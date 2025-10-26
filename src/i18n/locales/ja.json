@@ -1,0 +1,97 @@
+{
+  "app": {
+    "name": "HMRChan",
+    "description": "ソーシャルメディアコンテンツアグリゲーター"
+  },
+  "nav": {
+    "home": "ホーム",
+    "explore": "探索",
+    "favorites": "お気に入り",
+    "authors": "クリエイター",
+    "settings": "設定",
+    "login": "ログイン",
+    "logout": "ログアウト"
+  },
+  "platform": {
+    "youtube": "YouTube",
+    "twitter": "Twitter",
+    "tiktok": "TikTok",
+    "instagram": "Instagram",
+    "all": "すべてのプラットフォーム"
+  },
+  "post": {
+    "title": "タイトル",
+    "description": "説明",
+    "author": "作者",
+    "views": "再生回数",
+    "likes": "いいね",
+    "comments": "コメント",
+    "duration": "長さ",
+    "published": "公開日時",
+    "scraped": "取得日時",
+    "tags": "タグ",
+    "media": "メディア",
+    "viewOriginal": "元の投稿を見る"
+  },
+  "search": {
+    "placeholder": "コンテンツを検索...",
+    "noResults": "結果が見つかりません",
+    "searching": "検索中..."
+  },
+  "filter": {
+    "sortBy": "並び替え",
+    "latest": "最新",
+    "popular": "人気",
+    "oldest": "古い順",
+    "platform": "プラットフォーム",
+    "hasMedia": "メディアあり",
+    "dateRange": "期間"
+  },
+  "auth": {
+    "login": "ログイン",
+    "logout": "ログアウト",
+    "username": "ユーザー名",
+    "password": "パスワード",
+    "email": "メール",
+    "rememberMe": "ログイン状態を保持",
+    "forgotPassword": "パスワードをお忘れですか？",
+    "loginSuccess": "ログインしました",
+    "loginFailed": "ログインに失敗しました",
+    "logoutSuccess": "ログアウトしました"
+  },
+  "favorite": {
+    "add": "お気に入りに追加",
+    "remove": "お気に入りから削除",
+    "folder": "フォルダ",
+    "tags": "タグ",
+    "notes": "メモ",
+    "addSuccess": "お気に入りに追加しました",
+    "removeSuccess": "お気に入りから削除しました"
+  },
+  "settings": {
+    "theme": "テーマ",
+    "language": "言語",
+    "light": "ライト",
+    "dark": "ダーク",
+    "auto": "自動"
+  },
+  "common": {
+    "loading": "読み込み中...",
+    "error": "エラー",
+    "success": "成功",
+    "cancel": "キャンセル",
+    "confirm": "確認",
+    "save": "保存",
+    "delete": "削除",
+    "edit": "編集",
+    "close": "閉じる",
+    "more": "もっと見る",
+    "less": "閉じる",
+    "back": "戻る",
+    "next": "次へ",
+    "previous": "前へ",
+    "page": "ページ",
+    "of": "／",
+    "total": "合計"
+  }
+}

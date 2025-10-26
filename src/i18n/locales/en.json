@@ -1,0 +1,97 @@
+{
+  "app": {
+    "name": "HMRChan",
+    "description": "Social Media Content Aggregator"
+  },
+  "nav": {
+    "home": "Home",
+    "explore": "Explore",
+    "favorites": "Favorites",
+    "authors": "Authors",
+    "settings": "Settings",
+    "login": "Login",
+    "logout": "Logout"
+  },
+  "platform": {
+    "youtube": "YouTube",
+    "twitter": "Twitter",
+    "tiktok": "TikTok",
+    "instagram": "Instagram",
+    "all": "All Platforms"
+  },
+  "post": {
+    "title": "Title",
+    "description": "Description",
+    "author": "Author",
+    "views": "Views",
+    "likes": "Likes",
+    "comments": "Comments",
+    "duration": "Duration",
+    "published": "Published",
+    "scraped": "Scraped",
+    "tags": "Tags",
+    "media": "Media",
+    "viewOriginal": "View Original"
+  },
+  "search": {
+    "placeholder": "Search content...",
+    "noResults": "No results found",
+    "searching": "Searching..."
+  },
+  "filter": {
+    "sortBy": "Sort By",
+    "latest": "Latest",
+    "popular": "Most Popular",
+    "oldest": "Oldest",
+    "platform": "Platform",
+    "hasMedia": "Has Media",
+    "dateRange": "Date Range"
+  },
+  "auth": {
+    "login": "Login",
+    "logout": "Logout",
+    "username": "Username",
+    "password": "Password",
+    "email": "Email",
+    "rememberMe": "Remember Me",
+    "forgotPassword": "Forgot Password?",
+    "loginSuccess": "Login successful",
+    "loginFailed": "Login failed",
+    "logoutSuccess": "Logout successful"
+  },
+  "favorite": {
+    "add": "Add to Favorites",
+    "remove": "Remove from Favorites",
+    "folder": "Folder",
+    "tags": "Tags",
+    "notes": "Notes",
+    "addSuccess": "Added to favorites",
+    "removeSuccess": "Removed from favorites"
+  },
+  "settings": {
+    "theme": "Theme",
+    "language": "Language",
+    "light": "Light",
+    "dark": "Dark",
+    "auto": "Auto"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "close": "Close",
+    "more": "More",
+    "less": "Less",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "page": "Page",
+    "of": "of",
+    "total": "Total"
+  }
+}
