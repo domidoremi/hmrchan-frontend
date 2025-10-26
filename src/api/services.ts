@@ -89,10 +89,10 @@ export const postsApi = {
 
   /**
    * 获取内容统计
-   * GET /posts/stats
+   * GET /posts/stats/summary
    */
   getPostStats() {
-    return api.get<PostStats>('/posts/stats')
+    return api.get<PostStats>('/posts/stats/summary')
   },
 }
 

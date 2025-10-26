@@ -69,12 +69,15 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { ImageIcon, User, Eye, Heart, MessageCircle } from 'lucide-vue-next'
-import type { Post } from '@/types'
-import { PLATFORM_NAMES, PLATFORM_COLORS } from '@/types'
+import { useI18n } from 'vue-i18n'
+import { Heart, Eye, MessageCircle, Calendar, User, ImageIcon } from 'lucide-vue-next'
+
+import { useAuthStore } from '@/stores/auth'
 import { favoritesApi } from '@/api/services'
-import { formatRelativeTime, formatNumber, formatDuration, truncateText } from '@/utils/format'
+import { formatNumber, formatRelativeTime, formatDuration, truncateText } from '@/utils/format'
 import toast from '@/utils/toast'
+import { PLATFORM_NAMES, PLATFORM_COLORS } from '@/types'
+import type { Post } from '@/types'
 
 interface Props {
   post: Post
@@ -90,11 +93,16 @@ const platformName = computed(() => PLATFORM_NAMES[props.post.platform as keyof 
 const platformColor = computed(() => PLATFORM_COLORS[props.post.platform as keyof typeof PLATFORM_COLORS] || '#666')
 
 onMounted(async () => {
-  // 检查是否已收藏
+  // 只有登录后才检查收藏状态
+  const authStore = useAuthStore()
+  if (!authStore.isAuthenticated) {
+    return
+  }
+  
   try {
     isFavorited.value = await favoritesApi.isFavorited(props.post.id)
   } catch (error) {
-    console.error('Failed to check favorite status:', error)
+    // 忽略错误（可能是未登录）
   }
 })
 
@@ -103,6 +111,14 @@ const goToDetail = () => {
 }
 
 const toggleFavorite = async () => {
+  // 检查登录状态
+  const authStore = useAuthStore()
+  if (!authStore.isAuthenticated) {
+    toast.warning(t('messages.loginRequired'))
+    router.push('/login')
+    return
+  }
+  
   if (loading.value) return
   
   loading.value = true
