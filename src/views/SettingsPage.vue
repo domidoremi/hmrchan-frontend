@@ -27,6 +27,30 @@
           </div>
         </div>
 
+        <!-- Display Settings -->
+        <div class="settings-card glass-card">
+          <div class="card-header">
+            <Monitor :size="24" />
+            <h3>{{ $t('settings.display') }}</h3>
+          </div>
+
+          <div class="settings-content">
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-label">{{ $t('settings.showHeroSection') }}</div>
+                <div class="setting-description">{{ $t('settings.showHeroSectionDesc') }}</div>
+              </div>
+              <button
+                class="toggle-switch"
+                :class="{ active: settingsStore.settings.showHeroSection }"
+                @click="settingsStore.toggleSetting('showHeroSection')"
+              >
+                <span class="toggle-slider"></span>
+              </button>
+            </div>
+          </div>
+        </div>
+
         <!-- Language Settings -->
         <div class="settings-card glass-card">
           <div class="card-header">
@@ -95,12 +119,14 @@ import GlassButton from '@/components/ui/GlassButton.vue'
 
 import { useAuthStore } from '@/stores/auth'
 import { useThemeStore } from '@/stores/theme'
+import { useSettingsStore } from '@/stores/settings'
 import type { Theme } from '@/types'
 
 const router = useRouter()
 const { locale } = useI18n()
 const authStore = useAuthStore()
 const themeStore = useThemeStore()
+const settingsStore = useSettingsStore()
 
 const { user } = storeToRefs(authStore)
 const { theme } = storeToRefs(themeStore)
@@ -233,5 +259,65 @@ const handleLogout = () => {
 
 .info-row .value {
   color: var(--color-text-primary);
+}
+
+/* Toggle Switch */
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-md);
+  background: var(--glass-bg-light);
+  border-radius: var(--radius-md);
+}
+
+.setting-info {
+  flex: 1;
+}
+
+.setting-label {
+  font-weight: var(--font-medium);
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-xs);
+}
+
+.setting-description {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
+.toggle-switch {
+  position: relative;
+  width: 52px;
+  height: 28px;
+  border-radius: 14px;
+  background: var(--glass-border);
+  border: none;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.toggle-switch:hover {
+  background: var(--color-text-secondary);
+}
+
+.toggle-switch.active {
+  background: var(--color-primary);
+}
+
+.toggle-slider {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: white;
+  transition: transform var(--transition-fast);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.toggle-switch.active .toggle-slider {
+  transform: translateX(24px);
 }
 </style>

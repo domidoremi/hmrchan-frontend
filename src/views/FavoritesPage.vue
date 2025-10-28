@@ -5,9 +5,9 @@
 
       <LoadingSpinner v-if="loading" size="lg" />
 
-      <div v-else-if="favorites.length > 0" class="favorites-list">
+      <div v-else-if="favoritePosts.length > 0" class="favorites-list">
         <div class="favorites-grid">
-          <PostCard v-for="favorite in favorites" :key="favorite.id" :post="favorite" />
+          <PostCard v-for="post in favoritePosts" :key="post.id" :post="post" />
         </div>
       </div>
 
@@ -36,7 +36,7 @@ import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import GlassButton from '@/components/ui/GlassButton.vue'
 import { useFavorites } from '@/composables/useFavorites'
 
-const { favorites, loading, fetchFavorites } = useFavorites()
+const { favoritePosts, loading, fetchFavorites } = useFavorites()
 
 onMounted(async () => {
   try {

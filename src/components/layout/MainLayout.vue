@@ -7,12 +7,14 @@
       </div>
     </main>
     <AppFooter />
+    <BackToTop />
   </div>
 </template>
 
 <script setup lang="ts">
 import AppNavbar from './AppNavbar.vue'
 import AppFooter from './AppFooter.vue'
+import BackToTop from '../ui/BackToTop.vue'
 </script>
 
 <style scoped>

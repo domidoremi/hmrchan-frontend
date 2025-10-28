@@ -12,7 +12,7 @@
     <button v-if="searchQuery" class="clear-button" @click="clearSearch">
       <X :size="18" />
     </button>
-    
+
     <!-- 搜索建议下拉 -->
     <div v-if="showSuggestions && suggestions.length > 0" class="suggestions-dropdown glass-card">
       <div
@@ -69,13 +69,9 @@ const fetchSuggestions = useDebounceFn(async (query: string) => {
     showSuggestions.value = false
     return
   }
-  
+
   // TODO: 从API获取搜索建议
-  suggestions.value = [
-    `${query} youtube`,
-    `${query} twitter`,
-    `${query} video`,
-  ]
+  suggestions.value = [`${query} youtube`, `${query} twitter`, `${query} video`]
   showSuggestions.value = true
 }, 300)
 
@@ -102,7 +98,9 @@ watch(searchQuery, (newVal) => {
 }
 
 .search-bar:focus-within {
-  box-shadow: var(--glass-shadow), 0 0 0 3px rgba(139, 92, 246, 0.1);
+  box-shadow:
+    var(--glass-shadow),
+    0 0 0 3px rgba(139, 92, 246, 0.1);
 }
 
 .search-icon {

@@ -1,6 +1,8 @@
-# frontend
+# himeri chan - Frontend
 
-This template should help get you started developing with Vue 3 in Vite.
+社交媒体内容聚合系统前端应用
+
+基于 Vue 3 + TypeScript + Vite 构建的现代化 Web 应用。
 
 ## Recommended IDE Setup
 
@@ -23,32 +25,125 @@ TypeScript cannot handle type information for `.vue` imports by default, so we r
 
 See [Vite Configuration Reference](https://vite.dev/config/).
 
-## Project Setup
+## ✨ 特性
 
-```sh
+- 🌍 **完全国际化** - 支持中文、英文、日文
+- 🎨 **现代化 UI** - Glass morphism 设计风格
+- 🌓 **深色模式** - 自动切换主题
+- ♿ **可访问性** - ARIA 标签支持
+- 📱 **响应式设计** - 完美支持移动端
+- ⚡ **性能优化** - 智能预加载、虚拟滚动
+- 🛡️ **错误处理** - 全局错误边界
+- 🔒 **类型安全** - 完整的 TypeScript 支持
+
+## 📋 技术栈
+
+- **框架**: Vue 3 (Composition API)
+- **构建工具**: Vite
+- **语言**: TypeScript
+- **状态管理**: Pinia
+- **路由**: Vue Router
+- **国际化**: Vue I18n
+- **图标**: Lucide Vue
+- **HTTP**: Axios
+- **日期处理**: Day.js
+- **样式**: CSS Variables + Glass morphism
+
+## 🚀 快速开始
+
+### 安装依赖
+
+```bash
 bun install
 ```
 
-### Compile and Hot-Reload for Development
+### 开发环境
 
-```sh
-bun dev
+```bash
+bun run dev
 ```
 
-### Type-Check, Compile and Minify for Production
+访问: http://localhost:5173
 
-```sh
+### 生产构建
+
+```bash
 bun run build
 ```
 
-### Run Unit Tests with [Vitest](https://vitest.dev/)
+### 预览构建
 
-```sh
-bun test:unit
+```bash
+bun run preview
 ```
 
-### Lint with [ESLint](https://eslint.org/)
+### 代码检查
 
-```sh
-bun lint
+```bash
+# ESLint
+bun run lint
+
+# TypeScript 类型检查
+bun run type-check
+
+# 格式化代码
+bun run format
 ```
+
+### 测试
+
+```bash
+bun run test:unit
+```
+
+## 📁 项目结构
+
+```
+src/
+├── api/              # API 客户端和服务
+├── components/       # Vue 组件
+│   ├── features/    # 业务组件
+│   ├── layout/      # 布局组件
+│   └── ui/          # UI 组件
+├── composables/      # 组合式函数
+├── directives/       # 自定义指令
+├── i18n/            # 国际化配置
+├── router/          # 路由配置
+├── stores/          # Pinia 状态管理
+├── styles/          # 全局样式
+├── types/           # TypeScript 类型定义
+├── utils/           # 工具函数
+└── views/           # 页面组件
+```
+
+## 🔧 环境变量
+
+创建 `.env` 文件:
+
+```env
+VITE_API_URL=/api
+VITE_APP_NAME=himeri chan
+VITE_APP_DESCRIPTION=Social Media Content Aggregation System
+```
+
+## 📚 文档
+
+- **开发文档**: [DEVELOPMENT.md](./DEVELOPMENT.md)
+- **更新日志**: [CHANGELOG.md](./CHANGELOG.md)
+- **修复记录**: [FIXES_COMPLETED.md](./FIXES_COMPLETED.md)
+
+## 🎯 代码规范
+
+- 使用 ESLint + Prettier 进行代码格式化
+- 遵循 Vue 3 Composition API 最佳实践
+- TypeScript 严格模式
+- 所有用户可见文本必须国际化
+- 使用条件日志工具 (logger) 而非 console
+
+## 🤝 贡献
+
+欢迎提交 Pull Request！
+
+## 📄 许可证
+
+MIT License

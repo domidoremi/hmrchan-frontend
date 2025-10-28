@@ -30,6 +30,15 @@ const routes: RouteRecordRaw[] = [
     },
   },
   {
+    path: '/register',
+    name: 'register',
+    component: () => import('@/views/RegisterPage.vue'),
+    meta: {
+      title: 'Register',
+      guest: true,
+    },
+  },
+  {
     path: '/posts/:id',
     name: 'post-detail',
     component: () => import('@/views/PostDetailPage.vue'),
@@ -64,6 +73,15 @@ const routes: RouteRecordRaw[] = [
     },
   },
   {
+    path: '/profile',
+    name: 'profile',
+    component: () => import('@/views/ProfilePage.vue'),
+    meta: {
+      title: 'Profile',
+      requiresAuth: true,
+    },
+  },
+  {
     path: '/:pathMatch(.*)*',
     name: 'not-found',
     component: () => import('@/views/NotFoundPage.vue'),
@@ -77,10 +95,27 @@ const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes,
   scrollBehavior(to, from, savedPosition) {
+    // 如果是浏览器前进/后退，恢复之前的位置
     if (savedPosition) {
-      return savedPosition
+      return {
+        ...savedPosition,
+        behavior: 'smooth',
+      }
     }
-    return { top: 0 }
+
+    // 如果有hash，滚动到对应元素
+    if (to.hash) {
+      return {
+        el: to.hash,
+        behavior: 'smooth',
+      }
+    }
+
+    // 默认滚动到顶部，但使用平滑滚动
+    return {
+      top: 0,
+      behavior: 'smooth',
+    }
   },
 })
 
@@ -89,8 +124,9 @@ router.beforeEach((to, from, next) => {
   const authStore = useAuthStore()
 
   // 更新页面标题
+  const appName = import.meta.env.VITE_APP_NAME || 'himeri chan'
   if (to.meta.title) {
-    document.title = `${to.meta.title} - HMRChan`
+    document.title = `${to.meta.title} - ${appName}`
   }
 
   // 需要认证的页面

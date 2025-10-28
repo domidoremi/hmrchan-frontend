@@ -19,8 +19,12 @@
       <div class="footer-section">
         <h4>{{ $t('common.more') }}</h4>
         <ul class="footer-links">
-          <li><RouterLink to="/authors">{{ $t('nav.authors') }}</RouterLink></li>
-          <li><RouterLink to="/settings">{{ $t('nav.settings') }}</RouterLink></li>
+          <li>
+            <RouterLink to="/authors">{{ $t('nav.authors') }}</RouterLink>
+          </li>
+          <li>
+            <RouterLink to="/settings">{{ $t('nav.settings') }}</RouterLink>
+          </li>
         </ul>
       </div>
 

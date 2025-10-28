@@ -5,6 +5,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { User, LoginRequest } from '@/types'
 import { api } from '@/api/client'
+import logger from '@/utils/logger'
 
 export const useAuthStore = defineStore(
   'auth',
@@ -18,6 +19,38 @@ export const useAuthStore = defineStore(
     // 计算属性
     const isAuthenticated = computed(() => !!token.value)
     const isAdmin = computed(() => user.value?.is_admin ?? false)
+
+    // 注册
+    async function register(data: {
+      username: string
+      email: string
+      password: string
+      full_name?: string
+    }) {
+      loading.value = true
+      error.value = null
+
+      try {
+        const response = await api.post<{
+          access_token: string
+          user: User
+        }>('/auth/register', data)
+
+        token.value = response.access_token
+        user.value = response.user
+
+        // 保存到localStorage
+        localStorage.setItem('access_token', response.access_token)
+        localStorage.setItem('user', JSON.stringify(response.user))
+
+        return response
+      } catch (err: any) {
+        error.value = err.response?.data?.detail || 'Registration failed'
+        throw err
+      } finally {
+        loading.value = false
+      }
+    }
 
     // 登录
     async function login(credentials: LoginRequest) {
@@ -39,7 +72,7 @@ export const useAuthStore = defineStore(
 
         return response
       } catch (err: any) {
-        error.value = err.response?.data?.message || 'Login failed'
+        error.value = err.response?.data?.detail || 'Login failed'
         throw err
       } finally {
         loading.value = false
@@ -54,6 +87,12 @@ export const useAuthStore = defineStore(
 
       localStorage.removeItem('access_token')
       localStorage.removeItem('user')
+      
+      // 清空其他 stores 的状态
+      if (typeof window !== 'undefined') {
+        // 清空 sessionStorage（posts store 的持久化存储）
+        sessionStorage.clear()
+      }
     }
 
     // 获取当前用户信息
@@ -65,7 +104,7 @@ export const useAuthStore = defineStore(
         user.value = response
         localStorage.setItem('user', JSON.stringify(response))
       } catch (err) {
-        console.error('Failed to fetch user:', err)
+        logger.error('Failed to fetch user:', err)
         logout()
       }
     }
@@ -80,7 +119,7 @@ export const useAuthStore = defineStore(
         try {
           user.value = JSON.parse(savedUser)
         } catch (err) {
-          console.error('Failed to parse saved user:', err)
+          logger.error('Failed to parse saved user:', err)
           logout()
         }
       }
@@ -98,6 +137,7 @@ export const useAuthStore = defineStore(
       isAdmin,
 
       // 方法
+      register,
       login,
       logout,
       fetchCurrentUser,

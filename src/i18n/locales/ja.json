@@ -6,10 +6,12 @@
   "nav": {
     "home": "ホーム",
     "explore": "探索",
-    "favorites": "お気に入り",
-    "authors": "クリエイター",
+    "authors": "作者",
+    "profile": "プロフィール",
     "settings": "設定",
+    "favorites": "お気に入り",
     "login": "ログイン",
+    "register": "登録",
     "logout": "ログアウト"
   },
   "platform": {
@@ -20,7 +22,7 @@
     "all": "すべてのプラットフォーム"
   },
   "post": {
-    "title": "タイトル",
+    "title": "投稿",
     "description": "説明",
     "author": "作者",
     "views": "再生回数",
@@ -28,15 +30,25 @@
     "comments": "コメント",
     "duration": "長さ",
     "published": "公開日時",
+    "publishedAt": "公開日時",
+    "scrapedAt": "取得日時",
     "scraped": "取得日時",
     "tags": "タグ",
     "media": "メディア",
-    "viewOriginal": "元の投稿を見る"
+    "viewOriginal": "元の投稿を見る",
+    "retweet": "リツイート",
+    "originalAuthor": "元の作者",
+    "relatedPosts": "関連投稿",
+    "loadingMedia": "読み込み中...",
+    "video": "動画",
+    "image": "画像",
+    "videoNotSupported": "お使いのブラウザは動画再生に対応していません"
   },
   "search": {
     "placeholder": "コンテンツを検索...",
     "noResults": "結果が見つかりません",
-    "searching": "検索中..."
+    "searching": "検索中...",
+    "tryDifferent": "別のキーワードを試す"
   },
   "filter": {
     "sortBy": "並び替え",
@@ -45,7 +57,8 @@
     "oldest": "古い順",
     "platform": "プラットフォーム",
     "hasMedia": "メディアあり",
-    "dateRange": "期間"
+    "dateRange": "期間",
+    "published": "公開日"
   },
   "auth": {
     "login": "ログイン",
@@ -53,11 +66,33 @@
     "username": "ユーザー名",
     "password": "パスワード",
     "email": "メール",
+    "fullName": "氏名",
     "rememberMe": "ログイン状態を保持",
-    "forgotPassword": "パスワードをお忘れですか？",
-    "loginSuccess": "ログインしました",
-    "loginFailed": "ログインに失敗しました",
-    "logoutSuccess": "ログアウトしました"
+    "forgotPassword": "パスワードを忘れましたか？",
+    "loginSuccess": "ログイン成功",
+    "loginFailed": "ログイン失敗",
+    "logoutSuccess": "ログアウト成功",
+    "registerTitle": "アカウント作成",
+    "registerDescription": "登録して、もっと楽しもう",
+    "registerButton": "登録",
+    "noAccount": "アカウントをお持ちではありませんか？",
+    "hasAccount": "すでにアカウントをお持ちですか？",
+    "registerNow": "今すぐ登録",
+    "loginNow": "今すぐログイン",
+    "confirmPassword": "パスワード確認",
+    "usernamePlaceholder": "ユーザー名（3-50文字）",
+    "emailPlaceholder": "メールアドレス",
+    "fullNamePlaceholder": "お名前",
+    "passwordPlaceholder": "パスワード（8文字以上）",
+    "confirmPasswordPlaceholder": "パスワードを再入力",
+    "fillAllFields": "必須項目をすべて入力してください",
+    "usernameLength": "ユーザー名は3-50文字で入力してください",
+    "invalidEmail": "有効なメールアドレスを入力してください",
+    "passwordLength": "パスワードは8文字以上で入力してください",
+    "passwordMismatch": "パスワードが一致しません",
+    "registrationSuccess": "登録成功！リダイレクト中...",
+    "registrationFailed": "登録に失敗しました。もう一度お試しください",
+    "loginFailedMessage": "ログインに失敗しました。もう一度お試しください。"
   },
   "favorite": {
     "add": "お気に入りに追加",
@@ -66,14 +101,23 @@
     "tags": "タグ",
     "notes": "メモ",
     "addSuccess": "お気に入りに追加しました",
-    "removeSuccess": "お気に入りから削除しました"
+    "removeSuccess": "お気に入りから削除しました",
+    "addFailed": "追加に失敗しました",
+    "removeFailed": "削除に失敗しました",
+    "updateSuccess": "更新しました",
+    "updateFailed": "更新に失敗しました",
+    "loginRequired": "ログインしてください"
   },
   "settings": {
     "theme": "テーマ",
     "language": "言語",
+    "display": "表示設定",
+    "showHeroSection": "ヒーローセクションを表示",
+    "showHeroSectionDesc": "ホームページにヒーローバナーを表示",
     "light": "ライト",
     "dark": "ダーク",
-    "auto": "自動"
+    "auto": "自動",
+    "toggleTheme": "テーマ切り替え"
   },
   "common": {
     "loading": "読み込み中...",
@@ -92,6 +136,114 @@
     "previous": "前へ",
     "page": "ページ",
     "of": "／",
-    "total": "合計"
+    "total": "合計",
+    "reset": "リセット",
+    "apply": "適用",
+    "order": "順序",
+    "noMore": "これ以上ありません",
+    "loadFailed": "読み込みに失敗しました",
+    "operationFailed": "操作に失敗しました",
+    "loadFailedContent": "コンテンツの読み込みに失敗しました",
+    "noData": "データがありません",
+    "zoomIn": "拡大",
+    "zoomOut": "縮小",
+    "backToTop": "トップに戻る"
+  },
+  "author": {
+    "title": "作者",
+    "followers": "フォロワー",
+    "posts": "投稿",
+    "videos": "動画",
+    "verified": "認証済み",
+    "joined": "参加日",
+    "platformJoined": "プラットフォーム参加",
+    "bio": "プロフィール",
+    "profile": "プロフィール",
+    "viewProfile": "プロフィールを見る",
+    "viewOriginal": "プラットフォームで見る",
+    "scraped": "収集済み",
+    "noAuthors": "作者が見つかりません",
+    "loadFailed": "作者の読み込みに失敗しました",
+    "totalFollowers": "総フォロワー数",
+    "totalPosts": "総投稿数"
+  },
+  "profile": {
+    "title": "プロフィール",
+    "editProfile": "プロフィール編集",
+    "changePassword": "パスワード変更",
+    "deleteAccount": "アカウント削除",
+    "accountInfo": "アカウント情報",
+    "dangerZone": "危険な操作",
+    "username": "ユーザー名",
+    "email": "メールアドレス",
+    "fullName": "氏名",
+    "joinedAt": "登録日時",
+    "accountStatus": "アカウント状態",
+    "active": "アクティブ",
+    "inactive": "無効",
+    "verified": "認証済み",
+    "notVerified": "未認証",
+    "sendVerification": "認証メール送信",
+    "admin": "管理者",
+    "favorites": "お気に入り",
+    "views": "閲覧数",
+    "days": "日",
+    "currentPassword": "現在のパスワード",
+    "newPassword": "新しいパスワード",
+    "confirmPassword": "パスワード確認",
+    "passwordMinLength": "パスワードは8文字以上",
+    "passwordMismatch": "パスワードが一致しません",
+    "passwordChanged": "パスワードを変更しました。再ログインしてください",
+    "passwordChangeFailed": "パスワード変更に失敗しました",
+    "profileUpdated": "プロフィールを更新しました",
+    "profileUpdateFailed": "プロフィール更新に失敗しました",
+    "deleteConfirmTitle": "アカウント削除の確認",
+    "deleteWarning": "この操作は取り消せません。すべてのデータが永久に削除されます",
+    "enterPasswordToConfirm": "パスワードを入力して確認してください",
+    "accountDeleted": "アカウントを削除しました",
+    "accountDeleteFailed": "アカウント削除に失敗しました",
+    "dangerZoneDescription": "これらの操作は元に戻せません。慎重に実行してください",
+    "avatarUploading": "アバターをアップロード中...",
+    "avatarUploadSuccess": "アバターのアップロードに成功しました",
+    "avatarUploadFailed": "アバターのアップロードに失敗しました",
+    "notSet": "未設定",
+    "logout": "ログアウト",
+    "personalInfo": "個人情報",
+    "statistics": "統計",
+    "deleteItems": {
+      "profile": "プロフィールと設定",
+      "favorites": "すべてのお気に入りとコメント",
+      "access": "アカウントアクセス"
+    }
+  },
+  "access": {
+    "limit": "アクセス制限",
+    "limitMessage": "{current} / {limit} 件の投稿を表示中",
+    "loginForMore": "ログインしてさらに表示",
+    "unlimited": "制限なし"
+  },
+  "upload": {
+    "onlyImages": "JPG、PNG、WebP形式の画像のみサポート",
+    "processingFailed": "画像処理に失敗しました",
+    "tooLarge": "ファイルが大きすぎます。最大5MB"
+  },
+  "errors": {
+    "permissionDenied": "権限がありません",
+    "tooManyRequests": "リクエストが多すぎます。しばらく待ってから再度お試しください",
+    "serverError": "サーバーエラー。しばらく待ってから再度お試しください",
+    "networkError": "ネットワークエラー。接続を確認してください",
+    "unknownError": "未知のエラー",
+    "videoPlaybackFailed": "動画再生に失敗しました"
+  },
+  "aria": {
+    "closeMenu": "メニューを閉じる",
+    "openMenu": "メニューを開く",
+    "userMenu": "ユーザーメニュー",
+    "languageMenu": "言語メニュー",
+    "togglePassword": "パスワード表示切り替え",
+    "previousImage": "前の画像",
+    "nextImage": "次の画像",
+    "closeViewer": "ビューアを閉じる",
+    "loading": "読み込み中"
   }
 }

@@ -120,6 +120,22 @@ watch(
   gap: var(--spacing-md);
 }
 
+.glass-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: var(--z-modal);
+  display: flex;
+  align-items: center; /* 垂直居中 */
+  justify-content: center; /* 水平居中 */
+  padding: var(--spacing-lg);
+  overflow-y: auto;
+}
+
 /* 尺寸 */
 .modal-sm {
   max-width: 400px;
