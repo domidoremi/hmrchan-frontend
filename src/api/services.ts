@@ -23,6 +23,14 @@ import type {
 
 export const authApi = {
   /**
+   * 用户注册
+   * POST /auth/register
+   */
+  register(data: { username: string; email: string; password: string; full_name?: string }) {
+    return api.post<LoginResponse>('/auth/register', data)
+  },
+
+  /**
    * 用户登录
    * POST /auth/login
    */
@@ -219,13 +227,23 @@ export const favoritesApi = {
 
   /**
    * 检查内容是否已收藏
+   * POST /favorites/check/{post_id}
+   */
+  async checkFavorite(
+    postId: number,
+  ): Promise<{ is_favorited: boolean; favorite_id: number | null }> {
+    return api.post<{ is_favorited: boolean; favorite_id: number | null }>(
+      `/favorites/check/${postId}`,
+    )
+  },
+
+  /**
+   * 检查内容是否已收藏（简化版）
    */
   async isFavorited(postId: number): Promise<boolean> {
     try {
-      const response = await api.get<PaginatedResponse<Favorite>>('/favorites', {
-        params: { page: 1, page_size: 1 },
-      })
-      return response.items.some((fav) => fav.post_id === postId)
+      const result = await this.checkFavorite(postId)
+      return result.is_favorited
     } catch {
       return false
     }
@@ -244,6 +262,47 @@ export const statsApi = {
   },
 }
 
+// ========== 上传API ==========
+
+export interface FileUploadResponse {
+  filename: string
+  url: string
+  size: number
+  content_type: string
+  hash: string
+  uploaded_at: string
+}
+
+export const uploadApi = {
+  /**
+   * 上传头像
+   * POST /upload/avatar
+   */
+  async uploadAvatar(file: File): Promise<FileUploadResponse> {
+    const formData = new FormData()
+    formData.append('file', file)
+    return api.post<FileUploadResponse>('/upload/avatar', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    })
+  },
+
+  /**
+   * 为指定用户上传头像（管理员功能）
+   * POST /upload/users/{user_id}/avatar
+   */
+  async uploadUserAvatar(userId: number, file: File): Promise<FileUploadResponse> {
+    const formData = new FormData()
+    formData.append('file', file)
+    return api.post<FileUploadResponse>(`/upload/users/${userId}/avatar`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    })
+  },
+}
+
 // 导出所有API服务
 export const services = {
   auth: authApi,
@@ -252,6 +311,7 @@ export const services = {
   authors: authorsApi,
   favorites: favoritesApi,
   stats: statsApi,
+  upload: uploadApi,
 }
 
 export default services

@@ -1,13 +1,37 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
-import { RouterView } from 'vue-router'
+import { ref, onMounted, watch } from 'vue'
+import { RouterView, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useThemeStore } from '@/stores/theme'
 import { storeToRefs } from 'pinia'
+import ErrorBoundary from '@/components/ErrorBoundary.vue'
 
 const authStore = useAuthStore()
 const themeStore = useThemeStore()
 const { isDark } = storeToRefs(themeStore)
+
+const router = useRouter()
+const transitionName = ref('fade')
+
+// 需要缓存的组件列表（提升页面切换性能）
+const cachedComponents = ['HomePage', 'ExplorePage', 'AuthorsPage']
+
+// 根据路由变化设置过渡动画
+watch(
+  () => router.currentRoute.value,
+  (to) => {
+    // 默认使用fade动画
+    const transition = to?.meta?.transition
+    if (transition === 'slide-left') {
+      transitionName.value = 'slide-left'
+    } else if (transition === 'slide-right') {
+      transitionName.value = 'slide-right'
+    } else {
+      transitionName.value = 'fade'
+    }
+  },
+  { immediate: false },
+)
 
 // 初始化应用
 onMounted(() => {
@@ -24,7 +48,16 @@ onMounted(() => {
 
 <template>
   <div id="app" :data-theme="isDark ? 'dark' : 'light'">
-    <RouterView />
+    <ErrorBoundary>
+      <RouterView v-slot="{ Component, route }">
+        <transition :name="transitionName" mode="out-in">
+          <!-- KeepAlive 缓存页面组件，提升性能和用户体验 -->
+          <KeepAlive :include="cachedComponents" :max="5">
+            <component :is="Component" :key="route.path" />
+          </KeepAlive>
+        </transition>
+      </RouterView>
+    </ErrorBoundary>
   </div>
 </template>
 
@@ -32,5 +65,53 @@ onMounted(() => {
 #app {
   min-height: 100vh;
   transition: background-color var(--transition-base);
+}
+
+/* 页面过渡动画 */
+.fade-enter-active,
+.fade-leave-active {
+  transition:
+    opacity 0.3s ease,
+    transform 0.3s ease;
+}
+
+.fade-enter-from {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.fade-leave-to {
+  opacity: 0;
+  transform: translateY(-20px);
+}
+
+.slide-left-enter-active,
+.slide-left-leave-active {
+  transition: all 0.3s ease;
+}
+
+.slide-left-enter-from {
+  opacity: 0;
+  transform: translateX(30px);
+}
+
+.slide-left-leave-to {
+  opacity: 0;
+  transform: translateX(-30px);
+}
+
+.slide-right-enter-active,
+.slide-right-leave-active {
+  transition: all 0.3s ease;
+}
+
+.slide-right-enter-from {
+  opacity: 0;
+  transform: translateX(-30px);
+}
+
+.slide-right-leave-to {
+  opacity: 0;
+  transform: translateX(30px);
 }
 </style>

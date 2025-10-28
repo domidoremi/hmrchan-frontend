@@ -49,18 +49,35 @@
       <!-- 右侧操作 -->
       <div class="navbar-actions">
         <!-- 主题切换 -->
-        <button class="action-button" @click="toggleTheme" :title="$t('settings.theme')">
+        <button 
+          class="action-button" 
+          @click="toggleTheme" 
+          :title="$t('settings.theme')"
+          :aria-label="$t('settings.toggleTheme')"
+          :aria-pressed="isDark ? 'true' : 'false'"
+        >
           <Sun v-if="!isDark" :size="20" />
           <Moon v-else :size="20" />
         </button>
 
         <!-- 语言切换 -->
-        <button class="action-button" @click="showLanguageMenu = !showLanguageMenu">
+        <button 
+          class="action-button" 
+          @click="showLanguageMenu = !showLanguageMenu"
+          :aria-label="$t('aria.languageMenu')"
+          :aria-expanded="showLanguageMenu ? 'true' : 'false'"
+          :aria-haspopup="true"
+        >
           <Languages :size="20" />
         </button>
 
         <!-- 语言菜单 -->
-        <div v-if="showLanguageMenu" class="language-menu glass-card">
+        <div 
+          v-if="showLanguageMenu" 
+          class="language-menu glass-card"
+          role="menu"
+          :aria-label="$t('aria.languageMenu')"
+        >
           <button
             v-for="locale in locales"
             :key="locale.code"
@@ -74,20 +91,40 @@
 
         <!-- 用户菜单 -->
         <div v-if="isAuthenticated" class="user-menu">
-          <button class="user-avatar" @click="showUserMenu = !showUserMenu">
-            <User :size="20" />
+          <button 
+            class="user-avatar" 
+            @click="showUserMenu = !showUserMenu"
+            :aria-label="$t('aria.userMenu')"
+            :aria-expanded="showUserMenu ? 'true' : 'false'"
+            :aria-haspopup="true"
+          >
+            <img :src="userAvatarUrl" :alt="user?.username || 'User'" />
           </button>
 
-          <div v-if="showUserMenu" class="user-dropdown glass-card">
+          <div 
+            v-if="showUserMenu" 
+            class="user-dropdown glass-card"
+            role="menu"
+            :aria-label="$t('aria.userMenu')"
+          >
             <div class="user-info">
               <p class="user-name">{{ user?.username }}</p>
               <p class="user-email">{{ user?.email }}</p>
             </div>
             <div class="dropdown-divider"></div>
-            <RouterLink to="/settings" class="dropdown-item" @click="showUserMenu = false">
+            <RouterLink to="/profile" class="dropdown-item">
+              <User :size="18" />
+              {{ $t('nav.profile') }}
+            </RouterLink>
+            <RouterLink to="/favorites" class="dropdown-item">
+              <Heart :size="18" />
+              {{ $t('nav.favorites') }}
+            </RouterLink>
+            <RouterLink to="/settings" class="dropdown-item">
               <Settings :size="18" />
               {{ $t('nav.settings') }}
             </RouterLink>
+            <div class="dropdown-divider"></div>
             <button class="dropdown-item" @click="handleLogout">
               <LogOut :size="18" />
               {{ $t('nav.logout') }}
@@ -103,7 +140,13 @@
         </RouterLink>
 
         <!-- 移动端菜单按钮 -->
-        <button class="mobile-menu-button show-on-mobile" @click="toggleMobileMenu">
+        <button 
+          class="mobile-menu-button show-on-mobile" 
+          @click="toggleMobileMenu"
+          :aria-label="mobileMenuOpen ? $t('aria.closeMenu') : $t('aria.openMenu')"
+          :aria-expanded="mobileMenuOpen ? 'true' : 'false'"
+          :aria-controls="'mobile-nav'"
+        >
           <Menu v-if="!mobileMenuOpen" :size="24" />
           <X v-else :size="24" />
         </button>
@@ -113,7 +156,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
@@ -135,6 +178,7 @@ import {
 
 import { useAuthStore } from '@/stores/auth'
 import { useThemeStore } from '@/stores/theme'
+import { getUserAvatar } from '@/utils/avatar'
 import GlassButton from '@/components/ui/GlassButton.vue'
 
 const router = useRouter()
@@ -152,6 +196,9 @@ const showUserMenu = ref(false)
 const mobileMenuOpen = ref(false)
 
 const currentLocale = computed(() => locale.value)
+
+// 用户头像URL（含默认头像）
+const userAvatarUrl = computed(() => getUserAvatar(user.value, 40))
 
 const locales = [
   { code: 'en', name: 'English' },
@@ -189,6 +236,43 @@ const toggleMobileMenu = () => {
 const closeMobileMenu = () => {
   mobileMenuOpen.value = false
 }
+
+// 点击外部关闭下拉菜单
+const handleClickOutside = (event: MouseEvent) => {
+  const target = event.target as HTMLElement
+
+  // 检查是否点击在语言菜单外部
+  if (showLanguageMenu.value) {
+    const languageButton = document.querySelector(
+      '.action-button:has(svg[data-lucide="languages"])',
+    )
+    const languageMenu = document.querySelector('.language-menu')
+    if (
+      languageButton &&
+      languageMenu &&
+      !languageButton.contains(target) &&
+      !languageMenu.contains(target)
+    ) {
+      showLanguageMenu.value = false
+    }
+  }
+
+  // 检查是否点击在用户菜单外部
+  if (showUserMenu.value) {
+    const userMenu = document.querySelector('.user-menu')
+    if (userMenu && !userMenu.contains(target)) {
+      showUserMenu.value = false
+    }
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside)
+})
+
+onBeforeUnmount(() => {
+  document.removeEventListener('click', handleClickOutside)
+})
 </script>
 
 <style scoped>
@@ -257,6 +341,7 @@ const closeMobileMenu = () => {
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
   min-width: 300px;
+  flex-shrink: 1;
   transition: all var(--transition-fast);
 }
 
@@ -280,6 +365,7 @@ const closeMobileMenu = () => {
   align-items: center;
   gap: var(--spacing-sm);
   position: relative;
+  flex-shrink: 0;
 }
 
 .action-button {
@@ -348,6 +434,13 @@ const closeMobileMenu = () => {
   justify-content: center;
   cursor: pointer;
   transition: all var(--transition-fast);
+  overflow: hidden;
+}
+
+.user-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .user-avatar:hover {
@@ -391,6 +484,17 @@ const closeMobileMenu = () => {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+/* 平板和小屏幕样式 */
+@media (max-width: 1100px) {
+  .navbar-search {
+    min-width: 200px;
+  }
+
+  .navbar-content {
+    gap: var(--spacing-md);
   }
 }
 

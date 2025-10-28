@@ -2,12 +2,15 @@
  * Favorites组合式函数
  */
 import { ref } from 'vue'
-import { favoritesApi } from '@/api/services'
-import type { Favorite, FavoriteCreate, FavoriteUpdate } from '@/types'
+import { useI18n } from 'vue-i18n'
+import { favoritesApi, postsApi } from '@/api/services'
+import type { Favorite, FavoriteCreate, FavoriteUpdate, Post } from '@/types'
 import toast from '@/utils/toast'
 
 export function useFavorites() {
+  const { t } = useI18n()
   const favorites = ref<Favorite[]>([])
+  const favoritePosts = ref<Post[]>([])
   const loading = ref(false)
   const error = ref<string | null>(null)
 
@@ -19,9 +22,13 @@ export function useFavorites() {
   })
 
   /**
-   * 获取收藏列表
+   * 获取收藏列表（包含完整的帖子信息）
    */
-  const fetchFavorites = async (params?: { page?: number; page_size?: number; folder_name?: string }) => {
+  const fetchFavorites = async (params?: {
+    page?: number
+    page_size?: number
+    folder_name?: string
+  }) => {
     loading.value = true
     error.value = null
 
@@ -34,6 +41,23 @@ export function useFavorites() {
         total: response.total,
         total_pages: response.total_pages,
       }
+
+      // 获取所有收藏帖子的完整信息
+      const postIds = response.items.map((fav) => fav.post_id)
+      if (postIds.length > 0) {
+        try {
+          // 批量获取帖子信息
+          const postsResponse = await postsApi.getPosts({ page: 1, page_size: postIds.length })
+          // 过滤出收藏的帖子
+          favoritePosts.value = postsResponse.items.filter((post) => postIds.includes(post.id))
+        } catch (err) {
+          console.error('Failed to fetch favorite posts:', err)
+          favoritePosts.value = []
+        }
+      } else {
+        favoritePosts.value = []
+      }
+
       return response
     } catch (err: any) {
       error.value = err.message || 'Failed to fetch favorites'
@@ -50,10 +74,10 @@ export function useFavorites() {
     try {
       const favorite = await favoritesApi.addFavorite(data)
       favorites.value.unshift(favorite)
-      toast.success('Added to favorites')
+      toast.success(t('favorite.addSuccess'))
       return favorite
     } catch (err: any) {
-      const message = err.response?.data?.message || 'Failed to add favorite'
+      const message = err.response?.data?.message || t('favorite.addFailed')
       toast.error(message)
       throw err
     }
@@ -65,14 +89,14 @@ export function useFavorites() {
   const updateFavorite = async (favoriteId: number, data: FavoriteUpdate) => {
     try {
       const favorite = await favoritesApi.updateFavorite(favoriteId, data)
-      const index = favorites.value.findIndex(f => f.id === favoriteId)
+      const index = favorites.value.findIndex((f) => f.id === favoriteId)
       if (index !== -1) {
         favorites.value[index] = favorite
       }
-      toast.success('Favorite updated')
+      toast.success(t('favorite.updateSuccess'))
       return favorite
     } catch (err: any) {
-      const message = err.response?.data?.message || 'Failed to update favorite'
+      const message = err.response?.data?.message || t('favorite.updateFailed')
       toast.error(message)
       throw err
     }
@@ -84,10 +108,10 @@ export function useFavorites() {
   const deleteFavorite = async (favoriteId: number) => {
     try {
       await favoritesApi.deleteFavorite(favoriteId)
-      favorites.value = favorites.value.filter(f => f.id !== favoriteId)
-      toast.success('Removed from favorites')
+      favorites.value = favorites.value.filter((f) => f.id !== favoriteId)
+      toast.success(t('favorite.removeSuccess'))
     } catch (err: any) {
-      const message = err.response?.data?.message || 'Failed to remove favorite'
+      const message = err.response?.data?.message || t('favorite.removeFailed')
       toast.error(message)
       throw err
     }
@@ -107,6 +131,7 @@ export function useFavorites() {
   return {
     // 状态
     favorites,
+    favoritePosts,
     loading,
     error,
     pagination,

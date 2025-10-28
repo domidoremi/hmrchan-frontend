@@ -1,41 +1,83 @@
 <template>
-  <div class="login-page">
-    <div class="login-container">
-      <div class="login-card glass-card">
+  <div class="register-page">
+    <div class="register-container">
+      <div class="register-card glass-card">
         <!-- Logo -->
-        <div class="login-header">
+        <div class="register-header">
           <div class="brand-logo">HMR</div>
-          <h1>{{ $t('app.name') }}</h1>
-          <p>{{ $t('app.description') }}</p>
+          <h1>{{ $t('auth.registerTitle') }}</h1>
+          <p>{{ $t('auth.registerDescription') }}</p>
         </div>
 
-        <!-- Login Form -->
-        <form class="login-form" @submit.prevent="handleLogin">
+        <!-- Register Form -->
+        <form class="register-form" @submit.prevent="handleRegister">
           <div class="form-group">
-            <label>{{ $t('auth.username') }}</label>
+            <label>{{ $t('auth.username') }} *</label>
             <GlassInput
               v-model="formData.username"
               type="text"
-              :placeholder="$t('auth.username')"
+              :placeholder="$t('auth.usernamePlaceholder')"
               :icon="User"
               :disabled="loading"
-              autocomplete="username"
             />
           </div>
 
           <div class="form-group">
-            <label>{{ $t('auth.password') }}</label>
+            <label>{{ $t('auth.email') }} *</label>
+            <GlassInput
+              v-model="formData.email"
+              type="email"
+              :placeholder="$t('auth.emailPlaceholder')"
+              :icon="Mail"
+              :disabled="loading"
+            />
+          </div>
+
+          <div class="form-group">
+            <label>{{ $t('auth.fullName') }} ({{ $t('profile.notSet') }})</label>
+            <GlassInput
+              v-model="formData.full_name"
+              type="text"
+              :placeholder="$t('auth.fullNamePlaceholder')"
+              :icon="UserCircle"
+              :disabled="loading"
+            />
+          </div>
+
+          <div class="form-group">
+            <label>{{ $t('auth.password') }} *</label>
             <GlassInput
               v-model="formData.password"
               :type="showPassword ? 'text' : 'password'"
-              :placeholder="$t('auth.password')"
+              :placeholder="$t('auth.passwordPlaceholder')"
               :icon="Lock"
               :disabled="loading"
-              autocomplete="current-password"
             >
               <template #suffix>
                 <button type="button" class="password-toggle" @click="showPassword = !showPassword">
                   <Eye v-if="!showPassword" :size="18" />
+                  <EyeOff v-else :size="18" />
+                </button>
+              </template>
+            </GlassInput>
+          </div>
+
+          <div class="form-group">
+            <label>{{ $t('auth.confirmPassword') }} *</label>
+            <GlassInput
+              v-model="formData.confirmPassword"
+              :type="showConfirmPassword ? 'text' : 'password'"
+              :placeholder="$t('auth.confirmPasswordPlaceholder')"
+              :icon="Lock"
+              :disabled="loading"
+            >
+              <template #suffix>
+                <button
+                  type="button"
+                  class="password-toggle"
+                  @click="showConfirmPassword = !showConfirmPassword"
+                >
+                  <Eye v-if="!showConfirmPassword" :size="18" />
                   <EyeOff v-else :size="18" />
                 </button>
               </template>
@@ -48,15 +90,21 @@
             <span>{{ error }}</span>
           </div>
 
+          <!-- Success Message -->
+          <div v-if="success" class="success-message">
+            <CheckCircle :size="16" />
+            <span>{{ success }}</span>
+          </div>
+
           <!-- Submit Button -->
-          <GlassButton type="submit" size="lg" :loading="loading" class="login-button">
-            {{ $t('auth.login') }}
+          <GlassButton type="submit" size="lg" :loading="loading" class="register-button">
+            {{ $t('auth.registerButton') }}
           </GlassButton>
 
-          <!-- Register Link -->
-          <div class="register-link">
-            {{ $t('auth.noAccount') }}
-            <RouterLink to="/register">{{ $t('auth.registerNow') }}</RouterLink>
+          <!-- Login Link -->
+          <div class="login-link">
+            {{ $t('auth.hasAccount') }}
+            <RouterLink to="/login">{{ $t('auth.loginNow') }}</RouterLink>
           </div>
 
           <!-- Back to Home -->
@@ -79,12 +127,24 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { User, Lock, Eye, EyeOff, AlertCircle, ArrowLeft } from 'lucide-vue-next'
+import {
+  User,
+  Mail,
+  UserCircle,
+  Lock,
+  Eye,
+  EyeOff,
+  AlertCircle,
+  CheckCircle,
+  ArrowLeft,
+} from 'lucide-vue-next'
 
 import GlassInput from '@/components/ui/GlassInput.vue'
 import GlassButton from '@/components/ui/GlassButton.vue'
 
 import { useAuthStore } from '@/stores/auth'
+import toast from '@/utils/toast'
+import logger from '@/utils/logger'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -92,27 +152,70 @@ const { t } = useI18n()
 
 const formData = ref({
   username: '',
+  email: '',
+  full_name: '',
   password: '',
+  confirmPassword: '',
 })
 
 const showPassword = ref(false)
+const showConfirmPassword = ref(false)
 const loading = ref(false)
 const error = ref('')
+const success = ref('')
 
-const handleLogin = async () => {
-  if (!formData.value.username || !formData.value.password) {
+async function handleRegister() {
+  error.value = ''
+
+  // 验证输入
+  if (!formData.value.username || !formData.value.email || !formData.value.password) {
     error.value = t('auth.fillAllFields')
+    return
+  }
+
+  if (formData.value.username.length < 3 || formData.value.username.length > 50) {
+    error.value = t('auth.usernameLength')
+    return
+  }
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  if (!emailRegex.test(formData.value.email)) {
+    error.value = t('auth.invalidEmail')
+    return
+  }
+
+  if (formData.value.password.length < 8) {
+    error.value = t('auth.passwordLength')
+    return
+  }
+
+  if (formData.value.password !== formData.value.confirmPassword) {
+    error.value = t('auth.passwordMismatch')
     return
   }
 
   loading.value = true
   error.value = ''
+  success.value = ''
 
   try {
-    await authStore.login(formData.value)
-    router.push('/')
+    await authStore.register({
+      username: formData.value.username,
+      email: formData.value.email,
+      password: formData.value.password,
+      full_name: formData.value.full_name || undefined,
+    })
+
+    success.value = t('auth.registrationSuccess')
+    toast.success(t('auth.registrationSuccess'))
+
+    setTimeout(() => {
+      router.push('/')
+    }, 1500)
   } catch (err: any) {
-    error.value = err.response?.data?.message || t('auth.loginFailedMessage')
+    logger.error('Registration failed:', err)
+    error.value = err.response?.data?.detail || authStore.error || t('auth.registrationFailed')
+    toast.error(error.value)
   } finally {
     loading.value = false
   }
@@ -120,7 +223,7 @@ const handleLogin = async () => {
 </script>
 
 <style scoped>
-.login-page {
+.register-page {
   min-height: 100vh;
   display: flex;
   align-items: center;
@@ -130,19 +233,19 @@ const handleLogin = async () => {
   overflow: hidden;
 }
 
-.login-container {
+.register-container {
   width: 100%;
   max-width: 450px;
   position: relative;
   z-index: 1;
 }
 
-.login-card {
+.register-card {
   padding: var(--spacing-3xl);
   animation: slideUp var(--transition-slow);
 }
 
-.login-header {
+.register-header {
   text-align: center;
   margin-bottom: var(--spacing-2xl);
 }
@@ -162,19 +265,19 @@ const handleLogin = async () => {
   box-shadow: var(--glass-glow);
 }
 
-.login-header h1 {
+.register-header h1 {
   font-size: var(--text-3xl);
   font-weight: var(--font-bold);
   color: var(--color-text-primary);
   margin-bottom: var(--spacing-sm);
 }
 
-.login-header p {
+.register-header p {
   color: var(--color-text-secondary);
   font-size: var(--text-sm);
 }
 
-.login-form {
+.register-form {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-lg);
@@ -218,26 +321,38 @@ const handleLogin = async () => {
   font-size: var(--text-sm);
 }
 
-.login-button {
+.success-message {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  border-radius: var(--radius-lg);
+  color: #16a34a;
+  font-size: var(--text-sm);
+}
+
+.register-button {
   width: 100%;
   margin-top: var(--spacing-md);
 }
 
-.register-link {
+.login-link {
   text-align: center;
   font-size: var(--text-sm);
   color: var(--color-text-secondary);
   margin-top: var(--spacing-md);
 }
 
-.register-link a {
+.login-link a {
   color: var(--color-primary);
   text-decoration: none;
   font-weight: var(--font-medium);
   transition: color var(--transition-base);
 }
 
-.register-link a:hover {
+.login-link a:hover {
   color: var(--color-secondary);
   text-decoration: underline;
 }
@@ -304,7 +419,7 @@ const handleLogin = async () => {
 }
 
 @media (max-width: 768px) {
-  .login-card {
+  .register-card {
     padding: var(--spacing-xl);
   }
 

@@ -24,6 +24,8 @@ export interface User {
   username: string
   email: string
   full_name: string | null
+  avatar_url?: string | null
+  bio?: string | null
   is_active: boolean
   is_admin: boolean
   is_verified: boolean
@@ -54,9 +56,17 @@ export interface Post {
   url: string | null
   thumbnail_url: string | null
 
+  // Author info (发布者 - user字段)
   author_id: number | null
   author_name: string | null
   author_username: string | null
+  author_avatar_url?: string | null
+
+  // Original Author info (原作者 - author字段，Twitter转发/引用时)
+  original_author_id?: number | null
+  original_author_name?: string | null
+  original_author_username?: string | null
+  original_author_avatar_url?: string | null
 
   view_count: number | null
   like_count: number | null
@@ -129,11 +139,19 @@ export interface Author {
 export interface AuthorListItem {
   id: number
   platform: string
+  platform_user_id: string
   name: string
   username: string
+  description: string | null
   avatar_url: string | null
+  profile_url: string | null
+  profile_banner_url: string | null
   follower_count: number | null
+  video_count: number | null
   post_count: number
+  is_verified: boolean
+  created_at: string
+  updated_at: string
 }
 
 // ========== 收藏 ==========
