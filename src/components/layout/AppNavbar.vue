@@ -49,9 +49,9 @@
       <!-- 右侧操作 -->
       <div class="navbar-actions">
         <!-- 主题切换 -->
-        <button 
-          class="action-button" 
-          @click="toggleTheme" 
+        <button
+          class="action-button"
+          @click="toggleTheme"
           :title="$t('settings.theme')"
           :aria-label="$t('settings.toggleTheme')"
           :aria-pressed="isDark ? 'true' : 'false'"
@@ -61,8 +61,8 @@
         </button>
 
         <!-- 语言切换 -->
-        <button 
-          class="action-button" 
+        <button
+          class="action-button"
           @click="showLanguageMenu = !showLanguageMenu"
           :aria-label="$t('aria.languageMenu')"
           :aria-expanded="showLanguageMenu ? 'true' : 'false'"
@@ -72,8 +72,8 @@
         </button>
 
         <!-- 语言菜单 -->
-        <div 
-          v-if="showLanguageMenu" 
+        <div
+          v-if="showLanguageMenu"
           class="language-menu glass-card"
           role="menu"
           :aria-label="$t('aria.languageMenu')"
@@ -91,8 +91,8 @@
 
         <!-- 用户菜单 -->
         <div v-if="isAuthenticated" class="user-menu">
-          <button 
-            class="user-avatar" 
+          <button
+            class="user-avatar"
             @click="showUserMenu = !showUserMenu"
             :aria-label="$t('aria.userMenu')"
             :aria-expanded="showUserMenu ? 'true' : 'false'"
@@ -101,8 +101,8 @@
             <img :src="userAvatarUrl" :alt="user?.username || 'User'" />
           </button>
 
-          <div 
-            v-if="showUserMenu" 
+          <div
+            v-if="showUserMenu"
             class="user-dropdown glass-card"
             role="menu"
             :aria-label="$t('aria.userMenu')"
@@ -140,8 +140,8 @@
         </RouterLink>
 
         <!-- 移动端菜单按钮 -->
-        <button 
-          class="mobile-menu-button show-on-mobile" 
+        <button
+          class="mobile-menu-button show-on-mobile"
           @click="toggleMobileMenu"
           :aria-label="mobileMenuOpen ? $t('aria.closeMenu') : $t('aria.openMenu')"
           :aria-expanded="mobileMenuOpen ? 'true' : 'false'"

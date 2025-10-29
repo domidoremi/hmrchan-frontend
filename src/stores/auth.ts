@@ -87,7 +87,7 @@ export const useAuthStore = defineStore(
 
       localStorage.removeItem('access_token')
       localStorage.removeItem('user')
-      
+
       // 清空其他 stores 的状态
       if (typeof window !== 'undefined') {
         // 清空 sessionStorage（posts store 的持久化存储）
@@ -145,6 +145,9 @@ export const useAuthStore = defineStore(
     }
   },
   {
-    persist: true,
-  },
+    persist: {
+      key: 'auth',
+      storage: sessionStorage,
+    },
+  } as any,
 )

@@ -27,7 +27,7 @@ function getBrowserLocale(): SupportedLocale {
   }
 
   // 匹配语言代码（忽略地区）
-  const languageCode = browserLocale.split('-')[0]
+  const languageCode = browserLocale.split('-')[0] || 'en'
   const match = SUPPORTED_LOCALES.find((locale) => locale.startsWith(languageCode))
 
   return match || 'en'
