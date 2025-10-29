@@ -124,6 +124,10 @@
               <Settings :size="18" />
               {{ $t('nav.settings') }}
             </RouterLink>
+            <RouterLink to="/preferences" class="dropdown-item">
+              <Cookie :size="18" />
+              {{ $t('preferences.title') }}
+            </RouterLink>
             <div class="dropdown-divider"></div>
             <button class="dropdown-item" @click="handleLogout">
               <LogOut :size="18" />
@@ -174,6 +178,7 @@ import {
   LogOut,
   Menu,
   X,
+  Cookie,
 } from 'lucide-vue-next'
 
 import { useAuthStore } from '@/stores/auth'

@@ -3,11 +3,14 @@ import { ref, onMounted, watch } from 'vue'
 import { RouterView, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useThemeStore } from '@/stores/theme'
+import { useSettingsStore } from '@/stores/settings'
 import { storeToRefs } from 'pinia'
 import ErrorBoundary from '@/components/ErrorBoundary.vue'
+import CookieBanner from '@/components/CookieBanner.vue'
 
 const authStore = useAuthStore()
 const themeStore = useThemeStore()
+const settingsStore = useSettingsStore()
 const { isDark } = storeToRefs(themeStore)
 
 const router = useRouter()
@@ -58,6 +61,9 @@ onMounted(() => {
         </transition>
       </RouterView>
     </ErrorBoundary>
+    
+    <!-- Cookie 同意横幅 -->
+    <CookieBanner />
   </div>
 </template>
 
