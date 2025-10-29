@@ -155,9 +155,11 @@ export class XSSProtection {
   static isSafeObject(obj: unknown): boolean {
     if (typeof obj === 'string') {
       const objLower = obj.toLowerCase()
-      return !this.DANGEROUS_TAGS.some((tag) => objLower.includes(`<${tag}`)) &&
+      return (
+        !this.DANGEROUS_TAGS.some((tag) => objLower.includes(`<${tag}`)) &&
         !objLower.includes('javascript:') &&
         !this.DANGEROUS_ATTRS.some((attr) => objLower.includes(`${attr}=`))
+      )
     }
 
     if (Array.isArray(obj)) {

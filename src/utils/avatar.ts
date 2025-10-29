@@ -63,5 +63,13 @@ export function getUserAvatar(
     return generateDefaultAvatar('User', size)
   }
 
-  return getAvatarUrl(user.avatar_url, user.username, user.full_name, size)
+  // 如果有avatar_url且是相对路径，转换为完整URL
+  let avatarUrl = user.avatar_url
+  if (avatarUrl && avatarUrl.startsWith('/uploads/')) {
+    const apiUrl = import.meta.env.VITE_API_URL || '/api'
+    const baseUrl = apiUrl.replace('/api', '')
+    avatarUrl = `${baseUrl}${avatarUrl}`
+  }
+
+  return getAvatarUrl(avatarUrl, user.username, user.full_name, size)
 }

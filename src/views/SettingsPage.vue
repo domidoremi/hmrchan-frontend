@@ -48,6 +48,151 @@
                 <span class="toggle-slider"></span>
               </button>
             </div>
+
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-label">{{ $t('preferences.enableAnimations') }}</div>
+                <div class="setting-description">{{ $t('preferences.enableAnimationsDesc') }}</div>
+              </div>
+              <button
+                class="toggle-switch"
+                :class="{ active: settingsStore.settings.enableAnimations }"
+                @click="settingsStore.toggleSetting('enableAnimations')"
+              >
+                <span class="toggle-slider"></span>
+              </button>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-label">{{ $t('preferences.postsPerPage') }}</div>
+                <div class="setting-description">{{ $t('preferences.postsPerPageDesc') }}</div>
+              </div>
+              <select
+                class="select-input"
+                :value="settingsStore.settings.postsPerPage"
+                @change="settingsStore.updateSetting('postsPerPage', parseInt(($event.target as HTMLSelectElement).value))"
+              >
+                <option :value="10">10</option>
+                <option :value="20">20</option>
+                <option :value="30">30</option>
+                <option :value="50">50</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Media Settings -->
+        <div class="settings-card glass-card">
+          <div class="card-header">
+            <PlayCircle :size="24" />
+            <h3>{{ $t('preferences.media') }}</h3>
+          </div>
+
+          <div class="settings-content">
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-label">{{ $t('preferences.autoPlayVideos') }}</div>
+                <div class="setting-description">{{ $t('preferences.autoPlayVideosDesc') }}</div>
+              </div>
+              <button
+                class="toggle-switch"
+                :class="{ active: settingsStore.settings.autoPlayVideos }"
+                @click="settingsStore.toggleSetting('autoPlayVideos')"
+              >
+                <span class="toggle-slider"></span>
+              </button>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-label">{{ $t('preferences.showImagePreviews') }}</div>
+                <div class="setting-description">{{ $t('preferences.showImagePreviewsDesc') }}</div>
+              </div>
+              <button
+                class="toggle-switch"
+                :class="{ active: settingsStore.settings.showImagePreviews }"
+                @click="settingsStore.toggleSetting('showImagePreviews')"
+              >
+                <span class="toggle-slider"></span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Privacy & Cookies -->
+        <div class="settings-card glass-card">
+          <div class="card-header">
+            <Shield :size="24" />
+            <h3>{{ $t('preferences.privacy') }}</h3>
+          </div>
+
+          <div class="settings-content">
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-label">{{ $t('preferences.analyticsEnabled') }}</div>
+                <div class="setting-description">{{ $t('preferences.analyticsEnabledDesc') }}</div>
+              </div>
+              <button
+                class="toggle-switch"
+                :class="{ active: settingsStore.settings.analyticsEnabled }"
+                @click="settingsStore.toggleSetting('analyticsEnabled')"
+              >
+                <span class="toggle-slider"></span>
+              </button>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-label">{{ $t('preferences.performanceCookies') }}</div>
+                <div class="setting-description">{{ $t('preferences.performanceCookiesDesc') }}</div>
+              </div>
+              <button
+                class="toggle-switch"
+                :class="{ active: settingsStore.settings.performanceCookiesEnabled }"
+                @click="settingsStore.toggleSetting('performanceCookiesEnabled')"
+              >
+                <span class="toggle-slider"></span>
+              </button>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-label">{{ $t('preferences.personalizedContent') }}</div>
+                <div class="setting-description">{{ $t('preferences.personalizedContentDesc') }}</div>
+              </div>
+              <button
+                class="toggle-switch"
+                :class="{ active: settingsStore.settings.personalizedContent }"
+                @click="settingsStore.toggleSetting('personalizedContent')"
+              >
+                <span class="toggle-slider"></span>
+              </button>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-label">{{ $t('preferences.dataCollection') }}</div>
+                <div class="setting-description">{{ $t('preferences.dataCollectionDesc') }}</div>
+              </div>
+              <button
+                class="toggle-switch"
+                :class="{ active: settingsStore.settings.dataCollection }"
+                @click="settingsStore.toggleSetting('dataCollection')"
+              >
+                <span class="toggle-slider"></span>
+              </button>
+            </div>
+
+            <div class="privacy-note">
+              <Info :size="16" />
+              <p>
+                {{ $t('preferences.privacyNote') }}
+                <router-link to="/privacy" class="privacy-link">
+                  {{ $t('preferences.readPrivacyPolicy') }}
+                </router-link>
+              </p>
+            </div>
           </div>
         </div>
 
@@ -108,11 +253,10 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
-import { Palette, Languages, User, LogOut, Sun, Moon, Monitor } from 'lucide-vue-next'
+import { Palette, Languages, User, LogOut, Sun, Moon, Monitor, PlayCircle, Shield, Info } from 'lucide-vue-next'
 
 import MainLayout from '@/components/layout/MainLayout.vue'
 import GlassButton from '@/components/ui/GlassButton.vue'
@@ -319,5 +463,57 @@ const handleLogout = () => {
 
 .toggle-switch.active .toggle-slider {
   transform: translateX(24px);
+}
+
+/* Select Input */
+.select-input {
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-md);
+  border: 2px solid var(--glass-border);
+  background: var(--glass-bg-light);
+  color: var(--color-text-primary);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  min-width: 80px;
+}
+
+.select-input:hover {
+  border-color: var(--color-primary);
+}
+
+.select-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+}
+
+/* Privacy Note */
+.privacy-note {
+  display: flex;
+  gap: var(--spacing-sm);
+  align-items: flex-start;
+  padding: var(--spacing-md);
+  background: rgba(139, 92, 246, 0.05);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  margin-top: var(--spacing-md);
+}
+
+.privacy-note p {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.privacy-link {
+  color: var(--color-primary);
+  text-decoration: underline;
+  font-weight: var(--font-medium);
+}
+
+.privacy-link:hover {
+  opacity: 0.8;
 }
 </style>

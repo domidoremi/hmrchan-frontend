@@ -96,10 +96,8 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useSettingsStore } from '@/stores/settings'
-import { useI18n } from 'vue-i18n'
 
 const settingsStore = useSettingsStore()
-const { t } = useI18n()
 
 const showCustomize = ref(false)
 const customPreferences = ref({
@@ -229,24 +227,26 @@ const handleSaveCustom = () => {
 }
 
 .btn-customize {
-  background: transparent;
+  background: rgba(255, 255, 255, 0.1);
   color: var(--text-primary);
-  border: 1px solid var(--glass-border);
+  border: 2px solid var(--text-secondary);
 }
 
 .btn-customize:hover {
-  background: var(--glass-bg);
+  background: rgba(255, 255, 255, 0.2);
+  border-color: var(--text-primary);
 }
 
 .btn-reject {
-  background: var(--glass-bg);
+  background: rgba(255, 255, 255, 0.1);
   color: var(--text-primary);
-  border: 1px solid var(--glass-border);
+  border: 2px solid var(--text-secondary);
 }
 
 .btn-reject:hover {
-  background: rgba(255, 0, 0, 0.1);
+  background: rgba(255, 0, 0, 0.15);
   border-color: #ff6b6b;
+  color: #ff6b6b;
 }
 
 .btn-accept {
@@ -352,13 +352,14 @@ const handleSaveCustom = () => {
 }
 
 .btn-cancel {
-  background: var(--glass-bg);
+  background: rgba(255, 255, 255, 0.1);
   color: var(--text-primary);
-  border: 1px solid var(--glass-border);
+  border: 2px solid var(--text-secondary);
 }
 
 .btn-cancel:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.2);
+  border-color: var(--text-primary);
 }
 
 .btn-save {
