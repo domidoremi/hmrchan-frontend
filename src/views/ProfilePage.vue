@@ -1027,3 +1027,4 @@ function formatDate(dateStr: string | undefined) {
   width: 100%;
   justify-content: center;
 }
+</style>

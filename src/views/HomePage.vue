@@ -159,7 +159,7 @@ onMounted(async () => {
   try {
     // 重置筛选条件，确保首页总是显示最新内容
     postsStore.resetFilters()
-    
+
     // 加载最新内容
     await postsStore.fetchPosts({ page: 1, page_size: 8 })
 

@@ -68,7 +68,7 @@ const { posts, loading, filters, pagination } = storeToRefs(postsStore)
 onMounted(() => {
   // 重置筛选条件
   postsStore.resetFilters()
-  
+
   // 从URL查询参数初始化筛选
   const query = route.query
   if (query.q) filters.value.q = query.q as string
