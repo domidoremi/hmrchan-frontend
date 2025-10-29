@@ -16,6 +16,16 @@ export interface UserSettings {
   // 其他设置
   autoPlayVideos: boolean
   showImagePreviews: boolean
+
+  // 隐私设置
+  cookieConsent: boolean | null // null = 未选择, true = 接受, false = 拒绝
+  analyticsEnabled: boolean
+  functionalCookiesEnabled: boolean
+  performanceCookiesEnabled: boolean
+
+  // 数据偏好
+  dataCollection: boolean
+  personalizedContent: boolean
 }
 
 const DEFAULT_SETTINGS: UserSettings = {
@@ -24,6 +34,16 @@ const DEFAULT_SETTINGS: UserSettings = {
   enableAnimations: true,
   autoPlayVideos: false,
   showImagePreviews: true,
+
+  // 隐私默认值
+  cookieConsent: null,
+  analyticsEnabled: false,
+  functionalCookiesEnabled: true, // 必需的功能性 cookies
+  performanceCookiesEnabled: false,
+
+  // 数据默认值
+  dataCollection: false,
+  personalizedContent: false,
 }
 
 export const useSettingsStore = defineStore('settings', () => {

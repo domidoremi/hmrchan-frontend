@@ -245,5 +245,98 @@
     "nextImage": "Next image",
     "closeViewer": "Close viewer",
     "loading": "Loading"
+  },
+  "cookies": {
+    "title": "Cookie Notice",
+    "description": "We use cookies to improve your browsing experience, provide personalized content, and analyze website traffic.",
+    "learnMore": "Learn more",
+    "acceptAll": "Accept All",
+    "rejectAll": "Reject All",
+    "customize": "Customize",
+    "customizeTitle": "Customize Cookie Settings",
+    "essential": "Essential Cookies",
+    "essentialDesc": "These cookies are necessary for the website to function and cannot be disabled.",
+    "analytics": "Analytics Cookies",
+    "analyticsDesc": "Help us understand how visitors use our website to improve our services.",
+    "performance": "Performance Cookies",
+    "performanceDesc": "Collect information about website performance to help us optimize loading speed.",
+    "personalization": "Personalization Cookies",
+    "personalizationDesc": "Remember your preferences to provide personalized content.",
+    "required": "Required"
+  },
+  "preferences": {
+    "title": "User Preferences",
+    "subtitle": "Customize your browsing experience",
+    "display": "Display Settings",
+    "showHeroSection": "Show Hero Banner",
+    "showHeroSectionDesc": "Display welcome banner and statistics at the top of homepage",
+    "enableAnimations": "Enable Animations",
+    "enableAnimationsDesc": "Enable page transitions and interaction animations",
+    "postsPerPage": "Posts Per Page",
+    "postsPerPageDesc": "Set the number of posts displayed per page",
+    "media": "Media Settings",
+    "autoPlayVideos": "Auto-play Videos",
+    "autoPlayVideosDesc": "Automatically start playback when opening videos (MediaViewer only)",
+    "showImagePreviews": "Show Image Previews",
+    "showImagePreviewsDesc": "Display image thumbnails in lists",
+    "privacy": "Privacy & Data",
+    "analyticsEnabled": "Analytics",
+    "analyticsEnabledDesc": "Allow collection of anonymous usage data to improve services",
+    "performanceCookies": "Performance Cookies",
+    "performanceCookiesDesc": "Collect performance data to optimize website speed",
+    "personalizedContent": "Personalized Content",
+    "personalizedContentDesc": "Recommend content based on your preferences",
+    "dataCollection": "Data Collection",
+    "dataCollectionDesc": "Allow collection of usage data for analysis",
+    "privacyNote": "We value your privacy. All data collection is anonymous and used solely to improve our services.",
+    "readPrivacyPolicy": "Read Privacy Policy",
+    "dataManagement": "Data Management",
+    "exportData": "Export Settings",
+    "importData": "Import Settings",
+    "resetDefaults": "Reset to Defaults",
+    "settingsSaved": "Settings saved",
+    "exportSuccess": "Settings exported",
+    "importSuccess": "Settings imported",
+    "importFailed": "Import failed",
+    "resetConfirm": "Are you sure you want to reset to default settings?",
+    "resetSuccess": "Settings reset"
+  },
+  "privacy": {
+    "title": "Privacy Policy",
+    "lastUpdated": "Last updated",
+    "questions": "If you have any questions, please contact us.",
+    "managePreferences": "Manage Preferences",
+    "intro": {
+      "title": "Introduction",
+      "content": "<p>Welcome to himeri chan! We value your privacy and this policy explains how we collect, use, and protect your personal information.</p><p>By using our service, you agree to the practices described in this privacy policy.</p>"
+    },
+    "dataCollection": {
+      "title": "Information We Collect",
+      "content": "<p>We collect the following types of information:</p><ul><li><strong>Account Information</strong>: Username, email address, avatar (if you choose to provide)</li><li><strong>Usage Data</strong>: Browsing history, search queries, favorited content</li><li><strong>Technical Data</strong>: IP address, browser type, device information, cookies</li><li><strong>Preferences</strong>: Your custom settings and preferences</li></ul>"
+    },
+    "cookies": {
+      "title": "Cookie Usage",
+      "content": "<p>We use the following types of cookies:</p><ul><li><strong>Essential Cookies</strong>: Ensure proper website operation (cannot be disabled)</li><li><strong>Functional Cookies</strong>: Remember your preference settings</li><li><strong>Analytics Cookies</strong>: Understand website usage (requires your consent)</li><li><strong>Performance Cookies</strong>: Optimize website performance (requires your consent)</li></ul><p>You can manage cookies in your preferences.</p>"
+    },
+    "dataUse": {
+      "title": "How We Use Information",
+      "content": "<p>We use collected information to:</p><ul><li>Provide and improve our services</li><li>Personalize your experience</li><li>Analyze website usage</li><li>Send important notifications and updates</li><li>Prevent fraud and abuse</li></ul>"
+    },
+    "dataSharing": {
+      "title": "Information Sharing",
+      "content": "<p>We do <strong>not</strong> sell your personal information. We may share information in the following cases:</p><ul><li>With your explicit consent</li><li>To comply with legal requirements</li><li>With our service providers (who are bound by confidentiality agreements)</li></ul>"
+    },
+    "yourRights": {
+      "title": "Your Rights",
+      "content": "<p>You have the right to:</p><ul><li>Access and download your personal data</li><li>Correct inaccurate information</li><li>Delete your account and data</li><li>Object to certain data processing</li><li>Withdraw consent at any time</li></ul><p>You can manage these settings in your profile.</p>"
+    },
+    "security": {
+      "title": "Data Security",
+      "content": "<p>We take appropriate technical and organizational measures to protect your data:</p><ul><li>Encrypted transmission (HTTPS)</li><li>Secure data storage</li><li>Access control and permission management</li><li>Regular security audits</li></ul>"
+    },
+    "changes": {
+      "title": "Policy Changes",
+      "content": "<p>We may update this privacy policy from time to time. Significant changes will be communicated through website notifications or email.</p><p>Please review this page regularly for the latest information.</p>"
+    }
   }
 }
