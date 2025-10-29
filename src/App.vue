@@ -37,16 +37,32 @@ watch(
 )
 
 // 初始化应用
-onMounted(() => {
+onMounted(async () => {
   // 初始化主题
   themeStore.initTheme()
+
+  // 初始化本地设置
+  settingsStore.initSettings()
 
   // 恢复认证状态
   authStore.restoreAuth()
   if (authStore.isAuthenticated) {
-    authStore.fetchCurrentUser()
+    await authStore.fetchCurrentUser()
+    // 登录后从服务器加载设置
+    await settingsStore.loadFromServer()
   }
 })
+
+// 监听登录状态变化
+watch(
+  () => authStore.isAuthenticated,
+  async (isAuthenticated) => {
+    if (isAuthenticated) {
+      // 用户登录后，从服务器加载设置
+      await settingsStore.loadFromServer()
+    }
+  },
+)
 </script>
 
 <template>
@@ -61,7 +77,7 @@ onMounted(() => {
         </transition>
       </RouterView>
     </ErrorBoundary>
-    
+
     <!-- Cookie 同意横幅 -->
     <CookieBanner />
   </div>

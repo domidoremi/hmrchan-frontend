@@ -6,11 +6,9 @@
           <ArrowLeft :size="20" />
           {{ $t('common.back') }}
         </button>
-        
+
         <h1>{{ $t('privacy.title') }}</h1>
-        <p class="last-updated">
-          {{ $t('privacy.lastUpdated') }}: {{ lastUpdated }}
-        </p>
+        <p class="last-updated">{{ $t('privacy.lastUpdated') }}: {{ lastUpdated }}</p>
       </div>
 
       <div class="privacy-content glass-card">

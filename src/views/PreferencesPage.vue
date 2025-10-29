@@ -6,9 +6,29 @@
           <ArrowLeft :size="20" />
           {{ $t('common.back') }}
         </button>
-        
-        <h1>{{ $t('preferences.title') }}</h1>
-        <p class="subtitle">{{ $t('preferences.subtitle') }}</p>
+
+        <div class="header-content">
+          <div class="header-text">
+            <h1>{{ $t('preferences.title') }}</h1>
+            <p class="subtitle">{{ $t('preferences.subtitle') }}</p>
+          </div>
+
+          <!-- 同步状态指示器 -->
+          <div v-if="authStore.isAuthenticated" class="sync-status">
+            <div v-if="syncing" class="status-item syncing">
+              <RefreshCw :size="16" class="spinning" />
+              <span>{{ $t('preferences.syncing') }}</span>
+            </div>
+            <div v-else-if="lastSyncedAt" class="status-item synced">
+              <Check :size="16" />
+              <span>{{ $t('preferences.synced') }}</span>
+            </div>
+            <div v-else class="status-item local-only">
+              <Cloud :size="16" />
+              <span>{{ $t('preferences.localOnly') }}</span>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div class="preferences-content">
@@ -18,15 +38,15 @@
             <Monitor :size="24" />
             {{ $t('preferences.display') }}
           </h2>
-          
+
           <div class="preference-item">
             <div class="item-info">
               <label>{{ $t('preferences.showHeroSection') }}</label>
               <p class="item-description">{{ $t('preferences.showHeroSectionDesc') }}</p>
             </div>
             <label class="toggle-switch">
-              <input 
-                type="checkbox" 
+              <input
+                type="checkbox"
                 :checked="settings.showHeroSection"
                 @change="toggleSetting('showHeroSection')"
               />
@@ -40,8 +60,8 @@
               <p class="item-description">{{ $t('preferences.enableAnimationsDesc') }}</p>
             </div>
             <label class="toggle-switch">
-              <input 
-                type="checkbox" 
+              <input
+                type="checkbox"
                 :checked="settings.enableAnimations"
                 @change="toggleSetting('enableAnimations')"
               />
@@ -54,10 +74,12 @@
               <label>{{ $t('preferences.postsPerPage') }}</label>
               <p class="item-description">{{ $t('preferences.postsPerPageDesc') }}</p>
             </div>
-            <select 
+            <select
               class="select-input"
               :value="settings.postsPerPage"
-              @change="updateSetting('postsPerPage', parseInt(($event.target as HTMLSelectElement).value))"
+              @change="
+                updateSetting('postsPerPage', parseInt(($event.target as HTMLSelectElement).value))
+              "
             >
               <option :value="10">10</option>
               <option :value="20">20</option>
@@ -73,15 +95,15 @@
             <PlayCircle :size="24" />
             {{ $t('preferences.media') }}
           </h2>
-          
+
           <div class="preference-item">
             <div class="item-info">
               <label>{{ $t('preferences.autoPlayVideos') }}</label>
               <p class="item-description">{{ $t('preferences.autoPlayVideosDesc') }}</p>
             </div>
             <label class="toggle-switch">
-              <input 
-                type="checkbox" 
+              <input
+                type="checkbox"
                 :checked="settings.autoPlayVideos"
                 @change="toggleSetting('autoPlayVideos')"
               />
@@ -95,8 +117,8 @@
               <p class="item-description">{{ $t('preferences.showImagePreviewsDesc') }}</p>
             </div>
             <label class="toggle-switch">
-              <input 
-                type="checkbox" 
+              <input
+                type="checkbox"
                 :checked="settings.showImagePreviews"
                 @change="toggleSetting('showImagePreviews')"
               />
@@ -111,15 +133,15 @@
             <Shield :size="24" />
             {{ $t('preferences.privacy') }}
           </h2>
-          
+
           <div class="preference-item">
             <div class="item-info">
               <label>{{ $t('preferences.analyticsEnabled') }}</label>
               <p class="item-description">{{ $t('preferences.analyticsEnabledDesc') }}</p>
             </div>
             <label class="toggle-switch">
-              <input 
-                type="checkbox" 
+              <input
+                type="checkbox"
                 :checked="settings.analyticsEnabled"
                 @change="toggleSetting('analyticsEnabled')"
               />
@@ -133,8 +155,8 @@
               <p class="item-description">{{ $t('preferences.performanceCookiesDesc') }}</p>
             </div>
             <label class="toggle-switch">
-              <input 
-                type="checkbox" 
+              <input
+                type="checkbox"
                 :checked="settings.performanceCookiesEnabled"
                 @change="toggleSetting('performanceCookiesEnabled')"
               />
@@ -148,8 +170,8 @@
               <p class="item-description">{{ $t('preferences.personalizedContentDesc') }}</p>
             </div>
             <label class="toggle-switch">
-              <input 
-                type="checkbox" 
+              <input
+                type="checkbox"
                 :checked="settings.personalizedContent"
                 @change="toggleSetting('personalizedContent')"
               />
@@ -163,8 +185,8 @@
               <p class="item-description">{{ $t('preferences.dataCollectionDesc') }}</p>
             </div>
             <label class="toggle-switch">
-              <input 
-                type="checkbox" 
+              <input
+                type="checkbox"
                 :checked="settings.dataCollection"
                 @change="toggleSetting('dataCollection')"
               />
@@ -189,7 +211,7 @@
             <Database :size="24" />
             {{ $t('preferences.dataManagement') }}
           </h2>
-          
+
           <div class="data-actions">
             <button @click="exportPreferences" class="action-button">
               <Download :size="18" />
@@ -215,6 +237,8 @@ import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useSettingsStore } from '@/stores/settings'
+import { useAuthStore } from '@/stores/auth'
+import { storeToRefs } from 'pinia'
 import MainLayout from '@/components/layout/MainLayout.vue'
 import {
   ArrowLeft,
@@ -226,14 +250,18 @@ import {
   Upload,
   RefreshCw,
   Info,
+  Check,
+  Cloud,
 } from 'lucide-vue-next'
 import toast from '@/utils/toast'
 
 const router = useRouter()
 const { t } = useI18n()
 const settingsStore = useSettingsStore()
+const authStore = useAuthStore()
 
 const settings = computed(() => settingsStore.settings)
+const { syncing, lastSyncedAt } = storeToRefs(settingsStore)
 
 const goBack = () => {
   router.back()
@@ -321,7 +349,14 @@ const resetPreferences = () => {
   background: rgba(255, 255, 255, 0.1);
 }
 
-.preferences-header h1 {
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--spacing-lg);
+}
+
+.header-text h1 {
   font-size: var(--text-3xl);
   font-weight: 700;
   margin-bottom: var(--spacing-xs);
@@ -331,6 +366,49 @@ const resetPreferences = () => {
 .subtitle {
   font-size: var(--text-md);
   color: var(--text-secondary);
+}
+
+/* 同步状态 */
+.sync-status {
+  flex-shrink: 0;
+}
+
+.status-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-weight: 500;
+}
+
+.status-item.syncing {
+  background: rgba(139, 92, 246, 0.1);
+  color: var(--primary-color);
+}
+
+.status-item.synced {
+  background: rgba(34, 197, 94, 0.1);
+  color: #22c55e;
+}
+
+.status-item.local-only {
+  background: rgba(168, 168, 168, 0.1);
+  color: var(--text-secondary);
+}
+
+.spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .preferences-content {

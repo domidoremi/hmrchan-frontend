@@ -876,7 +876,7 @@ function formatDate(dateStr: string | undefined) {
   .stats-grid {
     grid-template-columns: repeat(2, 1fr);
   }
-  
+
   .info-grid {
     grid-template-columns: 1fr;
   }
@@ -898,7 +898,7 @@ function formatDate(dateStr: string | undefined) {
     align-items: center;
     text-align: center;
   }
-  
+
   .avatar-container {
     margin-bottom: var(--spacing-md);
   }
@@ -921,7 +921,7 @@ function formatDate(dateStr: string | undefined) {
     width: 100%;
     gap: var(--spacing-sm);
   }
-  
+
   .profile-actions button,
   .profile-actions .glass-button {
     width: 100%;
@@ -931,7 +931,7 @@ function formatDate(dateStr: string | undefined) {
     grid-template-columns: 1fr;
     gap: var(--spacing-md);
   }
-  
+
   .stat-card {
     padding: var(--spacing-md);
   }
@@ -944,7 +944,7 @@ function formatDate(dateStr: string | undefined) {
     flex-direction: column;
     gap: var(--spacing-sm);
   }
-  
+
   .danger-actions button {
     width: 100%;
   }
@@ -955,69 +955,69 @@ function formatDate(dateStr: string | undefined) {
   .profile-page {
     padding: var(--spacing-sm);
   }
-  
+
   .profile-banner {
     height: 100px;
   }
-  
+
   .profile-info {
     margin-top: -50px;
   }
-  
+
   .avatar {
     width: 64px;
     height: 64px;
   }
-  
+
   .avatar-upload-btn {
     width: 28px;
     height: 28px;
   }
-  
+
   .avatar-upload-btn svg {
     width: 14px;
     height: 14px;
   }
-  
+
   .user-name {
     font-size: var(--text-xl);
   }
-  
+
   .user-username {
     font-size: var(--text-sm);
   }
-  
+
   .stats-grid {
     gap: var(--spacing-sm);
   }
-  
+
   .stat-card {
     padding: var(--spacing-sm);
     gap: var(--spacing-sm);
   }
-  
+
   .stat-icon {
     width: 36px;
     height: 36px;
   }
-  
+
   .stat-icon svg {
     width: 18px;
     height: 18px;
   }
-  
+
   .stat-value {
     font-size: var(--text-xl);
   }
-  
+
   .stat-label {
     font-size: var(--text-xs);
   }
-  
+
   .info-section {
     padding: var(--spacing-md);
   }
-  
+
   .section-title {
     font-size: var(--text-lg);
   }

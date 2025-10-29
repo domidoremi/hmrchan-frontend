@@ -3,7 +3,7 @@
     <div v-if="showBanner" class="cookie-banner glass-card">
       <div class="cookie-content">
         <div class="cookie-icon">🍪</div>
-        
+
         <div class="cookie-text">
           <h3 class="cookie-title">{{ $t('cookies.title') }}</h3>
           <p class="cookie-description">
@@ -15,25 +15,17 @@
         </div>
 
         <div class="cookie-actions">
-          <button 
-            @click="handleCustomize" 
+          <button
+            @click="handleCustomize"
             class="btn-customize"
             :aria-label="$t('cookies.customize')"
           >
             {{ $t('cookies.customize') }}
           </button>
-          <button 
-            @click="handleReject" 
-            class="btn-reject"
-            :aria-label="$t('cookies.rejectAll')"
-          >
+          <button @click="handleReject" class="btn-reject" :aria-label="$t('cookies.rejectAll')">
             {{ $t('cookies.rejectAll') }}
           </button>
-          <button 
-            @click="handleAccept" 
-            class="btn-accept"
-            :aria-label="$t('cookies.acceptAll')"
-          >
+          <button @click="handleAccept" class="btn-accept" :aria-label="$t('cookies.acceptAll')">
             {{ $t('cookies.acceptAll') }}
           </button>
         </div>
@@ -43,16 +35,12 @@
       <Transition name="fade">
         <div v-if="showCustomize" class="cookie-customize">
           <h4>{{ $t('cookies.customizeTitle') }}</h4>
-          
+
           <div class="cookie-options">
             <div class="cookie-option">
               <div class="option-header">
                 <label class="option-label">
-                  <input 
-                    type="checkbox" 
-                    :checked="true"
-                    disabled
-                  />
+                  <input type="checkbox" :checked="true" disabled />
                   <span class="option-name">{{ $t('cookies.essential') }}</span>
                   <span class="option-badge required">{{ $t('cookies.required') }}</span>
                 </label>
@@ -63,10 +51,7 @@
             <div class="cookie-option">
               <div class="option-header">
                 <label class="option-label">
-                  <input 
-                    type="checkbox" 
-                    v-model="customPreferences.analyticsEnabled"
-                  />
+                  <input type="checkbox" v-model="customPreferences.analyticsEnabled" />
                   <span class="option-name">{{ $t('cookies.analytics') }}</span>
                 </label>
               </div>
@@ -76,10 +61,7 @@
             <div class="cookie-option">
               <div class="option-header">
                 <label class="option-label">
-                  <input 
-                    type="checkbox" 
-                    v-model="customPreferences.performanceCookiesEnabled"
-                  />
+                  <input type="checkbox" v-model="customPreferences.performanceCookiesEnabled" />
                   <span class="option-name">{{ $t('cookies.performance') }}</span>
                 </label>
               </div>
@@ -89,10 +71,7 @@
             <div class="cookie-option">
               <div class="option-header">
                 <label class="option-label">
-                  <input 
-                    type="checkbox" 
-                    v-model="customPreferences.personalizedContent"
-                  />
+                  <input type="checkbox" v-model="customPreferences.personalizedContent" />
                   <span class="option-name">{{ $t('cookies.personalization') }}</span>
                 </label>
               </div>
@@ -166,7 +145,10 @@ const handleCustomize = () => {
 const handleSaveCustom = () => {
   settingsStore.updateSetting('cookieConsent', true)
   settingsStore.updateSetting('analyticsEnabled', customPreferences.value.analyticsEnabled)
-  settingsStore.updateSetting('performanceCookiesEnabled', customPreferences.value.performanceCookiesEnabled)
+  settingsStore.updateSetting(
+    'performanceCookiesEnabled',
+    customPreferences.value.performanceCookiesEnabled,
+  )
   settingsStore.updateSetting('personalizedContent', customPreferences.value.personalizedContent)
   settingsStore.updateSetting('dataCollection', customPreferences.value.analyticsEnabled)
   showCustomize.value = false
@@ -318,13 +300,13 @@ const handleSaveCustom = () => {
   user-select: none;
 }
 
-.option-label input[type="checkbox"] {
+.option-label input[type='checkbox'] {
   width: 18px;
   height: 18px;
   cursor: pointer;
 }
 
-.option-label input[type="checkbox"]:disabled {
+.option-label input[type='checkbox']:disabled {
   cursor: not-allowed;
   opacity: 0.6;
 }

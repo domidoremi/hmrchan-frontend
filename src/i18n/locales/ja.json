@@ -267,6 +267,9 @@
   "preferences": {
     "title": "ユーザー設定",
     "subtitle": "ブラウジング体験をカスタマイズ",
+    "syncing": "同期中...",
+    "synced": "同期済み",
+    "localOnly": "ローカルのみ",
     "display": "表示設定",
     "showHeroSection": "ヒーローバナーを表示",
     "showHeroSectionDesc": "ホームページの上部にウェルカムバナーと統計情報を表示",
