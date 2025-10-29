@@ -267,6 +267,9 @@
   "preferences": {
     "title": "User Preferences",
     "subtitle": "Customize your browsing experience",
+    "syncing": "Syncing...",
+    "synced": "Synced",
+    "localOnly": "Local only",
     "display": "Display Settings",
     "showHeroSection": "Show Hero Banner",
     "showHeroSectionDesc": "Display welcome banner and statistics at the top of homepage",

@@ -267,6 +267,9 @@
   "preferences": {
     "title": "用户偏好设置",
     "subtitle": "自定义您的浏览体验",
+    "syncing": "同步中...",
+    "synced": "已同步",
+    "localOnly": "仅本地",
     "display": "显示设置",
     "showHeroSection": "显示首页横幅",
     "showHeroSectionDesc": "在首页顶部显示欢迎横幅和统计信息",
