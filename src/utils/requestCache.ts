@@ -132,11 +132,15 @@ class RequestCache {
       .then((data) => {
         // 缓存结果
         this.set(key, data, undefined, ttl)
+        // 清除进行中的请求（成功时）
+        this.pending.delete(key)
         return data
       })
-      .finally(() => {
-        // 清除进行中的请求
+      .catch((error) => {
+        // 清除进行中的请求（失败时）
         this.pending.delete(key)
+        console.log(`[Dedupe] Request failed, clearing pending: ${key}`)
+        throw error
       })
 
     this.pending.set(key, promise)

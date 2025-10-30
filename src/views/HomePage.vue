@@ -160,12 +160,16 @@ onMounted(async () => {
     // 重置筛选条件，确保首页总是显示最新内容
     postsStore.resetFilters()
 
-    // 加载最新内容
-    await postsStore.fetchPosts({ page: 1, page_size: 8 })
-
-    // 加载统计数据
-    const stats = await statsApi.getPlatformStats()
-    platformStats.value = stats.by_platform || {}
+    // 并行加载帖子和统计数据（不互相阻塞）
+    await Promise.all([
+      postsStore.fetchPosts({ page: 1, page_size: 8 }),
+      statsApi.getPlatformStats().then(stats => {
+        platformStats.value = stats.by_platform || {}
+      }).catch(err => {
+        logger.error('Failed to load stats:', err)
+        // 统计数据失败不影响主内容
+      })
+    ])
 
     // 监听滚动事件
     window.addEventListener('scroll', handleScroll)
