@@ -36,7 +36,7 @@
       </div>
 
       <!-- 搜索框 -->
-      <div class="navbar-search hide-on-mobile">
+      <div class="navbar-search">
         <Search :size="18" />
         <input
           v-model="searchQuery"
@@ -515,7 +515,7 @@ onBeforeUnmount(() => {
     min-width: 150px;
   }
 
-  .navbar-content {
+  .navbar-actions {
     gap: var(--spacing-xs);
   }
 
@@ -535,8 +535,9 @@ onBeforeUnmount(() => {
   }
 }
 
-/* 移动端样式 */
+/* 移动端样式 (768px及以下) */
 @media (max-width: 768px) {
+  /* 确保在768px时移动端样式优先 */
   .navbar-content {
     gap: var(--spacing-xs);
   }
@@ -584,50 +585,57 @@ onBeforeUnmount(() => {
   }
 
   /* 移动端隐藏语言切换按钮 */
-  .action-button:has(svg[data-lucide="languages"]) {
+  .action-button:has(svg[data-lucide='languages']) {
     display: none;
   }
 
-  /* 移动端用户头像改为悬浮按钮 */
+  /* 移动端头像按钮 - 固定在回到顶部按钮上方（垂直布局） */
   .navbar-actions .user-menu {
     position: fixed !important;
+    bottom: 20px !important;
+    right: 80px !important;
     top: auto !important;
-    bottom: 100px !important;
     left: auto !important;
-    right: 20px !important;
-    z-index: 1000;
-    display: flex;
+    z-index: 1000 !important;
   }
 
-  .navbar-actions .user-avatar {
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
-    background: var(--glass-bg);
-    backdrop-filter: blur(10px);
-    border: 2px solid var(--glass-border);
-    box-shadow: var(--glass-shadow), var(--glass-glow);
-    transition: all 0.3s ease;
+  .navbar-actions .user-menu .user-avatar {
+    width: 48px !important;
+    height: 48px !important;
+    border-radius: 50% !important;
+    background: var(--glass-bg) !important;
+    backdrop-filter: blur(10px) !important;
+    border: 2px solid var(--glass-border) !important;
+    box-shadow: var(--glass-shadow), var(--glass-glow) !important;
   }
 
-  .navbar-actions .user-avatar:hover {
-    transform: translateY(-4px) scale(1.05);
-    box-shadow: var(--shadow-xl), var(--glass-glow);
-  }
-
-  .navbar-actions .user-avatar img {
+  .navbar-actions .user-menu .user-avatar img {
     width: 100%;
     height: 100%;
     object-fit: cover;
     border-radius: 50%;
   }
 
-  /* 用户下拉菜单位置调整 */
-  .navbar-actions .user-dropdown {
-    position: fixed;
-    bottom: 160px;
-    right: 20px;
-    min-width: 200px;
+  /* 移动端下拉菜单 - 固定在头像上方 */
+  .navbar-actions .user-menu .user-dropdown {
+    position: fixed !important;
+    bottom: 78px !important;
+    right: 80px !important;
+    top: auto !important;
+    left: auto !important;
+    min-width: 200px !important;
+    max-width: 280px !important;
+    background: rgba(255, 255, 255, 0.95) !important;
+    backdrop-filter: blur(20px) !important;
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15) !important;
+  }
+
+  /* 深色模式下的下拉菜单 */
+  :global(.dark) .navbar-actions .user-menu .user-dropdown {
+    background: rgba(30, 30, 30, 0.95) !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
   }
 
   .mobile-menu-button {
@@ -639,7 +647,9 @@ onBeforeUnmount(() => {
   }
 
   .navbar-search {
-    min-width: auto;
+    flex: 1;
+    min-width: 0;
+    max-width: 300px;
   }
 
   /* 未登录时的登录按钮保持在页眉 */
@@ -650,21 +660,97 @@ onBeforeUnmount(() => {
 
 /* 极小屏幕优化 */
 @media (max-width: 480px) {
-  .navbar-actions .user-menu {
-    top: auto !important;
-    bottom: 90px !important;
-    left: auto !important;
-    right: 16px !important;
+  .navbar-content {
+    padding: var(--spacing-sm) var(--spacing-sm);
+    gap: var(--spacing-xs);
+    min-height: 56px;
   }
 
-  .navbar-actions .user-avatar {
+  .navbar-search {
+    max-width: 200px;
+    padding: var(--spacing-xs) var(--spacing-sm);
+  }
+
+  .navbar-search input {
+    font-size: 13px;
+  }
+
+  .navbar-actions {
+    gap: 4px;
+  }
+
+  .action-button {
+    width: 32px;
+    height: 32px;
+  }
+
+  .action-button svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .mobile-menu-button {
+    width: 32px;
+    height: 32px;
+  }
+
+  /* 登录按钮更紧凑 */
+  .navbar-actions :deep(.glass-button.btn-sm) {
+    padding: 6px 12px;
+    font-size: 13px;
+  }
+
+  .navbar-actions .user-menu {
+    bottom: 16px !important;
+    right: 70px !important;
+  }
+
+  .navbar-actions .user-menu .user-avatar {
     width: 44px !important;
     height: 44px !important;
   }
 
-  .user-dropdown {
-    bottom: 145px;
-    right: 16px;
+  .navbar-actions .user-menu .user-dropdown {
+    bottom: 70px !important;
+    right: 70px !important;
+  }
+}
+
+/* 超小屏幕优化 (400px及以下) */
+@media (max-width: 400px) {
+  .navbar-content {
+    padding: var(--spacing-xs) var(--spacing-xs);
+    min-height: 52px;
+  }
+
+  .navbar-actions {
+    gap: 2px;
+  }
+
+  .action-button {
+    width: 30px;
+    height: 30px;
+  }
+
+  .action-button svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .mobile-menu-button {
+    width: 30px;
+    height: 30px;
+  }
+
+  .mobile-menu-button svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  /* 登录按钮更小 */
+  .navbar-actions :deep(.glass-button.btn-sm) {
+    padding: 5px 10px;
+    font-size: 12px;
   }
 }
 </style>

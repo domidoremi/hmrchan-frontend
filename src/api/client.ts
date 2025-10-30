@@ -12,7 +12,7 @@ const BASE_URL = import.meta.env.VITE_API_URL || '/api'
 // 创建axios实例
 const apiClient: AxiosInstance = axios.create({
   baseURL: BASE_URL,
-  timeout: 10000,  // 减少到10秒，避免长时间阻塞
+  timeout: 10000, // 减少到10秒，避免长时间阻塞
   headers: {
     'Content-Type': 'application/json',
   },
@@ -42,13 +42,17 @@ if (!isConfigured) {
   // 响应拦截器
   apiClient.interceptors.response.use(
     (response: AxiosResponse) => {
-      logger.debug(`Response: ${response.config.method?.toUpperCase()} ${response.config.url} - ${response.status}`)
+      logger.debug(
+        `Response: ${response.config.method?.toUpperCase()} ${response.config.url} - ${response.status}`,
+      )
       return response
     },
     (error) => {
       if (error.response) {
         const { status } = error.response
-        logger.error(`Response error: ${error.config?.method?.toUpperCase()} ${error.config?.url} - ${status}`)
+        logger.error(
+          `Response error: ${error.config?.method?.toUpperCase()} ${error.config?.url} - ${status}`,
+        )
 
         // 401 未授权 - Token过期或无效
         if (status === 401) {

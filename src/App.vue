@@ -6,7 +6,6 @@ import { useThemeStore } from '@/stores/theme'
 import { useSettingsStore } from '@/stores/settings'
 import { storeToRefs } from 'pinia'
 import ErrorBoundary from '@/components/ErrorBoundary.vue'
-import CookieBanner from '@/components/CookieBanner.vue'
 
 const authStore = useAuthStore()
 const themeStore = useThemeStore()
@@ -46,7 +45,7 @@ onMounted(async () => {
 
   // 恢复认证状态（同步操作）
   authStore.restoreAuth()
-  
+
   // 并行加载用户数据和设置（不阻塞页面渲染）
   if (authStore.isAuthenticated) {
     Promise.all([
@@ -57,7 +56,7 @@ onMounted(async () => {
       settingsStore.loadFromServer().catch(() => {
         // 失败时不影响应用启动
         console.warn('Failed to load server settings, using local settings')
-      })
+      }),
     ]).catch(() => {
       // 防止未捕获的Promise rejection
     })
@@ -88,9 +87,6 @@ watch(
         </transition>
       </RouterView>
     </ErrorBoundary>
-
-    <!-- Cookie 同意横幅 -->
-    <CookieBanner />
   </div>
 </template>
 
