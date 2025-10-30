@@ -38,18 +38,29 @@ watch(
 
 // 初始化应用
 onMounted(async () => {
-  // 初始化主题
+  // 初始化主题（立即执行，不阻塞）
   themeStore.initTheme()
 
-  // 初始化本地设置
+  // 初始化本地设置（立即执行，不阻塞）
   settingsStore.initSettings()
 
-  // 恢复认证状态
+  // 恢复认证状态（同步操作）
   authStore.restoreAuth()
+  
+  // 并行加载用户数据和设置（不阻塞页面渲染）
   if (authStore.isAuthenticated) {
-    await authStore.fetchCurrentUser()
-    // 登录后从服务器加载设置
-    await settingsStore.loadFromServer()
+    Promise.all([
+      authStore.fetchCurrentUser().catch(() => {
+        // 失败时不影响应用启动
+        console.warn('Failed to fetch current user, using cached data')
+      }),
+      settingsStore.loadFromServer().catch(() => {
+        // 失败时不影响应用启动
+        console.warn('Failed to load server settings, using local settings')
+      })
+    ]).catch(() => {
+      // 防止未捕获的Promise rejection
+    })
   }
 })
 

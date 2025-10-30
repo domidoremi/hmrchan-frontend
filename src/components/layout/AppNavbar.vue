@@ -124,10 +124,6 @@
               <Settings :size="18" />
               {{ $t('nav.settings') }}
             </RouterLink>
-            <RouterLink to="/preferences" class="dropdown-item">
-              <Cookie :size="18" />
-              {{ $t('preferences.title') }}
-            </RouterLink>
             <div class="dropdown-divider"></div>
             <button class="dropdown-item" @click="handleLogout">
               <LogOut :size="18" />
@@ -178,7 +174,6 @@ import {
   LogOut,
   Menu,
   X,
-  Cookie,
 } from 'lucide-vue-next'
 
 import { useAuthStore } from '@/stores/auth'
@@ -187,7 +182,7 @@ import { getUserAvatar } from '@/utils/avatar'
 import GlassButton from '@/components/ui/GlassButton.vue'
 
 const router = useRouter()
-const { t, locale } = useI18n()
+const { locale } = useI18n()
 
 const authStore = useAuthStore()
 const themeStore = useThemeStore()
