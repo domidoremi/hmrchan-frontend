@@ -132,6 +132,9 @@ const resetFilters = () => {
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: var(--spacing-lg);
   margin-bottom: var(--spacing-xl);
+  width: 100%;
+  grid-auto-rows: auto;
+  align-items: start;
 }
 
 .empty-state {
@@ -155,9 +158,63 @@ const resetFilters = () => {
   margin-bottom: var(--spacing-md);
 }
 
-@media (max-width: 768px) {
+/* 大屏幕优化 (> 1400px) */
+@media (min-width: 1400px) {
   .posts-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  }
+}
+
+/* 中型屏幕 (1024px - 1400px) */
+@media (min-width: 1024px) and (max-width: 1399px) {
+  .posts-grid {
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  }
+}
+
+/* 平板端适配 (769px - 1023px) */
+@media (min-width: 769px) and (max-width: 1023px) {
+  .posts-grid {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  }
+}
+
+/* 移动端样式 */
+@media (max-width: 768px) {
+  .page-title {
+    font-size: var(--text-2xl);
+    margin-bottom: var(--spacing-md);
+  }
+
+  /* 移动端瀑布流布局 - 两列 */
+  .posts-grid {
+    display: block;
+    column-count: 2;
+    column-gap: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+  }
+
+  .posts-grid :deep(.post-card) {
+    display: inline-block;
+    width: 100%;
+    margin-bottom: var(--spacing-md);
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+}
+
+/* 极小屏幕优化 */
+@media (max-width: 480px) {
+  .page-title {
+    font-size: var(--text-xl);
+  }
+
+  .posts-grid {
+    column-gap: var(--spacing-sm);
+  }
+
+  .posts-grid :deep(.post-card) {
+    margin-bottom: var(--spacing-sm);
   }
 }
 </style>

@@ -93,5 +93,24 @@ onUnmounted(() => {
     width: 48px;
     height: 48px;
   }
+
+  .back-to-top svg {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .back-to-top {
+    bottom: 16px;
+    right: 16px;
+    width: 44px;
+    height: 44px;
+  }
+
+  .back-to-top svg {
+    width: 18px;
+    height: 18px;
+  }
 }
 </style>
