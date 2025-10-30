@@ -80,8 +80,8 @@ const getGutter = () => {
 
 const { reloadItems, destroy, initMasonry } = useMasonry(postsGrid, {
   itemSelector: 'a.post-card',
-  columnWidth: 'a.post-card',
-  gutter: getGutter,  // 传递函数而不是调用结果
+  columnWidth: 'a.post-card',  // 使用第一个卡片的CSS宽度
+  gutter: getGutter,
   percentPosition: false,
   horizontalOrder: false,
   fitWidth: false
@@ -207,6 +207,18 @@ const resetFilters = () => {
 
 /* Masonry布局，不需要这些样式 */
 
+/* 平板端优化 (780px-900px) - 2列布局 */
+@media (min-width: 780px) and (max-width: 900px) {
+  .explore-page {
+    gap: var(--spacing-lg);
+  }
+
+  .page-title {
+    font-size: var(--text-3xl);
+    margin-bottom: var(--spacing-lg);
+  }
+}
+
 /* 移动端样式 */
 @media (max-width: 768px) {
   .page-title {
@@ -245,9 +257,25 @@ const resetFilters = () => {
   }
 }
 
-@media (min-width: 769px) and (max-width: 1023px) {
+/* 平板端 - 较大屏幕 (901px-1023px) */
+@media (min-width: 901px) and (max-width: 1023px) {
   .explore-page .posts-grid .post-card {
-    width: calc(50% - 8px);
+    width: calc(50% - 8px); /* 2列 */
+  }
+}
+
+/* 平板端 - 中等屏幕 (780px-900px) - 2列布局 */
+@media (min-width: 780px) and (max-width: 900px) {
+  .explore-page .posts-grid .post-card {
+    width: calc(50% - 8px); /* 2列 */
+    margin-bottom: 16px;
+  }
+}
+
+/* 平板端 - 较小屏幕 (769px-779px) */
+@media (min-width: 769px) and (max-width: 779px) {
+  .explore-page .posts-grid .post-card {
+    width: calc(50% - 8px); /* 2列 */
   }
 }
 

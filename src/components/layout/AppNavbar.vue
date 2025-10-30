@@ -98,7 +98,11 @@
             :aria-expanded="showUserMenu ? 'true' : 'false'"
             :aria-haspopup="true"
           >
-            <img :src="userAvatarUrl" :alt="user?.username || 'User'" />
+            <img
+              :src="userAvatarUrl"
+              :alt="user?.username || 'User'"
+              @error="handleAvatarError"
+            />
           </button>
 
           <div
@@ -194,11 +198,23 @@ const searchQuery = ref('')
 const showLanguageMenu = ref(false)
 const showUserMenu = ref(false)
 const mobileMenuOpen = ref(false)
+const avatarError = ref(false)
 
 const currentLocale = computed(() => locale.value)
 
 // 用户头像URL（含默认头像）
-const userAvatarUrl = computed(() => getUserAvatar(user.value, 40))
+const userAvatarUrl = computed(() => {
+  // 如果之前加载失败过，直接返回默认头像
+  if (avatarError.value) {
+    return getUserAvatar({ ...user.value, avatar_url: null } as any, 40)
+  }
+  return getUserAvatar(user.value, 40)
+})
+
+// 头像加载失败处理
+const handleAvatarError = () => {
+  avatarError.value = true
+}
 
 const locales = [
   { code: 'en', name: 'English' },
@@ -592,8 +608,8 @@ onBeforeUnmount(() => {
   /* 移动端头像按钮 - 固定在回到顶部按钮上方（垂直布局） */
   .navbar-actions .user-menu {
     position: fixed !important;
-    bottom: 20px !important;
-    right: 80px !important;
+    bottom: 154px !important; /* back-to-top是90px + 48px(头像高度) + 16px(间距) */
+    right: 20px !important;
     top: auto !important;
     left: auto !important;
     z-index: 1000 !important;
@@ -619,8 +635,8 @@ onBeforeUnmount(() => {
   /* 移动端下拉菜单 - 固定在头像上方 */
   .navbar-actions .user-menu .user-dropdown {
     position: fixed !important;
-    bottom: 78px !important;
-    right: 80px !important;
+    bottom: 212px !important; /* 头像位置154px + 48px(头像高度) + 10px(间距) */
+    right: 20px !important;
     top: auto !important;
     left: auto !important;
     min-width: 200px !important;
@@ -701,8 +717,8 @@ onBeforeUnmount(() => {
   }
 
   .navbar-actions .user-menu {
-    bottom: 16px !important;
-    right: 70px !important;
+    bottom: 140px !important; /* back-to-top是80px + 44px(头像高度) + 16px(间距) */
+    right: 16px !important;
   }
 
   .navbar-actions .user-menu .user-avatar {
@@ -711,8 +727,8 @@ onBeforeUnmount(() => {
   }
 
   .navbar-actions .user-menu .user-dropdown {
-    bottom: 70px !important;
-    right: 70px !important;
+    bottom: 194px !important; /* 头像位置140px + 44px(头像高度) + 10px(间距) */
+    right: 16px !important;
   }
 }
 
