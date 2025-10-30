@@ -155,7 +155,7 @@
             v-model="editForm.full_name"
             type="text"
             :placeholder="$t('profile.fullName')"
-            :icon="User"
+            :icon="UserIcon"
           />
         </div>
 
@@ -270,7 +270,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import {
-  User,
+  User as UserIcon,
   Mail,
   Camera,
   Edit,
@@ -295,6 +295,7 @@ import { useAuthStore } from '@/stores/auth'
 import { uploadApi } from '@/api/services'
 import { api } from '@/api/client'
 import toast from '@/utils/toast'
+import logger from '@/utils/logger'
 import { formatRelativeTime } from '@/utils/format'
 import { getUserAvatar } from '@/utils/avatar'
 import { useImageUpload } from '@/composables/useImageUpload'
@@ -384,23 +385,17 @@ onMounted(() => {
 
 async function loadStats() {
   try {
-    // 尝试获取用户统计数据
+    // 获取用户统计数据
     const response = await api.get(`/users/${user.value?.id}/stats`, { cache: false })
     favoritesCount.value = response.favorites_count || 0
     viewsCount.value = response.views_count || 0
+    
+    logger.debug('User stats loaded:', response)
   } catch (error: any) {
-    // 如果API未实现（404），使用模拟数据
-    if (error.response?.status === 404) {
-      // 使用注册天数作为浏览数的基础
-      const days = joinedDays.value
-      favoritesCount.value = Math.floor(days * 2.5) // 平均每天2.5个收藏
-      viewsCount.value = Math.floor(days * 15) // 平均每天15次浏览
-    } else {
-      console.error('Failed to load stats:', error)
-      // 其他错误，使用默认值
-      favoritesCount.value = 0
-      viewsCount.value = 0
-    }
+    logger.error('Failed to load stats:', error)
+    // 加载失败时使用默认值
+    favoritesCount.value = 0
+    viewsCount.value = 0
   }
 }
 

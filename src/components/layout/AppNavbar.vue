@@ -368,6 +368,13 @@ onBeforeUnmount(() => {
   flex-shrink: 0;
 }
 
+/* 确保用户菜单在桌面端正常显示 */
+.user-menu {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
 .action-button {
   display: flex;
   align-items: center;
@@ -487,19 +494,58 @@ onBeforeUnmount(() => {
   }
 }
 
-/* 平板和小屏幕样式 */
-@media (max-width: 1100px) {
+/* 中型屏幕 (900px - 1100px) */
+@media (max-width: 1100px) and (min-width: 900px) {
   .navbar-search {
-    min-width: 200px;
+    min-width: 180px;
   }
 
   .navbar-content {
-    gap: var(--spacing-md);
+    gap: var(--spacing-sm);
+  }
+
+  .nav-link span {
+    display: inline;
+  }
+}
+
+/* 小屏幕 (769px - 899px) */
+@media (max-width: 899px) and (min-width: 769px) {
+  .navbar-search {
+    min-width: 150px;
+  }
+
+  .navbar-content {
+    gap: var(--spacing-xs);
+  }
+
+  /* 隐藏导航文字，只显示图标 */
+  .nav-link span {
+    display: none;
+  }
+
+  .action-button {
+    width: 36px;
+    height: 36px;
+  }
+
+  .user-avatar {
+    width: 36px;
+    height: 36px;
   }
 }
 
 /* 移动端样式 */
 @media (max-width: 768px) {
+  .navbar-content {
+    gap: var(--spacing-xs);
+  }
+
+  /* 移动端隐藏Logo品牌 */
+  .navbar-brand {
+    display: none;
+  }
+
   .navbar-nav {
     position: fixed;
     top: 64px;
@@ -523,14 +569,102 @@ onBeforeUnmount(() => {
     pointer-events: all;
   }
 
+  .navbar-actions {
+    gap: var(--spacing-xs);
+  }
+
+  .action-button {
+    width: 36px;
+    height: 36px;
+  }
+
+  .action-button svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  /* 移动端隐藏语言切换按钮 */
+  .action-button:has(svg[data-lucide="languages"]) {
+    display: none;
+  }
+
+  /* 移动端用户头像改为悬浮按钮 */
+  .navbar-actions .user-menu {
+    position: fixed !important;
+    top: auto !important;
+    bottom: 100px !important;
+    left: auto !important;
+    right: 20px !important;
+    z-index: 1000;
+    display: flex;
+  }
+
+  .navbar-actions .user-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--glass-bg);
+    backdrop-filter: blur(10px);
+    border: 2px solid var(--glass-border);
+    box-shadow: var(--glass-shadow), var(--glass-glow);
+    transition: all 0.3s ease;
+  }
+
+  .navbar-actions .user-avatar:hover {
+    transform: translateY(-4px) scale(1.05);
+    box-shadow: var(--shadow-xl), var(--glass-glow);
+  }
+
+  .navbar-actions .user-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+  }
+
+  /* 用户下拉菜单位置调整 */
+  .navbar-actions .user-dropdown {
+    position: fixed;
+    bottom: 160px;
+    right: 20px;
+    min-width: 200px;
+  }
+
   .mobile-menu-button {
     display: flex;
     align-items: center;
     justify-content: center;
+    width: 36px;
+    height: 36px;
   }
 
   .navbar-search {
     min-width: auto;
+  }
+
+  /* 未登录时的登录按钮保持在页眉 */
+  .navbar-actions > a {
+    display: flex;
+  }
+}
+
+/* 极小屏幕优化 */
+@media (max-width: 480px) {
+  .navbar-actions .user-menu {
+    top: auto !important;
+    bottom: 90px !important;
+    left: auto !important;
+    right: 16px !important;
+  }
+
+  .navbar-actions .user-avatar {
+    width: 44px !important;
+    height: 44px !important;
+  }
+
+  .user-dropdown {
+    bottom: 145px;
+    right: 16px;
   }
 }
 </style>

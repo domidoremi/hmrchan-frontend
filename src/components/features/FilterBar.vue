@@ -172,19 +172,67 @@ const resetFilters = () => {
   margin-left: auto;
 }
 
+/* 移动端样式优化 */
 @media (max-width: 768px) {
   .filter-bar {
-    flex-direction: column;
-    align-items: stretch;
+    padding: var(--spacing-md);
+    gap: var(--spacing-md);
   }
 
   .filter-section {
-    width: 100%;
+    min-width: 0;
+    flex: 1;
+  }
+
+  .filter-section:nth-child(1),
+  .filter-section:nth-child(2) {
+    flex: 1 1 calc(50% - var(--spacing-sm));
+  }
+
+  .filter-section:nth-child(3),
+  .filter-section:nth-child(4) {
+    flex: 0 0 auto;
+  }
+
+  .filter-label {
+    font-size: var(--text-xs);
+  }
+
+  .filter-select {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: var(--text-xs);
+  }
+
+  .filter-button {
+    padding: var(--spacing-xs);
+  }
+
+  .filter-button svg {
+    width: 14px;
+    height: 14px;
   }
 
   .filter-actions {
     width: 100%;
     margin-left: 0;
+    justify-content: stretch;
+  }
+
+  .filter-actions button {
+    flex: 1;
+  }
+}
+
+/* 极小屏幕优化 */
+@media (max-width: 480px) {
+  .filter-bar {
+    padding: var(--spacing-sm);
+    gap: var(--spacing-sm);
+  }
+
+  .filter-section:nth-child(1),
+  .filter-section:nth-child(2) {
+    flex: 1 1 100%;
   }
 }
 </style>

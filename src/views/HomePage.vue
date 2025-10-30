@@ -315,7 +315,7 @@ const getPlatformIcon = (platform: string) => {
 
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: var(--spacing-lg);
 }
 
@@ -381,6 +381,9 @@ const getPlatformIcon = (platform: string) => {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: var(--spacing-lg);
+  width: 100%;
+  grid-auto-rows: auto;
+  align-items: start;
 }
 
 .empty-state {
@@ -407,6 +410,28 @@ const getPlatformIcon = (platform: string) => {
   font-size: var(--text-sm);
 }
 
+/* 大屏幕优化 (> 1400px) */
+@media (min-width: 1400px) {
+  .posts-grid {
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  }
+}
+
+/* 中型屏幕 (1024px - 1400px) */
+@media (min-width: 1024px) and (max-width: 1399px) {
+  .posts-grid {
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  }
+}
+
+/* 平板端适配 (769px - 1023px) */
+@media (min-width: 769px) and (max-width: 1023px) {
+  .posts-grid {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  }
+}
+
+/* 移动端适配 */
 @media (max-width: 768px) {
   .hero-title {
     font-size: 2.5rem;
@@ -421,12 +446,91 @@ const getPlatformIcon = (platform: string) => {
     width: 100%;
   }
 
-  .stats-grid {
-    grid-template-columns: repeat(2, 1fr);
+  .stats-section {
+    padding: var(--spacing-lg) 0;
   }
 
+  .stats-grid {
+    display: flex;
+    gap: var(--spacing-sm);
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding: var(--spacing-xs) 0;
+  }
+
+  .stats-grid::-webkit-scrollbar {
+    display: none;
+  }
+
+  .stat-card {
+    flex: 0 0 140px;
+    scroll-snap-align: start;
+    padding: var(--spacing-md);
+  }
+
+  .stat-icon {
+    width: 48px;
+    height: 48px;
+    margin-bottom: var(--spacing-xs);
+  }
+
+  .stat-icon svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .stat-card h3 {
+    font-size: var(--text-sm);
+    margin-bottom: var(--spacing-xs);
+  }
+
+  .stat-count {
+    font-size: var(--text-lg);
+  }
+
+  .stat-label {
+    font-size: var(--text-xs);
+  }
+
+  /* 移动端瀑布流布局 - 两列 */
   .posts-grid {
+    display: block;
+    column-count: 2;
+    column-gap: var(--spacing-md);
+  }
+
+  .posts-grid :deep(.post-card) {
+    display: inline-block;
+    width: 100%;
+    margin-bottom: var(--spacing-md);
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+}
+
+/* 小屏手机适配 */
+@media (max-width: 480px) {
+  .hero-title {
+    font-size: 2rem;
+  }
+
+  .hero-content {
+    padding: var(--spacing-xl);
+  }
+
+  .stats-grid {
     grid-template-columns: 1fr;
+  }
+
+  /* 极小屏幕保持两列但缩小间距 */
+  .posts-grid {
+    column-gap: var(--spacing-sm);
+  }
+
+  .posts-grid :deep(.post-card) {
+    margin-bottom: var(--spacing-sm);
   }
 }
 </style>

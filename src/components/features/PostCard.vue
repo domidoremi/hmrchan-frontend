@@ -251,18 +251,15 @@ const formatDate = (dateStr: string): string => {
 .card-thumbnail {
   position: relative;
   width: 100%;
-  padding-top: 56.25%; /* 16:9 */
   background: var(--color-surface-variant);
   overflow: hidden;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
 }
 
 .card-thumbnail img {
-  position: absolute;
-  top: 0;
-  left: 0;
   width: 100%;
-  height: 100%;
-  object-fit: cover;
+  height: auto;
+  display: block;
   transition: transform var(--transition-slow);
 }
 
@@ -271,11 +268,8 @@ const formatDate = (dateStr: string): string => {
 }
 
 .thumbnail-placeholder {
-  position: absolute;
-  top: 0;
-  left: 0;
   width: 100%;
-  height: 100%;
+  aspect-ratio: 16 / 9;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -457,5 +451,79 @@ const formatDate = (dateStr: string): string => {
 .favorite-button:hover {
   background: var(--glass-bg-light);
   color: var(--color-primary);
+}
+
+/* 移动端优化 */
+@media (max-width: 768px) {
+  .card-content {
+    padding: var(--spacing-sm);
+  }
+
+  .card-title {
+    font-size: var(--text-sm);
+    -webkit-line-clamp: 2;
+    margin-bottom: var(--spacing-xs);
+  }
+
+  .card-author {
+    font-size: var(--text-xs);
+    margin-bottom: var(--spacing-xs);
+  }
+
+  .card-description {
+    font-size: var(--text-xs);
+    -webkit-line-clamp: 2;
+    margin-bottom: var(--spacing-sm);
+  }
+
+  .card-stats {
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-sm);
+  }
+
+  .stat-item {
+    font-size: var(--text-xs);
+  }
+
+  .platform-badge {
+    font-size: 0.625rem;
+    padding: 0.125rem 0.5rem;
+  }
+
+  .retweet-badge,
+  .quote-badge {
+    font-size: 0.625rem;
+    padding: 0.125rem 0.375rem;
+  }
+
+  .media-count-badge,
+  .duration-badge {
+    font-size: 0.625rem;
+    padding: 0.125rem 0.375rem;
+  }
+
+  .favorite-button {
+    width: 28px;
+    height: 28px;
+  }
+
+  .publish-date {
+    font-size: 0.625rem;
+  }
+}
+
+/* 极小屏幕优化 */
+@media (max-width: 480px) {
+  .card-content {
+    padding: var(--spacing-xs) var(--spacing-sm);
+  }
+
+  .card-title {
+    -webkit-line-clamp: 1;
+  }
+
+  .card-description {
+    -webkit-line-clamp: 1;
+  }
 }
 </style>
