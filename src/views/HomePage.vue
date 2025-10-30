@@ -5,6 +5,16 @@
       <Transition name="hero-fade">
         <section v-if="settingsStore.settings.showHeroSection" class="hero-section">
           <div class="hero-content glass-card">
+            <!-- 关闭按钮 -->
+            <button
+              class="hero-close-btn"
+              @click="settingsStore.toggleSetting('showHeroSection')"
+              :aria-label="$t('common.close')"
+              :title="$t('settings.hideHeroSection')"
+            >
+              <X :size="20" />
+            </button>
+            
             <h1 class="hero-title fade-in">
               {{ $t('app.name') }}
             </h1>
@@ -24,25 +34,21 @@
         </section>
       </Transition>
 
-      <!-- Platform Stats -->
+      <!-- Platform Stats - 横向网格 -->
       <section class="stats-section">
-        <div class="stats-wrapper">
+        <div class="stats-grid">
           <div
-            ref="statsGrid"
-            class="stats-grid"
-            @mouseenter="pauseAutoScroll"
-            @mouseleave="resumeAutoScroll"
+            v-for="platform in platforms"
+            :key="platform"
+            class="stat-card glass-card"
           >
-            <div v-for="platform in platforms" :key="platform" class="stat-card glass-card">
-              <div class="stat-icon" :style="{ background: getPlatformColor(platform) }">
-                <component :is="getPlatformIcon(platform)" :size="32" />
-              </div>
-              <h3>{{ $t(`platform.${platform}`) }}</h3>
-              <p class="stat-count">{{ formatNumber(platformStats[platform] || 0) }}</p>
-              <p class="stat-label">{{ $t('post.title') }}</p>
+            <div class="stat-icon" :style="{ background: getPlatformColor(platform) }">
+              <component :is="getPlatformIcon(platform)" :size="32" />
             </div>
+            <h3>{{ $t(`platform.${platform}`) }}</h3>
+            <p class="stat-count">{{ formatNumber(platformStats[platform] || 0) }}</p>
+            <p class="stat-label">{{ $t('post.title') }}</p>
           </div>
-          <div class="scroll-indicator">← {{ $t('common.swipeToView') }} →</div>
         </div>
       </section>
 
@@ -113,6 +119,7 @@ import {
   Twitter,
   Music2,
   Instagram,
+  X,
 } from 'lucide-vue-next'
 
 import MainLayout from '@/components/layout/MainLayout.vue'
@@ -155,10 +162,9 @@ const platformStats = ref<Record<string, number>>({})
 const currentPage = ref(1)
 const isLoadingMore = ref(false)
 const hasMore = ref(true)
-const statsGrid = ref<HTMLElement | null>(null)
 const postsGrid = ref<HTMLElement | null>(null)
-let autoScrollInterval: ReturnType<typeof setInterval> | null = null
-let isAutoScrollPaused = ref(false)
+
+// Stats状态（已移除3D轮播）
 
 // Masonry瀑布流 - 使用响应式gutter（函数形式）
 const getGutter = () => {
@@ -171,9 +177,9 @@ const getGutter = () => {
 
 const { reloadItems, destroy, initMasonry } = useMasonry(postsGrid, {
   itemSelector: 'a.post-card',
-  columnWidth: 'a.post-card',
-  gutter: getGutter,  // 传递函数而不是调用结果
-  percentPosition: false,
+  columnWidth: 'a.post-card',  // 使用第一个卡片的CSS宽度
+  gutter: getGutter,
+  percentPosition: false,  // 使用像素定位
   horizontalOrder: false,
   fitWidth: false
 })
@@ -200,11 +206,14 @@ const { refresh: refreshPreload } = useSmartPreload(posts, {
 })
 
 onMounted(async () => {
-  // 监听窗口大小变化
-  window.addEventListener('resize', handleResize)
-  
-  // 初始化其他功能
   try {
+    // 输出当前viewport宽度用于调试
+    console.log('[HomePage] Viewport width:', window.innerWidth)
+    console.log('[HomePage] Window outer width:', window.outerWidth)
+    
+    // 监听窗口大小变化
+    window.addEventListener('resize', handleResize)
+
     // 重置筛选条件，确保首页总是显示最新内容
     postsStore.resetFilters()
 
@@ -224,11 +233,6 @@ onMounted(async () => {
 
     // 监听滚动事件
     window.addEventListener('scroll', handleScroll)
-
-    // 在移动端启动自动滚动
-    if (window.innerWidth <= 768) {
-      startAutoScroll()
-    }
   } catch (error) {
     logger.error('Failed to load data:', error)
     toast.error(t('common.loadFailed'))
@@ -238,7 +242,6 @@ onMounted(async () => {
 onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll)
   window.removeEventListener('resize', handleResize)
-  stopAutoScroll()
   if (resizeTimer) clearTimeout(resizeTimer)
 })
 
@@ -292,41 +295,7 @@ const goToLogin = () => {
   router.push('/login')
 }
 
-// 自动滚动功能（仅移动端）
-const startAutoScroll = () => {
-  if (!statsGrid.value || autoScrollInterval) return
-
-  autoScrollInterval = setInterval(() => {
-    if (isAutoScrollPaused.value || !statsGrid.value) return
-
-    const scrollContainer = statsGrid.value
-    const scrollAmount = 180 // 每次滚动一个卡片宽度
-    const maxScroll = scrollContainer.scrollWidth - scrollContainer.clientWidth
-
-    if (scrollContainer.scrollLeft >= maxScroll) {
-      // 滚动到尽头，回到起点
-      scrollContainer.scrollTo({ left: 0, behavior: 'smooth' })
-    } else {
-      // 继续向右滚动
-      scrollContainer.scrollBy({ left: scrollAmount, behavior: 'smooth' })
-    }
-  }, 3000) // 每3秒滚动一次
-}
-
-const stopAutoScroll = () => {
-  if (autoScrollInterval) {
-    clearInterval(autoScrollInterval)
-    autoScrollInterval = null
-  }
-}
-
-const pauseAutoScroll = () => {
-  isAutoScrollPaused.value = true
-}
-
-const resumeAutoScroll = () => {
-  isAutoScrollPaused.value = false
-}
+// 轮播功能已移除，Stats Section改为横向网格展示
 
 const getPlatformColor = (platform: string) => {
   return PLATFORM_COLORS[platform as keyof typeof PLATFORM_COLORS] || '#666'
@@ -386,6 +355,37 @@ const getPlatformIcon = (platform: string) => {
   max-width: 800px;
   margin: 0 auto;
   padding: var(--spacing-3xl);
+  position: relative;
+}
+
+.hero-close-btn {
+  position: absolute;
+  top: var(--spacing-lg);
+  right: var(--spacing-lg);
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  z-index: 10;
+}
+
+.hero-close-btn:hover {
+  background: rgba(139, 92, 246, 0.1);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  transform: rotate(90deg) scale(1.1);
+}
+
+.hero-close-btn:active {
+  transform: rotate(90deg) scale(0.95);
 }
 
 .hero-title {
@@ -413,44 +413,40 @@ const getPlatformIcon = (platform: string) => {
   animation-delay: 0.2s;
 }
 
-/* Stats Section */
+/* Stats Section - 网格布局 */
 .stats-section {
-  padding: var(--spacing-md) 0;
-}
-
-.stats-wrapper {
-  position: relative;
-}
-
-.scroll-indicator {
-  display: none; /* 桌面端隐藏 */
+  padding: var(--spacing-2xl) 0;
 }
 
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: var(--spacing-lg);
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
 .stat-card {
-  padding: var(--spacing-xl);
   text-align: center;
+  padding: var(--spacing-2xl);
   transition: all var(--transition-base);
 }
 
 .stat-card:hover {
   transform: translateY(-4px);
+  box-shadow: var(--glass-shadow), var(--glass-glow);
 }
 
 .stat-icon {
-  width: 80px;
-  height: 80px;
+  width: 64px;
+  height: 64px;
   margin: 0 auto var(--spacing-md);
-  border-radius: var(--radius-2xl);
+  border-radius: var(--radius-xl);
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
 }
 
 .stat-card h3 {
@@ -522,6 +518,52 @@ const getPlatformIcon = (platform: string) => {
 
 /* Masonry布局，不需要这些样式 */
 
+/* 平板端/小笔记本优化 (780px-1100px) - 2列布局 */
+@media (min-width: 780px) and (max-width: 1100px) {
+  .hero-section {
+    padding: var(--spacing-xl) 0 var(--spacing-md) 0;
+  }
+
+  .hero-content {
+    padding: var(--spacing-2xl);
+  }
+
+  .hero-title {
+    font-size: 3rem;
+  }
+
+  .hero-subtitle {
+    font-size: var(--text-xl);
+  }
+
+  .stats-section {
+    padding: var(--spacing-xl) 0;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-md);
+  }
+
+  .stat-card {
+    padding: var(--spacing-xl);
+  }
+
+  .stat-icon {
+    width: 56px;
+    height: 56px;
+  }
+
+  .stat-icon svg {
+    width: 28px;
+    height: 28px;
+  }
+
+  .latest-section {
+    padding: var(--spacing-lg) 0 var(--spacing-xl) 0;
+  }
+}
+
 /* 移动端适配 */
 @media (max-width: 768px) {
   .hero-section {
@@ -530,6 +572,18 @@ const getPlatformIcon = (platform: string) => {
 
   .hero-content {
     padding: var(--spacing-xl);
+  }
+
+  .hero-close-btn {
+    top: var(--spacing-md);
+    right: var(--spacing-md);
+    width: 32px;
+    height: 32px;
+  }
+
+  .hero-close-btn svg {
+    width: 16px;
+    height: 16px;
   }
 
   .hero-title {
@@ -551,6 +605,38 @@ const getPlatformIcon = (platform: string) => {
     padding: var(--spacing-sm) 0;
   }
 
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-sm);
+  }
+
+  .stat-card {
+    padding: var(--spacing-lg) var(--spacing-md);
+  }
+
+  .stat-icon {
+    width: 48px;
+    height: 48px;
+    margin-bottom: var(--spacing-sm);
+  }
+
+  .stat-icon svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .stat-card h3 {
+    font-size: var(--text-base);
+  }
+
+  .stat-count {
+    font-size: var(--text-2xl);
+  }
+
+  .stat-label {
+    font-size: var(--text-xs);
+  }
+
   .latest-section {
     padding: var(--spacing-sm) 0 var(--spacing-lg) 0;
   }
@@ -558,82 +644,6 @@ const getPlatformIcon = (platform: string) => {
   .section-header {
     margin-bottom: var(--spacing-md);
   }
-
-  .stats-wrapper {
-    margin: 0 calc(-1 * var(--spacing-lg));
-    padding: 0 var(--spacing-lg);
-  }
-
-  .stats-grid {
-    display: flex;
-    gap: var(--spacing-md);
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-    padding: var(--spacing-sm) 0;
-    scroll-behavior: smooth;
-  }
-
-  .stats-grid::-webkit-scrollbar {
-    display: none;
-  }
-
-  .scroll-indicator {
-    display: block;
-    text-align: center;
-    font-size: var(--text-xs);
-    color: var(--color-text-tertiary);
-    margin-top: var(--spacing-sm);
-    animation: pulse 2s ease-in-out infinite;
-  }
-
-  @keyframes pulse {
-    0%,
-    100% {
-      opacity: 0.5;
-    }
-    50% {
-      opacity: 1;
-    }
-  }
-
-  .stat-card {
-    flex: 0 0 160px;
-    scroll-snap-align: center;
-    padding: var(--spacing-lg);
-    transition: transform 0.2s ease;
-  }
-
-  .stat-card:active {
-    transform: scale(0.98);
-  }
-
-  .stat-icon {
-    width: 48px;
-    height: 48px;
-    margin-bottom: var(--spacing-xs);
-  }
-
-  .stat-icon svg {
-    width: 20px;
-    height: 20px;
-  }
-
-  .stat-card h3 {
-    font-size: var(--text-sm);
-    margin-bottom: var(--spacing-xs);
-  }
-
-  .stat-count {
-    font-size: var(--text-lg);
-  }
-
-  .stat-label {
-    font-size: var(--text-xs);
-  }
-
-  /* Masonry布局在移动端也生效 */
 }
 
 /* 小屏手机适配 */
@@ -645,19 +655,20 @@ const getPlatformIcon = (platform: string) => {
   .hero-content {
     padding: var(--spacing-xl);
   }
-
-  .stats-grid {
-    grid-template-columns: 1fr;
-  }
 }
 </style>
 
 <!-- Masonry瀑布流全局样式 -->
 <style>
-/* Masonry瀑布流卡片样式 */
+/* Masonry瀑布流卡片样式 - 使用相对单位 */
+.posts-grid {
+  width: 100%;
+}
+
 .posts-grid .post-card {
-  width: calc(25% - 12px); /* 4列 */
+  width: calc(25% - 12px); /* 4列 - 默认 */
   margin-bottom: 16px;
+  box-sizing: border-box;
 }
 
 /* 大屏幕 */
@@ -667,15 +678,30 @@ const getPlatformIcon = (platform: string) => {
   }
 }
 
-/* 中型屏幕 */
-@media (min-width: 1024px) and (max-width: 1399px) {
+/* 中型屏幕 - 3列 */
+@media (min-width: 1101px) and (max-width: 1399px) {
   .posts-grid .post-card {
     width: calc(33.333% - 11px); /* 3列 */
   }
 }
 
-/* 平板端 */
-@media (min-width: 769px) and (max-width: 1023px) {
+/* 平板端/小笔记本 - 2列 (901px-1100px) */
+@media (min-width: 901px) and (max-width: 1100px) {
+  .posts-grid .post-card {
+    width: calc(50% - 8px); /* 2列 */
+  }
+}
+
+/* 平板端 - 中等屏幕 (780px-900px) - 2列布局 */
+@media (min-width: 780px) and (max-width: 900px) {
+  .posts-grid .post-card {
+    width: calc(50% - 8px) !important; /* 2列 - 强制应用 */
+    margin-bottom: 16px;
+  }
+}
+
+/* 平板端 - 较小屏幕 (769px-779px) */
+@media (min-width: 769px) and (max-width: 779px) {
   .posts-grid .post-card {
     width: calc(50% - 8px); /* 2列 */
   }

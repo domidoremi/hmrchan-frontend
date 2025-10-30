@@ -82,7 +82,7 @@ export const useSettingsStore = defineStore('settings', () => {
 
     try {
       syncing.value = true
-      await api.put('/preferences', settings.value)
+      await api.patch('/preferences', settings.value)
       lastSyncedAt.value = new Date()
       return true
     } catch (error) {

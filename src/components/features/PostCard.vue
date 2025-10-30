@@ -468,6 +468,31 @@ const formatDate = (dateStr: string): string => {
   .card-author {
     font-size: var(--text-xs);
     margin-bottom: var(--spacing-xs);
+    gap: 0.25rem;
+  }
+
+  .card-author svg {
+    flex-shrink: 0;
+  }
+
+  .author-retweet {
+    gap: 0.25rem;
+  }
+
+  .retweeter,
+  .original-author {
+    gap: 0.125rem;
+  }
+
+  .retweeter svg,
+  .original-author svg {
+    width: 12px;
+    height: 12px;
+  }
+
+  .rt-icon {
+    width: 12px;
+    height: 12px;
   }
 
   .card-description {

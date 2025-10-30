@@ -114,6 +114,7 @@
     "display": "表示設定",
     "showHeroSection": "ヒーローセクションを表示",
     "showHeroSectionDesc": "ホームページにヒーローバナーを表示",
+    "hideHeroSection": "ヒーローバナーを非表示（設定で復元可能）",
     "light": "ライト",
     "dark": "ダーク",
     "auto": "自動",
