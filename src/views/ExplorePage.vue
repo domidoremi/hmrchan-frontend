@@ -11,7 +11,7 @@
 
       <!-- Posts Grid -->
       <div v-else-if="posts.length > 0">
-        <div class="posts-grid">
+        <div ref="postsGrid" class="posts-grid">
           <PostCard v-for="post in posts" :key="post.id" :post="post" />
         </div>
 
@@ -44,7 +44,7 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { onMounted, watch } from 'vue'
+import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { SearchX, RotateCcw } from 'lucide-vue-next'
@@ -57,7 +57,9 @@ import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import GlassButton from '@/components/ui/GlassButton.vue'
 
 import { usePostsStore } from '@/stores/posts'
-import type { PostListParams } from '@/types'
+import type { Post } from '@/types'
+import { postsApi } from '@/api/services'
+import { useMasonry } from '@/composables/useMasonry'
 
 const route = useRoute()
 const router = useRouter()
@@ -65,7 +67,51 @@ const postsStore = usePostsStore()
 
 const { posts, loading, filters, pagination } = storeToRefs(postsStore)
 
+const postsGrid = ref<HTMLElement | null>(null)
+
+// Masonry瀑布流 - 使用响应式gutter（函数形式）
+const getGutter = () => {
+  const width = window.innerWidth
+  console.log('[ExplorePage] Calculating gutter for width:', width)
+  if (width <= 480) return 12  // 小屏：12px
+  if (width <= 768) return 16  // 移动端：16px
+  return 16  // 桌面端：16px
+}
+
+const { reloadItems, destroy, initMasonry } = useMasonry(postsGrid, {
+  itemSelector: 'a.post-card',
+  columnWidth: 'a.post-card',
+  gutter: getGutter,  // 传递函数而不是调用结果
+  percentPosition: false,
+  horizontalOrder: false,
+  fitWidth: false
+})
+
+// 监听窗口大小变化，重新初始化Masonry
+let resizeTimer: ReturnType<typeof setTimeout> | null = null
+const handleResize = () => {
+  if (resizeTimer) clearTimeout(resizeTimer)
+  resizeTimer = setTimeout(async () => {
+    console.log('[ExplorePage] Window resized, reinitializing Masonry...')
+    destroy()
+    await nextTick()
+    setTimeout(initMasonry, 300)
+  }, 300)
+}
+
+// 监听posts变化，重新布局Masonry
+watch(posts, async () => {
+  await nextTick()
+  setTimeout(() => {
+    console.log('[ExplorePage] Posts changed, reloading Masonry...')
+    reloadItems()
+  }, 300)
+}, { deep: true })
+
 onMounted(() => {
+  // 监听窗口大小变化
+  window.addEventListener('resize', handleResize)
+  
   // 重置筛选条件
   postsStore.resetFilters()
 
@@ -75,6 +121,11 @@ onMounted(() => {
   if (query.platform) filters.value.platform = query.platform as string
 
   loadPosts()
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResize)
+  if (resizeTimer) clearTimeout(resizeTimer)
 })
 
 watch(
@@ -89,7 +140,7 @@ const loadPosts = async () => {
   await postsStore.fetchPosts()
 }
 
-const handleFilterUpdate = async (newFilters: PostListParams) => {
+const handleFilterUpdate = async (newFilters: any) => {
   postsStore.updateFilters(newFilters)
   await loadPosts()
 
@@ -128,13 +179,9 @@ const resetFilters = () => {
 }
 
 .posts-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: var(--spacing-lg);
-  margin-bottom: var(--spacing-xl);
+  /* Masonry布局容器 */
   width: 100%;
-  grid-auto-rows: auto;
-  align-items: start;
+  max-width: 100%;
 }
 
 .empty-state {
@@ -158,26 +205,7 @@ const resetFilters = () => {
   margin-bottom: var(--spacing-md);
 }
 
-/* 大屏幕优化 (> 1400px) */
-@media (min-width: 1400px) {
-  .posts-grid {
-    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-  }
-}
-
-/* 中型屏幕 (1024px - 1400px) */
-@media (min-width: 1024px) and (max-width: 1399px) {
-  .posts-grid {
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  }
-}
-
-/* 平板端适配 (769px - 1023px) */
-@media (min-width: 769px) and (max-width: 1023px) {
-  .posts-grid {
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  }
-}
+/* Masonry布局，不需要这些样式 */
 
 /* 移动端样式 */
 @media (max-width: 768px) {
@@ -186,21 +214,7 @@ const resetFilters = () => {
     margin-bottom: var(--spacing-md);
   }
 
-  /* 移动端瀑布流布局 - 两列 */
-  .posts-grid {
-    display: block;
-    column-count: 2;
-    column-gap: var(--spacing-md);
-    margin-bottom: var(--spacing-lg);
-  }
-
-  .posts-grid :deep(.post-card) {
-    display: inline-block;
-    width: 100%;
-    margin-bottom: var(--spacing-md);
-    break-inside: avoid;
-    page-break-inside: avoid;
-  }
+  /* Masonry布局在移动端也生效 */
 }
 
 /* 极小屏幕优化 */
@@ -208,13 +222,46 @@ const resetFilters = () => {
   .page-title {
     font-size: var(--text-xl);
   }
+}
+</style>
 
-  .posts-grid {
-    column-gap: var(--spacing-sm);
+<!-- Masonry瀑布流全局样式 -->
+<style>
+/* Masonry瀑布流卡片样式 - 与HomePage保持一致 */
+.explore-page .posts-grid .post-card {
+  width: calc(25% - 12px);
+  margin-bottom: 16px;
+}
+
+@media (min-width: 1400px) {
+  .explore-page .posts-grid .post-card {
+    width: calc(25% - 12px);
   }
+}
 
-  .posts-grid :deep(.post-card) {
-    margin-bottom: var(--spacing-sm);
+@media (min-width: 1024px) and (max-width: 1399px) {
+  .explore-page .posts-grid .post-card {
+    width: calc(33.333% - 11px);
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1023px) {
+  .explore-page .posts-grid .post-card {
+    width: calc(50% - 8px);
+  }
+}
+
+@media (max-width: 768px) {
+  .explore-page .posts-grid .post-card {
+    width: calc(50% - 8px);
+    margin-bottom: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .explore-page .posts-grid .post-card {
+    width: calc(50% - 6px);
+    margin-bottom: 12px;
   }
 }
 </style>

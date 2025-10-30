@@ -127,84 +127,6 @@
           </div>
         </section>
 
-        <!-- 隐私和数据 -->
-        <section class="preference-section glass-card">
-          <h2>
-            <Shield :size="24" />
-            {{ $t('preferences.privacy') }}
-          </h2>
-
-          <div class="preference-item">
-            <div class="item-info">
-              <label>{{ $t('preferences.analyticsEnabled') }}</label>
-              <p class="item-description">{{ $t('preferences.analyticsEnabledDesc') }}</p>
-            </div>
-            <label class="toggle-switch">
-              <input
-                type="checkbox"
-                :checked="settings.analyticsEnabled"
-                @change="toggleSetting('analyticsEnabled')"
-              />
-              <span class="toggle-slider"></span>
-            </label>
-          </div>
-
-          <div class="preference-item">
-            <div class="item-info">
-              <label>{{ $t('preferences.performanceCookies') }}</label>
-              <p class="item-description">{{ $t('preferences.performanceCookiesDesc') }}</p>
-            </div>
-            <label class="toggle-switch">
-              <input
-                type="checkbox"
-                :checked="settings.performanceCookiesEnabled"
-                @change="toggleSetting('performanceCookiesEnabled')"
-              />
-              <span class="toggle-slider"></span>
-            </label>
-          </div>
-
-          <div class="preference-item">
-            <div class="item-info">
-              <label>{{ $t('preferences.personalizedContent') }}</label>
-              <p class="item-description">{{ $t('preferences.personalizedContentDesc') }}</p>
-            </div>
-            <label class="toggle-switch">
-              <input
-                type="checkbox"
-                :checked="settings.personalizedContent"
-                @change="toggleSetting('personalizedContent')"
-              />
-              <span class="toggle-slider"></span>
-            </label>
-          </div>
-
-          <div class="preference-item">
-            <div class="item-info">
-              <label>{{ $t('preferences.dataCollection') }}</label>
-              <p class="item-description">{{ $t('preferences.dataCollectionDesc') }}</p>
-            </div>
-            <label class="toggle-switch">
-              <input
-                type="checkbox"
-                :checked="settings.dataCollection"
-                @change="toggleSetting('dataCollection')"
-              />
-              <span class="toggle-slider"></span>
-            </label>
-          </div>
-
-          <div class="privacy-note">
-            <Info :size="16" />
-            <p>
-              {{ $t('preferences.privacyNote') }}
-              <router-link to="/privacy" class="privacy-link">
-                {{ $t('preferences.readPrivacyPolicy') }}
-              </router-link>
-            </p>
-          </div>
-        </section>
-
         <!-- 数据管理 -->
         <section class="preference-section glass-card">
           <h2>
@@ -244,7 +166,6 @@ import {
   ArrowLeft,
   Monitor,
   PlayCircle,
-  Shield,
   Database,
   Download,
   Upload,

@@ -71,7 +71,12 @@
               <select
                 class="select-input"
                 :value="settingsStore.settings.postsPerPage"
-                @change="settingsStore.updateSetting('postsPerPage', parseInt(($event.target as HTMLSelectElement).value))"
+                @change="
+                  settingsStore.updateSetting(
+                    'postsPerPage',
+                    parseInt(($event.target as HTMLSelectElement).value),
+                  )
+                "
               >
                 <option :value="10">10</option>
                 <option :value="20">20</option>
@@ -116,82 +121,6 @@
               >
                 <span class="toggle-slider"></span>
               </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Privacy & Cookies -->
-        <div class="settings-card glass-card">
-          <div class="card-header">
-            <Shield :size="24" />
-            <h3>{{ $t('preferences.privacy') }}</h3>
-          </div>
-
-          <div class="settings-content">
-            <div class="setting-row">
-              <div class="setting-info">
-                <div class="setting-label">{{ $t('preferences.analyticsEnabled') }}</div>
-                <div class="setting-description">{{ $t('preferences.analyticsEnabledDesc') }}</div>
-              </div>
-              <button
-                class="toggle-switch"
-                :class="{ active: settingsStore.settings.analyticsEnabled }"
-                @click="settingsStore.toggleSetting('analyticsEnabled')"
-              >
-                <span class="toggle-slider"></span>
-              </button>
-            </div>
-
-            <div class="setting-row">
-              <div class="setting-info">
-                <div class="setting-label">{{ $t('preferences.performanceCookies') }}</div>
-                <div class="setting-description">{{ $t('preferences.performanceCookiesDesc') }}</div>
-              </div>
-              <button
-                class="toggle-switch"
-                :class="{ active: settingsStore.settings.performanceCookiesEnabled }"
-                @click="settingsStore.toggleSetting('performanceCookiesEnabled')"
-              >
-                <span class="toggle-slider"></span>
-              </button>
-            </div>
-
-            <div class="setting-row">
-              <div class="setting-info">
-                <div class="setting-label">{{ $t('preferences.personalizedContent') }}</div>
-                <div class="setting-description">{{ $t('preferences.personalizedContentDesc') }}</div>
-              </div>
-              <button
-                class="toggle-switch"
-                :class="{ active: settingsStore.settings.personalizedContent }"
-                @click="settingsStore.toggleSetting('personalizedContent')"
-              >
-                <span class="toggle-slider"></span>
-              </button>
-            </div>
-
-            <div class="setting-row">
-              <div class="setting-info">
-                <div class="setting-label">{{ $t('preferences.dataCollection') }}</div>
-                <div class="setting-description">{{ $t('preferences.dataCollectionDesc') }}</div>
-              </div>
-              <button
-                class="toggle-switch"
-                :class="{ active: settingsStore.settings.dataCollection }"
-                @click="settingsStore.toggleSetting('dataCollection')"
-              >
-                <span class="toggle-slider"></span>
-              </button>
-            </div>
-
-            <div class="privacy-note">
-              <Info :size="16" />
-              <p>
-                {{ $t('preferences.privacyNote') }}
-                <router-link to="/privacy" class="privacy-link">
-                  {{ $t('preferences.readPrivacyPolicy') }}
-                </router-link>
-              </p>
             </div>
           </div>
         </div>
@@ -256,7 +185,7 @@
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
-import { Palette, Languages, User, LogOut, Sun, Moon, Monitor, PlayCircle, Shield, Info } from 'lucide-vue-next'
+import { Palette, Languages, User, LogOut, Sun, Moon, Monitor, PlayCircle } from 'lucide-vue-next'
 
 import MainLayout from '@/components/layout/MainLayout.vue'
 import GlassButton from '@/components/ui/GlassButton.vue'

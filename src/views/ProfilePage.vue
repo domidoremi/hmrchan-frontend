@@ -389,7 +389,7 @@ async function loadStats() {
     const response = await api.get(`/users/${user.value?.id}/stats`, { cache: false })
     favoritesCount.value = response.favorites_count || 0
     viewsCount.value = response.views_count || 0
-    
+
     logger.debug('User stats loaded:', response)
   } catch (error: any) {
     logger.error('Failed to load stats:', error)

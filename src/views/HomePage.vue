@@ -26,15 +26,23 @@
 
       <!-- Platform Stats -->
       <section class="stats-section">
-        <div class="stats-grid">
-          <div v-for="platform in platforms" :key="platform" class="stat-card glass-card">
-            <div class="stat-icon" :style="{ background: getPlatformColor(platform) }">
-              <component :is="getPlatformIcon(platform)" :size="32" />
+        <div class="stats-wrapper">
+          <div
+            ref="statsGrid"
+            class="stats-grid"
+            @mouseenter="pauseAutoScroll"
+            @mouseleave="resumeAutoScroll"
+          >
+            <div v-for="platform in platforms" :key="platform" class="stat-card glass-card">
+              <div class="stat-icon" :style="{ background: getPlatformColor(platform) }">
+                <component :is="getPlatformIcon(platform)" :size="32" />
+              </div>
+              <h3>{{ $t(`platform.${platform}`) }}</h3>
+              <p class="stat-count">{{ formatNumber(platformStats[platform] || 0) }}</p>
+              <p class="stat-label">{{ $t('post.title') }}</p>
             </div>
-            <h3>{{ $t(`platform.${platform}`) }}</h3>
-            <p class="stat-count">{{ formatNumber(platformStats[platform] || 0) }}</p>
-            <p class="stat-label">{{ $t('post.title') }}</p>
           </div>
+          <div class="scroll-indicator">← {{ $t('common.swipeToView') }} →</div>
         </div>
       </section>
 
@@ -61,7 +69,7 @@
         />
 
         <!-- Posts列表 -->
-        <div v-else-if="posts.length > 0" class="posts-grid">
+        <div v-else-if="posts.length > 0" ref="postsGrid" class="posts-grid">
           <PostCard v-for="post in posts" :key="post.id" :post="post" />
         </div>
 
@@ -92,10 +100,11 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
+
 import {
   Compass,
   ArrowRight,
@@ -118,6 +127,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useSettingsStore } from '@/stores/settings'
 import { usePostsStore } from '@/stores/posts'
 import { useSmartPreload } from '@/composables/useSmartPreload'
+import { useMasonry } from '@/composables/useMasonry'
 import { PLATFORMS, PLATFORM_COLORS } from '@/types'
 import { postsApi, statsApi } from '@/api/services'
 import toast from '@/utils/toast'
@@ -145,6 +155,40 @@ const platformStats = ref<Record<string, number>>({})
 const currentPage = ref(1)
 const isLoadingMore = ref(false)
 const hasMore = ref(true)
+const statsGrid = ref<HTMLElement | null>(null)
+const postsGrid = ref<HTMLElement | null>(null)
+let autoScrollInterval: ReturnType<typeof setInterval> | null = null
+let isAutoScrollPaused = ref(false)
+
+// Masonry瀑布流 - 使用响应式gutter（函数形式）
+const getGutter = () => {
+  const width = window.innerWidth
+  console.log('[HomePage] Calculating gutter for width:', width)
+  if (width <= 480) return 12  // 小屏：12px
+  if (width <= 768) return 16  // 移动端：16px
+  return 16  // 桌面端：16px
+}
+
+const { reloadItems, destroy, initMasonry } = useMasonry(postsGrid, {
+  itemSelector: 'a.post-card',
+  columnWidth: 'a.post-card',
+  gutter: getGutter,  // 传递函数而不是调用结果
+  percentPosition: false,
+  horizontalOrder: false,
+  fitWidth: false
+})
+
+// 监听窗口大小变化，重新初始化Masonry以应用新的gutter
+let resizeTimer: ReturnType<typeof setTimeout> | null = null
+const handleResize = () => {
+  if (resizeTimer) clearTimeout(resizeTimer)
+  resizeTimer = setTimeout(async () => {
+    console.log('[HomePage] Window resized, reinitializing Masonry...')
+    destroy()
+    await nextTick()
+    setTimeout(initMasonry, 300)
+  }, 300)
+}
 
 const { t } = useI18n()
 
@@ -156,6 +200,10 @@ const { refresh: refreshPreload } = useSmartPreload(posts, {
 })
 
 onMounted(async () => {
+  // 监听窗口大小变化
+  window.addEventListener('resize', handleResize)
+  
+  // 初始化其他功能
   try {
     // 重置筛选条件，确保首页总是显示最新内容
     postsStore.resetFilters()
@@ -163,16 +211,24 @@ onMounted(async () => {
     // 并行加载帖子和统计数据（不互相阻塞）
     await Promise.all([
       postsStore.fetchPosts({ page: 1, page_size: 8 }),
-      statsApi.getPlatformStats().then(stats => {
-        platformStats.value = stats.by_platform || {}
-      }).catch(err => {
-        logger.error('Failed to load stats:', err)
-        // 统计数据失败不影响主内容
-      })
+      statsApi
+        .getPlatformStats()
+        .then((stats) => {
+          platformStats.value = stats.by_platform || {}
+        })
+        .catch((err) => {
+          logger.error('Failed to load stats:', err)
+          // 统计数据失败不影响主内容
+        }),
     ])
 
     // 监听滚动事件
     window.addEventListener('scroll', handleScroll)
+
+    // 在移动端启动自动滚动
+    if (window.innerWidth <= 768) {
+      startAutoScroll()
+    }
   } catch (error) {
     logger.error('Failed to load data:', error)
     toast.error(t('common.loadFailed'))
@@ -181,6 +237,9 @@ onMounted(async () => {
 
 onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll)
+  window.removeEventListener('resize', handleResize)
+  stopAutoScroll()
+  if (resizeTimer) clearTimeout(resizeTimer)
 })
 
 // 滚动加载更多
@@ -233,9 +292,55 @@ const goToLogin = () => {
   router.push('/login')
 }
 
+// 自动滚动功能（仅移动端）
+const startAutoScroll = () => {
+  if (!statsGrid.value || autoScrollInterval) return
+
+  autoScrollInterval = setInterval(() => {
+    if (isAutoScrollPaused.value || !statsGrid.value) return
+
+    const scrollContainer = statsGrid.value
+    const scrollAmount = 180 // 每次滚动一个卡片宽度
+    const maxScroll = scrollContainer.scrollWidth - scrollContainer.clientWidth
+
+    if (scrollContainer.scrollLeft >= maxScroll) {
+      // 滚动到尽头，回到起点
+      scrollContainer.scrollTo({ left: 0, behavior: 'smooth' })
+    } else {
+      // 继续向右滚动
+      scrollContainer.scrollBy({ left: scrollAmount, behavior: 'smooth' })
+    }
+  }, 3000) // 每3秒滚动一次
+}
+
+const stopAutoScroll = () => {
+  if (autoScrollInterval) {
+    clearInterval(autoScrollInterval)
+    autoScrollInterval = null
+  }
+}
+
+const pauseAutoScroll = () => {
+  isAutoScrollPaused.value = true
+}
+
+const resumeAutoScroll = () => {
+  isAutoScrollPaused.value = false
+}
+
 const getPlatformColor = (platform: string) => {
   return PLATFORM_COLORS[platform as keyof typeof PLATFORM_COLORS] || '#666'
 }
+
+// 监听posts变化，重新布局Masonry
+watch(posts, async () => {
+  await nextTick()
+  // 延迟执行，确保DOM和图片已更新
+  setTimeout(() => {
+    console.log('[HomePage] Posts changed, reloading Masonry...')
+    reloadItems()
+  }, 300)
+}, { deep: true })
 
 const getPlatformIcon = (platform: string) => {
   const icons: Record<string, any> = {
@@ -274,7 +379,7 @@ const getPlatformIcon = (platform: string) => {
 /* Hero Section */
 .hero-section {
   text-align: center;
-  padding: var(--spacing-3xl) 0;
+  padding: var(--spacing-xl) 0 var(--spacing-md) 0;
 }
 
 .hero-content {
@@ -310,7 +415,15 @@ const getPlatformIcon = (platform: string) => {
 
 /* Stats Section */
 .stats-section {
-  padding: var(--spacing-2xl) 0;
+  padding: var(--spacing-md) 0;
+}
+
+.stats-wrapper {
+  position: relative;
+}
+
+.scroll-indicator {
+  display: none; /* 桌面端隐藏 */
 }
 
 .stats-grid {
@@ -361,7 +474,7 @@ const getPlatformIcon = (platform: string) => {
 
 /* Latest Section */
 .latest-section {
-  padding: var(--spacing-2xl) 0;
+  padding: var(--spacing-md) 0 var(--spacing-xl) 0;
 }
 
 .section-header {
@@ -378,12 +491,9 @@ const getPlatformIcon = (platform: string) => {
 }
 
 .posts-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: var(--spacing-lg);
+  /* Masonry布局容器 */
   width: 100%;
-  grid-auto-rows: auto;
-  align-items: start;
+  max-width: 100%;
 }
 
 .empty-state {
@@ -410,35 +520,26 @@ const getPlatformIcon = (platform: string) => {
   font-size: var(--text-sm);
 }
 
-/* 大屏幕优化 (> 1400px) */
-@media (min-width: 1400px) {
-  .posts-grid {
-    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-  }
-}
-
-/* 中型屏幕 (1024px - 1400px) */
-@media (min-width: 1024px) and (max-width: 1399px) {
-  .posts-grid {
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  }
-}
-
-/* 平板端适配 (769px - 1023px) */
-@media (min-width: 769px) and (max-width: 1023px) {
-  .posts-grid {
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  }
-}
+/* Masonry布局，不需要这些样式 */
 
 /* 移动端适配 */
 @media (max-width: 768px) {
+  .hero-section {
+    padding: var(--spacing-lg) 0 var(--spacing-sm) 0;
+  }
+
+  .hero-content {
+    padding: var(--spacing-xl);
+  }
+
   .hero-title {
     font-size: 2.5rem;
+    margin-bottom: var(--spacing-md);
   }
 
   .hero-subtitle {
     font-size: var(--text-lg);
+    margin-bottom: var(--spacing-lg);
   }
 
   .hero-actions {
@@ -447,27 +548,65 @@ const getPlatformIcon = (platform: string) => {
   }
 
   .stats-section {
-    padding: var(--spacing-lg) 0;
+    padding: var(--spacing-sm) 0;
+  }
+
+  .latest-section {
+    padding: var(--spacing-sm) 0 var(--spacing-lg) 0;
+  }
+
+  .section-header {
+    margin-bottom: var(--spacing-md);
+  }
+
+  .stats-wrapper {
+    margin: 0 calc(-1 * var(--spacing-lg));
+    padding: 0 var(--spacing-lg);
   }
 
   .stats-grid {
     display: flex;
-    gap: var(--spacing-sm);
+    gap: var(--spacing-md);
     overflow-x: auto;
     scroll-snap-type: x mandatory;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
-    padding: var(--spacing-xs) 0;
+    padding: var(--spacing-sm) 0;
+    scroll-behavior: smooth;
   }
 
   .stats-grid::-webkit-scrollbar {
     display: none;
   }
 
+  .scroll-indicator {
+    display: block;
+    text-align: center;
+    font-size: var(--text-xs);
+    color: var(--color-text-tertiary);
+    margin-top: var(--spacing-sm);
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%,
+    100% {
+      opacity: 0.5;
+    }
+    50% {
+      opacity: 1;
+    }
+  }
+
   .stat-card {
-    flex: 0 0 140px;
-    scroll-snap-align: start;
-    padding: var(--spacing-md);
+    flex: 0 0 160px;
+    scroll-snap-align: center;
+    padding: var(--spacing-lg);
+    transition: transform 0.2s ease;
+  }
+
+  .stat-card:active {
+    transform: scale(0.98);
   }
 
   .stat-icon {
@@ -494,20 +633,7 @@ const getPlatformIcon = (platform: string) => {
     font-size: var(--text-xs);
   }
 
-  /* 移动端瀑布流布局 - 两列 */
-  .posts-grid {
-    display: block;
-    column-count: 2;
-    column-gap: var(--spacing-md);
-  }
-
-  .posts-grid :deep(.post-card) {
-    display: inline-block;
-    width: 100%;
-    margin-bottom: var(--spacing-md);
-    break-inside: avoid;
-    page-break-inside: avoid;
-  }
+  /* Masonry布局在移动端也生效 */
 }
 
 /* 小屏手机适配 */
@@ -523,14 +649,51 @@ const getPlatformIcon = (platform: string) => {
   .stats-grid {
     grid-template-columns: 1fr;
   }
+}
+</style>
 
-  /* 极小屏幕保持两列但缩小间距 */
-  .posts-grid {
-    column-gap: var(--spacing-sm);
+<!-- Masonry瀑布流全局样式 -->
+<style>
+/* Masonry瀑布流卡片样式 */
+.posts-grid .post-card {
+  width: calc(25% - 12px); /* 4列 */
+  margin-bottom: 16px;
+}
+
+/* 大屏幕 */
+@media (min-width: 1400px) {
+  .posts-grid .post-card {
+    width: calc(25% - 12px); /* 4列 */
   }
+}
 
-  .posts-grid :deep(.post-card) {
-    margin-bottom: var(--spacing-sm);
+/* 中型屏幕 */
+@media (min-width: 1024px) and (max-width: 1399px) {
+  .posts-grid .post-card {
+    width: calc(33.333% - 11px); /* 3列 */
+  }
+}
+
+/* 平板端 */
+@media (min-width: 769px) and (max-width: 1023px) {
+  .posts-grid .post-card {
+    width: calc(50% - 8px); /* 2列 */
+  }
+}
+
+/* 移动端 */
+@media (max-width: 768px) {
+  .posts-grid .post-card {
+    width: calc(50% - 8px); /* 2列 */
+    margin-bottom: 16px;
+  }
+}
+
+/* 小屏手机 */
+@media (max-width: 480px) {
+  .posts-grid .post-card {
+    width: calc(50% - 6px); /* 2列 */
+    margin-bottom: 12px;
   }
 }
 </style>

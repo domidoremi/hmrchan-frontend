@@ -141,6 +141,7 @@
     "apply": "Apply",
     "order": "Order",
     "noMore": "No more items",
+    "swipeToView": "Swipe to view more",
     "loadFailed": "Failed to load",
     "operationFailed": "Operation failed",
     "loadFailedContent": "Failed to load content",
