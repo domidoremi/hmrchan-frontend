@@ -57,9 +57,9 @@ import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import GlassButton from '@/components/ui/GlassButton.vue'
 
 import { usePostsStore } from '@/stores/posts'
-import type { Post } from '@/types'
+import type { Post, PostListParams } from '@/types'
 import { postsApi } from '@/api/services'
-import { useMasonry } from '@/composables/useMasonry'
+import { usePageMasonry } from '@/composables/usePageMasonry'
 
 const route = useRoute()
 const router = useRouter()
@@ -69,49 +69,13 @@ const { posts, loading, filters, pagination } = storeToRefs(postsStore)
 
 const postsGrid = ref<HTMLElement | null>(null)
 
-// Masonry瀑布流 - 使用响应式gutter（函数形式）
-const getGutter = () => {
-  const width = window.innerWidth
-  console.log('[ExplorePage] Calculating gutter for width:', width)
-  if (width <= 480) return 12  // 小屏：12px
-  if (width <= 768) return 16  // 移动端：16px
-  return 16  // 桌面端：16px
-}
+// 使用页面级Masonry管理
+const masonry = usePageMasonry(postsGrid, { posts })
 
-const { reloadItems, destroy, initMasonry } = useMasonry(postsGrid, {
-  itemSelector: 'a.post-card',
-  columnWidth: 'a.post-card',  // 使用第一个卡片的CSS宽度
-  gutter: getGutter,
-  percentPosition: false,
-  horizontalOrder: false,
-  fitWidth: false
-})
+onMounted(async () => {
+  // 初始化Masonry管理
+  masonry.mount()
 
-// 监听窗口大小变化，重新初始化Masonry
-let resizeTimer: ReturnType<typeof setTimeout> | null = null
-const handleResize = () => {
-  if (resizeTimer) clearTimeout(resizeTimer)
-  resizeTimer = setTimeout(async () => {
-    console.log('[ExplorePage] Window resized, reinitializing Masonry...')
-    destroy()
-    await nextTick()
-    setTimeout(initMasonry, 300)
-  }, 300)
-}
-
-// 监听posts变化，重新布局Masonry
-watch(posts, async () => {
-  await nextTick()
-  setTimeout(() => {
-    console.log('[ExplorePage] Posts changed, reloading Masonry...')
-    reloadItems()
-  }, 300)
-}, { deep: true })
-
-onMounted(() => {
-  // 监听窗口大小变化
-  window.addEventListener('resize', handleResize)
-  
   // 重置筛选条件
   postsStore.resetFilters()
 
@@ -120,12 +84,14 @@ onMounted(() => {
   if (query.q) filters.value.q = query.q as string
   if (query.platform) filters.value.platform = query.platform as string
 
-  loadPosts()
+  await loadPosts()
+
+  // 初始化Masonry（自动判断桌面端/移动端）
+  await masonry.initialize()
 })
 
 onUnmounted(() => {
-  window.removeEventListener('resize', handleResize)
-  if (resizeTimer) clearTimeout(resizeTimer)
+  masonry.unmount()
 })
 
 watch(
@@ -140,7 +106,7 @@ const loadPosts = async () => {
   await postsStore.fetchPosts()
 }
 
-const handleFilterUpdate = async (newFilters: any) => {
+const handleFilterUpdate = async (newFilters: Partial<PostListParams>) => {
   postsStore.updateFilters(newFilters)
   await loadPosts()
 
@@ -179,9 +145,19 @@ const resetFilters = () => {
 }
 
 .posts-grid {
-  /* Masonry布局容器 */
+  /* Masonry布局容器 - 桌面端 */
   width: 100%;
   max-width: 100%;
+}
+
+/* 移动端使用flexbox布局 */
+@media (max-width: 768px) {
+  .posts-grid {
+    display: flex !important;
+    flex-wrap: wrap;
+    gap: 16px;
+    width: 100%;
+  }
 }
 
 .empty-state {
@@ -205,7 +181,7 @@ const resetFilters = () => {
   margin-bottom: var(--spacing-md);
 }
 
-/* Masonry布局，不需要这些样式 */
+/* ========== 响应式优化 ========== */
 
 /* 平板端优化 (780px-900px) - 2列布局 */
 @media (min-width: 780px) and (max-width: 900px) {
@@ -279,17 +255,25 @@ const resetFilters = () => {
   }
 }
 
+/* 移动端 - 使用flex布局时的样式 */
 @media (max-width: 768px) {
   .explore-page .posts-grid .post-card {
-    width: calc(50% - 8px);
-    margin-bottom: 16px;
+    flex: 0 0 calc(50% - 8px) !important;
+    width: calc(50% - 8px) !important;
+    max-width: calc(50% - 8px) !important;
+    margin: 0 !important;
+    position: relative !important;
+    left: auto !important;
+    top: auto !important;
   }
 }
 
+/* 小屏手机 */
 @media (max-width: 480px) {
   .explore-page .posts-grid .post-card {
-    width: calc(50% - 6px);
-    margin-bottom: 12px;
+    flex: 0 0 calc(50% - 8px) !important;
+    width: calc(50% - 8px) !important;
+    max-width: calc(50% - 8px) !important;
   }
 }
 </style>
