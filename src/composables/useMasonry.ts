@@ -151,8 +151,8 @@ export function useMasonry(
 
       // 再次检查，如果还是太宽，放弃初始化
       if (newCardWidth / containerWidth > 0.9) {
-        debugError('❌ CSS still not applied after wait, aborting initialization')
-        debugError('Container:', containerWidth, 'Card:', newCardWidth)
+        debugWarn('⚠️ CSS still not applied after wait, aborting initialization')
+        debugWarn('Container:', containerWidth, 'Card:', newCardWidth)
         isInitializing = false
         return
       }
@@ -196,7 +196,7 @@ export function useMasonry(
       if (window.innerWidth > 900) {
         debugWarn('🛠️ Window is wide enough, forcing initialization anyway...')
       } else {
-        debugError('❌ Window too narrow, aborting initialization')
+        debugWarn('⚠️ Window too narrow for multi-column layout, skipping Masonry')
         isInitializing = false
         return
       }
@@ -221,7 +221,7 @@ export function useMasonry(
       masonryInstance.layout?.()
       debug('Initial layout done')
     } catch (error) {
-      debugError('❌ Failed to initialize:', error)
+      debugWarn('⚠️ Failed to initialize Masonry:', error)
     } finally {
       isInitializing = false
     }
@@ -238,8 +238,14 @@ export function useMasonry(
     await nextTick()
 
     if (masonryInstance && containerRef.value) {
-      // 禁用过渡动画避免闪烁
+      // 禁用容器和所有卡片的过渡动画，防止卡片“乱飞”
+      const cards = containerRef.value.querySelectorAll(options.itemSelector)
       containerRef.value.style.transition = 'none'
+      cards.forEach((card: any) => {
+        if (card.style) {
+          card.style.transition = 'none'
+        }
+      })
 
       // 等待新卡片的图片加载
       const newImages = containerRef.value.querySelectorAll('img')
@@ -249,8 +255,8 @@ export function useMasonry(
             if (img.complete) {
               resolve(true)
             } else {
-              // 超时保护
-              const timeout = setTimeout(() => resolve(true), 2000)
+              // 超时保护减少到500ms，加快速度
+              const timeout = setTimeout(() => resolve(true), 500)
 
               img.addEventListener(
                 'load',
@@ -278,11 +284,18 @@ export function useMasonry(
       masonryInstance.reloadItems?.()
       masonryInstance.layout?.()
 
-      // 恢复过渡动画
+      // 等待布局完成后恢复过渡动画
       await nextTick()
-      containerRef.value.style.transition = ''
+      await new Promise((resolve) => setTimeout(resolve, 50)) // 稍微延迟
 
-      debug('Items reloaded and layout updated (smooth)')
+      containerRef.value.style.transition = ''
+      cards.forEach((card: any) => {
+        if (card.style) {
+          card.style.transition = ''
+        }
+      })
+
+      debug('Items reloaded and layout updated (no animation)')
     }
   }
 

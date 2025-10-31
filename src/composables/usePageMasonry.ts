@@ -41,16 +41,17 @@ export function usePageMasonry(
       const isMobile = window.innerWidth <= mobileBreakpoint
 
       if (isMobile) {
-        // 移动端：销毁Masonry，使用CSS布局
+        // 移动端：彻底销毁Masonry，使用CSS Flex布局
         destroy()
       } else {
         // 桌面端：重新初始化Masonry
         destroy()
         await nextTick()
-        setTimeout(initMasonry, 300)
+        // 减少延迟到100ms，加快响应
+        setTimeout(initMasonry, 100)
       }
     },
-    300,
+    200, // 减少节流时间
     { leading: false, trailing: true },
   )
 
@@ -61,23 +62,34 @@ export function usePageMasonry(
       if (!newPosts || newPosts.length === 0) return
 
       const isMobile = window.innerWidth <= mobileBreakpoint
-      if (isMobile) return
+      if (isMobile) {
+        // 移动端确保Masonry被销毁
+        destroy()
+        return
+      }
 
       await nextTick()
+      // 减少延迟到100ms，加快新卡片显示
       setTimeout(() => {
         if (containerRef.value && containerRef.value.querySelectorAll('a.post-card').length > 0) {
           reloadItems()
         }
-      }, 300)
+      }, 100)
     },
     { deep: true },
   )
 
   // 初始化Masonry（仅桌面端）
   const initialize = async () => {
-    if (window.innerWidth > mobileBreakpoint) {
+    const isMobile = window.innerWidth <= mobileBreakpoint
+
+    if (isMobile) {
+      // 移动端确保销毁任何可能存在的Masonry实例
+      destroy()
+    } else {
+      // 桌面端初始化，减少延迟到300ms
       await nextTick()
-      setTimeout(initMasonry, 600)
+      setTimeout(initMasonry, 300)
     }
   }
 

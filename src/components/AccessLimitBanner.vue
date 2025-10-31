@@ -9,7 +9,7 @@
 
       <!-- Message -->
       <div class="banner-message">
-        <h4>{{ title }}</h4>
+        <h3>{{ title }}</h3>
         <p>{{ message }}</p>
       </div>
 

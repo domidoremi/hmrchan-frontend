@@ -9,7 +9,11 @@
             <div class="avatar">
               <img :src="avatarUrl" :alt="user?.username || 'User'" />
             </div>
-            <button class="avatar-upload-btn" @click="handleAvatarUpload">
+            <button
+              class="avatar-upload-btn"
+              @click="handleAvatarUpload"
+              :aria-label="$t('profile.uploadAvatar')"
+            >
               <Camera :size="16" />
             </button>
           </div>

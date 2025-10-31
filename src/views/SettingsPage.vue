@@ -8,7 +8,7 @@
         <div class="settings-card glass-card">
           <div class="card-header">
             <Palette :size="24" />
-            <h3>{{ $t('settings.theme') }}</h3>
+            <h2>{{ $t('settings.theme') }}</h2>
           </div>
 
           <div class="settings-content">
@@ -31,7 +31,7 @@
         <div class="settings-card glass-card">
           <div class="card-header">
             <Monitor :size="24" />
-            <h3>{{ $t('settings.display') }}</h3>
+            <h2>{{ $t('settings.display') }}</h2>
           </div>
 
           <div class="settings-content">
@@ -44,6 +44,9 @@
                 class="toggle-switch"
                 :class="{ active: settingsStore.settings.showHeroSection }"
                 @click="settingsStore.toggleSetting('showHeroSection')"
+                role="switch"
+                :aria-checked="settingsStore.settings.showHeroSection ? 'true' : 'false'"
+                :aria-label="$t('settings.showHeroSection')"
               >
                 <span class="toggle-slider"></span>
               </button>
@@ -58,6 +61,9 @@
                 class="toggle-switch"
                 :class="{ active: settingsStore.settings.enableAnimations }"
                 @click="settingsStore.toggleSetting('enableAnimations')"
+                role="switch"
+                :aria-checked="settingsStore.settings.enableAnimations ? 'true' : 'false'"
+                :aria-label="$t('preferences.enableAnimations')"
               >
                 <span class="toggle-slider"></span>
               </button>
@@ -91,7 +97,7 @@
         <div class="settings-card glass-card">
           <div class="card-header">
             <PlayCircle :size="24" />
-            <h3>{{ $t('preferences.media') }}</h3>
+            <h2>{{ $t('preferences.media') }}</h2>
           </div>
 
           <div class="settings-content">
@@ -104,6 +110,9 @@
                 class="toggle-switch"
                 :class="{ active: settingsStore.settings.autoPlayVideos }"
                 @click="settingsStore.toggleSetting('autoPlayVideos')"
+                role="switch"
+                :aria-checked="settingsStore.settings.autoPlayVideos ? 'true' : 'false'"
+                :aria-label="$t('preferences.autoPlayVideos')"
               >
                 <span class="toggle-slider"></span>
               </button>
@@ -118,6 +127,9 @@
                 class="toggle-switch"
                 :class="{ active: settingsStore.settings.showImagePreviews }"
                 @click="settingsStore.toggleSetting('showImagePreviews')"
+                role="switch"
+                :aria-checked="settingsStore.settings.showImagePreviews ? 'true' : 'false'"
+                :aria-label="$t('preferences.showImagePreviews')"
               >
                 <span class="toggle-slider"></span>
               </button>
@@ -129,7 +141,7 @@
         <div class="settings-card glass-card">
           <div class="card-header">
             <Languages :size="24" />
-            <h3>{{ $t('settings.language') }}</h3>
+            <h2>{{ $t('settings.language') }}</h2>
           </div>
 
           <div class="settings-content">

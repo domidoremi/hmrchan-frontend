@@ -12,7 +12,7 @@
       <!-- Posts Grid -->
       <div v-else-if="posts.length > 0">
         <div ref="postsGrid" class="posts-grid">
-          <PostCard v-for="post in posts" :key="post.id" :post="post" />
+          <PostCard v-for="(post, index) in posts" :key="post.id" :post="post" :index="index" />
         </div>
 
         <!-- Pagination -->
@@ -145,20 +145,35 @@ const resetFilters = () => {
 }
 
 .posts-grid {
-  /* Masonry布局容器 - 桌面端 */
+  /* Masonry布局容器 */
   width: 100%;
   max-width: 100%;
+  min-height: 400px; /* 防止初始化前内容塌陷 */
+  transition: min-height 0.3s ease;
 }
 
-/* 移动端使用flexbox布局 */
-@media (max-width: 768px) {
+/* 桌面端：Masonry初始化前防止卡片堆叠和CLS */
+@media (min-width: 769px) {
   .posts-grid {
-    display: flex !important;
-    flex-wrap: wrap;
-    gap: 16px;
-    width: 100%;
+    opacity: 0;
+    visibility: hidden; /* 完全隐藏，防止CLS计算 */
+    /* 延迟到500ms，确保Masonry完全初始化 */
+    animation: fadeInExplore 0.4s ease-out 0.5s forwards;
   }
 }
+
+@keyframes fadeInExplore {
+  from {
+    opacity: 0;
+    visibility: hidden;
+  }
+  to {
+    opacity: 1;
+    visibility: visible;
+  }
+}
+
+/* 移动端flexbox布局 - 由全局样式控制，避免重复 */
 
 .empty-state {
   display: flex;
@@ -215,6 +230,12 @@ const resetFilters = () => {
 
 <!-- Masonry瀑布流全局样式 -->
 <style>
+/* 桌面端：Masonry完全控制布局 */
+.explore-page .posts-grid {
+  width: 100%;
+  position: relative; /* Masonry需要relative定位作为absolute的容器 */
+}
+
 /* 桌面端卡片基础样式 */
 .explore-page .posts-grid .post-card {
   box-sizing: border-box;
@@ -243,23 +264,40 @@ const resetFilters = () => {
 
 /* 移动端（<=768px）- 使用flex布局 */
 @media (max-width: 768px) {
+  .explore-page .posts-grid {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    /* 明确设置行间距和列间距 */
+    column-gap: var(--spacing-md) !important; /* 水平间距16px */
+    row-gap: var(--spacing-md) !important; /* 垂直间距16px */
+    width: 100% !important;
+  }
+
   .explore-page .posts-grid .post-card {
-    flex: 0 0 calc(50% - 8px) !important;
-    width: calc(50% - 8px) !important;
-    max-width: calc(50% - 8px) !important;
+    /* flex的gap自动处理间距，所以宽度计算为(100% - gap) / 2 */
+    flex: 0 0 calc((100% - var(--spacing-md)) / 2) !important;
+    width: calc((100% - var(--spacing-md)) / 2) !important;
+    max-width: calc((100% - var(--spacing-md)) / 2) !important;
     margin: 0 !important;
     position: relative !important;
     left: auto !important;
     top: auto !important;
+    /* 确保没有transform干扰布局 */
+    transform: none !important;
   }
 }
 
 /* 小屏手机（<=480px）*/
 @media (max-width: 480px) {
+  .explore-page .posts-grid {
+    column-gap: var(--spacing-sm) !important; /* 水平间距12px */
+    row-gap: var(--spacing-sm) !important; /* 垂直间距12px */
+  }
+
   .explore-page .posts-grid .post-card {
-    flex: 0 0 calc(50% - 8px) !important;
-    width: calc(50% - 8px) !important;
-    max-width: calc(50% - 8px) !important;
+    flex: 0 0 calc((100% - var(--spacing-sm)) / 2) !important;
+    width: calc((100% - var(--spacing-sm)) / 2) !important;
+    max-width: calc((100% - var(--spacing-sm)) / 2) !important;
   }
 }
 </style>

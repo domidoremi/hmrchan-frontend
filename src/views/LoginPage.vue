@@ -34,7 +34,12 @@
               autocomplete="current-password"
             >
               <template #suffix>
-                <button type="button" class="password-toggle" @click="showPassword = !showPassword">
+                <button
+                  type="button"
+                  class="password-toggle"
+                  @click="showPassword = !showPassword"
+                  :aria-label="showPassword ? $t('auth.hidePassword') : $t('auth.showPassword')"
+                >
                   <Eye v-if="!showPassword" :size="18" />
                   <EyeOff v-else :size="18" />
                 </button>
