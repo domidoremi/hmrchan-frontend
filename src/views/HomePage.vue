@@ -189,10 +189,20 @@ let resizeTimer: ReturnType<typeof setTimeout> | null = null
 const handleResize = () => {
   if (resizeTimer) clearTimeout(resizeTimer)
   resizeTimer = setTimeout(async () => {
-    console.log('[HomePage] Window resized, reinitializing Masonry...')
-    destroy()
-    await nextTick()
-    setTimeout(initMasonry, 300)
+    const isMobile = window.innerWidth <= 768
+    console.log('[HomePage] Window resized, isMobile:', isMobile)
+    
+    if (isMobile) {
+      // 移动端：销毁Masonry，使用CSS布局
+      destroy()
+      console.log('[HomePage] Mobile mode: using CSS layout')
+    } else {
+      // 桌面端：重新初始化Masonry
+      destroy()
+      await nextTick()
+      setTimeout(initMasonry, 300)
+      console.log('[HomePage] Desktop mode: reinitializing Masonry')
+    }
   }, 300)
 }
 
@@ -230,6 +240,18 @@ onMounted(async () => {
           // 统计数据失败不影响主内容
         }),
     ])
+
+    // Posts加载完成后，只在桌面端初始化Masonry
+    // 移动端使用纯CSS flexbox布局
+    if (window.innerWidth > 768) {
+      await nextTick()
+      setTimeout(() => {
+        console.log('[HomePage] Desktop mode: initializing Masonry...')
+        initMasonry()
+      }, 600)
+    } else {
+      console.log('[HomePage] Mobile mode: using pure CSS layout')
+    }
 
     // 监听滚动事件
     window.addEventListener('scroll', handleScroll)
@@ -301,13 +323,24 @@ const getPlatformColor = (platform: string) => {
   return PLATFORM_COLORS[platform as keyof typeof PLATFORM_COLORS] || '#666'
 }
 
-// 监听posts变化，重新布局Masonry
-watch(posts, async () => {
+// 监听posts变化，重新布局Masonry（仅桌面端）
+watch(posts, async (newPosts) => {
+  if (!newPosts || newPosts.length === 0) return
+  
+  const isMobile = window.innerWidth <= 768
+  if (isMobile) {
+    console.log('[HomePage] Posts changed, mobile mode - no Masonry needed')
+    return
+  }
+  
   await nextTick()
   // 延迟执行，确保DOM和图片已更新
   setTimeout(() => {
     console.log('[HomePage] Posts changed, reloading Masonry...')
-    reloadItems()
+    // 如果Masonry还未初始化（首次加载），则初始化它
+    if (postsGrid.value && postsGrid.value.querySelectorAll('a.post-card').length > 0) {
+      reloadItems()
+    }
   }, 300)
 }, { deep: true })
 
@@ -487,9 +520,19 @@ const getPlatformIcon = (platform: string) => {
 }
 
 .posts-grid {
-  /* Masonry布局容器 */
+  /* Masonry布局容器 - 桌面端 */
   width: 100%;
   max-width: 100%;
+}
+
+/* 移动端使用flexbox布局 */
+@media (max-width: 768px) {
+  .posts-grid {
+    display: flex !important;
+    flex-wrap: wrap;
+    gap: 16px;
+    width: 100%;
+  }
 }
 
 .empty-state {
@@ -707,19 +750,25 @@ const getPlatformIcon = (platform: string) => {
   }
 }
 
-/* 移动端 */
+/* 移动端 - 使用flex布局时的样式 */
 @media (max-width: 768px) {
   .posts-grid .post-card {
-    width: calc(50% - 8px); /* 2列 */
-    margin-bottom: 16px;
+    flex: 0 0 calc(50% - 8px) !important;
+    width: calc(50% - 8px) !important;
+    max-width: calc(50% - 8px) !important;
+    margin: 0 !important;
+    position: relative !important;
+    left: auto !important;
+    top: auto !important;
   }
 }
 
 /* 小屏手机 */
 @media (max-width: 480px) {
   .posts-grid .post-card {
-    width: calc(50% - 6px); /* 2列 */
-    margin-bottom: 12px;
+    flex: 0 0 calc(50% - 8px) !important;
+    width: calc(50% - 8px) !important;
+    max-width: calc(50% - 8px) !important;
   }
 }
 </style>
