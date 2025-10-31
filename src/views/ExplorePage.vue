@@ -215,47 +215,33 @@ const resetFilters = () => {
 
 <!-- Masonry瀑布流全局样式 -->
 <style>
-/* Masonry瀑布流卡片样式 - 与HomePage保持一致 */
+/* 桌面端卡片基础样式 */
 .explore-page .posts-grid .post-card {
-  width: calc(25% - 12px);
-  margin-bottom: 16px;
+  box-sizing: border-box;
 }
 
+/* 大屏幕（>=1400px）- 4列 */
 @media (min-width: 1400px) {
   .explore-page .posts-grid .post-card {
     width: calc(25% - 12px);
   }
 }
 
-@media (min-width: 1024px) and (max-width: 1399px) {
+/* 中型屏幕（1101px-1399px）- 3列 */
+@media (min-width: 1101px) and (max-width: 1399px) {
   .explore-page .posts-grid .post-card {
     width: calc(33.333% - 11px);
   }
 }
 
-/* 平板端 - 较大屏幕 (901px-1023px) */
-@media (min-width: 901px) and (max-width: 1023px) {
+/* 小型桌面/平板横屏（769px-1100px）- 2列 */
+@media (min-width: 769px) and (max-width: 1100px) {
   .explore-page .posts-grid .post-card {
-    width: calc(50% - 8px); /* 2列 */
+    width: calc(50% - 8px);
   }
 }
 
-/* 平板端 - 中等屏幕 (780px-900px) - 2列布局 */
-@media (min-width: 780px) and (max-width: 900px) {
-  .explore-page .posts-grid .post-card {
-    width: calc(50% - 8px); /* 2列 */
-    margin-bottom: 16px;
-  }
-}
-
-/* 平板端 - 较小屏幕 (769px-779px) */
-@media (min-width: 769px) and (max-width: 779px) {
-  .explore-page .posts-grid .post-card {
-    width: calc(50% - 8px); /* 2列 */
-  }
-}
-
-/* 移动端 - 使用flex布局时的样式 */
+/* 移动端（<=768px）- 使用flex布局 */
 @media (max-width: 768px) {
   .explore-page .posts-grid .post-card {
     flex: 0 0 calc(50% - 8px) !important;
@@ -268,7 +254,7 @@ const resetFilters = () => {
   }
 }
 
-/* 小屏手机 */
+/* 小屏手机（<=480px）*/
 @media (max-width: 480px) {
   .explore-page .posts-grid .post-card {
     flex: 0 0 calc(50% - 8px) !important;

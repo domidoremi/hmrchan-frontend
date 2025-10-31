@@ -8,7 +8,7 @@
       </RouterLink>
 
       <!-- 导航链接 -->
-      <div class="navbar-nav" :class="{ 'nav-open': mobileMenuOpen }">
+      <div ref="mobileNavRef" class="navbar-nav" :class="{ 'nav-open': mobileMenuOpen }">
         <RouterLink to="/" class="nav-link" @click="closeMobileMenu">
           <Home :size="20" />
           <span>{{ $t('nav.home') }}</span>
@@ -61,36 +61,38 @@
         </button>
 
         <!-- 语言切换 -->
-        <button
-          class="action-button"
-          @click="showLanguageMenu = !showLanguageMenu"
-          :aria-label="$t('aria.languageMenu')"
-          :aria-expanded="showLanguageMenu ? 'true' : 'false'"
-          :aria-haspopup="true"
-        >
-          <Languages :size="20" />
-        </button>
-
-        <!-- 语言菜单 -->
-        <div
-          v-if="showLanguageMenu"
-          class="language-menu glass-card"
-          role="menu"
-          :aria-label="$t('aria.languageMenu')"
-        >
+        <div ref="languageMenuRef" class="language-menu-wrapper">
           <button
-            v-for="locale in locales"
-            :key="locale.code"
-            class="language-item"
-            :class="{ active: currentLocale === locale.code }"
-            @click="changeLanguage(locale.code)"
+            class="action-button"
+            @click="showLanguageMenu = !showLanguageMenu"
+            :aria-label="$t('aria.languageMenu')"
+            :aria-expanded="showLanguageMenu ? 'true' : 'false'"
+            :aria-haspopup="true"
           >
-            {{ locale.name }}
+            <Languages :size="20" />
           </button>
+
+          <!-- 语言菜单 -->
+          <div
+            v-if="showLanguageMenu"
+            class="language-menu glass-card"
+            role="menu"
+            :aria-label="$t('aria.languageMenu')"
+          >
+            <button
+              v-for="locale in locales"
+              :key="locale.code"
+              class="language-item"
+              :class="{ active: currentLocale === locale.code }"
+              @click="changeLanguage(locale.code)"
+            >
+              {{ locale.name }}
+            </button>
+          </div>
         </div>
 
         <!-- 用户菜单 -->
-        <div v-if="isAuthenticated" class="user-menu">
+        <div v-if="isAuthenticated" ref="userMenuRef" class="user-menu">
           <button
             class="user-avatar"
             @click="showUserMenu = !showUserMenu"
@@ -112,15 +114,15 @@
               <p class="user-email">{{ user?.email }}</p>
             </div>
             <div class="dropdown-divider"></div>
-            <RouterLink to="/profile" class="dropdown-item">
+            <RouterLink to="/profile" class="dropdown-item" @click="showUserMenu = false">
               <User :size="18" />
               {{ $t('nav.profile') }}
             </RouterLink>
-            <RouterLink to="/favorites" class="dropdown-item">
+            <RouterLink to="/favorites" class="dropdown-item" @click="showUserMenu = false">
               <Heart :size="18" />
               {{ $t('nav.favorites') }}
             </RouterLink>
-            <RouterLink to="/settings" class="dropdown-item">
+            <RouterLink to="/settings" class="dropdown-item" @click="showUserMenu = false">
               <Settings :size="18" />
               {{ $t('nav.settings') }}
             </RouterLink>
@@ -141,6 +143,7 @@
 
         <!-- 移动端菜单按钮 -->
         <button
+          ref="mobileMenuButtonRef"
           class="mobile-menu-button show-on-mobile"
           @click="toggleMobileMenu"
           :aria-label="mobileMenuOpen ? $t('aria.closeMenu') : $t('aria.openMenu')"
@@ -195,6 +198,10 @@ const showLanguageMenu = ref(false)
 const showUserMenu = ref(false)
 const mobileMenuOpen = ref(false)
 const avatarError = ref(false)
+const languageMenuRef = ref<HTMLElement | null>(null)
+const userMenuRef = ref<HTMLElement | null>(null)
+const mobileNavRef = ref<HTMLElement | null>(null)
+const mobileMenuButtonRef = ref<HTMLElement | null>(null)
 
 const currentLocale = computed(() => locale.value)
 
@@ -249,31 +256,29 @@ const closeMobileMenu = () => {
   mobileMenuOpen.value = false
 }
 
-// 点击外部关闭下拉菜单
+// 点击外部关闭下拉菜单和移动端菜单
 const handleClickOutside = (event: MouseEvent) => {
   const target = event.target as HTMLElement
 
   // 检查是否点击在语言菜单外部
-  if (showLanguageMenu.value) {
-    const languageButton = document.querySelector(
-      '.action-button:has(svg[data-lucide="languages"])',
-    )
-    const languageMenu = document.querySelector('.language-menu')
-    if (
-      languageButton &&
-      languageMenu &&
-      !languageButton.contains(target) &&
-      !languageMenu.contains(target)
-    ) {
+  if (showLanguageMenu.value && languageMenuRef.value) {
+    if (!languageMenuRef.value.contains(target)) {
       showLanguageMenu.value = false
     }
   }
 
   // 检查是否点击在用户菜单外部
-  if (showUserMenu.value) {
-    const userMenu = document.querySelector('.user-menu')
-    if (userMenu && !userMenu.contains(target)) {
+  if (showUserMenu.value && userMenuRef.value) {
+    if (!userMenuRef.value.contains(target)) {
       showUserMenu.value = false
+    }
+  }
+
+  // 检查是否点击在移动端菜单外部
+  if (mobileMenuOpen.value && mobileNavRef.value && mobileMenuButtonRef.value) {
+    // 如果点击的不是导航菜单内部，也不是菜单按钮
+    if (!mobileNavRef.value.contains(target) && !mobileMenuButtonRef.value.contains(target)) {
+      mobileMenuOpen.value = false
     }
   }
 }
@@ -380,7 +385,8 @@ onBeforeUnmount(() => {
   flex-shrink: 0;
 }
 
-/* 确保用户菜单在桌面端正常显示 */
+/* 确保语言菜单和用户菜单在桌面端正常显示 */
+.language-menu-wrapper,
 .user-menu {
   position: relative;
   display: flex;
