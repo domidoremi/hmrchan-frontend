@@ -65,7 +65,7 @@ export function getUserAvatar(
 
   // 如果有avatar_url
   let avatarUrl = user.avatar_url
-  
+
   // 开发环境：相对路径直接使用（Vite会代理到后端）
   // 生产环境：相对路径需要拼接完整URL
   if (avatarUrl && avatarUrl.startsWith('/uploads/')) {

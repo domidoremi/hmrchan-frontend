@@ -98,11 +98,7 @@
             :aria-expanded="showUserMenu ? 'true' : 'false'"
             :aria-haspopup="true"
           >
-            <img
-              :src="userAvatarUrl"
-              :alt="user?.username || 'User'"
-              @error="handleAvatarError"
-            />
+            <img :src="userAvatarUrl" :alt="user?.username || 'User'" @error="handleAvatarError" />
           </button>
 
           <div

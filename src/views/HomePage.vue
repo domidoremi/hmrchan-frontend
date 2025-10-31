@@ -14,7 +14,7 @@
             >
               <X :size="20" />
             </button>
-            
+
             <h1 class="hero-title fade-in">
               {{ $t('app.name') }}
             </h1>
@@ -37,11 +37,7 @@
       <!-- Platform Stats - 横向网格 -->
       <section class="stats-section">
         <div class="stats-grid">
-          <div
-            v-for="platform in platforms"
-            :key="platform"
-            class="stat-card glass-card"
-          >
+          <div v-for="platform in platforms" :key="platform" class="stat-card glass-card">
             <div class="stat-icon" :style="{ background: getPlatformColor(platform) }">
               <component :is="getPlatformIcon(platform)" :size="32" />
             </div>
@@ -129,12 +125,12 @@ import PostCard from '@/components/features/PostCard.vue'
 import AccessLimitBanner from '@/components/AccessLimitBanner.vue'
 
 import type { Post } from '@/types'
-import { useThemeStore } from '@/stores/theme'
 import { useAuthStore } from '@/stores/auth'
 import { useSettingsStore } from '@/stores/settings'
 import { usePostsStore } from '@/stores/posts'
 import { useSmartPreload } from '@/composables/useSmartPreload'
-import { useMasonry } from '@/composables/useMasonry'
+import { usePageMasonry } from '@/composables/usePageMasonry'
+import { throttle } from '@/utils/throttle'
 import { PLATFORMS, PLATFORM_COLORS } from '@/types'
 import { postsApi, statsApi } from '@/api/services'
 import toast from '@/utils/toast'
@@ -142,7 +138,6 @@ import { formatNumber } from '@/utils/format'
 import logger from '@/utils/logger'
 
 const router = useRouter()
-const themeStore = useThemeStore()
 const authStore = useAuthStore()
 const settingsStore = useSettingsStore()
 const postsStore = usePostsStore()
@@ -166,50 +161,13 @@ const postsGrid = ref<HTMLElement | null>(null)
 
 // Stats状态（已移除3D轮播）
 
-// Masonry瀑布流 - 使用响应式gutter（函数形式）
-const getGutter = () => {
-  const width = window.innerWidth
-  console.log('[HomePage] Calculating gutter for width:', width)
-  if (width <= 480) return 12  // 小屏：12px
-  if (width <= 768) return 16  // 移动端：16px
-  return 16  // 桌面端：16px
-}
-
-const { reloadItems, destroy, initMasonry } = useMasonry(postsGrid, {
-  itemSelector: 'a.post-card',
-  columnWidth: 'a.post-card',  // 使用第一个卡片的CSS宽度
-  gutter: getGutter,
-  percentPosition: false,  // 使用像素定位
-  horizontalOrder: false,
-  fitWidth: false
-})
-
-// 监听窗口大小变化，重新初始化Masonry以应用新的gutter
-let resizeTimer: ReturnType<typeof setTimeout> | null = null
-const handleResize = () => {
-  if (resizeTimer) clearTimeout(resizeTimer)
-  resizeTimer = setTimeout(async () => {
-    const isMobile = window.innerWidth <= 768
-    console.log('[HomePage] Window resized, isMobile:', isMobile)
-    
-    if (isMobile) {
-      // 移动端：销毁Masonry，使用CSS布局
-      destroy()
-      console.log('[HomePage] Mobile mode: using CSS layout')
-    } else {
-      // 桌面端：重新初始化Masonry
-      destroy()
-      await nextTick()
-      setTimeout(initMasonry, 300)
-      console.log('[HomePage] Desktop mode: reinitializing Masonry')
-    }
-  }, 300)
-}
+// 使用页面级Masonry管理
+const masonry = usePageMasonry(postsGrid, { posts })
 
 const { t } = useI18n()
 
 // 智能预加载
-const { refresh: refreshPreload } = useSmartPreload(posts, {
+useSmartPreload(posts, {
   batchSize: 10,
   rootMargin: '400px 0px',
   enabled: true,
@@ -217,12 +175,8 @@ const { refresh: refreshPreload } = useSmartPreload(posts, {
 
 onMounted(async () => {
   try {
-    // 输出当前viewport宽度用于调试
-    console.log('[HomePage] Viewport width:', window.innerWidth)
-    console.log('[HomePage] Window outer width:', window.outerWidth)
-    
-    // 监听窗口大小变化
-    window.addEventListener('resize', handleResize)
+    // 初始化Masonry管理
+    masonry.mount()
 
     // 重置筛选条件，确保首页总是显示最新内容
     postsStore.resetFilters()
@@ -241,17 +195,8 @@ onMounted(async () => {
         }),
     ])
 
-    // Posts加载完成后，只在桌面端初始化Masonry
-    // 移动端使用纯CSS flexbox布局
-    if (window.innerWidth > 768) {
-      await nextTick()
-      setTimeout(() => {
-        console.log('[HomePage] Desktop mode: initializing Masonry...')
-        initMasonry()
-      }, 600)
-    } else {
-      console.log('[HomePage] Mobile mode: using pure CSS layout')
-    }
+    // Posts加载完成后，初始化Masonry（自动判断桌面端/移动端）
+    await masonry.initialize()
 
     // 监听滚动事件
     window.addEventListener('scroll', handleScroll)
@@ -263,24 +208,27 @@ onMounted(async () => {
 
 onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll)
-  window.removeEventListener('resize', handleResize)
-  if (resizeTimer) clearTimeout(resizeTimer)
+  masonry.unmount()
 })
 
-// 滚动加载更多
-const handleScroll = () => {
-  if (isLoadingMore.value || !hasMore.value) return
-  if (!isAuthenticated.value && posts.value.length >= accessLimit.value) return
+// 滚动加载更多（使用节流优化）
+const handleScroll = throttle(
+  () => {
+    if (isLoadingMore.value || !hasMore.value) return
+    if (!isAuthenticated.value && posts.value.length >= accessLimit.value) return
 
-  const scrollTop = window.pageYOffset || document.documentElement.scrollTop
-  const windowHeight = window.innerHeight
-  const documentHeight = document.documentElement.scrollHeight
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop
+    const windowHeight = window.innerHeight
+    const documentHeight = document.documentElement.scrollHeight
 
-  // 距离底部200px时触发加载
-  if (scrollTop + windowHeight >= documentHeight - 200) {
-    loadMore()
-  }
-}
+    // 距离底部200px时触发加载
+    if (scrollTop + windowHeight >= documentHeight - 200) {
+      loadMore()
+    }
+  },
+  100,
+  { leading: true, trailing: true },
+)
 
 // 加载更多帖子
 const loadMore = async () => {
@@ -323,35 +271,16 @@ const getPlatformColor = (platform: string) => {
   return PLATFORM_COLORS[platform as keyof typeof PLATFORM_COLORS] || '#666'
 }
 
-// 监听posts变化，重新布局Masonry（仅桌面端）
-watch(posts, async (newPosts) => {
-  if (!newPosts || newPosts.length === 0) return
-  
-  const isMobile = window.innerWidth <= 768
-  if (isMobile) {
-    console.log('[HomePage] Posts changed, mobile mode - no Masonry needed')
-    return
-  }
-  
-  await nextTick()
-  // 延迟执行，确保DOM和图片已更新
-  setTimeout(() => {
-    console.log('[HomePage] Posts changed, reloading Masonry...')
-    // 如果Masonry还未初始化（首次加载），则初始化它
-    if (postsGrid.value && postsGrid.value.querySelectorAll('a.post-card').length > 0) {
-      reloadItems()
-    }
-  }, 300)
-}, { deep: true })
+// posts变化的监听已在usePageMasonry中处理
 
 const getPlatformIcon = (platform: string) => {
-  const icons: Record<string, any> = {
+  const icons = {
     youtube: Youtube,
     twitter: Twitter,
     tiktok: Music2,
     instagram: Instagram,
-  }
-  return icons[platform] || ImageIcon
+  } as const
+  return icons[platform as keyof typeof icons] || ImageIcon
 }
 </script>
 
@@ -559,7 +488,7 @@ const getPlatformIcon = (platform: string) => {
   font-size: var(--text-sm);
 }
 
-/* Masonry布局，不需要这些样式 */
+/* ========== 响应式优化 ========== */
 
 /* 平板端/小笔记本优化 (780px-1100px) - 2列布局 */
 @media (min-width: 780px) and (max-width: 1100px) {
