@@ -33,7 +33,6 @@ export function useMasonry(
   containerRef: Ref<HTMLElement | null>,
   options: MasonryOptions = {
     itemSelector: '.post-card',
-    columnWidth: '.post-card',
     gutter: 16,
     percentPosition: true,
     horizontalOrder: false,
@@ -41,8 +40,16 @@ export function useMasonry(
   },
 ) {
   let masonryInstance: Masonry | null = null
+  let isInitializing = false // 初始化状态锁
 
   const initMasonry = async () => {
+    if (isInitializing) {
+      debug('Already initializing, skipping...')
+      return
+    }
+
+    isInitializing = true
+
     await nextTick()
 
     // 如果已经初始化，先销毁
@@ -54,6 +61,7 @@ export function useMasonry(
 
     if (!containerRef.value) {
       debugWarn('Container ref is null')
+      isInitializing = false
       return
     }
 
@@ -61,12 +69,13 @@ export function useMasonry(
     const cards = containerRef.value.querySelectorAll(options.itemSelector)
     if (cards.length === 0) {
       debugWarn(`No cards found with selector: ${options.itemSelector}`)
+      isInitializing = false
       return
     }
 
     debug(`Found ${cards.length} cards`)
 
-    // 等待图片加载
+    // 等待图片加载（带超时保护）
     const images = containerRef.value.querySelectorAll('img')
     debug(`Waiting for ${images.length} images to load...`)
 
@@ -76,14 +85,34 @@ export function useMasonry(
           if (img.complete) {
             resolve(true)
           } else {
-            img.addEventListener('load', () => resolve(true), { once: true })
-            img.addEventListener('error', () => resolve(true), { once: true })
+            // 添加超时保护，避免loading="lazy"的图片一直不加载
+            const timeout = setTimeout(() => {
+              debug('Image load timeout, continuing anyway...')
+              resolve(true)
+            }, 2000)
+
+            img.addEventListener(
+              'load',
+              () => {
+                clearTimeout(timeout)
+                resolve(true)
+              },
+              { once: true },
+            )
+            img.addEventListener(
+              'error',
+              () => {
+                clearTimeout(timeout)
+                resolve(true)
+              },
+              { once: true },
+            )
           }
         }),
     )
 
     await Promise.all(imagePromises)
-    debug('All images loaded')
+    debug('All images loaded or timed out')
 
     // 计算实际的gutter值（支持函数）
     const actualGutter = typeof options.gutter === 'function' ? options.gutter() : options.gutter
@@ -97,6 +126,7 @@ export function useMasonry(
     const firstCard = containerRef.value.querySelector(options.itemSelector) as HTMLElement
     if (!firstCard) {
       debugError('No first card found!')
+      isInitializing = false
       return
     }
 
@@ -109,6 +139,8 @@ export function useMasonry(
     debug('First card CSS width:', computedWidth)
     debug('First card offsetWidth:', cardWidth + 'px')
     debug('Card/Container ratio:', ((cardWidth / containerWidth) * 100).toFixed(1) + '%')
+    debug('Window width:', window.innerWidth + 'px')
+    debug('Current gutter:', actualGutter + 'px')
 
     // 如果卡片宽度接近容器宽度（>90%），说明CSS还没应用，等待更久
     if (cardWidth / containerWidth > 0.9) {
@@ -121,6 +153,7 @@ export function useMasonry(
       if (newCardWidth / containerWidth > 0.9) {
         debugError('❌ CSS still not applied after wait, aborting initialization')
         debugError('Container:', containerWidth, 'Card:', newCardWidth)
+        isInitializing = false
         return
       }
     }
@@ -129,13 +162,44 @@ export function useMasonry(
     const finalCardWidth = firstCard.offsetWidth
     const gutter = actualGutter || 0
     const theoreticalCols = Math.floor((containerWidth + gutter) / (finalCardWidth + gutter))
+    debug('===== Column Calculation =====')
+    debug('Final card width:', finalCardWidth + 'px')
+    debug('Gutter:', gutter + 'px')
+    debug(
+      'Formula: floor((' +
+        containerWidth +
+        ' + ' +
+        gutter +
+        ') / (' +
+        finalCardWidth +
+        ' + ' +
+        gutter +
+        '))',
+    )
     debug('Theoretical columns:', theoreticalCols)
 
+    // 宽容度检测：如果是桌面端但只检测到单列，可能是CSS问题
     if (theoreticalCols < 2) {
-      debugError('❌ Only 1 column detected! This is likely wrong.')
-      debugError('Container:', containerWidth, 'Card:', finalCardWidth, 'Gutter:', gutter)
-      debugError('Aborting initialization, will retry later')
-      return // 放弃初始化，等待下次重试
+      debugWarn('⚠️ Only ' + theoreticalCols + ' column detected!')
+      debugWarn('This might be a CSS issue or the window is very narrow')
+      debugWarn(
+        'Container: ' +
+          containerWidth +
+          'px, Card: ' +
+          finalCardWidth +
+          'px, Gutter: ' +
+          gutter +
+          'px',
+      )
+
+      // 如果窗口宽度大于900px但只有单列，强制初始化（可能是CSS计算问题）
+      if (window.innerWidth > 900) {
+        debugWarn('🛠️ Window is wide enough, forcing initialization anyway...')
+      } else {
+        debugError('❌ Window too narrow, aborting initialization')
+        isInitializing = false
+        return
+      }
     }
 
     // 初始化Masonry
@@ -158,6 +222,8 @@ export function useMasonry(
       debug('Initial layout done')
     } catch (error) {
       debugError('❌ Failed to initialize:', error)
+    } finally {
+      isInitializing = false
     }
   }
 
@@ -183,10 +249,25 @@ export function useMasonry(
             if (img.complete) {
               resolve(true)
             } else {
-              img.addEventListener('load', () => resolve(true), { once: true })
-              img.addEventListener('error', () => resolve(true), { once: true })
               // 超时保护
-              setTimeout(() => resolve(true), 2000)
+              const timeout = setTimeout(() => resolve(true), 2000)
+
+              img.addEventListener(
+                'load',
+                () => {
+                  clearTimeout(timeout)
+                  resolve(true)
+                },
+                { once: true },
+              )
+              img.addEventListener(
+                'error',
+                () => {
+                  clearTimeout(timeout)
+                  resolve(true)
+                },
+                { once: true },
+              )
             }
           }),
       )

@@ -34,9 +34,10 @@
         </section>
       </Transition>
 
-      <!-- Platform Stats - 横向网格 -->
+      <!-- Platform Stats - 桌面端网格 / 移动端轮播 -->
       <section class="stats-section">
-        <div class="stats-grid">
+        <!-- 桌面端：Grid布局 -->
+        <div class="stats-grid stats-desktop">
           <div v-for="platform in platforms" :key="platform" class="stat-card glass-card">
             <div class="stat-icon" :style="{ background: getPlatformColor(platform) }">
               <component :is="getPlatformIcon(platform)" :size="32" />
@@ -44,6 +45,67 @@
             <h3>{{ $t(`platform.${platform}`) }}</h3>
             <p class="stat-count">{{ formatNumber(platformStats[platform] || 0) }}</p>
             <p class="stat-label">{{ $t('post.title') }}</p>
+          </div>
+        </div>
+
+        <!-- 移动端：轮播图 -->
+        <div class="stats-carousel stats-mobile">
+          <div class="carousel-container">
+            <button
+              class="carousel-btn carousel-prev"
+              @click="prevStat"
+              :disabled="currentStatIndex === 0"
+              aria-label="Previous"
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="15 18 9 12 15 6"></polyline>
+              </svg>
+            </button>
+
+            <div class="carousel-track-container">
+              <div
+                class="carousel-track"
+                :style="{ transform: `translateX(-${currentStatIndex * 100}%)` }"
+              >
+                <div
+                  v-for="platform in platforms"
+                  :key="platform"
+                  class="carousel-slide"
+                >
+                  <div class="stat-card glass-card">
+                    <div class="stat-icon" :style="{ background: getPlatformColor(platform) }">
+                      <component :is="getPlatformIcon(platform)" :size="32" />
+                    </div>
+                    <h3>{{ $t(`platform.${platform}`) }}</h3>
+                    <p class="stat-count">{{ formatNumber(platformStats[platform] || 0) }}</p>
+                    <p class="stat-label">{{ $t('post.title') }}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <button
+              class="carousel-btn carousel-next"
+              @click="nextStat"
+              :disabled="currentStatIndex === platforms.length - 1"
+              aria-label="Next"
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </button>
+          </div>
+
+          <!-- 指示器 -->
+          <div class="carousel-indicators">
+            <button
+              v-for="(platform, index) in platforms"
+              :key="index"
+              class="indicator-dot"
+              :class="{ active: currentStatIndex === index }"
+              @click="currentStatIndex = index"
+              :aria-label="`Go to ${platform}`"
+            ></button>
           </div>
         </div>
       </section>
@@ -159,7 +221,21 @@ const isLoadingMore = ref(false)
 const hasMore = ref(true)
 const postsGrid = ref<HTMLElement | null>(null)
 
-// Stats状态（已移除3D轮播）
+// 移动端轮播图状态
+const currentStatIndex = ref(0)
+
+// 轮播图控制函数
+const prevStat = () => {
+  if (currentStatIndex.value > 0) {
+    currentStatIndex.value--
+  }
+}
+
+const nextStat = () => {
+  if (currentStatIndex.value < platforms.length - 1) {
+    currentStatIndex.value++
+  }
+}
 
 // 使用页面级Masonry管理
 const masonry = usePageMasonry(postsGrid, { posts })
@@ -375,7 +451,7 @@ const getPlatformIcon = (platform: string) => {
   animation-delay: 0.2s;
 }
 
-/* Stats Section - 网格布局 */
+/* Stats Section - 桌面端网格布局 */
 .stats-section {
   padding: var(--spacing-2xl) 0;
 }
@@ -386,6 +462,11 @@ const getPlatformIcon = (platform: string) => {
   gap: var(--spacing-lg);
   max-width: 1200px;
   margin: 0 auto;
+}
+
+/* 移动端默认隐藏轮播图 */
+.stats-mobile {
+  display: none;
 }
 
 .stat-card {
@@ -574,12 +655,108 @@ const getPlatformIcon = (platform: string) => {
   }
 
   .stats-section {
-    padding: var(--spacing-sm) 0;
+    padding: var(--spacing-lg) 0;
   }
 
-  .stats-grid {
-    grid-template-columns: repeat(2, 1fr);
+  /* 移动端隐藏桌面端布局 */
+  .stats-desktop {
+    display: none;
+  }
+
+  /* 移动端显示轮播图 */
+  .stats-mobile {
+    display: block;
+  }
+
+  /* 轮播图容器 */
+  .stats-carousel {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+  }
+
+  .carousel-container {
+    position: relative;
+    display: flex;
+    align-items: center;
     gap: var(--spacing-sm);
+  }
+
+  .carousel-track-container {
+    flex: 1;
+    overflow: hidden;
+    border-radius: var(--radius-lg);
+  }
+
+  .carousel-track {
+    display: flex;
+    transition: transform 0.3s ease-in-out;
+  }
+
+  .carousel-slide {
+    min-width: 100%;
+    flex-shrink: 0;
+  }
+
+  .carousel-slide .stat-card {
+    margin: 0;
+    padding: var(--spacing-xl) var(--spacing-lg);
+  }
+
+  /* 轮播按钮 */
+  .carousel-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-full);
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    color: var(--color-text-primary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    backdrop-filter: blur(10px);
+    flex-shrink: 0;
+  }
+
+  .carousel-btn:active:not(:disabled) {
+    transform: scale(0.95);
+    background: var(--glass-bg-light);
+  }
+
+  .carousel-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+
+  .carousel-btn svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  /* 指示器 */
+  .carousel-indicators {
+    display: flex;
+    justify-content: center;
+    gap: var(--spacing-xs);
+    margin-top: var(--spacing-md);
+  }
+
+  .indicator-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: var(--radius-full);
+    background: var(--color-text-tertiary);
+    border: none;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    padding: 0;
+  }
+
+  .indicator-dot.active {
+    width: 24px;
+    background: var(--color-primary);
   }
 
   .stat-card {
@@ -632,54 +809,38 @@ const getPlatformIcon = (platform: string) => {
 
 <!-- Masonry瀑布流全局样式 -->
 <style>
-/* Masonry瀑布流卡片样式 - 使用相对单位 */
+/* 桌面端：Masonry完全控制布局 */
 .posts-grid {
   width: 100%;
 }
 
+/* 桌面端卡片基础样式 */
 .posts-grid .post-card {
-  width: calc(25% - 12px); /* 4列 - 默认 */
-  margin-bottom: 16px;
   box-sizing: border-box;
 }
 
-/* 大屏幕 */
+/* 大屏幕（>=1400px）- 4列 */
 @media (min-width: 1400px) {
   .posts-grid .post-card {
-    width: calc(25% - 12px); /* 4列 */
+    width: calc(25% - 12px);
   }
 }
 
-/* 中型屏幕 - 3列 */
+/* 中型屏幕（1101px-1399px）- 3列 */
 @media (min-width: 1101px) and (max-width: 1399px) {
   .posts-grid .post-card {
-    width: calc(33.333% - 11px); /* 3列 */
+    width: calc(33.333% - 11px);
   }
 }
 
-/* 平板端/小笔记本 - 2列 (901px-1100px) */
-@media (min-width: 901px) and (max-width: 1100px) {
+/* 小型桌面/平板横屏（769px-1100px）- 2列 */
+@media (min-width: 769px) and (max-width: 1100px) {
   .posts-grid .post-card {
-    width: calc(50% - 8px); /* 2列 */
+    width: calc(50% - 8px);
   }
 }
 
-/* 平板端 - 中等屏幕 (780px-900px) - 2列布局 */
-@media (min-width: 780px) and (max-width: 900px) {
-  .posts-grid .post-card {
-    width: calc(50% - 8px) !important; /* 2列 - 强制应用 */
-    margin-bottom: 16px;
-  }
-}
-
-/* 平板端 - 较小屏幕 (769px-779px) */
-@media (min-width: 769px) and (max-width: 779px) {
-  .posts-grid .post-card {
-    width: calc(50% - 8px); /* 2列 */
-  }
-}
-
-/* 移动端 - 使用flex布局时的样式 */
+/* 移动端（<=768px）- 使用flex布局 */
 @media (max-width: 768px) {
   .posts-grid .post-card {
     flex: 0 0 calc(50% - 8px) !important;
@@ -692,7 +853,7 @@ const getPlatformIcon = (platform: string) => {
   }
 }
 
-/* 小屏手机 */
+/* 小屏手机（<=480px）*/
 @media (max-width: 480px) {
   .posts-grid .post-card {
     flex: 0 0 calc(50% - 8px) !important;
