@@ -26,6 +26,13 @@ export function useMasonry(
   const initMasonry = async () => {
     await nextTick()
 
+    // 如果已经初始化，先销毁
+    if (masonryInstance) {
+      console.log('[Masonry] Already initialized, destroying first...')
+      destroy()
+      await nextTick()
+    }
+
     if (!containerRef.value) {
       console.warn('[Masonry] Container ref is null')
       return
@@ -89,9 +96,16 @@ export function useMasonry(
     // 如果卡片宽度接近容器宽度（>90%），说明CSS还没应用，等待更久
     if (cardWidth / containerWidth > 0.9) {
       console.warn('[Masonry] ⚠️ Card too wide, waiting for CSS...')
-      await new Promise(resolve => setTimeout(resolve, 100))
+      await new Promise(resolve => setTimeout(resolve, 300))  // 增加到300ms
       const newCardWidth = firstCard.offsetWidth
       console.log('[Masonry] After wait, card width:', newCardWidth + 'px')
+      
+      // 再次检查，如果还是太宽，放弃初始化
+      if (newCardWidth / containerWidth > 0.9) {
+        console.error('[Masonry] ❌ CSS still not applied after wait, aborting initialization')
+        console.error('[Masonry] Container:', containerWidth, 'Card:', newCardWidth)
+        return
+      }
     }
 
     // 计算理论列数
@@ -103,6 +117,8 @@ export function useMasonry(
     if (theoreticalCols < 2) {
       console.error('[Masonry] ❌ Only 1 column detected! This is likely wrong.')
       console.error('[Masonry] Container:', containerWidth, 'Card:', finalCardWidth, 'Gutter:', gutter)
+      console.error('[Masonry] Aborting initialization, will retry later')
+      return  // 放弃初始化，等待下次重试
     }
 
     // 初始化Masonry

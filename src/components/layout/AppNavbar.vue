@@ -558,9 +558,19 @@ onBeforeUnmount(() => {
     gap: var(--spacing-xs);
   }
 
-  /* 移动端隐藏Logo品牌 */
+  /* 移动端只显示Logo图标，隐藏文字 */
   .navbar-brand {
+    gap: 0;
+  }
+
+  .navbar-brand .brand-name {
     display: none;
+  }
+
+  .navbar-brand .brand-logo {
+    width: 36px;
+    height: 36px;
+    font-size: 12px;
   }
 
   .navbar-nav {
@@ -605,53 +615,24 @@ onBeforeUnmount(() => {
     display: none;
   }
 
-  /* 移动端头像按钮 - 固定在回到顶部按钮上方（垂直布局） */
+  /* 移动端保持用户头像在导航栏 */
   .navbar-actions .user-menu {
-    position: fixed !important;
-    bottom: 154px !important; /* back-to-top是90px + 48px(头像高度) + 16px(间距) */
-    right: 20px !important;
-    top: auto !important;
-    left: auto !important;
-    z-index: 1000 !important;
+    position: relative;
   }
 
   .navbar-actions .user-menu .user-avatar {
-    width: 48px !important;
-    height: 48px !important;
-    border-radius: 50% !important;
-    background: var(--glass-bg) !important;
-    backdrop-filter: blur(10px) !important;
-    border: 2px solid var(--glass-border) !important;
-    box-shadow: var(--glass-shadow), var(--glass-glow) !important;
+    width: 36px;
+    height: 36px;
   }
 
-  .navbar-actions .user-menu .user-avatar img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    border-radius: 50%;
-  }
-
-  /* 移动端下拉菜单 - 固定在头像上方 */
+  /* 移动端下拉菜单 */
   .navbar-actions .user-menu .user-dropdown {
     position: fixed !important;
-    bottom: 212px !important; /* 头像位置154px + 48px(头像高度) + 10px(间距) */
-    right: 20px !important;
-    top: auto !important;
+    top: 60px !important;
+    right: 10px !important;
     left: auto !important;
     min-width: 200px !important;
     max-width: 280px !important;
-    background: rgba(255, 255, 255, 0.95) !important;
-    backdrop-filter: blur(20px) !important;
-    border: 1px solid rgba(0, 0, 0, 0.1) !important;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15) !important;
-  }
-
-  /* 深色模式下的下拉菜单 */
-  :global(.dark) .navbar-actions .user-menu .user-dropdown {
-    background: rgba(30, 30, 30, 0.95) !important;
-    border-color: rgba(255, 255, 255, 0.1) !important;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
   }
 
   .mobile-menu-button {
@@ -680,6 +661,12 @@ onBeforeUnmount(() => {
     padding: var(--spacing-sm) var(--spacing-sm);
     gap: var(--spacing-xs);
     min-height: 56px;
+  }
+
+  .navbar-brand .brand-logo {
+    width: 32px;
+    height: 32px;
+    font-size: 11px;
   }
 
   .navbar-search {
@@ -716,19 +703,13 @@ onBeforeUnmount(() => {
     font-size: 13px;
   }
 
-  .navbar-actions .user-menu {
-    bottom: 140px !important; /* back-to-top是80px + 44px(头像高度) + 16px(间距) */
-    right: 16px !important;
-  }
-
   .navbar-actions .user-menu .user-avatar {
-    width: 44px !important;
-    height: 44px !important;
+    width: 32px;
+    height: 32px;
   }
 
   .navbar-actions .user-menu .user-dropdown {
-    bottom: 194px !important; /* 头像位置140px + 44px(头像高度) + 10px(间距) */
-    right: 16px !important;
+    right: 8px !important;
   }
 }
 
@@ -737,6 +718,12 @@ onBeforeUnmount(() => {
   .navbar-content {
     padding: var(--spacing-xs) var(--spacing-xs);
     min-height: 52px;
+  }
+
+  .navbar-brand .brand-logo {
+    width: 28px;
+    height: 28px;
+    font-size: 10px;
   }
 
   .navbar-actions {
