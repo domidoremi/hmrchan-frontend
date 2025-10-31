@@ -43,7 +43,9 @@
     "loadingMedia": "Loading...",
     "video": "Video",
     "image": "Image",
-    "videoNotSupported": "Your browser does not support video playback"
+    "videoNotSupported": "Your browser does not support video playback",
+    "addToFavorites": "Add to Favorites",
+    "unfavorite": "Remove from Favorites"
   },
   "search": {
     "placeholder": "Search content...",

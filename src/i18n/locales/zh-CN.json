@@ -43,7 +43,9 @@
     "loadingMedia": "加载中...",
     "video": "视频",
     "image": "图片",
-    "videoNotSupported": "您的浏览器不支持视频播放"
+    "videoNotSupported": "您的浏览器不支持视频播放",
+    "addToFavorites": "添加到收藏",
+    "unfavorite": "取消收藏"
   },
   "search": {
     "placeholder": "搜索内容...",
