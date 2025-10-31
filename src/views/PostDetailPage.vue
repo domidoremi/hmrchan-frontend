@@ -166,7 +166,7 @@
                 class="video-thumbnail"
                 @click="openMediaViewer(getMediaIndex(index))"
               >
-                <video preload="metadata">
+                <video preload="none" poster="">
                   <source :src="`/api/media/${media.id}/stream`" type="video/mp4" />
                 </video>
                 <div class="video-play-overlay">

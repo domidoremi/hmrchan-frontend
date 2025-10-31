@@ -155,7 +155,7 @@
             v-model="editForm.full_name"
             type="text"
             :placeholder="$t('profile.fullName')"
-            :icon="User"
+            :icon="UserIcon"
           />
         </div>
 
@@ -270,7 +270,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import {
-  User,
+  User as UserIcon,
   Mail,
   Camera,
   Edit,
@@ -295,6 +295,7 @@ import { useAuthStore } from '@/stores/auth'
 import { uploadApi } from '@/api/services'
 import { api } from '@/api/client'
 import toast from '@/utils/toast'
+import logger from '@/utils/logger'
 import { formatRelativeTime } from '@/utils/format'
 import { getUserAvatar } from '@/utils/avatar'
 import { useImageUpload } from '@/composables/useImageUpload'
@@ -356,7 +357,7 @@ const deleteForm = ref({
   password: '',
 })
 
-// Stats (mock data for now)
+// Stats
 const favoritesCount = ref(0)
 const viewsCount = ref(0)
 
@@ -384,16 +385,15 @@ onMounted(() => {
 
 async function loadStats() {
   try {
-    // TODO: 后端实现统计API
-    const response = await api.get(`/users/${user.value?.id}/stats`)
+    // 获取用户统计数据
+    const response = await api.get(`/users/${user.value?.id}/stats`, { cache: false })
     favoritesCount.value = response.favorites_count || 0
     viewsCount.value = response.views_count || 0
+
+    logger.debug('User stats loaded:', response)
   } catch (error: any) {
-    // 静默处理404错误（API未实现）
-    if (error.response?.status !== 404) {
-      console.error('Failed to load stats:', error)
-    }
-    // 使用默认值
+    logger.error('Failed to load stats:', error)
+    // 加载失败时使用默认值
     favoritesCount.value = 0
     viewsCount.value = 0
   }
@@ -876,7 +876,7 @@ function formatDate(dateStr: string | undefined) {
   .stats-grid {
     grid-template-columns: repeat(2, 1fr);
   }
-  
+
   .info-grid {
     grid-template-columns: 1fr;
   }
@@ -898,7 +898,7 @@ function formatDate(dateStr: string | undefined) {
     align-items: center;
     text-align: center;
   }
-  
+
   .avatar-container {
     margin-bottom: var(--spacing-md);
   }
@@ -921,7 +921,7 @@ function formatDate(dateStr: string | undefined) {
     width: 100%;
     gap: var(--spacing-sm);
   }
-  
+
   .profile-actions button,
   .profile-actions .glass-button {
     width: 100%;
@@ -931,7 +931,7 @@ function formatDate(dateStr: string | undefined) {
     grid-template-columns: 1fr;
     gap: var(--spacing-md);
   }
-  
+
   .stat-card {
     padding: var(--spacing-md);
   }
@@ -944,7 +944,7 @@ function formatDate(dateStr: string | undefined) {
     flex-direction: column;
     gap: var(--spacing-sm);
   }
-  
+
   .danger-actions button {
     width: 100%;
   }
@@ -955,69 +955,69 @@ function formatDate(dateStr: string | undefined) {
   .profile-page {
     padding: var(--spacing-sm);
   }
-  
+
   .profile-banner {
     height: 100px;
   }
-  
+
   .profile-info {
     margin-top: -50px;
   }
-  
+
   .avatar {
     width: 64px;
     height: 64px;
   }
-  
+
   .avatar-upload-btn {
     width: 28px;
     height: 28px;
   }
-  
+
   .avatar-upload-btn svg {
     width: 14px;
     height: 14px;
   }
-  
+
   .user-name {
     font-size: var(--text-xl);
   }
-  
+
   .user-username {
     font-size: var(--text-sm);
   }
-  
+
   .stats-grid {
     gap: var(--spacing-sm);
   }
-  
+
   .stat-card {
     padding: var(--spacing-sm);
     gap: var(--spacing-sm);
   }
-  
+
   .stat-icon {
     width: 36px;
     height: 36px;
   }
-  
+
   .stat-icon svg {
     width: 18px;
     height: 18px;
   }
-  
+
   .stat-value {
     font-size: var(--text-xl);
   }
-  
+
   .stat-label {
     font-size: var(--text-xs);
   }
-  
+
   .info-section {
     padding: var(--spacing-md);
   }
-  
+
   .section-title {
     font-size: var(--text-lg);
   }
@@ -1027,3 +1027,4 @@ function formatDate(dateStr: string | undefined) {
   width: 100%;
   justify-content: center;
 }
+</style>

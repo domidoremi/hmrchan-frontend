@@ -36,7 +36,7 @@
       </div>
 
       <!-- 搜索框 -->
-      <div class="navbar-search hide-on-mobile">
+      <div class="navbar-search">
         <Search :size="18" />
         <input
           v-model="searchQuery"
@@ -49,9 +49,9 @@
       <!-- 右侧操作 -->
       <div class="navbar-actions">
         <!-- 主题切换 -->
-        <button 
-          class="action-button" 
-          @click="toggleTheme" 
+        <button
+          class="action-button"
+          @click="toggleTheme"
           :title="$t('settings.theme')"
           :aria-label="$t('settings.toggleTheme')"
           :aria-pressed="isDark ? 'true' : 'false'"
@@ -61,8 +61,8 @@
         </button>
 
         <!-- 语言切换 -->
-        <button 
-          class="action-button" 
+        <button
+          class="action-button"
           @click="showLanguageMenu = !showLanguageMenu"
           :aria-label="$t('aria.languageMenu')"
           :aria-expanded="showLanguageMenu ? 'true' : 'false'"
@@ -72,8 +72,8 @@
         </button>
 
         <!-- 语言菜单 -->
-        <div 
-          v-if="showLanguageMenu" 
+        <div
+          v-if="showLanguageMenu"
           class="language-menu glass-card"
           role="menu"
           :aria-label="$t('aria.languageMenu')"
@@ -91,18 +91,18 @@
 
         <!-- 用户菜单 -->
         <div v-if="isAuthenticated" class="user-menu">
-          <button 
-            class="user-avatar" 
+          <button
+            class="user-avatar"
             @click="showUserMenu = !showUserMenu"
             :aria-label="$t('aria.userMenu')"
             :aria-expanded="showUserMenu ? 'true' : 'false'"
             :aria-haspopup="true"
           >
-            <img :src="userAvatarUrl" :alt="user?.username || 'User'" />
+            <img :src="userAvatarUrl" :alt="user?.username || 'User'" @error="handleAvatarError" />
           </button>
 
-          <div 
-            v-if="showUserMenu" 
+          <div
+            v-if="showUserMenu"
             class="user-dropdown glass-card"
             role="menu"
             :aria-label="$t('aria.userMenu')"
@@ -140,8 +140,8 @@
         </RouterLink>
 
         <!-- 移动端菜单按钮 -->
-        <button 
-          class="mobile-menu-button show-on-mobile" 
+        <button
+          class="mobile-menu-button show-on-mobile"
           @click="toggleMobileMenu"
           :aria-label="mobileMenuOpen ? $t('aria.closeMenu') : $t('aria.openMenu')"
           :aria-expanded="mobileMenuOpen ? 'true' : 'false'"
@@ -182,7 +182,7 @@ import { getUserAvatar } from '@/utils/avatar'
 import GlassButton from '@/components/ui/GlassButton.vue'
 
 const router = useRouter()
-const { t, locale } = useI18n()
+const { locale } = useI18n()
 
 const authStore = useAuthStore()
 const themeStore = useThemeStore()
@@ -194,11 +194,23 @@ const searchQuery = ref('')
 const showLanguageMenu = ref(false)
 const showUserMenu = ref(false)
 const mobileMenuOpen = ref(false)
+const avatarError = ref(false)
 
 const currentLocale = computed(() => locale.value)
 
 // 用户头像URL（含默认头像）
-const userAvatarUrl = computed(() => getUserAvatar(user.value, 40))
+const userAvatarUrl = computed(() => {
+  // 如果之前加载失败过，直接返回默认头像
+  if (avatarError.value) {
+    return getUserAvatar({ ...user.value, avatar_url: null } as any, 40)
+  }
+  return getUserAvatar(user.value, 40)
+})
+
+// 头像加载失败处理
+const handleAvatarError = () => {
+  avatarError.value = true
+}
 
 const locales = [
   { code: 'en', name: 'English' },
@@ -368,6 +380,13 @@ onBeforeUnmount(() => {
   flex-shrink: 0;
 }
 
+/* 确保用户菜单在桌面端正常显示 */
+.user-menu {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
 .action-button {
   display: flex;
   align-items: center;
@@ -487,19 +506,69 @@ onBeforeUnmount(() => {
   }
 }
 
-/* 平板和小屏幕样式 */
-@media (max-width: 1100px) {
+/* 中型屏幕 (900px - 1100px) */
+@media (max-width: 1100px) and (min-width: 900px) {
   .navbar-search {
-    min-width: 200px;
+    min-width: 180px;
   }
 
   .navbar-content {
-    gap: var(--spacing-md);
+    gap: var(--spacing-sm);
+  }
+
+  .nav-link span {
+    display: inline;
   }
 }
 
-/* 移动端样式 */
+/* 小屏幕 (769px - 899px) */
+@media (max-width: 899px) and (min-width: 769px) {
+  .navbar-search {
+    min-width: 150px;
+  }
+
+  .navbar-actions {
+    gap: var(--spacing-xs);
+  }
+
+  /* 隐藏导航文字，只显示图标 */
+  .nav-link span {
+    display: none;
+  }
+
+  .action-button {
+    width: 36px;
+    height: 36px;
+  }
+
+  .user-avatar {
+    width: 36px;
+    height: 36px;
+  }
+}
+
+/* 移动端样式 (768px及以下) */
 @media (max-width: 768px) {
+  /* 确保在768px时移动端样式优先 */
+  .navbar-content {
+    gap: var(--spacing-xs);
+  }
+
+  /* 移动端只显示Logo图标，隐藏文字 */
+  .navbar-brand {
+    gap: 0;
+  }
+
+  .navbar-brand .brand-name {
+    display: none;
+  }
+
+  .navbar-brand .brand-logo {
+    width: 36px;
+    height: 36px;
+    font-size: 12px;
+  }
+
   .navbar-nav {
     position: fixed;
     top: 64px;
@@ -523,14 +592,164 @@ onBeforeUnmount(() => {
     pointer-events: all;
   }
 
+  .navbar-actions {
+    gap: var(--spacing-xs);
+  }
+
+  .action-button {
+    width: 36px;
+    height: 36px;
+  }
+
+  .action-button svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  /* 移动端隐藏语言切换按钮 */
+  .action-button:has(svg[data-lucide='languages']) {
+    display: none;
+  }
+
+  /* 移动端保持用户头像在导航栏 */
+  .navbar-actions .user-menu {
+    position: relative;
+  }
+
+  .navbar-actions .user-menu .user-avatar {
+    width: 36px;
+    height: 36px;
+  }
+
+  /* 移动端下拉菜单 */
+  .navbar-actions .user-menu .user-dropdown {
+    position: fixed !important;
+    top: 60px !important;
+    right: 10px !important;
+    left: auto !important;
+    min-width: 200px !important;
+    max-width: 280px !important;
+  }
+
   .mobile-menu-button {
     display: flex;
     align-items: center;
     justify-content: center;
+    width: 36px;
+    height: 36px;
   }
 
   .navbar-search {
-    min-width: auto;
+    flex: 1;
+    min-width: 0;
+    max-width: 300px;
+  }
+
+  /* 未登录时的登录按钮保持在页眉 */
+  .navbar-actions > a {
+    display: flex;
+  }
+}
+
+/* 极小屏幕优化 */
+@media (max-width: 480px) {
+  .navbar-content {
+    padding: var(--spacing-sm) var(--spacing-sm);
+    gap: var(--spacing-xs);
+    min-height: 56px;
+  }
+
+  .navbar-brand .brand-logo {
+    width: 32px;
+    height: 32px;
+    font-size: 11px;
+  }
+
+  .navbar-search {
+    max-width: 200px;
+    padding: var(--spacing-xs) var(--spacing-sm);
+  }
+
+  .navbar-search input {
+    font-size: 13px;
+  }
+
+  .navbar-actions {
+    gap: 4px;
+  }
+
+  .action-button {
+    width: 32px;
+    height: 32px;
+  }
+
+  .action-button svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .mobile-menu-button {
+    width: 32px;
+    height: 32px;
+  }
+
+  /* 登录按钮更紧凑 */
+  .navbar-actions :deep(.glass-button.btn-sm) {
+    padding: 6px 12px;
+    font-size: 13px;
+  }
+
+  .navbar-actions .user-menu .user-avatar {
+    width: 32px;
+    height: 32px;
+  }
+
+  .navbar-actions .user-menu .user-dropdown {
+    right: 8px !important;
+  }
+}
+
+/* 超小屏幕优化 (400px及以下) */
+@media (max-width: 400px) {
+  .navbar-content {
+    padding: var(--spacing-xs) var(--spacing-xs);
+    min-height: 52px;
+  }
+
+  .navbar-brand .brand-logo {
+    width: 28px;
+    height: 28px;
+    font-size: 10px;
+  }
+
+  .navbar-actions {
+    gap: 2px;
+  }
+
+  .action-button {
+    width: 30px;
+    height: 30px;
+  }
+
+  .action-button svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .mobile-menu-button {
+    width: 30px;
+    height: 30px;
+  }
+
+  .mobile-menu-button svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  /* 登录按钮更小 */
+  .navbar-actions :deep(.glass-button.btn-sm) {
+    padding: 5px 10px;
+    font-size: 12px;
   }
 }
 </style>

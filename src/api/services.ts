@@ -227,13 +227,14 @@ export const favoritesApi = {
 
   /**
    * 检查内容是否已收藏
-   * POST /favorites/check/{post_id}
+   * GET /favorites/check/{post_id}
    */
   async checkFavorite(
     postId: number,
   ): Promise<{ is_favorited: boolean; favorite_id: number | null }> {
-    return api.post<{ is_favorited: boolean; favorite_id: number | null }>(
+    return api.get<{ is_favorited: boolean; favorite_id: number | null }>(
       `/favorites/check/${postId}`,
+      { cache: false }, // 不缓存收藏状态，确保实时性
     )
   },
 

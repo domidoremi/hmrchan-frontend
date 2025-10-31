@@ -114,6 +114,7 @@
     "display": "显示设置",
     "showHeroSection": "显示首页横幅",
     "showHeroSectionDesc": "在首页显示横幅区域",
+    "hideHeroSection": "隐藏首页横幅（可在设置中恢复）",
     "light": "浅色",
     "dark": "深色",
     "auto": "自动",
@@ -141,6 +142,7 @@
     "apply": "应用",
     "order": "排序",
     "noMore": "没有更多了",
+    "swipeToView": "滑动查看",
     "loadFailed": "加载失败",
     "operationFailed": "操作失败",
     "loadFailedContent": "内容加载失败",
@@ -245,5 +247,101 @@
     "nextImage": "下一张图片",
     "closeViewer": "关闭查看器",
     "loading": "正在加载"
+  },
+  "cookies": {
+    "title": "Cookie 使用提示",
+    "description": "我们使用 Cookie 来改善您的浏览体验，提供个性化内容和分析网站流量。",
+    "learnMore": "了解更多",
+    "acceptAll": "接受全部",
+    "rejectAll": "拒绝全部",
+    "customize": "自定义设置",
+    "customizeTitle": "自定义 Cookie 设置",
+    "essential": "必需 Cookie",
+    "essentialDesc": "这些 Cookie 对网站的正常运行是必需的，无法禁用。",
+    "analytics": "分析 Cookie",
+    "analyticsDesc": "帮助我们了解访问者如何使用网站，以改进我们的服务。",
+    "performance": "性能 Cookie",
+    "performanceDesc": "收集有关网站性能的信息，帮助我们优化加载速度。",
+    "personalization": "个性化 Cookie",
+    "personalizationDesc": "记住您的偏好，为您提供个性化内容。",
+    "required": "必需"
+  },
+  "preferences": {
+    "title": "用户偏好设置",
+    "subtitle": "自定义您的浏览体验",
+    "syncing": "同步中...",
+    "synced": "已同步",
+    "localOnly": "仅本地",
+    "display": "显示设置",
+    "showHeroSection": "显示首页横幅",
+    "showHeroSectionDesc": "在首页顶部显示欢迎横幅和统计信息",
+    "enableAnimations": "启用动画效果",
+    "enableAnimationsDesc": "启用页面过渡和交互动画",
+    "postsPerPage": "每页帖子数量",
+    "postsPerPageDesc": "设置每页显示的帖子数量",
+    "media": "媒体设置",
+    "autoPlayVideos": "自动播放视频",
+    "autoPlayVideosDesc": "打开视频时自动开始播放（仅在打开 MediaViewer 时）",
+    "showImagePreviews": "显示图片预览",
+    "showImagePreviewsDesc": "在列表中显示图片缩略图",
+    "privacy": "隐私和数据",
+    "analyticsEnabled": "分析统计",
+    "analyticsEnabledDesc": "允许收集匿名使用数据以改进服务",
+    "performanceCookies": "性能 Cookie",
+    "performanceCookiesDesc": "收集性能数据以优化网站速度",
+    "personalizedContent": "个性化内容",
+    "personalizedContentDesc": "根据您的偏好推荐内容",
+    "dataCollection": "数据收集",
+    "dataCollectionDesc": "允许收集使用数据用于分析",
+    "privacyNote": "我们重视您的隐私。所有数据收集都是匿名的，仅用于改进服务。",
+    "readPrivacyPolicy": "阅读隐私政策",
+    "dataManagement": "数据管理",
+    "exportData": "导出设置",
+    "importData": "导入设置",
+    "resetDefaults": "恢复默认",
+    "settingsSaved": "设置已保存",
+    "exportSuccess": "设置已导出",
+    "importSuccess": "设置已导入",
+    "importFailed": "导入失败",
+    "resetConfirm": "确定要恢复默认设置吗？",
+    "resetSuccess": "设置已恢复"
+  },
+  "privacy": {
+    "title": "隐私政策",
+    "lastUpdated": "最后更新",
+    "questions": "如有问题，请联系我们。",
+    "managePreferences": "管理偏好设置",
+    "intro": {
+      "title": "简介",
+      "content": "<p>欢迎使用 himeri chan！我们重视您的隐私，本政策说明我们如何收集、使用和保护您的个人信息。</p><p>使用我们的服务即表示您同意本隐私政策中描述的做法。</p>"
+    },
+    "dataCollection": {
+      "title": "我们收集的信息",
+      "content": "<p>我们收集以下类型的信息：</p><ul><li><strong>账户信息</strong>：用户名、邮箱地址、头像（如果您选择提供）</li><li><strong>使用数据</strong>：浏览历史、搜索查询、收藏的内容</li><li><strong>技术数据</strong>：IP 地址、浏览器类型、设备信息、Cookie</li><li><strong>偏好设置</strong>：您的自定义设置和偏好</li></ul>"
+    },
+    "cookies": {
+      "title": "Cookie 使用",
+      "content": "<p>我们使用以下类型的 Cookie：</p><ul><li><strong>必需 Cookie</strong>：确保网站正常运行（无法禁用）</li><li><strong>功能 Cookie</strong>：记住您的偏好设置</li><li><strong>分析 Cookie</strong>：了解网站使用情况（需要您的同意）</li><li><strong>性能 Cookie</strong>：优化网站性能（需要您的同意）</li></ul><p>您可以在偏好设置中管理 Cookie。</p>"
+    },
+    "dataUse": {
+      "title": "信息使用方式",
+      "content": "<p>我们使用收集的信息用于：</p><ul><li>提供和改进我们的服务</li><li>个性化您的体验</li><li>分析网站使用情况</li><li>发送重要通知和更新</li><li>防止欺诈和滥用</li></ul>"
+    },
+    "dataSharing": {
+      "title": "信息共享",
+      "content": "<p>我们<strong>不会</strong>出售您的个人信息。我们可能在以下情况下共享信息：</p><ul><li>经您明确同意</li><li>遵守法律要求</li><li>与我们的服务提供商（他们受保密协议约束）</li></ul>"
+    },
+    "yourRights": {
+      "title": "您的权利",
+      "content": "<p>您有权：</p><ul><li>访问和下载您的个人数据</li><li>更正不准确的信息</li><li>删除您的账户和数据</li><li>反对某些数据处理</li><li>随时撤回同意</li></ul><p>您可以在个人中心管理这些设置。</p>"
+    },
+    "security": {
+      "title": "数据安全",
+      "content": "<p>我们采取适当的技术和组织措施来保护您的数据：</p><ul><li>加密传输（HTTPS）</li><li>安全的数据存储</li><li>访问控制和权限管理</li><li>定期安全审计</li></ul>"
+    },
+    "changes": {
+      "title": "政策变更",
+      "content": "<p>我们可能会不时更新本隐私政策。重大变更将通过网站通知或电子邮件告知您。</p><p>请定期查看本页面以了解最新信息。</p>"
+    }
   }
 }

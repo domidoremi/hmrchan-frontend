@@ -25,12 +25,13 @@
         </GlassButton>
       </div>
 
-      <div v-else-if="!isAdmin" class="banner-action">
+      <!-- 升级会员功能暂未实现，暂时隐藏 -->
+      <!-- <div v-else-if="!isAdmin" class="banner-action">
         <GlassButton @click="goToUpgrade" variant="primary" size="sm">
           <Crown :size="18" />
-          升级会员
+          {{ $t('user.upgrade') }}
         </GlassButton>
-      </div>
+      </div> -->
     </div>
 
     <!-- Progress Bar -->
@@ -43,7 +44,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { Info, AlertCircle, LogIn, UserPlus, Crown } from 'lucide-vue-next'
+import { Info, AlertCircle, LogIn, UserPlus } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/auth'
 import GlassButton from './ui/GlassButton.vue'
 
@@ -115,11 +116,6 @@ const goToLogin = () => {
 
 const goToRegister = () => {
   router.push('/register')
-}
-
-const goToUpgrade = () => {
-  // TODO: 实现升级会员页面
-  console.log('Navigate to upgrade page')
 }
 </script>
 

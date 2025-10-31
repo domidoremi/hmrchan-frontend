@@ -18,9 +18,9 @@ function getViewedPosts(): Map<number, number> {
   try {
     const stored = localStorage.getItem(STORAGE_KEY)
     if (!stored) return new Map()
-    
+
     const data: ViewedPost[] = JSON.parse(stored)
-    return new Map(data.map(item => [item.id, item.timestamp]))
+    return new Map(data.map((item) => [item.id, item.timestamp]))
   } catch (error) {
     console.error('Failed to load viewed posts:', error)
     return new Map()
@@ -39,12 +39,12 @@ function saveViewedPosts(viewedPosts: Map<number, number>) {
         .slice(0, MAX_STORED_POSTS)
       viewedPosts = new Map(sorted)
     }
-    
+
     const data: ViewedPost[] = Array.from(viewedPosts.entries()).map(([id, timestamp]) => ({
       id,
       timestamp,
     }))
-    
+
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
   } catch (error) {
     console.error('Failed to save viewed posts:', error)
@@ -91,16 +91,16 @@ export function getViewedPostsStats(): {
   const now = Date.now()
   const day = 24 * 60 * 60 * 1000
   const week = 7 * day
-  
+
   let last24h = 0
   let last7d = 0
-  
+
   for (const timestamp of viewedPosts.values()) {
     const age = now - timestamp
     if (age < day) last24h++
     if (age < week) last7d++
   }
-  
+
   return {
     total: viewedPosts.size,
     last24h,
