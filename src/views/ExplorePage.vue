@@ -11,7 +11,7 @@
 
       <!-- Posts Grid -->
       <div v-else-if="posts.length > 0">
-        <div class="posts-grid">
+        <div ref="postsGrid" class="posts-grid">
           <PostCard v-for="post in posts" :key="post.id" :post="post" />
         </div>
 
@@ -44,7 +44,7 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { onMounted, watch } from 'vue'
+import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { SearchX, RotateCcw } from 'lucide-vue-next'
@@ -57,7 +57,9 @@ import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import GlassButton from '@/components/ui/GlassButton.vue'
 
 import { usePostsStore } from '@/stores/posts'
-import type { PostListParams } from '@/types'
+import type { Post, PostListParams } from '@/types'
+import { postsApi } from '@/api/services'
+import { usePageMasonry } from '@/composables/usePageMasonry'
 
 const route = useRoute()
 const router = useRouter()
@@ -65,16 +67,31 @@ const postsStore = usePostsStore()
 
 const { posts, loading, filters, pagination } = storeToRefs(postsStore)
 
-onMounted(() => {
+const postsGrid = ref<HTMLElement | null>(null)
+
+// 使用页面级Masonry管理
+const masonry = usePageMasonry(postsGrid, { posts })
+
+onMounted(async () => {
+  // 初始化Masonry管理
+  masonry.mount()
+
   // 重置筛选条件
   postsStore.resetFilters()
-  
+
   // 从URL查询参数初始化筛选
   const query = route.query
   if (query.q) filters.value.q = query.q as string
   if (query.platform) filters.value.platform = query.platform as string
 
-  loadPosts()
+  await loadPosts()
+
+  // 初始化Masonry（自动判断桌面端/移动端）
+  await masonry.initialize()
+})
+
+onUnmounted(() => {
+  masonry.unmount()
 })
 
 watch(
@@ -89,7 +106,7 @@ const loadPosts = async () => {
   await postsStore.fetchPosts()
 }
 
-const handleFilterUpdate = async (newFilters: PostListParams) => {
+const handleFilterUpdate = async (newFilters: Partial<PostListParams>) => {
   postsStore.updateFilters(newFilters)
   await loadPosts()
 
@@ -128,10 +145,19 @@ const resetFilters = () => {
 }
 
 .posts-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: var(--spacing-lg);
-  margin-bottom: var(--spacing-xl);
+  /* Masonry布局容器 - 桌面端 */
+  width: 100%;
+  max-width: 100%;
+}
+
+/* 移动端使用flexbox布局 */
+@media (max-width: 768px) {
+  .posts-grid {
+    display: flex !important;
+    flex-wrap: wrap;
+    gap: 16px;
+    width: 100%;
+  }
 }
 
 .empty-state {
@@ -155,9 +181,99 @@ const resetFilters = () => {
   margin-bottom: var(--spacing-md);
 }
 
+/* ========== 响应式优化 ========== */
+
+/* 平板端优化 (780px-900px) - 2列布局 */
+@media (min-width: 780px) and (max-width: 900px) {
+  .explore-page {
+    gap: var(--spacing-lg);
+  }
+
+  .page-title {
+    font-size: var(--text-3xl);
+    margin-bottom: var(--spacing-lg);
+  }
+}
+
+/* 移动端样式 */
 @media (max-width: 768px) {
-  .posts-grid {
-    grid-template-columns: 1fr;
+  .page-title {
+    font-size: var(--text-2xl);
+    margin-bottom: var(--spacing-md);
+  }
+
+  /* Masonry布局在移动端也生效 */
+}
+
+/* 极小屏幕优化 */
+@media (max-width: 480px) {
+  .page-title {
+    font-size: var(--text-xl);
+  }
+}
+</style>
+
+<!-- Masonry瀑布流全局样式 -->
+<style>
+/* Masonry瀑布流卡片样式 - 与HomePage保持一致 */
+.explore-page .posts-grid .post-card {
+  width: calc(25% - 12px);
+  margin-bottom: 16px;
+}
+
+@media (min-width: 1400px) {
+  .explore-page .posts-grid .post-card {
+    width: calc(25% - 12px);
+  }
+}
+
+@media (min-width: 1024px) and (max-width: 1399px) {
+  .explore-page .posts-grid .post-card {
+    width: calc(33.333% - 11px);
+  }
+}
+
+/* 平板端 - 较大屏幕 (901px-1023px) */
+@media (min-width: 901px) and (max-width: 1023px) {
+  .explore-page .posts-grid .post-card {
+    width: calc(50% - 8px); /* 2列 */
+  }
+}
+
+/* 平板端 - 中等屏幕 (780px-900px) - 2列布局 */
+@media (min-width: 780px) and (max-width: 900px) {
+  .explore-page .posts-grid .post-card {
+    width: calc(50% - 8px); /* 2列 */
+    margin-bottom: 16px;
+  }
+}
+
+/* 平板端 - 较小屏幕 (769px-779px) */
+@media (min-width: 769px) and (max-width: 779px) {
+  .explore-page .posts-grid .post-card {
+    width: calc(50% - 8px); /* 2列 */
+  }
+}
+
+/* 移动端 - 使用flex布局时的样式 */
+@media (max-width: 768px) {
+  .explore-page .posts-grid .post-card {
+    flex: 0 0 calc(50% - 8px) !important;
+    width: calc(50% - 8px) !important;
+    max-width: calc(50% - 8px) !important;
+    margin: 0 !important;
+    position: relative !important;
+    left: auto !important;
+    top: auto !important;
+  }
+}
+
+/* 小屏手机 */
+@media (max-width: 480px) {
+  .explore-page .posts-grid .post-card {
+    flex: 0 0 calc(50% - 8px) !important;
+    width: calc(50% - 8px) !important;
+    max-width: calc(50% - 8px) !important;
   }
 }
 </style>

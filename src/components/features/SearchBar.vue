@@ -32,7 +32,7 @@
 import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { Search, X } from 'lucide-vue-next'
-import { useDebounceFn } from '@vueuse/core'
+import { debounce } from '@/utils/debounce'
 
 const router = useRouter()
 const searchQuery = ref('')
@@ -62,8 +62,8 @@ const selectSuggestion = (suggestion: string) => {
   handleSearch()
 }
 
-// 防抖搜索建议
-const fetchSuggestions = useDebounceFn(async (query: string) => {
+// 防抖搜索建议（300ms防抖，避免频繁触发）
+const fetchSuggestions = async (query: string) => {
   if (query.length < 2) {
     suggestions.value = []
     showSuggestions.value = false
@@ -73,10 +73,12 @@ const fetchSuggestions = useDebounceFn(async (query: string) => {
   // TODO: 从API获取搜索建议
   suggestions.value = [`${query} youtube`, `${query} twitter`, `${query} video`]
   showSuggestions.value = true
-}, 300)
+}
+
+const debouncedFetchSuggestions = debounce(fetchSuggestions, 300)
 
 const handleInput = () => {
-  fetchSuggestions(searchQuery.value)
+  debouncedFetchSuggestions(searchQuery.value)
 }
 
 watch(searchQuery, (newVal) => {

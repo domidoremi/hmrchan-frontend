@@ -2,11 +2,7 @@
   <div v-if="show" class="media-viewer-overlay" @click="close">
     <div class="media-viewer" @click.stop>
       <!-- 关闭按钮 -->
-      <button 
-        class="viewer-btn close-btn" 
-        @click="close"
-        :aria-label="$t('aria.closeViewer')"
-      >
+      <button class="viewer-btn close-btn" @click="close" :aria-label="$t('aria.closeViewer')">
         <X :size="24" />
       </button>
 
@@ -37,7 +33,7 @@
         <video
           v-else-if="currentMedia.type === 'video'"
           controls
-          preload="metadata"
+          preload="none"
           playsinline
           class="media-content-video"
           @loadedmetadata="onMediaLoad"
@@ -136,7 +132,8 @@ watch(
     if (newVal) {
       currentIndex.value = props.initialIndex
       zoom.value = 1
-      loading.value = true
+      // 对于视频且 preload="none"，不需要等待加载
+      loading.value = currentMedia.value.type === 'video' ? false : true
       document.body.style.overflow = 'hidden'
     } else {
       document.body.style.overflow = ''
@@ -145,7 +142,8 @@ watch(
 )
 
 watch(currentIndex, () => {
-  loading.value = true
+  // 对于视频且 preload="none"，不需要等待加载
+  loading.value = currentMedia.value.type === 'video' ? false : true
   zoom.value = 1
   // 如果切换到视频，触发加载
   if (currentMedia.value.type === 'video' && videoElement.value) {
@@ -209,10 +207,12 @@ const onVideoError = (event: Event) => {
     readyState: video.readyState,
     src: video.src,
   })
-  
+
   // Show error message to user
   if (import.meta.env.DEV) {
-    alert(`Video playback failed. Error code: ${video.error?.code}\nMessage: ${video.error?.message || 'Unknown error'}`)
+    alert(
+      `Video playback failed. Error code: ${video.error?.code}\nMessage: ${video.error?.message || 'Unknown error'}`,
+    )
   }
 }
 

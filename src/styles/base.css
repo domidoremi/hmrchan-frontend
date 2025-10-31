@@ -391,7 +391,21 @@ img {
   }
 }
 
-@media (max-width: 1024px) {
+@media (min-width: 901px) and (max-width: 1100px) {
+  .container {
+    max-width: 100%; /* 2列布局使用完整宽度 */
+    padding: 0 var(--spacing-lg);
+  }
+}
+
+@media (min-width: 780px) and (max-width: 900px) {
+  .container {
+    max-width: 100%; /* 允许完整宽度用于2列布局 */
+    padding: 0 var(--spacing-lg);
+  }
+}
+
+@media (max-width: 779px) {
   .container {
     max-width: 768px;
   }

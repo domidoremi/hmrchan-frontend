@@ -3,11 +3,13 @@ import { ref, onMounted, watch } from 'vue'
 import { RouterView, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useThemeStore } from '@/stores/theme'
+import { useSettingsStore } from '@/stores/settings'
 import { storeToRefs } from 'pinia'
 import ErrorBoundary from '@/components/ErrorBoundary.vue'
 
 const authStore = useAuthStore()
 const themeStore = useThemeStore()
+const settingsStore = useSettingsStore()
 const { isDark } = storeToRefs(themeStore)
 
 const router = useRouter()
@@ -34,16 +36,43 @@ watch(
 )
 
 // 初始化应用
-onMounted(() => {
-  // 初始化主题
+onMounted(async () => {
+  // 初始化主题（立即执行，不阻塞）
   themeStore.initTheme()
 
-  // 恢复认证状态
+  // 初始化本地设置（立即执行，不阻塞）
+  settingsStore.initSettings()
+
+  // 恢复认证状态（同步操作）
   authStore.restoreAuth()
+
+  // 并行加载用户数据和设置（不阻塞页面渲染）
   if (authStore.isAuthenticated) {
-    authStore.fetchCurrentUser()
+    Promise.all([
+      authStore.fetchCurrentUser().catch(() => {
+        // 失败时不影响应用启动
+        console.warn('Failed to fetch current user, using cached data')
+      }),
+      settingsStore.loadFromServer().catch(() => {
+        // 失败时不影响应用启动
+        console.warn('Failed to load server settings, using local settings')
+      }),
+    ]).catch(() => {
+      // 防止未捕获的Promise rejection
+    })
   }
 })
+
+// 监听登录状态变化
+watch(
+  () => authStore.isAuthenticated,
+  async (isAuthenticated) => {
+    if (isAuthenticated) {
+      // 用户登录后，从服务器加载设置
+      await settingsStore.loadFromServer()
+    }
+  },
+)
 </script>
 
 <template>

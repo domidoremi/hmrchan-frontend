@@ -114,6 +114,7 @@
     "display": "表示設定",
     "showHeroSection": "ヒーローセクションを表示",
     "showHeroSectionDesc": "ホームページにヒーローバナーを表示",
+    "hideHeroSection": "ヒーローバナーを非表示（設定で復元可能）",
     "light": "ライト",
     "dark": "ダーク",
     "auto": "自動",
@@ -140,7 +141,8 @@
     "reset": "リセット",
     "apply": "適用",
     "order": "順序",
-    "noMore": "これ以上ありません",
+    "noMore": "これ以上ない",
+    "swipeToView": "スワイプして詳細を表示",
     "loadFailed": "読み込みに失敗しました",
     "operationFailed": "操作に失敗しました",
     "loadFailedContent": "コンテンツの読み込みに失敗しました",
@@ -245,5 +247,101 @@
     "nextImage": "次の画像",
     "closeViewer": "ビューアを閉じる",
     "loading": "読み込み中"
+  },
+  "cookies": {
+    "title": "Cookie 使用通知",
+    "description": "当サイトでは、ブラウジング体験の向上、パーソナライズされたコンテンツの提供、トラフィック分析のために Cookie を使用しています。",
+    "learnMore": "詳細を見る",
+    "acceptAll": "すべて受け入れる",
+    "rejectAll": "すべて拒否",
+    "customize": "カスタマイズ",
+    "customizeTitle": "Cookie 設定のカスタマイズ",
+    "essential": "必須 Cookie",
+    "essentialDesc": "これらの Cookie はウェブサイトの動作に必要であり、無効にすることはできません。",
+    "analytics": "分析 Cookie",
+    "analyticsDesc": "訪問者がウェブサイトをどのように使用しているかを理解し、サービスを改善するために役立ちます。",
+    "performance": "パフォーマンス Cookie",
+    "performanceDesc": "ウェブサイトのパフォーマンスに関する情報を収集し、読み込み速度の最適化に役立てます。",
+    "personalization": "パーソナライゼーション Cookie",
+    "personalizationDesc": "お客様の設定を記憶し、パーソナライズされたコンテンツを提供します。",
+    "required": "必須"
+  },
+  "preferences": {
+    "title": "ユーザー設定",
+    "subtitle": "ブラウジング体験をカスタマイズ",
+    "syncing": "同期中...",
+    "synced": "同期済み",
+    "localOnly": "ローカルのみ",
+    "display": "表示設定",
+    "showHeroSection": "ヒーローバナーを表示",
+    "showHeroSectionDesc": "ホームページの上部にウェルカムバナーと統計情報を表示",
+    "enableAnimations": "アニメーションを有効化",
+    "enableAnimationsDesc": "ページ遷移とインタラクションアニメーションを有効化",
+    "postsPerPage": "ページあたりの投稿数",
+    "postsPerPageDesc": "ページに表示される投稿数を設定",
+    "media": "メディア設定",
+    "autoPlayVideos": "動画の自動再生",
+    "autoPlayVideosDesc": "動画を開いたときに自動的に再生を開始（MediaViewer のみ）",
+    "showImagePreviews": "画像プレビューを表示",
+    "showImagePreviewsDesc": "リストに画像のサムネイルを表示",
+    "privacy": "プライバシーとデータ",
+    "analyticsEnabled": "分析",
+    "analyticsEnabledDesc": "匿名の使用データの収集を許可してサービスを改善",
+    "performanceCookies": "パフォーマンス Cookie",
+    "performanceCookiesDesc": "パフォーマンスデータを収集してウェブサイトの速度を最適化",
+    "personalizedContent": "パーソナライズされたコンテンツ",
+    "personalizedContentDesc": "お客様の設定に基づいてコンテンツを推奨",
+    "dataCollection": "データ収集",
+    "dataCollectionDesc": "分析用の使用データの収集を許可",
+    "privacyNote": "お客様のプライバシーを尊重します。すべてのデータ収集は匿名であり、サービス改善のためにのみ使用されます。",
+    "readPrivacyPolicy": "プライバシーポリシーを読む",
+    "dataManagement": "データ管理",
+    "exportData": "設定をエクスポート",
+    "importData": "設定をインポート",
+    "resetDefaults": "デフォルトに戻す",
+    "settingsSaved": "設定を保存しました",
+    "exportSuccess": "設定をエクスポートしました",
+    "importSuccess": "設定をインポートしました",
+    "importFailed": "インポートに失敗しました",
+    "resetConfirm": "デフォルト設定に戻しますか？",
+    "resetSuccess": "設定をリセットしました"
+  },
+  "privacy": {
+    "title": "プライバシーポリシー",
+    "lastUpdated": "最終更新",
+    "questions": "ご質問がございましたら、お問い合わせください。",
+    "managePreferences": "設定を管理",
+    "intro": {
+      "title": "はじめに",
+      "content": "<p>himeri chan へようこそ！当サイトではお客様のプライバシーを尊重し、このポリシーでは個人情報の収集、使用、保護方法について説明します。</p><p>当サービスを使用することにより、このプライバシーポリシーに記載されている慣行に同意したものとみなされます。</p>"
+    },
+    "dataCollection": {
+      "title": "収集する情報",
+      "content": "<p>以下の種類の情報を収集します：</p><ul><li><strong>アカウント情報</strong>：ユーザー名、メールアドレス、アバター（提供された場合）</li><li><strong>使用データ</strong>：閲覧履歴、検索クエリ、お気に入りのコンテンツ</li><li><strong>技術データ</strong>：IP アドレス、ブラウザの種類、デバイス情報、Cookie</li><li><strong>設定</strong>：カスタム設定と環境設定</li></ul>"
+    },
+    "cookies": {
+      "title": "Cookie の使用",
+      "content": "<p>以下の種類の Cookie を使用します：</p><ul><li><strong>必須 Cookie</strong>：ウェブサイトの適切な動作を保証（無効化不可）</li><li><strong>機能 Cookie</strong>：設定を記憶</li><li><strong>分析 Cookie</strong>：ウェブサイトの使用状況を理解（同意が必要）</li><li><strong>パフォーマンス Cookie</strong>：ウェブサイトのパフォーマンスを最適化（同意が必要）</li></ul><p>Cookie は設定で管理できます。</p>"
+    },
+    "dataUse": {
+      "title": "情報の使用方法",
+      "content": "<p>収集した情報は以下の目的で使用します：</p><ul><li>サービスの提供と改善</li><li>体験のパーソナライズ</li><li>ウェブサイトの使用状況の分析</li><li>重要な通知と更新の送信</li><li>不正行為と悪用の防止</li></ul>"
+    },
+    "dataSharing": {
+      "title": "情報の共有",
+      "content": "<p>お客様の個人情報を<strong>販売することはありません</strong>。以下の場合に情報を共有する場合があります：</p><ul><li>お客様の明示的な同意がある場合</li><li>法的要件を遵守する場合</li><li>サービスプロバイダーと（機密保持契約に基づく）</li></ul>"
+    },
+    "yourRights": {
+      "title": "お客様の権利",
+      "content": "<p>お客様には以下の権利があります：</p><ul><li>個人データへのアクセスとダウンロード</li><li>不正確な情報の修正</li><li>アカウントとデータの削除</li><li>特定のデータ処理への反対</li><li>いつでも同意を撤回</li></ul><p>これらの設定はプロフィールで管理できます。</p>"
+    },
+    "security": {
+      "title": "データセキュリティ",
+      "content": "<p>お客様のデータを保護するために適切な技術的および組織的措置を講じています：</p><ul><li>暗号化された送信（HTTPS）</li><li>安全なデータストレージ</li><li>アクセス制御と権限管理</li><li>定期的なセキュリティ監査</li></ul>"
+    },
+    "changes": {
+      "title": "ポリシーの変更",
+      "content": "<p>このプライバシーポリシーは随時更新される場合があります。重大な変更は、ウェブサイト通知または電子メールで通知されます。</p><p>最新情報については、このページを定期的にご確認ください。</p>"
+    }
   }
 }
