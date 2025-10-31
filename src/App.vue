@@ -6,6 +6,8 @@ import { useThemeStore } from '@/stores/theme'
 import { useSettingsStore } from '@/stores/settings'
 import { storeToRefs } from 'pinia'
 import ErrorBoundary from '@/components/ErrorBoundary.vue'
+// 导入无障碍功能
+import { useKeyboardNavigation, useSkipLinks } from '@/composables/useAccessibility'
 
 const authStore = useAuthStore()
 const themeStore = useThemeStore()
@@ -34,6 +36,10 @@ watch(
   },
   { immediate: false },
 )
+
+// 启用无障碍功能
+useKeyboardNavigation()
+useSkipLinks()
 
 // 初始化应用
 onMounted(async () => {
@@ -78,14 +84,17 @@ watch(
 <template>
   <div id="app" :data-theme="isDark ? 'dark' : 'light'">
     <ErrorBoundary>
-      <RouterView v-slot="{ Component, route }">
-        <transition :name="transitionName" mode="out-in">
-          <!-- KeepAlive 缓存页面组件，提升性能和用户体验 -->
-          <KeepAlive :include="cachedComponents" :max="5">
-            <component :is="Component" :key="route.path" />
-          </KeepAlive>
-        </transition>
-      </RouterView>
+      <!-- 主内容区域，用于跳过链接 -->
+      <main id="main-content" tabindex="-1">
+        <RouterView v-slot="{ Component, route }">
+          <transition :name="transitionName" mode="out-in">
+            <!-- KeepAlive 缓存页面组件，提升性能和用户体验 -->
+            <KeepAlive :include="cachedComponents" :max="5">
+              <component :is="Component" :key="route.path" />
+            </KeepAlive>
+          </transition>
+        </RouterView>
+      </main>
     </ErrorBoundary>
   </div>
 </template>

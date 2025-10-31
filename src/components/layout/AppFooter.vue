@@ -4,12 +4,12 @@
       <!-- 桌面端布局 -->
       <div class="footer-content footer-desktop">
         <div class="footer-section">
-          <h4>{{ $t('app.name') }}</h4>
+          <h2>{{ $t('app.name') }}</h2>
           <p>{{ $t('app.description') }}</p>
         </div>
 
         <div class="footer-section">
-          <h4>{{ $t('nav.explore') }}</h4>
+          <h2>{{ $t('nav.explore') }}</h2>
           <ul class="footer-links">
             <li><RouterLink to="/explore?platform=youtube">YouTube</RouterLink></li>
             <li><RouterLink to="/explore?platform=twitter">Twitter</RouterLink></li>
@@ -19,7 +19,7 @@
         </div>
 
         <div class="footer-section">
-          <h4>{{ $t('common.more') }}</h4>
+          <h2>{{ $t('common.more') }}</h2>
           <ul class="footer-links">
             <li>
               <RouterLink to="/authors">{{ $t('nav.authors') }}</RouterLink>
@@ -94,6 +94,8 @@ const platforms = [
   border-top: 1px solid var(--glass-border);
   position: relative;
   z-index: 1;
+  /* 最小高度，防止布局偏移 */
+  min-height: 200px;
 }
 
 /* 桌面端布局 */
@@ -104,11 +106,12 @@ const platforms = [
   padding: var(--spacing-2xl) 0;
 }
 
-.footer-section h4 {
+.footer-section h2 {
   color: var(--color-text-primary);
   font-size: var(--text-lg);
   font-weight: var(--font-semibold);
   margin-bottom: var(--spacing-md);
+  margin-top: 0;
 }
 
 .footer-section p {
