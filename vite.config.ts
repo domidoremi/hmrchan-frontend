@@ -27,9 +27,23 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           if (id.includes('node_modules')) {
-            if (id.includes('vue') || id.includes('pinia')) {
+            // Vue核心库
+            if (id.includes('vue') || id.includes('pinia') || id.includes('vue-router')) {
               return 'vue-vendor'
             }
+            // 图标库单独分割
+            if (id.includes('lucide-vue-next')) {
+              return 'icons'
+            }
+            // Masonry布局库
+            if (id.includes('masonry-layout')) {
+              return 'masonry'
+            }
+            // i18n和dayjs
+            if (id.includes('vue-i18n') || id.includes('dayjs')) {
+              return 'utils'
+            }
+            // 其他依赖
             return 'vendor'
           }
         },

@@ -82,6 +82,22 @@ const routes: RouteRecordRaw[] = [
     },
   },
   {
+    path: '/preferences',
+    name: 'preferences',
+    component: () => import('@/views/PreferencesPage.vue'),
+    meta: {
+      title: 'Preferences',
+    },
+  },
+  {
+    path: '/privacy',
+    name: 'privacy',
+    component: () => import('@/views/PrivacyPage.vue'),
+    meta: {
+      title: 'Privacy Policy',
+    },
+  },
+  {
     path: '/:pathMatch(.*)*',
     name: 'not-found',
     component: () => import('@/views/NotFoundPage.vue'),

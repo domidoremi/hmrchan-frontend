@@ -63,5 +63,24 @@ export function getUserAvatar(
     return generateDefaultAvatar('User', size)
   }
 
-  return getAvatarUrl(user.avatar_url, user.username, user.full_name, size)
+  // 如果有avatar_url
+  let avatarUrl = user.avatar_url
+
+  // 开发环境：相对路径直接使用（Vite会代理到后端）
+  // 生产环境：相对路径需要拼接完整URL
+  if (avatarUrl && avatarUrl.startsWith('/uploads/')) {
+    // 开发环境直接使用相对路径，会被Vite代理
+    // 生产环境需要根据部署配置处理
+    if (import.meta.env.DEV) {
+      // 开发环境：直接使用，Vite会代理
+      avatarUrl = avatarUrl
+    } else {
+      // 生产环境：根据API URL构建完整路径
+      const apiUrl = import.meta.env.VITE_API_URL || '/api'
+      const baseUrl = apiUrl.replace('/api', '')
+      avatarUrl = `${baseUrl}${avatarUrl}`
+    }
+  }
+
+  return getAvatarUrl(avatarUrl, user.username, user.full_name, size)
 }
