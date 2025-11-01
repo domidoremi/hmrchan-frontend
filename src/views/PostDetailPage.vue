@@ -32,6 +32,9 @@
                   :key="currentThumbnailUrl"
                   :src="currentThumbnailUrl"
                   :alt="post.title || 'Post thumbnail'"
+                  loading="eager"
+                  decoding="async"
+                  fetchpriority="high"
                 />
               </transition>
               <div class="thumbnail-overlay">
@@ -158,6 +161,7 @@
                 :src="`/api/media/${media.id}/stream`"
                 :alt="post.title || ''"
                 loading="lazy"
+                decoding="async"
                 @click="openMediaViewer(getMediaIndex(index))"
                 class="clickable-image"
               />

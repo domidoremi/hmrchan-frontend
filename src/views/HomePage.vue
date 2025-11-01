@@ -36,8 +36,20 @@
 
       <!-- Platform Stats - 桌面端网格 / 移动端轮播 -->
       <section class="stats-section">
-        <!-- 桌面端：Grid布局 -->
-        <div class="stats-grid stats-desktop">
+        <!-- 加载中：显示加载状态 -->
+        <div v-if="isStatsLoading" class="stats-grid stats-desktop">
+          <div v-for="platform in platforms" :key="platform" class="stat-card glass-card loading">
+            <div class="stat-icon" style="background: #e5e7eb">
+              <div style="width: 32px; height: 32px; background: #d1d5db; border-radius: 4px;"></div>
+            </div>
+            <div style="height: 20px; width: 60%; background: #e5e7eb; border-radius: 4px; margin: 8px 0;"></div>
+            <div style="height: 32px; width: 40%; background: #e5e7eb; border-radius: 4px; margin: 4px 0;"></div>
+            <div style="height: 16px; width: 50%; background: #e5e7eb; border-radius: 4px;"></div>
+          </div>
+        </div>
+        
+        <!-- 加载完成：显示真实数据 -->
+        <div v-else class="stats-grid stats-desktop">
           <div v-for="platform in platforms" :key="platform" class="stat-card glass-card">
             <div class="stat-icon" :style="{ background: getPlatformColor(platform) }">
               <component :is="getPlatformIcon(platform)" :size="32" />
@@ -50,7 +62,19 @@
 
         <!-- 移动端：轮播图 -->
         <div class="stats-carousel stats-mobile">
-          <div class="carousel-container">
+          <!-- 加载中：显示加载状态 -->
+          <div v-if="isStatsLoading" class="stat-card glass-card loading">
+            <div class="stat-icon" style="background: #e5e7eb">
+              <div style="width: 32px; height: 32px; background: #d1d5db; border-radius: 4px;"></div>
+            </div>
+            <div style="height: 20px; width: 60%; background: #e5e7eb; border-radius: 4px; margin: 8px 0;"></div>
+            <div style="height: 32px; width: 40%; background: #e5e7eb; border-radius: 4px; margin: 4px 0;"></div>
+            <div style="height: 16px; width: 50%; background: #e5e7eb; border-radius: 4px;"></div>
+          </div>
+          
+          <!-- 加载完成：显示轮播 -->
+          <div v-else>
+            <div class="carousel-container">
             <button
               class="carousel-btn carousel-prev"
               @click="prevStat"
@@ -104,18 +128,19 @@
                 <polyline points="9 18 15 12 9 6"></polyline>
               </svg>
             </button>
-          </div>
+            </div>
 
-          <!-- 指示器 -->
-          <div class="carousel-indicators">
-            <button
-              v-for="(platform, index) in platforms"
-              :key="index"
-              class="indicator-dot"
-              :class="{ active: currentStatIndex === index }"
-              @click="currentStatIndex = index"
-              :aria-label="`Go to ${platform}`"
-            ></button>
+            <!-- 指示器 -->
+            <div class="carousel-indicators">
+              <button
+                v-for="(platform, index) in platforms"
+                :key="index"
+                class="indicator-dot"
+                :class="{ active: currentStatIndex === index }"
+                @click="currentStatIndex = index"
+                :aria-label="`Go to ${platform}`"
+              ></button>
+            </div>
           </div>
         </div>
       </section>
@@ -174,7 +199,7 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, nextTick, onMounted, onUnmounted, onActivated } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
@@ -200,7 +225,6 @@ import type { Post } from '@/types'
 import { useAuthStore } from '@/stores/auth'
 import { useSettingsStore } from '@/stores/settings'
 import { usePostsStore } from '@/stores/posts'
-import { useSmartPreload } from '@/composables/useSmartPreload'
 import { useWaterfallLayout } from '@/composables/useWaterfallLayout'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import { throttle } from '@/utils/throttle'
@@ -227,9 +251,11 @@ const accessLimit = computed(() => {
 
 const platforms = PLATFORMS
 const platformStats = ref<Record<string, number>>({})
+const isStatsLoading = ref(true)
 const currentPage = ref(1)
 const hasMore = ref(true)
 const postsGrid = ref<HTMLElement | null>(null)
+const loadedPostsCount = ref(0) // 追踪已加载的卡片数量
 
 // 移动端轮播图状态
 const currentStatIndex = ref(0)
@@ -250,7 +276,7 @@ const nextStat = () => {
 const { t } = useI18n()
 
 // 使用轻量级瀑布流布局
-const { updateLayout } = useWaterfallLayout(postsGrid, {
+const { updateLayout, smoothUpdateLayout } = useWaterfallLayout(postsGrid, {
   columnGap: 16,
   rowGap: 16,
   breakpoints: {
@@ -261,12 +287,6 @@ const { updateLayout } = useWaterfallLayout(postsGrid, {
   },
 })
 
-// 智能预加载
-useSmartPreload(posts, {
-  batchSize: 10,
-  rootMargin: '400px 0px',
-  enabled: true,
-})
 
 // 无限滚动
 const { isLoading: isLoadingMore } = useInfiniteScroll({
@@ -287,31 +307,51 @@ onMounted(async () => {
     // 重置筛选条件，确保首页总是显示最新内容
     postsStore.resetFilters()
 
-    // 并行加载帖子和统计数据（不互相阻塞）
-    await Promise.all([
-      await postsStore.fetchPosts({ page: currentPage.value, page_size: 8 }),
-      statsApi
-        .getPlatformStats()
-        .then((stats) => {
-          platformStats.value = stats.by_platform || {}
-        })
-        .catch((err) => {
-          logger.error('Failed to load stats:', err)
-          // 统计数据失败不影响主内容
-        }),
-    ])
+    // ✨ 优化：只等待关键内容（帖子），统计数据后台加载
+    await postsStore.fetchPosts({ page: currentPage.value, page_size: 8 })
 
-    // 刷新瀑布流布局
+    // 记录初始加载的卡片数量
     await nextTick()
+    loadedPostsCount.value = posts.value.length
+    
+    // 更新瀑布流布局
     await updateLayout()
+
+    // 后台加载统计数据（非阻塞）
+    loadStatsInBackground()
   } catch (error) {
     logger.error('Failed to load data:', error)
     toast.error(t('common.loadFailed'))
   }
 })
 
+// 后台加载统计数据
+const loadStatsInBackground = () => {
+  statsApi
+    .getPlatformStats()
+    .then((stats) => {
+      platformStats.value = stats.by_platform || {}
+      isStatsLoading.value = false
+      logger.info('统计数据加载完成')
+    })
+    .catch((err) => {
+      logger.error('Failed to load stats:', err)
+      isStatsLoading.value = false
+      // 统计数据失败不影响主内容
+    })
+}
+
 onUnmounted(() => {
   // 清理工作由 composables 自动处理
+})
+
+// 页面激活时重新计算布局（解决页面切换后布局错乱）
+onActivated(async () => {
+  if (postsGrid.value && posts.value.length > 0) {
+    await nextTick()
+    await updateLayout()
+    logger.info('页面激活，重新计算布局')
+  }
 })
 
 // 加载更多帖子
@@ -333,9 +373,36 @@ const loadMore = async () => {
       hasMore.value = false
     }
 
-    // 更新瀑布流布局
+    // 等待 DOM 更新
     await nextTick()
-    await updateLayout()
+    
+    // 获取所有卡片，只对新卡片添加动画
+    if (postsGrid.value) {
+      const allCards = postsGrid.value.querySelectorAll('a.post-card')
+      const previousCount = loadedPostsCount.value
+      
+      // 只对新增的卡片添加进入动画
+      for (let i = previousCount; i < allCards.length; i++) {
+        const card = allCards[i] as HTMLElement
+        card.classList.add('card-entering')
+      }
+      
+      // 更新已加载数量
+      loadedPostsCount.value = allCards.length
+    }
+    
+    // 使用平滑更新，减少现有卡片重排
+    await smoothUpdateLayout()
+    
+    // 延迟后移除进入动画类
+    setTimeout(() => {
+      if (postsGrid.value) {
+        const cards = postsGrid.value.querySelectorAll('a.post-card.card-entering')
+        cards.forEach(card => {
+          (card as HTMLElement).classList.remove('card-entering')
+        })
+      }
+    }, 600)
   } catch (error) {
     logger.error('Failed to load more posts:', error)
     currentPage.value-- // 恢复页码
@@ -356,7 +423,7 @@ const getPlatformColor = (platform: string) => {
   return PLATFORM_COLORS[platform as keyof typeof PLATFORM_COLORS] || '#666'
 }
 
-// posts变化的监听已在usePageMasonry中处理
+// posts变化的监听由 useSmartPreload 和 useInfiniteScroll 处理
 
 const getPlatformIcon = (platform: string) => {
   const icons = {
@@ -558,7 +625,22 @@ const getPlatformIcon = (platform: string) => {
 .loading-more {
   display: flex;
   justify-content: center;
-  padding: var(--spacing-xl);
+  align-items: center;
+  padding: var(--spacing-2xl) var(--spacing-xl);
+  margin-top: var(--spacing-lg);
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  min-height: 80px;
+  animation: fadeInLoading 0.3s ease;
+}
+
+@keyframes fadeInLoading {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .no-more-hint {
@@ -806,21 +888,36 @@ const getPlatformIcon = (platform: string) => {
 }
 </style>
 
-<!-- 瀑布流全局样式 - CSS Columns 实现 -->
+<!-- 瀑布流全局样式 - 手动定位实现 -->
 <style>
-/* 桌面端：CSS columns 瀑布流 */
+/* 桌面端：手动定位瀑布流 */
 .posts-grid {
   width: 100%;
-  /* column-count 由 useWaterfallLayout 动态控制 */
+  position: relative;
+  /* 高度由 JS 动态设置 */
 }
 
-/* 卡片样式 - 防止列内断开 */
+/* 卡片样式 - 绝对定位 */
 .posts-grid .post-card {
-  display: inline-block;
-  width: 100%;
+  /* position, left, top, width 由 JS 动态设置 */
   box-sizing: border-box;
-  break-inside: avoid;
-  page-break-inside: avoid;
+  transition: opacity 0.4s ease, transform 0.4s ease, left 0.3s ease, top 0.3s ease;
+}
+
+/* 新卡片进入动画 */
+.posts-grid .post-card.card-entering {
+  animation: cardFadeIn 0.5s ease forwards;
+}
+
+@keyframes cardFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 /* 移动端（<=768px）- 使用 flex 布局 */
@@ -830,10 +927,13 @@ const getPlatformIcon = (platform: string) => {
     flex-wrap: wrap !important;
     column-gap: var(--spacing-md) !important;
     row-gap: var(--spacing-md) !important;
-    column-count: unset !important; /* 禁用 columns */
+    height: auto !important; /* 覆盖 JS 设置的高度 */
   }
 
   .posts-grid .post-card {
+    position: relative !important; /* 覆盖绝对定位 */
+    left: auto !important;
+    top: auto !important;
     flex: 0 0 calc((100% - var(--spacing-md)) / 2) !important;
     width: calc((100% - var(--spacing-md)) / 2) !important;
     margin-bottom: 0 !important;

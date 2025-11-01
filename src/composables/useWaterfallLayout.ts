@@ -43,6 +43,8 @@ export function useWaterfallLayout(
 
   const isInitialized = ref(false)
   const currentColumns = ref(2)
+  const imageLoadListeners = new Map<HTMLImageElement, () => void>()
+  let imageLoadDebounceTimer: ReturnType<typeof setTimeout> | null = null
 
   /**
    * 计算当前应该显示的列数
@@ -63,7 +65,7 @@ export function useWaterfallLayout(
   }
 
   /**
-   * 应用瀑布流布局样式
+   * 应用瀑布流布局样式（手动计算位置，保持水平顺序）
    */
   const applyLayout = () => {
     if (!containerRef.value) return
@@ -72,19 +74,102 @@ export function useWaterfallLayout(
     currentColumns.value = columns
 
     const container = containerRef.value
-    // 使用 CSS columns 实现瀑布流
-    container.style.columnCount = String(columns)
-    container.style.columnGap = `${columnGap}px`
-    container.style.rowGap = `${rowGap}px`
+    const items = container.querySelectorAll('.post-card') as NodeListOf<HTMLElement>
 
-    // 防止列内断开
-    const items = containerRef.value.querySelectorAll('.post-card')
-    items.forEach((item) => {
-      ;(item as HTMLElement).style.breakInside = 'avoid'
-      ;(item as HTMLElement).style.marginBottom = `${rowGap}px`
+    if (items.length === 0) return
+
+    // 移动端（<=768px）使用 CSS flex 布局，跳过 JS 定位
+    if (window.innerWidth <= 768) {
+      // 清理所有绝对定位样式，让 CSS flex 接管
+      container.style.position = ''
+      container.style.height = ''
+      
+      items.forEach((item) => {
+        item.style.position = ''
+        item.style.left = ''
+        item.style.top = ''
+        item.style.width = ''
+      })
+      
+      debug(`Skipped manual positioning on mobile, cleared absolute styles`)
+      return
+    }
+
+    // 设置容器为相对定位
+    container.style.position = 'relative'
+
+    // 计算列宽
+    const containerWidth = container.offsetWidth
+    const columnWidth = (containerWidth - columnGap * (columns - 1)) / columns
+
+    // 初始化每列的高度数组
+    const columnHeights = new Array(columns).fill(0)
+
+    // 遍历每个卡片，放置到最短的列
+    items.forEach((item, index) => {
+      // 设置卡片宽度和定位
+      item.style.position = 'absolute'
+      item.style.width = `${columnWidth}px`
+
+      // 找到最短的列
+      const shortestColumn = columnHeights.indexOf(Math.min(...columnHeights))
+
+      // 计算卡片位置
+      const left = shortestColumn * (columnWidth + columnGap)
+      const top = columnHeights[shortestColumn]
+
+      item.style.left = `${left}px`
+      item.style.top = `${top}px`
+
+      // 获取卡片高度（如果图片未加载，会不准确）
+      const itemHeight = item.offsetHeight || 400
+      columnHeights[shortestColumn] += itemHeight + rowGap
+
+      // 监听卡片内的图片加载完成事件
+      const images = item.querySelectorAll('img')
+      images.forEach((img: HTMLImageElement) => {
+        // 如果图片已经加载完成，跳过
+        if (img.complete && img.naturalHeight > 0) return
+
+        // 移除旧的监听器（如果存在）
+        const oldListener = imageLoadListeners.get(img)
+        if (oldListener) {
+          img.removeEventListener('load', oldListener)
+          img.removeEventListener('error', oldListener)
+        }
+
+        // 添加新的监听器
+        const handleImageLoad = () => {
+          // 清理监听器
+          img.removeEventListener('load', handleImageLoad)
+          img.removeEventListener('error', handleImageLoad)
+          imageLoadListeners.delete(img)
+
+          // 使用防抖，避免多张图片同时加载时频繁重新计算
+          if (imageLoadDebounceTimer) {
+            clearTimeout(imageLoadDebounceTimer)
+          }
+
+          imageLoadDebounceTimer = setTimeout(() => {
+            if (containerRef.value) {
+              applyLayout()
+              debug('Images loaded, layout recalculated')
+            }
+            imageLoadDebounceTimer = null
+          }, 100)
+        }
+
+        img.addEventListener('load', handleImageLoad)
+        img.addEventListener('error', handleImageLoad)
+        imageLoadListeners.set(img, handleImageLoad)
+      })
     })
 
-    debug(`Applied layout: ${columns} columns, gap: ${columnGap}px`)
+    // 设置容器高度为最高列的高度
+    const maxHeight = Math.max(...columnHeights)
+    container.style.height = `${maxHeight}px`
+
+    debug(`Applied layout: ${columns} columns, gap: ${columnGap}px (manual positioning)`)
   }
 
   /**
@@ -113,12 +198,54 @@ export function useWaterfallLayout(
   }
 
   /**
+   * 平滑更新布局（用于添加新内容，减少重排影响）
+   */
+  const smoothUpdateLayout = async () => {
+    if (!containerRef.value) return
+
+    await nextTick()
+
+    // 暂时禁用过渡动画，避免卡片"跳动"
+    const container = containerRef.value
+    const oldTransition = container.style.transition
+    container.style.transition = 'none'
+
+    const items = container.querySelectorAll('.post-card')
+    const oldTransitions: string[] = []
+    items.forEach((item, index) => {
+      const element = item as HTMLElement
+      oldTransitions[index] = element.style.transition
+      element.style.transition = 'none'
+    })
+
+    // 应用新布局
+    applyLayout()
+
+    // 等待一帧后恢复过渡
+    await nextTick()
+    requestAnimationFrame(() => {
+      container.style.transition = oldTransition || ''
+      items.forEach((item, index) => {
+        ;(item as HTMLElement).style.transition = oldTransitions[index] || ''
+      })
+    })
+
+    debug('Layout smoothly updated')
+  }
+
+  /**
    * 响应式调整
    */
   const handleResize = throttle(() => {
+    if (!containerRef.value) return
+    
     const newColumns = calculateColumns()
-    if (newColumns !== currentColumns.value) {
-      debug(`Columns changed: ${currentColumns.value} -> ${newColumns}`)
+    const wasDesktop = currentColumns.value > 0 && window.innerWidth > 768
+    const isDesktop = window.innerWidth > 768
+    
+    // 桌面端 <-> 移动端切换，或列数变化时重新布局
+    if (wasDesktop !== isDesktop || newColumns !== currentColumns.value) {
+      debug(`Columns changed: ${currentColumns.value} -> ${newColumns}, Desktop: ${isDesktop}`)
       applyLayout()
     }
   }, 150)
@@ -129,14 +256,36 @@ export function useWaterfallLayout(
   const destroy = () => {
     if (!containerRef.value) return
 
+    // 清理防抖定时器
+    if (imageLoadDebounceTimer) {
+      clearTimeout(imageLoadDebounceTimer)
+      imageLoadDebounceTimer = null
+    }
+
+    // 清理图片加载监听器
+    imageLoadListeners.forEach((listener, img) => {
+      img.removeEventListener('load', listener)
+      img.removeEventListener('error', listener)
+    })
+    imageLoadListeners.clear()
+
+    // 清理容器样式
+    containerRef.value.style.position = ''
+    containerRef.value.style.height = ''
     containerRef.value.style.columnCount = ''
     containerRef.value.style.columnGap = ''
     containerRef.value.style.rowGap = ''
 
+    // 清理卡片样式（手动定位）
     const items = containerRef.value.querySelectorAll('.post-card')
     items.forEach((item) => {
-      ;(item as HTMLElement).style.breakInside = ''
-      ;(item as HTMLElement).style.marginBottom = ''
+      const element = item as HTMLElement
+      element.style.position = ''
+      element.style.left = ''
+      element.style.top = ''
+      element.style.width = ''
+      element.style.breakInside = ''
+      element.style.marginBottom = ''
     })
 
     isInitialized.value = false
@@ -160,6 +309,7 @@ export function useWaterfallLayout(
     currentColumns,
     initLayout,
     updateLayout,
+    smoothUpdateLayout,
     destroy,
   }
 }
