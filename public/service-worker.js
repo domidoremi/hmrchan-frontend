@@ -7,24 +7,28 @@
  * 4. 后台同步
  */
 
-const CACHE_VERSION = 'v1.0.0'
+const CACHE_VERSION = 'v1.1.0' // 更新版本
 const STATIC_CACHE = `hmrchan-static-${CACHE_VERSION}`
 const API_CACHE = `hmrchan-api-${CACHE_VERSION}`
 const IMAGE_CACHE = `hmrchan-images-${CACHE_VERSION}`
+const FONT_CACHE = `hmrchan-fonts-${CACHE_VERSION}`
 
-// 需要缓存的静态资源
+// 需要缓存的静态资源（关键资源）
 const STATIC_ASSETS = [
   '/',
   '/index.html',
   '/offline.html', // 离线页面
+  '/favicon.ico',
+  // 预缓存关键路由（将在运行时缓存）
 ]
 
 // API缓存策略配置
 const API_CACHE_RULES = {
   // 缓存时间(秒)
-  '/api/posts': 300,        // 5分钟
+  '/api/posts': 60,         // 1分钟（SWR 策略）
   '/api/authors': 600,      // 10分钟
-  '/api/media': 3600,       // 1小时
+  '/api/media': 2592000,    // 30天（媒体文件）
+  '/api/posts/stats': 300,  // 5分钟（统计数据）
 }
 
 // ==================== 安装事件 ====================
@@ -55,7 +59,8 @@ self.addEventListener('activate', (event) => {
             return cacheName.startsWith('hmrchan-') && 
                    cacheName !== STATIC_CACHE &&
                    cacheName !== API_CACHE &&
-                   cacheName !== IMAGE_CACHE
+                   cacheName !== IMAGE_CACHE &&
+                   cacheName !== FONT_CACHE
           })
           .map((cacheName) => {
             console.log('[SW] Deleting old cache:', cacheName)
@@ -87,6 +92,18 @@ self.addEventListener('fetch', (event) => {
 
   // 图片请求 - 缓存优先
   if (request.destination === 'image') {
+    event.respondWith(cacheFirstStrategy(request, IMAGE_CACHE))
+    return
+  }
+
+  // 字体请求 - 缓存优先（字体基本不变）
+  if (request.destination === 'font' || url.pathname.match(/\.(woff2?|ttf|otf|eot)$/)) {
+    event.respondWith(cacheFirstStrategy(request, FONT_CACHE))
+    return
+  }
+
+  // 媒体文件（流式传输）- 缓存优先，长期缓存
+  if (url.pathname.includes('/api/media/') && url.pathname.includes('/stream')) {
     event.respondWith(cacheFirstStrategy(request, IMAGE_CACHE))
     return
   }

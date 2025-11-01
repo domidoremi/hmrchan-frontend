@@ -22,6 +22,7 @@
           :alt="post.title || ''"
           :loading="isFirstScreen ? 'eager' : 'lazy'"
           :fetchpriority="isFirstScreen ? 'high' : 'auto'"
+          decoding="async"
         />
         <div v-else class="thumbnail-placeholder">
           <ImageIcon :size="48" />

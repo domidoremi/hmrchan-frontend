@@ -44,7 +44,7 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, nextTick, onMounted, onUnmounted, onActivated } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { SearchX, RotateCcw } from 'lucide-vue-next'
@@ -59,7 +59,7 @@ import GlassButton from '@/components/ui/GlassButton.vue'
 import { usePostsStore } from '@/stores/posts'
 import type { Post, PostListParams } from '@/types'
 import { postsApi } from '@/api/services'
-import { usePageMasonry } from '@/composables/usePageMasonry'
+import { useWaterfallLayout } from '@/composables/useWaterfallLayout'
 
 const route = useRoute()
 const router = useRouter()
@@ -68,14 +68,22 @@ const postsStore = usePostsStore()
 const { posts, loading, filters, pagination } = storeToRefs(postsStore)
 
 const postsGrid = ref<HTMLElement | null>(null)
+const loadedPostsCount = ref(0) // 追踪已加载的卡片数量
 
-// 使用页面级Masonry管理
-const masonry = usePageMasonry(postsGrid, { posts })
+// 使用轻量级瀑布流布局
+const { updateLayout, smoothUpdateLayout } = useWaterfallLayout(postsGrid, {
+  columnGap: 16,
+  rowGap: 16,
+  breakpoints: {
+    1400: 4, // >= 1400px: 4列
+    1100: 3, // >= 1100px: 3列
+    769: 2,  // >= 769px: 2列
+    0: 2,    // < 769px: 2列
+  },
+})
+
 
 onMounted(async () => {
-  // 初始化Masonry管理
-  masonry.mount()
-
   // 重置筛选条件
   postsStore.resetFilters()
 
@@ -86,12 +94,25 @@ onMounted(async () => {
 
   await loadPosts()
 
-  // 初始化Masonry（自动判断桌面端/移动端）
-  await masonry.initialize()
+  // 记录初始加载的卡片数量
+  await nextTick()
+  loadedPostsCount.value = posts.value.length
+  
+  // 更新瀑布流布局
+  await updateLayout()
 })
 
 onUnmounted(() => {
-  masonry.unmount()
+  // 清理工作由 composables 自动处理
+})
+
+// 页面激活时重新计算布局（解决页面切换后布局错乱）
+onActivated(async () => {
+  if (postsGrid.value && posts.value.length > 0) {
+    await nextTick()
+    await updateLayout()
+    console.log('[ExplorePage] 页面激活，重新计算布局')
+  }
 })
 
 watch(
@@ -103,11 +124,44 @@ watch(
 )
 
 const loadPosts = async () => {
+  const previousCount = loadedPostsCount.value
+  
   await postsStore.fetchPosts()
+  
+  // 等待 DOM 更新
+  await nextTick()
+  
+  // 获取所有卡片，只对新卡片添加动画
+  if (postsGrid.value) {
+    const allCards = postsGrid.value.querySelectorAll('a.post-card')
+    
+    // 只对新增的卡片添加进入动画
+    for (let i = previousCount; i < allCards.length; i++) {
+      const card = allCards[i] as HTMLElement
+      card.classList.add('card-entering')
+    }
+    
+    // 更新已加载数量
+    loadedPostsCount.value = allCards.length
+  }
+  
+  // 使用平滑更新
+  await smoothUpdateLayout()
+  
+  // 延迟后移除进入动画类
+  setTimeout(() => {
+    if (postsGrid.value) {
+      const cards = postsGrid.value.querySelectorAll('a.post-card.card-entering')
+      cards.forEach((card) => {
+        (card as HTMLElement).classList.remove('card-entering')
+      })
+    }
+  }, 600)
 }
 
 const handleFilterUpdate = async (newFilters: Partial<PostListParams>) => {
   postsStore.updateFilters(newFilters)
+  loadedPostsCount.value = 0 // 重置计数，因为是新的筛选结果
   await loadPosts()
 
   // 更新URL查询参数
@@ -119,12 +173,14 @@ const handleFilterUpdate = async (newFilters: Partial<PostListParams>) => {
 
 const handlePageChange = async (page: number) => {
   postsStore.updateFilters({ page })
+  loadedPostsCount.value = 0 // 重置计数，因为是新页面
   await loadPosts()
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
 const resetFilters = () => {
   postsStore.resetFilters()
+  loadedPostsCount.value = 0 // 重置计数
   router.push({ query: {} })
   loadPosts()
 }
@@ -145,35 +201,10 @@ const resetFilters = () => {
 }
 
 .posts-grid {
-  /* Masonry布局容器 */
+  /* 瀑布流容器 - 由 useWaterfallLayout 动态控制 columns */
   width: 100%;
   max-width: 100%;
-  min-height: 400px; /* 防止初始化前内容塌陷 */
-  transition: min-height 0.3s ease;
 }
-
-/* 桌面端：Masonry初始化前防止卡片堆叠和CLS */
-@media (min-width: 769px) {
-  .posts-grid {
-    opacity: 0;
-    visibility: hidden; /* 完全隐藏，防止CLS计算 */
-    /* 延迟到500ms，确保Masonry完全初始化 */
-    animation: fadeInExplore 0.4s ease-out 0.5s forwards;
-  }
-}
-
-@keyframes fadeInExplore {
-  from {
-    opacity: 0;
-    visibility: hidden;
-  }
-  to {
-    opacity: 1;
-    visibility: visible;
-  }
-}
-
-/* 移动端flexbox布局 - 由全局样式控制，避免重复 */
 
 .empty-state {
   display: flex;
@@ -217,7 +248,6 @@ const resetFilters = () => {
     margin-bottom: var(--spacing-md);
   }
 
-  /* Masonry布局在移动端也生效 */
 }
 
 /* 极小屏幕优化 */
@@ -228,76 +258,68 @@ const resetFilters = () => {
 }
 </style>
 
-<!-- Masonry瀑布流全局样式 -->
+<!-- 瀑布流全局样式 - 手动定位实现 -->
 <style>
-/* 桌面端：Masonry完全控制布局 */
+/* 桌面端：手动定位瀑布流 */
 .explore-page .posts-grid {
   width: 100%;
-  position: relative; /* Masonry需要relative定位作为absolute的容器 */
+  position: relative;
+  /* 高度由 JS 动态设置 */
 }
 
-/* 桌面端卡片基础样式 */
+/* 卡片样式 - 绝对定位 */
 .explore-page .posts-grid .post-card {
+  /* position, left, top, width 由 JS 动态设置 */
   box-sizing: border-box;
+  transition: opacity 0.4s ease, transform 0.4s ease, left 0.3s ease, top 0.3s ease;
 }
 
-/* 大屏幕（>=1400px）- 4列 */
-@media (min-width: 1400px) {
-  .explore-page .posts-grid .post-card {
-    width: calc(25% - 12px);
+/* 新卡片进入动画 */
+.explore-page .posts-grid .post-card.card-entering {
+  animation: cardFadeIn 0.5s ease forwards;
+}
+
+@keyframes cardFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
 }
 
-/* 中型屏幕（1101px-1399px）- 3列 */
-@media (min-width: 1101px) and (max-width: 1399px) {
-  .explore-page .posts-grid .post-card {
-    width: calc(33.333% - 11px);
-  }
-}
-
-/* 小型桌面/平板横屏（769px-1100px）- 2列 */
-@media (min-width: 769px) and (max-width: 1100px) {
-  .explore-page .posts-grid .post-card {
-    width: calc(50% - 8px);
-  }
-}
-
-/* 移动端（<=768px）- 使用flex布局 */
+/* 移动端（<=768px）- 使用 flex 布局 */
 @media (max-width: 768px) {
   .explore-page .posts-grid {
     display: flex !important;
     flex-wrap: wrap !important;
-    /* 明确设置行间距和列间距 */
-    column-gap: var(--spacing-md) !important; /* 水平间距16px */
-    row-gap: var(--spacing-md) !important; /* 垂直间距16px */
-    width: 100% !important;
+    column-gap: var(--spacing-md) !important;
+    row-gap: var(--spacing-md) !important;
+    height: auto !important; /* 覆盖 JS 设置的高度 */
   }
 
   .explore-page .posts-grid .post-card {
-    /* flex的gap自动处理间距，所以宽度计算为(100% - gap) / 2 */
-    flex: 0 0 calc((100% - var(--spacing-md)) / 2) !important;
-    width: calc((100% - var(--spacing-md)) / 2) !important;
-    max-width: calc((100% - var(--spacing-md)) / 2) !important;
-    margin: 0 !important;
-    position: relative !important;
+    position: relative !important; /* 覆盖绝对定位 */
     left: auto !important;
     top: auto !important;
-    /* 确保没有transform干扰布局 */
-    transform: none !important;
+    flex: 0 0 calc((100% - var(--spacing-md)) / 2) !important;
+    width: calc((100% - var(--spacing-md)) / 2) !important;
+    margin-bottom: 0 !important;
   }
 }
 
 /* 小屏手机（<=480px）*/
 @media (max-width: 480px) {
   .explore-page .posts-grid {
-    column-gap: var(--spacing-sm) !important; /* 水平间距12px */
-    row-gap: var(--spacing-sm) !important; /* 垂直间距12px */
+    column-gap: var(--spacing-sm) !important;
+    row-gap: var(--spacing-sm) !important;
   }
 
   .explore-page .posts-grid .post-card {
     flex: 0 0 calc((100% - var(--spacing-sm)) / 2) !important;
     width: calc((100% - var(--spacing-sm)) / 2) !important;
-    max-width: calc((100% - var(--spacing-sm)) / 2) !important;
   }
 }
 </style>

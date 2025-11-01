@@ -48,15 +48,15 @@ export default defineConfig(({ mode }) => ({
       output: {
         manualChunks(id) {
           if (id.includes('node_modules')) {
-            // Vue核心库（排除 devtools）
+            // Vue核心库（最高优先级，最常用）
             if (id.includes('@vue/runtime') || id.includes('@vue/reactivity') || id.includes('@vue/shared')) {
               return 'vue-core'
             }
-            // Pinia 和 Router
+            // Pinia 和 Router（高优先级）
             if (id.includes('pinia') || id.includes('vue-router')) {
               return 'vue-vendor'
             }
-            // 图标库单独分割（按需加载）
+            // 图标库单独分割（按需加载，体积大）
             if (id.includes('lucide-vue-next')) {
               return 'icons'
             }
@@ -64,11 +64,11 @@ export default defineConfig(({ mode }) => ({
             if (id.includes('masonry-layout')) {
               return 'masonry'
             }
-            // i18n和dayjs
+            // i18n和dayjs（中等优先级）
             if (id.includes('vue-i18n') || id.includes('dayjs')) {
               return 'utils'
             }
-            // Axios
+            // Axios（API客户端）
             if (id.includes('axios')) {
               return 'api'
             }
@@ -78,6 +78,25 @@ export default defineConfig(({ mode }) => ({
             }
             // 其他依赖
             return 'vendor'
+          }
+          
+          // 应用代码分割
+          // 页面组件（views）独立分割
+          if (id.includes('/src/views/')) {
+            const match = id.match(/\/views\/(.+?)\.vue/)
+            if (match) {
+              return `view-${match[1].toLowerCase()}`
+            }
+          }
+          
+          // Composables 分组
+          if (id.includes('/src/composables/')) {
+            return 'composables'
+          }
+          
+          // API 服务分组
+          if (id.includes('/src/api/')) {
+            return 'api-services'
           }
         },
       },

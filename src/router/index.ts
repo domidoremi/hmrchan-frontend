@@ -7,17 +7,19 @@ export const routes: RouteRecordRaw[] = [
   {
     path: '/',
     name: 'home',
-    component: () => import('@/views/HomePage.vue'),
+    component: () => import(/* webpackChunkName: "home" */ '@/views/HomePage.vue'),
     meta: {
       title: 'Home',
+      preload: true, // 预加载首页
     },
   },
   {
     path: '/explore',
     name: 'explore',
-    component: () => import('@/views/ExplorePage.vue'),
+    component: () => import(/* webpackChunkName: "explore" */ '@/views/ExplorePage.vue'),
     meta: {
       title: 'Explore',
+      preload: true, // 预加载探索页
     },
   },
   {
