@@ -9,19 +9,14 @@
 
       <!-- 导航链接 -->
       <div ref="mobileNavRef" class="navbar-nav" :class="{ 'nav-open': mobileMenuOpen }">
-        <RouterLink 
-          to="/" 
-          class="nav-link" 
-          @click="closeMobileMenu"
-          :aria-label="$t('nav.home')"
-        >
+        <RouterLink to="/" class="nav-link" @click="closeMobileMenu" :aria-label="$t('nav.home')">
           <Home :size="20" />
           <span>{{ $t('nav.home') }}</span>
         </RouterLink>
 
-        <RouterLink 
-          to="/explore" 
-          class="nav-link" 
+        <RouterLink
+          to="/explore"
+          class="nav-link"
           @click="closeMobileMenu"
           :aria-label="$t('nav.explore')"
         >
@@ -40,9 +35,9 @@
           <span>{{ $t('nav.favorites') }}</span>
         </RouterLink>
 
-        <RouterLink 
-          to="/authors" 
-          class="nav-link" 
+        <RouterLink
+          to="/authors"
+          class="nav-link"
           @click="closeMobileMenu"
           :aria-label="$t('nav.authors')"
         >
