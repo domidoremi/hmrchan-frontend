@@ -106,8 +106,8 @@
         <!-- 发布时间 -->
         <div class="card-footer">
           <span class="publish-date">{{ formatDate(post.published_at || post.scraped_at) }}</span>
-          <button 
-            class="favorite-button" 
+          <button
+            class="favorite-button"
             @click.stop="toggleFavorite"
             :aria-label="isFavorited ? t('post.unfavorite') : t('post.addToFavorites')"
           >
@@ -269,14 +269,13 @@ const formatDate = (dateStr: string): string => {
   background: var(--color-surface-variant);
   overflow: hidden;
   border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-  /* 固定宽高比，防止布局偏移 */
-  aspect-ratio: 16 / 9;
+  /* 瀑布流模式：使用最小高度，图片自然高度 */
+  min-height: 180px;
 }
 
 .card-thumbnail img {
   width: 100%;
-  height: 100%;
-  object-fit: cover;
+  height: auto; /* 自然高度，支持不同比例 */
   display: block;
   transition: transform var(--transition-slow);
 }
@@ -287,7 +286,7 @@ const formatDate = (dateStr: string): string => {
 
 .thumbnail-placeholder {
   width: 100%;
-  aspect-ratio: 16 / 9;
+  min-height: 180px;
   display: flex;
   align-items: center;
   justify-content: center;

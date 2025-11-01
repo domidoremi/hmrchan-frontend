@@ -201,7 +201,8 @@ import { useAuthStore } from '@/stores/auth'
 import { useSettingsStore } from '@/stores/settings'
 import { usePostsStore } from '@/stores/posts'
 import { useSmartPreload } from '@/composables/useSmartPreload'
-import { usePageMasonry } from '@/composables/usePageMasonry'
+import { useWaterfallLayout } from '@/composables/useWaterfallLayout'
+import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import { throttle } from '@/utils/throttle'
 import { PLATFORMS, PLATFORM_COLORS } from '@/types'
 import { postsApi, statsApi } from '@/api/services'
@@ -227,7 +228,6 @@ const accessLimit = computed(() => {
 const platforms = PLATFORMS
 const platformStats = ref<Record<string, number>>({})
 const currentPage = ref(1)
-const isLoadingMore = ref(false)
 const hasMore = ref(true)
 const postsGrid = ref<HTMLElement | null>(null)
 
@@ -247,10 +247,19 @@ const nextStat = () => {
   }
 }
 
-// 使用页面级Masonry管理
-const masonry = usePageMasonry(postsGrid, { posts })
-
 const { t } = useI18n()
+
+// 使用轻量级瀑布流布局
+const { updateLayout } = useWaterfallLayout(postsGrid, {
+  columnGap: 16,
+  rowGap: 16,
+  breakpoints: {
+    1400: 4, // >= 1400px: 4列
+    1100: 3, // >= 1100px: 3列
+    769: 2, // >= 769px: 2列
+    0: 2, // < 769px: 2列
+  },
+})
 
 // 智能预加载
 useSmartPreload(posts, {
@@ -259,17 +268,28 @@ useSmartPreload(posts, {
   enabled: true,
 })
 
+// 无限滚动
+const { isLoading: isLoadingMore } = useInfiniteScroll({
+  onLoadMore: async () => {
+    if (posts.value.length >= accessLimit.value) {
+      logger.log('[InfiniteScroll] 已达到访问限制')
+      return
+    }
+    await loadMore()
+  },
+  hasMore: () => posts.value.length < accessLimit.value && posts.value.length % 8 === 0,
+  threshold: 500,
+  enabled: true,
+})
+
 onMounted(async () => {
   try {
-    // 初始化Masonry管理
-    masonry.mount()
-
     // 重置筛选条件，确保首页总是显示最新内容
     postsStore.resetFilters()
 
     // 并行加载帖子和统计数据（不互相阻塞）
     await Promise.all([
-      postsStore.fetchPosts({ page: 1, page_size: 8 }),
+      await postsStore.fetchPosts({ page: currentPage.value, page_size: 8 }),
       statsApi
         .getPlatformStats()
         .then((stats) => {
@@ -281,11 +301,9 @@ onMounted(async () => {
         }),
     ])
 
-    // Posts加载完成后，初始化Masonry（自动判断桌面端/移动端）
-    await masonry.initialize()
-
-    // 监听滚动事件
-    window.addEventListener('scroll', handleScroll)
+    // 刷新瀑布流布局
+    await nextTick()
+    await updateLayout()
   } catch (error) {
     logger.error('Failed to load data:', error)
     toast.error(t('common.loadFailed'))
@@ -293,35 +311,14 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
-  window.removeEventListener('scroll', handleScroll)
-  masonry.unmount()
+  // 清理工作由 composables 自动处理
 })
-
-// 滚动加载更多（使用节流优化）
-const handleScroll = throttle(
-  () => {
-    if (isLoadingMore.value || !hasMore.value) return
-    if (!isAuthenticated.value && posts.value.length >= accessLimit.value) return
-
-    const scrollTop = window.pageYOffset || document.documentElement.scrollTop
-    const windowHeight = window.innerHeight
-    const documentHeight = document.documentElement.scrollHeight
-
-    // 距离底部200px时触发加载
-    if (scrollTop + windowHeight >= documentHeight - 200) {
-      loadMore()
-    }
-  },
-  100,
-  { leading: true, trailing: true },
-)
 
 // 加载更多帖子
 const loadMore = async () => {
-  if (isLoadingMore.value || !hasMore.value) return
+  if (!hasMore.value) return
   if (!isAuthenticated.value && posts.value.length >= accessLimit.value) return
 
-  isLoadingMore.value = true
   currentPage.value++
 
   try {
@@ -335,11 +332,13 @@ const loadMore = async () => {
     if (!result || result.items.length === 0) {
       hasMore.value = false
     }
+
+    // 更新瀑布流布局
+    await nextTick()
+    await updateLayout()
   } catch (error) {
     logger.error('Failed to load more posts:', error)
     currentPage.value-- // 恢复页码
-  } finally {
-    isLoadingMore.value = false
   }
 }
 
@@ -540,22 +539,10 @@ const getPlatformIcon = (platform: string) => {
 }
 
 .posts-grid {
-  /* Masonry布局容器 - 由全局样式和Masonry控制 */
+  /* 瀑布流容器 - 由 useWaterfallLayout 动态控制 columns */
   width: 100%;
   max-width: 100%;
-  min-height: 400px; /* 防止初始化前内容塌陷导致页脚跳动 */
-  transition: min-height 0.3s ease; /* 平滑过渡 */
 }
-
-/* 桌面端：Masonry初始化时平衡CLS和LCP */
-@media (min-width: 769px) {
-  .posts-grid {
-    /* 使用min-height保持空间，但不隐藏内容 */
-    /* 让Masonry尽快工作，牺牲一点CLS换取更好的LCP */
-  }
-}
-
-/* 移动端flexbox布局 - 由全局样式控制，这里不重复定义 */
 
 .empty-state {
   display: flex;
@@ -819,78 +806,50 @@ const getPlatformIcon = (platform: string) => {
 }
 </style>
 
-<!-- Masonry瀑布流全局样式 -->
+<!-- 瀑布流全局样式 - CSS Columns 实现 -->
 <style>
-/* 桌面端：Masonry完全控制布局 */
+/* 桌面端：CSS columns 瀑布流 */
 .posts-grid {
   width: 100%;
-  position: relative; /* Masonry需要relative定位作为absolute的容器 */
-  /* 不设置display，让Masonry或flex控制 */
+  /* column-count 由 useWaterfallLayout 动态控制 */
 }
 
-/* 桌面端卡片基础样式 */
+/* 卡片样式 - 防止列内断开 */
 .posts-grid .post-card {
+  display: inline-block;
+  width: 100%;
   box-sizing: border-box;
-  /* Masonry会用absolute定位，不需要margin-bottom */
+  break-inside: avoid;
+  page-break-inside: avoid;
 }
 
-/* 大屏幕（>=1400px）- 4列 */
-@media (min-width: 1400px) {
-  .posts-grid .post-card {
-    width: calc(25% - 12px);
-  }
-}
-
-/* 中型屏幕（1101px-1399px）- 3列 */
-@media (min-width: 1101px) and (max-width: 1399px) {
-  .posts-grid .post-card {
-    width: calc(33.333% - 11px);
-  }
-}
-
-/* 小型桌面/平板横屏（769px-1100px）- 2列 */
-@media (min-width: 769px) and (max-width: 1100px) {
-  .posts-grid .post-card {
-    width: calc(50% - 8px);
-  }
-}
-
-/* 移动端（<=768px）- 使用flex布局 */
+/* 移动端（<=768px）- 使用 flex 布局 */
 @media (max-width: 768px) {
   .posts-grid {
     display: flex !important;
     flex-wrap: wrap !important;
-    /* 明确设置行间距和列间距 */
-    column-gap: var(--spacing-md) !important; /* 水平间距16px */
-    row-gap: var(--spacing-md) !important; /* 垂直间距16px */
-    width: 100% !important;
+    column-gap: var(--spacing-md) !important;
+    row-gap: var(--spacing-md) !important;
+    column-count: unset !important; /* 禁用 columns */
   }
 
   .posts-grid .post-card {
-    /* flex的gap自动处理间距，所以宽度计算为(100% - gap) / 2 */
     flex: 0 0 calc((100% - var(--spacing-md)) / 2) !important;
     width: calc((100% - var(--spacing-md)) / 2) !important;
-    max-width: calc((100% - var(--spacing-md)) / 2) !important;
-    margin: 0 !important;
-    position: relative !important;
-    left: auto !important;
-    top: auto !important;
-    /* 确保没有transform干扰布局 */
-    transform: none !important;
+    margin-bottom: 0 !important;
   }
 }
 
 /* 小屏手机（<=480px）*/
 @media (max-width: 480px) {
   .posts-grid {
-    column-gap: var(--spacing-sm) !important; /* 水平间距12px */
-    row-gap: var(--spacing-sm) !important; /* 垂直间距12px */
+    column-gap: var(--spacing-sm) !important;
+    row-gap: var(--spacing-sm) !important;
   }
 
   .posts-grid .post-card {
     flex: 0 0 calc((100% - var(--spacing-sm)) / 2) !important;
     width: calc((100% - var(--spacing-sm)) / 2) !important;
-    max-width: calc((100% - var(--spacing-sm)) / 2) !important;
   }
 }
 </style>
