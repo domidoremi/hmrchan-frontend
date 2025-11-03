@@ -16,11 +16,12 @@
     >
       <!-- 缩略图 -->
       <div class="card-thumbnail">
-        <img
+        <OptimizedImage
           v-if="post.thumbnail_url"
           :src="post.thumbnail_url"
           :alt="post.title || ''"
-          loading="lazy"
+          :lazy="!isFirstScreen"
+          img-class="card-image"
         />
         <div v-else class="thumbnail-placeholder">
           <ImageIcon :size="48" />
@@ -105,7 +106,11 @@
         <!-- 发布时间 -->
         <div class="card-footer">
           <span class="publish-date">{{ formatDate(post.published_at || post.scraped_at) }}</span>
-          <button class="favorite-button" @click.stop="toggleFavorite">
+          <button
+            class="favorite-button"
+            @click.stop="toggleFavorite"
+            :aria-label="isFavorited ? t('post.unfavorite') : t('post.addToFavorites')"
+          >
             <Heart :size="18" :fill="isFavorited ? 'currentColor' : 'none'" />
           </button>
         </div>
@@ -120,6 +125,7 @@ import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { Heart, Eye, MessageCircle, User, ImageIcon, Repeat2, Quote } from 'lucide-vue-next'
 
+import OptimizedImage from '@/components/ui/OptimizedImage.vue'
 import { useAuthStore } from '@/stores/auth'
 import { favoritesApi } from '@/api/services'
 import { formatNumber, formatRelativeTime, formatDuration, truncateText } from '@/utils/format'
@@ -129,6 +135,7 @@ import type { Post } from '@/types'
 
 interface Props {
   post: Post
+  index?: number // 用于判断是否首屏
 }
 
 const props = defineProps<Props>()
@@ -138,6 +145,11 @@ const { t } = useI18n()
 const isFavorited = ref(false)
 const favoriteId = ref<number | null>(null)
 const loading = ref(false)
+
+// 前6张图片认为是首屏，优先加载以优化LCP
+const isFirstScreen = computed(() => {
+  return props.index !== undefined && props.index < 6
+})
 
 const platformName = computed(
   () => PLATFORM_NAMES[props.post.platform as keyof typeof PLATFORM_NAMES] || props.post.platform,
@@ -238,7 +250,11 @@ const formatDate = (dateStr: string): string => {
   display: block;
   overflow: hidden;
   cursor: pointer;
-  transition: all var(--transition-base);
+  /* 禁用position相关的transition，防止Masonry布局时卡片乱飞 */
+  transition:
+    transform var(--transition-base),
+    box-shadow var(--transition-base),
+    opacity var(--transition-base);
   text-decoration: none;
   color: inherit;
 }
@@ -254,11 +270,13 @@ const formatDate = (dateStr: string): string => {
   background: var(--color-surface-variant);
   overflow: hidden;
   border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  /* 瀑布流模式：使用最小高度，图片自然高度 */
+  min-height: 180px;
 }
 
 .card-thumbnail img {
   width: 100%;
-  height: auto;
+  height: auto; /* 自然高度，支持不同比例 */
   display: block;
   transition: transform var(--transition-slow);
 }
@@ -269,7 +287,7 @@ const formatDate = (dateStr: string): string => {
 
 .thumbnail-placeholder {
   width: 100%;
-  aspect-ratio: 16 / 9;
+  min-height: 180px;
   display: flex;
   align-items: center;
   justify-content: center;

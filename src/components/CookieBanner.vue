@@ -34,7 +34,7 @@
       <!-- 自定义设置面板 -->
       <Transition name="fade">
         <div v-if="showCustomize" class="cookie-customize">
-          <h4>{{ $t('cookies.customizeTitle') }}</h4>
+          <h3>{{ $t('cookies.customizeTitle') }}</h3>
 
           <div class="cookie-options">
             <div class="cookie-option">

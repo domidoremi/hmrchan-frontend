@@ -6,10 +6,52 @@
   X-XSS-Protection: 1; mode=block
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=()
+
+# HTML 页面 - 短缓存，便于更新
+/*.html
+  Cache-Control: public, max-age=0, must-revalidate
   
-# 静态资源缓存
-/assets/*
+# JavaScript 和 CSS - 长缓存（带版本号）
+/assets/*.js
   Cache-Control: public, max-age=31536000, immutable
   
+/assets/*.css
+  Cache-Control: public, max-age=31536000, immutable
+
+# 图片资源 - 长缓存
+/assets/*.jpg
+  Cache-Control: public, max-age=31536000, immutable
+  
+/assets/*.jpeg
+  Cache-Control: public, max-age=31536000, immutable
+  
+/assets/*.png
+  Cache-Control: public, max-age=31536000, immutable
+  
+/assets/*.webp
+  Cache-Control: public, max-age=31536000, immutable
+  
+/assets/*.svg
+  Cache-Control: public, max-age=31536000, immutable
+
+# 字体文件 - 长缓存
+/assets/*.woff
+  Cache-Control: public, max-age=31536000, immutable
+  
+/assets/*.woff2
+  Cache-Control: public, max-age=31536000, immutable
+  
+/assets/*.ttf
+  Cache-Control: public, max-age=31536000, immutable
+
+# Service Worker - 不缓存
+/service-worker.js
+  Cache-Control: no-cache, no-store, must-revalidate
+  
+# Favicon
 /favicon.ico
   Cache-Control: public, max-age=86400
+  
+# 其他静态资源
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable

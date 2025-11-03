@@ -50,30 +50,35 @@
           class="media-content-img"
         />
 
-        <!-- 视频 -->
-        <video
-          v-else-if="currentMedia.type === 'video'"
-          controls
-          preload="none"
-          playsinline
-          controlsList="nodownload"
-          class="media-content-video"
-          @loadedmetadata="onMediaLoad"
-          @canplay="onMediaLoad"
-          @error="onVideoError"
-          ref="videoElement"
-        >
-          <source :src="currentMedia.url" type="video/mp4" />
-          <track
-            v-if="currentMedia.subtitle"
-            kind="subtitles"
-            :src="currentMedia.subtitle"
-            srclang="zh"
-            label="中文"
-            default
-          />
-          {{ $t('post.videoNotSupported') }}
-        </video>
+        <!-- 视频 (使用 Plyr) -->
+        <div v-else-if="currentMedia.type === 'video'" class="video-wrapper">
+          <video ref="videoElement" class="plyr-video" playsinline controls :key="currentMedia.url">
+            <source :src="currentMedia.url" type="video/mp4" />
+            
+            <!-- 多语言字幕支持 -->
+            <template v-if="currentMedia.subtitles && currentMedia.subtitles.length > 0">
+              <track
+                v-for="(sub, index) in currentMedia.subtitles"
+                :key="`${currentMedia.url}-${sub.language}`"
+                kind="captions"
+                :label="sub.label"
+                :srclang="sub.language"
+                :src="`/api/media/${currentMedia.mediaId}/subtitle?language=${sub.language}`"
+                :default="index === 0"
+              />
+            </template>
+            
+            <!-- 向后兼容：单字幕模式 -->
+            <track
+              v-else-if="currentMedia.subtitle"
+              kind="captions"
+              label="中文"
+              srclang="zh"
+              :src="currentMedia.subtitle"
+              default
+            />
+          </video>
+        </div>
 
         <div v-if="loading" class="loading-spinner" role="status" :aria-label="$t('aria.loading')">
           <div class="spinner"></div>
@@ -114,31 +119,13 @@
             <Maximize2 :size="20" />
           </button>
         </div>
-
-        <!-- 视频倍速控制 -->
-        <div v-if="currentMedia.type === 'video'" class="playback-controls">
-          <button @click="showPlaybackMenu = !showPlaybackMenu" class="playback-btn">
-            {{ playbackRate }}x
-          </button>
-          <div v-if="showPlaybackMenu" class="playback-menu">
-            <button
-              v-for="rate in playbackRates"
-              :key="rate"
-              @click="changePlaybackRate(rate)"
-              :class="{ active: playbackRate === rate }"
-              class="playback-option"
-            >
-              {{ rate }}x
-            </button>
-          </div>
-        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onUnmounted } from 'vue'
+import { ref, computed, watch, onUnmounted, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
   X,
@@ -150,11 +137,20 @@ import {
   Maximize,
   Download,
 } from 'lucide-vue-next'
+// @ts-ignore - Plyr在运行时正常工作，但TypeScript类型定义有问题
+import Plyr from 'plyr'
+import 'plyr/dist/plyr.css'
 
 interface MediaItem {
   url: string
   type: 'image' | 'video'
-  subtitle?: string
+  subtitle?: string  // 向后兼容：单个字幕URL
+  subtitles?: Array<{  // 新增：多语言字幕
+    language: string
+    format: string
+    label: string
+  }>
+  mediaId?: number  // 媒体ID，用于生成字幕URL
 }
 
 interface Props {
@@ -176,13 +172,9 @@ const currentIndex = ref(props.initialIndex)
 const loading = ref(true)
 const zoom = ref(1)
 const videoElement = ref<HTMLVideoElement | null>(null)
-const playbackRate = ref(1)
-const showPlaybackMenu = ref(false)
-const isFullscreen = ref(false)
+let player: Plyr | null = null
 const controlsVisible = ref(true)
 let hideControlsTimer: ReturnType<typeof setTimeout> | null = null
-
-const playbackRates = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2]
 
 const currentMedia = computed(
   () =>
@@ -204,13 +196,20 @@ watch(
     if (newVal) {
       currentIndex.value = props.initialIndex
       zoom.value = 1
-      // 对于视频且 preload="none"，不需要等待加载
       loading.value = currentMedia.value.type === 'video' ? false : true
       document.body.style.overflow = 'hidden'
       controlsVisible.value = true
       resetHideControlsTimer()
+
+      // 初始化 Plyr（如果是视频）
+      if (currentMedia.value.type === 'video') {
+        nextTick(() => {
+          initPlyr()
+        })
+      }
     } else {
       document.body.style.overflow = ''
+      destroyPlyr()
       if (hideControlsTimer) {
         clearTimeout(hideControlsTimer)
       }
@@ -222,36 +221,150 @@ watch(currentIndex, () => {
   // 先显示loading
   loading.value = true
   zoom.value = 1
-  showPlaybackMenu.value = false
   controlsVisible.value = true
   resetHideControlsTimer()
-  
-  // 视频：立即隐藏loading（因为preload="none"）
-  // 图片：等待onMediaLoad事件
+
+  // 销毁旧的 Plyr 实例
+  destroyPlyr()
+
+  // 如果切换到视频，初始化新的 Plyr 实例
   if (currentMedia.value.type === 'video') {
-    loading.value = false
-    if (videoElement.value) {
-      videoElement.value.load()
-      videoElement.value.playbackRate = playbackRate.value
-    }
+    nextTick(() => {
+      initPlyr()
+    })
   }
-  // 图片会在@load事件中设置loading=false
+  // 图片类型，等待onMediaLoad自动设置loading=false
 })
 
-// 当显示媒体查看器且当前是视频时，触发加载
-watch(
-  () => [props.show, currentMedia.value.type],
-  ([show, type]) => {
-    if (show && type === 'video' && videoElement.value) {
-      // 延迟一帧以确保DOM已更新
-      setTimeout(() => {
-        if (videoElement.value) {
-          videoElement.value.load()
+const initPlyr = () => {
+  if (videoElement.value && !player) {
+    // 调试日志：检查字幕
+    const subtitleInfo = currentMedia.value.subtitles 
+      ? currentMedia.value.subtitles.map(s => `${s.label} (${s.language})`).join(', ')
+      : currentMedia.value.subtitle ? '单语言模式' : '无字幕'
+    
+    console.log('[Plyr] 初始化视频:', {
+      url: currentMedia.value.url,
+      hasSubtitle: !!(currentMedia.value.subtitle || currentMedia.value.subtitles),
+      subtitleUrl: currentMedia.value.subtitle,
+      availableSubtitles: subtitleInfo,
+      subtitleCount: currentMedia.value.subtitles?.length || (currentMedia.value.subtitle ? 1 : 0)
+    })
+
+    player = new Plyr(videoElement.value, {
+      controls: [
+        'play-large',
+        'play',
+        'progress',
+        'current-time',
+        'mute',
+        'volume',
+        'captions',
+        'settings',
+        'pip',
+        'airplay',
+        'fullscreen',
+      ],
+      settings: ['captions', 'quality', 'speed'],
+      speed: {
+        selected: 1,
+        options: [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2],
+      },
+      captions: {
+        active: true,
+        language: 'auto', // 自动检测字幕语言
+        update: true,
+      },
+      // 移动端响应式配置
+      ratio: '16:9',
+      fullscreen: {
+        enabled: true,
+        fallback: true,
+        iosNative: true,
+      },
+      debug: false, // 生产环境关闭调试
+      i18n: {
+        restart: '重新播放',
+        rewind: '快退 {seektime}s',
+        play: '播放',
+        pause: '暂停',
+        fastForward: '快进 {seektime}s',
+        seek: '跳转',
+        seekLabel: '{currentTime} / {duration}',
+        played: '已播放',
+        buffered: '已缓冲',
+        currentTime: '当前时间',
+        duration: '总时长',
+        volume: '音量',
+        mute: '静音',
+        unmute: '取消静音',
+        enableCaptions: '开启字幕',
+        disableCaptions: '关闭字幕',
+        download: '下载',
+        enterFullscreen: '全屏',
+        exitFullscreen: '退出全屏',
+        frameTitle: '视频播放器: {title}',
+        captions: '字幕',
+        settings: '设置',
+        pip: '画中画',
+        menuBack: '返回上级菜单',
+        speed: '倍速',
+        normal: '正常',
+        quality: '质量',
+        loop: '循环',
+        start: '开始',
+        end: '结束',
+        all: '全部',
+        reset: '重置',
+        disabled: '禁用',
+        enabled: '启用',
+      },
+    })
+
+    // 监听Plyr事件，调试字幕
+    player.on('ready', () => {
+      console.log('[Plyr] 播放器就绪')
+      loading.value = false
+      
+      // 检查字幕轨道
+      if (player) {
+        const videoEl = player.elements?.container?.querySelector('video')
+        const tracks = videoEl?.textTracks
+        if (tracks && tracks.length > 0) {
+          console.log(`[Plyr] 字幕轨道数量: ${tracks.length}`)
+          for (let i = 0; i < tracks.length; i++) {
+            const track = tracks[i]
+            if (track) {
+              console.log(`[Plyr] 字幕 ${i}:`, {
+                kind: track.kind,
+                label: track.label,
+                language: track.language,
+                mode: track.mode
+              })
+            }
+          }
+        } else {
+          console.log('[Plyr] 无字幕轨道')
         }
-      }, 0)
-    }
-  },
-)
+      }
+    })
+
+    player.on('captionsenabled', () => {
+      console.log('[Plyr] 字幕已开启')
+    })
+
+    player.on('captionsdisabled', () => {
+      console.log('[Plyr] 字幕已关闭')
+    })
+  }
+}
+
+const destroyPlyr = () => {
+  if (player) {
+    player.destroy()
+    player = null
+  }
+}
 
 // 鼠标移动时显示控件
 const onMouseMove = () => {
@@ -297,21 +410,11 @@ const resetZoom = () => {
   zoom.value = 1
 }
 
-const changePlaybackRate = (rate: number) => {
-  playbackRate.value = rate
-  if (videoElement.value) {
-    videoElement.value.playbackRate = rate
-  }
-  showPlaybackMenu.value = false
-}
-
 const toggleFullscreen = () => {
   if (!document.fullscreenElement) {
     document.documentElement.requestFullscreen()
-    isFullscreen.value = true
   } else {
     document.exitFullscreen()
-    isFullscreen.value = false
   }
 }
 
@@ -324,24 +427,6 @@ const downloadMedia = () => {
 
 const onMediaLoad = () => {
   loading.value = false
-}
-
-const onVideoError = (event: Event) => {
-  loading.value = false
-  const video = event.target as HTMLVideoElement
-  console.error('Video playback error:', {
-    error: video.error,
-    networkState: video.networkState,
-    readyState: video.readyState,
-    src: video.src,
-  })
-
-  // Show error message to user
-  if (import.meta.env.DEV) {
-    alert(
-      `Video playback failed. Error code: ${video.error?.code}\nMessage: ${video.error?.message || 'Unknown error'}`,
-    )
-  }
 }
 
 // 键盘快捷键
@@ -369,16 +454,6 @@ const handleKeydown = (e: KeyboardEvent) => {
     case 'F':
       toggleFullscreen()
       break
-    case ' ':
-      if (currentMedia.value.type === 'video' && videoElement.value) {
-        e.preventDefault()
-        if (videoElement.value.paused) {
-          videoElement.value.play()
-        } else {
-          videoElement.value.pause()
-        }
-      }
-      break
   }
 }
 
@@ -391,6 +466,7 @@ onUnmounted(() => {
     window.removeEventListener('keydown', handleKeydown)
   }
   document.body.style.overflow = ''
+  destroyPlyr()
 })
 </script>
 
@@ -457,7 +533,10 @@ onUnmounted(() => {
   right: 20px;
   display: flex;
   gap: 12px;
-  z-index: 10;
+  z-index: 100;
+  flex-wrap: wrap;
+  max-width: 200px;
+  justify-content: flex-end;
   opacity: 1;
   transition: opacity 0.3s ease;
 }
@@ -468,15 +547,16 @@ onUnmounted(() => {
 }
 
 .toolbar-btn {
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(0, 0, 0, 0.8);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .prev-btn {
-  left: 40px;
+  left: 20px;
   top: 50%;
   transform: translateY(-50%);
+  z-index: 50;
   opacity: 1;
   transition: opacity 0.3s ease, transform 0.2s ease;
 }
@@ -491,9 +571,10 @@ onUnmounted(() => {
 }
 
 .next-btn {
-  right: 40px;
+  right: 20px;
   top: 50%;
   transform: translateY(-50%);
+  z-index: 50;
   opacity: 1;
   transition: opacity 0.3s ease, transform 0.2s ease;
 }
@@ -524,10 +605,15 @@ onUnmounted(() => {
   animation: scaleIn 0.3s ease;
 }
 
-.media-content-video {
-  max-width: 90vw;
-  max-height: 85vh;
+.video-wrapper {
+  width: 90vw;
+  max-width: 1200px;
   animation: scaleIn 0.3s ease;
+}
+
+.plyr-video {
+  width: 100%;
+  max-height: 85vh;
 }
 
 @keyframes scaleIn {
@@ -577,17 +663,18 @@ onUnmounted(() => {
   bottom: 30px;
   left: 50%;
   transform: translateX(-50%);
-  background: rgba(0, 0, 0, 0.7);
+  background: rgba(0, 0, 0, 0.8);
   backdrop-filter: blur(10px);
   padding: 12px 24px;
-  border-radius: 12px;
+  border-radius: 30px;
   color: white;
+  font-size: 14px;
   display: flex;
   align-items: center;
-  gap: 20px;
-  z-index: 10;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  font-size: 14px;
+  gap: 24px;
+  animation: slideUp 0.3s ease;
+  z-index: 60;
+  max-width: 90%;
   opacity: 1;
   transition: opacity 0.3s ease;
 }
@@ -641,75 +728,25 @@ onUnmounted(() => {
   transform: scale(1.1);
 }
 
-/* 视频倍速控制 */
-.playback-controls {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.playback-btn {
-  background: rgba(139, 92, 246, 0.9);
-  border: none;
-  color: white;
-  padding: 6px 12px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  min-width: 50px;
-}
-
-.playback-btn:hover {
-  background: rgba(139, 92, 246, 1);
-  transform: scale(1.05);
-}
-
-.playback-menu {
-  position: absolute;
-  bottom: calc(100% + 10px);
-  right: 0;
-  background: rgba(0, 0, 0, 0.95);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  padding: 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 100px;
-  animation: slideUp 0.2s ease;
-}
-
-.playback-option {
-  background: transparent;
-  border: none;
-  color: white;
-  padding: 8px 16px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 14px;
-  text-align: center;
-  transition: all 0.2s ease;
-}
-
-.playback-option:hover {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.playback-option.active {
-  background: rgba(139, 92, 246, 0.8);
-  font-weight: 600;
-}
-
 @media (max-width: 768px) {
   .prev-btn {
-    left: 10px;
+    left: 5px;
+    padding: 8px;
+  }
+
+  .prev-btn svg {
+    width: 24px;
+    height: 24px;
   }
 
   .next-btn {
-    right: 10px;
+    right: 5px;
+    padding: 8px;
+  }
+
+  .next-btn svg {
+    width: 24px;
+    height: 24px;
   }
 
   .viewer-btn {
@@ -717,30 +754,174 @@ onUnmounted(() => {
   }
 
   .media-info {
-    bottom: 10px;
-    padding: 8px 16px;
-    font-size: 12px;
-    gap: 12px;
+    bottom: 100px;
+    padding: 8px 12px;
+    font-size: 11px;
+    gap: 8px;
     flex-wrap: wrap;
     justify-content: center;
+    max-width: calc(100vw - 20px);
+    left: 10px;
+    right: 10px;
+    transform: none;
+    z-index: 60;
   }
 
-  .media-content-video {
-    max-width: 95vw;
+  .media-type-badge {
+    font-size: 10px;
+    padding: 2px 6px;
+  }
+
+  .zoom-controls {
+    gap: 8px;
+    font-size: 11px;
+  }
+
+  .zoom-btn svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .video-wrapper {
+    max-width: 100vw;
+    width: 100vw;
+  }
+
+  .media-container {
+    max-width: 100vw;
+    max-height: 80vh;
   }
 
   .viewer-toolbar {
-    top: 10px;
-    right: 10px;
-    gap: 8px;
+    top: safe-area-inset-top, 10px;
+    right: 5px;
+    gap: 6px;
+    flex-direction: row;
+    z-index: 100;
+    max-width: calc(100vw - 20px);
   }
 
   .toolbar-btn {
     padding: 8px;
   }
 
-  .playback-menu {
-    right: -8px;
+  .toolbar-btn svg {
+    width: 18px;
+    height: 18px;
+  }
+  
+  .close-btn {
+    order: 3;
+  }
+
+  /* 移动端 Plyr 进度条修复 */
+  :deep(.plyr__controls) {
+    padding: 10px !important;
+  }
+
+  :deep(.plyr__progress) {
+    margin-bottom: 8px !important;
+  }
+
+  :deep(.plyr__progress input[type="range"]) {
+    height: 8px !important;
+  }
+
+  :deep(.plyr__volume) {
+    max-width: 60px !important;
+    min-width: 60px !important;
+  }
+}
+
+/* 极小屏幕优化 */
+@media (max-width: 480px) {
+  .viewer-toolbar {
+    top: 5px;
+    right: 5px;
+    gap: 4px;
+  }
+
+  .toolbar-btn {
+    padding: 6px;
+  }
+
+  .media-info {
+    bottom: 90px;
+    padding: 6px 10px;
+    font-size: 10px;
+  }
+
+  .prev-btn,
+  .next-btn {
+    padding: 6px;
+  }
+}
+
+/* Plyr 自定义样式 */
+:deep(.plyr) {
+  --plyr-color-main: #8b5cf6;
+}
+
+:deep(.plyr__control--overlaid) {
+  background: rgba(139, 92, 246, 0.9);
+}
+
+:deep(.plyr--video .plyr__control.plyr__tab-focus),
+:deep(.plyr--video .plyr__control:hover),
+:deep(.plyr--video .plyr__control[aria-expanded='true']) {
+  background: rgba(139, 92, 246, 0.9);
+}
+
+:deep(.plyr__menu__container) {
+  background: rgba(0, 0, 0, 0.95);
+  backdrop-filter: blur(10px);
+}
+
+/* Plyr 控件响应式布局 - 防止按钮重叠 */
+:deep(.plyr__controls) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+:deep(.plyr__controls__item) {
+  margin: 0 !important;
+}
+
+/* 确保音量控件不会过宽 */
+:deep(.plyr__volume) {
+  flex: 0 1 auto;
+  max-width: 100px;
+}
+
+/* 中等屏幕优化 */
+@media (max-width: 1024px) {
+  :deep(.plyr__controls) {
+    gap: 4px;
+  }
+  
+  :deep(.plyr__volume) {
+    max-width: 80px;
+  }
+  
+  :deep(.plyr__menu) {
+    margin-left: auto;
+  }
+}
+
+/* 小屏幕 - 字幕按钮换行 */
+@media (max-width: 640px) {
+  :deep(.plyr__controls) {
+    gap: 2px;
+  }
+  
+  :deep(.plyr__volume) {
+    max-width: 60px;
+  }
+  
+  :deep(.plyr__time) {
+    font-size: 12px;
   }
 }
 </style>

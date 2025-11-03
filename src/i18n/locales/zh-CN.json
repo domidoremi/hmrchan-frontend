@@ -10,6 +10,7 @@
     "profile": "个人中心",
     "settings": "设置",
     "favorites": "收藏",
+    "privacy": "隐私政策",
     "login": "登录",
     "register": "注册",
     "logout": "登出"
@@ -42,7 +43,9 @@
     "loadingMedia": "加载中...",
     "video": "视频",
     "image": "图片",
-    "videoNotSupported": "您的浏览器不支持视频播放"
+    "videoNotSupported": "您的浏览器不支持视频播放",
+    "addToFavorites": "添加到收藏",
+    "unfavorite": "取消收藏"
   },
   "search": {
     "placeholder": "搜索内容...",
@@ -149,7 +152,9 @@
     "noData": "暂无数据",
     "zoomIn": "放大",
     "zoomOut": "缩小",
-    "backToTop": "回到顶部"
+    "backToTop": "回到顶部",
+    "fullscreen": "全屏",
+    "download": "下载"
   },
   "author": {
     "title": "创作者",
@@ -222,12 +227,27 @@
     "limit": "访问限制",
     "limitMessage": "当前显示 {current} / {limit} 条帖子",
     "loginForMore": "登录查看更多",
-    "unlimited": "无限制"
+    "unlimited": "无限制",
+    "guestMode": "访客模式",
+    "nearLimit": "接近访问限制",
+    "contentAccess": "内容访问",
+    "guestMessage": "您正在查看最新 {limit} 条内容，登录后可查看更多精彩内容",
+    "nearLimitMessage": "还可以查看 {remaining} 条内容，升级会员解锁全部内容",
+    "loadedMessage": "已加载 {current}/{limit} 条内容"
   },
   "upload": {
     "onlyImages": "只支持 JPG、PNG、WebP 格式的图片",
     "processingFailed": "图片处理失败",
     "tooLarge": "文件太大，最大支持 5MB"
+  },
+  "error": {
+    "title": "出错了",
+    "unknown": "未知错误",
+    "details": "错误详情",
+    "componentInfo": "组件信息",
+    "retry": "重试",
+    "goHome": "返回首页",
+    "reload": "刷新页面"
   },
   "errors": {
     "permissionDenied": "权限不足",

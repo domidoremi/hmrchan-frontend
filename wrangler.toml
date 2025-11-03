@@ -1,8 +1,0 @@
-# Cloudflare Pages 配置 (可选)
-name = "hmrchan-frontend"
-compatibility_date = "2025-01-01"
-
-[site]
-bucket = "./dist"
-
-# 自定义域名会在 Cloudflare Pages 控制台配置
