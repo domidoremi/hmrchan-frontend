@@ -241,7 +241,9 @@
     "componentInfo": "Component Info",
     "retry": "Retry",
     "goHome": "Go Home",
-    "reload": "Reload Page"
+    "reload": "Reload Page",
+    "apiUnavailable": "API Service Unavailable",
+    "apiUnavailableDesc": "Unable to connect to the backend server. This may be because the backend has not been deployed yet or is misconfigured. Please check the API configuration or try again later."
   },
   "errors": {
     "permissionDenied": "Permission denied",
