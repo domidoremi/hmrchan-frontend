@@ -290,11 +290,30 @@ const resetFilters = () => {
   }
 }
 
-/* 移动端（<=768px）- 使用 flex 布局 */
+/* 平板端（769px - 1100px）- 简化瀑布流为2列 */
+@media (min-width: 769px) and (max-width: 1100px) {
+  .explore-page .posts-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: var(--spacing-lg) !important;
+    height: auto !important;
+    position: relative !important;
+  }
+
+  .explore-page .posts-grid .post-card {
+    position: relative !important;
+    left: auto !important;
+    top: auto !important;
+    width: 100% !important;
+    margin-bottom: 0 !important;
+  }
+}
+
+/* 移动端（<=768px）- 使用 grid 布局保持自然高度 */
 @media (max-width: 768px) {
   .explore-page .posts-grid {
-    display: flex !important;
-    flex-wrap: wrap !important;
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
     column-gap: var(--spacing-md) !important;
     row-gap: var(--spacing-md) !important;
     height: auto !important; /* 覆盖 JS 设置的高度 */
@@ -304,8 +323,7 @@ const resetFilters = () => {
     position: relative !important; /* 覆盖绝对定位 */
     left: auto !important;
     top: auto !important;
-    flex: 0 0 calc((100% - var(--spacing-md)) / 2) !important;
-    width: calc((100% - var(--spacing-md)) / 2) !important;
+    width: 100% !important;
     margin-bottom: 0 !important;
   }
 }
@@ -318,8 +336,7 @@ const resetFilters = () => {
   }
 
   .explore-page .posts-grid .post-card {
-    flex: 0 0 calc((100% - var(--spacing-sm)) / 2) !important;
-    width: calc((100% - var(--spacing-sm)) / 2) !important;
+    width: 100% !important;
   }
 }
 </style>
