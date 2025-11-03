@@ -34,10 +34,12 @@ export function useWaterfallLayout(
     rowGap = 16,
     minColumnWidth = 300,
     breakpoints = {
+      1600: 5, // >= 1600px: 5列
       1400: 4, // >= 1400px: 4列
       1100: 3, // >= 1100px: 3列
-      769: 2, // >= 769px: 2列
-      0: 2, // < 769px: 2列（移动端）
+      769: 2,  // >= 769px: 2列
+      481: 2,  // >= 481px: 2列
+      0: 2,    // < 481px: 2列（小屏手机也是2列）
     },
   } = options
 
@@ -78,24 +80,7 @@ export function useWaterfallLayout(
 
     if (items.length === 0) return
 
-    // 移动端（<=768px）使用 CSS flex 布局，跳过 JS 定位
-    if (window.innerWidth <= 768) {
-      // 清理所有绝对定位样式，让 CSS flex 接管
-      container.style.position = ''
-      container.style.height = ''
-      
-      items.forEach((item) => {
-        item.style.position = ''
-        item.style.left = ''
-        item.style.top = ''
-        item.style.width = ''
-      })
-      
-      debug(`Skipped manual positioning on mobile, cleared absolute styles`)
-      return
-    }
-
-    // 设置容器为相对定位
+    // 设置容器为相对定位（所有屏幕尺寸都使用 JS 瀑布流）
     container.style.position = 'relative'
 
     // 计算列宽
@@ -238,14 +223,12 @@ export function useWaterfallLayout(
    */
   const handleResize = throttle(() => {
     if (!containerRef.value) return
-    
+
     const newColumns = calculateColumns()
-    const wasDesktop = currentColumns.value > 0 && window.innerWidth > 768
-    const isDesktop = window.innerWidth > 768
-    
-    // 桌面端 <-> 移动端切换，或列数变化时重新布局
-    if (wasDesktop !== isDesktop || newColumns !== currentColumns.value) {
-      debug(`Columns changed: ${currentColumns.value} -> ${newColumns}, Desktop: ${isDesktop}`)
+
+    // 列数变化时重新布局
+    if (newColumns !== currentColumns.value) {
+      debug(`Columns changed: ${currentColumns.value} -> ${newColumns}`)
       applyLayout()
     }
   }, 150)

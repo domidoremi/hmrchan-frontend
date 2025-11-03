@@ -152,7 +152,9 @@
     "noData": "No data found",
     "zoomIn": "Zoom In",
     "zoomOut": "Zoom Out",
-    "backToTop": "Back to Top"
+    "backToTop": "Back to Top",
+    "fullscreen": "Fullscreen",
+    "download": "Download"
   },
   "author": {
     "title": "Authors",
@@ -231,6 +233,15 @@
     "onlyImages": "Only JPG, PNG, WebP images are supported",
     "processingFailed": "Image processing failed",
     "tooLarge": "File too large, maximum 5MB"
+  },
+  "error": {
+    "title": "Something went wrong",
+    "unknown": "Unknown error",
+    "details": "Error Details",
+    "componentInfo": "Component Info",
+    "retry": "Retry",
+    "goHome": "Go Home",
+    "reload": "Reload Page"
   },
   "errors": {
     "permissionDenied": "Permission denied",

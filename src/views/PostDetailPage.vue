@@ -11,11 +11,14 @@
         </button>
 
         <!-- 主要内容 -->
-        <div class="post-header glass-card" :class="{ 
-          'video-layout': isVideoPost,
-          'youtube-layout': isYouTube,
-          'tiktok-layout': isTikTok
-        }">
+        <div
+          class="post-header glass-card"
+          :class="{
+            'video-layout': isVideoPost,
+            'youtube-layout': isYouTube,
+            'tiktok-layout': isTikTok,
+          }"
+        >
           <!-- 缩略图区域 -->
           <div v-if="post.thumbnail_url" class="post-thumbnail-container">
             <!-- 上一张按钮 -->
@@ -65,71 +68,101 @@
 
           <!-- 内容区域 -->
           <div class="post-content-wrapper">
+            <!-- 1. Post Meta -->
+            <div class="post-meta">
+              <div class="meta-item">
+                <Calendar :size="18" />
+                <span>{{ formatDate(post.published_at || post.scraped_at) }}</span>
+              </div>
+              <div class="meta-item">
+                <span class="platform-badge" :style="{ background: platformColor }">
+                  {{ platformName }}
+                </span>
+              </div>
+              <!-- 转发标记 -->
+              <div v-if="isRetweet" class="meta-item retweet-indicator">
+                <Repeat2 :size="18" />
+                <span>{{ $t('post.retweet') }}</span>
+              </div>
+            </div>
+
+            <!-- 2. Author Info -->
+            <!-- 转发情况：显示转发者和原作者 -->
+            <div v-if="isRetweet" class="retweet-info">
+              <div class="retweeter-info">
+                <div class="author-avatar">
+                  <User :size="24" />
+                </div>
+                <div class="author-details">
+                  <h3>{{ post.author_name }}</h3>
+                  <p v-if="post.author_username">@{{ post.author_username }}</p>
+                </div>
+              </div>
+              <div class="retweet-arrow">
+                <Repeat2 :size="24" />
+              </div>
+              <div class="original-author-info">
+                <div class="author-avatar original">
+                  <User :size="24" />
+                </div>
+                <div class="author-details">
+                  <h3>{{ post.original_author_name }}</h3>
+                  <p v-if="post.original_author_username">@{{ post.original_author_username }}</p>
+                  <span class="original-label">{{ $t('post.originalAuthor') }}</span>
+                </div>
+              </div>
+            </div>
+            <!-- 普通帖子：只显示作者 -->
+            <RouterLink
+              v-if="!isRetweet && post.author_name"
+              :to="`/authors/${post.author_id || 0}`"
+              custom
+              v-slot="{ navigate }"
+            >
+              <div class="author-info clickable" @click="navigate" role="button" tabindex="0">
+                <div class="author-avatar">
+                  <User :size="24" />
+                </div>
+                <div class="author-details">
+                  <h3>{{ post.author_name }}</h3>
+                  <p v-if="post.author_username">@{{ post.author_username }}</p>
+                </div>
+                <ExternalLink :size="18" class="link-icon" />
+              </div>
+            </RouterLink>
+
+            <!-- 3. Post Title -->
             <h1 class="post-title">{{ post.title || 'Untitled' }}</h1>
 
-          <div class="post-meta">
-            <div class="meta-item">
-              <Calendar :size="18" />
-              <span>{{ formatDate(post.published_at || post.scraped_at) }}</span>
+            <div v-if="showDescription" class="post-description">
+              <p>{{ post.description }}</p>
             </div>
-            <div class="meta-item">
-              <span class="platform-badge" :style="{ background: platformColor }">
-                {{ platformName }}
-              </span>
-            </div>
-            <!-- 转发标记 -->
-            <div v-if="isRetweet" class="meta-item retweet-indicator">
-              <Repeat2 :size="18" />
-              <span>{{ $t('post.retweet') }}</span>
-            </div>
-          </div>
 
-          <!-- 转发情况：显示转发者和原作者 -->
-          <div v-if="isRetweet" class="retweet-info">
-            <div class="retweeter-info">
-              <div class="author-avatar">
-                <User :size="24" />
+            <!-- 4. Post Stats -->
+            <a
+              v-if="post.url"
+              :href="post.url"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="stats-link"
+            >
+              <div class="post-stats clickable">
+                <div v-if="post.view_count" class="stat-item">
+                  <Eye :size="20" />
+                  <span>{{ formatNumber(post.view_count) }} {{ $t('post.views') }}</span>
+                </div>
+                <div v-if="post.like_count" class="stat-item">
+                  <Heart :size="20" />
+                  <span>{{ formatNumber(post.like_count) }} {{ $t('post.likes') }}</span>
+                </div>
+                <div v-if="post.comment_count" class="stat-item">
+                  <MessageCircle :size="20" />
+                  <span>{{ formatNumber(post.comment_count) }} {{ $t('post.comments') }}</span>
+                </div>
+                <ExternalLink :size="16" class="link-icon" />
               </div>
-              <div class="author-details">
-                <h3>{{ post.author_name }}</h3>
-                <p v-if="post.author_username">@{{ post.author_username }}</p>
-              </div>
-            </div>
-            <div class="retweet-arrow">
-              <Repeat2 :size="24" />
-            </div>
-            <div class="original-author-info">
-              <div class="author-avatar original">
-                <User :size="24" />
-              </div>
-              <div class="author-details">
-                <h3>{{ post.original_author_name }}</h3>
-                <p v-if="post.original_author_username">@{{ post.original_author_username }}</p>
-                <span class="original-label">{{ $t('post.originalAuthor') }}</span>
-              </div>
-            </div>
-          </div>
-          <!-- 普通帖子：只显示作者 -->
-          <RouterLink 
-            v-if="!isRetweet && post.author_name" 
-            :to="`/authors/${post.author_id || 0}`" 
-            custom 
-            v-slot="{ navigate }"
-          >
-            <div class="author-info clickable" @click="navigate" role="button" tabindex="0">
-              <div class="author-avatar">
-                <User :size="24" />
-              </div>
-              <div class="author-details">
-                <h3>{{ post.author_name }}</h3>
-                <p v-if="post.author_username">@{{ post.author_username }}</p>
-              </div>
-              <ExternalLink :size="18" class="link-icon" />
-            </div>
-          </RouterLink>
-
-          <a v-if="post.url" :href="post.url" target="_blank" rel="noopener noreferrer" class="stats-link">
-            <div class="post-stats clickable">
+            </a>
+            <div v-else class="post-stats">
               <div v-if="post.view_count" class="stat-item">
                 <Eye :size="20" />
                 <span>{{ formatNumber(post.view_count) }} {{ $t('post.views') }}</span>
@@ -142,40 +175,21 @@
                 <MessageCircle :size="20" />
                 <span>{{ formatNumber(post.comment_count) }} {{ $t('post.comments') }}</span>
               </div>
-              <ExternalLink :size="16" class="link-icon" />
             </div>
-          </a>
-          <div v-else class="post-stats">
-            <div v-if="post.view_count" class="stat-item">
-              <Eye :size="20" />
-              <span>{{ formatNumber(post.view_count) }} {{ $t('post.views') }}</span>
-            </div>
-            <div v-if="post.like_count" class="stat-item">
-              <Heart :size="20" />
-              <span>{{ formatNumber(post.like_count) }} {{ $t('post.likes') }}</span>
-            </div>
-            <div v-if="post.comment_count" class="stat-item">
-              <MessageCircle :size="20" />
-              <span>{{ formatNumber(post.comment_count) }} {{ $t('post.comments') }}</span>
-            </div>
-          </div>
 
-          <div v-if="showDescription" class="post-description">
-            <p>{{ post.description }}</p>
-          </div>
-
-          <div class="post-actions">
-            <GlassButton @click="toggleFavorite">
-              <Heart :size="18" :fill="isFavorited ? 'currentColor' : 'none'" />
-              {{ $t('favorite.add') }}
-            </GlassButton>
-            <a v-if="post.url" :href="post.url" target="_blank" rel="noopener noreferrer">
-              <GlassButton variant="secondary">
-                <ExternalLink :size="18" />
-                {{ $t('post.viewOriginal') }}
+            <!-- 5. Post Actions -->
+            <div class="post-actions">
+              <GlassButton @click="toggleFavorite">
+                <Heart :size="18" :fill="isFavorited ? 'currentColor' : 'none'" />
+                {{ $t('favorite.add') }}
               </GlassButton>
-            </a>
-          </div>
+              <a v-if="post.url" :href="post.url" target="_blank" rel="noopener noreferrer">
+                <GlassButton variant="secondary">
+                  <ExternalLink :size="18" />
+                  {{ $t('post.viewOriginal') }}
+                </GlassButton>
+              </a>
+            </div>
           </div>
         </div>
 
@@ -298,7 +312,12 @@ const isFavorited = ref(false)
 const favoriteId = ref<number | null>(null)
 const favoriteLoading = ref(false)
 const showMediaViewer = ref(false)
-const viewerMediaItems = ref<Array<{ url: string; type: 'image' | 'video' }>>([])
+const viewerMediaItems = ref<Array<{ 
+  url: string
+  type: 'image' | 'video'
+  subtitle?: string  // 保留向后兼容
+  subtitles?: Array<{ language: string; format: string; label: string }>  // 新增：多语言字幕
+}>>([])
 const viewerInitialIndex = ref(0)
 const currentThumbnailIndex = ref(0)
 
@@ -330,7 +349,13 @@ const showDescription = computed(() => {
 const allMediaItems = computed(() => {
   if (!post.value) return []
 
-  const items: Array<{ url: string; type: 'image' | 'video'; subtitle?: string }> = []
+  const items: Array<{ 
+    url: string
+    type: 'image' | 'video'
+    subtitle?: string
+    subtitles?: Array<{ language: string; format: string; label: string }>
+    mediaId?: number  // 添加mediaId用于生成字幕URL
+  }> = []
   const hasThumbnail = !!post.value.thumbnail_url
 
   // 1. 添加缩略图（如果存在）
@@ -353,14 +378,29 @@ const allMediaItems = computed(() => {
           return // 跳过第一张图片以避免重复
         }
 
-        const item: { url: string; type: 'image' | 'video'; subtitle?: string } = {
+        const item: { 
+          url: string
+          type: 'image' | 'video'
+          subtitle?: string
+          subtitles?: Array<{ language: string; format: string; label: string }>
+          mediaId?: number
+        } = {
           url: mediaUrl,
           type: media.file_type as 'image' | 'video',
+          mediaId: media.id,
         }
 
-        // 如果是视频且有字幕，添加字幕URL
-        if (media.file_type === 'video' && (media as any).has_subtitle) {
-          item.subtitle = `/api/media/${media.id}/subtitle`
+        // 如果是视频且有字幕，添加字幕信息
+        if (media.file_type === 'video') {
+          // 优先使用新的subtitles数组（多语言支持）
+          if (media.subtitles && Array.isArray(media.subtitles) && media.subtitles.length > 0) {
+            item.subtitles = media.subtitles
+            // 向后兼容：保留subtitle字段（默认语言）
+            item.subtitle = `/api/media/${media.id}/subtitle`
+          } else if (media.has_subtitle) {
+            // 回退到旧的单字幕模式
+            item.subtitle = `/api/media/${media.id}/subtitle`
+          }
         }
 
         items.push(item)
@@ -401,8 +441,8 @@ const isVideoPost = computed(() => primaryMediaType.value === 'video')
 // 判断平台类型
 const isYouTube = computed(() => post.value?.platform === 'youtube')
 const isTikTok = computed(() => post.value?.platform === 'tiktok')
-const isInstagramOrTwitter = computed(() => 
-  post.value?.platform === 'instagram' || post.value?.platform === 'twitter'
+const isInstagramOrTwitter = computed(
+  () => post.value?.platform === 'instagram' || post.value?.platform === 'twitter',
 )
 
 onMounted(async () => {
@@ -586,7 +626,6 @@ const nextThumbnail = () => {
     flex-direction: column;
     gap: var(--spacing-xl);
   }
-
 }
 
 .post-thumbnail-container {
@@ -618,12 +657,10 @@ const nextThumbnail = () => {
   overflow: hidden;
   cursor: pointer;
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  background: 
-    linear-gradient(135deg, 
-      rgba(139, 92, 246, 0.05) 0%, 
-      rgba(192, 132, 252, 0.05) 100%),
+  background:
+    linear-gradient(135deg, rgba(139, 92, 246, 0.05) 0%, rgba(192, 132, 252, 0.05) 100%),
     var(--color-bg-secondary);
-  box-shadow: 
+  box-shadow:
     0 20px 60px -10px rgba(0, 0, 0, 0.2),
     0 8px 24px -6px rgba(139, 92, 246, 0.15),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
@@ -694,7 +731,7 @@ const nextThumbnail = () => {
 
 .post-thumbnail:hover {
   transform: translateY(-4px) scale(1.01);
-  box-shadow: 
+  box-shadow:
     0 28px 80px -12px rgba(0, 0, 0, 0.25),
     0 12px 32px -8px rgba(139, 92, 246, 0.25),
     inset 0 1px 0 rgba(255, 255, 255, 0.15);
@@ -729,10 +766,7 @@ const nextThumbnail = () => {
 .thumbnail-overlay {
   position: absolute;
   inset: 0;
-  background: 
-    linear-gradient(135deg,
-      rgba(139, 92, 246, 0.85) 0%,
-      rgba(192, 132, 252, 0.85) 100%);
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.85) 0%, rgba(192, 132, 252, 0.85) 100%);
   backdrop-filter: blur(8px) saturate(150%);
   display: flex;
   align-items: center;
@@ -743,7 +777,6 @@ const nextThumbnail = () => {
   z-index: 2;
   pointer-events: none;
 }
-
 
 .thumbnail-counter {
   position: absolute;
@@ -757,7 +790,7 @@ const nextThumbnail = () => {
   font-size: var(--text-sm);
   font-weight: var(--font-bold);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 
+  box-shadow:
     0 4px 16px rgba(0, 0, 0, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
   z-index: 5;
@@ -780,7 +813,7 @@ const nextThumbnail = () => {
   justify-content: center;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 
+  box-shadow:
     0 10px 30px rgba(139, 92, 246, 0.4),
     0 4px 12px rgba(0, 0, 0, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
@@ -797,7 +830,7 @@ const nextThumbnail = () => {
 .thumbnail-nav-btn:hover:not(:disabled) {
   background: rgba(139, 92, 246, 1);
   transform: translateY(-50%) scale(1.1);
-  box-shadow: 
+  box-shadow:
     0 14px 40px rgba(139, 92, 246, 0.5),
     0 6px 16px rgba(0, 0, 0, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.25);
@@ -959,15 +992,13 @@ const nextThumbnail = () => {
   align-items: center;
   gap: var(--spacing-md);
   padding: var(--spacing-lg);
-  background: 
-    linear-gradient(135deg,
-      rgba(139, 92, 246, 0.03) 0%,
-      rgba(192, 132, 252, 0.03) 100%),
+  background:
+    linear-gradient(135deg, rgba(139, 92, 246, 0.03) 0%, rgba(192, 132, 252, 0.03) 100%),
     var(--glass-bg-light);
   border-radius: var(--radius-2xl);
   border: 1px solid rgba(139, 92, 246, 0.1);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 
+  box-shadow:
     0 4px 16px rgba(0, 0, 0, 0.04),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
   position: relative;
@@ -978,14 +1009,12 @@ const nextThumbnail = () => {
 }
 
 .author-info.clickable:hover {
-  background: 
-    linear-gradient(135deg,
-      rgba(139, 92, 246, 0.08) 0%,
-      rgba(192, 132, 252, 0.08) 100%),
+  background:
+    linear-gradient(135deg, rgba(139, 92, 246, 0.08) 0%, rgba(192, 132, 252, 0.08) 100%),
     var(--glass-bg-light);
   border-color: rgba(139, 92, 246, 0.3);
   transform: translateY(-2px);
-  box-shadow: 
+  box-shadow:
     0 8px 24px rgba(139, 92, 246, 0.15),
     0 4px 12px rgba(0, 0, 0, 0.05),
     inset 0 1px 0 rgba(255, 255, 255, 0.15);
@@ -1035,16 +1064,14 @@ const nextThumbnail = () => {
   align-items: center;
   gap: var(--spacing-lg);
   padding: var(--spacing-lg);
-  background: 
-    linear-gradient(135deg,
-      rgba(139, 92, 246, 0.02) 0%,
-      rgba(192, 132, 252, 0.02) 100%),
+  background:
+    linear-gradient(135deg, rgba(139, 92, 246, 0.02) 0%, rgba(192, 132, 252, 0.02) 100%),
     var(--glass-bg-light);
   border-radius: var(--radius-2xl);
   border: 1px solid rgba(139, 92, 246, 0.08);
   flex-wrap: wrap;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 
+  box-shadow:
     0 2px 8px rgba(0, 0, 0, 0.03),
     inset 0 1px 0 rgba(255, 255, 255, 0.08);
   position: relative;
@@ -1055,13 +1082,11 @@ const nextThumbnail = () => {
 }
 
 .post-stats.clickable:hover {
-  background: 
-    linear-gradient(135deg,
-      rgba(139, 92, 246, 0.05) 0%,
-      rgba(192, 132, 252, 0.05) 100%),
+  background:
+    linear-gradient(135deg, rgba(139, 92, 246, 0.05) 0%, rgba(192, 132, 252, 0.05) 100%),
     var(--glass-bg-light);
   border-color: rgba(139, 92, 246, 0.15);
-  box-shadow: 
+  box-shadow:
     0 4px 12px rgba(139, 92, 246, 0.1),
     inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
@@ -1087,15 +1112,13 @@ const nextThumbnail = () => {
 
 .post-description {
   padding: var(--spacing-lg);
-  background: 
-    linear-gradient(135deg,
-      rgba(139, 92, 246, 0.02) 0%,
-      rgba(192, 132, 252, 0.02) 100%),
+  background:
+    linear-gradient(135deg, rgba(139, 92, 246, 0.02) 0%, rgba(192, 132, 252, 0.02) 100%),
     var(--glass-bg-light);
   border-radius: var(--radius-2xl);
   border: 1px solid rgba(139, 92, 246, 0.08);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 
+  box-shadow:
     0 2px 8px rgba(0, 0, 0, 0.03),
     inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
@@ -1112,7 +1135,7 @@ const nextThumbnail = () => {
   .post-description {
     padding: var(--spacing-xl);
   }
-  
+
   .post-description p {
     font-size: var(--text-lg);
     line-height: 1.75;
@@ -1279,7 +1302,6 @@ const nextThumbnail = () => {
   .post-stats {
     padding: var(--spacing-md);
   }
-
 
   .thumbnail-nav-btn {
     width: 40px;

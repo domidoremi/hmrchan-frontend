@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onErrorCaptured } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import logger from '@/utils/logger'
 
 interface Props {
@@ -16,6 +17,7 @@ const error = ref<Error | null>(null)
 const errorInfo = ref<string>('')
 const hasError = ref(false)
 const router = useRouter()
+const { t } = useI18n()
 const isDev = import.meta.env.DEV
 
 // 捕获子组件错误
@@ -56,19 +58,19 @@ const reload = () => {
   <div v-if="hasError && fallback" class="error-boundary">
     <div class="error-container">
       <div class="error-icon">⚠️</div>
-      <h1 class="error-title">出错了</h1>
-      <p class="error-message">{{ error?.message || '未知错误' }}</p>
+      <h1 class="error-title">{{ t('error.title') }}</h1>
+      <p class="error-message">{{ error?.message || t('error.unknown') }}</p>
 
       <details v-if="isDev" class="error-details">
-        <summary>错误详情</summary>
+        <summary>{{ t('error.details') }}</summary>
         <pre class="error-stack">{{ error?.stack }}</pre>
-        <p class="error-info"><strong>组件信息:</strong> {{ errorInfo }}</p>
+        <p class="error-info"><strong>{{ t('error.componentInfo') }}:</strong> {{ errorInfo }}</p>
       </details>
 
       <div class="error-actions">
-        <button @click="reset" class="btn btn-primary">重试</button>
-        <button @click="goHome" class="btn btn-secondary">返回首页</button>
-        <button @click="reload" class="btn btn-secondary">刷新页面</button>
+        <button @click="reset" class="btn btn-primary">{{ t('error.retry') }}</button>
+        <button @click="goHome" class="btn btn-secondary">{{ t('error.goHome') }}</button>
+        <button @click="reload" class="btn btn-secondary">{{ t('error.reload') }}</button>
       </div>
     </div>
   </div>

@@ -6,7 +6,7 @@
       <LoadingSpinner v-if="loading" size="lg" />
 
       <div v-else-if="favoritePosts.length > 0" class="favorites-list">
-        <div class="favorites-grid">
+        <div ref="gridRef" class="favorites-grid">
           <PostCard v-for="post in favoritePosts" :key="post.id" :post="post" />
         </div>
       </div>
@@ -27,7 +27,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { ref, onMounted, nextTick, watch } from 'vue'
 import { Heart, Compass } from 'lucide-vue-next'
 
 import MainLayout from '@/components/layout/MainLayout.vue'
@@ -35,15 +35,32 @@ import PostCard from '@/components/features/PostCard.vue'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import GlassButton from '@/components/ui/GlassButton.vue'
 import { useFavorites } from '@/composables/useFavorites'
+import { useWaterfallLayout } from '@/composables/useWaterfallLayout'
 
 const { favoritePosts, loading, fetchFavorites } = useFavorites()
+
+// 瀑布流布局
+const gridRef = ref<HTMLElement | null>(null)
+const { updateLayout } = useWaterfallLayout(gridRef, {
+  columnGap: 16,
+  rowGap: 16,
+})
 
 onMounted(async () => {
   try {
     await fetchFavorites()
+    // 数据加载后更新布局
+    await nextTick()
+    await updateLayout()
   } catch (error) {
     console.error('Failed to load favorites:', error)
   }
+})
+
+// 监听收藏列表变化，更新布局
+watch(() => favoritePosts.value.length, async () => {
+  await nextTick()
+  await updateLayout()
 })
 </script>
 
@@ -61,9 +78,19 @@ onMounted(async () => {
 }
 
 .favorites-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: var(--spacing-lg);
+  width: 100%;
+  position: relative;
+  /* 高度由 JS 动态设置 */
+}
+
+.favorites-grid .post-card {
+  /* position, left, top, width 由 JS 动态设置 */
+  box-sizing: border-box;
+  transition:
+    opacity 0.4s ease,
+    transform 0.4s ease,
+    left 0.3s ease,
+    top 0.3s ease;
 }
 
 .empty-state {
@@ -77,26 +104,13 @@ onMounted(async () => {
   color: var(--color-text-tertiary);
 }
 
-/* 平板端（769px - 1100px）- 固定2列 */
-@media (min-width: 769px) and (max-width: 1100px) {
-  .favorites-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-/* 移动端（<=768px）- 2列保持自然高度 */
-@media (max-width: 768px) {
-  .favorites-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: var(--spacing-md);
-  }
-}
-
-/* 小屏手机（<=480px）- 单列 */
-@media (max-width: 480px) {
-  .favorites-grid {
-    grid-template-columns: 1fr;
-    gap: var(--spacing-sm);
-  }
-}
+/* 所有屏幕尺寸都使用 JS 瀑布流（包括移动端） */
+/* JS 会自动根据屏幕宽度计算列数：
+   - >= 1600px: 5列
+   - >= 1400px: 4列
+   - >= 1100px: 3列
+   - >= 769px:  2列
+   - >= 481px:  2列
+   - < 481px:   2列
+*/
 </style>

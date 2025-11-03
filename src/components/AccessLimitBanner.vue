@@ -44,6 +44,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { Info, AlertCircle, LogIn, UserPlus } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/auth'
 import GlassButton from './ui/GlassButton.vue'
@@ -60,6 +61,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 const router = useRouter()
 const authStore = useAuthStore()
+const { t } = useI18n()
 
 const isAuthenticated = computed(() => authStore.isAuthenticated)
 const isAdmin = computed(() => authStore.user?.is_admin ?? false)
@@ -86,28 +88,28 @@ const shouldShow = computed(() => {
 
 const title = computed(() => {
   if (!isAuthenticated.value) {
-    return '访客模式'
+    return t('access.guestMode')
   }
 
   if (isNearLimit.value) {
-    return '接近访问限制'
+    return t('access.nearLimit')
   }
 
-  return '内容访问'
+  return t('access.contentAccess')
 })
 
 const message = computed(() => {
   const remaining = props.totalLimit - props.currentCount
 
   if (!isAuthenticated.value) {
-    return `您正在查看最新 ${props.totalLimit} 条内容，登录后可查看更多精彩内容`
+    return t('access.guestMessage', { limit: props.totalLimit })
   }
 
   if (isNearLimit.value) {
-    return `还可以查看 ${remaining} 条内容，升级会员解锁全部内容`
+    return t('access.nearLimitMessage', { remaining })
   }
 
-  return `已加载 ${props.currentCount}/${props.totalLimit} 条内容`
+  return t('access.loadedMessage', { current: props.currentCount, limit: props.totalLimit })
 })
 
 const goToLogin = () => {

@@ -8,7 +8,7 @@
       </RouterLink>
 
       <!-- 导航链接 -->
-      <div ref="mobileNavRef" class="navbar-nav" :class="{ 'nav-open': mobileMenuOpen }">
+      <div ref="mobileNavRef" id="mobile-nav" class="navbar-nav" :class="{ 'nav-open': mobileMenuOpen }">
         <RouterLink to="/" class="nav-link" @click="closeMobileMenu" :aria-label="$t('nav.home')">
           <Home :size="20" />
           <span>{{ $t('nav.home') }}</span>

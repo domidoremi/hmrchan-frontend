@@ -40,14 +40,30 @@
         <div v-if="isStatsLoading" class="stats-grid stats-desktop">
           <div v-for="platform in platforms" :key="platform" class="stat-card glass-card loading">
             <div class="stat-icon" style="background: #e5e7eb">
-              <div style="width: 32px; height: 32px; background: #d1d5db; border-radius: 4px;"></div>
+              <div style="width: 32px; height: 32px; background: #d1d5db; border-radius: 4px"></div>
             </div>
-            <div style="height: 20px; width: 60%; background: #e5e7eb; border-radius: 4px; margin: 8px 0;"></div>
-            <div style="height: 32px; width: 40%; background: #e5e7eb; border-radius: 4px; margin: 4px 0;"></div>
-            <div style="height: 16px; width: 50%; background: #e5e7eb; border-radius: 4px;"></div>
+            <div
+              style="
+                height: 20px;
+                width: 60%;
+                background: #e5e7eb;
+                border-radius: 4px;
+                margin: 8px 0;
+              "
+            ></div>
+            <div
+              style="
+                height: 32px;
+                width: 40%;
+                background: #e5e7eb;
+                border-radius: 4px;
+                margin: 4px 0;
+              "
+            ></div>
+            <div style="height: 16px; width: 50%; background: #e5e7eb; border-radius: 4px"></div>
           </div>
         </div>
-        
+
         <!-- 加载完成：显示真实数据 -->
         <div v-else class="stats-grid stats-desktop">
           <div v-for="platform in platforms" :key="platform" class="stat-card glass-card">
@@ -65,67 +81,79 @@
           <!-- 加载中：显示加载状态 -->
           <div v-if="isStatsLoading" class="stat-card glass-card loading">
             <div class="stat-icon" style="background: #e5e7eb">
-              <div style="width: 32px; height: 32px; background: #d1d5db; border-radius: 4px;"></div>
+              <div style="width: 32px; height: 32px; background: #d1d5db; border-radius: 4px"></div>
             </div>
-            <div style="height: 20px; width: 60%; background: #e5e7eb; border-radius: 4px; margin: 8px 0;"></div>
-            <div style="height: 32px; width: 40%; background: #e5e7eb; border-radius: 4px; margin: 4px 0;"></div>
-            <div style="height: 16px; width: 50%; background: #e5e7eb; border-radius: 4px;"></div>
+            <div
+              style="
+                height: 20px;
+                width: 60%;
+                background: #e5e7eb;
+                border-radius: 4px;
+                margin: 8px 0;
+              "
+            ></div>
+            <div
+              style="
+                height: 32px;
+                width: 40%;
+                background: #e5e7eb;
+                border-radius: 4px;
+                margin: 4px 0;
+              "
+            ></div>
+            <div style="height: 16px; width: 50%; background: #e5e7eb; border-radius: 4px"></div>
           </div>
-          
+
           <!-- 加载完成：显示轮播 -->
           <div v-else>
-            <div class="carousel-container glass-card" @mouseenter="pauseAutoplay" @mouseleave="resumeAutoplay">
-            <button
-              class="carousel-btn carousel-prev"
-              @click="prevStat"
-              aria-label="Previous"
+            <div
+              class="carousel-container glass-card"
+              @mouseenter="pauseAutoplay"
+              @mouseleave="resumeAutoplay"
             >
-              <svg
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-              >
-                <polyline points="15 18 9 12 15 6"></polyline>
-              </svg>
-            </button>
+              <button class="carousel-btn carousel-prev" @click="prevStat" aria-label="Previous">
+                <svg
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+              </button>
 
-            <div class="carousel-track-container">
-              <div
-                class="carousel-track"
-                :style="{ transform: `translateX(-${currentStatIndex * 100}%)` }"
-              >
-                <div v-for="platform in platforms" :key="platform" class="carousel-slide">
-                  <div class="stat-card glass-card">
-                    <div class="stat-icon" :style="{ background: getPlatformColor(platform) }">
-                      <component :is="getPlatformIcon(platform)" :size="32" />
+              <div class="carousel-track-container">
+                <div
+                  class="carousel-track"
+                  :style="{ transform: `translateX(-${currentStatIndex * 100}%)` }"
+                >
+                  <div v-for="platform in platforms" :key="platform" class="carousel-slide">
+                    <div class="stat-card glass-card">
+                      <div class="stat-icon" :style="{ background: getPlatformColor(platform) }">
+                        <component :is="getPlatformIcon(platform)" :size="32" />
+                      </div>
+                      <h3>{{ $t(`platform.${platform}`) }}</h3>
+                      <p class="stat-count">{{ formatNumber(platformStats[platform] || 0) }}</p>
+                      <p class="stat-label">{{ $t('post.title') }}</p>
                     </div>
-                    <h3>{{ $t(`platform.${platform}`) }}</h3>
-                    <p class="stat-count">{{ formatNumber(platformStats[platform] || 0) }}</p>
-                    <p class="stat-label">{{ $t('post.title') }}</p>
                   </div>
                 </div>
               </div>
-            </div>
 
-            <button
-              class="carousel-btn carousel-next"
-              @click="nextStat"
-              aria-label="Next"
-            >
-              <svg
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-              >
-                <polyline points="9 18 15 12 9 6"></polyline>
-              </svg>
-            </button>
+              <button class="carousel-btn carousel-next" @click="nextStat" aria-label="Next">
+                <svg
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+              </button>
             </div>
 
             <!-- 进度条指示器（计时器样式） -->
@@ -137,7 +165,10 @@
                 :class="{ active: currentStatIndex === index }"
                 @click="goToSlide(index)"
               >
-                <div class="progress-bar" :class="{ animating: currentStatIndex === index && !isPaused }"></div>
+                <div
+                  class="progress-bar"
+                  :class="{ animating: currentStatIndex === index && !isPaused }"
+                ></div>
               </div>
             </div>
           </div>
@@ -329,7 +360,6 @@ const { updateLayout, smoothUpdateLayout } = useWaterfallLayout(postsGrid, {
   },
 })
 
-
 // 无限滚动
 const { isLoading: isLoadingMore } = useInfiniteScroll({
   onLoadMore: async () => {
@@ -346,22 +376,25 @@ const { isLoading: isLoadingMore } = useInfiniteScroll({
 
 onMounted(async () => {
   try {
-    // 重置筛选条件，确保首页总是显示最新内容
-    postsStore.resetFilters()
-
     // ✨ 优化：减少初始加载数量，提升首屏速度
-    await postsStore.fetchPosts({ page: currentPage.value, page_size: 6 })
+    // 使用明确的参数，不修改全局 store filters，避免与 ExplorePage 冲突
+    await postsStore.fetchPosts({ 
+      page: currentPage.value, 
+      page_size: 6,
+      sort_by: 'scraped_at',
+      sort_order: 'desc'
+    })
 
     // 记录初始加载的卡片数量
     await nextTick()
     loadedPostsCount.value = posts.value.length
-    
+
     // 更新瀑布流布局
     await updateLayout()
 
     // 后台加载统计数据（非阻塞）
     loadStatsInBackground()
-    
+
     // 启动轮播自动播放
     startAutoplay()
   } catch (error) {
@@ -416,6 +449,8 @@ const loadMore = async () => {
     const result = await postsStore.fetchPosts({
       page: currentPage.value,
       page_size: 8,
+      sort_by: 'scraped_at',
+      sort_order: 'desc',
       append: true, // 追加到现有列表
     })
 
@@ -426,31 +461,31 @@ const loadMore = async () => {
 
     // 等待 DOM 更新
     await nextTick()
-    
+
     // 获取所有卡片，只对新卡片添加动画
     if (postsGrid.value) {
       const allCards = postsGrid.value.querySelectorAll('a.post-card')
       const previousCount = loadedPostsCount.value
-      
+
       // 只对新增的卡片添加进入动画
       for (let i = previousCount; i < allCards.length; i++) {
         const card = allCards[i] as HTMLElement
         card.classList.add('card-entering')
       }
-      
+
       // 更新已加载数量
       loadedPostsCount.value = allCards.length
     }
-    
+
     // 使用平滑更新，减少现有卡片重排
     await smoothUpdateLayout()
-    
+
     // 延迟后移除进入动画类
     setTimeout(() => {
       if (postsGrid.value) {
         const cards = postsGrid.value.querySelectorAll('a.post-card.card-entering')
-        cards.forEach(card => {
-          (card as HTMLElement).classList.remove('card-entering')
+        cards.forEach((card) => {
+          ;(card as HTMLElement).classList.remove('card-entering')
         })
       }
     }, 600)
@@ -989,7 +1024,11 @@ const getPlatformIcon = (platform: string) => {
 .posts-grid .post-card {
   /* position, left, top, width 由 JS 动态设置 */
   box-sizing: border-box;
-  transition: opacity 0.4s ease, transform 0.4s ease, left 0.3s ease, top 0.3s ease;
+  transition:
+    opacity 0.4s ease,
+    transform 0.4s ease,
+    left 0.3s ease,
+    top 0.3s ease;
 }
 
 /* 新卡片进入动画 */
@@ -1008,53 +1047,13 @@ const getPlatformIcon = (platform: string) => {
   }
 }
 
-/* 平板端（769px - 1100px）- 简化瀑布流为2列 */
-@media (min-width: 769px) and (max-width: 1100px) {
-  .posts-grid {
-    display: grid !important;
-    grid-template-columns: repeat(2, 1fr) !important;
-    gap: var(--spacing-lg) !important;
-    height: auto !important;
-    position: relative !important;
-  }
-
-  .posts-grid .post-card {
-    position: relative !important;
-    left: auto !important;
-    top: auto !important;
-    width: 100% !important;
-    margin-bottom: 0 !important;
-  }
-}
-
-/* 移动端（<=768px）- 使用 grid 布局保持自然高度 */
-@media (max-width: 768px) {
-  .posts-grid {
-    display: grid !important;
-    grid-template-columns: repeat(2, 1fr) !important;
-    column-gap: var(--spacing-md) !important;
-    row-gap: var(--spacing-md) !important;
-    height: auto !important; /* 覆盖 JS 设置的高度 */
-  }
-
-  .posts-grid .post-card {
-    position: relative !important; /* 覆盖绝对定位 */
-    left: auto !important;
-    top: auto !important;
-    width: 100% !important;
-    margin-bottom: 0 !important;
-  }
-}
-
-/* 小屏手机（<=480px）*/
-@media (max-width: 480px) {
-  .posts-grid {
-    column-gap: var(--spacing-sm) !important;
-    row-gap: var(--spacing-sm) !important;
-  }
-
-  .posts-grid .post-card {
-    width: 100% !important;
-  }
-}
+/* 所有屏幕尺寸都使用 JS 瀑布流（包括移动端） */
+/* JS 会自动根据屏幕宽度计算列数：
+   - >= 1600px: 5列
+   - >= 1400px: 4列
+   - >= 1100px: 3列
+   - >= 769px:  2列
+   - >= 481px:  2列
+   - < 481px:   2列
+*/
 </style>

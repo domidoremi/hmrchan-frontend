@@ -1,15 +1,27 @@
 <template>
-  <div v-if="show" class="media-viewer-overlay" @click="close">
+  <div v-if="show" class="media-viewer-overlay" @click="close" @mousemove="onMouseMove">
     <div class="media-viewer" @click.stop>
       <!-- 工具栏 -->
-      <div class="viewer-toolbar">
-        <button class="viewer-btn toolbar-btn" @click="toggleFullscreen" :title="$t('common.fullscreen')">
+      <div class="viewer-toolbar" :class="{ 'controls-hidden': !controlsVisible }">
+        <button
+          class="viewer-btn toolbar-btn"
+          @click="toggleFullscreen"
+          :title="$t('common.fullscreen')"
+        >
           <Maximize :size="20" />
         </button>
-        <button class="viewer-btn toolbar-btn" @click="downloadMedia" :title="$t('common.download')">
+        <button
+          class="viewer-btn toolbar-btn"
+          @click="downloadMedia"
+          :title="$t('common.download')"
+        >
           <Download :size="20" />
         </button>
-        <button class="viewer-btn toolbar-btn close-btn" @click="close" :aria-label="$t('aria.closeViewer')">
+        <button
+          class="viewer-btn toolbar-btn close-btn"
+          @click="close"
+          :aria-label="$t('aria.closeViewer')"
+        >
           <X :size="24" />
         </button>
       </div>
@@ -18,6 +30,7 @@
       <button
         v-if="mediaItems.length > 1"
         class="viewer-btn prev-btn"
+        :class="{ 'controls-hidden': !controlsVisible }"
         @click="prev"
         :disabled="currentIndex === 0"
         :aria-label="$t('aria.previousImage')"
@@ -72,6 +85,7 @@
       <button
         v-if="mediaItems.length > 1"
         class="viewer-btn next-btn"
+        :class="{ 'controls-hidden': !controlsVisible }"
         @click="next"
         :disabled="currentIndex === mediaItems.length - 1"
         :aria-label="$t('aria.nextImage')"
@@ -80,7 +94,7 @@
       </button>
 
       <!-- 媒体信息 -->
-      <div class="media-info">
+      <div class="media-info" :class="{ 'controls-hidden': !controlsVisible }">
         <span>
           {{ currentIndex + 1 }} / {{ mediaItems.length }}
           <span class="media-type-badge">
@@ -100,7 +114,7 @@
             <Maximize2 :size="20" />
           </button>
         </div>
-        
+
         <!-- 视频倍速控制 -->
         <div v-if="currentMedia.type === 'video'" class="playback-controls">
           <button @click="showPlaybackMenu = !showPlaybackMenu" class="playback-btn">
@@ -126,7 +140,16 @@
 <script setup lang="ts">
 import { ref, computed, watch, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { X, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Maximize2, Maximize, Download } from 'lucide-vue-next'
+import {
+  X,
+  ChevronLeft,
+  ChevronRight,
+  ZoomIn,
+  ZoomOut,
+  Maximize2,
+  Maximize,
+  Download,
+} from 'lucide-vue-next'
 
 interface MediaItem {
   url: string
@@ -156,11 +179,18 @@ const videoElement = ref<HTMLVideoElement | null>(null)
 const playbackRate = ref(1)
 const showPlaybackMenu = ref(false)
 const isFullscreen = ref(false)
+const controlsVisible = ref(true)
+let hideControlsTimer: ReturnType<typeof setTimeout> | null = null
 
 const playbackRates = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2]
 
 const currentMedia = computed(
-  () => props.mediaItems[currentIndex.value] || { url: '', type: 'image' as const, subtitle: undefined },
+  () =>
+    props.mediaItems[currentIndex.value] || {
+      url: '',
+      type: 'image' as const,
+      subtitle: undefined,
+    },
 )
 
 const imageStyle = computed(() => ({
@@ -177,22 +207,35 @@ watch(
       // 对于视频且 preload="none"，不需要等待加载
       loading.value = currentMedia.value.type === 'video' ? false : true
       document.body.style.overflow = 'hidden'
+      controlsVisible.value = true
+      resetHideControlsTimer()
     } else {
       document.body.style.overflow = ''
+      if (hideControlsTimer) {
+        clearTimeout(hideControlsTimer)
+      }
     }
   },
 )
 
 watch(currentIndex, () => {
-  // 对于视频且 preload="none"，不需要等待加载
-  loading.value = currentMedia.value.type === 'video' ? false : true
+  // 先显示loading
+  loading.value = true
   zoom.value = 1
   showPlaybackMenu.value = false
-  // 如果切换到视频，触发加载
-  if (currentMedia.value.type === 'video' && videoElement.value) {
-    videoElement.value.load()
-    videoElement.value.playbackRate = playbackRate.value
+  controlsVisible.value = true
+  resetHideControlsTimer()
+  
+  // 视频：立即隐藏loading（因为preload="none"）
+  // 图片：等待onMediaLoad事件
+  if (currentMedia.value.type === 'video') {
+    loading.value = false
+    if (videoElement.value) {
+      videoElement.value.load()
+      videoElement.value.playbackRate = playbackRate.value
+    }
   }
+  // 图片会在@load事件中设置loading=false
 })
 
 // 当显示媒体查看器且当前是视频时，触发加载
@@ -209,6 +252,22 @@ watch(
     }
   },
 )
+
+// 鼠标移动时显示控件
+const onMouseMove = () => {
+  controlsVisible.value = true
+  resetHideControlsTimer()
+}
+
+// 重置自动隐藏计时器
+const resetHideControlsTimer = () => {
+  if (hideControlsTimer) {
+    clearTimeout(hideControlsTimer)
+  }
+  hideControlsTimer = setTimeout(() => {
+    controlsVisible.value = false
+  }, 3000) // 3秒后自动隐藏
+}
 
 const close = () => {
   emit('close')
@@ -399,6 +458,13 @@ onUnmounted(() => {
   display: flex;
   gap: 12px;
   z-index: 10;
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+
+.viewer-toolbar.controls-hidden {
+  opacity: 0;
+  pointer-events: none;
 }
 
 .toolbar-btn {
@@ -411,6 +477,13 @@ onUnmounted(() => {
   left: 40px;
   top: 50%;
   transform: translateY(-50%);
+  opacity: 1;
+  transition: opacity 0.3s ease, transform 0.2s ease;
+}
+
+.prev-btn.controls-hidden {
+  opacity: 0;
+  pointer-events: none;
 }
 
 .prev-btn:hover:not(:disabled) {
@@ -421,6 +494,13 @@ onUnmounted(() => {
   right: 40px;
   top: 50%;
   transform: translateY(-50%);
+  opacity: 1;
+  transition: opacity 0.3s ease, transform 0.2s ease;
+}
+
+.next-btn.controls-hidden {
+  opacity: 0;
+  pointer-events: none;
 }
 
 .next-btn:hover:not(:disabled) {
@@ -497,16 +577,24 @@ onUnmounted(() => {
   bottom: 30px;
   left: 50%;
   transform: translateX(-50%);
-  background: rgba(0, 0, 0, 0.8);
+  background: rgba(0, 0, 0, 0.7);
   backdrop-filter: blur(10px);
   padding: 12px 24px;
-  border-radius: 30px;
+  border-radius: 12px;
   color: white;
-  font-size: 14px;
   display: flex;
   align-items: center;
-  gap: 24px;
-  animation: slideUp 0.3s ease;
+  gap: 20px;
+  z-index: 10;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  font-size: 14px;
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+
+.media-info.controls-hidden {
+  opacity: 0;
+  pointer-events: none;
 }
 
 @keyframes slideUp {

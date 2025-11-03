@@ -115,6 +115,14 @@ export interface MediaFile {
   thumbnail_path: string | null
   is_downloaded: boolean
   download_url: string | null
+  subtitle_language?: string | null
+  subtitle_format?: string | null
+  has_subtitle?: boolean
+  subtitles?: Array<{  // 新增：多语言字幕支持
+    language: string
+    format: string
+    label: string
+  }> | null
   created_at: string
 }
 
