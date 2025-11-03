@@ -176,8 +176,8 @@ export const usePostsStore = defineStore(
   },
   {
     // 持久化配置 - 使用 sessionStorage 保存会话期间的数据
-    persist: {
+    persist: typeof window !== 'undefined' ? {
       storage: sessionStorage,
-    },
+    } : false,
   },
 )
