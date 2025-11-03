@@ -152,7 +152,9 @@
     "noData": "データがありません",
     "zoomIn": "拡大",
     "zoomOut": "縮小",
-    "backToTop": "トップに戻る"
+    "backToTop": "トップに戻る",
+    "fullscreen": "全画面",
+    "download": "ダウンロード"
   },
   "author": {
     "title": "作者",
@@ -231,6 +233,15 @@
     "onlyImages": "JPG、PNG、WebP形式の画像のみサポート",
     "processingFailed": "画像処理に失敗しました",
     "tooLarge": "ファイルが大きすぎます。最大5MB"
+  },
+  "error": {
+    "title": "エラーが発生しました",
+    "unknown": "未知のエラー",
+    "details": "エラー詳細",
+    "componentInfo": "コンポーネント情報",
+    "retry": "再試行",
+    "goHome": "ホームに戻る",
+    "reload": "ページを更新"
   },
   "errors": {
     "permissionDenied": "権限がありません",

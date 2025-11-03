@@ -4,6 +4,7 @@
  * 优化长列表性能，只渲染可视区域的元素
  */
 import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 interface Props {
   items: T[]
@@ -20,6 +21,8 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<{
   scroll: [event: Event]
 }>()
+
+const { t } = useI18n()
 
 const containerRef = ref<HTMLElement>()
 const scrollTop = ref(0)
@@ -137,7 +140,7 @@ watch(
     <!-- 空状态 -->
     <div v-if="items.length === 0" class="virtual-scroll-empty">
       <slot name="empty">
-        <p>暂无数据</p>
+        <p>{{ t('common.noData') }}</p>
       </slot>
     </div>
   </div>

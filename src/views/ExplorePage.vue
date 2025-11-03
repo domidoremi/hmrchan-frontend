@@ -77,11 +77,10 @@ const { updateLayout, smoothUpdateLayout } = useWaterfallLayout(postsGrid, {
   breakpoints: {
     1400: 4, // >= 1400px: 4列
     1100: 3, // >= 1100px: 3列
-    769: 2,  // >= 769px: 2列
-    0: 2,    // < 769px: 2列
+    769: 2, // >= 769px: 2列
+    0: 2, // < 769px: 2列
   },
 })
-
 
 onMounted(async () => {
   // 重置筛选条件
@@ -97,7 +96,7 @@ onMounted(async () => {
   // 记录初始加载的卡片数量
   await nextTick()
   loadedPostsCount.value = posts.value.length
-  
+
   // 更新瀑布流布局
   await updateLayout()
 })
@@ -125,35 +124,35 @@ watch(
 
 const loadPosts = async () => {
   const previousCount = loadedPostsCount.value
-  
+
   await postsStore.fetchPosts()
-  
+
   // 等待 DOM 更新
   await nextTick()
-  
+
   // 获取所有卡片，只对新卡片添加动画
   if (postsGrid.value) {
     const allCards = postsGrid.value.querySelectorAll('a.post-card')
-    
+
     // 只对新增的卡片添加进入动画
     for (let i = previousCount; i < allCards.length; i++) {
       const card = allCards[i] as HTMLElement
       card.classList.add('card-entering')
     }
-    
+
     // 更新已加载数量
     loadedPostsCount.value = allCards.length
   }
-  
+
   // 使用平滑更新
   await smoothUpdateLayout()
-  
+
   // 延迟后移除进入动画类
   setTimeout(() => {
     if (postsGrid.value) {
       const cards = postsGrid.value.querySelectorAll('a.post-card.card-entering')
       cards.forEach((card) => {
-        (card as HTMLElement).classList.remove('card-entering')
+        ;(card as HTMLElement).classList.remove('card-entering')
       })
     }
   }, 600)
@@ -247,7 +246,6 @@ const resetFilters = () => {
     font-size: var(--text-2xl);
     margin-bottom: var(--spacing-md);
   }
-
 }
 
 /* 极小屏幕优化 */
@@ -271,7 +269,11 @@ const resetFilters = () => {
 .explore-page .posts-grid .post-card {
   /* position, left, top, width 由 JS 动态设置 */
   box-sizing: border-box;
-  transition: opacity 0.4s ease, transform 0.4s ease, left 0.3s ease, top 0.3s ease;
+  transition:
+    opacity 0.4s ease,
+    transform 0.4s ease,
+    left 0.3s ease,
+    top 0.3s ease;
 }
 
 /* 新卡片进入动画 */
@@ -290,53 +292,13 @@ const resetFilters = () => {
   }
 }
 
-/* 平板端（769px - 1100px）- 简化瀑布流为2列 */
-@media (min-width: 769px) and (max-width: 1100px) {
-  .explore-page .posts-grid {
-    display: grid !important;
-    grid-template-columns: repeat(2, 1fr) !important;
-    gap: var(--spacing-lg) !important;
-    height: auto !important;
-    position: relative !important;
-  }
-
-  .explore-page .posts-grid .post-card {
-    position: relative !important;
-    left: auto !important;
-    top: auto !important;
-    width: 100% !important;
-    margin-bottom: 0 !important;
-  }
-}
-
-/* 移动端（<=768px）- 使用 grid 布局保持自然高度 */
-@media (max-width: 768px) {
-  .explore-page .posts-grid {
-    display: grid !important;
-    grid-template-columns: repeat(2, 1fr) !important;
-    column-gap: var(--spacing-md) !important;
-    row-gap: var(--spacing-md) !important;
-    height: auto !important; /* 覆盖 JS 设置的高度 */
-  }
-
-  .explore-page .posts-grid .post-card {
-    position: relative !important; /* 覆盖绝对定位 */
-    left: auto !important;
-    top: auto !important;
-    width: 100% !important;
-    margin-bottom: 0 !important;
-  }
-}
-
-/* 小屏手机（<=480px）*/
-@media (max-width: 480px) {
-  .explore-page .posts-grid {
-    column-gap: var(--spacing-sm) !important;
-    row-gap: var(--spacing-sm) !important;
-  }
-
-  .explore-page .posts-grid .post-card {
-    width: 100% !important;
-  }
-}
+/* 所有屏幕尺寸都使用 JS 瀑布流（包括移动端） */
+/* JS 会自动根据屏幕宽度计算列数：
+   - >= 1600px: 5列
+   - >= 1400px: 4列
+   - >= 1100px: 3列
+   - >= 769px:  2列
+   - >= 481px:  2列
+   - < 481px:   2列
+*/
 </style>

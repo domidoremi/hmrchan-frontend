@@ -107,6 +107,9 @@ export const usePostsStore = defineStore(
         page_size: 20,
         sort_by: 'scraped_at',
         sort_order: 'desc',
+        platform: undefined,
+        q: undefined,
+        has_media: undefined,
       }
     }
 

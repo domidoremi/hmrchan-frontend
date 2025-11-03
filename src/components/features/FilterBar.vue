@@ -103,6 +103,8 @@ const resetFilters = () => {
     page_size: 20,
     sort_by: 'scraped_at',
     sort_order: 'desc',
+    platform: '',
+    has_media: false,
   }
   applyFilters()
 }
