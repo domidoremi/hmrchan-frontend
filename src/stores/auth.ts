@@ -145,9 +145,9 @@ export const useAuthStore = defineStore(
     }
   },
   {
-    persist: {
+    persist: typeof window !== 'undefined' ? {
       key: 'auth',
       storage: sessionStorage,
-    },
+    } : false,
   } as any,
 )

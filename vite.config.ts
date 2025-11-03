@@ -16,18 +16,6 @@ export default defineConfig(({ mode }) => ({
     // 生产环境内联关键 CSS
     ...(mode === 'production' ? [criticalCSSPlugin()] : []),
   ],
-  // vite-ssg 配置
-  ssgOptions: {
-    script: 'async',
-    formatting: 'minify',
-    includedRoutes: [
-      '/',
-      '/explore',
-      '/authors',
-      '/privacy',
-      '/preferences',
-    ],
-  },
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url))
