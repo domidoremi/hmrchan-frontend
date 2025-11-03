@@ -247,7 +247,9 @@
     "componentInfo": "组件信息",
     "retry": "重试",
     "goHome": "返回首页",
-    "reload": "刷新页面"
+    "reload": "刷新页面",
+    "apiUnavailable": "API 服务不可用",
+    "apiUnavailableDesc": "无法连接到后端服务器。这可能是因为后端尚未部署或配置错误。请检查 API 配置或稍后再试。"
   },
   "errors": {
     "permissionDenied": "权限不足",
