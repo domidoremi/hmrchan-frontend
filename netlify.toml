@@ -21,8 +21,37 @@
     X-XSS-Protection = "1; mode=block"
     Referrer-Policy = "no-referrer-when-downgrade"
 
-# 静态资源缓存
+# HTML页面 - 短缓存
 [[headers]]
-  for = "/assets/*"
+  for = "/*.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+# JS/CSS - 长缓存
+[[headers]]
+  for = "/assets/*.js"
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/assets/*.css"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# 图片资源 - 长缓存
+[[headers]]
+  for = "/assets/*.{jpg,jpeg,png,webp,svg}"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# 字体文件 - 长缓存
+[[headers]]
+  for = "/assets/*.{woff,woff2,ttf}"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Service Worker - 不缓存
+[[headers]]
+  for = "/service-worker.js"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"

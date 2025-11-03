@@ -12,7 +12,7 @@
       <!-- Posts Grid -->
       <div v-else-if="posts.length > 0">
         <div ref="postsGrid" class="posts-grid">
-          <PostCard v-for="post in posts" :key="post.id" :post="post" />
+          <PostCard v-for="(post, index) in posts" :key="post.id" :post="post" :index="index" />
         </div>
 
         <!-- Pagination -->
@@ -44,7 +44,7 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, nextTick, onMounted, onUnmounted, onActivated } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { SearchX, RotateCcw } from 'lucide-vue-next'
@@ -59,7 +59,7 @@ import GlassButton from '@/components/ui/GlassButton.vue'
 import { usePostsStore } from '@/stores/posts'
 import type { Post, PostListParams } from '@/types'
 import { postsApi } from '@/api/services'
-import { usePageMasonry } from '@/composables/usePageMasonry'
+import { useWaterfallLayout } from '@/composables/useWaterfallLayout'
 
 const route = useRoute()
 const router = useRouter()
@@ -68,14 +68,21 @@ const postsStore = usePostsStore()
 const { posts, loading, filters, pagination } = storeToRefs(postsStore)
 
 const postsGrid = ref<HTMLElement | null>(null)
+const loadedPostsCount = ref(0) // 追踪已加载的卡片数量
 
-// 使用页面级Masonry管理
-const masonry = usePageMasonry(postsGrid, { posts })
+// 使用轻量级瀑布流布局
+const { updateLayout, smoothUpdateLayout } = useWaterfallLayout(postsGrid, {
+  columnGap: 16,
+  rowGap: 16,
+  breakpoints: {
+    1400: 4, // >= 1400px: 4列
+    1100: 3, // >= 1100px: 3列
+    769: 2, // >= 769px: 2列
+    0: 2, // < 769px: 2列
+  },
+})
 
 onMounted(async () => {
-  // 初始化Masonry管理
-  masonry.mount()
-
   // 重置筛选条件
   postsStore.resetFilters()
 
@@ -86,12 +93,25 @@ onMounted(async () => {
 
   await loadPosts()
 
-  // 初始化Masonry（自动判断桌面端/移动端）
-  await masonry.initialize()
+  // 记录初始加载的卡片数量
+  await nextTick()
+  loadedPostsCount.value = posts.value.length
+
+  // 更新瀑布流布局
+  await updateLayout()
 })
 
 onUnmounted(() => {
-  masonry.unmount()
+  // 清理工作由 composables 自动处理
+})
+
+// 页面激活时重新计算布局（解决页面切换后布局错乱）
+onActivated(async () => {
+  if (postsGrid.value && posts.value.length > 0) {
+    await nextTick()
+    await updateLayout()
+    console.log('[ExplorePage] 页面激活，重新计算布局')
+  }
 })
 
 watch(
@@ -103,11 +123,44 @@ watch(
 )
 
 const loadPosts = async () => {
+  const previousCount = loadedPostsCount.value
+
   await postsStore.fetchPosts()
+
+  // 等待 DOM 更新
+  await nextTick()
+
+  // 获取所有卡片，只对新卡片添加动画
+  if (postsGrid.value) {
+    const allCards = postsGrid.value.querySelectorAll('a.post-card')
+
+    // 只对新增的卡片添加进入动画
+    for (let i = previousCount; i < allCards.length; i++) {
+      const card = allCards[i] as HTMLElement
+      card.classList.add('card-entering')
+    }
+
+    // 更新已加载数量
+    loadedPostsCount.value = allCards.length
+  }
+
+  // 使用平滑更新
+  await smoothUpdateLayout()
+
+  // 延迟后移除进入动画类
+  setTimeout(() => {
+    if (postsGrid.value) {
+      const cards = postsGrid.value.querySelectorAll('a.post-card.card-entering')
+      cards.forEach((card) => {
+        ;(card as HTMLElement).classList.remove('card-entering')
+      })
+    }
+  }, 600)
 }
 
 const handleFilterUpdate = async (newFilters: Partial<PostListParams>) => {
   postsStore.updateFilters(newFilters)
+  loadedPostsCount.value = 0 // 重置计数，因为是新的筛选结果
   await loadPosts()
 
   // 更新URL查询参数
@@ -119,12 +172,14 @@ const handleFilterUpdate = async (newFilters: Partial<PostListParams>) => {
 
 const handlePageChange = async (page: number) => {
   postsStore.updateFilters({ page })
+  loadedPostsCount.value = 0 // 重置计数，因为是新页面
   await loadPosts()
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
 const resetFilters = () => {
   postsStore.resetFilters()
+  loadedPostsCount.value = 0 // 重置计数
   router.push({ query: {} })
   loadPosts()
 }
@@ -145,19 +200,9 @@ const resetFilters = () => {
 }
 
 .posts-grid {
-  /* Masonry布局容器 - 桌面端 */
+  /* 瀑布流容器 - 由 useWaterfallLayout 动态控制 columns */
   width: 100%;
   max-width: 100%;
-}
-
-/* 移动端使用flexbox布局 */
-@media (max-width: 768px) {
-  .posts-grid {
-    display: flex !important;
-    flex-wrap: wrap;
-    gap: 16px;
-    width: 100%;
-  }
 }
 
 .empty-state {
@@ -201,8 +246,6 @@ const resetFilters = () => {
     font-size: var(--text-2xl);
     margin-bottom: var(--spacing-md);
   }
-
-  /* Masonry布局在移动端也生效 */
 }
 
 /* 极小屏幕优化 */
@@ -213,67 +256,49 @@ const resetFilters = () => {
 }
 </style>
 
-<!-- Masonry瀑布流全局样式 -->
+<!-- 瀑布流全局样式 - 手动定位实现 -->
 <style>
-/* Masonry瀑布流卡片样式 - 与HomePage保持一致 */
+/* 桌面端：手动定位瀑布流 */
+.explore-page .posts-grid {
+  width: 100%;
+  position: relative;
+  /* 高度由 JS 动态设置 */
+}
+
+/* 卡片样式 - 绝对定位 */
 .explore-page .posts-grid .post-card {
-  width: calc(25% - 12px);
-  margin-bottom: 16px;
+  /* position, left, top, width 由 JS 动态设置 */
+  box-sizing: border-box;
+  transition:
+    opacity 0.4s ease,
+    transform 0.4s ease,
+    left 0.3s ease,
+    top 0.3s ease;
 }
 
-@media (min-width: 1400px) {
-  .explore-page .posts-grid .post-card {
-    width: calc(25% - 12px);
+/* 新卡片进入动画 */
+.explore-page .posts-grid .post-card.card-entering {
+  animation: cardFadeIn 0.5s ease forwards;
+}
+
+@keyframes cardFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
 }
 
-@media (min-width: 1024px) and (max-width: 1399px) {
-  .explore-page .posts-grid .post-card {
-    width: calc(33.333% - 11px);
-  }
-}
-
-/* 平板端 - 较大屏幕 (901px-1023px) */
-@media (min-width: 901px) and (max-width: 1023px) {
-  .explore-page .posts-grid .post-card {
-    width: calc(50% - 8px); /* 2列 */
-  }
-}
-
-/* 平板端 - 中等屏幕 (780px-900px) - 2列布局 */
-@media (min-width: 780px) and (max-width: 900px) {
-  .explore-page .posts-grid .post-card {
-    width: calc(50% - 8px); /* 2列 */
-    margin-bottom: 16px;
-  }
-}
-
-/* 平板端 - 较小屏幕 (769px-779px) */
-@media (min-width: 769px) and (max-width: 779px) {
-  .explore-page .posts-grid .post-card {
-    width: calc(50% - 8px); /* 2列 */
-  }
-}
-
-/* 移动端 - 使用flex布局时的样式 */
-@media (max-width: 768px) {
-  .explore-page .posts-grid .post-card {
-    flex: 0 0 calc(50% - 8px) !important;
-    width: calc(50% - 8px) !important;
-    max-width: calc(50% - 8px) !important;
-    margin: 0 !important;
-    position: relative !important;
-    left: auto !important;
-    top: auto !important;
-  }
-}
-
-/* 小屏手机 */
-@media (max-width: 480px) {
-  .explore-page .posts-grid .post-card {
-    flex: 0 0 calc(50% - 8px) !important;
-    width: calc(50% - 8px) !important;
-    max-width: calc(50% - 8px) !important;
-  }
-}
+/* 所有屏幕尺寸都使用 JS 瀑布流（包括移动端） */
+/* JS 会自动根据屏幕宽度计算列数：
+   - >= 1600px: 5列
+   - >= 1400px: 4列
+   - >= 1100px: 3列
+   - >= 769px:  2列
+   - >= 481px:  2列
+   - < 481px:   2列
+*/
 </style>

@@ -8,10 +8,10 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "run-p type-check \"build-only {@}\" --",
+    "build": "vite-ssg build",
+    "build:spa": "vite build",
     "preview": "vite preview",
     "test:unit": "vitest",
-    "build-only": "vite build",
     "type-check": "vue-tsc --build",
     "lint": "eslint . --fix --cache",
     "format": "prettier --write src/"
@@ -24,6 +24,7 @@
     "masonry-layout": "^4.2.2",
     "pinia": "^3.0.3",
     "pinia-plugin-persistedstate": "^4.5.0",
+    "plyr": "^3.8.3",
     "vue": "^3.5.22",
     "vue-i18n": "^11.1.12",
     "vue-router": "^4.6.3"
@@ -49,8 +50,11 @@
     "typescript": "~5.9.3",
     "vite": "npm:rolldown-vite@latest",
     "vite-plugin-vue-devtools": "^8.0.3",
+    "vite-ssg": "^0.23.8",
+    "vite-ssg-sitemap": "^0.7.1",
     "vitest": "^4.0.2",
-    "vue-tsc": "^3.1.2"
+    "vue-tsc": "^3.1.2",
+    "@vueuse/head": "^2.0.0"
   },
   "optionalDependencies": {
     "@rolldown/binding-linux-x64-gnu": "^1.0.0-beta.44"
