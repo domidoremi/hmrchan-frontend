@@ -47,13 +47,9 @@
     "npm-run-all2": "^8.0.4",
     "prettier": "3.6.2",
     "typescript": "~5.9.3",
-    "esbuild": "^0.24.2",
-    "vite": "npm:rolldown-vite@latest",
+    "vite": "^5.4.11",
     "vite-plugin-vue-devtools": "^8.0.3",
-    "vitest": "^4.0.2",
+    "vitest": "^2.1.8",
     "vue-tsc": "^3.1.2"
-  },
-  "optionalDependencies": {
-    "@rolldown/binding-linux-x64-gnu": "^1.0.0-beta.44"
   }
 }
