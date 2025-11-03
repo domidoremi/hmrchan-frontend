@@ -77,9 +77,26 @@ onMounted(async () => {
   color: var(--color-text-tertiary);
 }
 
+/* 平板端（769px - 1100px）- 固定2列 */
+@media (min-width: 769px) and (max-width: 1100px) {
+  .favorites-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* 移动端（<=768px）- 2列保持自然高度 */
 @media (max-width: 768px) {
   .favorites-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-md);
+  }
+}
+
+/* 小屏手机（<=480px）- 单列 */
+@media (max-width: 480px) {
+  .favorites-grid {
     grid-template-columns: 1fr;
+    gap: var(--spacing-sm);
   }
 }
 </style>

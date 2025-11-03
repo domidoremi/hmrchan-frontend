@@ -35,7 +35,15 @@ export default defineConfig(({ mode }) => ({
   },
   // 依赖优化
   optimizeDeps: {
-    include: ['vue', 'vue-router', 'pinia', 'axios'],
+    include: [
+      'vue', 
+      'vue-router', 
+      'pinia', 
+      'axios', 
+      'dayjs',
+      'vue-i18n',
+      '@vueuse/core'
+    ],
     exclude: ['vite-plugin-vue-devtools']
   },
   build: {
@@ -110,6 +118,15 @@ export default defineConfig(({ mode }) => ({
   },
   server: {
     port: 5173,
+    // 预热常用文件以加快首次访问
+    warmup: {
+      clientFiles: [
+        './src/views/HomePage.vue',
+        './src/views/ExplorePage.vue',
+        './src/components/features/PostCard.vue',
+        './src/components/layout/MainLayout.vue'
+      ]
+    },
     proxy: {
       // 开发环境代理API请求
       '/api': {

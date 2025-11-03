@@ -257,9 +257,16 @@ export const statsApi = {
   /**
    * 获取平台统计
    */
-  async getPlatformStats() {
+  async getPlatformStats(): Promise<Record<string, number>> {
     const stats = await postsApi.getPostStats()
-    return stats
+    return stats.by_platform || {}
+  },
+  
+  /**
+   * 获取完整统计数据
+   */
+  async getFullStats() {
+    return postsApi.getPostStats()
   },
 }
 

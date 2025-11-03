@@ -37,30 +37,26 @@
           class="media-content-img"
         />
 
-        <!-- 视频 -->
-        <video
-          v-else-if="currentMedia.type === 'video'"
-          controls
-          preload="none"
-          playsinline
-          controlsList="nodownload"
-          class="media-content-video"
-          @loadedmetadata="onMediaLoad"
-          @canplay="onMediaLoad"
-          @error="onVideoError"
-          ref="videoElement"
-        >
-          <source :src="currentMedia.url" type="video/mp4" />
-          <track
-            v-if="currentMedia.subtitle"
-            kind="subtitles"
-            :src="currentMedia.subtitle"
-            srclang="zh"
-            label="中文"
-            default
-          />
-          {{ $t('post.videoNotSupported') }}
-        </video>
+        <!-- 视频 (使用 Plyr) -->
+        <div v-else-if="currentMedia.type === 'video'" class="video-wrapper">
+          <video
+            ref="videoElement"
+            class="plyr-video"
+            playsinline
+            controls
+            :key="currentMedia.url"
+          >
+            <source :src="currentMedia.url" type="video/mp4" />
+            <track
+              v-if="currentMedia.subtitle"
+              kind="captions"
+              label="中文"
+              srclang="zh"
+              :src="currentMedia.subtitle"
+              default
+            />
+          </video>
+        </div>
 
         <div v-if="loading" class="loading-spinner" role="status" :aria-label="$t('aria.loading')">
           <div class="spinner"></div>
@@ -100,33 +96,17 @@
             <Maximize2 :size="20" />
           </button>
         </div>
-        
-        <!-- 视频倍速控制 -->
-        <div v-if="currentMedia.type === 'video'" class="playback-controls">
-          <button @click="showPlaybackMenu = !showPlaybackMenu" class="playback-btn">
-            {{ playbackRate }}x
-          </button>
-          <div v-if="showPlaybackMenu" class="playback-menu">
-            <button
-              v-for="rate in playbackRates"
-              :key="rate"
-              @click="changePlaybackRate(rate)"
-              :class="{ active: playbackRate === rate }"
-              class="playback-option"
-            >
-              {{ rate }}x
-            </button>
-          </div>
-        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onUnmounted } from 'vue'
+import { ref, computed, watch, onUnmounted, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { X, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Maximize2, Maximize, Download } from 'lucide-vue-next'
+import Plyr from 'plyr'
+import 'plyr/dist/plyr.css'
 
 interface MediaItem {
   url: string
@@ -153,11 +133,7 @@ const currentIndex = ref(props.initialIndex)
 const loading = ref(true)
 const zoom = ref(1)
 const videoElement = ref<HTMLVideoElement | null>(null)
-const playbackRate = ref(1)
-const showPlaybackMenu = ref(false)
-const isFullscreen = ref(false)
-
-const playbackRates = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2]
+let player: Plyr | null = null
 
 const currentMedia = computed(
   () => props.mediaItems[currentIndex.value] || { url: '', type: 'image' as const, subtitle: undefined },
@@ -174,41 +150,113 @@ watch(
     if (newVal) {
       currentIndex.value = props.initialIndex
       zoom.value = 1
-      // 对于视频且 preload="none"，不需要等待加载
       loading.value = currentMedia.value.type === 'video' ? false : true
       document.body.style.overflow = 'hidden'
+      
+      // 初始化 Plyr（如果是视频）
+      if (currentMedia.value.type === 'video') {
+        nextTick(() => {
+          initPlyr()
+        })
+      }
     } else {
       document.body.style.overflow = ''
+      destroyPlyr()
     }
   },
 )
 
 watch(currentIndex, () => {
-  // 对于视频且 preload="none"，不需要等待加载
   loading.value = currentMedia.value.type === 'video' ? false : true
   zoom.value = 1
-  showPlaybackMenu.value = false
-  // 如果切换到视频，触发加载
-  if (currentMedia.value.type === 'video' && videoElement.value) {
-    videoElement.value.load()
-    videoElement.value.playbackRate = playbackRate.value
+  
+  // 销毁旧的 Plyr 实例
+  destroyPlyr()
+  
+  // 如果切换到视频，初始化新的 Plyr 实例
+  if (currentMedia.value.type === 'video') {
+    nextTick(() => {
+      initPlyr()
+    })
   }
 })
 
-// 当显示媒体查看器且当前是视频时，触发加载
-watch(
-  () => [props.show, currentMedia.value.type],
-  ([show, type]) => {
-    if (show && type === 'video' && videoElement.value) {
-      // 延迟一帧以确保DOM已更新
-      setTimeout(() => {
-        if (videoElement.value) {
-          videoElement.value.load()
-        }
-      }, 0)
-    }
-  },
-)
+const initPlyr = () => {
+  if (videoElement.value && !player) {
+    player = new Plyr(videoElement.value, {
+      controls: [
+        'play-large',
+        'play',
+        'progress',
+        'current-time',
+        'mute',
+        'volume',
+        'captions',
+        'settings',
+        'pip',
+        'airplay',
+        'fullscreen'
+      ],
+      settings: ['captions', 'quality', 'speed'],
+      speed: { 
+        selected: 1, 
+        options: [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2] 
+      },
+      captions: { 
+        active: true, 
+        language: 'zh',
+        update: true 
+      },
+      i18n: {
+        restart: '重新播放',
+        rewind: '快退 {seektime}s',
+        play: '播放',
+        pause: '暂停',
+        fastForward: '快进 {seektime}s',
+        seek: '跳转',
+        seekLabel: '{currentTime} / {duration}',
+        played: '已播放',
+        buffered: '已缓冲',
+        currentTime: '当前时间',
+        duration: '总时长',
+        volume: '音量',
+        mute: '静音',
+        unmute: '取消静音',
+        enableCaptions: '开启字幕',
+        disableCaptions: '关闭字幕',
+        download: '下载',
+        enterFullscreen: '全屏',
+        exitFullscreen: '退出全屏',
+        frameTitle: '视频播放器: {title}',
+        captions: '字幕',
+        settings: '设置',
+        pip: '画中画',
+        menuBack: '返回上级菜单',
+        speed: '速度',
+        normal: '正常',
+        quality: '质量',
+        loop: '循环',
+        start: '开始',
+        end: '结束',
+        all: '全部',
+        reset: '重置',
+        disabled: '禁用',
+        enabled: '启用',
+      }
+    })
+    
+    player.on('ready', () => {
+      loading.value = false
+    })
+  }
+}
+
+const destroyPlyr = () => {
+  if (player) {
+    player.destroy()
+    player = null
+  }
+}
 
 const close = () => {
   emit('close')
@@ -238,21 +286,11 @@ const resetZoom = () => {
   zoom.value = 1
 }
 
-const changePlaybackRate = (rate: number) => {
-  playbackRate.value = rate
-  if (videoElement.value) {
-    videoElement.value.playbackRate = rate
-  }
-  showPlaybackMenu.value = false
-}
-
 const toggleFullscreen = () => {
   if (!document.fullscreenElement) {
     document.documentElement.requestFullscreen()
-    isFullscreen.value = true
   } else {
     document.exitFullscreen()
-    isFullscreen.value = false
   }
 }
 
@@ -265,24 +303,6 @@ const downloadMedia = () => {
 
 const onMediaLoad = () => {
   loading.value = false
-}
-
-const onVideoError = (event: Event) => {
-  loading.value = false
-  const video = event.target as HTMLVideoElement
-  console.error('Video playback error:', {
-    error: video.error,
-    networkState: video.networkState,
-    readyState: video.readyState,
-    src: video.src,
-  })
-
-  // Show error message to user
-  if (import.meta.env.DEV) {
-    alert(
-      `Video playback failed. Error code: ${video.error?.code}\nMessage: ${video.error?.message || 'Unknown error'}`,
-    )
-  }
 }
 
 // 键盘快捷键
@@ -310,16 +330,6 @@ const handleKeydown = (e: KeyboardEvent) => {
     case 'F':
       toggleFullscreen()
       break
-    case ' ':
-      if (currentMedia.value.type === 'video' && videoElement.value) {
-        e.preventDefault()
-        if (videoElement.value.paused) {
-          videoElement.value.play()
-        } else {
-          videoElement.value.pause()
-        }
-      }
-      break
   }
 }
 
@@ -332,6 +342,7 @@ onUnmounted(() => {
     window.removeEventListener('keydown', handleKeydown)
   }
   document.body.style.overflow = ''
+  destroyPlyr()
 })
 </script>
 
@@ -444,10 +455,15 @@ onUnmounted(() => {
   animation: scaleIn 0.3s ease;
 }
 
-.media-content-video {
-  max-width: 90vw;
-  max-height: 85vh;
+.video-wrapper {
+  width: 90vw;
+  max-width: 1200px;
   animation: scaleIn 0.3s ease;
+}
+
+.plyr-video {
+  width: 100%;
+  max-height: 85vh;
 }
 
 @keyframes scaleIn {
@@ -553,68 +569,6 @@ onUnmounted(() => {
   transform: scale(1.1);
 }
 
-/* 视频倍速控制 */
-.playback-controls {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.playback-btn {
-  background: rgba(139, 92, 246, 0.9);
-  border: none;
-  color: white;
-  padding: 6px 12px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  min-width: 50px;
-}
-
-.playback-btn:hover {
-  background: rgba(139, 92, 246, 1);
-  transform: scale(1.05);
-}
-
-.playback-menu {
-  position: absolute;
-  bottom: calc(100% + 10px);
-  right: 0;
-  background: rgba(0, 0, 0, 0.95);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  padding: 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 100px;
-  animation: slideUp 0.2s ease;
-}
-
-.playback-option {
-  background: transparent;
-  border: none;
-  color: white;
-  padding: 8px 16px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 14px;
-  text-align: center;
-  transition: all 0.2s ease;
-}
-
-.playback-option:hover {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.playback-option.active {
-  background: rgba(139, 92, 246, 0.8);
-  font-weight: 600;
-}
-
 @media (max-width: 768px) {
   .prev-btn {
     left: 10px;
@@ -637,7 +591,7 @@ onUnmounted(() => {
     justify-content: center;
   }
 
-  .media-content-video {
+  .video-wrapper {
     max-width: 95vw;
   }
 
@@ -650,9 +604,25 @@ onUnmounted(() => {
   .toolbar-btn {
     padding: 8px;
   }
+}
 
-  .playback-menu {
-    right: -8px;
-  }
+/* Plyr 自定义样式 */
+:deep(.plyr) {
+  --plyr-color-main: #8b5cf6;
+}
+
+:deep(.plyr__control--overlaid) {
+  background: rgba(139, 92, 246, 0.9);
+}
+
+:deep(.plyr--video .plyr__control.plyr__tab-focus),
+:deep(.plyr--video .plyr__control:hover),
+:deep(.plyr--video .plyr__control[aria-expanded=true]) {
+  background: rgba(139, 92, 246, 0.9);
+}
+
+:deep(.plyr__menu__container) {
+  background: rgba(0, 0, 0, 0.95);
+  backdrop-filter: blur(10px);
 }
 </style>

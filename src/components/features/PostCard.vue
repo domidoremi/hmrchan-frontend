@@ -16,13 +16,12 @@
     >
       <!-- 缩略图 -->
       <div class="card-thumbnail">
-        <img
+        <OptimizedImage
           v-if="post.thumbnail_url"
           :src="post.thumbnail_url"
           :alt="post.title || ''"
-          :loading="isFirstScreen ? 'eager' : 'lazy'"
-          :fetchpriority="isFirstScreen ? 'high' : 'auto'"
-          decoding="async"
+          :lazy="!isFirstScreen"
+          img-class="card-image"
         />
         <div v-else class="thumbnail-placeholder">
           <ImageIcon :size="48" />
@@ -126,6 +125,7 @@ import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { Heart, Eye, MessageCircle, User, ImageIcon, Repeat2, Quote } from 'lucide-vue-next'
 
+import OptimizedImage from '@/components/ui/OptimizedImage.vue'
 import { useAuthStore } from '@/stores/auth'
 import { favoritesApi } from '@/api/services'
 import { formatNumber, formatRelativeTime, formatDuration, truncateText } from '@/utils/format'
