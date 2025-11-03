@@ -241,7 +241,9 @@
     "componentInfo": "コンポーネント情報",
     "retry": "再試行",
     "goHome": "ホームに戻る",
-    "reload": "ページを更新"
+    "reload": "ページを更新",
+    "apiUnavailable": "APIサービスが利用できません",
+    "apiUnavailableDesc": "バックエンドサーバーに接続できません。バックエンドがまだデプロイされていないか、設定に問題がある可能性があります。API設定を確認するか、後でもう一度お試しください。"
   },
   "errors": {
     "permissionDenied": "権限がありません",

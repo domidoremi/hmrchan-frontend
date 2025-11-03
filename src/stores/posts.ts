@@ -45,24 +45,51 @@ export const usePostsStore = defineStore(
           params: { ...filters.value, ...apiParams },
         })
 
+        // 防御性检查：确保响应数据有效
+        if (!response || !response.items) {
+          console.warn('API 返回无效数据，使用空数组')
+          posts.value = []
+          return {
+            items: [],
+            page: 1,
+            page_size: 20,
+            total: 0,
+            total_pages: 0,
+          }
+        }
+
         // 如果append为true，追加到现有列表；否则替换
         if (append) {
-          posts.value = [...posts.value, ...response.items]
+          posts.value = [...posts.value, ...(response.items || [])]
         } else {
-          posts.value = response.items
+          posts.value = response.items || []
         }
 
         pagination.value = {
-          page: response.page,
-          page_size: response.page_size,
-          total: response.total,
-          total_pages: response.total_pages,
+          page: response.page || 1,
+          page_size: response.page_size || 20,
+          total: response.total || 0,
+          total_pages: response.total_pages || 0,
         }
 
         return response
       } catch (err: any) {
-        error.value = err.message
-        throw err
+        error.value = err.message || 'API 请求失败'
+        console.error('获取帖子列表失败:', err)
+        
+        // API 失败时，设置空数组防止 undefined 错误
+        if (!append) {
+          posts.value = []
+        }
+        
+        // 不抛出错误，让页面显示空状态而不是崩溃
+        return {
+          items: [],
+          page: 1,
+          page_size: 20,
+          total: 0,
+          total_pages: 0,
+        }
       } finally {
         loading.value = false
       }
