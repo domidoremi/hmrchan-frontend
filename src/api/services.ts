@@ -137,6 +137,13 @@ export const mediaApi = {
   },
 
   /**
+   * 获取字幕URL
+   */
+  getSubtitleUrl(mediaId: number) {
+    return `/api/media/${mediaId}/subtitle`
+  },
+
+  /**
    * 下载媒体文件
    */
   async downloadMedia(mediaId: number, filename?: string) {
@@ -257,9 +264,16 @@ export const statsApi = {
   /**
    * 获取平台统计
    */
-  async getPlatformStats() {
+  async getPlatformStats(): Promise<Record<string, number>> {
     const stats = await postsApi.getPostStats()
-    return stats
+    return stats.by_platform || {}
+  },
+
+  /**
+   * 获取完整统计数据
+   */
+  async getFullStats() {
+    return postsApi.getPostStats()
   },
 }
 

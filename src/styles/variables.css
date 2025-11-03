@@ -30,6 +30,10 @@
   --color-error: #ef4444;
   --color-info: #3b82f6;
 
+  /* 骨架屏 */
+  --color-skeleton: #e2e8f0;
+  --color-skeleton-highlight: #f1f5f9;
+
   /* ========== 液态玻璃效果 ========== */
 
   /* 玻璃背景 - 使用半透明白色 */
@@ -159,6 +163,10 @@
 
   --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
   --glass-glow: 0 0 20px rgba(139, 92, 246, 0.5);
+
+  /* 骨架屏 - 夜间模式 */
+  --color-skeleton: #334155;
+  --color-skeleton-highlight: #475569;
 }
 
 /* ========== 高对比度模式 ========== */

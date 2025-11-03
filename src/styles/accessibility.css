@@ -1,0 +1,333 @@
+/**
+ * 无障碍样式
+ * 符合 WCAG 2.1 AA 标准
+ */
+
+/* ===== 触摸目标尺寸 ===== */
+
+/* 最小触摸目标尺寸: 44x44px */
+.touch-target,
+button,
+a,
+input[type='checkbox'],
+input[type='radio'] {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+/* 图标按钮确保触摸区域足够大 */
+.icon-button,
+.action-button {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Toggle 开关 */
+.toggle-switch {
+  min-width: 48px;
+  min-height: 24px;
+  padding: 4px;
+}
+
+/* 小按钮扩大点击区域 */
+.small-button {
+  position: relative;
+  min-width: 32px;
+  min-height: 32px;
+}
+
+.small-button::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  min-width: 44px;
+  min-height: 44px;
+  z-index: -1;
+}
+
+/* ===== 按钮间距 ===== */
+
+.button-group {
+  display: flex;
+  gap: 8px; /* 最小间距 8px */
+  flex-wrap: wrap;
+}
+
+.button-group button,
+.action-buttons button {
+  margin: 4px;
+}
+
+/* ===== 焦点可见性 ===== */
+
+/* 默认焦点样式 */
+*:focus {
+  outline: 2px solid var(--color-primary, #3b82f6);
+  outline-offset: 2px;
+}
+
+/* 使用 :focus-visible 只在键盘导航时显示焦点 */
+*:focus:not(:focus-visible) {
+  outline: none;
+}
+
+*:focus-visible {
+  outline: 2px solid var(--color-primary, #3b82f6);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* 按钮焦点样式 */
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--color-primary, #3b82f6);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+}
+
+/* ===== 屏幕阅读器专用 ===== */
+
+.sr-only,
+.visually-hidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border-width: 0 !important;
+}
+
+/* 可聚焦时显示 */
+.sr-only:focus,
+.visually-hidden:focus {
+  position: static !important;
+  width: auto !important;
+  height: auto !important;
+  padding: inherit !important;
+  margin: inherit !important;
+  overflow: visible !important;
+  clip: auto !important;
+  white-space: normal !important;
+}
+
+/* ===== 对比度增强 ===== */
+
+/* 确保文本对比度至少 4.5:1 */
+body {
+  --text-primary: #1a1a1a;
+  --text-secondary: #4a4a4a;
+  --text-on-primary: #ffffff;
+}
+
+[data-theme='dark'] {
+  --text-primary: #ffffff;
+  --text-secondary: #b8b8b8;
+  --text-on-primary: #1a1a1a;
+}
+
+/* ===== 触摸友好的表单元素 ===== */
+
+input,
+textarea,
+select {
+  min-height: 44px;
+  padding: 12px 16px;
+  font-size: 16px; /* 防止 iOS 自动缩放 */
+}
+
+label {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 0;
+}
+
+/* Checkbox 和 Radio 增大 */
+input[type='checkbox'],
+input[type='radio'] {
+  width: 24px;
+  height: 24px;
+  margin: 10px;
+  cursor: pointer;
+}
+
+/* ===== 链接样式 ===== */
+
+a {
+  color: var(--color-primary, #3b82f6);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+  min-height: 24px;
+  display: inline-block;
+}
+
+a:hover {
+  text-decoration-thickness: 2px;
+}
+
+/* ===== 跳过链接 ===== */
+
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 8px;
+  z-index: 10000;
+  padding: 12px 24px;
+  background: var(--color-primary, #3b82f6);
+  color: white;
+  text-decoration: none;
+  border-radius: 0 0 4px 4px;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: top 0.3s ease;
+}
+
+.skip-link:focus {
+  top: 0;
+  outline: 2px solid white;
+  outline-offset: 2px;
+}
+
+/* ===== 轮播指示器 ===== */
+
+.carousel-indicators button,
+.indicator-dot {
+  min-width: 16px;
+  min-height: 16px;
+  padding: 8px; /* 增加点击区域 */
+  margin: 4px;
+  position: relative;
+}
+
+/* 使用伪元素扩大点击区域 */
+.indicator-dot::before {
+  content: '';
+  position: absolute;
+  top: -8px;
+  left: -8px;
+  right: -8px;
+  bottom: -8px;
+}
+
+/* ===== 模态框无障碍 ===== */
+
+[role='dialog'],
+[role='alertdialog'] {
+  position: fixed;
+  z-index: 1000;
+}
+
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+}
+
+/* ===== 禁用状态 ===== */
+
+button:disabled,
+input:disabled,
+select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* ===== 加载状态 ===== */
+
+[aria-busy='true'] {
+  cursor: wait;
+  pointer-events: none;
+}
+
+/* ===== 错误状态 ===== */
+
+[aria-invalid='true'] {
+  border-color: #ef4444;
+  outline-color: #ef4444;
+}
+
+[aria-invalid='true']:focus {
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
+}
+
+/* ===== 移动端优化 ===== */
+
+@media (max-width: 768px) {
+  /* 移动端按钮更大 */
+  button,
+  a.button,
+  input {
+    min-height: 48px;
+    font-size: 16px;
+  }
+
+  /* 增加触摸间距 */
+  .button-group {
+    gap: 12px;
+  }
+
+  /* 表单元素更大 */
+  input,
+  textarea,
+  select {
+    min-height: 48px;
+    padding: 14px 16px;
+    font-size: 16px;
+  }
+}
+
+/* ===== 动画偏好 ===== */
+
+/* 尊重用户的动画偏好 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ===== 高对比度模式 ===== */
+
+@media (prefers-contrast: high) {
+  * {
+    border-width: 2px;
+  }
+
+  button,
+  a {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
+  }
+}
+
+/* ===== 深色模式特定样式 ===== */
+
+@media (prefers-color-scheme: dark) {
+  *:focus-visible {
+    outline-color: #60a5fa;
+  }
+
+  button:focus-visible,
+  a:focus-visible {
+    box-shadow: 0 0 0 4px rgba(96, 165, 250, 0.2);
+  }
+}

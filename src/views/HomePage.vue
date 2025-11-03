@@ -34,9 +34,38 @@
         </section>
       </Transition>
 
-      <!-- Platform Stats - 横向网格 -->
+      <!-- Platform Stats - 桌面端网格 / 移动端轮播 -->
       <section class="stats-section">
-        <div class="stats-grid">
+        <!-- 加载中：显示加载状态 -->
+        <div v-if="isStatsLoading" class="stats-grid stats-desktop">
+          <div v-for="platform in platforms" :key="platform" class="stat-card glass-card loading">
+            <div class="stat-icon" style="background: #e5e7eb">
+              <div style="width: 32px; height: 32px; background: #d1d5db; border-radius: 4px"></div>
+            </div>
+            <div
+              style="
+                height: 20px;
+                width: 60%;
+                background: #e5e7eb;
+                border-radius: 4px;
+                margin: 8px 0;
+              "
+            ></div>
+            <div
+              style="
+                height: 32px;
+                width: 40%;
+                background: #e5e7eb;
+                border-radius: 4px;
+                margin: 4px 0;
+              "
+            ></div>
+            <div style="height: 16px; width: 50%; background: #e5e7eb; border-radius: 4px"></div>
+          </div>
+        </div>
+
+        <!-- 加载完成：显示真实数据 -->
+        <div v-else class="stats-grid stats-desktop">
           <div v-for="platform in platforms" :key="platform" class="stat-card glass-card">
             <div class="stat-icon" :style="{ background: getPlatformColor(platform) }">
               <component :is="getPlatformIcon(platform)" :size="32" />
@@ -44,6 +73,104 @@
             <h3>{{ $t(`platform.${platform}`) }}</h3>
             <p class="stat-count">{{ formatNumber(platformStats[platform] || 0) }}</p>
             <p class="stat-label">{{ $t('post.title') }}</p>
+          </div>
+        </div>
+
+        <!-- 移动端：轮播图（自动计时器） -->
+        <div class="stats-carousel stats-mobile">
+          <!-- 加载中：显示加载状态 -->
+          <div v-if="isStatsLoading" class="stat-card glass-card loading">
+            <div class="stat-icon" style="background: #e5e7eb">
+              <div style="width: 32px; height: 32px; background: #d1d5db; border-radius: 4px"></div>
+            </div>
+            <div
+              style="
+                height: 20px;
+                width: 60%;
+                background: #e5e7eb;
+                border-radius: 4px;
+                margin: 8px 0;
+              "
+            ></div>
+            <div
+              style="
+                height: 32px;
+                width: 40%;
+                background: #e5e7eb;
+                border-radius: 4px;
+                margin: 4px 0;
+              "
+            ></div>
+            <div style="height: 16px; width: 50%; background: #e5e7eb; border-radius: 4px"></div>
+          </div>
+
+          <!-- 加载完成：显示轮播 -->
+          <div v-else>
+            <div
+              class="carousel-container glass-card"
+              @mouseenter="pauseAutoplay"
+              @mouseleave="resumeAutoplay"
+            >
+              <button class="carousel-btn carousel-prev" @click="prevStat" aria-label="Previous">
+                <svg
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+              </button>
+
+              <div class="carousel-track-container">
+                <div
+                  class="carousel-track"
+                  :style="{ transform: `translateX(-${currentStatIndex * 100}%)` }"
+                >
+                  <div v-for="platform in platforms" :key="platform" class="carousel-slide">
+                    <div class="stat-card glass-card">
+                      <div class="stat-icon" :style="{ background: getPlatformColor(platform) }">
+                        <component :is="getPlatformIcon(platform)" :size="32" />
+                      </div>
+                      <h3>{{ $t(`platform.${platform}`) }}</h3>
+                      <p class="stat-count">{{ formatNumber(platformStats[platform] || 0) }}</p>
+                      <p class="stat-label">{{ $t('post.title') }}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <button class="carousel-btn carousel-next" @click="nextStat" aria-label="Next">
+                <svg
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+              </button>
+            </div>
+
+            <!-- 进度条指示器（计时器样式） -->
+            <div class="carousel-indicators">
+              <div
+                v-for="(platform, index) in platforms"
+                :key="index"
+                class="indicator-progress"
+                :class="{ active: currentStatIndex === index }"
+                @click="goToSlide(index)"
+              >
+                <div
+                  class="progress-bar"
+                  :class="{ animating: currentStatIndex === index && !isPaused }"
+                ></div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -72,7 +199,7 @@
 
         <!-- Posts列表 -->
         <div v-else-if="posts.length > 0" ref="postsGrid" class="posts-grid">
-          <PostCard v-for="post in posts" :key="post.id" :post="post" />
+          <PostCard v-for="(post, index) in posts" :key="post.id" :post="post" :index="index" />
         </div>
 
         <!-- 空状态 -->
@@ -102,7 +229,7 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, nextTick, onMounted, onUnmounted, onActivated } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
@@ -128,8 +255,8 @@ import type { Post } from '@/types'
 import { useAuthStore } from '@/stores/auth'
 import { useSettingsStore } from '@/stores/settings'
 import { usePostsStore } from '@/stores/posts'
-import { useSmartPreload } from '@/composables/useSmartPreload'
-import { usePageMasonry } from '@/composables/usePageMasonry'
+import { useWaterfallLayout } from '@/composables/useWaterfallLayout'
+import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import { throttle } from '@/utils/throttle'
 import { PLATFORMS, PLATFORM_COLORS } from '@/types'
 import { postsApi, statsApi } from '@/api/services'
@@ -154,94 +281,176 @@ const accessLimit = computed(() => {
 
 const platforms = PLATFORMS
 const platformStats = ref<Record<string, number>>({})
+const isStatsLoading = ref(true)
 const currentPage = ref(1)
-const isLoadingMore = ref(false)
 const hasMore = ref(true)
 const postsGrid = ref<HTMLElement | null>(null)
+const loadedPostsCount = ref(0) // 追踪已加载的卡片数量
 
-// Stats状态（已移除3D轮播）
+// 移动端轮播图状态
+const currentStatIndex = ref(0)
+const autoplayInterval = ref<number | null>(null)
+const isPaused = ref(false)
+const autoplayDuration = 3000 // 3秒自动切换
 
-// 使用页面级Masonry管理
-const masonry = usePageMasonry(postsGrid, { posts })
+// 轮播图控制函数
+const prevStat = () => {
+  if (currentStatIndex.value > 0) {
+    currentStatIndex.value--
+  } else {
+    currentStatIndex.value = platforms.length - 1 // 循环到最后一个
+  }
+  resetAutoplay()
+}
+
+const nextStat = () => {
+  if (currentStatIndex.value < platforms.length - 1) {
+    currentStatIndex.value++
+  } else {
+    currentStatIndex.value = 0 // 循环到第一个
+  }
+  resetAutoplay()
+}
+
+const goToSlide = (index: number) => {
+  currentStatIndex.value = index
+  // 确保恢复播放状态
+  isPaused.value = false
+  resetAutoplay()
+}
+
+const pauseAutoplay = () => {
+  isPaused.value = true
+  if (autoplayInterval.value) {
+    clearInterval(autoplayInterval.value)
+    autoplayInterval.value = null
+  }
+}
+
+const resumeAutoplay = () => {
+  isPaused.value = false
+  startAutoplay()
+}
+
+const resetAutoplay = () => {
+  if (autoplayInterval.value) {
+    clearInterval(autoplayInterval.value)
+  }
+  startAutoplay()
+}
+
+const startAutoplay = () => {
+  if (isPaused.value) return
+  autoplayInterval.value = window.setInterval(() => {
+    nextStat()
+  }, autoplayDuration)
+}
 
 const { t } = useI18n()
 
-// 智能预加载
-useSmartPreload(posts, {
-  batchSize: 10,
-  rootMargin: '400px 0px',
+// 使用轻量级瀑布流布局
+const { updateLayout, smoothUpdateLayout } = useWaterfallLayout(postsGrid, {
+  columnGap: 16,
+  rowGap: 16,
+  breakpoints: {
+    1400: 4, // >= 1400px: 4列
+    1100: 3, // >= 1100px: 3列
+    769: 2, // >= 769px: 2列
+    0: 2, // < 769px: 2列
+  },
+})
+
+// 无限滚动
+const { isLoading: isLoadingMore } = useInfiniteScroll({
+  onLoadMore: async () => {
+    if (posts.value.length >= accessLimit.value) {
+      logger.log('[InfiniteScroll] 已达到访问限制')
+      return
+    }
+    await loadMore()
+  },
+  hasMore: () => posts.value.length < accessLimit.value && posts.value.length % 6 === 0,
+  threshold: 500,
   enabled: true,
 })
 
 onMounted(async () => {
   try {
-    // 初始化Masonry管理
-    masonry.mount()
+    // ✨ 优化：减少初始加载数量，提升首屏速度
+    // 使用明确的参数，不修改全局 store filters，避免与 ExplorePage 冲突
+    await postsStore.fetchPosts({ 
+      page: currentPage.value, 
+      page_size: 6,
+      sort_by: 'scraped_at',
+      sort_order: 'desc'
+    })
 
-    // 重置筛选条件，确保首页总是显示最新内容
-    postsStore.resetFilters()
+    // 记录初始加载的卡片数量
+    await nextTick()
+    loadedPostsCount.value = posts.value.length
 
-    // 并行加载帖子和统计数据（不互相阻塞）
-    await Promise.all([
-      postsStore.fetchPosts({ page: 1, page_size: 8 }),
-      statsApi
-        .getPlatformStats()
-        .then((stats) => {
-          platformStats.value = stats.by_platform || {}
-        })
-        .catch((err) => {
-          logger.error('Failed to load stats:', err)
-          // 统计数据失败不影响主内容
-        }),
-    ])
+    // 更新瀑布流布局
+    await updateLayout()
 
-    // Posts加载完成后，初始化Masonry（自动判断桌面端/移动端）
-    await masonry.initialize()
+    // 后台加载统计数据（非阻塞）
+    loadStatsInBackground()
 
-    // 监听滚动事件
-    window.addEventListener('scroll', handleScroll)
+    // 启动轮播自动播放
+    startAutoplay()
   } catch (error) {
     logger.error('Failed to load data:', error)
     toast.error(t('common.loadFailed'))
   }
 })
 
+// 后台加载统计数据（延迟加载以优先首屏）
+const loadStatsInBackground = () => {
+  // 延迟1秒加载统计数据，优先保证帖子加载
+  setTimeout(() => {
+    statsApi
+      .getPlatformStats()
+      .then((data) => {
+        platformStats.value = data
+        isStatsLoading.value = false
+      })
+      .catch((err) => {
+        logger.error('Failed to load stats:', err)
+        isStatsLoading.value = false
+        // 统计数据失败不影响主内容
+      })
+  }, 1000)
+}
+
 onUnmounted(() => {
-  window.removeEventListener('scroll', handleScroll)
-  masonry.unmount()
+  // 清理工作由 composables 自动处理
+  // 清理轮播定时器
+  if (autoplayInterval.value) {
+    clearInterval(autoplayInterval.value)
+  }
 })
 
-// 滚动加载更多（使用节流优化）
-const handleScroll = throttle(
-  () => {
-    if (isLoadingMore.value || !hasMore.value) return
-    if (!isAuthenticated.value && posts.value.length >= accessLimit.value) return
-
-    const scrollTop = window.pageYOffset || document.documentElement.scrollTop
-    const windowHeight = window.innerHeight
-    const documentHeight = document.documentElement.scrollHeight
-
-    // 距离底部200px时触发加载
-    if (scrollTop + windowHeight >= documentHeight - 200) {
-      loadMore()
-    }
-  },
-  100,
-  { leading: true, trailing: true },
-)
+// 页面激活时重新计算布局（解决页面切换后布局错乱）
+onActivated(async () => {
+  if (postsGrid.value && posts.value.length > 0) {
+    await nextTick()
+    await updateLayout()
+    logger.info('页面激活，重新计算布局')
+  }
+})
 
 // 加载更多帖子
 const loadMore = async () => {
-  if (isLoadingMore.value || !hasMore.value) return
+  if (!hasMore.value) return
   if (!isAuthenticated.value && posts.value.length >= accessLimit.value) return
 
-  isLoadingMore.value = true
   currentPage.value++
 
   try {
     const result = await postsStore.fetchPosts({
       page: currentPage.value,
       page_size: 8,
+      sort_by: 'scraped_at',
+      sort_order: 'desc',
       append: true, // 追加到现有列表
     })
 
@@ -249,11 +458,40 @@ const loadMore = async () => {
     if (!result || result.items.length === 0) {
       hasMore.value = false
     }
+
+    // 等待 DOM 更新
+    await nextTick()
+
+    // 获取所有卡片，只对新卡片添加动画
+    if (postsGrid.value) {
+      const allCards = postsGrid.value.querySelectorAll('a.post-card')
+      const previousCount = loadedPostsCount.value
+
+      // 只对新增的卡片添加进入动画
+      for (let i = previousCount; i < allCards.length; i++) {
+        const card = allCards[i] as HTMLElement
+        card.classList.add('card-entering')
+      }
+
+      // 更新已加载数量
+      loadedPostsCount.value = allCards.length
+    }
+
+    // 使用平滑更新，减少现有卡片重排
+    await smoothUpdateLayout()
+
+    // 延迟后移除进入动画类
+    setTimeout(() => {
+      if (postsGrid.value) {
+        const cards = postsGrid.value.querySelectorAll('a.post-card.card-entering')
+        cards.forEach((card) => {
+          ;(card as HTMLElement).classList.remove('card-entering')
+        })
+      }
+    }, 600)
   } catch (error) {
     logger.error('Failed to load more posts:', error)
     currentPage.value-- // 恢复页码
-  } finally {
-    isLoadingMore.value = false
   }
 }
 
@@ -271,7 +509,7 @@ const getPlatformColor = (platform: string) => {
   return PLATFORM_COLORS[platform as keyof typeof PLATFORM_COLORS] || '#666'
 }
 
-// posts变化的监听已在usePageMasonry中处理
+// posts变化的监听由 useSmartPreload 和 useInfiniteScroll 处理
 
 const getPlatformIcon = (platform: string) => {
   const icons = {
@@ -314,7 +552,7 @@ const getPlatformIcon = (platform: string) => {
 }
 
 .hero-content {
-  max-width: 800px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: var(--spacing-3xl);
   position: relative;
@@ -375,7 +613,7 @@ const getPlatformIcon = (platform: string) => {
   animation-delay: 0.2s;
 }
 
-/* Stats Section - 网格布局 */
+/* Stats Section - 桌面端网格布局 */
 .stats-section {
   padding: var(--spacing-2xl) 0;
 }
@@ -386,6 +624,11 @@ const getPlatformIcon = (platform: string) => {
   gap: var(--spacing-lg);
   max-width: 1200px;
   margin: 0 auto;
+}
+
+/* 移动端默认隐藏轮播图 */
+.stats-mobile {
+  display: none;
 }
 
 .stat-card {
@@ -449,19 +692,9 @@ const getPlatformIcon = (platform: string) => {
 }
 
 .posts-grid {
-  /* Masonry布局容器 - 桌面端 */
+  /* 瀑布流容器 - 由 useWaterfallLayout 动态控制 columns */
   width: 100%;
   max-width: 100%;
-}
-
-/* 移动端使用flexbox布局 */
-@media (max-width: 768px) {
-  .posts-grid {
-    display: flex !important;
-    flex-wrap: wrap;
-    gap: 16px;
-    width: 100%;
-  }
 }
 
 .empty-state {
@@ -478,7 +711,22 @@ const getPlatformIcon = (platform: string) => {
 .loading-more {
   display: flex;
   justify-content: center;
-  padding: var(--spacing-xl);
+  align-items: center;
+  padding: var(--spacing-2xl) var(--spacing-xl);
+  margin-top: var(--spacing-lg);
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  min-height: 80px;
+  animation: fadeInLoading 0.3s ease;
+}
+
+@keyframes fadeInLoading {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .no-more-hint {
@@ -574,12 +822,145 @@ const getPlatformIcon = (platform: string) => {
   }
 
   .stats-section {
-    padding: var(--spacing-sm) 0;
+    padding: var(--spacing-lg) 0;
   }
 
-  .stats-grid {
-    grid-template-columns: repeat(2, 1fr);
+  /* 移动端隐藏桌面端布局 */
+  .stats-desktop {
+    display: none;
+  }
+
+  /* 移动端显示轮播图 */
+  .stats-mobile {
+    display: block;
+  }
+
+  /* 轮播图容器 */
+  .stats-carousel {
+    position: relative;
+    width: 100%;
+  }
+
+  .carousel-container {
+    position: relative;
+    display: flex;
+    align-items: center;
     gap: var(--spacing-sm);
+    padding: var(--spacing-md);
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: var(--glass-blur);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--glass-shadow);
+    overflow: hidden;
+  }
+
+  .carousel-track-container {
+    flex: 1;
+    overflow: hidden;
+    border-radius: var(--radius-lg);
+  }
+
+  .carousel-track {
+    display: flex;
+    transition: transform 0.3s ease-in-out;
+  }
+
+  .carousel-slide {
+    min-width: 100%;
+    flex-shrink: 0;
+  }
+
+  .carousel-slide .stat-card {
+    margin: 0;
+    padding: var(--spacing-xl) var(--spacing-lg);
+    border: none;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  /* 轮播按钮 */
+  .carousel-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-full);
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    color: var(--color-text-primary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    backdrop-filter: blur(10px);
+    flex-shrink: 0;
+  }
+
+  .carousel-btn:active:not(:disabled) {
+    transform: scale(0.95);
+    background: var(--glass-bg-light);
+  }
+
+  .carousel-btn:hover:not(:disabled) {
+    background: rgba(139, 92, 246, 0.15);
+    border-color: var(--color-primary);
+    transform: scale(1.05);
+  }
+
+  .carousel-btn svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  /* 进度条指示器（计时器样式） */
+  .carousel-indicators {
+    display: flex;
+    justify-content: center;
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-lg);
+    padding: 0 var(--spacing-md);
+  }
+
+  .indicator-progress {
+    flex: 1;
+    height: 4px;
+    background: rgba(139, 92, 246, 0.2);
+    border-radius: var(--radius-full);
+    cursor: pointer;
+    overflow: hidden;
+    position: relative;
+    transition: all var(--transition-fast);
+  }
+
+  .indicator-progress:hover {
+    height: 6px;
+    background: rgba(139, 92, 246, 0.3);
+  }
+
+  .indicator-progress.active {
+    background: rgba(139, 92, 246, 0.4);
+  }
+
+  .progress-bar {
+    height: 100%;
+    width: 0;
+    background: linear-gradient(90deg, var(--color-primary), #c084fc);
+    border-radius: var(--radius-full);
+    transition: width 0.3s ease;
+    box-shadow: 0 0 8px rgba(139, 92, 246, 0.6);
+  }
+
+  .progress-bar.animating {
+    animation: progressAnimation 3s linear forwards;
+  }
+
+  @keyframes progressAnimation {
+    from {
+      width: 0;
+    }
+    to {
+      width: 100%;
+    }
   }
 
   .stat-card {
@@ -630,74 +1011,49 @@ const getPlatformIcon = (platform: string) => {
 }
 </style>
 
-<!-- Masonry瀑布流全局样式 -->
+<!-- 瀑布流全局样式 - 手动定位实现 -->
 <style>
-/* Masonry瀑布流卡片样式 - 使用相对单位 */
+/* 桌面端：手动定位瀑布流 */
 .posts-grid {
   width: 100%;
+  position: relative;
+  /* 高度由 JS 动态设置 */
 }
 
+/* 卡片样式 - 绝对定位 */
 .posts-grid .post-card {
-  width: calc(25% - 12px); /* 4列 - 默认 */
-  margin-bottom: 16px;
+  /* position, left, top, width 由 JS 动态设置 */
   box-sizing: border-box;
+  transition:
+    opacity 0.4s ease,
+    transform 0.4s ease,
+    left 0.3s ease,
+    top 0.3s ease;
 }
 
-/* 大屏幕 */
-@media (min-width: 1400px) {
-  .posts-grid .post-card {
-    width: calc(25% - 12px); /* 4列 */
+/* 新卡片进入动画 */
+.posts-grid .post-card.card-entering {
+  animation: cardFadeIn 0.5s ease forwards;
+}
+
+@keyframes cardFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
 }
 
-/* 中型屏幕 - 3列 */
-@media (min-width: 1101px) and (max-width: 1399px) {
-  .posts-grid .post-card {
-    width: calc(33.333% - 11px); /* 3列 */
-  }
-}
-
-/* 平板端/小笔记本 - 2列 (901px-1100px) */
-@media (min-width: 901px) and (max-width: 1100px) {
-  .posts-grid .post-card {
-    width: calc(50% - 8px); /* 2列 */
-  }
-}
-
-/* 平板端 - 中等屏幕 (780px-900px) - 2列布局 */
-@media (min-width: 780px) and (max-width: 900px) {
-  .posts-grid .post-card {
-    width: calc(50% - 8px) !important; /* 2列 - 强制应用 */
-    margin-bottom: 16px;
-  }
-}
-
-/* 平板端 - 较小屏幕 (769px-779px) */
-@media (min-width: 769px) and (max-width: 779px) {
-  .posts-grid .post-card {
-    width: calc(50% - 8px); /* 2列 */
-  }
-}
-
-/* 移动端 - 使用flex布局时的样式 */
-@media (max-width: 768px) {
-  .posts-grid .post-card {
-    flex: 0 0 calc(50% - 8px) !important;
-    width: calc(50% - 8px) !important;
-    max-width: calc(50% - 8px) !important;
-    margin: 0 !important;
-    position: relative !important;
-    left: auto !important;
-    top: auto !important;
-  }
-}
-
-/* 小屏手机 */
-@media (max-width: 480px) {
-  .posts-grid .post-card {
-    flex: 0 0 calc(50% - 8px) !important;
-    width: calc(50% - 8px) !important;
-    max-width: calc(50% - 8px) !important;
-  }
-}
+/* 所有屏幕尺寸都使用 JS 瀑布流（包括移动端） */
+/* JS 会自动根据屏幕宽度计算列数：
+   - >= 1600px: 5列
+   - >= 1400px: 4列
+   - >= 1100px: 3列
+   - >= 769px:  2列
+   - >= 481px:  2列
+   - < 481px:   2列
+*/
 </style>
