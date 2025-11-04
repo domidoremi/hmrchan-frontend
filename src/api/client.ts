@@ -7,15 +7,16 @@ import { requestCache } from '@/utils/requestCache'
 import logger from '@/utils/logger'
 
 // API基础URL
-const BASE_URL = import.meta.env.VITE_API_URL || '/api'
+const BASE_URL = import.meta.env.VITE_API_URL || 'https://api.momichan.xyz/api'
 
 // 创建axios实例
 const apiClient: AxiosInstance = axios.create({
   baseURL: BASE_URL,
-  timeout: 10000, // 减少到10秒，避免长时间阻塞
+  timeout: 30000, // 30秒超时，适应HTTPS连接
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true, // 支持跨域携带Cookie
 })
 
 // 防止重复初始化标志
