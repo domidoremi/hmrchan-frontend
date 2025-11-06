@@ -1,5 +1,5 @@
 <template>
-  <div v-if="shouldShow" class="access-limit-banner glass-card">
+  <div v-if="shouldShow" class="access-limit-banner">
     <div class="banner-content">
       <!-- Icon -->
       <div class="banner-icon">

@@ -155,10 +155,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useSettingsStore } from '@/stores/settings'
+import { useToastStore } from '@/stores/toast'
 import { useAuthStore } from '@/stores/auth'
 import { storeToRefs } from 'pinia'
 import MainLayout from '@/components/layout/MainLayout.vue'
@@ -170,15 +171,14 @@ import {
   Download,
   Upload,
   RefreshCw,
-  Info,
   Check,
   Cloud,
 } from 'lucide-vue-next'
-import toast from '@/utils/toast'
 
 const router = useRouter()
 const { t } = useI18n()
 const settingsStore = useSettingsStore()
+const toastStore = useToastStore()
 const authStore = useAuthStore()
 
 const settings = computed(() => settingsStore.settings)
@@ -190,12 +190,15 @@ const goBack = () => {
 
 const toggleSetting = (key: keyof typeof settingsStore.settings) => {
   settingsStore.toggleSetting(key)
-  toast.success(t('preferences.settingsSaved'))
+  toastStore.success(t('preferences.settingsSaved'))
 }
 
-const updateSetting = (key: keyof typeof settingsStore.settings, value: any) => {
+const updateSetting = (
+  key: keyof typeof settingsStore.settings,
+  value: number | boolean | null,
+) => {
   settingsStore.updateSetting(key, value)
-  toast.success(t('preferences.settingsSaved'))
+  toastStore.success(t('preferences.settingsSaved'))
 }
 
 const exportPreferences = () => {
@@ -207,7 +210,7 @@ const exportPreferences = () => {
   a.download = 'himeri-chan-preferences.json'
   a.click()
   URL.revokeObjectURL(url)
-  toast.success(t('preferences.exportSuccess'))
+  toastStore.success(t('preferences.exportSuccess'))
 }
 
 const showImportDialog = () => {
@@ -221,9 +224,9 @@ const showImportDialog = () => {
       reader.onload = (e) => {
         const data = e.target?.result as string
         if (settingsStore.importSettings(data)) {
-          toast.success(t('preferences.importSuccess'))
+          toastStore.success(t('preferences.importSuccess'))
         } else {
-          toast.error(t('preferences.importFailed'))
+          toastStore.error(t('preferences.importFailed'))
         }
       }
       reader.readAsText(file)
@@ -235,7 +238,7 @@ const showImportDialog = () => {
 const resetPreferences = () => {
   if (confirm(t('preferences.resetConfirm'))) {
     settingsStore.resetSettings()
-    toast.success(t('preferences.resetSuccess'))
+    toastStore.success(t('preferences.resetSuccess'))
   }
 }
 </script>

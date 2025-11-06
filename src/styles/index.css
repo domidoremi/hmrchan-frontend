@@ -1,8 +1,18 @@
-/* HMRChan 主样式文件 */
+/* HMRChan Modern Design System */
+/* Material Design 3 + Apple HIG + GSAP-inspired animations */
 
-/* 导入所有样式模块 */
-@import './variables.css';
-@import './base.css';
-@import './glass.css';
-@import './animations.css';
-@import './accessibility.css';
+/* Import all style modules in order */
+@import './variables.css'; /* Design tokens & CSS variables */
+@import './base.css'; /* Base styles & resets */
+@import './glass.css'; /* Glass morphism effects */
+@import './animations.css'; /* GSAP-style animations */
+@import './transitions.css'; /* Page transitions & micro-interactions */
+@import './utilities.css'; /* Utility classes */
+@import './accessibility.css'; /* Accessibility & WCAG compliance */
+
+/* Component Styles */
+@import './components/navbar.css'; /* Navigation bar */
+@import './components/post-card.css'; /* Post cards */
+
+/* Page Styles */
+@import './pages/home.css'; /* HomePage specific styles */

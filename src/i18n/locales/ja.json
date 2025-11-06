@@ -50,6 +50,7 @@
   "search": {
     "placeholder": "コンテンツを検索...",
     "noResults": "結果が見つかりません",
+    "noResultsDesc": "検索条件に一致するコンテンツが見つかりませんでした。別のキーワードをお試しください",
     "searching": "検索中...",
     "tryDifferent": "別のキーワードを試す"
   },
@@ -227,6 +228,8 @@
     "limit": "アクセス制限",
     "limitMessage": "{current} / {limit} 件の投稿を表示中",
     "loginForMore": "ログインしてさらに表示",
+    "guestMode": "ゲストモード",
+    "guestMessage": "ゲストとして閲覧中、一部機能が制限されています",
     "unlimited": "制限なし"
   },
   "upload": {
@@ -254,6 +257,7 @@
     "videoPlaybackFailed": "動画再生に失敗しました"
   },
   "aria": {
+    "skipToMain": "メインコンテンツへスキップ",
     "closeMenu": "メニューを閉じる",
     "openMenu": "メニューを開く",
     "userMenu": "ユーザーメニュー",

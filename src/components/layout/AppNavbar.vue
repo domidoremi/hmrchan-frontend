@@ -8,7 +8,12 @@
       </RouterLink>
 
       <!-- 导航链接 -->
-      <div ref="mobileNavRef" id="mobile-nav" class="navbar-nav" :class="{ 'nav-open': mobileMenuOpen }">
+      <div
+        ref="mobileNavRef"
+        id="mobile-nav"
+        class="navbar-nav"
+        :class="{ 'nav-open': mobileMenuOpen }"
+      >
         <RouterLink to="/" class="nav-link" @click="closeMobileMenu" :aria-label="$t('nav.home')">
           <Home :size="20" />
           <span>{{ $t('nav.home') }}</span>
@@ -219,8 +224,15 @@ const currentLocale = computed(() => locale.value)
 // 用户头像URL（含默认头像）
 const userAvatarUrl = computed(() => {
   // 如果之前加载失败过，直接返回默认头像
-  if (avatarError.value) {
-    return getUserAvatar({ ...user.value, avatar_url: null } as any, 40)
+  if (avatarError.value && user.value) {
+    return getUserAvatar(
+      {
+        username: user.value.username,
+        full_name: user.value.full_name,
+        avatar_url: null,
+      },
+      40,
+    )
   }
   return getUserAvatar(user.value, 40)
 })
@@ -268,7 +280,7 @@ const closeMobileMenu = () => {
 }
 
 // 点击外部关闭下拉菜单和移动端菜单
-const handleClickOutside = (event: MouseEvent) => {
+const handleClickOutside = (event: Event) => {
   const target = event.target as HTMLElement
 
   // 检查是否点击在语言菜单外部
@@ -304,6 +316,7 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
+/* Component styles imported from @/styles/components/navbar.css */
 .navbar-content {
   display: flex;
   align-items: center;
@@ -386,6 +399,17 @@ onBeforeUnmount(() => {
   outline: none;
   color: var(--color-text-primary);
   font-size: var(--text-sm);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.navbar-search input::placeholder {
+  color: var(--color-text-tertiary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .navbar-actions {
@@ -569,6 +593,7 @@ onBeforeUnmount(() => {
   /* 确保在768px时移动端样式优先 */
   .navbar-content {
     gap: var(--spacing-xs);
+    justify-content: space-between;
   }
 
   /* 移动端只显示Logo图标，隐藏文字 */
@@ -659,7 +684,12 @@ onBeforeUnmount(() => {
   .navbar-search {
     flex: 1;
     min-width: 0;
-    max-width: 300px;
+    max-width: 240px;
+    padding: var(--spacing-xs) var(--spacing-sm);
+  }
+
+  .navbar-search input {
+    font-size: 0.875rem;
   }
 
   /* 未登录时的登录按钮保持在页眉 */

@@ -1,0 +1,408 @@
+/* Page Transitions & Micro-interactions */
+/* Inspired by GSAP Showreel and Framer Motion */
+
+/* ========== Page Transitions ========== */
+
+/* Fade Transition */
+.page-fade-enter-active,
+.page-fade-leave-active {
+  transition: opacity var(--duration-base) var(--ease-standard);
+}
+
+.page-fade-enter-from,
+.page-fade-leave-to {
+  opacity: 0;
+}
+
+/* Slide Transition */
+.page-slide-enter-active,
+.page-slide-leave-active {
+  transition: all var(--duration-base) var(--ease-decelerate);
+}
+
+.page-slide-enter-from {
+  opacity: 0;
+  transform: translateX(30px);
+}
+
+.page-slide-leave-to {
+  opacity: 0;
+  transform: translateX(-30px);
+}
+
+/* Scale Transition */
+.page-scale-enter-active,
+.page-scale-leave-active {
+  transition: all var(--duration-base) var(--ease-bounce);
+}
+
+.page-scale-enter-from {
+  opacity: 0;
+  transform: scale(0.9);
+}
+
+.page-scale-leave-to {
+  opacity: 0;
+  transform: scale(1.1);
+}
+
+/* ========== Modal Transitions ========== */
+
+.modal-enter-active,
+.modal-leave-active {
+  transition: all var(--duration-base) var(--ease-decelerate);
+}
+
+.modal-enter-active .glass-modal,
+.modal-leave-active .glass-modal {
+  transition: all var(--duration-base) var(--ease-bounce);
+}
+
+.modal-enter-from,
+.modal-leave-to {
+  opacity: 0;
+}
+
+.modal-enter-from .glass-modal {
+  opacity: 0;
+  transform: scale(0.9) translateY(20px);
+}
+
+.modal-leave-to .glass-modal {
+  opacity: 0;
+  transform: scale(0.95) translateY(-10px);
+}
+
+/* ========== List Transitions ========== */
+
+.list-enter-active,
+.list-leave-active {
+  transition: all var(--duration-base) var(--ease-standard);
+}
+
+.list-enter-from {
+  opacity: 0;
+  transform: translateX(-20px);
+}
+
+.list-leave-to {
+  opacity: 0;
+  transform: translateX(20px);
+}
+
+.list-move {
+  transition: transform var(--duration-base) var(--ease-smooth);
+}
+
+/* ========== Micro-interactions ========== */
+
+/* Button Press */
+@keyframes buttonPress {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(0.95);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.btn-press {
+  animation: buttonPress 0.3s var(--ease-bounce);
+}
+
+/* Success Bounce */
+@keyframes successBounce {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+.success-bounce {
+  animation: successBounce 0.5s var(--ease-bounce);
+}
+
+/* Error Shake */
+@keyframes errorShake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  10%,
+  30%,
+  50%,
+  70%,
+  90% {
+    transform: translateX(-10px);
+  }
+  20%,
+  40%,
+  60%,
+  80% {
+    transform: translateX(10px);
+  }
+}
+
+.error-shake {
+  animation: errorShake 0.5s var(--ease-standard);
+}
+
+/* Loading Dots */
+@keyframes loadingDots {
+  0%,
+  20% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.loading-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  background: currentColor;
+  animation: loadingDots 1.4s infinite ease-in-out;
+}
+
+.loading-dot:nth-child(1) {
+  animation-delay: 0s;
+}
+
+.loading-dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.loading-dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+/* Tooltip Appear */
+.tooltip-enter-active,
+.tooltip-leave-active {
+  transition: all 0.2s var(--ease-decelerate);
+}
+
+.tooltip-enter-from,
+.tooltip-leave-to {
+  opacity: 0;
+  transform: translateY(-5px);
+}
+
+/* ========== Scroll Animations ========== */
+
+/* Reveal on Scroll */
+.scroll-reveal {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: all var(--duration-slow) var(--ease-decelerate);
+}
+
+.scroll-reveal.revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Parallax Effect */
+.parallax {
+  transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* ========== Card Interactions ========== */
+
+/* Card Flip */
+.card-flip {
+  perspective: 1000px;
+}
+
+.card-flip-inner {
+  transition: transform var(--duration-base) var(--ease-smooth);
+  transform-style: preserve-3d;
+}
+
+.card-flip:hover .card-flip-inner {
+  transform: rotateY(180deg);
+}
+
+.card-flip-front,
+.card-flip-back {
+  backface-visibility: hidden;
+}
+
+.card-flip-back {
+  transform: rotateY(180deg);
+}
+
+/* Card Tilt (3D effect on hover) */
+.card-tilt {
+  transition: transform var(--duration-fast) var(--ease-standard);
+}
+
+.card-tilt:hover {
+  transform: perspective(1000px) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
+}
+
+/* ========== Skeleton Loading ========== */
+
+@keyframes skeleton-wave {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.skeleton-wave {
+  position: relative;
+  overflow: hidden;
+  background: var(--color-skeleton);
+}
+
+.skeleton-wave::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, var(--color-skeleton-highlight), transparent);
+  animation: skeleton-wave 1.5s infinite;
+}
+
+/* ========== Badge Pulse ========== */
+
+.badge-pulse {
+  position: relative;
+}
+
+.badge-pulse::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: inherit;
+  background: currentColor;
+  opacity: 0.3;
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* ========== Notification Slide In ========== */
+
+.notification-enter-active {
+  animation: notificationSlideIn 0.3s var(--ease-decelerate);
+}
+
+.notification-leave-active {
+  animation: notificationSlideOut 0.3s var(--ease-accelerate);
+}
+
+@keyframes notificationSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes notificationSlideOut {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+}
+
+/* ========== Tab Transitions ========== */
+
+.tab-content-enter-active,
+.tab-content-leave-active {
+  transition: all 0.3s var(--ease-standard);
+}
+
+.tab-content-enter-from {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.tab-content-leave-to {
+  opacity: 0;
+  position: absolute;
+}
+
+/* ========== Drawer Transitions ========== */
+
+.drawer-enter-active,
+.drawer-leave-active {
+  transition: transform var(--duration-base) var(--ease-decelerate);
+}
+
+.drawer-enter-from,
+.drawer-leave-to {
+  transform: translateX(100%);
+}
+
+/* ========== Accordion Transitions ========== */
+
+.accordion-enter-active,
+.accordion-leave-active {
+  overflow: hidden;
+  transition: all 0.3s var(--ease-smooth);
+}
+
+.accordion-enter-from,
+.accordion-leave-to {
+  max-height: 0;
+  opacity: 0;
+}
+
+.accordion-enter-to,
+.accordion-leave-from {
+  max-height: 500px;
+  opacity: 1;
+}
+
+/* ========== Performance ========== */
+
+/* Disable animations for reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .scroll-reveal {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
+/* GPU Acceleration for smooth animations */
+.gpu-accelerated {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+}

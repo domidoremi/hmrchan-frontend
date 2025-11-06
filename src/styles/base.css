@@ -1,4 +1,5 @@
-/* 基础样式重置和全局样式 */
+/* Modern Base Styles - Mobile-First, Accessible, Responsive */
+/* Inspired by Material Design 3 & Apple Human Interface Guidelines */
 
 /* ========== CSS重置 ========== */
 
@@ -11,21 +12,48 @@
 }
 
 html {
+  /* Font rendering optimizations */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+
+  /* Smooth scrolling */
   scroll-behavior: smooth;
+
+  /* Prevent text size adjustment on orientation change */
+  -webkit-text-size-adjust: 100%;
+  -moz-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+
+  /* Improve tap targets on touch devices */
+  -webkit-tap-highlight-color: transparent;
 }
 
 body {
+  /* Typography */
   font-family: var(--font-sans);
   font-size: var(--text-base);
+  font-weight: var(--font-normal);
   line-height: var(--line-normal);
+  letter-spacing: var(--tracking-normal);
+
+  /* Colors */
   color: var(--color-text-primary);
   background-color: var(--color-background);
-  transition: background-color var(--transition-base);
+
+  /* Transitions */
+  transition:
+    background-color var(--transition-base),
+    color var(--transition-base);
+
+  /* Layout */
   min-height: 100vh;
   overflow-x: hidden;
+
+  /* Rendering optimizations */
+  -webkit-font-feature-settings: 'kern' 1;
+  font-feature-settings: 'kern' 1;
+  font-kerning: normal;
 }
 
 /* 背景网格效果 */
@@ -45,50 +73,91 @@ body::before {
 
 /* ========== 排版 ========== */
 
+/* Headings - Material Design 3 type scale */
 h1,
 h2,
 h3,
 h4,
 h5,
 h6 {
+  font-family: var(--font-display);
   font-weight: var(--font-bold);
   line-height: var(--line-tight);
+  letter-spacing: var(--tracking-tight);
   color: var(--color-text-primary);
-  margin-bottom: var(--spacing-md);
+  margin-bottom: var(--spacing-4);
+  text-wrap: balance; /* Better text wrapping */
 }
 
 h1 {
   font-size: var(--text-4xl);
+  font-weight: var(--font-extrabold);
+  letter-spacing: var(--tracking-tighter);
 }
+
 h2 {
   font-size: var(--text-3xl);
+  font-weight: var(--font-bold);
 }
+
 h3 {
   font-size: var(--text-2xl);
+  font-weight: var(--font-semibold);
 }
+
 h4 {
   font-size: var(--text-xl);
+  font-weight: var(--font-semibold);
 }
+
 h5 {
   font-size: var(--text-lg);
+  font-weight: var(--font-medium);
 }
+
 h6 {
   font-size: var(--text-base);
+  font-weight: var(--font-medium);
 }
 
 p {
-  margin-bottom: var(--spacing-md);
+  margin-bottom: var(--spacing-4);
   color: var(--color-text-secondary);
+  max-width: 65ch; /* Optimal reading width */
+  text-wrap: pretty; /* Better paragraph wrapping */
 }
 
 a {
   color: var(--color-primary);
   text-decoration: none;
-  transition: color var(--transition-fast);
+  transition:
+    color var(--transition-fast),
+    opacity var(--transition-fast);
+  cursor: pointer;
+
+  /* Touch target sizing */
+  min-height: 44px;
+  min-width: 44px;
+  display: inline-flex;
+  align-items: center;
 }
 
 a:hover {
   color: var(--color-primary-light);
+  opacity: 0.9;
+}
+
+a:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 4px;
+  border-radius: var(--radius-sm);
+}
+
+/* Text links without touch target requirements */
+a.text-link {
+  min-height: auto;
+  min-width: auto;
+  display: inline;
 }
 
 strong {
@@ -115,14 +184,37 @@ li {
   margin-bottom: var(--spacing-xs);
 }
 
-/* ========== 表单元素 ========== */
+/* ========== Form Elements ========== */
 
 button {
   font-family: inherit;
   font-size: inherit;
+  font-weight: var(--font-medium);
   cursor: pointer;
   border: none;
   background: none;
+
+  /* Touch target sizing */
+  min-height: 44px;
+  min-width: 44px;
+
+  /* Prevent text selection */
+  user-select: none;
+  -webkit-user-select: none;
+
+  /* Remove default styles */
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+button:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 
 input,
@@ -130,25 +222,59 @@ textarea,
 select {
   font-family: inherit;
   font-size: inherit;
+  line-height: inherit;
+  color: inherit;
+
+  /* Remove default styles */
+  -webkit-appearance: none;
+  appearance: none;
 }
 
 input:focus,
 textarea:focus,
 select:focus {
-  outline: none;
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 
-/* ========== 图片和媒体 ========== */
+/* Remove autofill styles */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px var(--color-surface) inset;
+  -webkit-text-fill-color: var(--color-text-primary);
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* ========== Images & Media ========== */
 
 img,
-video {
+video,
+svg {
   max-width: 100%;
   height: auto;
   display: block;
+
+  /* Prevent dragging */
+  -webkit-user-drag: none;
+  user-select: none;
 }
 
 img {
   border-radius: var(--radius-lg);
+}
+
+/* Prevent layout shift with aspect ratio */
+img[width][height] {
+  aspect-ratio: attr(width) / attr(height);
+}
+
+video {
+  border-radius: var(--radius-lg);
+}
+
+svg {
+  fill: currentColor;
 }
 
 /* ========== 滚动条样式 ========== */
@@ -178,11 +304,28 @@ img {
   scrollbar-color: var(--color-primary) transparent;
 }
 
-/* ========== 选择文本样式 ========== */
+/* ========== Selection & Focus ========== */
 
 ::selection {
-  background: rgba(139, 92, 246, 0.3);
+  background: rgba(139, 92, 246, 0.25);
   color: var(--color-text-primary);
+}
+
+::-moz-selection {
+  background: rgba(139, 92, 246, 0.25);
+  color: var(--color-text-primary);
+}
+
+/* Focus styles for accessibility */
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 4px;
+  border-radius: var(--radius-sm);
+}
+
+/* Remove focus outline when not needed */
+:focus:not(:focus-visible) {
+  outline: none;
 }
 
 /* ========== 工具类 ========== */
