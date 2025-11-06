@@ -246,6 +246,7 @@ const formatDate = (dateStr: string): string => {
 </script>
 
 <style scoped>
+/* Component styles imported from @/styles/components/post-card.css */
 .post-card {
   display: block;
   overflow: hidden;

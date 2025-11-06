@@ -64,7 +64,9 @@ const reload = () => {
       <details v-if="isDev" class="error-details">
         <summary>{{ t('error.details') }}</summary>
         <pre class="error-stack">{{ error?.stack }}</pre>
-        <p class="error-info"><strong>{{ t('error.componentInfo') }}:</strong> {{ errorInfo }}</p>
+        <p class="error-info">
+          <strong>{{ t('error.componentInfo') }}:</strong> {{ errorInfo }}
+        </p>
       </details>
 
       <div class="error-actions">

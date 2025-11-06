@@ -58,10 +58,13 @@ onMounted(async () => {
 })
 
 // 监听收藏列表变化，更新布局
-watch(() => favoritePosts.value.length, async () => {
-  await nextTick()
-  await updateLayout()
-})
+watch(
+  () => favoritePosts.value.length,
+  async () => {
+    await nextTick()
+    await updateLayout()
+  },
+)
 </script>
 
 <style scoped>

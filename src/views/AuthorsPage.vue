@@ -142,9 +142,10 @@ import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import { PLATFORM_COLORS, PLATFORM_NAMES } from '@/types'
 import { authorsApi } from '@/api/services'
 import type { AuthorListItem } from '@/types'
-import toast from '@/utils/toast'
+import { useErrorHandler } from '@/utils/errorHandler'
 
 const { t } = useI18n()
+const { handleError } = useErrorHandler('AuthorsPage')
 const loading = ref(true)
 const authors = ref<AuthorListItem[]>([])
 
@@ -160,9 +161,8 @@ onMounted(async () => {
   try {
     const response = await authorsApi.getAuthors({ page: 1, page_size: 100 })
     authors.value = response.items
-  } catch (error: any) {
-    console.error('Failed to fetch authors:', error)
-    toast.error(t('author.loadFailed'))
+  } catch (error) {
+    handleError(error, { customMessage: t('author.loadFailed', 'Failed to load authors') })
   } finally {
     loading.value = false
   }

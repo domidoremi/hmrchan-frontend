@@ -50,6 +50,7 @@
   "search": {
     "placeholder": "Search content...",
     "noResults": "No results found",
+    "noResultsDesc": "No content matches your search criteria. Please try different keywords",
     "searching": "Searching...",
     "tryDifferent": "Try different keywords"
   },
@@ -227,6 +228,8 @@
     "limit": "Access Limit",
     "limitMessage": "Showing {current} / {limit} posts",
     "loginForMore": "Login to see more",
+    "guestMode": "Guest Mode",
+    "guestMessage": "You are browsing as a guest with limited features",
     "unlimited": "Unlimited"
   },
   "upload": {
@@ -254,6 +257,7 @@
     "videoPlaybackFailed": "Video playback failed"
   },
   "aria": {
+    "skipToMain": "Skip to main content",
     "closeMenu": "Close menu",
     "openMenu": "Open menu",
     "userMenu": "User menu",

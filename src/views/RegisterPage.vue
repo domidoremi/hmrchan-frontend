@@ -143,12 +143,14 @@ import GlassInput from '@/components/ui/GlassInput.vue'
 import GlassButton from '@/components/ui/GlassButton.vue'
 
 import { useAuthStore } from '@/stores/auth'
-import toast from '@/utils/toast'
-import logger from '@/utils/logger'
+import { useErrorHandler } from '@/utils/errorHandler'
+import { useToastStore } from '@/stores/toast'
 
 const router = useRouter()
-const authStore = useAuthStore()
 const { t } = useI18n()
+const authStore = useAuthStore()
+const { handleError } = useErrorHandler('RegisterPage')
+const toastStore = useToastStore()
 
 const formData = ref({
   username: '',
@@ -207,15 +209,17 @@ async function handleRegister() {
     })
 
     success.value = t('auth.registrationSuccess')
-    toast.success(t('auth.registrationSuccess'))
+    toastStore.success(t('auth.registrationSuccess'))
 
     setTimeout(() => {
       router.push('/')
     }, 1500)
-  } catch (err: any) {
-    logger.error('Registration failed:', err)
-    error.value = err.response?.data?.detail || authStore.error || t('auth.registrationFailed')
-    toast.error(error.value)
+  } catch (err) {
+    const errorResponse = err as { response?: { data?: { detail?: string } } }
+    const errorMsg =
+      errorResponse.response?.data?.detail || authStore.error || t('auth.registrationFailed')
+    error.value = errorMsg
+    handleError(err, { customMessage: errorMsg })
   } finally {
     loading.value = false
   }

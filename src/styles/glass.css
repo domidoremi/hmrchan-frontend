@@ -1,4 +1,5 @@
-/* 液态玻璃效果类 */
+/* Modern Glass Morphism - Material Design 3 & Apple HIG */
+/* Elevation system with backdrop blur for depth perception */
 
 /* ========== 基础玻璃效果 ========== */
 
@@ -34,13 +35,35 @@
   border: 1px solid var(--glass-border);
   border-top: 1px solid var(--glass-border-top);
   box-shadow: var(--glass-shadow);
-  transition: all var(--transition-base);
+
+  /* Smooth transitions */
+  transition:
+    transform var(--transition-base),
+    box-shadow var(--transition-base),
+    border-color var(--transition-base),
+    background var(--transition-base);
+
+  /* Performance optimizations */
+  will-change: transform;
 }
 
 .glass-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--glass-shadow), var(--glass-glow);
-  border-color: var(--color-primary);
+  transform: translateY(-4px) scale(1.01);
+  box-shadow:
+    var(--glass-shadow),
+    var(--glass-glow),
+    0 20px 40px -10px rgba(139, 92, 246, 0.15);
+  border-color: rgba(139, 92, 246, 0.5);
+  background: rgba(255, 255, 255, 0.75);
+}
+
+[data-theme='dark'] .glass-card:hover {
+  background: rgba(30, 41, 59, 0.85);
+}
+
+.glass-card:active {
+  transform: translateY(-2px) scale(0.99);
+  transition-duration: var(--duration-fast);
 }
 
 /* ========== 玻璃按钮 ========== */
@@ -51,39 +74,71 @@
   -webkit-backdrop-filter: var(--glass-blur);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
-  padding: var(--spacing-sm) var(--spacing-lg);
+  padding: var(--spacing-3) var(--spacing-6);
   font-weight: var(--font-medium);
+  font-size: var(--text-sm);
+  line-height: var(--line-none);
   color: var(--color-text-primary);
   cursor: pointer;
-  transition: all var(--transition-base);
   position: relative;
   overflow: hidden;
+
+  /* Touch target sizing */
+  min-height: 44px;
+
+  /* Smooth transitions with spring-like effect */
+  transition:
+    transform var(--transition-bounce),
+    background var(--transition-base),
+    border-color var(--transition-base),
+    box-shadow var(--transition-base);
 }
 
 .glass-button::before {
   content: '';
   position: absolute;
   top: 0;
-  left: 0;
+  left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-  transform: translateX(-100%);
-  transition: transform var(--transition-slow);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left var(--duration-slower) var(--ease-decelerate);
+  pointer-events: none;
 }
 
 .glass-button:hover::before {
-  transform: translateX(100%);
+  left: 100%;
 }
 
 .glass-button:hover {
-  border-color: var(--color-primary);
-  box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
-  transform: translateY(-1px);
+  border-color: rgba(139, 92, 246, 0.6);
+  background: rgba(255, 255, 255, 0.8);
+  box-shadow:
+    0 4px 12px rgba(139, 92, 246, 0.2),
+    0 0 24px rgba(139, 92, 246, 0.15);
+  transform: translateY(-2px) scale(1.02);
+}
+
+[data-theme='dark'] .glass-button:hover {
+  background: rgba(30, 41, 59, 0.85);
 }
 
 .glass-button:active {
-  transform: translateY(0);
+  transform: translateY(0) scale(0.98);
+  transition-duration: var(--duration-fast);
+}
+
+.glass-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.glass-button:disabled:hover {
+  border-color: var(--glass-border);
+  background: var(--glass-bg);
+  box-shadow: none;
+  transform: none;
 }
 
 /* ========== 玻璃输入框 ========== */
@@ -92,37 +147,83 @@
   background: var(--glass-bg-light);
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--glass-border);
+  border: 1.5px solid var(--glass-border);
   border-radius: var(--radius-lg);
-  padding: var(--spacing-md);
+  padding: var(--spacing-3) var(--spacing-4);
   color: var(--color-text-primary);
   font-size: var(--text-base);
-  transition: all var(--transition-base);
-  outline: none;
+  line-height: var(--line-normal);
   width: 100%;
+  min-height: 44px;
+
+  /* Smooth transitions */
+  transition:
+    border-color var(--transition-base),
+    background var(--transition-base),
+    box-shadow var(--transition-base),
+    transform var(--transition-fast);
+
+  /* Remove default outline */
+  outline: none;
 }
 
 .glass-input::placeholder {
   color: var(--color-text-tertiary);
+  opacity: 0.7;
+}
+
+.glass-input:hover {
+  border-color: rgba(139, 92, 246, 0.4);
 }
 
 .glass-input:focus {
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
   background: var(--glass-bg);
+  box-shadow:
+    0 0 0 4px rgba(139, 92, 246, 0.1),
+    0 4px 12px rgba(139, 92, 246, 0.08);
+  transform: translateY(-1px);
 }
 
-/* ========== 玻璃导航栏 ========== */
+.glass-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: var(--color-surface-variant);
+}
+
+/* ========== Glass Navigation ========== */
 
 .glass-navbar {
   background: var(--glass-bg-strong);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur-strong);
+  -webkit-backdrop-filter: var(--glass-blur-strong);
   border-bottom: 1px solid var(--glass-border);
-  box-shadow: var(--shadow-md);
+  box-shadow:
+    var(--shadow-md),
+    0 4px 16px rgba(0, 0, 0, 0.04);
+
+  /* Sticky positioning */
   position: sticky;
   top: 0;
   z-index: var(--z-sticky);
+
+  /* Smooth transitions */
+  transition:
+    background var(--transition-base),
+    box-shadow var(--transition-base),
+    transform var(--transition-base);
+}
+
+/* Elevated state on scroll */
+.glass-navbar.elevated {
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow:
+    var(--shadow-lg),
+    0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+[data-theme='dark'] .glass-navbar.elevated {
+  background: rgba(30, 41, 59, 0.95);
 }
 
 /* ========== 玻璃侧边栏 ========== */
@@ -135,7 +236,7 @@
   box-shadow: var(--shadow-lg);
 }
 
-/* ========== 玻璃模态框 ========== */
+/* ========== Glass Modal ========== */
 
 .glass-modal {
   background: var(--glass-bg-strong);
@@ -144,20 +245,42 @@
   border-radius: var(--radius-2xl);
   border: 1px solid var(--glass-border);
   border-top: 1px solid var(--glass-border-top);
-  box-shadow: var(--shadow-2xl);
-  max-width: 90vw;
+  box-shadow:
+    var(--shadow-2xl),
+    0 32px 64px rgba(0, 0, 0, 0.15),
+    0 0 80px rgba(139, 92, 246, 0.1);
+
+  /* Size constraints */
+  max-width: min(90vw, 600px);
   max-height: 90vh;
+
+  /* Overflow */
   overflow: auto;
+
+  /* Scrollbar styling */
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-primary) transparent;
+}
+
+.glass-modal::-webkit-scrollbar {
+  width: 6px;
+}
+
+.glass-modal::-webkit-scrollbar-thumb {
+  background: var(--color-primary);
+  border-radius: var(--radius-full);
 }
 
 .glass-modal-backdrop {
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(5px);
-  -webkit-backdrop-filter: blur(5px);
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px) saturate(80%);
+  -webkit-backdrop-filter: blur(8px) saturate(80%);
   position: fixed;
   inset: 0;
   z-index: var(--z-modal-backdrop);
-  animation: fadeIn var(--transition-base);
+
+  /* Entrance animation */
+  animation: fadeIn var(--duration-base) var(--ease-decelerate);
 }
 
 @keyframes fadeIn {

@@ -1,41 +1,71 @@
 <template>
   <MainLayout>
     <div class="home-page">
-      <!-- Hero Section with transition -->
+      <!-- Hero Section - Modern Design -->
       <Transition name="hero-fade">
         <section v-if="settingsStore.settings.showHeroSection" class="hero-section">
-          <div class="hero-content glass-card">
-            <!-- 关闭按钮 -->
+          <div class="hero-background">
+            <div class="hero-gradient"></div>
+            <div class="hero-mesh"></div>
+          </div>
+
+          <div class="hero-container">
             <button
-              class="hero-close-btn"
+              class="hero-close"
               @click="settingsStore.toggleSetting('showHeroSection')"
               :aria-label="$t('common.close')"
-              :title="$t('settings.hideHeroSection')"
             >
-              <X :size="20" />
+              <X :size="24" />
             </button>
 
-            <h1 class="hero-title fade-in">
-              {{ $t('app.name') }}
-            </h1>
-            <p class="hero-subtitle slide-up">
-              {{ $t('app.description') }}
-            </p>
-            <div class="hero-actions slide-up">
-              <GlassButton size="lg" @click="goToExplore">
-                <Compass :size="20" />
-                {{ $t('nav.explore') }}
-              </GlassButton>
-              <GlassButton v-if="!isAuthenticated" size="lg" variant="secondary" @click="goToLogin">
-                {{ $t('nav.login') }}
-              </GlassButton>
+            <div class="hero-content animate-fade-in-up">
+              <div class="hero-badge animate-scale-in stagger-1">
+                <span class="badge-dot"></span>
+                <span>{{ $t('app.tagline', 'Discover Amazing Content') }}</span>
+              </div>
+
+              <h1 class="hero-title animate-fade-in-up stagger-2">
+                {{ $t('app.name') }}
+              </h1>
+
+              <p class="hero-description animate-fade-in-up stagger-3">
+                {{ $t('app.description') }}
+              </p>
+
+              <div class="hero-actions animate-fade-in-up stagger-4">
+                <button class="btn-primary" @click="goToExplore">
+                  <Compass :size="20" />
+                  <span>{{ $t('nav.explore') }}</span>
+                  <ArrowRight :size="18" class="btn-icon" />
+                </button>
+                <button v-if="!isAuthenticated" class="btn-secondary" @click="goToLogin">
+                  <span>{{ $t('nav.login') }}</span>
+                </button>
+              </div>
+
+              <div class="hero-stats animate-fade-in-up stagger-5">
+                <div class="stat-item">
+                  <span class="stat-value">{{ formatNumber(totalPosts) }}</span>
+                  <span class="stat-label">{{ $t('post.total', 'Posts') }}</span>
+                </div>
+                <div class="stat-divider"></div>
+                <div class="stat-item">
+                  <span class="stat-value">{{ platforms.length }}</span>
+                  <span class="stat-label">{{ $t('common.platforms', 'Platforms') }}</span>
+                </div>
+                <div class="stat-divider"></div>
+                <div class="stat-item">
+                  <span class="stat-value">{{ $t('common.live', 'Live') }}</span>
+                  <span class="stat-label">{{ $t('common.updates', 'Updates') }}</span>
+                </div>
+              </div>
             </div>
           </div>
         </section>
       </Transition>
 
-      <!-- Platform Stats - 桌面端网格 / 移动端轮播 -->
-      <section class="stats-section">
+      <!-- Platform Stats - Modern Cards -->
+      <section class="platforms-section">
         <!-- 加载中：显示加载状态 -->
         <div v-if="isStatsLoading" class="stats-grid stats-desktop">
           <div v-for="platform in platforms" :key="platform" class="stat-card glass-card loading">
@@ -175,8 +205,8 @@
         </div>
       </section>
 
-      <!-- Latest Posts -->
-      <section class="latest-section">
+      <!-- Latest Posts - Bento Grid Layout -->
+      <section class="posts-section">
         <div class="section-header">
           <h2>{{ $t('filter.latest') }}</h2>
           <RouterLink to="/explore">
@@ -202,11 +232,13 @@
           <PostCard v-for="(post, index) in posts" :key="post.id" :post="post" :index="index" />
         </div>
 
-        <!-- 空状态 -->
-        <div v-else-if="!loading" class="empty-state glass-card">
-          <ImageIcon :size="64" />
-          <p>{{ $t('search.noResults') }}</p>
-        </div>
+        <!-- Empty state -->
+        <EmptyState
+          v-else-if="!loading"
+          icon="image"
+          :title="$t('search.noResults')"
+          :description="$t('search.noResultsDesc')"
+        />
 
         <!-- 加载更多指示器 -->
         <div v-if="isLoadingMore" class="loading-more">
@@ -229,7 +261,7 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { ref, computed, watch, nextTick, onMounted, onUnmounted, onActivated } from 'vue'
+import { ref, computed, nextTick, onMounted, onUnmounted, onActivated } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
@@ -250,19 +282,17 @@ import GlassButton from '@/components/ui/GlassButton.vue'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import PostCard from '@/components/features/PostCard.vue'
 import AccessLimitBanner from '@/components/AccessLimitBanner.vue'
+import EmptyState from '@/components/ui/EmptyState.vue'
 
-import type { Post } from '@/types'
 import { useAuthStore } from '@/stores/auth'
 import { useSettingsStore } from '@/stores/settings'
 import { usePostsStore } from '@/stores/posts'
 import { useWaterfallLayout } from '@/composables/useWaterfallLayout'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
-import { throttle } from '@/utils/throttle'
 import { PLATFORMS, PLATFORM_COLORS } from '@/types'
-import { postsApi, statsApi } from '@/api/services'
-import toast from '@/utils/toast'
+import { statsApi } from '@/api/services'
 import { formatNumber } from '@/utils/format'
-import logger from '@/utils/logger'
+import { useErrorHandler } from '@/utils/errorHandler'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -277,6 +307,11 @@ const accessLimit = computed(() => {
   if (!isAuthenticated.value) return 40 // 未登录：40条
   if (user.value?.is_admin) return Infinity // 管理员：无限制
   return 100 // 已登录：100条
+})
+
+// 总帖子数（用于Hero统计）
+const totalPosts = computed(() => {
+  return Object.values(platformStats.value).reduce((sum, count) => sum + count, 0)
 })
 
 const platforms = PLATFORMS
@@ -347,6 +382,7 @@ const startAutoplay = () => {
 }
 
 const { t } = useI18n()
+const { handleError } = useErrorHandler('HomePage')
 
 // 使用轻量级瀑布流布局
 const { updateLayout, smoothUpdateLayout } = useWaterfallLayout(postsGrid, {
@@ -364,7 +400,7 @@ const { updateLayout, smoothUpdateLayout } = useWaterfallLayout(postsGrid, {
 const { isLoading: isLoadingMore } = useInfiniteScroll({
   onLoadMore: async () => {
     if (posts.value.length >= accessLimit.value) {
-      logger.log('[InfiniteScroll] 已达到访问限制')
+      console.debug('[InfiniteScroll] 已达到访问限制')
       return
     }
     await loadMore()
@@ -378,11 +414,11 @@ onMounted(async () => {
   try {
     // ✨ 优化：减少初始加载数量，提升首屏速度
     // 使用明确的参数，不修改全局 store filters，避免与 ExplorePage 冲突
-    await postsStore.fetchPosts({ 
-      page: currentPage.value, 
+    await postsStore.fetchPosts({
+      page: currentPage.value,
       page_size: 6,
       sort_by: 'scraped_at',
-      sort_order: 'desc'
+      sort_order: 'desc',
     })
 
     // 记录初始加载的卡片数量
@@ -398,8 +434,7 @@ onMounted(async () => {
     // 启动轮播自动播放
     startAutoplay()
   } catch (error) {
-    logger.error('Failed to load data:', error)
-    toast.error(t('common.loadFailed'))
+    handleError(error, { customMessage: t('common.loadFailed', 'Failed to load data') })
   }
 })
 
@@ -414,9 +449,11 @@ const loadStatsInBackground = () => {
         isStatsLoading.value = false
       })
       .catch((err) => {
-        logger.error('Failed to load stats:', err)
+        handleError(err, {
+          silent: true, // 统计数据失败不显示通知
+          customMessage: 'Failed to load platform stats',
+        })
         isStatsLoading.value = false
-        // 统计数据失败不影响主内容
       })
   }, 1000)
 }
@@ -434,7 +471,7 @@ onActivated(async () => {
   if (postsGrid.value && posts.value.length > 0) {
     await nextTick()
     await updateLayout()
-    logger.info('页面激活，重新计算布局')
+    console.debug('[HomePage] 页面激活，重新计算布局')
   }
 })
 
@@ -490,7 +527,7 @@ const loadMore = async () => {
       }
     }, 600)
   } catch (error) {
-    logger.error('Failed to load more posts:', error)
+    handleError(error, { customMessage: t('post.loadMoreFailed', 'Failed to load more posts') })
     currentPage.value-- // 恢复页码
   }
 }
@@ -523,13 +560,9 @@ const getPlatformIcon = (platform: string) => {
 </script>
 
 <style scoped>
-.home-page {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-3xl);
-}
+@import '@/styles/pages/home.css';
 
-/* Hero Section Transition */
+/* ========== Transitions ========== */
 .hero-fade-enter-active,
 .hero-fade-leave-active {
   transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);

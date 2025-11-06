@@ -84,6 +84,14 @@ export const routes: RouteRecordRaw[] = [
     },
   },
   {
+    path: '/dev-tools',
+    name: 'dev-tools',
+    component: () => import('@/views/DevToolsPage.vue'),
+    meta: {
+      title: 'Developer Tools',
+    },
+  },
+  {
     path: '/preferences',
     name: 'preferences',
     component: () => import('@/views/PreferencesPage.vue'),
