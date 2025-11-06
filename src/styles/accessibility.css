@@ -1,18 +1,24 @@
 /**
- * 无障碍样式
- * 符合 WCAG 2.1 AA 标准
+ * Modern Accessibility Styles
+ * Compliant with WCAG 2.2 AA/AAA Standards
+ * Mobile-first, Touch-friendly, Keyboard-accessible
  */
 
-/* ===== 触摸目标尺寸 ===== */
+/* ===== Touch Target Sizing (WCAG 2.5.5 - AAA) ===== */
 
-/* 最小触摸目标尺寸: 44x44px */
+/* Minimum touch target size: 44x44px (iOS/Android guidelines) */
 .touch-target,
-button,
-a,
+button:not(.icon-only),
+a:not(.text-link),
 input[type='checkbox'],
-input[type='radio'] {
+input[type='radio'],
+input[type='submit'],
+input[type='button'] {
   min-width: 44px;
   min-height: 44px;
+
+  /* Ensure proper spacing between interactive elements */
+  margin: var(--spacing-1, 4px);
 }
 
 /* 图标按钮确保触摸区域足够大 */
@@ -64,37 +70,52 @@ input[type='radio'] {
   margin: 4px;
 }
 
-/* ===== 焦点可见性 ===== */
+/* ===== Focus Visibility (WCAG 2.4.7 - AA) ===== */
 
-/* 默认焦点样式 */
-*:focus {
-  outline: 2px solid var(--color-primary, #3b82f6);
-  outline-offset: 2px;
-}
-
-/* 使用 :focus-visible 只在键盘导航时显示焦点 */
+/* Remove default focus for mouse users */
 *:focus:not(:focus-visible) {
   outline: none;
 }
 
+/* Enhanced keyboard focus indicator */
 *:focus-visible {
-  outline: 2px solid var(--color-primary, #3b82f6);
-  outline-offset: 2px;
-  border-radius: 4px;
+  outline: 3px solid var(--color-primary, #8b5cf6);
+  outline-offset: 3px;
+  border-radius: var(--radius-sm, 6px);
+
+  /* High contrast mode support */
+  @media (prefers-contrast: high) {
+    outline-width: 4px;
+    outline-offset: 4px;
+  }
 }
 
-/* 按钮焦点样式 */
+/* Enhanced button and link focus */
 button:focus-visible,
-a:focus-visible {
-  outline: 2px solid var(--color-primary, #3b82f6);
-  outline-offset: 2px;
-  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 3px solid var(--color-primary, #8b5cf6);
+  outline-offset: 3px;
+  box-shadow:
+    0 0 0 6px rgba(139, 92, 246, 0.15),
+    0 4px 12px rgba(139, 92, 246, 0.2);
+
+  /* Ensure good visibility in dark mode */
+  @media (prefers-color-scheme: dark) {
+    outline-color: #a78bfa;
+    box-shadow:
+      0 0 0 6px rgba(167, 139, 250, 0.2),
+      0 4px 12px rgba(167, 139, 250, 0.25);
+  }
 }
 
-/* ===== 屏幕阅读器专用 ===== */
+/* ===== Screen Reader Only (WCAG 1.3.1 - A) ===== */
 
 .sr-only,
-.visually-hidden {
+.visually-hidden,
+.accessible-hidden {
   position: absolute !important;
   width: 1px !important;
   height: 1px !important;
@@ -102,21 +123,30 @@ a:focus-visible {
   margin: -1px !important;
   overflow: hidden !important;
   clip: rect(0, 0, 0, 0) !important;
+  clip-path: inset(50%) !important;
   white-space: nowrap !important;
   border-width: 0 !important;
 }
 
-/* 可聚焦时显示 */
+/* Show when focused (for skip links) */
 .sr-only:focus,
-.visually-hidden:focus {
+.sr-only:active,
+.visually-hidden:focus,
+.visually-hidden:active {
   position: static !important;
   width: auto !important;
   height: auto !important;
-  padding: inherit !important;
-  margin: inherit !important;
+  padding: var(--spacing-4, 16px) !important;
+  margin: var(--spacing-2, 8px) !important;
   overflow: visible !important;
   clip: auto !important;
+  clip-path: none !important;
   white-space: normal !important;
+  background: var(--color-primary, #8b5cf6) !important;
+  color: white !important;
+  border-radius: var(--radius-md, 8px) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+  z-index: 10000 !important;
 }
 
 /* ===== 对比度增强 ===== */
@@ -160,19 +190,38 @@ input[type='radio'] {
   cursor: pointer;
 }
 
-/* ===== 链接样式 ===== */
+/* ===== Link Styles (WCAG 1.4.1 - A) ===== */
 
-a {
-  color: var(--color-primary, #3b82f6);
+/* Ensure links are distinguishable without relying on color alone */
+a.text-link {
+  color: var(--color-primary, #8b5cf6);
   text-decoration: underline;
-  text-decoration-thickness: 1px;
-  text-underline-offset: 2px;
-  min-height: 24px;
-  display: inline-block;
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 3px;
+  text-decoration-color: rgba(139, 92, 246, 0.5);
+  transition:
+    color var(--transition-fast, 150ms),
+    text-decoration-color var(--transition-fast, 150ms);
 }
 
-a:hover {
+a.text-link:hover {
+  color: var(--color-primary-light, #a78bfa);
   text-decoration-thickness: 2px;
+  text-decoration-color: currentColor;
+}
+
+a.text-link:active {
+  color: var(--color-primary-dark, #7c3aed);
+}
+
+/* External links indicator */
+a[target='_blank']::after,
+a[rel~='external']::after {
+  content: '\2197'; /* ↗ */
+  display: inline-block;
+  margin-left: 0.25em;
+  font-size: 0.8em;
+  opacity: 0.7;
 }
 
 /* ===== 跳过链接 ===== */
@@ -265,29 +314,57 @@ select:disabled {
   box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
 }
 
-/* ===== 移动端优化 ===== */
+/* ===== Mobile Optimizations (Touch-friendly) ===== */
 
 @media (max-width: 768px) {
-  /* 移动端按钮更大 */
-  button,
+  /* Larger touch targets on mobile */
+  button:not(.icon-only),
   a.button,
-  input {
+  input[type='submit'],
+  input[type='button'] {
     min-height: 48px;
-    font-size: 16px;
+    min-width: 48px;
+    font-size: 16px; /* Prevents iOS zoom on focus */
+    padding: var(--spacing-3, 12px) var(--spacing-4, 16px);
   }
 
-  /* 增加触摸间距 */
+  /* Increase spacing between touch targets */
   .button-group {
-    gap: 12px;
+    gap: var(--spacing-3, 12px);
   }
 
-  /* 表单元素更大 */
-  input,
+  /* Larger form elements */
+  input:not([type='checkbox']):not([type='radio']),
   textarea,
   select {
     min-height: 48px;
-    padding: 14px 16px;
-    font-size: 16px;
+    padding: var(--spacing-3, 12px) var(--spacing-4, 16px);
+    font-size: 16px; /* Prevents iOS auto-zoom */
+  }
+
+  /* Larger checkboxes and radios */
+  input[type='checkbox'],
+  input[type='radio'] {
+    width: 28px;
+    height: 28px;
+  }
+
+  /* Ensure adequate spacing for interactive elements */
+  nav a,
+  .nav-link {
+    padding: var(--spacing-3, 12px) var(--spacing-4, 16px);
+    min-height: 48px;
+  }
+}
+
+/* Tablet optimizations */
+@media (min-width: 769px) and (max-width: 1024px) {
+  button,
+  a.button,
+  input,
+  select,
+  textarea {
+    min-height: 46px;
   }
 }
 
@@ -305,17 +382,40 @@ select:disabled {
   }
 }
 
-/* ===== 高对比度模式 ===== */
+/* ===== High Contrast Mode (WCAG 1.4.6 - AAA) ===== */
 
 @media (prefers-contrast: high) {
+  /* Increase border visibility */
   * {
-    border-width: 2px;
+    border-width: 2px !important;
   }
 
+  /* Enhance interactive elements */
   button,
-  a {
-    outline: 2px solid currentColor;
-    outline-offset: 2px;
+  a,
+  input,
+  select,
+  textarea {
+    border: 2px solid currentColor !important;
+    outline-width: 3px !important;
+  }
+
+  /* Stronger shadows */
+  .glass-card,
+  .glass-button,
+  .glass-modal {
+    box-shadow:
+      0 4px 8px rgba(0, 0, 0, 0.4),
+      0 8px 16px rgba(0, 0, 0, 0.3) !important;
+  }
+
+  /* Remove transparency */
+  .glass,
+  .glass-card,
+  .glass-button {
+    background: var(--color-surface) !important;
+    backdrop-filter: none !important;
+    opacity: 1 !important;
   }
 }
 

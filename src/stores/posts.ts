@@ -76,12 +76,12 @@ export const usePostsStore = defineStore(
       } catch (err: any) {
         error.value = err.message || 'API 请求失败'
         console.error('获取帖子列表失败:', err)
-        
+
         // API 失败时，设置空数组防止 undefined 错误
         if (!append) {
           posts.value = []
         }
-        
+
         // 不抛出错误，让页面显示空状态而不是崩溃
         return {
           items: [],
@@ -203,8 +203,11 @@ export const usePostsStore = defineStore(
   },
   {
     // 持久化配置 - 使用 sessionStorage 保存会话期间的数据
-    persist: typeof window !== 'undefined' ? {
-      storage: sessionStorage,
-    } : false,
+    persist:
+      typeof window !== 'undefined'
+        ? {
+            storage: sessionStorage,
+          }
+        : false,
   },
 )

@@ -298,8 +298,8 @@ import GlassModal from '@/components/ui/GlassModal.vue'
 import { useAuthStore } from '@/stores/auth'
 import { uploadApi } from '@/api/services'
 import { api } from '@/api/client'
-import toast from '@/utils/toast'
-import logger from '@/utils/logger'
+import { useErrorHandler } from '@/utils/errorHandler'
+import { useToastStore } from '@/stores/toast'
 import { formatRelativeTime } from '@/utils/format'
 import { getUserAvatar } from '@/utils/avatar'
 import { useImageUpload } from '@/composables/useImageUpload'
@@ -309,6 +309,8 @@ const router = useRouter()
 const authStore = useAuthStore()
 const { user } = storeToRefs(authStore)
 const { t } = useI18n()
+const { handleError } = useErrorHandler('ProfilePage')
+const toastStore = useToastStore()
 
 // 强制刷新标记
 const avatarRefreshKey = ref(Date.now())
@@ -394,9 +396,9 @@ async function loadStats() {
     favoritesCount.value = response.favorites_count || 0
     viewsCount.value = response.views_count || 0
 
-    logger.debug('User stats loaded:', response)
-  } catch (error: any) {
-    logger.error('Failed to load stats:', error)
+    console.debug('[ProfilePage] User stats loaded:', response)
+  } catch (error) {
+    handleError(error, { silent: true, customMessage: 'Failed to load user stats' })
     // 加载失败时使用默认值
     favoritesCount.value = 0
     viewsCount.value = 0
@@ -416,10 +418,13 @@ async function handleUpdateProfile() {
     // Refresh user data
     await authStore.fetchCurrentUser()
 
-    toast.success(t('profile.profileUpdated'))
+    toastStore.success(t('profile.profileUpdated'))
     showEditModal.value = false
-  } catch (error: any) {
-    toast.error(error.response?.data?.detail || t('profile.profileUpdateFailed'))
+  } catch (error) {
+    const errorMsg =
+      (error as { response?: { data?: { detail?: string } } }).response?.data?.detail ||
+      t('profile.profileUpdateFailed')
+    handleError(error, { customMessage: errorMsg })
   } finally {
     updating.value = false
   }
@@ -427,12 +432,12 @@ async function handleUpdateProfile() {
 
 async function handleChangePassword() {
   if (passwordForm.value.new_password !== passwordForm.value.confirm_password) {
-    toast.error(t('profile.passwordMismatch'))
+    toastStore.error(t('profile.passwordMismatch'))
     return
   }
 
   if (passwordForm.value.new_password.length < 8) {
-    toast.error(t('profile.passwordMinLength'))
+    toastStore.error(t('profile.passwordMinLength'))
     return
   }
 
@@ -443,7 +448,7 @@ async function handleChangePassword() {
       new_password: passwordForm.value.new_password,
     })
 
-    toast.success(t('profile.passwordChanged'))
+    toastStore.success(t('profile.passwordChanged'))
 
     // Clear form
     passwordForm.value = {
@@ -459,8 +464,11 @@ async function handleChangePassword() {
       authStore.logout()
       router.push('/login')
     }, 1500)
-  } catch (error: any) {
-    toast.error(error.response?.data?.detail || t('profile.passwordChangeFailed'))
+  } catch (error) {
+    const errorMsg =
+      (error as { response?: { data?: { detail?: string } } }).response?.data?.detail ||
+      t('profile.passwordChangeFailed')
+    handleError(error, { customMessage: errorMsg })
   } finally {
     changingPassword.value = false
   }
@@ -473,7 +481,7 @@ async function handleAvatarUpload() {
     if (!file) return
 
     uploadingAvatar.value = true
-    toast.info(t('profile.avatarUploading'))
+    toastStore.info(t('profile.avatarUploading'))
 
     // 上传到服务器
     const response = await uploadApi.uploadAvatar(file)
@@ -486,23 +494,25 @@ async function handleAvatarUpload() {
     avatarRefreshKey.value = Date.now()
     console.log('🔄 Force refresh avatar with new key:', avatarRefreshKey.value)
 
-    toast.success(t('profile.avatarUploadSuccess'))
-  } catch (error: any) {
-    console.error('Avatar upload failed:', error)
-    toast.error(error.response?.data?.detail || t('profile.avatarUploadFailed'))
+    toastStore.success(t('profile.avatarUploadSuccess'))
+  } catch (error) {
+    const errorMsg =
+      (error as { response?: { data?: { detail?: string } } }).response?.data?.detail ||
+      t('profile.avatarUploadFailed')
+    handleError(error, { customMessage: errorMsg })
   } finally {
     uploadingAvatar.value = false
   }
 }
 
 function sendVerificationEmail() {
-  toast.info(t('profile.sendVerification'))
+  toastStore.info(t('profile.sendVerification'))
   // TODO: Implement email verification
 }
 
 async function handleDeleteAccount() {
   if (!deleteForm.value.password) {
-    toast.error(t('profile.enterPasswordToConfirm'))
+    toastStore.error(t('profile.enterPasswordToConfirm'))
     return
   }
 
@@ -512,11 +522,14 @@ async function handleDeleteAccount() {
       data: { password: deleteForm.value.password },
     })
 
-    toast.success(t('profile.accountDeleted'))
+    toastStore.success(t('profile.accountDeleted'))
     authStore.logout()
     router.push('/')
-  } catch (error: any) {
-    toast.error(error.response?.data?.detail || t('profile.accountDeleteFailed'))
+  } catch (error) {
+    const errorMsg =
+      (error as { response?: { data?: { detail?: string } } }).response?.data?.detail ||
+      t('profile.accountDeleteFailed')
+    handleError(error, { customMessage: errorMsg })
   } finally {
     deleting.value = false
   }
@@ -524,7 +537,7 @@ async function handleDeleteAccount() {
 
 function handleLogout() {
   authStore.logout()
-  toast.success(t('auth.logoutSuccess'))
+  toastStore.success(t('auth.logoutSuccess'))
   router.push('/')
 }
 
