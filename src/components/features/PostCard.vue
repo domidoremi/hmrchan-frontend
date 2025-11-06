@@ -125,13 +125,13 @@ import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { Heart, Eye, MessageCircle, User, ImageIcon, Repeat2, Quote } from 'lucide-vue-next'
 
-import OptimizedImage from '@/components/ui/OptimizedImage.vue'
+import OptimizedImage from '@/components/common/OptimizedImage.vue'
 import { useAuthStore } from '@/stores/auth'
 import { favoritesApi } from '@/api/services'
 import { formatNumber, formatRelativeTime, formatDuration, truncateText } from '@/utils/format'
 import toast from '@/utils/toast'
 import { PLATFORM_NAMES, PLATFORM_COLORS } from '@/types'
-import type { Post } from '@/types'
+import type { Post, UUID } from '@/types'
 
 interface Props {
   post: Post
@@ -143,7 +143,7 @@ const router = useRouter()
 const { t } = useI18n()
 
 const isFavorited = ref(false)
-const favoriteId = ref<number | null>(null)
+const favoriteId = ref<UUID | null>(null)
 const loading = ref(false)
 
 // 前6张图片认为是首屏，优先加载以优化LCP
@@ -166,7 +166,7 @@ const isRetweet = computed(() => {
 // 判断是否为引用推文
 const isQuote = computed(() => {
   // 引用推文：有quote_id但没有转发
-  const post = props.post as any
+  const post = props.post as Record<string, unknown>
   const metadata = post.platform_metadata
   if (!metadata) return false
 
@@ -201,7 +201,7 @@ onMounted(async () => {
     const result = await favoritesApi.checkFavorite(props.post.id)
     isFavorited.value = result.is_favorited
     favoriteId.value = result.favorite_id
-  } catch (error) {
+  } catch {
     // 忽略错误（可能是未登录）
   }
 })
@@ -232,9 +232,10 @@ const toggleFavorite = async () => {
       favoriteId.value = favorite.id
       toast.success(t('favorite.addSuccess'))
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Failed to toggle favorite:', error)
-    toast.error(error.response?.data?.message || t('common.operationFailed'))
+    const err = error as { response?: { data?: { message?: string } } }
+    toast.error(err.response?.data?.message || t('common.operationFailed'))
   } finally {
     loading.value = false
   }

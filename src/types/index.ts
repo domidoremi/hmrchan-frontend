@@ -1,6 +1,15 @@
 /**
  * TypeScript类型定义
+ * v2.0 - UUID迁移：所有ID字段已从number改为string (UUID格式)
  */
+
+// ========== UUID类型 ==========
+
+/**
+ * UUID类型别名 (v2.0新增)
+ * 格式: xxxxxxxx-xxxx-4xxx-xxxx-xxxxxxxxxxxx
+ */
+export type UUID = string
 
 // ========== 通用类型 ==========
 
@@ -20,7 +29,7 @@ export interface MessageResponse {
 // ========== 用户和认证 ==========
 
 export interface User {
-  id: number
+  id: UUID  // v2.0: 改用UUID
   username: string
   email: string
   full_name: string | null
@@ -48,7 +57,7 @@ export interface LoginResponse {
 // ========== 内容 ==========
 
 export interface Post {
-  id: number
+  id: UUID  // v2.0: 改用UUID
   platform: string
   platform_post_id: string
   title: string | null
@@ -57,13 +66,13 @@ export interface Post {
   thumbnail_url: string | null
 
   // Author info (发布者 - user字段)
-  author_id: number | null
+  author_id: UUID | null  // v2.0: 改用UUID
   author_name: string | null
   author_username: string | null
   author_avatar_url?: string | null
 
   // Original Author info (原作者 - author字段，Twitter转发/引用时)
-  original_author_id?: number | null
+  original_author_id?: UUID | null  // v2.0: 改用UUID
   original_author_name?: string | null
   original_author_username?: string | null
   original_author_avatar_url?: string | null
@@ -90,7 +99,7 @@ export interface PostListParams {
   page_size?: number
   q?: string
   platform?: string
-  author_id?: number
+  author_id?: UUID  // v2.0: 改用UUID
   has_media?: boolean
   published_after?: string
   published_before?: string
@@ -103,8 +112,8 @@ export interface PostListParams {
 // ========== 媒体 ==========
 
 export interface MediaFile {
-  id: number
-  post_id: number
+  id: UUID  // v2.0: 改用UUID
+  post_id: UUID  // v2.0: 改用UUID
   file_path: string
   file_type: 'image' | 'video' | 'audio'
   file_size: number
@@ -130,7 +139,7 @@ export interface MediaFile {
 // ========== 作者 ==========
 
 export interface Author {
-  id: number
+  id: UUID  // v2.0: 改用UUID
   platform: string
   platform_user_id: string
   name: string
@@ -146,7 +155,7 @@ export interface Author {
 }
 
 export interface AuthorListItem {
-  id: number
+  id: UUID  // v2.0: 改用UUID
   platform: string
   platform_user_id: string
   name: string
@@ -166,9 +175,9 @@ export interface AuthorListItem {
 // ========== 收藏 ==========
 
 export interface Favorite {
-  id: number
-  user_id: number
-  post_id: number
+  id: UUID  // v2.0: 改用UUID
+  user_id: UUID  // v2.0: 改用UUID
+  post_id: UUID  // v2.0: 改用UUID
   folder_name: string | null
   tags_array: string[]
   notes: string | null
@@ -180,7 +189,7 @@ export interface Favorite {
 }
 
 export interface FavoriteCreate {
-  post_id: number
+  post_id: UUID  // v2.0: 改用UUID
   folder_name?: string
   tags?: string[]
   notes?: string

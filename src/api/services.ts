@@ -1,5 +1,6 @@
 /**
  * API服务层 - 根据后端文档实现完整的API调用
+ * v2.0 - UUID迁移：所有ID参数已从number改为string (UUID格式)
  */
 import { api } from './client'
 import type {
@@ -17,6 +18,7 @@ import type {
   FavoriteUpdate,
   MediaFile,
   PostStats,
+  UUID,
 } from '@/types'
 
 // ========== 认证API ==========
@@ -71,7 +73,7 @@ export const postsApi = {
    * 获取单个内容详情
    * GET /posts/{post_id}
    */
-  getPostById(postId: number) {
+  getPostById(postId: UUID) {
     return api.get<PostDetail>(`/posts/${postId}`)
   },
 
@@ -111,42 +113,42 @@ export const mediaApi = {
    * 获取媒体文件信息
    * GET /media/{media_id}
    */
-  getMediaInfo(mediaId: number) {
+  getMediaInfo(mediaId: UUID) {
     return api.get<MediaFile>(`/media/${mediaId}`)
   },
 
   /**
    * 获取媒体流式播放URL
    */
-  getStreamUrl(mediaId: number) {
+  getStreamUrl(mediaId: UUID) {
     return `/api/media/${mediaId}/stream`
   },
 
   /**
    * 获取媒体下载URL
    */
-  getDownloadUrl(mediaId: number) {
+  getDownloadUrl(mediaId: UUID) {
     return `/api/media/${mediaId}/download`
   },
 
   /**
    * 获取缩略图URL
    */
-  getThumbnailUrl(mediaId: number) {
+  getThumbnailUrl(mediaId: UUID) {
     return `/api/media/${mediaId}/thumbnail`
   },
 
   /**
    * 获取字幕URL
    */
-  getSubtitleUrl(mediaId: number) {
+  getSubtitleUrl(mediaId: UUID) {
     return `/api/media/${mediaId}/subtitle`
   },
 
   /**
    * 下载媒体文件
    */
-  async downloadMedia(mediaId: number, filename?: string) {
+  async downloadMedia(mediaId: UUID, filename?: string) {
     const response = await api.get(`/media/${mediaId}/download`, {
       responseType: 'blob',
     })
@@ -176,7 +178,7 @@ export const authorsApi = {
    * 获取单个作者信息
    * GET /authors/{author_id}
    */
-  getAuthorById(authorId: number) {
+  getAuthorById(authorId: UUID) {
     return api.get<Author>(`/authors/${authorId}`)
   },
 
@@ -184,7 +186,7 @@ export const authorsApi = {
    * 获取作者的内容
    * GET /authors/{author_id}/posts
    */
-  getAuthorPosts(authorId: number, params?: PostListParams) {
+  getAuthorPosts(authorId: UUID, params?: PostListParams) {
     return api.get<PaginatedResponse<Post>>(`/authors/${authorId}/posts`, { params })
   },
 }
@@ -212,7 +214,7 @@ export const favoritesApi = {
    * 更新收藏
    * PUT /favorites/{favorite_id}
    */
-  updateFavorite(favoriteId: number, data: FavoriteUpdate) {
+  updateFavorite(favoriteId: UUID, data: FavoriteUpdate) {
     return api.put<Favorite>(`/favorites/${favoriteId}`, data)
   },
 
@@ -220,7 +222,7 @@ export const favoritesApi = {
    * 删除收藏
    * DELETE /favorites/{favorite_id}
    */
-  deleteFavorite(favoriteId: number) {
+  deleteFavorite(favoriteId: UUID) {
     return api.delete(`/favorites/${favoriteId}`)
   },
 
@@ -237,9 +239,9 @@ export const favoritesApi = {
    * GET /favorites/check/{post_id}
    */
   async checkFavorite(
-    postId: number,
-  ): Promise<{ is_favorited: boolean; favorite_id: number | null }> {
-    return api.get<{ is_favorited: boolean; favorite_id: number | null }>(
+    postId: UUID,
+  ): Promise<{ is_favorited: boolean; favorite_id: UUID | null }> {
+    return api.get<{ is_favorited: boolean; favorite_id: UUID | null }>(
       `/favorites/check/${postId}`,
       { cache: false }, // 不缓存收藏状态，确保实时性
     )
@@ -248,7 +250,7 @@ export const favoritesApi = {
   /**
    * 检查内容是否已收藏（简化版）
    */
-  async isFavorited(postId: number): Promise<boolean> {
+  async isFavorited(postId: UUID): Promise<boolean> {
     try {
       const result = await this.checkFavorite(postId)
       return result.is_favorited
@@ -307,7 +309,7 @@ export const uploadApi = {
    * 为指定用户上传头像（管理员功能）
    * POST /upload/users/{user_id}/avatar
    */
-  async uploadUserAvatar(userId: number, file: File): Promise<FileUploadResponse> {
+  async uploadUserAvatar(userId: UUID, file: File): Promise<FileUploadResponse> {
     const formData = new FormData()
     formData.append('file', file)
     return api.post<FileUploadResponse>(`/upload/users/${userId}/avatar`, formData, {
