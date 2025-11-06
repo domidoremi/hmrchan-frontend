@@ -6,13 +6,14 @@ import { useAuthStore } from '@/stores/auth'
 import { requestCache } from '@/utils/requestCache'
 import logger from '@/utils/logger'
 
-// API基础URL - 从环境变量读取
-const BASE_URL = import.meta.env.VITE_API_URL || '/api'
+// API基础URL - 从环境变量读取（根据文档使用VITE_API_ENDPOINT）
+const BASE_URL = import.meta.env.VITE_API_ENDPOINT || import.meta.env.VITE_API_URL || '/api'
 
 // 日志输出当前API配置（仅开发环境）
 if (import.meta.env.DEV) {
   console.log('🌐 API Configuration:', {
     baseURL: BASE_URL,
+    apiEndpoint: import.meta.env.VITE_API_ENDPOINT,
     mode: import.meta.env.MODE,
     isDev: import.meta.env.DEV,
   })
