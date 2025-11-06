@@ -270,7 +270,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useMediaPreload } from '@/composables/useSmartPreload'
 import { hasViewedPost, markPostAsViewed } from '@/utils/viewTracking'
-import logger from '@/utils/logger'
+import { useErrorHandler } from '@/utils/errorHandler'
 import {
   ArrowLeft,
   Calendar,
@@ -298,11 +298,13 @@ import { api } from '@/api/client'
 import { favoritesApi } from '@/api/services'
 import type { PostDetail } from '@/types'
 import { PLATFORM_NAMES, PLATFORM_COLORS } from '@/types'
-import toast from '@/utils/toast'
+import { useToastStore } from '@/stores/toast'
 
 const route = useRoute()
 const router = useRouter()
 const { t } = useI18n()
+const { handleError } = useErrorHandler('PostDetailPage')
+const toastStore = useToastStore()
 const postsStore = usePostsStore()
 const authStore = useAuthStore()
 
@@ -312,12 +314,14 @@ const isFavorited = ref(false)
 const favoriteId = ref<number | null>(null)
 const favoriteLoading = ref(false)
 const showMediaViewer = ref(false)
-const viewerMediaItems = ref<Array<{ 
-  url: string
-  type: 'image' | 'video'
-  subtitle?: string  // 保留向后兼容
-  subtitles?: Array<{ language: string; format: string; label: string }>  // 新增：多语言字幕
-}>>([])
+const viewerMediaItems = ref<
+  Array<{
+    url: string
+    type: 'image' | 'video'
+    subtitle?: string // 保留向后兼容
+    subtitles?: Array<{ language: string; format: string; label: string }> // 新增：多语言字幕
+  }>
+>([])
 const viewerInitialIndex = ref(0)
 const currentThumbnailIndex = ref(0)
 
@@ -349,12 +353,12 @@ const showDescription = computed(() => {
 const allMediaItems = computed(() => {
   if (!post.value) return []
 
-  const items: Array<{ 
+  const items: Array<{
     url: string
     type: 'image' | 'video'
     subtitle?: string
     subtitles?: Array<{ language: string; format: string; label: string }>
-    mediaId?: number  // 添加mediaId用于生成字幕URL
+    mediaId?: number // 添加mediaId用于生成字幕URL
   }> = []
   const hasThumbnail = !!post.value.thumbnail_url
 
@@ -378,7 +382,7 @@ const allMediaItems = computed(() => {
           return // 跳过第一张图片以避免重复
         }
 
-        const item: { 
+        const item: {
           url: string
           type: 'image' | 'video'
           subtitle?: string
@@ -455,9 +459,9 @@ onMounted(async () => {
       try {
         await api.post(`/posts/${postId}/increment-view`)
         markPostAsViewed(postId)
-        logger.log('📊 Post view counted:', postId)
+        console.debug('[PostDetailPage] Post view counted:', postId)
       } catch (error) {
-        logger.warn('Failed to increment view count:', error)
+        console.debug('[PostDetailPage] Failed to increment view count:', error)
       }
     }
 
@@ -472,7 +476,7 @@ onMounted(async () => {
       }
     }
   } catch (error) {
-    logger.error('Failed to fetch post:', error)
+    handleError(error, { customMessage: t('post.loadFailed', 'Failed to load post') })
   } finally {
     loading.value = false
   }
@@ -499,17 +503,19 @@ const toggleFavorite = async () => {
       await favoritesApi.deleteFavorite(favoriteId.value)
       isFavorited.value = false
       favoriteId.value = null
-      toast.success(t('favorite.removeSuccess'))
+      toastStore.success(t('favorite.removeSuccess'))
     } else {
       // 添加收藏
       const favorite = await favoritesApi.addFavorite({ post_id: post.value.id })
       isFavorited.value = true
       favoriteId.value = favorite.id
-      toast.success(t('favorite.addSuccess'))
+      toastStore.success(t('favorite.addSuccess'))
     }
-  } catch (error: any) {
-    console.error('Failed to toggle favorite:', error)
-    toast.error(error.response?.data?.message || t('common.operationFailed'))
+  } catch (error) {
+    const errorMsg =
+      (error as { response?: { data?: { message?: string } } }).response?.data?.message ||
+      t('common.operationFailed')
+    handleError(error, { customMessage: errorMsg })
   } finally {
     favoriteLoading.value = false
   }

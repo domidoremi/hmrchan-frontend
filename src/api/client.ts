@@ -6,8 +6,17 @@ import { useAuthStore } from '@/stores/auth'
 import { requestCache } from '@/utils/requestCache'
 import logger from '@/utils/logger'
 
-// API基础URL
-const BASE_URL = import.meta.env.VITE_API_URL || 'https://api.momichan.xyz/api'
+// API基础URL - 从环境变量读取
+const BASE_URL = import.meta.env.VITE_API_URL || '/api'
+
+// 日志输出当前API配置（仅开发环境）
+if (import.meta.env.DEV) {
+  console.log('🌐 API Configuration:', {
+    baseURL: BASE_URL,
+    mode: import.meta.env.MODE,
+    isDev: import.meta.env.DEV,
+  })
+}
 
 // 创建axios实例
 const apiClient: AxiosInstance = axios.create({

@@ -118,7 +118,8 @@ export interface MediaFile {
   subtitle_language?: string | null
   subtitle_format?: string | null
   has_subtitle?: boolean
-  subtitles?: Array<{  // 新增：多语言字幕支持
+  subtitles?: Array<{
+    // 新增：多语言字幕支持
     language: string
     format: string
     label: string

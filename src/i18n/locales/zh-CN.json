@@ -50,6 +50,7 @@
   "search": {
     "placeholder": "搜索内容...",
     "noResults": "未找到结果",
+    "noResultsDesc": "未找到符合搜索条件的内容，请尝试其他关键词",
     "searching": "搜索中...",
     "tryDifferent": "尝试其他关键词"
   },
@@ -227,11 +228,11 @@
     "limit": "访问限制",
     "limitMessage": "当前显示 {current} / {limit} 条帖子",
     "loginForMore": "登录查看更多",
-    "unlimited": "无限制",
     "guestMode": "访客模式",
+    "guestMessage": "您正在以访客身份浏览，部分功能受限",
+    "unlimited": "无限制",
     "nearLimit": "接近访问限制",
     "contentAccess": "内容访问",
-    "guestMessage": "您正在查看最新 {limit} 条内容，登录后可查看更多精彩内容",
     "nearLimitMessage": "还可以查看 {remaining} 条内容，升级会员解锁全部内容",
     "loadedMessage": "已加载 {current}/{limit} 条内容"
   },
@@ -260,6 +261,7 @@
     "videoPlaybackFailed": "视频播放失败"
   },
   "aria": {
+    "skipToMain": "跳转到主内容",
     "closeMenu": "关闭菜单",
     "openMenu": "打开菜单",
     "userMenu": "用户菜单",

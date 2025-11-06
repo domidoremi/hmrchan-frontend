@@ -6,8 +6,9 @@ import { useThemeStore } from '@/stores/theme'
 import { useSettingsStore } from '@/stores/settings'
 import { storeToRefs } from 'pinia'
 import ErrorBoundary from '@/components/ErrorBoundary.vue'
+import Toast from '@/components/ui/Toast.vue'
 // 导入无障碍功能
-import { useKeyboardNavigation, useSkipLinks } from '@/composables/useAccessibility'
+import { useKeyboardNavigation } from '@/composables/useAccessibility'
 
 const authStore = useAuthStore()
 const themeStore = useThemeStore()
@@ -39,7 +40,6 @@ watch(
 
 // 启用无障碍功能
 useKeyboardNavigation()
-useSkipLinks()
 
 // 初始化应用
 onMounted(async () => {
@@ -96,6 +96,9 @@ watch(
         </RouterView>
       </main>
     </ErrorBoundary>
+
+    <!-- Toast 通知系统 -->
+    <Toast />
   </div>
 </template>
 
