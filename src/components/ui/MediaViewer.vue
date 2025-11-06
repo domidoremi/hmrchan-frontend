@@ -225,7 +225,7 @@ watch(currentIndex, () => {
   showPlaybackMenu.value = false
   controlsVisible.value = true
   resetHideControlsTimer()
-  
+
   // 视频：立即隐藏loading（因为preload="none"）
   // 图片：等待onMediaLoad事件
   if (currentMedia.value.type === 'video') {
@@ -478,7 +478,9 @@ onUnmounted(() => {
   top: 50%;
   transform: translateY(-50%);
   opacity: 1;
-  transition: opacity 0.3s ease, transform 0.2s ease;
+  transition:
+    opacity 0.3s ease,
+    transform 0.2s ease;
 }
 
 .prev-btn.controls-hidden {
@@ -495,7 +497,9 @@ onUnmounted(() => {
   top: 50%;
   transform: translateY(-50%);
   opacity: 1;
-  transition: opacity 0.3s ease, transform 0.2s ease;
+  transition:
+    opacity 0.3s ease,
+    transform 0.2s ease;
 }
 
 .next-btn.controls-hidden {

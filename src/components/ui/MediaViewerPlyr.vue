@@ -54,7 +54,7 @@
         <div v-else-if="currentMedia.type === 'video'" class="video-wrapper">
           <video ref="videoElement" class="plyr-video" playsinline controls :key="currentMedia.url">
             <source :src="currentMedia.url" type="video/mp4" />
-            
+
             <!-- 多语言字幕支持 -->
             <template v-if="currentMedia.subtitles && currentMedia.subtitles.length > 0">
               <track
@@ -67,7 +67,7 @@
                 :default="index === 0"
               />
             </template>
-            
+
             <!-- 向后兼容：单字幕模式 -->
             <track
               v-else-if="currentMedia.subtitle"
@@ -144,13 +144,14 @@ import 'plyr/dist/plyr.css'
 interface MediaItem {
   url: string
   type: 'image' | 'video'
-  subtitle?: string  // 向后兼容：单个字幕URL
-  subtitles?: Array<{  // 新增：多语言字幕
+  subtitle?: string // 向后兼容：单个字幕URL
+  subtitles?: Array<{
+    // 新增：多语言字幕
     language: string
     format: string
     label: string
   }>
-  mediaId?: number  // 媒体ID，用于生成字幕URL
+  mediaId?: number // 媒体ID，用于生成字幕URL
 }
 
 interface Props {
@@ -239,16 +240,18 @@ watch(currentIndex, () => {
 const initPlyr = () => {
   if (videoElement.value && !player) {
     // 调试日志：检查字幕
-    const subtitleInfo = currentMedia.value.subtitles 
-      ? currentMedia.value.subtitles.map(s => `${s.label} (${s.language})`).join(', ')
-      : currentMedia.value.subtitle ? '单语言模式' : '无字幕'
-    
+    const subtitleInfo = currentMedia.value.subtitles
+      ? currentMedia.value.subtitles.map((s) => `${s.label} (${s.language})`).join(', ')
+      : currentMedia.value.subtitle
+        ? '单语言模式'
+        : '无字幕'
+
     console.log('[Plyr] 初始化视频:', {
       url: currentMedia.value.url,
       hasSubtitle: !!(currentMedia.value.subtitle || currentMedia.value.subtitles),
       subtitleUrl: currentMedia.value.subtitle,
       availableSubtitles: subtitleInfo,
-      subtitleCount: currentMedia.value.subtitles?.length || (currentMedia.value.subtitle ? 1 : 0)
+      subtitleCount: currentMedia.value.subtitles?.length || (currentMedia.value.subtitle ? 1 : 0),
     })
 
     player = new Plyr(videoElement.value, {
@@ -325,7 +328,7 @@ const initPlyr = () => {
     player.on('ready', () => {
       console.log('[Plyr] 播放器就绪')
       loading.value = false
-      
+
       // 检查字幕轨道
       if (player) {
         const videoEl = player.elements?.container?.querySelector('video')
@@ -339,7 +342,7 @@ const initPlyr = () => {
                 kind: track.kind,
                 label: track.label,
                 language: track.language,
-                mode: track.mode
+                mode: track.mode,
               })
             }
           }
@@ -558,7 +561,9 @@ onUnmounted(() => {
   transform: translateY(-50%);
   z-index: 50;
   opacity: 1;
-  transition: opacity 0.3s ease, transform 0.2s ease;
+  transition:
+    opacity 0.3s ease,
+    transform 0.2s ease;
 }
 
 .prev-btn.controls-hidden {
@@ -576,7 +581,9 @@ onUnmounted(() => {
   transform: translateY(-50%);
   z-index: 50;
   opacity: 1;
-  transition: opacity 0.3s ease, transform 0.2s ease;
+  transition:
+    opacity 0.3s ease,
+    transform 0.2s ease;
 }
 
 .next-btn.controls-hidden {
@@ -809,7 +816,7 @@ onUnmounted(() => {
     width: 18px;
     height: 18px;
   }
-  
+
   .close-btn {
     order: 3;
   }
@@ -823,7 +830,7 @@ onUnmounted(() => {
     margin-bottom: 8px !important;
   }
 
-  :deep(.plyr__progress input[type="range"]) {
+  :deep(.plyr__progress input[type='range']) {
     height: 8px !important;
   }
 
@@ -900,11 +907,11 @@ onUnmounted(() => {
   :deep(.plyr__controls) {
     gap: 4px;
   }
-  
+
   :deep(.plyr__volume) {
     max-width: 80px;
   }
-  
+
   :deep(.plyr__menu) {
     margin-left: auto;
   }
@@ -915,11 +922,11 @@ onUnmounted(() => {
   :deep(.plyr__controls) {
     gap: 2px;
   }
-  
+
   :deep(.plyr__volume) {
     max-width: 60px;
   }
-  
+
   :deep(.plyr__time) {
     font-size: 12px;
   }
