@@ -1,9 +1,10 @@
 /**
  * 内容状态管理 - 增强版（带持久化和缓存）
+ * v2.0 - UUID迁移：ID参数已从number改为string
  */
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import type { Post, PostDetail, PostListParams, PaginatedResponse, Platform } from '@/types'
+import type { Post, PostDetail, PostListParams, PaginatedResponse, Platform, UUID } from '@/types'
 import { api } from '@/api/client'
 
 export const usePostsStore = defineStore(
@@ -73,8 +74,8 @@ export const usePostsStore = defineStore(
         }
 
         return response
-      } catch (err: any) {
-        error.value = err.message || 'API 请求失败'
+      } catch (err: unknown) {
+        error.value = err instanceof Error ? err.message : 'API 请求失败'
         console.error('获取帖子列表失败:', err)
 
         // API 失败时，设置空数组防止 undefined 错误
@@ -96,7 +97,7 @@ export const usePostsStore = defineStore(
     }
 
     // 获取单个内容详情
-    async function fetchPost(postId: number) {
+    async function fetchPost(postId: UUID) {
       loading.value = true
       error.value = null
 
@@ -104,8 +105,8 @@ export const usePostsStore = defineStore(
         const response = await api.get<PostDetail>(`/posts/${postId}`)
         currentPost.value = response
         return response
-      } catch (err: any) {
-        error.value = err.message
+      } catch (err: unknown) {
+        error.value = err instanceof Error ? err.message : 'Unknown error'
         throw err
       } finally {
         loading.value = false

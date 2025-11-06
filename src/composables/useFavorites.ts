@@ -1,10 +1,11 @@
 /**
  * Favorites组合式函数
+ * v2.0 - UUID迁移：ID参数已从number改为string
  */
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { favoritesApi, postsApi } from '@/api/services'
-import type { Favorite, FavoriteCreate, FavoriteUpdate, Post } from '@/types'
+import type { Favorite, FavoriteCreate, FavoriteUpdate, Post, UUID } from '@/types'
 import toast from '@/utils/toast'
 
 export function useFavorites() {
@@ -59,8 +60,8 @@ export function useFavorites() {
       }
 
       return response
-    } catch (err: any) {
-      error.value = err.message || 'Failed to fetch favorites'
+    } catch (err: unknown) {
+      error.value = err instanceof Error ? err.message : 'Failed to fetch favorites'
       throw err
     } finally {
       loading.value = false
@@ -76,8 +77,8 @@ export function useFavorites() {
       favorites.value.unshift(favorite)
       toast.success(t('favorite.addSuccess'))
       return favorite
-    } catch (err: any) {
-      const message = err.response?.data?.message || t('favorite.addFailed')
+    } catch (err: unknown) {
+      const message = (err as any).response?.data?.message || t('favorite.addFailed')
       toast.error(message)
       throw err
     }
@@ -86,7 +87,7 @@ export function useFavorites() {
   /**
    * 更新收藏
    */
-  const updateFavorite = async (favoriteId: number, data: FavoriteUpdate) => {
+  const updateFavorite = async (favoriteId: UUID, data: FavoriteUpdate) => {
     try {
       const favorite = await favoritesApi.updateFavorite(favoriteId, data)
       const index = favorites.value.findIndex((f) => f.id === favoriteId)
@@ -95,8 +96,8 @@ export function useFavorites() {
       }
       toast.success(t('favorite.updateSuccess'))
       return favorite
-    } catch (err: any) {
-      const message = err.response?.data?.message || t('favorite.updateFailed')
+    } catch (err: unknown) {
+      const message = (err as any).response?.data?.message || t('favorite.updateFailed')
       toast.error(message)
       throw err
     }
@@ -105,13 +106,13 @@ export function useFavorites() {
   /**
    * 删除收藏
    */
-  const deleteFavorite = async (favoriteId: number) => {
+  const deleteFavorite = async (favoriteId: UUID) => {
     try {
       await favoritesApi.deleteFavorite(favoriteId)
       favorites.value = favorites.value.filter((f) => f.id !== favoriteId)
       toast.success(t('favorite.removeSuccess'))
-    } catch (err: any) {
-      const message = err.response?.data?.message || t('favorite.removeFailed')
+    } catch (err: unknown) {
+      const message = (err as any).response?.data?.message || t('favorite.removeFailed')
       toast.error(message)
       throw err
     }
@@ -120,7 +121,7 @@ export function useFavorites() {
   /**
    * 检查是否已收藏
    */
-  const isFavorited = async (postId: number): Promise<boolean> => {
+  const isFavorited = async (postId: UUID): Promise<boolean> => {
     try {
       return await favoritesApi.isFavorited(postId)
     } catch {
