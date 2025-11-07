@@ -3,6 +3,7 @@
  * v2.0 - UUID迁移：所有ID参数已从number改为string (UUID格式)
  */
 import { api } from './client'
+import { getApiBaseUrl } from '@/utils/url'
 import type {
   LoginRequest,
   LoginResponse,
@@ -20,11 +21,6 @@ import type {
   PostStats,
   UUID,
 } from '@/types'
-
-// 获取API端点基础URL
-const getApiBaseUrl = () => {
-  return import.meta.env.VITE_API_ENDPOINT || import.meta.env.VITE_API_BASE_URL + '/api' || '/api'
-}
 
 // ========== 认证API ==========
 
