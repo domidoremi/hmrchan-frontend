@@ -204,7 +204,7 @@
             >
               <img
                 v-if="media.file_type === 'image'"
-                :src="`/api/media/${media.id}/stream`"
+                :src="mediaApi.getStreamUrl(media.id)"
                 :alt="post.title || ''"
                 loading="lazy"
                 decoding="async"
@@ -217,7 +217,7 @@
                 @click="openMediaViewer(getMediaIndex(index))"
               >
                 <video preload="none" poster="">
-                  <source :src="`/api/media/${media.id}/stream`" type="video/mp4" />
+                  <source :src="mediaApi.getStreamUrl(media.id)" type="video/mp4" />
                 </video>
                 <div class="video-play-overlay">
                   <div class="play-button">
@@ -295,7 +295,7 @@ import MediaViewer from '@/components/ui/MediaViewerPlyr.vue'
 import { usePostsStore } from '@/stores/posts'
 import { useAuthStore } from '@/stores/auth'
 import { api } from '@/api/client'
-import { favoritesApi } from '@/api/services'
+import { favoritesApi, mediaApi } from '@/api/services'
 import type { PostDetail, UUID } from '@/types'
 import { PLATFORM_NAMES, PLATFORM_COLORS } from '@/types'
 import { useToastStore } from '@/stores/toast'
@@ -374,7 +374,7 @@ const allMediaItems = computed(() => {
   if (post.value.media_files && post.value.media_files.length > 0) {
     post.value.media_files.forEach((media, index) => {
       if (media.file_type === 'image' || media.file_type === 'video') {
-        const mediaUrl = `/api/media/${media.id}/stream`
+        const mediaUrl = mediaApi.getStreamUrl(media.id)
 
         // 如果有缩略图，跳过第一个媒体文件（如果是图片）
         // 因为缩略图通常就是第一张图片的缩略版
@@ -400,10 +400,10 @@ const allMediaItems = computed(() => {
           if (media.subtitles && Array.isArray(media.subtitles) && media.subtitles.length > 0) {
             item.subtitles = media.subtitles
             // 向后兼容：保留subtitle字段（默认语言）
-            item.subtitle = `/api/media/${media.id}/subtitle`
+            item.subtitle = mediaApi.getSubtitleUrl(media.id)
           } else if (media.has_subtitle) {
             // 回退到旧的单字幕模式
-            item.subtitle = `/api/media/${media.id}/subtitle`
+            item.subtitle = mediaApi.getSubtitleUrl(media.id)
           }
         }
 
