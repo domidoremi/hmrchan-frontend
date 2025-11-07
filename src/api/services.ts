@@ -21,6 +21,11 @@ import type {
   UUID,
 } from '@/types'
 
+// 获取API端点基础URL
+const getApiBaseUrl = () => {
+  return import.meta.env.VITE_API_ENDPOINT || import.meta.env.VITE_API_BASE_URL + '/api' || '/api'
+}
+
 // ========== 认证API ==========
 
 export const authApi = {
@@ -119,30 +124,34 @@ export const mediaApi = {
 
   /**
    * 获取媒体流式播放URL
+   * 返回完整URL以支持跨域访问
    */
   getStreamUrl(mediaId: UUID) {
-    return `/api/media/${mediaId}/stream`
+    return `${getApiBaseUrl()}/media/${mediaId}/stream`
   },
 
   /**
    * 获取媒体下载URL
+   * 返回完整URL以支持跨域访问
    */
   getDownloadUrl(mediaId: UUID) {
-    return `/api/media/${mediaId}/download`
+    return `${getApiBaseUrl()}/media/${mediaId}/download`
   },
 
   /**
    * 获取缩略图URL
+   * 返回完整URL以支持跨域访问
    */
   getThumbnailUrl(mediaId: UUID) {
-    return `/api/media/${mediaId}/thumbnail`
+    return `${getApiBaseUrl()}/media/${mediaId}/thumbnail`
   },
 
   /**
    * 获取字幕URL
+   * 返回完整URL以支持跨域访问
    */
   getSubtitleUrl(mediaId: UUID) {
-    return `/api/media/${mediaId}/subtitle`
+    return `${getApiBaseUrl()}/media/${mediaId}/subtitle`
   },
 
   /**
