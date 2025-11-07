@@ -18,7 +18,7 @@
         <!-- Pagination -->
         <Pagination
           :current-page="pagination.page"
-          :total-pages="pagination.total_pages"
+          :total-pages="pagination.pages"
           @change="handlePageChange"
         />
       </div>

@@ -21,7 +21,7 @@ export const usePostsStore = defineStore(
       page: 1,
       page_size: 20,
       total: 0,
-      total_pages: 0,
+      pages: 0,
     })
 
     // 筛选参数
@@ -55,7 +55,7 @@ export const usePostsStore = defineStore(
             page: 1,
             page_size: 20,
             total: 0,
-            total_pages: 0,
+            pages: 0,
           }
         }
 
@@ -70,7 +70,7 @@ export const usePostsStore = defineStore(
           page: response.page || 1,
           page_size: response.page_size || 20,
           total: response.total || 0,
-          total_pages: response.total_pages || 0,
+          pages: response.pages || 0,
         }
 
         return response
@@ -89,7 +89,7 @@ export const usePostsStore = defineStore(
           page: 1,
           page_size: 20,
           total: 0,
-          total_pages: 0,
+          pages: 0,
         }
       } finally {
         loading.value = false
@@ -143,7 +143,7 @@ export const usePostsStore = defineStore(
 
     // 下一页
     async function nextPage() {
-      if (pagination.value.page < pagination.value.total_pages) {
+      if (pagination.value.page < pagination.value.pages) {
         filters.value.page = pagination.value.page + 1
         await fetchPosts()
       }
@@ -159,7 +159,7 @@ export const usePostsStore = defineStore(
 
     // 跳转到指定页
     async function goToPage(page: number) {
-      if (page >= 1 && page <= pagination.value.total_pages) {
+      if (page >= 1 && page <= pagination.value.pages) {
         filters.value.page = page
         await fetchPosts()
       }
@@ -175,7 +175,7 @@ export const usePostsStore = defineStore(
         page: 1,
         page_size: 20,
         total: 0,
-        total_pages: 0,
+        pages: 0,
       }
       resetFilters()
     }

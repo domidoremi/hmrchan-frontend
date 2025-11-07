@@ -15,7 +15,7 @@ export function usePosts() {
     page: 1,
     page_size: 20,
     total: 0,
-    total_pages: 0,
+    pages: 0,
   })
 
   /**
@@ -33,7 +33,7 @@ export function usePosts() {
         page: response.page,
         page_size: response.page_size,
         total: response.total,
-        total_pages: response.total_pages,
+        pages: response.pages,
       }
 
       return response
@@ -92,11 +92,11 @@ export function usePosts() {
       page: 1,
       page_size: 20,
       total: 0,
-      total_pages: 0,
+      pages: 0,
     }
   }
 
-  const hasMore = computed(() => pagination.value.page < pagination.value.total_pages)
+  const hasMore = computed(() => pagination.value.page < pagination.value.pages)
 
   return {
     // 状态

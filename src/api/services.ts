@@ -225,10 +225,10 @@ export const favoritesApi = {
 
   /**
    * 删除收藏
-   * DELETE /favorites/{favorite_id}
+   * DELETE /favorites/{post_id}
    */
-  deleteFavorite(favoriteId: UUID) {
-    return api.delete(`/favorites/${favoriteId}`)
+  deleteFavorite(postId: UUID) {
+    return api.delete(`/favorites/${postId}`)
   },
 
   /**

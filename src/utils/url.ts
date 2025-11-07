@@ -21,10 +21,10 @@ export function getApiBaseUrl(): string {
 }
 
 /**
- * 获取API端点URL（含/api路径）
+ * 获取API端点URL（含/api/v1路径）
  */
 export function getApiEndpoint(): string {
-  return import.meta.env.VITE_API_ENDPOINT || import.meta.env.VITE_API_BASE_URL + '/api' || '/api'
+  return import.meta.env.VITE_API_ENDPOINT || import.meta.env.VITE_API_BASE_URL + '/api/v1' || '/api/v1'
 }
 
 /**
@@ -54,4 +54,48 @@ export function resolveMediaUrl(url: string | null | undefined): string {
  */
 export function resolveMediaUrls(urls: (string | null | undefined)[]): string[] {
   return urls.map(resolveMediaUrl).filter(Boolean)
+}
+
+/**
+ * 验证是否为有效的UUID格式
+ */
+export function isValidUUID(value: unknown): boolean {
+  if (typeof value !== 'string') return false
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value)
+}
+
+/**
+ * 验证媒体ID格式并记录错误
+ * @param mediaId - 媒体ID
+ * @param source - 调用来源（用于日志）
+ * @returns 是否为有效UUID
+ */
+export function validateMediaId(mediaId: unknown, source: string = 'unknown'): boolean {
+  if (!mediaId) {
+    console.warn(`[MediaID] Empty media ID from ${source}`)
+    return false
+  }
+  
+  const idType = typeof mediaId
+  if (idType === 'number') {
+    console.error(
+      `[MediaID] Received numeric ID from ${source}:`,
+      mediaId,
+      '\n→ Backend should return UUID format (string)',
+      '\n→ This will cause 500 error on media API'
+    )
+    return false
+  }
+  
+  if (!isValidUUID(mediaId)) {
+    console.error(
+      `[MediaID] Invalid UUID format from ${source}:`,
+      mediaId,
+      `(type: ${idType})`,
+      '\n→ Expected format: "550e8400-e29b-41d4-a716-446655440000"'
+    )
+    return false
+  }
+  
+  return true
 }
