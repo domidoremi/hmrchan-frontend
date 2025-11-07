@@ -517,6 +517,10 @@ onUnmounted(() => {
   cursor: pointer;
   transition: all 0.3s ease;
   z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
 }
 
 .viewer-btn:hover:not(:disabled) {
@@ -727,7 +731,10 @@ onUnmounted(() => {
   border-radius: 4px;
   display: flex;
   align-items: center;
+  justify-content: center;
   transition: all 0.3s ease;
+  min-width: 32px;
+  min-height: 32px;
 }
 
 .zoom-btn:hover {
