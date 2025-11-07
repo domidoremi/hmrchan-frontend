@@ -84,6 +84,16 @@ self.addEventListener('fetch', (event) => {
     return
   }
 
+  // 跳过不支持的scheme (chrome-extension, devtools, etc.)
+  if (!url.protocol.startsWith('http')) {
+    return
+  }
+
+  // 跳过跨域请求（只缓存同源资源）
+  if (url.origin !== self.location.origin && !url.pathname.startsWith('/api/')) {
+    return
+  }
+
   // API请求 - 网络优先，失败时使用缓存
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(networkFirstStrategy(request))
