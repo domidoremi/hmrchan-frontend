@@ -164,16 +164,10 @@ const isRetweet = computed(() => {
 })
 
 // 判断是否为引用推文
+// Note: This feature requires platform_metadata field which is not yet in the Post type
+// For now, we'll return false until the backend provides this data
 const isQuote = computed(() => {
-  // 引用推文：有quote_id但没有转发
-  const post = props.post as Record<string, unknown>
-  const metadata = post.platform_metadata
-  if (!metadata) return false
-
-  const hasQuoteId = metadata.quote_id && Number(metadata.quote_id) > 0
-  const hasRetweetId = metadata.retweet_id && Number(metadata.retweet_id) > 0
-
-  return hasQuoteId && !hasRetweetId
+  return false
 })
 
 // 判断是否显示description，避免与title重复

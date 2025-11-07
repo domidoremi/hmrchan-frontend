@@ -416,9 +416,9 @@ const allMediaItems = computed(() => {
 })
 
 // 所有图片（仅用于缩略图导航）
-const allImages = computed(() => {
-  return allMediaItems.value.filter((item) => item.type === 'image').map((item) => item.url)
-})
+// const allImages = computed(() => {
+//   return allMediaItems.value.filter((item) => item.type === 'image').map((item) => item.url)
+// })
 
 // 所有媒体URL（用于导航按钮显示）
 const allMediaUrls = computed(() => {
@@ -445,9 +445,9 @@ const isVideoPost = computed(() => primaryMediaType.value === 'video')
 // 判断平台类型
 const isYouTube = computed(() => post.value?.platform === 'youtube')
 const isTikTok = computed(() => post.value?.platform === 'tiktok')
-const isInstagramOrTwitter = computed(
-  () => post.value?.platform === 'instagram' || post.value?.platform === 'twitter',
-)
+// const isInstagramOrTwitter = computed(
+//   () => post.value?.platform === 'instagram' || post.value?.platform === 'twitter',
+// )
 
 onMounted(async () => {
   const postId = route.params.id as UUID
@@ -471,7 +471,7 @@ onMounted(async () => {
         const result = await favoritesApi.checkFavorite(post.value.id)
         isFavorited.value = result.is_favorited
         favoriteId.value = result.favorite_id
-      } catch (error) {
+      } catch {
         // 忽略错误
       }
     }
@@ -489,7 +489,7 @@ const goBack = () => {
 const toggleFavorite = async () => {
   // 检查登录状态
   if (!authStore.isAuthenticated) {
-    toast.warning(t('favorite.loginRequired'))
+    toastStore.warning(t('favorite.loginRequired'))
     router.push('/login')
     return
   }
