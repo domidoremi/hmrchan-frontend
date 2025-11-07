@@ -51,16 +51,23 @@
         </RouterLink>
       </div>
 
-      <!-- 搜索框 -->
-      <div class="navbar-search">
+      <!-- 搜索框/按钮 -->
+      <button 
+        class="navbar-search-trigger hide-on-mobile"
+        @click="openSearchModal"
+        :aria-label="$t('search.placeholder')"
+      >
         <Search :size="18" />
-        <input
-          v-model="searchQuery"
-          type="search"
-          :placeholder="$t('search.placeholder')"
-          @keyup.enter="handleSearch"
-        />
-      </div>
+        <span>{{ $t('search.placeholder') }}</span>
+      </button>
+      
+      <button
+        class="action-button show-on-mobile"
+        @click="openSearchModal"
+        :aria-label="$t('search.placeholder')"
+      >
+        <Search :size="20" />
+      </button>
 
       <!-- 右侧操作 -->
       <div class="navbar-actions">
@@ -171,6 +178,34 @@
         </button>
       </div>
     </div>
+    
+    <!-- 搜索模态框 -->
+    <Teleport to="body">
+      <Transition name="modal-fade">
+        <div v-if="showSearchModal" class="search-modal-overlay" @click="closeSearchModal">
+          <div class="search-modal-content" @click.stop>
+            <div class="search-modal-header">
+              <Search :size="24" class="search-icon" />
+              <input
+                ref="searchInputRef"
+                v-model="searchQuery"
+                type="search"
+                :placeholder="$t('search.placeholder')"
+                class="search-modal-input"
+                @keyup.enter="handleSearchSubmit"
+                @keyup.esc="closeSearchModal"
+              />
+              <button class="search-close-btn" @click="closeSearchModal" :aria-label="$t('common.close')">
+                <X :size="24" />
+              </button>
+            </div>
+            <div v-if="searchQuery.trim()" class="search-modal-hint">
+              {{ $t('search.pressEnter', 'Press Enter to search') }}
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
   </nav>
 </template>
 
@@ -213,11 +248,13 @@ const searchQuery = ref('')
 const showLanguageMenu = ref(false)
 const showUserMenu = ref(false)
 const mobileMenuOpen = ref(false)
+const showSearchModal = ref(false)
 const avatarError = ref(false)
 const languageMenuRef = ref<HTMLElement | null>(null)
 const userMenuRef = ref<HTMLElement | null>(null)
 const mobileNavRef = ref<HTMLElement | null>(null)
 const mobileMenuButtonRef = ref<HTMLElement | null>(null)
+const searchInputRef = ref<HTMLInputElement | null>(null)
 
 const currentLocale = computed(() => locale.value)
 
@@ -258,10 +295,23 @@ const changeLanguage = (newLocale: string) => {
   showLanguageMenu.value = false
 }
 
-const handleSearch = () => {
+const openSearchModal = () => {
+  showSearchModal.value = true
+  // 等待DOM更新后聚焦输入框
+  setTimeout(() => {
+    searchInputRef.value?.focus()
+  }, 100)
+}
+
+const closeSearchModal = () => {
+  showSearchModal.value = false
+  searchQuery.value = ''
+}
+
+const handleSearchSubmit = () => {
   if (searchQuery.value.trim()) {
     router.push({ path: '/explore', query: { q: searchQuery.value } })
-    searchQuery.value = ''
+    closeSearchModal()
   }
 }
 

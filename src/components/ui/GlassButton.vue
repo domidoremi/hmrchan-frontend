@@ -63,18 +63,24 @@ const handleClick = (event: MouseEvent) => {
   padding: var(--spacing-xs) var(--spacing-md);
   font-size: var(--text-sm);
   border-radius: var(--radius-md);
+  min-height: 32px;
+  height: auto;
 }
 
 .btn-md {
   padding: var(--spacing-sm) var(--spacing-lg);
   font-size: var(--text-base);
   border-radius: var(--radius-lg);
+  min-height: 40px;
+  height: auto;
 }
 
 .btn-lg {
   padding: var(--spacing-md) var(--spacing-xl);
   font-size: var(--text-lg);
   border-radius: var(--radius-xl);
+  min-height: 48px;
+  height: auto;
 }
 
 /* 变体 */

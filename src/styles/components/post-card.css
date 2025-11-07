@@ -12,7 +12,11 @@
   overflow: hidden;
   transition: all var(--transition-bounce);
   cursor: pointer;
-  height: 100%;
+  
+  /* 防止异常拉伸 */
+  min-height: 0;
+  max-height: 600px;
+  height: auto;
 
   /* Performance */
   will-change: transform;
@@ -39,8 +43,11 @@
   position: relative;
   width: 100%;
   aspect-ratio: 4 / 3;
+  min-height: 200px;
+  max-height: 300px;
   overflow: hidden;
   background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(6, 182, 212, 0.1));
+  flex-shrink: 0;
 }
 
 .card-image {
@@ -145,6 +152,7 @@
   margin: 0;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -208,6 +216,7 @@
   margin: 0;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
