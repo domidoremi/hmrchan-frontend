@@ -18,7 +18,7 @@
       <div class="card-thumbnail">
         <OptimizedImage
           v-if="post.thumbnail_url"
-          :src="post.thumbnail_url"
+          :src="thumbnailUrl"
           :alt="post.title || ''"
           :lazy="!isFirstScreen"
           img-class="card-image"
@@ -129,6 +129,7 @@ import OptimizedImage from '@/components/common/OptimizedImage.vue'
 import { useAuthStore } from '@/stores/auth'
 import { favoritesApi } from '@/api/services'
 import { formatNumber, formatRelativeTime, formatDuration, truncateText } from '@/utils/format'
+import { resolveMediaUrl } from '@/utils/url'
 import toast from '@/utils/toast'
 import { PLATFORM_NAMES, PLATFORM_COLORS } from '@/types'
 import type { Post, UUID } from '@/types'
@@ -149,6 +150,11 @@ const loading = ref(false)
 // 前6张图片认为是首屏，优先加载以优化LCP
 const isFirstScreen = computed(() => {
   return props.index !== undefined && props.index < 6
+})
+
+// 转换缩略图URL为完整API URL
+const thumbnailUrl = computed(() => {
+  return resolveMediaUrl(props.post.thumbnail_url)
 })
 
 const platformName = computed(

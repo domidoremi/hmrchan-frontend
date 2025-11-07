@@ -271,6 +271,7 @@ import { useI18n } from 'vue-i18n'
 import { useMediaPreload } from '@/composables/useSmartPreload'
 import { hasViewedPost, markPostAsViewed } from '@/utils/viewTracking'
 import { useErrorHandler } from '@/utils/errorHandler'
+import { resolveMediaUrl } from '@/utils/url'
 import {
   ArrowLeft,
   Calendar,
@@ -365,7 +366,7 @@ const allMediaItems = computed(() => {
   // 1. 添加缩略图（如果存在）
   if (hasThumbnail) {
     items.push({
-      url: post.value.thumbnail_url!,
+      url: resolveMediaUrl(post.value.thumbnail_url),
       type: 'image',
     })
   }
