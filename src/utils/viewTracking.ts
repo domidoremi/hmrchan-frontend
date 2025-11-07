@@ -1,20 +1,23 @@
 /**
  * 浏览跟踪工具
  * 使用 localStorage 跟踪用户已浏览的帖子，避免重复计数
+ * v2.0 - UUID迁移：postId从number改为string
  */
+
+import type { UUID } from '@/types'
 
 const STORAGE_KEY = 'viewed_posts'
 const MAX_STORED_POSTS = 1000 // 最多存储1000条记录
 
 interface ViewedPost {
-  id: number
+  id: UUID
   timestamp: number
 }
 
 /**
  * 获取已浏览的帖子列表
  */
-function getViewedPosts(): Map<number, number> {
+function getViewedPosts(): Map<UUID, number> {
   try {
     const stored = localStorage.getItem(STORAGE_KEY)
     if (!stored) return new Map()
@@ -30,7 +33,7 @@ function getViewedPosts(): Map<number, number> {
 /**
  * 保存已浏览的帖子列表
  */
-function saveViewedPosts(viewedPosts: Map<number, number>) {
+function saveViewedPosts(viewedPosts: Map<UUID, number>) {
   try {
     // 限制存储数量，删除最旧的记录
     if (viewedPosts.size > MAX_STORED_POSTS) {
@@ -54,7 +57,7 @@ function saveViewedPosts(viewedPosts: Map<number, number>) {
 /**
  * 检查帖子是否已被浏览
  */
-export function hasViewedPost(postId: number): boolean {
+export function hasViewedPost(postId: UUID): boolean {
   const viewedPosts = getViewedPosts()
   return viewedPosts.has(postId)
 }
@@ -62,7 +65,7 @@ export function hasViewedPost(postId: number): boolean {
 /**
  * 标记帖子为已浏览
  */
-export function markPostAsViewed(postId: number): void {
+export function markPostAsViewed(postId: UUID): void {
   const viewedPosts = getViewedPosts()
   viewedPosts.set(postId, Date.now())
   saveViewedPosts(viewedPosts)
