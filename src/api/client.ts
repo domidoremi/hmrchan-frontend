@@ -7,7 +7,8 @@ import { requestCache } from '@/utils/requestCache'
 import logger from '@/utils/logger'
 
 // API基础URL - 从环境变量读取（根据文档使用VITE_API_ENDPOINT）
-const BASE_URL = import.meta.env.VITE_API_ENDPOINT || import.meta.env.VITE_API_URL || '/api'
+// API v1 - 根据后端文档所有端点都在 /api/v1/ 下
+const BASE_URL = import.meta.env.VITE_API_ENDPOINT || import.meta.env.VITE_API_URL || '/api/v1'
 
 // 日志输出当前API配置（仅开发环境）
 if (import.meta.env.DEV) {

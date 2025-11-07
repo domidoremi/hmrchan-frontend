@@ -18,7 +18,7 @@ export interface PaginatedResponse<T> {
   total: number
   page: number
   page_size: number
-  total_pages: number
+  pages: number  // 根据API文档，使用pages而非total_pages
 }
 
 export interface MessageResponse {

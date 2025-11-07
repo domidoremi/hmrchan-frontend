@@ -271,7 +271,7 @@ import { useI18n } from 'vue-i18n'
 import { useMediaPreload } from '@/composables/useSmartPreload'
 import { hasViewedPost, markPostAsViewed } from '@/utils/viewTracking'
 import { useErrorHandler } from '@/utils/errorHandler'
-import { resolveMediaUrl } from '@/utils/url'
+import { resolveMediaUrl, validateMediaId } from '@/utils/url'
 import {
   ArrowLeft,
   Calendar,
@@ -454,6 +454,24 @@ onMounted(async () => {
   const postId = route.params.id as UUID
   try {
     post.value = await postsStore.fetchPost(postId)
+
+    // 验证媒体文件ID格式（诊断用）
+    if (import.meta.env.DEV && post.value?.media_files && post.value.media_files.length > 0) {
+      console.group('[PostDetailPage] Media ID Validation')
+      post.value.media_files.forEach((media, index) => {
+        const isValid = validateMediaId(media.id, `PostDetailPage(post=${postId}, media[${index}])`)
+        if (!isValid) {
+          console.log('Media File Details:', {
+            index,
+            id: media.id,
+            id_type: typeof media.id,
+            file_type: media.file_type,
+            file_path: media.file_path
+          })
+        }
+      })
+      console.groupEnd()
+    }
 
     // 增加浏览计数（如果该帖子未被浏览过）
     if (post.value && !hasViewedPost(postId)) {
