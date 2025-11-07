@@ -296,7 +296,7 @@ import { usePostsStore } from '@/stores/posts'
 import { useAuthStore } from '@/stores/auth'
 import { api } from '@/api/client'
 import { favoritesApi } from '@/api/services'
-import type { PostDetail } from '@/types'
+import type { PostDetail, UUID } from '@/types'
 import { PLATFORM_NAMES, PLATFORM_COLORS } from '@/types'
 import { useToastStore } from '@/stores/toast'
 
@@ -311,7 +311,7 @@ const authStore = useAuthStore()
 const post = ref<PostDetail | null>(null)
 const loading = ref(true)
 const isFavorited = ref(false)
-const favoriteId = ref<number | null>(null)
+const favoriteId = ref<UUID | null>(null)
 const favoriteLoading = ref(false)
 const showMediaViewer = ref(false)
 const viewerMediaItems = ref<
@@ -358,7 +358,7 @@ const allMediaItems = computed(() => {
     type: 'image' | 'video'
     subtitle?: string
     subtitles?: Array<{ language: string; format: string; label: string }>
-    mediaId?: number // 添加mediaId用于生成字幕URL
+    mediaId?: UUID // 添加mediaId用于生成字幕URL
   }> = []
   const hasThumbnail = !!post.value.thumbnail_url
 
@@ -387,7 +387,7 @@ const allMediaItems = computed(() => {
           type: 'image' | 'video'
           subtitle?: string
           subtitles?: Array<{ language: string; format: string; label: string }>
-          mediaId?: number
+          mediaId?: UUID
         } = {
           url: mediaUrl,
           type: media.file_type as 'image' | 'video',
@@ -450,7 +450,7 @@ const isInstagramOrTwitter = computed(
 )
 
 onMounted(async () => {
-  const postId = parseInt(route.params.id as string, 10)
+  const postId = route.params.id as UUID
   try {
     post.value = await postsStore.fetchPost(postId)
 
