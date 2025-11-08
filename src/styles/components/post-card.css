@@ -63,7 +63,10 @@
   background-size: 200% 200%;
   animation: gradientShift 8s ease infinite;
   flex-shrink: 0;
+  /* 关键：消除inline元素的间隙 */
   display: block;
+  line-height: 0;
+  font-size: 0;
 }
 
 /* 黑夜模式增强 */
