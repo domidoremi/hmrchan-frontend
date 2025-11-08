@@ -78,7 +78,8 @@ export function useFavorites() {
       toast.success(t('favorite.addSuccess'))
       return favorite
     } catch (err: unknown) {
-      const message = (err as any).response?.data?.message || t('favorite.addFailed')
+      const axiosError = err as { response?: { data?: { message?: string } } }
+      const message = axiosError.response?.data?.message || t('favorite.addFailed')
       toast.error(message)
       throw err
     }
@@ -97,7 +98,8 @@ export function useFavorites() {
       toast.success(t('favorite.updateSuccess'))
       return favorite
     } catch (err: unknown) {
-      const message = (err as any).response?.data?.message || t('favorite.updateFailed')
+      const axiosError = err as { response?: { data?: { message?: string } } }
+      const message = axiosError.response?.data?.message || t('favorite.updateFailed')
       toast.error(message)
       throw err
     }
@@ -122,7 +124,8 @@ export function useFavorites() {
       favorites.value = favorites.value.filter((f) => f.post_id !== postId)
       toast.success(t('favorite.removeSuccess'))
     } catch (err: unknown) {
-      const message = (err as any).response?.data?.message || t('favorite.removeFailed')
+      const axiosError = err as { response?: { data?: { message?: string } } }
+      const message = axiosError.response?.data?.message || t('favorite.removeFailed')
       toast.error(message)
       throw err
     }

@@ -75,7 +75,7 @@ if (!isConfigured) {
 
         // 403 权限不足
         if (status === 403) {
-          logger.warn('Permission denied')
+          logger.warn('Access forbidden')
         }
 
         // 429 请求过于频繁
@@ -110,7 +110,7 @@ if (!isConfigured) {
  */
 export const api = {
   // GET请求 - 默认启用缓存和去重
-  get<T = any>(
+  get<T = unknown>(
     url: string,
     config?: AxiosRequestConfig & { cache?: boolean; ttl?: number },
   ): Promise<T> {
@@ -132,27 +132,27 @@ export const api = {
   },
 
   // POST请求 - 不缓存
-  post<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
+  post<T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> {
     return apiClient.post(url, data, config).then((res) => res.data)
   },
 
   // PUT请求 - 不缓存
-  put<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
+  put<T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> {
     return apiClient.put(url, data, config).then((res) => res.data)
   },
 
   // PATCH请求 - 不缓存
-  patch<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
+  patch<T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> {
     return apiClient.patch(url, data, config).then((res) => res.data)
   },
 
   // DELETE请求 - 不缓存
-  delete<T = any>(url: string, config?: AxiosRequestConfig): Promise<T> {
+  delete<T = unknown>(url: string, config?: AxiosRequestConfig): Promise<T> {
     return apiClient.delete(url, config).then((res) => res.data)
   },
 
   // 手动清除缓存
-  clearCache(url?: string, params?: any) {
+  clearCache(url?: string, params?: Record<string, unknown>) {
     if (url) {
       const cacheKey = `GET:${url}:${JSON.stringify(params || {})}`
       requestCache.clear(cacheKey)

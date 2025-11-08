@@ -37,8 +37,8 @@ export function usePosts() {
       }
 
       return response
-    } catch (err: any) {
-      error.value = err.message || 'Failed to fetch posts'
+    } catch (err: unknown) {
+      error.value = err instanceof Error ? err.message : 'Failed to fetch posts'
       throw err
     } finally {
       loading.value = false
@@ -56,8 +56,8 @@ export function usePosts() {
       const response = await api.get<PostDetail>(`/posts/${postId}`)
       currentPost.value = response
       return response
-    } catch (err: any) {
-      error.value = err.message || 'Failed to fetch post detail'
+    } catch (err: unknown) {
+      error.value = err instanceof Error ? err.message : 'Failed to fetch post detail'
       throw err
     } finally {
       loading.value = false
