@@ -54,6 +54,12 @@
             <span>{{ error }}</span>
           </div>
 
+          <!-- Success Message -->
+          <div v-if="success" class="success-message">
+            <CheckCircle :size="16" />
+            <span>{{ success }}</span>
+          </div>
+
           <!-- Submit Button -->
           <GlassButton type="submit" size="lg" :loading="loading" class="login-button">
             {{ $t('auth.login') }}
@@ -85,7 +91,7 @@
 import { ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { User, Lock, Eye, EyeOff, AlertCircle, ArrowLeft } from 'lucide-vue-next'
+import { User, Lock, Eye, EyeOff, AlertCircle, CheckCircle, ArrowLeft } from 'lucide-vue-next'
 
 import GlassInput from '@/components/ui/GlassInput.vue'
 import GlassButton from '@/components/ui/GlassButton.vue'
@@ -105,22 +111,29 @@ const formData = ref({
 const showPassword = ref(false)
 const loading = ref(false)
 const error = ref('')
+const success = ref('')
 
 const handleLogin = async () => {
   if (!formData.value.username || !formData.value.password) {
     error.value = t('auth.fillAllFields')
+    success.value = ''
     return
   }
 
   loading.value = true
   error.value = ''
+  success.value = ''
 
   try {
     await authStore.login(formData.value)
+    success.value = t('auth.loginSuccess', 'Login successful! Redirecting...')
     
-    // 登录成功后跳转到redirect参数指定的页面，或首页
-    const redirect = (route.query.redirect as string) || '/'
-    await router.replace(redirect)
+    // 等待一小段时间让用户看到成功提示
+    setTimeout(async () => {
+      // 登录成功后跳转到redirect参数指定的页面，或首页
+      const redirect = (route.query.redirect as string) || '/'
+      await router.replace(redirect)
+    }, 1000)
   } catch (err: unknown) {
     const axiosError = err as { response?: { data?: { message?: string; detail?: string } } }
     error.value = axiosError.response?.data?.message || axiosError.response?.data?.detail || t('auth.loginFailedMessage')
@@ -205,10 +218,12 @@ const handleLogin = async () => {
 
 .password-toggle {
   background: transparent;
+  border: none;
   color: var(--color-text-tertiary);
   cursor: pointer;
   display: flex;
   align-items: center;
+  justify-content: center;
   padding: 0;
   transition: color var(--transition-fast);
 }
@@ -227,6 +242,31 @@ const handleLogin = async () => {
   border-radius: var(--radius-lg);
   color: var(--color-error);
   font-size: var(--text-sm);
+  animation: slideIn var(--transition-base);
+}
+
+.success-message {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  border-radius: var(--radius-lg);
+  color: #22c55e;
+  font-size: var(--text-sm);
+  animation: slideIn var(--transition-base);
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .login-button {

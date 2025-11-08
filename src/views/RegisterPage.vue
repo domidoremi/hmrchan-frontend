@@ -305,10 +305,12 @@ async function handleRegister() {
 
 .password-toggle {
   background: transparent;
+  border: none;
   color: var(--color-text-tertiary);
   cursor: pointer;
   display: flex;
   align-items: center;
+  justify-content: center;
   padding: 0;
   transition: color var(--transition-fast);
 }
