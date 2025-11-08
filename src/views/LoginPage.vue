@@ -32,6 +32,7 @@
               :icon="Lock"
               :disabled="loading"
               autocomplete="current-password"
+              name="password"
             >
               <template #suffix>
                 <button

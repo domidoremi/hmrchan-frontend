@@ -436,11 +436,18 @@
   border-radius: var(--radius-lg);
   transition: all var(--transition-fast);
   border: none;
+  flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .mobile-menu-button:hover {
   background: rgba(139, 92, 246, 0.1);
   color: var(--color-primary);
+}
+
+.mobile-menu-button:active {
+  transform: scale(0.95);
+  background: rgba(139, 92, 246, 0.15);
 }
 
 /* Responsive Design */
@@ -530,7 +537,7 @@
   }
 
   .mobile-menu-button {
-    display: flex;
+    display: flex !important;
     width: 36px;
     height: 36px;
     min-width: 36px;

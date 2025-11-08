@@ -52,6 +52,8 @@
               :placeholder="$t('auth.passwordPlaceholder')"
               :icon="Lock"
               :disabled="loading"
+              autocomplete="new-password"
+              name="password"
             >
               <template #suffix>
                 <button type="button" class="password-toggle" @click="showPassword = !showPassword">
@@ -70,6 +72,8 @@
               :placeholder="$t('auth.confirmPasswordPlaceholder')"
               :icon="Lock"
               :disabled="loading"
+              autocomplete="new-password"
+              name="confirm-password"
             >
               <template #suffix>
                 <button
