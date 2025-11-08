@@ -47,16 +47,23 @@
   transition-duration: var(--duration-fast);
 }
 
-/* Card Thumbnail */
+/* Card Thumbnail - 修复自适应问题 */
 .card-thumbnail {
   position: relative;
   width: 100%;
   aspect-ratio: 4 / 3;
-  min-height: 200px;
-  max-height: 300px;
   overflow: hidden;
   background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(6, 182, 212, 0.1));
   flex-shrink: 0;
+  /* 删除固定min/max-height，让容器随图片自适应 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 黑夜模式增强 */
+[data-theme='dark'] .card-thumbnail {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(6, 182, 212, 0.15));
 }
 
 .card-image {
@@ -112,7 +119,7 @@
   background: rgba(6, 182, 212, 0.9);
 }
 
-/* Duration & Media Count Badges */
+/* Duration & Media Count Badges - 修复拉伸问题 */
 .duration-badge,
 .media-count-badge {
   position: absolute;
@@ -130,9 +137,14 @@
   gap: var(--spacing-1);
   z-index: 3;
   border: 1px solid rgba(255, 255, 255, 0.2);
+  /* 防止被拉伸 */
   width: auto;
+  min-width: auto;
+  max-width: fit-content;
   height: auto;
+  min-height: auto;
   flex-shrink: 0;
+  white-space: nowrap;
 }
 
 /* Thumbnail Placeholder */
@@ -308,7 +320,7 @@
   }
 }
 
-/* Dark Mode */
+/* Dark Mode - 增强黑夜模式覆盖 */
 [data-theme='dark'] .post-card {
   background: rgba(30, 41, 59, 0.6);
   border-color: rgba(255, 255, 255, 0.1);
@@ -321,6 +333,26 @@
 
 [data-theme='dark'] .card-footer {
   background: rgba(15, 23, 42, 0.4);
+}
+
+[data-theme='dark'] .card-title {
+  color: var(--color-text-primary);
+}
+
+[data-theme='dark'] .post-card:hover .card-title {
+  color: var(--color-primary);
+}
+
+[data-theme='dark'] .card-description {
+  color: var(--color-text-secondary);
+}
+
+[data-theme='dark'] .card-stats {
+  border-top-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme='dark'] .thumbnail-placeholder {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(6, 182, 212, 0.15));
 }
 
 /* Performance */

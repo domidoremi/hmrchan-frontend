@@ -82,7 +82,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { User, Lock, Eye, EyeOff, AlertCircle, ArrowLeft } from 'lucide-vue-next'
 
@@ -92,6 +92,7 @@ import GlassButton from '@/components/ui/GlassButton.vue'
 import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()
+const route = useRoute()
 const authStore = useAuthStore()
 const { t } = useI18n()
 
@@ -115,9 +116,13 @@ const handleLogin = async () => {
 
   try {
     await authStore.login(formData.value)
-    router.push('/')
-  } catch (err: any) {
-    error.value = err.response?.data?.message || t('auth.loginFailedMessage')
+    
+    // 登录成功后跳转到redirect参数指定的页面，或首页
+    const redirect = (route.query.redirect as string) || '/'
+    await router.replace(redirect)
+  } catch (err: unknown) {
+    const axiosError = err as { response?: { data?: { message?: string; detail?: string } } }
+    error.value = axiosError.response?.data?.message || axiosError.response?.data?.detail || t('auth.loginFailedMessage')
   } finally {
     loading.value = false
   }

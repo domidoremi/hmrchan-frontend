@@ -31,21 +31,21 @@ export const useAuthStore = defineStore(
       error.value = null
 
       try {
-        const response = await api.post<{
-          access_token: string
-          user: User
-        }>('/auth/register', data)
-
-        token.value = response.access_token
-        user.value = response.user
-
-        // 保存到localStorage
-        localStorage.setItem('access_token', response.access_token)
-        localStorage.setItem('user', JSON.stringify(response.user))
-
-        return response
-      } catch (err: any) {
-        error.value = err.response?.data?.detail || 'Registration failed'
+        // 根据API文档，注册响应返回用户信息
+        const response = await api.post<User>('/auth/register', data)
+        user.value = response
+        
+        // 保存用户信息
+        localStorage.setItem('user', JSON.stringify(response))
+        
+        // 注册成功后自动登录
+        return login({
+          username: data.username,
+          password: data.password,
+        })
+      } catch (err: unknown) {
+        const axiosError = err as { response?: { data?: { detail?: string } } }
+        error.value = axiosError.response?.data?.detail || 'Registration failed'
         throw err
       } finally {
         loading.value = false
@@ -58,21 +58,23 @@ export const useAuthStore = defineStore(
       error.value = null
 
       try {
+        // 根据API文档，登录响应只返回 {access_token, token_type}
         const response = await api.post<{
           access_token: string
-          user: User
+          token_type: string
         }>('/auth/login', credentials)
 
+        // 保存token
         token.value = response.access_token
-        user.value = response.user
-
-        // 保存到localStorage
         localStorage.setItem('access_token', response.access_token)
-        localStorage.setItem('user', JSON.stringify(response.user))
+
+        // 登录后立即获取用户信息
+        await fetchCurrentUser()
 
         return response
-      } catch (err: any) {
-        error.value = err.response?.data?.detail || 'Login failed'
+      } catch (err: unknown) {
+        const axiosError = err as { response?: { data?: { detail?: string } } }
+        error.value = axiosError.response?.data?.detail || 'Login failed'
         throw err
       } finally {
         loading.value = false
@@ -152,5 +154,5 @@ export const useAuthStore = defineStore(
             storage: sessionStorage,
           }
         : false,
-  } as any,
+  },
 )
