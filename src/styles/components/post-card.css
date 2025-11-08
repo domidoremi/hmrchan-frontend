@@ -51,40 +51,65 @@
 .card-thumbnail {
   position: relative;
   width: 100%;
-  min-height: 180px;
-  max-height: 400px;
+  /* 移除固定高度，让容器完全适应图片 */
   overflow: hidden;
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(6, 182, 212, 0.1));
+  /* 渐变过渡背景 */
+  background: 
+    linear-gradient(135deg, 
+      rgba(139, 92, 246, 0.1) 0%, 
+      rgba(6, 182, 212, 0.1) 50%,
+      rgba(244, 114, 182, 0.1) 100%
+    );
+  background-size: 200% 200%;
+  animation: gradientShift 8s ease infinite;
   flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: block;
 }
 
 /* 黑夜模式增强 */
 [data-theme='dark'] .card-thumbnail {
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(6, 182, 212, 0.15));
+  background: 
+    linear-gradient(135deg, 
+      rgba(139, 92, 246, 0.2) 0%, 
+      rgba(6, 182, 212, 0.2) 50%,
+      rgba(244, 114, 182, 0.2) 100%
+    );
+  background-size: 200% 200%;
+}
+
+/* 渐变动画 */
+@keyframes gradientShift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
 }
 
 .card-image {
   width: 100%;
-  height: 100%;
+  height: auto;
+  display: block;
   object-fit: contain;
   object-position: center;
-  transition: transform var(--transition-slow);
+  transition: 
+    transform var(--transition-slow),
+    filter var(--transition-base);
 }
 
 .post-card:hover .card-image {
-  transform: scale(1.1);
+  transform: scale(1.05);
+  filter: brightness(1.1) saturate(1.1);
 }
 
-/* Platform Badge */
+/* Platform Badge - 不影响容器高度 */
 .platform-badge {
   position: absolute;
   top: var(--spacing-3);
   left: var(--spacing-3);
   padding: var(--spacing-1) var(--spacing-3);
-  background: rgba(0, 0, 0, 0.75);
+  background: rgba(0, 0, 0, 0.85);
   backdrop-filter: blur(10px);
   border-radius: var(--radius-full);
   color: white;
@@ -93,7 +118,10 @@
   text-transform: uppercase;
   letter-spacing: var(--tracking-wide);
   z-index: 2;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  /* 确保不影响父容器高度 */
+  pointer-events: none;
+  user-select: none;
 }
 
 /* Badges - Retweet, Quote, etc */

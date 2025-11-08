@@ -23,11 +23,13 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 
     <!-- Modern Typography: Inter Font (with fallback) -->
+    <!-- 使用备用字体系统，如果Google Fonts加载失败，将使用系统字体 -->
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
       rel="stylesheet"
       media="print"
       onload="this.media='all'"
+      onerror="this.remove()"
     />
     <noscript>
       <link
@@ -35,6 +37,13 @@
         rel="stylesheet"
       />
     </noscript>
+    
+    <!-- 系统字体备用方案 -->
+    <style>
+      body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+      }
+    </style>
 
     <!-- Accessibility -->
     <meta name="color-scheme" content="light dark" />

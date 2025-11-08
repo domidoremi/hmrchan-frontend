@@ -71,48 +71,14 @@
 
       <!-- 右侧操作 -->
       <div class="navbar-actions">
-        <!-- 主题切换 -->
-        <button
-          class="action-button"
-          @click="toggleTheme"
-          :title="$t('settings.theme')"
-          :aria-label="$t('settings.toggleTheme')"
-          :aria-pressed="isDark ? 'true' : 'false'"
+        <!-- 设置按钮 -->
+        <RouterLink 
+          to="/settings" 
+          class="action-button hide-on-mobile"
+          :aria-label="$t('nav.settings')"
         >
-          <Sun v-if="!isDark" :size="20" />
-          <Moon v-else :size="20" />
-        </button>
-
-        <!-- 语言切换 -->
-        <div ref="languageMenuRef" class="language-menu-wrapper">
-          <button
-            class="action-button"
-            @click="showLanguageMenu = !showLanguageMenu"
-            :aria-label="$t('aria.languageMenu')"
-            :aria-expanded="showLanguageMenu ? 'true' : 'false'"
-            :aria-haspopup="true"
-          >
-            <Languages :size="20" />
-          </button>
-
-          <!-- 语言菜单 -->
-          <div
-            v-if="showLanguageMenu"
-            class="language-menu glass-card"
-            role="menu"
-            :aria-label="$t('aria.languageMenu')"
-          >
-            <button
-              v-for="locale in locales"
-              :key="locale.code"
-              class="language-item"
-              :class="{ active: currentLocale === locale.code }"
-              @click="changeLanguage(locale.code)"
-            >
-              {{ locale.name }}
-            </button>
-          </div>
-        </div>
+          <Settings :size="20" />
+        </RouterLink>
 
         <!-- 用户菜单 -->
         <div v-if="isAuthenticated" ref="userMenuRef" class="user-menu">
@@ -212,7 +178,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
-import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
 import {
   Home,
@@ -220,9 +185,6 @@ import {
   Heart,
   Users,
   Search,
-  Sun,
-  Moon,
-  Languages,
   User,
   Settings,
   LogOut,
@@ -231,32 +193,24 @@ import {
 } from 'lucide-vue-next'
 
 import { useAuthStore } from '@/stores/auth'
-import { useThemeStore } from '@/stores/theme'
 import { getUserAvatar } from '@/utils/avatar'
 import GlassButton from '@/components/ui/GlassButton.vue'
 
 const router = useRouter()
-const { locale } = useI18n()
 
 const authStore = useAuthStore()
-const themeStore = useThemeStore()
 
 const { user, isAuthenticated } = storeToRefs(authStore)
-const { isDark } = storeToRefs(themeStore)
 
 const searchQuery = ref('')
-const showLanguageMenu = ref(false)
 const showUserMenu = ref(false)
 const mobileMenuOpen = ref(false)
 const showSearchModal = ref(false)
 const avatarError = ref(false)
-const languageMenuRef = ref<HTMLElement | null>(null)
 const userMenuRef = ref<HTMLElement | null>(null)
 const mobileNavRef = ref<HTMLElement | null>(null)
 const mobileMenuButtonRef = ref<HTMLElement | null>(null)
 const searchInputRef = ref<HTMLInputElement | null>(null)
-
-const currentLocale = computed(() => locale.value)
 
 // 用户头像URL（含默认头像）
 const userAvatarUrl = computed(() => {
@@ -279,21 +233,6 @@ const handleAvatarError = () => {
   avatarError.value = true
 }
 
-const locales = [
-  { code: 'en', name: 'English' },
-  { code: 'zh-CN', name: '简体中文' },
-  { code: 'ja', name: '日本語' },
-]
-
-const toggleTheme = () => {
-  themeStore.toggleTheme()
-}
-
-const changeLanguage = (newLocale: string) => {
-  locale.value = newLocale
-  localStorage.setItem('locale', newLocale)
-  showLanguageMenu.value = false
-}
 
 const openSearchModal = () => {
   showSearchModal.value = true
@@ -332,13 +271,6 @@ const closeMobileMenu = () => {
 // 点击外部关闭下拉菜单和移动端菜单
 const handleClickOutside = (event: Event) => {
   const target = event.target as HTMLElement
-
-  // 检查是否点击在语言菜单外部
-  if (showLanguageMenu.value && languageMenuRef.value) {
-    if (!languageMenuRef.value.contains(target)) {
-      showLanguageMenu.value = false
-    }
-  }
 
   // 检查是否点击在用户菜单外部
   if (showUserMenu.value && userMenuRef.value) {
