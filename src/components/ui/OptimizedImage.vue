@@ -15,7 +15,7 @@
 
 <script setup lang="ts">
 import { computed, ref, onMounted } from 'vue'
-import { mediaCache } from '@/utils/mediaCache'
+import { hybridCache } from '@/utils/hybridCache'
 
 interface Props {
   src: string
@@ -60,11 +60,11 @@ const onError = (e: Event) => {
   emit('error', e)
 }
 
-// 预加载并缓存图片
+// 预加载并缓存图片（使用混合缓存）
 onMounted(async () => {
   if (props.useCache && props.src) {
     try {
-      const cached = await mediaCache.preload(props.src)
+      const cached = await hybridCache.get(props.src)
       cachedSrc.value = cached
     } catch (error) {
       console.warn('Failed to cache image:', props.src, error)

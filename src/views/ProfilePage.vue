@@ -248,6 +248,7 @@
             type="password"
             :placeholder="$t('auth.password')"
             :icon="Lock"
+            autocomplete="current-password"
           />
         </div>
 
