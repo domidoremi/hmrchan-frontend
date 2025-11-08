@@ -135,8 +135,53 @@ const handleLogin = async () => {
       await router.replace(redirect)
     }, 1000)
   } catch (err: unknown) {
-    const axiosError = err as { response?: { data?: { message?: string; detail?: string } } }
-    error.value = axiosError.response?.data?.message || axiosError.response?.data?.detail || t('auth.loginFailedMessage')
+    const axiosError = err as { response?: { status: number; data?: { detail?: string; message?: string } }; request?: any; message?: string }
+    // 清除成功消息
+    success.value = ''
+    
+    // 详细的错误处理
+    if (axiosError.response) {
+      const status = axiosError.response.status
+      const detail = axiosError.response.data?.detail || axiosError.response.data?.message
+      
+      switch (status) {
+        case 401:
+          // 认证失败 - 用户名或密码错误
+          error.value = t('auth.invalidCredentials', '用户名或密码错误')
+          break
+          
+        case 400:
+          // 请求参数错误
+          error.value = detail || t('auth.invalidInput', '输入信息有误')
+          break
+          
+        case 404:
+          // 用户不存在
+          error.value = t('auth.userNotFound', '用户不存在')
+          break
+          
+        case 429:
+          // 请求过于频繁
+          error.value = t('auth.tooManyAttempts', '登录尝试过于频繁，请稍后再试')
+          break
+          
+        case 500:
+        case 502:
+        case 503:
+          // 服务器错误
+          error.value = t('auth.serverError', '服务器暂时无法处理请求，请稍后再试')
+          break
+          
+        default:
+          error.value = detail || t('auth.loginFailedMessage', '登录失败，请重试')
+      }
+    } else if (axiosError.request) {
+      // 网络错误
+      error.value = t('auth.networkError', '网络连接失败，请检查您的网络')
+    } else {
+      // 其他错误
+      error.value = axiosError.message || t('auth.loginFailedMessage', '登录失败，请重试')
+    }
   } finally {
     loading.value = false
   }

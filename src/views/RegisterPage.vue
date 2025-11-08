@@ -218,12 +218,67 @@ async function handleRegister() {
     setTimeout(() => {
       router.push('/')
     }, 1500)
-  } catch (err) {
-    const errorResponse = err as { response?: { data?: { detail?: string } } }
-    const errorMsg =
-      errorResponse.response?.data?.detail || authStore.error || t('auth.registrationFailed')
-    error.value = errorMsg
-    handleError(err, { customMessage: errorMsg })
+  } catch (err: unknown) {
+    const axiosError = err as { response?: { status: number; data?: { detail?: string; message?: string } }; request?: any; message?: string }
+    // 清除成功消息
+    success.value = ''
+    
+    // 详细的错误处理
+    if (axiosError.response) {
+      const status = axiosError.response.status
+      const detail = axiosError.response.data?.detail || axiosError.response.data?.message
+      
+      switch (status) {
+        case 409:
+          // 冲突错误 - 用户名或邮箱已存在
+          if (detail?.toLowerCase().includes('username')) {
+            error.value = t('auth.usernameExists', '此用户名已被使用，请换一个再试')
+            toastStore.error(error.value)
+          } else if (detail?.toLowerCase().includes('email')) {
+            error.value = t('auth.emailExists', '该电子邮件已被注册')
+            toastStore.error(error.value)
+          } else {
+            error.value = detail || t('auth.userAlreadyExists', '用户名或邮箱已存在')
+            toastStore.error(error.value)
+          }
+          break
+          
+        case 400:
+          // 请求参数错误
+          error.value = detail || t('auth.invalidInput', '输入信息有误，请检查后重试')
+          toastStore.error(error.value)
+          break
+          
+        case 422:
+          // 验证错误
+          error.value = detail || t('auth.validationFailed', '数据验证失败，请检查输入')
+          toastStore.error(error.value)
+          break
+          
+        case 500:
+        case 502:
+        case 503:
+          // 服务器错误
+          error.value = t('auth.serverError', '服务器暂时无法处理请求，请稍后再试')
+          toastStore.error(error.value)
+          break
+          
+        default:
+          error.value = detail || authStore.error || t('auth.registrationFailed')
+          toastStore.error(error.value)
+      }
+    } else if (axiosError.request) {
+      // 网络错误 - 请求已发出但没有收到响应
+      error.value = t('auth.networkError', '网络连接失败，请检查您的网络')
+      toastStore.error(error.value)
+    } else {
+      // 其他错误
+      error.value = axiosError.message || t('auth.registrationFailed')
+      toastStore.error(error.value)
+    }
+    
+    // 记录错误供调试
+    handleError(axiosError, { customMessage: error.value })
   } finally {
     loading.value = false
   }
