@@ -13,6 +13,7 @@
 /* Component Styles */
 @import './components/navbar.css'; /* Navigation bar */
 @import './components/post-card.css'; /* Post cards */
+@import './components/plyr-custom.css'; /* Plyr.js custom styles */
 
 /* Page Styles */
 @import './pages/home.css'; /* HomePage specific styles */

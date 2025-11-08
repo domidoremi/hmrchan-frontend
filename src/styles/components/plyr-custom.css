@@ -1,0 +1,67 @@
+/* Plyr.js Custom Styles - 修复移动端溢出问题 */
+
+/* 防止controls按钮溢出和挤压 */
+.plyr__controls {
+  padding: var(--spacing-2);
+  flex-wrap: nowrap !important;
+  overflow-x: auto !important;
+  overflow-y: hidden;
+  gap: var(--spacing-1);
+  /* 滚动条样式 */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+}
+
+.plyr__controls::-webkit-scrollbar {
+  height: 4px;
+}
+
+.plyr__controls::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: var(--radius-full);
+}
+
+/* 移动端优化 */
+@media (max-width: 768px) {
+  .plyr__controls {
+    padding: var(--spacing-1);
+    gap: 2px;
+  }
+
+  .plyr__controls button {
+    min-width: 32px !important;
+    width: 32px !important;
+    height: 32px !important;
+    flex-shrink: 0;
+    padding: 4px;
+  }
+
+  .plyr__volume,
+  .plyr__menu {
+    flex-shrink: 0;
+  }
+
+  .plyr__time {
+    font-size: var(--text-xs);
+    min-width: fit-content;
+    flex-shrink: 0;
+  }
+}
+
+/* 黑夜模式支持 */
+[data-theme='dark'] .plyr__controls {
+  background: rgba(0, 0, 0, 0.8);
+  scrollbar-color: rgba(139, 92, 246, 0.5) transparent;
+}
+
+[data-theme='dark'] .plyr__controls::-webkit-scrollbar-thumb {
+  background: rgba(139, 92, 246, 0.5);
+}
+
+[data-theme='dark'] .plyr__control {
+  color: var(--color-text-primary);
+}
+
+[data-theme='dark'] .plyr__control:hover {
+  background: rgba(139, 92, 246, 0.2);
+}
