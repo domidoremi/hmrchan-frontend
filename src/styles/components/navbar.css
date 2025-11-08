@@ -438,6 +438,10 @@
   border: none;
   flex-shrink: 0;
   -webkit-tap-highlight-color: transparent;
+  /* 确保按钮可点击 */
+  position: relative;
+  z-index: 100;
+  pointer-events: auto;
 }
 
 .mobile-menu-button:hover {
@@ -448,6 +452,13 @@
 .mobile-menu-button:active {
   transform: scale(0.95);
   background: rgba(139, 92, 246, 0.15);
+}
+
+/* 移动端确保按钮显示 */
+@media (max-width: 768px) {
+  .show-on-mobile {
+    display: flex !important;
+  }
 }
 
 /* Responsive Design */

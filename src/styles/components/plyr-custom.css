@@ -3,13 +3,18 @@
 /* 防止controls按钮溢出和挤压 */
 .plyr__controls {
   padding: var(--spacing-2);
+  display: flex !important;
   flex-wrap: nowrap !important;
+  justify-content: center !important;
+  align-items: center !important;
   overflow-x: auto !important;
   overflow-y: hidden;
-  gap: var(--spacing-1);
+  gap: var(--spacing-2);
   /* 滚动条样式 */
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+  /* 防止挤压 */
+  min-height: 48px;
 }
 
 .plyr__controls::-webkit-scrollbar {
@@ -24,27 +29,36 @@
 /* 移动端优化 */
 @media (max-width: 768px) {
   .plyr__controls {
-    padding: var(--spacing-1);
-    gap: 2px;
+    padding: var(--spacing-1) var(--spacing-2);
+    gap: 4px;
+    min-height: 44px;
+    justify-content: center !important;
   }
 
   .plyr__controls button {
-    min-width: 32px !important;
-    width: 32px !important;
-    height: 32px !important;
+    min-width: 36px !important;
+    width: 36px !important;
+    height: 36px !important;
     flex-shrink: 0;
-    padding: 4px;
+    padding: 6px;
   }
 
   .plyr__volume,
   .plyr__menu {
     flex-shrink: 0;
+    min-width: 36px;
   }
 
   .plyr__time {
     font-size: var(--text-xs);
     min-width: fit-content;
     flex-shrink: 0;
+    padding: 0 4px;
+  }
+  
+  /* 隐藏次要按钮防止挤压 */
+  .plyr__controls .plyr__menu {
+    display: none;
   }
 }
 

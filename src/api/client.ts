@@ -24,8 +24,9 @@ if (import.meta.env.DEV) {
 const apiClient: AxiosInstance = axios.create({
   baseURL: BASE_URL,
   timeout: 30000, // 30秒超时，适应HTTPS连接
-  // 不设置默认Content-Type，让axios根据请求数据自动设置，避免CORS问题
-  withCredentials: false, // Cloudflare Pages不支持withCredentials
+  // 不设置默认Content-Type，axios会根据请求数据自动设置
+  // 这样可以避免触发CORS预检请求失败
+  withCredentials: false,
 })
 
 // 防止重复初始化标志
