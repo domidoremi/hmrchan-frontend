@@ -690,7 +690,7 @@ const nextThumbnail = () => {
 .post-thumbnail-container {
   position: relative;
   width: 100%;
-  aspect-ratio: 16 / 9;
+  /* 移除aspect-ratio，让图片自适应 */
   background: linear-gradient(
     135deg,
     rgba(139, 92, 246, 0.1) 0%,
@@ -698,16 +698,18 @@ const nextThumbnail = () => {
   );
   overflow: hidden;
   border-radius: 24px 24px 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .post-thumbnail {
   position: relative;
   width: 100%;
-  aspect-ratio: 16 / 9;
-  max-height: 600px;
+  /* 移除固定aspect-ratio和max-height */
   border-radius: var(--radius-2xl);
   overflow: hidden;
-  cursor: pointer;
+  cursor: zoom-in;
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   background:
     linear-gradient(135deg, rgba(139, 92, 246, 0.05) 0%, rgba(192, 132, 252, 0.05) 100%),
@@ -726,7 +728,7 @@ const nextThumbnail = () => {
 .post-thumbnail img {
   width: 100%;
   max-width: 100%; /* 不超过容器宽度 */
-  height: 100%;
+  height: auto; /* 自适应高度 */
   display: block;
   object-fit: contain;
   position: relative;
@@ -736,16 +738,30 @@ const nextThumbnail = () => {
 .thumbnail-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.85) 0%, rgba(192, 132, 252, 0.85) 100%);
-  backdrop-filter: blur(8px) saturate(150%);
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.75) 0%, rgba(192, 132, 252, 0.75) 100%);
+  backdrop-filter: blur(12px) saturate(180%);
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: var(--spacing-2);
   opacity: 0;
   transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   color: white;
   z-index: 2;
   pointer-events: none;
+}
+
+/* Hover效果 - 显示放大提示 */
+.post-thumbnail:hover .thumbnail-overlay {
+  opacity: 1;
+}
+
+.thumbnail-overlay::after {
+  content: '点击查看完整大图';
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  opacity: 0.9;
 }
 
 .thumbnail-counter {
