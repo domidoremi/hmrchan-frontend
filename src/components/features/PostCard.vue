@@ -363,7 +363,7 @@ const handleClick = (event: MouseEvent, navigate: () => void) => {
   flex-direction: column;
   gap: var(--spacing-3);
   padding: var(--spacing-4);
-  flex: 1;
+  min-height: 0; /* 防止flex子项过度扩展 */
 }
 
 .card-title {
