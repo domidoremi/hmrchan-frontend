@@ -34,8 +34,8 @@
       <!-- 右侧操作 (桌面端) -->
       <div class="navbar-actions">
         <!-- 搜索按钮 -->
-        <button class="action-button" @click="openSearchModal" :aria-label="$t('search.placeholder')">
-          <Search :size="20" />
+        <button class="action-button search-button" @click="openSearchModal" :aria-label="$t('search.placeholder')">
+          <Search :size="24" />
         </button>
 
         <!-- 设置按钮 -->
@@ -101,8 +101,8 @@
 
       <!-- 右侧按钮 -->
       <div class="mobile-top-actions">
-        <button class="action-button" @click="openSearchModal">
-          <Search :size="20" />
+        <button class="action-button search-button" @click="openSearchModal">
+          <Search :size="24" />
         </button>
 
         <button v-if="isAuthenticated" class="action-button" @click="showUserMenu = !showUserMenu">
@@ -398,6 +398,18 @@ onUnmounted(() => {
   text-decoration: none;
   flex-shrink: 0; /* 防止flex布局压缩 */
   aspect-ratio: 1 / 1; /* 保持宽高比 */
+}
+
+/* 搜索按钮特殊样式 - 更醒目 */
+.search-button {
+  background: var(--glass-bg-light);
+  border: 1px solid var(--glass-border);
+}
+
+.search-button:hover {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(192, 132, 252, 0.1) 100%);
+  border-color: var(--color-primary);
+  transform: scale(1.05);
 }
 
 .action-button:hover {
