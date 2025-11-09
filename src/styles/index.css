@@ -11,8 +11,7 @@
 @import './accessibility.css'; /* Accessibility & WCAG compliance */
 
 /* Component Styles */
-@import './components/navbar.css'; /* Navigation bar */
-@import './components/post-card.css'; /* Post cards */
+/* navbar.css & post-card.css - 已迁移至组件scoped样式 */
 @import './components/plyr-custom.css'; /* Plyr.js custom styles */
 
 /* Page Styles */

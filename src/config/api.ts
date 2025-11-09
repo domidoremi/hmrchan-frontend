@@ -10,6 +10,9 @@ export const API_CONFIG = {
   timeout: 30000,
 }
 
+// 导出API_BASE_URL供组件使用
+export const API_BASE_URL = API_CONFIG.baseURL
+
 export const API_ENDPOINTS = {
   // 帖子相关
   POSTS: '/api/v1/posts',
