@@ -71,7 +71,6 @@ export const routes: RouteRecordRaw[] = [
     component: () => import('@/views/SettingsPage.vue'),
     meta: {
       title: 'Settings',
-      requiresAuth: true,
     },
   },
   {

@@ -1,13 +1,17 @@
 {
-  "name": "HMRChan - 二次元内容聚合平台",
+  "name": "HMRChan - 内容聚合平台",
   "short_name": "HMRChan",
-  "description": "聚合Twitter、Pixiv、YouTube等平台的优质二次元内容",
+  "description": "聚合平台内容",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#8b5cf6",
   "orientation": "portrait-primary",
-  "categories": ["entertainment", "social", "lifestyle"],
+  "categories": [
+    "entertainment",
+    "social",
+    "lifestyle"
+  ],
   "lang": "zh-CN",
   "dir": "ltr",
   "icons": [
@@ -17,14 +21,8 @@
       "type": "image/x-icon"
     },
     {
-      "src": "/icons/icon-192x192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/icons/icon-512x512.png",
-      "sizes": "512x512",
+      "src": "/icons/icon-183x183.png",
+      "sizes": "183x183",
       "type": "image/png",
       "purpose": "any maskable"
     }
@@ -51,34 +49,55 @@
       "short_name": "首页",
       "description": "返回首页浏览内容",
       "url": "/",
-      "icons": [{ "src": "/icons/home.png", "sizes": "96x96" }]
+      "icons": [
+        {
+          "src": "/icons/home.png",
+          "sizes": "96x96"
+        }
+      ]
     },
     {
       "name": "收藏",
       "short_name": "收藏",
       "description": "查看我的收藏",
       "url": "/favorites",
-      "icons": [{ "src": "/icons/favorites.png", "sizes": "96x96" }]
+      "icons": [
+        {
+          "src": "/icons/favorites.png",
+          "sizes": "96x96"
+        }
+      ]
     },
     {
       "name": "设置",
       "short_name": "设置",
       "description": "打开设置页面",
       "url": "/settings",
-      "icons": [{ "src": "/icons/settings.png", "sizes": "96x96" }]
+      "icons": [
+        {
+          "src": "/icons/settings.png",
+          "sizes": "96x96"
+        }
+      ]
     }
   ],
   "related_applications": [],
   "prefer_related_applications": false,
   "scope": "/",
   "iarc_rating_id": "",
-  "display_override": ["window-controls-overlay", "standalone"],
+  "display_override": [
+    "window-controls-overlay",
+    "standalone"
+  ],
   "features": [
     "Cross Origin Isolated"
   ],
   "handle_links": "preferred",
   "launch_handler": {
-    "client_mode": ["navigate-existing", "auto"]
+    "client_mode": [
+      "navigate-existing",
+      "auto"
+    ]
   },
   "protocol_handlers": [],
   "share_target": {
