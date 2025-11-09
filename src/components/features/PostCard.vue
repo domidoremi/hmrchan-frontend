@@ -1,97 +1,89 @@
 <template>
   <RouterLink :to="`/posts/${post.id}`" custom v-slot="{ navigate, href }">
     <article
+      ref="cardRef"
       :href="href"
       class="post-card"
       :data-post-id="post.id"
       @click="handleClick($event, navigate)"
+      @mouseenter="onHover"
+      @mouseleave="onLeave"
     >
-      <!-- 缩略图区域 -->
-      <div class="card-media">
-        <!-- 图片/视频缩略图 -->
+      <!-- 媒体容器 - 固定高度 -->
+      <div ref="mediaRef" class="card-media">
         <div class="media-wrapper">
           <OptimizedImage
             v-if="post.thumbnail_url"
             :src="thumbnailUrl"
             :alt="post.title || 'Post thumbnail'"
             :lazy="!isFirstScreen"
+            class="media-image"
           />
           <div v-else class="media-placeholder">
             <ImageIcon :size="48" />
           </div>
+          <!-- 渐变遮罩 -->
+          <div class="media-overlay"></div>
         </div>
 
-        <!-- 平台标签 -->
-        <div class="platform-badge" :style="{ backgroundColor: platformColor }">
-          {{ platformName }}
+        <!-- 悬浮标签 -->
+        <div class="card-badges">
+          <div class="platform-badge" :style="{ backgroundColor: platformColor }">
+            {{ platformName }}
+          </div>
+          <div v-if="post.duration" class="duration-badge">
+            <Play :size="12" />
+            {{ formatDuration(post.duration) }}
+          </div>
+          <div v-if="post.media_count > 1" class="media-count-badge">
+            <ImageIcon :size="12" />
+            {{ post.media_count }}
+          </div>
         </div>
 
-        <!-- 视频时长 -->
-        <div v-if="post.duration" class="duration-badge">
-          <Play :size="14" />
-          {{ formatDuration(post.duration) }}
-        </div>
-
-        <!-- 媒体数量 -->
-        <div v-if="post.media_count > 1" class="media-count-badge">
-          <ImageIcon :size="14" />
-          {{ post.media_count }}
-        </div>
-
-        <!-- 转发/引用标记 -->
-        <div v-if="isRetweet" class="retweet-badge">
-          <Repeat2 :size="14" />
-        </div>
-        <div v-else-if="isQuote" class="quote-badge">
-          <Quote :size="14" />
+        <!-- 转发标记 -->
+        <div v-if="isRetweet" class="retweet-indicator">
+          <Repeat2 :size="16" />
         </div>
       </div>
 
-      <!-- 内容区域 -->
-      <div class="card-body">
+      <!-- 内容区域 - 固定高度 -->
+      <div class="card-content">
         <!-- 标题 -->
-        <h3 class="card-title">
-          {{ post.title || 'Untitled' }}
-        </h3>
+        <h3 class="card-title">{{ post.title || 'Untitled' }}</h3>
 
         <!-- 描述 -->
         <p v-if="showDescription" class="card-description">
-          {{ truncateText(post.description || '', 80) }}
+          {{ truncateText(post.description || '', 60) }}
         </p>
 
-        <!-- 作者信息 -->
-        <div class="card-author">
-          <User :size="14" />
-          <span v-if="isRetweet && post.original_author_name">
-            {{ post.author_name }}
-            <Repeat2 :size="12" class="inline-rt-icon" />
-            {{ post.original_author_name }}
-          </span>
-          <span v-else>
-            {{ post.author_name || 'Anonymous' }}
-          </span>
-        </div>
+        <!-- 底部区域 -->
+        <div class="card-footer">
+          <!-- 作者 -->
+          <div class="card-author">
+            <div class="author-avatar">
+              <User :size="14" />
+            </div>
+            <span class="author-name">{{ post.author_name || 'Anonymous' }}</span>
+          </div>
 
-        <!-- 统计信息 -->
-        <div class="card-stats">
-          <div v-if="post.view_count" class="stat-item">
-            <Eye :size="16" />
-            <span>{{ formatNumber(post.view_count) }}</span>
-          </div>
-          <div v-if="post.like_count" class="stat-item">
-            <Heart :size="16" />
-            <span>{{ formatNumber(post.like_count) }}</span>
-          </div>
-          <div v-if="post.comment_count" class="stat-item">
-            <MessageCircle :size="16" />
-            <span>{{ formatNumber(post.comment_count) }}</span>
+          <!-- 统计 -->
+          <div class="card-stats">
+            <div v-if="post.view_count" class="stat-item" :title="post.view_count.toString()">
+              <Eye :size="14" />
+              <span>{{ formatNumber(post.view_count) }}</span>
+            </div>
+            <div v-if="post.like_count" class="stat-item" :title="post.like_count.toString()">
+              <Heart :size="14" />
+              <span>{{ formatNumber(post.like_count) }}</span>
+            </div>
           </div>
         </div>
 
-        <!-- 发布时间 -->
-        <div v-if="post.published_at" class="card-footer">
-          <Clock :size="14" />
-          <time :datetime="post.published_at || undefined">{{ formatRelativeTime(post.published_at) }}</time>
+        <!-- 时间戳 -->
+        <div v-if="post.published_at" class="card-time">
+          <Clock :size="12" />
+          <time :datetime="post.published_at">{{ formatRelativeTime(post.published_at) }}</time>
         </div>
       </div>
     </article>
@@ -99,23 +91,26 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { RouterLink } from 'vue-router'
 import {
   User,
   Eye,
   Heart,
-  MessageCircle,
   Clock,
   ImageIcon,
   Play,
   Repeat2,
-  Quote,
 } from 'lucide-vue-next'
+import gsap from 'gsap'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
 
 import OptimizedImage from '@/components/ui/OptimizedImage.vue'
 import type { Post } from '@/types'
 import { API_BASE_URL } from '@/config/api'
+
+// Register GSAP plugins
+gsap.registerPlugin(ScrollTrigger)
 
 interface Props {
   post: Post
@@ -130,13 +125,11 @@ const props = withDefaults(defineProps<Props>(), {
 const thumbnailUrl = computed(() => {
   const url = props.post.thumbnail_url
   if (!url) return ''
-  if (url.startsWith('http')) {
-    return url
-  }
+  if (url.startsWith('http')) return url
   return `${API_BASE_URL}${url}`
 })
 
-// 平台颜色映射
+// 平台颜色映射 - Material Design Colors
 const platformColors: Record<string, string> = {
   twitter: '#1DA1F2',
   x: '#000000',
@@ -144,6 +137,8 @@ const platformColors: Record<string, string> = {
   pixiv: '#0096FA',
   youtube: '#FF0000',
   weibo: '#E6162D',
+  instagram: '#E4405F',
+  tiktok: '#000000',
   default: '#8B5CF6',
 }
 
@@ -156,57 +151,42 @@ const platformName = computed(() => {
   return props.post.platform || 'Unknown'
 })
 
-// 是否为转发/引用
+// 是否为转发
 const isRetweet = computed(() => {
   return props.post.original_author_name && props.post.original_author_name !== props.post.author_name
-})
-
-// 是否为引用（暂时使用相同逻辑）
-const isQuote = computed(() => {
-  return false // Post类型中没有post_type字段
 })
 
 // 是否显示描述
 const showDescription = computed(() => {
   const desc = props.post.description
   if (!desc) return false
-  // 如果描述与标题相同，不显示
   if (desc === props.post.title) return false
-  // 如果描述包含在标题中，不显示
   if (props.post.title && props.post.title.includes(desc)) return false
   return true
 })
 
-// 截断文本
+// 工具函数
 const truncateText = (text: string, maxLength: number): string => {
   if (text.length <= maxLength) return text
   return text.slice(0, maxLength) + '...'
 }
 
-// 格式化数字
 const formatNumber = (num: number): string => {
-  if (num >= 1000000) {
-    return (num / 1000000).toFixed(1) + 'M'
-  }
-  if (num >= 1000) {
-    return (num / 1000).toFixed(1) + 'K'
-  }
+  if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M'
+  if (num >= 1000) return (num / 1000).toFixed(1) + 'K'
   return num.toString()
 }
 
-// 格式化时长
 const formatDuration = (seconds: number): string => {
   const hours = Math.floor(seconds / 3600)
   const minutes = Math.floor((seconds % 3600) / 60)
   const secs = Math.floor(seconds % 60)
-
   if (hours > 0) {
     return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
   }
   return `${minutes}:${secs.toString().padStart(2, '0')}`
 }
 
-// 格式化相对时间
 const formatRelativeTime = (dateString: string): string => {
   const date = new Date(dateString)
   const now = new Date()
@@ -223,62 +203,156 @@ const formatRelativeTime = (dateString: string): string => {
   return date.toLocaleDateString()
 }
 
-// 处理点击事件
+// GSAP Animations
+const cardRef = ref<HTMLElement | null>(null)
+const mediaRef = ref<HTMLElement | null>(null)
+
+onMounted(() => {
+  if (cardRef.value) {
+    gsap.from(cardRef.value, {
+      opacity: 0,
+      y: 30,
+      duration: 0.6,
+      ease: 'power3.out',
+      scrollTrigger: {
+        trigger: cardRef.value,
+        start: 'top 90%',
+        once: true,
+      },
+    })
+  }
+})
+
+// 事件处理
 const handleClick = (event: MouseEvent, navigate: () => void) => {
-  // 允许 Ctrl/Cmd + Click 在新标签页打开
   if (!event.ctrlKey && !event.metaKey) {
     event.preventDefault()
     navigate()
   }
 }
+
+const onHover = () => {
+  if (cardRef.value) {
+    gsap.to(cardRef.value, {
+      y: -12,
+      scale: 1.02,
+      duration: 0.4,
+      ease: 'power2.out',
+    })
+  }
+  if (mediaRef.value) {
+    const img = mediaRef.value.querySelector('img')
+    if (img) {
+      gsap.to(img, {
+        scale: 1.1,
+        duration: 0.6,
+        ease: 'power2.out',
+      })
+    }
+  }
+}
+
+const onLeave = () => {
+  if (cardRef.value) {
+    gsap.to(cardRef.value, {
+      y: 0,
+      scale: 1,
+      duration: 0.4,
+      ease: 'power2.inOut',
+    })
+  }
+  if (mediaRef.value) {
+    const img = mediaRef.value.querySelector('img')
+    if (img) {
+      gsap.to(img, {
+        scale: 1,
+        duration: 0.6,
+        ease: 'power2.inOut',
+      })
+    }
+  }
+}
 </script>
 
 <style scoped>
-/* ==================== 卡片容器 ==================== */
+/* ========================================
+   Material Design + Apple Style Card
+   ======================================== */
+
 .post-card {
+  position: relative;
   display: flex;
   flex-direction: column;
+  height: 100%; /* Flexible height for grid */
+  min-height: 400px; /* Minimum height */
+  max-height: 500px; /* Maximum height constraint */
   background: var(--glass-bg);
   backdrop-filter: var(--glass-blur);
   border: 1px solid var(--glass-border);
-  border-radius: var(--radius-2xl);
+  border-radius: 20px; /* Apple-inspired rounded corners */
   overflow: hidden;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
   text-decoration: none;
-  height: 100%;
-  /* 确保卡片占满grid cell */
-  will-change: transform;
-}
-
-.post-card:hover {
-  transform: translateY(-6px);
-  border-color: rgba(139, 92, 246, 0.5);
+  
+  /* Material Design Elevation 2 */
   box-shadow: 
-    0 20px 40px rgba(139, 92, 246, 0.15),
-    0 8px 16px rgba(0, 0, 0, 0.1);
+    0 3px 6px -2px rgba(0, 0, 0, 0.08),
+    0 6px 12px -3px rgba(0, 0, 0, 0.12),
+    0 0 0 1px rgba(139, 92, 246, 0.05);
+  
+  /* Performance optimization */
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  
+  /* Smooth transitions handled by GSAP */
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
+/* Hover State - Material Design Elevation 8 */
+.post-card:hover {
+  border-color: rgba(139, 92, 246, 0.6);
+  box-shadow: 
+    0 16px 32px -8px rgba(139, 92, 246, 0.25),
+    0 32px 64px -16px rgba(0, 0, 0, 0.18),
+    0 0 0 1px rgba(139, 92, 246, 0.15);
+}
+
+/* Active State */
 .post-card:active {
-  transform: translateY(-2px);
+  transform: translateY(-4px) scale(0.99);
+  transition-duration: 0.1s;
 }
 
-/* ==================== 媒体区域 ==================== */
+/* Focus State - Accessibility */
+.post-card:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* ========================================
+   Media Section - 固定高度240px
+   ======================================== */
+
 .card-media {
   position: relative;
   width: 100%;
-  aspect-ratio: 16 / 9;
-  overflow: hidden;
+  height: 0;
+  padding-bottom: 56.25%; /* 16:9 aspect ratio */
   flex-shrink: 0;
+  overflow: hidden;
   background: linear-gradient(
     135deg,
-    rgba(139, 92, 246, 0.1) 0%,
-    rgba(6, 182, 212, 0.1) 50%,
-    rgba(244, 114, 182, 0.1) 100%
+    rgba(139, 92, 246, 0.06) 0%,
+    rgba(6, 182, 212, 0.06) 50%,
+    rgba(244, 114, 182, 0.06) 100%
   );
 }
 
 .media-wrapper {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
   display: flex;
@@ -286,17 +360,42 @@ const handleClick = (event: MouseEvent, navigate: () => void) => {
   justify-content: center;
 }
 
+/* 媒体图片 */
+.media-wrapper :deep(.media-image),
 .media-wrapper :deep(img) {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
+.post-card:hover .media-wrapper :deep(.media-image),
 .post-card:hover .media-wrapper :deep(img) {
-  transform: scale(1.05);
+  transform: scale(1.08);
 }
 
+/* 渐变遮罩 */
+.media-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60%;
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.4) 0%,
+    rgba(0, 0, 0, 0) 100%
+  );
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.post-card:hover .media-overlay {
+  opacity: 1;
+}
+
+/* Placeholder */
 .media-placeholder {
   width: 100%;
   height: 100%;
@@ -304,191 +403,290 @@ const handleClick = (event: MouseEvent, navigate: () => void) => {
   align-items: center;
   justify-content: center;
   color: var(--color-text-secondary);
-  opacity: 0.3;
+  opacity: 0.2;
 }
 
-/* ==================== 标签徽章 ==================== */
+/* ========================================
+   Badges & Indicators
+   ======================================== */
+
+.card-badges {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  right: 12px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  z-index: 10;
+  pointer-events: none;
+}
+
 .platform-badge,
 .duration-badge,
-.media-count-badge,
-.retweet-badge,
-.quote-badge {
-  position: absolute;
-  padding: var(--spacing-1) var(--spacing-2);
-  border-radius: var(--radius-md);
-  font-size: var(--text-xs);
-  font-weight: var(--font-bold);
+.media-count-badge {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
   color: white;
-  backdrop-filter: blur(8px);
+  backdrop-filter: blur(12px);
   display: flex;
   align-items: center;
-  gap: var(--spacing-1);
-  z-index: 10;
+  gap: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 .platform-badge {
-  top: var(--spacing-3);
-  left: var(--spacing-3);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  /* 颜色由平台动态设置 (backgroundColor style binding) */
+  opacity: 0.95;
+  transition: opacity 0.3s ease;
 }
 
-.duration-badge {
-  bottom: var(--spacing-3);
-  right: var(--spacing-3);
-  background: rgba(0, 0, 0, 0.75);
+.post-card:hover .platform-badge {
+  opacity: 1;
 }
 
+.duration-badge,
 .media-count-badge {
-  bottom: var(--spacing-3);
-  left: var(--spacing-3);
-  background: rgba(0, 0, 0, 0.75);
+  background: rgba(0, 0, 0, 0.7);
+  margin-left: auto;
 }
 
-.retweet-badge {
-  top: var(--spacing-3);
-  right: var(--spacing-3);
-  background: rgba(34, 197, 94, 0.9);
+/* 转发指示器 */
+.retweet-indicator {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(34, 197, 94, 0.95);
+  border-radius: 50%;
+  color: white;
+  box-shadow: 0 2px 8px rgba(34, 197, 94, 0.3);
+  z-index: 10;
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
-.quote-badge {
-  top: var(--spacing-3);
-  right: var(--spacing-3);
-  background: rgba(59, 130, 246, 0.9);
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.8; }
 }
 
-/* ==================== 内容区域 ==================== */
-.card-body {
+/* ========================================
+   Content Section - 固定高度180px
+   ======================================== */
+
+.card-content {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-3);
-  padding: var(--spacing-4);
-  min-height: 0; /* 防止flex子项过度扩展 */
+  flex: 1;
+  min-height: 0; /* Allow flex shrink */
+  padding: 18px;
+  gap: 10px;
+  overflow: hidden;
 }
 
+/* 标题 - 最多2行 */
 .card-title {
-  font-size: var(--text-lg);
-  font-weight: var(--font-semibold);
+  font-size: 16px;
+  font-weight: 600;
   color: var(--color-text-primary);
   line-height: 1.4;
   margin: 0;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
+  transition: color 0.2s ease;
 }
 
+.post-card:hover .card-title {
+  color: var(--color-primary);
+}
+
+/* 描述 - 最多1行 */
 .card-description {
-  font-size: var(--text-sm);
+  font-size: 13px;
   color: var(--color-text-secondary);
   line-height: 1.5;
   margin: 0;
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 1;
+  line-clamp: 1;
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
+/* 底部区域 - 自动占据剩余空间 */
+.card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: auto;
+  padding-top: 8px;
+  gap: 8px;
+}
+
+/* 作者信息 */
 .card-author {
   display: flex;
   align-items: center;
-  gap: var(--spacing-2);
-  font-size: var(--text-sm);
+  gap: 6px;
+  font-size: 13px;
   color: var(--color-text-secondary);
-  margin-top: auto;
+  min-width: 0;
+  flex: 1;
 }
 
-.inline-rt-icon {
-  color: rgba(34, 197, 94, 0.8);
-  margin: 0 var(--spacing-1);
+.author-avatar {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--glass-bg-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
-/* ==================== 统计信息 ==================== */
+.author-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 统计信息 */
 .card-stats {
   display: flex;
   align-items: center;
-  gap: var(--spacing-4);
-  flex-wrap: wrap;
+  gap: 12px;
+  flex-shrink: 0;
 }
 
 .stat-item {
   display: flex;
   align-items: center;
-  gap: var(--spacing-1);
-  font-size: var(--text-sm);
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 500;
   color: var(--color-text-secondary);
-  transition: color var(--transition-fast);
+  transition: all 0.2s ease;
 }
 
-.post-card:hover .stat-item {
-  color: var(--color-text-primary);
+.stat-item:hover {
+  color: var(--color-primary);
+  transform: scale(1.05);
 }
 
-/* ==================== 页脚 ==================== */
-.card-footer {
+/* 时间戳 */
+.card-time {
   display: flex;
   align-items: center;
-  gap: var(--spacing-2);
-  font-size: var(--text-xs);
-  color: var(--color-text-secondary);
-  padding-top: var(--spacing-2);
+  gap: 4px;
+  font-size: 11px;
+  color: var(--color-text-tertiary);
+  padding-top: 4px;
   border-top: 1px solid var(--glass-border);
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
 }
 
-/* ==================== 响应式设计 ==================== */
+.post-card:hover .card-time {
+  opacity: 1;
+}
+
+/* ========================================
+   Responsive Design
+   ======================================== */
+
 @media (max-width: 768px) {
-  .card-media {
-    aspect-ratio: 4 / 3;
+  .post-card {
+    min-height: 360px;
+    max-height: 450px;
   }
 
-  .card-body {
-    padding: var(--spacing-3);
-    gap: var(--spacing-2);
+  .card-content {
+    padding: 14px;
   }
 
   .card-title {
-    font-size: var(--text-base);
-    -webkit-line-clamp: 2;
+    font-size: 15px;
   }
 
   .card-description {
-    font-size: var(--text-xs);
-    -webkit-line-clamp: 1;
+    font-size: 12px;
   }
 
-  .card-stats {
-    gap: var(--spacing-3);
-  }
-
+  .card-author,
   .stat-item {
-    font-size: var(--text-xs);
+    font-size: 12px;
+  }
+
+  .card-time {
+    font-size: 10px;
+  }
+
+  /* 移动端标签 */
+  .platform-badge,
+  .duration-badge,
+  .media-count-badge {
+    font-size: 10px;
+    padding: 3px 8px;
   }
 }
 
-/* ==================== 暗色主题增强 ==================== */
+/* ========================================
+   Theme Adaptations
+   ======================================== */
+
+/* Dark Theme - Deep Contrast */
 [data-theme='dark'] .post-card {
-  background: rgba(15, 23, 42, 0.8);
-  border-color: rgba(139, 92, 246, 0.2);
+  background: rgba(15, 23, 42, 0.85);
+  border-color: rgba(139, 92, 246, 0.25);
 }
 
 [data-theme='dark'] .post-card:hover {
-  background: rgba(15, 23, 42, 0.95);
-  border-color: rgba(139, 92, 246, 0.6);
+  background: rgba(15, 23, 42, 0.98);
+  border-color: rgba(139, 92, 246, 0.7);
 }
 
-/* ==================== 亮色主题增强 ==================== */
+[data-theme='dark'] .author-avatar {
+  background: rgba(139, 92, 246, 0.15);
+}
+
+/* Light Theme - Clean & Bright */
 [data-theme='light'] .post-card {
-  background: rgba(255, 255, 255, 0.9);
-  border-color: rgba(139, 92, 246, 0.15);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  background: rgba(255, 255, 255, 0.95);
+  border-color: rgba(139, 92, 246, 0.12);
 }
 
 [data-theme='light'] .post-card:hover {
   background: white;
   box-shadow: 
-    0 20px 40px rgba(139, 92, 246, 0.15),
-    0 8px 16px rgba(0, 0, 0, 0.08);
+    0 12px 24px -6px rgba(139, 92, 246, 0.18),
+    0 24px 48px -12px rgba(0, 0, 0, 0.12);
+}
+
+[data-theme='light'] .media-overlay {
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.5) 0%,
+    rgba(0, 0, 0, 0) 100%
+  );
+}
+
+[data-theme='light'] .author-avatar {
+  background: rgba(139, 92, 246, 0.08);
+  color: var(--color-primary);
 }
 </style>
