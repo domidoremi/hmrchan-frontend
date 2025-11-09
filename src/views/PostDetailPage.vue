@@ -626,7 +626,7 @@ const nextThumbnail = () => {
 
 .back-button {
   position: sticky;
-  top: 80px;
+  top: 88px; /* 增加顶部距离，避免被导航栏覆盖 */
   z-index: 100;
   display: inline-flex;
   align-items: center;

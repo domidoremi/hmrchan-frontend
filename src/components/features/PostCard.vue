@@ -283,13 +283,12 @@ const onLeave = () => {
   position: relative;
   display: flex;
   flex-direction: column;
-  height: 100%; /* Flexible height for grid */
-  min-height: 400px; /* Minimum height */
-  max-height: 500px; /* Maximum height constraint */
+  /* 瀑布流布局：移除固定高度，让内容自适应 */
+  width: 100%;
   background: var(--glass-bg);
   backdrop-filter: var(--glass-blur);
   border: 1px solid var(--glass-border);
-  border-radius: 20px; /* Apple-inspired rounded corners */
+  border-radius: 20px;
   overflow: hidden;
   cursor: pointer;
   text-decoration: none;
@@ -337,8 +336,7 @@ const onLeave = () => {
 .card-media {
   position: relative;
   width: 100%;
-  height: 0;
-  padding-bottom: 56.25%; /* 16:9 aspect ratio */
+  /* 瀑布流：不使用padding-bottom，让图片自然高度 */
   flex-shrink: 0;
   overflow: hidden;
   background: linear-gradient(
@@ -350,22 +348,58 @@ const onLeave = () => {
 }
 
 .media-wrapper {
-  position: absolute;
-  top: 0;
-  left: 0;
+  position: relative;
   width: 100%;
-  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
+  
+  /* 横向渐变模糊（媒体宽度不足时） */
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 60px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  
+  &::before {
+    left: 0;
+    background: linear-gradient(
+      to right,
+      rgba(139, 92, 246, 0.3) 0%,
+      transparent 100%
+    );
+  }
+  
+  &::after {
+    right: 0;
+    background: linear-gradient(
+      to left,
+      rgba(139, 92, 246, 0.3) 0%,
+      transparent 100%
+    );
+  }
 }
 
-/* 媒体图片 */
+/* 当图片宽度不足时显示渐变 */
+.media-wrapper:has(img[style*="object-fit: contain"])::before,
+.media-wrapper:has(img[style*="object-fit: contain"])::after {
+  opacity: 1;
+}
+
+/* 媒体图片 - 瀑布流自适应 */
 .media-wrapper :deep(.media-image),
 .media-wrapper :deep(img) {
   width: 100%;
-  height: 100%;
+  height: auto;
+  max-height: 600px; /* 限制最大高度 */
   object-fit: cover;
+  display: block;
   transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
@@ -610,13 +644,12 @@ const onLeave = () => {
    ======================================== */
 
 @media (max-width: 768px) {
-  .post-card {
-    min-height: 360px;
-    max-height: 450px;
-  }
-
   .card-content {
     padding: 14px;
+  }
+  
+  .media-wrapper :deep(img) {
+    max-height: 400px; /* 移动端降低最大高度 */
   }
 
   .card-title {
