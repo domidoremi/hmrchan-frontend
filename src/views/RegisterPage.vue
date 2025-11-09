@@ -128,7 +128,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import {
@@ -169,6 +169,15 @@ const showConfirmPassword = ref(false)
 const loading = ref(false)
 const error = ref('')
 const success = ref('')
+
+// 移除底部导航栏的padding
+onMounted(() => {
+  document.body.classList.add('no-bottom-padding')
+})
+
+onUnmounted(() => {
+  document.body.classList.remove('no-bottom-padding')
+})
 
 async function handleRegister() {
   error.value = ''
@@ -290,6 +299,7 @@ async function handleRegister() {
   min-height: 100vh;
   display: flex;
   align-items: center;
+  padding-bottom: 0 !important; /* 覆盖底部导航栏的padding */
   justify-content: center;
   padding: var(--spacing-lg);
   position: relative;

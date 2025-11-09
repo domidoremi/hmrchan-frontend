@@ -88,7 +88,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { User, Lock, Eye, EyeOff, AlertCircle, CheckCircle, ArrowLeft } from 'lucide-vue-next'
@@ -112,6 +112,15 @@ const showPassword = ref(false)
 const loading = ref(false)
 const error = ref('')
 const success = ref('')
+
+// 移除底部导航栏的padding
+onMounted(() => {
+  document.body.classList.add('no-bottom-padding')
+})
+
+onUnmounted(() => {
+  document.body.classList.remove('no-bottom-padding')
+})
 
 const handleLogin = async () => {
   if (!formData.value.username || !formData.value.password) {
@@ -193,6 +202,7 @@ const handleLogin = async () => {
   min-height: 100vh;
   display: flex;
   align-items: center;
+  padding-bottom: 0 !important; /* 覆盖底部导航栏的padding */
   justify-content: center;
   padding: var(--spacing-lg);
   position: relative;

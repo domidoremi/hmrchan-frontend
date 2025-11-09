@@ -581,6 +581,14 @@ onUnmounted(() => {
     gap: var(--spacing-2);
   }
 
+  /* 移动端action-button保持正常尺寸 */
+  .mobile-top-actions .action-button {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    min-height: 40px;
+  }
+
   .mobile-avatar {
     width: 32px;
     height: 32px;
@@ -733,8 +741,8 @@ onUnmounted(() => {
     transform: translateY(100%);
   }
 
-  /* 为底部导航栏留出空间 */
-  :global(body) {
+  /* 为底部导航栏留出空间 - 但不应用到登录/注册页面 */
+  :global(body:not(.no-bottom-padding)) {
     padding-bottom: 72px;
   }
 }
