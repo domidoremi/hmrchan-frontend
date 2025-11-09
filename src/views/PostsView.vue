@@ -179,12 +179,20 @@ const clearSearch = () => {
 
 const loadPosts = async () => {
   try {
-    await postsStore.fetchPosts({
+    const response = await postsStore.fetchPosts({
       page: currentPage.value,
       platform: selectedPlatform.value === 'all' ? undefined : selectedPlatform.value,
     })
+    
+    // 根据pagination设置hasMore
+    if (response && response.page && response.pages) {
+      hasMore.value = response.page < response.pages
+    } else {
+      hasMore.value = false
+    }
   } catch (error) {
     console.error('Failed to load posts:', error)
+    hasMore.value = false
   }
 }
 
@@ -198,10 +206,26 @@ const scrollToTop = () => {
 
 // Infinite scroll
 const loadMore = async () => {
-  if (!hasMore.value) return
+  if (!hasMore.value || isLoadingMore.value) return
   
   currentPage.value++
-  await loadPosts()
+  try {
+    const response = await postsStore.fetchPosts({
+      page: currentPage.value,
+      platform: selectedPlatform.value === 'all' ? undefined : selectedPlatform.value,
+      append: true, // 追加模式
+    })
+    
+    // 更新hasMore状态
+    if (response && response.page && response.pages) {
+      hasMore.value = response.page < response.pages
+    } else {
+      hasMore.value = false
+    }
+  } catch (error) {
+    console.error('Failed to load more posts:', error)
+    hasMore.value = false
+  }
 }
 
 const { isLoading: isLoadingMore } = useInfiniteScroll({

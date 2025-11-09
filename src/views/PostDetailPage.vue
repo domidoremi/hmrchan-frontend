@@ -626,7 +626,7 @@ const nextThumbnail = () => {
 
 .back-button {
   position: sticky;
-  top: 88px; /* 增加顶部距离，避免被导航栏覆盖 */
+  top: 100px; /* 进一步增加，适配Samsung Galaxy S20 Ultra */
   z-index: 100;
   display: inline-flex;
   align-items: center;
@@ -725,8 +725,8 @@ const nextThumbnail = () => {
 
 .post-thumbnail img {
   width: 100%;
-  height: auto;
-  max-height: 800px;
+  max-width: 100%; /* 不超过容器宽度 */
+  height: 100%;
   display: block;
   object-fit: contain;
   position: relative;
@@ -942,12 +942,16 @@ const nextThumbnail = () => {
 .author-avatar {
   width: 60px;
   height: 60px;
+  min-width: 60px; /* 防止被压缩 */
+  min-height: 60px;
   border-radius: var(--radius-full);
   background: var(--gradient-primary);
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
+  flex-shrink: 0; /* 防止flex布局压缩 */
+  aspect-ratio: 1 / 1; /* 保持圆形 */
 }
 
 .author-details h3 {
@@ -1225,6 +1229,17 @@ const nextThumbnail = () => {
   .author-info,
   .post-stats {
     padding: var(--spacing-md);
+  }
+  
+  .author-avatar {
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+    min-height: 48px;
+  }
+  
+  .back-button {
+    top: 76px; /* 移动端调整位置 */
   }
 
   .thumbnail-nav-btn {
