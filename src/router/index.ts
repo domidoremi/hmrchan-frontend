@@ -23,6 +23,15 @@ export const routes: RouteRecordRaw[] = [
     },
   },
   {
+    path: '/posts',
+    name: 'posts',
+    component: () => import(/* webpackChunkName: "posts" */ '@/views/PostsView.vue'),
+    meta: {
+      title: 'Posts',
+      preload: true,
+    },
+  },
+  {
     path: '/login',
     name: 'login',
     component: () => import('@/views/LoginPage.vue'),

@@ -45,7 +45,11 @@
     "image": "画像",
     "videoNotSupported": "お使いのブラウザは動画再生に対応していません",
     "addToFavorites": "お気に入りに追加",
-    "unfavorite": "お気に入りから削除"
+    "unfavorite": "お気に入りから削除",
+    "total": "総投稿数"
+  },
+  "posts": {
+    "subtitle": "複数のプラットフォームから素晴らしいコンテンツを発見し探索"
   },
   "search": {
     "placeholder": "コンテンツを検索...",
@@ -154,8 +158,10 @@
     "zoomIn": "拡大",
     "zoomOut": "縮小",
     "backToTop": "トップに戻る",
-    "fullscreen": "全画面",
-    "download": "ダウンロード"
+    "fullscreen": "フルスクリーン",
+    "download": "ダウンロード",
+    "explore": "探索",
+    "platforms": "プラットフォーム"
   },
   "author": {
     "title": "作者",

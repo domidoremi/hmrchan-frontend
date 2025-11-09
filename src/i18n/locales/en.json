@@ -45,7 +45,11 @@
     "image": "Image",
     "videoNotSupported": "Your browser does not support video playback",
     "addToFavorites": "Add to Favorites",
-    "unfavorite": "Remove from Favorites"
+    "unfavorite": "Remove from Favorites",
+    "total": "Total Posts"
+  },
+  "posts": {
+    "subtitle": "Discover and explore amazing content from multiple platforms"
   },
   "search": {
     "placeholder": "Search content...",
@@ -155,7 +159,9 @@
     "zoomOut": "Zoom Out",
     "backToTop": "Back to Top",
     "fullscreen": "Fullscreen",
-    "download": "Download"
+    "download": "Download",
+    "explore": "Explore",
+    "platforms": "Platforms"
   },
   "author": {
     "title": "Authors",

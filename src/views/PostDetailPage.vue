@@ -594,14 +594,28 @@ const nextThumbnail = () => {
 </script>
 
 <style scoped>
+/* ========================================
+   Post Detail Page - Modern Layout
+   Material Design + Apple Style
+   ======================================== */
+
 .post-detail-page {
-  max-width: 1920px;
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 0 var(--spacing-lg);
+  padding: 32px 24px;
+  min-height: calc(100vh - 140px);
+  animation: fadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.post-detail {
-  width: 100%;
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .back-button {
@@ -610,67 +624,80 @@ const nextThumbnail = () => {
   backdrop-filter: blur(12px);
 }
 
+.back-button {
+  position: sticky;
+  top: 80px;
+  z-index: 100;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  margin-bottom: 24px;
+  border-radius: 24px;
+  font-weight: 600;
+  font-size: 14px;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  text-decoration: none;
+  
+  /* Material Design Elevation 2 */
+  box-shadow: 
+    0 3px 6px -2px rgba(0, 0, 0, 0.12),
+    0 6px 12px -3px rgba(0, 0, 0, 0.08);
+  
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
 .back-button:hover {
-  transform: translateX(-4px);
-  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.2);
+  transform: translateY(-2px);
+  box-shadow: 
+    0 6px 12px -3px rgba(139, 92, 246, 0.2),
+    0 12px 24px -6px rgba(0, 0, 0, 0.12);
+  border-color: rgba(139, 92, 246, 0.4);
+}
+
+.back-button:active {
+  transform: translateY(0);
+  transition-duration: 0.1s;
 }
 
 .post-header {
-  padding: var(--spacing-lg);
-  margin-bottom: var(--spacing-xl);
-  background: transparent;
-  border: none;
-  box-shadow: none;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: 24px;
+  padding: 0;
+  margin-bottom: 32px;
+  overflow: hidden;
+  
+  /* Material Design Elevation 4 */
+  box-shadow: 
+    0 4px 8px -2px rgba(0, 0, 0, 0.08),
+    0 8px 16px -4px rgba(0, 0, 0, 0.12);
+  
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* 宽屏优化布局 (>1200px) */
-@media (min-width: 1200px) {
-  .post-detail-page {
-    padding: 0 var(--spacing-2xl);
-  }
-
-  /* 统一布局：简洁的左右分栏（图片和视频都使用） */
-  .post-header {
-    display: flex;
-    gap: var(--spacing-3xl);
-    padding: var(--spacing-2xl);
-    overflow: visible;
-  }
-
-  .post-thumbnail-container {
-    flex: 1.4;
-    min-width: 0;
-    position: relative;
-    overflow: visible;
-  }
-
-  .post-content-wrapper {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-xl);
-  }
+.post-header:hover {
+  box-shadow: 
+    0 6px 12px -3px rgba(139, 92, 246, 0.12),
+    0 12px 24px -6px rgba(0, 0, 0, 0.15);
 }
 
 .post-thumbnail-container {
   position: relative;
   width: 100%;
-  margin: 0 0 var(--spacing-xl) 0;
-  overflow: visible;
-}
-
-/* 宽屏布局中移除margin，由flex gap控制间距 */
-@media (min-width: 1200px) {
-  .post-thumbnail-container {
-    margin: 0;
-  }
-}
-
-.post-content-wrapper {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-lg);
+  aspect-ratio: 16 / 9;
+  background: linear-gradient(
+    135deg,
+    rgba(139, 92, 246, 0.1) 0%,
+    rgba(192, 132, 252, 0.1) 100%
+  );
+  overflow: hidden;
+  border-radius: 24px 24px 0 0;
 }
 
 .post-thumbnail {
@@ -696,82 +723,6 @@ const nextThumbnail = () => {
   justify-content: center;
 }
 
-@media (min-width: 1200px) {
-  .post-thumbnail {
-    max-height: 700px;
-  }
-
-  /* 图片类型帖子：让图片自然显示 */
-  .post-header:not(.video-layout) .post-thumbnail {
-    aspect-ratio: auto;
-    height: auto;
-  }
-
-  .post-header:not(.video-layout) .post-thumbnail img {
-    max-height: 85vh;
-    width: 100%;
-    height: auto;
-  }
-
-  /* 视频类型帖子：保持16:9比例 */
-  .post-header.video-layout .post-thumbnail {
-    aspect-ratio: 16 / 9;
-    max-height: none;
-    height: auto;
-  }
-
-  .post-header.video-layout .post-thumbnail img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-
-  /* YouTube：独占一行的布局 */
-  .post-header.youtube-layout {
-    flex-direction: column;
-  }
-
-  .post-header.youtube-layout .post-thumbnail-container {
-    flex: none;
-    width: 100%;
-    max-width: 1200px;
-    margin: 0 auto;
-  }
-
-  .post-header.youtube-layout .post-thumbnail {
-    aspect-ratio: 16 / 9;
-  }
-
-  .post-header.youtube-layout .post-content-wrapper {
-    flex: none;
-    width: 100%;
-  }
-
-  /* TikTok：竖屏比例 */
-  .post-header.tiktok-layout .post-thumbnail {
-    aspect-ratio: 9 / 16;
-    max-height: 700px;
-  }
-}
-
-.post-thumbnail:hover {
-  transform: translateY(-4px) scale(1.01);
-  box-shadow:
-    0 28px 80px -12px rgba(0, 0, 0, 0.25),
-    0 12px 32px -8px rgba(139, 92, 246, 0.25),
-    inset 0 1px 0 rgba(255, 255, 255, 0.15);
-  border-color: rgba(139, 92, 246, 0.2);
-}
-
-.post-thumbnail:hover .thumbnail-overlay {
-  opacity: 1;
-}
-
-/* 移除active状态避免点击按钮时容器变色 */
-/* .post-thumbnail:active {
-  transform: translateY(-2px) scale(1.005);
-} */
-
 .post-thumbnail img {
   width: 100%;
   height: auto;
@@ -780,12 +731,6 @@ const nextThumbnail = () => {
   object-fit: contain;
   position: relative;
   z-index: 1;
-}
-
-/* 视频类型帖子的缩略图使用cover以填充空间 */
-.post-header.video-layout .post-thumbnail img {
-  height: 100%;
-  object-fit: cover;
 }
 
 .thumbnail-overlay {
@@ -845,13 +790,6 @@ const nextThumbnail = () => {
   z-index: 10;
 }
 
-@media (min-width: 1200px) {
-  .thumbnail-nav-btn {
-    width: 60px;
-    height: 60px;
-  }
-}
-
 .thumbnail-nav-btn:hover:not(:disabled) {
   background: rgba(139, 92, 246, 1);
   transform: translateY(-50%) scale(1.1);
@@ -880,43 +818,6 @@ const nextThumbnail = () => {
   right: var(--spacing-md);
 }
 
-@media (min-width: 1200px) {
-  .prev-thumbnail-btn {
-    left: var(--spacing-lg);
-  }
-
-  .next-thumbnail-btn {
-    right: var(--spacing-lg);
-  }
-}
-
-/* 缩略图切换动画 */
-.thumbnail-fade-enter-active,
-.thumbnail-fade-leave-active {
-  transition:
-    opacity 0.3s ease,
-    transform 0.3s ease;
-}
-
-.thumbnail-fade-enter-from {
-  opacity: 0;
-  transform: translateX(20px);
-}
-
-.thumbnail-fade-leave-to {
-  opacity: 0;
-  transform: translateX(-20px);
-}
-
-.clickable-image {
-  cursor: pointer;
-  transition: transform 0.3s ease;
-}
-
-.clickable-image:hover {
-  transform: scale(1.05);
-}
-
 .post-title {
   font-size: var(--text-3xl);
   font-weight: 800;
@@ -929,12 +830,6 @@ const nextThumbnail = () => {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-}
-
-@media (min-width: 1200px) {
-  .post-title {
-    font-size: var(--text-4xl);
-  }
 }
 
 .post-meta {
@@ -961,20 +856,6 @@ const nextThumbnail = () => {
   flex-wrap: wrap;
 }
 
-@media (max-width: 768px) {
-  .retweet-info {
-    padding: var(--spacing-md);
-    gap: var(--spacing-md);
-  }
-}
-
-.retweeter-info,
-.original-author-info {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-md);
-}
-
 .retweet-arrow {
   color: #22c55e;
   display: flex;
@@ -982,7 +863,9 @@ const nextThumbnail = () => {
 }
 
 .original-author-info {
-  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
 }
 
 .author-avatar.original {
@@ -1192,8 +1075,15 @@ const nextThumbnail = () => {
 
 .media-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: var(--spacing-lg);
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+@media (max-width: 768px) {
+  .media-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
 }
 
 /* 移动端瀑布流使用单列但保持自然高度 */
@@ -1255,16 +1145,25 @@ const nextThumbnail = () => {
 }
 
 .tags-section h3 {
-  font-size: var(--text-xl);
-  font-weight: var(--font-semibold);
+  font-size: 18px;
+  font-weight: 600;
   color: var(--color-text-primary);
-  margin-bottom: var(--spacing-md);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tags-section h3::before {
+  content: '#';
+  color: var(--color-primary);
+  font-weight: 700;
 }
 
 .tags-list {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--spacing-sm);
+  gap: 10px;
 }
 
 .tag {
