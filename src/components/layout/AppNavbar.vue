@@ -182,7 +182,27 @@
   </Transition>
 
   <!-- 搜索模态框 -->
-  <SearchModal v-if="searchModalOpen" @close="closeSearchModal" />
+  <!-- TODO: 实现SearchModal组件 -->
+  <Teleport to="body">
+    <div v-if="searchModalOpen" class="search-modal-overlay" @click="closeSearchModal">
+      <div class="search-modal-content" @click.stop>
+        <div class="search-header">
+          <input
+            type="text"
+            placeholder="Search posts..."
+            class="search-input"
+            autofocus
+          />
+          <button class="close-btn" @click="closeSearchModal">
+            <X :size="24" />
+          </button>
+        </div>
+        <div class="search-results">
+          <p class="search-placeholder">Start typing to search...</p>
+        </div>
+      </div>
+    </div>
+  </Teleport>
 </template>
 
 <script setup lang="ts">
@@ -202,7 +222,7 @@ import {
   X,
 } from 'lucide-vue-next'
 
-import SearchModal from '@/components/features/SearchModal.vue'
+// import SearchModal from '@/components/features/SearchModal.vue' // 暂时注释，组件不存在
 import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()
@@ -713,6 +733,97 @@ onUnmounted(() => {
   /* 为底部导航栏留出空间 */
   :global(body) {
     padding-bottom: 72px;
+  }
+}
+
+/* ==================== 搜索模态框样式 ==================== */
+.search-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: var(--spacing-20);
+  overflow-y: auto;
+}
+
+.search-modal-content {
+  width: 100%;
+  max-width: 600px;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-2xl);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  margin-top: var(--spacing-10);
+  overflow: hidden;
+}
+
+.search-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  padding: var(--spacing-4);
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.search-input {
+  flex: 1;
+  padding: var(--spacing-3);
+  background: var(--glass-bg-light);
+  border: 2px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  color: var(--color-text-primary);
+  font-size: var(--text-lg);
+  outline: none;
+  transition: all var(--transition-fast);
+}
+
+.search-input:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+}
+
+.close-btn {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--glass-bg-light);
+  border: none;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.close-btn:hover {
+  background: var(--glass-bg);
+  color: var(--color-text-primary);
+}
+
+.search-results {
+  padding: var(--spacing-6);
+  min-height: 200px;
+}
+
+.search-placeholder {
+  text-align: center;
+  color: var(--color-text-secondary);
+  font-size: var(--text-base);
+}
+
+@media (max-width: 768px) {
+  .search-modal-overlay {
+    padding: var(--spacing-4);
+  }
+
+  .search-modal-content {
+    margin-top: var(--spacing-4);
   }
 }
 </style>
