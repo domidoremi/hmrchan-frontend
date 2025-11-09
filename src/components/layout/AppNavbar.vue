@@ -385,8 +385,10 @@ onUnmounted(() => {
   justify-content: center;
   width: 40px;
   height: 40px;
-  min-width: 40px; /* 防止被压缩 */
-  min-height: 40px;
+  min-width: 40px !important; /* 强制防止被压缩 */
+  min-height: 40px !important;
+  max-width: 40px; /* 限制最大宽度 */
+  max-height: 40px;
   border-radius: var(--radius-lg);
   color: var(--color-text-secondary);
   background: transparent;
@@ -395,6 +397,7 @@ onUnmounted(() => {
   transition: all var(--transition-fast);
   text-decoration: none;
   flex-shrink: 0; /* 防止flex布局压缩 */
+  aspect-ratio: 1 / 1; /* 保持宽高比 */
 }
 
 .action-button:hover {
@@ -406,6 +409,10 @@ onUnmounted(() => {
 .user-avatar-button {
   width: 40px;
   height: 40px;
+  min-width: 40px !important;
+  min-height: 40px !important;
+  max-width: 40px;
+  max-height: 40px;
   border-radius: 50%;
   border: 2px solid var(--glass-border);
   overflow: hidden;
@@ -413,6 +420,8 @@ onUnmounted(() => {
   transition: all var(--transition-fast);
   background: none;
   padding: 0;
+  flex-shrink: 0;
+  aspect-ratio: 1 / 1; /* 保持圆形 */
 }
 
 .user-avatar-button:hover {
@@ -429,6 +438,7 @@ onUnmounted(() => {
 /* 用户菜单 */
 .user-menu-container {
   position: relative;
+  flex-shrink: 0; /* 防止容器被压缩 */
 }
 
 .user-dropdown {
@@ -583,17 +593,25 @@ onUnmounted(() => {
 
   /* 移动端action-button保持正常尺寸 */
   .mobile-top-actions .action-button {
-    width: 40px;
-    height: 40px;
-    min-width: 40px;
-    min-height: 40px;
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    min-height: 40px !important;
+    max-width: 40px !important;
+    max-height: 40px !important;
+    flex-shrink: 0 !important;
+    aspect-ratio: 1 / 1;
   }
 
   .mobile-avatar {
-    width: 32px;
-    height: 32px;
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+    min-height: 32px !important;
     border-radius: 50%;
     object-fit: cover;
+    display: block;
+    aspect-ratio: 1 / 1;
   }
 
   /* 显示移动端底部导航栏 */
