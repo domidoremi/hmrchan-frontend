@@ -385,6 +385,8 @@ onUnmounted(() => {
   justify-content: center;
   width: 40px;
   height: 40px;
+  min-width: 40px; /* 防止被压缩 */
+  min-height: 40px;
   border-radius: var(--radius-lg);
   color: var(--color-text-secondary);
   background: transparent;
@@ -392,6 +394,7 @@ onUnmounted(() => {
   cursor: pointer;
   transition: all var(--transition-fast);
   text-decoration: none;
+  flex-shrink: 0; /* 防止flex布局压缩 */
 }
 
 .action-button:hover {
