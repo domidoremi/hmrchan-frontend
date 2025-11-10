@@ -4,12 +4,19 @@
 
 /**
  * 强制将 HTTP URL 转换为 HTTPS（生产环境）
+ * @param url - 要转换的 URL
+ * @returns 转换后的 URL（生产环境下强制 HTTPS）
  */
 function forceHttps(url: string): string {
+  if (!url) return url
+  
   // 生产环境强制使用 HTTPS
   if (import.meta.env.PROD && url.startsWith('http://')) {
-    return url.replace('http://', 'https://')
+    const httpsUrl = url.replace('http://', 'https://')
+    console.warn(`🔒 [Security] Converting HTTP to HTTPS: ${url} → ${httpsUrl}`)
+    return httpsUrl
   }
+  
   return url
 }
 

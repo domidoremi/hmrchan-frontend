@@ -2,10 +2,11 @@
  * API配置
  * 根据FRONTEND-API-GUIDE.md文档
  */
+import { getApiBaseUrl, getApiEndpoint } from '@/utils/url'
 
 export const API_CONFIG = {
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'https://api.momichan.xyz',
-  endpoint: import.meta.env.VITE_API_ENDPOINT || 'https://api.momichan.xyz/api/v1',
+  baseURL: getApiBaseUrl(),
+  endpoint: getApiEndpoint(),
   wsURL: import.meta.env.VITE_WS_URL || 'wss://api.momichan.xyz/ws',
   timeout: 30000,
 }
