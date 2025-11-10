@@ -3,7 +3,7 @@
  * v2.0 - UUID迁移：所有ID参数已从number改为string (UUID格式)
  */
 import { api } from './client'
-import { getApiBaseUrl, getApiEndpoint } from '@/utils/url'
+import { getApiEndpoint } from '@/utils/url'
 import type {
   LoginRequest,
   LoginResponse,
@@ -119,11 +119,22 @@ export const mediaApi = {
   },
 
   /**
+   * 运行时强制 HTTPS（防止构建时内联 HTTP）
+   */
+  _forceHttps(url: string): string {
+    if (typeof window !== 'undefined' && url.startsWith('http://')) {
+      return url.replace('http://', 'https://')
+    }
+    return url
+  },
+
+  /**
    * 获取媒体流式播放URL
    * 返回完整URL以支持跨域访问
    */
   getStreamUrl(mediaId: UUID) {
-    return `${getApiBaseUrl()}${getApiEndpoint().replace(getApiBaseUrl(), '')}/media/${mediaId}/stream`
+    const url = `${getApiEndpoint()}/media/${mediaId}/stream`
+    return this._forceHttps(url)
   },
 
   /**
@@ -131,7 +142,8 @@ export const mediaApi = {
    * 返回完整URL以支持跨域访问
    */
   getDownloadUrl(mediaId: UUID) {
-    return `${getApiBaseUrl()}${getApiEndpoint().replace(getApiBaseUrl(), '')}/media/${mediaId}/download`
+    const url = `${getApiEndpoint()}/media/${mediaId}/download`
+    return this._forceHttps(url)
   },
 
   /**
@@ -139,7 +151,8 @@ export const mediaApi = {
    * 返回完整URL以支持跨域访问
    */
   getThumbnailUrl(mediaId: UUID) {
-    return `${getApiBaseUrl()}${getApiEndpoint().replace(getApiBaseUrl(), '')}/media/${mediaId}/thumbnail`
+    const url = `${getApiEndpoint()}/media/${mediaId}/thumbnail`
+    return this._forceHttps(url)
   },
 
   /**
@@ -147,7 +160,8 @@ export const mediaApi = {
    * 返回完整URL以支持跨域访问
    */
   getSubtitleUrl(mediaId: UUID) {
-    return `${getApiBaseUrl()}${getApiEndpoint().replace(getApiBaseUrl(), '')}/media/${mediaId}/subtitle`
+    const url = `${getApiEndpoint()}/media/${mediaId}/subtitle`
+    return this._forceHttps(url)
   },
 
   /**
