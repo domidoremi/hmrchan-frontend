@@ -3,17 +3,19 @@
  */
 
 /**
- * 强制将 HTTP URL 转换为 HTTPS（生产环境）
- * @param url - 要转换的 URL
- * @returns 转换后的 URL（生产环境下强制 HTTPS）
+ * 强制转换为 HTTPS（生产环境）
+ * 运行时检测 - 不依赖构建时变量
  */
 function forceHttps(url: string): string {
   if (!url) return url
   
-  // 生产环境强制使用 HTTPS
-  if (import.meta.env.PROD && url.startsWith('http://')) {
+  // 运行时检测：在浏览器中且URL是HTTP
+  const isBrowser = typeof window !== 'undefined'
+  const isHttpUrl = url.startsWith('http://')
+  
+  if (isBrowser && isHttpUrl) {
     const httpsUrl = url.replace('http://', 'https://')
-    console.warn(`🔒 [Security] Converting HTTP to HTTPS: ${url} → ${httpsUrl}`)
+    console.warn(`🔒 [Runtime Security] Converting HTTP to HTTPS: ${url} → ${httpsUrl}`)
     return httpsUrl
   }
   

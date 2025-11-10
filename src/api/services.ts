@@ -3,7 +3,7 @@
  * v2.0 - UUID迁移：所有ID参数已从number改为string (UUID格式)
  */
 import { api } from './client'
-import { getApiEndpoint } from '@/utils/url'
+import { getRuntimeApiEndpoint } from '@/config/runtime'
 import type {
   LoginRequest,
   LoginResponse,
@@ -133,7 +133,7 @@ export const mediaApi = {
    * 返回完整URL以支持跨域访问
    */
   getStreamUrl(mediaId: UUID) {
-    const url = `${getApiEndpoint()}/media/${mediaId}/stream`
+    const url = `${getRuntimeApiEndpoint()}/media/${mediaId}/stream`
     return this._forceHttps(url)
   },
 
@@ -142,7 +142,7 @@ export const mediaApi = {
    * 返回完整URL以支持跨域访问
    */
   getDownloadUrl(mediaId: UUID) {
-    const url = `${getApiEndpoint()}/media/${mediaId}/download`
+    const url = `${getRuntimeApiEndpoint()}/media/${mediaId}/download`
     return this._forceHttps(url)
   },
 
@@ -151,7 +151,7 @@ export const mediaApi = {
    * 返回完整URL以支持跨域访问
    */
   getThumbnailUrl(mediaId: UUID) {
-    const url = `${getApiEndpoint()}/media/${mediaId}/thumbnail`
+    const url = `${getRuntimeApiEndpoint()}/media/${mediaId}/thumbnail`
     return this._forceHttps(url)
   },
 
@@ -160,7 +160,7 @@ export const mediaApi = {
    * 返回完整URL以支持跨域访问
    */
   getSubtitleUrl(mediaId: UUID) {
-    const url = `${getApiEndpoint()}/media/${mediaId}/subtitle`
+    const url = `${getRuntimeApiEndpoint()}/media/${mediaId}/subtitle`
     return this._forceHttps(url)
   },
 
