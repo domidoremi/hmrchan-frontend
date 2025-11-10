@@ -21,6 +21,11 @@ function forceHttpsUrl(url: string | URL): string {
 const OriginalXHR = window.XMLHttpRequest;
 
 class HttpsXHR extends OriginalXHR {
+  constructor() {
+    super();
+    console.log('[XHR] New XMLHttpRequest created via interceptor');
+  }
+
   open(
     method: string,
     url: string | URL,
@@ -28,7 +33,14 @@ class HttpsXHR extends OriginalXHR {
     username?: string | null,
     password?: string | null
   ): void {
+    const urlString = typeof url === 'string' ? url : url.toString();
+    console.log('[XHR] open() called with URL:', urlString);
+    
     const finalUrl = forceHttpsUrl(url);
+    
+    if (finalUrl !== urlString) {
+      console.error('🚨🚨🚨 [XHR] FORCED HTTPS:', urlString, '→', finalUrl);
+    }
     
     // Call original open with forced HTTPS URL
     if (async !== undefined) {
@@ -41,10 +53,16 @@ class HttpsXHR extends OriginalXHR {
       super.open(method, finalUrl);
     }
   }
+  
+  send(body?: Document | XMLHttpRequestBodyInit | null): void {
+    console.log('[XHR] send() called, responseURL will be:', this.responseURL);
+    super.send(body);
+  }
 }
 
 window.XMLHttpRequest = HttpsXHR as unknown as typeof XMLHttpRequest;
 console.log('🔒 [XHR Interceptor] Installed');
+console.log('[XHR] Test: new XMLHttpRequest() instanceof HttpsXHR:', new window.XMLHttpRequest() instanceof HttpsXHR);
 
 // ==================== Intercept fetch ====================
 const originalFetch = window.fetch;
