@@ -5,10 +5,20 @@ import axios, { type AxiosInstance, type AxiosRequestConfig, type AxiosResponse 
 import { useAuthStore } from '@/stores/auth'
 import { requestCache } from '@/utils/requestCache'
 import logger from '@/utils/logger'
-import { getRuntimeApiEndpoint } from '@/config/runtime'
 
-// API基础URL - 使用运行时配置，完全绕过构建时内联
-const BASE_URL = getRuntimeApiEndpoint()
+// 🔒 强制使用 HTTPS - 完全不依赖环境变量或构建时计算
+// 开发环境使用 Vite 代理，生产环境硬编码 HTTPS
+function getBaseURL(): string {
+  // 开发环境：使用相对路径 /api，Vite 会代理到后端
+  if (import.meta.env.DEV) {
+    return '/api/v1'
+  }
+  
+  // 生产环境：硬编码 HTTPS，永远不会被内联为 HTTP
+  return 'https://api.momichan.xyz/api/v1'
+}
+
+const BASE_URL = getBaseURL()
 
 // 日志输出当前API配置（所有环境，帮助调试）
 console.log('🌐 API Configuration:', {
@@ -18,16 +28,26 @@ console.log('🌐 API Configuration:', {
   mode: import.meta.env.MODE,
   isProd: import.meta.env.PROD,
   isDev: import.meta.env.DEV,
-  runtimeForced: BASE_URL.startsWith('https://'),
+  isHttps: BASE_URL.startsWith('https://'),
+  strategy: import.meta.env.DEV ? 'vite-proxy' : 'hardcoded-https',
 })
 
 // 创建axios实例
 const apiClient: AxiosInstance = axios.create({
   baseURL: BASE_URL,
-  timeout: 30000, // 30秒超时，适应HTTPS连接
-  // 不设置默认Content-Type，axios会根据请求数据自动设置
-  // 这样可以避免触发CORS预检请求失败
+  timeout: 30000,
   withCredentials: false,
+})
+
+// 🔒 强制锁定 baseURL，防止被修改
+Object.defineProperty(apiClient.defaults, 'baseURL', {
+  get() { return BASE_URL },
+  set() { 
+    console.error('🚨 Attempted to modify baseURL - ignored!')
+    // 忽略任何修改尝试
+  },
+  configurable: false,
+  enumerable: true
 })
 
 // 防止重复初始化标志
@@ -37,19 +57,43 @@ if (!isConfigured) {
   // 请求拦截器
   apiClient.interceptors.request.use(
     (config) => {
-      // 🔒 运行时强制 HTTPS - 最后防线
-      // 即使 baseURL 在构建时被内联为 HTTP，这里也会在请求前转换
-      if (typeof window !== 'undefined' && config.baseURL && config.baseURL.startsWith('http://')) {
-        const httpsBaseURL = config.baseURL.replace('http://', 'https://')
-        console.warn('🚨 [Interceptor] Forcing HTTP to HTTPS:', config.baseURL, '→', httpsBaseURL)
-        config.baseURL = httpsBaseURL
+      // 🔒 绝对强制 HTTPS - 重新构建完整 URL
+      const fullUrl = axios.getUri(config)
+      
+      // 记录请求详情用于调试
+      console.log('[Request]', {
+        method: config.method?.toUpperCase(),
+        url: config.url,
+        baseURL: config.baseURL,
+        fullUrl: fullUrl,
+        params: config.params
+      })
+      
+      // 如果完整 URL 是 HTTP，强制转换整个请求
+      if (fullUrl.startsWith('http://')) {
+        const httpsUrl = fullUrl.replace('http://', 'https://')
+        console.error('🚨🚨🚨 CRITICAL: HTTP URL detected!', {
+          original: fullUrl,
+          fixed: httpsUrl,
+          configBaseURL: config.baseURL,
+          configUrl: config.url
+        })
+        
+        // 完全重写请求配置
+        config.baseURL = ''
+        config.url = httpsUrl
       }
       
-      // 同时检查完整 URL
-      if (typeof window !== 'undefined' && config.url && config.url.startsWith('http://')) {
-        const httpsUrl = config.url.replace('http://', 'https://')
-        console.warn('🚨 [Interceptor] Forcing HTTP to HTTPS in URL:', config.url, '→', httpsUrl)
-        config.url = httpsUrl
+      // 双重检查 baseURL
+      if (config.baseURL && config.baseURL.startsWith('http://')) {
+        config.baseURL = config.baseURL.replace('http://', 'https://')
+        console.error('🚨 baseURL was HTTP, forced to HTTPS:', config.baseURL)
+      }
+      
+      // 双重检查 URL
+      if (config.url && config.url.startsWith('http://')) {
+        config.url = config.url.replace('http://', 'https://')
+        console.error('🚨 URL was HTTP, forced to HTTPS:', config.url)
       }
 
       // 添加认证Token
