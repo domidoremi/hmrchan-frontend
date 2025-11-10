@@ -1,7 +1,21 @@
 <template>
   <MainLayout>
     <div class="post-detail-page">
-      <LoadingSpinner v-if="loading" size="lg" :text="$t('common.loading')" />
+      <!-- 骨架屏加载状态 -->
+      <div v-if="loading" class="skeleton-loader">
+        <div class="skeleton-back-btn"></div>
+        <div class="skeleton-card">
+          <div class="skeleton-thumbnail"></div>
+          <div class="skeleton-content">
+            <div class="skeleton-meta"></div>
+            <div class="skeleton-title"></div>
+            <div class="skeleton-description"></div>
+            <div class="skeleton-author"></div>
+            <div class="skeleton-stats"></div>
+            <div class="skeleton-actions"></div>
+          </div>
+        </div>
+      </div>
 
       <div v-else-if="post" class="post-detail">
         <!-- 返回按钮 -->
@@ -183,17 +197,69 @@
                 @click="toggleFavorite"
                 :class="{ 'favorited': isFavorited }"
                 :disabled="favoriteLoading"
+                :title="isFavorited ? $t('favorite.remove') : $t('favorite.add')"
               >
                 <Heart :size="18" :fill="isFavorited ? 'currentColor' : 'none'" />
-                {{ isFavorited ? $t('favorite.remove') : $t('favorite.add') }}
+                <span class="action-label">{{ isFavorited ? $t('favorite.remove') : $t('favorite.add') }}</span>
+              </GlassButton>
+              <GlassButton 
+                @click="sharePost"
+                variant="secondary"
+                :title="$t('post.share')"
+              >
+                <Share2 :size="18" />
+                <span class="action-label">{{ $t('post.share') }}</span>
+              </GlassButton>
+              <GlassButton 
+                v-if="post.url"
+                @click="copyLink(post.url)"
+                variant="secondary"
+                :title="$t('post.copyLink')"
+              >
+                <Link :size="18" />
+                <span class="action-label">{{ $t('post.copyLink') }}</span>
               </GlassButton>
               <a v-if="post.url" :href="post.url" target="_blank" rel="noopener noreferrer">
-                <GlassButton variant="secondary">
+                <GlassButton variant="secondary" :title="$t('post.viewOriginal')">
                   <ExternalLink :size="18" />
-                  {{ $t('post.viewOriginal') }}
+                  <span class="action-label">{{ $t('post.viewOriginal') }}</span>
                 </GlassButton>
               </a>
             </div>
+          </div>
+        </div>
+
+        <!-- 相关推荐 -->
+        <div v-if="relatedPosts.length > 0" class="related-posts glass-card">
+          <h3 class="related-title">
+            <Sparkles :size="20" />
+            {{ $t('post.relatedPosts') }}
+          </h3>
+          <div class="related-grid">
+            <RouterLink
+              v-for="relatedPost in relatedPosts"
+              :key="relatedPost.id"
+              :to="`/posts/${relatedPost.id}`"
+              class="related-item"
+            >
+              <img 
+                v-if="relatedPost.thumbnail_url" 
+                :src="resolveMediaUrl(relatedPost.thumbnail_url)" 
+                :alt="relatedPost.title || ''"
+                loading="lazy"
+              />
+              <div class="related-info">
+                <h4>{{ relatedPost.title || $t('post.untitled') }}</h4>
+                <div class="related-stats">
+                  <span v-if="relatedPost.view_count">
+                    <Eye :size="14" /> {{ formatNumber(relatedPost.view_count) }}
+                  </span>
+                  <span v-if="relatedPost.like_count">
+                    <Heart :size="14" /> {{ formatNumber(relatedPost.like_count) }}
+                  </span>
+                </div>
+              </div>
+            </RouterLink>
           </div>
         </div>
 
@@ -289,11 +355,13 @@ import {
   ChevronLeft,
   ChevronRight,
   Repeat2,
+  Share2,
+  Link,
+  Sparkles,
 } from 'lucide-vue-next'
 import dayjs from 'dayjs'
 
 import MainLayout from '@/components/layout/MainLayout.vue'
-import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import GlassButton from '@/components/ui/GlassButton.vue'
 import MediaViewer from '@/components/ui/MediaViewerPlyr.vue'
 
@@ -301,7 +369,7 @@ import { usePostsStore } from '@/stores/posts'
 import { useAuthStore } from '@/stores/auth'
 import { api } from '@/api/client'
 import { favoritesApi, mediaApi } from '@/api/services'
-import type { PostDetail, UUID } from '@/types'
+import type { PostDetail, Post, UUID, PostListParams } from '@/types'
 import { PLATFORM_NAMES, PLATFORM_COLORS } from '@/types'
 import { useToastStore } from '@/stores/toast'
 
@@ -329,6 +397,7 @@ const viewerMediaItems = ref<
 >([])
 const viewerInitialIndex = ref(0)
 const currentThumbnailIndex = ref(0)
+const relatedPosts = ref<Post[]>([])
 
 const platformName = computed(
   () => PLATFORM_NAMES[post.value?.platform as keyof typeof PLATFORM_NAMES] || post.value?.platform,
@@ -498,6 +567,9 @@ onMounted(async () => {
         // 忽略错误
       }
     }
+
+    // 加载相关推荐（异步，不阻塞页面）
+    loadRelatedPosts()
   } catch (error) {
     handleError(error, { customMessage: t('post.loadFailed', 'Failed to load post') })
   } finally {
@@ -595,6 +667,112 @@ const nextThumbnail = () => {
     currentThumbnailIndex.value++
   }
 }
+
+// 加载相关推荐
+const loadRelatedPosts = async () => {
+  if (!post.value) return
+  
+  try {
+    // 基于标签和平台获取相关帖子
+    const baseParams: PostListParams = {
+      page: 1,
+      page_size: 6,
+      sort_by: 'view_count',
+      sort_order: 'desc',
+    }
+    
+    // 优先使用相同平台
+    if (post.value.platform) {
+      baseParams.platform = post.value.platform
+    }
+    
+    const response = await postsStore.fetchPosts(baseParams)
+    
+    // 过滤掉当前帖子
+    relatedPosts.value = (response?.items || []).filter(
+      (p: Post) => p.id !== post.value!.id
+    ).slice(0, 4) // 最多显示4个
+  } catch (error) {
+    console.debug('[PostDetailPage] Failed to load related posts:', error)
+  }
+}
+
+// 分享功能
+const sharePost = async () => {
+  if (!post.value) return
+  
+  const shareData = {
+    title: post.value.title || 'Post',
+    text: post.value.description || '',
+    url: window.location.href,
+  }
+  
+  try {
+    if (navigator.share) {
+      await navigator.share(shareData)
+      toastStore.success(t('post.shareSuccess', 'Shared successfully'))
+    } else {
+      // 降级：复制链接
+      await copyLink(window.location.href)
+    }
+  } catch (error) {
+    if ((error as Error).name !== 'AbortError') {
+      console.debug('[PostDetailPage] Share failed:', error)
+    }
+  }
+}
+
+// 复制链接
+const copyLink = async (url: string) => {
+  try {
+    await navigator.clipboard.writeText(url)
+    toastStore.success(t('post.copySuccess', 'Link copied to clipboard'))
+  } catch (error) {
+    console.debug('[PostDetailPage] Copy failed:', error)
+    toastStore.error(t('post.copyFailed', 'Failed to copy link'))
+  }
+}
+
+// 键盘快捷键
+const handleKeydown = (e: KeyboardEvent) => {
+  // ESC: 返回
+  if (e.key === 'Escape' && !showMediaViewer.value) {
+    goBack()
+    return
+  }
+  
+  // 左右箭头：切换图片（当有多张图片时）
+  if (!showMediaViewer.value && allMediaUrls.value.length > 1) {
+    if (e.key === 'ArrowLeft') {
+      prevThumbnail()
+    } else if (e.key === 'ArrowRight') {
+      nextThumbnail()
+    }
+  }
+  
+  // F: 收藏/取消收藏
+  if (e.key === 'f' && !e.ctrlKey && !e.metaKey) {
+    e.preventDefault()
+    toggleFavorite()
+  }
+  
+  // S: 分享
+  if (e.key === 's' && !e.ctrlKey && !e.metaKey) {
+    e.preventDefault()
+    sharePost()
+  }
+}
+
+// 组件挂载时添加键盘事件监听
+import { onUnmounted } from 'vue'
+
+onMounted(() => {
+  window.addEventListener('keydown', handleKeydown)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeydown)
+})
 </script>
 
 <style scoped>
@@ -1319,6 +1497,263 @@ const nextThumbnail = () => {
 
   .back-button {
     margin-bottom: var(--spacing-md);
+  }
+  
+  /* 移动端操作按钮优化 */
+  .post-actions {
+    gap: var(--spacing-sm);
+  }
+  
+  .post-actions .action-label {
+    display: none; /* 移动端隐藏文字，只显示图标 */
+  }
+  
+  .post-actions :deep(.glass-button) {
+    min-width: auto;
+    padding: var(--spacing-sm) var(--spacing-md);
+  }
+}
+
+/* ========================================
+   骨架屏加载状态
+   ======================================== */
+
+.skeleton-loader {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--spacing-lg);
+}
+
+.skeleton-back-btn {
+  width: 100px;
+  height: 40px;
+  background: var(--glass-bg-light);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--spacing-lg);
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+}
+
+.skeleton-card {
+  background: var(--glass-bg);
+  border-radius: var(--radius-2xl);
+  padding: var(--spacing-xl);
+  border: 1px solid var(--glass-border);
+}
+
+.skeleton-thumbnail {
+  width: 100%;
+  height: 400px;
+  background: var(--glass-bg-light);
+  border-radius: var(--radius-xl);
+  margin-bottom: var(--spacing-lg);
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+}
+
+.skeleton-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.skeleton-meta {
+  width: 200px;
+  height: 20px;
+  background: var(--glass-bg-light);
+  border-radius: var(--radius-md);
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+}
+
+.skeleton-title {
+  width: 80%;
+  height: 32px;
+  background: var(--glass-bg-light);
+  border-radius: var(--radius-md);
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+  animation-delay: 0.1s;
+}
+
+.skeleton-description {
+  width: 100%;
+  height: 60px;
+  background: var(--glass-bg-light);
+  border-radius: var(--radius-md);
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+  animation-delay: 0.2s;
+}
+
+.skeleton-author {
+  width: 150px;
+  height: 24px;
+  background: var(--glass-bg-light);
+  border-radius: var(--radius-md);
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+  animation-delay: 0.3s;
+}
+
+.skeleton-stats {
+  width: 250px;
+  height: 24px;
+  background: var(--glass-bg-light);
+  border-radius: var(--radius-md);
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+  animation-delay: 0.4s;
+}
+
+.skeleton-actions {
+  display: flex;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-md);
+}
+
+.skeleton-actions::before,
+.skeleton-actions::after {
+  content: '';
+  width: 120px;
+  height: 40px;
+  background: var(--glass-bg-light);
+  border-radius: var(--radius-lg);
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+  animation-delay: 0.5s;
+}
+
+@keyframes skeleton-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* ========================================
+   相关推荐
+   ======================================== */
+
+.related-posts {
+  margin-top: var(--spacing-2xl);
+  padding: var(--spacing-xl);
+}
+
+.related-title {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-size: var(--text-xl);
+  font-weight: var(--font-bold);
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-lg);
+}
+
+.related-title svg {
+  color: var(--color-primary);
+  animation: sparkle 2s ease-in-out infinite;
+}
+
+@keyframes sparkle {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.1);
+  }
+}
+
+.related-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: var(--spacing-lg);
+}
+
+.related-item {
+  display: flex;
+  flex-direction: column;
+  background: var(--glass-bg-light);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  border: 1px solid var(--glass-border);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.related-item:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(139, 92, 246, 0.15);
+  border-color: var(--color-primary);
+}
+
+.related-item img {
+  width: 100%;
+  height: 140px;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.related-item:hover img {
+  transform: scale(1.05);
+}
+
+.related-info {
+  padding: var(--spacing-md);
+  flex: 1;
+}
+
+.related-info h4 {
+  font-size: var(--text-base);
+  font-weight: var(--font-semibold);
+  color: var(--color-text-primary);
+  margin: 0 0 var(--spacing-sm) 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.4;
+}
+
+.related-stats {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
+.related-stats span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+@media (max-width: 768px) {
+  .related-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-md);
+  }
+  
+  .related-posts {
+    padding: var(--spacing-lg);
+  }
+  
+  .related-item img {
+    height: 120px;
+  }
+  
+  .related-info {
+    padding: var(--spacing-sm);
+  }
+  
+  .related-info h4 {
+    font-size: var(--text-sm);
+  }
+}
+
+@media (max-width: 480px) {
+  .related-grid {
+    grid-template-columns: 1fr;
   }
 }
 </style>
