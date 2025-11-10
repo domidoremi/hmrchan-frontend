@@ -64,10 +64,11 @@ export const authApi = {
 export const postsApi = {
   /**
    * 获取内容列表
-   * GET /posts
+   * GET /posts/
+   * Note: Trailing slash added to avoid 307 redirect to HTTP
    */
   getPosts(params?: PostListParams) {
-    return api.get<PaginatedResponse<Post>>('/posts', { params })
+    return api.get<PaginatedResponse<Post>>('/posts/', { params })
   },
 
   /**
@@ -80,20 +81,22 @@ export const postsApi = {
 
   /**
    * 搜索内容
-   * GET /posts?q=keyword
+   * GET /posts/?q=keyword
+   * Note: Trailing slash added to avoid 307 redirect to HTTP
    */
   searchPosts(query: string, params?: Omit<PostListParams, 'q'>) {
-    return api.get<PaginatedResponse<Post>>('/posts', {
+    return api.get<PaginatedResponse<Post>>('/posts/', {
       params: { ...params, q: query },
     })
   },
 
   /**
    * 按平台获取内容
-   * GET /posts?platform=youtube
+   * GET /posts/?platform=youtube
+   * Note: Trailing slash added to avoid 307 redirect to HTTP
    */
   getPostsByPlatform(platform: string, params?: Omit<PostListParams, 'platform'>) {
-    return api.get<PaginatedResponse<Post>>('/posts', {
+    return api.get<PaginatedResponse<Post>>('/posts/', {
       params: { ...params, platform },
     })
   },
@@ -203,10 +206,11 @@ export const authorsApi = {
 
   /**
    * 获取作者的内容
-   * GET /authors/{author_id}/posts
+   * GET /authors/{author_id}/posts/
+   * Note: Trailing slash added to avoid 307 redirect to HTTP
    */
   getAuthorPosts(authorId: UUID, params?: PostListParams) {
-    return api.get<PaginatedResponse<Post>>(`/authors/${authorId}/posts`, { params })
+    return api.get<PaginatedResponse<Post>>(`/authors/${authorId}/posts/`, { params })
   },
 }
 

@@ -126,7 +126,6 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onUnmounted, nextTick } from 'vue'
-import { useI18n } from 'vue-i18n'
 import {
   X,
   ChevronLeft,
@@ -137,8 +136,8 @@ import {
   Maximize,
   Download,
 } from 'lucide-vue-next'
-// @ts-expect-error - Plyr在运行时正常工作，但TypeScript类型定义有问题
 import Plyr from 'plyr'
+import type PlyrType from 'plyr'
 import 'plyr/dist/plyr.css'
 
 interface MediaItem {
@@ -168,12 +167,11 @@ const emit = defineEmits<{
   close: []
 }>()
 
-const { t } = useI18n()
 const currentIndex = ref(props.initialIndex)
 const loading = ref(true)
 const zoom = ref(1)
 const videoElement = ref<HTMLVideoElement | null>(null)
-let player: Plyr | null = null
+let player: PlyrType | null = null
 const controlsVisible = ref(true)
 let hideControlsTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -272,9 +270,7 @@ const initPlyr = () => {
         'volume',
         'captions',
         'settings',
-        'pip',
-        'airplay',
-        'fullscreen',
+        'fullscreen', // 全屏按钮放在最后，移动端更易访问
       ],
       settings: ['captions', 'quality', 'speed'],
       speed: {
@@ -289,10 +285,13 @@ const initPlyr = () => {
       // 移动端响应式配置
       ratio: '16:9',
       fullscreen: {
-        enabled: true,
-        fallback: true,
-        iosNative: true,
+        enabled: true, // 明确启用全屏
+        fallback: true, // 使用fallback确保所有浏览器支持
+        iosNative: true, // iOS使用原生全屏
+        container: undefined, // 使用默认容器（整个视频播放器）
       },
+      clickToPlay: true, // 点击视频播放/暂停
+      disableContextMenu: false, // 允许右键菜单
       debug: false, // 生产环境关闭调试
       i18n: {
         restart: '重新播放',
@@ -918,9 +917,10 @@ onUnmounted(() => {
   display: flex !important;
   flex-wrap: nowrap !important;
   align-items: center !important;
-  gap: 4px !important;
-  padding: 10px !important;
-  min-height: 50px !important;
+  gap: 6px !important;
+  padding: 12px 10px !important;
+  min-height: 54px !important;
+  background: rgba(0, 0, 0, 0.85) !important; /* 更深的背景提高可读性 */
 }
 
 :deep(.plyr__controls__item) {
@@ -980,63 +980,101 @@ onUnmounted(() => {
 /* 小屏幕优化 (手机横屏) */
 @media (max-width: 768px) {
   :deep(.plyr__controls) {
-    gap: 2px !important;
-    padding: 6px !important;
-    min-height: 44px !important;
+    gap: 4px !important;
+    padding: 10px 8px !important;
+    min-height: 48px !important;
   }
 
   :deep(.plyr__control--overlaid) {
-    min-width: 60px !important;
-    min-height: 60px !important;
+    min-width: 70px !important;
+    min-height: 70px !important;
   }
 
+  /* 音量控件 - 移动端缩小但保持可用 */
+  :deep(.plyr__volume) {
+    max-width: 70px !important;
+    min-width: 50px !important;
+  }
+
+  /* 时间显示 */
+  :deep(.plyr__time) {
+    font-size: 12px !important;
+    min-width: 38px !important;
+  }
+
+  /* 进度条 */
+  :deep(.plyr__progress) {
+    min-width: 100px !important;
+    flex: 1 1 auto !important;
+  }
+
+  /* 全屏按钮 - 确保在移动端可见且易于点击 */
+  :deep([data-plyr='fullscreen']) {
+    min-width: 44px !important;
+    min-height: 44px !important;
+    padding: 8px !important;
+  }
+}
+
+/* 极小屏幕 (手机竖屏) - 简化控件但保留关键功能 */
+@media (max-width: 480px) {
+  :deep(.plyr__controls) {
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+    padding: 10px 6px !important;
+  }
+
+  /* 第一行：进度条占满宽度 */
+  :deep(.plyr__progress) {
+    order: 1;
+    flex: 1 1 100% !important;
+    margin-bottom: 6px !important;
+  }
+
+  /* 第二行：播放、音量、时间、全屏 */
+  :deep(.plyr__controls__item:not(.plyr__progress)) {
+    order: 2;
+    flex-shrink: 0;
+  }
+
+  /* 大播放按钮 */
+  :deep(.plyr__control--overlaid) {
+    min-width: 64px !important;
+    min-height: 64px !important;
+  }
+
+  /* 控制按钮统一大小 */
+  :deep(.plyr__controls button) {
+    min-width: 40px !important;
+    min-height: 40px !important;
+    padding: 6px !important;
+  }
+
+  /* 音量控件 */
   :deep(.plyr__volume) {
     max-width: 60px !important;
-    min-width: 40px !important;
+    min-width: 50px !important;
   }
 
+  /* 时间显示 */
   :deep(.plyr__time) {
     font-size: 11px !important;
     min-width: 35px !important;
   }
 
-  :deep(.plyr__progress) {
-    min-width: 80px !important;
-  }
-}
-
-/* 极小屏幕 (手机竖屏) - 简化控件 */
-@media (max-width: 480px) {
-  :deep(.plyr__controls) {
-    flex-wrap: wrap !important;
-    gap: 4px !important;
+  /* 全屏按钮 - 移动端最重要的按钮之一 */
+  :deep([data-plyr='fullscreen']) {
+    order: 3;
+    min-width: 44px !important;
+    min-height: 44px !important;
     padding: 8px !important;
+    margin-left: auto !important; /* 推到最右边 */
   }
 
-  /* 第一行：播放、进度条、全屏 */
-  :deep(.plyr__progress) {
-    order: 1;
-    flex: 1 1 100% !important;
-    margin-bottom: 4px !important;
-  }
-
-  /* 第二行：其他控件 */
-  :deep(.plyr__controls__item:not(.plyr__progress)) {
-    order: 2;
-  }
-
-  :deep(.plyr__control--overlaid) {
-    min-width: 50px !important;
-    min-height: 50px !important;
-  }
-
-  :deep(.plyr__volume) {
-    max-width: 50px !important;
-  }
-
-  :deep(.plyr__time) {
-    font-size: 10px !important;
-    min-width: 30px !important;
+  /* 隐藏次要功能 (PiP, Airplay) 释放空间 */
+  :deep([data-plyr='pip']),
+  :deep([data-plyr='airplay']) {
+    display: none !important;
   }
 }
 </style>
