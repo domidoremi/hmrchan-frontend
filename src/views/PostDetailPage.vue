@@ -179,9 +179,13 @@
 
             <!-- 5. Post Actions -->
             <div class="post-actions">
-              <GlassButton @click="toggleFavorite">
+              <GlassButton 
+                @click="toggleFavorite"
+                :class="{ 'favorited': isFavorited }"
+                :disabled="favoriteLoading"
+              >
                 <Heart :size="18" :fill="isFavorited ? 'currentColor' : 'none'" />
-                {{ $t('favorite.add') }}
+                {{ isFavorited ? $t('favorite.remove') : $t('favorite.add') }}
               </GlassButton>
               <a v-if="post.url" :href="post.url" target="_blank" rel="noopener noreferrer">
                 <GlassButton variant="secondary">
@@ -1081,6 +1085,18 @@ const nextThumbnail = () => {
   display: inline-flex;
 }
 
+/* 收藏按钮激活状态 */
+.post-actions :deep(.glass-button.favorited) {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.2) 0%, rgba(192, 132, 252, 0.2) 100%);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+[data-theme='dark'] .post-actions :deep(.glass-button.favorited) {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.3) 0%, rgba(192, 132, 252, 0.3) 100%);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+}
+
 .media-section {
   margin-top: var(--spacing-2xl);
   margin-bottom: var(--spacing-xl);
@@ -1244,7 +1260,37 @@ const nextThumbnail = () => {
 
   .author-info,
   .post-stats {
-    padding: var(--spacing-md);
+    padding: var(--spacing-lg); /* 增加移动端内边距 */
+    gap: var(--spacing-md); /* 增加元素间隔 */
+  }
+  
+  /* iPhone 14 Pro Max (430x932) 优化 */
+  @media (max-width: 430px) {
+    .post-stats {
+      flex-wrap: nowrap; /* 强制单行显示 */
+      gap: var(--spacing-sm);
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    
+    .post-stats .stat-item {
+      flex-shrink: 0; /* 防止被压缩 */
+      min-width: fit-content;
+    }
+    
+    .post-stats .stat-item span {
+      font-size: var(--text-sm);
+    }
+    
+    .author-info {
+      gap: var(--spacing-md);
+    }
+    
+    .post-title {
+      font-size: var(--text-xl);
+      line-height: 1.4;
+      margin-bottom: var(--spacing-md);
+    }
   }
   
   .author-avatar {

@@ -4,7 +4,7 @@
       <div class="settings-header">
         <h1 class="page-title">{{ $t('nav.settings') }}</h1>
         <p class="page-subtitle">
-          {{ isAuthenticated ? $t('settings.welcomeBack', 'Manage your preferences and account') : $t('settings.welcome', 'Customize your experience') }}
+          {{ isAuthenticated ? $t('settings.welcomeBack') : $t('settings.welcome') }}
         </p>
       </div>
 
@@ -13,7 +13,7 @@
         <div class="settings-section">
           <h2 class="section-title">
             <Sliders :size="24" />
-            {{ $t('settings.generalSettings', '通用设置') }}
+            {{ $t('settings.generalSettings') }}
           </h2>
 
           <!-- Theme Settings -->
@@ -179,14 +179,14 @@
         <div v-if="isAuthenticated" class="settings-section">
           <h2 class="section-title">
             <UserCog :size="24" />
-            {{ $t('settings.accountSettings', '账户设置') }}
+            {{ $t('settings.accountSettings') }}
           </h2>
 
           <!-- Account Info -->
           <div class="settings-card glass-card">
             <div class="card-header">
               <User :size="24" />
-              <h3>{{ $t('settings.accountInfo', 'Account Information') }}</h3>
+              <h3>{{ $t('settings.accountInfo') }}</h3>
             </div>
 
             <div class="settings-content">
@@ -200,7 +200,7 @@
                   <span class="value">{{ user?.email }}</span>
                 </div>
                 <div class="info-row">
-                  <span class="label">{{ $t('settings.role', 'Role') }}</span>
+                  <span class="label">{{ $t('settings.role') }}</span>
                   <span class="value">{{ user?.is_admin ? 'Admin' : 'User' }}</span>
                 </div>
               </div>
@@ -208,7 +208,7 @@
               <div class="action-buttons">
                 <RouterLink to="/profile" class="text-button">
                   <UserCog :size="18" />
-                  {{ $t('settings.manageProfile', 'Manage Profile') }}
+                  {{ $t('settings.manageProfile') }}
                 </RouterLink>
                 
                 <button class="text-button danger" @click="handleLogout">
@@ -226,8 +226,8 @@
             <div class="prompt-icon">
               <UserPlus :size="48" />
             </div>
-            <h3>{{ $t('settings.loginPromptTitle', 'Sign in for more features') }}</h3>
-            <p>{{ $t('settings.loginPromptDesc', 'Access your favorites, manage your profile, and more.') }}</p>
+            <h3>{{ $t('settings.loginPromptTitle') }}</h3>
+            <p>{{ $t('settings.loginPromptDesc') }}</p>
             <div class="prompt-actions">
               <RouterLink to="/login">
                 <GlassButton>
@@ -467,6 +467,10 @@ const handleLogout = () => {
   position: relative;
   width: 52px;
   height: 28px;
+  min-width: 52px; /* 防止被压缩 */
+  min-height: 28px;
+  max-width: 52px; /* 防止被拉伸 */
+  max-height: 28px;
   border-radius: 14px;
   background: var(--glass-border);
   border: none;
