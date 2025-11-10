@@ -1,3 +1,6 @@
+// 🔒 CRITICAL: Import FIRST - intercepts ALL XHR before anything else loads
+import './utils/forceHttps'
+
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
