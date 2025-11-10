@@ -117,6 +117,15 @@
     "loginRequired": "Please login to add favorites"
   },
   "settings": {
+    "welcomeBack": "Manage your preferences and account",
+    "welcome": "Customize your experience",
+    "generalSettings": "General Settings",
+    "accountSettings": "Account Settings",
+    "accountInfo": "Account Information",
+    "role": "Role",
+    "manageProfile": "Manage Profile",
+    "loginPromptTitle": "Sign in for more features",
+    "loginPromptDesc": "Access your favorites, manage your profile, and more.",
     "theme": "Theme",
     "language": "Language",
     "display": "Display Settings",

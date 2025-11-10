@@ -182,31 +182,89 @@
   </Transition>
 
   <!-- 搜索模态框 -->
-  <!-- TODO: 实现SearchModal组件 -->
   <Teleport to="body">
-    <div v-if="searchModalOpen" class="search-modal-overlay" @click="closeSearchModal">
-      <div class="search-modal-content" @click.stop>
-        <div class="search-header">
-          <input
-            type="text"
-            placeholder="Search posts..."
-            class="search-input"
-            autofocus
-          />
-          <button class="close-btn" @click="closeSearchModal">
-            <X :size="24" />
-          </button>
-        </div>
-        <div class="search-results">
-          <p class="search-placeholder">Start typing to search...</p>
+    <Transition name="modal-fade">
+      <div v-if="searchModalOpen" class="search-modal-overlay" @click="closeSearchModal">
+        <div class="search-modal-content" @click.stop>
+          <div class="search-header">
+            <div class="search-input-wrapper">
+              <Search :size="20" class="search-icon" />
+              <input
+                ref="searchInputRef"
+                v-model="searchQuery"
+                type="text"
+                :placeholder="$t('search.placeholder')"
+                class="search-input"
+                @input="handleSearchInput"
+              />
+              <button
+                v-if="searchQuery"
+                class="clear-btn"
+                @click="clearSearch"
+                :aria-label="$t('common.clear')"
+              >
+                <X :size="18" />
+              </button>
+            </div>
+            <button class="close-btn" @click="closeSearchModal" :aria-label="$t('common.close')">
+              <X :size="24" />
+            </button>
+          </div>
+
+          <div class="search-results">
+            <!-- 加载状态 -->
+            <div v-if="searchLoading" class="search-loading">
+              <div class="loading-spinner"></div>
+              <p>{{ $t('search.searching') }}</p>
+            </div>
+
+            <!-- 空状态 -->
+            <div v-else-if="!searchQuery" class="search-empty">
+              <Search :size="48" />
+              <p>{{ $t('search.placeholder') }}</p>
+            </div>
+
+            <!-- 搜索结果 -->
+            <div v-else-if="searchResults.length > 0" class="results-list">
+              <RouterLink
+                v-for="post in searchResults"
+                :key="post.id"
+                :to="`/posts/${post.id}`"
+                class="result-item"
+                @click="closeSearchModal"
+              >
+                <img
+                  v-if="post.thumbnail_url"
+                  :src="getMediaUrl(post.thumbnail_url)"
+                  :alt="post.title || 'Post'"
+                  class="result-thumbnail"
+                />
+                <div class="result-info">
+                  <h4 class="result-title">{{ post.title || $t('post.untitled') }}</h4>
+                  <p v-if="post.description" class="result-description">{{ truncate(post.description, 100) }}</p>
+                  <div class="result-meta">
+                    <span class="meta-platform">{{ post.platform }}</span>
+                    <span class="meta-date">{{ formatDate(post.published_at || post.scraped_at) }}</span>
+                  </div>
+                </div>
+              </RouterLink>
+            </div>
+
+            <!-- 无结果 -->
+            <div v-else class="search-no-results">
+              <Search :size="48" />
+              <p>{{ $t('search.noResults') }}</p>
+              <p class="hint">{{ $t('search.tryDifferent') }}</p>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
+    </Transition>
   </Teleport>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import {
@@ -221,18 +279,29 @@ import {
   LogIn,
   X,
 } from 'lucide-vue-next'
-
-// import SearchModal from '@/components/features/SearchModal.vue' // 暂时注释，组件不存在
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
+import { usePostsStore } from '@/stores/posts'
+import { API_BASE_URL } from '@/config/api'
+import type { Post } from '@/types'
 
 const router = useRouter()
+const { t } = useI18n()
 const authStore = useAuthStore()
+const postsStore = usePostsStore()
 
 const { user, isAuthenticated } = storeToRefs(authStore)
 
 const showUserMenu = ref(false)
 const searchModalOpen = ref(false)
 const userMenuRef = ref<HTMLElement | null>(null)
+const searchInputRef = ref<HTMLInputElement | null>(null)
+
+// 搜索相关状态
+const searchQuery = ref('')
+const searchResults = ref<Post[]>([])
+const searchLoading = ref(false)
+let searchTimeout: ReturnType<typeof setTimeout> | null = null
 
 const userAvatarUrl = computed(() => {
   if (user.value?.avatar_url) {
@@ -241,12 +310,80 @@ const userAvatarUrl = computed(() => {
   return `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.value?.username || 'default'}`
 })
 
-const openSearchModal = () => {
+const openSearchModal = async () => {
   searchModalOpen.value = true
+  await nextTick()
+  searchInputRef.value?.focus()
 }
 
 const closeSearchModal = () => {
   searchModalOpen.value = false
+  searchQuery.value = ''
+  searchResults.value = []
+  if (searchTimeout) {
+    clearTimeout(searchTimeout)
+    searchTimeout = null
+  }
+}
+
+const clearSearch = () => {
+  searchQuery.value = ''
+  searchResults.value = []
+  searchInputRef.value?.focus()
+}
+
+// 防抖搜索
+const handleSearchInput = () => {
+  if (searchTimeout) {
+    clearTimeout(searchTimeout)
+  }
+
+  if (!searchQuery.value.trim()) {
+    searchResults.value = []
+    searchLoading.value = false
+    return
+  }
+
+  searchLoading.value = true
+
+  searchTimeout = setTimeout(async () => {
+    try {
+      await postsStore.fetchPosts({
+        q: searchQuery.value.trim(),
+        page: 1,
+        page_size: 10,
+      })
+      searchResults.value = postsStore.posts
+    } catch (error) {
+      console.error('Search error:', error)
+      searchResults.value = []
+    } finally {
+      searchLoading.value = false
+    }
+  }, 300) // 300ms 防抖延迟
+}
+
+// 工具函数
+const getMediaUrl = (url: string) => {
+  if (url.startsWith('http')) return url
+  return `${API_BASE_URL}${url}`
+}
+
+const truncate = (text: string, length: number) => {
+  if (text.length <= length) return text
+  return text.substring(0, length) + '...'
+}
+
+const formatDate = (dateString: string) => {
+  const date = new Date(dateString)
+  const now = new Date()
+  const diff = now.getTime() - date.getTime()
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+
+  if (days === 0) return t('common.today')
+  if (days === 1) return t('common.yesterday')
+  if (days < 7) return t('common.daysAgo', { days })
+  return date.toLocaleDateString(t('locale'))
 }
 
 const handleLogout = () => {
@@ -782,8 +919,8 @@ onUnmounted(() => {
   position: fixed;
   inset: 0;
   z-index: 3000;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(8px);
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(12px);
   display: flex;
   align-items: flex-start;
   justify-content: center;
@@ -793,12 +930,12 @@ onUnmounted(() => {
 
 .search-modal-content {
   width: 100%;
-  max-width: 600px;
+  max-width: 700px;
   background: var(--glass-bg);
   backdrop-filter: var(--glass-blur);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-2xl);
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
   margin-top: var(--spacing-10);
   overflow: hidden;
 }
@@ -807,30 +944,69 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: var(--spacing-3);
-  padding: var(--spacing-4);
+  padding: var(--spacing-5);
   border-bottom: 1px solid var(--glass-border);
+  background: var(--glass-bg-light);
 }
 
-.search-input {
+.search-input-wrapper {
   flex: 1;
-  padding: var(--spacing-3);
-  background: var(--glass-bg-light);
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  padding: var(--spacing-3) var(--spacing-4);
+  background: var(--color-background);
   border: 2px solid var(--glass-border);
-  border-radius: var(--radius-lg);
-  color: var(--color-text-primary);
-  font-size: var(--text-lg);
-  outline: none;
+  border-radius: var(--radius-xl);
   transition: all var(--transition-fast);
 }
 
-.search-input:focus {
+.search-input-wrapper:focus-within {
   border-color: var(--color-primary);
   box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
 }
 
+.search-icon {
+  color: var(--color-text-tertiary);
+  flex-shrink: 0;
+}
+
+.search-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--color-text-primary);
+  font-size: var(--text-base);
+  outline: none;
+}
+
+.search-input::placeholder {
+  color: var(--color-text-tertiary);
+}
+
+.clear-btn {
+  padding: var(--spacing-1);
+  background: transparent;
+  border: none;
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.clear-btn:hover {
+  background: var(--glass-bg-light);
+  color: var(--color-text-primary);
+}
+
 .close-btn {
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -840,31 +1016,199 @@ onUnmounted(() => {
   color: var(--color-text-secondary);
   cursor: pointer;
   transition: all var(--transition-fast);
+  flex-shrink: 0;
 }
 
 .close-btn:hover {
   background: var(--glass-bg);
   color: var(--color-text-primary);
+  transform: scale(1.05);
 }
 
+/* 搜索结果区域 */
 .search-results {
-  padding: var(--spacing-6);
-  min-height: 200px;
+  max-height: 60vh;
+  overflow-y: auto;
 }
 
-.search-placeholder {
-  text-align: center;
+/* 加载状态 */
+.search-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-12);
+  gap: var(--spacing-4);
   color: var(--color-text-secondary);
-  font-size: var(--text-base);
 }
 
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--glass-border);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 空状态 */
+.search-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-12);
+  gap: var(--spacing-4);
+  color: var(--color-text-tertiary);
+}
+
+/* 无结果 */
+.search-no-results {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-12);
+  gap: var(--spacing-3);
+  color: var(--color-text-tertiary);
+}
+
+.search-no-results .hint {
+  font-size: var(--text-sm);
+  opacity: 0.8;
+}
+
+/* 结果列表 */
+.results-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.result-item {
+  display: flex;
+  gap: var(--spacing-4);
+  padding: var(--spacing-4);
+  border-bottom: 1px solid var(--glass-border);
+  text-decoration: none;
+  color: inherit;
+  transition: all var(--transition-fast);
+}
+
+.result-item:hover {
+  background: var(--glass-bg-light);
+}
+
+.result-item:last-child {
+  border-bottom: none;
+}
+
+.result-thumbnail {
+  width: 80px;
+  height: 80px;
+  min-width: 80px;
+  object-fit: cover;
+  border-radius: var(--radius-lg);
+  background: var(--glass-bg-light);
+}
+
+.result-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+  min-width: 0;
+}
+
+.result-title {
+  font-size: var(--text-base);
+  font-weight: var(--font-semibold);
+  color: var(--color-text-primary);
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.result-description {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  line-height: 1.5;
+}
+
+.result-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+}
+
+.meta-platform {
+  padding: var(--spacing-1) var(--spacing-2);
+  background: var(--glass-bg-light);
+  border-radius: var(--radius-md);
+  font-weight: var(--font-medium);
+  text-transform: uppercase;
+}
+
+/* 模态框动画 */
+.modal-fade-enter-active,
+.modal-fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.modal-fade-enter-from,
+.modal-fade-leave-to {
+  opacity: 0;
+}
+
+.modal-fade-enter-active .search-modal-content,
+.modal-fade-leave-active .search-modal-content {
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.modal-fade-enter-from .search-modal-content,
+.modal-fade-leave-to .search-modal-content {
+  transform: translateY(-30px);
+  opacity: 0;
+}
+
+/* 响应式 */
 @media (max-width: 768px) {
   .search-modal-overlay {
     padding: var(--spacing-4);
   }
 
   .search-modal-content {
-    margin-top: var(--spacing-4);
+    margin-top: 0;
+  }
+
+  .result-thumbnail {
+    width: 60px;
+    height: 60px;
+    min-width: 60px;
+  }
+
+  .result-title {
+    font-size: var(--text-sm);
+  }
+
+  .result-description {
+    font-size: var(--text-xs);
   }
 }
 </style>

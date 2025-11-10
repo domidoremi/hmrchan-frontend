@@ -20,7 +20,8 @@
       </select>
     </div>
 
-    <div class="filter-section">
+    <!-- 升降序按钮（最新排序时隐藏） -->
+    <div v-if="localFilters.sort_by !== 'scraped_at'" class="filter-section">
       <label class="filter-label">{{ $t('common.order') }}</label>
       <div class="filter-buttons">
         <button
@@ -67,10 +68,12 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { ArrowDown, ArrowUp, ImageIcon, RotateCcw, Filter } from 'lucide-vue-next'
-import { useI18n } from 'vue-i18n'
 import type { PostListParams } from '@/types'
 import { PLATFORMS } from '@/types'
 import GlassButton from '@/components/ui/GlassButton.vue'
+
+// 防抖定时器
+let applyTimeout: ReturnType<typeof setTimeout> | null = null
 
 interface Props {
   filters: PostListParams
@@ -80,8 +83,6 @@ const props = defineProps<Props>()
 const emit = defineEmits<{
   update: [filters: PostListParams]
 }>()
-
-const { t } = useI18n()
 
 const platforms = PLATFORMS
 const localFilters = ref<PostListParams>({ ...props.filters })
@@ -93,7 +94,32 @@ watch(
   },
 )
 
+// 监听 sort_by 变化，当选择“最新”时自动设置为降序
+watch(
+  () => localFilters.value.sort_by,
+  (newSortBy) => {
+    if (newSortBy === 'scraped_at') {
+      localFilters.value.sort_order = 'desc'
+    }
+  },
+)
+
+// 防抖应用筛选（优化性能）
 const applyFilters = () => {
+  if (applyTimeout) {
+    clearTimeout(applyTimeout)
+  }
+  
+  applyTimeout = setTimeout(() => {
+    emit('update', { ...localFilters.value })
+  }, 100) // 100ms 防抖
+}
+
+// 立即应用筛选（用于重置按钮）
+const applyFiltersImmediate = () => {
+  if (applyTimeout) {
+    clearTimeout(applyTimeout)
+  }
   emit('update', { ...localFilters.value })
 }
 
@@ -106,7 +132,7 @@ const resetFilters = () => {
     platform: '',
     has_media: false,
   }
-  applyFilters()
+  applyFiltersImmediate() // 重置时立即应用
 }
 </script>
 
