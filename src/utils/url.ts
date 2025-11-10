@@ -3,17 +3,29 @@
  */
 
 /**
+ * 强制将 HTTP URL 转换为 HTTPS（生产环境）
+ */
+function forceHttps(url: string): string {
+  // 生产环境强制使用 HTTPS
+  if (import.meta.env.PROD && url.startsWith('http://')) {
+    return url.replace('http://', 'https://')
+  }
+  return url
+}
+
+/**
  * 获取API基础URL（不含/api路径）
  */
 export function getApiBaseUrl(): string {
   // 优先使用 VITE_API_BASE_URL (如 https://api.momichan.xyz)
   if (import.meta.env.VITE_API_BASE_URL) {
-    return import.meta.env.VITE_API_BASE_URL
+    return forceHttps(import.meta.env.VITE_API_BASE_URL)
   }
   
   // 如果只有 VITE_API_ENDPOINT (如 https://api.momichan.xyz/api)，去除 /api
   if (import.meta.env.VITE_API_ENDPOINT) {
-    return import.meta.env.VITE_API_ENDPOINT.replace(/\/api.*$/, '')
+    const baseUrl = import.meta.env.VITE_API_ENDPOINT.replace(/\/api.*$/, '')
+    return forceHttps(baseUrl)
   }
   
   // 生产环境默认使用HTTPS，防止混合内容错误
@@ -30,11 +42,11 @@ export function getApiBaseUrl(): string {
  */
 export function getApiEndpoint(): string {
   if (import.meta.env.VITE_API_ENDPOINT) {
-    return import.meta.env.VITE_API_ENDPOINT
+    return forceHttps(import.meta.env.VITE_API_ENDPOINT)
   }
   
   if (import.meta.env.VITE_API_BASE_URL) {
-    return import.meta.env.VITE_API_BASE_URL + '/api/v1'
+    return forceHttps(import.meta.env.VITE_API_BASE_URL + '/api/v1')
   }
   
   // 生产环境默认使用HTTPS完整URL
