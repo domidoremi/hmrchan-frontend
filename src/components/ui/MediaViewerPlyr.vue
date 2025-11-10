@@ -52,7 +52,7 @@
 
         <!-- 视频 (使用 Plyr) -->
         <div v-else-if="currentMedia.type === 'video'" class="video-wrapper">
-          <video ref="videoElement" class="plyr-video" playsinline controls :key="currentMedia.url">
+          <video ref="videoElement" class="plyr-video" playsinline controls>
             <source :src="currentMedia.url" type="video/mp4" />
 
             <!-- 多语言字幕支持 -->
@@ -137,7 +137,7 @@ import {
   Maximize,
   Download,
 } from 'lucide-vue-next'
-// @ts-ignore - Plyr在运行时正常工作，但TypeScript类型定义有问题
+// @ts-expect-error - Plyr在运行时正常工作，但TypeScript类型定义有问题
 import Plyr from 'plyr'
 import 'plyr/dist/plyr.css'
 
@@ -228,9 +228,17 @@ watch(currentIndex, () => {
   // 销毁旧的 Plyr 实例
   destroyPlyr()
 
-  // 如果切换到视频，初始化新的 Plyr 实例
+  // 如果切换到视频，重新加载视频源并初始化Plyr
   if (currentMedia.value.type === 'video') {
     nextTick(() => {
+      if (videoElement.value) {
+        // 更新video source而不是完全remount
+        const source = videoElement.value.querySelector('source')
+        if (source) {
+          source.src = currentMedia.value.url
+          videoElement.value.load()
+        }
+      }
       initPlyr()
     })
   }
@@ -328,6 +336,20 @@ const initPlyr = () => {
     player.on('ready', () => {
       console.log('[Plyr] 播放器就绪')
       loading.value = false
+      
+      // 检查视频是否可播放
+      if (videoElement.value) {
+        videoElement.value.addEventListener('error', () => {
+          console.error('[Plyr] 视频加载错误:', {
+            error: videoElement.value?.error,
+            src: currentMedia.value.url,
+          })
+          // ORB错误通常是CORS或路径问题
+          if (videoElement.value?.error?.code === 4) {
+            console.error('[Plyr] 网络错误 - 可能是CORS或URL路径问题')
+          }
+        })
+      }
 
       // 检查字幕轨道
       if (player) {
@@ -891,51 +913,130 @@ onUnmounted(() => {
   backdrop-filter: blur(10px);
 }
 
-/* Plyr 控件响应式布局 - 防止按钮重叠 */
+/* Plyr 控件响应式布局 - 防止按钮重叠和挤压 */
 :deep(.plyr__controls) {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  gap: 4px !important;
+  padding: 10px !important;
+  min-height: 50px !important;
 }
 
 :deep(.plyr__controls__item) {
   margin: 0 !important;
+  flex-shrink: 0 !important;
 }
 
-/* 确保音量控件不会过宽 */
+/* 播放/暂停按钮 */
+:deep(.plyr__control--overlaid) {
+  min-width: 80px !important;
+  min-height: 80px !important;
+}
+
+/* 进度条 - 占据剩余空间 */
+:deep(.plyr__progress) {
+  flex: 1 1 auto !important;
+  min-width: 100px !important;
+}
+
+/* 时间显示 - 固定宽度防止布局跳动 */
+:deep(.plyr__time) {
+  font-size: 13px !important;
+  flex-shrink: 0 !important;
+  min-width: 40px !important;
+}
+
+/* 音量控件 - 限制最大宽度 */
 :deep(.plyr__volume) {
-  flex: 0 1 auto;
-  max-width: 100px;
+  flex: 0 1 auto !important;
+  max-width: 100px !important;
+  min-width: 60px !important;
 }
 
-/* 中等屏幕优化 */
+/* 设置和字幕按钮 */
+:deep(.plyr__menu) {
+  margin-left: auto !important;
+  flex-shrink: 0 !important;
+}
+
+/* 中等屏幕优化 (平板) */
 @media (max-width: 1024px) {
   :deep(.plyr__controls) {
-    gap: 4px;
+    gap: 3px !important;
+    padding: 8px !important;
   }
 
   :deep(.plyr__volume) {
-    max-width: 80px;
-  }
-
-  :deep(.plyr__menu) {
-    margin-left: auto;
-  }
-}
-
-/* 小屏幕 - 字幕按钮换行 */
-@media (max-width: 640px) {
-  :deep(.plyr__controls) {
-    gap: 2px;
-  }
-
-  :deep(.plyr__volume) {
-    max-width: 60px;
+    max-width: 80px !important;
+    min-width: 50px !important;
   }
 
   :deep(.plyr__time) {
-    font-size: 12px;
+    font-size: 12px !important;
+  }
+}
+
+/* 小屏幕优化 (手机横屏) */
+@media (max-width: 768px) {
+  :deep(.plyr__controls) {
+    gap: 2px !important;
+    padding: 6px !important;
+    min-height: 44px !important;
+  }
+
+  :deep(.plyr__control--overlaid) {
+    min-width: 60px !important;
+    min-height: 60px !important;
+  }
+
+  :deep(.plyr__volume) {
+    max-width: 60px !important;
+    min-width: 40px !important;
+  }
+
+  :deep(.plyr__time) {
+    font-size: 11px !important;
+    min-width: 35px !important;
+  }
+
+  :deep(.plyr__progress) {
+    min-width: 80px !important;
+  }
+}
+
+/* 极小屏幕 (手机竖屏) - 简化控件 */
+@media (max-width: 480px) {
+  :deep(.plyr__controls) {
+    flex-wrap: wrap !important;
+    gap: 4px !important;
+    padding: 8px !important;
+  }
+
+  /* 第一行：播放、进度条、全屏 */
+  :deep(.plyr__progress) {
+    order: 1;
+    flex: 1 1 100% !important;
+    margin-bottom: 4px !important;
+  }
+
+  /* 第二行：其他控件 */
+  :deep(.plyr__controls__item:not(.plyr__progress)) {
+    order: 2;
+  }
+
+  :deep(.plyr__control--overlaid) {
+    min-width: 50px !important;
+    min-height: 50px !important;
+  }
+
+  :deep(.plyr__volume) {
+    max-width: 50px !important;
+  }
+
+  :deep(.plyr__time) {
+    font-size: 10px !important;
+    min-width: 30px !important;
   }
 }
 </style>
