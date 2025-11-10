@@ -1,10 +1,11 @@
 /**
  * API客户端配置 - 增强版（带缓存支持）
  */
-import axios, { type AxiosInstance, type AxiosRequestConfig, type AxiosResponse } from 'axios'
+import axios, { type AxiosInstance, type AxiosResponse, type AxiosRequestConfig } from 'axios'
 import { useAuthStore } from '@/stores/auth'
-import { requestCache } from '@/utils/requestCache'
 import logger from '@/utils/logger'
+import { forceHttpsAdapter } from './forceHttpsAdapter'
+import { requestCache } from '@/utils/requestCache'
 
 // 🔒 强制使用 HTTPS - 完全不依赖环境变量或构建时计算
 // 开发环境使用 Vite 代理，生产环境硬编码 HTTPS
@@ -42,11 +43,12 @@ console.log('🌐 API Configuration:', {
   windowProtocol: typeof window !== 'undefined' ? window.location.protocol : 'N/A'
 })
 
-// 创建axios实例 - 使用 SAFE_BASE_URL
+// 创建axios实例 - 使用 SAFE_BASE_URL 和自定义 HTTPS 强制适配器
 const apiClient: AxiosInstance = axios.create({
   baseURL: SAFE_BASE_URL,
   timeout: 30000,
   withCredentials: false,
+  adapter: forceHttpsAdapter, // 🔒 使用自定义适配器在最底层强制 HTTPS
 })
 
 // 🔒 强制锁定 baseURL，防止被修改
