@@ -7,7 +7,53 @@
  * 4. 后台同步
  */
 
-const CACHE_VERSION = 'v1.2.0' // HTTPS enforcement in Service Worker
+const CACHE_VERSION = 'v1.3.0' // Nuclear HTTPS enforcement in Service Worker
+
+// 🔒 CRITICAL: Override fetch in Service Worker context IMMEDIATELY
+const originalFetch = self.fetch.bind(self);
+self.fetch = function(input, init) {
+  let url;
+  
+  if (typeof input === 'string') {
+    url = input;
+  } else if (input instanceof URL) {
+    url = input.toString();
+  } else if (input instanceof Request) {
+    url = input.url;
+  } else {
+    url = String(input);
+  }
+  
+  // Force HTTPS if HTTP and points to api.momichan.xyz
+  if (url.includes('api.momichan.xyz') && url.startsWith('http://')) {
+    const httpsUrl = url.replace('http://', 'https://');
+    console.error('[SW] 🚨🚨🚨 FORCED HTTP → HTTPS:', url, '→', httpsUrl);
+    
+    if (typeof input === 'string') {
+      return originalFetch(httpsUrl, init);
+    } else if (input instanceof Request) {
+      // Create new request with HTTPS URL
+      const newRequest = new Request(httpsUrl, {
+        method: input.method,
+        headers: input.headers,
+        body: input.body,
+        mode: input.mode === 'no-cors' ? 'cors' : input.mode,
+        credentials: input.credentials,
+        cache: input.cache,
+        redirect: input.redirect,
+        referrer: input.referrer,
+        integrity: input.integrity,
+      });
+      return originalFetch(newRequest, init);
+    } else {
+      return originalFetch(httpsUrl, init);
+    }
+  }
+  
+  return originalFetch(input, init);
+};
+
+console.log('[SW] 🔒 Fetch interceptor installed in Service Worker context')
 const STATIC_CACHE = `hmrchan-static-${CACHE_VERSION}`
 const API_CACHE = `hmrchan-api-${CACHE_VERSION}`
 const IMAGE_CACHE = `hmrchan-images-${CACHE_VERSION}`
@@ -76,30 +122,11 @@ self.addEventListener('activate', (event) => {
 
 // ==================== 获取事件 ====================
 self.addEventListener('fetch', (event) => {
-  let { request } = event
-  let url = new URL(request.url)
+  const { request } = event
+  const url = new URL(request.url)
 
-  // 🔒 运行时强制 HTTPS - Service Worker 最后防线
-  // Service Worker 不经过 axios 拦截器，需要在这里转换
-  if (url.protocol === 'http:' && url.hostname === 'api.momichan.xyz') {
-    const httpsUrl = request.url.replace('http://', 'https://')
-    console.warn('[SW] 🚨 Forcing HTTP to HTTPS:', request.url, '→', httpsUrl)
-    
-    // 创建新的 HTTPS 请求
-    request = new Request(httpsUrl, {
-      method: request.method,
-      headers: request.headers,
-      mode: request.mode === 'no-cors' ? 'cors' : request.mode,
-      credentials: request.credentials,
-      cache: request.cache,
-      redirect: request.redirect,
-      referrer: request.referrer,
-      integrity: request.integrity,
-    })
-    
-    // 更新 URL 对象
-    url = new URL(httpsUrl)
-  }
+  // Note: HTTPS enforcement is now done at the fetch override level above
+  // No need to duplicate it here
 
   // 跳过非GET请求
   if (request.method !== 'GET') {
