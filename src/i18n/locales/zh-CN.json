@@ -46,7 +46,12 @@
     "videoNotSupported": "您的浏览器不支持视频播放",
     "addToFavorites": "添加到收藏",
     "unfavorite": "取消收藏",
-    "total": "帖子总数"
+    "total": "总帖子数",
+    "share": "分享",
+    "shareSuccess": "分享成功",
+    "copyLink": "复制链接",
+    "copySuccess": "链接已复制到剪贴板",
+    "copyFailed": "复制链接失败"
   },
   "posts": {
     "subtitle": "发现并探索来自多个平台的精彩内容"

@@ -23,7 +23,7 @@
     "all": "All Platforms"
   },
   "post": {
-    "title": "Post",
+    "title": "Posts",
     "description": "Description",
     "author": "Author",
     "views": "views",
@@ -46,7 +46,12 @@
     "videoNotSupported": "Your browser does not support video playback",
     "addToFavorites": "Add to Favorites",
     "unfavorite": "Remove from Favorites",
-    "total": "Total Posts"
+    "total": "Total Posts",
+    "share": "Share",
+    "shareSuccess": "Shared successfully",
+    "copyLink": "Copy Link",
+    "copySuccess": "Link copied to clipboard",
+    "copyFailed": "Failed to copy link"
   },
   "posts": {
     "subtitle": "Discover and explore amazing content from multiple platforms"

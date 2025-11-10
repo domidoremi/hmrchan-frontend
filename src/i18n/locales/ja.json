@@ -39,14 +39,19 @@
     "viewOriginal": "元の投稿を見る",
     "retweet": "リツイート",
     "originalAuthor": "元の作者",
-    "relatedPosts": "関連投稿",
     "loadingMedia": "読み込み中...",
     "video": "動画",
     "image": "画像",
     "videoNotSupported": "お使いのブラウザは動画再生に対応していません",
     "addToFavorites": "お気に入りに追加",
-    "unfavorite": "お気に入りから削除",
-    "total": "総投稿数"
+    "unfavorite": "お気に入り解除",
+    "total": "総投稿数",
+    "relatedPosts": "関連投稿",
+    "share": "共有",
+    "shareSuccess": "共有しました",
+    "copyLink": "リンクをコピー",
+    "copySuccess": "リンクをクリップボードにコピーしました",
+    "copyFailed": "リンクのコピーに失敗しました"
   },
   "posts": {
     "subtitle": "複数のプラットフォームから素晴らしいコンテンツを発見し探索"
