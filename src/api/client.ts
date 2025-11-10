@@ -5,25 +5,10 @@ import axios, { type AxiosInstance, type AxiosRequestConfig, type AxiosResponse 
 import { useAuthStore } from '@/stores/auth'
 import { requestCache } from '@/utils/requestCache'
 import logger from '@/utils/logger'
-import { getApiEndpoint } from '@/utils/url'
+import { getRuntimeApiEndpoint } from '@/config/runtime'
 
-// API基础URL - 运行时动态获取并强制 HTTPS
-// 注意：不能在这里直接调用 getApiEndpoint()，因为它会在构建时被内联
-// 我们需要在创建 axios 实例时动态计算
-function getRuntimeBaseURL(): string {
-  let url = getApiEndpoint()
-  
-  // 运行时强制转换：即使构建时是 HTTP，运行时也强制改成 HTTPS
-  // 这是最后一道防线，确保浏览器端永远使用 HTTPS
-  if (typeof window !== 'undefined' && url.startsWith('http://')) {
-    url = url.replace('http://', 'https://')
-    console.warn('🔒 [Runtime Security] Forced HTTP to HTTPS:', url)
-  }
-  
-  return url
-}
-
-const BASE_URL = getRuntimeBaseURL()
+// API基础URL - 使用运行时配置，完全绕过构建时内联
+const BASE_URL = getRuntimeApiEndpoint()
 
 // 日志输出当前API配置（所有环境，帮助调试）
 console.log('🌐 API Configuration:', {
@@ -52,6 +37,21 @@ if (!isConfigured) {
   // 请求拦截器
   apiClient.interceptors.request.use(
     (config) => {
+      // 🔒 运行时强制 HTTPS - 最后防线
+      // 即使 baseURL 在构建时被内联为 HTTP，这里也会在请求前转换
+      if (typeof window !== 'undefined' && config.baseURL && config.baseURL.startsWith('http://')) {
+        const httpsBaseURL = config.baseURL.replace('http://', 'https://')
+        console.warn('🚨 [Interceptor] Forcing HTTP to HTTPS:', config.baseURL, '→', httpsBaseURL)
+        config.baseURL = httpsBaseURL
+      }
+      
+      // 同时检查完整 URL
+      if (typeof window !== 'undefined' && config.url && config.url.startsWith('http://')) {
+        const httpsUrl = config.url.replace('http://', 'https://')
+        console.warn('🚨 [Interceptor] Forcing HTTP to HTTPS in URL:', config.url, '→', httpsUrl)
+        config.url = httpsUrl
+      }
+
       // 添加认证Token
       const authStore = useAuthStore()
       if (authStore.token) {

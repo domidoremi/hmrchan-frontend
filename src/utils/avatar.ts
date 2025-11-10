@@ -1,7 +1,7 @@
 /**
  * 头像工具函数
  */
-import { getApiBaseUrl } from './url'
+import { getRuntimeApiBaseUrl } from '@/config/runtime'
 
 /**
  * 生成默认头像URL（使用 UI Avatars API）
@@ -77,7 +77,7 @@ export function getUserAvatar(
       avatarUrl = avatarUrl
     } else {
       // 生产环境：使用HTTPS强制的base URL
-      const baseUrl = getApiBaseUrl()
+      const baseUrl = getRuntimeApiBaseUrl()
       avatarUrl = `${baseUrl}${avatarUrl}`
     }
   }
