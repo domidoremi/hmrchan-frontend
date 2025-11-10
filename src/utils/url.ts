@@ -13,10 +13,15 @@ export function getApiBaseUrl(): string {
   
   // 如果只有 VITE_API_ENDPOINT (如 https://api.momichan.xyz/api)，去除 /api
   if (import.meta.env.VITE_API_ENDPOINT) {
-    return import.meta.env.VITE_API_ENDPOINT.replace(/\/api$/, '')
+    return import.meta.env.VITE_API_ENDPOINT.replace(/\/api.*$/, '')
   }
   
-  // 默认为空（使用相对路径）
+  // 生产环境默认使用HTTPS，防止混合内容错误
+  if (import.meta.env.PROD) {
+    return 'https://api.momichan.xyz'
+  }
+  
+  // 开发环境使用相对路径（通过代理）
   return ''
 }
 
@@ -24,7 +29,21 @@ export function getApiBaseUrl(): string {
  * 获取API端点URL（含/api/v1路径）
  */
 export function getApiEndpoint(): string {
-  return import.meta.env.VITE_API_ENDPOINT || import.meta.env.VITE_API_BASE_URL + '/api/v1' || '/api/v1'
+  if (import.meta.env.VITE_API_ENDPOINT) {
+    return import.meta.env.VITE_API_ENDPOINT
+  }
+  
+  if (import.meta.env.VITE_API_BASE_URL) {
+    return import.meta.env.VITE_API_BASE_URL + '/api/v1'
+  }
+  
+  // 生产环境默认使用HTTPS完整URL
+  if (import.meta.env.PROD) {
+    return 'https://api.momichan.xyz/api/v1'
+  }
+  
+  // 开发环境使用相对路径
+  return '/api/v1'
 }
 
 /**
