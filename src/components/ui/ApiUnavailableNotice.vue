@@ -23,8 +23,9 @@
 <script setup lang="ts">
 import { ServerOff, RefreshCw } from 'lucide-vue-next'
 import GlassButton from './GlassButton.vue'
+import { getApiEndpoint } from '@/utils/url'
 
-const apiUrl = import.meta.env.VITE_API_URL || '/api'
+const apiUrl = getApiEndpoint()
 
 const emit = defineEmits<{
   retry: []

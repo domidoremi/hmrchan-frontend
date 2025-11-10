@@ -1,6 +1,7 @@
 /**
  * 头像工具函数
  */
+import { getApiBaseUrl } from './url'
 
 /**
  * 生成默认头像URL（使用 UI Avatars API）
@@ -75,9 +76,8 @@ export function getUserAvatar(
       // 开发环境：直接使用，Vite会代理
       avatarUrl = avatarUrl
     } else {
-      // 生产环境：根据API URL构建完整路径
-      const apiUrl = import.meta.env.VITE_API_URL || '/api'
-      const baseUrl = apiUrl.replace('/api', '')
+      // 生产环境：使用HTTPS强制的base URL
+      const baseUrl = getApiBaseUrl()
       avatarUrl = `${baseUrl}${avatarUrl}`
     }
   }
