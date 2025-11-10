@@ -3,7 +3,7 @@
  * v2.0 - UUID迁移：所有ID参数已从number改为string (UUID格式)
  */
 import { api } from './client'
-import { getApiBaseUrl } from '@/utils/url'
+import { getApiBaseUrl, getApiEndpoint } from '@/utils/url'
 import type {
   LoginRequest,
   LoginResponse,
@@ -123,7 +123,7 @@ export const mediaApi = {
    * 返回完整URL以支持跨域访问
    */
   getStreamUrl(mediaId: UUID) {
-    return `${getApiBaseUrl()}/media/${mediaId}/stream`
+    return `${getApiBaseUrl()}${getApiEndpoint().replace(getApiBaseUrl(), '')}/media/${mediaId}/stream`
   },
 
   /**
@@ -131,7 +131,7 @@ export const mediaApi = {
    * 返回完整URL以支持跨域访问
    */
   getDownloadUrl(mediaId: UUID) {
-    return `${getApiBaseUrl()}/media/${mediaId}/download`
+    return `${getApiBaseUrl()}${getApiEndpoint().replace(getApiBaseUrl(), '')}/media/${mediaId}/download`
   },
 
   /**
@@ -139,7 +139,7 @@ export const mediaApi = {
    * 返回完整URL以支持跨域访问
    */
   getThumbnailUrl(mediaId: UUID) {
-    return `${getApiBaseUrl()}/media/${mediaId}/thumbnail`
+    return `${getApiBaseUrl()}${getApiEndpoint().replace(getApiBaseUrl(), '')}/media/${mediaId}/thumbnail`
   },
 
   /**
@@ -147,19 +147,19 @@ export const mediaApi = {
    * 返回完整URL以支持跨域访问
    */
   getSubtitleUrl(mediaId: UUID) {
-    return `${getApiBaseUrl()}/media/${mediaId}/subtitle`
+    return `${getApiBaseUrl()}${getApiEndpoint().replace(getApiBaseUrl(), '')}/media/${mediaId}/subtitle`
   },
 
   /**
    * 下载媒体文件
    */
   async downloadMedia(mediaId: UUID, filename?: string) {
-    const response = await api.get(`/media/${mediaId}/download`, {
+    const response = await api.get<Blob>(`/media/${mediaId}/download`, {
       responseType: 'blob',
     })
 
     // 创建下载链接
-    const url = window.URL.createObjectURL(new Blob([response]))
+    const url = window.URL.createObjectURL(response)
     const link = document.createElement('a')
     link.href = url
     link.download = filename || `media_${mediaId}`

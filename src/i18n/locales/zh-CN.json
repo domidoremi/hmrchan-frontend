@@ -24,6 +24,7 @@
   },
   "post": {
     "title": "帖子",
+    "untitled": "无标题",
     "description": "描述",
     "author": "作者",
     "views": "观看",
@@ -51,7 +52,13 @@
     "shareSuccess": "分享成功",
     "copyLink": "复制链接",
     "copySuccess": "链接已复制到剪贴板",
-    "copyFailed": "复制链接失败"
+    "copyFailed": "复制链接失败",
+    "buffering": "缓冲中...",
+    "retry": "重试",
+    "retrying": "重试中...",
+    "loadError": "加载媒体失败",
+    "networkError": "网络错误",
+    "preloading": "预加载中..."
   },
   "posts": {
     "subtitle": "发现并探索来自多个平台的精彩内容"
@@ -175,7 +182,9 @@
     "fullscreen": "全屏",
     "download": "下载",
     "explore": "探索",
-    "platforms": "平台"
+    "platforms": "平台",
+    "buffered": "已缓冲",
+    "speed": "速度"
   },
   "author": {
     "title": "创作者",
@@ -288,7 +297,16 @@
     "languageMenu": "语言菜单",
     "togglePassword": "切换密码可见性",
     "previousImage": "上一张图片",
-    "nextImage": "下一张图片",
+    "nextImage": "下一张媒体",
+    "buffering": "视频缓冲中",
+    "play": "播放视频",
+    "pause": "暂停视频",
+    "mute": "静音",
+    "unmute": "取消静音",
+    "seekForward": "快进",
+    "seekBackward": "快退",
+    "toggleFullscreen": "切换全屏",
+    "toggleCaptions": "切换字幕",
     "closeViewer": "关闭查看器",
     "loading": "正在加载"
   },
