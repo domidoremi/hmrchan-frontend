@@ -5,23 +5,24 @@ import axios, { type AxiosInstance, type AxiosRequestConfig, type AxiosResponse 
 import { useAuthStore } from '@/stores/auth'
 import { requestCache } from '@/utils/requestCache'
 import logger from '@/utils/logger'
+import { getApiEndpoint } from '@/utils/url'
 
-// API基础URL - 从环境变量读取（根据文档使用VITE_API_ENDPOINT）
-// API v1 - 根据后端文档所有端点都在 /api/v1/ 下
-// 生产环境默认使用HTTPS，防止混合内容错误
-const BASE_URL = import.meta.env.VITE_API_ENDPOINT 
-  || import.meta.env.VITE_API_URL 
-  || (import.meta.env.PROD ? 'https://api.momichan.xyz/api/v1' : '/api/v1')
+// API基础URL - 使用 getApiEndpoint() 确保 HTTPS 和正确的路径
+// 这个函数会自动处理：
+// 1. 读取环境变量 VITE_API_ENDPOINT
+// 2. 生产环境强制使用 HTTPS
+// 3. 提供正确的默认值
+const BASE_URL = getApiEndpoint()
 
-// 日志输出当前API配置（仅开发环境）
-if (import.meta.env.DEV) {
-  console.log('🌐 API Configuration:', {
-    baseURL: BASE_URL,
-    apiEndpoint: import.meta.env.VITE_API_ENDPOINT,
-    mode: import.meta.env.MODE,
-    isDev: import.meta.env.DEV,
-  })
-}
+// 日志输出当前API配置（所有环境，帮助调试）
+console.log('🌐 API Configuration:', {
+  baseURL: BASE_URL,
+  envVITE_API_ENDPOINT: import.meta.env.VITE_API_ENDPOINT,
+  envVITE_API_BASE_URL: import.meta.env.VITE_API_BASE_URL,
+  mode: import.meta.env.MODE,
+  isProd: import.meta.env.PROD,
+  isDev: import.meta.env.DEV,
+})
 
 // 创建axios实例
 const apiClient: AxiosInstance = axios.create({
