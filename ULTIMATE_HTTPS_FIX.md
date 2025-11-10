@@ -62,6 +62,39 @@ apiClient.interceptors.request.use((config) => {
 })
 ```
 
+#### 4. **Service Worker HTTPS 强制 ⚠️ 关键修复**
+
+Service Worker 独立运行，不经过 axios 拦截器。在 `public/service-worker.js` 中添加：
+
+```javascript
+self.addEventListener('fetch', (event) => {
+  let { request } = event
+  let url = new URL(request.url)
+
+  // 🔒 运行时强制 HTTPS - Service Worker 最后防线
+  if (url.protocol === 'http:' && url.hostname === 'api.momichan.xyz') {
+    const httpsUrl = request.url.replace('http://', 'https://')
+    console.warn('[SW] 🚨 Forcing HTTP to HTTPS:', httpsUrl)
+    
+    request = new Request(httpsUrl, {
+      method: request.method,
+      headers: request.headers,
+      mode: request.mode === 'no-cors' ? 'cors' : request.mode,
+      credentials: request.credentials,
+      cache: request.cache,
+      redirect: request.redirect,
+      referrer: request.referrer,
+      integrity: request.integrity,
+    })
+    
+    url = new URL(httpsUrl)
+  }
+  // ... rest of fetch handler
+})
+```
+
+**Cache Version 升级到 v1.2.0** 以强制更新 Service Worker。
+
 ## 🚀 部署步骤
 
 ### 1. 确认 Cloudflare Pages 环境变量

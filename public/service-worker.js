@@ -7,7 +7,7 @@
  * 4. 后台同步
  */
 
-const CACHE_VERSION = 'v1.1.0' // 更新版本
+const CACHE_VERSION = 'v1.2.0' // HTTPS enforcement in Service Worker
 const STATIC_CACHE = `hmrchan-static-${CACHE_VERSION}`
 const API_CACHE = `hmrchan-api-${CACHE_VERSION}`
 const IMAGE_CACHE = `hmrchan-images-${CACHE_VERSION}`
@@ -76,8 +76,30 @@ self.addEventListener('activate', (event) => {
 
 // ==================== 获取事件 ====================
 self.addEventListener('fetch', (event) => {
-  const { request } = event
-  const url = new URL(request.url)
+  let { request } = event
+  let url = new URL(request.url)
+
+  // 🔒 运行时强制 HTTPS - Service Worker 最后防线
+  // Service Worker 不经过 axios 拦截器，需要在这里转换
+  if (url.protocol === 'http:' && url.hostname === 'api.momichan.xyz') {
+    const httpsUrl = request.url.replace('http://', 'https://')
+    console.warn('[SW] 🚨 Forcing HTTP to HTTPS:', request.url, '→', httpsUrl)
+    
+    // 创建新的 HTTPS 请求
+    request = new Request(httpsUrl, {
+      method: request.method,
+      headers: request.headers,
+      mode: request.mode === 'no-cors' ? 'cors' : request.mode,
+      credentials: request.credentials,
+      cache: request.cache,
+      redirect: request.redirect,
+      referrer: request.referrer,
+      integrity: request.integrity,
+    })
+    
+    // 更新 URL 对象
+    url = new URL(httpsUrl)
+  }
 
   // 跳过非GET请求
   if (request.method !== 'GET') {
