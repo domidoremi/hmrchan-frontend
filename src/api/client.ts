@@ -7,12 +7,23 @@ import { requestCache } from '@/utils/requestCache'
 import logger from '@/utils/logger'
 import { getApiEndpoint } from '@/utils/url'
 
-// API基础URL - 使用 getApiEndpoint() 确保 HTTPS 和正确的路径
-// 这个函数会自动处理：
-// 1. 读取环境变量 VITE_API_ENDPOINT
-// 2. 生产环境强制使用 HTTPS
-// 3. 提供正确的默认值
-const BASE_URL = getApiEndpoint()
+// API基础URL - 运行时动态获取并强制 HTTPS
+// 注意：不能在这里直接调用 getApiEndpoint()，因为它会在构建时被内联
+// 我们需要在创建 axios 实例时动态计算
+function getRuntimeBaseURL(): string {
+  let url = getApiEndpoint()
+  
+  // 运行时强制转换：即使构建时是 HTTP，运行时也强制改成 HTTPS
+  // 这是最后一道防线，确保浏览器端永远使用 HTTPS
+  if (typeof window !== 'undefined' && url.startsWith('http://')) {
+    url = url.replace('http://', 'https://')
+    console.warn('🔒 [Runtime Security] Forced HTTP to HTTPS:', url)
+  }
+  
+  return url
+}
+
+const BASE_URL = getRuntimeBaseURL()
 
 // 日志输出当前API配置（所有环境，帮助调试）
 console.log('🌐 API Configuration:', {
@@ -22,6 +33,7 @@ console.log('🌐 API Configuration:', {
   mode: import.meta.env.MODE,
   isProd: import.meta.env.PROD,
   isDev: import.meta.env.DEV,
+  runtimeForced: BASE_URL.startsWith('https://'),
 })
 
 // 创建axios实例
