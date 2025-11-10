@@ -4,14 +4,40 @@
  */
 
 /**
+ * 强制 HTTPS 转换助手函数
+ */
+function forceHttpsProtocol(url: string): string {
+  if (!url) return 'https://api.momichan.xyz'
+  
+  // 如果URL是HTTP，强制转换为HTTPS
+  if (url.startsWith('http://')) {
+    const httpsUrl = url.replace('http://', 'https://')
+    console.error('🚨 [Runtime] HTTP detected and converted to HTTPS:', url, '→', httpsUrl)
+    return httpsUrl
+  }
+  
+  // 如果URL没有协议，添加HTTPS
+  if (!url.startsWith('https://') && !url.startsWith('/')) {
+    return `https://${url}`
+  }
+  
+  return url
+}
+
+/**
  * 获取运行时 API 基础 URL
  * 策略：
- * 1. 优先使用环境变量（如果是 HTTPS）
- * 2. 如果环境变量是 HTTP，强制转换为 HTTPS
- * 3. 如果没有环境变量，使用默认 HTTPS URL
+ * 1. 在HTTPS页面上，总是使用HTTPS API
+ * 2. 强制转换任何HTTP环境变量为HTTPS
+ * 3. 如果没有环境变量，使用硬编码的HTTPS URL
  */
 export function getRuntimeApiBaseUrl(): string {
-  // 在浏览器环境中
+  // 在浏览器环境中且是HTTPS页面，强制使用HTTPS API
+  if (typeof window !== 'undefined' && window.location.protocol === 'https:') {
+    return 'https://api.momichan.xyz'
+  }
+
+  // 在非浏览器环境（SSR等）
   if (typeof window === 'undefined') {
     return 'https://api.momichan.xyz'
   }
@@ -29,26 +55,20 @@ export function getRuntimeApiBaseUrl(): string {
     baseUrl = 'https://api.momichan.xyz'
   }
 
-  // 🔒 运行时强制 HTTPS（关键！）
-  if (baseUrl.startsWith('http://')) {
-    baseUrl = baseUrl.replace('http://', 'https://')
-    // 使用 alert 确保在生产环境也能看到（因为 console 被删除了）
-    if (import.meta.env.PROD) {
-      // 只在第一次警告
-      if (!window.__HTTPS_WARNING_SHOWN__) {
-        window.__HTTPS_WARNING_SHOWN__ = true
-        console.error('🚨 Security: HTTP API URL detected and converted to HTTPS:', baseUrl)
-      }
-    }
-  }
-
-  return baseUrl
+  // 🔒 强制 HTTPS（无论如何都要执行）
+  return forceHttpsProtocol(baseUrl)
 }
 
 /**
  * 获取运行时 API 端点 URL（包含 /api/v1）
  */
 export function getRuntimeApiEndpoint(): string {
+  // 在HTTPS页面上，总是返回HTTPS端点
+  if (typeof window !== 'undefined' && window.location.protocol === 'https:') {
+    return 'https://api.momichan.xyz/api/v1'
+  }
+
+  // 在非浏览器环境
   if (typeof window === 'undefined') {
     return 'https://api.momichan.xyz/api/v1'
   }
@@ -62,16 +82,8 @@ export function getRuntimeApiEndpoint(): string {
     endpoint = `${baseUrl}/api/v1`
   }
 
-  // 🔒 运行时强制 HTTPS
-  if (endpoint.startsWith('http://')) {
-    endpoint = endpoint.replace('http://', 'https://')
-    if (import.meta.env.PROD && !window.__HTTPS_WARNING_SHOWN__) {
-      window.__HTTPS_WARNING_SHOWN__ = true
-      console.error('🚨 Security: HTTP API endpoint detected and converted to HTTPS:', endpoint)
-    }
-  }
-
-  return endpoint
+  // 🔒 强制 HTTPS（无论如何都要执行）
+  return forceHttpsProtocol(endpoint)
 }
 
 // 扩展 Window 接口
