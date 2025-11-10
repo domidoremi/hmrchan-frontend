@@ -8,7 +8,10 @@ import logger from '@/utils/logger'
 
 // API基础URL - 从环境变量读取（根据文档使用VITE_API_ENDPOINT）
 // API v1 - 根据后端文档所有端点都在 /api/v1/ 下
-const BASE_URL = import.meta.env.VITE_API_ENDPOINT || import.meta.env.VITE_API_URL || '/api/v1'
+// 生产环境默认使用HTTPS，防止混合内容错误
+const BASE_URL = import.meta.env.VITE_API_ENDPOINT 
+  || import.meta.env.VITE_API_URL 
+  || (import.meta.env.PROD ? 'https://api.momichan.xyz/api/v1' : '/api/v1')
 
 // 日志输出当前API配置（仅开发环境）
 if (import.meta.env.DEV) {
