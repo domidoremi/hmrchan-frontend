@@ -70,17 +70,30 @@ const originalFetch = window.fetch;
 window.fetch = function(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
   let url: string;
   
+  console.log('[Fetch Interceptor] Called with input type:', typeof input, input instanceof Request ? '(Request)' : '(string/URL)');
+  
   if (typeof input === 'string') {
+    console.log('[Fetch Interceptor] String URL:', input);
     url = forceHttpsUrl(input);
+    if (url !== input) {
+      console.error('🚨🚨🚨 [Fetch Interceptor] FORCED STRING URL:', input, '→', url);
+    }
     return originalFetch(url, init);
   } else if (input instanceof URL) {
-    url = forceHttpsUrl(input.toString());
+    const originalUrlStr = input.toString();
+    console.log('[Fetch Interceptor] URL object:', originalUrlStr);
+    url = forceHttpsUrl(originalUrlStr);
+    if (url !== originalUrlStr) {
+      console.error('🚨🚨🚨 [Fetch Interceptor] FORCED URL object:', originalUrlStr, '→', url);
+    }
     return originalFetch(url, init);
   } else if (input instanceof Request) {
     const originalUrl = input.url;
+    console.log('[Fetch Interceptor] Request object URL:', originalUrl);
     const forcedUrl = forceHttpsUrl(originalUrl);
     
     if (originalUrl !== forcedUrl) {
+      console.error('🚨🚨🚨 [Fetch Interceptor] FORCED Request URL:', originalUrl, '→', forcedUrl);
       // Create new Request with HTTPS URL
       const newRequest = new Request(forcedUrl, {
         method: input.method,
@@ -93,11 +106,12 @@ window.fetch = function(input: RequestInfo | URL, init?: RequestInit): Promise<R
         referrer: input.referrer,
         integrity: input.integrity,
       });
-      return originalFetch(newRequest);
+      return originalFetch(newRequest, init);
     }
     return originalFetch(input, init);
   }
   
+  console.log('[Fetch Interceptor] Unexpected input type, passing through');
   return originalFetch(input, init);
 };
 

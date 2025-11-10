@@ -203,11 +203,12 @@ export const usePostsStore = defineStore(
     }
   },
   {
-    // 持久化配置 - 使用 sessionStorage 保存会话期间的数据
+    // 持久化配置 - 只持久化filters，不持久化posts数组（避免返回时显示旧数据）
     persist:
       typeof window !== 'undefined'
         ? {
             storage: sessionStorage,
+            pick: ['filters', 'pagination'], // 只持久化filters和pagination，不持久化posts/currentPost
           }
         : false,
   },

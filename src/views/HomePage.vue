@@ -417,6 +417,9 @@ const { isLoading: isLoadingMore } = useInfiniteScroll({
 
 onMounted(async () => {
   try {
+    // 清空旧的posts数组，避免显示缓存数据
+    postsStore.posts = []
+    
     // ✨ 优化：减少初始加载数量，提升首屏速度
     // 使用明确的参数，不修改全局 store filters，避免与 ExplorePage 冲突
     await postsStore.fetchPosts({

@@ -82,6 +82,9 @@ const { updateLayout, smoothUpdateLayout } = useWaterfallLayout(postsGrid, {
 })
 
 onMounted(async () => {
+  // 清空旧的posts数组，避免显示缓存数据
+  postsStore.posts = []
+  
   // 重置筛选条件
   postsStore.resetFilters()
 
