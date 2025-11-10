@@ -40,11 +40,12 @@ export default defineConfig(({ mode }) => ({
     minify: 'esbuild',
     sourcemap: false,
     // 移除 console 和 debugger
-    ...(mode === 'production' && {
-      esbuildOptions: {
-        drop: ['console', 'debugger'],
-      },
-    }),
+    // 🔍 临时注释以便调试 HTTPS Mixed Content 问题
+    // ...(mode === 'production' && {
+    //   esbuildOptions: {
+    //     drop: ['console', 'debugger'],
+    //   },
+    // }),
     // 代码分割
     rollupOptions: {
       output: {
