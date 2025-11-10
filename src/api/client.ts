@@ -4,7 +4,7 @@
 import axios, { type AxiosInstance, type AxiosResponse, type AxiosRequestConfig } from 'axios'
 import { useAuthStore } from '@/stores/auth'
 import logger from '@/utils/logger'
-import { forceHttpsAdapter } from './forceHttpsAdapter'
+import { nativeFetchAdapter } from './nativeFetchAdapter'
 import { requestCache } from '@/utils/requestCache'
 
 // 🔒 强制使用 HTTPS - 完全不依赖环境变量或构建时计算
@@ -43,12 +43,12 @@ console.log('🌐 API Configuration:', {
   windowProtocol: typeof window !== 'undefined' ? window.location.protocol : 'N/A'
 })
 
-// 创建axios实例 - 使用 SAFE_BASE_URL 和自定义 HTTPS 强制适配器
+// 创建axios实例 - 使用 SAFE_BASE_URL 和原生 Fetch 适配器（完全绕过XHR）
 const apiClient: AxiosInstance = axios.create({
   baseURL: SAFE_BASE_URL,
   timeout: 30000,
   withCredentials: false,
-  adapter: forceHttpsAdapter, // 🔒 使用自定义适配器在最底层强制 HTTPS
+  adapter: nativeFetchAdapter, // 🔒 使用原生Fetch适配器，完全绕过XHR（XHR被某些东西拦截了）
 })
 
 // 🔒 强制锁定 baseURL，防止被修改
