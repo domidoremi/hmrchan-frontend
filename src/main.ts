@@ -44,8 +44,26 @@ app.directive('lazy', lazyLoad)
 
 // 全局错误处理
 app.config.errorHandler = (err, instance, info) => {
-  logger.criticalError('[Global Error Handler]', err, info)
-  // 可以在这里上报错误到监控服务
+  // 过滤Cloudflare Insights CORS错误（常见的部署环境错误）
+  const errorMessage = (err as Error)?.message || ''
+  if (errorMessage.includes('cloudflareinsights.com') || 
+      errorMessage.includes('cdn-cgi/rum')) {
+    // 静默忽略Cloudflare RUM的CORS错误
+    return
+  }
+
+  // 打印错误详情到控制台（开发环境）
+  if (import.meta.env.DEV) {
+    console.error('[Global Error Handler]:', {
+      error: err,
+      component: instance?.$options?.name || 'Unknown Component',
+      info,
+    })
+  }
+
+  // 可以在这里添加错误上报逻辑
+  // 例如发送到错误监控服务
+  logger.criticalError(`[Vue Error] ${info}:`, err)
 }
 
 // 开发环境：过滤浏览器扩展的控制台噪音
@@ -57,9 +75,9 @@ if (import.meta.env.DEV) {
   window.addEventListener(
     'error',
     (event) => {
-      const target = event.target as any
+      const target = event.target as HTMLElement | null
       if (target && target.tagName === 'IMG') {
-        const src = target.src || ''
+        const src = (target as HTMLImageElement).src || ''
         if (src.includes('pbs.twimg.com') || src.includes('twimg.com')) {
           event.preventDefault()
           event.stopPropagation()
@@ -70,9 +88,18 @@ if (import.meta.env.DEV) {
     true,
   )
 
-  console.error = (...args: any[]) => {
+  console.error = (...args: unknown[]) => {
     const message = args[0]?.toString() || ''
-    const stack = args[0]?.stack?.toString() || ''
+    const stack = (args[0] as Error)?.stack?.toString() || ''
+
+    // 过滤Cloudflare Insights CORS错误
+    if (
+      message.includes('cloudflareinsights.com') ||
+      message.includes('cdn-cgi/rum') ||
+      message.includes('ERR_BLOCKED_BY_CLIENT')
+    ) {
+      return // 静默Cloudflare RUM错误
+    }
 
     // 过滤浏览器扩展相关错误
     if (
@@ -91,15 +118,37 @@ if (import.meta.env.DEV) {
     originalError.apply(console, args)
   }
 
-  console.warn = (...args: any[]) => {
-    const message = args[0]?.toString() || ''
-    // 过滤已知的无害警告
-    if (message.includes('setupReplaceUnsafeHeader')) {
-      return // 静默这个警告
+  console.warn = (...args: unknown[]) => {
+    // 过滤掉特定的警告信息
+    const warningText = args.join(' ')
+    if (
+      warningText.includes('Extraneous non-props attributes') ||
+      warningText.includes('Extraneous non-emits event listeners')
+    ) {
+      return // 忽略这些警告
     }
     originalWarn.apply(console, args)
   }
 }
+
+// 全局Promise rejection处理（过滤Cloudflare错误）
+window.addEventListener('unhandledrejection', (event) => {
+  const error = event.reason
+  const errorMessage = error?.message || String(error)
+  
+  // 过滤Cloudflare Insights CORS错误
+  if (errorMessage.includes('cloudflareinsights.com') || 
+      errorMessage.includes('cdn-cgi/rum') ||
+      errorMessage.includes('ERR_BLOCKED_BY_CLIENT')) {
+    event.preventDefault()
+    return
+  }
+  
+  // 其他错误正常处理
+  if (import.meta.env.DEV) {
+    console.error('[Unhandled Promise Rejection]:', error)
+  }
+})
 
 // 挂载应用
 app.mount('#app')

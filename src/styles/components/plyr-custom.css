@@ -1,67 +1,66 @@
-/* Plyr.js Custom Styles - 修复移动端控件重叠问题 */
+/* Plyr.js Custom Styles - 使用Grid布局完美解决重叠问题 */
 
-/* 基础控件布局 */
+/* 基础控件布局 - 使用Grid */
 .plyr__controls {
-  padding: 12px 10px !important;
-  display: flex !important;
-  flex-wrap: nowrap !important;
-  justify-content: space-between !important;
+  display: grid !important;
+  grid-template-columns: auto 1fr auto auto auto !important;
+  grid-template-rows: auto !important;
   align-items: center !important;
   gap: 8px !important;
+  padding: 12px 10px !important;
   min-height: 54px !important;
   background: rgba(0, 0, 0, 0.85) !important;
-  /* 禁用滚动，改用换行布局 */
   overflow: visible !important;
 }
 
 /* 控件项基础样式 */
 .plyr__controls__item {
   margin: 0 !important;
-  flex-shrink: 0 !important;
+  display: flex !important;
+  align-items: center !important;
 }
 
-/* 进度条占据剩余空间 */
-.plyr__progress {
-  flex: 1 1 auto !important;
-  min-width: 80px !important;
-  order: 1;
-}
-
-/* 播放按钮 */
+/* 播放按钮 - 第1列 */
 .plyr__controls [data-plyr='play'] {
-  order: 0;
-  flex-shrink: 0 !important;
+  grid-column: 1 !important;
+  grid-row: 1 !important;
 }
 
-/* 时间显示 */
+/* 进度条 - 第2列，占据剩余空间 */
+.plyr__progress {
+  grid-column: 2 !important;
+  grid-row: 1 !important;
+  min-width: 80px !important;
+}
+
+/* 时间显示 - 第3列 */
 .plyr__time {
+  grid-column: 3 !important;
+  grid-row: 1 !important;
   font-size: 13px !important;
-  flex-shrink: 0 !important;
-  min-width: 40px !important;
-  order: 2;
+  white-space: nowrap !important;
 }
 
-/* 音量控件 */
+/* 音量控件 - 第4列 */
 .plyr__volume {
-  flex: 0 1 auto !important;
-  max-width: 100px !important;
+  grid-column: 4 !important;
+  grid-row: 1 !important;
   min-width: 60px !important;
-  order: 3;
+  max-width: 100px !important;
 }
 
-/* 设置按钮 */
+/* 设置/字幕按钮 - 与音量同列或第5列 */
 .plyr__menu,
 [data-plyr='settings'],
 [data-plyr='captions'] {
-  flex-shrink: 0 !important;
-  order: 4;
+  grid-column: 4 !important;
+  grid-row: 1 !important;
 }
 
-/* 全屏按钮 */
+/* 全屏按钮 - 第5列 */
 [data-plyr='fullscreen'] {
-  flex-shrink: 0 !important;
-  order: 5;
-  margin-left: auto !important;
+  grid-column: 5 !important;
+  grid-row: 1 !important;
 }
 
 /* 平板优化 (768px - 1024px) */
@@ -79,37 +78,21 @@
 
   .plyr__time {
     font-size: 12px !important;
-    min-width: 38px !important;
   }
 }
 
 /* 移动端优化 (手机横屏, 480px - 768px) */
 @media (max-width: 768px) {
   .plyr__controls {
+    grid-template-columns: auto 1fr auto auto !important;
     padding: 10px 6px !important;
     gap: 4px !important;
     min-height: 48px !important;
-    /* 保持单行布局，但允许水平滚动 */
-    flex-wrap: nowrap !important;
-    overflow-x: auto !important;
-    overflow-y: hidden !important;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  /* 隐藏滚动条但保持滚动功能 */
-  .plyr__controls::-webkit-scrollbar {
-    display: none;
-  }
-
-  .plyr__controls {
-    scrollbar-width: none;
-    -ms-overflow-style: none;
   }
 
   .plyr__controls button {
     min-width: 40px !important;
     min-height: 40px !important;
-    flex-shrink: 0 !important;
     padding: 8px !important;
   }
 
@@ -120,15 +103,19 @@
 
   .plyr__time {
     font-size: 12px !important;
-    min-width: 36px !important;
   }
 
   .plyr__progress {
     min-width: 100px !important;
-    flex: 1 1 auto !important;
   }
 
-  /* 全屏按钮保持可见 */
+  /* 隐藏设置按钮节省空间 */
+  .plyr__menu,
+  [data-plyr='settings'] {
+    display: none !important;
+  }
+
+  /* 全屏按钮 */
   [data-plyr='fullscreen'] {
     min-width: 44px !important;
     min-height: 44px !important;
@@ -136,50 +123,49 @@
   }
 }
 
-/* 极小屏幕优化 (手机竖屏, < 480px) */
+/* 极小屏幕优化 (手机竖屏, < 480px) - 两行Grid布局 */
 @media (max-width: 480px) {
   .plyr__controls {
-    /* 使用两行布局避免重叠 */
-    flex-wrap: wrap !important;
+    /* 两行Grid布局 */
+    grid-template-columns: 1fr !important;
+    grid-template-rows: auto auto !important;
     padding: 8px 6px !important;
-    gap: 6px !important;
+    gap: 8px 4px !important;
     min-height: auto !important;
-    overflow: visible !important;
   }
 
-  /* 第一行：进度条独占一行 */
+  /* 第一行：进度条独占 */
   .plyr__progress {
-    order: 0 !important;
-    flex: 1 1 100% !important;
+    grid-column: 1 / -1 !important;
+    grid-row: 1 !important;
     width: 100% !important;
-    min-width: 100% !important;
-    margin-bottom: 4px !important;
   }
 
-  /* 第二行：其他控件 */
+  /* 第二行：创建子Grid放置其他控件 */
   .plyr__controls [data-plyr='play'] {
-    order: 1 !important;
+    grid-column: 1 !important;
+    grid-row: 2 !important;
   }
 
   .plyr__time {
-    order: 2 !important;
+    grid-column: 1 !important;
+    grid-row: 2 !important;
     font-size: 11px !important;
-    min-width: 32px !important;
+    margin-left: 46px !important;
   }
 
   .plyr__volume {
-    order: 3 !important;
+    grid-column: 1 !important;
+    grid-row: 2 !important;
     max-width: 60px !important;
-    min-width: 45px !important;
-  }
-
-  [data-plyr='captions'],
-  [data-plyr='settings'] {
-    order: 4 !important;
+    min-width: 50px !important;
+    margin-left: auto !important;
+    margin-right: 46px !important;
   }
 
   [data-plyr='fullscreen'] {
-    order: 5 !important;
+    grid-column: 1 !important;
+    grid-row: 2 !important;
     margin-left: auto !important;
     min-width: 42px !important;
     min-height: 42px !important;
@@ -192,16 +178,13 @@
     padding: 6px !important;
   }
 
-  /* 隐藏次要功能释放空间 */
+  /* 隐藏次要功能 */
   [data-plyr='pip'],
-  [data-plyr='airplay'] {
-    display: none !important;
-  }
-
-  /* 设置菜单按钮可以考虑隐藏 */
+  [data-plyr='airplay'],
+  [data-plyr='captions'],
+  [data-plyr='settings'],
   .plyr__menu {
-    display: flex !important;
-    min-width: 38px !important;
+    display: none !important;
   }
 }
 
