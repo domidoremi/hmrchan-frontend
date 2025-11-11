@@ -29,16 +29,10 @@ const BASE_URL = getBaseURL()
 // 🔒 二次验证：如果BASE_URL仍然是HTTP，强制转换
 const SAFE_BASE_URL = BASE_URL.startsWith('http://') ? BASE_URL.replace('http://', 'https://') : BASE_URL
 
-// 日志输出当前API配置（所有环境，帮助调试）
+// 日志输出当前API配置（保留用于生产诊断）
 console.log('🌐 API Configuration:', {
-  originalBaseURL: BASE_URL,
-  safeBaseURL: SAFE_BASE_URL,
-  envVITE_API_ENDPOINT: import.meta.env.VITE_API_ENDPOINT,
-  envVITE_API_BASE_URL: import.meta.env.VITE_API_BASE_URL,
+  baseURL: BASE_URL,
   mode: import.meta.env.MODE,
-  isProd: import.meta.env.PROD,
-  isDev: import.meta.env.DEV,
-  isHttps: SAFE_BASE_URL.startsWith('https://'),
   strategy: import.meta.env.DEV ? 'vite-proxy' : 'hardcoded-https',
   windowProtocol: typeof window !== 'undefined' ? window.location.protocol : 'N/A'
 })
@@ -87,26 +81,10 @@ if (!isConfigured) {
       const fullUrl = axios.getUri(config)
       if (fullUrl.startsWith('http://')) {
         const httpsUrl = fullUrl.replace('http://', 'https://')
-        console.error('🚨🚨🚨 CRITICAL: HTTP URL detected after config!', {
-          original: fullUrl,
-          fixed: httpsUrl,
-          configBaseURL: config.baseURL,
-          configUrl: config.url
-        })
-        
         // 完全重写请求配置使用 HTTPS URL
         config.baseURL = ''
         config.url = httpsUrl
       }
-      
-      // 记录请求详情用于调试（在所有强制转换之后）
-      console.log('[Request]', {
-        method: config.method?.toUpperCase(),
-        url: config.url,
-        baseURL: config.baseURL,
-        fullUrl: axios.getUri(config),
-        params: config.params
-      })
 
       // 添加认证Token
       const authStore = useAuthStore()
