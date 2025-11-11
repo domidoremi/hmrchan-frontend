@@ -239,10 +239,10 @@ const filterRef = ref<HTMLElement | null>(null)
 const postsGridRef = ref<HTMLElement | null>(null)
 const platformChipsRef = ref<HTMLElement | null>(null)
 
-// State
-const searchQuery = ref('')
-const selectedPlatform = ref<string>('all')
-const sortBy = ref('latest')
+// State (使用sessionStorage持久化关键状态)
+const searchQuery = ref(sessionStorage.getItem('postsView_searchQuery') || '')
+const selectedPlatform = ref<string>(sessionStorage.getItem('postsView_platform') || 'all')
+const sortBy = ref(sessionStorage.getItem('postsView_sortBy') || 'latest')
 const viewMode = ref<'grid' | 'list'>('grid')
 const showScrollTop = ref(false)
 const currentPage = ref(1)
@@ -312,6 +312,7 @@ const onSearchInput = () => {
 
 const clearSearch = () => {
   searchQuery.value = ''
+  sessionStorage.removeItem('postsView_searchQuery')
   currentPage.value = 1
   loadPosts()
 }
@@ -321,6 +322,10 @@ const clearAllFilters = () => {
   selectedPlatform.value = 'all'
   sortBy.value = 'latest'
   currentPage.value = 1
+  // 清除sessionStorage
+  sessionStorage.removeItem('postsView_searchQuery')
+  sessionStorage.removeItem('postsView_platform')
+  sessionStorage.removeItem('postsView_sortBy')
   loadPosts()
 }
 
@@ -490,9 +495,21 @@ onMounted(async () => {
 })
 
 // Watch sort changes
-watch(sortBy, () => {
+watch(sortBy, (newValue) => {
+  // 保存到sessionStorage确保页面导航后保持
+  sessionStorage.setItem('postsView_sortBy', newValue)
   currentPage.value = 1
   loadPosts()
+})
+
+// Watch platform changes
+watch(selectedPlatform, (newValue) => {
+  sessionStorage.setItem('postsView_platform', newValue)
+})
+
+// Watch search query changes
+watch(searchQuery, (newValue) => {
+  sessionStorage.setItem('postsView_searchQuery', newValue)
 })
 
 // Watch view mode
