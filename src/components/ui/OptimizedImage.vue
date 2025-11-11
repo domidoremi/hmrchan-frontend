@@ -2,7 +2,7 @@
   <picture>
     <source v-if="webpSrc" :srcset="webpSrc" type="image/webp" />
     <img
-      :src="src"
+      :src="cachedSrc"
       :alt="alt"
       :loading="lazy ? 'lazy' : 'eager'"
       :decoding="async ? 'async' : 'auto'"
@@ -14,7 +14,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, onMounted } from 'vue'
+import { hybridCache } from '@/utils/hybridCache'
 
 interface Props {
   src: string
@@ -23,18 +24,22 @@ interface Props {
   async?: boolean
   webp?: boolean
   imgClass?: string
+  useCache?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   lazy: true,
   async: true,
   webp: true,
+  useCache: true,
 })
 
 const emit = defineEmits<{
   load: []
   error: [error: Event]
 }>()
+
+const cachedSrc = ref<string>(props.src)
 
 // 自动生成 WebP 路径
 const webpSrc = computed(() => {
@@ -54,13 +59,27 @@ const onLoad = () => {
 const onError = (e: Event) => {
   emit('error', e)
 }
+
+// 预加载并缓存图片（使用混合缓存）
+onMounted(async () => {
+  if (props.useCache && props.src) {
+    try {
+      const cached = await hybridCache.get(props.src)
+      cachedSrc.value = cached
+    } catch (error) {
+      console.warn('Failed to cache image:', props.src, error)
+      // 失败时使用原始URL
+      cachedSrc.value = props.src
+    }
+  }
+})
 </script>
 
 <style scoped>
 img {
   display: block;
   width: 100%;
-  height: 100%;
-  object-fit: cover;
+  height: auto;
+  max-width: 100%;
 }
 </style>

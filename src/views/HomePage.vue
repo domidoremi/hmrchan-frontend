@@ -401,17 +401,25 @@ const { isLoading: isLoadingMore } = useInfiniteScroll({
   onLoadMore: async () => {
     if (posts.value.length >= accessLimit.value) {
       console.debug('[InfiniteScroll] 已达到访问限制')
+      hasMore.value = false
+      return
+    }
+    if (!hasMore.value) {
+      console.debug('[InfiniteScroll] 没有更多数据')
       return
     }
     await loadMore()
   },
-  hasMore: () => posts.value.length < accessLimit.value && posts.value.length % 6 === 0,
+  hasMore: () => hasMore.value && posts.value.length < accessLimit.value,
   threshold: 500,
   enabled: true,
 })
 
 onMounted(async () => {
   try {
+    // 清空旧的posts数组，避免显示缓存数据
+    postsStore.posts = []
+    
     // ✨ 优化：减少初始加载数量，提升首屏速度
     // 使用明确的参数，不修改全局 store filters，避免与 ExplorePage 冲突
     await postsStore.fetchPosts({
@@ -491,9 +499,13 @@ const loadMore = async () => {
       append: true, // 追加到现有列表
     })
 
-    // 检查是否还有更多数据
+    // 使用pagination信息正确判断是否还有更多数据
     if (!result || result.items.length === 0) {
       hasMore.value = false
+    } else if (result.page && result.pages) {
+      // 根据分页信息判断：当前页 >= 总页数时，没有更多数据
+      hasMore.value = result.page < result.pages
+      console.debug(`[HomePage] 分页信息: 当前页 ${result.page}/${result.pages}, hasMore: ${hasMore.value}`)
     }
 
     // 等待 DOM 更新

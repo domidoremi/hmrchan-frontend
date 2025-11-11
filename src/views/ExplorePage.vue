@@ -18,7 +18,7 @@
         <!-- Pagination -->
         <Pagination
           :current-page="pagination.page"
-          :total-pages="pagination.total_pages"
+          :total-pages="pagination.pages"
           @change="handlePageChange"
         />
       </div>
@@ -44,7 +44,7 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { ref, computed, watch, nextTick, onMounted, onUnmounted, onActivated } from 'vue'
+import { ref, watch, nextTick, onMounted, onUnmounted, onActivated } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { SearchX, RotateCcw } from 'lucide-vue-next'
@@ -57,8 +57,7 @@ import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import GlassButton from '@/components/ui/GlassButton.vue'
 
 import { usePostsStore } from '@/stores/posts'
-import type { Post, PostListParams } from '@/types'
-import { postsApi } from '@/api/services'
+import type { PostListParams } from '@/types'
 import { useWaterfallLayout } from '@/composables/useWaterfallLayout'
 
 const route = useRoute()
@@ -83,6 +82,9 @@ const { updateLayout, smoothUpdateLayout } = useWaterfallLayout(postsGrid, {
 })
 
 onMounted(async () => {
+  // 清空旧的posts数组，避免显示缓存数据
+  postsStore.posts = []
+  
   // 重置筛选条件
   postsStore.resetFilters()
 

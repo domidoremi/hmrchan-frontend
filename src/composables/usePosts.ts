@@ -15,7 +15,7 @@ export function usePosts() {
     page: 1,
     page_size: 20,
     total: 0,
-    total_pages: 0,
+    pages: 0,
   })
 
   /**
@@ -33,12 +33,12 @@ export function usePosts() {
         page: response.page,
         page_size: response.page_size,
         total: response.total,
-        total_pages: response.total_pages,
+        pages: response.pages,
       }
 
       return response
-    } catch (err: any) {
-      error.value = err.message || 'Failed to fetch posts'
+    } catch (err: unknown) {
+      error.value = err instanceof Error ? err.message : 'Failed to fetch posts'
       throw err
     } finally {
       loading.value = false
@@ -56,8 +56,8 @@ export function usePosts() {
       const response = await api.get<PostDetail>(`/posts/${postId}`)
       currentPost.value = response
       return response
-    } catch (err: any) {
-      error.value = err.message || 'Failed to fetch post detail'
+    } catch (err: unknown) {
+      error.value = err instanceof Error ? err.message : 'Failed to fetch post detail'
       throw err
     } finally {
       loading.value = false
@@ -92,11 +92,11 @@ export function usePosts() {
       page: 1,
       page_size: 20,
       total: 0,
-      total_pages: 0,
+      pages: 0,
     }
   }
 
-  const hasMore = computed(() => pagination.value.page < pagination.value.total_pages)
+  const hasMore = computed(() => pagination.value.page < pagination.value.pages)
 
   return {
     // 状态
