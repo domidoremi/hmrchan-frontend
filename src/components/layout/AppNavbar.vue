@@ -516,17 +516,19 @@ onUnmounted(() => {
   gap: var(--spacing-2);
 }
 
-.action-button {
+.navbar-actions .action-button,
+.mobile-top-actions .action-button {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 40px;
   height: 40px;
-  min-width: 40px !important; /* 强制防止被压缩 */
-  min-height: 40px !important;
-  max-width: 40px; /* 限制最大宽度 */
+  min-width: 40px;
+  min-height: 40px;
+  max-width: 40px;
   max-height: 40px;
-  padding: 0 !important; /* 移除padding确保图标居中 */
+  padding: 0;
+  margin: 0;
   border-radius: var(--radius-lg);
   color: var(--color-text-secondary);
   background: transparent;
@@ -534,14 +536,15 @@ onUnmounted(() => {
   cursor: pointer;
   transition: all var(--transition-fast);
   text-decoration: none;
-  flex-shrink: 0; /* 防止flex布局压缩 */
-  aspect-ratio: 1 / 1; /* 保持宽高比 */
+  flex-shrink: 0;
+  aspect-ratio: 1 / 1;
 }
 
 /* 确保SVG图标尺寸正确 */
-.action-button svg {
-  width: 24px !important;
-  height: 24px !important;
+.navbar-actions .action-button svg,
+.mobile-top-actions .action-button svg {
+  width: 24px;
+  height: 24px;
   flex-shrink: 0;
 }
 
@@ -563,11 +566,11 @@ onUnmounted(() => {
 }
 
 /* 用户头像按钮 */
-.user-avatar-button {
+.navbar-actions .user-avatar-button {
   width: 40px;
   height: 40px;
-  min-width: 40px !important;
-  min-height: 40px !important;
+  min-width: 40px;
+  min-height: 40px;
   max-width: 40px;
   max-height: 40px;
   border-radius: 50%;
@@ -578,7 +581,7 @@ onUnmounted(() => {
   background: none;
   padding: 0;
   flex-shrink: 0;
-  aspect-ratio: 1 / 1; /* 保持圆形 */
+  aspect-ratio: 1 / 1;
 }
 
 .user-avatar-button:hover {
@@ -748,30 +751,23 @@ onUnmounted(() => {
     gap: var(--spacing-2);
   }
 
-  /* 移动端action-button保持正常尺寸 */
+  /* 移动端action-button尺寸已在上方统一定义，这里只需确保不被覆盖 */
   .mobile-top-actions .action-button {
-    width: 40px !important;
-    height: 40px !important;
-    min-width: 40px !important;
-    min-height: 40px !important;
-    max-width: 40px !important;
-    max-height: 40px !important;
-    padding: 0 !important;
-    flex-shrink: 0 !important;
-    aspect-ratio: 1 / 1;
+    width: 40px;
+    height: 40px;
+    padding: 0;
   }
 
-  /* 确保移动端SVG图标尺寸正确 */
   .mobile-top-actions .action-button svg {
-    width: 24px !important;
-    height: 24px !important;
+    width: 24px;
+    height: 24px;
   }
 
-  .mobile-avatar {
-    width: 32px !important;
-    height: 32px !important;
-    min-width: 32px !important;
-    min-height: 32px !important;
+  .mobile-top-actions .mobile-avatar {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    min-height: 32px;
     border-radius: 50%;
     object-fit: cover;
     display: block;
