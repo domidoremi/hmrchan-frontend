@@ -526,6 +526,7 @@ onUnmounted(() => {
   min-height: 40px !important;
   max-width: 40px; /* 限制最大宽度 */
   max-height: 40px;
+  padding: 0 !important; /* 移除padding确保图标居中 */
   border-radius: var(--radius-lg);
   color: var(--color-text-secondary);
   background: transparent;
@@ -535,6 +536,13 @@ onUnmounted(() => {
   text-decoration: none;
   flex-shrink: 0; /* 防止flex布局压缩 */
   aspect-ratio: 1 / 1; /* 保持宽高比 */
+}
+
+/* 确保SVG图标尺寸正确 */
+.action-button svg {
+  width: 24px !important;
+  height: 24px !important;
+  flex-shrink: 0;
 }
 
 /* 搜索按钮特殊样式 - 更醒目 */
@@ -748,8 +756,15 @@ onUnmounted(() => {
     min-height: 40px !important;
     max-width: 40px !important;
     max-height: 40px !important;
+    padding: 0 !important;
     flex-shrink: 0 !important;
     aspect-ratio: 1 / 1;
+  }
+
+  /* 确保移动端SVG图标尺寸正确 */
+  .mobile-top-actions .action-button svg {
+    width: 24px !important;
+    height: 24px !important;
   }
 
   .mobile-avatar {
@@ -1134,6 +1149,7 @@ onUnmounted(() => {
   text-overflow: ellipsis;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
 }
 
@@ -1145,6 +1161,7 @@ onUnmounted(() => {
   text-overflow: ellipsis;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   line-height: 1.5;
 }
