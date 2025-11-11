@@ -39,13 +39,22 @@
     "viewOriginal": "元の投稿を見る",
     "retweet": "リツイート",
     "originalAuthor": "元の作者",
-    "relatedPosts": "関連投稿",
     "loadingMedia": "読み込み中...",
     "video": "動画",
     "image": "画像",
     "videoNotSupported": "お使いのブラウザは動画再生に対応していません",
     "addToFavorites": "お気に入りに追加",
-    "unfavorite": "お気に入りから削除"
+    "unfavorite": "お気に入り解除",
+    "total": "総投稿数",
+    "relatedPosts": "関連投稿",
+    "share": "共有",
+    "shareSuccess": "共有しました",
+    "copyLink": "リンクをコピー",
+    "copySuccess": "リンクをクリップボードにコピーしました",
+    "copyFailed": "リンクのコピーに失敗しました"
+  },
+  "posts": {
+    "subtitle": "複数のプラットフォームから素晴らしいコンテンツを発見し探索"
   },
   "search": {
     "placeholder": "コンテンツを検索...",
@@ -113,11 +122,20 @@
     "loginRequired": "ログインしてください"
   },
   "settings": {
+    "welcomeBack": "設定とアカウントを管理",
+    "welcome": "体験をカスタマイズ",
+    "generalSettings": "一般設定",
+    "accountSettings": "アカウント設定",
+    "accountInfo": "アカウント情報",
+    "role": "役割",
+    "manageProfile": "プロフィール管理",
+    "loginPromptTitle": "サインインしてさらに機能を利用",
+    "loginPromptDesc": "お気に入り、プロフィール管理などを利用できます。",
     "theme": "テーマ",
     "language": "言語",
     "display": "表示設定",
     "showHeroSection": "ヒーローセクションを表示",
-    "showHeroSectionDesc": "ホームページにヒーローバナーを表示",
+    "showHeroSectionDesc": "ホームページにヒーローバナーを表示する",
     "hideHeroSection": "ヒーローバナーを非表示（設定で復元可能）",
     "light": "ライト",
     "dark": "ダーク",
@@ -154,8 +172,12 @@
     "zoomIn": "拡大",
     "zoomOut": "縮小",
     "backToTop": "トップに戻る",
-    "fullscreen": "全画面",
-    "download": "ダウンロード"
+    "fullscreen": "フルスクリーン",
+    "download": "ダウンロード",
+    "explore": "探索",
+    "platforms": "プラットフォーム",
+    "buffered": "バッファ済み",
+    "speed": "速度"
   },
   "author": {
     "title": "作者",
@@ -230,7 +252,13 @@
     "loginForMore": "ログインしてさらに表示",
     "guestMode": "ゲストモード",
     "guestMessage": "ゲストとして閲覧中、一部機能が制限されています",
-    "unlimited": "制限なし"
+    "untitled": "タイトルなし",
+    "buffering": "バッファリング中...",
+    "retry": "再試行",
+    "retrying": "再試行中...",
+    "loadError": "メディアの読み込みに失敗しました",
+    "networkError": "ネットワークエラー",
+    "preloading": "プリロード中..."
   },
   "upload": {
     "onlyImages": "JPG、PNG、WebP形式の画像のみサポート",
@@ -264,7 +292,16 @@
     "languageMenu": "言語メニュー",
     "togglePassword": "パスワード表示切り替え",
     "previousImage": "前の画像",
-    "nextImage": "次の画像",
+    "nextImage": "次のメディア",
+    "buffering": "ビデオバッファリング中",
+    "play": "ビデオを再生",
+    "pause": "ビデオを一時停止",
+    "mute": "ミュート",
+    "unmute": "ミュート解除",
+    "seekForward": "早送り",
+    "seekBackward": "巻き戻し",
+    "toggleFullscreen": "全画面切り替え",
+    "toggleCaptions": "字幕切り替え",
     "closeViewer": "ビューアを閉じる",
     "loading": "読み込み中"
   },
