@@ -1,79 +1,146 @@
 <template>
   <MainLayout>
     <div class="posts-view">
-      <!-- Simplified Header -->
+      <!-- Hero Header with Gradient Background -->
       <section ref="heroRef" class="posts-header">
+        <div class="header-bg-gradient"></div>
         <div class="header-content">
-          <h1 class="page-title">{{ $t('post.title') }}</h1>
-          <p class="page-subtitle">{{ $t('posts.subtitle') }}</p>
+          <div class="header-badge">
+            <ImageIcon :size="20" />
+            <span>{{ $t('nav.posts') }}</span>
+          </div>
+          <h1 class="page-title">
+            {{ $t('post.title') }}
+          </h1>
+          <p class="page-subtitle">
+            {{ $t('posts.subtitle') }}
+          </p>
+          <!-- Stats Row -->
+          <div class="stats-row">
+            <div class="stat-item">
+              <div class="stat-value">{{ formatNumber(posts.length) }}</div>
+              <div class="stat-label">{{ $t('posts.totalPosts') }}</div>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat-item">
+              <div class="stat-value">{{ selectedPlatform === 'all' ? filterPlatforms.length - 1 : 1 }}</div>
+              <div class="stat-label">{{ $t('posts.platforms') }}</div>
+            </div>
+          </div>
         </div>
       </section>
 
-      <!-- Compact Filter Bar -->
-      <section ref="filterRef" class="filter-bar">
+      <!-- Advanced Filter Bar with Glassmorphism -->
+      <section ref="filterRef" class="filter-bar" :class="{ 'is-sticky': isFilterSticky }">
         <div class="filter-wrapper">
-          <!-- Search -->
-          <div class="search-input">
-            <Search :size="18" />
-            <input
-              v-model="searchQuery"
-              type="text"
-              :placeholder="$t('search.placeholder')"
-              @input="onSearchInput"
-            />
-            <button v-if="searchQuery" class="clear-btn" @click="clearSearch">
-              <X :size="14" />
-            </button>
+          <!-- Search with Icon Animation -->
+          <div class="search-container">
+            <div class="search-input" :class="{ 'is-focused': isSearchFocused }">
+              <Search :size="18" class="search-icon" />
+              <input
+                v-model="searchQuery"
+                type="text"
+                :placeholder="$t('search.placeholder')"
+                @input="onSearchInput"
+                @focus="isSearchFocused = true"
+                @blur="isSearchFocused = false"
+              />
+              <Transition name="fade-scale">
+                <button v-if="searchQuery" class="clear-btn" @click="clearSearch">
+                  <X :size="16" />
+                </button>
+              </Transition>
+            </div>
           </div>
 
-          <!-- Platform Tabs -->
-          <div class="platform-tabs">
-            <button
-              v-for="platform in filterPlatforms"
-              :key="platform.value"
-              :class="['tab-btn', { active: selectedPlatform === platform.value }]"
-              @click="selectPlatform(platform.value)"
-            >
-              <component :is="platform.icon" :size="16" />
-              <span class="tab-label">{{ platform.label }}</span>
-            </button>
+          <!-- Platform Filter Chips -->
+          <div class="platform-chips-wrapper">
+            <div class="platform-chips" ref="platformChipsRef">
+              <button
+                v-for="platform in filterPlatforms"
+                :key="platform.value"
+                :class="['chip', { active: selectedPlatform === platform.value }]"
+                @click="selectPlatform(platform.value)"
+                :aria-label="`Filter by ${platform.label}`"
+              >
+                <span class="chip-icon">
+                  <component :is="platform.icon" :size="18" />
+                </span>
+                <span class="chip-label">{{ platform.label }}</span>
+                <Transition name="scale-in">
+                  <span v-if="selectedPlatform === platform.value" class="chip-check">
+                    <Check :size="14" />
+                  </span>
+                </Transition>
+              </button>
+            </div>
+            <!-- Scroll indicators for mobile -->
+            <div class="scroll-indicator left" v-if="showLeftScroll"></div>
+            <div class="scroll-indicator right" v-if="showRightScroll"></div>
           </div>
 
-          <!-- Sort & View -->
-          <div class="controls">
-            <select v-model="sortBy" class="sort-dropdown">
-              <option value="latest">{{ $t('filter.latest') }}</option>
-              <option value="popular">{{ $t('filter.popular') }}</option>
-              <option value="oldest">{{ $t('filter.oldest') }}</option>
-            </select>
+          <!-- Advanced Controls -->
+          <div class="controls-group">
+            <!-- Sort Dropdown with Custom Style -->
+            <div class="sort-control">
+              <SlidersHorizontal :size="16" class="control-icon" />
+              <select v-model="sortBy" class="sort-dropdown">
+                <option value="latest">{{ $t('filter.latest') }}</option>
+                <option value="popular">{{ $t('filter.popular') }}</option>
+                <option value="oldest">{{ $t('filter.oldest') }}</option>
+              </select>
+              <ChevronDown :size="16" class="dropdown-arrow" />
+            </div>
+
+            <!-- View Toggle (Grid/List) -->
+            <div class="view-toggle">
+              <button
+                :class="['view-btn', { active: viewMode === 'grid' }]"
+                @click="viewMode = 'grid'"
+                aria-label="Grid view"
+              >
+                <Grid3x3 :size="18" />
+              </button>
+              <button
+                :class="['view-btn', { active: viewMode === 'list' }]"
+                @click="viewMode = 'list'"
+                aria-label="List view"
+              >
+                <List :size="18" />
+              </button>
+            </div>
           </div>
         </div>
       </section>
 
-      <!-- Posts Grid/Masonry -->
+      <!-- Posts Content with Adaptive Layout -->
       <section class="posts-section">
-        <!-- Loading State -->
-        <LoadingSpinner
-          v-if="loading && posts.length === 0"
-          size="lg"
-          :text="$t('common.loading')"
-        />
+        <!-- Loading Skeleton -->
+        <div v-if="loading && posts.length === 0" class="skeleton-grid">
+          <div v-for="i in 8" :key="i" class="skeleton-card">
+            <div class="skeleton-image"></div>
+            <div class="skeleton-content">
+              <div class="skeleton-line"></div>
+              <div class="skeleton-line short"></div>
+            </div>
+          </div>
+        </div>
 
-        <!-- Posts Masonry Grid -->
+        <!-- Posts Grid (Responsive Masonry) -->
         <div
           v-else-if="posts.length > 0"
           ref="postsGridRef"
-          class="posts-masonry"
+          :class="['posts-grid', `view-${viewMode}`]"
         >
           <PostCard
-            v-for="post in posts"
+            v-for="(post, index) in posts"
             :key="post.id"
             :post="post"
-            :is-first-screen="false"
+            :is-first-screen="index < 6"
           />
         </div>
 
-        <!-- Empty State -->
+        <!-- Empty State with Illustration -->
         <EmptyState
           v-else-if="!loading"
           icon="image"
@@ -81,22 +148,49 @@
           :description="$t('search.noResultsDesc')"
         />
 
-        <!-- Load More -->
-        <div v-if="isLoadingMore" class="loading-more">
-          <LoadingSpinner size="sm" :text="$t('common.loading')" />
-        </div>
+        <!-- Load More Indicator -->
+        <Transition name="fade">
+          <div v-if="isLoadingMore" class="loading-more">
+            <div class="loading-spinner"></div>
+            <span>{{ $t('common.loading') }}</span>
+          </div>
+        </Transition>
 
-        <!-- No More -->
-        <div v-if="!hasMore && posts.length > 0" class="no-more">
-          <span>{{ $t('common.noMore') }}</span>
-        </div>
+        <!-- End of Content -->
+        <Transition name="fade">
+          <div v-if="!hasMore && posts.length > 0" class="end-content">
+            <div class="end-icon">
+              <CheckCircle2 :size="24" />
+            </div>
+            <span>{{ $t('common.noMore') }}</span>
+          </div>
+        </Transition>
       </section>
 
-      <!-- Scroll to Top Button -->
-      <Transition name="fade-scale">
-        <button v-show="showScrollTop" class="scroll-top-btn" @click="scrollToTop">
+      <!-- Floating Action Button (FAB) - Scroll to Top -->
+      <Transition name="fab">
+        <button 
+          v-show="showScrollTop" 
+          class="fab-scroll-top" 
+          @click="scrollToTop"
+          aria-label="Scroll to top"
+        >
           <ArrowUp :size="24" />
+          <div class="fab-ripple"></div>
         </button>
+      </Transition>
+
+      <!-- Filter Active Indicator -->
+      <Transition name="slide-up">
+        <div v-if="hasActiveFilters" class="active-filters-bar">
+          <div class="active-filters-content">
+            <span>{{ activeFiltersText }}</span>
+            <button class="clear-filters-btn" @click="clearAllFilters">
+              <X :size="16" />
+              {{ $t('filter.clearAll') }}
+            </button>
+          </div>
+        </div>
       </Transition>
     </div>
   </MainLayout>
@@ -117,11 +211,16 @@ import {
   Twitter,
   Instagram,
   Music2,
+  SlidersHorizontal,
+  ChevronDown,
+  Grid3x3,
+  List,
+  Check,
+  CheckCircle2,
 } from 'lucide-vue-next'
 
 import MainLayout from '@/components/layout/MainLayout.vue'
 import PostCard from '@/components/features/PostCard.vue'
-import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 
 import { usePostsStore } from '@/stores/posts'
@@ -138,14 +237,20 @@ const { posts, loading } = storeToRefs(postsStore)
 const heroRef = ref<HTMLElement | null>(null)
 const filterRef = ref<HTMLElement | null>(null)
 const postsGridRef = ref<HTMLElement | null>(null)
+const platformChipsRef = ref<HTMLElement | null>(null)
 
 // State
 const searchQuery = ref('')
 const selectedPlatform = ref<string>('all')
 const sortBy = ref('latest')
+const viewMode = ref<'grid' | 'list'>('grid')
 const showScrollTop = ref(false)
 const currentPage = ref(1)
 const hasMore = ref(true)
+const isSearchFocused = ref(false)
+const isFilterSticky = ref(false)
+const showLeftScroll = ref(false)
+const showRightScroll = ref(false)
 
 // Computed
 const filterPlatforms = computed(() => [
@@ -156,10 +261,44 @@ const filterPlatforms = computed(() => [
   { value: 'tiktok', label: t('platform.tiktok'), icon: Music2 },
 ])
 
+const hasActiveFilters = computed(() => {
+  return searchQuery.value !== '' || selectedPlatform.value !== 'all' || sortBy.value !== 'latest'
+})
+
+const activeFiltersText = computed(() => {
+  const filters: string[] = []
+  if (searchQuery.value) filters.push(`"${searchQuery.value}"`)
+  if (selectedPlatform.value !== 'all') {
+    const platform = filterPlatforms.value.find(p => p.value === selectedPlatform.value)
+    if (platform) filters.push(platform.label)
+  }
+  if (sortBy.value !== 'latest') filters.push(t(`filter.${sortBy.value}`))
+  return filters.length > 0 ? `${t('filter.active')}: ${filters.join(', ')}` : ''
+})
+
+// Utility Methods
+const formatNumber = (num: number) => {
+  return new Intl.NumberFormat('en-US', {
+    notation: num >= 1000 ? 'compact' : 'standard',
+    maximumFractionDigits: 1,
+  }).format(num)
+}
+
 // Methods
 const selectPlatform = (platform: string) => {
+  if (selectedPlatform.value === platform) return
   selectedPlatform.value = platform
   currentPage.value = 1
+  
+  // Haptic feedback animation
+  gsap.to('.chip.active', {
+    scale: 0.95,
+    duration: 0.1,
+    yoyo: true,
+    repeat: 1,
+    ease: 'power2.inOut',
+  })
+  
   loadPosts()
 }
 
@@ -173,6 +312,14 @@ const onSearchInput = () => {
 
 const clearSearch = () => {
   searchQuery.value = ''
+  currentPage.value = 1
+  loadPosts()
+}
+
+const clearAllFilters = () => {
+  searchQuery.value = ''
+  selectedPlatform.value = 'all'
+  sortBy.value = 'latest'
   currentPage.value = 1
   loadPosts()
 }
@@ -202,6 +349,15 @@ const scrollToTop = () => {
     duration: 0.8,
     ease: 'power3.inOut',
   })
+}
+
+// Check scroll indicators for platform chips
+const checkScrollIndicators = () => {
+  const el = platformChipsRef.value
+  if (!el) return
+  
+  showLeftScroll.value = el.scrollLeft > 10
+  showRightScroll.value = el.scrollLeft < el.scrollWidth - el.clientWidth - 10
 }
 
 // Infinite scroll
@@ -234,45 +390,99 @@ const { isLoading: isLoadingMore } = useInfiniteScroll({
   threshold: 300,
 })
 
-// GSAP Animations
+// Lifecycle
 onMounted(async () => {
   await loadPosts()
   await nextTick()
 
-  // Header animation
-  if (heroRef.value) {
-    gsap.from('.page-title', {
-      y: 30,
-      opacity: 0,
-      duration: 0.6,
-      ease: 'power3.out',
-    })
-    gsap.from('.page-subtitle', {
-      y: 20,
-      opacity: 0,
-      duration: 0.6,
-      delay: 0.2,
-      ease: 'power3.out',
-    })
+  // GSAP entrance animations
+  gsap.from('.header-badge', {
+    y: -20,
+    opacity: 0,
+    duration: 0.6,
+    ease: 'power3.out',
+  })
+  
+  gsap.from('.page-title', {
+    y: 30,
+    opacity: 0,
+    duration: 0.8,
+    delay: 0.2,
+    ease: 'power3.out',
+  })
+  
+  gsap.from('.page-subtitle', {
+    y: 20,
+    opacity: 0,
+    duration: 0.6,
+    delay: 0.4,
+    ease: 'power3.out',
+  })
+  
+  gsap.from('.stats-row', {
+    y: 20,
+    opacity: 0,
+    duration: 0.6,
+    delay: 0.6,
+    ease: 'power3.out',
+  })
+
+  // Check scroll indicators
+  if (platformChipsRef.value) {
+    checkScrollIndicators()
+    platformChipsRef.value.addEventListener('scroll', checkScrollIndicators)
   }
 
-  // Filter bar animation
+  // GSAP ScrollTrigger for filter bar sticky effect
   if (filterRef.value) {
-    gsap.from(filterRef.value, {
-      y: -20,
+    ScrollTrigger.create({
+      trigger: heroRef.value,
+      start: 'bottom top',
+      end: 'bottom top',
+      onEnter: () => (isFilterSticky.value = true),
+      onLeaveBack: () => (isFilterSticky.value = false),
+    })
+  }
+
+  // Animate post cards on scroll
+  if (postsGridRef.value) {
+    gsap.from('.post-card', {
+      scrollTrigger: {
+        trigger: postsGridRef.value,
+        start: 'top 80%',
+        toggleActions: 'play none none reverse',
+      },
+      y: 40,
       opacity: 0,
-      duration: 0.5,
-      delay: 0.4,
+      duration: 0.6,
+      stagger: 0.1,
       ease: 'power3.out',
     })
   }
 
-  // Scroll event
+  // Scroll event for FAB button
   const handleScroll = () => {
-    showScrollTop.value = window.scrollY > 400
+    showScrollTop.value = window.scrollY > 600
+    
+    // Update filter bar shadow
+    if (filterRef.value) {
+      const scrolled = window.scrollY > 100
+      if (scrolled !== isFilterSticky.value) {
+        isFilterSticky.value = scrolled
+      }
+    }
   }
-  window.addEventListener('scroll', handleScroll)
-  onUnmounted(() => window.removeEventListener('scroll', handleScroll))
+  
+  window.addEventListener('scroll', handleScroll, { passive: true })
+  
+  // Cleanup
+  onUnmounted(() => {
+    window.removeEventListener('scroll', handleScroll)
+    if (platformChipsRef.value) {
+      platformChipsRef.value.removeEventListener('scroll', checkScrollIndicators)
+    }
+    ScrollTrigger.getAll().forEach(trigger => trigger.kill())
+  })
 })
 
 // Watch sort changes
@@ -280,57 +490,166 @@ watch(sortBy, () => {
   currentPage.value = 1
   loadPosts()
 })
+
+// Watch view mode
+watch(viewMode, async () => {
+  await nextTick()
+  // Re-animate cards
+  gsap.from('.post-card', {
+    y: 20,
+    opacity: 0,
+    duration: 0.4,
+    stagger: 0.05,
+    ease: 'power2.out',
+  })
+})
 </script>
 
 <style scoped>
 /* ========================================
-   Simplified Posts View - Clean & Responsive
+   Modern Posts View - Apple HIG + Material Design 3
+   Responsive-First, Accessible, Performant
    ======================================== */
+
+:root {
+  /* Elevation Shadows (Material Design 3) */
+  --elevation-1: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
+  --elevation-2: 0 3px 6px rgba(0, 0, 0, 0.08), 0 3px 6px rgba(0, 0, 0, 0.05);
+  --elevation-3: 0 10px 20px rgba(0, 0, 0, 0.1), 0 6px 6px rgba(0, 0, 0, 0.08);
+  --elevation-4: 0 14px 28px rgba(0, 0, 0, 0.12), 0 10px 10px rgba(0, 0, 0, 0.1);
+  
+  /* Smooth Transitions */
+  --transition-swift: cubic-bezier(0.4, 0.0, 0.2, 1);
+  --transition-smooth: cubic-bezier(0.4, 0.0, 0.6, 1);
+}
 
 .posts-view {
   min-height: 100vh;
   background: var(--color-bg-primary);
   padding-bottom: 80px;
+  position: relative;
 }
 
 /* ========================================
-   Simplified Header
+   Hero Header - Apple-inspired
    ======================================== */
 
 .posts-header {
-  padding: clamp(40px, 8vw, 80px) 20px clamp(32px, 6vw, 48px);
+  position: relative;
+  padding: clamp(60px, 10vw, 120px) clamp(20px, 5vw, 40px) clamp(48px, 8vw, 80px);
   text-align: center;
-  background: linear-gradient(
-    to bottom,
-    rgba(139, 92, 246, 0.03) 0%,
-    transparent 100%
+  overflow: hidden;
+}
+
+.header-bg-gradient {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse 120% 80% at 50% 0%,
+    rgba(139, 92, 246, 0.08) 0%,
+    transparent 60%
   );
+  pointer-events: none;
+  z-index: 0;
 }
 
 .header-content {
-  max-width: 800px;
+  position: relative;
+  max-width: 880px;
   margin: 0 auto;
+  z-index: 1;
+}
+
+.header-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: rgba(139, 92, 246, 0.08);
+  border: 1px solid rgba(139, 92, 246, 0.15);
+  border-radius: 100px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  margin-bottom: 24px;
+  backdrop-filter: blur(8px);
+  transition: all 0.3s var(--transition-smooth);
+}
+
+.header-badge:hover {
+  background: rgba(139, 92, 246, 0.12);
+  border-color: rgba(139, 92, 246, 0.25);
+  transform: translateY(-2px);
 }
 
 .page-title {
-  font-size: clamp(2rem, 5vw, 3.5rem);
+  font-size: clamp(2.5rem, 6vw, 4.5rem);
   font-weight: 800;
-  color: var(--color-text-primary);
-  margin: 0 0 16px 0;
-  letter-spacing: -0.02em;
-  background: linear-gradient(135deg, var(--color-text-primary) 0%, var(--color-primary) 100%);
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  margin: 0 0 20px 0;
+  background: linear-gradient(
+    135deg,
+    var(--color-text-primary) 0%,
+    var(--color-primary) 50%,
+    rgba(139, 92, 246, 0.8) 100%
+  );
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  background-size: 200% 100%;
+  animation: gradient-shift 8s ease infinite;
+}
+
+@keyframes gradient-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
 }
 
 .page-subtitle {
-  font-size: clamp(0.95rem, 2vw, 1.125rem);
-  color: var(--color-text-secondary);
+  font-size: clamp(1rem, 2.5vw, 1.25rem);
   line-height: 1.6;
-  margin: 0;
-  max-width: 560px;
-  margin: 0 auto;
+  color: var(--color-text-secondary);
+  margin: 0 auto 32px;
+  max-width: 640px;
+  font-weight: 450;
+}
+
+/* Stats Row */
+.stats-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  margin-top: 40px;
+  flex-wrap: wrap;
+}
+
+.stat-item {
+  text-align: center;
+  padding: 12px 20px;
+}
+
+.stat-value {
+  font-size: clamp(1.75rem, 3vw, 2.5rem);
+  font-weight: 700;
+  color: var(--color-primary);
+  line-height: 1;
+  margin-bottom: 6px;
+}
+
+.stat-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.stat-divider {
+  width: 1px;
+  height: 40px;
+  background: var(--glass-border);
 }
 
 /* ========================================
