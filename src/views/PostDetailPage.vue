@@ -1,7 +1,21 @@
 <template>
   <MainLayout>
     <div class="post-detail-page">
-      <LoadingSpinner v-if="loading" size="lg" :text="$t('common.loading')" />
+      <!-- 骨架屏加载状态 -->
+      <div v-if="loading" class="skeleton-loader">
+        <div class="skeleton-back-btn"></div>
+        <div class="skeleton-card">
+          <div class="skeleton-thumbnail"></div>
+          <div class="skeleton-content">
+            <div class="skeleton-meta"></div>
+            <div class="skeleton-title"></div>
+            <div class="skeleton-description"></div>
+            <div class="skeleton-author"></div>
+            <div class="skeleton-stats"></div>
+            <div class="skeleton-actions"></div>
+          </div>
+        </div>
+      </div>
 
       <div v-else-if="post" class="post-detail">
         <!-- 返回按钮 -->
@@ -179,17 +193,65 @@
 
             <!-- 5. Post Actions -->
             <div class="post-actions">
-              <GlassButton @click="toggleFavorite">
+              <GlassButton 
+                @click="toggleFavorite"
+                :class="{ 'favorited': isFavorited }"
+                :disabled="favoriteLoading"
+                :title="isFavorited ? $t('favorite.remove') : $t('favorite.add')"
+              >
                 <Heart :size="18" :fill="isFavorited ? 'currentColor' : 'none'" />
-                {{ $t('favorite.add') }}
+                <span class="action-label">{{ isFavorited ? $t('favorite.remove') : $t('favorite.add') }}</span>
+              </GlassButton>
+              <GlassButton 
+                v-if="post.url"
+                @click="copyLink(post.url)"
+                variant="secondary"
+                :title="$t('post.copyLink')"
+              >
+                <Link :size="18" />
+                <span class="action-label">{{ $t('post.copyLink') }}</span>
               </GlassButton>
               <a v-if="post.url" :href="post.url" target="_blank" rel="noopener noreferrer">
-                <GlassButton variant="secondary">
+                <GlassButton variant="secondary" :title="$t('post.viewOriginal')">
                   <ExternalLink :size="18" />
-                  {{ $t('post.viewOriginal') }}
+                  <span class="action-label">{{ $t('post.viewOriginal') }}</span>
                 </GlassButton>
               </a>
             </div>
+          </div>
+        </div>
+
+        <!-- 相关推荐 -->
+        <div v-if="relatedPosts.length > 0" class="related-posts glass-card">
+          <h3 class="related-title">
+            <Sparkles :size="20" />
+            {{ $t('post.relatedPosts') }}
+          </h3>
+          <div class="related-grid">
+            <RouterLink
+              v-for="relatedPost in relatedPosts"
+              :key="relatedPost.id"
+              :to="`/posts/${relatedPost.id}`"
+              class="related-item"
+            >
+              <img 
+                v-if="relatedPost.thumbnail_url" 
+                :src="resolveMediaUrl(relatedPost.thumbnail_url)" 
+                :alt="relatedPost.title || ''"
+                loading="lazy"
+              />
+              <div class="related-info">
+                <h4>{{ relatedPost.title || $t('post.untitled') }}</h4>
+                <div class="related-stats">
+                  <span v-if="relatedPost.view_count">
+                    <Eye :size="14" /> {{ formatNumber(relatedPost.view_count) }}
+                  </span>
+                  <span v-if="relatedPost.like_count">
+                    <Heart :size="14" /> {{ formatNumber(relatedPost.like_count) }}
+                  </span>
+                </div>
+              </div>
+            </RouterLink>
           </div>
         </div>
 
@@ -271,6 +333,7 @@ import { useI18n } from 'vue-i18n'
 import { useMediaPreload } from '@/composables/useSmartPreload'
 import { hasViewedPost, markPostAsViewed } from '@/utils/viewTracking'
 import { useErrorHandler } from '@/utils/errorHandler'
+import { resolveMediaUrl, validateMediaId } from '@/utils/url'
 import {
   ArrowLeft,
   Calendar,
@@ -284,11 +347,12 @@ import {
   ChevronLeft,
   ChevronRight,
   Repeat2,
+  Link,
+  Sparkles,
 } from 'lucide-vue-next'
 import dayjs from 'dayjs'
 
 import MainLayout from '@/components/layout/MainLayout.vue'
-import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import GlassButton from '@/components/ui/GlassButton.vue'
 import MediaViewer from '@/components/ui/MediaViewerPlyr.vue'
 
@@ -296,7 +360,7 @@ import { usePostsStore } from '@/stores/posts'
 import { useAuthStore } from '@/stores/auth'
 import { api } from '@/api/client'
 import { favoritesApi, mediaApi } from '@/api/services'
-import type { PostDetail, UUID } from '@/types'
+import type { PostDetail, Post, UUID, PostListParams } from '@/types'
 import { PLATFORM_NAMES, PLATFORM_COLORS } from '@/types'
 import { useToastStore } from '@/stores/toast'
 
@@ -324,6 +388,7 @@ const viewerMediaItems = ref<
 >([])
 const viewerInitialIndex = ref(0)
 const currentThumbnailIndex = ref(0)
+const relatedPosts = ref<Post[]>([])
 
 const platformName = computed(
   () => PLATFORM_NAMES[post.value?.platform as keyof typeof PLATFORM_NAMES] || post.value?.platform,
@@ -365,7 +430,7 @@ const allMediaItems = computed(() => {
   // 1. 添加缩略图（如果存在）
   if (hasThumbnail) {
     items.push({
-      url: post.value.thumbnail_url!,
+      url: resolveMediaUrl(post.value.thumbnail_url),
       type: 'image',
     })
   }
@@ -416,9 +481,9 @@ const allMediaItems = computed(() => {
 })
 
 // 所有图片（仅用于缩略图导航）
-const allImages = computed(() => {
-  return allMediaItems.value.filter((item) => item.type === 'image').map((item) => item.url)
-})
+// const allImages = computed(() => {
+//   return allMediaItems.value.filter((item) => item.type === 'image').map((item) => item.url)
+// })
 
 // 所有媒体URL（用于导航按钮显示）
 const allMediaUrls = computed(() => {
@@ -445,14 +510,32 @@ const isVideoPost = computed(() => primaryMediaType.value === 'video')
 // 判断平台类型
 const isYouTube = computed(() => post.value?.platform === 'youtube')
 const isTikTok = computed(() => post.value?.platform === 'tiktok')
-const isInstagramOrTwitter = computed(
-  () => post.value?.platform === 'instagram' || post.value?.platform === 'twitter',
-)
+// const isInstagramOrTwitter = computed(
+//   () => post.value?.platform === 'instagram' || post.value?.platform === 'twitter',
+// )
 
 onMounted(async () => {
   const postId = route.params.id as UUID
   try {
     post.value = await postsStore.fetchPost(postId)
+
+    // 验证媒体文件ID格式（诊断用）
+    if (import.meta.env.DEV && post.value?.media_files && post.value.media_files.length > 0) {
+      console.group('[PostDetailPage] Media ID Validation')
+      post.value.media_files.forEach((media, index) => {
+        const isValid = validateMediaId(media.id, `PostDetailPage(post=${postId}, media[${index}])`)
+        if (!isValid) {
+          console.log('Media File Details:', {
+            index,
+            id: media.id,
+            id_type: typeof media.id,
+            file_type: media.file_type,
+            file_path: media.file_path
+          })
+        }
+      })
+      console.groupEnd()
+    }
 
     // 增加浏览计数（如果该帖子未被浏览过）
     if (post.value && !hasViewedPost(postId)) {
@@ -471,10 +554,13 @@ onMounted(async () => {
         const result = await favoritesApi.checkFavorite(post.value.id)
         isFavorited.value = result.is_favorited
         favoriteId.value = result.favorite_id
-      } catch (error) {
+      } catch {
         // 忽略错误
       }
     }
+
+    // 加载相关推荐（异步，不阻塞页面）
+    loadRelatedPosts()
   } catch (error) {
     handleError(error, { customMessage: t('post.loadFailed', 'Failed to load post') })
   } finally {
@@ -489,7 +575,7 @@ const goBack = () => {
 const toggleFavorite = async () => {
   // 检查登录状态
   if (!authStore.isAuthenticated) {
-    toast.warning(t('favorite.loginRequired'))
+    toastStore.warning(t('favorite.loginRequired'))
     router.push('/login')
     return
   }
@@ -572,17 +658,137 @@ const nextThumbnail = () => {
     currentThumbnailIndex.value++
   }
 }
+
+// 加载相关推荐
+const loadRelatedPosts = async () => {
+  if (!post.value) return
+  
+  try {
+    // 基于标签和平台获取相关帖子
+    const baseParams: PostListParams = {
+      page: 1,
+      page_size: 6,
+      sort_by: 'view_count',
+      sort_order: 'desc',
+    }
+    
+    // 优先使用相同平台
+    if (post.value.platform) {
+      baseParams.platform = post.value.platform
+    }
+    
+    const response = await postsStore.fetchPosts(baseParams)
+    
+    // 过滤掉当前帖子
+    relatedPosts.value = (response?.items || []).filter(
+      (p: Post) => p.id !== post.value!.id
+    ).slice(0, 4) // 最多显示4个
+  } catch (error) {
+    console.debug('[PostDetailPage] Failed to load related posts:', error)
+  }
+}
+
+// 分享功能
+const sharePost = async () => {
+  if (!post.value) return
+  
+  const shareData = {
+    title: post.value.title || 'Post',
+    text: post.value.description || '',
+    url: window.location.href,
+  }
+  
+  try {
+    if (navigator.share) {
+      await navigator.share(shareData)
+      toastStore.success(t('post.shareSuccess', 'Shared successfully'))
+    } else {
+      // 降级：复制链接
+      await copyLink(window.location.href)
+    }
+  } catch (error) {
+    if ((error as Error).name !== 'AbortError') {
+      console.debug('[PostDetailPage] Share failed:', error)
+    }
+  }
+}
+
+// 复制链接
+const copyLink = async (url: string) => {
+  try {
+    await navigator.clipboard.writeText(url)
+    toastStore.success(t('post.copySuccess', 'Link copied to clipboard'))
+  } catch (error) {
+    console.debug('[PostDetailPage] Copy failed:', error)
+    toastStore.error(t('post.copyFailed', 'Failed to copy link'))
+  }
+}
+
+// 键盘快捷键
+const handleKeydown = (e: KeyboardEvent) => {
+  // ESC: 返回
+  if (e.key === 'Escape' && !showMediaViewer.value) {
+    goBack()
+    return
+  }
+  
+  // 左右箭头：切换图片（当有多张图片时）
+  if (!showMediaViewer.value && allMediaUrls.value.length > 1) {
+    if (e.key === 'ArrowLeft') {
+      prevThumbnail()
+    } else if (e.key === 'ArrowRight') {
+      nextThumbnail()
+    }
+  }
+  
+  // F: 收藏/取消收藏
+  if (e.key === 'f' && !e.ctrlKey && !e.metaKey) {
+    e.preventDefault()
+    toggleFavorite()
+  }
+  
+  // S: 分享
+  if (e.key === 's' && !e.ctrlKey && !e.metaKey) {
+    e.preventDefault()
+    sharePost()
+  }
+}
+
+// 组件挂载时添加键盘事件监听
+import { onUnmounted } from 'vue'
+
+onMounted(() => {
+  window.addEventListener('keydown', handleKeydown)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeydown)
+})
 </script>
 
 <style scoped>
+/* ========================================
+   Post Detail Page - Modern Layout
+   Material Design + Apple Style
+   ======================================== */
+
 .post-detail-page {
-  max-width: 1920px;
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 0 var(--spacing-lg);
+  padding: 32px 24px;
+  min-height: calc(100vh - 140px);
+  animation: fadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.post-detail {
-  width: 100%;
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .back-button {
@@ -591,77 +797,92 @@ const nextThumbnail = () => {
   backdrop-filter: blur(12px);
 }
 
+.back-button {
+  position: sticky;
+  top: 100px; /* 进一步增加，适配Samsung Galaxy S20 Ultra */
+  z-index: 100;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  margin-bottom: 24px;
+  border-radius: 24px;
+  font-weight: 600;
+  font-size: 14px;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  text-decoration: none;
+  
+  /* Material Design Elevation 2 */
+  box-shadow: 
+    0 3px 6px -2px rgba(0, 0, 0, 0.12),
+    0 6px 12px -3px rgba(0, 0, 0, 0.08);
+  
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
 .back-button:hover {
-  transform: translateX(-4px);
-  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.2);
+  transform: translateY(-2px);
+  box-shadow: 
+    0 6px 12px -3px rgba(139, 92, 246, 0.2),
+    0 12px 24px -6px rgba(0, 0, 0, 0.12);
+  border-color: rgba(139, 92, 246, 0.4);
+}
+
+.back-button:active {
+  transform: translateY(0);
+  transition-duration: 0.1s;
 }
 
 .post-header {
-  padding: var(--spacing-lg);
-  margin-bottom: var(--spacing-xl);
-  background: transparent;
-  border: none;
-  box-shadow: none;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: 24px;
+  padding: 0;
+  margin-bottom: 32px;
+  overflow: hidden;
+  
+  /* Material Design Elevation 4 */
+  box-shadow: 
+    0 4px 8px -2px rgba(0, 0, 0, 0.08),
+    0 8px 16px -4px rgba(0, 0, 0, 0.12);
+  
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* 宽屏优化布局 (>1200px) */
-@media (min-width: 1200px) {
-  .post-detail-page {
-    padding: 0 var(--spacing-2xl);
-  }
-
-  /* 统一布局：简洁的左右分栏（图片和视频都使用） */
-  .post-header {
-    display: flex;
-    gap: var(--spacing-3xl);
-    padding: var(--spacing-2xl);
-    overflow: visible;
-  }
-
-  .post-thumbnail-container {
-    flex: 1.4;
-    min-width: 0;
-    position: relative;
-    overflow: visible;
-  }
-
-  .post-content-wrapper {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-xl);
-  }
+.post-header:hover {
+  box-shadow: 
+    0 6px 12px -3px rgba(139, 92, 246, 0.12),
+    0 12px 24px -6px rgba(0, 0, 0, 0.15);
 }
 
 .post-thumbnail-container {
   position: relative;
   width: 100%;
-  margin: 0 0 var(--spacing-xl) 0;
-  overflow: visible;
-}
-
-/* 宽屏布局中移除margin，由flex gap控制间距 */
-@media (min-width: 1200px) {
-  .post-thumbnail-container {
-    margin: 0;
-  }
-}
-
-.post-content-wrapper {
+  /* 移除aspect-ratio，让图片自适应 */
+  background: linear-gradient(
+    135deg,
+    rgba(139, 92, 246, 0.1) 0%,
+    rgba(192, 132, 252, 0.1) 100%
+  );
+  overflow: hidden;
+  border-radius: 24px 24px 0 0;
   display: flex;
-  flex-direction: column;
-  gap: var(--spacing-lg);
+  align-items: center;
+  justify-content: center;
 }
 
 .post-thumbnail {
   position: relative;
   width: 100%;
-  aspect-ratio: 16 / 9;
-  max-height: 600px;
+  /* 移除固定aspect-ratio和max-height */
   border-radius: var(--radius-2xl);
   overflow: hidden;
-  cursor: pointer;
+  cursor: zoom-in;
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   background:
     linear-gradient(135deg, rgba(139, 92, 246, 0.05) 0%, rgba(192, 132, 252, 0.05) 100%),
@@ -677,111 +898,43 @@ const nextThumbnail = () => {
   justify-content: center;
 }
 
-@media (min-width: 1200px) {
-  .post-thumbnail {
-    max-height: 700px;
-  }
-
-  /* 图片类型帖子：让图片自然显示 */
-  .post-header:not(.video-layout) .post-thumbnail {
-    aspect-ratio: auto;
-    height: auto;
-  }
-
-  .post-header:not(.video-layout) .post-thumbnail img {
-    max-height: 85vh;
-    width: 100%;
-    height: auto;
-  }
-
-  /* 视频类型帖子：保持16:9比例 */
-  .post-header.video-layout .post-thumbnail {
-    aspect-ratio: 16 / 9;
-    max-height: none;
-    height: auto;
-  }
-
-  .post-header.video-layout .post-thumbnail img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-
-  /* YouTube：独占一行的布局 */
-  .post-header.youtube-layout {
-    flex-direction: column;
-  }
-
-  .post-header.youtube-layout .post-thumbnail-container {
-    flex: none;
-    width: 100%;
-    max-width: 1200px;
-    margin: 0 auto;
-  }
-
-  .post-header.youtube-layout .post-thumbnail {
-    aspect-ratio: 16 / 9;
-  }
-
-  .post-header.youtube-layout .post-content-wrapper {
-    flex: none;
-    width: 100%;
-  }
-
-  /* TikTok：竖屏比例 */
-  .post-header.tiktok-layout .post-thumbnail {
-    aspect-ratio: 9 / 16;
-    max-height: 700px;
-  }
-}
-
-.post-thumbnail:hover {
-  transform: translateY(-4px) scale(1.01);
-  box-shadow:
-    0 28px 80px -12px rgba(0, 0, 0, 0.25),
-    0 12px 32px -8px rgba(139, 92, 246, 0.25),
-    inset 0 1px 0 rgba(255, 255, 255, 0.15);
-  border-color: rgba(139, 92, 246, 0.2);
-}
-
-.post-thumbnail:hover .thumbnail-overlay {
-  opacity: 1;
-}
-
-/* 移除active状态避免点击按钮时容器变色 */
-/* .post-thumbnail:active {
-  transform: translateY(-2px) scale(1.005);
-} */
-
 .post-thumbnail img {
   width: 100%;
-  height: auto;
-  max-height: 800px;
+  max-width: 100%; /* 不超过容器宽度 */
+  height: auto; /* 自适应高度 */
   display: block;
   object-fit: contain;
   position: relative;
   z-index: 1;
 }
 
-/* 视频类型帖子的缩略图使用cover以填充空间 */
-.post-header.video-layout .post-thumbnail img {
-  height: 100%;
-  object-fit: cover;
-}
-
 .thumbnail-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.85) 0%, rgba(192, 132, 252, 0.85) 100%);
-  backdrop-filter: blur(8px) saturate(150%);
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.75) 0%, rgba(192, 132, 252, 0.75) 100%);
+  backdrop-filter: blur(12px) saturate(180%);
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: var(--spacing-2);
   opacity: 0;
   transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   color: white;
   z-index: 2;
   pointer-events: none;
+}
+
+/* Hover效果 - 显示放大提示 */
+.post-thumbnail:hover .thumbnail-overlay {
+  opacity: 1;
+}
+
+.thumbnail-overlay::after {
+  content: '点击查看完整大图';
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  opacity: 0.9;
 }
 
 .thumbnail-counter {
@@ -826,13 +979,6 @@ const nextThumbnail = () => {
   z-index: 10;
 }
 
-@media (min-width: 1200px) {
-  .thumbnail-nav-btn {
-    width: 60px;
-    height: 60px;
-  }
-}
-
 .thumbnail-nav-btn:hover:not(:disabled) {
   background: rgba(139, 92, 246, 1);
   transform: translateY(-50%) scale(1.1);
@@ -861,43 +1007,6 @@ const nextThumbnail = () => {
   right: var(--spacing-md);
 }
 
-@media (min-width: 1200px) {
-  .prev-thumbnail-btn {
-    left: var(--spacing-lg);
-  }
-
-  .next-thumbnail-btn {
-    right: var(--spacing-lg);
-  }
-}
-
-/* 缩略图切换动画 */
-.thumbnail-fade-enter-active,
-.thumbnail-fade-leave-active {
-  transition:
-    opacity 0.3s ease,
-    transform 0.3s ease;
-}
-
-.thumbnail-fade-enter-from {
-  opacity: 0;
-  transform: translateX(20px);
-}
-
-.thumbnail-fade-leave-to {
-  opacity: 0;
-  transform: translateX(-20px);
-}
-
-.clickable-image {
-  cursor: pointer;
-  transition: transform 0.3s ease;
-}
-
-.clickable-image:hover {
-  transform: scale(1.05);
-}
-
 .post-title {
   font-size: var(--text-3xl);
   font-weight: 800;
@@ -910,12 +1019,6 @@ const nextThumbnail = () => {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-}
-
-@media (min-width: 1200px) {
-  .post-title {
-    font-size: var(--text-4xl);
-  }
 }
 
 .post-meta {
@@ -942,20 +1045,6 @@ const nextThumbnail = () => {
   flex-wrap: wrap;
 }
 
-@media (max-width: 768px) {
-  .retweet-info {
-    padding: var(--spacing-md);
-    gap: var(--spacing-md);
-  }
-}
-
-.retweeter-info,
-.original-author-info {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-md);
-}
-
 .retweet-arrow {
   color: #22c55e;
   display: flex;
@@ -963,7 +1052,9 @@ const nextThumbnail = () => {
 }
 
 .original-author-info {
-  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
 }
 
 .author-avatar.original {
@@ -1040,12 +1131,16 @@ const nextThumbnail = () => {
 .author-avatar {
   width: 60px;
   height: 60px;
+  min-width: 60px; /* 防止被压缩 */
+  min-height: 60px;
   border-radius: var(--radius-full);
   background: var(--gradient-primary);
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
+  flex-shrink: 0; /* 防止flex布局压缩 */
+  aspect-ratio: 1 / 1; /* 保持圆形 */
 }
 
 .author-details h3 {
@@ -1069,18 +1164,23 @@ const nextThumbnail = () => {
   display: flex;
   align-items: center;
   gap: var(--spacing-lg);
-  padding: var(--spacing-lg);
-  background:
-    linear-gradient(135deg, rgba(139, 92, 246, 0.02) 0%, rgba(192, 132, 252, 0.02) 100%),
-    var(--glass-bg-light);
-  border-radius: var(--radius-2xl);
-  border: 1px solid rgba(139, 92, 246, 0.08);
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  padding: var(--spacing-md);
+  border-radius: var(--radius-xl);
+  margin: var(--spacing-md) 0;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow:
     0 2px 8px rgba(0, 0, 0, 0.03),
     inset 0 1px 0 rgba(255, 255, 255, 0.08);
   position: relative;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.post-stats::-webkit-scrollbar {
+  display: none;
 }
 
 .post-stats.clickable {
@@ -1152,11 +1252,31 @@ const nextThumbnail = () => {
   display: flex;
   align-items: center;
   gap: var(--spacing-md);
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.post-actions::-webkit-scrollbar {
+  display: none;
 }
 
 .post-actions a {
   display: inline-flex;
+}
+
+/* 收藏按钮激活状态 */
+.post-actions :deep(.glass-button.favorited) {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.2) 0%, rgba(192, 132, 252, 0.2) 100%);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+[data-theme='dark'] .post-actions :deep(.glass-button.favorited) {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.3) 0%, rgba(192, 132, 252, 0.3) 100%);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
 }
 
 .media-section {
@@ -1173,8 +1293,15 @@ const nextThumbnail = () => {
 
 .media-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: var(--spacing-lg);
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+@media (max-width: 768px) {
+  .media-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
 }
 
 /* 移动端瀑布流使用单列但保持自然高度 */
@@ -1236,16 +1363,25 @@ const nextThumbnail = () => {
 }
 
 .tags-section h3 {
-  font-size: var(--text-xl);
-  font-weight: var(--font-semibold);
+  font-size: 18px;
+  font-weight: 600;
   color: var(--color-text-primary);
-  margin-bottom: var(--spacing-md);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tags-section h3::before {
+  content: '#';
+  color: var(--color-primary);
+  font-weight: 700;
 }
 
 .tags-list {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--spacing-sm);
+  gap: 10px;
 }
 
 .tag {
@@ -1306,7 +1442,48 @@ const nextThumbnail = () => {
 
   .author-info,
   .post-stats {
-    padding: var(--spacing-md);
+    padding: var(--spacing-lg); /* 增加移动端内边距 */
+    gap: var(--spacing-md); /* 增加元素间隔 */
+  }
+  
+  /* iPhone 14 Pro Max (430x932) 优化 */
+  @media (max-width: 430px) {
+    .post-stats {
+      flex-wrap: nowrap; /* 强制单行显示 */
+      gap: var(--spacing-sm);
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    
+    .post-stats .stat-item {
+      flex-shrink: 0; /* 防止被压缩 */
+      min-width: fit-content;
+    }
+    
+    .post-stats .stat-item span {
+      font-size: var(--text-sm);
+    }
+    
+    .author-info {
+      gap: var(--spacing-md);
+    }
+    
+    .post-title {
+      font-size: var(--text-xl);
+      line-height: 1.4;
+      margin-bottom: var(--spacing-md);
+    }
+  }
+  
+  .author-avatar {
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+    min-height: 48px;
+  }
+  
+  .back-button {
+    top: 76px; /* 移动端调整位置 */
   }
 
   .thumbnail-nav-btn {
@@ -1324,6 +1501,263 @@ const nextThumbnail = () => {
 
   .back-button {
     margin-bottom: var(--spacing-md);
+  }
+  
+  /* 移动端操作按钮优化 */
+  .post-actions {
+    gap: var(--spacing-sm);
+  }
+  
+  .post-actions .action-label {
+    display: none; /* 移动端隐藏文字，只显示图标 */
+  }
+  
+  .post-actions :deep(.glass-button) {
+    min-width: auto;
+    padding: var(--spacing-sm) var(--spacing-md);
+  }
+}
+
+/* ========================================
+   骨架屏加载状态
+   ======================================== */
+
+.skeleton-loader {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--spacing-lg);
+}
+
+.skeleton-back-btn {
+  width: 100px;
+  height: 40px;
+  background: var(--glass-bg-light);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--spacing-lg);
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+}
+
+.skeleton-card {
+  background: var(--glass-bg);
+  border-radius: var(--radius-2xl);
+  padding: var(--spacing-xl);
+  border: 1px solid var(--glass-border);
+}
+
+.skeleton-thumbnail {
+  width: 100%;
+  height: 400px;
+  background: var(--glass-bg-light);
+  border-radius: var(--radius-xl);
+  margin-bottom: var(--spacing-lg);
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+}
+
+.skeleton-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.skeleton-meta {
+  width: 200px;
+  height: 20px;
+  background: var(--glass-bg-light);
+  border-radius: var(--radius-md);
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+}
+
+.skeleton-title {
+  width: 80%;
+  height: 32px;
+  background: var(--glass-bg-light);
+  border-radius: var(--radius-md);
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+  animation-delay: 0.1s;
+}
+
+.skeleton-description {
+  width: 100%;
+  height: 60px;
+  background: var(--glass-bg-light);
+  border-radius: var(--radius-md);
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+  animation-delay: 0.2s;
+}
+
+.skeleton-author {
+  width: 150px;
+  height: 24px;
+  background: var(--glass-bg-light);
+  border-radius: var(--radius-md);
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+  animation-delay: 0.3s;
+}
+
+.skeleton-stats {
+  width: 250px;
+  height: 24px;
+  background: var(--glass-bg-light);
+  border-radius: var(--radius-md);
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+  animation-delay: 0.4s;
+}
+
+.skeleton-actions {
+  display: flex;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-md);
+}
+
+.skeleton-actions::before,
+.skeleton-actions::after {
+  content: '';
+  width: 120px;
+  height: 40px;
+  background: var(--glass-bg-light);
+  border-radius: var(--radius-lg);
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+  animation-delay: 0.5s;
+}
+
+@keyframes skeleton-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* ========================================
+   相关推荐
+   ======================================== */
+
+.related-posts {
+  margin-top: var(--spacing-2xl);
+  padding: var(--spacing-xl);
+}
+
+.related-title {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-size: var(--text-xl);
+  font-weight: var(--font-bold);
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-lg);
+}
+
+.related-title svg {
+  color: var(--color-primary);
+  animation: sparkle 2s ease-in-out infinite;
+}
+
+@keyframes sparkle {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.1);
+  }
+}
+
+.related-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: var(--spacing-lg);
+}
+
+.related-item {
+  display: flex;
+  flex-direction: column;
+  background: var(--glass-bg-light);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  border: 1px solid var(--glass-border);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.related-item:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(139, 92, 246, 0.15);
+  border-color: var(--color-primary);
+}
+
+.related-item img {
+  width: 100%;
+  height: 140px;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.related-item:hover img {
+  transform: scale(1.05);
+}
+
+.related-info {
+  padding: var(--spacing-md);
+  flex: 1;
+}
+
+.related-info h4 {
+  font-size: var(--text-base);
+  font-weight: var(--font-semibold);
+  color: var(--color-text-primary);
+  margin: 0 0 var(--spacing-sm) 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.4;
+}
+
+.related-stats {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
+.related-stats span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+@media (max-width: 768px) {
+  .related-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-md);
+  }
+  
+  .related-posts {
+    padding: var(--spacing-lg);
+  }
+  
+  .related-item img {
+    height: 120px;
+  }
+  
+  .related-info {
+    padding: var(--spacing-sm);
+  }
+  
+  .related-info h4 {
+    font-size: var(--text-sm);
+  }
+}
+
+@media (max-width: 480px) {
+  .related-grid {
+    grid-template-columns: 1fr;
   }
 }
 </style>

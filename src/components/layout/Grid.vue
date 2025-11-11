@@ -31,7 +31,7 @@ const props = withDefaults(defineProps<Props>(), {
   gap: 'md',
   autoFit: false,
   minColWidth: '280px',
-  align: 'stretch',
+  align: 'start',
   alignContent: 'start',
 })
 
@@ -76,6 +76,7 @@ const gridStyle = computed(() => {
 .grid {
   display: grid;
   width: 100%;
+  grid-auto-rows: minmax(min-content, max-content);
 }
 
 /* 列数 */

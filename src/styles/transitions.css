@@ -3,6 +3,13 @@
 
 /* ========== Page Transitions ========== */
 
+/* 防止页面切换时的白色闪烁 */
+#app {
+  background-color: var(--color-background);
+  min-height: 100vh;
+  transition: background-color var(--duration-base) var(--ease-standard);
+}
+
 /* Fade Transition */
 .page-fade-enter-active,
 .page-fade-leave-active {

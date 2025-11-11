@@ -32,6 +32,7 @@
               :icon="Lock"
               :disabled="loading"
               autocomplete="current-password"
+              name="password"
             >
               <template #suffix>
                 <button
@@ -51,6 +52,12 @@
           <div v-if="error" class="error-message">
             <AlertCircle :size="16" />
             <span>{{ error }}</span>
+          </div>
+
+          <!-- Success Message -->
+          <div v-if="success" class="success-message">
+            <CheckCircle :size="16" />
+            <span>{{ success }}</span>
           </div>
 
           <!-- Submit Button -->
@@ -81,10 +88,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, onMounted, onUnmounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { User, Lock, Eye, EyeOff, AlertCircle, ArrowLeft } from 'lucide-vue-next'
+import { User, Lock, Eye, EyeOff, AlertCircle, CheckCircle, ArrowLeft } from 'lucide-vue-next'
 
 import GlassInput from '@/components/ui/GlassInput.vue'
 import GlassButton from '@/components/ui/GlassButton.vue'
@@ -92,6 +99,7 @@ import GlassButton from '@/components/ui/GlassButton.vue'
 import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()
+const route = useRoute()
 const authStore = useAuthStore()
 const { t } = useI18n()
 
@@ -103,21 +111,86 @@ const formData = ref({
 const showPassword = ref(false)
 const loading = ref(false)
 const error = ref('')
+const success = ref('')
+
+// 移除底部导航栏的padding
+onMounted(() => {
+  document.body.classList.add('no-bottom-padding')
+})
+
+onUnmounted(() => {
+  document.body.classList.remove('no-bottom-padding')
+})
 
 const handleLogin = async () => {
   if (!formData.value.username || !formData.value.password) {
     error.value = t('auth.fillAllFields')
+    success.value = ''
     return
   }
 
   loading.value = true
   error.value = ''
+  success.value = ''
 
   try {
     await authStore.login(formData.value)
-    router.push('/')
-  } catch (err: any) {
-    error.value = err.response?.data?.message || t('auth.loginFailedMessage')
+    success.value = t('auth.loginSuccess', 'Login successful! Redirecting...')
+    
+    // 等待一小段时间让用户看到成功提示
+    setTimeout(async () => {
+      // 登录成功后跳转到redirect参数指定的页面，或首页
+      const redirect = (route.query.redirect as string) || '/'
+      await router.replace(redirect)
+    }, 1000)
+  } catch (err: unknown) {
+    const axiosError = err as { response?: { status: number; data?: { detail?: string; message?: string } }; request?: any; message?: string }
+    // 清除成功消息
+    success.value = ''
+    
+    // 详细的错误处理
+    if (axiosError.response) {
+      const status = axiosError.response.status
+      const detail = axiosError.response.data?.detail || axiosError.response.data?.message
+      
+      switch (status) {
+        case 401:
+          // 认证失败 - 用户名或密码错误
+          error.value = t('auth.invalidCredentials', '用户名或密码错误')
+          break
+          
+        case 400:
+          // 请求参数错误
+          error.value = detail || t('auth.invalidInput', '输入信息有误')
+          break
+          
+        case 404:
+          // 用户不存在
+          error.value = t('auth.userNotFound', '用户不存在')
+          break
+          
+        case 429:
+          // 请求过于频繁
+          error.value = t('auth.tooManyAttempts', '登录尝试过于频繁，请稍后再试')
+          break
+          
+        case 500:
+        case 502:
+        case 503:
+          // 服务器错误
+          error.value = t('auth.serverError', '服务器暂时无法处理请求，请稍后再试')
+          break
+          
+        default:
+          error.value = detail || t('auth.loginFailedMessage', '登录失败，请重试')
+      }
+    } else if (axiosError.request) {
+      // 网络错误
+      error.value = t('auth.networkError', '网络连接失败，请检查您的网络')
+    } else {
+      // 其他错误
+      error.value = axiosError.message || t('auth.loginFailedMessage', '登录失败，请重试')
+    }
   } finally {
     loading.value = false
   }
@@ -129,6 +202,7 @@ const handleLogin = async () => {
   min-height: 100vh;
   display: flex;
   align-items: center;
+  padding-bottom: 0 !important; /* 覆盖底部导航栏的padding */
   justify-content: center;
   padding: var(--spacing-lg);
   position: relative;
@@ -199,10 +273,12 @@ const handleLogin = async () => {
 
 .password-toggle {
   background: transparent;
+  border: none;
   color: var(--color-text-tertiary);
   cursor: pointer;
   display: flex;
   align-items: center;
+  justify-content: center;
   padding: 0;
   transition: color var(--transition-fast);
 }
@@ -221,6 +297,31 @@ const handleLogin = async () => {
   border-radius: var(--radius-lg);
   color: var(--color-error);
   font-size: var(--text-sm);
+  animation: slideIn var(--transition-base);
+}
+
+.success-message {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  border-radius: var(--radius-lg);
+  color: #22c55e;
+  font-size: var(--text-sm);
+  animation: slideIn var(--transition-base);
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .login-button {

@@ -248,6 +248,7 @@
             type="password"
             :placeholder="$t('auth.password')"
             :icon="Lock"
+            autocomplete="current-password"
           />
         </div>
 
@@ -495,10 +496,31 @@ async function handleAvatarUpload() {
     console.log('🔄 Force refresh avatar with new key:', avatarRefreshKey.value)
 
     toastStore.success(t('profile.avatarUploadSuccess'))
-  } catch (error) {
-    const errorMsg =
-      (error as { response?: { data?: { detail?: string } } }).response?.data?.detail ||
-      t('profile.avatarUploadFailed')
+  } catch (error: any) {
+    console.error('❌ Avatar upload error:', error)
+    
+    let errorMsg = t('profile.avatarUploadFailed')
+    
+    // 处理不同类型的错误
+    if (error.response) {
+      // 服务器返回了响应
+      const status = error.response.status
+      
+      if (status === 500) {
+        errorMsg = t('profile.serverError') || '服务器内部错误，请稍后重试或联系管理员'
+      } else if (status === 413) {
+        errorMsg = t('profile.fileTooLarge') || '文件太大，请选择小于2MB的图片'
+      } else if (status === 415) {
+        errorMsg = t('profile.invalidFileType') || '不支持的文件格式，请上传JPG、PNG或GIF图片'
+      } else if (error.response.data?.detail) {
+        errorMsg = error.response.data.detail
+      }
+    } else if (error.message === 'Network Error') {
+      // 网络错误（包括CORS）
+      errorMsg = t('profile.networkError') || '网络连接失败，请检查网络或稍后重试'
+    }
+    
+    toastStore.error(errorMsg)
     handleError(error, { customMessage: errorMsg })
   } finally {
     uploadingAvatar.value = false

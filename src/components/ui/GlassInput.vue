@@ -9,6 +9,7 @@
       :placeholder="placeholder"
       :disabled="disabled"
       :class="inputClass"
+      v-bind="$attrs"
       @input="handleInput"
       @focus="handleFocus"
       @blur="handleBlur"
@@ -22,6 +23,11 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import type { Component } from 'vue'
+
+// 禁用属性继承，手动控制attrs传递给input
+defineOptions({
+  inheritAttrs: false,
+})
 
 interface Props {
   modelValue: string

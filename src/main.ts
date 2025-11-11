@@ -1,3 +1,6 @@
+// 🔒 CRITICAL: Import FIRST - intercepts ALL XHR before anything else loads
+import './utils/forceHttps'
+
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
@@ -12,11 +15,13 @@ import './styles/index.css'
 // 导入自定义指令
 import { lazyLoad } from './directives/lazyLoad'
 
-// 导入Service Worker
-import { swManager } from './utils/serviceWorker'
-
 // 导入日志工具
 import logger from './utils/logger'
+
+// 导入缓存系统
+import { swManager } from './utils/serviceWorkerManager'
+import { indexedDB } from './utils/indexedDB'
+import { offlineQueue } from './utils/offlineQueue'
 
 // 导入Store（用于初始化）
 import { useThemeStore } from './stores/theme'
@@ -39,8 +44,26 @@ app.directive('lazy', lazyLoad)
 
 // 全局错误处理
 app.config.errorHandler = (err, instance, info) => {
-  logger.criticalError('[Global Error Handler]', err, info)
-  // 可以在这里上报错误到监控服务
+  // 过滤Cloudflare Insights CORS错误（常见的部署环境错误）
+  const errorMessage = (err as Error)?.message || ''
+  if (errorMessage.includes('cloudflareinsights.com') || 
+      errorMessage.includes('cdn-cgi/rum')) {
+    // 静默忽略Cloudflare RUM的CORS错误
+    return
+  }
+
+  // 打印错误详情到控制台（开发环境）
+  if (import.meta.env.DEV) {
+    console.error('[Global Error Handler]:', {
+      error: err,
+      component: instance?.$options?.name || 'Unknown Component',
+      info,
+    })
+  }
+
+  // 可以在这里添加错误上报逻辑
+  // 例如发送到错误监控服务
+  logger.criticalError(`[Vue Error] ${info}:`, err)
 }
 
 // 开发环境：过滤浏览器扩展的控制台噪音
@@ -52,9 +75,9 @@ if (import.meta.env.DEV) {
   window.addEventListener(
     'error',
     (event) => {
-      const target = event.target as any
+      const target = event.target as HTMLElement | null
       if (target && target.tagName === 'IMG') {
-        const src = target.src || ''
+        const src = (target as HTMLImageElement).src || ''
         if (src.includes('pbs.twimg.com') || src.includes('twimg.com')) {
           event.preventDefault()
           event.stopPropagation()
@@ -65,9 +88,18 @@ if (import.meta.env.DEV) {
     true,
   )
 
-  console.error = (...args: any[]) => {
+  console.error = (...args: unknown[]) => {
     const message = args[0]?.toString() || ''
-    const stack = args[0]?.stack?.toString() || ''
+    const stack = (args[0] as Error)?.stack?.toString() || ''
+
+    // 过滤Cloudflare Insights CORS错误
+    if (
+      message.includes('cloudflareinsights.com') ||
+      message.includes('cdn-cgi/rum') ||
+      message.includes('ERR_BLOCKED_BY_CLIENT')
+    ) {
+      return // 静默Cloudflare RUM错误
+    }
 
     // 过滤浏览器扩展相关错误
     if (
@@ -86,15 +118,37 @@ if (import.meta.env.DEV) {
     originalError.apply(console, args)
   }
 
-  console.warn = (...args: any[]) => {
-    const message = args[0]?.toString() || ''
-    // 过滤已知的无害警告
-    if (message.includes('setupReplaceUnsafeHeader')) {
-      return // 静默这个警告
+  console.warn = (...args: unknown[]) => {
+    // 过滤掉特定的警告信息
+    const warningText = args.join(' ')
+    if (
+      warningText.includes('Extraneous non-props attributes') ||
+      warningText.includes('Extraneous non-emits event listeners')
+    ) {
+      return // 忽略这些警告
     }
     originalWarn.apply(console, args)
   }
 }
+
+// 全局Promise rejection处理（过滤Cloudflare错误）
+window.addEventListener('unhandledrejection', (event) => {
+  const error = event.reason
+  const errorMessage = error?.message || String(error)
+  
+  // 过滤Cloudflare Insights CORS错误
+  if (errorMessage.includes('cloudflareinsights.com') || 
+      errorMessage.includes('cdn-cgi/rum') ||
+      errorMessage.includes('ERR_BLOCKED_BY_CLIENT')) {
+    event.preventDefault()
+    return
+  }
+  
+  // 其他错误正常处理
+  if (import.meta.env.DEV) {
+    console.error('[Unhandled Promise Rejection]:', error)
+  }
+})
 
 // 挂载应用
 app.mount('#app')
@@ -105,14 +159,52 @@ const settingsStore = useSettingsStore()
 themeStore.initTheme()
 settingsStore.initSettings()
 
-// 注册Service Worker (生产环境)
+// ============================================
+// 初始化缓存系统
+// ============================================
+
+// 1. 初始化IndexedDB
+indexedDB.init().then(() => {
+  logger.log('[Cache] IndexedDB initialized')
+}).catch((error) => {
+  logger.criticalError('[Cache] IndexedDB init failed:', error)
+})
+
+// 2. 注册Service Worker（仅生产环境）
 if (!import.meta.env.DEV) {
   swManager
     .register()
-    .then(() => {
-      logger.log('Service Worker registered successfully')
+    .then((registration) => {
+      if (registration) {
+        logger.log('[Cache] Service Worker registered')
+        
+        // 监听SW更新
+        window.addEventListener('sw-update-available', () => {
+          logger.log('[Cache] New version available')
+          // 可以在这里显示更新提示
+        })
+      }
     })
     .catch((error) => {
-      logger.criticalError('Service Worker registration failed:', error)
+      logger.criticalError('[Cache] Service Worker registration failed:', error)
     })
+}
+
+// 3. 设置离线队列
+import('./api/client').then(({ default: apiClient }) => {
+  offlineQueue.setApiClient(apiClient)
+  logger.log('[Cache] Offline queue configured')
+})
+
+// 4. 定期清理旧数据（每24小时）
+if (typeof window !== 'undefined') {
+  setInterval(() => {
+    indexedDB.clearOldPosts(7).then((count) => {
+      logger.log(`[Cache] Cleared ${count} old posts`)
+    })
+    
+    if (!import.meta.env.DEV) {
+      swManager.clearOldMedia()
+    }
+  }, 24 * 60 * 60 * 1000)
 }
