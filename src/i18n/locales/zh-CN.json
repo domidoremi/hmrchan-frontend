@@ -6,6 +6,7 @@
   "nav": {
     "home": "首页",
     "explore": "探索",
+    "posts": "帖子",
     "authors": "作者",
     "profile": "个人中心",
     "settings": "设置",
@@ -61,7 +62,9 @@
     "preloading": "预加载中..."
   },
   "posts": {
-    "subtitle": "发现并探索来自多个平台的精彩内容"
+    "subtitle": "发现并探索来自多个平台的精彩内容",
+    "totalPosts": "总帖子",
+    "platforms": "平台数"
   },
   "search": {
     "placeholder": "搜索内容...",
@@ -78,7 +81,9 @@
     "platform": "平台",
     "hasMedia": "包含媒体",
     "dateRange": "日期范围",
-    "published": "发布日期"
+    "published": "发布日期",
+    "active": "已激活筛选",
+    "clearAll": "清除全部"
   },
   "auth": {
     "login": "登录",

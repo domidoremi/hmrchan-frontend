@@ -37,12 +37,14 @@ export default defineConfig(({ mode }) => ({
   build: {
     // 生产环境优化
     target: 'esnext',
-    minify: 'esbuild',
+    minify: mode === 'production' ? 'esbuild' : false,
     sourcemap: false,
     // 移除 console 和 debugger
     ...(mode === 'production' && {
       esbuildOptions: {
         drop: ['console', 'debugger'],
+        legalComments: 'none', // 移除注释
+        treeShaking: true,
       },
     }),
     // 代码分割
@@ -61,6 +63,14 @@ export default defineConfig(({ mode }) => ({
             // 图标库单独分割（按需加载，体积大）
             if (id.includes('lucide-vue-next')) {
               return 'icons'
+            }
+            // GSAP 动画库
+            if (id.includes('gsap')) {
+              return 'gsap'
+            }
+            // Plyr 播放器
+            if (id.includes('plyr')) {
+              return 'plyr'
             }
             // Masonry布局库（仅桌面端使用）
             if (id.includes('masonry-layout')) {
@@ -101,13 +111,29 @@ export default defineConfig(({ mode }) => ({
             return 'api-services'
           }
         },
+        // 优化文件命名
+        chunkFileNames: 'assets/js/[name]-[hash].js',
+        entryFileNames: 'assets/js/[name]-[hash].js',
+        assetFileNames: (assetInfo) => {
+          const info = assetInfo.name?.split('.')
+          const ext = info?.[info.length - 1]
+          if (/\.(png|jpe?g|gif|svg|webp|avif)$/i.test(assetInfo.name || '')) {
+            return 'assets/images/[name]-[hash][extname]'
+          } else if (/\.(woff2?|eot|ttf|otf)$/i.test(assetInfo.name || '')) {
+            return 'assets/fonts/[name]-[hash][extname]'
+          } else if (ext === 'css') {
+            return 'assets/css/[name]-[hash][extname]'
+          }
+          return 'assets/[name]-[hash][extname]'
+        },
       },
     },
     // 资源优化
     chunkSizeWarningLimit: 1000,
-    assetsInlineLimit: 4096,
+    assetsInlineLimit: 4096, // 小于 4KB 的资源内联
     // 压缩配置
     cssCodeSplit: true,
+    cssMinify: 'esbuild', // 使用 esbuild 压缩 CSS
     reportCompressedSize: false, // 加快构建速度
   },
   server: {
