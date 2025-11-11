@@ -18,6 +18,11 @@ import { lazyLoad } from './directives/lazyLoad'
 // 导入日志工具
 import logger from './utils/logger'
 
+// 导入缓存系统
+import { swManager } from './utils/serviceWorkerManager'
+import { indexedDB } from './utils/indexedDB'
+import { offlineQueue } from './utils/offlineQueue'
+
 // 导入Store（用于初始化）
 import { useThemeStore } from './stores/theme'
 import { useSettingsStore } from './stores/settings'
@@ -104,3 +109,53 @@ const themeStore = useThemeStore()
 const settingsStore = useSettingsStore()
 themeStore.initTheme()
 settingsStore.initSettings()
+
+// ============================================
+// 初始化缓存系统
+// ============================================
+
+// 1. 初始化IndexedDB
+indexedDB.init().then(() => {
+  logger.log('[Cache] IndexedDB initialized')
+}).catch((error) => {
+  logger.criticalError('[Cache] IndexedDB init failed:', error)
+})
+
+// 2. 注册Service Worker（仅生产环境）
+if (!import.meta.env.DEV) {
+  swManager
+    .register()
+    .then((registration) => {
+      if (registration) {
+        logger.log('[Cache] Service Worker registered')
+        
+        // 监听SW更新
+        window.addEventListener('sw-update-available', () => {
+          logger.log('[Cache] New version available')
+          // 可以在这里显示更新提示
+        })
+      }
+    })
+    .catch((error) => {
+      logger.criticalError('[Cache] Service Worker registration failed:', error)
+    })
+}
+
+// 3. 设置离线队列
+import('./api/client').then(({ default: apiClient }) => {
+  offlineQueue.setApiClient(apiClient)
+  logger.log('[Cache] Offline queue configured')
+})
+
+// 4. 定期清理旧数据（每24小时）
+if (typeof window !== 'undefined') {
+  setInterval(() => {
+    indexedDB.clearOldPosts(7).then((count) => {
+      logger.log(`[Cache] Cleared ${count} old posts`)
+    })
+    
+    if (!import.meta.env.DEV) {
+      swManager.clearOldMedia()
+    }
+  }, 24 * 60 * 60 * 1000)
+}
