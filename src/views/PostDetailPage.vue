@@ -203,14 +203,6 @@
                 <span class="action-label">{{ isFavorited ? $t('favorite.remove') : $t('favorite.add') }}</span>
               </GlassButton>
               <GlassButton 
-                @click="sharePost"
-                variant="secondary"
-                :title="$t('post.share')"
-              >
-                <Share2 :size="18" />
-                <span class="action-label">{{ $t('post.share') }}</span>
-              </GlassButton>
-              <GlassButton 
                 v-if="post.url"
                 @click="copyLink(post.url)"
                 variant="secondary"
@@ -355,7 +347,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Repeat2,
-  Share2,
   Link,
   Sparkles,
 } from 'lucide-vue-next'
@@ -1173,18 +1164,23 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: var(--spacing-lg);
-  padding: var(--spacing-lg);
-  background:
-    linear-gradient(135deg, rgba(139, 92, 246, 0.02) 0%, rgba(192, 132, 252, 0.02) 100%),
-    var(--glass-bg-light);
-  border-radius: var(--radius-2xl);
-  border: 1px solid rgba(139, 92, 246, 0.08);
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  padding: var(--spacing-md);
+  border-radius: var(--radius-xl);
+  margin: var(--spacing-md) 0;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow:
     0 2px 8px rgba(0, 0, 0, 0.03),
     inset 0 1px 0 rgba(255, 255, 255, 0.08);
   position: relative;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.post-stats::-webkit-scrollbar {
+  display: none;
 }
 
 .post-stats.clickable {
@@ -1256,7 +1252,15 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: var(--spacing-md);
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.post-actions::-webkit-scrollbar {
+  display: none;
 }
 
 .post-actions a {
