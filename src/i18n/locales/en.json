@@ -6,6 +6,7 @@
   "nav": {
     "home": "Home",
     "explore": "Explore",
+    "posts": "Posts",
     "authors": "Authors",
     "profile": "Profile",
     "settings": "Settings",
@@ -61,7 +62,9 @@
     "preloading": "Preloading..."
   },
   "posts": {
-    "subtitle": "Discover and explore amazing content from multiple platforms"
+    "subtitle": "Discover and explore amazing content from multiple platforms",
+    "totalPosts": "Total Posts",
+    "platforms": "Platforms"
   },
   "search": {
     "placeholder": "Search content...",
@@ -78,7 +81,9 @@
     "platform": "Platform",
     "hasMedia": "Has Media",
     "dateRange": "Date Range",
-    "published": "Published Date"
+    "published": "Published Date",
+    "active": "Active Filters",
+    "clearAll": "Clear All"
   },
   "auth": {
     "login": "Login",
