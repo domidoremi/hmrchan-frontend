@@ -1,53 +1,32 @@
 <template>
-  <div v-if="shouldShow" class="access-limit-banner">
-    <div class="banner-content">
-      <!-- Icon -->
-      <div class="banner-icon">
-        <Info v-if="!isNearLimit" :size="24" />
-        <AlertCircle v-else :size="24" class="warning" />
-      </div>
-
-      <!-- Message -->
-      <div class="banner-message">
-        <h3>{{ title }}</h3>
-        <p>{{ message }}</p>
-      </div>
-
-      <!-- Action -->
-      <div v-if="!isAuthenticated" class="banner-action">
-        <GlassButton @click="goToLogin" size="sm">
-          <LogIn :size="18" />
-          {{ $t('nav.login') }}
-        </GlassButton>
-        <GlassButton @click="goToRegister" variant="primary" size="sm">
-          <UserPlus :size="18" />
-          {{ $t('nav.register') }}
-        </GlassButton>
-      </div>
-
-      <!-- 升级会员功能暂未实现，暂时隐藏 -->
-      <!-- <div v-else-if="!isAdmin" class="banner-action">
-        <GlassButton @click="goToUpgrade" variant="primary" size="sm">
-          <Crown :size="18" />
-          {{ $t('user.upgrade') }}
-        </GlassButton>
-      </div> -->
-    </div>
-
-    <!-- Progress Bar -->
-    <div v-if="showProgress" class="progress-bar">
-      <div class="progress-fill" :style="{ width: `${progress}%` }"></div>
-    </div>
+  <!-- 不再在页面上显示，改用Toast通知 -->
+  <div class="access-limit-indicator">
+    <!-- 小气泡指示器 -->
+    <Transition name="fade">
+      <button 
+        v-if="shouldShowIndicator" 
+        class="access-bubble"
+        :class="{ 'bubble-warning': isNearLimit }"
+        @click="showDetails"
+        :aria-label="$t('access.viewDetails')"
+      >
+        <div class="bubble-icon">
+          <Info v-if="!isNearLimit" :size="16" />
+          <AlertCircle v-else :size="16" />
+        </div>
+        <div class="bubble-text">
+          <span class="bubble-count">{{ currentCount }}/{{ totalLimit }}</span>
+        </div>
+      </button>
+    </Transition>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { useI18n } from 'vue-i18n'
-import { Info, AlertCircle, LogIn, UserPlus } from 'lucide-vue-next'
+import { Info, AlertCircle } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/auth'
-import GlassButton from './ui/GlassButton.vue'
 
 interface Props {
   currentCount: number
@@ -61,7 +40,6 @@ const props = withDefaults(defineProps<Props>(), {
 
 const router = useRouter()
 const authStore = useAuthStore()
-const { t } = useI18n()
 
 const isAuthenticated = computed(() => authStore.isAuthenticated)
 const isAdmin = computed(() => authStore.user?.is_admin ?? false)
@@ -75,8 +53,8 @@ const isNearLimit = computed(() => {
   return progress.value >= 80
 })
 
-const shouldShow = computed(() => {
-  // 未登录用户：总是显示
+const shouldShowIndicator = computed(() => {
+  // 未登录用户：显示气泡
   if (!isAuthenticated.value) return true
 
   // 已登录非管理员：接近限制时显示
@@ -86,121 +64,96 @@ const shouldShow = computed(() => {
   return false
 })
 
-const title = computed(() => {
+// 点击气泡显示详细信息
+const showDetails = () => {
+  // 使用Toast显示详细信息
   if (!isAuthenticated.value) {
-    return t('access.guestMode')
+    router.push('/login')
   }
-
-  if (isNearLimit.value) {
-    return t('access.nearLimit')
-  }
-
-  return t('access.contentAccess')
-})
-
-const message = computed(() => {
-  const remaining = props.totalLimit - props.currentCount
-
-  if (!isAuthenticated.value) {
-    return t('access.guestMessage', { limit: props.totalLimit })
-  }
-
-  if (isNearLimit.value) {
-    return t('access.nearLimitMessage', { remaining })
-  }
-
-  return t('access.loadedMessage', { current: props.currentCount, limit: props.totalLimit })
-})
-
-const goToLogin = () => {
-  router.push('/login')
 }
 
-const goToRegister = () => {
-  router.push('/register')
-}
 </script>
 
 <style scoped>
-.access-limit-banner {
-  margin: 1.5rem 0;
-  padding: 1.25rem;
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(59, 130, 246, 0.1));
-  border: 1px solid rgba(139, 92, 246, 0.3);
-  border-radius: 12px;
-  backdrop-filter: blur(10px);
+.access-limit-indicator {
+  position: fixed;
+  bottom: var(--spacing-6);
+  right: var(--spacing-6);
+  z-index: 1000;
 }
 
-.banner-content {
+.access-bubble {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: var(--spacing-2);
+  padding: var(--spacing-2) var(--spacing-3);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  border-radius: var(--radius-full);
+  box-shadow: 
+    0 4px 12px rgba(139, 92, 246, 0.2),
+    0 2px 6px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: all var(--transition-fast);
 }
 
-.banner-icon {
+[data-theme='dark'] .access-bubble {
+  background: rgba(30, 41, 59, 0.95);
+  border-color: rgba(139, 92, 246, 0.4);
+}
+
+.access-bubble:hover {
+  transform: translateY(-2px);
+  box-shadow: 
+    0 6px 16px rgba(139, 92, 246, 0.3),
+    0 3px 8px rgba(0, 0, 0, 0.15);
+}
+
+.access-bubble.bubble-warning {
+  border-color: rgba(245, 158, 11, 0.5);
+  box-shadow: 
+    0 4px 12px rgba(245, 158, 11, 0.3),
+    0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.bubble-icon {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  background: rgba(139, 92, 246, 0.2);
   color: var(--color-primary);
 }
 
-.banner-icon .warning {
+.bubble-warning .bubble-icon {
   color: var(--color-warning);
 }
 
-.banner-message {
-  flex: 1;
+.bubble-text {
+  display: flex;
+  flex-direction: column;
 }
 
-.banner-message h4 {
-  margin: 0 0 0.25rem 0;
-  font-size: 1rem;
-  font-weight: 600;
+.bubble-count {
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
   color: var(--color-text-primary);
 }
 
-.banner-message p {
-  margin: 0;
-  font-size: 0.875rem;
-  color: var(--color-text-secondary);
+.fade-enter-active,
+.fade-leave-active {
+  transition: all var(--transition-base);
 }
 
-.banner-action {
-  display: flex;
-  gap: 0.75rem;
-}
-
-.progress-bar {
-  margin-top: 1rem;
-  height: 4px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 2px;
-  overflow: hidden;
-}
-
-.progress-fill {
-  height: 100%;
-  background: linear-gradient(90deg, var(--color-primary), var(--color-secondary));
-  transition: width 0.3s ease;
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+  transform: translateY(10px);
 }
 
 @media (max-width: 768px) {
-  .banner-content {
-    flex-direction: column;
-    text-align: center;
-  }
-
-  .banner-action {
-    width: 100%;
-    flex-direction: column;
-  }
-
-  .banner-action button {
-    width: 100%;
+  .access-limit-indicator {
+    bottom: var(--spacing-4);
+    right: var(--spacing-4);
   }
 }
 </style>

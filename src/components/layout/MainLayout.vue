@@ -85,10 +85,11 @@ onBeforeUnmount(() => {
 /* Main content */
 .main-content {
   flex: 1;
-  padding: var(--spacing-12) 0;
+  padding-top: 88px; /* 导航栏高度 + 额外间距 */
+  padding-bottom: var(--spacing-12);
 
   /* Smooth scroll for anchor links */
-  scroll-margin-top: 80px;
+  scroll-margin-top: 88px;
 }
 
 /* Fade transition for back to top */
@@ -105,7 +106,8 @@ onBeforeUnmount(() => {
 /* Responsive */
 @media (max-width: 768px) {
   .main-content {
-    padding: var(--spacing-8) 0;
+    padding-top: 76px; /* 移动端导航栏高度 */
+    padding-bottom: 90px; /* 底部导航栏高度 */
   }
 }
 </style>

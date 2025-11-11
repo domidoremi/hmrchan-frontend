@@ -19,7 +19,7 @@ export function useFavorites() {
     page: 1,
     page_size: 20,
     total: 0,
-    total_pages: 0,
+    pages: 0,
   })
 
   /**
@@ -40,7 +40,7 @@ export function useFavorites() {
         page: response.page,
         page_size: response.page_size,
         total: response.total,
-        total_pages: response.total_pages,
+        pages: response.pages,
       }
 
       // 获取所有收藏帖子的完整信息
@@ -78,7 +78,8 @@ export function useFavorites() {
       toast.success(t('favorite.addSuccess'))
       return favorite
     } catch (err: unknown) {
-      const message = (err as any).response?.data?.message || t('favorite.addFailed')
+      const axiosError = err as { response?: { data?: { message?: string } } }
+      const message = axiosError.response?.data?.message || t('favorite.addFailed')
       toast.error(message)
       throw err
     }
@@ -97,7 +98,8 @@ export function useFavorites() {
       toast.success(t('favorite.updateSuccess'))
       return favorite
     } catch (err: unknown) {
-      const message = (err as any).response?.data?.message || t('favorite.updateFailed')
+      const axiosError = err as { response?: { data?: { message?: string } } }
+      const message = axiosError.response?.data?.message || t('favorite.updateFailed')
       toast.error(message)
       throw err
     }
@@ -105,14 +107,25 @@ export function useFavorites() {
 
   /**
    * 删除收藏
+   * @param favoriteIdOrPostId - 可以是favorite_id或post_id
    */
-  const deleteFavorite = async (favoriteId: UUID) => {
+  const deleteFavorite = async (favoriteIdOrPostId: UUID) => {
     try {
-      await favoritesApi.deleteFavorite(favoriteId)
-      favorites.value = favorites.value.filter((f) => f.id !== favoriteId)
+      // 查找对应的收藏，获取post_id
+      const favorite = favorites.value.find(
+        (f) => f.id === favoriteIdOrPostId || f.post_id === favoriteIdOrPostId
+      )
+      const postId = favorite?.post_id || favoriteIdOrPostId
+      
+      // API使用post_id删除
+      await favoritesApi.deleteFavorite(postId)
+      
+      // 从本地列表中移除
+      favorites.value = favorites.value.filter((f) => f.post_id !== postId)
       toast.success(t('favorite.removeSuccess'))
     } catch (err: unknown) {
-      const message = (err as any).response?.data?.message || t('favorite.removeFailed')
+      const axiosError = err as { response?: { data?: { message?: string } } }
+      const message = axiosError.response?.data?.message || t('favorite.removeFailed')
       toast.error(message)
       throw err
     }

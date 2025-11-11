@@ -3,6 +3,7 @@
  * v2.0 - UUID迁移：所有ID参数已从number改为string (UUID格式)
  */
 import { api } from './client'
+import { getRuntimeApiEndpoint } from '@/config/runtime'
 import type {
   LoginRequest,
   LoginResponse,
@@ -20,11 +21,6 @@ import type {
   PostStats,
   UUID,
 } from '@/types'
-
-// 获取API端点基础URL
-const getApiBaseUrl = () => {
-  return import.meta.env.VITE_API_ENDPOINT || import.meta.env.VITE_API_BASE_URL + '/api' || '/api'
-}
 
 // ========== 认证API ==========
 
@@ -68,10 +64,11 @@ export const authApi = {
 export const postsApi = {
   /**
    * 获取内容列表
-   * GET /posts
+   * GET /posts/
+   * Note: Trailing slash added to avoid 307 redirect to HTTP
    */
   getPosts(params?: PostListParams) {
-    return api.get<PaginatedResponse<Post>>('/posts', { params })
+    return api.get<PaginatedResponse<Post>>('/posts/', { params })
   },
 
   /**
@@ -84,20 +81,22 @@ export const postsApi = {
 
   /**
    * 搜索内容
-   * GET /posts?q=keyword
+   * GET /posts/?q=keyword
+   * Note: Trailing slash added to avoid 307 redirect to HTTP
    */
   searchPosts(query: string, params?: Omit<PostListParams, 'q'>) {
-    return api.get<PaginatedResponse<Post>>('/posts', {
+    return api.get<PaginatedResponse<Post>>('/posts/', {
       params: { ...params, q: query },
     })
   },
 
   /**
    * 按平台获取内容
-   * GET /posts?platform=youtube
+   * GET /posts/?platform=youtube
+   * Note: Trailing slash added to avoid 307 redirect to HTTP
    */
   getPostsByPlatform(platform: string, params?: Omit<PostListParams, 'platform'>) {
-    return api.get<PaginatedResponse<Post>>('/posts', {
+    return api.get<PaginatedResponse<Post>>('/posts/', {
       params: { ...params, platform },
     })
   },
@@ -123,11 +122,22 @@ export const mediaApi = {
   },
 
   /**
+   * 运行时强制 HTTPS（防止构建时内联 HTTP）
+   */
+  _forceHttps(url: string): string {
+    if (typeof window !== 'undefined' && url.startsWith('http://')) {
+      return url.replace('http://', 'https://')
+    }
+    return url
+  },
+
+  /**
    * 获取媒体流式播放URL
    * 返回完整URL以支持跨域访问
    */
   getStreamUrl(mediaId: UUID) {
-    return `${getApiBaseUrl()}/media/${mediaId}/stream`
+    const url = `${getRuntimeApiEndpoint()}/media/${mediaId}/stream`
+    return this._forceHttps(url)
   },
 
   /**
@@ -135,7 +145,8 @@ export const mediaApi = {
    * 返回完整URL以支持跨域访问
    */
   getDownloadUrl(mediaId: UUID) {
-    return `${getApiBaseUrl()}/media/${mediaId}/download`
+    const url = `${getRuntimeApiEndpoint()}/media/${mediaId}/download`
+    return this._forceHttps(url)
   },
 
   /**
@@ -143,7 +154,8 @@ export const mediaApi = {
    * 返回完整URL以支持跨域访问
    */
   getThumbnailUrl(mediaId: UUID) {
-    return `${getApiBaseUrl()}/media/${mediaId}/thumbnail`
+    const url = `${getRuntimeApiEndpoint()}/media/${mediaId}/thumbnail`
+    return this._forceHttps(url)
   },
 
   /**
@@ -151,19 +163,20 @@ export const mediaApi = {
    * 返回完整URL以支持跨域访问
    */
   getSubtitleUrl(mediaId: UUID) {
-    return `${getApiBaseUrl()}/media/${mediaId}/subtitle`
+    const url = `${getRuntimeApiEndpoint()}/media/${mediaId}/subtitle`
+    return this._forceHttps(url)
   },
 
   /**
    * 下载媒体文件
    */
   async downloadMedia(mediaId: UUID, filename?: string) {
-    const response = await api.get(`/media/${mediaId}/download`, {
+    const response = await api.get<Blob>(`/media/${mediaId}/download`, {
       responseType: 'blob',
     })
 
     // 创建下载链接
-    const url = window.URL.createObjectURL(new Blob([response]))
+    const url = window.URL.createObjectURL(response)
     const link = document.createElement('a')
     link.href = url
     link.download = filename || `media_${mediaId}`
@@ -193,10 +206,11 @@ export const authorsApi = {
 
   /**
    * 获取作者的内容
-   * GET /authors/{author_id}/posts
+   * GET /authors/{author_id}/posts/
+   * Note: Trailing slash added to avoid 307 redirect to HTTP
    */
   getAuthorPosts(authorId: UUID, params?: PostListParams) {
-    return api.get<PaginatedResponse<Post>>(`/authors/${authorId}/posts`, { params })
+    return api.get<PaginatedResponse<Post>>(`/authors/${authorId}/posts/`, { params })
   },
 }
 
@@ -229,10 +243,10 @@ export const favoritesApi = {
 
   /**
    * 删除收藏
-   * DELETE /favorites/{favorite_id}
+   * DELETE /favorites/{post_id}
    */
-  deleteFavorite(favoriteId: UUID) {
-    return api.delete(`/favorites/${favoriteId}`)
+  deleteFavorite(postId: UUID) {
+    return api.delete(`/favorites/${postId}`)
   },
 
   /**

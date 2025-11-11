@@ -1,5 +1,6 @@
 <template>
-  <nav class="glass-navbar">
+  <!-- 桌面端导航栏 -->
+  <nav class="app-navbar desktop-nav">
     <div class="container navbar-content">
       <!-- Logo -->
       <RouterLink to="/" class="navbar-brand">
@@ -7,177 +8,264 @@
         <span class="brand-name">Chan</span>
       </RouterLink>
 
-      <!-- 导航链接 -->
-      <div
-        ref="mobileNavRef"
-        id="mobile-nav"
-        class="navbar-nav"
-        :class="{ 'nav-open': mobileMenuOpen }"
-      >
-        <RouterLink to="/" class="nav-link" @click="closeMobileMenu" :aria-label="$t('nav.home')">
+      <!-- 导航链接 (桌面端) -->
+      <div class="navbar-links">
+        <RouterLink to="/" class="nav-link">
           <Home :size="20" />
           <span>{{ $t('nav.home') }}</span>
         </RouterLink>
 
-        <RouterLink
-          to="/explore"
-          class="nav-link"
-          @click="closeMobileMenu"
-          :aria-label="$t('nav.explore')"
-        >
+        <RouterLink to="/explore" class="nav-link">
           <Compass :size="20" />
           <span>{{ $t('nav.explore') }}</span>
         </RouterLink>
 
-        <RouterLink
-          v-if="isAuthenticated"
-          to="/favorites"
-          class="nav-link"
-          @click="closeMobileMenu"
-          :aria-label="$t('nav.favorites')"
-        >
+        <RouterLink v-if="isAuthenticated" to="/favorites" class="nav-link">
           <Heart :size="20" />
           <span>{{ $t('nav.favorites') }}</span>
         </RouterLink>
 
-        <RouterLink
-          to="/authors"
-          class="nav-link"
-          @click="closeMobileMenu"
-          :aria-label="$t('nav.authors')"
-        >
+        <RouterLink to="/authors" class="nav-link">
           <Users :size="20" />
           <span>{{ $t('nav.authors') }}</span>
         </RouterLink>
       </div>
 
-      <!-- 搜索框 -->
-      <div class="navbar-search">
-        <Search :size="18" />
-        <input
-          v-model="searchQuery"
-          type="search"
-          :placeholder="$t('search.placeholder')"
-          @keyup.enter="handleSearch"
-        />
-      </div>
-
-      <!-- 右侧操作 -->
+      <!-- 右侧操作 (桌面端) -->
       <div class="navbar-actions">
-        <!-- 主题切换 -->
-        <button
-          class="action-button"
-          @click="toggleTheme"
-          :title="$t('settings.theme')"
-          :aria-label="$t('settings.toggleTheme')"
-          :aria-pressed="isDark ? 'true' : 'false'"
-        >
-          <Sun v-if="!isDark" :size="20" />
-          <Moon v-else :size="20" />
+        <!-- 搜索按钮 -->
+        <button class="action-button search-button" @click="openSearchModal" :aria-label="$t('search.placeholder')">
+          <Search :size="24" />
         </button>
 
-        <!-- 语言切换 -->
-        <div ref="languageMenuRef" class="language-menu-wrapper">
-          <button
-            class="action-button"
-            @click="showLanguageMenu = !showLanguageMenu"
-            :aria-label="$t('aria.languageMenu')"
-            :aria-expanded="showLanguageMenu ? 'true' : 'false'"
-            :aria-haspopup="true"
-          >
-            <Languages :size="20" />
-          </button>
-
-          <!-- 语言菜单 -->
-          <div
-            v-if="showLanguageMenu"
-            class="language-menu glass-card"
-            role="menu"
-            :aria-label="$t('aria.languageMenu')"
-          >
-            <button
-              v-for="locale in locales"
-              :key="locale.code"
-              class="language-item"
-              :class="{ active: currentLocale === locale.code }"
-              @click="changeLanguage(locale.code)"
-            >
-              {{ locale.name }}
-            </button>
-          </div>
-        </div>
+        <!-- 设置按钮 -->
+        <RouterLink to="/settings" class="action-button">
+          <Settings :size="20" />
+        </RouterLink>
 
         <!-- 用户菜单 -->
-        <div v-if="isAuthenticated" ref="userMenuRef" class="user-menu">
-          <button
-            class="user-avatar"
-            @click="showUserMenu = !showUserMenu"
-            :aria-label="$t('aria.userMenu')"
-            :aria-expanded="showUserMenu ? 'true' : 'false'"
-            :aria-haspopup="true"
-          >
-            <img :src="userAvatarUrl" :alt="user?.username || 'User'" @error="handleAvatarError" />
+        <div v-if="isAuthenticated" ref="userMenuRef" class="user-menu-container">
+          <button class="user-avatar-button" @click="showUserMenu = !showUserMenu">
+            <img :src="userAvatarUrl" :alt="user?.username || 'User'" />
           </button>
 
-          <div
-            v-if="showUserMenu"
-            class="user-dropdown glass-card"
-            role="menu"
-            :aria-label="$t('aria.userMenu')"
-          >
-            <div class="user-info">
-              <p class="user-name">{{ user?.username }}</p>
-              <p class="user-email">{{ user?.email }}</p>
+          <Transition name="dropdown">
+            <div v-if="showUserMenu" class="user-dropdown glass-card">
+              <div class="dropdown-header">
+                <div class="user-avatar-large">
+                  <img :src="userAvatarUrl" :alt="user?.username || 'User'" />
+                </div>
+                <div class="user-info">
+                  <div class="user-name">{{ user?.username }}</div>
+                  <div class="user-email">{{ user?.email }}</div>
+                </div>
+              </div>
+
+              <div class="dropdown-links">
+                <RouterLink to="/profile" class="dropdown-link" @click="showUserMenu = false">
+                  <User :size="18" />
+                  <span>{{ $t('nav.profile') }}</span>
+                </RouterLink>
+
+                <RouterLink to="/settings" class="dropdown-link" @click="showUserMenu = false">
+                  <Settings :size="18" />
+                  <span>{{ $t('nav.settings') }}</span>
+                </RouterLink>
+
+                <button class="dropdown-link danger" @click="handleLogout">
+                  <LogOut :size="18" />
+                  <span>{{ $t('nav.logout') }}</span>
+                </button>
+              </div>
             </div>
-            <div class="dropdown-divider"></div>
-            <RouterLink to="/profile" class="dropdown-item" @click="showUserMenu = false">
-              <User :size="18" />
-              {{ $t('nav.profile') }}
-            </RouterLink>
-            <RouterLink to="/favorites" class="dropdown-item" @click="showUserMenu = false">
-              <Heart :size="18" />
-              {{ $t('nav.favorites') }}
-            </RouterLink>
-            <RouterLink to="/settings" class="dropdown-item" @click="showUserMenu = false">
-              <Settings :size="18" />
-              {{ $t('nav.settings') }}
-            </RouterLink>
-            <div class="dropdown-divider"></div>
-            <button class="dropdown-item" @click="handleLogout">
-              <LogOut :size="18" />
-              {{ $t('nav.logout') }}
-            </button>
-          </div>
+          </Transition>
         </div>
 
         <!-- 登录按钮 -->
-        <RouterLink v-else to="/login">
-          <GlassButton size="sm">
-            {{ $t('nav.login') }}
-          </GlassButton>
+        <RouterLink v-else to="/login" class="login-button">
+          <LogIn :size="18" />
+          <span>{{ $t('nav.login') }}</span>
         </RouterLink>
-
-        <!-- 移动端菜单按钮 -->
-        <button
-          ref="mobileMenuButtonRef"
-          class="mobile-menu-button show-on-mobile"
-          @click="toggleMobileMenu"
-          :aria-label="mobileMenuOpen ? $t('aria.closeMenu') : $t('aria.openMenu')"
-          :aria-expanded="mobileMenuOpen ? 'true' : 'false'"
-          :aria-controls="'mobile-nav'"
-        >
-          <Menu v-if="!mobileMenuOpen" :size="24" />
-          <X v-else :size="24" />
-        </button>
       </div>
     </div>
   </nav>
+
+  <!-- 移动端顶部栏 -->
+  <nav class="app-navbar mobile-top-nav">
+    <div class="mobile-top-content">
+      <!-- Logo -->
+      <RouterLink to="/" class="navbar-brand">
+        <div class="brand-logo">HMR</div>
+        <span class="brand-name">Chan</span>
+      </RouterLink>
+
+      <!-- 右侧按钮 -->
+      <div class="mobile-top-actions">
+        <button class="action-button search-button" @click="openSearchModal">
+          <Search :size="24" />
+        </button>
+
+        <button v-if="isAuthenticated" class="action-button" @click="showUserMenu = !showUserMenu">
+          <img :src="userAvatarUrl" :alt="user?.username" class="mobile-avatar" />
+        </button>
+
+        <RouterLink v-else to="/login" class="action-button">
+          <LogIn :size="20" />
+        </RouterLink>
+      </div>
+    </div>
+  </nav>
+
+  <!-- 移动端底部导航栏 -->
+  <nav class="mobile-bottom-nav">
+    <RouterLink to="/" class="bottom-nav-item">
+      <Home :size="24" />
+      <span>{{ $t('nav.home') }}</span>
+    </RouterLink>
+
+    <RouterLink to="/explore" class="bottom-nav-item">
+      <Compass :size="24" />
+      <span>{{ $t('nav.explore') }}</span>
+    </RouterLink>
+
+    <RouterLink v-if="isAuthenticated" to="/favorites" class="bottom-nav-item">
+      <Heart :size="24" />
+      <span>{{ $t('nav.favorites') }}</span>
+    </RouterLink>
+
+    <RouterLink to="/authors" class="bottom-nav-item">
+      <Users :size="24" />
+      <span>{{ $t('nav.authors') }}</span>
+    </RouterLink>
+
+    <RouterLink to="/settings" class="bottom-nav-item">
+      <Settings :size="24" />
+      <span>{{ $t('nav.settings') }}</span>
+    </RouterLink>
+  </nav>
+
+  <!-- 用户菜单弹出层（移动端） -->
+  <Transition name="modal">
+    <div v-if="showUserMenu && isAuthenticated" class="mobile-user-modal" @click="showUserMenu = false">
+      <div class="mobile-user-content glass-card" @click.stop>
+        <div class="mobile-user-header">
+          <div class="user-avatar-large">
+            <img :src="userAvatarUrl" :alt="user?.username" />
+          </div>
+          <div class="user-info">
+            <div class="user-name">{{ user?.username }}</div>
+            <div class="user-email">{{ user?.email }}</div>
+          </div>
+          <button class="close-button" @click="showUserMenu = false">
+            <X :size="24" />
+          </button>
+        </div>
+
+        <div class="mobile-user-links">
+          <RouterLink to="/profile" class="mobile-user-link" @click="showUserMenu = false">
+            <User :size="20" />
+            <span>{{ $t('nav.profile') }}</span>
+          </RouterLink>
+
+          <RouterLink to="/settings" class="mobile-user-link" @click="showUserMenu = false">
+            <Settings :size="20" />
+            <span>{{ $t('nav.settings') }}</span>
+          </RouterLink>
+
+          <button class="mobile-user-link danger" @click="handleLogout">
+            <LogOut :size="20" />
+            <span>{{ $t('nav.logout') }}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </Transition>
+
+  <!-- 搜索模态框 -->
+  <Teleport to="body">
+    <Transition name="modal-fade">
+      <div v-if="searchModalOpen" class="search-modal-overlay" @click="closeSearchModal">
+        <div class="search-modal-content" @click.stop>
+          <div class="search-header">
+            <div class="search-input-wrapper">
+              <Search :size="20" class="search-icon" />
+              <input
+                ref="searchInputRef"
+                v-model="searchQuery"
+                type="text"
+                :placeholder="$t('search.placeholder')"
+                class="search-input"
+                @input="handleSearchInput"
+              />
+              <button
+                v-if="searchQuery"
+                class="clear-btn"
+                @click="clearSearch"
+                :aria-label="$t('common.clear')"
+              >
+                <X :size="18" />
+              </button>
+            </div>
+            <button class="close-btn" @click="closeSearchModal" :aria-label="$t('common.close')">
+              <X :size="24" />
+            </button>
+          </div>
+
+          <div class="search-results">
+            <!-- 加载状态 -->
+            <div v-if="searchLoading" class="search-loading">
+              <div class="loading-spinner"></div>
+              <p>{{ $t('search.searching') }}</p>
+            </div>
+
+            <!-- 空状态 -->
+            <div v-else-if="!searchQuery" class="search-empty">
+              <Search :size="48" />
+              <p>{{ $t('search.placeholder') }}</p>
+            </div>
+
+            <!-- 搜索结果 -->
+            <div v-else-if="searchResults.length > 0" class="results-list">
+              <RouterLink
+                v-for="post in searchResults"
+                :key="post.id"
+                :to="`/posts/${post.id}`"
+                class="result-item"
+                @click="closeSearchModal"
+              >
+                <img
+                  v-if="post.thumbnail_url"
+                  :src="getMediaUrl(post.thumbnail_url)"
+                  :alt="post.title || 'Post'"
+                  class="result-thumbnail"
+                />
+                <div class="result-info">
+                  <h4 class="result-title">{{ post.title || $t('post.untitled') }}</h4>
+                  <p v-if="post.description" class="result-description">{{ truncate(post.description, 100) }}</p>
+                  <div class="result-meta">
+                    <span class="meta-platform">{{ post.platform }}</span>
+                    <span class="meta-date">{{ formatDate(post.published_at || post.scraped_at) }}</span>
+                  </div>
+                </div>
+              </RouterLink>
+            </div>
+
+            <!-- 无结果 -->
+            <div v-else class="search-no-results">
+              <Search :size="48" />
+              <p>{{ $t('search.noResults') }}</p>
+              <p class="hint">{{ $t('search.tryDifferent') }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Transition>
+  </Teleport>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
-import { useRouter } from 'vue-router'
-import { useI18n } from 'vue-i18n'
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
+import { RouterLink, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import {
   Home,
@@ -185,124 +273,129 @@ import {
   Heart,
   Users,
   Search,
-  Sun,
-  Moon,
-  Languages,
-  User,
   Settings,
+  User,
   LogOut,
-  Menu,
+  LogIn,
   X,
 } from 'lucide-vue-next'
-
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
-import { useThemeStore } from '@/stores/theme'
-import { getUserAvatar } from '@/utils/avatar'
-import GlassButton from '@/components/ui/GlassButton.vue'
+import { usePostsStore } from '@/stores/posts'
+import { API_BASE_URL } from '@/config/api'
+import type { Post } from '@/types'
 
 const router = useRouter()
-const { locale } = useI18n()
-
+const { t } = useI18n()
 const authStore = useAuthStore()
-const themeStore = useThemeStore()
+const postsStore = usePostsStore()
 
 const { user, isAuthenticated } = storeToRefs(authStore)
-const { isDark } = storeToRefs(themeStore)
 
-const searchQuery = ref('')
-const showLanguageMenu = ref(false)
 const showUserMenu = ref(false)
-const mobileMenuOpen = ref(false)
-const avatarError = ref(false)
-const languageMenuRef = ref<HTMLElement | null>(null)
+const searchModalOpen = ref(false)
 const userMenuRef = ref<HTMLElement | null>(null)
-const mobileNavRef = ref<HTMLElement | null>(null)
-const mobileMenuButtonRef = ref<HTMLElement | null>(null)
+const searchInputRef = ref<HTMLInputElement | null>(null)
 
-const currentLocale = computed(() => locale.value)
+// 搜索相关状态
+const searchQuery = ref('')
+const searchResults = ref<Post[]>([])
+const searchLoading = ref(false)
+let searchTimeout: ReturnType<typeof setTimeout> | null = null
 
-// 用户头像URL（含默认头像）
 const userAvatarUrl = computed(() => {
-  // 如果之前加载失败过，直接返回默认头像
-  if (avatarError.value && user.value) {
-    return getUserAvatar(
-      {
-        username: user.value.username,
-        full_name: user.value.full_name,
-        avatar_url: null,
-      },
-      40,
-    )
+  if (user.value?.avatar_url) {
+    return user.value.avatar_url
   }
-  return getUserAvatar(user.value, 40)
+  return `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.value?.username || 'default'}`
 })
 
-// 头像加载失败处理
-const handleAvatarError = () => {
-  avatarError.value = true
+const openSearchModal = async () => {
+  searchModalOpen.value = true
+  await nextTick()
+  searchInputRef.value?.focus()
 }
 
-const locales = [
-  { code: 'en', name: 'English' },
-  { code: 'zh-CN', name: '简体中文' },
-  { code: 'ja', name: '日本語' },
-]
-
-const toggleTheme = () => {
-  themeStore.toggleTheme()
-}
-
-const changeLanguage = (newLocale: string) => {
-  locale.value = newLocale
-  localStorage.setItem('locale', newLocale)
-  showLanguageMenu.value = false
-}
-
-const handleSearch = () => {
-  if (searchQuery.value.trim()) {
-    router.push({ path: '/explore', query: { q: searchQuery.value } })
-    searchQuery.value = ''
+const closeSearchModal = () => {
+  searchModalOpen.value = false
+  searchQuery.value = ''
+  searchResults.value = []
+  if (searchTimeout) {
+    clearTimeout(searchTimeout)
+    searchTimeout = null
   }
+}
+
+const clearSearch = () => {
+  searchQuery.value = ''
+  searchResults.value = []
+  searchInputRef.value?.focus()
+}
+
+// 防抖搜索
+const handleSearchInput = () => {
+  if (searchTimeout) {
+    clearTimeout(searchTimeout)
+  }
+
+  if (!searchQuery.value.trim()) {
+    searchResults.value = []
+    searchLoading.value = false
+    return
+  }
+
+  searchLoading.value = true
+
+  searchTimeout = setTimeout(async () => {
+    try {
+      await postsStore.fetchPosts({
+        q: searchQuery.value.trim(),
+        page: 1,
+        page_size: 10,
+      })
+      searchResults.value = postsStore.posts
+    } catch (error) {
+      console.error('Search error:', error)
+      searchResults.value = []
+    } finally {
+      searchLoading.value = false
+    }
+  }, 300) // 300ms 防抖延迟
+}
+
+// 工具函数
+const getMediaUrl = (url: string) => {
+  if (url.startsWith('http')) return url
+  return `${API_BASE_URL}${url}`
+}
+
+const truncate = (text: string, length: number) => {
+  if (text.length <= length) return text
+  return text.substring(0, length) + '...'
+}
+
+const formatDate = (dateString: string) => {
+  const date = new Date(dateString)
+  const now = new Date()
+  const diff = now.getTime() - date.getTime()
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+
+  if (days === 0) return t('common.today')
+  if (days === 1) return t('common.yesterday')
+  if (days < 7) return t('common.daysAgo', { days })
+  return date.toLocaleDateString(t('locale'))
 }
 
 const handleLogout = () => {
   authStore.logout()
   showUserMenu.value = false
-  router.push('/login')
+  router.push('/')
 }
 
-const toggleMobileMenu = () => {
-  mobileMenuOpen.value = !mobileMenuOpen.value
-}
-
-const closeMobileMenu = () => {
-  mobileMenuOpen.value = false
-}
-
-// 点击外部关闭下拉菜单和移动端菜单
-const handleClickOutside = (event: Event) => {
-  const target = event.target as HTMLElement
-
-  // 检查是否点击在语言菜单外部
-  if (showLanguageMenu.value && languageMenuRef.value) {
-    if (!languageMenuRef.value.contains(target)) {
-      showLanguageMenu.value = false
-    }
-  }
-
-  // 检查是否点击在用户菜单外部
-  if (showUserMenu.value && userMenuRef.value) {
-    if (!userMenuRef.value.contains(target)) {
-      showUserMenu.value = false
-    }
-  }
-
-  // 检查是否点击在移动端菜单外部
-  if (mobileMenuOpen.value && mobileNavRef.value && mobileMenuButtonRef.value) {
-    // 如果点击的不是导航菜单内部，也不是菜单按钮
-    if (!mobileNavRef.value.contains(target) && !mobileMenuButtonRef.value.contains(target)) {
-      mobileMenuOpen.value = false
-    }
+// 点击外部关闭用户菜单
+const handleClickOutside = (event: MouseEvent) => {
+  if (userMenuRef.value && !userMenuRef.value.contains(event.target as Node)) {
+    showUserMenu.value = false
   }
 }
 
@@ -310,493 +403,825 @@ onMounted(() => {
   document.addEventListener('click', handleClickOutside)
 })
 
-onBeforeUnmount(() => {
+onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
 })
 </script>
 
 <style scoped>
-/* Component styles imported from @/styles/components/navbar.css */
+/* ==================== 基础样式 ==================== */
+.app-navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  border-bottom: 1px solid var(--glass-border);
+}
+
+/* ==================== 桌面端导航栏 ==================== */
+.desktop-nav {
+  display: block;
+}
+
 .navbar-content {
   display: flex;
   align-items: center;
-  gap: var(--spacing-lg);
-  padding: var(--spacing-md) var(--spacing-lg);
-  min-height: 64px;
+  justify-content: space-between;
+  padding: var(--spacing-4) var(--spacing-6);
+  max-width: 1400px;
+  margin: 0 auto;
 }
 
+/* Logo */
 .navbar-brand {
   display: flex;
   align-items: center;
-  gap: var(--spacing-sm);
+  gap: var(--spacing-2);
   text-decoration: none;
-  font-size: var(--text-xl);
-  font-weight: var(--font-bold);
-  color: var(--color-text-primary);
+  transition: transform var(--transition-fast);
+}
+
+.navbar-brand:hover {
+  transform: scale(1.05);
 }
 
 .brand-logo {
   width: 40px;
   height: 40px;
-  background: var(--gradient-primary);
-  border-radius: var(--radius-lg);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+  border-radius: var(--radius-lg);
   font-weight: var(--font-bold);
-  font-size: var(--text-sm);
+  font-size: var(--text-lg);
+  color: white;
 }
 
-.navbar-nav {
+.brand-name {
+  font-size: var(--text-xl);
+  font-weight: var(--font-bold);
+  color: var(--color-text-primary);
+}
+
+/* 导航链接 */
+.navbar-links {
   display: flex;
   align-items: center;
-  gap: var(--spacing-md);
-  flex: 1;
+  gap: var(--spacing-2);
 }
 
 .nav-link {
   display: flex;
   align-items: center;
-  gap: var(--spacing-xs);
-  padding: var(--spacing-sm) var(--spacing-md);
+  gap: var(--spacing-2);
+  padding: var(--spacing-3) var(--spacing-4);
   border-radius: var(--radius-lg);
   color: var(--color-text-secondary);
   text-decoration: none;
   font-weight: var(--font-medium);
   transition: all var(--transition-fast);
+  position: relative;
 }
 
-.nav-link:hover,
-.nav-link.router-link-active {
-  background: var(--glass-bg-light);
+.nav-link:hover {
   color: var(--color-primary);
-}
-
-.navbar-search {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-sm) var(--spacing-md);
   background: var(--glass-bg-light);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-lg);
-  min-width: 300px;
-  flex-shrink: 1;
-  transition: all var(--transition-fast);
 }
 
-.navbar-search:focus-within {
-  background: var(--glass-bg);
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+.nav-link.router-link-active {
+  color: var(--color-primary);
+  background: var(--glass-bg-light);
 }
 
-.navbar-search input {
-  flex: 1;
-  background: transparent;
-  border: none;
-  outline: none;
-  color: var(--color-text-primary);
-  font-size: var(--text-sm);
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.nav-link.router-link-active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 24px;
+  height: 3px;
+  background: var(--color-primary);
+  border-radius: 2px 2px 0 0;
 }
 
-.navbar-search input::placeholder {
-  color: var(--color-text-tertiary);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
+/* 右侧操作 */
 .navbar-actions {
   display: flex;
   align-items: center;
-  gap: var(--spacing-sm);
-  position: relative;
+  gap: var(--spacing-2);
+}
+
+.navbar-actions .action-button,
+.mobile-top-actions .action-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  min-height: 40px;
+  max-width: 40px;
+  max-height: 40px;
+  padding: 0;
+  margin: 0;
+  border-radius: var(--radius-lg);
+  color: var(--color-text-secondary);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  text-decoration: none;
+  flex-shrink: 0;
+  aspect-ratio: 1 / 1;
+}
+
+/* 确保SVG图标尺寸正确 */
+.navbar-actions .action-button svg,
+.mobile-top-actions .action-button svg {
+  width: 24px;
+  height: 24px;
   flex-shrink: 0;
 }
 
-/* 确保语言菜单和用户菜单在桌面端正常显示 */
-.language-menu-wrapper,
-.user-menu {
-  position: relative;
-  display: flex;
-  align-items: center;
+/* 搜索按钮特殊样式 - 更醒目 */
+.search-button {
+  background: var(--glass-bg-light);
+  border: 1px solid var(--glass-border);
 }
 
-.action-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: var(--radius-lg);
-  background: transparent;
-  color: var(--color-text-secondary);
-  cursor: pointer;
-  transition: all var(--transition-fast);
+.search-button:hover {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(192, 132, 252, 0.1) 100%);
+  border-color: var(--color-primary);
+  transform: scale(1.05);
 }
 
 .action-button:hover {
-  background: var(--glass-bg-light);
-  color: var(--color-text-primary);
-}
-
-.language-menu,
-.user-dropdown {
-  position: absolute;
-  top: calc(100% + var(--spacing-sm));
-  right: 0;
-  min-width: 200px;
-  padding: var(--spacing-sm);
-  z-index: var(--z-dropdown);
-  animation: slideDown var(--transition-fast);
-}
-
-.language-item,
-.dropdown-item {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
-  width: 100%;
-  padding: var(--spacing-sm) var(--spacing-md);
-  border-radius: var(--radius-md);
-  background: transparent;
-  color: var(--color-text-secondary);
-  text-align: left;
-  cursor: pointer;
-  transition: all var(--transition-fast);
-}
-
-.language-item:hover,
-.dropdown-item:hover {
-  background: var(--glass-bg-light);
-  color: var(--color-text-primary);
-}
-
-.language-item.active {
-  background: var(--glass-bg-light);
   color: var(--color-primary);
+  background: var(--glass-bg-light);
 }
 
-.user-avatar {
+/* 用户头像按钮 */
+.navbar-actions .user-avatar-button {
   width: 40px;
   height: 40px;
-  border-radius: var(--radius-full);
-  background: var(--gradient-primary);
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  min-width: 40px;
+  min-height: 40px;
+  max-width: 40px;
+  max-height: 40px;
+  border-radius: 50%;
+  border: 2px solid var(--glass-border);
+  overflow: hidden;
   cursor: pointer;
   transition: all var(--transition-fast);
-  overflow: hidden;
+  background: none;
+  padding: 0;
+  flex-shrink: 0;
+  aspect-ratio: 1 / 1;
 }
 
-.user-avatar img {
+.user-avatar-button:hover {
+  border-color: var(--color-primary);
+  transform: scale(1.05);
+}
+
+.user-avatar-button img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.user-avatar:hover {
-  transform: scale(1.05);
-  box-shadow: var(--glass-glow);
+/* 用户菜单 */
+.user-menu-container {
+  position: relative;
+  flex-shrink: 0; /* 防止容器被压缩 */
+}
+
+.user-dropdown {
+  position: absolute;
+  top: calc(100% + var(--spacing-2));
+  right: 0;
+  width: 280px;
+  padding: var(--spacing-4);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--glass-shadow);
+}
+
+.dropdown-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  padding-bottom: var(--spacing-4);
+  border-bottom: 1px solid var(--glass-border);
+  margin-bottom: var(--spacing-3);
+}
+
+.user-avatar-large {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.user-avatar-large img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .user-info {
-  padding: var(--spacing-md);
+  flex: 1;
+  overflow: hidden;
 }
 
 .user-name {
   font-weight: var(--font-semibold);
   color: var(--color-text-primary);
-  margin-bottom: var(--spacing-xs);
+  font-size: var(--text-base);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .user-email {
   font-size: var(--text-sm);
-  color: var(--color-text-tertiary);
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.dropdown-divider {
-  height: 1px;
-  background: var(--glass-border);
-  margin: var(--spacing-sm) 0;
+.dropdown-links {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-1);
 }
 
-.mobile-menu-button {
-  display: none;
-  background: transparent;
+.dropdown-link {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  padding: var(--spacing-3);
+  border-radius: var(--radius-md);
   color: var(--color-text-primary);
+  text-decoration: none;
+  background: none;
+  border: none;
+  width: 100%;
   cursor: pointer;
+  transition: all var(--transition-fast);
+  font-size: var(--text-base);
 }
 
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.dropdown-link:hover {
+  background: var(--glass-bg-light);
+  color: var(--color-primary);
 }
 
-/* 中型屏幕 (900px - 1100px) */
-@media (max-width: 1100px) and (min-width: 900px) {
-  .navbar-search {
-    min-width: 180px;
-  }
-
-  .navbar-content {
-    gap: var(--spacing-sm);
-  }
-
-  .nav-link span {
-    display: inline;
-  }
+.dropdown-link.danger:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--color-danger);
 }
 
-/* 小屏幕 (769px - 899px) */
-@media (max-width: 899px) and (min-width: 769px) {
-  .navbar-search {
-    min-width: 150px;
-  }
+/* 登录按钮 */
+.login-button {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  padding: var(--spacing-3) var(--spacing-5);
+  border-radius: var(--radius-lg);
+  background: var(--color-primary);
+  color: white;
+  text-decoration: none;
+  font-weight: var(--font-semibold);
+  transition: all var(--transition-fast);
+}
 
-  .navbar-actions {
-    gap: var(--spacing-xs);
-  }
+.login-button:hover {
+  background: var(--color-primary-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+}
 
-  /* 隐藏导航文字，只显示图标 */
-  .nav-link span {
+/* ==================== 移动端导航栏 ==================== */
+.mobile-top-nav,
+.mobile-bottom-nav {
+  display: none;
+}
+
+/* Transitions */
+.dropdown-enter-active,
+.dropdown-leave-active {
+  transition: all var(--transition-fast);
+}
+
+.dropdown-enter-from,
+.dropdown-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+/* ==================== 响应式设计 (<768px) ==================== */
+@media (max-width: 768px) {
+  /* 隐藏桌面端导航栏 */
+  .desktop-nav {
     display: none;
   }
 
-  .action-button {
-    width: 36px;
-    height: 36px;
+  /* 显示移动端顶部栏 */
+  .mobile-top-nav {
+    display: block;
+    padding: var(--spacing-3) var(--spacing-4);
   }
 
-  .user-avatar {
-    width: 36px;
-    height: 36px;
-  }
-}
-
-/* 移动端样式 (768px及以下) */
-@media (max-width: 768px) {
-  /* 确保在768px时移动端样式优先 */
-  .navbar-content {
-    gap: var(--spacing-xs);
+  .mobile-top-content {
+    display: flex;
+    align-items: center;
     justify-content: space-between;
   }
 
-  /* 移动端只显示Logo图标，隐藏文字 */
-  .navbar-brand {
-    gap: 0;
+  .mobile-top-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-2);
   }
 
-  .navbar-brand .brand-name {
-    display: none;
+  /* 移动端action-button尺寸已在上方统一定义，这里只需确保不被覆盖 */
+  .mobile-top-actions .action-button {
+    width: 40px;
+    height: 40px;
+    padding: 0;
   }
 
-  .navbar-brand .brand-logo {
-    width: 36px;
-    height: 36px;
-    font-size: 12px;
+  .mobile-top-actions .action-button svg {
+    width: 24px;
+    height: 24px;
   }
 
-  .navbar-nav {
+  .mobile-top-actions .mobile-avatar {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    min-height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+    display: block;
+    aspect-ratio: 1 / 1;
+  }
+
+  /* 显示移动端底部导航栏 */
+  .mobile-bottom-nav {
+    display: flex;
     position: fixed;
-    top: 64px;
+    bottom: 0;
     left: 0;
     right: 0;
+    z-index: 1000;
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    border-top: 1px solid var(--glass-border);
+    padding: var(--spacing-2) var(--spacing-1);
+    justify-content: space-around;
+    align-items: center;
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
+  }
+
+  .bottom-nav-item {
+    display: flex;
     flex-direction: column;
-    background: var(--glass-bg-strong);
-    backdrop-filter: var(--glass-blur-strong);
-    padding: var(--spacing-lg);
-    gap: var(--spacing-sm);
-    transform: translateY(-100%);
-    opacity: 0;
-    transition: all var(--transition-base);
-    pointer-events: none;
-    z-index: var(--z-sticky);
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-1);
+    padding: var(--spacing-2);
+    border-radius: var(--radius-md);
+    color: var(--color-text-secondary);
+    text-decoration: none;
+    font-size: var(--text-xs);
+    font-weight: var(--font-medium);
+    transition: all var(--transition-fast);
+    flex: 1;
+    max-width: 80px;
   }
 
-  .navbar-nav.nav-open {
-    transform: translateY(0);
-    opacity: 1;
-    pointer-events: all;
+  .bottom-nav-item:active {
+    transform: scale(0.95);
   }
 
-  .navbar-actions {
-    gap: var(--spacing-xs);
+  .bottom-nav-item.router-link-active {
+    color: var(--color-primary);
+    background: var(--glass-bg-light);
   }
 
-  .action-button {
-    width: 36px;
-    height: 36px;
+  /* 移动端用户菜单 */
+  .mobile-user-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: flex-end;
   }
 
-  .action-button svg {
-    width: 18px;
-    height: 18px;
+  .mobile-user-content {
+    width: 100%;
+    max-height: 80vh;
+    border-radius: var(--radius-2xl) var(--radius-2xl) 0 0;
+    padding: var(--spacing-6);
+    overflow-y: auto;
   }
 
-  /* 移动端隐藏语言切换按钮 */
-  .action-button:has(svg[data-lucide='languages']) {
-    display: none;
-  }
-
-  /* 移动端保持用户头像在导航栏 */
-  .navbar-actions .user-menu {
+  .mobile-user-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-3);
+    padding-bottom: var(--spacing-4);
+    border-bottom: 1px solid var(--glass-border);
+    margin-bottom: var(--spacing-4);
     position: relative;
   }
 
-  .navbar-actions .user-menu .user-avatar {
-    width: 36px;
-    height: 36px;
-  }
-
-  /* 移动端下拉菜单 */
-  .navbar-actions .user-menu .user-dropdown {
-    position: fixed !important;
-    top: 60px !important;
-    right: 10px !important;
-    left: auto !important;
-    min-width: 200px !important;
-    max-width: 280px !important;
-  }
-
-  .mobile-menu-button {
+  .close-button {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 32px;
+    height: 32px;
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 36px;
-    height: 36px;
+    border-radius: 50%;
+    background: var(--glass-bg-light);
+    border: none;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
   }
 
-  .navbar-search {
-    flex: 1;
-    min-width: 0;
-    max-width: 240px;
-    padding: var(--spacing-xs) var(--spacing-sm);
+  .close-button:active {
+    transform: scale(0.95);
   }
 
-  .navbar-search input {
-    font-size: 0.875rem;
-  }
-
-  /* 未登录时的登录按钮保持在页眉 */
-  .navbar-actions > a {
+  .mobile-user-links {
     display: flex;
+    flex-direction: column;
+    gap: var(--spacing-2);
+  }
+
+  .mobile-user-link {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-3);
+    padding: var(--spacing-4);
+    border-radius: var(--radius-lg);
+    background: var(--glass-bg-light);
+    color: var(--color-text-primary);
+    text-decoration: none;
+    font-weight: var(--font-medium);
+    transition: all var(--transition-fast);
+    border: none;
+    width: 100%;
+    cursor: pointer;
+    font-size: var(--text-base);
+  }
+
+  .mobile-user-link:active {
+    transform: scale(0.98);
+  }
+
+  .mobile-user-link.danger {
+    color: var(--color-danger);
+  }
+
+  /* Modal Transitions */
+  .modal-enter-active,
+  .modal-leave-active {
+    transition: all 0.3s ease;
+  }
+
+  .modal-enter-from,
+  .modal-leave-to {
+    opacity: 0;
+  }
+
+  .modal-enter-active .mobile-user-content,
+  .modal-leave-active .mobile-user-content {
+    transition: transform 0.3s ease;
+  }
+
+  .modal-enter-from .mobile-user-content,
+  .modal-leave-to .mobile-user-content {
+    transform: translateY(100%);
+  }
+
+  /* 为底部导航栏留出空间 - 但不应用到登录/注册页面 */
+  :global(body:not(.no-bottom-padding)) {
+    padding-bottom: 72px;
   }
 }
 
-/* 极小屏幕优化 */
-@media (max-width: 480px) {
-  .navbar-content {
-    padding: var(--spacing-sm) var(--spacing-sm);
-    gap: var(--spacing-xs);
-    min-height: 56px;
-  }
+/* ==================== 搜索模态框样式 ==================== */
+.search-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(12px);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: var(--spacing-20);
+  overflow-y: auto;
+}
 
-  .navbar-brand .brand-logo {
-    width: 32px;
-    height: 32px;
-    font-size: 11px;
-  }
+.search-modal-content {
+  width: 100%;
+  max-width: 700px;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-2xl);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+  margin-top: var(--spacing-10);
+  overflow: hidden;
+}
 
-  .navbar-search {
-    max-width: 200px;
-    padding: var(--spacing-xs) var(--spacing-sm);
-  }
+.search-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  padding: var(--spacing-5);
+  border-bottom: 1px solid var(--glass-border);
+  background: var(--glass-bg-light);
+}
 
-  .navbar-search input {
-    font-size: 13px;
-  }
+.search-input-wrapper {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  padding: var(--spacing-3) var(--spacing-4);
+  background: var(--color-background);
+  border: 2px solid var(--glass-border);
+  border-radius: var(--radius-xl);
+  transition: all var(--transition-fast);
+}
 
-  .navbar-actions {
-    gap: 4px;
-  }
+.search-input-wrapper:focus-within {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+}
 
-  .action-button {
-    width: 32px;
-    height: 32px;
-  }
+.search-icon {
+  color: var(--color-text-tertiary);
+  flex-shrink: 0;
+}
 
-  .action-button svg {
-    width: 16px;
-    height: 16px;
-  }
+.search-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--color-text-primary);
+  font-size: var(--text-base);
+  outline: none;
+}
 
-  .mobile-menu-button {
-    width: 32px;
-    height: 32px;
-  }
+.search-input::placeholder {
+  color: var(--color-text-tertiary);
+}
 
-  /* 登录按钮更紧凑 */
-  .navbar-actions :deep(.glass-button.btn-sm) {
-    padding: 6px 12px;
-    font-size: 13px;
-  }
+.clear-btn {
+  padding: var(--spacing-1);
+  background: transparent;
+  border: none;
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+}
 
-  .navbar-actions .user-menu .user-avatar {
-    width: 32px;
-    height: 32px;
-  }
+.clear-btn:hover {
+  background: var(--glass-bg-light);
+  color: var(--color-text-primary);
+}
 
-  .navbar-actions .user-menu .user-dropdown {
-    right: 8px !important;
+.close-btn {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--glass-bg-light);
+  border: none;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.close-btn:hover {
+  background: var(--glass-bg);
+  color: var(--color-text-primary);
+  transform: scale(1.05);
+}
+
+/* 搜索结果区域 */
+.search-results {
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+/* 加载状态 */
+.search-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-12);
+  gap: var(--spacing-4);
+  color: var(--color-text-secondary);
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--glass-border);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
   }
 }
 
-/* 超小屏幕优化 (400px及以下) */
-@media (max-width: 400px) {
-  .navbar-content {
-    padding: var(--spacing-xs) var(--spacing-xs);
-    min-height: 52px;
+/* 空状态 */
+.search-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-12);
+  gap: var(--spacing-4);
+  color: var(--color-text-tertiary);
+}
+
+/* 无结果 */
+.search-no-results {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-12);
+  gap: var(--spacing-3);
+  color: var(--color-text-tertiary);
+}
+
+.search-no-results .hint {
+  font-size: var(--text-sm);
+  opacity: 0.8;
+}
+
+/* 结果列表 */
+.results-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.result-item {
+  display: flex;
+  gap: var(--spacing-4);
+  padding: var(--spacing-4);
+  border-bottom: 1px solid var(--glass-border);
+  text-decoration: none;
+  color: inherit;
+  transition: all var(--transition-fast);
+}
+
+.result-item:hover {
+  background: var(--glass-bg-light);
+}
+
+.result-item:last-child {
+  border-bottom: none;
+}
+
+.result-thumbnail {
+  width: 80px;
+  height: 80px;
+  min-width: 80px;
+  object-fit: cover;
+  border-radius: var(--radius-lg);
+  background: var(--glass-bg-light);
+}
+
+.result-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+  min-width: 0;
+}
+
+.result-title {
+  font-size: var(--text-base);
+  font-weight: var(--font-semibold);
+  color: var(--color-text-primary);
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.result-description {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  line-height: 1.5;
+}
+
+.result-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+}
+
+.meta-platform {
+  padding: var(--spacing-1) var(--spacing-2);
+  background: var(--glass-bg-light);
+  border-radius: var(--radius-md);
+  font-weight: var(--font-medium);
+  text-transform: uppercase;
+}
+
+/* 模态框动画 */
+.modal-fade-enter-active,
+.modal-fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.modal-fade-enter-from,
+.modal-fade-leave-to {
+  opacity: 0;
+}
+
+.modal-fade-enter-active .search-modal-content,
+.modal-fade-leave-active .search-modal-content {
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.modal-fade-enter-from .search-modal-content,
+.modal-fade-leave-to .search-modal-content {
+  transform: translateY(-30px);
+  opacity: 0;
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+  .search-modal-overlay {
+    padding: var(--spacing-4);
   }
 
-  .navbar-brand .brand-logo {
-    width: 28px;
-    height: 28px;
-    font-size: 10px;
+  .search-modal-content {
+    margin-top: 0;
   }
 
-  .navbar-actions {
-    gap: 2px;
+  .result-thumbnail {
+    width: 60px;
+    height: 60px;
+    min-width: 60px;
   }
 
-  .action-button {
-    width: 30px;
-    height: 30px;
+  .result-title {
+    font-size: var(--text-sm);
   }
 
-  .action-button svg {
-    width: 14px;
-    height: 14px;
-  }
-
-  .mobile-menu-button {
-    width: 30px;
-    height: 30px;
-  }
-
-  .mobile-menu-button svg {
-    width: 18px;
-    height: 18px;
-  }
-
-  /* 登录按钮更小 */
-  .navbar-actions :deep(.glass-button.btn-sm) {
-    padding: 5px 10px;
-    font-size: 12px;
+  .result-description {
+    font-size: var(--text-xs);
   }
 }
 </style>
