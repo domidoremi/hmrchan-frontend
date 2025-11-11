@@ -15,9 +15,6 @@ import './styles/index.css'
 // 导入自定义指令
 import { lazyLoad } from './directives/lazyLoad'
 
-// 导入Service Worker
-import { swManager } from './utils/serviceWorker'
-
 // 导入日志工具
 import logger from './utils/logger'
 
@@ -107,15 +104,3 @@ const themeStore = useThemeStore()
 const settingsStore = useSettingsStore()
 themeStore.initTheme()
 settingsStore.initSettings()
-
-// 注册Service Worker (生产环境)
-if (!import.meta.env.DEV) {
-  swManager
-    .register()
-    .then(() => {
-      logger.log('Service Worker registered successfully')
-    })
-    .catch((error) => {
-      logger.criticalError('Service Worker registration failed:', error)
-    })
-}
