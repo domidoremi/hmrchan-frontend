@@ -1,7 +1,8 @@
 /* Plyr.js Custom Styles - 使用Grid布局完美解决重叠问题 */
 
-/* 基础控件布局 - 使用Grid */
-.plyr__controls {
+/* 基础控件布局 - 使用Grid，针对Plyr需要!important覆盖第三方样式 */
+.plyr--video .plyr__controls,
+.plyr--audio .plyr__controls {
   display: grid !important;
   grid-template-columns: auto 1fr auto auto auto !important;
   grid-template-rows: auto !important;
@@ -14,7 +15,8 @@
 }
 
 /* 控件项基础样式 */
-.plyr__controls__item {
+.plyr--video .plyr__controls__item,
+.plyr--audio .plyr__controls__item {
   margin: 0 !important;
   display: flex !important;
   align-items: center !important;
