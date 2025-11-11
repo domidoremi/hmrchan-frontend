@@ -329,6 +329,8 @@ const loadPosts = async () => {
     const response = await postsStore.fetchPosts({
       page: currentPage.value,
       platform: selectedPlatform.value === 'all' ? undefined : selectedPlatform.value,
+      sort_by: sortBy.value === 'latest' ? 'published_at' : sortBy.value === 'popular' ? 'view_count' : 'published_at',
+      sort_order: sortBy.value === 'oldest' ? 'asc' : 'desc',
     })
     
     // 根据pagination设置hasMore
@@ -369,6 +371,8 @@ const loadMore = async () => {
     const response = await postsStore.fetchPosts({
       page: currentPage.value,
       platform: selectedPlatform.value === 'all' ? undefined : selectedPlatform.value,
+      sort_by: sortBy.value === 'latest' ? 'published_at' : sortBy.value === 'popular' ? 'view_count' : 'published_at',
+      sort_order: sortBy.value === 'oldest' ? 'asc' : 'desc',
       append: true, // 追加模式
     })
     
