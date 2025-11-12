@@ -48,6 +48,26 @@
             </button>
 
             <div class="post-thumbnail" @click="openMediaViewer(currentThumbnailIndex)">
+              <div class="media-backdrop" aria-hidden="true">
+                <transition name="thumbnail-fade" mode="out-in">
+                  <img
+                    v-if="currentMediaType !== 'video'"
+                    :key="`bg-${currentThumbnailUrl}`"
+                    :src="currentThumbnailUrl"
+                    alt=""
+                    decoding="async"
+                  />
+                  <video
+                    v-else
+                    :key="`bg-video-${currentThumbnailUrl}`"
+                    :src="currentThumbnailUrl"
+                    muted
+                    playsinline
+                    preload="metadata"
+                  ></video>
+                </transition>
+              </div>
+
               <transition name="thumbnail-fade" mode="out-in">
                 <img
                   v-if="currentMediaType !== 'video'"
@@ -173,15 +193,18 @@
               <div class="post-stats clickable">
                 <div v-if="post.view_count" class="stat-item">
                   <Eye :size="20" />
-                  <span>{{ formatNumber(post.view_count) }} {{ $t('post.views') }}</span>
+                  <span class="stat-count">{{ formatNumber(post.view_count) }}</span>
+                  <span class="stat-label">{{ $t('post.views') }}</span>
                 </div>
                 <div v-if="post.like_count" class="stat-item">
                   <Heart :size="20" />
-                  <span>{{ formatNumber(post.like_count) }} {{ $t('post.likes') }}</span>
+                  <span class="stat-count">{{ formatNumber(post.like_count) }}</span>
+                  <span class="stat-label">{{ $t('post.likes') }}</span>
                 </div>
                 <div v-if="post.comment_count" class="stat-item">
                   <MessageCircle :size="20" />
-                  <span>{{ formatNumber(post.comment_count) }} {{ $t('post.comments') }}</span>
+                  <span class="stat-count">{{ formatNumber(post.comment_count) }}</span>
+                  <span class="stat-label">{{ $t('post.comments') }}</span>
                 </div>
                 <ExternalLink :size="16" class="link-icon" />
               </div>
@@ -189,25 +212,30 @@
             <div v-else class="post-stats">
               <div v-if="post.view_count" class="stat-item">
                 <Eye :size="20" />
-                <span>{{ formatNumber(post.view_count) }} {{ $t('post.views') }}</span>
+                <span class="stat-count">{{ formatNumber(post.view_count) }}</span>
+                <span class="stat-label">{{ $t('post.views') }}</span>
               </div>
               <div v-if="post.like_count" class="stat-item">
                 <Heart :size="20" />
-                <span>{{ formatNumber(post.like_count) }} {{ $t('post.likes') }}</span>
+                <span class="stat-count">{{ formatNumber(post.like_count) }}</span>
+                <span class="stat-label">{{ $t('post.likes') }}</span>
               </div>
               <div v-if="post.comment_count" class="stat-item">
                 <MessageCircle :size="20" />
-                <span>{{ formatNumber(post.comment_count) }} {{ $t('post.comments') }}</span>
+                <span class="stat-count">{{ formatNumber(post.comment_count) }}</span>
+                <span class="stat-label">{{ $t('post.comments') }}</span>
               </div>
             </div>
 
             <!-- 5. Post Actions -->
             <div class="post-actions">
-              <GlassButton 
+              <GlassButton
                 @click="toggleFavorite"
-                :class="{ 'favorited': isFavorited }"
                 :disabled="favoriteLoading"
                 :title="isFavorited ? $t('favorite.remove') : $t('favorite.add')"
+                :variant="isFavorited ? 'primary' : 'secondary'"
+                :class="{ 'is-favorited': isFavorited }"
+                :aria-pressed="isFavorited"
               >
                 <Heart :size="18" :fill="isFavorited ? 'currentColor' : 'none'" />
                 <span class="action-label">{{ isFavorited ? $t('favorite.remove') : $t('favorite.add') }}</span>
@@ -889,7 +917,7 @@ onUnmounted(() => {
 .post-thumbnail-container {
   position: relative;
   width: 100%;
-  min-height: min(80vh, 840px);
+  min-height: min(78vh, 820px);
   max-height: 85vh;
   background: linear-gradient(
     135deg,
@@ -928,6 +956,26 @@ onUnmounted(() => {
   justify-content: center;
 }
 
+.media-backdrop {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  filter: blur(40px);
+  transform: scale(1.4);
+  opacity: 0.6;
+  background: radial-gradient(circle at center, rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.85));
+  transition: opacity 0.4s ease;
+}
+
+.media-backdrop img,
+.media-backdrop video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.85;
+}
+
 .post-thumbnail img,
 .post-thumbnail video {
   width: 100%;
@@ -937,6 +985,7 @@ onUnmounted(() => {
   position: relative;
   z-index: 1;
   background: #050505;
+  border-radius: inherit;
 }
 
 .thumbnail-overlay {
@@ -982,6 +1031,8 @@ onUnmounted(() => {
   gap: clamp(16px, 2.5vw, 28px);
   padding: clamp(16px, 2.5vw, 28px);
   border-radius: var(--radius-2xl);
+  width: 100%;
+  align-self: stretch;
   background:
     linear-gradient(135deg, rgba(139, 92, 246, 0.04) 0%, rgba(192, 132, 252, 0.06) 100%),
     var(--glass-bg-light);
@@ -1283,6 +1334,16 @@ onUnmounted(() => {
   font-size: var(--text-base);
 }
 
+.stat-count {
+  font-weight: var(--font-semibold);
+  color: var(--color-text-primary);
+}
+
+.stat-label {
+  color: var(--color-text-tertiary);
+  font-size: var(--text-sm);
+}
+
 .post-description {
   padding: var(--spacing-lg);
   background:
@@ -1335,13 +1396,13 @@ onUnmounted(() => {
 }
 
 /* 收藏按钮激活状态 */
-.post-actions :deep(.glass-button.favorited) {
+.post-actions :deep(.glass-button.is-favorited) {
   background: linear-gradient(135deg, rgba(139, 92, 246, 0.2) 0%, rgba(192, 132, 252, 0.2) 100%);
   border-color: var(--color-primary);
   color: var(--color-primary);
 }
 
-[data-theme='dark'] .post-actions :deep(.glass-button.favorited) {
+[data-theme='dark'] .post-actions :deep(.glass-button.is-favorited) {
   background: linear-gradient(135deg, rgba(139, 92, 246, 0.3) 0%, rgba(192, 132, 252, 0.3) 100%);
   box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
 }
@@ -1493,14 +1554,20 @@ onUnmounted(() => {
 
   .post-header {
     padding: var(--spacing-lg);
-    grid-template-columns: 1fr;
+    display: flex;
+    flex-direction: column;
     gap: var(--spacing-lg);
+    align-items: stretch;
   }
 
   .post-thumbnail-container {
     margin-bottom: var(--spacing-lg);
-    min-height: 65vh;
+    min-height: 60vh;
     max-height: 70vh;
+  }
+
+  .post-thumbnail {
+    min-height: inherit;
   }
 
   .post-title {
@@ -1517,10 +1584,11 @@ onUnmounted(() => {
     gap: var(--spacing-md); /* 增加元素间隔 */
   }
 
-  .post-stats.clickable .stat-item span {
+  .post-stats.clickable .stat-item .stat-label,
+  .post-stats .stat-item .stat-label {
     display: none;
   }
-  
+
   /* iPhone 14 Pro Max (430x932) 优化 */
   @media (max-width: 430px) {
     .post-stats {
@@ -1535,10 +1603,10 @@ onUnmounted(() => {
       min-width: fit-content;
     }
     
-    .post-stats .stat-item span {
-      font-size: var(--text-sm);
+    .post-stats .stat-item .stat-count {
+      font-size: var(--text-base);
     }
-    
+
     .author-info {
       gap: var(--spacing-md);
     }
@@ -1584,10 +1652,6 @@ onUnmounted(() => {
     padding: var(--spacing-md);
   }
 
-  .post-actions .action-label {
-    display: none; /* 移动端隐藏文字，只显示图标 */
-  }
-  
   .post-actions :deep(.glass-button) {
     min-width: auto;
     padding: var(--spacing-sm) var(--spacing-md);
