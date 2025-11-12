@@ -137,7 +137,6 @@ import {
   Download,
 } from 'lucide-vue-next'
 import Plyr from 'plyr'
-import type PlyrType from 'plyr'
 import 'plyr/dist/plyr.css'
 
 interface MediaItem {
@@ -171,7 +170,8 @@ const currentIndex = ref(props.initialIndex)
 const loading = ref(true)
 const zoom = ref(1)
 const videoElement = ref<HTMLVideoElement | null>(null)
-let player: PlyrType | null = null
+
+let player: Plyr | null = null
 const controlsVisible = ref(true)
 let hideControlsTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -638,14 +638,72 @@ onUnmounted(() => {
 }
 
 .video-wrapper {
-  width: 90vw;
-  max-width: 1200px;
+  position: relative;
+  width: min(90vw, 1200px);
+  max-height: 85vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(8px, 1.5vw, 18px);
+  border-radius: 24px;
+  background: rgba(12, 12, 16, 0.6);
+  backdrop-filter: blur(16px);
   animation: scaleIn 0.3s ease;
+  box-shadow:
+    0 18px 48px -16px rgba(15, 23, 42, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .plyr-video {
   width: 100%;
-  max-height: 85vh;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 20px;
+  background: #000;
+}
+
+:deep(.plyr) {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  --plyr-color-main: rgba(139, 92, 246, 0.85);
+}
+
+:deep(.plyr__video-wrapper) {
+  flex: 1 1 auto;
+  max-height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+:deep(.plyr__controls) {
+  justify-content: center;
+  gap: clamp(10px, 2vw, 20px);
+  padding: clamp(10px, 2vw, 16px) clamp(12px, 3vw, 24px);
+  background: linear-gradient(135deg, rgba(18, 18, 24, 0.85), rgba(28, 24, 44, 0.85));
+  border-radius: 20px;
+  margin: clamp(10px, 1.5vw, 18px);
+  box-shadow:
+    0 10px 24px -12px rgba(15, 23, 42, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+:deep(.plyr__controls .plyr__controls__item) {
+  display: flex;
+  align-items: center;
+}
+
+:deep(.plyr__controls .plyr__control) {
+  border-radius: 16px;
+  padding: 6px;
+}
+
+:deep(.plyr__progress__container) {
+  flex: 1 1 220px;
+  max-width: 520px;
 }
 
 @keyframes scaleIn {
