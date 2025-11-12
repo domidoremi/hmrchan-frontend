@@ -709,7 +709,8 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  --plyr-color-main: rgba(139, 92, 246, 0.85);
+  --plyr-color-main: #1ea7fd;
+  color: #fff;
 }
 
 :deep(.plyr__video-wrapper) {
@@ -728,13 +729,14 @@ onUnmounted(() => {
   justify-content: space-between;
   align-items: center;
   width: 100%;
-  padding: clamp(8px, 1.8vw, 14px) clamp(10px, 2.5vw, 20px);
-  background: linear-gradient(135deg, rgba(18, 18, 24, 0.85), rgba(28, 24, 44, 0.85));
+  padding: clamp(8px, 1.6vw, 14px) clamp(12px, 2.6vw, 20px);
+  background: rgba(10, 12, 20, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 16px;
-  margin: clamp(8px, 1.2vw, 14px);
+  margin: clamp(8px, 1.1vw, 14px);
   box-shadow:
-    0 10px 24px -12px rgba(15, 23, 42, 0.5),
-    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    0 18px 32px -18px rgba(8, 12, 24, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07);
   gap: clamp(4px, 1.2vw, 12px);
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
@@ -758,6 +760,19 @@ onUnmounted(() => {
   padding: 6px;
   margin: 0;
   flex-shrink: 0;
+  color: #fff;
+  background: transparent;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+:deep(.plyr__controls .plyr__control svg) {
+  fill: currentColor;
+}
+
+:deep(.plyr__controls .plyr__control:hover),
+:deep(.plyr__controls .plyr__control:focus-visible) {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
 }
 
 :deep(.plyr__progress__container) {
@@ -770,6 +785,31 @@ onUnmounted(() => {
   flex: 0 0 auto;
   min-width: 60px;
   max-width: 100px;
+}
+
+:deep(.plyr__progress input[type='range']) {
+  accent-color: #1ea7fd;
+}
+
+:deep(.plyr__progress__buffer) {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+:deep(.plyr__time) {
+  color: rgba(255, 255, 255, 0.82);
+}
+
+:deep(.plyr__tooltip) {
+  background: rgba(10, 12, 20, 0.85);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+:deep(.plyr__control--overlaid) {
+  background: rgba(30, 167, 253, 0.9);
+  color: #fff;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 18px 36px -18px rgba(30, 167, 253, 0.6);
 }
 
 /* 移动端适配 */

@@ -986,28 +986,30 @@ onUnmounted(() => {
   inset: 0;
   overflow: hidden;
   border-radius: inherit;
-  filter: blur(18px) saturate(110%) brightness(0.95);
-  transform: scale(1.25);
-  opacity: 0.54;
-  background: radial-gradient(circle at center, rgba(28, 24, 41, 0.38), rgba(12, 10, 24, 0.72));
+  filter: blur(24px) saturate(112%) brightness(0.9);
+  transform: scale(1.38);
+  opacity: 0.6;
+  background: radial-gradient(circle at center, rgba(24, 22, 36, 0.42), rgba(11, 9, 24, 0.78));
   transition: opacity 0.32s ease;
   pointer-events: none;
+  z-index: 0;
 }
 
 .media-backdrop img,
 .media-backdrop video {
-  width: 100%;
-  height: 100%;
+  width: 120%;
+  height: 120%;
   object-fit: cover;
-  opacity: 0.78;
-  filter: blur(4px) saturate(105%);
+  opacity: 0.82;
+  filter: blur(10px) saturate(110%);
+  transform: scale(1.06);
 }
 
 .media-backdrop::after {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, rgba(20, 18, 35, 0.18) 0%, rgba(42, 24, 52, 0.32) 100%);
+  background: linear-gradient(140deg, rgba(18, 16, 32, 0.22) 0%, rgba(32, 22, 44, 0.4) 100%);
   mix-blend-mode: soft-light;
 }
 
@@ -1019,7 +1021,7 @@ onUnmounted(() => {
   object-fit: contain;
   position: relative;
   z-index: 1;
-  background: transparent;
+  background: rgba(0, 0, 0, 0.22);
   border-radius: inherit;
 }
 
