@@ -862,45 +862,54 @@ onUnmounted(() => {
   background: var(--glass-bg);
   backdrop-filter: var(--glass-blur);
   border: 1px solid var(--glass-border);
-  border-radius: 24px;
-  padding: 0;
+  border-radius: 28px;
+  padding: clamp(24px, 4vw, 48px);
   margin-bottom: 32px;
-  overflow: hidden;
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  gap: clamp(24px, 4vw, 40px);
+  align-items: stretch;
+  overflow: visible;
   
-  /* Material Design Elevation 4 */
   box-shadow: 
-    0 4px 8px -2px rgba(0, 0, 0, 0.08),
-    0 8px 16px -4px rgba(0, 0, 0, 0.12);
+    0 6px 20px -8px rgba(0, 0, 0, 0.18),
+    0 18px 40px -16px rgba(139, 92, 246, 0.18);
   
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .post-header:hover {
+  transform: translateY(-4px);
   box-shadow: 
-    0 6px 12px -3px rgba(139, 92, 246, 0.12),
-    0 12px 24px -6px rgba(0, 0, 0, 0.15);
+    0 12px 32px -8px rgba(139, 92, 246, 0.25),
+    0 24px 48px -12px rgba(0, 0, 0, 0.2);
 }
 
 .post-thumbnail-container {
   position: relative;
   width: 100%;
-  /* 移除aspect-ratio，让图片自适应 */
+  min-height: min(80vh, 840px);
+  max-height: 85vh;
   background: linear-gradient(
     135deg,
-    rgba(139, 92, 246, 0.1) 0%,
-    rgba(192, 132, 252, 0.1) 100%
+    rgba(139, 92, 246, 0.08) 0%,
+    rgba(192, 132, 252, 0.12) 100%
   );
   overflow: hidden;
-  border-radius: 24px 24px 0 0;
+  border-radius: var(--radius-3xl);
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    inset 0 40px 120px rgba(139, 92, 246, 0.08);
 }
 
 .post-thumbnail {
   position: relative;
   width: 100%;
-  /* 移除固定aspect-ratio和max-height */
+  height: 100%;
   border-radius: var(--radius-2xl);
   overflow: hidden;
   cursor: zoom-in;
@@ -919,25 +928,15 @@ onUnmounted(() => {
   justify-content: center;
 }
 
-.post-thumbnail img {
-  width: 100%;
-  max-width: 100%; /* 不超过容器宽度 */
-  height: auto; /* 自适应高度 */
-  display: block;
-  object-fit: contain;
-  position: relative;
-  z-index: 1;
-}
-
+.post-thumbnail img,
 .post-thumbnail video {
   width: 100%;
-  max-width: 100%;
-  height: auto;
+  height: 100%;
   display: block;
   object-fit: contain;
   position: relative;
   z-index: 1;
-  background: #000;
+  background: #050505;
 }
 
 .thumbnail-overlay {
@@ -975,6 +974,34 @@ onUnmounted(() => {
 
 .thumbnail-overlay.is-video::after {
   content: '点击播放视频';
+}
+
+.post-content-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(16px, 2.5vw, 28px);
+  padding: clamp(16px, 2.5vw, 28px);
+  border-radius: var(--radius-2xl);
+  background:
+    linear-gradient(135deg, rgba(139, 92, 246, 0.04) 0%, rgba(192, 132, 252, 0.06) 100%),
+    var(--glass-bg-light);
+  border: 1px solid rgba(139, 92, 246, 0.08);
+  box-shadow:
+    0 12px 32px -16px rgba(0, 0, 0, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(18px);
+  animation: contentFadeIn 0.5s ease;
+}
+
+@keyframes contentFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .thumbnail-counter {
@@ -1447,12 +1474,13 @@ onUnmounted(() => {
   }
 
   .post-header {
-    padding: var(--spacing-2xl);
-    display: block;
+    grid-template-columns: 1fr;
+    padding: clamp(24px, 4vw, 36px);
   }
 
   .post-thumbnail-container {
     margin-bottom: var(--spacing-xl);
+    min-height: min(70vh, 720px);
   }
 }
 
@@ -1465,11 +1493,14 @@ onUnmounted(() => {
 
   .post-header {
     padding: var(--spacing-lg);
-    display: block;
+    grid-template-columns: 1fr;
+    gap: var(--spacing-lg);
   }
 
   .post-thumbnail-container {
     margin-bottom: var(--spacing-lg);
+    min-height: 65vh;
+    max-height: 70vh;
   }
 
   .post-title {
@@ -1549,9 +1580,10 @@ onUnmounted(() => {
   
   /* 移动端操作按钮优化 */
   .post-actions {
-    gap: var(--spacing-sm);
+    gap: var(--spacing-md);
+    padding: var(--spacing-md);
   }
-  
+
   .post-actions .action-label {
     display: none; /* 移动端隐藏文字，只显示图标 */
   }
