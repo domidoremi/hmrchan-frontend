@@ -853,10 +853,10 @@ onUnmounted(() => {
    ======================================== */
 
 .post-detail-page {
-  max-width: 1200px;
+  max-width: 1280px;
   margin: 0 auto;
-  padding: 32px 24px;
-  min-height: calc(100vh - 140px);
+  padding: 24px 16px;
+  min-height: calc(100vh - 120px);
   animation: fadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   content-visibility: auto;
   contain: layout style paint;
@@ -881,7 +881,7 @@ onUnmounted(() => {
 
 .back-button {
   position: sticky;
-  top: calc(var(--app-navbar-height, 78px) + 48px);
+  top: calc(var(--app-navbar-height, 78px) + 16px);
   z-index: 100;
   display: inline-flex;
   align-items: center;
@@ -923,15 +923,15 @@ onUnmounted(() => {
   background: var(--glass-bg);
   backdrop-filter: var(--glass-blur);
   border: 1px solid var(--glass-border);
-  border-radius: 28px;
-  padding: clamp(24px, 4vw, 48px);
-  margin-bottom: 32px;
+  border-radius: 24px;
+  padding: clamp(20px, 3.5vw, 36px);
+  margin-bottom: 24px;
   display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
-  gap: clamp(24px, 4vw, 40px);
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
+  gap: clamp(20px, 3vw, 32px);
   align-items: start;
   overflow: visible;
-  box-shadow: 0 18px 48px -24px rgba(15, 23, 42, 0.32);
+  box-shadow: 0 16px 40px -20px rgba(15, 23, 42, 0.28);
   transition:
     transform 0.28s cubic-bezier(0.4, 0, 0.2, 1),
     box-shadow 0.28s cubic-bezier(0.4, 0, 0.2, 1);
@@ -945,8 +945,8 @@ onUnmounted(() => {
 .post-thumbnail-container {
   position: relative;
   width: 100%;
-  min-height: min(78vh, 820px);
-  max-height: 85vh;
+  min-height: min(70vh, 720px);
+  max-height: 80vh;
   background: linear-gradient(
     135deg,
     rgba(139, 92, 246, 0.08) 0%,
@@ -986,9 +986,9 @@ onUnmounted(() => {
   inset: 0;
   overflow: hidden;
   border-radius: inherit;
-  filter: blur(28px) saturate(120%) brightness(1.05);
-  transform: scale(1.32);
-  opacity: 0.62;
+  filter: blur(18px) saturate(110%) brightness(0.95);
+  transform: scale(1.25);
+  opacity: 0.54;
   background: radial-gradient(circle at center, rgba(28, 24, 41, 0.38), rgba(12, 10, 24, 0.72));
   transition: opacity 0.32s ease;
   pointer-events: none;
@@ -999,15 +999,15 @@ onUnmounted(() => {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  opacity: 0.88;
-  filter: blur(8px) saturate(112%);
+  opacity: 0.78;
+  filter: blur(4px) saturate(105%);
 }
 
 .media-backdrop::after {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, rgba(20, 18, 35, 0.22) 0%, rgba(42, 24, 52, 0.38) 100%);
+  background: linear-gradient(135deg, rgba(20, 18, 35, 0.18) 0%, rgba(42, 24, 52, 0.32) 100%);
   mix-blend-mode: soft-light;
 }
 
@@ -1635,8 +1635,8 @@ onUnmounted(() => {
 /* 平板优化 (769px-1199px) */
 @media (min-width: 769px) and (max-width: 1199px) {
   .post-detail-page {
-    max-width: 960px;
-    padding: 0 var(--spacing-xl);
+    max-width: 100%;
+    padding: 16px var(--spacing-md);
   }
 
   .post-header {
@@ -1654,15 +1654,17 @@ onUnmounted(() => {
 @media (max-width: 768px) {
   .post-detail-page {
     max-width: 100%;
-    padding: 0 var(--spacing-md);
+    padding: 12px var(--spacing-sm);
   }
 
   .post-header {
-    padding: var(--spacing-lg);
+    padding: var(--spacing-md);
     display: flex;
     flex-direction: column;
     gap: var(--spacing-md);
     align-items: stretch;
+    border-radius: 20px;
+    margin-bottom: var(--spacing-md);
   }
 
   .post-thumbnail-container {
@@ -1728,7 +1730,12 @@ onUnmounted(() => {
   }
 
   .back-button {
-    top: 76px; /* 移动端调整位置 */
+    position: sticky;
+    top: calc(var(--app-navbar-height, 60px) + 12px); /* 移动端安全距离 */
+    padding: 8px 16px;
+    margin-top: 8px;
+    margin-bottom: var(--spacing-md);
+    z-index: 200;
   }
 
   .thumbnail-nav-btn {

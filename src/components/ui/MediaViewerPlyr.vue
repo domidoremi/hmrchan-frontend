@@ -243,6 +243,36 @@ watch(currentIndex, () => {
   // 图片类型，等待onMediaLoad自动设置loading=false
 })
 
+const detectVideoOrientation = () => {
+  if (!videoElement.value) return 'landscape'
+  
+  // 检测视频方向
+  const checkOrientation = () => {
+    if (videoElement.value) {
+      const videoEl = videoElement.value
+      const isVertical = videoEl.videoHeight > videoEl.videoWidth
+      
+      // 根据视频方向添加类名
+      const wrapper = document.querySelector('.video-wrapper')
+      if (wrapper) {
+        if (isVertical) {
+          wrapper.classList.add('vertical-video')
+        } else {
+          wrapper.classList.remove('vertical-video')
+        }
+      }
+      
+      return isVertical ? 'vertical' : 'landscape'
+    }
+    return 'landscape'
+  }
+  
+  // 视频元数据加载完毕后检查方向
+  videoElement.value.addEventListener('loadedmetadata', checkOrientation)
+  
+  return checkOrientation()
+}
+
 const initPlyr = () => {
   if (videoElement.value && !player) {
     // 调试日志：检查字幕
@@ -251,9 +281,13 @@ const initPlyr = () => {
       : currentMedia.value.subtitle
         ? '单语言模式'
         : '无字幕'
-
+    
+    // 检测视频方向
+    const videoOrientation = detectVideoOrientation()
+    
     console.log('[Plyr] 初始化视频:', {
       url: currentMedia.value.url,
+      orientation: videoOrientation,
       hasSubtitle: !!(currentMedia.value.subtitle || currentMedia.value.subtitles),
       subtitleUrl: currentMedia.value.subtitle,
       availableSubtitles: subtitleInfo,
@@ -639,13 +673,14 @@ onUnmounted(() => {
 
 .video-wrapper {
   position: relative;
-  width: min(90vw, 1200px);
-  max-height: 85vh;
+  width: min(92vw, 1200px);
+  height: auto;
+  max-height: 88vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: clamp(8px, 1.5vw, 18px);
-  border-radius: 24px;
+  padding: clamp(6px, 1.2vw, 16px);
+  border-radius: 20px;
   background: rgba(12, 12, 16, 0.6);
   backdrop-filter: blur(16px);
   animation: scaleIn 0.3s ease;
@@ -654,17 +689,23 @@ onUnmounted(() => {
     inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
+.video-wrapper.vertical-video {
+  width: min(70vw, 560px);
+}
+
 .plyr-video {
   width: 100%;
   height: 100%;
   object-fit: contain;
-  border-radius: 20px;
+  border-radius: 16px;
   background: #000;
+  max-height: calc(88vh - 80px);
+  aspect-ratio: auto;
 }
 
 :deep(.plyr) {
   width: 100%;
-  height: 100%;
+  height: auto;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -673,37 +714,90 @@ onUnmounted(() => {
 
 :deep(.plyr__video-wrapper) {
   flex: 1 1 auto;
-  max-height: 100%;
+  height: auto;
   display: flex;
   align-items: center;
   justify-content: center;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 :deep(.plyr__controls) {
-  justify-content: center;
-  gap: clamp(10px, 2vw, 20px);
-  padding: clamp(10px, 2vw, 16px) clamp(12px, 3vw, 24px);
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: clamp(8px, 1.8vw, 14px) clamp(10px, 2.5vw, 20px);
   background: linear-gradient(135deg, rgba(18, 18, 24, 0.85), rgba(28, 24, 44, 0.85));
-  border-radius: 20px;
-  margin: clamp(10px, 1.5vw, 18px);
+  border-radius: 16px;
+  margin: clamp(8px, 1.2vw, 14px);
   box-shadow:
     0 10px 24px -12px rgba(15, 23, 42, 0.5),
     inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  gap: clamp(4px, 1.2vw, 12px);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none; /* Firefox */
+}
+
+:deep(.plyr__controls)::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Edge */
 }
 
 :deep(.plyr__controls .plyr__controls__item) {
   display: flex;
   align-items: center;
+  margin-left: 0;
+  margin-right: clamp(2px, 1vw, 8px);
+  flex-shrink: 0;
 }
 
 :deep(.plyr__controls .plyr__control) {
-  border-radius: 16px;
+  border-radius: 12px;
   padding: 6px;
+  margin: 0;
+  flex-shrink: 0;
 }
 
 :deep(.plyr__progress__container) {
-  flex: 1 1 220px;
-  max-width: 520px;
+  flex: 1 1 120px;
+  min-width: 80px;
+  margin: 0 clamp(2px, 1vw, 8px);
+}
+
+:deep(.plyr__volume) {
+  flex: 0 0 auto;
+  min-width: 60px;
+  max-width: 100px;
+}
+
+/* 移动端适配 */
+@media (max-width: 640px) {
+  :deep(.plyr__controls) {
+    padding: 6px 10px;
+    gap: 4px;
+  }
+  
+  :deep(.plyr__controls .plyr__control) {
+    padding: 4px;
+  }
+  
+  :deep(.plyr__time) {
+    font-size: 11px;
+  }
+}
+
+/* 竖屏视频的控制条适配 */
+.vertical-video :deep(.plyr__controls) {
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.vertical-video :deep(.plyr__progress__container) {
+  order: -1;
+  flex-basis: 100%;
+  margin-bottom: 6px;
 }
 
 @keyframes scaleIn {
