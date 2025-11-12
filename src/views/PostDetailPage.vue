@@ -50,16 +50,26 @@
             <div class="post-thumbnail" @click="openMediaViewer(currentThumbnailIndex)">
               <transition name="thumbnail-fade" mode="out-in">
                 <img
-                  :key="currentThumbnailUrl"
+                  v-if="currentMediaType !== 'video'"
+                  :key="`image-${currentThumbnailUrl}`"
                   :src="currentThumbnailUrl"
                   :alt="post.title || 'Post thumbnail'"
                   loading="eager"
                   decoding="async"
                   fetchpriority="high"
                 />
+                <video
+                  v-else
+                  :key="`video-${currentThumbnailUrl}`"
+                  :src="currentThumbnailUrl"
+                  preload="metadata"
+                  playsinline
+                  muted
+                  :poster="post.thumbnail_url ? resolveMediaUrl(post.thumbnail_url) : undefined"
+                ></video>
               </transition>
-              <div class="thumbnail-overlay">
-                <Maximize2 :size="32" />
+              <div class="thumbnail-overlay" :class="{ 'is-video': currentMediaType === 'video' }">
+                <component :is="currentMediaType === 'video' ? Play : Maximize2" :size="32" />
               </div>
               <!-- 图片计数 -->
               <div v-if="allMediaUrls.length > 1" class="thumbnail-counter">
@@ -349,6 +359,7 @@ import {
   Repeat2,
   Link,
   Sparkles,
+  Play,
 } from 'lucide-vue-next'
 import dayjs from 'dayjs'
 
@@ -360,7 +371,7 @@ import { usePostsStore } from '@/stores/posts'
 import { useAuthStore } from '@/stores/auth'
 import { api } from '@/api/client'
 import { favoritesApi, mediaApi } from '@/api/services'
-import type { PostDetail, Post, UUID, PostListParams } from '@/types'
+import type { PostDetail, Post, UUID, PostListParams, PaginatedResponse } from '@/types'
 import { PLATFORM_NAMES, PLATFORM_COLORS } from '@/types'
 import { useToastStore } from '@/stores/toast'
 
@@ -495,6 +506,13 @@ const currentThumbnailUrl = computed(() => {
   if (allMediaUrls.value.length === 0) return ''
   return allMediaUrls.value[currentThumbnailIndex.value]
 })
+
+const currentMediaItem = computed(() => {
+  if (allMediaItems.value.length === 0) return null
+  return allMediaItems.value[currentThumbnailIndex.value]
+})
+
+const currentMediaType = computed(() => currentMediaItem.value?.type ?? 'image')
 
 // 判断主要媒体类型
 const primaryMediaType = computed(() => {
@@ -659,7 +677,7 @@ const nextThumbnail = () => {
   }
 }
 
-// 加载相关推荐
+// 加载相关推荐（直接调用API，不污染全局posts状态）
 const loadRelatedPosts = async () => {
   if (!post.value) return
   
@@ -677,7 +695,10 @@ const loadRelatedPosts = async () => {
       baseParams.platform = post.value.platform
     }
     
-    const response = await postsStore.fetchPosts(baseParams)
+    // 直接调用API，不通过store避免污染全局状态
+    const response = await api.get<PaginatedResponse<Post>>('/posts', {
+      params: baseParams,
+    })
     
     // 过滤掉当前帖子
     relatedPosts.value = (response?.items || []).filter(
@@ -908,6 +929,17 @@ onUnmounted(() => {
   z-index: 1;
 }
 
+.post-thumbnail video {
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  display: block;
+  object-fit: contain;
+  position: relative;
+  z-index: 1;
+  background: #000;
+}
+
 .thumbnail-overlay {
   position: absolute;
   inset: 0;
@@ -935,6 +967,14 @@ onUnmounted(() => {
   font-size: var(--text-sm);
   font-weight: var(--font-medium);
   opacity: 0.9;
+}
+
+.thumbnail-overlay.is-video {
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.thumbnail-overlay.is-video::after {
+  content: '点击播放视频';
 }
 
 .thumbnail-counter {
@@ -1444,6 +1484,10 @@ onUnmounted(() => {
   .post-stats {
     padding: var(--spacing-lg); /* 增加移动端内边距 */
     gap: var(--spacing-md); /* 增加元素间隔 */
+  }
+
+  .post-stats.clickable .stat-item span {
+    display: none;
   }
   
   /* iPhone 14 Pro Max (430x932) 优化 */
