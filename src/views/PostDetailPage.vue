@@ -182,114 +182,121 @@
               <p>{{ post.description }}</p>
             </div>
 
-            <!-- 4. Post Stats -->
-            <a
-              v-if="post.url"
-              :href="post.url"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="stats-link"
-            >
-              <div class="post-stats clickable">
-                <div v-if="post.view_count" class="stat-item">
-                  <Eye :size="20" />
-                  <span class="stat-count">{{ formatNumber(post.view_count) }}</span>
-                  <span class="stat-label">{{ $t('post.views') }}</span>
-                </div>
-                <div v-if="post.like_count" class="stat-item">
-                  <Heart :size="20" />
-                  <span class="stat-count">{{ formatNumber(post.like_count) }}</span>
-                  <span class="stat-label">{{ $t('post.likes') }}</span>
-                </div>
-                <div v-if="post.comment_count" class="stat-item">
-                  <MessageCircle :size="20" />
-                  <span class="stat-count">{{ formatNumber(post.comment_count) }}</span>
-                  <span class="stat-label">{{ $t('post.comments') }}</span>
-                </div>
-                <ExternalLink :size="16" class="link-icon" />
-              </div>
-            </a>
-            <div v-else class="post-stats">
-              <div v-if="post.view_count" class="stat-item">
-                <Eye :size="20" />
-                <span class="stat-count">{{ formatNumber(post.view_count) }}</span>
-                <span class="stat-label">{{ $t('post.views') }}</span>
-              </div>
-              <div v-if="post.like_count" class="stat-item">
-                <Heart :size="20" />
-                <span class="stat-count">{{ formatNumber(post.like_count) }}</span>
-                <span class="stat-label">{{ $t('post.likes') }}</span>
-              </div>
-              <div v-if="post.comment_count" class="stat-item">
-                <MessageCircle :size="20" />
-                <span class="stat-count">{{ formatNumber(post.comment_count) }}</span>
-                <span class="stat-label">{{ $t('post.comments') }}</span>
-              </div>
-            </div>
-
-            <!-- 5. Post Actions -->
-            <div class="post-actions">
-              <GlassButton
-                @click="toggleFavorite"
-                :disabled="favoriteLoading"
-                :title="isFavorited ? $t('favorite.remove') : $t('favorite.add')"
-                :variant="isFavorited ? 'primary' : 'secondary'"
-                :class="{ 'is-favorited': isFavorited }"
-                :aria-pressed="isFavorited"
-              >
-                <Heart :size="18" :fill="isFavorited ? 'currentColor' : 'none'" />
-                <span class="action-label">{{ isFavorited ? $t('favorite.remove') : $t('favorite.add') }}</span>
-              </GlassButton>
-              <GlassButton 
-                v-if="post.url"
-                @click="copyLink(post.url)"
-                variant="secondary"
-                :title="$t('post.copyLink')"
-              >
-                <Link :size="18" />
-                <span class="action-label">{{ $t('post.copyLink') }}</span>
-              </GlassButton>
-              <a v-if="post.url" :href="post.url" target="_blank" rel="noopener noreferrer">
-                <GlassButton variant="secondary" :title="$t('post.viewOriginal')">
-                  <ExternalLink :size="18" />
-                  <span class="action-label">{{ $t('post.viewOriginal') }}</span>
+            <!-- 4. Post Actions -->
+            <section class="post-actions" aria-labelledby="post-actions-heading">
+              <h2 id="post-actions-heading" class="sr-only">{{ $t('post.actions') }}</h2>
+              <div class="post-action-buttons" role="group" :aria-label="$t('post.actions')">
+                <GlassButton
+                  @click="toggleFavorite"
+                  :disabled="favoriteLoading"
+                  :title="isFavorited ? $t('favorite.remove') : $t('favorite.add')"
+                  :variant="isFavorited ? 'primary' : 'secondary'"
+                  :class="{ 'is-favorited': isFavorited }"
+                  :aria-pressed="isFavorited"
+                  :aria-label="isFavorited ? $t('favorite.remove') : $t('favorite.add')"
+                >
+                  <Heart :size="18" :fill="isFavorited ? 'currentColor' : 'none'" />
+                  <span class="sr-only">{{ isFavorited ? $t('favorite.remove') : $t('favorite.add') }}</span>
                 </GlassButton>
-              </a>
-            </div>
-          </div>
-        </div>
-
-        <!-- 相关推荐 -->
-        <div v-if="relatedPosts.length > 0" class="related-posts glass-card">
-          <h3 class="related-title">
-            <Sparkles :size="20" />
-            {{ $t('post.relatedPosts') }}
-          </h3>
-          <div class="related-grid">
-            <RouterLink
-              v-for="relatedPost in relatedPosts"
-              :key="relatedPost.id"
-              :to="`/posts/${relatedPost.id}`"
-              class="related-item"
-            >
-              <img 
-                v-if="relatedPost.thumbnail_url" 
-                :src="resolveMediaUrl(relatedPost.thumbnail_url)" 
-                :alt="relatedPost.title || ''"
-                loading="lazy"
-              />
-              <div class="related-info">
-                <h4>{{ relatedPost.title || $t('post.untitled') }}</h4>
-                <div class="related-stats">
-                  <span v-if="relatedPost.view_count">
-                    <Eye :size="14" /> {{ formatNumber(relatedPost.view_count) }}
-                  </span>
-                  <span v-if="relatedPost.like_count">
-                    <Heart :size="14" /> {{ formatNumber(relatedPost.like_count) }}
-                  </span>
-                </div>
+                <GlassButton
+                  v-if="post.url"
+                  @click="copyLink(post.url)"
+                  variant="secondary"
+                  :title="$t('post.copyLink')"
+                  :aria-label="$t('post.copyLink')"
+                >
+                  <Link :size="18" />
+                  <span class="sr-only">{{ $t('post.copyLink') }}</span>
+                </GlassButton>
+                <a
+                  v-if="post.url"
+                  :href="post.url"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="post-action-link"
+                  :title="$t('post.viewOriginal')"
+                  :aria-label="$t('post.viewOriginal')"
+                >
+                  <GlassButton variant="secondary">
+                    <ExternalLink :size="18" />
+                    <span class="sr-only">{{ $t('post.viewOriginal') }}</span>
+                  </GlassButton>
+                </a>
               </div>
-            </RouterLink>
+
+              <div
+                v-if="yieldedStats.length > 0"
+                class="post-action-stats"
+                role="list"
+                :aria-label="$t('post.stats')"
+              >
+                <component
+                  v-for="stat in yieldedStats"
+                  :key="stat.key"
+                  :is="stat.linkAttrs ? 'a' : 'div'"
+                  v-bind="stat.linkAttrs ?? {}"
+                  :class="['post-stats-row', { 'is-link': !!stat.linkAttrs }]"
+                  role="listitem"
+                >
+                  <div class="stat-icon">
+                    <component :is="stat.icon" :size="20" />
+                  </div>
+                  <div class="stat-text">
+                    <span class="stat-count">{{ stat.display }}</span>
+                    <span class="stat-label">{{ stat.label }}</span>
+                  </div>
+                  <ExternalLink
+                    v-if="stat.linkAttrs"
+                    :size="16"
+                    class="link-icon"
+                    aria-hidden="true"
+                  />
+                </component>
+              </div>
+            </section>
+
+            <!-- 相关推荐 -->
+            <div v-if="relatedPosts.length > 0" class="related-posts glass-card">
+              <h3 class="related-title">
+                <Sparkles :size="20" />
+                {{ $t('post.relatedPosts') }}
+              </h3>
+              <div class="related-grid">
+                <RouterLink
+                  v-for="relatedPost in relatedPosts"
+                  :key="relatedPost.id"
+                  :to="`/posts/${relatedPost.id}`"
+                  class="related-item"
+                >
+                  <img
+                    v-if="relatedPost.thumbnail_url"
+                    :src="resolveMediaUrl(relatedPost.thumbnail_url)"
+                    :alt="relatedPost.title || ''"
+                    loading="lazy"
+                  />
+                  <div class="related-info">
+                    <h4>{{ relatedPost.title || $t('post.untitled') }}</h4>
+                    <div class="related-stats">
+                      <span v-if="relatedPost.view_count">
+                        <Eye :size="14" /> {{ formatNumber(relatedPost.view_count) }}
+                      </span>
+                      <span v-if="relatedPost.like_count">
+                        <Heart :size="14" /> {{ formatNumber(relatedPost.like_count) }}
+                      </span>
+                    </div>
+                  </div>
+                </RouterLink>
+              </div>
+            </div>
+
+            <div v-if="post.tags && post.tags.length > 0" class="tags-section glass-card">
+              <h3>{{ $t('post.tags') }}</h3>
+              <div class="tags-list">
+                <span v-for="tag in post.tags" :key="tag" class="tag glass-badge">
+                  {{ tag }}
+                </span>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -331,19 +338,8 @@
             </div>
           </div>
         </div>
-
-        <!-- 标签 -->
-        <div v-if="post.tags && post.tags.length > 0" class="tags-section glass-card">
-          <h3>{{ $t('post.tags') }}</h3>
-          <div class="tags-list">
-            <span v-for="tag in post.tags" :key="tag" class="tag glass-badge">
-              {{ tag }}
-            </span>
-          </div>
-        </div>
       </div>
 
-      <!-- 错误状态 -->
       <div v-else class="error-state glass-card">
         <AlertCircle :size="64" />
         <h3>{{ $t('common.error') }}</h3>
@@ -365,7 +361,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, defineAsyncComponent, onUnmounted, type Component } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useMediaPreload } from '@/composables/useSmartPreload'
@@ -393,7 +389,7 @@ import dayjs from 'dayjs'
 
 import MainLayout from '@/components/layout/MainLayout.vue'
 import GlassButton from '@/components/ui/GlassButton.vue'
-import MediaViewer from '@/components/ui/MediaViewerPlyr.vue'
+const MediaViewer = defineAsyncComponent(() => import('@/components/ui/MediaViewerPlyr.vue'))
 
 import { usePostsStore } from '@/stores/posts'
 import { useAuthStore } from '@/stores/auth'
@@ -428,6 +424,14 @@ const viewerMediaItems = ref<
 const viewerInitialIndex = ref(0)
 const currentThumbnailIndex = ref(0)
 const relatedPosts = ref<Post[]>([])
+
+interface StatEntry {
+  key: string
+  icon: Component
+  display: string
+  label: string
+  linkAttrs?: Record<string, string>
+}
 
 const platformName = computed(
   () => PLATFORM_NAMES[post.value?.platform as keyof typeof PLATFORM_NAMES] || post.value?.platform,
@@ -559,6 +563,36 @@ const isTikTok = computed(() => post.value?.platform === 'tiktok')
 // const isInstagramOrTwitter = computed(
 //   () => post.value?.platform === 'instagram' || post.value?.platform === 'twitter',
 // )
+
+const yieldedStats = computed<StatEntry[]>(() => {
+  if (!post.value) return []
+
+  const stats: StatEntry[] = []
+  const baseLink = post.value.url
+    ? {
+        href: post.value.url,
+        target: '_blank',
+        rel: 'noopener noreferrer',
+      }
+    : undefined
+
+  const pushStat = (key: string, value: number | null | undefined, icon: Component, labelKey: string) => {
+    if (!value) return
+    stats.push({
+      key,
+      icon,
+      display: formatNumber(value),
+      label: t(labelKey),
+      linkAttrs: baseLink ? { ...baseLink } : undefined,
+    })
+  }
+
+  pushStat('views', post.value.view_count, Eye, 'post.views')
+  pushStat('likes', post.value.like_count, Heart, 'post.likes')
+  pushStat('comments', post.value.comment_count, MessageCircle, 'post.comments')
+
+  return stats
+})
 
 onMounted(async () => {
   const postId = route.params.id as UUID
@@ -803,9 +837,6 @@ const handleKeydown = (e: KeyboardEvent) => {
   }
 }
 
-// 组件挂载时添加键盘事件监听
-import { onUnmounted } from 'vue'
-
 onMounted(() => {
   window.addEventListener('keydown', handleKeydown)
 })
@@ -827,6 +858,8 @@ onUnmounted(() => {
   padding: 32px 24px;
   min-height: calc(100vh - 140px);
   animation: fadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  content-visibility: auto;
+  contain: layout style paint;
 }
 
 @keyframes fadeIn {
@@ -848,7 +881,7 @@ onUnmounted(() => {
 
 .back-button {
   position: sticky;
-  top: 100px; /* 进一步增加，适配Samsung Galaxy S20 Ultra */
+  top: calc(var(--app-navbar-height, 78px) + 48px);
   z-index: 100;
   display: inline-flex;
   align-items: center;
@@ -896,22 +929,17 @@ onUnmounted(() => {
   display: grid;
   grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
   gap: clamp(24px, 4vw, 40px);
-  align-items: stretch;
+  align-items: start;
   overflow: visible;
-  
-  box-shadow: 
-    0 6px 20px -8px rgba(0, 0, 0, 0.18),
-    0 18px 40px -16px rgba(139, 92, 246, 0.18);
-  
-  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-    box-shadow 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 18px 48px -24px rgba(15, 23, 42, 0.32);
+  transition:
+    transform 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.28s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .post-header:hover {
-  transform: translateY(-4px);
-  box-shadow: 
-    0 12px 32px -8px rgba(139, 92, 246, 0.25),
-    0 24px 48px -12px rgba(0, 0, 0, 0.2);
+  transform: translateY(-3px);
+  box-shadow: 0 26px 54px -26px rgba(76, 29, 149, 0.42);
 }
 
 .post-thumbnail-container {
@@ -938,19 +966,16 @@ onUnmounted(() => {
   position: relative;
   width: 100%;
   height: 100%;
+  isolation: isolate;
   border-radius: var(--radius-2xl);
   overflow: hidden;
   cursor: zoom-in;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1);
   background:
-    linear-gradient(135deg, rgba(139, 92, 246, 0.05) 0%, rgba(192, 132, 252, 0.05) 100%),
+    linear-gradient(135deg, rgba(139, 92, 246, 0.04) 0%, rgba(192, 132, 252, 0.04) 100%),
     var(--color-bg-secondary);
-  box-shadow:
-    0 20px 60px -10px rgba(0, 0, 0, 0.2),
-    0 8px 24px -6px rgba(139, 92, 246, 0.15),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(139, 92, 246, 0.1);
-  will-change: transform, box-shadow;
+  box-shadow: 0 22px 46px -18px rgba(15, 23, 42, 0.4);
+  border: 1px solid rgba(139, 92, 246, 0.12);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -961,11 +986,12 @@ onUnmounted(() => {
   inset: 0;
   overflow: hidden;
   border-radius: inherit;
-  filter: blur(40px);
-  transform: scale(1.4);
-  opacity: 0.6;
-  background: radial-gradient(circle at center, rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.85));
-  transition: opacity 0.4s ease;
+  filter: blur(28px) saturate(120%) brightness(1.05);
+  transform: scale(1.32);
+  opacity: 0.62;
+  background: radial-gradient(circle at center, rgba(28, 24, 41, 0.38), rgba(12, 10, 24, 0.72));
+  transition: opacity 0.32s ease;
+  pointer-events: none;
 }
 
 .media-backdrop img,
@@ -973,7 +999,16 @@ onUnmounted(() => {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  opacity: 0.85;
+  opacity: 0.88;
+  filter: blur(8px) saturate(112%);
+}
+
+.media-backdrop::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(20, 18, 35, 0.22) 0%, rgba(42, 24, 52, 0.38) 100%);
+  mix-blend-mode: soft-light;
 }
 
 .post-thumbnail img,
@@ -984,7 +1019,7 @@ onUnmounted(() => {
   object-fit: contain;
   position: relative;
   z-index: 1;
-  background: #050505;
+  background: transparent;
   border-radius: inherit;
 }
 
@@ -1033,6 +1068,7 @@ onUnmounted(() => {
   border-radius: var(--radius-2xl);
   width: 100%;
   align-self: stretch;
+  min-width: 0;
   background:
     linear-gradient(135deg, rgba(139, 92, 246, 0.04) 0%, rgba(192, 132, 252, 0.06) 100%),
     var(--glass-bg-light);
@@ -1042,6 +1078,8 @@ onUnmounted(() => {
     inset 0 1px 0 rgba(255, 255, 255, 0.12);
   backdrop-filter: blur(18px);
   animation: contentFadeIn 0.5s ease;
+  content-visibility: auto;
+  contain: layout paint style;
 }
 
 @keyframes contentFadeIn {
@@ -1204,9 +1242,11 @@ onUnmounted(() => {
 
 .author-info {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--spacing-md);
   padding: var(--spacing-lg);
+  flex-wrap: wrap;
+  min-width: 0;
   background:
     linear-gradient(135deg, rgba(139, 92, 246, 0.03) 0%, rgba(192, 132, 252, 0.03) 100%),
     var(--glass-bg-light);
@@ -1246,6 +1286,14 @@ onUnmounted(() => {
   opacity: 1;
 }
 
+.author-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
 .author-avatar {
   width: 60px;
   height: 60px;
@@ -1266,11 +1314,17 @@ onUnmounted(() => {
   font-weight: var(--font-semibold);
   color: var(--color-text-primary);
   margin-bottom: var(--spacing-xs);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .author-details p {
   color: var(--color-text-tertiary);
   font-size: var(--text-sm);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .stats-link {
@@ -1278,65 +1332,11 @@ onUnmounted(() => {
   display: block;
 }
 
-.post-stats {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-lg);
-  flex-wrap: nowrap;
-  padding: var(--spacing-md);
-  border-radius: var(--radius-xl);
-  margin: var(--spacing-md) 0;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow:
-    0 2px 8px rgba(0, 0, 0, 0.03),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  position: relative;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-.post-stats::-webkit-scrollbar {
-  display: none;
-}
-
-.post-stats.clickable {
-  cursor: pointer;
-}
-
-.post-stats.clickable:hover {
-  background:
-    linear-gradient(135deg, rgba(139, 92, 246, 0.05) 0%, rgba(192, 132, 252, 0.05) 100%),
-    var(--glass-bg-light);
-  border-color: rgba(139, 92, 246, 0.15);
-  box-shadow:
-    0 4px 12px rgba(139, 92, 246, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.12);
-}
-
-.post-stats .link-icon {
-  margin-left: auto;
-  color: var(--color-primary);
-  opacity: 0.6;
-  transition: opacity 0.3s ease;
-}
-
-.post-stats.clickable:hover .link-icon {
-  opacity: 1;
-}
-
-.stat-item {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
-  color: var(--color-text-secondary);
-  font-size: var(--text-base);
-}
 
 .stat-count {
   font-weight: var(--font-semibold);
   color: var(--color-text-primary);
+  font-size: 1.05rem;
 }
 
 .stat-label {
@@ -1376,35 +1376,140 @@ onUnmounted(() => {
   }
 }
 
+
 .post-actions {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  gap: clamp(16px, 2vw, 24px);
+  margin: var(--spacing-lg) 0;
+}
+
+.post-action-buttons {
+  display: flex;
+  flex-wrap: wrap;
   gap: var(--spacing-md);
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+  padding: var(--spacing-md);
+  background:
+    linear-gradient(135deg, rgba(139, 92, 246, 0.04) 0%, rgba(192, 132, 252, 0.04) 100%),
+    var(--glass-bg-light);
+  border-radius: var(--radius-2xl);
+  border: 1px solid rgba(139, 92, 246, 0.1);
+  box-shadow:
+    0 3px 12px rgba(15, 23, 42, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
-.post-actions::-webkit-scrollbar {
-  display: none;
+.post-action-buttons > * {
+  flex: 1 1 160px;
+  display: flex;
+  min-width: 0;
 }
 
-.post-actions a {
-  display: inline-flex;
+.post-action-buttons .post-action-link {
+  display: flex;
+  width: 100%;
+}
+
+.post-action-buttons :deep(.glass-button) {
+  flex: 1 1 auto;
+  justify-content: center;
+  align-items: center;
+  min-height: 52px;
+  width: 100%;
+}
+
+.post-action-buttons :deep(.glass-button svg) {
+  margin: 0;
 }
 
 /* 收藏按钮激活状态 */
-.post-actions :deep(.glass-button.is-favorited) {
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.2) 0%, rgba(192, 132, 252, 0.2) 100%);
+.post-action-buttons :deep(.glass-button.is-favorited) {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.18) 0%, rgba(192, 132, 252, 0.18) 100%);
   border-color: var(--color-primary);
   color: var(--color-primary);
 }
 
-[data-theme='dark'] .post-actions :deep(.glass-button.is-favorited) {
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.3) 0%, rgba(192, 132, 252, 0.3) 100%);
-  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+[data-theme='dark'] .post-action-buttons :deep(.glass-button.is-favorited) {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.28) 0%, rgba(192, 132, 252, 0.28) 100%);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.32);
+}
+
+.post-action-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+  background:
+    linear-gradient(135deg, rgba(139, 92, 246, 0.05) 0%, rgba(192, 132, 252, 0.05) 100%),
+    var(--glass-bg-light);
+  border-radius: var(--radius-2xl);
+  border: 1px solid rgba(139, 92, 246, 0.1);
+  box-shadow:
+    0 4px 16px rgba(15, 23, 42, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.post-stats-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-xl);
+  border: 1px solid transparent;
+  min-height: 56px;
+  transition: all 0.25s ease;
+  background: rgba(255, 255, 255, 0.35);
+  backdrop-filter: blur(10px);
+}
+
+[data-theme='dark'] .post-stats-row {
+  background: rgba(31, 24, 56, 0.45);
+}
+
+.post-stats-row.is-link {
+  cursor: pointer;
+}
+
+.post-stats-row.is-link:hover {
+  transform: translateY(-1px);
+  border-color: rgba(139, 92, 246, 0.35);
+  box-shadow:
+    0 8px 20px rgba(76, 29, 149, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.post-stats-row .link-icon {
+  margin-left: auto;
+  color: var(--color-primary);
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+}
+
+.post-stats-row.is-link:hover .link-icon {
+  opacity: 1;
+}
+
+.stat-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.18), rgba(192, 132, 252, 0.18));
+  color: var(--color-primary);
+  flex-shrink: 0;
+}
+
+[data-theme='dark'] .stat-icon {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.28), rgba(192, 132, 252, 0.28));
+}
+
+.stat-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
 }
 
 .media-section {
@@ -1556,7 +1661,7 @@ onUnmounted(() => {
     padding: var(--spacing-lg);
     display: flex;
     flex-direction: column;
-    gap: var(--spacing-lg);
+    gap: var(--spacing-md);
     align-items: stretch;
   }
 
@@ -1578,53 +1683,50 @@ onUnmounted(() => {
     padding: var(--spacing-md);
   }
 
-  .author-info,
-  .post-stats {
-    padding: var(--spacing-lg); /* 增加移动端内边距 */
-    gap: var(--spacing-md); /* 增加元素间隔 */
+  .post-action-buttons {
+    padding: var(--spacing-sm) var(--spacing-md);
+    gap: var(--spacing-sm);
   }
 
-  .post-stats.clickable .stat-item .stat-label,
-  .post-stats .stat-item .stat-label {
-    display: none;
+  .post-action-buttons > * {
+    flex: 1 1 140px;
+  }
+
+  .post-action-stats {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-sm);
+  }
+
+  .post-stats-row {
+    min-height: 52px;
   }
 
   /* iPhone 14 Pro Max (430x932) 优化 */
   @media (max-width: 430px) {
-    .post-stats {
-      flex-wrap: nowrap; /* 强制单行显示 */
-      gap: var(--spacing-sm);
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
-    }
-    
-    .post-stats .stat-item {
-      flex-shrink: 0; /* 防止被压缩 */
-      min-width: fit-content;
-    }
-    
-    .post-stats .stat-item .stat-count {
-      font-size: var(--text-base);
+    .post-action-buttons > * {
+      flex: 1 1 120px;
     }
 
-    .author-info {
-      gap: var(--spacing-md);
+    .post-stats-row {
+      flex-direction: row;
+      gap: var(--spacing-sm);
+      min-height: 48px;
+      padding: var(--spacing-sm) var(--spacing-sm);
     }
-    
-    .post-title {
-      font-size: var(--text-xl);
-      line-height: 1.4;
-      margin-bottom: var(--spacing-md);
+
+    .stat-icon {
+      width: 38px;
+      height: 38px;
     }
   }
-  
+
   .author-avatar {
     width: 48px;
     height: 48px;
     min-width: 48px;
     min-height: 48px;
   }
-  
+
   .back-button {
     top: 76px; /* 移动端调整位置 */
   }
@@ -1645,7 +1747,7 @@ onUnmounted(() => {
   .back-button {
     margin-bottom: var(--spacing-md);
   }
-  
+
   /* 移动端操作按钮优化 */
   .post-actions {
     gap: var(--spacing-md);
@@ -1653,7 +1755,14 @@ onUnmounted(() => {
   }
 
   .post-actions :deep(.glass-button) {
-    min-width: auto;
+    min-width: 120px;
+  }
+
+  .post-actions :deep(.glass-button)::after {
+    display: none;
+  }
+
+  .post-actions :deep(.glass-button) {
     padding: var(--spacing-sm) var(--spacing-md);
   }
 }
