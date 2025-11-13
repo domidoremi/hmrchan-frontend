@@ -297,13 +297,19 @@ const initPlyr = () => {
     player = new Plyr(videoElement.value, {
       controls: [
         'play-large',
+        'restart',
+        'rewind',
         'play',
+        'fast-forward',
         'progress',
         'current-time',
+        'duration',
         'mute',
         'volume',
         'captions',
         'settings',
+        'pip',
+        'airplay',
         'fullscreen', // 全屏按钮放在最后，移动端更易访问
       ],
       settings: ['captions', 'quality', 'speed'],
@@ -725,9 +731,9 @@ onUnmounted(() => {
 
 :deep(.plyr__controls) {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
   width: 100%;
   padding: clamp(8px, 1.4vw, 14px) clamp(12px, 2.4vw, 20px);
   background: rgba(10, 12, 20, 0.78);
@@ -737,8 +743,7 @@ onUnmounted(() => {
   box-shadow:
     0 16px 30px -18px rgba(8, 12, 24, 0.55),
     inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  gap: clamp(6px, 1.2vw, 14px);
-  row-gap: clamp(8px, 1.5vw, 16px);
+  gap: clamp(6px, 1vw, 12px);
 }
 
 :deep(.plyr__controls .plyr__controls__item) {
@@ -746,6 +751,7 @@ onUnmounted(() => {
   align-items: center;
   margin: 0;
   flex: 0 0 auto;
+  gap: clamp(2px, 0.6vw, 6px);
 }
 
 :deep(.plyr__controls .plyr__control) {
@@ -756,7 +762,7 @@ onUnmounted(() => {
   color: #fff;
   background: transparent;
   transition: background 0.2s ease, color 0.2s ease;
-  min-width: 36px;
+  min-width: 32px;
   display: inline-flex;
   justify-content: center;
   align-items: center;
@@ -773,16 +779,13 @@ onUnmounted(() => {
 }
 
 :deep(.plyr__progress__container) {
-  order: -1;
-  flex: 1 1 100%;
-  min-width: min(540px, 100%);
-  margin: 0 0 clamp(6px, 1vw, 12px);
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0 clamp(4px, 1vw, 10px);
 }
 
 :deep(.plyr__volume) {
-  flex: 0 0 auto;
-  min-width: 80px;
-  max-width: 140px;
+  flex: 0 0 clamp(64px, 10vw, 120px);
 }
 
 :deep(.plyr__progress input[type='range']) {
@@ -813,17 +816,15 @@ onUnmounted(() => {
 /* 移动端适配 */
 @media (max-width: 640px) {
   :deep(.plyr__controls) {
-    padding: 8px 10px;
-    gap: 8px;
-    justify-content: space-between;
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
+    padding: 6px 10px;
+    gap: 6px;
+    flex-wrap: wrap;
+    justify-content: center;
   }
   
   :deep(.plyr__controls .plyr__control) {
     padding: 4px;
-    min-width: 34px;
-    scroll-snap-align: center;
+    min-width: 30px;
   }
 
   :deep(.plyr__time) {
@@ -833,6 +834,7 @@ onUnmounted(() => {
 
 /* 竖屏视频的控制条适配 */
 .vertical-video :deep(.plyr__controls) {
+  flex-wrap: wrap;
   justify-content: center;
 }
 
