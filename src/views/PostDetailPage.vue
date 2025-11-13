@@ -1387,9 +1387,11 @@ onUnmounted(() => {
   margin: var(--spacing-lg) 0;
 }
 
+
 .post-action-buttons {
   display: flex;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: var(--spacing-sm);
   padding: var(--spacing-sm) var(--spacing-md);
   background:
@@ -1400,13 +1402,12 @@ onUnmounted(() => {
   box-shadow:
     0 3px 12px rgba(15, 23, 42, 0.08),
     inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
 }
 
 .post-action-buttons > * {
-  flex: 0 0 auto;
+  flex: 1 1 clamp(140px, 22%, 200px);
   display: flex;
+  min-width: clamp(140px, 45%, 220px);
 }
 
 .post-action-buttons .post-action-link {
@@ -1415,11 +1416,11 @@ onUnmounted(() => {
 }
 
 .post-action-buttons :deep(.glass-button) {
-  flex: 0 0 auto;
+  flex: 1 1 auto;
   justify-content: center;
   align-items: center;
   min-height: 48px;
-  min-width: 48px;
+  width: 100%;
   padding: 0 var(--spacing-md);
 }
 
@@ -1440,8 +1441,8 @@ onUnmounted(() => {
 }
 
 .post-action-stats {
-  display: flex;
-  flex-wrap: nowrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: var(--spacing-sm);
   padding: var(--spacing-sm) var(--spacing-md);
   background:
@@ -1452,8 +1453,6 @@ onUnmounted(() => {
   box-shadow:
     0 4px 16px rgba(15, 23, 42, 0.08),
     inset 0 1px 0 rgba(255, 255, 255, 0.06);
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
 }
 
 .post-stats-row {
@@ -1467,7 +1466,6 @@ onUnmounted(() => {
   transition: all 0.25s ease;
   background: rgba(255, 255, 255, 0.4);
   backdrop-filter: blur(10px);
-  flex: 0 0 auto;
 }
 
 [data-theme='dark'] .post-stats-row {
