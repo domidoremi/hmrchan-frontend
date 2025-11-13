@@ -924,12 +924,13 @@ onUnmounted(() => {
   backdrop-filter: var(--glass-blur);
   border: 1px solid var(--glass-border);
   border-radius: 24px;
-  padding: clamp(20px, 3.5vw, 36px);
+  padding: clamp(20px, 3.5vw, 32px);
   margin-bottom: 24px;
-  display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
-  gap: clamp(20px, 3vw, 32px);
-  align-items: start;
+  display: flex;
+  flex-wrap: wrap;
+  gap: clamp(18px, 3vw, 28px);
+  align-items: flex-start;
+  justify-content: center;
   overflow: visible;
   box-shadow: 0 16px 40px -20px rgba(15, 23, 42, 0.28);
   transition:
@@ -944,9 +945,8 @@ onUnmounted(() => {
 
 .post-thumbnail-container {
   position: relative;
-  width: 100%;
-  min-height: min(70vh, 720px);
-  max-height: 80vh;
+  width: clamp(320px, 42vw, 520px);
+  min-height: 320px;
   background: linear-gradient(
     135deg,
     rgba(139, 92, 246, 0.08) 0%,
@@ -960,6 +960,7 @@ onUnmounted(() => {
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.12),
     inset 0 40px 120px rgba(139, 92, 246, 0.08);
+  flex: 0 0 auto;
 }
 
 .post-thumbnail {
@@ -1382,15 +1383,15 @@ onUnmounted(() => {
 .post-actions {
   display: flex;
   flex-direction: column;
-  gap: clamp(16px, 2vw, 24px);
+  gap: clamp(12px, 1.6vw, 20px);
   margin: var(--spacing-lg) 0;
 }
 
 .post-action-buttons {
   display: flex;
-  flex-wrap: wrap;
-  gap: var(--spacing-md);
-  padding: var(--spacing-md);
+  flex-wrap: nowrap;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
   background:
     linear-gradient(135deg, rgba(139, 92, 246, 0.04) 0%, rgba(192, 132, 252, 0.04) 100%),
     var(--glass-bg-light);
@@ -1399,12 +1400,13 @@ onUnmounted(() => {
   box-shadow:
     0 3px 12px rgba(15, 23, 42, 0.08),
     inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .post-action-buttons > * {
-  flex: 1 1 160px;
+  flex: 0 0 auto;
   display: flex;
-  min-width: 0;
 }
 
 .post-action-buttons .post-action-link {
@@ -1413,11 +1415,12 @@ onUnmounted(() => {
 }
 
 .post-action-buttons :deep(.glass-button) {
-  flex: 1 1 auto;
+  flex: 0 0 auto;
   justify-content: center;
   align-items: center;
-  min-height: 52px;
-  width: 100%;
+  min-height: 48px;
+  min-width: 48px;
+  padding: 0 var(--spacing-md);
 }
 
 .post-action-buttons :deep(.glass-button svg) {
@@ -1437,10 +1440,10 @@ onUnmounted(() => {
 }
 
 .post-action-stats {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  display: flex;
+  flex-wrap: nowrap;
   gap: var(--spacing-sm);
-  padding: var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-md);
   background:
     linear-gradient(135deg, rgba(139, 92, 246, 0.05) 0%, rgba(192, 132, 252, 0.05) 100%),
     var(--glass-bg-light);
@@ -1449,19 +1452,22 @@ onUnmounted(() => {
   box-shadow:
     0 4px 16px rgba(15, 23, 42, 0.08),
     inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .post-stats-row {
   display: flex;
   align-items: center;
-  gap: var(--spacing-md);
-  padding: var(--spacing-sm) var(--spacing-md);
+  gap: var(--spacing-sm);
+  padding: var(--spacing-xs) var(--spacing-md);
   border-radius: var(--radius-xl);
   border: 1px solid transparent;
-  min-height: 56px;
+  min-height: 48px;
   transition: all 0.25s ease;
-  background: rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.4);
   backdrop-filter: blur(10px);
+  flex: 0 0 auto;
 }
 
 [data-theme='dark'] .post-stats-row {
