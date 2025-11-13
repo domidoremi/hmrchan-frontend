@@ -1,5 +1,5 @@
 <template>
-  <MainLayout>
+  <MainLayout :disable-container="true">
     <div class="post-detail-page">
       <!-- 骨架屏加载状态 -->
       <div v-if="loading" class="skeleton-loader">
@@ -853,9 +853,9 @@ onUnmounted(() => {
    ======================================== */
 
 .post-detail-page {
-  max-width: 1280px;
   margin: 0 auto;
-  padding: 24px 16px;
+  padding: clamp(24px, 4vw, 48px) clamp(16px, 5vw, 48px);
+  width: min(1440px, 100%);
   min-height: calc(100vh - 120px);
   animation: fadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   content-visibility: auto;
@@ -1785,9 +1785,9 @@ onUnmounted(() => {
    ======================================== */
 
 .skeleton-loader {
-  max-width: 1200px;
+  width: min(1120px, 100% - 32px);
   margin: 0 auto;
-  padding: var(--spacing-lg);
+  padding: clamp(20px, 4vw, 36px);
 }
 
 .skeleton-back-btn {
