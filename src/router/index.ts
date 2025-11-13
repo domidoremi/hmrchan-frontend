@@ -2,6 +2,8 @@ import { createRouter, createWebHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 
+const LAST_VISITED_ROUTE_KEY = 'hmrchan:last-route'
+
 // 定义路由
 export const routes: RouteRecordRaw[] = [
   {
@@ -157,6 +159,25 @@ const router = createRouter({
 router.beforeEach((to, from, next) => {
   const authStore = useAuthStore()
 
+  if (from.name && from.name !== 'login') {
+    sessionStorage.setItem(LAST_VISITED_ROUTE_KEY, from.fullPath)
+  }
+
+  if (to.name === 'login' && !to.query.redirect) {
+    const historicalRoute = sessionStorage.getItem(LAST_VISITED_ROUTE_KEY) || '/'
+    const redirectTarget = from.name && from.name !== 'login' ? from.fullPath : historicalRoute
+
+    next({
+      name: 'login',
+      query: {
+        ...to.query,
+        redirect: redirectTarget,
+      },
+      replace: true,
+    })
+    return
+  }
+
   // 更新页面标题
   const appName = import.meta.env.VITE_APP_NAME || 'himeri chan'
   if (to.meta.title) {
@@ -176,6 +197,12 @@ router.beforeEach((to, from, next) => {
   }
 
   next()
+})
+
+router.afterEach((to) => {
+  if (to.name && to.name !== 'login') {
+    sessionStorage.setItem(LAST_VISITED_ROUTE_KEY, to.fullPath)
+  }
 })
 
 export default router
