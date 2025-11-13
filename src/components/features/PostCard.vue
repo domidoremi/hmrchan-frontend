@@ -115,11 +115,17 @@ gsap.registerPlugin(ScrollTrigger)
 interface Props {
   post: Post
   isFirstScreen?: boolean
+  previewEnabled?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   isFirstScreen: false,
+  previewEnabled: false,
 })
+
+const emit = defineEmits<{
+  (e: 'open', postId: string): void
+}>()
 
 // 缩略图URL
 const thumbnailUrl = computed(() => {
@@ -225,10 +231,18 @@ onMounted(() => {
 
 // 事件处理
 const handleClick = (event: MouseEvent, navigate: () => void) => {
-  if (!event.ctrlKey && !event.metaKey) {
-    event.preventDefault()
-    navigate()
+  if (event.ctrlKey || event.metaKey) {
+    return
   }
+
+  event.preventDefault()
+
+  if (props.previewEnabled) {
+    emit('open', props.post.id)
+    return
+  }
+
+  navigate()
 }
 
 const onHover = () => {
