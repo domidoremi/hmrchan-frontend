@@ -725,44 +725,41 @@ onUnmounted(() => {
 
 :deep(.plyr__controls) {
   display: flex;
-  flex-wrap: nowrap;
-  justify-content: space-between;
+  flex-wrap: wrap;
   align-items: center;
+  justify-content: center;
   width: 100%;
-  padding: clamp(8px, 1.6vw, 14px) clamp(12px, 2.6vw, 20px);
-  background: rgba(10, 12, 20, 0.75);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: clamp(8px, 1.4vw, 14px) clamp(12px, 2.4vw, 20px);
+  background: rgba(10, 12, 20, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 16px;
   margin: clamp(8px, 1.1vw, 14px);
   box-shadow:
-    0 18px 32px -18px rgba(8, 12, 24, 0.6),
-    inset 0 1px 0 rgba(255, 255, 255, 0.07);
-  gap: clamp(4px, 1.2vw, 12px);
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none; /* Firefox */
-}
-
-:deep(.plyr__controls)::-webkit-scrollbar {
-  display: none; /* Chrome, Safari, Edge */
+    0 16px 30px -18px rgba(8, 12, 24, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  gap: clamp(6px, 1.2vw, 14px);
+  row-gap: clamp(8px, 1.5vw, 16px);
 }
 
 :deep(.plyr__controls .plyr__controls__item) {
   display: flex;
   align-items: center;
-  margin-left: 0;
-  margin-right: clamp(2px, 1vw, 8px);
-  flex-shrink: 0;
+  margin: 0;
+  flex: 0 0 auto;
 }
 
 :deep(.plyr__controls .plyr__control) {
   border-radius: 12px;
   padding: 6px;
   margin: 0;
-  flex-shrink: 0;
+  flex: 0 0 auto;
   color: #fff;
   background: transparent;
   transition: background 0.2s ease, color 0.2s ease;
+  min-width: 36px;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
 }
 
 :deep(.plyr__controls .plyr__control svg) {
@@ -776,15 +773,16 @@ onUnmounted(() => {
 }
 
 :deep(.plyr__progress__container) {
-  flex: 1 1 120px;
-  min-width: 80px;
-  margin: 0 clamp(2px, 1vw, 8px);
+  order: -1;
+  flex: 1 1 100%;
+  min-width: min(540px, 100%);
+  margin: 0 0 clamp(6px, 1vw, 12px);
 }
 
 :deep(.plyr__volume) {
   flex: 0 0 auto;
-  min-width: 60px;
-  max-width: 100px;
+  min-width: 80px;
+  max-width: 140px;
 }
 
 :deep(.plyr__progress input[type='range']) {
@@ -815,14 +813,19 @@ onUnmounted(() => {
 /* 移动端适配 */
 @media (max-width: 640px) {
   :deep(.plyr__controls) {
-    padding: 6px 10px;
-    gap: 4px;
+    padding: 8px 10px;
+    gap: 8px;
+    justify-content: space-between;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
   }
   
   :deep(.plyr__controls .plyr__control) {
     padding: 4px;
+    min-width: 34px;
+    scroll-snap-align: center;
   }
-  
+
   :deep(.plyr__time) {
     font-size: 11px;
   }
@@ -830,14 +833,13 @@ onUnmounted(() => {
 
 /* 竖屏视频的控制条适配 */
 .vertical-video :deep(.plyr__controls) {
-  flex-wrap: wrap;
   justify-content: center;
 }
 
 .vertical-video :deep(.plyr__progress__container) {
   order: -1;
   flex-basis: 100%;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }
 
 @keyframes scaleIn {
