@@ -874,15 +874,15 @@ onUnmounted(() => {
 }
 
 .back-button {
-  margin-bottom: var(--spacing-lg);
+  margin: clamp(8px, 2vw, 16px) 0 var(--spacing-lg);
   transition: all var(--transition-base);
   backdrop-filter: blur(12px);
 }
 
 .back-button {
   position: sticky;
-  top: calc(var(--app-navbar-height, 78px) + 16px);
-  z-index: 100;
+  top: calc(var(--app-navbar-height, 78px) + clamp(16px, 2.5vw, 28px));
+  z-index: 220;
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -1389,9 +1389,9 @@ onUnmounted(() => {
 
 
 .post-action-buttons {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: stretch;
   gap: var(--spacing-sm);
   padding: var(--spacing-sm) var(--spacing-md);
   background:
@@ -1405,22 +1405,19 @@ onUnmounted(() => {
 }
 
 .post-action-buttons > * {
-  flex: 1 1 clamp(140px, 22%, 200px);
-  display: flex;
-  min-width: clamp(140px, 45%, 220px);
+  min-width: 0;
 }
 
 .post-action-buttons .post-action-link {
-  display: flex;
+  display: block;
   width: 100%;
 }
 
 .post-action-buttons :deep(.glass-button) {
-  flex: 1 1 auto;
+  width: 100%;
   justify-content: center;
   align-items: center;
   min-height: 48px;
-  width: 100%;
   padding: 0 var(--spacing-md);
 }
 
@@ -1442,7 +1439,8 @@ onUnmounted(() => {
 
 .post-action-stats {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  align-items: stretch;
   gap: var(--spacing-sm);
   padding: var(--spacing-sm) var(--spacing-md);
   background:
@@ -1466,6 +1464,19 @@ onUnmounted(() => {
   transition: all 0.25s ease;
   background: rgba(255, 255, 255, 0.4);
   backdrop-filter: blur(10px);
+  min-width: 0;
+}
+
+@media (max-width: 1100px) {
+  .post-action-buttons {
+    grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .post-action-stats {
+    grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+  }
 }
 
 [data-theme='dark'] .post-stats-row {
@@ -1692,21 +1703,23 @@ onUnmounted(() => {
   }
 
   .post-action-buttons {
-    padding: var(--spacing-sm) var(--spacing-md);
-    gap: var(--spacing-sm);
+    grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+    padding: var(--spacing-xs) var(--spacing-sm);
+    gap: var(--spacing-xs);
   }
 
   .post-action-buttons > * {
-    flex: 1 1 140px;
+    min-width: 0;
   }
 
   .post-action-stats {
-    grid-template-columns: 1fr;
-    gap: var(--spacing-sm);
+    grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+    gap: var(--spacing-xs);
   }
 
   .post-stats-row {
-    min-height: 52px;
+    min-height: 48px;
+    padding: var(--spacing-xs) var(--spacing-sm);
   }
 
   /* iPhone 14 Pro Max (430x932) 优化 */
@@ -1737,11 +1750,11 @@ onUnmounted(() => {
 
   .back-button {
     position: sticky;
-    top: calc(var(--app-navbar-height, 60px) + 12px); /* 移动端安全距离 */
+    top: calc(var(--app-navbar-height, 60px) + clamp(12px, 3vw, 20px)); /* 移动端安全距离 */
     padding: 8px 16px;
     margin-top: 8px;
     margin-bottom: var(--spacing-md);
-    z-index: 200;
+    z-index: 220;
   }
 
   .thumbnail-nav-btn {
