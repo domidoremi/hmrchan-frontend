@@ -263,7 +263,7 @@ import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
 import { usePostsStore } from '@/stores/posts'
 import { useSettingsStore } from '@/stores/settings'
-import { API_BASE_URL } from '@/config/api'
+import { resolveMediaUrl } from '@/utils/url'
 import type { Post } from '@/types'
 
 const router = useRouter()
@@ -436,8 +436,7 @@ const handleSearchInput = () => {
 
 // 工具函数
 const getMediaUrl = (url: string) => {
-  if (url.startsWith('http')) return url
-  return `${API_BASE_URL}${url}`
+  return resolveMediaUrl(url)
 }
 
 const truncate = (text: string, length: number) => {
