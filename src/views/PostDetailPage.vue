@@ -39,7 +39,9 @@
                   <ChevronLeft :size="20" />
                 </button>
 
-                <div class="post-thumbnail" @click="openMediaViewer(currentThumbnailIndex)">
+                <div class="post-thumbnail" @click="openMediaViewer(currentThumbnailIndex)"
+                  @touchstart.passive="handleThumbnailTouchStart" @touchmove.passive="handleThumbnailTouchMove"
+                  @touchend.passive="handleThumbnailTouchEnd" @touchcancel.passive="handleThumbnailTouchEnd">
                   <div class="media-backdrop" aria-hidden="true">
                     <transition name="thumbnail-fade" mode="out-in">
                       <img v-if="currentMediaType !== 'video'" :key="`bg-${currentThumbnailUrl}`"
@@ -141,8 +143,22 @@
 
                     <h1 class="post-title">{{ post.title || 'Untitled' }}</h1>
 
-                    <div v-if="showDescription" class="post-description">
+                    <div v-if="showDescription" :class="[
+                      'post-description',
+                      {
+                        'is-collapsed': !isDescriptionExpanded && isDescriptionLong,
+                        'is-expanded': isDescriptionExpanded && isDescriptionLong,
+                      },
+                    ]">
                       <p>{{ post.description }}</p>
+                      <button v-if="isDescriptionLong" type="button" class="description-toggle"
+                        @click="isDescriptionExpanded = !isDescriptionExpanded">
+                        {{
+                          isDescriptionExpanded
+                            ? t('post.collapseDescription', '收起')
+                            : t('post.expandDescription', '展开全部')
+                        }}
+                      </button>
                     </div>
                   </div>
                 </details>
@@ -304,8 +320,22 @@
 
                 <h1 class="post-title">{{ post.title || 'Untitled' }}</h1>
 
-                <div v-if="showDescription" class="post-description">
+                <div v-if="showDescription" :class="[
+                  'post-description',
+                  {
+                    'is-collapsed': !isDescriptionExpanded && isDescriptionLong,
+                    'is-expanded': isDescriptionExpanded && isDescriptionLong,
+                  },
+                ]">
                   <p>{{ post.description }}</p>
+                  <button v-if="isDescriptionLong" type="button" class="description-toggle"
+                    @click="isDescriptionExpanded = !isDescriptionExpanded">
+                    {{
+                      isDescriptionExpanded
+                        ? t('post.collapseDescription', '收起')
+                        : t('post.expandDescription', '展开全部')
+                    }}
+                  </button>
                 </div>
 
                 <section class="post-actions" aria-labelledby="post-actions-heading">
@@ -519,6 +549,13 @@ const platformColor = computed(
 // 判断是否为转发
 const isRetweet = computed(() => {
   return !!post.value?.original_author_id && !!post.value?.original_author_name
+})
+
+const isDescriptionExpanded = ref(false)
+
+const isDescriptionLong = computed(() => {
+  const length = post.value?.description?.length ?? 0
+  return length > 260
 })
 
 // 判断是否显示描述（避免与标题重复）
@@ -823,6 +860,52 @@ const nextThumbnail = () => {
   if (currentThumbnailIndex.value < allMediaUrls.value.length - 1) {
     currentThumbnailIndex.value++
   }
+}
+
+// 移动端缩略图滑动手势
+const thumbnailTouchStartX = ref<number | null>(null)
+const thumbnailTouchStartY = ref<number | null>(null)
+const thumbnailTouchActive = ref(false)
+
+const handleThumbnailTouchStart = (event: TouchEvent) => {
+  if (!isTabletOrBelow.value || event.touches.length !== 1) return
+  const touch = event.touches[0] as Touch
+  thumbnailTouchStartX.value = touch.clientX
+  thumbnailTouchStartY.value = touch.clientY
+  thumbnailTouchActive.value = true
+}
+
+const handleThumbnailTouchMove = (event: TouchEvent) => {
+  if (!thumbnailTouchActive.value || thumbnailTouchStartX.value === null || thumbnailTouchStartY.value === null) return
+  if (event.touches.length !== 1) return
+}
+
+const handleThumbnailTouchEnd = (event: TouchEvent) => {
+  if (!thumbnailTouchActive.value || thumbnailTouchStartX.value === null || thumbnailTouchStartY.value === null) {
+    thumbnailTouchActive.value = false
+    thumbnailTouchStartX.value = null
+    thumbnailTouchStartY.value = null
+    return
+  }
+
+  const touch = event.changedTouches[0] as Touch
+  const deltaX = touch.clientX - thumbnailTouchStartX.value
+  const deltaY = touch.clientY - thumbnailTouchStartY.value
+  const absDeltaX = Math.abs(deltaX)
+  const absDeltaY = Math.abs(deltaY)
+  const threshold = 48
+
+  if (absDeltaX > threshold && absDeltaX > absDeltaY * 1.2) {
+    if (deltaX > 0) {
+      prevThumbnail()
+    } else {
+      nextThumbnail()
+    }
+  }
+
+  thumbnailTouchActive.value = false
+  thumbnailTouchStartX.value = null
+  thumbnailTouchStartY.value = null
 }
 
 // 加载相关推荐（直接调用API，不污染全局posts状态）
@@ -1561,6 +1644,49 @@ onUnmounted(() => {
   word-break: break-word;
 }
 
+.post-description.is-collapsed {
+  position: relative;
+  max-height: 16rem;
+  overflow: hidden;
+}
+
+.post-description.is-collapsed::after {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 72px;
+  background: linear-gradient(to top, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0));
+  pointer-events: none;
+}
+
+.post-description.is-expanded {
+  max-height: none;
+}
+
+.description-toggle {
+  margin-top: var(--spacing-md);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.5);
+  background: rgba(15, 23, 42, 0.4);
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+  transition: all 0.2s ease;
+}
+
+.description-toggle:hover {
+  color: var(--color-text-primary);
+  border-color: rgba(129, 140, 248, 0.9);
+  background: rgba(15, 23, 42, 0.7);
+}
+
 @media (min-width: 1200px) {
   .post-description {
     padding: var(--spacing-xl);
@@ -1569,6 +1695,13 @@ onUnmounted(() => {
   .post-description p {
     font-size: var(--text-lg);
     line-height: 1.75;
+  }
+}
+
+@media (min-width: 1280px) {
+  .post-description.is-expanded p {
+    column-count: 2;
+    column-gap: var(--spacing-xl);
   }
 }
 
