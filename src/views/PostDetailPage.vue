@@ -719,9 +719,31 @@ const updateViewportBreakpoints = () => {
 }
 
 onMounted(async () => {
+
   const postId = route.params.id as UUID
   try {
-    post.value = await postsStore.fetchPost(postId)
+    // 优先复用当前 Store 中的详情，避免重复加载
+    const cachedDetail = postsStore.currentPost
+    if (cachedDetail && cachedDetail.id === postId) {
+      post.value = cachedDetail
+      // 已有完整详情，立刻取消骨架屏
+      loading.value = false
+    } else {
+      // 从列表中做浅缓存，先展示基础信息
+      const listItem = postsStore.posts?.find((p: Post) => p.id === postId)
+      if (listItem) {
+        post.value = {
+          ...listItem,
+          media_files: [],
+          tags: [],
+        } as PostDetail
+        // 有列表数据时也立刻渲染，剩余字段靠后台刷新
+        loading.value = false
+      }
+
+      // 再拉取完整详情（命中 requestCache 时不会重复向后端请求）
+      post.value = await postsStore.fetchPost(postId)
+    }
 
     // 验证媒体文件ID格式（诊断用）
     if (import.meta.env.DEV && post.value?.media_files && post.value.media_files.length > 0) {
@@ -768,6 +790,7 @@ onMounted(async () => {
   } catch (error) {
     handleError(error, { customMessage: t('post.loadFailed', 'Failed to load post') })
   } finally {
+    // 确保在没有任何本地数据的情况下也能关闭骨架屏
     loading.value = false
   }
 })
