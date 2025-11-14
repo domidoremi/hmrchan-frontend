@@ -1043,10 +1043,6 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   gap: clamp(18px, 3vw, 28px);
-  position: sticky;
-  top: calc(var(--app-navbar-height, 78px) + 24px);
-  align-self: flex-start;
-  z-index: 1;
 }
 
 .info-column.interactive {
