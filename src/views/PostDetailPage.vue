@@ -1728,7 +1728,7 @@ onUnmounted(() => {
 .post-action-buttons {
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
+  justify-content: flex-start;
   gap: var(--spacing-sm);
   padding: var(--spacing-sm) var(--spacing-md);
   background:
@@ -1742,22 +1742,21 @@ onUnmounted(() => {
 }
 
 .post-action-buttons>* {
-  flex: 1 1 clamp(140px, 22%, 200px);
-  display: flex;
-  min-width: clamp(140px, 45%, 220px);
+  flex: 0 0 auto;
+  display: inline-flex;
+  min-width: 0;
 }
 
 .post-action-buttons .post-action-link {
-  display: flex;
-  width: 100%;
+  display: inline-flex;
 }
 
 .post-action-buttons :deep(.glass-button) {
-  flex: 1 1 auto;
+  flex: 0 0 auto;
   justify-content: center;
   align-items: center;
   min-height: 48px;
-  width: 100%;
+  width: auto;
   padding: 0 var(--spacing-md);
 }
 
@@ -2034,7 +2033,7 @@ onUnmounted(() => {
   }
 
   .post-action-buttons>* {
-    flex: 1 1 140px;
+    flex: 0 0 auto;
   }
 
   .post-action-stats {
@@ -2049,7 +2048,7 @@ onUnmounted(() => {
   /* iPhone 14 Pro Max (430x932) 优化 */
   @media (max-width: 430px) {
     .post-action-buttons>* {
-      flex: 1 1 120px;
+      flex: 0 0 auto;
     }
 
     .post-stats-row {
