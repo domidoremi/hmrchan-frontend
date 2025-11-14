@@ -31,14 +31,8 @@
           <div class="search-block">
             <div class="search-field" :class="{ 'is-focused': isSearchFocused }">
               <Search :size="18" class="search-icon" />
-              <input
-                v-model="searchQuery"
-                type="text"
-                :placeholder="$t('search.placeholder')"
-                @input="onSearchInput"
-                @focus="isSearchFocused = true"
-                @blur="isSearchFocused = false"
-              />
+              <input v-model="searchQuery" type="text" :placeholder="$t('search.placeholder')" @input="onSearchInput"
+                @focus="isSearchFocused = true" @blur="isSearchFocused = false" />
               <Transition name="fade-scale">
                 <button v-if="searchQuery" class="clear-btn" type="button" @click="clearSearch">
                   <X :size="16" />
@@ -49,14 +43,9 @@
 
           <div class="platform-chips-wrapper">
             <div class="platform-chips" ref="platformChipsRef">
-              <button
-                v-for="platform in filterPlatforms"
-                :key="platform.value"
-                :class="['chip', { active: selectedPlatform === platform.value }]"
-                type="button"
-                @click="selectPlatform(platform.value)"
-                :aria-label="`${t('filter.filterBy')} ${platform.label}`"
-              >
+              <button v-for="platform in filterPlatforms" :key="platform.value"
+                :class="['chip', { active: selectedPlatform === platform.value }]" type="button"
+                @click="selectPlatform(platform.value)" :aria-label="`${t('filter.filterBy')} ${platform.label}`">
                 <span class="chip-icon">
                   <component :is="platform.icon" :size="18" />
                 </span>
@@ -84,20 +73,12 @@
             </div>
 
             <div class="view-toggle">
-              <button
-                :class="['view-button', { active: viewMode === 'grid' }]"
-                type="button"
-                @click="viewMode = 'grid'"
-                aria-label="Grid view"
-              >
+              <button :class="['view-button', { active: viewMode === 'grid' }]" type="button" @click="viewMode = 'grid'"
+                aria-label="Grid view">
                 <Grid3x3 :size="18" />
               </button>
-              <button
-                :class="['view-button', { active: viewMode === 'list' }]"
-                type="button"
-                @click="viewMode = 'list'"
-                aria-label="List view"
-              >
+              <button :class="['view-button', { active: viewMode === 'list' }]" type="button" @click="viewMode = 'list'"
+                aria-label="List view">
                 <List :size="18" />
               </button>
             </div>
@@ -117,27 +98,14 @@
             </div>
           </div>
 
-          <div
-            v-else-if="posts.length > 0"
-            ref="postsGridRef"
-            :class="['posts-grid', viewMode === 'list' ? 'is-list' : 'is-grid']"
-          >
-            <PostCard
-              v-for="(post, index) in posts"
-              :key="post.id"
-              :post="post"
-              :is-first-screen="index < 6"
-              :preview-enabled="true"
-              @open="openPreview"
-            />
+          <div v-else-if="posts.length > 0" ref="postsGridRef"
+            :class="['posts-grid', viewMode === 'list' ? 'is-list' : 'is-grid']">
+            <PostCard v-for="(post, index) in posts" :key="post.id" :post="post" :is-first-screen="index < 6"
+              :preview-enabled="true" @open="openPreview" />
           </div>
 
-          <EmptyState
-            v-else-if="!loading"
-            icon="image"
-            :title="$t('search.noResults')"
-            :description="$t('search.noResultsDesc')"
-          />
+          <EmptyState v-else-if="!loading" icon="image" :title="$t('search.noResults')"
+            :description="$t('search.noResultsDesc')" />
 
           <Transition name="fade">
             <div v-if="isLoadingMore" class="loading-more">
@@ -158,14 +126,8 @@
 
         <aside v-if="isDesktop" class="preview-column">
           <Transition name="preview-fade" mode="out-in">
-            <PostPreviewPanel
-              v-if="previewVisible"
-              :key="previewPost?.id || 'preview-panel'"
-              :post="previewPost"
-              :loading="previewLoading"
-              :error="previewError"
-              @close="closePreview"
-            />
+            <PostPreviewPanel v-if="previewVisible" :key="previewPost?.id || 'preview-panel'" :post="previewPost"
+              :loading="previewLoading" :error="previewError" @close="closePreview" />
             <div v-else class="preview-placeholder" key="preview-empty">
               <p>{{ $t('post.media') }}</p>
               <span>{{ $t('common.select') }}</span>
@@ -179,12 +141,8 @@
           <div v-if="previewVisible && !isDesktop" class="preview-overlay">
             <div class="overlay-backdrop" @click="closePreview"></div>
             <div class="overlay-panel">
-              <PostPreviewPanel
-                :post="previewPost"
-                :loading="previewLoading"
-                :error="previewError"
-                @close="closePreview"
-              />
+              <PostPreviewPanel :post="previewPost" :loading="previewLoading" :error="previewError"
+                @close="closePreview" />
             </div>
           </div>
         </Transition>
@@ -336,7 +294,7 @@ const selectPlatform = (platform: string) => {
   if (selectedPlatform.value === platform) return
   selectedPlatform.value = platform
   currentPage.value = 1
-  
+
   // Haptic feedback animation
   gsap.to('.chip.active', {
     scale: 0.95,
@@ -345,7 +303,7 @@ const selectPlatform = (platform: string) => {
     repeat: 1,
     ease: 'power2.inOut',
   })
-  
+
   loadPosts()
 }
 
@@ -463,6 +421,8 @@ const { isLoading: isLoadingMore } = useInfiniteScroll({
 // Preview handlers
 const openPreview = async (postId: string) => {
   previewVisible.value = true
+
+  // 如果已经在预览同一条，直接返回，避免重复工作
   if (previewPost.value?.id === postId) {
     return
   }
@@ -471,6 +431,26 @@ const openPreview = async (postId: string) => {
   previewError.value = null
 
   try {
+    // 1) 优先复用当前 Store 中的详情
+    const cachedDetail = postsStore.currentPost
+    if (cachedDetail && cachedDetail.id === postId) {
+      previewPost.value = cachedDetail
+      previewLoading.value = false
+      return
+    }
+
+    // 2) 从列表中做浅缓存，先展示基础信息
+    const listItem = posts.value.find((p) => p.id === postId)
+    if (listItem) {
+      previewPost.value = {
+        ...listItem,
+        media_files: [],
+        tags: [],
+      } as PostDetail
+      // 保持 previewLoading 为 true，这样媒体区域仍显示 loading
+    }
+
+    // 3) 拉取完整详情（命中 requestCache 时不会重复向后端请求）
     const detail = await postsStore.fetchPost(postId)
     previewPost.value = detail
   } catch (error) {
@@ -512,7 +492,7 @@ onMounted(async () => {
     duration: 0.6,
     ease: 'power3.out',
   })
-  
+
   gsap.from('.page-title', {
     y: 30,
     opacity: 0,
@@ -520,7 +500,7 @@ onMounted(async () => {
     delay: 0.2,
     ease: 'power3.out',
   })
-  
+
   gsap.from('.page-subtitle', {
     y: 20,
     opacity: 0,
@@ -528,7 +508,7 @@ onMounted(async () => {
     delay: 0.4,
     ease: 'power3.out',
   })
-  
+
   gsap.from('.stats-row', {
     y: 20,
     opacity: 0,
@@ -573,7 +553,7 @@ onMounted(async () => {
   // Scroll event for FAB button
   const handleScroll = () => {
     showScrollTop.value = window.scrollY > 600
-    
+
     // Update filter bar shadow
     if (filterRef.value) {
       const scrolled = window.scrollY > 100
@@ -582,7 +562,7 @@ onMounted(async () => {
       }
     }
   }
-  
+
   window.addEventListener('scroll', handleScroll, { passive: true })
   window.addEventListener('resize', handleBreakpointChange, { passive: true })
   handleBreakpointChange()
@@ -680,11 +660,9 @@ watch(
 .hero-bg {
   position: absolute;
   inset: 0;
-  background: radial-gradient(
-      circle at 20% 20%,
+  background: radial-gradient(circle at 20% 20%,
       rgba(96, 165, 250, 0.18),
-      transparent 55%
-    ),
+      transparent 55%),
     radial-gradient(circle at 80% 0%, rgba(236, 72, 153, 0.18), transparent 60%);
   opacity: 0.75;
   pointer-events: none;
@@ -1057,6 +1035,7 @@ watch(
   0% {
     background-position: 200% 0;
   }
+
   100% {
     background-position: -200% 0;
   }
@@ -1105,7 +1084,7 @@ watch(
   align-items: stretch;
 }
 
-.preview-column > * {
+.preview-column>* {
   width: 100%;
 }
 
@@ -1326,7 +1305,7 @@ watch(
     justify-content: stretch;
   }
 
-  .toolbar-controls > * {
+  .toolbar-controls>* {
     flex: 1 1 100%;
   }
 
