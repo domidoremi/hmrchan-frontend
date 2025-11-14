@@ -1018,6 +1018,16 @@ onUnmounted(() => {
   grid-template-columns: minmax(0, 1fr);
 }
 
+.detail-grid>.full-width-section {
+  grid-column: 1 / -1;
+}
+
+@media (min-width: 1024px) {
+  .detail-grid>.full-width-section {
+    margin-top: clamp(8px, 1.5vw, 16px);
+  }
+}
+
 .media-column {
   display: flex;
   flex-direction: column;
@@ -1209,6 +1219,13 @@ onUnmounted(() => {
 .post-content-wrapper.as-accordion {
   gap: var(--spacing-lg);
   padding: var(--spacing-md);
+}
+
+@media (max-width: 767px) {
+  .post-content-wrapper.as-accordion {
+    gap: var(--spacing-md);
+    padding: var(--spacing-sm);
+  }
 }
 
 .accordion-block {
