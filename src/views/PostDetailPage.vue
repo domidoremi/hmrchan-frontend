@@ -320,24 +320,6 @@
 
                 <h1 class="post-title">{{ post.title || 'Untitled' }}</h1>
 
-                <div v-if="showDescription" :class="[
-                  'post-description',
-                  {
-                    'is-collapsed': !isDescriptionExpanded && isDescriptionLong,
-                    'is-expanded': isDescriptionExpanded && isDescriptionLong,
-                  },
-                ]">
-                  <p>{{ post.description }}</p>
-                  <button v-if="isDescriptionLong" type="button" class="description-toggle"
-                    @click="isDescriptionExpanded = !isDescriptionExpanded">
-                    {{
-                      isDescriptionExpanded
-                        ? t('post.collapseDescription', '收起')
-                        : t('post.expandDescription', '展开全部')
-                    }}
-                  </button>
-                </div>
-
                 <section class="post-actions" aria-labelledby="post-actions-heading">
                   <h2 id="post-actions-heading" class="sr-only">{{ $t('post.actions') }}</h2>
                   <div class="post-action-buttons" role="group" :aria-label="$t('post.actions')">
@@ -382,6 +364,25 @@
               </template>
             </div>
           </aside>
+
+          <div v-if="!isTabletOrBelow && showDescription" :class="[
+            'post-description',
+            'full-width-section',
+            {
+              'is-collapsed': !isDescriptionExpanded && isDescriptionLong,
+              'is-expanded': isDescriptionExpanded && isDescriptionLong,
+            },
+          ]">
+            <p>{{ post.description }}</p>
+            <button v-if="isDescriptionLong" type="button" class="description-toggle"
+              @click="isDescriptionExpanded = !isDescriptionExpanded">
+              {{
+                isDescriptionExpanded
+                  ? t('post.collapseDescription', '收起')
+                  : t('post.expandDescription', '展开全部')
+              }}
+            </button>
+          </div>
 
           <div v-if="!isTabletOrBelow && post.tags && post.tags.length > 0"
             class="tags-section glass-card full-width-section">
