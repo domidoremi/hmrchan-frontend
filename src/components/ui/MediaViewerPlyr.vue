@@ -3,52 +3,29 @@
     <div class="media-viewer" @click.stop>
       <!-- 工具栏 -->
       <div class="viewer-toolbar" :class="{ 'controls-hidden': !controlsVisible }">
-        <button
-          class="viewer-btn toolbar-btn"
-          @click="toggleFullscreen"
-          :title="$t('common.fullscreen')"
-        >
+        <button class="viewer-btn toolbar-btn" @click="toggleFullscreen" :title="$t('common.fullscreen')">
           <Maximize :size="20" />
         </button>
-        <button
-          class="viewer-btn toolbar-btn"
-          @click="downloadMedia"
-          :title="$t('common.download')"
-        >
+        <button class="viewer-btn toolbar-btn" @click="downloadMedia" :title="$t('common.download')">
           <Download :size="20" />
         </button>
-        <button
-          class="viewer-btn toolbar-btn close-btn"
-          @click="close"
-          :aria-label="$t('aria.closeViewer')"
-        >
+        <button class="viewer-btn toolbar-btn close-btn" @click="close" :aria-label="$t('aria.closeViewer')">
           <X :size="24" />
         </button>
       </div>
 
       <!-- 上一张按钮 -->
-      <button
-        v-if="mediaItems.length > 1"
-        class="viewer-btn prev-btn"
-        :class="{ 'controls-hidden': !controlsVisible }"
-        @click="prev"
-        :disabled="currentIndex === 0"
-        :aria-label="$t('aria.previousImage')"
-      >
+      <button v-if="mediaItems.length > 1" class="viewer-btn prev-btn" :class="{ 'controls-hidden': !controlsVisible }"
+        @click="prev" :disabled="currentIndex === 0" :aria-label="$t('aria.previousImage')">
         <ChevronLeft :size="32" />
       </button>
 
       <!-- 媒体内容 -->
       <div class="media-container">
         <!-- 图片 -->
-        <img
-          v-if="currentMedia.type === 'image'"
-          :src="currentMedia.url"
-          :alt="`${$t('post.image')} ${currentIndex + 1}`"
-          @load="onMediaLoad"
-          :style="imageStyle"
-          class="media-content-img"
-        />
+        <img v-if="currentMedia.type === 'image'" :src="currentMedia.url"
+          :alt="`${$t('post.image')} ${currentIndex + 1}`" @load="onMediaLoad" :style="imageStyle"
+          class="media-content-img" />
 
         <!-- 视频 (使用 Plyr) -->
         <div v-else-if="currentMedia.type === 'video'" class="video-wrapper">
@@ -57,26 +34,15 @@
 
             <!-- 多语言字幕支持 -->
             <template v-if="currentMedia.subtitles && currentMedia.subtitles.length > 0">
-              <track
-                v-for="(sub, index) in currentMedia.subtitles"
-                :key="`${currentMedia.url}-${sub.language}`"
-                kind="captions"
-                :label="sub.label"
-                :srclang="sub.language"
-                :src="`/api/media/${currentMedia.mediaId}/subtitle?language=${sub.language}`"
-                :default="index === 0"
-              />
+              <track v-for="(sub, index) in currentMedia.subtitles" :key="`${currentMedia.url}-${sub.language}`"
+                kind="captions" :label="sub.label" :srclang="sub.language"
+                :src="`${runtimeApiEndpoint}/media/${currentMedia.mediaId}/subtitle?language=${sub.language}`"
+                :default="index === 0" />
             </template>
 
             <!-- 向后兼容：单字幕模式 -->
-            <track
-              v-else-if="currentMedia.subtitle"
-              kind="captions"
-              label="中文"
-              srclang="zh"
-              :src="currentMedia.subtitle"
-              default
-            />
+            <track v-else-if="currentMedia.subtitle" kind="captions" label="中文" srclang="zh"
+              :src="currentMedia.subtitle" default />
           </video>
         </div>
 
@@ -87,14 +53,8 @@
       </div>
 
       <!-- 下一张按钮 -->
-      <button
-        v-if="mediaItems.length > 1"
-        class="viewer-btn next-btn"
-        :class="{ 'controls-hidden': !controlsVisible }"
-        @click="next"
-        :disabled="currentIndex === mediaItems.length - 1"
-        :aria-label="$t('aria.nextImage')"
-      >
+      <button v-if="mediaItems.length > 1" class="viewer-btn next-btn" :class="{ 'controls-hidden': !controlsVisible }"
+        @click="next" :disabled="currentIndex === mediaItems.length - 1" :aria-label="$t('aria.nextImage')">
         <ChevronRight :size="32" />
       </button>
 
@@ -137,6 +97,7 @@ import {
   Download,
 } from 'lucide-vue-next'
 import Plyr from 'plyr'
+import { getRuntimeApiEndpoint } from '@/config/runtime'
 import 'plyr/dist/plyr.css'
 
 interface MediaItem {
@@ -161,6 +122,8 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   initialIndex: 0,
 })
+
+const runtimeApiEndpoint = getRuntimeApiEndpoint()
 
 const emit = defineEmits<{
   close: []
@@ -245,13 +208,13 @@ watch(currentIndex, () => {
 
 const detectVideoOrientation = () => {
   if (!videoElement.value) return 'landscape'
-  
+
   // 检测视频方向
   const checkOrientation = () => {
     if (videoElement.value) {
       const videoEl = videoElement.value
       const isVertical = videoEl.videoHeight > videoEl.videoWidth
-      
+
       // 根据视频方向添加类名
       const wrapper = document.querySelector('.video-wrapper')
       if (wrapper) {
@@ -261,15 +224,15 @@ const detectVideoOrientation = () => {
           wrapper.classList.remove('vertical-video')
         }
       }
-      
+
       return isVertical ? 'vertical' : 'landscape'
     }
     return 'landscape'
   }
-  
+
   // 视频元数据加载完毕后检查方向
   videoElement.value.addEventListener('loadedmetadata', checkOrientation)
-  
+
   return checkOrientation()
 }
 
@@ -281,10 +244,10 @@ const initPlyr = () => {
       : currentMedia.value.subtitle
         ? '单语言模式'
         : '无字幕'
-    
+
     // 检测视频方向
     const videoOrientation = detectVideoOrientation()
-    
+
     console.log('[Plyr] 初始化视频:', {
       url: currentMedia.value.url,
       orientation: videoOrientation,
@@ -375,7 +338,7 @@ const initPlyr = () => {
     player.on('ready', () => {
       console.log('[Plyr] 播放器就绪')
       loading.value = false
-      
+
       // 检查视频是否可播放
       if (videoElement.value) {
         videoElement.value.addEventListener('error', () => {
@@ -553,6 +516,7 @@ onUnmounted(() => {
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -821,7 +785,7 @@ onUnmounted(() => {
     flex-wrap: wrap;
     justify-content: center;
   }
-  
+
   :deep(.plyr__controls .plyr__control) {
     padding: 4px;
     min-width: 30px;
@@ -849,6 +813,7 @@ onUnmounted(() => {
     opacity: 0;
     transform: scale(0.9);
   }
+
   to {
     opacity: 1;
     transform: scale(1);
@@ -917,6 +882,7 @@ onUnmounted(() => {
     opacity: 0;
     transform: translate(-50%, 20px);
   }
+
   to {
     opacity: 1;
     transform: translate(-50%, 0);
@@ -1116,7 +1082,8 @@ onUnmounted(() => {
   gap: 6px !important;
   padding: 12px 10px !important;
   min-height: 54px !important;
-  background: rgba(0, 0, 0, 0.85) !important; /* 更深的背景提高可读性 */
+  background: rgba(0, 0, 0, 0.85) !important;
+  /* 更深的背景提高可读性 */
 }
 
 :deep(.plyr__controls__item) {
@@ -1264,7 +1231,8 @@ onUnmounted(() => {
     min-width: 44px !important;
     min-height: 44px !important;
     padding: 8px !important;
-    margin-left: auto !important; /* 推到最右边 */
+    margin-left: auto !important;
+    /* 推到最右边 */
   }
 
   /* 隐藏次要功能 (PiP, Airplay) 释放空间 */
