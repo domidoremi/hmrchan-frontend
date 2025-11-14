@@ -189,20 +189,9 @@
           <div class="search-header">
             <div class="search-input-wrapper">
               <Search :size="20" class="search-icon" />
-              <input
-                ref="searchInputRef"
-                v-model="searchQuery"
-                type="text"
-                :placeholder="$t('search.placeholder')"
-                class="search-input"
-                @input="handleSearchInput"
-              />
-              <button
-                v-if="searchQuery"
-                class="clear-btn"
-                @click="clearSearch"
-                :aria-label="$t('common.clear')"
-              >
+              <input ref="searchInputRef" v-model="searchQuery" type="text" :placeholder="$t('search.placeholder')"
+                class="search-input" @input="handleSearchInput" />
+              <button v-if="searchQuery" class="clear-btn" @click="clearSearch" :aria-label="$t('common.clear')">
                 <X :size="18" />
               </button>
             </div>
@@ -226,19 +215,10 @@
 
             <!-- 搜索结果 -->
             <div v-else-if="searchResults.length > 0" class="results-list">
-              <RouterLink
-                v-for="post in searchResults"
-                :key="post.id"
-                :to="`/posts/${post.id}`"
-                class="result-item"
-                @click="closeSearchModal"
-              >
-                <img
-                  v-if="post.thumbnail_url"
-                  :src="getMediaUrl(post.thumbnail_url)"
-                  :alt="post.title || 'Post'"
-                  class="result-thumbnail"
-                />
+              <RouterLink v-for="post in searchResults" :key="post.id" :to="`/posts/${post.id}`" class="result-item"
+                @click="closeSearchModal">
+                <img v-if="post.thumbnail_url" :src="getMediaUrl(post.thumbnail_url)" :alt="post.title || 'Post'"
+                  class="result-thumbnail" />
                 <div class="result-info">
                   <h4 class="result-title">{{ post.title || $t('post.untitled') }}</h4>
                   <p v-if="post.description" class="result-description">{{ truncate(post.description, 100) }}</p>
@@ -282,6 +262,7 @@ import {
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
 import { usePostsStore } from '@/stores/posts'
+import { useSettingsStore } from '@/stores/settings'
 import { API_BASE_URL } from '@/config/api'
 import type { Post } from '@/types'
 
@@ -289,8 +270,10 @@ const router = useRouter()
 const { t } = useI18n()
 const authStore = useAuthStore()
 const postsStore = usePostsStore()
+const settingsStore = useSettingsStore()
 
 const { user, isAuthenticated } = storeToRefs(authStore)
+const { settings } = storeToRefs(settingsStore)
 
 const showUserMenu = ref(false)
 const searchModalOpen = ref(false)
@@ -302,6 +285,94 @@ const searchQuery = ref('')
 const searchResults = ref<Post[]>([])
 const searchLoading = ref(false)
 let searchTimeout: ReturnType<typeof setTimeout> | null = null
+
+// 移动端检测
+const isMobile = ref(false)
+
+const updateIsMobile = () => {
+  if (typeof window === 'undefined') return
+  isMobile.value = window.matchMedia('(max-width: 768px)').matches
+}
+
+interface BottomNavItem {
+  path: string
+  requiresAuth?: boolean
+}
+
+const bottomNavItems = computed<BottomNavItem[]>(() => {
+  const items: BottomNavItem[] = [
+    { path: '/' },
+    { path: '/explore' },
+  ]
+
+  if (isAuthenticated.value) {
+    items.push({ path: '/favorites', requiresAuth: true })
+  }
+
+  items.push({ path: '/authors' }, { path: '/settings' })
+  return items
+})
+
+// 全局滑动切换主页面（仅移动端）
+const swipeStartX = ref<number | null>(null)
+const swipeStartY = ref<number | null>(null)
+const swipeActive = ref(false)
+
+const handleGlobalTouchStart = (event: TouchEvent) => {
+  if (!isMobile.value || !settings.value.enableSwipeNavigation || event.touches.length !== 1) return
+  const touch = event.touches[0]
+  const target = event.target as HTMLElement
+
+  // 避免与底部导航点击冲突
+  if (target.closest('.mobile-bottom-nav')) return
+
+  swipeStartX.value = touch.clientX
+  swipeStartY.value = touch.clientY
+  swipeActive.value = true
+}
+
+const handleGlobalTouchEnd = (event: TouchEvent) => {
+  if (!swipeActive.value || swipeStartX.value === null || swipeStartY.value === null) {
+    swipeActive.value = false
+    swipeStartX.value = null
+    swipeStartY.value = null
+    return
+  }
+
+  const touch = event.changedTouches[0]
+  const deltaX = touch.clientX - swipeStartX.value
+  const deltaY = touch.clientY - swipeStartY.value
+  const absDeltaX = Math.abs(deltaX)
+  const absDeltaY = Math.abs(deltaY)
+  const threshold = 80
+
+  swipeActive.value = false
+  swipeStartX.value = null
+  swipeStartY.value = null
+
+  if (!isMobile.value || !settings.value.enableSwipeNavigation) return
+
+  // 只有明显的水平滑动才触发
+  if (absDeltaX < threshold || absDeltaX <= absDeltaY * 1.2) {
+    return
+  }
+
+  const items = bottomNavItems.value
+  if (!items.length) return
+
+  const currentPath = router.currentRoute.value.path
+  const currentIndex = items.findIndex((item) => currentPath.startsWith(item.path))
+  if (currentIndex === -1) return
+
+  const direction = deltaX > 0 ? -1 : 1
+  const nextIndex = currentIndex + direction
+
+  // 不循环，超出范围直接忽略
+  if (nextIndex < 0 || nextIndex >= items.length) return
+
+  const nextItem = items[nextIndex]
+  router.push(nextItem.path)
+}
 
 const userAvatarUrl = computed(() => {
   if (user.value?.avatar_url) {
@@ -401,10 +472,24 @@ const handleClickOutside = (event: MouseEvent) => {
 
 onMounted(() => {
   document.addEventListener('click', handleClickOutside)
+  updateIsMobile()
+
+  if (typeof window !== 'undefined') {
+    window.addEventListener('resize', updateIsMobile)
+    window.addEventListener('touchstart', handleGlobalTouchStart, { passive: true })
+    window.addEventListener('touchend', handleGlobalTouchEnd, { passive: true })
+    window.addEventListener('touchcancel', handleGlobalTouchEnd, { passive: true })
+  }
 })
 
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
+  if (typeof window !== 'undefined') {
+    window.removeEventListener('resize', updateIsMobile)
+    window.removeEventListener('touchstart', handleGlobalTouchStart)
+    window.removeEventListener('touchend', handleGlobalTouchEnd)
+    window.removeEventListener('touchcancel', handleGlobalTouchEnd)
+  }
 })
 </script>
 
@@ -598,7 +683,8 @@ onUnmounted(() => {
 /* 用户菜单 */
 .user-menu-container {
   position: relative;
-  flex-shrink: 0; /* 防止容器被压缩 */
+  flex-shrink: 0;
+  /* 防止容器被压缩 */
 }
 
 .user-dropdown {
@@ -728,6 +814,7 @@ onUnmounted(() => {
 
 /* ==================== 响应式设计 (<768px) ==================== */
 @media (max-width: 768px) {
+
   /* 隐藏桌面端导航栏 */
   .desktop-nav {
     display: none;

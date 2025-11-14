@@ -3,7 +3,7 @@
  * 支持 localStorage 和服务器同步
  */
 import { defineStore } from 'pinia'
-import { ref, watch } from 'vue'
+import { ref } from 'vue'
 import { useAuthStore } from './auth'
 import { api } from '@/api/client'
 
@@ -16,6 +16,7 @@ export interface UserSettings {
   enableAnimations: boolean
 
   // 其他设置
+  enableSwipeNavigation: boolean
   autoPlayVideos: boolean
   showImagePreviews: boolean
 
@@ -34,6 +35,7 @@ const DEFAULT_SETTINGS: UserSettings = {
   showHeroSection: true,
   postsPerPage: 20,
   enableAnimations: true,
+  enableSwipeNavigation: true,
   autoPlayVideos: false,
   showImagePreviews: true,
 
@@ -82,7 +84,9 @@ export const useSettingsStore = defineStore('settings', () => {
 
     try {
       syncing.value = true
-      await api.patch('/preferences', settings.value)
+      const { enableSwipeNavigation, ...serverSettings } = settings.value
+      void enableSwipeNavigation // excluded from server payload but kept for type safety
+      await api.patch('/preferences', serverSettings)
       lastSyncedAt.value = new Date()
       return true
     } catch (error) {
@@ -102,11 +106,17 @@ export const useSettingsStore = defineStore('settings', () => {
 
     try {
       syncing.value = true
-      const data = await api.get('/preferences', { cache: false })
+      const data = await api.get<Partial<UserSettings> & { updatedAt?: string }>('/preferences', {
+        cache: false,
+      })
       if (data) {
         settings.value = { ...DEFAULT_SETTINGS, ...data }
         saveSettings()
-        lastSyncedAt.value = new Date(data.updatedAt)
+        if (data.updatedAt) {
+          lastSyncedAt.value = new Date(data.updatedAt)
+        } else {
+          lastSyncedAt.value = new Date()
+        }
         return true
       }
       return false
