@@ -317,71 +317,71 @@
                     <ExternalLink :size="18" class="link-icon" />
                   </div>
                 </RouterLink>
-
-                <h1 class="post-title">{{ post.title || 'Untitled' }}</h1>
-
-                <section class="post-actions" aria-labelledby="post-actions-heading">
-                  <h2 id="post-actions-heading" class="sr-only">{{ $t('post.actions') }}</h2>
-                  <div class="post-action-buttons" role="group" :aria-label="$t('post.actions')">
-                    <GlassButton @click="toggleFavorite" :disabled="favoriteLoading"
-                      :title="isFavorited ? $t('favorite.remove') : $t('favorite.add')"
-                      :variant="isFavorited ? 'primary' : 'secondary'" :class="{ 'is-favorited': isFavorited }"
-                      :aria-pressed="isFavorited"
-                      :aria-label="isFavorited ? $t('favorite.remove') : $t('favorite.add')">
-                      <Heart :size="18" :fill="isFavorited ? 'currentColor' : 'none'" />
-                      <span class="sr-only">{{ isFavorited ? $t('favorite.remove') : $t('favorite.add') }}</span>
-                    </GlassButton>
-                    <GlassButton v-if="post.url" @click="copyLink(post.url)" variant="secondary"
-                      :title="$t('post.copyLink')" :aria-label="$t('post.copyLink')">
-                      <Link :size="18" />
-                      <span class="sr-only">{{ $t('post.copyLink') }}</span>
-                    </GlassButton>
-                    <a v-if="post.url" :href="post.url" target="_blank" rel="noopener noreferrer"
-                      class="post-action-link" :title="$t('post.viewOriginal')" :aria-label="$t('post.viewOriginal')">
-                      <GlassButton variant="secondary">
-                        <ExternalLink :size="18" />
-                        <span class="sr-only">{{ $t('post.viewOriginal') }}</span>
-                      </GlassButton>
-                    </a>
-                  </div>
-
-                  <div v-if="yieldedStats.length > 0" class="post-action-stats" role="list"
-                    :aria-label="$t('post.stats')">
-                    <component v-for="stat in yieldedStats" :key="stat.key" :is="stat.linkAttrs ? 'a' : 'div'"
-                      v-bind="stat.linkAttrs ?? {}" :class="['post-stats-row', { 'is-link': !!stat.linkAttrs }]"
-                      role="listitem">
-                      <div class="stat-icon">
-                        <component :is="stat.icon" :size="20" />
-                      </div>
-                      <div class="stat-text">
-                        <span class="stat-count">{{ stat.display }}</span>
-                        <span class="stat-label">{{ stat.label }}</span>
-                      </div>
-                      <ExternalLink v-if="stat.linkAttrs" :size="16" class="link-icon" aria-hidden="true" />
-                    </component>
-                  </div>
-                </section>
               </template>
             </div>
           </aside>
 
-          <div v-if="!isTabletOrBelow && showDescription" :class="[
-            'post-description',
-            'full-width-section',
-            {
-              'is-collapsed': !isDescriptionExpanded && isDescriptionLong,
-              'is-expanded': isDescriptionExpanded && isDescriptionLong,
-            },
-          ]">
-            <p>{{ post.description }}</p>
-            <button v-if="isDescriptionLong" type="button" class="description-toggle"
-              @click="isDescriptionExpanded = !isDescriptionExpanded">
-              {{
-                isDescriptionExpanded
-                  ? t('post.collapseDescription', '收起')
-                  : t('post.expandDescription', '展开全部')
-              }}
-            </button>
+          <!-- 桌面端：媒体下方整行，放标题 + 描述 + 操作按钮 + 统计 -->
+          <div v-if="!isTabletOrBelow" class="detail-main full-width-section">
+            <h1 class="post-title">{{ post.title || 'Untitled' }}</h1>
+
+            <div v-if="showDescription" :class="[
+              'post-description',
+              {
+                'is-collapsed': !isDescriptionExpanded && isDescriptionLong,
+                'is-expanded': isDescriptionExpanded && isDescriptionLong,
+              },
+            ]">
+              <p>{{ post.description }}</p>
+              <button v-if="isDescriptionLong" type="button" class="description-toggle"
+                @click="isDescriptionExpanded = !isDescriptionExpanded">
+                {{
+                  isDescriptionExpanded
+                    ? t('post.collapseDescription', '收起')
+                    : t('post.expandDescription', '展开全部')
+                }}
+              </button>
+            </div>
+
+            <section class="post-actions" aria-labelledby="post-actions-heading">
+              <h2 id="post-actions-heading" class="sr-only">{{ $t('post.actions') }}</h2>
+              <div class="post-action-buttons" role="group" :aria-label="$t('post.actions')">
+                <GlassButton @click="toggleFavorite" :disabled="favoriteLoading"
+                  :title="isFavorited ? $t('favorite.remove') : $t('favorite.add')"
+                  :variant="isFavorited ? 'primary' : 'secondary'" :class="{ 'is-favorited': isFavorited }"
+                  :aria-pressed="isFavorited" :aria-label="isFavorited ? $t('favorite.remove') : $t('favorite.add')">
+                  <Heart :size="18" :fill="isFavorited ? 'currentColor' : 'none'" />
+                  <span class="sr-only">{{ isFavorited ? $t('favorite.remove') : $t('favorite.add') }}</span>
+                </GlassButton>
+                <GlassButton v-if="post.url" @click="copyLink(post.url)" variant="secondary"
+                  :title="$t('post.copyLink')" :aria-label="$t('post.copyLink')">
+                  <Link :size="18" />
+                  <span class="sr-only">{{ $t('post.copyLink') }}</span>
+                </GlassButton>
+                <a v-if="post.url" :href="post.url" target="_blank" rel="noopener noreferrer" class="post-action-link"
+                  :title="$t('post.viewOriginal')" :aria-label="$t('post.viewOriginal')">
+                  <GlassButton variant="secondary">
+                    <ExternalLink :size="18" />
+                    <span class="sr-only">{{ $t('post.viewOriginal') }}</span>
+                  </GlassButton>
+                </a>
+              </div>
+
+              <div v-if="yieldedStats.length > 0" class="post-action-stats" role="list" :aria-label="$t('post.stats')">
+                <component v-for="stat in yieldedStats" :key="stat.key" :is="stat.linkAttrs ? 'a' : 'div'"
+                  v-bind="stat.linkAttrs ?? {}" :class="['post-stats-row', { 'is-link': !!stat.linkAttrs }]"
+                  role="listitem">
+                  <div class="stat-icon">
+                    <component :is="stat.icon" :size="20" />
+                  </div>
+                  <div class="stat-text">
+                    <span class="stat-count">{{ stat.display }}</span>
+                    <span class="stat-label">{{ stat.label }}</span>
+                  </div>
+                  <ExternalLink v-if="stat.linkAttrs" :size="16" class="link-icon" aria-hidden="true" />
+                </component>
+              </div>
+            </section>
           </div>
 
           <div v-if="!isTabletOrBelow && post.tags && post.tags.length > 0"
@@ -1104,6 +1104,16 @@ onUnmounted(() => {
 
 .detail-grid>.full-width-section {
   grid-column: 1 / -1;
+}
+
+.detail-main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.detail-main .post-title {
+  margin-bottom: var(--spacing-sm);
 }
 
 @media (min-width: 1024px) {
