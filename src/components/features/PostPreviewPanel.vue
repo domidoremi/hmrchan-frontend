@@ -30,21 +30,10 @@
           <p>{{ error }}</p>
         </div>
         <div v-else-if="activeMedia" key="media-active" class="media-display">
-          <video
-            v-if="activeMedia.file_type === 'video'"
-            key="media-video"
-            :src="activeMediaSrc"
-            controls
-            playsinline
-            preload="metadata"
-          ></video>
-          <img
-            v-else
-            key="media-image"
-            :src="activeMediaSrc"
-            :alt="post?.title || 'Post media preview'"
-            loading="lazy"
-          />
+          <video v-if="activeMedia.file_type === 'video'" key="media-video" :src="activeMediaSrc" controls playsinline
+            preload="metadata"></video>
+          <img v-else key="media-image" :src="activeMediaSrc" :alt="post?.title || 'Post media preview'"
+            loading="lazy" />
         </div>
         <div v-else key="media-empty" class="media-empty">
           <ImageIcon :size="32" />
@@ -53,21 +42,11 @@
       </div>
 
       <div v-if="mediaItems.length > 1" class="media-thumbnails" role="tablist">
-        <button
-          v-for="(media, index) in mediaItems"
-          :key="media.id"
-          type="button"
-          :class="['thumbnail-btn', { active: index === activeIndex }]"
-          @click="setActive(index)"
-          :aria-selected="index === activeIndex"
-          role="tab"
-        >
-          <img
-            v-if="media.thumbnail_path || media.file_type === 'image'"
-            :src="resolveThumb(media)"
-            alt=""
-            loading="lazy"
-          />
+        <button v-for="(media, index) in mediaItems" :key="media.id" type="button"
+          :class="['thumbnail-btn', { active: index === activeIndex }]" @click="setActive(index)"
+          :aria-selected="index === activeIndex" role="tab">
+          <img v-if="media.thumbnail_path || media.file_type === 'image'" :src="resolveThumb(media)" alt=""
+            loading="lazy" />
           <span v-else class="thumbnail-placeholder">
             <Play v-if="media.file_type === 'video'" :size="16" />
             <ImageIcon v-else :size="16" />
@@ -143,7 +122,7 @@ import {
 import { useI18n } from 'vue-i18n'
 
 import type { MediaFile, PostDetail } from '@/types'
-import { API_BASE_URL } from '@/config/api'
+import { resolveMediaUrl } from '@/utils/url'
 
 interface Props {
   post: PostDetail | null
@@ -198,15 +177,13 @@ const activeMediaSrc = computed(() => {
 })
 
 function resolveMedia(media: MediaFile): string {
-  if (media.download_url) return media.download_url
-  if (media.file_path?.startsWith('http')) return media.file_path
-  if (media.file_path) return `${API_BASE_URL}${media.file_path}`
+  if (media.download_url) return resolveMediaUrl(media.download_url)
+  if (media.file_path) return resolveMediaUrl(media.file_path)
   return ''
 }
 
 function resolveThumb(media: MediaFile): string {
-  if (media.thumbnail_path?.startsWith('http')) return media.thumbnail_path
-  if (media.thumbnail_path) return `${API_BASE_URL}${media.thumbnail_path}`
+  if (media.thumbnail_path) return resolveMediaUrl(media.thumbnail_path)
   return resolveMedia(media)
 }
 
