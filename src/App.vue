@@ -5,8 +5,8 @@ import { useAuthStore } from '@/stores/auth'
 import { useThemeStore } from '@/stores/theme'
 import { useSettingsStore } from '@/stores/settings'
 import { storeToRefs } from 'pinia'
-import ErrorBoundary from '@/components/ErrorBoundary.vue'
-import Toast from '@/components/ui/Toast.vue'
+import ErrorBoundary from '@/components/feedback/ErrorBoundary.vue'
+import Toast from '@/components/feedback/Toast.vue'
 // 导入无障碍功能
 import { useKeyboardNavigation } from '@/composables/useAccessibility'
 

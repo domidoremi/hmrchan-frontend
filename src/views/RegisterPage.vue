@@ -143,8 +143,8 @@ import {
   ArrowLeft,
 } from 'lucide-vue-next'
 
-import GlassInput from '@/components/ui/GlassInput.vue'
-import GlassButton from '@/components/ui/GlassButton.vue'
+import GlassInput from '@/components/form/Input.vue'
+import GlassButton from '@/components/base/Button.vue'
 
 import { useAuthStore } from '@/stores/auth'
 import { useErrorHandler } from '@/utils/errorHandler'
@@ -231,12 +231,12 @@ async function handleRegister() {
     const axiosError = err as { response?: { status: number; data?: { detail?: string; message?: string } }; request?: any; message?: string }
     // 清除成功消息
     success.value = ''
-    
+
     // 详细的错误处理
     if (axiosError.response) {
       const status = axiosError.response.status
       const detail = axiosError.response.data?.detail || axiosError.response.data?.message
-      
+
       switch (status) {
         case 409:
           // 冲突错误 - 用户名或邮箱已存在
@@ -251,19 +251,19 @@ async function handleRegister() {
             toastStore.error(error.value)
           }
           break
-          
+
         case 400:
           // 请求参数错误
           error.value = detail || t('auth.invalidInput', '输入信息有误，请检查后重试')
           toastStore.error(error.value)
           break
-          
+
         case 422:
           // 验证错误
           error.value = detail || t('auth.validationFailed', '数据验证失败，请检查输入')
           toastStore.error(error.value)
           break
-          
+
         case 500:
         case 502:
         case 503:
@@ -271,7 +271,7 @@ async function handleRegister() {
           error.value = t('auth.serverError', '服务器暂时无法处理请求，请稍后再试')
           toastStore.error(error.value)
           break
-          
+
         default:
           error.value = detail || authStore.error || t('auth.registrationFailed')
           toastStore.error(error.value)
@@ -285,7 +285,7 @@ async function handleRegister() {
       error.value = axiosError.message || t('auth.registrationFailed')
       toastStore.error(error.value)
     }
-    
+
     // 记录错误供调试
     handleError(axiosError, { customMessage: error.value })
   } finally {

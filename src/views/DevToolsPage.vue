@@ -10,6 +10,89 @@
         <p>Toast测试 & 错误监控面板</p>
       </div>
 
+      <!-- Input Component Showcase -->
+      <section class="tool-section glass-card">
+        <h2>
+          <Type :size="24" />
+          Input Component Showcase
+        </h2>
+        <p style="margin-bottom: var(--spacing-4); color: var(--color-text-secondary)">
+          Enhanced Input component with label, error, hint, clearable, and character count features
+        </p>
+
+        <div class="input-showcase-grid">
+          <div class="showcase-item">
+            <h3>Basic Input with Label</h3>
+            <GlassInput v-model="inputDemos.basic" label="Username" placeholder="Enter your username" :icon="User"
+              clearable />
+          </div>
+
+          <div class="showcase-item">
+            <h3>Input with Error</h3>
+            <GlassInput v-model="inputDemos.withError" label="Email Address" type="email" placeholder="your@email.com"
+              :icon="Mail" error="Please enter a valid email address" required />
+          </div>
+
+          <div class="showcase-item">
+            <h3>Input with Hint</h3>
+            <GlassInput v-model="inputDemos.withHint" label="Password" type="password" placeholder="Enter password"
+              :icon="Lock" hint="Password must be at least 8 characters" clearable />
+          </div>
+
+          <div class="showcase-item">
+            <h3>Input with Character Count</h3>
+            <GlassInput v-model="inputDemos.withCount" label="Bio" placeholder="Tell us about yourself" :maxLength="100"
+              :showCount="true" clearable />
+          </div>
+
+          <div class="showcase-item">
+            <h3>Number Input</h3>
+            <GlassInput v-model="inputDemos.number" type="number" label="Age" placeholder="Enter your age" :icon="Hash"
+              clearable />
+          </div>
+
+          <div class="showcase-item">
+            <h3>Tel Input</h3>
+            <GlassInput v-model="inputDemos.tel" type="tel" label="Phone Number" placeholder="+1 (555) 000-0000"
+              :icon="Phone" clearable />
+          </div>
+
+          <div class="showcase-item">
+            <h3>URL Input</h3>
+            <GlassInput v-model="inputDemos.url" type="url" label="Website" placeholder="https://example.com"
+              :icon="Globe" hint="Enter a valid URL starting with http:// or https://" clearable />
+          </div>
+
+          <div class="showcase-item">
+            <h3>Disabled Input</h3>
+            <GlassInput v-model="inputDemos.disabled" label="Disabled Field" placeholder="This field is disabled"
+              :disabled="true" />
+          </div>
+
+          <div class="showcase-item">
+            <h3>Readonly Input</h3>
+            <GlassInput v-model="inputDemos.readonly" label="Readonly Field" placeholder="This field is readonly"
+              :readonly="true" />
+          </div>
+
+          <div class="showcase-item">
+            <h3>Input with Prefix</h3>
+            <GlassInput v-model="inputDemos.withPrefix" label="Price" placeholder="0.00" prefix="$" clearable />
+          </div>
+
+          <div class="showcase-item">
+            <h3>Input with Suffix</h3>
+            <GlassInput v-model="inputDemos.withSuffix" label="Weight" placeholder="0" suffix="kg" clearable />
+          </div>
+
+          <div class="showcase-item">
+            <h3>Search Input</h3>
+            <GlassInput v-model="inputDemos.search" type="search" label="Search" placeholder="Search..." :icon="Search"
+              clearable />
+          </div>
+        </div>
+      </section>
+
       <!-- Toast测试区域 -->
       <section class="tool-section glass-card">
         <h2>
@@ -230,9 +313,18 @@ import {
   Bug,
   ShieldAlert,
   Ban,
+  Type,
+  User,
+  Mail,
+  Lock,
+  Hash,
+  Phone,
+  Globe,
+  Search,
 } from 'lucide-vue-next'
 
 import MainLayout from '@/components/layout/MainLayout.vue'
+import GlassInput from '@/components/form/Input.vue'
 import { useToastStore } from '@/stores/toast'
 import { errorMonitor } from '@/utils/errorMonitor'
 import { useErrorHandler } from '@/utils/errorHandler'
@@ -240,6 +332,22 @@ import { useErrorHandler } from '@/utils/errorHandler'
 const router = useRouter()
 const toastStore = useToastStore()
 const { handleError } = useErrorHandler('DevTools')
+
+// Input component demo data
+const inputDemos = ref({
+  basic: '',
+  withError: 'invalid-email',
+  withHint: '',
+  withCount: '',
+  number: 0,
+  tel: '',
+  url: '',
+  disabled: 'This is disabled',
+  readonly: 'This is readonly',
+  withPrefix: '',
+  withSuffix: '',
+  search: '',
+})
 
 const stats = ref({
   total: 0,
@@ -457,6 +565,20 @@ onMounted(() => {
   font-weight: var(--font-semibold);
   margin-bottom: var(--spacing-4);
   color: var(--color-text-primary);
+}
+
+.input-showcase-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--spacing-6);
+  margin-top: var(--spacing-4);
+}
+
+.showcase-item h3 {
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--spacing-3);
 }
 
 .toast-test-grid {
