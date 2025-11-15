@@ -382,6 +382,12 @@
     "resetConfirm": "确定要恢复默认设置吗？",
     "resetSuccess": "设置已恢复"
   },
+  "offline": {
+    "usingCache": "当前显示的是本地缓存数据，可能不是最新。",
+    "actionsQueued": "部分操作已加入离线队列，将在网络恢复后自动同步。",
+    "favoriteQueued": "已离线添加到收藏，稍后会自动与服务器同步。",
+    "unfavoriteQueued": "已离线取消收藏，稍后会自动与服务器同步。"
+  },
   "privacy": {
     "title": "隐私政策",
     "lastUpdated": "最后更新",

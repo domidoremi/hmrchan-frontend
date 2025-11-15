@@ -177,6 +177,10 @@
           </RouterLink>
         </div>
 
+        <p v-if="lastListFromFallback" class="offline-hint">
+          {{ $t('offline.usingCache') }}
+        </p>
+
         <!-- Access Limit Banner -->
         <AccessLimitBanner :current-count="posts.length" :total-limit="accessLimit" />
 
@@ -252,7 +256,7 @@ const settingsStore = useSettingsStore()
 const postsStore = usePostsStore()
 
 const { isAuthenticated, user } = storeToRefs(authStore)
-const { posts, loading } = storeToRefs(postsStore)
+const { posts, loading, lastListFromFallback } = storeToRefs(postsStore)
 
 // 访问限制
 const accessLimit = computed(() => {
@@ -731,6 +735,15 @@ const getPlatformIcon = (platform: string) => {
   text-align: center;
   padding: var(--spacing-xl);
   color: var(--color-text-tertiary);
+  font-size: var(--text-sm);
+}
+
+.offline-hint {
+  margin-bottom: var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-md);
+  background: rgba(59, 130, 246, 0.08);
+  color: var(--color-text-secondary);
   font-size: var(--text-sm);
 }
 

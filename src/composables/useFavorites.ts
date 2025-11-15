@@ -18,6 +18,7 @@ export function useFavorites() {
   const favoritePosts = ref<Post[]>([])
   const loading = ref(false)
   const error = ref<string | null>(null)
+  const fromFallback = ref(false)
 
   const pagination = ref({
     page: 1,
@@ -38,7 +39,7 @@ export function useFavorites() {
     error.value = null
 
     try {
-      const { data, fromFallback } = await fetchWithFallback<{
+      const { data, fromFallback: fallbackUsed } = await fetchWithFallback<{
         items: Favorite[]
         page: number
         page_size: number
@@ -117,6 +118,7 @@ export function useFavorites() {
       })
 
       favorites.value = data.items
+      fromFallback.value = fallbackUsed
       pagination.value = {
         page: data.page,
         page_size: data.page_size,
@@ -127,7 +129,7 @@ export function useFavorites() {
       // 获取所有收藏帖子的完整信息
       const postIds = data.items.map((fav) => fav.post_id)
       if (postIds.length > 0) {
-        if (!fromFallback) {
+        if (!fallbackUsed) {
           // 在线且主请求成功：照常通过 API 获取帖子详情
           try {
             const posts = await Promise.all(
@@ -175,6 +177,7 @@ export function useFavorites() {
       return data
     } catch (err: unknown) {
       error.value = err instanceof Error ? err.message : 'Failed to fetch favorites'
+      fromFallback.value = false
       throw err
     } finally {
       loading.value = false
@@ -287,6 +290,7 @@ export function useFavorites() {
     loading,
     error,
     pagination,
+    fromFallback,
 
     // 方法
     fetchFavorites,

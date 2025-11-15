@@ -25,6 +25,10 @@
           </button>
         </div>
 
+        <div v-if="isOfflineDetail" class="offline-hint">
+          {{ $t('offline.usingCache') }}
+        </div>
+
         <div :class="['detail-grid', { 'single-column': isTabletOrBelow }]">
           <section :class="['media-column', { 'compact-media': isMobileViewport }]">
             <div class="media-hero glass-card" :class="{
@@ -498,6 +502,8 @@ import { usePostsStore } from '@/stores/posts'
 import { useAuthStore } from '@/stores/auth'
 import { api } from '@/api/client'
 import { favoritesApi, mediaApi } from '@/api/services'
+import { indexedDB } from '@/utils/indexedDB'
+import { offlineQueue } from '@/utils/offlineQueue'
 import type { PostDetail, Post, UUID, PostListParams, PaginatedResponse } from '@/types'
 import { PLATFORM_NAMES, PLATFORM_COLORS } from '@/types'
 import { useToastStore } from '@/stores/toast'
@@ -531,6 +537,8 @@ const isTabletViewport = ref(false)
 const isMobileViewport = ref(false)
 
 const isTabletOrBelow = computed(() => isTabletViewport.value || isMobileViewport.value)
+
+const isOfflineDetail = computed(() => postsStore.lastDetailFromFallback)
 
 interface StatEntry {
   key: string
@@ -811,17 +819,56 @@ const toggleFavorite = async () => {
 
   favoriteLoading.value = true
   try {
-    if (isFavorited.value && favoriteId.value) {
-      // 删除收藏
-      await favoritesApi.deleteFavorite(favoriteId.value)
+    const postId = post.value.id
+    const userId = authStore.user?.id
+
+    const updateLocalFavorite = async (favorited: boolean) => {
+      if (!userId) return
+      try {
+        if (favorited) {
+          await indexedDB.addFavorite({
+            user_id: userId,
+            post_id: postId,
+            created_at: Date.now(),
+          })
+        } else {
+          await indexedDB.removeFavorite(userId, postId)
+        }
+      } catch (e) {
+        console.error('[PostDetailPage] Failed to update local favorite in IndexedDB:', e)
+      }
+    }
+
+    if (!navigator.onLine) {
+      // 离线模式：使用离线队列并乐观更新UI
+      if (isFavorited.value) {
+        await offlineQueue.addAction('unfavorite', { post_id: postId })
+        isFavorited.value = false
+        favoriteId.value = null
+        await updateLocalFavorite(false)
+        toastStore.info(t('offline.unfavoriteQueued'))
+      } else {
+        await offlineQueue.addAction('favorite', { post_id: postId })
+        isFavorited.value = true
+        // favoriteId 将在同步后由服务端生成
+        await updateLocalFavorite(true)
+        toastStore.info(t('offline.favoriteQueued'))
+      }
+      return
+    }
+
+    // 在线模式：直接调用API并保持本地状态同步
+    if (isFavorited.value) {
+      await favoritesApi.deleteFavorite(postId)
       isFavorited.value = false
       favoriteId.value = null
+      await updateLocalFavorite(false)
       toastStore.success(t('favorite.removeSuccess'))
     } else {
-      // 添加收藏
-      const favorite = await favoritesApi.addFavorite({ post_id: post.value.id })
+      const favorite = await favoritesApi.addFavorite({ post_id: postId })
       isFavorited.value = true
       favoriteId.value = favorite.id
+      await updateLocalFavorite(true)
       toastStore.success(t('favorite.addSuccess'))
     }
   } catch (error) {
@@ -1290,6 +1337,15 @@ onUnmounted(() => {
 /* Hover效果 - 显示放大提示 */
 .post-thumbnail:hover .thumbnail-overlay {
   opacity: 1;
+}
+
+.offline-hint {
+  margin: 0 0 var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-md);
+  background: rgba(59, 130, 246, 0.08);
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
 }
 
 .thumbnail-overlay::after {
