@@ -23,7 +23,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { ImageIcon, SearchX, FileX, AlertCircle } from 'lucide-vue-next'
-import GlassButton from './GlassButton.vue'
+import GlassButton from '../base/Button.vue'
 
 defineOptions({
   name: 'UiEmptyState',

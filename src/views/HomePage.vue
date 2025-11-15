@@ -234,11 +234,11 @@ import {
 } from 'lucide-vue-next'
 
 import MainLayout from '@/components/layout/MainLayout.vue'
-import GlassButton from '@/components/ui/GlassButton.vue'
-import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
-import PostCard from '@/components/features/PostCard.vue'
-import AccessLimitBanner from '@/components/AccessLimitBanner.vue'
-import EmptyState from '@/components/ui/EmptyState.vue'
+import GlassButton from '@/components/base/Button.vue'
+import LoadingSpinner from '@/components/feedback/LoadingSpinner.vue'
+import PostCard from '@/components/business/PostCard.vue'
+import AccessLimitBanner from '@/components/feedback/AccessLimitBanner.vue'
+import EmptyState from '@/components/feedback/EmptyState.vue'
 
 import { useAuthStore } from '@/stores/auth'
 import { useSettingsStore } from '@/stores/settings'

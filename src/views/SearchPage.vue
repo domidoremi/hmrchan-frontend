@@ -102,9 +102,9 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import MainLayout from '@/components/layout/MainLayout.vue'
-import SearchBar from '@/components/features/SearchBar.vue'
-import PostCard from '@/components/features/PostCard.vue'
-import Pagination from '@/components/features/Pagination.vue'
+import SearchBar from '@/components/business/SearchBar.vue'
+import PostCard from '@/components/business/PostCard.vue'
+import Pagination from '@/components/business/Pagination.vue'
 
 import services from '@/api/services'
 import type { Post, AuthorListItem, PaginatedResponse } from '@/types'

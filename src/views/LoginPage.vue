@@ -11,45 +11,27 @@
 
         <!-- Login Form -->
         <form class="login-form" @submit.prevent="handleLogin">
-          <div class="form-group">
-            <label>{{ $t('auth.username') }}</label>
-            <GlassInput
-              v-model="formData.username"
-              type="text"
-              :placeholder="$t('auth.username')"
-              :icon="User"
-              :disabled="loading"
-              autocomplete="username"
-            />
-          </div>
+          <GlassInput v-model="formData.username" type="text" :label="$t('auth.username')"
+            :placeholder="$t('auth.username')" :icon="User" :disabled="loading"
+            :error="error && !formData.username ? $t('auth.fillAllFields') : ''" clearable autocomplete="username"
+            required />
 
-          <div class="form-group">
-            <label>{{ $t('auth.password') }}</label>
-            <GlassInput
-              v-model="formData.password"
-              :type="showPassword ? 'text' : 'password'"
-              :placeholder="$t('auth.password')"
-              :icon="Lock"
-              :disabled="loading"
-              autocomplete="current-password"
-              name="password"
-            >
-              <template #suffix>
-                <button
-                  type="button"
-                  class="password-toggle"
-                  @click="showPassword = !showPassword"
-                  :aria-label="showPassword ? $t('auth.hidePassword') : $t('auth.showPassword')"
-                >
-                  <Eye v-if="!showPassword" :size="18" />
-                  <EyeOff v-else :size="18" />
-                </button>
-              </template>
-            </GlassInput>
-          </div>
+          <GlassInput v-model="formData.password" :type="showPassword ? 'text' : 'password'"
+            :label="$t('auth.password')" :placeholder="$t('auth.password')" :icon="Lock" :disabled="loading"
+            :error="error && !formData.password ? $t('auth.fillAllFields') : ''"
+            :hint="$t('auth.passwordHint', 'Enter your password')" autocomplete="current-password" name="password"
+            required>
+            <template #suffix>
+              <button type="button" class="password-toggle" @click="showPassword = !showPassword"
+                :aria-label="showPassword ? $t('auth.hidePassword') : $t('auth.showPassword')">
+                <Eye v-if="!showPassword" :size="18" />
+                <EyeOff v-else :size="18" />
+              </button>
+            </template>
+          </GlassInput>
 
           <!-- Error Message -->
-          <div v-if="error" class="error-message">
+          <div v-if="error && formData.username && formData.password" class="error-message">
             <AlertCircle :size="16" />
             <span>{{ error }}</span>
           </div>
@@ -93,8 +75,8 @@ import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { User, Lock, Eye, EyeOff, AlertCircle, CheckCircle, ArrowLeft } from 'lucide-vue-next'
 
-import GlassInput from '@/components/ui/GlassInput.vue'
-import GlassButton from '@/components/ui/GlassButton.vue'
+import GlassInput from '@/components/form/Input.vue'
+import GlassButton from '@/components/base/Button.vue'
 
 import { useAuthStore } from '@/stores/auth'
 
@@ -136,7 +118,7 @@ const handleLogin = async () => {
   try {
     await authStore.login(formData.value)
     success.value = t('auth.loginSuccess', 'Login successful! Redirecting...')
-    
+
     // 等待一小段时间让用户看到成功提示
     setTimeout(async () => {
       // 登录成功后跳转到redirect参数指定的页面，或首页
@@ -147,40 +129,40 @@ const handleLogin = async () => {
     const axiosError = err as { response?: { status: number; data?: { detail?: string; message?: string } }; request?: any; message?: string }
     // 清除成功消息
     success.value = ''
-    
+
     // 详细的错误处理
     if (axiosError.response) {
       const status = axiosError.response.status
       const detail = axiosError.response.data?.detail || axiosError.response.data?.message
-      
+
       switch (status) {
         case 401:
           // 认证失败 - 用户名或密码错误
           error.value = t('auth.invalidCredentials', '用户名或密码错误')
           break
-          
+
         case 400:
           // 请求参数错误
           error.value = detail || t('auth.invalidInput', '输入信息有误')
           break
-          
+
         case 404:
           // 用户不存在
           error.value = t('auth.userNotFound', '用户不存在')
           break
-          
+
         case 429:
           // 请求过于频繁
           error.value = t('auth.tooManyAttempts', '登录尝试过于频繁，请稍后再试')
           break
-          
+
         case 500:
         case 502:
         case 503:
           // 服务器错误
           error.value = t('auth.serverError', '服务器暂时无法处理请求，请稍后再试')
           break
-          
+
         default:
           error.value = detail || t('auth.loginFailedMessage', '登录失败，请重试')
       }
@@ -202,7 +184,8 @@ const handleLogin = async () => {
   min-height: 100vh;
   display: flex;
   align-items: center;
-  padding-bottom: 0 !important; /* 覆盖底部导航栏的padding */
+  padding-bottom: 0 !important;
+  /* 覆盖底部导航栏的padding */
   justify-content: center;
   padding: var(--spacing-lg);
   position: relative;
@@ -259,18 +242,6 @@ const handleLogin = async () => {
   gap: var(--spacing-lg);
 }
 
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-xs);
-}
-
-.form-group label {
-  font-size: var(--text-sm);
-  font-weight: var(--font-medium);
-  color: var(--color-text-secondary);
-}
-
 .password-toggle {
   background: transparent;
   border: none;
@@ -318,6 +289,7 @@ const handleLogin = async () => {
     opacity: 0;
     transform: translateY(-10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -400,10 +372,12 @@ const handleLogin = async () => {
 }
 
 @keyframes float {
+
   0%,
   100% {
     transform: translateY(0) scale(1);
   }
+
   50% {
     transform: translateY(-20px) scale(1.1);
   }

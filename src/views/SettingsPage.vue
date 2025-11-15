@@ -210,7 +210,7 @@
                   <UserCog :size="18" />
                   {{ $t('settings.manageProfile') }}
                 </RouterLink>
-                
+
                 <button class="text-button danger" @click="handleLogout">
                   <LogOut :size="18" />
                   {{ $t('nav.logout') }}
@@ -269,8 +269,8 @@ import {
 } from 'lucide-vue-next'
 
 import MainLayout from '@/components/layout/MainLayout.vue'
-import GlassButton from '@/components/ui/GlassButton.vue'
-import CacheManagement from '@/components/settings/CacheManagement.vue'
+import GlassButton from '@/components/base/Button.vue'
+import CacheManagement from '@/components/business/CacheManagement.vue'
 
 import { useAuthStore } from '@/stores/auth'
 import { useThemeStore } from '@/stores/theme'
