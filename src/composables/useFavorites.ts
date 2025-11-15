@@ -47,10 +47,19 @@ export function useFavorites() {
       const postIds = response.items.map((fav) => fav.post_id)
       if (postIds.length > 0) {
         try {
-          // 批量获取帖子信息
-          const postsResponse = await postsApi.getPosts({ page: 1, page_size: postIds.length })
-          // 过滤出收藏的帖子
-          favoritePosts.value = postsResponse.items.filter((post) => postIds.includes(post.id))
+          const posts = await Promise.all(
+            postIds.map(async (id) => {
+              try {
+                const post = await postsApi.getPostById(id)
+                return post as Post
+              } catch (err) {
+                console.error('Failed to fetch favorite post detail:', id, err)
+                return null
+              }
+            }),
+          )
+
+          favoritePosts.value = posts.filter((p): p is Post => p !== null)
         } catch (err) {
           console.error('Failed to fetch favorite posts:', err)
           favoritePosts.value = []
@@ -113,13 +122,13 @@ export function useFavorites() {
     try {
       // 查找对应的收藏，获取post_id
       const favorite = favorites.value.find(
-        (f) => f.id === favoriteIdOrPostId || f.post_id === favoriteIdOrPostId
+        (f) => f.id === favoriteIdOrPostId || f.post_id === favoriteIdOrPostId,
       )
       const postId = favorite?.post_id || favoriteIdOrPostId
-      
+
       // API使用post_id删除
       await favoritesApi.deleteFavorite(postId)
-      
+
       // 从本地列表中移除
       favorites.value = favorites.value.filter((f) => f.post_id !== postId)
       toast.success(t('favorite.removeSuccess'))

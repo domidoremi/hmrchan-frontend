@@ -13,12 +13,12 @@
 
       <div v-else class="empty-state glass-card">
         <Heart :size="64" />
-        <h3>No favorites yet</h3>
-        <p>Start adding content to your favorites!</p>
+        <h3>{{ $t('favorite.emptyTitle') }}</h3>
+        <p>{{ $t('favorite.emptyDesc') }}</p>
         <RouterLink to="/explore">
           <GlassButton>
             <Compass :size="18" />
-            Explore Content
+            {{ $t('favorite.goExplore') }}
           </GlassButton>
         </RouterLink>
       </div>
