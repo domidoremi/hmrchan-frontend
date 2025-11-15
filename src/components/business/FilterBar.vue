@@ -83,7 +83,7 @@ import {
   Heart,
 } from 'lucide-vue-next'
 import type { PostListParams, Platform } from '@/types'
-import GlassButton from '@/components/ui/GlassButton.vue'
+import GlassButton from '@/components/base/Button.vue'
 
 // 防抖定时器
 let applyTimeout: ReturnType<typeof setTimeout> | null = null

@@ -198,9 +198,9 @@ import {
 } from 'lucide-vue-next'
 
 import MainLayout from '@/components/layout/MainLayout.vue'
-import PostCard from '@/components/features/PostCard.vue'
-import EmptyState from '@/components/ui/EmptyState.vue'
-import PostPreviewPanel from '@/components/features/PostPreviewPanel.vue'
+import PostCard from '@/components/business/PostCard.vue'
+import EmptyState from '@/components/feedback/EmptyState.vue'
+import PostPreviewPanel from '@/components/business/PostPreviewPanel.vue'
 
 import { usePostsStore } from '@/stores/posts'
 import { useSettingsStore } from '@/stores/settings'

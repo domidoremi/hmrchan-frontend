@@ -101,7 +101,7 @@ import { Database, Zap, HardDrive, Archive, Trash2, AlertTriangle } from 'lucide
 import { hybridCache } from '@/utils/hybridCache'
 import { storage } from '@/utils/storageManager'
 import { useToastStore } from '@/stores/toast'
-import GlassButton from '@/components/ui/GlassButton.vue'
+import GlassButton from '@/components/base/Button.vue'
 
 const toastStore = useToastStore()
 const clearing = ref(false)
@@ -203,7 +203,7 @@ async function clearAllCaches() {
     // 通知 Service Worker 清空缓存
     if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
       const channel = new MessageChannel()
-      
+
       channel.port1.onmessage = (event) => {
         if (event.data.success) {
           toastStore.success('所有缓存已清空')
