@@ -43,7 +43,7 @@ onUnmounted(() => {
 <style scoped>
 .back-to-top {
   position: fixed;
-  bottom: 40px;
+  bottom: 110px;
   right: 40px;
   width: 56px;
   height: 56px;
@@ -89,7 +89,7 @@ onUnmounted(() => {
 /* Samsung Galaxy S20 Ultra 和类似设备 */
 @media (max-width: 768px) {
   .back-to-top {
-    bottom: 100px; /* 增加到100px，避免被底部导航遮挡 */
+    bottom: 150px; /* 增加偏移，避免与辅助气泡重叠 */
     right: 20px;
     width: 48px;
     height: 48px;
@@ -103,7 +103,7 @@ onUnmounted(() => {
 
 @media (max-width: 480px) {
   .back-to-top {
-    bottom: 90px; /* 小屏幕也增加 */
+    bottom: 140px; /* 小屏幕保持更高位置 */
     right: 16px;
     width: 44px;
     height: 44px;

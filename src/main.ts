@@ -21,7 +21,6 @@ import logger from './utils/logger'
 // 导入缓存系统
 import { swManager } from './utils/serviceWorkerManager'
 import { indexedDB } from './utils/indexedDB'
-import { offlineQueue } from './utils/offlineQueue'
 
 // 导入Store（用于初始化）
 import { useThemeStore } from './stores/theme'
@@ -46,8 +45,7 @@ app.directive('lazy', lazyLoad)
 app.config.errorHandler = (err, instance, info) => {
   // 过滤Cloudflare Insights CORS错误（常见的部署环境错误）
   const errorMessage = (err as Error)?.message || ''
-  if (errorMessage.includes('cloudflareinsights.com') || 
-      errorMessage.includes('cdn-cgi/rum')) {
+  if (errorMessage.includes('cloudflareinsights.com') || errorMessage.includes('cdn-cgi/rum')) {
     // 静默忽略Cloudflare RUM的CORS错误
     return
   }
@@ -135,15 +133,17 @@ if (import.meta.env.DEV) {
 window.addEventListener('unhandledrejection', (event) => {
   const error = event.reason
   const errorMessage = error?.message || String(error)
-  
+
   // 过滤Cloudflare Insights CORS错误
-  if (errorMessage.includes('cloudflareinsights.com') || 
-      errorMessage.includes('cdn-cgi/rum') ||
-      errorMessage.includes('ERR_BLOCKED_BY_CLIENT')) {
+  if (
+    errorMessage.includes('cloudflareinsights.com') ||
+    errorMessage.includes('cdn-cgi/rum') ||
+    errorMessage.includes('ERR_BLOCKED_BY_CLIENT')
+  ) {
     event.preventDefault()
     return
   }
-  
+
   // 其他错误正常处理
   if (import.meta.env.DEV) {
     console.error('[Unhandled Promise Rejection]:', error)
@@ -164,11 +164,14 @@ settingsStore.initSettings()
 // ============================================
 
 // 1. 初始化IndexedDB
-indexedDB.init().then(() => {
-  logger.log('[Cache] IndexedDB initialized')
-}).catch((error) => {
-  logger.criticalError('[Cache] IndexedDB init failed:', error)
-})
+indexedDB
+  .init()
+  .then(() => {
+    logger.log('[Cache] IndexedDB initialized')
+  })
+  .catch((error) => {
+    logger.criticalError('[Cache] IndexedDB init failed:', error)
+  })
 
 // 2. 注册Service Worker（仅生产环境）
 if (!import.meta.env.DEV) {
@@ -177,7 +180,7 @@ if (!import.meta.env.DEV) {
     .then((registration) => {
       if (registration) {
         logger.log('[Cache] Service Worker registered')
-        
+
         // 监听SW更新
         window.addEventListener('sw-update-available', () => {
           logger.log('[Cache] New version available')
@@ -191,20 +194,19 @@ if (!import.meta.env.DEV) {
 }
 
 // 3. 设置离线队列
-import('./api/client').then(({ default: apiClient }) => {
-  offlineQueue.setApiClient(apiClient)
-  logger.log('[Cache] Offline queue configured')
-})
 
 // 4. 定期清理旧数据（每24小时）
 if (typeof window !== 'undefined') {
-  setInterval(() => {
-    indexedDB.clearOldPosts(7).then((count) => {
-      logger.log(`[Cache] Cleared ${count} old posts`)
-    })
-    
-    if (!import.meta.env.DEV) {
-      swManager.clearOldMedia()
-    }
-  }, 24 * 60 * 60 * 1000)
+  setInterval(
+    () => {
+      indexedDB.clearOldPosts(7).then((count) => {
+        logger.log(`[Cache] Cleared ${count} old posts`)
+      })
+
+      if (!import.meta.env.DEV) {
+        swManager.clearOldMedia()
+      }
+    },
+    24 * 60 * 60 * 1000,
+  )
 }

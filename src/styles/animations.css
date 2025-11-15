@@ -145,6 +145,10 @@ body::before {
   animation: liquidGlow 12s var(--ease-smooth) infinite;
 }
 
+[data-animations='off'] body::before {
+  animation: none !important;
+}
+
 /* ========== Ripple & Wave Effects ========== */
 
 @keyframes ripple {

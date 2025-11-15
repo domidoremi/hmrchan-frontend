@@ -18,7 +18,7 @@ export interface PaginatedResponse<T> {
   total: number
   page: number
   page_size: number
-  pages: number  // 根据API文档，使用pages而非total_pages
+  pages: number // 根据API文档，使用pages而非total_pages
 }
 
 export interface MessageResponse {
@@ -29,7 +29,7 @@ export interface MessageResponse {
 // ========== 用户和认证 ==========
 
 export interface User {
-  id: UUID  // v2.0: 改用UUID
+  id: UUID // v2.0: 改用UUID
   username: string
   email: string
   full_name: string | null
@@ -57,7 +57,7 @@ export interface LoginResponse {
 // ========== 内容 ==========
 
 export interface Post {
-  id: UUID  // v2.0: 改用UUID
+  id: UUID // v2.0: 改用UUID
   platform: string
   platform_post_id: string
   title: string | null
@@ -66,13 +66,13 @@ export interface Post {
   thumbnail_url: string | null
 
   // Author info (发布者 - user字段)
-  author_id: UUID | null  // v2.0: 改用UUID
+  author_id: UUID | null // v2.0: 改用UUID
   author_name: string | null
   author_username: string | null
   author_avatar_url?: string | null
 
   // Original Author info (原作者 - author字段，Twitter转发/引用时)
-  original_author_id?: UUID | null  // v2.0: 改用UUID
+  original_author_id?: UUID | null // v2.0: 改用UUID
   original_author_name?: string | null
   original_author_username?: string | null
   original_author_avatar_url?: string | null
@@ -99,7 +99,7 @@ export interface PostListParams {
   page_size?: number
   q?: string
   platform?: string
-  author_id?: UUID  // v2.0: 改用UUID
+  author_id?: UUID // v2.0: 改用UUID
   has_media?: boolean
   published_after?: string
   published_before?: string
@@ -112,8 +112,8 @@ export interface PostListParams {
 // ========== 媒体 ==========
 
 export interface MediaFile {
-  id: UUID  // v2.0: 改用UUID
-  post_id: UUID  // v2.0: 改用UUID
+  id: UUID // v2.0: 改用UUID
+  post_id: UUID // v2.0: 改用UUID
   file_path: string
   file_type: 'image' | 'video' | 'audio'
   file_size: number
@@ -139,7 +139,7 @@ export interface MediaFile {
 // ========== 作者 ==========
 
 export interface Author {
-  id: UUID  // v2.0: 改用UUID
+  id: UUID // v2.0: 改用UUID
   platform: string
   platform_user_id: string
   name: string
@@ -155,7 +155,7 @@ export interface Author {
 }
 
 export interface AuthorListItem {
-  id: UUID  // v2.0: 改用UUID
+  id: UUID // v2.0: 改用UUID
   platform: string
   platform_user_id: string
   name: string
@@ -172,12 +172,30 @@ export interface AuthorListItem {
   updated_at: string
 }
 
+// ========== 搜索 ==========
+
+export type SearchSuggestionType = 'post' | 'author'
+
+export interface SearchSuggestion {
+  type: SearchSuggestionType
+  id: UUID
+  label: string
+  subtitle?: string
+  thumbnail_url?: string | null
+  platform?: string | null
+}
+
+export interface SearchSuggestionResponse {
+  query: string
+  results: SearchSuggestion[]
+}
+
 // ========== 收藏 ==========
 
 export interface Favorite {
-  id: UUID  // v2.0: 改用UUID
-  user_id: UUID  // v2.0: 改用UUID
-  post_id: UUID  // v2.0: 改用UUID
+  id: UUID // v2.0: 改用UUID
+  user_id: UUID // v2.0: 改用UUID
+  post_id: UUID // v2.0: 改用UUID
   folder_name: string | null
   tags_array: string[]
   notes: string | null
@@ -189,7 +207,7 @@ export interface Favorite {
 }
 
 export interface FavoriteCreate {
-  post_id: UUID  // v2.0: 改用UUID
+  post_id: UUID // v2.0: 改用UUID
   folder_name?: string
   tags?: string[]
   notes?: string

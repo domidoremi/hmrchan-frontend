@@ -4,6 +4,7 @@
  */
 import { api } from './client'
 import { getRuntimeApiEndpoint } from '@/config/runtime'
+import { indexedDB } from '@/utils/indexedDB'
 import type {
   LoginRequest,
   LoginResponse,
@@ -20,6 +21,7 @@ import type {
   MediaFile,
   PostStats,
   UUID,
+  SearchSuggestionResponse,
 } from '@/types'
 
 // ========== 认证API ==========
@@ -59,6 +61,61 @@ export const authApi = {
   },
 }
 
+// ========== 搜索API ==========
+
+export const searchApi = {
+  /**
+   * 搜索帖子
+   * GET /search/posts?q=keyword
+   */
+  searchPosts(query: string, params?: Omit<PostListParams, 'q'>) {
+    return api.get<PaginatedResponse<Post>>('/search/posts', {
+      params: { ...params, q: query },
+    })
+  },
+
+  /**
+   * 搜索作者
+   * GET /search/authors?q=keyword
+   */
+  searchAuthors(
+    query: string,
+    params?: {
+      platform?: string
+      is_verified?: boolean
+      min_followers?: number
+      page?: number
+      page_size?: number
+    },
+  ) {
+    return api.get<PaginatedResponse<AuthorListItem>>('/search/authors', {
+      params: { ...params, q: query },
+    })
+  },
+
+  /**
+   * 搜索联想建议
+   * GET /search/suggestions?q=keyword
+   */
+  fetchSuggestions(
+    query: string,
+    params?: {
+      type?: 'post' | 'author' | 'all'
+      platform?: string
+      limit?: number
+    },
+  ) {
+    return api.get<SearchSuggestionResponse>('/search/suggestions', {
+      params: {
+        type: 'all',
+        limit: 10,
+        ...params,
+        q: query,
+      },
+    })
+  },
+}
+
 // ========== 内容API ==========
 
 export const postsApi = {
@@ -67,16 +124,34 @@ export const postsApi = {
    * GET /posts/
    * Note: Trailing slash added to avoid 307 redirect to HTTP
    */
-  getPosts(params?: PostListParams) {
-    return api.get<PaginatedResponse<Post>>('/posts/', { params })
+  async getPosts(params?: PostListParams) {
+    const response = await api.get<PaginatedResponse<Post>>('/posts/', { params })
+
+    // 将帖子列表持久化到 IndexedDB（忽略错误，避免影响正常请求）
+    try {
+      await indexedDB.savePosts(response.items)
+    } catch (error) {
+      console.error('[IndexedDB] Failed to save posts list:', error)
+    }
+
+    return response
   },
 
   /**
    * 获取单个内容详情
    * GET /posts/{post_id}
    */
-  getPostById(postId: UUID) {
-    return api.get<PostDetail>(`/posts/${postId}`)
+  async getPostById(postId: UUID) {
+    const detail = await api.get<PostDetail>(`/posts/${postId}`)
+
+    // 将详情也写入 IndexedDB，便于后续作为列表/离线回退使用
+    try {
+      await indexedDB.savePosts([detail])
+    } catch (error) {
+      console.error('[IndexedDB] Failed to save post detail:', error)
+    }
+
+    return detail
   },
 
   /**
@@ -261,9 +336,7 @@ export const favoritesApi = {
    * 检查内容是否已收藏
    * GET /favorites/check/{post_id}
    */
-  async checkFavorite(
-    postId: UUID,
-  ): Promise<{ is_favorited: boolean; favorite_id: UUID | null }> {
+  async checkFavorite(postId: UUID): Promise<{ is_favorited: boolean; favorite_id: UUID | null }> {
     return api.get<{ is_favorited: boolean; favorite_id: UUID | null }>(
       `/favorites/check/${postId}`,
       { cache: false }, // 不缓存收藏状态，确保实时性
@@ -352,6 +425,7 @@ export const services = {
   favorites: favoritesApi,
   stats: statsApi,
   upload: uploadApi,
+  search: searchApi,
 }
 
 export default services
