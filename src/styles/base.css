@@ -63,6 +63,8 @@ body::before {
   inset: 0;
   background: var(--gradient-mesh);
   opacity: 0.4;
+  background-size: 160% 160%;
+  animation: gradientShift 40s var(--ease-smooth) infinite;
   z-index: -1;
   pointer-events: none;
 }
@@ -72,7 +74,31 @@ body::before {
 }
 
 [data-theme='dark'] body::before {
-  opacity: 0.15; /* 降低网格透明度，让背景更暗 */
+  opacity: 0.28; /* 提升暗色模式下渐变存在感，但保持内容对比度 */
+}
+
+@keyframes gradientShift {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+
+  50% {
+    transform: translate3d(-4%, -3%, 0) scale(1.03);
+  }
+
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body::before {
+    animation: none;
+  }
+}
+
+[data-animations='off'] body::before {
+  animation: none !important;
 }
 
 /* ========== 排版 ========== */
