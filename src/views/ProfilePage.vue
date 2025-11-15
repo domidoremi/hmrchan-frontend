@@ -292,9 +292,9 @@ import {
 } from 'lucide-vue-next'
 
 import MainLayout from '@/components/layout/MainLayout.vue'
-import GlassButton from '@/components/ui/GlassButton.vue'
-import GlassInput from '@/components/ui/GlassInput.vue'
-import GlassModal from '@/components/ui/GlassModal.vue'
+import GlassButton from '@/components/base/Button.vue'
+import GlassInput from '@/components/form/Input.vue'
+import GlassModal from '@/components/feedback/Modal.vue'
 
 import { useAuthStore } from '@/stores/auth'
 import { uploadApi } from '@/api/services'
@@ -498,14 +498,14 @@ async function handleAvatarUpload() {
     toastStore.success(t('profile.avatarUploadSuccess'))
   } catch (error: any) {
     console.error('❌ Avatar upload error:', error)
-    
+
     let errorMsg = t('profile.avatarUploadFailed')
-    
+
     // 处理不同类型的错误
     if (error.response) {
       // 服务器返回了响应
       const status = error.response.status
-      
+
       if (status === 500) {
         errorMsg = t('profile.serverError') || '服务器内部错误，请稍后重试或联系管理员'
       } else if (status === 413) {
@@ -519,7 +519,7 @@ async function handleAvatarUpload() {
       // 网络错误（包括CORS）
       errorMsg = t('profile.networkError') || '网络连接失败，请检查网络或稍后重试'
     }
-    
+
     toastStore.error(errorMsg)
     handleError(error, { customMessage: errorMsg })
   } finally {

@@ -495,8 +495,8 @@ import {
 import dayjs from 'dayjs'
 
 import MainLayout from '@/components/layout/MainLayout.vue'
-import GlassButton from '@/components/ui/GlassButton.vue'
-const MediaViewer = defineAsyncComponent(() => import('@/components/ui/MediaViewerPlyr.vue'))
+import GlassButton from '@/components/base/Button.vue'
+const MediaViewer = defineAsyncComponent(() => import('@/components/data-display/MediaViewerPlyr.vue'))
 
 import { usePostsStore } from '@/stores/posts'
 import { useAuthStore } from '@/stores/auth'

@@ -33,7 +33,7 @@
 import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
 import AppNavbar from './AppNavbar.vue'
 import AppFooter from './AppFooter.vue'
-import BackToTop from '../ui/BackToTop.vue'
+import BackToTop from '../base/BackToTop.vue'
 import { useNetworkStore } from '@/stores/network'
 
 const props = withDefaults(
@@ -119,7 +119,8 @@ onBeforeUnmount(() => {
 /* Main content */
 .main-content {
   flex: 1;
-  padding-top: 88px; /* 导航栏高度 + 额外间距 */
+  padding-top: 88px;
+  /* 导航栏高度 + 额外间距 */
   padding-bottom: var(--spacing-12);
 
   /* Smooth scroll for anchor links */
@@ -140,8 +141,10 @@ onBeforeUnmount(() => {
 /* Responsive */
 @media (max-width: 768px) {
   .main-content {
-    padding-top: 76px; /* 移动端导航栏高度 */
-    padding-bottom: 90px; /* 底部导航栏高度 */
+    padding-top: 76px;
+    /* 移动端导航栏高度 */
+    padding-bottom: 90px;
+    /* 底部导航栏高度 */
   }
 }
 </style>
