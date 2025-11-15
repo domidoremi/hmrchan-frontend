@@ -176,7 +176,7 @@
 
           <RouterLink to="/settings" class="mobile-user-link" @click="showUserMenu = false">
             <Settings :size="20" />
-            <span>{{ $t('nav.settings') }}</span>
+            <span>{{ $t('nav.advancedSettings') }}</span>
           </RouterLink>
 
           <button class="mobile-user-link danger" @click="handleLogout">
