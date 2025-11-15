@@ -6,6 +6,8 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import type { Post, PostDetail, PostListParams, PaginatedResponse, Platform, UUID } from '@/types'
 import { api } from '@/api/client'
+import { indexedDB } from '@/utils/indexedDB'
+import { fetchWithFallback } from '@/utils/cacheHelper'
 
 export const usePostsStore = defineStore(
   'posts',
@@ -15,6 +17,10 @@ export const usePostsStore = defineStore(
     const currentPost = ref<PostDetail | null>(null)
     const loading = ref(false)
     const error = ref<string | null>(null)
+
+    // 离线状态标记：最近一次列表/详情请求是否使用了 IndexedDB 回退数据
+    const lastListFromFallback = ref(false)
+    const lastDetailFromFallback = ref(false)
 
     // 分页信息
     const pagination = ref({
@@ -41,10 +47,62 @@ export const usePostsStore = defineStore(
       }
       error.value = null
 
+      const mergedParams: PostListParams = {
+        ...filters.value,
+        ...apiParams,
+      }
+
       try {
-        const response = await api.get<PaginatedResponse<Post>>('/posts', {
-          params: { ...filters.value, ...apiParams },
+        const { data, fromFallback } = await fetchWithFallback<PaginatedResponse<Post>>({
+          primary: () =>
+            api.get<PaginatedResponse<Post>>('/posts/', {
+              params: mergedParams,
+            }),
+          fallback: async () => {
+            try {
+              const page = mergedParams.page ?? 1
+              const pageSize = mergedParams.page_size ?? 20
+              const offset = (page - 1) * pageSize
+              const limit = pageSize
+              const platform = mergedParams.platform
+
+              const cachedPosts = await indexedDB.getPosts({
+                platform,
+                limit,
+                offset,
+              })
+
+              if (!cachedPosts.length) {
+                return null
+              }
+
+              return {
+                items: cachedPosts,
+                page,
+                page_size: pageSize,
+                total: cachedPosts.length,
+                pages: 1,
+              }
+            } catch (fallbackError) {
+              console.error('[PostsStore] Failed to load posts from IndexedDB:', fallbackError)
+              return null
+            }
+          },
+          onSuccess: async (response) => {
+            if (!response.items || !response.items.length) return
+
+            try {
+              await indexedDB.savePosts(response.items)
+            } catch (persistError) {
+              console.error('[PostsStore] Failed to persist posts list to IndexedDB:', persistError)
+            }
+          },
         })
+
+        const response = data
+
+        // 标记此次列表数据是否来自本地回退
+        lastListFromFallback.value = !!fromFallback
 
         // 防御性检查：确保响应数据有效
         if (!response || !response.items) {
@@ -78,6 +136,9 @@ export const usePostsStore = defineStore(
         error.value = err instanceof Error ? err.message : 'API 请求失败'
         console.error('获取帖子列表失败:', err)
 
+        // 失败时视为非回退数据
+        lastListFromFallback.value = false
+
         // API 失败时，设置空数组防止 undefined 错误
         if (!append) {
           posts.value = []
@@ -92,19 +153,49 @@ export const usePostsStore = defineStore(
           pages: 0,
         }
       } finally {
-        loading.value = false
+        if (!append) {
+          loading.value = false
+        }
       }
     }
 
-    // 获取单个内容详情
+    // 获取单个内容详情（带 IndexedDB 回退）
     async function fetchPost(postId: UUID) {
       loading.value = true
       error.value = null
 
       try {
-        const response = await api.get<PostDetail>(`/posts/${postId}`)
-        currentPost.value = response
-        return response
+        const { data, fromFallback } = await fetchWithFallback<PostDetail>({
+          primary: () => api.get<PostDetail>(`/posts/${postId}`),
+          fallback: async () => {
+            // 从 IndexedDB 读取基础 Post 信息，构造一个最小可用的 PostDetail
+            try {
+              const cached = await indexedDB.getPost(postId)
+              if (!cached) return null
+              return {
+                ...cached,
+                media_files: [],
+                tags: [],
+              } as PostDetail
+            } catch {
+              return null
+            }
+          },
+          onSuccess: async (value) => {
+            try {
+              await indexedDB.savePosts([value])
+            } catch (persistError) {
+              console.error('[PostsStore] Failed to persist post to IndexedDB:', persistError)
+            }
+          },
+        })
+
+        currentPost.value = data
+
+        // 标记此次详情数据是否来自本地回退
+        lastDetailFromFallback.value = !!fromFallback
+
+        return data
       } catch (err: unknown) {
         error.value = err instanceof Error ? err.message : 'Unknown error'
         throw err
@@ -188,6 +279,8 @@ export const usePostsStore = defineStore(
       error,
       pagination,
       filters,
+      lastListFromFallback,
+      lastDetailFromFallback,
 
       // 方法
       fetchPosts,

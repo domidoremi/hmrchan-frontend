@@ -1,24 +1,12 @@
 <template>
   <RouterLink :to="`/posts/${post.id}`" custom v-slot="{ navigate, href }">
-    <article
-      ref="cardRef"
-      :href="href"
-      class="post-card"
-      :data-post-id="post.id"
-      @click="handleClick($event, navigate)"
-      @mouseenter="onHover"
-      @mouseleave="onLeave"
-    >
+    <article ref="cardRef" :href="href" class="post-card" :data-post-id="post.id" @click="handleClick($event, navigate)"
+      @mouseenter="onHover" @mouseleave="onLeave">
       <!-- 媒体容器 - 固定高度 -->
       <div ref="mediaRef" class="card-media">
         <div class="media-wrapper">
-          <OptimizedImage
-            v-if="post.thumbnail_url"
-            :src="thumbnailUrl"
-            :alt="post.title || 'Post thumbnail'"
-            :lazy="!isFirstScreen"
-            class="media-image"
-          />
+          <OptimizedImage v-if="post.thumbnail_url" :src="thumbnailUrl" :alt="post.title || 'Post thumbnail'"
+            :lazy="!isFirstScreen" class="media-image" />
           <div v-else class="media-placeholder">
             <ImageIcon :size="48" />
           </div>
@@ -107,7 +95,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger'
 
 import OptimizedImage from '@/components/ui/OptimizedImage.vue'
 import type { Post } from '@/types'
-import { API_BASE_URL } from '@/config/api'
+import { resolveMediaUrl } from '@/utils/url'
 
 // Register GSAP plugins
 gsap.registerPlugin(ScrollTrigger)
@@ -115,18 +103,21 @@ gsap.registerPlugin(ScrollTrigger)
 interface Props {
   post: Post
   isFirstScreen?: boolean
+  previewEnabled?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   isFirstScreen: false,
+  previewEnabled: false,
 })
+
+const emit = defineEmits<{
+  (e: 'open', postId: string): void
+}>()
 
 // 缩略图URL
 const thumbnailUrl = computed(() => {
-  const url = props.post.thumbnail_url
-  if (!url) return ''
-  if (url.startsWith('http')) return url
-  return `${API_BASE_URL}${url}`
+  return resolveMediaUrl(props.post.thumbnail_url)
 })
 
 // 平台颜色映射 - Material Design Colors
@@ -225,10 +216,18 @@ onMounted(() => {
 
 // 事件处理
 const handleClick = (event: MouseEvent, navigate: () => void) => {
-  if (!event.ctrlKey && !event.metaKey) {
-    event.preventDefault()
-    navigate()
+  if (event.ctrlKey || event.metaKey) {
+    return
   }
+
+  event.preventDefault()
+
+  if (props.previewEnabled) {
+    emit('open', props.post.id)
+    return
+  }
+
+  navigate()
 }
 
 const onHover = () => {
@@ -292,18 +291,18 @@ const onLeave = () => {
   overflow: hidden;
   cursor: pointer;
   text-decoration: none;
-  
+
   /* Material Design Elevation 2 */
-  box-shadow: 
+  box-shadow:
     0 3px 6px -2px rgba(0, 0, 0, 0.08),
     0 6px 12px -3px rgba(0, 0, 0, 0.12),
     0 0 0 1px rgba(139, 92, 246, 0.05);
-  
+
   /* Performance optimization */
   will-change: transform;
   transform: translateZ(0);
   backface-visibility: hidden;
-  
+
   /* Smooth transitions handled by GSAP */
   transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
@@ -311,7 +310,7 @@ const onLeave = () => {
 /* Hover State - Material Design Elevation 8 */
 .post-card:hover {
   border-color: rgba(139, 92, 246, 0.6);
-  box-shadow: 
+  box-shadow:
     0 16px 32px -8px rgba(139, 92, 246, 0.25),
     0 32px 64px -16px rgba(0, 0, 0, 0.18),
     0 0 0 1px rgba(139, 92, 246, 0.15);
@@ -339,12 +338,10 @@ const onLeave = () => {
   /* 瀑布流：不使用padding-bottom，让图片自然高度 */
   flex-shrink: 0;
   overflow: hidden;
-  background: linear-gradient(
-    135deg,
-    rgba(139, 92, 246, 0.06) 0%,
-    rgba(6, 182, 212, 0.06) 50%,
-    rgba(244, 114, 182, 0.06) 100%
-  );
+  background: linear-gradient(135deg,
+      rgba(139, 92, 246, 0.06) 0%,
+      rgba(6, 182, 212, 0.06) 50%,
+      rgba(244, 114, 182, 0.06) 100%);
 }
 
 .media-wrapper {
@@ -353,7 +350,7 @@ const onLeave = () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  
+
   /* 横向渐变模糊（媒体宽度不足时） */
   &::before,
   &::after {
@@ -366,23 +363,19 @@ const onLeave = () => {
     opacity: 0;
     transition: opacity 0.3s ease;
   }
-  
+
   &::before {
     left: 0;
-    background: linear-gradient(
-      to right,
-      rgba(139, 92, 246, 0.3) 0%,
-      transparent 100%
-    );
+    background: linear-gradient(to right,
+        rgba(139, 92, 246, 0.3) 0%,
+        transparent 100%);
   }
-  
+
   &::after {
     right: 0;
-    background: linear-gradient(
-      to left,
-      rgba(139, 92, 246, 0.3) 0%,
-      transparent 100%
-    );
+    background: linear-gradient(to left,
+        rgba(139, 92, 246, 0.3) 0%,
+        transparent 100%);
   }
 }
 
@@ -397,7 +390,8 @@ const onLeave = () => {
 .media-wrapper :deep(img) {
   width: 100%;
   height: auto;
-  max-height: 600px; /* 限制最大高度 */
+  max-height: 600px;
+  /* 限制最大高度 */
   object-fit: cover;
   display: block;
   transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -415,11 +409,9 @@ const onLeave = () => {
   left: 0;
   right: 0;
   height: 60%;
-  background: linear-gradient(
-    to top,
-    rgba(0, 0, 0, 0.4) 0%,
-    rgba(0, 0, 0, 0) 100%
-  );
+  background: linear-gradient(to top,
+      rgba(0, 0, 0, 0.4) 0%,
+      rgba(0, 0, 0, 0) 100%);
   pointer-events: none;
   opacity: 0;
   transition: opacity 0.3s ease;
@@ -509,8 +501,15 @@ const onLeave = () => {
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.8; }
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.8;
+  }
 }
 
 /* ========================================
@@ -521,7 +520,8 @@ const onLeave = () => {
   display: flex;
   flex-direction: column;
   flex: 1;
-  min-height: 0; /* Allow flex shrink */
+  min-height: 0;
+  /* Allow flex shrink */
   padding: 18px;
   gap: 10px;
   overflow: hidden;
@@ -647,9 +647,10 @@ const onLeave = () => {
   .card-content {
     padding: 14px;
   }
-  
+
   .media-wrapper :deep(img) {
-    max-height: 400px; /* 移动端降低最大高度 */
+    max-height: 400px;
+    /* 移动端降低最大高度 */
   }
 
   .card-title {
@@ -705,17 +706,15 @@ const onLeave = () => {
 
 [data-theme='light'] .post-card:hover {
   background: white;
-  box-shadow: 
+  box-shadow:
     0 12px 24px -6px rgba(139, 92, 246, 0.18),
     0 24px 48px -12px rgba(0, 0, 0, 0.12);
 }
 
 [data-theme='light'] .media-overlay {
-  background: linear-gradient(
-    to top,
-    rgba(0, 0, 0, 0.5) 0%,
-    rgba(0, 0, 0, 0) 100%
-  );
+  background: linear-gradient(to top,
+      rgba(0, 0, 0, 0.5) 0%,
+      rgba(0, 0, 0, 0) 100%);
 }
 
 [data-theme='light'] .author-avatar {

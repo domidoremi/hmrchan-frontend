@@ -10,6 +10,7 @@
     "authors": "作者",
     "profile": "个人中心",
     "settings": "设置",
+    "advancedSettings": "高级设置",
     "favorites": "收藏",
     "privacy": "隐私政策",
     "login": "登录",
@@ -131,7 +132,10 @@
     "removeFailed": "取消收藏失败",
     "updateSuccess": "收藏已更新",
     "updateFailed": "更新收藏失败",
-    "loginRequired": "请登录后添加收藏"
+    "loginRequired": "请登录后添加收藏",
+    "emptyTitle": "暂无收藏",
+    "emptyDesc": "还没有任何收藏内容，去发现一些喜欢的帖子吧！",
+    "goExplore": "去探索内容"
   },
   "settings": {
     "welcomeBack": "管理您的偏好设置和账户",
@@ -152,7 +156,10 @@
     "light": "浅色",
     "dark": "深色",
     "auto": "自动",
-    "toggleTheme": "切换主题"
+    "toggleTheme": "切换主题",
+    "toggleHeroSection": "切换首页横幅",
+    "toggleAnimations": "切换动效",
+    "toggleSwipeNavigation": "切换滑动导航"
   },
   "common": {
     "loading": "加载中...",
@@ -344,6 +351,8 @@
     "showHeroSectionDesc": "在首页顶部显示欢迎横幅和统计信息",
     "enableAnimations": "启用动画效果",
     "enableAnimationsDesc": "启用页面过渡和交互动画",
+    "enableSwipeNavigation": "启用滑动切换页面",
+    "enableSwipeNavigationDesc": "在移动端通过左右滑动在主页面之间切换",
     "postsPerPage": "每页帖子数量",
     "postsPerPageDesc": "设置每页显示的帖子数量",
     "media": "媒体设置",
@@ -372,6 +381,16 @@
     "importFailed": "导入失败",
     "resetConfirm": "确定要恢复默认设置吗？",
     "resetSuccess": "设置已恢复"
+  },
+  "offline": {
+    "usingCache": "当前显示的是本地缓存数据，可能不是最新。",
+    "actionsQueued": "部分操作已加入离线队列，将在网络恢复后自动同步。",
+    "favoriteQueued": "已离线添加到收藏，稍后会自动与服务器同步。",
+    "unfavoriteQueued": "已离线取消收藏，稍后会自动与服务器同步。",
+    "queueTitle": "离线队列",
+    "queueEmpty": "当前没有待同步的操作。",
+    "syncNow": "立即同步",
+    "offlineNow": "您当前处于离线状态，一些功能可能暂时不可用。"
   },
   "privacy": {
     "title": "隐私政策",

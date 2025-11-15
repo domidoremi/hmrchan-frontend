@@ -25,7 +25,7 @@ interface PreloadOptions {
  * 使用智能预加载
  */
 export function useSmartPreload(
-  posts: Ref<Array<{ id: number; thumbnail_url?: string | null }>>,
+  posts: Ref<Array<{ id: string | number; thumbnail_url?: string | null }>>,
   options: PreloadOptions = {},
 ) {
   const { rootMargin = '400px 0px', batchSize = 10, enabled = true } = options
@@ -47,8 +47,8 @@ export function useSmartPreload(
             const postId = card.dataset.postId
 
             if (postId) {
-              // 查找当前帖子的索引
-              const currentIndex = posts.value.findIndex((p) => p.id === parseInt(postId))
+              // 查找当前帖子的索引（兼容数字和字符串ID）
+              const currentIndex = posts.value.findIndex((p) => String(p.id) === postId)
 
               // 避免重复预加载
               if (currentIndex >= 0 && !preloadedIndices.has(currentIndex)) {

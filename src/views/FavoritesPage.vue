@@ -6,6 +6,9 @@
       <LoadingSpinner v-if="loading" size="lg" />
 
       <div v-else-if="favoritePosts.length > 0" class="favorites-list">
+        <p v-if="fromFallback" class="offline-hint">
+          {{ $t('offline.usingCache') }}
+        </p>
         <div ref="gridRef" class="favorites-grid">
           <PostCard v-for="post in favoritePosts" :key="post.id" :post="post" />
         </div>
@@ -13,12 +16,12 @@
 
       <div v-else class="empty-state glass-card">
         <Heart :size="64" />
-        <h3>No favorites yet</h3>
-        <p>Start adding content to your favorites!</p>
+        <h3>{{ $t('favorite.emptyTitle') }}</h3>
+        <p>{{ $t('favorite.emptyDesc') }}</p>
         <RouterLink to="/explore">
           <GlassButton>
             <Compass :size="18" />
-            Explore Content
+            {{ $t('favorite.goExplore') }}
           </GlassButton>
         </RouterLink>
       </div>
@@ -37,7 +40,7 @@ import GlassButton from '@/components/ui/GlassButton.vue'
 import { useFavorites } from '@/composables/useFavorites'
 import { useWaterfallLayout } from '@/composables/useWaterfallLayout'
 
-const { favoritePosts, loading, fetchFavorites } = useFavorites()
+const { favoritePosts, loading, fetchFavorites, fromFallback } = useFavorites()
 
 // 瀑布流布局
 const gridRef = ref<HTMLElement | null>(null)
@@ -105,6 +108,15 @@ watch(
   padding: var(--spacing-3xl);
   text-align: center;
   color: var(--color-text-tertiary);
+}
+
+.offline-hint {
+  margin-bottom: var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-md);
+  background: rgba(59, 130, 246, 0.08);
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
 }
 
 /* 所有屏幕尺寸都使用 JS 瀑布流（包括移动端） */

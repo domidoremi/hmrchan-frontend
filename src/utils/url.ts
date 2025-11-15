@@ -8,17 +8,17 @@
  */
 function forceHttps(url: string): string {
   if (!url) return url
-  
+
   // 运行时检测：在浏览器中且URL是HTTP
   const isBrowser = typeof window !== 'undefined'
   const isHttpUrl = url.startsWith('http://')
-  
+
   if (isBrowser && isHttpUrl) {
     const httpsUrl = url.replace('http://', 'https://')
     console.warn(`🔒 [Runtime Security] Converting HTTP to HTTPS: ${url} → ${httpsUrl}`)
     return httpsUrl
   }
-  
+
   return url
 }
 
@@ -30,18 +30,18 @@ export function getApiBaseUrl(): string {
   if (import.meta.env.VITE_API_BASE_URL) {
     return forceHttps(import.meta.env.VITE_API_BASE_URL)
   }
-  
+
   // 如果只有 VITE_API_ENDPOINT (如 https://api.momichan.xyz/api)，去除 /api
   if (import.meta.env.VITE_API_ENDPOINT) {
     const baseUrl = import.meta.env.VITE_API_ENDPOINT.replace(/\/api.*$/, '')
     return forceHttps(baseUrl)
   }
-  
+
   // 生产环境默认使用HTTPS，防止混合内容错误
   if (import.meta.env.PROD) {
     return 'https://api.momichan.xyz'
   }
-  
+
   // 开发环境使用相对路径（通过代理）
   return ''
 }
@@ -53,16 +53,16 @@ export function getApiEndpoint(): string {
   if (import.meta.env.VITE_API_ENDPOINT) {
     return forceHttps(import.meta.env.VITE_API_ENDPOINT)
   }
-  
+
   if (import.meta.env.VITE_API_BASE_URL) {
     return forceHttps(import.meta.env.VITE_API_BASE_URL + '/api/v1')
   }
-  
+
   // 生产环境默认使用HTTPS完整URL
   if (import.meta.env.PROD) {
     return 'https://api.momichan.xyz/api/v1'
   }
-  
+
   // 开发环境使用相对路径
   return '/api/v1'
 }
@@ -74,18 +74,33 @@ export function getApiEndpoint(): string {
  */
 export function resolveMediaUrl(url: string | null | undefined): string {
   if (!url) return ''
-  
-  // 如果已经是完整URL（http:// 或 https://），直接返回
+
+  // 如果已经是完整URL（http:// 或 https://），进行HTTPS规范化并处理legacy路径
   if (url.startsWith('http://') || url.startsWith('https://')) {
-    return url
+    const normalized = forceHttps(url)
+
+    // 迁移兼容：将 legacy /api/media 路径重写为 /api/v1/media
+    if (normalized.startsWith('https://api.momichan.xyz/api/media/')) {
+      return normalized.replace(
+        'https://api.momichan.xyz/api/media/',
+        'https://api.momichan.xyz/api/v1/media/',
+      )
+    }
+
+    return normalized
   }
-  
+
   // 如果是相对路径，添加API基础URL
   const apiBaseUrl = getApiBaseUrl()
-  
+
   // 移除路径开头的斜杠（避免双斜杠）
   const path = url.startsWith('/') ? url : `/${url}`
-  
+
+  // 迁移兼容：将相对的 /api/media 路径重写为 /api/v1/media
+  if (path.startsWith('/api/media/')) {
+    return `${apiBaseUrl}/api/v1${path.substring('/api'.length)}`
+  }
+
   return `${apiBaseUrl}${path}`
 }
 
@@ -115,27 +130,27 @@ export function validateMediaId(mediaId: unknown, source: string = 'unknown'): b
     console.warn(`[MediaID] Empty media ID from ${source}`)
     return false
   }
-  
+
   const idType = typeof mediaId
   if (idType === 'number') {
     console.error(
       `[MediaID] Received numeric ID from ${source}:`,
       mediaId,
       '\n→ Backend should return UUID format (string)',
-      '\n→ This will cause 500 error on media API'
+      '\n→ This will cause 500 error on media API',
     )
     return false
   }
-  
+
   if (!isValidUUID(mediaId)) {
     console.error(
       `[MediaID] Invalid UUID format from ${source}:`,
       mediaId,
       `(type: ${idType})`,
-      '\n→ Expected format: "550e8400-e29b-41d4-a716-446655440000"'
+      '\n→ Expected format: "550e8400-e29b-41d4-a716-446655440000"',
     )
     return false
   }
-  
+
   return true
 }
