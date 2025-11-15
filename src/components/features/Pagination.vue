@@ -34,6 +34,10 @@
 import { computed } from 'vue'
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-vue-next'
 
+defineOptions({
+  name: 'AppPagination',
+})
+
 interface Props {
   currentPage: number
   totalPages: number
