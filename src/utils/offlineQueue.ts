@@ -55,7 +55,7 @@ class OfflineQueueManager {
    */
   async addAction(
     action: 'favorite' | 'unfavorite' | 'like' | 'comment',
-    data: Record<string, unknown>
+    data: Record<string, unknown>,
   ): Promise<number> {
     const offlineAction: Omit<OfflineAction, 'id'> = {
       action,
@@ -88,8 +88,8 @@ class OfflineQueueManager {
     try {
       // 获取操作
       const actions = await indexedDB.getPendingActions()
-      const action = actions.find(a => a.id === actionId)
-      
+      const action = actions.find((a) => a.id === actionId)
+
       if (!action) {
         console.warn(`[Offline Queue] Action ${actionId} not found`)
         return false
@@ -105,7 +105,7 @@ class OfflineQueueManager {
         // 成功：更新状态
         await indexedDB.updateActionStatus(actionId, 'synced')
         console.log(`[Offline Queue] Synced action ${actionId}`)
-        
+
         // 触发回调
         if (this.config.onSync) {
           this.config.onSync(action)
@@ -117,17 +117,19 @@ class OfflineQueueManager {
         if (action.retry_count < this.config.maxRetries) {
           // 重置为pending，等待重试
           await indexedDB.updateActionStatus(actionId, 'pending')
-          
+
           // 延迟后重试（指数退避）
           const delay = this.config.retryDelay * Math.pow(2, action.retry_count)
           setTimeout(() => this.sync(actionId), delay)
-          
+
           console.log(`[Offline Queue] Will retry action ${actionId} after ${delay}ms`)
         } else {
           // 超过重试次数，标记为失败
           await indexedDB.updateActionStatus(actionId, 'failed', 'Max retries exceeded')
-          console.error(`[Offline Queue] Action ${actionId} failed after ${this.config.maxRetries} retries`)
-          
+          console.error(
+            `[Offline Queue] Action ${actionId} failed after ${this.config.maxRetries} retries`,
+          )
+
           if (this.config.onError) {
             this.config.onError(action, new Error('Max retries exceeded'))
           }
@@ -138,9 +140,9 @@ class OfflineQueueManager {
     } catch (error) {
       console.error('[Offline Queue] Sync error:', error)
       await indexedDB.updateActionStatus(
-        actionId, 
-        'failed', 
-        error instanceof Error ? error.message : 'Unknown error'
+        actionId,
+        'failed',
+        error instanceof Error ? error.message : 'Unknown error',
       )
       return false
     }
@@ -155,21 +157,21 @@ class OfflineQueueManager {
     try {
       switch (action.action) {
         case 'favorite':
-          await this.apiClient.post('/api/favorites', {
+          await this.apiClient.post('/favorites', {
             post_id: action.data.post_id,
           })
           break
 
         case 'unfavorite':
-          await this.apiClient.delete(`/api/favorites/${action.data.post_id}`)
+          await this.apiClient.delete(`/favorites/${action.data.post_id}`)
           break
 
         case 'like':
-          await this.apiClient.post(`/api/posts/${action.data.post_id}/like`)
+          await this.apiClient.post(`/posts/${action.data.post_id}/like`)
           break
 
         case 'comment':
-          await this.apiClient.post(`/api/posts/${action.data.post_id}/comments`, {
+          await this.apiClient.post(`/posts/${action.data.post_id}/comments`, {
             content: action.data.content,
           })
           break
@@ -212,7 +214,7 @@ class OfflineQueueManager {
         if (action.id) {
           await this.sync(action.id)
           // 短暂延迟，避免API限流
-          await new Promise(resolve => setTimeout(resolve, 200))
+          await new Promise((resolve) => setTimeout(resolve, 200))
         }
       }
 
@@ -234,11 +236,11 @@ class OfflineQueueManager {
     failed: number
   }> {
     const actions = await indexedDB.getPendingActions()
-    
+
     return {
-      pending: actions.filter(a => a.status === 'pending').length,
-      syncing: actions.filter(a => a.status === 'syncing').length,
-      failed: actions.filter(a => a.status === 'failed').length,
+      pending: actions.filter((a) => a.status === 'pending').length,
+      syncing: actions.filter((a) => a.status === 'syncing').length,
+      failed: actions.filter((a) => a.status === 'failed').length,
     }
   }
 
