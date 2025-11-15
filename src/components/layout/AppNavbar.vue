@@ -38,10 +38,58 @@
           <Search :size="24" />
         </button>
 
-        <!-- 设置按钮 -->
-        <RouterLink to="/settings" class="action-button">
-          <Settings :size="20" />
-        </RouterLink>
+        <!-- 统一设置按钮：语言/主题/布局等快捷设置（不跳转页面） -->
+        <div ref="settingsMenuRef" class="settings-menu-container">
+          <button class="action-button" type="button" @click="toggleSettingsPanel" :aria-label="$t('nav.settings')">
+            <Settings :size="20" />
+          </button>
+
+          <Transition name="dropdown">
+            <div v-if="showSettingsPanel" class="settings-dropdown glass-card">
+              <div class="settings-group">
+                <div class="settings-group-title">{{ $t('settings.theme') }}</div>
+                <div class="settings-theme-options">
+                  <button v-for="option in themeOptions" :key="option.value" type="button" class="settings-theme-button"
+                    :class="{ active: theme === option.value }" @click="setTheme(option.value)">
+                    <component :is="option.icon" :size="18" />
+                    <span>{{ $t(`settings.${option.value}`) }}</span>
+                  </button>
+                </div>
+              </div>
+
+              <div class="settings-group">
+                <div class="settings-group-title">{{ $t('settings.language') }}</div>
+                <div class="settings-language-options">
+                  <button v-for="localeOption in localeOptions" :key="localeOption.code" type="button"
+                    class="settings-language-button" :class="{ active: locale === localeOption.code }"
+                    @click="changeLanguage(localeOption.code)">
+                    {{ localeOption.name }}
+                  </button>
+                </div>
+              </div>
+
+              <div class="settings-group">
+                <div class="settings-group-title">{{ $t('settings.display') }}</div>
+                <div class="settings-toggle-list">
+                  <button type="button" class="settings-toggle" :class="{ active: settings.showHeroSection }"
+                    @click="settingsStore.toggleSetting('showHeroSection')">
+                    <span class="settings-toggle-label">{{ $t('settings.showHeroSection') }}</span>
+                  </button>
+
+                  <button type="button" class="settings-toggle" :class="{ active: settings.enableAnimations }"
+                    @click="settingsStore.toggleSetting('enableAnimations')">
+                    <span class="settings-toggle-label">{{ $t('preferences.enableAnimations') }}</span>
+                  </button>
+
+                  <button type="button" class="settings-toggle" :class="{ active: settings.enableSwipeNavigation }"
+                    @click="settingsStore.toggleSetting('enableSwipeNavigation')">
+                    <span class="settings-toggle-label">{{ $t('preferences.enableSwipeNavigation') }}</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </Transition>
+        </div>
 
         <!-- 用户菜单 -->
         <div v-if="isAuthenticated" ref="userMenuRef" class="user-menu-container">
@@ -186,6 +234,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
 import {
   Home,
@@ -198,19 +247,29 @@ import {
   LogOut,
   LogIn,
   X,
+  Sun,
+  Moon,
+  Monitor,
 } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/auth'
 import { useSettingsStore } from '@/stores/settings'
+import { useThemeStore } from '@/stores/theme'
+import type { Theme } from '@/types'
 
 const router = useRouter()
+const { locale } = useI18n()
 const authStore = useAuthStore()
 const settingsStore = useSettingsStore()
+const themeStore = useThemeStore()
 
 const { user, isAuthenticated } = storeToRefs(authStore)
 const { settings } = storeToRefs(settingsStore)
+const { theme } = storeToRefs(themeStore)
 
 const showUserMenu = ref(false)
 const userMenuRef = ref<HTMLElement | null>(null)
+const showSettingsPanel = ref(false)
+const settingsMenuRef = ref<HTMLElement | null>(null)
 
 // 点击导航栏搜索按钮：跳转到 Explore 作为统一搜索视图
 const goToSearch = () => {
@@ -243,6 +302,31 @@ const bottomNavItems = computed<BottomNavItem[]>(() => {
   items.push({ path: '/authors' }, { path: '/settings' })
   return items
 })
+
+const themeOptions = [
+  { value: 'light' as Theme, icon: Sun },
+  { value: 'dark' as Theme, icon: Moon },
+  { value: 'auto' as Theme, icon: Monitor },
+]
+
+const localeOptions = [
+  { code: 'en', name: 'English' },
+  { code: 'zh-CN', name: '简体中文' },
+  { code: 'ja', name: '日本語' },
+]
+
+const toggleSettingsPanel = () => {
+  showSettingsPanel.value = !showSettingsPanel.value
+}
+
+const setTheme = (newTheme: Theme) => {
+  themeStore.setTheme(newTheme)
+}
+
+const changeLanguage = (newLocale: string) => {
+  locale.value = newLocale
+  localStorage.setItem('locale', newLocale)
+}
 
 // 全局滑动切换主页面（仅移动端）
 const swipeStartX = ref<number | null>(null)
@@ -331,8 +415,14 @@ const handleLogout = () => {
 
 // 点击外部关闭用户菜单
 const handleClickOutside = (event: MouseEvent) => {
-  if (userMenuRef.value && !userMenuRef.value.contains(event.target as Node)) {
+  const target = event.target as Node
+
+  if (userMenuRef.value && !userMenuRef.value.contains(target)) {
     showUserMenu.value = false
+  }
+
+  if (settingsMenuRef.value && !settingsMenuRef.value.contains(target)) {
+    showSettingsPanel.value = false
   }
 }
 
@@ -551,6 +641,101 @@ onUnmounted(() => {
   position: relative;
   flex-shrink: 0;
   /* 防止容器被压缩 */
+}
+
+.settings-menu-container {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.settings-dropdown {
+  position: absolute;
+  top: calc(100% + var(--spacing-2));
+  right: 0;
+  width: 320px;
+  padding: var(--spacing-4);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--glass-shadow);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-4);
+}
+
+.settings-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+}
+
+.settings-group-title {
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  color: var(--color-text-secondary);
+}
+
+.settings-theme-options,
+.settings-language-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-2);
+}
+
+.settings-theme-button,
+.settings-language-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-2);
+  padding: var(--spacing-2) var(--spacing-3);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg-light);
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.settings-theme-button.active,
+.settings-language-button.active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #fff;
+}
+
+.settings-theme-button:hover,
+.settings-language-button:hover {
+  background: var(--glass-bg);
+}
+
+.settings-toggle-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+}
+
+.settings-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-2) var(--spacing-3);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg-light);
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.settings-toggle.active {
+  background: var(--glass-bg);
+  color: var(--color-text-primary);
+}
+
+.settings-toggle-label {
+  flex: 1;
+  text-align: left;
 }
 
 .user-dropdown {
