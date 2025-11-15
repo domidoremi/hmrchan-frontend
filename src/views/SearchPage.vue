@@ -32,8 +32,13 @@
                         <span>{{ $t('search.searching') }}</span>
                     </div>
 
-                    <div v-else-if="posts.length > 0" class="results-list posts-list">
-                        <PostCard v-for="post in posts" :key="post.id" :post="post" />
+                    <div v-else-if="posts.length > 0">
+                        <p v-if="isPostsOffline" class="offline-hint">
+                            {{ $t('offline.usingCache') }}
+                        </p>
+                        <div class="results-list posts-list">
+                            <PostCard v-for="post in posts" :key="post.id" :post="post" />
+                        </div>
 
                         <Pagination v-if="postsTotalPages > 1" :current-page="postsPage" :total-pages="postsTotalPages"
                             @change="handlePostsPageChange" />
@@ -102,7 +107,9 @@ import PostCard from '@/components/features/PostCard.vue'
 import Pagination from '@/components/features/Pagination.vue'
 
 import services from '@/api/services'
-import type { Post, AuthorListItem } from '@/types'
+import type { Post, AuthorListItem, PaginatedResponse } from '@/types'
+import { indexedDB } from '@/utils/indexedDB'
+import { fetchWithFallback } from '@/utils/cacheHelper'
 
 const route = useRoute()
 const router = useRouter()
@@ -127,6 +134,7 @@ const authorsPageSize = 20
 
 const loadingPosts = ref(false)
 const loadingAuthors = ref(false)
+const isPostsOffline = ref(false)
 
 const hasQuery = computed(() => query.value.trim().length > 0)
 
@@ -145,21 +153,80 @@ const loadPosts = async () => {
     if (!hasQuery.value) {
         posts.value = []
         postsTotalPages.value = 0
+        isPostsOffline.value = false
         return
     }
 
     loadingPosts.value = true
     try {
-        const response = await services.search.searchPosts(query.value.trim(), {
-            page: postsPage.value,
-            page_size: postsPageSize,
+        const currentQuery = query.value.trim()
+
+        const { data, fromFallback } = await fetchWithFallback<PaginatedResponse<Post>>({
+            primary: () =>
+                services.search.searchPosts(currentQuery, {
+                    page: postsPage.value,
+                    page_size: postsPageSize,
+                }),
+            fallback: async () => {
+                // 使用 IndexedDB 中已有的帖子做本地搜索回退
+                try {
+                    const allCached = await indexedDB.getPosts({ limit: 200 })
+                    if (!allCached.length) return null
+
+                    const qLower = currentQuery.toLowerCase()
+                    const filtered = allCached.filter((p) => {
+                        const title = p.title?.toLowerCase() || ''
+                        const desc = p.description?.toLowerCase() || ''
+                        const author = (p.author_name || '').toLowerCase()
+                        const platform = (p.platform || '').toLowerCase()
+                        return (
+                            title.includes(qLower) ||
+                            desc.includes(qLower) ||
+                            author.includes(qLower) ||
+                            platform.includes(qLower)
+                        )
+                    })
+
+                    if (!filtered.length) return null
+
+                    const pageSize = postsPageSize
+                    const start = (postsPage.value - 1) * pageSize
+                    const end = start + pageSize
+                    const paged = filtered.slice(start, end)
+                    const total = filtered.length
+                    const pages = Math.max(1, Math.ceil(total / pageSize))
+
+                    const response: PaginatedResponse<Post> = {
+                        items: paged as Post[],
+                        page: postsPage.value,
+                        page_size: pageSize,
+                        total,
+                        pages,
+                    }
+
+                    return response
+                } catch (error) {
+                    console.error('[SearchPage] Fallback search in IndexedDB failed:', error)
+                    return null
+                }
+            },
+            onSuccess: async (response) => {
+                try {
+                    await indexedDB.savePosts(response.items)
+                } catch (error) {
+                    console.error('[SearchPage] Failed to persist search results to IndexedDB:', error)
+                }
+            },
         })
-        posts.value = response.items || []
-        postsTotalPages.value = response.pages || 0
+
+        posts.value = data.items || []
+        postsTotalPages.value = data.pages || 0
+        isPostsOffline.value = !!fromFallback
     } catch (error) {
         console.error('[SearchPage] Failed to search posts:', error)
         posts.value = []
         postsTotalPages.value = 0
+        isPostsOffline.value = false
     } finally {
         loadingPosts.value = false
     }
@@ -329,6 +396,15 @@ watch(
     display: flex;
     flex-direction: column;
     gap: var(--spacing-xl);
+}
+
+.offline-hint {
+    margin-bottom: var(--spacing-md);
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--radius-md);
+    background: rgba(59, 130, 246, 0.08);
+    color: var(--color-text-secondary);
+    font-size: var(--text-sm);
 }
 
 .results-section {
