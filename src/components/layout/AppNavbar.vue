@@ -214,7 +214,7 @@ const userMenuRef = ref<HTMLElement | null>(null)
 
 // 点击导航栏搜索按钮：跳转到 Explore 作为统一搜索视图
 const goToSearch = () => {
-  router.push({ path: '/explore' })
+  router.push({ path: '/search' })
 }
 
 // 移动端检测
