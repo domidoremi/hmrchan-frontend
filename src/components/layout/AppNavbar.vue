@@ -151,9 +151,9 @@
     </RouterLink>
   </nav>
 
-  <!-- 用户菜单弹出层（移动端） -->
+  <!-- 用户菜单弹出层（仅移动端） -->
   <Transition name="modal">
-    <div v-if="showUserMenu && isAuthenticated" class="mobile-user-modal" @click="showUserMenu = false">
+    <div v-if="showUserMenu && isAuthenticated && isMobile" class="mobile-user-modal" @click="showUserMenu = false">
       <div class="mobile-user-content glass-card" @click.stop>
         <div class="mobile-user-header">
           <div class="user-avatar-large">
