@@ -11,16 +11,15 @@
 
       <!-- Posts Grid -->
       <div v-else-if="posts.length > 0">
+        <p v-if="lastListFromFallback" class="offline-hint">
+          {{ $t('offline.usingCache') }}
+        </p>
         <div ref="postsGrid" class="posts-grid">
           <PostCard v-for="(post, index) in posts" :key="post.id" :post="post" :index="index" />
         </div>
 
         <!-- Pagination -->
-        <Pagination
-          :current-page="pagination.page"
-          :total-pages="pagination.pages"
-          @change="handlePageChange"
-        />
+        <Pagination :current-page="pagination.page" :total-pages="pagination.pages" @change="handlePageChange" />
       </div>
 
       <!-- Empty State -->
@@ -64,7 +63,7 @@ const route = useRoute()
 const router = useRouter()
 const postsStore = usePostsStore()
 
-const { posts, loading, filters, pagination } = storeToRefs(postsStore)
+const { posts, loading, filters, pagination, lastListFromFallback } = storeToRefs(postsStore)
 
 const postsGrid = ref<HTMLElement | null>(null)
 const loadedPostsCount = ref(0) // 追踪已加载的卡片数量
@@ -84,7 +83,7 @@ const { updateLayout, smoothUpdateLayout } = useWaterfallLayout(postsGrid, {
 onMounted(async () => {
   // 清空旧的posts数组，避免显示缓存数据
   postsStore.posts = []
-  
+
   // 重置筛选条件
   postsStore.resetFilters()
 
@@ -154,7 +153,7 @@ const loadPosts = async () => {
     if (postsGrid.value) {
       const cards = postsGrid.value.querySelectorAll('a.post-card.card-entering')
       cards.forEach((card) => {
-        ;(card as HTMLElement).classList.remove('card-entering')
+        ; (card as HTMLElement).classList.remove('card-entering')
       })
     }
   }, 600)
@@ -228,6 +227,15 @@ const resetFilters = () => {
   margin-bottom: var(--spacing-md);
 }
 
+.offline-hint {
+  margin-bottom: var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-md);
+  background: rgba(59, 130, 246, 0.08);
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+}
+
 /* ========== 响应式优化 ========== */
 
 /* 平板端优化 (780px-900px) - 2列布局 */
@@ -288,6 +296,7 @@ const resetFilters = () => {
     opacity: 0;
     transform: translateY(20px) scale(0.95);
   }
+
   to {
     opacity: 1;
     transform: translateY(0) scale(1);

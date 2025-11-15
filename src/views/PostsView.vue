@@ -88,6 +88,10 @@
 
       <div class="posts-layout">
         <section class="feed-column">
+          <p v-if="lastListFromFallback" class="offline-hint">
+            {{ $t('offline.usingCache') }}
+          </p>
+
           <div v-if="loading && posts.length === 0" class="skeleton-grid">
             <div v-for="i in 8" :key="i" class="skeleton-card">
               <div class="skeleton-image"></div>
@@ -210,7 +214,7 @@ gsap.registerPlugin(ScrollTrigger)
 const { t } = useI18n()
 const postsStore = usePostsStore()
 const settingsStore = useSettingsStore()
-const { posts, loading } = storeToRefs(postsStore)
+const { posts, loading, lastListFromFallback } = storeToRefs(postsStore)
 const { settings } = storeToRefs(settingsStore)
 
 // Refs
@@ -728,6 +732,15 @@ watch(
   font-size: clamp(1.6rem, 2.6vw, 2.2rem);
   font-weight: 700;
   color: var(--color-primary);
+}
+
+.offline-hint {
+  margin-bottom: var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-md);
+  background: rgba(59, 130, 246, 0.08);
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
 }
 
 .stat-label {

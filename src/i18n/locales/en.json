@@ -381,6 +381,12 @@
     "resetConfirm": "Are you sure you want to reset to default settings?",
     "resetSuccess": "Settings reset"
   },
+  "offline": {
+    "usingCache": "Showing cached offline data. It may not be up to date.",
+    "actionsQueued": "Some actions are queued offline and will sync when you're back online.",
+    "favoriteQueued": "Favorite added in offline mode. It will sync to the server later.",
+    "unfavoriteQueued": "Favorite removed in offline mode. It will sync to the server later."
+  },
   "privacy": {
     "title": "Privacy Policy",
     "lastUpdated": "Last updated",
