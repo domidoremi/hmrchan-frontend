@@ -73,10 +73,60 @@
         </div>
 
         <!-- 统一设置按钮：语言/主题/布局等快捷设置（不跳转页面） -->
-        <div class="settings-menu-container">
+        <div class="settings-menu-container" ref="settingsMenuRef">
           <button class="action-button" type="button" @click="toggleSettingsPanel" :aria-label="$t('nav.settings')">
             <Settings :size="20" />
           </button>
+
+          <!-- 桌面端设置面板，下拉在按钮下方展开 -->
+          <Transition name="dropdown">
+            <div v-if="showSettingsPanel && !isMobile" class="settings-dropdown glass-card">
+              <div class="settings-group">
+                <div class="settings-group-title">{{ $t('settings.theme') }}</div>
+                <div class="settings-theme-options">
+                  <button v-for="option in themeOptions" :key="option.value" type="button" class="settings-theme-button"
+                    :class="{ active: theme === option.value }" @click="setTheme(option.value)">
+                    <component :is="option.icon" :size="18" />
+                    <span>{{ $t(`settings.${option.value}`) }}</span>
+                  </button>
+                </div>
+              </div>
+
+              <div class="settings-group">
+                <div class="settings-group-title">{{ $t('settings.language') }}</div>
+                <div class="settings-language-options">
+                  <button v-for="localeOption in localeOptions" :key="localeOption.code" type="button"
+                    class="settings-language-button" :class="{ active: locale === localeOption.code }"
+                    @click="changeLanguage(localeOption.code)">
+                    {{ localeOption.name }}
+                  </button>
+                </div>
+              </div>
+
+              <div class="settings-group">
+                <div class="settings-group-title">{{ $t('settings.display') }}</div>
+                <div class="settings-toggle-list">
+                  <button type="button" class="settings-toggle" :class="{ active: settings.showHeroSection }"
+                    @click="settingsStore.toggleSetting('showHeroSection')">
+                    <span class="settings-toggle-label">{{ $t('settings.toggleHeroSection') }}</span>
+                    <span class="settings-toggle-indicator" :class="{ active: settings.showHeroSection }"></span>
+                  </button>
+
+                  <button type="button" class="settings-toggle" :class="{ active: settings.enableAnimations }"
+                    @click="settingsStore.toggleSetting('enableAnimations')">
+                    <span class="settings-toggle-label">{{ $t('settings.toggleAnimations') }}</span>
+                    <span class="settings-toggle-indicator" :class="{ active: settings.enableAnimations }"></span>
+                  </button>
+
+                  <button type="button" class="settings-toggle" :class="{ active: settings.enableSwipeNavigation }"
+                    @click="settingsStore.toggleSetting('enableSwipeNavigation')">
+                    <span class="settings-toggle-label">{{ $t('settings.toggleSwipeNavigation') }}</span>
+                    <span class="settings-toggle-indicator" :class="{ active: settings.enableSwipeNavigation }"></span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </Transition>
         </div>
 
         <!-- 用户菜单 -->
@@ -230,55 +280,7 @@
     </div>
   </Transition>
 
-  <!-- 全局设置面板（桌面端 + 移动端复用） -->
-  <Transition name="dropdown">
-    <div v-if="showSettingsPanel" ref="settingsMenuRef" class="settings-dropdown glass-card">
-      <div class="settings-group">
-        <div class="settings-group-title">{{ $t('settings.theme') }}</div>
-        <div class="settings-theme-options">
-          <button v-for="option in themeOptions" :key="option.value" type="button" class="settings-theme-button"
-            :class="{ active: theme === option.value }" @click="setTheme(option.value)">
-            <component :is="option.icon" :size="18" />
-            <span>{{ $t(`settings.${option.value}`) }}</span>
-          </button>
-        </div>
-      </div>
-
-      <div class="settings-group">
-        <div class="settings-group-title">{{ $t('settings.language') }}</div>
-        <div class="settings-language-options">
-          <button v-for="localeOption in localeOptions" :key="localeOption.code" type="button"
-            class="settings-language-button" :class="{ active: locale === localeOption.code }"
-            @click="changeLanguage(localeOption.code)">
-            {{ localeOption.name }}
-          </button>
-        </div>
-      </div>
-
-      <div class="settings-group">
-        <div class="settings-group-title">{{ $t('settings.display') }}</div>
-        <div class="settings-toggle-list">
-          <button type="button" class="settings-toggle" :class="{ active: settings.showHeroSection }"
-            @click="settingsStore.toggleSetting('showHeroSection')">
-            <span class="settings-toggle-label">{{ $t('settings.toggleHeroSection') }}</span>
-            <span class="settings-toggle-indicator" :class="{ active: settings.showHeroSection }"></span>
-          </button>
-
-          <button type="button" class="settings-toggle" :class="{ active: settings.enableAnimations }"
-            @click="settingsStore.toggleSetting('enableAnimations')">
-            <span class="settings-toggle-label">{{ $t('settings.toggleAnimations') }}</span>
-            <span class="settings-toggle-indicator" :class="{ active: settings.enableAnimations }"></span>
-          </button>
-
-          <button type="button" class="settings-toggle" :class="{ active: settings.enableSwipeNavigation }"
-            @click="settingsStore.toggleSetting('enableSwipeNavigation')">
-            <span class="settings-toggle-label">{{ $t('settings.toggleSwipeNavigation') }}</span>
-            <span class="settings-toggle-indicator" :class="{ active: settings.enableSwipeNavigation }"></span>
-          </button>
-        </div>
-      </div>
-    </div>
-  </Transition>
+  <!-- 全局设置面板结束 -->
 
 </template>
 
@@ -599,6 +601,7 @@ onUnmounted(() => {
   padding: var(--spacing-4) var(--spacing-6);
   max-width: 1400px;
   margin: 0 auto;
+  position: relative;
 }
 
 /* Logo */
@@ -800,9 +803,9 @@ onUnmounted(() => {
 }
 
 .settings-dropdown {
-  position: fixed;
-  top: calc(var(--app-navbar-height, 72px) + var(--spacing-2));
-  right: var(--spacing-4);
+  position: absolute;
+  top: calc(100% + var(--spacing-2));
+  right: 0;
   width: 320px;
   max-width: calc(100% - 2 * var(--spacing-4));
   padding: var(--spacing-4);
@@ -815,9 +818,9 @@ onUnmounted(() => {
 }
 
 .queue-dropdown {
-  position: fixed;
-  top: calc(var(--app-navbar-height, 72px) + var(--spacing-2));
-  right: calc(var(--spacing-4) + 48px);
+  position: absolute;
+  top: calc(100% + var(--spacing-2));
+  right: 0;
   width: 260px;
   max-width: calc(100% - 2 * var(--spacing-4));
   padding: var(--spacing-4);
