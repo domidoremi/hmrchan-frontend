@@ -39,56 +39,10 @@
         </button>
 
         <!-- 统一设置按钮：语言/主题/布局等快捷设置（不跳转页面） -->
-        <div ref="settingsMenuRef" class="settings-menu-container">
+        <div class="settings-menu-container">
           <button class="action-button" type="button" @click="toggleSettingsPanel" :aria-label="$t('nav.settings')">
             <Settings :size="20" />
           </button>
-
-          <Transition name="dropdown">
-            <div v-if="showSettingsPanel" class="settings-dropdown glass-card">
-              <div class="settings-group">
-                <div class="settings-group-title">{{ $t('settings.theme') }}</div>
-                <div class="settings-theme-options">
-                  <button v-for="option in themeOptions" :key="option.value" type="button" class="settings-theme-button"
-                    :class="{ active: theme === option.value }" @click="setTheme(option.value)">
-                    <component :is="option.icon" :size="18" />
-                    <span>{{ $t(`settings.${option.value}`) }}</span>
-                  </button>
-                </div>
-              </div>
-
-              <div class="settings-group">
-                <div class="settings-group-title">{{ $t('settings.language') }}</div>
-                <div class="settings-language-options">
-                  <button v-for="localeOption in localeOptions" :key="localeOption.code" type="button"
-                    class="settings-language-button" :class="{ active: locale === localeOption.code }"
-                    @click="changeLanguage(localeOption.code)">
-                    {{ localeOption.name }}
-                  </button>
-                </div>
-              </div>
-
-              <div class="settings-group">
-                <div class="settings-group-title">{{ $t('settings.display') }}</div>
-                <div class="settings-toggle-list">
-                  <button type="button" class="settings-toggle" :class="{ active: settings.showHeroSection }"
-                    @click="settingsStore.toggleSetting('showHeroSection')">
-                    <span class="settings-toggle-label">{{ $t('settings.showHeroSection') }}</span>
-                  </button>
-
-                  <button type="button" class="settings-toggle" :class="{ active: settings.enableAnimations }"
-                    @click="settingsStore.toggleSetting('enableAnimations')">
-                    <span class="settings-toggle-label">{{ $t('preferences.enableAnimations') }}</span>
-                  </button>
-
-                  <button type="button" class="settings-toggle" :class="{ active: settings.enableSwipeNavigation }"
-                    @click="settingsStore.toggleSetting('enableSwipeNavigation')">
-                    <span class="settings-toggle-label">{{ $t('preferences.enableSwipeNavigation') }}</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </Transition>
         </div>
 
         <!-- 用户菜单 -->
@@ -151,6 +105,11 @@
       <div class="mobile-top-actions">
         <button class="action-button search-button" @click="goToSearch">
           <Search :size="24" />
+        </button>
+
+        <button class="action-button settings-menu-container" type="button" @click="toggleSettingsPanel"
+          :aria-label="$t('nav.settings')">
+          <Settings :size="20" />
         </button>
 
         <button v-if="isAuthenticated" class="action-button" @click="showUserMenu = !showUserMenu">
@@ -223,6 +182,56 @@
           <button class="mobile-user-link danger" @click="handleLogout">
             <LogOut :size="20" />
             <span>{{ $t('nav.logout') }}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </Transition>
+
+  <!-- 全局设置面板（桌面端 + 移动端复用） -->
+  <Transition name="dropdown">
+    <div v-if="showSettingsPanel" ref="settingsMenuRef" class="settings-dropdown glass-card">
+      <div class="settings-group">
+        <div class="settings-group-title">{{ $t('settings.theme') }}</div>
+        <div class="settings-theme-options">
+          <button v-for="option in themeOptions" :key="option.value" type="button" class="settings-theme-button"
+            :class="{ active: theme === option.value }" @click="setTheme(option.value)">
+            <component :is="option.icon" :size="18" />
+            <span>{{ $t(`settings.${option.value}`) }}</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="settings-group">
+        <div class="settings-group-title">{{ $t('settings.language') }}</div>
+        <div class="settings-language-options">
+          <button v-for="localeOption in localeOptions" :key="localeOption.code" type="button"
+            class="settings-language-button" :class="{ active: locale === localeOption.code }"
+            @click="changeLanguage(localeOption.code)">
+            {{ localeOption.name }}
+          </button>
+        </div>
+      </div>
+
+      <div class="settings-group">
+        <div class="settings-group-title">{{ $t('settings.display') }}</div>
+        <div class="settings-toggle-list">
+          <button type="button" class="settings-toggle" :class="{ active: settings.showHeroSection }"
+            @click="settingsStore.toggleSetting('showHeroSection')">
+            <span class="settings-toggle-label">{{ $t('settings.toggleHeroSection') }}</span>
+            <span class="settings-toggle-indicator" :class="{ active: settings.showHeroSection }"></span>
+          </button>
+
+          <button type="button" class="settings-toggle" :class="{ active: settings.enableAnimations }"
+            @click="settingsStore.toggleSetting('enableAnimations')">
+            <span class="settings-toggle-label">{{ $t('settings.toggleAnimations') }}</span>
+            <span class="settings-toggle-indicator" :class="{ active: settings.enableAnimations }"></span>
+          </button>
+
+          <button type="button" class="settings-toggle" :class="{ active: settings.enableSwipeNavigation }"
+            @click="settingsStore.toggleSetting('enableSwipeNavigation')">
+            <span class="settings-toggle-label">{{ $t('settings.toggleSwipeNavigation') }}</span>
+            <span class="settings-toggle-indicator" :class="{ active: settings.enableSwipeNavigation }"></span>
           </button>
         </div>
       </div>
@@ -415,13 +424,14 @@ const handleLogout = () => {
 
 // 点击外部关闭用户菜单
 const handleClickOutside = (event: MouseEvent) => {
-  const target = event.target as Node
+  const target = event.target as HTMLElement
 
   if (userMenuRef.value && !userMenuRef.value.contains(target)) {
     showUserMenu.value = false
   }
 
-  if (settingsMenuRef.value && !settingsMenuRef.value.contains(target)) {
+  const inSettingsButton = target.closest('.settings-menu-container')
+  if (settingsMenuRef.value && !settingsMenuRef.value.contains(target) && !inSettingsButton) {
     showSettingsPanel.value = false
   }
 }
@@ -649,13 +659,15 @@ onUnmounted(() => {
 }
 
 .settings-dropdown {
-  position: absolute;
-  top: calc(100% + var(--spacing-2));
-  right: 0;
+  position: fixed;
+  top: calc(var(--app-navbar-height, 72px) + var(--spacing-2));
+  right: var(--spacing-4);
   width: 320px;
+  max-width: calc(100% - 2 * var(--spacing-4));
   padding: var(--spacing-4);
   border-radius: var(--radius-xl);
   box-shadow: var(--glass-shadow);
+  z-index: 1100;
   display: flex;
   flex-direction: column;
   gap: var(--spacing-4);

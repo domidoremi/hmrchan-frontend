@@ -152,7 +152,10 @@
     "light": "Light",
     "dark": "Dark",
     "auto": "Auto",
-    "toggleTheme": "Toggle theme"
+    "toggleTheme": "Toggle theme",
+    "toggleHeroSection": "Toggle home hero banner",
+    "toggleAnimations": "Toggle animations",
+    "toggleSwipeNavigation": "Toggle swipe navigation"
   },
   "common": {
     "loading": "Loading...",
@@ -343,6 +346,8 @@
     "showHeroSectionDesc": "Display welcome banner and statistics at the top of homepage",
     "enableAnimations": "Enable Animations",
     "enableAnimationsDesc": "Enable page transitions and interaction animations",
+    "enableSwipeNavigation": "Enable swipe navigation",
+    "enableSwipeNavigationDesc": "Allow swiping left and right between main pages on mobile",
     "postsPerPage": "Posts Per Page",
     "postsPerPageDesc": "Set the number of posts displayed per page",
     "media": "Media Settings",

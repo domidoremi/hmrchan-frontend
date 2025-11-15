@@ -1,6 +1,6 @@
 <template>
   <MainLayout :disable-container="true">
-    <div class="posts-page" :class="{ 'mobile-preview-open': previewVisible && !isDesktop }">
+    <div class="posts-page reduce-motion" :class="{ 'mobile-preview-open': previewVisible && !isDesktop }">
       <section ref="heroRef" class="posts-hero">
         <div class="hero-bg"></div>
         <div class="hero-content">
@@ -199,6 +199,7 @@ import EmptyState from '@/components/ui/EmptyState.vue'
 import PostPreviewPanel from '@/components/features/PostPreviewPanel.vue'
 
 import { usePostsStore } from '@/stores/posts'
+import { useSettingsStore } from '@/stores/settings'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import { useWaterfallLayout } from '@/composables/useWaterfallLayout'
 import type { PostDetail } from '@/types'
@@ -208,7 +209,9 @@ gsap.registerPlugin(ScrollTrigger)
 
 const { t } = useI18n()
 const postsStore = usePostsStore()
+const settingsStore = useSettingsStore()
 const { posts, loading } = storeToRefs(postsStore)
+const { settings } = storeToRefs(settingsStore)
 
 // Refs
 const heroRef = ref<HTMLElement | null>(null)
@@ -486,36 +489,38 @@ onMounted(async () => {
   await nextTick()
 
   // GSAP entrance animations
-  gsap.from('.header-badge', {
-    y: -20,
-    opacity: 0,
-    duration: 0.6,
-    ease: 'power3.out',
-  })
+  if (settings.value.enableAnimations) {
+    gsap.from('.header-badge', {
+      y: -20,
+      opacity: 0,
+      duration: 0.6,
+      ease: 'power3.out',
+    })
 
-  gsap.from('.page-title', {
-    y: 30,
-    opacity: 0,
-    duration: 0.8,
-    delay: 0.2,
-    ease: 'power3.out',
-  })
+    gsap.from('.page-title', {
+      y: 30,
+      opacity: 0,
+      duration: 0.8,
+      delay: 0.2,
+      ease: 'power3.out',
+    })
 
-  gsap.from('.page-subtitle', {
-    y: 20,
-    opacity: 0,
-    duration: 0.6,
-    delay: 0.4,
-    ease: 'power3.out',
-  })
+    gsap.from('.page-subtitle', {
+      y: 20,
+      opacity: 0,
+      duration: 0.6,
+      delay: 0.4,
+      ease: 'power3.out',
+    })
 
-  gsap.from('.stats-row', {
-    y: 20,
-    opacity: 0,
-    duration: 0.6,
-    delay: 0.6,
-    ease: 'power3.out',
-  })
+    gsap.from('.stats-row', {
+      y: 20,
+      opacity: 0,
+      duration: 0.6,
+      delay: 0.6,
+      ease: 'power3.out',
+    })
+  }
 
   // Check scroll indicators
   if (platformChipsRef.value) {
@@ -535,7 +540,7 @@ onMounted(async () => {
   }
 
   // Animate post cards on scroll
-  if (postsGridRef.value) {
+  if (settings.value.enableAnimations && postsGridRef.value) {
     gsap.from('.post-card', {
       scrollTrigger: {
         trigger: postsGridRef.value,
@@ -608,13 +613,15 @@ watch(viewMode, async (mode) => {
     destroyWaterfallLayout()
   }
 
-  gsap.from('.post-card', {
-    y: 20,
-    opacity: 0,
-    duration: 0.4,
-    stagger: 0.05,
-    ease: 'power2.out',
-  })
+  if (settings.value.enableAnimations) {
+    gsap.from('.post-card', {
+      y: 20,
+      opacity: 0,
+      duration: 0.4,
+      stagger: 0.05,
+      ease: 'power2.out',
+    })
+  }
 })
 
 // 当posts变化时刷新瀑布流
