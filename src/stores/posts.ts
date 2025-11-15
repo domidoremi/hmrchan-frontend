@@ -39,18 +39,22 @@ export const usePostsStore = defineStore(
     })
 
     // 获取内容列表
-    async function fetchPosts(params?: PostListParams & { append?: boolean }) {
+    async function fetchPosts(
+      params?: PostListParams & { append?: boolean; ignoreFilters?: boolean },
+    ) {
       // 如果是追加模式，不显示loading状态（避免UI闪烁）
-      const { append, ...apiParams } = params || {}
+      const { append, ignoreFilters, ...apiParams } = params || {}
       if (!append) {
         loading.value = true
       }
       error.value = null
 
-      const mergedParams: PostListParams = {
-        ...filters.value,
-        ...apiParams,
-      }
+      const mergedParams: PostListParams = ignoreFilters
+        ? { ...apiParams }
+        : {
+            ...filters.value,
+            ...apiParams,
+          }
 
       try {
         const { data, fromFallback } = await fetchWithFallback<PaginatedResponse<Post>>({
