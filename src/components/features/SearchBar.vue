@@ -42,7 +42,6 @@ const handleSearch = () => {
   if (searchQuery.value.trim()) {
     showSuggestions.value = false
     emit('search', searchQuery.value)
-    router.push({ path: '/explore', query: { q: searchQuery.value } })
   }
 }
 
@@ -62,7 +61,7 @@ const selectSuggestion = (suggestion: SearchSuggestion) => {
   }
 
   if (suggestion.type === 'author') {
-    router.push({ path: '/authors', query: { id: suggestion.id, q: suggestion.label } })
+    router.push({ path: '/search', query: { tab: 'authors', q: suggestion.label } })
     return
   }
 
