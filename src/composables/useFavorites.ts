@@ -7,9 +7,13 @@ import { useI18n } from 'vue-i18n'
 import { favoritesApi, postsApi } from '@/api/services'
 import type { Favorite, FavoriteCreate, FavoriteUpdate, Post, UUID } from '@/types'
 import toast from '@/utils/toast'
+import { indexedDB } from '@/utils/indexedDB'
+import { useAuthStore } from '@/stores/auth'
+import { fetchWithFallback } from '@/utils/cacheHelper'
 
 export function useFavorites() {
   const { t } = useI18n()
+  const authStore = useAuthStore()
   const favorites = ref<Favorite[]>([])
   const favoritePosts = ref<Post[]>([])
   const loading = ref(false)
@@ -34,41 +38,141 @@ export function useFavorites() {
     error.value = null
 
     try {
-      const response = await favoritesApi.getFavorites(params)
-      favorites.value = response.items
+      const { data, fromFallback } = await fetchWithFallback<{
+        items: Favorite[]
+        page: number
+        page_size: number
+        total: number
+        pages: number
+      }>({
+        primary: async () => {
+          const response = await favoritesApi.getFavorites(params)
+          return response
+        },
+        fallback: async () => {
+          const userId = authStore.user?.id
+          if (!userId) return null
+
+          try {
+            const localFavs = await indexedDB.getFavorites(userId)
+            if (!localFavs.length) return null
+
+            const items: Favorite[] = localFavs.map((f) => {
+              return {
+                id: f.id as unknown as UUID,
+                user_id: f.user_id as unknown as UUID,
+                post_id: f.post_id as unknown as UUID,
+                folder_name: null,
+                tags_array: [],
+                notes: null,
+                created_at: new Date(f.created_at).toISOString(),
+                post_title: null,
+                post_thumbnail: null,
+                post_platform: null,
+              }
+            })
+
+            return {
+              items,
+              page: 1,
+              page_size: items.length || 1,
+              total: items.length,
+              pages: 1,
+            }
+          } catch (e) {
+            console.error('[Favorites] Fallback from IndexedDB failed:', e)
+            return null
+          }
+        },
+        onSuccess: async (response) => {
+          // 同步服务端收藏列表到 IndexedDB，保持本地镜像大致一致
+          try {
+            const userId = authStore.user?.id
+            if (!userId) return
+
+            const serverPostIds = new Set(response.items.map((f) => f.post_id))
+            const localFavs = await indexedDB.getFavorites(userId)
+
+            // 删除本地存在但服务端已不存在的收藏
+            await Promise.all(
+              localFavs
+                .filter((f) => !serverPostIds.has(f.post_id as unknown as UUID))
+                .map((f) => indexedDB.removeFavorite(userId, f.post_id)),
+            )
+
+            // 写入/更新当前服务端收藏
+            await Promise.all(
+              response.items.map((f) =>
+                indexedDB.addFavorite({
+                  user_id: userId,
+                  post_id: f.post_id,
+                  created_at: Date.parse(f.created_at) || Date.now(),
+                }),
+              ),
+            )
+          } catch (e) {
+            console.error('[Favorites] Failed to sync favorites to IndexedDB:', e)
+          }
+        },
+      })
+
+      favorites.value = data.items
       pagination.value = {
-        page: response.page,
-        page_size: response.page_size,
-        total: response.total,
-        pages: response.pages,
+        page: data.page,
+        page_size: data.page_size,
+        total: data.total,
+        pages: data.pages,
       }
 
       // 获取所有收藏帖子的完整信息
-      const postIds = response.items.map((fav) => fav.post_id)
+      const postIds = data.items.map((fav) => fav.post_id)
       if (postIds.length > 0) {
-        try {
-          const posts = await Promise.all(
-            postIds.map(async (id) => {
-              try {
-                const post = await postsApi.getPostById(id)
-                return post as Post
-              } catch (err) {
-                console.error('Failed to fetch favorite post detail:', id, err)
-                return null
-              }
-            }),
-          )
+        if (!fromFallback) {
+          // 在线且主请求成功：照常通过 API 获取帖子详情
+          try {
+            const posts = await Promise.all(
+              postIds.map(async (id) => {
+                try {
+                  const post = await postsApi.getPostById(id)
+                  return post as Post
+                } catch (err) {
+                  console.error('Failed to fetch favorite post detail:', id, err)
+                  return null
+                }
+              }),
+            )
 
-          favoritePosts.value = posts.filter((p): p is Post => p !== null)
-        } catch (err) {
-          console.error('Failed to fetch favorite posts:', err)
-          favoritePosts.value = []
+            favoritePosts.value = posts.filter((p): p is Post => p !== null)
+          } catch (err) {
+            console.error('Failed to fetch favorite posts:', err)
+            favoritePosts.value = []
+          }
+        } else {
+          // 回退模式：只从 IndexedDB 读取帖子缓存，不打网络
+          try {
+            const posts = await Promise.all(
+              postIds.map(async (id) => {
+                try {
+                  const cached = await indexedDB.getPost(id)
+                  return cached as unknown as Post
+                } catch (err) {
+                  console.error('Failed to read cached favorite post:', id, err)
+                  return null
+                }
+              }),
+            )
+
+            favoritePosts.value = posts.filter((p): p is Post => p !== null)
+          } catch (err) {
+            console.error('Failed to load cached favorite posts:', err)
+            favoritePosts.value = []
+          }
         }
       } else {
         favoritePosts.value = []
       }
 
-      return response
+      return data
     } catch (err: unknown) {
       error.value = err instanceof Error ? err.message : 'Failed to fetch favorites'
       throw err
@@ -85,6 +189,21 @@ export function useFavorites() {
       const favorite = await favoritesApi.addFavorite(data)
       favorites.value.unshift(favorite)
       toast.success(t('favorite.addSuccess'))
+
+      // 将收藏写入 IndexedDB（如果有登录用户）
+      try {
+        const userId = authStore.user?.id
+        if (userId) {
+          await indexedDB.addFavorite({
+            user_id: userId,
+            post_id: favorite.post_id,
+            created_at: Date.now(),
+          })
+        }
+      } catch (e) {
+        console.error('[IndexedDB] Failed to add favorite locally:', e)
+      }
+
       return favorite
     } catch (err: unknown) {
       const axiosError = err as { response?: { data?: { message?: string } } }
@@ -132,6 +251,16 @@ export function useFavorites() {
       // 从本地列表中移除
       favorites.value = favorites.value.filter((f) => f.post_id !== postId)
       toast.success(t('favorite.removeSuccess'))
+
+      // 从 IndexedDB 中移除本地收藏
+      try {
+        const userId = authStore.user?.id
+        if (userId) {
+          await indexedDB.removeFavorite(userId, postId)
+        }
+      } catch (e) {
+        console.error('[IndexedDB] Failed to remove favorite locally:', e)
+      }
     } catch (err: unknown) {
       const axiosError = err as { response?: { data?: { message?: string } } }
       const message = axiosError.response?.data?.message || t('favorite.removeFailed')
