@@ -385,7 +385,11 @@
     "usingCache": "Showing cached offline data. It may not be up to date.",
     "actionsQueued": "Some actions are queued offline and will sync when you're back online.",
     "favoriteQueued": "Favorite added in offline mode. It will sync to the server later.",
-    "unfavoriteQueued": "Favorite removed in offline mode. It will sync to the server later."
+    "unfavoriteQueued": "Favorite removed in offline mode. It will sync to the server later.",
+    "queueTitle": "Offline queue",
+    "queueEmpty": "No pending actions to sync.",
+    "syncNow": "Sync now",
+    "offlineNow": "You are currently offline. Some features may be limited."
   },
   "privacy": {
     "title": "Privacy Policy",
