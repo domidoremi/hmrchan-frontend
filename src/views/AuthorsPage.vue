@@ -118,7 +118,7 @@ import {
 import dayjs from 'dayjs'
 
 import MainLayout from '@/components/layout/MainLayout.vue'
-import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
+import LoadingSpinner from '@/components/feedback/LoadingSpinner.vue'
 import { PLATFORM_COLORS, PLATFORM_NAMES } from '@/types'
 import { authorsApi } from '@/api/services'
 import type { AuthorListItem } from '@/types'

@@ -93,7 +93,7 @@ import {
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 
-import OptimizedImage from '@/components/ui/OptimizedImage.vue'
+import OptimizedImage from '@/components/base/OptimizedImage.vue'
 import type { Post } from '@/types'
 import { resolveMediaUrl } from '@/utils/url'
 

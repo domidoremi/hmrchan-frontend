@@ -18,21 +18,13 @@ export default defineConfig(({ mode }) => ({
   ],
   resolve: {
     alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url))
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
   // 依赖优化
   optimizeDeps: {
-    include: [
-      'vue', 
-      'vue-router', 
-      'pinia', 
-      'axios', 
-      'dayjs',
-      'vue-i18n',
-      '@vueuse/core'
-    ],
-    exclude: ['vite-plugin-vue-devtools']
+    include: ['vue', 'vue-router', 'pinia', 'axios', 'dayjs', 'vue-i18n', '@vueuse/core'],
+    exclude: ['vite-plugin-vue-devtools'],
   },
   build: {
     // 生产环境优化
@@ -53,7 +45,11 @@ export default defineConfig(({ mode }) => ({
         manualChunks(id) {
           if (id.includes('node_modules')) {
             // Vue核心库（最高优先级，最常用）
-            if (id.includes('@vue/runtime') || id.includes('@vue/reactivity') || id.includes('@vue/shared')) {
+            if (
+              id.includes('@vue/runtime') ||
+              id.includes('@vue/reactivity') ||
+              id.includes('@vue/shared')
+            ) {
               return 'vue-core'
             }
             // Pinia 和 Router（高优先级）
@@ -91,7 +87,7 @@ export default defineConfig(({ mode }) => ({
             // 其他依赖
             return 'vendor'
           }
-          
+
           // 应用代码分割
           // 页面组件（views）独立分割
           if (id.includes('/src/views/')) {
@@ -100,12 +96,12 @@ export default defineConfig(({ mode }) => ({
               return `view-${match[1].toLowerCase()}`
             }
           }
-          
+
           // Composables 分组
           if (id.includes('/src/composables/')) {
             return 'composables'
           }
-          
+
           // API 服务分组
           if (id.includes('/src/api/')) {
             return 'api-services'
@@ -143,9 +139,9 @@ export default defineConfig(({ mode }) => ({
       clientFiles: [
         './src/views/HomePage.vue',
         './src/views/ExplorePage.vue',
-        './src/components/features/PostCard.vue',
-        './src/components/layout/MainLayout.vue'
-      ]
+        './src/components/business/PostCard.vue',
+        './src/components/layout/MainLayout.vue',
+      ],
     },
     proxy: {
       // 开发环境代理API请求
