@@ -14,14 +14,18 @@
       </div>
     </div>
 
-    <div class="filter-section">
+    <div class="filter-section filter-section--sort">
       <label class="filter-label">{{ $t('filter.sortBy') }}</label>
-      <select v-model="localFilters.sort_by" class="filter-select glass-input">
-        <option value="scraped_at">{{ $t('filter.latest') }}</option>
-        <option value="published_at">{{ $t('filter.published') }}</option>
-        <option value="view_count">{{ $t('post.views') }}</option>
-        <option value="like_count">{{ $t('post.likes') }}</option>
-      </select>
+      <div class="sort-chips">
+        <button v-for="item in sortOptions" :key="item.value" type="button" class="filter-chip"
+          :class="{ active: localFilters.sort_by === item.value }" @click="selectSort(item.value)"
+          :aria-label="`${$t('filter.sortBy')}: ${$t(item.labelKey)}`">
+          <span class="chip-icon">
+            <component :is="item.icon" :size="16" />
+          </span>
+          <span class="chip-label">{{ $t(item.labelKey) }}</span>
+        </button>
+      </div>
     </div>
 
     <!-- 升降序按钮（最新排序时隐藏） -->
@@ -62,7 +66,22 @@
 
 <script setup lang="ts">
 import { ref, watch, type Component } from 'vue'
-import { ArrowDown, ArrowUp, ImageIcon, RotateCcw, Filter, Youtube, Twitter, Instagram, Music2, Globe2 } from 'lucide-vue-next'
+import {
+  ArrowDown,
+  ArrowUp,
+  ImageIcon,
+  RotateCcw,
+  Filter,
+  Youtube,
+  Twitter,
+  Instagram,
+  Music2,
+  Globe2,
+  Clock,
+  CalendarDays,
+  Eye,
+  Heart,
+} from 'lucide-vue-next'
 import type { PostListParams, Platform } from '@/types'
 import GlassButton from '@/components/ui/GlassButton.vue'
 
@@ -86,6 +105,13 @@ const platformOptions: { value: '' | Platform; labelKey: string; icon: Component
   { value: 'instagram', labelKey: 'platform.instagram', icon: Instagram },
 ]
 
+const sortOptions: { value: 'scraped_at' | 'published_at' | 'view_count' | 'like_count'; labelKey: string; icon: Component }[] = [
+  { value: 'scraped_at', labelKey: 'filter.latest', icon: Clock },
+  { value: 'published_at', labelKey: 'filter.published', icon: CalendarDays },
+  { value: 'view_count', labelKey: 'post.views', icon: Eye },
+  { value: 'like_count', labelKey: 'post.likes', icon: Heart },
+]
+
 const localFilters = ref<PostListParams>({ ...props.filters })
 
 const isPlatformActive = (value: '' | Platform) => {
@@ -97,6 +123,11 @@ const isPlatformActive = (value: '' | Platform) => {
 
 const selectPlatform = (value: '' | Platform) => {
   localFilters.value.platform = value || ''
+}
+
+const selectSort = (value: 'scraped_at' | 'published_at' | 'view_count' | 'like_count') => {
+  if (localFilters.value.sort_by === value) return
+  localFilters.value.sort_by = value
 }
 
 watch(
