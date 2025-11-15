@@ -16,12 +16,29 @@
   color: rgba(255, 255, 255, 1);
 }
 
-/* 移动端优化 - 简化控件 */
+/* 移动端优化 - 简化控件 + 调整分布 */
 @media (max-width: 768px) {
   .plyr__controls {
     padding: 10px 8px !important;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
   }
-  
+
+  /* 第一行：主要按钮，保持紧凑 */
+  .plyr__controls .plyr__controls__item:not(.plyr__progress) {
+    order: 1;
+    flex-shrink: 0;
+  }
+
+  /* 第二行：进度条占满整行 */
+  .plyr__controls .plyr__progress {
+    order: 2;
+    flex: 1 1 100%;
+    margin-top: 4px;
+  }
+
   /* 隐藏次要控件节省空间 */
   .plyr__menu,
   [data-plyr='settings'] {
@@ -34,7 +51,13 @@
   .plyr__controls {
     padding: 8px 6px !important;
   }
-  
+
+  /* 控件尺寸稍微缩小，避免换行过于混乱 */
+  .plyr__controls button {
+    min-width: 34px;
+    min-height: 34px;
+  }
+
   /* 隐藏更多次要功能 */
   .plyr__menu__container,
   .plyr__controls [data-plyr='mute'],
