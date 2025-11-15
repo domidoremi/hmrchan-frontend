@@ -38,6 +38,40 @@
           <Search :size="24" />
         </button>
 
+        <!-- 离线队列状态按钮 -->
+        <div class="queue-status-container">
+          <button class="action-button queue-button" type="button" @click="toggleQueuePanel"
+            :aria-label="$t('offline.actionsQueued')">
+            <CloudOff :size="20" />
+            <span v-if="queueStatus.pending > 0" class="queue-badge">
+              {{ queueStatus.pending }}
+            </span>
+          </button>
+
+          <Transition name="dropdown">
+            <div v-if="showQueuePanel" ref="queueMenuRef" class="queue-dropdown glass-card">
+              <div class="queue-header">
+                <span class="queue-title">{{ $t('offline.queueTitle') }}</span>
+              </div>
+              <div class="queue-body">
+                <p class="queue-description">
+                  {{ $t('offline.actionsQueued') }}
+                </p>
+                <p v-if="queueStatus.pending > 0" class="queue-count">
+                  {{ queueStatus.pending }}
+                </p>
+                <p v-else class="queue-empty">
+                  {{ $t('offline.queueEmpty') }}
+                </p>
+              </div>
+              <button class="queue-sync-button" type="button" @click="handleQueueSync"
+                :disabled="!queueStatus.pending || !isOnline || isQueueSyncing">
+                <span>{{ $t('offline.syncNow') }}</span>
+              </button>
+            </div>
+          </Transition>
+        </div>
+
         <!-- 统一设置按钮：语言/主题/布局等快捷设置（不跳转页面） -->
         <div class="settings-menu-container">
           <button class="action-button" type="button" @click="toggleSettingsPanel" :aria-label="$t('nav.settings')">
@@ -105,6 +139,14 @@
       <div class="mobile-top-actions">
         <button class="action-button search-button" @click="goToSearch">
           <Search :size="24" />
+        </button>
+
+        <button class="action-button queue-button" type="button" @click="toggleQueuePanel"
+          :aria-label="$t('offline.actionsQueued')">
+          <CloudOff :size="20" />
+          <span v-if="queueStatus.pending > 0" class="queue-badge">
+            {{ queueStatus.pending }}
+          </span>
         </button>
 
         <button class="action-button settings-menu-container" type="button" @click="toggleSettingsPanel"
@@ -251,6 +293,7 @@ import {
   Heart,
   Users,
   Search,
+  CloudOff,
   Settings,
   User,
   LogOut,
@@ -264,6 +307,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useSettingsStore } from '@/stores/settings'
 import { useThemeStore } from '@/stores/theme'
 import type { Theme } from '@/types'
+import { offlineQueue } from '@/utils/offlineQueue'
 
 const router = useRouter()
 const { locale } = useI18n()
@@ -279,6 +323,53 @@ const showUserMenu = ref(false)
 const userMenuRef = ref<HTMLElement | null>(null)
 const showSettingsPanel = ref(false)
 const settingsMenuRef = ref<HTMLElement | null>(null)
+const showQueuePanel = ref(false)
+const queueMenuRef = ref<HTMLElement | null>(null)
+
+const queueStatus = ref<{ pending: number; syncing: number; failed: number }>({
+  pending: 0,
+  syncing: 0,
+  failed: 0,
+})
+const isQueueSyncing = ref(false)
+const isOnline = ref(typeof window === 'undefined' ? true : navigator.onLine)
+
+const hasQueueItems = computed(() => queueStatus.value.pending > 0)
+
+const refreshQueueStatus = async () => {
+  try {
+    const status = await offlineQueue.getQueueStatus()
+    queueStatus.value = status
+  } catch (error) {
+    console.error('[Offline Queue] Failed to get status:', error)
+  }
+}
+
+const toggleQueuePanel = async () => {
+  showQueuePanel.value = !showQueuePanel.value
+  if (showQueuePanel.value) {
+    await refreshQueueStatus()
+  }
+}
+
+const handleQueueSync = async () => {
+  if (!isOnline.value || !hasQueueItems.value || isQueueSyncing.value) return
+  try {
+    isQueueSyncing.value = true
+    await offlineQueue.manualSync()
+    await refreshQueueStatus()
+  } catch (error) {
+    console.error('[Offline Queue] Manual sync failed:', error)
+  } finally {
+    isQueueSyncing.value = false
+  }
+}
+
+const handleOnlineChange = () => {
+  if (typeof navigator !== 'undefined') {
+    isOnline.value = navigator.onLine
+  }
+}
 
 // 点击导航栏搜索按钮：跳转到 Explore 作为统一搜索视图
 const goToSearch = () => {
@@ -437,17 +528,31 @@ const handleClickOutside = (event: MouseEvent) => {
   if (settingsMenuRef.value && !settingsMenuRef.value.contains(target) && !inSettingsButton) {
     showSettingsPanel.value = false
   }
+
+  const inQueueContainer = target.closest('.queue-status-container')
+  if (queueMenuRef.value && !queueMenuRef.value.contains(target) && !inQueueContainer) {
+    showQueuePanel.value = false
+  }
 }
+let queueStatusTimer: number | null = null
 
 onMounted(() => {
   document.addEventListener('click', handleClickOutside)
   updateIsMobile()
+
+  refreshQueueStatus()
 
   if (typeof window !== 'undefined') {
     window.addEventListener('resize', updateIsMobile)
     window.addEventListener('touchstart', handleGlobalTouchStart, { passive: true })
     window.addEventListener('touchend', handleGlobalTouchEnd, { passive: true })
     window.addEventListener('touchcancel', handleGlobalTouchEnd, { passive: true })
+    window.addEventListener('online', handleOnlineChange)
+    window.addEventListener('offline', handleOnlineChange)
+
+    queueStatusTimer = window.setInterval(() => {
+      refreshQueueStatus()
+    }, 15000)
   }
 })
 
@@ -458,6 +563,13 @@ onUnmounted(() => {
     window.removeEventListener('touchstart', handleGlobalTouchStart)
     window.removeEventListener('touchend', handleGlobalTouchEnd)
     window.removeEventListener('touchcancel', handleGlobalTouchEnd)
+    window.removeEventListener('online', handleOnlineChange)
+    window.removeEventListener('offline', handleOnlineChange)
+
+    if (queueStatusTimer !== null) {
+      window.clearInterval(queueStatusTimer)
+      queueStatusTimer = null
+    }
   }
 })
 </script>
@@ -661,6 +773,32 @@ onUnmounted(() => {
   flex-shrink: 0;
 }
 
+.queue-status-container {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.queue-button {
+  position: relative;
+}
+
+.queue-badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--color-danger, #ef4444);
+  color: #fff;
+  font-size: 10px;
+  line-height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .settings-dropdown {
   position: fixed;
   top: calc(var(--app-navbar-height, 72px) + var(--spacing-2));
@@ -674,6 +812,83 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-4);
+}
+
+.queue-dropdown {
+  position: fixed;
+  top: calc(var(--app-navbar-height, 72px) + var(--spacing-2));
+  right: calc(var(--spacing-4) + 48px);
+  width: 260px;
+  max-width: calc(100% - 2 * var(--spacing-4));
+  padding: var(--spacing-4);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--glass-shadow);
+  z-index: 1100;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+}
+
+.queue-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.queue-title {
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  color: var(--color-text-primary);
+}
+
+.queue-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-1);
+}
+
+.queue-description {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+}
+
+.queue-count {
+  margin: 0;
+  font-size: var(--text-lg);
+  font-weight: var(--font-bold);
+  color: var(--color-primary);
+}
+
+.queue-empty {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+}
+
+.queue-sync-button {
+  margin-top: var(--spacing-2);
+  width: 100%;
+  padding: var(--spacing-2) var(--spacing-3);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg-light);
+  color: var(--color-text-primary);
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.queue-sync-button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.queue-sync-button:not(:disabled):hover {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #fff;
 }
 
 .settings-group {

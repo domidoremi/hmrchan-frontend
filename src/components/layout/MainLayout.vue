@@ -10,6 +10,9 @@
 
     <!-- Main Content Area -->
     <main id="main-content" class="main-content" role="main">
+      <div v-if="isOffline" class="network-banner">
+        {{ $t('offline.offlineNow') }}
+      </div>
       <div v-if="!props.disableContainer" :class="mainContainerClass">
         <slot />
       </div>
@@ -31,6 +34,7 @@ import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
 import AppNavbar from './AppNavbar.vue'
 import AppFooter from './AppFooter.vue'
 import BackToTop from '../ui/BackToTop.vue'
+import { useNetworkStore } from '@/stores/network'
 
 const props = withDefaults(
   defineProps<{
@@ -64,9 +68,12 @@ const showBackToTop = ref(false)
 const handleScroll = () => {
   showBackToTop.value = window.scrollY > 400
 }
+const networkStore = useNetworkStore()
+const isOffline = computed(() => !networkStore.isOnline)
 
 onMounted(() => {
   window.addEventListener('scroll', handleScroll, { passive: true })
+  networkStore.init()
 })
 
 onBeforeUnmount(() => {
