@@ -899,18 +899,20 @@ onUnmounted(() => {
     max-height: 100vh;
   }
 
-  /* 竖屏视频在移动端尽量贴合全屏，减少黑边 */
+  /* 竖屏视频在移动端尽量贴合全屏，优先完整显示画面，避免上下被裁切 */
   .video-wrapper.vertical-video {
-    width: 100vw;
-    max-width: 100vw;
+    height: 100vh;
     max-height: 100vh;
+    width: auto;
+    max-width: 100vw;
     border-radius: 0;
     padding: 0;
   }
 
   .video-wrapper.vertical-video .plyr-video {
     max-height: 100vh;
-    object-fit: cover;
+    max-width: 100vw;
+    object-fit: contain;
   }
 
   .viewer-toolbar {
