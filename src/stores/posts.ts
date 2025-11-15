@@ -6,6 +6,8 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import type { Post, PostDetail, PostListParams, PaginatedResponse, Platform, UUID } from '@/types'
 import { api } from '@/api/client'
+import { indexedDB } from '@/utils/indexedDB'
+import { fetchWithFallback } from '@/utils/cacheHelper'
 
 export const usePostsStore = defineStore(
   'posts',
@@ -96,15 +98,39 @@ export const usePostsStore = defineStore(
       }
     }
 
-    // 获取单个内容详情
+    // 获取单个内容详情（带 IndexedDB 回退）
     async function fetchPost(postId: UUID) {
       loading.value = true
       error.value = null
 
       try {
-        const response = await api.get<PostDetail>(`/posts/${postId}`)
-        currentPost.value = response
-        return response
+        const { data } = await fetchWithFallback<PostDetail>({
+          primary: () => api.get<PostDetail>(`/posts/${postId}`),
+          fallback: async () => {
+            // 从 IndexedDB 读取基础 Post 信息，构造一个最小可用的 PostDetail
+            try {
+              const cached = await indexedDB.getPost(postId)
+              if (!cached) return null
+              return {
+                ...cached,
+                media_files: [],
+                tags: [],
+              } as PostDetail
+            } catch {
+              return null
+            }
+          },
+          onSuccess: async (value) => {
+            try {
+              await indexedDB.savePosts([value])
+            } catch (persistError) {
+              console.error('[PostsStore] Failed to persist post to IndexedDB:', persistError)
+            }
+          },
+        })
+
+        currentPost.value = data
+        return data
       } catch (err: unknown) {
         error.value = err instanceof Error ? err.message : 'Unknown error'
         throw err

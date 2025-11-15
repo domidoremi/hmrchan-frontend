@@ -4,6 +4,7 @@
  */
 import { api } from './client'
 import { getRuntimeApiEndpoint } from '@/config/runtime'
+import { indexedDB } from '@/utils/indexedDB'
 import type {
   LoginRequest,
   LoginResponse,
@@ -123,16 +124,34 @@ export const postsApi = {
    * GET /posts/
    * Note: Trailing slash added to avoid 307 redirect to HTTP
    */
-  getPosts(params?: PostListParams) {
-    return api.get<PaginatedResponse<Post>>('/posts/', { params })
+  async getPosts(params?: PostListParams) {
+    const response = await api.get<PaginatedResponse<Post>>('/posts/', { params })
+
+    // 将帖子列表持久化到 IndexedDB（忽略错误，避免影响正常请求）
+    try {
+      await indexedDB.savePosts(response.items)
+    } catch (error) {
+      console.error('[IndexedDB] Failed to save posts list:', error)
+    }
+
+    return response
   },
 
   /**
    * 获取单个内容详情
    * GET /posts/{post_id}
    */
-  getPostById(postId: UUID) {
-    return api.get<PostDetail>(`/posts/${postId}`)
+  async getPostById(postId: UUID) {
+    const detail = await api.get<PostDetail>(`/posts/${postId}`)
+
+    // 将详情也写入 IndexedDB，便于后续作为列表/离线回退使用
+    try {
+      await indexedDB.savePosts([detail])
+    } catch (error) {
+      console.error('[IndexedDB] Failed to save post detail:', error)
+    }
+
+    return detail
   },
 
   /**
