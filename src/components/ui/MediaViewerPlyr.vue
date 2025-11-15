@@ -626,8 +626,8 @@ onUnmounted(() => {
 
 .media-container {
   position: relative;
-  max-width: 90vw;
-  max-height: 85vh;
+  max-width: 100vw;
+  max-height: 90vh;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -896,7 +896,21 @@ onUnmounted(() => {
 
   .media-container {
     max-width: 100vw;
-    max-height: 80vh;
+    max-height: 100vh;
+  }
+
+  /* 竖屏视频在移动端尽量贴合全屏，减少黑边 */
+  .video-wrapper.vertical-video {
+    width: 100vw;
+    max-width: 100vw;
+    max-height: 100vh;
+    border-radius: 0;
+    padding: 0;
+  }
+
+  .video-wrapper.vertical-video .plyr-video {
+    max-height: 100vh;
+    object-fit: cover;
   }
 
   .viewer-toolbar {
