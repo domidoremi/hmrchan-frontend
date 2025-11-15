@@ -7,23 +7,9 @@
 // 类型定义
 // ============================================
 
-export interface Post {
-  id: string
-  platform: 'youtube' | 'twitter' | 'instagram' | 'tiktok'
-  author_id: string
-  author_name: string
-  author_avatar: string
-  content: string
-  media_urls: string[]
-  thumbnail_url?: string
-  stats: {
-    likes: number
-    comments: number
-    shares: number
-    views: number
-  }
-  tags: string[]
-  created_at: string
+import type { Post as ApiPost } from '@/types'
+
+export interface CachedPost extends ApiPost {
   cached_at: number
 }
 
@@ -64,7 +50,7 @@ export interface MediaMetadata {
 export interface OfflineAction {
   id?: number
   action: 'favorite' | 'unfavorite' | 'like' | 'comment'
-  data: Record<string, any>
+  data: Record<string, unknown>
   timestamp: number
   status: 'pending' | 'syncing' | 'synced' | 'failed'
   retry_count: number
@@ -140,9 +126,9 @@ class IndexedDBManager {
 
         // 创建 offline_queue 表
         if (!db.objectStoreNames.contains('offline_queue')) {
-          const queueStore = db.createObjectStore('offline_queue', { 
-            keyPath: 'id', 
-            autoIncrement: true 
+          const queueStore = db.createObjectStore('offline_queue', {
+            keyPath: 'id',
+            autoIncrement: true,
           })
           queueStore.createIndex('status', 'status', { unique: false })
           queueStore.createIndex('timestamp', 'timestamp', { unique: false })
@@ -169,12 +155,12 @@ class IndexedDBManager {
   // Posts 操作
   // ============================================
 
-  async savePosts(posts: Post[]): Promise<void> {
+  async savePosts(posts: ApiPost[]): Promise<void> {
     const db = await this.ensureDB()
     const transaction = db.transaction(['posts'], 'readwrite')
     const store = transaction.objectStore('posts')
 
-    const promises = posts.map(post => {
+    const promises = posts.map((post) => {
       return new Promise<void>((resolve, reject) => {
         const request = store.put({ ...post, cached_at: Date.now() })
         request.onsuccess = () => resolve()
@@ -186,7 +172,7 @@ class IndexedDBManager {
     console.log(`[IndexedDB] Saved ${posts.length} posts`)
   }
 
-  async getPost(id: string): Promise<Post | null> {
+  async getPost(id: string): Promise<CachedPost | null> {
     const db = await this.ensureDB()
     return new Promise((resolve, reject) => {
       const transaction = db.transaction(['posts'], 'readonly')
@@ -198,19 +184,21 @@ class IndexedDBManager {
     })
   }
 
-  async getPosts(options: {
-    platform?: string
-    limit?: number
-    offset?: number
-  } = {}): Promise<Post[]> {
+  async getPosts(
+    options: {
+      platform?: string
+      limit?: number
+      offset?: number
+    } = {},
+  ): Promise<CachedPost[]> {
     const db = await this.ensureDB()
     const { platform, limit = 50, offset = 0 } = options
 
     return new Promise((resolve, reject) => {
       const transaction = db.transaction(['posts'], 'readonly')
       const store = transaction.objectStore('posts')
-      
-      const posts: Post[] = []
+
+      const posts: CachedPost[] = []
       let cursor: IDBRequest
 
       if (platform) {
@@ -226,7 +214,7 @@ class IndexedDBManager {
 
       cursor.onsuccess = (event) => {
         const c = (event.target as IDBRequest).result as IDBCursorWithValue | null
-        
+
         if (c) {
           if (skipped < offset) {
             skipped++
@@ -297,7 +285,7 @@ class IndexedDBManager {
   async addFavorite(favorite: Omit<Favorite, 'id'>): Promise<string> {
     const db = await this.ensureDB()
     const id = `${favorite.user_id}_${favorite.post_id}`
-    
+
     return new Promise((resolve, reject) => {
       const transaction = db.transaction(['favorites'], 'readwrite')
       const store = transaction.objectStore('favorites')
@@ -311,7 +299,7 @@ class IndexedDBManager {
   async removeFavorite(userId: string, postId: string): Promise<void> {
     const db = await this.ensureDB()
     const id = `${userId}_${postId}`
-    
+
     return new Promise((resolve, reject) => {
       const transaction = db.transaction(['favorites'], 'readwrite')
       const store = transaction.objectStore('favorites')
@@ -325,7 +313,7 @@ class IndexedDBManager {
   async isFavorite(userId: string, postId: string): Promise<boolean> {
     const db = await this.ensureDB()
     const id = `${userId}_${postId}`
-    
+
     return new Promise((resolve, reject) => {
       const transaction = db.transaction(['favorites'], 'readonly')
       const store = transaction.objectStore('favorites')
@@ -338,7 +326,7 @@ class IndexedDBManager {
 
   async getFavorites(userId: string): Promise<Favorite[]> {
     const db = await this.ensureDB()
-    
+
     return new Promise((resolve, reject) => {
       const transaction = db.transaction(['favorites'], 'readonly')
       const store = transaction.objectStore('favorites')
@@ -384,7 +372,7 @@ class IndexedDBManager {
 
   async addToOfflineQueue(action: Omit<OfflineAction, 'id'>): Promise<number> {
     const db = await this.ensureDB()
-    
+
     return new Promise((resolve, reject) => {
       const transaction = db.transaction(['offline_queue'], 'readwrite')
       const store = transaction.objectStore('offline_queue')
@@ -397,7 +385,7 @@ class IndexedDBManager {
 
   async getPendingActions(): Promise<OfflineAction[]> {
     const db = await this.ensureDB()
-    
+
     return new Promise((resolve, reject) => {
       const transaction = db.transaction(['offline_queue'], 'readonly')
       const store = transaction.objectStore('offline_queue')
@@ -410,12 +398,12 @@ class IndexedDBManager {
   }
 
   async updateActionStatus(
-    id: number, 
+    id: number,
     status: OfflineAction['status'],
-    errorMessage?: string
+    errorMessage?: string,
   ): Promise<void> {
     const db = await this.ensureDB()
-    
+
     return new Promise((resolve, reject) => {
       const transaction = db.transaction(['offline_queue'], 'readwrite')
       const store = transaction.objectStore('offline_queue')
@@ -427,7 +415,7 @@ class IndexedDBManager {
           action.status = status
           if (errorMessage) action.error_message = errorMessage
           if (status === 'failed') action.retry_count++
-          
+
           const updateRequest = store.put(action)
           updateRequest.onsuccess = () => resolve()
           updateRequest.onerror = () => reject(updateRequest.error)
@@ -442,7 +430,7 @@ class IndexedDBManager {
 
   async clearSyncedActions(): Promise<number> {
     const db = await this.ensureDB()
-    
+
     return new Promise((resolve, reject) => {
       const transaction = db.transaction(['offline_queue'], 'readwrite')
       const store = transaction.objectStore('offline_queue')
@@ -472,8 +460,8 @@ class IndexedDBManager {
 
   async clearOldPosts(daysToKeep = 7): Promise<number> {
     const db = await this.ensureDB()
-    const cutoffTime = Date.now() - (daysToKeep * 24 * 60 * 60 * 1000)
-    
+    const cutoffTime = Date.now() - daysToKeep * 24 * 60 * 60 * 1000
+
     return new Promise((resolve, reject) => {
       const transaction = db.transaction(['posts'], 'readwrite')
       const store = transaction.objectStore('posts')
@@ -486,7 +474,7 @@ class IndexedDBManager {
         const cursor = (event.target as IDBRequest).result as IDBCursorWithValue | null
         if (cursor) {
           // 不删除收藏的帖子
-          this.isFavorite('current_user', cursor.value.id).then(isFav => {
+          this.isFavorite('current_user', cursor.value.id).then((isFav) => {
             if (!isFav) {
               cursor.delete()
               count++
@@ -505,7 +493,7 @@ class IndexedDBManager {
 
   async getStorageSize(): Promise<{ posts: number; total: number; totalMB: string }> {
     const db = await this.ensureDB()
-    
+
     // 简化实现：计算记录数
     const postsCount = await new Promise<number>((resolve) => {
       const transaction = db.transaction(['posts'], 'readonly')
@@ -528,19 +516,19 @@ class IndexedDBManager {
   async clearAll(): Promise<void> {
     const db = await this.ensureDB()
     const storeNames = ['posts', 'authors', 'favorites', 'media_metadata', 'offline_queue']
-    
+
     const transaction = db.transaction(storeNames, 'readwrite')
-    
+
     await Promise.all(
-      storeNames.map(name => {
+      storeNames.map((name) => {
         return new Promise<void>((resolve, reject) => {
           const request = transaction.objectStore(name).clear()
           request.onsuccess = () => resolve()
           request.onerror = () => reject(request.error)
         })
-      })
+      }),
     )
-    
+
     console.log('[IndexedDB] All data cleared')
   }
 

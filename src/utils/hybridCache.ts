@@ -1,7 +1,9 @@
 /**
  * 混合缓存策略：简化的内存缓存实现
- * 生产环境优化版本 - 仅使用内存缓存
+ * 生产环境优化版本 - 默认使用内存缓存，可选统计 IndexedDB
  */
+
+import { indexedDB } from './indexedDB'
 
 interface CacheEntry {
   url: string
@@ -151,6 +153,18 @@ export class HybridMediaCache {
     const sizeMB = (this.currentSize / (1024 * 1024)).toFixed(2)
     const utilization = ((this.currentSize / this.maxSize) * 100).toFixed(1)
 
+    // IndexedDB 统计（可能会失败，失败时回退为 0）
+    let idbCount = 0
+    let idbSizeMB = '0.00'
+
+    try {
+      const storage = await indexedDB.getStorageSize()
+      idbCount = storage.total
+      idbSizeMB = storage.totalMB
+    } catch (error) {
+      console.error('[HybridCache] Failed to read IndexedDB stats:', error)
+    }
+
     return {
       memory: {
         count: this.cache.size,
@@ -158,14 +172,14 @@ export class HybridMediaCache {
         utilization: `${utilization}%`,
       },
       indexedDB: {
-        count: 0,
-        size: '0 MB',
-        utilization: '0%',
+        count: idbCount,
+        size: `${idbSizeMB} MB`,
+        utilization: idbCount > 0 ? 'N/A' : '0%',
       },
       total: {
-        count: this.cache.size,
+        count: this.cache.size + idbCount,
         memorySize: `${sizeMB} MB`,
-        persistentSize: '0 MB',
+        persistentSize: `${idbSizeMB} MB`,
       },
     }
   }

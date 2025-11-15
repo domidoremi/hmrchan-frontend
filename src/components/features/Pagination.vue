@@ -4,45 +4,28 @@
       <ChevronsLeft :size="18" />
     </button>
 
-    <button
-      class="pagination-button"
-      :disabled="currentPage === 1"
-      @click="goToPage(currentPage - 1)"
-    >
+    <button class="pagination-button" :disabled="currentPage === 1" @click="goToPage(currentPage - 1)">
       <ChevronLeft :size="18" />
     </button>
 
     <div class="pagination-pages">
-      <button
-        v-for="page in visiblePages"
-        :key="page"
-        class="pagination-page"
-        :class="{ active: page === currentPage, ellipsis: page === '...' }"
-        :disabled="page === '...'"
-        @click="typeof page === 'number' && goToPage(page)"
-      >
+      <button v-for="page in visiblePages" :key="page" class="pagination-page"
+        :class="{ active: page === currentPage, ellipsis: page === '...' }" :disabled="page === '...'"
+        @click="typeof page === 'number' && goToPage(page)">
         {{ page }}
       </button>
     </div>
 
-    <button
-      class="pagination-button"
-      :disabled="currentPage === totalPages"
-      @click="goToPage(currentPage + 1)"
-    >
+    <button class="pagination-button" :disabled="currentPage === totalPages" @click="goToPage(currentPage + 1)">
       <ChevronRight :size="18" />
     </button>
 
-    <button
-      class="pagination-button"
-      :disabled="currentPage === totalPages"
-      @click="goToPage(totalPages)"
-    >
+    <button class="pagination-button" :disabled="currentPage === totalPages" @click="goToPage(totalPages)">
       <ChevronsRight :size="18" />
     </button>
 
     <span class="pagination-info">
-      {{ $t('common.page') }} {{ currentPage }} {{ $t('common.of') }} {{ totalPages }}
+      {{ $t('common.page') }} {{ safeCurrentPage }} {{ $t('common.of') }} {{ safeTotalPages }}
     </span>
   </div>
 </template>
@@ -50,6 +33,10 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-vue-next'
+
+defineOptions({
+  name: 'AppPagination',
+})
 
 interface Props {
   currentPage: number
@@ -102,6 +89,19 @@ const visiblePages = computed(() => {
   }
 
   return pages
+})
+
+// 安全的页码显示，避免出现 "1 / 0" 等情况
+const safeTotalPages = computed(() => {
+  return props.totalPages && props.totalPages > 0 ? props.totalPages : 1
+})
+
+const safeCurrentPage = computed(() => {
+  const total = safeTotalPages.value
+  const current = props.currentPage || 1
+  if (current < 1) return 1
+  if (current > total) return total
+  return current
 })
 
 const goToPage = (page: number) => {
