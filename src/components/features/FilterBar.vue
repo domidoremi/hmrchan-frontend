@@ -128,6 +128,8 @@ const selectPlatform = (value: '' | Platform) => {
 const selectSort = (value: 'scraped_at' | 'published_at' | 'view_count' | 'like_count') => {
   if (localFilters.value.sort_by === value) return
   localFilters.value.sort_by = value
+  // 选择排序方式时，立即应用筛选（带防抖）
+  applyFilters()
 }
 
 watch(
