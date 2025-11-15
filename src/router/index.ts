@@ -25,6 +25,14 @@ export const routes: RouteRecordRaw[] = [
     },
   },
   {
+    path: '/search',
+    name: 'search',
+    component: () => import(/* webpackChunkName: "search" */ '@/views/SearchPage.vue'),
+    meta: {
+      title: 'Search',
+    },
+  },
+  {
     path: '/posts',
     name: 'posts',
     component: () => import(/* webpackChunkName: "posts" */ '@/views/PostsView.vue'),
