@@ -33,8 +33,8 @@
 
       <!-- 右侧操作 (桌面端) -->
       <div class="navbar-actions">
-        <!-- 搜索按钮 -->
-        <button class="action-button search-button" @click="openSearchModal" :aria-label="$t('search.placeholder')">
+        <!-- 搜索按钮：跳转到搜索视图（Explore） -->
+        <button class="action-button search-button" @click="goToSearch" :aria-label="$t('search.placeholder')">
           <Search :size="24" />
         </button>
 
@@ -101,7 +101,7 @@
 
       <!-- 右侧按钮 -->
       <div class="mobile-top-actions">
-        <button class="action-button search-button" @click="openSearchModal">
+        <button class="action-button search-button" @click="goToSearch">
           <Search :size="24" />
         </button>
 
@@ -181,70 +181,10 @@
     </div>
   </Transition>
 
-  <!-- 搜索模态框 -->
-  <Teleport to="body">
-    <Transition name="modal-fade">
-      <div v-if="searchModalOpen" class="search-modal-overlay" @click="closeSearchModal">
-        <div class="search-modal-content" @click.stop>
-          <div class="search-header">
-            <div class="search-input-wrapper">
-              <Search :size="20" class="search-icon" />
-              <input ref="searchInputRef" v-model="searchQuery" type="text" :placeholder="$t('search.placeholder')"
-                class="search-input" @input="handleSearchInput" />
-              <button v-if="searchQuery" class="clear-btn" @click="clearSearch" :aria-label="$t('common.clear')">
-                <X :size="18" />
-              </button>
-            </div>
-            <button class="close-btn" @click="closeSearchModal" :aria-label="$t('common.close')">
-              <X :size="24" />
-            </button>
-          </div>
-
-          <div class="search-results">
-            <!-- 加载状态 -->
-            <div v-if="searchLoading" class="search-loading">
-              <div class="loading-spinner"></div>
-              <p>{{ $t('search.searching') }}</p>
-            </div>
-
-            <!-- 空状态 -->
-            <div v-else-if="!searchQuery" class="search-empty">
-              <Search :size="48" />
-              <p>{{ $t('search.placeholder') }}</p>
-            </div>
-
-            <!-- 搜索结果 -->
-            <div v-else-if="searchResults.length > 0" class="results-list">
-              <RouterLink v-for="post in searchResults" :key="post.id" :to="`/posts/${post.id}`" class="result-item"
-                @click="closeSearchModal">
-                <img v-if="post.thumbnail_url" :src="getMediaUrl(post.thumbnail_url)" :alt="post.title || 'Post'"
-                  class="result-thumbnail" />
-                <div class="result-info">
-                  <h4 class="result-title">{{ post.title || $t('post.untitled') }}</h4>
-                  <p v-if="post.description" class="result-description">{{ truncate(post.description, 100) }}</p>
-                  <div class="result-meta">
-                    <span class="meta-platform">{{ post.platform }}</span>
-                    <span class="meta-date">{{ formatDate(post.published_at || post.scraped_at) }}</span>
-                  </div>
-                </div>
-              </RouterLink>
-            </div>
-
-            <!-- 无结果 -->
-            <div v-else class="search-no-results">
-              <Search :size="48" />
-              <p>{{ $t('search.noResults') }}</p>
-              <p class="hint">{{ $t('search.tryDifferent') }}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </Transition>
-  </Teleport>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import {
@@ -259,32 +199,23 @@ import {
   LogIn,
   X,
 } from 'lucide-vue-next'
-import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
-import { usePostsStore } from '@/stores/posts'
 import { useSettingsStore } from '@/stores/settings'
-import { resolveMediaUrl } from '@/utils/url'
-import type { Post } from '@/types'
 
 const router = useRouter()
-const { t } = useI18n()
 const authStore = useAuthStore()
-const postsStore = usePostsStore()
 const settingsStore = useSettingsStore()
 
 const { user, isAuthenticated } = storeToRefs(authStore)
 const { settings } = storeToRefs(settingsStore)
 
 const showUserMenu = ref(false)
-const searchModalOpen = ref(false)
 const userMenuRef = ref<HTMLElement | null>(null)
-const searchInputRef = ref<HTMLInputElement | null>(null)
 
-// 搜索相关状态
-const searchQuery = ref('')
-const searchResults = ref<Post[]>([])
-const searchLoading = ref(false)
-let searchTimeout: ReturnType<typeof setTimeout> | null = null
+// 点击导航栏搜索按钮：跳转到 Explore 作为统一搜索视图
+const goToSearch = () => {
+  router.push({ path: '/explore' })
+}
 
 // 移动端检测
 const isMobile = ref(false)
@@ -321,6 +252,7 @@ const swipeActive = ref(false)
 const handleGlobalTouchStart = (event: TouchEvent) => {
   if (!isMobile.value || !settings.value.enableSwipeNavigation || event.touches.length !== 1) return
   const touch = event.touches[0]
+  if (!touch) return
   const target = event.target as HTMLElement
 
   // 避免与底部导航点击冲突
@@ -340,6 +272,13 @@ const handleGlobalTouchEnd = (event: TouchEvent) => {
   }
 
   const touch = event.changedTouches[0]
+  if (!touch) {
+    swipeActive.value = false
+    swipeStartX.value = null
+    swipeStartY.value = null
+    return
+  }
+
   const deltaX = touch.clientX - swipeStartX.value
   const deltaY = touch.clientY - swipeStartY.value
   const absDeltaX = Math.abs(deltaX)
@@ -371,6 +310,7 @@ const handleGlobalTouchEnd = (event: TouchEvent) => {
   if (nextIndex < 0 || nextIndex >= items.length) return
 
   const nextItem = items[nextIndex]
+  if (!nextItem) return
   router.push(nextItem.path)
 }
 
@@ -381,80 +321,7 @@ const userAvatarUrl = computed(() => {
   return `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.value?.username || 'default'}`
 })
 
-const openSearchModal = async () => {
-  searchModalOpen.value = true
-  await nextTick()
-  searchInputRef.value?.focus()
-}
-
-const closeSearchModal = () => {
-  searchModalOpen.value = false
-  searchQuery.value = ''
-  searchResults.value = []
-  if (searchTimeout) {
-    clearTimeout(searchTimeout)
-    searchTimeout = null
-  }
-}
-
-const clearSearch = () => {
-  searchQuery.value = ''
-  searchResults.value = []
-  searchInputRef.value?.focus()
-}
-
-// 防抖搜索
-const handleSearchInput = () => {
-  if (searchTimeout) {
-    clearTimeout(searchTimeout)
-  }
-
-  if (!searchQuery.value.trim()) {
-    searchResults.value = []
-    searchLoading.value = false
-    return
-  }
-
-  searchLoading.value = true
-
-  searchTimeout = setTimeout(async () => {
-    try {
-      await postsStore.fetchPosts({
-        q: searchQuery.value.trim(),
-        page: 1,
-        page_size: 10,
-      })
-      searchResults.value = postsStore.posts
-    } catch (error) {
-      console.error('Search error:', error)
-      searchResults.value = []
-    } finally {
-      searchLoading.value = false
-    }
-  }, 300) // 300ms 防抖延迟
-}
-
-// 工具函数
-const getMediaUrl = (url: string) => {
-  return resolveMediaUrl(url)
-}
-
-const truncate = (text: string, length: number) => {
-  if (text.length <= length) return text
-  return text.substring(0, length) + '...'
-}
-
-const formatDate = (dateString: string) => {
-  const date = new Date(dateString)
-  const now = new Date()
-  const diff = now.getTime() - date.getTime()
-  const days = Math.floor(diff / (1000 * 60 * 60 * 24))
-
-  if (days === 0) return t('common.today')
-  if (days === 1) return t('common.yesterday')
-  if (days < 7) return t('common.daysAgo', { days })
-  return date.toLocaleDateString(t('locale'))
-}
+// 其他工具函数保留在此下方
 
 const handleLogout = () => {
   authStore.logout()
@@ -1122,192 +989,5 @@ onUnmounted(() => {
   transform: scale(1.05);
 }
 
-/* 搜索结果区域 */
-.search-results {
-  max-height: 60vh;
-  overflow-y: auto;
-}
-
-/* 加载状态 */
-.search-loading {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: var(--spacing-12);
-  gap: var(--spacing-4);
-  color: var(--color-text-secondary);
-}
-
-.loading-spinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid var(--glass-border);
-  border-top-color: var(--color-primary);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-/* 空状态 */
-.search-empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: var(--spacing-12);
-  gap: var(--spacing-4);
-  color: var(--color-text-tertiary);
-}
-
-/* 无结果 */
-.search-no-results {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: var(--spacing-12);
-  gap: var(--spacing-3);
-  color: var(--color-text-tertiary);
-}
-
-.search-no-results .hint {
-  font-size: var(--text-sm);
-  opacity: 0.8;
-}
-
-/* 结果列表 */
-.results-list {
-  display: flex;
-  flex-direction: column;
-}
-
-.result-item {
-  display: flex;
-  gap: var(--spacing-4);
-  padding: var(--spacing-4);
-  border-bottom: 1px solid var(--glass-border);
-  text-decoration: none;
-  color: inherit;
-  transition: all var(--transition-fast);
-}
-
-.result-item:hover {
-  background: var(--glass-bg-light);
-}
-
-.result-item:last-child {
-  border-bottom: none;
-}
-
-.result-thumbnail {
-  width: 80px;
-  height: 80px;
-  min-width: 80px;
-  object-fit: cover;
-  border-radius: var(--radius-lg);
-  background: var(--glass-bg-light);
-}
-
-.result-info {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-2);
-  min-width: 0;
-}
-
-.result-title {
-  font-size: var(--text-base);
-  font-weight: var(--font-semibold);
-  color: var(--color-text-primary);
-  margin: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
-}
-
-.result-description {
-  font-size: var(--text-sm);
-  color: var(--color-text-secondary);
-  margin: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
-  line-height: 1.5;
-}
-
-.result-meta {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-3);
-  font-size: var(--text-xs);
-  color: var(--color-text-tertiary);
-}
-
-.meta-platform {
-  padding: var(--spacing-1) var(--spacing-2);
-  background: var(--glass-bg-light);
-  border-radius: var(--radius-md);
-  font-weight: var(--font-medium);
-  text-transform: uppercase;
-}
-
-/* 模态框动画 */
-.modal-fade-enter-active,
-.modal-fade-leave-active {
-  transition: opacity 0.3s ease;
-}
-
-.modal-fade-enter-from,
-.modal-fade-leave-to {
-  opacity: 0;
-}
-
-.modal-fade-enter-active .search-modal-content,
-.modal-fade-leave-active .search-modal-content {
-  transition: transform 0.3s ease, opacity 0.3s ease;
-}
-
-.modal-fade-enter-from .search-modal-content,
-.modal-fade-leave-to .search-modal-content {
-  transform: translateY(-30px);
-  opacity: 0;
-}
-
-/* 响应式 */
-@media (max-width: 768px) {
-  .search-modal-overlay {
-    padding: var(--spacing-4);
-  }
-
-  .search-modal-content {
-    margin-top: 0;
-  }
-
-  .result-thumbnail {
-    width: 60px;
-    height: 60px;
-    min-width: 60px;
-  }
-
-  .result-title {
-    font-size: var(--text-sm);
-  }
-
-  .result-description {
-    font-size: var(--text-xs);
-  }
-}
+/* 结束搜索模态相关样式清理 */
 </style>

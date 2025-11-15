@@ -20,6 +20,7 @@ import type {
   MediaFile,
   PostStats,
   UUID,
+  SearchSuggestionResponse,
 } from '@/types'
 
 // ========== 认证API ==========
@@ -56,6 +57,61 @@ export const authApi = {
     // 清除本地存储
     localStorage.removeItem('access_token')
     localStorage.removeItem('user')
+  },
+}
+
+// ========== 搜索API ==========
+
+export const searchApi = {
+  /**
+   * 搜索帖子
+   * GET /search/posts?q=keyword
+   */
+  searchPosts(query: string, params?: Omit<PostListParams, 'q'>) {
+    return api.get<PaginatedResponse<Post>>('/search/posts', {
+      params: { ...params, q: query },
+    })
+  },
+
+  /**
+   * 搜索作者
+   * GET /search/authors?q=keyword
+   */
+  searchAuthors(
+    query: string,
+    params?: {
+      platform?: string
+      is_verified?: boolean
+      min_followers?: number
+      page?: number
+      page_size?: number
+    },
+  ) {
+    return api.get<PaginatedResponse<AuthorListItem>>('/search/authors', {
+      params: { ...params, q: query },
+    })
+  },
+
+  /**
+   * 搜索联想建议
+   * GET /search/suggestions?q=keyword
+   */
+  fetchSuggestions(
+    query: string,
+    params?: {
+      type?: 'post' | 'author' | 'all'
+      platform?: string
+      limit?: number
+    },
+  ) {
+    return api.get<SearchSuggestionResponse>('/search/suggestions', {
+      params: {
+        type: 'all',
+        limit: 10,
+        ...params,
+        q: query,
+      },
+    })
   },
 }
 
@@ -261,9 +317,7 @@ export const favoritesApi = {
    * 检查内容是否已收藏
    * GET /favorites/check/{post_id}
    */
-  async checkFavorite(
-    postId: UUID,
-  ): Promise<{ is_favorited: boolean; favorite_id: UUID | null }> {
+  async checkFavorite(postId: UUID): Promise<{ is_favorited: boolean; favorite_id: UUID | null }> {
     return api.get<{ is_favorited: boolean; favorite_id: UUID | null }>(
       `/favorites/check/${postId}`,
       { cache: false }, // 不缓存收藏状态，确保实时性
@@ -352,6 +406,7 @@ export const services = {
   favorites: favoritesApi,
   stats: statsApi,
   upload: uploadApi,
+  search: searchApi,
 }
 
 export default services
