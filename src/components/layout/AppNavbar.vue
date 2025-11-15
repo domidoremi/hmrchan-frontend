@@ -814,6 +814,16 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-4);
+  overflow: hidden;
+}
+
+.settings-dropdown::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: linear-gradient(90deg, rgba(139, 92, 246, 0.9), rgba(56, 189, 248, 0.9));
+  opacity: 0.95;
 }
 
 .queue-dropdown {
@@ -828,6 +838,16 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-3);
+  overflow: hidden;
+}
+
+.queue-dropdown::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: linear-gradient(90deg, rgba(96, 165, 250, 0.95), rgba(59, 130, 246, 0.95));
+  opacity: 0.95;
 }
 
 .queue-header {
@@ -977,6 +997,7 @@ onUnmounted(() => {
   padding: var(--spacing-4);
   border-radius: var(--radius-xl);
   box-shadow: var(--glass-shadow);
+  overflow: hidden;
 }
 
 .dropdown-header {
@@ -986,6 +1007,8 @@ onUnmounted(() => {
   padding-bottom: var(--spacing-4);
   border-bottom: 1px solid var(--glass-border);
   margin-bottom: var(--spacing-3);
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.12), rgba(56, 189, 248, 0.08));
+  border-radius: calc(var(--radius-xl) - 4px);
 }
 
 .user-avatar-large {
