@@ -71,7 +71,7 @@
 
                 <RouterLink to="/settings" class="dropdown-link" @click="showUserMenu = false">
                   <Settings :size="18" />
-                  <span>{{ $t('nav.settings') }}</span>
+                  <span>{{ $t('nav.advancedSettings') }}</span>
                 </RouterLink>
 
                 <button class="dropdown-link danger" @click="handleLogout">
@@ -112,7 +112,7 @@
           <Settings :size="20" />
         </button>
 
-        <button v-if="isAuthenticated" class="action-button" @click="showUserMenu = !showUserMenu">
+        <button v-if="isAuthenticated" class="action-button mobile-user-trigger" @click="showUserMenu = !showUserMenu">
           <img :src="userAvatarUrl" :alt="user?.username" class="mobile-avatar" />
         </button>
 
@@ -426,7 +426,10 @@ const handleLogout = () => {
 const handleClickOutside = (event: MouseEvent) => {
   const target = event.target as HTMLElement
 
-  if (userMenuRef.value && !userMenuRef.value.contains(target)) {
+  const inMobileUserTrigger = target.closest('.mobile-user-trigger')
+  const inMobileUserModal = target.closest('.mobile-user-modal')
+
+  if (userMenuRef.value && !userMenuRef.value.contains(target) && !inMobileUserTrigger && !inMobileUserModal) {
     showUserMenu.value = false
   }
 
