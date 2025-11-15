@@ -1239,6 +1239,8 @@ onUnmounted(() => {
 .post-thumbnail-container {
   position: relative;
   width: clamp(320px, 42vw, 520px);
+  /* 固定显示比例，避免不同图片尺寸导致高度剧烈变化 */
+  aspect-ratio: 16 / 9;
   min-height: 320px;
   background: linear-gradient(135deg,
       rgba(139, 92, 246, 0.08) 0%,

@@ -383,6 +383,7 @@ onMounted(async () => {
       page_size: 6,
       sort_by: 'scraped_at',
       sort_order: 'desc',
+      ignoreFilters: true,
     })
 
     // 记录初始加载的卡片数量
