@@ -6,6 +6,7 @@ import { useAuthStore } from '@/stores/auth'
 import logger from '@/utils/logger'
 import { nativeFetchAdapter } from './nativeFetchAdapter'
 import { requestCache } from '@/utils/requestCache'
+import { offlineQueue } from '@/utils/offlineQueue'
 
 // 🔒 强制使用 HTTPS - 完全不依赖环境变量或构建时计算
 // 开发环境使用 Vite 代理，生产环境硬编码 HTTPS
@@ -14,12 +15,12 @@ function getBaseURL(): string {
   if (typeof window !== 'undefined' && window.location.protocol === 'https:') {
     return 'https://api.momichan.xyz/api/v1'
   }
-  
+
   // 开发环境：使用相对路径 /api，Vite 会代理到后端
   if (import.meta.env.DEV) {
     return '/api/v1'
   }
-  
+
   // 生产环境默认：硬编码 HTTPS
   return 'https://api.momichan.xyz/api/v1'
 }
@@ -27,14 +28,16 @@ function getBaseURL(): string {
 const BASE_URL = getBaseURL()
 
 // 🔒 二次验证：如果BASE_URL仍然是HTTP，强制转换
-const SAFE_BASE_URL = BASE_URL.startsWith('http://') ? BASE_URL.replace('http://', 'https://') : BASE_URL
+const SAFE_BASE_URL = BASE_URL.startsWith('http://')
+  ? BASE_URL.replace('http://', 'https://')
+  : BASE_URL
 
 // 日志输出当前API配置（保留用于生产诊断）
 console.log('🌐 API Configuration:', {
   baseURL: BASE_URL,
   mode: import.meta.env.MODE,
   strategy: import.meta.env.DEV ? 'vite-proxy' : 'hardcoded-https',
-  windowProtocol: typeof window !== 'undefined' ? window.location.protocol : 'N/A'
+  windowProtocol: typeof window !== 'undefined' ? window.location.protocol : 'N/A',
 })
 
 // 创建axios实例 - 使用 SAFE_BASE_URL 和原生 Fetch 适配器（完全绕过XHR）
@@ -45,15 +48,20 @@ const apiClient: AxiosInstance = axios.create({
   adapter: nativeFetchAdapter, // 🔒 使用原生Fetch适配器，完全绕过XHR（XHR被某些东西拦截了）
 })
 
+// 将API客户端注入离线队列，用于网络恢复后的后台同步
+offlineQueue.setApiClient(apiClient)
+
 // 🔒 强制锁定 baseURL，防止被修改
 Object.defineProperty(apiClient.defaults, 'baseURL', {
-  get() { return SAFE_BASE_URL },
-  set() { 
+  get() {
+    return SAFE_BASE_URL
+  },
+  set() {
     console.error('🚨 Attempted to modify baseURL - ignored!')
     // 忽略任何修改尝试
   },
   configurable: false,
-  enumerable: true
+  enumerable: true,
 })
 
 // 防止重复初始化标志
@@ -70,13 +78,13 @@ if (!isConfigured) {
         config.baseURL = config.baseURL.replace('http://', 'https://')
         console.error('🚨 baseURL was HTTP, forced to HTTPS:', config.baseURL)
       }
-      
+
       // 🔒 STEP 2: 如果 URL 是完整URL且是HTTP，强制转换
       if (config.url && config.url.startsWith('http://')) {
         config.url = config.url.replace('http://', 'https://')
         console.error('🚨 URL was HTTP, forced to HTTPS:', config.url)
       }
-      
+
       // 🔒 STEP 3: 检查构建后的完整 URL
       const fullUrl = axios.getUri(config)
       if (fullUrl.startsWith('http://')) {
