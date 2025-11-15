@@ -3,52 +3,29 @@
     <div class="media-viewer" @click.stop>
       <!-- 工具栏 -->
       <div class="viewer-toolbar" :class="{ 'controls-hidden': !controlsVisible }">
-        <button
-          class="viewer-btn toolbar-btn"
-          @click="toggleFullscreen"
-          :title="$t('common.fullscreen')"
-        >
+        <button class="viewer-btn toolbar-btn" @click="toggleFullscreen" :title="$t('common.fullscreen')">
           <Maximize :size="20" />
         </button>
-        <button
-          class="viewer-btn toolbar-btn"
-          @click="downloadMedia"
-          :title="$t('common.download')"
-        >
+        <button class="viewer-btn toolbar-btn" @click="downloadMedia" :title="$t('common.download')">
           <Download :size="20" />
         </button>
-        <button
-          class="viewer-btn toolbar-btn close-btn"
-          @click="close"
-          :aria-label="$t('aria.closeViewer')"
-        >
+        <button class="viewer-btn toolbar-btn close-btn" @click="close" :aria-label="$t('aria.closeViewer')">
           <X :size="24" />
         </button>
       </div>
 
       <!-- 上一张按钮 -->
-      <button
-        v-if="mediaItems.length > 1"
-        class="viewer-btn prev-btn"
-        :class="{ 'controls-hidden': !controlsVisible }"
-        @click="prev"
-        :disabled="currentIndex === 0"
-        :aria-label="$t('aria.previousImage')"
-      >
+      <button v-if="mediaItems.length > 1" class="viewer-btn prev-btn" :class="{ 'controls-hidden': !controlsVisible }"
+        @click="prev" :disabled="currentIndex === 0" :aria-label="$t('aria.previousImage')">
         <ChevronLeft :size="32" />
       </button>
 
       <!-- 媒体内容 -->
       <div class="media-container">
         <!-- 图片 -->
-        <img
-          v-if="currentMedia.type === 'image'"
-          :src="currentMedia.url"
-          :alt="`${$t('post.image')} ${currentIndex + 1}`"
-          @load="onMediaLoad"
-          :style="imageStyle"
-          class="media-content-img"
-        />
+        <img v-if="currentMedia.type === 'image'" :src="currentMedia.url"
+          :alt="`${$t('post.image')} ${currentIndex + 1}`" @load="onMediaLoad" :style="imageStyle"
+          class="media-content-img" />
 
         <!-- 视频 (使用 Plyr) -->
         <div v-else-if="currentMedia.type === 'video'" class="video-wrapper">
@@ -57,26 +34,15 @@
 
             <!-- 多语言字幕支持 -->
             <template v-if="currentMedia.subtitles && currentMedia.subtitles.length > 0">
-              <track
-                v-for="(sub, index) in currentMedia.subtitles"
-                :key="`${currentMedia.url}-${sub.language}`"
-                kind="captions"
-                :label="sub.label"
-                :srclang="sub.language"
-                :src="`/api/media/${currentMedia.mediaId}/subtitle?language=${sub.language}`"
-                :default="index === 0"
-              />
+              <track v-for="(sub, index) in currentMedia.subtitles" :key="`${currentMedia.url}-${sub.language}`"
+                kind="captions" :label="sub.label" :srclang="sub.language"
+                :src="`${runtimeApiEndpoint}/media/${currentMedia.mediaId}/subtitle?language=${sub.language}`"
+                :default="index === 0" />
             </template>
 
             <!-- 向后兼容：单字幕模式 -->
-            <track
-              v-else-if="currentMedia.subtitle"
-              kind="captions"
-              label="中文"
-              srclang="zh"
-              :src="currentMedia.subtitle"
-              default
-            />
+            <track v-else-if="currentMedia.subtitle" kind="captions" label="中文" srclang="zh"
+              :src="currentMedia.subtitle" default />
           </video>
         </div>
 
@@ -87,14 +53,8 @@
       </div>
 
       <!-- 下一张按钮 -->
-      <button
-        v-if="mediaItems.length > 1"
-        class="viewer-btn next-btn"
-        :class="{ 'controls-hidden': !controlsVisible }"
-        @click="next"
-        :disabled="currentIndex === mediaItems.length - 1"
-        :aria-label="$t('aria.nextImage')"
-      >
+      <button v-if="mediaItems.length > 1" class="viewer-btn next-btn" :class="{ 'controls-hidden': !controlsVisible }"
+        @click="next" :disabled="currentIndex === mediaItems.length - 1" :aria-label="$t('aria.nextImage')">
         <ChevronRight :size="32" />
       </button>
 
@@ -137,7 +97,7 @@ import {
   Download,
 } from 'lucide-vue-next'
 import Plyr from 'plyr'
-import type PlyrType from 'plyr'
+import { getRuntimeApiEndpoint } from '@/config/runtime'
 import 'plyr/dist/plyr.css'
 
 interface MediaItem {
@@ -163,6 +123,8 @@ const props = withDefaults(defineProps<Props>(), {
   initialIndex: 0,
 })
 
+const runtimeApiEndpoint = getRuntimeApiEndpoint()
+
 const emit = defineEmits<{
   close: []
 }>()
@@ -171,7 +133,8 @@ const currentIndex = ref(props.initialIndex)
 const loading = ref(true)
 const zoom = ref(1)
 const videoElement = ref<HTMLVideoElement | null>(null)
-let player: PlyrType | null = null
+
+let player: Plyr | null = null
 const controlsVisible = ref(true)
 let hideControlsTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -243,6 +206,36 @@ watch(currentIndex, () => {
   // 图片类型，等待onMediaLoad自动设置loading=false
 })
 
+const detectVideoOrientation = () => {
+  if (!videoElement.value) return 'landscape'
+
+  // 检测视频方向
+  const checkOrientation = () => {
+    if (videoElement.value) {
+      const videoEl = videoElement.value
+      const isVertical = videoEl.videoHeight > videoEl.videoWidth
+
+      // 根据视频方向添加类名
+      const wrapper = document.querySelector('.video-wrapper')
+      if (wrapper) {
+        if (isVertical) {
+          wrapper.classList.add('vertical-video')
+        } else {
+          wrapper.classList.remove('vertical-video')
+        }
+      }
+
+      return isVertical ? 'vertical' : 'landscape'
+    }
+    return 'landscape'
+  }
+
+  // 视频元数据加载完毕后检查方向
+  videoElement.value.addEventListener('loadedmetadata', checkOrientation)
+
+  return checkOrientation()
+}
+
 const initPlyr = () => {
   if (videoElement.value && !player) {
     // 调试日志：检查字幕
@@ -252,8 +245,12 @@ const initPlyr = () => {
         ? '单语言模式'
         : '无字幕'
 
+    // 检测视频方向
+    const videoOrientation = detectVideoOrientation()
+
     console.log('[Plyr] 初始化视频:', {
       url: currentMedia.value.url,
+      orientation: videoOrientation,
       hasSubtitle: !!(currentMedia.value.subtitle || currentMedia.value.subtitles),
       subtitleUrl: currentMedia.value.subtitle,
       availableSubtitles: subtitleInfo,
@@ -263,13 +260,19 @@ const initPlyr = () => {
     player = new Plyr(videoElement.value, {
       controls: [
         'play-large',
+        'restart',
+        'rewind',
         'play',
+        'fast-forward',
         'progress',
         'current-time',
+        'duration',
         'mute',
         'volume',
         'captions',
         'settings',
+        'pip',
+        'airplay',
         'fullscreen', // 全屏按钮放在最后，移动端更易访问
       ],
       settings: ['captions', 'quality', 'speed'],
@@ -335,7 +338,7 @@ const initPlyr = () => {
     player.on('ready', () => {
       console.log('[Plyr] 播放器就绪')
       loading.value = false
-      
+
       // 检查视频是否可播放
       if (videoElement.value) {
         videoElement.value.addEventListener('error', () => {
@@ -513,6 +516,7 @@ onUnmounted(() => {
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -622,8 +626,8 @@ onUnmounted(() => {
 
 .media-container {
   position: relative;
-  max-width: 90vw;
-  max-height: 85vh;
+  max-width: 100vw;
+  max-height: 90vh;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -638,14 +642,80 @@ onUnmounted(() => {
 }
 
 .video-wrapper {
-  width: 90vw;
-  max-width: 1200px;
+  position: relative;
+  width: min(92vw, 1200px);
+  height: auto;
+  max-height: 88vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(6px, 1.2vw, 16px);
+  border-radius: 20px;
+  background: rgba(12, 12, 16, 0.6);
+  backdrop-filter: blur(16px);
   animation: scaleIn 0.3s ease;
+  box-shadow:
+    0 18px 48px -16px rgba(15, 23, 42, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.video-wrapper.vertical-video {
+  width: min(70vw, 560px);
 }
 
 .plyr-video {
   width: 100%;
-  max-height: 85vh;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 16px;
+  background: #000;
+  max-height: calc(88vh - 80px);
+  aspect-ratio: auto;
+}
+
+:deep(.plyr) {
+  width: 100%;
+  height: auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  --plyr-color-main: #1ea7fd;
+  color: #fff;
+}
+
+:deep(.plyr__video-wrapper) {
+  flex: 1 1 auto;
+  height: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+:deep(.plyr__tooltip) {
+  background: rgba(10, 12, 20, 0.85);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+:deep(.plyr__control--overlaid) {
+  background: rgba(30, 167, 253, 0.9);
+  color: #fff;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 18px 36px -18px rgba(30, 167, 253, 0.6);
+}
+
+/* 竖屏视频的控制条适配 */
+.vertical-video :deep(.plyr__controls) {
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.vertical-video :deep(.plyr__progress__container) {
+  order: -1;
+  flex-basis: 100%;
+  margin-bottom: 8px;
 }
 
 @keyframes scaleIn {
@@ -653,6 +723,7 @@ onUnmounted(() => {
     opacity: 0;
     transform: scale(0.9);
   }
+
   to {
     opacity: 1;
     transform: scale(1);
@@ -721,6 +792,7 @@ onUnmounted(() => {
     opacity: 0;
     transform: translate(-50%, 20px);
   }
+
   to {
     opacity: 1;
     transform: translate(-50%, 0);
@@ -824,7 +896,23 @@ onUnmounted(() => {
 
   .media-container {
     max-width: 100vw;
-    max-height: 80vh;
+    max-height: 100vh;
+  }
+
+  /* 竖屏视频在移动端尽量贴合全屏，优先完整显示画面，避免上下被裁切 */
+  .video-wrapper.vertical-video {
+    height: 100vh;
+    max-height: 100vh;
+    width: auto;
+    max-width: 100vw;
+    border-radius: 0;
+    padding: 0;
+  }
+
+  .video-wrapper.vertical-video .plyr-video {
+    max-height: 100vh;
+    max-width: 100vw;
+    object-fit: contain;
   }
 
   .viewer-toolbar {
@@ -849,23 +937,7 @@ onUnmounted(() => {
     order: 3;
   }
 
-  /* 移动端 Plyr 进度条修复 */
-  :deep(.plyr__controls) {
-    padding: 10px !important;
-  }
-
-  :deep(.plyr__progress) {
-    margin-bottom: 8px !important;
-  }
-
-  :deep(.plyr__progress input[type='range']) {
-    height: 8px !important;
-  }
-
-  :deep(.plyr__volume) {
-    max-width: 60px !important;
-    min-width: 60px !important;
-  }
+  /* 移动端 Plyr 进度条修复 - 使用全局 plyr-custom.css 控制 */
 }
 
 /* 极小屏幕优化 */
@@ -910,171 +982,5 @@ onUnmounted(() => {
 :deep(.plyr__menu__container) {
   background: rgba(0, 0, 0, 0.95);
   backdrop-filter: blur(10px);
-}
-
-/* Plyr 控件响应式布局 - 防止按钮重叠和挤压 */
-:deep(.plyr__controls) {
-  display: flex !important;
-  flex-wrap: nowrap !important;
-  align-items: center !important;
-  gap: 6px !important;
-  padding: 12px 10px !important;
-  min-height: 54px !important;
-  background: rgba(0, 0, 0, 0.85) !important; /* 更深的背景提高可读性 */
-}
-
-:deep(.plyr__controls__item) {
-  margin: 0 !important;
-  flex-shrink: 0 !important;
-}
-
-/* 播放/暂停按钮 */
-:deep(.plyr__control--overlaid) {
-  min-width: 80px !important;
-  min-height: 80px !important;
-}
-
-/* 进度条 - 占据剩余空间 */
-:deep(.plyr__progress) {
-  flex: 1 1 auto !important;
-  min-width: 100px !important;
-}
-
-/* 时间显示 - 固定宽度防止布局跳动 */
-:deep(.plyr__time) {
-  font-size: 13px !important;
-  flex-shrink: 0 !important;
-  min-width: 40px !important;
-}
-
-/* 音量控件 - 限制最大宽度 */
-:deep(.plyr__volume) {
-  flex: 0 1 auto !important;
-  max-width: 100px !important;
-  min-width: 60px !important;
-}
-
-/* 设置和字幕按钮 */
-:deep(.plyr__menu) {
-  margin-left: auto !important;
-  flex-shrink: 0 !important;
-}
-
-/* 中等屏幕优化 (平板) */
-@media (max-width: 1024px) {
-  :deep(.plyr__controls) {
-    gap: 3px !important;
-    padding: 8px !important;
-  }
-
-  :deep(.plyr__volume) {
-    max-width: 80px !important;
-    min-width: 50px !important;
-  }
-
-  :deep(.plyr__time) {
-    font-size: 12px !important;
-  }
-}
-
-/* 小屏幕优化 (手机横屏) */
-@media (max-width: 768px) {
-  :deep(.plyr__controls) {
-    gap: 4px !important;
-    padding: 10px 8px !important;
-    min-height: 48px !important;
-  }
-
-  :deep(.plyr__control--overlaid) {
-    min-width: 70px !important;
-    min-height: 70px !important;
-  }
-
-  /* 音量控件 - 移动端缩小但保持可用 */
-  :deep(.plyr__volume) {
-    max-width: 70px !important;
-    min-width: 50px !important;
-  }
-
-  /* 时间显示 */
-  :deep(.plyr__time) {
-    font-size: 12px !important;
-    min-width: 38px !important;
-  }
-
-  /* 进度条 */
-  :deep(.plyr__progress) {
-    min-width: 100px !important;
-    flex: 1 1 auto !important;
-  }
-
-  /* 全屏按钮 - 确保在移动端可见且易于点击 */
-  :deep([data-plyr='fullscreen']) {
-    min-width: 44px !important;
-    min-height: 44px !important;
-    padding: 8px !important;
-  }
-}
-
-/* 极小屏幕 (手机竖屏) - 简化控件但保留关键功能 */
-@media (max-width: 480px) {
-  :deep(.plyr__controls) {
-    flex-wrap: wrap !important;
-    gap: 6px !important;
-    padding: 10px 6px !important;
-  }
-
-  /* 第一行：进度条占满宽度 */
-  :deep(.plyr__progress) {
-    order: 1;
-    flex: 1 1 100% !important;
-    margin-bottom: 6px !important;
-  }
-
-  /* 第二行：播放、音量、时间、全屏 */
-  :deep(.plyr__controls__item:not(.plyr__progress)) {
-    order: 2;
-    flex-shrink: 0;
-  }
-
-  /* 大播放按钮 */
-  :deep(.plyr__control--overlaid) {
-    min-width: 64px !important;
-    min-height: 64px !important;
-  }
-
-  /* 控制按钮统一大小 */
-  :deep(.plyr__controls button) {
-    min-width: 40px !important;
-    min-height: 40px !important;
-    padding: 6px !important;
-  }
-
-  /* 音量控件 */
-  :deep(.plyr__volume) {
-    max-width: 60px !important;
-    min-width: 50px !important;
-  }
-
-  /* 时间显示 */
-  :deep(.plyr__time) {
-    font-size: 11px !important;
-    min-width: 35px !important;
-  }
-
-  /* 全屏按钮 - 移动端最重要的按钮之一 */
-  :deep([data-plyr='fullscreen']) {
-    order: 3;
-    min-width: 44px !important;
-    min-height: 44px !important;
-    padding: 8px !important;
-    margin-left: auto !important; /* 推到最右边 */
-  }
-
-  /* 隐藏次要功能 (PiP, Airplay) 释放空间 */
-  :deep([data-plyr='pip']),
-  :deep([data-plyr='airplay']) {
-    display: none !important;
-  }
 }
 </style>

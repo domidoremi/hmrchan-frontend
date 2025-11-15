@@ -1,5 +1,5 @@
 <template>
-  <MainLayout>
+  <MainLayout :disable-container="true">
     <div class="post-detail-page">
       <!-- 骨架屏加载状态 -->
       <div v-if="loading" class="skeleton-loader">
@@ -18,240 +18,409 @@
       </div>
 
       <div v-else-if="post" class="post-detail">
-        <!-- 返回按钮 -->
-        <button class="back-button glass-button" @click="goBack">
-          <ArrowLeft :size="20" />
-          {{ $t('common.back') }}
-        </button>
-
-        <!-- 主要内容 -->
-        <div
-          class="post-header glass-card"
-          :class="{
-            'video-layout': isVideoPost,
-            'youtube-layout': isYouTube,
-            'tiktok-layout': isTikTok,
-          }"
-        >
-          <!-- 缩略图区域 -->
-          <div v-if="post.thumbnail_url" class="post-thumbnail-container">
-            <!-- 上一张按钮 -->
-            <button
-              v-show="allMediaUrls.length > 1"
-              class="thumbnail-nav-btn prev-thumbnail-btn"
-              :class="{ 'nav-btn-disabled': currentThumbnailIndex === 0 }"
-              @click.stop="prevThumbnail"
-              :disabled="currentThumbnailIndex === 0"
-              :aria-label="$t('common.previous')"
-            >
-              <ChevronLeft :size="20" />
-            </button>
-
-            <div class="post-thumbnail" @click="openMediaViewer(currentThumbnailIndex)">
-              <transition name="thumbnail-fade" mode="out-in">
-                <img
-                  :key="currentThumbnailUrl"
-                  :src="currentThumbnailUrl"
-                  :alt="post.title || 'Post thumbnail'"
-                  loading="eager"
-                  decoding="async"
-                  fetchpriority="high"
-                />
-              </transition>
-              <div class="thumbnail-overlay">
-                <Maximize2 :size="32" />
-              </div>
-              <!-- 图片计数 -->
-              <div v-if="allMediaUrls.length > 1" class="thumbnail-counter">
-                {{ currentThumbnailIndex + 1 }} / {{ allMediaUrls.length }}
-              </div>
-            </div>
-
-            <!-- 下一张按钮 -->
-            <button
-              v-show="allMediaUrls.length > 1"
-              class="thumbnail-nav-btn next-thumbnail-btn"
-              :class="{ 'nav-btn-disabled': currentThumbnailIndex === allMediaUrls.length - 1 }"
-              @click.stop="nextThumbnail"
-              :disabled="currentThumbnailIndex === allMediaUrls.length - 1"
-              :aria-label="$t('common.next')"
-            >
-              <ChevronRight :size="20" />
-            </button>
-          </div>
-
-          <!-- 内容区域 -->
-          <div class="post-content-wrapper">
-            <!-- 1. Post Meta -->
-            <div class="post-meta">
-              <div class="meta-item">
-                <Calendar :size="18" />
-                <span>{{ formatDate(post.published_at || post.scraped_at) }}</span>
-              </div>
-              <div class="meta-item">
-                <span class="platform-badge" :style="{ background: platformColor }">
-                  {{ platformName }}
-                </span>
-              </div>
-              <!-- 转发标记 -->
-              <div v-if="isRetweet" class="meta-item retweet-indicator">
-                <Repeat2 :size="18" />
-                <span>{{ $t('post.retweet') }}</span>
-              </div>
-            </div>
-
-            <!-- 2. Author Info -->
-            <!-- 转发情况：显示转发者和原作者 -->
-            <div v-if="isRetweet" class="retweet-info">
-              <div class="retweeter-info">
-                <div class="author-avatar">
-                  <User :size="24" />
-                </div>
-                <div class="author-details">
-                  <h3>{{ post.author_name }}</h3>
-                  <p v-if="post.author_username">@{{ post.author_username }}</p>
-                </div>
-              </div>
-              <div class="retweet-arrow">
-                <Repeat2 :size="24" />
-              </div>
-              <div class="original-author-info">
-                <div class="author-avatar original">
-                  <User :size="24" />
-                </div>
-                <div class="author-details">
-                  <h3>{{ post.original_author_name }}</h3>
-                  <p v-if="post.original_author_username">@{{ post.original_author_username }}</p>
-                  <span class="original-label">{{ $t('post.originalAuthor') }}</span>
-                </div>
-              </div>
-            </div>
-            <!-- 普通帖子：只显示作者 -->
-            <RouterLink
-              v-if="!isRetweet && post.author_name"
-              :to="`/authors/${post.author_id || 0}`"
-              custom
-              v-slot="{ navigate }"
-            >
-              <div class="author-info clickable" @click="navigate" role="button" tabindex="0">
-                <div class="author-avatar">
-                  <User :size="24" />
-                </div>
-                <div class="author-details">
-                  <h3>{{ post.author_name }}</h3>
-                  <p v-if="post.author_username">@{{ post.author_username }}</p>
-                </div>
-                <ExternalLink :size="18" class="link-icon" />
-              </div>
-            </RouterLink>
-
-            <!-- 3. Post Title -->
-            <h1 class="post-title">{{ post.title || 'Untitled' }}</h1>
-
-            <div v-if="showDescription" class="post-description">
-              <p>{{ post.description }}</p>
-            </div>
-
-            <!-- 4. Post Stats -->
-            <a
-              v-if="post.url"
-              :href="post.url"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="stats-link"
-            >
-              <div class="post-stats clickable">
-                <div v-if="post.view_count" class="stat-item">
-                  <Eye :size="20" />
-                  <span>{{ formatNumber(post.view_count) }} {{ $t('post.views') }}</span>
-                </div>
-                <div v-if="post.like_count" class="stat-item">
-                  <Heart :size="20" />
-                  <span>{{ formatNumber(post.like_count) }} {{ $t('post.likes') }}</span>
-                </div>
-                <div v-if="post.comment_count" class="stat-item">
-                  <MessageCircle :size="20" />
-                  <span>{{ formatNumber(post.comment_count) }} {{ $t('post.comments') }}</span>
-                </div>
-                <ExternalLink :size="16" class="link-icon" />
-              </div>
-            </a>
-            <div v-else class="post-stats">
-              <div v-if="post.view_count" class="stat-item">
-                <Eye :size="20" />
-                <span>{{ formatNumber(post.view_count) }} {{ $t('post.views') }}</span>
-              </div>
-              <div v-if="post.like_count" class="stat-item">
-                <Heart :size="20" />
-                <span>{{ formatNumber(post.like_count) }} {{ $t('post.likes') }}</span>
-              </div>
-              <div v-if="post.comment_count" class="stat-item">
-                <MessageCircle :size="20" />
-                <span>{{ formatNumber(post.comment_count) }} {{ $t('post.comments') }}</span>
-              </div>
-            </div>
-
-            <!-- 5. Post Actions -->
-            <div class="post-actions">
-              <GlassButton 
-                @click="toggleFavorite"
-                :class="{ 'favorited': isFavorited }"
-                :disabled="favoriteLoading"
-                :title="isFavorited ? $t('favorite.remove') : $t('favorite.add')"
-              >
-                <Heart :size="18" :fill="isFavorited ? 'currentColor' : 'none'" />
-                <span class="action-label">{{ isFavorited ? $t('favorite.remove') : $t('favorite.add') }}</span>
-              </GlassButton>
-              <GlassButton 
-                v-if="post.url"
-                @click="copyLink(post.url)"
-                variant="secondary"
-                :title="$t('post.copyLink')"
-              >
-                <Link :size="18" />
-                <span class="action-label">{{ $t('post.copyLink') }}</span>
-              </GlassButton>
-              <a v-if="post.url" :href="post.url" target="_blank" rel="noopener noreferrer">
-                <GlassButton variant="secondary" :title="$t('post.viewOriginal')">
-                  <ExternalLink :size="18" />
-                  <span class="action-label">{{ $t('post.viewOriginal') }}</span>
-                </GlassButton>
-              </a>
-            </div>
-          </div>
+        <div class="detail-topbar">
+          <button class="back-button glass-button" @click="goBack">
+            <ArrowLeft :size="20" />
+            {{ $t('common.back') }}
+          </button>
         </div>
 
-        <!-- 相关推荐 -->
-        <div v-if="relatedPosts.length > 0" class="related-posts glass-card">
-          <h3 class="related-title">
-            <Sparkles :size="20" />
-            {{ $t('post.relatedPosts') }}
-          </h3>
-          <div class="related-grid">
-            <RouterLink
-              v-for="relatedPost in relatedPosts"
-              :key="relatedPost.id"
-              :to="`/posts/${relatedPost.id}`"
-              class="related-item"
-            >
-              <img 
-                v-if="relatedPost.thumbnail_url" 
-                :src="resolveMediaUrl(relatedPost.thumbnail_url)" 
-                :alt="relatedPost.title || ''"
-                loading="lazy"
-              />
-              <div class="related-info">
-                <h4>{{ relatedPost.title || $t('post.untitled') }}</h4>
-                <div class="related-stats">
-                  <span v-if="relatedPost.view_count">
-                    <Eye :size="14" /> {{ formatNumber(relatedPost.view_count) }}
-                  </span>
-                  <span v-if="relatedPost.like_count">
-                    <Heart :size="14" /> {{ formatNumber(relatedPost.like_count) }}
-                  </span>
+        <div v-if="isOfflineDetail" class="offline-hint">
+          {{ $t('offline.usingCache') }}
+        </div>
+
+        <div :class="['detail-grid', { 'single-column': isTabletOrBelow }]">
+          <section :class="['media-column', { 'compact-media': isMobileViewport }]">
+            <div class="media-hero glass-card" :class="{
+              'video-layout': isVideoPost,
+              'youtube-layout': isYouTube,
+              'tiktok-layout': isTikTok,
+            }">
+              <div v-if="post.thumbnail_url" class="post-thumbnail-container">
+                <button v-show="allMediaUrls.length > 1" class="thumbnail-nav-btn prev-thumbnail-btn"
+                  :class="{ 'nav-btn-disabled': currentThumbnailIndex === 0 }" @click.stop="prevThumbnail"
+                  :disabled="currentThumbnailIndex === 0" :aria-label="$t('common.previous')">
+                  <ChevronLeft :size="20" />
+                </button>
+
+                <div class="post-thumbnail" @click="openMediaViewer(currentThumbnailIndex)"
+                  @touchstart.passive="handleThumbnailTouchStart" @touchmove.passive="handleThumbnailTouchMove"
+                  @touchend.passive="handleThumbnailTouchEnd" @touchcancel.passive="handleThumbnailTouchEnd">
+                  <div class="media-backdrop" aria-hidden="true">
+                    <transition name="thumbnail-fade" mode="out-in">
+                      <img v-if="currentMediaType !== 'video'" :key="`bg-${currentThumbnailUrl}`"
+                        :src="currentThumbnailUrl" alt="" decoding="async" />
+                      <video v-else :key="`bg-video-${currentThumbnailUrl}`" :src="currentThumbnailUrl" muted
+                        playsinline preload="metadata"></video>
+                    </transition>
+                  </div>
+
+                  <transition name="thumbnail-fade" mode="out-in">
+                    <img v-if="currentMediaType !== 'video'" :key="`image-${currentThumbnailUrl}`"
+                      :src="currentThumbnailUrl" :alt="post.title || 'Post thumbnail'" loading="eager" decoding="async"
+                      fetchpriority="high" />
+                    <video v-else :key="`video-${currentThumbnailUrl}`" :src="currentThumbnailUrl" preload="metadata"
+                      playsinline muted
+                      :poster="post.thumbnail_url ? resolveMediaUrl(post.thumbnail_url) : undefined"></video>
+                  </transition>
+                  <div class="thumbnail-overlay" :class="{ 'is-video': currentMediaType === 'video' }">
+                    <component :is="currentMediaType === 'video' ? Play : Maximize2" :size="32" />
+                  </div>
+                  <div v-if="allMediaUrls.length > 1" class="thumbnail-counter">
+                    {{ currentThumbnailIndex + 1 }} / {{ allMediaUrls.length }}
+                  </div>
                 </div>
+
+                <button v-show="allMediaUrls.length > 1" class="thumbnail-nav-btn next-thumbnail-btn"
+                  :class="{ 'nav-btn-disabled': currentThumbnailIndex === allMediaUrls.length - 1 }"
+                  @click.stop="nextThumbnail" :disabled="currentThumbnailIndex === allMediaUrls.length - 1"
+                  :aria-label="$t('common.next')">
+                  <ChevronRight :size="20" />
+                </button>
               </div>
-            </RouterLink>
+            </div>
+          </section>
+
+          <aside :class="['info-column', { interactive: isTabletOrBelow }]">
+            <div :class="['post-content-wrapper', { 'as-accordion': isTabletOrBelow }]">
+              <template v-if="isTabletOrBelow">
+                <details class="accordion-block" open>
+                  <summary class="accordion-summary">
+                    <span>{{ $t('post.overview') }}</span>
+                    <ChevronRight :size="16" class="chevron" />
+                  </summary>
+
+                  <div class="accordion-body">
+                    <div class="post-meta">
+                      <div class="meta-item">
+                        <Calendar :size="18" />
+                        <span>{{ formatDate(post.published_at || post.scraped_at) }}</span>
+                      </div>
+                      <div class="meta-item">
+                        <span class="platform-badge" :style="{ background: platformColor }">
+                          {{ platformName }}
+                        </span>
+                      </div>
+                      <div v-if="isRetweet" class="meta-item retweet-indicator">
+                        <Repeat2 :size="18" />
+                        <span>{{ $t('post.retweet') }}</span>
+                      </div>
+                    </div>
+
+                    <div v-if="isRetweet" class="retweet-info">
+                      <div class="retweeter-info">
+                        <div class="author-avatar">
+                          <User :size="24" />
+                        </div>
+                        <div class="author-details">
+                          <h3>{{ post.author_name }}</h3>
+                          <p v-if="post.author_username">@{{ post.author_username }}</p>
+                        </div>
+                      </div>
+                      <div class="retweet-arrow">
+                        <Repeat2 :size="24" />
+                      </div>
+                      <div class="original-author-info">
+                        <div class="author-avatar original">
+                          <User :size="24" />
+                        </div>
+                        <div class="author-details">
+                          <h3>{{ post.original_author_name }}</h3>
+                          <p v-if="post.original_author_username">@{{ post.original_author_username }}</p>
+                          <span class="original-label">{{ $t('post.originalAuthor') }}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <RouterLink v-else-if="post.author_name" :to="`/authors/${post.author_id || 0}`" custom
+                      v-slot="{ navigate }">
+                      <div class="author-info clickable" @click="navigate" role="button" tabindex="0">
+                        <div class="author-avatar">
+                          <User :size="24" />
+                        </div>
+                        <div class="author-details">
+                          <h3>{{ post.author_name }}</h3>
+                          <p v-if="post.author_username">@{{ post.author_username }}</p>
+                        </div>
+                        <ExternalLink :size="18" class="link-icon" />
+                      </div>
+                    </RouterLink>
+
+                    <h1 class="post-title">{{ post.title || 'Untitled' }}</h1>
+
+                    <div v-if="showDescription" :class="[
+                      'post-description',
+                      {
+                        'is-collapsed': !isDescriptionExpanded && isDescriptionLong,
+                        'is-expanded': isDescriptionExpanded && isDescriptionLong,
+                      },
+                    ]">
+                      <p>{{ post.description }}</p>
+                      <button v-if="isDescriptionLong" type="button" class="description-toggle"
+                        @click="isDescriptionExpanded = !isDescriptionExpanded">
+                        {{
+                          isDescriptionExpanded
+                            ? t('post.collapseDescription', '收起')
+                            : t('post.expandDescription', '展开全部')
+                        }}
+                      </button>
+                    </div>
+                  </div>
+                </details>
+
+                <details class="accordion-block" open>
+                  <summary class="accordion-summary">
+                    <span>{{ $t('post.actions') }}</span>
+                    <ChevronRight :size="16" class="chevron" />
+                  </summary>
+
+                  <div class="accordion-body">
+                    <section class="post-actions" aria-labelledby="post-actions-heading">
+                      <h2 id="post-actions-heading" class="sr-only">{{ $t('post.actions') }}</h2>
+                      <div class="post-action-buttons" role="group" :aria-label="$t('post.actions')">
+                        <GlassButton @click="toggleFavorite" :disabled="favoriteLoading"
+                          :title="isFavorited ? $t('favorite.remove') : $t('favorite.add')"
+                          :variant="isFavorited ? 'primary' : 'secondary'" :class="{ 'is-favorited': isFavorited }"
+                          :aria-pressed="isFavorited"
+                          :aria-label="isFavorited ? $t('favorite.remove') : $t('favorite.add')">
+                          <Heart :size="18" :fill="isFavorited ? 'currentColor' : 'none'" />
+                          <span class="sr-only">{{ isFavorited ? $t('favorite.remove') : $t('favorite.add') }}</span>
+                        </GlassButton>
+                        <GlassButton v-if="post.url" @click="copyLink(post.url)" variant="secondary"
+                          :title="$t('post.copyLink')" :aria-label="$t('post.copyLink')">
+                          <Link :size="18" />
+                          <span class="sr-only">{{ $t('post.copyLink') }}</span>
+                        </GlassButton>
+                        <a v-if="post.url" :href="post.url" target="_blank" rel="noopener noreferrer"
+                          class="post-action-link" :title="$t('post.viewOriginal')"
+                          :aria-label="$t('post.viewOriginal')">
+                          <GlassButton variant="secondary">
+                            <ExternalLink :size="18" />
+                            <span class="sr-only">{{ $t('post.viewOriginal') }}</span>
+                          </GlassButton>
+                        </a>
+                      </div>
+
+                      <div v-if="yieldedStats.length > 0" class="post-action-stats" role="list"
+                        :aria-label="$t('post.stats')">
+                        <component v-for="stat in yieldedStats" :key="stat.key" :is="stat.linkAttrs ? 'a' : 'div'"
+                          v-bind="stat.linkAttrs ?? {}" :class="['post-stats-row', { 'is-link': !!stat.linkAttrs }]"
+                          role="listitem">
+                          <div class="stat-icon">
+                            <component :is="stat.icon" :size="20" />
+                          </div>
+                          <div class="stat-text">
+                            <span class="stat-count">{{ stat.display }}</span>
+                            <span class="stat-label">{{ stat.label }}</span>
+                          </div>
+                          <ExternalLink v-if="stat.linkAttrs" :size="16" class="link-icon" aria-hidden="true" />
+                        </component>
+                      </div>
+                    </section>
+                  </div>
+                </details>
+
+                <details v-if="post.tags && post.tags.length > 0" class="accordion-block" open>
+                  <summary class="accordion-summary">
+                    <span>{{ $t('post.tags') }}</span>
+                    <ChevronRight :size="16" class="chevron" />
+                  </summary>
+
+                  <div class="accordion-body">
+                    <div class="tags-section">
+                      <div class="tags-list">
+                        <span v-for="tag in post.tags" :key="tag" class="tag glass-badge">
+                          {{ tag }}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </details>
+
+                <details v-if="relatedPosts.length > 0" class="accordion-block" open>
+                  <summary class="accordion-summary">
+                    <span>{{ $t('post.relatedPosts') }}</span>
+                    <ChevronRight :size="16" class="chevron" />
+                  </summary>
+
+                  <div class="accordion-body">
+                    <div class="related-posts">
+                      <div class="related-grid">
+                        <RouterLink v-for="relatedPost in relatedPosts" :key="relatedPost.id"
+                          :to="`/posts/${relatedPost.id}`" class="related-item">
+                          <img v-if="relatedPost.thumbnail_url" :src="resolveMediaUrl(relatedPost.thumbnail_url)"
+                            :alt="relatedPost.title || ''" loading="lazy" />
+                          <div class="related-info">
+                            <h4>{{ relatedPost.title || $t('post.untitled') }}</h4>
+                            <div class="related-stats">
+                              <span v-if="relatedPost.view_count">
+                                <Eye :size="14" /> {{ formatNumber(relatedPost.view_count) }}
+                              </span>
+                              <span v-if="relatedPost.like_count">
+                                <Heart :size="14" /> {{ formatNumber(relatedPost.like_count) }}
+                              </span>
+                            </div>
+                          </div>
+                        </RouterLink>
+                      </div>
+                    </div>
+                  </div>
+                </details>
+              </template>
+
+              <template v-else>
+                <div class="post-meta">
+                  <div class="meta-item">
+                    <Calendar :size="18" />
+                    <span>{{ formatDate(post.published_at || post.scraped_at) }}</span>
+                  </div>
+                  <div class="meta-item">
+                    <span class="platform-badge" :style="{ background: platformColor }">
+                      {{ platformName }}
+                    </span>
+                  </div>
+                  <div v-if="isRetweet" class="meta-item retweet-indicator">
+                    <Repeat2 :size="18" />
+                    <span>{{ $t('post.retweet') }}</span>
+                  </div>
+                </div>
+
+                <div v-if="isRetweet" class="retweet-info">
+                  <div class="retweeter-info">
+                    <div class="author-avatar">
+                      <User :size="24" />
+                    </div>
+                    <div class="author-details">
+                      <h3>{{ post.author_name }}</h3>
+                      <p v-if="post.author_username">@{{ post.author_username }}</p>
+                    </div>
+                  </div>
+                  <div class="retweet-arrow">
+                    <Repeat2 :size="24" />
+                  </div>
+                  <div class="original-author-info">
+                    <div class="author-avatar original">
+                      <User :size="24" />
+                    </div>
+                    <div class="author-details">
+                      <h3>{{ post.original_author_name }}</h3>
+                      <p v-if="post.original_author_username">@{{ post.original_author_username }}</p>
+                      <span class="original-label">{{ $t('post.originalAuthor') }}</span>
+                    </div>
+                  </div>
+                </div>
+                <RouterLink v-else-if="post.author_name" :to="`/authors/${post.author_id || 0}`" custom
+                  v-slot="{ navigate }">
+                  <div class="author-info clickable" @click="navigate" role="button" tabindex="0">
+                    <div class="author-avatar">
+                      <User :size="24" />
+                    </div>
+                    <div class="author-details">
+                      <h3>{{ post.author_name }}</h3>
+                      <p v-if="post.author_username">@{{ post.author_username }}</p>
+                    </div>
+                    <ExternalLink :size="18" class="link-icon" />
+                  </div>
+                </RouterLink>
+              </template>
+            </div>
+          </aside>
+
+          <!-- 桌面端：媒体下方整行，放标题 + 描述 + 操作按钮 + 统计 -->
+          <div v-if="!isTabletOrBelow" class="detail-main full-width-section">
+            <h1 class="post-title">{{ post.title || 'Untitled' }}</h1>
+
+            <div v-if="showDescription" :class="[
+              'post-description',
+              {
+                'is-collapsed': !isDescriptionExpanded && isDescriptionLong,
+                'is-expanded': isDescriptionExpanded && isDescriptionLong,
+              },
+            ]">
+              <p>{{ post.description }}</p>
+              <button v-if="isDescriptionLong" type="button" class="description-toggle"
+                @click="isDescriptionExpanded = !isDescriptionExpanded">
+                {{
+                  isDescriptionExpanded
+                    ? t('post.collapseDescription', '收起')
+                    : t('post.expandDescription', '展开全部')
+                }}
+              </button>
+            </div>
+
+            <section class="post-actions" aria-labelledby="post-actions-heading">
+              <h2 id="post-actions-heading" class="sr-only">{{ $t('post.actions') }}</h2>
+              <div class="post-action-buttons" role="group" :aria-label="$t('post.actions')">
+                <GlassButton @click="toggleFavorite" :disabled="favoriteLoading"
+                  :title="isFavorited ? $t('favorite.remove') : $t('favorite.add')"
+                  :variant="isFavorited ? 'primary' : 'secondary'" :class="{ 'is-favorited': isFavorited }"
+                  :aria-pressed="isFavorited" :aria-label="isFavorited ? $t('favorite.remove') : $t('favorite.add')">
+                  <Heart :size="18" :fill="isFavorited ? 'currentColor' : 'none'" />
+                  <span class="sr-only">{{ isFavorited ? $t('favorite.remove') : $t('favorite.add') }}</span>
+                </GlassButton>
+                <GlassButton v-if="post.url" @click="copyLink(post.url)" variant="secondary"
+                  :title="$t('post.copyLink')" :aria-label="$t('post.copyLink')">
+                  <Link :size="18" />
+                  <span class="sr-only">{{ $t('post.copyLink') }}</span>
+                </GlassButton>
+                <a v-if="post.url" :href="post.url" target="_blank" rel="noopener noreferrer" class="post-action-link"
+                  :title="$t('post.viewOriginal')" :aria-label="$t('post.viewOriginal')">
+                  <GlassButton variant="secondary">
+                    <ExternalLink :size="18" />
+                    <span class="sr-only">{{ $t('post.viewOriginal') }}</span>
+                  </GlassButton>
+                </a>
+              </div>
+
+              <div v-if="yieldedStats.length > 0" class="post-action-stats" role="list" :aria-label="$t('post.stats')">
+                <component v-for="stat in yieldedStats" :key="stat.key" :is="stat.linkAttrs ? 'a' : 'div'"
+                  v-bind="stat.linkAttrs ?? {}" :class="['post-stats-row', { 'is-link': !!stat.linkAttrs }]"
+                  role="listitem">
+                  <div class="stat-icon">
+                    <component :is="stat.icon" :size="20" />
+                  </div>
+                  <div class="stat-text">
+                    <span class="stat-count">{{ stat.display }}</span>
+                    <span class="stat-label">{{ stat.label }}</span>
+                  </div>
+                  <ExternalLink v-if="stat.linkAttrs" :size="16" class="link-icon" aria-hidden="true" />
+                </component>
+              </div>
+            </section>
+          </div>
+
+          <div v-if="!isTabletOrBelow && post.tags && post.tags.length > 0"
+            class="tags-section glass-card full-width-section">
+            <h3>{{ $t('post.tags') }}</h3>
+            <div class="tags-list">
+              <span v-for="tag in post.tags" :key="tag" class="tag glass-badge">
+                {{ tag }}
+              </span>
+            </div>
+          </div>
+
+          <div v-if="!isTabletOrBelow && relatedPosts.length > 0" class="related-posts glass-card full-width-section">
+            <h3 class="related-title">
+              <Sparkles :size="20" />
+              {{ $t('post.relatedPosts') }}
+            </h3>
+            <div class="related-grid">
+              <RouterLink v-for="relatedPost in relatedPosts" :key="relatedPost.id" :to="`/posts/${relatedPost.id}`"
+                class="related-item">
+                <img v-if="relatedPost.thumbnail_url" :src="resolveMediaUrl(relatedPost.thumbnail_url)"
+                  :alt="relatedPost.title || ''" loading="lazy" />
+                <div class="related-info">
+                  <h4>{{ relatedPost.title || $t('post.untitled') }}</h4>
+                  <div class="related-stats">
+                    <span v-if="relatedPost.view_count">
+                      <Eye :size="14" /> {{ formatNumber(relatedPost.view_count) }}
+                    </span>
+                    <span v-if="relatedPost.like_count">
+                      <Heart :size="14" /> {{ formatNumber(relatedPost.like_count) }}
+                    </span>
+                  </div>
+                </div>
+              </RouterLink>
+            </div>
           </div>
         </div>
 
@@ -259,25 +428,12 @@
         <div v-if="post.media_files && post.media_files.length > 0" class="media-section">
           <h2>{{ $t('post.media') }} ({{ post.media_files.length }})</h2>
           <div class="media-grid">
-            <div
-              v-for="(media, index) in post.media_files"
-              :key="media.id"
-              class="media-item glass-card"
-            >
-              <img
-                v-if="media.file_type === 'image'"
-                :src="mediaApi.getStreamUrl(media.id)"
-                :alt="post.title || ''"
-                loading="lazy"
-                decoding="async"
-                @click="openMediaViewer(getMediaIndex(index))"
-                class="clickable-image"
-              />
-              <div
-                v-else-if="media.file_type === 'video'"
-                class="video-thumbnail"
-                @click="openMediaViewer(getMediaIndex(index))"
-              >
+            <div v-for="(media, index) in post.media_files" :key="media.id" class="media-item glass-card">
+              <img v-if="media.file_type === 'image'" :src="mediaApi.getStreamUrl(media.id)" :alt="post.title || ''"
+                loading="lazy" decoding="async" @click="openMediaViewer(getMediaIndex(index))"
+                class="clickable-image" />
+              <div v-else-if="media.file_type === 'video'" class="video-thumbnail"
+                @click="openMediaViewer(getMediaIndex(index))">
                 <video preload="none" poster="">
                   <source :src="mediaApi.getStreamUrl(media.id)" type="video/mp4" />
                 </video>
@@ -293,19 +449,8 @@
             </div>
           </div>
         </div>
-
-        <!-- 标签 -->
-        <div v-if="post.tags && post.tags.length > 0" class="tags-section glass-card">
-          <h3>{{ $t('post.tags') }}</h3>
-          <div class="tags-list">
-            <span v-for="tag in post.tags" :key="tag" class="tag glass-badge">
-              {{ tag }}
-            </span>
-          </div>
-        </div>
       </div>
 
-      <!-- 错误状态 -->
       <div v-else class="error-state glass-card">
         <AlertCircle :size="64" />
         <h3>{{ $t('common.error') }}</h3>
@@ -317,17 +462,13 @@
     </div>
 
     <!-- 媒体查看器 -->
-    <MediaViewer
-      :show="showMediaViewer"
-      :media-items="viewerMediaItems"
-      :initial-index="viewerInitialIndex"
-      @close="closeMediaViewer"
-    />
+    <MediaViewer :show="showMediaViewer" :media-items="viewerMediaItems" :initial-index="viewerInitialIndex"
+      @close="closeMediaViewer" />
   </MainLayout>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, defineAsyncComponent, onUnmounted, type Component } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useMediaPreload } from '@/composables/useSmartPreload'
@@ -349,18 +490,21 @@ import {
   Repeat2,
   Link,
   Sparkles,
+  Play,
 } from 'lucide-vue-next'
 import dayjs from 'dayjs'
 
 import MainLayout from '@/components/layout/MainLayout.vue'
 import GlassButton from '@/components/ui/GlassButton.vue'
-import MediaViewer from '@/components/ui/MediaViewerPlyr.vue'
+const MediaViewer = defineAsyncComponent(() => import('@/components/ui/MediaViewerPlyr.vue'))
 
 import { usePostsStore } from '@/stores/posts'
 import { useAuthStore } from '@/stores/auth'
 import { api } from '@/api/client'
 import { favoritesApi, mediaApi } from '@/api/services'
-import type { PostDetail, Post, UUID, PostListParams } from '@/types'
+import { indexedDB } from '@/utils/indexedDB'
+import { offlineQueue } from '@/utils/offlineQueue'
+import type { PostDetail, Post, UUID, PostListParams, PaginatedResponse } from '@/types'
 import { PLATFORM_NAMES, PLATFORM_COLORS } from '@/types'
 import { useToastStore } from '@/stores/toast'
 
@@ -389,6 +533,20 @@ const viewerMediaItems = ref<
 const viewerInitialIndex = ref(0)
 const currentThumbnailIndex = ref(0)
 const relatedPosts = ref<Post[]>([])
+const isTabletViewport = ref(false)
+const isMobileViewport = ref(false)
+
+const isTabletOrBelow = computed(() => isTabletViewport.value || isMobileViewport.value)
+
+const isOfflineDetail = computed(() => postsStore.lastDetailFromFallback)
+
+interface StatEntry {
+  key: string
+  icon: Component
+  display: string
+  label: string
+  linkAttrs?: Record<string, string>
+}
 
 const platformName = computed(
   () => PLATFORM_NAMES[post.value?.platform as keyof typeof PLATFORM_NAMES] || post.value?.platform,
@@ -400,6 +558,13 @@ const platformColor = computed(
 // 判断是否为转发
 const isRetweet = computed(() => {
   return !!post.value?.original_author_id && !!post.value?.original_author_name
+})
+
+const isDescriptionExpanded = ref(false)
+
+const isDescriptionLong = computed(() => {
+  const length = post.value?.description?.length ?? 0
+  return length > 260
 })
 
 // 判断是否显示描述（避免与标题重复）
@@ -496,6 +661,13 @@ const currentThumbnailUrl = computed(() => {
   return allMediaUrls.value[currentThumbnailIndex.value]
 })
 
+const currentMediaItem = computed(() => {
+  if (allMediaItems.value.length === 0) return null
+  return allMediaItems.value[currentThumbnailIndex.value]
+})
+
+const currentMediaType = computed(() => currentMediaItem.value?.type ?? 'image')
+
 // 判断主要媒体类型
 const primaryMediaType = computed(() => {
   if (!post.value?.media_files || post.value.media_files.length === 0) return 'image'
@@ -514,10 +686,72 @@ const isTikTok = computed(() => post.value?.platform === 'tiktok')
 //   () => post.value?.platform === 'instagram' || post.value?.platform === 'twitter',
 // )
 
+const yieldedStats = computed<StatEntry[]>(() => {
+  if (!post.value) return []
+
+  const stats: StatEntry[] = []
+  const baseLink = post.value.url
+    ? {
+      href: post.value.url,
+      target: '_blank',
+      rel: 'noopener noreferrer',
+    }
+    : undefined
+
+  const pushStat = (key: string, value: number | null | undefined, icon: Component, labelKey: string) => {
+    if (!value) return
+    stats.push({
+      key,
+      icon,
+      display: formatNumber(value),
+      label: t(labelKey),
+      linkAttrs: baseLink ? { ...baseLink } : undefined,
+    })
+  }
+
+  pushStat('views', post.value.view_count, Eye, 'post.views')
+  pushStat('likes', post.value.like_count, Heart, 'post.likes')
+  pushStat('comments', post.value.comment_count, MessageCircle, 'post.comments')
+
+  return stats
+})
+
+const updateViewportBreakpoints = () => {
+  if (typeof window === 'undefined') return
+
+  const mobileQuery = window.matchMedia('(max-width: 767px)')
+  const tabletQuery = window.matchMedia('(max-width: 1023px)')
+
+  isMobileViewport.value = mobileQuery.matches
+  isTabletViewport.value = !mobileQuery.matches && tabletQuery.matches
+}
+
 onMounted(async () => {
+
   const postId = route.params.id as UUID
   try {
-    post.value = await postsStore.fetchPost(postId)
+    // 优先复用当前 Store 中的详情，避免重复加载
+    const cachedDetail = postsStore.currentPost
+    if (cachedDetail && cachedDetail.id === postId) {
+      post.value = cachedDetail
+      // 已有完整详情，立刻取消骨架屏
+      loading.value = false
+    } else {
+      // 从列表中做浅缓存，先展示基础信息
+      const listItem = postsStore.posts?.find((p: Post) => p.id === postId)
+      if (listItem) {
+        post.value = {
+          ...listItem,
+          media_files: [],
+          tags: [],
+        } as PostDetail
+        // 有列表数据时也立刻渲染，剩余字段靠后台刷新
+        loading.value = false
+      }
+
+      // 再拉取完整详情（命中 requestCache 时不会重复向后端请求）
+      post.value = await postsStore.fetchPost(postId)
+    }
 
     // 验证媒体文件ID格式（诊断用）
     if (import.meta.env.DEV && post.value?.media_files && post.value.media_files.length > 0) {
@@ -564,6 +798,7 @@ onMounted(async () => {
   } catch (error) {
     handleError(error, { customMessage: t('post.loadFailed', 'Failed to load post') })
   } finally {
+    // 确保在没有任何本地数据的情况下也能关闭骨架屏
     loading.value = false
   }
 })
@@ -584,17 +819,56 @@ const toggleFavorite = async () => {
 
   favoriteLoading.value = true
   try {
-    if (isFavorited.value && favoriteId.value) {
-      // 删除收藏
-      await favoritesApi.deleteFavorite(favoriteId.value)
+    const postId = post.value.id
+    const userId = authStore.user?.id
+
+    const updateLocalFavorite = async (favorited: boolean) => {
+      if (!userId) return
+      try {
+        if (favorited) {
+          await indexedDB.addFavorite({
+            user_id: userId,
+            post_id: postId,
+            created_at: Date.now(),
+          })
+        } else {
+          await indexedDB.removeFavorite(userId, postId)
+        }
+      } catch (e) {
+        console.error('[PostDetailPage] Failed to update local favorite in IndexedDB:', e)
+      }
+    }
+
+    if (!navigator.onLine) {
+      // 离线模式：使用离线队列并乐观更新UI
+      if (isFavorited.value) {
+        await offlineQueue.addAction('unfavorite', { post_id: postId })
+        isFavorited.value = false
+        favoriteId.value = null
+        await updateLocalFavorite(false)
+        toastStore.info(t('offline.unfavoriteQueued'))
+      } else {
+        await offlineQueue.addAction('favorite', { post_id: postId })
+        isFavorited.value = true
+        // favoriteId 将在同步后由服务端生成
+        await updateLocalFavorite(true)
+        toastStore.info(t('offline.favoriteQueued'))
+      }
+      return
+    }
+
+    // 在线模式：直接调用API并保持本地状态同步
+    if (isFavorited.value) {
+      await favoritesApi.deleteFavorite(postId)
       isFavorited.value = false
       favoriteId.value = null
+      await updateLocalFavorite(false)
       toastStore.success(t('favorite.removeSuccess'))
     } else {
-      // 添加收藏
-      const favorite = await favoritesApi.addFavorite({ post_id: post.value.id })
+      const favorite = await favoritesApi.addFavorite({ post_id: postId })
       isFavorited.value = true
       favoriteId.value = favorite.id
+      await updateLocalFavorite(true)
       toastStore.success(t('favorite.addSuccess'))
     }
   } catch (error) {
@@ -659,10 +933,56 @@ const nextThumbnail = () => {
   }
 }
 
-// 加载相关推荐
+// 移动端缩略图滑动手势
+const thumbnailTouchStartX = ref<number | null>(null)
+const thumbnailTouchStartY = ref<number | null>(null)
+const thumbnailTouchActive = ref(false)
+
+const handleThumbnailTouchStart = (event: TouchEvent) => {
+  if (!isTabletOrBelow.value || event.touches.length !== 1) return
+  const touch = event.touches[0] as Touch
+  thumbnailTouchStartX.value = touch.clientX
+  thumbnailTouchStartY.value = touch.clientY
+  thumbnailTouchActive.value = true
+}
+
+const handleThumbnailTouchMove = (event: TouchEvent) => {
+  if (!thumbnailTouchActive.value || thumbnailTouchStartX.value === null || thumbnailTouchStartY.value === null) return
+  if (event.touches.length !== 1) return
+}
+
+const handleThumbnailTouchEnd = (event: TouchEvent) => {
+  if (!thumbnailTouchActive.value || thumbnailTouchStartX.value === null || thumbnailTouchStartY.value === null) {
+    thumbnailTouchActive.value = false
+    thumbnailTouchStartX.value = null
+    thumbnailTouchStartY.value = null
+    return
+  }
+
+  const touch = event.changedTouches[0] as Touch
+  const deltaX = touch.clientX - thumbnailTouchStartX.value
+  const deltaY = touch.clientY - thumbnailTouchStartY.value
+  const absDeltaX = Math.abs(deltaX)
+  const absDeltaY = Math.abs(deltaY)
+  const threshold = 48
+
+  if (absDeltaX > threshold && absDeltaX > absDeltaY * 1.2) {
+    if (deltaX > 0) {
+      prevThumbnail()
+    } else {
+      nextThumbnail()
+    }
+  }
+
+  thumbnailTouchActive.value = false
+  thumbnailTouchStartX.value = null
+  thumbnailTouchStartY.value = null
+}
+
+// 加载相关推荐（直接调用API，不污染全局posts状态）
 const loadRelatedPosts = async () => {
   if (!post.value) return
-  
+
   try {
     // 基于标签和平台获取相关帖子
     const baseParams: PostListParams = {
@@ -671,14 +991,17 @@ const loadRelatedPosts = async () => {
       sort_by: 'view_count',
       sort_order: 'desc',
     }
-    
+
     // 优先使用相同平台
     if (post.value.platform) {
       baseParams.platform = post.value.platform
     }
-    
-    const response = await postsStore.fetchPosts(baseParams)
-    
+
+    // 直接调用API，不通过store避免污染全局状态
+    const response = await api.get<PaginatedResponse<Post>>('/posts', {
+      params: baseParams,
+    })
+
     // 过滤掉当前帖子
     relatedPosts.value = (response?.items || []).filter(
       (p: Post) => p.id !== post.value!.id
@@ -691,13 +1014,13 @@ const loadRelatedPosts = async () => {
 // 分享功能
 const sharePost = async () => {
   if (!post.value) return
-  
+
   const shareData = {
     title: post.value.title || 'Post',
     text: post.value.description || '',
     url: window.location.href,
   }
-  
+
   try {
     if (navigator.share) {
       await navigator.share(shareData)
@@ -731,7 +1054,7 @@ const handleKeydown = (e: KeyboardEvent) => {
     goBack()
     return
   }
-  
+
   // 左右箭头：切换图片（当有多张图片时）
   if (!showMediaViewer.value && allMediaUrls.value.length > 1) {
     if (e.key === 'ArrowLeft') {
@@ -740,13 +1063,13 @@ const handleKeydown = (e: KeyboardEvent) => {
       nextThumbnail()
     }
   }
-  
+
   // F: 收藏/取消收藏
   if (e.key === 'f' && !e.ctrlKey && !e.metaKey) {
     e.preventDefault()
     toggleFavorite()
   }
-  
+
   // S: 分享
   if (e.key === 's' && !e.ctrlKey && !e.metaKey) {
     e.preventDefault()
@@ -754,15 +1077,15 @@ const handleKeydown = (e: KeyboardEvent) => {
   }
 }
 
-// 组件挂载时添加键盘事件监听
-import { onUnmounted } from 'vue'
-
 onMounted(() => {
+  updateViewportBreakpoints()
   window.addEventListener('keydown', handleKeydown)
+  window.addEventListener('resize', updateViewportBreakpoints, { passive: true })
 })
 
 onUnmounted(() => {
   window.removeEventListener('keydown', handleKeydown)
+  window.removeEventListener('resize', updateViewportBreakpoints)
 })
 </script>
 
@@ -773,11 +1096,13 @@ onUnmounted(() => {
    ======================================== */
 
 .post-detail-page {
-  max-width: 1200px;
   margin: 0 auto;
-  padding: 32px 24px;
-  min-height: calc(100vh - 140px);
+  padding: clamp(24px, 4vw, 48px) clamp(16px, 5vw, 48px);
+  width: min(1440px, 100%);
+  min-height: calc(100vh - 120px);
   animation: fadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  content-visibility: auto;
+  contain: layout style paint;
 }
 
 @keyframes fadeIn {
@@ -785,27 +1110,29 @@ onUnmounted(() => {
     opacity: 0;
     transform: translateY(20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
   }
 }
 
-.back-button {
-  margin-bottom: var(--spacing-lg);
-  transition: all var(--transition-base);
-  backdrop-filter: blur(12px);
+.detail-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  margin-bottom: clamp(16px, 3vw, 28px);
 }
 
 .back-button {
   position: sticky;
-  top: 100px; /* 进一步增加，适配Samsung Galaxy S20 Ultra */
+  top: calc(var(--app-navbar-height, 78px) + 16px);
   z-index: 100;
   display: inline-flex;
   align-items: center;
   gap: 8px;
   padding: 12px 20px;
-  margin-bottom: 24px;
   border-radius: 24px;
   font-weight: 600;
   font-size: 14px;
@@ -815,18 +1142,15 @@ onUnmounted(() => {
   color: var(--color-text-primary);
   cursor: pointer;
   text-decoration: none;
-  
-  /* Material Design Elevation 2 */
-  box-shadow: 
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow:
     0 3px 6px -2px rgba(0, 0, 0, 0.12),
     0 6px 12px -3px rgba(0, 0, 0, 0.08);
-  
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .back-button:hover {
   transform: translateY(-2px);
-  box-shadow: 
+  box-shadow:
     0 6px 12px -3px rgba(139, 92, 246, 0.2),
     0 12px 24px -6px rgba(0, 0, 0, 0.12);
   border-color: rgba(139, 92, 246, 0.4);
@@ -837,82 +1161,167 @@ onUnmounted(() => {
   transition-duration: 0.1s;
 }
 
-.post-header {
+.detail-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 360px);
+  gap: clamp(24px, 4vw, 40px);
+  align-items: flex-start;
+}
+
+.detail-grid.single-column {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.detail-grid>.full-width-section {
+  grid-column: 1 / -1;
+}
+
+.detail-main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.detail-main .post-title {
+  margin-bottom: var(--spacing-sm);
+}
+
+@media (min-width: 1024px) {
+  .detail-grid>.full-width-section {
+    margin-top: clamp(8px, 1.5vw, 16px);
+  }
+}
+
+.media-column {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(18px, 3vw, 28px);
+  position: relative;
+}
+
+.media-column.compact-media .post-thumbnail-container {
+  width: 100%;
+}
+
+.info-column {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(18px, 3vw, 28px);
+}
+
+.info-column.interactive {
+  gap: var(--spacing-lg);
+}
+
+.media-hero {
   background: var(--glass-bg);
   backdrop-filter: var(--glass-blur);
   border: 1px solid var(--glass-border);
   border-radius: 24px;
-  padding: 0;
-  margin-bottom: 32px;
-  overflow: hidden;
-  
-  /* Material Design Elevation 4 */
-  box-shadow: 
-    0 4px 8px -2px rgba(0, 0, 0, 0.08),
-    0 8px 16px -4px rgba(0, 0, 0, 0.12);
-  
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: clamp(20px, 3.5vw, 32px);
+  display: flex;
+  flex-wrap: wrap;
+  gap: clamp(18px, 3vw, 28px);
+  align-items: flex-start;
+  justify-content: center;
+  overflow: visible;
+  box-shadow: 0 16px 40px -20px rgba(15, 23, 42, 0.28);
+  transition:
+    transform 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.28s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.post-header:hover {
-  box-shadow: 
-    0 6px 12px -3px rgba(139, 92, 246, 0.12),
-    0 12px 24px -6px rgba(0, 0, 0, 0.15);
+.media-hero:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 26px 54px -26px rgba(76, 29, 149, 0.42);
 }
 
 .post-thumbnail-container {
   position: relative;
-  width: 100%;
-  /* 移除aspect-ratio，让图片自适应 */
-  background: linear-gradient(
-    135deg,
-    rgba(139, 92, 246, 0.1) 0%,
-    rgba(192, 132, 252, 0.1) 100%
-  );
+  width: clamp(320px, 42vw, 520px);
+  min-height: 320px;
+  background: linear-gradient(135deg,
+      rgba(139, 92, 246, 0.08) 0%,
+      rgba(192, 132, 252, 0.12) 100%);
   overflow: hidden;
-  border-radius: 24px 24px 0 0;
+  border-radius: var(--radius-3xl);
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    inset 0 40px 120px rgba(139, 92, 246, 0.08);
+  flex: 0 0 auto;
 }
 
 .post-thumbnail {
   position: relative;
   width: 100%;
-  /* 移除固定aspect-ratio和max-height */
+  height: 100%;
+  isolation: isolate;
   border-radius: var(--radius-2xl);
   overflow: hidden;
   cursor: zoom-in;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1);
   background:
-    linear-gradient(135deg, rgba(139, 92, 246, 0.05) 0%, rgba(192, 132, 252, 0.05) 100%),
+    linear-gradient(135deg, rgba(139, 92, 246, 0.04) 0%, rgba(192, 132, 252, 0.04) 100%),
     var(--color-bg-secondary);
-  box-shadow:
-    0 20px 60px -10px rgba(0, 0, 0, 0.2),
-    0 8px 24px -6px rgba(139, 92, 246, 0.15),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(139, 92, 246, 0.1);
-  will-change: transform, box-shadow;
+  box-shadow: 0 22px 46px -18px rgba(15, 23, 42, 0.4);
+  border: 1px solid rgba(139, 92, 246, 0.12);
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.post-thumbnail img {
+.media-backdrop {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  filter: blur(16px) saturate(110%) brightness(0.96);
+  transform: scale(1.28);
+  opacity: 0.45;
+  background: radial-gradient(circle at center, rgba(24, 22, 36, 0.42), rgba(11, 9, 24, 0.78));
+  transition: opacity 0.32s ease;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.media-backdrop img,
+.media-backdrop video {
+  width: 120%;
+  height: 120%;
+  object-fit: cover;
+  opacity: 0.82;
+  filter: blur(6px) saturate(108%);
+  transform: scale(1.06);
+}
+
+.media-backdrop::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(140deg, rgba(18, 16, 32, 0.22) 0%, rgba(32, 22, 44, 0.4) 100%);
+  mix-blend-mode: soft-light;
+}
+
+.post-thumbnail img,
+.post-thumbnail video {
   width: 100%;
-  max-width: 100%; /* 不超过容器宽度 */
-  height: auto; /* 自适应高度 */
+  height: 100%;
   display: block;
   object-fit: contain;
   position: relative;
   z-index: 1;
+  background: rgba(0, 0, 0, 0.22);
+  border-radius: inherit;
 }
 
 .thumbnail-overlay {
   position: absolute;
   inset: 0;
   background: linear-gradient(135deg, rgba(139, 92, 246, 0.75) 0%, rgba(192, 132, 252, 0.75) 100%);
-  backdrop-filter: blur(12px) saturate(180%);
+  backdrop-filter: blur(8px) saturate(160%);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -930,11 +1339,124 @@ onUnmounted(() => {
   opacity: 1;
 }
 
+.offline-hint {
+  margin: 0 0 var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-md);
+  background: rgba(59, 130, 246, 0.08);
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+}
+
 .thumbnail-overlay::after {
   content: '点击查看完整大图';
   font-size: var(--text-sm);
   font-weight: var(--font-medium);
   opacity: 0.9;
+}
+
+.thumbnail-overlay.is-video {
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.thumbnail-overlay.is-video::after {
+  content: '点击播放视频';
+}
+
+.post-content-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(16px, 2.5vw, 28px);
+  padding: clamp(16px, 2.5vw, 28px);
+  border-radius: var(--radius-2xl);
+  width: 100%;
+  align-self: stretch;
+  min-width: 0;
+  background:
+    linear-gradient(135deg, rgba(139, 92, 246, 0.04) 0%, rgba(192, 132, 252, 0.06) 100%),
+    var(--glass-bg-light);
+  border: 1px solid rgba(139, 92, 246, 0.08);
+  box-shadow:
+    0 12px 32px -16px rgba(0, 0, 0, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(18px);
+  animation: contentFadeIn 0.5s ease;
+  content-visibility: auto;
+  contain: layout paint style;
+}
+
+.post-content-wrapper.as-accordion {
+  gap: var(--spacing-lg);
+  padding: var(--spacing-md);
+}
+
+@media (max-width: 767px) {
+  .post-content-wrapper.as-accordion {
+    gap: var(--spacing-md);
+    padding: var(--spacing-sm);
+  }
+}
+
+.accordion-block {
+  border-radius: var(--radius-xl);
+  border: 1px solid rgba(139, 92, 246, 0.14);
+  background:
+    linear-gradient(135deg, rgba(139, 92, 246, 0.04) 0%, rgba(192, 132, 252, 0.08) 100%),
+    var(--glass-bg);
+  box-shadow:
+    0 12px 24px -18px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.accordion-summary {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md) var(--spacing-lg);
+  cursor: pointer;
+  font-weight: var(--font-semibold);
+  color: var(--color-text-primary);
+}
+
+.accordion-summary::-webkit-details-marker {
+  display: none;
+}
+
+.accordion-summary .chevron {
+  transition: transform 0.2s ease;
+}
+
+.accordion-block[open] .accordion-summary .chevron {
+  transform: rotate(90deg);
+}
+
+.accordion-body {
+  padding: 0 var(--spacing-lg) var(--spacing-lg);
+  display: grid;
+  gap: var(--spacing-lg);
+}
+
+.accordion-body .post-actions {
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+  border: none;
+}
+
+@keyframes contentFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .thumbnail-counter {
@@ -1086,9 +1608,11 @@ onUnmounted(() => {
 
 .author-info {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--spacing-md);
   padding: var(--spacing-lg);
+  flex-wrap: wrap;
+  min-width: 0;
   background:
     linear-gradient(135deg, rgba(139, 92, 246, 0.03) 0%, rgba(192, 132, 252, 0.03) 100%),
     var(--glass-bg-light);
@@ -1128,10 +1652,19 @@ onUnmounted(() => {
   opacity: 1;
 }
 
+.author-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
 .author-avatar {
   width: 60px;
   height: 60px;
-  min-width: 60px; /* 防止被压缩 */
+  min-width: 60px;
+  /* 防止被压缩 */
   min-height: 60px;
   border-radius: var(--radius-full);
   background: var(--gradient-primary);
@@ -1139,8 +1672,10 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   color: white;
-  flex-shrink: 0; /* 防止flex布局压缩 */
-  aspect-ratio: 1 / 1; /* 保持圆形 */
+  flex-shrink: 0;
+  /* 防止flex布局压缩 */
+  aspect-ratio: 1 / 1;
+  /* 保持圆形 */
 }
 
 .author-details h3 {
@@ -1148,11 +1683,17 @@ onUnmounted(() => {
   font-weight: var(--font-semibold);
   color: var(--color-text-primary);
   margin-bottom: var(--spacing-xs);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .author-details p {
   color: var(--color-text-tertiary);
   font-size: var(--text-sm);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .stats-link {
@@ -1160,60 +1701,16 @@ onUnmounted(() => {
   display: block;
 }
 
-.post-stats {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-lg);
-  flex-wrap: nowrap;
-  padding: var(--spacing-md);
-  border-radius: var(--radius-xl);
-  margin: var(--spacing-md) 0;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow:
-    0 2px 8px rgba(0, 0, 0, 0.03),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  position: relative;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+
+.stat-count {
+  font-weight: var(--font-semibold);
+  color: var(--color-text-primary);
+  font-size: 1.05rem;
 }
 
-.post-stats::-webkit-scrollbar {
-  display: none;
-}
-
-.post-stats.clickable {
-  cursor: pointer;
-}
-
-.post-stats.clickable:hover {
-  background:
-    linear-gradient(135deg, rgba(139, 92, 246, 0.05) 0%, rgba(192, 132, 252, 0.05) 100%),
-    var(--glass-bg-light);
-  border-color: rgba(139, 92, 246, 0.15);
-  box-shadow:
-    0 4px 12px rgba(139, 92, 246, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.12);
-}
-
-.post-stats .link-icon {
-  margin-left: auto;
-  color: var(--color-primary);
-  opacity: 0.6;
-  transition: opacity 0.3s ease;
-}
-
-.post-stats.clickable:hover .link-icon {
-  opacity: 1;
-}
-
-.stat-item {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
-  color: var(--color-text-secondary);
-  font-size: var(--text-base);
+.stat-label {
+  color: var(--color-text-tertiary);
+  font-size: var(--text-sm);
 }
 
 .post-description {
@@ -1237,6 +1734,49 @@ onUnmounted(() => {
   word-break: break-word;
 }
 
+.post-description.is-collapsed {
+  position: relative;
+  max-height: 16rem;
+  overflow: hidden;
+}
+
+.post-description.is-collapsed::after {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 72px;
+  background: linear-gradient(to top, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0));
+  pointer-events: none;
+}
+
+.post-description.is-expanded {
+  max-height: none;
+}
+
+.description-toggle {
+  margin-top: var(--spacing-md);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.5);
+  background: rgba(15, 23, 42, 0.4);
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+  transition: all 0.2s ease;
+}
+
+.description-toggle:hover {
+  color: var(--color-text-primary);
+  border-color: rgba(129, 140, 248, 0.9);
+  background: rgba(15, 23, 42, 0.7);
+}
+
 @media (min-width: 1200px) {
   .post-description {
     padding: var(--spacing-xl);
@@ -1248,35 +1788,149 @@ onUnmounted(() => {
   }
 }
 
+@media (min-width: 1280px) {
+  .post-description.is-expanded p {
+    column-count: 2;
+    column-gap: var(--spacing-xl);
+  }
+}
+
+
 .post-actions {
   display: flex;
-  align-items: center;
-  gap: var(--spacing-md);
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+  flex-direction: column;
+  gap: clamp(12px, 1.6vw, 20px);
+  margin: var(--spacing-lg) 0;
 }
 
-.post-actions::-webkit-scrollbar {
-  display: none;
+
+.post-action-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background:
+    linear-gradient(135deg, rgba(139, 92, 246, 0.04) 0%, rgba(192, 132, 252, 0.04) 100%),
+    var(--glass-bg-light);
+  border-radius: var(--radius-2xl);
+  border: 1px solid rgba(139, 92, 246, 0.1);
+  box-shadow:
+    0 3px 12px rgba(15, 23, 42, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
-.post-actions a {
+.post-action-buttons>* {
+  flex: 0 0 auto;
+  display: inline-flex;
+  min-width: 0;
+}
+
+.post-action-buttons .post-action-link {
   display: inline-flex;
 }
 
+.post-action-buttons :deep(.glass-button) {
+  flex: 0 0 auto;
+  justify-content: center;
+  align-items: center;
+  min-height: 48px;
+  width: auto;
+  padding: 0 var(--spacing-md);
+}
+
+.post-action-buttons :deep(.glass-button svg) {
+  margin: 0;
+}
+
 /* 收藏按钮激活状态 */
-.post-actions :deep(.glass-button.favorited) {
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.2) 0%, rgba(192, 132, 252, 0.2) 100%);
+.post-action-buttons :deep(.glass-button.is-favorited) {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.18) 0%, rgba(192, 132, 252, 0.18) 100%);
   border-color: var(--color-primary);
   color: var(--color-primary);
 }
 
-[data-theme='dark'] .post-actions :deep(.glass-button.favorited) {
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.3) 0%, rgba(192, 132, 252, 0.3) 100%);
-  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+[data-theme='dark'] .post-action-buttons :deep(.glass-button.is-favorited) {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.28) 0%, rgba(192, 132, 252, 0.28) 100%);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.32);
+}
+
+.post-action-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background:
+    linear-gradient(135deg, rgba(139, 92, 246, 0.05) 0%, rgba(192, 132, 252, 0.05) 100%),
+    var(--glass-bg-light);
+  border-radius: var(--radius-2xl);
+  border: 1px solid rgba(139, 92, 246, 0.1);
+  box-shadow:
+    0 4px 16px rgba(15, 23, 42, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.post-stats-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-xs) var(--spacing-md);
+  border-radius: var(--radius-xl);
+  border: 1px solid transparent;
+  min-height: 48px;
+  transition: all 0.25s ease;
+  background: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(10px);
+}
+
+[data-theme='dark'] .post-stats-row {
+  background: rgba(31, 24, 56, 0.45);
+}
+
+.post-stats-row.is-link {
+  cursor: pointer;
+}
+
+.post-stats-row.is-link:hover {
+  transform: translateY(-1px);
+  border-color: rgba(139, 92, 246, 0.35);
+  box-shadow:
+    0 8px 20px rgba(76, 29, 149, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.post-stats-row .link-icon {
+  margin-left: auto;
+  color: var(--color-primary);
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+}
+
+.post-stats-row.is-link:hover .link-icon {
+  opacity: 1;
+}
+
+.stat-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.18), rgba(192, 132, 252, 0.18));
+  color: var(--color-primary);
+  flex-shrink: 0;
+}
+
+[data-theme='dark'] .stat-icon {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.28), rgba(192, 132, 252, 0.28));
+}
+
+.stat-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
 }
 
 .media-section {
@@ -1402,17 +2056,18 @@ onUnmounted(() => {
 /* 平板优化 (769px-1199px) */
 @media (min-width: 769px) and (max-width: 1199px) {
   .post-detail-page {
-    max-width: 960px;
-    padding: 0 var(--spacing-xl);
+    max-width: 100%;
+    padding: 16px var(--spacing-md);
   }
 
   .post-header {
-    padding: var(--spacing-2xl);
-    display: block;
+    grid-template-columns: 1fr;
+    padding: clamp(24px, 4vw, 36px);
   }
 
   .post-thumbnail-container {
     margin-bottom: var(--spacing-xl);
+    min-height: min(70vh, 720px);
   }
 }
 
@@ -1420,16 +2075,27 @@ onUnmounted(() => {
 @media (max-width: 768px) {
   .post-detail-page {
     max-width: 100%;
-    padding: 0 var(--spacing-md);
+    padding: 12px var(--spacing-sm);
   }
 
   .post-header {
-    padding: var(--spacing-lg);
-    display: block;
+    padding: var(--spacing-md);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+    align-items: stretch;
+    border-radius: 20px;
+    margin-bottom: var(--spacing-md);
   }
 
   .post-thumbnail-container {
     margin-bottom: var(--spacing-lg);
+    min-height: 60vh;
+    max-height: 70vh;
+  }
+
+  .post-thumbnail {
+    min-height: inherit;
   }
 
   .post-title {
@@ -1440,50 +2106,58 @@ onUnmounted(() => {
     padding: var(--spacing-md);
   }
 
-  .author-info,
-  .post-stats {
-    padding: var(--spacing-lg); /* 增加移动端内边距 */
-    gap: var(--spacing-md); /* 增加元素间隔 */
+  .post-action-buttons {
+    padding: var(--spacing-sm) var(--spacing-md);
+    gap: var(--spacing-sm);
   }
-  
+
+  .post-action-buttons>* {
+    flex: 0 0 auto;
+  }
+
+  .post-action-stats {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-sm);
+  }
+
+  .post-stats-row {
+    min-height: 52px;
+  }
+
   /* iPhone 14 Pro Max (430x932) 优化 */
   @media (max-width: 430px) {
-    .post-stats {
-      flex-wrap: nowrap; /* 强制单行显示 */
+    .post-action-buttons>* {
+      flex: 0 0 auto;
+    }
+
+    .post-stats-row {
+      flex-direction: row;
       gap: var(--spacing-sm);
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
+      min-height: 48px;
+      padding: var(--spacing-sm) var(--spacing-sm);
     }
-    
-    .post-stats .stat-item {
-      flex-shrink: 0; /* 防止被压缩 */
-      min-width: fit-content;
-    }
-    
-    .post-stats .stat-item span {
-      font-size: var(--text-sm);
-    }
-    
-    .author-info {
-      gap: var(--spacing-md);
-    }
-    
-    .post-title {
-      font-size: var(--text-xl);
-      line-height: 1.4;
-      margin-bottom: var(--spacing-md);
+
+    .stat-icon {
+      width: 38px;
+      height: 38px;
     }
   }
-  
+
   .author-avatar {
     width: 48px;
     height: 48px;
     min-width: 48px;
     min-height: 48px;
   }
-  
+
   .back-button {
-    top: 76px; /* 移动端调整位置 */
+    position: sticky;
+    top: calc(var(--app-navbar-height, 60px) + 12px);
+    /* 移动端安全距离 */
+    padding: 8px 16px;
+    margin-top: 8px;
+    margin-bottom: var(--spacing-md);
+    z-index: 200;
   }
 
   .thumbnail-nav-btn {
@@ -1502,18 +2176,22 @@ onUnmounted(() => {
   .back-button {
     margin-bottom: var(--spacing-md);
   }
-  
+
   /* 移动端操作按钮优化 */
   .post-actions {
-    gap: var(--spacing-sm);
+    gap: var(--spacing-md);
+    padding: var(--spacing-md);
   }
-  
-  .post-actions .action-label {
-    display: none; /* 移动端隐藏文字，只显示图标 */
-  }
-  
+
   .post-actions :deep(.glass-button) {
-    min-width: auto;
+    min-width: 120px;
+  }
+
+  .post-actions :deep(.glass-button)::after {
+    display: none;
+  }
+
+  .post-actions :deep(.glass-button) {
     padding: var(--spacing-sm) var(--spacing-md);
   }
 }
@@ -1523,9 +2201,9 @@ onUnmounted(() => {
    ======================================== */
 
 .skeleton-loader {
-  max-width: 1200px;
+  width: min(1120px, 100% - 32px);
   margin: 0 auto;
-  padding: var(--spacing-lg);
+  padding: clamp(20px, 4vw, 36px);
 }
 
 .skeleton-back-btn {
@@ -1621,9 +2299,12 @@ onUnmounted(() => {
 }
 
 @keyframes skeleton-pulse {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 1;
   }
+
   50% {
     opacity: 0.5;
   }
@@ -1654,10 +2335,13 @@ onUnmounted(() => {
 }
 
 @keyframes sparkle {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 1;
     transform: scale(1);
   }
+
   50% {
     opacity: 0.7;
     transform: scale(1.1);
@@ -1737,19 +2421,19 @@ onUnmounted(() => {
     grid-template-columns: repeat(2, 1fr);
     gap: var(--spacing-md);
   }
-  
+
   .related-posts {
     padding: var(--spacing-lg);
   }
-  
+
   .related-item img {
     height: 120px;
   }
-  
+
   .related-info {
     padding: var(--spacing-sm);
   }
-  
+
   .related-info h4 {
     font-size: var(--text-sm);
   }

@@ -1,41 +1,43 @@
 <template>
   <div class="filter-bar glass-card">
-    <div class="filter-section">
+    <div class="filter-section filter-section--platform">
       <label class="filter-label">{{ $t('filter.platform') }}</label>
-      <select v-model="localFilters.platform" class="filter-select glass-input">
-        <option value="">{{ $t('platform.all') }}</option>
-        <option v-for="platform in platforms" :key="platform" :value="platform">
-          {{ $t(`platform.${platform}`) }}
-        </option>
-      </select>
+      <div class="platform-chips">
+        <button v-for="item in platformOptions" :key="item.value || 'all'" type="button" class="filter-chip"
+          :class="{ active: isPlatformActive(item.value) }" @click="selectPlatform(item.value)"
+          :aria-label="`${$t('filter.platform')}: ${$t(item.labelKey)}`">
+          <span class="chip-icon">
+            <component :is="item.icon" :size="16" />
+          </span>
+          <span class="chip-label">{{ $t(item.labelKey) }}</span>
+        </button>
+      </div>
     </div>
 
-    <div class="filter-section">
+    <div class="filter-section filter-section--sort">
       <label class="filter-label">{{ $t('filter.sortBy') }}</label>
-      <select v-model="localFilters.sort_by" class="filter-select glass-input">
-        <option value="scraped_at">{{ $t('filter.latest') }}</option>
-        <option value="published_at">{{ $t('filter.published') }}</option>
-        <option value="view_count">{{ $t('post.views') }}</option>
-        <option value="like_count">{{ $t('post.likes') }}</option>
-      </select>
+      <div class="sort-chips">
+        <button v-for="item in sortOptions" :key="item.value" type="button" class="filter-chip"
+          :class="{ active: localFilters.sort_by === item.value }" @click="selectSort(item.value)"
+          :aria-label="`${$t('filter.sortBy')}: ${$t(item.labelKey)}`">
+          <span class="chip-icon">
+            <component :is="item.icon" :size="16" />
+          </span>
+          <span class="chip-label">{{ $t(item.labelKey) }}</span>
+        </button>
+      </div>
     </div>
 
     <!-- 升降序按钮（最新排序时隐藏） -->
     <div v-if="localFilters.sort_by !== 'scraped_at'" class="filter-section">
       <label class="filter-label">{{ $t('common.order') }}</label>
       <div class="filter-buttons">
-        <button
-          class="filter-button"
-          :class="{ active: localFilters.sort_order === 'desc' }"
-          @click="localFilters.sort_order = 'desc'"
-        >
+        <button class="filter-button" :class="{ active: localFilters.sort_order === 'desc' }"
+          @click="localFilters.sort_order = 'desc'">
           <ArrowDown :size="16" />
         </button>
-        <button
-          class="filter-button"
-          :class="{ active: localFilters.sort_order === 'asc' }"
-          @click="localFilters.sort_order = 'asc'"
-        >
+        <button class="filter-button" :class="{ active: localFilters.sort_order === 'asc' }"
+          @click="localFilters.sort_order = 'asc'">
           <ArrowUp :size="16" />
         </button>
       </div>
@@ -43,11 +45,8 @@
 
     <div class="filter-section">
       <label class="filter-label">{{ $t('filter.hasMedia') }}</label>
-      <button
-        class="filter-button"
-        :class="{ active: localFilters.has_media }"
-        @click="localFilters.has_media = !localFilters.has_media"
-      >
+      <button class="filter-button" :class="{ active: localFilters.has_media }"
+        @click="localFilters.has_media = !localFilters.has_media">
         <ImageIcon :size="16" />
       </button>
     </div>
@@ -66,10 +65,24 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
-import { ArrowDown, ArrowUp, ImageIcon, RotateCcw, Filter } from 'lucide-vue-next'
-import type { PostListParams } from '@/types'
-import { PLATFORMS } from '@/types'
+import { ref, watch, type Component } from 'vue'
+import {
+  ArrowDown,
+  ArrowUp,
+  ImageIcon,
+  RotateCcw,
+  Filter,
+  Youtube,
+  Twitter,
+  Instagram,
+  Music2,
+  Globe2,
+  Clock,
+  CalendarDays,
+  Eye,
+  Heart,
+} from 'lucide-vue-next'
+import type { PostListParams, Platform } from '@/types'
 import GlassButton from '@/components/ui/GlassButton.vue'
 
 // 防抖定时器
@@ -84,8 +97,40 @@ const emit = defineEmits<{
   update: [filters: PostListParams]
 }>()
 
-const platforms = PLATFORMS
+const platformOptions: { value: '' | Platform; labelKey: string; icon: Component }[] = [
+  { value: '', labelKey: 'platform.all', icon: Globe2 },
+  { value: 'youtube', labelKey: 'platform.youtube', icon: Youtube },
+  { value: 'twitter', labelKey: 'platform.twitter', icon: Twitter },
+  { value: 'tiktok', labelKey: 'platform.tiktok', icon: Music2 },
+  { value: 'instagram', labelKey: 'platform.instagram', icon: Instagram },
+]
+
+const sortOptions: { value: 'scraped_at' | 'published_at' | 'view_count' | 'like_count'; labelKey: string; icon: Component }[] = [
+  { value: 'scraped_at', labelKey: 'filter.latest', icon: Clock },
+  { value: 'published_at', labelKey: 'filter.published', icon: CalendarDays },
+  { value: 'view_count', labelKey: 'post.views', icon: Eye },
+  { value: 'like_count', labelKey: 'post.likes', icon: Heart },
+]
+
 const localFilters = ref<PostListParams>({ ...props.filters })
+
+const isPlatformActive = (value: '' | Platform) => {
+  if (value === '') {
+    return !localFilters.value.platform
+  }
+  return localFilters.value.platform === value
+}
+
+const selectPlatform = (value: '' | Platform) => {
+  localFilters.value.platform = value || ''
+}
+
+const selectSort = (value: 'scraped_at' | 'published_at' | 'view_count' | 'like_count') => {
+  if (localFilters.value.sort_by === value) return
+  localFilters.value.sort_by = value
+  // 选择排序方式时，立即应用筛选（带防抖）
+  applyFilters()
+}
 
 watch(
   () => props.filters,
@@ -109,7 +154,7 @@ const applyFilters = () => {
   if (applyTimeout) {
     clearTimeout(applyTimeout)
   }
-  
+
   applyTimeout = setTimeout(() => {
     emit('update', { ...localFilters.value })
   }, 100) // 100ms 防抖
@@ -139,7 +184,7 @@ const resetFilters = () => {
 <style scoped>
 .filter-bar {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   gap: var(--spacing-lg);
   padding: var(--spacing-lg);
   flex-wrap: wrap;
@@ -150,6 +195,57 @@ const resetFilters = () => {
   flex-direction: column;
   gap: var(--spacing-xs);
   min-width: 150px;
+}
+
+.filter-section--platform {
+  flex: 1.5;
+  min-width: 240px;
+}
+
+.platform-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
+}
+
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: var(--glass-bg-light);
+  border: 1px solid var(--glass-border);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.filter-chip:hover {
+  background: var(--glass-bg);
+  border-color: var(--color-primary);
+  color: var(--color-text-primary);
+}
+
+.filter-chip.active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: white;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.12),
+    0 8px 18px rgba(0, 0, 0, 0.25);
+}
+
+.chip-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chip-label {
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
 }
 
 .filter-label {

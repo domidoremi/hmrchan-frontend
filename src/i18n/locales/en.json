@@ -10,6 +10,7 @@
     "authors": "Authors",
     "profile": "Profile",
     "settings": "Settings",
+    "advancedSettings": "Advanced Settings",
     "favorites": "Favorites",
     "privacy": "Privacy Policy",
     "login": "Login",
@@ -131,7 +132,10 @@
     "removeFailed": "Failed to remove favorite",
     "updateSuccess": "Favorite updated",
     "updateFailed": "Failed to update favorite",
-    "loginRequired": "Please login to add favorites"
+    "loginRequired": "Please login to add favorites",
+    "emptyTitle": "No favorites yet",
+    "emptyDesc": "Start adding content to your favorites!",
+    "goExplore": "Explore Content"
   },
   "settings": {
     "welcomeBack": "Manage your preferences and account",
@@ -152,7 +156,10 @@
     "light": "Light",
     "dark": "Dark",
     "auto": "Auto",
-    "toggleTheme": "Toggle theme"
+    "toggleTheme": "Toggle theme",
+    "toggleHeroSection": "Toggle home hero banner",
+    "toggleAnimations": "Toggle animations",
+    "toggleSwipeNavigation": "Toggle swipe navigation"
   },
   "common": {
     "loading": "Loading...",
@@ -343,6 +350,8 @@
     "showHeroSectionDesc": "Display welcome banner and statistics at the top of homepage",
     "enableAnimations": "Enable Animations",
     "enableAnimationsDesc": "Enable page transitions and interaction animations",
+    "enableSwipeNavigation": "Enable swipe navigation",
+    "enableSwipeNavigationDesc": "Allow swiping left and right between main pages on mobile",
     "postsPerPage": "Posts Per Page",
     "postsPerPageDesc": "Set the number of posts displayed per page",
     "media": "Media Settings",
@@ -371,6 +380,16 @@
     "importFailed": "Import failed",
     "resetConfirm": "Are you sure you want to reset to default settings?",
     "resetSuccess": "Settings reset"
+  },
+  "offline": {
+    "usingCache": "Showing cached offline data. It may not be up to date.",
+    "actionsQueued": "Some actions are queued offline and will sync when you're back online.",
+    "favoriteQueued": "Favorite added in offline mode. It will sync to the server later.",
+    "unfavoriteQueued": "Favorite removed in offline mode. It will sync to the server later.",
+    "queueTitle": "Offline queue",
+    "queueEmpty": "No pending actions to sync.",
+    "syncNow": "Sync now",
+    "offlineNow": "You are currently offline. Some features may be limited."
   },
   "privacy": {
     "title": "Privacy Policy",

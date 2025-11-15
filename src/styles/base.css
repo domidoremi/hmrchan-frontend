@@ -526,6 +526,24 @@ svg {
   }
 }
 
+/* ========== 全局动画偏好（用户设置） ========== */
+
+/* 当用户关闭动画时，禁用全局平滑滚动，避免额外的运动感 */
+[data-animations='off'],
+[data-animations='off'] * {
+  scroll-behavior: auto !important;
+}
+
+/* 对于需要完全关闭动效的元素，可以加上 reduce-motion 辅助类（包含子元素） */
+[data-animations='off'] .reduce-motion,
+[data-animations='off'] .reduce-motion * {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  animation: none !important;
+  transition: none !important;
+}
+
 /* ========== 响应式设计 ========== */
 
 @media (max-width: 1280px) {
