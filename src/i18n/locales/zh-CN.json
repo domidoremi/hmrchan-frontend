@@ -152,7 +152,10 @@
     "light": "浅色",
     "dark": "深色",
     "auto": "自动",
-    "toggleTheme": "切换主题"
+    "toggleTheme": "切换主题",
+    "toggleHeroSection": "切换首页横幅",
+    "toggleAnimations": "切换动效",
+    "toggleSwipeNavigation": "切换滑动导航"
   },
   "common": {
     "loading": "加载中...",
@@ -344,6 +347,8 @@
     "showHeroSectionDesc": "在首页顶部显示欢迎横幅和统计信息",
     "enableAnimations": "启用动画效果",
     "enableAnimationsDesc": "启用页面过渡和交互动画",
+    "enableSwipeNavigation": "启用滑动切换页面",
+    "enableSwipeNavigationDesc": "在移动端通过左右滑动在主页面之间切换",
     "postsPerPage": "每页帖子数量",
     "postsPerPageDesc": "设置每页显示的帖子数量",
     "media": "媒体设置",

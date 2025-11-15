@@ -3,7 +3,7 @@
     <div class="home-page">
       <!-- Hero Section - Modern Design -->
       <Transition name="hero-fade">
-        <section v-if="settingsStore.settings.showHeroSection" class="hero-section">
+        <section v-if="settingsStore.settings.showHeroSection" class="hero-section reduce-motion">
           <div class="hero-background">
             <div class="hero-gradient"></div>
             <div class="hero-mesh"></div>
@@ -62,7 +62,7 @@
       </Transition>
 
       <!-- Platform Stats - Modern Cards -->
-      <section class="platforms-section">
+      <section class="platforms-section reduce-motion">
         <!-- 加载中：显示加载状态 -->
         <div v-if="isStatsLoading" class="stats-grid stats-desktop">
           <div v-for="platform in platforms" :key="platform" class="stat-card glass-card loading">
@@ -166,7 +166,7 @@
       </section>
 
       <!-- Latest Posts - Bento Grid Layout -->
-      <section class="posts-section">
+      <section class="posts-section reduce-motion">
         <div class="section-header">
           <h2>{{ $t('filter.latest') }}</h2>
           <RouterLink to="/explore">

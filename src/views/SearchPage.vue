@@ -27,7 +27,7 @@
             <section v-else class="search-results-wrapper">
                 <!-- Posts Tab -->
                 <div v-if="activeTab === 'posts'" class="results-section glass-card">
-                    <div v-if="loadingPosts" class="loading-state">
+                    <div v-if="loadingPosts" class="loading-state reduce-motion">
                         <div class="spinner"></div>
                         <span>{{ $t('search.searching') }}</span>
                     </div>
@@ -47,7 +47,7 @@
 
                 <!-- Authors Tab -->
                 <div v-else class="results-section glass-card">
-                    <div v-if="loadingAuthors" class="loading-state">
+                    <div v-if="loadingAuthors" class="loading-state reduce-motion">
                         <div class="spinner"></div>
                         <span>{{ $t('search.searching') }}</span>
                     </div>
