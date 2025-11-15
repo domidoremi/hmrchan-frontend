@@ -132,7 +132,10 @@
     "removeFailed": "取消收藏失败",
     "updateSuccess": "收藏已更新",
     "updateFailed": "更新收藏失败",
-    "loginRequired": "请登录后添加收藏"
+    "loginRequired": "请登录后添加收藏",
+    "emptyTitle": "暂无收藏",
+    "emptyDesc": "还没有任何收藏内容，去发现一些喜欢的帖子吧！",
+    "goExplore": "去探索内容"
   },
   "settings": {
     "welcomeBack": "管理您的偏好设置和账户",

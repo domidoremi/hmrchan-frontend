@@ -132,7 +132,10 @@
     "removeFailed": "Failed to remove favorite",
     "updateSuccess": "Favorite updated",
     "updateFailed": "Failed to update favorite",
-    "loginRequired": "Please login to add favorites"
+    "loginRequired": "Please login to add favorites",
+    "emptyTitle": "No favorites yet",
+    "emptyDesc": "Start adding content to your favorites!",
+    "goExplore": "Explore Content"
   },
   "settings": {
     "welcomeBack": "Manage your preferences and account",
