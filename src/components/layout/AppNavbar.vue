@@ -807,7 +807,6 @@ onUnmounted(() => {
   top: calc(100% + var(--spacing-2));
   right: 0;
   width: 320px;
-  max-width: calc(100% - 2 * var(--spacing-4));
   padding: var(--spacing-4);
   border-radius: var(--radius-xl);
   box-shadow: var(--glass-shadow);
@@ -822,7 +821,6 @@ onUnmounted(() => {
   top: calc(100% + var(--spacing-2));
   right: 0;
   width: 260px;
-  max-width: calc(100% - 2 * var(--spacing-4));
   padding: var(--spacing-4);
   border-radius: var(--radius-xl);
   box-shadow: var(--glass-shadow);
