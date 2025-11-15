@@ -3,13 +3,8 @@
   <div class="access-limit-indicator">
     <!-- 小气泡指示器 -->
     <Transition name="fade">
-      <button 
-        v-if="shouldShowIndicator" 
-        class="access-bubble"
-        :class="{ 'bubble-warning': isNearLimit }"
-        @click="showDetails"
-        :aria-label="$t('access.viewDetails')"
-      >
+      <button v-if="shouldShowIndicator" class="access-bubble" :class="{ 'bubble-warning': isNearLimit }"
+        @click="showDetails" :aria-label="$t('access.viewDetails')">
         <div class="bubble-icon">
           <Info v-if="!isNearLimit" :size="16" />
           <AlertCircle v-else :size="16" />
@@ -91,7 +86,7 @@ const showDetails = () => {
   backdrop-filter: blur(20px) saturate(180%);
   border: 1px solid rgba(139, 92, 246, 0.3);
   border-radius: var(--radius-full);
-  box-shadow: 
+  box-shadow:
     0 4px 12px rgba(139, 92, 246, 0.2),
     0 2px 6px rgba(0, 0, 0, 0.1);
   cursor: pointer;
@@ -105,14 +100,14 @@ const showDetails = () => {
 
 .access-bubble:hover {
   transform: translateY(-2px);
-  box-shadow: 
+  box-shadow:
     0 6px 16px rgba(139, 92, 246, 0.3),
     0 3px 8px rgba(0, 0, 0, 0.15);
 }
 
 .access-bubble.bubble-warning {
   border-color: rgba(245, 158, 11, 0.5);
-  box-shadow: 
+  box-shadow:
     0 4px 12px rgba(245, 158, 11, 0.3),
     0 2px 6px rgba(0, 0, 0, 0.1);
 }
@@ -152,7 +147,7 @@ const showDetails = () => {
 
 @media (max-width: 768px) {
   .access-limit-indicator {
-    bottom: var(--spacing-4);
+    bottom: calc(72px + var(--spacing-2));
     right: var(--spacing-4);
   }
 }

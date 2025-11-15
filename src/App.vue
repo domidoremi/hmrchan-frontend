@@ -14,6 +14,7 @@ const authStore = useAuthStore()
 const themeStore = useThemeStore()
 const settingsStore = useSettingsStore()
 const { isDark } = storeToRefs(themeStore)
+const { settings } = storeToRefs(settingsStore)
 
 const router = useRouter()
 const transitionName = ref('fade')
@@ -25,6 +26,12 @@ const cachedComponents = ['HomePage', 'ExplorePage', 'AuthorsPage']
 watch(
   () => router.currentRoute.value,
   (to) => {
+    // 如果用户关闭动画，则禁用路由过渡动画
+    if (!settings.value.enableAnimations) {
+      transitionName.value = ''
+      return
+    }
+
     // 默认使用fade动画
     const transition = to?.meta?.transition
     if (transition === 'slide-left') {
@@ -68,6 +75,17 @@ onMounted(async () => {
     })
   }
 })
+
+// 根据用户偏好切换全局动画开关
+watch(
+  () => settings.value.enableAnimations,
+  (enabled) => {
+    if (typeof document !== 'undefined') {
+      document.documentElement.setAttribute('data-animations', enabled ? 'on' : 'off')
+    }
+  },
+  { immediate: true },
+)
 
 // 监听登录状态变化
 watch(
