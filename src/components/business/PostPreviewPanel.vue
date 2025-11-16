@@ -145,7 +145,7 @@ import {
 import { useI18n } from 'vue-i18n'
 
 import type { MediaFile, PostDetail } from '@/types'
-import { resolveMediaUrl } from '@/utils/url'
+import { resolveMediaUrl } from '@/utils/format'
 
 interface Props {
   post: PostDetail | null

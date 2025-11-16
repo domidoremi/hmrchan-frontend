@@ -10,8 +10,11 @@
           </div>
 
           <div class="hero-container">
-            <button class="hero-close" @click="settingsStore.toggleSetting('showHeroSection')"
-              :aria-label="$t('common.close')">
+            <button
+              class="hero-close"
+              @click="settingsStore.toggleSetting('showHeroSection')"
+              :aria-label="$t('common.close')"
+            >
               <X :size="24" />
             </button>
 
@@ -64,18 +67,35 @@
       <!-- Platform Stats - Modern Cards -->
       <section class="platforms-section reduce-motion">
         <StatCardGrid :autoplay="true" :autoplay-duration="3000">
-          <StatCard v-for="platform in platforms" :key="platform" :icon="getPlatformIcon(platform)"
-            :icon-color="getPlatformColor(platform)" :title="$t(`platform.${platform}`)"
-            :value="platformStats[platform] || 0" :label="platform === 'youtube' || platform === 'tiktok'
-              ? $t('post.videos')
-              : $t('post.title')
-              " :loading="isStatsLoading" />
-          <template v-for="(platform, index) in platforms" :key="`slide-${index}`" #[`slide-${index}`]>
-            <StatCard :icon="getPlatformIcon(platform)" :icon-color="getPlatformColor(platform)"
-              :title="$t(`platform.${platform}`)" :value="platformStats[platform] || 0" :label="platform === 'youtube' || platform === 'tiktok'
-                ? $t('post.videos')
-                : $t('post.title')
-                " :loading="isStatsLoading" />
+          <StatCard
+            v-for="platform in platforms"
+            :key="platform"
+            :icon="getPlatformIcon(platform)"
+            :icon-color="getPlatformColor(platform)"
+            :title="$t(`platform.${platform}`)"
+            :value="platformStats[platform] || 0"
+            :label="
+              platform === 'youtube' || platform === 'tiktok' ? $t('post.videos') : $t('post.title')
+            "
+            :loading="isStatsLoading"
+          />
+          <template
+            v-for="(platform, index) in platforms"
+            :key="`slide-${index}`"
+            #[`slide-${index}`]
+          >
+            <StatCard
+              :icon="getPlatformIcon(platform)"
+              :icon-color="getPlatformColor(platform)"
+              :title="$t(`platform.${platform}`)"
+              :value="platformStats[platform] || 0"
+              :label="
+                platform === 'youtube' || platform === 'tiktok'
+                  ? $t('post.videos')
+                  : $t('post.title')
+              "
+              :loading="isStatsLoading"
+            />
           </template>
         </StatCardGrid>
       </section>
@@ -100,16 +120,30 @@
         <AccessLimitBanner :current-count="posts.length" :total-limit="accessLimit" />
 
         <!-- 初始加载状态 -->
-        <LoadingSpinner v-if="loading && posts.length === 0" size="lg" :text="$t('common.loading')" />
+        <LoadingSpinner
+          v-if="loading && posts.length === 0"
+          size="lg"
+          :text="$t('common.loading')"
+        />
 
         <!-- Posts列表 -->
         <div v-else-if="posts.length > 0" ref="postsGrid" class="posts-grid">
-          <PostCard v-for="(post, index) in posts" :key="post.id" :post="post" :index="index" :show-actions="false" />
+          <PostCard
+            v-for="(post, index) in posts"
+            :key="post.id"
+            :post="post"
+            :index="index"
+            :show-actions="false"
+          />
         </div>
 
         <!-- Empty state -->
-        <EmptyState v-else-if="!loading" icon="image" :title="$t('search.noResults')"
-          :description="$t('search.noResultsDesc')" />
+        <EmptyState
+          v-else-if="!loading"
+          icon="image"
+          :title="$t('search.noResults')"
+          :description="$t('search.noResultsDesc')"
+        />
 
         <!-- 加载更多指示器 -->
         <div v-if="isLoadingMore" class="loading-more">
@@ -149,23 +183,21 @@ import {
 } from 'lucide-vue-next'
 
 import MainLayout from '@/components/layout/MainLayout.vue'
-import GlassButton from '@/components/base/Button.vue'
-import LoadingSpinner from '@/components/feedback/LoadingSpinner.vue'
+import GlassButton from '@/components/ui/button/Button.vue'
+import LoadingSpinner from '@/components/ui/loading/LoadingSpinner.vue'
 import PostCard from '@/components/business/PostCard.vue'
-import AccessLimitBanner from '@/components/feedback/AccessLimitBanner.vue'
-import EmptyState from '@/components/feedback/EmptyState.vue'
-import StatCard from '@/components/data-display/StatCard.vue'
-import StatCardGrid from '@/components/data-display/StatCardGrid.vue'
+import AccessLimitBanner from '@/components/ui/banner/AccessLimitBanner.vue'
+import EmptyState from '@/components/ui/empty/EmptyState.vue'
+import StatCard from '@/components/ui/card/StatCard.vue'
+import StatCardGrid from '@/components/ui/card/StatCardGrid.vue'
 
-import { useAuthStore } from '@/stores/auth'
-import { useSettingsStore } from '@/stores/settings'
-import { usePostsStore } from '@/stores/posts'
+import { useAuthStore, useSettingsStore, usePostsStore } from '@/stores'
 import { useWaterfallLayout } from '@/composables'
 import { useInfiniteScroll } from '@/composables'
 import { PLATFORMS, PLATFORM_COLORS } from '@/types'
 import { statsApi } from '@/api/services'
 import { formatNumber } from '@/utils/format'
-import { useErrorHandler } from '@/utils/errorHandler'
+import { useErrorHandler } from '@/utils/error'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -344,7 +376,7 @@ const loadMore = async () => {
       if (postsGrid.value) {
         const cards = postsGrid.value.querySelectorAll('a.post-card.card-entering')
         cards.forEach((card) => {
-          ; (card as HTMLElement).classList.remove('card-entering')
+          ;(card as HTMLElement).classList.remove('card-entering')
         })
       }
     }, 600)

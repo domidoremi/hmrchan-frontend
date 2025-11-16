@@ -6,6 +6,7 @@ import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useToast } from '@/composables'
 import logger from '@/utils/logger'
+import { toLogContext } from '@/utils/typeGuards'
 
 interface ImageUploadOptions {
   maxSize?: number // MB
@@ -165,11 +166,11 @@ export function useImageUpload(options: ImageUploadOptions = {}) {
           // 显示压缩信息
           const originalSizeMB = (file.size / 1024 / 1024).toFixed(2)
           const compressedSizeMB = (compressedFile.size / 1024 / 1024).toFixed(2)
-          logger.log(`Image compressed: ${originalSizeMB}MB → ${compressedSizeMB}MB`)
+          logger.info(`Image compressed: ${originalSizeMB}MB → ${compressedSizeMB}MB`)
 
           resolve(compressedFile)
         } catch (err) {
-          logger.error('Image compression failed:', err)
+          logger.error('Image compression failed', toLogContext(err))
           error.value = t('upload.processingFailed')
           toast.error(error.value)
           resolve(null)
@@ -210,10 +211,10 @@ export function useImageUpload(options: ImageUploadOptions = {}) {
 
       return data.url || data.file_url || data.path
     } catch (err: unknown) {
-      const error = err as Error
-      const errorMsg = error.message || '上传失败'
+      const errorMsg = err instanceof Error ? err.message : '上传失败'
       error.value = errorMsg
       toast.error(errorMsg)
+      logger.error('Image upload failed', toLogContext(err))
       throw err
     } finally {
       uploading.value = false

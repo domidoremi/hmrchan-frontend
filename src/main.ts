@@ -33,7 +33,7 @@ logger.setContext({ category: 'App' })
 
 // 导入缓存系统
 import { swManager } from './utils/serviceWorkerManager'
-import { indexedDB } from './utils/indexedDB'
+import { indexedDB } from './utils/storage'
 
 // 导入图片预加载插件
 import { imagePreloadPlugin } from './plugins/imagePreload'
@@ -42,8 +42,8 @@ import { imagePreloadPlugin } from './plugins/imagePreload'
 import { performanceMonitor } from './utils/performance/performanceMonitor'
 
 // 导入Store（用于初始化）
-import { useThemeStore } from './stores/theme'
-import { useSettingsStore } from './stores/settings'
+import { useThemeStore } from './stores/useTheme'
+import { useSettingsStore } from './stores/useSettings'
 
 // 创建应用
 const app = createApp(App)

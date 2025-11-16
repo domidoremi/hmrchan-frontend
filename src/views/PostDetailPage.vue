@@ -197,7 +197,6 @@
                   </div>
                 </details>
 
-
                 <details v-if="post.tags && post.tags.length > 0" class="accordion-block" open>
                   <summary class="accordion-summary">
                     <span>{{ $t('post.tags') }}</span>
@@ -428,11 +427,10 @@
 import { ref, computed, onMounted, defineAsyncComponent, onUnmounted, type Component } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { useSmartPreload } from '@/composables/media/useSmartPreload'
-const useMediaPreload = useSmartPreload
+import { useMediaPreload } from '@/composables/media/useSmartPreload'
 import { hasViewedPost, markPostAsViewed } from '@/utils/viewTracking'
-import { useErrorHandler } from '@/utils/errorHandler'
-import { resolveMediaUrl, validateMediaId } from '@/utils/url'
+import { useErrorHandler } from '@/utils/error'
+import { resolveMediaUrl, validateMediaId } from '@/utils/format'
 import {
   ArrowLeft,
   Calendar,
@@ -452,21 +450,17 @@ import {
 import dayjs from 'dayjs'
 
 import MainLayout from '@/components/layout/MainLayout.vue'
-import GlassButton from '@/components/base/Button.vue'
+import GlassButton from '@/components/ui/button/Button.vue'
 import PostCardActions from '@/components/business/PostCard/PostCardActions.vue'
-const MediaViewer = defineAsyncComponent(
-  () => import('@/components/data-display/MediaViewerPlyr.vue'),
-)
+const MediaViewer = defineAsyncComponent(() => import('@/components/ui/viewer/MediaViewerPlyr.vue'))
 
-import { usePostsStore } from '@/stores/posts'
-import { useAuthStore } from '@/stores/auth'
+import { usePostsStore, useAuthStore, useToastStore } from '@/stores'
 import { api } from '@/api/client'
 import { favoritesApi, mediaApi } from '@/api/services'
-import { indexedDB } from '@/utils/indexedDB'
-import { offlineQueue } from '@/utils/offlineQueue'
+import { indexedDB } from '@/utils/storage'
+import { offlineQueue } from '@/utils/storage'
 import type { PostDetail, Post, UUID, PostListParams, PaginatedResponse } from '@/types'
 import { PLATFORM_NAMES, PLATFORM_COLORS } from '@/types'
-import { useToastStore } from '@/stores/toast'
 
 const route = useRoute()
 const router = useRouter()
@@ -1774,9 +1768,7 @@ onUnmounted(() => {
   line-height: 1.4;
   margin: 0;
   word-break: break-word;
-  background: linear-gradient(135deg,
-      var(--color-text-primary) 0%,
-      rgba(139, 92, 246, 0.9) 100%);
+  background: linear-gradient(135deg, var(--color-text-primary) 0%, rgba(139, 92, 246, 0.9) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;

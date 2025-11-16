@@ -1,12 +1,10 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
 import { RouterView, useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
-import { useThemeStore } from '@/stores/theme'
-import { useSettingsStore } from '@/stores/settings'
+import { useAuthStore, useThemeStore, useSettingsStore } from '@/stores'
 import { storeToRefs } from 'pinia'
-import ErrorBoundary from '@/components/feedback/ErrorBoundary.vue'
-import Toast from '@/components/feedback/Toast.vue'
+import ErrorBoundary from '@/components/ui/error/ErrorBoundary.vue'
+import Toast from '@/components/ui/toast/Toast.vue'
 // 导入无障碍功能
 import { useKeyboardNavigation } from '@/composables'
 
