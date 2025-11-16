@@ -26,7 +26,7 @@
             <span class="stat-value">{{ stats.memory.utilization }}</span>
           </div>
         </div>
-        <GlassButton @click="clearMemoryCache" size="sm" variant="ghost">
+        <GlassButton @click="clearMemoryCache" size="sm" variant="ghost" :loading="clearingMemory">
           <Trash2 :size="16" />
           {{ $t('settings.clearMemoryCache', '清空内存缓存') }}
         </GlassButton>
@@ -52,7 +52,12 @@
             <span class="stat-value">{{ stats.indexedDB.utilization }}</span>
           </div>
         </div>
-        <GlassButton @click="clearIndexedDBCache" size="sm" variant="ghost">
+        <GlassButton
+          @click="clearIndexedDBCache"
+          size="sm"
+          variant="ghost"
+          :loading="clearingIndexedDB"
+        >
           <Trash2 :size="16" />
           {{ $t('settings.clearIndexedDBCache', '清空持久缓存') }}
         </GlassButton>
@@ -74,7 +79,12 @@
             <span class="stat-value">{{ stats.localStorage.size }}</span>
           </div>
         </div>
-        <GlassButton @click="clearLocalStorage" size="sm" variant="ghost">
+        <GlassButton
+          @click="clearLocalStorage"
+          size="sm"
+          variant="ghost"
+          :loading="clearingLocalStorage"
+        >
           <Trash2 :size="16" />
           {{ $t('settings.clearLocalStorage', '清空本地存储') }}
         </GlassButton>
@@ -105,6 +115,9 @@ import GlassButton from '@/components/base/Button.vue'
 
 const toastStore = useToastStore()
 const clearing = ref(false)
+const clearingMemory = ref(false)
+const clearingIndexedDB = ref(false)
+const clearingLocalStorage = ref(false)
 
 const stats = ref({
   memory: {
@@ -143,38 +156,48 @@ async function loadStats() {
 }
 
 // 清空内存缓存
-function clearMemoryCache() {
+async function clearMemoryCache() {
+  clearingMemory.value = true
   try {
     // Memory cache is cleared via mediaCache
     toastStore.success('内存缓存已清空')
-    loadStats()
+    await loadStats()
   } catch (error) {
     console.error('[CacheManagement] Failed to clear memory cache:', error)
     toastStore.error('清空内存缓存失败')
+  } finally {
+    clearingMemory.value = false
   }
 }
 
 // 清空 IndexedDB 缓存
 async function clearIndexedDBCache() {
+  clearingIndexedDB.value = true
   try {
     await hybridCache.clear()
     toastStore.success('持久缓存已清空')
-    loadStats()
+    await loadStats()
   } catch (error) {
     console.error('[CacheManagement] Failed to clear IndexedDB cache:', error)
     toastStore.error('清空持久缓存失败')
+  } finally {
+    clearingIndexedDB.value = false
   }
 }
 
 // 清空 localStorage
-function clearLocalStorage() {
+async function clearLocalStorage() {
+  clearingLocalStorage.value = true
   try {
     const confirmed = confirm('确定要清空本地存储吗？这将清除您的设置和偏好。')
-    if (!confirmed) return
+    if (!confirmed) {
+      clearingLocalStorage.value = false
+      return
+    }
 
     storage.clear()
     toastStore.success('本地存储已清空')
-    loadStats()
+    await loadStats()
 
     // 提示用户刷新页面
     setTimeout(() => {
@@ -183,6 +206,8 @@ function clearLocalStorage() {
   } catch (error) {
     console.error('[CacheManagement] Failed to clear localStorage:', error)
     toastStore.error('清空本地存储失败')
+  } finally {
+    clearingLocalStorage.value = false
   }
 }
 
@@ -210,10 +235,7 @@ async function clearAllCaches() {
         }
       }
 
-      navigator.serviceWorker.controller.postMessage(
-        { type: 'CLEAR_CACHE' },
-        [channel.port2]
-      )
+      navigator.serviceWorker.controller.postMessage({ type: 'CLEAR_CACHE' }, [channel.port2])
     }
 
     loadStats()

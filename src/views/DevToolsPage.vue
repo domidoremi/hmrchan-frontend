@@ -23,72 +23,142 @@
         <div class="input-showcase-grid">
           <div class="showcase-item">
             <h3>Basic Input with Label</h3>
-            <GlassInput v-model="inputDemos.basic" label="Username" placeholder="Enter your username" :icon="User"
-              clearable />
+            <GlassInput
+              v-model="inputDemos.basic"
+              label="Username"
+              placeholder="Enter your username"
+              :icon="User"
+              clearable
+            />
           </div>
 
           <div class="showcase-item">
             <h3>Input with Error</h3>
-            <GlassInput v-model="inputDemos.withError" label="Email Address" type="email" placeholder="your@email.com"
-              :icon="Mail" error="Please enter a valid email address" required />
+            <GlassInput
+              v-model="inputDemos.withError"
+              label="Email Address"
+              type="email"
+              placeholder="your@email.com"
+              :icon="Mail"
+              error="Please enter a valid email address"
+              required
+            />
           </div>
 
           <div class="showcase-item">
             <h3>Input with Hint</h3>
-            <GlassInput v-model="inputDemos.withHint" label="Password" type="password" placeholder="Enter password"
-              :icon="Lock" hint="Password must be at least 8 characters" clearable />
+            <GlassInput
+              v-model="inputDemos.withHint"
+              label="Password"
+              type="password"
+              placeholder="Enter password"
+              :icon="Lock"
+              hint="Password must be at least 8 characters"
+              clearable
+            />
           </div>
 
           <div class="showcase-item">
             <h3>Input with Character Count</h3>
-            <GlassInput v-model="inputDemos.withCount" label="Bio" placeholder="Tell us about yourself" :maxLength="100"
-              :showCount="true" clearable />
+            <GlassInput
+              v-model="inputDemos.withCount"
+              label="Bio"
+              placeholder="Tell us about yourself"
+              :maxLength="100"
+              :showCount="true"
+              clearable
+            />
           </div>
 
           <div class="showcase-item">
             <h3>Number Input</h3>
-            <GlassInput v-model="inputDemos.number" type="number" label="Age" placeholder="Enter your age" :icon="Hash"
-              clearable />
+            <GlassInput
+              v-model="inputDemos.number"
+              type="number"
+              label="Age"
+              placeholder="Enter your age"
+              :icon="Hash"
+              clearable
+            />
           </div>
 
           <div class="showcase-item">
             <h3>Tel Input</h3>
-            <GlassInput v-model="inputDemos.tel" type="tel" label="Phone Number" placeholder="+1 (555) 000-0000"
-              :icon="Phone" clearable />
+            <GlassInput
+              v-model="inputDemos.tel"
+              type="tel"
+              label="Phone Number"
+              placeholder="+1 (555) 000-0000"
+              :icon="Phone"
+              clearable
+            />
           </div>
 
           <div class="showcase-item">
             <h3>URL Input</h3>
-            <GlassInput v-model="inputDemos.url" type="url" label="Website" placeholder="https://example.com"
-              :icon="Globe" hint="Enter a valid URL starting with http:// or https://" clearable />
+            <GlassInput
+              v-model="inputDemos.url"
+              type="url"
+              label="Website"
+              placeholder="https://example.com"
+              :icon="Globe"
+              hint="Enter a valid URL starting with http:// or https://"
+              clearable
+            />
           </div>
 
           <div class="showcase-item">
             <h3>Disabled Input</h3>
-            <GlassInput v-model="inputDemos.disabled" label="Disabled Field" placeholder="This field is disabled"
-              :disabled="true" />
+            <GlassInput
+              v-model="inputDemos.disabled"
+              label="Disabled Field"
+              placeholder="This field is disabled"
+              :disabled="true"
+            />
           </div>
 
           <div class="showcase-item">
             <h3>Readonly Input</h3>
-            <GlassInput v-model="inputDemos.readonly" label="Readonly Field" placeholder="This field is readonly"
-              :readonly="true" />
+            <GlassInput
+              v-model="inputDemos.readonly"
+              label="Readonly Field"
+              placeholder="This field is readonly"
+              :readonly="true"
+            />
           </div>
 
           <div class="showcase-item">
             <h3>Input with Prefix</h3>
-            <GlassInput v-model="inputDemos.withPrefix" label="Price" placeholder="0.00" prefix="$" clearable />
+            <GlassInput
+              v-model="inputDemos.withPrefix"
+              label="Price"
+              placeholder="0.00"
+              prefix="$"
+              clearable
+            />
           </div>
 
           <div class="showcase-item">
             <h3>Input with Suffix</h3>
-            <GlassInput v-model="inputDemos.withSuffix" label="Weight" placeholder="0" suffix="kg" clearable />
+            <GlassInput
+              v-model="inputDemos.withSuffix"
+              label="Weight"
+              placeholder="0"
+              suffix="kg"
+              clearable
+            />
           </div>
 
           <div class="showcase-item">
             <h3>Search Input</h3>
-            <GlassInput v-model="inputDemos.search" type="search" label="Search" placeholder="Search..." :icon="Search"
-              clearable />
+            <GlassInput
+              v-model="inputDemos.search"
+              type="search"
+              label="Search"
+              placeholder="Search..."
+              :icon="Search"
+              clearable
+            />
           </div>
         </div>
       </section>

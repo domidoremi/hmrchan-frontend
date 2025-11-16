@@ -45,7 +45,11 @@
               <p class="item-description">{{ $t('preferences.showHeroSectionDesc') }}</p>
             </div>
             <label class="toggle-switch">
-              <input type="checkbox" :checked="settings.showHeroSection" @change="toggleSetting('showHeroSection')" />
+              <input
+                type="checkbox"
+                :checked="settings.showHeroSection"
+                @change="toggleSetting('showHeroSection')"
+              />
               <span class="toggle-slider"></span>
             </label>
           </div>
@@ -56,7 +60,11 @@
               <p class="item-description">{{ $t('preferences.enableAnimationsDesc') }}</p>
             </div>
             <label class="toggle-switch">
-              <input type="checkbox" :checked="settings.enableAnimations" @change="toggleSetting('enableAnimations')" />
+              <input
+                type="checkbox"
+                :checked="settings.enableAnimations"
+                @change="toggleSetting('enableAnimations')"
+              />
               <span class="toggle-slider"></span>
             </label>
           </div>
@@ -67,8 +75,11 @@
               <p class="item-description">{{ $t('preferences.enableSwipeNavigationDesc') }}</p>
             </div>
             <label class="toggle-switch">
-              <input type="checkbox" :checked="settings.enableSwipeNavigation"
-                @change="toggleSetting('enableSwipeNavigation')" />
+              <input
+                type="checkbox"
+                :checked="settings.enableSwipeNavigation"
+                @change="toggleSetting('enableSwipeNavigation')"
+              />
               <span class="toggle-slider"></span>
             </label>
           </div>
@@ -78,9 +89,13 @@
               <label>{{ $t('preferences.postsPerPage') }}</label>
               <p class="item-description">{{ $t('preferences.postsPerPageDesc') }}</p>
             </div>
-            <select class="select-input" :value="settings.postsPerPage" @change="
-              updateSetting('postsPerPage', parseInt(($event.target as HTMLSelectElement).value))
-              ">
+            <select
+              class="select-input"
+              :value="settings.postsPerPage"
+              @change="
+                updateSetting('postsPerPage', parseInt(($event.target as HTMLSelectElement).value))
+              "
+            >
               <option :value="10">10</option>
               <option :value="20">20</option>
               <option :value="30">30</option>
@@ -102,7 +117,11 @@
               <p class="item-description">{{ $t('preferences.autoPlayVideosDesc') }}</p>
             </div>
             <label class="toggle-switch">
-              <input type="checkbox" :checked="settings.autoPlayVideos" @change="toggleSetting('autoPlayVideos')" />
+              <input
+                type="checkbox"
+                :checked="settings.autoPlayVideos"
+                @change="toggleSetting('autoPlayVideos')"
+              />
               <span class="toggle-slider"></span>
             </label>
           </div>
@@ -113,8 +132,11 @@
               <p class="item-description">{{ $t('preferences.showImagePreviewsDesc') }}</p>
             </div>
             <label class="toggle-switch">
-              <input type="checkbox" :checked="settings.showImagePreviews"
-                @change="toggleSetting('showImagePreviews')" />
+              <input
+                type="checkbox"
+                :checked="settings.showImagePreviews"
+                @change="toggleSetting('showImagePreviews')"
+              />
               <span class="toggle-slider"></span>
             </label>
           </div>
@@ -418,11 +440,11 @@ const resetPreferences = () => {
   border-radius: 50%;
 }
 
-input:checked+.toggle-slider {
+input:checked + .toggle-slider {
   background-color: var(--primary-color);
 }
 
-input:checked+.toggle-slider:before {
+input:checked + .toggle-slider:before {
   transform: translateX(24px);
 }
 

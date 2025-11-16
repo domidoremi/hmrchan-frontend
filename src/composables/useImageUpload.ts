@@ -208,8 +208,9 @@ export function useImageUpload(options: ImageUploadOptions = {}) {
       toast.success('上传成功')
 
       return data.url || data.file_url || data.path
-    } catch (err: any) {
-      const errorMsg = err.message || '上传失败'
+    } catch (err: unknown) {
+      const error = err as Error
+      const errorMsg = error.message || '上传失败'
       error.value = errorMsg
       toast.error(errorMsg)
       throw err

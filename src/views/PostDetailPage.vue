@@ -31,39 +31,78 @@
 
         <div :class="['detail-grid', { 'single-column': isTabletOrBelow }]">
           <section :class="['media-column', { 'compact-media': isMobileViewport }]">
-            <div class="media-hero glass-card" :class="{
-              'video-layout': isVideoPost,
-              'youtube-layout': isYouTube,
-              'tiktok-layout': isTikTok,
-            }">
+            <div
+              class="media-hero glass-card"
+              :class="{
+                'video-layout': isVideoPost,
+                'youtube-layout': isYouTube,
+                'tiktok-layout': isTikTok,
+              }"
+            >
               <div v-if="post.thumbnail_url" class="post-thumbnail-container">
-                <button v-show="allMediaUrls.length > 1" class="thumbnail-nav-btn prev-thumbnail-btn"
-                  :class="{ 'nav-btn-disabled': currentThumbnailIndex === 0 }" @click.stop="prevThumbnail"
-                  :disabled="currentThumbnailIndex === 0" :aria-label="$t('common.previous')">
+                <button
+                  v-show="allMediaUrls.length > 1"
+                  class="thumbnail-nav-btn prev-thumbnail-btn"
+                  :class="{ 'nav-btn-disabled': currentThumbnailIndex === 0 }"
+                  @click.stop="prevThumbnail"
+                  :disabled="currentThumbnailIndex === 0"
+                  :aria-label="$t('common.previous')"
+                >
                   <ChevronLeft :size="20" />
                 </button>
 
-                <div class="post-thumbnail" @click="openMediaViewer(currentThumbnailIndex)"
-                  @touchstart.passive="handleThumbnailTouchStart" @touchmove.passive="handleThumbnailTouchMove"
-                  @touchend.passive="handleThumbnailTouchEnd" @touchcancel.passive="handleThumbnailTouchEnd">
+                <div
+                  class="post-thumbnail"
+                  @click="openMediaViewer(currentThumbnailIndex)"
+                  @touchstart.passive="handleThumbnailTouchStart"
+                  @touchmove.passive="handleThumbnailTouchMove"
+                  @touchend.passive="handleThumbnailTouchEnd"
+                  @touchcancel.passive="handleThumbnailTouchEnd"
+                >
                   <div class="media-backdrop" aria-hidden="true">
                     <transition name="thumbnail-fade" mode="out-in">
-                      <img v-if="currentMediaType !== 'video'" :key="`bg-${currentThumbnailUrl}`"
-                        :src="currentThumbnailUrl" alt="" decoding="async" />
-                      <video v-else :key="`bg-video-${currentThumbnailUrl}`" :src="currentThumbnailUrl" muted
-                        playsinline preload="metadata"></video>
+                      <img
+                        v-if="currentMediaType !== 'video'"
+                        :key="`bg-${currentThumbnailUrl}`"
+                        :src="currentThumbnailUrl"
+                        alt=""
+                        decoding="async"
+                      />
+                      <video
+                        v-else
+                        :key="`bg-video-${currentThumbnailUrl}`"
+                        :src="currentThumbnailUrl"
+                        muted
+                        playsinline
+                        preload="metadata"
+                      ></video>
                     </transition>
                   </div>
 
                   <transition name="thumbnail-fade" mode="out-in">
-                    <img v-if="currentMediaType !== 'video'" :key="`image-${currentThumbnailUrl}`"
-                      :src="currentThumbnailUrl" :alt="post.title || 'Post thumbnail'" loading="eager" decoding="async"
-                      fetchpriority="high" />
-                    <video v-else :key="`video-${currentThumbnailUrl}`" :src="currentThumbnailUrl" preload="metadata"
-                      playsinline muted
-                      :poster="post.thumbnail_url ? resolveMediaUrl(post.thumbnail_url) : undefined"></video>
+                    <img
+                      v-if="currentMediaType !== 'video'"
+                      :key="`image-${currentThumbnailUrl}`"
+                      :src="currentThumbnailUrl"
+                      :alt="post.title || 'Post thumbnail'"
+                      loading="eager"
+                      decoding="async"
+                      fetchpriority="high"
+                    />
+                    <video
+                      v-else
+                      :key="`video-${currentThumbnailUrl}`"
+                      :src="currentThumbnailUrl"
+                      preload="metadata"
+                      playsinline
+                      muted
+                      :poster="post.thumbnail_url ? resolveMediaUrl(post.thumbnail_url) : undefined"
+                    ></video>
                   </transition>
-                  <div class="thumbnail-overlay" :class="{ 'is-video': currentMediaType === 'video' }">
+                  <div
+                    class="thumbnail-overlay"
+                    :class="{ 'is-video': currentMediaType === 'video' }"
+                  >
                     <component :is="currentMediaType === 'video' ? Play : Maximize2" :size="32" />
                   </div>
                   <div v-if="allMediaUrls.length > 1" class="thumbnail-counter">
@@ -71,10 +110,14 @@
                   </div>
                 </div>
 
-                <button v-show="allMediaUrls.length > 1" class="thumbnail-nav-btn next-thumbnail-btn"
+                <button
+                  v-show="allMediaUrls.length > 1"
+                  class="thumbnail-nav-btn next-thumbnail-btn"
                   :class="{ 'nav-btn-disabled': currentThumbnailIndex === allMediaUrls.length - 1 }"
-                  @click.stop="nextThumbnail" :disabled="currentThumbnailIndex === allMediaUrls.length - 1"
-                  :aria-label="$t('common.next')">
+                  @click.stop="nextThumbnail"
+                  :disabled="currentThumbnailIndex === allMediaUrls.length - 1"
+                  :aria-label="$t('common.next')"
+                >
                   <ChevronRight :size="20" />
                 </button>
               </div>
@@ -126,14 +169,25 @@
                         </div>
                         <div class="author-details">
                           <h3>{{ post.original_author_name }}</h3>
-                          <p v-if="post.original_author_username">@{{ post.original_author_username }}</p>
+                          <p v-if="post.original_author_username">
+                            @{{ post.original_author_username }}
+                          </p>
                           <span class="original-label">{{ $t('post.originalAuthor') }}</span>
                         </div>
                       </div>
                     </div>
-                    <RouterLink v-else-if="post.author_name" :to="`/authors/${post.author_id || 0}`" custom
-                      v-slot="{ navigate }">
-                      <div class="author-info clickable" @click="navigate" role="button" tabindex="0">
+                    <RouterLink
+                      v-else-if="post.author_name"
+                      :to="`/authors/${post.author_id || 0}`"
+                      custom
+                      v-slot="{ navigate }"
+                    >
+                      <div
+                        class="author-info clickable"
+                        @click="navigate"
+                        role="button"
+                        tabindex="0"
+                      >
                         <div class="author-avatar">
                           <User :size="24" />
                         </div>
@@ -147,16 +201,23 @@
 
                     <h1 class="post-title">{{ post.title || 'Untitled' }}</h1>
 
-                    <div v-if="showDescription" :class="[
-                      'post-description',
-                      {
-                        'is-collapsed': !isDescriptionExpanded && isDescriptionLong,
-                        'is-expanded': isDescriptionExpanded && isDescriptionLong,
-                      },
-                    ]">
+                    <div
+                      v-if="showDescription"
+                      :class="[
+                        'post-description',
+                        {
+                          'is-collapsed': !isDescriptionExpanded && isDescriptionLong,
+                          'is-expanded': isDescriptionExpanded && isDescriptionLong,
+                        },
+                      ]"
+                    >
                       <p>{{ post.description }}</p>
-                      <button v-if="isDescriptionLong" type="button" class="description-toggle"
-                        @click="isDescriptionExpanded = !isDescriptionExpanded">
+                      <button
+                        v-if="isDescriptionLong"
+                        type="button"
+                        class="description-toggle"
+                        @click="isDescriptionExpanded = !isDescriptionExpanded"
+                      >
                         {{
                           isDescriptionExpanded
                             ? t('post.collapseDescription', '收起')
@@ -176,23 +237,44 @@
                   <div class="accordion-body">
                     <section class="post-actions" aria-labelledby="post-actions-heading">
                       <h2 id="post-actions-heading" class="sr-only">{{ $t('post.actions') }}</h2>
-                      <div class="post-action-buttons" role="group" :aria-label="$t('post.actions')">
-                        <GlassButton @click="toggleFavorite" :disabled="favoriteLoading"
+                      <div
+                        class="post-action-buttons"
+                        role="group"
+                        :aria-label="$t('post.actions')"
+                      >
+                        <GlassButton
+                          @click="toggleFavorite"
+                          :disabled="favoriteLoading"
                           :title="isFavorited ? $t('favorite.remove') : $t('favorite.add')"
-                          :variant="isFavorited ? 'primary' : 'secondary'" :class="{ 'is-favorited': isFavorited }"
+                          :variant="isFavorited ? 'primary' : 'secondary'"
+                          :class="{ 'is-favorited': isFavorited }"
                           :aria-pressed="isFavorited"
-                          :aria-label="isFavorited ? $t('favorite.remove') : $t('favorite.add')">
+                          :aria-label="isFavorited ? $t('favorite.remove') : $t('favorite.add')"
+                        >
                           <Heart :size="18" :fill="isFavorited ? 'currentColor' : 'none'" />
-                          <span class="sr-only">{{ isFavorited ? $t('favorite.remove') : $t('favorite.add') }}</span>
+                          <span class="sr-only">{{
+                            isFavorited ? $t('favorite.remove') : $t('favorite.add')
+                          }}</span>
                         </GlassButton>
-                        <GlassButton v-if="post.url" @click="copyLink(post.url)" variant="secondary"
-                          :title="$t('post.copyLink')" :aria-label="$t('post.copyLink')">
+                        <GlassButton
+                          v-if="post.url"
+                          @click="copyLink(post.url)"
+                          variant="secondary"
+                          :title="$t('post.copyLink')"
+                          :aria-label="$t('post.copyLink')"
+                        >
                           <Link :size="18" />
                           <span class="sr-only">{{ $t('post.copyLink') }}</span>
                         </GlassButton>
-                        <a v-if="post.url" :href="post.url" target="_blank" rel="noopener noreferrer"
-                          class="post-action-link" :title="$t('post.viewOriginal')"
-                          :aria-label="$t('post.viewOriginal')">
+                        <a
+                          v-if="post.url"
+                          :href="post.url"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          class="post-action-link"
+                          :title="$t('post.viewOriginal')"
+                          :aria-label="$t('post.viewOriginal')"
+                        >
                           <GlassButton variant="secondary">
                             <ExternalLink :size="18" />
                             <span class="sr-only">{{ $t('post.viewOriginal') }}</span>
@@ -200,11 +282,20 @@
                         </a>
                       </div>
 
-                      <div v-if="yieldedStats.length > 0" class="post-action-stats" role="list"
-                        :aria-label="$t('post.stats')">
-                        <component v-for="stat in yieldedStats" :key="stat.key" :is="stat.linkAttrs ? 'a' : 'div'"
-                          v-bind="stat.linkAttrs ?? {}" :class="['post-stats-row', { 'is-link': !!stat.linkAttrs }]"
-                          role="listitem">
+                      <div
+                        v-if="yieldedStats.length > 0"
+                        class="post-action-stats"
+                        role="list"
+                        :aria-label="$t('post.stats')"
+                      >
+                        <component
+                          v-for="stat in yieldedStats"
+                          :key="stat.key"
+                          :is="stat.linkAttrs ? 'a' : 'div'"
+                          v-bind="stat.linkAttrs ?? {}"
+                          :class="['post-stats-row', { 'is-link': !!stat.linkAttrs }]"
+                          role="listitem"
+                        >
                           <div class="stat-icon">
                             <component :is="stat.icon" :size="20" />
                           </div>
@@ -212,7 +303,12 @@
                             <span class="stat-count">{{ stat.display }}</span>
                             <span class="stat-label">{{ stat.label }}</span>
                           </div>
-                          <ExternalLink v-if="stat.linkAttrs" :size="16" class="link-icon" aria-hidden="true" />
+                          <ExternalLink
+                            v-if="stat.linkAttrs"
+                            :size="16"
+                            class="link-icon"
+                            aria-hidden="true"
+                          />
                         </component>
                       </div>
                     </section>
@@ -245,10 +341,18 @@
                   <div class="accordion-body">
                     <div class="related-posts">
                       <div class="related-grid">
-                        <RouterLink v-for="relatedPost in relatedPosts" :key="relatedPost.id"
-                          :to="`/posts/${relatedPost.id}`" class="related-item">
-                          <img v-if="relatedPost.thumbnail_url" :src="resolveMediaUrl(relatedPost.thumbnail_url)"
-                            :alt="relatedPost.title || ''" loading="lazy" />
+                        <RouterLink
+                          v-for="relatedPost in relatedPosts"
+                          :key="relatedPost.id"
+                          :to="`/posts/${relatedPost.id}`"
+                          class="related-item"
+                        >
+                          <img
+                            v-if="relatedPost.thumbnail_url"
+                            :src="resolveMediaUrl(relatedPost.thumbnail_url)"
+                            :alt="relatedPost.title || ''"
+                            loading="lazy"
+                          />
                           <div class="related-info">
                             <h4>{{ relatedPost.title || $t('post.untitled') }}</h4>
                             <div class="related-stats">
@@ -303,13 +407,19 @@
                     </div>
                     <div class="author-details">
                       <h3>{{ post.original_author_name }}</h3>
-                      <p v-if="post.original_author_username">@{{ post.original_author_username }}</p>
+                      <p v-if="post.original_author_username">
+                        @{{ post.original_author_username }}
+                      </p>
                       <span class="original-label">{{ $t('post.originalAuthor') }}</span>
                     </div>
                   </div>
                 </div>
-                <RouterLink v-else-if="post.author_name" :to="`/authors/${post.author_id || 0}`" custom
-                  v-slot="{ navigate }">
+                <RouterLink
+                  v-else-if="post.author_name"
+                  :to="`/authors/${post.author_id || 0}`"
+                  custom
+                  v-slot="{ navigate }"
+                >
                   <div class="author-info clickable" @click="navigate" role="button" tabindex="0">
                     <div class="author-avatar">
                       <User :size="24" />
@@ -329,16 +439,23 @@
           <div v-if="!isTabletOrBelow" class="detail-main full-width-section">
             <h1 class="post-title">{{ post.title || 'Untitled' }}</h1>
 
-            <div v-if="showDescription" :class="[
-              'post-description',
-              {
-                'is-collapsed': !isDescriptionExpanded && isDescriptionLong,
-                'is-expanded': isDescriptionExpanded && isDescriptionLong,
-              },
-            ]">
+            <div
+              v-if="showDescription"
+              :class="[
+                'post-description',
+                {
+                  'is-collapsed': !isDescriptionExpanded && isDescriptionLong,
+                  'is-expanded': isDescriptionExpanded && isDescriptionLong,
+                },
+              ]"
+            >
               <p>{{ post.description }}</p>
-              <button v-if="isDescriptionLong" type="button" class="description-toggle"
-                @click="isDescriptionExpanded = !isDescriptionExpanded">
+              <button
+                v-if="isDescriptionLong"
+                type="button"
+                class="description-toggle"
+                @click="isDescriptionExpanded = !isDescriptionExpanded"
+              >
                 {{
                   isDescriptionExpanded
                     ? t('post.collapseDescription', '收起')
@@ -350,20 +467,39 @@
             <section class="post-actions" aria-labelledby="post-actions-heading">
               <h2 id="post-actions-heading" class="sr-only">{{ $t('post.actions') }}</h2>
               <div class="post-action-buttons" role="group" :aria-label="$t('post.actions')">
-                <GlassButton @click="toggleFavorite" :disabled="favoriteLoading"
+                <GlassButton
+                  @click="toggleFavorite"
+                  :disabled="favoriteLoading"
                   :title="isFavorited ? $t('favorite.remove') : $t('favorite.add')"
-                  :variant="isFavorited ? 'primary' : 'secondary'" :class="{ 'is-favorited': isFavorited }"
-                  :aria-pressed="isFavorited" :aria-label="isFavorited ? $t('favorite.remove') : $t('favorite.add')">
+                  :variant="isFavorited ? 'primary' : 'secondary'"
+                  :class="{ 'is-favorited': isFavorited }"
+                  :aria-pressed="isFavorited"
+                  :aria-label="isFavorited ? $t('favorite.remove') : $t('favorite.add')"
+                >
                   <Heart :size="18" :fill="isFavorited ? 'currentColor' : 'none'" />
-                  <span class="sr-only">{{ isFavorited ? $t('favorite.remove') : $t('favorite.add') }}</span>
+                  <span class="sr-only">{{
+                    isFavorited ? $t('favorite.remove') : $t('favorite.add')
+                  }}</span>
                 </GlassButton>
-                <GlassButton v-if="post.url" @click="copyLink(post.url)" variant="secondary"
-                  :title="$t('post.copyLink')" :aria-label="$t('post.copyLink')">
+                <GlassButton
+                  v-if="post.url"
+                  @click="copyLink(post.url)"
+                  variant="secondary"
+                  :title="$t('post.copyLink')"
+                  :aria-label="$t('post.copyLink')"
+                >
                   <Link :size="18" />
                   <span class="sr-only">{{ $t('post.copyLink') }}</span>
                 </GlassButton>
-                <a v-if="post.url" :href="post.url" target="_blank" rel="noopener noreferrer" class="post-action-link"
-                  :title="$t('post.viewOriginal')" :aria-label="$t('post.viewOriginal')">
+                <a
+                  v-if="post.url"
+                  :href="post.url"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="post-action-link"
+                  :title="$t('post.viewOriginal')"
+                  :aria-label="$t('post.viewOriginal')"
+                >
                   <GlassButton variant="secondary">
                     <ExternalLink :size="18" />
                     <span class="sr-only">{{ $t('post.viewOriginal') }}</span>
@@ -371,10 +507,20 @@
                 </a>
               </div>
 
-              <div v-if="yieldedStats.length > 0" class="post-action-stats" role="list" :aria-label="$t('post.stats')">
-                <component v-for="stat in yieldedStats" :key="stat.key" :is="stat.linkAttrs ? 'a' : 'div'"
-                  v-bind="stat.linkAttrs ?? {}" :class="['post-stats-row', { 'is-link': !!stat.linkAttrs }]"
-                  role="listitem">
+              <div
+                v-if="yieldedStats.length > 0"
+                class="post-action-stats"
+                role="list"
+                :aria-label="$t('post.stats')"
+              >
+                <component
+                  v-for="stat in yieldedStats"
+                  :key="stat.key"
+                  :is="stat.linkAttrs ? 'a' : 'div'"
+                  v-bind="stat.linkAttrs ?? {}"
+                  :class="['post-stats-row', { 'is-link': !!stat.linkAttrs }]"
+                  role="listitem"
+                >
                   <div class="stat-icon">
                     <component :is="stat.icon" :size="20" />
                   </div>
@@ -382,14 +528,21 @@
                     <span class="stat-count">{{ stat.display }}</span>
                     <span class="stat-label">{{ stat.label }}</span>
                   </div>
-                  <ExternalLink v-if="stat.linkAttrs" :size="16" class="link-icon" aria-hidden="true" />
+                  <ExternalLink
+                    v-if="stat.linkAttrs"
+                    :size="16"
+                    class="link-icon"
+                    aria-hidden="true"
+                  />
                 </component>
               </div>
             </section>
           </div>
 
-          <div v-if="!isTabletOrBelow && post.tags && post.tags.length > 0"
-            class="tags-section glass-card full-width-section">
+          <div
+            v-if="!isTabletOrBelow && post.tags && post.tags.length > 0"
+            class="tags-section glass-card full-width-section"
+          >
             <h3>{{ $t('post.tags') }}</h3>
             <div class="tags-list">
               <span v-for="tag in post.tags" :key="tag" class="tag glass-badge">
@@ -398,16 +551,27 @@
             </div>
           </div>
 
-          <div v-if="!isTabletOrBelow && relatedPosts.length > 0" class="related-posts glass-card full-width-section">
+          <div
+            v-if="!isTabletOrBelow && relatedPosts.length > 0"
+            class="related-posts glass-card full-width-section"
+          >
             <h3 class="related-title">
               <Sparkles :size="20" />
               {{ $t('post.relatedPosts') }}
             </h3>
             <div class="related-grid">
-              <RouterLink v-for="relatedPost in relatedPosts" :key="relatedPost.id" :to="`/posts/${relatedPost.id}`"
-                class="related-item">
-                <img v-if="relatedPost.thumbnail_url" :src="resolveMediaUrl(relatedPost.thumbnail_url)"
-                  :alt="relatedPost.title || ''" loading="lazy" />
+              <RouterLink
+                v-for="relatedPost in relatedPosts"
+                :key="relatedPost.id"
+                :to="`/posts/${relatedPost.id}`"
+                class="related-item"
+              >
+                <img
+                  v-if="relatedPost.thumbnail_url"
+                  :src="resolveMediaUrl(relatedPost.thumbnail_url)"
+                  :alt="relatedPost.title || ''"
+                  loading="lazy"
+                />
                 <div class="related-info">
                   <h4>{{ relatedPost.title || $t('post.untitled') }}</h4>
                   <div class="related-stats">
@@ -428,12 +592,25 @@
         <div v-if="post.media_files && post.media_files.length > 0" class="media-section">
           <h2>{{ $t('post.media') }} ({{ post.media_files.length }})</h2>
           <div class="media-grid">
-            <div v-for="(media, index) in post.media_files" :key="media.id" class="media-item glass-card">
-              <img v-if="media.file_type === 'image'" :src="mediaApi.getStreamUrl(media.id)" :alt="post.title || ''"
-                loading="lazy" decoding="async" @click="openMediaViewer(getMediaIndex(index))"
-                class="clickable-image" />
-              <div v-else-if="media.file_type === 'video'" class="video-thumbnail"
-                @click="openMediaViewer(getMediaIndex(index))">
+            <div
+              v-for="(media, index) in post.media_files"
+              :key="media.id"
+              class="media-item glass-card"
+            >
+              <img
+                v-if="media.file_type === 'image'"
+                :src="mediaApi.getStreamUrl(media.id)"
+                :alt="post.title || ''"
+                loading="lazy"
+                decoding="async"
+                @click="openMediaViewer(getMediaIndex(index))"
+                class="clickable-image"
+              />
+              <div
+                v-else-if="media.file_type === 'video'"
+                class="video-thumbnail"
+                @click="openMediaViewer(getMediaIndex(index))"
+              >
                 <video preload="none" poster="">
                   <source :src="mediaApi.getStreamUrl(media.id)" type="video/mp4" />
                 </video>
@@ -462,8 +639,12 @@
     </div>
 
     <!-- 媒体查看器 -->
-    <MediaViewer :show="showMediaViewer" :media-items="viewerMediaItems" :initial-index="viewerInitialIndex"
-      @close="closeMediaViewer" />
+    <MediaViewer
+      :show="showMediaViewer"
+      :media-items="viewerMediaItems"
+      :initial-index="viewerInitialIndex"
+      @close="closeMediaViewer"
+    />
   </MainLayout>
 </template>
 
@@ -496,7 +677,9 @@ import dayjs from 'dayjs'
 
 import MainLayout from '@/components/layout/MainLayout.vue'
 import GlassButton from '@/components/base/Button.vue'
-const MediaViewer = defineAsyncComponent(() => import('@/components/data-display/MediaViewerPlyr.vue'))
+const MediaViewer = defineAsyncComponent(
+  () => import('@/components/data-display/MediaViewerPlyr.vue'),
+)
 
 import { usePostsStore } from '@/stores/posts'
 import { useAuthStore } from '@/stores/auth'
@@ -692,13 +875,18 @@ const yieldedStats = computed<StatEntry[]>(() => {
   const stats: StatEntry[] = []
   const baseLink = post.value.url
     ? {
-      href: post.value.url,
-      target: '_blank',
-      rel: 'noopener noreferrer',
-    }
+        href: post.value.url,
+        target: '_blank',
+        rel: 'noopener noreferrer',
+      }
     : undefined
 
-  const pushStat = (key: string, value: number | null | undefined, icon: Component, labelKey: string) => {
+  const pushStat = (
+    key: string,
+    value: number | null | undefined,
+    icon: Component,
+    labelKey: string,
+  ) => {
     if (!value) return
     stats.push({
       key,
@@ -727,7 +915,6 @@ const updateViewportBreakpoints = () => {
 }
 
 onMounted(async () => {
-
   const postId = route.params.id as UUID
   try {
     // 优先复用当前 Store 中的详情，避免重复加载
@@ -764,7 +951,7 @@ onMounted(async () => {
             id: media.id,
             id_type: typeof media.id,
             file_type: media.file_type,
-            file_path: media.file_path
+            file_path: media.file_path,
           })
         }
       })
@@ -947,12 +1134,21 @@ const handleThumbnailTouchStart = (event: TouchEvent) => {
 }
 
 const handleThumbnailTouchMove = (event: TouchEvent) => {
-  if (!thumbnailTouchActive.value || thumbnailTouchStartX.value === null || thumbnailTouchStartY.value === null) return
+  if (
+    !thumbnailTouchActive.value ||
+    thumbnailTouchStartX.value === null ||
+    thumbnailTouchStartY.value === null
+  )
+    return
   if (event.touches.length !== 1) return
 }
 
 const handleThumbnailTouchEnd = (event: TouchEvent) => {
-  if (!thumbnailTouchActive.value || thumbnailTouchStartX.value === null || thumbnailTouchStartY.value === null) {
+  if (
+    !thumbnailTouchActive.value ||
+    thumbnailTouchStartX.value === null ||
+    thumbnailTouchStartY.value === null
+  ) {
     thumbnailTouchActive.value = false
     thumbnailTouchStartX.value = null
     thumbnailTouchStartY.value = null
@@ -1003,9 +1199,9 @@ const loadRelatedPosts = async () => {
     })
 
     // 过滤掉当前帖子
-    relatedPosts.value = (response?.items || []).filter(
-      (p: Post) => p.id !== post.value!.id
-    ).slice(0, 4) // 最多显示4个
+    relatedPosts.value = (response?.items || [])
+      .filter((p: Post) => p.id !== post.value!.id)
+      .slice(0, 4) // 最多显示4个
   } catch (error) {
     console.debug('[PostDetailPage] Failed to load related posts:', error)
   }
@@ -1172,7 +1368,7 @@ onUnmounted(() => {
   grid-template-columns: minmax(0, 1fr);
 }
 
-.detail-grid>.full-width-section {
+.detail-grid > .full-width-section {
   grid-column: 1 / -1;
 }
 
@@ -1187,7 +1383,7 @@ onUnmounted(() => {
 }
 
 @media (min-width: 1024px) {
-  .detail-grid>.full-width-section {
+  .detail-grid > .full-width-section {
     margin-top: clamp(8px, 1.5vw, 16px);
   }
 }
@@ -1242,9 +1438,7 @@ onUnmounted(() => {
   /* 固定显示比例，避免不同图片尺寸导致高度剧烈变化 */
   aspect-ratio: 16 / 9;
   min-height: 320px;
-  background: linear-gradient(135deg,
-      rgba(139, 92, 246, 0.08) 0%,
-      rgba(192, 132, 252, 0.12) 100%);
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.08) 0%, rgba(192, 132, 252, 0.12) 100%);
   overflow: hidden;
   border-radius: var(--radius-3xl);
   display: flex;
@@ -1409,7 +1603,9 @@ onUnmounted(() => {
     0 12px 24px -18px rgba(0, 0, 0, 0.35),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
   overflow: hidden;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .accordion-summary {
@@ -1703,7 +1899,6 @@ onUnmounted(() => {
   display: block;
 }
 
-
 .stat-count {
   font-weight: var(--font-semibold);
   color: var(--color-text-primary);
@@ -1797,14 +1992,12 @@ onUnmounted(() => {
   }
 }
 
-
 .post-actions {
   display: flex;
   flex-direction: column;
   gap: clamp(12px, 1.6vw, 20px);
   margin: var(--spacing-lg) 0;
 }
-
 
 .post-action-buttons {
   display: flex;
@@ -1822,7 +2015,7 @@ onUnmounted(() => {
     inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
-.post-action-buttons>* {
+.post-action-buttons > * {
   flex: 0 0 auto;
   display: inline-flex;
   min-width: 0;
@@ -2113,7 +2306,7 @@ onUnmounted(() => {
     gap: var(--spacing-sm);
   }
 
-  .post-action-buttons>* {
+  .post-action-buttons > * {
     flex: 0 0 auto;
   }
 
@@ -2128,7 +2321,7 @@ onUnmounted(() => {
 
   /* iPhone 14 Pro Max (430x932) 优化 */
   @media (max-width: 430px) {
-    .post-action-buttons>* {
+    .post-action-buttons > * {
       flex: 0 0 auto;
     }
 
@@ -2301,7 +2494,6 @@ onUnmounted(() => {
 }
 
 @keyframes skeleton-pulse {
-
   0%,
   100% {
     opacity: 1;
@@ -2337,7 +2529,6 @@ onUnmounted(() => {
 }
 
 @keyframes sparkle {
-
   0%,
   100% {
     opacity: 1;

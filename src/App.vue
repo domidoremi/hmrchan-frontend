@@ -126,12 +126,12 @@ watch(
   transition: background-color var(--transition-base);
 }
 
-/* 页面过渡动画 */
+/* 页面过渡动画 - 使用设计系统变量 */
 .fade-enter-active,
 .fade-leave-active {
   transition:
-    opacity 0.3s ease,
-    transform 0.3s ease;
+    opacity var(--duration-base) var(--ease-standard),
+    transform var(--duration-base) var(--ease-decelerate);
 }
 
 .fade-enter-from {
@@ -141,36 +141,40 @@ watch(
 
 .fade-leave-to {
   opacity: 0;
-  transform: translateY(-20px);
+  transform: translateY(-10px);
 }
 
 .slide-left-enter-active,
 .slide-left-leave-active {
-  transition: all 0.3s ease;
+  transition:
+    opacity var(--duration-base) var(--ease-standard),
+    transform var(--duration-base) var(--ease-decelerate);
 }
 
 .slide-left-enter-from {
   opacity: 0;
-  transform: translateX(30px);
+  transform: translateX(20px);
 }
 
 .slide-left-leave-to {
   opacity: 0;
-  transform: translateX(-30px);
+  transform: translateX(-20px);
 }
 
 .slide-right-enter-active,
 .slide-right-leave-active {
-  transition: all 0.3s ease;
+  transition:
+    opacity var(--duration-base) var(--ease-standard),
+    transform var(--duration-base) var(--ease-decelerate);
 }
 
 .slide-right-enter-from {
   opacity: 0;
-  transform: translateX(-30px);
+  transform: translateX(-20px);
 }
 
 .slide-right-leave-to {
   opacity: 0;
-  transform: translateX(30px);
+  transform: translateX(20px);
 }
 </style>
