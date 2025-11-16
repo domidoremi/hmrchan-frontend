@@ -7,7 +7,7 @@ import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { favoritesApi, postsApi } from '@/api/services'
 import type { Favorite, FavoriteCreate, FavoriteUpdate, Post, UUID } from '@/types'
-import toast from '@/utils/toast'
+import { useToast } from '@/composables/useToast'
 import { indexedDB } from '@/utils/indexedDB'
 import { useAuthStore } from '@/stores/auth'
 import { fetchWithFallback } from '@/utils/cacheHelper'
@@ -17,6 +17,7 @@ import logger from '@/utils/logger'
 export function useFavorites() {
   const { t } = useI18n()
   const authStore = useAuthStore()
+  const toast = useToast()
   const favorites = ref<Favorite[]>([])
   const favoritePosts = ref<Post[]>([])
   const loading = ref(false)
