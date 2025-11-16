@@ -1129,21 +1129,24 @@ onUnmounted(() => {
 /* 移动端 (< 768px) - 底部导航无需大间距 */
 @media (max-width: 767px) {
   .detail-topbar.is-sticky {
-    top: 8px;
+    top: 66px;
+    /* 顶部栏高度 */
   }
 }
 
 /* 平板端 (768px - 1023px) - 顶部导航72px */
 @media (min-width: 768px) and (max-width: 1023px) {
   .detail-topbar.is-sticky {
-    top: 76px;
+    top: 72px;
+    /* 导航栏高度，不留间距以避免被遮挡 */
   }
 }
 
 /* 桌面端 (>= 1024px) - 顶部导航78px */
 @media (min-width: 1024px) {
   .detail-topbar.is-sticky {
-    top: 82px;
+    top: 78px;
+    /* 导航栏高度，不留间距以避免被遮挡 */
   }
 }
 
