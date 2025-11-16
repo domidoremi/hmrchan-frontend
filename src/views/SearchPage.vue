@@ -10,18 +10,11 @@
       </header>
 
       <div class="search-tabs glass-card">
-        <button
-          type="button"
-          :class="['tab-button', { active: activeTab === 'posts' }]"
-          @click="switchTab('posts')"
-        >
+        <button type="button" :class="['tab-button', { active: activeTab === 'posts' }]" @click="switchTab('posts')">
           {{ $t('nav.posts') }}
         </button>
-        <button
-          type="button"
-          :class="['tab-button', { active: activeTab === 'authors' }]"
-          @click="switchTab('authors')"
-        >
+        <button type="button" :class="['tab-button', { active: activeTab === 'authors' }]"
+          @click="switchTab('authors')">
           {{ $t('nav.authors') }}
         </button>
       </div>
@@ -43,15 +36,11 @@
               {{ $t('offline.usingCache') }}
             </p>
             <div class="results-list posts-list">
-              <PostCard v-for="post in posts" :key="post.id" :post="post" />
+              <PostCard v-for="post in posts" :key="post.id" :post="post" :show-actions="false" />
             </div>
 
-            <Pagination
-              v-if="postsTotalPages > 1"
-              :current-page="postsPage"
-              :total-pages="postsTotalPages"
-              @change="handlePostsPageChange"
-            />
+            <Pagination v-if="postsTotalPages > 1" :current-page="postsPage" :total-pages="postsTotalPages"
+              @change="handlePostsPageChange" />
           </div>
 
           <div v-else class="empty-state glass-card">
@@ -87,23 +76,14 @@
                   </span>
                 </div>
               </div>
-              <a
-                v-if="author.profile_url"
-                :href="author.profile_url"
-                class="author-link"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
+              <a v-if="author.profile_url" :href="author.profile_url" class="author-link" target="_blank"
+                rel="noopener noreferrer">
                 {{ $t('author.viewOriginal') }}
               </a>
             </div>
 
-            <Pagination
-              v-if="authorsTotalPages > 1"
-              :current-page="authorsPage"
-              :total-pages="authorsTotalPages"
-              @change="handleAuthorsPageChange"
-            />
+            <Pagination v-if="authorsTotalPages > 1" :current-page="authorsPage" :total-pages="authorsTotalPages"
+              @change="handleAuthorsPageChange" />
           </div>
 
           <div v-else class="empty-state glass-card">
