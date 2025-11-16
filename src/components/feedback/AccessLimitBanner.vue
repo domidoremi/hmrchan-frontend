@@ -22,7 +22,7 @@ import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { Info, AlertCircle } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/auth'
-import { useResponsiveLayout } from '@/composables/useResponsiveLayout'
+import { useResponsive } from '@/composables/useResponsive'
 
 interface Props {
   currentCount: number
@@ -36,7 +36,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 const router = useRouter()
 const authStore = useAuthStore()
-const { safeAreaBottom, isMobile } = useResponsiveLayout()
+const { safeAreaBottom, isMobile } = useResponsive()
 
 const isAuthenticated = computed(() => authStore.isAuthenticated)
 const isAdmin = computed(() => authStore.user?.is_admin ?? false)
