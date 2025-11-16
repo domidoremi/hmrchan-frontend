@@ -326,33 +326,9 @@
               </button>
             </div>
 
-            <section class="post-actions" aria-labelledby="post-actions-heading">
-              <h2 id="post-actions-heading" class="sr-only">{{ $t('post.actions') }}</h2>
-              <div class="post-action-buttons" role="group" :aria-label="$t('post.actions')">
-                <GlassButton @click="toggleFavorite" :disabled="favoriteLoading"
-                  :title="isFavorited ? $t('favorite.remove') : $t('favorite.add')"
-                  :variant="isFavorited ? 'primary' : 'secondary'" :class="{ 'is-favorited': isFavorited }"
-                  :aria-pressed="isFavorited" :aria-label="isFavorited ? $t('favorite.remove') : $t('favorite.add')">
-                  <Heart :size="18" :fill="isFavorited ? 'currentColor' : 'none'" />
-                  <span class="sr-only">{{
-                    isFavorited ? $t('favorite.remove') : $t('favorite.add')
-                  }}</span>
-                </GlassButton>
-                <GlassButton v-if="post.url" @click="copyLink(post.url)" variant="secondary"
-                  :title="$t('post.copyLink')" :aria-label="$t('post.copyLink')">
-                  <Link :size="18" />
-                  <span class="sr-only">{{ $t('post.copyLink') }}</span>
-                </GlassButton>
-                <a v-if="post.url" :href="post.url" target="_blank" rel="noopener noreferrer" class="post-action-link"
-                  :title="$t('post.viewOriginal')" :aria-label="$t('post.viewOriginal')">
-                  <GlassButton variant="secondary">
-                    <ExternalLink :size="18" />
-                    <span class="sr-only">{{ $t('post.viewOriginal') }}</span>
-                  </GlassButton>
-                </a>
-              </div>
-
-              <div v-if="yieldedStats.length > 0" class="post-action-stats" role="list" :aria-label="$t('post.stats')">
+            <section v-if="yieldedStats.length > 0" class="post-stats" aria-labelledby="post-stats-heading">
+              <h2 id="post-stats-heading" class="sr-only">{{ $t('post.stats') }}</h2>
+              <div class="post-action-stats" role="list" :aria-label="$t('post.stats')">
                 <component v-for="stat in yieldedStats" :key="stat.key" :is="stat.linkAttrs ? 'a' : 'div'"
                   v-bind="stat.linkAttrs ?? {}" :class="['post-stats-row', { 'is-link': !!stat.linkAttrs }]"
                   role="listitem">
@@ -469,7 +445,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Repeat2,
-  Link,
   Sparkles,
   Play,
 } from 'lucide-vue-next'
@@ -1140,37 +1115,35 @@ onUnmounted(() => {
 /* 粘性布局 - 移动端和桌面端统一设计 */
 .detail-topbar.is-sticky {
   position: sticky;
-  z-index: 99;
+  z-index: 999;
+  /* 低于导航栏(1000)避免遮挡 */
   background: var(--glass-bg);
   backdrop-filter: var(--glass-blur);
   border-bottom: 1px solid var(--glass-border);
-  padding: 12px clamp(16px, 5vw, 48px);
+  padding: 10px clamp(16px, 5vw, 48px);
   margin-left: calc(-1 * clamp(16px, 5vw, 48px));
   margin-right: calc(-1 * clamp(16px, 5vw, 48px));
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
-/* 移动端 (< 768px) */
+/* 移动端 (< 768px) - 底部导航无需大间距 */
 @media (max-width: 767px) {
   .detail-topbar.is-sticky {
-    top: calc(66px + 8px);
-    /* 移动端导航栏高度 + 间距 */
+    top: 8px;
   }
 }
 
-/* 平板端 (768px - 1023px) */
+/* 平板端 (768px - 1023px) - 顶部导航72px */
 @media (min-width: 768px) and (max-width: 1023px) {
   .detail-topbar.is-sticky {
-    top: calc(72px + 8px);
-    /* 平板端导航栏高度 + 间距 */
+    top: 76px;
   }
 }
 
-/* 桌面端 (>= 1024px) */
+/* 桌面端 (>= 1024px) - 顶部导航78px */
 @media (min-width: 1024px) {
   .detail-topbar.is-sticky {
-    top: calc(78px + 8px);
-    /* 桌面端导航栏高度 + 间距 */
+    top: 82px;
   }
 }
 
@@ -1865,62 +1838,8 @@ onUnmounted(() => {
   }
 }
 
-.post-actions {
-  display: flex;
-  flex-direction: column;
-  gap: clamp(12px, 1.6vw, 20px);
+.post-stats {
   margin: var(--spacing-lg) 0;
-}
-
-.post-action-buttons {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-start;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-sm) var(--spacing-md);
-  background:
-    linear-gradient(135deg, rgba(139, 92, 246, 0.04) 0%, rgba(192, 132, 252, 0.04) 100%),
-    var(--glass-bg-light);
-  border-radius: var(--radius-2xl);
-  border: 1px solid rgba(139, 92, 246, 0.1);
-  box-shadow:
-    0 3px 12px rgba(15, 23, 42, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
-}
-
-.post-action-buttons>* {
-  flex: 0 0 auto;
-  display: inline-flex;
-  min-width: 0;
-}
-
-.post-action-buttons .post-action-link {
-  display: inline-flex;
-}
-
-.post-action-buttons :deep(.glass-button) {
-  flex: 0 0 auto;
-  justify-content: center;
-  align-items: center;
-  min-height: 48px;
-  width: auto;
-  padding: 0 var(--spacing-md);
-}
-
-.post-action-buttons :deep(.glass-button svg) {
-  margin: 0;
-}
-
-/* 收藏按钮激活状态 */
-.post-action-buttons :deep(.glass-button.is-favorited) {
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.18) 0%, rgba(192, 132, 252, 0.18) 100%);
-  border-color: var(--color-primary);
-  color: var(--color-primary);
-}
-
-[data-theme='dark'] .post-action-buttons :deep(.glass-button.is-favorited) {
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.28) 0%, rgba(192, 132, 252, 0.28) 100%);
-  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.32);
 }
 
 .post-action-stats {
@@ -2170,15 +2089,6 @@ onUnmounted(() => {
     padding: var(--spacing-md);
   }
 
-  .post-action-buttons {
-    padding: var(--spacing-sm) var(--spacing-md);
-    gap: var(--spacing-sm);
-  }
-
-  .post-action-buttons>* {
-    flex: 0 0 auto;
-  }
-
   .post-action-stats {
     grid-template-columns: 1fr;
     gap: var(--spacing-sm);
@@ -2190,10 +2100,6 @@ onUnmounted(() => {
 
   /* iPhone 14 Pro Max (430x932) 优化 */
   @media (max-width: 430px) {
-    .post-action-buttons>* {
-      flex: 0 0 auto;
-    }
-
     .post-stats-row {
       flex-direction: row;
       gap: var(--spacing-sm);
@@ -2239,24 +2145,6 @@ onUnmounted(() => {
 
   .back-button {
     margin-bottom: var(--spacing-md);
-  }
-
-  /* 移动端操作按钮优化 */
-  .post-actions {
-    gap: var(--spacing-md);
-    padding: var(--spacing-md);
-  }
-
-  .post-actions :deep(.glass-button) {
-    min-width: 120px;
-  }
-
-  .post-actions :deep(.glass-button)::after {
-    display: none;
-  }
-
-  .post-actions :deep(.glass-button) {
-    padding: var(--spacing-sm) var(--spacing-md);
   }
 }
 
