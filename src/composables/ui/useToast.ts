@@ -3,8 +3,8 @@
  * Wrapper around the toast store for easier usage in components
  */
 
-import { useToastStore } from '@/stores/toast'
-import type { ToastType } from '@/stores/toast'
+import { useToastStore } from '@/stores'
+import type { ToastType } from '@/stores'
 
 export interface ToastOptions {
   title?: string

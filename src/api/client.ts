@@ -2,11 +2,11 @@
  * API客户端配置 - 增强版（带缓存支持）
  */
 import axios, { type AxiosInstance, type AxiosResponse, type AxiosRequestConfig } from 'axios'
-import { useAuthStore } from '@/stores/auth'
+import { useAuthStore } from '@/stores'
 import logger from '@/utils/logger'
 import { nativeFetchAdapter } from './nativeFetchAdapter'
-import { requestCache } from '@/utils/requestCache'
-import { offlineQueue } from '@/utils/offlineQueue'
+import { requestCache } from '@/utils/cache'
+import { offlineQueue } from '@/utils/storage'
 import { cacheManager } from '@/utils/cache/CacheManager'
 
 // 设置 API 客户端日志上下文

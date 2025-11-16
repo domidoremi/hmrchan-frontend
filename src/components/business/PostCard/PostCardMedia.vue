@@ -42,7 +42,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { ImageIcon, Play, Repeat2 } from 'lucide-vue-next'
-import OptimizedImage from '@/components/base/OptimizedImage.vue'
+import OptimizedImage from '@/components/ui/image/OptimizedImage.vue'
 import { formatDuration } from '@/utils/format'
 
 interface Props {

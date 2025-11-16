@@ -33,8 +33,8 @@
 import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
 import AppNavbar from './AppNavbar.vue'
 import AppFooter from './AppFooter.vue'
-import BackToTop from '../base/BackToTop.vue'
-import { useNetworkStore } from '@/stores/network'
+import BackToTop from '../ui/button/BackToTop.vue'
+import { useNetworkStore } from '@/stores'
 
 const props = withDefaults(
   defineProps<{

@@ -5,7 +5,10 @@ import { reactive, computed } from 'vue'
  * Returns error message string if validation fails, null/undefined if passes
  * @template T - The value type being validated
  */
-export type ValidationRule<T = unknown> = (value: T, formValues?: Record<string, unknown>) => string | null | undefined
+export type ValidationRule<T = unknown> = (
+  value: T,
+  formValues?: Record<string, unknown>,
+) => string | null | undefined
 
 /**
  * Validation schema - maps field names to validation rules

@@ -8,11 +8,12 @@ import { useI18n } from 'vue-i18n'
 import { favoritesApi, postsApi } from '@/api/services'
 import type { Favorite, FavoriteCreate, FavoriteUpdate, Post, UUID } from '@/types'
 import { useToast } from '@/composables'
-import { indexedDB } from '@/utils/indexedDB'
-import { useAuthStore } from '@/stores/auth'
-import { fetchWithFallback } from '@/utils/cacheHelper'
-import { handleError } from '@/utils/errorHandler'
+import { indexedDB } from '@/utils/storage'
+import { useAuthStore } from '@/stores'
+import { fetchWithFallback } from '@/utils/cache'
+import { handleError } from '@/utils/error'
 import logger from '@/utils/logger'
+import { toLogContext } from '@/utils/typeGuards'
 
 export function useFavorites() {
   const { t } = useI18n()
@@ -267,7 +268,7 @@ export function useFavorites() {
           await indexedDB.removeFavorite(userId, postId)
         }
       } catch (e) {
-        logger.warn('[Favorites] Failed to remove favorite from IndexedDB:', e)
+        logger.warn('[Favorites] Failed to remove favorite from IndexedDB', toLogContext(e))
       }
     } catch (err: unknown) {
       handleError(err, 'UseFavorites.DeleteFavorite', {

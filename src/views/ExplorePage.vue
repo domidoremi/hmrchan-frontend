@@ -15,11 +15,21 @@
           {{ $t('offline.usingCache') }}
         </p>
         <div ref="postsGrid" class="posts-grid">
-          <PostCard v-for="(post, index) in posts" :key="post.id" :post="post" :index="index" :show-actions="false" />
+          <PostCard
+            v-for="(post, index) in posts"
+            :key="post.id"
+            :post="post"
+            :index="index"
+            :show-actions="false"
+          />
         </div>
 
         <!-- Pagination -->
-        <Pagination :current-page="pagination.page" :total-pages="pagination.pages" @change="handlePageChange" />
+        <Pagination
+          :current-page="pagination.page"
+          :total-pages="pagination.pages"
+          @change="handlePageChange"
+        />
       </div>
 
       <!-- Empty State -->
@@ -52,10 +62,10 @@ import MainLayout from '@/components/layout/MainLayout.vue'
 import FilterBar from '@/components/business/FilterBar.vue'
 import PostCard from '@/components/business/PostCard.vue'
 import Pagination from '@/components/business/Pagination.vue'
-import LoadingSpinner from '@/components/feedback/LoadingSpinner.vue'
-import GlassButton from '@/components/base/Button.vue'
+import LoadingSpinner from '@/components/ui/loading/LoadingSpinner.vue'
+import GlassButton from '@/components/ui/button/Button.vue'
 
-import { usePostsStore } from '@/stores/posts'
+import { usePostsStore } from '@/stores'
 import type { PostListParams } from '@/types'
 import { useWaterfallLayout } from '@/composables'
 
@@ -153,7 +163,7 @@ const loadPosts = async () => {
     if (postsGrid.value) {
       const cards = postsGrid.value.querySelectorAll('a.post-card.card-entering')
       cards.forEach((card) => {
-        ; (card as HTMLElement).classList.remove('card-entering')
+        ;(card as HTMLElement).classList.remove('card-entering')
       })
     }
   }, 600)

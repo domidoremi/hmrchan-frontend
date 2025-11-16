@@ -3,17 +3,8 @@
  * Central export point for all components
  */
 
-// Base Components
-export * from './base'
-
-// Form Components
-export * from './form'
-
-// Feedback Components
-export * from './feedback'
-
-// Data Display Components
-export * from './data-display'
+// UI Components (consolidated from base, form, data-display, feedback)
+export * from './ui'
 
 // Layout Components
 export * from './layout'
