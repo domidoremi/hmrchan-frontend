@@ -4,7 +4,7 @@
  */
 
 import { ref } from 'vue'
-import { useToast } from './useToast'
+import { useToast } from '@/composables'
 
 export interface OptimisticUpdateOptions<T> {
   /**
