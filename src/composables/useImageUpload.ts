@@ -4,7 +4,7 @@
  */
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import toast from '@/utils/toast'
+import { useToast } from '@/composables/useToast'
 import logger from '@/utils/logger'
 
 interface ImageUploadOptions {
@@ -26,6 +26,7 @@ const DEFAULT_OPTIONS: Required<ImageUploadOptions> = {
 export function useImageUpload(options: ImageUploadOptions = {}) {
   const config = { ...DEFAULT_OPTIONS, ...options }
   const { t } = useI18n()
+  const toast = useToast()
 
   const uploading = ref(false)
   const preview = ref<string | null>(null)
