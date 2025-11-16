@@ -149,16 +149,14 @@
                       </div>
                     </RouterLink>
 
-                    <h1 class="post-title">{{ post.title || 'Untitled' }}</h1>
-
-                    <div v-if="showDescription" :class="[
+                    <div v-if="post.description || post.title" :class="[
                       'post-description',
                       {
                         'is-collapsed': !isDescriptionExpanded && isDescriptionLong,
                         'is-expanded': isDescriptionExpanded && isDescriptionLong,
                       },
                     ]">
-                      <p>{{ post.description }}</p>
+                      <p>{{ post.description || post.title || 'No description' }}</p>
                       <button v-if="isDescriptionLong" type="button" class="description-toggle"
                         @click="isDescriptionExpanded = !isDescriptionExpanded">
                         {{
@@ -333,18 +331,16 @@
             </div>
           </aside>
 
-          <!-- 桌面端：媒体下方整行，放标题 + 描述 + 操作按钮 + 统计 -->
+          <!-- 桌面端：媒体下方整行，放描述 + 操作按钮 + 统计 -->
           <div v-if="!isTabletOrBelow" class="detail-main full-width-section">
-            <h1 class="post-title">{{ post.title || 'Untitled' }}</h1>
-
-            <div v-if="showDescription" :class="[
+            <div v-if="post.description || post.title" :class="[
               'post-description',
               {
                 'is-collapsed': !isDescriptionExpanded && isDescriptionLong,
                 'is-expanded': isDescriptionExpanded && isDescriptionLong,
               },
             ]">
-              <p>{{ post.description }}</p>
+              <p>{{ post.description || post.title || 'No description' }}</p>
               <button v-if="isDescriptionLong" type="button" class="description-toggle"
                 @click="isDescriptionExpanded = !isDescriptionExpanded">
                 {{
@@ -581,18 +577,8 @@ const isDescriptionLong = computed(() => {
   return length > 260
 })
 
-// 判断是否显示描述（避免与标题重复）
-const showDescription = computed(() => {
-  if (!post.value?.description) return false
-  const title = (post.value.title || '').trim().toLowerCase()
-  const description = post.value.description.trim().toLowerCase()
-  // 如果描述为空或与标题完全相同，则不显示
-  if (!description || description === title) return false
-  // 如果标题包含描述或描述包含标题（任一方向），且长度差异小于20字符，也不显示
-  const lengthDiff = Math.abs(description.length - title.length)
-  if (lengthDiff < 20 && (description.includes(title) || title.includes(description))) return false
-  return true
-})
+// 判断描述长度以确定是否需要展开/收起功能
+// 注意：已移除showDescription，现在始终显示description或title
 
 // 所有媒体项（包括缩略图、图片和视频）
 const allMediaItems = computed(() => {
@@ -1178,19 +1164,15 @@ onUnmounted(() => {
 @media (min-width: 768px) {
   .detail-topbar.is-sticky {
     position: sticky;
-    top: var(--app-navbar-height, 78px);
+    top: calc(var(--app-navbar-height, 78px) + 8px);
     z-index: 99;
-    background: var(--glass-bg);
-    backdrop-filter: var(--glass-blur);
-    border-bottom: 1px solid var(--glass-border);
-    padding: 16px 24px;
-    margin-left: calc(-1 * clamp(16px, 5vw, 48px));
-    margin-right: calc(-1 * clamp(16px, 5vw, 48px));
-    padding-left: clamp(16px, 5vw, 48px);
-    padding-right: clamp(16px, 5vw, 48px);
-    box-shadow:
-      0 4px 8px -2px rgba(0, 0, 0, 0.1),
-      0 8px 16px -4px rgba(0, 0, 0, 0.08);
+    background: transparent;
+    backdrop-filter: none;
+    border-bottom: none;
+    padding: 12px 0;
+    margin-left: 0;
+    margin-right: 0;
+    box-shadow: none;
   }
 }
 
@@ -1280,10 +1262,6 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-lg);
-}
-
-.detail-main .post-title {
-  margin-bottom: var(--spacing-sm);
 }
 
 @media (min-width: 1024px) {
@@ -1631,20 +1609,6 @@ onUnmounted(() => {
   right: var(--spacing-md);
 }
 
-.post-title {
-  font-size: var(--text-3xl);
-  font-weight: 800;
-  color: var(--color-text-primary);
-  line-height: 1.2;
-  word-break: break-word;
-  letter-spacing: -0.03em;
-  margin-bottom: var(--spacing-sm);
-  background: linear-gradient(135deg, var(--color-text-primary) 0%, rgba(139, 92, 246, 0.9) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
 .post-meta {
   display: flex;
   align-items: center;
@@ -1828,11 +1792,18 @@ onUnmounted(() => {
 }
 
 .post-description p {
-  color: var(--color-text-secondary);
-  font-size: var(--text-base);
-  line-height: 1.7;
-  white-space: pre-wrap;
+  color: var(--color-text-primary);
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  line-height: 1.4;
+  margin: 0;
   word-break: break-word;
+  background: linear-gradient(135deg,
+      var(--color-text-primary) 0%,
+      rgba(139, 92, 246, 0.9) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .post-description.is-collapsed {
@@ -1884,8 +1855,8 @@ onUnmounted(() => {
   }
 
   .post-description p {
-    font-size: var(--text-lg);
-    line-height: 1.75;
+    font-size: var(--text-3xl);
+    line-height: 1.3;
   }
 }
 
@@ -2195,10 +2166,6 @@ onUnmounted(() => {
 
   .post-thumbnail {
     min-height: inherit;
-  }
-
-  .post-title {
-    font-size: var(--text-2xl);
   }
 
   .post-description {
