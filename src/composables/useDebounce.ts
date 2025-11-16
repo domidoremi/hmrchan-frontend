@@ -8,7 +8,7 @@ import { ref, watch, type Ref } from 'vue'
 /**
  * Debounce a function
  */
-export function useDebounce<T extends (...args: unknown[]) => unknown>(
+export function useDebounce<T extends (...args: never[]) => unknown>(
   fn: T,
   delay = 300,
 ): (...args: Parameters<T>) => void {

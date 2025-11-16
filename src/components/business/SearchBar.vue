@@ -35,7 +35,7 @@
 import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { Search, X } from 'lucide-vue-next'
-import { debounce } from '@/utils/debounce'
+import { useDebounce } from '@/composables/useDebounce'
 import services from '@/api/services'
 import type { SearchSuggestion } from '@/types'
 
@@ -109,7 +109,7 @@ const fetchSuggestions = async (query: string) => {
   }
 }
 
-const debouncedFetchSuggestions = debounce(fetchSuggestions, 300)
+const debouncedFetchSuggestions = useDebounce(fetchSuggestions, 300)
 
 const handleInput = () => {
   debouncedFetchSuggestions(searchQuery.value)

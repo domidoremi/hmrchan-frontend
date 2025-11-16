@@ -4,7 +4,7 @@
  * 支持动态内容和无限滚动
  */
 import { ref, onMounted, onUnmounted, nextTick, type Ref } from 'vue'
-import { throttle } from '@/utils/throttle'
+import { useThrottle } from '@/composables/useThrottle'
 
 interface WaterfallOptions {
   columnGap?: number // 列间距（px）
@@ -220,7 +220,7 @@ export function useWaterfallLayout(
   /**
    * 响应式调整
    */
-  const handleResize = throttle(() => {
+  const handleResize = useThrottle(() => {
     if (!containerRef.value) return
 
     const newColumns = calculateColumns()
