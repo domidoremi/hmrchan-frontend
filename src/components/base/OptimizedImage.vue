@@ -1,33 +1,17 @@
 <template>
   <picture class="optimized-image">
     <!-- WebP 格式（如果支持） -->
-    <source
-      v-if="webpSrcset && supportsWebP"
-      :srcset="webpSrcset"
-      :sizes="computedSizes"
-      type="image/webp"
-    />
+    <source v-if="webpSrcset && supportsWebP" :srcset="webpSrcset" :sizes="computedSizes" type="image/webp" />
 
     <!-- 原始格式 fallback with srcset -->
     <source v-if="responsive && originalSrcset" :srcset="originalSrcset" :sizes="computedSizes" />
 
     <!-- 主图片元素 -->
-    <img
-      ref="imgRef"
-      :src="lazy && lazyLoad ? generatePlaceholder(cachedSrc) : currentSrc"
+    <img ref="imgRef" :src="lazy && lazyLoad ? generatePlaceholder(cachedSrc) : currentSrc"
       :data-src="lazy && lazyLoad ? currentSrc : undefined"
-      :data-srcset="lazy && lazyLoad && originalSrcset ? originalSrcset : undefined"
-      :alt="alt"
-      :width="width"
-      :height="height"
-      :loading="lazy && !lazyLoad ? 'lazy' : 'eager'"
-      :decoding="async ? 'async' : 'auto'"
-      :fetchpriority="fetchpriority"
-      :class="imageClass"
-      :style="imageStyle"
-      @load="onLoad"
-      @error="onError"
-    />
+      :data-srcset="lazy && lazyLoad && originalSrcset ? originalSrcset : undefined" :alt="alt" :width="width"
+      :height="height" :loading="lazy && !lazyLoad ? 'lazy' : 'eager'" :decoding="async ? 'async' : 'auto'"
+      :fetchpriority="fetchpriority" :class="imageClass" :style="imageStyle" @load="onLoad" @error="onError" />
   </picture>
 </template>
 
@@ -41,7 +25,7 @@ import {
   generatePlaceholder,
   getOptimizedImageUrl,
 } from '@/utils/imageOptimizer'
-import { useImageLazyLoad } from '@/composables/useImageLazyLoad'
+import { useImageLazyLoad } from '@/composables'
 
 interface Props {
   src: string
@@ -100,12 +84,12 @@ const hasError = ref(false)
 // 使用懒加载 composable（仅在启用 lazy 时）
 const lazyLoad = props.lazy
   ? useImageLazyLoad({
-      rootMargin: props.rootMargin,
-      threshold: props.threshold,
-      preload: props.preload,
-      preloadDistance: props.preloadDistance,
-      priority: props.fetchpriority,
-    })
+    rootMargin: props.rootMargin,
+    threshold: props.threshold,
+    preload: props.preload,
+    preloadDistance: props.preloadDistance,
+    priority: props.fetchpriority,
+  })
   : null
 
 // 如果使用懒加载，同步 elementRef

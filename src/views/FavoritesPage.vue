@@ -37,8 +37,8 @@ import MainLayout from '@/components/layout/MainLayout.vue'
 import PostCard from '@/components/business/PostCard.vue'
 import LoadingSpinner from '@/components/feedback/LoadingSpinner.vue'
 import GlassButton from '@/components/base/Button.vue'
-import { useFavorites } from '@/composables/useFavorites'
-import { useWaterfallLayout } from '@/composables/useWaterfallLayout'
+import { useFavorites } from '@/composables'
+import { useWaterfallLayout } from '@/composables'
 
 const { favoritePosts, loading, fetchFavorites, fromFallback } = useFavorites()
 

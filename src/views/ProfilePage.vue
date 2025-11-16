@@ -9,11 +9,7 @@
             <div class="avatar">
               <img :src="avatarUrl" :alt="user?.username || 'User'" />
             </div>
-            <button
-              class="avatar-upload-btn"
-              @click="handleAvatarUpload"
-              :aria-label="$t('profile.uploadAvatar')"
-            >
+            <button class="avatar-upload-btn" @click="handleAvatarUpload" :aria-label="$t('profile.uploadAvatar')">
               <Camera :size="16" />
             </button>
           </div>
@@ -48,29 +44,14 @@
 
       <!-- Stats Cards -->
       <div class="stats-grid">
-        <StatCard
-          :icon="Heart"
-          icon-color="rgba(239, 68, 68, 0.8)"
-          :title="$t('profile.favorites')"
-          :value="favoritesCount"
-          :loading="!user"
-        />
+        <StatCard :icon="Heart" icon-color="rgba(239, 68, 68, 0.8)" :title="$t('profile.favorites')"
+          :value="favoritesCount" :loading="!user" />
 
-        <StatCard
-          :icon="Eye"
-          icon-color="rgba(59, 130, 246, 0.8)"
-          :title="$t('profile.views')"
-          :value="viewsCount"
-          :loading="!user"
-        />
+        <StatCard :icon="Eye" icon-color="rgba(59, 130, 246, 0.8)" :title="$t('profile.views')" :value="viewsCount"
+          :loading="!user" />
 
-        <StatCard
-          :icon="Calendar"
-          icon-color="rgba(139, 92, 246, 0.8)"
-          :title="$t('profile.days')"
-          :value="joinedDays"
-          :loading="!user"
-        />
+        <StatCard :icon="Calendar" icon-color="rgba(139, 92, 246, 0.8)" :title="$t('profile.days')" :value="joinedDays"
+          :loading="!user" />
       </div>
 
       <!-- Account Information -->
@@ -113,9 +94,7 @@
           <div class="info-item">
             <label>{{ $t('profile.accountStatus') }}</label>
             <div class="info-value">
-              <span
-                :class="['status-badge', user?.is_active ? 'status-active' : 'status-inactive']"
-              >
+              <span :class="['status-badge', user?.is_active ? 'status-active' : 'status-inactive']">
                 {{ user?.is_active ? $t('profile.active') : $t('profile.inactive') }}
               </span>
             </div>
@@ -149,22 +128,12 @@
       <form @submit.prevent="handleUpdateProfile" class="edit-form">
         <div class="form-group">
           <label>{{ $t('profile.fullName') }}</label>
-          <GlassInput
-            v-model="editForm.full_name"
-            type="text"
-            :placeholder="$t('profile.fullName')"
-            :icon="UserIcon"
-          />
+          <GlassInput v-model="editForm.full_name" type="text" :placeholder="$t('profile.fullName')" :icon="UserIcon" />
         </div>
 
         <div class="form-group">
           <label>{{ $t('profile.email') }}</label>
-          <GlassInput
-            v-model="editForm.email"
-            type="email"
-            :placeholder="$t('profile.email')"
-            :icon="Mail"
-          />
+          <GlassInput v-model="editForm.email" type="email" :placeholder="$t('profile.email')" :icon="Mail" />
         </div>
 
         <div class="modal-actions">
@@ -181,35 +150,20 @@
       <form @submit.prevent="handleChangePassword" class="password-form">
         <div class="form-group">
           <label>{{ $t('profile.currentPassword') }}</label>
-          <GlassInput
-            v-model="passwordForm.current_password"
-            type="password"
-            :placeholder="$t('profile.currentPassword')"
-            :icon="Lock"
-            autocomplete="current-password"
-          />
+          <GlassInput v-model="passwordForm.current_password" type="password"
+            :placeholder="$t('profile.currentPassword')" :icon="Lock" autocomplete="current-password" />
         </div>
 
         <div class="form-group">
           <label>{{ $t('profile.newPassword') }}</label>
-          <GlassInput
-            v-model="passwordForm.new_password"
-            type="password"
-            :placeholder="$t('profile.passwordMinLength')"
-            :icon="Lock"
-            autocomplete="new-password"
-          />
+          <GlassInput v-model="passwordForm.new_password" type="password" :placeholder="$t('profile.passwordMinLength')"
+            :icon="Lock" autocomplete="new-password" />
         </div>
 
         <div class="form-group">
           <label>{{ $t('profile.confirmPassword') }}</label>
-          <GlassInput
-            v-model="passwordForm.confirm_password"
-            type="password"
-            :placeholder="$t('profile.confirmPassword')"
-            :icon="Lock"
-            autocomplete="new-password"
-          />
+          <GlassInput v-model="passwordForm.confirm_password" type="password"
+            :placeholder="$t('profile.confirmPassword')" :icon="Lock" autocomplete="new-password" />
         </div>
 
         <div class="modal-actions">
@@ -237,25 +191,15 @@
 
         <div class="form-group">
           <label>{{ $t('profile.enterPasswordToConfirm') }}</label>
-          <GlassInput
-            v-model="deleteForm.password"
-            type="password"
-            :placeholder="$t('auth.password')"
-            :icon="Lock"
-            autocomplete="current-password"
-          />
+          <GlassInput v-model="deleteForm.password" type="password" :placeholder="$t('auth.password')" :icon="Lock"
+            autocomplete="current-password" />
         </div>
 
         <div class="modal-actions">
           <GlassButton type="button" variant="ghost" @click="showDeleteModal = false">
             {{ $t('common.cancel') }}
           </GlassButton>
-          <GlassButton
-            type="button"
-            variant="secondary"
-            :loading="deleting"
-            @click="handleDeleteAccount"
-          >
+          <GlassButton type="button" variant="secondary" :loading="deleting" @click="handleDeleteAccount">
             {{ $t('common.confirm') }}
           </GlassButton>
         </div>
@@ -298,7 +242,7 @@ import { useErrorHandler } from '@/utils/errorHandler'
 import { useToastStore } from '@/stores/toast'
 import { formatRelativeTime } from '@/utils/format'
 import { getUserAvatar } from '@/utils/avatar'
-import { useImageUpload } from '@/composables/useImageUpload'
+import { useImageUpload } from '@/composables'
 import { useI18n } from 'vue-i18n'
 
 const router = useRouter()

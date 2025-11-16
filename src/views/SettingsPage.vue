@@ -281,7 +281,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useThemeStore } from '@/stores/theme'
 import { useSettingsStore } from '@/stores/settings'
 import { useToastStore } from '@/stores/toast'
-import { useAutoSave } from '@/composables/useAutoSave'
+import { useAutoSave } from '@/composables'
 import type { Theme } from '@/types'
 import logger from '@/utils/logger'
 

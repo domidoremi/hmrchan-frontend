@@ -1,22 +1,9 @@
 <template>
   <Teleport to="body">
     <Transition name="modal" @after-enter="onAfterEnter" @after-leave="onAfterLeave">
-      <div
-        v-if="modelValue"
-        class="glass-modal-backdrop"
-        @click="handleBackdropClick"
-        @keydown.esc="close"
-      >
-        <div
-          ref="modalRef"
-          class="glass-modal"
-          :class="sizeClass"
-          role="dialog"
-          aria-modal="true"
-          :aria-labelledby="titleId"
-          :aria-describedby="bodyId"
-          @click.stop
-        >
+      <div v-if="modelValue" class="glass-modal-backdrop" @click="handleBackdropClick" @keydown.esc="close">
+        <div ref="modalRef" class="glass-modal" :class="sizeClass" role="dialog" aria-modal="true"
+          :aria-labelledby="titleId" :aria-describedby="bodyId" @click.stop>
           <div v-if="!hideHeader" class="modal-header">
             <h3 :id="titleId" class="modal-title">{{ title }}</h3>
             <button class="modal-close" @click="close" aria-label="Close dialog">
@@ -40,7 +27,7 @@
 <script setup lang="ts">
 import { computed, watch, ref, nextTick, onMounted } from 'vue'
 import { X } from 'lucide-vue-next'
-import { useFocusManagement } from '@/composables/useAccessibility'
+import { useFocusManagement } from '@/composables'
 
 interface Props {
   modelValue: boolean

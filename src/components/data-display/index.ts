@@ -6,7 +6,7 @@ export { default as StatCard } from './StatCard.vue'
 export { default as StatCardGrid } from './StatCardGrid.vue'
 
 // 重量级组件 - 懒加载导出
-import { useLazyComponent } from '@/composables/useLazyComponent'
+import { useLazyComponent } from '@/composables'
 
 /**
  * MediaViewer - 媒体查看器（图片/视频）
