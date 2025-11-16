@@ -53,7 +53,7 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script setup lang="ts" generic="T = string">
 import { computed } from 'vue'
 
 defineOptions({
@@ -62,18 +62,30 @@ defineOptions({
   name: 'Radio',
 })
 
+/**
+ * Radio Props
+ * @template T - radio选项值的类型
+ */
 interface Props {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  modelValue?: any
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  value: any
+  /** 当前选中的值（来自父级 RadioGroup） */
+  modelValue?: T
+  /** 该radio的值 */
+  value: T
+  /** name属性（用于原生表单） */
   name?: string
+  /** 标签文本 */
   label?: string
+  /** 错误信息 */
   error?: string
+  /** 提示信息 */
   hint?: string
+  /** 是否禁用 */
   disabled?: boolean
+  /** 是否必填 */
   required?: boolean
+  /** 尺寸 */
   size?: 'sm' | 'md' | 'lg'
+  /** 变体 */
   variant?: 'default' | 'primary' | 'success' | 'warning' | 'error'
 }
 
@@ -85,10 +97,8 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const emit = defineEmits<{
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  'update:modelValue': [value: any]
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  change: [value: any]
+  'update:modelValue': [value: T]
+  change: [value: T]
 }>()
 
 const radioId = computed(() => `radio-${Math.random().toString(36).substr(2, 9)}`)
