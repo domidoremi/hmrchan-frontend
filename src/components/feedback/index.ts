@@ -12,7 +12,7 @@ export { default as ApiUnavailableNotice } from './ApiUnavailableNotice.vue'
 export { default as CookieBanner } from './CookieBanner.vue'
 
 // 重量级组件 - 懒加载导出
-import { useLazyComponent } from '@/composables/useLazyComponent'
+import { useLazyComponent } from '@/composables'
 
 /**
  * Modal - 模态框组件
