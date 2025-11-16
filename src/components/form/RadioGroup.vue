@@ -37,29 +37,53 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script setup lang="ts" generic="T = string">
 import Radio from './Radio.vue'
 
-type OptionValue = string | number
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type Option =
-  | OptionValue
-  | { label: string; value: OptionValue; disabled?: boolean; [key: string]: any }
+/**
+ * 选项类型
+ * 支持简单值或对象形式
+ */
+type Option<T> =
+  | T
+  | {
+      label: string
+      value: T
+      disabled?: boolean
+      description?: string
+      icon?: unknown
+    }
 
+/**
+ * RadioGroup Props
+ * @template T - 选项值的类型
+ */
 interface Props {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  modelValue?: any
-  options: Option[]
+  /** 当前选中的值 */
+  modelValue?: T
+  /** 选项列表 */
+  options: Option<T>[]
+  /** name属性（用于原生表单） */
   name?: string
+  /** 标签文本 */
   label?: string
+  /** 错误信息 */
   error?: string
+  /** 提示信息 */
   hint?: string
+  /** 是否必填 */
   required?: boolean
+  /** 是否禁用 */
   disabled?: boolean
+  /** 布局方向 */
   direction?: 'horizontal' | 'vertical'
+  /** 尺寸 */
   size?: 'sm' | 'md' | 'lg'
+  /** 变体 */
   variant?: 'default' | 'primary' | 'success' | 'warning' | 'error'
+  /** 对象选项的值字段名 */
   valueKey?: string
+  /** 对象选项的标签字段名 */
   labelKey?: string
 }
 
@@ -74,35 +98,32 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const emit = defineEmits<{
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  'update:modelValue': [value: any]
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  change: [value: any]
+  'update:modelValue': [value: T]
+  change: [value: T]
 }>()
 
-function getOptionValue(option: Option): OptionValue {
+function getOptionValue(option: Option<T>): T {
   if (typeof option === 'object' && option !== null) {
-    return option[props.valueKey]
+    return (option as Record<string, T>)[props.valueKey] as T
   }
-  return option
+  return option as T
 }
 
-function getOptionLabel(option: Option): string {
+function getOptionLabel(option: Option<T>): string {
   if (typeof option === 'object' && option !== null) {
-    return String(option[props.labelKey])
+    return String((option as Record<string, unknown>)[props.labelKey])
   }
   return String(option)
 }
 
-function isOptionDisabled(option: Option): boolean {
-  if (typeof option === 'object' && option !== null) {
-    return option.disabled === true
+function isOptionDisabled(option: Option<T>): boolean {
+  if (typeof option === 'object' && option !== null && 'disabled' in option) {
+    return (option as { disabled?: boolean }).disabled === true
   }
   return false
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function handleChange(value: any) {
+function handleChange(value: T) {
   emit('update:modelValue', value)
   emit('change', value)
 }
