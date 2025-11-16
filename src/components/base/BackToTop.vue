@@ -10,12 +10,12 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { ArrowUp } from 'lucide-vue-next'
-import { useResponsiveLayout } from '@/composables/useResponsiveLayout'
+import { useResponsive } from '@/composables/useResponsive'
 
 const visible = ref(false)
 const scrollThreshold = 300
 
-const { safeAreaBottom, isMobile } = useResponsiveLayout()
+const { safeAreaBottom, isMobile } = useResponsive()
 
 // 动态计算bottom值：底部导航栏高度 + 额外间距
 const dynamicBottom = computed(() => {
