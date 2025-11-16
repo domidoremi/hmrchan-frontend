@@ -204,8 +204,8 @@ import PostPreviewPanel from '@/components/business/PostPreviewPanel.vue'
 
 import { usePostsStore } from '@/stores/posts'
 import { useSettingsStore } from '@/stores/settings'
-import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
-import { useWaterfallLayout } from '@/composables/useWaterfallLayout'
+import { useInfiniteScroll } from '@/composables'
+import { useWaterfallLayout } from '@/composables'
 import type { PostDetail } from '@/types'
 
 // Register GSAP plugins
