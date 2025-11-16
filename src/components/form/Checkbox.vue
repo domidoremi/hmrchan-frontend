@@ -81,7 +81,7 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script setup lang="ts" generic="T = string">
 import { computed } from 'vue'
 
 defineOptions({
@@ -90,18 +90,38 @@ defineOptions({
   name: 'Checkbox',
 })
 
+/**
+ * Checkbox Props
+ * 支持两种模式：
+ * 1. 单选模式：modelValue 为 boolean
+ * 2. 多选模式：modelValue 为 T[]，需要提供 value
+ *
+ * @template T - 多选模式下的值类型
+ */
 interface Props {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  modelValue?: boolean | any[]
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  value?: any
+  /**
+   * 绑定值
+   * - 单选模式：boolean
+   * - 多选模式：T[]（需配合 value 使用）
+   */
+  modelValue?: boolean | T[]
+  /** 多选模式下，该checkbox的值 */
+  value?: T
+  /** 标签文本 */
   label?: string
+  /** 错误信息 */
   error?: string
+  /** 提示信息 */
   hint?: string
+  /** 是否禁用 */
   disabled?: boolean
+  /** 是否必填 */
   required?: boolean
+  /** 不确定状态（半选） */
   indeterminate?: boolean
+  /** 尺寸 */
   size?: 'sm' | 'md' | 'lg'
+  /** 变体 */
   variant?: 'default' | 'primary' | 'success' | 'warning' | 'error'
 }
 
@@ -114,8 +134,7 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const emit = defineEmits<{
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  'update:modelValue': [value: boolean | any[]]
+  'update:modelValue': [value: boolean | T[]]
   change: [checked: boolean]
 }>()
 
@@ -123,7 +142,7 @@ const checkboxId = computed(() => `checkbox-${Math.random().toString(36).substr(
 
 const isChecked = computed(() => {
   if (Array.isArray(props.modelValue)) {
-    return props.modelValue.includes(props.value)
+    return props.value !== undefined && props.modelValue.includes(props.value as T)
   }
   return props.modelValue === true
 })
@@ -146,17 +165,26 @@ function handleChange(event: Event) {
   const checked = target.checked
 
   if (Array.isArray(props.modelValue)) {
+    // 多选模式：需要确保value已定义
+    if (props.value === undefined) {
+      console.warn('Checkbox: value prop is required when using array modelValue')
+      return
+    }
+
     const newValue = [...props.modelValue]
+    const typedValue = props.value as T
+
     if (checked) {
-      newValue.push(props.value)
+      newValue.push(typedValue)
     } else {
-      const index = newValue.indexOf(props.value)
+      const index = newValue.indexOf(typedValue)
       if (index > -1) {
         newValue.splice(index, 1)
       }
     }
     emit('update:modelValue', newValue)
   } else {
+    // 单选模式：直接更新boolean值
     emit('update:modelValue', checked)
   }
 
