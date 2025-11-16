@@ -23,8 +23,8 @@
             <ArrowLeft :size="20" />
             {{ $t('common.back') }}
           </button>
-          <PostCardActions v-if="!isTabletOrBelow" :is-favorited="isFavorited" @favorite="toggleFavorite"
-            @share="sharePost" @more="handleMoreOptions" />
+          <PostCardActions :is-favorited="isFavorited" @favorite="toggleFavorite" @share="sharePost"
+            @more="handleMoreOptions" />
         </div>
 
         <div v-if="isOfflineDetail" class="offline-hint">
@@ -169,41 +169,15 @@
                   </div>
                 </details>
 
-                <details class="accordion-block" open>
+                <details v-if="yieldedStats.length > 0" class="accordion-block" open>
                   <summary class="accordion-summary">
-                    <span>{{ $t('post.actions') }}</span>
+                    <span>{{ $t('post.stats') }}</span>
                     <ChevronRight :size="16" class="chevron" />
                   </summary>
 
                   <div class="accordion-body">
-                    <section class="post-actions" aria-labelledby="post-actions-heading">
-                      <h2 id="post-actions-heading" class="sr-only">{{ $t('post.actions') }}</h2>
-                      <div class="post-action-buttons" role="group" :aria-label="$t('post.actions')">
-                        <GlassButton @click="toggleFavorite" :disabled="favoriteLoading"
-                          :title="isFavorited ? $t('favorite.remove') : $t('favorite.add')"
-                          :variant="isFavorited ? 'primary' : 'secondary'" :class="{ 'is-favorited': isFavorited }"
-                          :aria-pressed="isFavorited"
-                          :aria-label="isFavorited ? $t('favorite.remove') : $t('favorite.add')">
-                          <Heart :size="18" :fill="isFavorited ? 'currentColor' : 'none'" />
-                          <span class="sr-only">{{
-                            isFavorited ? $t('favorite.remove') : $t('favorite.add')
-                          }}</span>
-                        </GlassButton>
-                        <GlassButton v-if="post.url" @click="copyLink(post.url)" variant="secondary"
-                          :title="$t('post.copyLink')" :aria-label="$t('post.copyLink')">
-                          <Link :size="18" />
-                          <span class="sr-only">{{ $t('post.copyLink') }}</span>
-                        </GlassButton>
-                        <a v-if="post.url" :href="post.url" target="_blank" rel="noopener noreferrer"
-                          class="post-action-link" :title="$t('post.viewOriginal')"
-                          :aria-label="$t('post.viewOriginal')">
-                          <GlassButton variant="secondary">
-                            <ExternalLink :size="18" />
-                            <span class="sr-only">{{ $t('post.viewOriginal') }}</span>
-                          </GlassButton>
-                        </a>
-                      </div>
-
+                    <section class="post-stats-section" aria-labelledby="post-stats-heading">
+                      <h2 id="post-stats-heading" class="sr-only">{{ $t('post.stats') }}</h2>
                       <div v-if="yieldedStats.length > 0" class="post-action-stats" role="list"
                         :aria-label="$t('post.stats')">
                         <component v-for="stat in yieldedStats" :key="stat.key" :is="stat.linkAttrs ? 'a' : 'div'"
@@ -222,6 +196,7 @@
                     </section>
                   </div>
                 </details>
+
 
                 <details v-if="post.tags && post.tags.length > 0" class="accordion-block" open>
                   <summary class="accordion-summary">
@@ -1097,14 +1072,16 @@ const handleKeydown = (e: KeyboardEvent) => {
   }
 }
 
-// 滚动检测，用于 topbar 粘性效果
+// 滚动检测，用于 topbar 粘性效果 - 统一移动/桌面端
 const handleScroll = () => {
-  if (isTabletOrBelow.value) {
-    isTopbarSticky.value = false
-    return
-  }
   const scrollTop = window.scrollY || document.documentElement.scrollTop
-  const navbarHeight = 78 // --app-navbar-height
+  // 根据不同视口大小设置不同的导航栏高度
+  let navbarHeight = 78 // 默认桌面端
+  if (isMobileViewport.value) {
+    navbarHeight = 66 // 移动端导航栏高度
+  } else if (isTabletViewport.value) {
+    navbarHeight = 72 // 平板端导航栏高度
+  }
   isTopbarSticky.value = scrollTop > navbarHeight
 }
 
@@ -1155,24 +1132,45 @@ onUnmounted(() => {
   align-items: center;
   justify-content: space-between;
   gap: var(--spacing-md);
-  margin-bottom: clamp(16px, 3vw, 28px);
   padding: 12px 0;
+  margin-bottom: clamp(16px, 3vw, 28px);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* 桌面端粘性布局效果 */
-@media (min-width: 768px) {
+/* 粘性布局 - 移动端和桌面端统一设计 */
+.detail-topbar.is-sticky {
+  position: sticky;
+  z-index: 99;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  border-bottom: 1px solid var(--glass-border);
+  padding: 12px clamp(16px, 5vw, 48px);
+  margin-left: calc(-1 * clamp(16px, 5vw, 48px));
+  margin-right: calc(-1 * clamp(16px, 5vw, 48px));
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* 移动端 (< 768px) */
+@media (max-width: 767px) {
   .detail-topbar.is-sticky {
-    position: sticky;
-    top: calc(var(--app-navbar-height, 78px) + 8px);
-    z-index: 99;
-    background: transparent;
-    backdrop-filter: none;
-    border-bottom: none;
-    padding: 12px 0;
-    margin-left: 0;
-    margin-right: 0;
-    box-shadow: none;
+    top: calc(66px + 8px);
+    /* 移动端导航栏高度 + 间距 */
+  }
+}
+
+/* 平板端 (768px - 1023px) */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .detail-topbar.is-sticky {
+    top: calc(72px + 8px);
+    /* 平板端导航栏高度 + 间距 */
+  }
+}
+
+/* 桌面端 (>= 1024px) */
+@media (min-width: 1024px) {
+  .detail-topbar.is-sticky {
+    top: calc(78px + 8px);
+    /* 桌面端导航栏高度 + 间距 */
   }
 }
 
