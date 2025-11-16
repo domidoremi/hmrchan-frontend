@@ -9,40 +9,16 @@
 
         <!-- Auto-save Status Indicator -->
         <Transition name="fade">
-          <div
-            v-if="autoSaveStatus !== 'idle'"
-            class="save-status"
-            :class="`status-${autoSaveStatus}`"
-          >
+          <div v-if="autoSaveStatus !== 'idle'" class="save-status" :class="`status-${autoSaveStatus}`">
             <span v-if="autoSaveStatus === 'saving'" class="status-icon spinner-small"></span>
-            <svg
-              v-else-if="autoSaveStatus === 'saved'"
-              class="status-icon"
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
+            <svg v-else-if="autoSaveStatus === 'saved'" class="status-icon" xmlns="http://www.w3.org/2000/svg"
+              width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
               <polyline points="20 6 9 17 4 12" />
             </svg>
-            <svg
-              v-else-if="autoSaveStatus === 'error'"
-              class="status-icon"
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
+            <svg v-else-if="autoSaveStatus === 'error'" class="status-icon" xmlns="http://www.w3.org/2000/svg"
+              width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="10" />
               <line x1="12" y1="8" x2="12" y2="12" />
               <line x1="12" y1="16" x2="12.01" y2="16" />
@@ -78,13 +54,8 @@
 
             <div class="settings-content">
               <div class="theme-options">
-                <button
-                  v-for="themeOption in themeOptions"
-                  :key="themeOption.value"
-                  class="theme-option"
-                  :class="{ active: theme === themeOption.value }"
-                  @click="setTheme(themeOption.value)"
-                >
+                <button v-for="themeOption in themeOptions" :key="themeOption.value" class="theme-option"
+                  :class="{ active: theme === themeOption.value }" @click="setTheme(themeOption.value)">
                   <component :is="themeOption.icon" :size="20" />
                   <span>{{ $t(`settings.${themeOption.value}`) }}</span>
                 </button>
@@ -101,13 +72,8 @@
 
             <div class="settings-content">
               <div class="language-options">
-                <button
-                  v-for="localeOption in localeOptions"
-                  :key="localeOption.code"
-                  class="language-option"
-                  :class="{ active: locale === localeOption.code }"
-                  @click="changeLanguage(localeOption.code)"
-                >
+                <button v-for="localeOption in localeOptions" :key="localeOption.code" class="language-option"
+                  :class="{ active: locale === localeOption.code }" @click="changeLanguage(localeOption.code)">
                   {{ localeOption.name }}
                 </button>
               </div>
@@ -127,14 +93,10 @@
                   <div class="setting-label">{{ $t('settings.showHeroSection') }}</div>
                   <div class="setting-description">{{ $t('settings.showHeroSectionDesc') }}</div>
                 </div>
-                <button
-                  class="toggle-switch"
-                  :class="{ active: settingsStore.settings.showHeroSection }"
-                  @click="handleToggleSetting('showHeroSection')"
-                  role="switch"
+                <button class="toggle-switch" :class="{ active: settingsStore.settings.showHeroSection }"
+                  @click="handleToggleSetting('showHeroSection')" role="switch"
                   :aria-checked="settingsStore.settings.showHeroSection ? 'true' : 'false'"
-                  :aria-label="$t('settings.showHeroSection')"
-                >
+                  :aria-label="$t('settings.showHeroSection')">
                   <span class="toggle-slider"></span>
                 </button>
               </div>
@@ -146,14 +108,10 @@
                     {{ $t('preferences.enableAnimationsDesc') }}
                   </div>
                 </div>
-                <button
-                  class="toggle-switch"
-                  :class="{ active: settingsStore.settings.enableAnimations }"
-                  @click="handleToggleSetting('enableAnimations')"
-                  role="switch"
+                <button class="toggle-switch" :class="{ active: settingsStore.settings.enableAnimations }"
+                  @click="handleToggleSetting('enableAnimations')" role="switch"
                   :aria-checked="settingsStore.settings.enableAnimations ? 'true' : 'false'"
-                  :aria-label="$t('preferences.enableAnimations')"
-                >
+                  :aria-label="$t('preferences.enableAnimations')">
                   <span class="toggle-slider"></span>
                 </button>
               </div>
@@ -163,16 +121,12 @@
                   <div class="setting-label">{{ $t('preferences.postsPerPage') }}</div>
                   <div class="setting-description">{{ $t('preferences.postsPerPageDesc') }}</div>
                 </div>
-                <select
-                  class="select-input"
-                  :value="settingsStore.settings.postsPerPage"
-                  @change="
-                    handleUpdateSetting(
-                      'postsPerPage',
-                      parseInt(($event.target as HTMLSelectElement).value),
-                    )
-                  "
-                >
+                <select class="select-input" :value="settingsStore.settings.postsPerPage" @change="
+                  handleUpdateSetting(
+                    'postsPerPage',
+                    parseInt(($event.target as HTMLSelectElement).value),
+                  )
+                  ">
                   <option :value="10">10</option>
                   <option :value="20">20</option>
                   <option :value="30">30</option>
@@ -195,14 +149,10 @@
                   <div class="setting-label">{{ $t('preferences.autoPlayVideos') }}</div>
                   <div class="setting-description">{{ $t('preferences.autoPlayVideosDesc') }}</div>
                 </div>
-                <button
-                  class="toggle-switch"
-                  :class="{ active: settingsStore.settings.autoPlayVideos }"
-                  @click="handleToggleSetting('autoPlayVideos')"
-                  role="switch"
+                <button class="toggle-switch" :class="{ active: settingsStore.settings.autoPlayVideos }"
+                  @click="handleToggleSetting('autoPlayVideos')" role="switch"
                   :aria-checked="settingsStore.settings.autoPlayVideos ? 'true' : 'false'"
-                  :aria-label="$t('preferences.autoPlayVideos')"
-                >
+                  :aria-label="$t('preferences.autoPlayVideos')">
                   <span class="toggle-slider"></span>
                 </button>
               </div>
@@ -214,14 +164,10 @@
                     {{ $t('preferences.showImagePreviewsDesc') }}
                   </div>
                 </div>
-                <button
-                  class="toggle-switch"
-                  :class="{ active: settingsStore.settings.showImagePreviews }"
-                  @click="handleToggleSetting('showImagePreviews')"
-                  role="switch"
+                <button class="toggle-switch" :class="{ active: settingsStore.settings.showImagePreviews }"
+                  @click="handleToggleSetting('showImagePreviews')" role="switch"
                   :aria-checked="settingsStore.settings.showImagePreviews ? 'true' : 'false'"
-                  :aria-label="$t('preferences.showImagePreviews')"
-                >
+                  :aria-label="$t('preferences.showImagePreviews')">
                   <span class="toggle-slider"></span>
                 </button>
               </div>
@@ -308,6 +254,7 @@
 </template>
 
 <script setup lang="ts">
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
