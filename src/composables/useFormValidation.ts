@@ -3,15 +3,15 @@ import { reactive, computed } from 'vue'
 /**
  * Validation rule function type
  * Returns error message string if validation fails, null/undefined if passes
+ * @template T - The value type being validated
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type ValidationRule<T = any> = (value: T) => string | null | undefined
+export type ValidationRule<T = unknown> = (value: T, formValues?: Record<string, unknown>) => string | null | undefined
 
 /**
  * Validation schema - maps field names to validation rules
+ * @template T - The form values type
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type ValidationSchema<T extends Record<string, any>> = {
+export type ValidationSchema<T extends Record<string, unknown>> = {
   [K in keyof T]?: ValidationRule<T[K]> | ValidationRule<T[K]>[]
 }
 
@@ -27,9 +27,9 @@ export interface FieldState {
 /**
  * Form validation composable
  * Provides real-time validation with common validation rules
+ * @template T - The form values type
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function useFormValidation<T extends Record<string, any>>(
+export function useFormValidation<T extends Record<string, unknown>>(
   schema: ValidationSchema<T>,
   initialValues?: Partial<T>,
 ) {
@@ -50,8 +50,7 @@ export function useFormValidation<T extends Record<string, any>>(
   /**
    * Validate a single field
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  function validateField(field: keyof T, value: any): boolean {
+  function validateField(field: keyof T, value: T[keyof T]): boolean {
     const fieldKey = String(field)
     const rules = schema[field]
     if (!rules) return true
@@ -78,7 +77,7 @@ export function useFormValidation<T extends Record<string, any>>(
 
     for (const field in schema) {
       const value = values[field]
-      if (!validateField(field, value)) {
+      if (!validateField(field as keyof T, value as T[keyof T])) {
         isFormValid = false
       }
     }
@@ -89,8 +88,7 @@ export function useFormValidation<T extends Record<string, any>>(
   /**
    * Set field value and optionally validate
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  function setFieldValue(field: keyof T, value: any, validate = true) {
+  function setFieldValue(field: keyof T, value: T[keyof T], validate = true) {
     const fieldKey = String(field)
     ;(values as Record<string, unknown>)[fieldKey] = value
     dirty[fieldKey] = true
@@ -109,7 +107,7 @@ export function useFormValidation<T extends Record<string, any>>(
 
     if (isTouched) {
       const fieldValue = (values as Record<string, unknown>)[fieldKey]
-      validateField(field, fieldValue)
+      validateField(field, fieldValue as T[keyof T])
     }
   }
 
@@ -199,8 +197,7 @@ export const validationRules = {
    * Required field validation
    */
   required: (message = 'This field is required'): ValidationRule => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return (value: any) => {
+    return (value: unknown) => {
       if (value === null || value === undefined || value === '') {
         return message
       }
@@ -309,8 +306,7 @@ export const validationRules = {
    * Number validation
    */
   number: (message = 'Must be a number'): ValidationRule => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return (value: any) => {
+    return (value: unknown) => {
       if (value === null || value === undefined || value === '') return null
       if (isNaN(Number(value))) {
         return message
@@ -323,8 +319,7 @@ export const validationRules = {
    * Integer validation
    */
   integer: (message = 'Must be an integer'): ValidationRule => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return (value: any) => {
+    return (value: unknown) => {
       if (value === null || value === undefined || value === '') return null
       if (!Number.isInteger(Number(value))) {
         return message
@@ -337,8 +332,7 @@ export const validationRules = {
    * Match another field (e.g., password confirmation)
    */
   match: (otherField: string, message?: string): ValidationRule => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return (value: any, formValues?: any) => {
+    return (value: unknown, formValues?: Record<string, unknown>) => {
       if (!value) return null
       if (formValues && value !== formValues[otherField]) {
         return message || `Must match ${otherField}`
@@ -350,10 +344,8 @@ export const validationRules = {
   /**
    * Custom validation function
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  custom: (validator: (value: any) => boolean, message: string): ValidationRule => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return (value: any) => {
+  custom: (validator: (value: unknown) => boolean, message: string): ValidationRule => {
+    return (value: unknown) => {
       if (!validator(value)) {
         return message
       }
