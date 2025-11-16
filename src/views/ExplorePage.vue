@@ -57,7 +57,7 @@ import GlassButton from '@/components/base/Button.vue'
 
 import { usePostsStore } from '@/stores/posts'
 import type { PostListParams } from '@/types'
-import { useWaterfallLayout } from '@/composables/useWaterfallLayout'
+import { useWaterfallLayout } from '@/composables'
 
 const route = useRoute()
 const router = useRouter()

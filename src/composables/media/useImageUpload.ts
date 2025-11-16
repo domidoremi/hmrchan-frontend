@@ -4,7 +4,7 @@
  */
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useToast } from '@/composables/useToast'
+import { useToast } from '@/composables'
 import logger from '@/utils/logger'
 
 interface ImageUploadOptions {

@@ -8,7 +8,7 @@ import { storeToRefs } from 'pinia'
 import ErrorBoundary from '@/components/feedback/ErrorBoundary.vue'
 import Toast from '@/components/feedback/Toast.vue'
 // 导入无障碍功能
-import { useKeyboardNavigation } from '@/composables/useAccessibility'
+import { useKeyboardNavigation } from '@/composables'
 
 const authStore = useAuthStore()
 const themeStore = useThemeStore()
