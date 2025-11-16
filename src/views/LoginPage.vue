@@ -1,91 +1,98 @@
 <template>
   <div class="login-page">
     <div class="login-container">
-      <div class="login-card glass-card">
-        <!-- Logo -->
-        <div class="login-header">
-          <div class="brand-logo">HMR</div>
-          <h1>{{ $t('app.name') }}</h1>
-          <p>{{ $t('app.description') }}</p>
+      <!-- 左侧品牌展示区域（仅桌面端显示） -->
+      <div class="brand-section">
+        <div class="brand-content">
+          <div class="brand-logo-large">
+            <div class="logo-inner">HMR</div>
+          </div>
+          <h2 class="brand-title">{{ $t('app.name') }}</h2>
+          <p class="brand-description">{{ $t('app.description') }}</p>
+          <div class="brand-features">
+            <div class="feature-item">
+              <div class="feature-icon">✨</div>
+              <div class="feature-text">跨平台内容聚合</div>
+            </div>
+            <div class="feature-item">
+              <div class="feature-icon">🎯</div>
+              <div class="feature-text">智能推荐系统</div>
+            </div>
+            <div class="feature-item">
+              <div class="feature-icon">🔒</div>
+              <div class="feature-text">安全可靠</div>
+            </div>
+          </div>
         </div>
-
-        <!-- Login Form -->
-        <form class="login-form" @submit.prevent="handleLogin">
-          <GlassInput
-            v-model="formData.username"
-            type="text"
-            :label="$t('auth.username')"
-            :placeholder="$t('auth.username')"
-            :icon="User"
-            :disabled="loading"
-            :error="error && !formData.username ? $t('auth.fillAllFields') : ''"
-            clearable
-            autocomplete="username"
-            required
-          />
-
-          <GlassInput
-            v-model="formData.password"
-            :type="showPassword ? 'text' : 'password'"
-            :label="$t('auth.password')"
-            :placeholder="$t('auth.password')"
-            :icon="Lock"
-            :disabled="loading"
-            :error="error && !formData.password ? $t('auth.fillAllFields') : ''"
-            :hint="$t('auth.passwordHint', 'Enter your password')"
-            autocomplete="current-password"
-            name="password"
-            required
-          >
-            <template #suffix>
-              <button
-                type="button"
-                class="password-toggle"
-                @click="showPassword = !showPassword"
-                :aria-label="showPassword ? $t('auth.hidePassword') : $t('auth.showPassword')"
-              >
-                <Eye v-if="!showPassword" :size="18" />
-                <EyeOff v-else :size="18" />
-              </button>
-            </template>
-          </GlassInput>
-
-          <!-- Error Message -->
-          <div v-if="error && formData.username && formData.password" class="error-message">
-            <AlertCircle :size="16" />
-            <span>{{ error }}</span>
-          </div>
-
-          <!-- Success Message -->
-          <div v-if="success" class="success-message">
-            <CheckCircle :size="16" />
-            <span>{{ success }}</span>
-          </div>
-
-          <!-- Submit Button -->
-          <GlassButton type="submit" size="lg" :loading="loading" class="login-button">
-            {{ $t('auth.login') }}
-          </GlassButton>
-
-          <!-- Register Link -->
-          <div class="register-link">
-            {{ $t('auth.noAccount') }}
-            <RouterLink to="/register">{{ $t('auth.registerNow') }}</RouterLink>
-          </div>
-
-          <!-- Back to Home -->
-          <RouterLink to="/" class="back-link">
-            <ArrowLeft :size="16" />
-            {{ $t('common.back') }}
-          </RouterLink>
-        </form>
       </div>
 
-      <!-- Decorative Elements -->
-      <div class="decoration decoration-1"></div>
-      <div class="decoration decoration-2"></div>
-      <div class="decoration decoration-3"></div>
+      <!-- 右侧表单区域 -->
+      <div class="form-section">
+        <div class="login-card glass-card">
+          <!-- 移动端Logo -->
+          <div class="mobile-header">
+            <div class="brand-logo">HMR</div>
+            <h1>{{ $t('auth.login') }}</h1>
+          </div>
+
+          <!-- Login Form -->
+          <form class="login-form" @submit.prevent="handleLogin">
+            <GlassInput v-model="formData.username" type="text" :label="$t('auth.username')"
+              :placeholder="$t('auth.username')" :icon="User" :disabled="loading"
+              :error="error && !formData.username ? $t('auth.fillAllFields') : ''" clearable autocomplete="username"
+              required />
+
+            <GlassInput v-model="formData.password" :type="showPassword ? 'text' : 'password'"
+              :label="$t('auth.password')" :placeholder="$t('auth.password')" :icon="Lock" :disabled="loading"
+              :error="error && !formData.password ? $t('auth.fillAllFields') : ''"
+              :hint="$t('auth.passwordHint', 'Enter your password')" autocomplete="current-password" name="password"
+              required>
+              <template #suffix>
+                <button type="button" class="password-toggle" @click="showPassword = !showPassword"
+                  :aria-label="showPassword ? $t('auth.hidePassword') : $t('auth.showPassword')">
+                  <Eye v-if="!showPassword" :size="18" />
+                  <EyeOff v-else :size="18" />
+                </button>
+              </template>
+            </GlassInput>
+
+            <!-- Error Message -->
+            <div v-if="error && formData.username && formData.password" class="error-message">
+              <AlertCircle :size="16" />
+              <span>{{ error }}</span>
+            </div>
+
+            <!-- Success Message -->
+            <div v-if="success" class="success-message">
+              <CheckCircle :size="16" />
+              <span>{{ success }}</span>
+            </div>
+
+            <!-- Submit Button -->
+            <GlassButton type="submit" size="lg" :loading="loading" class="login-button">
+              {{ $t('auth.login') }}
+            </GlassButton>
+
+            <!-- Register Link -->
+            <div class="register-link">
+              {{ $t('auth.noAccount') }}
+              <RouterLink to="/register">{{ $t('auth.registerNow') }}</RouterLink>
+            </div>
+
+            <!-- Back to Home -->
+            <RouterLink to="/" class="back-link">
+              <ArrowLeft :size="16" />
+              {{ $t('common.back') }}
+            </RouterLink>
+          </form>
+        </div>
+      </div>
     </div>
+
+    <!-- Decorative Elements -->
+    <div class="decoration decoration-1"></div>
+    <div class="decoration decoration-2"></div>
+    <div class="decoration decoration-3"></div>
   </div>
 </template>
 
@@ -214,34 +221,157 @@ const handleLogin = async () => {
   min-height: 100vh;
   display: flex;
   align-items: center;
-  padding-bottom: 0 !important;
-  /* 覆盖底部导航栏的padding */
   justify-content: center;
-  padding: var(--spacing-lg);
+  padding-bottom: 0 !important;
   position: relative;
   overflow: hidden;
 }
 
 .login-container {
   width: 100%;
-  max-width: 450px;
+  max-width: 1200px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--spacing-2xl);
+  padding: var(--spacing-lg);
   position: relative;
   z-index: 1;
 }
 
+/* 双列布局 - 桌面端 */
+@media (min-width: 1024px) {
+  .login-container {
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-3xl);
+    padding: var(--spacing-2xl);
+  }
+}
+
+/* 左侧品牌展示区域 */
+.brand-section {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .brand-section {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-3xl);
+  }
+
+  .brand-content {
+    max-width: 480px;
+    text-align: center;
+  }
+
+  .brand-logo-large {
+    width: 120px;
+    height: 120px;
+    margin: 0 auto var(--spacing-xl);
+    background: var(--gradient-primary);
+    border-radius: var(--radius-2xl);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 32px rgba(139, 92, 246, 0.3);
+    animation: float 6s ease-in-out infinite;
+  }
+
+  .logo-inner {
+    color: white;
+    font-weight: var(--font-bold);
+    font-size: var(--text-4xl);
+  }
+
+  .brand-title {
+    font-size: var(--text-4xl);
+    font-weight: var(--font-bold);
+    color: var(--color-text-primary);
+    margin-bottom: var(--spacing-md);
+    background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .brand-description {
+    font-size: var(--text-lg);
+    color: var(--color-text-secondary);
+    margin-bottom: var(--spacing-2xl);
+    line-height: 1.6;
+  }
+
+  .brand-features {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+    text-align: left;
+  }
+
+  .feature-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-md);
+    background: var(--glass-bg-light);
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--glass-border);
+    transition: all var(--transition-fast);
+  }
+
+  .feature-item:hover {
+    transform: translateX(8px);
+    box-shadow: var(--glass-shadow);
+  }
+
+  .feature-icon {
+    font-size: var(--text-3xl);
+    flex-shrink: 0;
+  }
+
+  .feature-text {
+    font-size: var(--text-base);
+    color: var(--color-text-primary);
+    font-weight: var(--font-medium);
+  }
+}
+
+/* 右侧表单区域 */
+.form-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .login-card {
-  padding: var(--spacing-3xl);
+  width: 100%;
+  max-width: 480px;
+  padding: var(--spacing-2xl);
   animation: slideUp var(--transition-slow);
 }
 
-.login-header {
+@media (min-width: 768px) {
+  .login-card {
+    padding: var(--spacing-3xl);
+  }
+}
+
+/* 移动端Header */
+.mobile-header {
   text-align: center;
   margin-bottom: var(--spacing-2xl);
 }
 
-.brand-logo {
-  width: 80px;
-  height: 80px;
+@media (min-width: 1024px) {
+  .mobile-header {
+    display: none;
+  }
+}
+
+.mobile-header .brand-logo {
+  width: 70px;
+  height: 70px;
   margin: 0 auto var(--spacing-lg);
   background: var(--gradient-primary);
   border-radius: var(--radius-2xl);
@@ -254,16 +384,10 @@ const handleLogin = async () => {
   box-shadow: var(--glass-glow);
 }
 
-.login-header h1 {
-  font-size: var(--text-3xl);
+.mobile-header h1 {
+  font-size: var(--text-2xl);
   font-weight: var(--font-bold);
   color: var(--color-text-primary);
-  margin-bottom: var(--spacing-sm);
-}
-
-.login-header p {
-  color: var(--color-text-secondary);
-  font-size: var(--text-sm);
 }
 
 .login-form {
@@ -402,6 +526,7 @@ const handleLogin = async () => {
 }
 
 @keyframes float {
+
   0%,
   100% {
     transform: translateY(0) scale(1);
@@ -413,13 +538,13 @@ const handleLogin = async () => {
 }
 
 @media (max-width: 768px) {
-  .login-card {
-    padding: var(--spacing-xl);
-  }
-
-  .brand-logo {
+  .mobile-header .brand-logo {
     width: 60px;
     height: 60px;
+    font-size: var(--text-xl);
+  }
+
+  .mobile-header h1 {
     font-size: var(--text-xl);
   }
 }
