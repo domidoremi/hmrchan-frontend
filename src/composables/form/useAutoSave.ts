@@ -4,7 +4,7 @@
  */
 
 import { ref, watch, type Ref } from 'vue'
-import { useDebounceFn } from './useDebounce'
+import { useDebounceFn } from '@/composables'
 
 export type SaveStatus = 'idle' | 'saving' | 'saved' | 'error'
 
