@@ -10,7 +10,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { ArrowUp } from 'lucide-vue-next'
-import { useResponsive } from '@/composables/useResponsive'
+import { useResponsive } from '@/composables'
 
 const visible = ref(false)
 const scrollThreshold = 300

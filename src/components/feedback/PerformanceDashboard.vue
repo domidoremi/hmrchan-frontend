@@ -45,11 +45,7 @@
           <div class="metric-target">Target: &lt;500ms</div>
         </div>
         <div class="transitions-list">
-          <div
-            v-for="(transition, index) in recentTransitions"
-            :key="index"
-            class="transition-item"
-          >
+          <div v-for="(transition, index) in recentTransitions" :key="index" class="transition-item">
             <span class="transition-route">{{ transition.from }} → {{ transition.to }}</span>
             <span class="transition-time">{{ transition.duration.toFixed(0) }}ms</span>
           </div>
@@ -94,7 +90,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { usePerformanceMonitoring } from '@/composables/usePerformanceMonitoring'
+import { usePerformanceMonitoring } from '@/composables'
 
 const {
   fcp,

@@ -10,7 +10,7 @@ export { default as SearchBar } from './SearchBar.vue'
 export { default as Pagination } from './Pagination.vue'
 
 // 重量级业务组件 - 懒加载导出
-import { useLazyComponent } from '@/composables/useLazyComponent'
+import { useLazyComponent } from '@/composables'
 
 /**
  * PostPreviewPanel - 帖子预览面板

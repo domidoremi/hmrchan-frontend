@@ -4,7 +4,7 @@
  * 支持动态内容和无限滚动
  */
 import { ref, onMounted, onUnmounted, nextTick, type Ref } from 'vue'
-import { useThrottle } from '@/composables/useThrottle'
+import { useThrottle } from '@/composables'
 
 interface WaterfallOptions {
   columnGap?: number // 列间距（px）
