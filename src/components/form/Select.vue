@@ -8,41 +8,20 @@
     <!-- Select Wrapper -->
     <div class="form-select-wrapper" :class="wrapperClass" ref="selectRef">
       <!-- Select Button -->
-      <button
-        :id="selectId"
-        type="button"
-        class="select-button"
-        :disabled="disabled"
-        :aria-expanded="isOpen"
-        :aria-haspopup="true"
-        :aria-invalid="!!error"
-        :aria-describedby="error ? `${selectId}-error` : hint ? `${selectId}-hint` : undefined"
-        @click="toggleDropdown"
-        @keydown.enter.prevent="toggleDropdown"
-        @keydown.space.prevent="toggleDropdown"
-        @keydown.escape="closeDropdown"
-        @keydown.down.prevent="focusNextOption"
-        @keydown.up.prevent="focusPreviousOption"
-      >
+      <button :id="selectId" type="button" class="select-button" :disabled="disabled" :aria-expanded="isOpen"
+        :aria-haspopup="true" :aria-invalid="!!error"
+        :aria-describedby="error ? `${selectId}-error` : hint ? `${selectId}-hint` : undefined" @click="toggleDropdown"
+        @keydown.enter.prevent="toggleDropdown" @keydown.space.prevent="toggleDropdown" @keydown.escape="closeDropdown"
+        @keydown.down.prevent="focusNextOption" @keydown.up.prevent="focusPreviousOption">
         <!-- Selected Value Display -->
         <span class="select-value" :class="{ 'is-placeholder': !hasValue }">
           {{ displayValue }}
         </span>
 
         <!-- Arrow Icon -->
-        <svg
-          class="select-arrow"
-          :class="{ 'is-open': isOpen }"
-          xmlns="http://www.w3.org/2000/svg"
-          width="20"
-          height="20"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        >
+        <svg class="select-arrow" :class="{ 'is-open': isOpen }" xmlns="http://www.w3.org/2000/svg" width="20"
+          height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+          stroke-linejoin="round">
           <polyline points="6 9 12 15 18 9" />
         </svg>
       </button>
@@ -52,57 +31,28 @@
         <div v-if="isOpen" class="select-dropdown" :style="dropdownStyle">
           <!-- Search Input -->
           <div v-if="searchable" class="select-search">
-            <input
-              ref="searchInputRef"
-              v-model="searchQuery"
-              type="text"
-              class="search-input"
-              :placeholder="searchPlaceholder"
-              @keydown.escape="closeDropdown"
-              @keydown.down.prevent="focusNextOption"
-              @keydown.up.prevent="focusPreviousOption"
-              @keydown.enter.prevent="selectFocusedOption"
-            />
+            <input ref="searchInputRef" v-model="searchQuery" type="text" class="search-input"
+              :placeholder="searchPlaceholder" @keydown.escape="closeDropdown" @keydown.down.prevent="focusNextOption"
+              @keydown.up.prevent="focusPreviousOption" @keydown.enter.prevent="selectFocusedOption" />
           </div>
 
           <!-- Options List -->
           <div class="select-options" ref="optionsRef">
-            <div
-              v-for="(option, index) in filteredOptions"
-              :key="getOptionValue(option)"
-              class="select-option"
-              :class="{
-                'is-selected': isSelected(option),
-                'is-focused': focusedIndex === index,
-              }"
-              @click="handleSelect(option)"
-              @mouseenter="focusedIndex = index"
-            >
+            <div v-for="(option, index) in filteredOptions" :key="getOptionValue(option)" class="select-option" :class="{
+              'is-selected': isSelected(option),
+              'is-focused': focusedIndex === index,
+            }" @click="handleSelect(option)" @mouseenter="focusedIndex = index">
               <!-- Checkbox for multi-select -->
               <div v-if="multiple" class="option-checkbox">
-                <svg
-                  v-if="isSelected(option)"
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="3"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                >
+                <svg v-if="isSelected(option)" xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                  viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"
+                  stroke-linejoin="round">
                   <polyline points="20 6 9 17 4 12" />
                 </svg>
               </div>
 
               <!-- Custom Option Slot -->
-              <slot
-                v-if="$slots.option"
-                name="option"
-                :option="option"
-                :selected="isSelected(option)"
-              />
+              <slot v-if="$slots.option" name="option" :option="option" :selected="isSelected(option)" />
 
               <!-- Default Option Display -->
               <span v-else class="option-label">
@@ -126,18 +76,8 @@
 
     <!-- Error Message -->
     <div v-if="error" :id="`${selectId}-error`" class="select-error" role="alert">
-      <svg
-        class="error-icon"
-        xmlns="http://www.w3.org/2000/svg"
-        width="14"
-        height="14"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-      >
+      <svg class="error-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <circle cx="12" cy="12" r="10" />
         <line x1="12" y1="8" x2="12" y2="12" />
         <line x1="12" y1="16" x2="12.01" y2="16" />
@@ -155,8 +95,19 @@ defineOptions({
 })
 
 type OptionValue = string | number
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type Option = OptionValue | { label: string; value: OptionValue; [key: string]: any }
+
+/**
+ * 选项类型
+ * 支持简单值或对象形式
+ */
+type Option = OptionValue | {
+  label: string
+  value: OptionValue
+  disabled?: boolean
+  description?: string
+  icon?: unknown
+  group?: string
+}
 
 interface Props {
   modelValue: OptionValue | OptionValue[] | null
@@ -249,15 +200,18 @@ const dropdownStyle = computed(() => ({
 }))
 
 function getOptionValue(option: Option): OptionValue {
-  if (typeof option === 'object' && option !== null) {
-    return option[props.valueKey]
+  if (typeof option === 'object' && option !== null && 'value' in option) {
+    // 对象形式的选项，返回 value 属性
+    return option.value
   }
-  return option
+  // 简单值形式的选项，直接返回
+  return option as OptionValue
 }
 
 function getOptionLabel(option: Option): string {
   if (typeof option === 'object' && option !== null) {
-    return String(option[props.labelKey])
+    // 使用 'label' 属性（对象形式的选项）
+    return 'label' in option ? option.label : String(option)
   }
   return String(option)
 }
@@ -630,6 +584,7 @@ onBeforeUnmount(() => {
 }
 
 @keyframes errorShake {
+
   0%,
   100% {
     transform: translateX(0);
