@@ -25,7 +25,7 @@ export interface ThrottleOptions {
   trailing?: boolean // 是否在结束后执行
 }
 
-export function throttle<T extends (...args: any[]) => any>(
+export function throttle<T extends (...args: never[]) => unknown>(
   func: T,
   wait: number = 300,
   options: ThrottleOptions = {},
@@ -33,7 +33,7 @@ export function throttle<T extends (...args: any[]) => any>(
   let timeout: ReturnType<typeof setTimeout> | null = null
   let previous = 0
   let lastArgs: Parameters<T> | null = null
-  let lastContext: any = null
+  let lastContext: unknown = null
 
   const { leading = true, trailing = true } = options
 
@@ -47,7 +47,7 @@ export function throttle<T extends (...args: any[]) => any>(
     }
   }
 
-  return function (this: any, ...args: Parameters<T>) {
+  return function (this: unknown, ...args: Parameters<T>) {
     const now = Date.now()
 
     if (!previous && leading === false) {
@@ -55,6 +55,7 @@ export function throttle<T extends (...args: any[]) => any>(
     }
 
     const remaining = wait - (now - previous)
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
     lastContext = this
     lastArgs = args
 
@@ -76,13 +77,13 @@ export function throttle<T extends (...args: any[]) => any>(
 /**
  * 带取消功能的节流函数
  */
-export interface ThrottledFunction<T extends (...args: any[]) => any> {
+export interface ThrottledFunction<T extends (...args: never[]) => unknown> {
   (...args: Parameters<T>): void
   cancel: () => void
   flush: () => void
 }
 
-export function throttleWithCancel<T extends (...args: any[]) => any>(
+export function throttleWithCancel<T extends (...args: never[]) => unknown>(
   func: T,
   wait: number = 300,
   options: ThrottleOptions = {},
@@ -90,7 +91,7 @@ export function throttleWithCancel<T extends (...args: any[]) => any>(
   let timeout: ReturnType<typeof setTimeout> | null = null
   let previous = 0
   let lastArgs: Parameters<T> | null = null
-  let lastContext: any = null
+  let lastContext: unknown = null
 
   const { leading = true, trailing = true } = options
 
@@ -104,7 +105,7 @@ export function throttleWithCancel<T extends (...args: any[]) => any>(
     }
   }
 
-  const throttled = function (this: any, ...args: Parameters<T>) {
+  const throttled = function (this: unknown, ...args: Parameters<T>) {
     const now = Date.now()
 
     if (!previous && leading === false) {
@@ -112,6 +113,7 @@ export function throttleWithCancel<T extends (...args: any[]) => any>(
     }
 
     const remaining = wait - (now - previous)
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
     lastContext = this
     lastArgs = args
 

@@ -34,14 +34,22 @@
       <!-- 右侧操作 (桌面端) -->
       <div class="navbar-actions">
         <!-- 搜索按钮：跳转到搜索视图（Explore） -->
-        <button class="action-button search-button" @click="goToSearch" :aria-label="$t('search.placeholder')">
+        <button
+          class="action-button search-button"
+          @click="goToSearch"
+          :aria-label="$t('search.placeholder')"
+        >
           <Search :size="24" />
         </button>
 
         <!-- 离线队列状态按钮 -->
         <div class="queue-status-container">
-          <button class="action-button queue-button" type="button" @click="toggleQueuePanel"
-            :aria-label="$t('offline.actionsQueued')">
+          <button
+            class="action-button queue-button"
+            type="button"
+            @click="toggleQueuePanel"
+            :aria-label="$t('offline.actionsQueued')"
+          >
             <CloudOff :size="20" />
             <span v-if="queueStatus.pending > 0" class="queue-badge">
               {{ queueStatus.pending }}
@@ -64,8 +72,12 @@
                   {{ $t('offline.queueEmpty') }}
                 </p>
               </div>
-              <button class="queue-sync-button" type="button" @click="handleQueueSync"
-                :disabled="!queueStatus.pending || !isOnline || isQueueSyncing">
+              <button
+                class="queue-sync-button"
+                type="button"
+                @click="handleQueueSync"
+                :disabled="!queueStatus.pending || !isOnline || isQueueSyncing"
+              >
                 <span>{{ $t('offline.syncNow') }}</span>
               </button>
             </div>
@@ -74,7 +86,12 @@
 
         <!-- 统一设置按钮：语言/主题/布局等快捷设置（不跳转页面） -->
         <div class="settings-menu-container" ref="settingsMenuRef">
-          <button class="action-button" type="button" @click="toggleSettingsPanel" :aria-label="$t('nav.settings')">
+          <button
+            class="action-button"
+            type="button"
+            @click="toggleSettingsPanel"
+            :aria-label="$t('nav.settings')"
+          >
             <Settings :size="20" />
           </button>
 
@@ -84,8 +101,14 @@
               <div class="settings-group">
                 <div class="settings-group-title">{{ $t('settings.theme') }}</div>
                 <div class="settings-theme-options">
-                  <button v-for="option in themeOptions" :key="option.value" type="button" class="settings-theme-button"
-                    :class="{ active: theme === option.value }" @click="setTheme(option.value)">
+                  <button
+                    v-for="option in themeOptions"
+                    :key="option.value"
+                    type="button"
+                    class="settings-theme-button"
+                    :class="{ active: theme === option.value }"
+                    @click="setTheme(option.value)"
+                  >
                     <component :is="option.icon" :size="18" />
                     <span>{{ $t(`settings.${option.value}`) }}</span>
                   </button>
@@ -95,9 +118,14 @@
               <div class="settings-group">
                 <div class="settings-group-title">{{ $t('settings.language') }}</div>
                 <div class="settings-language-options">
-                  <button v-for="localeOption in localeOptions" :key="localeOption.code" type="button"
-                    class="settings-language-button" :class="{ active: locale === localeOption.code }"
-                    @click="changeLanguage(localeOption.code)">
+                  <button
+                    v-for="localeOption in localeOptions"
+                    :key="localeOption.code"
+                    type="button"
+                    class="settings-language-button"
+                    :class="{ active: locale === localeOption.code }"
+                    @click="changeLanguage(localeOption.code)"
+                  >
                     {{ localeOption.name }}
                   </button>
                 </div>
@@ -106,22 +134,47 @@
               <div class="settings-group">
                 <div class="settings-group-title">{{ $t('settings.display') }}</div>
                 <div class="settings-toggle-list">
-                  <button type="button" class="settings-toggle" :class="{ active: settings.showHeroSection }"
-                    @click="settingsStore.toggleSetting('showHeroSection')">
-                    <span class="settings-toggle-label">{{ $t('settings.toggleHeroSection') }}</span>
-                    <span class="settings-toggle-indicator" :class="{ active: settings.showHeroSection }"></span>
+                  <button
+                    type="button"
+                    class="settings-toggle"
+                    :class="{ active: settings.showHeroSection }"
+                    @click="settingsStore.toggleSetting('showHeroSection')"
+                  >
+                    <span class="settings-toggle-label">{{
+                      $t('settings.toggleHeroSection')
+                    }}</span>
+                    <span
+                      class="settings-toggle-indicator"
+                      :class="{ active: settings.showHeroSection }"
+                    ></span>
                   </button>
 
-                  <button type="button" class="settings-toggle" :class="{ active: settings.enableAnimations }"
-                    @click="settingsStore.toggleSetting('enableAnimations')">
+                  <button
+                    type="button"
+                    class="settings-toggle"
+                    :class="{ active: settings.enableAnimations }"
+                    @click="settingsStore.toggleSetting('enableAnimations')"
+                  >
                     <span class="settings-toggle-label">{{ $t('settings.toggleAnimations') }}</span>
-                    <span class="settings-toggle-indicator" :class="{ active: settings.enableAnimations }"></span>
+                    <span
+                      class="settings-toggle-indicator"
+                      :class="{ active: settings.enableAnimations }"
+                    ></span>
                   </button>
 
-                  <button type="button" class="settings-toggle" :class="{ active: settings.enableSwipeNavigation }"
-                    @click="settingsStore.toggleSetting('enableSwipeNavigation')">
-                    <span class="settings-toggle-label">{{ $t('settings.toggleSwipeNavigation') }}</span>
-                    <span class="settings-toggle-indicator" :class="{ active: settings.enableSwipeNavigation }"></span>
+                  <button
+                    type="button"
+                    class="settings-toggle"
+                    :class="{ active: settings.enableSwipeNavigation }"
+                    @click="settingsStore.toggleSetting('enableSwipeNavigation')"
+                  >
+                    <span class="settings-toggle-label">{{
+                      $t('settings.toggleSwipeNavigation')
+                    }}</span>
+                    <span
+                      class="settings-toggle-indicator"
+                      :class="{ active: settings.enableSwipeNavigation }"
+                    ></span>
                   </button>
                 </div>
               </div>
@@ -191,20 +244,32 @@
           <Search :size="24" />
         </button>
 
-        <button class="action-button queue-button" type="button" @click="toggleQueuePanel"
-          :aria-label="$t('offline.actionsQueued')">
+        <button
+          class="action-button queue-button"
+          type="button"
+          @click="toggleQueuePanel"
+          :aria-label="$t('offline.actionsQueued')"
+        >
           <CloudOff :size="20" />
           <span v-if="queueStatus.pending > 0" class="queue-badge">
             {{ queueStatus.pending }}
           </span>
         </button>
 
-        <button class="action-button settings-menu-container" type="button" @click="toggleSettingsPanel"
-          :aria-label="$t('nav.settings')">
+        <button
+          class="action-button settings-menu-container"
+          type="button"
+          @click="toggleSettingsPanel"
+          :aria-label="$t('nav.settings')"
+        >
           <Settings :size="20" />
         </button>
 
-        <button v-if="isAuthenticated" class="action-button mobile-user-trigger" @click="showUserMenu = !showUserMenu">
+        <button
+          v-if="isAuthenticated"
+          class="action-button mobile-user-trigger"
+          @click="showUserMenu = !showUserMenu"
+        >
           <img :src="userAvatarUrl" :alt="user?.username" class="mobile-avatar" />
         </button>
 
@@ -245,7 +310,11 @@
 
   <!-- 用户菜单弹出层（仅移动端） -->
   <Transition name="modal">
-    <div v-if="showUserMenu && isAuthenticated && isMobile" class="mobile-user-modal" @click="showUserMenu = false">
+    <div
+      v-if="showUserMenu && isAuthenticated && isMobile"
+      class="mobile-user-modal"
+      @click="showUserMenu = false"
+    >
       <div class="mobile-user-content glass-card" @click.stop>
         <div class="mobile-user-header">
           <div class="user-avatar-large">
@@ -281,7 +350,6 @@
   </Transition>
 
   <!-- 全局设置面板结束 -->
-
 </template>
 
 <script setup lang="ts">
@@ -392,10 +460,7 @@ interface BottomNavItem {
 }
 
 const bottomNavItems = computed<BottomNavItem[]>(() => {
-  const items: BottomNavItem[] = [
-    { path: '/' },
-    { path: '/explore' },
-  ]
+  const items: BottomNavItem[] = [{ path: '/' }, { path: '/explore' }]
 
   if (isAuthenticated.value) {
     items.push({ path: '/favorites', requiresAuth: true })
@@ -425,9 +490,9 @@ const setTheme = (newTheme: Theme) => {
   themeStore.setTheme(newTheme)
 }
 
-const changeLanguage = (newLocale: string) => {
-  locale.value = newLocale
-  localStorage.setItem('locale', newLocale)
+const changeLanguage = async (newLocale: string) => {
+  const { changeLocale } = await import('@/composables/useI18nOptimized')
+  await changeLocale(newLocale as 'en' | 'zh' | 'ja')
 }
 
 // 全局滑动切换主页面（仅移动端）
@@ -522,7 +587,12 @@ const handleClickOutside = (event: MouseEvent) => {
   const inMobileUserTrigger = target.closest('.mobile-user-trigger')
   const inMobileUserModal = target.closest('.mobile-user-modal')
 
-  if (userMenuRef.value && !userMenuRef.value.contains(target) && !inMobileUserTrigger && !inMobileUserModal) {
+  if (
+    userMenuRef.value &&
+    !userMenuRef.value.contains(target) &&
+    !inMobileUserTrigger &&
+    !inMobileUserModal
+  ) {
     showUserMenu.value = false
   }
 
@@ -709,6 +779,19 @@ onUnmounted(() => {
   aspect-ratio: 1 / 1;
 }
 
+/* 移动端增加触摸目标尺寸 */
+@media (max-width: 768px) {
+  .navbar-actions .action-button,
+  .mobile-top-actions .action-button {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    max-width: 44px;
+    max-height: 44px;
+  }
+}
+
 /* 确保SVG图标尺寸正确 */
 .navbar-actions .action-button svg,
 .mobile-top-actions .action-button svg {
@@ -751,6 +834,18 @@ onUnmounted(() => {
   padding: 0;
   flex-shrink: 0;
   aspect-ratio: 1 / 1;
+}
+
+/* 移动端增加触摸目标尺寸 */
+@media (max-width: 768px) {
+  .navbar-actions .user-avatar-button {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    max-width: 44px;
+    max-height: 44px;
+  }
 }
 
 .user-avatar-button:hover {
@@ -1119,7 +1214,6 @@ onUnmounted(() => {
 
 /* ==================== 响应式设计 (<768px) ==================== */
 @media (max-width: 768px) {
-
   /* 隐藏桌面端导航栏 */
   .desktop-nav {
     display: none;
@@ -1178,9 +1272,11 @@ onUnmounted(() => {
     backdrop-filter: var(--glass-blur);
     border-top: 1px solid var(--glass-border);
     padding: var(--spacing-2) var(--spacing-1);
+    padding-bottom: calc(var(--spacing-2) + env(safe-area-inset-bottom));
     justify-content: space-around;
     align-items: center;
     box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
+    min-height: 64px;
   }
 
   .bottom-nav-item {
@@ -1198,10 +1294,16 @@ onUnmounted(() => {
     transition: all var(--transition-fast);
     flex: 1;
     max-width: 80px;
+    min-width: 44px;
+    min-height: 44px;
+    /* 添加触摸优化 */
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
   }
 
   .bottom-nav-item:active {
     transform: scale(0.95);
+    opacity: 0.8;
   }
 
   .bottom-nav-item.router-link-active {

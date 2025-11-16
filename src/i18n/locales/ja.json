@@ -147,7 +147,10 @@
     "toggleTheme": "テーマ切り替え",
     "toggleHeroSection": "ホームのヒーローバナーを切り替え",
     "toggleAnimations": "アニメーションを切り替え",
-    "toggleSwipeNavigation": "スワイプナビゲーションを切り替え"
+    "toggleSwipeNavigation": "スワイプナビゲーションを切り替え",
+    "saving": "保存中...",
+    "saved": "保存済み",
+    "saveFailed": "保存失敗"
   },
   "common": {
     "loading": "読み込み中...",

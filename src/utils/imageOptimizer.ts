@@ -128,6 +128,7 @@ export function generatePlaceholder(url: string): string {
 
 /**
  * 预加载关键图片
+ * 使用 <link rel="preload"> 标签预加载
  */
 export function preloadImage(url: string, as: 'image' = 'image'): void {
   if (typeof window === 'undefined') return
@@ -146,18 +147,145 @@ export function preloadImage(url: string, as: 'image' = 'image'): void {
 
 /**
  * 批量预加载图片
+ * 使用 Image 对象预加载，支持进度回调
  */
-export function preloadImages(urls: string[]): Promise<void[]> {
+export function preloadImages(
+  urls: string[],
+  onProgress?: (loaded: number, total: number) => void,
+): Promise<void[]> {
+  let loadedCount = 0
+  const total = urls.length
+
   return Promise.all(
     urls.map((url) => {
       return new Promise<void>((resolve, reject) => {
         const img = new Image()
-        img.onload = () => resolve()
-        img.onerror = () => reject(new Error(`Failed to load image: ${url}`))
+
+        img.onload = () => {
+          loadedCount++
+          if (onProgress) {
+            onProgress(loadedCount, total)
+          }
+          resolve()
+        }
+
+        img.onerror = () => {
+          loadedCount++
+          if (onProgress) {
+            onProgress(loadedCount, total)
+          }
+          reject(new Error(`Failed to load image: ${url}`))
+        }
+
         img.src = url
       })
     }),
   )
+}
+
+/**
+ * 智能预加载：根据网络状况和设备性能决定是否预加载
+ */
+export function smartPreloadImages(
+  urls: string[],
+  options: {
+    priority?: 'high' | 'low'
+    maxConcurrent?: number
+    onProgress?: (loaded: number, total: number) => void
+  } = {},
+): Promise<void> {
+  const { priority = 'low', maxConcurrent = 3, onProgress } = options
+
+  // 检查网络连接
+  interface NetworkInformation {
+    effectiveType?: string
+    saveData?: boolean
+  }
+
+  if ('connection' in navigator) {
+    const conn = (navigator as { connection?: NetworkInformation }).connection
+    // 如果是慢速网络或启用了数据节省模式，跳过预加载
+    if (conn?.saveData || conn?.effectiveType === 'slow-2g' || conn?.effectiveType === '2g') {
+      console.log('[SmartPreload] Skipping preload due to network conditions')
+      return Promise.resolve()
+    }
+  }
+
+  // 分批预加载
+  const batches: string[][] = []
+  for (let i = 0; i < urls.length; i += maxConcurrent) {
+    batches.push(urls.slice(i, i + maxConcurrent))
+  }
+
+  let loadedCount = 0
+  const total = urls.length
+
+  const preloadBatch = async (batch: string[]) => {
+    await Promise.allSettled(
+      batch.map((url) => {
+        return new Promise<void>((resolve, reject) => {
+          const img = new Image()
+
+          img.onload = () => {
+            loadedCount++
+            if (onProgress) {
+              onProgress(loadedCount, total)
+            }
+            resolve()
+          }
+
+          img.onerror = () => {
+            loadedCount++
+            if (onProgress) {
+              onProgress(loadedCount, total)
+            }
+            reject(new Error(`Failed to load image: ${url}`))
+          }
+
+          img.src = url
+        })
+      }),
+    )
+  }
+
+  // 根据优先级决定预加载策略
+  if (priority === 'high') {
+    // 高优先级：立即预加载所有批次
+    return Promise.all(batches.map(preloadBatch)).then(() => {})
+  } else {
+    // 低优先级：使用 requestIdleCallback 在空闲时预加载
+    return new Promise((resolve) => {
+      let currentBatch = 0
+
+      const preloadNextBatch = () => {
+        if (currentBatch >= batches.length) {
+          resolve()
+          return
+        }
+
+        const batch = batches[currentBatch]
+        if (!batch) {
+          resolve()
+          return
+        }
+
+        preloadBatch(batch).then(() => {
+          currentBatch++
+          if ('requestIdleCallback' in window) {
+            requestIdleCallback(() => preloadNextBatch(), { timeout: 2000 })
+          } else {
+            setTimeout(preloadNextBatch, 100)
+          }
+        })
+      }
+
+      if ('requestIdleCallback' in window) {
+        requestIdleCallback(() => preloadNextBatch(), { timeout: 2000 })
+      } else {
+        setTimeout(preloadNextBatch, 100)
+      }
+    })
+  }
 }
 
 /**

@@ -11,7 +11,7 @@ interface CacheConfig {
   force?: boolean // 强制刷新
 }
 
-interface CacheItem<T = any> {
+interface CacheItem<T = unknown> {
   data: T
   timestamp: number
   ttl: number
@@ -22,12 +22,12 @@ class RequestCache {
   private cache = new Map<string, CacheItem>()
 
   // 进行中的请求 (去重)
-  private pending = new Map<string, Promise<any>>()
+  private pending = new Map<string, Promise<unknown>>()
 
   /**
    * 生成缓存键
    */
-  private getCacheKey(url: string, params?: any): string {
+  private getCacheKey(url: string, params?: Record<string, unknown>): string {
     const paramStr = params ? JSON.stringify(params) : ''
     return `${url}${paramStr}`
   }
@@ -43,7 +43,7 @@ class RequestCache {
   /**
    * 获取缓存
    */
-  get<T = any>(url: string, params?: any): T | null {
+  get<T = unknown>(url: string, params?: Record<string, unknown>): T | null {
     const key = this.getCacheKey(url, params)
     const item = this.cache.get(key)
 
@@ -61,7 +61,12 @@ class RequestCache {
   /**
    * 设置缓存
    */
-  set<T = any>(url: string, data: T, params?: any, ttl = 5 * 60 * 1000): void {
+  set<T = unknown>(
+    url: string,
+    data: T,
+    params?: Record<string, unknown>,
+    ttl = 5 * 60 * 1000,
+  ): void {
     const key = this.getCacheKey(url, params)
     this.cache.set(key, {
       data,
@@ -74,7 +79,7 @@ class RequestCache {
   /**
    * 清除缓存
    */
-  clear(url?: string, params?: any): void {
+  clear(url?: string, params?: Record<string, unknown>): void {
     if (url) {
       const key = this.getCacheKey(url, params)
       this.cache.delete(key)
@@ -105,7 +110,7 @@ class RequestCache {
    * 请求去重包装器
    * 相同的请求只会发送一次，其他请求等待结果
    */
-  async dedupe<T = any>(
+  async dedupe<T = unknown>(
     key: string,
     requestFn: () => Promise<T>,
     config: CacheConfig = {},

@@ -1,11 +1,15 @@
 /**
  * 用户设置状态管理
  * 支持 localStorage 和服务器同步
+ * v2.0 - 增强错误处理：使用统一的错误处理机制
  */
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { useAuthStore } from './auth'
 import { api } from '@/api/client'
+import { handleError } from '@/utils/errorHandler'
+import { useToastStore } from './toast'
+import logger from '@/utils/logger'
 
 export interface UserSettings {
   // 显示设置
@@ -51,64 +55,110 @@ const DEFAULT_SETTINGS: UserSettings = {
 }
 
 export const useSettingsStore = defineStore('settings', () => {
-  // 状态
+  // 设置日志上下文
+  const logContext = { category: 'SettingsStore' }
+
+  // ==================== 状态 ====================
   const settings = ref<UserSettings>({ ...DEFAULT_SETTINGS })
   const syncing = ref(false)
   const lastSyncedAt = ref<Date | null>(null)
+  const error = ref<string | null>(null)
 
-  // 初始化设置（从localStorage加载）
+  // ==================== Actions ====================
+
+  /**
+   * 初始化设置（从localStorage加载）
+   */
   function initSettings() {
-    const saved = localStorage.getItem('user-settings')
-    if (saved) {
-      try {
+    try {
+      const saved = localStorage.getItem('user-settings')
+      if (saved) {
         const parsed = JSON.parse(saved)
         settings.value = { ...DEFAULT_SETTINGS, ...parsed }
-      } catch (e) {
-        console.error('Failed to parse user settings:', e)
-        settings.value = { ...DEFAULT_SETTINGS }
+        logger.debug('Settings loaded from localStorage', logContext)
+      } else {
+        logger.debug('Using default settings', logContext)
       }
+    } catch (err) {
+      logger.error('Failed to parse user settings', {
+        ...logContext,
+        error: err instanceof Error ? err.message : 'Unknown error',
+      })
+      settings.value = { ...DEFAULT_SETTINGS }
     }
   }
 
-  // 保存设置到localStorage
+  /**
+   * 保存设置到localStorage
+   */
   function saveSettings() {
-    localStorage.setItem('user-settings', JSON.stringify(settings.value))
+    try {
+      localStorage.setItem('user-settings', JSON.stringify(settings.value))
+      logger.debug('Settings saved to localStorage', logContext)
+    } catch (err) {
+      logger.error('Failed to save settings to localStorage', {
+        ...logContext,
+        error: err instanceof Error ? err.message : 'Unknown error',
+      })
+    }
   }
 
-  // 同步到服务器
+  /**
+   * 同步到服务器
+   */
   async function syncToServer() {
     const authStore = useAuthStore()
+    const toastStore = useToastStore()
+
     if (!authStore.isAuthenticated) {
+      logger.warn('Cannot sync to server: user not authenticated', logContext)
       return false
     }
 
     try {
       syncing.value = true
+      error.value = null
+
       const { enableSwipeNavigation, ...serverSettings } = settings.value
       void enableSwipeNavigation // excluded from server payload but kept for type safety
+
       await api.patch('/preferences', serverSettings)
       lastSyncedAt.value = new Date()
+
+      logger.info('Settings synced to server successfully', logContext)
       return true
-    } catch (error) {
-      console.error('Failed to sync settings to server:', error)
+    } catch (err) {
+      const errorResponse = handleError(err, 'SettingsStore.SyncToServer', {
+        silent: true, // Don't show toast here, we'll handle it below
+      })
+      error.value = errorResponse.message
+      toastStore.error('Failed to sync settings to server', 'Settings')
       return false
     } finally {
       syncing.value = false
     }
   }
 
-  // 从服务器加载设置
+  /**
+   * 从服务器加载设置
+   */
   async function loadFromServer() {
     const authStore = useAuthStore()
+    const toastStore = useToastStore()
+
     if (!authStore.isAuthenticated) {
+      logger.warn('Cannot load from server: user not authenticated', logContext)
       return false
     }
 
     try {
       syncing.value = true
+      error.value = null
+
       const data = await api.get<Partial<UserSettings> & { updatedAt?: string }>('/preferences', {
         cache: false,
       })
+
       if (data) {
         settings.value = { ...DEFAULT_SETTINGS, ...data }
         saveSettings()
@@ -117,64 +167,121 @@ export const useSettingsStore = defineStore('settings', () => {
         } else {
           lastSyncedAt.value = new Date()
         }
+        logger.info('Settings loaded from server successfully', logContext)
         return true
       }
       return false
-    } catch (error) {
-      console.error('Failed to load settings from server:', error)
+    } catch (err) {
+      const errorResponse = handleError(err, 'SettingsStore.LoadFromServer', {
+        silent: true, // Don't show toast here, we'll handle it below
+      })
+      error.value = errorResponse.message
+      toastStore.warning('Failed to load settings from server, using local settings', 'Settings')
       return false
     } finally {
       syncing.value = false
     }
   }
 
-  // 更新单个设置
+  /**
+   * 更新单个设置
+   */
   async function updateSetting<K extends keyof UserSettings>(key: K, value: UserSettings[K]) {
-    settings.value[key] = value
-    saveSettings()
-
-    // 如果已登录，同步到服务器
-    const authStore = useAuthStore()
-    if (authStore.isAuthenticated) {
-      await syncToServer()
-    }
-  }
-
-  // 切换布尔值设置
-  async function toggleSetting(key: keyof UserSettings) {
-    const currentValue = settings.value[key]
-    if (typeof currentValue === 'boolean') {
-      ;(settings.value[key] as boolean) = !currentValue
+    try {
+      settings.value[key] = value
       saveSettings()
+
+      logger.debug('Setting updated', { ...logContext, key, value })
 
       // 如果已登录，同步到服务器
       const authStore = useAuthStore()
       if (authStore.isAuthenticated) {
         await syncToServer()
       }
+    } catch (err) {
+      logger.error('Failed to update setting', {
+        ...logContext,
+        key,
+        error: err instanceof Error ? err.message : 'Unknown error',
+      })
     }
   }
 
-  // 重置所有设置
+  /**
+   * 切换布尔值设置
+   */
+  async function toggleSetting(key: keyof UserSettings) {
+    try {
+      const currentValue = settings.value[key]
+      if (typeof currentValue === 'boolean') {
+        ;(settings.value[key] as boolean) = !currentValue
+        saveSettings()
+
+        logger.debug('Setting toggled', { ...logContext, key, value: settings.value[key] })
+
+        // 如果已登录，同步到服务器
+        const authStore = useAuthStore()
+        if (authStore.isAuthenticated) {
+          await syncToServer()
+        }
+      }
+    } catch (err) {
+      logger.error('Failed to toggle setting', {
+        ...logContext,
+        key,
+        error: err instanceof Error ? err.message : 'Unknown error',
+      })
+    }
+  }
+
+  /**
+   * 重置所有设置
+   */
   function resetSettings() {
-    settings.value = { ...DEFAULT_SETTINGS }
-    saveSettings()
+    try {
+      settings.value = { ...DEFAULT_SETTINGS }
+      saveSettings()
+      logger.info('Settings reset to defaults', logContext)
+    } catch (err) {
+      logger.error('Failed to reset settings', {
+        ...logContext,
+        error: err instanceof Error ? err.message : 'Unknown error',
+      })
+    }
   }
 
-  // 导出设置
+  /**
+   * 导出设置
+   */
   function exportSettings() {
-    return JSON.stringify(settings.value, null, 2)
+    try {
+      const exported = JSON.stringify(settings.value, null, 2)
+      logger.debug('Settings exported', logContext)
+      return exported
+    } catch (err) {
+      logger.error('Failed to export settings', {
+        ...logContext,
+        error: err instanceof Error ? err.message : 'Unknown error',
+      })
+      return '{}'
+    }
   }
 
-  // 导入设置
+  /**
+   * 导入设置
+   */
   function importSettings(settingsJson: string) {
     try {
       const imported = JSON.parse(settingsJson)
       settings.value = { ...DEFAULT_SETTINGS, ...imported }
       saveSettings()
+      logger.info('Settings imported successfully', logContext)
       return true
-    } catch (e) {
-      console.error('Failed to import settings:', e)
+    } catch (err) {
+      logger.error('Failed to import settings', {
+        ...logContext,
+        error: err instanceof Error ? err.message : 'Unknown error',
+      })
       return false
     }
   }
@@ -183,6 +290,7 @@ export const useSettingsStore = defineStore('settings', () => {
     settings,
     syncing,
     lastSyncedAt,
+    error,
     initSettings,
     updateSetting,
     toggleSetting,
