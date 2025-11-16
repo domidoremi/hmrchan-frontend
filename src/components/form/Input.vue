@@ -16,9 +16,22 @@
       <span v-if="prefix" class="input-prefix">{{ prefix }}</span>
 
       <!-- Input Element -->
-      <input :id="inputId" :type="type" :value="modelValue" :placeholder="placeholder" :disabled="disabled"
-        :readonly="readonly" :maxlength="maxLength" :class="inputClass" v-bind="$attrs" @input="handleInput"
-        @focus="handleFocus" @blur="handleBlur" />
+      <input
+        :id="inputId"
+        :type="type"
+        :value="modelValue"
+        :placeholder="placeholder"
+        :disabled="disabled"
+        :readonly="readonly"
+        :maxlength="maxLength"
+        :class="inputClass"
+        :aria-invalid="!!error"
+        :aria-describedby="error ? `${inputId}-error` : hint ? `${inputId}-hint` : undefined"
+        v-bind="$attrs"
+        @input="handleInput"
+        @focus="handleFocus"
+        @blur="handleBlur"
+      />
 
       <!-- Suffix Text -->
       <span v-if="suffix" class="input-suffix-text">{{ suffix }}</span>
@@ -29,10 +42,24 @@
       </span>
 
       <!-- Clear Button -->
-      <button v-if="clearable && modelValue && !disabled && !readonly" type="button" class="input-clear"
-        @click="handleClear" aria-label="Clear input">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <button
+        v-if="clearable && modelValue && !disabled && !readonly"
+        type="button"
+        class="input-clear"
+        @click="handleClear"
+        aria-label="Clear input"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
           <circle cx="12" cy="12" r="10" />
           <path d="m15 9-6 6" />
           <path d="m9 9 6 6" />
@@ -46,13 +73,29 @@
     </div>
 
     <!-- Hint Text -->
-    <div v-if="hint && !error" class="input-hint">
+    <div v-if="hint && !error" :id="`${inputId}-hint`" class="input-hint">
       {{ hint }}
     </div>
 
     <!-- Error Message -->
-    <div v-if="error" class="input-error">
-      {{ error }}
+    <div v-if="error" :id="`${inputId}-error`" class="input-error" role="alert">
+      <svg
+        class="error-icon"
+        xmlns="http://www.w3.org/2000/svg"
+        width="14"
+        height="14"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <circle cx="12" cy="12" r="10" />
+        <line x1="12" y1="8" x2="12" y2="12" />
+        <line x1="12" y1="16" x2="12.01" y2="16" />
+      </svg>
+      <span>{{ error }}</span>
     </div>
   </div>
 </template>
@@ -358,10 +401,33 @@ const handleClear = () => {
 
 /* Error Message */
 .input-error {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-1);
   font-size: var(--text-xs);
   color: var(--color-error);
   line-height: var(--line-normal);
   font-weight: var(--font-medium);
+}
+
+.error-icon {
+  flex-shrink: 0;
+  animation: errorShake 0.4s ease-in-out;
+}
+
+@keyframes errorShake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  25% {
+    transform: translateX(-4px);
+  }
+
+  75% {
+    transform: translateX(4px);
+  }
 }
 
 /* Responsive adjustments */

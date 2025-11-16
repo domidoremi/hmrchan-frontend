@@ -6,6 +6,59 @@
         <p class="page-subtitle">
           {{ isAuthenticated ? $t('settings.welcomeBack') : $t('settings.welcome') }}
         </p>
+
+        <!-- Auto-save Status Indicator -->
+        <Transition name="fade">
+          <div
+            v-if="autoSaveStatus !== 'idle'"
+            class="save-status"
+            :class="`status-${autoSaveStatus}`"
+          >
+            <span v-if="autoSaveStatus === 'saving'" class="status-icon spinner-small"></span>
+            <svg
+              v-else-if="autoSaveStatus === 'saved'"
+              class="status-icon"
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+            <svg
+              v-else-if="autoSaveStatus === 'error'"
+              class="status-icon"
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+
+            <span class="status-text">
+              {{
+                autoSaveStatus === 'saving'
+                  ? $t('settings.saving')
+                  : autoSaveStatus === 'saved'
+                    ? $t('settings.saved')
+                    : $t('settings.saveFailed')
+              }}
+            </span>
+          </div>
+        </Transition>
       </div>
 
       <div class="settings-grid">
@@ -77,7 +130,7 @@
                 <button
                   class="toggle-switch"
                   :class="{ active: settingsStore.settings.showHeroSection }"
-                  @click="settingsStore.toggleSetting('showHeroSection')"
+                  @click="handleToggleSetting('showHeroSection')"
                   role="switch"
                   :aria-checked="settingsStore.settings.showHeroSection ? 'true' : 'false'"
                   :aria-label="$t('settings.showHeroSection')"
@@ -89,12 +142,14 @@
               <div class="setting-row">
                 <div class="setting-info">
                   <div class="setting-label">{{ $t('preferences.enableAnimations') }}</div>
-                  <div class="setting-description">{{ $t('preferences.enableAnimationsDesc') }}</div>
+                  <div class="setting-description">
+                    {{ $t('preferences.enableAnimationsDesc') }}
+                  </div>
                 </div>
                 <button
                   class="toggle-switch"
                   :class="{ active: settingsStore.settings.enableAnimations }"
-                  @click="settingsStore.toggleSetting('enableAnimations')"
+                  @click="handleToggleSetting('enableAnimations')"
                   role="switch"
                   :aria-checked="settingsStore.settings.enableAnimations ? 'true' : 'false'"
                   :aria-label="$t('preferences.enableAnimations')"
@@ -112,7 +167,7 @@
                   class="select-input"
                   :value="settingsStore.settings.postsPerPage"
                   @change="
-                    settingsStore.updateSetting(
+                    handleUpdateSetting(
                       'postsPerPage',
                       parseInt(($event.target as HTMLSelectElement).value),
                     )
@@ -143,7 +198,7 @@
                 <button
                   class="toggle-switch"
                   :class="{ active: settingsStore.settings.autoPlayVideos }"
-                  @click="settingsStore.toggleSetting('autoPlayVideos')"
+                  @click="handleToggleSetting('autoPlayVideos')"
                   role="switch"
                   :aria-checked="settingsStore.settings.autoPlayVideos ? 'true' : 'false'"
                   :aria-label="$t('preferences.autoPlayVideos')"
@@ -155,12 +210,14 @@
               <div class="setting-row">
                 <div class="setting-info">
                   <div class="setting-label">{{ $t('preferences.showImagePreviews') }}</div>
-                  <div class="setting-description">{{ $t('preferences.showImagePreviewsDesc') }}</div>
+                  <div class="setting-description">
+                    {{ $t('preferences.showImagePreviewsDesc') }}
+                  </div>
                 </div>
                 <button
                   class="toggle-switch"
                   :class="{ active: settingsStore.settings.showImagePreviews }"
-                  @click="settingsStore.toggleSetting('showImagePreviews')"
+                  @click="handleToggleSetting('showImagePreviews')"
                   role="switch"
                   :aria-checked="settingsStore.settings.showImagePreviews ? 'true' : 'false'"
                   :aria-label="$t('preferences.showImagePreviews')"
@@ -211,8 +268,9 @@
                   {{ $t('settings.manageProfile') }}
                 </RouterLink>
 
-                <button class="text-button danger" @click="handleLogout">
-                  <LogOut :size="18" />
+                <button class="text-button danger" @click="handleLogout" :disabled="loggingOut">
+                  <span v-if="loggingOut" class="spinner-small"></span>
+                  <LogOut v-else :size="18" />
                   {{ $t('nav.logout') }}
                 </button>
               </div>
@@ -275,16 +333,46 @@ import CacheManagement from '@/components/business/CacheManagement.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useThemeStore } from '@/stores/theme'
 import { useSettingsStore } from '@/stores/settings'
+import { useToastStore } from '@/stores/toast'
+import { useAutoSave } from '@/composables/useAutoSave'
 import type { Theme } from '@/types'
+import logger from '@/utils/logger'
 
 const router = useRouter()
-const { locale } = useI18n()
+const { locale, t } = useI18n()
 const authStore = useAuthStore()
 const themeStore = useThemeStore()
 const settingsStore = useSettingsStore()
+const toastStore = useToastStore()
 
 const { user, isAuthenticated } = storeToRefs(authStore)
 const { theme } = storeToRefs(themeStore)
+
+// Loading states
+const changingTheme = ref(false)
+const changingLanguage = ref(false)
+const loggingOut = ref(false)
+
+// Auto-save for settings
+const settingsData = computed(() => settingsStore.settings)
+const { status: autoSaveStatus } = useAutoSave(
+  settingsData,
+  async (data) => {
+    // Settings are automatically persisted by Pinia plugin
+    // This is just for showing save status to user
+    logger.debug('Settings auto-saved', { data })
+  },
+  {
+    delay: 1500,
+    enabled: true,
+    onSuccess: () => {
+      logger.info('Settings auto-saved successfully')
+    },
+    onError: (error) => {
+      logger.error('Failed to auto-save settings', { error })
+    },
+  },
+)
 
 const themeOptions = [
   { value: 'light' as Theme, icon: Sun },
@@ -298,18 +386,70 @@ const localeOptions = [
   { code: 'ja', name: '日本語' },
 ]
 
-const setTheme = (newTheme: Theme) => {
-  themeStore.setTheme(newTheme)
+const setTheme = async (newTheme: Theme) => {
+  changingTheme.value = true
+  try {
+    themeStore.setTheme(newTheme)
+    toastStore.success(t('settings.themeChanged', 'Theme changed successfully'))
+    logger.info('Theme changed', { theme: newTheme })
+  } catch (error) {
+    toastStore.error(t('settings.themeChangeFailed', 'Failed to change theme'))
+    logger.error('Failed to change theme', { error })
+  } finally {
+    changingTheme.value = false
+  }
 }
 
-const changeLanguage = (newLocale: string) => {
-  locale.value = newLocale
-  localStorage.setItem('locale', newLocale)
+const changeLanguage = async (newLocale: string) => {
+  changingLanguage.value = true
+  try {
+    locale.value = newLocale
+    localStorage.setItem('locale', newLocale)
+    toastStore.success(t('settings.languageChanged', 'Language changed successfully'))
+    logger.info('Language changed', { locale: newLocale })
+  } catch (error) {
+    toastStore.error(t('settings.languageChangeFailed', 'Failed to change language'))
+    logger.error('Failed to change language', { error })
+  } finally {
+    changingLanguage.value = false
+  }
 }
 
-const handleLogout = () => {
-  authStore.logout()
-  router.push('/')
+const handleLogout = async () => {
+  loggingOut.value = true
+  try {
+    authStore.logout()
+    toastStore.success(t('auth.logoutSuccess', 'Logged out successfully'))
+    logger.info('User logged out')
+    await router.push('/')
+  } catch (error) {
+    toastStore.error(t('auth.logoutFailed', 'Failed to logout'))
+    logger.error('Failed to logout', { error })
+  } finally {
+    loggingOut.value = false
+  }
+}
+
+const handleToggleSetting = async (key: string) => {
+  try {
+    settingsStore.toggleSetting(key)
+    toastStore.success(t('settings.settingUpdated', 'Setting updated successfully'))
+    logger.debug('Setting toggled', { key, value: settingsStore.settings[key] })
+  } catch (error) {
+    toastStore.error(t('settings.settingUpdateFailed', 'Failed to update setting'))
+    logger.error('Failed to toggle setting', { key, error })
+  }
+}
+
+const handleUpdateSetting = async (key: string, value: unknown) => {
+  try {
+    settingsStore.updateSetting(key, value)
+    toastStore.success(t('settings.settingUpdated', 'Setting updated successfully'))
+    logger.debug('Setting updated', { key, value })
+  } catch (error) {
+    toastStore.error(t('settings.settingUpdateFailed', 'Failed to update setting'))
+    logger.error('Failed to update setting', { key, value, error })
+  }
 }
 </script>
 
@@ -323,6 +463,7 @@ const handleLogout = () => {
 .settings-header {
   margin-bottom: var(--spacing-8);
   text-align: center;
+  position: relative;
 }
 
 .page-title {
@@ -335,6 +476,53 @@ const handleLogout = () => {
 .page-subtitle {
   font-size: var(--text-lg);
   color: var(--color-text-secondary);
+}
+
+/* Save Status Indicator */
+.save-status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  margin-top: var(--spacing-3);
+  padding: var(--spacing-2) var(--spacing-4);
+  border-radius: var(--radius-full);
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  transition: all var(--transition-fast);
+}
+
+.save-status.status-saving {
+  background: rgba(59, 130, 246, 0.1);
+  color: var(--color-info);
+}
+
+.save-status.status-saved {
+  background: rgba(16, 185, 129, 0.1);
+  color: var(--color-success);
+}
+
+.save-status.status-error {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--color-error);
+}
+
+.status-icon {
+  flex-shrink: 0;
+}
+
+.status-text {
+  line-height: 1;
+}
+
+/* Fade Transition */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity var(--transition-fast);
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 
 .settings-grid {
@@ -467,9 +655,11 @@ const handleLogout = () => {
   position: relative;
   width: 52px;
   height: 28px;
-  min-width: 52px; /* 防止被压缩 */
+  min-width: 52px;
+  /* 防止被压缩 */
   min-height: 28px;
-  max-width: 52px; /* 防止被拉伸 */
+  max-width: 52px;
+  /* 防止被拉伸 */
   max-height: 28px;
   border-radius: 14px;
   background: var(--glass-border);
@@ -626,6 +816,23 @@ const handleLogout = () => {
   display: flex;
   gap: var(--spacing-3);
   margin-top: var(--spacing-2);
+}
+
+/* Loading Spinner */
+.spinner-small {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Responsive */

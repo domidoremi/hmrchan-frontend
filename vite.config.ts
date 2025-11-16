@@ -23,20 +23,44 @@ export default defineConfig(({ mode }) => ({
   },
   // 依赖优化
   optimizeDeps: {
-    include: ['vue', 'vue-router', 'pinia', 'axios', 'dayjs', 'vue-i18n', '@vueuse/core'],
-    exclude: ['vite-plugin-vue-devtools'],
+    // 精确指定需要预构建的核心依赖
+    include: [
+      'vue',
+      'vue-router',
+      'pinia',
+      'pinia-plugin-persistedstate',
+      'axios',
+      'dayjs',
+      'vue-i18n',
+      '@vueuse/core',
+      '@vueuse/shared',
+      'gsap',
+    ],
+    // 排除不需要预构建的依赖
+    exclude: [
+      'vite-plugin-vue-devtools',
+      'lucide-vue-next', // 图标库按需加载，不预构建
+      'plyr', // 媒体播放器按需加载
+      'masonry-layout', // 瀑布流布局按需加载
+    ],
+    // 强制预构建，避免二次预构建
+    force: false,
+    // 优化依赖扫描
+    entries: ['./src/main.ts', './src/views/HomePage.vue', './src/views/ExplorePage.vue'],
   },
   build: {
     // 生产环境优化
     target: 'esnext',
     minify: mode === 'production' ? 'esbuild' : false,
-    sourcemap: false,
+    sourcemap: false, // 禁用 sourcemap 以加快构建速度
     // 移除 console 和 debugger
     ...(mode === 'production' && {
       esbuildOptions: {
         drop: ['console', 'debugger'],
         legalComments: 'none', // 移除注释
         treeShaking: true,
+        // 优化构建性能
+        logLevel: 'error', // 减少日志输出
       },
     }),
     // 代码分割
@@ -44,67 +68,136 @@ export default defineConfig(({ mode }) => ({
       output: {
         manualChunks(id) {
           if (id.includes('node_modules')) {
-            // Vue核心库（最高优先级，最常用）
-            if (
-              id.includes('@vue/runtime') ||
-              id.includes('@vue/reactivity') ||
-              id.includes('@vue/shared')
-            ) {
-              return 'vue-core'
+            // ========== 核心库分割（最高优先级） ==========
+            // Vue 核心运行时 - 最常用，单独分割
+            if (id.includes('@vue/runtime-dom') || id.includes('@vue/runtime-core')) {
+              return 'vue-runtime'
             }
-            // Pinia 和 Router（高优先级）
-            if (id.includes('pinia') || id.includes('vue-router')) {
-              return 'vue-vendor'
+            // Vue 响应式系统 - 独立分割以便缓存
+            if (id.includes('@vue/reactivity')) {
+              return 'vue-reactivity'
             }
-            // 图标库单独分割（按需加载，体积大）
+            // Vue 共享工具
+            if (id.includes('@vue/shared')) {
+              return 'vue-shared'
+            }
+
+            // ========== 路由和状态管理（高优先级） ==========
+            // Vue Router - 路由系统
+            if (id.includes('vue-router')) {
+              return 'vue-router'
+            }
+            // Pinia - 状态管理
+            if (id.includes('pinia')) {
+              return 'pinia'
+            }
+
+            // ========== UI 和交互库（按需加载） ==========
+            // 图标库 - 体积大，单独分割
             if (id.includes('lucide-vue-next')) {
               return 'icons'
             }
-            // GSAP 动画库
+            // GSAP 动画库 - 按需加载
             if (id.includes('gsap')) {
-              return 'gsap'
+              return 'animations'
             }
-            // Plyr 播放器
+            // Plyr 播放器 - 仅媒体页面使用
             if (id.includes('plyr')) {
-              return 'plyr'
+              return 'media-player'
             }
-            // Masonry布局库（仅桌面端使用）
+            // Masonry 布局库 - 仅桌面端瀑布流使用
             if (id.includes('masonry-layout')) {
               return 'masonry'
             }
-            // i18n和dayjs（中等优先级）
-            if (id.includes('vue-i18n') || id.includes('dayjs')) {
-              return 'utils'
+
+            // ========== 工具库（中等优先级） ==========
+            // Vue I18n - 国际化
+            if (id.includes('vue-i18n')) {
+              return 'i18n'
             }
-            // Axios（API客户端）
+            // Day.js - 日期处理
+            if (id.includes('dayjs')) {
+              return 'dayjs'
+            }
+            // Axios - HTTP 客户端
             if (id.includes('axios')) {
-              return 'api'
+              return 'http-client'
             }
-            // VueUse（按需加载）
-            if (id.includes('@vueuse')) {
-              return 'vueuse'
+            // VueUse - 组合式工具集
+            if (id.includes('@vueuse/core')) {
+              return 'vueuse-core'
             }
-            // 其他依赖
+            if (id.includes('@vueuse/shared')) {
+              return 'vueuse-shared'
+            }
+
+            // 其他第三方依赖
             return 'vendor'
           }
 
-          // 应用代码分割
-          // 页面组件（views）独立分割
+          // ========== 应用代码分割 ==========
+          // 页面组件 - 按页面独立分割
           if (id.includes('/src/views/')) {
             const match = id.match(/\/views\/(.+?)\.vue/)
             if (match) {
-              return `view-${match[1].toLowerCase()}`
+              const pageName = match[1].toLowerCase()
+              // 关键页面单独分割
+              if (['homepage', 'explorepage', 'postsview'].includes(pageName)) {
+                return `page-${pageName}`
+              }
+              // 其他页面分组
+              return 'pages-other'
             }
           }
 
-          // Composables 分组
+          // 业务组件 - 按功能分组
+          if (id.includes('/src/components/business/')) {
+            return 'components-business'
+          }
+
+          // 数据展示组件
+          if (id.includes('/src/components/data-display/')) {
+            return 'components-display'
+          }
+
+          // 反馈组件
+          if (id.includes('/src/components/feedback/')) {
+            return 'components-feedback'
+          }
+
+          // 表单组件
+          if (id.includes('/src/components/form/')) {
+            return 'components-form'
+          }
+
+          // 布局组件
+          if (id.includes('/src/components/layout/')) {
+            return 'components-layout'
+          }
+
+          // 基础组件
+          if (id.includes('/src/components/base/')) {
+            return 'components-base'
+          }
+
+          // Composables - 按功能分组
           if (id.includes('/src/composables/')) {
             return 'composables'
           }
 
-          // API 服务分组
+          // API 服务层
           if (id.includes('/src/api/')) {
             return 'api-services'
+          }
+
+          // Stores - 状态管理模块
+          if (id.includes('/src/stores/')) {
+            return 'stores'
+          }
+
+          // 工具函数
+          if (id.includes('/src/utils/')) {
+            return 'utils'
           }
         },
         // 优化文件命名
@@ -137,12 +230,31 @@ export default defineConfig(({ mode }) => ({
     // 预热常用文件以加快首次访问
     warmup: {
       clientFiles: [
+        // 核心入口文件
+        './src/main.ts',
+        './src/App.vue',
+        // 关键页面组件
         './src/views/HomePage.vue',
         './src/views/ExplorePage.vue',
-        './src/components/business/PostCard.vue',
+        // 核心布局组件
         './src/components/layout/MainLayout.vue',
+        './src/components/layout/AppNavbar.vue',
+        // 高频业务组件
+        './src/components/business/PostCard.vue',
+        // 核心 composables
+        './src/composables/useAuth.ts',
+        './src/composables/useTheme.ts',
       ],
     },
+    // 开发服务器性能优化
+    fs: {
+      // 限制文件系统访问范围，提升性能
+      strict: true,
+      // 允许访问的目录
+      allow: ['..'],
+    },
+    // 预转换已知的 CommonJS 依赖
+    preTransformRequests: true,
     proxy: {
       // 开发环境代理API请求
       '/api': {

@@ -178,7 +178,7 @@ export function useContrastCheck() {
       // 在开发环境中检查对比度
       const checkContrast = () => {
         const elements = document.querySelectorAll('[style*="color"]')
-        elements.forEach((el) => {
+        elements.forEach(() => {
           // 这里可以添加对比度检查逻辑
           // 实际项目中可以使用 color-contrast API 或第三方库
         })

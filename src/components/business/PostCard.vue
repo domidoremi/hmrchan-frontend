@@ -1,222 +1,118 @@
 <template>
   <RouterLink :to="`/posts/${post.id}`" custom v-slot="{ navigate, href }">
-    <article ref="cardRef" :href="href" class="post-card" :data-post-id="post.id" @click="handleClick($event, navigate)"
-      @mouseenter="onHover" @mouseleave="onLeave">
-      <!-- 媒体容器 - 固定高度 -->
-      <div ref="mediaRef" class="card-media">
-        <div class="media-wrapper">
-          <OptimizedImage v-if="post.thumbnail_url" :src="thumbnailUrl" :alt="post.title || 'Post thumbnail'"
-            :lazy="!isFirstScreen" class="media-image" />
-          <div v-else class="media-placeholder">
-            <ImageIcon :size="48" />
-          </div>
-          <!-- 渐变遮罩 -->
-          <div class="media-overlay"></div>
-        </div>
+    <article
+      ref="cardRef"
+      :href="href"
+      class="post-card"
+      :data-post-id="post.id"
+      role="article"
+      :aria-label="`Post by ${post.author_name || 'Anonymous'}: ${post.title || 'Untitled'}`"
+      tabindex="0"
+      @click="handleClick($event, navigate)"
+      @mouseenter="onHover"
+      @mouseleave="onLeave"
+      @keydown.enter="handleClick($event, navigate)"
+      @keydown.space.prevent="handleClick($event, navigate)"
+    >
+      <!-- 媒体容器 -->
+      <PostCardMedia
+        ref="mediaComponentRef"
+        :thumbnail-url="cardData.thumbnailUrl.value"
+        :alt="post.title || 'Post thumbnail'"
+        :is-first-screen="isFirstScreen"
+        :platform-color="cardData.platformColor.value"
+        :platform-name="cardData.platformName.value"
+        :duration="post.duration"
+        :media-count="post.media_count"
+        :is-retweet="cardData.isRetweet.value"
+      />
 
-        <!-- 悬浮标签 -->
-        <div class="card-badges">
-          <div class="platform-badge" :style="{ backgroundColor: platformColor }">
-            {{ platformName }}
-          </div>
-          <div v-if="post.duration" class="duration-badge">
-            <Play :size="12" />
-            {{ formatDuration(post.duration) }}
-          </div>
-          <div v-if="post.media_count > 1" class="media-count-badge">
-            <ImageIcon :size="12" />
-            {{ post.media_count }}
-          </div>
-        </div>
+      <!-- 快捷操作按钮 -->
+      <PostCardActions
+        v-if="showActions"
+        :is-favorited="isFavorited"
+        @favorite="handleFavorite"
+        @share="handleShare"
+        @more="handleMore"
+      />
 
-        <!-- 转发标记 -->
-        <div v-if="isRetweet" class="retweet-indicator">
-          <Repeat2 :size="16" />
-        </div>
-      </div>
-
-      <!-- 内容区域 - 固定高度 -->
-      <div class="card-content">
-        <!-- 标题 -->
-        <h3 class="card-title">{{ post.title || 'Untitled' }}</h3>
-
-        <!-- 描述 -->
-        <p v-if="showDescription" class="card-description">
-          {{ truncateText(post.description || '', 60) }}
-        </p>
-
-        <!-- 底部区域 -->
-        <div class="card-footer">
-          <!-- 作者 -->
-          <div class="card-author">
-            <div class="author-avatar">
-              <User :size="14" />
-            </div>
-            <span class="author-name">{{ post.author_name || 'Anonymous' }}</span>
-          </div>
-
-          <!-- 统计 -->
-          <div class="card-stats">
-            <div v-if="post.view_count" class="stat-item" :title="post.view_count.toString()">
-              <Eye :size="14" />
-              <span>{{ formatNumber(post.view_count) }}</span>
-            </div>
-            <div v-if="post.like_count" class="stat-item" :title="post.like_count.toString()">
-              <Heart :size="14" />
-              <span>{{ formatNumber(post.like_count) }}</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- 时间戳 -->
-        <div v-if="post.published_at" class="card-time">
-          <Clock :size="12" />
-          <time :datetime="post.published_at">{{ formatRelativeTime(post.published_at) }}</time>
-        </div>
-      </div>
+      <!-- 内容区域 -->
+      <PostCardContent
+        :title="post.title"
+        :description="post.description"
+        :show-description="cardData.showDescription.value"
+        :author-name="post.author_name"
+        :view-count="post.view_count"
+        :like-count="post.like_count"
+        :published-at="post.published_at"
+      />
     </article>
   </RouterLink>
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { RouterLink } from 'vue-router'
-import {
-  User,
-  Eye,
-  Heart,
-  Clock,
-  ImageIcon,
-  Play,
-  Repeat2,
-} from 'lucide-vue-next'
-import gsap from 'gsap'
-import { ScrollTrigger } from 'gsap/ScrollTrigger'
-
-import OptimizedImage from '@/components/base/OptimizedImage.vue'
 import type { Post } from '@/types'
-import { resolveMediaUrl } from '@/utils/url'
-
-// Register GSAP plugins
-gsap.registerPlugin(ScrollTrigger)
+import PostCardMedia from './PostCard/PostCardMedia.vue'
+import PostCardContent from './PostCard/PostCardContent.vue'
+import PostCardActions from './PostCard/PostCardActions.vue'
+import { usePostCardData } from '@/composables/usePostCard'
+import { usePostCardAnimation } from '@/composables/usePostCardAnimation'
+import { useFavorites } from '@/composables/useFavorites'
 
 interface Props {
   post: Post
   isFirstScreen?: boolean
   previewEnabled?: boolean
+  showActions?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   isFirstScreen: false,
   previewEnabled: false,
+  showActions: true,
 })
 
 const emit = defineEmits<{
   (e: 'open', postId: string): void
+  (e: 'favorite', postId: string): void
+  (e: 'share', post: Post): void
+  (e: 'more', post: Post): void
 }>()
 
-// 缩略图URL
-const thumbnailUrl = computed(() => {
-  return resolveMediaUrl(props.post.thumbnail_url)
-})
+// 使用 composables 提取逻辑
+const cardData = usePostCardData(props.post)
+const { isFavorited: checkFavorited } = useFavorites()
 
-// 平台颜色映射 - Material Design Colors
-const platformColors: Record<string, string> = {
-  twitter: '#1DA1F2',
-  x: '#000000',
-  bilibili: '#FB7299',
-  pixiv: '#0096FA',
-  youtube: '#FF0000',
-  weibo: '#E6162D',
-  instagram: '#E4405F',
-  tiktok: '#000000',
-  default: '#8B5CF6',
+// 收藏状态 - 使用 ref 而不是 computed，因为 isFavorited 是异步的
+const isFavorited = ref(false)
+
+// 检查收藏状态
+const loadFavoriteStatus = async () => {
+  isFavorited.value = await checkFavorited(props.post.id)
 }
 
-const platformColor = computed(() => {
-  const platform = props.post.platform?.toLowerCase() || 'default'
-  return platformColors[platform] || platformColors.default
-})
-
-const platformName = computed(() => {
-  return props.post.platform || 'Unknown'
-})
-
-// 是否为转发
-const isRetweet = computed(() => {
-  return props.post.original_author_name && props.post.original_author_name !== props.post.author_name
-})
-
-// 是否显示描述
-const showDescription = computed(() => {
-  const desc = props.post.description
-  if (!desc) return false
-  if (desc === props.post.title) return false
-  if (props.post.title && props.post.title.includes(desc)) return false
-  return true
-})
-
-// 工具函数
-const truncateText = (text: string, maxLength: number): string => {
-  if (text.length <= maxLength) return text
-  return text.slice(0, maxLength) + '...'
-}
-
-const formatNumber = (num: number): string => {
-  if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M'
-  if (num >= 1000) return (num / 1000).toFixed(1) + 'K'
-  return num.toString()
-}
-
-const formatDuration = (seconds: number): string => {
-  const hours = Math.floor(seconds / 3600)
-  const minutes = Math.floor((seconds % 3600) / 60)
-  const secs = Math.floor(seconds % 60)
-  if (hours > 0) {
-    return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
-  }
-  return `${minutes}:${secs.toString().padStart(2, '0')}`
-}
-
-const formatRelativeTime = (dateString: string): string => {
-  const date = new Date(dateString)
-  const now = new Date()
-  const diffMs = now.getTime() - date.getTime()
-  const diffMins = Math.floor(diffMs / 60000)
-  const diffHours = Math.floor(diffMs / 3600000)
-  const diffDays = Math.floor(diffMs / 86400000)
-
-  if (diffMins < 1) return 'Just now'
-  if (diffMins < 60) return `${diffMins}m ago`
-  if (diffHours < 24) return `${diffHours}h ago`
-  if (diffDays < 7) return `${diffDays}d ago`
-  if (diffDays < 30) return `${Math.floor(diffDays / 7)}w ago`
-  return date.toLocaleDateString()
-}
-
-// GSAP Animations
-const cardRef = ref<HTMLElement | null>(null)
-const mediaRef = ref<HTMLElement | null>(null)
-
+// 组件挂载时检查收藏状态
 onMounted(() => {
-  if (cardRef.value) {
-    gsap.from(cardRef.value, {
-      opacity: 0,
-      y: 30,
-      duration: 0.6,
-      ease: 'power3.out',
-      scrollTrigger: {
-        trigger: cardRef.value,
-        start: 'top 90%',
-        once: true,
-      },
-    })
-  }
+  loadFavoriteStatus()
+})
+
+// Refs
+const cardRef = ref<HTMLElement | null>(null)
+const mediaComponentRef = ref<InstanceType<typeof PostCardMedia> | null>(null)
+
+// 动画控制
+const { onHover, onLeave } = usePostCardAnimation(cardRef, () => {
+  const component = mediaComponentRef.value
+  if (!component) return null
+  // Access exposed mediaRef from component
+  return (component as unknown as { mediaRef: HTMLElement | null }).mediaRef
 })
 
 // 事件处理
-const handleClick = (event: MouseEvent, navigate: () => void) => {
-  if (event.ctrlKey || event.metaKey) {
+const handleClick = (event: MouseEvent | KeyboardEvent, navigate: () => void) => {
+  if (event instanceof MouseEvent && (event.ctrlKey || event.metaKey)) {
     return
   }
 
@@ -230,46 +126,16 @@ const handleClick = (event: MouseEvent, navigate: () => void) => {
   navigate()
 }
 
-const onHover = () => {
-  if (cardRef.value) {
-    gsap.to(cardRef.value, {
-      y: -12,
-      scale: 1.02,
-      duration: 0.4,
-      ease: 'power2.out',
-    })
-  }
-  if (mediaRef.value) {
-    const img = mediaRef.value.querySelector('img')
-    if (img) {
-      gsap.to(img, {
-        scale: 1.1,
-        duration: 0.6,
-        ease: 'power2.out',
-      })
-    }
-  }
+const handleFavorite = () => {
+  emit('favorite', props.post.id)
 }
 
-const onLeave = () => {
-  if (cardRef.value) {
-    gsap.to(cardRef.value, {
-      y: 0,
-      scale: 1,
-      duration: 0.4,
-      ease: 'power2.inOut',
-    })
-  }
-  if (mediaRef.value) {
-    const img = mediaRef.value.querySelector('img')
-    if (img) {
-      gsap.to(img, {
-        scale: 1,
-        duration: 0.6,
-        ease: 'power2.inOut',
-      })
-    }
-  }
+const handleShare = () => {
+  emit('share', props.post)
+}
+
+const handleMore = () => {
+  emit('more', props.post)
 }
 </script>
 
@@ -299,21 +165,25 @@ const onLeave = () => {
     0 0 0 1px rgba(139, 92, 246, 0.05);
 
   /* Performance optimization */
-  will-change: transform;
   transform: translateZ(0);
   backface-visibility: hidden;
+  contain: layout style paint;
 
   /* Smooth transitions handled by GSAP */
-  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  transition:
+    border-color 0.3s ease,
+    box-shadow 0.3s ease;
 }
 
 /* Hover State - Material Design Elevation 8 */
-.post-card:hover {
+.post-card:hover,
+.post-card:focus-within {
   border-color: rgba(139, 92, 246, 0.6);
   box-shadow:
     0 16px 32px -8px rgba(139, 92, 246, 0.25),
     0 32px 64px -16px rgba(0, 0, 0, 0.18),
     0 0 0 1px rgba(139, 92, 246, 0.15);
+  will-change: transform, box-shadow;
 }
 
 /* Active State */
@@ -338,10 +208,12 @@ const onLeave = () => {
   /* 瀑布流：不使用padding-bottom，让图片自然高度 */
   flex-shrink: 0;
   overflow: hidden;
-  background: linear-gradient(135deg,
-      rgba(139, 92, 246, 0.06) 0%,
-      rgba(6, 182, 212, 0.06) 50%,
-      rgba(244, 114, 182, 0.06) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(139, 92, 246, 0.06) 0%,
+    rgba(6, 182, 212, 0.06) 50%,
+    rgba(244, 114, 182, 0.06) 100%
+  );
 }
 
 .media-wrapper {
@@ -366,22 +238,18 @@ const onLeave = () => {
 
   &::before {
     left: 0;
-    background: linear-gradient(to right,
-        rgba(139, 92, 246, 0.3) 0%,
-        transparent 100%);
+    background: linear-gradient(to right, rgba(139, 92, 246, 0.3) 0%, transparent 100%);
   }
 
   &::after {
     right: 0;
-    background: linear-gradient(to left,
-        rgba(139, 92, 246, 0.3) 0%,
-        transparent 100%);
+    background: linear-gradient(to left, rgba(139, 92, 246, 0.3) 0%, transparent 100%);
   }
 }
 
 /* 当图片宽度不足时显示渐变 */
-.media-wrapper:has(img[style*="object-fit: contain"])::before,
-.media-wrapper:has(img[style*="object-fit: contain"])::after {
+.media-wrapper:has(img[style*='object-fit: contain'])::before,
+.media-wrapper:has(img[style*='object-fit: contain'])::after {
   opacity: 1;
 }
 
@@ -409,9 +277,7 @@ const onLeave = () => {
   left: 0;
   right: 0;
   height: 60%;
-  background: linear-gradient(to top,
-      rgba(0, 0, 0, 0.4) 0%,
-      rgba(0, 0, 0, 0) 100%);
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0) 100%);
   pointer-events: none;
   opacity: 0;
   transition: opacity 0.3s ease;
@@ -501,7 +367,6 @@ const onLeave = () => {
 }
 
 @keyframes pulse {
-
   0%,
   100% {
     opacity: 1;
@@ -543,7 +408,8 @@ const onLeave = () => {
   transition: color 0.2s ease;
 }
 
-.post-card:hover .card-title {
+.post-card:hover .card-title,
+.post-card:focus-within .card-title {
   color: var(--color-primary);
 }
 
@@ -635,7 +501,8 @@ const onLeave = () => {
   transition: opacity 0.2s ease;
 }
 
-.post-card:hover .card-time {
+.post-card:hover .card-time,
+.post-card:focus-within .card-time {
   opacity: 1;
 }
 
@@ -712,9 +579,7 @@ const onLeave = () => {
 }
 
 [data-theme='light'] .media-overlay {
-  background: linear-gradient(to top,
-      rgba(0, 0, 0, 0.5) 0%,
-      rgba(0, 0, 0, 0) 100%);
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0) 100%);
 }
 
 [data-theme='light'] .author-avatar {

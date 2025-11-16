@@ -1,16 +1,23 @@
 <template>
-  <div v-if="visible" class="loading-progress" role="progressbar" :aria-valuenow="progress" aria-valuemin="0" aria-valuemax="100">
+  <div
+    v-if="visible"
+    class="loading-progress"
+    role="progressbar"
+    :aria-valuenow="progress"
+    aria-valuemin="0"
+    aria-valuemax="100"
+  >
     <div class="progress-container">
       <div class="progress-bar" :style="{ width: `${progress}%` }">
         <div class="progress-glow"></div>
       </div>
     </div>
-    
+
     <div v-if="showLabel" class="progress-label">
       <span class="progress-text">{{ label || $t('common.loading') }}</span>
       <span class="progress-percent">{{ Math.round(progress) }}%</span>
     </div>
-    
+
     <div v-if="showSpeed && speed" class="progress-speed">
       {{ formatSpeed(speed) }}
     </div>
@@ -19,39 +26,38 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useI18n } from 'vue-i18n'
 
 interface Props {
   /**
    * 进度值 (0-100)
    */
   progress: number
-  
+
   /**
    * 是否可见
    */
   visible?: boolean
-  
+
   /**
    * 是否显示标签
    */
   showLabel?: boolean
-  
+
   /**
    * 自定义标签文本
    */
   label?: string
-  
+
   /**
    * 是否显示速度
    */
   showSpeed?: boolean
-  
+
   /**
    * 加载速度 (bytes/second)
    */
   speed?: number
-  
+
   /**
    * 进度条类型
    */
@@ -64,8 +70,6 @@ const props = withDefaults(defineProps<Props>(), {
   showSpeed: false,
   variant: 'default',
 })
-
-const { t } = useI18n()
 
 /**
  * 格式化速度
@@ -112,6 +116,7 @@ const progressColor = computed(() => {
     opacity: 0;
     transform: translateY(-10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -142,12 +147,7 @@ const progressColor = computed(() => {
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.3),
-    transparent
-  );
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
   animation: shimmer 2s infinite;
 }
 

@@ -6,7 +6,7 @@ import logger from '@/utils/logger'
 
 interface Props {
   fallback?: boolean
-  onError?: (error: Error, instance: any, info: string) => void
+  onError?: (error: Error, instance: unknown, info: string) => void
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -21,7 +21,7 @@ const { t } = useI18n()
 const isDev = import.meta.env.DEV
 
 // 捕获子组件错误
-onErrorCaptured((err: Error, instance: any, info: string) => {
+onErrorCaptured((err: Error, instance: unknown, info: string) => {
   logger.criticalError('[ErrorBoundary] Caught error:', err)
   logger.criticalError('[ErrorBoundary] Error info:', info)
 
@@ -110,9 +110,11 @@ const reload = () => {
   100% {
     transform: translateX(0);
   }
+
   25% {
     transform: translateX(-10px);
   }
+
   75% {
     transform: translateX(10px);
   }

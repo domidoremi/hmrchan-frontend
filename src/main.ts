@@ -11,16 +11,35 @@ import i18n from './i18n'
 
 // 导入样式
 import './styles/index.css'
+import './styles/mobile-optimizations.css'
+import './styles/tablet-optimizations.css'
+import './styles/desktop-optimizations.css'
 
 // 导入自定义指令
 import { lazyLoad } from './directives/lazyLoad'
 
 // 导入日志工具
-import logger from './utils/logger'
+import logger, { LogLevel } from './utils/logger'
+
+// 配置日志系统
+logger.setConfig({
+  level: import.meta.env.DEV ? LogLevel.DEBUG : LogLevel.WARN,
+  enableTimestamp: true,
+  enableContext: true,
+  enableColors: true,
+})
+
+logger.setContext({ category: 'App' })
 
 // 导入缓存系统
 import { swManager } from './utils/serviceWorkerManager'
 import { indexedDB } from './utils/indexedDB'
+
+// 导入图片预加载插件
+import { imagePreloadPlugin } from './plugins/imagePreload'
+
+// 导入性能监控（仅开发环境）
+import { performanceMonitor } from './utils/performance/performanceMonitor'
 
 // 导入Store（用于初始化）
 import { useThemeStore } from './stores/theme'
@@ -37,6 +56,14 @@ pinia.use(piniaPluginPersistedstate)
 app.use(pinia)
 app.use(router)
 app.use(i18n)
+app.use(imagePreloadPlugin, {
+  enabled: true,
+  priority: 'low',
+  maxConcurrent: 3,
+  wifiOnly: false,
+  delay: 1000,
+  criticalSelectors: ['.hero-image', '.featured-image', '[data-critical="true"] img'],
+})
 
 // 注册全局指令
 app.directive('lazy', lazyLoad)
@@ -61,7 +88,10 @@ app.config.errorHandler = (err, instance, info) => {
 
   // 可以在这里添加错误上报逻辑
   // 例如发送到错误监控服务
-  logger.criticalError(`[Vue Error] ${info}:`, err)
+  logger.critical(`Vue error: ${info}`, {
+    component: instance?.$options?.name || 'Unknown',
+    error: err instanceof Error ? err.message : String(err),
+  })
 }
 
 // 开发环境：过滤浏览器扩展的控制台噪音
@@ -159,6 +189,32 @@ const settingsStore = useSettingsStore()
 themeStore.initTheme()
 settingsStore.initSettings()
 
+// 初始化 i18n 开发工具（仅开发环境）
+if (import.meta.env.DEV) {
+  import('./utils/i18nDevTools').then(({ initI18nDevTools }) => {
+    initI18nDevTools()
+  })
+
+  // 性能监控：在开发环境显示性能报告
+  window.addEventListener('load', () => {
+    setTimeout(() => {
+      const report = performanceMonitor.generateReport()
+      console.log(report)
+
+      // 将性能监控暴露到全局，方便调试
+      ;(
+        window as Window & { __performanceMonitor__?: typeof performanceMonitor }
+      ).__performanceMonitor__ = performanceMonitor
+      console.log(
+        '%c💡 Performance Monitor',
+        'color: #8b5cf6; font-weight: bold',
+        '\nAccess via: window.__performanceMonitor__',
+        '\nGenerate report: window.__performanceMonitor__.generateReport()',
+      )
+    }, 2000)
+  })
+}
+
 // ============================================
 // 初始化缓存系统
 // ============================================
@@ -167,10 +223,13 @@ settingsStore.initSettings()
 indexedDB
   .init()
   .then(() => {
-    logger.log('[Cache] IndexedDB initialized')
+    logger.info('IndexedDB initialized', { category: 'Cache' })
   })
   .catch((error) => {
-    logger.criticalError('[Cache] IndexedDB init failed:', error)
+    logger.critical('IndexedDB init failed', {
+      category: 'Cache',
+      error: error instanceof Error ? error.message : String(error),
+    })
   })
 
 // 2. 注册Service Worker（仅生产环境）
@@ -179,17 +238,20 @@ if (!import.meta.env.DEV) {
     .register()
     .then((registration) => {
       if (registration) {
-        logger.log('[Cache] Service Worker registered')
+        logger.info('Service Worker registered', { category: 'Cache' })
 
         // 监听SW更新
         window.addEventListener('sw-update-available', () => {
-          logger.log('[Cache] New version available')
+          logger.info('New version available', { category: 'Cache' })
           // 可以在这里显示更新提示
         })
       }
     })
     .catch((error) => {
-      logger.criticalError('[Cache] Service Worker registration failed:', error)
+      logger.critical('Service Worker registration failed', {
+        category: 'Cache',
+        error: error instanceof Error ? error.message : String(error),
+      })
     })
 }
 
@@ -200,7 +262,7 @@ if (typeof window !== 'undefined') {
   setInterval(
     () => {
       indexedDB.clearOldPosts(7).then((count) => {
-        logger.log(`[Cache] Cleared ${count} old posts`)
+        logger.info('Cleared old posts', { category: 'Cache', count })
       })
 
       if (!import.meta.env.DEV) {

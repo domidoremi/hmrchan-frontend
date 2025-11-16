@@ -3,13 +3,28 @@
  */
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
-import 'dayjs/locale/zh-cn'
-import 'dayjs/locale/ja'
 
+// 懒加载语言包，不在模块顶层导入
+let localesLoaded = false
+
+async function ensureLocalesLoaded() {
+  if (localesLoaded) return
+
+  try {
+    // 动态导入语言包
+    await Promise.all([import('dayjs/locale/zh-cn'), import('dayjs/locale/ja')])
+    localesLoaded = true
+  } catch (error) {
+    console.warn('Failed to load dayjs locales:', error)
+  }
+}
+
+// 扩展 relativeTime 插件
 dayjs.extend(relativeTime)
 
 /**
  * 格式化数字（K, M）
+ * @deprecated 使用 formatCompactNumber from '@/utils/numberFormat' 以获得更好的国际化支持
  */
 export function formatNumber(num: number): string {
   if (num >= 1000000) {
@@ -23,16 +38,45 @@ export function formatNumber(num: number): string {
 
 /**
  * 格式化日期 - 相对时间
+ * 支持根据用户语言环境自动格式化
  */
-export function formatRelativeTime(dateStr: string, locale: string = 'en'): string {
-  dayjs.locale(locale)
+export async function formatRelativeTime(dateStr: string, locale: string = 'en'): Promise<string> {
+  await ensureLocalesLoaded()
+
+  // 映射语言代码
+  const localeMap: Record<string, string> = {
+    en: 'en',
+    'zh-CN': 'zh-cn',
+    ja: 'ja',
+  }
+
+  const dayjsLocale = localeMap[locale] || 'en'
+  dayjs.locale(dayjsLocale)
   return dayjs(dateStr).fromNow()
 }
 
 /**
  * 格式化日期 - 完整格式
+ * 支持根据用户语言环境自动格式化
  */
-export function formatDate(dateStr: string, format: string = 'YYYY-MM-DD HH:mm'): string {
+export async function formatDate(
+  dateStr: string,
+  format: string = 'YYYY-MM-DD HH:mm',
+  locale?: string,
+): Promise<string> {
+  if (locale) {
+    await ensureLocalesLoaded()
+
+    const localeMap: Record<string, string> = {
+      en: 'en',
+      'zh-CN': 'zh-cn',
+      ja: 'ja',
+    }
+
+    const dayjsLocale = localeMap[locale] || 'en'
+    dayjs.locale(dayjsLocale)
+  }
+
   return dayjs(dateStr).format(format)
 }
 
@@ -52,6 +96,7 @@ export function formatDuration(seconds: number): string {
 
 /**
  * 格式化文件大小
+ * @deprecated 使用 formatFileSize from '@/utils/numberFormat' 以获得更好的国际化支持
  */
 export function formatFileSize(bytes: number): string {
   if (bytes >= 1073741824) {
@@ -93,7 +138,7 @@ export function generateId(): string {
 /**
  * 防抖函数
  */
-export function debounce<T extends (...args: any[]) => any>(
+export function debounce<T extends (...args: never[]) => unknown>(
   func: T,
   wait: number,
 ): (...args: Parameters<T>) => void {
@@ -115,7 +160,7 @@ export function debounce<T extends (...args: any[]) => any>(
 /**
  * 节流函数
  */
-export function throttle<T extends (...args: any[]) => any>(
+export function throttle<T extends (...args: never[]) => unknown>(
   func: T,
   limit: number,
 ): (...args: Parameters<T>) => void {
@@ -195,7 +240,7 @@ export function parseQuery(query: string): Record<string, string> {
 /**
  * 构建查询字符串
  */
-export function buildQuery(params: Record<string, any>): string {
+export function buildQuery(params: Record<string, unknown>): string {
   const searchParams = new URLSearchParams()
   Object.entries(params).forEach(([key, value]) => {
     if (value !== undefined && value !== null) {

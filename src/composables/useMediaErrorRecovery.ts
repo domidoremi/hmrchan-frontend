@@ -9,22 +9,22 @@ interface RetryOptions {
    * 最大重试次数
    */
   maxRetries?: number
-  
+
   /**
    * 重试延迟（毫秒）
    */
   retryDelay?: number
-  
+
   /**
    * 延迟倍数（指数退避）
    */
   backoffMultiplier?: number
-  
+
   /**
    * 最大延迟时间
    */
   maxDelay?: number
-  
+
   /**
    * 是否启用降级
    */
@@ -63,11 +63,11 @@ export function useMediaErrorRecovery(options: RetryOptions = {}) {
   const loadWithRetry = async (
     url: string,
     loadFn: (url: string) => Promise<unknown>,
-    fallbackUrls: string[] = []
+    fallbackUrls: string[] = [],
   ): Promise<unknown> => {
     const sources: MediaSource[] = [
       { url, type: 'primary' },
-      ...fallbackUrls.map(fb => ({ url: fb, type: 'fallback' as const })),
+      ...fallbackUrls.map((fb) => ({ url: fb, type: 'fallback' as const })),
     ]
 
     let lastError: Error | null = null
@@ -77,17 +77,17 @@ export function useMediaErrorRecovery(options: RetryOptions = {}) {
       try {
         console.log(`[ErrorRecovery] 尝试加载: ${source.url} (${source.type})`)
         const result = await retryWithBackoff(source.url, loadFn)
-        
+
         // 成功后清除错误状态
         errorStates.value.delete(source.url)
         return result
       } catch (error) {
         lastError = error as Error
         console.warn(`[ErrorRecovery] ${source.type} 失败:`, source.url, error)
-        
+
         // 记录错误状态
         recordError(source.url, error as Error)
-        
+
         // 如果不是最后一个源，继续尝试下一个
         if (source !== sources[sources.length - 1] && enableFallback) {
           console.log(`[ErrorRecovery] 尝试降级到下一个源...`)
@@ -105,7 +105,7 @@ export function useMediaErrorRecovery(options: RetryOptions = {}) {
    */
   const retryWithBackoff = async (
     url: string,
-    loadFn: (url: string) => Promise<unknown>
+    loadFn: (url: string) => Promise<unknown>,
   ): Promise<unknown> => {
     let attempt = 0
     let delay = retryDelay
@@ -121,21 +121,21 @@ export function useMediaErrorRecovery(options: RetryOptions = {}) {
         }
 
         const result = await loadFn(url)
-        
+
         // 成功
         isRetrying.value = false
         currentRetryCount.value = 0
         return result
       } catch (error) {
         attempt++
-        
+
         if (attempt > maxRetries) {
           throw error
         }
 
         // 指数退避
         delay = Math.min(delay * backoffMultiplier, maxDelay)
-        
+
         console.warn(`[ErrorRecovery] 尝试 ${attempt} 失败:`, error)
       }
     }
@@ -148,7 +148,7 @@ export function useMediaErrorRecovery(options: RetryOptions = {}) {
    */
   const recordError = (url: string, error: Error): void => {
     const existing = errorStates.value.get(url)
-    
+
     errorStates.value.set(url, {
       url,
       retryCount: (existing?.retryCount || 0) + 1,
@@ -181,11 +181,11 @@ export function useMediaErrorRecovery(options: RetryOptions = {}) {
   const shouldSkipRetry = (url: string): boolean => {
     const state = errorStates.value.get(url)
     if (!state) return false
-    
+
     // 如果短时间内失败次数过多，暂时跳过
     const timeSinceFailure = Date.now() - state.failedAt
     const cooldownPeriod = 60000 // 1分钟冷却期
-    
+
     return state.retryCount > maxRetries && timeSinceFailure < cooldownPeriod
   }
 
@@ -194,23 +194,23 @@ export function useMediaErrorRecovery(options: RetryOptions = {}) {
    */
   const generateFallbackUrls = (originalUrl: string): string[] => {
     const fallbacks: string[] = []
-    
+
     // 策略1: 尝试不同的CDN节点（如果URL包含CDN标识）
     if (originalUrl.includes('cdn')) {
       fallbacks.push(originalUrl.replace('cdn', 'cdn-backup'))
     }
-    
+
     // 策略2: 降低质量（如果URL包含质量参数）
     if (originalUrl.includes('quality=high')) {
       fallbacks.push(originalUrl.replace('quality=high', 'quality=medium'))
       fallbacks.push(originalUrl.replace('quality=high', 'quality=low'))
     }
-    
+
     // 策略3: 使用原始服务器（移除CDN前缀）
     if (originalUrl.includes('//cdn.')) {
       fallbacks.push(originalUrl.replace('//cdn.', '//api.'))
     }
-    
+
     return fallbacks
   }
 
@@ -218,7 +218,7 @@ export function useMediaErrorRecovery(options: RetryOptions = {}) {
    * 睡眠函数
    */
   const sleep = (ms: number): Promise<void> => {
-    return new Promise(resolve => setTimeout(resolve, ms))
+    return new Promise((resolve) => setTimeout(resolve, ms))
   }
 
   /**
@@ -229,20 +229,22 @@ export function useMediaErrorRecovery(options: RetryOptions = {}) {
     return {
       totalErrors: errors.length,
       totalRetries: errors.reduce((sum, e) => sum + e.retryCount, 0),
-      recentErrors: errors.filter(e => Date.now() - e.failedAt < 300000).length, // 5分钟内
+      recentErrors: errors.filter((e) => Date.now() - e.failedAt < 300000).length, // 5分钟内
     }
   })
 
   /**
    * 诊断错误类型
    */
-  const diagnoseError = (error: Error): {
+  const diagnoseError = (
+    error: Error,
+  ): {
     type: 'network' | 'cors' | 'timeout' | 'not-found' | 'server' | 'unknown'
     message: string
     recoverable: boolean
   } => {
     const errorMessage = error.message.toLowerCase()
-    
+
     // 网络错误
     if (errorMessage.includes('network') || errorMessage.includes('failed to fetch')) {
       return {
@@ -251,7 +253,7 @@ export function useMediaErrorRecovery(options: RetryOptions = {}) {
         recoverable: true,
       }
     }
-    
+
     // CORS错误
     if (errorMessage.includes('cors') || errorMessage.includes('cross-origin')) {
       return {
@@ -260,7 +262,7 @@ export function useMediaErrorRecovery(options: RetryOptions = {}) {
         recoverable: false,
       }
     }
-    
+
     // 超时错误
     if (errorMessage.includes('timeout') || errorMessage.includes('timed out')) {
       return {
@@ -269,7 +271,7 @@ export function useMediaErrorRecovery(options: RetryOptions = {}) {
         recoverable: true,
       }
     }
-    
+
     // 404错误
     if (errorMessage.includes('404') || errorMessage.includes('not found')) {
       return {
@@ -278,16 +280,20 @@ export function useMediaErrorRecovery(options: RetryOptions = {}) {
         recoverable: false,
       }
     }
-    
+
     // 服务器错误
-    if (errorMessage.includes('500') || errorMessage.includes('502') || errorMessage.includes('503')) {
+    if (
+      errorMessage.includes('500') ||
+      errorMessage.includes('502') ||
+      errorMessage.includes('503')
+    ) {
       return {
         type: 'server',
         message: '服务器错误，请稍后重试',
         recoverable: true,
       }
     }
-    
+
     return {
       type: 'unknown',
       message: error.message || '未知错误',
@@ -301,7 +307,7 @@ export function useMediaErrorRecovery(options: RetryOptions = {}) {
     currentRetryCount: computed(() => currentRetryCount.value),
     errorStates: computed(() => errorStates.value),
     errorStats,
-    
+
     // 方法
     loadWithRetry,
     retryWithBackoff,

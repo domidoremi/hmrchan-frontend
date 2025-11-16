@@ -19,14 +19,15 @@
  *
  * input.addEventListener('input', (e) => handleSearch(e.target.value))
  */
-export function debounce<T extends (...args: any[]) => any>(
+export function debounce<T extends (...args: never[]) => unknown>(
   func: T,
   wait: number = 300,
   immediate: boolean = false,
 ): (...args: Parameters<T>) => void {
   let timeout: ReturnType<typeof setTimeout> | null = null
 
-  return function (this: any, ...args: Parameters<T>) {
+  return function (this: unknown, ...args: Parameters<T>) {
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
     const context = this
 
     const later = () => {
@@ -53,20 +54,20 @@ export function debounce<T extends (...args: any[]) => any>(
 /**
  * 带取消功能的防抖函数
  */
-export interface DebouncedFunction<T extends (...args: any[]) => any> {
+export interface DebouncedFunction<T extends (...args: never[]) => unknown> {
   (...args: Parameters<T>): void
   cancel: () => void
   flush: () => void
 }
 
-export function debounceWithCancel<T extends (...args: any[]) => any>(
+export function debounceWithCancel<T extends (...args: never[]) => unknown>(
   func: T,
   wait: number = 300,
   immediate: boolean = false,
 ): DebouncedFunction<T> {
   let timeout: ReturnType<typeof setTimeout> | null = null
   let lastArgs: Parameters<T> | null = null
-  let lastContext: any = null
+  let lastContext: unknown = null
 
   const later = () => {
     timeout = null
@@ -77,7 +78,8 @@ export function debounceWithCancel<T extends (...args: any[]) => any>(
     }
   }
 
-  const debounced = function (this: any, ...args: Parameters<T>) {
+  const debounced = function (this: unknown, ...args: Parameters<T>) {
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
     lastContext = this
     lastArgs = args
 

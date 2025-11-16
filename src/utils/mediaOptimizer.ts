@@ -27,7 +27,7 @@ class MediaOptimizer {
    */
   generateSrcSet(baseUrl: string, sizes: number[]): string {
     return sizes
-      .map(size => `${this.getOptimizedUrl(baseUrl, { maxWidth: size })} ${size}w`)
+      .map((size) => `${this.getOptimizedUrl(baseUrl, { maxWidth: size })} ${size}w`)
       .join(', ')
   }
 
@@ -35,12 +35,7 @@ class MediaOptimizer {
    * 获取优化后的图片URL
    */
   getOptimizedUrl(url: string, options: ImageOptimizationOptions = {}): string {
-    const {
-      quality = 80,
-      format = 'webp',
-      maxWidth,
-      maxHeight,
-    } = options
+    const { quality = 80, format = 'webp', maxWidth, maxHeight } = options
 
     // 如果是外部URL（如Unsplash），使用其API参数
     if (url.includes('unsplash.com')) {
@@ -50,7 +45,7 @@ class MediaOptimizer {
       params.set('q', quality.toString())
       params.set('fm', format)
       params.set('fit', 'crop')
-      
+
       return `${url}?${params.toString()}`
     }
 
@@ -61,7 +56,7 @@ class MediaOptimizer {
       let sizeParam = 'medium'
       if (maxWidth && maxWidth <= 400) sizeParam = 'small'
       if (maxWidth && maxWidth >= 800) sizeParam = 'large'
-      
+
       if (url.includes('?format=')) {
         return url.replace(/name=\w+/, `name=${sizeParam}`)
       }
@@ -118,7 +113,7 @@ class MediaOptimizer {
    * 提取图片主色调
    */
   async extractDominantColor(url: string): Promise<string> {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       const img = new Image()
       img.crossOrigin = 'Anonymous'
 
@@ -126,7 +121,7 @@ class MediaOptimizer {
         try {
           const canvas = document.createElement('canvas')
           const ctx = canvas.getContext('2d')
-          
+
           if (!ctx) {
             resolve('#f0f0f0')
             return
@@ -136,21 +131,21 @@ class MediaOptimizer {
           canvas.width = 1
           canvas.height = 1
           ctx.drawImage(img, 0, 0, 1, 1)
-          
+
           const pixel = ctx.getImageData(0, 0, 1, 1).data
           const rgb = `rgb(${pixel[0]}, ${pixel[1]}, ${pixel[2]})`
           resolve(rgb)
-        } catch (error) {
+        } catch {
           // CORS错误时使用默认颜色
           resolve('#f0f0f0')
         }
       }
 
       img.onerror = () => resolve('#f0f0f0')
-      
+
       // 使用小尺寸图片加快处理
       img.src = this.getOptimizedUrl(url, { maxWidth: 50, maxHeight: 50 })
-      
+
       // 超时保护
       setTimeout(() => resolve('#f0f0f0'), 3000)
     })
@@ -159,16 +154,8 @@ class MediaOptimizer {
   /**
    * 懒加载图片
    */
-  lazyLoad(
-    elements: HTMLElement | HTMLElement[],
-    options: LazyLoadOptions = {}
-  ): () => void {
-    const {
-      rootMargin = '50px',
-      threshold = 0.01,
-      onLoad,
-      onError,
-    } = options
+  lazyLoad(elements: HTMLElement | HTMLElement[], options: LazyLoadOptions = {}): () => void {
+    const { rootMargin = '50px', threshold = 0.01, onLoad, onError } = options
 
     const elementsArray = Array.isArray(elements) ? elements : [elements]
 
@@ -192,7 +179,7 @@ class MediaOptimizer {
       {
         rootMargin,
         threshold,
-      }
+      },
     )
 
     elementsArray.forEach((element) => {
@@ -215,7 +202,7 @@ class MediaOptimizer {
   private async loadImage(
     img: HTMLImageElement,
     onLoad?: (element: HTMLElement) => void,
-    onError?: (element: HTMLElement, error: Error) => void
+    onError?: (element: HTMLElement, error: Error) => void,
   ): Promise<void> {
     const src = img.dataset.src
     const srcset = img.dataset.srcset
@@ -256,7 +243,7 @@ class MediaOptimizer {
   private async loadBackgroundImage(
     element: HTMLElement,
     onLoad?: (element: HTMLElement) => void,
-    onError?: (element: HTMLElement, error: Error) => void
+    onError?: (element: HTMLElement, error: Error) => void,
   ): Promise<void> {
     const bgUrl = element.dataset.bg
 
@@ -303,10 +290,10 @@ class MediaOptimizer {
    * 批量预加载
    */
   async preloadImages(urls: string[]): Promise<void> {
-    const promises = urls.map(url => 
+    const promises = urls.map((url) =>
       this.preloadImage(url).catch(() => {
         console.warn(`[Media Optimizer] Preload failed: ${url}`)
-      })
+      }),
     )
 
     await Promise.allSettled(promises)
@@ -322,7 +309,8 @@ class MediaOptimizer {
       const img = new Image()
       img.onload = () => resolve(img.width === 1)
       img.onerror = () => resolve(false)
-      img.src = 'data:image/webp;base64,UklGRiQAAABXRUJQVlA4IBgAAAAwAQCdASoBAAEAAwA0JaQAA3AA/vuUAAA='
+      img.src =
+        'data:image/webp;base64,UklGRiQAAABXRUJQVlA4IBgAAAAwAQCdASoBAAEAAwA0JaQAA3AA/vuUAAA='
     })
   }
 
@@ -336,7 +324,8 @@ class MediaOptimizer {
       const img = new Image()
       img.onload = () => resolve(img.width === 1)
       img.onerror = () => resolve(false)
-      img.src = 'data:image/avif;base64,AAAAIGZ0eXBhdmlmAAAAAGF2aWZtaWYxbWlhZk1BMUIAAADybWV0YQAAAAAAAAAoaGRscgAAAAAAAAAAcGljdAAAAAAAAAAAAAAAAGxpYmF2aWYAAAAADnBpdG0AAAAAAAEAAAAeaWxvYwAAAABEAAABAAEAAAABAAABGgAAAB0AAAAoaWluZgAAAAAAAQAAABppbmZlAgAAAAABAABhdjAxQ29sb3IAAAAAamlwcnAAAABLaXBjbwAAABRpc3BlAAAAAAAAAAEAAAABAAAAEHBpeGkAAAAAAwgICAAAAAxhdjFDgQ0MAAAAABNjb2xybmNseAACAAIAAYAAAAAXaXBtYQAAAAAAAAABAAEEAQKDBAAAACVtZGF0EgAKCBgANogQEAwgMg8f8D///8WfhwB8+ErK42A='
+      img.src =
+        'data:image/avif;base64,AAAAIGZ0eXBhdmlmAAAAAGF2aWZtaWYxbWlhZk1BMUIAAADybWV0YQAAAAAAAAAoaGRscgAAAAAAAAAAcGljdAAAAAAAAAAAAAAAAGxpYmF2aWYAAAAADnBpdG0AAAAAAAEAAAAeaWxvYwAAAABEAAABAAEAAAABAAABGgAAAB0AAAAoaWluZgAAAAAAAQAAABppbmZlAgAAAAABAABhdjAxQ29sb3IAAAAAamlwcnAAAABLaXBjbwAAABRpc3BlAAAAAAAAAAEAAAABAAAAEHBpeGkAAAAAAwgICAAAAAxhdjFDgQ0MAAAAABNjb2xybmNseAACAAIAAYAAAAAXaXBtYQAAAAAAAAABAAEEAQKDBAAAACVtZGF0EgAKCBgANogQEAwgMg8f8D///8WfhwB8+ErK42A='
     })
   }
 
@@ -356,7 +345,7 @@ class MediaOptimizer {
     originalWidth: number,
     originalHeight: number,
     maxWidth?: number,
-    maxHeight?: number
+    maxHeight?: number,
   ): { width: number; height: number } {
     if (!maxWidth && !maxHeight) {
       return { width: originalWidth, height: originalHeight }

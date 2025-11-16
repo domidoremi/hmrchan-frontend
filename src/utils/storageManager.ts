@@ -49,12 +49,12 @@ class StorageManager {
       return true
     } catch (error) {
       console.error(`[Storage] Failed to set ${key}:`, error)
-      
+
       // 处理 QuotaExceededError
       if (error instanceof DOMException && error.name === 'QuotaExceededError') {
         console.warn('[Storage] Quota exceeded, trying to clear old items...')
         this.clearOldest(5)
-        
+
         // 重试一次
         try {
           const fullKey = this.getKey(key)
@@ -65,7 +65,7 @@ class StorageManager {
           console.error('[Storage] Retry failed:', retryError)
         }
       }
-      
+
       return false
     }
   }
@@ -198,7 +198,7 @@ class StorageManager {
 
         if (itemStr) {
           try {
-            const item: StorageItem<any> = JSON.parse(itemStr)
+            const item: StorageItem<unknown> = JSON.parse(itemStr)
             if (item.expiry && Date.now() > item.expiry) {
               localStorage.removeItem(fullKey)
               count++
@@ -236,7 +236,7 @@ class StorageManager {
 
         if (itemStr) {
           try {
-            const item: StorageItem<any> = JSON.parse(itemStr)
+            const item: StorageItem<unknown> = JSON.parse(itemStr)
             items.push({ key, timestamp: item.timestamp })
           } catch {
             // 解析失败的项目也加入清理列表
@@ -266,7 +266,7 @@ class StorageManager {
   /**
    * 批量设置
    */
-  setMultiple(items: Record<string, any>): boolean {
+  setMultiple(items: Record<string, unknown>): boolean {
     try {
       Object.entries(items).forEach(([key, value]) => {
         this.set(key, value)

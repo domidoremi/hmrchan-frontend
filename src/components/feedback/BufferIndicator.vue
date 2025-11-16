@@ -5,11 +5,11 @@
       <div class="spinner-ring"></div>
       <div class="spinner-ring"></div>
     </div>
-    
+
     <div v-if="showLabel" class="buffer-label">
       {{ label || $t('post.buffering') }}
     </div>
-    
+
     <div v-if="showStats && bufferStats" class="buffer-stats">
       <div class="stat-item">
         <span class="stat-label">{{ $t('common.buffered') }}:</span>
@@ -25,7 +25,6 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useI18n } from 'vue-i18n'
 
 interface BufferStats {
   buffered: number // 已缓冲秒数
@@ -38,27 +37,27 @@ interface Props {
    * 是否正在缓冲
    */
   isBuffering: boolean
-  
+
   /**
    * 是否显示标签
    */
   showLabel?: boolean
-  
+
   /**
    * 自定义标签文本
    */
   label?: string
-  
+
   /**
    * 是否显示统计信息
    */
   showStats?: boolean
-  
+
   /**
    * 缓冲统计
    */
   bufferStats?: BufferStats
-  
+
   /**
    * 指示器大小
    */
@@ -70,8 +69,6 @@ const props = withDefaults(defineProps<Props>(), {
   showStats: false,
   size: 'medium',
 })
-
-const { t } = useI18n()
 
 /**
  * 格式化时长
@@ -115,6 +112,7 @@ const spinnerSize = computed(() => {
     opacity: 0;
     transform: scale(0.9);
   }
+
   to {
     opacity: 1;
     transform: scale(1);
@@ -159,6 +157,7 @@ const spinnerSize = computed(() => {
   0% {
     transform: rotate(0deg);
   }
+
   100% {
     transform: rotate(360deg);
   }
