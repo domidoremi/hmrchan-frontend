@@ -69,8 +69,18 @@ body::before {
   pointer-events: none;
 }
 
+/* 浅色模式确保浅色背景 */
+[data-theme='light'] body {
+  background-color: #f8fafc;
+}
+
+[data-theme='light'] body::before {
+  opacity: 0.4;
+}
+
+/* 暗色模式确保深色背景 */
 [data-theme='dark'] body {
-  background-color: #0f172a; /* 确保暗色模式有深色背景 */
+  background-color: #0f172a;
 }
 
 [data-theme='dark'] body::before {
