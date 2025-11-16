@@ -67,14 +67,14 @@
           <StatCard v-for="platform in platforms" :key="platform" :icon="getPlatformIcon(platform)"
             :icon-color="getPlatformColor(platform)" :title="$t(`platform.${platform}`)"
             :value="platformStats[platform] || 0" :label="platform === 'youtube' || platform === 'tiktok'
-                ? $t('post.videos')
-                : $t('post.title')
+              ? $t('post.videos')
+              : $t('post.title')
               " :loading="isStatsLoading" />
           <template v-for="(platform, index) in platforms" :key="`slide-${index}`" #[`slide-${index}`]>
             <StatCard :icon="getPlatformIcon(platform)" :icon-color="getPlatformColor(platform)"
               :title="$t(`platform.${platform}`)" :value="platformStats[platform] || 0" :label="platform === 'youtube' || platform === 'tiktok'
-                  ? $t('post.videos')
-                  : $t('post.title')
+                ? $t('post.videos')
+                : $t('post.title')
                 " :loading="isStatsLoading" />
           </template>
         </StatCardGrid>
@@ -104,7 +104,7 @@
 
         <!-- Posts列表 -->
         <div v-else-if="posts.length > 0" ref="postsGrid" class="posts-grid">
-          <PostCard v-for="(post, index) in posts" :key="post.id" :post="post" :index="index" />
+          <PostCard v-for="(post, index) in posts" :key="post.id" :post="post" :index="index" :show-actions="false" />
         </div>
 
         <!-- Empty state -->

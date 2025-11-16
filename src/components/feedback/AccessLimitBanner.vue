@@ -1,15 +1,10 @@
 <template>
   <!-- 不再在页面上显示，改用Toast通知 -->
-  <div class="access-limit-indicator">
+  <div class="access-limit-indicator" :style="{ bottom: dynamicBottom }">
     <!-- 小气泡指示器 -->
     <Transition name="fade">
-      <button
-        v-if="shouldShowIndicator"
-        class="access-bubble"
-        :class="{ 'bubble-warning': isNearLimit }"
-        @click="showDetails"
-        :aria-label="$t('access.viewDetails')"
-      >
+      <button v-if="shouldShowIndicator" class="access-bubble" :class="{ 'bubble-warning': isNearLimit }"
+        @click="showDetails" :aria-label="$t('access.viewDetails')">
         <div class="bubble-icon">
           <Info v-if="!isNearLimit" :size="16" />
           <AlertCircle v-else :size="16" />
@@ -27,6 +22,7 @@ import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { Info, AlertCircle } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/auth'
+import { useResponsiveLayout } from '@/composables/useResponsiveLayout'
 
 interface Props {
   currentCount: number
@@ -40,9 +36,15 @@ const props = withDefaults(defineProps<Props>(), {
 
 const router = useRouter()
 const authStore = useAuthStore()
+const { safeAreaBottom, isMobile } = useResponsiveLayout()
 
 const isAuthenticated = computed(() => authStore.isAuthenticated)
 const isAdmin = computed(() => authStore.user?.is_admin ?? false)
+
+// 动态计算bottom值：底部导航栏高度 + 额外间距
+const dynamicBottom = computed(() => {
+  return `${safeAreaBottom.value + (isMobile.value ? 8 : 24)}px`
+})
 
 const progress = computed(() => {
   if (props.totalLimit === 0 || props.totalLimit === Infinity) return 0
@@ -76,8 +78,8 @@ const showDetails = () => {
 <style scoped>
 .access-limit-indicator {
   position: fixed;
-  bottom: var(--spacing-6);
-  right: var(--spacing-6);
+  /* bottom 由动态计算提供 */
+  right: clamp(16px, 4vw, 24px);
   z-index: 1000;
 }
 
@@ -149,10 +151,5 @@ const showDetails = () => {
   transform: translateY(10px);
 }
 
-@media (max-width: 768px) {
-  .access-limit-indicator {
-    bottom: calc(72px + var(--spacing-2));
-    right: var(--spacing-4);
-  }
-}
+/* 移动端响应式样式已通过动态计算处理 */
 </style>

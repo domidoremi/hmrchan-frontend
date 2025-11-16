@@ -1,23 +1,26 @@
 <template>
   <transition name="fade">
-    <button
-      v-if="visible"
-      class="back-to-top"
-      @click="scrollToTop"
-      :title="$t('common.backToTop')"
-      :aria-label="$t('common.backToTop')"
-    >
+    <button v-if="visible" class="back-to-top" :style="{ bottom: dynamicBottom }" @click="scrollToTop"
+      :title="$t('common.backToTop')" :aria-label="$t('common.backToTop')">
       <ArrowUp :size="24" />
     </button>
   </transition>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { ArrowUp } from 'lucide-vue-next'
+import { useResponsiveLayout } from '@/composables/useResponsiveLayout'
 
 const visible = ref(false)
 const scrollThreshold = 300
+
+const { safeAreaBottom, isMobile } = useResponsiveLayout()
+
+// 动态计算bottom值：底部导航栏高度 + 额外间距
+const dynamicBottom = computed(() => {
+  return `${safeAreaBottom.value + (isMobile.value ? 12 : 32)}px`
+})
 
 const handleScroll = () => {
   visible.value = window.pageYOffset > scrollThreshold
@@ -32,7 +35,7 @@ const scrollToTop = () => {
 
 onMounted(() => {
   window.addEventListener('scroll', handleScroll)
-  handleScroll() // 初始检查
+  handleScroll()
 })
 
 onUnmounted(() => {
@@ -43,8 +46,8 @@ onUnmounted(() => {
 <style scoped>
 .back-to-top {
   position: fixed;
-  bottom: 110px;
-  right: 40px;
+  /* bottom 由动态计算提供 */
+  right: clamp(16px, 4vw, 40px);
   width: 56px;
   height: 56px;
   border-radius: 50%;
@@ -86,11 +89,10 @@ onUnmounted(() => {
   transform: translateY(20px) scale(0.8);
 }
 
-/* Samsung Galaxy S20 Ultra 和类似设备 */
+/* 移动端响应式 */
 @media (max-width: 768px) {
   .back-to-top {
-    bottom: 150px; /* 增加偏移，避免与辅助气泡重叠 */
-    right: 20px;
+    /* bottom 由动态计算提供 */
     width: 48px;
     height: 48px;
   }
@@ -103,8 +105,7 @@ onUnmounted(() => {
 
 @media (max-width: 480px) {
   .back-to-top {
-    bottom: 140px; /* 小屏幕保持更高位置 */
-    right: 16px;
+    /* bottom 由动态计算提供 */
     width: 44px;
     height: 44px;
   }
