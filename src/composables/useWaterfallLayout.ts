@@ -16,7 +16,7 @@ interface WaterfallOptions {
   }
 }
 
-const debug = (...args: any[]) => {
+const debug = (...args: unknown[]) => {
   if (import.meta.env.DEV) {
     console.log('[Waterfall]', ...args)
   }
@@ -32,7 +32,6 @@ export function useWaterfallLayout(
   const {
     columnGap = 16,
     rowGap = 16,
-    minColumnWidth = 300,
     breakpoints = {
       1600: 5, // >= 1600px: 5列
       1400: 4, // >= 1400px: 4列
@@ -91,7 +90,7 @@ export function useWaterfallLayout(
     const columnHeights = new Array(columns).fill(0)
 
     // 遍历每个卡片，放置到最短的列
-    items.forEach((item, index) => {
+    items.forEach((item) => {
       // 设置卡片宽度和定位
       item.style.position = 'absolute'
       item.style.width = `${columnWidth}px`

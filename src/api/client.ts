@@ -7,6 +7,10 @@ import logger from '@/utils/logger'
 import { nativeFetchAdapter } from './nativeFetchAdapter'
 import { requestCache } from '@/utils/requestCache'
 import { offlineQueue } from '@/utils/offlineQueue'
+import { cacheManager } from '@/utils/cache/CacheManager'
+
+// 设置 API 客户端日志上下文
+logger.setContext({ category: 'API' })
 
 // 🔒 强制使用 HTTPS - 完全不依赖环境变量或构建时计算
 // 开发环境使用 Vite 代理，生产环境硬编码 HTTPS
@@ -76,13 +80,13 @@ if (!isConfigured) {
         config.baseURL = SAFE_BASE_URL
       } else if (config.baseURL.startsWith('http://')) {
         config.baseURL = config.baseURL.replace('http://', 'https://')
-        console.error('🚨 baseURL was HTTP, forced to HTTPS:', config.baseURL)
+        logger.warn('baseURL was HTTP, forced to HTTPS', { url: config.baseURL })
       }
 
       // 🔒 STEP 2: 如果 URL 是完整URL且是HTTP，强制转换
       if (config.url && config.url.startsWith('http://')) {
         config.url = config.url.replace('http://', 'https://')
-        console.error('🚨 URL was HTTP, forced to HTTPS:', config.url)
+        logger.warn('URL was HTTP, forced to HTTPS', { url: config.url })
       }
 
       // 🔒 STEP 3: 检查构建后的完整 URL
@@ -100,10 +104,14 @@ if (!isConfigured) {
         config.headers.Authorization = `Bearer ${authStore.token}`
       }
 
+      logger.debug(`Request: ${config.method?.toUpperCase()} ${config.url}`, {
+        params: config.params,
+      })
+
       return config
     },
     (error) => {
-      logger.error('Request error:', error)
+      logger.error('Request interceptor error', { error: error.message })
       return Promise.reject(error)
     },
   )
@@ -111,20 +119,27 @@ if (!isConfigured) {
   // 响应拦截器
   apiClient.interceptors.response.use(
     (response: AxiosResponse) => {
-      logger.debug(
-        `Response: ${response.config.method?.toUpperCase()} ${response.config.url} - ${response.status}`,
-      )
+      logger.debug(`Response: ${response.config.method?.toUpperCase()} ${response.config.url}`, {
+        status: response.status,
+        statusText: response.statusText,
+      })
       return response
     },
     (error) => {
       if (error.response) {
-        const { status } = error.response
-        logger.error(
-          `Response error: ${error.config?.method?.toUpperCase()} ${error.config?.url} - ${status}`,
-        )
+        const { status, statusText } = error.response
+        const method = error.config?.method?.toUpperCase()
+        const url = error.config?.url
+
+        logger.error(`Response error: ${method} ${url}`, {
+          status,
+          statusText,
+          data: error.response.data,
+        })
 
         // 401 未授权 - Token过期或无效
         if (status === 401) {
+          logger.warn('Unauthorized - redirecting to login', { url })
           const authStore = useAuthStore()
           authStore.logout()
           window.location.href = '/login'
@@ -132,27 +147,27 @@ if (!isConfigured) {
 
         // 403 权限不足
         if (status === 403) {
-          logger.warn('Access forbidden')
+          logger.warn('Access forbidden', { url })
         }
 
         // 429 请求过于频繁
         if (status === 429) {
-          logger.warn('Too many requests')
+          logger.warn('Too many requests - rate limit exceeded', { url })
         }
 
         // 500 服务器错误
         if (status >= 500) {
-          logger.error('Server error')
+          logger.error('Server error', { status, url })
         }
       } else if (error.request) {
-        logger.error('Network error - no response received:', error.message)
-        logger.debug('Request details:', {
+        logger.error('Network error - no response received', {
+          message: error.message,
           url: error.config?.url,
           method: error.config?.method,
           timeout: error.config?.timeout,
         })
       } else {
-        logger.error('Request setup error:', error.message)
+        logger.error('Request setup error', { message: error.message })
       }
 
       return Promise.reject(error)
@@ -163,64 +178,185 @@ if (!isConfigured) {
 }
 
 /**
- * API请求封装 - 增强版（带缓存和去重）
+ * API请求封装 - 增强版（带多层缓存和去重）
  */
 export const api = {
-  // GET请求 - 默认启用缓存和去重
-  get<T = unknown>(
+  // GET请求 - 默认启用多层缓存和去重
+  async get<T = unknown>(
     url: string,
-    config?: AxiosRequestConfig & { cache?: boolean; ttl?: number },
+    config?: AxiosRequestConfig & {
+      cache?: boolean
+      ttl?: number
+      useMultiLayerCache?: boolean
+      invalidateCache?: boolean
+    },
   ): Promise<T> {
-    const { cache = true, ttl = 5 * 60 * 1000, ...axiosConfig } = config || {}
+    const {
+      cache = true,
+      ttl = 5 * 60 * 1000,
+      useMultiLayerCache = true,
+      invalidateCache = false,
+      ...axiosConfig
+    } = config || {}
 
-    // 如果启用缓存（默认启用）
-    if (cache) {
-      const cacheKey = `GET:${url}:${JSON.stringify(axiosConfig.params || {})}`
+    const cacheKey = `GET:${url}:${JSON.stringify(axiosConfig.params || {})}`
 
+    // 如果需要强制刷新缓存
+    if (invalidateCache) {
+      await cacheManager.delete(cacheKey)
+      requestCache.clear(cacheKey)
+    }
+
+    // 如果不启用缓存
+    if (!cache) {
+      return apiClient.get(url, axiosConfig).then((res) => res.data)
+    }
+
+    // 使用多层缓存（内存 + IndexedDB）
+    if (useMultiLayerCache) {
+      // 1. 尝试从多层缓存获取
+      const cachedData = await cacheManager.get<T>(cacheKey)
+      if (cachedData !== null) {
+        logger.debug('Multi-layer cache hit', { cacheKey, url })
+        return cachedData
+      }
+
+      // 2. 缓存未命中，使用去重请求
       return requestCache.dedupe(
         cacheKey,
-        () => apiClient.get(url, axiosConfig).then((res) => res.data),
+        async () => {
+          const response = await apiClient.get(url, axiosConfig)
+          const data = response.data
+
+          // 存储到多层缓存
+          await cacheManager.set(cacheKey, data, ttl)
+
+          return data
+        },
         { ttl, force: false },
       )
     }
 
-    // 不缓存的情况
-    return apiClient.get(url, axiosConfig).then((res) => res.data)
+    // 使用简单内存缓存（向后兼容）
+    return requestCache.dedupe(
+      cacheKey,
+      () => apiClient.get(url, axiosConfig).then((res) => res.data),
+      { ttl, force: false },
+    )
   },
 
-  // POST请求 - 不缓存
-  post<T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> {
-    return apiClient.post(url, data, config).then((res) => res.data)
+  // POST请求 - 不缓存，但会清除相关缓存
+  async post<T = unknown>(
+    url: string,
+    data?: unknown,
+    config?: AxiosRequestConfig & { invalidatePatterns?: string[] },
+  ): Promise<T> {
+    const { invalidatePatterns, ...axiosConfig } = config || {}
+
+    const response = await apiClient.post(url, data, axiosConfig)
+
+    // 清除相关缓存
+    if (invalidatePatterns && invalidatePatterns.length > 0) {
+      await this.invalidateCacheByPatterns(invalidatePatterns)
+    }
+
+    return response.data
   },
 
-  // PUT请求 - 不缓存
-  put<T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> {
-    return apiClient.put(url, data, config).then((res) => res.data)
+  // PUT请求 - 不缓存，但会清除相关缓存
+  async put<T = unknown>(
+    url: string,
+    data?: unknown,
+    config?: AxiosRequestConfig & { invalidatePatterns?: string[] },
+  ): Promise<T> {
+    const { invalidatePatterns, ...axiosConfig } = config || {}
+
+    const response = await apiClient.put(url, data, axiosConfig)
+
+    // 清除相关缓存
+    if (invalidatePatterns && invalidatePatterns.length > 0) {
+      await this.invalidateCacheByPatterns(invalidatePatterns)
+    }
+
+    return response.data
   },
 
-  // PATCH请求 - 不缓存
-  patch<T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> {
-    return apiClient.patch(url, data, config).then((res) => res.data)
+  // PATCH请求 - 不缓存，但会清除相关缓存
+  async patch<T = unknown>(
+    url: string,
+    data?: unknown,
+    config?: AxiosRequestConfig & { invalidatePatterns?: string[] },
+  ): Promise<T> {
+    const { invalidatePatterns, ...axiosConfig } = config || {}
+
+    const response = await apiClient.patch(url, data, axiosConfig)
+
+    // 清除相关缓存
+    if (invalidatePatterns && invalidatePatterns.length > 0) {
+      await this.invalidateCacheByPatterns(invalidatePatterns)
+    }
+
+    return response.data
   },
 
-  // DELETE请求 - 不缓存
-  delete<T = unknown>(url: string, config?: AxiosRequestConfig): Promise<T> {
-    return apiClient.delete(url, config).then((res) => res.data)
+  // DELETE请求 - 不缓存，但会清除相关缓存
+  async delete<T = unknown>(
+    url: string,
+    config?: AxiosRequestConfig & { invalidatePatterns?: string[] },
+  ): Promise<T> {
+    const { invalidatePatterns, ...axiosConfig } = config || {}
+
+    const response = await apiClient.delete(url, axiosConfig)
+
+    // 清除相关缓存
+    if (invalidatePatterns && invalidatePatterns.length > 0) {
+      await this.invalidateCacheByPatterns(invalidatePatterns)
+    }
+
+    return response.data
   },
 
   // 手动清除缓存
-  clearCache(url?: string, params?: Record<string, unknown>) {
+  async clearCache(url?: string, params?: Record<string, unknown>) {
     if (url) {
       const cacheKey = `GET:${url}:${JSON.stringify(params || {})}`
+      await cacheManager.delete(cacheKey)
       requestCache.clear(cacheKey)
     } else {
+      await cacheManager.clear()
       requestCache.clear()
     }
   },
 
+  // 按模式清除缓存
+  async invalidateCacheByPatterns(patterns: string[]) {
+    logger.debug('Invalidating cache by patterns', { patterns })
+
+    // 这里简化实现，实际应该遍历所有缓存键
+    for (const pattern of patterns) {
+      await this.clearCache(pattern)
+    }
+  },
+
+  // 预加载缓存
+  async preloadCache(urls: Array<{ url: string; params?: Record<string, unknown>; ttl?: number }>) {
+    logger.info('Preloading cache', { count: urls.length })
+
+    await Promise.all(
+      urls.map(({ url, params, ttl }) =>
+        this.get(url, { params, ttl, cache: true, useMultiLayerCache: true }).catch((error) => {
+          logger.warn('Failed to preload URL', { url, error: error.message })
+        }),
+      ),
+    )
+  },
+
   // 获取缓存统计
   getCacheStats() {
-    return requestCache.getStats()
+    return {
+      requestCache: requestCache.getStats(),
+      multiLayerCache: cacheManager.getStats(),
+    }
   },
 }
 

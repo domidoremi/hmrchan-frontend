@@ -1,6 +1,7 @@
 /**
  * 内容状态管理 - 增强版（带持久化和缓存）
  * v2.0 - UUID迁移：ID参数已从number改为string
+ * v2.1 - 增强错误处理：使用统一的错误处理机制
  */
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
@@ -8,6 +9,8 @@ import type { Post, PostDetail, PostListParams, PaginatedResponse, Platform, UUI
 import { api } from '@/api/client'
 import { indexedDB } from '@/utils/indexedDB'
 import { fetchWithFallback } from '@/utils/cacheHelper'
+import { handleError } from '@/utils/errorHandler'
+import logger from '@/utils/logger'
 
 export const usePostsStore = defineStore(
   'posts',
@@ -137,8 +140,11 @@ export const usePostsStore = defineStore(
 
         return response
       } catch (err: unknown) {
-        error.value = err instanceof Error ? err.message : 'API 请求失败'
-        console.error('获取帖子列表失败:', err)
+        const errorResponse = handleError(err, 'PostsStore.FetchPosts', {
+          silent: true, // Don't show toast for list fetches, just log
+        })
+        error.value = errorResponse.message
+        logger.error('[Posts] Failed to fetch posts:', err)
 
         // 失败时视为非回退数据
         lastListFromFallback.value = false
@@ -201,7 +207,8 @@ export const usePostsStore = defineStore(
 
         return data
       } catch (err: unknown) {
-        error.value = err instanceof Error ? err.message : 'Unknown error'
+        const errorResponse = handleError(err, 'PostsStore.FetchPost')
+        error.value = errorResponse.message
         throw err
       } finally {
         loading.value = false
@@ -300,12 +307,14 @@ export const usePostsStore = defineStore(
     }
   },
   {
-    // 持久化配置 - 只持久化filters，不持久化posts数组（避免返回时显示旧数据）
+    // 持久化配置 - 只持久化filters和pagination，不持久化posts数组和运行时状态
     persist:
       typeof window !== 'undefined'
         ? {
+            key: 'posts',
             storage: sessionStorage,
-            pick: ['filters', 'pagination'], // 只持久化filters和pagination，不持久化posts/currentPost
+            // 只持久化用户的筛选偏好，不持久化数据和运行时状态
+            pick: ['filters', 'pagination'],
           }
         : false,
   },

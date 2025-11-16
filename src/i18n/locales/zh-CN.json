@@ -159,7 +159,10 @@
     "toggleTheme": "切换主题",
     "toggleHeroSection": "切换首页横幅",
     "toggleAnimations": "切换动效",
-    "toggleSwipeNavigation": "切换滑动导航"
+    "toggleSwipeNavigation": "切换滑动导航",
+    "saving": "保存中...",
+    "saved": "已保存",
+    "saveFailed": "保存失败"
   },
   "common": {
     "loading": "加载中...",

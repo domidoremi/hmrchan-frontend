@@ -3,9 +3,15 @@
     <div class="filter-section filter-section--platform">
       <label class="filter-label">{{ $t('filter.platform') }}</label>
       <div class="platform-chips">
-        <button v-for="item in platformOptions" :key="item.value || 'all'" type="button" class="filter-chip"
-          :class="{ active: isPlatformActive(item.value) }" @click="selectPlatform(item.value)"
-          :aria-label="`${$t('filter.platform')}: ${$t(item.labelKey)}`">
+        <button
+          v-for="item in platformOptions"
+          :key="item.value || 'all'"
+          type="button"
+          class="filter-chip"
+          :class="{ active: isPlatformActive(item.value) }"
+          @click="selectPlatform(item.value)"
+          :aria-label="`${$t('filter.platform')}: ${$t(item.labelKey)}`"
+        >
           <span class="chip-icon">
             <component :is="item.icon" :size="16" />
           </span>
@@ -17,9 +23,15 @@
     <div class="filter-section filter-section--sort">
       <label class="filter-label">{{ $t('filter.sortBy') }}</label>
       <div class="sort-chips">
-        <button v-for="item in sortOptions" :key="item.value" type="button" class="filter-chip"
-          :class="{ active: localFilters.sort_by === item.value }" @click="selectSort(item.value)"
-          :aria-label="`${$t('filter.sortBy')}: ${$t(item.labelKey)}`">
+        <button
+          v-for="item in sortOptions"
+          :key="item.value"
+          type="button"
+          class="filter-chip"
+          :class="{ active: localFilters.sort_by === item.value }"
+          @click="selectSort(item.value)"
+          :aria-label="`${$t('filter.sortBy')}: ${$t(item.labelKey)}`"
+        >
           <span class="chip-icon">
             <component :is="item.icon" :size="16" />
           </span>
@@ -32,12 +44,18 @@
     <div v-if="localFilters.sort_by !== 'scraped_at'" class="filter-section">
       <label class="filter-label">{{ $t('common.order') }}</label>
       <div class="filter-buttons">
-        <button class="filter-button" :class="{ active: localFilters.sort_order === 'desc' }"
-          @click="localFilters.sort_order = 'desc'">
+        <button
+          class="filter-button"
+          :class="{ active: localFilters.sort_order === 'desc' }"
+          @click="localFilters.sort_order = 'desc'"
+        >
           <ArrowDown :size="16" />
         </button>
-        <button class="filter-button" :class="{ active: localFilters.sort_order === 'asc' }"
-          @click="localFilters.sort_order = 'asc'">
+        <button
+          class="filter-button"
+          :class="{ active: localFilters.sort_order === 'asc' }"
+          @click="localFilters.sort_order = 'asc'"
+        >
           <ArrowUp :size="16" />
         </button>
       </div>
@@ -45,8 +63,11 @@
 
     <div class="filter-section">
       <label class="filter-label">{{ $t('filter.hasMedia') }}</label>
-      <button class="filter-button" :class="{ active: localFilters.has_media }"
-        @click="localFilters.has_media = !localFilters.has_media">
+      <button
+        class="filter-button"
+        :class="{ active: localFilters.has_media }"
+        @click="localFilters.has_media = !localFilters.has_media"
+      >
         <ImageIcon :size="16" />
       </button>
     </div>
@@ -105,7 +126,11 @@ const platformOptions: { value: '' | Platform; labelKey: string; icon: Component
   { value: 'instagram', labelKey: 'platform.instagram', icon: Instagram },
 ]
 
-const sortOptions: { value: 'scraped_at' | 'published_at' | 'view_count' | 'like_count'; labelKey: string; icon: Component }[] = [
+const sortOptions: {
+  value: 'scraped_at' | 'published_at' | 'view_count' | 'like_count'
+  labelKey: string
+  icon: Component
+}[] = [
   { value: 'scraped_at', labelKey: 'filter.latest', icon: Clock },
   { value: 'published_at', labelKey: 'filter.published', icon: CalendarDays },
   { value: 'view_count', labelKey: 'post.views', icon: Eye },

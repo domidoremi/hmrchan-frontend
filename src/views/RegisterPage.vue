@@ -228,7 +228,11 @@ async function handleRegister() {
       router.push('/')
     }, 1500)
   } catch (err: unknown) {
-    const axiosError = err as { response?: { status: number; data?: { detail?: string; message?: string } }; request?: any; message?: string }
+    const axiosError = err as {
+      response?: { status: number; data?: { detail?: string; message?: string } }
+      request?: unknown
+      message?: string
+    }
     // 清除成功消息
     success.value = ''
 
@@ -299,7 +303,8 @@ async function handleRegister() {
   min-height: 100vh;
   display: flex;
   align-items: center;
-  padding-bottom: 0 !important; /* 覆盖底部导航栏的padding */
+  padding-bottom: 0 !important;
+  /* 覆盖底部导航栏的padding */
   justify-content: center;
   padding: var(--spacing-lg);
   position: relative;
@@ -488,6 +493,7 @@ async function handleRegister() {
   100% {
     transform: translateY(0) scale(1);
   }
+
   50% {
     transform: translateY(-20px) scale(1.1);
   }

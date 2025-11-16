@@ -3,8 +3,13 @@
   <div class="access-limit-indicator">
     <!-- 小气泡指示器 -->
     <Transition name="fade">
-      <button v-if="shouldShowIndicator" class="access-bubble" :class="{ 'bubble-warning': isNearLimit }"
-        @click="showDetails" :aria-label="$t('access.viewDetails')">
+      <button
+        v-if="shouldShowIndicator"
+        class="access-bubble"
+        :class="{ 'bubble-warning': isNearLimit }"
+        @click="showDetails"
+        :aria-label="$t('access.viewDetails')"
+      >
         <div class="bubble-icon">
           <Info v-if="!isNearLimit" :size="16" />
           <AlertCircle v-else :size="16" />
@@ -66,7 +71,6 @@ const showDetails = () => {
     router.push('/login')
   }
 }
-
 </script>
 
 <style scoped>

@@ -4,23 +4,40 @@
       <ChevronsLeft :size="18" />
     </button>
 
-    <button class="pagination-button" :disabled="currentPage === 1" @click="goToPage(currentPage - 1)">
+    <button
+      class="pagination-button"
+      :disabled="currentPage === 1"
+      @click="goToPage(currentPage - 1)"
+    >
       <ChevronLeft :size="18" />
     </button>
 
     <div class="pagination-pages">
-      <button v-for="page in visiblePages" :key="page" class="pagination-page"
-        :class="{ active: page === currentPage, ellipsis: page === '...' }" :disabled="page === '...'"
-        @click="typeof page === 'number' && goToPage(page)">
+      <button
+        v-for="page in visiblePages"
+        :key="page"
+        class="pagination-page"
+        :class="{ active: page === currentPage, ellipsis: page === '...' }"
+        :disabled="page === '...'"
+        @click="typeof page === 'number' && goToPage(page)"
+      >
         {{ page }}
       </button>
     </div>
 
-    <button class="pagination-button" :disabled="currentPage === totalPages" @click="goToPage(currentPage + 1)">
+    <button
+      class="pagination-button"
+      :disabled="currentPage === totalPages"
+      @click="goToPage(currentPage + 1)"
+    >
       <ChevronRight :size="18" />
     </button>
 
-    <button class="pagination-button" :disabled="currentPage === totalPages" @click="goToPage(totalPages)">
+    <button
+      class="pagination-button"
+      :disabled="currentPage === totalPages"
+      @click="goToPage(totalPages)"
+    >
       <ChevronsRight :size="18" />
     </button>
 
