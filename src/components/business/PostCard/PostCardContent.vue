@@ -34,12 +34,13 @@
     <!-- 时间戳 -->
     <div v-if="publishedAt" class="card-time">
       <Clock :size="12" />
-      <time :datetime="publishedAt">{{ formatRelativeTime(publishedAt) }}</time>
+      <time :datetime="publishedAt">{{ formattedTime }}</time>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { ref, watch } from 'vue'
 import { User, Eye, Heart, Clock } from 'lucide-vue-next'
 import { formatNumber, formatRelativeTime, truncateText } from '@/utils/format'
 
@@ -53,7 +54,23 @@ interface Props {
   publishedAt: string | null
 }
 
-defineProps<Props>()
+const props = defineProps<Props>()
+
+// 异步格式化时间
+const formattedTime = ref<string>('')
+
+// 格式化时间的函数
+const updateFormattedTime = async () => {
+  if (props.publishedAt) {
+    formattedTime.value = await formatRelativeTime(props.publishedAt)
+  }
+}
+
+// 初始化时格式化时间
+updateFormattedTime()
+
+// 监听 publishedAt 变化
+watch(() => props.publishedAt, updateFormattedTime)
 </script>
 
 <style scoped>
