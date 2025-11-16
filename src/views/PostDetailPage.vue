@@ -428,7 +428,8 @@
 import { ref, computed, onMounted, defineAsyncComponent, onUnmounted, type Component } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { useMediaPreload } from '@/composables/useSmartPreload'
+import { useSmartPreload } from '@/composables/media/useSmartPreload'
+const useMediaPreload = useSmartPreload
 import { hasViewedPost, markPostAsViewed } from '@/utils/viewTracking'
 import { useErrorHandler } from '@/utils/errorHandler'
 import { resolveMediaUrl, validateMediaId } from '@/utils/url'
@@ -1117,36 +1118,37 @@ onUnmounted(() => {
   position: sticky;
   z-index: 999;
   /* 低于导航栏(1000)避免遮挡 */
-  background: var(--glass-bg);
-  backdrop-filter: var(--glass-blur);
-  border-bottom: 1px solid var(--glass-border);
+  /* 移除背景，保持透明 */
+  background: transparent;
+  backdrop-filter: none;
+  border-bottom: none;
   padding: 10px clamp(16px, 5vw, 48px);
   margin-left: calc(-1 * clamp(16px, 5vw, 48px));
   margin-right: calc(-1 * clamp(16px, 5vw, 48px));
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  box-shadow: none;
 }
 
-/* 移动端 (< 768px) - 底部导航无需大间距 */
+/* 移动端 (< 768px) - 导航栏高度66px + 8px间距 */
 @media (max-width: 767px) {
   .detail-topbar.is-sticky {
-    top: 66px;
-    /* 顶部栏高度 */
+    top: 74px;
+    /* 导航栏高度66px + 8px间距 = 74px */
   }
 }
 
-/* 平板端 (768px - 1023px) - 顶部导航72px */
+/* 平板端 (768px - 1023px) - 导航栏高度72px + 8px间距 */
 @media (min-width: 768px) and (max-width: 1023px) {
   .detail-topbar.is-sticky {
-    top: 72px;
-    /* 导航栏高度，不留间距以避免被遮挡 */
+    top: 80px;
+    /* 导航栏高度72px + 8px间距 = 80px */
   }
 }
 
-/* 桌面端 (>= 1024px) - 顶部导航78px */
+/* 桌面端 (>= 1024px) - 导航栏高度78px + 8px间距 */
 @media (min-width: 1024px) {
   .detail-topbar.is-sticky {
-    top: 78px;
-    /* 导航栏高度，不留间距以避免被遮挡 */
+    top: 86px;
+    /* 导航栏高度78px + 8px间距 = 86px */
   }
 }
 
