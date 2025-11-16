@@ -1,0 +1,253 @@
+文件夹 PATH 列表
+卷序列号为 0D36-10A9
+F:\PROJECTS\HMRCHAN\FRONTEND\SRC
+│  App.vue
+│  main.ts
+│  
+├─api
+│      client.ts
+│      forceHttpsAdapter.ts
+│      nativeFetchAdapter.ts
+│      services.ts
+│      
+├─components
+│  │  index.ts
+│  │  
+│  ├─base
+│  │      BackToTop.vue
+│  │      Button.md
+│  │      Button.vue
+│  │      ButtonExample.vue
+│  │      index.ts
+│  │      OptimizedImage.vue
+│  │      OptimizedImageLegacy.vue
+│  │      
+│  ├─business
+│  │  │  CacheManagement.vue
+│  │  │  FilterBar.vue
+│  │  │  index.ts
+│  │  │  Pagination.vue
+│  │  │  PostCard.vue
+│  │  │  PostPreviewPanel.vue
+│  │  │  SearchBar.vue
+│  │  │  
+│  │  └─PostCard
+│  │          PostCardActions.vue
+│  │          PostCardContent.vue
+│  │          PostCardMedia.vue
+│  │          
+│  ├─data-display
+│  │      Badge.vue
+│  │      Card.vue
+│  │      Divider.vue
+│  │      ImageViewer.vue
+│  │      index.ts
+│  │      MediaViewer.vue
+│  │      MediaViewerPlyr.vue
+│  │      StatCard.vue
+│  │      StatCardGrid.vue
+│  │      
+│  ├─feedback
+│  │      AccessLimitBanner.vue
+│  │      ApiUnavailableNotice.vue
+│  │      AsyncComponentLoader.vue
+│  │      BufferIndicator.vue
+│  │      CookieBanner.vue
+│  │      EmptyState.vue
+│  │      ErrorBoundary.vue
+│  │      index.ts
+│  │      LoadingProgress.vue
+│  │      LoadingSpinner.vue
+│  │      Modal.vue
+│  │      PerformanceDashboard.vue
+│  │      Skeleton.vue
+│  │      Toast.vue
+│  │      
+│  ├─form
+│  │      Checkbox.vue
+│  │      index.ts
+│  │      Input.vue
+│  │      Radio.vue
+│  │      RadioGroup.vue
+│  │      Select.vue
+│  │      Switch.vue
+│  │      
+│  └─layout
+│          AppFooter.vue
+│          AppNavbar.vue
+│          Grid.vue
+│          index.ts
+│          MainLayout.vue
+│          Section.vue
+│          Stack.vue
+│          
+├─composables
+│  │  index.ts
+│  │  
+│  ├─business
+│  │      useFavorites.ts
+│  │      usePostCard.ts
+│  │      usePostCardAnimation.ts
+│  │      
+│  ├─core
+│  │      useDebounce.ts
+│  │      useEventListener.ts
+│  │      useI18nFallback.ts
+│  │      useI18nOptimized.ts
+│  │      usePerformanceMonitoring.ts
+│  │      useResponsive.ts
+│  │      useThrottle.ts
+│  │      
+│  ├─data
+│  │      useInfiniteScroll.ts
+│  │      useOptimisticUpdate.ts
+│  │      usePagination.ts
+│  │      useSearch.ts
+│  │      
+│  ├─deprecated
+│  │      useResponsive.old.ts
+│  │      useResponsiveLayout.old.ts
+│  │      
+│  ├─form
+│  │      useAutoSave.ts
+│  │      useFormValidation.ts
+│  │      useInputMethod.ts
+│  │      
+│  ├─media
+│  │      useImageLazyLoad.ts
+│  │      useImagePreload.ts
+│  │      useImageUpload.ts
+│  │      useMediaErrorRecovery.ts
+│  │      useSmartPreload.ts
+│  │      useVirtualScroll.ts
+│  │      useWaterfallLayout.ts
+│  │      
+│  └─ui
+│          useAccessibility.ts
+│          useAnimation.ts
+│          useClipboard.ts
+│          useFocusTrap.ts
+│          useKeyboardShortcuts.ts
+│          useLazyComponent.ts
+│          useLongPress.ts
+│          useModal.ts
+│          useToast.ts
+│          
+├─config
+│      api.ts
+│      runtime.ts
+│      
+├─directives
+│      lazyLoad.ts
+│      
+├─i18n
+│  │  index.ts
+│  │  
+│  └─locales
+│          en.json
+│          ja.json
+│          zh-CN.json
+│          
+├─plugins
+│      imagePreload.ts
+│      
+├─router
+│      index.ts
+│      
+├─stores
+│      auth.ts
+│      counter.ts
+│      network.ts
+│      posts.ts
+│      settings.ts
+│      theme.ts
+│      toast.ts
+│      
+├─styles
+│  │  accessibility.css
+│  │  animations.css
+│  │  base.css
+│  │  critical.css
+│  │  desktop-optimizations.css
+│  │  glass.css
+│  │  index.css
+│  │  mobile-optimizations.css
+│  │  tablet-optimizations.css
+│  │  transitions.css
+│  │  utilities.css
+│  │  variables.css
+│  │  
+│  ├─components
+│  │      plyr-custom.css
+│  │      
+│  └─pages
+│          home.css
+│          
+├─types
+│      components.ts
+│      form.ts
+│      index.ts
+│      plyr.d.ts
+│      
+├─utils
+│  │  avatar.ts
+│  │  cacheHelper.ts
+│  │  common.ts
+│  │  dateFormat.ts
+│  │  errorHandler.ts
+│  │  errorHandlerImprovements.md
+│  │  errorHandlerReview.md
+│  │  errorMonitor.ts
+│  │  forceHttps.ts
+│  │  format.ts
+│  │  hybridCache.ts
+│  │  i18nDevTools.ts
+│  │  i18nScanner.ts
+│  │  imageOptimizer.ts
+│  │  index.ts
+│  │  indexedDB.ts
+│  │  logger-usage-examples.md
+│  │  logger.ts
+│  │  mediaOptimizer.ts
+│  │  numberFormat.ts
+│  │  offlineQueue.ts
+│  │  performance.ts
+│  │  preload.ts
+│  │  requestCache.ts
+│  │  serviceWorkerManager.ts
+│  │  storageManager.ts
+│  │  url.ts
+│  │  viewTracking.ts
+│  │  xss.ts
+│  │  
+│  ├─cache
+│  │      cacheInvalidation.ts
+│  │      CacheManager.ts
+│  │      index.ts
+│  │      
+│  ├─deprecated
+│  │      debounce.old.ts
+│  │      throttle.old.ts
+│  │      toast.old.ts
+│  │      
+│  └─performance
+│          performanceMonitor.ts
+│          README.md
+│          
+└─views
+        AuthorsPage.vue
+        DevToolsPage.vue
+        ExplorePage.vue
+        FavoritesPage.vue
+        HomePage.vue
+        LoginPage.vue
+        NotFoundPage.vue
+        PostDetailPage.vue
+        PostsView.vue
+        PreferencesPage.vue
+        PrivacyPage.vue
+        ProfilePage.vue
+        RegisterPage.vue
+        SearchPage.vue
+        SettingsPage.vue
+        
