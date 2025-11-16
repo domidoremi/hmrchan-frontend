@@ -377,7 +377,7 @@ const handleLogout = async () => {
   }
 }
 
-const handleToggleSetting = async (key: string) => {
+const handleToggleSetting = async (key: keyof typeof settingsStore.settings) => {
   try {
     settingsStore.toggleSetting(key)
     toastStore.success(t('settings.settingUpdated', 'Setting updated successfully'))
@@ -388,7 +388,7 @@ const handleToggleSetting = async (key: string) => {
   }
 }
 
-const handleUpdateSetting = async (key: string, value: unknown) => {
+const handleUpdateSetting = async (key: keyof typeof settingsStore.settings, value: number | boolean | null) => {
   try {
     settingsStore.updateSetting(key, value)
     toastStore.success(t('settings.settingUpdated', 'Setting updated successfully'))
