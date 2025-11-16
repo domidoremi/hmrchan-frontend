@@ -1,6 +1,6 @@
 {
   "app": {
-    "name": "HMRChan",
+    "name": "HMR Club",
     "description": "社交媒体内容聚合系统"
   },
   "nav": {
@@ -26,6 +26,7 @@
   },
   "post": {
     "title": "帖子",
+    "videos": "视频",
     "untitled": "无标题",
     "description": "描述",
     "author": "作者",
@@ -402,7 +403,7 @@
     "managePreferences": "管理偏好设置",
     "intro": {
       "title": "简介",
-      "content": "<p>欢迎使用 himeri chan！我们重视您的隐私，本政策说明我们如何收集、使用和保护您的个人信息。</p><p>使用我们的服务即表示您同意本隐私政策中描述的做法。</p>"
+      "content": "<p>欢迎使用 himeri club！我们重视您的隐私，本政策说明我们如何收集、使用和保护您的个人信息。</p><p>使用我们的服务即表示您同意本隐私政策中描述的做法。</p>"
     },
     "dataCollection": {
       "title": "我们收集的信息",
