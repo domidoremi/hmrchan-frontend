@@ -110,7 +110,7 @@
                     @click="settingsStore.toggleSetting('showHeroSection')">
                     <span class="settings-toggle-label">{{
                       $t('settings.toggleHeroSection')
-                    }}</span>
+                      }}</span>
                     <span class="settings-toggle-indicator" :class="{ active: settings.showHeroSection }"></span>
                   </button>
 
@@ -124,7 +124,7 @@
                     @click="settingsStore.toggleSetting('enableSwipeNavigation')">
                     <span class="settings-toggle-label">{{
                       $t('settings.toggleSwipeNavigation')
-                    }}</span>
+                      }}</span>
                     <span class="settings-toggle-indicator" :class="{ active: settings.enableSwipeNavigation }"></span>
                   </button>
                 </div>
@@ -426,7 +426,7 @@ const setTheme = (newTheme: Theme) => {
 }
 
 const changeLanguage = async (newLocale: string) => {
-  const { changeLocale } = await import('@/composables/useI18nOptimized')
+  const { changeLocale } = await import('@/composables/core/useI18nOptimized')
   await changeLocale(newLocale as 'en' | 'zh' | 'ja')
 }
 

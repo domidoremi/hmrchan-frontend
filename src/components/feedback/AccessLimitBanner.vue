@@ -22,7 +22,7 @@ import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { Info, AlertCircle } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/auth'
-import { useResponsive } from '@/composables/useResponsive'
+import { useResponsive } from '@/composables/core/useResponsive'
 
 interface Props {
   currentCount: number
@@ -79,7 +79,8 @@ const showDetails = () => {
 .access-limit-indicator {
   position: fixed;
   /* bottom 由动态计算提供 */
-  right: clamp(16px, 4vw, 24px);
+  /* 与 BackToTop 错开位置，避免重叠 */
+  right: clamp(80px, 10vw, 120px);
   z-index: 1000;
 }
 
