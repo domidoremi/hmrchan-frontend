@@ -308,11 +308,9 @@ import {
   Moon,
   Monitor,
 } from 'lucide-vue-next'
-import { useAuthStore } from '@/stores/auth'
-import { useSettingsStore } from '@/stores/settings'
-import { useThemeStore } from '@/stores/theme'
+import { useAuthStore, useSettingsStore, useThemeStore } from '@/stores'
 import type { Theme } from '@/types'
-import { offlineQueue } from '@/utils/offlineQueue'
+import { offlineQueue } from '@/utils/storage'
 
 const router = useRouter()
 const { locale } = useI18n()
@@ -427,7 +425,7 @@ const setTheme = (newTheme: Theme) => {
 
 const changeLanguage = async (newLocale: string) => {
   const { changeLocale } = await import('@/composables/core/useI18nOptimized')
-  await changeLocale(newLocale as 'en' | 'zh' | 'ja')
+  await changeLocale(newLocale as 'en' | 'zh-CN' | 'ja')
 }
 
 // 全局滑动切换主页面（仅移动端）

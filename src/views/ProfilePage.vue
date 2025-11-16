@@ -230,20 +230,20 @@ import {
 } from 'lucide-vue-next'
 
 import MainLayout from '@/components/layout/MainLayout.vue'
-import GlassButton from '@/components/base/Button.vue'
-import GlassInput from '@/components/form/Input.vue'
-import GlassModal from '@/components/feedback/Modal.vue'
-import StatCard from '@/components/data-display/StatCard.vue'
+import GlassButton from '@/components/ui/button/Button.vue'
+import GlassInput from '@/components/ui/input/Input.vue'
+import GlassModal from '@/components/ui/modal/Modal.vue'
+import StatCard from '@/components/ui/card/StatCard.vue'
 
-import { useAuthStore } from '@/stores/auth'
+import { useAuthStore, useToastStore } from '@/stores'
 import { uploadApi } from '@/api/services'
 import { api } from '@/api/client'
-import { useErrorHandler } from '@/utils/errorHandler'
-import { useToastStore } from '@/stores/toast'
+import { useErrorHandler } from '@/utils/error'
 import { formatRelativeTime } from '@/utils/format'
 import { getUserAvatar } from '@/utils/avatar'
 import { useImageUpload } from '@/composables'
 import { useI18n } from 'vue-i18n'
+import { isAxiosError } from '@/utils/typeGuards'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -329,8 +329,13 @@ async function loadStats() {
   try {
     // 获取用户统计数据
     const response = await api.get(`/users/${user.value?.id}/stats`, { cache: false })
-    favoritesCount.value = response.favorites_count || 0
-    viewsCount.value = response.views_count || 0
+
+    // Type guard for response object
+    if (response && typeof response === 'object' && 'favorites_count' in response) {
+      const statsResponse = response as { favorites_count?: number; views_count?: number }
+      favoritesCount.value = statsResponse.favorites_count || 0
+      viewsCount.value = statsResponse.views_count || 0
+    }
 
     console.debug('[ProfilePage] User stats loaded:', response)
   } catch (error) {
@@ -357,9 +362,12 @@ async function handleUpdateProfile() {
     toastStore.success(t('profile.profileUpdated'))
     showEditModal.value = false
   } catch (error) {
-    const errorMsg =
-      (error as { response?: { data?: { detail?: string } } }).response?.data?.detail ||
-      t('profile.profileUpdateFailed')
+    let errorMsg = t('profile.profileUpdateFailed')
+
+    if (isAxiosError(error) && error.response.data?.detail) {
+      errorMsg = error.response.data.detail
+    }
+
     handleError(error, { customMessage: errorMsg })
   } finally {
     updating.value = false
@@ -401,9 +409,12 @@ async function handleChangePassword() {
       router.push('/login')
     }, 1500)
   } catch (error) {
-    const errorMsg =
-      (error as { response?: { data?: { detail?: string } } }).response?.data?.detail ||
-      t('profile.passwordChangeFailed')
+    let errorMsg = t('profile.passwordChangeFailed')
+
+    if (isAxiosError(error) && error.response.data?.detail) {
+      errorMsg = error.response.data.detail
+    }
+
     handleError(error, { customMessage: errorMsg })
   } finally {
     changingPassword.value = false
@@ -436,9 +447,8 @@ async function handleAvatarUpload() {
 
     let errorMsg = t('profile.avatarUploadFailed')
 
-    // 处理不同类型的错误
-    const err = error as { response?: { data?: { detail?: string } }; message?: string }
-    if (err.response) {
+    // 处理不同类型的错误 - use type guard
+    if (isAxiosError(error)) {
       // 服务器返回了响应
       const status = error.response.status
 
@@ -451,9 +461,12 @@ async function handleAvatarUpload() {
       } else if (error.response.data?.detail) {
         errorMsg = error.response.data.detail
       }
-    } else if (error.message === 'Network Error') {
-      // 网络错误（包括CORS）
-      errorMsg = t('profile.networkError') || '网络连接失败，请检查网络或稍后重试'
+    } else if (error && typeof error === 'object' && 'message' in error) {
+      const err = error as { message: string }
+      if (err.message === 'Network Error') {
+        // 网络错误（包括CORS）
+        errorMsg = t('profile.networkError') || '网络连接失败，请检查网络或稍后重试'
+      }
     }
 
     toastStore.error(errorMsg)
@@ -484,9 +497,12 @@ async function handleDeleteAccount() {
     authStore.logout()
     router.push('/')
   } catch (error) {
-    const errorMsg =
-      (error as { response?: { data?: { detail?: string } } }).response?.data?.detail ||
-      t('profile.accountDeleteFailed')
+    let errorMsg = t('profile.accountDeleteFailed')
+
+    if (isAxiosError(error) && error.response.data?.detail) {
+      errorMsg = error.response.data.detail
+    }
+
     handleError(error, { customMessage: errorMsg })
   } finally {
     deleting.value = false

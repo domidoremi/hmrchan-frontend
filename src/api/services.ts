@@ -5,10 +5,11 @@
  */
 import { api } from './client'
 import { getRuntimeApiEndpoint } from '@/config/runtime'
-import { indexedDB } from '@/utils/indexedDB'
+import { indexedDB } from '@/utils/storage'
 import { cacheInvalidation } from '@/utils/cache/cacheInvalidation'
-import { handleError } from '@/utils/errorHandler'
+import { handleError } from '@/utils/error'
 import logger from '@/utils/logger'
+import { toLogContext } from '@/utils/typeGuards'
 import type {
   LoginRequest,
   LoginResponse,
@@ -84,9 +85,9 @@ export const authApi = {
       // 清除本地存储
       localStorage.removeItem('access_token')
       localStorage.removeItem('user')
-      logger.info('[Auth] User logged out successfully')
+      logger.info('[Auth] User logged out successfully', {})
     } catch (error) {
-      logger.error('[Auth] Error during logout:', error)
+      logger.error('[Auth] Error during logout', toLogContext(error))
     }
   },
 }
@@ -188,7 +189,7 @@ export const postsApi = {
       try {
         await indexedDB.savePosts(response.items)
       } catch (error) {
-        logger.warn('[Posts.GetPosts] Failed to save posts to IndexedDB:', error)
+        logger.warn('[Posts.GetPosts] Failed to save posts to IndexedDB', toLogContext(error))
       }
 
       return response
@@ -216,7 +217,10 @@ export const postsApi = {
       try {
         await indexedDB.savePosts([detail])
       } catch (error) {
-        logger.warn('[Posts.GetPostById] Failed to save post detail to IndexedDB:', error)
+        logger.warn(
+          '[Posts.GetPostById] Failed to save post detail to IndexedDB',
+          toLogContext(error),
+        )
       }
 
       return detail
@@ -371,7 +375,7 @@ export const mediaApi = {
       link.click()
       window.URL.revokeObjectURL(url)
 
-      logger.info('[Media] Downloaded media successfully:', mediaId)
+      logger.info('[Media] Downloaded media successfully', { mediaId })
     } catch (error) {
       handleError(error, 'Media.DownloadMedia', {
         customMessage: `Failed to download media: ${mediaId}`,
@@ -481,7 +485,7 @@ export const favoritesApi = {
       // 手动失效相关缓存
       await cacheInvalidation.invalidateByAction('favorites.add', data.post_id)
 
-      logger.info('[Favorites] Added favorite successfully:', data.post_id)
+      logger.info('[Favorites] Added favorite successfully', { postId: data.post_id })
       return result
     } catch (error) {
       handleError(error, 'Favorites.AddFavorite', {
@@ -501,7 +505,7 @@ export const favoritesApi = {
         invalidatePatterns: ['/favorites', `/favorites/${favoriteId}`],
       })
 
-      logger.info('[Favorites] Updated favorite successfully:', favoriteId)
+      logger.info('[Favorites] Updated favorite successfully', { favoriteId })
       return result
     } catch (error) {
       handleError(error, 'Favorites.UpdateFavorite', {
@@ -524,7 +528,7 @@ export const favoritesApi = {
       // 手动失效相关缓存
       await cacheInvalidation.invalidateByAction('favorites.remove', postId)
 
-      logger.info('[Favorites] Deleted favorite successfully:', postId)
+      logger.info('[Favorites] Deleted favorite successfully', { postId })
       return result
     } catch (error) {
       handleError(error, 'Favorites.DeleteFavorite', {
@@ -580,7 +584,10 @@ export const favoritesApi = {
       const result = await this.checkFavorite(postId)
       return result.is_favorited
     } catch (error) {
-      logger.warn('[Favorites] Failed to check favorite status, returning false:', error)
+      logger.warn(
+        '[Favorites] Failed to check favorite status, returning false',
+        toLogContext(error),
+      )
       return false
     }
   },
@@ -645,7 +652,7 @@ export const uploadApi = {
         },
       })
 
-      logger.info('[Upload] Avatar uploaded successfully')
+      logger.info('[Upload] Avatar uploaded successfully', {})
       return result
     } catch (error) {
       handleError(error, 'Upload.UploadAvatar', {
@@ -673,7 +680,7 @@ export const uploadApi = {
         },
       )
 
-      logger.info('[Upload] User avatar uploaded successfully:', userId)
+      logger.info('[Upload] User avatar uploaded successfully', { userId })
       return result
     } catch (error) {
       handleError(error, 'Upload.UploadUserAvatar', {

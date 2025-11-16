@@ -172,6 +172,7 @@ export function useListOptimisticUpdate<T extends { id: string | number }>(
     if (index === -1) return { success: false }
 
     const item = list.value[index]
+    if (!item) return { success: false }
 
     // Optimistically remove from list
     list.value.splice(index, 1)
@@ -200,12 +201,17 @@ export function useListOptimisticUpdate<T extends { id: string | number }>(
     const index = list.value.findIndex((i) => i.id === itemId)
     if (index === -1) return { success: false }
 
-    const originalItem = { ...list.value[index] }
+    const currentItem = list.value[index]
+    if (!currentItem) return { success: false }
+
+    const originalItem = { ...currentItem }
 
     // Optimistically update
-    list.value[index] = { ...list.value[index], ...updates }
+    list.value[index] = { ...currentItem, ...updates } as T
 
-    const currentItem = list.value[index]
+    const updatedCurrentItem = list.value[index]
+    if (!updatedCurrentItem) return { success: false }
+
     const result = await optimistic.execute(async () => {
       const updatedItem = await updateFn(itemId, updates)
       // Update with server response
@@ -214,13 +220,13 @@ export function useListOptimisticUpdate<T extends { id: string | number }>(
         list.value[currentIndex] = updatedItem
       }
       return updatedItem
-    }, currentItem)
+    }, updatedCurrentItem)
 
     // Rollback on error
     if (!result.success) {
       const currentIndex = list.value.findIndex((i) => i.id === itemId)
       if (currentIndex !== -1) {
-        list.value[currentIndex] = originalItem
+        list.value[currentIndex] = originalItem as T
       }
     }
 
@@ -239,6 +245,8 @@ export function useListOptimisticUpdate<T extends { id: string | number }>(
     if (index === -1) return { success: false }
 
     const item = list.value[index]
+    if (!item) return { success: false }
+
     const originalValue = item[property]
 
     if (typeof originalValue !== 'boolean') {
@@ -249,7 +257,10 @@ export function useListOptimisticUpdate<T extends { id: string | number }>(
     // Optimistically toggle
     const currentIndex = list.value.findIndex((i) => i.id === itemId)
     if (currentIndex !== -1) {
-      ;(list.value[currentIndex][property] as boolean) = !originalValue
+      const currentItem = list.value[currentIndex]
+      if (currentItem) {
+        ;(currentItem[property] as boolean) = !originalValue
+      }
     }
 
     const result = await optimistic.execute(async () => {
@@ -260,7 +271,10 @@ export function useListOptimisticUpdate<T extends { id: string | number }>(
     if (!result.success) {
       const rollbackIndex = list.value.findIndex((i) => i.id === itemId)
       if (rollbackIndex !== -1) {
-        ;(list.value[rollbackIndex][property] as boolean) = originalValue
+        const rollbackItem = list.value[rollbackIndex]
+        if (rollbackItem) {
+          ;(rollbackItem[property] as boolean) = originalValue
+        }
       }
     }
 

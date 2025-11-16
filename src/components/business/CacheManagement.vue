@@ -108,10 +108,10 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { Database, Zap, HardDrive, Archive, Trash2, AlertTriangle } from 'lucide-vue-next'
-import { hybridCache } from '@/utils/hybridCache'
-import { storage } from '@/utils/storageManager'
-import { useToastStore } from '@/stores/toast'
-import GlassButton from '@/components/base/Button.vue'
+import { hybridCache } from '@/utils/cache'
+import { storage } from '@/utils/storage'
+import { useToastStore } from '@/stores'
+import GlassButton from '@/components/ui/button/Button.vue'
 
 const toastStore = useToastStore()
 const clearing = ref(false)

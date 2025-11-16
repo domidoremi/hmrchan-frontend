@@ -1,23 +1,51 @@
 <template>
   <RouterLink :to="`/posts/${post.id}`" custom v-slot="{ navigate, href }">
-    <article ref="cardRef" :href="href" class="post-card" :data-post-id="post.id" role="article"
-      :aria-label="`Post by ${post.author_name || 'Anonymous'}: ${post.title || 'Untitled'}`" tabindex="0"
-      @click="handleClick($event, navigate)" @mouseenter="onHover" @mouseleave="onLeave"
-      @keydown.enter="handleClick($event, navigate)" @keydown.space.prevent="handleClick($event, navigate)">
+    <article
+      ref="cardRef"
+      :href="href"
+      class="post-card"
+      :data-post-id="post.id"
+      role="article"
+      :aria-label="`Post by ${post.author_name || 'Anonymous'}: ${post.title || 'Untitled'}`"
+      tabindex="0"
+      @click="handleClick($event, navigate)"
+      @mouseenter="onHover"
+      @mouseleave="onLeave"
+      @keydown.enter="handleClick($event, navigate)"
+      @keydown.space.prevent="handleClick($event, navigate)"
+    >
       <!-- 媒体容器 -->
-      <PostCardMedia ref="mediaComponentRef" :thumbnail-url="cardData.thumbnailUrl.value"
-        :alt="post.title || 'Post thumbnail'" :is-first-screen="isFirstScreen"
-        :platform-color="cardData.platformColor.value" :platform-name="cardData.platformName.value"
-        :duration="post.duration" :media-count="post.media_count" :is-retweet="cardData.isRetweet.value" />
+      <PostCardMedia
+        ref="mediaComponentRef"
+        :thumbnail-url="cardData.thumbnailUrl.value"
+        :alt="post.title || 'Post thumbnail'"
+        :is-first-screen="isFirstScreen"
+        :platform-color="cardData.platformColor.value"
+        :platform-name="cardData.platformName.value"
+        :duration="post.duration"
+        :media-count="post.media_count"
+        :is-retweet="cardData.isRetweet.value"
+      />
 
       <!-- 快捷操作按钮 -->
-      <PostCardActions v-if="showActions" :is-favorited="isFavorited" @favorite="handleFavorite" @share="handleShare"
-        @more="handleMore" />
+      <PostCardActions
+        v-if="showActions"
+        :is-favorited="isFavorited"
+        @favorite="handleFavorite"
+        @share="handleShare"
+        @more="handleMore"
+      />
 
       <!-- 内容区域 -->
-      <PostCardContent :title="post.title" :description="post.description"
-        :show-description="cardData.showDescription.value" :author-name="post.author_name" :view-count="post.view_count"
-        :like-count="post.like_count" :published-at="post.published_at" />
+      <PostCardContent
+        :title="post.title"
+        :description="post.description"
+        :show-description="cardData.showDescription.value"
+        :author-name="post.author_name"
+        :view-count="post.view_count"
+        :like-count="post.like_count"
+        :published-at="post.published_at"
+      />
     </article>
   </RouterLink>
 </template>
@@ -180,10 +208,12 @@ const handleMore = () => {
   /* 瀑布流：不使用padding-bottom，让图片自然高度 */
   flex-shrink: 0;
   overflow: hidden;
-  background: linear-gradient(135deg,
-      rgba(139, 92, 246, 0.06) 0%,
-      rgba(6, 182, 212, 0.06) 50%,
-      rgba(244, 114, 182, 0.06) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(139, 92, 246, 0.06) 0%,
+    rgba(6, 182, 212, 0.06) 50%,
+    rgba(244, 114, 182, 0.06) 100%
+  );
 }
 
 .media-wrapper {
@@ -337,7 +367,6 @@ const handleMore = () => {
 }
 
 @keyframes pulse {
-
   0%,
   100% {
     opacity: 1;

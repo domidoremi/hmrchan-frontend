@@ -1,0 +1,31 @@
+{
+  "error": {
+    "title": "出错了",
+    "unknown": "未知错误",
+    "details": "错误详情",
+    "componentInfo": "组件信息",
+    "retry": "重试",
+    "goHome": "返回首页",
+    "reload": "刷新页面",
+    "apiUnavailable": "API 服务不可用",
+    "apiUnavailableDesc": "无法连接到后端服务器。这可能是因为后端尚未部署或配置错误。请检查 API 配置或稍后再试。"
+  },
+  "errors": {
+    "permissionDenied": "权限不足",
+    "tooManyRequests": "请求过于频繁，请稍后再试",
+    "serverError": "服务器错误，请稍后再试",
+    "networkError": "网络错误，请检查您的连接",
+    "unknownError": "未知错误",
+    "videoPlaybackFailed": "视频播放失败"
+  },
+  "offline": {
+    "usingCache": "当前显示的是本地缓存数据，可能不是最新。",
+    "actionsQueued": "部分操作已加入离线队列，将在网络恢复后自动同步。",
+    "favoriteQueued": "已离线添加到收藏，稍后会自动与服务器同步。",
+    "unfavoriteQueued": "已离线取消收藏，稍后会自动与服务器同步。",
+    "queueTitle": "离线队列",
+    "queueEmpty": "当前没有待同步的操作。",
+    "syncNow": "立即同步",
+    "offlineNow": "您当前处于离线状态，一些功能可能暂时不可用。"
+  }
+}
