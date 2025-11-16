@@ -1,0 +1,31 @@
+{
+  "error": {
+    "title": "Something went wrong",
+    "unknown": "Unknown error",
+    "details": "Error Details",
+    "componentInfo": "Component Info",
+    "retry": "Retry",
+    "goHome": "Go Home",
+    "reload": "Reload Page",
+    "apiUnavailable": "API Service Unavailable",
+    "apiUnavailableDesc": "Unable to connect to the backend server. This may be because the backend has not been deployed yet or is misconfigured. Please check the API configuration or try again later."
+  },
+  "errors": {
+    "permissionDenied": "Permission denied",
+    "tooManyRequests": "Too many requests, please try again later",
+    "serverError": "Server error, please try again later",
+    "networkError": "Network error, please check your connection",
+    "unknownError": "Unknown error",
+    "videoPlaybackFailed": "Video playback failed"
+  },
+  "offline": {
+    "usingCache": "Showing cached offline data. It may not be up to date.",
+    "actionsQueued": "Some actions are queued offline and will sync when you're back online.",
+    "favoriteQueued": "Favorite added in offline mode. It will sync to the server later.",
+    "unfavoriteQueued": "Favorite removed in offline mode. It will sync to the server later.",
+    "queueTitle": "Offline queue",
+    "queueEmpty": "No pending actions to sync.",
+    "syncNow": "Sync now",
+    "offlineNow": "You are currently offline. Some features may be limited."
+  }
+}

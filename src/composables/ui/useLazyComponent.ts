@@ -1,5 +1,5 @@
 import { defineAsyncComponent, type Component } from 'vue'
-import AsyncComponentLoader from '@/components/feedback/AsyncComponentLoader.vue'
+import AsyncComponentLoader from '@/components/ui/loading/AsyncComponentLoader.vue'
 
 /**
  * 创建懒加载组件的工具函数

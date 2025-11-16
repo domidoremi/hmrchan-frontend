@@ -4,7 +4,7 @@
  */
 
 import type { App } from 'vue'
-import { smartPreloadImages } from '@/utils/imageOptimizer'
+import { smartPreloadImages } from '@/utils/media'
 
 export interface ImagePreloadPluginOptions {
   /**

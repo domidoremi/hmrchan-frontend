@@ -173,9 +173,7 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { useSettingsStore } from '@/stores/settings'
-import { useToastStore } from '@/stores/toast'
-import { useAuthStore } from '@/stores/auth'
+import { useSettingsStore, useToastStore, useAuthStore } from '@/stores'
 import { storeToRefs } from 'pinia'
 import MainLayout from '@/components/layout/MainLayout.vue'
 import {

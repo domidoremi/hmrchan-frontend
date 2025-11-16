@@ -3,7 +3,13 @@
  * This is the nuclear option to avoid any XHR interception
  */
 
-import type { AxiosAdapter, InternalAxiosRequestConfig, AxiosResponse, AxiosHeaders } from 'axios'
+import type {
+  AxiosAdapter,
+  InternalAxiosRequestConfig,
+  AxiosResponse,
+  AxiosHeaders,
+  AxiosRequestConfig,
+} from 'axios'
 import axios from 'axios'
 
 export const nativeFetchAdapter: AxiosAdapter = async (

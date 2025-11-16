@@ -115,7 +115,11 @@ export function useAutoSave<T>(
   /**
    * Debounced save function
    */
-  const { debounced: debouncedSave, cancel, flush } = useDebounceFn(save, delay)
+  const {
+    debounced: debouncedSave,
+    cancel,
+    flush,
+  } = useDebounceFn((dataToSave: unknown) => save(dataToSave as T), delay)
 
   /**
    * Watch for data changes and trigger auto-save
