@@ -1,6 +1,6 @@
 {
   "app": {
-    "name": "HMRChan",
+    "name": "himeri club",
     "description": "Social Media Content Aggregator"
   },
   "nav": {
@@ -26,6 +26,7 @@
   },
   "post": {
     "title": "Posts",
+    "videos": "Videos",
     "description": "Description",
     "author": "Author",
     "views": "views",
@@ -401,7 +402,7 @@
     "managePreferences": "Manage Preferences",
     "intro": {
       "title": "Introduction",
-      "content": "<p>Welcome to himeri chan! We value your privacy and this policy explains how we collect, use, and protect your personal information.</p><p>By using our service, you agree to the practices described in this privacy policy.</p>"
+      "content": "<p>Welcome to himeri club! We value your privacy and this policy explains how we collect, use, and protect your personal information.</p><p>By using our service, you agree to the practices described in this privacy policy.</p>"
     },
     "dataCollection": {
       "title": "Information We Collect",
