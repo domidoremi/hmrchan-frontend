@@ -19,7 +19,11 @@
         </div>
 
         <!-- Pagination -->
-        <Pagination :current-page="pagination.page" :total-pages="pagination.pages" @change="handlePageChange" />
+        <Pagination
+          :current-page="pagination.page"
+          :total-pages="pagination.pages"
+          @change="handlePageChange"
+        />
       </div>
 
       <!-- Empty State -->
@@ -153,7 +157,7 @@ const loadPosts = async () => {
     if (postsGrid.value) {
       const cards = postsGrid.value.querySelectorAll('a.post-card.card-entering')
       cards.forEach((card) => {
-        ; (card as HTMLElement).classList.remove('card-entering')
+        ;(card as HTMLElement).classList.remove('card-entering')
       })
     }
   }, 600)
@@ -288,7 +292,7 @@ const resetFilters = () => {
 
 /* 新卡片进入动画 */
 .explore-page .posts-grid .post-card.card-entering {
-  animation: cardFadeIn 0.5s ease forwards;
+  animation: cardFadeIn var(--duration-slower) var(--ease-decelerate) forwards;
 }
 
 @keyframes cardFadeIn {

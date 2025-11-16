@@ -11,19 +11,39 @@
 
         <!-- Login Form -->
         <form class="login-form" @submit.prevent="handleLogin">
-          <GlassInput v-model="formData.username" type="text" :label="$t('auth.username')"
-            :placeholder="$t('auth.username')" :icon="User" :disabled="loading"
-            :error="error && !formData.username ? $t('auth.fillAllFields') : ''" clearable autocomplete="username"
-            required />
+          <GlassInput
+            v-model="formData.username"
+            type="text"
+            :label="$t('auth.username')"
+            :placeholder="$t('auth.username')"
+            :icon="User"
+            :disabled="loading"
+            :error="error && !formData.username ? $t('auth.fillAllFields') : ''"
+            clearable
+            autocomplete="username"
+            required
+          />
 
-          <GlassInput v-model="formData.password" :type="showPassword ? 'text' : 'password'"
-            :label="$t('auth.password')" :placeholder="$t('auth.password')" :icon="Lock" :disabled="loading"
+          <GlassInput
+            v-model="formData.password"
+            :type="showPassword ? 'text' : 'password'"
+            :label="$t('auth.password')"
+            :placeholder="$t('auth.password')"
+            :icon="Lock"
+            :disabled="loading"
             :error="error && !formData.password ? $t('auth.fillAllFields') : ''"
-            :hint="$t('auth.passwordHint', 'Enter your password')" autocomplete="current-password" name="password"
-            required>
+            :hint="$t('auth.passwordHint', 'Enter your password')"
+            autocomplete="current-password"
+            name="password"
+            required
+          >
             <template #suffix>
-              <button type="button" class="password-toggle" @click="showPassword = !showPassword"
-                :aria-label="showPassword ? $t('auth.hidePassword') : $t('auth.showPassword')">
+              <button
+                type="button"
+                class="password-toggle"
+                @click="showPassword = !showPassword"
+                :aria-label="showPassword ? $t('auth.hidePassword') : $t('auth.showPassword')"
+              >
                 <Eye v-if="!showPassword" :size="18" />
                 <EyeOff v-else :size="18" />
               </button>
@@ -79,10 +99,12 @@ import GlassInput from '@/components/form/Input.vue'
 import GlassButton from '@/components/base/Button.vue'
 
 import { useAuthStore } from '@/stores/auth'
+import { useToastStore } from '@/stores/toast'
 
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
+const toastStore = useToastStore()
 const { t } = useI18n()
 
 const formData = ref({
@@ -118,6 +140,7 @@ const handleLogin = async () => {
   try {
     await authStore.login(formData.value)
     success.value = t('auth.loginSuccess', 'Login successful! Redirecting...')
+    toastStore.success(t('auth.loginSuccess', 'Login successful! Redirecting...'))
 
     // 等待一小段时间让用户看到成功提示
     setTimeout(async () => {
@@ -126,7 +149,11 @@ const handleLogin = async () => {
       await router.replace(redirect)
     }, 1000)
   } catch (err: unknown) {
-    const axiosError = err as { response?: { status: number; data?: { detail?: string; message?: string } }; request?: any; message?: string }
+    const axiosError = err as {
+      response?: { status: number; data?: { detail?: string; message?: string } }
+      request?: unknown
+      message?: string
+    }
     // 清除成功消息
     success.value = ''
 
@@ -173,6 +200,9 @@ const handleLogin = async () => {
       // 其他错误
       error.value = axiosError.message || t('auth.loginFailedMessage', '登录失败，请重试')
     }
+
+    // 显示错误 Toast 通知
+    toastStore.error(error.value)
   } finally {
     loading.value = false
   }
@@ -372,7 +402,6 @@ const handleLogin = async () => {
 }
 
 @keyframes float {
-
   0%,
   100% {
     transform: translateY(0) scale(1);

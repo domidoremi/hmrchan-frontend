@@ -1,15 +1,19 @@
 /**
  * 认证状态管理
+ * v2.0 - 增强错误处理：使用统一的错误处理机制
  */
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { User, LoginRequest } from '@/types'
 import { api } from '@/api/client'
+import { handleError } from '@/utils/errorHandler'
 import logger from '@/utils/logger'
 
 export const useAuthStore = defineStore(
   'auth',
   () => {
+    // 设置日志上下文
+    const logContext = { category: 'AuthStore' }
     // 状态
     const user = ref<User | null>(null)
     const token = ref<string | null>(null)
@@ -34,18 +38,25 @@ export const useAuthStore = defineStore(
         // 根据API文档，注册响应返回用户信息
         const response = await api.post<User>('/auth/register', data)
         user.value = response
-        
+
         // 保存用户信息
         localStorage.setItem('user', JSON.stringify(response))
-        
+
+        logger.info('User registered successfully', { ...logContext, username: data.username })
+
         // 注册成功后自动登录
         return login({
           username: data.username,
           password: data.password,
         })
       } catch (err: unknown) {
-        const axiosError = err as { response?: { data?: { detail?: string } } }
-        error.value = axiosError.response?.data?.detail || 'Registration failed'
+        const errorResponse = handleError(err, 'AuthStore.Register')
+        error.value = errorResponse.message
+        logger.error('Registration failed', {
+          ...logContext,
+          username: data.username,
+          error: errorResponse.message,
+        })
         throw err
       } finally {
         loading.value = false
@@ -71,10 +82,19 @@ export const useAuthStore = defineStore(
         // 登录后立即获取用户信息
         await fetchCurrentUser()
 
+        logger.info('User logged in successfully', {
+          ...logContext,
+          username: credentials.username,
+        })
         return response
       } catch (err: unknown) {
-        const axiosError = err as { response?: { data?: { detail?: string } } }
-        error.value = axiosError.response?.data?.detail || 'Login failed'
+        const errorResponse = handleError(err, 'AuthStore.Login')
+        error.value = errorResponse.message
+        logger.error('Login failed', {
+          ...logContext,
+          username: credentials.username,
+          error: errorResponse.message,
+        })
         throw err
       } finally {
         loading.value = false
@@ -83,6 +103,8 @@ export const useAuthStore = defineStore(
 
     // 登出
     function logout() {
+      const username = user.value?.username
+
       user.value = null
       token.value = null
       error.value = null
@@ -95,6 +117,8 @@ export const useAuthStore = defineStore(
         // 清空 sessionStorage（posts store 的持久化存储）
         sessionStorage.clear()
       }
+
+      logger.info('User logged out', { ...logContext, username })
     }
 
     // 获取当前用户信息
@@ -105,8 +129,12 @@ export const useAuthStore = defineStore(
         const response = await api.get<User>('/auth/me')
         user.value = response
         localStorage.setItem('user', JSON.stringify(response))
+        logger.info('Fetched current user successfully', { ...logContext, userId: response.id })
       } catch (err) {
-        logger.error('Failed to fetch user:', err)
+        handleError(err, 'AuthStore.FetchCurrentUser', {
+          customMessage: 'Failed to fetch current user information',
+        })
+        logger.error('Failed to fetch current user', logContext)
         logout()
       }
     }
@@ -120,8 +148,15 @@ export const useAuthStore = defineStore(
         token.value = savedToken
         try {
           user.value = JSON.parse(savedUser)
+          logger.debug('Auth state restored from storage', {
+            ...logContext,
+            userId: user.value?.id,
+          })
         } catch (err) {
-          logger.error('Failed to parse saved user:', err)
+          logger.error('Failed to parse saved user', {
+            ...logContext,
+            error: err instanceof Error ? err.message : 'Unknown error',
+          })
           logout()
         }
       }
@@ -152,6 +187,8 @@ export const useAuthStore = defineStore(
         ? {
             key: 'auth',
             storage: sessionStorage,
+            // 只持久化必要的状态，不持久化 loading 和 error
+            pick: ['user', 'token'],
           }
         : false,
   },

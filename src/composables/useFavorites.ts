@@ -1,6 +1,7 @@
 /**
  * Favorites组合式函数
  * v2.0 - UUID迁移：ID参数已从number改为string
+ * v2.1 - 增强错误处理：使用统一的错误处理机制
  */
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -10,6 +11,8 @@ import toast from '@/utils/toast'
 import { indexedDB } from '@/utils/indexedDB'
 import { useAuthStore } from '@/stores/auth'
 import { fetchWithFallback } from '@/utils/cacheHelper'
+import { handleError } from '@/utils/errorHandler'
+import logger from '@/utils/logger'
 
 export function useFavorites() {
   const { t } = useI18n()
@@ -176,7 +179,8 @@ export function useFavorites() {
 
       return data
     } catch (err: unknown) {
-      error.value = err instanceof Error ? err.message : 'Failed to fetch favorites'
+      const errorResponse = handleError(err, 'UseFavorites.FetchFavorites')
+      error.value = errorResponse.message
       fromFallback.value = false
       throw err
     } finally {
@@ -209,9 +213,9 @@ export function useFavorites() {
 
       return favorite
     } catch (err: unknown) {
-      const axiosError = err as { response?: { data?: { message?: string } } }
-      const message = axiosError.response?.data?.message || t('favorite.addFailed')
-      toast.error(message)
+      handleError(err, 'UseFavorites.AddFavorite', {
+        customMessage: t('favorite.addFailed'),
+      })
       throw err
     }
   }
@@ -229,9 +233,9 @@ export function useFavorites() {
       toast.success(t('favorite.updateSuccess'))
       return favorite
     } catch (err: unknown) {
-      const axiosError = err as { response?: { data?: { message?: string } } }
-      const message = axiosError.response?.data?.message || t('favorite.updateFailed')
-      toast.error(message)
+      handleError(err, 'UseFavorites.UpdateFavorite', {
+        customMessage: t('favorite.updateFailed'),
+      })
       throw err
     }
   }
@@ -262,12 +266,12 @@ export function useFavorites() {
           await indexedDB.removeFavorite(userId, postId)
         }
       } catch (e) {
-        console.error('[IndexedDB] Failed to remove favorite locally:', e)
+        logger.warn('[Favorites] Failed to remove favorite from IndexedDB:', e)
       }
     } catch (err: unknown) {
-      const axiosError = err as { response?: { data?: { message?: string } } }
-      const message = axiosError.response?.data?.message || t('favorite.removeFailed')
-      toast.error(message)
+      handleError(err, 'UseFavorites.DeleteFavorite', {
+        customMessage: t('favorite.removeFailed'),
+      })
       throw err
     }
   }

@@ -48,35 +48,29 @@
 
       <!-- Stats Cards -->
       <div class="stats-grid">
-        <div class="stat-card glass-card">
-          <div class="stat-icon">
-            <Heart :size="24" />
-          </div>
-          <div class="stat-info">
-            <div class="stat-value">{{ favoritesCount }}</div>
-            <div class="stat-label">{{ $t('profile.favorites') }}</div>
-          </div>
-        </div>
+        <StatCard
+          :icon="Heart"
+          icon-color="rgba(239, 68, 68, 0.8)"
+          :title="$t('profile.favorites')"
+          :value="favoritesCount"
+          :loading="!user"
+        />
 
-        <div class="stat-card glass-card">
-          <div class="stat-icon">
-            <Eye :size="24" />
-          </div>
-          <div class="stat-info">
-            <div class="stat-value">{{ viewsCount }}</div>
-            <div class="stat-label">{{ $t('profile.views') }}</div>
-          </div>
-        </div>
+        <StatCard
+          :icon="Eye"
+          icon-color="rgba(59, 130, 246, 0.8)"
+          :title="$t('profile.views')"
+          :value="viewsCount"
+          :loading="!user"
+        />
 
-        <div class="stat-card glass-card">
-          <div class="stat-icon">
-            <Calendar :size="24" />
-          </div>
-          <div class="stat-info">
-            <div class="stat-value">{{ joinedDays }}</div>
-            <div class="stat-label">{{ $t('profile.days') }}</div>
-          </div>
-        </div>
+        <StatCard
+          :icon="Calendar"
+          icon-color="rgba(139, 92, 246, 0.8)"
+          :title="$t('profile.days')"
+          :value="joinedDays"
+          :loading="!user"
+        />
       </div>
 
       <!-- Account Information -->
@@ -295,6 +289,7 @@ import MainLayout from '@/components/layout/MainLayout.vue'
 import GlassButton from '@/components/base/Button.vue'
 import GlassInput from '@/components/form/Input.vue'
 import GlassModal from '@/components/feedback/Modal.vue'
+import StatCard from '@/components/data-display/StatCard.vue'
 
 import { useAuthStore } from '@/stores/auth'
 import { uploadApi } from '@/api/services'
@@ -327,11 +322,7 @@ const avatarUrl = computed(() => {
 })
 
 // 头像上传
-const {
-  uploading: uploadingAvatar,
-  preview: avatarPreview,
-  selectImage,
-} = useImageUpload({
+const { uploading: uploadingAvatar, selectImage } = useImageUpload({
   maxSize: 2, // 2MB
   maxWidth: 512,
   maxHeight: 512,
@@ -496,13 +487,14 @@ async function handleAvatarUpload() {
     console.log('🔄 Force refresh avatar with new key:', avatarRefreshKey.value)
 
     toastStore.success(t('profile.avatarUploadSuccess'))
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('❌ Avatar upload error:', error)
 
     let errorMsg = t('profile.avatarUploadFailed')
 
     // 处理不同类型的错误
-    if (error.response) {
+    const err = error as { response?: { data?: { detail?: string } }; message?: string }
+    if (err.response) {
       // 服务器返回了响应
       const status = error.response.status
 
@@ -696,35 +688,6 @@ function formatDate(dateStr: string | undefined) {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: var(--spacing-lg);
-}
-
-.stat-card {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-md);
-  padding: var(--spacing-xl);
-}
-
-.stat-icon {
-  width: 60px;
-  height: 60px;
-  border-radius: var(--radius-lg);
-  background: rgba(var(--color-primary-rgb), 0.1);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--color-primary);
-}
-
-.stat-value {
-  font-size: var(--text-3xl);
-  font-weight: var(--font-bold);
-  color: var(--color-text-primary);
-}
-
-.stat-label {
-  color: var(--color-text-secondary);
-  font-size: var(--text-sm);
 }
 
 /* Account Info */
@@ -971,10 +934,6 @@ function formatDate(dateStr: string | undefined) {
     gap: var(--spacing-md);
   }
 
-  .stat-card {
-    padding: var(--spacing-md);
-  }
-
   .info-grid {
     grid-template-columns: 1fr;
   }
@@ -1028,29 +987,6 @@ function formatDate(dateStr: string | undefined) {
 
   .stats-grid {
     gap: var(--spacing-sm);
-  }
-
-  .stat-card {
-    padding: var(--spacing-sm);
-    gap: var(--spacing-sm);
-  }
-
-  .stat-icon {
-    width: 36px;
-    height: 36px;
-  }
-
-  .stat-icon svg {
-    width: 18px;
-    height: 18px;
-  }
-
-  .stat-value {
-    font-size: var(--text-xl);
-  }
-
-  .stat-label {
-    font-size: var(--text-xs);
   }
 
   .info-section {

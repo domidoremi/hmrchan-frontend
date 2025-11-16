@@ -92,11 +92,17 @@ export class PerformanceMonitor {
    */
   getMemoryUsage() {
     if ('memory' in performance) {
-      const memory = (performance as any).memory
-      return {
-        usedJSHeapSize: (memory.usedJSHeapSize / 1048576).toFixed(2) + ' MB',
-        totalJSHeapSize: (memory.totalJSHeapSize / 1048576).toFixed(2) + ' MB',
-        jsHeapSizeLimit: (memory.jsHeapSizeLimit / 1048576).toFixed(2) + ' MB',
+      const memory = (
+        performance as Performance & {
+          memory?: { usedJSHeapSize: number; totalJSHeapSize: number; jsHeapSizeLimit: number }
+        }
+      ).memory
+      if (memory) {
+        return {
+          usedJSHeapSize: (memory.usedJSHeapSize / 1048576).toFixed(2) + ' MB',
+          totalJSHeapSize: (memory.totalJSHeapSize / 1048576).toFixed(2) + ' MB',
+          jsHeapSizeLimit: (memory.jsHeapSizeLimit / 1048576).toFixed(2) + ' MB',
+        }
       }
     }
     return null
@@ -125,6 +131,6 @@ if (import.meta.env.DEV) {
 
   // 暴露到全局方便调试
   if (typeof window !== 'undefined') {
-    ;(window as any).__perfMonitor = perfMonitor
+    ;(window as Window & { __perfMonitor?: typeof perfMonitor }).__perfMonitor = perfMonitor
   }
 }

@@ -1,16 +1,30 @@
 <template>
   <Teleport to="body">
-    <Transition name="modal">
-      <div v-if="modelValue" class="glass-modal-backdrop" @click="handleBackdropClick">
-        <div class="glass-modal" :class="sizeClass" @click.stop>
+    <Transition name="modal" @after-enter="onAfterEnter" @after-leave="onAfterLeave">
+      <div
+        v-if="modelValue"
+        class="glass-modal-backdrop"
+        @click="handleBackdropClick"
+        @keydown.esc="close"
+      >
+        <div
+          ref="modalRef"
+          class="glass-modal"
+          :class="sizeClass"
+          role="dialog"
+          aria-modal="true"
+          :aria-labelledby="titleId"
+          :aria-describedby="bodyId"
+          @click.stop
+        >
           <div v-if="!hideHeader" class="modal-header">
-            <h3 class="modal-title">{{ title }}</h3>
-            <button class="modal-close" @click="close">
-              <X :size="20" />
+            <h3 :id="titleId" class="modal-title">{{ title }}</h3>
+            <button class="modal-close" @click="close" aria-label="Close dialog">
+              <X :size="20" aria-hidden="true" />
             </button>
           </div>
 
-          <div class="modal-body">
+          <div :id="bodyId" class="modal-body">
             <slot />
           </div>
 
@@ -24,8 +38,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed, watch } from 'vue'
+import { computed, watch, ref, nextTick, onMounted } from 'vue'
 import { X } from 'lucide-vue-next'
+import { useFocusManagement } from '@/composables/useAccessibility'
 
 interface Props {
   modelValue: boolean
@@ -46,6 +61,16 @@ const emit = defineEmits<{
   'update:modelValue': [value: boolean]
 }>()
 
+const modalRef = ref<HTMLElement>()
+const previousFocusedElement = ref<HTMLElement | null>(null)
+let cleanupFocusTrap: (() => void) | undefined
+
+const { trapFocus, saveFocus, restoreFocus } = useFocusManagement()
+
+// Generate unique IDs for ARIA
+const titleId = computed(() => `modal-title-${Math.random().toString(36).substr(2, 9)}`)
+const bodyId = computed(() => `modal-body-${Math.random().toString(36).substr(2, 9)}`)
+
 const sizeClass = computed(() => `modal-${props.size}`)
 
 const close = () => {
@@ -56,6 +81,43 @@ const handleBackdropClick = () => {
   if (props.closeOnBackdrop) {
     close()
   }
+}
+
+// 模态框打开后设置焦点陷阱
+const onAfterEnter = async () => {
+  await nextTick()
+  if (modalRef.value) {
+    // 保存之前的焦点
+    previousFocusedElement.value = saveFocus()
+
+    // 设置焦点陷阱
+    cleanupFocusTrap = trapFocus(modalRef.value)
+
+    // 将焦点移到模态框的第一个可聚焦元素
+    const firstFocusable = modalRef.value.querySelector<HTMLElement>(
+      'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+    )
+    if (firstFocusable) {
+      firstFocusable.focus()
+    } else {
+      // 如果没有可聚焦元素，聚焦到模态框本身
+      modalRef.value.setAttribute('tabindex', '-1')
+      modalRef.value.focus()
+    }
+  }
+}
+
+// 模态框关闭后恢复焦点
+const onAfterLeave = () => {
+  // 清理焦点陷阱
+  if (cleanupFocusTrap) {
+    cleanupFocusTrap()
+    cleanupFocusTrap = undefined
+  }
+
+  // 恢复之前的焦点
+  restoreFocus(previousFocusedElement.value)
+  previousFocusedElement.value = null
 }
 
 // 防止背景滚动
@@ -69,6 +131,17 @@ watch(
     }
   },
 )
+
+// 组件卸载时清理
+onMounted(() => {
+  return () => {
+    if (cleanupFocusTrap) {
+      cleanupFocusTrap()
+    }
+    // 确保恢复 body 滚动
+    document.body.style.overflow = ''
+  }
+})
 </script>
 
 <style scoped>
@@ -130,8 +203,10 @@ watch(
   backdrop-filter: blur(4px);
   z-index: var(--z-modal);
   display: flex;
-  align-items: center; /* 垂直居中 */
-  justify-content: center; /* 水平居中 */
+  align-items: center;
+  /* 垂直居中 */
+  justify-content: center;
+  /* 水平居中 */
   padding: var(--spacing-lg);
   overflow-y: auto;
 }

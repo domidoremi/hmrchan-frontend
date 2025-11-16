@@ -325,7 +325,15 @@ export const smartPreloader = new SmartPreloader()
 
 // 开发环境暴露到全局
 if (import.meta.env.DEV && typeof window !== 'undefined') {
-  ;(window as any).__preloader = {
+  ;(
+    window as Window & {
+      __preloader?: {
+        image: typeof imagePreloader
+        video: typeof videoPreloader
+        smart: typeof smartPreloader
+      }
+    }
+  ).__preloader = {
     image: imagePreloader,
     video: videoPreloader,
     smart: smartPreloader,

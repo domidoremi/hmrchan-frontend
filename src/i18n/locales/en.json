@@ -159,7 +159,10 @@
     "toggleTheme": "Toggle theme",
     "toggleHeroSection": "Toggle home hero banner",
     "toggleAnimations": "Toggle animations",
-    "toggleSwipeNavigation": "Toggle swipe navigation"
+    "toggleSwipeNavigation": "Toggle swipe navigation",
+    "saving": "Saving...",
+    "saved": "Saved",
+    "saveFailed": "Save failed"
   },
   "common": {
     "loading": "Loading...",

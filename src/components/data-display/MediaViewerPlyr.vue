@@ -3,29 +3,52 @@
     <div class="media-viewer" @click.stop>
       <!-- 工具栏 -->
       <div class="viewer-toolbar" :class="{ 'controls-hidden': !controlsVisible }">
-        <button class="viewer-btn toolbar-btn" @click="toggleFullscreen" :title="$t('common.fullscreen')">
+        <button
+          class="viewer-btn toolbar-btn"
+          @click="toggleFullscreen"
+          :title="$t('common.fullscreen')"
+        >
           <Maximize :size="20" />
         </button>
-        <button class="viewer-btn toolbar-btn" @click="downloadMedia" :title="$t('common.download')">
+        <button
+          class="viewer-btn toolbar-btn"
+          @click="downloadMedia"
+          :title="$t('common.download')"
+        >
           <Download :size="20" />
         </button>
-        <button class="viewer-btn toolbar-btn close-btn" @click="close" :aria-label="$t('aria.closeViewer')">
+        <button
+          class="viewer-btn toolbar-btn close-btn"
+          @click="close"
+          :aria-label="$t('aria.closeViewer')"
+        >
           <X :size="24" />
         </button>
       </div>
 
       <!-- 上一张按钮 -->
-      <button v-if="mediaItems.length > 1" class="viewer-btn prev-btn" :class="{ 'controls-hidden': !controlsVisible }"
-        @click="prev" :disabled="currentIndex === 0" :aria-label="$t('aria.previousImage')">
+      <button
+        v-if="mediaItems.length > 1"
+        class="viewer-btn prev-btn"
+        :class="{ 'controls-hidden': !controlsVisible }"
+        @click="prev"
+        :disabled="currentIndex === 0"
+        :aria-label="$t('aria.previousImage')"
+      >
         <ChevronLeft :size="32" />
       </button>
 
       <!-- 媒体内容 -->
       <div class="media-container">
         <!-- 图片 -->
-        <img v-if="currentMedia.type === 'image'" :src="currentMedia.url"
-          :alt="`${$t('post.image')} ${currentIndex + 1}`" @load="onMediaLoad" :style="imageStyle"
-          class="media-content-img" />
+        <img
+          v-if="currentMedia.type === 'image'"
+          :src="currentMedia.url"
+          :alt="`${$t('post.image')} ${currentIndex + 1}`"
+          @load="onMediaLoad"
+          :style="imageStyle"
+          class="media-content-img"
+        />
 
         <!-- 视频 (使用 Plyr) -->
         <div v-else-if="currentMedia.type === 'video'" class="video-wrapper">
@@ -34,15 +57,26 @@
 
             <!-- 多语言字幕支持 -->
             <template v-if="currentMedia.subtitles && currentMedia.subtitles.length > 0">
-              <track v-for="(sub, index) in currentMedia.subtitles" :key="`${currentMedia.url}-${sub.language}`"
-                kind="captions" :label="sub.label" :srclang="sub.language"
+              <track
+                v-for="(sub, index) in currentMedia.subtitles"
+                :key="`${currentMedia.url}-${sub.language}`"
+                kind="captions"
+                :label="sub.label"
+                :srclang="sub.language"
                 :src="`${runtimeApiEndpoint}/media/${currentMedia.mediaId}/subtitle?language=${sub.language}`"
-                :default="index === 0" />
+                :default="index === 0"
+              />
             </template>
 
             <!-- 向后兼容：单字幕模式 -->
-            <track v-else-if="currentMedia.subtitle" kind="captions" label="中文" srclang="zh"
-              :src="currentMedia.subtitle" default />
+            <track
+              v-else-if="currentMedia.subtitle"
+              kind="captions"
+              label="中文"
+              srclang="zh"
+              :src="currentMedia.subtitle"
+              default
+            />
           </video>
         </div>
 
@@ -53,8 +87,14 @@
       </div>
 
       <!-- 下一张按钮 -->
-      <button v-if="mediaItems.length > 1" class="viewer-btn next-btn" :class="{ 'controls-hidden': !controlsVisible }"
-        @click="next" :disabled="currentIndex === mediaItems.length - 1" :aria-label="$t('aria.nextImage')">
+      <button
+        v-if="mediaItems.length > 1"
+        class="viewer-btn next-btn"
+        :class="{ 'controls-hidden': !controlsVisible }"
+        @click="next"
+        :disabled="currentIndex === mediaItems.length - 1"
+        :aria-label="$t('aria.nextImage')"
+      >
         <ChevronRight :size="32" />
       </button>
 
