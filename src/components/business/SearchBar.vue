@@ -1,16 +1,26 @@
 <template>
   <div class="search-bar glass-card animated">
     <Search :size="20" class="search-icon" />
-    <input v-model="searchQuery" type="search" :placeholder="$t('search.placeholder')" class="search-input"
-      @keyup.enter="handleSearch" @input="handleInput" />
+    <input
+      v-model="searchQuery"
+      type="search"
+      :placeholder="$t('search.placeholder')"
+      class="search-input"
+      @keyup.enter="handleSearch"
+      @input="handleInput"
+    />
     <button v-if="searchQuery" class="clear-button" @click="clearSearch">
       <X :size="18" />
     </button>
 
     <!-- 搜索建议下拉 -->
     <div v-if="showSuggestions && suggestions.length > 0" class="suggestions-dropdown glass-card">
-      <div v-for="suggestion in suggestions" :key="suggestion.id" class="suggestion-item"
-        @click="selectSuggestion(suggestion)">
+      <div
+        v-for="suggestion in suggestions"
+        :key="suggestion.id"
+        class="suggestion-item"
+        @click="selectSuggestion(suggestion)"
+      >
         <Search :size="16" />
         <div>
           <div>{{ suggestion.label }}</div>
