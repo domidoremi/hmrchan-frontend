@@ -170,24 +170,49 @@ export const usePostsStore = defineStore(
       }
     }
 
-    // 获取单个内容详情（带 IndexedDB 回退）
-    async function fetchPost(postId: UUID) {
+    // 获取单个内容详情（Stale-While-Revalidate策略）
+    async function fetchPost(postId: UUID, options = { forceFresh: false }) {
       loading.value = true
       error.value = null
 
       try {
+        // 1. 先尝试从缓存读取（如果不是强制刷新）
+        if (!options.forceFresh) {
+          const cached = await indexedDB.getPost(postId)
+
+          // 如果缓存新鲜（5分钟内），立即返回并后台刷新
+          if (cached && indexedDB.isCacheFresh(cached, 5 * 60 * 1000)) {
+            const cachedDetail = cached as unknown as PostDetail
+
+            currentPost.value = cachedDetail
+            lastDetailFromFallback.value = false
+            loading.value = false
+
+            // 后台静默刷新（不显示loading，不抛出错误）
+            api
+              .get<PostDetail>(`/posts/${postId}`)
+              .then(async (response) => {
+                currentPost.value = response
+                await indexedDB.savePosts([response])
+                console.log('[PostsStore] Background refresh completed for', postId)
+              })
+              .catch((err) => {
+                console.warn('[PostsStore] Background refresh failed:', err)
+              })
+
+            return cachedDetail
+          }
+        }
+
+        // 2. 缓存不存在/过期/强制刷新 - 请求网络
         const { data, fromFallback } = await fetchWithFallback<PostDetail>({
           primary: () => api.get<PostDetail>(`/posts/${postId}`),
           fallback: async () => {
-            // 从 IndexedDB 读取基础 Post 信息，构造一个最小可用的 PostDetail
+            // 网络失败时，使用过期缓存
             try {
               const cached = await indexedDB.getPost(postId)
               if (!cached) return null
-              return {
-                ...cached,
-                media_files: [],
-                tags: [],
-              } as PostDetail
+              return cached as unknown as PostDetail
             } catch {
               return null
             }
@@ -202,8 +227,6 @@ export const usePostsStore = defineStore(
         })
 
         currentPost.value = data
-
-        // 标记此次详情数据是否来自本地回退
         lastDetailFromFallback.value = !!fromFallback
 
         return data

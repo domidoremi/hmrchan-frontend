@@ -78,5 +78,14 @@
     "personalization": "个性化 Cookie",
     "personalizationDesc": "记住您的偏好，为您提供个性化内容。",
     "required": "必需"
+  },
+  "cache": {
+    "justNow": "刚刚",
+    "minutesAgo": "{minutes}分钟前",
+    "hoursAgo": "{hours}小时前",
+    "cachedAt": "缓存于: {time}",
+    "fresh": "新鲜数据",
+    "stale": "数据稍旧",
+    "expired": "数据已过期"
   }
 }
