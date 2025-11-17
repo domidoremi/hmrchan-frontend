@@ -1128,7 +1128,8 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: visible;
+  overflow: hidden;
+  /* 修复：防止背景模糊(scale 1.28)超出容器 */
   box-shadow: 0 16px 40px -20px rgba(15, 23, 42, 0.28);
   transition:
     transform 0.28s cubic-bezier(0.4, 0, 0.2, 1),

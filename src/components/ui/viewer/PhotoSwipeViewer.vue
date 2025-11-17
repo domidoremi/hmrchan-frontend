@@ -135,25 +135,6 @@ const initPhotoSwipe = () => {
     arrowNextTitle: '下一个',
   })
 
-  // 阻止PhotoSwipe容器的触摸事件冒泡到网站手势处理器
-  pswp.on('beforeOpen', () => {
-    console.log('[PhotoSwipeViewer] Blocking website gestures')
-    // 多层阻止网站级别的路由切换手势
-    document.documentElement.style.touchAction = 'none'
-    document.documentElement.style.overflow = 'hidden'
-    document.body.style.touchAction = 'none'
-    document.body.style.overflow = 'hidden'
-  })
-
-  pswp.on('openingAnimationEnd', () => {
-    // 在PhotoSwipe容器上也设置touchAction
-    const pswpElement = document.querySelector('.pswp')
-    if (pswpElement) {
-      (pswpElement as HTMLElement).style.touchAction = 'pan-x pan-y'
-      console.log('[PhotoSwipeViewer] Set touchAction on .pswp element')
-    }
-  })
-
   // 监听内容加载事件
   pswp.on('contentLoad', (e: any) => {
     console.log('[PhotoSwipeViewer] contentLoad:', e.content?.type, e.content?.data)
@@ -169,12 +150,7 @@ const initPhotoSwipe = () => {
 
   // 监听关闭事件
   pswp.on('close', () => {
-    console.log('[PhotoSwipeViewer] Closing PhotoSwipe, restoring website gestures')
-    // 恢复网站级别的路由切换手势和滚动
-    document.documentElement.style.touchAction = ''
-    document.documentElement.style.overflow = ''
-    document.body.style.touchAction = ''
-    document.body.style.overflow = ''
+    console.log('[PhotoSwipeViewer] Closing PhotoSwipe')
     emit('close')
   })
 
