@@ -33,53 +33,51 @@
 
         <div :class="['detail-grid', { 'single-column': isTabletOrBelow }]">
           <section :class="['media-column', { 'compact-media': isMobileViewport }]">
-            <div class="media-hero glass-card" :class="{
+            <div v-if="post.thumbnail_url" class="post-thumbnail-container" :class="{
               'video-layout': isVideoPost,
               'youtube-layout': isYouTube,
               'tiktok-layout': isTikTok,
             }">
-              <div v-if="post.thumbnail_url" class="post-thumbnail-container">
-                <button v-show="allMediaUrls.length > 1" class="thumbnail-nav-btn prev-thumbnail-btn"
-                  :class="{ 'nav-btn-disabled': currentThumbnailIndex === 0 }" @click.stop="prevThumbnail"
-                  :disabled="currentThumbnailIndex === 0" :aria-label="$t('common.previous')">
-                  <ChevronLeft :size="20" />
-                </button>
+              <button v-show="allMediaUrls.length > 1" class="thumbnail-nav-btn prev-thumbnail-btn"
+                :class="{ 'nav-btn-disabled': currentThumbnailIndex === 0 }" @click.stop="prevThumbnail"
+                :disabled="currentThumbnailIndex === 0" :aria-label="$t('common.previous')">
+                <ChevronLeft :size="20" />
+              </button>
 
-                <div class="post-thumbnail" @click="openMediaViewer(currentThumbnailIndex)"
-                  @touchstart.passive="handleThumbnailTouchStart" @touchmove.passive="handleThumbnailTouchMove"
-                  @touchend.passive="handleThumbnailTouchEnd" @touchcancel.passive="handleThumbnailTouchEnd">
-                  <div class="media-backdrop" aria-hidden="true">
-                    <transition name="thumbnail-fade" mode="out-in">
-                      <img v-if="currentMediaType !== 'video'" :key="`bg-${currentThumbnailUrl}`"
-                        :src="currentThumbnailUrl" alt="" decoding="async" />
-                      <video v-else :key="`bg-video-${currentThumbnailUrl}`" :src="currentThumbnailUrl" muted
-                        playsinline preload="metadata"></video>
-                    </transition>
-                  </div>
-
+              <div class="post-thumbnail" @click="openMediaViewer(currentThumbnailIndex)"
+                @touchstart.passive="handleThumbnailTouchStart" @touchmove.passive="handleThumbnailTouchMove"
+                @touchend.passive="handleThumbnailTouchEnd" @touchcancel.passive="handleThumbnailTouchEnd">
+                <div class="media-backdrop" aria-hidden="true">
                   <transition name="thumbnail-fade" mode="out-in">
-                    <img v-if="currentMediaType !== 'video'" :key="`image-${currentThumbnailUrl}`"
-                      :src="currentThumbnailUrl" :alt="post.title || 'Post thumbnail'" loading="eager" decoding="async"
-                      fetchpriority="high" />
-                    <video v-else :key="`video-${currentThumbnailUrl}`" :src="currentThumbnailUrl" preload="metadata"
-                      playsinline muted
-                      :poster="post.thumbnail_url ? resolveMediaUrl(post.thumbnail_url) : undefined"></video>
+                    <img v-if="currentMediaType !== 'video'" :key="`bg-${currentThumbnailUrl}`"
+                      :src="currentThumbnailUrl" alt="" decoding="async" />
+                    <video v-else :key="`bg-video-${currentThumbnailUrl}`" :src="currentThumbnailUrl" muted playsinline
+                      preload="metadata"></video>
                   </transition>
-                  <div class="thumbnail-overlay" :class="{ 'is-video': currentMediaType === 'video' }">
-                    <component :is="currentMediaType === 'video' ? Play : Maximize2" :size="32" />
-                  </div>
-                  <div v-if="allMediaUrls.length > 1" class="thumbnail-counter">
-                    {{ currentThumbnailIndex + 1 }} / {{ allMediaUrls.length }}
-                  </div>
                 </div>
 
-                <button v-show="allMediaUrls.length > 1" class="thumbnail-nav-btn next-thumbnail-btn"
-                  :class="{ 'nav-btn-disabled': currentThumbnailIndex === allMediaUrls.length - 1 }"
-                  @click.stop="nextThumbnail" :disabled="currentThumbnailIndex === allMediaUrls.length - 1"
-                  :aria-label="$t('common.next')">
-                  <ChevronRight :size="20" />
-                </button>
+                <transition name="thumbnail-fade" mode="out-in">
+                  <img v-if="currentMediaType !== 'video'" :key="`image-${currentThumbnailUrl}`"
+                    :src="currentThumbnailUrl" :alt="post.title || 'Post thumbnail'" loading="eager" decoding="async"
+                    fetchpriority="high" />
+                  <video v-else :key="`video-${currentThumbnailUrl}`" :src="currentThumbnailUrl" preload="metadata"
+                    playsinline muted
+                    :poster="post.thumbnail_url ? resolveMediaUrl(post.thumbnail_url) : undefined"></video>
+                </transition>
+                <div class="thumbnail-overlay" :class="{ 'is-video': currentMediaType === 'video' }">
+                  <component :is="currentMediaType === 'video' ? Play : Maximize2" :size="32" />
+                </div>
+                <div v-if="allMediaUrls.length > 1" class="thumbnail-counter">
+                  {{ currentThumbnailIndex + 1 }} / {{ allMediaUrls.length }}
+                </div>
               </div>
+
+              <button v-show="allMediaUrls.length > 1" class="thumbnail-nav-btn next-thumbnail-btn"
+                :class="{ 'nav-btn-disabled': currentThumbnailIndex === allMediaUrls.length - 1 }"
+                @click.stop="nextThumbnail" :disabled="currentThumbnailIndex === allMediaUrls.length - 1"
+                :aria-label="$t('common.next')">
+                <ChevronRight :size="20" />
+              </button>
             </div>
           </section>
 
@@ -1122,27 +1120,27 @@ onUnmounted(() => {
   box-shadow: none;
 }
 
-/* 移动端 (< 768px) - 导航栏高度66px + 8px间距 */
+/* 移动端 (< 768px) - 导航栏高度66px + 16px间距 */
 @media (max-width: 767px) {
   .detail-topbar.is-sticky {
-    top: 74px;
-    /* 导航栏高度66px + 8px间距 = 74px */
+    top: 82px;
+    /* 导航栏高度66px + 16px间距 = 82px */
   }
 }
 
-/* 平板端 (768px - 1023px) - 导航栏高度72px + 8px间距 */
+/* 平板端 (768px - 1023px) - 导航栏高度72px + 16px间距 */
 @media (min-width: 768px) and (max-width: 1023px) {
   .detail-topbar.is-sticky {
-    top: 80px;
-    /* 导航栏高度72px + 8px间距 = 80px */
+    top: 88px;
+    /* 导航栏高度72px + 16px间距 = 88px */
   }
 }
 
-/* 桌面端 (>= 1024px) - 导航栏高度78px + 8px间距 */
+/* 桌面端 (>= 1024px) - 导航栏高度78px + 16px间距 */
 @media (min-width: 1024px) {
   .detail-topbar.is-sticky {
-    top: 86px;
-    /* 导航栏高度78px + 8px间距 = 86px */
+    top: 94px;
+    /* 导航栏高度78px + 16px间距 = 94px */
   }
 }
 
@@ -1196,6 +1194,8 @@ onUnmounted(() => {
   opacity: 1;
   transform: none;
   gap: 12px;
+  display: flex;
+  align-items: center;
 }
 
 .detail-topbar :deep(.action-button) {
@@ -1261,45 +1261,31 @@ onUnmounted(() => {
   gap: var(--spacing-lg);
 }
 
-.media-hero {
-  background: var(--glass-bg);
-  backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--glass-border);
-  border-radius: 24px;
-  padding: clamp(20px, 3.5vw, 32px);
-  display: flex;
-  flex-wrap: wrap;
-  gap: clamp(18px, 3vw, 28px);
-  align-items: flex-start;
-  justify-content: center;
-  overflow: visible;
-  box-shadow: 0 16px 40px -20px rgba(15, 23, 42, 0.28);
-  transition:
-    transform 0.28s cubic-bezier(0.4, 0, 0.2, 1),
-    box-shadow 0.28s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.media-hero:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 26px 54px -26px rgba(76, 29, 149, 0.42);
-}
-
 .post-thumbnail-container {
   position: relative;
   width: clamp(320px, 42vw, 520px);
   /* 固定显示比例，避免不同图片尺寸导致高度剧烈变化 */
   aspect-ratio: 16 / 9;
   min-height: 320px;
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.08) 0%, rgba(192, 132, 252, 0.12) 100%);
-  overflow: hidden;
-  border-radius: var(--radius-3xl);
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: 24px;
+  padding: clamp(20px, 3.5vw, 32px);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.12),
-    inset 0 40px 120px rgba(139, 92, 246, 0.08);
+  overflow: visible;
+  box-shadow: 0 16px 40px -20px rgba(15, 23, 42, 0.28);
+  transition:
+    transform 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.28s cubic-bezier(0.4, 0, 0.2, 1);
   flex: 0 0 auto;
+}
+
+.post-thumbnail-container:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 26px 54px -26px rgba(76, 29, 149, 0.42);
 }
 
 .post-thumbnail {
@@ -1307,15 +1293,11 @@ onUnmounted(() => {
   width: 100%;
   height: 100%;
   isolation: isolate;
-  border-radius: var(--radius-2xl);
+  border-radius: 16px;
   overflow: hidden;
   cursor: zoom-in;
   transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1);
-  background:
-    linear-gradient(135deg, rgba(139, 92, 246, 0.04) 0%, rgba(192, 132, 252, 0.04) 100%),
-    var(--color-bg-secondary);
-  box-shadow: 0 22px 46px -18px rgba(15, 23, 42, 0.4);
-  border: 1px solid rgba(139, 92, 246, 0.12);
+  background: rgba(0, 0, 0, 0.05);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2050,7 +2032,7 @@ onUnmounted(() => {
   }
 
   .post-thumbnail-container {
-    margin-bottom: var(--spacing-xl);
+    width: 100%;
     min-height: min(70vh, 720px);
   }
 }
@@ -2073,7 +2055,7 @@ onUnmounted(() => {
   }
 
   .post-thumbnail-container {
-    margin-bottom: var(--spacing-lg);
+    width: 100%;
     min-height: 60vh;
     max-height: 70vh;
   }
