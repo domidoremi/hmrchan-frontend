@@ -54,10 +54,10 @@ const prepareDataSource = (items: MediaItem[]) => {
 
       return imageData
     } else {
-      // 视频：使用element属性代替html
+      // 视频：使用html属性（PhotoSwipe支持）
       console.log(`[PhotoSwipeViewer] Video ${index}:`, item.url)
       return {
-        element: createVideoElement(item.url),
+        html: createVideoElement(item.url),
         width: item.width || 1920,
         height: item.height || 1080,
       }
@@ -159,6 +159,31 @@ const initPhotoSwipe = () => {
     zoomTitle: '缩放',
     arrowPrevTitle: '上一个',
     arrowNextTitle: '下一个',
+  })
+
+  // 🎬 自定义内容加载器 - 处理视频HTML
+  pswp.on('contentLoad', (e: { content: { data: { html?: string | HTMLElement }, element?: HTMLElement | null, onLoaded?: () => void } }) => {
+    const { content } = e
+
+    // 如果是自定义HTML（视频）
+    if (content.data.html && !content.element) {
+      console.log('[PhotoSwipeViewer] 🎬 自定义内容加载器 - 渲染视频元素')
+
+      // 如果是HTMLElement，直接使用
+      if (content.data.html instanceof HTMLElement) {
+        content.element = content.data.html
+      } else {
+        // 如果是字符串，创建元素
+        const div = document.createElement('div')
+        div.innerHTML = content.data.html as string
+        content.element = div.firstElementChild as HTMLElement || div
+      }
+
+      // 通知PhotoSwipe内容已加载
+      if (content.onLoaded) {
+        content.onLoaded()
+      }
+    }
   })
 
   // 监听内容加载事件
