@@ -102,20 +102,33 @@ const initPhotoSwipe = () => {
     dataSource,
     index: props.initialIndex,
 
-    // 基础配置
+    // 基础UI配置
     showHideAnimationType: 'fade',
-    bgOpacity: 0.9,
+    bgOpacity: 0.95,
+    spacing: 0.12,
 
-    // 缩放配置 - 使用函数动态计算初始缩放
-    initialZoomLevel: (zoomLevelObject) => {
-      console.log('[PhotoSwipeViewer] Calculating zoom level:', zoomLevelObject)
-      // 返回fill级别，让图片充满屏幕
-      return zoomLevelObject.fill
-    },
+    // 缩放配置 - 使用fit模式让图片完整显示
+    initialZoomLevel: 'fit',
     secondaryZoomLevel: 1.5,
     maxZoomLevel: 4,
 
-    // 简化的配置
+    // 禁用可能导致路由跳转的手势
+    allowPanToNext: false,  // 禁用左右滑动切换图片
+    pinchToClose: false,    // 禁用捏合关闭
+    closeOnVerticalDrag: false, // 禁用垂直拖拽关闭
+
+    // 启用鼠标滚轮缩放
+    wheelToZoom: true,
+
+    // 键盘导航
+    arrowKeys: true,
+    escKey: true,
+
+    // 点击行为
+    tapAction: 'close',
+    doubleTapAction: 'zoom',
+
+    // 按钮标题
     closeTitle: '关闭',
     zoomTitle: '缩放',
     arrowPrevTitle: '上一个',
