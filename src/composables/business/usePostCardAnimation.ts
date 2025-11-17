@@ -46,6 +46,9 @@ export function usePostCardAnimation(
         },
       })
 
+      // 初始化属性值，防止 quickTo 的 resetTo 警告
+      gsap.set(cardRef.value, { y: 0, scale: 1 })
+
       // 创建 quickTo 方法以提升悬停动画性能
       cardYQuickTo = gsap.quickTo(cardRef.value, 'y', { duration: 0.4, ease: 'power2.out' })
       cardScaleQuickTo = gsap.quickTo(cardRef.value, 'scale', {

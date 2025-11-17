@@ -771,6 +771,15 @@ const formatNumber = (num: number): string => {
 const openMediaViewer = (mediaIndex: number) => {
   if (!post.value) return
 
+  console.log('[PostDetailPage] 🎬 Opening media viewer', {
+    mediaIndex,
+    allMediaItems: allMediaItems.value,
+    itemsCount: allMediaItems.value.length,
+    postId: post.value.id,
+    hasThumbnail: !!post.value.thumbnail_url,
+    mediaFilesCount: post.value.media_files?.length || 0,
+  })
+
   viewerMediaItems.value = allMediaItems.value
   viewerInitialIndex.value = mediaIndex
   showMediaViewer.value = true
