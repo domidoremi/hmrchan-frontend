@@ -24,7 +24,6 @@ export function usePostCardAnimation(
 ): PostCardAnimationHandlers {
   let scrollTriggerInstance: ScrollTrigger | null = null
   let cardYQuickTo: ((value: number) => void) | null = null
-  let cardScaleQuickTo: ((value: number) => void) | null = null
 
   // 入场动画
   onMounted(() => {
@@ -46,15 +45,11 @@ export function usePostCardAnimation(
         },
       })
 
-      // 初始化属性值，防止 quickTo 的 resetTo 警告
-      gsap.set(cardRef.value, { y: 0, scale: 1 })
+      // 初始化y轴，防止警告
+      gsap.set(cardRef.value, { y: 0 })
 
-      // 创建 quickTo 方法以提升悬停动画性能
+      // 只为y轴创建quickTo，scale使用普通动画避免resetTo警告
       cardYQuickTo = gsap.quickTo(cardRef.value, 'y', { duration: 0.4, ease: 'power2.out' })
-      cardScaleQuickTo = gsap.quickTo(cardRef.value, 'scale', {
-        duration: 0.4,
-        ease: 'power2.out',
-      })
     }
   })
 
@@ -65,11 +60,19 @@ export function usePostCardAnimation(
     }
   })
 
-  // 悬停动画 - 使用 quickTo 提升性能
+  // 悬停动画 - y轴使用quickTo，scale使用普通动画
   const onHover = () => {
-    if (cardYQuickTo && cardScaleQuickTo) {
+    if (cardYQuickTo) {
       cardYQuickTo(-12)
-      cardScaleQuickTo(1.02)
+    }
+
+    // 卡片scale动画 - 使用普通gsap.to避免resetTo警告
+    if (cardRef.value) {
+      gsap.to(cardRef.value, {
+        scale: 1.02,
+        duration: 0.4,
+        ease: 'power2.out',
+      })
     }
 
     const mediaEl = getMediaRef()
@@ -101,11 +104,19 @@ export function usePostCardAnimation(
     }
   }
 
-  // 离开动画 - 使用 quickTo 提升性能
+  // 离开动画 - y轴使用quickTo，scale使用普通动画
   const onLeave = () => {
-    if (cardYQuickTo && cardScaleQuickTo) {
+    if (cardYQuickTo) {
       cardYQuickTo(0)
-      cardScaleQuickTo(1)
+    }
+
+    // 卡片scale重置 - 使用普通gsap.to避免resetTo警告
+    if (cardRef.value) {
+      gsap.to(cardRef.value, {
+        scale: 1,
+        duration: 0.4,
+        ease: 'power2.out',
+      })
     }
 
     const mediaEl = getMediaRef()
