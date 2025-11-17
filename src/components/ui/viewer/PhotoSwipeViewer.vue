@@ -102,41 +102,24 @@ const initPhotoSwipe = () => {
     dataSource,
     index: props.initialIndex,
 
-    // UI配置
-    showHideAnimationType: 'zoom',
-    bgOpacity: 0.95,
-    spacing: 0.1,
-    allowPanToNext: true,
-    loop: false,
+    // 基础配置
+    showHideAnimationType: 'fade',
+    bgOpacity: 0.9,
 
-    // 缩放配置 - 使用fill让图片充满屏幕
-    initialZoomLevel: 'fill',
+    // 缩放配置 - 使用函数动态计算初始缩放
+    initialZoomLevel: (zoomLevelObject) => {
+      console.log('[PhotoSwipeViewer] Calculating zoom level:', zoomLevelObject)
+      // 返回fill级别，让图片充满屏幕
+      return zoomLevelObject.fill
+    },
     secondaryZoomLevel: 1.5,
-    maxZoomLevel: 3,
+    maxZoomLevel: 4,
 
-    // 触摸手势
-    pinchToClose: true,
-    closeOnVerticalDrag: true,
-
-    // 键盘导航
-    escKey: true,
-    arrowKeys: true,
-
-    // 工具栏按钮
+    // 简化的配置
     closeTitle: '关闭',
     zoomTitle: '缩放',
     arrowPrevTitle: '上一个',
     arrowNextTitle: '下一个',
-
-    // 鼠标滚轮缩放
-    wheelToZoom: true,
-
-    // 点击背景关闭
-    tapAction: 'close',
-    doubleTapAction: 'zoom',
-
-    // Padding
-    padding: { top: 60, bottom: 60, left: 60, right: 60 },
   })
 
   // 监听内容加载事件
