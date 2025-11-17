@@ -109,10 +109,10 @@ const initPhotoSwipe = () => {
     allowPanToNext: true,
     loop: false,
 
-    // 缩放配置
-    initialZoomLevel: 'fit',
-    secondaryZoomLevel: 2,
-    maxZoomLevel: 4,
+    // 缩放配置 - 使用fill让图片充满屏幕
+    initialZoomLevel: 'fill',
+    secondaryZoomLevel: 1.5,
+    maxZoomLevel: 3,
 
     // 触摸手势
     pinchToClose: true,
