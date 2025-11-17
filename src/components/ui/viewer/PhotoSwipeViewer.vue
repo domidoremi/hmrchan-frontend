@@ -38,19 +38,19 @@ const prepareDataSource = (items: MediaItem[]) => {
 
   return items.map((item, index) => {
     if (item.type === 'image') {
-      // PhotoSwipe需要明确的尺寸来正确显示图片
-      // 如果有尺寸信息就使用，否则提供默认值
       const imageData: Record<string, string | number> = {
         src: item.url,
         alt: item.alt || '',
-        // 提供默认尺寸，PhotoSwipe会根据实际图片调整
-        width: item.width && item.width > 0 ? item.width : 1920,
-        height: item.height && item.height > 0 ? item.height : 1080,
       }
 
-      console.log(`[PhotoSwipeViewer] Image ${index}: width=${imageData.width}, height=${imageData.height}`,
-        item.width && item.height ? '(from MediaFile)' : '(using defaults)')
-      console.log(`[PhotoSwipeViewer] Image ${index} data:`, imageData)
+      // 只有在有真实尺寸时才提供，否则让PhotoSwipe自动检测
+      if (item.width && item.width > 0 && item.height && item.height > 0) {
+        imageData.width = item.width
+        imageData.height = item.height
+        console.log(`[PhotoSwipeViewer] Image ${index}: ${item.width}x${item.height} (from MediaFile)`)
+      } else {
+        console.log(`[PhotoSwipeViewer] Image ${index}: auto-detect size`)
+      }
 
       return imageData
     } else {
@@ -138,8 +138,20 @@ const initPhotoSwipe = () => {
   // 阻止PhotoSwipe容器的触摸事件冒泡到网站手势处理器
   pswp.on('beforeOpen', () => {
     console.log('[PhotoSwipeViewer] Blocking website gestures')
-    // 阻止网站级别的路由切换手势
+    // 多层阻止网站级别的路由切换手势
+    document.documentElement.style.touchAction = 'none'
+    document.documentElement.style.overflow = 'hidden'
     document.body.style.touchAction = 'none'
+    document.body.style.overflow = 'hidden'
+  })
+
+  pswp.on('openingAnimationEnd', () => {
+    // 在PhotoSwipe容器上也设置touchAction
+    const pswpElement = document.querySelector('.pswp')
+    if (pswpElement) {
+      (pswpElement as HTMLElement).style.touchAction = 'pan-x pan-y'
+      console.log('[PhotoSwipeViewer] Set touchAction on .pswp element')
+    }
   })
 
   // 监听内容加载事件
@@ -158,8 +170,11 @@ const initPhotoSwipe = () => {
   // 监听关闭事件
   pswp.on('close', () => {
     console.log('[PhotoSwipeViewer] Closing PhotoSwipe, restoring website gestures')
-    // 恢复网站级别的路由切换手势
+    // 恢复网站级别的路由切换手势和滚动
+    document.documentElement.style.touchAction = ''
+    document.documentElement.style.overflow = ''
     document.body.style.touchAction = ''
+    document.body.style.overflow = ''
     emit('close')
   })
 
