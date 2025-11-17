@@ -1,6 +1,6 @@
 /**
- * 媒体文件URL工具函数
- * 支持基于平台的差异化缓存策略
+ * 平台差异化缓存工具
+ * 支持基于平台的媒体文件URL构建和缓存策略
  */
 
 import { getRuntimeApiBaseUrl } from '@/config/runtime'
