@@ -7,7 +7,7 @@
         <div class="profile-info">
           <div class="avatar-container">
             <div class="avatar">
-              <img :src="avatarUrl" :alt="user?.username || 'User'" />
+              <img :src="avatarUrl" :alt="user?.username || 'User'" @error="handleAvatarError" />
             </div>
             <button class="avatar-upload-btn" @click="handleAvatarUpload" :aria-label="$t('profile.uploadAvatar')">
               <Camera :size="16" />
@@ -88,7 +88,7 @@
 
           <div class="info-item">
             <label>{{ $t('profile.joinedAt') }}</label>
-            <div class="info-value">{{ formatDate(user?.created_at) }}</div>
+            <div class="info-value">{{ formattedJoinedAt }}</div>
           </div>
 
           <div class="info-item">
@@ -209,7 +209,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import {
@@ -256,14 +256,44 @@ const toastStore = useToastStore()
 const avatarRefreshKey = ref(Date.now())
 
 // 头像URL（含默认头像，自动刷新缓存）
-const avatarUrl = computed(() => {
-  const url = getUserAvatar(user.value, 120)
-  // 如果是上传的头像（非默认头像），添加时间戳防止缓存
-  if (user.value?.avatar_url && url.startsWith('/uploads/')) {
-    return `${url}?t=${avatarRefreshKey.value}`
-  }
-  return url
-})
+const avatarUrl = ref('')
+const avatarLoadError = ref(false)
+
+// 计算头像URL
+watch(
+  [() => user.value, avatarRefreshKey],
+  () => {
+    const url = getUserAvatar(user.value, 120)
+    // 如果是上传的头像（非默认头像），添加时间戳防止缓存
+    if (user.value?.avatar_url && url.startsWith('/uploads/')) {
+      avatarUrl.value = `${url}?t=${avatarRefreshKey.value}`
+    } else {
+      avatarUrl.value = url
+    }
+    avatarLoadError.value = false
+  },
+  { immediate: true },
+)
+
+// 头像加载失败时的备用方案
+function handleAvatarError() {
+  if (avatarLoadError.value) return // 避免无限循环
+
+  avatarLoadError.value = true
+  const name = user.value?.full_name || user.value?.username || 'User'
+
+  // 使用base64编码的本地SVG作为备用
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="120" height="120">
+      <rect width="120" height="120" fill="#8B5CF6"/>
+      <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle"
+            font-family="Arial" font-size="48" font-weight="bold" fill="#ffffff">
+        ${name.charAt(0).toUpperCase()}
+      </text>
+    </svg>
+  `
+  avatarUrl.value = `data:image/svg+xml;base64,${btoa(svg)}`
+}
 
 // 头像上传
 const { uploading: uploadingAvatar, selectImage } = useImageUpload({
@@ -303,6 +333,9 @@ const deleteForm = ref({
 const favoritesCount = ref(0)
 const viewsCount = ref(0)
 
+// 格式化后的注册时间
+const formattedJoinedAt = ref<string>('')
+
 const joinedDays = computed(() => {
   if (!user.value?.created_at) return 0
   const created = new Date(user.value.created_at)
@@ -310,6 +343,25 @@ const joinedDays = computed(() => {
   const diff = now.getTime() - created.getTime()
   return Math.floor(diff / (1000 * 60 * 60 * 24))
 })
+
+// 异步格式化注册时间
+watch(
+  () => user.value?.created_at,
+  async (createdAt) => {
+    if (createdAt) {
+      try {
+        const locale = (localStorage.getItem('language') as 'en' | 'zh-CN' | 'ja') || 'zh-CN'
+        formattedJoinedAt.value = await formatRelativeTime(createdAt, locale)
+      } catch (error) {
+        console.error('Failed to format date:', error)
+        formattedJoinedAt.value = new Date(createdAt).toLocaleDateString()
+      }
+    } else {
+      formattedJoinedAt.value = t('profile.notSet')
+    }
+  },
+  { immediate: true },
+)
 
 onMounted(() => {
   if (!user.value) {
@@ -513,11 +565,6 @@ function handleLogout() {
   authStore.logout()
   toastStore.success(t('auth.logoutSuccess'))
   router.push('/')
-}
-
-function formatDate(dateStr: string | undefined) {
-  if (!dateStr) return t('profile.notSet')
-  return formatRelativeTime(dateStr)
 }
 </script>
 
