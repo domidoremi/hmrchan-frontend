@@ -309,6 +309,7 @@ const loadMore = async () => {
       sort_by: 'scraped_at',
       sort_order: 'desc',
       append: true, // 追加到现有列表
+      ignoreFilters: true, // 忽略Explore页面的筛选状态
     })
 
     // 使用pagination信息正确判断是否还有更多数据

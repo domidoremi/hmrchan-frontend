@@ -168,21 +168,33 @@ const initPhotoSwipe = () => {
 
     // 如果是自定义HTML（视频）
     if (content.data.html && !content.element) {
-      console.log('[PhotoSwipeViewer] 🎬 自定义内容加载器 - 渲染视频元素')
+      console.log('[PhotoSwipeViewer] 🎬 自定义内容加载器 - 渲染视频元素', {
+        htmlType: typeof content.data.html,
+        htmlLength: (content.data.html as string).length,
+      })
 
       // 如果是HTMLElement，直接使用
       if (content.data.html instanceof HTMLElement) {
         content.element = content.data.html
+        console.log('[PhotoSwipeViewer] ✅ 使用HTMLElement')
       } else {
         // 如果是字符串，创建元素
         const div = document.createElement('div')
         div.innerHTML = content.data.html as string
-        content.element = div.firstElementChild as HTMLElement || div
+        const videoWrapper = div.firstElementChild as HTMLElement || div
+        content.element = videoWrapper
+
+        console.log('[PhotoSwipeViewer] ✅ 从HTML字符串创建元素', {
+          tagName: videoWrapper.tagName,
+          className: videoWrapper.className,
+          hasVideo: !!videoWrapper.querySelector('video'),
+        })
       }
 
       // 通知PhotoSwipe内容已加载
       if (content.onLoaded) {
         content.onLoaded()
+        console.log('[PhotoSwipeViewer] ✅ onLoaded() 已调用')
       }
     }
   })
@@ -306,7 +318,7 @@ onUnmounted(() => {
   --pswp-bg: rgba(10, 10, 10, 0.98);
 }
 
-/* 视频容器样式 */
+/* 视频容器样式 - 响应式适配 */
 .pswp__video-wrapper {
   display: flex;
   align-items: center;
@@ -316,6 +328,8 @@ onUnmounted(() => {
   position: relative;
   background: rgba(0, 0, 0, 0.3);
   border-radius: 8px;
+  padding: 0;
+  margin: 0;
 }
 
 .pswp__video {
@@ -324,10 +338,15 @@ onUnmounted(() => {
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
+  /* 保持宽高比，完整显示 */
   border-radius: 8px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
   outline: none;
   cursor: pointer;
+
+  /* 确保视频居中显示 */
+  display: block;
+  margin: 0 auto;
 }
 
 /* 视频控件样式优化 */
