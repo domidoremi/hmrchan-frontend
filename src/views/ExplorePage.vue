@@ -15,21 +15,11 @@
           {{ $t('offline.usingCache') }}
         </p>
         <div ref="postsGrid" class="posts-grid">
-          <PostCard
-            v-for="(post, index) in posts"
-            :key="post.id"
-            :post="post"
-            :index="index"
-            :show-actions="false"
-          />
+          <PostCard v-for="(post, index) in posts" :key="post.id" :post="post" :index="index" :show-actions="false" />
         </div>
 
         <!-- Pagination -->
-        <Pagination
-          :current-page="pagination.page"
-          :total-pages="pagination.pages"
-          @change="handlePageChange"
-        />
+        <Pagination :current-page="pagination.page" :total-pages="pagination.pages" @change="handlePageChange" />
       </div>
 
       <!-- Empty State -->
@@ -53,7 +43,7 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { ref, watch, nextTick, onMounted, onUnmounted, onActivated } from 'vue'
+import { ref, watch, nextTick, onMounted, onUnmounted, onActivated, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { SearchX, RotateCcw } from 'lucide-vue-next'
@@ -112,6 +102,13 @@ onMounted(async () => {
   await updateLayout()
 })
 
+onBeforeUnmount(() => {
+  // 离开页面时重置筛选条件和posts，避免状态污染其他页面
+  postsStore.resetFilters()
+  postsStore.posts = []
+  console.log('[ExplorePage] 页面卸载，已重置筛选条件和posts')
+})
+
 onUnmounted(() => {
   // 清理工作由 composables 自动处理
 })
@@ -163,7 +160,7 @@ const loadPosts = async () => {
     if (postsGrid.value) {
       const cards = postsGrid.value.querySelectorAll('a.post-card.card-entering')
       cards.forEach((card) => {
-        ;(card as HTMLElement).classList.remove('card-entering')
+        ; (card as HTMLElement).classList.remove('card-entering')
       })
     }
   }, 600)
