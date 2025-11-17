@@ -28,6 +28,7 @@
     "gsap": "^3.13.0",
     "lucide-vue-next": "^0.468.0",
     "masonry-layout": "^4.2.2",
+    "photoswipe": "^5.4.4",
     "pinia": "^3.0.3",
     "pinia-plugin-persistedstate": "^4.5.0",
     "plyr": "^3.8.3",
