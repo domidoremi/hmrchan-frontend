@@ -528,13 +528,28 @@ class IndexedDBManager {
         })
       }),
     )
-
-    console.log('[IndexedDB] All data cleared')
   }
 
+  // ============================================
+  // 缓存工具方法
+  // ============================================
+
   /**
-   * 关闭数据库连接
+   * 检查缓存是否新鲜（在有效期内）
+   * @param cached 缓存的数据
+   * @param maxAge 最大缓存时间（毫秒），默认5分钟
+   * @returns 是否新鲜
    */
+  isCacheFresh(cached: CachedPost | null, maxAge: number = 5 * 60 * 1000): boolean {
+    if (!cached || !cached.cached_at) return false
+    const age = Date.now() - cached.cached_at
+    return age < maxAge
+  }
+
+  // ============================================
+  // 关闭连接
+  // ============================================
+
   close(): void {
     if (this.db) {
       this.db.close()

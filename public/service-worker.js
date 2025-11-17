@@ -64,7 +64,7 @@ const FONT_CACHE = `hmrchan-fonts-${CACHE_VERSION}`
 // 缓存大小限制（LRU清理）
 const CACHE_LIMITS = {
   [API_CACHE]: 100, // API 缓存最多100条
-  [IMAGE_CACHE]: 200, // 图片缓存最多200张
+  [IMAGE_CACHE]: 500, // 图片和媒体缓存最多500个（优化）
   [STATIC_CACHE]: 50, // 静态资源最多50个
   [FONT_CACHE]: 20, // 字体最多20个
 }

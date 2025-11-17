@@ -1,13 +1,7 @@
 <template>
   <transition name="fade">
-    <button
-      v-if="visible"
-      class="back-to-top"
-      :style="{ bottom: dynamicBottom }"
-      @click="scrollToTop"
-      :title="$t('common.backToTop')"
-      :aria-label="$t('common.backToTop')"
-    >
+    <button v-if="visible" class="back-to-top" :style="{ bottom: dynamicBottom }" @click="scrollToTop"
+      :title="$t('common.backToTop')" :aria-label="$t('common.backToTop')">
       <ArrowUp :size="24" />
     </button>
   </transition>
@@ -93,6 +87,20 @@ onUnmounted(() => {
 .fade-leave-to {
   opacity: 0;
   transform: translateY(20px) scale(0.8);
+}
+
+/* 平板端优化 */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .back-to-top {
+    width: 52px;
+    height: 52px;
+    right: clamp(24px, 5vw, 36px);
+  }
+
+  .back-to-top svg {
+    width: 22px;
+    height: 22px;
+  }
 }
 
 /* 移动端响应式 */
