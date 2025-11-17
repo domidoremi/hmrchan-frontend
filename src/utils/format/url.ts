@@ -98,6 +98,13 @@ export function resolveMediaUrl(url: string | null | undefined): string {
 
   // 迁移兼容：将相对的 /api/media 路径重写为 /api/v1/media
   if (path.startsWith('/api/media/')) {
+    console.warn(
+      '⚠️ [API] DEPRECATED: Backend returned legacy API path:',
+      path,
+      '\n→ Backend should return /api/v1/media/ instead',
+      '\n→ Legacy API will be sunset on 2026-06-01',
+      '\n→ Auto-rewriting to /api/v1/media/ for now',
+    )
     return `${apiBaseUrl}/api/v1${path.substring('/api'.length)}`
   }
 
