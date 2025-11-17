@@ -156,7 +156,7 @@ onMounted(() => {
     })
     player.on('ready', () => emit('ready'))
 
-    console.log('[VideoPlayer] Plyr initialized')
+    console.log('[VideoPlayer] ✅ Plyr initialized with LOCAL icon (v2024.11.18)')
 })
 
 // 监听src变化
