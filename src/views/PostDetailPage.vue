@@ -603,28 +603,34 @@ const updateViewportBreakpoints = () => {
 onMounted(async () => {
   const postId = route.params.id as UUID
   try {
-    // 优先复用当前 Store 中的详情，避免重复加载
-    const cachedDetail = postsStore.currentPost
-    if (cachedDetail && cachedDetail.id === postId) {
-      post.value = cachedDetail
-      // 已有完整详情，立刻取消骨架屏
-      loading.value = false
-    } else {
-      // 从列表中做浅缓存，先展示基础信息
-      const listItem = postsStore.posts?.find((p: Post) => p.id === postId)
-      if (listItem) {
-        post.value = {
-          ...listItem,
-          media_files: [],
-          tags: [],
-        } as PostDetail
-        // 有列表数据时也立刻渲染，剩余字段靠后台刷新
-        loading.value = false
-      }
+    // 🔧 临时修复：强制刷新绕过所有缓存，确保获取最新数据（包含media_files）
+    // 原因：旧缓存可能缺少media_files字段
+    const forceFresh = true
 
-      // 再拉取完整详情（命中 requestCache 时不会重复向后端请求）
-      post.value = await postsStore.fetchPost(postId)
+    if (!forceFresh) {
+      // 优先复用当前 Store 中的详情，避免重复加载
+      const cachedDetail = postsStore.currentPost
+      if (cachedDetail && cachedDetail.id === postId) {
+        post.value = cachedDetail
+        // 已有完整详情，立刻取消骨架屏
+        loading.value = false
+      } else {
+        // 从列表中做浅缓存，先展示基础信息
+        const listItem = postsStore.posts?.find((p: Post) => p.id === postId)
+        if (listItem) {
+          post.value = {
+            ...listItem,
+            media_files: [],
+            tags: [],
+          } as PostDetail
+          // 有列表数据时也立刻渲染，剩余字段靠后台刷新
+          loading.value = false
+        }
+      }
     }
+
+    // 强制从网络获取最新数据
+    post.value = await postsStore.fetchPost(postId, { forceFresh })
 
     // 验证媒体文件ID格式（诊断用）
     if (import.meta.env.DEV && post.value?.media_files && post.value.media_files.length > 0) {
