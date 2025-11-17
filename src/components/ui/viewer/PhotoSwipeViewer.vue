@@ -136,11 +136,11 @@ const initPhotoSwipe = () => {
   })
 
   // 监听内容加载事件
-  pswp.on('contentLoad', (e: any) => {
+  pswp.on('contentLoad', (e: { content?: { type?: string; data?: unknown } }) => {
     console.log('[PhotoSwipeViewer] contentLoad:', e.content?.type, e.content?.data)
   })
 
-  pswp.on('contentLoadImage', (e: any) => {
+  pswp.on('contentLoadImage', (e: { content?: { data?: { src?: string } } }) => {
     console.log('[PhotoSwipeViewer] contentLoadImage:', e.content?.data?.src)
   })
 
