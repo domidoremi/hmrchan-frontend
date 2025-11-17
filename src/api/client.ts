@@ -152,7 +152,7 @@ export const api = {
       ttl?: number
       useMultiLayerCache?: boolean
       invalidateCache?: boolean
-      params?: Record<string, string | number | boolean>
+      params?: Record<string, unknown> // 支持任意类型参数
     },
   ): Promise<T> {
     const {
@@ -175,7 +175,7 @@ export const api = {
 
     // 如果不启用缓存
     if (!cache) {
-      return apiClient.get(normalizedUrl, { searchParams: params, ...kyConfig }).json<T>()
+      return apiClient.get(normalizedUrl, { searchParams: params as any, ...kyConfig }).json<T>()
     }
 
     // 使用多层缓存（内存 + IndexedDB）
@@ -207,7 +207,7 @@ export const api = {
     // 使用简单内存缓存（向后兼容）
     return requestCache.dedupe(
       cacheKey,
-      () => apiClient.get(normalizedUrl, { searchParams: params, ...kyConfig }).json<T>(),
+      () => apiClient.get(normalizedUrl, { searchParams: params as any, ...kyConfig }).json<T>(),
       { ttl, force: false },
     )
   },

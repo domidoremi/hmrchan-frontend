@@ -2,6 +2,7 @@
  * API服务层 - 根据后端文档实现完整的API调用
  * v2.0 - UUID迁移：所有ID参数已从number改为string (UUID格式)
  * v2.1 - 增强错误处理：所有API调用都使用统一的错误处理机制
+ * v2.2 - 国际化支持：所有错误消息使用i18n
  */
 import { api } from './client'
 import { getRuntimeApiEndpoint } from '@/config/runtime'
@@ -10,6 +11,7 @@ import { cacheInvalidation } from '@/utils/cache/cacheInvalidation'
 import { handleError } from '@/utils/error'
 import logger from '@/utils/logger'
 import { toLogContext } from '@/utils/typeGuards'
+import i18n from '@/i18n'
 import type {
   LoginRequest,
   LoginResponse,
@@ -28,6 +30,14 @@ import type {
   UUID,
   SearchSuggestionResponse,
 } from '@/types'
+
+/**
+ * 获取国际化文本的辅助函数
+ * 使用全局i18n实例的t方法
+ */
+const t = (key: string): string => {
+  return i18n.global.t(key) as string
+}
 
 // ========== 认证API ==========
 
@@ -71,7 +81,7 @@ export const authApi = {
       return await api.get<User>('/auth/me')
     } catch (error) {
       handleError(error, 'Auth.GetCurrentUser', {
-        customMessage: 'Failed to fetch current user',
+        customMessage: t('api.fetchCurrentUser'),
       })
       throw error
     }
@@ -161,7 +171,7 @@ export const searchApi = {
       })
     } catch (error) {
       handleError(error, 'Search.FetchSuggestions', {
-        customMessage: `Failed to fetch search suggestions for: ${query}`,
+        customMessage: t('api.fetchSuggestions'),
       })
       throw error
     }
@@ -195,7 +205,7 @@ export const postsApi = {
       return response
     } catch (error) {
       handleError(error, 'Posts.GetPosts', {
-        customMessage: 'Failed to fetch posts',
+        customMessage: t('api.fetchPosts'),
       })
       throw error
     }
@@ -226,7 +236,7 @@ export const postsApi = {
       return detail
     } catch (error) {
       handleError(error, 'Posts.GetPostById', {
-        customMessage: `Failed to fetch post: ${postId}`,
+        customMessage: t('api.fetchPostById'),
       })
       throw error
     }
@@ -268,7 +278,7 @@ export const postsApi = {
       })
     } catch (error) {
       handleError(error, 'Posts.GetPostsByPlatform', {
-        customMessage: `Failed to fetch posts for platform: ${platform}`,
+        customMessage: t('api.fetchPostsByPlatform'),
       })
       throw error
     }
@@ -287,7 +297,7 @@ export const postsApi = {
       })
     } catch (error) {
       handleError(error, 'Posts.GetPostStats', {
-        customMessage: 'Failed to fetch post statistics',
+        customMessage: t('api.fetchPostStats'),
       })
       throw error
     }
@@ -306,7 +316,7 @@ export const mediaApi = {
       return await api.get<MediaFile>(`/media/${mediaId}`)
     } catch (error) {
       handleError(error, 'Media.GetMediaInfo', {
-        customMessage: `Failed to fetch media info: ${mediaId}`,
+        customMessage: t('api.fetchMediaInfo'),
       })
       throw error
     }
@@ -402,7 +412,7 @@ export const authorsApi = {
       })
     } catch (error) {
       handleError(error, 'Authors.GetAuthors', {
-        customMessage: 'Failed to fetch authors',
+        customMessage: t('api.fetchAuthors'),
       })
       throw error
     }
@@ -421,7 +431,7 @@ export const authorsApi = {
       })
     } catch (error) {
       handleError(error, 'Authors.GetAuthorById', {
-        customMessage: `Failed to fetch author: ${authorId}`,
+        customMessage: t('api.fetchAuthorById'),
       })
       throw error
     }
@@ -442,7 +452,7 @@ export const authorsApi = {
       })
     } catch (error) {
       handleError(error, 'Authors.GetAuthorPosts', {
-        customMessage: `Failed to fetch posts for author: ${authorId}`,
+        customMessage: t('api.fetchAuthorPosts'),
       })
       throw error
     }
@@ -466,7 +476,7 @@ export const favoritesApi = {
       })
     } catch (error) {
       handleError(error, 'Favorites.GetFavorites', {
-        customMessage: 'Failed to fetch favorites',
+        customMessage: t('api.fetchFavorites'),
       })
       throw error
     }
@@ -551,7 +561,7 @@ export const favoritesApi = {
       })
     } catch (error) {
       handleError(error, 'Favorites.GetFolders', {
-        customMessage: 'Failed to fetch favorite folders',
+        customMessage: t('api.fetchFolders'),
       })
       throw error
     }
@@ -605,7 +615,7 @@ export const statsApi = {
       return stats.by_platform || {}
     } catch (error) {
       handleError(error, 'Stats.GetPlatformStats', {
-        customMessage: 'Failed to fetch platform statistics',
+        customMessage: t('api.fetchPlatformStats'),
       })
       throw error
     }
@@ -619,7 +629,7 @@ export const statsApi = {
       return await postsApi.getPostStats()
     } catch (error) {
       handleError(error, 'Stats.GetFullStats', {
-        customMessage: 'Failed to fetch full statistics',
+        customMessage: t('api.fetchFullStats'),
       })
       throw error
     }
