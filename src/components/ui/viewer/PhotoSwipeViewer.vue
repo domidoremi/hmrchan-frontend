@@ -232,10 +232,7 @@ onUnmounted(() => {
 }
 
 .pswp__img {
-  max-width: 100%;
-  max-height: 100%;
-  width: auto !important;
-  height: auto !important;
+  /* 移除width和height的!important，让PhotoSwipe动态设置尺寸 */
   object-fit: contain;
 }
 
