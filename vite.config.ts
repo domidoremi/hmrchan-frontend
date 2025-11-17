@@ -4,6 +4,7 @@ import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import vueJsx from '@vitejs/plugin-vue-jsx'
 import vueDevTools from 'vite-plugin-vue-devtools'
+import { imagetools } from 'vite-imagetools'
 import { criticalCSSPlugin } from './vite-plugin-critical-css'
 
 // https://vite.dev/config/
@@ -13,6 +14,19 @@ export default defineConfig(({ mode }) => ({
     vueJsx(),
     // 仅在开发环境启用 DevTools
     ...(mode === 'development' ? [vueDevTools()] : []),
+    // 图片优化 - WebP转换
+    imagetools({
+      defaultDirectives: (url) => {
+        // 只对支持的格式转换为WebP
+        if (url.searchParams.has('format')) {
+          return new URLSearchParams()
+        }
+        return new URLSearchParams({
+          format: 'webp',
+          quality: '85',
+        })
+      },
+    }),
     // 生产环境内联关键 CSS
     ...(mode === 'production' ? [criticalCSSPlugin()] : []),
   ],
@@ -29,7 +43,7 @@ export default defineConfig(({ mode }) => ({
       'vue-router',
       'pinia',
       'pinia-plugin-persistedstate',
-      'axios',
+      'ky', // 轻量级HTTP客户端
       'dayjs',
       'vue-i18n',
       '@vueuse/core',
