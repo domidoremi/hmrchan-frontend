@@ -67,6 +67,7 @@ onMounted(() => {
 
     // Plyr配置
     player = new Plyr(videoRef.value, {
+        iconUrl: '/plyr.svg', // 使用本地图标，避免CDN证书问题
         controls: [
             'play-large', // 中央大播放按钮
             'play', // 播放/暂停
