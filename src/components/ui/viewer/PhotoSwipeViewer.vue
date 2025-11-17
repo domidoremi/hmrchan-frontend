@@ -34,18 +34,30 @@ let pswp: PhotoSwipe | null = null
 
 // 转换媒体项为PhotoSwipe数据源
 const prepareDataSource = (items: MediaItem[]) => {
-  return items.map((item) => {
+  console.log('[PhotoSwipeViewer] prepareDataSource - items:', items)
+
+  return items.map((item, index) => {
     if (item.type === 'image') {
-      return {
+      // 如果有尺寸信息就使用，否则不提供（让PhotoSwipe自动检测）
+      const imageData: Record<string, string | number> = {
         src: item.url,
-        // 使用提供的尺寸，如果没有则使用默认值
-        // PhotoSwipe需要非零尺寸才能正确显示
-        width: item.width || 1920,
-        height: item.height || 1080,
         alt: item.alt || '',
       }
+
+      // 只有当width和height都存在且有效时才添加
+      if (item.width && item.height && item.width > 0 && item.height > 0) {
+        imageData.width = item.width
+        imageData.height = item.height
+        console.log(`[PhotoSwipeViewer] Image ${index}: width=${item.width}, height=${item.height}`)
+      } else {
+        console.log(`[PhotoSwipeViewer] Image ${index}: no size info, PhotoSwipe will detect`)
+      }
+
+      console.log(`[PhotoSwipeViewer] Image ${index} data:`, imageData)
+      return imageData
     } else {
       // 视频：使用element属性代替html
+      console.log(`[PhotoSwipeViewer] Video ${index}:`, item.url)
       return {
         element: createVideoElement(item.url),
         width: item.width || 1920,
@@ -78,9 +90,15 @@ const createVideoElement = (url: string): HTMLElement => {
 
 // 初始化PhotoSwipe
 const initPhotoSwipe = () => {
-  if (!props.show || props.items.length === 0) return
+  console.log('[PhotoSwipeViewer] initPhotoSwipe - show:', props.show, 'items:', props.items.length)
+
+  if (!props.show || props.items.length === 0) {
+    console.log('[PhotoSwipeViewer] Skipping init: show=', props.show, 'items.length=', props.items.length)
+    return
+  }
 
   const dataSource = prepareDataSource(props.items)
+  console.log('[PhotoSwipeViewer] dataSource prepared:', dataSource)
 
   pswp = new PhotoSwipe({
     dataSource,
@@ -170,7 +188,9 @@ const initPhotoSwipe = () => {
     })
   })
 
+  console.log('[PhotoSwipeViewer] Calling pswp.init()...')
   pswp.init()
+  console.log('[PhotoSwipeViewer] pswp.init() completed, PhotoSwipe should be visible')
 }
 
 // 关闭PhotoSwipe
