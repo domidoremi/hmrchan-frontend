@@ -10,11 +10,8 @@
           </div>
 
           <div class="hero-container">
-            <button
-              class="hero-close"
-              @click="settingsStore.toggleSetting('showHeroSection')"
-              :aria-label="$t('common.close')"
-            >
+            <button class="hero-close" @click="settingsStore.toggleSetting('showHeroSection')"
+              :aria-label="$t('common.close')">
               <X :size="24" />
             </button>
 
@@ -67,35 +64,16 @@
       <!-- Platform Stats - Modern Cards -->
       <section class="platforms-section reduce-motion">
         <StatCardGrid :autoplay="true" :autoplay-duration="3000">
-          <StatCard
-            v-for="platform in platforms"
-            :key="platform"
-            :icon="getPlatformIcon(platform)"
-            :icon-color="getPlatformColor(platform)"
-            :title="$t(`platform.${platform}`)"
-            :value="platformStats[platform] || 0"
-            :label="
-              platform === 'youtube' || platform === 'tiktok' ? $t('post.videos') : $t('post.title')
-            "
-            :loading="isStatsLoading"
-          />
-          <template
-            v-for="(platform, index) in platforms"
-            :key="`slide-${index}`"
-            #[`slide-${index}`]
-          >
-            <StatCard
-              :icon="getPlatformIcon(platform)"
-              :icon-color="getPlatformColor(platform)"
-              :title="$t(`platform.${platform}`)"
-              :value="platformStats[platform] || 0"
-              :label="
-                platform === 'youtube' || platform === 'tiktok'
+          <StatCard v-for="platform in platforms" :key="platform" :icon="getPlatformIcon(platform)"
+            :icon-color="getPlatformColor(platform)" :title="$t(`platform.${platform}`)"
+            :value="platformStats[platform] || 0" :label="platform === 'youtube' || platform === 'tiktok' ? $t('post.videos') : $t('post.title')
+              " :loading="isStatsLoading" />
+          <template v-for="(platform, index) in platforms" :key="`slide-${index}`" #[`slide-${index}`]>
+            <StatCard :icon="getPlatformIcon(platform)" :icon-color="getPlatformColor(platform)"
+              :title="$t(`platform.${platform}`)" :value="platformStats[platform] || 0" :label="platform === 'youtube' || platform === 'tiktok'
                   ? $t('post.videos')
                   : $t('post.title')
-              "
-              :loading="isStatsLoading"
-            />
+                " :loading="isStatsLoading" />
           </template>
         </StatCardGrid>
       </section>
@@ -120,30 +98,16 @@
         <AccessLimitBanner :current-count="posts.length" :total-limit="accessLimit" />
 
         <!-- 初始加载状态 -->
-        <LoadingSpinner
-          v-if="loading && posts.length === 0"
-          size="lg"
-          :text="$t('common.loading')"
-        />
+        <LoadingSpinner v-if="loading && posts.length === 0" size="lg" :text="$t('common.loading')" />
 
         <!-- Posts列表 -->
         <div v-else-if="posts.length > 0" ref="postsGrid" class="posts-grid">
-          <PostCard
-            v-for="(post, index) in posts"
-            :key="post.id"
-            :post="post"
-            :index="index"
-            :show-actions="false"
-          />
+          <PostCard v-for="(post, index) in posts" :key="post.id" :post="post" :index="index" :show-actions="false" />
         </div>
 
         <!-- Empty state -->
-        <EmptyState
-          v-else-if="!loading"
-          icon="image"
-          :title="$t('search.noResults')"
-          :description="$t('search.noResultsDesc')"
-        />
+        <EmptyState v-else-if="!loading" icon="image" :title="$t('search.noResults')"
+          :description="$t('search.noResultsDesc')" />
 
         <!-- 加载更多指示器 -->
         <div v-if="isLoadingMore" class="loading-more">
@@ -376,7 +340,7 @@ const loadMore = async () => {
       if (postsGrid.value) {
         const cards = postsGrid.value.querySelectorAll('a.post-card.card-entering')
         cards.forEach((card) => {
-          ;(card as HTMLElement).classList.remove('card-entering')
+          ; (card as HTMLElement).classList.remove('card-entering')
         })
       }
     }, 600)
@@ -567,6 +531,14 @@ const getPlatformIcon = (platform: string) => {
   padding: var(--spacing-xl);
   color: var(--color-text-tertiary);
   font-size: var(--text-sm);
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.no-more-hint p {
+  margin: 0;
 }
 
 .offline-hint {
