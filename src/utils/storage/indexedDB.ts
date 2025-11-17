@@ -63,7 +63,7 @@ export interface OfflineAction {
 
 class IndexedDBManager {
   private dbName = 'hmrchan_db'
-  private version = 1
+  private version = 2 // 升级版本，清空旧缓存（旧缓存缺少media_files字段）
   private db: IDBDatabase | null = null
 
   /**
@@ -86,7 +86,10 @@ class IndexedDBManager {
 
       request.onupgradeneeded = (event) => {
         const db = (event.target as IDBOpenDBRequest).result
-        console.log('[IndexedDB] Upgrading schema...')
+        const transaction = (event.target as IDBOpenDBRequest).transaction!
+        const oldVersion = event.oldVersion
+
+        console.log(`[IndexedDB] Upgrading schema from v${oldVersion} to v${this.version}`)
 
         // 创建 posts 表
         if (!db.objectStoreNames.contains('posts')) {
@@ -96,6 +99,16 @@ class IndexedDBManager {
           postsStore.createIndex('created_at', 'created_at', { unique: false })
           postsStore.createIndex('cached_at', 'cached_at', { unique: false })
           console.log('[IndexedDB] Created posts store')
+        }
+
+        // v1 → v2: 清空posts表（旧缓存缺少media_files字段）
+        if (oldVersion < 2) {
+          console.log('[IndexedDB] Clearing posts cache (missing media_files in old data)')
+          if (db.objectStoreNames.contains('posts')) {
+            const postsStore = transaction.objectStore('posts')
+            postsStore.clear()
+            console.log('[IndexedDB] Posts cache cleared')
+          }
         }
 
         // 创建 authors 表
