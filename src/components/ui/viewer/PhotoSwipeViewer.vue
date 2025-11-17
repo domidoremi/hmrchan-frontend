@@ -83,6 +83,32 @@ const createVideoElement = (url: string): HTMLElement => {
   video.appendChild(source)
   container.appendChild(video)
 
+  console.log('[PhotoSwipeViewer] ✅ 视频元素已创建:', {
+    url,
+    videoElement: video,
+    hasControls: video.controls,
+    className: video.className,
+  })
+
+  // 监听视频加载错误
+  video.addEventListener('error', () => {
+    console.error('[PhotoSwipeViewer] ❌ 视频加载失败:', {
+      url,
+      error: video.error,
+      errorCode: video.error?.code,
+      errorMessage: video.error?.message,
+    })
+  })
+
+  video.addEventListener('loadedmetadata', () => {
+    console.log('[PhotoSwipeViewer] ✅ 视频元数据已加载:', {
+      url,
+      duration: video.duration,
+      videoWidth: video.videoWidth,
+      videoHeight: video.videoHeight,
+    })
+  })
+
   return container
 }
 
