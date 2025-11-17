@@ -38,9 +38,10 @@ const prepareDataSource = (items: MediaItem[]) => {
     if (item.type === 'image') {
       return {
         src: item.url,
-        // 使用提供的尺寸，或使用默认值（PhotoSwipe会自动调整）
-        width: item.width || 0,
-        height: item.height || 0,
+        // 使用提供的尺寸，如果没有则使用默认值
+        // PhotoSwipe需要非零尺寸才能正确显示
+        width: item.width || 1920,
+        height: item.height || 1080,
         alt: item.alt || '',
       }
     } else {
