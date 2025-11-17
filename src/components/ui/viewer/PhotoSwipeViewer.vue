@@ -3,7 +3,7 @@
 </template>
 
 <script setup lang="ts">
-import { watch, onUnmounted, ref } from 'vue'
+import { watch, onUnmounted } from 'vue'
 import PhotoSwipe from 'photoswipe'
 import 'photoswipe/style.css'
 
@@ -31,64 +31,27 @@ const emit = defineEmits<{
 }>()
 
 let pswp: PhotoSwipe | null = null
-const loadedImageSizes = ref<Map<string, { width: number; height: number }>>(new Map())
-
-// 动态加载图片尺寸
-const loadImageSize = (url: string): Promise<{ width: number; height: number }> => {
-  return new Promise((resolve) => {
-    // 检查缓存
-    if (loadedImageSizes.value.has(url)) {
-      resolve(loadedImageSizes.value.get(url)!)
-      return
-    }
-
-    const img = new Image()
-    img.onload = () => {
-      const size = { width: img.naturalWidth, height: img.naturalHeight }
-      loadedImageSizes.value.set(url, size)
-      resolve(size)
-    }
-    img.onerror = () => {
-      // 如果加载失败，使用默认16:9比例
-      resolve({ width: 1920, height: 1080 })
-    }
-    img.src = url
-  })
-}
 
 // 转换媒体项为PhotoSwipe数据源
-const prepareDataSource = async (items: MediaItem[]) => {
-  const dataSource = []
-
-  for (const item of items) {
+const prepareDataSource = (items: MediaItem[]) => {
+  return items.map((item) => {
     if (item.type === 'image') {
-      // 动态获取图片尺寸
-      let width = item.width
-      let height = item.height
-
-      if (!width || !height) {
-        const size = await loadImageSize(item.url)
-        width = size.width
-        height = size.height
-      }
-
-      dataSource.push({
+      return {
         src: item.url,
-        width,
-        height,
+        // 使用提供的尺寸，或使用默认值（PhotoSwipe会自动调整）
+        width: item.width || 0,
+        height: item.height || 0,
         alt: item.alt || '',
-      })
+      }
     } else {
       // 视频：使用element属性代替html
-      dataSource.push({
+      return {
         element: createVideoElement(item.url),
         width: item.width || 1920,
         height: item.height || 1080,
-      })
+      }
     }
-  }
-
-  return dataSource
+  })
 }
 
 // 创建视频元素
@@ -113,10 +76,10 @@ const createVideoElement = (url: string): HTMLElement => {
 }
 
 // 初始化PhotoSwipe
-const initPhotoSwipe = async () => {
+const initPhotoSwipe = () => {
   if (!props.show || props.items.length === 0) return
 
-  const dataSource = await prepareDataSource(props.items)
+  const dataSource = prepareDataSource(props.items)
 
   pswp = new PhotoSwipe({
     dataSource,

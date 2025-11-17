@@ -81,5 +81,14 @@
     "personalization": "Personalization Cookies",
     "personalizationDesc": "Remember your preferences to provide personalized content.",
     "required": "Required"
+  },
+  "cache": {
+    "justNow": "Just now",
+    "minutesAgo": "{minutes}m ago",
+    "hoursAgo": "{hours}h ago",
+    "cachedAt": "Cached at: {time}",
+    "fresh": "Fresh data",
+    "stale": "Stale data",
+    "expired": "Expired data"
   }
 }

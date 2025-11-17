@@ -39,3 +39,16 @@ coverage
 
 # Vitest
 __screenshots__/
+
+# Documentation
+# 忽略.kiro目录下的所有Markdown文档（规范、总结等）
+.kiro/
+
+# 忽略临时笔记和草稿
+**/notes.md
+**/draft*.md
+**/temp*.md
+**/TODO.md
+# 保留重要文档
+!README.md
+
