@@ -152,5 +152,33 @@ const showDetails = () => {
   transform: translateY(10px);
 }
 
+/* 平板端优化 */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .access-bubble {
+    right: clamp(90px, 12vw, 110px);
+    padding: var(--spacing-3) var(--spacing-4);
+    min-width: 220px;
+  }
+
+  .bubble-count {
+    font-size: var(--text-sm);
+  }
+
+  .bubble-icon svg {
+    width: 20px;
+    height: 20px;
+  }
+}
+
 /* 移动端响应式样式已通过动态计算处理 */
+@media (max-width: 768px) {
+  .access-bubble {
+    padding: var(--spacing-2) var(--spacing-3);
+    min-width: 160px;
+  }
+
+  .bubble-count {
+    font-size: var(--text-xs);
+  }
+}
 </style>
