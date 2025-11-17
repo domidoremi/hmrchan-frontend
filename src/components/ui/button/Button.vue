@@ -1,21 +1,13 @@
 <template>
   <button :class="buttonClass" :disabled="disabled || loading" @click="handleClick" ref="buttonRef">
-    <component
-      v-if="icon && iconPosition === 'left' && !loading"
-      :is="icon"
-      :size="iconSize"
-      class="btn-icon btn-icon-left"
-    />
+    <component v-if="icon && iconPosition === 'left' && !loading" :is="icon" :size="iconSize"
+      class="btn-icon btn-icon-left" />
     <span v-if="loading" class="spinner-small"></span>
     <span v-if="$slots.default" class="btn-content">
       <slot />
     </span>
-    <component
-      v-if="icon && iconPosition === 'right' && !loading"
-      :is="icon"
-      :size="iconSize"
-      class="btn-icon btn-icon-right"
-    />
+    <component v-if="icon && iconPosition === 'right' && !loading" :is="icon" :size="iconSize"
+      class="btn-icon btn-icon-right" />
     <span class="ripple-container" ref="rippleContainer"></span>
   </button>
 </template>
@@ -233,6 +225,11 @@ const handleClick = (event: MouseEvent) => {
 .btn-ghost:hover:not(.btn-disabled):not(.btn-loading) {
   background: var(--glass-bg-light);
   border-color: var(--glass-border);
+  color: var(--color-text-primary);
+}
+
+.btn-ghost:hover:not(.btn-disabled):not(.btn-loading) svg {
+  color: var(--color-text-primary);
 }
 
 .btn-danger {
