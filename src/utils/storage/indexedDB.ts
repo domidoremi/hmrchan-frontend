@@ -11,6 +11,8 @@ import type { Post as ApiPost } from '@/types'
 
 export interface CachedPost extends ApiPost {
   cached_at: number
+  etag?: string // ETag for conditional requests (If-None-Match)
+  last_modified?: string // Last-Modified for conditional requests
 }
 
 export interface Author {
@@ -63,8 +65,12 @@ export interface OfflineAction {
 
 class IndexedDBManager {
   private dbName = 'hmrchan_db'
-  private version = 2 // 升级版本，清空旧缓存（旧缓存缺少media_files字段）
+  private version = 3 // v3: 添加metadata store，实现版本化缓存策略
   private db: IDBDatabase | null = null
+
+  // 缓存版本号（应用层）
+  private readonly CACHE_STRATEGY_VERSION = '2.0.0'
+  private readonly DATA_SCHEMA_VERSION = 3
 
   /**
    * 初始化数据库
@@ -101,6 +107,12 @@ class IndexedDBManager {
           console.log('[IndexedDB] Created posts store')
         }
 
+        // 创建 metadata 表（v3新增）
+        if (!db.objectStoreNames.contains('metadata')) {
+          const metadataStore = db.createObjectStore('metadata', { keyPath: 'key' })
+          console.log('[IndexedDB] Created metadata store')
+        }
+
         // v1 → v2: 清空posts表（旧缓存缺少media_files字段）
         if (oldVersion < 2) {
           console.log('[IndexedDB] Clearing posts cache (missing media_files in old data)')
@@ -109,6 +121,31 @@ class IndexedDBManager {
             postsStore.clear()
             console.log('[IndexedDB] Posts cache cleared')
           }
+        }
+
+        // v2 → v3: 初始化缓存版本元数据
+        if (oldVersion < 3) {
+          console.log('[IndexedDB] Initializing cache version metadata')
+          const metadataStore = transaction.objectStore('metadata')
+
+          // 存储缓存策略版本
+          metadataStore.put({
+            key: 'cache_strategy_version',
+            value: this.CACHE_STRATEGY_VERSION,
+            updated_at: new Date().toISOString(),
+          })
+
+          // 存储数据schema版本
+          metadataStore.put({
+            key: 'data_schema_version',
+            value: this.DATA_SCHEMA_VERSION,
+            updated_at: new Date().toISOString(),
+          })
+
+          console.log('[IndexedDB] Metadata initialized:', {
+            cache_strategy: this.CACHE_STRATEGY_VERSION,
+            data_schema: this.DATA_SCHEMA_VERSION,
+          })
         }
 
         // 创建 authors 表
@@ -528,7 +565,14 @@ class IndexedDBManager {
 
   async clearAll(): Promise<void> {
     const db = await this.ensureDB()
-    const storeNames = ['posts', 'authors', 'favorites', 'media_metadata', 'offline_queue']
+    const storeNames = [
+      'posts',
+      'authors',
+      'favorites',
+      'media_metadata',
+      'offline_queue',
+      'metadata',
+    ]
 
     const transaction = db.transaction(storeNames, 'readwrite')
 
@@ -541,6 +585,68 @@ class IndexedDBManager {
         })
       }),
     )
+  }
+
+  /**
+   * 获取metadata
+   */
+  async getMetadata(
+    key: string,
+  ): Promise<{ key: string; value: unknown; updated_at: string } | null> {
+    const db = await this.ensureDB()
+    const transaction = db.transaction(['metadata'], 'readonly')
+    const store = transaction.objectStore('metadata')
+
+    return new Promise((resolve, reject) => {
+      const request = store.get(key)
+      request.onsuccess = () => resolve(request.result || null)
+      request.onerror = () => reject(request.error)
+    })
+  }
+
+  /**
+   * 设置metadata
+   */
+  async setMetadata(key: string, value: unknown): Promise<void> {
+    const db = await this.ensureDB()
+    const transaction = db.transaction(['metadata'], 'readwrite')
+    const store = transaction.objectStore('metadata')
+
+    return new Promise((resolve, reject) => {
+      const request = store.put({
+        key,
+        value,
+        updated_at: new Date().toISOString(),
+      })
+      request.onsuccess = () => resolve()
+      request.onerror = () => reject(request.error)
+    })
+  }
+
+  /**
+   * 检查缓存版本是否匹配
+   */
+  async checkCacheVersion(): Promise<boolean> {
+    try {
+      const strategyVersion = await this.getMetadata('cache_strategy_version')
+      const schemaVersion = await this.getMetadata('data_schema_version')
+
+      const isValid =
+        strategyVersion?.value === this.CACHE_STRATEGY_VERSION &&
+        schemaVersion?.value === this.DATA_SCHEMA_VERSION
+
+      if (!isValid) {
+        console.warn('[IndexedDB] Cache version mismatch:', {
+          expected: { strategy: this.CACHE_STRATEGY_VERSION, schema: this.DATA_SCHEMA_VERSION },
+          actual: { strategy: strategyVersion?.value, schema: schemaVersion?.value },
+        })
+      }
+
+      return isValid
+    } catch (error) {
+      console.error('[IndexedDB] Failed to check cache version:', error)
+      return false
+    }
   }
 
   // ============================================

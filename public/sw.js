@@ -1,9 +1,10 @@
 /**
  * Service Worker - 三层缓存策略
- * 版本: 1.0.0
+ * 版本: 2.0.0
+ * 更新: 禁用帖子详情API缓存，修复media_files缺失问题
  */
 
-const CACHE_VERSION = 'v1'
+const CACHE_VERSION = 'v2'
 const CACHE_NAMES = {
   static: `hmrchan-static-${CACHE_VERSION}`,
   api: `hmrchan-api-${CACHE_VERSION}`,
@@ -91,8 +92,11 @@ self.addEventListener('fetch', (event) => {
   } else if (isMediaRequest(url)) {
     // 媒体文件: Cache First with Network Fallback
     event.respondWith(cacheFirstMedia(request))
+  } else if (isPostDetailRequest(url)) {
+    // 🔧 帖子详情: Network Only（禁用缓存，避免使用旧数据）
+    event.respondWith(fetch(request))
   } else if (isApiRequest(url)) {
-    // API请求: Network First with Cache Fallback
+    // 其他API请求: Network First with Cache Fallback
     event.respondWith(networkFirstApi(request))
   } else {
     // 其他: Network Only
@@ -289,6 +293,13 @@ function isMediaRequest(url) {
 
 function isApiRequest(url) {
   return url.pathname.startsWith('/api/')
+}
+
+function isPostDetailRequest(url) {
+  // 匹配 /api/v1/posts/{uuid} 格式
+  // 不包括 /api/v1/posts?... （列表查询）
+  const postDetailPattern = /^\/api\/v1\/posts\/[0-9a-f-]{36}$/i
+  return postDetailPattern.test(url.pathname)
 }
 
 /**
