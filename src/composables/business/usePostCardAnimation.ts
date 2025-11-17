@@ -73,6 +73,8 @@ export function usePostCardAnimation(
     if (mediaEl) {
       const img = mediaEl.querySelector('img')
       if (img) {
+        // 确保scale属性存在初始值
+        gsap.set(img, { scale: 1 })
         gsap.to(img, {
           scale: 1.1,
           duration: 0.6,
@@ -93,10 +95,13 @@ export function usePostCardAnimation(
     if (mediaEl) {
       const img = mediaEl.querySelector('img')
       if (img) {
+        // 使用killTweensOf清除活动动画，避免警告
+        gsap.killTweensOf(img)
         gsap.to(img, {
           scale: 1,
           duration: 0.6,
           ease: 'power2.inOut',
+          overwrite: 'auto', // 自动覆盖冲突的动画
         })
       }
     }
