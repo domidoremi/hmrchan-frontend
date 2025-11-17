@@ -54,10 +54,11 @@ const prepareDataSource = (items: MediaItem[]) => {
 
       return imageData
     } else {
-      // 视频：使用html属性（PhotoSwipe支持）
+      // 视频：将HTMLElement转换为HTML字符串
       console.log(`[PhotoSwipeViewer] Video ${index}:`, item.url)
+      const videoElement = createVideoElement(item.url)
       return {
-        html: createVideoElement(item.url),
+        html: videoElement.outerHTML, // ✅ 使用outerHTML转换为HTML字符串
         width: item.width || 1920,
         height: item.height || 1080,
       }
