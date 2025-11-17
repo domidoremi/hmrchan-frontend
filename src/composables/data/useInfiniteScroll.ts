@@ -2,7 +2,7 @@
  * 无限滚动组合式函数
  * 用于实现列表的懒加载和分页
  */
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, type Ref, unref } from 'vue'
 
 interface UseInfiniteScrollOptions {
   /**
@@ -31,7 +31,7 @@ interface UseInfiniteScrollOptions {
    * 是否启用（可以用于条件性禁用）
    * @default true
    */
-  enabled?: boolean
+  enabled?: boolean | Ref<boolean>
 }
 
 export function useInfiniteScroll(options: UseInfiniteScrollOptions) {
@@ -43,7 +43,7 @@ export function useInfiniteScroll(options: UseInfiniteScrollOptions) {
   let timeoutId: number | null = null
 
   const checkScroll = () => {
-    if (!enabled || isLoading.value || !hasMore()) {
+    if (!unref(enabled) || isLoading.value || !hasMore()) {
       return
     }
 
@@ -87,7 +87,7 @@ export function useInfiniteScroll(options: UseInfiniteScrollOptions) {
   }
 
   onMounted(() => {
-    if (enabled) {
+    if (unref(enabled)) {
       window.addEventListener('scroll', handleScroll, { passive: true })
       // 初始检查（可能初始内容就不够一屏）
       checkScroll()

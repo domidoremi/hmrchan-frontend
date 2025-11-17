@@ -71,8 +71,8 @@
           <template v-for="(platform, index) in platforms" :key="`slide-${index}`" #[`slide-${index}`]>
             <StatCard :icon="getPlatformIcon(platform)" :icon-color="getPlatformColor(platform)"
               :title="$t(`platform.${platform}`)" :value="platformStats[platform] || 0" :label="platform === 'youtube' || platform === 'tiktok'
-                  ? $t('post.videos')
-                  : $t('post.title')
+                ? $t('post.videos')
+                : $t('post.title')
                 " :loading="isStatsLoading" />
           </template>
         </StatCardGrid>
@@ -206,6 +206,9 @@ const { updateLayout, smoothUpdateLayout } = useWaterfallLayout(postsGrid, {
   },
 })
 
+// 初始加载完成标志
+const initialLoadComplete = ref(false)
+
 // 无限滚动
 const { isLoading: isLoadingMore } = useInfiniteScroll({
   onLoadMore: async () => {
@@ -222,7 +225,7 @@ const { isLoading: isLoadingMore } = useInfiniteScroll({
   },
   hasMore: () => hasMore.value && posts.value.length < accessLimit.value,
   threshold: 500,
-  enabled: true,
+  enabled: initialLoadComplete, // 等待初始加载完成后再启用
 })
 
 onMounted(async () => {
@@ -247,10 +250,15 @@ onMounted(async () => {
     // 更新瀑布流布局
     await updateLayout()
 
+    // 标记初始加载完成，启用无限滚动
+    initialLoadComplete.value = true
+
     // 后台加载统计数据（非阻塞）
     loadStatsInBackground()
   } catch (error) {
     handleError(error, { customMessage: t('common.loadFailed', 'Failed to load data') })
+    // 即使失败也要启用无限滚动
+    initialLoadComplete.value = true
   }
 })
 
