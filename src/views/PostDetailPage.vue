@@ -358,19 +358,10 @@
               <img v-if="media.file_type === 'image'" :src="mediaApi.getStreamUrl(media.id)" :alt="post.title || ''"
                 loading="lazy" decoding="async" @click="openMediaViewer(getMediaIndex(index))"
                 class="clickable-image" />
-              <div v-else-if="media.file_type === 'video'" class="video-thumbnail"
-                @click="openMediaViewer(getMediaIndex(index))">
-                <video preload="none" poster="">
-                  <source :src="mediaApi.getStreamUrl(media.id)" type="video/mp4" />
-                </video>
-                <div class="video-play-overlay">
-                  <div class="play-button">
-                    <svg width="64" height="64" viewBox="0 0 64 64">
-                      <circle cx="32" cy="32" r="30" fill="rgba(255,255,255,0.9)" />
-                      <polygon points="26,20 26,44 44,32" fill="#000" />
-                    </svg>
-                  </div>
-                </div>
+              <div v-else-if="media.file_type === 'video'" class="video-player-container">
+                <VideoPlayer :src="buildMediaStreamUrl(media, post.platform)"
+                  :poster="media.thumbnail_path ? mediaApi.getStreamUrl(media.id) + '/thumbnail' : undefined"
+                  :autoplay="false" :muted="false" />
               </div>
             </div>
           </div>
@@ -420,12 +411,14 @@ import MainLayout from '@/components/layout/MainLayout.vue'
 import GlassButton from '@/components/ui/button/Button.vue'
 import PostCardActions from '@/components/business/PostCard/PostCardActions.vue'
 import PhotoSwipeViewer from '@/components/ui/viewer/PhotoSwipeViewer.vue'
+import { VideoPlayer } from '@/components/ui/video'
 
 import { usePostsStore, useAuthStore, useToastStore } from '@/stores'
 import { api } from '@/api/client'
 import { favoritesApi, mediaApi } from '@/api/services'
 import { indexedDB } from '@/utils/storage'
 import { offlineQueue } from '@/utils/storage'
+import { buildMediaStreamUrl } from '@/utils/media'
 import type { PostDetail, Post, UUID, PostListParams, PaginatedResponse } from '@/types'
 import { PLATFORM_NAMES, PLATFORM_COLORS } from '@/types'
 
@@ -447,6 +440,8 @@ const viewerMediaItems = ref<
   Array<{
     url: string
     type: 'image' | 'video'
+    width?: number
+    height?: number
     subtitle?: string // 保留向后兼容
     subtitles?: Array<{ language: string; format: string; label: string }> // 新增：多语言字幕
   }>
@@ -499,6 +494,8 @@ const allMediaItems = computed(() => {
   const items: Array<{
     url: string
     type: 'image' | 'video'
+    width?: number
+    height?: number
     subtitle?: string
     subtitles?: Array<{ language: string; format: string; label: string }>
     mediaId?: UUID // 添加mediaId用于生成字幕URL
@@ -510,6 +507,7 @@ const allMediaItems = computed(() => {
     items.push({
       url: resolveMediaUrl(post.value.thumbnail_url),
       type: 'image',
+      // 缩略图通常没有固定尺寸，让PhotoSwipe自动检测
     })
   }
 
@@ -528,12 +526,16 @@ const allMediaItems = computed(() => {
         const item: {
           url: string
           type: 'image' | 'video'
+          width?: number
+          height?: number
           subtitle?: string
           subtitles?: Array<{ language: string; format: string; label: string }>
           mediaId?: UUID
         } = {
           url: mediaUrl,
           type: media.file_type as 'image' | 'video',
+          width: media.width || undefined,
+          height: media.height || undefined,
           mediaId: media.id,
         }
 
@@ -1815,6 +1817,14 @@ onUnmounted(() => {
 
 .video-thumbnail:hover .play-button {
   transform: scale(1.1);
+}
+
+.video-player-container {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #000;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
 }
 
 .tags-section {
