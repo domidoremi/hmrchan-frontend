@@ -112,10 +112,10 @@ const initPhotoSwipe = () => {
     secondaryZoomLevel: 1.5,
     maxZoomLevel: 4,
 
-    // 禁用可能导致路由跳转的手势
-    allowPanToNext: false,  // 禁用左右滑动切换图片
-    pinchToClose: false,    // 禁用捏合关闭
-    closeOnVerticalDrag: false, // 禁用垂直拖拽关闭
+    // 启用PhotoSwipe手势（完整功能）
+    allowPanToNext: true,      // 启用左右滑动切换图片
+    pinchToClose: true,        // 启用捏合关闭
+    closeOnVerticalDrag: true, // 启用垂直拖拽关闭
 
     // 启用鼠标滚轮缩放
     wheelToZoom: true,
@@ -135,6 +135,13 @@ const initPhotoSwipe = () => {
     arrowNextTitle: '下一个',
   })
 
+  // 阻止PhotoSwipe容器的触摸事件冒泡到网站手势处理器
+  pswp.on('beforeOpen', () => {
+    console.log('[PhotoSwipeViewer] Blocking website gestures')
+    // 阻止网站级别的路由切换手势
+    document.body.style.touchAction = 'none'
+  })
+
   // 监听内容加载事件
   pswp.on('contentLoad', (e: any) => {
     console.log('[PhotoSwipeViewer] contentLoad:', e.content?.type, e.content?.data)
@@ -150,7 +157,9 @@ const initPhotoSwipe = () => {
 
   // 监听关闭事件
   pswp.on('close', () => {
-    console.log('[PhotoSwipeViewer] Closing PhotoSwipe')
+    console.log('[PhotoSwipeViewer] Closing PhotoSwipe, restoring website gestures')
+    // 恢复网站级别的路由切换手势
+    document.body.style.touchAction = ''
     emit('close')
   })
 
