@@ -1783,6 +1783,8 @@ onUnmounted(() => {
   width: 100%;
   height: auto;
   display: block;
+  border-radius: var(--radius-lg);
+  /* 添加圆角与compact-media一致 */
 }
 
 .video-thumbnail {
