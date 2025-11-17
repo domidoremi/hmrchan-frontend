@@ -139,8 +139,22 @@ const initPhotoSwipe = () => {
     padding: { top: 60, bottom: 60, left: 60, right: 60 },
   })
 
+  // 监听内容加载事件
+  pswp.on('contentLoad', (e: any) => {
+    console.log('[PhotoSwipeViewer] contentLoad:', e.content?.type, e.content?.data)
+  })
+
+  pswp.on('contentLoadImage', (e: any) => {
+    console.log('[PhotoSwipeViewer] contentLoadImage:', e.content?.data?.src)
+  })
+
+  pswp.on('loadComplete', () => {
+    console.log('[PhotoSwipeViewer] loadComplete - PhotoSwipe finished loading')
+  })
+
   // 监听关闭事件
   pswp.on('close', () => {
+    console.log('[PhotoSwipeViewer] Closing PhotoSwipe')
     emit('close')
   })
 
