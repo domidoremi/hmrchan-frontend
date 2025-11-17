@@ -133,6 +133,14 @@ const apiClient: KyInstance = ky.create({
 offlineQueue.setApiClient(apiClient as unknown as typeof apiClient)
 
 /**
+ * 规范化URL - 移除开头的斜杠以兼容ky的prefixUrl
+ * ky要求：当使用prefixUrl时，路径不能以斜杠开头
+ */
+function normalizeUrl(url: string): string {
+  return url.startsWith('/') ? url.slice(1) : url
+}
+
+/**
  * API请求封装 - 增强版（带多层缓存和去重）
  */
 export const api = {
@@ -156,6 +164,7 @@ export const api = {
       ...kyConfig
     } = config || {}
 
+    const normalizedUrl = normalizeUrl(url)
     const cacheKey = `GET:${url}:${JSON.stringify(params || {})}`
 
     // 如果需要强制刷新缓存
@@ -166,7 +175,7 @@ export const api = {
 
     // 如果不启用缓存
     if (!cache) {
-      return apiClient.get(url, { searchParams: params, ...kyConfig }).json<T>()
+      return apiClient.get(normalizedUrl, { searchParams: params, ...kyConfig }).json<T>()
     }
 
     // 使用多层缓存（内存 + IndexedDB）
@@ -182,7 +191,9 @@ export const api = {
       return requestCache.dedupe(
         cacheKey,
         async () => {
-          const data = await apiClient.get(url, { searchParams: params, ...kyConfig }).json<T>()
+          const data = await apiClient
+            .get(normalizedUrl, { searchParams: params, ...kyConfig })
+            .json<T>()
 
           // 存储到多层缓存
           await cacheManager.set(cacheKey, data, ttl)
@@ -196,7 +207,7 @@ export const api = {
     // 使用简单内存缓存（向后兼容）
     return requestCache.dedupe(
       cacheKey,
-      () => apiClient.get(url, { searchParams: params, ...kyConfig }).json<T>(),
+      () => apiClient.get(normalizedUrl, { searchParams: params, ...kyConfig }).json<T>(),
       { ttl, force: false },
     )
   },
@@ -209,7 +220,7 @@ export const api = {
   ): Promise<T> {
     const { invalidatePatterns, ...kyConfig } = config || {}
 
-    const response = await apiClient.post(url, { json: data, ...kyConfig }).json<T>()
+    const response = await apiClient.post(normalizeUrl(url), { json: data, ...kyConfig }).json<T>()
 
     // 清除相关缓存
     if (invalidatePatterns && invalidatePatterns.length > 0) {
@@ -227,7 +238,7 @@ export const api = {
   ): Promise<T> {
     const { invalidatePatterns, ...kyConfig } = config || {}
 
-    const response = await apiClient.put(url, { json: data, ...kyConfig }).json<T>()
+    const response = await apiClient.put(normalizeUrl(url), { json: data, ...kyConfig }).json<T>()
 
     // 清除相关缓存
     if (invalidatePatterns && invalidatePatterns.length > 0) {
@@ -245,7 +256,7 @@ export const api = {
   ): Promise<T> {
     const { invalidatePatterns, ...kyConfig } = config || {}
 
-    const response = await apiClient.patch(url, { json: data, ...kyConfig }).json<T>()
+    const response = await apiClient.patch(normalizeUrl(url), { json: data, ...kyConfig }).json<T>()
 
     // 清除相关缓存
     if (invalidatePatterns && invalidatePatterns.length > 0) {
@@ -262,7 +273,7 @@ export const api = {
   ): Promise<T> {
     const { invalidatePatterns, ...kyConfig } = config || {}
 
-    const response = await apiClient.delete(url, kyConfig).json<T>()
+    const response = await apiClient.delete(normalizeUrl(url), kyConfig).json<T>()
 
     // 清除相关缓存
     if (invalidatePatterns && invalidatePatterns.length > 0) {
@@ -295,7 +306,9 @@ export const api = {
   },
 
   // 预加载缓存
-  async preloadCache(urls: Array<{ url: string; params?: Record<string, unknown>; ttl?: number }>) {
+  async preloadCache(
+    urls: Array<{ url: string; params?: Record<string, string | number | boolean>; ttl?: number }>,
+  ) {
     logger.info('Preloading cache', { count: urls.length })
 
     await Promise.all(
