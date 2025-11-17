@@ -3,13 +3,8 @@
   <div class="access-limit-indicator" :style="{ bottom: dynamicBottom }">
     <!-- 小气泡指示器 -->
     <Transition name="fade">
-      <button
-        v-if="shouldShowIndicator"
-        class="access-bubble"
-        :class="{ 'bubble-warning': isNearLimit }"
-        @click="showDetails"
-        :aria-label="$t('access.viewDetails')"
-      >
+      <button v-if="shouldShowIndicator" class="access-bubble" :class="{ 'bubble-warning': isNearLimit }"
+        @click="showDetails" :aria-label="$t('access.viewDetails')">
         <div class="bubble-icon">
           <Info v-if="!isNearLimit" :size="16" />
           <AlertCircle v-else :size="16" />
@@ -46,9 +41,9 @@ const { safeAreaBottom, isMobile } = useResponsive()
 const isAuthenticated = computed(() => authStore.isAuthenticated)
 const isAdmin = computed(() => authStore.user?.is_admin ?? false)
 
-// 动态计算bottom值：底部导航栏高度 + 额外间距
+// 动态计算bottom值：底部导航栏高度 + 额外间距（与BackToTop保持一致）
 const dynamicBottom = computed(() => {
-  return `${safeAreaBottom.value + (isMobile.value ? 8 : 24)}px`
+  return `${safeAreaBottom.value + (isMobile.value ? 12 : 32)}px`
 })
 
 const progress = computed(() => {
