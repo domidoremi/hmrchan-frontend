@@ -38,22 +38,20 @@ const prepareDataSource = (items: MediaItem[]) => {
 
   return items.map((item, index) => {
     if (item.type === 'image') {
-      // 如果有尺寸信息就使用，否则不提供（让PhotoSwipe自动检测）
+      // PhotoSwipe需要明确的尺寸来正确显示图片
+      // 如果有尺寸信息就使用，否则提供默认值
       const imageData: Record<string, string | number> = {
         src: item.url,
         alt: item.alt || '',
+        // 提供默认尺寸，PhotoSwipe会根据实际图片调整
+        width: item.width && item.width > 0 ? item.width : 1920,
+        height: item.height && item.height > 0 ? item.height : 1080,
       }
 
-      // 只有当width和height都存在且有效时才添加
-      if (item.width && item.height && item.width > 0 && item.height > 0) {
-        imageData.width = item.width
-        imageData.height = item.height
-        console.log(`[PhotoSwipeViewer] Image ${index}: width=${item.width}, height=${item.height}`)
-      } else {
-        console.log(`[PhotoSwipeViewer] Image ${index}: no size info, PhotoSwipe will detect`)
-      }
-
+      console.log(`[PhotoSwipeViewer] Image ${index}: width=${imageData.width}, height=${imageData.height}`,
+        item.width && item.height ? '(from MediaFile)' : '(using defaults)')
       console.log(`[PhotoSwipeViewer] Image ${index} data:`, imageData)
+
       return imageData
     } else {
       // 视频：使用element属性代替html
