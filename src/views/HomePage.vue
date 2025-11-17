@@ -321,41 +321,48 @@ const loadMore = async () => {
         `[HomePage] 分页信息: 当前页 ${result.page}/${result.pages}, hasMore: ${hasMore.value}`,
       )
     }
+  } catch (error) {
+    // 加载失败时回退页码并显示错误
+    currentPage.value--
+    hasMore.value = false // 停止继续尝试
+    handleError(error, {
+      customMessage: t('error.api.fetchPosts'),
+      silent: false, // 显示通知
+    })
+    console.error('[HomePage] Failed to load more posts:', error)
+    return // 直接返回，跳过布局更新
+  }
 
-    // 等待 DOM 更新
-    await nextTick()
+  // 等待 DOM 更新
+  await nextTick()
 
-    // 获取所有卡片，只对新卡片添加动画
-    if (postsGrid.value) {
-      const allCards = postsGrid.value.querySelectorAll('a.post-card')
-      const previousCount = loadedPostsCount.value
+  // 获取所有卡片，只对新卡片添加动画
+  if (postsGrid.value) {
+    const allCards = postsGrid.value.querySelectorAll('a.post-card')
+    const previousCount = loadedPostsCount.value
 
-      // 只对新增的卡片添加进入动画
-      for (let i = previousCount; i < allCards.length; i++) {
-        const card = allCards[i] as HTMLElement
-        card.classList.add('card-entering')
-      }
-
-      // 更新已加载数量
-      loadedPostsCount.value = allCards.length
+    // 只对新增的卡片添加进入动画
+    for (let i = previousCount; i < allCards.length; i++) {
+      const card = allCards[i] as HTMLElement
+      card.classList.add('card-entering')
     }
 
-    // 使用平滑更新，减少现有卡片重排
-    await smoothUpdateLayout()
-
-    // 延迟后移除进入动画类
-    setTimeout(() => {
-      if (postsGrid.value) {
-        const cards = postsGrid.value.querySelectorAll('a.post-card.card-entering')
-        cards.forEach((card) => {
-          ; (card as HTMLElement).classList.remove('card-entering')
-        })
-      }
-    }, 600)
-  } catch (error) {
-    handleError(error, { customMessage: t('post.loadMoreFailed', 'Failed to load more posts') })
-    currentPage.value-- // 恢复页码
+    // 更新已加载数量
+    loadedPostsCount.value = allCards.length
   }
+
+  // 使用平滑更新，减少现有卡片重排
+  await smoothUpdateLayout()
+
+  // 延迟后移除进入动画类
+  setTimeout(() => {
+    if (postsGrid.value) {
+      const cards = postsGrid.value.querySelectorAll('a.post-card.card-entering')
+      cards.forEach((card) => {
+        ; (card as HTMLElement).classList.remove('card-entering')
+      })
+    }
+  }, 600)
 }
 
 const goToExplore = () => {
