@@ -7,19 +7,10 @@
 
     <!-- Mobile: Carousel Layout -->
     <div class="stat-carousel stat-carousel--mobile">
-      <div
-        class="carousel-container glass-card"
-        @mouseenter="pauseAutoplay"
-        @mouseleave="resumeAutoplay"
-        @touchstart="pauseAutoplay"
-        @touchend="resumeAutoplay"
-      >
-        <button
-          class="carousel-btn carousel-prev"
-          @click="prevSlide"
-          :aria-label="$t('common.previous', 'Previous')"
-          :disabled="!canNavigate"
-        >
+      <div class="carousel-container glass-card" @mouseenter="pauseAutoplay" @mouseleave="resumeAutoplay"
+        @touchstart="pauseAutoplay" @touchend="resumeAutoplay">
+        <button class="carousel-btn carousel-prev" @click="prevSlide" :aria-label="$t('common.previous', 'Previous')"
+          :disabled="!canNavigate">
           <ChevronLeft :size="20" />
         </button>
 
@@ -31,29 +22,17 @@
           </div>
         </div>
 
-        <button
-          class="carousel-btn carousel-next"
-          @click="nextSlide"
-          :aria-label="$t('common.next', 'Next')"
-          :disabled="!canNavigate"
-        >
+        <button class="carousel-btn carousel-next" @click="nextSlide" :aria-label="$t('common.next', 'Next')"
+          :disabled="!canNavigate">
           <ChevronRight :size="20" />
         </button>
       </div>
 
       <!-- Progress Indicators -->
       <div v-if="slideCount > 1" class="carousel-indicators">
-        <div
-          v-for="index in slideCount"
-          :key="index"
-          class="indicator-progress"
-          :class="{ active: currentSlide === index - 1 }"
-          @click="goToSlide(index - 1)"
-        >
-          <div
-            class="progress-bar"
-            :class="{ animating: currentSlide === index - 1 && !isPaused }"
-          ></div>
+        <div v-for="index in slideCount" :key="index" class="indicator-progress"
+          :class="{ active: currentSlide === index - 1 }" @click="goToSlide(index - 1)">
+          <div class="progress-bar" :class="{ animating: currentSlide === index - 1 && !isPaused }"></div>
         </div>
       </div>
     </div>
@@ -85,10 +64,19 @@ const currentSlide = ref(0)
 const isPaused = ref(false)
 const autoplayInterval = ref<number | null>(null)
 
-// Calculate slide count from default slot
+// Calculate slide count from named slots (for mobile carousel)
 const slideCount = computed(() => {
-  const defaultSlot = slots.default?.()
-  return defaultSlot?.length || 0
+  // 计算具名插槽 slide-0, slide-1, ... 的数量
+  let count = 0
+  while (slots[`slide-${count}`]) {
+    count++
+  }
+  // 如果没有具名插槽，则使用default slot的长度
+  if (count === 0) {
+    const defaultSlot = slots.default?.()
+    return defaultSlot?.length || 0
+  }
+  return count
 })
 
 const canNavigate = computed(() => slideCount.value > 1)

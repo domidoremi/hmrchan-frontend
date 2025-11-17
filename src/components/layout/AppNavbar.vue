@@ -5,7 +5,7 @@
       <!-- Logo -->
       <RouterLink to="/" class="navbar-brand">
         <div class="brand-logo">HMR</div>
-        <span class="brand-name">Chan</span>
+        <span class="brand-name">Club</span>
       </RouterLink>
 
       <!-- 导航链接 (桌面端) -->
@@ -186,7 +186,7 @@
       <!-- Logo -->
       <RouterLink to="/" class="navbar-brand">
         <div class="brand-logo">HMR</div>
-        <span class="brand-name">Chan</span>
+        <span class="brand-name">Club</span>
       </RouterLink>
 
       <!-- 右侧按钮 -->
@@ -613,11 +613,14 @@ onUnmounted(() => {
   align-items: center;
   gap: var(--spacing-2);
   text-decoration: none;
-  transition: transform var(--transition-fast);
+  transition: all var(--transition-fast);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-lg);
 }
 
 .navbar-brand:hover {
   transform: scale(1.05);
+  background: rgba(139, 92, 246, 0.08);
 }
 
 .brand-logo {
@@ -635,6 +638,10 @@ onUnmounted(() => {
 
 .brand-name {
   font-size: var(--text-xl);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
   font-weight: var(--font-bold);
   color: var(--color-text-primary);
 }
