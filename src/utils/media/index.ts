@@ -21,3 +21,11 @@ export { mediaOptimizer } from './mediaOptimizer'
 
 // Preload
 export { imagePreloader, videoPreloader, smartPreloader } from './preload'
+
+// Platform-based Caching
+export {
+  buildMediaStreamUrl,
+  buildMediaThumbnailUrl,
+  getPlatformCacheDays,
+  extractMediaIdFromUrl,
+} from './platformCache'
