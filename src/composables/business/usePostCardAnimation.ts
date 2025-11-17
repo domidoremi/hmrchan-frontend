@@ -76,17 +76,27 @@ export function usePostCardAnimation(
     if (mediaEl) {
       const img = mediaEl.querySelector('img')
       if (img) {
-        // 先清除所有动画，避免冲突
+        // 检查图片是否完全加载
+        if (!img.complete) {
+          // 图片未加载完成，跳过动画
+          return
+        }
+
+        // 先清除所有动画
         gsap.killTweensOf(img)
-        // 设置初始值
-        gsap.set(img, { scale: 1 })
-        // 开始动画
-        gsap.to(img, {
-          scale: 1.1,
-          duration: 0.6,
-          ease: 'power2.out',
-          overwrite: 'auto',
-        })
+
+        // 使用from动画代替to，避免resetTo警告
+        // from会自动设置起始值，不需要resetTo
+        gsap.fromTo(
+          img,
+          { scale: 1 }, // 起始状态
+          {
+            scale: 1.1,
+            duration: 0.6,
+            ease: 'power2.out',
+            overwrite: 'auto',
+          },
+        )
       }
     }
   }
