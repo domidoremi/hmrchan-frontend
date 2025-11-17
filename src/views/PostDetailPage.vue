@@ -513,15 +513,12 @@ const allMediaItems = computed(() => {
 
   // 2. 添加媒体文件中的图片和视频
   if (post.value.media_files && post.value.media_files.length > 0) {
-    post.value.media_files.forEach((media, index) => {
+    post.value.media_files.forEach((media) => {
       if (media.file_type === 'image' || media.file_type === 'video') {
         const mediaUrl = mediaApi.getStreamUrl(media.id)
 
-        // 如果有缩略图，跳过第一个媒体文件（如果是图片）
-        // 因为缩略图通常就是第一张图片的缩略版
-        if (hasThumbnail && index === 0 && media.file_type === 'image') {
-          return // 跳过第一张图片以避免重复
-        }
+        // 不跳过任何媒体 - 让用户查看所有原始文件
+        // thumbnail_url 只是预览图，不等同于原始媒体文件
 
         const item: {
           url: string
@@ -783,7 +780,7 @@ const openMediaViewer = (mediaIndex: number) => {
 
 const getMediaIndex = (mediaFileIndex: number): number => {
   // 计算媒体文件在allMediaItems中的实际索引
-  // 如果有缩略图，索引需要+1
+  // thumbnail在索引0，media_files从索引1开始
   const offset = post.value?.thumbnail_url ? 1 : 0
   return offset + mediaFileIndex
 }
