@@ -34,19 +34,22 @@ export default defineConfig(({ mode }) => ({
       'vue-i18n',
       '@vueuse/core',
       '@vueuse/shared',
-      'gsap',
     ],
-    // 排除不需要预构建的依赖
+    // 排除不需要预构建的依赖（按需加载）
     exclude: [
       'vite-plugin-vue-devtools',
       'lucide-vue-next', // 图标库按需加载，不预构建
       'plyr', // 媒体播放器按需加载
+      'photoswipe', // 图片查看器按需加载
       'masonry-layout', // 瀑布流布局按需加载
+      'gsap', // 动画库按需加载
     ],
     // 强制预构建，避免二次预构建
     force: false,
-    // 优化依赖扫描
-    entries: ['./src/main.ts', './src/views/HomePage.vue', './src/views/ExplorePage.vue'],
+    // 优化依赖扫描 - 只扫描关键入口
+    entries: ['./src/main.ts', './src/views/HomePage.vue'],
+    // 启用依赖扫描缓存
+    holdUntilCrawlEnd: false, // 不等待扫描完成，加快启动
   },
   build: {
     // 生产环境优化
@@ -77,6 +80,11 @@ export default defineConfig(({ mode }) => ({
     rollupOptions: {
       output: {
         manualChunks(id) {
+          // ========== 优化策略 ==========
+          // 1. 核心库独立缓存（变化频率低）
+          // 2. 第三方库按大小和使用频率分割
+          // 3. 业务代码按页面/功能分割
+          // 4. 目标：首屏<100KB，单chunk<200KB
           if (id.includes('node_modules')) {
             // ========== 核心库分割（最高优先级） ==========
             // Vue 核心运行时 - 最常用，单独分割
@@ -115,6 +123,10 @@ export default defineConfig(({ mode }) => ({
             if (id.includes('plyr')) {
               return 'media-player'
             }
+            // PhotoSwipe 查看器 - 仅详情页使用
+            if (id.includes('photoswipe')) {
+              return 'photo-viewer'
+            }
             // Masonry 布局库 - 仅桌面端瀑布流使用
             if (id.includes('masonry-layout')) {
               return 'masonry'
@@ -129,9 +141,9 @@ export default defineConfig(({ mode }) => ({
             if (id.includes('dayjs')) {
               return 'dayjs'
             }
-            // Axios - HTTP 客户端
+            // Axios - HTTP 客户端（大文件，单独分割）
             if (id.includes('axios')) {
-              return 'http-client'
+              return 'vendor-axios'
             }
             // VueUse - 组合式工具集
             if (id.includes('@vueuse/core')) {
@@ -168,24 +180,44 @@ export default defineConfig(({ mode }) => ({
             }
           }
 
-          // 业务组件 - 按功能分组
+          // 业务组件 - 细化分割
           if (id.includes('/src/components/business/')) {
+            // PostCard单独分割（大组件，高频使用）
+            if (id.includes('PostCard')) {
+              return 'component-postcard'
+            }
+            // 其他业务组件
             return 'components-business'
           }
 
-          // 数据展示组件
-          if (id.includes('/src/components/data-display/')) {
-            return 'components-display'
-          }
-
-          // 反馈组件
-          if (id.includes('/src/components/feedback/')) {
-            return 'components-feedback'
-          }
-
-          // 表单组件
-          if (id.includes('/src/components/form/')) {
-            return 'components-form'
+          // UI组件 - 保持细粒度分割
+          if (id.includes('/src/components/ui/')) {
+            // PhotoSwipe查看器（仅详情页）
+            if (id.includes('/ui/viewer/PhotoSwipe')) {
+              return 'viewer-photoswipe'
+            }
+            // VideoPlayer组件（详情页+列表）
+            if (id.includes('/ui/video/VideoPlayer')) {
+              return 'viewer-video'
+            }
+            // 其他查看器组件
+            if (id.includes('/ui/viewer')) {
+              return 'components-viewer'
+            }
+            // 卡片组件
+            if (id.includes('/ui/card')) {
+              return 'components-card'
+            }
+            // 按钮和输入组件
+            if (id.includes('/ui/button') || id.includes('/ui/input')) {
+              return 'components-input'
+            }
+            // 反馈组件（加载、提示等）
+            if (id.includes('/ui/feedback') || id.includes('/ui/indicator')) {
+              return 'components-feedback'
+            }
+            // 其他UI组件
+            return 'components-ui'
           }
 
           // 布局组件
@@ -222,8 +254,13 @@ export default defineConfig(({ mode }) => ({
             return 'stores'
           }
 
-          // 工具函数
+          // 工具函数 - 细化分割
           if (id.includes('/src/utils/')) {
+            // 媒体处理工具（体积较大）
+            if (id.includes('/utils/media')) {
+              return 'utils-media'
+            }
+            // 其他工具
             return 'utils'
           }
         },
@@ -246,11 +283,11 @@ export default defineConfig(({ mode }) => ({
     },
     // 资源优化
     chunkSizeWarningLimit: 500, // 降低警告阈值，促进更细的分割
-    assetsInlineLimit: 4096, // 小于 4KB 的资源内联
+    assetsInlineLimit: 4096, // 小于 4KB 的资源内联为base64
     // 压缩配置
-    cssCodeSplit: true,
-    cssMinify: 'esbuild', // 使用 esbuild 压缩 CSS
-    reportCompressedSize: false, // 加快构建速度
+    cssCodeSplit: true, // CSS代码分割
+    cssMinify: 'esbuild', // 使用 esbuild 压缩 CSS（更快）
+    reportCompressedSize: false, // 禁用压缩大小报告，加快构建
     // 优化输出
     emptyOutDir: true, // 清理输出目录
     // 优化导入分析
@@ -261,6 +298,17 @@ export default defineConfig(({ mode }) => ({
       strictRequires: true,
       transformMixedEsModules: true,
     },
+    // 优化CSS处理
+    cssTarget: 'esnext', // CSS目标版本
+    // 启用实验性优化
+    ...(mode === 'production' && {
+      // 优化CSS导入
+      cssCodeSplit: true,
+      // 优化资源处理
+      assetsDir: 'assets',
+      // 启用构建缓存（实验性）
+      manifest: true, // 生成manifest.json
+    }),
   },
   server: {
     port: 5173,
