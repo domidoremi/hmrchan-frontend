@@ -61,8 +61,18 @@ export default defineConfig(({ mode }) => ({
         treeShaking: true,
         // 优化构建性能
         logLevel: 'error', // 减少日志输出
+        // 优化标识符命名以减小体积
+        minifyIdentifiers: true,
+        minifySyntax: true,
+        minifyWhitespace: true,
+        // 更激进的压缩
+        keepNames: false,
       },
     }),
+    // 优化模块外部化
+    modulePreload: {
+      polyfill: false, // 关闭polyfill减小体积
+    },
     // 代码分割
     rollupOptions: {
       output: {
@@ -145,7 +155,15 @@ export default defineConfig(({ mode }) => ({
               if (['homepage', 'explorepage', 'postsview'].includes(pageName)) {
                 return `page-${pageName}`
               }
-              // 其他页面分组
+              // PostDetailPage 单独分割（包含PhotoSwipe和VideoPlayer）
+              if (pageName === 'postdetailpage') {
+                return 'page-postdetail'
+              }
+              // ProfilePage 单独分割
+              if (pageName === 'profilepage') {
+                return 'page-profile'
+              }
+              // 其他次要页面分组
               return 'pages-other'
             }
           }
@@ -185,9 +203,18 @@ export default defineConfig(({ mode }) => ({
             return 'composables'
           }
 
-          // API 服务层
+          // API 服务层 - 细化分割
           if (id.includes('/src/api/')) {
-            return 'api-services'
+            // API客户端基础配置
+            if (id.includes('/api/client')) {
+              return 'api-client'
+            }
+            // API服务 - 按模块分割
+            if (id.includes('/api/services')) {
+              return 'api-services'
+            }
+            // 其他API工具
+            return 'api-utils'
           }
 
           // Stores - 状态管理模块
@@ -218,12 +245,22 @@ export default defineConfig(({ mode }) => ({
       },
     },
     // 资源优化
-    chunkSizeWarningLimit: 1000,
+    chunkSizeWarningLimit: 500, // 降低警告阈值，促进更细的分割
     assetsInlineLimit: 4096, // 小于 4KB 的资源内联
     // 压缩配置
     cssCodeSplit: true,
     cssMinify: 'esbuild', // 使用 esbuild 压缩 CSS
     reportCompressedSize: false, // 加快构建速度
+    // 优化输出
+    emptyOutDir: true, // 清理输出目录
+    // 优化导入分析
+    commonjsOptions: {
+      include: [/node_modules/],
+      extensions: ['.js', '.cjs'],
+      // 优化转换性能
+      strictRequires: true,
+      transformMixedEsModules: true,
+    },
   },
   server: {
     port: 5173,
