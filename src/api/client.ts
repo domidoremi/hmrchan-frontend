@@ -46,7 +46,7 @@ console.log('🌐 API Configuration:', {
 // 创建ky实例 - ky原生使用fetch，体积更小，性能更好
 const apiClient: KyInstance = ky.create({
   prefixUrl: SAFE_BASE_URL,
-  timeout: 30000,
+  timeout: 60000, // 60秒超时（增加以处理慢速网络）
   credentials: 'omit', // 不发送cookies
   retry: {
     limit: 2,
