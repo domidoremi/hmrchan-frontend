@@ -512,13 +512,11 @@ const allMediaItems = computed(() => {
   }
 
   // 2. 添加媒体文件中的图片和视频
+  // 不跳过任何媒体，保持与模板显示的一致性
   if (post.value.media_files && post.value.media_files.length > 0) {
     post.value.media_files.forEach((media) => {
       if (media.file_type === 'image' || media.file_type === 'video') {
         const mediaUrl = mediaApi.getStreamUrl(media.id)
-
-        // 不跳过任何媒体 - 让用户查看所有原始文件
-        // thumbnail_url 只是预览图，不等同于原始媒体文件
 
         const item: {
           url: string
