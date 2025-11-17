@@ -18,6 +18,22 @@
     "unknownError": "Unknown error",
     "videoPlaybackFailed": "Video playback failed"
   },
+  "api": {
+    "fetchCurrentUser": "Failed to fetch current user",
+    "fetchSuggestions": "Failed to fetch search suggestions",
+    "fetchPosts": "Failed to fetch posts",
+    "fetchPostById": "Failed to fetch post details",
+    "fetchPostsByPlatform": "Failed to fetch posts for this platform",
+    "fetchPostStats": "Failed to fetch post statistics",
+    "fetchMediaInfo": "Failed to fetch media information",
+    "fetchAuthors": "Failed to fetch authors",
+    "fetchAuthorById": "Failed to fetch author details",
+    "fetchAuthorPosts": "Failed to fetch posts for this author",
+    "fetchFavorites": "Failed to fetch favorites",
+    "fetchFolders": "Failed to fetch favorite folders",
+    "fetchPlatformStats": "Failed to fetch platform statistics",
+    "fetchFullStats": "Failed to fetch statistics"
+  },
   "offline": {
     "usingCache": "Showing cached offline data. It may not be up to date.",
     "actionsQueued": "Some actions are queued offline and will sync when you're back online.",

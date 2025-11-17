@@ -18,6 +18,22 @@
     "unknownError": "未知错误",
     "videoPlaybackFailed": "视频播放失败"
   },
+  "api": {
+    "fetchCurrentUser": "获取用户信息失败",
+    "fetchSuggestions": "获取搜索建议失败",
+    "fetchPosts": "获取帖子列表失败",
+    "fetchPostById": "获取帖子详情失败",
+    "fetchPostsByPlatform": "获取该平台的帖子失败",
+    "fetchPostStats": "获取帖子统计失败",
+    "fetchMediaInfo": "获取媒体信息失败",
+    "fetchAuthors": "获取作者列表失败",
+    "fetchAuthorById": "获取作者详情失败",
+    "fetchAuthorPosts": "获取该作者的帖子失败",
+    "fetchFavorites": "获取收藏失败",
+    "fetchFolders": "获取收藏夹失败",
+    "fetchPlatformStats": "获取平台统计失败",
+    "fetchFullStats": "获取统计数据失败"
+  },
   "offline": {
     "usingCache": "当前显示的是本地缓存数据，可能不是最新。",
     "actionsQueued": "部分操作已加入离线队列，将在网络恢复后自动同步。",
