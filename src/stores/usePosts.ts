@@ -180,8 +180,9 @@ export const usePostsStore = defineStore(
         if (!options.forceFresh) {
           const cached = await indexedDB.getPost(postId)
 
-          // 如果缓存新鲜（5分钟内），立即返回并后台刷新
-          if (cached && indexedDB.isCacheFresh(cached, 5 * 60 * 1000)) {
+          // 如果缓存新鲜（30秒内），立即返回并后台刷新
+          // 缩短TTL避免使用缺少media_files的旧缓存
+          if (cached && indexedDB.isCacheFresh(cached, 30 * 1000)) {
             const cachedDetail = cached as unknown as PostDetail
 
             currentPost.value = cachedDetail
