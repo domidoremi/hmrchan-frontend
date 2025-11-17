@@ -771,14 +771,20 @@ const formatNumber = (num: number): string => {
 const openMediaViewer = (mediaIndex: number) => {
   if (!post.value) return
 
-  console.log('[PostDetailPage] 🎬 Opening media viewer', {
-    mediaIndex,
-    allMediaItems: allMediaItems.value,
-    itemsCount: allMediaItems.value.length,
-    postId: post.value.id,
-    hasThumbnail: !!post.value.thumbnail_url,
-    mediaFilesCount: post.value.media_files?.length || 0,
-  })
+  // 使用JSON.stringify查看完整数据
+  console.log('[PostDetailPage] 🎬 Opening media viewer')
+  console.log('  mediaIndex:', mediaIndex)
+  console.log('  itemsCount:', allMediaItems.value.length)
+  console.log('  postId:', post.value.id)
+  console.log('  hasThumbnail:', !!post.value.thumbnail_url)
+  console.log('  mediaFilesCount:', post.value.media_files?.length || 0)
+  console.log('  allMediaItems:', JSON.stringify(allMediaItems.value, null, 2))
+  console.log('  media_files:', JSON.stringify(post.value.media_files?.map(m => ({
+    id: m.id,
+    type: m.file_type,
+    width: m.width,
+    height: m.height,
+  })), null, 2))
 
   viewerMediaItems.value = allMediaItems.value
   viewerInitialIndex.value = mediaIndex
