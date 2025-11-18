@@ -19,10 +19,32 @@ export default defineConfigWithVueTs(
 
   pluginVue.configs['flat/essential'],
   vueTsConfigs.recommended,
-  
+
   {
     ...pluginVitest.configs.recommended,
     files: ['src/**/__tests__/*'],
   },
   skipFormatting,
+
+  {
+    name: 'app/custom-rules',
+    rules: {
+      'vue/multi-word-component-names': [
+        'error',
+        {
+          ignores: [
+            'Button',
+            'Input',
+            'Card',
+            'Badge',
+            'Icon',
+            'Modal',
+            'Toast',
+            'Loading',
+            'Skeleton',
+          ],
+        },
+      ],
+    },
+  },
 )

@@ -1,12 +1,15 @@
 /**
- * API客户端配置 - 增强版（带缓存支持）
+ * API客户端配置 - 增强版（使用ky，体积更小）
  */
-import axios, { type AxiosInstance, type AxiosResponse, type AxiosRequestConfig } from 'axios'
-import { useAuthStore } from '@/stores/auth'
+import ky, { type KyInstance, type Options as KyOptions } from 'ky'
+import { useAuthStore } from '@/stores'
 import logger from '@/utils/logger'
-import { nativeFetchAdapter } from './nativeFetchAdapter'
-import { requestCache } from '@/utils/requestCache'
-import { offlineQueue } from '@/utils/offlineQueue'
+import { requestCache } from '@/utils/cache'
+import { offlineQueue } from '@/utils/storage'
+import { cacheManager } from '@/utils/cache/CacheManager'
+
+// 设置 API 客户端日志上下文
+logger.setContext({ category: 'API' })
 
 // 🔒 强制使用 HTTPS - 完全不依赖环境变量或构建时计算
 // 开发环境使用 Vite 代理，生产环境硬编码 HTTPS
@@ -40,187 +43,289 @@ console.log('🌐 API Configuration:', {
   windowProtocol: typeof window !== 'undefined' ? window.location.protocol : 'N/A',
 })
 
-// 创建axios实例 - 使用 SAFE_BASE_URL 和原生 Fetch 适配器（完全绕过XHR）
-const apiClient: AxiosInstance = axios.create({
-  baseURL: SAFE_BASE_URL,
-  timeout: 30000,
-  withCredentials: false,
-  adapter: nativeFetchAdapter, // 🔒 使用原生Fetch适配器，完全绕过XHR（XHR被某些东西拦截了）
-})
-
-// 将API客户端注入离线队列，用于网络恢复后的后台同步
-offlineQueue.setApiClient(apiClient)
-
-// 🔒 强制锁定 baseURL，防止被修改
-Object.defineProperty(apiClient.defaults, 'baseURL', {
-  get() {
-    return SAFE_BASE_URL
+// 创建ky实例 - ky原生使用fetch，体积更小，性能更好
+const apiClient: KyInstance = ky.create({
+  prefixUrl: SAFE_BASE_URL,
+  timeout: 60000, // 60秒超时（增加以处理慢速网络）
+  credentials: 'omit', // 不发送cookies
+  retry: {
+    limit: 2,
+    methods: ['get'],
+    statusCodes: [408, 413, 429, 500, 502, 503, 504],
   },
-  set() {
-    console.error('🚨 Attempted to modify baseURL - ignored!')
-    // 忽略任何修改尝试
-  },
-  configurable: false,
-  enumerable: true,
-})
-
-// 防止重复初始化标志
-let isConfigured = false
-
-if (!isConfigured) {
-  // 请求拦截器 - 极度激进的 HTTPS 强制执行
-  apiClient.interceptors.request.use(
-    (config) => {
-      // 🔒 STEP 1: 确保 baseURL 是 HTTPS
-      if (!config.baseURL) {
-        config.baseURL = SAFE_BASE_URL
-      } else if (config.baseURL.startsWith('http://')) {
-        config.baseURL = config.baseURL.replace('http://', 'https://')
-        console.error('🚨 baseURL was HTTP, forced to HTTPS:', config.baseURL)
-      }
-
-      // 🔒 STEP 2: 如果 URL 是完整URL且是HTTP，强制转换
-      if (config.url && config.url.startsWith('http://')) {
-        config.url = config.url.replace('http://', 'https://')
-        console.error('🚨 URL was HTTP, forced to HTTPS:', config.url)
-      }
-
-      // 🔒 STEP 3: 检查构建后的完整 URL
-      const fullUrl = axios.getUri(config)
-      if (fullUrl.startsWith('http://')) {
-        const httpsUrl = fullUrl.replace('http://', 'https://')
-        // 完全重写请求配置使用 HTTPS URL
-        config.baseURL = ''
-        config.url = httpsUrl
-      }
-
-      // 添加认证Token
-      const authStore = useAuthStore()
-      if (authStore.token) {
-        config.headers.Authorization = `Bearer ${authStore.token}`
-      }
-
-      return config
-    },
-    (error) => {
-      logger.error('Request error:', error)
-      return Promise.reject(error)
-    },
-  )
-
-  // 响应拦截器
-  apiClient.interceptors.response.use(
-    (response: AxiosResponse) => {
-      logger.debug(
-        `Response: ${response.config.method?.toUpperCase()} ${response.config.url} - ${response.status}`,
-      )
-      return response
-    },
-    (error) => {
-      if (error.response) {
-        const { status } = error.response
-        logger.error(
-          `Response error: ${error.config?.method?.toUpperCase()} ${error.config?.url} - ${status}`,
-        )
-
-        // 401 未授权 - Token过期或无效
-        if (status === 401) {
-          const authStore = useAuthStore()
-          authStore.logout()
-          window.location.href = '/login'
+  hooks: {
+    beforeRequest: [
+      (request) => {
+        // 🔒 确保HTTPS
+        const url = request.url
+        if (url.startsWith('http://')) {
+          request = new Request(url.replace('http://', 'https://'), request)
+          logger.warn('URL was HTTP, forced to HTTPS', { url })
         }
 
-        // 403 权限不足
-        if (status === 403) {
-          logger.warn('Access forbidden')
+        // 添加认证Token
+        const authStore = useAuthStore()
+        if (authStore.token) {
+          request.headers.set('Authorization', `Bearer ${authStore.token}`)
         }
 
-        // 429 请求过于频繁
-        if (status === 429) {
-          logger.warn('Too many requests')
-        }
-
-        // 500 服务器错误
-        if (status >= 500) {
-          logger.error('Server error')
-        }
-      } else if (error.request) {
-        logger.error('Network error - no response received:', error.message)
-        logger.debug('Request details:', {
-          url: error.config?.url,
-          method: error.config?.method,
-          timeout: error.config?.timeout,
+        logger.debug(`Request: ${request.method} ${request.url}`)
+        return request
+      },
+    ],
+    afterResponse: [
+      (request, options, response) => {
+        logger.debug(`Response: ${request.method} ${request.url}`, {
+          status: response.status,
+          statusText: response.statusText,
         })
-      } else {
-        logger.error('Request setup error:', error.message)
-      }
+        return response
+      },
+    ],
+    beforeError: [
+      (error) => {
+        const { request, response } = error
+        if (response) {
+          const status = response.status
 
-      return Promise.reject(error)
-    },
-  )
+          logger.error(`Response error: ${request.method} ${request.url}`, {
+            status,
+            statusText: response.statusText,
+          })
 
-  isConfigured = true
+          // 401 未授权
+          if (status === 401) {
+            logger.warn('Unauthorized - redirecting to login')
+            const authStore = useAuthStore()
+            authStore.logout()
+            window.location.href = '/login'
+          }
+
+          // 403 权限不足
+          if (status === 403) {
+            logger.warn('Access forbidden', { url: request.url })
+          }
+
+          // 429 请求过于频繁
+          if (status === 429) {
+            logger.warn('Too many requests - rate limit exceeded')
+          }
+
+          // 500 服务器错误
+          if (status >= 500) {
+            logger.error('Server error', { status, url: request.url })
+          }
+        } else {
+          logger.error('Network error - no response received', {
+            message: error.message,
+            url: request.url,
+            method: request.method,
+          })
+        }
+        return error
+      },
+    ],
+  },
+})
+
+// 将API客户端注入离线队列
+// ky和axios接口略有不同，但基本HTTP方法兼容
+offlineQueue.setApiClient(apiClient as unknown as typeof apiClient)
+
+/**
+ * 规范化URL - 移除开头的斜杠以兼容ky的prefixUrl
+ * ky要求：当使用prefixUrl时，路径不能以斜杠开头
+ */
+function normalizeUrl(url: string): string {
+  return url.startsWith('/') ? url.slice(1) : url
 }
 
 /**
- * API请求封装 - 增强版（带缓存和去重）
+ * API请求封装 - 增强版（带多层缓存和去重）
  */
 export const api = {
-  // GET请求 - 默认启用缓存和去重
-  get<T = unknown>(
+  // GET请求 - 默认启用多层缓存和去重
+  async get<T = unknown>(
     url: string,
-    config?: AxiosRequestConfig & { cache?: boolean; ttl?: number },
+    config?: KyOptions & {
+      cache?: boolean
+      ttl?: number
+      useMultiLayerCache?: boolean
+      invalidateCache?: boolean
+      params?: Record<string, unknown> // 支持任意类型参数
+    },
   ): Promise<T> {
-    const { cache = true, ttl = 5 * 60 * 1000, ...axiosConfig } = config || {}
+    const {
+      cache = true,
+      ttl = 5 * 60 * 1000,
+      useMultiLayerCache = true,
+      invalidateCache = false,
+      params,
+      ...kyConfig
+    } = config || {}
 
-    // 如果启用缓存（默认启用）
-    if (cache) {
-      const cacheKey = `GET:${url}:${JSON.stringify(axiosConfig.params || {})}`
+    const normalizedUrl = normalizeUrl(url)
+    const cacheKey = `GET:${url}:${JSON.stringify(params || {})}`
 
+    // 如果需要强制刷新缓存
+    if (invalidateCache) {
+      await cacheManager.delete(cacheKey)
+      requestCache.clear(cacheKey)
+    }
+
+    // 如果不启用缓存
+    if (!cache) {
+      return apiClient.get(normalizedUrl, { searchParams: params as any, ...kyConfig }).json<T>()
+    }
+
+    // 使用多层缓存（内存 + IndexedDB）
+    if (useMultiLayerCache) {
+      // 1. 尝试从多层缓存获取
+      const cachedData = await cacheManager.get<T>(cacheKey)
+      if (cachedData !== null) {
+        logger.debug('Multi-layer cache hit', { cacheKey, url })
+        return cachedData
+      }
+
+      // 2. 缓存未命中，使用去重请求
       return requestCache.dedupe(
         cacheKey,
-        () => apiClient.get(url, axiosConfig).then((res) => res.data),
+        async () => {
+          const data = await apiClient
+            .get(normalizedUrl, { searchParams: params, ...kyConfig })
+            .json<T>()
+
+          // 存储到多层缓存
+          await cacheManager.set(cacheKey, data, ttl)
+
+          return data
+        },
         { ttl, force: false },
       )
     }
 
-    // 不缓存的情况
-    return apiClient.get(url, axiosConfig).then((res) => res.data)
+    // 使用简单内存缓存（向后兼容）
+    return requestCache.dedupe(
+      cacheKey,
+      () => apiClient.get(normalizedUrl, { searchParams: params as any, ...kyConfig }).json<T>(),
+      { ttl, force: false },
+    )
   },
 
-  // POST请求 - 不缓存
-  post<T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> {
-    return apiClient.post(url, data, config).then((res) => res.data)
+  // POST请求 - 不缓存，但会清除相关缓存
+  async post<T = unknown>(
+    url: string,
+    data?: unknown,
+    config?: KyOptions & { invalidatePatterns?: string[] },
+  ): Promise<T> {
+    const { invalidatePatterns, ...kyConfig } = config || {}
+
+    const response = await apiClient.post(normalizeUrl(url), { json: data, ...kyConfig }).json<T>()
+
+    // 清除相关缓存
+    if (invalidatePatterns && invalidatePatterns.length > 0) {
+      await this.invalidateCacheByPatterns(invalidatePatterns)
+    }
+
+    return response
   },
 
-  // PUT请求 - 不缓存
-  put<T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> {
-    return apiClient.put(url, data, config).then((res) => res.data)
+  // PUT请求 - 不缓存，但会清除相关缓存
+  async put<T = unknown>(
+    url: string,
+    data?: unknown,
+    config?: KyOptions & { invalidatePatterns?: string[] },
+  ): Promise<T> {
+    const { invalidatePatterns, ...kyConfig } = config || {}
+
+    const response = await apiClient.put(normalizeUrl(url), { json: data, ...kyConfig }).json<T>()
+
+    // 清除相关缓存
+    if (invalidatePatterns && invalidatePatterns.length > 0) {
+      await this.invalidateCacheByPatterns(invalidatePatterns)
+    }
+
+    return response
   },
 
-  // PATCH请求 - 不缓存
-  patch<T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> {
-    return apiClient.patch(url, data, config).then((res) => res.data)
+  // PATCH请求 - 不缓存，但会清除相关缓存
+  async patch<T = unknown>(
+    url: string,
+    data?: unknown,
+    config?: KyOptions & { invalidatePatterns?: string[] },
+  ): Promise<T> {
+    const { invalidatePatterns, ...kyConfig } = config || {}
+
+    const response = await apiClient.patch(normalizeUrl(url), { json: data, ...kyConfig }).json<T>()
+
+    // 清除相关缓存
+    if (invalidatePatterns && invalidatePatterns.length > 0) {
+      await this.invalidateCacheByPatterns(invalidatePatterns)
+    }
+
+    return response
   },
 
-  // DELETE请求 - 不缓存
-  delete<T = unknown>(url: string, config?: AxiosRequestConfig): Promise<T> {
-    return apiClient.delete(url, config).then((res) => res.data)
+  // DELETE请求 - 不缓存，但会清除相关缓存
+  async delete<T = unknown>(
+    url: string,
+    config?: KyOptions & { invalidatePatterns?: string[] },
+  ): Promise<T> {
+    const { invalidatePatterns, ...kyConfig } = config || {}
+
+    const response = await apiClient.delete(normalizeUrl(url), kyConfig).json<T>()
+
+    // 清除相关缓存
+    if (invalidatePatterns && invalidatePatterns.length > 0) {
+      await this.invalidateCacheByPatterns(invalidatePatterns)
+    }
+
+    return response
   },
 
   // 手动清除缓存
-  clearCache(url?: string, params?: Record<string, unknown>) {
+  async clearCache(url?: string, params?: Record<string, unknown>) {
     if (url) {
       const cacheKey = `GET:${url}:${JSON.stringify(params || {})}`
+      await cacheManager.delete(cacheKey)
       requestCache.clear(cacheKey)
     } else {
+      await cacheManager.clear()
       requestCache.clear()
     }
   },
 
+  // 按模式清除缓存
+  async invalidateCacheByPatterns(patterns: string[]) {
+    logger.debug('Invalidating cache by patterns', { patterns })
+
+    // 这里简化实现，实际应该遍历所有缓存键
+    for (const pattern of patterns) {
+      await this.clearCache(pattern)
+    }
+  },
+
+  // 预加载缓存
+  async preloadCache(
+    urls: Array<{ url: string; params?: Record<string, string | number | boolean>; ttl?: number }>,
+  ) {
+    logger.info('Preloading cache', { count: urls.length })
+
+    await Promise.all(
+      urls.map(({ url, params, ttl }) =>
+        this.get(url, { params, ttl, cache: true, useMultiLayerCache: true }).catch((error) => {
+          logger.warn('Failed to preload URL', { url, error: error.message })
+        }),
+      ),
+    )
+  },
+
   // 获取缓存统计
   getCacheStats() {
-    return requestCache.getStats()
+    return {
+      requestCache: requestCache.getStats(),
+      multiLayerCache: cacheManager.getStats(),
+    }
   },
 }
 

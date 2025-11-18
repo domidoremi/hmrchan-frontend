@@ -1,14 +1,12 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
 import { RouterView, useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
-import { useThemeStore } from '@/stores/theme'
-import { useSettingsStore } from '@/stores/settings'
+import { useAuthStore, useThemeStore, useSettingsStore } from '@/stores'
 import { storeToRefs } from 'pinia'
-import ErrorBoundary from '@/components/ErrorBoundary.vue'
-import Toast from '@/components/ui/Toast.vue'
+import ErrorBoundary from '@/components/ui/error/ErrorBoundary.vue'
+import Toast from '@/components/ui/toast/Toast.vue'
 // 导入无障碍功能
-import { useKeyboardNavigation } from '@/composables/useAccessibility'
+import { useKeyboardNavigation } from '@/composables'
 
 const authStore = useAuthStore()
 const themeStore = useThemeStore()
@@ -126,12 +124,12 @@ watch(
   transition: background-color var(--transition-base);
 }
 
-/* 页面过渡动画 */
+/* 页面过渡动画 - 使用设计系统变量 */
 .fade-enter-active,
 .fade-leave-active {
   transition:
-    opacity 0.3s ease,
-    transform 0.3s ease;
+    opacity var(--duration-base) var(--ease-standard),
+    transform var(--duration-base) var(--ease-decelerate);
 }
 
 .fade-enter-from {
@@ -141,36 +139,40 @@ watch(
 
 .fade-leave-to {
   opacity: 0;
-  transform: translateY(-20px);
+  transform: translateY(-10px);
 }
 
 .slide-left-enter-active,
 .slide-left-leave-active {
-  transition: all 0.3s ease;
+  transition:
+    opacity var(--duration-base) var(--ease-standard),
+    transform var(--duration-base) var(--ease-decelerate);
 }
 
 .slide-left-enter-from {
   opacity: 0;
-  transform: translateX(30px);
+  transform: translateX(20px);
 }
 
 .slide-left-leave-to {
   opacity: 0;
-  transform: translateX(-30px);
+  transform: translateX(-20px);
 }
 
 .slide-right-enter-active,
 .slide-right-leave-active {
-  transition: all 0.3s ease;
+  transition:
+    opacity var(--duration-base) var(--ease-standard),
+    transform var(--duration-base) var(--ease-decelerate);
 }
 
 .slide-right-enter-from {
   opacity: 0;
-  transform: translateX(-30px);
+  transform: translateX(-20px);
 }
 
 .slide-right-leave-to {
   opacity: 0;
-  transform: translateX(30px);
+  transform: translateX(20px);
 }
 </style>

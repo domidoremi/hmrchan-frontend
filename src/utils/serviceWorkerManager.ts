@@ -19,10 +19,10 @@ class ServiceWorkerManager {
 
     try {
       console.log('[SW Manager] Registering Service Worker...')
-      
+
       this.registration = await navigator.serviceWorker.register('/sw.js', {
         scope: '/',
-        updateViaCache: 'none' // 总是检查更新
+        updateViaCache: 'none', // 总是检查更新
       })
 
       console.log('[SW Manager] Registered successfully')
@@ -54,7 +54,7 @@ class ServiceWorkerManager {
 
     this.registration.addEventListener('updatefound', () => {
       const newWorker = this.registration!.installing
-      
+
       if (!newWorker) return
 
       console.log('[SW Manager] Update found')
@@ -96,9 +96,12 @@ class ServiceWorkerManager {
    */
   private startUpdateCheck(): void {
     // 每小时检查一次更新
-    this.updateCheckInterval = window.setInterval(() => {
-      this.checkForUpdates()
-    }, 60 * 60 * 1000)
+    this.updateCheckInterval = window.setInterval(
+      () => {
+        this.checkForUpdates()
+      },
+      60 * 60 * 1000,
+    )
   }
 
   /**
@@ -125,15 +128,12 @@ class ServiceWorkerManager {
 
     return new Promise((resolve) => {
       const messageChannel = new MessageChannel()
-      
+
       messageChannel.port1.onmessage = (event) => {
         resolve(event.data.size || 0)
       }
 
-      this.registration!.active!.postMessage(
-        { type: 'GET_CACHE_SIZE' },
-        [messageChannel.port2]
-      )
+      this.registration!.active!.postMessage({ type: 'GET_CACHE_SIZE' }, [messageChannel.port2])
 
       // 超时保护
       setTimeout(() => resolve(0), 5000)
@@ -177,7 +177,7 @@ class ServiceWorkerManager {
 
     this.registration.active.postMessage({
       type: 'PRECACHE_RESOURCES',
-      payload: { urls }
+      payload: { urls },
     })
   }
 
@@ -225,11 +225,11 @@ class ServiceWorkerManager {
    */
   getState(): string {
     if (!this.registration) return 'unregistered'
-    
+
     if (this.registration.active) return 'active'
     if (this.registration.installing) return 'installing'
     if (this.registration.waiting) return 'waiting'
-    
+
     return 'unknown'
   }
 }

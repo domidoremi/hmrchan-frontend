@@ -7,13 +7,9 @@
         <div class="profile-info">
           <div class="avatar-container">
             <div class="avatar">
-              <img :src="avatarUrl" :alt="user?.username || 'User'" />
+              <img :src="avatarUrl" :alt="user?.username || 'User'" @error="handleAvatarError" />
             </div>
-            <button
-              class="avatar-upload-btn"
-              @click="handleAvatarUpload"
-              :aria-label="$t('profile.uploadAvatar')"
-            >
+            <button class="avatar-upload-btn" @click="handleAvatarUpload" :aria-label="$t('profile.uploadAvatar')">
               <Camera :size="16" />
             </button>
           </div>
@@ -48,35 +44,14 @@
 
       <!-- Stats Cards -->
       <div class="stats-grid">
-        <div class="stat-card glass-card">
-          <div class="stat-icon">
-            <Heart :size="24" />
-          </div>
-          <div class="stat-info">
-            <div class="stat-value">{{ favoritesCount }}</div>
-            <div class="stat-label">{{ $t('profile.favorites') }}</div>
-          </div>
-        </div>
+        <StatCard :icon="Heart" icon-color="rgba(239, 68, 68, 0.8)" :title="$t('profile.favorites')"
+          :value="favoritesCount" :loading="!user" />
 
-        <div class="stat-card glass-card">
-          <div class="stat-icon">
-            <Eye :size="24" />
-          </div>
-          <div class="stat-info">
-            <div class="stat-value">{{ viewsCount }}</div>
-            <div class="stat-label">{{ $t('profile.views') }}</div>
-          </div>
-        </div>
+        <StatCard :icon="Eye" icon-color="rgba(59, 130, 246, 0.8)" :title="$t('profile.views')" :value="viewsCount"
+          :loading="!user" />
 
-        <div class="stat-card glass-card">
-          <div class="stat-icon">
-            <Calendar :size="24" />
-          </div>
-          <div class="stat-info">
-            <div class="stat-value">{{ joinedDays }}</div>
-            <div class="stat-label">{{ $t('profile.days') }}</div>
-          </div>
-        </div>
+        <StatCard :icon="Calendar" icon-color="rgba(139, 92, 246, 0.8)" :title="$t('profile.days')" :value="joinedDays"
+          :loading="!user" />
       </div>
 
       <!-- Account Information -->
@@ -113,15 +88,13 @@
 
           <div class="info-item">
             <label>{{ $t('profile.joinedAt') }}</label>
-            <div class="info-value">{{ formatDate(user?.created_at) }}</div>
+            <div class="info-value">{{ formattedJoinedAt }}</div>
           </div>
 
           <div class="info-item">
             <label>{{ $t('profile.accountStatus') }}</label>
             <div class="info-value">
-              <span
-                :class="['status-badge', user?.is_active ? 'status-active' : 'status-inactive']"
-              >
+              <span :class="['status-badge', user?.is_active ? 'status-active' : 'status-inactive']">
                 {{ user?.is_active ? $t('profile.active') : $t('profile.inactive') }}
               </span>
             </div>
@@ -155,22 +128,12 @@
       <form @submit.prevent="handleUpdateProfile" class="edit-form">
         <div class="form-group">
           <label>{{ $t('profile.fullName') }}</label>
-          <GlassInput
-            v-model="editForm.full_name"
-            type="text"
-            :placeholder="$t('profile.fullName')"
-            :icon="UserIcon"
-          />
+          <GlassInput v-model="editForm.full_name" type="text" :placeholder="$t('profile.fullName')" :icon="UserIcon" />
         </div>
 
         <div class="form-group">
           <label>{{ $t('profile.email') }}</label>
-          <GlassInput
-            v-model="editForm.email"
-            type="email"
-            :placeholder="$t('profile.email')"
-            :icon="Mail"
-          />
+          <GlassInput v-model="editForm.email" type="email" :placeholder="$t('profile.email')" :icon="Mail" />
         </div>
 
         <div class="modal-actions">
@@ -187,35 +150,20 @@
       <form @submit.prevent="handleChangePassword" class="password-form">
         <div class="form-group">
           <label>{{ $t('profile.currentPassword') }}</label>
-          <GlassInput
-            v-model="passwordForm.current_password"
-            type="password"
-            :placeholder="$t('profile.currentPassword')"
-            :icon="Lock"
-            autocomplete="current-password"
-          />
+          <GlassInput v-model="passwordForm.current_password" type="password"
+            :placeholder="$t('profile.currentPassword')" :icon="Lock" autocomplete="current-password" />
         </div>
 
         <div class="form-group">
           <label>{{ $t('profile.newPassword') }}</label>
-          <GlassInput
-            v-model="passwordForm.new_password"
-            type="password"
-            :placeholder="$t('profile.passwordMinLength')"
-            :icon="Lock"
-            autocomplete="new-password"
-          />
+          <GlassInput v-model="passwordForm.new_password" type="password" :placeholder="$t('profile.passwordMinLength')"
+            :icon="Lock" autocomplete="new-password" />
         </div>
 
         <div class="form-group">
           <label>{{ $t('profile.confirmPassword') }}</label>
-          <GlassInput
-            v-model="passwordForm.confirm_password"
-            type="password"
-            :placeholder="$t('profile.confirmPassword')"
-            :icon="Lock"
-            autocomplete="new-password"
-          />
+          <GlassInput v-model="passwordForm.confirm_password" type="password"
+            :placeholder="$t('profile.confirmPassword')" :icon="Lock" autocomplete="new-password" />
         </div>
 
         <div class="modal-actions">
@@ -243,25 +191,15 @@
 
         <div class="form-group">
           <label>{{ $t('profile.enterPasswordToConfirm') }}</label>
-          <GlassInput
-            v-model="deleteForm.password"
-            type="password"
-            :placeholder="$t('auth.password')"
-            :icon="Lock"
-            autocomplete="current-password"
-          />
+          <GlassInput v-model="deleteForm.password" type="password" :placeholder="$t('auth.password')" :icon="Lock"
+            autocomplete="current-password" />
         </div>
 
         <div class="modal-actions">
           <GlassButton type="button" variant="ghost" @click="showDeleteModal = false">
             {{ $t('common.cancel') }}
           </GlassButton>
-          <GlassButton
-            type="button"
-            variant="secondary"
-            :loading="deleting"
-            @click="handleDeleteAccount"
-          >
+          <GlassButton type="button" variant="secondary" :loading="deleting" @click="handleDeleteAccount">
             {{ $t('common.confirm') }}
           </GlassButton>
         </div>
@@ -271,7 +209,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import {
@@ -292,19 +230,20 @@ import {
 } from 'lucide-vue-next'
 
 import MainLayout from '@/components/layout/MainLayout.vue'
-import GlassButton from '@/components/ui/GlassButton.vue'
-import GlassInput from '@/components/ui/GlassInput.vue'
-import GlassModal from '@/components/ui/GlassModal.vue'
+import GlassButton from '@/components/ui/button/Button.vue'
+import GlassInput from '@/components/ui/input/Input.vue'
+import GlassModal from '@/components/ui/modal/Modal.vue'
+import StatCard from '@/components/ui/card/StatCard.vue'
 
-import { useAuthStore } from '@/stores/auth'
+import { useAuthStore, useToastStore } from '@/stores'
 import { uploadApi } from '@/api/services'
 import { api } from '@/api/client'
-import { useErrorHandler } from '@/utils/errorHandler'
-import { useToastStore } from '@/stores/toast'
+import { useErrorHandler } from '@/utils/error'
 import { formatRelativeTime } from '@/utils/format'
 import { getUserAvatar } from '@/utils/avatar'
-import { useImageUpload } from '@/composables/useImageUpload'
+import { useImageUpload } from '@/composables'
 import { useI18n } from 'vue-i18n'
+import { isAxiosError } from '@/utils/typeGuards'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -317,21 +256,47 @@ const toastStore = useToastStore()
 const avatarRefreshKey = ref(Date.now())
 
 // 头像URL（含默认头像，自动刷新缓存）
-const avatarUrl = computed(() => {
-  const url = getUserAvatar(user.value, 120)
-  // 如果是上传的头像（非默认头像），添加时间戳防止缓存
-  if (user.value?.avatar_url && url.startsWith('/uploads/')) {
-    return `${url}?t=${avatarRefreshKey.value}`
-  }
-  return url
-})
+const avatarUrl = ref('')
+const avatarLoadError = ref(false)
+
+// 计算头像URL
+watch(
+  [() => user.value, avatarRefreshKey],
+  () => {
+    const url = getUserAvatar(user.value, 120)
+    // 如果是上传的头像（非默认头像），添加时间戳防止缓存
+    if (user.value?.avatar_url && url.startsWith('/uploads/')) {
+      avatarUrl.value = `${url}?t=${avatarRefreshKey.value}`
+    } else {
+      avatarUrl.value = url
+    }
+    avatarLoadError.value = false
+  },
+  { immediate: true },
+)
+
+// 头像加载失败时的备用方案
+function handleAvatarError() {
+  if (avatarLoadError.value) return // 避免无限循环
+
+  avatarLoadError.value = true
+  const name = user.value?.full_name || user.value?.username || 'User'
+
+  // 使用base64编码的本地SVG作为备用
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="120" height="120">
+      <rect width="120" height="120" fill="#8B5CF6"/>
+      <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle"
+            font-family="Arial" font-size="48" font-weight="bold" fill="#ffffff">
+        ${name.charAt(0).toUpperCase()}
+      </text>
+    </svg>
+  `
+  avatarUrl.value = `data:image/svg+xml;base64,${btoa(svg)}`
+}
 
 // 头像上传
-const {
-  uploading: uploadingAvatar,
-  preview: avatarPreview,
-  selectImage,
-} = useImageUpload({
+const { uploading: uploadingAvatar, selectImage } = useImageUpload({
   maxSize: 2, // 2MB
   maxWidth: 512,
   maxHeight: 512,
@@ -368,6 +333,9 @@ const deleteForm = ref({
 const favoritesCount = ref(0)
 const viewsCount = ref(0)
 
+// 格式化后的注册时间
+const formattedJoinedAt = ref<string>('')
+
 const joinedDays = computed(() => {
   if (!user.value?.created_at) return 0
   const created = new Date(user.value.created_at)
@@ -375,6 +343,25 @@ const joinedDays = computed(() => {
   const diff = now.getTime() - created.getTime()
   return Math.floor(diff / (1000 * 60 * 60 * 24))
 })
+
+// 异步格式化注册时间
+watch(
+  () => user.value?.created_at,
+  async (createdAt) => {
+    if (createdAt) {
+      try {
+        const locale = (localStorage.getItem('language') as 'en' | 'zh-CN' | 'ja') || 'zh-CN'
+        formattedJoinedAt.value = await formatRelativeTime(createdAt, locale)
+      } catch (error) {
+        console.error('Failed to format date:', error)
+        formattedJoinedAt.value = new Date(createdAt).toLocaleDateString()
+      }
+    } else {
+      formattedJoinedAt.value = t('profile.notSet')
+    }
+  },
+  { immediate: true },
+)
 
 onMounted(() => {
   if (!user.value) {
@@ -394,8 +381,13 @@ async function loadStats() {
   try {
     // 获取用户统计数据
     const response = await api.get(`/users/${user.value?.id}/stats`, { cache: false })
-    favoritesCount.value = response.favorites_count || 0
-    viewsCount.value = response.views_count || 0
+
+    // Type guard for response object
+    if (response && typeof response === 'object' && 'favorites_count' in response) {
+      const statsResponse = response as { favorites_count?: number; views_count?: number }
+      favoritesCount.value = statsResponse.favorites_count || 0
+      viewsCount.value = statsResponse.views_count || 0
+    }
 
     console.debug('[ProfilePage] User stats loaded:', response)
   } catch (error) {
@@ -422,9 +414,12 @@ async function handleUpdateProfile() {
     toastStore.success(t('profile.profileUpdated'))
     showEditModal.value = false
   } catch (error) {
-    const errorMsg =
-      (error as { response?: { data?: { detail?: string } } }).response?.data?.detail ||
-      t('profile.profileUpdateFailed')
+    let errorMsg = t('profile.profileUpdateFailed')
+
+    if (isAxiosError(error) && error.response.data?.detail) {
+      errorMsg = error.response.data.detail
+    }
+
     handleError(error, { customMessage: errorMsg })
   } finally {
     updating.value = false
@@ -466,9 +461,12 @@ async function handleChangePassword() {
       router.push('/login')
     }, 1500)
   } catch (error) {
-    const errorMsg =
-      (error as { response?: { data?: { detail?: string } } }).response?.data?.detail ||
-      t('profile.passwordChangeFailed')
+    let errorMsg = t('profile.passwordChangeFailed')
+
+    if (isAxiosError(error) && error.response.data?.detail) {
+      errorMsg = error.response.data.detail
+    }
+
     handleError(error, { customMessage: errorMsg })
   } finally {
     changingPassword.value = false
@@ -496,16 +494,16 @@ async function handleAvatarUpload() {
     console.log('🔄 Force refresh avatar with new key:', avatarRefreshKey.value)
 
     toastStore.success(t('profile.avatarUploadSuccess'))
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('❌ Avatar upload error:', error)
-    
+
     let errorMsg = t('profile.avatarUploadFailed')
-    
-    // 处理不同类型的错误
-    if (error.response) {
+
+    // 处理不同类型的错误 - use type guard
+    if (isAxiosError(error)) {
       // 服务器返回了响应
       const status = error.response.status
-      
+
       if (status === 500) {
         errorMsg = t('profile.serverError') || '服务器内部错误，请稍后重试或联系管理员'
       } else if (status === 413) {
@@ -515,11 +513,14 @@ async function handleAvatarUpload() {
       } else if (error.response.data?.detail) {
         errorMsg = error.response.data.detail
       }
-    } else if (error.message === 'Network Error') {
-      // 网络错误（包括CORS）
-      errorMsg = t('profile.networkError') || '网络连接失败，请检查网络或稍后重试'
+    } else if (error && typeof error === 'object' && 'message' in error) {
+      const err = error as { message: string }
+      if (err.message === 'Network Error') {
+        // 网络错误（包括CORS）
+        errorMsg = t('profile.networkError') || '网络连接失败，请检查网络或稍后重试'
+      }
     }
-    
+
     toastStore.error(errorMsg)
     handleError(error, { customMessage: errorMsg })
   } finally {
@@ -548,9 +549,12 @@ async function handleDeleteAccount() {
     authStore.logout()
     router.push('/')
   } catch (error) {
-    const errorMsg =
-      (error as { response?: { data?: { detail?: string } } }).response?.data?.detail ||
-      t('profile.accountDeleteFailed')
+    let errorMsg = t('profile.accountDeleteFailed')
+
+    if (isAxiosError(error) && error.response.data?.detail) {
+      errorMsg = error.response.data.detail
+    }
+
     handleError(error, { customMessage: errorMsg })
   } finally {
     deleting.value = false
@@ -561,11 +565,6 @@ function handleLogout() {
   authStore.logout()
   toastStore.success(t('auth.logoutSuccess'))
   router.push('/')
-}
-
-function formatDate(dateStr: string | undefined) {
-  if (!dateStr) return t('profile.notSet')
-  return formatRelativeTime(dateStr)
 }
 </script>
 
@@ -696,35 +695,6 @@ function formatDate(dateStr: string | undefined) {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: var(--spacing-lg);
-}
-
-.stat-card {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-md);
-  padding: var(--spacing-xl);
-}
-
-.stat-icon {
-  width: 60px;
-  height: 60px;
-  border-radius: var(--radius-lg);
-  background: rgba(var(--color-primary-rgb), 0.1);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--color-primary);
-}
-
-.stat-value {
-  font-size: var(--text-3xl);
-  font-weight: var(--font-bold);
-  color: var(--color-text-primary);
-}
-
-.stat-label {
-  color: var(--color-text-secondary);
-  font-size: var(--text-sm);
 }
 
 /* Account Info */
@@ -971,10 +941,6 @@ function formatDate(dateStr: string | undefined) {
     gap: var(--spacing-md);
   }
 
-  .stat-card {
-    padding: var(--spacing-md);
-  }
-
   .info-grid {
     grid-template-columns: 1fr;
   }
@@ -1028,29 +994,6 @@ function formatDate(dateStr: string | undefined) {
 
   .stats-grid {
     gap: var(--spacing-sm);
-  }
-
-  .stat-card {
-    padding: var(--spacing-sm);
-    gap: var(--spacing-sm);
-  }
-
-  .stat-icon {
-    width: 36px;
-    height: 36px;
-  }
-
-  .stat-icon svg {
-    width: 18px;
-    height: 18px;
-  }
-
-  .stat-value {
-    font-size: var(--text-xl);
-  }
-
-  .stat-label {
-    font-size: var(--text-xs);
   }
 
   .info-section {

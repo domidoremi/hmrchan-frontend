@@ -11,10 +11,18 @@
         <div class="footer-section">
           <h2>{{ $t('nav.explore') }}</h2>
           <ul class="footer-links">
-            <li><RouterLink to="/explore?platform=youtube">YouTube</RouterLink></li>
-            <li><RouterLink to="/explore?platform=twitter">Twitter</RouterLink></li>
-            <li><RouterLink to="/explore?platform=tiktok">TikTok</RouterLink></li>
-            <li><RouterLink to="/explore?platform=instagram">Instagram</RouterLink></li>
+            <li>
+              <RouterLink to="/explore?platform=youtube">YouTube</RouterLink>
+            </li>
+            <li>
+              <RouterLink to="/explore?platform=twitter">Twitter</RouterLink>
+            </li>
+            <li>
+              <RouterLink to="/explore?platform=tiktok">TikTok</RouterLink>
+            </li>
+            <li>
+              <RouterLink to="/explore?platform=instagram">Instagram</RouterLink>
+            </li>
           </ul>
         </div>
 
@@ -75,10 +83,6 @@
 </template>
 
 <script setup lang="ts">
-import { useI18n } from 'vue-i18n'
-
-const { t } = useI18n()
-
 const platforms = [
   { name: 'youtube', label: 'YouTube' },
   { name: 'twitter', label: 'Twitter' },

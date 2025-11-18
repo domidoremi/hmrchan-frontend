@@ -3,24 +3,33 @@
  * This is the nuclear option to avoid any XHR interception
  */
 
-import type { AxiosAdapter, InternalAxiosRequestConfig, AxiosResponse, AxiosHeaders } from 'axios'
+import type {
+  AxiosAdapter,
+  InternalAxiosRequestConfig,
+  AxiosResponse,
+  AxiosHeaders,
+  AxiosRequestConfig,
+} from 'axios'
 import axios from 'axios'
 
-export const nativeFetchAdapter: AxiosAdapter = async (config: InternalAxiosRequestConfig): Promise<AxiosResponse> => {
+export const nativeFetchAdapter: AxiosAdapter = async (
+  config: InternalAxiosRequestConfig,
+): Promise<AxiosResponse> => {
   // Build the full URL
   const fullUrl = axios.getUri(config)
-  
+
   // CRITICAL: Force HTTPS if HTTP detected
-  const finalUrl = fullUrl.startsWith('http://') && fullUrl.includes('api.momichan.xyz')
-    ? fullUrl.replace('http://', 'https://')
-    : fullUrl
-  
+  const finalUrl =
+    fullUrl.startsWith('http://') && fullUrl.includes('api.momichan.xyz')
+      ? fullUrl.replace('http://', 'https://')
+      : fullUrl
+
   if (finalUrl !== fullUrl) {
     console.error('🚨🚨🚨 [NativeFetchAdapter] FORCED HTTP → HTTPS:', fullUrl, '→', finalUrl)
   }
-  
+
   console.log('[NativeFetchAdapter] Making request with native fetch():', finalUrl)
-  
+
   // Build headers
   const headers: Record<string, string> = {}
   if (config.headers) {
@@ -30,7 +39,7 @@ export const nativeFetchAdapter: AxiosAdapter = async (config: InternalAxiosRequ
       Object.assign(headers, headersObj)
     }
   }
-  
+
   // Build fetch options
   const fetchOptions: RequestInit = {
     method: config.method?.toUpperCase() || 'GET',
@@ -38,7 +47,7 @@ export const nativeFetchAdapter: AxiosAdapter = async (config: InternalAxiosRequ
     mode: 'cors',
     credentials: config.withCredentials ? 'include' : 'same-origin',
   }
-  
+
   // Add body for non-GET requests
   if (config.data && config.method?.toUpperCase() !== 'GET') {
     if (typeof config.data === 'string') {
@@ -52,25 +61,25 @@ export const nativeFetchAdapter: AxiosAdapter = async (config: InternalAxiosRequ
       }
     }
   }
-  
+
   // Make the request with native fetch
   try {
     const startTime = Date.now()
     const response = await window.fetch(finalUrl, fetchOptions)
     const duration = Date.now() - startTime
-    
+
     console.log(`[NativeFetchAdapter] Response received: ${response.status} in ${duration}ms`)
-    
+
     // Parse response data
     const contentType = response.headers.get('content-type')
-    let data: any
-    
+    let data: unknown
+
     if (contentType && contentType.includes('application/json')) {
       data = await response.json()
     } else {
       data = await response.text()
     }
-    
+
     // Build Axios-compatible response
     const axiosResponse: AxiosResponse = {
       data,
@@ -80,26 +89,35 @@ export const nativeFetchAdapter: AxiosAdapter = async (config: InternalAxiosRequ
       config,
       request: { responseURL: response.url },
     }
-    
+
     // Check if response is successful
     if (response.ok) {
       return axiosResponse
     } else {
       // Throw error for non-2xx responses
-      const error: any = new Error(`Request failed with status ${response.status}`)
+      const error = new Error(`Request failed with status ${response.status}`) as Error & {
+        response?: AxiosResponse
+        config?: AxiosRequestConfig
+        request?: { responseURL: string }
+      }
       error.response = axiosResponse
       error.config = config
       error.request = { responseURL: response.url }
       throw error
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[NativeFetchAdapter] Request failed:', error)
-    
+
     // Re-throw with Axios-compatible error
-    if (!error.response) {
-      error.config = config
-      error.code = 'ERR_NETWORK'
+    const err = error as Error & {
+      response?: AxiosResponse
+      config?: AxiosRequestConfig
+      code?: string
     }
-    throw error
+    if (!err.response) {
+      err.config = config
+      err.code = 'ERR_NETWORK'
+    }
+    throw err
   }
 }
