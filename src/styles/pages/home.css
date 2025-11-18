@@ -379,13 +379,42 @@
 }
 
 /* ========== Responsive Design ========== */
-@media (max-width: 1024px) {
+/* 平板端优化 (769px - 1024px) */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .hero-section {
+    min-height: clamp(480px, 65vh, 700px);
+    margin-bottom: var(--spacing-12);
+  }
+
+  .hero-container {
+    padding: var(--spacing-8) var(--spacing-6);
+    max-width: 90%;
+  }
+
+  .hero-title {
+    font-size: clamp(2.5rem, 8vw, 3.5rem);
+  }
+
+  .hero-description {
+    font-size: var(--text-lg);
+    max-width: 85%;
+  }
+
+  .hero-background {
+    opacity: 0.9;
+  }
+
+  .hero-mesh {
+    opacity: 0.8;
+  }
+
   .stats-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: var(--spacing-4);
   }
 }
 
+/* 移动端优化 (<=768px) */
 @media (max-width: 768px) {
   .hero-section {
     min-height: calc(100vh - 56px); /* 56px = 移动端导航栏高度 */

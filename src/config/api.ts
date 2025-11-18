@@ -19,31 +19,31 @@ export const API_ENDPOINTS = {
   POSTS: '/api/v1/posts',
   POST_DETAIL: (id: string) => `/api/v1/posts/${id}`,
   POST_STATS: '/api/v1/posts/stats/summary',
-  
+
   // 媒体相关
   MEDIA: '/api/v1/media',
   MEDIA_DETAIL: (id: string) => `/api/v1/media/${id}`,
   MEDIA_STREAM: (id: string) => `/api/v1/media/${id}/stream`,
   MEDIA_DOWNLOAD: (id: string) => `/api/v1/media/${id}/download`,
   MEDIA_THUMBNAIL: (id: string) => `/api/v1/media/${id}/thumbnail`,
-  
+
   // 作者相关
   AUTHORS: '/api/v1/authors',
   AUTHOR_DETAIL: (id: string) => `/api/v1/authors/${id}`,
   AUTHOR_POSTS: (id: string) => `/api/v1/authors/${id}/posts`,
-  
+
   // 搜索
   SEARCH: '/api/v1/search',
-  
+
   // 认证
   LOGIN: '/api/v1/auth/login',
   REGISTER: '/api/v1/auth/register',
   ME: '/api/v1/auth/me',
-  
+
   // 收藏
   FAVORITES: '/api/v1/favorites',
   FAVORITE_CHECK: (postId: string) => `/api/v1/favorites/check/${postId}`,
-  
+
   // 健康检查
   HEALTH: '/health',
 }

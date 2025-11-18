@@ -1,21 +1,34 @@
 /**
- * UI Components Index
- * Export all reusable UI components
+ * UI Components
+ * Unified export for all UI components
  */
 
-// Layout Components
-export { default as Section } from '../layout/Section.vue'
-export { default as Grid } from '../layout/Grid.vue'
-export { default as Stack } from '../layout/Stack.vue'
+// Button components
+export * from './button'
 
-// UI Components
-export { default as Card } from './Card.vue'
-export { default as Badge } from './Badge.vue'
-export { default as Skeleton } from './Skeleton.vue'
-export { default as Divider } from './Divider.vue'
-export { default as EmptyState } from './EmptyState.vue'
-export { default as GlassButton } from './GlassButton.vue'
-export { default as GlassInput } from './GlassInput.vue'
-export { default as GlassModal } from './GlassModal.vue'
-export { default as LoadingSpinner } from './LoadingSpinner.vue'
-export { default as BackToTop } from './BackToTop.vue'
+// Image components
+export * from './image'
+
+// Form components
+export * from './input'
+export * from './select'
+export * from './checkbox'
+export * from './radio'
+export * from './switch'
+
+// Data display components
+export * from './card'
+export * from './badge'
+export * from './divider'
+export * from './viewer'
+
+// Feedback components
+export * from './modal'
+export * from './toast'
+export * from './loading'
+export * from './skeleton'
+export * from './empty'
+export * from './error'
+export * from './banner'
+export * from './notice'
+export * from './debug'

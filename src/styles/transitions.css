@@ -1,68 +1,22 @@
 /* Page Transitions & Micro-interactions */
 /* Inspired by GSAP Showreel and Framer Motion */
+/* All transitions use design system variables for consistency */
 
 /* ========== Page Transitions ========== */
-
-/* 防止页面切换时的白色闪烁 */
-#app {
-  background-color: var(--color-background);
-  min-height: 100vh;
-  transition: background-color var(--duration-base) var(--ease-standard);
-}
-
-/* Fade Transition */
-.page-fade-enter-active,
-.page-fade-leave-active {
-  transition: opacity var(--duration-base) var(--ease-standard);
-}
-
-.page-fade-enter-from,
-.page-fade-leave-to {
-  opacity: 0;
-}
-
-/* Slide Transition */
-.page-slide-enter-active,
-.page-slide-leave-active {
-  transition: all var(--duration-base) var(--ease-decelerate);
-}
-
-.page-slide-enter-from {
-  opacity: 0;
-  transform: translateX(30px);
-}
-
-.page-slide-leave-to {
-  opacity: 0;
-  transform: translateX(-30px);
-}
-
-/* Scale Transition */
-.page-scale-enter-active,
-.page-scale-leave-active {
-  transition: all var(--duration-base) var(--ease-bounce);
-}
-
-.page-scale-enter-from {
-  opacity: 0;
-  transform: scale(0.9);
-}
-
-.page-scale-leave-to {
-  opacity: 0;
-  transform: scale(1.1);
-}
+/* Note: Page transitions are defined in App.vue for better control */
 
 /* ========== Modal Transitions ========== */
 
 .modal-enter-active,
 .modal-leave-active {
-  transition: all var(--duration-base) var(--ease-decelerate);
+  transition: opacity var(--duration-base) var(--ease-standard);
 }
 
 .modal-enter-active .glass-modal,
 .modal-leave-active .glass-modal {
-  transition: all var(--duration-base) var(--ease-bounce);
+  transition:
+    opacity var(--duration-base) var(--ease-standard),
+    transform var(--duration-base) var(--ease-decelerate);
 }
 
 .modal-enter-from,
@@ -72,33 +26,35 @@
 
 .modal-enter-from .glass-modal {
   opacity: 0;
-  transform: scale(0.9) translateY(20px);
+  transform: scale(0.95) translateY(10px);
 }
 
 .modal-leave-to .glass-modal {
   opacity: 0;
-  transform: scale(0.95) translateY(-10px);
+  transform: scale(0.98);
 }
 
 /* ========== List Transitions ========== */
 
 .list-enter-active,
 .list-leave-active {
-  transition: all var(--duration-base) var(--ease-standard);
+  transition:
+    opacity var(--duration-base) var(--ease-standard),
+    transform var(--duration-base) var(--ease-standard);
 }
 
 .list-enter-from {
   opacity: 0;
-  transform: translateX(-20px);
+  transform: translateY(10px);
 }
 
 .list-leave-to {
   opacity: 0;
-  transform: translateX(20px);
+  transform: translateY(-10px);
 }
 
 .list-move {
-  transition: transform var(--duration-base) var(--ease-smooth);
+  transition: transform var(--duration-base) var(--ease-standard);
 }
 
 /* ========== Micro-interactions ========== */
@@ -109,7 +65,7 @@
     transform: scale(1);
   }
   50% {
-    transform: scale(0.95);
+    transform: scale(0.96);
   }
   100% {
     transform: scale(1);
@@ -117,7 +73,7 @@
 }
 
 .btn-press {
-  animation: buttonPress 0.3s var(--ease-bounce);
+  animation: buttonPress var(--duration-fast) var(--ease-standard);
 }
 
 /* Success Bounce */
@@ -127,12 +83,12 @@
     transform: scale(1);
   }
   50% {
-    transform: scale(1.1);
+    transform: scale(1.05);
   }
 }
 
 .success-bounce {
-  animation: successBounce 0.5s var(--ease-bounce);
+  animation: successBounce var(--duration-base) var(--ease-bounce);
 }
 
 /* Error Shake */
@@ -146,31 +102,31 @@
   50%,
   70%,
   90% {
-    transform: translateX(-10px);
+    transform: translateX(-8px);
   }
   20%,
   40%,
   60%,
   80% {
-    transform: translateX(10px);
+    transform: translateX(8px);
   }
 }
 
 .error-shake {
-  animation: errorShake 0.5s var(--ease-standard);
+  animation: errorShake var(--duration-slow) var(--ease-standard);
 }
 
 /* Loading Dots */
 @keyframes loadingDots {
   0%,
   20% {
-    opacity: 0;
+    opacity: 0.3;
   }
   50% {
     opacity: 1;
   }
   100% {
-    opacity: 0;
+    opacity: 0.3;
   }
 }
 
@@ -180,7 +136,7 @@
   height: 8px;
   border-radius: var(--radius-full);
   background: currentColor;
-  animation: loadingDots 1.4s infinite ease-in-out;
+  animation: loadingDots 1.4s var(--ease-smooth) infinite;
 }
 
 .loading-dot:nth-child(1) {
@@ -198,7 +154,9 @@
 /* Tooltip Appear */
 .tooltip-enter-active,
 .tooltip-leave-active {
-  transition: all 0.2s var(--ease-decelerate);
+  transition:
+    opacity var(--duration-fast) var(--ease-standard),
+    transform var(--duration-fast) var(--ease-decelerate);
 }
 
 .tooltip-enter-from,
@@ -213,7 +171,9 @@
 .scroll-reveal {
   opacity: 0;
   transform: translateY(30px);
-  transition: all var(--duration-slow) var(--ease-decelerate);
+  transition:
+    opacity var(--duration-slow) var(--ease-decelerate),
+    transform var(--duration-slow) var(--ease-decelerate);
 }
 
 .scroll-reveal.revealed {
@@ -223,41 +183,20 @@
 
 /* Parallax Effect */
 .parallax {
-  transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transition: transform var(--duration-base) var(--ease-smooth);
 }
 
 /* ========== Card Interactions ========== */
 
-/* Card Flip */
-.card-flip {
-  perspective: 1000px;
+/* Card Hover */
+.card-hover {
+  transition:
+    transform var(--duration-fast) var(--ease-standard),
+    box-shadow var(--duration-fast) var(--ease-standard);
 }
 
-.card-flip-inner {
-  transition: transform var(--duration-base) var(--ease-smooth);
-  transform-style: preserve-3d;
-}
-
-.card-flip:hover .card-flip-inner {
-  transform: rotateY(180deg);
-}
-
-.card-flip-front,
-.card-flip-back {
-  backface-visibility: hidden;
-}
-
-.card-flip-back {
-  transform: rotateY(180deg);
-}
-
-/* Card Tilt (3D effect on hover) */
-.card-tilt {
-  transition: transform var(--duration-fast) var(--ease-standard);
-}
-
-.card-tilt:hover {
-  transform: perspective(1000px) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
+.card-hover:hover {
+  transform: translateY(-2px);
 }
 
 /* ========== Skeleton Loading ========== */
@@ -286,36 +225,17 @@
   left: 0;
   transform: translateX(-100%);
   background: linear-gradient(90deg, transparent, var(--color-skeleton-highlight), transparent);
-  animation: skeleton-wave 1.5s infinite;
-}
-
-/* ========== Badge Pulse ========== */
-
-.badge-pulse {
-  position: relative;
-}
-
-.badge-pulse::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  border-radius: inherit;
-  background: currentColor;
-  opacity: 0.3;
-  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  animation: skeleton-wave 1.5s var(--ease-smooth) infinite;
 }
 
 /* ========== Notification Slide In ========== */
 
 .notification-enter-active {
-  animation: notificationSlideIn 0.3s var(--ease-decelerate);
+  animation: notificationSlideIn var(--duration-base) var(--ease-decelerate);
 }
 
 .notification-leave-active {
-  animation: notificationSlideOut 0.3s var(--ease-accelerate);
+  animation: notificationSlideOut var(--duration-base) var(--ease-accelerate);
 }
 
 @keyframes notificationSlideIn {
@@ -344,7 +264,9 @@
 
 .tab-content-enter-active,
 .tab-content-leave-active {
-  transition: all 0.3s var(--ease-standard);
+  transition:
+    opacity var(--duration-base) var(--ease-standard),
+    transform var(--duration-base) var(--ease-standard);
 }
 
 .tab-content-enter-from {
@@ -374,7 +296,9 @@
 .accordion-enter-active,
 .accordion-leave-active {
   overflow: hidden;
-  transition: all 0.3s var(--ease-smooth);
+  transition:
+    max-height var(--duration-base) var(--ease-smooth),
+    opacity var(--duration-base) var(--ease-smooth);
 }
 
 .accordion-enter-from,
@@ -387,6 +311,35 @@
 .accordion-leave-from {
   max-height: 500px;
   opacity: 1;
+}
+
+/* ========== Language Switching Transition ========== */
+
+/* Smooth fade transition when switching languages */
+.locale-switching {
+  pointer-events: none;
+}
+
+.locale-switching * {
+  transition: opacity var(--duration-fast) var(--ease-standard) !important;
+}
+
+/* Optional: Add a subtle fade effect to text content during switch */
+@keyframes localeFade {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.locale-switching [data-i18n],
+.locale-switching .i18n-text {
+  animation: localeFade var(--duration-base) var(--ease-smooth);
 }
 
 /* ========== Performance ========== */
@@ -405,11 +358,9 @@
     opacity: 1 !important;
     transform: none !important;
   }
-}
 
-/* GPU Acceleration for smooth animations */
-.gpu-accelerated {
-  transform: translateZ(0);
-  backface-visibility: hidden;
-  perspective: 1000px;
+  .locale-switching * {
+    transition: none !important;
+    animation: none !important;
+  }
 }

@@ -20,16 +20,24 @@
       <div v-else-if="authors.length > 0" class="authors-list">
         <div v-for="author in authors" :key="author.id" class="author-card glass-card">
           <!-- Banner 背景 -->
-          <div v-if="author.profile_banner_url" class="card-banner"
-            :style="{ backgroundImage: `url(${author.profile_banner_url})` }"></div>
+          <div
+            v-if="author.profile_banner_url"
+            class="card-banner"
+            :style="{ backgroundImage: `url(${author.profile_banner_url})` }"
+          ></div>
           <div class="card-overlay"></div>
 
           <div class="card-content">
             <!-- 头像区域 -->
             <div class="author-avatar-section">
               <div class="avatar-wrapper">
-                <img v-if="author.avatar_url" :src="author.avatar_url" :alt="author.name" class="avatar-image"
-                  @error="onImageError" />
+                <img
+                  v-if="author.avatar_url"
+                  :src="author.avatar_url"
+                  :alt="author.name"
+                  class="avatar-image"
+                  @error="onImageError"
+                />
                 <div v-else class="avatar-placeholder">
                   <User :size="48" />
                 </div>
@@ -46,7 +54,10 @@
                   </div>
                   <p class="author-username">@{{ author.username }}</p>
                 </div>
-                <div class="platform-badge" :style="{ background: getPlatformColor(author.platform) }">
+                <div
+                  class="platform-badge"
+                  :style="{ background: getPlatformColor(author.platform) }"
+                >
                   {{ getPlatformName(author.platform) }}
                 </div>
               </div>
@@ -64,7 +75,9 @@
                 <div class="stat-item">
                   <FileText :size="16" />
                   <span class="stat-value">{{ formatNumber(author.video_count || 0) }}</span>
-                  <span class="stat-label">{{ $t('platform.' + author.platform) }} {{ $t('author.posts') }}</span>
+                  <span class="stat-label"
+                    >{{ $t('platform.' + author.platform) }} {{ $t('author.posts') }}</span
+                  >
                 </div>
                 <div v-if="author.post_count > 0" class="stat-item scraped">
                   <Database :size="16" />
@@ -76,10 +89,17 @@
               <div class="author-footer">
                 <div class="author-meta">
                   <Calendar :size="14" />
-                  <span>{{ $t('author.platformJoined') }}: {{ formatDate(author.created_at) }}</span>
+                  <span
+                    >{{ $t('author.platformJoined') }}: {{ formatDate(author.created_at) }}</span
+                  >
                 </div>
-                <a v-if="author.profile_url" :href="author.profile_url" target="_blank" rel="noopener noreferrer"
-                  class="profile-link">
+                <a
+                  v-if="author.profile_url"
+                  :href="author.profile_url"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="profile-link"
+                >
                   <ExternalLink :size="16" />
                   {{ $t('author.viewOriginal') }}
                 </a>
@@ -118,11 +138,11 @@ import {
 import dayjs from 'dayjs'
 
 import MainLayout from '@/components/layout/MainLayout.vue'
-import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
+import LoadingSpinner from '@/components/ui/loading/LoadingSpinner.vue'
 import { PLATFORM_COLORS, PLATFORM_NAMES } from '@/types'
 import { authorsApi } from '@/api/services'
 import type { AuthorListItem } from '@/types'
-import { useErrorHandler } from '@/utils/errorHandler'
+import { useErrorHandler } from '@/utils/error'
 
 const { t } = useI18n()
 const { handleError } = useErrorHandler('AuthorsPage')
@@ -176,7 +196,7 @@ const onImageError = (event: Event) => {
   img.style.display = 'none'
   const placeholder = img.parentElement?.querySelector('.avatar-placeholder')
   if (placeholder) {
-    ; (placeholder as HTMLElement).style.display = 'flex'
+    ;(placeholder as HTMLElement).style.display = 'flex'
   }
 }
 </script>
@@ -186,6 +206,8 @@ const onImageError = (event: Event) => {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-2xl);
+  padding-top: clamp(16px, 3vw, 24px);
+  /* 确保不被导航栏遮挡 */
 }
 
 .page-header {
@@ -270,9 +292,11 @@ const onImageError = (event: Event) => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg,
-      rgba(var(--glass-bg-rgb), 0.95) 0%,
-      rgba(var(--glass-bg-rgb), 0.85) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(var(--glass-bg-rgb), 0.95) 0%,
+    rgba(var(--glass-bg-rgb), 0.85) 100%
+  );
   backdrop-filter: blur(10px);
   z-index: 1;
 }
