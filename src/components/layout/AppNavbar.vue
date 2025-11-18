@@ -49,7 +49,8 @@
           </button>
 
           <Transition name="dropdown">
-            <div v-if="showQueuePanel" ref="queueMenuRef" class="queue-dropdown glass-card">
+            <div v-if="showQueuePanel" ref="queueMenuRef" class="queue-dropdown glass-card"
+              :class="{ 'mobile-modal': isMobile }" @click.self="isMobile && (showQueuePanel = false)">
               <div class="queue-header">
                 <span class="queue-title">{{ $t('offline.queueTitle') }}</span>
               </div>
@@ -74,13 +75,15 @@
 
         <!-- 统一设置按钮：语言/主题/布局等快捷设置（不跳转页面） -->
         <div class="settings-menu-container" ref="settingsMenuRef">
-          <button class="action-button" type="button" @click="toggleSettingsPanel" :aria-label="$t('nav.settings')">
+          <button class="action-button" type="button" @click.stop="toggleSettingsPanel"
+            :aria-label="$t('nav.settings')">
             <Settings :size="20" />
           </button>
 
-          <!-- 桌面端设置面板，下拉在按钮下方展开 -->
+          <!-- 设置面板（桌面端下拉，移动端模态框） -->
           <Transition name="dropdown">
-            <div v-if="showSettingsPanel && !isMobile" class="settings-dropdown glass-card">
+            <div v-if="showSettingsPanel" class="settings-dropdown glass-card" :class="{ 'mobile-modal': isMobile }"
+              @click.self="isMobile && (showSettingsPanel = false)">
               <div class="settings-group">
                 <div class="settings-group-title">{{ $t('settings.theme') }}</div>
                 <div class="settings-theme-options">
@@ -349,7 +352,9 @@ const refreshQueueStatus = async () => {
 }
 
 const toggleQueuePanel = async () => {
+  console.log('[AppNavbar] Toggle queue panel - before:', showQueuePanel.value, 'isMobile:', isMobile.value)
   showQueuePanel.value = !showQueuePanel.value
+  console.log('[AppNavbar] Toggle queue panel - after:', showQueuePanel.value)
   if (showQueuePanel.value) {
     await refreshQueueStatus()
   }
@@ -384,7 +389,9 @@ const isMobile = ref(false)
 
 const updateIsMobile = () => {
   if (typeof window === 'undefined') return
+  const wasMobile = isMobile.value
   isMobile.value = window.matchMedia('(max-width: 768px)').matches
+  console.log('[AppNavbar] isMobile updated:', wasMobile, '->', isMobile.value, 'window.innerWidth:', window.innerWidth)
 }
 
 interface BottomNavItem {
@@ -416,7 +423,9 @@ const localeOptions = [
 ]
 
 const toggleSettingsPanel = () => {
+  console.log('[AppNavbar] Toggle settings panel - before:', showSettingsPanel.value, 'isMobile:', isMobile.value)
   showSettingsPanel.value = !showSettingsPanel.value
+  console.log('[AppNavbar] Toggle settings panel - after:', showSettingsPanel.value)
 }
 
 const setTheme = (newTheme: Theme) => {
@@ -428,75 +437,13 @@ const changeLanguage = async (newLocale: string) => {
   await changeLocale(newLocale as 'en' | 'zh-CN' | 'ja')
 }
 
-// 全局滑动切换主页面（仅移动端）
-const swipeStartX = ref<number | null>(null)
-const swipeStartY = ref<number | null>(null)
-const swipeActive = ref(false)
+// ❌ 已禁用：全局滑动切换主页面功能
+// const swipeStartX = ref<number | null>(null)
+// const swipeStartY = ref<number | null>(null)
+// const swipeActive = ref(false)
 
-const handleGlobalTouchStart = (event: TouchEvent) => {
-  if (!isMobile.value || !settings.value.enableSwipeNavigation || event.touches.length !== 1) return
-  const touch = event.touches[0]
-  if (!touch) return
-  const target = event.target as HTMLElement
-
-  // 避免与底部导航点击冲突
-  if (target.closest('.mobile-bottom-nav')) return
-
-  swipeStartX.value = touch.clientX
-  swipeStartY.value = touch.clientY
-  swipeActive.value = true
-}
-
-const handleGlobalTouchEnd = (event: TouchEvent) => {
-  if (!swipeActive.value || swipeStartX.value === null || swipeStartY.value === null) {
-    swipeActive.value = false
-    swipeStartX.value = null
-    swipeStartY.value = null
-    return
-  }
-
-  const touch = event.changedTouches[0]
-  if (!touch) {
-    swipeActive.value = false
-    swipeStartX.value = null
-    swipeStartY.value = null
-    return
-  }
-
-  const deltaX = touch.clientX - swipeStartX.value
-  const deltaY = touch.clientY - swipeStartY.value
-  const absDeltaX = Math.abs(deltaX)
-  const absDeltaY = Math.abs(deltaY)
-  const threshold = 80
-
-  swipeActive.value = false
-  swipeStartX.value = null
-  swipeStartY.value = null
-
-  if (!isMobile.value || !settings.value.enableSwipeNavigation) return
-
-  // 只有明显的水平滑动才触发
-  if (absDeltaX < threshold || absDeltaX <= absDeltaY * 1.2) {
-    return
-  }
-
-  const items = bottomNavItems.value
-  if (!items.length) return
-
-  const currentPath = router.currentRoute.value.path
-  const currentIndex = items.findIndex((item) => currentPath.startsWith(item.path))
-  if (currentIndex === -1) return
-
-  const direction = deltaX > 0 ? -1 : 1
-  const nextIndex = currentIndex + direction
-
-  // 不循环，超出范围直接忽略
-  if (nextIndex < 0 || nextIndex >= items.length) return
-
-  const nextItem = items[nextIndex]
-  if (!nextItem) return
-  router.push(nextItem.path)
-}
+// const handleGlobalTouchStart = (event: TouchEvent) => { ... }
+// const handleGlobalTouchEnd = (event: TouchEvent) => { ... }
 
 const userAvatarUrl = computed(() => {
   if (user.value?.avatar_url) {
@@ -517,9 +464,9 @@ const handleLogout = () => {
 const handleClickOutside = (event: MouseEvent) => {
   const target = event.target as HTMLElement
 
+  // 用户菜单
   const inMobileUserTrigger = target.closest('.mobile-user-trigger')
   const inMobileUserModal = target.closest('.mobile-user-modal')
-
   if (
     userMenuRef.value &&
     !userMenuRef.value.contains(target) &&
@@ -529,13 +476,27 @@ const handleClickOutside = (event: MouseEvent) => {
     showUserMenu.value = false
   }
 
+  // 设置面板 - 检查是否点击了按钮或面板内部
   const inSettingsButton = target.closest('.settings-menu-container')
-  if (settingsMenuRef.value && !settingsMenuRef.value.contains(target) && !inSettingsButton) {
+  const inSettingsDropdown = target.closest('.settings-dropdown')
+  if (
+    showSettingsPanel.value &&
+    !inSettingsButton &&
+    !inSettingsDropdown
+  ) {
+    console.log('[AppNavbar] Closing settings panel from click outside')
     showSettingsPanel.value = false
   }
 
-  const inQueueContainer = target.closest('.queue-status-container')
-  if (queueMenuRef.value && !queueMenuRef.value.contains(target) && !inQueueContainer) {
+  // 队列面板 - 检查是否点击了按钮或面板内部
+  const inQueueButton = target.closest('.queue-status-container')
+  const inQueueDropdown = target.closest('.queue-dropdown')
+  if (
+    showQueuePanel.value &&
+    !inQueueButton &&
+    !inQueueDropdown
+  ) {
+    console.log('[AppNavbar] Closing queue panel from click outside')
     showQueuePanel.value = false
   }
 }
@@ -549,9 +510,10 @@ onMounted(() => {
 
   if (typeof window !== 'undefined') {
     window.addEventListener('resize', updateIsMobile)
-    window.addEventListener('touchstart', handleGlobalTouchStart, { passive: true })
-    window.addEventListener('touchend', handleGlobalTouchEnd, { passive: true })
-    window.addEventListener('touchcancel', handleGlobalTouchEnd, { passive: true })
+    // ❌ 禁用手势跳转页面功能
+    // window.addEventListener('touchstart', handleGlobalTouchStart, { passive: true })
+    // window.addEventListener('touchend', handleGlobalTouchEnd, { passive: true })
+    // window.addEventListener('touchcancel', handleGlobalTouchEnd, { passive: true })
     window.addEventListener('online', handleOnlineChange)
     window.addEventListener('offline', handleOnlineChange)
 
@@ -565,9 +527,10 @@ onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
   if (typeof window !== 'undefined') {
     window.removeEventListener('resize', updateIsMobile)
-    window.removeEventListener('touchstart', handleGlobalTouchStart)
-    window.removeEventListener('touchend', handleGlobalTouchEnd)
-    window.removeEventListener('touchcancel', handleGlobalTouchEnd)
+    // ❌ 禁用手势跳转页面功能
+    // window.removeEventListener('touchstart', handleGlobalTouchStart)
+    // window.removeEventListener('touchend', handleGlobalTouchEnd)
+    // window.removeEventListener('touchcancel', handleGlobalTouchEnd)
     window.removeEventListener('online', handleOnlineChange)
     window.removeEventListener('offline', handleOnlineChange)
 
@@ -1253,6 +1216,32 @@ onUnmounted(() => {
   .bottom-nav-item.router-link-active {
     color: var(--color-primary);
     background: var(--glass-bg-light);
+  }
+
+  /* 移动端模态框样式 - 应用于queue和settings面板 */
+  .queue-dropdown.mobile-modal,
+  .settings-dropdown.mobile-modal {
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    right: auto !important;
+    /* 重置桌面端的right: 0 */
+    transform: translate(-50%, -50%) !important;
+    width: calc(100vw - 32px) !important;
+    max-width: 400px !important;
+    max-height: 80vh;
+    overflow-y: auto;
+    z-index: 2500 !important;
+    box-shadow:
+      0 20px 60px rgba(0, 0, 0, 0.3),
+      0 0 0 100vmax rgba(0, 0, 0, 0.5) !important;
+  }
+
+  .queue-dropdown.mobile-modal::before,
+  .settings-dropdown.mobile-modal::before {
+    position: sticky;
+    top: 0;
+    z-index: 1;
   }
 
   /* 移动端用户菜单 */
