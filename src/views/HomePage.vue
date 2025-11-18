@@ -235,13 +235,23 @@ onMounted(async () => {
 
     // ✨ 优化：减少初始加载数量，提升首屏速度
     // 使用明确的参数，不修改全局 store filters，避免与 ExplorePage 冲突
-    await postsStore.fetchPosts({
+    const result = await postsStore.fetchPosts({
       page: currentPage.value,
       page_size: 6,
       sort_by: 'scraped_at',
       sort_order: 'desc',
       ignoreFilters: true,
     })
+
+    // 根据分页信息更新hasMore状态
+    if (result && result.page && result.pages) {
+      hasMore.value = result.page < result.pages
+      console.debug(
+        `[HomePage] 初始加载分页信息: 当前页 ${result.page}/${result.pages}, hasMore: ${hasMore.value}`,
+      )
+    } else if (result && result.items && result.items.length === 0) {
+      hasMore.value = false
+    }
 
     // 记录初始加载的卡片数量
     await nextTick()
@@ -252,6 +262,7 @@ onMounted(async () => {
 
     // 标记初始加载完成，启用无限滚动
     initialLoadComplete.value = true
+    console.debug('[HomePage] 初始加载完成，启用无限滚动')
 
     // 后台加载统计数据（非阻塞）
     loadStatsInBackground()
