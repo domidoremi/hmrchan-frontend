@@ -75,19 +75,9 @@ export function getApiEndpoint(): string {
 export function resolveMediaUrl(url: string | null | undefined): string {
   if (!url) return ''
 
-  // 如果已经是完整URL（http:// 或 https://），进行HTTPS规范化并处理legacy路径
+  // 如果已经是完整URL（http:// 或 https://），进行HTTPS规范化
   if (url.startsWith('http://') || url.startsWith('https://')) {
-    const normalized = forceHttps(url)
-
-    // 迁移兼容：将 legacy /api/media 路径重写为 /api/v1/media
-    if (normalized.startsWith('https://api.momichan.xyz/api/media/')) {
-      return normalized.replace(
-        'https://api.momichan.xyz/api/media/',
-        'https://api.momichan.xyz/api/v1/media/',
-      )
-    }
-
-    return normalized
+    return forceHttps(url)
   }
 
   // 如果是相对路径，添加API基础URL
@@ -95,18 +85,6 @@ export function resolveMediaUrl(url: string | null | undefined): string {
 
   // 移除路径开头的斜杠（避免双斜杠）
   const path = url.startsWith('/') ? url : `/${url}`
-
-  // 迁移兼容：将相对的 /api/media 路径重写为 /api/v1/media
-  if (path.startsWith('/api/media/')) {
-    console.warn(
-      '⚠️ [API] DEPRECATED: Backend returned legacy API path:',
-      path,
-      '\n→ Backend should return /api/v1/media/ instead',
-      '\n→ Legacy API will be sunset on 2026-06-01',
-      '\n→ Auto-rewriting to /api/v1/media/ for now',
-    )
-    return `${apiBaseUrl}/api/v1${path.substring('/api'.length)}`
-  }
 
   return `${apiBaseUrl}${path}`
 }
