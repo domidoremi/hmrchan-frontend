@@ -10,7 +10,12 @@
           {{ $t('offline.usingCache') }}
         </p>
         <div ref="gridRef" class="favorites-grid">
-          <PostCard v-for="post in favoritePosts" :key="post.id" :post="post" />
+          <PostCard
+            v-for="post in favoritePosts"
+            :key="post.id"
+            :post="post"
+            :show-actions="false"
+          />
         </div>
       </div>
 
@@ -34,11 +39,11 @@ import { ref, onMounted, nextTick, watch } from 'vue'
 import { Heart, Compass } from 'lucide-vue-next'
 
 import MainLayout from '@/components/layout/MainLayout.vue'
-import PostCard from '@/components/features/PostCard.vue'
-import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
-import GlassButton from '@/components/ui/GlassButton.vue'
-import { useFavorites } from '@/composables/useFavorites'
-import { useWaterfallLayout } from '@/composables/useWaterfallLayout'
+import PostCard from '@/components/business/PostCard.vue'
+import LoadingSpinner from '@/components/ui/loading/LoadingSpinner.vue'
+import GlassButton from '@/components/ui/button/Button.vue'
+import { useFavorites } from '@/composables'
+import { useWaterfallLayout } from '@/composables'
 
 const { favoritePosts, loading, fetchFavorites, fromFallback } = useFavorites()
 

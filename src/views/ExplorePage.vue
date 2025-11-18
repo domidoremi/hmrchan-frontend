@@ -15,7 +15,7 @@
           {{ $t('offline.usingCache') }}
         </p>
         <div ref="postsGrid" class="posts-grid">
-          <PostCard v-for="(post, index) in posts" :key="post.id" :post="post" :index="index" />
+          <PostCard v-for="(post, index) in posts" :key="post.id" :post="post" :index="index" :show-actions="false" />
         </div>
 
         <!-- Pagination -->
@@ -43,21 +43,21 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { ref, watch, nextTick, onMounted, onUnmounted, onActivated } from 'vue'
+import { ref, watch, nextTick, onMounted, onUnmounted, onActivated, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { SearchX, RotateCcw } from 'lucide-vue-next'
 
 import MainLayout from '@/components/layout/MainLayout.vue'
-import FilterBar from '@/components/features/FilterBar.vue'
-import PostCard from '@/components/features/PostCard.vue'
-import Pagination from '@/components/features/Pagination.vue'
-import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
-import GlassButton from '@/components/ui/GlassButton.vue'
+import FilterBar from '@/components/business/FilterBar.vue'
+import PostCard from '@/components/business/PostCard.vue'
+import Pagination from '@/components/business/Pagination.vue'
+import LoadingSpinner from '@/components/ui/loading/LoadingSpinner.vue'
+import GlassButton from '@/components/ui/button/Button.vue'
 
-import { usePostsStore } from '@/stores/posts'
+import { usePostsStore } from '@/stores'
 import type { PostListParams } from '@/types'
-import { useWaterfallLayout } from '@/composables/useWaterfallLayout'
+import { useWaterfallLayout } from '@/composables'
 
 const route = useRoute()
 const router = useRouter()
@@ -100,6 +100,13 @@ onMounted(async () => {
 
   // 更新瀑布流布局
   await updateLayout()
+})
+
+onBeforeUnmount(() => {
+  // 离开页面时重置筛选条件和posts，避免状态污染其他页面
+  postsStore.resetFilters()
+  postsStore.posts = []
+  console.log('[ExplorePage] 页面卸载，已重置筛选条件和posts')
 })
 
 onUnmounted(() => {
@@ -288,7 +295,7 @@ const resetFilters = () => {
 
 /* 新卡片进入动画 */
 .explore-page .posts-grid .post-card.card-entering {
-  animation: cardFadeIn 0.5s ease forwards;
+  animation: cardFadeIn var(--duration-slower) var(--ease-decelerate) forwards;
 }
 
 @keyframes cardFadeIn {

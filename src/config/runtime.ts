@@ -8,19 +8,19 @@
  */
 function forceHttpsProtocol(url: string): string {
   if (!url) return 'https://api.momichan.xyz'
-  
+
   // 如果URL是HTTP，强制转换为HTTPS
   if (url.startsWith('http://')) {
     const httpsUrl = url.replace('http://', 'https://')
     console.error('🚨 [Runtime] HTTP detected and converted to HTTPS:', url, '→', httpsUrl)
     return httpsUrl
   }
-  
+
   // 如果URL没有协议，添加HTTPS
   if (!url.startsWith('https://') && !url.startsWith('/')) {
     return `https://${url}`
   }
-  
+
   return url
 }
 
