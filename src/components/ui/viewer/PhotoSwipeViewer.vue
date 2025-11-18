@@ -16,6 +16,12 @@ interface MediaItem {
   height?: number
   thumbnail?: string
   alt?: string
+  mediaId?: string // 用于获取字幕
+  subtitles?: Array<{
+    language: string
+    format: string
+    label: string
+  }> | null
 }
 
 interface Props {
@@ -58,8 +64,8 @@ const prepareDataSource = (items: MediaItem[]) => {
       return imageData
     } else {
       // 视频：使用Plyr创建高级视频播放器
-      console.log(`[PhotoSwipeViewer] Video ${index}:`, item.url)
-      const videoElement = createPlyrVideoElement(item.url, index)
+      console.log(`[PhotoSwipeViewer] Video ${index}:`, item.url, 'subtitles:', item.subtitles)
+      const videoElement = createPlyrVideoElement(item.url, index, item.subtitles, item.mediaId)
       return {
         html: videoElement.outerHTML,
         width: item.width || 1920,
@@ -70,7 +76,12 @@ const prepareDataSource = (items: MediaItem[]) => {
 }
 
 // 创建Plyr视频元素
-const createPlyrVideoElement = (url: string, index: number): HTMLElement => {
+const createPlyrVideoElement = (
+  url: string,
+  index: number,
+  subtitles?: Array<{ language: string; format: string; label: string }> | null,
+  mediaId?: string,
+): HTMLElement => {
   const container = document.createElement('div')
   container.className = 'pswp__video-wrapper'
   container.dataset.videoUrl = url
@@ -80,12 +91,29 @@ const createPlyrVideoElement = (url: string, index: number): HTMLElement => {
   video.className = 'pswp__plyr-video'
   video.playsInline = true
   video.controls = true
+  video.crossOrigin = 'anonymous' // 允许加载跨域字幕
 
   const source = document.createElement('source')
   source.src = url
   source.type = 'video/mp4'
 
   video.appendChild(source)
+
+  // 添加字幕轨道
+  if (subtitles && subtitles.length > 0 && mediaId) {
+    subtitles.forEach((subtitle, idx) => {
+      const track = document.createElement('track')
+      track.kind = 'subtitles'
+      track.label = subtitle.label
+      track.srclang = subtitle.language
+      // 构建字幕URL: /api/v1/media/{mediaId}/subtitles/{language}
+      track.src = `https://api.momichan.xyz/api/v1/media/${mediaId}/subtitles/${subtitle.language}`
+      track.default = idx === 0 // 第一个字幕设为默认
+      video.appendChild(track)
+      console.log(`[PhotoSwipeViewer] Added subtitle track: ${subtitle.label} (${subtitle.language})`)
+    })
+  }
+
   container.appendChild(video)
 
   return container
@@ -106,14 +134,16 @@ const initPlyrForVideo = (videoElement: HTMLVideoElement, url: string) => {
       'duration',
       'mute',
       'volume',
+      'captions', // ⭐ 启用字幕按钮
       'settings',
       'fullscreen',
     ],
-    settings: ['quality', 'speed'],
+    settings: ['captions', 'quality', 'speed'], // ⭐ 设置中添加字幕选项
     speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 2] },
     ratio: '16:9',
     fullscreen: { enabled: true, fallback: true, iosNative: true },
     autopause: true,
+    captions: { active: true, language: 'auto', update: true }, // ⭐ 启用字幕
     i18n: {
       play: '播放',
       pause: '暂停',
@@ -126,6 +156,9 @@ const initPlyrForVideo = (videoElement: HTMLVideoElement, url: string) => {
       settings: '设置',
       speed: '倍速',
       normal: '正常',
+      captions: '字幕',
+      enabled: '启用',
+      disabled: '禁用',
     },
   })
 

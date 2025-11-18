@@ -998,11 +998,11 @@ onUnmounted(() => {
   }
 }
 
-/* 平板端和桌面端 (>= 768px) - 恢复sticky行为 */
+/* 平板端和桌面端 (>= 768px) - 保持sticky行为 */
 @media (min-width: 768px) {
   .detail-topbar.is-sticky {
-    position: sticky;
-    top: 16px;
+    position: sticky !important;
+    top: 16px !important;
     /* 桌面端导航栏不是fixed，直接设置top偏移即可 */
   }
 }
