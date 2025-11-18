@@ -1,0 +1,47 @@
+{
+  "error": {
+    "title": "エラーが発生しました",
+    "unknown": "未知のエラー",
+    "details": "エラー詳細",
+    "componentInfo": "コンポーネント情報",
+    "retry": "再試行",
+    "goHome": "ホームに戻る",
+    "reload": "ページを更新",
+    "apiUnavailable": "APIサービスが利用できません",
+    "apiUnavailableDesc": "バックエンドサーバーに接続できません。バックエンドがまだデプロイされていないか、設定に問題がある可能性があります。API設定を確認するか、後でもう一度お試しください。"
+  },
+  "errors": {
+    "permissionDenied": "権限がありません",
+    "tooManyRequests": "リクエストが多すぎます。しばらくしてからもう一度お試しください",
+    "serverError": "サーバーエラーが発生しました。しばらくしてからもう一度お試しください",
+    "networkError": "ネットワークエラーです。接続を確認してください",
+    "unknownError": "不明なエラー",
+    "videoPlaybackFailed": "動画の再生に失敗しました"
+  },
+  "api": {
+    "fetchCurrentUser": "ユーザー情報の取得に失敗しました",
+    "fetchSuggestions": "検索候補の取得に失敗しました",
+    "fetchPosts": "投稿リストの取得に失敗しました",
+    "fetchPostById": "投稿詳細の取得に失敗しました",
+    "fetchPostsByPlatform": "このプラットフォームの投稿取得に失敗しました",
+    "fetchPostStats": "投稿統計の取得に失敗しました",
+    "fetchMediaInfo": "メディア情報の取得に失敗しました",
+    "fetchAuthors": "作者リストの取得に失敗しました",
+    "fetchAuthorById": "作者詳細の取得に失敗しました",
+    "fetchAuthorPosts": "この作者の投稿取得に失敗しました",
+    "fetchFavorites": "お気に入りの取得に失敗しました",
+    "fetchFolders": "お気に入りフォルダの取得に失敗しました",
+    "fetchPlatformStats": "プラットフォーム統計の取得に失敗しました",
+    "fetchFullStats": "統計データの取得に失敗しました"
+  },
+  "offline": {
+    "usingCache": "現在はオフラインキャッシュのデータを表示しています。最新ではない可能性があります。",
+    "actionsQueued": "一部の操作はオフラインキューに保存されており、オンライン復帰後に自動同期されます。",
+    "favoriteQueued": "オフラインでお気に入りに追加しました。オンライン復帰後に自動的に同期されます。",
+    "unfavoriteQueued": "オフラインでお気に入りを解除しました。オンライン復帰後に自動的に同期されます。",
+    "queueTitle": "オフラインキュー",
+    "queueEmpty": "同期待ちの操作はありません。",
+    "syncNow": "今すぐ同期",
+    "offlineNow": "現在オフラインです。一部の機能が利用できない場合があります。"
+  }
+}

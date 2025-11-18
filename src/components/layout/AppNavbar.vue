@@ -5,7 +5,7 @@
       <!-- Logo -->
       <RouterLink to="/" class="navbar-brand">
         <div class="brand-logo">HMR</div>
-        <span class="brand-name">Chan</span>
+        <span class="brand-name">Club</span>
       </RouterLink>
 
       <!-- 导航链接 (桌面端) -->
@@ -73,10 +73,64 @@
         </div>
 
         <!-- 统一设置按钮：语言/主题/布局等快捷设置（不跳转页面） -->
-        <div class="settings-menu-container">
+        <div class="settings-menu-container" ref="settingsMenuRef">
           <button class="action-button" type="button" @click="toggleSettingsPanel" :aria-label="$t('nav.settings')">
             <Settings :size="20" />
           </button>
+
+          <!-- 桌面端设置面板，下拉在按钮下方展开 -->
+          <Transition name="dropdown">
+            <div v-if="showSettingsPanel && !isMobile" class="settings-dropdown glass-card">
+              <div class="settings-group">
+                <div class="settings-group-title">{{ $t('settings.theme') }}</div>
+                <div class="settings-theme-options">
+                  <button v-for="option in themeOptions" :key="option.value" type="button" class="settings-theme-button"
+                    :class="{ active: theme === option.value }" @click="setTheme(option.value)">
+                    <component :is="option.icon" :size="18" />
+                    <span>{{ $t(`settings.${option.value}`) }}</span>
+                  </button>
+                </div>
+              </div>
+
+              <div class="settings-group">
+                <div class="settings-group-title">{{ $t('settings.language') }}</div>
+                <div class="settings-language-options">
+                  <button v-for="localeOption in localeOptions" :key="localeOption.code" type="button"
+                    class="settings-language-button" :class="{ active: locale === localeOption.code }"
+                    @click="changeLanguage(localeOption.code)">
+                    {{ localeOption.name }}
+                  </button>
+                </div>
+              </div>
+
+              <div class="settings-group">
+                <div class="settings-group-title">{{ $t('settings.display') }}</div>
+                <div class="settings-toggle-list">
+                  <button type="button" class="settings-toggle" :class="{ active: settings.showHeroSection }"
+                    @click="settingsStore.toggleSetting('showHeroSection')">
+                    <span class="settings-toggle-label">{{
+                      $t('settings.toggleHeroSection')
+                      }}</span>
+                    <span class="settings-toggle-indicator" :class="{ active: settings.showHeroSection }"></span>
+                  </button>
+
+                  <button type="button" class="settings-toggle" :class="{ active: settings.enableAnimations }"
+                    @click="settingsStore.toggleSetting('enableAnimations')">
+                    <span class="settings-toggle-label">{{ $t('settings.toggleAnimations') }}</span>
+                    <span class="settings-toggle-indicator" :class="{ active: settings.enableAnimations }"></span>
+                  </button>
+
+                  <button type="button" class="settings-toggle" :class="{ active: settings.enableSwipeNavigation }"
+                    @click="settingsStore.toggleSetting('enableSwipeNavigation')">
+                    <span class="settings-toggle-label">{{
+                      $t('settings.toggleSwipeNavigation')
+                      }}</span>
+                    <span class="settings-toggle-indicator" :class="{ active: settings.enableSwipeNavigation }"></span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </Transition>
         </div>
 
         <!-- 用户菜单 -->
@@ -132,7 +186,7 @@
       <!-- Logo -->
       <RouterLink to="/" class="navbar-brand">
         <div class="brand-logo">HMR</div>
-        <span class="brand-name">Chan</span>
+        <span class="brand-name">Club</span>
       </RouterLink>
 
       <!-- 右侧按钮 -->
@@ -230,56 +284,7 @@
     </div>
   </Transition>
 
-  <!-- 全局设置面板（桌面端 + 移动端复用） -->
-  <Transition name="dropdown">
-    <div v-if="showSettingsPanel" ref="settingsMenuRef" class="settings-dropdown glass-card">
-      <div class="settings-group">
-        <div class="settings-group-title">{{ $t('settings.theme') }}</div>
-        <div class="settings-theme-options">
-          <button v-for="option in themeOptions" :key="option.value" type="button" class="settings-theme-button"
-            :class="{ active: theme === option.value }" @click="setTheme(option.value)">
-            <component :is="option.icon" :size="18" />
-            <span>{{ $t(`settings.${option.value}`) }}</span>
-          </button>
-        </div>
-      </div>
-
-      <div class="settings-group">
-        <div class="settings-group-title">{{ $t('settings.language') }}</div>
-        <div class="settings-language-options">
-          <button v-for="localeOption in localeOptions" :key="localeOption.code" type="button"
-            class="settings-language-button" :class="{ active: locale === localeOption.code }"
-            @click="changeLanguage(localeOption.code)">
-            {{ localeOption.name }}
-          </button>
-        </div>
-      </div>
-
-      <div class="settings-group">
-        <div class="settings-group-title">{{ $t('settings.display') }}</div>
-        <div class="settings-toggle-list">
-          <button type="button" class="settings-toggle" :class="{ active: settings.showHeroSection }"
-            @click="settingsStore.toggleSetting('showHeroSection')">
-            <span class="settings-toggle-label">{{ $t('settings.toggleHeroSection') }}</span>
-            <span class="settings-toggle-indicator" :class="{ active: settings.showHeroSection }"></span>
-          </button>
-
-          <button type="button" class="settings-toggle" :class="{ active: settings.enableAnimations }"
-            @click="settingsStore.toggleSetting('enableAnimations')">
-            <span class="settings-toggle-label">{{ $t('settings.toggleAnimations') }}</span>
-            <span class="settings-toggle-indicator" :class="{ active: settings.enableAnimations }"></span>
-          </button>
-
-          <button type="button" class="settings-toggle" :class="{ active: settings.enableSwipeNavigation }"
-            @click="settingsStore.toggleSetting('enableSwipeNavigation')">
-            <span class="settings-toggle-label">{{ $t('settings.toggleSwipeNavigation') }}</span>
-            <span class="settings-toggle-indicator" :class="{ active: settings.enableSwipeNavigation }"></span>
-          </button>
-        </div>
-      </div>
-    </div>
-  </Transition>
-
+  <!-- 全局设置面板结束 -->
 </template>
 
 <script setup lang="ts">
@@ -303,11 +308,9 @@ import {
   Moon,
   Monitor,
 } from 'lucide-vue-next'
-import { useAuthStore } from '@/stores/auth'
-import { useSettingsStore } from '@/stores/settings'
-import { useThemeStore } from '@/stores/theme'
+import { useAuthStore, useSettingsStore, useThemeStore } from '@/stores'
 import type { Theme } from '@/types'
-import { offlineQueue } from '@/utils/offlineQueue'
+import { offlineQueue } from '@/utils/storage'
 
 const router = useRouter()
 const { locale } = useI18n()
@@ -390,10 +393,7 @@ interface BottomNavItem {
 }
 
 const bottomNavItems = computed<BottomNavItem[]>(() => {
-  const items: BottomNavItem[] = [
-    { path: '/' },
-    { path: '/explore' },
-  ]
+  const items: BottomNavItem[] = [{ path: '/' }, { path: '/explore' }]
 
   if (isAuthenticated.value) {
     items.push({ path: '/favorites', requiresAuth: true })
@@ -423,9 +423,9 @@ const setTheme = (newTheme: Theme) => {
   themeStore.setTheme(newTheme)
 }
 
-const changeLanguage = (newLocale: string) => {
-  locale.value = newLocale
-  localStorage.setItem('locale', newLocale)
+const changeLanguage = async (newLocale: string) => {
+  const { changeLocale } = await import('@/composables/core/useI18nOptimized')
+  await changeLocale(newLocale as 'en' | 'zh-CN' | 'ja')
 }
 
 // 全局滑动切换主页面（仅移动端）
@@ -520,7 +520,12 @@ const handleClickOutside = (event: MouseEvent) => {
   const inMobileUserTrigger = target.closest('.mobile-user-trigger')
   const inMobileUserModal = target.closest('.mobile-user-modal')
 
-  if (userMenuRef.value && !userMenuRef.value.contains(target) && !inMobileUserTrigger && !inMobileUserModal) {
+  if (
+    userMenuRef.value &&
+    !userMenuRef.value.contains(target) &&
+    !inMobileUserTrigger &&
+    !inMobileUserModal
+  ) {
     showUserMenu.value = false
   }
 
@@ -599,6 +604,7 @@ onUnmounted(() => {
   padding: var(--spacing-4) var(--spacing-6);
   max-width: 1400px;
   margin: 0 auto;
+  position: relative;
 }
 
 /* Logo */
@@ -607,11 +613,14 @@ onUnmounted(() => {
   align-items: center;
   gap: var(--spacing-2);
   text-decoration: none;
-  transition: transform var(--transition-fast);
+  transition: all var(--transition-fast);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-lg);
 }
 
 .navbar-brand:hover {
   transform: scale(1.05);
+  background: rgba(139, 92, 246, 0.08);
 }
 
 .brand-logo {
@@ -629,6 +638,10 @@ onUnmounted(() => {
 
 .brand-name {
   font-size: var(--text-xl);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
   font-weight: var(--font-bold);
   color: var(--color-text-primary);
 }
@@ -706,6 +719,20 @@ onUnmounted(() => {
   aspect-ratio: 1 / 1;
 }
 
+/* 移动端增加触摸目标尺寸 */
+@media (max-width: 768px) {
+
+  .navbar-actions .action-button,
+  .mobile-top-actions .action-button {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    max-width: 44px;
+    max-height: 44px;
+  }
+}
+
 /* 确保SVG图标尺寸正确 */
 .navbar-actions .action-button svg,
 .mobile-top-actions .action-button svg {
@@ -748,6 +775,18 @@ onUnmounted(() => {
   padding: 0;
   flex-shrink: 0;
   aspect-ratio: 1 / 1;
+}
+
+/* 移动端增加触摸目标尺寸 */
+@media (max-width: 768px) {
+  .navbar-actions .user-avatar-button {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    max-width: 44px;
+    max-height: 44px;
+  }
 }
 
 .user-avatar-button:hover {
@@ -800,33 +839,53 @@ onUnmounted(() => {
 }
 
 .settings-dropdown {
-  position: fixed;
-  top: calc(var(--app-navbar-height, 72px) + var(--spacing-2));
-  right: var(--spacing-4);
+  position: absolute;
+  top: calc(100% + var(--spacing-2));
+  right: 0;
   width: 320px;
-  max-width: calc(100% - 2 * var(--spacing-4));
+  max-width: calc(100vw - 32px);
   padding: var(--spacing-4);
   border-radius: var(--radius-xl);
   box-shadow: var(--glass-shadow);
-  z-index: 1100;
+  z-index: 1500;
   display: flex;
   flex-direction: column;
   gap: var(--spacing-4);
+  overflow: hidden;
+}
+
+.settings-dropdown::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: linear-gradient(90deg, rgba(139, 92, 246, 0.9), rgba(56, 189, 248, 0.9));
+  opacity: 0.95;
 }
 
 .queue-dropdown {
-  position: fixed;
-  top: calc(var(--app-navbar-height, 72px) + var(--spacing-2));
-  right: calc(var(--spacing-4) + 48px);
+  position: absolute;
+  top: calc(100% + var(--spacing-2));
+  right: 0;
   width: 260px;
-  max-width: calc(100% - 2 * var(--spacing-4));
+  max-width: calc(100vw - 32px);
   padding: var(--spacing-4);
   border-radius: var(--radius-xl);
   box-shadow: var(--glass-shadow);
-  z-index: 1100;
+  z-index: 1500;
   display: flex;
   flex-direction: column;
   gap: var(--spacing-3);
+  overflow: hidden;
+}
+
+.queue-dropdown::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: linear-gradient(90deg, rgba(96, 165, 250, 0.95), rgba(59, 130, 246, 0.95));
+  opacity: 0.95;
 }
 
 .queue-header {
@@ -976,6 +1035,7 @@ onUnmounted(() => {
   padding: var(--spacing-4);
   border-radius: var(--radius-xl);
   box-shadow: var(--glass-shadow);
+  overflow: hidden;
 }
 
 .dropdown-header {
@@ -985,6 +1045,8 @@ onUnmounted(() => {
   padding-bottom: var(--spacing-4);
   border-bottom: 1px solid var(--glass-border);
   margin-bottom: var(--spacing-3);
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.12), rgba(56, 189, 248, 0.08));
+  border-radius: calc(var(--radius-xl) - 4px);
 }
 
 .user-avatar-large {
@@ -1154,9 +1216,11 @@ onUnmounted(() => {
     backdrop-filter: var(--glass-blur);
     border-top: 1px solid var(--glass-border);
     padding: var(--spacing-2) var(--spacing-1);
+    padding-bottom: calc(var(--spacing-2) + env(safe-area-inset-bottom));
     justify-content: space-around;
     align-items: center;
     box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
+    min-height: 64px;
   }
 
   .bottom-nav-item {
@@ -1174,10 +1238,16 @@ onUnmounted(() => {
     transition: all var(--transition-fast);
     flex: 1;
     max-width: 80px;
+    min-width: 44px;
+    min-height: 44px;
+    /* 添加触摸优化 */
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
   }
 
   .bottom-nav-item:active {
     transform: scale(0.95);
+    opacity: 0.8;
   }
 
   .bottom-nav-item.router-link-active {

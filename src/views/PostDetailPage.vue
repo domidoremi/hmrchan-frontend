@@ -18,11 +18,13 @@
       </div>
 
       <div v-else-if="post" class="post-detail">
-        <div class="detail-topbar">
+        <div class="detail-topbar" :class="{ 'is-sticky': isTopbarSticky }">
           <button class="back-button glass-button" @click="goBack">
             <ArrowLeft :size="20" />
             {{ $t('common.back') }}
           </button>
+          <PostCardActions :is-favorited="isFavorited" @favorite="toggleFavorite" @share="sharePost"
+            @more="handleMoreOptions" />
         </div>
 
         <div v-if="isOfflineDetail" class="offline-hint">
@@ -31,52 +33,22 @@
 
         <div :class="['detail-grid', { 'single-column': isTabletOrBelow }]">
           <section :class="['media-column', { 'compact-media': isMobileViewport }]">
-            <div class="media-hero glass-card" :class="{
-              'video-layout': isVideoPost,
-              'youtube-layout': isYouTube,
-              'tiktok-layout': isTikTok,
-            }">
-              <div v-if="post.thumbnail_url" class="post-thumbnail-container">
-                <button v-show="allMediaUrls.length > 1" class="thumbnail-nav-btn prev-thumbnail-btn"
-                  :class="{ 'nav-btn-disabled': currentThumbnailIndex === 0 }" @click.stop="prevThumbnail"
-                  :disabled="currentThumbnailIndex === 0" :aria-label="$t('common.previous')">
-                  <ChevronLeft :size="20" />
-                </button>
+            <div v-if="post.thumbnail_url" class="post-thumbnail-container" @click="openMediaViewer(0)">
+              <!-- 模糊背景 -->
+              <div class="media-backdrop" aria-hidden="true">
+                <img :src="resolveMediaUrl(post.thumbnail_url)" alt="" decoding="async" />
+              </div>
 
-                <div class="post-thumbnail" @click="openMediaViewer(currentThumbnailIndex)"
-                  @touchstart.passive="handleThumbnailTouchStart" @touchmove.passive="handleThumbnailTouchMove"
-                  @touchend.passive="handleThumbnailTouchEnd" @touchcancel.passive="handleThumbnailTouchEnd">
-                  <div class="media-backdrop" aria-hidden="true">
-                    <transition name="thumbnail-fade" mode="out-in">
-                      <img v-if="currentMediaType !== 'video'" :key="`bg-${currentThumbnailUrl}`"
-                        :src="currentThumbnailUrl" alt="" decoding="async" />
-                      <video v-else :key="`bg-video-${currentThumbnailUrl}`" :src="currentThumbnailUrl" muted
-                        playsinline preload="metadata"></video>
-                    </transition>
-                  </div>
+              <!-- 主图片 -->
+              <img :src="resolveMediaUrl(post.thumbnail_url)" :alt="post.title || 'Post thumbnail'" class="main-image"
+                loading="eager" decoding="async" fetchpriority="high" />
 
-                  <transition name="thumbnail-fade" mode="out-in">
-                    <img v-if="currentMediaType !== 'video'" :key="`image-${currentThumbnailUrl}`"
-                      :src="currentThumbnailUrl" :alt="post.title || 'Post thumbnail'" loading="eager" decoding="async"
-                      fetchpriority="high" />
-                    <video v-else :key="`video-${currentThumbnailUrl}`" :src="currentThumbnailUrl" preload="metadata"
-                      playsinline muted
-                      :poster="post.thumbnail_url ? resolveMediaUrl(post.thumbnail_url) : undefined"></video>
-                  </transition>
-                  <div class="thumbnail-overlay" :class="{ 'is-video': currentMediaType === 'video' }">
-                    <component :is="currentMediaType === 'video' ? Play : Maximize2" :size="32" />
-                  </div>
-                  <div v-if="allMediaUrls.length > 1" class="thumbnail-counter">
-                    {{ currentThumbnailIndex + 1 }} / {{ allMediaUrls.length }}
-                  </div>
-                </div>
-
-                <button v-show="allMediaUrls.length > 1" class="thumbnail-nav-btn next-thumbnail-btn"
-                  :class="{ 'nav-btn-disabled': currentThumbnailIndex === allMediaUrls.length - 1 }"
-                  @click.stop="nextThumbnail" :disabled="currentThumbnailIndex === allMediaUrls.length - 1"
-                  :aria-label="$t('common.next')">
-                  <ChevronRight :size="20" />
-                </button>
+              <!-- 点击提示 -->
+              <div class="thumbnail-overlay">
+                <Maximize2 :size="32" />
+                <span v-if="post.media_files && post.media_files.length > 1" class="media-count">
+                  {{ post.media_files.length }} {{ $t('post.media') }}
+                </span>
               </div>
             </div>
           </section>
@@ -126,7 +98,9 @@
                         </div>
                         <div class="author-details">
                           <h3>{{ post.original_author_name }}</h3>
-                          <p v-if="post.original_author_username">@{{ post.original_author_username }}</p>
+                          <p v-if="post.original_author_username">
+                            @{{ post.original_author_username }}
+                          </p>
                           <span class="original-label">{{ $t('post.originalAuthor') }}</span>
                         </div>
                       </div>
@@ -145,16 +119,14 @@
                       </div>
                     </RouterLink>
 
-                    <h1 class="post-title">{{ post.title || 'Untitled' }}</h1>
-
-                    <div v-if="showDescription" :class="[
+                    <div v-if="post.description || post.title" :class="[
                       'post-description',
                       {
                         'is-collapsed': !isDescriptionExpanded && isDescriptionLong,
                         'is-expanded': isDescriptionExpanded && isDescriptionLong,
                       },
                     ]">
-                      <p>{{ post.description }}</p>
+                      <p>{{ post.description || post.title || 'No description' }}</p>
                       <button v-if="isDescriptionLong" type="button" class="description-toggle"
                         @click="isDescriptionExpanded = !isDescriptionExpanded">
                         {{
@@ -167,39 +139,15 @@
                   </div>
                 </details>
 
-                <details class="accordion-block" open>
+                <details v-if="yieldedStats.length > 0" class="accordion-block" open>
                   <summary class="accordion-summary">
-                    <span>{{ $t('post.actions') }}</span>
+                    <span>{{ $t('post.stats') }}</span>
                     <ChevronRight :size="16" class="chevron" />
                   </summary>
 
                   <div class="accordion-body">
-                    <section class="post-actions" aria-labelledby="post-actions-heading">
-                      <h2 id="post-actions-heading" class="sr-only">{{ $t('post.actions') }}</h2>
-                      <div class="post-action-buttons" role="group" :aria-label="$t('post.actions')">
-                        <GlassButton @click="toggleFavorite" :disabled="favoriteLoading"
-                          :title="isFavorited ? $t('favorite.remove') : $t('favorite.add')"
-                          :variant="isFavorited ? 'primary' : 'secondary'" :class="{ 'is-favorited': isFavorited }"
-                          :aria-pressed="isFavorited"
-                          :aria-label="isFavorited ? $t('favorite.remove') : $t('favorite.add')">
-                          <Heart :size="18" :fill="isFavorited ? 'currentColor' : 'none'" />
-                          <span class="sr-only">{{ isFavorited ? $t('favorite.remove') : $t('favorite.add') }}</span>
-                        </GlassButton>
-                        <GlassButton v-if="post.url" @click="copyLink(post.url)" variant="secondary"
-                          :title="$t('post.copyLink')" :aria-label="$t('post.copyLink')">
-                          <Link :size="18" />
-                          <span class="sr-only">{{ $t('post.copyLink') }}</span>
-                        </GlassButton>
-                        <a v-if="post.url" :href="post.url" target="_blank" rel="noopener noreferrer"
-                          class="post-action-link" :title="$t('post.viewOriginal')"
-                          :aria-label="$t('post.viewOriginal')">
-                          <GlassButton variant="secondary">
-                            <ExternalLink :size="18" />
-                            <span class="sr-only">{{ $t('post.viewOriginal') }}</span>
-                          </GlassButton>
-                        </a>
-                      </div>
-
+                    <section class="post-stats-section" aria-labelledby="post-stats-heading">
+                      <h2 id="post-stats-heading" class="sr-only">{{ $t('post.stats') }}</h2>
                       <div v-if="yieldedStats.length > 0" class="post-action-stats" role="list"
                         :aria-label="$t('post.stats')">
                         <component v-for="stat in yieldedStats" :key="stat.key" :is="stat.linkAttrs ? 'a' : 'div'"
@@ -303,7 +251,9 @@
                     </div>
                     <div class="author-details">
                       <h3>{{ post.original_author_name }}</h3>
-                      <p v-if="post.original_author_username">@{{ post.original_author_username }}</p>
+                      <p v-if="post.original_author_username">
+                        @{{ post.original_author_username }}
+                      </p>
                       <span class="original-label">{{ $t('post.originalAuthor') }}</span>
                     </div>
                   </div>
@@ -325,18 +275,16 @@
             </div>
           </aside>
 
-          <!-- 桌面端：媒体下方整行，放标题 + 描述 + 操作按钮 + 统计 -->
+          <!-- 桌面端：媒体下方整行，放描述 + 操作按钮 + 统计 -->
           <div v-if="!isTabletOrBelow" class="detail-main full-width-section">
-            <h1 class="post-title">{{ post.title || 'Untitled' }}</h1>
-
-            <div v-if="showDescription" :class="[
+            <div v-if="post.description || post.title" :class="[
               'post-description',
               {
                 'is-collapsed': !isDescriptionExpanded && isDescriptionLong,
                 'is-expanded': isDescriptionExpanded && isDescriptionLong,
               },
             ]">
-              <p>{{ post.description }}</p>
+              <p>{{ post.description || post.title || 'No description' }}</p>
               <button v-if="isDescriptionLong" type="button" class="description-toggle"
                 @click="isDescriptionExpanded = !isDescriptionExpanded">
                 {{
@@ -347,31 +295,9 @@
               </button>
             </div>
 
-            <section class="post-actions" aria-labelledby="post-actions-heading">
-              <h2 id="post-actions-heading" class="sr-only">{{ $t('post.actions') }}</h2>
-              <div class="post-action-buttons" role="group" :aria-label="$t('post.actions')">
-                <GlassButton @click="toggleFavorite" :disabled="favoriteLoading"
-                  :title="isFavorited ? $t('favorite.remove') : $t('favorite.add')"
-                  :variant="isFavorited ? 'primary' : 'secondary'" :class="{ 'is-favorited': isFavorited }"
-                  :aria-pressed="isFavorited" :aria-label="isFavorited ? $t('favorite.remove') : $t('favorite.add')">
-                  <Heart :size="18" :fill="isFavorited ? 'currentColor' : 'none'" />
-                  <span class="sr-only">{{ isFavorited ? $t('favorite.remove') : $t('favorite.add') }}</span>
-                </GlassButton>
-                <GlassButton v-if="post.url" @click="copyLink(post.url)" variant="secondary"
-                  :title="$t('post.copyLink')" :aria-label="$t('post.copyLink')">
-                  <Link :size="18" />
-                  <span class="sr-only">{{ $t('post.copyLink') }}</span>
-                </GlassButton>
-                <a v-if="post.url" :href="post.url" target="_blank" rel="noopener noreferrer" class="post-action-link"
-                  :title="$t('post.viewOriginal')" :aria-label="$t('post.viewOriginal')">
-                  <GlassButton variant="secondary">
-                    <ExternalLink :size="18" />
-                    <span class="sr-only">{{ $t('post.viewOriginal') }}</span>
-                  </GlassButton>
-                </a>
-              </div>
-
-              <div v-if="yieldedStats.length > 0" class="post-action-stats" role="list" :aria-label="$t('post.stats')">
+            <section v-if="yieldedStats.length > 0" class="post-stats" aria-labelledby="post-stats-heading">
+              <h2 id="post-stats-heading" class="sr-only">{{ $t('post.stats') }}</h2>
+              <div class="post-action-stats" role="list" :aria-label="$t('post.stats')">
                 <component v-for="stat in yieldedStats" :key="stat.key" :is="stat.linkAttrs ? 'a' : 'div'"
                   v-bind="stat.linkAttrs ?? {}" :class="['post-stats-row', { 'is-link': !!stat.linkAttrs }]"
                   role="listitem">
@@ -432,19 +358,10 @@
               <img v-if="media.file_type === 'image'" :src="mediaApi.getStreamUrl(media.id)" :alt="post.title || ''"
                 loading="lazy" decoding="async" @click="openMediaViewer(getMediaIndex(index))"
                 class="clickable-image" />
-              <div v-else-if="media.file_type === 'video'" class="video-thumbnail"
-                @click="openMediaViewer(getMediaIndex(index))">
-                <video preload="none" poster="">
-                  <source :src="mediaApi.getStreamUrl(media.id)" type="video/mp4" />
-                </video>
-                <div class="video-play-overlay">
-                  <div class="play-button">
-                    <svg width="64" height="64" viewBox="0 0 64 64">
-                      <circle cx="32" cy="32" r="30" fill="rgba(255,255,255,0.9)" />
-                      <polygon points="26,20 26,44 44,32" fill="#000" />
-                    </svg>
-                  </div>
-                </div>
+              <div v-else-if="media.file_type === 'video'" class="video-player-container">
+                <VideoPlayer :src="buildMediaStreamUrl(media, post.platform)"
+                  :poster="media.thumbnail_path ? mediaApi.getStreamUrl(media.id) + '/thumbnail' : undefined"
+                  :autoplay="false" :muted="false" />
               </div>
             </div>
           </div>
@@ -462,19 +379,19 @@
     </div>
 
     <!-- 媒体查看器 -->
-    <MediaViewer :show="showMediaViewer" :media-items="viewerMediaItems" :initial-index="viewerInitialIndex"
+    <PhotoSwipeViewer :show="showMediaViewer" :items="viewerMediaItems" :initial-index="viewerInitialIndex"
       @close="closeMediaViewer" />
   </MainLayout>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, defineAsyncComponent, onUnmounted, type Component } from 'vue'
+import { ref, computed, onMounted, onUnmounted, type Component } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { useMediaPreload } from '@/composables/useSmartPreload'
+import { useMediaPreload } from '@/composables/media/useSmartPreload'
 import { hasViewedPost, markPostAsViewed } from '@/utils/viewTracking'
-import { useErrorHandler } from '@/utils/errorHandler'
-import { resolveMediaUrl, validateMediaId } from '@/utils/url'
+import { useErrorHandler } from '@/utils/error'
+import { resolveMediaUrl, validateMediaId } from '@/utils/format'
 import {
   ArrowLeft,
   Calendar,
@@ -485,28 +402,25 @@ import {
   ExternalLink,
   AlertCircle,
   Maximize2,
-  ChevronLeft,
-  ChevronRight,
   Repeat2,
-  Link,
   Sparkles,
-  Play,
 } from 'lucide-vue-next'
 import dayjs from 'dayjs'
 
 import MainLayout from '@/components/layout/MainLayout.vue'
-import GlassButton from '@/components/ui/GlassButton.vue'
-const MediaViewer = defineAsyncComponent(() => import('@/components/ui/MediaViewerPlyr.vue'))
+import GlassButton from '@/components/ui/button/Button.vue'
+import PostCardActions from '@/components/business/PostCard/PostCardActions.vue'
+import PhotoSwipeViewer from '@/components/ui/viewer/PhotoSwipeViewer.vue'
+import { VideoPlayer } from '@/components/ui/video'
 
-import { usePostsStore } from '@/stores/posts'
-import { useAuthStore } from '@/stores/auth'
+import { usePostsStore, useAuthStore, useToastStore } from '@/stores'
 import { api } from '@/api/client'
 import { favoritesApi, mediaApi } from '@/api/services'
-import { indexedDB } from '@/utils/indexedDB'
-import { offlineQueue } from '@/utils/offlineQueue'
+import { indexedDB } from '@/utils/storage'
+import { offlineQueue } from '@/utils/storage'
+import { buildMediaStreamUrl } from '@/utils/media'
 import type { PostDetail, Post, UUID, PostListParams, PaginatedResponse } from '@/types'
 import { PLATFORM_NAMES, PLATFORM_COLORS } from '@/types'
-import { useToastStore } from '@/stores/toast'
 
 const route = useRoute()
 const router = useRouter()
@@ -526,6 +440,8 @@ const viewerMediaItems = ref<
   Array<{
     url: string
     type: 'image' | 'video'
+    width?: number
+    height?: number
     subtitle?: string // 保留向后兼容
     subtitles?: Array<{ language: string; format: string; label: string }> // 新增：多语言字幕
   }>
@@ -535,6 +451,7 @@ const currentThumbnailIndex = ref(0)
 const relatedPosts = ref<Post[]>([])
 const isTabletViewport = ref(false)
 const isMobileViewport = ref(false)
+const isTopbarSticky = ref(false)
 
 const isTabletOrBelow = computed(() => isTabletViewport.value || isMobileViewport.value)
 
@@ -567,17 +484,8 @@ const isDescriptionLong = computed(() => {
   return length > 260
 })
 
-// 判断是否显示描述（避免与标题重复）
-const showDescription = computed(() => {
-  if (!post.value?.description) return false
-  const title = (post.value.title || '').trim().toLowerCase()
-  const description = post.value.description.trim().toLowerCase()
-  // 如果描述为空或与标题完全相同，则不显示
-  if (!description || description === title) return false
-  // 如果描述只比标题多几个字符（容差10个字符），也不显示
-  if (Math.abs(description.length - title.length) < 10 && description.includes(title)) return false
-  return true
-})
+// 判断描述长度以确定是否需要展开/收起功能
+// 注意：已移除showDescription，现在始终显示description或title
 
 // 所有媒体项（包括缩略图、图片和视频）
 const allMediaItems = computed(() => {
@@ -586,6 +494,8 @@ const allMediaItems = computed(() => {
   const items: Array<{
     url: string
     type: 'image' | 'video'
+    width?: number
+    height?: number
     subtitle?: string
     subtitles?: Array<{ language: string; format: string; label: string }>
     mediaId?: UUID // 添加mediaId用于生成字幕URL
@@ -597,30 +507,30 @@ const allMediaItems = computed(() => {
     items.push({
       url: resolveMediaUrl(post.value.thumbnail_url),
       type: 'image',
+      // 缩略图通常没有固定尺寸，让PhotoSwipe自动检测
     })
   }
 
   // 2. 添加媒体文件中的图片和视频
+  // 不跳过任何媒体，保持与模板显示的一致性
   if (post.value.media_files && post.value.media_files.length > 0) {
-    post.value.media_files.forEach((media, index) => {
+    post.value.media_files.forEach((media) => {
       if (media.file_type === 'image' || media.file_type === 'video') {
         const mediaUrl = mediaApi.getStreamUrl(media.id)
-
-        // 如果有缩略图，跳过第一个媒体文件（如果是图片）
-        // 因为缩略图通常就是第一张图片的缩略版
-        if (hasThumbnail && index === 0 && media.file_type === 'image') {
-          return // 跳过第一张图片以避免重复
-        }
 
         const item: {
           url: string
           type: 'image' | 'video'
+          width?: number
+          height?: number
           subtitle?: string
           subtitles?: Array<{ language: string; format: string; label: string }>
           mediaId?: UUID
         } = {
           url: mediaUrl,
           type: media.file_type as 'image' | 'video',
+          width: media.width || undefined,
+          height: media.height || undefined,
           mediaId: media.id,
         }
 
@@ -645,47 +555,6 @@ const allMediaItems = computed(() => {
   return items
 })
 
-// 所有图片（仅用于缩略图导航）
-// const allImages = computed(() => {
-//   return allMediaItems.value.filter((item) => item.type === 'image').map((item) => item.url)
-// })
-
-// 所有媒体URL（用于导航按钮显示）
-const allMediaUrls = computed(() => {
-  return allMediaItems.value.map((item) => item.url)
-})
-
-// 当前缩略图URL
-const currentThumbnailUrl = computed(() => {
-  if (allMediaUrls.value.length === 0) return ''
-  return allMediaUrls.value[currentThumbnailIndex.value]
-})
-
-const currentMediaItem = computed(() => {
-  if (allMediaItems.value.length === 0) return null
-  return allMediaItems.value[currentThumbnailIndex.value]
-})
-
-const currentMediaType = computed(() => currentMediaItem.value?.type ?? 'image')
-
-// 判断主要媒体类型
-const primaryMediaType = computed(() => {
-  if (!post.value?.media_files || post.value.media_files.length === 0) return 'image'
-  // 检查第一个媒体文件的类型
-  const firstMedia = post.value.media_files[0]
-  return firstMedia?.file_type === 'video' ? 'video' : 'image'
-})
-
-// 判断是否为视频类型
-const isVideoPost = computed(() => primaryMediaType.value === 'video')
-
-// 判断平台类型
-const isYouTube = computed(() => post.value?.platform === 'youtube')
-const isTikTok = computed(() => post.value?.platform === 'tiktok')
-// const isInstagramOrTwitter = computed(
-//   () => post.value?.platform === 'instagram' || post.value?.platform === 'twitter',
-// )
-
 const yieldedStats = computed<StatEntry[]>(() => {
   if (!post.value) return []
 
@@ -698,7 +567,12 @@ const yieldedStats = computed<StatEntry[]>(() => {
     }
     : undefined
 
-  const pushStat = (key: string, value: number | null | undefined, icon: Component, labelKey: string) => {
+  const pushStat = (
+    key: string,
+    value: number | null | undefined,
+    icon: Component,
+    labelKey: string,
+  ) => {
     if (!value) return
     stats.push({
       key,
@@ -727,31 +601,36 @@ const updateViewportBreakpoints = () => {
 }
 
 onMounted(async () => {
-
   const postId = route.params.id as UUID
   try {
-    // 优先复用当前 Store 中的详情，避免重复加载
-    const cachedDetail = postsStore.currentPost
-    if (cachedDetail && cachedDetail.id === postId) {
-      post.value = cachedDetail
-      // 已有完整详情，立刻取消骨架屏
-      loading.value = false
-    } else {
-      // 从列表中做浅缓存，先展示基础信息
-      const listItem = postsStore.posts?.find((p: Post) => p.id === postId)
-      if (listItem) {
-        post.value = {
-          ...listItem,
-          media_files: [],
-          tags: [],
-        } as PostDetail
-        // 有列表数据时也立刻渲染，剩余字段靠后台刷新
-        loading.value = false
-      }
+    // 🔧 临时修复：强制刷新绕过所有缓存，确保获取最新数据（包含media_files）
+    // 原因：旧缓存可能缺少media_files字段
+    const forceFresh = true
 
-      // 再拉取完整详情（命中 requestCache 时不会重复向后端请求）
-      post.value = await postsStore.fetchPost(postId)
+    if (!forceFresh) {
+      // 优先复用当前 Store 中的详情，避免重复加载
+      const cachedDetail = postsStore.currentPost
+      if (cachedDetail && cachedDetail.id === postId) {
+        post.value = cachedDetail
+        // 已有完整详情，立刻取消骨架屏
+        loading.value = false
+      } else {
+        // 从列表中做浅缓存，先展示基础信息
+        const listItem = postsStore.posts?.find((p: Post) => p.id === postId)
+        if (listItem) {
+          post.value = {
+            ...listItem,
+            media_files: [],
+            tags: [],
+          } as PostDetail
+          // 有列表数据时也立刻渲染，剩余字段靠后台刷新
+          loading.value = false
+        }
+      }
     }
+
+    // 强制从网络获取最新数据
+    post.value = await postsStore.fetchPost(postId, { forceFresh })
 
     // 验证媒体文件ID格式（诊断用）
     if (import.meta.env.DEV && post.value?.media_files && post.value.media_files.length > 0) {
@@ -764,7 +643,7 @@ onMounted(async () => {
             id: media.id,
             id_type: typeof media.id,
             file_type: media.file_type,
-            file_path: media.file_path
+            file_path: media.file_path,
           })
         }
       })
@@ -898,6 +777,21 @@ const formatNumber = (num: number): string => {
 const openMediaViewer = (mediaIndex: number) => {
   if (!post.value) return
 
+  // 使用JSON.stringify查看完整数据
+  console.log('[PostDetailPage] 🎬 Opening media viewer')
+  console.log('  mediaIndex:', mediaIndex)
+  console.log('  itemsCount:', allMediaItems.value.length)
+  console.log('  postId:', post.value.id)
+  console.log('  hasThumbnail:', !!post.value.thumbnail_url)
+  console.log('  mediaFilesCount:', post.value.media_files?.length || 0)
+  console.log('  allMediaItems:', JSON.stringify(allMediaItems.value, null, 2))
+  console.log('  media_files:', JSON.stringify(post.value.media_files?.map(m => ({
+    id: m.id,
+    type: m.file_type,
+    width: m.width,
+    height: m.height,
+  })), null, 2))
+
   viewerMediaItems.value = allMediaItems.value
   viewerInitialIndex.value = mediaIndex
   showMediaViewer.value = true
@@ -905,7 +799,7 @@ const openMediaViewer = (mediaIndex: number) => {
 
 const getMediaIndex = (mediaFileIndex: number): number => {
   // 计算媒体文件在allMediaItems中的实际索引
-  // 如果有缩略图，索引需要+1
+  // thumbnail在索引0，media_files从索引1开始
   const offset = post.value?.thumbnail_url ? 1 : 0
   return offset + mediaFileIndex
 }
@@ -919,65 +813,6 @@ useMediaPreload(allMediaItems, currentThumbnailIndex, {
   lookahead: 2,
   enabled: true,
 })
-
-// 缩略图导航
-const prevThumbnail = () => {
-  if (currentThumbnailIndex.value > 0) {
-    currentThumbnailIndex.value--
-  }
-}
-
-const nextThumbnail = () => {
-  if (currentThumbnailIndex.value < allMediaUrls.value.length - 1) {
-    currentThumbnailIndex.value++
-  }
-}
-
-// 移动端缩略图滑动手势
-const thumbnailTouchStartX = ref<number | null>(null)
-const thumbnailTouchStartY = ref<number | null>(null)
-const thumbnailTouchActive = ref(false)
-
-const handleThumbnailTouchStart = (event: TouchEvent) => {
-  if (!isTabletOrBelow.value || event.touches.length !== 1) return
-  const touch = event.touches[0] as Touch
-  thumbnailTouchStartX.value = touch.clientX
-  thumbnailTouchStartY.value = touch.clientY
-  thumbnailTouchActive.value = true
-}
-
-const handleThumbnailTouchMove = (event: TouchEvent) => {
-  if (!thumbnailTouchActive.value || thumbnailTouchStartX.value === null || thumbnailTouchStartY.value === null) return
-  if (event.touches.length !== 1) return
-}
-
-const handleThumbnailTouchEnd = (event: TouchEvent) => {
-  if (!thumbnailTouchActive.value || thumbnailTouchStartX.value === null || thumbnailTouchStartY.value === null) {
-    thumbnailTouchActive.value = false
-    thumbnailTouchStartX.value = null
-    thumbnailTouchStartY.value = null
-    return
-  }
-
-  const touch = event.changedTouches[0] as Touch
-  const deltaX = touch.clientX - thumbnailTouchStartX.value
-  const deltaY = touch.clientY - thumbnailTouchStartY.value
-  const absDeltaX = Math.abs(deltaX)
-  const absDeltaY = Math.abs(deltaY)
-  const threshold = 48
-
-  if (absDeltaX > threshold && absDeltaX > absDeltaY * 1.2) {
-    if (deltaX > 0) {
-      prevThumbnail()
-    } else {
-      nextThumbnail()
-    }
-  }
-
-  thumbnailTouchActive.value = false
-  thumbnailTouchStartX.value = null
-  thumbnailTouchStartY.value = null
-}
 
 // 加载相关推荐（直接调用API，不污染全局posts状态）
 const loadRelatedPosts = async () => {
@@ -1003,9 +838,9 @@ const loadRelatedPosts = async () => {
     })
 
     // 过滤掉当前帖子
-    relatedPosts.value = (response?.items || []).filter(
-      (p: Post) => p.id !== post.value!.id
-    ).slice(0, 4) // 最多显示4个
+    relatedPosts.value = (response?.items || [])
+      .filter((p: Post) => p.id !== post.value!.id)
+      .slice(0, 4) // 最多显示4个
   } catch (error) {
     console.debug('[PostDetailPage] Failed to load related posts:', error)
   }
@@ -1047,6 +882,12 @@ const copyLink = async (url: string) => {
   }
 }
 
+// 更多选项菜单
+const handleMoreOptions = () => {
+  // 可以在这里实现更多选项的菜单，例如：举报、下载等
+  console.log('[PostDetailPage] More options clicked')
+}
+
 // 键盘快捷键
 const handleKeydown = (e: KeyboardEvent) => {
   // ESC: 返回
@@ -1055,17 +896,8 @@ const handleKeydown = (e: KeyboardEvent) => {
     return
   }
 
-  // 左右箭头：切换图片（当有多张图片时）
-  if (!showMediaViewer.value && allMediaUrls.value.length > 1) {
-    if (e.key === 'ArrowLeft') {
-      prevThumbnail()
-    } else if (e.key === 'ArrowRight') {
-      nextThumbnail()
-    }
-  }
-
-  // F: 收藏/取消收藏
-  if (e.key === 'f' && !e.ctrlKey && !e.metaKey) {
+  // Ctrl/Cmd + D: 切换收藏
+  if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
     e.preventDefault()
     toggleFavorite()
   }
@@ -1077,15 +909,30 @@ const handleKeydown = (e: KeyboardEvent) => {
   }
 }
 
+// 滚动检测，用于 topbar 粘性效果 - 统一移动/桌面端
+const handleScroll = () => {
+  const scrollTop = window.scrollY || document.documentElement.scrollTop
+  // 根据不同视口大小设置不同的导航栏高度
+  let navbarHeight = 78 // 默认桌面端
+  if (isMobileViewport.value) {
+    navbarHeight = 66 // 移动端导航栏高度
+  } else if (isTabletViewport.value) {
+    navbarHeight = 72 // 平板端导航栏高度
+  }
+  isTopbarSticky.value = scrollTop > navbarHeight
+}
+
 onMounted(() => {
   updateViewportBreakpoints()
   window.addEventListener('keydown', handleKeydown)
   window.addEventListener('resize', updateViewportBreakpoints, { passive: true })
+  window.addEventListener('scroll', handleScroll, { passive: true })
 })
 
 onUnmounted(() => {
   window.removeEventListener('keydown', handleKeydown)
   window.removeEventListener('resize', updateViewportBreakpoints)
+  window.removeEventListener('scroll', handleScroll)
 })
 </script>
 
@@ -1122,13 +969,51 @@ onUnmounted(() => {
   align-items: center;
   justify-content: space-between;
   gap: var(--spacing-md);
+  padding: 12px 0;
   margin-bottom: clamp(16px, 3vw, 28px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 粘性布局 - 移动端和桌面端统一设计 */
+.detail-topbar.is-sticky {
+  position: sticky;
+  z-index: 999;
+  /* 低于导航栏(1000)避免遮挡 */
+  /* 移除背景，保持透明 */
+  background: transparent;
+  backdrop-filter: none;
+  border-bottom: none;
+  padding: 10px clamp(16px, 5vw, 48px);
+  margin-left: calc(-1 * clamp(16px, 5vw, 48px));
+  margin-right: calc(-1 * clamp(16px, 5vw, 48px));
+  box-shadow: none;
+}
+
+/* 移动端 (< 768px) - 导航栏高度66px + 16px间距 */
+@media (max-width: 767px) {
+  .detail-topbar.is-sticky {
+    top: 82px;
+    /* 导航栏高度66px + 16px间距 = 82px */
+  }
+}
+
+/* 平板端 (768px - 1023px) - 导航栏高度72px + 16px间距 */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .detail-topbar.is-sticky {
+    top: 88px;
+    /* 导航栏高度72px + 16px间距 = 88px */
+  }
+}
+
+/* 桌面端 (>= 1024px) - 导航栏高度78px + 16px间距 */
+@media (min-width: 1024px) {
+  .detail-topbar.is-sticky {
+    top: 94px;
+    /* 导航栏高度78px + 16px间距 = 94px */
+  }
 }
 
 .back-button {
-  position: sticky;
-  top: calc(var(--app-navbar-height, 78px) + 16px);
-  z-index: 100;
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -1148,6 +1033,12 @@ onUnmounted(() => {
     0 6px 12px -3px rgba(0, 0, 0, 0.08);
 }
 
+.detail-topbar.is-sticky .back-button {
+  box-shadow: none;
+  background: rgba(139, 92, 246, 0.1);
+  border-color: rgba(139, 92, 246, 0.3);
+}
+
 .back-button:hover {
   transform: translateY(-2px);
   box-shadow:
@@ -1156,9 +1047,39 @@ onUnmounted(() => {
   border-color: rgba(139, 92, 246, 0.4);
 }
 
+.detail-topbar.is-sticky .back-button:hover {
+  transform: translateY(0);
+  background: rgba(139, 92, 246, 0.15);
+}
+
 .back-button:active {
   transform: translateY(0);
   transition-duration: 0.1s;
+}
+
+/* PostCardActions 在 topbar 中的样式调整 */
+.detail-topbar :deep(.card-actions) {
+  position: static;
+  opacity: 1;
+  transform: none;
+  gap: 12px;
+  display: flex;
+  align-items: center;
+}
+
+.detail-topbar :deep(.action-button) {
+  background: rgba(139, 92, 246, 0.1);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+}
+
+.detail-topbar :deep(.action-button:hover) {
+  background: rgba(139, 92, 246, 0.2);
+  border-color: rgba(139, 92, 246, 0.4);
+}
+
+.detail-topbar.is-sticky :deep(.action-button) {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .detail-grid {
@@ -1180,10 +1101,6 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-lg);
-}
-
-.detail-main .post-title {
-  margin-bottom: var(--spacing-sm);
 }
 
 @media (min-width: 1024px) {
@@ -1213,64 +1130,42 @@ onUnmounted(() => {
   gap: var(--spacing-lg);
 }
 
-.media-hero {
+.post-thumbnail-container {
+  position: relative;
+  width: clamp(320px, 42vw, 520px);
+  /* 固定显示比例，避免不同图片尺寸导致高度剧烈变化 */
+  aspect-ratio: 16 / 9;
+  min-height: 320px;
   background: var(--glass-bg);
   backdrop-filter: var(--glass-blur);
   border: 1px solid var(--glass-border);
   border-radius: 24px;
   padding: clamp(20px, 3.5vw, 32px);
   display: flex;
-  flex-wrap: wrap;
-  gap: clamp(18px, 3vw, 28px);
-  align-items: flex-start;
+  align-items: center;
   justify-content: center;
-  overflow: visible;
+  overflow: hidden;
+  /* 修复：防止背景模糊(scale 1.28)超出容器 */
   box-shadow: 0 16px 40px -20px rgba(15, 23, 42, 0.28);
   transition:
     transform 0.28s cubic-bezier(0.4, 0, 0.2, 1),
     box-shadow 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  flex: 0 0 auto;
 }
 
-.media-hero:hover {
+.post-thumbnail-container:hover {
   transform: translateY(-3px);
   box-shadow: 0 26px 54px -26px rgba(76, 29, 149, 0.42);
 }
 
-.post-thumbnail-container {
-  position: relative;
-  width: clamp(320px, 42vw, 520px);
-  min-height: 320px;
-  background: linear-gradient(135deg,
-      rgba(139, 92, 246, 0.08) 0%,
-      rgba(192, 132, 252, 0.12) 100%);
-  overflow: hidden;
-  border-radius: var(--radius-3xl);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.12),
-    inset 0 40px 120px rgba(139, 92, 246, 0.08);
-  flex: 0 0 auto;
-}
-
-.post-thumbnail {
+.post-thumbnail-container .main-image {
   position: relative;
   width: 100%;
   height: 100%;
-  isolation: isolate;
-  border-radius: var(--radius-2xl);
-  overflow: hidden;
+  object-fit: contain;
+  z-index: 1;
+  border-radius: 16px;
   cursor: zoom-in;
-  transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1);
-  background:
-    linear-gradient(135deg, rgba(139, 92, 246, 0.04) 0%, rgba(192, 132, 252, 0.04) 100%),
-    var(--color-bg-secondary);
-  box-shadow: 0 22px 46px -18px rgba(15, 23, 42, 0.4);
-  border: 1px solid rgba(139, 92, 246, 0.12);
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 .media-backdrop {
@@ -1287,8 +1182,7 @@ onUnmounted(() => {
   z-index: 0;
 }
 
-.media-backdrop img,
-.media-backdrop video {
+.media-backdrop img {
   width: 120%;
   height: 120%;
   object-fit: cover;
@@ -1303,18 +1197,6 @@ onUnmounted(() => {
   inset: 0;
   background: linear-gradient(140deg, rgba(18, 16, 32, 0.22) 0%, rgba(32, 22, 44, 0.4) 100%);
   mix-blend-mode: soft-light;
-}
-
-.post-thumbnail img,
-.post-thumbnail video {
-  width: 100%;
-  height: 100%;
-  display: block;
-  object-fit: contain;
-  position: relative;
-  z-index: 1;
-  background: rgba(0, 0, 0, 0.22);
-  border-radius: inherit;
 }
 
 .thumbnail-overlay {
@@ -1332,11 +1214,17 @@ onUnmounted(() => {
   color: white;
   z-index: 2;
   pointer-events: none;
+  border-radius: 16px;
 }
 
-/* Hover效果 - 显示放大提示 */
-.post-thumbnail:hover .thumbnail-overlay {
+.post-thumbnail-container:hover .thumbnail-overlay {
   opacity: 1;
+}
+
+.media-count {
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  margin-top: var(--spacing-2);
 }
 
 .offline-hint {
@@ -1407,7 +1295,9 @@ onUnmounted(() => {
     0 12px 24px -18px rgba(0, 0, 0, 0.35),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
   overflow: hidden;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .accordion-summary {
@@ -1527,20 +1417,6 @@ onUnmounted(() => {
 
 .next-thumbnail-btn {
   right: var(--spacing-md);
-}
-
-.post-title {
-  font-size: var(--text-3xl);
-  font-weight: 800;
-  color: var(--color-text-primary);
-  line-height: 1.2;
-  word-break: break-word;
-  letter-spacing: -0.03em;
-  margin-bottom: var(--spacing-sm);
-  background: linear-gradient(135deg, var(--color-text-primary) 0%, rgba(139, 92, 246, 0.9) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
 }
 
 .post-meta {
@@ -1701,7 +1577,6 @@ onUnmounted(() => {
   display: block;
 }
 
-
 .stat-count {
   font-weight: var(--font-semibold);
   color: var(--color-text-primary);
@@ -1727,11 +1602,16 @@ onUnmounted(() => {
 }
 
 .post-description p {
-  color: var(--color-text-secondary);
-  font-size: var(--text-base);
-  line-height: 1.7;
-  white-space: pre-wrap;
+  color: var(--color-text-primary);
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  line-height: 1.4;
+  margin: 0;
   word-break: break-word;
+  background: linear-gradient(135deg, var(--color-text-primary) 0%, rgba(139, 92, 246, 0.9) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .post-description.is-collapsed {
@@ -1783,8 +1663,8 @@ onUnmounted(() => {
   }
 
   .post-description p {
-    font-size: var(--text-lg);
-    line-height: 1.75;
+    font-size: var(--text-3xl);
+    line-height: 1.3;
   }
 }
 
@@ -1795,64 +1675,8 @@ onUnmounted(() => {
   }
 }
 
-
-.post-actions {
-  display: flex;
-  flex-direction: column;
-  gap: clamp(12px, 1.6vw, 20px);
+.post-stats {
   margin: var(--spacing-lg) 0;
-}
-
-
-.post-action-buttons {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-start;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-sm) var(--spacing-md);
-  background:
-    linear-gradient(135deg, rgba(139, 92, 246, 0.04) 0%, rgba(192, 132, 252, 0.04) 100%),
-    var(--glass-bg-light);
-  border-radius: var(--radius-2xl);
-  border: 1px solid rgba(139, 92, 246, 0.1);
-  box-shadow:
-    0 3px 12px rgba(15, 23, 42, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
-}
-
-.post-action-buttons>* {
-  flex: 0 0 auto;
-  display: inline-flex;
-  min-width: 0;
-}
-
-.post-action-buttons .post-action-link {
-  display: inline-flex;
-}
-
-.post-action-buttons :deep(.glass-button) {
-  flex: 0 0 auto;
-  justify-content: center;
-  align-items: center;
-  min-height: 48px;
-  width: auto;
-  padding: 0 var(--spacing-md);
-}
-
-.post-action-buttons :deep(.glass-button svg) {
-  margin: 0;
-}
-
-/* 收藏按钮激活状态 */
-.post-action-buttons :deep(.glass-button.is-favorited) {
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.18) 0%, rgba(192, 132, 252, 0.18) 100%);
-  border-color: var(--color-primary);
-  color: var(--color-primary);
-}
-
-[data-theme='dark'] .post-action-buttons :deep(.glass-button.is-favorited) {
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.28) 0%, rgba(192, 132, 252, 0.28) 100%);
-  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.32);
 }
 
 .post-action-stats {
@@ -1975,6 +1799,8 @@ onUnmounted(() => {
   width: 100%;
   height: auto;
   display: block;
+  border-radius: var(--radius-lg);
+  /* 添加圆角与compact-media一致 */
 }
 
 .video-thumbnail {
@@ -2010,6 +1836,14 @@ onUnmounted(() => {
 
 .video-thumbnail:hover .play-button {
   transform: scale(1.1);
+}
+
+.video-player-container {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #000;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
 }
 
 .tags-section {
@@ -2066,7 +1900,7 @@ onUnmounted(() => {
   }
 
   .post-thumbnail-container {
-    margin-bottom: var(--spacing-xl);
+    width: 100%;
     min-height: min(70vh, 720px);
   }
 }
@@ -2089,7 +1923,7 @@ onUnmounted(() => {
   }
 
   .post-thumbnail-container {
-    margin-bottom: var(--spacing-lg);
+    width: 100%;
     min-height: 60vh;
     max-height: 70vh;
   }
@@ -2098,21 +1932,8 @@ onUnmounted(() => {
     min-height: inherit;
   }
 
-  .post-title {
-    font-size: var(--text-2xl);
-  }
-
   .post-description {
     padding: var(--spacing-md);
-  }
-
-  .post-action-buttons {
-    padding: var(--spacing-sm) var(--spacing-md);
-    gap: var(--spacing-sm);
-  }
-
-  .post-action-buttons>* {
-    flex: 0 0 auto;
   }
 
   .post-action-stats {
@@ -2126,10 +1947,6 @@ onUnmounted(() => {
 
   /* iPhone 14 Pro Max (430x932) 优化 */
   @media (max-width: 430px) {
-    .post-action-buttons>* {
-      flex: 0 0 auto;
-    }
-
     .post-stats-row {
       flex-direction: row;
       gap: var(--spacing-sm);
@@ -2175,24 +1992,6 @@ onUnmounted(() => {
 
   .back-button {
     margin-bottom: var(--spacing-md);
-  }
-
-  /* 移动端操作按钮优化 */
-  .post-actions {
-    gap: var(--spacing-md);
-    padding: var(--spacing-md);
-  }
-
-  .post-actions :deep(.glass-button) {
-    min-width: 120px;
-  }
-
-  .post-actions :deep(.glass-button)::after {
-    display: none;
-  }
-
-  .post-actions :deep(.glass-button) {
-    padding: var(--spacing-sm) var(--spacing-md);
   }
 }
 
