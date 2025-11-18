@@ -183,6 +183,23 @@ onUnmounted(() => {
   border-radius: var(--radius-xl);
   box-shadow: var(--glass-shadow);
   overflow: hidden;
+  width: 100%;
+  /* 确保容器不超出父元素 */
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* 小屏幕优化 */
+@media (max-width: 480px) {
+  .carousel-container {
+    gap: var(--spacing-xs, 8px);
+    padding: var(--spacing-sm, 12px);
+  }
+
+  .carousel-btn {
+    width: 32px;
+    height: 32px;
+  }
 }
 
 .carousel-track-container {
