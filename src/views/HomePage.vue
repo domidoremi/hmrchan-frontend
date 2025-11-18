@@ -158,7 +158,7 @@ import StatCardGrid from '@/components/ui/card/StatCardGrid.vue'
 import { useAuthStore, useSettingsStore, usePostsStore } from '@/stores'
 import { useWaterfallLayout } from '@/composables'
 import { useInfiniteScroll } from '@/composables'
-import { PLATFORMS, PLATFORM_COLORS } from '@/types'
+import { PLATFORMS, PLATFORM_COLORS, type Post } from '@/types'
 import { statsApi } from '@/api/services'
 import { formatNumber } from '@/utils/format'
 import { useErrorHandler } from '@/utils/error'
@@ -169,7 +169,10 @@ const settingsStore = useSettingsStore()
 const postsStore = usePostsStore()
 
 const { isAuthenticated, user } = storeToRefs(authStore)
-const { posts, loading, lastListFromFallback } = storeToRefs(postsStore)
+const { loading, lastListFromFallback } = storeToRefs(postsStore)
+
+// ✨ 主页使用独立的posts数组，不受explore页面筛选影响
+const posts = ref<Post[]>([])
 
 // 访问限制
 const accessLimit = computed(() => {
@@ -230,18 +233,30 @@ const { isLoading: isLoadingMore } = useInfiniteScroll({
 
 onMounted(async () => {
   try {
-    // 清空旧的posts数组，避免显示缓存数据
-    postsStore.posts = []
-
     // ✨ 优化：减少初始加载数量，提升首屏速度
     // 使用明确的参数，不修改全局 store filters，避免与 ExplorePage 冲突
-    await postsStore.fetchPosts({
+    const result = await postsStore.fetchPosts({
       page: currentPage.value,
       page_size: 6,
       sort_by: 'scraped_at',
       sort_order: 'desc',
       ignoreFilters: true,
     })
+
+    // ✨ 更新本地posts数组
+    if (result && result.items) {
+      posts.value = result.items
+    }
+
+    // 根据分页信息更新hasMore状态
+    if (result && result.page && result.pages) {
+      hasMore.value = result.page < result.pages
+      console.debug(
+        `[HomePage] 初始加载分页信息: 当前页 ${result.page}/${result.pages}, hasMore: ${hasMore.value}`,
+      )
+    } else if (result && result.items && result.items.length === 0) {
+      hasMore.value = false
+    }
 
     // 记录初始加载的卡片数量
     await nextTick()
@@ -252,6 +267,7 @@ onMounted(async () => {
 
     // 标记初始加载完成，启用无限滚动
     initialLoadComplete.value = true
+    console.debug('[HomePage] 初始加载完成，启用无限滚动')
 
     // 后台加载统计数据（非阻塞）
     loadStatsInBackground()
@@ -308,9 +324,14 @@ const loadMore = async () => {
       page_size: 8,
       sort_by: 'scraped_at',
       sort_order: 'desc',
-      append: true, // 追加到现有列表
+      append: false, // ❌ 不使用append模式，手动追加到本地数组
       ignoreFilters: true, // 忽略Explore页面的筛选状态
     })
+
+    // ✨ 手动追加到本地posts数组
+    if (result && result.items) {
+      posts.value = [...posts.value, ...result.items]
+    }
 
     // 使用pagination信息正确判断是否还有更多数据
     if (!result || result.items.length === 0) {

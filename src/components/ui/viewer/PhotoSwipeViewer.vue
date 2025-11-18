@@ -5,7 +5,9 @@
 <script setup lang="ts">
 import { watch, onUnmounted } from 'vue'
 import PhotoSwipe from 'photoswipe'
+import Plyr from 'plyr'
 import 'photoswipe/style.css'
+import 'plyr/dist/plyr.css'
 
 interface MediaItem {
   url: string
@@ -14,6 +16,12 @@ interface MediaItem {
   height?: number
   thumbnail?: string
   alt?: string
+  mediaId?: string // 用于获取字幕
+  subtitles?: Array<{
+    language: string
+    format: string
+    label: string
+  }> | null
 }
 
 interface Props {
@@ -31,6 +39,7 @@ const emit = defineEmits<{
 }>()
 
 let pswp: PhotoSwipe | null = null
+const plyrInstances: Map<string, Plyr> = new Map()
 
 // 转换媒体项为PhotoSwipe数据源
 const prepareDataSource = (items: MediaItem[]) => {
@@ -54,11 +63,11 @@ const prepareDataSource = (items: MediaItem[]) => {
 
       return imageData
     } else {
-      // 视频：将HTMLElement转换为HTML字符串
-      console.log(`[PhotoSwipeViewer] Video ${index}:`, item.url)
-      const videoElement = createVideoElement(item.url)
+      // 视频：使用Plyr创建高级视频播放器
+      console.log(`[PhotoSwipeViewer] Video ${index}:`, item.url, 'subtitles:', item.subtitles)
+      const videoElement = createPlyrVideoElement(item.url, index, item.subtitles, item.mediaId)
       return {
-        html: videoElement.outerHTML, // ✅ 使用outerHTML转换为HTML字符串
+        html: videoElement.outerHTML,
         width: item.width || 1920,
         height: item.height || 1080,
       }
@@ -66,51 +75,96 @@ const prepareDataSource = (items: MediaItem[]) => {
   })
 }
 
-// 创建视频元素
-const createVideoElement = (url: string): HTMLElement => {
+// 创建Plyr视频元素
+const createPlyrVideoElement = (
+  url: string,
+  index: number,
+  subtitles?: Array<{ language: string; format: string; label: string }> | null,
+  mediaId?: string,
+): HTMLElement => {
   const container = document.createElement('div')
   container.className = 'pswp__video-wrapper'
+  container.dataset.videoUrl = url
+  container.dataset.videoIndex = String(index)
 
   const video = document.createElement('video')
-  video.className = 'pswp__video'
-  video.controls = true
+  video.className = 'pswp__plyr-video'
   video.playsInline = true
-  video.preload = 'metadata'
+  video.controls = true
+  video.crossOrigin = 'anonymous' // 允许加载跨域字幕
 
   const source = document.createElement('source')
   source.src = url
   source.type = 'video/mp4'
 
   video.appendChild(source)
+
+  // 添加字幕轨道
+  if (subtitles && subtitles.length > 0 && mediaId) {
+    subtitles.forEach((subtitle, idx) => {
+      const track = document.createElement('track')
+      track.kind = 'subtitles'
+      track.label = subtitle.label
+      track.srclang = subtitle.language
+      // 构建字幕URL: /api/v1/media/{mediaId}/subtitles/{language}
+      track.src = `https://api.momichan.xyz/api/v1/media/${mediaId}/subtitles/${subtitle.language}`
+      track.default = idx === 0 // 第一个字幕设为默认
+      video.appendChild(track)
+      console.log(`[PhotoSwipeViewer] Added subtitle track: ${subtitle.label} (${subtitle.language})`)
+    })
+  }
+
   container.appendChild(video)
 
-  console.log('[PhotoSwipeViewer] ✅ 视频元素已创建:', {
-    url,
-    videoElement: video,
-    hasControls: video.controls,
-    className: video.className,
-  })
-
-  // 监听视频加载错误
-  video.addEventListener('error', () => {
-    console.error('[PhotoSwipeViewer] ❌ 视频加载失败:', {
-      url,
-      error: video.error,
-      errorCode: video.error?.code,
-      errorMessage: video.error?.message,
-    })
-  })
-
-  video.addEventListener('loadedmetadata', () => {
-    console.log('[PhotoSwipeViewer] ✅ 视频元数据已加载:', {
-      url,
-      duration: video.duration,
-      videoWidth: video.videoWidth,
-      videoHeight: video.videoHeight,
-    })
-  })
-
   return container
+}
+
+// 初始化Plyr实例
+const initPlyrForVideo = (videoElement: HTMLVideoElement, url: string) => {
+  if (plyrInstances.has(url)) return plyrInstances.get(url)!
+
+  const player = new Plyr(videoElement, {
+    iconUrl: '/plyr.svg',
+    blankVideo: '', // 禁用 CDN blank视频，避免证书错误
+    controls: [
+      'play-large',
+      'play',
+      'progress',
+      'current-time',
+      'duration',
+      'mute',
+      'volume',
+      'captions', // ⭐ 启用字幕按钮
+      'settings',
+      'fullscreen',
+    ],
+    settings: ['captions', 'quality', 'speed'], // ⭐ 设置中添加字幕选项
+    speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 2] },
+    ratio: '16:9',
+    fullscreen: { enabled: true, fallback: true, iosNative: true },
+    autopause: true,
+    captions: { active: true, language: 'auto', update: true }, // ⭐ 启用字幕
+    i18n: {
+      play: '播放',
+      pause: '暂停',
+      seek: '跳转',
+      volume: '音量',
+      mute: '静音',
+      unmute: '取消静音',
+      enterFullscreen: '全屏',
+      exitFullscreen: '退出全屏',
+      settings: '设置',
+      speed: '倍速',
+      normal: '正常',
+      captions: '字幕',
+      enabled: '启用',
+      disabled: '禁用',
+    },
+  })
+
+  plyrInstances.set(url, player)
+  console.log('[PhotoSwipeViewer] ✅ Plyr initialized for:', url)
+  return player
 }
 
 // 初始化PhotoSwipe
@@ -151,8 +205,8 @@ const initPhotoSwipe = () => {
     arrowKeys: true,
     escKey: true,
 
-    // 点击行为
-    tapAction: 'close',
+    // 点击行为 - 修改为toggle-controls以保留按钮
+    tapAction: 'toggle-controls',
     doubleTapAction: 'zoom',
 
     // 按钮标题
@@ -162,39 +216,39 @@ const initPhotoSwipe = () => {
     arrowNextTitle: '下一个',
   })
 
-  // 🎬 自定义内容加载器 - 处理视频HTML
+  // 🎬 自定义内容加载器 - 处理视频HTML并初始化Plyr
   pswp.on('contentLoad', (e: { content: { data: { html?: string | HTMLElement }, element?: HTMLElement | null, onLoaded?: () => void } }) => {
     const { content } = e
 
     // 如果是自定义HTML（视频）
     if (content.data.html && !content.element) {
-      console.log('[PhotoSwipeViewer] 🎬 自定义内容加载器 - 渲染视频元素', {
-        htmlType: typeof content.data.html,
-        htmlLength: (content.data.html as string).length,
-      })
+      console.log('[PhotoSwipeViewer] 🎬 自定义内容加载器 - 渲染视频元素')
 
       // 如果是HTMLElement，直接使用
       if (content.data.html instanceof HTMLElement) {
         content.element = content.data.html
-        console.log('[PhotoSwipeViewer] ✅ 使用HTMLElement')
       } else {
         // 如果是字符串，创建元素
         const div = document.createElement('div')
         div.innerHTML = content.data.html as string
         const videoWrapper = div.firstElementChild as HTMLElement || div
         content.element = videoWrapper
+      }
 
-        console.log('[PhotoSwipeViewer] ✅ 从HTML字符串创建元素', {
-          tagName: videoWrapper.tagName,
-          className: videoWrapper.className,
-          hasVideo: !!videoWrapper.querySelector('video'),
-        })
+      // 初始化Plyr
+      const videoElement = content.element?.querySelector('.pswp__plyr-video') as HTMLVideoElement
+      const videoUrl = content.element?.dataset.videoUrl
+
+      if (videoElement && videoUrl) {
+        // 延迟初始化Plyr，确保DOM已插入
+        setTimeout(() => {
+          initPlyrForVideo(videoElement, videoUrl)
+        }, 100)
       }
 
       // 通知PhotoSwipe内容已加载
       if (content.onLoaded) {
         content.onLoaded()
-        console.log('[PhotoSwipeViewer] ✅ onLoaded() 已调用')
       }
     }
   })
@@ -218,47 +272,28 @@ const initPhotoSwipe = () => {
     emit('close')
   })
 
-  // 监听slide切换，管理视频播放
+  // 监听slide切换，管理Plyr视频播放
   pswp.on('change', () => {
     const currentSlide = pswp?.currSlide
     if (currentSlide) {
-      // 暂停所有视频
-      const allVideos = document.querySelectorAll('.pswp__video')
-      allVideos.forEach((video) => {
-        (video as HTMLVideoElement).pause()
-      })
-
-      // 为当前视频添加交互
-      const currentVideo = currentSlide.container?.querySelector('.pswp__video') as HTMLVideoElement
-      if (currentVideo) {
-        // 移除之前的事件监听器
-        currentVideo.onclick = null
-
-        // 添加点击切换播放/暂停
-        currentVideo.onclick = (e) => {
-          e.stopPropagation()
-          if (currentVideo.paused) {
-            currentVideo.play()
-          } else {
-            currentVideo.pause()
-          }
+      // 暂停所有Plyr实例
+      plyrInstances.forEach((player) => {
+        if (player.playing) {
+          player.pause()
         }
-
-        // 可选：自动播放（根据需要启用）
-        // currentVideo.play().catch(() => {
-        //   // 自动播放失败时静默处理
-        // })
-      }
+      })
     }
   })
 
-  // 关闭时暂停所有视频
-  pswp.on('close', () => {
-    const allVideos = document.querySelectorAll('.pswp__video')
-    allVideos.forEach((video) => {
-      (video as HTMLVideoElement).pause()
+  // 监听destroy事件，清理Plyr实例
+  pswp.on('destroy', () => {
+    console.log('[PhotoSwipeViewer] Destroying all Plyr instances')
+    plyrInstances.forEach((player) => {
+      player.destroy()
     })
+    plyrInstances.clear()
   })
+
 
   console.log('[PhotoSwipeViewer] Calling pswp.init()...')
   pswp.init()
@@ -318,7 +353,7 @@ onUnmounted(() => {
   --pswp-bg: rgba(10, 10, 10, 0.98);
 }
 
-/* 视频容器样式 - 响应式适配 */
+/* 视频容器样式 - 响应式适配，支持Plyr */
 .pswp__video-wrapper {
   display: flex;
   align-items: center;
@@ -330,6 +365,27 @@ onUnmounted(() => {
   border-radius: 8px;
   padding: 0;
   margin: 0;
+}
+
+/* Plyr播放器样式 */
+.pswp__video-wrapper :deep(.plyr) {
+  width: 100%;
+  height: 100%;
+  --plyr-color-main: #8b5cf6;
+}
+
+.pswp__video-wrapper :deep(.plyr__video-wrapper) {
+  background: #000;
+  border-radius: 8px;
+}
+
+.pswp__plyr-video {
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 8px;
 }
 
 .pswp__video {
