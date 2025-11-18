@@ -1,46 +1,43 @@
 # API字段审计报告
 
+## ✅ 状态更新 (2025-11-18)
+
+**后端已全面移除 legacy API 路径！**
+
+所有 `/api/media/` 路径已被移除，统一使用 `/api/v1/media/`。  
+前端已清理所有兼容代码，不再需要路径重写。
+
+---
+
 ## 🔍 后端实际返回 vs 前端期望
 
-### 1. **thumbnail_url 路径问题**
+### 1. **thumbnail_url 路径问题** ✅ 已解决
 
-**后端返回**：
+**后端现在返回**（2025-11-18）：
 
 ```json
 {
-  "thumbnail_url": "/api/media/d743bcf9-84f3-4b74-a8c6-3192c02cea6e/stream"
+  "thumbnail_url": "/api/v1/media/d743bcf9-84f3-4b74-a8c6-3192c02cea6e/stream"
 }
 ```
 
-**前端处理**：
+**前端处理**（已简化）：
 
 ```typescript
 // src/utils/format/url.ts
 export function resolveMediaUrl(url: string): string {
-  // 后端返回 "/api/media/xxx"
-  // 前端重写为 "/api/v1/media/xxx"
-  if (path.startsWith('/api/media/')) {
-    return `${apiBaseUrl}/api/v1${path.substring('/api'.length)}`
-  }
+  // 直接使用后端返回的路径，无需重写
+  const apiBaseUrl = getApiBaseUrl()
+  const path = url.startsWith('/') ? url : `/${url}`
+  return `${apiBaseUrl}${path}`
 }
 ```
 
-**问题**：
+**状态**：
 
-- ❌ 后端使用 `/api/media/` (无版本号)
-- ❌ 前端重写为 `/api/v1/media/`
-- ⚠️ 如果后端没有 `/api/v1/media/` 路由，会404
-
-**解决方案**：
-
-```typescript
-// 选项1: 移除路径重写，使用后端返回的路径
-if (path.startsWith('/api/media/')) {
-  return `${apiBaseUrl}${path}` // 不重写版本号
-}
-
-// 选项2: 后端统一使用 /api/v1/media/ 路径
-```
+- ✅ 后端统一使用 `/api/v1/media/` 路径
+- ✅ 前端直接使用，无需重写
+- ✅ legacy API 已完全移除
 
 ---
 
@@ -195,23 +192,25 @@ mediaApi.getStreamUrl(media.id)
 
 ## 📊 字段使用统计
 
-| 字段             | 后端返回            | 前端使用        | 状态       |
-| ---------------- | ------------------- | --------------- | ---------- |
-| `id`             | ✅ UUID             | ✅ 正确使用     | 正常       |
-| `file_path`      | ✅ 服务器路径       | ⚠️ 不应直接使用 | 需审计     |
-| `file_type`      | ✅ "video"          | ✅ 正确使用     | 正常       |
-| `download_url`   | null                | 有fallback      | 正常       |
-| `thumbnail_path` | null                | 不常用          | 正常       |
-| `thumbnail_url`  | ✅ `/api/media/...` | ⚠️ 路径重写     | **需修复** |
-| `media_files`    | ✅ 数组             | ✅ 正确使用     | 正常       |
+| 字段             | 后端返回               | 前端使用    | 状态    |
+| ---------------- | ---------------------- | ----------- | ------- |
+| `id`             | ✅ UUID                | ✅ 正确使用 | ✅ 正常 |
+| `file_path`      | ✅ 服务器路径          | ✅ 已修复   | ✅ 正常 |
+| `file_type`      | ✅ "video"             | ✅ 正确使用 | ✅ 正常 |
+| `download_url`   | null                   | 有fallback  | ✅ 正常 |
+| `thumbnail_path` | null                   | 不常用      | ✅ 正常 |
+| `thumbnail_url`  | ✅ `/api/v1/media/...` | ✅ 直接使用 | ✅ 正常 |
+| `media_files`    | ✅ 数组                | ✅ 正确使用 | ✅ 正常 |
 
 ---
 
-## ✅ 检查清单
+## ✅ 检查清单（2025-11-18 更新）
 
-- [ ] 确认后端 `/api/media/` vs `/api/v1/media/` 路径
-- [ ] 修复 resolveMediaUrl 的路径重写逻辑
-- [ ] 审计所有直接使用 file_path 的代码
-- [ ] 确保所有媒体URL使用 mediaApi
+- [x] 确认后端统一使用 `/api/v1/media/` 路径
+- [x] 移除 resolveMediaUrl 的路径重写逻辑
+- [x] 审计所有直接使用 file_path 的代码（已改用 mediaApi）
+- [x] 确保所有媒体URL使用 mediaApi
+- [x] 移除弃用警告日志
+- [x] 简化前端代码逻辑
 - [ ] 测试缩略图和视频加载
 - [ ] 检查SW缓存策略
