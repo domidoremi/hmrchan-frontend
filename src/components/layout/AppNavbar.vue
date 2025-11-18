@@ -49,7 +49,8 @@
           </button>
 
           <Transition name="dropdown">
-            <div v-if="showQueuePanel" ref="queueMenuRef" class="queue-dropdown glass-card">
+            <div v-if="showQueuePanel" ref="queueMenuRef" class="queue-dropdown glass-card"
+              :class="{ 'mobile-modal': isMobile }" @click.self="isMobile && (showQueuePanel = false)">
               <div class="queue-header">
                 <span class="queue-title">{{ $t('offline.queueTitle') }}</span>
               </div>
@@ -78,9 +79,10 @@
             <Settings :size="20" />
           </button>
 
-          <!-- 桌面端设置面板，下拉在按钮下方展开 -->
+          <!-- 设置面板（桌面端下拉，移动端模态框） -->
           <Transition name="dropdown">
-            <div v-if="showSettingsPanel && !isMobile" class="settings-dropdown glass-card">
+            <div v-if="showSettingsPanel" class="settings-dropdown glass-card" :class="{ 'mobile-modal': isMobile }"
+              @click.self="isMobile && (showSettingsPanel = false)">
               <div class="settings-group">
                 <div class="settings-group-title">{{ $t('settings.theme') }}</div>
                 <div class="settings-theme-options">
@@ -110,7 +112,7 @@
                     @click="settingsStore.toggleSetting('showHeroSection')">
                     <span class="settings-toggle-label">{{
                       $t('settings.toggleHeroSection')
-                      }}</span>
+                    }}</span>
                     <span class="settings-toggle-indicator" :class="{ active: settings.showHeroSection }"></span>
                   </button>
 
@@ -124,7 +126,7 @@
                     @click="settingsStore.toggleSetting('enableSwipeNavigation')">
                     <span class="settings-toggle-label">{{
                       $t('settings.toggleSwipeNavigation')
-                      }}</span>
+                    }}</span>
                     <span class="settings-toggle-indicator" :class="{ active: settings.enableSwipeNavigation }"></span>
                   </button>
                 </div>
@@ -1253,6 +1255,30 @@ onUnmounted(() => {
   .bottom-nav-item.router-link-active {
     color: var(--color-primary);
     background: var(--glass-bg-light);
+  }
+
+  /* 移动端模态框样式 - 应用于queue和settings面板 */
+  .queue-dropdown.mobile-modal,
+  .settings-dropdown.mobile-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: calc(100vw - 32px);
+    max-width: 400px;
+    max-height: 80vh;
+    overflow-y: auto;
+    z-index: 2500;
+    box-shadow:
+      0 20px 60px rgba(0, 0, 0, 0.3),
+      0 0 0 100vmax rgba(0, 0, 0, 0.5);
+  }
+
+  .queue-dropdown.mobile-modal::before,
+  .settings-dropdown.mobile-modal::before {
+    position: sticky;
+    top: 0;
+    z-index: 1;
   }
 
   /* 移动端用户菜单 */

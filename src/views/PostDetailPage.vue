@@ -987,29 +987,29 @@ onUnmounted(() => {
   margin-left: calc(-1 * clamp(16px, 5vw, 48px));
   margin-right: calc(-1 * clamp(16px, 5vw, 48px));
   box-shadow: none;
+  /* 所有宽度统一：导航栏高度 + 安全间距 */
+  top: calc(var(--navbar-height, 66px) + 16px);
 }
 
-/* 移动端 (< 768px) - 导航栏高度66px + 16px间距 */
+/* 移动端 (< 768px) */
 @media (max-width: 767px) {
   .detail-topbar.is-sticky {
-    top: 82px;
-    /* 导航栏高度66px + 16px间距 = 82px */
+    --navbar-height: 66px;
   }
 }
 
-/* 平板端 (768px - 1023px) - 导航栏高度72px + 16px间距 */
+/* 平板端 (768px - 1023px) */
 @media (min-width: 768px) and (max-width: 1023px) {
   .detail-topbar.is-sticky {
-    top: 88px;
-    /* 导航栏高度72px + 16px间距 = 88px */
+    --navbar-height: 72px;
   }
 }
 
-/* 桌面端 (>= 1024px) - 导航栏高度78px + 16px间距 */
+/* 桌面端 (>= 1024px) - 修正：导航栏实际高度应为 var(--spacing-4)*2 + 40px logo高度 */
 @media (min-width: 1024px) {
   .detail-topbar.is-sticky {
-    top: 94px;
-    /* 导航栏高度78px + 16px间距 = 94px */
+    --navbar-height: 72px;
+    /* padding: 16px*2 + logo/button height: ~40px = ~72px */
   }
 }
 
