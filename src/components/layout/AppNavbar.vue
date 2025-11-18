@@ -112,7 +112,7 @@
                     @click="settingsStore.toggleSetting('showHeroSection')">
                     <span class="settings-toggle-label">{{
                       $t('settings.toggleHeroSection')
-                    }}</span>
+                      }}</span>
                     <span class="settings-toggle-indicator" :class="{ active: settings.showHeroSection }"></span>
                   </button>
 
@@ -126,7 +126,7 @@
                     @click="settingsStore.toggleSetting('enableSwipeNavigation')">
                     <span class="settings-toggle-label">{{
                       $t('settings.toggleSwipeNavigation')
-                    }}</span>
+                      }}</span>
                     <span class="settings-toggle-indicator" :class="{ active: settings.enableSwipeNavigation }"></span>
                   </button>
                 </div>
@@ -351,7 +351,9 @@ const refreshQueueStatus = async () => {
 }
 
 const toggleQueuePanel = async () => {
+  console.log('[AppNavbar] Toggle queue panel - before:', showQueuePanel.value, 'isMobile:', isMobile.value)
   showQueuePanel.value = !showQueuePanel.value
+  console.log('[AppNavbar] Toggle queue panel - after:', showQueuePanel.value)
   if (showQueuePanel.value) {
     await refreshQueueStatus()
   }
@@ -386,7 +388,9 @@ const isMobile = ref(false)
 
 const updateIsMobile = () => {
   if (typeof window === 'undefined') return
+  const wasMobile = isMobile.value
   isMobile.value = window.matchMedia('(max-width: 768px)').matches
+  console.log('[AppNavbar] isMobile updated:', wasMobile, '->', isMobile.value, 'window.innerWidth:', window.innerWidth)
 }
 
 interface BottomNavItem {
@@ -418,7 +422,9 @@ const localeOptions = [
 ]
 
 const toggleSettingsPanel = () => {
+  console.log('[AppNavbar] Toggle settings panel - before:', showSettingsPanel.value, 'isMobile:', isMobile.value)
   showSettingsPanel.value = !showSettingsPanel.value
+  console.log('[AppNavbar] Toggle settings panel - after:', showSettingsPanel.value)
 }
 
 const setTheme = (newTheme: Theme) => {
@@ -519,9 +525,9 @@ const handleLogout = () => {
 const handleClickOutside = (event: MouseEvent) => {
   const target = event.target as HTMLElement
 
+  // 用户菜单
   const inMobileUserTrigger = target.closest('.mobile-user-trigger')
   const inMobileUserModal = target.closest('.mobile-user-modal')
-
   if (
     userMenuRef.value &&
     !userMenuRef.value.contains(target) &&
@@ -531,13 +537,27 @@ const handleClickOutside = (event: MouseEvent) => {
     showUserMenu.value = false
   }
 
+  // 设置面板 - 检查是否点击了按钮或面板内部
   const inSettingsButton = target.closest('.settings-menu-container')
-  if (settingsMenuRef.value && !settingsMenuRef.value.contains(target) && !inSettingsButton) {
+  const inSettingsDropdown = target.closest('.settings-dropdown')
+  if (
+    showSettingsPanel.value &&
+    !inSettingsButton &&
+    !inSettingsDropdown
+  ) {
+    console.log('[AppNavbar] Closing settings panel from click outside')
     showSettingsPanel.value = false
   }
 
-  const inQueueContainer = target.closest('.queue-status-container')
-  if (queueMenuRef.value && !queueMenuRef.value.contains(target) && !inQueueContainer) {
+  // 队列面板 - 检查是否点击了按钮或面板内部
+  const inQueueButton = target.closest('.queue-status-container')
+  const inQueueDropdown = target.closest('.queue-dropdown')
+  if (
+    showQueuePanel.value &&
+    !inQueueButton &&
+    !inQueueDropdown
+  ) {
+    console.log('[AppNavbar] Closing queue panel from click outside')
     showQueuePanel.value = false
   }
 }
@@ -1260,18 +1280,20 @@ onUnmounted(() => {
   /* 移动端模态框样式 - 应用于queue和settings面板 */
   .queue-dropdown.mobile-modal,
   .settings-dropdown.mobile-modal {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: calc(100vw - 32px);
-    max-width: 400px;
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    right: auto !important;
+    /* 重置桌面端的right: 0 */
+    transform: translate(-50%, -50%) !important;
+    width: calc(100vw - 32px) !important;
+    max-width: 400px !important;
     max-height: 80vh;
     overflow-y: auto;
-    z-index: 2500;
+    z-index: 2500 !important;
     box-shadow:
       0 20px 60px rgba(0, 0, 0, 0.3),
-      0 0 0 100vmax rgba(0, 0, 0, 0.5);
+      0 0 0 100vmax rgba(0, 0, 0, 0.5) !important;
   }
 
   .queue-dropdown.mobile-modal::before,
