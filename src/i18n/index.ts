@@ -2,9 +2,9 @@
  * 国际化配置
  */
 import { createI18n } from 'vue-i18n'
-import en from './locales/en.json'
-import zhCN from './locales/zh-CN.json'
-import ja from './locales/ja.json'
+import en from './locales/en'
+import zhCN from './locales/zh-CN'
+import ja from './locales/ja'
 
 // 支持的语言
 export const SUPPORTED_LOCALES = ['en', 'zh-CN', 'ja'] as const

@@ -1,0 +1,39 @@
+{
+  "nav": {
+    "home": "ホーム",
+    "explore": "探索",
+    "authors": "作者",
+    "profile": "プロフィール",
+    "settings": "設定",
+    "advancedSettings": "詳細設定",
+    "favorites": "お気に入り",
+    "privacy": "プライバシーポリシー",
+    "login": "ログイン",
+    "register": "登録",
+    "logout": "ログアウト"
+  },
+  "platform": {
+    "youtube": "YouTube",
+    "twitter": "Twitter",
+    "tiktok": "TikTok",
+    "instagram": "Instagram",
+    "all": "すべてのプラットフォーム"
+  },
+  "search": {
+    "placeholder": "コンテンツを検索...",
+    "noResults": "結果が見つかりません",
+    "noResultsDesc": "検索条件に一致するコンテンツが見つかりませんでした。別のキーワードをお試しください",
+    "searching": "検索中...",
+    "tryDifferent": "別のキーワードを試す"
+  },
+  "filter": {
+    "sortBy": "並び替え",
+    "latest": "最新",
+    "popular": "人気",
+    "oldest": "古い順",
+    "platform": "プラットフォーム",
+    "hasMedia": "メディアあり",
+    "dateRange": "期間",
+    "published": "公開日"
+  }
+}

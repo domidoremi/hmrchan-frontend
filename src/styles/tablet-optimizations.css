@@ -1,0 +1,390 @@
+/**
+ * Tablet Optimizations
+ * Styles specific to tablet devices (768px-1024px)
+ */
+
+/* ==================== Tablet Breakpoint Range ==================== */
+
+/* Tablet Portrait (768px-1024px) */
+@media (min-width: 768px) and (max-width: 1024px) {
+  /* ==================== Layout Adjustments ==================== */
+
+  .container {
+    padding-left: var(--spacing-6, 24px);
+    padding-right: var(--spacing-6, 24px);
+  }
+
+  /* ==================== Navigation ==================== */
+
+  .app-navbar {
+    padding: var(--spacing-3) var(--spacing-4);
+  }
+
+  .navbar-links {
+    gap: var(--spacing-1);
+  }
+
+  .nav-link {
+    padding: var(--spacing-2) var(--spacing-3);
+    font-size: var(--text-sm);
+  }
+
+  /* ==================== Grid Layouts ==================== */
+
+  /* Default 2-column grid for tablets */
+  .grid-tablet-2 {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  .grid-tablet-3 {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+
+  /* ==================== Cards ==================== */
+
+  .card-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-4);
+  }
+
+  /* ==================== Touch Targets ==================== */
+
+  /* Slightly smaller than mobile but still comfortable */
+  button:not(.btn-xs):not(.btn-sm),
+  a.button:not(.btn-xs):not(.btn-sm) {
+    min-height: 40px;
+    min-width: 40px;
+  }
+
+  .action-button {
+    width: 40px;
+    height: 40px;
+  }
+
+  /* ==================== Typography ==================== */
+
+  /* Adjust font sizes for tablet */
+  h1 {
+    font-size: var(--text-3xl, 30px);
+  }
+
+  h2 {
+    font-size: var(--text-2xl, 24px);
+  }
+
+  h3 {
+    font-size: var(--text-xl, 20px);
+  }
+
+  /* ==================== Spacing ==================== */
+
+  /* Moderate spacing for tablets */
+  .section {
+    padding: var(--spacing-8) 0;
+  }
+
+  .section-large {
+    padding: var(--spacing-12) 0;
+  }
+}
+
+/* Tablet Landscape (1024px+) */
+@media (min-width: 1024px) and (max-width: 1280px) {
+  /* ==================== Layout Adjustments ==================== */
+
+  .container {
+    max-width: 1024px;
+  }
+
+  /* ==================== Grid Layouts ==================== */
+
+  .card-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--spacing-6);
+  }
+
+  /* ==================== Sidebar Layouts ==================== */
+
+  .layout-with-sidebar {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: var(--spacing-6);
+  }
+
+  .sidebar {
+    width: 280px;
+  }
+}
+
+/* ==================== Hover Effects for Hybrid Input ==================== */
+
+/* Only show hover effects on devices that support hover */
+@media (hover: hover) and (pointer: fine) {
+  .button:hover,
+  .nav-link:hover,
+  .card:hover {
+    /* Hover styles */
+  }
+}
+
+/* Use active states for touch devices */
+@media (hover: none) and (pointer: coarse) {
+  .button:active,
+  .nav-link:active,
+  .card:active {
+    transform: scale(0.98);
+    opacity: 0.9;
+  }
+}
+
+/* Hybrid devices: support both */
+@media (hover: hover) and (pointer: coarse) {
+  .button:hover {
+    /* Subtle hover effect */
+    opacity: 0.95;
+  }
+
+  .button:active {
+    /* Stronger active effect */
+    transform: scale(0.98);
+    opacity: 0.9;
+  }
+}
+
+/* ==================== Orientation-Specific Styles ==================== */
+
+/* Portrait Orientation */
+@media (min-width: 768px) and (max-width: 1024px) and (orientation: portrait) {
+  /* Stack layouts vertically */
+  .tablet-portrait-stack {
+    flex-direction: column !important;
+  }
+
+  /* Full width elements */
+  .tablet-portrait-full {
+    width: 100% !important;
+  }
+
+  /* 2-column grid */
+  .responsive-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Landscape Orientation */
+@media (min-width: 768px) and (max-width: 1024px) and (orientation: landscape) {
+  /* Horizontal layouts */
+  .tablet-landscape-row {
+    flex-direction: row !important;
+  }
+
+  /* 3-column grid */
+  .responsive-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  /* Reduce vertical padding */
+  .section {
+    padding: var(--spacing-6) 0;
+  }
+}
+
+/* ==================== Touch Gestures ==================== */
+
+@media (min-width: 768px) and (max-width: 1024px) {
+  /* Enable swipe gestures */
+  .swipeable {
+    touch-action: pan-y;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Enable pinch-zoom for images */
+  .zoomable {
+    touch-action: pinch-zoom;
+  }
+
+  /* Smooth scrolling */
+  .scrollable {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+}
+
+/* ==================== Modal and Overlay Adjustments ==================== */
+
+@media (min-width: 768px) and (max-width: 1024px) {
+  .modal-content {
+    max-width: 90%;
+    max-height: 85vh;
+  }
+
+  .modal-large {
+    max-width: 95%;
+  }
+
+  .modal-small {
+    max-width: 480px;
+  }
+}
+
+/* ==================== Form Layouts ==================== */
+
+@media (min-width: 768px) and (max-width: 1024px) {
+  /* Two-column form layout */
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-4);
+  }
+
+  .form-field-full {
+    grid-column: 1 / -1;
+  }
+
+  /* Form inputs */
+  input[type='text'],
+  input[type='email'],
+  input[type='password'],
+  textarea,
+  select {
+    min-height: 44px;
+    font-size: 16px; /* Prevent zoom on iOS */
+  }
+}
+
+/* ==================== Table Responsiveness ==================== */
+
+@media (min-width: 768px) and (max-width: 1024px) {
+  /* Horizontal scroll for wide tables */
+  .table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  table {
+    min-width: 600px;
+  }
+}
+
+/* ==================== Image Galleries ==================== */
+
+@media (min-width: 768px) and (max-width: 1024px) {
+  .image-gallery {
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--spacing-3);
+  }
+}
+
+@media (min-width: 1024px) and (max-width: 1280px) {
+  .image-gallery {
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--spacing-4);
+  }
+}
+
+/* ==================== Split View Layouts ==================== */
+
+@media (min-width: 768px) and (max-width: 1024px) {
+  .split-view {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-6);
+  }
+
+  .split-view-sidebar {
+    grid-template-columns: 300px 1fr;
+  }
+}
+
+/* ==================== Performance Optimizations ==================== */
+
+@media (min-width: 768px) and (max-width: 1024px) {
+  /* Hardware acceleration for animations */
+  .animated {
+    will-change: transform, opacity;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+  }
+
+  /* Optimize images */
+  img {
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+  }
+}
+
+/* ==================== Utility Classes ==================== */
+
+/* Hide on tablet */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .hide-tablet {
+    display: none !important;
+  }
+
+  .show-tablet {
+    display: block !important;
+  }
+}
+
+/* Show only on tablet portrait */
+@media (min-width: 768px) and (max-width: 1024px) and (orientation: portrait) {
+  .show-tablet-portrait {
+    display: block !important;
+  }
+
+  .hide-tablet-portrait {
+    display: none !important;
+  }
+}
+
+/* Show only on tablet landscape */
+@media (min-width: 768px) and (max-width: 1024px) and (orientation: landscape) {
+  .show-tablet-landscape {
+    display: block !important;
+  }
+
+  .hide-tablet-landscape {
+    display: none !important;
+  }
+}
+
+/* ==================== Accessibility ==================== */
+
+@media (min-width: 768px) and (max-width: 1024px) {
+  /* Ensure focus indicators are visible */
+  *:focus-visible {
+    outline: 2px solid var(--color-primary, #8b5cf6);
+    outline-offset: 2px;
+  }
+
+  /* Improve text selection */
+  ::selection {
+    background: var(--color-primary, #8b5cf6);
+    color: white;
+  }
+}
+
+/* ==================== Print Styles ==================== */
+
+@media print {
+  /* Hide navigation and non-essential elements */
+  .app-navbar,
+  .mobile-bottom-nav,
+  .sidebar,
+  .action-button {
+    display: none !important;
+  }
+
+  /* Optimize layout for printing */
+  .main-content {
+    padding: 0 !important;
+  }
+
+  /* Ensure readable text */
+  body {
+    font-size: 12pt;
+    line-height: 1.5;
+    color: #000;
+    background: #fff;
+  }
+}
