@@ -97,6 +97,7 @@ const initPlyrForVideo = (videoElement: HTMLVideoElement, url: string) => {
 
   const player = new Plyr(videoElement, {
     iconUrl: '/plyr.svg',
+    blankVideo: '', // 禁用 CDN blank视频，避免证书错误
     controls: [
       'play-large',
       'play',
@@ -112,6 +113,7 @@ const initPlyrForVideo = (videoElement: HTMLVideoElement, url: string) => {
     speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 2] },
     ratio: '16:9',
     fullscreen: { enabled: true, fallback: true, iosNative: true },
+    autopause: true,
     i18n: {
       play: '播放',
       pause: '暂停',
@@ -170,8 +172,8 @@ const initPhotoSwipe = () => {
     arrowKeys: true,
     escKey: true,
 
-    // 点击行为
-    tapAction: 'close',
+    // 点击行为 - 修改为toggle-controls以保留按钮
+    tapAction: 'toggle-controls',
     doubleTapAction: 'zoom',
 
     // 按钮标题
