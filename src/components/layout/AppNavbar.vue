@@ -75,7 +75,8 @@
 
         <!-- 统一设置按钮：语言/主题/布局等快捷设置（不跳转页面） -->
         <div class="settings-menu-container" ref="settingsMenuRef">
-          <button class="action-button" type="button" @click="toggleSettingsPanel" :aria-label="$t('nav.settings')">
+          <button class="action-button" type="button" @click.stop="toggleSettingsPanel"
+            :aria-label="$t('nav.settings')">
             <Settings :size="20" />
           </button>
 
@@ -436,75 +437,13 @@ const changeLanguage = async (newLocale: string) => {
   await changeLocale(newLocale as 'en' | 'zh-CN' | 'ja')
 }
 
-// 全局滑动切换主页面（仅移动端）
-const swipeStartX = ref<number | null>(null)
-const swipeStartY = ref<number | null>(null)
-const swipeActive = ref(false)
+// ❌ 已禁用：全局滑动切换主页面功能
+// const swipeStartX = ref<number | null>(null)
+// const swipeStartY = ref<number | null>(null)
+// const swipeActive = ref(false)
 
-const handleGlobalTouchStart = (event: TouchEvent) => {
-  if (!isMobile.value || !settings.value.enableSwipeNavigation || event.touches.length !== 1) return
-  const touch = event.touches[0]
-  if (!touch) return
-  const target = event.target as HTMLElement
-
-  // 避免与底部导航点击冲突
-  if (target.closest('.mobile-bottom-nav')) return
-
-  swipeStartX.value = touch.clientX
-  swipeStartY.value = touch.clientY
-  swipeActive.value = true
-}
-
-const handleGlobalTouchEnd = (event: TouchEvent) => {
-  if (!swipeActive.value || swipeStartX.value === null || swipeStartY.value === null) {
-    swipeActive.value = false
-    swipeStartX.value = null
-    swipeStartY.value = null
-    return
-  }
-
-  const touch = event.changedTouches[0]
-  if (!touch) {
-    swipeActive.value = false
-    swipeStartX.value = null
-    swipeStartY.value = null
-    return
-  }
-
-  const deltaX = touch.clientX - swipeStartX.value
-  const deltaY = touch.clientY - swipeStartY.value
-  const absDeltaX = Math.abs(deltaX)
-  const absDeltaY = Math.abs(deltaY)
-  const threshold = 80
-
-  swipeActive.value = false
-  swipeStartX.value = null
-  swipeStartY.value = null
-
-  if (!isMobile.value || !settings.value.enableSwipeNavigation) return
-
-  // 只有明显的水平滑动才触发
-  if (absDeltaX < threshold || absDeltaX <= absDeltaY * 1.2) {
-    return
-  }
-
-  const items = bottomNavItems.value
-  if (!items.length) return
-
-  const currentPath = router.currentRoute.value.path
-  const currentIndex = items.findIndex((item) => currentPath.startsWith(item.path))
-  if (currentIndex === -1) return
-
-  const direction = deltaX > 0 ? -1 : 1
-  const nextIndex = currentIndex + direction
-
-  // 不循环，超出范围直接忽略
-  if (nextIndex < 0 || nextIndex >= items.length) return
-
-  const nextItem = items[nextIndex]
-  if (!nextItem) return
-  router.push(nextItem.path)
-}
+// const handleGlobalTouchStart = (event: TouchEvent) => { ... }
+// const handleGlobalTouchEnd = (event: TouchEvent) => { ... }
 
 const userAvatarUrl = computed(() => {
   if (user.value?.avatar_url) {
@@ -571,9 +510,10 @@ onMounted(() => {
 
   if (typeof window !== 'undefined') {
     window.addEventListener('resize', updateIsMobile)
-    window.addEventListener('touchstart', handleGlobalTouchStart, { passive: true })
-    window.addEventListener('touchend', handleGlobalTouchEnd, { passive: true })
-    window.addEventListener('touchcancel', handleGlobalTouchEnd, { passive: true })
+    // ❌ 禁用手势跳转页面功能
+    // window.addEventListener('touchstart', handleGlobalTouchStart, { passive: true })
+    // window.addEventListener('touchend', handleGlobalTouchEnd, { passive: true })
+    // window.addEventListener('touchcancel', handleGlobalTouchEnd, { passive: true })
     window.addEventListener('online', handleOnlineChange)
     window.addEventListener('offline', handleOnlineChange)
 
@@ -587,9 +527,10 @@ onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
   if (typeof window !== 'undefined') {
     window.removeEventListener('resize', updateIsMobile)
-    window.removeEventListener('touchstart', handleGlobalTouchStart)
-    window.removeEventListener('touchend', handleGlobalTouchEnd)
-    window.removeEventListener('touchcancel', handleGlobalTouchEnd)
+    // ❌ 禁用手势跳转页面功能
+    // window.removeEventListener('touchstart', handleGlobalTouchStart)
+    // window.removeEventListener('touchend', handleGlobalTouchEnd)
+    // window.removeEventListener('touchcancel', handleGlobalTouchEnd)
     window.removeEventListener('online', handleOnlineChange)
     window.removeEventListener('offline', handleOnlineChange)
 
