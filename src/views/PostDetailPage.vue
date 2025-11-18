@@ -998,18 +998,12 @@ onUnmounted(() => {
   }
 }
 
-/* 平板端 (768px - 1023px) */
-@media (min-width: 768px) and (max-width: 1023px) {
+/* 平板端和桌面端 (>= 768px) */
+@media (min-width: 768px) {
   .detail-topbar.is-sticky {
-    --navbar-height: 72px;
-  }
-}
-
-/* 桌面端 (>= 1024px) - 修正：导航栏实际高度应为 var(--spacing-4)*2 + 40px logo高度 */
-@media (min-width: 1024px) {
-  .detail-topbar.is-sticky {
-    --navbar-height: 72px;
-    /* padding: 16px*2 + logo/button height: ~40px = ~72px */
+    --navbar-height: 0px;
+    /* 桌面端导航栏不是fixed，不需要偏移 */
+    top: 16px;
   }
 }
 
