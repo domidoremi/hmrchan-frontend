@@ -987,29 +987,23 @@ onUnmounted(() => {
   margin-left: calc(-1 * clamp(16px, 5vw, 48px));
   margin-right: calc(-1 * clamp(16px, 5vw, 48px));
   box-shadow: none;
+  /* 所有宽度统一：导航栏高度 + 安全间距 */
+  top: calc(var(--navbar-height, 66px) + 16px);
 }
 
-/* 移动端 (< 768px) - 导航栏高度66px + 16px间距 */
+/* 移动端 (< 768px) */
 @media (max-width: 767px) {
   .detail-topbar.is-sticky {
-    top: 82px;
-    /* 导航栏高度66px + 16px间距 = 82px */
+    --navbar-height: 66px;
   }
 }
 
-/* 平板端 (768px - 1023px) - 导航栏高度72px + 16px间距 */
-@media (min-width: 768px) and (max-width: 1023px) {
+/* 平板端和桌面端 (>= 768px) - 保持sticky行为 */
+@media (min-width: 768px) {
   .detail-topbar.is-sticky {
-    top: 88px;
-    /* 导航栏高度72px + 16px间距 = 88px */
-  }
-}
-
-/* 桌面端 (>= 1024px) - 导航栏高度78px + 16px间距 */
-@media (min-width: 1024px) {
-  .detail-topbar.is-sticky {
-    top: 94px;
-    /* 导航栏高度78px + 16px间距 = 94px */
+    position: sticky !important;
+    top: 16px !important;
+    /* 桌面端导航栏不是fixed，直接设置top偏移即可 */
   }
 }
 
