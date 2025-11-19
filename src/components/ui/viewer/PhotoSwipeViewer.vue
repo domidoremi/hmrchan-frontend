@@ -5,9 +5,8 @@
 <script setup lang="ts">
 import { watch, onUnmounted } from 'vue'
 import PhotoSwipe from 'photoswipe'
-import Plyr from 'plyr'
+import type Plyr from 'plyr'
 import 'photoswipe/style.css'
-import 'plyr/dist/plyr.css'
 
 interface MediaItem {
   url: string
@@ -165,8 +164,8 @@ const initPlyrForVideo = (videoElement: HTMLVideoElement, url: string) => {
   plyrInstances.set(url, player)
   console.log('[PhotoSwipeViewer] Plyr initialized for:', url)
 
-  // 强制修复video和poster尺寸 - Plyr会设置固定尺寸
-  player.on('ready', () => {
+  // 修复尺寸的通用函数
+  const fixElementSizes = () => {
     const container = videoElement.closest('.pswp__video-wrapper')
 
     // 修复video元素
@@ -179,7 +178,6 @@ const initPlyrForVideo = (videoElement: HTMLVideoElement, url: string) => {
       video.style.setProperty('max-width', '100%', 'important')
       video.style.setProperty('max-height', '100%', 'important')
       video.style.setProperty('object-fit', 'contain', 'important')
-      console.log('[PhotoSwipeViewer] Video resized to container')
     }
 
     // 修复poster元素
@@ -194,7 +192,6 @@ const initPlyrForVideo = (videoElement: HTMLVideoElement, url: string) => {
       poster.style.setProperty('background-size', 'contain', 'important')
       poster.style.setProperty('background-position', 'center', 'important')
       poster.style.setProperty('background-repeat', 'no-repeat', 'important')
-      console.log('[PhotoSwipeViewer] Poster resized to container')
     }
 
     // 修复 plyr__video-wrapper 内部容器
@@ -204,50 +201,48 @@ const initPlyrForVideo = (videoElement: HTMLVideoElement, url: string) => {
       plyrVideoWrapper.style.setProperty('height', '100%', 'important')
       plyrVideoWrapper.style.setProperty('max-width', '100%', 'important')
       plyrVideoWrapper.style.setProperty('max-height', '100%', 'important')
-      console.log('[PhotoSwipeViewer] Plyr video wrapper resized to container')
     }
+  }
+
+  // 在 ready 事件中修复
+  player.on('ready', () => {
+    fixElementSizes()
+    console.log('[PhotoSwipeViewer] Sizes fixed on ready')
+
+    // 延迟再次修复，确保 Plyr 完全初始化
+    setTimeout(fixElementSizes, 100)
+    setTimeout(fixElementSizes, 300)
+    setTimeout(fixElementSizes, 500)
   })
 
-  // 监听 loadedmetadata 事件，确保视频元数据加载后再次修复尺寸
+  // 监听 loadedmetadata 事件
   videoElement.addEventListener('loadedmetadata', () => {
-    const container = videoElement.closest('.pswp__video-wrapper')
+    fixElementSizes()
+    console.log('[PhotoSwipeViewer] Sizes fixed on loadedmetadata')
 
-    // 再次修复所有元素尺寸
-    const video = container?.querySelector('.pswp__plyr-video') as HTMLVideoElement
-    const poster = container?.querySelector('.plyr__poster') as HTMLElement
-    const plyrVideoWrapper = container?.querySelector('.plyr__video-wrapper') as HTMLElement
-
-    if (video) {
-      video.removeAttribute('width')
-      video.removeAttribute('height')
-      video.style.setProperty('width', '100%', 'important')
-      video.style.setProperty('height', '100%', 'important')
-      video.style.setProperty('max-width', '100%', 'important')
-      video.style.setProperty('max-height', '100%', 'important')
-      video.style.setProperty('object-fit', 'contain', 'important')
-    }
-
-    if (poster) {
-      poster.removeAttribute('width')
-      poster.removeAttribute('height')
-      poster.style.setProperty('width', '100%', 'important')
-      poster.style.setProperty('height', '100%', 'important')
-      poster.style.setProperty('max-width', '100%', 'important')
-      poster.style.setProperty('max-height', '100%', 'important')
-      poster.style.setProperty('background-size', 'contain', 'important')
-      poster.style.setProperty('background-position', 'center', 'important')
-      poster.style.setProperty('background-repeat', 'no-repeat', 'important')
-    }
-
-    if (plyrVideoWrapper) {
-      plyrVideoWrapper.style.setProperty('width', '100%', 'important')
-      plyrVideoWrapper.style.setProperty('height', '100%', 'important')
-      plyrVideoWrapper.style.setProperty('max-width', '100%', 'important')
-      plyrVideoWrapper.style.setProperty('max-height', '100%', 'important')
-    }
-
-    console.log('[PhotoSwipeViewer] All elements resized after metadata loaded')
+    // 延迟再次修复
+    setTimeout(fixElementSizes, 100)
   })
+
+  // 使用 MutationObserver 监控 poster 元素的属性变化
+  const container = videoElement.closest('.pswp__video-wrapper')
+  const poster = container?.querySelector('.plyr__poster') as HTMLElement
+
+  if (poster) {
+    const observer = new MutationObserver(() => {
+      // 当 poster 的属性被修改时，立即修复
+      fixElementSizes()
+    })
+
+    observer.observe(poster, {
+      attributes: true,
+      attributeFilter: ['style', 'width', 'height']
+    })
+
+      // 将 observer 存储到 player 对象上，以便后续清理
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ; (player as any)._posterObserver = observer
+  }
 
   return player
 }
@@ -258,7 +253,6 @@ const initPhotoSwipe = () => {
 
   if (!props.show || props.items.length === 0) {
     console.log('[PhotoSwipeViewer] Skipping init: show=', props.show, 'items.length=', props.items.length)
-    return
   }
 
   const dataSource = prepareDataSource(props.items)
@@ -311,7 +305,7 @@ const initPhotoSwipe = () => {
         const url = videoWrapper.dataset.videoUrl
         if (url) {
           console.log('[PhotoSwipeViewer] Activating video:', url)
-          initPlyrForVideo(videoElement, url)
+          initNativeVideoPlayer(videoElement, url)
         }
       }
     }
@@ -349,9 +343,9 @@ const initPhotoSwipe = () => {
     }
   })
 
-  // 监听destroy事件，清理Plyr实例
+  // 监听destroy事件，清理视频实例
   pswp.on('destroy', () => {
-    console.log('[PhotoSwipeViewer] Destroying all Plyr instances')
+    console.log('[PhotoSwipeViewer] Destroying all video instances')
     plyrInstances.forEach((player) => {
       player.destroy()
     })
