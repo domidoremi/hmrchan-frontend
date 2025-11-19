@@ -194,6 +194,55 @@ const initPlyrForVideo = (videoElement: HTMLVideoElement, url: string) => {
       poster.style.setProperty('object-fit', 'contain', 'important')
       console.log('[PhotoSwipeViewer] Poster resized to container')
     }
+
+    // 修复 plyr__video-wrapper 内部容器
+    const plyrVideoWrapper = container?.querySelector('.plyr__video-wrapper') as HTMLElement
+    if (plyrVideoWrapper) {
+      plyrVideoWrapper.style.setProperty('width', '100%', 'important')
+      plyrVideoWrapper.style.setProperty('height', '100%', 'important')
+      plyrVideoWrapper.style.setProperty('max-width', '100%', 'important')
+      plyrVideoWrapper.style.setProperty('max-height', '100%', 'important')
+      console.log('[PhotoSwipeViewer] Plyr video wrapper resized to container')
+    }
+  })
+
+  // 监听 loadedmetadata 事件，确保视频元数据加载后再次修复尺寸
+  videoElement.addEventListener('loadedmetadata', () => {
+    const container = videoElement.closest('.pswp__video-wrapper')
+
+    // 再次修复所有元素尺寸
+    const video = container?.querySelector('.pswp__plyr-video') as HTMLVideoElement
+    const poster = container?.querySelector('.plyr__poster') as HTMLElement
+    const plyrVideoWrapper = container?.querySelector('.plyr__video-wrapper') as HTMLElement
+
+    if (video) {
+      video.removeAttribute('width')
+      video.removeAttribute('height')
+      video.style.setProperty('width', '100%', 'important')
+      video.style.setProperty('height', '100%', 'important')
+      video.style.setProperty('max-width', '100%', 'important')
+      video.style.setProperty('max-height', '100%', 'important')
+      video.style.setProperty('object-fit', 'contain', 'important')
+    }
+
+    if (poster) {
+      poster.removeAttribute('width')
+      poster.removeAttribute('height')
+      poster.style.setProperty('width', '100%', 'important')
+      poster.style.setProperty('height', '100%', 'important')
+      poster.style.setProperty('max-width', '100%', 'important')
+      poster.style.setProperty('max-height', '100%', 'important')
+      poster.style.setProperty('object-fit', 'contain', 'important')
+    }
+
+    if (plyrVideoWrapper) {
+      plyrVideoWrapper.style.setProperty('width', '100%', 'important')
+      plyrVideoWrapper.style.setProperty('height', '100%', 'important')
+      plyrVideoWrapper.style.setProperty('max-width', '100%', 'important')
+      plyrVideoWrapper.style.setProperty('max-height', '100%', 'important')
+    }
+
+    console.log('[PhotoSwipeViewer] All elements resized after metadata loaded')
   })
 
   return player
@@ -377,18 +426,31 @@ onUnmounted(() => {
 
 /* Plyr播放器基础样式 */
 .pswp__video-wrapper :deep(.plyr) {
-  width: 100%;
-  height: 100%;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
   --plyr-color-main: #8b5cf6;
 }
 
+/* Plyr内部video-wrapper - 强制适配容器 */
+.pswp__video-wrapper :deep(.plyr__video-wrapper) {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  position: relative !important;
+}
+
 /* 原始video元素 - 强制适配容器 */
-.pswp__video-wrapper :deep(.pswp__plyr-video) {
+.pswp__video-wrapper :deep(.pswp__plyr-video),
+.pswp__video-wrapper :deep(.plyr__video-wrapper video) {
   width: 100% !important;
   height: 100% !important;
   max-width: 100% !important;
   max-height: 100% !important;
   object-fit: contain !important;
+  position: relative !important;
 }
 
 /* Plyr海报图 - 强制适配容器 */
@@ -398,6 +460,9 @@ onUnmounted(() => {
   max-width: 100% !important;
   max-height: 100% !important;
   object-fit: contain !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
 }
 
 /* 通用video元素 */
