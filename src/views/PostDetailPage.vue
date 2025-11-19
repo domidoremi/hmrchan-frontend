@@ -369,7 +369,7 @@
                   <Play :size="48" />
                   <span class="video-duration" v-if="media.duration">{{
                     formatDuration(media.duration)
-                  }}</span>
+                    }}</span>
                 </div>
               </div>
             </div>
@@ -511,11 +511,19 @@ const allMediaItems = computed(() => {
     mediaId?: UUID // 添加mediaId用于生成字幕URL
   }> = []
   const hasThumbnail = !!post.value.thumbnail_url
+  const thumbnailUrl = hasThumbnail ? resolveMediaUrl(post.value.thumbnail_url) : null
 
-  // 1. 添加缩略图（如果存在）
-  if (hasThumbnail) {
+  // 检查第一个media_file是否与thumbnail重复
+  const firstMediaUrl = post.value.media_files?.[0]
+    ? mediaApi.getStreamUrl(post.value.media_files[0].id)
+    : null
+  const isThumbnailDuplicate = thumbnailUrl && firstMediaUrl &&
+    (thumbnailUrl === firstMediaUrl || thumbnailUrl.includes(post.value.media_files?.[0]?.id || ''))
+
+  // 1. 添加缩略图（如果存在且不与第一个媒体文件重复）
+  if (hasThumbnail && !isThumbnailDuplicate) {
     items.push({
-      url: resolveMediaUrl(post.value.thumbnail_url),
+      url: thumbnailUrl!,
       type: 'image',
       // 缩略图通常没有固定尺寸，让PhotoSwipe自动检测
     })
@@ -814,8 +822,18 @@ const openMediaViewer = (mediaIndex: number) => {
 
 const getMediaIndex = (mediaFileIndex: number): number => {
   // 计算媒体文件在allMediaItems中的实际索引
-  // thumbnail在索引0，media_files从索引1开始
-  const offset = post.value?.thumbnail_url ? 1 : 0
+  // 如果thumbnail存在且不重复，它占用索引0，media_files从索引1开始
+  // 如果thumbnail与第一个media_file重复，则不添加单独的thumbnail，media_files从索引0开始
+  if (!post.value?.thumbnail_url) return mediaFileIndex
+
+  const thumbnailUrl = resolveMediaUrl(post.value.thumbnail_url)
+  const firstMediaUrl = post.value.media_files?.[0]
+    ? mediaApi.getStreamUrl(post.value.media_files[0].id)
+    : null
+  const isThumbnailDuplicate = thumbnailUrl && firstMediaUrl &&
+    (thumbnailUrl === firstMediaUrl || thumbnailUrl.includes(post.value.media_files?.[0]?.id || ''))
+
+  const offset = isThumbnailDuplicate ? 0 : 1
   return offset + mediaFileIndex
 }
 

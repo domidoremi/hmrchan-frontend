@@ -368,6 +368,76 @@ onUnmounted(() => {
   border-radius: 8px;
 }
 
+/* 响应式视频样式 */
+/* 移动端 (< 768px) - 全屏显示 */
+@media (max-width: 767px) {
+  .pswp__video-wrapper {
+    width: 100vw;
+    height: 100vh;
+    max-width: 100%;
+    max-height: 100%;
+    border-radius: 0;
+  }
+
+  .pswp__video-wrapper :deep(.plyr__video-wrapper) {
+    border-radius: 0;
+  }
+
+  .pswp__plyr-video {
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
+  }
+
+  /* 移动端Plyr控件大小调整 */
+  .pswp__video-wrapper :deep(.plyr__controls) {
+    padding: 8px;
+  }
+
+  .pswp__video-wrapper :deep(.plyr__control) {
+    padding: 8px;
+  }
+}
+
+/* 平板端 (768px - 1024px) - 适中尺寸 */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .pswp__video-wrapper {
+    max-width: 90vw;
+    max-height: 85vh;
+  }
+
+  .pswp__plyr-video {
+    max-width: 90vw;
+    max-height: 85vh;
+  }
+}
+
+/* 桌面端 (> 1024px) - 限制最大尺寸 */
+@media (min-width: 1025px) {
+  .pswp__video-wrapper {
+    max-width: 85vw;
+    max-height: 85vh;
+  }
+
+  .pswp__plyr-video {
+    max-width: 1600px;
+    max-height: 900px;
+  }
+}
+
+/* 超宽屏 (> 1920px) - 保持合理尺寸 */
+@media (min-width: 1921px) {
+  .pswp__video-wrapper {
+    max-width: 75vw;
+    max-height: 80vh;
+  }
+
+  .pswp__plyr-video {
+    max-width: 1920px;
+    max-height: 1080px;
+  }
+}
+
 .pswp__video {
   width: 100%;
   height: 100%;
