@@ -53,7 +53,6 @@ export default defineConfig(({ mode }) => ({
     exclude: [
       'vite-plugin-vue-devtools',
       'lucide-vue-next', // 图标库按需加载，不预构建
-      'plyr', // 媒体播放器按需加载
       'photoswipe', // 图片查看器按需加载
       'masonry-layout', // 瀑布流布局按需加载
       'gsap', // 动画库按需加载
@@ -133,10 +132,7 @@ export default defineConfig(({ mode }) => ({
             if (id.includes('gsap')) {
               return 'animations'
             }
-            // Plyr 播放器 - 仅媒体页面使用
-            if (id.includes('plyr')) {
-              return 'media-player'
-            }
+
             // PhotoSwipe 查看器 - 仅详情页使用
             if (id.includes('photoswipe')) {
               return 'photo-viewer'
@@ -210,10 +206,7 @@ export default defineConfig(({ mode }) => ({
             if (id.includes('/ui/viewer/PhotoSwipe')) {
               return 'viewer-photoswipe'
             }
-            // VideoPlayer组件（详情页+列表）
-            if (id.includes('/ui/video/VideoPlayer')) {
-              return 'viewer-video'
-            }
+
             // 其他查看器组件
             if (id.includes('/ui/viewer')) {
               return 'components-viewer'

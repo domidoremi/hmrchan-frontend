@@ -12,7 +12,6 @@
 
 /* Component Styles */
 /* navbar.css & post-card.css - 已迁移至组件scoped样式 */
-@import './components/plyr-custom.css'; /* Plyr.js custom styles */
 
 /* Page Styles */
 @import './pages/home.css'; /* HomePage specific styles */

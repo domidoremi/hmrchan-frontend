@@ -7,35 +7,21 @@
       </button>
 
       <!-- 上一张按钮 -->
-      <button
-        v-if="images.length > 1"
-        class="viewer-btn prev-btn"
-        @click="prev"
-        :disabled="currentIndex === 0"
-      >
+      <button v-if="images.length > 1" class="viewer-btn prev-btn" @click="prev" :disabled="currentIndex === 0">
         <ChevronLeft :size="32" />
       </button>
 
       <!-- 图片 -->
       <div class="image-container">
-        <img
-          :src="currentImage"
-          :alt="`Image ${currentIndex + 1}`"
-          @load="onImageLoad"
-          :style="imageStyle"
-        />
+        <img :src="currentImage" :alt="`Image ${currentIndex + 1}`" @load="onImageLoad" :style="imageStyle" />
         <div v-if="loading" class="loading-spinner">
-          <div class="spinner"></div>
+          <div class="spinner spinner-xl"></div>
         </div>
       </div>
 
       <!-- 下一张按钮 -->
-      <button
-        v-if="images.length > 1"
-        class="viewer-btn next-btn"
-        @click="next"
-        :disabled="currentIndex === images.length - 1"
-      >
+      <button v-if="images.length > 1" class="viewer-btn next-btn" @click="next"
+        :disabled="currentIndex === images.length - 1">
         <ChevronRight :size="32" />
       </button>
 
@@ -253,20 +239,7 @@ if (typeof window !== 'undefined') {
   transform: translate(-50%, -50%);
 }
 
-.spinner {
-  width: 50px;
-  height: 50px;
-  border: 4px solid rgba(255, 255, 255, 0.1);
-  border-top-color: white;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
+/* Spinner styles moved to base.css and utilities.css - use .spinner.spinner-xl */
 
 .image-info {
   position: absolute;
