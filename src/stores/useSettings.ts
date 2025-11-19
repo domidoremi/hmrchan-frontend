@@ -1,13 +1,17 @@
 /**
  * 用户设置状态管理
- * 支持 localStorage 和服务器同步
- * v2.0 - 增强错误处理：使用统一的错误处理机制
+ * v3.0 - 安全增强版
+ * - 使用安全存储
+ * - 防止竞态条件
+ * - 支持 localStorage 和服务器同步
+ * - 增强浏览器兼容性
  */
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { api } from '@/api/client'
 import { handleError } from '@/utils/error'
 import logger from '@/utils/logger'
+import { secureLocalStorage } from '@/utils/secureStorage'
 import { useAuthStore } from './useAuth'
 import { useToastStore } from './useToast'
 
@@ -58,6 +62,10 @@ export const useSettingsStore = defineStore('settings', () => {
   // 设置日志上下文
   const logContext = { category: 'SettingsStore' }
 
+  // 操作锁，防止竞态条件
+  let syncInProgress = false
+  let loadInProgress = false
+
   // ==================== 状态 ====================
   const settings = ref<UserSettings>({ ...DEFAULT_SETTINGS })
   const syncing = ref(false)
@@ -67,20 +75,22 @@ export const useSettingsStore = defineStore('settings', () => {
   // ==================== Actions ====================
 
   /**
-   * 初始化设置（从localStorage加载）
+   * 初始化设置（从安全存储加载）
    */
-  function initSettings() {
+  async function initSettings() {
     try {
-      const saved = localStorage.getItem('user-settings')
+      const saved = await secureLocalStorage.get<UserSettings>('user-settings', {
+        silent: true,
+      })
+
       if (saved) {
-        const parsed = JSON.parse(saved)
-        settings.value = { ...DEFAULT_SETTINGS, ...parsed }
-        logger.debug('Settings loaded from localStorage', logContext)
+        settings.value = { ...DEFAULT_SETTINGS, ...saved }
+        logger.debug('Settings loaded from secure storage', logContext)
       } else {
         logger.debug('Using default settings', logContext)
       }
     } catch (err) {
-      logger.error('Failed to parse user settings', {
+      logger.error('Failed to load user settings', {
         ...logContext,
         error: err instanceof Error ? err.message : 'Unknown error',
       })
@@ -89,14 +99,16 @@ export const useSettingsStore = defineStore('settings', () => {
   }
 
   /**
-   * 保存设置到localStorage
+   * 保存设置到安全存储
    */
-  function saveSettings() {
+  async function saveSettings() {
     try {
-      localStorage.setItem('user-settings', JSON.stringify(settings.value))
-      logger.debug('Settings saved to localStorage', logContext)
+      await secureLocalStorage.set('user-settings', settings.value, {
+        silent: true,
+      })
+      logger.debug('Settings saved to secure storage', logContext)
     } catch (err) {
-      logger.error('Failed to save settings to localStorage', {
+      logger.error('Failed to save settings', {
         ...logContext,
         error: err instanceof Error ? err.message : 'Unknown error',
       })
@@ -114,6 +126,14 @@ export const useSettingsStore = defineStore('settings', () => {
       logger.warn('Cannot sync to server: user not authenticated', logContext)
       return false
     }
+
+    // 防止重复同步
+    if (syncInProgress) {
+      logger.warn('Sync already in progress', logContext)
+      return false
+    }
+
+    syncInProgress = true
 
     try {
       syncing.value = true
@@ -136,6 +156,7 @@ export const useSettingsStore = defineStore('settings', () => {
       return false
     } finally {
       syncing.value = false
+      syncInProgress = false
     }
   }
 
@@ -151,6 +172,14 @@ export const useSettingsStore = defineStore('settings', () => {
       return false
     }
 
+    // 防止重复加载
+    if (loadInProgress) {
+      logger.warn('Load already in progress', logContext)
+      return false
+    }
+
+    loadInProgress = true
+
     try {
       syncing.value = true
       error.value = null
@@ -161,7 +190,7 @@ export const useSettingsStore = defineStore('settings', () => {
 
       if (data) {
         settings.value = { ...DEFAULT_SETTINGS, ...data }
-        saveSettings()
+        await saveSettings()
         if (data.updatedAt) {
           lastSyncedAt.value = new Date(data.updatedAt)
         } else {
@@ -180,6 +209,7 @@ export const useSettingsStore = defineStore('settings', () => {
       return false
     } finally {
       syncing.value = false
+      loadInProgress = false
     }
   }
 
@@ -189,11 +219,11 @@ export const useSettingsStore = defineStore('settings', () => {
   async function updateSetting<K extends keyof UserSettings>(key: K, value: UserSettings[K]) {
     try {
       settings.value[key] = value
-      saveSettings()
+      await saveSettings()
 
-      logger.debug('Setting updated', { ...logContext, key, value })
+      logger.debug('Setting updated', { ...logContext, key })
 
-      // 如果已登录，同步到服务器
+      // 如果已登录，同步到服务器（防抖处理由调用方控制）
       const authStore = useAuthStore()
       if (authStore.isAuthenticated) {
         await syncToServer()
@@ -215,9 +245,9 @@ export const useSettingsStore = defineStore('settings', () => {
       const currentValue = settings.value[key]
       if (typeof currentValue === 'boolean') {
         ;(settings.value[key] as boolean) = !currentValue
-        saveSettings()
+        await saveSettings()
 
-        logger.debug('Setting toggled', { ...logContext, key, value: settings.value[key] })
+        logger.debug('Setting toggled', { ...logContext, key })
 
         // 如果已登录，同步到服务器
         const authStore = useAuthStore()
@@ -237,10 +267,10 @@ export const useSettingsStore = defineStore('settings', () => {
   /**
    * 重置所有设置
    */
-  function resetSettings() {
+  async function resetSettings() {
     try {
       settings.value = { ...DEFAULT_SETTINGS }
-      saveSettings()
+      await saveSettings()
       logger.info('Settings reset to defaults', logContext)
     } catch (err) {
       logger.error('Failed to reset settings', {
@@ -270,11 +300,11 @@ export const useSettingsStore = defineStore('settings', () => {
   /**
    * 导入设置
    */
-  function importSettings(settingsJson: string) {
+  async function importSettings(settingsJson: string) {
     try {
       const imported = JSON.parse(settingsJson)
       settings.value = { ...DEFAULT_SETTINGS, ...imported }
-      saveSettings()
+      await saveSettings()
       logger.info('Settings imported successfully', logContext)
       return true
     } catch (err) {
