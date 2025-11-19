@@ -4,7 +4,8 @@
  */
 
 import { indexedDB, type OfflineAction } from './indexedDB'
-import type { AxiosInstance } from 'axios'
+import type { KyInstance } from 'ky'
+import { logger } from '@/utils/logger'
 
 interface QueueConfig {
   maxRetries: number
@@ -16,7 +17,7 @@ interface QueueConfig {
 class OfflineQueueManager {
   private config: QueueConfig
   private isSyncing = false
-  private apiClient: AxiosInstance | null = null
+  private apiClient: KyInstance | null = null
 
   constructor(config: Partial<QueueConfig> = {}) {
     this.config = {
@@ -32,7 +33,7 @@ class OfflineQueueManager {
   /**
    * 设置API客户端
    */
-  setApiClient(client: AxiosInstance): void {
+  setApiClient(client: KyInstance): void {
     this.apiClient = client
   }
 
@@ -41,12 +42,12 @@ class OfflineQueueManager {
    */
   private setupNetworkListeners(): void {
     window.addEventListener('online', () => {
-      console.log('[Offline Queue] Network online, starting sync...')
+      logger.debug('Network online, starting sync...', { category: 'OfflineQueue' })
       this.syncAll()
     })
 
     window.addEventListener('offline', () => {
-      console.log('[Offline Queue] Network offline')
+      logger.debug('Network offline', { category: 'OfflineQueue' })
     })
   }
 
@@ -66,7 +67,7 @@ class OfflineQueueManager {
     }
 
     const id = await indexedDB.addToOfflineQueue(offlineAction)
-    console.log(`[Offline Queue] Added ${action} action:`, id)
+    logger.debug(`Added ${action} action: ${id}`, { category: 'OfflineQueue' })
 
     // 如果在线，立即尝试同步
     if (navigator.onLine) {
@@ -81,7 +82,7 @@ class OfflineQueueManager {
    */
   private async sync(actionId: number): Promise<boolean> {
     if (!this.apiClient) {
-      console.warn('[Offline Queue] No API client set')
+      logger.warn('No API client set', { category: 'OfflineQueue' })
       return false
     }
 
@@ -91,7 +92,7 @@ class OfflineQueueManager {
       const action = actions.find((a) => a.id === actionId)
 
       if (!action) {
-        console.warn(`[Offline Queue] Action ${actionId} not found`)
+        logger.warn(`Action ${actionId} not found`, { category: 'OfflineQueue' })
         return false
       }
 
@@ -104,7 +105,7 @@ class OfflineQueueManager {
       if (success) {
         // 成功：更新状态
         await indexedDB.updateActionStatus(actionId, 'synced')
-        console.log(`[Offline Queue] Synced action ${actionId}`)
+        logger.debug(`Synced action ${actionId}`, { category: 'OfflineQueue' })
 
         // 触发回调
         if (this.config.onSync) {
@@ -122,13 +123,15 @@ class OfflineQueueManager {
           const delay = this.config.retryDelay * Math.pow(2, action.retry_count)
           setTimeout(() => this.sync(actionId), delay)
 
-          console.log(`[Offline Queue] Will retry action ${actionId} after ${delay}ms`)
+          logger.debug(`Will retry action ${actionId} after ${delay}ms`, {
+            category: 'OfflineQueue',
+          })
         } else {
           // 超过重试次数，标记为失败
           await indexedDB.updateActionStatus(actionId, 'failed', 'Max retries exceeded')
-          console.error(
-            `[Offline Queue] Action ${actionId} failed after ${this.config.maxRetries} retries`,
-          )
+          logger.error(`Action ${actionId} failed after ${this.config.maxRetries} retries`, {
+            category: 'OfflineQueue',
+          })
 
           if (this.config.onError) {
             this.config.onError(action, new Error('Max retries exceeded'))
@@ -138,7 +141,7 @@ class OfflineQueueManager {
         return false
       }
     } catch (error) {
-      console.error('[Offline Queue] Sync error:', error)
+      logger.error('Sync error:', { category: 'OfflineQueue' }, error)
       await indexedDB.updateActionStatus(
         actionId,
         'failed',
@@ -158,7 +161,9 @@ class OfflineQueueManager {
       switch (action.action) {
         case 'favorite':
           await this.apiClient.post('/favorites', {
-            post_id: action.data.post_id,
+            json: {
+              post_id: action.data.post_id,
+            },
           })
           break
 
@@ -172,18 +177,20 @@ class OfflineQueueManager {
 
         case 'comment':
           await this.apiClient.post(`/posts/${action.data.post_id}/comments`, {
-            content: action.data.content,
+            json: {
+              content: action.data.content,
+            },
           })
           break
 
         default:
-          console.warn(`[Offline Queue] Unknown action: ${action.action}`)
+          logger.warn(`Unknown action: ${action.action}`, { category: 'OfflineQueue' })
           return false
       }
 
       return true
     } catch (error) {
-      console.error(`[Offline Queue] Execute action failed:`, error)
+      logger.error('Execute action failed:', { category: 'OfflineQueue' }, error)
       return false
     }
   }
@@ -193,21 +200,21 @@ class OfflineQueueManager {
    */
   async syncAll(): Promise<void> {
     if (this.isSyncing) {
-      console.log('[Offline Queue] Sync already in progress')
+      logger.debug('Sync already in progress', { category: 'OfflineQueue' })
       return
     }
 
     if (!navigator.onLine) {
-      console.log('[Offline Queue] Cannot sync while offline')
+      logger.debug('Cannot sync while offline', { category: 'OfflineQueue' })
       return
     }
 
     this.isSyncing = true
-    console.log('[Offline Queue] Starting sync all...')
+    logger.debug('Starting sync all...', { category: 'OfflineQueue' })
 
     try {
       const actions = await indexedDB.getPendingActions()
-      console.log(`[Offline Queue] Found ${actions.length} pending actions`)
+      logger.debug(`Found ${actions.length} pending actions`, { category: 'OfflineQueue' })
 
       // 顺序同步（避免并发冲突）
       for (const action of actions) {
@@ -220,10 +227,10 @@ class OfflineQueueManager {
 
       // 清理已同步的操作
       const cleared = await indexedDB.clearSyncedActions()
-      console.log(`[Offline Queue] Cleared ${cleared} synced actions`)
+      logger.debug(`Cleared ${cleared} synced actions`, { category: 'OfflineQueue' })
     } finally {
       this.isSyncing = false
-      console.log('[Offline Queue] Sync complete')
+      logger.debug('Sync complete', { category: 'OfflineQueue' })
     }
   }
 
@@ -249,7 +256,7 @@ class OfflineQueueManager {
    */
   async clearQueue(): Promise<void> {
     await indexedDB.clearSyncedActions()
-    console.log('[Offline Queue] Queue cleared')
+    logger.debug('Queue cleared', { category: 'OfflineQueue' })
   }
 
   /**

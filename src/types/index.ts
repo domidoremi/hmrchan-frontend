@@ -107,6 +107,7 @@ export interface PostListParams {
   min_likes?: number
   sort_by?: string
   sort_order?: 'asc' | 'desc'
+  [key: string]: string | number | boolean | UUID | undefined
 }
 
 // ========== 媒体 ==========

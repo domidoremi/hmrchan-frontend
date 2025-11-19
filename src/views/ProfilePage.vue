@@ -244,6 +244,7 @@ import { getUserAvatar } from '@/utils/avatar'
 import { useImageUpload } from '@/composables'
 import { useI18n } from 'vue-i18n'
 import { isAxiosError } from '@/utils/typeGuards'
+import { logger } from '@/utils/logger'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -353,7 +354,7 @@ watch(
         const locale = (localStorage.getItem('language') as 'en' | 'zh-CN' | 'ja') || 'zh-CN'
         formattedJoinedAt.value = await formatRelativeTime(createdAt, locale)
       } catch (error) {
-        console.error('Failed to format date:', error)
+        logger.error('Failed to format date', { category: 'ProfilePage' }, error)
         formattedJoinedAt.value = new Date(createdAt).toLocaleDateString()
       }
     } else {
@@ -389,7 +390,7 @@ async function loadStats() {
       viewsCount.value = statsResponse.views_count || 0
     }
 
-    console.debug('[ProfilePage] User stats loaded:', response)
+    logger.debug('User stats loaded', { category: 'ProfilePage' }, response)
   } catch (error) {
     handleError(error, { silent: true, customMessage: 'Failed to load user stats' })
     // 加载失败时使用默认值
@@ -484,18 +485,18 @@ async function handleAvatarUpload() {
 
     // 上传到服务器
     const response = await uploadApi.uploadAvatar(file)
-    console.log('✅ Avatar uploaded:', response)
+    logger.info('Avatar uploaded', { category: 'ProfilePage' }, response)
 
     // 更新用户信息（强制刷新）
     await authStore.fetchCurrentUser()
 
     // 更新刷新key，触发图片重新加载
     avatarRefreshKey.value = Date.now()
-    console.log('🔄 Force refresh avatar with new key:', avatarRefreshKey.value)
+    logger.debug('Force refresh avatar with new key', { category: 'ProfilePage', key: avatarRefreshKey.value })
 
     toastStore.success(t('profile.avatarUploadSuccess'))
   } catch (error: unknown) {
-    console.error('❌ Avatar upload error:', error)
+    logger.error('Avatar upload error', { category: 'ProfilePage' }, error)
 
     let errorMsg = t('profile.avatarUploadFailed')
 
@@ -542,7 +543,7 @@ async function handleDeleteAccount() {
   deleting.value = true
   try {
     await api.delete(`/users/${user.value?.id}`, {
-      data: { password: deleteForm.value.password },
+      json: { password: deleteForm.value.password },
     })
 
     toastStore.success(t('profile.accountDeleted'))

@@ -602,6 +602,33 @@
   }
 }
 
+/* ========== Loading Spinner Utilities ========== */
+
+/* Spinner size variants - use with .spinner from base.css */
+.spinner-sm {
+  width: 16px;
+  height: 16px;
+  border-width: 2px;
+}
+
+.spinner-md {
+  width: 24px;
+  height: 24px;
+  border-width: 2px;
+}
+
+.spinner-lg {
+  width: 32px;
+  height: 32px;
+  border-width: 3px;
+}
+
+.spinner-xl {
+  width: 50px;
+  height: 50px;
+  border-width: 3px;
+}
+
 /* ========== Accessibility Utilities ========== */
 
 /* Skip to main content */
