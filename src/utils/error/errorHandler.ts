@@ -3,7 +3,6 @@
  * Unified Error Handling System
  */
 
-import type { AxiosError } from 'axios'
 import { useI18n } from 'vue-i18n'
 import { useToastStore } from '@/stores'
 import { errorMonitor } from './errorMonitor'
@@ -22,9 +21,19 @@ export interface ErrorHandlerOptions {
 }
 
 /**
- * 解析Axios错误
+ * HTTP错误接口（兼容多种HTTP客户端）
  */
-export function parseAxiosError(error: AxiosError): ErrorResponse {
+interface HttpError extends Error {
+  response?: {
+    status: number
+    data?: Record<string, unknown>
+  }
+}
+
+/**
+ * 解析HTTP错误（兼容axios和ky）
+ */
+export function parseHttpError(error: HttpError): ErrorResponse {
   const { t } = useI18n()
 
   // 网络错误
@@ -113,8 +122,8 @@ export function handleError(
   let errorResponse: ErrorResponse
 
   // 解析错误类型
-  if ((error as AxiosError).isAxiosError) {
-    errorResponse = parseAxiosError(error as AxiosError)
+  if ((error as HttpError).response) {
+    errorResponse = parseHttpError(error as HttpError)
   } else if (error instanceof Error) {
     errorResponse = {
       message: customMessage || error.message,
@@ -127,15 +136,27 @@ export function handleError(
     }
   }
 
-  // 记录到控制台
+  // 记录到控制台（使用 logger 而不是 console.error）
   if (logToConsole) {
-    console.error(`[${context}] Error:`, {
-      message: errorResponse.message,
-      code: errorResponse.code,
-      status: errorResponse.status,
-      details: errorResponse.details,
-      original: error,
-    })
+    // 动态导入 logger 以避免循环依赖
+    import('@/utils/logger')
+      .then(({ logger }) => {
+        logger.error(`Error: ${errorResponse.message}`, {
+          category: context,
+          code: errorResponse.code,
+          status: errorResponse.status,
+        })
+      })
+      .catch(() => {
+        // 如果 logger 不可用，降级到 console.error
+        console.error(`[${context}] Error:`, {
+          message: errorResponse.message,
+          code: errorResponse.code,
+          status: errorResponse.status,
+          details: errorResponse.details,
+          original: error,
+        })
+      })
   }
 
   // 错误监控
@@ -178,6 +199,41 @@ export async function withErrorHandling<T>(
 }
 
 /**
+ * 同步操作错误处理包装器
+ */
+export function withErrorHandlingSync<T>(
+  fn: () => T,
+  context: string,
+  options: ErrorHandlerOptions = {},
+): { data: T | null; error: ErrorResponse | null } {
+  try {
+    const data = fn()
+    return { data, error: null }
+  } catch (error) {
+    const errorResponse = handleError(error, context, options)
+    return { data: null, error: errorResponse }
+  }
+}
+
+/**
+ * 简化的异步错误处理包装器 - 直接抛出错误但记录日志
+ * 适用于需要在组件中使用 try-catch 但想要统一日志记录的场景
+ */
+export async function withLogging<T>(
+  fn: () => Promise<T>,
+  context: string,
+  options: Omit<ErrorHandlerOptions, 'silent'> = {},
+): Promise<T> {
+  try {
+    return await fn()
+  } catch (error) {
+    // 记录错误但不显示 toast（silent = true）
+    handleError(error, context, { ...options, silent: true })
+    throw error
+  }
+}
+
+/**
  * 创建错误处理的Hook
  */
 export function useErrorHandler(context: string = 'App') {
@@ -187,5 +243,8 @@ export function useErrorHandler(context: string = 'App') {
 
     withErrorHandling: <T>(fn: () => Promise<T>, options?: ErrorHandlerOptions) =>
       withErrorHandling(fn, context, options),
+
+    withLogging: <T>(fn: () => Promise<T>, options?: Omit<ErrorHandlerOptions, 'silent'>) =>
+      withLogging(fn, context, options),
   }
 }

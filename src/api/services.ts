@@ -373,9 +373,7 @@ export const mediaApi = {
    */
   async downloadMedia(mediaId: UUID, filename?: string) {
     try {
-      const response = await api.get<Blob>(`/media/${mediaId}/download`, {
-        responseType: 'blob',
-      })
+      const response = await api.getBlob(`/media/${mediaId}/download`)
 
       // 创建下载链接
       const url = window.URL.createObjectURL(response)

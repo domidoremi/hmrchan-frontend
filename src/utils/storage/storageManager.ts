@@ -3,6 +3,8 @@
  * 提供类型安全的 localStorage 操作和错误处理
  */
 
+import { logger } from '@/utils/logger'
+
 interface StorageConfig {
   prefix?: string
   expiryEnabled?: boolean
@@ -48,11 +50,11 @@ class StorageManager {
       localStorage.setItem(fullKey, JSON.stringify(item))
       return true
     } catch (error) {
-      console.error(`[Storage] Failed to set ${key}:`, error)
+      logger.error(`Failed to set ${key}:`, { category: 'Storage' }, error)
 
       // 处理 QuotaExceededError
       if (error instanceof DOMException && error.name === 'QuotaExceededError') {
-        console.warn('[Storage] Quota exceeded, trying to clear old items...')
+        logger.warn('Quota exceeded, trying to clear old items...', { category: 'Storage' })
         this.clearOldest(5)
 
         // 重试一次
@@ -62,7 +64,7 @@ class StorageManager {
           localStorage.setItem(fullKey, JSON.stringify(item))
           return true
         } catch (retryError) {
-          console.error('[Storage] Retry failed:', retryError)
+          logger.error('Retry failed:', { category: 'Storage' }, retryError)
         }
       }
 
@@ -92,7 +94,7 @@ class StorageManager {
 
       return item.value
     } catch (error) {
-      console.error(`[Storage] Failed to get ${key}:`, error)
+      logger.error(`Failed to get ${key}:`, { category: 'Storage' }, error)
       return defaultValue ?? null
     }
   }
@@ -106,7 +108,7 @@ class StorageManager {
       localStorage.removeItem(fullKey)
       return true
     } catch (error) {
-      console.error(`[Storage] Failed to remove ${key}:`, error)
+      logger.error(`Failed to remove ${key}:`, { category: 'Storage' }, error)
       return false
     }
   }
@@ -131,10 +133,10 @@ class StorageManager {
         localStorage.removeItem(key)
       })
 
-      console.log(`[Storage] Cleared ${prefixedKeys.length} items`)
+      logger.debug(`Cleared ${prefixedKeys.length} items`, { category: 'Storage' })
       return true
     } catch (error) {
-      console.error('[Storage] Failed to clear:', error)
+      logger.error('Failed to clear:', { category: 'Storage' }, error)
       return false
     }
   }
@@ -149,7 +151,7 @@ class StorageManager {
         .filter((key) => key.startsWith(this.prefix))
         .map((key) => key.slice(this.prefix.length))
     } catch (error) {
-      console.error('[Storage] Failed to get keys:', error)
+      logger.error('Failed to get keys:', { category: 'Storage' }, error)
       return []
     }
   }
@@ -177,7 +179,7 @@ class StorageManager {
         keys: prefixedKeys.length,
       }
     } catch (error) {
-      console.error('[Storage] Failed to get usage:', error)
+      logger.error('Failed to get usage:', { category: 'Storage' }, error)
       return { used: 0, usedMB: '0.00', keys: 0 }
     }
   }
@@ -212,12 +214,12 @@ class StorageManager {
       })
 
       if (count > 0) {
-        console.log(`[Storage] Cleared ${count} expired items`)
+        logger.debug(`Cleared ${count} expired items`, { category: 'Storage' })
       }
 
       return count
     } catch (error) {
-      console.error('[Storage] Failed to clear expired:', error)
+      logger.error('Failed to clear expired:', { category: 'Storage' }, error)
       return 0
     }
   }
@@ -255,10 +257,10 @@ class StorageManager {
         localStorage.removeItem(fullKey)
       })
 
-      console.log(`[Storage] Cleared ${toRemove.length} oldest items`)
+      logger.debug(`Cleared ${toRemove.length} oldest items`, { category: 'Storage' })
       return toRemove.length
     } catch (error) {
-      console.error('[Storage] Failed to clear oldest:', error)
+      logger.error('Failed to clear oldest:', { category: 'Storage' }, error)
       return 0
     }
   }
@@ -273,7 +275,7 @@ class StorageManager {
       })
       return true
     } catch (error) {
-      console.error('[Storage] Failed to set multiple:', error)
+      logger.error('Failed to set multiple:', { category: 'Storage' }, error)
       return false
     }
   }
