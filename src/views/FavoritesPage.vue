@@ -10,12 +10,7 @@
           {{ $t('offline.usingCache') }}
         </p>
         <div ref="gridRef" class="favorites-grid">
-          <PostCard
-            v-for="post in favoritePosts"
-            :key="post.id"
-            :post="post"
-            :show-actions="false"
-          />
+          <PostCard v-for="post in favoritePosts" :key="post.id" :post="post" :show-actions="false" />
         </div>
       </div>
 
@@ -44,6 +39,7 @@ import LoadingSpinner from '@/components/ui/loading/LoadingSpinner.vue'
 import GlassButton from '@/components/ui/button/Button.vue'
 import { useFavorites } from '@/composables'
 import { useWaterfallLayout } from '@/composables'
+import { withLogging } from '@/utils/error'
 
 const { favoritePosts, loading, fetchFavorites, fromFallback } = useFavorites()
 
@@ -56,12 +52,12 @@ const { updateLayout } = useWaterfallLayout(gridRef, {
 
 onMounted(async () => {
   try {
-    await fetchFavorites()
+    await withLogging(() => fetchFavorites(), 'FavoritesPage:LoadFavorites')
     // 数据加载后更新布局
     await nextTick()
     await updateLayout()
-  } catch (error) {
-    console.error('Failed to load favorites:', error)
+  } catch {
+    // Error already logged by withLogging
   }
 })
 
