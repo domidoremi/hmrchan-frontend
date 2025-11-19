@@ -358,10 +358,19 @@
               <img v-if="media.file_type === 'image'" :src="mediaApi.getStreamUrl(media.id)" :alt="post.title || ''"
                 loading="lazy" decoding="async" @click="openMediaViewer(getMediaIndex(index))"
                 class="clickable-image" />
-              <div v-else-if="media.file_type === 'video'" class="video-player-container">
-                <VideoPlayer :src="buildMediaStreamUrl(media, post.platform)"
-                  :poster="media.thumbnail_path ? mediaApi.getStreamUrl(media.id) + '/thumbnail' : undefined"
-                  :autoplay="false" :muted="false" />
+              <div v-else-if="media.file_type === 'video'" class="video-thumbnail-container"
+                @click="openMediaViewer(getMediaIndex(index))">
+                <img v-if="media.thumbnail_path" :src="mediaApi.getStreamUrl(media.id) + '/thumbnail'"
+                  :alt="post.title || ''" loading="lazy" decoding="async" class="video-thumbnail" />
+                <div v-else class="video-placeholder">
+                  <Play :size="48" />
+                </div>
+                <div class="video-overlay">
+                  <Play :size="48" />
+                  <span class="video-duration" v-if="media.duration">{{
+                    formatDuration(media.duration)
+                  }}</span>
+                </div>
               </div>
             </div>
           </div>
@@ -405,6 +414,8 @@ import {
   Maximize2,
   Repeat2,
   Sparkles,
+  Play,
+  ChevronRight,
 } from 'lucide-vue-next'
 import dayjs from 'dayjs'
 
@@ -412,14 +423,12 @@ import MainLayout from '@/components/layout/MainLayout.vue'
 import GlassButton from '@/components/ui/button/Button.vue'
 import PostCardActions from '@/components/business/PostCard/PostCardActions.vue'
 import PhotoSwipeViewer from '@/components/ui/viewer/PhotoSwipeViewer.vue'
-import { VideoPlayer } from '@/components/ui/video'
 
 import { usePostsStore, useAuthStore, useToastStore } from '@/stores'
 import { api } from '@/api/client'
 import { favoritesApi, mediaApi } from '@/api/services'
 import { indexedDB } from '@/utils/storage'
 import { offlineQueue } from '@/utils/storage'
-import { buildMediaStreamUrl } from '@/utils/media'
 import type { PostDetail, Post, UUID, PostListParams, PaginatedResponse } from '@/types'
 import { PLATFORM_NAMES, PLATFORM_COLORS } from '@/types'
 
@@ -773,6 +782,17 @@ const formatNumber = (num: number): string => {
     return `${(num / 1000).toFixed(1)}K`
   }
   return num.toString()
+}
+
+const formatDuration = (seconds: number): string => {
+  const hours = Math.floor(seconds / 3600)
+  const minutes = Math.floor((seconds % 3600) / 60)
+  const secs = Math.floor(seconds % 60)
+
+  if (hours > 0) {
+    return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+  }
+  return `${minutes}:${secs.toString().padStart(2, '0')}`
 }
 
 const openMediaViewer = (mediaIndex: number) => {
@@ -1827,12 +1847,72 @@ onUnmounted(() => {
   transform: scale(1.1);
 }
 
-.video-player-container {
+.video-thumbnail-container {
+  position: relative;
   width: 100%;
   aspect-ratio: 16 / 9;
   background: #000;
   border-radius: var(--radius-lg);
   overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+
+.video-thumbnail-container:hover {
+  transform: scale(1.02);
+}
+
+.video-thumbnail {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.video-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-background-secondary);
+  color: var(--color-text-secondary);
+}
+
+.video-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.video-thumbnail-container:hover .video-overlay {
+  opacity: 1;
+}
+
+.video-overlay svg {
+  color: white;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.3));
+}
+
+.video-duration {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
 }
 
 .tags-section {
