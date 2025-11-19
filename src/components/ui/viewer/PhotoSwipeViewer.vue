@@ -393,22 +393,70 @@ onUnmounted(() => {
   left: 0;
 }
 
-/* Plyr控件层 */
+/* Plyr poster海报图 - 修复object-fit */
+.pswp__video-wrapper :deep(.plyr__poster) {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain !important;
+  /* 完整显示，不裁剪 */
+  background: #000;
+  z-index: 1;
+}
+
+/* Plyr控件层 - 确保始终可见 */
 .pswp__video-wrapper :deep(.plyr__controls) {
   position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
   z-index: 3;
+  opacity: 1 !important;
+  /* 防止自动隐藏 */
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.8) 0%, transparent 100%);
 }
 
-/* Plyr大播放按钮 */
+/* 控件按钮对齐 */
+.pswp__video-wrapper :deep(.plyr__controls__item) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 控件内的SVG图标居中 */
+.pswp__video-wrapper :deep(.plyr__control svg) {
+  display: block;
+  margin: auto;
+}
+
+/* 进度条容器 */
+.pswp__video-wrapper :deep(.plyr__progress) {
+  display: flex;
+  align-items: center;
+}
+
+/* Plyr大播放按钮 - 确保居中和可见 */
 .pswp__video-wrapper :deep(.plyr__control--overlaid) {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
   z-index: 2;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  opacity: 1 !important;
+}
+
+/* 大播放按钮SVG */
+.pswp__video-wrapper :deep(.plyr__control--overlaid svg) {
+  width: 80px;
+  height: 80px;
 }
 
 .pswp__video {
