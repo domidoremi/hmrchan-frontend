@@ -166,6 +166,50 @@ const initPlyrForVideo = (videoElement: HTMLVideoElement, url: string) => {
   plyrInstances.set(url, player)
   console.log('[PhotoSwipeViewer] Plyr initialized for:', url)
 
+  // 强制修改Plyr控件布局 - 必须在初始化后立即执行
+  setTimeout(() => {
+    const container = videoElement.closest('.pswp__video-wrapper') as HTMLElement
+    if (container) {
+      // 找到Plyr控件栏
+      const controls = container.querySelector('.plyr__controls') as HTMLElement
+      if (controls) {
+        // 强制使用Grid布局
+        controls.style.display = 'grid'
+        controls.style.gridTemplateColumns = 'auto 1fr auto'
+        controls.style.gap = '10px'
+        controls.style.padding = '15px 20px'
+        controls.style.alignItems = 'center'
+        controls.style.opacity = '1'
+        controls.style.visibility = 'visible'
+        console.log('[PhotoSwipeViewer] Controls layout set to Grid')
+      }
+
+      // 强制显示所有控件按钮
+      const controlButtons = container.querySelectorAll('.plyr__control')
+      controlButtons.forEach((btn) => {
+        const button = btn as HTMLElement
+        button.style.display = 'inline-flex'
+        button.style.alignItems = 'center'
+        button.style.justifyContent = 'center'
+        button.style.opacity = '1'
+        button.style.visibility = 'visible'
+        button.style.width = '36px'
+        button.style.height = '36px'
+      })
+
+      // 强制显示时间
+      const times = container.querySelectorAll('.plyr__time')
+      times.forEach((time) => {
+        const el = time as HTMLElement
+        el.style.display = 'inline-block'
+        el.style.opacity = '1'
+        el.style.visibility = 'visible'
+      })
+
+      console.log('[PhotoSwipeViewer] All controls forced visible')
+    }
+  }, 100)
+
   // 监听视频元数据加载，确保Plyr正确计算尺寸
   videoElement.addEventListener('loadedmetadata', () => {
     const container = videoElement.closest('.pswp__video-wrapper') as HTMLElement
