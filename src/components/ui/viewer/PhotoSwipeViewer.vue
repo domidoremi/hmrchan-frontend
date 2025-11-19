@@ -165,6 +165,17 @@ const initPlyrForVideo = (videoElement: HTMLVideoElement, url: string) => {
   plyrInstances.set(url, player)
   console.log('[PhotoSwipeViewer] Plyr initialized for:', url)
 
+  // 强制修复poster尺寸 - Plyr会设置固定尺寸
+  player.on('ready', () => {
+    const poster = videoElement.parentElement?.querySelector('.plyr__poster') as HTMLElement
+    if (poster) {
+      poster.style.width = '100%'
+      poster.style.height = '100%'
+      poster.style.objectFit = 'contain'
+      console.log('[PhotoSwipeViewer] Poster resized to container')
+    }
+  })
+
   return player
 }
 
@@ -349,6 +360,13 @@ onUnmounted(() => {
   width: 100%;
   height: 100%;
   --plyr-color-main: #8b5cf6;
+}
+
+/* Plyr海报图 - 强制适配容器 */
+.pswp__video-wrapper :deep(.plyr__poster) {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
 }
 
 /* Video元素基础样式 */
