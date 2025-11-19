@@ -64,12 +64,11 @@ const prepareDataSource = (items: MediaItem[]) => {
       return imageData
     } else {
       // 视频：使用Plyr创建高级视频播放器
-      console.log(`[PhotoSwipeViewer] Video ${index}:`, item.url, 'subtitles:', item.subtitles)
+      // 不传递width/height，让PhotoSwipe使用viewport尺寸创建容器
+      console.log(`[PhotoSwipeViewer] Video ${index}:`, item.url)
       const videoElement = createPlyrVideoElement(item.url, index, item.subtitles, item.mediaId)
       return {
         html: videoElement.outerHTML,
-        width: item.width || 1920,
-        height: item.height || 1080,
       }
     }
   })
