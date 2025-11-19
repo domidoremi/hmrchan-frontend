@@ -3,6 +3,8 @@
  * 处理后端图片的 WebP 转换、尺寸优化和懒加载
  */
 
+import { logger } from '../logger'
+
 /**
  * 检测浏览器是否支持 WebP
  */
@@ -206,7 +208,7 @@ export function smartPreloadImages(
     const conn = (navigator as { connection?: NetworkInformation }).connection
     // 如果是慢速网络或启用了数据节省模式，跳过预加载
     if (conn?.saveData || conn?.effectiveType === 'slow-2g' || conn?.effectiveType === '2g') {
-      console.log('[SmartPreload] Skipping preload due to network conditions')
+      logger.debug('Skipping preload due to network conditions', { category: 'SmartPreload' })
       return Promise.resolve()
     }
   }

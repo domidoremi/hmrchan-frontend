@@ -141,20 +141,26 @@ function normalizeUrl(url: string): string {
 }
 
 /**
+ * 扩展的API配置选项
+ */
+interface ExtendedGetOptions extends Omit<KyOptions, 'cache'> {
+  cache?: boolean
+  ttl?: number
+  useMultiLayerCache?: boolean
+  invalidateCache?: boolean
+  params?: Record<string, unknown>
+}
+
+interface ExtendedMutationOptions extends KyOptions {
+  invalidatePatterns?: string[]
+}
+
+/**
  * API请求封装 - 增强版（带多层缓存和去重）
  */
 export const api = {
   // GET请求 - 默认启用多层缓存和去重
-  async get<T = unknown>(
-    url: string,
-    config?: KyOptions & {
-      cache?: boolean
-      ttl?: number
-      useMultiLayerCache?: boolean
-      invalidateCache?: boolean
-      params?: Record<string, unknown> // 支持任意类型参数
-    },
-  ): Promise<T> {
+  async get<T = unknown>(url: string, config?: ExtendedGetOptions): Promise<T> {
     const {
       cache = true,
       ttl = 5 * 60 * 1000,
@@ -175,7 +181,13 @@ export const api = {
 
     // 如果不启用缓存
     if (!cache) {
-      return apiClient.get(normalizedUrl, { searchParams: params as any, ...kyConfig }).json<T>()
+      const searchParams = params
+        ? (Object.fromEntries(Object.entries(params).map(([k, v]) => [k, String(v)])) as Record<
+            string,
+            string
+          >)
+        : undefined
+      return apiClient.get(normalizedUrl, { searchParams, ...kyConfig }).json<T>()
     }
 
     // 使用多层缓存（内存 + IndexedDB）
@@ -191,9 +203,13 @@ export const api = {
       return requestCache.dedupe(
         cacheKey,
         async () => {
-          const data = await apiClient
-            .get(normalizedUrl, { searchParams: params, ...kyConfig })
-            .json<T>()
+          const searchParams = params
+            ? (Object.fromEntries(Object.entries(params).map(([k, v]) => [k, String(v)])) as Record<
+                string,
+                string
+              >)
+            : undefined
+          const data = await apiClient.get(normalizedUrl, { searchParams, ...kyConfig }).json<T>()
 
           // 存储到多层缓存
           await cacheManager.set(cacheKey, data, ttl)
@@ -207,16 +223,40 @@ export const api = {
     // 使用简单内存缓存（向后兼容）
     return requestCache.dedupe(
       cacheKey,
-      () => apiClient.get(normalizedUrl, { searchParams: params as any, ...kyConfig }).json<T>(),
+      () => {
+        const searchParams = params
+          ? (Object.fromEntries(Object.entries(params).map(([k, v]) => [k, String(v)])) as Record<
+              string,
+              string
+            >)
+          : undefined
+        return apiClient.get(normalizedUrl, { searchParams, ...kyConfig }).json<T>()
+      },
       { ttl, force: false },
     )
+  },
+
+  // GET请求 - 返回Blob（用于文件下载）
+  async getBlob(
+    url: string,
+    config?: Omit<ExtendedGetOptions, 'cache' | 'ttl' | 'useMultiLayerCache'>,
+  ): Promise<Blob> {
+    const { params, ...kyConfig } = config || {}
+    const normalizedUrl = normalizeUrl(url)
+    const searchParams = params
+      ? (Object.fromEntries(Object.entries(params).map(([k, v]) => [k, String(v)])) as Record<
+          string,
+          string
+        >)
+      : undefined
+    return apiClient.get(normalizedUrl, { searchParams, ...kyConfig }).blob()
   },
 
   // POST请求 - 不缓存，但会清除相关缓存
   async post<T = unknown>(
     url: string,
     data?: unknown,
-    config?: KyOptions & { invalidatePatterns?: string[] },
+    config?: ExtendedMutationOptions,
   ): Promise<T> {
     const { invalidatePatterns, ...kyConfig } = config || {}
 
@@ -234,7 +274,7 @@ export const api = {
   async put<T = unknown>(
     url: string,
     data?: unknown,
-    config?: KyOptions & { invalidatePatterns?: string[] },
+    config?: ExtendedMutationOptions,
   ): Promise<T> {
     const { invalidatePatterns, ...kyConfig } = config || {}
 
@@ -252,7 +292,7 @@ export const api = {
   async patch<T = unknown>(
     url: string,
     data?: unknown,
-    config?: KyOptions & { invalidatePatterns?: string[] },
+    config?: ExtendedMutationOptions,
   ): Promise<T> {
     const { invalidatePatterns, ...kyConfig } = config || {}
 
@@ -267,10 +307,7 @@ export const api = {
   },
 
   // DELETE请求 - 不缓存，但会清除相关缓存
-  async delete<T = unknown>(
-    url: string,
-    config?: KyOptions & { invalidatePatterns?: string[] },
-  ): Promise<T> {
+  async delete<T = unknown>(url: string, config?: ExtendedMutationOptions): Promise<T> {
     const { invalidatePatterns, ...kyConfig } = config || {}
 
     const response = await apiClient.delete(normalizeUrl(url), kyConfig).json<T>()
