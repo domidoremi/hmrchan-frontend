@@ -1,10 +1,26 @@
+/**
+ * 路由配置
+ *
+ * 功能：
+ * - 路由懒加载
+ * - 路由守卫（认证、权限）
+ * - 智能预加载
+ * - 滚动行为
+ */
+
 import { createRouter, createWebHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
 import { useAuthStore } from '@/stores'
 
+/**
+ * 最后访问路由的存储键
+ */
 const LAST_VISITED_ROUTE_KEY = 'hmrchan:last-route'
 
-// 定义路由 - 所有路由使用懒加载
+/**
+ * 路由定义
+ * 所有路由使用懒加载，提升首屏加载速度
+ */
 export const routes: RouteRecordRaw[] = [
   {
     path: '/',
@@ -162,11 +178,19 @@ export const routes: RouteRecordRaw[] = [
   },
 ]
 
+/**
+ * 创建路由实例
+ */
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes,
+
+  /**
+   * 滚动行为配置
+   * 控制路由切换时的滚动位置
+   */
   scrollBehavior(to, from, savedPosition) {
-    // 如果是浏览器前进/后退，恢复之前的位置
+    // 浏览器前进/后退：恢复之前的滚动位置
     if (savedPosition) {
       return {
         ...savedPosition,
@@ -174,7 +198,7 @@ const router = createRouter({
       }
     }
 
-    // 如果有hash，滚动到对应元素
+    // 锚点跳转：滚动到指定元素
     if (to.hash) {
       return {
         el: to.hash,
@@ -182,7 +206,7 @@ const router = createRouter({
       }
     }
 
-    // 默认滚动到顶部，但使用平滑滚动
+    // 默认：滚动到页面顶部
     return {
       top: 0,
       behavior: 'smooth',
