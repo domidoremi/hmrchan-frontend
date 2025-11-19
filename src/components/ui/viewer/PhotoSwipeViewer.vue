@@ -408,36 +408,101 @@ onUnmounted(() => {
 
 /* Plyr控件层 - 确保始终可见 */
 .pswp__video-wrapper :deep(.plyr__controls) {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  z-index: 3;
+  position: absolute !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  width: 100% !important;
+  z-index: 3 !important;
   opacity: 1 !important;
-  /* 防止自动隐藏 */
-  display: flex;
-  align-items: center;
-  padding: 10px;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.8) 0%, transparent 100%);
+  visibility: visible !important;
+  display: grid !important;
+  grid-template-columns: auto 1fr auto !important;
+  gap: 10px !important;
+  padding: 15px 20px !important;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0.6) 60%, transparent 100%) !important;
+  pointer-events: auto !important;
 }
 
-/* 控件按钮对齐 */
+/* 控件按钮组 */
 .pswp__video-wrapper :deep(.plyr__controls__item) {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  min-height: 36px !important;
 }
 
-/* 控件内的SVG图标居中 */
+/* 所有控件按钮基础样式 */
+.pswp__video-wrapper :deep(.plyr__control) {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 36px !important;
+  height: 36px !important;
+  padding: 8px !important;
+  color: #fff !important;
+  background: transparent !important;
+  border: none !important;
+  cursor: pointer !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+/* 控件按钮悬停效果 */
+.pswp__video-wrapper :deep(.plyr__control:hover) {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border-radius: 4px !important;
+}
+
+/* 控件内的SVG图标 */
 .pswp__video-wrapper :deep(.plyr__control svg) {
-  display: block;
-  margin: auto;
+  width: 18px !important;
+  height: 18px !important;
+  display: block !important;
+  fill: currentColor !important;
 }
 
-/* 进度条容器 */
+/* 进度条容器 - 占满中间空间 */
 .pswp__video-wrapper :deep(.plyr__progress) {
-  display: flex;
-  align-items: center;
+  display: flex !important;
+  align-items: center !important;
+  flex: 1 !important;
+  min-width: 0 !important;
+}
+
+/* 时间显示 */
+.pswp__video-wrapper :deep(.plyr__time) {
+  font-size: 13px !important;
+  color: #fff !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  display: inline-block !important;
+  padding: 0 8px !important;
+}
+
+/* 音量控件 */
+.pswp__video-wrapper :deep(.plyr__volume) {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+/* 设置菜单按钮 */
+.pswp__video-wrapper :deep(.plyr__menu) {
+  position: relative !important;
+}
+
+/* 设置下拉菜单 */
+.pswp__video-wrapper :deep(.plyr__menu__container) {
+  position: absolute !important;
+  bottom: 100% !important;
+  right: 0 !important;
+  margin-bottom: 10px !important;
+  background: rgba(0, 0, 0, 0.95) !important;
+  border-radius: 8px !important;
+  padding: 8px !important;
+  min-width: 200px !important;
 }
 
 /* Plyr大播放按钮 - 确保居中和可见 */
