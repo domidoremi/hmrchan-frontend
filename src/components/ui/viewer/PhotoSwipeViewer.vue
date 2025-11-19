@@ -173,31 +173,52 @@ const initPlyrForVideo = (videoElement: HTMLVideoElement, url: string) => {
       // 找到Plyr控件栏
       const controls = container.querySelector('.plyr__controls') as HTMLElement
       if (controls) {
-        // 强制使用Grid布局
-        controls.style.display = 'grid'
-        controls.style.gridTemplateColumns = 'auto 1fr auto'
-        controls.style.gap = '10px'
-        controls.style.padding = '15px 20px'
+        // 强制使用Flex布局（更简单有效）
+        controls.style.display = 'flex'
         controls.style.alignItems = 'center'
+        controls.style.justifyContent = 'space-between'
+        controls.style.gap = '10px'
+        controls.style.padding = '12px 16px'
         controls.style.opacity = '1'
         controls.style.visibility = 'visible'
-        console.log('[PhotoSwipeViewer] Controls layout set to Grid')
+        console.log('[PhotoSwipeViewer] Controls layout set to Flex')
+      }
+
+      // 强制显示左侧按钮组（播放等）
+      const leftControls = container.querySelector('.plyr__controls__item.plyr__progress__container') as HTMLElement
+      if (leftControls?.previousElementSibling) {
+        const left = leftControls.previousElementSibling as HTMLElement
+        left.style.display = 'flex'
+        left.style.alignItems = 'center'
+        left.style.gap = '8px'
+      }
+
+      // 强制显示右侧按钮组（音量、设置、全屏等）
+      const rightControls = container.querySelector('.plyr__controls__item.plyr__progress__container') as HTMLElement
+      if (rightControls?.nextElementSibling) {
+        const right = rightControls.nextElementSibling as HTMLElement
+        right.style.display = 'flex'
+        right.style.alignItems = 'center'
+        right.style.gap = '8px'
       }
 
       // 强制显示所有控件按钮
-      const controlButtons = container.querySelectorAll('.plyr__control')
+      const controlButtons = container.querySelectorAll('.plyr__control, button[data-plyr]')
       controlButtons.forEach((btn) => {
         const button = btn as HTMLElement
-        button.style.display = 'inline-flex'
-        button.style.alignItems = 'center'
-        button.style.justifyContent = 'center'
-        button.style.opacity = '1'
-        button.style.visibility = 'visible'
-        button.style.width = '36px'
-        button.style.height = '36px'
+        if (button.getAttribute('data-plyr') !== 'play' || !button.classList.contains('plyr__control--overlaid')) {
+          button.style.display = 'inline-flex'
+          button.style.alignItems = 'center'
+          button.style.justifyContent = 'center'
+          button.style.opacity = '1'
+          button.style.visibility = 'visible'
+          button.style.minWidth = '36px'
+          button.style.minHeight = '36px'
+          button.style.padding = '8px'
+        }
       })
 
-      // 强制显示时间
+      // 强制显示时间和进度条
       const times = container.querySelectorAll('.plyr__time')
       times.forEach((time) => {
         const el = time as HTMLElement
@@ -206,7 +227,15 @@ const initPlyrForVideo = (videoElement: HTMLVideoElement, url: string) => {
         el.style.visibility = 'visible'
       })
 
+      const progress = container.querySelector('.plyr__progress__container') as HTMLElement
+      if (progress) {
+        progress.style.display = 'flex'
+        progress.style.flex = '1'
+        progress.style.alignItems = 'center'
+      }
+
       console.log('[PhotoSwipeViewer] All controls forced visible')
+      console.log('[PhotoSwipeViewer] Control buttons found:', controlButtons.length)
     }
   }, 100)
 
@@ -282,7 +311,7 @@ const initPhotoSwipe = () => {
     arrowNextTitle: '下一个',
   })
 
-  // 🎬 内容激活时初始化Plyr
+  // 内容激活时初始化Plyr
   pswp.on('contentActivate', ({ content }) => {
     if (content.element) {
       const videoWrapper = content.element.querySelector('.pswp__video-wrapper') as HTMLElement
@@ -291,7 +320,7 @@ const initPhotoSwipe = () => {
       if (videoElement && videoWrapper) {
         const url = videoWrapper.dataset.videoUrl
         if (url) {
-          console.log('[PhotoSwipeViewer] 🎬 Activating video:', url)
+          console.log('[PhotoSwipeViewer] Activating video:', url)
           initPlyrForVideo(videoElement, url)
         }
       }
@@ -426,18 +455,7 @@ onUnmounted(() => {
   position: relative;
 }
 
-/* 确保video元素填充容器 */
-.pswp__video-wrapper :deep(.plyr__video-wrapper video),
-.pswp__plyr-video {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  position: absolute;
-  top: 0;
-  left: 0;
-}
-
-/* Plyr poster海报图 - 修复object-fit */
+/* 完整显示，不裁剪 */
 .pswp__video-wrapper :deep(.plyr__poster) {
   position: absolute;
   top: 0;
@@ -445,108 +463,43 @@ onUnmounted(() => {
   width: 100%;
   height: 100%;
   object-fit: contain !important;
-  /* 完整显示，不裁剪 */
   background: #000;
   z-index: 1;
 }
 
-/* Plyr控件层 - 确保始终可见 */
+/* Plyr控件层 - 基础样式（让JS控制布局）*/
 .pswp__video-wrapper :deep(.plyr__controls) {
-  position: absolute !important;
-  bottom: 0 !important;
-  left: 0 !important;
-  right: 0 !important;
-  width: 100% !important;
-  z-index: 3 !important;
-  opacity: 1 !important;
-  visibility: visible !important;
-  display: grid !important;
-  grid-template-columns: auto 1fr auto !important;
-  gap: 10px !important;
-  padding: 15px 20px !important;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0.6) 60%, transparent 100%) !important;
-  pointer-events: auto !important;
-}
-
-/* 控件按钮组 */
-.pswp__video-wrapper :deep(.plyr__controls__item) {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  gap: 8px !important;
-  min-height: 36px !important;
-}
-
-/* 所有控件按钮基础样式 */
-.pswp__video-wrapper :deep(.plyr__control) {
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  width: 36px !important;
-  height: 36px !important;
-  padding: 8px !important;
-  color: #fff !important;
-  background: transparent !important;
-  border: none !important;
-  cursor: pointer !important;
-  opacity: 1 !important;
-  visibility: visible !important;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  z-index: 3;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0.6) 60%, transparent 100%);
+  pointer-events: auto;
 }
 
 /* 控件按钮悬停效果 */
 .pswp__video-wrapper :deep(.plyr__control:hover) {
-  background: rgba(255, 255, 255, 0.1) !important;
-  border-radius: 4px !important;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
 }
 
 /* 控件内的SVG图标 */
 .pswp__video-wrapper :deep(.plyr__control svg) {
-  width: 18px !important;
-  height: 18px !important;
-  display: block !important;
-  fill: currentColor !important;
-}
-
-/* 进度条容器 - 占满中间空间 */
-.pswp__video-wrapper :deep(.plyr__progress) {
-  display: flex !important;
-  align-items: center !important;
-  flex: 1 !important;
-  min-width: 0 !important;
-}
-
-/* 时间显示 */
-.pswp__video-wrapper :deep(.plyr__time) {
-  font-size: 13px !important;
-  color: #fff !important;
-  opacity: 1 !important;
-  visibility: visible !important;
-  display: inline-block !important;
-  padding: 0 8px !important;
-}
-
-/* 音量控件 */
-.pswp__video-wrapper :deep(.plyr__volume) {
-  display: flex !important;
-  align-items: center !important;
-  gap: 8px !important;
-}
-
-/* 设置菜单按钮 */
-.pswp__video-wrapper :deep(.plyr__menu) {
-  position: relative !important;
+  fill: currentColor;
 }
 
 /* 设置下拉菜单 */
 .pswp__video-wrapper :deep(.plyr__menu__container) {
-  position: absolute !important;
-  bottom: 100% !important;
-  right: 0 !important;
-  margin-bottom: 10px !important;
-  background: rgba(0, 0, 0, 0.95) !important;
-  border-radius: 8px !important;
-  padding: 8px !important;
-  min-width: 200px !important;
+  position: absolute;
+  bottom: 100%;
+  right: 0;
+  margin-bottom: 10px;
+  background: rgba(0, 0, 0, 0.95);
+  border-radius: 8px;
+  padding: 8px;
+  min-width: 200px;
 }
 
 /* Plyr大播放按钮 - 确保居中和可见 */
@@ -556,16 +509,21 @@ onUnmounted(() => {
   left: 50%;
   transform: translate(-50%, -50%);
   z-index: 2;
-  display: flex !important;
-  align-items: center;
-  justify-content: center;
-  opacity: 1 !important;
-}
-
-/* 大播放按钮SVG */
-.pswp__video-wrapper :deep(.plyr__control--overlaid svg) {
   width: 80px;
   height: 80px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 大播放按钮SVG - 完全居中 */
+.pswp__video-wrapper :deep(.plyr__control--overlaid svg) {
+  width: 100%;
+  height: 100%;
+  display: block;
+  margin: 0;
+  padding: 0;
 }
 
 .pswp__video {
