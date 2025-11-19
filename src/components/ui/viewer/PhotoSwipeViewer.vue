@@ -333,100 +333,34 @@ onUnmounted(() => {
   --pswp-bg: rgba(10, 10, 10, 0.98);
 }
 
-/* 视频容器样式 - 响应式适配，支持Plyr */
+/* 视频容器样式 - 让PhotoSwipe自动处理布局 */
 .pswp__video-wrapper {
   position: relative;
   width: 100%;
-  max-width: 100vw;
-  max-height: 100vh;
-  aspect-ratio: 16 / 9;
-  background: rgba(0, 0, 0, 0.5);
-  border-radius: 8px;
-  margin: auto;
-  overflow: hidden;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
 }
 
 /* Plyr播放器样式 */
 .pswp__video-wrapper :deep(.plyr) {
-  width: 100% !important;
-  height: 100% !important;
+  width: 100%;
+  height: 100%;
   --plyr-color-main: #8b5cf6;
 }
 
 .pswp__video-wrapper :deep(.plyr__video-wrapper) {
-  width: 100% !important;
-  height: 100% !important;
+  width: 100%;
+  height: 100%;
   background: #000;
-  border-radius: 8px;
 }
 
 .pswp__plyr-video {
-  width: 100% !important;
-  height: 100% !important;
-  object-fit: contain !important;
-  border-radius: 8px;
-}
-
-/* 响应式视频样式 */
-/* 移动端 (< 768px) - 优化为竖屏和横屏 */
-@media (max-width: 767px) {
-  .pswp__video-wrapper {
-    width: 100vw;
-    max-width: 100vw;
-    max-height: 100vh;
-    aspect-ratio: auto;
-    border-radius: 0;
-  }
-
-  .pswp__video-wrapper :deep(.plyr__video-wrapper) {
-    border-radius: 0;
-  }
-
-  .pswp__plyr-video {
-    border-radius: 0;
-  }
-
-  /* 移动端横屏适配 */
-  @media (orientation: landscape) {
-    .pswp__video-wrapper {
-      width: auto;
-      height: 100vh;
-      max-width: none;
-    }
-  }
-
-  /* 移动端竖屏适配 */
-  @media (orientation: portrait) {
-    .pswp__video-wrapper {
-      width: 100vw;
-      height: auto;
-      max-height: 60vh;
-    }
-  }
-}
-
-/* 平板端 (768px - 1024px) */
-@media (min-width: 768px) and (max-width: 1024px) {
-  .pswp__video-wrapper {
-    max-width: min(90vw, 1200px);
-    max-height: min(80vh, 675px);
-  }
-}
-
-/* 桌面端 (1025px - 1920px) */
-@media (min-width: 1025px) and (max-width: 1920px) {
-  .pswp__video-wrapper {
-    max-width: min(80vw, 1600px);
-    max-height: min(80vh, 900px);
-  }
-}
-
-/* 超宽屏 (> 1920px) */
-@media (min-width: 1921px) {
-  .pswp__video-wrapper {
-    max-width: 1920px;
-    max-height: 1080px;
-  }
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .pswp__video {
