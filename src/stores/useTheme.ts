@@ -1,14 +1,15 @@
 /**
  * 主题状态管理
- * Theme Store
- *
- * 管理应用主题（light/dark/auto）和系统主题偏好
- * v2.0 - 规范化：统一Store结构，添加错误处理和日志记录
+ * v3.0 - 安全增强版
+ * - 使用安全存储替代Pinia persist
+ * - 管理应用主题（light/dark/auto）和系统主题偏好
+ * - 增强浏览器兼容性
  */
 import { defineStore } from 'pinia'
 import { ref, watch } from 'vue'
 import type { Theme } from '@/types'
 import logger from '@/utils/logger'
+import { secureLocalStorage } from '@/utils/secureStorage'
 
 export const useThemeStore = defineStore(
   'theme',
@@ -27,11 +28,17 @@ export const useThemeStore = defineStore(
 
     /**
      * 初始化主题
-     * 注意：主题值已通过Pinia persist插件自动从localStorage恢复
+     * 从安全存储恢复主题设置
      */
-    function initTheme() {
+    async function initTheme() {
       try {
-        // 应用主题（theme值已由Pinia persist自动恢复）
+        // 从安全存储加载主题
+        const saved = await secureLocalStorage.get<Theme>('theme', { silent: true })
+        if (saved && ['light', 'dark', 'auto'].includes(saved)) {
+          theme.value = saved
+        }
+
+        // 应用主题
         updateTheme()
 
         // 设置系统主题监听
@@ -90,13 +97,16 @@ export const useThemeStore = defineStore(
 
     /**
      * 设置主题
-     * 注意：主题值会通过Pinia persist插件自动保存到localStorage
+     * 使用安全存储保存主题设置
      */
-    function setTheme(newTheme: Theme) {
+    async function setTheme(newTheme: Theme) {
       try {
         const previousTheme = theme.value
         theme.value = newTheme
-        // localStorage保存由Pinia persist插件自动处理
+
+        // 保存到安全存储
+        await secureLocalStorage.set('theme', newTheme, { silent: true })
+
         updateTheme()
 
         logger.info('Theme changed', {
@@ -179,14 +189,7 @@ export const useThemeStore = defineStore(
     }
   },
   {
-    // 持久化配置 - 只持久化theme选择，isDark是计算得出的
-    persist:
-      typeof window !== 'undefined'
-        ? {
-            key: 'theme',
-            storage: localStorage,
-            pick: ['theme'],
-          }
-        : false,
+    // 禁用Pinia persist，使用自定义的安全存储
+    persist: false,
   },
 )
