@@ -65,15 +65,11 @@ const prepareDataSource = (items: MediaItem[]) => {
     } else {
       // 视频：使用Plyr创建高级视频播放器
       console.log(`[PhotoSwipeViewer] Video ${index}:`, item.url, 'subtitles:', item.subtitles)
-      // 存储视频配置数据，在contentLoad中创建元素
+      const videoElement = createPlyrVideoElement(item.url, index, item.subtitles, item.mediaId)
       return {
-        html: '', // 空字符串标记为自定义内容
+        html: videoElement.outerHTML,
         width: item.width || 1920,
         height: item.height || 1080,
-        videoUrl: item.url,
-        videoIndex: index,
-        videoSubtitles: item.subtitles,
-        videoMediaId: item.mediaId,
       }
     }
   })
