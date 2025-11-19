@@ -58,6 +58,7 @@ import GlassButton from '@/components/ui/button/Button.vue'
 import { usePostsStore } from '@/stores'
 import type { PostListParams } from '@/types'
 import { useWaterfallLayout } from '@/composables'
+import { logger } from '@/utils/logger'
 
 const route = useRoute()
 const router = useRouter()
@@ -106,7 +107,7 @@ onBeforeUnmount(() => {
   // 离开页面时重置筛选条件和posts，避免状态污染其他页面
   postsStore.resetFilters()
   postsStore.posts = []
-  console.log('[ExplorePage] 页面卸载，已重置筛选条件和posts')
+  logger.debug('页面卸载，已重置筛选条件和posts', { category: 'ExplorePage' })
 })
 
 onUnmounted(() => {
@@ -118,7 +119,7 @@ onActivated(async () => {
   if (postsGrid.value && posts.value.length > 0) {
     await nextTick()
     await updateLayout()
-    console.log('[ExplorePage] 页面激活，重新计算布局')
+    logger.debug('页面激活，重新计算布局', { category: 'ExplorePage' })
   }
 })
 

@@ -113,7 +113,7 @@
                     @click="settingsStore.toggleSetting('showHeroSection')">
                     <span class="settings-toggle-label">{{
                       $t('settings.toggleHeroSection')
-                      }}</span>
+                    }}</span>
                     <span class="settings-toggle-indicator" :class="{ active: settings.showHeroSection }"></span>
                   </button>
 
@@ -127,7 +127,7 @@
                     @click="settingsStore.toggleSetting('enableSwipeNavigation')">
                     <span class="settings-toggle-label">{{
                       $t('settings.toggleSwipeNavigation')
-                      }}</span>
+                    }}</span>
                     <span class="settings-toggle-indicator" :class="{ active: settings.enableSwipeNavigation }"></span>
                   </button>
                 </div>
@@ -394,22 +394,6 @@ const updateIsMobile = () => {
   console.log('[AppNavbar] isMobile updated:', wasMobile, '->', isMobile.value, 'window.innerWidth:', window.innerWidth)
 }
 
-interface BottomNavItem {
-  path: string
-  requiresAuth?: boolean
-}
-
-const bottomNavItems = computed<BottomNavItem[]>(() => {
-  const items: BottomNavItem[] = [{ path: '/' }, { path: '/explore' }]
-
-  if (isAuthenticated.value) {
-    items.push({ path: '/favorites', requiresAuth: true })
-  }
-
-  items.push({ path: '/authors' }, { path: '/settings' })
-  return items
-})
-
 const themeOptions = [
   { value: 'light' as Theme, icon: Sun },
   { value: 'dark' as Theme, icon: Moon },
@@ -449,7 +433,8 @@ const userAvatarUrl = computed(() => {
   if (user.value?.avatar_url) {
     return user.value.avatar_url
   }
-  return `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.value?.username || 'default'}`
+  // 使用 encodeURIComponent 防止 URL 注入
+  return `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user.value?.username || 'default')}`
 })
 
 // 其他工具函数保留在此下方

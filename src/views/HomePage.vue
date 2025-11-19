@@ -162,6 +162,7 @@ import { PLATFORMS, PLATFORM_COLORS, type Post } from '@/types'
 import { statsApi } from '@/api/services'
 import { formatNumber } from '@/utils/format'
 import { useErrorHandler } from '@/utils/error'
+import { logger } from '@/utils/logger'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -216,12 +217,12 @@ const initialLoadComplete = ref(false)
 const { isLoading: isLoadingMore } = useInfiniteScroll({
   onLoadMore: async () => {
     if (posts.value.length >= accessLimit.value) {
-      console.debug('[InfiniteScroll] 已达到访问限制')
+      logger.debug('已达到访问限制', { category: 'HomePage' })
       hasMore.value = false
       return
     }
     if (!hasMore.value) {
-      console.debug('[InfiniteScroll] 没有更多数据')
+      logger.debug('没有更多数据', { category: 'HomePage' })
       return
     }
     await loadMore()
@@ -251,9 +252,12 @@ onMounted(async () => {
     // 根据分页信息更新hasMore状态
     if (result && result.page && result.pages) {
       hasMore.value = result.page < result.pages
-      console.debug(
-        `[HomePage] 初始加载分页信息: 当前页 ${result.page}/${result.pages}, hasMore: ${hasMore.value}`,
-      )
+      logger.debug('初始加载分页信息', {
+        category: 'HomePage',
+        page: result.page,
+        pages: result.pages,
+        hasMore: hasMore.value,
+      })
     } else if (result && result.items && result.items.length === 0) {
       hasMore.value = false
     }
@@ -267,7 +271,7 @@ onMounted(async () => {
 
     // 标记初始加载完成，启用无限滚动
     initialLoadComplete.value = true
-    console.debug('[HomePage] 初始加载完成，启用无限滚动')
+    logger.debug('初始加载完成，启用无限滚动', { category: 'HomePage' })
 
     // 后台加载统计数据（非阻塞）
     loadStatsInBackground()
@@ -307,7 +311,7 @@ onActivated(async () => {
   if (postsGrid.value && posts.value.length > 0) {
     await nextTick()
     await updateLayout()
-    console.debug('[HomePage] 页面激活，重新计算布局')
+    logger.debug('页面激活，重新计算布局', { category: 'HomePage' })
   }
 })
 
@@ -339,9 +343,12 @@ const loadMore = async () => {
     } else if (result.page && result.pages) {
       // 根据分页信息判断：当前页 >= 总页数时，没有更多数据
       hasMore.value = result.page < result.pages
-      console.debug(
-        `[HomePage] 分页信息: 当前页 ${result.page}/${result.pages}, hasMore: ${hasMore.value}`,
-      )
+      logger.debug('分页信息', {
+        category: 'HomePage',
+        page: result.page,
+        pages: result.pages,
+        hasMore: hasMore.value,
+      })
     }
   } catch (error) {
     // 加载失败时回退页码并显示错误
@@ -351,7 +358,6 @@ const loadMore = async () => {
       customMessage: t('error.api.fetchPosts'),
       silent: false, // 显示通知
     })
-    console.error('[HomePage] Failed to load more posts:', error)
     return // 直接返回，跳过布局更新
   }
 

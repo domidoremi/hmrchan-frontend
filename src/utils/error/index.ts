@@ -3,7 +3,14 @@
  */
 
 // Error Handler
-export { handleError, parseAxiosError, withErrorHandling, useErrorHandler } from './errorHandler'
+export {
+  handleError,
+  parseHttpError,
+  withErrorHandling,
+  withErrorHandlingSync,
+  withLogging,
+  useErrorHandler,
+} from './errorHandler'
 export type { ErrorResponse, ErrorHandlerOptions } from './errorHandler'
 
 // Error Monitor
