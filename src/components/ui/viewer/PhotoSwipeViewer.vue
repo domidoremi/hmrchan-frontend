@@ -65,11 +65,15 @@ const prepareDataSource = (items: MediaItem[]) => {
     } else {
       // 视频：使用Plyr创建高级视频播放器
       console.log(`[PhotoSwipeViewer] Video ${index}:`, item.url, 'subtitles:', item.subtitles)
-      const videoElement = createPlyrVideoElement(item.url, index, item.subtitles, item.mediaId)
+      // 存储视频配置数据，在contentLoad中创建元素
       return {
-        html: videoElement.outerHTML,
+        html: '', // 空字符串标记为自定义内容
         width: item.width || 1920,
         height: item.height || 1080,
+        videoUrl: item.url,
+        videoIndex: index,
+        videoSubtitles: item.subtitles,
+        videoMediaId: item.mediaId,
       }
     }
   })
@@ -107,7 +111,8 @@ const createPlyrVideoElement = (
       track.label = subtitle.label
       track.srclang = subtitle.language
       // 构建字幕URL: /api/v1/media/{mediaId}/subtitles/{language}
-      track.src = `https://api.momichan.xyz/api/v1/media/${mediaId}/subtitles/${subtitle.language}`
+      // 使用 encodeURIComponent 防止 URL 注入
+      track.src = `https://api.momichan.xyz/api/v1/media/${encodeURIComponent(mediaId)}/subtitles/${encodeURIComponent(subtitle.language)}`
       track.default = idx === 0 // 第一个字幕设为默认
       video.appendChild(track)
       console.log(`[PhotoSwipeViewer] Added subtitle track: ${subtitle.label} (${subtitle.language})`)
@@ -216,28 +221,25 @@ const initPhotoSwipe = () => {
     arrowNextTitle: '下一个',
   })
 
-  // 🎬 自定义内容加载器 - 处理视频HTML并初始化Plyr
-  pswp.on('contentLoad', (e: { content: { data: { html?: string | HTMLElement }, element?: HTMLElement | null, onLoaded?: () => void } }) => {
+  // 🎬 自定义内容加载器 - 处理视频并初始化Plyr
+  pswp.on('contentLoad', (e: { content: { data: Record<string, unknown>, element?: HTMLElement | null, onLoaded?: () => void } }) => {
     const { content } = e
 
-    // 如果是自定义HTML（视频）
-    if (content.data.html && !content.element) {
+    // 如果是视频内容（通过videoUrl标识）
+    if (content.data.videoUrl && !content.element) {
       console.log('[PhotoSwipeViewer] 🎬 自定义内容加载器 - 渲染视频元素')
 
-      // 如果是HTMLElement，直接使用
-      if (content.data.html instanceof HTMLElement) {
-        content.element = content.data.html
-      } else {
-        // 如果是字符串，创建元素
-        const div = document.createElement('div')
-        div.innerHTML = content.data.html as string
-        const videoWrapper = div.firstElementChild as HTMLElement || div
-        content.element = videoWrapper
-      }
+      // 直接创建DOM元素，避免使用innerHTML
+      const videoUrl = content.data.videoUrl as string
+      const videoIndex = content.data.videoIndex as number
+      const videoSubtitles = content.data.videoSubtitles as Array<{ language: string; format: string; label: string }> | null | undefined
+      const videoMediaId = content.data.videoMediaId as string | undefined
+
+      // 使用安全的DOM创建方法
+      content.element = createPlyrVideoElement(videoUrl, videoIndex, videoSubtitles, videoMediaId)
 
       // 初始化Plyr
-      const videoElement = content.element?.querySelector('.pswp__plyr-video') as HTMLVideoElement
-      const videoUrl = content.element?.dataset.videoUrl
+      const videoElement = content.element.querySelector('.pswp__plyr-video') as HTMLVideoElement
 
       if (videoElement && videoUrl) {
         // 延迟初始化Plyr，确保DOM已插入

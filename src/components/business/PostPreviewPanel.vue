@@ -22,7 +22,7 @@
     <section class="preview-body">
       <div class="media-area" :class="{ 'is-loading': loading }">
         <div v-if="loading" key="media-loading" class="media-loader">
-          <div class="spinner"></div>
+          <div class="spinner spinner-lg"></div>
           <span>{{ $t('common.loading') }}</span>
         </div>
         <div v-else-if="error" key="media-error" class="media-error">
@@ -332,20 +332,7 @@ function formatRelativeTime(dateString: string): string {
   color: rgba(255, 255, 255, 0.85);
 }
 
-.spinner {
-  width: 32px;
-  height: 32px;
-  border: 3px solid rgba(255, 255, 255, 0.2);
-  border-top-color: #fff;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
+/* Spinner styles moved to base.css and utilities.css - use .spinner.spinner-lg */
 
 .media-thumbnails {
   display: flex;

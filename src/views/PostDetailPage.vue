@@ -392,6 +392,7 @@ import { useMediaPreload } from '@/composables/media/useSmartPreload'
 import { hasViewedPost, markPostAsViewed } from '@/utils/viewTracking'
 import { useErrorHandler } from '@/utils/error'
 import { resolveMediaUrl, validateMediaId } from '@/utils/format'
+import { logger } from '@/utils/logger'
 import {
   ArrowLeft,
   Calendar,
@@ -634,20 +635,20 @@ onMounted(async () => {
 
     // 验证媒体文件ID格式（诊断用）
     if (import.meta.env.DEV && post.value?.media_files && post.value.media_files.length > 0) {
-      console.group('[PostDetailPage] Media ID Validation')
-      post.value.media_files.forEach((media, index) => {
-        const isValid = validateMediaId(media.id, `PostDetailPage(post=${postId}, media[${index}])`)
-        if (!isValid) {
-          console.log('Media File Details:', {
-            index,
-            id: media.id,
-            id_type: typeof media.id,
-            file_type: media.file_type,
-            file_path: media.file_path,
-          })
-        }
-      })
-      console.groupEnd()
+      logger.group('[PostDetailPage] Media ID Validation', () => {
+        post.value!.media_files!.forEach((media, index) => {
+          const isValid = validateMediaId(media.id, `PostDetailPage(post=${postId}, media[${index}])`)
+          if (!isValid) {
+            logger.debug('Media File Details', { category: 'PostDetailPage' }, {
+              index,
+              id: media.id,
+              id_type: typeof media.id,
+              file_type: media.file_type,
+              file_path: media.file_path,
+            })
+          }
+        })
+      }, { category: 'PostDetailPage' })
     }
 
     // 增加浏览计数（如果该帖子未被浏览过）
@@ -655,9 +656,9 @@ onMounted(async () => {
       try {
         await api.post(`/posts/${postId}/increment-view`)
         markPostAsViewed(postId)
-        console.debug('[PostDetailPage] Post view counted:', postId)
+        logger.debug('Post view counted', { category: 'PostDetailPage', postId })
       } catch (error) {
-        console.debug('[PostDetailPage] Failed to increment view count:', error)
+        logger.debug('Failed to increment view count', { category: 'PostDetailPage' }, error)
       }
     }
 
@@ -714,7 +715,7 @@ const toggleFavorite = async () => {
           await indexedDB.removeFavorite(userId, postId)
         }
       } catch (e) {
-        console.error('[PostDetailPage] Failed to update local favorite in IndexedDB:', e)
+        handleError(e, { silent: true, customMessage: 'Failed to update local favorite in IndexedDB' })
       }
     }
 
@@ -777,20 +778,14 @@ const formatNumber = (num: number): string => {
 const openMediaViewer = (mediaIndex: number) => {
   if (!post.value) return
 
-  // 使用JSON.stringify查看完整数据
-  console.log('[PostDetailPage] 🎬 Opening media viewer')
-  console.log('  mediaIndex:', mediaIndex)
-  console.log('  itemsCount:', allMediaItems.value.length)
-  console.log('  postId:', post.value.id)
-  console.log('  hasThumbnail:', !!post.value.thumbnail_url)
-  console.log('  mediaFilesCount:', post.value.media_files?.length || 0)
-  console.log('  allMediaItems:', JSON.stringify(allMediaItems.value, null, 2))
-  console.log('  media_files:', JSON.stringify(post.value.media_files?.map(m => ({
-    id: m.id,
-    type: m.file_type,
-    width: m.width,
-    height: m.height,
-  })), null, 2))
+  logger.debug('Opening media viewer', {
+    category: 'PostDetailPage',
+    mediaIndex,
+    itemsCount: allMediaItems.value.length,
+    postId: post.value.id,
+    hasThumbnail: !!post.value.thumbnail_url,
+    mediaFilesCount: post.value.media_files?.length || 0,
+  })
 
   viewerMediaItems.value = allMediaItems.value
   viewerInitialIndex.value = mediaIndex
@@ -842,7 +837,7 @@ const loadRelatedPosts = async () => {
       .filter((p: Post) => p.id !== post.value!.id)
       .slice(0, 4) // 最多显示4个
   } catch (error) {
-    console.debug('[PostDetailPage] Failed to load related posts:', error)
+    logger.debug('Failed to load related posts', { category: 'PostDetailPage' }, error)
   }
 }
 
@@ -866,7 +861,7 @@ const sharePost = async () => {
     }
   } catch (error) {
     if ((error as Error).name !== 'AbortError') {
-      console.debug('[PostDetailPage] Share failed:', error)
+      logger.debug('Share failed', { category: 'PostDetailPage' }, error)
     }
   }
 }
@@ -877,7 +872,7 @@ const copyLink = async (url: string) => {
     await navigator.clipboard.writeText(url)
     toastStore.success(t('post.copySuccess', 'Link copied to clipboard'))
   } catch (error) {
-    console.debug('[PostDetailPage] Copy failed:', error)
+    logger.debug('Copy failed', { category: 'PostDetailPage' }, error)
     toastStore.error(t('post.copyFailed', 'Failed to copy link'))
   }
 }
@@ -885,7 +880,7 @@ const copyLink = async (url: string) => {
 // 更多选项菜单
 const handleMoreOptions = () => {
   // 可以在这里实现更多选项的菜单，例如：举报、下载等
-  console.log('[PostDetailPage] More options clicked')
+  logger.debug('More options clicked', { category: 'PostDetailPage' })
 }
 
 // 键盘快捷键

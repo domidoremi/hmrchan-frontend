@@ -3,6 +3,8 @@
  * 提供图片优化、懒加载、渐进式加载等功能
  */
 
+import { logger } from '../logger'
+
 interface ImageOptimizationOptions {
   quality?: number
   format?: 'webp' | 'jpeg' | 'png'
@@ -104,7 +106,7 @@ class MediaOptimizer {
 
       return lqipUrl
     } catch (error) {
-      console.error('[Media Optimizer] LQIP generation failed:', error)
+      logger.error('LQIP generation failed', { category: 'Media Optimizer' }, error)
       return url
     }
   }
@@ -292,7 +294,7 @@ class MediaOptimizer {
   async preloadImages(urls: string[]): Promise<void> {
     const promises = urls.map((url) =>
       this.preloadImage(url).catch(() => {
-        console.warn(`[Media Optimizer] Preload failed: ${url}`)
+        logger.warn('Preload failed', { category: 'Media Optimizer', url })
       }),
     )
 

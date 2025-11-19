@@ -3,6 +3,8 @@
  * 负责注册、更新和与SW通信
  */
 
+import { logger } from './logger'
+
 class ServiceWorkerManager {
   private registration: ServiceWorkerRegistration | null = null
   private updateCheckInterval: number | null = null
@@ -13,19 +15,19 @@ class ServiceWorkerManager {
   async register(): Promise<ServiceWorkerRegistration | null> {
     // 仅在生产环境和支持SW的浏览器中注册
     if (import.meta.env.DEV || !('serviceWorker' in navigator)) {
-      console.log('[SW Manager] Service Worker not available')
+      logger.debug('Service Worker not available', { category: 'SW Manager' })
       return null
     }
 
     try {
-      console.log('[SW Manager] Registering Service Worker...')
+      logger.info('Registering Service Worker...', { category: 'SW Manager' })
 
       this.registration = await navigator.serviceWorker.register('/sw.js', {
         scope: '/',
         updateViaCache: 'none', // 总是检查更新
       })
 
-      console.log('[SW Manager] Registered successfully')
+      logger.info('Registered successfully', { category: 'SW Manager' })
 
       // 监听更新
       this.setupUpdateListener()
@@ -35,13 +37,13 @@ class ServiceWorkerManager {
 
       // 监听controller变化
       navigator.serviceWorker.addEventListener('controllerchange', () => {
-        console.log('[SW Manager] Controller changed, reloading...')
+        logger.info('Controller changed, reloading...', { category: 'SW Manager' })
         window.location.reload()
       })
 
       return this.registration
     } catch (error) {
-      console.error('[SW Manager] Registration failed:', error)
+      logger.error('Registration failed', { category: 'SW Manager' }, error)
       return null
     }
   }
@@ -57,12 +59,12 @@ class ServiceWorkerManager {
 
       if (!newWorker) return
 
-      console.log('[SW Manager] Update found')
+      logger.info('Update found', { category: 'SW Manager' })
 
       newWorker.addEventListener('statechange', () => {
         if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
           // 新的SW已安装，提示用户更新
-          console.log('[SW Manager] New version available')
+          logger.info('New version available', { category: 'SW Manager' })
           this.notifyUpdate()
         }
       })
@@ -83,7 +85,7 @@ class ServiceWorkerManager {
    */
   async applyUpdate(): Promise<void> {
     if (!this.registration || !this.registration.waiting) {
-      console.warn('[SW Manager] No waiting worker to activate')
+      logger.warn('No waiting worker to activate', { category: 'SW Manager' })
       return
     }
 
@@ -112,9 +114,9 @@ class ServiceWorkerManager {
 
     try {
       await this.registration.update()
-      console.log('[SW Manager] Update check complete')
+      logger.debug('Update check complete', { category: 'SW Manager' })
     } catch (error) {
-      console.error('[SW Manager] Update check failed:', error)
+      logger.error('Update check failed', { category: 'SW Manager' }, error)
     }
   }
 
@@ -145,12 +147,12 @@ class ServiceWorkerManager {
    */
   async clearCache(): Promise<void> {
     if (!this.registration || !this.registration.active) {
-      console.warn('[SW Manager] No active worker')
+      logger.warn('No active worker', { category: 'SW Manager' })
       return
     }
 
     this.registration.active.postMessage({ type: 'CLEAR_CACHE' })
-    console.log('[SW Manager] Cache clear requested')
+    logger.debug('Cache clear requested', { category: 'SW Manager' })
   }
 
   /**
@@ -158,12 +160,12 @@ class ServiceWorkerManager {
    */
   async clearOldMedia(): Promise<void> {
     if (!this.registration || !this.registration.active) {
-      console.warn('[SW Manager] No active worker')
+      logger.warn('No active worker', { category: 'SW Manager' })
       return
     }
 
     this.registration.active.postMessage({ type: 'CLEAR_OLD_MEDIA' })
-    console.log('[SW Manager] Old media cleanup requested')
+    logger.debug('Old media cleanup requested', { category: 'SW Manager' })
   }
 
   /**
@@ -171,7 +173,7 @@ class ServiceWorkerManager {
    */
   async precacheResources(urls: string[]): Promise<void> {
     if (!this.registration || !this.registration.active) {
-      console.warn('[SW Manager] No active worker')
+      logger.warn('No active worker', { category: 'SW Manager' })
       return
     }
 
@@ -197,11 +199,11 @@ class ServiceWorkerManager {
       }
 
       const success = await this.registration.unregister()
-      console.log('[SW Manager] Unregistered:', success)
+      logger.info('Unregistered', { category: 'SW Manager', success })
       this.registration = null
       return success
     } catch (error) {
-      console.error('[SW Manager] Unregister failed:', error)
+      logger.error('Unregister failed', { category: 'SW Manager' }, error)
       return false
     }
   }
