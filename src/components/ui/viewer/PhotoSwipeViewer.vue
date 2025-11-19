@@ -69,7 +69,7 @@ const prepareDataSource = (items: MediaItem[]) => {
   })
 }
 
-// 创建原生视频元素
+// 创建原生视频元素（带自定义控制栏）
 const createNativeVideoElement = (
   url: string,
   index: number,
@@ -84,11 +84,10 @@ const createNativeVideoElement = (
   const video = document.createElement('video')
   video.className = 'pswp__native-video'
   video.playsInline = true
-  video.controls = true
+  video.controls = true // 使用原生控件
+  video.setAttribute('controlsList', 'nodownload') // 隐藏下载按钮
   video.crossOrigin = 'anonymous'
-  video.style.width = '100%'
-  video.style.height = '100%'
-  video.style.objectFit = 'contain'
+  video.preload = 'metadata'
 
   const source = document.createElement('source')
   source.src = url
@@ -120,6 +119,15 @@ const initNativeVideoPlayer = (videoElement: HTMLVideoElement, url: string) => {
   if (videoInstances.has(url)) return videoInstances.get(url)!
 
   console.log('[PhotoSwipeViewer] Native video player initialized for:', url)
+
+  // 启用字幕（如果有）
+  if (videoElement.textTracks && videoElement.textTracks.length > 0) {
+    const firstTrack = videoElement.textTracks[0]
+    if (firstTrack) {
+      firstTrack.mode = 'showing'
+    }
+  }
+
   videoInstances.set(url, videoElement)
 
   return videoElement
@@ -273,14 +281,95 @@ onUnmounted(() => {
   max-height: 100% !important;
   object-fit: contain !important;
   background: #000;
+  border-radius: 8px;
 }
 
-/* 视频控件样式优化 */
+/* ========================================
+   原生视频控件美化 - 深色/浅色模式兼容
+   ======================================== */
+
+/* WebKit/Chrome/Safari 控件美化 */
 .pswp__native-video::-webkit-media-controls-panel {
   background: linear-gradient(to top,
-      rgba(0, 0, 0, 0.85) 0%,
-      rgba(0, 0, 0, 0.4) 50%,
+      rgba(0, 0, 0, 0.9) 0%,
+      rgba(0, 0, 0, 0.6) 50%,
       transparent 100%);
+  border-radius: 0 0 8px 8px;
+}
+
+.pswp__native-video::-webkit-media-controls-enclosure {
+  border-radius: 0 0 8px 8px;
+}
+
+/* 播放按钮 */
+.pswp__native-video::-webkit-media-controls-play-button {
+  background-color: rgba(139, 92, 246, 0.9);
+  border-radius: 50%;
+  filter: brightness(1.2);
+}
+
+.pswp__native-video::-webkit-media-controls-play-button:hover {
+  background-color: rgba(139, 92, 246, 1);
+  transform: scale(1.1);
+}
+
+/* 时间轴 */
+.pswp__native-video::-webkit-media-controls-timeline {
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  height: 6px;
+}
+
+.pswp__native-video::-webkit-media-controls-timeline:hover {
+  height: 8px;
+}
+
+/* 当前时间和剩余时间 */
+.pswp__native-video::-webkit-media-controls-current-time-display,
+.pswp__native-video::-webkit-media-controls-time-remaining-display {
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  font-size: 13px;
+}
+
+/* 音量滑块 */
+.pswp__native-video::-webkit-media-controls-volume-slider {
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+}
+
+/* 全屏按钮 */
+.pswp__native-video::-webkit-media-controls-fullscreen-button {
+  filter: brightness(1.2);
+}
+
+.pswp__native-video::-webkit-media-controls-fullscreen-button:hover {
+  filter: brightness(1.5);
+}
+
+/* 字幕按钮 */
+.pswp__native-video::-webkit-media-controls-toggle-closed-captions-button {
+  filter: brightness(1.2);
+}
+
+.pswp__native-video::-webkit-media-controls-toggle-closed-captions-button:hover {
+  filter: brightness(1.5);
+}
+
+/* Firefox 控件美化 */
+.pswp__native-video::-moz-media-controls {
+  opacity: 1;
+}
+
+/* 字幕样式美化 */
+.pswp__native-video::cue {
+  background-color: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  font-size: 18px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+  padding: 4px 8px;
+  border-radius: 4px;
 }
 
 /* 移动端优化 */
@@ -289,8 +378,22 @@ onUnmounted(() => {
     --pswp-icon-stroke-width: 3px;
   }
 
+  .pswp__native-video {
+    border-radius: 0;
+  }
+
+  /* 移动端控件增大触摸区域 */
   .pswp__native-video::-webkit-media-controls-play-button {
     transform: scale(1.3);
+  }
+
+  .pswp__native-video::-webkit-media-controls-panel {
+    padding: 8px;
+  }
+
+  /* 字幕在移动端稍小 */
+  .pswp__native-video::cue {
+    font-size: 16px;
   }
 }
 
@@ -300,6 +403,28 @@ onUnmounted(() => {
   max-height: 100vh;
   width: 100%;
   height: 100%;
+  border-radius: 0;
+}
+
+.pswp__native-video:-webkit-full-screen {
+  max-width: 100vw;
+  max-height: 100vh;
+  width: 100%;
+  height: 100%;
+  border-radius: 0;
+}
+
+.pswp__native-video:-moz-full-screen {
+  max-width: 100vw;
+  max-height: 100vh;
+  width: 100%;
+  height: 100%;
+  border-radius: 0;
+}
+
+/* 全屏模式下的控件 */
+.pswp__native-video:fullscreen::-webkit-media-controls-panel {
+  border-radius: 0;
 }
 
 /* 工具栏按钮样式 */
@@ -331,5 +456,21 @@ onUnmounted(() => {
   font-size: 14px;
   font-weight: 500;
   margin: 12px;
+}
+
+/* 浅色模式适配（如果需要） */
+@media (prefers-color-scheme: light) {
+  .pswp__native-video::-webkit-media-controls-panel {
+    background: linear-gradient(to top,
+        rgba(255, 255, 255, 0.95) 0%,
+        rgba(255, 255, 255, 0.7) 50%,
+        transparent 100%);
+  }
+
+  .pswp__native-video::-webkit-media-controls-current-time-display,
+  .pswp__native-video::-webkit-media-controls-time-remaining-display {
+    color: #000;
+    text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5);
+  }
 }
 </style>
