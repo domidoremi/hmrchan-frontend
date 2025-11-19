@@ -2,7 +2,7 @@
   <button :class="buttonClass" :disabled="disabled || loading" @click="handleClick" ref="buttonRef">
     <component v-if="icon && iconPosition === 'left' && !loading" :is="icon" :size="iconSize"
       class="btn-icon btn-icon-left" />
-    <span v-if="loading" class="spinner-small"></span>
+    <span v-if="loading" class="spinner spinner-sm"></span>
     <span v-if="$slots.default" class="btn-content">
       <slot />
     </span>
@@ -304,22 +304,7 @@ const handleClick = (event: MouseEvent) => {
   justify-content: center;
 }
 
-/* 加载动画 */
-.spinner-small {
-  width: 16px;
-  height: 16px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-top-color: currentColor;
-  border-radius: 50%;
-  animation: spin 0.6s linear infinite;
-  flex-shrink: 0;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
+/* Spinner styles moved to base.css and utilities.css - use .spinner.spinner-sm */
 
 /* 涟漪效果 */
 .ripple-container {

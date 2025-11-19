@@ -7,7 +7,6 @@
 
 // Store exports
 export { useAuthStore } from './useAuth'
-export { useCounterStore } from './useCounter'
 export { useNetworkStore } from './useNetwork'
 export { usePostsStore } from './usePosts'
 export { useSettingsStore } from './useSettings'

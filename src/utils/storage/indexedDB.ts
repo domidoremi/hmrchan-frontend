@@ -8,6 +8,7 @@
 // ============================================
 
 import type { Post as ApiPost } from '@/types'
+import { logger } from '@/utils/logger'
 
 export interface CachedPost extends ApiPost {
   cached_at: number
@@ -80,13 +81,13 @@ class IndexedDBManager {
       const request = window.indexedDB.open(this.dbName, this.version)
 
       request.onerror = () => {
-        console.error('[IndexedDB] Open failed:', request.error)
+        logger.error('Open failed:', { category: 'IndexedDB' }, request.error)
         reject(request.error)
       }
 
       request.onsuccess = () => {
         this.db = request.result
-        console.log('[IndexedDB] Opened successfully')
+        logger.debug('Opened successfully', { category: 'IndexedDB' })
         resolve()
       }
 
@@ -95,7 +96,9 @@ class IndexedDBManager {
         const transaction = (event.target as IDBOpenDBRequest).transaction!
         const oldVersion = event.oldVersion
 
-        console.log(`[IndexedDB] Upgrading schema from v${oldVersion} to v${this.version}`)
+        logger.debug(`Upgrading schema from v${oldVersion} to v${this.version}`, {
+          category: 'IndexedDB',
+        })
 
         // 创建 posts 表
         if (!db.objectStoreNames.contains('posts')) {
@@ -104,28 +107,30 @@ class IndexedDBManager {
           postsStore.createIndex('author_id', 'author_id', { unique: false })
           postsStore.createIndex('created_at', 'created_at', { unique: false })
           postsStore.createIndex('cached_at', 'cached_at', { unique: false })
-          console.log('[IndexedDB] Created posts store')
+          logger.debug('Created posts store', { category: 'IndexedDB' })
         }
 
         // 创建 metadata 表（v3新增）
         if (!db.objectStoreNames.contains('metadata')) {
-          const metadataStore = db.createObjectStore('metadata', { keyPath: 'key' })
-          console.log('[IndexedDB] Created metadata store')
+          db.createObjectStore('metadata', { keyPath: 'key' })
+          logger.debug('Created metadata store', { category: 'IndexedDB' })
         }
 
         // v1 → v2: 清空posts表（旧缓存缺少media_files字段）
         if (oldVersion < 2) {
-          console.log('[IndexedDB] Clearing posts cache (missing media_files in old data)')
+          logger.debug('Clearing posts cache (missing media_files in old data)', {
+            category: 'IndexedDB',
+          })
           if (db.objectStoreNames.contains('posts')) {
             const postsStore = transaction.objectStore('posts')
             postsStore.clear()
-            console.log('[IndexedDB] Posts cache cleared')
+            logger.debug('Posts cache cleared', { category: 'IndexedDB' })
           }
         }
 
         // v2 → v3: 初始化缓存版本元数据
         if (oldVersion < 3) {
-          console.log('[IndexedDB] Initializing cache version metadata')
+          logger.debug('Initializing cache version metadata', { category: 'IndexedDB' })
           const metadataStore = transaction.objectStore('metadata')
 
           // 存储缓存策略版本
@@ -142,10 +147,10 @@ class IndexedDBManager {
             updated_at: new Date().toISOString(),
           })
 
-          console.log('[IndexedDB] Metadata initialized:', {
-            cache_strategy: this.CACHE_STRATEGY_VERSION,
-            data_schema: this.DATA_SCHEMA_VERSION,
-          })
+          logger.debug(
+            `Metadata initialized: cache_strategy=${this.CACHE_STRATEGY_VERSION}, data_schema=${this.DATA_SCHEMA_VERSION}`,
+            { category: 'IndexedDB' },
+          )
         }
 
         // 创建 authors 表
@@ -153,7 +158,7 @@ class IndexedDBManager {
           const authorsStore = db.createObjectStore('authors', { keyPath: 'id' })
           authorsStore.createIndex('platform', 'platform', { unique: false })
           authorsStore.createIndex('username', 'username', { unique: false })
-          console.log('[IndexedDB] Created authors store')
+          logger.debug('Created authors store', { category: 'IndexedDB' })
         }
 
         // 创建 favorites 表
@@ -162,7 +167,7 @@ class IndexedDBManager {
           favoritesStore.createIndex('post_id', 'post_id', { unique: false })
           favoritesStore.createIndex('user_id', 'user_id', { unique: false })
           favoritesStore.createIndex('created_at', 'created_at', { unique: false })
-          console.log('[IndexedDB] Created favorites store')
+          logger.debug('Created favorites store', { category: 'IndexedDB' })
         }
 
         // 创建 media_metadata 表
@@ -171,7 +176,7 @@ class IndexedDBManager {
           mediaStore.createIndex('type', 'type', { unique: false })
           mediaStore.createIndex('cached', 'cached', { unique: false })
           mediaStore.createIndex('cached_at', 'cached_at', { unique: false })
-          console.log('[IndexedDB] Created media_metadata store')
+          logger.debug('Created media_metadata store', { category: 'IndexedDB' })
         }
 
         // 创建 offline_queue 表
@@ -182,7 +187,7 @@ class IndexedDBManager {
           })
           queueStore.createIndex('status', 'status', { unique: false })
           queueStore.createIndex('timestamp', 'timestamp', { unique: false })
-          console.log('[IndexedDB] Created offline_queue store')
+          logger.debug('Created offline_queue store', { category: 'IndexedDB' })
         }
       }
     })
@@ -219,7 +224,7 @@ class IndexedDBManager {
     })
 
     await Promise.all(promises)
-    console.log(`[IndexedDB] Saved ${posts.length} posts`)
+    logger.debug(`Saved ${posts.length} posts`, { category: 'IndexedDB' })
   }
 
   async getPost(id: string): Promise<CachedPost | null> {
@@ -532,7 +537,7 @@ class IndexedDBManager {
             cursor.continue()
           })
         } else {
-          console.log(`[IndexedDB] Cleared ${count} old posts`)
+          logger.debug(`Cleared ${count} old posts`, { category: 'IndexedDB' })
           resolve(count)
         }
       }
@@ -636,15 +641,15 @@ class IndexedDBManager {
         schemaVersion?.value === this.DATA_SCHEMA_VERSION
 
       if (!isValid) {
-        console.warn('[IndexedDB] Cache version mismatch:', {
-          expected: { strategy: this.CACHE_STRATEGY_VERSION, schema: this.DATA_SCHEMA_VERSION },
-          actual: { strategy: strategyVersion?.value, schema: schemaVersion?.value },
-        })
+        logger.warn(
+          `Cache version mismatch - expected: strategy=${this.CACHE_STRATEGY_VERSION}, schema=${this.DATA_SCHEMA_VERSION}; actual: strategy=${strategyVersion?.value}, schema=${schemaVersion?.value}`,
+          { category: 'IndexedDB' },
+        )
       }
 
       return isValid
     } catch (error) {
-      console.error('[IndexedDB] Failed to check cache version:', error)
+      logger.error('Failed to check cache version:', { category: 'IndexedDB' }, error)
       return false
     }
   }
@@ -673,7 +678,7 @@ class IndexedDBManager {
     if (this.db) {
       this.db.close()
       this.db = null
-      console.log('[IndexedDB] Connection closed')
+      logger.debug('Connection closed', { category: 'IndexedDB' })
     }
   }
 }
