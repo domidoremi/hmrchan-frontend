@@ -167,12 +167,34 @@ const initPlyrForVideo = (videoElement: HTMLVideoElement, url: string) => {
 
   // 强制修复poster尺寸 - Plyr会设置固定尺寸
   player.on('ready', () => {
-    const poster = videoElement.parentElement?.querySelector('.plyr__poster') as HTMLElement
+    const container = videoElement.closest('.pswp__video-wrapper')
+    const poster = container?.querySelector('.plyr__poster') as HTMLElement
     if (poster) {
-      poster.style.width = '100%'
-      poster.style.height = '100%'
-      poster.style.objectFit = 'contain'
-      console.log('[PhotoSwipeViewer] Poster resized to container')
+      // 输出原始尺寸
+      console.log('[PhotoSwipeViewer] Poster before fix:', {
+        width: poster.style.width || poster.getAttribute('width'),
+        height: poster.style.height || poster.getAttribute('height'),
+        computedWidth: getComputedStyle(poster).width,
+        computedHeight: getComputedStyle(poster).height,
+      })
+
+      // 移除width/height属性
+      poster.removeAttribute('width')
+      poster.removeAttribute('height')
+
+      // 强制设置样式
+      poster.style.setProperty('width', '100%', 'important')
+      poster.style.setProperty('height', '100%', 'important')
+      poster.style.setProperty('object-fit', 'contain', 'important')
+      poster.style.setProperty('max-width', '100%', 'important')
+      poster.style.setProperty('max-height', '100%', 'important')
+
+      console.log('[PhotoSwipeViewer] Poster after fix:', {
+        width: poster.style.width,
+        height: poster.style.height,
+        computedWidth: getComputedStyle(poster).width,
+        computedHeight: getComputedStyle(poster).height,
+      })
     }
   })
 
