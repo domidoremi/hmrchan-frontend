@@ -191,7 +191,9 @@ const initPlyrForVideo = (videoElement: HTMLVideoElement, url: string) => {
       poster.style.setProperty('height', '100%', 'important')
       poster.style.setProperty('max-width', '100%', 'important')
       poster.style.setProperty('max-height', '100%', 'important')
-      poster.style.setProperty('object-fit', 'contain', 'important')
+      poster.style.setProperty('background-size', 'contain', 'important')
+      poster.style.setProperty('background-position', 'center', 'important')
+      poster.style.setProperty('background-repeat', 'no-repeat', 'important')
       console.log('[PhotoSwipeViewer] Poster resized to container')
     }
 
@@ -232,7 +234,9 @@ const initPlyrForVideo = (videoElement: HTMLVideoElement, url: string) => {
       poster.style.setProperty('height', '100%', 'important')
       poster.style.setProperty('max-width', '100%', 'important')
       poster.style.setProperty('max-height', '100%', 'important')
-      poster.style.setProperty('object-fit', 'contain', 'important')
+      poster.style.setProperty('background-size', 'contain', 'important')
+      poster.style.setProperty('background-position', 'center', 'important')
+      poster.style.setProperty('background-repeat', 'no-repeat', 'important')
     }
 
     if (plyrVideoWrapper) {
@@ -459,10 +463,12 @@ onUnmounted(() => {
   height: 100% !important;
   max-width: 100% !important;
   max-height: 100% !important;
-  object-fit: contain !important;
   position: absolute !important;
   top: 0 !important;
   left: 0 !important;
+  background-size: contain !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
 }
 
 /* 通用video元素 */
