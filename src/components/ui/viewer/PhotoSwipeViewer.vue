@@ -141,7 +141,7 @@ const initPlyrForVideo = (videoElement: HTMLVideoElement, url: string) => {
     ],
     settings: ['captions', 'quality', 'speed'], // ⭐ 设置中添加字幕选项
     speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 2] },
-    ratio: '16:9',
+    // 移除固定ratio，让视频自适应实际宽高比
     fullscreen: { enabled: true, fallback: true, iosNative: true },
     autopause: true,
     captions: { active: true, language: 'auto', update: true }, // ⭐ 启用字幕
@@ -164,7 +164,28 @@ const initPlyrForVideo = (videoElement: HTMLVideoElement, url: string) => {
   })
 
   plyrInstances.set(url, player)
-  console.log('[PhotoSwipeViewer] ✅ Plyr initialized for:', url)
+  console.log('[PhotoSwipeViewer] Plyr initialized for:', url)
+
+  // 监听视频元数据加载，确保Plyr正确计算尺寸
+  videoElement.addEventListener('loadedmetadata', () => {
+    const container = videoElement.closest('.pswp__video-wrapper') as HTMLElement
+    if (container) {
+      const rect = container.getBoundingClientRect()
+      const videoWidth = videoElement.videoWidth
+      const videoHeight = videoElement.videoHeight
+      const aspectRatio = videoWidth / videoHeight
+
+      console.log('[PhotoSwipeViewer] Video metadata loaded')
+      console.log('[PhotoSwipeViewer] Container:', rect.width, 'x', rect.height)
+      console.log('[PhotoSwipeViewer] Video:', videoWidth, 'x', videoHeight)
+      console.log('[PhotoSwipeViewer] Aspect ratio:', aspectRatio.toFixed(2), aspectRatio > 1 ? '(横屏)' : '(竖屏)')
+
+      // 强制重绘确保尺寸更新
+      videoElement.style.width = '100%'
+      videoElement.style.height = '100%'
+    }
+  }, { once: true })
+
   return player
 }
 
@@ -344,23 +365,50 @@ onUnmounted(() => {
   background: transparent;
 }
 
-/* Plyr播放器样式 */
+/* Plyr播放器样式 - 确保所有层级正确继承尺寸 */
 .pswp__video-wrapper :deep(.plyr) {
   width: 100%;
   height: 100%;
   --plyr-color-main: #8b5cf6;
+  display: flex;
+  flex-direction: column;
 }
 
 .pswp__video-wrapper :deep(.plyr__video-wrapper) {
   width: 100%;
   height: 100%;
+  flex: 1;
   background: #000;
+  position: relative;
 }
 
+/* 确保video元素填充容器 */
+.pswp__video-wrapper :deep(.plyr__video-wrapper video),
 .pswp__plyr-video {
   width: 100%;
   height: 100%;
   object-fit: contain;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+/* Plyr控件层 */
+.pswp__video-wrapper :deep(.plyr__controls) {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 3;
+}
+
+/* Plyr大播放按钮 */
+.pswp__video-wrapper :deep(.plyr__control--overlaid) {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 2;
 }
 
 .pswp__video {
