@@ -221,36 +221,18 @@ const initPhotoSwipe = () => {
     arrowNextTitle: '下一个',
   })
 
-  // 🎬 自定义内容加载器 - 处理视频并初始化Plyr
-  pswp.on('contentLoad', (e: { content: { data: Record<string, unknown>, element?: HTMLElement | null, onLoaded?: () => void } }) => {
-    const { content } = e
-
-    // 如果是视频内容（通过videoUrl标识）
-    if (content.data.videoUrl && !content.element) {
-      console.log('[PhotoSwipeViewer] 🎬 自定义内容加载器 - 渲染视频元素')
-
-      // 直接创建DOM元素，避免使用innerHTML
-      const videoUrl = content.data.videoUrl as string
-      const videoIndex = content.data.videoIndex as number
-      const videoSubtitles = content.data.videoSubtitles as Array<{ language: string; format: string; label: string }> | null | undefined
-      const videoMediaId = content.data.videoMediaId as string | undefined
-
-      // 使用安全的DOM创建方法
-      content.element = createPlyrVideoElement(videoUrl, videoIndex, videoSubtitles, videoMediaId)
-
-      // 初始化Plyr
+  // 🎬 内容激活时初始化Plyr
+  pswp.on('contentActivate', ({ content }) => {
+    if (content.element) {
+      const videoWrapper = content.element.querySelector('.pswp__video-wrapper') as HTMLElement
       const videoElement = content.element.querySelector('.pswp__plyr-video') as HTMLVideoElement
 
-      if (videoElement && videoUrl) {
-        // 延迟初始化Plyr，确保DOM已插入
-        setTimeout(() => {
-          initPlyrForVideo(videoElement, videoUrl)
-        }, 100)
-      }
-
-      // 通知PhotoSwipe内容已加载
-      if (content.onLoaded) {
-        content.onLoaded()
+      if (videoElement && videoWrapper) {
+        const url = videoWrapper.dataset.videoUrl
+        if (url) {
+          console.log('[PhotoSwipeViewer] 🎬 Activating video:', url)
+          initPlyrForVideo(videoElement, url)
+        }
       }
     }
   })
