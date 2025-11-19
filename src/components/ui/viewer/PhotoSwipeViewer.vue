@@ -165,36 +165,34 @@ const initPlyrForVideo = (videoElement: HTMLVideoElement, url: string) => {
   plyrInstances.set(url, player)
   console.log('[PhotoSwipeViewer] Plyr initialized for:', url)
 
-  // 强制修复poster尺寸 - Plyr会设置固定尺寸
+  // 强制修复video和poster尺寸 - Plyr会设置固定尺寸
   player.on('ready', () => {
     const container = videoElement.closest('.pswp__video-wrapper')
+
+    // 修复video元素
+    const video = container?.querySelector('.pswp__plyr-video') as HTMLVideoElement
+    if (video) {
+      video.removeAttribute('width')
+      video.removeAttribute('height')
+      video.style.setProperty('width', '100%', 'important')
+      video.style.setProperty('height', '100%', 'important')
+      video.style.setProperty('max-width', '100%', 'important')
+      video.style.setProperty('max-height', '100%', 'important')
+      video.style.setProperty('object-fit', 'contain', 'important')
+      console.log('[PhotoSwipeViewer] Video resized to container')
+    }
+
+    // 修复poster元素
     const poster = container?.querySelector('.plyr__poster') as HTMLElement
     if (poster) {
-      // 输出原始尺寸
-      console.log('[PhotoSwipeViewer] Poster before fix:', {
-        width: poster.style.width || poster.getAttribute('width'),
-        height: poster.style.height || poster.getAttribute('height'),
-        computedWidth: getComputedStyle(poster).width,
-        computedHeight: getComputedStyle(poster).height,
-      })
-
-      // 移除width/height属性
       poster.removeAttribute('width')
       poster.removeAttribute('height')
-
-      // 强制设置样式
       poster.style.setProperty('width', '100%', 'important')
       poster.style.setProperty('height', '100%', 'important')
-      poster.style.setProperty('object-fit', 'contain', 'important')
       poster.style.setProperty('max-width', '100%', 'important')
       poster.style.setProperty('max-height', '100%', 'important')
-
-      console.log('[PhotoSwipeViewer] Poster after fix:', {
-        width: poster.style.width,
-        height: poster.style.height,
-        computedWidth: getComputedStyle(poster).width,
-        computedHeight: getComputedStyle(poster).height,
-      })
+      poster.style.setProperty('object-fit', 'contain', 'important')
+      console.log('[PhotoSwipeViewer] Poster resized to container')
     }
   })
 
@@ -384,14 +382,25 @@ onUnmounted(() => {
   --plyr-color-main: #8b5cf6;
 }
 
+/* 原始video元素 - 强制适配容器 */
+.pswp__video-wrapper :deep(.pswp__plyr-video) {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  object-fit: contain !important;
+}
+
 /* Plyr海报图 - 强制适配容器 */
 .pswp__video-wrapper :deep(.plyr__poster) {
   width: 100% !important;
   height: 100% !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
   object-fit: contain !important;
 }
 
-/* Video元素基础样式 */
+/* 通用video元素 */
 .pswp__video-wrapper :deep(video) {
   width: 100%;
   height: 100%;
