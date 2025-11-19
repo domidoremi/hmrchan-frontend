@@ -86,15 +86,6 @@ const createPlyrVideoElement = (
   subtitles?: Array<{ language: string; format: string; label: string }> | null,
   mediaId?: string,
 ): HTMLElement => {
-  const authStore = useAuthStore()
-  
-  // 辅助函数：添加token到URL
-  const appendToken = (targetUrl: string) => {
-    if (!authStore.token) return targetUrl
-    const separator = targetUrl.includes('?') ? '&' : '?'
-    return `${targetUrl}${separator}token=${encodeURIComponent(authStore.token)}`
-  }
-
   const container = document.createElement('div')
   container.className = 'pswp__video-wrapper'
   container.dataset.videoUrl = url
@@ -107,7 +98,7 @@ const createPlyrVideoElement = (
   video.crossOrigin = 'anonymous' // 允许加载跨域字幕
 
   const source = document.createElement('source')
-  source.src = appendToken(url) // ✨ 添加token
+  source.src = url
   source.type = 'video/mp4'
 
   video.appendChild(source)
@@ -121,8 +112,7 @@ const createPlyrVideoElement = (
       track.srclang = subtitle.language
       // 构建字幕URL: /api/v1/media/{mediaId}/subtitles/{language}
       // 使用 encodeURIComponent 防止 URL 注入
-      const trackUrl = `https://api.momichan.xyz/api/v1/media/${encodeURIComponent(mediaId)}/subtitles/${encodeURIComponent(subtitle.language)}`
-      track.src = appendToken(trackUrl) // ✨ 添加token
+      track.src = `https://api.momichan.xyz/api/v1/media/${encodeURIComponent(mediaId)}/subtitles/${encodeURIComponent(subtitle.language)}`
       track.default = idx === 0 // 第一个字幕设为默认
       video.appendChild(track)
       console.log(`[PhotoSwipeViewer] Added subtitle track: ${subtitle.label} (${subtitle.language})`)
