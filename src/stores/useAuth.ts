@@ -21,9 +21,11 @@ export const useAuthStore = defineStore(
     // 设置日志上下文
     const logContext = { category: 'AuthStore' }
 
-    // 操作锁，防止竞态条件
-    let loginInProgress = false
-    let registerInProgress = false
+    // 操作锁，使用ref确保响应式和SSR兼容
+    const loginInProgress = ref(false)
+    const registerInProgress = ref(false)
+    const fetchUserInProgress = ref(false)
+    const restoringAuth = ref(false)
 
     // 状态
     const user = ref<User | null>(null)
@@ -43,12 +45,12 @@ export const useAuthStore = defineStore(
       full_name?: string
     }) {
       // 防止重复注册
-      if (registerInProgress) {
+      if (registerInProgress.value) {
         logger.warn('Register already in progress', logContext)
         throw new Error('注册正在进行中，请勿重复提交')
       }
 
-      registerInProgress = true
+      registerInProgress.value = true
       loading.value = true
       error.value = null
 
@@ -81,19 +83,19 @@ export const useAuthStore = defineStore(
         throw err
       } finally {
         loading.value = false
-        registerInProgress = false
+        registerInProgress.value = false
       }
     }
 
     // 登录
     async function login(credentials: LoginRequest) {
       // 防止重复登录
-      if (loginInProgress) {
+      if (loginInProgress.value) {
         logger.warn('Login already in progress', logContext)
         throw new Error('登录正在进行中，请勿重复提交')
       }
 
-      loginInProgress = true
+      loginInProgress.value = true
       loading.value = true
       error.value = null
 
@@ -130,7 +132,7 @@ export const useAuthStore = defineStore(
         throw err
       } finally {
         loading.value = false
-        loginInProgress = false
+        loginInProgress.value = false
       }
     }
 
@@ -166,15 +168,31 @@ export const useAuthStore = defineStore(
     }
 
     // 获取当前用户信息
-    async function fetchCurrentUser() {
+    async function fetchCurrentUser(options: { skipLogoutOnError?: boolean } = {}) {
       if (!token.value) return
+
+      // 防止并发请求
+      if (fetchUserInProgress.value) {
+        logger.warn('FetchCurrentUser already in progress', logContext)
+        return
+      }
+
+      fetchUserInProgress.value = true
 
       try {
         const response = await api.get<User>('/auth/me')
         user.value = response
 
-        // 使用安全存储保存用户信息
-        await secureLocalStorage.set('user', response, { silent: true })
+        // 使用安全存储保存用户信息（添加错误处理）
+        try {
+          await secureLocalStorage.set('user', response, { silent: true })
+        } catch (storageErr) {
+          logger.warn('Failed to save user to storage', {
+            ...logContext,
+            error: storageErr instanceof Error ? storageErr.message : 'Unknown',
+          })
+          // 存储失败不影响主流程
+        }
 
         logger.info('Fetched current user successfully', {
           ...logContext,
@@ -185,12 +203,26 @@ export const useAuthStore = defineStore(
           customMessage: 'Failed to fetch current user information',
         })
         logger.error('Failed to fetch current user', logContext)
-        await logout()
+
+        // 防止循环调用：只在非恢复场景下自动登出
+        if (!options.skipLogoutOnError && !restoringAuth.value) {
+          await logout()
+        }
+      } finally {
+        fetchUserInProgress.value = false
       }
     }
 
     // 从localStorage恢复状态
     async function restoreAuth() {
+      // 防止重复恢复
+      if (restoringAuth.value) {
+        logger.warn('RestoreAuth already in progress', logContext)
+        return
+      }
+
+      restoringAuth.value = true
+
       try {
         // 使用安全存储恢复状态
         const [savedToken, savedUser] = await Promise.all([
@@ -198,7 +230,8 @@ export const useAuthStore = defineStore(
           secureLocalStorage.get<User>('user', { silent: true }),
         ])
 
-        if (savedToken && savedUser) {
+        // 类型安全检查
+        if (savedToken && savedUser && typeof savedUser === 'object' && 'id' in savedUser) {
           token.value = savedToken
           user.value = savedUser
 
@@ -207,18 +240,28 @@ export const useAuthStore = defineStore(
             ...sanitizeForLog({ userId: savedUser.id }),
           })
 
-          // 后台验证token有效性
-          fetchCurrentUser().catch(() => {
-            // Token无效，静默登出
-            logout()
+          // 后台验证token有效性（防止循环调用）
+          fetchCurrentUser({ skipLogoutOnError: true }).catch(() => {
+            // Token无效，静默登出（不再递归）
+            logger.warn('Token validation failed during restore', logContext)
+            // 清理状态但不触发完整logout流程
+            user.value = null
+            token.value = null
           })
+        } else if (savedToken || savedUser) {
+          // 数据不完整，清理
+          logger.warn('Incomplete auth data in storage, cleaning up', logContext)
+          await logout()
         }
       } catch (err) {
         logger.error('Failed to restore auth state', {
           ...logContext,
           error: err instanceof Error ? err.message : 'Unknown error',
         })
+        // 恢复失败，清理状态
         await logout()
+      } finally {
+        restoringAuth.value = false
       }
     }
 
