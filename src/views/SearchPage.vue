@@ -10,18 +10,11 @@
       </header>
 
       <div class="search-tabs glass-card">
-        <button
-          type="button"
-          :class="['tab-button', { active: activeTab === 'posts' }]"
-          @click="switchTab('posts')"
-        >
+        <button type="button" :class="['tab-button', { active: activeTab === 'posts' }]" @click="switchTab('posts')">
           {{ $t('nav.posts') }}
         </button>
-        <button
-          type="button"
-          :class="['tab-button', { active: activeTab === 'authors' }]"
-          @click="switchTab('authors')"
-        >
+        <button type="button" :class="['tab-button', { active: activeTab === 'authors' }]"
+          @click="switchTab('authors')">
           {{ $t('nav.authors') }}
         </button>
       </div>
@@ -34,7 +27,7 @@
         <!-- Posts Tab -->
         <div v-if="activeTab === 'posts'" class="results-section glass-card">
           <div v-if="loadingPosts" class="loading-state reduce-motion">
-            <div class="spinner"></div>
+            <div class="spinner spinner-md"></div>
             <span>{{ $t('search.searching') }}</span>
           </div>
 
@@ -46,12 +39,8 @@
               <PostCard v-for="post in posts" :key="post.id" :post="post" :show-actions="false" />
             </div>
 
-            <Pagination
-              v-if="postsTotalPages > 1"
-              :current-page="postsPage"
-              :total-pages="postsTotalPages"
-              @change="handlePostsPageChange"
-            />
+            <Pagination v-if="postsTotalPages > 1" :current-page="postsPage" :total-pages="postsTotalPages"
+              @change="handlePostsPageChange" />
           </div>
 
           <div v-else class="empty-state glass-card">
@@ -63,7 +52,7 @@
         <!-- Authors Tab -->
         <div v-else class="results-section glass-card">
           <div v-if="loadingAuthors" class="loading-state reduce-motion">
-            <div class="spinner"></div>
+            <div class="spinner spinner-md"></div>
             <span>{{ $t('search.searching') }}</span>
           </div>
 
@@ -87,23 +76,14 @@
                   </span>
                 </div>
               </div>
-              <a
-                v-if="author.profile_url"
-                :href="author.profile_url"
-                class="author-link"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
+              <a v-if="author.profile_url" :href="author.profile_url" class="author-link" target="_blank"
+                rel="noopener noreferrer">
                 {{ $t('author.viewOriginal') }}
               </a>
             </div>
 
-            <Pagination
-              v-if="authorsTotalPages > 1"
-              :current-page="authorsPage"
-              :total-pages="authorsTotalPages"
-              @change="handleAuthorsPageChange"
-            />
+            <Pagination v-if="authorsTotalPages > 1" :current-page="authorsPage" :total-pages="authorsTotalPages"
+              @change="handleAuthorsPageChange" />
           </div>
 
           <div v-else class="empty-state glass-card">
@@ -129,6 +109,7 @@ import services from '@/api/services'
 import type { Post, AuthorListItem, PaginatedResponse } from '@/types'
 import { indexedDB } from '@/utils/storage'
 import { fetchWithFallback } from '@/utils/cache'
+import { withLogging } from '@/utils/error'
 
 const route = useRoute()
 const router = useRouter()
@@ -182,69 +163,72 @@ const loadPosts = async () => {
   try {
     const currentQuery = query.value.trim()
 
-    const { data, fromFallback } = await fetchWithFallback<PaginatedResponse<Post>>({
-      primary: () =>
-        services.search.searchPosts(currentQuery, {
-          page: postsPage.value,
-          page_size: postsPageSize,
+    const { data, fromFallback } = await withLogging(
+      () =>
+        fetchWithFallback<PaginatedResponse<Post>>({
+          primary: () =>
+            services.search.searchPosts(currentQuery, {
+              page: postsPage.value,
+              page_size: postsPageSize,
+            }),
+          fallback: async () => {
+            // 使用 IndexedDB 中已有的帖子做本地搜索回退
+            try {
+              const allCached = await indexedDB.getPosts({ limit: 200 })
+              if (!allCached.length) return null
+
+              const qLower = currentQuery.toLowerCase()
+              const filtered = allCached.filter((p) => {
+                const title = p.title?.toLowerCase() || ''
+                const desc = p.description?.toLowerCase() || ''
+                const author = (p.author_name || '').toLowerCase()
+                const platform = (p.platform || '').toLowerCase()
+                return (
+                  title.includes(qLower) ||
+                  desc.includes(qLower) ||
+                  author.includes(qLower) ||
+                  platform.includes(qLower)
+                )
+              })
+
+              if (!filtered.length) return null
+
+              const pageSize = postsPageSize
+              const start = (postsPage.value - 1) * pageSize
+              const end = start + pageSize
+              const paged = filtered.slice(start, end)
+              const total = filtered.length
+              const pages = Math.max(1, Math.ceil(total / pageSize))
+
+              const response: PaginatedResponse<Post> = {
+                items: paged as Post[],
+                page: postsPage.value,
+                page_size: pageSize,
+                total,
+                pages,
+              }
+
+              return response
+            } catch (error) {
+              await withLogging(() => Promise.reject(error), 'SearchPage:FallbackSearch')
+              return null
+            }
+          },
+          onSuccess: async (response) => {
+            try {
+              await indexedDB.savePosts(response.items)
+            } catch (error) {
+              await withLogging(() => Promise.reject(error), 'SearchPage:PersistResults')
+            }
+          },
         }),
-      fallback: async () => {
-        // 使用 IndexedDB 中已有的帖子做本地搜索回退
-        try {
-          const allCached = await indexedDB.getPosts({ limit: 200 })
-          if (!allCached.length) return null
-
-          const qLower = currentQuery.toLowerCase()
-          const filtered = allCached.filter((p) => {
-            const title = p.title?.toLowerCase() || ''
-            const desc = p.description?.toLowerCase() || ''
-            const author = (p.author_name || '').toLowerCase()
-            const platform = (p.platform || '').toLowerCase()
-            return (
-              title.includes(qLower) ||
-              desc.includes(qLower) ||
-              author.includes(qLower) ||
-              platform.includes(qLower)
-            )
-          })
-
-          if (!filtered.length) return null
-
-          const pageSize = postsPageSize
-          const start = (postsPage.value - 1) * pageSize
-          const end = start + pageSize
-          const paged = filtered.slice(start, end)
-          const total = filtered.length
-          const pages = Math.max(1, Math.ceil(total / pageSize))
-
-          const response: PaginatedResponse<Post> = {
-            items: paged as Post[],
-            page: postsPage.value,
-            page_size: pageSize,
-            total,
-            pages,
-          }
-
-          return response
-        } catch (error) {
-          console.error('[SearchPage] Fallback search in IndexedDB failed:', error)
-          return null
-        }
-      },
-      onSuccess: async (response) => {
-        try {
-          await indexedDB.savePosts(response.items)
-        } catch (error) {
-          console.error('[SearchPage] Failed to persist search results to IndexedDB:', error)
-        }
-      },
-    })
+      'SearchPage:SearchPosts',
+    )
 
     posts.value = data.items || []
     postsTotalPages.value = data.pages || 0
     isPostsOffline.value = !!fromFallback
-  } catch (error) {
-    console.error('[SearchPage] Failed to search posts:', error)
+  } catch {
     posts.value = []
     postsTotalPages.value = 0
     isPostsOffline.value = false
@@ -262,14 +246,17 @@ const loadAuthors = async () => {
 
   loadingAuthors.value = true
   try {
-    const response = await services.search.searchAuthors(query.value.trim(), {
-      page: authorsPage.value,
-      page_size: authorsPageSize,
-    })
+    const response = await withLogging(
+      () =>
+        services.search.searchAuthors(query.value.trim(), {
+          page: authorsPage.value,
+          page_size: authorsPageSize,
+        }),
+      'SearchPage:SearchAuthors',
+    )
     authors.value = response.items || []
     authorsTotalPages.value = response.pages || 0
-  } catch (error) {
-    console.error('[SearchPage] Failed to search authors:', error)
+  } catch {
     authors.value = []
     authorsTotalPages.value = 0
   } finally {
@@ -437,20 +424,7 @@ watch(
   color: var(--color-text-secondary);
 }
 
-.spinner {
-  width: 24px;
-  height: 24px;
-  border-radius: 999px;
-  border: 3px solid var(--glass-border);
-  border-top-color: var(--color-primary);
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
+/* Spinner styles moved to base.css and utilities.css - use .spinner.spinner-md */
 
 .results-list {
   display: flex;

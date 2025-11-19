@@ -358,10 +358,19 @@
               <img v-if="media.file_type === 'image'" :src="mediaApi.getStreamUrl(media.id)" :alt="post.title || ''"
                 loading="lazy" decoding="async" @click="openMediaViewer(getMediaIndex(index))"
                 class="clickable-image" />
-              <div v-else-if="media.file_type === 'video'" class="video-player-container">
-                <VideoPlayer :src="buildMediaStreamUrl(media, post.platform)"
-                  :poster="media.thumbnail_path ? mediaApi.getStreamUrl(media.id) + '/thumbnail' : undefined"
-                  :autoplay="false" :muted="false" />
+              <div v-else-if="media.file_type === 'video'" class="video-thumbnail-container"
+                @click="openMediaViewer(getMediaIndex(index))">
+                <img v-if="media.thumbnail_path" :src="mediaApi.getStreamUrl(media.id) + '/thumbnail'"
+                  :alt="post.title || ''" loading="lazy" decoding="async" class="video-thumbnail" />
+                <div v-else class="video-placeholder">
+                  <Play :size="48" />
+                </div>
+                <div class="video-overlay">
+                  <Play :size="48" />
+                  <span class="video-duration" v-if="media.duration">{{
+                    formatDuration(media.duration)
+                    }}</span>
+                </div>
               </div>
             </div>
           </div>
@@ -392,6 +401,7 @@ import { useMediaPreload } from '@/composables/media/useSmartPreload'
 import { hasViewedPost, markPostAsViewed } from '@/utils/viewTracking'
 import { useErrorHandler } from '@/utils/error'
 import { resolveMediaUrl, validateMediaId } from '@/utils/format'
+import { logger } from '@/utils/logger'
 import {
   ArrowLeft,
   Calendar,
@@ -404,6 +414,8 @@ import {
   Maximize2,
   Repeat2,
   Sparkles,
+  Play,
+  ChevronRight,
 } from 'lucide-vue-next'
 import dayjs from 'dayjs'
 
@@ -411,14 +423,12 @@ import MainLayout from '@/components/layout/MainLayout.vue'
 import GlassButton from '@/components/ui/button/Button.vue'
 import PostCardActions from '@/components/business/PostCard/PostCardActions.vue'
 import PhotoSwipeViewer from '@/components/ui/viewer/PhotoSwipeViewer.vue'
-import { VideoPlayer } from '@/components/ui/video'
 
 import { usePostsStore, useAuthStore, useToastStore } from '@/stores'
 import { api } from '@/api/client'
 import { favoritesApi, mediaApi } from '@/api/services'
 import { indexedDB } from '@/utils/storage'
 import { offlineQueue } from '@/utils/storage'
-import { buildMediaStreamUrl } from '@/utils/media'
 import type { PostDetail, Post, UUID, PostListParams, PaginatedResponse } from '@/types'
 import { PLATFORM_NAMES, PLATFORM_COLORS } from '@/types'
 
@@ -501,11 +511,19 @@ const allMediaItems = computed(() => {
     mediaId?: UUID // 添加mediaId用于生成字幕URL
   }> = []
   const hasThumbnail = !!post.value.thumbnail_url
+  const thumbnailUrl = hasThumbnail ? resolveMediaUrl(post.value.thumbnail_url) : null
 
-  // 1. 添加缩略图（如果存在）
-  if (hasThumbnail) {
+  // 检查第一个media_file是否与thumbnail重复
+  const firstMediaUrl = post.value.media_files?.[0]
+    ? mediaApi.getStreamUrl(post.value.media_files[0].id)
+    : null
+  const isThumbnailDuplicate = thumbnailUrl && firstMediaUrl &&
+    (thumbnailUrl === firstMediaUrl || thumbnailUrl.includes(post.value.media_files?.[0]?.id || ''))
+
+  // 1. 添加缩略图（如果存在且不与第一个媒体文件重复）
+  if (hasThumbnail && !isThumbnailDuplicate) {
     items.push({
-      url: resolveMediaUrl(post.value.thumbnail_url),
+      url: thumbnailUrl!,
       type: 'image',
       // 缩略图通常没有固定尺寸，让PhotoSwipe自动检测
     })
@@ -634,20 +652,20 @@ onMounted(async () => {
 
     // 验证媒体文件ID格式（诊断用）
     if (import.meta.env.DEV && post.value?.media_files && post.value.media_files.length > 0) {
-      console.group('[PostDetailPage] Media ID Validation')
-      post.value.media_files.forEach((media, index) => {
-        const isValid = validateMediaId(media.id, `PostDetailPage(post=${postId}, media[${index}])`)
-        if (!isValid) {
-          console.log('Media File Details:', {
-            index,
-            id: media.id,
-            id_type: typeof media.id,
-            file_type: media.file_type,
-            file_path: media.file_path,
-          })
-        }
-      })
-      console.groupEnd()
+      logger.group('[PostDetailPage] Media ID Validation', () => {
+        post.value!.media_files!.forEach((media, index) => {
+          const isValid = validateMediaId(media.id, `PostDetailPage(post=${postId}, media[${index}])`)
+          if (!isValid) {
+            logger.debug('Media File Details', { category: 'PostDetailPage' }, {
+              index,
+              id: media.id,
+              id_type: typeof media.id,
+              file_type: media.file_type,
+              file_path: media.file_path,
+            })
+          }
+        })
+      }, { category: 'PostDetailPage' })
     }
 
     // 增加浏览计数（如果该帖子未被浏览过）
@@ -655,9 +673,9 @@ onMounted(async () => {
       try {
         await api.post(`/posts/${postId}/increment-view`)
         markPostAsViewed(postId)
-        console.debug('[PostDetailPage] Post view counted:', postId)
+        logger.debug('Post view counted', { category: 'PostDetailPage', postId })
       } catch (error) {
-        console.debug('[PostDetailPage] Failed to increment view count:', error)
+        logger.debug('Failed to increment view count', { category: 'PostDetailPage' }, error)
       }
     }
 
@@ -714,7 +732,7 @@ const toggleFavorite = async () => {
           await indexedDB.removeFavorite(userId, postId)
         }
       } catch (e) {
-        console.error('[PostDetailPage] Failed to update local favorite in IndexedDB:', e)
+        handleError(e, { silent: true, customMessage: 'Failed to update local favorite in IndexedDB' })
       }
     }
 
@@ -774,23 +792,28 @@ const formatNumber = (num: number): string => {
   return num.toString()
 }
 
+const formatDuration = (seconds: number): string => {
+  const hours = Math.floor(seconds / 3600)
+  const minutes = Math.floor((seconds % 3600) / 60)
+  const secs = Math.floor(seconds % 60)
+
+  if (hours > 0) {
+    return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+  }
+  return `${minutes}:${secs.toString().padStart(2, '0')}`
+}
+
 const openMediaViewer = (mediaIndex: number) => {
   if (!post.value) return
 
-  // 使用JSON.stringify查看完整数据
-  console.log('[PostDetailPage] 🎬 Opening media viewer')
-  console.log('  mediaIndex:', mediaIndex)
-  console.log('  itemsCount:', allMediaItems.value.length)
-  console.log('  postId:', post.value.id)
-  console.log('  hasThumbnail:', !!post.value.thumbnail_url)
-  console.log('  mediaFilesCount:', post.value.media_files?.length || 0)
-  console.log('  allMediaItems:', JSON.stringify(allMediaItems.value, null, 2))
-  console.log('  media_files:', JSON.stringify(post.value.media_files?.map(m => ({
-    id: m.id,
-    type: m.file_type,
-    width: m.width,
-    height: m.height,
-  })), null, 2))
+  logger.debug('Opening media viewer', {
+    category: 'PostDetailPage',
+    mediaIndex,
+    itemsCount: allMediaItems.value.length,
+    postId: post.value.id,
+    hasThumbnail: !!post.value.thumbnail_url,
+    mediaFilesCount: post.value.media_files?.length || 0,
+  })
 
   viewerMediaItems.value = allMediaItems.value
   viewerInitialIndex.value = mediaIndex
@@ -799,8 +822,18 @@ const openMediaViewer = (mediaIndex: number) => {
 
 const getMediaIndex = (mediaFileIndex: number): number => {
   // 计算媒体文件在allMediaItems中的实际索引
-  // thumbnail在索引0，media_files从索引1开始
-  const offset = post.value?.thumbnail_url ? 1 : 0
+  // 如果thumbnail存在且不重复，它占用索引0，media_files从索引1开始
+  // 如果thumbnail与第一个media_file重复，则不添加单独的thumbnail，media_files从索引0开始
+  if (!post.value?.thumbnail_url) return mediaFileIndex
+
+  const thumbnailUrl = resolveMediaUrl(post.value.thumbnail_url)
+  const firstMediaUrl = post.value.media_files?.[0]
+    ? mediaApi.getStreamUrl(post.value.media_files[0].id)
+    : null
+  const isThumbnailDuplicate = thumbnailUrl && firstMediaUrl &&
+    (thumbnailUrl === firstMediaUrl || thumbnailUrl.includes(post.value.media_files?.[0]?.id || ''))
+
+  const offset = isThumbnailDuplicate ? 0 : 1
   return offset + mediaFileIndex
 }
 
@@ -842,7 +875,7 @@ const loadRelatedPosts = async () => {
       .filter((p: Post) => p.id !== post.value!.id)
       .slice(0, 4) // 最多显示4个
   } catch (error) {
-    console.debug('[PostDetailPage] Failed to load related posts:', error)
+    logger.debug('Failed to load related posts', { category: 'PostDetailPage' }, error)
   }
 }
 
@@ -866,7 +899,7 @@ const sharePost = async () => {
     }
   } catch (error) {
     if ((error as Error).name !== 'AbortError') {
-      console.debug('[PostDetailPage] Share failed:', error)
+      logger.debug('Share failed', { category: 'PostDetailPage' }, error)
     }
   }
 }
@@ -877,7 +910,7 @@ const copyLink = async (url: string) => {
     await navigator.clipboard.writeText(url)
     toastStore.success(t('post.copySuccess', 'Link copied to clipboard'))
   } catch (error) {
-    console.debug('[PostDetailPage] Copy failed:', error)
+    logger.debug('Copy failed', { category: 'PostDetailPage' }, error)
     toastStore.error(t('post.copyFailed', 'Failed to copy link'))
   }
 }
@@ -885,7 +918,7 @@ const copyLink = async (url: string) => {
 // 更多选项菜单
 const handleMoreOptions = () => {
   // 可以在这里实现更多选项的菜单，例如：举报、下载等
-  console.log('[PostDetailPage] More options clicked')
+  logger.debug('More options clicked', { category: 'PostDetailPage' })
 }
 
 // 键盘快捷键
@@ -1832,12 +1865,72 @@ onUnmounted(() => {
   transform: scale(1.1);
 }
 
-.video-player-container {
+.video-thumbnail-container {
+  position: relative;
   width: 100%;
   aspect-ratio: 16 / 9;
   background: #000;
   border-radius: var(--radius-lg);
   overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+
+.video-thumbnail-container:hover {
+  transform: scale(1.02);
+}
+
+.video-thumbnail {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.video-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-background-secondary);
+  color: var(--color-text-secondary);
+}
+
+.video-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.video-thumbnail-container:hover .video-overlay {
+  opacity: 1;
+}
+
+.video-overlay svg {
+  color: white;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.3));
+}
+
+.video-duration {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
 }
 
 .tags-section {

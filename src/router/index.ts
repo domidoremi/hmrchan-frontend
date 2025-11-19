@@ -1,10 +1,26 @@
+/**
+ * 路由配置
+ *
+ * 功能：
+ * - 路由懒加载
+ * - 路由守卫（认证、权限）
+ * - 智能预加载
+ * - 滚动行为
+ */
+
 import { createRouter, createWebHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
 import { useAuthStore } from '@/stores'
 
+/**
+ * 最后访问路由的存储键
+ */
 const LAST_VISITED_ROUTE_KEY = 'hmrchan:last-route'
 
-// 定义路由 - 所有路由使用懒加载
+/**
+ * 路由定义
+ * 所有路由使用懒加载，提升首屏加载速度
+ */
 export const routes: RouteRecordRaw[] = [
   {
     path: '/',
@@ -162,11 +178,19 @@ export const routes: RouteRecordRaw[] = [
   },
 ]
 
+/**
+ * 创建路由实例
+ */
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes,
+
+  /**
+   * 滚动行为配置
+   * 控制路由切换时的滚动位置
+   */
   scrollBehavior(to, from, savedPosition) {
-    // 如果是浏览器前进/后退，恢复之前的位置
+    // 浏览器前进/后退：恢复之前的滚动位置
     if (savedPosition) {
       return {
         ...savedPosition,
@@ -174,7 +198,7 @@ const router = createRouter({
       }
     }
 
-    // 如果有hash，滚动到对应元素
+    // 锚点跳转：滚动到指定元素
     if (to.hash) {
       return {
         el: to.hash,
@@ -182,7 +206,7 @@ const router = createRouter({
       }
     }
 
-    // 默认滚动到顶部，但使用平滑滚动
+    // 默认：滚动到页面顶部
     return {
       top: 0,
       behavior: 'smooth',
@@ -190,14 +214,19 @@ const router = createRouter({
   },
 })
 
-// 路由守卫
+/**
+ * 全局前置守卫
+ * 处理认证、权限和页面标题
+ */
 router.beforeEach((to, from, next) => {
   const authStore = useAuthStore()
 
+  // 保存最后访问的路由（用于登录后跳转）
   if (from.name && from.name !== 'login') {
     sessionStorage.setItem(LAST_VISITED_ROUTE_KEY, from.fullPath)
   }
 
+  // 登录页：自动添加重定向参数
   if (to.name === 'login' && !to.query.redirect) {
     const historicalRoute = sessionStorage.getItem(LAST_VISITED_ROUTE_KEY) || '/'
     const redirectTarget = from.name && from.name !== 'login' ? from.fullPath : historicalRoute
@@ -219,13 +248,13 @@ router.beforeEach((to, from, next) => {
     document.title = `${to.meta.title} - ${appName}`
   }
 
-  // 需要认证的页面
+  // 认证检查：需要登录的页面
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     next({ name: 'login', query: { redirect: to.fullPath } })
     return
   }
 
-  // 已登录用户访问登录页
+  // 访客页面：已登录用户重定向到首页
   if (to.meta.guest && authStore.isAuthenticated) {
     next({ name: 'home' })
     return
@@ -234,67 +263,75 @@ router.beforeEach((to, from, next) => {
   next()
 })
 
+/**
+ * 全局后置钩子
+ * 路由切换完成后执行
+ */
 router.afterEach((to) => {
+  // 保存当前路由
   if (to.name && to.name !== 'login') {
     sessionStorage.setItem(LAST_VISITED_ROUTE_KEY, to.fullPath)
   }
 
-  // 预加载关键路由
+  // 智能预加载下一个可能访问的路由
   preloadCriticalRoutes(to)
 })
 
-// ========== 路由预加载逻辑 ==========
+/**
+ * ============================================
+ * 路由预加载逻辑
+ * ============================================
+ */
+
 /**
  * 预加载关键路由组件
  * 在用户访问某个页面后，智能预加载可能访问的下一个页面
+ *
+ * @param currentRoute - 当前路由对象
  */
 function preloadCriticalRoutes(currentRoute: { name?: string | symbol }) {
-  // 获取需要预加载的路由
   const routesToPreload = getRoutesToPreload(currentRoute.name)
 
-  // 延迟预加载，避免影响当前页面性能
+  // 延迟 1 秒后开始预加载，避免影响当前页面性能
   setTimeout(() => {
     routesToPreload.forEach((routeName) => {
       const route = routes.find((r) => r.name === routeName)
       if (route && route.component) {
         // 触发组件懒加载
         ;(route.component as () => Promise<unknown>)().catch(() => {
-          // 预加载失败不影响用户体验
-          console.debug(`[Router] Failed to preload route: ${routeName}`)
+          // 预加载失败不影响用户体验，仅记录调试信息
+          console.debug(`[路由] 预加载失败: ${routeName}`)
         })
       }
     })
-  }, 1000) // 1秒后开始预加载
+  }, 1000)
 }
 
 /**
  * 根据当前路由确定需要预加载的路由
+ * 基于用户行为模式预测下一步可能访问的页面
+ *
+ * @param currentRouteName - 当前路由名称
+ * @returns 需要预加载的路由名称数组
  */
 function getRoutesToPreload(currentRouteName: string | symbol | undefined): string[] {
   if (!currentRouteName || typeof currentRouteName !== 'string') return []
 
-  // 预加载策略：基于用户行为预测
+  /**
+   * 预加载策略映射表
+   * 根据用户常见的浏览路径预测下一步操作
+   */
   const preloadMap: Record<string, string[]> = {
-    // 首页 -> 探索页、帖子列表
-    home: ['explore', 'posts'],
-    // 探索页 -> 首页、搜索
-    explore: ['home', 'search'],
-    // 帖子列表 -> 探索页、搜索
-    posts: ['explore', 'search'],
-    // 搜索页 -> 探索页
-    search: ['explore'],
-    // 登录页 -> 首页、探索页
-    login: ['home', 'explore'],
-    // 注册页 -> 登录页
-    register: ['login'],
-    // 帖子详情 -> 探索页
-    'post-detail': ['explore'],
-    // 收藏页 -> 探索页
-    favorites: ['explore'],
-    // 个人资料 -> 设置页
-    profile: ['settings'],
-    // 设置页 -> 首页
-    settings: ['home'],
+    home: ['explore', 'posts'], // 首页 → 探索页、帖子列表
+    explore: ['home', 'search'], // 探索页 → 首页、搜索
+    posts: ['explore', 'search'], // 帖子列表 → 探索页、搜索
+    search: ['explore'], // 搜索页 → 探索页
+    login: ['home', 'explore'], // 登录页 → 首页、探索页
+    register: ['login'], // 注册页 → 登录页
+    'post-detail': ['explore'], // 帖子详情 → 探索页
+    favorites: ['explore'], // 收藏页 → 探索页
+    profile: ['settings'], // 个人资料 → 设置页
+    settings: ['home'], // 设置页 → 首页
   }
 
   return preloadMap[currentRouteName] || []
