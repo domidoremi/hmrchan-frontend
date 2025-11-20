@@ -1,20 +1,22 @@
 <template>
   <!-- 不再在页面上显示，改用Toast通知 -->
-  <div class="access-limit-indicator" :style="{ bottom: dynamicBottom }">
-    <!-- 小气泡指示器 -->
-    <Transition name="fade">
-      <button v-if="shouldShowIndicator" class="access-bubble" :class="{ 'bubble-warning': isNearLimit }"
-        @click="showDetails" :aria-label="$t('access.viewDetails')">
-        <div class="bubble-icon">
-          <Info v-if="!isNearLimit" :size="16" />
-          <AlertCircle v-else :size="16" />
-        </div>
-        <div class="bubble-text">
-          <span class="bubble-count">{{ currentCount }}/{{ totalLimit }}</span>
-        </div>
-      </button>
-    </Transition>
-  </div>
+  <Teleport to=".main-layout">
+    <div class="access-limit-indicator" :style="{ bottom: dynamicBottom }">
+      <!-- 小气泡指示器 -->
+      <Transition name="fade">
+        <button v-if="shouldShowIndicator" class="access-bubble" :class="{ 'bubble-warning': isNearLimit }"
+          @click="showDetails" :aria-label="$t('access.viewDetails')">
+          <div class="bubble-icon">
+            <Info v-if="!isNearLimit" :size="16" />
+            <AlertCircle v-else :size="16" />
+          </div>
+          <div class="bubble-text">
+            <span class="bubble-count">{{ currentCount }}/{{ totalLimit }}</span>
+          </div>
+        </button>
+      </Transition>
+    </div>
+  </Teleport>
 </template>
 
 <script setup lang="ts">
