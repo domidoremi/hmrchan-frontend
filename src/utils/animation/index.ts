@@ -6,3 +6,4 @@
 
 export * from './config'
 export * from './gsap-utils'
+export * from './page-animations'
