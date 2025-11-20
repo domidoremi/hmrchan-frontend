@@ -40,19 +40,52 @@
 </template>
 
 <script setup lang="ts">
+/**
+ * 帖子卡片媒体组件
+ *
+ * 业务功能：
+ * - 展示帖子的缩略图或媒体预览
+ * - 显示平台标识、媒体数量、视频时长等信息
+ * - 提供转发标识显示
+ * - 支持图片懒加载和优先级加载
+ *
+ * 业务场景：
+ * - 在帖子卡片中展示媒体内容
+ * - 提供视觉吸引力和内容预览
+ * - 标识帖子的来源平台和媒体类型
+ *
+ * Props:
+ * - thumbnailUrl: 缩略图 URL
+ * - alt: 图片替代文本
+ * - isFirstScreen: 是否在首屏（影响加载优先级）
+ * - platformColor: 平台颜色
+ * - platformName: 平台名称
+ * - duration: 视频时长（秒）
+ * - mediaCount: 媒体文件数量
+ * - isRetweet: 是否为转发内容
+ */
+
 import { ref } from 'vue'
 import { ImageIcon, Play, Repeat2 } from 'lucide-vue-next'
 import OptimizedImage from '@/components/ui/image/OptimizedImage.vue'
 import { formatDuration } from '@/utils/format'
 
 interface Props {
+  /** 缩略图 URL */
   thumbnailUrl?: string
+  /** 图片替代文本 */
   alt: string
+  /** 是否在首屏 */
   isFirstScreen?: boolean
+  /** 平台颜色 */
   platformColor: string
+  /** 平台名称 */
   platformName: string
+  /** 视频时长（秒） */
   duration?: number | null
+  /** 媒体文件数量 */
   mediaCount: number
+  /** 是否为转发内容 */
   isRetweet: boolean
 }
 
@@ -62,8 +95,10 @@ withDefaults(defineProps<Props>(), {
   duration: null,
 })
 
+/** 媒体容器元素引用 */
 const mediaRef = ref<HTMLElement | null>(null)
 
+/** 暴露媒体引用供父组件使用（用于动画控制） */
 defineExpose({
   mediaRef,
 })

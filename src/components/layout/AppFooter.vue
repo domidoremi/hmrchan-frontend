@@ -1,4 +1,5 @@
 <template>
+  <!-- 应用页脚组件 -->
   <footer class="app-footer">
     <div class="container">
       <!-- 桌面端布局 -->
@@ -83,6 +84,25 @@
 </template>
 
 <script setup lang="ts">
+/**
+ * 应用页脚组件
+ *
+ * 功能描述：
+ * - 提供应用底部导航和信息展示
+ * - 支持桌面端和移动端不同布局
+ * - 显示快捷链接、平台链接和版权信息
+ *
+ * 布局结构：
+ * - 桌面端：多列网格布局，展示详细导航分组
+ * - 移动端：垂直堆叠布局，优化触摸交互
+ *
+ * 职责：
+ * - 提供全站导航快捷入口
+ * - 展示平台链接
+ * - 显示版权和应用描述信息
+ */
+
+/** 支持的社交媒体平台列表 */
 const platforms = [
   { name: 'youtube', label: 'YouTube' },
   { name: 'twitter', label: 'Twitter' },
@@ -92,13 +112,13 @@ const platforms = [
 </script>
 
 <style scoped>
+/* 页脚容器样式 */
 .app-footer {
   margin-top: auto;
   background: var(--color-background);
   border-top: 1px solid var(--glass-border);
   position: relative;
   z-index: 1;
-  /* 最小高度，防止布局偏移 */
   min-height: 200px;
 }
 

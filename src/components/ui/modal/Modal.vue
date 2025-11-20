@@ -38,15 +38,56 @@
 </template>
 
 <script setup lang="ts">
+/**
+ * Modal 模态框组件
+ *
+ * 功能描述：
+ * - 提供模态对话框功能，用于显示重要信息或需要用户交互的内容
+ * - 支持多种尺寸（sm/md/lg/xl）
+ * - 支持自定义标题和页脚
+ * - 完整的焦点管理和键盘导航支持
+ * - 支持点击背景关闭
+ * - 防止背景滚动
+ * - 完整的无障碍支持（ARIA 属性、焦点陷阱）
+ *
+ * Props:
+ * - modelValue: 模态框是否显示
+ * - title: 模态框标题
+ * - size: 模态框尺寸
+ * - hideHeader: 是否隐藏头部
+ * - closeOnBackdrop: 是否允许点击背景关闭
+ *
+ * Emits:
+ * - update:modelValue: 显示状态变化事件
+ *
+ * Slots:
+ * - default: 模态框主体内容
+ * - footer: 模态框页脚内容（通常放置操作按钮）
+ *
+ * @example
+ * <Modal v-model="showModal" title="确认删除" size="sm">
+ *   <p>确定要删除这条记录吗？</p>
+ *   <template #footer>
+ *     <Button @click="handleDelete">确认</Button>
+ *     <Button variant="secondary" @click="showModal = false">取消</Button>
+ *   </template>
+ * </Modal>
+ */
+
 import { computed, watch, ref, nextTick, onMounted } from 'vue'
 import { X } from 'lucide-vue-next'
 import { useFocusManagement } from '@/composables'
 
 interface Props {
+  /** 模态框是否显示 */
   modelValue: boolean
+  /** 模态框标题 */
   title?: string
+  /** 模态框尺寸 */
   size?: 'sm' | 'md' | 'lg' | 'xl'
+  /** 是否隐藏头部 */
   hideHeader?: boolean
+  /** 是否允许点击背景关闭模态框 */
   closeOnBackdrop?: boolean
 }
 
@@ -58,6 +99,7 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const emit = defineEmits<{
+  /** 显示状态变化事件 */
   'update:modelValue': [value: boolean]
 }>()
 
@@ -67,27 +109,39 @@ let cleanupFocusTrap: (() => void) | undefined
 
 const { trapFocus, saveFocus, restoreFocus } = useFocusManagement()
 
-// Generate unique IDs for ARIA
+/** 生成唯一的标题 ID，用于无障碍支持 */
 const titleId = computed(() => `modal-title-${Math.random().toString(36).substr(2, 9)}`)
+
+/** 生成唯一的内容 ID，用于无障碍支持 */
 const bodyId = computed(() => `modal-body-${Math.random().toString(36).substr(2, 9)}`)
 
+/** 计算模态框尺寸的 CSS 类名 */
 const sizeClass = computed(() => `modal-${props.size}`)
 
+/**
+ * 关闭模态框
+ */
 const close = () => {
   emit('update:modelValue', false)
 }
 
+/**
+ * 处理背景点击事件
+ */
 const handleBackdropClick = () => {
   if (props.closeOnBackdrop) {
     close()
   }
 }
 
-// 模态框打开后设置焦点陷阱
+/**
+ * 模态框打开后的回调
+ * 设置焦点陷阱，确保焦点在模态框内循环
+ */
 const onAfterEnter = async () => {
   await nextTick()
   if (modalRef.value) {
-    // 保存之前的焦点
+    // 保存之前的焦点元素
     previousFocusedElement.value = saveFocus()
 
     // 设置焦点陷阱
@@ -107,7 +161,10 @@ const onAfterEnter = async () => {
   }
 }
 
-// 模态框关闭后恢复焦点
+/**
+ * 模态框关闭后的回调
+ * 清理焦点陷阱并恢复之前的焦点
+ */
 const onAfterLeave = () => {
   // 清理焦点陷阱
   if (cleanupFocusTrap) {
@@ -120,19 +177,25 @@ const onAfterLeave = () => {
   previousFocusedElement.value = null
 }
 
-// 防止背景滚动
+/**
+ * 监听模态框显示状态，控制背景滚动
+ */
 watch(
   () => props.modelValue,
   (isOpen) => {
     if (isOpen) {
+      // 模态框打开时禁止背景滚动
       document.body.style.overflow = 'hidden'
     } else {
+      // 模态框关闭时恢复背景滚动
       document.body.style.overflow = ''
     }
   },
 )
 
-// 组件卸载时清理
+/**
+ * 组件卸载时清理资源
+ */
 onMounted(() => {
   return () => {
     if (cleanupFocusTrap) {

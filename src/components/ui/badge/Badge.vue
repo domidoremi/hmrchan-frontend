@@ -5,6 +5,29 @@
 </template>
 
 <script setup lang="ts">
+/**
+ * Badge 徽章组件
+ *
+ * 功能描述：
+ * - 用于显示状态、标签或数字提示的小型标记组件
+ * - 支持多种颜色变体和尺寸
+ * - 支持点状徽章和轮廓样式
+ *
+ * Props:
+ * - variant: 徽章颜色变体（default/primary/secondary/success/warning/error）
+ * - size: 徽章尺寸（sm/md/lg）
+ * - dot: 是否显示为点状徽章
+ * - outlined: 是否使用轮廓样式
+ *
+ * Slots:
+ * - default: 徽章内容（文字或数字）
+ *
+ * @example
+ * <Badge variant="primary">新</Badge>
+ * <Badge variant="error" dot />
+ * <Badge variant="success" outlined>已完成</Badge>
+ */
+
 import { computed } from 'vue'
 
 defineOptions({
@@ -12,13 +35,13 @@ defineOptions({
 })
 
 interface Props {
-  /** 变体 */
+  /** 徽章颜色变体 */
   variant?: 'default' | 'primary' | 'secondary' | 'success' | 'warning' | 'error'
-  /** 大小 */
+  /** 徽章尺寸 */
   size?: 'sm' | 'md' | 'lg'
-  /** 是否为点状badge */
+  /** 是否显示为点状徽章（无文字，仅显示圆点） */
   dot?: boolean
-  /** 是否为轮廓样式 */
+  /** 是否使用轮廓样式（透明背景，带边框） */
   outlined?: boolean
 }
 
@@ -29,6 +52,7 @@ const props = withDefaults(defineProps<Props>(), {
   outlined: false,
 })
 
+/** 计算徽章的 CSS 类名 */
 const badgeClass = computed(() => {
   return [
     'badge',
