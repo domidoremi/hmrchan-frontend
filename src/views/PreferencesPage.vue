@@ -234,9 +234,9 @@ const showImportDialog = () => {
     const file = (e.target as HTMLInputElement).files?.[0]
     if (file) {
       const reader = new FileReader()
-      reader.onload = (e) => {
+      reader.onload = async (e) => {
         const data = e.target?.result as string
-        if (settingsStore.importSettings(data)) {
+        if (await settingsStore.importSettings(data)) {
           toastStore.success(t('preferences.importSuccess'))
         } else {
           toastStore.error(t('preferences.importFailed'))

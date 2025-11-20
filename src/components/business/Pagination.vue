@@ -48,6 +48,28 @@
 </template>
 
 <script setup lang="ts">
+/**
+ * 分页组件
+ *
+ * 业务功能：
+ * - 提供帖子列表的分页导航功能
+ * - 支持首页、尾页、上一页、下一页快速跳转
+ * - 智能显示页码，避免页码过多时的显示问题
+ *
+ * 业务场景：
+ * - 用户浏览帖子列表时进行翻页
+ * - 快速跳转到第一页或最后一页
+ * - 在大量页面中快速导航
+ *
+ * Props:
+ * - currentPage: 当前页码
+ * - totalPages: 总页数
+ * - maxVisible: 最多显示的页码数量（默认 5）
+ *
+ * Emits:
+ * - change: 页码变化时触发，传递新的页码
+ */
+
 import { computed } from 'vue'
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-vue-next'
 
@@ -56,8 +78,11 @@ defineOptions({
 })
 
 interface Props {
+  /** 当前页码 */
   currentPage: number
+  /** 总页数 */
   totalPages: number
+  /** 最多显示的页码数量 */
   maxVisible?: number
 }
 
@@ -66,9 +91,14 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const emit = defineEmits<{
+  /** 页码变化事件 */
   change: [page: number]
 }>()
 
+/**
+ * 计算可见的页码列表
+ * 根据当前页码和总页数，智能显示页码，超出范围时使用省略号
+ */
 const visiblePages = computed(() => {
   const pages: (number | string)[] = []
   const { currentPage, totalPages, maxVisible } = props
@@ -108,11 +138,18 @@ const visiblePages = computed(() => {
   return pages
 })
 
-// 安全的页码显示，避免出现 "1 / 0" 等情况
+/**
+ * 安全的总页数
+ * 避免出现 "1 / 0" 等异常显示
+ */
 const safeTotalPages = computed(() => {
   return props.totalPages && props.totalPages > 0 ? props.totalPages : 1
 })
 
+/**
+ * 安全的当前页码
+ * 确保页码在有效范围内
+ */
 const safeCurrentPage = computed(() => {
   const total = safeTotalPages.value
   const current = props.currentPage || 1
@@ -121,6 +158,10 @@ const safeCurrentPage = computed(() => {
   return current
 })
 
+/**
+ * 跳转到指定页码
+ * @param page - 目标页码
+ */
 const goToPage = (page: number) => {
   if (page >= 1 && page <= props.totalPages && page !== props.currentPage) {
     emit('change', page)

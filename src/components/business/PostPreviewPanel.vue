@@ -105,6 +105,30 @@
 </template>
 
 <script setup lang="ts">
+/**
+ * 帖子预览面板组件
+ *
+ * 业务功能：
+ * - 在侧边面板中预览帖子的完整内容
+ * - 支持多媒体文件的切换和预览
+ * - 显示帖子的详细信息和统计数据
+ * - 提供跳转到原始链接和详情页的功能
+ *
+ * 业务场景：
+ * - 用户快速预览帖子内容而不离开当前页面
+ * - 浏览帖子的多个媒体文件
+ * - 查看帖子的完整描述和统计信息
+ * - 决定是否访问原始链接或详情页
+ *
+ * Props:
+ * - post: 帖子详情数据
+ * - loading: 加载状态
+ * - error: 错误信息
+ *
+ * Emits:
+ * - close: 关闭预览面板
+ */
+
 import { computed, watch, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import {
@@ -125,8 +149,11 @@ import type { MediaFile, PostDetail } from '@/types'
 import { mediaApi } from '@/api/services'
 
 interface Props {
+  /** 帖子详情数据 */
   post: PostDetail | null
+  /** 加载状态 */
   loading?: boolean
+  /** 错误信息 */
   error?: string | null
 }
 
@@ -136,13 +163,19 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const emit = defineEmits<{
+  /** 关闭预览面板事件 */
   (e: 'close'): void
 }>()
 
 const { t } = useI18n()
 
+/** 当前激活的媒体索引 */
 const activeIndex = ref(0)
 
+/**
+ * 监听帖子变化
+ * 切换帖子时重置媒体索引
+ */
 watch(
   () => props.post?.id,
   () => {
@@ -150,10 +183,16 @@ watch(
   },
 )
 
+/** 媒体文件列表 */
 const mediaItems = computed<MediaFile[]>(() => props.post?.media_files || [])
 
+/** 当前激活的媒体文件 */
 const activeMedia = computed(() => mediaItems.value[activeIndex.value] || null)
 
+/**
+ * 平台颜色
+ * 根据不同平台返回对应的品牌颜色
+ */
 const platformColor = computed(() => {
   const palette: Record<string, string> = {
     twitter: '#1DA1F2',
@@ -169,33 +208,61 @@ const platformColor = computed(() => {
   return palette[key] || palette.default
 })
 
+/** 平台名称 */
 const platformName = computed(() => props.post?.platform || 'Platform')
 
+/** 当前激活媒体的 URL */
 const activeMediaSrc = computed(() => {
   if (!activeMedia.value) return ''
   return resolveMedia(activeMedia.value)
 })
 
+/**
+ * 解析媒体文件 URL
+ * 使用 mediaApi 获取流式 URL
+ * @param media - 媒体文件对象
+ * @returns 媒体文件的流式 URL
+ */
 function resolveMedia(media: MediaFile): string {
-  // ✅ 使用mediaApi获取流式URL，不直接使用file_path
   return mediaApi.getStreamUrl(media.id)
 }
 
+/**
+ * 解析缩略图 URL
+ * 使用 mediaApi 获取缩略图 URL
+ * @param media - 媒体文件对象
+ * @returns 缩略图 URL
+ */
 function resolveThumb(media: MediaFile): string {
-  // ✅ 使用mediaApi获取缩略图URL
   return mediaApi.getThumbnailUrl(media.id)
 }
 
+/**
+ * 设置激活的媒体
+ * @param index - 媒体索引
+ */
 function setActive(index: number) {
   activeIndex.value = index
 }
 
+/**
+ * 格式化数字
+ * 将大数字转换为 K/M 格式
+ * @param num - 数字
+ * @returns 格式化后的字符串
+ */
 function formatNumber(num: number): string {
   if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`
   if (num >= 1000) return `${(num / 1000).toFixed(1)}K`
   return num.toString()
 }
 
+/**
+ * 格式化视频时长
+ * 将秒数转换为 HH:MM:SS 或 MM:SS 格式
+ * @param seconds - 秒数
+ * @returns 格式化后的时长字符串
+ */
 function formatDuration(seconds: number): string {
   const hours = Math.floor(seconds / 3600)
   const minutes = Math.floor((seconds % 3600) / 60)
@@ -206,6 +273,12 @@ function formatDuration(seconds: number): string {
   return `${minutes}:${secs.toString().padStart(2, '0')}`
 }
 
+/**
+ * 格式化相对时间
+ * 将日期转换为相对时间格式（如 "2h ago"）
+ * @param dateString - 日期字符串
+ * @returns 相对时间字符串
+ */
 function formatRelativeTime(dateString: string): string {
   const date = new Date(dateString)
   const now = new Date()

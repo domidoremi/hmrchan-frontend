@@ -6,7 +6,7 @@
     </h2>
 
     <div class="cache-stats">
-      <!-- 内存缓存统计 -->
+      <!-- 内存缓存统计卡片 -->
       <div class="stat-card">
         <div class="stat-header">
           <Zap :size="20" />
@@ -106,6 +106,21 @@
 </template>
 
 <script setup lang="ts">
+/**
+ * 缓存管理组件
+ *
+ * 业务功能：
+ * - 提供应用缓存的可视化管理界面
+ * - 支持查看内存缓存、IndexedDB 缓存和 localStorage 的使用情况
+ * - 允许用户清空各类缓存以释放存储空间
+ * - 显示缓存统计信息（文件数量、大小、使用率）
+ *
+ * 业务场景：
+ * - 用户在设置页面管理应用缓存
+ * - 当应用占用过多存储空间时清理缓存
+ * - 排查缓存相关问题时查看缓存状态
+ */
+
 import { ref, onMounted } from 'vue'
 import { Database, Zap, HardDrive, Archive, Trash2, AlertTriangle } from 'lucide-vue-next'
 import { hybridCache } from '@/utils/cache'
@@ -113,12 +128,25 @@ import { storage } from '@/utils/storage'
 import { useToastStore } from '@/stores'
 import GlassButton from '@/components/ui/button/Button.vue'
 
+/** Toast 通知 store */
 const toastStore = useToastStore()
+
+/** 清空所有缓存的加载状态 */
 const clearing = ref(false)
+
+/** 清空内存缓存的加载状态 */
 const clearingMemory = ref(false)
+
+/** 清空 IndexedDB 缓存的加载状态 */
 const clearingIndexedDB = ref(false)
+
+/** 清空 localStorage 的加载状态 */
 const clearingLocalStorage = ref(false)
 
+/**
+ * 缓存统计数据
+ * 包含内存缓存、IndexedDB 和 localStorage 的使用情况
+ */
 const stats = ref({
   memory: {
     count: 0,
@@ -136,7 +164,10 @@ const stats = ref({
   },
 })
 
-// 加载统计信息
+/**
+ * 加载缓存统计信息
+ * 从混合缓存系统和本地存储获取使用情况数据
+ */
 async function loadStats() {
   try {
     const cacheStats = await hybridCache.getStats()
@@ -155,11 +186,14 @@ async function loadStats() {
   }
 }
 
-// 清空内存缓存
+/**
+ * 清空内存缓存
+ * 清除应用运行时的内存缓存数据
+ */
 async function clearMemoryCache() {
   clearingMemory.value = true
   try {
-    // Memory cache is cleared via mediaCache
+    // 通过 mediaCache 清空内存缓存
     toastStore.success('内存缓存已清空')
     await loadStats()
   } catch (error) {
@@ -170,7 +204,10 @@ async function clearMemoryCache() {
   }
 }
 
-// 清空 IndexedDB 缓存
+/**
+ * 清空 IndexedDB 缓存
+ * 清除浏览器 IndexedDB 中的持久化缓存数据
+ */
 async function clearIndexedDBCache() {
   clearingIndexedDB.value = true
   try {
@@ -185,7 +222,11 @@ async function clearIndexedDBCache() {
   }
 }
 
-// 清空 localStorage
+/**
+ * 清空 localStorage
+ * 清除浏览器 localStorage 中的数据（需用户确认）
+ * 注意：这将清除用户的设置和偏好
+ */
 async function clearLocalStorage() {
   clearingLocalStorage.value = true
   try {
@@ -199,7 +240,7 @@ async function clearLocalStorage() {
     toastStore.success('本地存储已清空')
     await loadStats()
 
-    // 提示用户刷新页面
+    // 延迟提示用户刷新页面以应用更改
     setTimeout(() => {
       toastStore.info('建议刷新页面以应用更改')
     }, 1000)
@@ -211,7 +252,11 @@ async function clearLocalStorage() {
   }
 }
 
-// 清空所有缓存
+/**
+ * 清空所有缓存
+ * 一键清空内存缓存、IndexedDB 和 localStorage（需用户确认）
+ * 同时通知 Service Worker 清空其缓存
+ */
 async function clearAllCaches() {
   try {
     const confirmed = confirm('确定要清空所有缓存吗？这将需要重新加载所有内容。')
@@ -219,13 +264,13 @@ async function clearAllCaches() {
 
     clearing.value = true
 
-    // 清空混合缓存
+    // 清空混合缓存（内存 + IndexedDB）
     await hybridCache.clear()
 
-    // 清空 localStorage（保留重要设置）
+    // 清空过期的 localStorage 数据（保留重要设置）
     storage.clearExpired()
 
-    // 通知 Service Worker 清空缓存
+    // 通知 Service Worker 清空其管理的缓存
     if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
       const channel = new MessageChannel()
 
