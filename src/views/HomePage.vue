@@ -1,6 +1,6 @@
 <template>
   <MainLayout>
-    <div class="home-page">
+    <div ref="homeContainer" class="home-page">
       <!-- Hero Section - GSAP 动画版本 -->
       <HeroSection
         :visible="settingsStore.settings.showHeroSection"
@@ -18,6 +18,9 @@
 
       <!-- Platform Stats - Modern Cards -->
       <section class="platforms-section reduce-motion">
+        <div class="section-header">
+          <h2>{{ $t('common.platforms', '平台统计') }}</h2>
+        </div>
         <StatCardGrid :autoplay="true" :autoplay-duration="3000">
           <StatCard v-for="platform in platforms" :key="platform" :icon="getPlatformIcon(platform)"
             :icon-color="getPlatformColor(platform)" :title="$t(`platform.${platform}`)"
@@ -34,7 +37,7 @@
       </section>
 
       <!-- Latest Posts - Bento Grid Layout -->
-      <section class="posts-section reduce-motion">
+      <section class="posts-section reduce-motion parallax-slow">
         <div class="section-header">
           <h2>{{ $t('filter.latest') }}</h2>
           <RouterLink to="/explore">
@@ -127,6 +130,7 @@ import StatCardGrid from '@/components/ui/card/StatCardGrid.vue'
 import { useAuthStore, useSettingsStore, usePostsStore } from '@/stores'
 import { useWaterfallLayout } from '@/composables'
 import { useInfiniteScroll } from '@/composables'
+import { useHomePageAnimation } from '@/composables/animation/useHomePageAnimation'
 import { PLATFORMS, PLATFORM_COLORS, type Post } from '@/types'
 import { statsApi } from '@/api/services'
 import { formatNumber } from '@/utils/format'
@@ -146,6 +150,9 @@ const postsStore = usePostsStore()
 const { isAuthenticated, user } = storeToRefs(authStore)
 /** 加载状态和离线回退标志 */
 const { loading, lastListFromFallback } = storeToRefs(postsStore)
+
+/** 首页动画系统 */
+const { container: homeContainer, refreshAnimations } = useHomePageAnimation()
 
 /** 主页使用独立的posts数组，不受explore页面筛选影响 */
 const posts = ref<Post[]>([])
