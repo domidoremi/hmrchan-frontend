@@ -197,14 +197,11 @@ app.config.errorHandler = (err, instance, info) => {
     return
   }
 
-  /** 开发环境：在控制台打印详细错误信息 */
-  if (import.meta.env.DEV) {
-    console.error('[全局错误处理器]:', {
-      error: err,
-      component: instance?.$options?.name || '未知组件',
-      info,
-    })
-  }
+  logger.error('全局错误处理器捕获到错误 (DEV)', {
+    component: instance?.$options?.name || '未知组件',
+    info,
+    error: err instanceof Error ? err.message : String(err),
+  })
 
   /** 记录错误日志（可扩展为错误上报服务） */
   logger.critical(`Vue 错误: ${info}`, {
@@ -322,10 +319,9 @@ window.addEventListener('unhandledrejection', (event) => {
     return
   }
 
-  /** 开发环境：记录其他未处理的 Promise 错误 */
-  if (import.meta.env.DEV) {
-    console.error('[未处理的 Promise 错误]:', error)
-  }
+  logger.error('未处理的 Promise 错误 (DEV)', {
+    error: error instanceof Error ? error.message : String(error),
+  })
 })
 
 // ============================================
@@ -371,7 +367,9 @@ if (import.meta.env.DEV) {
     setTimeout(() => {
       /** 生成性能报告 */
       const report = performanceMonitor.generateReport()
-      console.log(report)
+      logger.info('Performance report (DEV)', {
+        report,
+      })
 
       /**
        * 将性能监控工具暴露到全局对象
@@ -382,12 +380,10 @@ if (import.meta.env.DEV) {
       ).__performanceMonitor__ = performanceMonitor
 
       /** 在控制台输出性能监控工具的使用提示 */
-      console.log(
-        '%c💡 性能监控工具',
-        'color: #8b5cf6; font-weight: bold',
-        '\n访问方式: window.__performanceMonitor__',
-        '\n生成报告: window.__performanceMonitor__.generateReport()',
-      )
+      logger.info('💡 性能监控工具 (DEV)', {
+        usage:
+          '访问: window.__performanceMonitor__ ; 生成报告: window.__performanceMonitor__.generateReport()',
+      })
     }, 2000)
   })
 }

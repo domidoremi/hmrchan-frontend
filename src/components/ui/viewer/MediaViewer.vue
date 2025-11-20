@@ -90,6 +90,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onUnmounted } from 'vue'
+import logger from '@/utils/logger'
 import {
   X,
   ChevronLeft,
@@ -278,8 +279,9 @@ const onMediaLoad = () => {
 const onVideoError = (event: Event) => {
   loading.value = false
   const video = event.target as HTMLVideoElement
-  console.error('Video playback error:', {
-    error: video.error,
+  logger.error('Video playback error', {
+    errorCode: video.error?.code,
+    errorMessage: video.error?.message,
     networkState: video.networkState,
     readyState: video.readyState,
     src: video.src,

@@ -5,6 +5,7 @@
 
 import { useI18n } from 'vue-i18n'
 import { useToastStore } from '@/stores'
+import logger from '@/utils/logger'
 import { errorMonitor } from './errorMonitor'
 
 export interface ErrorResponse {
@@ -173,8 +174,11 @@ export function handleError(
       const toastStore = useToastStore()
       toastStore.error(errorResponse.message, context)
     } catch (e) {
-      // Toast store可能未初始化，降级为console
-      console.warn('[ErrorHandler] Failed to show toast:', e)
+      // Toast store可能未初始化，降级为logger
+      logger.warn('[ErrorHandler] Failed to show toast', {
+        error: e instanceof Error ? e.message : String(e),
+        context,
+      })
     }
   }
 

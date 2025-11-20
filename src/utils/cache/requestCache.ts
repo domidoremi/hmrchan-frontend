@@ -6,6 +6,8 @@
  * 3. 缓存失效 - 支持TTL和手动清除
  */
 
+import logger from '@/utils/logger'
+
 interface CacheConfig {
   ttl?: number // 缓存时间(毫秒)
   force?: boolean // 强制刷新
@@ -54,7 +56,7 @@ class RequestCache {
       return null
     }
 
-    console.log(`[Cache] Hit: ${key}`)
+    logger.debug(`[Cache] Hit: ${key}`)
     return item.data as T
   }
 
@@ -83,10 +85,10 @@ class RequestCache {
     if (url) {
       const key = this.getCacheKey(url, params)
       this.cache.delete(key)
-      console.log(`[Cache] Clear: ${key}`)
+      logger.info(`[Cache] Clear: ${key}`)
     } else {
       this.cache.clear()
-      console.log('[Cache] Clear all')
+      logger.info('[Cache] Clear all')
     }
   }
 
@@ -102,7 +104,7 @@ class RequestCache {
       }
     }
     if (count > 0) {
-      console.log(`[Cache] Cleared ${count} expired items`)
+      logger.info(`[Cache] Cleared ${count} expired items`)
     }
   }
 
