@@ -23,6 +23,38 @@
 </template>
 
 <script setup lang="ts">
+/**
+ * Card 卡片组件
+ *
+ * 功能描述：
+ * - 提供多种样式变体的卡片容器（elevated/outlined/filled/glass）
+ * - 支持可点击卡片和悬停效果
+ * - 支持自定义内边距
+ * - 提供头部、媒体、内容和页脚插槽
+ *
+ * Props:
+ * - variant: 卡片样式变体
+ * - clickable: 是否可点击（渲染为 button 元素）
+ * - hover: 是否启用悬停效果
+ * - padding: 内边距大小
+ *
+ * Emits:
+ * - click: 卡片点击事件（仅在 clickable 为 true 时触发）
+ *
+ * Slots:
+ * - header: 卡片头部内容
+ * - media: 媒体内容（图片或视频）
+ * - default: 卡片主体内容
+ * - footer: 卡片页脚内容
+ *
+ * @example
+ * <Card variant="glass" hover>
+ *   <template #header>标题</template>
+ *   <p>卡片内容</p>
+ *   <template #footer>操作按钮</template>
+ * </Card>
+ */
+
 import { computed } from 'vue'
 
 defineOptions({
@@ -30,11 +62,11 @@ defineOptions({
 })
 
 interface Props {
-  /** 卡片变体 */
+  /** 卡片样式变体 */
   variant?: 'elevated' | 'outlined' | 'filled' | 'glass'
-  /** 是否可点击 */
+  /** 是否可点击（渲染为 button 元素） */
   clickable?: boolean
-  /** 悬停效果 */
+  /** 是否启用悬停效果 */
   hover?: boolean
   /** 内边距大小 */
   padding?: 'none' | 'sm' | 'md' | 'lg'
@@ -48,9 +80,11 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const emit = defineEmits<{
+  /** 卡片点击事件 */
   click: [event: MouseEvent]
 }>()
 
+/** 计算卡片的 CSS 类名 */
 const cardClass = computed(() => {
   return [
     'card',
@@ -63,6 +97,10 @@ const cardClass = computed(() => {
   ]
 })
 
+/**
+ * 处理卡片点击事件
+ * @param event - 鼠标点击事件
+ */
 const handleClick = (event: MouseEvent) => {
   if (props.clickable) {
     emit('click', event)

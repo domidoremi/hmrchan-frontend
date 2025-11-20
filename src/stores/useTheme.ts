@@ -1,9 +1,11 @@
 /**
  * 主题状态管理
- * v3.0 - 安全增强版
- * - 使用安全存储替代Pinia persist
- * - 管理应用主题（light/dark/auto）和系统主题偏好
- * - 增强浏览器兼容性
+ *
+ * 功能说明：
+ * - 管理应用主题模式（浅色/深色/自动）
+ * - 监听系统主题偏好变化
+ * - 使用安全存储持久化主题设置
+ * - 自动应用主题到 DOM
  */
 import { defineStore } from 'pinia'
 import { ref, watch } from 'vue'
@@ -14,34 +16,32 @@ import { secureLocalStorage } from '@/utils/secureStorage'
 export const useThemeStore = defineStore(
   'theme',
   () => {
-    // 设置日志上下文
+    /** 日志上下文 */
     const logContext = { category: 'ThemeStore' }
 
-    // ==================== 状态 ====================
+    /** 主题模式 */
     const theme = ref<Theme>('auto')
+
+    /** 当前是否为深色模式 */
     const isDark = ref(false)
 
-    // ==================== 内部状态 ====================
+    /** 系统主题监听器 */
     let mediaQueryListener: ((e: MediaQueryListEvent) => void) | null = null
-
-    // ==================== Actions ====================
 
     /**
      * 初始化主题
-     * 从安全存储恢复主题设置
+     *
+     * 从安全存储恢复主题设置并应用
      */
     async function initTheme() {
       try {
-        // 从安全存储加载主题
         const saved = await secureLocalStorage.get<Theme>('theme', { silent: true })
         if (saved && ['light', 'dark', 'auto'].includes(saved)) {
           theme.value = saved
         }
 
-        // 应用主题
         updateTheme()
 
-        // 设置系统主题监听
         setupMediaQueryListener()
 
         logger.info('Theme store initialized successfully', {
@@ -54,7 +54,6 @@ export const useThemeStore = defineStore(
           ...logContext,
           error: error instanceof Error ? error.message : 'Unknown error',
         })
-        // 降级到默认主题
         theme.value = 'auto'
         updateTheme()
       }
@@ -62,6 +61,8 @@ export const useThemeStore = defineStore(
 
     /**
      * 更新主题
+     *
+     * 根据当前主题设置更新 DOM 和状态
      */
     function updateTheme() {
       try {
@@ -75,7 +76,6 @@ export const useThemeStore = defineStore(
 
         isDark.value = shouldBeDark
 
-        // 更新DOM
         if (shouldBeDark) {
           document.documentElement.setAttribute('data-theme', 'dark')
         } else {
@@ -97,14 +97,14 @@ export const useThemeStore = defineStore(
 
     /**
      * 设置主题
-     * 使用安全存储保存主题设置
+     *
+     * @param newTheme - 新的主题模式
      */
     async function setTheme(newTheme: Theme) {
       try {
         const previousTheme = theme.value
         theme.value = newTheme
 
-        // 保存到安全存储
         await secureLocalStorage.set('theme', newTheme, { silent: true })
 
         updateTheme()
@@ -125,7 +125,9 @@ export const useThemeStore = defineStore(
     }
 
     /**
-     * 切换主题（light <-> dark）
+     * 切换主题
+     *
+     * 在浅色和深色模式之间切换
      */
     function toggleTheme() {
       if (theme.value === 'light') {
@@ -137,17 +139,17 @@ export const useThemeStore = defineStore(
 
     /**
      * 设置系统主题监听器
+     *
+     * 当主题为 auto 时，监听系统主题偏好变化
      */
     function setupMediaQueryListener() {
       try {
-        // 清除旧的监听器
         if (mediaQueryListener) {
           const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
           mediaQuery.removeEventListener('change', mediaQueryListener)
           mediaQueryListener = null
         }
 
-        // 监听主题变化
         watch(
           () => theme.value,
           (newTheme) => {
@@ -178,18 +180,14 @@ export const useThemeStore = defineStore(
     }
 
     return {
-      // 状态
       theme,
       isDark,
-
-      // 方法
       initTheme,
       setTheme,
       toggleTheme,
     }
   },
   {
-    // 禁用Pinia persist，使用自定义的安全存储
     persist: false,
   },
 )

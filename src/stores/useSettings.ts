@@ -1,10 +1,12 @@
 /**
  * 用户设置状态管理
- * v3.0 - 安全增强版
- * - 使用安全存储
- * - 防止竞态条件
- * - 支持 localStorage 和服务器同步
- * - 增强浏览器兼容性
+ *
+ * 功能说明：
+ * - 管理用户偏好设置（显示、界面、隐私等）
+ * - 支持本地存储和服务器同步
+ * - 使用安全存储保存设置
+ * - 防止并发操作的竞态条件
+ * - 支持设置导入导出
  */
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
@@ -15,30 +17,48 @@ import { secureLocalStorage } from '@/utils/secureStorage'
 import { useAuthStore } from './useAuth'
 import { useToastStore } from './useToast'
 
+/**
+ * 用户设置接口定义
+ */
 export interface UserSettings {
-  // 显示设置
+  /** 是否显示首页横幅区域 */
   showHeroSection: boolean
 
-  // 界面设置
+  /** 每页显示的内容数量 */
   postsPerPage: number
+
+  /** 是否启用动画效果 */
   enableAnimations: boolean
 
-  // 其他设置
+  /** 是否启用滑动导航 */
   enableSwipeNavigation: boolean
+
+  /** 是否自动播放视频 */
   autoPlayVideos: boolean
+
+  /** 是否显示图片预览 */
   showImagePreviews: boolean
 
-  // 隐私设置
-  cookieConsent: boolean | null // null = 未选择, true = 接受, false = 拒绝
+  /** Cookie 同意状态（null=未选择, true=接受, false=拒绝） */
+  cookieConsent: boolean | null
+
+  /** 是否启用分析统计 */
   analyticsEnabled: boolean
+
+  /** 是否启用功能性 Cookie */
   functionalCookiesEnabled: boolean
+
+  /** 是否启用性能 Cookie */
   performanceCookiesEnabled: boolean
 
-  // 数据偏好
+  /** 是否允许数据收集 */
   dataCollection: boolean
+
+  /** 是否启用个性化内容 */
   personalizedContent: boolean
 }
 
+/** 默认设置值 */
 const DEFAULT_SETTINGS: UserSettings = {
   showHeroSection: true,
   postsPerPage: 20,
@@ -46,36 +66,40 @@ const DEFAULT_SETTINGS: UserSettings = {
   enableSwipeNavigation: true,
   autoPlayVideos: false,
   showImagePreviews: true,
-
-  // 隐私默认值
   cookieConsent: null,
   analyticsEnabled: false,
-  functionalCookiesEnabled: true, // 必需的功能性 cookies
+  functionalCookiesEnabled: true,
   performanceCookiesEnabled: false,
-
-  // 数据默认值
   dataCollection: false,
   personalizedContent: false,
 }
 
 export const useSettingsStore = defineStore('settings', () => {
-  // 设置日志上下文
+  /** 日志上下文 */
   const logContext = { category: 'SettingsStore' }
 
-  // 操作锁，防止竞态条件
+  /** 同步操作进行中标志 */
   let syncInProgress = false
+
+  /** 加载操作进行中标志 */
   let loadInProgress = false
 
-  // ==================== 状态 ====================
+  /** 用户设置 */
   const settings = ref<UserSettings>({ ...DEFAULT_SETTINGS })
+
+  /** 同步状态 */
   const syncing = ref(false)
+
+  /** 最后一次同步时间 */
   const lastSyncedAt = ref<Date | null>(null)
+
+  /** 错误信息 */
   const error = ref<string | null>(null)
 
-  // ==================== Actions ====================
-
   /**
-   * 初始化设置（从安全存储加载）
+   * 初始化设置
+   *
+   * 从安全存储加载用户设置，如果不存在则使用默认值
    */
   async function initSettings() {
     try {
@@ -116,7 +140,9 @@ export const useSettingsStore = defineStore('settings', () => {
   }
 
   /**
-   * 同步到服务器
+   * 同步设置到服务器
+   *
+   * @returns 同步是否成功
    */
   async function syncToServer() {
     const authStore = useAuthStore()
@@ -127,7 +153,6 @@ export const useSettingsStore = defineStore('settings', () => {
       return false
     }
 
-    // 防止重复同步
     if (syncInProgress) {
       logger.warn('Sync already in progress', logContext)
       return false
@@ -140,7 +165,7 @@ export const useSettingsStore = defineStore('settings', () => {
       error.value = null
 
       const { enableSwipeNavigation, ...serverSettings } = settings.value
-      void enableSwipeNavigation // excluded from server payload but kept for type safety
+      void enableSwipeNavigation
 
       await api.patch('/preferences', serverSettings)
       lastSyncedAt.value = new Date()
@@ -149,7 +174,7 @@ export const useSettingsStore = defineStore('settings', () => {
       return true
     } catch (err) {
       const errorResponse = handleError(err, 'SettingsStore.SyncToServer', {
-        silent: true, // Don't show toast here, we'll handle it below
+        silent: true,
       })
       error.value = errorResponse.message
       toastStore.error('Failed to sync settings to server', 'Settings')
@@ -162,6 +187,8 @@ export const useSettingsStore = defineStore('settings', () => {
 
   /**
    * 从服务器加载设置
+   *
+   * @returns 加载是否成功
    */
   async function loadFromServer() {
     const authStore = useAuthStore()
@@ -172,7 +199,6 @@ export const useSettingsStore = defineStore('settings', () => {
       return false
     }
 
-    // 防止重复加载
     if (loadInProgress) {
       logger.warn('Load already in progress', logContext)
       return false
@@ -202,7 +228,7 @@ export const useSettingsStore = defineStore('settings', () => {
       return false
     } catch (err) {
       const errorResponse = handleError(err, 'SettingsStore.LoadFromServer', {
-        silent: true, // Don't show toast here, we'll handle it below
+        silent: true,
       })
       error.value = errorResponse.message
       toastStore.warning('Failed to load settings from server, using local settings', 'Settings')
@@ -215,6 +241,9 @@ export const useSettingsStore = defineStore('settings', () => {
 
   /**
    * 更新单个设置
+   *
+   * @param key - 设置项的键名
+   * @param value - 新的设置值
    */
   async function updateSetting<K extends keyof UserSettings>(key: K, value: UserSettings[K]) {
     try {
@@ -223,7 +252,6 @@ export const useSettingsStore = defineStore('settings', () => {
 
       logger.debug('Setting updated', { ...logContext, key })
 
-      // 如果已登录，同步到服务器（防抖处理由调用方控制）
       const authStore = useAuthStore()
       if (authStore.isAuthenticated) {
         await syncToServer()
@@ -239,6 +267,8 @@ export const useSettingsStore = defineStore('settings', () => {
 
   /**
    * 切换布尔值设置
+   *
+   * @param key - 设置项的键名
    */
   async function toggleSetting(key: keyof UserSettings) {
     try {
@@ -249,7 +279,6 @@ export const useSettingsStore = defineStore('settings', () => {
 
         logger.debug('Setting toggled', { ...logContext, key })
 
-        // 如果已登录，同步到服务器
         const authStore = useAuthStore()
         if (authStore.isAuthenticated) {
           await syncToServer()
@@ -266,6 +295,8 @@ export const useSettingsStore = defineStore('settings', () => {
 
   /**
    * 重置所有设置
+   *
+   * 恢复到默认设置值
    */
   async function resetSettings() {
     try {
@@ -282,6 +313,8 @@ export const useSettingsStore = defineStore('settings', () => {
 
   /**
    * 导出设置
+   *
+   * @returns JSON 格式的设置字符串
    */
   function exportSettings() {
     try {
@@ -299,6 +332,9 @@ export const useSettingsStore = defineStore('settings', () => {
 
   /**
    * 导入设置
+   *
+   * @param settingsJson - JSON 格式的设置字符串
+   * @returns 导入是否成功
    */
   async function importSettings(settingsJson: string) {
     try {
