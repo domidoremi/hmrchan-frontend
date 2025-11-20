@@ -25,17 +25,17 @@ const MEDIA_CACHE_CONFIG = {
 // 安装阶段：预缓存静态资源
 // ============================================
 self.addEventListener('install', (event) => {
-  console.log('[SW] Installing...')
+  // console.log('[SW] Installing...')
 
   event.waitUntil(
     caches
       .open(CACHE_NAMES.static)
       .then((cache) => {
-        console.log('[SW] Caching static assets')
+        // console.log('[SW] Caching static assets')
         return cache.addAll(STATIC_ASSETS)
       })
       .then(() => {
-        console.log('[SW] Install complete')
+        // console.log('[SW] Install complete')
         return self.skipWaiting() // 立即激活新的SW
       })
       .catch((error) => {
@@ -48,7 +48,7 @@ self.addEventListener('install', (event) => {
 // 激活阶段：清理旧缓存
 // ============================================
 self.addEventListener('activate', (event) => {
-  console.log('[SW] Activating...')
+  // console.log('[SW] Activating...')
 
   event.waitUntil(
     caches
@@ -61,13 +61,13 @@ self.addEventListener('activate', (event) => {
               return name.startsWith('hmrchan-') && !Object.values(CACHE_NAMES).includes(name)
             })
             .map((name) => {
-              console.log('[SW] Deleting old cache:', name)
+              // console.log('[SW] Deleting old cache:', name)
               return caches.delete(name)
             }),
         )
       })
       .then(() => {
-        console.log('[SW] Activation complete')
+        // console.log('[SW] Activation complete')
         return self.clients.claim() // 立即控制所有页面
       }),
   )
@@ -108,7 +108,7 @@ self.addEventListener('fetch', (event) => {
 // 后台同步：离线操作队列
 // ============================================
 self.addEventListener('sync', (event) => {
-  console.log('[SW] Background sync:', event.tag)
+  // console.log('[SW] Background sync:', event.tag)
 
   if (event.tag === 'sync-offline-actions') {
     event.waitUntil(syncOfflineActions())
@@ -143,7 +143,8 @@ self.addEventListener('message', (event) => {
       break
 
     default:
-      console.log('[SW] Unknown message:', type)
+      // console.log('[SW] Unknown message:', type)
+      break
   }
 })
 
@@ -159,11 +160,11 @@ async function cacheFirst(request, cacheName) {
   const cached = await cache.match(request)
 
   if (cached) {
-    console.log('[SW] Cache hit:', request.url)
+    // console.log('[SW] Cache hit:', request.url)
     return cached
   }
 
-  console.log('[SW] Cache miss, fetching:', request.url)
+  // console.log('[SW] Cache miss, fetching:', request.url)
   try {
     const response = await fetch(request)
     if (response.ok) {
