@@ -82,6 +82,44 @@
 </template>
 
 <script setup lang="ts" generic="T = string">
+/**
+ * Checkbox 复选框组件
+ *
+ * 功能描述：
+ * - 支持单选模式（boolean）和多选模式（数组）
+ * - 支持不确定状态（半选状态）
+ * - 支持多种尺寸和颜色变体
+ * - 支持错误提示和帮助文本
+ * - 完整的无障碍支持（ARIA 属性）
+ *
+ * Props:
+ * - modelValue: 绑定值（单选为 boolean，多选为数组）
+ * - value: 多选模式下该复选框的值
+ * - label: 标签文本
+ * - error: 错误提示信息
+ * - hint: 帮助提示信息
+ * - disabled: 是否禁用
+ * - required: 是否必填
+ * - indeterminate: 是否为不确定状态（半选）
+ * - size: 复选框尺寸
+ * - variant: 颜色变体
+ *
+ * Emits:
+ * - update:modelValue: 值变化事件
+ * - change: 选中状态变化事件
+ *
+ * Slots:
+ * - default: 自定义标签内容
+ *
+ * @example
+ * // 单选模式
+ * <Checkbox v-model="agreed" label="我同意服务条款" />
+ *
+ * // 多选模式
+ * <Checkbox v-model="selectedItems" value="item1" label="选项1" />
+ * <Checkbox v-model="selectedItems" value="item2" label="选项2" />
+ */
+
 import { computed } from 'vue'
 
 defineOptions({
@@ -91,11 +129,6 @@ defineOptions({
 })
 
 /**
- * Checkbox Props
- * 支持两种模式：
- * 1. 单选模式：modelValue 为 boolean
- * 2. 多选模式：modelValue 为 T[]，需要提供 value
- *
  * @template T - 多选模式下的值类型
  */
 interface Props {
@@ -105,23 +138,23 @@ interface Props {
    * - 多选模式：T[]（需配合 value 使用）
    */
   modelValue?: boolean | T[]
-  /** 多选模式下，该checkbox的值 */
+  /** 多选模式下该复选框的值 */
   value?: T
   /** 标签文本 */
   label?: string
-  /** 错误信息 */
+  /** 错误提示信息 */
   error?: string
-  /** 提示信息 */
+  /** 帮助提示信息 */
   hint?: string
   /** 是否禁用 */
   disabled?: boolean
   /** 是否必填 */
   required?: boolean
-  /** 不确定状态（半选） */
+  /** 是否为不确定状态（半选状态，用于全选场景） */
   indeterminate?: boolean
-  /** 尺寸 */
+  /** 复选框尺寸 */
   size?: 'sm' | 'md' | 'lg'
-  /** 变体 */
+  /** 颜色变体 */
   variant?: 'default' | 'primary' | 'success' | 'warning' | 'error'
 }
 
@@ -134,12 +167,16 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const emit = defineEmits<{
+  /** 值变化事件 */
   'update:modelValue': [value: boolean | T[]]
+  /** 选中状态变化事件 */
   change: [checked: boolean]
 }>()
 
+/** 生成唯一的复选框 ID，用于无障碍支持 */
 const checkboxId = computed(() => `checkbox-${Math.random().toString(36).substr(2, 9)}`)
 
+/** 计算复选框是否被选中 */
 const isChecked = computed(() => {
   if (Array.isArray(props.modelValue)) {
     return props.value !== undefined && props.modelValue.includes(props.value as T)
@@ -147,6 +184,7 @@ const isChecked = computed(() => {
   return props.modelValue === true
 })
 
+/** 计算容器的 CSS 类名 */
 const wrapperClass = computed(() => ({
   'is-checked': isChecked.value,
   'is-disabled': props.disabled,
@@ -154,18 +192,23 @@ const wrapperClass = computed(() => ({
   [`size-${props.size}`]: true,
 }))
 
+/** 计算复选框的 CSS 类名 */
 const boxClass = computed(() => ({
   'is-checked': isChecked.value,
   'is-indeterminate': props.indeterminate,
   [`variant-${props.variant}`]: true,
 }))
 
+/**
+ * 处理复选框状态变化
+ * @param event - 变化事件对象
+ */
 function handleChange(event: Event) {
   const target = event.target as HTMLInputElement
   const checked = target.checked
 
   if (Array.isArray(props.modelValue)) {
-    // 多选模式：需要确保value已定义
+    // 多选模式：需要确保 value 已定义
     if (props.value === undefined) {
       console.warn('Checkbox: value prop is required when using array modelValue')
       return
@@ -175,8 +218,10 @@ function handleChange(event: Event) {
     const typedValue = props.value as T
 
     if (checked) {
+      // 添加到数组
       newValue.push(typedValue)
     } else {
+      // 从数组中移除
       const index = newValue.indexOf(typedValue)
       if (index > -1) {
         newValue.splice(index, 1)
@@ -184,7 +229,7 @@ function handleChange(event: Event) {
     }
     emit('update:modelValue', newValue)
   } else {
-    // 单选模式：直接更新boolean值
+    // 单选模式：直接更新 boolean 值
     emit('update:modelValue', checked)
   }
 

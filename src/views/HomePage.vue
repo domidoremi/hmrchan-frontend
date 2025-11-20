@@ -123,6 +123,21 @@
   </MainLayout>
 </template>
 
+/**
+ * 首页组件
+ *
+ * 功能描述：
+ * - 展示应用首页，包含Hero区域、平台统计和最新帖子列表
+ * - 支持无限滚动加载更多帖子
+ * - 根据用户登录状态限制访问数量
+ * - 使用瀑布流布局展示帖子卡片
+ *
+ * 主要功能：
+ * - Hero区域展示应用介绍和统计信息
+ * - 平台统计卡片展示各平台帖子数量
+ * - 帖子列表支持无限滚动加载
+ * - 访问限制：未登录40条，已登录100条，管理员无限制
+ */
 <script lang="ts">
 export default {
   name: 'HomePage',
@@ -164,56 +179,85 @@ import { formatNumber } from '@/utils/format'
 import { useErrorHandler } from '@/utils/error'
 import { logger } from '@/utils/logger'
 
+/** 路由实例 */
 const router = useRouter()
+/** 认证状态管理 */
 const authStore = useAuthStore()
+/** 设置状态管理 */
 const settingsStore = useSettingsStore()
+/** 帖子状态管理 */
 const postsStore = usePostsStore()
 
+/** 用户认证状态和用户信息 */
 const { isAuthenticated, user } = storeToRefs(authStore)
+/** 加载状态和离线回退标志 */
 const { loading, lastListFromFallback } = storeToRefs(postsStore)
 
-// ✨ 主页使用独立的posts数组，不受explore页面筛选影响
+/** 主页使用独立的posts数组，不受explore页面筛选影响 */
 const posts = ref<Post[]>([])
 
-// 访问限制
+/**
+ * 访问限制计算属性
+ * 根据用户登录状态和角色返回不同的访问限制
+ * @returns 未登录：40条，已登录：100条，管理员：无限制
+ */
 const accessLimit = computed(() => {
-  if (!isAuthenticated.value) return 40 // 未登录：40条
-  if (user.value?.is_admin) return Infinity // 管理员：无限制
-  return 100 // 已登录：100条
+  if (!isAuthenticated.value) return 40
+  if (user.value?.is_admin) return Infinity
+  return 100
 })
 
-// 总帖子数（用于Hero统计）
+/**
+ * 总帖子数计算属性
+ * 用于Hero区域统计展示
+ * @returns 所有平台帖子数量总和
+ */
 const totalPosts = computed(() => {
   return Object.values(platformStats.value).reduce((sum, count) => sum + count, 0)
 })
 
+/** 支持的平台列表 */
 const platforms = PLATFORMS
+/** 各平台帖子统计数据 */
 const platformStats = ref<Record<string, number>>({})
+/** 统计数据加载状态 */
 const isStatsLoading = ref(true)
+/** 当前页码 */
 const currentPage = ref(1)
+/** 是否还有更多数据 */
 const hasMore = ref(true)
+/** 帖子网格容器引用 */
 const postsGrid = ref<HTMLElement | null>(null)
-const loadedPostsCount = ref(0) // 追踪已加载的卡片数量
+/** 已加载的卡片数量，用于追踪新增卡片 */
+const loadedPostsCount = ref(0)
 
+/** 国际化工具 */
 const { t } = useI18n()
+/** 错误处理工具 */
 const { handleError } = useErrorHandler('HomePage')
 
-// 使用轻量级瀑布流布局
+/**
+ * 瀑布流布局配置
+ * 使用轻量级瀑布流布局，支持响应式断点
+ */
 const { updateLayout, smoothUpdateLayout } = useWaterfallLayout(postsGrid, {
   columnGap: 16,
   rowGap: 16,
   breakpoints: {
-    1400: 4, // >= 1400px: 4列
-    1100: 3, // >= 1100px: 3列
-    769: 2, // >= 769px: 2列
-    0: 2, // < 769px: 2列
+    1400: 4,
+    1100: 3,
+    769: 2,
+    0: 2,
   },
 })
 
-// 初始加载完成标志
+/** 初始加载完成标志，用于控制无限滚动启用时机 */
 const initialLoadComplete = ref(false)
 
-// 无限滚动
+/**
+ * 无限滚动配置
+ * 当用户滚动到底部时自动加载更多帖子
+ */
 const { isLoading: isLoadingMore } = useInfiniteScroll({
   onLoadMore: async () => {
     if (posts.value.length >= accessLimit.value) {
@@ -229,7 +273,7 @@ const { isLoading: isLoadingMore } = useInfiniteScroll({
   },
   hasMore: () => hasMore.value && posts.value.length < accessLimit.value,
   threshold: 500,
-  enabled: initialLoadComplete, // 等待初始加载完成后再启用
+  enabled: initialLoadComplete,
 })
 
 onMounted(async () => {

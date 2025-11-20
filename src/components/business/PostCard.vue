@@ -51,6 +51,33 @@
 </template>
 
 <script setup lang="ts">
+/**
+ * 帖子卡片组件
+ *
+ * 业务功能：
+ * - 展示社交媒体帖子的核心信息（标题、作者、统计数据等）
+ * - 提供帖子的快捷操作（收藏、分享、更多选项）
+ * - 支持点击跳转到帖子详情页或预览面板
+ * - 提供悬停动画效果提升用户体验
+ *
+ * 业务场景：
+ * - 在首页帖子列表中展示帖子
+ * - 在搜索结果中展示匹配的帖子
+ * - 在收藏列表中展示收藏的帖子
+ *
+ * Props:
+ * - post: 帖子数据对象
+ * - isFirstScreen: 是否在首屏（影响图片加载优先级）
+ * - previewEnabled: 是否启用预览模式（点击打开预览面板而非跳转）
+ * - showActions: 是否显示快捷操作按钮
+ *
+ * Emits:
+ * - open: 打开帖子预览面板
+ * - favorite: 收藏/取消收藏帖子
+ * - share: 分享帖子
+ * - more: 显示更多选项
+ */
+
 import { ref, onMounted } from 'vue'
 import { RouterLink } from 'vue-router'
 import type { Post } from '@/types'
@@ -62,9 +89,13 @@ import { usePostCardAnimation } from '@/composables'
 import { useFavorites } from '@/composables'
 
 interface Props {
+  /** 帖子数据 */
   post: Post
+  /** 是否在首屏（影响图片加载策略） */
   isFirstScreen?: boolean
+  /** 是否启用预览模式 */
   previewEnabled?: boolean
+  /** 是否显示快捷操作按钮 */
   showActions?: boolean
 }
 
@@ -75,42 +106,58 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const emit = defineEmits<{
+  /** 打开帖子预览 */
   (e: 'open', postId: string): void
+  /** 收藏帖子 */
   (e: 'favorite', postId: string): void
+  /** 分享帖子 */
   (e: 'share', post: Post): void
+  /** 更多选项 */
   (e: 'more', post: Post): void
 }>()
 
-// 使用 composables 提取逻辑
+/** 使用 composable 提取卡片数据逻辑 */
 const cardData = usePostCardData(props.post)
 const { isFavorited: checkFavorited } = useFavorites()
 
-// 收藏状态 - 使用 ref 而不是 computed，因为 isFavorited 是异步的
+/** 收藏状态（使用 ref 因为 isFavorited 是异步的） */
 const isFavorited = ref(false)
 
-// 检查收藏状态
+/**
+ * 加载收藏状态
+ * 异步检查当前帖子是否已被收藏
+ */
 const loadFavoriteStatus = async () => {
   isFavorited.value = await checkFavorited(props.post.id)
 }
 
-// 组件挂载时检查收藏状态
+/** 组件挂载时检查收藏状态 */
 onMounted(() => {
   loadFavoriteStatus()
 })
 
-// Refs
+/** 卡片根元素引用 */
 const cardRef = ref<HTMLElement | null>(null)
+
+/** 媒体组件引用 */
 const mediaComponentRef = ref<InstanceType<typeof PostCardMedia> | null>(null)
 
-// 动画控制
+/**
+ * 动画控制
+ * 使用 composable 处理悬停动画效果
+ */
 const { onHover, onLeave } = usePostCardAnimation(cardRef, () => {
   const component = mediaComponentRef.value
   if (!component) return null
-  // Access exposed mediaRef from component
   return (component as unknown as { mediaRef: HTMLElement | null }).mediaRef
 })
 
-// 事件处理
+/**
+ * 处理卡片点击事件
+ * 根据预览模式决定是打开预览面板还是跳转到详情页
+ * @param event - 鼠标或键盘事件
+ * @param navigate - 路由导航函数
+ */
 const handleClick = (event: MouseEvent | KeyboardEvent, navigate: () => void) => {
   if (event instanceof MouseEvent && (event.ctrlKey || event.metaKey)) {
     return
@@ -126,14 +173,26 @@ const handleClick = (event: MouseEvent | KeyboardEvent, navigate: () => void) =>
   navigate()
 }
 
+/**
+ * 处理收藏操作
+ * 触发收藏事件，由父组件处理具体逻辑
+ */
 const handleFavorite = () => {
   emit('favorite', props.post.id)
 }
 
+/**
+ * 处理分享操作
+ * 触发分享事件，由父组件处理具体逻辑
+ */
 const handleShare = () => {
   emit('share', props.post)
 }
 
+/**
+ * 处理更多选项操作
+ * 触发更多选项事件，由父组件处理具体逻辑
+ */
 const handleMore = () => {
   emit('more', props.post)
 }

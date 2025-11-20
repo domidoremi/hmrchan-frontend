@@ -1,29 +1,32 @@
 /**
  * 网络状态管理
- * Network Status Store
  *
- * 用于跟踪在线/离线状态，并在需要的地方统一使用
- * v2.0 - 规范化：统一Store结构，添加日志记录
+ * 功能说明：
+ * - 监听浏览器在线/离线状态
+ * - 记录网络状态变化时间
+ * - 提供网络状态查询接口
  */
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import logger from '@/utils/logger'
 
 export const useNetworkStore = defineStore('network', () => {
-  // 设置日志上下文
+  /** 日志上下文 */
   const logContext = { category: 'NetworkStore' }
 
-  // ==================== 状态 ====================
+  /** 是否在线 */
   const isOnline = ref<boolean>(typeof window === 'undefined' ? true : navigator.onLine)
+
+  /** 最后一次状态变化时间 */
   const lastChangeAt = ref<Date | null>(null)
 
-  // ==================== 内部状态 ====================
+  /** 是否已初始化 */
   let initialized = false
-
-  // ==================== Actions ====================
 
   /**
    * 初始化网络状态监听
+   *
+   * 设置浏览器在线/离线事件监听器
    */
   function init() {
     if (initialized || typeof window === 'undefined') {
@@ -48,10 +51,8 @@ export const useNetworkStore = defineStore('network', () => {
         }
       }
 
-      // 初始更新
       updateNetworkStatus()
 
-      // 监听网络状态变化
       window.addEventListener('online', updateNetworkStatus)
       window.addEventListener('offline', updateNetworkStatus)
 
@@ -68,7 +69,9 @@ export const useNetworkStore = defineStore('network', () => {
   }
 
   /**
-   * 手动更新网络状态（用于测试）
+   * 手动更新网络状态
+   *
+   * @param status - 网络状态（true 为在线，false 为离线）
    */
   function updateStatus(status: boolean) {
     isOnline.value = status
@@ -77,11 +80,8 @@ export const useNetworkStore = defineStore('network', () => {
   }
 
   return {
-    // 状态
     isOnline,
     lastChangeAt,
-
-    // 方法
     init,
     updateStatus,
   }
