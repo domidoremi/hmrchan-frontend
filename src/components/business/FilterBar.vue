@@ -187,7 +187,7 @@ const isPlatformActive = (value: '' | Platform) => {
  * @param value - 平台值（空字符串表示全部平台）
  */
 const selectPlatform = (value: '' | Platform) => {
-  localFilters.value.platform = value || ''
+  localFilters.value.platform = value === '' ? undefined : value
 }
 
 /**
@@ -260,8 +260,8 @@ const resetFilters = () => {
     page_size: 20,
     sort_by: 'scraped_at',
     sort_order: 'desc',
-    platform: '',
-    has_media: false,
+    platform: undefined,
+    has_media: undefined,
   }
   applyFiltersImmediate()
 }
