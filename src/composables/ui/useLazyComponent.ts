@@ -1,5 +1,6 @@
 import { defineAsyncComponent, type Component } from 'vue'
 import AsyncComponentLoader from '@/components/ui/loading/AsyncComponentLoader.vue'
+import logger from '@/utils/logger'
 
 /**
  * 创建懒加载组件的工具函数
@@ -31,7 +32,10 @@ export function useLazyComponent(
     delay,
     timeout,
     onError(error, retry, fail, attempts) {
-      console.error(`[LazyComponent] Failed to load component (attempt ${attempts}):`, error)
+      logger.error('[LazyComponent] Failed to load component', {
+        attempts,
+        error,
+      })
       // 最多重试 2 次
       if (attempts <= 2) {
         retry()
@@ -48,6 +52,6 @@ export function useLazyComponent(
  */
 export function preloadComponent(loader: () => Promise<Component>) {
   return loader().catch((error) => {
-    console.debug('[LazyComponent] Failed to preload component:', error)
+    logger.debug('[LazyComponent] Failed to preload component', { error })
   })
 }

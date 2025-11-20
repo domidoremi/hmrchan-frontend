@@ -1,8 +1,10 @@
 /**
  * 调试日志工具
  *
- * 在生产环境自动关闭所有调试日志
+ * 在生产环境自动关闭所有调试日志，底层统一使用 logger
  */
+
+import logger from './logger'
 
 const isDev = import.meta.env.DEV
 const isProduction = import.meta.env.PROD
@@ -17,7 +19,8 @@ export const debugLog = {
    */
   log: (...args: unknown[]) => {
     if (isDev) {
-      console.log(...args)
+      const message = args.map((arg) => (typeof arg === 'string' ? arg : String(arg))).join(' ')
+      logger.debug(message)
     }
   },
 
@@ -26,7 +29,8 @@ export const debugLog = {
    */
   warn: (...args: unknown[]) => {
     if (isDev) {
-      console.warn(...args)
+      const message = args.map((arg) => (typeof arg === 'string' ? arg : String(arg))).join(' ')
+      logger.warn(message)
     }
   },
 
@@ -34,7 +38,8 @@ export const debugLog = {
    * 错误日志（生产环境也输出）
    */
   error: (...args: unknown[]) => {
-    console.error(...args)
+    const message = args.map((arg) => (typeof arg === 'string' ? arg : String(arg))).join(' ')
+    logger.error(message)
   },
 
   /**
@@ -42,7 +47,8 @@ export const debugLog = {
    */
   info: (...args: unknown[]) => {
     if (isDev) {
-      console.info(...args)
+      const message = args.map((arg) => (typeof arg === 'string' ? arg : String(arg))).join(' ')
+      logger.info(message)
     }
   },
 
@@ -51,7 +57,12 @@ export const debugLog = {
    */
   table: (...args: unknown[]) => {
     if (isDev) {
-      console.table(...args)
+      // 使用 logger 自身的 table 能力（如果需要更复杂的数据结构可以在此扩展）
+      if (args.length === 1) {
+        logger.table(args[0])
+      } else {
+        logger.table(args)
+      }
     }
   },
 
@@ -60,7 +71,9 @@ export const debugLog = {
    */
   group: (label: string) => {
     if (isDev) {
-      console.group(label)
+      logger.group(label, () => {
+        // 仅负责开始分组，具体内容由后续日志输出
+      })
     }
   },
 
@@ -69,7 +82,8 @@ export const debugLog = {
    */
   groupEnd: () => {
     if (isDev) {
-      console.groupEnd()
+      // 使用一个空分组结束标记（logger.group 内部已经处理 group 边界，这里保持向后兼容）
+      logger.debug('[debugLog] groupEnd')
     }
   },
 }

@@ -3,6 +3,8 @@
  * 使用 Intl.NumberFormat 根据语言环境格式化数字
  */
 
+import logger from '@/utils/logger'
+
 /**
  * 格式化数字（带千分位分隔符）
  * 根据用户语言环境自动格式化
@@ -11,7 +13,7 @@ export function formatNumberWithLocale(num: number, locale: string = 'en'): stri
   try {
     return new Intl.NumberFormat(locale).format(num)
   } catch (error) {
-    console.warn('Failed to format number with locale:', error)
+    logger.warn('Failed to format number with locale', { error })
     return num.toString()
   }
 }
@@ -33,7 +35,7 @@ export function formatCurrency(
       maximumFractionDigits: 2,
     }).format(amount)
   } catch (error) {
-    console.warn('Failed to format currency:', error)
+    logger.warn('Failed to format currency', { error })
     return `${currency} ${amount.toFixed(2)}`
   }
 }
@@ -53,7 +55,7 @@ export function formatPercentage(
       maximumFractionDigits: decimals,
     }).format(value)
   } catch (error) {
-    console.warn('Failed to format percentage:', error)
+    logger.warn('Failed to format percentage', { error })
     return `${(value * 100).toFixed(decimals)}%`
   }
 }
@@ -73,7 +75,7 @@ export function formatCompactNumber(num: number, locale: string = 'en'): string 
       }).format(num)
     }
   } catch (error) {
-    console.warn('Compact notation not supported, falling back:', error)
+    logger.warn('Compact notation not supported, falling back', { error })
   }
 
   // 降级方案
@@ -110,7 +112,7 @@ export function formatFileSize(bytes: number, locale: string = 'en'): string {
 
     return `${formattedSize} ${units[unitIndex]}`
   } catch (error) {
-    console.warn('Failed to format file size:', error)
+    logger.warn('Failed to format file size', { error })
     return `${size.toFixed(unitIndex === 0 ? 0 : 2)} ${units[unitIndex]}`
   }
 }
@@ -126,7 +128,7 @@ export function formatNumberRange(start: number, end: number, locale: string = '
       return new Intl.NumberFormat(locale).formatRange(start, end)
     }
   } catch (error) {
-    console.warn('formatRange not supported, falling back:', error)
+    logger.warn('formatRange not supported, falling back', { error })
   }
 
   // 降级方案
@@ -153,7 +155,7 @@ export function formatOrdinal(num: number, locale: string = 'en'): string {
     const suffix = suffixes[rule] || 'th'
     return `${num}${suffix}`
   } catch (error) {
-    console.warn('Failed to format ordinal:', error)
+    logger.warn('Failed to format ordinal', { error })
     return num.toString()
   }
 }

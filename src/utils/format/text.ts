@@ -2,6 +2,8 @@
  * 文本格式化工具
  */
 
+import logger from '@/utils/logger'
+
 /**
  * 截断文本
  */
@@ -34,7 +36,7 @@ export async function copyToClipboard(text: string): Promise<boolean> {
     await navigator.clipboard.writeText(text)
     return true
   } catch (err) {
-    console.error('Failed to copy:', err)
+    logger.error('Failed to copy to clipboard', { error: err })
     return false
   }
 }
