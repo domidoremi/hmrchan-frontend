@@ -6,13 +6,10 @@
 
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import {
-  ANIMATION_DURATION,
-  ANIMATION_EASE,
-  STAGGER_CONFIG,
-  prefersReducedMotion,
-  getResponsiveAnimationConfig,
-} from './config'
+import { ANIMATION_DURATION, ANIMATION_EASE, STAGGER_CONFIG, prefersReducedMotion } from './config'
+
+// 重新导出配置函数
+export { getResponsiveConfig } from './config'
 
 // 注册 GSAP 插件
 gsap.registerPlugin(ScrollTrigger)
@@ -75,7 +72,7 @@ export function fadeIn(
     {
       opacity: 1,
       duration: config.duration || ANIMATION_DURATION.normal,
-      ease: config.ease || ANIMATION_EASE.fade,
+      ease: config.ease || ANIMATION_EASE.default,
       delay: config.delay || 0,
       stagger: config.stagger,
       scrollTrigger: config.scrollTrigger,
@@ -481,11 +478,4 @@ export function killAllAnimations(): void {
  */
 export function refreshScrollTriggers(): void {
   ScrollTrigger.refresh()
-}
-
-/**
- * 获取响应式动画配置
- */
-export function getResponsiveConfig(): ReturnType<typeof getResponsiveAnimationConfig> {
-  return getResponsiveAnimationConfig(window.innerWidth)
 }
