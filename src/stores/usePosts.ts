@@ -83,11 +83,20 @@ export const usePostsStore = defineStore(
             ...apiParams,
           }
 
+      const sanitizedParams: PostListParams = Object.fromEntries(
+        Object.entries(mergedParams).filter(([key, value]) => {
+          if (value === undefined || value === null) return false
+          if (value === 'undefined') return false
+          if ((key === 'platform' || key === 'q') && value === '') return false
+          return true
+        }),
+      ) as PostListParams
+
       try {
         const { data, fromFallback } = await fetchWithFallback<PaginatedResponse<Post>>({
           primary: () =>
             api.get<PaginatedResponse<Post>>('/posts/', {
-              params: mergedParams,
+              params: sanitizedParams,
             }),
           fallback: async () => {
             try {
