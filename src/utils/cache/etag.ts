@@ -3,6 +3,8 @@
  * 实现HTTP缓存验证（If-None-Match / If-Modified-Since）
  */
 
+import logger from '@/utils/logger'
+
 export interface ETagOptions {
   etag?: string
   lastModified?: string
@@ -141,7 +143,7 @@ export function logETagRequest(options: {
   const emoji = fromCache ? '💾' : '🔄'
   const action = fromCache ? 'Cache hit (304)' : 'Updated (200)'
 
-  console.log(`${emoji} [ETag] ${action}`, {
+  logger.debug(`${emoji} [ETag] ${action}`, {
     url,
     hasETag,
     hasLastModified,

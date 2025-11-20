@@ -49,8 +49,8 @@ const SAFE_BASE_URL = BASE_URL.startsWith('http://')
   ? BASE_URL.replace('http://', 'https://')
   : BASE_URL
 
-/** 输出当前 API 配置信息（用于生产环境诊断） */
-console.log('🌐 API Configuration:', {
+/** 输出当前 API 配置信息（用于诊断） */
+logger.info('🌐 API Configuration', {
   baseURL: BASE_URL,
   mode: import.meta.env.MODE,
   strategy: import.meta.env.DEV ? 'vite-proxy' : 'hardcoded-https',

@@ -3,6 +3,7 @@
  * 实现自动重试和降级机制
  */
 import { ref, computed } from 'vue'
+import logger from '@/utils/logger'
 
 interface RetryOptions {
   /**
@@ -75,7 +76,7 @@ export function useMediaErrorRecovery(options: RetryOptions = {}) {
     // 尝试所有源
     for (const source of sources) {
       try {
-        console.log(`[ErrorRecovery] 尝试加载: ${source.url} (${source.type})`)
+        logger.debug(`[ErrorRecovery] 尝试加载: ${source.url} (${source.type})`)
         const result = await retryWithBackoff(source.url, loadFn)
 
         // 成功后清除错误状态
@@ -83,14 +84,20 @@ export function useMediaErrorRecovery(options: RetryOptions = {}) {
         return result
       } catch (error) {
         lastError = error as Error
-        console.warn(`[ErrorRecovery] ${source.type} 失败:`, source.url, error)
+        logger.warn('[ErrorRecovery] 源加载失败', {
+          type: source.type,
+          url: source.url,
+          error,
+        })
 
         // 记录错误状态
         recordError(source.url, error as Error)
 
         // 如果不是最后一个源，继续尝试下一个
         if (source !== sources[sources.length - 1] && enableFallback) {
-          console.log(`[ErrorRecovery] 尝试降级到下一个源...`)
+          logger.info('[ErrorRecovery] 尝试降级到下一个源', {
+            currentUrl: source.url,
+          })
           continue
         }
       }
@@ -116,7 +123,11 @@ export function useMediaErrorRecovery(options: RetryOptions = {}) {
         currentRetryCount.value = attempt
 
         if (attempt > 0) {
-          console.log(`[ErrorRecovery] 重试 ${attempt}/${maxRetries}，延迟 ${delay}ms`)
+          logger.debug('[ErrorRecovery] 重试', {
+            attempt,
+            maxRetries,
+            delay,
+          })
           await sleep(delay)
         }
 
@@ -136,7 +147,10 @@ export function useMediaErrorRecovery(options: RetryOptions = {}) {
         // 指数退避
         delay = Math.min(delay * backoffMultiplier, maxDelay)
 
-        console.warn(`[ErrorRecovery] 尝试 ${attempt} 失败:`, error)
+        logger.warn('[ErrorRecovery] 重试失败', {
+          attempt,
+          error,
+        })
       }
     }
 
