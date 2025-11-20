@@ -1,11 +1,12 @@
 /**
  * 认证状态管理
- * v3.0 - 安全增强版
- * - 使用安全存储（加密token）
- * - 防止竞态条件
- * - 数据脱敏
- * - 统一持久化策略
- * - 浏览器兼容性
+ *
+ * 功能说明：
+ * - 管理用户登录、注册、登出状态
+ * - 使用安全存储加密保存 token
+ * - 防止并发操作的竞态条件
+ * - 支持从本地存储恢复认证状态
+ * - 提供用户信息和权限查询
  */
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
@@ -18,33 +19,56 @@ import { secureLocalStorage, sanitizeForLog } from '@/utils/secureStorage'
 export const useAuthStore = defineStore(
   'auth',
   () => {
-    // 设置日志上下文
+    /** 日志上下文 */
     const logContext = { category: 'AuthStore' }
 
-    // 操作锁，使用ref确保响应式和SSR兼容
+    /** 登录操作进行中标志 */
     const loginInProgress = ref(false)
+
+    /** 注册操作进行中标志 */
     const registerInProgress = ref(false)
+
+    /** 获取用户信息操作进行中标志 */
     const fetchUserInProgress = ref(false)
+
+    /** 恢复认证状态操作进行中标志 */
     const restoringAuth = ref(false)
 
-    // 状态
+    /** 当前登录用户信息 */
     const user = ref<User | null>(null)
+
+    /** 访问令牌 */
     const token = ref<string | null>(null)
+
+    /** 加载状态 */
     const loading = ref(false)
+
+    /** 错误信息 */
     const error = ref<string | null>(null)
 
-    // 计算属性
+    /** 是否已认证 */
     const isAuthenticated = computed(() => !!token.value)
+
+    /** 是否为管理员 */
     const isAdmin = computed(() => user.value?.is_admin ?? false)
 
-    // 注册
+    /**
+     * 用户注册
+     *
+     * @param data - 注册信息
+     * @param data.username - 用户名
+     * @param data.email - 邮箱地址
+     * @param data.password - 密码
+     * @param data.full_name - 全名（可选）
+     * @returns 登录响应结果
+     * @throws 注册失败时抛出错误
+     */
     async function register(data: {
       username: string
       email: string
       password: string
       full_name?: string
     }) {
-      // 防止重复注册
       if (registerInProgress.value) {
         logger.warn('Register already in progress', logContext)
         throw new Error('注册正在进行中，请勿重复提交')
@@ -55,11 +79,9 @@ export const useAuthStore = defineStore(
       error.value = null
 
       try {
-        // 根据API文档，注册响应返回用户信息
         const response = await api.post<User>('/auth/register', data)
         user.value = response
 
-        // 使用安全存储保存用户信息（不加密用户信息，只是统一接口）
         await secureLocalStorage.set('user', response, { silent: true })
 
         logger.info('User registered successfully', {
@@ -67,7 +89,6 @@ export const useAuthStore = defineStore(
           ...sanitizeForLog({ username: data.username }),
         })
 
-        // 注册成功后自动登录
         return login({
           username: data.username,
           password: data.password,
@@ -87,9 +108,16 @@ export const useAuthStore = defineStore(
       }
     }
 
-    // 登录
+    /**
+     * 用户登录
+     *
+     * @param credentials - 登录凭证
+     * @param credentials.username - 用户名
+     * @param credentials.password - 密码
+     * @returns 包含访问令牌的响应对象
+     * @throws 登录失败时抛出错误
+     */
     async function login(credentials: LoginRequest) {
-      // 防止重复登录
       if (loginInProgress.value) {
         logger.warn('Login already in progress', logContext)
         throw new Error('登录正在进行中，请勿重复提交')
@@ -100,20 +128,17 @@ export const useAuthStore = defineStore(
       error.value = null
 
       try {
-        // 根据API文档，登录响应只返回 {access_token, token_type}
         const response = await api.post<{
           access_token: string
           token_type: string
         }>('/auth/login', credentials)
 
-        // 使用加密存储保存token（敏感信息）
         token.value = response.access_token
         await secureLocalStorage.set('access_token', response.access_token, {
           encrypt: true,
           silent: true,
         })
 
-        // 登录后立即获取用户信息
         await fetchCurrentUser()
 
         logger.info('User logged in successfully', {
@@ -136,24 +161,24 @@ export const useAuthStore = defineStore(
       }
     }
 
-    // 登出
+    /**
+     * 用户登出
+     *
+     * 清除用户状态、令牌和本地存储数据
+     */
     async function logout() {
       const username = user.value?.username
 
-      // 重置状态
       user.value = null
       token.value = null
       error.value = null
 
-      // 使用安全存储清理
       await Promise.all([
         secureLocalStorage.remove('access_token', { silent: true }),
         secureLocalStorage.remove('user', { silent: true }),
       ])
 
-      // 清空其他 stores 的状态
       if (typeof window !== 'undefined') {
-        // 清空 sessionStorage（posts store 的持久化存储）
         try {
           sessionStorage.clear()
         } catch (err) {
@@ -167,11 +192,15 @@ export const useAuthStore = defineStore(
       })
     }
 
-    // 获取当前用户信息
+    /**
+     * 获取当前用户信息
+     *
+     * @param options - 配置选项
+     * @param options.skipLogoutOnError - 错误时是否跳过自动登出（默认 false）
+     */
     async function fetchCurrentUser(options: { skipLogoutOnError?: boolean } = {}) {
       if (!token.value) return
 
-      // 防止并发请求
       if (fetchUserInProgress.value) {
         logger.warn('FetchCurrentUser already in progress', logContext)
         return
@@ -183,7 +212,6 @@ export const useAuthStore = defineStore(
         const response = await api.get<User>('/auth/me')
         user.value = response
 
-        // 使用安全存储保存用户信息（添加错误处理）
         try {
           await secureLocalStorage.set('user', response, { silent: true })
         } catch (storageErr) {
@@ -191,7 +219,6 @@ export const useAuthStore = defineStore(
             ...logContext,
             error: storageErr instanceof Error ? storageErr.message : 'Unknown',
           })
-          // 存储失败不影响主流程
         }
 
         logger.info('Fetched current user successfully', {
@@ -204,7 +231,6 @@ export const useAuthStore = defineStore(
         })
         logger.error('Failed to fetch current user', logContext)
 
-        // 防止循环调用：只在非恢复场景下自动登出
         if (!options.skipLogoutOnError && !restoringAuth.value) {
           await logout()
         }
@@ -213,9 +239,12 @@ export const useAuthStore = defineStore(
       }
     }
 
-    // 从localStorage恢复状态
+    /**
+     * 从本地存储恢复认证状态
+     *
+     * 应用启动时调用，从安全存储中恢复用户登录状态
+     */
     async function restoreAuth() {
-      // 防止重复恢复
       if (restoringAuth.value) {
         logger.warn('RestoreAuth already in progress', logContext)
         return
@@ -224,13 +253,11 @@ export const useAuthStore = defineStore(
       restoringAuth.value = true
 
       try {
-        // 使用安全存储恢复状态
         const [savedToken, savedUser] = await Promise.all([
           secureLocalStorage.get<string>('access_token', { encrypt: true, silent: true }),
           secureLocalStorage.get<User>('user', { silent: true }),
         ])
 
-        // 类型安全检查
         if (savedToken && savedUser && typeof savedUser === 'object' && 'id' in savedUser) {
           token.value = savedToken
           user.value = savedUser
@@ -240,16 +267,12 @@ export const useAuthStore = defineStore(
             ...sanitizeForLog({ userId: savedUser.id }),
           })
 
-          // 后台验证token有效性（防止循环调用）
           fetchCurrentUser({ skipLogoutOnError: true }).catch(() => {
-            // Token无效，静默登出（不再递归）
             logger.warn('Token validation failed during restore', logContext)
-            // 清理状态但不触发完整logout流程
             user.value = null
             token.value = null
           })
         } else if (savedToken || savedUser) {
-          // 数据不完整，清理
           logger.warn('Incomplete auth data in storage, cleaning up', logContext)
           await logout()
         }
@@ -258,7 +281,6 @@ export const useAuthStore = defineStore(
           ...logContext,
           error: err instanceof Error ? err.message : 'Unknown error',
         })
-        // 恢复失败，清理状态
         await logout()
       } finally {
         restoringAuth.value = false
@@ -266,17 +288,12 @@ export const useAuthStore = defineStore(
     }
 
     return {
-      // 状态
       user,
       token,
       loading,
       error,
-
-      // 计算属性
       isAuthenticated,
       isAdmin,
-
-      // 方法
       register,
       login,
       logout,
@@ -285,8 +302,6 @@ export const useAuthStore = defineStore(
     }
   },
   {
-    // 禁用pinia-plugin-persistedstate，使用自定义的安全存储
-    // 因为我们需要加密token并控制存储逻辑
     persist: false,
   },
 )

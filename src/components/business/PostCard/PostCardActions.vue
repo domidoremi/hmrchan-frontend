@@ -48,14 +48,49 @@
 </template>
 
 <script setup lang="ts">
+/**
+ * 帖子卡片快捷操作组件
+ *
+ * 业务功能：
+ * - 提供帖子的快捷操作按钮（收藏、分享、书签、更多）
+ * - 悬停时显示，提供流畅的交互体验
+ * - 支持激活状态显示（如已收藏、已书签）
+ *
+ * 业务场景：
+ * - 用户快速收藏感兴趣的帖子
+ * - 分享帖子到其他平台
+ * - 添加书签以便后续查看
+ * - 访问更多操作选项
+ *
+ * Props:
+ * - showFavorite: 是否显示收藏按钮
+ * - showShare: 是否显示分享按钮
+ * - showBookmark: 是否显示书签按钮
+ * - showMore: 是否显示更多按钮
+ * - isFavorited: 是否已收藏
+ * - isBookmarked: 是否已书签
+ *
+ * Emits:
+ * - favorite: 收藏操作
+ * - share: 分享操作
+ * - bookmark: 书签操作
+ * - more: 更多操作
+ */
+
 import { Heart, Share2, Bookmark, MoreVertical } from 'lucide-vue-next'
 
 interface Props {
+  /** 是否显示收藏按钮 */
   showFavorite?: boolean
+  /** 是否显示分享按钮 */
   showShare?: boolean
+  /** 是否显示书签按钮 */
   showBookmark?: boolean
+  /** 是否显示更多按钮 */
   showMore?: boolean
+  /** 是否已收藏 */
   isFavorited?: boolean
+  /** 是否已书签 */
   isBookmarked?: boolean
 }
 
@@ -69,9 +104,13 @@ withDefaults(defineProps<Props>(), {
 })
 
 defineEmits<{
+  /** 收藏事件 */
   (e: 'favorite'): void
+  /** 分享事件 */
   (e: 'share'): void
+  /** 书签事件 */
   (e: 'bookmark'): void
+  /** 更多选项事件 */
   (e: 'more'): void
 }>()
 </script>
