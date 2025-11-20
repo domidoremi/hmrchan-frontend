@@ -1,3 +1,17 @@
+/**
+ * Vite 构建配置文件
+ *
+ * 主要配置：
+ * - Vue 3 插件和开发工具
+ * - 图片优化和关键 CSS 内联
+ * - 依赖预构建优化
+ * - 生产环境构建优化
+ * - 代码分割策略（细粒度分割，优化缓存）
+ * - 开发服务器配置和预热
+ *
+ * @see https://vite.dev/config/
+ */
+
 import { fileURLToPath, URL } from 'node:url'
 
 import { defineConfig } from 'vite'
@@ -7,17 +21,34 @@ import vueDevTools from 'vite-plugin-vue-devtools'
 import { imagetools } from 'vite-imagetools'
 import { criticalCSSPlugin } from './vite-plugin-critical-css'
 
-// https://vite.dev/config/
 export default defineConfig(({ mode }) => ({
+  /**
+   * 插件配置
+   *
+   * 包含的插件：
+   * - Vue 3 核心插件：支持 SFC 单文件组件
+   * - Vue JSX 插件：支持 JSX/TSX 语法
+   * - Vue DevTools：开发环境调试工具
+   * - ImageTools：图片优化，自动转换为 WebP 格式
+   * - Critical CSS：生产环境内联关键 CSS，优化首屏渲染
+   */
   plugins: [
+    /** Vue 3 单文件组件支持 */
     vue(),
+
+    /** Vue JSX/TSX 语法支持 */
     vueJsx(),
-    // 仅在开发环境启用 DevTools
+
+    /** 开发环境启用 Vue DevTools 调试工具 */
     ...(mode === 'development' ? [vueDevTools()] : []),
-    // 图片优化 - WebP转换
+
+    /**
+     * 图片优化插件
+     * 自动将图片转换为 WebP 格式，减小体积
+     * 质量设置为 85，平衡体积和质量
+     */
     imagetools({
       defaultDirectives: (url) => {
-        // 只对支持的格式转换为WebP
         if (url.searchParams.has('format')) {
           return new URLSearchParams()
         }
@@ -27,135 +58,207 @@ export default defineConfig(({ mode }) => ({
         })
       },
     }),
-    // 生产环境内联关键 CSS
+
+    /** 生产环境内联关键 CSS，优化首屏加载性能 */
     ...(mode === 'production' ? [criticalCSSPlugin()] : []),
   ],
+
+  /**
+   * 路径解析配置
+   *
+   * 配置路径别名，简化导入路径
+   */
   resolve: {
     alias: {
+      /** @ 符号指向 src 目录 */
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
-  // 依赖优化
+
+  /**
+   * 依赖预构建优化配置
+   *
+   * 优化策略：
+   * - 预构建高频使用的核心依赖，加快开发服务器启动
+   * - 排除按需加载的大型库，避免不必要的预构建
+   * - 精确指定扫描入口，减少扫描时间
+   */
   optimizeDeps: {
-    // 精确指定需要预构建的核心依赖
+    /**
+     * 需要预构建的核心依赖
+     * 这些依赖在应用启动时就会被使用，预构建可以提升性能
+     */
     include: [
       'vue',
       'vue-router',
       'pinia',
       'pinia-plugin-persistedstate',
-      'ky', // 轻量级HTTP客户端
+      'ky',
       'dayjs',
       'vue-i18n',
       '@vueuse/core',
       '@vueuse/shared',
     ],
-    // 排除不需要预构建的依赖（按需加载）
+
+    /**
+     * 排除预构建的依赖
+     * 这些依赖按需加载，不需要预构建
+     */
     exclude: [
       'vite-plugin-vue-devtools',
-      'lucide-vue-next', // 图标库按需加载，不预构建
-      'photoswipe', // 图片查看器按需加载
-      'masonry-layout', // 瀑布流布局按需加载
-      'gsap', // 动画库按需加载
+      'lucide-vue-next',
+      'photoswipe',
+      'masonry-layout',
+      'gsap',
     ],
-    // 强制预构建，避免二次预构建
+
+    /** 是否强制重新预构建 */
     force: false,
-    // 优化依赖扫描 - 只扫描关键入口
+
+    /** 依赖扫描入口文件，只扫描关键入口以加快启动速度 */
     entries: ['./src/main.ts', './src/views/HomePage.vue'],
-    // 启用依赖扫描缓存
-    holdUntilCrawlEnd: false, // 不等待扫描完成，加快启动
+
+    /** 不等待依赖扫描完成，立即启动开发服务器 */
+    holdUntilCrawlEnd: false,
   },
+
+  /**
+   * 构建配置
+   *
+   * 优化策略：
+   * - 使用 ESNext 目标，生成现代化代码
+   * - 使用 esbuild 进行快速压缩
+   * - 生产环境移除 console 和 debugger
+   * - 细粒度代码分割，优化缓存策略
+   * - 优化资源处理和文件命名
+   */
   build: {
-    // 生产环境优化
+    /** 构建目标，使用最新的 ES 特性 */
     target: 'esnext',
+
+    /** 代码压缩工具，esbuild 速度更快 */
     minify: mode === 'production' ? 'esbuild' : false,
-    sourcemap: false, // 禁用 sourcemap 以加快构建速度
-    // 移除 console 和 debugger
+
+    /** 禁用 sourcemap 以加快构建速度和减小体积 */
+    sourcemap: false,
+
+    /**
+     * esbuild 压缩配置
+     * 生产环境移除 console、debugger 和注释
+     */
     ...(mode === 'production' && {
       esbuildOptions: {
+        /** 移除 console 和 debugger 语句 */
         drop: ['console', 'debugger'],
-        legalComments: 'none', // 移除注释
+
+        /** 移除代码中的法律注释 */
+        legalComments: 'none',
+
+        /** 启用 Tree Shaking */
         treeShaking: true,
-        // 优化构建性能
-        logLevel: 'error', // 减少日志输出
-        // 优化标识符命名以减小体积
+
+        /** 只输出错误日志，减少构建输出 */
+        logLevel: 'error',
+
+        /** 压缩标识符名称 */
         minifyIdentifiers: true,
+
+        /** 压缩语法结构 */
         minifySyntax: true,
+
+        /** 压缩空白字符 */
         minifyWhitespace: true,
-        // 更激进的压缩
+
+        /** 不保留函数和类名，进一步减小体积 */
         keepNames: false,
       },
     }),
-    // 优化模块外部化
+
+    /**
+     * 模块预加载配置
+     * 关闭 polyfill 以减小体积
+     */
     modulePreload: {
-      polyfill: false, // 关闭polyfill减小体积
+      polyfill: false,
     },
-    // 代码分割
+
+    /**
+     * Rollup 打包配置
+     * 主要用于配置代码分割策略
+     */
     rollupOptions: {
       output: {
+        /**
+         * 手动代码分割策略
+         *
+         * 分割原则：
+         * 1. 核心库独立缓存（变化频率低）
+         * 2. 第三方库按大小和使用频率分割
+         * 3. 业务代码按页面/功能分割
+         * 4. 目标：首屏 < 100KB，单 chunk < 200KB
+         *
+         * @param id - 模块 ID（文件路径）
+         * @returns chunk 名称
+         */
         manualChunks(id) {
-          // ========== 优化策略 ==========
-          // 1. 核心库独立缓存（变化频率低）
-          // 2. 第三方库按大小和使用频率分割
-          // 3. 业务代码按页面/功能分割
-          // 4. 目标：首屏<100KB，单chunk<200KB
+          /** 第三方依赖分割 */
           if (id.includes('node_modules')) {
-            // ========== 核心库分割（最高优先级） ==========
-            // Vue 核心运行时 - 最常用，单独分割
+            /**
+             * Vue 核心库分割（最高优先级）
+             * 将 Vue 运行时、响应式系统、共享工具分别打包
+             * 这些库变化频率低，独立分割有利于长期缓存
+             */
             if (id.includes('@vue/runtime-dom') || id.includes('@vue/runtime-core')) {
               return 'vue-runtime'
             }
-            // Vue 响应式系统 - 独立分割以便缓存
             if (id.includes('@vue/reactivity')) {
               return 'vue-reactivity'
             }
-            // Vue 共享工具
             if (id.includes('@vue/shared')) {
               return 'vue-shared'
             }
 
-            // ========== 路由和状态管理（高优先级） ==========
-            // Vue Router - 路由系统
+            /**
+             * 路由和状态管理（高优先级）
+             * 应用启动时必需的核心依赖
+             */
             if (id.includes('vue-router')) {
               return 'vue-router'
             }
-            // Pinia - 状态管理
             if (id.includes('pinia')) {
               return 'pinia'
             }
 
-            // ========== UI 和交互库（按需加载） ==========
-            // 图标库 - 体积大，单独分割
+            /**
+             * UI 和交互库（按需加载）
+             * 这些库体积较大，按需加载可以减小首屏体积
+             */
             if (id.includes('lucide-vue-next')) {
               return 'icons'
             }
-            // GSAP 动画库 - 按需加载
             if (id.includes('gsap')) {
               return 'animations'
             }
-
-            // PhotoSwipe 查看器 - 仅详情页使用
             if (id.includes('photoswipe')) {
               return 'photo-viewer'
             }
-            // Masonry 布局库 - 仅桌面端瀑布流使用
             if (id.includes('masonry-layout')) {
               return 'masonry'
             }
 
-            // ========== 工具库（中等优先级） ==========
-            // Vue I18n - 国际化
+            /**
+             * 工具库（中等优先级）
+             * 常用但不是启动必需的工具库
+             */
             if (id.includes('vue-i18n')) {
               return 'i18n'
             }
-            // Day.js - 日期处理
             if (id.includes('dayjs')) {
               return 'dayjs'
             }
-            // Axios - HTTP 客户端（大文件，单独分割）
             if (id.includes('axios')) {
               return 'vendor-axios'
             }
-            // VueUse - 组合式工具集
             if (id.includes('@vueuse/core')) {
               return 'vueuse-core'
             }
@@ -163,197 +266,272 @@ export default defineConfig(({ mode }) => ({
               return 'vueuse-shared'
             }
 
-            // 其他第三方依赖
+            /** 其他第三方依赖统一打包 */
             return 'vendor'
           }
 
-          // ========== 应用代码分割 ==========
-          // 页面组件 - 按页面独立分割
+          /**
+           * 应用代码分割
+           * 按页面和功能模块进行细粒度分割
+           */
+
+          /** 页面组件 - 按页面独立分割，实现路由级别的懒加载 */
           if (id.includes('/src/views/')) {
             const match = id.match(/\/views\/(.+?)\.vue/)
             if (match) {
               const pageName = match[1].toLowerCase()
-              // 关键页面单独分割
+              /** 关键页面单独分割 */
               if (['homepage', 'explorepage', 'postsview'].includes(pageName)) {
                 return `page-${pageName}`
               }
-              // PostDetailPage 单独分割（包含PhotoSwipe和VideoPlayer）
               if (pageName === 'postdetailpage') {
                 return 'page-postdetail'
               }
-              // ProfilePage 单独分割
               if (pageName === 'profilepage') {
                 return 'page-profile'
               }
-              // 其他次要页面分组
+              /** 其他次要页面分组 */
               return 'pages-other'
             }
           }
 
-          // 业务组件 - 细化分割
+          /** 业务组件 - 按使用频率分割 */
           if (id.includes('/src/components/business/')) {
-            // PostCard单独分割（大组件，高频使用）
             if (id.includes('PostCard')) {
               return 'component-postcard'
             }
-            // 其他业务组件
             return 'components-business'
           }
 
-          // UI组件 - 保持细粒度分割
+          /** UI 组件 - 按功能类型分割 */
           if (id.includes('/src/components/ui/')) {
-            // PhotoSwipe查看器（仅详情页）
             if (id.includes('/ui/viewer/PhotoSwipe')) {
               return 'viewer-photoswipe'
             }
-
-            // 其他查看器组件
             if (id.includes('/ui/viewer')) {
               return 'components-viewer'
             }
-            // 卡片组件
             if (id.includes('/ui/card')) {
               return 'components-card'
             }
-            // 按钮和输入组件
             if (id.includes('/ui/button') || id.includes('/ui/input')) {
               return 'components-input'
             }
-            // 反馈组件（加载、提示等）
             if (id.includes('/ui/feedback') || id.includes('/ui/indicator')) {
               return 'components-feedback'
             }
-            // 其他UI组件
             return 'components-ui'
           }
 
-          // 布局组件
+          /** 布局组件 */
           if (id.includes('/src/components/layout/')) {
             return 'components-layout'
           }
 
-          // 基础组件
+          /** 基础组件 */
           if (id.includes('/src/components/base/')) {
             return 'components-base'
           }
 
-          // Composables - 按功能分组
+          /** 组合式函数 */
           if (id.includes('/src/composables/')) {
             return 'composables'
           }
 
-          // API 服务层 - 细化分割
+          /** API 服务层 - 按模块分割 */
           if (id.includes('/src/api/')) {
-            // API客户端基础配置
             if (id.includes('/api/client')) {
               return 'api-client'
             }
-            // API服务 - 按模块分割
             if (id.includes('/api/services')) {
               return 'api-services'
             }
-            // 其他API工具
             return 'api-utils'
           }
 
-          // Stores - 状态管理模块
+          /** 状态管理 */
           if (id.includes('/src/stores/')) {
             return 'stores'
           }
 
-          // 工具函数 - 细化分割
+          /** 工具函数 - 按功能分割 */
           if (id.includes('/src/utils/')) {
-            // 媒体处理工具（体积较大）
             if (id.includes('/utils/media')) {
               return 'utils-media'
             }
-            // 其他工具
             return 'utils'
           }
         },
-        // 优化文件命名
+
+        /**
+         * 输出文件命名规则
+         * 使用 hash 确保文件变化时缓存失效
+         */
+
+        /** JS chunk 文件命名 */
         chunkFileNames: 'assets/js/[name]-[hash].js',
+
+        /** 入口文件命名 */
         entryFileNames: 'assets/js/[name]-[hash].js',
+
+        /**
+         * 静态资源文件命名
+         * 根据文件类型分类存放到不同目录
+         */
         assetFileNames: (assetInfo) => {
           const info = assetInfo.name?.split('.')
           const ext = info?.[info.length - 1]
+
+          /** 图片资源 */
           if (/\.(png|jpe?g|gif|svg|webp|avif)$/i.test(assetInfo.name || '')) {
             return 'assets/images/[name]-[hash][extname]'
-          } else if (/\.(woff2?|eot|ttf|otf)$/i.test(assetInfo.name || '')) {
+          }
+
+          /** 字体资源 */
+          if (/\.(woff2?|eot|ttf|otf)$/i.test(assetInfo.name || '')) {
             return 'assets/fonts/[name]-[hash][extname]'
-          } else if (ext === 'css') {
+          }
+
+          /** CSS 文件 */
+          if (ext === 'css') {
             return 'assets/css/[name]-[hash][extname]'
           }
+
+          /** 其他资源 */
           return 'assets/[name]-[hash][extname]'
         },
       },
     },
-    // 资源优化
-    chunkSizeWarningLimit: 500, // 降低警告阈值，促进更细的分割
-    assetsInlineLimit: 4096, // 小于 4KB 的资源内联为base64
-    // 压缩配置
-    cssCodeSplit: true, // CSS代码分割
-    cssMinify: 'esbuild', // 使用 esbuild 压缩 CSS（更快）
-    reportCompressedSize: false, // 禁用压缩大小报告，加快构建
-    // 优化输出
-    emptyOutDir: true, // 清理输出目录
-    // 优化导入分析
+
+    /**
+     * 资源处理配置
+     */
+
+    /** chunk 大小警告阈值（KB），降低阈值促进更细的分割 */
+    chunkSizeWarningLimit: 500,
+
+    /** 小于 4KB 的资源内联为 base64，减少 HTTP 请求 */
+    assetsInlineLimit: 4096,
+
+    /**
+     * CSS 处理配置
+     */
+
+    /** 启用 CSS 代码分割，每个异步 chunk 生成独立的 CSS 文件 */
+    cssCodeSplit: true,
+
+    /** 使用 esbuild 压缩 CSS，速度更快 */
+    cssMinify: 'esbuild',
+
+    /** CSS 目标版本 */
+    cssTarget: 'esnext',
+
+    /**
+     * 构建性能优化
+     */
+
+    /** 禁用压缩大小报告，加快构建速度 */
+    reportCompressedSize: false,
+
+    /** 构建前清空输出目录 */
+    emptyOutDir: true,
+
+    /**
+     * CommonJS 模块处理配置
+     * 优化 CommonJS 模块的转换性能
+     */
     commonjsOptions: {
+      /** 只处理 node_modules 中的 CommonJS 模块 */
       include: [/node_modules/],
+
+      /** 支持的文件扩展名 */
       extensions: ['.js', '.cjs'],
-      // 优化转换性能
+
+      /** 严格的 require 处理 */
       strictRequires: true,
+
+      /** 转换混合的 ES 模块 */
       transformMixedEsModules: true,
     },
-    // 优化CSS处理
-    cssTarget: 'esnext', // CSS目标版本
-    // 启用实验性优化
+
+    /**
+     * 生产环境额外配置
+     */
     ...(mode === 'production' && {
-      // 优化CSS导入
-      cssCodeSplit: true,
-      // 优化资源处理
+      /** 资源输出目录 */
       assetsDir: 'assets',
-      // 启用构建缓存（实验性）
-      manifest: true, // 生成manifest.json
+
+      /** 生成 manifest.json 文件，用于资源映射 */
+      manifest: true,
     }),
   },
+
+  /**
+   * 开发服务器配置
+   *
+   * 优化策略：
+   * - 预热常用文件，加快首次访问速度
+   * - 限制文件系统访问范围，提升性能
+   * - 配置 API 代理，解决跨域问题
+   */
   server: {
+    /** 开发服务器端口 */
     port: 5173,
-    // 预热常用文件以加快首次访问
+
+    /**
+     * 文件预热配置
+     * 在服务器启动时预先转换这些文件，加快首次访问速度
+     */
     warmup: {
       clientFiles: [
-        // 核心入口文件
+        /** 核心入口文件 */
         './src/main.ts',
         './src/App.vue',
-        // 关键页面组件
+
+        /** 关键页面组件 */
         './src/views/HomePage.vue',
         './src/views/ExplorePage.vue',
-        // 核心布局组件
+
+        /** 核心布局组件 */
         './src/components/layout/MainLayout.vue',
         './src/components/layout/AppNavbar.vue',
-        // 高频业务组件
+
+        /** 高频业务组件 */
         './src/components/business/PostCard.vue',
-        // 核心 composables
+
+        /** 核心组合式函数 */
         './src/composables/useAuth.ts',
         './src/composables/useTheme.ts',
       ],
     },
-    // 开发服务器性能优化
+
+    /**
+     * 文件系统访问配置
+     * 限制访问范围以提升性能和安全性
+     */
     fs: {
-      // 限制文件系统访问范围，提升性能
+      /** 启用严格模式，限制访问范围 */
       strict: true,
-      // 允许访问的目录
+
+      /** 允许访问的目录 */
       allow: ['..'],
     },
-    // 预转换已知的 CommonJS 依赖
+
+    /** 预转换已知的 CommonJS 依赖，提升性能 */
     preTransformRequests: true,
+
+    /**
+     * 开发环境 API 代理配置
+     * 解决开发环境的跨域问题
+     */
     proxy: {
-      // 开发环境代理API请求
+      /** 代理 API 请求到后端服务器 */
       '/api': {
         target: 'http://localhost:8000',
         changeOrigin: true,
       },
-      // 代理上传文件（头像等）
+
+      /** 代理文件上传请求（头像、图片等） */
       '/uploads': {
         target: 'http://localhost:8000',
         changeOrigin: true,

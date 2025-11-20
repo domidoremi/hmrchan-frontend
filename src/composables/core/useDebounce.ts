@@ -1,12 +1,31 @@
 /**
- * Debounce composable
- * Delays function execution until after a specified delay
+ * 防抖组合式函数
+ *
+ * 功能描述：
+ * - 延迟函数执行直到指定延迟时间后
+ * - 在延迟期间如果再次调用，会重置计时器
+ * - 适用于搜索输入、窗口调整等高频事件
+ *
+ * 使用场景：
+ * - 搜索框输入防抖
+ * - 窗口大小调整事件
+ * - 表单自动保存
+ *
+ * @example
+ * ```ts
+ * const debouncedSearch = useDebounce(searchFunction, 500)
+ * input.addEventListener('input', () => debouncedSearch(input.value))
+ * ```
  */
 
 import { ref, watch, type Ref } from 'vue'
 
 /**
- * Debounce a function
+ * 防抖函数
+ *
+ * @param fn - 需要防抖的函数
+ * @param delay - 延迟时间（毫秒），默认 300ms
+ * @returns 防抖后的函数
  */
 export function useDebounce<T extends (...args: never[]) => unknown>(
   fn: T,
@@ -27,7 +46,11 @@ export function useDebounce<T extends (...args: never[]) => unknown>(
 }
 
 /**
- * Debounce a ref value
+ * 防抖响应式值
+ *
+ * @param value - 原始响应式值或普通值
+ * @param delay - 延迟时间（毫秒），默认 300ms
+ * @returns 防抖后的响应式值
  */
 export function useDebouncedRef<T>(value: Ref<T> | T, delay = 300): Ref<T> {
   const inputRef = ref(value) as Ref<T>
@@ -54,14 +77,18 @@ export function useDebouncedRef<T>(value: Ref<T> | T, delay = 300): Ref<T> {
 }
 
 /**
- * Debounce composable with cancel and flush
+ * 增强版防抖函数（支持取消和立即执行）
+ *
+ * @param fn - 需要防抖的函数
+ * @param delay - 延迟时间（毫秒），默认 300ms
+ * @returns 包含防抖函数和控制方法的对象
  */
 export function useDebounceFn<T extends (...args: unknown[]) => unknown>(fn: T, delay = 300) {
   let timeoutId: ReturnType<typeof setTimeout> | null = null
   let lastArgs: Parameters<T> | null = null
 
   /**
-   * Debounced function
+   * 防抖后的函数
    */
   function debounced(...args: Parameters<T>) {
     lastArgs = args
@@ -78,7 +105,7 @@ export function useDebounceFn<T extends (...args: unknown[]) => unknown>(fn: T, 
   }
 
   /**
-   * Cancel pending execution
+   * 取消待执行的函数
    */
   function cancel() {
     if (timeoutId) {
@@ -89,7 +116,7 @@ export function useDebounceFn<T extends (...args: unknown[]) => unknown>(fn: T, 
   }
 
   /**
-   * Execute immediately with last arguments
+   * 立即执行（使用最后一次的参数）
    */
   function flush() {
     if (timeoutId && lastArgs) {
@@ -99,7 +126,7 @@ export function useDebounceFn<T extends (...args: unknown[]) => unknown>(fn: T, 
   }
 
   /**
-   * Check if there's a pending execution
+   * 检查是否有待执行的函数
    */
   function isPending(): boolean {
     return timeoutId !== null
@@ -114,11 +141,18 @@ export function useDebounceFn<T extends (...args: unknown[]) => unknown>(fn: T, 
 }
 
 /**
- * Debounced ref with additional controls
+ * 增强版防抖响应式值（支持取消和立即执行）
+ *
+ * @param initialValue - 初始值
+ * @param delay - 延迟时间（毫秒），默认 300ms
+ * @returns 包含原始值、防抖值和控制方法的对象
  */
 export function useDebounceRef<T>(initialValue: T, delay = 300) {
+  /** 原始响应式值 */
   const value = ref(initialValue) as Ref<T>
+  /** 防抖后的响应式值 */
   const debouncedValue = ref(initialValue) as Ref<T>
+  /** 是否有待执行的更新 */
   const isPending = ref(false)
 
   let timeoutId: ReturnType<typeof setTimeout> | null = null
@@ -138,7 +172,7 @@ export function useDebounceRef<T>(initialValue: T, delay = 300) {
   })
 
   /**
-   * Cancel pending update
+   * 取消待执行的更新
    */
   function cancel() {
     if (timeoutId) {
@@ -149,7 +183,7 @@ export function useDebounceRef<T>(initialValue: T, delay = 300) {
   }
 
   /**
-   * Flush immediately
+   * 立即执行更新
    */
   function flush() {
     if (timeoutId) {

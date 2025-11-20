@@ -86,6 +86,26 @@
 </template>
 
 <script setup lang="ts">
+/**
+ * 筛选栏组件
+ *
+ * 业务功能：
+ * - 提供帖子列表的多维度筛选功能
+ * - 支持按平台、排序方式、媒体类型等条件筛选
+ * - 提供友好的筛选器 UI 和交互体验
+ *
+ * 业务场景：
+ * - 用户在首页浏览帖子时进行筛选
+ * - 快速切换不同平台的内容
+ * - 按热度、时间等维度排序帖子
+ *
+ * Props:
+ * - filters: 当前筛选条件
+ *
+ * Emits:
+ * - update: 筛选条件更新时触发，传递新的筛选参数
+ */
+
 import { ref, watch, type Component } from 'vue'
 import {
   ArrowDown,
@@ -106,18 +126,24 @@ import {
 import type { PostListParams, Platform } from '@/types'
 import GlassButton from '@/components/ui/button/Button.vue'
 
-// 防抖定时器
+/** 防抖定时器，用于延迟应用筛选条件 */
 let applyTimeout: ReturnType<typeof setTimeout> | null = null
 
 interface Props {
+  /** 当前筛选条件 */
   filters: PostListParams
 }
 
 const props = defineProps<Props>()
 const emit = defineEmits<{
+  /** 筛选条件更新事件 */
   update: [filters: PostListParams]
 }>()
 
+/**
+ * 平台选项配置
+ * 包含所有支持的社交媒体平台及其图标
+ */
 const platformOptions: { value: '' | Platform; labelKey: string; icon: Component }[] = [
   { value: '', labelKey: 'platform.all', icon: Globe2 },
   { value: 'youtube', labelKey: 'platform.youtube', icon: Youtube },
@@ -126,6 +152,10 @@ const platformOptions: { value: '' | Platform; labelKey: string; icon: Component
   { value: 'instagram', labelKey: 'platform.instagram', icon: Instagram },
 ]
 
+/**
+ * 排序选项配置
+ * 支持按抓取时间、发布时间、浏览量、点赞数排序
+ */
 const sortOptions: {
   value: 'scraped_at' | 'published_at' | 'view_count' | 'like_count'
   labelKey: string
@@ -137,8 +167,14 @@ const sortOptions: {
   { value: 'like_count', labelKey: 'post.likes', icon: Heart },
 ]
 
+/** 本地筛选条件状态（用于双向绑定） */
 const localFilters = ref<PostListParams>({ ...props.filters })
 
+/**
+ * 判断平台选项是否激活
+ * @param value - 平台值（空字符串表示全部平台）
+ * @returns 是否为当前选中的平台
+ */
 const isPlatformActive = (value: '' | Platform) => {
   if (value === '') {
     return !localFilters.value.platform
@@ -146,17 +182,29 @@ const isPlatformActive = (value: '' | Platform) => {
   return localFilters.value.platform === value
 }
 
+/**
+ * 选择平台
+ * @param value - 平台值（空字符串表示全部平台）
+ */
 const selectPlatform = (value: '' | Platform) => {
   localFilters.value.platform = value || ''
 }
 
+/**
+ * 选择排序方式
+ * 选择后自动应用筛选（带防抖）
+ * @param value - 排序字段
+ */
 const selectSort = (value: 'scraped_at' | 'published_at' | 'view_count' | 'like_count') => {
   if (localFilters.value.sort_by === value) return
   localFilters.value.sort_by = value
-  // 选择排序方式时，立即应用筛选（带防抖）
   applyFilters()
 }
 
+/**
+ * 监听外部筛选条件变化
+ * 同步更新本地筛选状态
+ */
 watch(
   () => props.filters,
   (newFilters) => {
@@ -164,7 +212,10 @@ watch(
   },
 )
 
-// 监听 sort_by 变化，当选择“最新”时自动设置为降序
+/**
+ * 监听排序方式变化
+ * 当选择"最新"排序时，自动设置为降序
+ */
 watch(
   () => localFilters.value.sort_by,
   (newSortBy) => {
@@ -174,7 +225,10 @@ watch(
   },
 )
 
-// 防抖应用筛选（优化性能）
+/**
+ * 防抖应用筛选
+ * 延迟 100ms 后触发筛选更新，避免频繁触发
+ */
 const applyFilters = () => {
   if (applyTimeout) {
     clearTimeout(applyTimeout)
@@ -182,10 +236,13 @@ const applyFilters = () => {
 
   applyTimeout = setTimeout(() => {
     emit('update', { ...localFilters.value })
-  }, 100) // 100ms 防抖
+  }, 100)
 }
 
-// 立即应用筛选（用于重置按钮）
+/**
+ * 立即应用筛选
+ * 不使用防抖，立即触发筛选更新（用于重置按钮）
+ */
 const applyFiltersImmediate = () => {
   if (applyTimeout) {
     clearTimeout(applyTimeout)
@@ -193,6 +250,10 @@ const applyFiltersImmediate = () => {
   emit('update', { ...localFilters.value })
 }
 
+/**
+ * 重置筛选条件
+ * 恢复到默认筛选状态并立即应用
+ */
 const resetFilters = () => {
   localFilters.value = {
     page: 1,
@@ -202,7 +263,7 @@ const resetFilters = () => {
     platform: '',
     has_media: false,
   }
-  applyFiltersImmediate() // 重置时立即应用
+  applyFiltersImmediate()
 }
 </script>
 
