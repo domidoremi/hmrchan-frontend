@@ -1300,10 +1300,12 @@ onUnmounted(() => {
     max-width: 400px !important;
     max-height: 80vh;
     overflow-y: auto;
-    z-index: 2500 !important;
+    z-index: 9999 !important; /* 提高z-index确保在最顶层 */
     box-shadow:
       0 20px 60px rgba(0, 0, 0, 0.3),
       0 0 0 100vmax rgba(0, 0, 0, 0.5) !important;
+    /* 添加调试边框 */
+    /* border: 3px solid red !important; */
   }
 
   .queue-dropdown.mobile-modal::before,

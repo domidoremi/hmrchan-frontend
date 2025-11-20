@@ -17,6 +17,7 @@ import { fetchWithFallback } from '@/utils/cache'
 import { handleError } from '@/utils/error'
 import logger from '@/utils/logger'
 import { toLogContext } from '@/utils/typeGuards'
+import { useSettingsStore } from './useSettings'
 
 export const usePostsStore = defineStore(
   'posts',
@@ -39,10 +40,13 @@ export const usePostsStore = defineStore(
     /** 最近一次详情请求是否使用了离线数据 */
     const lastDetailFromFallback = ref(false)
 
+    /** 获取设置 store */
+    const settingsStore = useSettingsStore()
+
     /** 分页信息 */
     const pagination = ref({
       page: 1,
-      page_size: 20,
+      page_size: settingsStore.settings.postsPerPage,
       total: 0,
       pages: 0,
     })
@@ -50,7 +54,7 @@ export const usePostsStore = defineStore(
     /** 筛选参数 */
     const filters = ref<PostListParams>({
       page: 1,
-      page_size: 20,
+      page_size: settingsStore.settings.postsPerPage,
       sort_by: 'scraped_at',
       sort_order: 'desc',
     })
