@@ -1,65 +1,20 @@
 <template>
   <MainLayout>
     <div class="home-page">
-      <!-- Hero Section - Modern Design -->
-      <Transition name="hero-fade">
-        <section v-if="settingsStore.settings.showHeroSection" class="hero-section reduce-motion">
-          <div class="hero-background">
-            <div class="hero-gradient"></div>
-            <div class="hero-mesh"></div>
-          </div>
-
-          <div class="hero-container">
-            <button class="hero-close" @click="settingsStore.toggleSetting('showHeroSection')"
-              :aria-label="$t('common.close')">
-              <X :size="24" />
-            </button>
-
-            <div class="hero-content animate-fade-in-up">
-              <div class="hero-badge animate-scale-in stagger-1">
-                <span class="badge-dot"></span>
-                <span>{{ $t('app.tagline', 'Discover Amazing Content') }}</span>
-              </div>
-
-              <h1 class="hero-title animate-fade-in-up stagger-2">
-                {{ $t('app.name') }}
-              </h1>
-
-              <p class="hero-description animate-fade-in-up stagger-3">
-                {{ $t('app.description') }}
-              </p>
-
-              <div class="hero-actions animate-fade-in-up stagger-4">
-                <button class="btn-primary" @click="goToExplore">
-                  <Compass :size="20" />
-                  <span>{{ $t('nav.explore') }}</span>
-                  <ArrowRight :size="18" class="btn-icon" />
-                </button>
-                <button v-if="!isAuthenticated" class="btn-secondary" @click="goToLogin">
-                  <span>{{ $t('nav.login') }}</span>
-                </button>
-              </div>
-
-              <div class="hero-stats animate-fade-in-up stagger-5">
-                <div class="stat-item">
-                  <span class="stat-value">{{ formatNumber(totalPosts) }}</span>
-                  <span class="stat-label">{{ $t('post.total', 'Posts') }}</span>
-                </div>
-                <div class="stat-divider"></div>
-                <div class="stat-item">
-                  <span class="stat-value">{{ platforms.length }}</span>
-                  <span class="stat-label">{{ $t('common.platforms', 'Platforms') }}</span>
-                </div>
-                <div class="stat-divider"></div>
-                <div class="stat-item">
-                  <span class="stat-value">{{ $t('common.live', 'Live') }}</span>
-                  <span class="stat-label">{{ $t('common.updates', 'Updates') }}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-      </Transition>
+      <!-- Hero Section - GSAP 动画版本 -->
+      <HeroSection
+        :visible="settingsStore.settings.showHeroSection"
+        :title="$t('app.name')"
+        :description="$t('app.description')"
+        :badge-text="$t('app.tagline', 'Discover Amazing Content')"
+        :primary-button-text="$t('nav.explore')"
+        :secondary-button-text="$t('nav.login')"
+        :show-secondary-button="!isAuthenticated"
+        :stats="heroStats"
+        @close="settingsStore.toggleSetting('showHeroSection')"
+        @explore="goToExplore"
+        @secondary-action="goToLogin"
+      />
 
       <!-- Platform Stats - Modern Cards -->
       <section class="platforms-section reduce-motion">
@@ -151,17 +106,16 @@ import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
 
 import {
-  Compass,
   ArrowRight,
   ImageIcon,
   Youtube,
   Twitter,
   Music2,
   Instagram,
-  X,
 } from 'lucide-vue-next'
 
 import MainLayout from '@/components/layout/MainLayout.vue'
+import HeroSection from '@/components/layout/HeroSection.vue'
 import GlassButton from '@/components/ui/button/Button.vue'
 import LoadingSpinner from '@/components/ui/loading/LoadingSpinner.vue'
 import PostCard from '@/components/business/PostCard.vue'
@@ -215,6 +169,24 @@ const accessLimit = computed(() => {
 const totalPosts = computed(() => {
   return Object.values(platformStats.value).reduce((sum, count) => sum + count, 0)
 })
+
+/**
+ * Hero统计数据
+ */
+const heroStats = computed(() => [
+  {
+    value: formatNumber(totalPosts.value),
+    label: t('post.total', 'Posts'),
+  },
+  {
+    value: platforms.length,
+    label: t('common.platforms', 'Platforms'),
+  },
+  {
+    value: t('common.live', 'Live'),
+    label: t('common.updates', 'Updates'),
+  },
+])
 
 /** 支持的平台列表 */
 const platforms = PLATFORMS
@@ -466,90 +438,6 @@ const getPlatformIcon = (platform: string) => {
 
 <style scoped>
 @import '@/styles/pages/home.css';
-
-/* ========== Transitions ========== */
-.hero-fade-enter-active,
-.hero-fade-leave-active {
-  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.hero-fade-enter-from {
-  opacity: 0;
-  transform: translateY(-20px);
-}
-
-.hero-fade-leave-to {
-  opacity: 0;
-  transform: translateY(-20px);
-}
-
-/* Hero Section */
-.hero-section {
-  text-align: center;
-  padding: var(--spacing-xl) 0 var(--spacing-md) 0;
-}
-
-.hero-content {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: var(--spacing-3xl);
-  position: relative;
-}
-
-.hero-close-btn {
-  position: absolute;
-  top: var(--spacing-lg);
-  right: var(--spacing-lg);
-  width: 36px;
-  height: 36px;
-  border-radius: var(--radius-full);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--glass-bg);
-  backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--glass-border);
-  color: var(--color-text-secondary);
-  cursor: pointer;
-  transition: all var(--transition-base);
-  z-index: 10;
-}
-
-.hero-close-btn:hover {
-  background: rgba(139, 92, 246, 0.1);
-  border-color: var(--color-primary);
-  color: var(--color-primary);
-  transform: rotate(90deg) scale(1.1);
-}
-
-.hero-close-btn:active {
-  transform: rotate(90deg) scale(0.95);
-}
-
-.hero-title {
-  font-size: 4rem;
-  font-weight: var(--font-bold);
-  background: var(--gradient-primary);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  margin-bottom: var(--spacing-lg);
-}
-
-.hero-subtitle {
-  font-size: var(--text-xl);
-  color: var(--color-text-secondary);
-  margin-bottom: var(--spacing-2xl);
-  animation-delay: 0.1s;
-}
-
-.hero-actions {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--spacing-md);
-  animation-delay: 0.2s;
-}
 
 /* Stats Section */
 .platforms-section {
