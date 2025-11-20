@@ -1,7 +1,12 @@
 /**
- * 内容状态管理 - 增强版（带持久化和缓存）
- * v2.0 - UUID迁移：ID参数已从number改为string
- * v2.1 - 增强错误处理：使用统一的错误处理机制
+ * 内容状态管理
+ *
+ * 功能说明：
+ * - 管理内容列表和详情数据
+ * - 支持分页、筛选、搜索功能
+ * - 使用 IndexedDB 实现离线缓存
+ * - 采用 Stale-While-Revalidate 缓存策略
+ * - 支持按平台筛选内容
  */
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
@@ -16,17 +21,25 @@ import { toLogContext } from '@/utils/typeGuards'
 export const usePostsStore = defineStore(
   'posts',
   () => {
-    // 状态
+    /** 内容列表 */
     const posts = ref<Post[]>([])
+
+    /** 当前查看的内容详情 */
     const currentPost = ref<PostDetail | null>(null)
+
+    /** 加载状态 */
     const loading = ref(false)
+
+    /** 错误信息 */
     const error = ref<string | null>(null)
 
-    // 离线状态标记：最近一次列表/详情请求是否使用了 IndexedDB 回退数据
+    /** 最近一次列表请求是否使用了离线数据 */
     const lastListFromFallback = ref(false)
+
+    /** 最近一次详情请求是否使用了离线数据 */
     const lastDetailFromFallback = ref(false)
 
-    // 分页信息
+    /** 分页信息 */
     const pagination = ref({
       page: 1,
       page_size: 20,
@@ -34,7 +47,7 @@ export const usePostsStore = defineStore(
       pages: 0,
     })
 
-    // 筛选参数
+    /** 筛选参数 */
     const filters = ref<PostListParams>({
       page: 1,
       page_size: 20,
@@ -42,11 +55,17 @@ export const usePostsStore = defineStore(
       sort_order: 'desc',
     })
 
-    // 获取内容列表
+    /**
+     * 获取内容列表
+     *
+     * @param params - 查询参数
+     * @param params.append - 是否追加到现有列表（用于无限滚动）
+     * @param params.ignoreFilters - 是否忽略当前筛选条件
+     * @returns 分页响应数据
+     */
     async function fetchPosts(
       params?: PostListParams & { append?: boolean; ignoreFilters?: boolean },
     ) {
-      // 如果是追加模式，不显示loading状态（避免UI闪烁）
       const { append, ignoreFilters, ...apiParams } = params || {}
       if (!append) {
         loading.value = true
@@ -109,10 +128,8 @@ export const usePostsStore = defineStore(
 
         const response = data
 
-        // 标记此次列表数据是否来自本地回退
         lastListFromFallback.value = !!fromFallback
 
-        // 防御性检查：确保响应数据有效
         if (!response || !response.items) {
           console.warn('API 返回无效数据，使用空数组')
           posts.value = []
@@ -125,7 +142,6 @@ export const usePostsStore = defineStore(
           }
         }
 
-        // 如果append为true，追加到现有列表；否则替换
         if (append) {
           posts.value = [...posts.value, ...(response.items || [])]
         } else {
@@ -142,20 +158,17 @@ export const usePostsStore = defineStore(
         return response
       } catch (err: unknown) {
         const errorResponse = handleError(err, 'PostsStore.FetchPosts', {
-          silent: true, // Don't show toast for list fetches, just log
+          silent: true,
         })
         error.value = errorResponse.message
         logger.error('[Posts] Failed to fetch posts', toLogContext(err))
 
-        // 失败时视为非回退数据
         lastListFromFallback.value = false
 
-        // API 失败时，设置空数组防止 undefined 错误
         if (!append) {
           posts.value = []
         }
 
-        // 不抛出错误，让页面显示空状态而不是崩溃
         return {
           items: [],
           page: 1,
@@ -170,18 +183,27 @@ export const usePostsStore = defineStore(
       }
     }
 
-    // 获取单个内容详情（Stale-While-Revalidate策略）
+    /**
+     * 获取单个内容详情
+     *
+     * 采用 Stale-While-Revalidate 缓存策略：
+     * - 优先返回新鲜缓存，后台静默刷新
+     * - 缓存过期时请求网络，失败则使用过期缓存
+     *
+     * @param postId - 内容 ID
+     * @param options - 配置选项
+     * @param options.forceFresh - 是否强制从网络获取最新数据
+     * @returns 内容详情数据
+     * @throws 获取失败时抛出错误
+     */
     async function fetchPost(postId: UUID, options = { forceFresh: false }) {
       loading.value = true
       error.value = null
 
       try {
-        // 1. 先尝试从缓存读取（如果不是强制刷新）
         if (!options.forceFresh) {
           const cached = await indexedDB.getPost(postId)
 
-          // 如果缓存新鲜（30秒内），立即返回并后台刷新
-          // 缩短TTL避免使用缺少media_files的旧缓存
           if (cached && indexedDB.isCacheFresh(cached, 30 * 1000)) {
             const cachedDetail = cached as unknown as PostDetail
 
@@ -189,7 +211,6 @@ export const usePostsStore = defineStore(
             lastDetailFromFallback.value = false
             loading.value = false
 
-            // 后台静默刷新（不显示loading，不抛出错误）
             api
               .get<PostDetail>(`/posts/${postId}`)
               .then(async (response) => {
@@ -205,11 +226,9 @@ export const usePostsStore = defineStore(
           }
         }
 
-        // 2. 缓存不存在/过期/强制刷新 - 请求网络
         const { data, fromFallback } = await fetchWithFallback<PostDetail>({
           primary: () => api.get<PostDetail>(`/posts/${postId}`),
           fallback: async () => {
-            // 网络失败时，使用过期缓存
             try {
               const cached = await indexedDB.getPost(postId)
               if (!cached) return null
@@ -240,22 +259,42 @@ export const usePostsStore = defineStore(
       }
     }
 
-    // 按平台获取内容
+    /**
+     * 按平台获取内容
+     *
+     * @param platform - 平台类型
+     * @param params - 额外的查询参数
+     * @returns 分页响应数据
+     */
     async function fetchPostsByPlatform(platform: Platform, params?: PostListParams) {
       return fetchPosts({ ...params, platform })
     }
 
-    // 搜索内容
+    /**
+     * 搜索内容
+     *
+     * @param query - 搜索关键词
+     * @param params - 额外的查询参数
+     * @returns 分页响应数据
+     */
     async function searchPosts(query: string, params?: PostListParams) {
       return fetchPosts({ ...params, q: query })
     }
 
-    // 更新筛选
+    /**
+     * 更新筛选条件
+     *
+     * @param newFilters - 新的筛选参数（部分更新）
+     */
     function updateFilters(newFilters: Partial<PostListParams>) {
       filters.value = { ...filters.value, ...newFilters }
     }
 
-    // 重置筛选
+    /**
+     * 重置筛选条件
+     *
+     * 恢复到默认的筛选参数
+     */
     function resetFilters() {
       filters.value = {
         page: 1,
@@ -268,7 +307,9 @@ export const usePostsStore = defineStore(
       }
     }
 
-    // 下一页
+    /**
+     * 加载下一页
+     */
     async function nextPage() {
       if (pagination.value.page < pagination.value.pages) {
         filters.value.page = pagination.value.page + 1
@@ -276,7 +317,9 @@ export const usePostsStore = defineStore(
       }
     }
 
-    // 上一页
+    /**
+     * 加载上一页
+     */
     async function prevPage() {
       if (pagination.value.page > 1) {
         filters.value.page = pagination.value.page - 1
@@ -284,7 +327,11 @@ export const usePostsStore = defineStore(
       }
     }
 
-    // 跳转到指定页
+    /**
+     * 跳转到指定页
+     *
+     * @param page - 目标页码
+     */
     async function goToPage(page: number) {
       if (page >= 1 && page <= pagination.value.pages) {
         filters.value.page = page
@@ -292,7 +339,11 @@ export const usePostsStore = defineStore(
       }
     }
 
-    // 清空所有状态（用于登出或重置）
+    /**
+     * 清空所有状态
+     *
+     * 用于用户登出或重置应用状态
+     */
     function clearStore() {
       posts.value = []
       currentPost.value = null
@@ -308,7 +359,6 @@ export const usePostsStore = defineStore(
     }
 
     return {
-      // 状态
       posts,
       currentPost,
       loading,
@@ -317,8 +367,6 @@ export const usePostsStore = defineStore(
       filters,
       lastListFromFallback,
       lastDetailFromFallback,
-
-      // 方法
       fetchPosts,
       fetchPost,
       fetchPostsByPlatform,
@@ -332,13 +380,11 @@ export const usePostsStore = defineStore(
     }
   },
   {
-    // 持久化配置 - 只持久化filters和pagination，不持久化posts数组和运行时状态
     persist:
       typeof window !== 'undefined'
         ? {
             key: 'posts',
             storage: sessionStorage,
-            // 只持久化用户的筛选偏好，不持久化数据和运行时状态
             pick: ['filters', 'pagination'],
           }
         : false,

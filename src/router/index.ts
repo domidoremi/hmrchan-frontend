@@ -1,57 +1,79 @@
 /**
- * 路由配置
+ * 路由配置文件
  *
- * 功能：
- * - 路由懒加载
- * - 路由守卫（认证、权限）
- * - 智能预加载
- * - 滚动行为
+ * 主要功能：
+ * - 定义应用所有路由规则
+ * - 实现路由懒加载优化首屏性能
+ * - 配置路由守卫处理认证和权限
+ * - 实现智能预加载提升用户体验
+ * - 配置滚动行为控制页面切换效果
  */
 
 import { createRouter, createWebHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
 import { useAuthStore } from '@/stores'
 
-/**
- * 最后访问路由的存储键
- */
+/** 最后访问路由的 sessionStorage 存储键 */
 const LAST_VISITED_ROUTE_KEY = 'hmrchan:last-route'
 
 /**
- * 路由定义
- * 所有路由使用懒加载，提升首屏加载速度
+ * 路由配置数组
+ *
+ * 所有路由组件采用懒加载方式导入，减少初始包体积
+ * 路由按优先级分为三类：高优先级（核心页面）、中优先级（常用页面）、低优先级（辅助页面）
  */
 export const routes: RouteRecordRaw[] = [
+  /** ========== 核心页面路由（高优先级） ========== */
+  /**
+   * 首页路由
+   * 应用的主入口页面，展示推荐内容
+   */
   {
     path: '/',
     name: 'home',
     component: () => import(/* webpackChunkName: "page-homepage" */ '@/views/HomePage.vue'),
     meta: {
       title: 'Home',
-      preload: true, // 关键路由：预加载首页
-      priority: 'high', // 高优先级
+      preload: true,
+      priority: 'high',
     },
   },
+
+  /**
+   * 探索页路由
+   * 用户浏览和发现新内容的页面
+   */
   {
     path: '/explore',
     name: 'explore',
     component: () => import(/* webpackChunkName: "page-explorepage" */ '@/views/ExplorePage.vue'),
     meta: {
       title: 'Explore',
-      preload: true, // 关键路由：预加载探索页
-      priority: 'high', // 高优先级
+      preload: true,
+      priority: 'high',
     },
   },
+
+  /**
+   * 帖子列表路由
+   * 展示所有帖子的列表页面
+   */
   {
     path: '/posts',
     name: 'posts',
     component: () => import(/* webpackChunkName: "page-postsview" */ '@/views/PostsView.vue'),
     meta: {
       title: 'Posts',
-      preload: true, // 关键路由：预加载帖子列表
-      priority: 'high', // 高优先级
+      preload: true,
+      priority: 'high',
     },
   },
+
+  /** ========== 常用功能路由（中优先级） ========== */
+  /**
+   * 搜索页路由
+   * 提供内容搜索功能
+   */
   {
     path: '/search',
     name: 'search',
@@ -59,9 +81,14 @@ export const routes: RouteRecordRaw[] = [
     meta: {
       title: 'Search',
       preload: false,
-      priority: 'medium', // 中优先级
+      priority: 'medium',
     },
   },
+
+  /**
+   * 登录页路由
+   * 用户登录入口，仅访客可访问
+   */
   {
     path: '/login',
     name: 'login',
@@ -70,20 +97,14 @@ export const routes: RouteRecordRaw[] = [
       title: 'Login',
       guest: true,
       preload: false,
-      priority: 'medium', // 中优先级
+      priority: 'medium',
     },
   },
-  {
-    path: '/register',
-    name: 'register',
-    component: () => import(/* webpackChunkName: "pages-other" */ '@/views/RegisterPage.vue'),
-    meta: {
-      title: 'Register',
-      guest: true,
-      preload: false,
-      priority: 'low', // 低优先级
-    },
-  },
+
+  /**
+   * 帖子详情路由
+   * 展示单个帖子的详细内容
+   */
   {
     path: '/posts/:id',
     name: 'post-detail',
@@ -91,9 +112,14 @@ export const routes: RouteRecordRaw[] = [
     meta: {
       title: 'Post Detail',
       preload: false,
-      priority: 'medium', // 中优先级
+      priority: 'medium',
     },
   },
+
+  /**
+   * 收藏页路由
+   * 展示用户收藏的内容，需要登录
+   */
   {
     path: '/favorites',
     name: 'favorites',
@@ -102,29 +128,14 @@ export const routes: RouteRecordRaw[] = [
       title: 'Favorites',
       requiresAuth: true,
       preload: false,
-      priority: 'medium', // 中优先级
+      priority: 'medium',
     },
   },
-  {
-    path: '/authors',
-    name: 'authors',
-    component: () => import(/* webpackChunkName: "pages-other" */ '@/views/AuthorsPage.vue'),
-    meta: {
-      title: 'Authors',
-      preload: false,
-      priority: 'low', // 低优先级
-    },
-  },
-  {
-    path: '/settings',
-    name: 'settings',
-    component: () => import(/* webpackChunkName: "pages-other" */ '@/views/SettingsPage.vue'),
-    meta: {
-      title: 'Settings',
-      preload: false,
-      priority: 'low', // 低优先级
-    },
-  },
+
+  /**
+   * 个人资料路由
+   * 展示和编辑用户个人信息，需要登录
+   */
   {
     path: '/profile',
     name: 'profile',
@@ -133,9 +144,62 @@ export const routes: RouteRecordRaw[] = [
       title: 'Profile',
       requiresAuth: true,
       preload: false,
-      priority: 'medium', // 中优先级
+      priority: 'medium',
     },
   },
+
+  /** ========== 辅助功能路由（低优先级） ========== */
+
+  /**
+   * 注册页路由
+   * 新用户注册入口，仅访客可访问
+   */
+  {
+    path: '/register',
+    name: 'register',
+    component: () => import(/* webpackChunkName: "pages-other" */ '@/views/RegisterPage.vue'),
+    meta: {
+      title: 'Register',
+      guest: true,
+      preload: false,
+      priority: 'low',
+    },
+  },
+
+  /**
+   * 作者列表路由
+   * 展示所有作者信息
+   */
+  {
+    path: '/authors',
+    name: 'authors',
+    component: () => import(/* webpackChunkName: "pages-other" */ '@/views/AuthorsPage.vue'),
+    meta: {
+      title: 'Authors',
+      preload: false,
+      priority: 'low',
+    },
+  },
+
+  /**
+   * 设置页路由
+   * 应用设置和配置
+   */
+  {
+    path: '/settings',
+    name: 'settings',
+    component: () => import(/* webpackChunkName: "pages-other" */ '@/views/SettingsPage.vue'),
+    meta: {
+      title: 'Settings',
+      preload: false,
+      priority: 'low',
+    },
+  },
+
+  /**
+   * 开发工具路由
+   * 开发调试工具页面
+   */
   {
     path: '/dev-tools',
     name: 'dev-tools',
@@ -143,9 +207,14 @@ export const routes: RouteRecordRaw[] = [
     meta: {
       title: 'Developer Tools',
       preload: false,
-      priority: 'low', // 低优先级
+      priority: 'low',
     },
   },
+
+  /**
+   * 偏好设置路由
+   * 用户个性化偏好配置
+   */
   {
     path: '/preferences',
     name: 'preferences',
@@ -153,9 +222,14 @@ export const routes: RouteRecordRaw[] = [
     meta: {
       title: 'Preferences',
       preload: false,
-      priority: 'low', // 低优先级
+      priority: 'low',
     },
   },
+
+  /**
+   * 隐私政策路由
+   * 展示应用隐私政策
+   */
   {
     path: '/privacy',
     name: 'privacy',
@@ -163,9 +237,16 @@ export const routes: RouteRecordRaw[] = [
     meta: {
       title: 'Privacy Policy',
       preload: false,
-      priority: 'low', // 低优先级
+      priority: 'low',
     },
   },
+
+  /** ========== 错误处理路由 ========== */
+
+  /**
+   * 404 页面路由
+   * 捕获所有未匹配的路径
+   */
   {
     path: '/:pathMatch(.*)*',
     name: 'not-found',
@@ -173,13 +254,18 @@ export const routes: RouteRecordRaw[] = [
     meta: {
       title: '404',
       preload: false,
-      priority: 'low', // 低优先级
+      priority: 'low',
     },
   },
 ]
 
 /**
  * 创建路由实例
+ *
+ * 配置项说明：
+ * - history: 使用 HTML5 History 模式
+ * - routes: 路由配置数组
+ * - scrollBehavior: 自定义滚动行为
  */
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -187,10 +273,18 @@ const router = createRouter({
 
   /**
    * 滚动行为配置
-   * 控制路由切换时的滚动位置
+   *
+   * 控制路由切换时页面的滚动位置，提供三种场景的处理：
+   * 1. 浏览器前进/后退：恢复用户之前的滚动位置
+   * 2. 锚点导航：滚动到指定的页面元素
+   * 3. 普通导航：滚动到页面顶部
+   *
+   * @param to - 目标路由对象
+   * @param _from - 来源路由对象（未使用）
+   * @param savedPosition - 浏览器记录的滚动位置（前进/后退时存在）
+   * @returns 滚动位置配置对象
    */
-  scrollBehavior(to, from, savedPosition) {
-    // 浏览器前进/后退：恢复之前的滚动位置
+  scrollBehavior(to, _from, savedPosition) {
     if (savedPosition) {
       return {
         ...savedPosition,
@@ -198,7 +292,6 @@ const router = createRouter({
       }
     }
 
-    // 锚点跳转：滚动到指定元素
     if (to.hash) {
       return {
         el: to.hash,
@@ -206,7 +299,6 @@ const router = createRouter({
       }
     }
 
-    // 默认：滚动到页面顶部
     return {
       top: 0,
       behavior: 'smooth',
@@ -216,17 +308,25 @@ const router = createRouter({
 
 /**
  * 全局前置守卫
- * 处理认证、权限和页面标题
+ *
+ * 在每次路由跳转前执行，处理以下逻辑：
+ * 1. 保存用户访问历史，用于登录后返回
+ * 2. 为登录页自动添加重定向参数
+ * 3. 更新浏览器标签页标题
+ * 4. 检查需要认证的页面，未登录则跳转登录页
+ * 5. 检查访客专用页面，已登录则跳转首页
+ *
+ * @param to - 目标路由对象
+ * @param from - 来源路由对象
+ * @param next - 路由导航函数，必须调用以继续导航
  */
 router.beforeEach((to, from, next) => {
   const authStore = useAuthStore()
 
-  // 保存最后访问的路由（用于登录后跳转）
   if (from.name && from.name !== 'login') {
     sessionStorage.setItem(LAST_VISITED_ROUTE_KEY, from.fullPath)
   }
 
-  // 登录页：自动添加重定向参数
   if (to.name === 'login' && !to.query.redirect) {
     const historicalRoute = sessionStorage.getItem(LAST_VISITED_ROUTE_KEY) || '/'
     const redirectTarget = from.name && from.name !== 'login' ? from.fullPath : historicalRoute
@@ -242,19 +342,16 @@ router.beforeEach((to, from, next) => {
     return
   }
 
-  // 更新页面标题
   const appName = import.meta.env.VITE_APP_NAME || 'himeri chan'
   if (to.meta.title) {
     document.title = `${to.meta.title} - ${appName}`
   }
 
-  // 认证检查：需要登录的页面
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     next({ name: 'login', query: { redirect: to.fullPath } })
     return
   }
 
-  // 访客页面：已登录用户重定向到首页
   if (to.meta.guest && authStore.isAuthenticated) {
     next({ name: 'home' })
     return
@@ -265,41 +362,43 @@ router.beforeEach((to, from, next) => {
 
 /**
  * 全局后置钩子
- * 路由切换完成后执行
+ *
+ * 在路由跳转完成后执行，处理以下逻辑：
+ * 1. 保存当前路由到 sessionStorage
+ * 2. 触发智能预加载，提前加载用户可能访问的下一个页面
+ *
+ * @param to - 目标路由对象
  */
 router.afterEach((to) => {
-  // 保存当前路由
   if (to.name && to.name !== 'login') {
     sessionStorage.setItem(LAST_VISITED_ROUTE_KEY, to.fullPath)
   }
 
-  // 智能预加载下一个可能访问的路由
   preloadCriticalRoutes(to)
 })
 
 /**
- * ============================================
- * 路由预加载逻辑
- * ============================================
- */
-
-/**
  * 预加载关键路由组件
- * 在用户访问某个页面后，智能预加载可能访问的下一个页面
+ *
+ * 根据当前访问的页面，智能预测并预加载用户可能访问的下一个页面组件
+ * 采用延迟加载策略，避免影响当前页面的性能
+ *
+ * 工作流程：
+ * 1. 根据当前路由名称获取预加载列表
+ * 2. 延迟 1 秒后开始预加载（确保当前页面已完全加载）
+ * 3. 遍历预加载列表，触发组件的懒加载函数
+ * 4. 预加载失败时静默处理，不影响用户体验
  *
  * @param currentRoute - 当前路由对象
  */
 function preloadCriticalRoutes(currentRoute: { name?: string | symbol }) {
   const routesToPreload = getRoutesToPreload(currentRoute.name)
 
-  // 延迟 1 秒后开始预加载，避免影响当前页面性能
   setTimeout(() => {
     routesToPreload.forEach((routeName) => {
       const route = routes.find((r) => r.name === routeName)
       if (route && route.component) {
-        // 触发组件懒加载
         ;(route.component as () => Promise<unknown>)().catch(() => {
-          // 预加载失败不影响用户体验，仅记录调试信息
           console.debug(`[路由] 预加载失败: ${routeName}`)
         })
       }
@@ -308,8 +407,10 @@ function preloadCriticalRoutes(currentRoute: { name?: string | symbol }) {
 }
 
 /**
- * 根据当前路由确定需要预加载的路由
- * 基于用户行为模式预测下一步可能访问的页面
+ * 获取需要预加载的路由列表
+ *
+ * 基于用户行为分析和页面访问模式，预测用户下一步可能访问的页面
+ * 例如：用户在首页时，很可能接下来访问探索页或帖子列表
  *
  * @param currentRouteName - 当前路由名称
  * @returns 需要预加载的路由名称数组
@@ -317,21 +418,17 @@ function preloadCriticalRoutes(currentRoute: { name?: string | symbol }) {
 function getRoutesToPreload(currentRouteName: string | symbol | undefined): string[] {
   if (!currentRouteName || typeof currentRouteName !== 'string') return []
 
-  /**
-   * 预加载策略映射表
-   * 根据用户常见的浏览路径预测下一步操作
-   */
   const preloadMap: Record<string, string[]> = {
-    home: ['explore', 'posts'], // 首页 → 探索页、帖子列表
-    explore: ['home', 'search'], // 探索页 → 首页、搜索
-    posts: ['explore', 'search'], // 帖子列表 → 探索页、搜索
-    search: ['explore'], // 搜索页 → 探索页
-    login: ['home', 'explore'], // 登录页 → 首页、探索页
-    register: ['login'], // 注册页 → 登录页
-    'post-detail': ['explore'], // 帖子详情 → 探索页
-    favorites: ['explore'], // 收藏页 → 探索页
-    profile: ['settings'], // 个人资料 → 设置页
-    settings: ['home'], // 设置页 → 首页
+    home: ['explore', 'posts'],
+    explore: ['home', 'search'],
+    posts: ['explore', 'search'],
+    search: ['explore'],
+    login: ['home', 'explore'],
+    register: ['login'],
+    'post-detail': ['explore'],
+    favorites: ['explore'],
+    profile: ['settings'],
+    settings: ['home'],
   }
 
   return preloadMap[currentRouteName] || []
