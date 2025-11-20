@@ -1,52 +1,68 @@
 /**
- * Toast 通知系统 Store
- * Toast Notification System Store
+ * Toast 通知状态管理
  *
- * 管理应用内的通知消息
- * v2.0 - 规范化：统一Store结构，添加日志记录
+ * 功能说明：
+ * - 管理应用内的 Toast 通知消息
+ * - 支持成功、错误、警告、信息四种类型
+ * - 自动定时移除通知
+ * - 提供便捷的通知方法
  */
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import logger from '@/utils/logger'
 
+/** Toast 通知类型 */
 export type ToastType = 'success' | 'error' | 'warning' | 'info'
 
+/**
+ * Toast 通知接口定义
+ */
 export interface Toast {
+  /** 唯一标识符 */
   id: string
+
+  /** 通知类型 */
   type: ToastType
+
+  /** 通知消息内容 */
   message: string
+
+  /** 通知标题（可选） */
   title?: string
+
+  /** 显示时长（毫秒，0 表示不自动关闭） */
   duration?: number
 }
 
 export const useToastStore = defineStore('toast', () => {
-  // 设置日志上下文
+  /** 日志上下文 */
   const logContext = { category: 'ToastStore' }
 
-  // ==================== 状态 ====================
+  /** Toast 通知列表 */
   const toasts = ref<Toast[]>([])
 
-  // ==================== 内部状态 ====================
+  /** 自动移除定时器映射表 */
   const autoRemoveTimers = new Map<string, number>()
 
-  // ==================== 辅助函数 ====================
-
   /**
-   * 生成唯一ID
+   * 生成唯一 ID
+   *
+   * @returns 唯一标识符字符串
    */
   function generateId(): string {
     return `toast-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
   }
 
-  // ==================== Actions ====================
-
   /**
-   * 添加Toast通知
+   * 添加 Toast 通知
+   *
+   * @param toast - Toast 通知配置（不含 id）
+   * @returns Toast 的唯一标识符
    */
   function addToast(toast: Omit<Toast, 'id'>): string {
     try {
       const id = generateId()
-      const duration = toast.duration ?? 5000 // 默认5秒
+      const duration = toast.duration ?? 5000
 
       const newToast: Toast = {
         id,
@@ -64,7 +80,6 @@ export const useToastStore = defineStore('toast', () => {
         duration,
       })
 
-      // 自动移除
       if (duration > 0) {
         const timer = window.setTimeout(() => {
           removeToast(id)
@@ -83,7 +98,9 @@ export const useToastStore = defineStore('toast', () => {
   }
 
   /**
-   * 移除Toast通知
+   * 移除 Toast 通知
+   *
+   * @param id - Toast 的唯一标识符
    */
   function removeToast(id: string): void {
     try {
@@ -91,7 +108,6 @@ export const useToastStore = defineStore('toast', () => {
       if (index > -1) {
         toasts.value.splice(index, 1)
 
-        // 清除定时器
         const timer = autoRemoveTimers.get(id)
         if (timer) {
           clearTimeout(timer)
@@ -110,7 +126,7 @@ export const useToastStore = defineStore('toast', () => {
   }
 
   /**
-   * 清除所有Toast
+   * 清除所有 Toast 通知
    */
   function clearAll(): void {
     try {
@@ -128,41 +144,56 @@ export const useToastStore = defineStore('toast', () => {
     }
   }
 
-  // ==================== 便捷方法 ====================
-
   /**
-   * 成功提示
+   * 显示成功提示
+   *
+   * @param message - 提示消息
+   * @param title - 提示标题（可选）
+   * @param duration - 显示时长（可选）
+   * @returns Toast 的唯一标识符
    */
   function success(message: string, title?: string, duration?: number): string {
     return addToast({ type: 'success', message, title, duration })
   }
 
   /**
-   * 错误提示
+   * 显示错误提示
+   *
+   * @param message - 提示消息
+   * @param title - 提示标题（可选）
+   * @param duration - 显示时长（可选，默认 8 秒）
+   * @returns Toast 的唯一标识符
    */
   function error(message: string, title?: string, duration?: number): string {
     return addToast({ type: 'error', message, title, duration: duration ?? 8000 })
   }
 
   /**
-   * 警告提示
+   * 显示警告提示
+   *
+   * @param message - 提示消息
+   * @param title - 提示标题（可选）
+   * @param duration - 显示时长（可选）
+   * @returns Toast 的唯一标识符
    */
   function warning(message: string, title?: string, duration?: number): string {
     return addToast({ type: 'warning', message, title, duration })
   }
 
   /**
-   * 信息提示
+   * 显示信息提示
+   *
+   * @param message - 提示消息
+   * @param title - 提示标题（可选）
+   * @param duration - 显示时长（可选）
+   * @returns Toast 的唯一标识符
    */
   function info(message: string, title?: string, duration?: number): string {
     return addToast({ type: 'info', message, title, duration })
   }
 
   return {
-    // 状态
     toasts,
-
-    // 方法
     addToast,
     removeToast,
     clearAll,
