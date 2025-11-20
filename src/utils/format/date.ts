@@ -6,6 +6,7 @@ import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import localizedFormat from 'dayjs/plugin/localizedFormat'
 import type { SupportedLocale } from '@/i18n'
+import logger from '@/utils/logger'
 
 // 扩展 dayjs 插件
 dayjs.extend(relativeTime)
@@ -36,7 +37,7 @@ async function loadDayjsLocale(locale: SupportedLocale): Promise<void> {
       loadedLocales.add(dayjsLocale)
     }
   } catch (error) {
-    console.warn(`Failed to load dayjs locale: ${dayjsLocale}`, error)
+    logger.warn(`Failed to load dayjs locale: ${dayjsLocale}`, { error })
   }
 }
 
@@ -125,7 +126,7 @@ export function formatDateTimeIntl(
     const dateObj = typeof date === 'string' || typeof date === 'number' ? new Date(date) : date
     return new Intl.DateTimeFormat(locale, options).format(dateObj)
   } catch (error) {
-    console.warn('Failed to format date with Intl:', error)
+    logger.warn('Failed to format date with Intl', { error })
     return String(date)
   }
 }
@@ -162,7 +163,7 @@ export function formatDateRange(
     const formattedEnd = formatDateTimeIntl(end, locale, options)
     return `${formattedStart} - ${formattedEnd}`
   } catch (error) {
-    console.warn('Failed to format date range:', error)
+    logger.warn('Failed to format date range', { error })
     return `${startDate} - ${endDate}`
   }
 }
@@ -249,7 +250,7 @@ export function getTimezone(): string {
   try {
     return Intl.DateTimeFormat().resolvedOptions().timeZone
   } catch (error) {
-    console.warn('Failed to get timezone:', error)
+    logger.warn('Failed to get timezone', { error })
     return 'UTC'
   }
 }
@@ -274,7 +275,7 @@ export function formatTimezone(
       minute: '2-digit',
     }).format(dateObj)
   } catch (error) {
-    console.warn('Failed to format timezone:', error)
+    logger.warn('Failed to format timezone', { error })
     return String(date)
   }
 }

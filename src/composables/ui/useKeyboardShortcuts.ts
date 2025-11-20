@@ -4,6 +4,7 @@
  */
 
 import { onMounted, onUnmounted } from 'vue'
+import logger from '@/utils/logger'
 
 export interface ShortcutConfig {
   /** Keyboard shortcut key combination */
@@ -206,7 +207,7 @@ export function useCommonShortcuts(router: { push: (path: string) => void }) {
   register('shift+/', {
     callback: () => {
       // Show keyboard shortcuts help modal
-      console.log('Show keyboard shortcuts help')
+      logger.info('Show keyboard shortcuts help')
     },
     description: 'Show keyboard shortcuts help',
   })

@@ -3,6 +3,8 @@
  * Error Monitoring System
  */
 
+import logger from '@/utils/logger'
+
 export interface ErrorLog {
   id: string
   timestamp: number
@@ -171,7 +173,7 @@ class ErrorMonitor {
       //   })
       // }
 
-      console.debug('[ErrorMonitor] Would send to remote:', log)
+      logger.debug('[ErrorMonitor] Would send to remote', { log })
     }
   }
 
@@ -206,7 +208,7 @@ class ErrorMonitor {
       })
     })
 
-    console.log('[ErrorMonitor] Global error handlers initialized')
+    logger.info('[ErrorMonitor] Global error handlers initialized')
   }
 }
 
