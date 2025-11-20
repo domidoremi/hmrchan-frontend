@@ -409,9 +409,9 @@ const refreshQueueStatus = async () => {
  * 打开面板时会刷新队列状态
  */
 const toggleQueuePanel = async () => {
-  console.log('[AppNavbar] Toggle queue panel - before:', showQueuePanel.value, 'isMobile:', isMobile.value)
+  // console.log('[AppNavbar] Toggle queue panel - before:', showQueuePanel.value, 'isMobile:', isMobile.value)
   showQueuePanel.value = !showQueuePanel.value
-  console.log('[AppNavbar] Toggle queue panel - after:', showQueuePanel.value)
+  // console.log('[AppNavbar] Toggle queue panel - after:', showQueuePanel.value)
   if (showQueuePanel.value) {
     await refreshQueueStatus()
   }
@@ -461,9 +461,7 @@ const isMobile = ref(false)
  */
 const updateIsMobile = () => {
   if (typeof window === 'undefined') return
-  const wasMobile = isMobile.value
   isMobile.value = window.matchMedia('(max-width: 768px)').matches
-  console.log('[AppNavbar] isMobile updated:', wasMobile, '->', isMobile.value, 'window.innerWidth:', window.innerWidth)
 }
 
 /** 主题选项配置 */
@@ -484,9 +482,9 @@ const localeOptions = [
  * 切换设置面板显示状态
  */
 const toggleSettingsPanel = () => {
-  console.log('[AppNavbar] Toggle settings panel - before:', showSettingsPanel.value, 'isMobile:', isMobile.value)
+  // console.log('[AppNavbar] Toggle settings panel - before:', showSettingsPanel.value, 'isMobile:', isMobile.value)
   showSettingsPanel.value = !showSettingsPanel.value
-  console.log('[AppNavbar] Toggle settings panel - after:', showSettingsPanel.value)
+  // console.log('[AppNavbar] Toggle settings panel - after:', showSettingsPanel.value)
 }
 
 /**
@@ -552,7 +550,6 @@ const handleClickOutside = (event: MouseEvent) => {
     !inSettingsButton &&
     !inSettingsDropdown
   ) {
-    console.log('[AppNavbar] Closing settings panel from click outside')
     showSettingsPanel.value = false
   }
 
@@ -563,7 +560,6 @@ const handleClickOutside = (event: MouseEvent) => {
     !inQueueButton &&
     !inQueueDropdown
   ) {
-    console.log('[AppNavbar] Closing queue panel from click outside')
     showQueuePanel.value = false
   }
 }
