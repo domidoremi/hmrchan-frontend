@@ -73,7 +73,7 @@ class RequestCache {
       timestamp: Date.now(),
       ttl,
     })
-    console.log(`[Cache] Set: ${key} (TTL: ${ttl}ms)`)
+    // console.log(`[Cache] Set: ${key} (TTL: ${ttl}ms)`)
   }
 
   /**
@@ -127,12 +127,12 @@ class RequestCache {
 
     // 检查是否有进行中的请求
     if (this.pending.has(key)) {
-      console.log(`[Dedupe] Waiting for pending request: ${key}`)
+      // console.log(`[Dedupe] Waiting for pending request: ${key}`)
       return this.pending.get(key) as Promise<T>
     }
 
     // 发起新请求
-    console.log(`[Dedupe] New request: ${key}`)
+    // console.log(`[Dedupe] New request: ${key}`)
     const promise = requestFn()
       .then((data) => {
         // 缓存结果
@@ -144,7 +144,7 @@ class RequestCache {
       .catch((error) => {
         // 清除进行中的请求（失败时）
         this.pending.delete(key)
-        console.log(`[Dedupe] Request failed, clearing pending: ${key}`)
+        // console.log(`[Dedupe] Request failed, clearing pending: ${key}`)
         throw error
       })
 
@@ -158,10 +158,10 @@ class RequestCache {
   cancelPending(key?: string): void {
     if (key) {
       this.pending.delete(key)
-      console.log(`[Dedupe] Cancel: ${key}`)
+      // console.log(`[Dedupe] Cancel: ${key}`)
     } else {
       this.pending.clear()
-      console.log('[Dedupe] Cancel all pending requests')
+      // console.log('[Dedupe] Cancel all pending requests')
     }
   }
 
