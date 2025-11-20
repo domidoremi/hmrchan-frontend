@@ -115,7 +115,10 @@ export const usePostsStore = defineStore(
                 pages: 1,
               }
             } catch (fallbackError) {
-              console.error('[PostsStore] Failed to load posts from IndexedDB:', fallbackError)
+              logger.warn(
+                '[PostsStore] Failed to load posts from IndexedDB',
+                toLogContext(fallbackError),
+              )
               return null
             }
           },
@@ -125,7 +128,10 @@ export const usePostsStore = defineStore(
             try {
               await indexedDB.savePosts(response.items)
             } catch (persistError) {
-              console.error('[PostsStore] Failed to persist posts list to IndexedDB:', persistError)
+              logger.error(
+                '[PostsStore] Failed to persist posts list to IndexedDB',
+                toLogContext(persistError),
+              )
             }
           },
         })
@@ -135,7 +141,7 @@ export const usePostsStore = defineStore(
         lastListFromFallback.value = !!fromFallback
 
         if (!response || !response.items) {
-          console.warn('API 返回无效数据，使用空数组')
+          logger.warn('[PostsStore] API 返回无效数据，使用空数组')
           posts.value = []
           return {
             items: [],
@@ -220,10 +226,12 @@ export const usePostsStore = defineStore(
               .then(async (response) => {
                 currentPost.value = response
                 await indexedDB.savePosts([response])
-                console.log('[PostsStore] Background refresh completed for', postId)
+                logger.debug('[PostsStore] Background refresh completed for post', {
+                  postId,
+                })
               })
               .catch((err) => {
-                console.warn('[PostsStore] Background refresh failed:', err)
+                logger.warn('[PostsStore] Background refresh failed', toLogContext(err))
               })
 
             return cachedDetail
@@ -245,7 +253,10 @@ export const usePostsStore = defineStore(
             try {
               await indexedDB.savePosts([value])
             } catch (persistError) {
-              console.error('[PostsStore] Failed to persist post to IndexedDB:', persistError)
+              logger.warn(
+                '[PostsStore] Failed to persist post to IndexedDB',
+                toLogContext(persistError),
+              )
             }
           },
         })
