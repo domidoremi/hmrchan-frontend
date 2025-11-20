@@ -93,21 +93,6 @@ export async function changeLocale(newLocale: SupportedLocale) {
       delay: `${delay.toFixed(2)}ms`,
     })
 
-    // 显示切换成功的toast通知（使用新语言）
-    setTimeout(() => {
-      // 动态导入toast store避免循环依赖
-      import('@/stores/useToast').then(({ useToastStore }) => {
-        const toastStore = useToastStore()
-        // 使用简单的本地化消息映射
-        const messages: Record<SupportedLocale, string> = {
-          en: 'Language changed successfully',
-          'zh-CN': '语言切换成功',
-          ja: '言語が正常に変更されました',
-        }
-        toastStore.success(messages[newLocale] || messages['en'])
-      })
-    }, 100)
-
     // 短暂延迟后移除过渡类（确保动画完成）
     setTimeout(() => {
       document.documentElement.classList.remove('locale-switching')
