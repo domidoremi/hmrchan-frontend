@@ -198,18 +198,24 @@
           <Search :size="24" />
         </button>
 
-        <button class="action-button queue-button" type="button" @click="toggleQueuePanel"
-          :aria-label="$t('offline.actionsQueued')">
-          <CloudOff :size="20" />
-          <span v-if="queueStatus.pending > 0" class="queue-badge">
-            {{ queueStatus.pending }}
-          </span>
-        </button>
+        <!-- 离线队列按钮（移动端） -->
+        <div class="queue-status-container">
+          <button class="action-button queue-button" type="button" @click="toggleQueuePanel"
+            :aria-label="$t('offline.actionsQueued')">
+            <CloudOff :size="20" />
+            <span v-if="queueStatus.pending > 0" class="queue-badge">
+              {{ queueStatus.pending }}
+            </span>
+          </button>
+        </div>
 
-        <button class="action-button settings-menu-container" type="button" @click="toggleSettingsPanel"
-          :aria-label="$t('nav.settings')">
-          <Settings :size="20" />
-        </button>
+        <!-- 设置按钮（移动端） -->
+        <div class="settings-menu-container">
+          <button class="action-button" type="button" @click="toggleSettingsPanel"
+            :aria-label="$t('nav.settings')">
+            <Settings :size="20" />
+          </button>
+        </div>
 
         <button v-if="isAuthenticated" class="action-button mobile-user-trigger" @click="showUserMenu = !showUserMenu">
           <img :src="userAvatarUrl" :alt="user?.username" class="mobile-avatar" />
