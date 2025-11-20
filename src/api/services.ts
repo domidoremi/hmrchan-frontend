@@ -1,8 +1,17 @@
 /**
- * API服务层 - 根据后端文档实现完整的API调用
- * v2.0 - UUID迁移：所有ID参数已从number改为string (UUID格式)
- * v2.1 - 增强错误处理：所有API调用都使用统一的错误处理机制
- * v2.2 - 国际化支持：所有错误消息使用i18n
+ * API 服务层
+ *
+ * 主要功能：
+ * - 封装所有后端 API 调用
+ * - 提供类型安全的 API 接口
+ * - 统一错误处理和日志记录
+ * - 支持缓存策略和缓存失效
+ * - 集成国际化错误消息
+ *
+ * 版本历史：
+ * - v2.0: UUID 迁移，所有 ID 参数从 number 改为 string (UUID 格式)
+ * - v2.1: 增强错误处理，统一错误处理机制
+ * - v2.2: 国际化支持，所有错误消息使用 i18n
  */
 import { api } from './client'
 import { getRuntimeApiEndpoint } from '@/config/runtime'
@@ -32,19 +41,37 @@ import type {
 } from '@/types'
 
 /**
- * 获取国际化文本的辅助函数
- * 使用全局i18n实例的t方法
+ * 获取国际化文本
+ *
+ * @param key - 国际化键名
+ * @returns 翻译后的文本
  */
 const t = (key: string): string => {
   return i18n.global.t(key) as string
 }
 
-// ========== 认证API ==========
-
+/**
+ * 认证 API
+ *
+ * 提供用户认证相关的 API 调用
+ */
 export const authApi = {
   /**
    * 用户注册
-   * POST /auth/register
+   *
+   * @param data - 注册信息
+   * @param data.username - 用户名
+   * @param data.email - 邮箱
+   * @param data.password - 密码
+   * @param data.full_name - 可选，全名
+   * @returns 登录响应（包含 token 和用户信息）
+   *
+   * @example
+   * const response = await authApi.register({
+   *   username: 'john',
+   *   email: 'john@example.com',
+   *   password: 'password123'
+   * })
    */
   async register(data: { username: string; email: string; password: string; full_name?: string }) {
     try {
@@ -59,7 +86,17 @@ export const authApi = {
 
   /**
    * 用户登录
-   * POST /auth/login
+   *
+   * @param credentials - 登录凭证
+   * @param credentials.username - 用户名
+   * @param credentials.password - 密码
+   * @returns 登录响应（包含 token 和用户信息）
+   *
+   * @example
+   * const response = await authApi.login({
+   *   username: 'john',
+   *   password: 'password123'
+   * })
    */
   async login(credentials: LoginRequest) {
     try {
@@ -74,7 +111,11 @@ export const authApi = {
 
   /**
    * 获取当前用户信息
-   * GET /auth/me
+   *
+   * @returns 当前登录用户的详细信息
+   *
+   * @example
+   * const user = await authApi.getCurrentUser()
    */
   async getCurrentUser() {
     try {
@@ -88,11 +129,15 @@ export const authApi = {
   },
 
   /**
-   * 登出（客户端操作，无需调用API）
+   * 用户登出
+   *
+   * 客户端操作，清除本地存储的认证信息
+   *
+   * @example
+   * authApi.logout()
    */
   logout() {
     try {
-      // 清除本地存储
       localStorage.removeItem('access_token')
       localStorage.removeItem('user')
       logger.info('[Auth] User logged out successfully', {})
@@ -102,12 +147,21 @@ export const authApi = {
   },
 }
 
-// ========== 搜索API ==========
-
+/**
+ * 搜索 API
+ *
+ * 提供内容和作者的搜索功能
+ */
 export const searchApi = {
   /**
    * 搜索帖子
-   * GET /search/posts?q=keyword
+   *
+   * @param query - 搜索关键词
+   * @param params - 可选，额外的查询参数（分页、排序等）
+   * @returns 分页的帖子列表
+   *
+   * @example
+   * const results = await searchApi.searchPosts('Vue', { page: 1, page_size: 20 })
    */
   async searchPosts(query: string, params?: Omit<PostListParams, 'q'>) {
     try {
@@ -124,7 +178,18 @@ export const searchApi = {
 
   /**
    * 搜索作者
-   * GET /search/authors?q=keyword
+   *
+   * @param query - 搜索关键词
+   * @param params - 可选，筛选参数
+   * @param params.platform - 平台筛选
+   * @param params.is_verified - 是否认证
+   * @param params.min_followers - 最小粉丝数
+   * @param params.page - 页码
+   * @param params.page_size - 每页数量
+   * @returns 分页的作者列表
+   *
+   * @example
+   * const results = await searchApi.searchAuthors('John', { platform: 'youtube' })
    */
   async searchAuthors(
     query: string,
@@ -149,8 +214,17 @@ export const searchApi = {
   },
 
   /**
-   * 搜索联想建议
-   * GET /search/suggestions?q=keyword
+   * 获取搜索联想建议
+   *
+   * @param query - 搜索关键词
+   * @param params - 可选，筛选参数
+   * @param params.type - 建议类型（post/author/all）
+   * @param params.platform - 平台筛选
+   * @param params.limit - 返回数量限制
+   * @returns 搜索建议列表
+   *
+   * @example
+   * const suggestions = await searchApi.fetchSuggestions('Vue', { type: 'all', limit: 10 })
    */
   async fetchSuggestions(
     query: string,
@@ -178,13 +252,26 @@ export const searchApi = {
   },
 }
 
-// ========== 内容API ==========
-
+/**
+ * 内容 API
+ *
+ * 提供帖子内容的增删改查功能
+ */
 export const postsApi = {
   /**
-   * 获取内容列表（带缓存）
-   * GET /posts/
-   * Note: Trailing slash added to avoid 307 redirect to HTTP
+   * 获取内容列表
+   *
+   * 启用多层缓存（1 分钟 TTL）
+   *
+   * @param params - 可选，查询参数
+   * @param params.page - 页码
+   * @param params.page_size - 每页数量
+   * @param params.platform - 平台筛选
+   * @param params.author_id - 作者筛选
+   * @returns 分页的帖子列表
+   *
+   * @example
+   * const posts = await postsApi.getPosts({ page: 1, page_size: 20 })
    */
   async getPosts(params?: PostListParams) {
     try {
@@ -195,7 +282,6 @@ export const postsApi = {
         useMultiLayerCache: true,
       })
 
-      // 将帖子列表持久化到 IndexedDB（忽略错误，避免影响正常请求）
       try {
         await indexedDB.savePosts(response.items)
       } catch (error) {
@@ -212,8 +298,15 @@ export const postsApi = {
   },
 
   /**
-   * 获取单个内容详情（带缓存）
-   * GET /posts/{post_id}
+   * 获取单个内容详情
+   *
+   * 启用多层缓存（5 分钟 TTL）
+   *
+   * @param postId - 帖子 UUID
+   * @returns 帖子详情
+   *
+   * @example
+   * const post = await postsApi.getPostById('123e4567-e89b-12d3-a456-426614174000')
    */
   async getPostById(postId: UUID) {
     try {
@@ -223,7 +316,6 @@ export const postsApi = {
         useMultiLayerCache: true,
       })
 
-      // 将详情也写入 IndexedDB，便于后续作为列表/离线回退使用
       try {
         await indexedDB.savePosts([detail])
       } catch (error) {
@@ -243,9 +335,16 @@ export const postsApi = {
   },
 
   /**
-   * 搜索内容（带缓存）
-   * GET /posts/?q=keyword
-   * Note: Trailing slash added to avoid 307 redirect to HTTP
+   * 搜索内容
+   *
+   * 启用多层缓存（2 分钟 TTL）
+   *
+   * @param query - 搜索关键词
+   * @param params - 可选，额外的查询参数
+   * @returns 分页的帖子列表
+   *
+   * @example
+   * const results = await postsApi.searchPosts('Vue', { page: 1 })
    */
   async searchPosts(query: string, params?: Omit<PostListParams, 'q'>) {
     try {
@@ -264,9 +363,16 @@ export const postsApi = {
   },
 
   /**
-   * 按平台获取内容（带缓存）
-   * GET /posts/?platform=youtube
-   * Note: Trailing slash added to avoid 307 redirect to HTTP
+   * 按平台获取内容
+   *
+   * 启用多层缓存（1 分钟 TTL）
+   *
+   * @param platform - 平台名称（如 youtube、bilibili）
+   * @param params - 可选，额外的查询参数
+   * @returns 分页的帖子列表
+   *
+   * @example
+   * const posts = await postsApi.getPostsByPlatform('youtube', { page: 1 })
    */
   async getPostsByPlatform(platform: string, params?: Omit<PostListParams, 'platform'>) {
     try {
@@ -285,8 +391,14 @@ export const postsApi = {
   },
 
   /**
-   * 获取内容统计（带缓存）
-   * GET /posts/stats/summary
+   * 获取内容统计
+   *
+   * 启用多层缓存（5 分钟 TTL）
+   *
+   * @returns 内容统计数据（总数、按平台分组等）
+   *
+   * @example
+   * const stats = await postsApi.getPostStats()
    */
   async getPostStats() {
     try {
@@ -304,12 +416,20 @@ export const postsApi = {
   },
 }
 
-// ========== 媒体API ==========
-
+/**
+ * 媒体 API
+ *
+ * 提供媒体文件的获取、流式播放、下载等功能
+ */
 export const mediaApi = {
   /**
    * 获取媒体文件信息
-   * GET /media/{media_id}
+   *
+   * @param mediaId - 媒体文件 UUID
+   * @returns 媒体文件详细信息
+   *
+   * @example
+   * const media = await mediaApi.getMediaInfo('123e4567-e89b-12d3-a456-426614174000')
    */
   async getMediaInfo(mediaId: UUID) {
     try {
@@ -323,7 +443,12 @@ export const mediaApi = {
   },
 
   /**
-   * 运行时强制 HTTPS（防止构建时内联 HTTP）
+   * 强制 URL 使用 HTTPS
+   *
+   * 运行时检测，防止构建时内联 HTTP
+   *
+   * @param url - 原始 URL
+   * @returns HTTPS URL
    */
   _forceHttps(url: string): string {
     if (typeof window !== 'undefined' && url.startsWith('http://')) {
@@ -333,8 +458,14 @@ export const mediaApi = {
   },
 
   /**
-   * 获取媒体流式播放URL
-   * 返回完整URL以支持跨域访问
+   * 获取媒体流式播放 URL
+   *
+   * @param mediaId - 媒体文件 UUID
+   * @returns 流式播放 URL
+   *
+   * @example
+   * const streamUrl = mediaApi.getStreamUrl('123e4567-e89b-12d3-a456-426614174000')
+   * videoElement.src = streamUrl
    */
   getStreamUrl(mediaId: UUID) {
     const url = `${getRuntimeApiEndpoint()}/media/${mediaId}/stream`
@@ -342,8 +473,13 @@ export const mediaApi = {
   },
 
   /**
-   * 获取媒体下载URL
-   * 返回完整URL以支持跨域访问
+   * 获取媒体下载 URL
+   *
+   * @param mediaId - 媒体文件 UUID
+   * @returns 下载 URL
+   *
+   * @example
+   * const downloadUrl = mediaApi.getDownloadUrl('123e4567-e89b-12d3-a456-426614174000')
    */
   getDownloadUrl(mediaId: UUID) {
     const url = `${getRuntimeApiEndpoint()}/media/${mediaId}/download`
@@ -351,8 +487,13 @@ export const mediaApi = {
   },
 
   /**
-   * 获取缩略图URL
-   * 返回完整URL以支持跨域访问
+   * 获取缩略图 URL
+   *
+   * @param mediaId - 媒体文件 UUID
+   * @returns 缩略图 URL
+   *
+   * @example
+   * const thumbnailUrl = mediaApi.getThumbnailUrl('123e4567-e89b-12d3-a456-426614174000')
    */
   getThumbnailUrl(mediaId: UUID) {
     const url = `${getRuntimeApiEndpoint()}/media/${mediaId}/thumbnail`
@@ -360,8 +501,13 @@ export const mediaApi = {
   },
 
   /**
-   * 获取字幕URL
-   * 返回完整URL以支持跨域访问
+   * 获取字幕 URL
+   *
+   * @param mediaId - 媒体文件 UUID
+   * @returns 字幕 URL
+   *
+   * @example
+   * const subtitleUrl = mediaApi.getSubtitleUrl('123e4567-e89b-12d3-a456-426614174000')
    */
   getSubtitleUrl(mediaId: UUID) {
     const url = `${getRuntimeApiEndpoint()}/media/${mediaId}/subtitle`
@@ -370,12 +516,19 @@ export const mediaApi = {
 
   /**
    * 下载媒体文件
+   *
+   * 触发浏览器下载
+   *
+   * @param mediaId - 媒体文件 UUID
+   * @param filename - 可选，下载文件名
+   *
+   * @example
+   * await mediaApi.downloadMedia('123e4567-e89b-12d3-a456-426614174000', 'video.mp4')
    */
   async downloadMedia(mediaId: UUID, filename?: string) {
     try {
       const response = await api.getBlob(`/media/${mediaId}/download`)
 
-      // 创建下载链接
       const url = window.URL.createObjectURL(response)
       const link = document.createElement('a')
       link.href = url
@@ -393,12 +546,25 @@ export const mediaApi = {
   },
 }
 
-// ========== 作者API ==========
-
+/**
+ * 作者 API
+ *
+ * 提供作者信息的查询功能
+ */
 export const authorsApi = {
   /**
-   * 获取作者列表（带缓存）
-   * GET /authors
+   * 获取作者列表
+   *
+   * 启用多层缓存（10 分钟 TTL）
+   *
+   * @param params - 可选，查询参数
+   * @param params.page - 页码
+   * @param params.page_size - 每页数量
+   * @param params.platform - 平台筛选
+   * @returns 分页的作者列表
+   *
+   * @example
+   * const authors = await authorsApi.getAuthors({ page: 1, platform: 'youtube' })
    */
   async getAuthors(params?: { page?: number; page_size?: number; platform?: string }) {
     try {
@@ -417,8 +583,15 @@ export const authorsApi = {
   },
 
   /**
-   * 获取单个作者信息（带缓存）
-   * GET /authors/{author_id}
+   * 获取单个作者信息
+   *
+   * 启用多层缓存（10 分钟 TTL）
+   *
+   * @param authorId - 作者 UUID
+   * @returns 作者详细信息
+   *
+   * @example
+   * const author = await authorsApi.getAuthorById('123e4567-e89b-12d3-a456-426614174000')
    */
   async getAuthorById(authorId: UUID) {
     try {
@@ -436,9 +609,16 @@ export const authorsApi = {
   },
 
   /**
-   * 获取作者的内容（带缓存）
-   * GET /authors/{author_id}/posts/
-   * Note: Trailing slash added to avoid 307 redirect to HTTP
+   * 获取作者的内容
+   *
+   * 启用多层缓存（2 分钟 TTL）
+   *
+   * @param authorId - 作者 UUID
+   * @param params - 可选，查询参数
+   * @returns 分页的帖子列表
+   *
+   * @example
+   * const posts = await authorsApi.getAuthorPosts('123e4567-e89b-12d3-a456-426614174000', { page: 1 })
    */
   async getAuthorPosts(authorId: UUID, params?: PostListParams) {
     try {
@@ -457,12 +637,25 @@ export const authorsApi = {
   },
 }
 
-// ========== 收藏API ==========
-
+/**
+ * 收藏 API
+ *
+ * 提供收藏的增删改查功能
+ */
 export const favoritesApi = {
   /**
-   * 获取收藏列表（带缓存）
-   * GET /favorites
+   * 获取收藏列表
+   *
+   * 启用多层缓存（1 分钟 TTL）
+   *
+   * @param params - 可选，查询参数
+   * @param params.page - 页码
+   * @param params.page_size - 每页数量
+   * @param params.folder_name - 文件夹筛选
+   * @returns 分页的收藏列表
+   *
+   * @example
+   * const favorites = await favoritesApi.getFavorites({ page: 1, folder_name: 'Tech' })
    */
   async getFavorites(params?: { page?: number; page_size?: number; folder_name?: string }) {
     try {
@@ -481,8 +674,21 @@ export const favoritesApi = {
   },
 
   /**
-   * 添加收藏（带缓存失效）
-   * POST /favorites
+   * 添加收藏
+   *
+   * 自动失效相关缓存
+   *
+   * @param data - 收藏数据
+   * @param data.post_id - 帖子 UUID
+   * @param data.folder_name - 可选，文件夹名称
+   * @param data.notes - 可选，备注
+   * @returns 创建的收藏记录
+   *
+   * @example
+   * const favorite = await favoritesApi.addFavorite({
+   *   post_id: '123e4567-e89b-12d3-a456-426614174000',
+   *   folder_name: 'Tech'
+   * })
    */
   async addFavorite(data: FavoriteCreate) {
     try {
@@ -490,7 +696,6 @@ export const favoritesApi = {
         invalidatePatterns: ['/favorites', `/posts/${data.post_id}`],
       })
 
-      // 手动失效相关缓存
       await cacheInvalidation.invalidateByAction('favorites.add', data.post_id)
 
       logger.info('[Favorites] Added favorite successfully', { postId: data.post_id })
@@ -504,8 +709,20 @@ export const favoritesApi = {
   },
 
   /**
-   * 更新收藏（带缓存失效）
-   * PUT /favorites/{favorite_id}
+   * 更新收藏
+   *
+   * 自动失效相关缓存
+   *
+   * @param favoriteId - 收藏记录 UUID
+   * @param data - 更新数据
+   * @param data.folder_name - 可选，文件夹名称
+   * @param data.notes - 可选，备注
+   * @returns 更新后的收藏记录
+   *
+   * @example
+   * const favorite = await favoritesApi.updateFavorite('123e4567-e89b-12d3-a456-426614174000', {
+   *   folder_name: 'New Folder'
+   * })
    */
   async updateFavorite(favoriteId: UUID, data: FavoriteUpdate) {
     try {
@@ -524,8 +741,14 @@ export const favoritesApi = {
   },
 
   /**
-   * 删除收藏（带缓存失效）
-   * DELETE /favorites/{post_id}
+   * 删除收藏
+   *
+   * 自动失效相关缓存
+   *
+   * @param postId - 帖子 UUID
+   *
+   * @example
+   * await favoritesApi.deleteFavorite('123e4567-e89b-12d3-a456-426614174000')
    */
   async deleteFavorite(postId: UUID) {
     try {
@@ -533,7 +756,6 @@ export const favoritesApi = {
         invalidatePatterns: ['/favorites', `/posts/${postId}`],
       })
 
-      // 手动失效相关缓存
       await cacheInvalidation.invalidateByAction('favorites.remove', postId)
 
       logger.info('[Favorites] Deleted favorite successfully', { postId })
@@ -547,8 +769,14 @@ export const favoritesApi = {
   },
 
   /**
-   * 获取收藏文件夹列表（带缓存）
-   * GET /favorites/folders
+   * 获取收藏文件夹列表
+   *
+   * 启用多层缓存（5 分钟 TTL）
+   *
+   * @returns 文件夹名称列表
+   *
+   * @example
+   * const folders = await favoritesApi.getFolders()
    */
   async getFolders() {
     try {
@@ -567,18 +795,25 @@ export const favoritesApi = {
 
   /**
    * 检查内容是否已收藏
-   * GET /favorites/check/{post_id}
+   *
+   * 不使用缓存，确保实时性
+   *
+   * @param postId - 帖子 UUID
+   * @returns 收藏状态和收藏记录 ID
+   *
+   * @example
+   * const { is_favorited, favorite_id } = await favoritesApi.checkFavorite('123e4567-e89b-12d3-a456-426614174000')
    */
   async checkFavorite(postId: UUID): Promise<{ is_favorited: boolean; favorite_id: UUID | null }> {
     try {
       return await api.get<{ is_favorited: boolean; favorite_id: UUID | null }>(
         `/favorites/check/${postId}`,
-        { cache: false }, // 不缓存收藏状态，确保实时性
+        { cache: false },
       )
     } catch (error) {
       handleError(error, 'Favorites.CheckFavorite', {
         customMessage: `Failed to check favorite status: ${postId}`,
-        silent: true, // 静默处理，不显示toast
+        silent: true,
       })
       throw error
     }
@@ -586,6 +821,14 @@ export const favoritesApi = {
 
   /**
    * 检查内容是否已收藏（简化版）
+   *
+   * 只返回布尔值，失败时返回 false
+   *
+   * @param postId - 帖子 UUID
+   * @returns 是否已收藏
+   *
+   * @example
+   * const isFavorited = await favoritesApi.isFavorited('123e4567-e89b-12d3-a456-426614174000')
    */
   async isFavorited(postId: UUID): Promise<boolean> {
     try {
@@ -601,11 +844,20 @@ export const favoritesApi = {
   },
 }
 
-// ========== 统计API ==========
-
+/**
+ * 统计 API
+ *
+ * 提供各类统计数据的查询功能
+ */
 export const statsApi = {
   /**
    * 获取平台统计
+   *
+   * @returns 按平台分组的统计数据
+   *
+   * @example
+   * const stats = await statsApi.getPlatformStats()
+   * console.log('YouTube posts:', stats.youtube)
    */
   async getPlatformStats(): Promise<Record<string, number>> {
     try {
@@ -621,6 +873,11 @@ export const statsApi = {
 
   /**
    * 获取完整统计数据
+   *
+   * @returns 完整的统计数据（包含总数、按平台分组等）
+   *
+   * @example
+   * const stats = await statsApi.getFullStats()
    */
   async getFullStats() {
     try {
@@ -634,21 +891,39 @@ export const statsApi = {
   },
 }
 
-// ========== 上传API ==========
-
+/**
+ * 文件上传响应类型
+ */
 export interface FileUploadResponse {
+  /** 文件名 */
   filename: string
+  /** 文件 URL */
   url: string
+  /** 文件大小（字节） */
   size: number
+  /** 内容类型 */
   content_type: string
+  /** 文件哈希值 */
   hash: string
+  /** 上传时间 */
   uploaded_at: string
 }
 
+/**
+ * 上传 API
+ *
+ * 提供文件上传功能
+ */
 export const uploadApi = {
   /**
    * 上传头像
-   * POST /upload/avatar
+   *
+   * @param file - 头像文件
+   * @returns 上传响应（包含文件 URL 等信息）
+   *
+   * @example
+   * const response = await uploadApi.uploadAvatar(file)
+   * console.log('Avatar URL:', response.url)
    */
   async uploadAvatar(file: File): Promise<FileUploadResponse> {
     try {
@@ -671,8 +946,16 @@ export const uploadApi = {
   },
 
   /**
-   * 为指定用户上传头像（管理员功能）
-   * POST /upload/users/{user_id}/avatar
+   * 为指定用户上传头像
+   *
+   * 管理员功能
+   *
+   * @param userId - 用户 UUID
+   * @param file - 头像文件
+   * @returns 上传响应（包含文件 URL 等信息）
+   *
+   * @example
+   * const response = await uploadApi.uploadUserAvatar('123e4567-e89b-12d3-a456-426614174000', file)
    */
   async uploadUserAvatar(userId: UUID, file: File): Promise<FileUploadResponse> {
     try {
@@ -699,15 +982,29 @@ export const uploadApi = {
   },
 }
 
-// 导出所有API服务
+/**
+ * 统一导出所有 API 服务
+ *
+ * @example
+ * import { services } from '@/api/services'
+ * const posts = await services.posts.getPosts()
+ */
 export const services = {
+  /** 认证 API */
   auth: authApi,
+  /** 内容 API */
   posts: postsApi,
+  /** 媒体 API */
   media: mediaApi,
+  /** 作者 API */
   authors: authorsApi,
+  /** 收藏 API */
   favorites: favoritesApi,
+  /** 统计 API */
   stats: statsApi,
+  /** 上传 API */
   upload: uploadApi,
+  /** 搜索 API */
   search: searchApi,
 }
 

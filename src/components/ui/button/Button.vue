@@ -13,16 +13,55 @@
 </template>
 
 <script setup lang="ts">
+/**
+ * Button 按钮组件
+ *
+ * 功能描述：
+ * - 提供多种样式变体的按钮组件（主要、次要、幽灵、危险、成功）
+ * - 支持多种尺寸和状态（禁用、加载中）
+ * - 支持图标按钮和涟漪点击效果
+ * - 支持全宽和圆角样式
+ *
+ * Props:
+ * - variant: 按钮样式变体
+ * - size: 按钮尺寸
+ * - disabled: 是否禁用
+ * - loading: 是否显示加载状态
+ * - icon: 图标组件
+ * - iconPosition: 图标位置（左侧或右侧）
+ * - fullWidth: 是否占满容器宽度
+ * - rounded: 是否使用完全圆角
+ *
+ * Emits:
+ * - click: 按钮点击事件，传递 MouseEvent 对象
+ *
+ * Slots:
+ * - default: 按钮文本内容
+ *
+ * @example
+ * <Button variant="primary" @click="handleClick">提交</Button>
+ * <Button variant="secondary" :icon="IconSearch" icon-position="left">搜索</Button>
+ * <Button variant="danger" loading>删除中...</Button>
+ */
+
 import { computed, ref, useSlots, type Component } from 'vue'
 
 interface Props {
+  /** 按钮样式变体 */
   variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'success'
+  /** 按钮尺寸 */
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl'
+  /** 是否禁用按钮 */
   disabled?: boolean
+  /** 是否显示加载状态 */
   loading?: boolean
+  /** 图标组件 */
   icon?: Component
+  /** 图标位置 */
   iconPosition?: 'left' | 'right'
+  /** 是否占满容器宽度 */
   fullWidth?: boolean
+  /** 是否使用完全圆角样式 */
   rounded?: boolean
 }
 
@@ -37,6 +76,7 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const emit = defineEmits<{
+  /** 按钮点击事件 */
   click: [event: MouseEvent]
 }>()
 
@@ -44,6 +84,7 @@ const slots = useSlots()
 const buttonRef = ref<HTMLButtonElement>()
 const rippleContainer = ref<HTMLSpanElement>()
 
+/** 计算按钮的 CSS 类名 */
 const buttonClass = computed(() => {
   return [
     'glass-button',
@@ -59,6 +100,7 @@ const buttonClass = computed(() => {
   ]
 })
 
+/** 根据按钮尺寸计算图标大小 */
 const iconSize = computed(() => {
   const sizeMap = {
     xs: 14,
@@ -70,6 +112,10 @@ const iconSize = computed(() => {
   return sizeMap[props.size]
 })
 
+/**
+ * 创建涟漪点击效果
+ * @param event - 鼠标点击事件
+ */
 const createRipple = (event: MouseEvent) => {
   if (!rippleContainer.value || !buttonRef.value) return
 
@@ -79,6 +125,7 @@ const createRipple = (event: MouseEvent) => {
   const x = event.clientX - rect.left - size / 2
   const y = event.clientY - rect.top - size / 2
 
+  // 创建涟漪元素
   const ripple = document.createElement('span')
   ripple.className = 'ripple'
   ripple.style.width = ripple.style.height = `${size}px`
@@ -87,11 +134,16 @@ const createRipple = (event: MouseEvent) => {
 
   rippleContainer.value.appendChild(ripple)
 
+  // 动画结束后移除涟漪元素
   setTimeout(() => {
     ripple.remove()
   }, 600)
 }
 
+/**
+ * 处理按钮点击事件
+ * @param event - 鼠标点击事件
+ */
 const handleClick = (event: MouseEvent) => {
   if (!props.disabled && !props.loading) {
     createRipple(event)
