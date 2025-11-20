@@ -101,29 +101,86 @@
 </template>
 
 <script setup lang="ts">
+/**
+ * Input 输入框组件
+ *
+ * 功能描述：
+ * - 提供多种类型的输入框（文本、密码、邮箱、搜索、数字、电话、URL）
+ * - 支持标签、占位符、错误提示和帮助文本
+ * - 支持前缀/后缀图标和文本
+ * - 支持清除按钮和字符计数
+ * - 支持禁用和只读状态
+ * - 完整的无障碍支持（ARIA 属性）
+ *
+ * Props:
+ * - modelValue: 输入框的值
+ * - type: 输入框类型
+ * - label: 输入框标签
+ * - placeholder: 占位符文本
+ * - error: 错误提示信息
+ * - hint: 帮助提示信息
+ * - required: 是否必填
+ * - disabled: 是否禁用
+ * - readonly: 是否只读
+ * - icon: 前缀图标组件
+ * - prefix: 前缀文本
+ * - suffix: 后缀文本
+ * - clearable: 是否显示清除按钮
+ * - maxLength: 最大字符长度
+ * - showCount: 是否显示字符计数
+ *
+ * Emits:
+ * - update:modelValue: 值变化事件
+ * - focus: 获得焦点事件
+ * - blur: 失去焦点事件
+ * - clear: 清除内容事件
+ *
+ * Slots:
+ * - suffix: 自定义后缀内容
+ *
+ * @example
+ * <Input v-model="username" label="用户名" placeholder="请输入用户名" />
+ * <Input v-model="email" type="email" :icon="IconMail" clearable />
+ * <Input v-model="password" type="password" error="密码格式不正确" />
+ */
+
 import { computed, ref } from 'vue'
 import type { Component } from 'vue'
 
-// 禁用属性继承，手动控制attrs传递给input
 defineOptions({
   inheritAttrs: false,
 })
 
 interface Props {
+  /** 输入框的值 */
   modelValue: string | number
+  /** 输入框类型 */
   type?: 'text' | 'password' | 'email' | 'search' | 'number' | 'tel' | 'url'
+  /** 输入框标签 */
   label?: string
+  /** 占位符文本 */
   placeholder?: string
+  /** 错误提示信息 */
   error?: string
+  /** 帮助提示信息 */
   hint?: string
+  /** 是否必填（标签后显示红色星号） */
   required?: boolean
+  /** 是否禁用 */
   disabled?: boolean
+  /** 是否只读 */
   readonly?: boolean
+  /** 前缀图标组件 */
   icon?: Component
+  /** 前缀文本 */
   prefix?: string
+  /** 后缀文本 */
   suffix?: string
+  /** 是否显示清除按钮 */
   clearable?: boolean
+  /** 最大字符长度 */
   maxLength?: number
+  /** 是否显示字符计数 */
   showCount?: boolean
 }
 
@@ -138,21 +195,28 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const emit = defineEmits<{
+  /** 值变化事件 */
   'update:modelValue': [value: string | number]
+  /** 获得焦点事件 */
   focus: []
+  /** 失去焦点事件 */
   blur: []
+  /** 清除内容事件 */
   clear: []
 }>()
 
+/** 输入框是否获得焦点 */
 const isFocused = ref(false)
 
-// Generate unique ID for accessibility
+/** 生成唯一的输入框 ID，用于无障碍支持 */
 const inputId = computed(() => `input-${Math.random().toString(36).substr(2, 9)}`)
 
+/** 计算当前字符数 */
 const characterCount = computed(() => {
   return String(props.modelValue).length
 })
 
+/** 计算输入框容器的 CSS 类名 */
 const wrapperClass = computed(() => {
   return {
     'is-focused': isFocused.value,
@@ -162,6 +226,7 @@ const wrapperClass = computed(() => {
   }
 })
 
+/** 计算输入框元素的 CSS 类名 */
 const inputClass = computed(() => {
   return [
     'glass-input',
@@ -174,11 +239,15 @@ const inputClass = computed(() => {
   ]
 })
 
+/**
+ * 处理输入事件
+ * @param event - 输入事件对象
+ */
 const handleInput = (event: Event) => {
   const target = event.target as HTMLInputElement
   let value: string | number = target.value
 
-  // Handle number type
+  // 处理数字类型的输入
   if (props.type === 'number' && value !== '') {
     value = Number(value)
   }
@@ -186,16 +255,25 @@ const handleInput = (event: Event) => {
   emit('update:modelValue', value)
 }
 
+/**
+ * 处理获得焦点事件
+ */
 const handleFocus = () => {
   isFocused.value = true
   emit('focus')
 }
 
+/**
+ * 处理失去焦点事件
+ */
 const handleBlur = () => {
   isFocused.value = false
   emit('blur')
 }
 
+/**
+ * 处理清除按钮点击事件
+ */
 const handleClear = () => {
   emit('update:modelValue', props.type === 'number' ? 0 : '')
   emit('clear')

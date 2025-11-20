@@ -8,24 +8,50 @@
 </template>
 
 <script setup lang="ts">
+/**
+ * BackToTop 返回顶部按钮组件
+ *
+ * 功能描述：
+ * - 页面滚动超过阈值时显示返回顶部按钮
+ * - 点击按钮平滑滚动到页面顶部
+ * - 根据设备类型和安全区域动态调整按钮位置
+ * - 支持响应式设计，在不同设备上显示不同尺寸
+ *
+ * @example
+ * <BackToTop />
+ */
+
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { ArrowUp } from 'lucide-vue-next'
 import { useResponsive } from '@/composables'
 
+/** 按钮是否可见 */
 const visible = ref(false)
+
+/** 显示按钮的滚动阈值（像素） */
 const scrollThreshold = 300
 
 const { safeAreaBottom, isMobile } = useResponsive()
 
-// 动态计算bottom值：底部导航栏高度 + 额外间距
+/**
+ * 动态计算按钮的 bottom 位置
+ * 考虑底部导航栏高度和设备类型
+ */
 const dynamicBottom = computed(() => {
   return `${safeAreaBottom.value + (isMobile.value ? 12 : 32)}px`
 })
 
+/**
+ * 处理页面滚动事件
+ * 根据滚动位置控制按钮显示/隐藏
+ */
 const handleScroll = () => {
   visible.value = window.pageYOffset > scrollThreshold
 }
 
+/**
+ * 平滑滚动到页面顶部
+ */
 const scrollToTop = () => {
   window.scrollTo({
     top: 0,

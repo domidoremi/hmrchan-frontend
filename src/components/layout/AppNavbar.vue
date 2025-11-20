@@ -291,6 +291,32 @@
 </template>
 
 <script setup lang="ts">
+/**
+ * 应用导航栏组件
+ *
+ * 功能描述：
+ * - 提供应用主导航功能，支持桌面端和移动端不同布局
+ * - 桌面端：顶部固定导航栏，包含Logo、导航链接、搜索、设置、用户菜单
+ * - 移动端：顶部栏 + 底部导航栏，优化触摸交互体验
+ *
+ * 主要功能：
+ * - 页面导航（首页、探索、收藏、作者）
+ * - 搜索功能
+ * - 离线队列状态管理
+ * - 快捷设置面板（主题、语言、显示选项）
+ * - 用户认证和账户管理
+ *
+ * 布局结构：
+ * - 桌面端：单行水平布局，左侧Logo，中间导航，右侧操作按钮
+ * - 移动端：顶部栏（Logo + 操作按钮）+ 底部导航栏（主要页面入口）
+ *
+ * 职责：
+ * - 提供全局导航入口
+ * - 管理用户会话状态
+ * - 提供快捷设置访问
+ * - 显示离线队列状态
+ */
+
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
@@ -315,33 +341,54 @@ import { useAuthStore, useSettingsStore, useThemeStore } from '@/stores'
 import type { Theme } from '@/types'
 import { offlineQueue } from '@/utils/storage'
 
+/** 路由实例 */
 const router = useRouter()
+
+/** 国际化实例 */
 const { locale } = useI18n()
+
+/** Store 实例 */
 const authStore = useAuthStore()
 const settingsStore = useSettingsStore()
 const themeStore = useThemeStore()
 
+/** Store 响应式状态 */
 const { user, isAuthenticated } = storeToRefs(authStore)
 const { settings } = storeToRefs(settingsStore)
 const { theme } = storeToRefs(themeStore)
 
+/** 用户菜单显示状态 */
 const showUserMenu = ref(false)
 const userMenuRef = ref<HTMLElement | null>(null)
+
+/** 设置面板显示状态 */
 const showSettingsPanel = ref(false)
 const settingsMenuRef = ref<HTMLElement | null>(null)
+
+/** 离线队列面板显示状态 */
 const showQueuePanel = ref(false)
 const queueMenuRef = ref<HTMLElement | null>(null)
 
+/** 离线队列状态 */
 const queueStatus = ref<{ pending: number; syncing: number; failed: number }>({
   pending: 0,
   syncing: 0,
   failed: 0,
 })
+
+/** 队列同步状态 */
 const isQueueSyncing = ref(false)
+
+/** 网络在线状态 */
 const isOnline = ref(typeof window === 'undefined' ? true : navigator.onLine)
 
+/** 是否有待处理的队列项 */
 const hasQueueItems = computed(() => queueStatus.value.pending > 0)
 
+/**
+ * 刷新离线队列状态
+ * 从离线队列获取最新的待处理、同步中和失败的任务数量
+ */
 const refreshQueueStatus = async () => {
   try {
     const status = await offlineQueue.getQueueStatus()
@@ -351,6 +398,10 @@ const refreshQueueStatus = async () => {
   }
 }
 
+/**
+ * 切换离线队列面板显示状态
+ * 打开面板时会刷新队列状态
+ */
 const toggleQueuePanel = async () => {
   console.log('[AppNavbar] Toggle queue panel - before:', showQueuePanel.value, 'isMobile:', isMobile.value)
   showQueuePanel.value = !showQueuePanel.value
@@ -360,6 +411,10 @@ const toggleQueuePanel = async () => {
   }
 }
 
+/**
+ * 手动同步离线队列
+ * 仅在在线且有待处理项时执行
+ */
 const handleQueueSync = async () => {
   if (!isOnline.value || !hasQueueItems.value || isQueueSyncing.value) return
   try {
@@ -373,20 +428,31 @@ const handleQueueSync = async () => {
   }
 }
 
+/**
+ * 处理网络状态变化
+ * 更新在线状态标志
+ */
 const handleOnlineChange = () => {
   if (typeof navigator !== 'undefined') {
     isOnline.value = navigator.onLine
   }
 }
 
-// 点击导航栏搜索按钮：跳转到 Explore 作为统一搜索视图
+/**
+ * 跳转到搜索页面
+ * 点击搜索按钮时触发
+ */
 const goToSearch = () => {
   router.push({ path: '/search' })
 }
 
-// 移动端检测
+/** 移动端检测标志 */
 const isMobile = ref(false)
 
+/**
+ * 更新移动端检测状态
+ * 根据窗口宽度判断是否为移动端（768px 断点）
+ */
 const updateIsMobile = () => {
   if (typeof window === 'undefined') return
   const wasMobile = isMobile.value
@@ -394,62 +460,74 @@ const updateIsMobile = () => {
   console.log('[AppNavbar] isMobile updated:', wasMobile, '->', isMobile.value, 'window.innerWidth:', window.innerWidth)
 }
 
+/** 主题选项配置 */
 const themeOptions = [
   { value: 'light' as Theme, icon: Sun },
   { value: 'dark' as Theme, icon: Moon },
   { value: 'auto' as Theme, icon: Monitor },
 ]
 
+/** 语言选项配置 */
 const localeOptions = [
   { code: 'en', name: 'English' },
   { code: 'zh-CN', name: '简体中文' },
   { code: 'ja', name: '日本語' },
 ]
 
+/**
+ * 切换设置面板显示状态
+ */
 const toggleSettingsPanel = () => {
   console.log('[AppNavbar] Toggle settings panel - before:', showSettingsPanel.value, 'isMobile:', isMobile.value)
   showSettingsPanel.value = !showSettingsPanel.value
   console.log('[AppNavbar] Toggle settings panel - after:', showSettingsPanel.value)
 }
 
+/**
+ * 设置主题
+ * @param newTheme - 新的主题值（light/dark/auto）
+ */
 const setTheme = (newTheme: Theme) => {
   themeStore.setTheme(newTheme)
 }
 
+/**
+ * 切换语言
+ * @param newLocale - 新的语言代码
+ */
 const changeLanguage = async (newLocale: string) => {
   const { changeLocale } = await import('@/composables/core/useI18nOptimized')
   await changeLocale(newLocale as 'en' | 'zh-CN' | 'ja')
 }
 
-// ❌ 已禁用：全局滑动切换主页面功能
-// const swipeStartX = ref<number | null>(null)
-// const swipeStartY = ref<number | null>(null)
-// const swipeActive = ref(false)
-
-// const handleGlobalTouchStart = (event: TouchEvent) => { ... }
-// const handleGlobalTouchEnd = (event: TouchEvent) => { ... }
-
+/**
+ * 用户头像 URL
+ * 优先使用用户上传的头像，否则使用 DiceBear 生成的默认头像
+ */
 const userAvatarUrl = computed(() => {
   if (user.value?.avatar_url) {
     return user.value.avatar_url
   }
-  // 使用 encodeURIComponent 防止 URL 注入
   return `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user.value?.username || 'default')}`
 })
 
-// 其他工具函数保留在此下方
-
+/**
+ * 处理用户登出
+ * 清除用户会话并跳转到首页
+ */
 const handleLogout = () => {
   authStore.logout()
   showUserMenu.value = false
   router.push('/')
 }
 
-// 点击外部关闭用户菜单
+/**
+ * 处理点击外部区域
+ * 关闭打开的下拉菜单和面板
+ */
 const handleClickOutside = (event: MouseEvent) => {
   const target = event.target as HTMLElement
 
-  // 用户菜单
   const inMobileUserTrigger = target.closest('.mobile-user-trigger')
   const inMobileUserModal = target.closest('.mobile-user-modal')
   if (
@@ -461,7 +539,6 @@ const handleClickOutside = (event: MouseEvent) => {
     showUserMenu.value = false
   }
 
-  // 设置面板 - 检查是否点击了按钮或面板内部
   const inSettingsButton = target.closest('.settings-menu-container')
   const inSettingsDropdown = target.closest('.settings-dropdown')
   if (
@@ -473,7 +550,6 @@ const handleClickOutside = (event: MouseEvent) => {
     showSettingsPanel.value = false
   }
 
-  // 队列面板 - 检查是否点击了按钮或面板内部
   const inQueueButton = target.closest('.queue-status-container')
   const inQueueDropdown = target.closest('.queue-dropdown')
   if (
@@ -485,6 +561,8 @@ const handleClickOutside = (event: MouseEvent) => {
     showQueuePanel.value = false
   }
 }
+
+/** 队列状态定时器 */
 let queueStatusTimer: number | null = null
 
 onMounted(() => {

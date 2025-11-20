@@ -7,6 +7,31 @@
 </template>
 
 <script setup lang="ts">
+/**
+ * Divider 分割线组件
+ *
+ * 功能描述：
+ * - 提供水平和垂直分割线
+ * - 支持多种样式变体（实线、虚线、点线、渐变）
+ * - 支持带文字的分割线
+ * - 支持自定义对齐方式和间距
+ *
+ * Props:
+ * - orientation: 分割线方向（水平或垂直）
+ * - align: 文字对齐方式（左、中、右）
+ * - spacing: 分割线间距
+ * - variant: 分割线样式变体
+ *
+ * Slots:
+ * - default: 分割线中间的文字内容
+ *
+ * @example
+ * <Divider />
+ * <Divider orientation="vertical" />
+ * <Divider variant="dashed">或</Divider>
+ * <Divider align="left">章节标题</Divider>
+ */
+
 import { computed } from 'vue'
 
 defineOptions({
@@ -14,13 +39,13 @@ defineOptions({
 })
 
 interface Props {
-  /** 方向 */
+  /** 分割线方向 */
   orientation?: 'horizontal' | 'vertical'
-  /** 对齐方式（当有内容时） */
+  /** 文字对齐方式（当有内容时生效） */
   align?: 'left' | 'center' | 'right'
-  /** 间距 */
+  /** 分割线间距 */
   spacing?: 'sm' | 'md' | 'lg'
-  /** 变体 */
+  /** 分割线样式变体 */
   variant?: 'solid' | 'dashed' | 'dotted' | 'gradient'
 }
 
@@ -31,6 +56,7 @@ const props = withDefaults(defineProps<Props>(), {
   variant: 'solid',
 })
 
+/** 计算分割线的 CSS 类名 */
 const dividerClass = computed(() => {
   return [
     'divider',

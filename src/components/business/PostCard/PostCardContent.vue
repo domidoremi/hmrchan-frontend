@@ -40,36 +40,69 @@
 </template>
 
 <script setup lang="ts">
+/**
+ * 帖子卡片内容组件
+ *
+ * 业务功能：
+ * - 展示帖子的文本内容（标题、描述）
+ * - 显示作者信息和统计数据（浏览量、点赞数）
+ * - 显示发布时间（相对时间格式）
+ *
+ * 业务场景：
+ * - 在帖子卡片中展示核心文本信息
+ * - 提供帖子的基本统计数据
+ * - 显示帖子的时效性信息
+ *
+ * Props:
+ * - title: 帖子标题
+ * - description: 帖子描述
+ * - showDescription: 是否显示描述
+ * - authorName: 作者名称
+ * - viewCount: 浏览量
+ * - likeCount: 点赞数
+ * - publishedAt: 发布时间
+ */
+
 import { ref, watch } from 'vue'
 import { User, Eye, Heart, Clock } from 'lucide-vue-next'
 import { formatNumber, formatRelativeTime, truncateText } from '@/utils/format'
 
 interface Props {
+  /** 帖子标题 */
   title: string | null
+  /** 帖子描述 */
   description: string | null
+  /** 是否显示描述 */
   showDescription: boolean
+  /** 作者名称 */
   authorName: string | null
+  /** 浏览量 */
   viewCount: number | null
+  /** 点赞数 */
   likeCount: number | null
+  /** 发布时间 */
   publishedAt: string | null
 }
 
 const props = defineProps<Props>()
 
-// 异步格式化时间
+/** 格式化后的相对时间 */
 const formattedTime = ref<string>('')
 
-// 格式化时间的函数
+/**
+ * 更新格式化时间
+ * 异步格式化发布时间为相对时间格式
+ */
 const updateFormattedTime = async () => {
   if (props.publishedAt) {
     formattedTime.value = await formatRelativeTime(props.publishedAt)
   }
 }
 
-// 初始化时格式化时间
+/** 初始化时格式化时间 */
 updateFormattedTime()
 
-// 监听 publishedAt 变化
+/** 监听发布时间变化，重新格式化 */
 watch(() => props.publishedAt, updateFormattedTime)
 </script>
 
