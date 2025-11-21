@@ -90,11 +90,22 @@ const apiClient: KyInstance = ky.create({
       },
     ],
     beforeError: [
-      (error) => {
+      async (error) => {
         /** 统一错误处理逻辑 */
         const { request, response } = error
         if (response) {
           const status = response.status
+
+          // 尝试解析错误响应体，供后续错误处理（兼容 ky / 自定义错误处理）
+          try {
+            const cloned = response.clone()
+            const data = await cloned.json().catch(() => null)
+            if (data && typeof data === 'object') {
+              ;(error as unknown as { responseData?: unknown }).responseData = data
+            }
+          } catch {
+            // 忽略 JSON 解析错误，保持网络错误日志即可
+          }
 
           logger.error(`Response error: ${request.method} ${request.url}`, {
             status,

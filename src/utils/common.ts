@@ -3,78 +3,7 @@
  * 公共工具函数 - 消除重复代码
  */
 
-import type { User } from '@/types'
 import logger from '@/utils/logger'
-
-/**
- * 认证响应处理器
- * 消除auth.ts中login和register的重复代码
- */
-export interface AuthResponse {
-  access_token: string
-  refresh_token?: string
-  csrf_token?: string
-  user: User
-}
-
-export class AuthHelper {
-  /**
-   * 处理认证响应（登录/注册通用）
-   */
-  static handleAuthResponse(response: AuthResponse): void {
-    const { access_token, user, csrf_token } = response
-
-    // 保存到localStorage
-    localStorage.setItem('access_token', access_token)
-    localStorage.setItem('user', JSON.stringify(user))
-
-    if (csrf_token) {
-      localStorage.setItem('csrf_token', csrf_token)
-    }
-
-    if (response.refresh_token) {
-      localStorage.setItem('refresh_token', response.refresh_token)
-    }
-  }
-
-  /**
-   * 清除认证信息
-   */
-  static clearAuthData(): void {
-    localStorage.removeItem('access_token')
-    localStorage.removeItem('refresh_token')
-    localStorage.removeItem('csrf_token')
-    localStorage.removeItem('user')
-  }
-
-  /**
-   * 获取存储的用户信息
-   */
-  static getStoredUser(): User | null {
-    const userStr = localStorage.getItem('user')
-    if (!userStr) return null
-
-    try {
-      return JSON.parse(userStr) as User
-    } catch {
-      return null
-    }
-  }
-
-  /**
-   * 获取存储的Token
-   */
-  static getStoredToken(): string | null {
-    return localStorage.getItem('access_token')
-  }
-
-  /**
-   * 获取CSRF Token
-   */
-  static getCSRFToken(): string | null {
-    return localStorage.getItem('csrf_token')
-  }
-}
 
 /**
  * 验证辅助工具

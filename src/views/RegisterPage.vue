@@ -13,48 +13,27 @@
         <form class="register-form" @submit.prevent="handleRegister">
           <div class="form-group">
             <label>{{ $t('auth.username') }} *</label>
-            <GlassInput
-              v-model="formData.username"
-              type="text"
-              :placeholder="$t('auth.usernamePlaceholder')"
-              :icon="User"
-              :disabled="loading"
-            />
+            <GlassInput v-model="formData.username" type="text" :placeholder="$t('auth.usernamePlaceholder')"
+              :icon="User" :disabled="loading" />
           </div>
 
           <div class="form-group">
             <label>{{ $t('auth.email') }} *</label>
-            <GlassInput
-              v-model="formData.email"
-              type="email"
-              :placeholder="$t('auth.emailPlaceholder')"
-              :icon="Mail"
-              :disabled="loading"
-            />
+            <GlassInput v-model="formData.email" type="email" :placeholder="$t('auth.emailPlaceholder')" :icon="Mail"
+              :disabled="loading" />
           </div>
 
           <div class="form-group">
             <label>{{ $t('auth.fullName') }} ({{ $t('profile.notSet') }})</label>
-            <GlassInput
-              v-model="formData.full_name"
-              type="text"
-              :placeholder="$t('auth.fullNamePlaceholder')"
-              :icon="UserCircle"
-              :disabled="loading"
-            />
+            <GlassInput v-model="formData.full_name" type="text" :placeholder="$t('auth.fullNamePlaceholder')"
+              :icon="UserCircle" :disabled="loading" />
           </div>
 
           <div class="form-group">
             <label>{{ $t('auth.password') }} *</label>
-            <GlassInput
-              v-model="formData.password"
-              :type="showPassword ? 'text' : 'password'"
-              :placeholder="$t('auth.passwordPlaceholder')"
-              :icon="Lock"
-              :disabled="loading"
-              autocomplete="new-password"
-              name="password"
-            >
+            <GlassInput v-model="formData.password" :type="showPassword ? 'text' : 'password'"
+              :placeholder="$t('auth.passwordPlaceholder')" :icon="Lock" :disabled="loading" autocomplete="new-password"
+              name="password">
               <template #suffix>
                 <button type="button" class="password-toggle" @click="showPassword = !showPassword">
                   <Eye v-if="!showPassword" :size="18" />
@@ -64,23 +43,21 @@
             </GlassInput>
           </div>
 
+          <div v-if="passwordErrors.length" class="password-errors">
+            <ul>
+              <li v-for="(msg, index) in passwordErrors" :key="index">
+                {{ msg }}
+              </li>
+            </ul>
+          </div>
+
           <div class="form-group">
             <label>{{ $t('auth.confirmPassword') }} *</label>
-            <GlassInput
-              v-model="formData.confirmPassword"
-              :type="showConfirmPassword ? 'text' : 'password'"
-              :placeholder="$t('auth.confirmPasswordPlaceholder')"
-              :icon="Lock"
-              :disabled="loading"
-              autocomplete="new-password"
-              name="confirm-password"
-            >
+            <GlassInput v-model="formData.confirmPassword" :type="showConfirmPassword ? 'text' : 'password'"
+              :placeholder="$t('auth.confirmPasswordPlaceholder')" :icon="Lock" :disabled="loading"
+              autocomplete="new-password" name="confirm-password">
               <template #suffix>
-                <button
-                  type="button"
-                  class="password-toggle"
-                  @click="showConfirmPassword = !showConfirmPassword"
-                >
+                <button type="button" class="password-toggle" @click="showConfirmPassword = !showConfirmPassword">
                   <Eye v-if="!showConfirmPassword" :size="18" />
                   <EyeOff v-else :size="18" />
                 </button>
@@ -147,12 +124,10 @@ import GlassInput from '@/components/ui/input/Input.vue'
 import GlassButton from '@/components/ui/button/Button.vue'
 
 import { useAuthStore, useToastStore } from '@/stores'
-import { useErrorHandler } from '@/utils/error'
 
 const router = useRouter()
 const { t } = useI18n()
 const authStore = useAuthStore()
-const { handleError } = useErrorHandler('RegisterPage')
 const toastStore = useToastStore()
 
 const formData = ref({
@@ -168,6 +143,7 @@ const showConfirmPassword = ref(false)
 const loading = ref(false)
 const error = ref('')
 const success = ref('')
+const passwordErrors = ref<string[]>([])
 
 // 移除底部导航栏的padding
 onMounted(() => {
@@ -180,6 +156,7 @@ onUnmounted(() => {
 
 async function handleRegister() {
   error.value = ''
+  passwordErrors.value = []
 
   // 验证输入
   if (!formData.value.username || !formData.value.email || !formData.value.password) {
@@ -227,70 +204,54 @@ async function handleRegister() {
       router.push('/')
     }, 1500)
   } catch (err: unknown) {
-    const axiosError = err as {
-      response?: { status: number; data?: { detail?: string; message?: string } }
-      request?: unknown
-      message?: string
-    }
     // 清除成功消息
     success.value = ''
 
-    // 详细的错误处理
-    if (axiosError.response) {
-      const status = axiosError.response.status
-      const detail = axiosError.response.data?.detail || axiosError.response.data?.message
-
-      switch (status) {
-        case 409:
-          // 冲突错误 - 用户名或邮箱已存在
-          if (detail?.toLowerCase().includes('username')) {
-            error.value = t('auth.usernameExists', '此用户名已被使用，请换一个再试')
-            toastStore.error(error.value)
-          } else if (detail?.toLowerCase().includes('email')) {
-            error.value = t('auth.emailExists', '该电子邮件已被注册')
-            toastStore.error(error.value)
-          } else {
-            error.value = detail || t('auth.userAlreadyExists', '用户名或邮箱已存在')
-            toastStore.error(error.value)
-          }
-          break
-
-        case 400:
-          // 请求参数错误
-          error.value = detail || t('auth.invalidInput', '输入信息有误，请检查后重试')
-          toastStore.error(error.value)
-          break
-
-        case 422:
-          // 验证错误
-          error.value = detail || t('auth.validationFailed', '数据验证失败，请检查输入')
-          toastStore.error(error.value)
-          break
-
-        case 500:
-        case 502:
-        case 503:
-          // 服务器错误
-          error.value = t('auth.serverError', '服务器暂时无法处理请求，请稍后再试')
-          toastStore.error(error.value)
-          break
-
-        default:
-          error.value = detail || authStore.error || t('auth.registrationFailed')
-          toastStore.error(error.value)
+    const httpError = err as {
+      response?: { status?: number }
+      responseData?: {
+        error_code?: string
+        message?: string
+        details?: { errors?: string[] }
       }
-    } else if (axiosError.request) {
-      // 网络错误 - 请求已发出但没有收到响应
-      error.value = t('auth.networkError', '网络连接失败，请检查您的网络')
-      toastStore.error(error.value)
-    } else {
-      // 其他错误
-      error.value = axiosError.message || t('auth.registrationFailed')
-      toastStore.error(error.value)
+      message?: string
     }
 
-    // 记录错误供调试
-    handleError(axiosError, { customMessage: error.value })
+    const status = httpError.response?.status
+    const data = httpError.responseData || {}
+    const errorCode = data.error_code
+    const backendMessage = data.message
+    const details = data.details
+
+    if (errorCode === 'USER_1104' && details && Array.isArray(details.errors)) {
+      // 弱密码：展示后端返回的规则提示
+      passwordErrors.value = details.errors
+      error.value = backendMessage || t('auth.passwordWeak', '密码不符合安全要求')
+      toastStore.error(error.value)
+    } else if (status === 429 || errorCode === 'SECURITY_1604') {
+      // 触发速率限制
+      error.value = t('auth.tooManyAttempts', '操作过于频繁，请稍后再试')
+      toastStore.error(error.value)
+    } else if (status === 409) {
+      // 用户名或邮箱已存在
+      error.value = backendMessage || t('auth.userAlreadyExists', '用户名或邮箱已存在')
+      toastStore.error(error.value)
+    } else if (status === 400 || status === 422) {
+      // 请求参数/验证错误
+      error.value = backendMessage || t('auth.invalidInput', '输入信息有误，请检查后重试')
+      toastStore.error(error.value)
+    } else if (status && status >= 500) {
+      // 服务器错误
+      error.value = t('auth.serverError', '服务器暂时无法处理请求，请稍后再试')
+      toastStore.error(error.value)
+    } else if (httpError.message) {
+      // 其他错误
+      error.value = httpError.message || t('auth.registrationFailed')
+      toastStore.error(error.value)
+    } else {
+      error.value = t('auth.registrationFailed')
+      toastStore.error(error.value)
+    }
   } finally {
     loading.value = false
   }
@@ -358,6 +319,17 @@ async function handleRegister() {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-lg);
+}
+
+.password-errors {
+  margin-top: var(--spacing-xs);
+  font-size: var(--text-xs);
+  color: var(--color-error);
+}
+
+.password-errors ul {
+  margin: 0;
+  padding-left: 1.25rem;
 }
 
 .form-group {
@@ -488,6 +460,7 @@ async function handleRegister() {
 }
 
 @keyframes float {
+
   0%,
   100% {
     transform: translateY(0) scale(1);
