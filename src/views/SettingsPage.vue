@@ -10,7 +10,7 @@
         <!-- Auto-save Status Indicator -->
         <Transition name="fade">
           <div v-if="autoSaveStatus !== 'idle'" class="save-status" :class="`status-${autoSaveStatus}`">
-            <span v-if="autoSaveStatus === 'saving'" class="status-icon spinner-small"></span>
+            <span v-if="autoSaveStatus === 'saving'" class="status-icon spinner spinner-sm"></span>
             <svg v-else-if="autoSaveStatus === 'saved'" class="status-icon" xmlns="http://www.w3.org/2000/svg"
               width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
               stroke-linecap="round" stroke-linejoin="round">
@@ -215,7 +215,7 @@
                 </RouterLink>
 
                 <button class="text-button danger" @click="handleLogout" :disabled="loggingOut">
-                  <span v-if="loggingOut" class="spinner-small"></span>
+                  <span v-if="loggingOut" class="spinner spinner-sm"></span>
                   <LogOut v-else :size="18" />
                   {{ $t('nav.logout') }}
                 </button>
@@ -274,13 +274,10 @@ import {
 } from 'lucide-vue-next'
 
 import MainLayout from '@/components/layout/MainLayout.vue'
-import GlassButton from '@/components/base/Button.vue'
+import GlassButton from '@/components/ui/button/Button.vue'
 import CacheManagement from '@/components/business/CacheManagement.vue'
 
-import { useAuthStore } from '@/stores/auth'
-import { useThemeStore } from '@/stores/theme'
-import { useSettingsStore } from '@/stores/settings'
-import { useToastStore } from '@/stores/toast'
+import { useAuthStore, useThemeStore, useSettingsStore, useToastStore } from '@/stores'
 import { useAutoSave } from '@/composables'
 import type { Theme } from '@/types'
 import logger from '@/utils/logger'
@@ -388,7 +385,10 @@ const handleToggleSetting = async (key: keyof typeof settingsStore.settings) => 
   }
 }
 
-const handleUpdateSetting = async (key: keyof typeof settingsStore.settings, value: number | boolean | null) => {
+const handleUpdateSetting = async (
+  key: keyof typeof settingsStore.settings,
+  value: number | boolean | null,
+) => {
   try {
     settingsStore.updateSetting(key, value)
     toastStore.success(t('settings.settingUpdated', 'Setting updated successfully'))
@@ -765,22 +765,7 @@ const handleUpdateSetting = async (key: keyof typeof settingsStore.settings, val
   margin-top: var(--spacing-2);
 }
 
-/* Loading Spinner */
-.spinner-small {
-  width: 16px;
-  height: 16px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-top-color: currentColor;
-  border-radius: 50%;
-  animation: spin 0.6s linear infinite;
-  flex-shrink: 0;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
+/* Spinner styles moved to base.css and utilities.css */
 
 /* Responsive */
 @media (max-width: 768px) {

@@ -139,21 +139,20 @@ export function useI18nFallback() {
   function logTranslationCoverage(): void {
     if (!import.meta.env.DEV) return
 
-    console.group('📊 Translation Coverage Report')
-    console.log(`Locale: ${locale.value}`)
-    console.log(`Total Translations: ${translationStats.total}`)
-    console.log(`Missing Translations: ${translationStats.missing}`)
-    console.log(`Coverage: ${translationCoverage.value}%`)
+    logger.group('📊 Translation Coverage Report', () => {
+      logger.info(`Locale: ${locale.value}`)
+      logger.info(`Total Translations: ${translationStats.total}`)
+      logger.info(`Missing Translations: ${translationStats.missing}`)
+      logger.info(`Coverage: ${translationCoverage.value}%`)
 
-    if (missingTranslations.size > 0) {
-      console.group('Missing Keys:')
-      Array.from(missingTranslations).forEach((key) => {
-        console.log(`  - ${key}`)
-      })
-      console.groupEnd()
-    }
-
-    console.groupEnd()
+      if (missingTranslations.size > 0) {
+        logger.group('Missing Keys:', () => {
+          Array.from(missingTranslations).forEach((key) => {
+            logger.info(`  - ${key}`)
+          })
+        })
+      }
+    })
   }
 
   return {

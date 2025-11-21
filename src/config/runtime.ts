@@ -3,6 +3,8 @@
  * 使用浏览器运行时信息动态确定 API URL
  */
 
+import logger from '@/utils/logger'
+
 /**
  * 强制 HTTPS 转换助手函数
  */
@@ -12,7 +14,10 @@ function forceHttpsProtocol(url: string): string {
   // 如果URL是HTTP，强制转换为HTTPS
   if (url.startsWith('http://')) {
     const httpsUrl = url.replace('http://', 'https://')
-    console.error('🚨 [Runtime] HTTP detected and converted to HTTPS:', url, '→', httpsUrl)
+    logger.warn('🚨 [Runtime] HTTP detected and converted to HTTPS', {
+      url,
+      httpsUrl,
+    })
     return httpsUrl
   }
 

@@ -1,16 +1,26 @@
 <template>
   <div class="search-bar glass-card animated">
     <Search :size="20" class="search-icon" />
-    <input v-model="searchQuery" type="search" :placeholder="$t('search.placeholder')" class="search-input"
-      @keyup.enter="handleSearch" @input="handleInput" />
+    <input
+      v-model="searchQuery"
+      type="search"
+      :placeholder="$t('search.placeholder')"
+      class="search-input"
+      @keyup.enter="handleSearch"
+      @input="handleInput"
+    />
     <button v-if="searchQuery" class="clear-button" @click="clearSearch">
       <X :size="18" />
     </button>
 
     <!-- 搜索建议下拉 -->
     <div v-if="showSuggestions && suggestions.length > 0" class="suggestions-dropdown glass-card">
-      <div v-for="suggestion in suggestions" :key="suggestion.id" class="suggestion-item"
-        @click="selectSuggestion(suggestion)">
+      <div
+        v-for="suggestion in suggestions"
+        :key="suggestion.id"
+        class="suggestion-item"
+        @click="selectSuggestion(suggestion)"
+      >
         <Search :size="16" />
         <div>
           <div>{{ suggestion.label }}</div>
@@ -22,6 +32,24 @@
 </template>
 
 <script setup lang="ts">
+/**
+ * 搜索栏组件
+ *
+ * 业务功能：
+ * - 提供全局搜索功能
+ * - 支持搜索建议和自动完成
+ * - 根据建议类型智能跳转（帖子详情、作者搜索等）
+ * - 防抖优化搜索性能
+ *
+ * 业务场景：
+ * - 用户搜索感兴趣的帖子或作者
+ * - 快速访问搜索建议中的内容
+ * - 实时显示搜索建议提升用户体验
+ *
+ * Emits:
+ * - search: 执行搜索时触发，传递搜索关键词
+ */
+
 import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { Search, X } from 'lucide-vue-next'
@@ -30,14 +58,25 @@ import services from '@/api/services'
 import type { SearchSuggestion } from '@/types'
 
 const router = useRouter()
+
+/** 搜索关键词 */
 const searchQuery = ref('')
+
+/** 搜索建议列表 */
 const suggestions = ref<SearchSuggestion[]>([])
+
+/** 是否显示搜索建议 */
 const showSuggestions = ref(false)
 
 const emit = defineEmits<{
+  /** 搜索事件 */
   search: [query: string]
 }>()
 
+/**
+ * 处理搜索操作
+ * 当用户按下回车键或点击搜索按钮时触发
+ */
 const handleSearch = () => {
   if (searchQuery.value.trim()) {
     showSuggestions.value = false
@@ -45,12 +84,21 @@ const handleSearch = () => {
   }
 }
 
+/**
+ * 清空搜索
+ * 清除搜索关键词和建议列表
+ */
 const clearSearch = () => {
   searchQuery.value = ''
   suggestions.value = []
   showSuggestions.value = false
 }
 
+/**
+ * 选择搜索建议
+ * 根据建议类型进行不同的跳转操作
+ * @param suggestion - 搜索建议对象
+ */
 const selectSuggestion = (suggestion: SearchSuggestion) => {
   searchQuery.value = suggestion.label
   showSuggestions.value = false
@@ -68,7 +116,11 @@ const selectSuggestion = (suggestion: SearchSuggestion) => {
   handleSearch()
 }
 
-// 防抖搜索建议（300ms防抖，避免频繁触发）
+/**
+ * 获取搜索建议
+ * 根据搜索关键词异步获取建议列表
+ * @param query - 搜索关键词
+ */
 const fetchSuggestions = async (query: string) => {
   if (query.length < 2) {
     suggestions.value = []
@@ -99,12 +151,21 @@ const fetchSuggestions = async (query: string) => {
   }
 }
 
+/** 防抖的搜索建议函数（300ms 延迟） */
 const debouncedFetchSuggestions = useDebounce(fetchSuggestions, 300)
 
+/**
+ * 处理输入事件
+ * 触发防抖的搜索建议获取
+ */
 const handleInput = () => {
   debouncedFetchSuggestions(searchQuery.value)
 }
 
+/**
+ * 监听搜索关键词变化
+ * 当关键词为空时清空建议列表
+ */
 watch(searchQuery, (newVal) => {
   if (!newVal) {
     suggestions.value = []
