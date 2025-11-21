@@ -182,7 +182,9 @@ export const useAuthStore = defineStore(
         try {
           sessionStorage.clear()
         } catch (err) {
-          console.warn('[AuthStore] Failed to clear sessionStorage:', err)
+          logger.warn('[AuthStore] Failed to clear sessionStorage', {
+            error: err instanceof Error ? err.message : 'Unknown error',
+          })
         }
       }
 

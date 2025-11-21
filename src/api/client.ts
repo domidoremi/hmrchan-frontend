@@ -49,8 +49,8 @@ const SAFE_BASE_URL = BASE_URL.startsWith('http://')
   ? BASE_URL.replace('http://', 'https://')
   : BASE_URL
 
-/** 输出当前 API 配置信息（用于生产环境诊断） */
-console.log('🌐 API Configuration:', {
+/** 输出当前 API 配置信息（用于诊断） */
+logger.info('🌐 API Configuration', {
   baseURL: BASE_URL,
   mode: import.meta.env.MODE,
   strategy: import.meta.env.DEV ? 'vite-proxy' : 'hardcoded-https',
@@ -79,9 +79,9 @@ const apiClient: KyInstance = ky.create({
   hooks: {
     beforeRequest: [
       (request) => {
-        /** 确保请求使用 HTTPS 协议 */
+        /** 确保请求使用 HTTPS 协议 (仅生产环境且指向正式 API 域名时生效) */
         const url = request.url
-        if (url.startsWith('http://')) {
+        if (!import.meta.env.DEV && url.startsWith('http://') && url.includes('api.momichan.xyz')) {
           request = new Request(url.replace('http://', 'https://'), request)
           logger.warn('URL was HTTP, forced to HTTPS', { url })
         }

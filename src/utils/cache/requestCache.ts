@@ -6,6 +6,8 @@
  * 3. 缓存失效 - 支持TTL和手动清除
  */
 
+import logger from '@/utils/logger'
+
 interface CacheConfig {
   ttl?: number // 缓存时间(毫秒)
   force?: boolean // 强制刷新
@@ -54,7 +56,7 @@ class RequestCache {
       return null
     }
 
-    console.log(`[Cache] Hit: ${key}`)
+    logger.debug(`[Cache] Hit: ${key}`)
     return item.data as T
   }
 
@@ -73,7 +75,7 @@ class RequestCache {
       timestamp: Date.now(),
       ttl,
     })
-    console.log(`[Cache] Set: ${key} (TTL: ${ttl}ms)`)
+    // console.log(`[Cache] Set: ${key} (TTL: ${ttl}ms)`)
   }
 
   /**
@@ -83,10 +85,10 @@ class RequestCache {
     if (url) {
       const key = this.getCacheKey(url, params)
       this.cache.delete(key)
-      console.log(`[Cache] Clear: ${key}`)
+      logger.info(`[Cache] Clear: ${key}`)
     } else {
       this.cache.clear()
-      console.log('[Cache] Clear all')
+      logger.info('[Cache] Clear all')
     }
   }
 
@@ -102,7 +104,7 @@ class RequestCache {
       }
     }
     if (count > 0) {
-      console.log(`[Cache] Cleared ${count} expired items`)
+      logger.info(`[Cache] Cleared ${count} expired items`)
     }
   }
 
@@ -127,12 +129,12 @@ class RequestCache {
 
     // 检查是否有进行中的请求
     if (this.pending.has(key)) {
-      console.log(`[Dedupe] Waiting for pending request: ${key}`)
+      // console.log(`[Dedupe] Waiting for pending request: ${key}`)
       return this.pending.get(key) as Promise<T>
     }
 
     // 发起新请求
-    console.log(`[Dedupe] New request: ${key}`)
+    // console.log(`[Dedupe] New request: ${key}`)
     const promise = requestFn()
       .then((data) => {
         // 缓存结果
@@ -144,7 +146,7 @@ class RequestCache {
       .catch((error) => {
         // 清除进行中的请求（失败时）
         this.pending.delete(key)
-        console.log(`[Dedupe] Request failed, clearing pending: ${key}`)
+        // console.log(`[Dedupe] Request failed, clearing pending: ${key}`)
         throw error
       })
 
@@ -158,10 +160,10 @@ class RequestCache {
   cancelPending(key?: string): void {
     if (key) {
       this.pending.delete(key)
-      console.log(`[Dedupe] Cancel: ${key}`)
+      // console.log(`[Dedupe] Cancel: ${key}`)
     } else {
       this.pending.clear()
-      console.log('[Dedupe] Cancel all pending requests')
+      // console.log('[Dedupe] Cancel all pending requests')
     }
   }
 

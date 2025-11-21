@@ -17,6 +17,7 @@ import { fetchWithFallback } from '@/utils/cache'
 import { handleError } from '@/utils/error'
 import logger from '@/utils/logger'
 import { toLogContext } from '@/utils/typeGuards'
+import { useSettingsStore } from './useSettings'
 
 export const usePostsStore = defineStore(
   'posts',
@@ -39,10 +40,13 @@ export const usePostsStore = defineStore(
     /** 最近一次详情请求是否使用了离线数据 */
     const lastDetailFromFallback = ref(false)
 
+    /** 获取设置 store */
+    const settingsStore = useSettingsStore()
+
     /** 分页信息 */
     const pagination = ref({
       page: 1,
-      page_size: 20,
+      page_size: settingsStore.settings.postsPerPage,
       total: 0,
       pages: 0,
     })
@@ -50,7 +54,7 @@ export const usePostsStore = defineStore(
     /** 筛选参数 */
     const filters = ref<PostListParams>({
       page: 1,
-      page_size: 20,
+      page_size: settingsStore.settings.postsPerPage,
       sort_by: 'scraped_at',
       sort_order: 'desc',
     })
@@ -79,11 +83,20 @@ export const usePostsStore = defineStore(
             ...apiParams,
           }
 
+      const sanitizedParams: PostListParams = Object.fromEntries(
+        Object.entries(mergedParams).filter(([key, value]) => {
+          if (value === undefined || value === null) return false
+          if (value === 'undefined') return false
+          if ((key === 'platform' || key === 'q') && value === '') return false
+          return true
+        }),
+      ) as PostListParams
+
       try {
         const { data, fromFallback } = await fetchWithFallback<PaginatedResponse<Post>>({
           primary: () =>
             api.get<PaginatedResponse<Post>>('/posts/', {
-              params: mergedParams,
+              params: sanitizedParams,
             }),
           fallback: async () => {
             try {
@@ -111,7 +124,10 @@ export const usePostsStore = defineStore(
                 pages: 1,
               }
             } catch (fallbackError) {
-              console.error('[PostsStore] Failed to load posts from IndexedDB:', fallbackError)
+              logger.warn(
+                '[PostsStore] Failed to load posts from IndexedDB',
+                toLogContext(fallbackError),
+              )
               return null
             }
           },
@@ -121,7 +137,10 @@ export const usePostsStore = defineStore(
             try {
               await indexedDB.savePosts(response.items)
             } catch (persistError) {
-              console.error('[PostsStore] Failed to persist posts list to IndexedDB:', persistError)
+              logger.error(
+                '[PostsStore] Failed to persist posts list to IndexedDB',
+                toLogContext(persistError),
+              )
             }
           },
         })
@@ -131,7 +150,7 @@ export const usePostsStore = defineStore(
         lastListFromFallback.value = !!fromFallback
 
         if (!response || !response.items) {
-          console.warn('API 返回无效数据，使用空数组')
+          logger.warn('[PostsStore] API 返回无效数据，使用空数组')
           posts.value = []
           return {
             items: [],
@@ -216,10 +235,12 @@ export const usePostsStore = defineStore(
               .then(async (response) => {
                 currentPost.value = response
                 await indexedDB.savePosts([response])
-                console.log('[PostsStore] Background refresh completed for', postId)
+                logger.debug('[PostsStore] Background refresh completed for post', {
+                  postId,
+                })
               })
               .catch((err) => {
-                console.warn('[PostsStore] Background refresh failed:', err)
+                logger.warn('[PostsStore] Background refresh failed', toLogContext(err))
               })
 
             return cachedDetail
@@ -241,7 +262,10 @@ export const usePostsStore = defineStore(
             try {
               await indexedDB.savePosts([value])
             } catch (persistError) {
-              console.error('[PostsStore] Failed to persist post to IndexedDB:', persistError)
+              logger.warn(
+                '[PostsStore] Failed to persist post to IndexedDB',
+                toLogContext(persistError),
+              )
             }
           },
         })
