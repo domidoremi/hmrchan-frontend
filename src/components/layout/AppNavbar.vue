@@ -113,7 +113,7 @@
                     @click="settingsStore.toggleSetting('showHeroSection')">
                     <span class="settings-toggle-label">{{
                       $t('settings.toggleHeroSection')
-                      }}</span>
+                    }}</span>
                     <span class="settings-toggle-indicator" :class="{ active: settings.showHeroSection }"></span>
                   </button>
 
@@ -127,7 +127,7 @@
                     @click="settingsStore.toggleSetting('enableSwipeNavigation')">
                     <span class="settings-toggle-label">{{
                       $t('settings.toggleSwipeNavigation')
-                      }}</span>
+                    }}</span>
                     <span class="settings-toggle-indicator" :class="{ active: settings.enableSwipeNavigation }"></span>
                   </button>
                 </div>
@@ -203,7 +203,7 @@
 
       <!-- 右侧按钮 -->
       <div class="mobile-top-actions">
-        <button class="action-button search-button" @click="goToSearch">
+        <button class="action-button search-button" @click="goToSearch" :aria-label="$t('search.placeholder')">
           <Search :size="24" />
         </button>
 
@@ -229,7 +229,7 @@
           <img :src="userAvatarUrl" :alt="user?.username" class="mobile-avatar" />
         </button>
 
-        <RouterLink v-else to="/login" class="action-button">
+        <RouterLink v-else to="/login" class="action-button" :aria-label="$t('nav.login')">
           <LogIn :size="20" />
         </RouterLink>
       </div>
