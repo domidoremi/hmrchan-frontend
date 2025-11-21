@@ -5,7 +5,7 @@
       <!-- Logo -->
       <RouterLink to="/" class="navbar-brand">
         <div class="brand-logo">HMR</div>
-        <span class="brand-name">Chan</span>
+        <span class="brand-name">Club</span>
       </RouterLink>
 
       <!-- 导航链接 (桌面端) -->
@@ -49,7 +49,8 @@
           </button>
 
           <Transition name="dropdown">
-            <div v-if="showQueuePanel" ref="queueMenuRef" class="queue-dropdown glass-card">
+            <div v-if="showQueuePanel" ref="queueMenuRef" class="queue-dropdown glass-card"
+              :class="{ 'mobile-modal': isMobile }" @click.self="isMobile && (showQueuePanel = false)">
               <div class="queue-header">
                 <span class="queue-title">{{ $t('offline.queueTitle') }}</span>
               </div>
@@ -74,13 +75,15 @@
 
         <!-- 统一设置按钮：语言/主题/布局等快捷设置（不跳转页面） -->
         <div class="settings-menu-container" ref="settingsMenuRef">
-          <button class="action-button" type="button" @click="toggleSettingsPanel" :aria-label="$t('nav.settings')">
+          <button class="action-button" type="button" @click.stop="toggleSettingsPanel"
+            :aria-label="$t('nav.settings')">
             <Settings :size="20" />
           </button>
 
-          <!-- 桌面端设置面板，下拉在按钮下方展开 -->
+          <!-- 设置面板（桌面端下拉，移动端模态框） -->
           <Transition name="dropdown">
-            <div v-if="showSettingsPanel && !isMobile" class="settings-dropdown glass-card">
+            <div v-if="showSettingsPanel" class="settings-dropdown glass-card" :class="{ 'mobile-modal': isMobile }"
+              @click.self="isMobile && (showSettingsPanel = false)">
               <div class="settings-group">
                 <div class="settings-group-title">{{ $t('settings.theme') }}</div>
                 <div class="settings-theme-options">
@@ -110,7 +113,7 @@
                     @click="settingsStore.toggleSetting('showHeroSection')">
                     <span class="settings-toggle-label">{{
                       $t('settings.toggleHeroSection')
-                      }}</span>
+                    }}</span>
                     <span class="settings-toggle-indicator" :class="{ active: settings.showHeroSection }"></span>
                   </button>
 
@@ -124,7 +127,7 @@
                     @click="settingsStore.toggleSetting('enableSwipeNavigation')">
                     <span class="settings-toggle-label">{{
                       $t('settings.toggleSwipeNavigation')
-                      }}</span>
+                    }}</span>
                     <span class="settings-toggle-indicator" :class="{ active: settings.enableSwipeNavigation }"></span>
                   </button>
                 </div>
@@ -186,7 +189,7 @@
       <!-- Logo -->
       <RouterLink to="/" class="navbar-brand">
         <div class="brand-logo">HMR</div>
-        <span class="brand-name">Chan</span>
+        <span class="brand-name">Club</span>
       </RouterLink>
 
       <!-- 右侧按钮 -->
@@ -195,18 +198,24 @@
           <Search :size="24" />
         </button>
 
-        <button class="action-button queue-button" type="button" @click="toggleQueuePanel"
-          :aria-label="$t('offline.actionsQueued')">
-          <CloudOff :size="20" />
-          <span v-if="queueStatus.pending > 0" class="queue-badge">
-            {{ queueStatus.pending }}
-          </span>
-        </button>
+        <!-- 离线队列按钮（移动端） -->
+        <div class="queue-status-container">
+          <button class="action-button queue-button" type="button" @click="toggleQueuePanel"
+            :aria-label="$t('offline.actionsQueued')">
+            <CloudOff :size="20" />
+            <span v-if="queueStatus.pending > 0" class="queue-badge">
+              {{ queueStatus.pending }}
+            </span>
+          </button>
+        </div>
 
-        <button class="action-button settings-menu-container" type="button" @click="toggleSettingsPanel"
-          :aria-label="$t('nav.settings')">
-          <Settings :size="20" />
-        </button>
+        <!-- 设置按钮（移动端） -->
+        <div class="settings-menu-container">
+          <button class="action-button" type="button" @click="toggleSettingsPanel"
+            :aria-label="$t('nav.settings')">
+            <Settings :size="20" />
+          </button>
+        </div>
 
         <button v-if="isAuthenticated" class="action-button mobile-user-trigger" @click="showUserMenu = !showUserMenu">
           <img :src="userAvatarUrl" :alt="user?.username" class="mobile-avatar" />
@@ -393,6 +402,32 @@
 </template>
 
 <script setup lang="ts">
+/**
+ * 应用导航栏组件
+ *
+ * 功能描述：
+ * - 提供应用主导航功能，支持桌面端和移动端不同布局
+ * - 桌面端：顶部固定导航栏，包含Logo、导航链接、搜索、设置、用户菜单
+ * - 移动端：顶部栏 + 底部导航栏，优化触摸交互体验
+ *
+ * 主要功能：
+ * - 页面导航（首页、探索、收藏、作者）
+ * - 搜索功能
+ * - 离线队列状态管理
+ * - 快捷设置面板（主题、语言、显示选项）
+ * - 用户认证和账户管理
+ *
+ * 布局结构：
+ * - 桌面端：单行水平布局，左侧Logo，中间导航，右侧操作按钮
+ * - 移动端：顶部栏（Logo + 操作按钮）+ 底部导航栏（主要页面入口）
+ *
+ * 职责：
+ * - 提供全局导航入口
+ * - 管理用户会话状态
+ * - 提供快捷设置访问
+ * - 显示离线队列状态
+ */
+
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
@@ -413,39 +448,58 @@ import {
   Moon,
   Monitor,
 } from 'lucide-vue-next'
-import { useAuthStore } from '@/stores/auth'
-import { useSettingsStore } from '@/stores/settings'
-import { useThemeStore } from '@/stores/theme'
+import { useAuthStore, useSettingsStore, useThemeStore } from '@/stores'
 import type { Theme } from '@/types'
-import { offlineQueue } from '@/utils/offlineQueue'
+import { offlineQueue } from '@/utils/storage'
 
+/** 路由实例 */
 const router = useRouter()
+
+/** 国际化实例 */
 const { locale } = useI18n()
+
+/** Store 实例 */
 const authStore = useAuthStore()
 const settingsStore = useSettingsStore()
 const themeStore = useThemeStore()
 
+/** Store 响应式状态 */
 const { user, isAuthenticated } = storeToRefs(authStore)
 const { settings } = storeToRefs(settingsStore)
 const { theme } = storeToRefs(themeStore)
 
+/** 用户菜单显示状态 */
 const showUserMenu = ref(false)
 const userMenuRef = ref<HTMLElement | null>(null)
+
+/** 设置面板显示状态 */
 const showSettingsPanel = ref(false)
 const settingsMenuRef = ref<HTMLElement | null>(null)
+
+/** 离线队列面板显示状态 */
 const showQueuePanel = ref(false)
 const queueMenuRef = ref<HTMLElement | null>(null)
 
+/** 离线队列状态 */
 const queueStatus = ref<{ pending: number; syncing: number; failed: number }>({
   pending: 0,
   syncing: 0,
   failed: 0,
 })
+
+/** 队列同步状态 */
 const isQueueSyncing = ref(false)
+
+/** 网络在线状态 */
 const isOnline = ref(typeof window === 'undefined' ? true : navigator.onLine)
 
+/** 是否有待处理的队列项 */
 const hasQueueItems = computed(() => queueStatus.value.pending > 0)
 
+/**
+ * 刷新离线队列状态
+ * 从离线队列获取最新的待处理、同步中和失败的任务数量
+ */
 const refreshQueueStatus = async () => {
   try {
     const status = await offlineQueue.getQueueStatus()
@@ -455,13 +509,23 @@ const refreshQueueStatus = async () => {
   }
 }
 
+/**
+ * 切换离线队列面板显示状态
+ * 打开面板时会刷新队列状态
+ */
 const toggleQueuePanel = async () => {
+  // console.log('[AppNavbar] Toggle queue panel - before:', showQueuePanel.value, 'isMobile:', isMobile.value)
   showQueuePanel.value = !showQueuePanel.value
+  // console.log('[AppNavbar] Toggle queue panel - after:', showQueuePanel.value)
   if (showQueuePanel.value) {
     await refreshQueueStatus()
   }
 }
 
+/**
+ * 手动同步离线队列
+ * 仅在在线且有待处理项时执行
+ */
 const handleQueueSync = async () => {
   if (!isOnline.value || !hasQueueItems.value || isQueueSyncing.value) return
   try {
@@ -475,158 +539,106 @@ const handleQueueSync = async () => {
   }
 }
 
+/**
+ * 处理网络状态变化
+ * 更新在线状态标志
+ */
 const handleOnlineChange = () => {
   if (typeof navigator !== 'undefined') {
     isOnline.value = navigator.onLine
   }
 }
 
-// 点击导航栏搜索按钮：跳转到 Explore 作为统一搜索视图
+/**
+ * 跳转到搜索页面
+ * 点击搜索按钮时触发
+ */
 const goToSearch = () => {
   router.push({ path: '/search' })
 }
 
-// 移动端检测
+/** 移动端检测标志 */
 const isMobile = ref(false)
 
+/**
+ * 更新移动端检测状态
+ * 根据窗口宽度判断是否为移动端（768px 断点）
+ */
 const updateIsMobile = () => {
   if (typeof window === 'undefined') return
   isMobile.value = window.matchMedia('(max-width: 768px)').matches
 }
 
-interface BottomNavItem {
-  path: string
-  requiresAuth?: boolean
-}
-
-const bottomNavItems = computed<BottomNavItem[]>(() => {
-  const items: BottomNavItem[] = [{ path: '/' }, { path: '/explore' }]
-
-  if (isAuthenticated.value) {
-    items.push({ path: '/favorites', requiresAuth: true })
-  }
-
-  items.push({ path: '/authors' }, { path: '/settings' })
-  return items
-})
-
+/** 主题选项配置 */
 const themeOptions = [
   { value: 'light' as Theme, icon: Sun },
   { value: 'dark' as Theme, icon: Moon },
   { value: 'auto' as Theme, icon: Monitor },
 ]
 
+/** 语言选项配置 */
 const localeOptions = [
   { code: 'en', name: 'English' },
   { code: 'zh-CN', name: '简体中文' },
   { code: 'ja', name: '日本語' },
 ]
 
+/**
+ * 切换设置面板显示状态
+ */
 const toggleSettingsPanel = () => {
+  // console.log('[AppNavbar] Toggle settings panel - before:', showSettingsPanel.value, 'isMobile:', isMobile.value)
   showSettingsPanel.value = !showSettingsPanel.value
+  // console.log('[AppNavbar] Toggle settings panel - after:', showSettingsPanel.value)
 }
 
+/**
+ * 设置主题
+ * @param newTheme - 新的主题值（light/dark/auto）
+ */
 const setTheme = (newTheme: Theme) => {
   themeStore.setTheme(newTheme)
 }
 
+/**
+ * 切换语言
+ * @param newLocale - 新的语言代码
+ */
 const changeLanguage = async (newLocale: string) => {
   const { changeLocale } = await import('@/composables/core/useI18nOptimized')
-  await changeLocale(newLocale as 'en' | 'zh' | 'ja')
+  await changeLocale(newLocale as 'en' | 'zh-CN' | 'ja')
 }
 
-// 全局滑动切换主页面（仅移动端）
-const swipeStartX = ref<number | null>(null)
-const swipeStartY = ref<number | null>(null)
-const swipeActive = ref(false)
-
-const handleGlobalTouchStart = (event: TouchEvent) => {
-  if (!isMobile.value || !settings.value.enableSwipeNavigation || event.touches.length !== 1) return
-  const touch = event.touches[0]
-  if (!touch) return
-  const target = event.target as HTMLElement
-
-  // 避免与底部导航点击冲突
-  if (target.closest('.mobile-bottom-nav')) return
-
-  swipeStartX.value = touch.clientX
-  swipeStartY.value = touch.clientY
-  swipeActive.value = true
-}
-
-const handleGlobalTouchEnd = (event: TouchEvent) => {
-  if (!swipeActive.value || swipeStartX.value === null || swipeStartY.value === null) {
-    swipeActive.value = false
-    swipeStartX.value = null
-    swipeStartY.value = null
-    return
-  }
-
-  const touch = event.changedTouches[0]
-  if (!touch) {
-    swipeActive.value = false
-    swipeStartX.value = null
-    swipeStartY.value = null
-    return
-  }
-
-  const deltaX = touch.clientX - swipeStartX.value
-  const deltaY = touch.clientY - swipeStartY.value
-  const absDeltaX = Math.abs(deltaX)
-  const absDeltaY = Math.abs(deltaY)
-  const threshold = 80
-
-  swipeActive.value = false
-  swipeStartX.value = null
-  swipeStartY.value = null
-
-  if (!isMobile.value || !settings.value.enableSwipeNavigation) return
-
-  // 只有明显的水平滑动才触发
-  if (absDeltaX < threshold || absDeltaX <= absDeltaY * 1.2) {
-    return
-  }
-
-  const items = bottomNavItems.value
-  if (!items.length) return
-
-  const currentPath = router.currentRoute.value.path
-  const currentIndex = items.findIndex((item) => currentPath.startsWith(item.path))
-  if (currentIndex === -1) return
-
-  const direction = deltaX > 0 ? -1 : 1
-  const nextIndex = currentIndex + direction
-
-  // 不循环，超出范围直接忽略
-  if (nextIndex < 0 || nextIndex >= items.length) return
-
-  const nextItem = items[nextIndex]
-  if (!nextItem) return
-  router.push(nextItem.path)
-}
-
+/**
+ * 用户头像 URL
+ * 优先使用用户上传的头像，否则使用 DiceBear 生成的默认头像
+ */
 const userAvatarUrl = computed(() => {
   if (user.value?.avatar_url) {
     return user.value.avatar_url
   }
-  return `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.value?.username || 'default'}`
+  return `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user.value?.username || 'default')}`
 })
 
-// 其他工具函数保留在此下方
-
+/**
+ * 处理用户登出
+ * 清除用户会话并跳转到首页
+ */
 const handleLogout = () => {
   authStore.logout()
   showUserMenu.value = false
   router.push('/')
 }
 
-// 点击外部关闭用户菜单
+/**
+ * 处理点击外部区域
+ * 关闭打开的下拉菜单和面板
+ */
 const handleClickOutside = (event: MouseEvent) => {
   const target = event.target as HTMLElement
 
   const inMobileUserTrigger = target.closest('.mobile-user-trigger')
   const inMobileUserModal = target.closest('.mobile-user-modal')
-
   if (
     userMenuRef.value &&
     !userMenuRef.value.contains(target) &&
@@ -637,15 +649,27 @@ const handleClickOutside = (event: MouseEvent) => {
   }
 
   const inSettingsButton = target.closest('.settings-menu-container')
-  if (settingsMenuRef.value && !settingsMenuRef.value.contains(target) && !inSettingsButton) {
+  const inSettingsDropdown = target.closest('.settings-dropdown')
+  if (
+    showSettingsPanel.value &&
+    !inSettingsButton &&
+    !inSettingsDropdown
+  ) {
     showSettingsPanel.value = false
   }
 
-  const inQueueContainer = target.closest('.queue-status-container')
-  if (queueMenuRef.value && !queueMenuRef.value.contains(target) && !inQueueContainer) {
+  const inQueueButton = target.closest('.queue-status-container')
+  const inQueueDropdown = target.closest('.queue-dropdown')
+  if (
+    showQueuePanel.value &&
+    !inQueueButton &&
+    !inQueueDropdown
+  ) {
     showQueuePanel.value = false
   }
 }
+
+/** 队列状态定时器 */
 let queueStatusTimer: number | null = null
 
 onMounted(() => {
@@ -656,9 +680,10 @@ onMounted(() => {
 
   if (typeof window !== 'undefined') {
     window.addEventListener('resize', updateIsMobile)
-    window.addEventListener('touchstart', handleGlobalTouchStart, { passive: true })
-    window.addEventListener('touchend', handleGlobalTouchEnd, { passive: true })
-    window.addEventListener('touchcancel', handleGlobalTouchEnd, { passive: true })
+    // ❌ 禁用手势跳转页面功能
+    // window.addEventListener('touchstart', handleGlobalTouchStart, { passive: true })
+    // window.addEventListener('touchend', handleGlobalTouchEnd, { passive: true })
+    // window.addEventListener('touchcancel', handleGlobalTouchEnd, { passive: true })
     window.addEventListener('online', handleOnlineChange)
     window.addEventListener('offline', handleOnlineChange)
 
@@ -672,9 +697,10 @@ onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
   if (typeof window !== 'undefined') {
     window.removeEventListener('resize', updateIsMobile)
-    window.removeEventListener('touchstart', handleGlobalTouchStart)
-    window.removeEventListener('touchend', handleGlobalTouchEnd)
-    window.removeEventListener('touchcancel', handleGlobalTouchEnd)
+    // ❌ 禁用手势跳转页面功能
+    // window.removeEventListener('touchstart', handleGlobalTouchStart)
+    // window.removeEventListener('touchend', handleGlobalTouchEnd)
+    // window.removeEventListener('touchcancel', handleGlobalTouchEnd)
     window.removeEventListener('online', handleOnlineChange)
     window.removeEventListener('offline', handleOnlineChange)
 
@@ -720,11 +746,14 @@ onUnmounted(() => {
   align-items: center;
   gap: var(--spacing-2);
   text-decoration: none;
-  transition: transform var(--transition-fast);
+  transition: all var(--transition-fast);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-lg);
 }
 
 .navbar-brand:hover {
   transform: scale(1.05);
+  background: rgba(139, 92, 246, 0.08);
 }
 
 .brand-logo {
@@ -742,6 +771,10 @@ onUnmounted(() => {
 
 .brand-name {
   font-size: var(--text-xl);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
   font-weight: var(--font-bold);
   color: var(--color-text-primary);
 }
@@ -943,6 +976,7 @@ onUnmounted(() => {
   top: calc(100% + var(--spacing-2));
   right: 0;
   width: 320px;
+  max-width: calc(100vw - 32px);
   padding: var(--spacing-4);
   border-radius: var(--radius-xl);
   box-shadow: var(--glass-shadow);
@@ -967,6 +1001,7 @@ onUnmounted(() => {
   top: calc(100% + var(--spacing-2));
   right: 0;
   width: 260px;
+  max-width: calc(100vw - 32px);
   padding: var(--spacing-4);
   border-radius: var(--radius-xl);
   box-shadow: var(--glass-shadow);
@@ -1351,6 +1386,34 @@ onUnmounted(() => {
   .bottom-nav-item.router-link-active {
     color: var(--color-primary);
     background: var(--glass-bg-light);
+  }
+
+  /* 移动端模态框样式 - 应用于queue和settings面板 */
+  .queue-dropdown.mobile-modal,
+  .settings-dropdown.mobile-modal {
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    right: auto !important;
+    /* 重置桌面端的right: 0 */
+    transform: translate(-50%, -50%) !important;
+    width: calc(100vw - 32px) !important;
+    max-width: 400px !important;
+    max-height: 80vh;
+    overflow-y: auto;
+    z-index: 9999 !important; /* 提高z-index确保在最顶层 */
+    box-shadow:
+      0 20px 60px rgba(0, 0, 0, 0.3),
+      0 0 0 100vmax rgba(0, 0, 0, 0.5) !important;
+    /* 添加调试边框 */
+    /* border: 3px solid red !important; */
+  }
+
+  .queue-dropdown.mobile-modal::before,
+  .settings-dropdown.mobile-modal::before {
+    position: sticky;
+    top: 0;
+    z-index: 1;
   }
 
   /* 移动端用户菜单 */
