@@ -9,7 +9,7 @@
  * 6. Stale-While-Revalidate 策略
  */
 
-const CACHE_VERSION = 'v1.4.0' // Optimized caching with background updates
+const CACHE_VERSION = 'v1.5.0' // Platform-based differentiated media caching
 
 // 🔒 CRITICAL: Override fetch in Service Worker context IMMEDIATELY
 const originalFetch = self.fetch.bind(self)
@@ -64,7 +64,7 @@ const FONT_CACHE = `hmrchan-fonts-${CACHE_VERSION}`
 // 缓存大小限制（LRU清理）
 const CACHE_LIMITS = {
   [API_CACHE]: 100, // API 缓存最多100条
-  [IMAGE_CACHE]: 200, // 图片缓存最多200张
+  [IMAGE_CACHE]: 500, // 图片和媒体缓存最多500个（优化）
   [STATIC_CACHE]: 50, // 静态资源最多50个
   [FONT_CACHE]: 20, // 字体最多20个
 }
@@ -82,8 +82,17 @@ const STATIC_ASSETS = [
 const API_CACHE_RULES = {
   '/api/posts': 60, // 1分钟（SWR 策略）
   '/api/authors': 600, // 10分钟
-  '/api/media': 2592000, // 30天（媒体文件）
+  '/api/media': 2592000, // 30天（媒体文件默认）
   '/api/posts/stats': 300, // 5分钟（统计数据）
+}
+
+// 基于平台的媒体缓存策略（秒）
+const PLATFORM_MEDIA_CACHE_RULES = {
+  youtube: 7 * 24 * 60 * 60, // 7天（YouTube视频较大，缓存时间短）
+  tiktok: 14 * 24 * 60 * 60, // 14天（TikTok视频适中）
+  twitter: 14 * 24 * 60 * 60, // 14天（Twitter媒体）
+  instagram: 14 * 24 * 60 * 60, // 14天（Instagram媒体）
+  default: 30 * 24 * 60 * 60, // 30天（其他平台默认）
 }
 
 // 缓存元数据存储（用于TTL和LRU）
@@ -211,7 +220,7 @@ async function networkFirstStrategy(request) {
       const cache = await caches.open(cacheName)
 
       // 保存缓存元数据
-      const ttl = getCacheTTL(url.pathname)
+      const ttl = getCacheTTL(url.pathname, request.url)
       CACHE_METADATA.set(cacheKey, {
         timestamp: Date.now(),
         ttl: ttl * 1000,
@@ -330,7 +339,7 @@ async function updateCacheInBackground(request, cacheName) {
 
       // 更新缓存元数据
       const url = new URL(request.url)
-      const ttl = getCacheTTL(url.pathname)
+      const ttl = getCacheTTL(url.pathname, request.url)
       CACHE_METADATA.set(cacheKey, {
         timestamp: Date.now(),
         ttl: ttl * 1000,
@@ -349,14 +358,53 @@ async function updateCacheInBackground(request, cacheName) {
 }
 
 /**
- * 获取缓存TTL（秒）
+ * 从URL中提取平台信息
+ * 支持的URL格式:
+ * - /api/media/{id}/stream?platform=youtube
+ * - /api/posts/{id}?platform=tiktok
  */
-function getCacheTTL(pathname) {
+function extractPlatform(url) {
+  try {
+    const urlObj = new URL(url)
+
+    // 1. 从query参数获取
+    const platformParam = urlObj.searchParams.get('platform')
+    if (platformParam) {
+      return platformParam.toLowerCase()
+    }
+
+    // 2. 从路径中提取 (e.g., /api/youtube/media/...)
+    const pathMatch = urlObj.pathname.match(/\/api\/(youtube|tiktok|twitter|instagram)\//)
+    if (pathMatch) {
+      return pathMatch[1]
+    }
+
+    return 'default'
+  } catch {
+    return 'default'
+  }
+}
+
+/**
+ * 获取缓存TTL（秒）
+ * 对于媒体文件，根据平台返回不同的TTL
+ */
+function getCacheTTL(pathname, url) {
+  // 媒体文件：根据平台决定TTL
+  if (pathname.includes('/api/media')) {
+    const platform = extractPlatform(url)
+    const ttl = PLATFORM_MEDIA_CACHE_RULES[platform] || PLATFORM_MEDIA_CACHE_RULES.default
+    console.log(`[SW] Media cache TTL for ${platform}: ${ttl}s (${Math.round(ttl / 86400)}d)`)
+    return ttl
+  }
+
+  // 其他API：使用通用规则
   for (const [pattern, ttl] of Object.entries(API_CACHE_RULES)) {
     if (pathname.includes(pattern)) {
       return ttl
     }
   }
+
   return 300 // 默认5分钟
 }
 

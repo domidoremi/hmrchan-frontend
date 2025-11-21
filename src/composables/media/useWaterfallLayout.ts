@@ -5,6 +5,7 @@
  */
 import { ref, onMounted, onUnmounted, nextTick, type Ref } from 'vue'
 import { useThrottle } from '@/composables'
+import logger from '@/utils/logger'
 
 interface WaterfallOptions {
   columnGap?: number // 列间距（px）
@@ -18,7 +19,9 @@ interface WaterfallOptions {
 
 const debug = (...args: unknown[]) => {
   if (import.meta.env.DEV) {
-    console.log('[Waterfall]', ...args)
+    logger.debug('[Waterfall]', {
+      args,
+    })
   }
 }
 

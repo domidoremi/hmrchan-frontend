@@ -8,11 +8,12 @@ import { useI18n } from 'vue-i18n'
 import { favoritesApi, postsApi } from '@/api/services'
 import type { Favorite, FavoriteCreate, FavoriteUpdate, Post, UUID } from '@/types'
 import { useToast } from '@/composables'
-import { indexedDB } from '@/utils/indexedDB'
-import { useAuthStore } from '@/stores/auth'
-import { fetchWithFallback } from '@/utils/cacheHelper'
-import { handleError } from '@/utils/errorHandler'
+import { indexedDB } from '@/utils/storage'
+import { useAuthStore } from '@/stores'
+import { fetchWithFallback } from '@/utils/cache'
+import { handleError } from '@/utils/error'
 import logger from '@/utils/logger'
+import { toLogContext } from '@/utils/typeGuards'
 
 export function useFavorites() {
   const { t } = useI18n()
@@ -85,7 +86,7 @@ export function useFavorites() {
               pages: 1,
             }
           } catch (e) {
-            console.error('[Favorites] Fallback from IndexedDB failed:', e)
+            logger.warn('[Favorites] Fallback from IndexedDB failed', toLogContext(e))
             return null
           }
         },
@@ -116,7 +117,7 @@ export function useFavorites() {
               ),
             )
           } catch (e) {
-            console.error('[Favorites] Failed to sync favorites to IndexedDB:', e)
+            logger.warn('[Favorites] Failed to sync favorites to IndexedDB', toLogContext(e))
           }
         },
       })
@@ -142,7 +143,10 @@ export function useFavorites() {
                   const post = await postsApi.getPostById(id)
                   return post as Post
                 } catch (err) {
-                  console.error('Failed to fetch favorite post detail:', id, err)
+                  logger.warn('Failed to fetch favorite post detail', {
+                    ...toLogContext(err),
+                    postId: id,
+                  })
                   return null
                 }
               }),
@@ -150,7 +154,7 @@ export function useFavorites() {
 
             favoritePosts.value = posts.filter((p): p is Post => p !== null)
           } catch (err) {
-            console.error('Failed to fetch favorite posts:', err)
+            logger.error('Failed to fetch favorite posts', toLogContext(err))
             favoritePosts.value = []
           }
         } else {
@@ -162,7 +166,10 @@ export function useFavorites() {
                   const cached = await indexedDB.getPost(id)
                   return cached as unknown as Post
                 } catch (err) {
-                  console.error('Failed to read cached favorite post:', id, err)
+                  logger.warn('Failed to read cached favorite post', {
+                    ...toLogContext(err),
+                    postId: id,
+                  })
                   return null
                 }
               }),
@@ -170,7 +177,7 @@ export function useFavorites() {
 
             favoritePosts.value = posts.filter((p): p is Post => p !== null)
           } catch (err) {
-            console.error('Failed to load cached favorite posts:', err)
+            logger.error('Failed to load cached favorite posts', toLogContext(err))
             favoritePosts.value = []
           }
         }
@@ -209,7 +216,7 @@ export function useFavorites() {
           })
         }
       } catch (e) {
-        console.error('[IndexedDB] Failed to add favorite locally:', e)
+        logger.warn('[IndexedDB] Failed to add favorite locally', toLogContext(e))
       }
 
       return favorite
@@ -267,7 +274,7 @@ export function useFavorites() {
           await indexedDB.removeFavorite(userId, postId)
         }
       } catch (e) {
-        logger.warn('[Favorites] Failed to remove favorite from IndexedDB:', e)
+        logger.warn('[Favorites] Failed to remove favorite from IndexedDB', toLogContext(e))
       }
     } catch (err: unknown) {
       handleError(err, 'UseFavorites.DeleteFavorite', {
