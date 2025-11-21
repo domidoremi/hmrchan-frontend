@@ -113,7 +113,7 @@
 
           <Transition name="fade">
             <div v-if="isLoadingMore" class="loading-more">
-              <div class="spinner"></div>
+              <div class="spinner spinner-md"></div>
               <span>{{ $t('common.loading') }}</span>
             </div>
           </Transition>
@@ -199,14 +199,14 @@ import {
 
 import MainLayout from '@/components/layout/MainLayout.vue'
 import PostCard from '@/components/business/PostCard.vue'
-import EmptyState from '@/components/feedback/EmptyState.vue'
+import EmptyState from '@/components/ui/empty/EmptyState.vue'
 import PostPreviewPanel from '@/components/business/PostPreviewPanel.vue'
 
-import { usePostsStore } from '@/stores/posts'
-import { useSettingsStore } from '@/stores/settings'
+import { usePostsStore, useSettingsStore } from '@/stores'
 import { useInfiniteScroll } from '@/composables'
 import { useWaterfallLayout } from '@/composables'
 import type { PostDetail } from '@/types'
+import { withLogging } from '@/utils/error'
 
 // Register GSAP plugins
 gsap.registerPlugin(ScrollTrigger)
@@ -346,17 +346,22 @@ const clearAllFilters = () => {
 
 const loadPosts = async () => {
   try {
-    const response = await postsStore.fetchPosts({
-      page: currentPage.value,
-      platform: selectedPlatform.value === 'all' ? undefined : selectedPlatform.value,
-      sort_by:
-        sortBy.value === 'latest'
-          ? 'published_at'
-          : sortBy.value === 'popular'
-            ? 'view_count'
-            : 'published_at',
-      sort_order: sortBy.value === 'oldest' ? 'asc' : 'desc',
-    })
+    const response = await withLogging(
+      () =>
+        postsStore.fetchPosts({
+          page: currentPage.value,
+          platform: selectedPlatform.value === 'all' ? undefined : selectedPlatform.value,
+          sort_by:
+            sortBy.value === 'latest'
+              ? 'published_at'
+              : sortBy.value === 'popular'
+                ? 'view_count'
+                : 'published_at',
+          sort_order: sortBy.value === 'oldest' ? 'asc' : 'desc',
+          ignoreFilters: true, // 重要：不要污染全局filters状态
+        }),
+      'PostsView:LoadPosts',
+    )
 
     // 根据pagination设置hasMore
     if (response && response.page && response.pages) {
@@ -369,8 +374,7 @@ const loadPosts = async () => {
     if (viewMode.value === 'grid' && postsGridRef.value) {
       updateWaterfallLayout()
     }
-  } catch (error) {
-    console.error('Failed to load posts:', error)
+  } catch {
     hasMore.value = false
   }
 }
@@ -402,18 +406,23 @@ const loadMore = async () => {
 
   currentPage.value++
   try {
-    const response = await postsStore.fetchPosts({
-      page: currentPage.value,
-      platform: selectedPlatform.value === 'all' ? undefined : selectedPlatform.value,
-      sort_by:
-        sortBy.value === 'latest'
-          ? 'published_at'
-          : sortBy.value === 'popular'
-            ? 'view_count'
-            : 'published_at',
-      sort_order: sortBy.value === 'oldest' ? 'asc' : 'desc',
-      append: true, // 追加模式
-    })
+    const response = await withLogging(
+      () =>
+        postsStore.fetchPosts({
+          page: currentPage.value,
+          platform: selectedPlatform.value === 'all' ? undefined : selectedPlatform.value,
+          sort_by:
+            sortBy.value === 'latest'
+              ? 'published_at'
+              : sortBy.value === 'popular'
+                ? 'view_count'
+                : 'published_at',
+          sort_order: sortBy.value === 'oldest' ? 'asc' : 'desc',
+          append: true, // 追加模式
+          ignoreFilters: true, // 重要：不要污染全局filters状态
+        }),
+      'PostsView:LoadMore',
+    )
 
     // 更新hasMore状态
     if (response && response.page && response.pages) {
@@ -426,8 +435,7 @@ const loadMore = async () => {
     if (viewMode.value === 'grid' && postsGridRef.value) {
       updateWaterfallLayout()
     }
-  } catch (error) {
-    console.error('Failed to load more posts:', error)
+  } catch {
     hasMore.value = false
   }
 }
@@ -471,7 +479,7 @@ const openPreview = async (postId: string) => {
     }
 
     // 3) 拉取完整详情（命中 requestCache 时不会重复向后端请求）
-    const detail = await postsStore.fetchPost(postId)
+    const detail = await withLogging(() => postsStore.fetchPost(postId), 'PostsView:FetchPreview')
     previewPost.value = detail
   } catch (error) {
     previewError.value = error instanceof Error ? error.message : t('error.unknown')
@@ -1081,20 +1089,7 @@ watch(
   }
 }
 
-.spinner {
-  width: 26px;
-  height: 26px;
-  border: 3px solid rgba(148, 163, 184, 0.35);
-  border-top-color: var(--color-primary);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
+/* Spinner styles moved to base.css and utilities.css - use .spinner.spinner-md */
 
 .loading-more,
 .end-of-feed {

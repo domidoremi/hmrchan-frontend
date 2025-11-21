@@ -3,7 +3,7 @@
  * 使用 IntersectionObserver 实现可视区域感知的预加载
  */
 import { ref, onMounted, onBeforeUnmount, watch, type Ref } from 'vue'
-import { smartPreloader } from '@/utils/preload'
+import { smartPreloader } from '@/utils/media'
 import logger from '@/utils/logger'
 
 interface PreloadOptions {
@@ -83,7 +83,7 @@ export function useSmartPreload(
       observerRef.value?.observe(card)
     })
 
-    logger.log(`[SmartPreload] 开始观察 ${cards.length} 张卡片`)
+    logger.info(`[SmartPreload] 开始观察 ${cards.length} 张卡片`)
   }
 
   /**
