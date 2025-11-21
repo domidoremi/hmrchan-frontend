@@ -404,7 +404,7 @@ function preloadCriticalRoutes(currentRoute: { name?: string | symbol }) {
         })
       }
     })
-  }, 1000)
+  }, 2000)
 }
 
 /**
