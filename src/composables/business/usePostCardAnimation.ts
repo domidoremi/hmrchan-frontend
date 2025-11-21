@@ -24,7 +24,6 @@ export function usePostCardAnimation(
 ): PostCardAnimationHandlers {
   let scrollTriggerInstance: ScrollTrigger | null = null
   let cardYQuickTo: ((value: number) => void) | null = null
-  let cardScaleQuickTo: ((value: number) => void) | null = null
 
   // 入场动画
   onMounted(() => {
@@ -46,12 +45,11 @@ export function usePostCardAnimation(
         },
       })
 
-      // 创建 quickTo 方法以提升悬停动画性能
+      // 初始化y轴，防止警告
+      gsap.set(cardRef.value, { y: 0 })
+
+      // 只为y轴创建quickTo，scale使用普通动画避免resetTo警告
       cardYQuickTo = gsap.quickTo(cardRef.value, 'y', { duration: 0.4, ease: 'power2.out' })
-      cardScaleQuickTo = gsap.quickTo(cardRef.value, 'scale', {
-        duration: 0.4,
-        ease: 'power2.out',
-      })
     }
   })
 
@@ -62,42 +60,72 @@ export function usePostCardAnimation(
     }
   })
 
-  // 悬停动画 - 使用 quickTo 提升性能
+  // 悬停动画 - y轴使用quickTo，scale使用普通动画
   const onHover = () => {
-    if (cardYQuickTo && cardScaleQuickTo) {
+    if (cardYQuickTo) {
       cardYQuickTo(-12)
-      cardScaleQuickTo(1.02)
+    }
+
+    // 卡片scale动画 - 使用普通gsap.to避免resetTo警告
+    if (cardRef.value) {
+      gsap.to(cardRef.value, {
+        scale: 1.02,
+        duration: 0.4,
+        ease: 'power2.out',
+      })
     }
 
     const mediaEl = getMediaRef()
     if (mediaEl) {
       const img = mediaEl.querySelector('img')
       if (img) {
-        gsap.to(img, {
-          scale: 1.1,
-          duration: 0.6,
-          ease: 'power2.out',
-        })
+        // 检查图片是否完全加载
+        if (!img.complete) {
+          // 图片未加载完成，跳过动画
+          return
+        }
+
+        // 先清除所有动画
+        gsap.killTweensOf(img)
+
+        // 使用from动画代替to，避免resetTo警告
+        // from会自动设置起始值，不需要resetTo
+        gsap.fromTo(
+          img,
+          { scale: 1 }, // 起始状态
+          {
+            scale: 1.1,
+            duration: 0.6,
+            ease: 'power2.out',
+            overwrite: 'auto',
+          },
+        )
       }
     }
   }
 
-  // 离开动画 - 使用 quickTo 提升性能
+  // 离开动画 - y轴使用quickTo，scale使用普通动画
   const onLeave = () => {
-    if (cardYQuickTo && cardScaleQuickTo) {
+    if (cardYQuickTo) {
       cardYQuickTo(0)
-      cardScaleQuickTo(1)
+    }
+
+    // 卡片scale重置 - 使用普通gsap.to避免resetTo警告
+    if (cardRef.value) {
+      gsap.to(cardRef.value, {
+        scale: 1,
+        duration: 0.4,
+        ease: 'power2.out',
+      })
     }
 
     const mediaEl = getMediaRef()
     if (mediaEl) {
       const img = mediaEl.querySelector('img')
       if (img) {
-        gsap.to(img, {
-          scale: 1,
-          duration: 0.6,
-          ease: 'power2.inOut',
-        })
+        // 清除所有动画并直接重置，避免reset警告
+        gsap.killTweensOf(img)
+        gsap.set(img, { scale: 1 })
       }
     }
   }

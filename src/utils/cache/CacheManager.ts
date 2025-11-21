@@ -4,8 +4,9 @@
  * 支持 LRU 清理策略和缓存预热
  */
 
-import { indexedDB } from '@/utils/indexedDB'
+import { indexedDB } from '@/utils/storage'
 import logger from '@/utils/logger'
+import { toLogContext } from '@/utils/typeGuards'
 
 export interface CacheConfig {
   maxMemorySize?: number // 内存缓存最大条目数
@@ -100,7 +101,7 @@ export class CacheManager {
     // 定期清理过期缓存
     this.startCleanupTimer()
 
-    logger.log('[CacheManager] Initialized', {
+    logger.info('[CacheManager] Initialized', {
       maxMemorySize: this.config.maxMemorySize,
       maxAge: this.config.maxAge,
       enablePersistence: this.config.enablePersistence,
@@ -114,9 +115,9 @@ export class CacheManager {
     try {
       // 确保 IndexedDB 已初始化
       await indexedDB.init()
-      logger.log('[CacheManager] Persistence store initialized')
+      logger.info('[CacheManager] Persistence store initialized')
     } catch (error) {
-      logger.error('[CacheManager] Failed to initialize persistence store:', error)
+      logger.error('[CacheManager] Failed to initialize persistence store', toLogContext(error))
       this.config.enablePersistence = false
     }
   }
@@ -201,7 +202,7 @@ export class CacheManager {
       await this.clearPersistence()
     }
 
-    logger.log('[CacheManager] All caches cleared')
+    logger.info('[CacheManager] All caches cleared')
   }
 
   /**
@@ -243,7 +244,7 @@ export class CacheManager {
    * 缓存预热
    */
   async preloadCache(): Promise<void> {
-    logger.log('[CacheManager] Preloading cache...', this.config.preloadKeys)
+    logger.info('[CacheManager] Preloading cache...', { preloadKeys: this.config.preloadKeys })
 
     if (!this.config.enablePersistence) {
       return
@@ -261,7 +262,7 @@ export class CacheManager {
     )
 
     const total = preloadedCount.reduce((sum: number, count: number) => sum + count, 0)
-    logger.log(`[CacheManager] Preloaded ${total} cache entries`)
+    logger.info(`[CacheManager] Preloaded ${total} cache entries`, { count: total })
   }
 
   /**
@@ -457,12 +458,14 @@ export class CacheManager {
         }
 
         request.onerror = () => {
-          logger.error('[CacheManager] Persistence get error:', request.error)
+          logger.error('[CacheManager] Persistence get error', {
+            error: request.error?.message || 'Unknown error',
+          })
           resolve(null)
         }
       })
     } catch (error) {
-      logger.error('[CacheManager] Persistence get failed:', error)
+      logger.error('[CacheManager] Persistence get failed', toLogContext(error))
       return null
     }
   }
@@ -491,12 +494,14 @@ export class CacheManager {
 
         request.onsuccess = () => resolve()
         request.onerror = () => {
-          logger.error('[CacheManager] Persistence set error:', request.error)
+          logger.error('[CacheManager] Persistence set error', {
+            error: request.error?.message || 'Unknown error',
+          })
           reject(request.error)
         }
       })
     } catch (error) {
-      logger.error('[CacheManager] Persistence set failed:', error)
+      logger.error('[CacheManager] Persistence set failed', toLogContext(error))
     }
   }
 
@@ -513,12 +518,14 @@ export class CacheManager {
         const request = store.delete(key)
         request.onsuccess = () => resolve()
         request.onerror = () => {
-          logger.error('[CacheManager] Persistence delete error:', request.error)
+          logger.error('[CacheManager] Persistence delete error', {
+            error: request.error?.message || 'Unknown error',
+          })
           resolve()
         }
       })
     } catch (error) {
-      logger.error('[CacheManager] Persistence delete failed:', error)
+      logger.error('[CacheManager] Persistence delete failed', toLogContext(error))
     }
   }
 
@@ -529,7 +536,7 @@ export class CacheManager {
     try {
       await indexedDB.clearAll()
     } catch (error) {
-      logger.error('[CacheManager] Persistence clear failed:', error)
+      logger.error('[CacheManager] Persistence clear failed', toLogContext(error))
     }
   }
 
@@ -579,7 +586,7 @@ export class CacheManager {
     }
 
     if (count > 0) {
-      logger.log(`[CacheManager] Cleaned up ${count} expired entries`)
+      logger.info(`[CacheManager] Cleaned up ${count} expired entries`, { count })
     }
   }
 }
