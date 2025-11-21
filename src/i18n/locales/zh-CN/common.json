@@ -1,7 +1,8 @@
 {
   "app": {
     "name": "HMR Club",
-    "description": "社交媒体内容聚合系统"
+    "description": "社交媒体内容聚合系统",
+    "tagline": "一站汇总 Himeri 的所有动态"
   },
   "common": {
     "loading": "加载中...",
@@ -37,6 +38,8 @@
     "download": "下载",
     "explore": "探索",
     "platforms": "平台",
+    "live": "直播",
+    "updates": "更新",
     "buffered": "已缓冲",
     "speed": "速度"
   },
