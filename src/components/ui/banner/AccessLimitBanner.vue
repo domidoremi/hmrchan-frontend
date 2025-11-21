@@ -83,7 +83,7 @@ const showDetails = () => {
   /* bottom 由动态计算提供 */
   /* 与 BackToTop 错开位置，避免重叠 */
   right: calc(clamp(16px, 4vw, 40px) + 72px);
-  z-index: 1000;
+  z-index: 1100;
 }
 
 .access-bubble {
