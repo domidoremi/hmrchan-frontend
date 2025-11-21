@@ -62,7 +62,8 @@
     "toggleFullscreen": "切换全屏",
     "toggleCaptions": "切换字幕",
     "closeViewer": "关闭查看器",
-    "loading": "正在加载"
+    "loading": "正在加载",
+    "accessLimit": "访问用量：{current} / {limit}"
   },
   "cookies": {
     "title": "Cookie 使用提示",
