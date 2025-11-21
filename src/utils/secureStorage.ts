@@ -3,6 +3,8 @@
  * 提供统一的加密、错误处理和竞态条件防护
  */
 
+import logger from '@/utils/logger'
+
 // 简单的加密/解密（生产环境应使用更强的加密）
 const STORAGE_KEY_PREFIX = '__hmrc_'
 const ENCRYPTION_KEY = 'hmrchan_secure_key_v1' // 生产环境应从环境变量读取
@@ -114,7 +116,7 @@ class SecureStorage {
   async set<T>(key: string, value: T, options: SecureStorageOptions = {}): Promise<boolean> {
     if (!this.isAvailable()) {
       if (!options.silent) {
-        console.error('[SecureStorage] Storage is not available')
+        logger.error('[SecureStorage] Storage is not available')
       }
       return false
     }
@@ -137,7 +139,7 @@ class SecureStorage {
         return true
       } catch (error) {
         if (!options.silent) {
-          console.error('[SecureStorage] Failed to set item:', error)
+          logger.error('[SecureStorage] Failed to set item', { error })
         }
         return false
       }
@@ -172,7 +174,7 @@ class SecureStorage {
         return item.value
       } catch (error) {
         if (!options.silent) {
-          console.error('[SecureStorage] Failed to get item:', error)
+          logger.error('[SecureStorage] Failed to get item', { error })
         }
         // 数据损坏，删除它
         await this.remove(key, { silent: true })
@@ -195,7 +197,7 @@ class SecureStorage {
         return true
       } catch (error) {
         if (!options.silent) {
-          console.error('[SecureStorage] Failed to remove item:', error)
+          logger.error('[SecureStorage] Failed to remove item', { error })
         }
         return false
       }
@@ -219,7 +221,7 @@ class SecureStorage {
 
       return true
     } catch (error) {
-      console.error('[SecureStorage] Failed to clear storage:', error)
+      logger.error('[SecureStorage] Failed to clear storage', { error })
       return false
     }
   }

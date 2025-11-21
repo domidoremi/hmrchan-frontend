@@ -5,6 +5,7 @@
 
 import { ref } from 'vue'
 import { useToast } from '@/composables'
+import logger from '@/utils/logger'
 
 export interface OptimisticUpdateOptions<T> {
   /**
@@ -250,7 +251,10 @@ export function useListOptimisticUpdate<T extends { id: string | number }>(
     const originalValue = item[property]
 
     if (typeof originalValue !== 'boolean') {
-      console.error(`Property ${String(property)} is not a boolean`)
+      logger.error('Property is not a boolean in optimistic toggle', {
+        property: String(property),
+        valueType: typeof originalValue,
+      })
       return { success: false }
     }
 

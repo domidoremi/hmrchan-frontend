@@ -68,111 +68,105 @@ export function createI18nDevTools(): I18nDevTools | null {
 
     validate(key: string) {
       const result = validateI18nKey(key)
-      console.group(`🔍 Validating key: "${key}"`)
-      if (result.valid) {
-        console.log('✅ Valid')
-      } else {
-        console.log('❌ Invalid')
-        result.issues.forEach((issue) => {
-          console.log(`  - ${issue}`)
-        })
-      }
-      console.groupEnd()
+      logger.group(`🔍 Validating key: "${key}"`, () => {
+        if (result.valid) {
+          logger.info('✅ Valid')
+        } else {
+          logger.info('❌ Invalid')
+          result.issues.forEach((issue) => {
+            logger.info(`  - ${issue}`)
+          })
+        }
+      })
     },
 
     listKeys(locale?: SupportedLocale) {
       const targetLocale = locale || localStorage.getItem('locale') || 'en'
-      console.group(`📋 Translation Keys (${targetLocale})`)
-
-      try {
-        // 动态导入翻译文件
-        import(`@/i18n/locales/${targetLocale}.json`).then((messages) => {
-          const keys = extractKeys(messages.default as Record<string, unknown>)
-          console.log(`Total keys: ${keys.length}`)
-          console.log('')
-          keys.forEach((key) => {
-            console.log(`  ${key}`)
+      logger.group(`📋 Translation Keys (${targetLocale})`, () => {
+        try {
+          // 动态导入翻译文件
+          import(`@/i18n/locales/${targetLocale}.json`).then((messages) => {
+            const keys = extractKeys(messages.default as Record<string, unknown>)
+            logger.info(`Total keys: ${keys.length}`)
+            logger.info('')
+            keys.forEach((key) => {
+              logger.info(`  ${key}`)
+            })
           })
-        })
-      } catch (error) {
-        console.error('Failed to load translations:', error)
-      }
-
-      console.groupEnd()
+        } catch (error) {
+          logger.error('Failed to load translations', { error })
+        }
+      })
     },
 
     searchKeys(pattern: string, locale?: SupportedLocale) {
       const targetLocale = locale || localStorage.getItem('locale') || 'en'
       const regex = new RegExp(pattern, 'i')
 
-      console.group(`🔎 Searching keys matching: "${pattern}" (${targetLocale})`)
+      logger.group(`🔎 Searching keys matching: "${pattern}" (${targetLocale})`, () => {
+        try {
+          import(`@/i18n/locales/${targetLocale}.json`).then((messages) => {
+            const messagesObj = messages.default as Record<string, unknown>
+            const keys = extractKeys(messagesObj)
+            const matches = keys.filter((key) => regex.test(key))
 
-      try {
-        import(`@/i18n/locales/${targetLocale}.json`).then((messages) => {
-          const messagesObj = messages.default as Record<string, unknown>
-          const keys = extractKeys(messagesObj)
-          const matches = keys.filter((key) => regex.test(key))
-
-          console.log(`Found ${matches.length} matches:`)
-          console.log('')
-          matches.forEach((key) => {
-            const value = getNestedValue(messagesObj, key)
-            console.log(`  ${key}: "${value}"`)
+            logger.info(`Found ${matches.length} matches:`)
+            logger.info('')
+            matches.forEach((key) => {
+              const value = getNestedValue(messagesObj, key)
+              logger.info(`  ${key}: "${value}"`)
+            })
           })
-        })
-      } catch (error) {
-        console.error('Failed to search translations:', error)
-      }
-
-      console.groupEnd()
+        } catch (error) {
+          logger.error('Failed to search translations', { error })
+        }
+      })
     },
 
     compareLocales() {
-      console.group('📊 Locale Coverage Comparison')
+      logger.group('📊 Locale Coverage Comparison', () => {
+        const locales: SupportedLocale[] = ['en', 'zh-CN', 'ja']
+        const promises = locales.map((locale) =>
+          import(`@/i18n/locales/${locale}.json`).then((messages) => ({
+            locale,
+            keys: extractKeys(messages.default as Record<string, unknown>),
+          })),
+        )
 
-      const locales: SupportedLocale[] = ['en', 'zh-CN', 'ja']
-      const promises = locales.map((locale) =>
-        import(`@/i18n/locales/${locale}.json`).then((messages) => ({
-          locale,
-          keys: extractKeys(messages.default as Record<string, unknown>),
-        })),
-      )
+        Promise.all(promises).then((results) => {
+          const allKeys = new Set<string>()
+          results.forEach((result) => {
+            result.keys.forEach((key) => allKeys.add(key))
+          })
 
-      Promise.all(promises).then((results) => {
-        const allKeys = new Set<string>()
-        results.forEach((result) => {
-          result.keys.forEach((key) => allKeys.add(key))
-        })
+          logger.info(`Total unique keys: ${allKeys.size}`)
+          logger.info('')
 
-        console.log(`Total unique keys: ${allKeys.size}`)
-        console.log('')
+          results.forEach((result) => {
+            const coverage = (result.keys.length / allKeys.size) * 100
+            const missing = allKeys.size - result.keys.length
 
-        results.forEach((result) => {
-          const coverage = (result.keys.length / allKeys.size) * 100
-          const missing = allKeys.size - result.keys.length
+            logger.info(`${result.locale}:`)
+            logger.info(`  Keys: ${result.keys.length}`)
+            logger.info(`  Coverage: ${coverage.toFixed(2)}%`)
+            logger.info(`  Missing: ${missing}`)
+            logger.info('')
+          })
 
-          console.log(`${result.locale}:`)
-          console.log(`  Keys: ${result.keys.length}`)
-          console.log(`  Coverage: ${coverage.toFixed(2)}%`)
-          console.log(`  Missing: ${missing}`)
-          console.log('')
-        })
+          // 找出缺失的键
+          results.forEach((result) => {
+            const missingKeys = Array.from(allKeys).filter((key) => !result.keys.includes(key))
 
-        // 找出缺失的键
-        results.forEach((result) => {
-          const missingKeys = Array.from(allKeys).filter((key) => !result.keys.includes(key))
-
-          if (missingKeys.length > 0) {
-            console.group(`Missing keys in ${result.locale}:`)
-            missingKeys.forEach((key) => {
-              console.log(`  - ${key}`)
-            })
-            console.groupEnd()
-          }
+            if (missingKeys.length > 0) {
+              logger.group(`Missing keys in ${result.locale}:`, () => {
+                missingKeys.forEach((key) => {
+                  logger.info(`  - ${key}`)
+                })
+              })
+            }
+          })
         })
       })
-
-      console.groupEnd()
     },
 
     exportTranslations(locale?: SupportedLocale) {
@@ -181,16 +175,16 @@ export function createI18nDevTools(): I18nDevTools | null {
       try {
         import(`@/i18n/locales/${targetLocale}.json`).then((messages) => {
           const json = JSON.stringify(messages.default as Record<string, unknown>, null, 2)
-          console.log(`📦 Exporting translations for ${targetLocale}:`)
-          console.log(json)
+          logger.info(`📦 Exporting translations for ${targetLocale}:`)
+          logger.info(json)
 
           // 复制到剪贴板
           navigator.clipboard.writeText(json).then(() => {
-            console.log('✅ Copied to clipboard')
+            logger.info('✅ Copied to clipboard')
           })
         })
       } catch (error) {
-        console.error('Failed to export translations:', error)
+        logger.error('Failed to export translations', { error })
       }
     },
 
@@ -201,13 +195,13 @@ export function createI18nDevTools(): I18nDevTools | null {
         import(`@/i18n/locales/${targetLocale}.json`).then((messages) => {
           const value = getNestedValue(messages.default as Record<string, unknown>, key)
           const exists = value !== undefined
-          console.log(
+          logger.info(
             `${exists ? '✅' : '❌'} Key "${key}" ${exists ? 'exists' : 'does not exist'} in ${targetLocale}`,
           )
           return exists
         })
       } catch (error) {
-        console.error('Failed to check key:', error)
+        logger.error('Failed to check key', { error })
       }
 
       return false
@@ -219,11 +213,11 @@ export function createI18nDevTools(): I18nDevTools | null {
       try {
         import(`@/i18n/locales/${targetLocale}.json`).then((messages) => {
           const value = getNestedValue(messages.default as Record<string, unknown>, key)
-          console.log(`${key} (${targetLocale}): "${value}"`)
+          logger.info(`${key} (${targetLocale}): "${value}"`)
           return value as string | undefined
         })
       } catch (error) {
-        console.error('Failed to get translation:', error)
+        logger.error('Failed to get translation', { error })
       }
 
       return undefined
@@ -283,21 +277,20 @@ export function initI18nDevTools(): void {
     })
 
     // 打印使用提示
-    console.log(
-      '%c🌐 i18n DevTools Available',
-      'color: #8b5cf6; font-size: 14px; font-weight: bold;',
-    )
-    console.log('Access via: window.__I18N_DEV__')
-    console.log('')
-    console.log('Available methods:')
-    console.log('  - guide()              : Show naming guide')
-    console.log('  - validate(key)        : Validate a key')
-    console.log('  - listKeys(locale?)    : List all keys')
-    console.log('  - searchKeys(pattern)  : Search keys')
-    console.log('  - compareLocales()     : Compare coverage')
-    console.log('  - exportTranslations() : Export translations')
-    console.log('  - hasKey(key)          : Check if key exists')
-    console.log('  - get(key)             : Get translation value')
-    console.log('')
+    logger.info('%c🌐 i18n DevTools Available', {
+      note: 'Access via window.__I18N_DEV__ in console',
+    })
+    logger.info('Access via: window.__I18N_DEV__')
+    logger.info('')
+    logger.info('Available methods:')
+    logger.info('  - guide()              : Show naming guide')
+    logger.info('  - validate(key)        : Validate a key')
+    logger.info('  - listKeys(locale?)    : List all keys')
+    logger.info('  - searchKeys(pattern)  : Search keys')
+    logger.info('  - compareLocales()     : Compare coverage')
+    logger.info('  - exportTranslations() : Export translations')
+    logger.info('  - hasKey(key)          : Check if key exists')
+    logger.info('  - get(key)             : Get translation value')
+    logger.info('')
   }
 }
