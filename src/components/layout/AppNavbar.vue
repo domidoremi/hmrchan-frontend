@@ -198,18 +198,24 @@
           <Search :size="24" />
         </button>
 
-        <button class="action-button queue-button" type="button" @click="toggleQueuePanel"
-          :aria-label="$t('offline.actionsQueued')">
-          <CloudOff :size="20" />
-          <span v-if="queueStatus.pending > 0" class="queue-badge">
-            {{ queueStatus.pending }}
-          </span>
-        </button>
+        <!-- 离线队列按钮（移动端） -->
+        <div class="queue-status-container">
+          <button class="action-button queue-button" type="button" @click="toggleQueuePanel"
+            :aria-label="$t('offline.actionsQueued')">
+            <CloudOff :size="20" />
+            <span v-if="queueStatus.pending > 0" class="queue-badge">
+              {{ queueStatus.pending }}
+            </span>
+          </button>
+        </div>
 
-        <button class="action-button settings-menu-container" type="button" @click="toggleSettingsPanel"
-          :aria-label="$t('nav.settings')">
-          <Settings :size="20" />
-        </button>
+        <!-- 设置按钮（移动端） -->
+        <div class="settings-menu-container">
+          <button class="action-button" type="button" @click="toggleSettingsPanel"
+            :aria-label="$t('nav.settings')">
+            <Settings :size="20" />
+          </button>
+        </div>
 
         <button v-if="isAuthenticated" class="action-button mobile-user-trigger" @click="showUserMenu = !showUserMenu">
           <img :src="userAvatarUrl" :alt="user?.username" class="mobile-avatar" />
@@ -403,9 +409,9 @@ const refreshQueueStatus = async () => {
  * 打开面板时会刷新队列状态
  */
 const toggleQueuePanel = async () => {
-  console.log('[AppNavbar] Toggle queue panel - before:', showQueuePanel.value, 'isMobile:', isMobile.value)
+  // console.log('[AppNavbar] Toggle queue panel - before:', showQueuePanel.value, 'isMobile:', isMobile.value)
   showQueuePanel.value = !showQueuePanel.value
-  console.log('[AppNavbar] Toggle queue panel - after:', showQueuePanel.value)
+  // console.log('[AppNavbar] Toggle queue panel - after:', showQueuePanel.value)
   if (showQueuePanel.value) {
     await refreshQueueStatus()
   }
@@ -455,9 +461,7 @@ const isMobile = ref(false)
  */
 const updateIsMobile = () => {
   if (typeof window === 'undefined') return
-  const wasMobile = isMobile.value
   isMobile.value = window.matchMedia('(max-width: 768px)').matches
-  console.log('[AppNavbar] isMobile updated:', wasMobile, '->', isMobile.value, 'window.innerWidth:', window.innerWidth)
 }
 
 /** 主题选项配置 */
@@ -478,9 +482,9 @@ const localeOptions = [
  * 切换设置面板显示状态
  */
 const toggleSettingsPanel = () => {
-  console.log('[AppNavbar] Toggle settings panel - before:', showSettingsPanel.value, 'isMobile:', isMobile.value)
+  // console.log('[AppNavbar] Toggle settings panel - before:', showSettingsPanel.value, 'isMobile:', isMobile.value)
   showSettingsPanel.value = !showSettingsPanel.value
-  console.log('[AppNavbar] Toggle settings panel - after:', showSettingsPanel.value)
+  // console.log('[AppNavbar] Toggle settings panel - after:', showSettingsPanel.value)
 }
 
 /**
@@ -546,7 +550,6 @@ const handleClickOutside = (event: MouseEvent) => {
     !inSettingsButton &&
     !inSettingsDropdown
   ) {
-    console.log('[AppNavbar] Closing settings panel from click outside')
     showSettingsPanel.value = false
   }
 
@@ -557,7 +560,6 @@ const handleClickOutside = (event: MouseEvent) => {
     !inQueueButton &&
     !inQueueDropdown
   ) {
-    console.log('[AppNavbar] Closing queue panel from click outside')
     showQueuePanel.value = false
   }
 }
@@ -1294,10 +1296,12 @@ onUnmounted(() => {
     max-width: 400px !important;
     max-height: 80vh;
     overflow-y: auto;
-    z-index: 2500 !important;
+    z-index: 9999 !important; /* 提高z-index确保在最顶层 */
     box-shadow:
       0 20px 60px rgba(0, 0, 0, 0.3),
       0 0 0 100vmax rgba(0, 0, 0, 0.5) !important;
+    /* 添加调试边框 */
+    /* border: 3px solid red !important; */
   }
 
   .queue-dropdown.mobile-modal::before,

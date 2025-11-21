@@ -41,7 +41,7 @@ const videoInstances: Map<string, HTMLVideoElement> = new Map()
 
 // 转换媒体项为PhotoSwipe数据源
 const prepareDataSource = (items: MediaItem[]) => {
-  console.log('[PhotoSwipeViewer] prepareDataSource - items:', items)
+  // console.log('[PhotoSwipeViewer] prepareDataSource - items:', items)
 
   return items.map((item, index) => {
     if (item.type === 'image') {
@@ -53,14 +53,14 @@ const prepareDataSource = (items: MediaItem[]) => {
       if (item.width && item.width > 0 && item.height && item.height > 0) {
         imageData.width = item.width
         imageData.height = item.height
-        console.log(`[PhotoSwipeViewer] Image ${index}: ${item.width}x${item.height}`)
+        // console.log(`[PhotoSwipeViewer] Image ${index}: ${item.width}x${item.height}`)
       } else {
-        console.log(`[PhotoSwipeViewer] Image ${index}: auto-detect size`)
+        // console.log(`[PhotoSwipeViewer] Image ${index}: auto-detect size`)
       }
 
       return imageData
     } else {
-      console.log(`[PhotoSwipeViewer] Video ${index}:`, item.url)
+      // console.log(`[PhotoSwipeViewer] Video ${index}:`, item.url)
       const videoElement = createNativeVideoElement(item.url, item.mediaId, item.subtitles || undefined)
       return {
         html: videoElement.outerHTML,
@@ -106,7 +106,7 @@ const createNativeVideoElement = (url: string, mediaId?: string, subtitles?: Arr
 const initNativeVideoPlayer = (videoElement: HTMLVideoElement, _container: HTMLElement, url: string) => {
   if (videoInstances.has(url)) return videoInstances.get(url)!
 
-  console.log('[PhotoSwipeViewer] Initializing native video player:', url)
+  // console.log('[PhotoSwipeViewer] Initializing native video player:', url)
 
   // 启用第一个字幕轨道
   videoElement.addEventListener('loadedmetadata', () => {
@@ -121,10 +121,10 @@ const initNativeVideoPlayer = (videoElement: HTMLVideoElement, _container: HTMLE
 
 // 初始化PhotoSwipe
 const initPhotoSwipe = () => {
-  console.log('[PhotoSwipeViewer] initPhotoSwipe - show:', props.show, 'items:', props.items.length)
+  // console.log('[PhotoSwipeViewer] initPhotoSwipe - show:', props.show, 'items:', props.items.length)
 
   if (!props.show || props.items.length === 0) {
-    console.log('[PhotoSwipeViewer] Skipping init')
+    // console.log('[PhotoSwipeViewer] Skipping init')
     return
   }
 
@@ -162,7 +162,7 @@ const initPhotoSwipe = () => {
       if (videoElement && videoWrapper) {
         const url = videoWrapper.dataset.videoUrl
         if (url) {
-          console.log('[PhotoSwipeViewer] Activating video:', url)
+          // console.log('[PhotoSwipeViewer] Activating video:', url)
           initNativeVideoPlayer(videoElement, videoWrapper, url)
         }
       }
@@ -170,7 +170,7 @@ const initPhotoSwipe = () => {
   })
 
   pswp.on('close', () => {
-    console.log('[PhotoSwipeViewer] Closing PhotoSwipe')
+    // console.log('[PhotoSwipeViewer] Closing PhotoSwipe')
     emit('close')
   })
 
@@ -185,7 +185,7 @@ const initPhotoSwipe = () => {
 
   // 监听destroy事件，清理视频实例
   pswp.on('destroy', () => {
-    console.log('[PhotoSwipeViewer] Destroying all video instances')
+    // console.log('[PhotoSwipeViewer] Destroying all video instances')
     videoInstances.forEach((video) => {
       video.pause()
       video.src = ''
@@ -195,7 +195,7 @@ const initPhotoSwipe = () => {
   })
 
   pswp.init()
-  console.log('[PhotoSwipeViewer] PhotoSwipe initialized')
+  // console.log('[PhotoSwipeViewer] PhotoSwipe initialized')
 }
 
 // 关闭PhotoSwipe

@@ -4,6 +4,7 @@
  */
 
 import { ref, onMounted } from 'vue'
+import logger from '@/utils/logger'
 
 export interface PreloadOptions {
   /**
@@ -159,20 +160,20 @@ export function useImagePreload(options: PreloadOptions = {}): PreloadResult {
   const shouldPreload = (): boolean => {
     // 检查数据节省模式
     if (isDataSaverEnabled()) {
-      console.log('[ImagePreload] Data saver enabled, skipping preload')
+      logger.debug('[ImagePreload] Data saver enabled, skipping preload')
       return false
     }
 
     // 检查网络连接
     if (wifiOnly && !isWiFiConnection()) {
-      console.log('[ImagePreload] Not on WiFi, skipping preload')
+      logger.debug('[ImagePreload] Not on WiFi, skipping preload')
       return false
     }
 
     // 检查网络速度
     const connectionType = getConnectionType()
     if (connectionType === 'slow-2g' || connectionType === '2g') {
-      console.log('[ImagePreload] Slow connection, skipping preload')
+      logger.debug('[ImagePreload] Slow connection, skipping preload')
       return false
     }
 
@@ -216,7 +217,7 @@ export function useImagePreload(options: PreloadOptions = {}): PreloadResult {
         img.src = url
       })
     } catch (error) {
-      console.warn('[ImagePreload] Failed to preload:', url, error)
+      logger.warn('[ImagePreload] Failed to preload', { url, error })
       throw error
     }
   }
@@ -233,7 +234,7 @@ export function useImagePreload(options: PreloadOptions = {}): PreloadResult {
 
       preload(url)
         .catch((error) => {
-          console.warn('[ImagePreload] Error:', error)
+          logger.warn('[ImagePreload] Error during preload', { error })
         })
         .finally(() => {
           activePreloads--
@@ -372,7 +373,9 @@ export function useSmartImagePreload() {
     const criticalImages = identifyCriticalImages()
 
     if (criticalImages.length > 0) {
-      console.log(`[SmartPreload] Found ${criticalImages.length} critical images`)
+      logger.debug('[SmartPreload] Found critical images', {
+        count: criticalImages.length,
+      })
       preloadBatch(criticalImages)
     }
   }
@@ -409,7 +412,9 @@ export function useNextPagePreload(getNextPageImages: () => string[] | Promise<s
   const preloadNextPage = async () => {
     const images = await getNextPageImages()
     if (images.length > 0) {
-      console.log(`[NextPagePreload] Preloading ${images.length} images`)
+      logger.debug('[NextPagePreload] Preloading images', {
+        count: images.length,
+      })
       preloadBatch(images)
     }
   }

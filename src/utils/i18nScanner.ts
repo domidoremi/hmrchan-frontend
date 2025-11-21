@@ -3,6 +3,8 @@
  * 用于检测硬编码文本和验证 i18n 键值命名规范
  */
 
+import logger from '@/utils/logger'
+
 /**
  * i18n 键值命名规范
  * 格式: category.subcategory.key
@@ -243,22 +245,22 @@ ${filesWithIssues > 0 ? '⚠️  Issues found. Please review and add i18n keys.'
 export function printI18nGuide(): void {
   if (!import.meta.env.DEV) return
 
-  console.group('📖 i18n Key Naming Guide')
-  console.log('Format: category.subcategory.key')
-  console.log('')
-  console.log('Standard Prefixes:')
-  I18N_KEY_PREFIXES.forEach((prefix) => {
-    console.log(`  - ${prefix}`)
+  logger.group('📖 i18n Key Naming Guide', () => {
+    logger.info('Format: category.subcategory.key')
+    logger.info('')
+    logger.info('Standard Prefixes:')
+    I18N_KEY_PREFIXES.forEach((prefix) => {
+      logger.info(`  - ${prefix}`)
+    })
+    logger.info('')
+    logger.info('Examples:')
+    logger.info('  ✅ page.home.title')
+    logger.info('  ✅ common.button.save')
+    logger.info('  ✅ error.network.timeout')
+    logger.info('  ✅ auth.login.success')
+    logger.info('')
+    logger.info('  ❌ homeTitle (missing category)')
+    logger.info('  ❌ page_home_title (use dots, not underscores)')
+    logger.info('  ❌ PageHomeTitle (use camelCase, not PascalCase)')
   })
-  console.log('')
-  console.log('Examples:')
-  console.log('  ✅ page.home.title')
-  console.log('  ✅ common.button.save')
-  console.log('  ✅ error.network.timeout')
-  console.log('  ✅ auth.login.success')
-  console.log('')
-  console.log('  ❌ homeTitle (missing category)')
-  console.log('  ❌ page_home_title (use dots, not underscores)')
-  console.log('  ❌ PageHomeTitle (use camelCase, not PascalCase)')
-  console.groupEnd()
 }
