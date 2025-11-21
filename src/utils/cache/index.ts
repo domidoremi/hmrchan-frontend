@@ -2,6 +2,8 @@
  * 缓存工具统一导出
  */
 
+import logger from '@/utils/logger'
+
 export { CacheManager, cacheManager } from './CacheManager'
 export type { CacheConfig, CacheEntry, CacheStats } from './CacheManager'
 
@@ -57,7 +59,7 @@ export async function fetchWithFallback<T>(
         await onSuccess(data)
       } catch (persistError) {
         // 持久化失败不应影响主流程
-        console.error('[CacheHelper] onSuccess failed:', persistError)
+        logger.warn('[CacheHelper] onSuccess failed', { error: persistError })
       }
     }
 
@@ -70,11 +72,13 @@ export async function fetchWithFallback<T>(
     try {
       const cached = await fallback()
       if (cached != null) {
-        console.warn('[CacheHelper] Using fallback data due to primary fetch error:', error)
+        logger.warn('[CacheHelper] Using fallback data due to primary fetch error', {
+          error,
+        })
         return { data: cached, fromFallback: true }
       }
     } catch (fallbackError) {
-      console.error('[CacheHelper] Fallback failed:', fallbackError)
+      logger.error('[CacheHelper] Fallback failed', { error: fallbackError })
     }
 
     throw error

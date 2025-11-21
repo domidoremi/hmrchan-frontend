@@ -10,6 +10,7 @@
  */
 
 import { createRouter, createWebHistory } from 'vue-router'
+import logger from '@/utils/logger'
 import type { RouteRecordRaw } from 'vue-router'
 import { useAuthStore } from '@/stores'
 
@@ -399,7 +400,7 @@ function preloadCriticalRoutes(currentRoute: { name?: string | symbol }) {
       const route = routes.find((r) => r.name === routeName)
       if (route && route.component) {
         ;(route.component as () => Promise<unknown>)().catch(() => {
-          console.debug(`[路由] 预加载失败: ${routeName}`)
+          logger.debug('[路由] 预加载失败', { routeName })
         })
       }
     })

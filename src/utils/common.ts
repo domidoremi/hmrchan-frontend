@@ -4,6 +4,7 @@
  */
 
 import type { User } from '@/types'
+import logger from '@/utils/logger'
 
 /**
  * 认证响应处理器
@@ -277,7 +278,7 @@ export class StorageHelper {
     try {
       localStorage.setItem(key, JSON.stringify(value))
     } catch (error) {
-      console.error('Failed to save to localStorage:', error)
+      logger.error('Failed to save to localStorage', { key, error })
     }
   }
 
@@ -288,7 +289,7 @@ export class StorageHelper {
     try {
       localStorage.removeItem(key)
     } catch (error) {
-      console.error('Failed to remove from localStorage:', error)
+      logger.error('Failed to remove from localStorage', { key, error })
     }
   }
 
@@ -299,7 +300,7 @@ export class StorageHelper {
     try {
       localStorage.clear()
     } catch (error) {
-      console.error('Failed to clear localStorage:', error)
+      logger.error('Failed to clear localStorage', { error })
     }
   }
 }

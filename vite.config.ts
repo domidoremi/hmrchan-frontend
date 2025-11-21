@@ -500,8 +500,8 @@ export default defineConfig(({ mode }) => ({
         './src/components/business/PostCard.vue',
 
         /** 核心组合式函数 */
-        './src/composables/useAuth.ts',
-        './src/composables/useTheme.ts',
+        './src/stores/useAuth.ts',
+        './src/stores/useTheme.ts',
       ],
     },
 

@@ -2,6 +2,8 @@
  * URL处理工具函数
  */
 
+import logger from '@/utils/logger'
+
 /**
  * 强制转换为 HTTPS（生产环境）
  * 运行时检测 - 不依赖构建时变量
@@ -15,7 +17,7 @@ function forceHttps(url: string): string {
 
   if (isBrowser && isHttpUrl) {
     const httpsUrl = url.replace('http://', 'https://')
-    console.warn(`🔒 [Runtime Security] Converting HTTP to HTTPS: ${url} → ${httpsUrl}`)
+    logger.warn(`🔒 [Runtime Security] Converting HTTP to HTTPS: ${url} → ${httpsUrl}`)
     return httpsUrl
   }
 
@@ -112,28 +114,29 @@ export function isValidUUID(value: unknown): boolean {
  */
 export function validateMediaId(mediaId: unknown, source: string = 'unknown'): boolean {
   if (!mediaId) {
-    console.warn(`[MediaID] Empty media ID from ${source}`)
+    logger.warn(`[MediaID] Empty media ID from ${source}`)
     return false
   }
 
   const idType = typeof mediaId
   if (idType === 'number') {
-    console.error(
-      `[MediaID] Received numeric ID from ${source}:`,
-      mediaId,
-      '\n→ Backend should return UUID format (string)',
-      '\n→ This will cause 500 error on media API',
+    logger.error(
+      `[MediaID] Received numeric ID from ${source}: ${String(mediaId)} (type: number)`,
+      {
+        source,
+        hint: 'Backend should return UUID format (string); this will cause 500 on media API',
+      },
     )
     return false
   }
 
   if (!isValidUUID(mediaId)) {
-    console.error(
-      `[MediaID] Invalid UUID format from ${source}:`,
+    logger.error('[MediaID] Invalid UUID format', {
+      source,
       mediaId,
-      `(type: ${idType})`,
-      '\n→ Expected format: "550e8400-e29b-41d4-a716-446655440000"',
-    )
+      type: idType,
+      expected: '550e8400-e29b-41d4-a716-446655440000',
+    })
     return false
   }
 

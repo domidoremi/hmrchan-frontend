@@ -4,6 +4,7 @@
  */
 
 import { indexedDB } from '../storage/indexedDB'
+import logger from '@/utils/logger'
 
 interface CacheEntry {
   url: string
@@ -46,7 +47,7 @@ export class HybridMediaCache {
       const blob = await response.blob()
       return await this.set(url, blob)
     } catch (error) {
-      console.error('[HybridCache] Get failed:', url, error)
+      logger.error('[HybridCache] Get failed', { url, error })
       return url // 失败时返回原始 URL
     }
   }
@@ -162,7 +163,7 @@ export class HybridMediaCache {
       idbCount = storage.total
       idbSizeMB = storage.totalMB
     } catch (error) {
-      console.error('[HybridCache] Failed to read IndexedDB stats:', error)
+      logger.warn('[HybridCache] Failed to read IndexedDB stats', { error })
     }
 
     return {

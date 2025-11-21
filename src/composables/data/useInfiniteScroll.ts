@@ -3,6 +3,7 @@
  * 用于实现列表的懒加载和分页
  */
 import { ref, watch, onMounted, onUnmounted, type Ref, unref } from 'vue'
+import logger from '@/utils/logger'
 
 interface UseInfiniteScrollOptions {
   /**
@@ -46,7 +47,7 @@ export function useInfiniteScroll(options: UseInfiniteScrollOptions) {
     const isEnabled = unref(enabled)
     const hasMoreData = hasMore()
 
-    console.debug(
+    logger.debug(
       `[InfiniteScroll] checkScroll - enabled: ${isEnabled}, isLoading: ${isLoading.value}, hasMore: ${hasMoreData}`,
     )
 
@@ -62,13 +63,13 @@ export function useInfiniteScroll(options: UseInfiniteScrollOptions) {
     const distanceToBottom = scrollHeight - (scrollTop + clientHeight)
     isNearBottom.value = distanceToBottom < threshold
 
-    console.debug(
+    logger.debug(
       `[InfiniteScroll] Scroll check - distance to bottom: ${distanceToBottom}px, threshold: ${threshold}px, near bottom: ${isNearBottom.value}`,
     )
 
     // 如果接近底部，触发加载
     if (isNearBottom.value) {
-      console.debug('[InfiniteScroll] Near bottom, triggering loadMore...')
+      logger.debug('[InfiniteScroll] Near bottom, triggering loadMore...')
       loadMore()
     }
   }
@@ -83,7 +84,7 @@ export function useInfiniteScroll(options: UseInfiniteScrollOptions) {
     try {
       await onLoadMore()
     } catch (error) {
-      console.error('Failed to load more:', error)
+      logger.error('Failed to load more', { error })
     } finally {
       isLoading.value = false
     }
@@ -102,26 +103,26 @@ export function useInfiniteScroll(options: UseInfiniteScrollOptions) {
 
   const attachListener = () => {
     if (isListenerAttached) return
-    console.debug('[InfiniteScroll] Attaching scroll listener')
+    logger.debug('[InfiniteScroll] Attaching scroll listener')
     window.addEventListener('scroll', handleScroll, { passive: true })
     isListenerAttached = true
     // 初始检查（可能初始内容就不够一屏）
     setTimeout(() => {
-      console.debug('[InfiniteScroll] Initial scroll check after attach')
+      logger.debug('[InfiniteScroll] Initial scroll check after attach')
       checkScroll()
     }, 100)
   }
 
   const detachListener = () => {
     if (!isListenerAttached) return
-    console.debug('[InfiniteScroll] Detaching scroll listener')
+    logger.debug('[InfiniteScroll] Detaching scroll listener')
     window.removeEventListener('scroll', handleScroll)
     isListenerAttached = false
   }
 
   onMounted(() => {
     const isEnabled = unref(enabled)
-    console.debug(
+    logger.debug(
       `[InfiniteScroll] Mounted - enabled: ${isEnabled}, hasMore: ${hasMore()}, threshold: ${threshold}px`,
     )
     if (isEnabled) {
@@ -133,7 +134,7 @@ export function useInfiniteScroll(options: UseInfiniteScrollOptions) {
       watch(
         () => unref(enabled),
         (newEnabled) => {
-          console.debug(`[InfiniteScroll] Enabled changed to: ${newEnabled}`)
+          logger.debug(`[InfiniteScroll] Enabled changed to: ${newEnabled}`)
           if (newEnabled) {
             attachListener()
           } else {
