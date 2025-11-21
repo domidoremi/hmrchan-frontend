@@ -276,11 +276,24 @@ const trendIcon = computed(() => {
   .stat-card {
     padding: var(--spacing-lg);
     gap: var(--spacing-sm);
+    /* 移动端使用更清爽的阴影 */
+    box-shadow:
+      0 2px 8px rgba(0, 0, 0, 0.05),
+      0 1px 2px rgba(0, 0, 0, 0.05);
+    border: 1px solid var(--glass-border);
+  }
+
+  .stat-card:hover {
+    box-shadow:
+      0 4px 12px rgba(0, 0, 0, 0.08),
+      0 2px 4px rgba(0, 0, 0, 0.06);
   }
 
   .stat-icon {
     width: 48px;
     height: 48px;
+    /* 移动端图标阴影更柔和 */
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   }
 
   .stat-value {
@@ -295,11 +308,22 @@ const trendIcon = computed(() => {
 @media (max-width: 480px) {
   .stat-card {
     padding: var(--spacing-md);
+    /* 小屏幕使用最轻量的阴影 */
+    box-shadow:
+      0 1px 4px rgba(0, 0, 0, 0.04),
+      0 1px 2px rgba(0, 0, 0, 0.03);
+  }
+
+  .stat-card:hover {
+    box-shadow:
+      0 2px 8px rgba(0, 0, 0, 0.06),
+      0 1px 3px rgba(0, 0, 0, 0.04);
   }
 
   .stat-icon {
     width: 40px;
     height: 40px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
   }
 
   .stat-value {

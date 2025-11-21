@@ -31,7 +31,10 @@ async function updateDayjsLocale(newLocale: SupportedLocale) {
 
     // 懒加载 dayjs 语言包
     if (dayjsLocale !== 'en') {
-      await import(`dayjs/locale/${dayjsLocale}`)
+      await import(
+        /* @vite-ignore */
+        `dayjs/locale/${dayjsLocale}`
+      )
     }
 
     dayjs.locale(dayjsLocale)

@@ -1,20 +1,22 @@
 <template>
   <!-- 不再在页面上显示，改用Toast通知 -->
-  <div class="access-limit-indicator" :style="{ bottom: dynamicBottom }">
-    <!-- 小气泡指示器 -->
-    <Transition name="fade">
-      <button v-if="shouldShowIndicator" class="access-bubble" :class="{ 'bubble-warning': isNearLimit }"
-        @click="showDetails" :aria-label="$t('access.viewDetails')">
-        <div class="bubble-icon">
-          <Info v-if="!isNearLimit" :size="16" />
-          <AlertCircle v-else :size="16" />
-        </div>
-        <div class="bubble-text">
-          <span class="bubble-count">{{ currentCount }}/{{ totalLimit }}</span>
-        </div>
-      </button>
-    </Transition>
-  </div>
+  <Teleport to="body">
+    <div class="access-limit-indicator" :style="{ bottom: dynamicBottom }">
+      <!-- 小气泡指示器 -->
+      <Transition name="fade">
+        <button v-if="shouldShowIndicator" class="access-bubble" :class="{ 'bubble-warning': isNearLimit }"
+          @click="showDetails" :aria-label="$t('access.viewDetails')">
+          <div class="bubble-icon">
+            <Info v-if="!isNearLimit" :size="16" />
+            <AlertCircle v-else :size="16" />
+          </div>
+          <div class="bubble-text">
+            <span class="bubble-count">{{ currentCount }}/{{ totalLimit }}</span>
+          </div>
+        </button>
+      </Transition>
+    </div>
+  </Teleport>
 </template>
 
 <script setup lang="ts">
@@ -80,7 +82,7 @@ const showDetails = () => {
   position: fixed;
   /* bottom 由动态计算提供 */
   /* 与 BackToTop 错开位置，避免重叠 */
-  right: clamp(80px, 10vw, 120px);
+  right: clamp(16px, 4vw, 40px);
   z-index: 1000;
 }
 

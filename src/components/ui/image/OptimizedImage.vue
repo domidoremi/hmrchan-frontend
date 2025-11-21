@@ -34,6 +34,7 @@
 <script setup lang="ts">
 import { computed, ref, onMounted, watch } from 'vue'
 import { hybridCache } from '@/utils/cache'
+import logger from '@/utils/logger'
 import {
   supportsWebP,
   generateSrcSet,
@@ -216,7 +217,10 @@ onMounted(async () => {
       const cached = await hybridCache.get(props.src)
       cachedSrc.value = cached
     } catch (error) {
-      console.warn('Failed to cache image:', props.src, error)
+      logger.warn('Failed to cache image', {
+        src: props.src,
+        error,
+      })
       // 失败时使用原始URL
       cachedSrc.value = props.src
     }

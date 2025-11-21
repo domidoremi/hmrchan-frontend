@@ -1,7 +1,8 @@
 {
   "app": {
     "name": "himeri club",
-    "description": "Social Media Content Aggregator"
+    "description": "Social Media Content Aggregator",
+    "tagline": "All himeri content in one place"
   },
   "common": {
     "loading": "Loading...",
@@ -41,6 +42,8 @@
     "zoomOut": "Zoom Out",
     "explore": "Explore",
     "platforms": "Platforms",
+    "live": "Live",
+    "updates": "Updates",
     "buffered": "Buffered",
     "speed": "Speed"
   },
