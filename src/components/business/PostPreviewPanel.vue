@@ -90,7 +90,7 @@
         </div>
 
         <div class="actions-row" v-if="post?.url">
-          <a :href="post.url" target="_blank" rel="noopener" class="glass-button">
+          <a :href="post.url" target="_blank" rel="noopener noreferrer" class="glass-button">
             <ExternalLink :size="16" />
             {{ $t('post.viewOriginal') }}
           </a>
