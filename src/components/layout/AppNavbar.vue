@@ -49,8 +49,7 @@
           </button>
 
           <Transition name="dropdown">
-            <div v-if="showQueuePanel" ref="queueMenuRef" class="queue-dropdown glass-card"
-              :class="{ 'mobile-modal': isMobile }" @click.self="isMobile && (showQueuePanel = false)">
+            <div v-if="showQueuePanel && !isMobile" ref="queueMenuRef" class="queue-dropdown glass-card">
               <div class="queue-header">
                 <span class="queue-title">{{ $t('offline.queueTitle') }}</span>
               </div>
@@ -80,10 +79,9 @@
             <Settings :size="20" />
           </button>
 
-          <!-- 设置面板（桌面端下拉，移动端模态框） -->
+          <!-- 设置面板（桌面端下拉，移动端使用下方模态框） -->
           <Transition name="dropdown">
-            <div v-if="showSettingsPanel" class="settings-dropdown glass-card" :class="{ 'mobile-modal': isMobile }"
-              @click.self="isMobile && (showSettingsPanel = false)">
+            <div v-if="showSettingsPanel && !isMobile" class="settings-dropdown glass-card">
               <div class="settings-group">
                 <div class="settings-group-title">{{ $t('settings.theme') }}</div>
                 <div class="settings-theme-options">
@@ -211,8 +209,7 @@
 
         <!-- 设置按钮（移动端） -->
         <div class="settings-menu-container">
-          <button class="action-button" type="button" @click="toggleSettingsPanel"
-            :aria-label="$t('nav.settings')">
+          <button class="action-button" type="button" @click="toggleSettingsPanel" :aria-label="$t('nav.settings')">
             <Settings :size="20" />
           </button>
         </div>
@@ -288,6 +285,82 @@
             <LogOut :size="20" />
             <span>{{ $t('nav.logout') }}</span>
           </button>
+        </div>
+      </div>
+    </div>
+  </Transition>
+
+  <Transition name="modal">
+    <div v-if="showQueuePanel && isMobile" class="mobile-user-modal" @click="showQueuePanel = false">
+      <div class="mobile-user-content glass-card" @click.stop>
+        <div class="queue-header">
+          <span class="queue-title">{{ $t('offline.queueTitle') }}</span>
+        </div>
+        <div class="queue-body">
+          <p class="queue-description">
+            {{ $t('offline.actionsQueued') }}
+          </p>
+          <p v-if="queueStatus.pending > 0" class="queue-count">
+            {{ queueStatus.pending }}
+          </p>
+          <p v-else class="queue-empty">
+            {{ $t('offline.queueEmpty') }}
+          </p>
+        </div>
+        <button class="queue-sync-button" type="button" @click="handleQueueSync"
+          :disabled="!queueStatus.pending || !isOnline || isQueueSyncing">
+          <span>{{ $t('offline.syncNow') }}</span>
+        </button>
+      </div>
+    </div>
+  </Transition>
+
+  <Transition name="modal">
+    <div v-if="showSettingsPanel && isMobile" class="mobile-user-modal" @click="showSettingsPanel = false">
+      <div class="mobile-user-content glass-card" @click.stop>
+        <div class="settings-group">
+          <div class="settings-group-title">{{ $t('settings.theme') }}</div>
+          <div class="settings-theme-options">
+            <button v-for="option in themeOptions" :key="option.value" type="button" class="settings-theme-button"
+              :class="{ active: theme === option.value }" @click="setTheme(option.value)">
+              <component :is="option.icon" :size="18" />
+              <span>{{ $t(`settings.${option.value}`) }}</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="settings-group">
+          <div class="settings-group-title">{{ $t('settings.language') }}</div>
+          <div class="settings-language-options">
+            <button v-for="localeOption in localeOptions" :key="localeOption.code" type="button"
+              class="settings-language-button" :class="{ active: locale === localeOption.code }"
+              @click="changeLanguage(localeOption.code)">
+              {{ localeOption.name }}
+            </button>
+          </div>
+        </div>
+
+        <div class="settings-group">
+          <div class="settings-group-title">{{ $t('settings.display') }}</div>
+          <div class="settings-toggle-list">
+            <button type="button" class="settings-toggle" :class="{ active: settings.showHeroSection }"
+              @click="settingsStore.toggleSetting('showHeroSection')">
+              <span class="settings-toggle-label">{{ $t('settings.toggleHeroSection') }}</span>
+              <span class="settings-toggle-indicator" :class="{ active: settings.showHeroSection }"></span>
+            </button>
+
+            <button type="button" class="settings-toggle" :class="{ active: settings.enableAnimations }"
+              @click="settingsStore.toggleSetting('enableAnimations')">
+              <span class="settings-toggle-label">{{ $t('settings.toggleAnimations') }}</span>
+              <span class="settings-toggle-indicator" :class="{ active: settings.enableAnimations }"></span>
+            </button>
+
+            <button type="button" class="settings-toggle" :class="{ active: settings.enableSwipeNavigation }"
+              @click="settingsStore.toggleSetting('enableSwipeNavigation')">
+              <span class="settings-toggle-label">{{ $t('settings.toggleSwipeNavigation') }}</span>
+              <span class="settings-toggle-indicator" :class="{ active: settings.enableSwipeNavigation }"></span>
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -1296,7 +1369,8 @@ onUnmounted(() => {
     max-width: 400px !important;
     max-height: 80vh;
     overflow-y: auto;
-    z-index: 9999 !important; /* 提高z-index确保在最顶层 */
+    z-index: 9999 !important;
+    /* 提高z-index确保在最顶层 */
     box-shadow:
       0 20px 60px rgba(0, 0, 0, 0.3),
       0 0 0 100vmax rgba(0, 0, 0, 0.5) !important;

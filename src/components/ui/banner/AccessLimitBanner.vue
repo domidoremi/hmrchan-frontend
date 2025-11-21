@@ -82,7 +82,7 @@ const showDetails = () => {
   position: fixed;
   /* bottom 由动态计算提供 */
   /* 与 BackToTop 错开位置，避免重叠 */
-  right: clamp(16px, 4vw, 40px);
+  right: calc(clamp(16px, 4vw, 40px) + 72px);
   z-index: 1000;
 }
 
