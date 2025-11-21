@@ -45,7 +45,9 @@
         </p>
 
         <!-- 初始加载状态 -->
-        <LoadingSpinner v-if="loading && posts.length === 0" size="lg" :text="$t('common.loading')" />
+        <div v-if="loading && posts.length === 0" class="home-posts-loading">
+          <LoadingSpinner size="lg" :text="$t('common.loading')" />
+        </div>
 
         <!-- Posts列表 -->
         <div v-else-if="posts.length > 0" ref="postsGrid" class="posts-grid">
@@ -140,7 +142,7 @@ const { isAuthenticated, user } = storeToRefs(authStore)
 const { loading, lastListFromFallback } = storeToRefs(postsStore)
 
 /** 首页动画系统 */
-const { container: homeContainer, refreshAnimations } = useHomePageAnimation()
+const { container: homeContainer } = useHomePageAnimation()
 
 /** 主页使用独立的posts数组，不受explore页面筛选影响 */
 const posts = ref<Post[]>([])
@@ -455,6 +457,18 @@ const getPlatformIcon = (platform: string) => {
   font-size: var(--text-3xl);
   font-weight: var(--font-bold);
   color: var(--color-text-primary);
+}
+
+.home-posts-loading {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 220px;
+  border-radius: var(--radius-lg);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
 }
 
 .posts-grid {
