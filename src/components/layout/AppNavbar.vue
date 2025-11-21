@@ -113,7 +113,7 @@
                     @click="settingsStore.toggleSetting('showHeroSection')">
                     <span class="settings-toggle-label">{{
                       $t('settings.toggleHeroSection')
-                    }}</span>
+                      }}</span>
                     <span class="settings-toggle-indicator" :class="{ active: settings.showHeroSection }"></span>
                   </button>
 
@@ -127,7 +127,7 @@
                     @click="settingsStore.toggleSetting('enableSwipeNavigation')">
                     <span class="settings-toggle-label">{{
                       $t('settings.toggleSwipeNavigation')
-                    }}</span>
+                      }}</span>
                     <span class="settings-toggle-indicator" :class="{ active: settings.enableSwipeNavigation }"></span>
                   </button>
                 </div>
@@ -192,6 +192,14 @@
         <span class="brand-name">Club</span>
       </RouterLink>
 
+      <div v-if="showAccessIndicator" class="mobile-access-indicator">
+        <button type="button" class="access-chip">
+          <span class="access-chip-count">
+            {{ accessCurrentDisplay }} / {{ accessLimitDisplay }}
+          </span>
+        </button>
+      </div>
+
       <!-- 右侧按钮 -->
       <div class="mobile-top-actions">
         <button class="action-button search-button" @click="goToSearch">
@@ -211,8 +219,7 @@
 
         <!-- 设置按钮（移动端） -->
         <div class="settings-menu-container">
-          <button class="action-button" type="button" @click="toggleSettingsPanel"
-            :aria-label="$t('nav.settings')">
+          <button class="action-button" type="button" @click="toggleSettingsPanel" :aria-label="$t('nav.settings')">
             <Settings :size="20" />
           </button>
         </div>
@@ -311,12 +318,8 @@
             {{ $t('offline.queueEmpty') }}
           </p>
         </div>
-        <button
-          class="queue-sync-button"
-          type="button"
-          @click="handleQueueSync"
-          :disabled="!queueStatus.pending || !isOnline || isQueueSyncing"
-        >
+        <button class="queue-sync-button" type="button" @click="handleQueueSync"
+          :disabled="!queueStatus.pending || !isOnline || isQueueSyncing">
           <span>{{ $t('offline.syncNow') }}</span>
         </button>
       </div>
@@ -330,14 +333,8 @@
         <div class="settings-group">
           <div class="settings-group-title">{{ $t('settings.theme') }}</div>
           <div class="settings-theme-options">
-            <button
-              v-for="option in themeOptions"
-              :key="option.value"
-              type="button"
-              class="settings-theme-button"
-              :class="{ active: theme === option.value }"
-              @click="setTheme(option.value)"
-            >
+            <button v-for="option in themeOptions" :key="option.value" type="button" class="settings-theme-button"
+              :class="{ active: theme === option.value }" @click="setTheme(option.value)">
               <component :is="option.icon" :size="18" />
               <span>{{ $t(`settings.${option.value}`) }}</span>
             </button>
@@ -347,14 +344,9 @@
         <div class="settings-group">
           <div class="settings-group-title">{{ $t('settings.language') }}</div>
           <div class="settings-language-options">
-            <button
-              v-for="localeOption in localeOptions"
-              :key="localeOption.code"
-              type="button"
-              class="settings-language-button"
-              :class="{ active: locale === localeOption.code }"
-              @click="changeLanguage(localeOption.code)"
-            >
+            <button v-for="localeOption in localeOptions" :key="localeOption.code" type="button"
+              class="settings-language-button" :class="{ active: locale === localeOption.code }"
+              @click="changeLanguage(localeOption.code)">
               {{ localeOption.name }}
             </button>
           </div>
@@ -363,32 +355,20 @@
         <div class="settings-group">
           <div class="settings-group-title">{{ $t('settings.display') }}</div>
           <div class="settings-toggle-list">
-            <button
-              type="button"
-              class="settings-toggle"
-              :class="{ active: settings.showHeroSection }"
-              @click="settingsStore.toggleSetting('showHeroSection')"
-            >
+            <button type="button" class="settings-toggle" :class="{ active: settings.showHeroSection }"
+              @click="settingsStore.toggleSetting('showHeroSection')">
               <span class="settings-toggle-label">{{ $t('settings.toggleHeroSection') }}</span>
               <span class="settings-toggle-indicator" :class="{ active: settings.showHeroSection }"></span>
             </button>
 
-            <button
-              type="button"
-              class="settings-toggle"
-              :class="{ active: settings.enableAnimations }"
-              @click="settingsStore.toggleSetting('enableAnimations')"
-            >
+            <button type="button" class="settings-toggle" :class="{ active: settings.enableAnimations }"
+              @click="settingsStore.toggleSetting('enableAnimations')">
               <span class="settings-toggle-label">{{ $t('settings.toggleAnimations') }}</span>
               <span class="settings-toggle-indicator" :class="{ active: settings.enableAnimations }"></span>
             </button>
 
-            <button
-              type="button"
-              class="settings-toggle"
-              :class="{ active: settings.enableSwipeNavigation }"
-              @click="settingsStore.toggleSetting('enableSwipeNavigation')"
-            >
+            <button type="button" class="settings-toggle" :class="{ active: settings.enableSwipeNavigation }"
+              @click="settingsStore.toggleSetting('enableSwipeNavigation')">
               <span class="settings-toggle-label">{{ $t('settings.toggleSwipeNavigation') }}</span>
               <span class="settings-toggle-indicator" :class="{ active: settings.enableSwipeNavigation }"></span>
             </button>
@@ -451,6 +431,32 @@ import {
 import { useAuthStore, useSettingsStore, useThemeStore } from '@/stores'
 import type { Theme } from '@/types'
 import { offlineQueue } from '@/utils/storage'
+
+const navbarProps = withDefaults(
+  defineProps<{
+    accessCurrent?: number
+    accessLimit?: number
+    showAccessIndicator?: boolean
+  }>(),
+  {
+    showAccessIndicator: false,
+  },
+)
+
+const accessCurrentDisplay = computed(() => {
+  return typeof navbarProps.accessCurrent === 'number' ? navbarProps.accessCurrent : 0
+})
+
+const accessLimitDisplay = computed(() => {
+  const value = navbarProps.accessLimit
+  if (typeof value !== 'number') return ''
+  if (value === Infinity) return '∞'
+  return value
+})
+
+const showAccessIndicator = computed(
+  () => navbarProps.showAccessIndicator && typeof navbarProps.accessLimit === 'number',
+)
 
 /** 路由实例 */
 const router = useRouter()
@@ -777,6 +783,31 @@ onUnmounted(() => {
   background-clip: text;
   font-weight: var(--font-bold);
   color: var(--color-text-primary);
+}
+
+.mobile-top-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-2);
+}
+
+.mobile-access-indicator {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+}
+
+.access-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+  background: var(--glass-bg-light);
+  border: 1px solid var(--glass-border);
 }
 
 /* 导航链接 */
@@ -1401,7 +1432,8 @@ onUnmounted(() => {
     max-width: 400px !important;
     max-height: 80vh;
     overflow-y: auto;
-    z-index: 9999 !important; /* 提高z-index确保在最顶层 */
+    z-index: 9999 !important;
+    /* 提高z-index确保在最顶层 */
     box-shadow:
       0 20px 60px rgba(0, 0, 0, 0.3),
       0 0 0 100vmax rgba(0, 0, 0, 0.5) !important;
