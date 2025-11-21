@@ -143,12 +143,11 @@ import {
   ArrowLeft,
 } from 'lucide-vue-next'
 
-import GlassInput from '@/components/form/Input.vue'
-import GlassButton from '@/components/base/Button.vue'
+import GlassInput from '@/components/ui/input/Input.vue'
+import GlassButton from '@/components/ui/button/Button.vue'
 
-import { useAuthStore } from '@/stores/auth'
-import { useErrorHandler } from '@/utils/errorHandler'
-import { useToastStore } from '@/stores/toast'
+import { useAuthStore, useToastStore } from '@/stores'
+import { useErrorHandler } from '@/utils/error'
 
 const router = useRouter()
 const { t } = useI18n()

@@ -43,7 +43,7 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { ref, watch, nextTick, onMounted, onUnmounted, onActivated } from 'vue'
+import { ref, watch, nextTick, onMounted, onUnmounted, onActivated, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { SearchX, RotateCcw } from 'lucide-vue-next'
@@ -52,12 +52,13 @@ import MainLayout from '@/components/layout/MainLayout.vue'
 import FilterBar from '@/components/business/FilterBar.vue'
 import PostCard from '@/components/business/PostCard.vue'
 import Pagination from '@/components/business/Pagination.vue'
-import LoadingSpinner from '@/components/feedback/LoadingSpinner.vue'
-import GlassButton from '@/components/base/Button.vue'
+import LoadingSpinner from '@/components/ui/loading/LoadingSpinner.vue'
+import GlassButton from '@/components/ui/button/Button.vue'
 
-import { usePostsStore } from '@/stores/posts'
+import { usePostsStore } from '@/stores'
 import type { PostListParams } from '@/types'
 import { useWaterfallLayout } from '@/composables'
+import { logger } from '@/utils/logger'
 
 const route = useRoute()
 const router = useRouter()
@@ -102,6 +103,13 @@ onMounted(async () => {
   await updateLayout()
 })
 
+onBeforeUnmount(() => {
+  // 离开页面时重置筛选条件和posts，避免状态污染其他页面
+  postsStore.resetFilters()
+  postsStore.posts = []
+  logger.debug('页面卸载，已重置筛选条件和posts', { category: 'ExplorePage' })
+})
+
 onUnmounted(() => {
   // 清理工作由 composables 自动处理
 })
@@ -111,7 +119,7 @@ onActivated(async () => {
   if (postsGrid.value && posts.value.length > 0) {
     await nextTick()
     await updateLayout()
-    console.log('[ExplorePage] 页面激活，重新计算布局')
+    logger.debug('页面激活，重新计算布局', { category: 'ExplorePage' })
   }
 })
 

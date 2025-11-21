@@ -1,74 +1,30 @@
 <template>
   <MainLayout>
-    <div class="home-page">
-      <!-- Hero Section - Modern Design -->
-      <Transition name="hero-fade">
-        <section v-if="settingsStore.settings.showHeroSection" class="hero-section reduce-motion">
-          <div class="hero-background">
-            <div class="hero-gradient"></div>
-            <div class="hero-mesh"></div>
-          </div>
-
-          <div class="hero-container">
-            <button class="hero-close" @click="settingsStore.toggleSetting('showHeroSection')"
-              :aria-label="$t('common.close')">
-              <X :size="24" />
-            </button>
-
-            <div class="hero-content animate-fade-in-up">
-              <div class="hero-badge animate-scale-in stagger-1">
-                <span class="badge-dot"></span>
-                <span>{{ $t('app.tagline', 'Discover Amazing Content') }}</span>
-              </div>
-
-              <h1 class="hero-title animate-fade-in-up stagger-2">
-                {{ $t('app.name') }}
-              </h1>
-
-              <p class="hero-description animate-fade-in-up stagger-3">
-                {{ $t('app.description') }}
-              </p>
-
-              <div class="hero-actions animate-fade-in-up stagger-4">
-                <button class="btn-primary" @click="goToExplore">
-                  <Compass :size="20" />
-                  <span>{{ $t('nav.explore') }}</span>
-                  <ArrowRight :size="18" class="btn-icon" />
-                </button>
-                <button v-if="!isAuthenticated" class="btn-secondary" @click="goToLogin">
-                  <span>{{ $t('nav.login') }}</span>
-                </button>
-              </div>
-
-              <div class="hero-stats animate-fade-in-up stagger-5">
-                <div class="stat-item">
-                  <span class="stat-value">{{ formatNumber(totalPosts) }}</span>
-                  <span class="stat-label">{{ $t('post.total', 'Posts') }}</span>
-                </div>
-                <div class="stat-divider"></div>
-                <div class="stat-item">
-                  <span class="stat-value">{{ platforms.length }}</span>
-                  <span class="stat-label">{{ $t('common.platforms', 'Platforms') }}</span>
-                </div>
-                <div class="stat-divider"></div>
-                <div class="stat-item">
-                  <span class="stat-value">{{ $t('common.live', 'Live') }}</span>
-                  <span class="stat-label">{{ $t('common.updates', 'Updates') }}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-      </Transition>
+    <div ref="homeContainer" class="home-page">
+      <!-- Hero Section - GSAP 动画版本 -->
+      <HeroSection
+        :visible="settingsStore.settings.showHeroSection"
+        :title="$t('app.name')"
+        :description="$t('app.description')"
+        :badge-text="$t('app.tagline', 'Discover Amazing Content')"
+        :primary-button-text="$t('nav.explore')"
+        :secondary-button-text="$t('nav.login')"
+        :show-secondary-button="!isAuthenticated"
+        :stats="heroStats"
+        @close="settingsStore.toggleSetting('showHeroSection')"
+        @explore="goToExplore"
+        @secondary-action="goToLogin"
+      />
 
       <!-- Platform Stats - Modern Cards -->
       <section class="platforms-section reduce-motion">
+        <div class="section-header">
+          <h2>{{ $t('common.platforms', '平台统计') }}</h2>
+        </div>
         <StatCardGrid :autoplay="true" :autoplay-duration="3000">
           <StatCard v-for="platform in platforms" :key="platform" :icon="getPlatformIcon(platform)"
             :icon-color="getPlatformColor(platform)" :title="$t(`platform.${platform}`)"
-            :value="platformStats[platform] || 0" :label="platform === 'youtube' || platform === 'tiktok'
-              ? $t('post.videos')
-              : $t('post.title')
+            :value="platformStats[platform] || 0" :label="platform === 'youtube' || platform === 'tiktok' ? $t('post.videos') : $t('post.title')
               " :loading="isStatsLoading" />
           <template v-for="(platform, index) in platforms" :key="`slide-${index}`" #[`slide-${index}`]>
             <StatCard :icon="getPlatformIcon(platform)" :icon-color="getPlatformColor(platform)"
@@ -81,7 +37,7 @@
       </section>
 
       <!-- Latest Posts - Bento Grid Layout -->
-      <section class="posts-section reduce-motion">
+      <section class="posts-section reduce-motion parallax-slow">
         <div class="section-header">
           <h2>{{ $t('filter.latest') }}</h2>
           <RouterLink to="/explore">
@@ -125,6 +81,21 @@
   </MainLayout>
 </template>
 
+/**
+ * 首页组件
+ *
+ * 功能描述：
+ * - 展示应用首页，包含Hero区域、平台统计和最新帖子列表
+ * - 支持无限滚动加载更多帖子
+ * - 根据用户登录状态限制访问数量
+ * - 使用瀑布流布局展示帖子卡片
+ *
+ * 主要功能：
+ * - Hero区域展示应用介绍和统计信息
+ * - 平台统计卡片展示各平台帖子数量
+ * - 帖子列表支持无限滚动加载
+ * - 访问限制：未登录40条，已登录100条，管理员无限制
+ */
 <script lang="ts">
 export default {
   name: 'HomePage',
@@ -138,111 +109,181 @@ import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
 
 import {
-  Compass,
   ArrowRight,
   ImageIcon,
   Youtube,
   Twitter,
   Music2,
   Instagram,
-  X,
 } from 'lucide-vue-next'
 
 import MainLayout from '@/components/layout/MainLayout.vue'
-import GlassButton from '@/components/base/Button.vue'
-import LoadingSpinner from '@/components/feedback/LoadingSpinner.vue'
+import HeroSection from '@/components/layout/HeroSection.vue'
+import GlassButton from '@/components/ui/button/Button.vue'
+import LoadingSpinner from '@/components/ui/loading/LoadingSpinner.vue'
 import PostCard from '@/components/business/PostCard.vue'
-import AccessLimitBanner from '@/components/feedback/AccessLimitBanner.vue'
-import EmptyState from '@/components/feedback/EmptyState.vue'
-import StatCard from '@/components/data-display/StatCard.vue'
-import StatCardGrid from '@/components/data-display/StatCardGrid.vue'
+import AccessLimitBanner from '@/components/ui/banner/AccessLimitBanner.vue'
+import EmptyState from '@/components/ui/empty/EmptyState.vue'
+import StatCard from '@/components/ui/card/StatCard.vue'
+import StatCardGrid from '@/components/ui/card/StatCardGrid.vue'
 
-import { useAuthStore } from '@/stores/auth'
-import { useSettingsStore } from '@/stores/settings'
-import { usePostsStore } from '@/stores/posts'
+import { useAuthStore, useSettingsStore, usePostsStore } from '@/stores'
 import { useWaterfallLayout } from '@/composables'
 import { useInfiniteScroll } from '@/composables'
-import { PLATFORMS, PLATFORM_COLORS } from '@/types'
+import { useHomePageAnimation } from '@/composables/animation/useHomePageAnimation'
+import { PLATFORMS, PLATFORM_COLORS, type Post } from '@/types'
 import { statsApi } from '@/api/services'
 import { formatNumber } from '@/utils/format'
-import { useErrorHandler } from '@/utils/errorHandler'
+import { useErrorHandler } from '@/utils/error'
+import { logger } from '@/utils/logger'
 
+/** 路由实例 */
 const router = useRouter()
+/** 认证状态管理 */
 const authStore = useAuthStore()
+/** 设置状态管理 */
 const settingsStore = useSettingsStore()
+/** 帖子状态管理 */
 const postsStore = usePostsStore()
 
+/** 用户认证状态和用户信息 */
 const { isAuthenticated, user } = storeToRefs(authStore)
-const { posts, loading, lastListFromFallback } = storeToRefs(postsStore)
+/** 加载状态和离线回退标志 */
+const { loading, lastListFromFallback } = storeToRefs(postsStore)
 
-// 访问限制
+/** 首页动画系统 */
+const { container: homeContainer, refreshAnimations } = useHomePageAnimation()
+
+/** 主页使用独立的posts数组，不受explore页面筛选影响 */
+const posts = ref<Post[]>([])
+
+/**
+ * 访问限制计算属性
+ * 根据用户登录状态和角色返回不同的访问限制
+ * @returns 未登录：40条，已登录：100条，管理员：无限制
+ */
 const accessLimit = computed(() => {
-  if (!isAuthenticated.value) return 40 // 未登录：40条
-  if (user.value?.is_admin) return Infinity // 管理员：无限制
-  return 100 // 已登录：100条
+  if (!isAuthenticated.value) return 40
+  if (user.value?.is_admin) return Infinity
+  return 100
 })
 
-// 总帖子数（用于Hero统计）
+/**
+ * 总帖子数计算属性
+ * 用于Hero区域统计展示
+ * @returns 所有平台帖子数量总和
+ */
 const totalPosts = computed(() => {
   return Object.values(platformStats.value).reduce((sum, count) => sum + count, 0)
 })
 
-const platforms = PLATFORMS
-const platformStats = ref<Record<string, number>>({})
-const isStatsLoading = ref(true)
-const currentPage = ref(1)
-const hasMore = ref(true)
-const postsGrid = ref<HTMLElement | null>(null)
-const loadedPostsCount = ref(0) // 追踪已加载的卡片数量
+/**
+ * Hero统计数据
+ */
+const heroStats = computed(() => [
+  {
+    value: formatNumber(totalPosts.value),
+    label: t('post.total', 'Posts'),
+  },
+  {
+    value: platforms.length,
+    label: t('common.platforms', 'Platforms'),
+  },
+  {
+    value: t('common.live', 'Live'),
+    label: t('common.updates', 'Updates'),
+  },
+])
 
+/** 支持的平台列表 */
+const platforms = PLATFORMS
+/** 各平台帖子统计数据 */
+const platformStats = ref<Record<string, number>>({})
+/** 统计数据加载状态 */
+const isStatsLoading = ref(true)
+/** 当前页码 */
+const currentPage = ref(1)
+/** 是否还有更多数据 */
+const hasMore = ref(true)
+/** 帖子网格容器引用 */
+const postsGrid = ref<HTMLElement | null>(null)
+/** 已加载的卡片数量，用于追踪新增卡片 */
+const loadedPostsCount = ref(0)
+
+/** 国际化工具 */
 const { t } = useI18n()
+/** 错误处理工具 */
 const { handleError } = useErrorHandler('HomePage')
 
-// 使用轻量级瀑布流布局
+/**
+ * 瀑布流布局配置
+ * 使用轻量级瀑布流布局，支持响应式断点
+ */
 const { updateLayout, smoothUpdateLayout } = useWaterfallLayout(postsGrid, {
   columnGap: 16,
   rowGap: 16,
   breakpoints: {
-    1400: 4, // >= 1400px: 4列
-    1100: 3, // >= 1100px: 3列
-    769: 2, // >= 769px: 2列
-    0: 2, // < 769px: 2列
+    1400: 4,
+    1100: 3,
+    769: 2,
+    0: 2,
   },
 })
 
-// 无限滚动
+/** 初始加载完成标志，用于控制无限滚动启用时机 */
+const initialLoadComplete = ref(false)
+
+/**
+ * 无限滚动配置
+ * 当用户滚动到底部时自动加载更多帖子
+ */
 const { isLoading: isLoadingMore } = useInfiniteScroll({
   onLoadMore: async () => {
     if (posts.value.length >= accessLimit.value) {
-      console.debug('[InfiniteScroll] 已达到访问限制')
+      logger.debug('已达到访问限制', { category: 'HomePage' })
       hasMore.value = false
       return
     }
     if (!hasMore.value) {
-      console.debug('[InfiniteScroll] 没有更多数据')
+      logger.debug('没有更多数据', { category: 'HomePage' })
       return
     }
     await loadMore()
   },
   hasMore: () => hasMore.value && posts.value.length < accessLimit.value,
   threshold: 500,
-  enabled: true,
+  enabled: initialLoadComplete,
 })
 
 onMounted(async () => {
   try {
-    // 清空旧的posts数组，避免显示缓存数据
-    postsStore.posts = []
-
     // ✨ 优化：减少初始加载数量，提升首屏速度
     // 使用明确的参数，不修改全局 store filters，避免与 ExplorePage 冲突
-    await postsStore.fetchPosts({
+    const result = await postsStore.fetchPosts({
       page: currentPage.value,
       page_size: 6,
       sort_by: 'scraped_at',
       sort_order: 'desc',
       ignoreFilters: true,
     })
+
+    // ✨ 更新本地posts数组
+    if (result && result.items) {
+      posts.value = result.items
+    }
+
+    // 根据分页信息更新hasMore状态
+    if (result && result.page && result.pages) {
+      hasMore.value = result.page < result.pages
+      logger.debug('初始加载分页信息', {
+        category: 'HomePage',
+        page: result.page,
+        pages: result.pages,
+        hasMore: hasMore.value,
+      })
+    } else if (result && result.items && result.items.length === 0) {
+      hasMore.value = false
+    }
 
     // 记录初始加载的卡片数量
     await nextTick()
@@ -251,10 +292,16 @@ onMounted(async () => {
     // 更新瀑布流布局
     await updateLayout()
 
+    // 标记初始加载完成，启用无限滚动
+    initialLoadComplete.value = true
+    logger.debug('初始加载完成，启用无限滚动', { category: 'HomePage' })
+
     // 后台加载统计数据（非阻塞）
     loadStatsInBackground()
   } catch (error) {
     handleError(error, { customMessage: t('common.loadFailed', 'Failed to load data') })
+    // 即使失败也要启用无限滚动
+    initialLoadComplete.value = true
   }
 })
 
@@ -287,7 +334,7 @@ onActivated(async () => {
   if (postsGrid.value && posts.value.length > 0) {
     await nextTick()
     await updateLayout()
-    console.debug('[HomePage] 页面激活，重新计算布局')
+    logger.debug('页面激活，重新计算布局', { category: 'HomePage' })
   }
 })
 
@@ -304,8 +351,14 @@ const loadMore = async () => {
       page_size: 8,
       sort_by: 'scraped_at',
       sort_order: 'desc',
-      append: true, // 追加到现有列表
+      append: false, // ❌ 不使用append模式，手动追加到本地数组
+      ignoreFilters: true, // 忽略Explore页面的筛选状态
     })
+
+    // ✨ 手动追加到本地posts数组
+    if (result && result.items) {
+      posts.value = [...posts.value, ...result.items]
+    }
 
     // 使用pagination信息正确判断是否还有更多数据
     if (!result || result.items.length === 0) {
@@ -313,45 +366,54 @@ const loadMore = async () => {
     } else if (result.page && result.pages) {
       // 根据分页信息判断：当前页 >= 总页数时，没有更多数据
       hasMore.value = result.page < result.pages
-      console.debug(
-        `[HomePage] 分页信息: 当前页 ${result.page}/${result.pages}, hasMore: ${hasMore.value}`,
-      )
+      logger.debug('分页信息', {
+        category: 'HomePage',
+        page: result.page,
+        pages: result.pages,
+        hasMore: hasMore.value,
+      })
     }
-
-    // 等待 DOM 更新
-    await nextTick()
-
-    // 获取所有卡片，只对新卡片添加动画
-    if (postsGrid.value) {
-      const allCards = postsGrid.value.querySelectorAll('a.post-card')
-      const previousCount = loadedPostsCount.value
-
-      // 只对新增的卡片添加进入动画
-      for (let i = previousCount; i < allCards.length; i++) {
-        const card = allCards[i] as HTMLElement
-        card.classList.add('card-entering')
-      }
-
-      // 更新已加载数量
-      loadedPostsCount.value = allCards.length
-    }
-
-    // 使用平滑更新，减少现有卡片重排
-    await smoothUpdateLayout()
-
-    // 延迟后移除进入动画类
-    setTimeout(() => {
-      if (postsGrid.value) {
-        const cards = postsGrid.value.querySelectorAll('a.post-card.card-entering')
-        cards.forEach((card) => {
-          ; (card as HTMLElement).classList.remove('card-entering')
-        })
-      }
-    }, 600)
   } catch (error) {
-    handleError(error, { customMessage: t('post.loadMoreFailed', 'Failed to load more posts') })
-    currentPage.value-- // 恢复页码
+    // 加载失败时回退页码并显示错误
+    currentPage.value--
+    hasMore.value = false // 停止继续尝试
+    handleError(error, {
+      customMessage: t('error.api.fetchPosts'),
+      silent: false, // 显示通知
+    })
+    return // 直接返回，跳过布局更新
   }
+
+  // 等待 DOM 更新
+  await nextTick()
+
+  // 获取所有卡片，只对新卡片添加动画
+  if (postsGrid.value) {
+    const allCards = postsGrid.value.querySelectorAll('a.post-card')
+    const previousCount = loadedPostsCount.value
+
+    // 只对新增的卡片添加进入动画
+    for (let i = previousCount; i < allCards.length; i++) {
+      const card = allCards[i] as HTMLElement
+      card.classList.add('card-entering')
+    }
+
+    // 更新已加载数量
+    loadedPostsCount.value = allCards.length
+  }
+
+  // 使用平滑更新，减少现有卡片重排
+  await smoothUpdateLayout()
+
+  // 延迟后移除进入动画类
+  setTimeout(() => {
+    if (postsGrid.value) {
+      const cards = postsGrid.value.querySelectorAll('a.post-card.card-entering')
+      cards.forEach((card) => {
+        ; (card as HTMLElement).classList.remove('card-entering')
+      })
+    }
+  }, 600)
 }
 
 const goToExplore = () => {
@@ -383,90 +445,6 @@ const getPlatformIcon = (platform: string) => {
 
 <style scoped>
 @import '@/styles/pages/home.css';
-
-/* ========== Transitions ========== */
-.hero-fade-enter-active,
-.hero-fade-leave-active {
-  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.hero-fade-enter-from {
-  opacity: 0;
-  transform: translateY(-20px);
-}
-
-.hero-fade-leave-to {
-  opacity: 0;
-  transform: translateY(-20px);
-}
-
-/* Hero Section */
-.hero-section {
-  text-align: center;
-  padding: var(--spacing-xl) 0 var(--spacing-md) 0;
-}
-
-.hero-content {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: var(--spacing-3xl);
-  position: relative;
-}
-
-.hero-close-btn {
-  position: absolute;
-  top: var(--spacing-lg);
-  right: var(--spacing-lg);
-  width: 36px;
-  height: 36px;
-  border-radius: var(--radius-full);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--glass-bg);
-  backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--glass-border);
-  color: var(--color-text-secondary);
-  cursor: pointer;
-  transition: all var(--transition-base);
-  z-index: 10;
-}
-
-.hero-close-btn:hover {
-  background: rgba(139, 92, 246, 0.1);
-  border-color: var(--color-primary);
-  color: var(--color-primary);
-  transform: rotate(90deg) scale(1.1);
-}
-
-.hero-close-btn:active {
-  transform: rotate(90deg) scale(0.95);
-}
-
-.hero-title {
-  font-size: 4rem;
-  font-weight: var(--font-bold);
-  background: var(--gradient-primary);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  margin-bottom: var(--spacing-lg);
-}
-
-.hero-subtitle {
-  font-size: var(--text-xl);
-  color: var(--color-text-secondary);
-  margin-bottom: var(--spacing-2xl);
-  animation-delay: 0.1s;
-}
-
-.hero-actions {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--spacing-md);
-  animation-delay: 0.2s;
-}
 
 /* Stats Section */
 .platforms-section {
@@ -535,6 +513,14 @@ const getPlatformIcon = (platform: string) => {
   padding: var(--spacing-xl);
   color: var(--color-text-tertiary);
   font-size: var(--text-sm);
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.no-more-hint p {
+  margin: 0;
 }
 
 .offline-hint {

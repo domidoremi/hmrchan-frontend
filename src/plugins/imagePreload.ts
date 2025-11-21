@@ -4,7 +4,8 @@
  */
 
 import type { App } from 'vue'
-import { smartPreloadImages } from '@/utils/imageOptimizer'
+import { smartPreloadImages } from '@/utils/media'
+import logger from '@/utils/logger'
 
 export interface ImagePreloadPluginOptions {
   /**
@@ -69,7 +70,7 @@ function identifyCriticalImages(selectors: string[] = []): string[] {
         }
       })
     } catch (error) {
-      console.warn(`[ImagePreload] Invalid selector: ${selector}`, error)
+      logger.warn('[ImagePreload] Invalid selector', { selector, error })
     }
   })
 
@@ -108,7 +109,7 @@ function shouldPreload(wifiOnly: boolean = false): boolean {
   if ('connection' in navigator) {
     const conn = (navigator as { connection?: NetworkInformation }).connection
     if (conn?.saveData) {
-      console.log('[ImagePreload] Data saver enabled, skipping preload')
+      logger.info('[ImagePreload] Data saver enabled, skipping preload')
       return false
     }
 
@@ -116,7 +117,7 @@ function shouldPreload(wifiOnly: boolean = false): boolean {
     if (wifiOnly) {
       const type = conn?.type
       if (type !== 'wifi' && type !== 'ethernet') {
-        console.log('[ImagePreload] Not on WiFi, skipping preload')
+        logger.info('[ImagePreload] Not on WiFi, skipping preload')
         return false
       }
     }
@@ -124,7 +125,7 @@ function shouldPreload(wifiOnly: boolean = false): boolean {
     // 检查网络速度
     const effectiveType = conn?.effectiveType
     if (effectiveType === 'slow-2g' || effectiveType === '2g') {
-      console.log('[ImagePreload] Slow connection, skipping preload')
+      logger.info('[ImagePreload] Slow connection, skipping preload')
       return false
     }
   }
@@ -164,16 +165,16 @@ export const imagePreloadPlugin = {
             const criticalImages = identifyCriticalImages(criticalSelectors)
 
             if (criticalImages.length > 0) {
-              console.log(`[ImagePreload] Preloading ${criticalImages.length} critical images`)
+              logger.info(`[ImagePreload] Preloading ${criticalImages.length} critical images`)
 
               smartPreloadImages(criticalImages, {
                 priority,
                 maxConcurrent,
                 onProgress: (loaded, total) => {
-                  console.log(`[ImagePreload] Progress: ${loaded}/${total}`)
+                  logger.info(`[ImagePreload] Progress: ${loaded}/${total}`)
                 },
               }).catch((error) => {
-                console.warn('[ImagePreload] Failed to preload images:', error)
+                logger.warn('[ImagePreload] Failed to preload images', { error })
               })
             }
           }
@@ -198,7 +199,7 @@ export const imagePreloadPlugin = {
       })
     }
 
-    console.log('[ImagePreload] Plugin installed')
+    logger.info('[ImagePreload] Plugin installed')
   },
 }
 
