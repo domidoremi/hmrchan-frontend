@@ -1,6 +1,6 @@
 <template>
   <!-- 不再在页面上显示，改用Toast通知 -->
-  <Teleport to=".main-layout">
+  <Teleport to="body">
     <div class="access-limit-indicator" :style="{ bottom: dynamicBottom }">
       <!-- 小气泡指示器 -->
       <Transition name="fade">

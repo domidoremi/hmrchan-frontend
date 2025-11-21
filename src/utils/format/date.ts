@@ -33,7 +33,10 @@ async function loadDayjsLocale(locale: SupportedLocale): Promise<void> {
 
   try {
     if (dayjsLocale !== 'en') {
-      await import(`dayjs/locale/${dayjsLocale}`)
+      await import(
+        /* @vite-ignore */
+        `dayjs/locale/${dayjsLocale}`
+      )
       loadedLocales.add(dayjsLocale)
     }
   } catch (error) {
