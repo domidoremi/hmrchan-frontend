@@ -1,9 +1,10 @@
 /**
  * Service Worker - 三层缓存策略
- * 版本: 1.0.0
+ * 版本: 2.0.0
+ * 更新: 禁用帖子详情API缓存，修复media_files缺失问题
  */
 
-const CACHE_VERSION = 'v1'
+const CACHE_VERSION = 'v2'
 const CACHE_NAMES = {
   static: `hmrchan-static-${CACHE_VERSION}`,
   api: `hmrchan-api-${CACHE_VERSION}`,
@@ -24,17 +25,17 @@ const MEDIA_CACHE_CONFIG = {
 // 安装阶段：预缓存静态资源
 // ============================================
 self.addEventListener('install', (event) => {
-  console.log('[SW] Installing...')
+  // console.log('[SW] Installing...')
 
   event.waitUntil(
     caches
       .open(CACHE_NAMES.static)
       .then((cache) => {
-        console.log('[SW] Caching static assets')
+        // console.log('[SW] Caching static assets')
         return cache.addAll(STATIC_ASSETS)
       })
       .then(() => {
-        console.log('[SW] Install complete')
+        // console.log('[SW] Install complete')
         return self.skipWaiting() // 立即激活新的SW
       })
       .catch((error) => {
@@ -47,7 +48,7 @@ self.addEventListener('install', (event) => {
 // 激活阶段：清理旧缓存
 // ============================================
 self.addEventListener('activate', (event) => {
-  console.log('[SW] Activating...')
+  // console.log('[SW] Activating...')
 
   event.waitUntil(
     caches
@@ -60,13 +61,13 @@ self.addEventListener('activate', (event) => {
               return name.startsWith('hmrchan-') && !Object.values(CACHE_NAMES).includes(name)
             })
             .map((name) => {
-              console.log('[SW] Deleting old cache:', name)
+              // console.log('[SW] Deleting old cache:', name)
               return caches.delete(name)
             }),
         )
       })
       .then(() => {
-        console.log('[SW] Activation complete')
+        // console.log('[SW] Activation complete')
         return self.clients.claim() // 立即控制所有页面
       }),
   )
@@ -91,8 +92,11 @@ self.addEventListener('fetch', (event) => {
   } else if (isMediaRequest(url)) {
     // 媒体文件: Cache First with Network Fallback
     event.respondWith(cacheFirstMedia(request))
+  } else if (isPostDetailRequest(url)) {
+    // 🔧 帖子详情: Network Only（禁用缓存，避免使用旧数据）
+    event.respondWith(fetch(request))
   } else if (isApiRequest(url)) {
-    // API请求: Network First with Cache Fallback
+    // 其他API请求: Network First with Cache Fallback
     event.respondWith(networkFirstApi(request))
   } else {
     // 其他: Network Only
@@ -104,7 +108,7 @@ self.addEventListener('fetch', (event) => {
 // 后台同步：离线操作队列
 // ============================================
 self.addEventListener('sync', (event) => {
-  console.log('[SW] Background sync:', event.tag)
+  // console.log('[SW] Background sync:', event.tag)
 
   if (event.tag === 'sync-offline-actions') {
     event.waitUntil(syncOfflineActions())
@@ -139,7 +143,8 @@ self.addEventListener('message', (event) => {
       break
 
     default:
-      console.log('[SW] Unknown message:', type)
+      // console.log('[SW] Unknown message:', type)
+      break
   }
 })
 
@@ -155,11 +160,11 @@ async function cacheFirst(request, cacheName) {
   const cached = await cache.match(request)
 
   if (cached) {
-    console.log('[SW] Cache hit:', request.url)
+    // console.log('[SW] Cache hit:', request.url)
     return cached
   }
 
-  console.log('[SW] Cache miss, fetching:', request.url)
+  // console.log('[SW] Cache miss, fetching:', request.url)
   try {
     const response = await fetch(request)
     if (response.ok) {
@@ -289,6 +294,13 @@ function isMediaRequest(url) {
 
 function isApiRequest(url) {
   return url.pathname.startsWith('/api/')
+}
+
+function isPostDetailRequest(url) {
+  // 匹配 /api/v1/posts/{uuid} 格式
+  // 不包括 /api/v1/posts?... （列表查询）
+  const postDetailPattern = /^\/api\/v1\/posts\/[0-9a-f-]{36}$/i
+  return postDetailPattern.test(url.pathname)
 }
 
 /**

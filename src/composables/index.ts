@@ -1,14 +1,18 @@
 /**
- * Composables
- * Reusable composition functions
+ * 组合式函数集合
  *
- * 📁 新的组织结构：
- * - core/     核心功能（响应式、国际化、性能、防抖节流）
- * - ui/       UI交互（动画、模态框、Toast、快捷键）
- * - form/     表单相关（验证、自动保存、输入法）
- * - data/     数据处理（分页、搜索、乐观更新）
- * - media/    媒体处理（图片、视频、懒加载、预加载）
- * - business/ 业务逻辑（收藏、帖子卡片）
+ * 功能描述：
+ * - 提供可复用的组合式函数
+ * - 按功能模块组织，便于维护和查找
+ * - 统一导出接口，简化导入路径
+ *
+ * 目录结构：
+ * - core/     核心功能（响应式、国际化、性能监控、防抖节流、事件监听）
+ * - ui/       UI 交互（动画、模态框、Toast、无障碍、剪贴板、快捷键）
+ * - form/     表单相关（验证、自动保存、输入法检测）
+ * - data/     数据处理（分页、搜索、乐观更新、无限滚动）
+ * - media/    媒体处理（图片上传、懒加载、预加载、虚拟滚动、瀑布流）
+ * - business/ 业务逻辑（收藏管理、帖子卡片）
  */
 
 // ==================== Core 核心功能 ====================
@@ -36,6 +40,7 @@ export type { KeyboardShortcut } from './core/useEventListener'
 export { useI18nFallback } from './core/useI18nFallback'
 export { useI18nOptimized } from './core/useI18nOptimized'
 export { usePerformanceMonitoring } from './core/usePerformanceMonitoring'
+export { initAppState } from './core/useAppInit'
 
 // ==================== UI 交互 ====================
 export { useAnimation } from './ui/useAnimation'

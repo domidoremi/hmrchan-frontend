@@ -5,7 +5,7 @@
 import { computed, type ComputedRef } from 'vue'
 import type { Post } from '@/types'
 import { formatNumber, formatDuration, formatRelativeTime, truncateText } from '@/utils/format'
-import { resolveMediaUrl } from '@/utils/url'
+import { resolveMediaUrl } from '@/utils/format'
 
 export interface PostCardData {
   thumbnailUrl: ComputedRef<string | undefined>
