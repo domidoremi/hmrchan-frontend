@@ -79,9 +79,9 @@ const apiClient: KyInstance = ky.create({
   hooks: {
     beforeRequest: [
       (request) => {
-        /** 确保请求使用 HTTPS 协议 */
+        /** 确保请求使用 HTTPS 协议 (仅生产环境且指向正式 API 域名时生效) */
         const url = request.url
-        if (url.startsWith('http://')) {
+        if (!import.meta.env.DEV && url.startsWith('http://') && url.includes('api.momichan.xyz')) {
           request = new Request(url.replace('http://', 'https://'), request)
           logger.warn('URL was HTTP, forced to HTTPS', { url })
         }
