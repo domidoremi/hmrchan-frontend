@@ -394,10 +394,10 @@ import {
 } from 'lucide-vue-next'
 
 import MainLayout from '@/components/layout/MainLayout.vue'
-import GlassInput from '@/components/form/Input.vue'
-import { useToastStore } from '@/stores/toast'
-import { errorMonitor } from '@/utils/errorMonitor'
-import { useErrorHandler } from '@/utils/errorHandler'
+import GlassInput from '@/components/ui/input/Input.vue'
+import { useToastStore } from '@/stores'
+import { errorMonitor } from '@/utils/error'
+import { useErrorHandler } from '@/utils/error'
 
 const router = useRouter()
 const toastStore = useToastStore()

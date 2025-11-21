@@ -7,7 +7,7 @@
         <div class="profile-info">
           <div class="avatar-container">
             <div class="avatar">
-              <img :src="avatarUrl" :alt="user?.username || 'User'" />
+              <img :src="avatarUrl" :alt="user?.username || 'User'" @error="handleAvatarError" />
             </div>
             <button class="avatar-upload-btn" @click="handleAvatarUpload" :aria-label="$t('profile.uploadAvatar')">
               <Camera :size="16" />
@@ -88,7 +88,7 @@
 
           <div class="info-item">
             <label>{{ $t('profile.joinedAt') }}</label>
-            <div class="info-value">{{ formatDate(user?.created_at) }}</div>
+            <div class="info-value">{{ formattedJoinedAt }}</div>
           </div>
 
           <div class="info-item">
@@ -209,7 +209,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import {
@@ -230,20 +230,21 @@ import {
 } from 'lucide-vue-next'
 
 import MainLayout from '@/components/layout/MainLayout.vue'
-import GlassButton from '@/components/base/Button.vue'
-import GlassInput from '@/components/form/Input.vue'
-import GlassModal from '@/components/feedback/Modal.vue'
-import StatCard from '@/components/data-display/StatCard.vue'
+import GlassButton from '@/components/ui/button/Button.vue'
+import GlassInput from '@/components/ui/input/Input.vue'
+import GlassModal from '@/components/ui/modal/Modal.vue'
+import StatCard from '@/components/ui/card/StatCard.vue'
 
-import { useAuthStore } from '@/stores/auth'
+import { useAuthStore, useToastStore } from '@/stores'
 import { uploadApi } from '@/api/services'
 import { api } from '@/api/client'
-import { useErrorHandler } from '@/utils/errorHandler'
-import { useToastStore } from '@/stores/toast'
+import { useErrorHandler } from '@/utils/error'
 import { formatRelativeTime } from '@/utils/format'
 import { getUserAvatar } from '@/utils/avatar'
 import { useImageUpload } from '@/composables'
 import { useI18n } from 'vue-i18n'
+import { isAxiosError } from '@/utils/typeGuards'
+import { logger } from '@/utils/logger'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -256,14 +257,44 @@ const toastStore = useToastStore()
 const avatarRefreshKey = ref(Date.now())
 
 // 头像URL（含默认头像，自动刷新缓存）
-const avatarUrl = computed(() => {
-  const url = getUserAvatar(user.value, 120)
-  // 如果是上传的头像（非默认头像），添加时间戳防止缓存
-  if (user.value?.avatar_url && url.startsWith('/uploads/')) {
-    return `${url}?t=${avatarRefreshKey.value}`
-  }
-  return url
-})
+const avatarUrl = ref('')
+const avatarLoadError = ref(false)
+
+// 计算头像URL
+watch(
+  [() => user.value, avatarRefreshKey],
+  () => {
+    const url = getUserAvatar(user.value, 120)
+    // 如果是上传的头像（非默认头像），添加时间戳防止缓存
+    if (user.value?.avatar_url && url.startsWith('/uploads/')) {
+      avatarUrl.value = `${url}?t=${avatarRefreshKey.value}`
+    } else {
+      avatarUrl.value = url
+    }
+    avatarLoadError.value = false
+  },
+  { immediate: true },
+)
+
+// 头像加载失败时的备用方案
+function handleAvatarError() {
+  if (avatarLoadError.value) return // 避免无限循环
+
+  avatarLoadError.value = true
+  const name = user.value?.full_name || user.value?.username || 'User'
+
+  // 使用base64编码的本地SVG作为备用
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="120" height="120">
+      <rect width="120" height="120" fill="#8B5CF6"/>
+      <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle"
+            font-family="Arial" font-size="48" font-weight="bold" fill="#ffffff">
+        ${name.charAt(0).toUpperCase()}
+      </text>
+    </svg>
+  `
+  avatarUrl.value = `data:image/svg+xml;base64,${btoa(svg)}`
+}
 
 // 头像上传
 const { uploading: uploadingAvatar, selectImage } = useImageUpload({
@@ -303,6 +334,9 @@ const deleteForm = ref({
 const favoritesCount = ref(0)
 const viewsCount = ref(0)
 
+// 格式化后的注册时间
+const formattedJoinedAt = ref<string>('')
+
 const joinedDays = computed(() => {
   if (!user.value?.created_at) return 0
   const created = new Date(user.value.created_at)
@@ -310,6 +344,25 @@ const joinedDays = computed(() => {
   const diff = now.getTime() - created.getTime()
   return Math.floor(diff / (1000 * 60 * 60 * 24))
 })
+
+// 异步格式化注册时间
+watch(
+  () => user.value?.created_at,
+  async (createdAt) => {
+    if (createdAt) {
+      try {
+        const locale = (localStorage.getItem('language') as 'en' | 'zh-CN' | 'ja') || 'zh-CN'
+        formattedJoinedAt.value = await formatRelativeTime(createdAt, locale)
+      } catch (error) {
+        logger.error('Failed to format date', { category: 'ProfilePage' }, error)
+        formattedJoinedAt.value = new Date(createdAt).toLocaleDateString()
+      }
+    } else {
+      formattedJoinedAt.value = t('profile.notSet')
+    }
+  },
+  { immediate: true },
+)
 
 onMounted(() => {
   if (!user.value) {
@@ -329,10 +382,15 @@ async function loadStats() {
   try {
     // 获取用户统计数据
     const response = await api.get(`/users/${user.value?.id}/stats`, { cache: false })
-    favoritesCount.value = response.favorites_count || 0
-    viewsCount.value = response.views_count || 0
 
-    console.debug('[ProfilePage] User stats loaded:', response)
+    // Type guard for response object
+    if (response && typeof response === 'object' && 'favorites_count' in response) {
+      const statsResponse = response as { favorites_count?: number; views_count?: number }
+      favoritesCount.value = statsResponse.favorites_count || 0
+      viewsCount.value = statsResponse.views_count || 0
+    }
+
+    logger.debug('User stats loaded', { category: 'ProfilePage' }, response)
   } catch (error) {
     handleError(error, { silent: true, customMessage: 'Failed to load user stats' })
     // 加载失败时使用默认值
@@ -357,9 +415,12 @@ async function handleUpdateProfile() {
     toastStore.success(t('profile.profileUpdated'))
     showEditModal.value = false
   } catch (error) {
-    const errorMsg =
-      (error as { response?: { data?: { detail?: string } } }).response?.data?.detail ||
-      t('profile.profileUpdateFailed')
+    let errorMsg = t('profile.profileUpdateFailed')
+
+    if (isAxiosError(error) && error.response.data?.detail) {
+      errorMsg = error.response.data.detail
+    }
+
     handleError(error, { customMessage: errorMsg })
   } finally {
     updating.value = false
@@ -401,9 +462,12 @@ async function handleChangePassword() {
       router.push('/login')
     }, 1500)
   } catch (error) {
-    const errorMsg =
-      (error as { response?: { data?: { detail?: string } } }).response?.data?.detail ||
-      t('profile.passwordChangeFailed')
+    let errorMsg = t('profile.passwordChangeFailed')
+
+    if (isAxiosError(error) && error.response.data?.detail) {
+      errorMsg = error.response.data.detail
+    }
+
     handleError(error, { customMessage: errorMsg })
   } finally {
     changingPassword.value = false
@@ -421,24 +485,23 @@ async function handleAvatarUpload() {
 
     // 上传到服务器
     const response = await uploadApi.uploadAvatar(file)
-    console.log('✅ Avatar uploaded:', response)
+    logger.info('Avatar uploaded', { category: 'ProfilePage' }, response)
 
     // 更新用户信息（强制刷新）
     await authStore.fetchCurrentUser()
 
     // 更新刷新key，触发图片重新加载
     avatarRefreshKey.value = Date.now()
-    console.log('🔄 Force refresh avatar with new key:', avatarRefreshKey.value)
+    logger.debug('Force refresh avatar with new key', { category: 'ProfilePage', key: avatarRefreshKey.value })
 
     toastStore.success(t('profile.avatarUploadSuccess'))
   } catch (error: unknown) {
-    console.error('❌ Avatar upload error:', error)
+    logger.error('Avatar upload error', { category: 'ProfilePage' }, error)
 
     let errorMsg = t('profile.avatarUploadFailed')
 
-    // 处理不同类型的错误
-    const err = error as { response?: { data?: { detail?: string } }; message?: string }
-    if (err.response) {
+    // 处理不同类型的错误 - use type guard
+    if (isAxiosError(error)) {
       // 服务器返回了响应
       const status = error.response.status
 
@@ -451,9 +514,12 @@ async function handleAvatarUpload() {
       } else if (error.response.data?.detail) {
         errorMsg = error.response.data.detail
       }
-    } else if (error.message === 'Network Error') {
-      // 网络错误（包括CORS）
-      errorMsg = t('profile.networkError') || '网络连接失败，请检查网络或稍后重试'
+    } else if (error && typeof error === 'object' && 'message' in error) {
+      const err = error as { message: string }
+      if (err.message === 'Network Error') {
+        // 网络错误（包括CORS）
+        errorMsg = t('profile.networkError') || '网络连接失败，请检查网络或稍后重试'
+      }
     }
 
     toastStore.error(errorMsg)
@@ -477,16 +543,19 @@ async function handleDeleteAccount() {
   deleting.value = true
   try {
     await api.delete(`/users/${user.value?.id}`, {
-      data: { password: deleteForm.value.password },
+      json: { password: deleteForm.value.password },
     })
 
     toastStore.success(t('profile.accountDeleted'))
     authStore.logout()
     router.push('/')
   } catch (error) {
-    const errorMsg =
-      (error as { response?: { data?: { detail?: string } } }).response?.data?.detail ||
-      t('profile.accountDeleteFailed')
+    let errorMsg = t('profile.accountDeleteFailed')
+
+    if (isAxiosError(error) && error.response.data?.detail) {
+      errorMsg = error.response.data.detail
+    }
+
     handleError(error, { customMessage: errorMsg })
   } finally {
     deleting.value = false
@@ -497,11 +566,6 @@ function handleLogout() {
   authStore.logout()
   toastStore.success(t('auth.logoutSuccess'))
   router.push('/')
-}
-
-function formatDate(dateStr: string | undefined) {
-  if (!dateStr) return t('profile.notSet')
-  return formatRelativeTime(dateStr)
 }
 </script>
 

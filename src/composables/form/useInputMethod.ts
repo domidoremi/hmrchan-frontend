@@ -108,13 +108,16 @@ export function useInputMethod() {
       )
     } else {
       // Fallback to touch and mouse events
-      ;(window as Window)
-        .addEventListener('touchstart', handleTouchStart as (event: Event) => void, {
+      ;(window as Window).addEventListener(
+        'touchstart',
+        handleTouchStart as (event: Event) => void,
+        {
           passive: true,
-        })(window as Window)
-        .addEventListener('mousemove', handleMouseMove as (event: Event) => void, {
-          passive: true,
-        })
+        },
+      )
+      ;(window as Window).addEventListener('mousemove', handleMouseMove as (event: Event) => void, {
+        passive: true,
+      })
     }
   }
 
@@ -130,12 +133,14 @@ export function useInputMethod() {
         handlePointerDown as (event: Event) => void,
       )
     } else {
-      ;(window as Window)
-        .removeEventListener(
-          'touchstart',
-          handleTouchStart as (event: Event) => void,
-        )(window as Window)
-        .removeEventListener('mousemove', handleMouseMove as (event: Event) => void)
+      ;(window as Window).removeEventListener(
+        'touchstart',
+        handleTouchStart as (event: Event) => void,
+      )
+      ;(window as Window).removeEventListener(
+        'mousemove',
+        handleMouseMove as (event: Event) => void,
+      )
     }
   }
 

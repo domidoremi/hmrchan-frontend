@@ -5,7 +5,7 @@
 
 import { computed } from 'vue'
 import gsap from 'gsap'
-import { useSettingsStore } from '@/stores/settings'
+import { useSettingsStore } from '@/stores'
 
 export interface AnimationOptions {
   duration?: number
