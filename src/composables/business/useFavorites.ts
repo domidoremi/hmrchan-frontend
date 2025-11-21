@@ -288,6 +288,11 @@ export function useFavorites() {
    * 检查是否已收藏
    */
   const isFavorited = async (postId: UUID): Promise<boolean> => {
+    // 未登录用户：直接返回 false，不调用远程 /favorites/check 接口
+    if (!authStore.isAuthenticated) {
+      return false
+    }
+
     try {
       return await favoritesApi.isFavorited(postId)
     } catch {
