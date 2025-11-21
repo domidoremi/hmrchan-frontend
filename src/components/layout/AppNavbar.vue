@@ -193,7 +193,8 @@
       </RouterLink>
 
       <div v-if="showAccessIndicator" class="mobile-access-indicator">
-        <button type="button" class="access-chip">
+        <button type="button" class="access-chip"
+          :aria-label="$t('aria.accessLimit', { current: accessCurrentDisplay, limit: accessLimitDisplay })">
           <span class="access-chip-count">
             {{ accessCurrentDisplay }} / {{ accessLimitDisplay }}
           </span>
@@ -266,7 +267,8 @@
   <!-- 用户菜单弹出层（仅移动端） -->
   <Transition name="modal">
     <div v-if="showUserMenu && isAuthenticated && isMobile" class="mobile-user-modal" @click="showUserMenu = false">
-      <div class="mobile-user-content glass-card" @click.stop>
+      <div class="mobile-user-content glass-card" role="dialog" aria-modal="true" :aria-label="$t('aria.userMenu')"
+        @click.stop>
         <div class="mobile-user-header">
           <div class="user-avatar-large">
             <img :src="userAvatarUrl" :alt="user?.username" />
@@ -303,7 +305,8 @@
   <!-- 离线队列面板（移动端） -->
   <Transition name="modal">
     <div v-if="showQueuePanel && isMobile" class="mobile-user-modal" @click="showQueuePanel = false">
-      <div class="mobile-user-content glass-card" @click.stop>
+      <div class="mobile-user-content glass-card" role="dialog" aria-modal="true" :aria-label="$t('offline.queueTitle')"
+        @click.stop>
         <div class="queue-header">
           <span class="queue-title">{{ $t('offline.queueTitle') }}</span>
         </div>
@@ -329,7 +332,8 @@
   <!-- 快捷设置面板（移动端） -->
   <Transition name="modal">
     <div v-if="showSettingsPanel && isMobile" class="mobile-user-modal" @click="showSettingsPanel = false">
-      <div class="mobile-user-content glass-card" @click.stop>
+      <div class="mobile-user-content glass-card" role="dialog" aria-modal="true" :aria-label="$t('nav.settings')"
+        @click.stop>
         <div class="settings-group">
           <div class="settings-group-title">{{ $t('settings.theme') }}</div>
           <div class="settings-theme-options">
