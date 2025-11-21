@@ -2,7 +2,8 @@
  * 无限滚动组合式函数
  * 用于实现列表的懒加载和分页
  */
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, watch, onMounted, onUnmounted, type Ref, unref } from 'vue'
+import logger from '@/utils/logger'
 
 interface UseInfiniteScrollOptions {
   /**
@@ -31,7 +32,7 @@ interface UseInfiniteScrollOptions {
    * 是否启用（可以用于条件性禁用）
    * @default true
    */
-  enabled?: boolean
+  enabled?: boolean | Ref<boolean>
 }
 
 export function useInfiniteScroll(options: UseInfiniteScrollOptions) {
@@ -43,7 +44,14 @@ export function useInfiniteScroll(options: UseInfiniteScrollOptions) {
   let timeoutId: number | null = null
 
   const checkScroll = () => {
-    if (!enabled || isLoading.value || !hasMore()) {
+    const isEnabled = unref(enabled)
+    const hasMoreData = hasMore()
+
+    logger.debug(
+      `[InfiniteScroll] checkScroll - enabled: ${isEnabled}, isLoading: ${isLoading.value}, hasMore: ${hasMoreData}`,
+    )
+
+    if (!isEnabled || isLoading.value || !hasMoreData) {
       return
     }
 
@@ -55,8 +63,13 @@ export function useInfiniteScroll(options: UseInfiniteScrollOptions) {
     const distanceToBottom = scrollHeight - (scrollTop + clientHeight)
     isNearBottom.value = distanceToBottom < threshold
 
+    logger.debug(
+      `[InfiniteScroll] Scroll check - distance to bottom: ${distanceToBottom}px, threshold: ${threshold}px, near bottom: ${isNearBottom.value}`,
+    )
+
     // 如果接近底部，触发加载
     if (isNearBottom.value) {
+      logger.debug('[InfiniteScroll] Near bottom, triggering loadMore...')
       loadMore()
     }
   }
@@ -71,7 +84,7 @@ export function useInfiniteScroll(options: UseInfiniteScrollOptions) {
     try {
       await onLoadMore()
     } catch (error) {
-      console.error('Failed to load more:', error)
+      logger.error('Failed to load more', { error })
     } finally {
       isLoading.value = false
     }
@@ -86,16 +99,54 @@ export function useInfiniteScroll(options: UseInfiniteScrollOptions) {
     timeoutId = window.setTimeout(checkScroll, delay)
   }
 
-  onMounted(() => {
-    if (enabled) {
-      window.addEventListener('scroll', handleScroll, { passive: true })
-      // 初始检查（可能初始内容就不够一屏）
+  let isListenerAttached = false
+
+  const attachListener = () => {
+    if (isListenerAttached) return
+    logger.debug('[InfiniteScroll] Attaching scroll listener')
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    isListenerAttached = true
+    // 初始检查（可能初始内容就不够一屏）
+    setTimeout(() => {
+      logger.debug('[InfiniteScroll] Initial scroll check after attach')
       checkScroll()
+    }, 100)
+  }
+
+  const detachListener = () => {
+    if (!isListenerAttached) return
+    logger.debug('[InfiniteScroll] Detaching scroll listener')
+    window.removeEventListener('scroll', handleScroll)
+    isListenerAttached = false
+  }
+
+  onMounted(() => {
+    const isEnabled = unref(enabled)
+    logger.debug(
+      `[InfiniteScroll] Mounted - enabled: ${isEnabled}, hasMore: ${hasMore()}, threshold: ${threshold}px`,
+    )
+    if (isEnabled) {
+      attachListener()
+    }
+
+    // Watch for changes in enabled state
+    if (typeof enabled !== 'boolean') {
+      watch(
+        () => unref(enabled),
+        (newEnabled) => {
+          logger.debug(`[InfiniteScroll] Enabled changed to: ${newEnabled}`)
+          if (newEnabled) {
+            attachListener()
+          } else {
+            detachListener()
+          }
+        },
+      )
     }
   })
 
   onUnmounted(() => {
-    window.removeEventListener('scroll', handleScroll)
+    detachListener()
     if (timeoutId) {
       clearTimeout(timeoutId)
     }

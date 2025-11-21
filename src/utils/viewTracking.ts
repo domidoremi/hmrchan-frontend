@@ -5,6 +5,7 @@
  */
 
 import type { UUID } from '@/types'
+import { logger } from './logger'
 
 const STORAGE_KEY = 'viewed_posts'
 const MAX_STORED_POSTS = 1000 // 最多存储1000条记录
@@ -25,7 +26,7 @@ function getViewedPosts(): Map<UUID, number> {
     const data: ViewedPost[] = JSON.parse(stored)
     return new Map(data.map((item) => [item.id, item.timestamp]))
   } catch (error) {
-    console.error('Failed to load viewed posts:', error)
+    logger.error('Failed to load viewed posts', { category: 'ViewTracking' }, error)
     return new Map()
   }
 }
@@ -50,7 +51,7 @@ function saveViewedPosts(viewedPosts: Map<UUID, number>) {
 
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
   } catch (error) {
-    console.error('Failed to save viewed posts:', error)
+    logger.error('Failed to save viewed posts', { category: 'ViewTracking' }, error)
   }
 }
 
@@ -78,7 +79,7 @@ export function clearViewedPosts(): void {
   try {
     localStorage.removeItem(STORAGE_KEY)
   } catch (error) {
-    console.error('Failed to clear viewed posts:', error)
+    logger.error('Failed to clear viewed posts', { category: 'ViewTracking' }, error)
   }
 }
 

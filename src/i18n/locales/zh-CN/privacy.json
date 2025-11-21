@@ -1,0 +1,40 @@
+{
+  "privacy": {
+    "title": "隐私政策",
+    "lastUpdated": "最后更新",
+    "questions": "如有问题，请联系我们。",
+    "managePreferences": "管理偏好设置",
+    "intro": {
+      "title": "简介",
+      "content": "<p>欢迎使用 himeri club！我们重视您的隐私，本政策说明我们如何收集、使用和保护您的个人信息。</p><p>使用我们的服务即表示您同意本隐私政策中描述的做法。</p>"
+    },
+    "dataCollection": {
+      "title": "我们收集的信息",
+      "content": "<p>我们收集以下类型的信息：</p><ul><li><strong>账户信息</strong>：用户名、邮箱地址、头像（如果您选择提供）</li><li><strong>使用数据</strong>：浏览历史、搜索查询、收藏的内容</li><li><strong>技术数据</strong>：IP 地址、浏览器类型、设备信息、Cookie</li><li><strong>偏好设置</strong>：您的自定义设置和偏好</li></ul>"
+    },
+    "cookies": {
+      "title": "Cookie 使用",
+      "content": "<p>我们使用以下类型的 Cookie：</p><ul><li><strong>必需 Cookie</strong>：确保网站正常运行（无法禁用）</li><li><strong>功能 Cookie</strong>：记住您的偏好设置</li><li><strong>分析 Cookie</strong>：了解网站使用情况（需要您的同意）</li><li><strong>性能 Cookie</strong>：优化网站性能（需要您的同意）</li></ul><p>您可以在偏好设置中管理 Cookie。</p>"
+    },
+    "dataUse": {
+      "title": "信息使用方式",
+      "content": "<p>我们使用收集的信息用于：</p><ul><li>提供和改进我们的服务</li><li>个性化您的体验</li><li>分析网站使用情况</li><li>发送重要通知和更新</li><li>防止欺诈和滥用</li></ul>"
+    },
+    "dataSharing": {
+      "title": "信息共享",
+      "content": "<p>我们<strong>不会</strong>出售您的个人信息。我们可能在以下情况下共享信息：</p><ul><li>经您明确同意</li><li>遵守法律要求</li><li>与我们的服务提供商（他们受保密协议约束）</li></ul>"
+    },
+    "yourRights": {
+      "title": "您的权利",
+      "content": "<p>您有权：</p><ul><li>访问和下载您的个人数据</li><li>更正不准确的信息</li><li>删除您的账户和数据</li><li>反对某些数据处理</li><li>随时撤回同意</li></ul><p>您可以在个人中心管理这些设置。</p>"
+    },
+    "security": {
+      "title": "数据安全",
+      "content": "<p>我们采取适当的技术和组织措施来保护您的数据：</p><ul><li>加密传输（HTTPS）</li><li>安全的数据存储</li><li>访问控制和权限管理</li><li>定期安全审计</li></ul>"
+    },
+    "changes": {
+      "title": "政策变更",
+      "content": "<p>我们可能会不时更新本隐私政策。重大变更将通过网站通知或电子邮件告知您。</p><p>请定期查看本页面以了解最新信息。</p>"
+    }
+  }
+}
