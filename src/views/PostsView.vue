@@ -153,7 +153,8 @@
       </Teleport>
 
       <Transition name="fab">
-        <button v-show="showScrollTop" class="scroll-top" type="button" @click="scrollToTop">
+        <button v-show="showScrollTop" class="scroll-top" type="button" @click="scrollToTop"
+          :aria-label="$t('common.backToTop')">
           <ArrowUp :size="24" />
           <div class="fab-ripple"></div>
         </button>
@@ -203,7 +204,7 @@ import EmptyState from '@/components/ui/empty/EmptyState.vue'
 import PostPreviewPanel from '@/components/business/PostPreviewPanel.vue'
 
 import { usePostsStore, useSettingsStore } from '@/stores'
-import { useInfiniteScroll } from '@/composables'
+import { useInfiniteScroll, useDebounceFn } from '@/composables'
 import { useWaterfallLayout } from '@/composables'
 import type { PostDetail } from '@/types'
 import { withLogging } from '@/utils/error'
@@ -291,6 +292,14 @@ const formatNumber = (num: number) => {
   }).format(num)
 }
 
+const { debounced: debouncedSearch } = useDebounceFn(
+  () => {
+    currentPage.value = 1
+    loadPosts()
+  },
+  300,
+)
+
 const checkScrollIndicators = () => {
   const el = platformChipsRef.value
   if (!el) return
@@ -318,11 +327,7 @@ const selectPlatform = (platform: string) => {
 }
 
 const onSearchInput = () => {
-  // Debounce search
-  setTimeout(() => {
-    currentPage.value = 1
-    loadPosts()
-  }, 300)
+  debouncedSearch()
 }
 
 const clearSearch = () => {
