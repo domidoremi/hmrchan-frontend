@@ -1,20 +1,12 @@
 <template>
-  <MainLayout>
+  <MainLayout :access-current="posts.length" :access-limit="accessLimit" :show-access-indicator="true">
     <div ref="homeContainer" class="home-page">
       <!-- Hero Section - GSAP 动画版本 -->
-      <HeroSection
-        :visible="settingsStore.settings.showHeroSection"
-        :title="$t('app.name')"
-        :description="$t('app.description')"
-        :badge-text="$t('app.tagline', 'Discover Amazing Content')"
-        :primary-button-text="$t('nav.explore')"
-        :secondary-button-text="$t('nav.login')"
-        :show-secondary-button="!isAuthenticated"
-        :stats="heroStats"
-        @close="settingsStore.toggleSetting('showHeroSection')"
-        @explore="goToExplore"
-        @secondary-action="goToLogin"
-      />
+      <HeroSection :visible="settingsStore.settings.showHeroSection" :title="$t('app.name')"
+        :description="$t('app.description')" :badge-text="$t('app.tagline', 'Discover Amazing Content')"
+        :primary-button-text="$t('nav.explore')" :secondary-button-text="$t('nav.login')"
+        :show-secondary-button="!isAuthenticated" :stats="heroStats"
+        @close="settingsStore.toggleSetting('showHeroSection')" @explore="goToExplore" @secondary-action="goToLogin" />
 
       <!-- Platform Stats - Modern Cards -->
       <section class="platforms-section reduce-motion">
@@ -52,9 +44,6 @@
           {{ $t('offline.usingCache') }}
         </p>
 
-        <!-- Access Limit Banner -->
-        <AccessLimitBanner :current-count="posts.length" :total-limit="accessLimit" />
-
         <!-- 初始加载状态 -->
         <LoadingSpinner v-if="loading && posts.length === 0" size="lg" :text="$t('common.loading')" />
 
@@ -82,20 +71,20 @@
 </template>
 
 /**
- * 首页组件
- *
- * 功能描述：
- * - 展示应用首页，包含Hero区域、平台统计和最新帖子列表
- * - 支持无限滚动加载更多帖子
- * - 根据用户登录状态限制访问数量
- * - 使用瀑布流布局展示帖子卡片
- *
- * 主要功能：
- * - Hero区域展示应用介绍和统计信息
- * - 平台统计卡片展示各平台帖子数量
- * - 帖子列表支持无限滚动加载
- * - 访问限制：未登录40条，已登录100条，管理员无限制
- */
+* 首页组件
+*
+* 功能描述：
+* - 展示应用首页，包含Hero区域、平台统计和最新帖子列表
+* - 支持无限滚动加载更多帖子
+* - 根据用户登录状态限制访问数量
+* - 使用瀑布流布局展示帖子卡片
+*
+* 主要功能：
+* - Hero区域展示应用介绍和统计信息
+* - 平台统计卡片展示各平台帖子数量
+* - 帖子列表支持无限滚动加载
+* - 访问限制：未登录40条，已登录100条，管理员无限制
+*/
 <script lang="ts">
 export default {
   name: 'HomePage',
@@ -122,7 +111,6 @@ import HeroSection from '@/components/layout/HeroSection.vue'
 import GlassButton from '@/components/ui/button/Button.vue'
 import LoadingSpinner from '@/components/ui/loading/LoadingSpinner.vue'
 import PostCard from '@/components/business/PostCard.vue'
-import AccessLimitBanner from '@/components/ui/banner/AccessLimitBanner.vue'
 import EmptyState from '@/components/ui/empty/EmptyState.vue'
 import StatCard from '@/components/ui/card/StatCard.vue'
 import StatCardGrid from '@/components/ui/card/StatCardGrid.vue'
