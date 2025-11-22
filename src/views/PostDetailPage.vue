@@ -431,7 +431,7 @@
                   <Play :size="48" />
                   <span class="video-duration" v-if="media.duration">{{
                     formatDuration(media.duration)
-                  }}</span>
+                    }}</span>
                 </div>
               </div>
             </div>
@@ -683,11 +683,12 @@ function splitTextByTags(text: string, tags: string[]): DescriptionSegment[] {
 
   const segments: DescriptionSegment[] = []
 
-  // 创建一个正则表达式匹配所有标签（作为完整单词，不区分大小写）
+  // 创建一个正则表达式匹配所有标签
   // 需要对标签进行转义以处理特殊字符，并按长度降序排序以优先匹配长标签
   const sortedTags = [...tags].sort((a, b) => b.length - a.length)
   const escapedTags = sortedTags.map(tag => tag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
-  const tagPattern = new RegExp(`\\b(${escapedTags.join('|')})\\b`, 'gi')
+  // 移除 \b 单词边界，改用更灵活的匹配方式
+  const tagPattern = new RegExp(`(${escapedTags.join('|')})`, 'gi')
 
   let lastIndex = 0
   let match: RegExpExecArray | null
