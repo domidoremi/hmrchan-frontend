@@ -134,27 +134,22 @@
                         <template v-for="(segment, index) in descriptionSegments" :key="index">
                           <a v-if="segment.type === 'link'" class="description-link" :href="segment.href"
                             target="_blank" rel="noopener noreferrer">
-                            <template v-if="segment.platform">
-                              <span class="description-link-icon" aria-hidden="true">
-                                {{
-                                  segment.platform === 'instagram'
-                                    ? 'IG'
-                                    : segment.platform === 'tiktok'
-                                      ? 'TT'
-                                      : 'X'
-                                }}
-                              </span>
-                              <span class="description-link-text">
-                                <span class="description-link-platform">
-                                  {{ getPlatformDisplayName(segment.platform) }}
-                                </span>
-                                <span class="description-link-username">{{ segment.text }}</span>
-                              </span>
-                            </template>
-                            <template v-else>
-                              {{ segment.text }}
-                            </template>
+                            <span class="description-link-icon" aria-hidden="true">
+                              <Instagram v-if="segment.platform === 'instagram'" :size="16" />
+                              <Music2 v-else-if="segment.platform === 'tiktok'" :size="16" />
+                              <Twitter v-else-if="segment.platform === 'x'" :size="16" />
+                              <Youtube v-else-if="segment.platform === 'youtube'" :size="16" />
+                              <Ticket v-else-if="segment.platform === 'legendfes' || segment.platform === 'tiget'"
+                                :size="16" />
+                              <Globe v-else-if="segment.platform === 'takanenonadeshiko'" :size="16" />
+                              <ExternalLink v-else :size="16" />
+                            </span>
+                            <span class="description-link-username">{{ segment.text }}</span>
                           </a>
+                          <span v-else-if="segment.type === 'tag'" class="description-tag">
+                            <Tag :size="14" class="description-tag-icon" aria-hidden="true" />
+                            <span class="description-tag-text">#{{ segment.tagName || segment.text }}</span>
+                          </span>
                           <span v-else>
                             {{ segment.text }}
                           </span>
@@ -324,27 +319,21 @@
                 <template v-for="(segment, index) in descriptionSegments" :key="index">
                   <a v-if="segment.type === 'link'" class="description-link" :href="segment.href" target="_blank"
                     rel="noopener noreferrer">
-                    <template v-if="segment.platform">
-                      <span class="description-link-icon" aria-hidden="true">
-                        {{
-                          segment.platform === 'instagram'
-                            ? 'IG'
-                            : segment.platform === 'tiktok'
-                              ? 'TT'
-                              : 'X'
-                        }}
-                      </span>
-                      <span class="description-link-text">
-                        <span class="description-link-platform">
-                          {{ getPlatformDisplayName(segment.platform) }}
-                        </span>
-                        <span class="description-link-username">{{ segment.text }}</span>
-                      </span>
-                    </template>
-                    <template v-else>
-                      {{ segment.text }}
-                    </template>
+                    <span class="description-link-icon" aria-hidden="true">
+                      <Instagram v-if="segment.platform === 'instagram'" :size="16" />
+                      <Music2 v-else-if="segment.platform === 'tiktok'" :size="16" />
+                      <Twitter v-else-if="segment.platform === 'x'" :size="16" />
+                      <Youtube v-else-if="segment.platform === 'youtube'" :size="16" />
+                      <Ticket v-else-if="segment.platform === 'legendfes' || segment.platform === 'tiget'" :size="16" />
+                      <Globe v-else-if="segment.platform === 'takanenonadeshiko'" :size="16" />
+                      <ExternalLink v-else :size="16" />
+                    </span>
+                    <span class="description-link-username">{{ segment.text }}</span>
                   </a>
+                  <span v-else-if="segment.type === 'tag'" class="description-tag">
+                    <Tag :size="14" class="description-tag-icon" aria-hidden="true" />
+                    <span class="description-tag-text">#{{ segment.tagName || segment.text }}</span>
+                  </span>
                   <span v-else>
                     {{ segment.text }}
                   </span>
@@ -493,6 +482,13 @@ import {
   Sparkles,
   Play,
   ChevronRight,
+  Instagram,
+  Twitter,
+  Youtube,
+  Ticket,
+  Globe,
+  Tag,
+  Music2,
 } from 'lucide-vue-next'
 import dayjs from 'dayjs'
 
@@ -577,13 +573,23 @@ const isDescriptionLong = computed(() => {
 
 const rawDescription = computed(() => post.value?.description || post.value?.title || '')
 
-type SupportedPlatform = 'instagram' | 'tiktok' | 'x'
+type SupportedPlatform =
+  | 'instagram'
+  | 'tiktok'
+  | 'x'
+  | 'youtube'
+  | 'legendfes'
+  | 'tiget'
+  | 'takanenonadeshiko'
+
+type DescriptionSegmentType = 'text' | 'link' | 'tag'
 
 interface DescriptionSegment {
-  type: 'text' | 'link'
+  type: DescriptionSegmentType
   text: string
   href?: string
   platform?: SupportedPlatform
+  tagName?: string
 }
 
 const descriptionSegments = computed<DescriptionSegment[]>(() => {
@@ -594,24 +600,39 @@ const descriptionSegments = computed<DescriptionSegment[]>(() => {
 
 function parseDescriptionText(text: string): DescriptionSegment[] {
   const segments: DescriptionSegment[] = []
-  const urlRegex = /(https?:\/\/[^\s]+)/g
+  // 同时识别 URL 和 {#+tag} 形式的标签
+  const tokenRegex = /(\{\#\+[^}]+\}|https?:\/\/[^\s]+)/g
 
   let lastIndex = 0
   let match: RegExpExecArray | null
 
-  while ((match = urlRegex.exec(text)) !== null) {
-    const url = match[0]
+  while ((match = tokenRegex.exec(text)) !== null) {
+    const token = match[0]
     const index = match.index
 
     if (index > lastIndex) {
       segments.push({ type: 'text', text: text.slice(lastIndex, index) })
     }
 
-    const label = getShortLinkLabel(url)
-    const platform = getPlatformFromUrl(url)
-    segments.push({ type: 'link', text: label, href: url, platform })
+    if (token.startsWith('{#+')) {
+      // 标签语法：{#+tagName}
+      const inner = token.slice(3, -1).trim()
+      if (inner) {
+        segments.push({
+          type: 'tag',
+          text: inner,
+          tagName: inner,
+        })
+      }
+    } else {
+      // URL 链接
+      const url = token
+      const label = getShortLinkLabel(url)
+      const platform = getPlatformFromUrl(url)
+      segments.push({ type: 'link', text: label, href: url, platform })
+    }
 
-    lastIndex = index + url.length
+    lastIndex = index + token.length
   }
 
   if (lastIndex < text.length) {
@@ -657,23 +678,14 @@ function getPlatformFromUrl(urlStr: string): SupportedPlatform | undefined {
     if (hostname === 'instagram.com') return 'instagram'
     if (hostname === 'tiktok.com') return 'tiktok'
     if (hostname === 'x.com' || hostname === 'twitter.com') return 'x'
+    if (hostname === 'youtube.com' || hostname === 'youtu.be') return 'youtube'
+    if (hostname.includes('legendfes')) return 'legendfes'
+    if (hostname.includes('tiget')) return 'tiget'
+    if (hostname.includes('takanenonadeshiko')) return 'takanenonadeshiko'
   } catch {
     // ignore
   }
   return undefined
-}
-
-function getPlatformDisplayName(platform?: SupportedPlatform): string {
-  switch (platform) {
-    case 'instagram':
-      return 'Instagram'
-    case 'tiktok':
-      return 'TikTok'
-    case 'x':
-      return 'X'
-    default:
-      return ''
-  }
 }
 
 // Accordion 状态持久化
@@ -2003,17 +2015,53 @@ onUnmounted(() => {
 }
 
 .post-description .description-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
   font-weight: 700;
   color: var(--color-primary);
   -webkit-text-fill-color: currentColor;
   background: none;
-  text-decoration: underline;
-  text-decoration-thickness: 2px;
-  text-underline-offset: 3px;
+  text-decoration: none;
 }
 
 .post-description .description-link:hover {
   color: var(--color-secondary);
+}
+
+.description-link-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.description-link-username {
+  font-weight: 600;
+}
+
+.description-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.1rem 0.6rem;
+  margin-inline: 0.15rem;
+  border-radius: 999px;
+  background: rgba(129, 140, 248, 0.12);
+  color: var(--color-primary);
+  -webkit-text-fill-color: currentColor;
+}
+
+[data-theme='dark'] .description-tag {
+  background: rgba(129, 140, 248, 0.25);
+}
+
+.description-tag-icon {
+  flex-shrink: 0;
+}
+
+.description-tag-text {
+  font-size: var(--text-xs);
+  font-weight: 500;
 }
 
 .post-description.is-collapsed {
