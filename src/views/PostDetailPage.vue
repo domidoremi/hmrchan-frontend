@@ -123,7 +123,7 @@
                       </div>
                     </RouterLink>
 
-                    <div v-if="post.description || post.title" :class="[
+                    <div v-if="post.description || post.title" ref="descriptionSectionRef" :class="[
                       'post-description',
                       {
                         'is-collapsed': !isDescriptionExpanded && isDescriptionLong,
@@ -210,7 +210,7 @@
                     <div class="tags-section" ref="mobileTagsSectionRef">
                       <div class="tags-list">
                         <span v-for="tag in post.tags" :key="tag" class="tag glass-badge"
-                          :class="{ 'is-active': tag === activeTag }">
+                          :class="{ 'is-active': tag === activeTag }" @click="onTagsListTagClick(tag)">
                           {{ tag }}
                         </span>
                       </div>
@@ -312,7 +312,7 @@
 
           <!-- 桌面端：媒体下方整行，放描述 + 操作按钮 + 统计 -->
           <div v-if="!isTabletOrBelow" class="detail-main full-width-section">
-            <div v-if="post.description || post.title" :class="[
+            <div v-if="post.description || post.title" ref="descriptionSectionRef" :class="[
               'post-description',
               {
                 'is-collapsed': !isDescriptionExpanded && isDescriptionLong,
@@ -380,7 +380,7 @@
             <h3>{{ $t('post.tags') }}</h3>
             <div class="tags-list">
               <span v-for="tag in post.tags" :key="tag" class="tag glass-badge"
-                :class="{ 'is-active': tag === activeTag }">
+                :class="{ 'is-active': tag === activeTag }" @click="onTagsListTagClick(tag)">
                 {{ tag }}
               </span>
             </div>
@@ -431,7 +431,7 @@
                   <Play :size="48" />
                   <span class="video-duration" v-if="media.duration">{{
                     formatDuration(media.duration)
-                    }}</span>
+                  }}</span>
                 </div>
               </div>
             </div>
@@ -610,6 +610,7 @@ const descriptionSegments = computed<DescriptionSegment[]>(() => {
 const activeTag = ref<string | null>(null)
 const mobileTagsSectionRef = ref<HTMLElement | null>(null)
 const desktopTagsSectionRef = ref<HTMLElement | null>(null)
+const descriptionSectionRef = ref<HTMLElement | null>(null)
 
 function parseDescriptionText(text: string, tags: string[] = []): DescriptionSegment[] {
   const segments: DescriptionSegment[] = []
@@ -783,6 +784,12 @@ function scrollToTagsSection() {
   target.scrollIntoView({ behavior: 'smooth', block: 'center' })
 }
 
+function scrollToDescriptionSection() {
+  const target = descriptionSectionRef.value
+  if (!target) return
+  target.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
+
 function onDescriptionTagClick(tagName?: string) {
   if (!tagName || !isKnownTag(tagName)) return
   activeTag.value = tagName
@@ -790,6 +797,14 @@ function onDescriptionTagClick(tagName?: string) {
   accordionStates.value.tags = true
   nextTick(() => {
     scrollToTagsSection()
+  })
+}
+
+function onTagsListTagClick(tagName: string) {
+  if (!tagName) return
+  activeTag.value = tagName
+  nextTick(() => {
+    scrollToDescriptionSection()
   })
 }
 
@@ -2148,20 +2163,34 @@ onUnmounted(() => {
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
-  padding: 0.1rem 0.6rem;
+  padding: 0.2rem 0.7rem;
   margin-inline: 0.15rem;
   border-radius: 999px;
-  background: rgba(129, 140, 248, 0.12);
+  background: rgba(129, 140, 248, 0.18);
+  border: 1px solid rgba(129, 140, 248, 0.4);
   color: var(--color-primary);
   -webkit-text-fill-color: currentColor;
+  box-shadow: 0 2px 6px rgba(129, 140, 248, 0.15);
+  transition: all 0.2s ease;
 }
 
 .description-tag.is-link {
   cursor: pointer;
 }
 
+.description-tag.is-link:hover {
+  background: rgba(129, 140, 248, 0.25);
+  border-color: rgba(129, 140, 248, 0.6);
+  box-shadow: 0 4px 10px rgba(129, 140, 248, 0.25);
+  transform: translateY(-1px);
+}
+
 .description-tag.is-active {
-  box-shadow: 0 0 0 1px rgba(129, 140, 248, 0.8);
+  background: rgba(129, 140, 248, 0.25);
+  border-color: rgba(129, 140, 248, 0.9);
+  box-shadow:
+    0 0 0 2px rgba(129, 140, 248, 0.9),
+    0 4px 12px rgba(15, 23, 42, 0.25);
 }
 
 [data-theme='dark'] .description-tag {
@@ -2547,6 +2576,21 @@ onUnmounted(() => {
 
 .tag {
   font-size: var(--text-sm);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tag:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+}
+
+.tag.is-active {
+  box-shadow:
+    0 0 0 2px rgba(129, 140, 248, 0.9),
+    0 4px 12px rgba(15, 23, 42, 0.25);
+  transform: translateY(-1px);
+  background: linear-gradient(135deg, rgba(129, 140, 248, 0.2), rgba(165, 180, 252, 0.2));
 }
 
 .error-state {
