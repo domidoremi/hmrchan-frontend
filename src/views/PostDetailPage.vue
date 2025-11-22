@@ -372,7 +372,7 @@
                   <Play :size="48" />
                   <span class="video-duration" v-if="media.duration">{{
                     formatDuration(media.duration)
-                  }}</span>
+                    }}</span>
                 </div>
               </div>
             </div>
@@ -1830,21 +1830,42 @@ onUnmounted(() => {
   gap: 6px;
   padding: 6px 14px;
   border-radius: 999px;
-  border: 1px solid rgba(148, 163, 184, 0.5);
-  background: rgba(15, 23, 42, 0.9);
+  /* 渐变背景 */
+  background: linear-gradient(135deg,
+      rgba(139, 92, 246, 0.2),
+      rgba(192, 132, 252, 0.2));
+  border: 1px solid rgba(139, 92, 246, 0.5);
   color: var(--color-text-secondary);
   font-size: var(--text-sm);
+  font-weight: 500;
   cursor: pointer;
   backdrop-filter: blur(10px);
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  /* 增强阴影层次 */
+  box-shadow:
+    0 2px 8px rgba(139, 92, 246, 0.25),
+    0 4px 16px rgba(0, 0, 0, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
 }
 
 .description-toggle:hover {
   color: var(--color-text-primary);
-  border-color: rgba(129, 140, 248, 0.9);
-  background: rgba(15, 23, 42, 0.95);
-  transform: translateX(-50%) translateY(-2px);
+  background: linear-gradient(135deg,
+      rgba(139, 92, 246, 0.3),
+      rgba(192, 132, 252, 0.3));
+  border-color: rgba(129, 140, 248, 0.7);
+  transform: translateX(-50%) translateY(-4px) scale(1.02);
+  box-shadow:
+    0 4px 16px rgba(139, 92, 246, 0.4),
+    0 8px 24px rgba(0, 0, 0, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.description-toggle:active {
+  transform: translateX(-50%) translateY(-2px) scale(1);
+  box-shadow:
+    0 2px 8px rgba(139, 92, 246, 0.3),
+    0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 @media (max-width: 768px) {
