@@ -130,7 +130,36 @@
                         'is-expanded': isDescriptionExpanded && isDescriptionLong,
                       },
                     ]">
-                      <p>{{ post.description || post.title || 'No description' }}</p>
+                      <p>
+                        <template v-for="(segment, index) in descriptionSegments" :key="index">
+                          <a v-if="segment.type === 'link'" class="description-link" :href="segment.href"
+                            target="_blank" rel="noopener noreferrer">
+                            <template v-if="segment.platform">
+                              <span class="description-link-icon" aria-hidden="true">
+                                {{
+                                  segment.platform === 'instagram'
+                                    ? 'IG'
+                                    : segment.platform === 'tiktok'
+                                      ? 'TT'
+                                      : 'X'
+                                }}
+                              </span>
+                              <span class="description-link-text">
+                                <span class="description-link-platform">
+                                  {{ getPlatformDisplayName(segment.platform) }}
+                                </span>
+                                <span class="description-link-username">{{ segment.text }}</span>
+                              </span>
+                            </template>
+                            <template v-else>
+                              {{ segment.text }}
+                            </template>
+                          </a>
+                          <span v-else>
+                            {{ segment.text }}
+                          </span>
+                        </template>
+                      </p>
                       <button v-if="isDescriptionLong" type="button" class="description-toggle"
                         @click="isDescriptionExpanded = !isDescriptionExpanded">
                         {{
@@ -291,7 +320,36 @@
                 'is-expanded': isDescriptionExpanded && isDescriptionLong,
               },
             ]">
-              <p>{{ post.description || post.title || 'No description' }}</p>
+              <p>
+                <template v-for="(segment, index) in descriptionSegments" :key="index">
+                  <a v-if="segment.type === 'link'" class="description-link" :href="segment.href" target="_blank"
+                    rel="noopener noreferrer">
+                    <template v-if="segment.platform">
+                      <span class="description-link-icon" aria-hidden="true">
+                        {{
+                          segment.platform === 'instagram'
+                            ? 'IG'
+                            : segment.platform === 'tiktok'
+                              ? 'TT'
+                              : 'X'
+                        }}
+                      </span>
+                      <span class="description-link-text">
+                        <span class="description-link-platform">
+                          {{ getPlatformDisplayName(segment.platform) }}
+                        </span>
+                        <span class="description-link-username">{{ segment.text }}</span>
+                      </span>
+                    </template>
+                    <template v-else>
+                      {{ segment.text }}
+                    </template>
+                  </a>
+                  <span v-else>
+                    {{ segment.text }}
+                  </span>
+                </template>
+              </p>
               <button v-if="isDescriptionLong" type="button" class="description-toggle"
                 @click="isDescriptionExpanded = !isDescriptionExpanded">
                 {{
@@ -376,7 +434,7 @@
                   <Play :size="48" />
                   <span class="video-duration" v-if="media.duration">{{
                     formatDuration(media.duration)
-                    }}</span>
+                  }}</span>
                 </div>
               </div>
             </div>
@@ -516,6 +574,107 @@ const isDescriptionLong = computed(() => {
   const length = post.value?.description?.length ?? 0
   return length > 260
 })
+
+const rawDescription = computed(() => post.value?.description || post.value?.title || '')
+
+type SupportedPlatform = 'instagram' | 'tiktok' | 'x'
+
+interface DescriptionSegment {
+  type: 'text' | 'link'
+  text: string
+  href?: string
+  platform?: SupportedPlatform
+}
+
+const descriptionSegments = computed<DescriptionSegment[]>(() => {
+  const text = rawDescription.value
+  if (!text) return []
+  return parseDescriptionText(text)
+})
+
+function parseDescriptionText(text: string): DescriptionSegment[] {
+  const segments: DescriptionSegment[] = []
+  const urlRegex = /(https?:\/\/[^\s]+)/g
+
+  let lastIndex = 0
+  let match: RegExpExecArray | null
+
+  while ((match = urlRegex.exec(text)) !== null) {
+    const url = match[0]
+    const index = match.index
+
+    if (index > lastIndex) {
+      segments.push({ type: 'text', text: text.slice(lastIndex, index) })
+    }
+
+    const label = getShortLinkLabel(url)
+    const platform = getPlatformFromUrl(url)
+    segments.push({ type: 'link', text: label, href: url, platform })
+
+    lastIndex = index + url.length
+  }
+
+  if (lastIndex < text.length) {
+    segments.push({ type: 'text', text: text.slice(lastIndex) })
+  }
+
+  return segments
+}
+
+function getShortLinkLabel(urlStr: string): string {
+  try {
+    const url = new URL(urlStr)
+    const hostname = url.hostname.replace(/^www\./, '')
+    const trimmedPath = url.pathname.replace(/\/+$/, '')
+
+    // 如果有路径，优先使用最后一段路径作为标签（例如 Instagram/TikTok 用户名）
+    if (trimmedPath && trimmedPath !== '/') {
+      const parts = trimmedPath.split('/').filter(Boolean)
+      const rawLast = parts[parts.length - 1] || ''
+      // 去掉前缀 @（如 TikTok 的 @username），统一显示为 username
+      const cleanedLast = rawLast.startsWith('@') ? rawLast.slice(1) : rawLast
+      if (cleanedLast) return cleanedLast
+    }
+
+    // 否则使用主域名去掉后缀（例如 takanenonadeshiko.jp -> takanenonadeshiko）
+    const hostParts = hostname.split('.')
+    if (hostParts.length >= 2) {
+      const label = hostParts[hostParts.length - 2] || hostname
+      return label
+    }
+    return hostname
+  } catch {
+    // 如果 URL 解析失败，退回到去除协议的原始字符串
+    return urlStr.replace(/^https?:\/\//, '')
+  }
+}
+
+function getPlatformFromUrl(urlStr: string): SupportedPlatform | undefined {
+  try {
+    const url = new URL(urlStr)
+    const hostname = url.hostname.replace(/^www\./, '')
+
+    if (hostname === 'instagram.com') return 'instagram'
+    if (hostname === 'tiktok.com') return 'tiktok'
+    if (hostname === 'x.com' || hostname === 'twitter.com') return 'x'
+  } catch {
+    // ignore
+  }
+  return undefined
+}
+
+function getPlatformDisplayName(platform?: SupportedPlatform): string {
+  switch (platform) {
+    case 'instagram':
+      return 'Instagram'
+    case 'tiktok':
+      return 'TikTok'
+    case 'x':
+      return 'X'
+    default:
+      return ''
+  }
+}
 
 // Accordion 状态持久化
 const ACCORDION_KEY = 'hmrchan:accordion-states'
@@ -1841,6 +2000,20 @@ onUnmounted(() => {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+}
+
+.post-description .description-link {
+  font-weight: 700;
+  color: var(--color-primary);
+  -webkit-text-fill-color: currentColor;
+  background: none;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+
+.post-description .description-link:hover {
+  color: var(--color-secondary);
 }
 
 .post-description.is-collapsed {
