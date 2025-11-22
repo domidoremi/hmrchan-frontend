@@ -146,7 +146,10 @@
                             </span>
                             <span class="description-link-username">{{ segment.text }}</span>
                           </a>
-                          <span v-else-if="segment.type === 'tag'" class="description-tag">
+                          <span v-else-if="segment.type === 'tag'" class="description-tag" :class="{
+                            'is-link': isKnownTag(segment.tagName),
+                            'is-active': segment.tagName === activeTag,
+                          }" @click="onDescriptionTagClick(segment.tagName)">
                             <Tag :size="14" class="description-tag-icon" aria-hidden="true" />
                             <span class="description-tag-text">#{{ segment.tagName || segment.text }}</span>
                           </span>
@@ -204,9 +207,10 @@
                   </summary>
 
                   <div class="accordion-body">
-                    <div class="tags-section">
+                    <div class="tags-section" ref="mobileTagsSectionRef">
                       <div class="tags-list">
-                        <span v-for="tag in post.tags" :key="tag" class="tag glass-badge">
+                        <span v-for="tag in post.tags" :key="tag" class="tag glass-badge"
+                          :class="{ 'is-active': tag === activeTag }">
                           {{ tag }}
                         </span>
                       </div>
@@ -330,7 +334,10 @@
                     </span>
                     <span class="description-link-username">{{ segment.text }}</span>
                   </a>
-                  <span v-else-if="segment.type === 'tag'" class="description-tag">
+                  <span v-else-if="segment.type === 'tag'" class="description-tag" :class="{
+                    'is-link': isKnownTag(segment.tagName),
+                    'is-active': segment.tagName === activeTag,
+                  }" @click="onDescriptionTagClick(segment.tagName)">
                     <Tag :size="14" class="description-tag-icon" aria-hidden="true" />
                     <span class="description-tag-text">#{{ segment.tagName || segment.text }}</span>
                   </span>
@@ -369,10 +376,11 @@
           </div>
 
           <div v-if="!isTabletOrBelow && post.tags && post.tags.length > 0"
-            class="tags-section glass-card full-width-section">
+            class="tags-section glass-card full-width-section" ref="desktopTagsSectionRef">
             <h3>{{ $t('post.tags') }}</h3>
             <div class="tags-list">
-              <span v-for="tag in post.tags" :key="tag" class="tag glass-badge">
+              <span v-for="tag in post.tags" :key="tag" class="tag glass-badge"
+                :class="{ 'is-active': tag === activeTag }">
                 {{ tag }}
               </span>
             </div>
@@ -423,7 +431,7 @@
                   <Play :size="48" />
                   <span class="video-duration" v-if="media.duration">{{
                     formatDuration(media.duration)
-                  }}</span>
+                    }}</span>
                 </div>
               </div>
             </div>
@@ -459,7 +467,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, type Component } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick, type Component } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useMediaPreload } from '@/composables/media/useSmartPreload'
@@ -598,6 +606,10 @@ const descriptionSegments = computed<DescriptionSegment[]>(() => {
   return parseDescriptionText(text)
 })
 
+const activeTag = ref<string | null>(null)
+const mobileTagsSectionRef = ref<HTMLElement | null>(null)
+const desktopTagsSectionRef = ref<HTMLElement | null>(null)
+
 function parseDescriptionText(text: string): DescriptionSegment[] {
   const segments: DescriptionSegment[] = []
   // 同时识别 URL 和 {#+tag} 形式的标签
@@ -686,6 +698,27 @@ function getPlatformFromUrl(urlStr: string): SupportedPlatform | undefined {
     // ignore
   }
   return undefined
+}
+
+function isKnownTag(tagName?: string): boolean {
+  if (!tagName || !post.value?.tags) return false
+  return post.value.tags.includes(tagName)
+}
+
+function scrollToTagsSection() {
+  const target = isTabletOrBelow.value ? mobileTagsSectionRef.value : desktopTagsSectionRef.value
+  if (!target) return
+  target.scrollIntoView({ behavior: 'smooth', block: 'center' })
+}
+
+function onDescriptionTagClick(tagName?: string) {
+  if (!tagName || !isKnownTag(tagName)) return
+  activeTag.value = tagName
+  // 展开 tags 手风琴面板
+  accordionStates.value.tags = true
+  nextTick(() => {
+    scrollToTagsSection()
+  })
 }
 
 // Accordion 状态持久化
@@ -2049,6 +2082,14 @@ onUnmounted(() => {
   background: rgba(129, 140, 248, 0.12);
   color: var(--color-primary);
   -webkit-text-fill-color: currentColor;
+}
+
+.description-tag.is-link {
+  cursor: pointer;
+}
+
+.description-tag.is-active {
+  box-shadow: 0 0 0 1px rgba(129, 140, 248, 0.8);
 }
 
 [data-theme='dark'] .description-tag {
