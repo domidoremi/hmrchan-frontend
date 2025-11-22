@@ -5,6 +5,7 @@
       :href="href"
       class="post-card"
       :data-post-id="post.id"
+      :data-platform="cardData.platformName.value.toLowerCase()"
       role="article"
       :aria-label="`Post by ${post.author_name || 'Anonymous'}: ${post.title || 'Untitled'}`"
       tabindex="0"
@@ -243,6 +244,36 @@ const handleMore = () => {
     0 32px 64px -16px rgba(0, 0, 0, 0.18),
     0 0 0 1px rgba(139, 92, 246, 0.15);
   will-change: transform, box-shadow;
+}
+
+/* Platform-specific Hover Glows */
+.post-card[data-platform='youtube']:hover {
+  border-color: var(--color-youtube);
+  box-shadow:
+    var(--glow-youtube),
+    0 32px 64px -16px rgba(0, 0, 0, 0.18);
+}
+
+.post-card[data-platform='twitter']:hover,
+.post-card[data-platform='x']:hover {
+  border-color: var(--color-twitter);
+  box-shadow:
+    var(--glow-twitter),
+    0 32px 64px -16px rgba(0, 0, 0, 0.18);
+}
+
+.post-card[data-platform='tiktok']:hover {
+  border-color: var(--color-tiktok-accent);
+  box-shadow:
+    var(--glow-tiktok),
+    0 32px 64px -16px rgba(0, 0, 0, 0.18);
+}
+
+.post-card[data-platform='instagram']:hover {
+  border-color: var(--color-instagram);
+  box-shadow:
+    var(--glow-instagram),
+    0 32px 64px -16px rgba(0, 0, 0, 0.18);
 }
 
 /* Active State */
