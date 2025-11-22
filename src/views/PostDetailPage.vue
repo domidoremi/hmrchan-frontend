@@ -59,7 +59,8 @@
           <aside :class="['info-column', { interactive: isTabletOrBelow }]">
             <div :class="['post-content-wrapper', { 'as-accordion': isTabletOrBelow }]">
               <template v-if="isTabletOrBelow">
-                <details class="accordion-block" open>
+                <details class="accordion-block" :open="accordionStates.overview"
+                  @toggle="(event) => saveAccordionState('overview', (event.target as HTMLDetailsElement).open)">
                   <summary class="accordion-summary">
                     <span>{{ $t('post.overview') }}</span>
                     <ChevronRight :size="16" class="chevron" />
@@ -142,7 +143,8 @@
                   </div>
                 </details>
 
-                <details v-if="yieldedStats.length > 0" class="accordion-block" open>
+                <details v-if="yieldedStats.length > 0" class="accordion-block" :open="accordionStates.stats"
+                  @toggle="(event) => saveAccordionState('stats', (event.target as HTMLDetailsElement).open)">
                   <summary class="accordion-summary">
                     <span>{{ $t('post.stats') }}</span>
                     <ChevronRight :size="16" class="chevron" />
@@ -170,7 +172,8 @@
                   </div>
                 </details>
 
-                <details v-if="post.tags && post.tags.length > 0" class="accordion-block" open>
+                <details v-if="post.tags && post.tags.length > 0" class="accordion-block" :open="accordionStates.tags"
+                  @toggle="(event) => saveAccordionState('tags', (event.target as HTMLDetailsElement).open)">
                   <summary class="accordion-summary">
                     <span>{{ $t('post.tags') }}</span>
                     <ChevronRight :size="16" class="chevron" />
@@ -187,7 +190,8 @@
                   </div>
                 </details>
 
-                <details v-if="relatedPosts.length > 0" class="accordion-block" open>
+                <details v-if="relatedPosts.length > 0" class="accordion-block" :open="accordionStates.related"
+                  @toggle="(event) => saveAccordionState('related', (event.target as HTMLDetailsElement).open)">
                   <summary class="accordion-summary">
                     <span>{{ $t('post.relatedPosts') }}</span>
                     <ChevronRight :size="16" class="chevron" />
@@ -513,6 +517,43 @@ const isDescriptionLong = computed(() => {
   return length > 260
 })
 
+// Accordion 状态持久化
+const ACCORDION_KEY = 'hmrchan:accordion-states'
+
+const accordionStates = ref({
+  overview: true,
+  stats: true,
+  tags: true,
+  related: true
+})
+
+// 保存 accordion 状态
+const saveAccordionState = (key: keyof typeof accordionStates.value, isOpen: boolean) => {
+  accordionStates.value[key] = isOpen
+  const postId = route.params.id
+  try {
+    sessionStorage.setItem(
+      `${ACCORDION_KEY}:${postId}`,
+      JSON.stringify(accordionStates.value)
+    )
+  } catch {
+    // Silently ignore sessionStorage errors
+  }
+}
+
+// 恢复 accordion 状态
+const restoreAccordionStates = () => {
+  const postId = route.params.id
+  try {
+    const saved = sessionStorage.getItem(`${ACCORDION_KEY}:${postId}`)
+    if (saved) {
+      Object.assign(accordionStates.value, JSON.parse(saved))
+    }
+  } catch {
+    // Silently ignore sessionStorage errors
+  }
+}
+
 // 判断描述长度以确定是否需要展开/收起功能
 // 注意：已移除showDescription，现在始终显示description或title
 
@@ -717,6 +758,9 @@ onMounted(async () => {
 
     // 加载相关推荐（异步，不阻塞页面）
     loadRelatedPosts()
+
+    // 恢复 accordion 状态
+    restoreAccordionStates()
   } catch (error) {
     handleError(error, { customMessage: t('post.loadFailed', 'Failed to load post') })
   } finally {
