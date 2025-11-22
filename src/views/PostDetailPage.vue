@@ -128,7 +128,7 @@
                         'is-collapsed': !isDescriptionExpanded && isDescriptionLong,
                         'is-expanded': isDescriptionExpanded && isDescriptionLong,
                       },
-                    ]">
+                    ]" :style="{ maxHeight: isDescriptionExpanded ? 'none' : collapsedHeight }">
                       <p>{{ post.description || post.title || 'No description' }}</p>
                       <button v-if="isDescriptionLong" type="button" class="description-toggle"
                         @click="isDescriptionExpanded = !isDescriptionExpanded">
@@ -280,13 +280,13 @@
 
           <!-- 桌面端：媒体下方整行，放描述 + 操作按钮 + 统计 -->
           <div v-if="!isTabletOrBelow" class="detail-main full-width-section">
-            <div v-if="post.description || post.title" :class="[
+            <div v-if="post.description || post.title" ref="descriptionRef" :class="[
               'post-description',
               {
                 'is-collapsed': !isDescriptionExpanded && isDescriptionLong,
                 'is-expanded': isDescriptionExpanded && isDescriptionLong,
               },
-            ]">
+            ]" :style="{ maxHeight: isDescriptionExpanded ? 'none' : collapsedHeight }">
               <p>{{ post.description || post.title || 'No description' }}</p>
               <button v-if="isDescriptionLong" type="button" class="description-toggle"
                 @click="isDescriptionExpanded = !isDescriptionExpanded">
@@ -482,6 +482,10 @@ const isTopbarSticky = ref(false)
 const readingProgress = ref(0)
 const showBackToTop = ref(false)
 
+// 描述动态高度相关
+const descriptionRef = ref<HTMLElement | null>(null)
+const collapsedHeight = ref('20em') // 初始占位高度
+
 const isTabletOrBelow = computed(() => isTabletViewport.value || isMobileViewport.value)
 
 const isOfflineDetail = computed(() => postsStore.lastDetailFromFallback)
@@ -512,6 +516,20 @@ const isDescriptionLong = computed(() => {
   const length = post.value?.description?.length ?? 0
   return length > 260
 })
+
+// 计算折叠高度（动态根据行高显示约6行文本）
+const calculateCollapsedHeight = () => {
+  if (!descriptionRef.value) return
+
+  const computedStyle = getComputedStyle(descriptionRef.value.querySelector('p') || descriptionRef.value)
+  const lineHeight = parseFloat(computedStyle.lineHeight)
+
+  if (lineHeight && !isNaN(lineHeight)) {
+    const lines = isMobileViewport.value ? 5 : 6 // 移动端5行，桌面端6行
+    const padding = parseFloat(getComputedStyle(descriptionRef.value).paddingTop) * 2
+    collapsedHeight.value = `${lineHeight * lines + padding}px`
+  }
+}
 
 // 判断描述长度以确定是否需要展开/收起功能
 // 注意：已移除showDescription，现在始终显示description或title
@@ -641,6 +659,11 @@ const updateViewportBreakpoints = () => {
 
   isMobileViewport.value = mobileQuery.matches
   isTabletViewport.value = !mobileQuery.matches && tabletQuery.matches
+
+  // 视口变化时重新计算折叠高度
+  if (post.value) {
+    setTimeout(() => calculateCollapsedHeight(), 50)
+  }
 }
 
 onMounted(async () => {
@@ -717,6 +740,11 @@ onMounted(async () => {
 
     // 加载相关推荐（异步，不阻塞页面）
     loadRelatedPosts()
+
+    // 计算描述折叠高度
+    setTimeout(() => {
+      calculateCollapsedHeight()
+    }, 100) // 等待DOM渲染完成
   } catch (error) {
     handleError(error, { customMessage: t('post.loadFailed', 'Failed to load post') })
   } finally {
@@ -1778,10 +1806,12 @@ onUnmounted(() => {
     var(--glass-bg-light);
   border-radius: var(--radius-2xl);
   border: 1px solid rgba(139, 92, 246, 0.08);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow:
     0 2px 8px rgba(0, 0, 0, 0.03),
     inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  /* 动态高度过渡 */
+  transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
 }
 
 .post-description p {
@@ -1799,8 +1829,7 @@ onUnmounted(() => {
 
 .post-description.is-collapsed {
   position: relative;
-  max-height: 16rem;
-  overflow: hidden;
+  /* max-height由JavaScript动态设置 */
 }
 
 .post-description.is-collapsed::after {
@@ -1809,12 +1838,13 @@ onUnmounted(() => {
   inset-inline: 0;
   bottom: 0;
   height: 72px;
-  background: linear-gradient(to top, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0));
+  background: linear-gradient(to top, var(--glass-bg-light), transparent);
   pointer-events: none;
 }
 
 .post-description.is-expanded {
-  max-height: none;
+  max-height: none !important;
+  /* 展开时移除高度限制 */
 }
 
 .description-toggle {
