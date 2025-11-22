@@ -603,14 +603,15 @@ interface DescriptionSegment {
 const descriptionSegments = computed<DescriptionSegment[]>(() => {
   const text = rawDescription.value
   if (!text) return []
-  return parseDescriptionText(text)
+  const tags = post.value?.tags || []
+  return parseDescriptionText(text, tags)
 })
 
 const activeTag = ref<string | null>(null)
 const mobileTagsSectionRef = ref<HTMLElement | null>(null)
 const desktopTagsSectionRef = ref<HTMLElement | null>(null)
 
-function parseDescriptionText(text: string): DescriptionSegment[] {
+function parseDescriptionText(text: string, tags: string[] = []): DescriptionSegment[] {
   const segments: DescriptionSegment[] = []
   // 同时识别 URL 和 {#+tag} 形式的标签
   const tokenRegex = /(\{\#\+[^}]+\}|https?:\/\/[^\s]+)/g
@@ -649,6 +650,77 @@ function parseDescriptionText(text: string): DescriptionSegment[] {
 
   if (lastIndex < text.length) {
     segments.push({ type: 'text', text: text.slice(lastIndex) })
+  }
+
+  // 第二次处理：在文本段中查找并高亮已有的标签
+  if (tags.length > 0) {
+    const finalSegments: DescriptionSegment[] = []
+
+    for (const segment of segments) {
+      if (segment.type !== 'text') {
+        // 保留非文本段（链接和已有的标签）
+        finalSegments.push(segment)
+        continue
+      }
+
+      // 对文本段进行标签匹配和替换
+      const textSegments = splitTextByTags(segment.text, tags)
+      finalSegments.push(...textSegments)
+    }
+
+    return finalSegments
+  }
+
+  return segments
+}
+
+/**
+ * 将文本按照标签分割，将匹配的标签转换为tag类型的segment
+ */
+function splitTextByTags(text: string, tags: string[]): DescriptionSegment[] {
+  if (!text || tags.length === 0) return [{ type: 'text', text }]
+
+  const segments: DescriptionSegment[] = []
+
+  // 创建一个正则表达式匹配所有标签（作为完整单词，不区分大小写）
+  // 需要对标签进行转义以处理特殊字符，并按长度降序排序以优先匹配长标签
+  const sortedTags = [...tags].sort((a, b) => b.length - a.length)
+  const escapedTags = sortedTags.map(tag => tag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+  const tagPattern = new RegExp(`\\b(${escapedTags.join('|')})\\b`, 'gi')
+
+  let lastIndex = 0
+  let match: RegExpExecArray | null
+
+  while ((match = tagPattern.exec(text)) !== null) {
+    const matchedTag = match[0]
+    const index = match.index
+
+    // 添加匹配前的文本
+    if (index > lastIndex) {
+      segments.push({ type: 'text', text: text.slice(lastIndex, index) })
+    }
+
+    // 找到原始标签（保持原始大小写）
+    const originalTag = tags.find(t => t.toLowerCase() === matchedTag.toLowerCase()) || matchedTag
+
+    // 添加标签段
+    segments.push({
+      type: 'tag',
+      text: matchedTag,
+      tagName: originalTag,
+    })
+
+    lastIndex = index + matchedTag.length
+  }
+
+  // 添加剩余的文本
+  if (lastIndex < text.length) {
+    segments.push({ type: 'text', text: text.slice(lastIndex) })
+  }
+
+  // 如果没有匹配到任何标签，返回原始文本
+  if (segments.length === 0) {
+    return [{ type: 'text', text }]
   }
 
   return segments
