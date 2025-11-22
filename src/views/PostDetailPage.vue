@@ -1,5 +1,8 @@
 <template>
   <MainLayout :disable-container="true">
+    <!-- 阅读进度条 -->
+    <div class="reading-progress" :style="{ width: `${readingProgress}%` }"></div>
+
     <div class="post-detail-page">
       <!-- 骨架屏加载状态 -->
       <div v-if="loading" class="skeleton-loader">
@@ -387,6 +390,17 @@
       </div>
     </div>
 
+    <!-- 回到顶部按钮（带进度环） -->
+    <button v-show="showBackToTop" class="back-to-top-btn" @click="scrollToTop"
+      :aria-label="$t('common.backToTop', '回到顶部')">
+      <svg viewBox="0 0 100 100" class="progress-ring">
+        <circle cx="50" cy="50" r="45" class="progress-ring-bg" />
+        <circle cx="50" cy="50" r="45" class="progress-ring-progress"
+          :style="{ strokeDashoffset: progressRingOffset }" />
+      </svg>
+      <ArrowUp :size="20" class="arrow-icon" />
+    </button>
+
     <!-- 媒体查看器 -->
     <PhotoSwipeViewer :show="showMediaViewer" :items="viewerMediaItems" :initial-index="viewerInitialIndex"
       @close="closeMediaViewer" />
@@ -404,6 +418,7 @@ import { resolveMediaUrl, validateMediaId } from '@/utils/format'
 import { logger } from '@/utils/logger'
 import {
   ArrowLeft,
+  ArrowUp,
   Calendar,
   User,
   Eye,
@@ -462,6 +477,10 @@ const relatedPosts = ref<Post[]>([])
 const isTabletViewport = ref(false)
 const isMobileViewport = ref(false)
 const isTopbarSticky = ref(false)
+
+// 阅读进度相关
+const readingProgress = ref(0)
+const showBackToTop = ref(false)
 
 const isTabletOrBelow = computed(() => isTabletViewport.value || isMobileViewport.value)
 
@@ -606,6 +625,12 @@ const yieldedStats = computed<StatEntry[]>(() => {
   pushStat('comments', post.value.comment_count, MessageCircle, 'post.comments')
 
   return stats
+})
+
+// 进度环偏移量计算
+const progressRingOffset = computed(() => {
+  const circumference = 2 * Math.PI * 45 // r=45
+  return circumference - (readingProgress.value / 100) * circumference
 })
 
 const updateViewportBreakpoints = () => {
@@ -942,9 +967,21 @@ const handleKeydown = (e: KeyboardEvent) => {
   }
 }
 
-// 滚动检测，用于 topbar 粘性效果 - 统一移动/桌面端
+// 滚动检测，用于 topbar 粘性效果和阅读进度 - 统一移动/桌面端
 const handleScroll = () => {
   const scrollTop = window.scrollY || document.documentElement.scrollTop
+  const windowHeight = window.innerHeight
+  const documentHeight = document.documentElement.scrollHeight
+
+  // 计算阅读进度
+  const scrollableHeight = documentHeight - windowHeight
+  readingProgress.value = scrollableHeight > 0
+    ? Math.min((scrollTop / scrollableHeight) * 100, 100)
+    : 0
+
+  // 显示/隐藏回到顶部按钮
+  showBackToTop.value = scrollTop > 300
+
   // 根据不同视口大小设置不同的导航栏高度
   let navbarHeight = 78 // 默认桌面端
   if (isMobileViewport.value) {
@@ -953,6 +990,14 @@ const handleScroll = () => {
     navbarHeight = 72 // 平板端导航栏高度
   }
   isTopbarSticky.value = scrollTop > navbarHeight
+}
+
+// 回到顶部
+const scrollToTop = () => {
+  window.scrollTo({
+    top: 0,
+    behavior: 'smooth'
+  })
 }
 
 onMounted(() => {
@@ -970,6 +1015,117 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+/* ========================================
+   阅读进度条
+   ======================================== */
+
+.reading-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--color-primary), #c084fc);
+  z-index: 9999;
+  transition: width 0.1s ease-out;
+  box-shadow:
+    0 1px 3px rgba(139, 92, 246, 0.5),
+    0 0 10px rgba(139, 92, 246, 0.3);
+}
+
+/* ========================================
+   回到顶部按钮（带进度环）
+   ======================================== */
+
+.back-to-top-btn {
+  position: fixed;
+  bottom: 32px;
+  right: 32px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: var(--glass-blur);
+  cursor: pointer;
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.1),
+    0 8px 24px rgba(139, 92, 246, 0.2);
+  animation: fadeInUp 0.3s ease-out;
+}
+
+.back-to-top-btn:hover {
+  transform: translateY(-4px);
+  background: rgba(139, 92, 246, 0.1);
+  box-shadow:
+    0 8px 20px rgba(139, 92, 246, 0.3),
+    0 12px 32px rgba(139, 92, 246, 0.2);
+}
+
+.back-to-top-btn:active {
+  transform: translateY(-2px);
+}
+
+.progress-ring {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.progress-ring-bg {
+  fill: none;
+  stroke: rgba(139, 92, 246, 0.1);
+  stroke-width: 2;
+}
+
+.progress-ring-progress {
+  fill: none;
+  stroke: var(--color-primary);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-dasharray: 283;
+  /* 2 * π * 45 */
+  transition: stroke-dashoffset 0.3s ease;
+  filter: drop-shadow(0 0 4px rgba(139, 92, 246, 0.6));
+}
+
+.arrow-icon {
+  position: relative;
+  z-index: 1;
+  color: var(--color-primary);
+  transition: transform 0.3s ease;
+}
+
+.back-to-top-btn:hover .arrow-icon {
+  transform: translateY(-2px);
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 768px) {
+  .back-to-top-btn {
+    bottom: 20px;
+    right: 20px;
+    width: 48px;
+    height: 48px;
+  }
+}
+
 /* ========================================
    Post Detail Page - Modern Layout
    Material Design + Apple Style
@@ -1771,6 +1927,18 @@ onUnmounted(() => {
   background: linear-gradient(135deg, rgba(139, 92, 246, 0.18), rgba(192, 132, 252, 0.18));
   color: var(--color-primary);
   flex-shrink: 0;
+  position: relative;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 添加发光效果 */
+.post-stats-row.is-link:hover .stat-icon {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.35), rgba(192, 132, 252, 0.35));
+  box-shadow:
+    0 0 20px rgba(139, 92, 246, 0.4),
+    0 0 40px rgba(139, 92, 246, 0.2),
+    inset 0 0 10px rgba(255, 255, 255, 0.1);
+  transform: scale(1.1);
 }
 
 [data-theme='dark'] .stat-icon {
@@ -2184,16 +2352,49 @@ onUnmounted(() => {
   animation-delay: 0.5s;
 }
 
+/* 改进后的骨架屏 - Shimmer 加载效果 */
 @keyframes skeleton-pulse {
-
-  0%,
-  100% {
+  0% {
     opacity: 1;
   }
 
   50% {
-    opacity: 0.5;
+    opacity: 0.4;
   }
+
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.skeleton-back-btn,
+.skeleton-thumbnail,
+.skeleton-meta,
+.skeleton-title,
+.skeleton-description,
+.skeleton-author,
+.skeleton-stats {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(90deg,
+      var(--glass-bg-light) 0%,
+      rgba(139, 92, 246, 0.08) 20%,
+      rgba(192, 132, 252, 0.12) 40%,
+      rgba(139, 92, 246, 0.08) 60%,
+      var(--glass-bg-light) 100%);
+  background-size: 1000px 100%;
+  animation: skeleton-shimmer 2s ease-in-out infinite,
+    skeleton-pulse 1.5s ease-in-out infinite;
 }
 
 /* ========================================
