@@ -17,6 +17,19 @@
       <div class="media-overlay"></div>
     </div>
 
+    <!-- 平台特定遮罩 -->
+    <div v-if="normalizedPlatform === 'youtube'" class="platform-overlay youtube-overlay">
+      <div class="play-button">
+        <Play :size="24" fill="currentColor" />
+      </div>
+    </div>
+
+    <div v-if="normalizedPlatform === 'tiktok'" class="platform-overlay tiktok-overlay">
+      <div class="music-icon">
+        <Music2 :size="20" />
+      </div>
+    </div>
+
     <!-- 悬浮标签 -->
     <div class="card-badges">
       <div class="platform-badge" :style="{ backgroundColor: platformColor }">
@@ -65,8 +78,8 @@
  * - isRetweet: 是否为转发内容
  */
 
-import { ref } from 'vue'
-import { ImageIcon, Play, Repeat2 } from 'lucide-vue-next'
+import { ref, computed } from 'vue'
+import { ImageIcon, Play, Repeat2, Music2 } from 'lucide-vue-next'
 import OptimizedImage from '@/components/ui/image/OptimizedImage.vue'
 import { formatDuration } from '@/utils/format'
 
@@ -89,11 +102,14 @@ interface Props {
   isRetweet: boolean
 }
 
-withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<Props>(), {
   thumbnailUrl: '',
   isFirstScreen: false,
   duration: null,
 })
+
+/** 规范化平台名称 */
+const normalizedPlatform = computed(() => props.platformName.toLowerCase())
 
 /** 媒体容器元素引用 */
 const mediaRef = ref<HTMLElement | null>(null)
@@ -192,6 +208,65 @@ defineExpose({
   justify-content: center;
   color: var(--color-text-secondary);
   opacity: 0.2;
+}
+
+/* ========================================
+   Platform Overlays
+   ======================================== */
+
+.platform-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 5;
+  pointer-events: none;
+  opacity: 0.9;
+  transition: all 0.3s ease;
+}
+
+.youtube-overlay .play-button {
+  width: 48px;
+  height: 32px;
+  background: rgba(255, 0, 0, 0.9);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.tiktok-overlay .music-icon {
+  width: 40px;
+  height: 40px;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  animation: spin 4s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Hover Effects */
+.card-media:hover .youtube-overlay {
+  transform: translate(-50%, -50%) scale(1.1);
+  opacity: 1;
+}
+
+.card-media:hover .tiktok-overlay {
+  opacity: 1;
 }
 
 /* ========================================
