@@ -4,48 +4,31 @@
             <div class="contact-header glass-card">
                 <button class="back-button glass-button" @click="goBack">
                     <ArrowLeft :size="20" />
-                    {{ $t('common.back', 'Back') }}
+                    {{ $t('common.back') }}
                 </button>
 
-                <h1>{{ $t('contact.title', 'Contact Developer') }}</h1>
+                <h1>{{ $t('contact.title') }}</h1>
                 <p class="subtitle">
-                    {{
-                        $t(
-                            'contact.subtitle',
-                            'If you have questions, suggestions, or bug reports, please reach out using one of the channels
-                    below.',
-                        )
-                    }}
+                    {{ $t('contact.subtitle') }}
                 </p>
             </div>
 
             <div class="contact-content glass-card">
                 <section class="contact-section">
-                    <h2>{{ $t('contact.githubTitle', 'GitHub Issues') }}</h2>
+                    <h2>{{ $t('contact.githubTitle') }}</h2>
                     <p>
-                        {{
-                            $t(
-                                'contact.githubDesc',
-                                'For feature requests and bug reports, please open an issue on the GitHub repository.',
-                            )
-                        }}
+                        {{ $t('contact.githubDesc') }}
                     </p>
                     <a href="https://github.com/domidoremi/hmrchan-frontend/issues" class="contact-link" target="_blank"
                         rel="noopener noreferrer">
-                        {{ $t('contact.githubLink', 'Open GitHub Issues') }}
+                        {{ $t('contact.githubLink') }}
                     </a>
                 </section>
 
                 <section class="contact-section">
-                    <h2>{{ $t('contact.emailTitle', 'Email') }}</h2>
+                    <h2>{{ $t('contact.emailTitle') }}</h2>
                     <p>
-                        {{
-                            $t(
-                                'contact.emailDesc',
-                                'If you prefer email, please use the contact address provided in the project documentation or
-                        profile.',
-                            )
-                        }}
+                        {{ $t('contact.emailDesc') }}
                     </p>
                 </section>
             </div>
