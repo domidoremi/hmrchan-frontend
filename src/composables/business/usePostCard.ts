@@ -26,15 +26,15 @@ export interface PostCardFormatters {
  * 平台颜色映射 - Material Design Colors
  */
 const PLATFORM_COLORS: Record<string, string> = {
-  twitter: '#1DA1F2',
-  x: '#000000',
-  bilibili: '#FB7299',
+  twitter: 'var(--color-twitter)',
+  x: 'var(--color-twitter)', // X is Twitter
+  bilibili: '#FB7299', // Keep hardcoded for now or add var later
   pixiv: '#0096FA',
-  youtube: '#FF0000',
+  youtube: 'var(--color-youtube)',
   weibo: '#E6162D',
-  instagram: '#E4405F',
-  tiktok: '#000000',
-  default: '#8B5CF6',
+  instagram: 'var(--color-instagram)',
+  tiktok: 'var(--color-tiktok)',
+  default: 'var(--color-primary)',
 }
 
 /**

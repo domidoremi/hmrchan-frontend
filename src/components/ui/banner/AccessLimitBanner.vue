@@ -43,7 +43,7 @@ const { safeAreaBottom, isMobile } = useResponsive()
 const isAuthenticated = computed(() => authStore.isAuthenticated)
 const isAdmin = computed(() => authStore.user?.is_admin ?? false)
 
-// 动态计算bottom值：底部导航栏高度 + 额外间距（与BackToTop保持一致）
+// 动态计算bottom值：与 BackToTop 保持一致，底部导航栏高度 + 额外间距
 const dynamicBottom = computed(() => {
   return `${safeAreaBottom.value + (isMobile.value ? 12 : 32)}px`
 })
@@ -82,8 +82,8 @@ const showDetails = () => {
   position: fixed;
   /* bottom 由动态计算提供 */
   /* 与 BackToTop 错开位置，避免重叠 */
-  right: clamp(16px, 4vw, 40px);
-  z-index: 1000;
+  right: calc(clamp(16px, 4vw, 40px) + 72px);
+  z-index: 1100;
 }
 
 .access-bubble {
