@@ -315,12 +315,36 @@ const resetFilters = () => {
 }
 
 .filter-chip.active {
+  color: white;
   background: var(--color-primary);
   border-color: var(--color-primary);
-  color: white;
-  box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.12),
-    0 8px 18px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 0 15px rgba(139, 92, 246, 0.4);
+}
+
+/* Platform-specific active states */
+.filter-chip.active[aria-label*='YouTube'] {
+  background: var(--color-youtube);
+  border-color: var(--color-youtube);
+  box-shadow: var(--glow-youtube);
+}
+
+.filter-chip.active[aria-label*='Twitter'] {
+  background: var(--color-twitter);
+  border-color: var(--color-twitter);
+  box-shadow: var(--glow-twitter);
+}
+
+.filter-chip.active[aria-label*='TikTok'] {
+  background: var(--color-tiktok);
+  border-color: var(--color-tiktok-accent);
+  box-shadow: var(--glow-tiktok);
+  color: var(--color-tiktok-accent);
+}
+
+.filter-chip.active[aria-label*='Instagram'] {
+  background: var(--gradient-instagram);
+  border-color: transparent;
+  box-shadow: var(--glow-instagram);
 }
 
 .chip-icon {
@@ -373,6 +397,7 @@ const resetFilters = () => {
   background: var(--color-primary);
   border-color: var(--color-primary);
   color: white;
+  box-shadow: 0 0 10px rgba(139, 92, 246, 0.3);
 }
 
 .filter-actions {
@@ -445,4 +470,5 @@ const resetFilters = () => {
     flex: 1 1 100%;
   }
 }
+
 </style>

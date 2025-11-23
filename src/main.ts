@@ -36,6 +36,7 @@ import App from './App.vue'
 
 /** 路由配置 */
 import router from './router'
+import { setRouter } from './router/navigator'
 
 /** 国际化配置 */
 import i18n from './i18n'
@@ -144,6 +145,9 @@ app.use(pinia)
 
 /** 注册 Vue Router 路由 */
 app.use(router)
+
+/** 将 Router 实例注入导航助手，供非组件模块使用 */
+setRouter(router)
 
 /** 注册 vue-i18n 国际化 */
 app.use(i18n)

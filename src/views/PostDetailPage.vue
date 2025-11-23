@@ -1,5 +1,8 @@
 <template>
   <MainLayout :disable-container="true">
+    <!-- 阅读进度条 -->
+    <div class="reading-progress" :style="{ width: `${readingProgress}%` }"></div>
+
     <div class="post-detail-page">
       <!-- 骨架屏加载状态 -->
       <div v-if="loading" class="skeleton-loader">
@@ -56,7 +59,8 @@
           <aside :class="['info-column', { interactive: isTabletOrBelow }]">
             <div :class="['post-content-wrapper', { 'as-accordion': isTabletOrBelow }]">
               <template v-if="isTabletOrBelow">
-                <details class="accordion-block" open>
+                <details class="accordion-block" :open="accordionStates.overview"
+                  @toggle="(event) => saveAccordionState('overview', (event.target as HTMLDetailsElement).open)">
                   <summary class="accordion-summary">
                     <span>{{ $t('post.overview') }}</span>
                     <ChevronRight :size="16" class="chevron" />
@@ -119,14 +123,41 @@
                       </div>
                     </RouterLink>
 
-                    <div v-if="post.description || post.title" :class="[
+                    <div v-if="post.description || post.title" ref="descriptionSectionRef" :class="[
                       'post-description',
                       {
                         'is-collapsed': !isDescriptionExpanded && isDescriptionLong,
                         'is-expanded': isDescriptionExpanded && isDescriptionLong,
                       },
                     ]">
-                      <p>{{ post.description || post.title || 'No description' }}</p>
+                      <p>
+                        <template v-for="(segment, index) in descriptionSegments" :key="index">
+                          <a v-if="segment.type === 'link'" class="description-link" :href="segment.href"
+                            target="_blank" rel="noopener noreferrer">
+                            <span class="description-link-icon" aria-hidden="true">
+                              <Instagram v-if="segment.platform === 'instagram'" :size="16" />
+                              <Music2 v-else-if="segment.platform === 'tiktok'" :size="16" />
+                              <Twitter v-else-if="segment.platform === 'x'" :size="16" />
+                              <Youtube v-else-if="segment.platform === 'youtube'" :size="16" />
+                              <Ticket v-else-if="segment.platform === 'legendfes' || segment.platform === 'tiget'"
+                                :size="16" />
+                              <Globe v-else-if="segment.platform === 'takanenonadeshiko'" :size="16" />
+                              <ExternalLink v-else :size="16" />
+                            </span>
+                            <span class="description-link-username">{{ segment.text }}</span>
+                          </a>
+                          <span v-else-if="segment.type === 'tag'" class="description-tag" :class="{
+                            'is-link': isKnownTag(segment.tagName),
+                            'is-active': segment.tagName === activeTag,
+                          }" @click="onDescriptionTagClick(segment.tagName)">
+                            <Tag :size="14" class="description-tag-icon" aria-hidden="true" />
+                            <span class="description-tag-text">#{{ segment.tagName || segment.text }}</span>
+                          </span>
+                          <span v-else>
+                            {{ segment.text }}
+                          </span>
+                        </template>
+                      </p>
                       <button v-if="isDescriptionLong" type="button" class="description-toggle"
                         @click="isDescriptionExpanded = !isDescriptionExpanded">
                         {{
@@ -139,7 +170,8 @@
                   </div>
                 </details>
 
-                <details v-if="yieldedStats.length > 0" class="accordion-block" open>
+                <details v-if="yieldedStats.length > 0" class="accordion-block" :open="accordionStates.stats"
+                  @toggle="(event) => saveAccordionState('stats', (event.target as HTMLDetailsElement).open)">
                   <summary class="accordion-summary">
                     <span>{{ $t('post.stats') }}</span>
                     <ChevronRight :size="16" class="chevron" />
@@ -167,16 +199,18 @@
                   </div>
                 </details>
 
-                <details v-if="post.tags && post.tags.length > 0" class="accordion-block" open>
+                <details v-if="post.tags && post.tags.length > 0" class="accordion-block" :open="accordionStates.tags"
+                  @toggle="(event) => saveAccordionState('tags', (event.target as HTMLDetailsElement).open)">
                   <summary class="accordion-summary">
                     <span>{{ $t('post.tags') }}</span>
                     <ChevronRight :size="16" class="chevron" />
                   </summary>
 
                   <div class="accordion-body">
-                    <div class="tags-section">
+                    <div class="tags-section" ref="mobileTagsSectionRef">
                       <div class="tags-list">
-                        <span v-for="tag in post.tags" :key="tag" class="tag glass-badge">
+                        <span v-for="tag in post.tags" :key="tag" class="tag glass-badge"
+                          :class="{ 'is-active': tag === activeTag }" @click="onTagsListTagClick(tag)">
                           {{ tag }}
                         </span>
                       </div>
@@ -184,7 +218,8 @@
                   </div>
                 </details>
 
-                <details v-if="relatedPosts.length > 0" class="accordion-block" open>
+                <details v-if="relatedPosts.length > 0" class="accordion-block" :open="accordionStates.related"
+                  @toggle="(event) => saveAccordionState('related', (event.target as HTMLDetailsElement).open)">
                   <summary class="accordion-summary">
                     <span>{{ $t('post.relatedPosts') }}</span>
                     <ChevronRight :size="16" class="chevron" />
@@ -277,14 +312,40 @@
 
           <!-- 桌面端：媒体下方整行，放描述 + 操作按钮 + 统计 -->
           <div v-if="!isTabletOrBelow" class="detail-main full-width-section">
-            <div v-if="post.description || post.title" :class="[
+            <div v-if="post.description || post.title" ref="descriptionSectionRef" :class="[
               'post-description',
               {
                 'is-collapsed': !isDescriptionExpanded && isDescriptionLong,
                 'is-expanded': isDescriptionExpanded && isDescriptionLong,
               },
             ]">
-              <p>{{ post.description || post.title || 'No description' }}</p>
+              <p>
+                <template v-for="(segment, index) in descriptionSegments" :key="index">
+                  <a v-if="segment.type === 'link'" class="description-link" :href="segment.href" target="_blank"
+                    rel="noopener noreferrer">
+                    <span class="description-link-icon" aria-hidden="true">
+                      <Instagram v-if="segment.platform === 'instagram'" :size="16" />
+                      <Music2 v-else-if="segment.platform === 'tiktok'" :size="16" />
+                      <Twitter v-else-if="segment.platform === 'x'" :size="16" />
+                      <Youtube v-else-if="segment.platform === 'youtube'" :size="16" />
+                      <Ticket v-else-if="segment.platform === 'legendfes' || segment.platform === 'tiget'" :size="16" />
+                      <Globe v-else-if="segment.platform === 'takanenonadeshiko'" :size="16" />
+                      <ExternalLink v-else :size="16" />
+                    </span>
+                    <span class="description-link-username">{{ segment.text }}</span>
+                  </a>
+                  <span v-else-if="segment.type === 'tag'" class="description-tag" :class="{
+                    'is-link': isKnownTag(segment.tagName),
+                    'is-active': segment.tagName === activeTag,
+                  }" @click="onDescriptionTagClick(segment.tagName)">
+                    <Tag :size="14" class="description-tag-icon" aria-hidden="true" />
+                    <span class="description-tag-text">#{{ segment.tagName || segment.text }}</span>
+                  </span>
+                  <span v-else>
+                    {{ segment.text }}
+                  </span>
+                </template>
+              </p>
               <button v-if="isDescriptionLong" type="button" class="description-toggle"
                 @click="isDescriptionExpanded = !isDescriptionExpanded">
                 {{
@@ -315,10 +376,11 @@
           </div>
 
           <div v-if="!isTabletOrBelow && post.tags && post.tags.length > 0"
-            class="tags-section glass-card full-width-section">
+            class="tags-section glass-card full-width-section" ref="desktopTagsSectionRef">
             <h3>{{ $t('post.tags') }}</h3>
             <div class="tags-list">
-              <span v-for="tag in post.tags" :key="tag" class="tag glass-badge">
+              <span v-for="tag in post.tags" :key="tag" class="tag glass-badge"
+                :class="{ 'is-active': tag === activeTag }" @click="onTagsListTagClick(tag)">
                 {{ tag }}
               </span>
             </div>
@@ -387,6 +449,17 @@
       </div>
     </div>
 
+    <!-- 回到顶部按钮（带进度环） -->
+    <button v-show="showBackToTop" class="back-to-top-btn" @click="scrollToTop"
+      :aria-label="$t('common.backToTop', '回到顶部')">
+      <svg viewBox="0 0 100 100" class="progress-ring">
+        <circle cx="50" cy="50" r="45" class="progress-ring-bg" />
+        <circle cx="50" cy="50" r="45" class="progress-ring-progress"
+          :style="{ strokeDashoffset: progressRingOffset }" />
+      </svg>
+      <ArrowUp :size="20" class="arrow-icon" />
+    </button>
+
     <!-- 媒体查看器 -->
     <PhotoSwipeViewer :show="showMediaViewer" :items="viewerMediaItems" :initial-index="viewerInitialIndex"
       @close="closeMediaViewer" />
@@ -394,7 +467,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, type Component } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick, type Component } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useMediaPreload } from '@/composables/media/useSmartPreload'
@@ -404,6 +477,7 @@ import { resolveMediaUrl, validateMediaId } from '@/utils/format'
 import { logger } from '@/utils/logger'
 import {
   ArrowLeft,
+  ArrowUp,
   Calendar,
   User,
   Eye,
@@ -416,6 +490,13 @@ import {
   Sparkles,
   Play,
   ChevronRight,
+  Instagram,
+  Twitter,
+  Youtube,
+  Ticket,
+  Globe,
+  Tag,
+  Music2,
 } from 'lucide-vue-next'
 import dayjs from 'dayjs'
 
@@ -463,6 +544,10 @@ const isTabletViewport = ref(false)
 const isMobileViewport = ref(false)
 const isTopbarSticky = ref(false)
 
+// 阅读进度相关
+const readingProgress = ref(0)
+const showBackToTop = ref(false)
+
 const isTabletOrBelow = computed(() => isTabletViewport.value || isMobileViewport.value)
 
 const isOfflineDetail = computed(() => postsStore.lastDetailFromFallback)
@@ -493,6 +578,273 @@ const isDescriptionLong = computed(() => {
   const length = post.value?.description?.length ?? 0
   return length > 260
 })
+
+const rawDescription = computed(() => post.value?.description || post.value?.title || '')
+
+type SupportedPlatform =
+  | 'instagram'
+  | 'tiktok'
+  | 'x'
+  | 'youtube'
+  | 'legendfes'
+  | 'tiget'
+  | 'takanenonadeshiko'
+
+type DescriptionSegmentType = 'text' | 'link' | 'tag'
+
+interface DescriptionSegment {
+  type: DescriptionSegmentType
+  text: string
+  href?: string
+  platform?: SupportedPlatform
+  tagName?: string
+}
+
+const descriptionSegments = computed<DescriptionSegment[]>(() => {
+  const text = rawDescription.value
+  if (!text) return []
+  const tags = post.value?.tags || []
+  return parseDescriptionText(text, tags)
+})
+
+const activeTag = ref<string | null>(null)
+const mobileTagsSectionRef = ref<HTMLElement | null>(null)
+const desktopTagsSectionRef = ref<HTMLElement | null>(null)
+const descriptionSectionRef = ref<HTMLElement | null>(null)
+
+function parseDescriptionText(text: string, tags: string[] = []): DescriptionSegment[] {
+  const segments: DescriptionSegment[] = []
+  // 同时识别 URL 和 {#+tag} 形式的标签
+  const tokenRegex = /(\{\#\+[^}]+\}|https?:\/\/[^\s]+)/g
+
+  let lastIndex = 0
+  let match: RegExpExecArray | null
+
+  while ((match = tokenRegex.exec(text)) !== null) {
+    const token = match[0]
+    const index = match.index
+
+    if (index > lastIndex) {
+      segments.push({ type: 'text', text: text.slice(lastIndex, index) })
+    }
+
+    if (token.startsWith('{#+')) {
+      // 标签语法：{#+tagName}
+      const inner = token.slice(3, -1).trim()
+      if (inner) {
+        segments.push({
+          type: 'tag',
+          text: inner,
+          tagName: inner,
+        })
+      }
+    } else {
+      // URL 链接
+      const url = token
+      const label = getShortLinkLabel(url)
+      const platform = getPlatformFromUrl(url)
+      segments.push({ type: 'link', text: label, href: url, platform })
+    }
+
+    lastIndex = index + token.length
+  }
+
+  if (lastIndex < text.length) {
+    segments.push({ type: 'text', text: text.slice(lastIndex) })
+  }
+
+  // 第二次处理：在文本段中查找并高亮已有的标签
+  if (tags.length > 0) {
+    const finalSegments: DescriptionSegment[] = []
+
+    for (const segment of segments) {
+      if (segment.type !== 'text') {
+        // 保留非文本段（链接和已有的标签）
+        finalSegments.push(segment)
+        continue
+      }
+
+      // 对文本段进行标签匹配和替换
+      const textSegments = splitTextByTags(segment.text, tags)
+      finalSegments.push(...textSegments)
+    }
+
+    return finalSegments
+  }
+
+  return segments
+}
+
+/**
+ * 将文本按照标签分割，将匹配的标签转换为tag类型的segment
+ */
+function splitTextByTags(text: string, tags: string[]): DescriptionSegment[] {
+  if (!text || tags.length === 0) return [{ type: 'text', text }]
+
+  const segments: DescriptionSegment[] = []
+
+  // 创建一个正则表达式匹配所有标签
+  // 需要对标签进行转义以处理特殊字符，并按长度降序排序以优先匹配长标签
+  const sortedTags = [...tags].sort((a, b) => b.length - a.length)
+  const escapedTags = sortedTags.map(tag => tag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+  // 移除 \b 单词边界，改用更灵活的匹配方式
+  const tagPattern = new RegExp(`(${escapedTags.join('|')})`, 'gi')
+
+  let lastIndex = 0
+  let match: RegExpExecArray | null
+
+  while ((match = tagPattern.exec(text)) !== null) {
+    const matchedTag = match[0]
+    const index = match.index
+
+    // 添加匹配前的文本
+    if (index > lastIndex) {
+      segments.push({ type: 'text', text: text.slice(lastIndex, index) })
+    }
+
+    // 找到原始标签（保持原始大小写）
+    const originalTag = tags.find(t => t.toLowerCase() === matchedTag.toLowerCase()) || matchedTag
+
+    // 添加标签段
+    segments.push({
+      type: 'tag',
+      text: matchedTag,
+      tagName: originalTag,
+    })
+
+    lastIndex = index + matchedTag.length
+  }
+
+  // 添加剩余的文本
+  if (lastIndex < text.length) {
+    segments.push({ type: 'text', text: text.slice(lastIndex) })
+  }
+
+  // 如果没有匹配到任何标签，返回原始文本
+  if (segments.length === 0) {
+    return [{ type: 'text', text }]
+  }
+
+  return segments
+}
+
+function getShortLinkLabel(urlStr: string): string {
+  try {
+    const url = new URL(urlStr)
+    const hostname = url.hostname.replace(/^www\./, '')
+    const trimmedPath = url.pathname.replace(/\/+$/, '')
+
+    // 如果有路径，优先使用最后一段路径作为标签（例如 Instagram/TikTok 用户名）
+    if (trimmedPath && trimmedPath !== '/') {
+      const parts = trimmedPath.split('/').filter(Boolean)
+      const rawLast = parts[parts.length - 1] || ''
+      // 去掉前缀 @（如 TikTok 的 @username），统一显示为 username
+      const cleanedLast = rawLast.startsWith('@') ? rawLast.slice(1) : rawLast
+      if (cleanedLast) return cleanedLast
+    }
+
+    // 否则使用主域名去掉后缀（例如 takanenonadeshiko.jp -> takanenonadeshiko）
+    const hostParts = hostname.split('.')
+    if (hostParts.length >= 2) {
+      const label = hostParts[hostParts.length - 2] || hostname
+      return label
+    }
+    return hostname
+  } catch {
+    // 如果 URL 解析失败，退回到去除协议的原始字符串
+    return urlStr.replace(/^https?:\/\//, '')
+  }
+}
+
+function getPlatformFromUrl(urlStr: string): SupportedPlatform | undefined {
+  try {
+    const url = new URL(urlStr)
+    const hostname = url.hostname.replace(/^www\./, '')
+
+    if (hostname === 'instagram.com') return 'instagram'
+    if (hostname === 'tiktok.com') return 'tiktok'
+    if (hostname === 'x.com' || hostname === 'twitter.com') return 'x'
+    if (hostname === 'youtube.com' || hostname === 'youtu.be') return 'youtube'
+    if (hostname.includes('legendfes')) return 'legendfes'
+    if (hostname.includes('tiget')) return 'tiget'
+    if (hostname.includes('takanenonadeshiko')) return 'takanenonadeshiko'
+  } catch {
+    // ignore
+  }
+  return undefined
+}
+
+function isKnownTag(tagName?: string): boolean {
+  if (!tagName || !post.value?.tags) return false
+  return post.value.tags.includes(tagName)
+}
+
+function scrollToTagsSection() {
+  const target = isTabletOrBelow.value ? mobileTagsSectionRef.value : desktopTagsSectionRef.value
+  if (!target) return
+  target.scrollIntoView({ behavior: 'smooth', block: 'center' })
+}
+
+function scrollToDescriptionSection() {
+  const target = descriptionSectionRef.value
+  if (!target) return
+  target.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
+
+function onDescriptionTagClick(tagName?: string) {
+  if (!tagName || !isKnownTag(tagName)) return
+  activeTag.value = tagName
+  // 展开 tags 手风琴面板
+  accordionStates.value.tags = true
+  nextTick(() => {
+    scrollToTagsSection()
+  })
+}
+
+function onTagsListTagClick(tagName: string) {
+  if (!tagName) return
+  activeTag.value = tagName
+  nextTick(() => {
+    scrollToDescriptionSection()
+  })
+}
+
+// Accordion 状态持久化
+const ACCORDION_KEY = 'hmrchan:accordion-states'
+
+const accordionStates = ref({
+  overview: true,
+  stats: true,
+  tags: true,
+  related: true
+})
+
+// 保存 accordion 状态
+const saveAccordionState = (key: keyof typeof accordionStates.value, isOpen: boolean) => {
+  accordionStates.value[key] = isOpen
+  const postId = route.params.id
+  try {
+    sessionStorage.setItem(
+      `${ACCORDION_KEY}:${postId}`,
+      JSON.stringify(accordionStates.value)
+    )
+  } catch {
+    // Silently ignore sessionStorage errors
+  }
+}
+
+// 恢复 accordion 状态
+const restoreAccordionStates = () => {
+  const postId = route.params.id
+  try {
+    const saved = sessionStorage.getItem(`${ACCORDION_KEY}:${postId}`)
+    if (saved) {
+      Object.assign(accordionStates.value, JSON.parse(saved))
+    }
+  } catch {
+    // Silently ignore sessionStorage errors
+  }
+}
 
 // 判断描述长度以确定是否需要展开/收起功能
 // 注意：已移除showDescription，现在始终显示description或title
@@ -608,6 +960,12 @@ const yieldedStats = computed<StatEntry[]>(() => {
   return stats
 })
 
+// 进度环偏移量计算
+const progressRingOffset = computed(() => {
+  const circumference = 2 * Math.PI * 45 // r=45
+  return circumference - (readingProgress.value / 100) * circumference
+})
+
 const updateViewportBreakpoints = () => {
   if (typeof window === 'undefined') return
 
@@ -692,6 +1050,9 @@ onMounted(async () => {
 
     // 加载相关推荐（异步，不阻塞页面）
     loadRelatedPosts()
+
+    // 恢复 accordion 状态
+    restoreAccordionStates()
   } catch (error) {
     handleError(error, { customMessage: t('post.loadFailed', 'Failed to load post') })
   } finally {
@@ -942,9 +1303,21 @@ const handleKeydown = (e: KeyboardEvent) => {
   }
 }
 
-// 滚动检测，用于 topbar 粘性效果 - 统一移动/桌面端
+// 滚动检测，用于 topbar 粘性效果和阅读进度 - 统一移动/桌面端
 const handleScroll = () => {
   const scrollTop = window.scrollY || document.documentElement.scrollTop
+  const windowHeight = window.innerHeight
+  const documentHeight = document.documentElement.scrollHeight
+
+  // 计算阅读进度
+  const scrollableHeight = documentHeight - windowHeight
+  readingProgress.value = scrollableHeight > 0
+    ? Math.min((scrollTop / scrollableHeight) * 100, 100)
+    : 0
+
+  // 显示/隐藏回到顶部按钮
+  showBackToTop.value = scrollTop > 300
+
   // 根据不同视口大小设置不同的导航栏高度
   let navbarHeight = 78 // 默认桌面端
   if (isMobileViewport.value) {
@@ -953,6 +1326,14 @@ const handleScroll = () => {
     navbarHeight = 72 // 平板端导航栏高度
   }
   isTopbarSticky.value = scrollTop > navbarHeight
+}
+
+// 回到顶部
+const scrollToTop = () => {
+  window.scrollTo({
+    top: 0,
+    behavior: 'smooth'
+  })
 }
 
 onMounted(() => {
@@ -970,6 +1351,117 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+/* ========================================
+   阅读进度条
+   ======================================== */
+
+.reading-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--color-primary), #c084fc);
+  z-index: 9999;
+  transition: width 0.1s ease-out;
+  box-shadow:
+    0 1px 3px rgba(139, 92, 246, 0.5),
+    0 0 10px rgba(139, 92, 246, 0.3);
+}
+
+/* ========================================
+   回到顶部按钮（带进度环）
+   ======================================== */
+
+.back-to-top-btn {
+  position: fixed;
+  bottom: 32px;
+  right: 32px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: var(--glass-blur);
+  cursor: pointer;
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.1),
+    0 8px 24px rgba(139, 92, 246, 0.2);
+  animation: fadeInUp 0.3s ease-out;
+}
+
+.back-to-top-btn:hover {
+  transform: translateY(-4px);
+  background: rgba(139, 92, 246, 0.1);
+  box-shadow:
+    0 8px 20px rgba(139, 92, 246, 0.3),
+    0 12px 32px rgba(139, 92, 246, 0.2);
+}
+
+.back-to-top-btn:active {
+  transform: translateY(-2px);
+}
+
+.progress-ring {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.progress-ring-bg {
+  fill: none;
+  stroke: rgba(139, 92, 246, 0.1);
+  stroke-width: 2;
+}
+
+.progress-ring-progress {
+  fill: none;
+  stroke: var(--color-primary);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-dasharray: 283;
+  /* 2 * π * 45 */
+  transition: stroke-dashoffset 0.3s ease;
+  filter: drop-shadow(0 0 4px rgba(139, 92, 246, 0.6));
+}
+
+.arrow-icon {
+  position: relative;
+  z-index: 1;
+  color: var(--color-primary);
+  transition: transform 0.3s ease;
+}
+
+.back-to-top-btn:hover .arrow-icon {
+  transform: translateY(-2px);
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 768px) {
+  .back-to-top-btn {
+    bottom: 20px;
+    right: 20px;
+    width: 48px;
+    height: 48px;
+  }
+}
+
 /* ========================================
    Post Detail Page - Modern Layout
    Material Design + Apple Style
@@ -1622,10 +2114,12 @@ onUnmounted(() => {
     var(--glass-bg-light);
   border-radius: var(--radius-2xl);
   border: 1px solid rgba(139, 92, 246, 0.08);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow:
     0 2px 8px rgba(0, 0, 0, 0.03),
     inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
 }
 
 .post-description p {
@@ -1641,10 +2135,81 @@ onUnmounted(() => {
   background-clip: text;
 }
 
+.post-description .description-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  -webkit-text-fill-color: currentColor;
+  background: none;
+  text-decoration: none;
+}
+
+.post-description .description-link:hover {
+  color: var(--color-secondary);
+}
+
+.description-link-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.description-link-username {
+  font-weight: 600;
+}
+
+.description-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.2rem 0.7rem;
+  margin-inline: 0.15rem;
+  border-radius: 999px;
+  background: rgba(129, 140, 248, 0.18);
+  border: 1px solid rgba(129, 140, 248, 0.4);
+  color: var(--color-primary);
+  -webkit-text-fill-color: currentColor;
+  box-shadow: 0 2px 6px rgba(129, 140, 248, 0.15);
+  transition: all 0.2s ease;
+}
+
+.description-tag.is-link {
+  cursor: pointer;
+}
+
+.description-tag.is-link:hover {
+  background: rgba(129, 140, 248, 0.25);
+  border-color: rgba(129, 140, 248, 0.6);
+  box-shadow: 0 4px 10px rgba(129, 140, 248, 0.25);
+  transform: translateY(-1px);
+}
+
+.description-tag.is-active {
+  background: rgba(129, 140, 248, 0.25);
+  border-color: rgba(129, 140, 248, 0.9);
+  box-shadow:
+    0 0 0 2px rgba(129, 140, 248, 0.9),
+    0 4px 12px rgba(15, 23, 42, 0.25);
+}
+
+[data-theme='dark'] .description-tag {
+  background: rgba(129, 140, 248, 0.25);
+}
+
+.description-tag-icon {
+  flex-shrink: 0;
+}
+
+.description-tag-text {
+  font-size: var(--text-xs);
+  font-weight: 500;
+}
+
 .post-description.is-collapsed {
-  position: relative;
-  max-height: 16rem;
-  overflow: hidden;
+  max-height: 18em;
+  /* 固定em值，桌面端 */
 }
 
 .post-description.is-collapsed::after {
@@ -1653,35 +2218,74 @@ onUnmounted(() => {
   inset-inline: 0;
   bottom: 0;
   height: 72px;
-  background: linear-gradient(to top, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0));
+  background: linear-gradient(to top, var(--glass-bg-light), transparent);
   pointer-events: none;
 }
 
 .post-description.is-expanded {
-  max-height: none;
+  max-height: none !important;
 }
 
 .description-toggle {
-  margin-top: var(--spacing-md);
+  position: absolute;
+  bottom: var(--spacing-sm);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
   padding: 6px 14px;
   border-radius: 999px;
-  border: 1px solid rgba(148, 163, 184, 0.5);
-  background: rgba(15, 23, 42, 0.4);
+  /* 渐变背景 */
+  background: linear-gradient(135deg,
+      rgba(139, 92, 246, 0.2),
+      rgba(192, 132, 252, 0.2));
+  border: 1px solid rgba(139, 92, 246, 0.5);
   color: var(--color-text-secondary);
   font-size: var(--text-sm);
+  font-weight: 500;
   cursor: pointer;
   backdrop-filter: blur(10px);
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  /* 增强阴影层次 */
+  box-shadow:
+    0 2px 8px rgba(139, 92, 246, 0.25),
+    0 4px 16px rgba(0, 0, 0, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
 }
 
 .description-toggle:hover {
   color: var(--color-text-primary);
-  border-color: rgba(129, 140, 248, 0.9);
-  background: rgba(15, 23, 42, 0.7);
+  background: linear-gradient(135deg,
+      rgba(139, 92, 246, 0.3),
+      rgba(192, 132, 252, 0.3));
+  border-color: rgba(129, 140, 248, 0.7);
+  transform: translateX(-50%) translateY(-4px) scale(1.02);
+  box-shadow:
+    0 4px 16px rgba(139, 92, 246, 0.4),
+    0 8px 24px rgba(0, 0, 0, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.description-toggle:active {
+  transform: translateX(-50%) translateY(-2px) scale(1);
+  box-shadow:
+    0 2px 8px rgba(139, 92, 246, 0.3),
+    0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+@media (max-width: 768px) {
+  .post-description.is-collapsed {
+    max-height: 14em;
+    /* 移动端更小的固定值 */
+  }
+
+  .description-toggle {
+    padding: 4px 12px;
+    font-size: var(--text-xs);
+  }
 }
 
 @media (min-width: 1200px) {
@@ -1771,6 +2375,18 @@ onUnmounted(() => {
   background: linear-gradient(135deg, rgba(139, 92, 246, 0.18), rgba(192, 132, 252, 0.18));
   color: var(--color-primary);
   flex-shrink: 0;
+  position: relative;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 添加发光效果 */
+.post-stats-row.is-link:hover .stat-icon {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.35), rgba(192, 132, 252, 0.35));
+  box-shadow:
+    0 0 20px rgba(139, 92, 246, 0.4),
+    0 0 40px rgba(139, 92, 246, 0.2),
+    inset 0 0 10px rgba(255, 255, 255, 0.1);
+  transform: scale(1.1);
 }
 
 [data-theme='dark'] .stat-icon {
@@ -1961,6 +2577,21 @@ onUnmounted(() => {
 
 .tag {
   font-size: var(--text-sm);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tag:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+}
+
+.tag.is-active {
+  box-shadow:
+    0 0 0 2px rgba(129, 140, 248, 0.9),
+    0 4px 12px rgba(15, 23, 42, 0.25);
+  transform: translateY(-1px);
+  background: linear-gradient(135deg, rgba(129, 140, 248, 0.2), rgba(165, 180, 252, 0.2));
 }
 
 .error-state {
@@ -2184,16 +2815,49 @@ onUnmounted(() => {
   animation-delay: 0.5s;
 }
 
+/* 改进后的骨架屏 - Shimmer 加载效果 */
 @keyframes skeleton-pulse {
-
-  0%,
-  100% {
+  0% {
     opacity: 1;
   }
 
   50% {
-    opacity: 0.5;
+    opacity: 0.4;
   }
+
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.skeleton-back-btn,
+.skeleton-thumbnail,
+.skeleton-meta,
+.skeleton-title,
+.skeleton-description,
+.skeleton-author,
+.skeleton-stats {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(90deg,
+      var(--glass-bg-light) 0%,
+      rgba(139, 92, 246, 0.08) 20%,
+      rgba(192, 132, 252, 0.12) 40%,
+      rgba(139, 92, 246, 0.08) 60%,
+      var(--glass-bg-light) 100%);
+  background-size: 1000px 100%;
+  animation: skeleton-shimmer 2s ease-in-out infinite,
+    skeleton-pulse 1.5s ease-in-out infinite;
 }
 
 /* ========================================
