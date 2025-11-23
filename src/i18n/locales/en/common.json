@@ -65,7 +65,8 @@
     "seekForward": "Seek forward",
     "seekBackward": "Seek backward",
     "toggleFullscreen": "Toggle fullscreen",
-    "toggleCaptions": "Toggle captions"
+    "toggleCaptions": "Toggle captions",
+    "accessLimit": "Access usage: {current} of {limit}"
   },
   "cookies": {
     "title": "Cookie Notice",

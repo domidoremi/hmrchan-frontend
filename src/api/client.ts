@@ -15,46 +15,32 @@ import logger from '@/utils/logger'
 import { requestCache } from '@/utils/cache'
 import { offlineQueue } from '@/utils/storage'
 import { cacheManager } from '@/utils/cache/CacheManager'
+import { getRuntimeApiEndpoint } from '@/config/runtime'
+import { getRouter } from '@/router/navigator'
 
 /** 设置 API 客户端日志上下文 */
 logger.setContext({ category: 'API' })
 
 /**
- * 获取 API 基础 URL
+ * API 基础 URL（包含 /api/v1），通过运行时配置和环境变量动态获取
  *
- * 策略说明：
- * - 浏览器 HTTPS 环境：强制使用 HTTPS API
- * - 开发环境：使用相对路径 /api，由 Vite 代理到后端
- * - 生产环境：硬编码 HTTPS API 地址
- *
- * @returns API 基础 URL
+ * 优先级：
+ * - VITE_API_ENDPOINT
+ * - VITE_API_BASE_URL + /api/v1
+ * - 回退到默认线上地址（由 runtime 模块内部处理）
  */
-function getBaseURL(): string {
-  if (typeof window !== 'undefined' && window.location.protocol === 'https:') {
-    return 'https://api.momichan.xyz/api/v1'
-  }
-
-  if (import.meta.env.DEV) {
-    return '/api/v1'
-  }
-
-  return 'https://api.momichan.xyz/api/v1'
-}
-
-/** API 基础 URL */
-const BASE_URL = getBaseURL()
-
-/** 安全的 API 基础 URL（确保使用 HTTPS） */
-const SAFE_BASE_URL = BASE_URL.startsWith('http://')
-  ? BASE_URL.replace('http://', 'https://')
-  : BASE_URL
+const BASE_URL = getRuntimeApiEndpoint()
 
 /** 输出当前 API 配置信息（用于诊断） */
 logger.info('🌐 API Configuration', {
   baseURL: BASE_URL,
   mode: import.meta.env.MODE,
-  strategy: import.meta.env.DEV ? 'vite-proxy' : 'hardcoded-https',
   windowProtocol: typeof window !== 'undefined' ? window.location.protocol : 'N/A',
+  source: import.meta.env.VITE_API_ENDPOINT
+    ? 'env:VITE_API_ENDPOINT'
+    : import.meta.env.VITE_API_BASE_URL
+      ? 'env:VITE_API_BASE_URL'
+      : 'runtime-default',
 })
 
 /**
@@ -68,7 +54,7 @@ logger.info('🌐 API Configuration', {
  * - 拦截器：请求前添加认证、响应后记录日志、错误时统一处理
  */
 const apiClient: KyInstance = ky.create({
-  prefixUrl: SAFE_BASE_URL,
+  prefixUrl: BASE_URL,
   timeout: 60000,
   credentials: 'omit',
   retry: {
@@ -79,14 +65,11 @@ const apiClient: KyInstance = ky.create({
   hooks: {
     beforeRequest: [
       (request) => {
-        /** 确保请求使用 HTTPS 协议 (仅生产环境且指向正式 API 域名时生效) */
-        const url = request.url
-        if (!import.meta.env.DEV && url.startsWith('http://') && url.includes('api.momichan.xyz')) {
-          request = new Request(url.replace('http://', 'https://'), request)
-          logger.warn('URL was HTTP, forced to HTTPS', { url })
-        }
-
-        /** 添加认证 Token 到请求头 */
+        /**
+         * 添加认证 Token 到请求头
+         *
+         * 说明：BASE_URL 已通过 runtime 配置强制为 HTTPS，这里不再重复处理协议
+         */
         const authStore = useAuthStore()
         if (authStore.token) {
           request.headers.set('Authorization', `Bearer ${authStore.token}`)
@@ -107,11 +90,22 @@ const apiClient: KyInstance = ky.create({
       },
     ],
     beforeError: [
-      (error) => {
+      async (error) => {
         /** 统一错误处理逻辑 */
         const { request, response } = error
         if (response) {
           const status = response.status
+
+          // 尝试解析错误响应体，供后续错误处理（兼容 ky / 自定义错误处理）
+          try {
+            const cloned = response.clone()
+            const data = await cloned.json().catch(() => null)
+            if (data && typeof data === 'object') {
+              ;(error as unknown as { responseData?: unknown }).responseData = data
+            }
+          } catch {
+            // 忽略 JSON 解析错误，保持网络错误日志即可
+          }
 
           logger.error(`Response error: ${request.method} ${request.url}`, {
             status,
@@ -121,8 +115,23 @@ const apiClient: KyInstance = ky.create({
           if (status === 401) {
             logger.warn('Unauthorized - redirecting to login')
             const authStore = useAuthStore()
-            authStore.logout()
-            window.location.href = '/login'
+            // 异步清理本地认证状态（无需阻塞当前错误处理流程）
+            void authStore.logout()
+
+            if (typeof window !== 'undefined') {
+              const currentUrl =
+                window.location.pathname + window.location.search + window.location.hash
+              const router = getRouter()
+
+              if (router) {
+                router.push({ name: 'login', query: { redirect: currentUrl } }).catch(() => {
+                  /* ignore navigation errors */
+                })
+              } else {
+                // 兜底：在 Router 尚未就绪时，退回到直接跳转
+                window.location.href = `/login?redirect=${encodeURIComponent(currentUrl)}`
+              }
+            }
           }
 
           if (status === 403) {
@@ -163,6 +172,57 @@ offlineQueue.setApiClient(apiClient as unknown as typeof apiClient)
  */
 function normalizeUrl(url: string): string {
   return url.startsWith('/') ? url.slice(1) : url
+}
+
+/**
+ * 稳定序列化任意值，用于生成与键顺序无关的缓存键
+ */
+function stableStringify(value: unknown): string {
+  if (value === null || typeof value !== 'object') {
+    return JSON.stringify(value)
+  }
+
+  if (Array.isArray(value)) {
+    return `[${value.map((item) => stableStringify(item)).join(',')}]`
+  }
+
+  const entries = Object.entries(value as Record<string, unknown>).sort(([a], [b]) =>
+    a.localeCompare(b),
+  )
+  const serialized = entries
+    .map(([key, val]) => `${JSON.stringify(key)}:${stableStringify(val)}`)
+    .join(',')
+  return `{${serialized}}`
+}
+
+/**
+ * 根据 HTTP 方法 / URL / 参数生成缓存键
+ */
+function createCacheKey(method: string, url: string, params?: Record<string, unknown>): string {
+  const paramsPart = params ? stableStringify(params) : ''
+  return `${method.toUpperCase()}:${url}:${paramsPart}`
+}
+
+function toParamValue(value: unknown): string {
+  if (value === undefined || value === null) return ''
+  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+    return String(value)
+  }
+  // 对于数组和对象，使用 JSON 字符串，便于后端解析
+  return JSON.stringify(value)
+}
+
+/**
+ * 将 params 对象转换为 ky 所需的 searchParams 对象
+ */
+function buildSearchParams(params?: Record<string, unknown>): Record<string, string> | undefined {
+  if (!params) return undefined
+  const searchParams: Record<string, string> = {}
+  for (const [key, value] of Object.entries(params)) {
+    if (value === undefined) continue
+    searchParams[key] = toParamValue(value)
+  }
+  return searchParams
 }
 
 /**
@@ -223,7 +283,7 @@ export const api = {
     } = config || {}
 
     const normalizedUrl = normalizeUrl(url)
-    const cacheKey = `GET:${url}:${JSON.stringify(params || {})}`
+    const cacheKey = createCacheKey('GET', url, params)
 
     if (invalidateCache) {
       await cacheManager.delete(cacheKey)
@@ -231,12 +291,7 @@ export const api = {
     }
 
     if (!cache) {
-      const searchParams = params
-        ? (Object.fromEntries(Object.entries(params).map(([k, v]) => [k, String(v)])) as Record<
-            string,
-            string
-          >)
-        : undefined
+      const searchParams = buildSearchParams(params)
       return apiClient.get(normalizedUrl, { searchParams, ...kyConfig }).json<T>()
     }
 
@@ -250,12 +305,7 @@ export const api = {
       return requestCache.dedupe(
         cacheKey,
         async () => {
-          const searchParams = params
-            ? (Object.fromEntries(Object.entries(params).map(([k, v]) => [k, String(v)])) as Record<
-                string,
-                string
-              >)
-            : undefined
+          const searchParams = buildSearchParams(params)
           const data = await apiClient.get(normalizedUrl, { searchParams, ...kyConfig }).json<T>()
 
           await cacheManager.set(cacheKey, data, ttl)
@@ -269,12 +319,7 @@ export const api = {
     return requestCache.dedupe(
       cacheKey,
       () => {
-        const searchParams = params
-          ? (Object.fromEntries(Object.entries(params).map(([k, v]) => [k, String(v)])) as Record<
-              string,
-              string
-            >)
-          : undefined
+        const searchParams = buildSearchParams(params)
         return apiClient.get(normalizedUrl, { searchParams, ...kyConfig }).json<T>()
       },
       { ttl, force: false },
@@ -299,12 +344,7 @@ export const api = {
   ): Promise<Blob> {
     const { params, ...kyConfig } = config || {}
     const normalizedUrl = normalizeUrl(url)
-    const searchParams = params
-      ? (Object.fromEntries(Object.entries(params).map(([k, v]) => [k, String(v)])) as Record<
-          string,
-          string
-        >)
-      : undefined
+    const searchParams = buildSearchParams(params)
     return apiClient.get(normalizedUrl, { searchParams, ...kyConfig }).blob()
   },
 
@@ -431,7 +471,7 @@ export const api = {
    */
   async clearCache(url?: string, params?: Record<string, unknown>) {
     if (url) {
-      const cacheKey = `GET:${url}:${JSON.stringify(params || {})}`
+      const cacheKey = createCacheKey('GET', url, params)
       await cacheManager.delete(cacheKey)
       requestCache.clear(cacheKey)
     } else {

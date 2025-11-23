@@ -37,8 +37,12 @@ interface HttpError extends Error {
 export function parseHttpError(error: HttpError): ErrorResponse {
   const { t } = useI18n()
 
-  // 网络错误
-  if (!error.response) {
+  // 兼容 axios 风格（response.data）和 ky 风格（在 beforeError 中附加的 responseData）
+  const rawResponse = (error as unknown as { response?: { status?: number; data?: unknown } })
+    .response
+
+  // 网络错误（没有任何响应）
+  if (!rawResponse) {
     return {
       message: t('errors.networkError', 'Network error, please check your connection'),
       code: 'NETWORK_ERROR',
@@ -46,48 +50,56 @@ export function parseHttpError(error: HttpError): ErrorResponse {
     }
   }
 
-  const status = error.response.status
-  const data = error.response.data as Record<string, unknown>
+  const status = rawResponse.status ?? 0
+  const data = ((rawResponse as { data?: unknown }).data ??
+    (error as unknown as { responseData?: unknown }).responseData ??
+    {}) as Record<string, unknown>
 
-  // 根据HTTP状态码返回相应错误
-  const errorMessage = typeof data?.message === 'string' ? data.message : undefined
+  const errorCode = typeof data?.error_code === 'string' ? (data.error_code as string) : undefined
+  const details = Object.prototype.hasOwnProperty.call(data, 'details') ? data.details : undefined
+  const errorMessage = typeof data?.message === 'string' ? (data.message as string) : undefined
 
+  // 根据 HTTP 状态码和后端统一错误格式返回错误
   switch (status) {
     case 400:
       return {
         message: errorMessage || t('errors.badRequest', 'Invalid request'),
-        code: 'BAD_REQUEST',
+        code: errorCode || 'BAD_REQUEST',
         status,
-        details: data,
+        details,
       }
 
     case 401:
       return {
         message: errorMessage || t('errors.unauthorized', 'Please login first'),
-        code: 'UNAUTHORIZED',
+        code: errorCode || 'UNAUTHORIZED',
         status,
+        details,
       }
 
     case 403:
       return {
         message: errorMessage || t('errors.permissionDenied', 'Permission denied'),
-        code: 'FORBIDDEN',
+        code: errorCode || 'FORBIDDEN',
         status,
+        details,
       }
 
     case 404:
       return {
         message: errorMessage || t('errors.notFound', 'Resource not found'),
-        code: 'NOT_FOUND',
+        code: errorCode || 'NOT_FOUND',
         status,
+        details,
       }
 
     case 429:
       return {
         message:
           errorMessage || t('errors.tooManyRequests', 'Too many requests, please try again later'),
-        code: 'TOO_MANY_REQUESTS',
+        code: errorCode || 'TOO_MANY_REQUESTS',
         status,
+        details,
       }
 
     case 500:
@@ -96,16 +108,17 @@ export function parseHttpError(error: HttpError): ErrorResponse {
     case 504:
       return {
         message: errorMessage || t('errors.serverError', 'Server error, please try again later'),
-        code: 'SERVER_ERROR',
+        code: errorCode || 'SERVER_ERROR',
         status,
+        details,
       }
 
     default:
       return {
         message: errorMessage || t('errors.unknownError', 'Unknown error'),
-        code: 'UNKNOWN_ERROR',
+        code: errorCode || 'UNKNOWN_ERROR',
         status,
-        details: data,
+        details,
       }
   }
 }
