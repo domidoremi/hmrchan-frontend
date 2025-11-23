@@ -67,5 +67,23 @@
     "importFailed": "Import failed",
     "resetConfirm": "Are you sure you want to reset to default settings?",
     "resetSuccess": "Settings reset"
+  },
+  "terms": {
+    "title": "Terms of Use",
+    "introTitle": "Introduction",
+    "intro": "By using this service, you agree to the following basic terms. Please read them carefully before continuing to use the site.",
+    "usageTitle": "Acceptable Use",
+    "usage": "You agree not to abuse, reverse engineer, or use this service in ways that may harm the system, other users, or the underlying data sources.",
+    "changesTitle": "Changes to Terms",
+    "changes": "These terms may be updated from time to time. Continued use of the service after changes means you accept the updated terms."
+  },
+  "contact": {
+    "title": "Contact Developer",
+    "subtitle": "If you have questions, suggestions, or bug reports, please reach out using one of the channels below.",
+    "githubTitle": "GitHub Issues",
+    "githubDesc": "For feature requests and bug reports, please open an issue on the GitHub repository.",
+    "githubLink": "Open GitHub Issues",
+    "emailTitle": "Email",
+    "emailDesc": "If you prefer email, please use the contact address provided in the project documentation or profile."
   }
 }
