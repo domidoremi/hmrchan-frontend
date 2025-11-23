@@ -1,11 +1,11 @@
 # Cloudflare Pages Redirects
 # 反向代理 API 请求到 AWS EC2 后端
 
-# API 请求代理
-/api/*  http://54.168.189.160:8000/api/:splat  200
+# API 请求代理（HTTPS）
+/api/*  https://api.momichan.xyz/:splat  200
 
 # WebSocket 代理（如果需要）
-/ws  http://54.168.189.160:8000/ws  200
+/ws  https://api.momichan.xyz/ws  200
 
 # SPA 路由支持
-/*  /index.html  200
+/*  /index.html  200!
