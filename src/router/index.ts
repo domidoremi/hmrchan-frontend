@@ -242,6 +242,28 @@ export const routes: RouteRecordRaw[] = [
     },
   },
 
+  {
+    path: '/terms',
+    name: 'terms',
+    component: () => import(/* webpackChunkName: "pages-other" */ '@/views/TermsPage.vue'),
+    meta: {
+      title: 'Terms of Use',
+      preload: false,
+      priority: 'low',
+    },
+  },
+
+  {
+    path: '/contact',
+    name: 'contact',
+    component: () => import(/* webpackChunkName: "pages-other" */ '@/views/ContactPage.vue'),
+    meta: {
+      title: 'Contact',
+      preload: false,
+      priority: 'low',
+    },
+  },
+
   /** ========== 错误处理路由 ========== */
 
   /**
