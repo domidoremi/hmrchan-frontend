@@ -113,7 +113,7 @@
                     @click="settingsStore.toggleSetting('showHeroSection')">
                     <span class="settings-toggle-label">{{
                       $t('settings.toggleHeroSection')
-                    }}</span>
+                      }}</span>
                     <span class="settings-toggle-indicator" :class="{ active: settings.showHeroSection }"></span>
                   </button>
 
@@ -127,7 +127,7 @@
                     @click="settingsStore.toggleSetting('enableSwipeNavigation')">
                     <span class="settings-toggle-label">{{
                       $t('settings.toggleSwipeNavigation')
-                    }}</span>
+                      }}</span>
                     <span class="settings-toggle-indicator" :class="{ active: settings.enableSwipeNavigation }"></span>
                   </button>
                 </div>
@@ -137,8 +137,7 @@
                 <button type="button" class="settings-advanced-button" @click="goToAdvancedSettings">
                   <Settings :size="18" />
                   <div class="advanced-labels">
-                    <span class="advanced-title">{{ $t('nav.advancedSettings') }}</span>
-                    <span class="advanced-desc">{{ $t('settings.openAdvanced') }}</span>
+                    <span class="advanced-title">{{ $t('settings.openAdvanced') }}</span>
                   </div>
                   <ArrowRight :size="16" />
                 </button>
@@ -436,6 +435,7 @@ import {
 import { useAuthStore, useSettingsStore, useThemeStore } from '@/stores'
 import type { Theme } from '@/types'
 import { offlineQueue } from '@/utils/storage'
+import { useI18nOptimized } from '@/composables/core/useI18nOptimized'
 
 const navbarProps = withDefaults(
   defineProps<{
@@ -468,6 +468,7 @@ const router = useRouter()
 
 /** 国际化实例 */
 const { locale } = useI18n()
+const { changeLocale: changeLocaleOptimized } = useI18nOptimized()
 
 /** Store 实例 */
 const authStore = useAuthStore()
@@ -623,8 +624,7 @@ const setTheme = (newTheme: Theme) => {
  * @param newLocale - 新的语言代码
  */
 const changeLanguage = async (newLocale: string) => {
-  const { changeLocale } = await import('@/composables/core/useI18nOptimized')
-  await changeLocale(newLocale as 'en' | 'zh-CN' | 'ja')
+  await changeLocaleOptimized(newLocale as 'en' | 'zh-CN' | 'ja')
 }
 
 /**
