@@ -1,57 +1,44 @@
-# Cloudflare Pages 安全头配置
+# Cloudflare Pages HTTP headers
 
+# 通用安全头
 /*
+  Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
   X-Frame-Options: SAMEORIGIN
   X-Content-Type-Options: nosniff
-  X-XSS-Protection: 1; mode=block
   Referrer-Policy: strict-origin-when-cross-origin
-  Permissions-Policy: camera=(), microphone=(), geolocation=()
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Resource-Policy: same-origin
+  Cross-Origin-Embedder-Policy: require-corp
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), fullscreen=(self), payment=()
+  Content-Security-Policy: default-src 'self'; img-src 'self' data: https:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; connect-src 'self' https:; media-src 'self' https:; object-src 'none'
 
-# HTML 页面 - 短缓存，便于更新
+# HTML 页面 - 短缓存，便于快速更新
 /*.html
   Cache-Control: public, max-age=0, must-revalidate
-  
-# JavaScript 和 CSS - 长缓存（带版本号）
+
+# 主入口（index.html）
+/index.html
+  Cache-Control: public, max-age=0, must-revalidate
+
+# JavaScript 与 CSS 打包产物 - 长缓存（带哈希）
 /assets/*.js
   Cache-Control: public, max-age=31536000, immutable
-  
+
 /assets/*.css
   Cache-Control: public, max-age=31536000, immutable
 
-# 图片资源 - 长缓存
-/assets/*.jpg
-  Cache-Control: public, max-age=31536000, immutable
-  
-/assets/*.jpeg
-  Cache-Control: public, max-age=31536000, immutable
-  
-/assets/*.png
-  Cache-Control: public, max-age=31536000, immutable
-  
-/assets/*.webp
-  Cache-Control: public, max-age=31536000, immutable
-  
-/assets/*.svg
+# 图片资源
+/assets/*.(png|jpg|jpeg|gif|svg|webp|avif)
   Cache-Control: public, max-age=31536000, immutable
 
-# 字体文件 - 长缓存
-/assets/*.woff
-  Cache-Control: public, max-age=31536000, immutable
-  
-/assets/*.woff2
-  Cache-Control: public, max-age=31536000, immutable
-  
-/assets/*.ttf
+# 字体文件
+/assets/*.(woff|woff2|ttf|otf)
   Cache-Control: public, max-age=31536000, immutable
 
-# Service Worker - 不缓存
+# Service Worker - 禁止缓存
 /service-worker.js
   Cache-Control: no-cache, no-store, must-revalidate
-  
+
 # Favicon
 /favicon.ico
-  Cache-Control: public, max-age=86400
-  
-# 其他静态资源
-/assets/*
   Cache-Control: public, max-age=31536000, immutable
