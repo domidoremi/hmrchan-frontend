@@ -22,6 +22,7 @@
     "toggleHeroSection": "Toggle home hero banner",
     "toggleAnimations": "Toggle animations",
     "toggleSwipeNavigation": "Toggle swipe navigation",
+    "openAdvanced": "Open full settings",
     "saving": "Saving...",
     "saved": "Saved",
     "saveFailed": "Save failed"
