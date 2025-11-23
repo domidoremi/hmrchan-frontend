@@ -22,6 +22,7 @@
     "toggleHeroSection": "切换首页横幅",
     "toggleAnimations": "切换动效",
     "toggleSwipeNavigation": "切换滑动导航",
+    "openAdvanced": "打开完整设置",
     "saving": "保存中...",
     "saved": "已保存",
     "saveFailed": "保存失败"
@@ -67,5 +68,23 @@
     "importFailed": "导入失败",
     "resetConfirm": "确定要恢复默认设置吗？",
     "resetSuccess": "设置已恢复"
+  },
+  "terms": {
+    "title": "使用条款",
+    "introTitle": "简介",
+    "intro": "使用本服务即表示您同意以下基本条款，请在继续使用本站之前仔细阅读。",
+    "usageTitle": "可接受的使用方式",
+    "usage": "您同意不滥用本服务，不进行逆向工程，也不以可能损害系统、其他用户或底层数据来源的方式使用本服务。",
+    "changesTitle": "条款的变更",
+    "changes": "我们可能会不时更新本使用条款。如在条款变更后继续使用本服务，则视为您接受更新后的条款。"
+  },
+  "contact": {
+    "title": "联系开发者",
+    "subtitle": "如果您有问题、建议或 Bug 报告，请通过以下任意方式联系我们。",
+    "githubTitle": "GitHub Issues",
+    "githubDesc": "如需提交功能请求或 Bug 报告，请在 GitHub 仓库中创建 Issue。",
+    "githubLink": "打开 GitHub Issues",
+    "emailTitle": "电子邮件",
+    "emailDesc": "如需通过邮件联系，请使用项目文档或个人资料中提供的联系地址。"
   }
 }

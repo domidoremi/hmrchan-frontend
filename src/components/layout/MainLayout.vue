@@ -6,7 +6,8 @@
     </a>
 
     <!-- 顶部导航栏 -->
-    <AppNavbar />
+    <AppNavbar :access-current="props.accessCurrent" :access-limit="props.accessLimit"
+      :show-access-indicator="props.showAccessIndicator" />
 
     <!-- 主内容区域 -->
     <main id="main-content" class="main-content" role="main">
@@ -69,10 +70,19 @@ const props = withDefaults(
     disableContainer?: boolean
     /** 自定义容器类名，支持字符串、数组或对象格式 */
     containerClass?: string | string[] | Record<string, boolean>
+    /** 访问限制当前计数（用于导航栏 Access Limit 指示） */
+    accessCurrent?: number
+    /** 访问限制总配额 */
+    accessLimit?: number
+    /** 是否在导航栏显示访问限制指示 */
+    showAccessIndicator?: boolean
   }>(),
   {
     disableContainer: false,
     containerClass: '',
+    accessCurrent: undefined,
+    accessLimit: undefined,
+    showAccessIndicator: false,
   },
 )
 

@@ -242,6 +242,28 @@ export const routes: RouteRecordRaw[] = [
     },
   },
 
+  {
+    path: '/terms',
+    name: 'terms',
+    component: () => import(/* webpackChunkName: "pages-other" */ '@/views/TermsPage.vue'),
+    meta: {
+      title: 'Terms of Use',
+      preload: false,
+      priority: 'low',
+    },
+  },
+
+  {
+    path: '/contact',
+    name: 'contact',
+    component: () => import(/* webpackChunkName: "pages-other" */ '@/views/ContactPage.vue'),
+    meta: {
+      title: 'Contact',
+      preload: false,
+      priority: 'low',
+    },
+  },
+
   /** ========== 错误处理路由 ========== */
 
   /**
@@ -279,13 +301,15 @@ const router = createRouter({
    * 1. 浏览器前进/后退：恢复用户之前的滚动位置
    * 2. 锚点导航：滚动到指定的页面元素
    * 3. 普通导航：滚动到页面顶部
+   * 4. KeepAlive 缓存页面：从 sessionStorage 恢复位置
    *
    * @param to - 目标路由对象
-   * @param _from - 来源路由对象（未使用）
+   * @param from - 来源路由对象
    * @param savedPosition - 浏览器记录的滚动位置（前进/后退时存在）
    * @returns 滚动位置配置对象
    */
-  scrollBehavior(to, _from, savedPosition) {
+  scrollBehavior(to, from, savedPosition) {
+    // 浏览器前进/后退：使用浏览器记录的位置
     if (savedPosition) {
       return {
         ...savedPosition,
@@ -293,6 +317,7 @@ const router = createRouter({
       }
     }
 
+    // 锚点导航
     if (to.hash) {
       return {
         el: to.hash,
@@ -300,6 +325,34 @@ const router = createRouter({
       }
     }
 
+    // 对于 KeepAlive 缓存的页面，尝试恢复滚动位置
+    const cachedPages = ['HomePage', 'ExplorePage', 'PostsView', 'AuthorsPage']
+    const toComponentName = to.matched[0]?.components?.default?.name
+
+    if (toComponentName && cachedPages.includes(toComponentName)) {
+      // 从 sessionStorage 恢复位置
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          try {
+            const savedScroll = sessionStorage.getItem(`scroll:${to.path}`)
+            if (savedScroll) {
+              const position = JSON.parse(savedScroll)
+              resolve({
+                left: position.x,
+                top: position.y,
+                behavior: 'auto', // 使用 auto 以避免动画延迟
+              })
+              return
+            }
+          } catch {
+            // Ignore errors
+          }
+          resolve({ top: 0, behavior: 'smooth' })
+        }, 50) // 短暂延迟确保 DOM 已渲染
+      })
+    }
+
+    // 默认：滚动到顶部
     return {
       top: 0,
       behavior: 'smooth',
@@ -311,11 +364,12 @@ const router = createRouter({
  * 全局前置守卫
  *
  * 在每次路由跳转前执行，处理以下逻辑：
- * 1. 保存用户访问历史，用于登录后返回
- * 2. 为登录页自动添加重定向参数
- * 3. 更新浏览器标签页标题
- * 4. 检查需要认证的页面，未登录则跳转登录页
- * 5. 检查访客专用页面，已登录则跳转首页
+ * 1. 保存缓存页面的滚动位置
+ * 2. 保存用户访问历史，用于登录后返回
+ * 3. 为登录页自动添加重定向参数
+ * 4. 更新浏览器标签页标题
+ * 5. 检查需要认证的页面，未登录则跳转登录页
+ * 6. 检查访客专用页面，已登录则跳转首页
  *
  * @param to - 目标路由对象
  * @param from - 来源路由对象
@@ -323,6 +377,24 @@ const router = createRouter({
  */
 router.beforeEach((to, from, next) => {
   const authStore = useAuthStore()
+
+  // 保存缓存页面的滚动位置
+  const cachedPages = ['HomePage', 'ExplorePage', 'PostsView', 'AuthorsPage']
+  const fromComponentName = from.matched[0]?.components?.default?.name
+
+  if (fromComponentName && cachedPages.includes(fromComponentName)) {
+    try {
+      sessionStorage.setItem(
+        `scroll:${from.path}`,
+        JSON.stringify({
+          x: window.scrollX,
+          y: window.scrollY,
+        }),
+      )
+    } catch {
+      // Ignore sessionStorage errors
+    }
+  }
 
   if (from.name && from.name !== 'login') {
     sessionStorage.setItem(LAST_VISITED_ROUTE_KEY, from.fullPath)
@@ -404,7 +476,7 @@ function preloadCriticalRoutes(currentRoute: { name?: string | symbol }) {
         })
       }
     })
-  }, 1000)
+  }, 2000)
 }
 
 /**

@@ -1,8 +1,5 @@
 <template>
-  <div
-    class="stat-card glass-card"
-    :class="[`stat-card--${variant}`, { 'stat-card--loading': loading }]"
-  >
+  <div class="stat-card glass-card" :class="[`stat-card--${variant}`, { 'stat-card--loading': loading }]">
     <!-- Loading State (Skeleton) -->
     <template v-if="loading">
       <div class="stat-icon skeleton-box"></div>
@@ -261,6 +258,7 @@ const trendIcon = computed(() => {
 }
 
 @keyframes skeleton-pulse {
+
   0%,
   100% {
     opacity: 1;

@@ -165,6 +165,19 @@ const initPhotoSwipe = () => {
           // console.log('[PhotoSwipeViewer] Activating video:', url)
           initNativeVideoPlayer(videoElement, videoWrapper, url)
         }
+
+        // 添加视频播放/暂停事件监听，自动隐藏/显示UI
+        videoElement.addEventListener('play', () => {
+          pswp?.template?.classList.add('pswp--ui-hidden')
+        })
+
+        videoElement.addEventListener('pause', () => {
+          pswp?.template?.classList.remove('pswp--ui-hidden')
+        })
+
+        videoElement.addEventListener('ended', () => {
+          pswp?.template?.classList.remove('pswp--ui-hidden')
+        })
       }
     }
   })
@@ -310,5 +323,13 @@ onUnmounted(() => {
   font-size: 14px;
   font-weight: 500;
   margin: 12px;
+}
+
+/* 视频播放时自动隐藏UI */
+.pswp--ui-hidden .pswp__top-bar,
+.pswp--ui-hidden .pswp__button--arrow {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
 }
 </style>

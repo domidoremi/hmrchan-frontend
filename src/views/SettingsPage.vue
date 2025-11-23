@@ -248,6 +248,74 @@
             </div>
           </div>
         </div>
+
+        <div class="settings-section">
+          <h2 class="section-title">
+            <Info :size="24" />
+            {{ $t('settings.moreAbout', '更多 / 关于') }}
+          </h2>
+
+          <div class="settings-card glass-card">
+            <div class="card-header">
+              <Info :size="24" />
+              <h3>{{ $t('settings.aboutThisApp', '关于本应用') }}</h3>
+            </div>
+
+            <div class="settings-content">
+              <div class="setting-row">
+                <div class="setting-info">
+                  <div class="setting-label">{{ $t('app.name') }}</div>
+                  <div class="setting-description">{{ $t('app.description') }}</div>
+                </div>
+              </div>
+
+              <div class="setting-row">
+                <div class="setting-info">
+                  <div class="setting-label">{{ $t('nav.privacy', '隐私政策') }}</div>
+                  <div class="setting-description">
+                    {{ $t('privacy.summary', '查看我们如何处理数据与隐私。') }}
+                  </div>
+                </div>
+                <RouterLink to="/privacy" class="text-button">
+                  {{ $t('nav.privacy', '隐私政策') }}
+                </RouterLink>
+              </div>
+
+              <div class="setting-row">
+                <div class="setting-info">
+                  <div class="setting-label">{{ $t('settings.termsOfUse', '使用条款') }}</div>
+                  <div class="setting-description">
+                    {{ $t('settings.termsOfUseDesc', '查看本服务的使用条款。') }}
+                  </div>
+                </div>
+                <RouterLink to="/terms" class="text-button">
+                  {{ $t('settings.termsOfUse', '使用条款') }}
+                </RouterLink>
+              </div>
+
+              <div class="setting-row">
+                <div class="setting-info">
+                  <div class="setting-label">{{ $t('settings.contact', '联系开发者') }}</div>
+                  <div class="setting-description">
+                    {{ $t('settings.contactDesc', '反馈问题或提出建议。') }}
+                  </div>
+                </div>
+                <RouterLink to="/contact" class="text-button">
+                  {{ $t('settings.contact', '联系开发者') }}
+                </RouterLink>
+              </div>
+
+              <div class="setting-row">
+                <div class="setting-info">
+                  <div class="setting-label">{{ $t('settings.version', '版本号 / 构建信息') }}</div>
+                  <div class="setting-description">
+                    {{ buildInfo }}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </MainLayout>
@@ -271,6 +339,7 @@ import {
   Monitor,
   PlayCircle,
   Sliders,
+  Info,
 } from 'lucide-vue-next'
 
 import MainLayout from '@/components/layout/MainLayout.vue'
@@ -281,6 +350,10 @@ import { useAuthStore, useThemeStore, useSettingsStore, useToastStore } from '@/
 import { useAutoSave } from '@/composables'
 import type { Theme } from '@/types'
 import logger from '@/utils/logger'
+
+const appVersion = import.meta.env.VITE_APP_VERSION || '0.0.1'
+const buildMode = import.meta.env.MODE || 'development'
+const buildInfo = computed(() => `v${appVersion} (${buildMode})`)
 
 const router = useRouter()
 const { locale, t } = useI18n()

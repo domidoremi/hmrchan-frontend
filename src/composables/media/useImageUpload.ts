@@ -6,6 +6,7 @@ import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useToast } from '@/composables'
 import logger from '@/utils/logger'
+import { useAuthStore } from '@/stores'
 import { toLogContext } from '@/utils/typeGuards'
 
 interface ImageUploadOptions {
@@ -28,6 +29,7 @@ export function useImageUpload(options: ImageUploadOptions = {}) {
   const config = { ...DEFAULT_OPTIONS, ...options }
   const { t } = useI18n()
   const toast = useToast()
+  const authStore = useAuthStore()
 
   const uploading = ref(false)
   const preview = ref<string | null>(null)
@@ -194,12 +196,17 @@ export function useImageUpload(options: ImageUploadOptions = {}) {
       const formData = new FormData()
       formData.append('file', file)
 
+      const token = authStore.token
+      const headers: Record<string, string> = {}
+
+      if (token) {
+        headers.Authorization = `Bearer ${token}`
+      }
+
       const response = await fetch(uploadUrl, {
         method: 'POST',
         body: formData,
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('access_token') || ''}`,
-        },
+        headers,
       })
 
       if (!response.ok) {

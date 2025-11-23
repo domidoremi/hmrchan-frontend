@@ -50,7 +50,7 @@ const transitionName = ref('fade')
  * 需要缓存的页面组件列表
  * 通过 KeepAlive 缓存这些常访问的页面，避免重复渲染，提升切换性能和用户体验
  */
-const cachedComponents = ['HomePage', 'ExplorePage', 'AuthorsPage']
+const cachedComponents = ['HomePage', 'ExplorePage', 'PostsView', 'AuthorsPage']
 
 /**
  * 监听路由变化，动态设置页面过渡动画
