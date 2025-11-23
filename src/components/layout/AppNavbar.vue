@@ -113,7 +113,7 @@
                     @click="settingsStore.toggleSetting('showHeroSection')">
                     <span class="settings-toggle-label">{{
                       $t('settings.toggleHeroSection')
-                    }}</span>
+                      }}</span>
                     <span class="settings-toggle-indicator" :class="{ active: settings.showHeroSection }"></span>
                   </button>
 
@@ -127,10 +127,20 @@
                     @click="settingsStore.toggleSetting('enableSwipeNavigation')">
                     <span class="settings-toggle-label">{{
                       $t('settings.toggleSwipeNavigation')
-                    }}</span>
+                      }}</span>
                     <span class="settings-toggle-indicator" :class="{ active: settings.enableSwipeNavigation }"></span>
                   </button>
                 </div>
+              </div>
+
+              <div class="settings-group settings-advanced-link">
+                <button type="button" class="settings-advanced-button" @click="goToAdvancedSettings">
+                  <Settings :size="18" />
+                  <div class="advanced-labels">
+                    <span class="advanced-title">{{ $t('settings.openAdvanced') }}</span>
+                  </div>
+                  <ArrowRight :size="16" />
+                </button>
               </div>
             </div>
           </Transition>
@@ -160,11 +170,6 @@
                   <span>{{ $t('nav.profile') }}</span>
                 </RouterLink>
 
-                <RouterLink to="/settings" class="dropdown-link" @click="showUserMenu = false">
-                  <Settings :size="18" />
-                  <span>{{ $t('nav.advancedSettings') }}</span>
-                </RouterLink>
-
                 <button class="dropdown-link danger" @click="handleLogout">
                   <LogOut :size="18" />
                   <span>{{ $t('nav.logout') }}</span>
@@ -192,9 +197,18 @@
         <span class="brand-name">Club</span>
       </RouterLink>
 
+      <div v-if="showAccessIndicator" class="mobile-access-indicator">
+        <button type="button" class="access-chip"
+          :aria-label="$t('aria.accessLimit', { current: accessCurrentDisplay, limit: accessLimitDisplay })">
+          <span class="access-chip-count">
+            {{ accessCurrentDisplay }} / {{ accessLimitDisplay }}
+          </span>
+        </button>
+      </div>
+
       <!-- 右侧按钮 -->
       <div class="mobile-top-actions">
-        <button class="action-button search-button" @click="goToSearch">
+        <button class="action-button search-button" @click="goToSearch" :aria-label="$t('search.placeholder')">
           <Search :size="24" />
         </button>
 
@@ -211,8 +225,7 @@
 
         <!-- 设置按钮（移动端） -->
         <div class="settings-menu-container">
-          <button class="action-button" type="button" @click="toggleSettingsPanel"
-            :aria-label="$t('nav.settings')">
+          <button class="action-button" type="button" @click="toggleSettingsPanel" :aria-label="$t('nav.settings')">
             <Settings :size="20" />
           </button>
         </div>
@@ -221,7 +234,7 @@
           <img :src="userAvatarUrl" :alt="user?.username" class="mobile-avatar" />
         </button>
 
-        <RouterLink v-else to="/login" class="action-button">
+        <RouterLink v-else to="/login" class="action-button" :aria-label="$t('nav.login')">
           <LogIn :size="20" />
         </RouterLink>
       </div>
@@ -259,7 +272,8 @@
   <!-- 用户菜单弹出层（仅移动端） -->
   <Transition name="modal">
     <div v-if="showUserMenu && isAuthenticated && isMobile" class="mobile-user-modal" @click="showUserMenu = false">
-      <div class="mobile-user-content glass-card" @click.stop>
+      <div class="mobile-user-content glass-card" role="dialog" aria-modal="true" :aria-label="$t('aria.userMenu')"
+        @click.stop>
         <div class="mobile-user-header">
           <div class="user-avatar-large">
             <img :src="userAvatarUrl" :alt="user?.username" />
@@ -279,15 +293,90 @@
             <span>{{ $t('nav.profile') }}</span>
           </RouterLink>
 
-          <RouterLink to="/settings" class="mobile-user-link" @click="showUserMenu = false">
-            <Settings :size="20" />
-            <span>{{ $t('nav.advancedSettings') }}</span>
-          </RouterLink>
-
           <button class="mobile-user-link danger" @click="handleLogout">
             <LogOut :size="20" />
             <span>{{ $t('nav.logout') }}</span>
           </button>
+        </div>
+      </div>
+    </div>
+  </Transition>
+
+  <!-- 离线队列面板（移动端） -->
+  <Transition name="modal">
+    <div v-if="showQueuePanel && isMobile" class="mobile-user-modal" @click="showQueuePanel = false">
+      <div class="mobile-user-content glass-card" role="dialog" aria-modal="true" :aria-label="$t('offline.queueTitle')"
+        @click.stop>
+        <div class="queue-header">
+          <span class="queue-title">{{ $t('offline.queueTitle') }}</span>
+        </div>
+        <div class="queue-body">
+          <p class="queue-description">
+            {{ $t('offline.actionsQueued') }}
+          </p>
+          <p v-if="queueStatus.pending > 0" class="queue-count">
+            {{ queueStatus.pending }}
+          </p>
+          <p v-else class="queue-empty">
+            {{ $t('offline.queueEmpty') }}
+          </p>
+        </div>
+        <button class="queue-sync-button" type="button" @click="handleQueueSync"
+          :disabled="!queueStatus.pending || !isOnline || isQueueSyncing">
+          <span>{{ $t('offline.syncNow') }}</span>
+        </button>
+      </div>
+    </div>
+  </Transition>
+
+  <!-- 快捷设置面板（移动端） -->
+  <Transition name="modal">
+    <div v-if="showSettingsPanel && isMobile" class="mobile-user-modal" @click="showSettingsPanel = false">
+      <div class="mobile-user-content glass-card" role="dialog" aria-modal="true" :aria-label="$t('nav.settings')"
+        @click.stop>
+        <div class="settings-group">
+          <div class="settings-group-title">{{ $t('settings.theme') }}</div>
+          <div class="settings-theme-options">
+            <button v-for="option in themeOptions" :key="option.value" type="button" class="settings-theme-button"
+              :class="{ active: theme === option.value }" @click="setTheme(option.value)">
+              <component :is="option.icon" :size="18" />
+              <span>{{ $t(`settings.${option.value}`) }}</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="settings-group">
+          <div class="settings-group-title">{{ $t('settings.language') }}</div>
+          <div class="settings-language-options">
+            <button v-for="localeOption in localeOptions" :key="localeOption.code" type="button"
+              class="settings-language-button" :class="{ active: locale === localeOption.code }"
+              @click="changeLanguage(localeOption.code)">
+              {{ localeOption.name }}
+            </button>
+          </div>
+        </div>
+
+        <div class="settings-group">
+          <div class="settings-group-title">{{ $t('settings.display') }}</div>
+          <div class="settings-toggle-list">
+            <button type="button" class="settings-toggle" :class="{ active: settings.showHeroSection }"
+              @click="settingsStore.toggleSetting('showHeroSection')">
+              <span class="settings-toggle-label">{{ $t('settings.toggleHeroSection') }}</span>
+              <span class="settings-toggle-indicator" :class="{ active: settings.showHeroSection }"></span>
+            </button>
+
+            <button type="button" class="settings-toggle" :class="{ active: settings.enableAnimations }"
+              @click="settingsStore.toggleSetting('enableAnimations')">
+              <span class="settings-toggle-label">{{ $t('settings.toggleAnimations') }}</span>
+              <span class="settings-toggle-indicator" :class="{ active: settings.enableAnimations }"></span>
+            </button>
+
+            <button type="button" class="settings-toggle" :class="{ active: settings.enableSwipeNavigation }"
+              @click="settingsStore.toggleSetting('enableSwipeNavigation')">
+              <span class="settings-toggle-label">{{ $t('settings.toggleSwipeNavigation') }}</span>
+              <span class="settings-toggle-indicator" :class="{ active: settings.enableSwipeNavigation }"></span>
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -346,12 +435,40 @@ import {
 import { useAuthStore, useSettingsStore, useThemeStore } from '@/stores'
 import type { Theme } from '@/types'
 import { offlineQueue } from '@/utils/storage'
+import { useI18nOptimized } from '@/composables/core/useI18nOptimized'
+
+const navbarProps = withDefaults(
+  defineProps<{
+    accessCurrent?: number
+    accessLimit?: number
+    showAccessIndicator?: boolean
+  }>(),
+  {
+    showAccessIndicator: false,
+  },
+)
+
+const accessCurrentDisplay = computed(() => {
+  return typeof navbarProps.accessCurrent === 'number' ? navbarProps.accessCurrent : 0
+})
+
+const accessLimitDisplay = computed(() => {
+  const value = navbarProps.accessLimit
+  if (typeof value !== 'number') return ''
+  if (value === Infinity) return '∞'
+  return value
+})
+
+const showAccessIndicator = computed(
+  () => navbarProps.showAccessIndicator && typeof navbarProps.accessLimit === 'number',
+)
 
 /** 路由实例 */
 const router = useRouter()
 
 /** 国际化实例 */
 const { locale } = useI18n()
+const { changeLocale: changeLocaleOptimized } = useI18nOptimized()
 
 /** Store 实例 */
 const authStore = useAuthStore()
@@ -452,6 +569,13 @@ const goToSearch = () => {
   router.push({ path: '/search' })
 }
 
+/** 跳转到设置页 */
+const goToAdvancedSettings = () => {
+  router.push({ path: '/settings' })
+  showSettingsPanel.value = false
+  showUserMenu.value = false
+}
+
 /** 移动端检测标志 */
 const isMobile = ref(false)
 
@@ -500,8 +624,7 @@ const setTheme = (newTheme: Theme) => {
  * @param newLocale - 新的语言代码
  */
 const changeLanguage = async (newLocale: string) => {
-  const { changeLocale } = await import('@/composables/core/useI18nOptimized')
-  await changeLocale(newLocale as 'en' | 'zh-CN' | 'ja')
+  await changeLocaleOptimized(newLocale as 'en' | 'zh-CN' | 'ja')
 }
 
 /**
@@ -672,6 +795,31 @@ onUnmounted(() => {
   background-clip: text;
   font-weight: var(--font-bold);
   color: var(--color-text-primary);
+}
+
+.mobile-top-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-2);
+}
+
+.mobile-access-indicator {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+}
+
+.access-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+  background: var(--glass-bg-light);
+  border: 1px solid var(--glass-border);
 }
 
 /* 导航链接 */
@@ -1296,7 +1444,8 @@ onUnmounted(() => {
     max-width: 400px !important;
     max-height: 80vh;
     overflow-y: auto;
-    z-index: 9999 !important; /* 提高z-index确保在最顶层 */
+    z-index: 9999 !important;
+    /* 提高z-index确保在最顶层 */
     box-shadow:
       0 20px 60px rgba(0, 0, 0, 0.3),
       0 0 0 100vmax rgba(0, 0, 0, 0.5) !important;

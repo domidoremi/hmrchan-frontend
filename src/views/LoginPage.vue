@@ -37,39 +37,19 @@
 
           <!-- Login Form -->
           <form class="login-form" @submit.prevent="handleLogin">
-            <GlassInput
-              v-model="formData.username"
-              type="text"
-              :label="$t('auth.username')"
-              :placeholder="$t('auth.username')"
-              :icon="User"
-              :disabled="loading"
-              :error="error && !formData.username ? $t('auth.fillAllFields') : ''"
-              clearable
-              autocomplete="username"
-              required
-            />
+            <GlassInput v-model="formData.username" type="text" :label="$t('auth.username')"
+              :placeholder="$t('auth.username')" :icon="User" :disabled="loading"
+              :error="error && !formData.username ? $t('auth.fillAllFields') : ''" clearable autocomplete="username"
+              required />
 
-            <GlassInput
-              v-model="formData.password"
-              :type="showPassword ? 'text' : 'password'"
-              :label="$t('auth.password')"
-              :placeholder="$t('auth.password')"
-              :icon="Lock"
-              :disabled="loading"
+            <GlassInput v-model="formData.password" :type="showPassword ? 'text' : 'password'"
+              :label="$t('auth.password')" :placeholder="$t('auth.password')" :icon="Lock" :disabled="loading"
               :error="error && !formData.password ? $t('auth.fillAllFields') : ''"
-              :hint="$t('auth.passwordHint', 'Enter your password')"
-              autocomplete="current-password"
-              name="password"
-              required
-            >
+              :hint="$t('auth.passwordHint', 'Enter your password')" autocomplete="current-password" name="password"
+              required>
               <template #suffix>
-                <button
-                  type="button"
-                  class="password-toggle"
-                  @click="showPassword = !showPassword"
-                  :aria-label="showPassword ? $t('auth.hidePassword') : $t('auth.showPassword')"
-                >
+                <button type="button" class="password-toggle" @click="showPassword = !showPassword"
+                  :aria-label="showPassword ? $t('auth.hidePassword') : $t('auth.showPassword')">
                   <Eye v-if="!showPassword" :size="18" />
                   <EyeOff v-else :size="18" />
                 </button>
@@ -171,60 +151,51 @@ const handleLogin = async () => {
     // 等待一小段时间让用户看到成功提示
     setTimeout(async () => {
       // 登录成功后跳转到redirect参数指定的页面，或首页
-      const redirect = (route.query.redirect as string) || '/'
+      const redirectParam = route.query.redirect
+      const redirect =
+        typeof redirectParam === 'string' && redirectParam.startsWith('/')
+          ? redirectParam
+          : '/'
       await router.replace(redirect)
     }, 1000)
   } catch (err: unknown) {
-    const axiosError = err as {
-      response?: { status: number; data?: { detail?: string; message?: string } }
-      request?: unknown
-      message?: string
-    }
     // 清除成功消息
     success.value = ''
 
-    // 详细的错误处理
-    if (axiosError.response) {
-      const status = axiosError.response.status
-      const detail = axiosError.response.data?.detail || axiosError.response.data?.message
+    const httpError = err as {
+      response?: { status?: number }
+      responseData?: { error_code?: string; message?: string; details?: unknown }
+      message?: string
+    }
 
-      switch (status) {
-        case 401:
-          // 认证失败 - 用户名或密码错误
-          error.value = t('auth.invalidCredentials', '用户名或密码错误')
-          break
+    const status = httpError.response?.status
+    const data = httpError.responseData || {}
+    const errorCode = (data as { error_code?: string }).error_code
+    const backendMessage = (data as { message?: string }).message
 
-        case 400:
-          // 请求参数错误
-          error.value = detail || t('auth.invalidInput', '输入信息有误')
-          break
-
-        case 404:
-          // 用户不存在
-          error.value = t('auth.userNotFound', '用户不存在')
-          break
-
-        case 429:
-          // 请求过于频繁
-          error.value = t('auth.tooManyAttempts', '登录尝试过于频繁，请稍后再试')
-          break
-
-        case 500:
-        case 502:
-        case 503:
-          // 服务器错误
-          error.value = t('auth.serverError', '服务器暂时无法处理请求，请稍后再试')
-          break
-
-        default:
-          error.value = detail || t('auth.loginFailedMessage', '登录失败，请重试')
-      }
-    } else if (axiosError.request) {
-      // 网络错误
-      error.value = t('auth.networkError', '网络连接失败，请检查您的网络')
+    if (status === 401 || errorCode === 'AUTH_1001') {
+      // 未认证 / 用户名或密码错误
+      error.value = t('auth.invalidCredentials', '用户名或密码错误')
+    } else if (status === 403 && (errorCode === 'AUTH_1005' || errorCode === 'ACCOUNT_LOCKED')) {
+      // 账号被锁定或不可用
+      error.value = t(
+        'auth.accountLocked',
+        '该账号因多次登录失败已被暂时锁定，请稍后再试或联系管理员',
+      )
+    } else if (status === 429 || errorCode === 'SECURITY_1604') {
+      // 触发速率限制
+      error.value = t('auth.tooManyAttempts', '登录尝试过于频繁，请稍后再试')
+    } else if (status === 400) {
+      // 请求参数错误
+      error.value = backendMessage || t('auth.invalidInput', '输入信息有误')
+    } else if (status && status >= 500) {
+      // 服务器错误
+      error.value = t('auth.serverError', '服务器暂时无法处理请求，请稍后再试')
+    } else if (httpError.message) {
+      // 其他错误（例如 JS 错误）
+      error.value = httpError.message
     } else {
-      // 其他错误
-      error.value = axiosError.message || t('auth.loginFailedMessage', '登录失败，请重试')
+      error.value = t('auth.loginFailedMessage', '登录失败，请重试')
     }
 
     // 显示错误 Toast 通知
@@ -545,6 +516,7 @@ const handleLogin = async () => {
 }
 
 @keyframes float {
+
   0%,
   100% {
     transform: translateY(0) scale(1);

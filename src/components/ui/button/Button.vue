@@ -408,5 +408,11 @@ const handleClick = (event: MouseEvent) => {
     font-size: var(--text-base);
     min-height: 44px;
   }
+
+  .btn-md {
+    padding: var(--spacing-2) var(--spacing-5);
+    font-size: var(--text-sm);
+    min-height: 44px;
+  }
 }
 </style>

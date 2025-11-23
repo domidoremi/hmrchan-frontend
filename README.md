@@ -349,8 +349,8 @@ server: {
 
 **您的名字**
 
-- GitHub: [@yourusername](https://github.com/yourusername)
-- Email: your.email@example.com
+- GitHub: [@domi](https://github.com/domidoremi)
+- Email: qiubai1004@gmail.com
 
 ---
 
@@ -370,6 +370,6 @@ server: {
 
 **⭐ 如果这个项目对你有帮助，请给一个 Star！**
 
-Made with ❤️ by [Your Name]
+Made with ❤️ by domi
 
 </div>
