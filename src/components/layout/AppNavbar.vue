@@ -132,6 +132,17 @@
                   </button>
                 </div>
               </div>
+
+              <div class="settings-group settings-advanced-link">
+                <button type="button" class="settings-advanced-button" @click="goToAdvancedSettings">
+                  <Settings :size="18" />
+                  <div class="advanced-labels">
+                    <span class="advanced-title">{{ $t('nav.advancedSettings') }}</span>
+                    <span class="advanced-desc">{{ $t('settings.openAdvanced') }}</span>
+                  </div>
+                  <ArrowRight :size="16" />
+                </button>
+              </div>
             </div>
           </Transition>
         </div>
@@ -158,11 +169,6 @@
                 <RouterLink to="/profile" class="dropdown-link" @click="showUserMenu = false">
                   <User :size="18" />
                   <span>{{ $t('nav.profile') }}</span>
-                </RouterLink>
-
-                <RouterLink to="/settings" class="dropdown-link" @click="showUserMenu = false">
-                  <Settings :size="18" />
-                  <span>{{ $t('nav.advancedSettings') }}</span>
                 </RouterLink>
 
                 <button class="dropdown-link danger" @click="handleLogout">
@@ -286,11 +292,6 @@
           <RouterLink to="/profile" class="mobile-user-link" @click="showUserMenu = false">
             <User :size="20" />
             <span>{{ $t('nav.profile') }}</span>
-          </RouterLink>
-
-          <RouterLink to="/settings" class="mobile-user-link" @click="showUserMenu = false">
-            <Settings :size="20" />
-            <span>{{ $t('nav.advancedSettings') }}</span>
           </RouterLink>
 
           <button class="mobile-user-link danger" @click="handleLogout">
@@ -565,6 +566,13 @@ const handleOnlineChange = () => {
  */
 const goToSearch = () => {
   router.push({ path: '/search' })
+}
+
+/** 跳转到设置页 */
+const goToAdvancedSettings = () => {
+  router.push({ path: '/settings' })
+  showSettingsPanel.value = false
+  showUserMenu.value = false
 }
 
 /** 移动端检测标志 */
