@@ -452,11 +452,17 @@ const handleSubmit = async () => {
   background: var(--glass-bg);
   cursor: pointer;
   font-size: var(--text-sm);
+  position: relative;
 }
 
 .option-pill input {
-  accent-color: var(--primary-color);
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
   margin: 0;
+  cursor: pointer;
 }
 
 .option-pill.active {
