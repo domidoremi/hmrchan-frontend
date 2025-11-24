@@ -85,6 +85,20 @@
     "githubDesc": "如需提交功能请求或 Bug 报告，请在 GitHub 仓库中创建 Issue。",
     "githubLink": "打开 GitHub Issues",
     "emailTitle": "电子邮件",
-    "emailDesc": "如需通过邮件联系，请使用项目文档或个人资料中提供的联系地址。"
+    "emailDesc": "如需通过邮件联系，请使用项目文档或个人资料中提供的联系地址。",
+    "formTitle": "站内联系表单",
+    "formHint": "您可以通过此表单直接向开发者发送反馈，请勿包含敏感信息。",
+    "typeLabel": "反馈类型",
+    "typeBug": "Bug 反馈",
+    "typeFeature": "功能建议",
+    "typeOther": "其他",
+    "authStatus": "登录状态",
+    "authLoggedIn": "已登录",
+    "authGuest": "未登录或游客",
+    "authForceGuest": "以访客身份提交",
+    "emailLabel": "联系邮箱（可选）",
+    "messageLabel": "反馈内容",
+    "attachmentsLabel": "附件（可选）",
+    "attachmentsHint": "最多 1 个图片文件，不超过 5MB，仅支持 PNG / JPEG / WEBP / GIF。"
   }
 }
