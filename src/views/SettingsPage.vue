@@ -310,6 +310,9 @@
                   <div class="setting-label">{{ $t('settings.version', '版本号 / 构建信息') }}</div>
                   <div class="setting-description">
                     {{ buildInfo }}
+                    <span v-if="deploymentMeta" class="env-meta">
+                      · {{ deploymentMeta }}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -354,6 +357,16 @@ import logger from '@/utils/logger'
 const appVersion = import.meta.env.VITE_APP_VERSION || '0.0.1'
 const buildMode = import.meta.env.MODE || 'development'
 const buildInfo = computed(() => `v${appVersion} (${buildMode})`)
+const gitCommit = import.meta.env.VITE_GIT_COMMIT || ''
+const gitCommitShort = gitCommit ? gitCommit.slice(0, 7) : ''
+const deploymentHost =
+  typeof window !== 'undefined' && window.location ? window.location.host : ''
+const deploymentMeta = computed(() => {
+  const parts: string[] = []
+  if (deploymentHost) parts.push(deploymentHost)
+  if (gitCommitShort) parts.push(`commit ${gitCommitShort}`)
+  return parts.join(' · ')
+})
 
 const router = useRouter()
 const { locale, t } = useI18n()
