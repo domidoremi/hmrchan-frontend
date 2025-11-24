@@ -31,7 +31,9 @@
             {{ $t('contact.emailDesc') }}
           </p>
         </section>
+      </div>
 
+      <div class="contact-form-card glass-card">
         <section class="contact-section contact-form-section">
           <h2>{{ $t('contact.formTitle', '站内联系表单') }}</h2>
           <p class="contact-form-hint">
@@ -41,15 +43,15 @@
             <div class="form-row">
               <label class="form-label">{{ $t('contact.typeLabel', '反馈类型') }}</label>
               <div class="form-options">
-                <label class="option-pill">
+                <label class="option-pill" :class="{ active: form.type === 'bug' }">
                   <input v-model="form.type" type="radio" value="bug">
                   <span>{{ $t('contact.typeBug', 'Bug 反馈') }}</span>
                 </label>
-                <label class="option-pill">
+                <label class="option-pill" :class="{ active: form.type === 'feature' }">
                   <input v-model="form.type" type="radio" value="feature">
                   <span>{{ $t('contact.typeFeature', '功能建议') }}</span>
                 </label>
-                <label class="option-pill">
+                <label class="option-pill" :class="{ active: form.type === 'other' }">
                   <input v-model="form.type" type="radio" value="other">
                   <span>{{ $t('contact.typeOther', '其他') }}</span>
                 </label>
@@ -59,12 +61,12 @@
             <div class="form-row">
               <label class="form-label">{{ $t('contact.authStatus', '登录状态') }}</label>
               <div class="form-options">
-                <label class="option-pill">
+                <label class="option-pill" :class="{ active: form.authStatus === 'auto' }">
                   <input v-model="form.authStatus" type="radio" value="auto">
                   <span>{{ isAuthenticated ? $t('contact.authLoggedIn', '已登录') :
                     $t('contact.authGuest', '未登录或游客') }}</span>
                 </label>
-                <label class="option-pill">
+                <label class="option-pill" :class="{ active: form.authStatus === 'guest' }">
                   <input v-model="form.authStatus" type="radio" value="guest">
                   <span>{{ $t('contact.authForceGuest', '以访客身份提交') }}</span>
                 </label>
@@ -361,6 +363,11 @@ const handleSubmit = async () => {
   padding: var(--spacing-xl);
 }
 
+.contact-form-card {
+  margin-top: var(--spacing-lg);
+  padding: var(--spacing-xl);
+}
+
 .contact-section {
   margin-bottom: var(--spacing-2xl);
 }
@@ -401,8 +408,7 @@ const handleSubmit = async () => {
 }
 
 .contact-form-section {
-  border-top: 1px solid var(--glass-border);
-  padding-top: var(--spacing-xl);
+  padding-top: 0;
 }
 
 .contact-form-hint {
@@ -438,6 +444,7 @@ const handleSubmit = async () => {
 .option-pill {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: var(--spacing-xs);
   padding: 0.4rem 0.75rem;
   border-radius: 999px;
@@ -449,6 +456,17 @@ const handleSubmit = async () => {
 
 .option-pill input {
   accent-color: var(--primary-color);
+  margin: 0;
+}
+
+.option-pill.active {
+  background: rgba(139, 92, 246, 0.16);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.option-pill.active span {
+  font-weight: 600;
 }
 
 .contact-textarea {
@@ -493,6 +511,10 @@ const handleSubmit = async () => {
 .form-actions {
   display: flex;
   justify-content: flex-end;
+}
+
+.contact-page .glass-card:active {
+  transform: none;
 }
 
 @media (max-width: 768px) {
