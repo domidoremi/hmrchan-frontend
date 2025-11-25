@@ -85,6 +85,20 @@
     "githubDesc": "機能要望やバグ報告は、GitHub リポジトリの Issue として作成してください。",
     "githubLink": "GitHub Issues を開く",
     "emailTitle": "メール",
-    "emailDesc": "メールでの連絡を希望される場合は、プロジェクトのドキュメントまたはプロフィールに記載されている連絡先アドレスをご利用ください。"
+    "emailDesc": "メールでの連絡を希望される場合は、プロジェクトのドキュメントまたはプロフィールに記載されている連絡先アドレスをご利用ください。",
+    "formTitle": "サイト内お問い合わせフォーム",
+    "formHint": "このフォームから開発者に直接フィードバックを送信できます。機密情報は含めないでください。",
+    "typeLabel": "フィードバックの種類",
+    "typeBug": "バグ報告",
+    "typeFeature": "機能要望",
+    "typeOther": "その他",
+    "authStatus": "ログイン状態",
+    "authLoggedIn": "ログイン済み",
+    "authGuest": "未ログイン / ゲスト",
+    "authForceGuest": "ゲストとして送信する",
+    "emailLabel": "連絡用メールアドレス（任意）",
+    "messageLabel": "フィードバック内容",
+    "attachmentsLabel": "添付ファイル（任意）",
+    "attachmentsHint": "画像ファイルを1つまで（最大5MB、PNG / JPEG / WEBP / GIF のみ）。"
   }
 }
