@@ -85,6 +85,20 @@
     "githubDesc": "For feature requests and bug reports, please open an issue on the GitHub repository.",
     "githubLink": "Open GitHub Issues",
     "emailTitle": "Email",
-    "emailDesc": "If you prefer email, please use the contact address provided in the project documentation or profile."
+    "emailDesc": "If you prefer email, please use the contact address provided in the project documentation or profile.",
+    "formTitle": "In-app Contact Form",
+    "formHint": "You can use this form to send feedback directly to the developer. Please do not include sensitive information.",
+    "typeLabel": "Feedback type",
+    "typeBug": "Bug report",
+    "typeFeature": "Feature request",
+    "typeOther": "Other",
+    "authStatus": "Authentication status",
+    "authLoggedIn": "Logged in",
+    "authGuest": "Not logged in / guest",
+    "authForceGuest": "Submit as guest",
+    "emailLabel": "Contact email (optional)",
+    "messageLabel": "Feedback content",
+    "attachmentsLabel": "Attachment (optional)",
+    "attachmentsHint": "Up to 1 image file, max 5MB, PNG / JPEG / WEBP / GIF only."
   }
 }
