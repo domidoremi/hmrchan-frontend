@@ -156,18 +156,27 @@ watch(
       <main id="main-content" tabindex="-1">
         <!-- 路由视图插槽，渲染当前路由对应的页面组件 -->
         <RouterView v-slot="{ Component, route }">
-          <!-- 页面过渡动画容器，mode="out-in" 确保旧页面完全离开后再进入新页面 -->
-          <transition :name="transitionName" mode="out-in">
-            <!--
-              KeepAlive 组件缓存
-              - include: 指定需要缓存的组件名称列表
-              - max: 最多缓存 5 个组件实例，超出后移除最久未使用的
-              - key: 使用路由路径作为 key，确保相同路由的不同参数也能正确缓存
-            -->
-            <KeepAlive :include="cachedComponents" :max="5">
-              <component :is="Component" :key="route.path" />
-            </KeepAlive>
-          </transition>
+          <Suspense>
+            <template #default>
+              <!-- 页面过渡动画容器，mode="out-in" 确保旧页面完全离开后再进入新页面 -->
+              <transition :name="transitionName" mode="out-in">
+                <!--
+                  KeepAlive 组件缓存
+                  - include: 指定需要缓存的组件名称列表
+                  - max: 最多缓存 5 个组件实例，超出后移除最久未使用的
+                  - key: 使用路由路径作为 key，确保相同路由的不同参数也能正确缓存
+                -->
+                <KeepAlive :include="cachedComponents" :max="5">
+                  <component :is="Component" :key="route.path" />
+                </KeepAlive>
+              </transition>
+            </template>
+            <template #fallback>
+              <div class="route-loading">
+                <div class="route-loading-spinner spinner"></div>
+              </div>
+            </template>
+          </Suspense>
         </RouterView>
       </main>
     </ErrorBoundary>
@@ -182,6 +191,14 @@ watch(
 #app {
   min-height: 100vh;
   transition: background-color var(--transition-base);
+}
+
+/* 全局路由 Suspense 加载状态 */
+.route-loading {
+  min-height: 50vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* ==================== 页面过渡动画 ==================== */
