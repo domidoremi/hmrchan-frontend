@@ -4,8 +4,7 @@
     <div class="container navbar-content">
       <!-- Logo -->
       <RouterLink to="/" class="navbar-brand">
-        <div class="brand-logo">HMR</div>
-        <span class="brand-name">Club</span>
+        <span class="brand-name">Himenshion club</span>
       </RouterLink>
 
       <!-- 导航链接 (桌面端) -->
@@ -193,8 +192,7 @@
     <div class="mobile-top-content">
       <!-- Logo -->
       <RouterLink to="/" class="navbar-brand">
-        <div class="brand-logo">HMR</div>
-        <span class="brand-name">Club</span>
+        <span class="brand-name">Himenshion club</span>
       </RouterLink>
 
       <div v-if="showAccessIndicator" class="mobile-access-indicator">
