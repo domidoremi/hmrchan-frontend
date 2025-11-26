@@ -4,17 +4,17 @@
  */
 import { getRuntimeApiBaseUrl, getRuntimeApiEndpoint } from './runtime'
 
-export const API_CONFIG = {
+export const API_CONFIG = Object.freeze({
   baseURL: getRuntimeApiBaseUrl(),
   endpoint: getRuntimeApiEndpoint(),
   wsURL: import.meta.env.VITE_WS_URL || 'wss://api.momichan.xyz/ws',
   timeout: 30000,
-}
+})
 
 // 导出API_BASE_URL供组件使用
 export const API_BASE_URL = API_CONFIG.baseURL
 
-export const API_ENDPOINTS = {
+export const API_ENDPOINTS = Object.freeze({
   // 帖子相关
   POSTS: '/api/v1/posts',
   POST_DETAIL: (id: string) => `/api/v1/posts/${id}`,
@@ -46,24 +46,24 @@ export const API_ENDPOINTS = {
 
   // 健康检查
   HEALTH: '/health',
-}
+})
 
 /**
  * 支持的平台
  */
-export const SUPPORTED_PLATFORMS = {
+export const SUPPORTED_PLATFORMS = Object.freeze({
   TWITTER: 'twitter' as const,
   YOUTUBE: 'youtube' as const,
   TIKTOK: 'tiktok' as const,
   INSTAGRAM: 'instagram' as const, // 暂时禁用
-}
+})
 
 /**
  * 平台状态
  */
-export const PLATFORM_STATUS = {
+export const PLATFORM_STATUS = Object.seal({
   [SUPPORTED_PLATFORMS.TWITTER]: true,
   [SUPPORTED_PLATFORMS.YOUTUBE]: true,
   [SUPPORTED_PLATFORMS.TIKTOK]: true,
   [SUPPORTED_PLATFORMS.INSTAGRAM]: false, // 暂时禁用
-}
+})
