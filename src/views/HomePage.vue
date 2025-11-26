@@ -50,15 +50,9 @@
         </div>
 
         <!-- Posts列表 -->
-        <div v-else-if="posts.length > 0" ref="postsGrid" class="posts-grid">
-          <PostCard
-            v-for="(post, index) in posts"
-            :key="post.id"
-            :post="post"
-            :index="index"
-            :show-actions="false"
-            :is-first-screen="index < 4"
-          />
+        <div v-else-if="posts.length > 0" ref="postsGrid" class="posts-grid" v-memo="[posts.length]">
+          <PostCard v-for="(post, index) in posts" :key="post.id" :post="post" :index="index" :show-actions="false"
+            :is-first-screen="index < 4" />
         </div>
 
         <!-- Empty state -->
