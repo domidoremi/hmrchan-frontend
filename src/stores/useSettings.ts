@@ -59,7 +59,7 @@ export interface UserSettings {
 }
 
 /** 默认设置值 */
-const DEFAULT_SETTINGS: UserSettings = {
+const DEFAULT_SETTINGS: UserSettings = Object.freeze({
   showHeroSection: true,
   postsPerPage: 20,
   enableAnimations: true,
@@ -72,7 +72,7 @@ const DEFAULT_SETTINGS: UserSettings = {
   performanceCookiesEnabled: false,
   dataCollection: false,
   personalizedContent: false,
-}
+}) as UserSettings
 
 export const useSettingsStore = defineStore('settings', () => {
   /** 日志上下文 */
