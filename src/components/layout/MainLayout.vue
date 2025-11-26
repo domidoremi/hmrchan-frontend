@@ -191,7 +191,7 @@ onBeforeUnmount(() => {
 @media (max-width: 768px) {
   .main-content {
     padding-top: 76px;
-    padding-bottom: calc(90px + env(safe-area-inset-bottom));
+    padding-bottom: calc(120px + env(safe-area-inset-bottom));
   }
 }
 </style>
