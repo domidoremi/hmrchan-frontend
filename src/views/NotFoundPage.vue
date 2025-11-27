@@ -1,5 +1,5 @@
 <template>
-  <div class="not-found-page">
+  <div class="not-found-page" v-once>
     <div class="not-found-content glass-card">
       <div class="error-code">404</div>
       <h1>Page Not Found</h1>

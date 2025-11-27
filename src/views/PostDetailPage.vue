@@ -67,7 +67,7 @@
                   </summary>
 
                   <div class="accordion-body">
-                    <div class="post-meta">
+                    <div class="post-meta" v-memo="[post && post.id, isRetweet]">
                       <div class="meta-item">
                         <Calendar :size="18" />
                         <span>{{ formatDate(post.published_at || post.scraped_at) }}</span>
@@ -123,13 +123,14 @@
                       </div>
                     </RouterLink>
 
-                    <div v-if="post.description || post.title" ref="descriptionSectionRef" :class="[
-                      'post-description',
-                      {
-                        'is-collapsed': !isDescriptionExpanded && isDescriptionLong,
-                        'is-expanded': isDescriptionExpanded && isDescriptionLong,
-                      },
-                    ]">
+                    <div v-if="post.description || post.title" ref="descriptionSectionRef"
+                      v-memo="[post && post.id, activeTag, isDescriptionExpanded]" :class="[
+                        'post-description',
+                        {
+                          'is-collapsed': !isDescriptionExpanded && isDescriptionLong,
+                          'is-expanded': isDescriptionExpanded && isDescriptionLong,
+                        },
+                      ]">
                       <p>
                         <template v-for="(segment, index) in descriptionSegments" :key="index">
                           <a v-if="segment.type === 'link'" class="description-link" :href="segment.href"
@@ -207,7 +208,7 @@
                   </summary>
 
                   <div class="accordion-body">
-                    <div class="tags-section" ref="mobileTagsSectionRef">
+                    <div class="tags-section" ref="mobileTagsSectionRef" v-memo="[post && post.id, activeTag]">
                       <div class="tags-list">
                         <span v-for="tag in post.tags" :key="tag" class="tag glass-badge"
                           :class="{ 'is-active': tag === activeTag }" @click="onTagsListTagClick(tag)">
@@ -226,7 +227,7 @@
                   </summary>
 
                   <div class="accordion-body">
-                    <div class="related-posts">
+                    <div class="related-posts" v-memo="[post && post.id, relatedPosts.length]">
                       <div class="related-grid">
                         <RouterLink v-for="relatedPost in relatedPosts" :key="relatedPost.id"
                           :to="`/posts/${relatedPost.id}`" class="related-item">
@@ -312,13 +313,14 @@
 
           <!-- 桌面端：媒体下方整行，放描述 + 操作按钮 + 统计 -->
           <div v-if="!isTabletOrBelow" class="detail-main full-width-section">
-            <div v-if="post.description || post.title" ref="descriptionSectionRef" :class="[
-              'post-description',
-              {
-                'is-collapsed': !isDescriptionExpanded && isDescriptionLong,
-                'is-expanded': isDescriptionExpanded && isDescriptionLong,
-              },
-            ]">
+            <div v-if="post.description || post.title" ref="descriptionSectionRef"
+              v-memo="[post && post.id, activeTag, isDescriptionExpanded]" :class="[
+                'post-description',
+                {
+                  'is-collapsed': !isDescriptionExpanded && isDescriptionLong,
+                  'is-expanded': isDescriptionExpanded && isDescriptionLong,
+                },
+              ]">
               <p>
                 <template v-for="(segment, index) in descriptionSegments" :key="index">
                   <a v-if="segment.type === 'link'" class="description-link" :href="segment.href" target="_blank"
@@ -356,7 +358,8 @@
               </button>
             </div>
 
-            <section v-if="yieldedStats.length > 0" class="post-stats" aria-labelledby="post-stats-heading">
+            <section v-if="yieldedStats.length > 0" v-memo="[post && post.id]" class="post-stats"
+              aria-labelledby="post-stats-heading">
               <h2 id="post-stats-heading" class="sr-only">{{ $t('post.stats') }}</h2>
               <div class="post-action-stats" role="list" :aria-label="$t('post.stats')">
                 <component v-for="stat in yieldedStats" :key="stat.key" :is="stat.linkAttrs ? 'a' : 'div'"
@@ -376,7 +379,8 @@
           </div>
 
           <div v-if="!isTabletOrBelow && post.tags && post.tags.length > 0"
-            class="tags-section glass-card full-width-section" ref="desktopTagsSectionRef">
+            class="tags-section glass-card full-width-section" ref="desktopTagsSectionRef"
+            v-memo="[post && post.id, activeTag]">
             <h3>{{ $t('post.tags') }}</h3>
             <div class="tags-list">
               <span v-for="tag in post.tags" :key="tag" class="tag glass-badge"
@@ -386,7 +390,8 @@
             </div>
           </div>
 
-          <div v-if="!isTabletOrBelow && relatedPosts.length > 0" class="related-posts glass-card full-width-section">
+          <div v-if="!isTabletOrBelow && relatedPosts.length > 0" class="related-posts glass-card full-width-section"
+            v-memo="[post && post.id, relatedPosts.length]">
             <h3 class="related-title">
               <Sparkles :size="20" />
               {{ $t('post.relatedPosts') }}
@@ -431,7 +436,7 @@
                   <Play :size="48" />
                   <span class="video-duration" v-if="media.duration">{{
                     formatDuration(media.duration)
-                    }}</span>
+                  }}</span>
                 </div>
               </div>
             </div>
