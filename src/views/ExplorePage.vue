@@ -14,7 +14,7 @@
         <p v-if="lastListFromFallback" class="offline-hint">
           {{ $t('offline.usingCache') }}
         </p>
-        <div ref="postsGrid" class="posts-grid">
+        <div ref="postsGrid" class="posts-grid" v-memo="[posts.length]">
           <PostCard v-for="(post, index) in posts" :key="post.id" :post="post" :index="index" :show-actions="false" />
         </div>
 
