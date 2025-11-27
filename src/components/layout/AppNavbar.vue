@@ -112,7 +112,7 @@
                     @click="settingsStore.toggleSetting('showHeroSection')">
                     <span class="settings-toggle-label">{{
                       $t('settings.toggleHeroSection')
-                    }}</span>
+                      }}</span>
                     <span class="settings-toggle-indicator" :class="{ active: settings.showHeroSection }"></span>
                   </button>
 
@@ -126,7 +126,7 @@
                     @click="settingsStore.toggleSetting('enableSwipeNavigation')">
                     <span class="settings-toggle-label">{{
                       $t('settings.toggleSwipeNavigation')
-                    }}</span>
+                      }}</span>
                     <span class="settings-toggle-indicator" :class="{ active: settings.enableSwipeNavigation }"></span>
                   </button>
                 </div>
@@ -1347,7 +1347,7 @@ onUnmounted(() => {
   .mobile-top-nav {
     display: flex;
     align-items: center;
-    padding: var(--spacing-3) var(--spacing-4);
+    padding: 0;
     min-height: 76px;
   }
 
@@ -1355,6 +1355,9 @@ onUnmounted(() => {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    width: 100%;
+    box-sizing: border-box;
+    padding: var(--spacing-3) var(--spacing-4);
   }
 
   .mobile-top-actions {
