@@ -332,7 +332,7 @@ const router = createRouter({
     if (toComponentName && cachedPages.includes(toComponentName)) {
       // 从 sessionStorage 恢复位置
       return new Promise((resolve) => {
-        setTimeout(() => {
+        const restoreScroll = () => {
           try {
             const savedScroll = sessionStorage.getItem(`scroll:${to.path}`)
             if (savedScroll) {
@@ -348,7 +348,17 @@ const router = createRouter({
             // Ignore errors
           }
           resolve({ top: 0, behavior: 'smooth' })
-        }, 50) // 短暂延迟确保 DOM 已渲染
+        }
+
+        // 优先使用 requestAnimationFrame，在布局完成后的帧中恢复滚动
+        if (typeof window !== 'undefined' && 'requestAnimationFrame' in window) {
+          requestAnimationFrame(() => {
+            requestAnimationFrame(restoreScroll)
+          })
+        } else {
+          // 退回到固定延迟方案
+          setTimeout(restoreScroll, 50)
+        }
       })
     }
 
