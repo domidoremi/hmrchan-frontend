@@ -112,7 +112,7 @@
                     @click="settingsStore.toggleSetting('showHeroSection')">
                     <span class="settings-toggle-label">{{
                       $t('settings.toggleHeroSection')
-                      }}</span>
+                    }}</span>
                     <span class="settings-toggle-indicator" :class="{ active: settings.showHeroSection }"></span>
                   </button>
 
@@ -126,7 +126,7 @@
                     @click="settingsStore.toggleSetting('enableSwipeNavigation')">
                     <span class="settings-toggle-label">{{
                       $t('settings.toggleSwipeNavigation')
-                      }}</span>
+                    }}</span>
                     <span class="settings-toggle-indicator" :class="{ active: settings.enableSwipeNavigation }"></span>
                   </button>
                 </div>
@@ -269,115 +269,121 @@
 
   <!-- 用户菜单弹出层（仅移动端） -->
   <Transition name="modal">
-    <div v-if="showUserMenu && isAuthenticated && isMobile" class="mobile-user-modal" @click="showUserMenu = false">
-      <div class="mobile-user-content glass-card" role="dialog" aria-modal="true" :aria-label="$t('aria.userMenu')"
-        @click.stop>
-        <div class="mobile-user-header">
-          <div class="user-avatar-large">
-            <img :src="userAvatarUrl" :alt="user?.username" />
+    <Teleport to="body">
+      <div v-if="showUserMenu && isAuthenticated && isMobile" class="mobile-user-modal" @click="showUserMenu = false">
+        <div class="mobile-user-content glass-card" role="dialog" aria-modal="true" :aria-label="$t('aria.userMenu')"
+          @click.stop>
+          <div class="mobile-user-header">
+            <div class="user-avatar-large">
+              <img :src="userAvatarUrl" :alt="user?.username" />
+            </div>
+            <div class="user-info">
+              <div class="user-name">{{ user?.username }}</div>
+              <div class="user-email">{{ user?.email }}</div>
+            </div>
+            <button class="close-button" @click="showUserMenu = false">
+              <X :size="24" />
+            </button>
           </div>
-          <div class="user-info">
-            <div class="user-name">{{ user?.username }}</div>
-            <div class="user-email">{{ user?.email }}</div>
+
+          <div class="mobile-user-links">
+            <RouterLink to="/profile" class="mobile-user-link" @click="showUserMenu = false">
+              <User :size="20" />
+              <span>{{ $t('nav.profile') }}</span>
+            </RouterLink>
+
+            <button class="mobile-user-link danger" @click="handleLogout">
+              <LogOut :size="20" />
+              <span>{{ $t('nav.logout') }}</span>
+            </button>
           </div>
-          <button class="close-button" @click="showUserMenu = false">
-            <X :size="24" />
-          </button>
-        </div>
-
-        <div class="mobile-user-links">
-          <RouterLink to="/profile" class="mobile-user-link" @click="showUserMenu = false">
-            <User :size="20" />
-            <span>{{ $t('nav.profile') }}</span>
-          </RouterLink>
-
-          <button class="mobile-user-link danger" @click="handleLogout">
-            <LogOut :size="20" />
-            <span>{{ $t('nav.logout') }}</span>
-          </button>
         </div>
       </div>
-    </div>
+    </Teleport>
   </Transition>
 
   <!-- 离线队列面板（移动端） -->
   <Transition name="modal">
-    <div v-if="showQueuePanel && isMobile" class="mobile-user-modal" @click="showQueuePanel = false">
-      <div class="mobile-user-content glass-card" role="dialog" aria-modal="true" :aria-label="$t('offline.queueTitle')"
-        @click.stop>
-        <div class="queue-header">
-          <span class="queue-title">{{ $t('offline.queueTitle') }}</span>
+    <Teleport to="body">
+      <div v-if="showQueuePanel && isMobile" class="mobile-user-modal" @click="showQueuePanel = false">
+        <div class="mobile-user-content glass-card" role="dialog" aria-modal="true"
+          :aria-label="$t('offline.queueTitle')" @click.stop>
+          <div class="queue-header">
+            <span class="queue-title">{{ $t('offline.queueTitle') }}</span>
+          </div>
+          <div class="queue-body">
+            <p class="queue-description">
+              {{ $t('offline.actionsQueued') }}
+            </p>
+            <p v-if="queueStatus.pending > 0" class="queue-count">
+              {{ queueStatus.pending }}
+            </p>
+            <p v-else class="queue-empty">
+              {{ $t('offline.queueEmpty') }}
+            </p>
+          </div>
+          <button class="queue-sync-button" type="button" @click="handleQueueSync"
+            :disabled="!queueStatus.pending || !isOnline || isQueueSyncing">
+            <span>{{ $t('offline.syncNow') }}</span>
+          </button>
         </div>
-        <div class="queue-body">
-          <p class="queue-description">
-            {{ $t('offline.actionsQueued') }}
-          </p>
-          <p v-if="queueStatus.pending > 0" class="queue-count">
-            {{ queueStatus.pending }}
-          </p>
-          <p v-else class="queue-empty">
-            {{ $t('offline.queueEmpty') }}
-          </p>
-        </div>
-        <button class="queue-sync-button" type="button" @click="handleQueueSync"
-          :disabled="!queueStatus.pending || !isOnline || isQueueSyncing">
-          <span>{{ $t('offline.syncNow') }}</span>
-        </button>
       </div>
-    </div>
+    </Teleport>
   </Transition>
 
   <!-- 快捷设置面板（移动端） -->
   <Transition name="modal">
-    <div v-if="showSettingsPanel && isMobile" class="mobile-user-modal" @click="showSettingsPanel = false">
-      <div class="mobile-user-content glass-card" role="dialog" aria-modal="true" :aria-label="$t('nav.settings')"
-        @click.stop>
-        <div class="settings-group">
-          <div class="settings-group-title">{{ $t('settings.theme') }}</div>
-          <div class="settings-theme-options">
-            <button v-for="option in themeOptions" :key="option.value" type="button" class="settings-theme-button"
-              :class="{ active: theme === option.value }" @click="setTheme(option.value)">
-              <component :is="option.icon" :size="18" />
-              <span>{{ $t(`settings.${option.value}`) }}</span>
-            </button>
+    <Teleport to="body">
+      <div v-if="showSettingsPanel && isMobile" class="mobile-user-modal" @click="showSettingsPanel = false">
+        <div class="mobile-user-content glass-card" role="dialog" aria-modal="true" :aria-label="$t('nav.settings')"
+          @click.stop>
+          <div class="settings-group">
+            <div class="settings-group-title">{{ $t('settings.theme') }}</div>
+            <div class="settings-theme-options">
+              <button v-for="option in themeOptions" :key="option.value" type="button" class="settings-theme-button"
+                :class="{ active: theme === option.value }" @click="setTheme(option.value)">
+                <component :is="option.icon" :size="18" />
+                <span>{{ $t(`settings.${option.value}`) }}</span>
+              </button>
+            </div>
           </div>
-        </div>
 
-        <div class="settings-group">
-          <div class="settings-group-title">{{ $t('settings.language') }}</div>
-          <div class="settings-language-options">
-            <button v-for="localeOption in localeOptions" :key="localeOption.code" type="button"
-              class="settings-language-button" :class="{ active: locale === localeOption.code }"
-              @click="changeLanguage(localeOption.code)">
-              {{ localeOption.name }}
-            </button>
+          <div class="settings-group">
+            <div class="settings-group-title">{{ $t('settings.language') }}</div>
+            <div class="settings-language-options">
+              <button v-for="localeOption in localeOptions" :key="localeOption.code" type="button"
+                class="settings-language-button" :class="{ active: locale === localeOption.code }"
+                @click="changeLanguage(localeOption.code)">
+                {{ localeOption.name }}
+              </button>
+            </div>
           </div>
-        </div>
 
-        <div class="settings-group">
-          <div class="settings-group-title">{{ $t('settings.display') }}</div>
-          <div class="settings-toggle-list">
-            <button type="button" class="settings-toggle" :class="{ active: settings.showHeroSection }"
-              @click="settingsStore.toggleSetting('showHeroSection')">
-              <span class="settings-toggle-label">{{ $t('settings.toggleHeroSection') }}</span>
-              <span class="settings-toggle-indicator" :class="{ active: settings.showHeroSection }"></span>
-            </button>
+          <div class="settings-group">
+            <div class="settings-group-title">{{ $t('settings.display') }}</div>
+            <div class="settings-toggle-list">
+              <button type="button" class="settings-toggle" :class="{ active: settings.showHeroSection }"
+                @click="settingsStore.toggleSetting('showHeroSection')">
+                <span class="settings-toggle-label">{{ $t('settings.toggleHeroSection') }}</span>
+                <span class="settings-toggle-indicator" :class="{ active: settings.showHeroSection }"></span>
+              </button>
 
-            <button type="button" class="settings-toggle" :class="{ active: settings.enableAnimations }"
-              @click="settingsStore.toggleSetting('enableAnimations')">
-              <span class="settings-toggle-label">{{ $t('settings.toggleAnimations') }}</span>
-              <span class="settings-toggle-indicator" :class="{ active: settings.enableAnimations }"></span>
-            </button>
+              <button type="button" class="settings-toggle" :class="{ active: settings.enableAnimations }"
+                @click="settingsStore.toggleSetting('enableAnimations')">
+                <span class="settings-toggle-label">{{ $t('settings.toggleAnimations') }}</span>
+                <span class="settings-toggle-indicator" :class="{ active: settings.enableAnimations }"></span>
+              </button>
 
-            <button type="button" class="settings-toggle" :class="{ active: settings.enableSwipeNavigation }"
-              @click="settingsStore.toggleSetting('enableSwipeNavigation')">
-              <span class="settings-toggle-label">{{ $t('settings.toggleSwipeNavigation') }}</span>
-              <span class="settings-toggle-indicator" :class="{ active: settings.enableSwipeNavigation }"></span>
-            </button>
+              <button type="button" class="settings-toggle" :class="{ active: settings.enableSwipeNavigation }"
+                @click="settingsStore.toggleSetting('enableSwipeNavigation')">
+                <span class="settings-toggle-label">{{ $t('settings.toggleSwipeNavigation') }}</span>
+                <span class="settings-toggle-indicator" :class="{ active: settings.enableSwipeNavigation }"></span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </Teleport>
   </Transition>
 
   <!-- 全局设置面板结束 -->
@@ -1339,8 +1345,10 @@ onUnmounted(() => {
 
   /* 显示移动端顶部栏 */
   .mobile-top-nav {
-    display: block;
+    display: flex;
+    align-items: center;
     padding: var(--spacing-3) var(--spacing-4);
+    min-height: 76px;
   }
 
   .mobile-top-content {
