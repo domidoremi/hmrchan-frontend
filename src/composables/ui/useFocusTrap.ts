@@ -129,10 +129,17 @@ export function useFocusTrap(
 
     // Focus the first focusable element
     if (initialFocus) {
-      // Use setTimeout to ensure the container is rendered
-      setTimeout(() => {
-        firstFocusable.value?.focus()
-      }, 0)
+      // 使用 requestAnimationFrame 确保容器在下一帧已经完成渲染
+      if (typeof window !== 'undefined' && 'requestAnimationFrame' in window) {
+        requestAnimationFrame(() => {
+          firstFocusable.value?.focus()
+        })
+      } else {
+        // 回退到 0ms 延迟
+        setTimeout(() => {
+          firstFocusable.value?.focus()
+        }, 0)
+      }
     }
 
     // Add event listeners
