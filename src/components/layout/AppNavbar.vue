@@ -48,8 +48,8 @@
           </button>
 
           <Transition name="dropdown">
-            <div v-if="showQueuePanel" ref="queueDropdownRef" class="queue-dropdown glass-card"
-              :popover="useNativePopover ? 'auto' : undefined" :class="{ 'mobile-modal': isMobile }"
+            <div v-show="showQueuePanel" ref="queueDropdownRef" class="queue-dropdown glass-card"
+              :popover="useNativePopover && !isMobile ? 'manual' : undefined" :class="{ 'mobile-modal': isMobile }"
               @click.self="isMobile && (showQueuePanel = false)">
               <div class="queue-header">
                 <span class="queue-title">{{ $t('offline.queueTitle') }}</span>
@@ -82,8 +82,8 @@
 
           <!-- 设置面板（桌面端下拉，移动端模态框） -->
           <Transition name="dropdown">
-            <div v-if="showSettingsPanel" ref="settingsDropdownRef" class="settings-dropdown glass-card"
-              :popover="useNativePopover ? 'auto' : undefined" :class="{ 'mobile-modal': isMobile }"
+            <div v-show="showSettingsPanel" ref="settingsDropdownRef" class="settings-dropdown glass-card"
+              :popover="useNativePopover && !isMobile ? 'manual' : undefined" :class="{ 'mobile-modal': isMobile }"
               @click.self="isMobile && (showSettingsPanel = false)">
               <div class="settings-group">
                 <div class="settings-group-title">{{ $t('settings.theme') }}</div>
@@ -154,8 +154,8 @@
           </button>
 
           <Transition name="dropdown">
-            <div v-if="showUserMenu" ref="userDropdownRef" class="user-dropdown glass-card"
-              :popover="useNativePopover ? 'auto' : undefined">
+            <div v-show="showUserMenu" ref="userDropdownRef" class="user-dropdown glass-card"
+              :popover="useNativePopover && !isMobile ? 'manual' : undefined">
               <div class="dropdown-header">
                 <div class="user-avatar-large">
                   <img :src="userAvatarUrl" :alt="user?.username || 'User'" />
@@ -419,7 +419,7 @@
  * - 显示离线队列状态
  */
 
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
@@ -539,11 +539,23 @@ const refreshQueueStatus = async () => {
  * 打开面板时会刷新队列状态
  */
 const toggleQueuePanel = async () => {
-  if (useNativePopover && queueDropdownRef.value) {
-    queueDropdownRef.value.togglePopover()
-  } else {
-    showQueuePanel.value = !showQueuePanel.value
+  // 关闭其他面板
+  showSettingsPanel.value = false
+  showUserMenu.value = false
+
+  // 切换状态
+  showQueuePanel.value = !showQueuePanel.value
+
+  // 如果使用原生 Popover API 且是打开状态（仅桌面端）
+  if (useNativePopover && !isMobile.value && showQueuePanel.value) {
+    await nextTick()
+    try {
+      queueDropdownRef.value?.showPopover()
+    } catch (e) {
+      // 忽略 popover 已打开的错误
+    }
   }
+
   if (showQueuePanel.value) {
     await refreshQueueStatus()
   }
@@ -620,41 +632,65 @@ const localeOptions = [
 /**
  * 切换设置面板显示状态
  */
-const toggleSettingsPanel = () => {
-  if (useNativePopover && settingsDropdownRef.value) {
-    settingsDropdownRef.value.togglePopover()
-  } else {
-    showSettingsPanel.value = !showSettingsPanel.value
+const toggleSettingsPanel = async () => {
+  // 关闭其他面板
+  showQueuePanel.value = false
+  showUserMenu.value = false
+
+  // 切换状态
+  showSettingsPanel.value = !showSettingsPanel.value
+
+  // 如果使用原生 Popover API 且是打开状态（仅桌面端）
+  if (useNativePopover && !isMobile.value && showSettingsPanel.value) {
+    await nextTick()
+    try {
+      settingsDropdownRef.value?.showPopover()
+    } catch (e) {
+      // 忽略 popover 已打开的错误
+    }
   }
 }
 
 /**
  * 切换用户菜单显示状态
  */
-const toggleUserMenu = () => {
-  if (useNativePopover && userDropdownRef.value) {
-    userDropdownRef.value.togglePopover()
-  } else {
-    showUserMenu.value = !showUserMenu.value
+const toggleUserMenu = async () => {
+  // 关闭其他面板
+  showQueuePanel.value = false
+  showSettingsPanel.value = false
+
+  // 切换状态
+  showUserMenu.value = !showUserMenu.value
+
+  // 如果使用原生 Popover API 且是打开状态（仅桌面端）
+  if (useNativePopover && !isMobile.value && showUserMenu.value) {
+    await nextTick()
+    try {
+      userDropdownRef.value?.showPopover()
+    } catch (e) {
+      // 忽略 popover 已打开的错误
+    }
   }
 }
 
-// Popover toggle 事件处理
-const handlePopoverToggle = (panel: 'user' | 'settings' | 'queue') => (event: Event) => {
-  const toggleEvent = event as Event & { newState: string }
-  const isOpen = toggleEvent.newState === 'open'
+/**
+ * 关闭所有 popover 面板
+ */
+const closeAllPopovers = () => {
+  // 关闭 Vue 状态
+  showUserMenu.value = false
+  showSettingsPanel.value = false
+  showQueuePanel.value = false
 
-  switch (panel) {
-    case 'user':
-      showUserMenu.value = isOpen
-      break
-    case 'settings':
-      showSettingsPanel.value = isOpen
-      break
-    case 'queue':
-      showQueuePanel.value = isOpen
-      if (isOpen) refreshQueueStatus()
-      break
+  // 如果使用原生 Popover API（桌面端），也关闭 DOM 层面
+  if (useNativePopover && !isMobile.value) {
+    try {
+      userDropdownRef.value?.hidePopover()
+      settingsDropdownRef.value?.hidePopover()
+      queueDropdownRef.value?.hidePopover()
+    } catch (e) {
+      // 忽略 popover 已关闭的错误
+    }
   }
 }
 
@@ -671,7 +707,12 @@ const setTheme = (newTheme: Theme) => {
  * @param newLocale - 新的语言代码
  */
 const changeLanguage = async (newLocale: string) => {
-  await changeLocaleOptimized(newLocale as 'en' | 'zh-CN' | 'ja')
+  try {
+    await changeLocaleOptimized(newLocale as 'en' | 'zh-CN' | 'ja')
+  } catch (error) {
+    // 静默处理语言切换错误，防止错误传播到 ErrorBoundary
+    console.warn('[AppNavbar] Language switch error:', error)
+  }
 }
 
 /**
@@ -696,27 +737,29 @@ const handleLogout = () => {
 }
 
 /**
- * 处理点击外部区域（降级方案）
+ * 处理点击外部区域
  * 关闭打开的下拉菜单和面板
- * 注意：使用原生 Popover API 时不需要这个处理
  */
 const handleClickOutside = (event: MouseEvent) => {
-  // 使用原生 Popover API 时，点击外部自动关闭由浏览器处理
-  if (useNativePopover) return
-
   const target = event.target as HTMLElement
 
+  // 检查用户菜单
   const inMobileUserTrigger = target.closest('.mobile-user-trigger')
   const inMobileUserModal = target.closest('.mobile-user-modal')
+  const inUserMenu = userMenuRef.value?.contains(target)
   if (
-    userMenuRef.value &&
-    !userMenuRef.value.contains(target) &&
+    showUserMenu.value &&
+    !inUserMenu &&
     !inMobileUserTrigger &&
     !inMobileUserModal
   ) {
     showUserMenu.value = false
+    if (useNativePopover && !isMobile.value) {
+      try { userDropdownRef.value?.hidePopover() } catch (e) { /* ignore */ }
+    }
   }
 
+  // 检查设置面板
   const inSettingsButton = target.closest('.settings-menu-container')
   const inSettingsDropdown = target.closest('.settings-dropdown')
   if (
@@ -725,8 +768,12 @@ const handleClickOutside = (event: MouseEvent) => {
     !inSettingsDropdown
   ) {
     showSettingsPanel.value = false
+    if (useNativePopover && !isMobile.value) {
+      try { settingsDropdownRef.value?.hidePopover() } catch (e) { /* ignore */ }
+    }
   }
 
+  // 检查离线队列面板
   const inQueueButton = target.closest('.queue-status-container')
   const inQueueDropdown = target.closest('.queue-dropdown')
   if (
@@ -735,23 +782,26 @@ const handleClickOutside = (event: MouseEvent) => {
     !inQueueDropdown
   ) {
     showQueuePanel.value = false
+    if (useNativePopover && !isMobile.value) {
+      try { queueDropdownRef.value?.hidePopover() } catch (e) { /* ignore */ }
+    }
   }
 }
 
 /** 队列状态定时器 */
 let queueStatusTimer: number | null = null
 
-onMounted(() => {
-  // 根据是否支持原生 Popover API 选择事件监听方式
-  if (useNativePopover) {
-    // 原生 Popover API: 监听 toggle 事件
-    userDropdownRef.value?.addEventListener('toggle', handlePopoverToggle('user'))
-    settingsDropdownRef.value?.addEventListener('toggle', handlePopoverToggle('settings'))
-    queueDropdownRef.value?.addEventListener('toggle', handlePopoverToggle('queue'))
-  } else {
-    // 降级方案: 使用 click outside
-    document.addEventListener('click', handleClickOutside)
+// 监听路由变化，关闭所有面板
+watch(
+  () => router.currentRoute.value.path,
+  () => {
+    closeAllPopovers()
   }
+)
+
+onMounted(() => {
+  // 使用 click outside 处理所有情况（更可靠）
+  document.addEventListener('click', handleClickOutside)
 
   updateIsMobile()
   refreshQueueStatus()
@@ -768,13 +818,7 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-  if (useNativePopover) {
-    userDropdownRef.value?.removeEventListener('toggle', handlePopoverToggle('user'))
-    settingsDropdownRef.value?.removeEventListener('toggle', handlePopoverToggle('settings'))
-    queueDropdownRef.value?.removeEventListener('toggle', handlePopoverToggle('queue'))
-  } else {
-    document.removeEventListener('click', handleClickOutside)
-  }
+  document.removeEventListener('click', handleClickOutside)
 
   if (typeof window !== 'undefined') {
     window.removeEventListener('resize', updateIsMobile)
@@ -1761,4 +1805,31 @@ onUnmounted(() => {
 }
 
 /* 结束搜索模态相关样式清理 */
+
+/* ========================================
+   CSS :has() 选择器增强 - 现代浏览器特性
+   使用 :has() 实现基于子元素状态的父级样式
+   ======================================== */
+
+/* 当设置面板打开时，高亮设置按钮 */
+.settings-menu-container:has(.settings-dropdown[style*="display: block"]),
+.settings-menu-container:has(.settings-dropdown:not([style*="display: none"])) .action-button {
+  color: var(--color-primary);
+  background: var(--glass-bg-light);
+}
+
+/* 当下拉菜单有激活项时增强视觉反馈 */
+.settings-theme-options:has(.active) .settings-theme-button:not(.active) {
+  opacity: 0.7;
+}
+
+.settings-language-options:has(.active) .settings-language-button:not(.active) {
+  opacity: 0.7;
+}
+
+/* 设置开关列表中有激活项时的样式 */
+.settings-toggle-list:has(.active) {
+  border-left: 2px solid var(--color-primary);
+  padding-left: var(--spacing-2);
+}
 </style>
