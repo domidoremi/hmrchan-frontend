@@ -71,6 +71,9 @@ export { useKeyboardShortcuts } from './ui/useKeyboardShortcuts' // 使用独立
 export { useLongPress } from './ui/useLongPress'
 export { useLazyComponent } from './ui/useLazyComponent'
 
+export { usePopover, supportsPopover, usePopoverAnchor } from './ui/usePopover'
+export type { UsePopoverOptions } from './ui/usePopover'
+
 export { useClipboard, copyToClipboard } from './ui/useClipboard'
 export type { ClipboardOptions } from './ui/useClipboard'
 
