@@ -17,34 +17,54 @@ const switchDelays = ref<number[]>([])
 
 /**
  * 更新 dayjs 语言
+ * 使用防御性编程确保不会因语言包加载失败而影响应用
  */
-async function updateDayjsLocale(newLocale: SupportedLocale) {
+async function updateDayjsLocale(newLocale: SupportedLocale): Promise<void> {
+  // 映射语言代码
+  const dayjsLocaleMap: Record<SupportedLocale, string> = {
+    en: 'en',
+    'zh-CN': 'zh-cn',
+    ja: 'ja',
+  }
+
+  const dayjsLocale = dayjsLocaleMap[newLocale] || 'en'
+
   try {
-    // 映射语言代码
-    const dayjsLocaleMap: Record<SupportedLocale, string> = {
-      en: 'en',
-      'zh-CN': 'zh-cn',
-      ja: 'ja',
-    }
-
-    const dayjsLocale = dayjsLocaleMap[newLocale]
-
-    // 懒加载 dayjs 语言包
+    // 懒加载 dayjs 语言包（英语为默认，无需加载）
     if (dayjsLocale !== 'en') {
-      await import(
-        /* @vite-ignore */
-        `dayjs/locale/${dayjsLocale}`
-      )
+      // 使用静态导入路径列表，避免动态导入可能的问题
+      const localeImports: Record<string, () => Promise<unknown>> = {
+        'zh-cn': () => import('dayjs/locale/zh-cn'),
+        ja: () => import('dayjs/locale/ja'),
+      }
+
+      const importFn = localeImports[dayjsLocale]
+      if (importFn) {
+        await importFn()
+      }
     }
 
-    dayjs.locale(dayjsLocale)
+    // 设置 dayjs 语言
+    if (typeof dayjs.locale === 'function') {
+      dayjs.locale(dayjsLocale)
+    }
 
     logger.debug('Dayjs locale updated', { category: 'I18n', locale: dayjsLocale })
   } catch (error) {
-    logger.warn('Failed to update dayjs locale', {
+    // 静默处理错误，不影响主流程
+    logger.warn('Failed to update dayjs locale, using default', {
       category: 'I18n',
+      locale: dayjsLocale,
       error: error instanceof Error ? error.message : String(error),
     })
+    // 回退到英语
+    try {
+      if (typeof dayjs.locale === 'function') {
+        dayjs.locale('en')
+      }
+    } catch {
+      // 忽略
+    }
   }
 }
 
