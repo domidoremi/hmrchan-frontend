@@ -48,8 +48,9 @@
           </button>
 
           <Transition name="dropdown">
-            <div v-if="showQueuePanel" ref="queueMenuRef" class="queue-dropdown glass-card"
-              :class="{ 'mobile-modal': isMobile }" @click.self="isMobile && (showQueuePanel = false)">
+            <div v-if="showQueuePanel" ref="queueDropdownRef" class="queue-dropdown glass-card"
+              :popover="useNativePopover ? 'auto' : undefined" :class="{ 'mobile-modal': isMobile }"
+              @click.self="isMobile && (showQueuePanel = false)">
               <div class="queue-header">
                 <span class="queue-title">{{ $t('offline.queueTitle') }}</span>
               </div>
@@ -81,7 +82,8 @@
 
           <!-- 设置面板（桌面端下拉，移动端模态框） -->
           <Transition name="dropdown">
-            <div v-if="showSettingsPanel" class="settings-dropdown glass-card" :class="{ 'mobile-modal': isMobile }"
+            <div v-if="showSettingsPanel" ref="settingsDropdownRef" class="settings-dropdown glass-card"
+              :popover="useNativePopover ? 'auto' : undefined" :class="{ 'mobile-modal': isMobile }"
               @click.self="isMobile && (showSettingsPanel = false)">
               <div class="settings-group">
                 <div class="settings-group-title">{{ $t('settings.theme') }}</div>
@@ -112,7 +114,7 @@
                     @click="settingsStore.toggleSetting('showHeroSection')">
                     <span class="settings-toggle-label">{{
                       $t('settings.toggleHeroSection')
-                      }}</span>
+                    }}</span>
                     <span class="settings-toggle-indicator" :class="{ active: settings.showHeroSection }"></span>
                   </button>
 
@@ -126,7 +128,7 @@
                     @click="settingsStore.toggleSetting('enableSwipeNavigation')">
                     <span class="settings-toggle-label">{{
                       $t('settings.toggleSwipeNavigation')
-                      }}</span>
+                    }}</span>
                     <span class="settings-toggle-indicator" :class="{ active: settings.enableSwipeNavigation }"></span>
                   </button>
                 </div>
@@ -147,12 +149,13 @@
 
         <!-- 用户菜单 -->
         <div v-if="isAuthenticated" ref="userMenuRef" class="user-menu-container">
-          <button class="user-avatar-button" @click="showUserMenu = !showUserMenu">
+          <button class="user-avatar-button" @click="toggleUserMenu">
             <img :src="userAvatarUrl" :alt="user?.username || 'User'" />
           </button>
 
           <Transition name="dropdown">
-            <div v-if="showUserMenu" class="user-dropdown glass-card">
+            <div v-if="showUserMenu" ref="userDropdownRef" class="user-dropdown glass-card"
+              :popover="useNativePopover ? 'auto' : undefined">
               <div class="dropdown-header">
                 <div class="user-avatar-large">
                   <img :src="userAvatarUrl" :alt="user?.username || 'User'" />
@@ -440,6 +443,7 @@ import { useAuthStore, useSettingsStore, useThemeStore } from '@/stores'
 import type { Theme } from '@/types'
 import { offlineQueue } from '@/utils/storage'
 import { useI18nOptimized } from '@/composables/core/useI18nOptimized'
+import { supportsPopover } from '@/composables'
 
 const navbarProps = withDefaults(
   defineProps<{
@@ -484,17 +488,22 @@ const { user, isAuthenticated } = storeToRefs(authStore)
 const { settings } = storeToRefs(settingsStore)
 const { theme } = storeToRefs(themeStore)
 
+// 检测原生 Popover API 支持
+const useNativePopover = supportsPopover()
+
 /** 用户菜单显示状态 */
 const showUserMenu = ref(false)
 const userMenuRef = ref<HTMLElement | null>(null)
+const userDropdownRef = ref<HTMLElement | null>(null)
 
 /** 设置面板显示状态 */
 const showSettingsPanel = ref(false)
 const settingsMenuRef = ref<HTMLElement | null>(null)
+const settingsDropdownRef = ref<HTMLElement | null>(null)
 
 /** 离线队列面板显示状态 */
 const showQueuePanel = ref(false)
-const queueMenuRef = ref<HTMLElement | null>(null)
+const queueDropdownRef = ref<HTMLElement | null>(null)
 
 /** 离线队列状态 */
 const queueStatus = ref<{ pending: number; syncing: number; failed: number }>({
@@ -530,9 +539,11 @@ const refreshQueueStatus = async () => {
  * 打开面板时会刷新队列状态
  */
 const toggleQueuePanel = async () => {
-  // console.log('[AppNavbar] Toggle queue panel - before:', showQueuePanel.value, 'isMobile:', isMobile.value)
-  showQueuePanel.value = !showQueuePanel.value
-  // console.log('[AppNavbar] Toggle queue panel - after:', showQueuePanel.value)
+  if (useNativePopover && queueDropdownRef.value) {
+    queueDropdownRef.value.togglePopover()
+  } else {
+    showQueuePanel.value = !showQueuePanel.value
+  }
   if (showQueuePanel.value) {
     await refreshQueueStatus()
   }
@@ -610,9 +621,41 @@ const localeOptions = [
  * 切换设置面板显示状态
  */
 const toggleSettingsPanel = () => {
-  // console.log('[AppNavbar] Toggle settings panel - before:', showSettingsPanel.value, 'isMobile:', isMobile.value)
-  showSettingsPanel.value = !showSettingsPanel.value
-  // console.log('[AppNavbar] Toggle settings panel - after:', showSettingsPanel.value)
+  if (useNativePopover && settingsDropdownRef.value) {
+    settingsDropdownRef.value.togglePopover()
+  } else {
+    showSettingsPanel.value = !showSettingsPanel.value
+  }
+}
+
+/**
+ * 切换用户菜单显示状态
+ */
+const toggleUserMenu = () => {
+  if (useNativePopover && userDropdownRef.value) {
+    userDropdownRef.value.togglePopover()
+  } else {
+    showUserMenu.value = !showUserMenu.value
+  }
+}
+
+// Popover toggle 事件处理
+const handlePopoverToggle = (panel: 'user' | 'settings' | 'queue') => (event: Event) => {
+  const toggleEvent = event as Event & { newState: string }
+  const isOpen = toggleEvent.newState === 'open'
+
+  switch (panel) {
+    case 'user':
+      showUserMenu.value = isOpen
+      break
+    case 'settings':
+      showSettingsPanel.value = isOpen
+      break
+    case 'queue':
+      showQueuePanel.value = isOpen
+      if (isOpen) refreshQueueStatus()
+      break
+  }
 }
 
 /**
@@ -653,10 +696,14 @@ const handleLogout = () => {
 }
 
 /**
- * 处理点击外部区域
+ * 处理点击外部区域（降级方案）
  * 关闭打开的下拉菜单和面板
+ * 注意：使用原生 Popover API 时不需要这个处理
  */
 const handleClickOutside = (event: MouseEvent) => {
+  // 使用原生 Popover API 时，点击外部自动关闭由浏览器处理
+  if (useNativePopover) return
+
   const target = event.target as HTMLElement
 
   const inMobileUserTrigger = target.closest('.mobile-user-trigger')
@@ -695,17 +742,22 @@ const handleClickOutside = (event: MouseEvent) => {
 let queueStatusTimer: number | null = null
 
 onMounted(() => {
-  document.addEventListener('click', handleClickOutside)
-  updateIsMobile()
+  // 根据是否支持原生 Popover API 选择事件监听方式
+  if (useNativePopover) {
+    // 原生 Popover API: 监听 toggle 事件
+    userDropdownRef.value?.addEventListener('toggle', handlePopoverToggle('user'))
+    settingsDropdownRef.value?.addEventListener('toggle', handlePopoverToggle('settings'))
+    queueDropdownRef.value?.addEventListener('toggle', handlePopoverToggle('queue'))
+  } else {
+    // 降级方案: 使用 click outside
+    document.addEventListener('click', handleClickOutside)
+  }
 
+  updateIsMobile()
   refreshQueueStatus()
 
   if (typeof window !== 'undefined') {
     window.addEventListener('resize', updateIsMobile)
-    // ❌ 禁用手势跳转页面功能
-    // window.addEventListener('touchstart', handleGlobalTouchStart, { passive: true })
-    // window.addEventListener('touchend', handleGlobalTouchEnd, { passive: true })
-    // window.addEventListener('touchcancel', handleGlobalTouchEnd, { passive: true })
     window.addEventListener('online', handleOnlineChange)
     window.addEventListener('offline', handleOnlineChange)
 
@@ -716,13 +768,16 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-  document.removeEventListener('click', handleClickOutside)
+  if (useNativePopover) {
+    userDropdownRef.value?.removeEventListener('toggle', handlePopoverToggle('user'))
+    settingsDropdownRef.value?.removeEventListener('toggle', handlePopoverToggle('settings'))
+    queueDropdownRef.value?.removeEventListener('toggle', handlePopoverToggle('queue'))
+  } else {
+    document.removeEventListener('click', handleClickOutside)
+  }
+
   if (typeof window !== 'undefined') {
     window.removeEventListener('resize', updateIsMobile)
-    // ❌ 禁用手势跳转页面功能
-    // window.removeEventListener('touchstart', handleGlobalTouchStart)
-    // window.removeEventListener('touchend', handleGlobalTouchEnd)
-    // window.removeEventListener('touchcancel', handleGlobalTouchEnd)
     window.removeEventListener('online', handleOnlineChange)
     window.removeEventListener('offline', handleOnlineChange)
 
@@ -1216,6 +1271,23 @@ onUnmounted(() => {
   border-radius: var(--radius-xl);
   box-shadow: var(--glass-shadow);
   overflow: hidden;
+}
+
+/* Native Popover API overrides */
+.settings-dropdown[popover],
+.queue-dropdown[popover],
+.user-dropdown[popover] {
+  /* 重置原生 popover 默认样式 */
+  margin: 0;
+  border: none;
+  inset: unset;
+  /* 保持相对于父容器的绝对定位 */
+  position: absolute;
+  top: calc(100% + var(--spacing-2));
+  right: 0;
+  /* 继承原有背景样式 */
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
 }
 
 .dropdown-header {
