@@ -49,7 +49,13 @@
 
       <!-- Dropdown -->
       <Transition name="dropdown">
-        <div v-if="isOpen" class="select-dropdown" :style="dropdownStyle">
+        <div
+          v-if="isOpen"
+          ref="dropdownRef"
+          class="select-dropdown"
+          :popover="useNativePopover ? 'manual' : undefined"
+          :style="dropdownStyle"
+        >
           <!-- Search Input -->
           <div v-if="searchable" class="select-search">
             <input
@@ -149,6 +155,7 @@
 
 <script setup lang="ts">
 import { computed, ref, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { supportsPopover } from '@/composables'
 
 defineOptions({
   name: 'FormSelect',
@@ -210,9 +217,13 @@ const emit = defineEmits<{
 const selectRef = ref<HTMLElement>()
 const searchInputRef = ref<HTMLInputElement>()
 const optionsRef = ref<HTMLElement>()
+const dropdownRef = ref<HTMLElement>()
 const isOpen = ref(false)
 const searchQuery = ref('')
 const focusedIndex = ref(0)
+
+// 检测原生 Popover API 支持
+const useNativePopover = supportsPopover()
 
 const selectId = computed(() => `select-${Math.random().toString(36).substr(2, 9)}`)
 
@@ -296,6 +307,9 @@ function toggleDropdown() {
 }
 
 async function openDropdown() {
+  if (useNativePopover && dropdownRef.value) {
+    dropdownRef.value.showPopover()
+  }
   isOpen.value = true
   searchQuery.value = ''
   focusedIndex.value = 0
@@ -308,6 +322,9 @@ async function openDropdown() {
 }
 
 function closeDropdown() {
+  if (useNativePopover && dropdownRef.value) {
+    dropdownRef.value.hidePopover()
+  }
   isOpen.value = false
   searchQuery.value = ''
   emit('close')
@@ -372,6 +389,18 @@ function handleClickOutside(event: MouseEvent) {
   }
 }
 
+// 原生 Popover toggle 事件处理
+function handlePopoverToggle(event: Event) {
+  const toggleEvent = event as Event & { newState: string }
+  isOpen.value = toggleEvent.newState === 'open'
+  if (isOpen.value) {
+    emit('open')
+  } else {
+    searchQuery.value = ''
+    emit('close')
+  }
+}
+
 watch(
   () => props.options,
   () => {
@@ -380,11 +409,21 @@ watch(
 )
 
 onMounted(() => {
-  document.addEventListener('click', handleClickOutside)
+  if (useNativePopover && dropdownRef.value) {
+    // 使用原生 Popover API
+    dropdownRef.value.addEventListener('toggle', handlePopoverToggle)
+  } else {
+    // 降级方案
+    document.addEventListener('click', handleClickOutside)
+  }
 })
 
 onBeforeUnmount(() => {
-  document.removeEventListener('click', handleClickOutside)
+  if (useNativePopover && dropdownRef.value) {
+    dropdownRef.value.removeEventListener('toggle', handlePopoverToggle)
+  } else {
+    document.removeEventListener('click', handleClickOutside)
+  }
 })
 </script>
 
@@ -495,6 +534,19 @@ onBeforeUnmount(() => {
   box-shadow: var(--shadow-xl);
   overflow: hidden;
   z-index: var(--z-dropdown);
+}
+
+/* Native Popover API overrides */
+.select-dropdown[popover] {
+  /* 重置原生 popover 默认样式 */
+  margin: 0;
+  padding: 0;
+  inset: unset;
+  /* 保持相对定位 */
+  position: absolute;
+  top: calc(100% + var(--spacing-2));
+  left: 0;
+  right: 0;
 }
 
 /* Dropdown Transitions */
