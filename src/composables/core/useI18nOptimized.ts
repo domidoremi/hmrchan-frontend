@@ -6,7 +6,7 @@ import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { SupportedLocale } from '@/i18n'
 import logger from '@/utils/logger'
-import * as dayjs from 'dayjs'
+import dayjs from 'dayjs'
 
 // 语言切换状态
 const isSwitching = ref(false)
@@ -17,45 +17,64 @@ const switchDelays = ref<number[]>([])
 
 /**
  * 更新 dayjs 语言
+ * 使用防御性编程确保不会因语言包加载失败而影响应用
  */
-async function updateDayjsLocale(newLocale: SupportedLocale) {
+async function updateDayjsLocale(newLocale: SupportedLocale): Promise<void> {
+  // 映射语言代码
+  const dayjsLocaleMap: Record<SupportedLocale, string> = {
+    en: 'en',
+    'zh-CN': 'zh-cn',
+    ja: 'ja',
+  }
+
+  const dayjsLocale = dayjsLocaleMap[newLocale] || 'en'
+
   try {
-    // 映射语言代码
-    const dayjsLocaleMap: Record<SupportedLocale, string> = {
-      en: 'en',
-      'zh-CN': 'zh-cn',
-      ja: 'ja',
-    }
-
-    const dayjsLocale = dayjsLocaleMap[newLocale]
-
-    // 懒加载 dayjs 语言包
+    // 懒加载 dayjs 语言包（英语为默认，无需加载）
     if (dayjsLocale !== 'en') {
-      await import(
-        /* @vite-ignore */
-        `dayjs/locale/${dayjsLocale}`
-      )
+      // 使用静态导入路径列表，避免动态导入可能的问题
+      const localeImports: Record<string, () => Promise<unknown>> = {
+        'zh-cn': () => import('dayjs/locale/zh-cn'),
+        ja: () => import('dayjs/locale/ja'),
+      }
+
+      const importFn = localeImports[dayjsLocale]
+      if (importFn) {
+        await importFn()
+      }
     }
 
-    dayjs.locale(dayjsLocale)
+    // 设置 dayjs 语言
+    if (typeof dayjs.locale === 'function') {
+      dayjs.locale(dayjsLocale)
+    }
 
     logger.debug('Dayjs locale updated', { category: 'I18n', locale: dayjsLocale })
   } catch (error) {
-    logger.warn('Failed to update dayjs locale', {
+    // 静默处理错误，不影响主流程
+    logger.warn('Failed to update dayjs locale, using default', {
       category: 'I18n',
+      locale: dayjsLocale,
       error: error instanceof Error ? error.message : String(error),
     })
+    // 回退到英语
+    try {
+      if (typeof dayjs.locale === 'function') {
+        dayjs.locale('en')
+      }
+    } catch {
+      // 忽略
+    }
   }
 }
 
 /**
- * 切换语言（带性能监控和过渡动画）
- * 独立导出供动态导入使用
+ * 内部切换语言函数（需要传入 locale ref）
+ * @param localeRef - 来自 useI18n() 的 locale ref
+ * @param newLocale - 目标语言
  */
-export async function changeLocale(newLocale: SupportedLocale) {
-  const { locale } = useI18n()
-
-  if (locale.value === newLocale) {
+async function changeLocaleInternal(localeRef: { value: string }, newLocale: SupportedLocale) {
+  if (localeRef.value === newLocale) {
     logger.debug('Locale already set', { category: 'I18n', locale: newLocale })
     return
   }
@@ -64,13 +83,13 @@ export async function changeLocale(newLocale: SupportedLocale) {
     isSwitching.value = true
     switchStartTime.value = performance.now()
 
-    logger.info('Switching locale', { category: 'I18n', from: locale.value, to: newLocale })
+    logger.info('Switching locale', { category: 'I18n', from: localeRef.value, to: newLocale })
 
     // 添加过渡动画类
     document.documentElement.classList.add('locale-switching')
 
     // 切换语言
-    locale.value = newLocale
+    localeRef.value = newLocale
 
     // 保存到 localStorage
     localStorage.setItem('locale', newLocale)
@@ -108,6 +127,7 @@ export async function changeLocale(newLocale: SupportedLocale) {
     })
     document.documentElement.classList.remove('locale-switching')
     isSwitching.value = false
+    throw error
   }
 }
 
@@ -123,10 +143,10 @@ export function useI18nOptimized() {
 
   /**
    * 切换语言（带性能监控和过渡动画）
-   * 内部包装函数，调用导出的 changeLocale
+   * 包装函数，将 locale ref 传递给内部实现
    */
-  async function changeLocaleInternal(newLocale: SupportedLocale) {
-    await changeLocale(newLocale)
+  async function changeLocale(newLocale: SupportedLocale) {
+    await changeLocaleInternal(locale, newLocale)
   }
 
   /**
@@ -157,7 +177,7 @@ export function useI18nOptimized() {
     t,
     isSwitching,
     averageSwitchDelay,
-    changeLocale: changeLocaleInternal,
+    changeLocale,
     getLocaleName,
     getSupportedLocales,
   }
