@@ -52,3 +52,6 @@ __screenshots__/
 # 保留重要文档
 !README.md
 
+docs/*
+.vscode/
+*.md
