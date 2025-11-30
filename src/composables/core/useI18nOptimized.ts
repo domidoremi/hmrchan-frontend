@@ -6,7 +6,7 @@ import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { SupportedLocale } from '@/i18n'
 import logger from '@/utils/logger'
-import * as dayjs from 'dayjs'
+import dayjs from 'dayjs'
 
 // 语言切换状态
 const isSwitching = ref(false)
@@ -69,13 +69,12 @@ async function updateDayjsLocale(newLocale: SupportedLocale): Promise<void> {
 }
 
 /**
- * 切换语言（带性能监控和过渡动画）
- * 独立导出供动态导入使用
+ * 内部切换语言函数（需要传入 locale ref）
+ * @param localeRef - 来自 useI18n() 的 locale ref
+ * @param newLocale - 目标语言
  */
-export async function changeLocale(newLocale: SupportedLocale) {
-  const { locale } = useI18n()
-
-  if (locale.value === newLocale) {
+async function changeLocaleInternal(localeRef: { value: string }, newLocale: SupportedLocale) {
+  if (localeRef.value === newLocale) {
     logger.debug('Locale already set', { category: 'I18n', locale: newLocale })
     return
   }
@@ -84,13 +83,13 @@ export async function changeLocale(newLocale: SupportedLocale) {
     isSwitching.value = true
     switchStartTime.value = performance.now()
 
-    logger.info('Switching locale', { category: 'I18n', from: locale.value, to: newLocale })
+    logger.info('Switching locale', { category: 'I18n', from: localeRef.value, to: newLocale })
 
     // 添加过渡动画类
     document.documentElement.classList.add('locale-switching')
 
     // 切换语言
-    locale.value = newLocale
+    localeRef.value = newLocale
 
     // 保存到 localStorage
     localStorage.setItem('locale', newLocale)
@@ -128,6 +127,7 @@ export async function changeLocale(newLocale: SupportedLocale) {
     })
     document.documentElement.classList.remove('locale-switching')
     isSwitching.value = false
+    throw error
   }
 }
 
@@ -143,10 +143,10 @@ export function useI18nOptimized() {
 
   /**
    * 切换语言（带性能监控和过渡动画）
-   * 内部包装函数，调用导出的 changeLocale
+   * 包装函数，将 locale ref 传递给内部实现
    */
-  async function changeLocaleInternal(newLocale: SupportedLocale) {
-    await changeLocale(newLocale)
+  async function changeLocale(newLocale: SupportedLocale) {
+    await changeLocaleInternal(locale, newLocale)
   }
 
   /**
@@ -177,7 +177,7 @@ export function useI18nOptimized() {
     t,
     isSwitching,
     averageSwitchDelay,
-    changeLocale: changeLocaleInternal,
+    changeLocale,
     getLocaleName,
     getSupportedLocales,
   }
