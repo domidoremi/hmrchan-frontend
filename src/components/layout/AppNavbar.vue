@@ -4,7 +4,7 @@
     <div class="container navbar-content">
       <!-- Logo -->
       <RouterLink to="/" class="navbar-brand">
-        <span class="brand-name">Himenshion club</span>
+        <span class="brand-name">{{ $t('app.name') }}</span>
       </RouterLink>
 
       <!-- 导航链接 (桌面端) -->
@@ -114,7 +114,7 @@
                     @click="settingsStore.toggleSetting('showHeroSection')">
                     <span class="settings-toggle-label">{{
                       $t('settings.toggleHeroSection')
-                    }}</span>
+                      }}</span>
                     <span class="settings-toggle-indicator" :class="{ active: settings.showHeroSection }"></span>
                   </button>
 
@@ -128,7 +128,7 @@
                     @click="settingsStore.toggleSetting('enableSwipeNavigation')">
                     <span class="settings-toggle-label">{{
                       $t('settings.toggleSwipeNavigation')
-                    }}</span>
+                      }}</span>
                     <span class="settings-toggle-indicator" :class="{ active: settings.enableSwipeNavigation }"></span>
                   </button>
                 </div>
@@ -195,7 +195,7 @@
     <div class="mobile-top-content">
       <!-- Logo -->
       <RouterLink to="/" class="navbar-brand">
-        <span class="brand-name">Himenshion club</span>
+        <span class="brand-name">{{ $t('app.name') }}</span>
       </RouterLink>
 
       <div v-if="showAccessIndicator" class="mobile-access-indicator">
@@ -438,12 +438,13 @@ import {
   Sun,
   Moon,
   Monitor,
+  ArrowRight,
 } from 'lucide-vue-next'
 import { useAuthStore, useSettingsStore, useThemeStore } from '@/stores'
 import type { Theme } from '@/types'
 import { offlineQueue } from '@/utils/storage'
 import { useI18nOptimized } from '@/composables/core/useI18nOptimized'
-import { supportsPopover } from '@/composables'
+// import { supportsPopover } from '@/composables' // 暂时禁用，待 CSS Anchor Positioning 支持后启用
 
 const navbarProps = withDefaults(
   defineProps<{
@@ -488,8 +489,10 @@ const { user, isAuthenticated } = storeToRefs(authStore)
 const { settings } = storeToRefs(settingsStore)
 const { theme } = storeToRefs(themeStore)
 
-// 检测原生 Popover API 支持
-const useNativePopover = supportsPopover()
+// 禁用原生 Popover API - 使用传统 CSS 定位方式
+// 原因：原生 popover 会将元素提升到 top-layer，导致 position: absolute 失效
+// TODO: 待 CSS Anchor Positioning 广泛支持后可重新启用
+const useNativePopover = false // supportsPopover()
 
 /** 用户菜单显示状态 */
 const showUserMenu = ref(false)
