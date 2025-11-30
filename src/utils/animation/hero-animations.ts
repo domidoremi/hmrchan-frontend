@@ -274,7 +274,7 @@ export function animateHeroExit(container: HTMLElement): gsap.core.Timeline {
     opacity: 0,
     y: -30,
     duration: ANIMATION_DURATION.normal,
-    ease: ANIMATION_EASE.quickStart,
+    ease: ANIMATION_EASE.power,
   })
 
   return tl
