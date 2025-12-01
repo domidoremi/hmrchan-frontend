@@ -44,20 +44,26 @@ export function hasFullDetail(post: CachedPost | null): post is CachedPost & { i
   return !!post && post.is_detail === true && Array.isArray(post.media_files)
 }
 
+/**
+ * 缓存的作者数据 - 与 API AuthorListItem 兼容
+ */
 export interface Author {
   id: string
   platform: string
+  platform_user_id: string
+  name: string
   username: string
-  display_name: string
-  avatar: string
-  bio?: string
-  verified: boolean
-  stats: {
-    followers: number
-    following: number
-    posts: number
-  }
-  cached_at: number
+  description: string | null
+  avatar_url: string | null
+  profile_url: string | null
+  profile_banner_url?: string | null
+  follower_count: number | null
+  video_count: number | null
+  post_count: number
+  is_verified: boolean
+  created_at: string
+  updated_at: string
+  cached_at?: number
 }
 
 export interface Favorite {
@@ -429,6 +435,60 @@ class IndexedDBManager {
       request.onsuccess = () => resolve(request.result || null)
       request.onerror = () => reject(request.error)
     })
+  }
+
+  /**
+   * 获取所有作者列表
+   */
+  async getAuthors(options: { platform?: string; limit?: number } = {}): Promise<Author[]> {
+    const db = await this.ensureDB()
+    const { platform, limit = 200 } = options
+
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(['authors'], 'readonly')
+      const store = transaction.objectStore('authors')
+      const authors: Author[] = []
+
+      let cursor: IDBRequest
+      if (platform) {
+        const index = store.index('platform')
+        cursor = index.openCursor(IDBKeyRange.only(platform))
+      } else {
+        cursor = store.openCursor()
+      }
+
+      cursor.onsuccess = (event) => {
+        const c = (event.target as IDBRequest).result as IDBCursorWithValue | null
+        if (c && authors.length < limit) {
+          authors.push(c.value)
+          c.continue()
+        } else {
+          resolve(authors)
+        }
+      }
+
+      cursor.onerror = () => reject(cursor.error)
+    })
+  }
+
+  /**
+   * 批量保存作者
+   */
+  async saveAuthors(authors: Author[]): Promise<void> {
+    const db = await this.ensureDB()
+    const transaction = db.transaction(['authors'], 'readwrite')
+    const store = transaction.objectStore('authors')
+
+    const promises = authors.map((author) => {
+      return new Promise<void>((resolve, reject) => {
+        const request = store.put({ ...author, cached_at: Date.now() })
+        request.onsuccess = () => resolve()
+        request.onerror = () => reject(request.error)
+      })
+    })
+
+    await Promise.all(promises)
+    logger.debug(`Saved ${authors.length} authors`, { category: 'IndexedDB' })
   }
 
   // ============================================
