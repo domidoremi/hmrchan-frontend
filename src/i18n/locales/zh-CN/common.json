@@ -47,7 +47,8 @@
     "live": "实时",
     "updates": "更新",
     "buffered": "已缓冲",
-    "speed": "速度"
+    "speed": "速度",
+    "retry": "重试"
   },
   "aria": {
     "skipToMain": "跳转到主内容",

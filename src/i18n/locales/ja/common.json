@@ -44,7 +44,8 @@
     "explore": "探索",
     "platforms": "プラットフォーム",
     "buffered": "バッファ済み",
-    "speed": "速度"
+    "speed": "速度",
+    "retry": "リトライ"
   },
   "aria": {
     "skipToMain": "メインコンテンツへスキップ",
