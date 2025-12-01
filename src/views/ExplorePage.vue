@@ -6,32 +6,25 @@
       <!-- Filter Bar -->
       <FilterBar :filters="filters" @update="handleFilterUpdate" />
 
-      <!-- Loading State -->
-      <LoadingSpinner v-if="loading" size="lg" :text="$t('common.loading')" />
+      <!-- Infinite Post Grid -->
+      <InfinitePostGrid :items="posts" :loading="loading" :has-more="hasMore"
+        :is-loading-more="loading && posts.length > 0" @load-more="handleLoadMore">
+        <template #empty>
+          <div class="empty-state glass-card">
+            <SearchX :size="64" />
+            <h3>{{ $t('search.noResults') }}</h3>
+            <p>{{ $t('search.tryDifferent') }}</p>
+            <GlassButton @click="resetFilters">
+              <RotateCcw :size="18" />
+              {{ $t('common.reset') }}
+            </GlassButton>
+          </div>
+        </template>
+      </InfinitePostGrid>
 
-      <!-- Posts Grid -->
-      <div v-else-if="posts.length > 0">
-        <p v-if="lastListFromFallback" class="offline-hint">
-          {{ $t('offline.usingCache') }}
-        </p>
-        <div ref="postsGrid" class="posts-grid" v-memo="[posts.length]">
-          <PostCard v-for="(post, index) in posts" :key="post.id" :post="post" :index="index" :show-actions="false" />
-        </div>
-
-        <!-- Pagination -->
-        <Pagination :current-page="pagination.page" :total-pages="pagination.pages" @change="handlePageChange" />
-      </div>
-
-      <!-- Empty State -->
-      <div v-else class="empty-state glass-card">
-        <SearchX :size="64" />
-        <h3>{{ $t('search.noResults') }}</h3>
-        <p>{{ $t('search.tryDifferent') }}</p>
-        <GlassButton @click="resetFilters">
-          <RotateCcw :size="18" />
-          {{ $t('common.reset') }}
-        </GlassButton>
-      </div>
+      <p v-if="lastListFromFallback && posts.length > 0" class="offline-hint">
+        {{ $t('offline.usingCache') }}
+      </p>
     </div>
   </MainLayout>
 </template>
@@ -43,21 +36,18 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { ref, watch, nextTick, onMounted, onUnmounted, onActivated, onBeforeUnmount } from 'vue'
+import { computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { SearchX, RotateCcw } from 'lucide-vue-next'
 
 import MainLayout from '@/components/layout/MainLayout.vue'
 import FilterBar from '@/components/business/FilterBar.vue'
-import PostCard from '@/components/business/PostCard.vue'
-import Pagination from '@/components/business/Pagination.vue'
-import LoadingSpinner from '@/components/ui/loading/LoadingSpinner.vue'
+import InfinitePostGrid from '@/components/business/InfinitePostGrid.vue'
 import GlassButton from '@/components/ui/button/Button.vue'
 
 import { usePostsStore } from '@/stores'
 import type { PostListParams } from '@/types'
-import { useWaterfallLayout } from '@/composables'
 import { logger } from '@/utils/logger'
 
 const route = useRoute()
@@ -66,20 +56,7 @@ const postsStore = usePostsStore()
 
 const { posts, loading, filters, pagination, lastListFromFallback } = storeToRefs(postsStore)
 
-const postsGrid = ref<HTMLElement | null>(null)
-const loadedPostsCount = ref(0) // 追踪已加载的卡片数量
-
-// 使用轻量级瀑布流布局
-const { updateLayout, smoothUpdateLayout } = useWaterfallLayout(postsGrid, {
-  columnGap: 16,
-  rowGap: 16,
-  breakpoints: {
-    1400: 4, // >= 1400px: 4列
-    1100: 3, // >= 1100px: 3列
-    769: 2, // >= 769px: 2列
-    0: 2, // < 769px: 2列
-  },
-})
+const hasMore = computed(() => pagination.value.page < pagination.value.pages)
 
 onMounted(async () => {
   // 清空旧的posts数组，避免显示缓存数据
@@ -93,14 +70,7 @@ onMounted(async () => {
   if (query.q) filters.value.q = query.q as string
   if (query.platform) filters.value.platform = query.platform as string
 
-  await loadPosts()
-
-  // 记录初始加载的卡片数量
-  await nextTick()
-  loadedPostsCount.value = posts.value.length
-
-  // 更新瀑布流布局
-  await updateLayout()
+  await postsStore.fetchPosts()
 })
 
 onBeforeUnmount(() => {
@@ -110,67 +80,25 @@ onBeforeUnmount(() => {
   logger.debug('页面卸载，已重置筛选条件和posts', { category: 'ExplorePage' })
 })
 
-onUnmounted(() => {
-  // 清理工作由 composables 自动处理
-})
-
-// 页面激活时重新计算布局（解决页面切换后布局错乱）
-onActivated(async () => {
-  if (postsGrid.value && posts.value.length > 0) {
-    await nextTick()
-    await updateLayout()
-    logger.debug('页面激活，重新计算布局', { category: 'ExplorePage' })
-  }
-})
-
 watch(
   () => route.query,
   () => {
     if (route.query.q) filters.value.q = route.query.q as string
-    loadPosts()
+    postsStore.fetchPosts()
   },
 )
 
-const loadPosts = async () => {
-  const previousCount = loadedPostsCount.value
+const handleLoadMore = async () => {
+  if (loading.value || !hasMore.value) return
 
-  await postsStore.fetchPosts()
-
-  // 等待 DOM 更新
-  await nextTick()
-
-  // 获取所有卡片，只对新卡片添加动画
-  if (postsGrid.value) {
-    const allCards = postsGrid.value.querySelectorAll('a.post-card')
-
-    // 只对新增的卡片添加进入动画
-    for (let i = previousCount; i < allCards.length; i++) {
-      const card = allCards[i] as HTMLElement
-      card.classList.add('card-entering')
-    }
-
-    // 更新已加载数量
-    loadedPostsCount.value = allCards.length
-  }
-
-  // 使用平滑更新
-  await smoothUpdateLayout()
-
-  // 延迟后移除进入动画类
-  setTimeout(() => {
-    if (postsGrid.value) {
-      const cards = postsGrid.value.querySelectorAll('a.post-card.card-entering')
-      cards.forEach((card) => {
-        ; (card as HTMLElement).classList.remove('card-entering')
-      })
-    }
-  }, 600)
+  const nextPage = pagination.value.page + 1
+  postsStore.updateFilters({ page: nextPage })
+  await postsStore.fetchPosts({ append: true })
 }
 
 const handleFilterUpdate = async (newFilters: Partial<PostListParams>) => {
-  postsStore.updateFilters(newFilters)
-  loadedPostsCount.value = 0 // 重置计数，因为是新的筛选结果
-  await loadPosts()
+  postsStore.updateFilters({ ...newFilters, page: 1 })
+  await postsStore.fetchPosts()
 
   // 更新URL查询参数
   const query: Record<string, string> = {}
@@ -179,20 +107,87 @@ const handleFilterUpdate = async (newFilters: Partial<PostListParams>) => {
   router.push({ query })
 }
 
-const handlePageChange = async (page: number) => {
-  postsStore.updateFilters({ page })
-  loadedPostsCount.value = 0 // 重置计数，因为是新页面
-  await loadPosts()
-  window.scrollTo({ top: 0, behavior: 'smooth' })
-}
-
 const resetFilters = () => {
   postsStore.resetFilters()
-  loadedPostsCount.value = 0 // 重置计数
   router.push({ query: {} })
-  loadPosts()
+  postsStore.fetchPosts()
 }
 </script>
+
+<style scoped>
+.explore-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xl);
+}
+
+.page-title {
+  font-size: var(--text-4xl);
+  font-weight: var(--font-bold);
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-lg);
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-3xl);
+  text-align: center;
+}
+
+.empty-state h3 {
+  font-size: var(--text-2xl);
+  font-weight: var(--font-semibold);
+  color: var(--color-text-primary);
+}
+
+.empty-state p {
+  color: var(--color-text-secondary);
+  margin-bottom: var(--spacing-md);
+}
+
+.offline-hint {
+  margin-top: var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-md);
+  background: rgba(59, 130, 246, 0.08);
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  text-align: center;
+}
+
+/* ========== 响应式优化 ========== */
+
+/* 平板端优化 (780px-900px) */
+@media (min-width: 780px) and (max-width: 900px) {
+  .explore-page {
+    gap: var(--spacing-lg);
+  }
+
+  .page-title {
+    font-size: var(--text-3xl);
+    margin-bottom: var(--spacing-lg);
+  }
+}
+
+/* 移动端样式 */
+@media (max-width: 768px) {
+  .page-title {
+    font-size: var(--text-2xl);
+    margin-bottom: var(--spacing-md);
+  }
+}
+
+/* 极小屏幕优化 */
+@media (max-width: 480px) {
+  .page-title {
+    font-size: var(--text-xl);
+  }
+}
+</style>
 
 <style scoped>
 .explore-page {
