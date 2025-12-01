@@ -19,12 +19,18 @@
     "back": "返回",
     "next": "下一页",
     "previous": "上一页",
+    "prevPage": "上一页",
+    "nextPage": "下一页",
     "page": "第",
     "of": "页,共",
     "total": "总计",
     "reset": "重置",
     "apply": "应用",
     "order": "排序",
+    "sortBy": "排序方式",
+    "date": "日期",
+    "platform": "平台",
+    "all": "全部",
     "noMore": "没有更多了",
     "swipeToView": "滑动查看",
     "loadFailed": "加载失败",
@@ -41,7 +47,8 @@
     "live": "实时",
     "updates": "更新",
     "buffered": "已缓冲",
-    "speed": "速度"
+    "speed": "速度",
+    "retry": "重试"
   },
   "aria": {
     "skipToMain": "跳转到主内容",

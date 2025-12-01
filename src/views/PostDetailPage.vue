@@ -436,7 +436,7 @@
                   <Play :size="48" />
                   <span class="video-duration" v-if="media.duration">{{
                     formatDuration(media.duration)
-                  }}</span>
+                    }}</span>
                 </div>
               </div>
             </div>
@@ -798,6 +798,11 @@ function scrollToDescriptionSection() {
 
 function onDescriptionTagClick(tagName?: string) {
   if (!tagName || !isKnownTag(tagName)) return
+  // 切换选中状态：再次点击取消选中
+  if (activeTag.value === tagName) {
+    activeTag.value = null
+    return
+  }
   activeTag.value = tagName
   // 展开 tags 手风琴面板
   accordionStates.value.tags = true
@@ -808,6 +813,11 @@ function onDescriptionTagClick(tagName?: string) {
 
 function onTagsListTagClick(tagName: string) {
   if (!tagName) return
+  // 切换选中状态：再次点击取消选中
+  if (activeTag.value === tagName) {
+    activeTag.value = null
+    return
+  }
   activeTag.value = tagName
   nextTick(() => {
     scrollToDescriptionSection()

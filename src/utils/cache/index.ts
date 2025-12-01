@@ -19,6 +19,9 @@ export { HybridMediaCache, hybridCache } from './hybridCache'
 
 export { requestCache } from './requestCache'
 
+// 帖子专用缓存服务
+export { postCache } from './postCache'
+
 /**
  * 通用缓存/回退工具
  * 用于在网络请求失败时优雅地回退到本地数据（如 IndexedDB）。
