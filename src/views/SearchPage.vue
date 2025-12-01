@@ -35,12 +35,9 @@
             <p v-if="isPostsOffline" class="offline-hint">
               {{ $t('offline.usingCache') }}
             </p>
-            <div class="results-list posts-list">
-              <PostCard v-for="post in posts" :key="post.id" :post="post" :show-actions="false" />
-            </div>
 
-            <Pagination v-if="postsTotalPages > 1" :current-page="postsPage" :total-pages="postsTotalPages"
-              @change="handlePostsPageChange" />
+            <InfinitePostGrid :items="posts" :loading="loadingPosts" :has-more="postsHasMore"
+              :is-loading-more="loadingPosts && posts.length > 0" @load-more="handlePostsLoadMore" />
           </div>
 
           <div v-else class="empty-state glass-card">
@@ -51,7 +48,7 @@
 
         <!-- Authors Tab -->
         <div v-else class="results-section glass-card">
-          <div v-if="loadingAuthors" class="loading-state reduce-motion">
+          <div v-if="loadingAuthors && authors.length === 0" class="loading-state reduce-motion">
             <div class="spinner spinner-md"></div>
             <span>{{ $t('search.searching') }}</span>
           </div>
@@ -82,8 +79,10 @@
               </a>
             </div>
 
-            <Pagination v-if="authorsTotalPages > 1" :current-page="authorsPage" :total-pages="authorsTotalPages"
-              @change="handleAuthorsPageChange" />
+            <!-- Load More Trigger for Authors -->
+            <div ref="authorsLoadMoreTrigger" class="load-more-trigger">
+              <div v-if="loadingAuthors" class="spinner spinner-sm"></div>
+            </div>
           </div>
 
           <div v-else class="empty-state glass-card">
@@ -99,11 +98,11 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useIntersectionObserver } from '@vueuse/core'
 
 import MainLayout from '@/components/layout/MainLayout.vue'
 import SearchBar from '@/components/business/SearchBar.vue'
-import PostCard from '@/components/business/PostCard.vue'
-import Pagination from '@/components/business/Pagination.vue'
+import InfinitePostGrid from '@/components/business/InfinitePostGrid.vue'
 
 import services from '@/api/services'
 import type { Post, AuthorListItem, PaginatedResponse } from '@/types'
@@ -140,6 +139,22 @@ const isPostsOffline = ref(false)
 
 const hasQuery = computed(() => query.value.trim().length > 0)
 
+const postsHasMore = computed(() => postsPage.value < postsTotalPages.value)
+const authorsHasMore = computed(() => authorsPage.value < authorsTotalPages.value)
+
+// Authors Infinite Scroll Trigger
+const authorsLoadMoreTrigger = ref<HTMLElement | null>(null)
+useIntersectionObserver(
+  authorsLoadMoreTrigger,
+  (entries) => {
+    const entry = entries[0]
+    if (entry && entry.isIntersecting && authorsHasMore.value && !loadingAuthors.value) {
+      handleAuthorsLoadMore()
+    }
+  },
+  { rootMargin: '200px' }
+)
+
 const syncRoute = () => {
   const q = query.value.trim()
   const tab = activeTab.value
@@ -151,7 +166,7 @@ const syncRoute = () => {
   router.replace({ path: '/search', query: nextQuery })
 }
 
-const loadPosts = async () => {
+const loadPosts = async (append = false) => {
   if (!hasQuery.value) {
     posts.value = []
     postsTotalPages.value = 0
@@ -225,19 +240,24 @@ const loadPosts = async () => {
       'SearchPage:SearchPosts',
     )
 
-    posts.value = data.items || []
+    if (append) {
+      posts.value = [...posts.value, ...(data.items || [])]
+    } else {
+      posts.value = data.items || []
+    }
+
     postsTotalPages.value = data.pages || 0
     isPostsOffline.value = !!fromFallback
   } catch {
-    posts.value = []
-    postsTotalPages.value = 0
+    if (!append) posts.value = []
+    // postsTotalPages.value = 0 // Keep existing pagination if append fails? No, reset if fresh load fails.
     isPostsOffline.value = false
   } finally {
     loadingPosts.value = false
   }
 }
 
-const loadAuthors = async () => {
+const loadAuthors = async (append = false) => {
   if (!hasQuery.value) {
     authors.value = []
     authorsTotalPages.value = 0
@@ -254,11 +274,17 @@ const loadAuthors = async () => {
         }),
       'SearchPage:SearchAuthors',
     )
-    authors.value = response.items || []
+
+    if (append) {
+      authors.value = [...authors.value, ...(response.items || [])]
+    } else {
+      authors.value = response.items || []
+    }
+
     authorsTotalPages.value = response.pages || 0
   } catch {
-    authors.value = []
-    authorsTotalPages.value = 0
+    if (!append) authors.value = []
+    // authorsTotalPages.value = 0
   } finally {
     loadingAuthors.value = false
   }
@@ -266,9 +292,9 @@ const loadAuthors = async () => {
 
 const loadActiveTab = async () => {
   if (activeTab.value === 'posts') {
-    await loadPosts()
+    if (posts.value.length === 0) await loadPosts()
   } else {
-    await loadAuthors()
+    if (authors.value.length === 0) await loadAuthors()
   }
 }
 
@@ -276,6 +302,8 @@ const handleSearch = (q: string) => {
   query.value = q
   postsPage.value = 1
   authorsPage.value = 1
+  posts.value = []
+  authors.value = []
   syncRoute()
   void loadActiveTab()
 }
@@ -287,18 +315,16 @@ const switchTab = (tab: 'posts' | 'authors') => {
   void loadActiveTab()
 }
 
-const handlePostsPageChange = (page: number) => {
-  if (page === postsPage.value) return
-  postsPage.value = page
-  syncRoute()
-  void loadPosts()
+const handlePostsLoadMore = async () => {
+  if (postsPage.value >= postsTotalPages.value) return
+  postsPage.value++
+  await loadPosts(true)
 }
 
-const handleAuthorsPageChange = (page: number) => {
-  if (page === authorsPage.value) return
-  authorsPage.value = page
-  syncRoute()
-  void loadAuthors()
+const handleAuthorsLoadMore = async () => {
+  if (authorsPage.value >= authorsTotalPages.value) return
+  authorsPage.value++
+  await loadAuthors(true)
 }
 
 onMounted(() => {
@@ -316,7 +342,15 @@ watch(
     const q = typeof qRaw === 'string' ? qRaw : Array.isArray(qRaw) ? qRaw[0] || '' : ''
     const tab = tabRaw === 'authors' ? 'authors' : 'posts'
 
-    query.value = q
+    // If query changed or tab changed
+    if (q !== query.value) {
+      query.value = q
+      posts.value = []
+      authors.value = []
+      postsPage.value = 1
+      authorsPage.value = 1
+    }
+
     activeTab.value = tab
 
     if (!q) {
@@ -446,6 +480,8 @@ watch(
   display: flex;
   align-items: center;
   gap: var(--spacing-md);
+  content-visibility: auto;
+  contain-intrinsic-size: 80px;
 }
 
 .author-avatar {

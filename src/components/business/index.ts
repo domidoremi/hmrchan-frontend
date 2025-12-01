@@ -23,8 +23,8 @@ export { default as FilterBar } from './FilterBar.vue'
 /** 搜索栏组件 - 提供全局搜索和搜索建议功能 */
 export { default as SearchBar } from './SearchBar.vue'
 
-/** 分页组件 - 提供帖子列表的分页导航功能 */
-export { default as Pagination } from './Pagination.vue'
+/** 无限滚动帖子网格 - 支持瀑布流、虚拟列表和 IntersectionObserver */
+export { default as InfinitePostGrid } from './InfinitePostGrid.vue'
 
 /**
  * 重量级业务组件 - 懒加载导出
