@@ -96,8 +96,8 @@ const totalPages = computed(() => pagination.value.pages)
 // 帖子网格容器
 const postsGrid = ref<HTMLElement | null>(null)
 
-// 防止重复请求的标志
-let isNavigating = false
+// 请求计数器 - 用于取消过时的请求结果
+let requestId = 0
 
 // 瀑布流布局
 const { updateLayout } = useWaterfallLayout(postsGrid, {
@@ -111,56 +111,75 @@ const { updateLayout } = useWaterfallLayout(postsGrid, {
   },
 })
 
+/**
+ * 统一的数据获取函数
+ * 使用请求 ID 确保只处理最新请求的结果
+ */
+async function loadPosts(updateUrl = false, urlQuery?: Record<string, string>) {
+  const currentRequestId = ++requestId
+
+  await postsStore.fetchPosts()
+
+  // 如果在请求期间有新的请求发起，忽略此次结果
+  if (currentRequestId !== requestId) {
+    logger.debug('忽略过时的请求结果', { category: 'ExplorePage', currentRequestId, latestRequestId: requestId })
+    return
+  }
+
+  // 更新 URL（如果需要）
+  if (updateUrl && urlQuery) {
+    // 使用 replace 而不是 push，避免触发 popstate
+    router.replace({ query: urlQuery })
+  }
+
+  await nextTick()
+  updateLayout()
+}
+
 onMounted(async () => {
   // 重置状态
   postsStore.resetFilters()
 
-  // 从URL查询参数初始化筛选
+  // 从URL查询参数初始化筛选（一次性设置所有参数）
   const query = route.query
-  if (query.q) {
-    postsStore.updateFilters({ q: query.q as string })
-  }
-  if (query.platform) {
-    postsStore.updateFilters({ platform: query.platform as string })
-  }
-  if (query.page) {
-    postsStore.updateFilters({ page: parseInt(query.page as string) || 1 })
+  const initialFilters: Partial<PostListParams> = {}
+
+  if (query.q) initialFilters.q = query.q as string
+  if (query.platform) initialFilters.platform = query.platform as string
+  if (query.page) initialFilters.page = parseInt(query.page as string) || 1
+
+  if (Object.keys(initialFilters).length > 0) {
+    postsStore.updateFilters(initialFilters)
   }
 
-  await postsStore.fetchPosts()
-  await nextTick()
-  updateLayout()
+  await loadPosts()
 })
 
 onBeforeUnmount(() => {
+  // 取消任何待处理的请求
+  requestId++
   postsStore.resetFilters()
   postsStore.posts = []
   logger.debug('页面卸载，已重置筛选条件和posts', { category: 'ExplorePage' })
 })
 
+// 监听浏览器前进/后退 (popstate)
 watch(
   () => route.query,
   async (newQuery, oldQuery) => {
     // 避免无意义的重复请求
     if (JSON.stringify(newQuery) === JSON.stringify(oldQuery)) return
 
-    // 如果是程序导航触发的，跳过（避免双重请求）
-    if (isNavigating) {
-      isNavigating = false
-      return
-    }
+    logger.debug('route.query 变化', { category: 'ExplorePage', newQuery, oldQuery })
 
-    // 同步URL参数到筛选条件（仅处理浏览器前进/后退等外部导航）
-    const updates: Partial<PostListParams> = {
+    // 同步URL参数到筛选条件
+    postsStore.updateFilters({
       q: (newQuery.q as string) || undefined,
       platform: (newQuery.platform as string) || undefined,
       page: newQuery.page ? parseInt(newQuery.page as string) : 1,
-    }
-    postsStore.updateFilters(updates)
+    })
 
-    await postsStore.fetchPosts()
-    await nextTick()
-    updateLayout()
+    await loadPosts()
   },
 )
 
@@ -174,52 +193,34 @@ watch(
 )
 
 const handlePageChange = async (page: number) => {
-  // 设置标志防止 route.query watch 重复请求
-  isNavigating = true
-
   postsStore.updateFilters({ page })
-  await postsStore.fetchPosts()
 
-  // 更新URL
+  // 构建 URL 查询参数
   const query: Record<string, string> = {}
   if (filters.value.q) query.q = filters.value.q
   if (filters.value.platform) query.platform = filters.value.platform
-  query.page = String(page)
-  router.push({ query })
+  if (page > 1) query.page = String(page)
 
-  await nextTick()
-  updateLayout()
+  await loadPosts(true, query)
 
   // 滚动到顶部
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
 const handleFilterUpdate = async (newFilters: Partial<PostListParams>) => {
-  // 设置标志防止 route.query watch 重复请求
-  isNavigating = true
-
   postsStore.updateFilters({ ...newFilters, page: 1 })
-  await postsStore.fetchPosts()
 
-  // 更新URL查询参数
+  // 构建 URL 查询参数
   const query: Record<string, string> = {}
   if (newFilters.q) query.q = newFilters.q
   if (newFilters.platform) query.platform = newFilters.platform
-  router.push({ query })
 
-  await nextTick()
-  updateLayout()
+  await loadPosts(true, query)
 }
 
 const resetFilters = async () => {
-  // 设置标志防止 route.query watch 重复请求
-  isNavigating = true
-
   postsStore.resetFilters()
-  router.push({ query: {} })
-  await postsStore.fetchPosts()
-  await nextTick()
-  updateLayout()
+  await loadPosts(true, {})
 }
 </script>
 
