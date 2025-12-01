@@ -7,29 +7,63 @@
 // 类型定义
 // ============================================
 
-import type { Post as ApiPost } from '@/types'
+import type { Post as ApiPost, PostDetail, MediaFile } from '@/types'
 import { logger } from '@/utils/logger'
 
+/**
+ * 缓存的帖子数据 - 支持完整的 PostDetail
+ * 包含 media_files 和 tags，确保离线访问时数据完整
+ */
 export interface CachedPost extends ApiPost {
   cached_at: number
   etag?: string // ETag for conditional requests (If-None-Match)
   last_modified?: string // Last-Modified for conditional requests
+  // 完整帖子详情字段
+  media_files?: MediaFile[] // 媒体文件列表
+  tags?: string[] // 标签列表
+  is_detail?: boolean // 标记是否为完整详情数据
 }
 
+/**
+ * 将 PostDetail 转换为可缓存格式
+ */
+export function toFullCachedPost(post: PostDetail): CachedPost {
+  return {
+    ...post,
+    cached_at: Date.now(),
+    media_files: post.media_files || [],
+    tags: post.tags || [],
+    is_detail: true,
+  }
+}
+
+/**
+ * 检查缓存的帖子是否包含完整详情
+ */
+export function hasFullDetail(post: CachedPost | null): post is CachedPost & { is_detail: true } {
+  return !!post && post.is_detail === true && Array.isArray(post.media_files)
+}
+
+/**
+ * 缓存的作者数据 - 与 API AuthorListItem 兼容
+ */
 export interface Author {
   id: string
   platform: string
+  platform_user_id: string
+  name: string
   username: string
-  display_name: string
-  avatar: string
-  bio?: string
-  verified: boolean
-  stats: {
-    followers: number
-    following: number
-    posts: number
-  }
-  cached_at: number
+  description: string | null
+  avatar_url: string | null
+  profile_url: string | null
+  profile_banner_url?: string | null
+  follower_count: number | null
+  video_count: number | null
+  post_count: number
+  is_verified: boolean
+  created_at: string
+  updated_at: string
+  cached_at?: number
 }
 
 export interface Favorite {
@@ -227,6 +261,76 @@ class IndexedDBManager {
     logger.debug(`Saved ${posts.length} posts`, { category: 'IndexedDB' })
   }
 
+  /**
+   * 保存完整帖子详情（包含 media_files）
+   * 这是缓存完整帖子数据的首选方法
+   */
+  async savePostDetail(post: PostDetail): Promise<void> {
+    const db = await this.ensureDB()
+    const transaction = db.transaction(['posts'], 'readwrite')
+    const store = transaction.objectStore('posts')
+
+    const cachedPost: CachedPost = {
+      ...post,
+      cached_at: Date.now(),
+      media_files: post.media_files || [],
+      tags: post.tags || [],
+      is_detail: true,
+    }
+
+    return new Promise((resolve, reject) => {
+      const request = store.put(cachedPost)
+      request.onsuccess = () => {
+        logger.debug(
+          `Saved post detail: ${post.id} with ${post.media_files?.length || 0} media files`,
+          {
+            category: 'IndexedDB',
+          },
+        )
+        resolve()
+      }
+      request.onerror = () => reject(request.error)
+    })
+  }
+
+  /**
+   * 批量保存完整帖子详情
+   */
+  async savePostDetails(posts: PostDetail[]): Promise<void> {
+    const db = await this.ensureDB()
+    const transaction = db.transaction(['posts'], 'readwrite')
+    const store = transaction.objectStore('posts')
+
+    const promises = posts.map((post) => {
+      const cachedPost: CachedPost = {
+        ...post,
+        cached_at: Date.now(),
+        media_files: post.media_files || [],
+        tags: post.tags || [],
+        is_detail: true,
+      }
+      return new Promise<void>((resolve, reject) => {
+        const request = store.put(cachedPost)
+        request.onsuccess = () => resolve()
+        request.onerror = () => reject(request.error)
+      })
+    })
+
+    await Promise.all(promises)
+    logger.debug(`Saved ${posts.length} post details`, { category: 'IndexedDB' })
+  }
+
+  /**
+   * 获取完整帖子详情（优先返回包含 media_files 的版本）
+   */
+  async getPostDetail(id: string): Promise<CachedPost | null> {
+    const post = await this.getPost(id)
+    if (post && post.is_detail) {
+      return post
+    }
+    return post // 返回基础版本，调用方可检查 is_detail 字段
+  }
+
   async getPost(id: string): Promise<CachedPost | null> {
     const db = await this.ensureDB()
     return new Promise((resolve, reject) => {
@@ -331,6 +435,60 @@ class IndexedDBManager {
       request.onsuccess = () => resolve(request.result || null)
       request.onerror = () => reject(request.error)
     })
+  }
+
+  /**
+   * 获取所有作者列表
+   */
+  async getAuthors(options: { platform?: string; limit?: number } = {}): Promise<Author[]> {
+    const db = await this.ensureDB()
+    const { platform, limit = 200 } = options
+
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(['authors'], 'readonly')
+      const store = transaction.objectStore('authors')
+      const authors: Author[] = []
+
+      let cursor: IDBRequest
+      if (platform) {
+        const index = store.index('platform')
+        cursor = index.openCursor(IDBKeyRange.only(platform))
+      } else {
+        cursor = store.openCursor()
+      }
+
+      cursor.onsuccess = (event) => {
+        const c = (event.target as IDBRequest).result as IDBCursorWithValue | null
+        if (c && authors.length < limit) {
+          authors.push(c.value)
+          c.continue()
+        } else {
+          resolve(authors)
+        }
+      }
+
+      cursor.onerror = () => reject(cursor.error)
+    })
+  }
+
+  /**
+   * 批量保存作者
+   */
+  async saveAuthors(authors: Author[]): Promise<void> {
+    const db = await this.ensureDB()
+    const transaction = db.transaction(['authors'], 'readwrite')
+    const store = transaction.objectStore('authors')
+
+    const promises = authors.map((author) => {
+      return new Promise<void>((resolve, reject) => {
+        const request = store.put({ ...author, cached_at: Date.now() })
+        request.onsuccess = () => resolve()
+        request.onerror = () => reject(request.error)
+      })
+    })
+
+    await Promise.all(promises)
+    logger.debug(`Saved ${authors.length} authors`, { category: 'IndexedDB' })
   }
 
   // ============================================

@@ -6,20 +6,48 @@
       <!-- Filter Bar -->
       <FilterBar :filters="filters" @update="handleFilterUpdate" />
 
-      <!-- Loading State -->
-      <LoadingSpinner v-if="loading" size="lg" :text="$t('common.loading')" />
+      <!-- Initial Loading State -->
+      <div v-if="loading && localPosts.length === 0" class="loading-container">
+        <LoadingSpinner size="lg" :text="$t('common.loading')" />
+      </div>
 
       <!-- Posts Grid -->
-      <div v-else-if="posts.length > 0">
+      <template v-else-if="localPosts.length > 0">
         <p v-if="lastListFromFallback" class="offline-hint">
           {{ $t('offline.usingCache') }}
         </p>
-        <div ref="postsGrid" class="posts-grid" v-memo="[posts.length]">
-          <PostCard v-for="(post, index) in posts" :key="post.id" :post="post" :index="index" :show-actions="false" />
+
+        <div class="posts-grid-wrapper">
+          <div ref="postsGrid" class="posts-grid">
+            <PostCard v-for="(post, index) in localPosts" :key="post.id" :post="post" :index="index"
+              :show-actions="false" />
+          </div>
+
+          <!-- Loading More Indicator -->
+          <div v-if="isLoadingMore || scrollLoading" class="loading-more">
+            <LoadingSpinner size="sm" :text="$t('common.loading')" />
+          </div>
+
+          <!-- Load Progress -->
+          <div v-if="!pageFullyRendered && localPosts.length > 0" class="load-progress">
+            <span>{{ localPosts.length }} / {{ allPagePosts.length }}</span>
+          </div>
         </div>
 
-        <!-- Pagination -->
-        <Pagination :current-page="pagination.page" :total-pages="pagination.pages" @change="handlePageChange" />
+        <!-- Pagination - 只在当前页渲染完成且有多页时显示 -->
+        <Pagination v-if="pageFullyRendered && totalPages > 1" :current-page="currentPage" :total-pages="totalPages"
+          @change="handlePageChange" />
+      </template>
+
+      <!-- Error State -->
+      <div v-else-if="error" class="error-state glass-card">
+        <AlertCircle :size="64" />
+        <h3>{{ $t('common.error') }}</h3>
+        <p>{{ error }}</p>
+        <GlassButton @click="resetFilters">
+          <RotateCcw :size="18" />
+          {{ $t('common.retry') }}
+        </GlassButton>
       </div>
 
       <!-- Empty State -->
@@ -43,155 +71,247 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { ref, watch, nextTick, onMounted, onUnmounted, onActivated, onBeforeUnmount } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
-import { SearchX, RotateCcw } from 'lucide-vue-next'
+import { SearchX, RotateCcw, AlertCircle } from 'lucide-vue-next'
 
 import MainLayout from '@/components/layout/MainLayout.vue'
 import FilterBar from '@/components/business/FilterBar.vue'
 import PostCard from '@/components/business/PostCard.vue'
-import Pagination from '@/components/business/Pagination.vue'
-import LoadingSpinner from '@/components/ui/loading/LoadingSpinner.vue'
 import GlassButton from '@/components/ui/button/Button.vue'
+import LoadingSpinner from '@/components/ui/loading/LoadingSpinner.vue'
+import { Pagination } from '@/components/ui/pagination'
 
 import { usePostsStore } from '@/stores'
-import type { PostListParams } from '@/types'
-import { useWaterfallLayout } from '@/composables'
+import { useWaterfallLayout, useInfiniteScroll } from '@/composables'
+import type { PostListParams, Post } from '@/types'
 import { logger } from '@/utils/logger'
 
 const route = useRoute()
 const router = useRouter()
 const postsStore = usePostsStore()
 
-const { posts, loading, filters, pagination, lastListFromFallback } = storeToRefs(postsStore)
+const { loading, error, filters, pagination, lastListFromFallback } = storeToRefs(postsStore)
 
+// ============================================
+// 配置常量
+// ============================================
+const POSTS_PER_PAGE = 20      // 每页总帖子数
+const RENDER_BATCH_SIZE = 5    // 每次渲染的帖子数
+
+// ============================================
+// 本地状态
+// ============================================
+const allPagePosts = ref<Post[]>([])  // 当前页的所有帖子（从 API 获取）
+const renderedCount = ref(0)          // 已渲染的帖子数量
+const isLoadingMore = ref(false)      // 是否正在渲染更多
+
+// 实际显示的帖子（渐进式渲染）
+const localPosts = computed(() => allPagePosts.value.slice(0, renderedCount.value))
+
+// 分页计算属性
+const currentPage = computed(() => filters.value.page || 1)
+const totalPages = computed(() => pagination.value.pages || 0)
+
+// 当前页是否已完全渲染
+const pageFullyRendered = computed(() =>
+  allPagePosts.value.length > 0 && renderedCount.value >= allPagePosts.value.length
+)
+
+// 是否还能继续滚动加载更多渲染
+const canRenderMore = computed(() =>
+  !pageFullyRendered.value &&
+  allPagePosts.value.length > 0 &&
+  !isLoadingMore.value
+)
+
+// 帖子网格容器
 const postsGrid = ref<HTMLElement | null>(null)
-const loadedPostsCount = ref(0) // 追踪已加载的卡片数量
 
-// 使用轻量级瀑布流布局
+// 瀑布流布局
 const { updateLayout, smoothUpdateLayout } = useWaterfallLayout(postsGrid, {
   columnGap: 16,
   rowGap: 16,
   breakpoints: {
-    1400: 4, // >= 1400px: 4列
-    1100: 3, // >= 1100px: 3列
-    769: 2, // >= 769px: 2列
-    0: 2, // < 769px: 2列
+    1400: 4,
+    1100: 3,
+    769: 2,
+    0: 2,
   },
 })
 
-onMounted(async () => {
-  // 清空旧的posts数组，避免显示缓存数据
-  postsStore.posts = []
+// ============================================
+// 无限滚动 - 用于渐进式渲染
+// ============================================
+const { isLoading: scrollLoading } = useInfiniteScroll({
+  onLoadMore: renderMorePosts,
+  hasMore: () => canRenderMore.value,
+  threshold: 300,
+  enabled: computed(() => canRenderMore.value),
+})
 
-  // 重置筛选条件
-  postsStore.resetFilters()
+/**
+ * 渲染更多帖子（滚动触发）
+ * 不发起新的 API 请求，只是从已加载的数据中渲染更多
+ */
+async function renderMorePosts() {
+  if (!canRenderMore.value) return
 
-  // 从URL查询参数初始化筛选
-  const query = route.query
-  if (query.q) filters.value.q = query.q as string
-  if (query.platform) filters.value.platform = query.platform as string
+  isLoadingMore.value = true
 
-  await loadPosts()
+  // 增加渲染数量
+  const newCount = Math.min(
+    renderedCount.value + RENDER_BATCH_SIZE,
+    allPagePosts.value.length
+  )
+  renderedCount.value = newCount
 
-  // 记录初始加载的卡片数量
+  logger.debug('渐进式渲染', {
+    category: 'ExplorePage',
+    rendered: newCount,
+    total: allPagePosts.value.length
+  })
+
   await nextTick()
-  loadedPostsCount.value = posts.value.length
+  smoothUpdateLayout()
 
-  // 更新瀑布流布局
-  await updateLayout()
-})
-
-onBeforeUnmount(() => {
-  // 离开页面时重置筛选条件和posts，避免状态污染其他页面
-  postsStore.resetFilters()
-  postsStore.posts = []
-  logger.debug('页面卸载，已重置筛选条件和posts', { category: 'ExplorePage' })
-})
-
-onUnmounted(() => {
-  // 清理工作由 composables 自动处理
-})
-
-// 页面激活时重新计算布局（解决页面切换后布局错乱）
-onActivated(async () => {
-  if (postsGrid.value && posts.value.length > 0) {
-    await nextTick()
-    await updateLayout()
-    logger.debug('页面激活，重新计算布局', { category: 'ExplorePage' })
-  }
-})
-
-watch(
-  () => route.query,
-  () => {
-    if (route.query.q) filters.value.q = route.query.q as string
-    loadPosts()
-  },
-)
-
-const loadPosts = async () => {
-  const previousCount = loadedPostsCount.value
-
-  await postsStore.fetchPosts()
-
-  // 等待 DOM 更新
-  await nextTick()
-
-  // 获取所有卡片，只对新卡片添加动画
-  if (postsGrid.value) {
-    const allCards = postsGrid.value.querySelectorAll('a.post-card')
-
-    // 只对新增的卡片添加进入动画
-    for (let i = previousCount; i < allCards.length; i++) {
-      const card = allCards[i] as HTMLElement
-      card.classList.add('card-entering')
-    }
-
-    // 更新已加载数量
-    loadedPostsCount.value = allCards.length
-  }
-
-  // 使用平滑更新
-  await smoothUpdateLayout()
-
-  // 延迟后移除进入动画类
-  setTimeout(() => {
-    if (postsGrid.value) {
-      const cards = postsGrid.value.querySelectorAll('a.post-card.card-entering')
-      cards.forEach((card) => {
-        ; (card as HTMLElement).classList.remove('card-entering')
-      })
-    }
-  }, 600)
+  isLoadingMore.value = false
 }
 
-const handleFilterUpdate = async (newFilters: Partial<PostListParams>) => {
-  postsStore.updateFilters(newFilters)
-  loadedPostsCount.value = 0 // 重置计数，因为是新的筛选结果
-  await loadPosts()
+/**
+ * 加载当前页的所有帖子
+ */
+async function loadPagePosts() {
+  // 重置状态
+  allPagePosts.value = []
+  renderedCount.value = 0
+  isLoadingMore.value = false
 
-  // 更新URL查询参数
+  try {
+    const result = await postsStore.fetchPosts({
+      page: currentPage.value,
+      page_size: POSTS_PER_PAGE,
+    })
+
+    if (result && result.items && result.items.length > 0) {
+      // 保存所有帖子
+      allPagePosts.value = result.items
+
+      // 初始渲染第一批
+      renderedCount.value = Math.min(RENDER_BATCH_SIZE, result.items.length)
+
+      logger.debug('页面数据加载完成', {
+        category: 'ExplorePage',
+        total: result.items.length,
+        initialRender: renderedCount.value,
+        paginationPages: pagination.value.pages,
+        paginationTotal: pagination.value.total,
+      })
+    }
+
+    await nextTick()
+    updateLayout()
+
+  } catch (err) {
+    logger.error('加载失败', { category: 'ExplorePage', error: err })
+  }
+}
+
+/**
+ * 切换页面
+ */
+async function handlePageChange(page: number) {
+  postsStore.updateFilters({ page })
+
+  // 更新 URL
+  const query: Record<string, string> = {}
+  if (filters.value.q) query.q = filters.value.q
+  if (filters.value.platform) query.platform = filters.value.platform
+  if (page > 1) query.page = String(page)
+  router.replace({ query })
+
+  // 滚动到顶部
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+
+  await loadPagePosts()
+}
+
+/**
+ * 更新筛选条件
+ */
+async function handleFilterUpdate(newFilters: Partial<PostListParams>) {
+  postsStore.updateFilters({ ...newFilters, page: 1 })
+
   const query: Record<string, string> = {}
   if (newFilters.q) query.q = newFilters.q
   if (newFilters.platform) query.platform = newFilters.platform
-  router.push({ query })
+  router.replace({ query })
+
+  await loadPagePosts()
 }
 
-const handlePageChange = async (page: number) => {
-  postsStore.updateFilters({ page })
-  loadedPostsCount.value = 0 // 重置计数，因为是新页面
-  await loadPosts()
-  window.scrollTo({ top: 0, behavior: 'smooth' })
-}
-
-const resetFilters = () => {
+/**
+ * 重置筛选
+ */
+async function resetFilters() {
   postsStore.resetFilters()
-  loadedPostsCount.value = 0 // 重置计数
-  router.push({ query: {} })
-  loadPosts()
+  router.replace({ query: {} })
+  await loadPagePosts()
 }
+
+// ============================================
+// 生命周期
+// ============================================
+onMounted(async () => {
+  postsStore.resetFilters()
+
+  // 从 URL 初始化筛选条件
+  const query = route.query
+  const initialFilters: Partial<PostListParams> = {}
+
+  if (query.q) initialFilters.q = query.q as string
+  if (query.platform) initialFilters.platform = query.platform as string
+  if (query.page) initialFilters.page = parseInt(query.page as string) || 1
+
+  if (Object.keys(initialFilters).length > 0) {
+    postsStore.updateFilters(initialFilters)
+  }
+
+  await loadPagePosts()
+})
+
+onBeforeUnmount(() => {
+  allPagePosts.value = []
+  renderedCount.value = 0
+  postsStore.resetFilters()
+  logger.debug('页面卸载', { category: 'ExplorePage' })
+})
+
+// 监听浏览器前进/后退
+watch(
+  () => route.query,
+  async (newQuery, oldQuery) => {
+    if (JSON.stringify(newQuery) === JSON.stringify(oldQuery)) return
+
+    postsStore.updateFilters({
+      q: (newQuery.q as string) || undefined,
+      platform: (newQuery.platform as string) || undefined,
+      page: newQuery.page ? parseInt(newQuery.page as string) : 1,
+    })
+
+    await loadPagePosts()
+  },
+)
+
+// 监听 localPosts 变化更新布局
+watch(
+  () => localPosts.value.length,
+  async () => {
+    await nextTick()
+    updateLayout()
+  },
+)
 </script>
 
 <style scoped>
@@ -208,13 +328,52 @@ const resetFilters = () => {
   margin-bottom: var(--spacing-lg);
 }
 
-.posts-grid {
-  /* 瀑布流容器 - 由 useWaterfallLayout 动态控制 columns */
-  width: 100%;
-  max-width: 100%;
+.loading-container {
+  display: flex;
+  justify-content: center;
+  padding: var(--spacing-3xl);
 }
 
-.empty-state {
+.posts-grid-wrapper {
+  position: relative;
+}
+
+.posts-grid {
+  width: 100%;
+  position: relative;
+  min-height: 200px;
+  transition: opacity 0.3s ease;
+}
+
+.posts-grid.is-loading {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.loading-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+  background: var(--glass-bg);
+  padding: var(--spacing-lg);
+  border-radius: var(--radius-lg);
+  backdrop-filter: blur(8px);
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+.empty-state,
+.error-state {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -224,15 +383,25 @@ const resetFilters = () => {
   text-align: center;
 }
 
-.empty-state h3 {
+.empty-state h3,
+.error-state h3 {
   font-size: var(--text-2xl);
   font-weight: var(--font-semibold);
   color: var(--color-text-primary);
 }
 
-.empty-state p {
+.empty-state p,
+.error-state p {
   color: var(--color-text-secondary);
   margin-bottom: var(--spacing-md);
+}
+
+.error-state {
+  border-color: var(--color-error);
+}
+
+.error-state svg {
+  color: var(--color-error);
 }
 
 .offline-hint {
@@ -244,9 +413,22 @@ const resetFilters = () => {
   font-size: var(--text-sm);
 }
 
-/* ========== 响应式优化 ========== */
+.loading-more {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: var(--spacing-xl);
+  margin-top: var(--spacing-lg);
+}
 
-/* 平板端优化 (780px-900px) - 2列布局 */
+.load-progress {
+  text-align: center;
+  padding: var(--spacing-md);
+  color: var(--color-text-tertiary);
+  font-size: var(--text-sm);
+}
+
+/* 响应式优化 */
 @media (min-width: 780px) and (max-width: 900px) {
   .explore-page {
     gap: var(--spacing-lg);
@@ -258,7 +440,6 @@ const resetFilters = () => {
   }
 }
 
-/* 移动端样式 */
 @media (max-width: 768px) {
   .page-title {
     font-size: var(--text-2xl);
@@ -266,7 +447,6 @@ const resetFilters = () => {
   }
 }
 
-/* 极小屏幕优化 */
 @media (max-width: 480px) {
   .page-title {
     font-size: var(--text-xl);
@@ -274,50 +454,10 @@ const resetFilters = () => {
 }
 </style>
 
-<!-- 瀑布流全局样式 - 手动定位实现 -->
+<!-- 瀑布流布局样式 -->
 <style>
-/* 桌面端：手动定位瀑布流 */
-.explore-page .posts-grid {
-  width: 100%;
-  position: relative;
-  /* 高度由 JS 动态设置 */
-}
-
-/* 卡片样式 - 绝对定位 */
 .explore-page .posts-grid .post-card {
-  /* position, left, top, width 由 JS 动态设置 */
   box-sizing: border-box;
-  transition:
-    opacity 0.4s ease,
-    transform 0.4s ease,
-    left 0.3s ease,
-    top 0.3s ease;
+  transition: opacity 0.3s ease, transform 0.3s ease, left 0.3s ease, top 0.3s ease;
 }
-
-/* 新卡片进入动画 */
-.explore-page .posts-grid .post-card.card-entering {
-  animation: cardFadeIn var(--duration-slower) var(--ease-decelerate) forwards;
-}
-
-@keyframes cardFadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(20px) scale(0.95);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-/* 所有屏幕尺寸都使用 JS 瀑布流（包括移动端） */
-/* JS 会自动根据屏幕宽度计算列数：
-   - >= 1600px: 5列
-   - >= 1400px: 4列
-   - >= 1100px: 3列
-   - >= 769px:  2列
-   - >= 481px:  2列
-   - < 481px:   2列
-*/
 </style>

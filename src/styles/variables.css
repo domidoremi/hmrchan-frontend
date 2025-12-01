@@ -203,6 +203,14 @@
   --z-popover: 1060;
   --z-tooltip: 1070;
 
+  /* ========== 布局尺寸 ========== */
+  --navbar-height: 72px;
+  --navbar-height-mobile: 60px;
+  --bottom-nav-height: 64px;
+  --footer-min-height: 200px;
+  --container-max-width: 1400px;
+  --content-padding-x: var(--spacing-4);
+
   /* ========== 响应式断点 ========== */
   --breakpoint-sm: 640px;
   --breakpoint-md: 768px;

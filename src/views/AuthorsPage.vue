@@ -1,6 +1,7 @@
 <template>
   <MainLayout>
     <div class="authors-page">
+      <!-- 页面头部 -->
       <div class="page-header">
         <h1 class="page-title">{{ $t('author.title') }}</h1>
         <div class="header-stats">
@@ -15,29 +16,76 @@
         </div>
       </div>
 
-      <LoadingSpinner v-if="loading" size="lg" />
+      <!-- 筛选工具栏 -->
+      <div class="filter-toolbar glass-card">
+        <!-- 搜索框 -->
+        <div class="search-box">
+          <Search :size="18" class="search-icon" />
+          <input v-model="searchQuery" type="text" :placeholder="$t('author.searchPlaceholder', 'Search authors...')"
+            class="search-input" @input="debouncedSearch" />
+          <button v-if="searchQuery" class="clear-btn" @click="clearSearch">
+            <X :size="16" />
+          </button>
+        </div>
 
-      <div v-else-if="authors.length > 0" class="authors-list">
-        <div v-for="author in authors" :key="author.id" class="author-card glass-card">
+        <!-- 平台筛选 -->
+        <div class="filter-group">
+          <label class="filter-label">{{ $t('common.platform') }}</label>
+          <select v-model="selectedPlatform" class="filter-select" @change="handleFilterChange">
+            <option value="">{{ $t('common.all') }}</option>
+            <option v-for="platform in platforms" :key="platform" :value="platform">
+              {{ getPlatformName(platform) }}
+            </option>
+          </select>
+        </div>
+
+        <!-- 排序 -->
+        <div class="filter-group">
+          <label class="filter-label">{{ $t('common.sortBy') }}</label>
+          <select v-model="sortBy" class="filter-select" @change="handleFilterChange">
+            <option value="follower_count">{{ $t('author.followers') }}</option>
+            <option value="post_count">{{ $t('author.posts') }}</option>
+            <option value="name">{{ $t('author.name') }}</option>
+            <option value="created_at">{{ $t('common.date') }}</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- 骨架屏加载 -->
+      <div v-if="loading && authors.length === 0" class="authors-list">
+        <div v-for="i in 6" :key="i" class="author-card glass-card skeleton-card">
+          <div class="card-content">
+            <div class="author-avatar-section">
+              <div class="avatar-wrapper skeleton"></div>
+            </div>
+            <div class="author-content">
+              <div class="skeleton-line skeleton-title"></div>
+              <div class="skeleton-line skeleton-subtitle"></div>
+              <div class="skeleton-line skeleton-text"></div>
+              <div class="skeleton-stats">
+                <div class="skeleton-stat"></div>
+                <div class="skeleton-stat"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 作者列表 -->
+      <div v-else-if="paginatedAuthors.length > 0" class="authors-list">
+        <div v-for="author in paginatedAuthors" :key="author.id" class="author-card glass-card"
+          @click="handleAuthorClick(author)">
           <!-- Banner 背景 -->
-          <div
-            v-if="author.profile_banner_url"
-            class="card-banner"
-            :style="{ backgroundImage: `url(${author.profile_banner_url})` }"
-          ></div>
+          <div v-if="author.profile_banner_url" class="card-banner"
+            :style="{ backgroundImage: `url(${author.profile_banner_url})` }"></div>
           <div class="card-overlay"></div>
 
           <div class="card-content">
             <!-- 头像区域 -->
             <div class="author-avatar-section">
               <div class="avatar-wrapper">
-                <img
-                  v-if="author.avatar_url"
-                  :src="author.avatar_url"
-                  :alt="author.name"
-                  class="avatar-image"
-                  @error="onImageError"
-                />
+                <img v-if="author.avatar_url" :src="author.avatar_url" :alt="author.name" class="avatar-image"
+                  @error="onImageError" />
                 <div v-else class="avatar-placeholder">
                   <User :size="48" />
                 </div>
@@ -54,10 +102,7 @@
                   </div>
                   <p class="author-username">@{{ author.username }}</p>
                 </div>
-                <div
-                  class="platform-badge"
-                  :style="{ background: getPlatformColor(author.platform) }"
-                >
+                <div class="platform-badge" :style="{ background: getPlatformColor(author.platform) }">
                   {{ getPlatformName(author.platform) }}
                 </div>
               </div>
@@ -75,9 +120,7 @@
                 <div class="stat-item">
                   <FileText :size="16" />
                   <span class="stat-value">{{ formatNumber(author.video_count || 0) }}</span>
-                  <span class="stat-label"
-                    >{{ $t('platform.' + author.platform) }} {{ $t('author.posts') }}</span
-                  >
+                  <span class="stat-label">{{ $t('platform.' + author.platform) }} {{ $t('author.posts') }}</span>
                 </div>
                 <div v-if="author.post_count > 0" class="stat-item scraped">
                   <Database :size="16" />
@@ -89,17 +132,10 @@
               <div class="author-footer">
                 <div class="author-meta">
                   <Calendar :size="14" />
-                  <span
-                    >{{ $t('author.platformJoined') }}: {{ formatDate(author.created_at) }}</span
-                  >
+                  <span>{{ $t('author.platformJoined') }}: {{ formatDate(author.created_at) }}</span>
                 </div>
-                <a
-                  v-if="author.profile_url"
-                  :href="author.profile_url"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="profile-link"
-                >
+                <a v-if="author.profile_url" :href="author.profile_url" target="_blank" rel="noopener noreferrer"
+                  class="profile-link">
                   <ExternalLink :size="16" />
                   {{ $t('author.viewOriginal') }}
                 </a>
@@ -107,6 +143,20 @@
             </div>
           </div>
         </div>
+        <!-- Pagination -->
+        <Pagination v-if="totalPages > 1" :current-page="currentPage" :total-pages="totalPages"
+          @change="handlePageChange" />
+      </div>
+
+      <!-- Error State -->
+      <div v-else-if="error" class="error-state glass-card">
+        <AlertCircle :size="64" />
+        <h3>{{ $t('common.error') }}</h3>
+        <p>{{ error }}</p>
+        <button class="retry-button glass-button" @click="loadAuthors(true)">
+          <RotateCcw :size="18" />
+          {{ $t('common.retry') }}
+        </button>
       </div>
 
       <div v-else class="empty-state glass-card">
@@ -124,7 +174,8 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import {
   User,
@@ -134,40 +185,224 @@ import {
   ExternalLink,
   FileText,
   Database,
+  Search,
+  X,
+  AlertCircle,
+  RotateCcw,
 } from 'lucide-vue-next'
 import dayjs from 'dayjs'
 
 import MainLayout from '@/components/layout/MainLayout.vue'
-import LoadingSpinner from '@/components/ui/loading/LoadingSpinner.vue'
-import { PLATFORM_COLORS, PLATFORM_NAMES } from '@/types'
+import { Pagination } from '@/components/ui/pagination'
+import { PLATFORM_COLORS, PLATFORM_NAMES, PLATFORMS } from '@/types'
 import { authorsApi } from '@/api/services'
 import type { AuthorListItem } from '@/types'
 import { useErrorHandler } from '@/utils/error'
+import { indexedDB } from '@/utils/storage'
+import logger from '@/utils/logger'
 
+const router = useRouter()
 const { t } = useI18n()
 const { handleError } = useErrorHandler('AuthorsPage')
-const loading = ref(true)
-const authors = ref<AuthorListItem[]>([])
 
+// ============================================
+// 状态
+// ============================================
+const loading = ref(true)
+const error = ref<string | null>(null)
+const authors = ref<AuthorListItem[]>([])
+const allAuthors = ref<AuthorListItem[]>([]) // 缓存所有数据用于本地筛选
+
+// 筛选和排序
+const searchQuery = ref('')
+const selectedPlatform = ref('')
+const sortBy = ref<'follower_count' | 'post_count' | 'name' | 'created_at'>('follower_count')
+const platforms = PLATFORMS
+
+// 分页
+const currentPage = ref(1)
+const itemsPerPage = 12 // 每页显示12个作者
+const totalCount = ref(0)
+
+// ============================================
+// 计算属性
+// ============================================
 const totalFollowers = computed(() => {
-  return authors.value.reduce((sum, author) => sum + (author.follower_count || 0), 0)
+  return allAuthors.value.reduce((sum, author) => sum + (author.follower_count || 0), 0)
 })
 
 const totalPosts = computed(() => {
-  return authors.value.reduce((sum, author) => sum + (author.post_count || 0), 0)
+  return allAuthors.value.reduce((sum, author) => sum + (author.post_count || 0), 0)
 })
 
-onMounted(async () => {
+// 筛选和排序后的作者列表
+const filteredAuthors = computed(() => {
+  let result = [...allAuthors.value]
+
+  // 搜索筛选
+  if (searchQuery.value.trim()) {
+    const query = searchQuery.value.toLowerCase().trim()
+    result = result.filter(
+      (author) =>
+        author.name.toLowerCase().includes(query) ||
+        author.username.toLowerCase().includes(query) ||
+        (author.description && author.description.toLowerCase().includes(query)),
+    )
+  }
+
+  // 平台筛选
+  if (selectedPlatform.value) {
+    result = result.filter((author) => author.platform === selectedPlatform.value)
+  }
+
+  // 排序
+  result.sort((a, b) => {
+    switch (sortBy.value) {
+      case 'follower_count':
+        return (b.follower_count || 0) - (a.follower_count || 0)
+      case 'post_count':
+        return (b.post_count || 0) - (a.post_count || 0)
+      case 'name':
+        return a.name.localeCompare(b.name)
+      case 'created_at':
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      default:
+        return 0
+    }
+  })
+
+  return result
+})
+
+// 总页数
+const totalPages = computed(() => {
+  return Math.ceil(filteredAuthors.value.length / itemsPerPage)
+})
+
+// 分页后的作者列表
+const paginatedAuthors = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage
+  const end = start + itemsPerPage
+  return filteredAuthors.value.slice(start, end)
+})
+
+// ============================================
+// 数据加载
+// ============================================
+const loadAuthors = async (forceRefresh = false) => {
   try {
-    const response = await authorsApi.getAuthors({ page: 1, page_size: 100 })
+    loading.value = true
+    error.value = null
+
+    // 先尝试从缓存加载
+    if (!forceRefresh) {
+      const cached = await loadFromCache()
+      if (cached.length > 0) {
+        allAuthors.value = cached
+        authors.value = cached
+        loading.value = false
+        // 后台刷新
+        refreshInBackground()
+        return
+      }
+    }
+
+    // 从 API 加载
+    const response = await authorsApi.getAuthors({ page: 1, page_size: 200 })
+    allAuthors.value = response.items
     authors.value = response.items
-  } catch (error) {
-    handleError(error, { customMessage: t('author.loadFailed', 'Failed to load authors') })
+    totalCount.value = response.total
+
+    // 缓存到 IndexedDB
+    await cacheAuthors(response.items)
+  } catch (err) {
+    error.value = t('author.loadFailed', 'Failed to load authors')
+    handleError(err, { customMessage: t('author.loadFailed', 'Failed to load authors') })
   } finally {
     loading.value = false
   }
-})
+}
 
+// 从缓存加载
+const loadFromCache = async (): Promise<AuthorListItem[]> => {
+  try {
+    const cached = await indexedDB.getAuthors()
+    if (cached.length > 0) {
+      logger.debug(`[AuthorsPage] Loaded ${cached.length} authors from cache`)
+      return cached as AuthorListItem[]
+    }
+  } catch (error) {
+    logger.warn('[AuthorsPage] Failed to load from cache', { error })
+  }
+  return []
+}
+
+// 缓存作者数据
+const cacheAuthors = async (items: AuthorListItem[]) => {
+  try {
+    await indexedDB.saveAuthors(items)
+    logger.debug(`[AuthorsPage] Cached ${items.length} authors`)
+  } catch (error) {
+    logger.warn('[AuthorsPage] Failed to cache authors', { error })
+  }
+}
+
+// 后台刷新
+const refreshInBackground = async () => {
+  try {
+    const response = await authorsApi.getAuthors({ page: 1, page_size: 200 })
+    if (response.items.length > 0) {
+      allAuthors.value = response.items
+      authors.value = response.items
+      await cacheAuthors(response.items)
+      logger.debug('[AuthorsPage] Background refresh complete')
+    }
+  } catch (error) {
+    logger.warn('[AuthorsPage] Background refresh failed', { error })
+  }
+}
+
+// ============================================
+// 事件处理
+// ============================================
+let searchTimeout: ReturnType<typeof setTimeout> | null = null
+
+const debouncedSearch = () => {
+  if (searchTimeout) clearTimeout(searchTimeout)
+  searchTimeout = setTimeout(() => {
+    authors.value = filteredAuthors.value
+  }, 300)
+}
+
+const clearSearch = () => {
+  searchQuery.value = ''
+  authors.value = filteredAuthors.value
+}
+
+const handleFilterChange = () => {
+  currentPage.value = 1 // 筛选变化时重置到第一页
+  authors.value = filteredAuthors.value
+}
+
+// 处理分页变化
+const handlePageChange = (page: number) => {
+  currentPage.value = page
+  // 滚动到顶部
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
+
+// 点击作者卡片 - 跳转到作者帖子页
+const handleAuthorClick = (author: AuthorListItem) => {
+  router.push({
+    path: '/',
+    query: { author_id: author.id, author_name: author.name },
+  })
+}
+
+
+// ============================================
+// 工具函数
+// ============================================
 const formatNumber = (num: number): string => {
   if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`
   if (num >= 1000) return `${(num / 1000).toFixed(1)}K`
@@ -196,18 +431,33 @@ const onImageError = (event: Event) => {
   img.style.display = 'none'
   const placeholder = img.parentElement?.querySelector('.avatar-placeholder')
   if (placeholder) {
-    ;(placeholder as HTMLElement).style.display = 'flex'
+    ; (placeholder as HTMLElement).style.display = 'flex'
   }
 }
+
+// ============================================
+// 生命周期
+// ============================================
+onMounted(() => {
+  loadAuthors()
+})
+
+onUnmounted(() => {
+  if (searchTimeout) clearTimeout(searchTimeout)
+})
+
+// 监听筛选变化
+watch([searchQuery, selectedPlatform, sortBy], () => {
+  currentPage.value = 1 // 重置分页
+  authors.value = filteredAuthors.value
+})
 </script>
 
 <style scoped>
 .authors-page {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-2xl);
-  padding-top: clamp(16px, 3vw, 24px);
-  /* 确保不被导航栏遮挡 */
+  gap: var(--spacing-xl);
 }
 
 .page-header {
@@ -246,6 +496,179 @@ const onImageError = (event: Event) => {
   font-size: var(--text-2xl);
   font-weight: var(--font-bold);
   color: var(--color-primary);
+}
+
+/* 筛选工具栏 */
+.filter-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-lg);
+  padding: var(--spacing-lg);
+}
+
+.search-box {
+  position: relative;
+  flex: 1;
+  min-width: 200px;
+  max-width: 400px;
+}
+
+.search-icon {
+  position: absolute;
+  left: var(--spacing-md);
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-text-tertiary);
+  pointer-events: none;
+}
+
+.search-input {
+  width: 100%;
+  padding: var(--spacing-sm) var(--spacing-md);
+  padding-left: calc(var(--spacing-md) * 2 + 18px);
+  padding-right: calc(var(--spacing-md) + 28px);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  background: var(--glass-bg-light);
+  color: var(--color-text-primary);
+  font-size: var(--text-base);
+  transition: all 0.2s ease;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.1);
+}
+
+.search-input::placeholder {
+  color: var(--color-text-tertiary);
+}
+
+.clear-btn {
+  position: absolute;
+  right: var(--spacing-sm);
+  top: 50%;
+  transform: translateY(-50%);
+  padding: var(--spacing-xs);
+  border: none;
+  background: transparent;
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: all 0.2s ease;
+}
+
+.clear-btn:hover {
+  color: var(--color-text-primary);
+  background: var(--glass-bg-hover);
+}
+
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.filter-label {
+  font-size: var(--text-sm);
+  color: var(--color-text-tertiary);
+  white-space: nowrap;
+}
+
+.filter-select {
+  padding: var(--spacing-sm) var(--spacing-md);
+  padding-right: calc(var(--spacing-md) + 16px);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  background: var(--glass-bg-light);
+  color: var(--color-text-primary);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  min-width: 120px;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right var(--spacing-sm) center;
+  background-size: 16px;
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(var(--color-primary-rgb), 0.1);
+}
+
+/* 骨架屏 */
+.skeleton-card {
+  pointer-events: none;
+}
+
+.skeleton {
+  background: linear-gradient(90deg,
+      var(--glass-bg-light) 25%,
+      var(--glass-bg-hover) 50%,
+      var(--glass-bg-light) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s infinite;
+}
+
+.skeleton-line {
+  height: 16px;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(90deg,
+      var(--glass-bg-light) 25%,
+      var(--glass-bg-hover) 50%,
+      var(--glass-bg-light) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s infinite;
+}
+
+.skeleton-title {
+  width: 60%;
+  height: 24px;
+  margin-bottom: var(--spacing-sm);
+}
+
+.skeleton-subtitle {
+  width: 40%;
+  height: 14px;
+  margin-bottom: var(--spacing-md);
+}
+
+.skeleton-text {
+  width: 80%;
+  height: 14px;
+  margin-bottom: var(--spacing-md);
+}
+
+.skeleton-stats {
+  display: flex;
+  gap: var(--spacing-lg);
+}
+
+.skeleton-stat {
+  width: 80px;
+  height: 20px;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(90deg,
+      var(--glass-bg-light) 25%,
+      var(--glass-bg-hover) 50%,
+      var(--glass-bg-light) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s infinite;
+}
+
+@keyframes skeleton-loading {
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 .authors-list {
@@ -292,11 +715,9 @@ const onImageError = (event: Event) => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(
-    135deg,
-    rgba(var(--glass-bg-rgb), 0.95) 0%,
-    rgba(var(--glass-bg-rgb), 0.85) 100%
-  );
+  background: linear-gradient(135deg,
+      rgba(var(--glass-bg-rgb), 0.95) 0%,
+      rgba(var(--glass-bg-rgb), 0.85) 100%);
   backdrop-filter: blur(10px);
   z-index: 1;
 }
@@ -473,13 +894,30 @@ const onImageError = (event: Event) => {
   transform: translateX(4px);
 }
 
-.empty-state {
+.empty-state,
+.error-state {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: var(--spacing-md);
   padding: var(--spacing-3xl);
   color: var(--color-text-tertiary);
+  text-align: center;
+}
+
+.error-state {
+  border-color: var(--color-error);
+}
+
+.error-state svg {
+  color: var(--color-error);
+}
+
+.retry-button {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  margin-top: var(--spacing-md);
 }
 
 /* 响应式设计 */

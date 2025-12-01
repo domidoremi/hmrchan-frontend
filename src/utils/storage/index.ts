@@ -3,7 +3,7 @@
  */
 
 // IndexedDB
-export { indexedDB } from './indexedDB'
+export { indexedDB, toFullCachedPost, hasFullDetail } from './indexedDB'
 export type { CachedPost, Author, Favorite, MediaMetadata, OfflineAction } from './indexedDB'
 
 // Storage Manager
