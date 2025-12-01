@@ -148,6 +148,17 @@
           @change="handlePageChange" />
       </div>
 
+      <!-- Error State -->
+      <div v-else-if="error" class="error-state glass-card">
+        <AlertCircle :size="64" />
+        <h3>{{ $t('common.error') }}</h3>
+        <p>{{ error }}</p>
+        <button class="retry-button glass-button" @click="loadAuthors(true)">
+          <RotateCcw :size="18" />
+          {{ $t('common.retry') }}
+        </button>
+      </div>
+
       <div v-else class="empty-state glass-card">
         <Users :size="64" />
         <h3>{{ $t('author.noAuthors') }}</h3>
@@ -176,6 +187,8 @@ import {
   Database,
   Search,
   X,
+  AlertCircle,
+  RotateCcw,
 } from 'lucide-vue-next'
 import dayjs from 'dayjs'
 
@@ -196,6 +209,7 @@ const { handleError } = useErrorHandler('AuthorsPage')
 // 状态
 // ============================================
 const loading = ref(true)
+const error = ref<string | null>(null)
 const authors = ref<AuthorListItem[]>([])
 const allAuthors = ref<AuthorListItem[]>([]) // 缓存所有数据用于本地筛选
 
@@ -278,6 +292,7 @@ const paginatedAuthors = computed(() => {
 const loadAuthors = async (forceRefresh = false) => {
   try {
     loading.value = true
+    error.value = null
 
     // 先尝试从缓存加载
     if (!forceRefresh) {
@@ -300,8 +315,9 @@ const loadAuthors = async (forceRefresh = false) => {
 
     // 缓存到 IndexedDB
     await cacheAuthors(response.items)
-  } catch (error) {
-    handleError(error, { customMessage: t('author.loadFailed', 'Failed to load authors') })
+  } catch (err) {
+    error.value = t('author.loadFailed', 'Failed to load authors')
+    handleError(err, { customMessage: t('author.loadFailed', 'Failed to load authors') })
   } finally {
     loading.value = false
   }
@@ -870,13 +886,30 @@ watch([searchQuery, selectedPlatform, sortBy], () => {
   transform: translateX(4px);
 }
 
-.empty-state {
+.empty-state,
+.error-state {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: var(--spacing-md);
   padding: var(--spacing-3xl);
   color: var(--color-text-tertiary);
+  text-align: center;
+}
+
+.error-state {
+  border-color: var(--color-error);
+}
+
+.error-state svg {
+  color: var(--color-error);
+}
+
+.retry-button {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  margin-top: var(--spacing-md);
 }
 
 /* 响应式设计 */
