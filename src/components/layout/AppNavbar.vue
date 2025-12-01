@@ -935,6 +935,7 @@ onUnmounted(() => {
 }
 
 .mobile-top-content {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -950,9 +951,12 @@ onUnmounted(() => {
 
 /* 移动端访问限制指示器 */
 .mobile-access-indicator {
-  flex: 1;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
   justify-content: center;
+  z-index: 1;
 }
 
 /* 访问限制芯片基础样式 */
