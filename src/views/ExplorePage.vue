@@ -7,31 +7,36 @@
       <FilterBar :filters="filters" @update="handleFilterUpdate" />
 
       <!-- Initial Loading State -->
-      <div v-if="loading && posts.length === 0" class="loading-container">
+      <div v-if="loading && localPosts.length === 0" class="loading-container">
         <LoadingSpinner size="lg" :text="$t('common.loading')" />
       </div>
 
       <!-- Posts Grid -->
-      <template v-else-if="posts.length > 0">
+      <template v-else-if="localPosts.length > 0">
         <p v-if="lastListFromFallback" class="offline-hint">
           {{ $t('offline.usingCache') }}
         </p>
 
         <div class="posts-grid-wrapper">
-          <!-- Loading Overlay for page changes -->
-          <Transition name="fade">
-            <div v-if="loading" class="loading-overlay">
-              <LoadingSpinner size="md" />
-            </div>
-          </Transition>
+          <div ref="postsGrid" class="posts-grid">
+            <PostCard v-for="(post, index) in localPosts" :key="post.id" :post="post" :index="index"
+              :show-actions="false" />
+          </div>
 
-          <div ref="postsGrid" class="posts-grid" :class="{ 'is-loading': loading }">
-            <PostCard v-for="(post, index) in posts" :key="post.id" :post="post" :index="index" :show-actions="false" />
+          <!-- Loading More Indicator -->
+          <div v-if="isLoadingMore || scrollLoading" class="loading-more">
+            <LoadingSpinner size="sm" :text="$t('common.loading')" />
+          </div>
+
+          <!-- Load Progress -->
+          <div v-if="!pageFullyRendered && localPosts.length > 0" class="load-progress">
+            <span>{{ localPosts.length }} / {{ allPagePosts.length }}</span>
           </div>
         </div>
 
-        <!-- Pagination -->
-        <Pagination :current-page="currentPage" :total-pages="totalPages" @change="handlePageChange" />
+        <!-- Pagination - 只在当前页渲染完成后显示 -->
+        <Pagination v-if="pageFullyRendered && totalPages > 1" :current-page="currentPage" :total-pages="totalPages"
+          @change="handlePageChange" />
       </template>
 
       <!-- Error State -->
@@ -79,28 +84,53 @@ import LoadingSpinner from '@/components/ui/loading/LoadingSpinner.vue'
 import { Pagination } from '@/components/ui/pagination'
 
 import { usePostsStore } from '@/stores'
-import { useWaterfallLayout } from '@/composables'
-import type { PostListParams } from '@/types'
+import { useWaterfallLayout, useInfiniteScroll } from '@/composables'
+import type { PostListParams, Post } from '@/types'
 import { logger } from '@/utils/logger'
 
 const route = useRoute()
 const router = useRouter()
 const postsStore = usePostsStore()
 
-const { posts, loading, error, filters, pagination, lastListFromFallback } = storeToRefs(postsStore)
+const { loading, error, filters, pagination, lastListFromFallback } = storeToRefs(postsStore)
 
-// 分页计算属性 - 确保正确访问分页数据
-const currentPage = computed(() => pagination.value.page)
-const totalPages = computed(() => pagination.value.pages)
+// ============================================
+// 配置常量
+// ============================================
+const POSTS_PER_PAGE = 20      // 每页总帖子数
+const RENDER_BATCH_SIZE = 5    // 每次渲染的帖子数
+
+// ============================================
+// 本地状态
+// ============================================
+const allPagePosts = ref<Post[]>([])  // 当前页的所有帖子（从 API 获取）
+const renderedCount = ref(0)          // 已渲染的帖子数量
+const isLoadingMore = ref(false)      // 是否正在渲染更多
+
+// 实际显示的帖子（渐进式渲染）
+const localPosts = computed(() => allPagePosts.value.slice(0, renderedCount.value))
+
+// 分页计算属性
+const currentPage = computed(() => filters.value.page || 1)
+const totalPages = computed(() => pagination.value.pages || 0)
+
+// 当前页是否已完全渲染
+const pageFullyRendered = computed(() =>
+  allPagePosts.value.length > 0 && renderedCount.value >= allPagePosts.value.length
+)
+
+// 是否还能继续滚动加载更多渲染
+const canRenderMore = computed(() =>
+  !pageFullyRendered.value &&
+  allPagePosts.value.length > 0 &&
+  !isLoadingMore.value
+)
 
 // 帖子网格容器
 const postsGrid = ref<HTMLElement | null>(null)
 
-// 请求计数器 - 用于取消过时的请求结果
-let requestId = 0
-
 // 瀑布流布局
-const { updateLayout } = useWaterfallLayout(postsGrid, {
+const { updateLayout, smoothUpdateLayout } = useWaterfallLayout(postsGrid, {
   columnGap: 16,
   rowGap: 16,
   breakpoints: {
@@ -111,36 +141,130 @@ const { updateLayout } = useWaterfallLayout(postsGrid, {
   },
 })
 
+// ============================================
+// 无限滚动 - 用于渐进式渲染
+// ============================================
+const { isLoading: scrollLoading } = useInfiniteScroll({
+  onLoadMore: renderMorePosts,
+  hasMore: () => canRenderMore.value,
+  threshold: 300,
+  enabled: computed(() => canRenderMore.value),
+})
+
 /**
- * 统一的数据获取函数
- * 使用请求 ID 确保只处理最新请求的结果
+ * 渲染更多帖子（滚动触发）
+ * 不发起新的 API 请求，只是从已加载的数据中渲染更多
  */
-async function loadPosts(updateUrl = false, urlQuery?: Record<string, string>) {
-  const currentRequestId = ++requestId
+async function renderMorePosts() {
+  if (!canRenderMore.value) return
 
-  await postsStore.fetchPosts()
+  isLoadingMore.value = true
 
-  // 如果在请求期间有新的请求发起，忽略此次结果
-  if (currentRequestId !== requestId) {
-    logger.debug('忽略过时的请求结果', { category: 'ExplorePage', currentRequestId, latestRequestId: requestId })
-    return
-  }
+  // 增加渲染数量
+  const newCount = Math.min(
+    renderedCount.value + RENDER_BATCH_SIZE,
+    allPagePosts.value.length
+  )
+  renderedCount.value = newCount
 
-  // 更新 URL（如果需要）
-  if (updateUrl && urlQuery) {
-    // 使用 replace 而不是 push，避免触发 popstate
-    router.replace({ query: urlQuery })
-  }
+  logger.debug('渐进式渲染', {
+    category: 'ExplorePage',
+    rendered: newCount,
+    total: allPagePosts.value.length
+  })
 
   await nextTick()
-  updateLayout()
+  smoothUpdateLayout()
+
+  isLoadingMore.value = false
 }
 
-onMounted(async () => {
+/**
+ * 加载当前页的所有帖子
+ */
+async function loadPagePosts() {
   // 重置状态
+  allPagePosts.value = []
+  renderedCount.value = 0
+  isLoadingMore.value = false
+
+  try {
+    const result = await postsStore.fetchPosts({
+      page: currentPage.value,
+      page_size: POSTS_PER_PAGE,
+    })
+
+    if (result && result.items && result.items.length > 0) {
+      // 保存所有帖子
+      allPagePosts.value = result.items
+
+      // 初始渲染第一批
+      renderedCount.value = Math.min(RENDER_BATCH_SIZE, result.items.length)
+
+      logger.debug('页面数据加载完成', {
+        category: 'ExplorePage',
+        total: result.items.length,
+        initialRender: renderedCount.value
+      })
+    }
+
+    await nextTick()
+    updateLayout()
+
+  } catch (err) {
+    logger.error('加载失败', { category: 'ExplorePage', error: err })
+  }
+}
+
+/**
+ * 切换页面
+ */
+async function handlePageChange(page: number) {
+  postsStore.updateFilters({ page })
+
+  // 更新 URL
+  const query: Record<string, string> = {}
+  if (filters.value.q) query.q = filters.value.q
+  if (filters.value.platform) query.platform = filters.value.platform
+  if (page > 1) query.page = String(page)
+  router.replace({ query })
+
+  // 滚动到顶部
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+
+  await loadPagePosts()
+}
+
+/**
+ * 更新筛选条件
+ */
+async function handleFilterUpdate(newFilters: Partial<PostListParams>) {
+  postsStore.updateFilters({ ...newFilters, page: 1 })
+
+  const query: Record<string, string> = {}
+  if (newFilters.q) query.q = newFilters.q
+  if (newFilters.platform) query.platform = newFilters.platform
+  router.replace({ query })
+
+  await loadPagePosts()
+}
+
+/**
+ * 重置筛选
+ */
+async function resetFilters() {
+  postsStore.resetFilters()
+  router.replace({ query: {} })
+  await loadPagePosts()
+}
+
+// ============================================
+// 生命周期
+// ============================================
+onMounted(async () => {
   postsStore.resetFilters()
 
-  // 从URL查询参数初始化筛选（一次性设置所有参数）
+  // 从 URL 初始化筛选条件
   const query = route.query
   const initialFilters: Partial<PostListParams> = {}
 
@@ -152,76 +276,40 @@ onMounted(async () => {
     postsStore.updateFilters(initialFilters)
   }
 
-  await loadPosts()
+  await loadPagePosts()
 })
 
 onBeforeUnmount(() => {
-  // 取消任何待处理的请求
-  requestId++
+  allPagePosts.value = []
+  renderedCount.value = 0
   postsStore.resetFilters()
-  postsStore.posts = []
-  logger.debug('页面卸载，已重置筛选条件和posts', { category: 'ExplorePage' })
+  logger.debug('页面卸载', { category: 'ExplorePage' })
 })
 
-// 监听浏览器前进/后退 (popstate)
+// 监听浏览器前进/后退
 watch(
   () => route.query,
   async (newQuery, oldQuery) => {
-    // 避免无意义的重复请求
     if (JSON.stringify(newQuery) === JSON.stringify(oldQuery)) return
 
-    logger.debug('route.query 变化', { category: 'ExplorePage', newQuery, oldQuery })
-
-    // 同步URL参数到筛选条件
     postsStore.updateFilters({
       q: (newQuery.q as string) || undefined,
       platform: (newQuery.platform as string) || undefined,
       page: newQuery.page ? parseInt(newQuery.page as string) : 1,
     })
 
-    await loadPosts()
+    await loadPagePosts()
   },
 )
 
-// 监听 posts 变化更新布局
+// 监听 localPosts 变化更新布局
 watch(
-  () => posts.value.length,
+  () => localPosts.value.length,
   async () => {
     await nextTick()
     updateLayout()
   },
 )
-
-const handlePageChange = async (page: number) => {
-  postsStore.updateFilters({ page })
-
-  // 构建 URL 查询参数
-  const query: Record<string, string> = {}
-  if (filters.value.q) query.q = filters.value.q
-  if (filters.value.platform) query.platform = filters.value.platform
-  if (page > 1) query.page = String(page)
-
-  await loadPosts(true, query)
-
-  // 滚动到顶部
-  window.scrollTo({ top: 0, behavior: 'smooth' })
-}
-
-const handleFilterUpdate = async (newFilters: Partial<PostListParams>) => {
-  postsStore.updateFilters({ ...newFilters, page: 1 })
-
-  // 构建 URL 查询参数
-  const query: Record<string, string> = {}
-  if (newFilters.q) query.q = newFilters.q
-  if (newFilters.platform) query.platform = newFilters.platform
-
-  await loadPosts(true, query)
-}
-
-const resetFilters = async () => {
-  postsStore.resetFilters()
-  await loadPosts(true, {})
-}
 </script>
 
 <style scoped>
@@ -320,6 +408,21 @@ const resetFilters = async () => {
   border-radius: var(--radius-md);
   background: rgba(59, 130, 246, 0.08);
   color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+}
+
+.loading-more {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: var(--spacing-xl);
+  margin-top: var(--spacing-lg);
+}
+
+.load-progress {
+  text-align: center;
+  padding: var(--spacing-md);
+  color: var(--color-text-tertiary);
   font-size: var(--text-sm);
 }
 
