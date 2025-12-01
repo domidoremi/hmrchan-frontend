@@ -6,7 +6,7 @@
       <!-- Filter Bar -->
       <FilterBar :filters="filters" @update="handleFilterUpdate" />
 
-      <!-- Loading State -->
+      <!-- Initial Loading State -->
       <div v-if="loading && posts.length === 0" class="loading-container">
         <LoadingSpinner size="lg" :text="$t('common.loading')" />
       </div>
@@ -17,8 +17,17 @@
           {{ $t('offline.usingCache') }}
         </p>
 
-        <div ref="postsGrid" class="posts-grid">
-          <PostCard v-for="(post, index) in posts" :key="post.id" :post="post" :index="index" :show-actions="false" />
+        <div class="posts-grid-wrapper">
+          <!-- Loading Overlay for page changes -->
+          <Transition name="fade">
+            <div v-if="loading" class="loading-overlay">
+              <LoadingSpinner size="md" />
+            </div>
+          </Transition>
+
+          <div ref="postsGrid" class="posts-grid" :class="{ 'is-loading': loading }">
+            <PostCard v-for="(post, index) in posts" :key="post.id" :post="post" :index="index" :show-actions="false" />
+          </div>
         </div>
 
         <!-- Pagination -->
@@ -179,10 +188,42 @@ const resetFilters = () => {
   padding: var(--spacing-3xl);
 }
 
+.posts-grid-wrapper {
+  position: relative;
+}
+
 .posts-grid {
   width: 100%;
   position: relative;
   min-height: 200px;
+  transition: opacity 0.3s ease;
+}
+
+.posts-grid.is-loading {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.loading-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+  background: var(--glass-bg);
+  padding: var(--spacing-lg);
+  border-radius: var(--radius-lg);
+  backdrop-filter: blur(8px);
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 
 .empty-state {
