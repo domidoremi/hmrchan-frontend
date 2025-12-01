@@ -72,8 +72,8 @@
       </div>
 
       <!-- 作者列表 -->
-      <div v-else-if="authors.length > 0" class="authors-list">
-        <div v-for="author in authors" :key="author.id" class="author-card glass-card"
+      <div v-else-if="paginatedAuthors.length > 0" class="authors-list">
+        <div v-for="author in paginatedAuthors" :key="author.id" class="author-card glass-card"
           @click="handleAuthorClick(author)">
           <!-- Banner 背景 -->
           <div v-if="author.profile_banner_url" class="card-banner"
@@ -143,6 +143,9 @@
             </div>
           </div>
         </div>
+        <!-- Pagination -->
+        <Pagination v-if="totalPages > 1" :current-page="currentPage" :total-pages="totalPages"
+          @change="handlePageChange" />
       </div>
 
       <div v-else class="empty-state glass-card">
@@ -177,6 +180,7 @@ import {
 import dayjs from 'dayjs'
 
 import MainLayout from '@/components/layout/MainLayout.vue'
+import { Pagination } from '@/components/ui/pagination'
 import { PLATFORM_COLORS, PLATFORM_NAMES, PLATFORMS } from '@/types'
 import { authorsApi } from '@/api/services'
 import type { AuthorListItem } from '@/types'
@@ -192,7 +196,6 @@ const { handleError } = useErrorHandler('AuthorsPage')
 // 状态
 // ============================================
 const loading = ref(true)
-const loadingMore = ref(false)
 const authors = ref<AuthorListItem[]>([])
 const allAuthors = ref<AuthorListItem[]>([]) // 缓存所有数据用于本地筛选
 
@@ -203,7 +206,8 @@ const sortBy = ref<'follower_count' | 'post_count' | 'name' | 'created_at'>('fol
 const platforms = PLATFORMS
 
 // 分页
-const hasMore = ref(true)
+const currentPage = ref(1)
+const itemsPerPage = 12 // 每页显示12个作者
 const totalCount = ref(0)
 
 // ============================================
@@ -254,6 +258,18 @@ const filteredAuthors = computed(() => {
   })
 
   return result
+})
+
+// 总页数
+const totalPages = computed(() => {
+  return Math.ceil(filteredAuthors.value.length / itemsPerPage)
+})
+
+// 分页后的作者列表
+const paginatedAuthors = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage
+  const end = start + itemsPerPage
+  return filteredAuthors.value.slice(start, end)
 })
 
 // ============================================
@@ -348,7 +364,15 @@ const clearSearch = () => {
 }
 
 const handleFilterChange = () => {
+  currentPage.value = 1 // 筛选变化时重置到第一页
   authors.value = filteredAuthors.value
+}
+
+// 处理分页变化
+const handlePageChange = (page: number) => {
+  currentPage.value = page
+  // 滚动到顶部
+  window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
 // 点击作者卡片 - 跳转到作者帖子页
@@ -359,22 +383,6 @@ const handleAuthorClick = (author: AuthorListItem) => {
   })
 }
 
-// ============================================
-// 无限滚动
-// ============================================
-const handleScroll = () => {
-  if (loadingMore.value || !hasMore.value) return
-
-  const scrollHeight = document.documentElement.scrollHeight
-  const scrollTop = window.scrollY
-  const clientHeight = window.innerHeight
-
-  // 距离底部 200px 时加载更多
-  if (scrollHeight - scrollTop - clientHeight < 200) {
-    // 这里使用本地分页，因为数据已全部加载
-    // 实际上不需要加载更多，filteredAuthors 已包含所有数据
-  }
-}
 
 // ============================================
 // 工具函数
@@ -416,16 +424,15 @@ const onImageError = (event: Event) => {
 // ============================================
 onMounted(() => {
   loadAuthors()
-  window.addEventListener('scroll', handleScroll)
 })
 
 onUnmounted(() => {
-  window.removeEventListener('scroll', handleScroll)
   if (searchTimeout) clearTimeout(searchTimeout)
 })
 
 // 监听筛选变化
 watch([searchQuery, selectedPlatform, sortBy], () => {
+  currentPage.value = 1 // 重置分页
   authors.value = filteredAuthors.value
 })
 </script>
