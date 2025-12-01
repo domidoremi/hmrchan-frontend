@@ -322,12 +322,19 @@ export const usePostsStore = defineStore(
     function resetFilters() {
       filters.value = {
         page: 1,
-        page_size: 20,
+        page_size: settingsStore.settings.postsPerPage,
         sort_by: 'scraped_at',
         sort_order: 'desc',
         platform: undefined,
         q: undefined,
         has_media: undefined,
+      }
+      // 同时重置分页信息
+      pagination.value = {
+        page: 1,
+        page_size: settingsStore.settings.postsPerPage,
+        total: 0,
+        pages: 0,
       }
     }
 

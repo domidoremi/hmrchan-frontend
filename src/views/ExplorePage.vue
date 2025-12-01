@@ -31,7 +31,7 @@
         </div>
 
         <!-- Pagination -->
-        <Pagination :current-page="pagination.page" :total-pages="pagination.pages" @change="handlePageChange" />
+        <Pagination :current-page="currentPage" :total-pages="totalPages" @change="handlePageChange" />
       </template>
 
       <!-- Empty State -->
@@ -55,7 +55,7 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { SearchX, RotateCcw } from 'lucide-vue-next'
@@ -77,6 +77,10 @@ const router = useRouter()
 const postsStore = usePostsStore()
 
 const { posts, loading, filters, pagination, lastListFromFallback } = storeToRefs(postsStore)
+
+// 分页计算属性 - 确保正确访问分页数据
+const currentPage = computed(() => pagination.value.page)
+const totalPages = computed(() => pagination.value.pages)
 
 // 帖子网格容器
 const postsGrid = ref<HTMLElement | null>(null)
