@@ -171,15 +171,23 @@ offlineQueue.setApiClient(apiClient as unknown as typeof apiClient)
 
 /**
  * 规范化 URL
- *
- * 移除开头的斜杠以兼容 ky 的 prefixUrl 机制
- * ky 要求：当使用 prefixUrl 时，路径不能以斜杠开头
+ * - 移除开头的斜杠（ky 会自动添加）
+ * - 移除结尾的斜杠（防止后端 500 错误）
  *
  * @param url - 原始 URL
  * @returns 规范化后的 URL
  */
 function normalizeUrl(url: string): string {
-  return url.startsWith('/') ? url.slice(1) : url
+  let normalized = url
+  // 移除开头的斜杠
+  if (normalized.startsWith('/')) {
+    normalized = normalized.slice(1)
+  }
+  // 移除结尾的斜杠（但保留根路径）
+  if (normalized.length > 0 && normalized.endsWith('/')) {
+    normalized = normalized.slice(0, -1)
+  }
+  return normalized
 }
 
 /**
