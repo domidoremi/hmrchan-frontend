@@ -34,12 +34,6 @@
           </div>
         </div>
 
-        <!-- Debug Info (临时调试) -->
-        <div v-if="pageFullyRendered" class="debug-info"
-          style="padding: 8px; background: rgba(0,0,0,0.1); font-size: 12px; margin-top: 8px;">
-          渲染完成: {{ pageFullyRendered }} | 总页数: {{ totalPages }} | 当前页: {{ currentPage }} | 总帖子: {{ pagination.total }}
-        </div>
-
         <!-- Pagination - 只在当前页渲染完成且有多页时显示 -->
         <Pagination v-if="pageFullyRendered && totalPages > 1" :current-page="currentPage" :total-pages="totalPages"
           @change="handlePageChange" />
