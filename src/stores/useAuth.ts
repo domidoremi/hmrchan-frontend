@@ -14,7 +14,7 @@ import type { User, LoginRequest } from '@/types'
 import { api } from '@/api/client'
 import { handleError } from '@/utils/error'
 import logger from '@/utils/logger'
-import { secureLocalStorage, sanitizeForLog } from '@/utils/secureStorage'
+import { secureLocalStorage, sanitizeForLog } from '@/utils/security'
 
 export const useAuthStore = defineStore(
   'auth',

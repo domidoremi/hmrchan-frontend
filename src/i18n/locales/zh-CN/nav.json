@@ -1,9 +1,24 @@
 {
+  "author": {
+    "title": "作者列表",
+    "totalFollowers": "总粉丝数",
+    "totalPosts": "已收录帖子",
+    "searchPlaceholder": "搜索作者...",
+    "followers": "粉丝",
+    "posts": "帖子",
+    "name": "名称",
+    "scraped": "已收录",
+    "platformJoined": "加入平台",
+    "viewOriginal": "查看原链接",
+    "noAuthors": "暂无作者数据",
+    "loadFailed": "加载作者失败"
+  },
   "nav": {
     "home": "首页",
     "explore": "探索",
     "posts": "帖子",
     "authors": "作者",
+    "contact": "联系",
     "profile": "个人中心",
     "settings": "设置",
     "advancedSettings": "高级设置",

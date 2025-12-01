@@ -28,10 +28,25 @@
           <Users :size="20" />
           <span>{{ $t('nav.authors') }}</span>
         </RouterLink>
+
+        <RouterLink to="/contact" class="nav-link">
+          <MessageCircle :size="20" />
+          <span>{{ $t('nav.contact') }}</span>
+        </RouterLink>
       </div>
 
       <!-- 右侧操作 (桌面端) -->
       <div class="navbar-actions">
+        <!-- 访问限制指示器 (桌面端) -->
+        <div v-if="showAccessIndicator" class="desktop-access-indicator">
+          <div class="access-chip" :class="accessChipClass">
+            <Gauge :size="14" class="access-icon" />
+            <span class="access-chip-count">
+              {{ accessCurrentDisplay }} / {{ accessLimitDisplay }}
+            </span>
+          </div>
+        </div>
+
         <!-- 搜索按钮：跳转到搜索视图（Explore） -->
         <button class="action-button search-button" @click="goToSearch" :aria-label="$t('search.placeholder')">
           <Search :size="24" />
@@ -199,12 +214,13 @@
       </RouterLink>
 
       <div v-if="showAccessIndicator" class="mobile-access-indicator">
-        <button type="button" class="access-chip"
+        <div class="access-chip" :class="accessChipClass"
           :aria-label="$t('aria.accessLimit', { current: accessCurrentDisplay, limit: accessLimitDisplay })">
+          <Gauge :size="12" class="access-icon" />
           <span class="access-chip-count">
             {{ accessCurrentDisplay }} / {{ accessLimitDisplay }}
           </span>
-        </button>
+        </div>
       </div>
 
       <!-- 右侧按钮 -->
@@ -244,29 +260,29 @@
 
   <!-- 移动端底部导航栏 -->
   <nav class="mobile-bottom-nav">
-    <RouterLink to="/" class="bottom-nav-item">
-      <Home :size="24" />
+    <RouterLink to="/" class="bottom-nav-item" :class="{ compact: isAuthenticated }">
+      <Home :size="22" />
       <span>{{ $t('nav.home') }}</span>
     </RouterLink>
 
-    <RouterLink to="/explore" class="bottom-nav-item">
-      <Compass :size="24" />
+    <RouterLink to="/explore" class="bottom-nav-item" :class="{ compact: isAuthenticated }">
+      <Compass :size="22" />
       <span>{{ $t('nav.explore') }}</span>
     </RouterLink>
 
-    <RouterLink v-if="isAuthenticated" to="/favorites" class="bottom-nav-item">
-      <Heart :size="24" />
+    <RouterLink v-if="isAuthenticated" to="/favorites" class="bottom-nav-item compact">
+      <Heart :size="22" />
       <span>{{ $t('nav.favorites') }}</span>
     </RouterLink>
 
-    <RouterLink to="/authors" class="bottom-nav-item">
-      <Users :size="24" />
+    <RouterLink to="/authors" class="bottom-nav-item" :class="{ compact: isAuthenticated }">
+      <Users :size="22" />
       <span>{{ $t('nav.authors') }}</span>
     </RouterLink>
 
-    <RouterLink to="/settings" class="bottom-nav-item">
-      <Settings :size="24" />
-      <span>{{ $t('nav.settings') }}</span>
+    <RouterLink to="/contact" class="bottom-nav-item" :class="{ compact: isAuthenticated }">
+      <MessageCircle :size="22" />
+      <span>{{ $t('nav.contact') }}</span>
     </RouterLink>
   </nav>
 
@@ -439,6 +455,8 @@ import {
   Moon,
   Monitor,
   ArrowRight,
+  MessageCircle,
+  Gauge,
 } from 'lucide-vue-next'
 import { useAuthStore, useSettingsStore, useThemeStore } from '@/stores'
 import type { Theme } from '@/types'
@@ -471,6 +489,17 @@ const accessLimitDisplay = computed(() => {
 const showAccessIndicator = computed(
   () => navbarProps.showAccessIndicator && typeof navbarProps.accessLimit === 'number',
 )
+
+// 访问限制指示器的状态类
+const accessChipClass = computed(() => {
+  const current = navbarProps.accessCurrent || 0
+  const limit = navbarProps.accessLimit || 0
+  if (limit === Infinity) return 'access-unlimited'
+  const ratio = current / limit
+  if (ratio >= 0.9) return 'access-critical'
+  if (ratio >= 0.7) return 'access-warning'
+  return 'access-normal'
+})
 
 /** 路由实例 */
 const router = useRouter()
@@ -554,7 +583,7 @@ const toggleQueuePanel = async () => {
     await nextTick()
     try {
       queueDropdownRef.value?.showPopover()
-    } catch (e) {
+    } catch {
       // 忽略 popover 已打开的错误
     }
   }
@@ -648,7 +677,7 @@ const toggleSettingsPanel = async () => {
     await nextTick()
     try {
       settingsDropdownRef.value?.showPopover()
-    } catch (e) {
+    } catch {
       // 忽略 popover 已打开的错误
     }
   }
@@ -670,7 +699,7 @@ const toggleUserMenu = async () => {
     await nextTick()
     try {
       userDropdownRef.value?.showPopover()
-    } catch (e) {
+    } catch {
       // 忽略 popover 已打开的错误
     }
   }
@@ -691,7 +720,7 @@ const closeAllPopovers = () => {
       userDropdownRef.value?.hidePopover()
       settingsDropdownRef.value?.hidePopover()
       queueDropdownRef.value?.hidePopover()
-    } catch (e) {
+    } catch {
       // 忽略 popover 已关闭的错误
     }
   }
@@ -758,7 +787,7 @@ const handleClickOutside = (event: MouseEvent) => {
   ) {
     showUserMenu.value = false
     if (useNativePopover && !isMobile.value) {
-      try { userDropdownRef.value?.hidePopover() } catch (e) { /* ignore */ }
+      try { userDropdownRef.value?.hidePopover() } catch { /* ignore */ }
     }
   }
 
@@ -772,7 +801,7 @@ const handleClickOutside = (event: MouseEvent) => {
   ) {
     showSettingsPanel.value = false
     if (useNativePopover && !isMobile.value) {
-      try { settingsDropdownRef.value?.hidePopover() } catch (e) { /* ignore */ }
+      try { settingsDropdownRef.value?.hidePopover() } catch { /* ignore */ }
     }
   }
 
@@ -786,7 +815,7 @@ const handleClickOutside = (event: MouseEvent) => {
   ) {
     showQueuePanel.value = false
     if (useNativePopover && !isMobile.value) {
-      try { queueDropdownRef.value?.hidePopover() } catch (e) { /* ignore */ }
+      try { queueDropdownRef.value?.hidePopover() } catch { /* ignore */ }
     }
   }
 }
@@ -843,7 +872,7 @@ onUnmounted(() => {
   top: 0;
   left: 0;
   right: 0;
-  z-index: 1000;
+  z-index: var(--z-fixed);
   background: var(--glass-bg);
   backdrop-filter: var(--glass-blur);
   border-bottom: 1px solid var(--glass-border);
@@ -852,14 +881,16 @@ onUnmounted(() => {
 /* ==================== 桌面端导航栏 ==================== */
 .desktop-nav {
   display: block;
+  height: var(--navbar-height);
 }
 
 .navbar-content {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--spacing-4) var(--spacing-6);
-  max-width: 1400px;
+  height: 100%;
+  padding: 0 var(--spacing-6);
+  max-width: var(--container-max-width);
   margin: 0 auto;
   position: relative;
 }
@@ -904,28 +935,94 @@ onUnmounted(() => {
 }
 
 .mobile-top-content {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--spacing-2);
 }
 
-.mobile-access-indicator {
-  flex: 1;
+/* 桌面端访问限制指示器 */
+.desktop-access-indicator {
   display: flex;
-  justify-content: center;
+  align-items: center;
+  margin-right: var(--spacing-2);
 }
 
+/* 移动端访问限制指示器 */
+.mobile-access-indicator {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  justify-content: center;
+  z-index: 1;
+}
+
+/* 访问限制芯片基础样式 */
 .access-chip {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 4px 10px;
+  gap: var(--spacing-1);
+  padding: 4px 12px;
   border-radius: 999px;
   font-size: var(--text-xs);
+  font-weight: var(--font-medium);
+  transition: all var(--transition-fast);
+  cursor: default;
+  user-select: none;
+}
+
+.access-icon {
+  flex-shrink: 0;
+  opacity: 0.8;
+}
+
+.access-chip-count {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 正常状态 - 使用主题变量 */
+.access-chip.access-normal {
   color: var(--color-text-secondary);
   background: var(--glass-bg-light);
   border: 1px solid var(--glass-border);
+}
+
+/* 警告状态 (70-90%) */
+.access-chip.access-warning {
+  color: var(--color-warning, #f59e0b);
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+/* 临界状态 (>90%) */
+.access-chip.access-critical {
+  color: var(--color-error, #ef4444);
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  animation: pulse-subtle 2s ease-in-out infinite;
+}
+
+/* 无限制状态 */
+.access-chip.access-unlimited {
+  color: var(--color-success, #22c55e);
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+@keyframes pulse-subtle {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.7;
+  }
 }
 
 /* 导航链接 */
@@ -1466,8 +1563,8 @@ onUnmounted(() => {
   .mobile-top-nav {
     display: flex;
     align-items: center;
+    height: var(--navbar-height-mobile);
     padding: 0;
-    min-height: 76px;
   }
 
   .mobile-top-content {
@@ -1475,8 +1572,9 @@ onUnmounted(() => {
     align-items: center;
     justify-content: space-between;
     width: 100%;
+    height: 100%;
     box-sizing: border-box;
-    padding: var(--spacing-3) var(--spacing-4);
+    padding: 0 var(--spacing-4);
   }
 
   .mobile-top-actions {
@@ -1515,16 +1613,16 @@ onUnmounted(() => {
     bottom: 0;
     left: 0;
     right: 0;
-    z-index: 1000;
+    z-index: var(--z-fixed);
     background: var(--glass-bg);
     backdrop-filter: var(--glass-blur);
     border-top: 1px solid var(--glass-border);
-    padding: var(--spacing-2) var(--spacing-1);
-    padding-bottom: calc(var(--spacing-2) + env(safe-area-inset-bottom));
+    padding: var(--spacing-1) var(--spacing-1);
+    padding-bottom: calc(var(--spacing-1) + env(safe-area-inset-bottom));
     justify-content: space-around;
     align-items: center;
     box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
-    min-height: 64px;
+    height: var(--bottom-nav-height);
   }
 
   .bottom-nav-item {
@@ -1532,31 +1630,54 @@ onUnmounted(() => {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: var(--spacing-1);
-    padding: var(--spacing-2);
+    gap: 2px;
+    padding: var(--spacing-1) var(--spacing-2);
     border-radius: var(--radius-md);
     color: var(--color-text-secondary);
     text-decoration: none;
-    font-size: var(--text-xs);
+    font-size: 10px;
     font-weight: var(--font-medium);
     transition: all var(--transition-fast);
     flex: 1;
-    max-width: 80px;
-    min-width: 44px;
-    min-height: 44px;
-    /* 添加触摸优化 */
+    max-width: 72px;
+    min-width: 48px;
+    min-height: 48px;
+    /* 触摸优化 */
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
+    position: relative;
+  }
+
+  .bottom-nav-item.compact {
+    max-width: 64px;
+    font-size: 9px;
+  }
+
+  .bottom-nav-item.compact span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
   }
 
   .bottom-nav-item:active {
-    transform: scale(0.95);
-    opacity: 0.8;
+    transform: scale(0.92);
   }
 
   .bottom-nav-item.router-link-active {
     color: var(--color-primary);
-    background: var(--glass-bg-light);
+  }
+
+  .bottom-nav-item.router-link-active::before {
+    content: '';
+    position: absolute;
+    top: 4px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--color-primary);
   }
 
   /* 移动端模态框样式 - 应用于queue和settings面板 */
