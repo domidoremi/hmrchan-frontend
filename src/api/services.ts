@@ -16,6 +16,7 @@
 import { api } from './client'
 import { getRuntimeApiEndpoint } from '@/config/runtime'
 import { indexedDB } from '@/utils/storage'
+import { postCache } from '@/utils/cache'
 import { cacheInvalidation } from '@/utils/cache/cacheInvalidation'
 import { handleError } from '@/utils/error'
 import logger from '@/utils/logger'
@@ -300,37 +301,79 @@ export const postsApi = {
   /**
    * 获取单个内容详情
    *
-   * 启用多层缓存（5 分钟 TTL）
+   * 使用统一帖子缓存服务，支持完整离线访问（含 media_files）
+   * 缓存策略：先返回缓存，后台更新（Stale-While-Revalidate）
    *
    * @param postId - 帖子 UUID
-   * @returns 帖子详情
+   * @param options - 可选配置
+   * @param options.forceRefresh - 强制刷新，跳过缓存
+   * @returns 帖子详情（含 media_files 和 tags）
    *
    * @example
    * const post = await postsApi.getPostById('123e4567-e89b-12d3-a456-426614174000')
    */
-  async getPostById(postId: UUID) {
+  async getPostById(postId: UUID, options?: { forceRefresh?: boolean }) {
+    const { forceRefresh = false } = options || {}
+
     try {
+      // 1. 先检查缓存（除非强制刷新）
+      if (!forceRefresh) {
+        const cached = await postCache.getPost(postId)
+        if (cached.data) {
+          logger.debug(`[Posts.GetPostById] Cache ${cached.source}: ${postId}`, {
+            isStale: cached.isStale,
+          })
+
+          // 如果缓存过期，后台更新
+          if (cached.isStale) {
+            this.refreshPostInBackground(postId)
+          }
+
+          return cached.data
+        }
+      }
+
+      // 2. 从网络获取
       const detail = await api.get<PostDetail>(`/posts/${postId}`, {
-        cache: true,
-        ttl: 5 * 60 * 1000, // 5分钟缓存
-        useMultiLayerCache: true,
+        cache: false, // SW 层已有缓存，这里不需要重复
       })
 
+      // 3. 缓存完整帖子详情（含 media_files）
       try {
-        await indexedDB.savePosts([detail])
-      } catch (error) {
-        logger.warn(
-          '[Posts.GetPostById] Failed to save post detail to IndexedDB',
-          toLogContext(error),
+        await postCache.cachePost(detail)
+        logger.debug(
+          `[Posts.GetPostById] Cached: ${postId} with ${detail.media_files?.length || 0} media files`,
         )
+      } catch (error) {
+        logger.warn('[Posts.GetPostById] Failed to cache post detail', toLogContext(error))
       }
 
       return detail
     } catch (error) {
+      // 网络失败时尝试返回缓存
+      const cached = await postCache.getPost(postId)
+      if (cached.data) {
+        logger.warn(`[Posts.GetPostById] Network failed, using cache for: ${postId}`)
+        return cached.data
+      }
+
       handleError(error, 'Posts.GetPostById', {
         customMessage: t('api.fetchPostById'),
       })
       throw error
+    }
+  },
+
+  /**
+   * 后台刷新帖子数据（不阻塞 UI）
+   */
+  async refreshPostInBackground(postId: UUID) {
+    try {
+      const detail = await api.get<PostDetail>(`/posts/${postId}`, { cache: false })
+      await postCache.cachePost(detail)
+      logger.debug(`[Posts.RefreshBackground] Updated: ${postId}`)
+    } catch (error) {
+      logger.warn(`[Posts.RefreshBackground] Failed for: ${postId}`, toLogContext(error))
     }
   },
 

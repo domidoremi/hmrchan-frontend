@@ -554,7 +554,7 @@ const toggleQueuePanel = async () => {
     await nextTick()
     try {
       queueDropdownRef.value?.showPopover()
-    } catch (e) {
+    } catch {
       // 忽略 popover 已打开的错误
     }
   }
@@ -648,7 +648,7 @@ const toggleSettingsPanel = async () => {
     await nextTick()
     try {
       settingsDropdownRef.value?.showPopover()
-    } catch (e) {
+    } catch {
       // 忽略 popover 已打开的错误
     }
   }
@@ -670,7 +670,7 @@ const toggleUserMenu = async () => {
     await nextTick()
     try {
       userDropdownRef.value?.showPopover()
-    } catch (e) {
+    } catch {
       // 忽略 popover 已打开的错误
     }
   }
@@ -691,7 +691,7 @@ const closeAllPopovers = () => {
       userDropdownRef.value?.hidePopover()
       settingsDropdownRef.value?.hidePopover()
       queueDropdownRef.value?.hidePopover()
-    } catch (e) {
+    } catch {
       // 忽略 popover 已关闭的错误
     }
   }
@@ -758,7 +758,7 @@ const handleClickOutside = (event: MouseEvent) => {
   ) {
     showUserMenu.value = false
     if (useNativePopover && !isMobile.value) {
-      try { userDropdownRef.value?.hidePopover() } catch (e) { /* ignore */ }
+      try { userDropdownRef.value?.hidePopover() } catch { /* ignore */ }
     }
   }
 
@@ -772,7 +772,7 @@ const handleClickOutside = (event: MouseEvent) => {
   ) {
     showSettingsPanel.value = false
     if (useNativePopover && !isMobile.value) {
-      try { settingsDropdownRef.value?.hidePopover() } catch (e) { /* ignore */ }
+      try { settingsDropdownRef.value?.hidePopover() } catch { /* ignore */ }
     }
   }
 
@@ -786,7 +786,7 @@ const handleClickOutside = (event: MouseEvent) => {
   ) {
     showQueuePanel.value = false
     if (useNativePopover && !isMobile.value) {
-      try { queueDropdownRef.value?.hidePopover() } catch (e) { /* ignore */ }
+      try { queueDropdownRef.value?.hidePopover() } catch { /* ignore */ }
     }
   }
 }
