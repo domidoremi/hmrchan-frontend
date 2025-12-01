@@ -28,6 +28,11 @@
           <Users :size="20" />
           <span>{{ $t('nav.authors') }}</span>
         </RouterLink>
+
+        <RouterLink to="/contact" class="nav-link">
+          <MessageCircle :size="20" />
+          <span>{{ $t('nav.contact') }}</span>
+        </RouterLink>
       </div>
 
       <!-- 右侧操作 (桌面端) -->
@@ -244,29 +249,29 @@
 
   <!-- 移动端底部导航栏 -->
   <nav class="mobile-bottom-nav">
-    <RouterLink to="/" class="bottom-nav-item">
-      <Home :size="24" />
+    <RouterLink to="/" class="bottom-nav-item" :class="{ compact: isAuthenticated }">
+      <Home :size="22" />
       <span>{{ $t('nav.home') }}</span>
     </RouterLink>
 
-    <RouterLink to="/explore" class="bottom-nav-item">
-      <Compass :size="24" />
+    <RouterLink to="/explore" class="bottom-nav-item" :class="{ compact: isAuthenticated }">
+      <Compass :size="22" />
       <span>{{ $t('nav.explore') }}</span>
     </RouterLink>
 
-    <RouterLink v-if="isAuthenticated" to="/favorites" class="bottom-nav-item">
-      <Heart :size="24" />
+    <RouterLink v-if="isAuthenticated" to="/favorites" class="bottom-nav-item compact">
+      <Heart :size="22" />
       <span>{{ $t('nav.favorites') }}</span>
     </RouterLink>
 
-    <RouterLink to="/authors" class="bottom-nav-item">
-      <Users :size="24" />
+    <RouterLink to="/authors" class="bottom-nav-item" :class="{ compact: isAuthenticated }">
+      <Users :size="22" />
       <span>{{ $t('nav.authors') }}</span>
     </RouterLink>
 
-    <RouterLink to="/settings" class="bottom-nav-item">
-      <Settings :size="24" />
-      <span>{{ $t('nav.settings') }}</span>
+    <RouterLink to="/contact" class="bottom-nav-item" :class="{ compact: isAuthenticated }">
+      <MessageCircle :size="22" />
+      <span>{{ $t('nav.contact') }}</span>
     </RouterLink>
   </nav>
 
@@ -439,6 +444,7 @@ import {
   Moon,
   Monitor,
   ArrowRight,
+  MessageCircle,
 } from 'lucide-vue-next'
 import { useAuthStore, useSettingsStore, useThemeStore } from '@/stores'
 import type { Theme } from '@/types'
@@ -1532,31 +1538,54 @@ onUnmounted(() => {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: var(--spacing-1);
-    padding: var(--spacing-2);
+    gap: 2px;
+    padding: var(--spacing-1) var(--spacing-2);
     border-radius: var(--radius-md);
     color: var(--color-text-secondary);
     text-decoration: none;
-    font-size: var(--text-xs);
+    font-size: 10px;
     font-weight: var(--font-medium);
     transition: all var(--transition-fast);
     flex: 1;
-    max-width: 80px;
-    min-width: 44px;
-    min-height: 44px;
-    /* 添加触摸优化 */
+    max-width: 72px;
+    min-width: 48px;
+    min-height: 48px;
+    /* 触摸优化 */
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
+    position: relative;
+  }
+
+  .bottom-nav-item.compact {
+    max-width: 64px;
+    font-size: 9px;
+  }
+
+  .bottom-nav-item.compact span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
   }
 
   .bottom-nav-item:active {
-    transform: scale(0.95);
-    opacity: 0.8;
+    transform: scale(0.92);
   }
 
   .bottom-nav-item.router-link-active {
     color: var(--color-primary);
-    background: var(--glass-bg-light);
+  }
+
+  .bottom-nav-item.router-link-active::before {
+    content: '';
+    position: absolute;
+    top: 4px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--color-primary);
   }
 
   /* 移动端模态框样式 - 应用于queue和settings面板 */
