@@ -171,9 +171,20 @@ onBeforeUnmount(() => {
 /* 主内容区域 */
 .main-content {
   flex: 1;
-  padding-top: 88px;
+  padding-top: calc(var(--navbar-height) + var(--spacing-4));
   padding-bottom: var(--spacing-12);
-  scroll-margin-top: 88px;
+  scroll-margin-top: var(--navbar-height);
+  min-height: calc(100vh - var(--navbar-height) - var(--footer-min-height));
+}
+
+/* 网络状态横幅 */
+.network-banner {
+  background: var(--color-warning);
+  color: white;
+  text-align: center;
+  padding: var(--spacing-2) var(--spacing-4);
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
 }
 
 /* 返回顶部按钮淡入淡出动画 */
@@ -190,8 +201,9 @@ onBeforeUnmount(() => {
 /* 移动端响应式样式 */
 @media (max-width: 768px) {
   .main-content {
-    padding-top: 76px;
-    padding-bottom: calc(120px + env(safe-area-inset-bottom));
+    padding-top: calc(var(--navbar-height-mobile) + var(--spacing-3));
+    padding-bottom: calc(var(--bottom-nav-height) + var(--spacing-6) + env(safe-area-inset-bottom));
+    scroll-margin-top: var(--navbar-height-mobile);
   }
 }
 </style>
