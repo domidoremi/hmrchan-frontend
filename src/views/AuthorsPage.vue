@@ -441,9 +441,7 @@ watch([searchQuery, selectedPlatform, sortBy], () => {
 .authors-page {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-2xl);
-  padding-top: clamp(16px, 3vw, 24px);
-  /* 确保不被导航栏遮挡 */
+  gap: var(--spacing-xl);
 }
 
 .page-header {

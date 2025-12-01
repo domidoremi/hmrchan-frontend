@@ -342,9 +342,9 @@ svg {
 
 .container {
   width: 100%;
-  max-width: 1280px;
+  max-width: var(--container-max-width);
   margin: 0 auto;
-  padding: 0 var(--spacing-lg);
+  padding: 0 var(--content-padding-x);
 }
 
 .section {
