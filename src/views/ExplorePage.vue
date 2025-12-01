@@ -34,6 +34,17 @@
         <Pagination :current-page="currentPage" :total-pages="totalPages" @change="handlePageChange" />
       </template>
 
+      <!-- Error State -->
+      <div v-else-if="error" class="error-state glass-card">
+        <AlertCircle :size="64" />
+        <h3>{{ $t('common.error') }}</h3>
+        <p>{{ error }}</p>
+        <GlassButton @click="resetFilters">
+          <RotateCcw :size="18" />
+          {{ $t('common.retry') }}
+        </GlassButton>
+      </div>
+
       <!-- Empty State -->
       <div v-else class="empty-state glass-card">
         <SearchX :size="64" />
@@ -58,7 +69,7 @@ export default {
 import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
-import { SearchX, RotateCcw } from 'lucide-vue-next'
+import { SearchX, RotateCcw, AlertCircle } from 'lucide-vue-next'
 
 import MainLayout from '@/components/layout/MainLayout.vue'
 import FilterBar from '@/components/business/FilterBar.vue'
@@ -76,7 +87,7 @@ const route = useRoute()
 const router = useRouter()
 const postsStore = usePostsStore()
 
-const { posts, loading, filters, pagination, lastListFromFallback } = storeToRefs(postsStore)
+const { posts, loading, error, filters, pagination, lastListFromFallback } = storeToRefs(postsStore)
 
 // 分页计算属性 - 确保正确访问分页数据
 const currentPage = computed(() => pagination.value.page)
@@ -98,15 +109,20 @@ const { updateLayout } = useWaterfallLayout(postsGrid, {
 })
 
 onMounted(async () => {
-  // 清空旧的posts数组
-  postsStore.posts = []
+  // 重置状态
   postsStore.resetFilters()
 
   // 从URL查询参数初始化筛选
   const query = route.query
-  if (query.q) filters.value.q = query.q as string
-  if (query.platform) filters.value.platform = query.platform as string
-  if (query.page) filters.value.page = parseInt(query.page as string) || 1
+  if (query.q) {
+    postsStore.updateFilters({ q: query.q as string })
+  }
+  if (query.platform) {
+    postsStore.updateFilters({ platform: query.platform as string })
+  }
+  if (query.page) {
+    postsStore.updateFilters({ page: parseInt(query.page as string) || 1 })
+  }
 
   await postsStore.fetchPosts()
   await nextTick()
@@ -121,9 +137,18 @@ onBeforeUnmount(() => {
 
 watch(
   () => route.query,
-  async () => {
-    if (route.query.q) filters.value.q = route.query.q as string
-    if (route.query.page) filters.value.page = parseInt(route.query.page as string) || 1
+  async (newQuery, oldQuery) => {
+    // 避免无意义的重复请求
+    if (JSON.stringify(newQuery) === JSON.stringify(oldQuery)) return
+
+    // 同步URL参数到筛选条件
+    const updates: Partial<PostListParams> = {
+      q: (newQuery.q as string) || undefined,
+      platform: (newQuery.platform as string) || undefined,
+      page: newQuery.page ? parseInt(newQuery.page as string) : 1,
+    }
+    postsStore.updateFilters(updates)
+
     await postsStore.fetchPosts()
     await nextTick()
     updateLayout()
@@ -165,10 +190,12 @@ const handleFilterUpdate = async (newFilters: Partial<PostListParams>) => {
   router.push({ query })
 }
 
-const resetFilters = () => {
+const resetFilters = async () => {
   postsStore.resetFilters()
   router.push({ query: {} })
-  postsStore.fetchPosts()
+  await postsStore.fetchPosts()
+  await nextTick()
+  updateLayout()
 }
 </script>
 
@@ -230,7 +257,8 @@ const resetFilters = () => {
   opacity: 0;
 }
 
-.empty-state {
+.empty-state,
+.error-state {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -240,15 +268,25 @@ const resetFilters = () => {
   text-align: center;
 }
 
-.empty-state h3 {
+.empty-state h3,
+.error-state h3 {
   font-size: var(--text-2xl);
   font-weight: var(--font-semibold);
   color: var(--color-text-primary);
 }
 
-.empty-state p {
+.empty-state p,
+.error-state p {
   color: var(--color-text-secondary);
   margin-bottom: var(--spacing-md);
+}
+
+.error-state {
+  border-color: var(--color-error);
+}
+
+.error-state svg {
+  color: var(--color-error);
 }
 
 .offline-hint {
