@@ -43,7 +43,7 @@ const videoInstances: Map<string, HTMLVideoElement> = new Map()
 const prepareDataSource = (items: MediaItem[]) => {
   // console.log('[PhotoSwipeViewer] prepareDataSource - items:', items)
 
-  return items.map((item, index) => {
+  return items.map((item) => {
     if (item.type === 'image') {
       const imageData: Record<string, string | number> = {
         src: item.url,
