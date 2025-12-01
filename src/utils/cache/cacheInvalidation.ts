@@ -1,9 +1,11 @@
 /**
  * 缓存失效策略管理
  * 定义不同操作对应的缓存失效规则
+ * 支持多层缓存同步失效（内存、IndexedDB、SW Cache）
  */
 
 import { api } from '@/api/client'
+import { postCache } from './postCache'
 import logger from '@/utils/logger'
 
 /**
@@ -41,6 +43,7 @@ export type InvalidationAction = keyof typeof CACHE_INVALIDATION_RULES
 export class CacheInvalidationManager {
   /**
    * 根据操作类型失效缓存
+   * 同时失效 API 缓存和 PostCache（内存 + IndexedDB）
    */
   async invalidateByAction(action: InvalidationAction, resourceId?: string): Promise<void> {
     const patterns = CACHE_INVALIDATION_RULES[action]
@@ -63,8 +66,18 @@ export class CacheInvalidationManager {
       return pattern
     })
 
-    // 执行失效
+    // 执行 API 缓存失效
     await api.invalidateCacheByPatterns(fullPatterns)
+
+    // 如果是帖子相关操作且有资源 ID，同时失效 PostCache
+    if (resourceId && action.startsWith('posts.')) {
+      try {
+        await postCache.invalidate(resourceId)
+        logger.debug(`[CacheInvalidation] PostCache invalidated: ${resourceId}`)
+      } catch (error) {
+        logger.warn(`[CacheInvalidation] Failed to invalidate PostCache`, { error })
+      }
+    }
   }
 
   /**

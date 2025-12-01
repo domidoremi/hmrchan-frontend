@@ -18,12 +18,18 @@
     "back": "戻る",
     "next": "次へ",
     "previous": "前へ",
+    "prevPage": "前のページ",
+    "nextPage": "次のページ",
     "page": "ページ",
     "of": "／",
     "total": "合計",
     "reset": "リセット",
     "apply": "適用",
     "order": "順序",
+    "sortBy": "並び替え",
+    "date": "日付",
+    "platform": "プラットフォーム",
+    "all": "すべて",
     "noMore": "これ以上ない",
     "swipeToView": "スワイプして詳細を表示",
     "loadFailed": "読み込みに失敗しました",
@@ -38,7 +44,8 @@
     "explore": "探索",
     "platforms": "プラットフォーム",
     "buffered": "バッファ済み",
-    "speed": "速度"
+    "speed": "速度",
+    "retry": "リトライ"
   },
   "aria": {
     "skipToMain": "メインコンテンツへスキップ",

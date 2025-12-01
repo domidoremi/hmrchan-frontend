@@ -1,14 +1,16 @@
 /**
  * Service Worker - 三层缓存策略
- * 版本: 2.0.0
- * 更新: 禁用帖子详情API缓存，修复media_files缺失问题
+ * 版本: 3.0.0
+ * 更新: 启用帖子详情智能缓存，使用 Stale-While-Revalidate 策略
+ *       确保完整帖子数据（含 media_files）可离线访问
  */
 
-const CACHE_VERSION = 'v2'
+const CACHE_VERSION = 'v3'
 const CACHE_NAMES = {
   static: `hmrchan-static-${CACHE_VERSION}`,
   api: `hmrchan-api-${CACHE_VERSION}`,
   media: `hmrchan-media-${CACHE_VERSION}`,
+  posts: `hmrchan-posts-${CACHE_VERSION}`, // 专用帖子缓存
 }
 
 // 静态资源列表（预缓存）
@@ -19,6 +21,13 @@ const MEDIA_CACHE_CONFIG = {
   maxAge: 7 * 24 * 60 * 60 * 1000, // 7天
   maxItems: 500, // 最多500个媒体文件
   maxSize: 200 * 1024 * 1024, // 200MB
+}
+
+// 帖子缓存配置
+const POST_CACHE_CONFIG = {
+  maxAge: 24 * 60 * 60 * 1000, // 24小时（帖子详情可缓存较长时间）
+  staleWhileRevalidate: 5 * 60 * 1000, // 5分钟内使用缓存同时后台更新
+  maxItems: 200, // 最多缓存200个帖子详情
 }
 
 // ============================================
@@ -93,8 +102,12 @@ self.addEventListener('fetch', (event) => {
     // 媒体文件: Cache First with Network Fallback
     event.respondWith(cacheFirstMedia(request))
   } else if (isPostDetailRequest(url)) {
-    // 🔧 帖子详情: Network Only（禁用缓存，避免使用旧数据）
-    event.respondWith(fetch(request))
+    // 帖子详情: Stale-While-Revalidate（优先缓存，后台更新）
+    // 确保完整帖子数据（含 media_files）可快速访问和离线使用
+    event.respondWith(staleWhileRevalidatePost(request))
+  } else if (isPostListRequest(url)) {
+    // 帖子列表: Network First（列表需要最新数据）
+    event.respondWith(networkFirstApi(request))
   } else if (isApiRequest(url)) {
     // 其他API请求: Network First with Cache Fallback
     event.respondWith(networkFirstApi(request))
@@ -209,6 +222,113 @@ async function cacheFirstMedia(request) {
 }
 
 /**
+ * Stale-While-Revalidate - 帖子详情专用
+ * 优先返回缓存，同时后台更新
+ * 确保完整帖子数据（含 media_files）可快速访问
+ */
+async function staleWhileRevalidatePost(request) {
+  const cache = await caches.open(CACHE_NAMES.posts)
+  const cached = await cache.match(request)
+
+  // 后台更新函数
+  const fetchAndUpdate = async () => {
+    try {
+      const response = await fetch(request, {
+        signal: AbortSignal.timeout(10000), // 10秒超时
+      })
+
+      if (response.ok) {
+        // 克隆响应并缓存
+        const clonedResponse = response.clone()
+
+        // 添加缓存时间戳
+        const headers = new Headers(clonedResponse.headers)
+        headers.set('X-Cached-At', new Date().toISOString())
+
+        const cachedResponse = new Response(clonedResponse.body, {
+          status: clonedResponse.status,
+          statusText: clonedResponse.statusText,
+          headers,
+        })
+
+        await cache.put(request, cachedResponse)
+
+        // 管理缓存容量
+        await managePostCache()
+
+        return response
+      }
+      return response
+    } catch (error) {
+      console.log('[SW] Post fetch failed:', error.message)
+      return null
+    }
+  }
+
+  if (cached) {
+    // 检查缓存是否过期（超过 staleWhileRevalidate 时间）
+    const cachedAt = cached.headers.get('X-Cached-At')
+    const cacheAge = cachedAt ? Date.now() - new Date(cachedAt).getTime() : Infinity
+
+    if (cacheAge < POST_CACHE_CONFIG.staleWhileRevalidate) {
+      // 缓存新鲜，直接返回
+      console.log('[SW] Post cache hit (fresh):', request.url)
+      return cached
+    }
+
+    // 缓存过期但可用，返回缓存同时后台更新
+    console.log('[SW] Post cache hit (stale), revalidating:', request.url)
+    fetchAndUpdate() // 不等待，后台执行
+    return addCacheHeader(cached, true)
+  }
+
+  // 无缓存，等待网络
+  console.log('[SW] Post cache miss:', request.url)
+  const networkResponse = await fetchAndUpdate()
+
+  if (networkResponse) {
+    return networkResponse
+  }
+
+  // 网络失败，返回离线错误
+  return new Response(JSON.stringify({ error: 'Offline', message: '帖子数据不可用' }), {
+    status: 503,
+    headers: { 'Content-Type': 'application/json' },
+  })
+}
+
+/**
+ * 添加缓存标识 header
+ */
+function addCacheHeader(response, isStale = false) {
+  const headers = new Headers(response.headers)
+  headers.set('X-From-Cache', 'true')
+  if (isStale) {
+    headers.set('X-Cache-Stale', 'true')
+  }
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  })
+}
+
+/**
+ * 管理帖子缓存容量
+ */
+async function managePostCache() {
+  const cache = await caches.open(CACHE_NAMES.posts)
+  const keys = await cache.keys()
+
+  if (keys.length > POST_CACHE_CONFIG.maxItems) {
+    // 删除最旧的条目（简单 FIFO）
+    const toDelete = keys.slice(0, keys.length - POST_CACHE_CONFIG.maxItems)
+    await Promise.all(toDelete.map((key) => cache.delete(key)))
+    console.log(`[SW] Post cache cleanup: removed ${toDelete.length} items`)
+  }
+}
+
+/**
  * Network First - 优先网络，缓存降级
  */
 async function networkFirstApi(request) {
@@ -301,6 +421,11 @@ function isPostDetailRequest(url) {
   // 不包括 /api/v1/posts?... （列表查询）
   const postDetailPattern = /^\/api\/v1\/posts\/[0-9a-f-]{36}$/i
   return postDetailPattern.test(url.pathname)
+}
+
+function isPostListRequest(url) {
+  // 匹配 /api/v1/posts 或 /api/v1/posts?... 格式（帖子列表查询）
+  return url.pathname === '/api/v1/posts' || url.pathname === '/api/v1/posts/'
 }
 
 /**
