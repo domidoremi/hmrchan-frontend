@@ -37,6 +37,16 @@
 
       <!-- 右侧操作 (桌面端) -->
       <div class="navbar-actions">
+        <!-- 访问限制指示器 (桌面端) -->
+        <div v-if="showAccessIndicator" class="desktop-access-indicator">
+          <div class="access-chip" :class="accessChipClass">
+            <Gauge :size="14" class="access-icon" />
+            <span class="access-chip-count">
+              {{ accessCurrentDisplay }} / {{ accessLimitDisplay }}
+            </span>
+          </div>
+        </div>
+
         <!-- 搜索按钮：跳转到搜索视图（Explore） -->
         <button class="action-button search-button" @click="goToSearch" :aria-label="$t('search.placeholder')">
           <Search :size="24" />
@@ -119,7 +129,7 @@
                     @click="settingsStore.toggleSetting('showHeroSection')">
                     <span class="settings-toggle-label">{{
                       $t('settings.toggleHeroSection')
-                    }}</span>
+                      }}</span>
                     <span class="settings-toggle-indicator" :class="{ active: settings.showHeroSection }"></span>
                   </button>
 
@@ -133,7 +143,7 @@
                     @click="settingsStore.toggleSetting('enableSwipeNavigation')">
                     <span class="settings-toggle-label">{{
                       $t('settings.toggleSwipeNavigation')
-                    }}</span>
+                      }}</span>
                     <span class="settings-toggle-indicator" :class="{ active: settings.enableSwipeNavigation }"></span>
                   </button>
                 </div>
@@ -204,12 +214,13 @@
       </RouterLink>
 
       <div v-if="showAccessIndicator" class="mobile-access-indicator">
-        <button type="button" class="access-chip"
+        <div class="access-chip" :class="accessChipClass"
           :aria-label="$t('aria.accessLimit', { current: accessCurrentDisplay, limit: accessLimitDisplay })">
+          <Gauge :size="12" class="access-icon" />
           <span class="access-chip-count">
             {{ accessCurrentDisplay }} / {{ accessLimitDisplay }}
           </span>
-        </button>
+        </div>
       </div>
 
       <!-- 右侧按钮 -->
@@ -445,6 +456,7 @@ import {
   Monitor,
   ArrowRight,
   MessageCircle,
+  Gauge,
 } from 'lucide-vue-next'
 import { useAuthStore, useSettingsStore, useThemeStore } from '@/stores'
 import type { Theme } from '@/types'
@@ -477,6 +489,17 @@ const accessLimitDisplay = computed(() => {
 const showAccessIndicator = computed(
   () => navbarProps.showAccessIndicator && typeof navbarProps.accessLimit === 'number',
 )
+
+// 访问限制指示器的状态类
+const accessChipClass = computed(() => {
+  const current = navbarProps.accessCurrent || 0
+  const limit = navbarProps.accessLimit || 0
+  if (limit === Infinity) return 'access-unlimited'
+  const ratio = current / limit
+  if (ratio >= 0.9) return 'access-critical'
+  if (ratio >= 0.7) return 'access-warning'
+  return 'access-normal'
+})
 
 /** 路由实例 */
 const router = useRouter()
@@ -918,22 +941,84 @@ onUnmounted(() => {
   gap: var(--spacing-2);
 }
 
+/* 桌面端访问限制指示器 */
+.desktop-access-indicator {
+  display: flex;
+  align-items: center;
+  margin-right: var(--spacing-2);
+}
+
+/* 移动端访问限制指示器 */
 .mobile-access-indicator {
   flex: 1;
   display: flex;
   justify-content: center;
 }
 
+/* 访问限制芯片基础样式 */
 .access-chip {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 4px 10px;
+  gap: var(--spacing-1);
+  padding: 4px 12px;
   border-radius: 999px;
   font-size: var(--text-xs);
+  font-weight: var(--font-medium);
+  transition: all var(--transition-fast);
+  cursor: default;
+  user-select: none;
+}
+
+.access-icon {
+  flex-shrink: 0;
+  opacity: 0.8;
+}
+
+.access-chip-count {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 正常状态 - 使用主题变量 */
+.access-chip.access-normal {
   color: var(--color-text-secondary);
   background: var(--glass-bg-light);
   border: 1px solid var(--glass-border);
+}
+
+/* 警告状态 (70-90%) */
+.access-chip.access-warning {
+  color: var(--color-warning, #f59e0b);
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+/* 临界状态 (>90%) */
+.access-chip.access-critical {
+  color: var(--color-error, #ef4444);
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  animation: pulse-subtle 2s ease-in-out infinite;
+}
+
+/* 无限制状态 */
+.access-chip.access-unlimited {
+  color: var(--color-success, #22c55e);
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+@keyframes pulse-subtle {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.7;
+  }
 }
 
 /* 导航链接 */
