@@ -96,6 +96,9 @@ const totalPages = computed(() => pagination.value.pages)
 // 帖子网格容器
 const postsGrid = ref<HTMLElement | null>(null)
 
+// 防止重复请求的标志
+let isNavigating = false
+
 // 瀑布流布局
 const { updateLayout } = useWaterfallLayout(postsGrid, {
   columnGap: 16,
@@ -141,7 +144,13 @@ watch(
     // 避免无意义的重复请求
     if (JSON.stringify(newQuery) === JSON.stringify(oldQuery)) return
 
-    // 同步URL参数到筛选条件
+    // 如果是程序导航触发的，跳过（避免双重请求）
+    if (isNavigating) {
+      isNavigating = false
+      return
+    }
+
+    // 同步URL参数到筛选条件（仅处理浏览器前进/后退等外部导航）
     const updates: Partial<PostListParams> = {
       q: (newQuery.q as string) || undefined,
       platform: (newQuery.platform as string) || undefined,
@@ -165,6 +174,9 @@ watch(
 )
 
 const handlePageChange = async (page: number) => {
+  // 设置标志防止 route.query watch 重复请求
+  isNavigating = true
+
   postsStore.updateFilters({ page })
   await postsStore.fetchPosts()
 
@@ -175,11 +187,17 @@ const handlePageChange = async (page: number) => {
   query.page = String(page)
   router.push({ query })
 
+  await nextTick()
+  updateLayout()
+
   // 滚动到顶部
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
 const handleFilterUpdate = async (newFilters: Partial<PostListParams>) => {
+  // 设置标志防止 route.query watch 重复请求
+  isNavigating = true
+
   postsStore.updateFilters({ ...newFilters, page: 1 })
   await postsStore.fetchPosts()
 
@@ -188,9 +206,15 @@ const handleFilterUpdate = async (newFilters: Partial<PostListParams>) => {
   if (newFilters.q) query.q = newFilters.q
   if (newFilters.platform) query.platform = newFilters.platform
   router.push({ query })
+
+  await nextTick()
+  updateLayout()
 }
 
 const resetFilters = async () => {
+  // 设置标志防止 route.query watch 重复请求
+  isNavigating = true
+
   postsStore.resetFilters()
   router.push({ query: {} })
   await postsStore.fetchPosts()
