@@ -1,8 +1,23 @@
 {
+  "author": {
+    "title": "作者一覧",
+    "totalFollowers": "総フォロワー数",
+    "totalPosts": "収録投稿数",
+    "searchPlaceholder": "作者を検索...",
+    "followers": "フォロワー",
+    "posts": "投稿",
+    "name": "名前",
+    "scraped": "収録済み",
+    "platformJoined": "参加日",
+    "viewOriginal": "元のリンクを見る",
+    "noAuthors": "作者データがありません",
+    "loadFailed": "作者の読み込みに失敗しました"
+  },
   "nav": {
     "home": "ホーム",
     "explore": "探索",
     "authors": "作者",
+    "contact": "お問合せ",
     "profile": "プロフィール",
     "settings": "設定",
     "advancedSettings": "詳細設定",

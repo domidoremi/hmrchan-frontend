@@ -21,6 +21,7 @@ export * from './card'
 export * from './badge'
 export * from './divider'
 export * from './viewer'
+export * from './pagination'
 
 // Feedback components
 export * from './modal'

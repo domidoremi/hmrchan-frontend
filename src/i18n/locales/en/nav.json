@@ -1,9 +1,24 @@
 {
+  "author": {
+    "title": "Authors",
+    "totalFollowers": "Total Followers",
+    "totalPosts": "Collected Posts",
+    "searchPlaceholder": "Search authors...",
+    "followers": "Followers",
+    "posts": "Posts",
+    "name": "Name",
+    "scraped": "Collected",
+    "platformJoined": "Joined Platform",
+    "viewOriginal": "View Original",
+    "noAuthors": "No authors found",
+    "loadFailed": "Failed to load authors"
+  },
   "nav": {
     "home": "Home",
     "explore": "Explore",
     "posts": "Posts",
     "authors": "Authors",
+    "contact": "Contact",
     "profile": "Profile",
     "settings": "Settings",
     "advancedSettings": "Advanced Settings",

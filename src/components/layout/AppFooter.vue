@@ -63,12 +63,8 @@
 
         <!-- 平台链接 -->
         <div class="footer-platforms">
-          <RouterLink
-            v-for="platform in platforms"
-            :key="platform.name"
-            :to="`/explore?platform=${platform.name}`"
-            class="platform-chip"
-          >
+          <RouterLink v-for="platform in platforms" :key="platform.name" :to="`/explore?platform=${platform.name}`"
+            class="platform-chip">
             {{ platform.label }}
           </RouterLink>
         </div>
@@ -119,7 +115,7 @@ const platforms = [
   border-top: 1px solid var(--glass-border);
   position: relative;
   z-index: 1;
-  min-height: 200px;
+  min-height: var(--footer-min-height);
 }
 
 /* 桌面端布局 */
@@ -254,13 +250,11 @@ const platforms = [
   /* 分隔线 */
   .footer-divider {
     height: 1px;
-    background: linear-gradient(
-      to right,
-      transparent,
-      var(--glass-border) 20%,
-      var(--glass-border) 80%,
-      transparent
-    );
+    background: linear-gradient(to right,
+        transparent,
+        var(--glass-border) 20%,
+        var(--glass-border) 80%,
+        transparent);
     margin: var(--spacing-md) 0;
   }
 
