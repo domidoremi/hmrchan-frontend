@@ -3,15 +3,9 @@
     <div class="filter-section filter-section--platform">
       <label class="filter-label">{{ $t('filter.platform') }}</label>
       <div class="platform-chips">
-        <button
-          v-for="item in platformOptions"
-          :key="item.value || 'all'"
-          type="button"
-          class="filter-chip"
-          :class="{ active: isPlatformActive(item.value) }"
-          @click="selectPlatform(item.value)"
-          :aria-label="`${$t('filter.platform')}: ${$t(item.labelKey)}`"
-        >
+        <button v-for="item in platformOptions" :key="item.value || 'all'" type="button" class="filter-chip"
+          :class="{ active: isPlatformActive(item.value) }" @click="selectPlatform(item.value)"
+          :aria-label="`${$t('filter.platform')}: ${$t(item.labelKey)}`">
           <span class="chip-icon">
             <component :is="item.icon" :size="16" />
           </span>
@@ -23,15 +17,9 @@
     <div class="filter-section filter-section--sort">
       <label class="filter-label">{{ $t('filter.sortBy') }}</label>
       <div class="sort-chips">
-        <button
-          v-for="item in sortOptions"
-          :key="item.value"
-          type="button"
-          class="filter-chip"
-          :class="{ active: localFilters.sort_by === item.value }"
-          @click="selectSort(item.value)"
-          :aria-label="`${$t('filter.sortBy')}: ${$t(item.labelKey)}`"
-        >
+        <button v-for="item in sortOptions" :key="item.value" type="button" class="filter-chip"
+          :class="{ active: localFilters.sort_by === item.value }" @click="selectSort(item.value)"
+          :aria-label="`${$t('filter.sortBy')}: ${$t(item.labelKey)}`">
           <span class="chip-icon">
             <component :is="item.icon" :size="16" />
           </span>
@@ -44,18 +32,12 @@
     <div v-if="localFilters.sort_by !== 'scraped_at'" class="filter-section">
       <label class="filter-label">{{ $t('common.order') }}</label>
       <div class="filter-buttons">
-        <button
-          class="filter-button"
-          :class="{ active: localFilters.sort_order === 'desc' }"
-          @click="localFilters.sort_order = 'desc'"
-        >
+        <button class="filter-button" :class="{ active: localFilters.sort_order === 'desc' }"
+          @click="localFilters.sort_order = 'desc'">
           <ArrowDown :size="16" />
         </button>
-        <button
-          class="filter-button"
-          :class="{ active: localFilters.sort_order === 'asc' }"
-          @click="localFilters.sort_order = 'asc'"
-        >
+        <button class="filter-button" :class="{ active: localFilters.sort_order === 'asc' }"
+          @click="localFilters.sort_order = 'asc'">
           <ArrowUp :size="16" />
         </button>
       </div>
@@ -63,11 +45,8 @@
 
     <div class="filter-section">
       <label class="filter-label">{{ $t('filter.hasMedia') }}</label>
-      <button
-        class="filter-button"
-        :class="{ active: localFilters.has_media }"
-        @click="localFilters.has_media = !localFilters.has_media"
-      >
+      <button class="filter-button" :class="{ active: localFilters.has_media }"
+        @click="localFilters.has_media = !localFilters.has_media">
         <ImageIcon :size="16" />
       </button>
     </div>
@@ -161,11 +140,11 @@ const sortOptions: {
   labelKey: string
   icon: Component
 }[] = [
-  { value: 'scraped_at', labelKey: 'filter.latest', icon: Clock },
-  { value: 'published_at', labelKey: 'filter.published', icon: CalendarDays },
-  { value: 'view_count', labelKey: 'post.views', icon: Eye },
-  { value: 'like_count', labelKey: 'post.likes', icon: Heart },
-]
+    { value: 'scraped_at', labelKey: 'filter.latest', icon: Clock },
+    { value: 'published_at', labelKey: 'filter.published', icon: CalendarDays },
+    { value: 'view_count', labelKey: 'post.views', icon: Eye },
+    { value: 'like_count', labelKey: 'post.likes', icon: Heart },
+  ]
 
 /** 本地筛选条件状态（用于双向绑定） */
 const localFilters = ref<PostListParams>({ ...props.filters })
@@ -366,7 +345,26 @@ const resetFilters = () => {
 
 .filter-select {
   padding: var(--spacing-sm) var(--spacing-md);
+  padding-right: calc(var(--spacing-md) + 16px);
   font-size: var(--text-sm);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  background: var(--glass-bg-light);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  min-width: 100px;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right var(--spacing-xs) center;
+  background-size: 14px;
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(var(--color-primary-rgb), 0.1);
 }
 
 .filter-buttons {
@@ -470,5 +468,4 @@ const resetFilters = () => {
     flex: 1 1 100%;
   }
 }
-
 </style>

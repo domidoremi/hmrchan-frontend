@@ -399,6 +399,24 @@ watch(
   color: var(--color-text-secondary);
 }
 
+/* 确保 SearchBar 在 header 中正确显示 */
+.search-header :deep(.search-bar) {
+  flex: 1;
+  min-width: 280px;
+  max-width: 500px;
+}
+
+@media (max-width: 768px) {
+  .search-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .search-header :deep(.search-bar) {
+    max-width: 100%;
+  }
+}
+
 .search-tabs {
   display: inline-flex;
   align-items: center;
