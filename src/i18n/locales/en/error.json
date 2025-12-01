@@ -11,6 +11,11 @@
     "apiUnavailableDesc": "Unable to connect to the backend server. This may be because the backend has not been deployed yet or is misconfigured. Please check the API configuration or try again later.",
     "api": {
       "fetchPosts": "Failed to fetch posts"
+    },
+    "notFound": {
+      "title": "Page Not Found",
+      "description": "The page you're looking for doesn't exist or has been moved.",
+      "goHome": "Go Home"
     }
   },
   "errors": {

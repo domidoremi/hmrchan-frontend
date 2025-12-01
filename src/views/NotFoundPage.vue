@@ -2,17 +2,17 @@
   <div class="not-found-page" v-once>
     <div class="not-found-content glass-card">
       <div class="error-code">404</div>
-      <h1>Page Not Found</h1>
-      <p>The page you're looking for doesn't exist or has been moved.</p>
+      <h1>{{ $t('error.notFound.title', 'Page Not Found') }}</h1>
+      <p>{{ $t('error.notFound.description', "The page you're looking for doesn't exist or has been moved.") }}</p>
 
       <div class="actions">
         <GlassButton size="lg" @click="goHome">
           <Home :size="20" />
-          Go Home
+          {{ $t('error.notFound.goHome', 'Go Home') }}
         </GlassButton>
         <GlassButton size="lg" variant="ghost" @click="goBack">
           <ArrowLeft :size="20" />
-          Go Back
+          {{ $t('common.back', 'Go Back') }}
         </GlassButton>
       </div>
     </div>
