@@ -167,11 +167,16 @@ export const usePostsStore = defineStore(
           posts.value = response.items || []
         }
 
+        const pageSize = response.page_size || 20
+        const total = response.total || 0
+        // 如果 API 没有返回 pages，则手动计算
+        const pages = response.pages || Math.ceil(total / pageSize)
+
         pagination.value = {
           page: response.page || 1,
-          page_size: response.page_size || 20,
-          total: response.total || 0,
-          pages: response.pages || 0,
+          page_size: pageSize,
+          total: total,
+          pages: pages,
         }
 
         return response
