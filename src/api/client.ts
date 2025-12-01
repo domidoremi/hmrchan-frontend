@@ -60,7 +60,8 @@ const apiClient: KyInstance = ky.create({
   retry: {
     limit: 2,
     methods: ['get'],
-    statusCodes: [408, 413, 429, 500, 502, 503, 504],
+    // 不重试 500 错误，避免后端问题导致无限重试
+    statusCodes: [408, 413, 429, 502, 503, 504],
   },
   hooks: {
     beforeRequest: [
@@ -73,6 +74,13 @@ const apiClient: KyInstance = ky.create({
         const authStore = useAuthStore()
         if (authStore.token) {
           request.headers.set('Authorization', `Bearer ${authStore.token}`)
+        }
+
+        // 移除 URL 路径中的尾部斜杠（保留根路径）
+        const url = new URL(request.url)
+        if (url.pathname.length > 1 && url.pathname.endsWith('/')) {
+          url.pathname = url.pathname.slice(0, -1)
+          return new Request(url.toString(), request)
         }
 
         logger.debug(`Request: ${request.method} ${request.url}`)
