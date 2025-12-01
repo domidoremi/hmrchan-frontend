@@ -119,7 +119,7 @@
                     @click="settingsStore.toggleSetting('showHeroSection')">
                     <span class="settings-toggle-label">{{
                       $t('settings.toggleHeroSection')
-                      }}</span>
+                    }}</span>
                     <span class="settings-toggle-indicator" :class="{ active: settings.showHeroSection }"></span>
                   </button>
 
@@ -133,7 +133,7 @@
                     @click="settingsStore.toggleSetting('enableSwipeNavigation')">
                     <span class="settings-toggle-label">{{
                       $t('settings.toggleSwipeNavigation')
-                      }}</span>
+                    }}</span>
                     <span class="settings-toggle-indicator" :class="{ active: settings.enableSwipeNavigation }"></span>
                   </button>
                 </div>
@@ -849,7 +849,7 @@ onUnmounted(() => {
   top: 0;
   left: 0;
   right: 0;
-  z-index: 1000;
+  z-index: var(--z-fixed);
   background: var(--glass-bg);
   backdrop-filter: var(--glass-blur);
   border-bottom: 1px solid var(--glass-border);
@@ -858,14 +858,16 @@ onUnmounted(() => {
 /* ==================== 桌面端导航栏 ==================== */
 .desktop-nav {
   display: block;
+  height: var(--navbar-height);
 }
 
 .navbar-content {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--spacing-4) var(--spacing-6);
-  max-width: 1400px;
+  height: 100%;
+  padding: 0 var(--spacing-6);
+  max-width: var(--container-max-width);
   margin: 0 auto;
   position: relative;
 }
@@ -1472,8 +1474,8 @@ onUnmounted(() => {
   .mobile-top-nav {
     display: flex;
     align-items: center;
+    height: var(--navbar-height-mobile);
     padding: 0;
-    min-height: 76px;
   }
 
   .mobile-top-content {
@@ -1481,8 +1483,9 @@ onUnmounted(() => {
     align-items: center;
     justify-content: space-between;
     width: 100%;
+    height: 100%;
     box-sizing: border-box;
-    padding: var(--spacing-3) var(--spacing-4);
+    padding: 0 var(--spacing-4);
   }
 
   .mobile-top-actions {
@@ -1521,16 +1524,16 @@ onUnmounted(() => {
     bottom: 0;
     left: 0;
     right: 0;
-    z-index: 1000;
+    z-index: var(--z-fixed);
     background: var(--glass-bg);
     backdrop-filter: var(--glass-blur);
     border-top: 1px solid var(--glass-border);
-    padding: var(--spacing-2) var(--spacing-1);
-    padding-bottom: calc(var(--spacing-2) + env(safe-area-inset-bottom));
+    padding: var(--spacing-1) var(--spacing-1);
+    padding-bottom: calc(var(--spacing-1) + env(safe-area-inset-bottom));
     justify-content: space-around;
     align-items: center;
     box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
-    min-height: 64px;
+    height: var(--bottom-nav-height);
   }
 
   .bottom-nav-item {
