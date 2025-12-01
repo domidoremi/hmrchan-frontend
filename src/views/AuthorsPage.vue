@@ -347,19 +347,30 @@ const cacheAuthors = async (items: AuthorListItem[]) => {
   }
 }
 
-// 后台刷新
-const refreshInBackground = async () => {
-  try {
-    const response = await authorsApi.getAuthors({ page: 1, page_size: 200 })
-    if (response.items.length > 0) {
-      allAuthors.value = response.items
-      authors.value = response.items
-      await cacheAuthors(response.items)
-      logger.debug('[AuthorsPage] Background refresh complete')
-    }
-  } catch (error) {
-    logger.warn('[AuthorsPage] Background refresh failed', { error })
+// 后台刷新（延迟执行，避免与初始请求冲突）
+let backgroundRefreshTimer: ReturnType<typeof setTimeout> | null = null
+
+const refreshInBackground = () => {
+  // 清除之前的定时器
+  if (backgroundRefreshTimer) {
+    clearTimeout(backgroundRefreshTimer)
   }
+
+  // 延迟 5 秒后执行后台刷新，避免与主请求冲突
+  backgroundRefreshTimer = setTimeout(async () => {
+    try {
+      const response = await authorsApi.getAuthors({ page: 1, page_size: 200 })
+      if (response.items.length > 0) {
+        allAuthors.value = response.items
+        authors.value = response.items
+        await cacheAuthors(response.items)
+        logger.debug('[AuthorsPage] Background refresh complete')
+      }
+    } catch (error) {
+      // 后台刷新失败不影响用户体验，静默处理
+      logger.warn('[AuthorsPage] Background refresh failed', { error })
+    }
+  }, 5000)
 }
 
 // ============================================
@@ -444,6 +455,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   if (searchTimeout) clearTimeout(searchTimeout)
+  if (backgroundRefreshTimer) clearTimeout(backgroundRefreshTimer)
 })
 
 // 监听筛选变化
