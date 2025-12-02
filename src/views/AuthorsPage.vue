@@ -72,8 +72,8 @@
       </div>
 
       <!-- 作者列表 -->
-      <div v-else-if="paginatedAuthors.length > 0" class="authors-list">
-        <div v-for="author in paginatedAuthors" :key="author.id" class="author-card glass-card"
+      <div v-else-if="displayAuthors.length > 0" class="authors-list">
+        <div v-for="author in displayAuthors" :key="author.id" class="author-card glass-card"
           @click="handleAuthorClick(author)">
           <!-- Banner 背景 -->
           <div v-if="author.profile_banner_url" class="card-banner"
@@ -143,9 +143,20 @@
             </div>
           </div>
         </div>
-        <!-- Pagination -->
-        <Pagination v-if="totalPages > 1" :current-page="currentPage" :total-pages="totalPages"
-          @change="handlePageChange" />
+        <!-- Loading More Indicator -->
+        <div v-if="loadingMore || scrollLoading" class="loading-more">
+          <LoadingSpinner size="sm" :text="$t('common.loading')" />
+        </div>
+
+        <!-- Load More Hint -->
+        <div v-else-if="hasMore" class="load-more-hint">
+          {{ $t('common.scrollToLoadMore', '向下滚动加载更多') }}
+        </div>
+
+        <!-- All Loaded -->
+        <div v-else-if="authors.length > 0" class="all-loaded-hint">
+          {{ $t('author.allLoaded', '已加载全部作者') }} ({{ authors.length }})
+        </div>
       </div>
 
       <!-- Error State -->
@@ -174,7 +185,7 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import {
@@ -193,11 +204,12 @@ import {
 import dayjs from 'dayjs'
 
 import MainLayout from '@/components/layout/MainLayout.vue'
-import { Pagination } from '@/components/ui/pagination'
+import LoadingSpinner from '@/components/ui/loading/LoadingSpinner.vue'
 import { PLATFORM_COLORS, PLATFORM_NAMES, PLATFORMS } from '@/types'
 import { authorsApi } from '@/api/services'
 import type { AuthorListItem } from '@/types'
 import { useErrorHandler } from '@/utils/error'
+import { useInfiniteScroll } from '@/composables'
 import { indexedDB } from '@/utils/storage'
 import logger from '@/utils/logger'
 
@@ -206,12 +218,17 @@ const { t } = useI18n()
 const { handleError } = useErrorHandler('AuthorsPage')
 
 // ============================================
+// 常量
+// ============================================
+const PAGE_SIZE = 20 // 每次加载的作者数量
+
+// ============================================
 // 状态
 // ============================================
 const loading = ref(true)
+const loadingMore = ref(false)
 const error = ref<string | null>(null)
 const authors = ref<AuthorListItem[]>([])
-const allAuthors = ref<AuthorListItem[]>([]) // 缓存所有数据用于本地筛选
 
 // 筛选和排序
 const searchQuery = ref('')
@@ -221,25 +238,26 @@ const platforms = PLATFORMS
 
 // 分页
 const currentPage = ref(1)
-const itemsPerPage = 12 // 每页显示12个作者
 const totalCount = ref(0)
+const totalPages = ref(0)
+const hasMore = ref(true)
 
 // ============================================
 // 计算属性
 // ============================================
 const totalFollowers = computed(() => {
-  return allAuthors.value.reduce((sum, author) => sum + (author.follower_count || 0), 0)
+  return authors.value.reduce((sum: number, author: AuthorListItem) => sum + (author.follower_count || 0), 0)
 })
 
 const totalPosts = computed(() => {
-  return allAuthors.value.reduce((sum, author) => sum + (author.post_count || 0), 0)
+  return authors.value.reduce((sum: number, author: AuthorListItem) => sum + (author.post_count || 0), 0)
 })
 
-// 筛选和排序后的作者列表
-const filteredAuthors = computed(() => {
-  let result = [...allAuthors.value]
+// 客户端筛选和排序（用于已加载的数据）
+const displayAuthors = computed(() => {
+  let result = [...authors.value]
 
-  // 搜索筛选
+  // 搜索筛选（客户端）
   if (searchQuery.value.trim()) {
     const query = searchQuery.value.toLowerCase().trim()
     result = result.filter(
@@ -250,7 +268,7 @@ const filteredAuthors = computed(() => {
     )
   }
 
-  // 平台筛选
+  // 平台筛选（客户端）
   if (selectedPlatform.value) {
     result = result.filter((author) => author.platform === selectedPlatform.value)
   }
@@ -274,47 +292,42 @@ const filteredAuthors = computed(() => {
   return result
 })
 
-// 总页数
-const totalPages = computed(() => {
-  return Math.ceil(filteredAuthors.value.length / itemsPerPage)
-})
-
-// 分页后的作者列表
-const paginatedAuthors = computed(() => {
-  const start = (currentPage.value - 1) * itemsPerPage
-  const end = start + itemsPerPage
-  return filteredAuthors.value.slice(start, end)
-})
-
 // ============================================
 // 数据加载
 // ============================================
-const loadAuthors = async (forceRefresh = false) => {
+
+/**
+ * 加载作者列表（初始加载或刷新）
+ */
+const loadAuthors = async (reset = false) => {
+  if (reset) {
+    authors.value = []
+    currentPage.value = 1
+    hasMore.value = true
+  }
+
   try {
     loading.value = true
     error.value = null
 
-    // 先尝试从缓存加载
-    if (!forceRefresh) {
-      const cached = await loadFromCache()
-      if (cached.length > 0) {
-        allAuthors.value = cached
-        authors.value = cached
-        loading.value = false
-        // 后台刷新
-        refreshInBackground()
-        return
-      }
-    }
+    const response = await authorsApi.getAuthors({
+      page: currentPage.value,
+      page_size: PAGE_SIZE,
+    })
 
-    // 从 API 加载
-    const response = await authorsApi.getAuthors({ page: 1, page_size: 200 })
-    allAuthors.value = response.items
     authors.value = response.items
     totalCount.value = response.total
+    totalPages.value = response.pages || Math.ceil(response.total / PAGE_SIZE)
+    hasMore.value = currentPage.value < totalPages.value
 
     // 缓存到 IndexedDB
     await cacheAuthors(response.items)
+
+    logger.debug('[AuthorsPage] Loaded authors', {
+      page: currentPage.value,
+      count: response.items.length,
+      total: response.total,
+    })
   } catch (err) {
     error.value = t('author.loadFailed', 'Failed to load authors')
     handleError(err, { customMessage: t('author.loadFailed', 'Failed to load authors') })
@@ -323,42 +336,58 @@ const loadAuthors = async (forceRefresh = false) => {
   }
 }
 
-// 从缓存加载
-const loadFromCache = async (): Promise<AuthorListItem[]> => {
+/**
+ * 加载更多作者（无限滚动触发）
+ */
+const loadMoreAuthors = async () => {
+  if (loadingMore.value || !hasMore.value) return
+
   try {
-    const cached = await indexedDB.getAuthors()
-    if (cached.length > 0) {
-      logger.debug(`[AuthorsPage] Loaded ${cached.length} authors from cache`)
-      return cached as AuthorListItem[]
-    }
-  } catch (error) {
-    logger.warn('[AuthorsPage] Failed to load from cache', { error })
+    loadingMore.value = true
+    currentPage.value++
+
+    const response = await authorsApi.getAuthors({
+      page: currentPage.value,
+      page_size: PAGE_SIZE,
+    })
+
+    // 追加新数据
+    authors.value = [...authors.value, ...response.items]
+    totalPages.value = response.pages || Math.ceil(response.total / PAGE_SIZE)
+    hasMore.value = currentPage.value < totalPages.value
+
+    // 增量缓存
+    await cacheAuthors(authors.value)
+
+    logger.debug('[AuthorsPage] Loaded more authors', {
+      page: currentPage.value,
+      newCount: response.items.length,
+      totalLoaded: authors.value.length,
+    })
+  } catch (err) {
+    // 加载更多失败，回退页码
+    currentPage.value--
+    logger.warn('[AuthorsPage] Failed to load more', { error: err })
+  } finally {
+    loadingMore.value = false
   }
-  return []
 }
+
+// 无限滚动
+const { isLoading: scrollLoading } = useInfiniteScroll({
+  onLoadMore: loadMoreAuthors,
+  hasMore: () => hasMore.value && !loadingMore.value,
+  threshold: 400,
+  enabled: computed(() => !loading.value && authors.value.length > 0),
+})
 
 // 缓存作者数据
 const cacheAuthors = async (items: AuthorListItem[]) => {
   try {
     await indexedDB.saveAuthors(items)
     logger.debug(`[AuthorsPage] Cached ${items.length} authors`)
-  } catch (error) {
-    logger.warn('[AuthorsPage] Failed to cache authors', { error })
-  }
-}
-
-// 后台刷新
-const refreshInBackground = async () => {
-  try {
-    const response = await authorsApi.getAuthors({ page: 1, page_size: 200 })
-    if (response.items.length > 0) {
-      allAuthors.value = response.items
-      authors.value = response.items
-      await cacheAuthors(response.items)
-      logger.debug('[AuthorsPage] Background refresh complete')
-    }
-  } catch (error) {
-    logger.warn('[AuthorsPage] Background refresh failed', { error })
+  } catch (err) {
+    logger.warn('[AuthorsPage] Failed to cache authors', { error: err })
   }
 }
 
@@ -370,25 +399,16 @@ let searchTimeout: ReturnType<typeof setTimeout> | null = null
 const debouncedSearch = () => {
   if (searchTimeout) clearTimeout(searchTimeout)
   searchTimeout = setTimeout(() => {
-    authors.value = filteredAuthors.value
+    // 搜索只在客户端过滤已加载的数据
   }, 300)
 }
 
 const clearSearch = () => {
   searchQuery.value = ''
-  authors.value = filteredAuthors.value
 }
 
 const handleFilterChange = () => {
-  currentPage.value = 1 // 筛选变化时重置到第一页
-  authors.value = filteredAuthors.value
-}
-
-// 处理分页变化
-const handlePageChange = (page: number) => {
-  currentPage.value = page
-  // 滚动到顶部
-  window.scrollTo({ top: 0, behavior: 'smooth' })
+  // 筛选只在客户端过滤已加载的数据
 }
 
 // 点击作者卡片 - 跳转到作者帖子页
@@ -398,7 +418,6 @@ const handleAuthorClick = (author: AuthorListItem) => {
     query: { author_id: author.id, author_name: author.name },
   })
 }
-
 
 // ============================================
 // 工具函数
@@ -444,12 +463,6 @@ onMounted(() => {
 
 onUnmounted(() => {
   if (searchTimeout) clearTimeout(searchTimeout)
-})
-
-// 监听筛选变化
-watch([searchQuery, selectedPlatform, sortBy], () => {
-  currentPage.value = 1 // 重置分页
-  authors.value = filteredAuthors.value
 })
 </script>
 
@@ -971,5 +984,30 @@ watch([searchQuery, selectedPlatform, sortBy], () => {
     width: 100%;
     justify-content: space-around;
   }
+}
+
+/* 加载更多指示器 */
+.loading-more {
+  display: flex;
+  justify-content: center;
+  padding: var(--spacing-xl);
+  grid-column: 1 / -1;
+}
+
+.load-more-hint {
+  text-align: center;
+  padding: var(--spacing-lg);
+  color: var(--color-text-tertiary);
+  font-size: var(--text-sm);
+  grid-column: 1 / -1;
+}
+
+.all-loaded-hint {
+  text-align: center;
+  padding: var(--spacing-lg);
+  color: var(--color-text-tertiary);
+  font-size: var(--text-sm);
+  grid-column: 1 / -1;
+  opacity: 0.7;
 }
 </style>
