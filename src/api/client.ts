@@ -60,7 +60,8 @@ const apiClient: KyInstance = ky.create({
   retry: {
     limit: 2,
     methods: ['get'],
-    statusCodes: [408, 413, 429, 500, 502, 503, 504],
+    // 不重试 500 错误，避免后端问题导致无限重试
+    statusCodes: [408, 413, 429, 502, 503, 504],
   },
   hooks: {
     beforeRequest: [
@@ -73,6 +74,13 @@ const apiClient: KyInstance = ky.create({
         const authStore = useAuthStore()
         if (authStore.token) {
           request.headers.set('Authorization', `Bearer ${authStore.token}`)
+        }
+
+        // 移除 URL 路径中的尾部斜杠（保留根路径）
+        const url = new URL(request.url)
+        if (url.pathname.length > 1 && url.pathname.endsWith('/')) {
+          url.pathname = url.pathname.slice(0, -1)
+          return new Request(url.toString(), request)
         }
 
         logger.debug(`Request: ${request.method} ${request.url}`)
@@ -163,15 +171,23 @@ offlineQueue.setApiClient(apiClient as unknown as typeof apiClient)
 
 /**
  * 规范化 URL
- *
- * 移除开头的斜杠以兼容 ky 的 prefixUrl 机制
- * ky 要求：当使用 prefixUrl 时，路径不能以斜杠开头
+ * - 移除开头的斜杠（ky 会自动添加）
+ * - 移除结尾的斜杠（防止后端 500 错误）
  *
  * @param url - 原始 URL
  * @returns 规范化后的 URL
  */
 function normalizeUrl(url: string): string {
-  return url.startsWith('/') ? url.slice(1) : url
+  let normalized = url
+  // 移除开头的斜杠
+  if (normalized.startsWith('/')) {
+    normalized = normalized.slice(1)
+  }
+  // 移除结尾的斜杠（但保留根路径）
+  if (normalized.length > 0 && normalized.endsWith('/')) {
+    normalized = normalized.slice(0, -1)
+  }
+  return normalized
 }
 
 /**

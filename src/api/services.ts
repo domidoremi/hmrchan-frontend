@@ -276,7 +276,7 @@ export const postsApi = {
    */
   async getPosts(params?: PostListParams) {
     try {
-      const response = await api.get<PaginatedResponse<Post>>('/posts/', {
+      const response = await api.get<PaginatedResponse<Post>>('/posts', {
         params,
         cache: true,
         ttl: 60 * 1000, // 1分钟缓存
@@ -391,7 +391,7 @@ export const postsApi = {
    */
   async searchPosts(query: string, params?: Omit<PostListParams, 'q'>) {
     try {
-      return await api.get<PaginatedResponse<Post>>('/posts/', {
+      return await api.get<PaginatedResponse<Post>>('/posts', {
         params: { ...params, q: query },
         cache: true,
         ttl: 2 * 60 * 1000, // 2分钟缓存
@@ -419,7 +419,7 @@ export const postsApi = {
    */
   async getPostsByPlatform(platform: string, params?: Omit<PostListParams, 'platform'>) {
     try {
-      return await api.get<PaginatedResponse<Post>>('/posts/', {
+      return await api.get<PaginatedResponse<Post>>('/posts', {
         params: { ...params, platform },
         cache: true,
         ttl: 60 * 1000, // 1分钟缓存
@@ -665,7 +665,7 @@ export const authorsApi = {
    */
   async getAuthorPosts(authorId: UUID, params?: PostListParams) {
     try {
-      return await api.get<PaginatedResponse<Post>>(`/authors/${authorId}/posts/`, {
+      return await api.get<PaginatedResponse<Post>>(`/authors/${authorId}/posts`, {
         params,
         cache: true,
         ttl: 2 * 60 * 1000, // 2分钟缓存

@@ -106,6 +106,7 @@ const RENDER_BATCH_SIZE = 5    // 每次渲染的帖子数
 const allPagePosts = ref<Post[]>([])  // 当前页的所有帖子（从 API 获取）
 const renderedCount = ref(0)          // 已渲染的帖子数量
 const isLoadingMore = ref(false)      // 是否正在渲染更多
+const isNavigating = ref(false)       // 是否正在导航（防止重复加载）
 
 // 实际显示的帖子（渐进式渲染）
 const localPosts = computed(() => allPagePosts.value.slice(0, renderedCount.value))
@@ -222,9 +223,12 @@ async function loadPagePosts() {
  * 切换页面
  */
 async function handlePageChange(page: number) {
+  // 防止重复加载
+  isNavigating.value = true
+
   postsStore.updateFilters({ page })
 
-  // 更新 URL
+  // 更新 URL（不触发 watcher 的重新加载）
   const query: Record<string, string> = {}
   if (filters.value.q) query.q = filters.value.q
   if (filters.value.platform) query.platform = filters.value.platform
@@ -235,12 +239,17 @@ async function handlePageChange(page: number) {
   window.scrollTo({ top: 0, behavior: 'smooth' })
 
   await loadPagePosts()
+
+  // 导航完成
+  isNavigating.value = false
 }
 
 /**
  * 更新筛选条件
  */
 async function handleFilterUpdate(newFilters: Partial<PostListParams>) {
+  isNavigating.value = true
+
   postsStore.updateFilters({ ...newFilters, page: 1 })
 
   const query: Record<string, string> = {}
@@ -249,15 +258,21 @@ async function handleFilterUpdate(newFilters: Partial<PostListParams>) {
   router.replace({ query })
 
   await loadPagePosts()
+
+  isNavigating.value = false
 }
 
 /**
  * 重置筛选
  */
 async function resetFilters() {
+  isNavigating.value = true
+
   postsStore.resetFilters()
   router.replace({ query: {} })
   await loadPagePosts()
+
+  isNavigating.value = false
 }
 
 // ============================================
@@ -288,10 +303,12 @@ onBeforeUnmount(() => {
   logger.debug('页面卸载', { category: 'ExplorePage' })
 })
 
-// 监听浏览器前进/后退
+// 监听浏览器前进/后退（仅处理用户通过浏览器导航的情况）
 watch(
   () => route.query,
   async (newQuery, oldQuery) => {
+    // 如果是程序导航（handlePageChange 等），跳过
+    if (isNavigating.value) return
     if (JSON.stringify(newQuery) === JSON.stringify(oldQuery)) return
 
     postsStore.updateFilters({
