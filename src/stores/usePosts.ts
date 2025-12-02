@@ -95,7 +95,7 @@ export const usePostsStore = defineStore(
       try {
         const { data, fromFallback } = await fetchWithFallback<PaginatedResponse<Post>>({
           primary: () =>
-            api.get<PaginatedResponse<Post>>('/posts/', {
+            api.get<PaginatedResponse<Post>>('/posts', {
               params: sanitizedParams,
             }),
           fallback: async () => {
