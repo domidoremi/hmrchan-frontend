@@ -527,14 +527,28 @@ export default defineConfig(({ mode }) => ({
     proxy: {
       /** 代理 API 请求到后端服务器 */
       '/api': {
-        target: 'http://localhost:8000',
+        target: 'https://api.momichan.xyz',
         changeOrigin: true,
+        secure: true,
+        // 跟随重定向，避免浏览器跟随导致 CORS 错误
+        followRedirects: true,
+        // 重写路径，确保尾部斜杠一致
+        rewrite: (path) => {
+          // 为 API 路径添加尾部斜杠，避免后端 301 重定向
+          const url = new URL(path, 'http://localhost')
+          if (!url.pathname.endsWith('/')) {
+            return url.pathname + '/' + url.search
+          }
+          return path
+        },
       },
 
       /** 代理文件上传请求（头像、图片等） */
       '/uploads': {
-        target: 'http://localhost:8000',
+        target: 'https://api.momichan.xyz',
         changeOrigin: true,
+        secure: true,
+        followRedirects: true,
       },
     },
   },

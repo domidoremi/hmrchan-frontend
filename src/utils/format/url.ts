@@ -77,7 +77,22 @@ export function getApiEndpoint(): string {
 export function resolveMediaUrl(url: string | null | undefined): string {
   if (!url) return ''
 
-  // 如果已经是完整URL（http:// 或 https://），进行HTTPS规范化
+  // 开发环境：将完整 API URL 转换为相对路径，通过 Vite 代理
+  if (import.meta.env.DEV) {
+    // 将 https://api.momichan.xyz/api/v1/... 转换为 /api/v1/...
+    if (url.includes('api.momichan.xyz')) {
+      const relativePath = url.replace(/https?:\/\/api\.momichan\.xyz/, '')
+      return relativePath
+    }
+    // 如果是相对路径，直接返回
+    if (url.startsWith('/')) {
+      return url
+    }
+    // 其他情况，添加 /api 前缀
+    return `/api/v1/${url}`
+  }
+
+  // 生产环境：如果已经是完整URL（http:// 或 https://），进行HTTPS规范化
   if (url.startsWith('http://') || url.startsWith('https://')) {
     return forceHttps(url)
   }
