@@ -24,9 +24,16 @@
     <!-- 页脚 -->
     <AppFooter />
 
+    <!-- 浮动访问指示器（移动端） -->
+    <AccessLimitBanner
+      v-if="props.showAccessIndicator && isMobile"
+      :current-count="props.accessCurrent ?? 0"
+      :total-limit="props.accessLimit ?? 100"
+    />
+
     <!-- 返回顶部浮动按钮 -->
     <Transition name="fade">
-      <BackToTop v-if="showBackToTop" />
+      <BackToTop v-if="showBackToTop" :offset-for-indicator="props.showAccessIndicator && isMobile" />
     </Transition>
   </div>
 </template>
@@ -62,7 +69,9 @@ import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
 import AppNavbar from './AppNavbar.vue'
 import AppFooter from './AppFooter.vue'
 import BackToTop from '../ui/button/BackToTop.vue'
+import AccessLimitBanner from '../ui/banner/AccessLimitBanner.vue'
 import { useNetworkStore } from '@/stores'
+import { useResponsive } from '@/composables'
 
 const props = withDefaults(
   defineProps<{
@@ -115,6 +124,9 @@ const showBackToTop = ref(false)
 const handleScroll = () => {
   showBackToTop.value = window.scrollY > 400
 }
+
+/** 响应式工具 */
+const { isMobile } = useResponsive()
 
 /** 网络状态 Store */
 const networkStore = useNetworkStore()

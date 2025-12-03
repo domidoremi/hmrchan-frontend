@@ -213,15 +213,7 @@
         <span class="brand-name">{{ $t('app.name') }}</span>
       </RouterLink>
 
-      <div v-if="showAccessIndicator" class="mobile-access-indicator">
-        <div class="access-chip" :class="accessChipClass"
-          :aria-label="$t('aria.accessLimit', { current: accessCurrentDisplay, limit: accessLimitDisplay })">
-          <Gauge :size="12" class="access-icon" />
-          <span class="access-chip-count">
-            {{ accessCurrentDisplay }} / {{ accessLimitDisplay }}
-          </span>
-        </div>
-      </div>
+      <!-- 移动端访问指示器已移至浮动位置，见 MainLayout -->
 
       <!-- 右侧按钮 -->
       <div class="mobile-top-actions">
@@ -949,15 +941,7 @@ onUnmounted(() => {
   margin-right: var(--spacing-2);
 }
 
-/* 移动端访问限制指示器 */
-.mobile-access-indicator {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  justify-content: center;
-  z-index: 1;
-}
+/* 移动端访问限制指示器已移至浮动组件 AccessLimitBanner */
 
 /* 访问限制芯片基础样式 */
 .access-chip {
