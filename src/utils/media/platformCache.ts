@@ -3,7 +3,7 @@
  * 支持基于平台的媒体文件URL构建和缓存策略
  */
 
-import { getRuntimeApiBaseUrl } from '@/config/runtime'
+import { getRuntimeApiEndpoint } from '@/config/runtime'
 import type { MediaFile } from '@/types'
 
 /**
@@ -15,14 +15,13 @@ import type { MediaFile } from '@/types'
  * @returns 完整的媒体流URL
  */
 export function buildMediaStreamUrl(mediaFile: MediaFile, platform?: string): string {
-  const baseUrl = getRuntimeApiBaseUrl()
-  const streamUrl = `${baseUrl}/media/${mediaFile.id}/stream`
+  // getRuntimeApiEndpoint() 开发环境返回 /api/v1，生产环境返回完整 HTTPS URL
+  const streamUrl = `${getRuntimeApiEndpoint()}/media/${mediaFile.id}/stream`
 
   // 添加platform参数用于Service Worker差异化缓存
   if (platform) {
-    const url = new URL(streamUrl)
-    url.searchParams.set('platform', platform.toLowerCase())
-    return url.toString()
+    const separator = streamUrl.includes('?') ? '&' : '?'
+    return `${streamUrl}${separator}platform=${platform.toLowerCase()}`
   }
 
   return streamUrl
@@ -35,8 +34,8 @@ export function buildMediaStreamUrl(mediaFile: MediaFile, platform?: string): st
  * @returns 缩略图URL
  */
 export function buildMediaThumbnailUrl(mediaFile: MediaFile): string {
-  const baseUrl = getRuntimeApiBaseUrl()
-  return `${baseUrl}/media/${mediaFile.id}/thumbnail`
+  // getRuntimeApiEndpoint() 开发环境返回 /api/v1，生产环境返回完整 HTTPS URL
+  return `${getRuntimeApiEndpoint()}/media/${mediaFile.id}/thumbnail`
 }
 
 /**

@@ -81,9 +81,9 @@ const showDetails = () => {
 .access-limit-indicator {
   position: fixed;
   /* bottom 由动态计算提供 */
-  /* 与 BackToTop 错开位置，避免重叠 */
-  right: calc(clamp(16px, 4vw, 40px) + 72px);
-  z-index: 1100;
+  /* 与 BackToTop 相同位置 */
+  right: clamp(16px, 4vw, 40px);
+  z-index: 1099;
 }
 
 .access-bubble {
