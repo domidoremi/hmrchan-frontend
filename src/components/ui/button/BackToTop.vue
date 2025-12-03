@@ -25,20 +25,34 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { ArrowUp } from 'lucide-vue-next'
 import { useResponsive } from '@/composables'
 
+interface Props {
+  /** 是否为访问指示器预留空间（向上偏移） */
+  offsetForIndicator?: boolean
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  offsetForIndicator: false,
+})
+
 /** 按钮是否可见 */
 const visible = ref(false)
 
 /** 显示按钮的滚动阈值（像素） */
 const scrollThreshold = 300
 
+/** 访问指示器高度（大约） */
+const indicatorHeight = 48
+
 const { safeAreaBottom, isMobile } = useResponsive()
 
 /**
  * 动态计算按钮的 bottom 位置
- * 考虑底部导航栏高度和设备类型
+ * 考虑底部导航栏高度、设备类型和访问指示器
  */
 const dynamicBottom = computed(() => {
-  return `${safeAreaBottom.value + (isMobile.value ? 12 : 32)}px`
+  const base = safeAreaBottom.value + (isMobile.value ? 12 : 32)
+  const offset = props.offsetForIndicator ? indicatorHeight + 12 : 0
+  return `${base + offset}px`
 })
 
 /**

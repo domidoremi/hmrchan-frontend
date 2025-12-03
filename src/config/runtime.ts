@@ -32,11 +32,17 @@ function forceHttpsProtocol(url: string): string {
 /**
  * 获取运行时 API 基础 URL
  * 策略：
- * 1. 在HTTPS页面上，总是使用HTTPS API
- * 2. 强制转换任何HTTP环境变量为HTTPS
- * 3. 如果没有环境变量，使用硬编码的HTTPS URL
+ * 1. 开发环境返回空字符串，通过 Vite 代理
+ * 2. 在HTTPS页面上，总是使用HTTPS API
+ * 3. 强制转换任何HTTP环境变量为HTTPS
+ * 4. 如果没有环境变量，使用硬编码的HTTPS URL
  */
 export function getRuntimeApiBaseUrl(): string {
+  // 开发环境使用相对路径，通过 Vite 代理
+  if (import.meta.env.DEV) {
+    return ''
+  }
+
   // 在浏览器环境中且是HTTPS页面，强制使用HTTPS API
   if (typeof window !== 'undefined' && window.location.protocol === 'https:') {
     return 'https://api.momichan.xyz'
@@ -68,6 +74,11 @@ export function getRuntimeApiBaseUrl(): string {
  * 获取运行时 API 端点 URL（包含 /api/v1）
  */
 export function getRuntimeApiEndpoint(): string {
+  // 开发环境使用相对路径，通过 Vite 代理
+  if (import.meta.env.DEV) {
+    return '/api/v1'
+  }
+
   // 在HTTPS页面上，总是返回HTTPS端点
   if (typeof window !== 'undefined' && window.location.protocol === 'https:') {
     return 'https://api.momichan.xyz/api/v1'
