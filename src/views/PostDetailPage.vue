@@ -650,6 +650,7 @@
     <button
       v-show="showBackToTop"
       class="back-to-top-btn"
+      :style="{ bottom: backToTopBottom }"
       @click="scrollToTop"
       :aria-label="$t('common.backToTop', '回到顶部')"
     >
@@ -714,6 +715,7 @@ import MainLayout from '@/components/layout/MainLayout.vue'
 import GlassButton from '@/components/ui/button/Button.vue'
 import PostCardActions from '@/components/business/PostCard/PostCardActions.vue'
 import PhotoSwipeViewer from '@/components/ui/viewer/PhotoSwipeViewer.vue'
+import { useResponsive } from '@/composables'
 
 import { usePostsStore, useAuthStore, useToastStore } from '@/stores'
 import { api } from '@/api/client'
@@ -757,6 +759,13 @@ const isTopbarSticky = ref(false)
 // 阅读进度相关
 const readingProgress = ref(0)
 const showBackToTop = ref(false)
+
+const { safeAreaBottom, isMobile } = useResponsive()
+
+const backToTopBottom = computed(() => {
+  const base = safeAreaBottom.value + (isMobile.value ? 12 : 32)
+  return `${base}px`
+})
 
 const isTabletOrBelow = computed(() => isTabletViewport.value || isMobileViewport.value)
 
