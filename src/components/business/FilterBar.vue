@@ -1,97 +1,164 @@
 <template>
-  <div class="filter-bar glass-card">
-    <div class="filter-section filter-section--platform">
-      <label class="filter-label">{{ $t('filter.platform') }}</label>
-      <div class="platform-chips">
-        <button v-for="item in platformOptions" :key="item.value || 'all'" type="button" class="filter-chip"
-          :class="{ active: isPlatformActive(item.value) }" @click="selectPlatform(item.value)"
-          :aria-label="`${$t('filter.platform')}: ${$t(item.labelKey)}`">
-          <span class="chip-icon">
-            <component :is="item.icon" :size="16" />
-          </span>
-          <span class="chip-label">{{ $t(item.labelKey) }}</span>
+  <div
+    ref="filterBarRef"
+    class="filter-bar"
+    :class="{
+      'is-sticky': isSticky,
+      'is-mobile': isMobile,
+    }"
+  >
+    <!-- 桌面端布局 -->
+    <div v-if="!isMobile" class="filter-bar-desktop">
+      <!-- 平台筛选 Tabs -->
+      <div class="platform-tabs" role="tablist" :aria-label="$t('filter.platform')">
+        <button
+          v-for="platform in platformOptions"
+          :key="platform.value || 'all'"
+          type="button"
+          class="platform-tab"
+          :class="{
+            active: isPlatformActive(platform.value),
+            [`platform-${platform.value || 'all'}`]: true,
+          }"
+          role="tab"
+          :aria-selected="isPlatformActive(platform.value)"
+          @click="selectPlatform(platform.value)"
+        >
+          <component :is="platform.icon" :size="16" />
+          <span class="tab-label">{{ $t(platform.labelKey) }}</span>
         </button>
       </div>
-    </div>
 
-    <div class="filter-section filter-section--sort">
-      <label class="filter-label">{{ $t('filter.sortBy') }}</label>
-      <div class="sort-chips">
-        <button v-for="item in sortOptions" :key="item.value" type="button" class="filter-chip"
-          :class="{ active: localFilters.sort_by === item.value }" @click="selectSort(item.value)"
-          :aria-label="`${$t('filter.sortBy')}: ${$t(item.labelKey)}`">
-          <span class="chip-icon">
-            <component :is="item.icon" :size="16" />
-          </span>
-          <span class="chip-label">{{ $t(item.labelKey) }}</span>
+      <!-- 分隔线 -->
+      <div class="filter-divider"></div>
+
+      <!-- 排序下拉 -->
+      <div class="sort-dropdown">
+        <button
+          type="button"
+          class="sort-trigger"
+          :aria-expanded="sortDropdownOpen"
+          @click="sortDropdownOpen = !sortDropdownOpen"
+        >
+          <component :is="currentSortIcon" :size="16" />
+          <span>{{ $t(currentSortLabel) }}</span>
+          <ChevronDown :size="14" class="chevron" :class="{ rotated: sortDropdownOpen }" />
         </button>
+
+        <Transition name="dropdown">
+          <div v-if="sortDropdownOpen" class="sort-menu" role="menu">
+            <button
+              v-for="option in sortOptions"
+              :key="option.value"
+              type="button"
+              class="sort-option"
+              :class="{ active: localFilters.sort_by === option.value }"
+              role="menuitem"
+              @click="selectSort(option.value)"
+            >
+              <component :is="option.icon" :size="16" />
+              <span>{{ $t(option.labelKey) }}</span>
+              <Check v-if="localFilters.sort_by === option.value" :size="14" class="check-icon" />
+            </button>
+          </div>
+        </Transition>
       </div>
-    </div>
 
-    <!-- 升降序按钮（最新排序时隐藏） -->
-    <div v-if="localFilters.sort_by !== 'scraped_at'" class="filter-section">
-      <label class="filter-label">{{ $t('common.order') }}</label>
-      <div class="filter-buttons">
-        <button class="filter-button" :class="{ active: localFilters.sort_order === 'desc' }"
-          @click="localFilters.sort_order = 'desc'">
-          <ArrowDown :size="16" />
-        </button>
-        <button class="filter-button" :class="{ active: localFilters.sort_order === 'asc' }"
-          @click="localFilters.sort_order = 'asc'">
-          <ArrowUp :size="16" />
-        </button>
-      </div>
-    </div>
+      <!-- 排序方向 -->
+      <button
+        v-if="localFilters.sort_by !== 'scraped_at'"
+        type="button"
+        class="order-toggle"
+        :aria-label="
+          localFilters.sort_order === 'desc' ? $t('filter.descending') : $t('filter.ascending')
+        "
+        @click="toggleSortOrder"
+      >
+        <ArrowDown v-if="localFilters.sort_order === 'desc'" :size="16" />
+        <ArrowUp v-else :size="16" />
+      </button>
 
-    <div class="filter-section">
-      <label class="filter-label">{{ $t('filter.hasMedia') }}</label>
-      <button class="filter-button" :class="{ active: localFilters.has_media }"
-        @click="localFilters.has_media = !localFilters.has_media">
+      <!-- 媒体筛选 -->
+      <button
+        type="button"
+        class="media-toggle"
+        :class="{ active: localFilters.has_media }"
+        :aria-pressed="!!localFilters.has_media"
+        :aria-label="$t('filter.hasMedia')"
+        @click="toggleMediaFilter"
+      >
         <ImageIcon :size="16" />
+      </button>
+
+      <!-- 重置按钮 -->
+      <button
+        v-if="hasActiveFilters"
+        type="button"
+        class="reset-button"
+        :aria-label="$t('common.reset')"
+        @click="resetFilters"
+      >
+        <RotateCcw :size="14" />
+        <span>{{ $t('common.reset') }}</span>
       </button>
     </div>
 
-    <div class="filter-actions">
-      <GlassButton size="sm" variant="ghost" @click="resetFilters">
-        <RotateCcw :size="16" />
-        {{ $t('common.reset') }}
-      </GlassButton>
-      <GlassButton size="sm" @click="applyFilters">
-        <Filter :size="16" />
-        {{ $t('common.apply') }}
-      </GlassButton>
+    <!-- 移动端布局 -->
+    <div v-else class="filter-bar-mobile">
+      <!-- 平台滑动 Chips -->
+      <div class="platform-scroll" ref="platformScrollRef">
+        <div class="platform-chips">
+          <button
+            v-for="platform in platformOptions"
+            :key="platform.value || 'all'"
+            type="button"
+            class="platform-chip"
+            :class="{
+              active: isPlatformActive(platform.value),
+              [`platform-${platform.value || 'all'}`]: true,
+            }"
+            @click="selectPlatform(platform.value)"
+          >
+            <component :is="platform.icon" :size="14" />
+            <span>{{ $t(platform.labelKey) }}</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 筛选按钮 -->
+      <button
+        type="button"
+        class="filter-trigger"
+        :class="{ 'has-filters': hasActiveFilters }"
+        @click="$emit('openSheet')"
+      >
+        <SlidersHorizontal :size="18" />
+        <span v-if="activeFilterCount > 0" class="filter-badge">{{ activeFilterCount }}</span>
+      </button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 /**
- * 筛选栏组件
+ * FilterBar - 重构版筛选栏组件
  *
- * 业务功能：
- * - 提供帖子列表的多维度筛选功能
- * - 支持按平台、排序方式、媒体类型等条件筛选
- * - 提供友好的筛选器 UI 和交互体验
- *
- * 业务场景：
- * - 用户在首页浏览帖子时进行筛选
- * - 快速切换不同平台的内容
- * - 按热度、时间等维度排序帖子
- *
- * Props:
- * - filters: 当前筛选条件
- *
- * Emits:
- * - update: 筛选条件更新时触发，传递新的筛选参数
+ * 新特性：
+ * - 桌面端：紧凑水平布局，即时生效
+ * - 移动端：平台滑动 Chips + 筛选底部抽屉触发
+ * - 滚动粘性定位
+ * - 现代化视觉设计
  */
 
-import { ref, watch, type Component } from 'vue'
+import { ref, reactive, computed, watch, onMounted, onUnmounted, type Component } from 'vue'
 import {
+  ChevronDown,
   ArrowDown,
   ArrowUp,
   ImageIcon,
   RotateCcw,
-  Filter,
+  Check,
+  SlidersHorizontal,
   Youtube,
   Twitter,
   Instagram,
@@ -103,26 +170,41 @@ import {
   Heart,
 } from 'lucide-vue-next'
 import type { PostListParams, Platform } from '@/types'
-import GlassButton from '@/components/ui/button/Button.vue'
-
-/** 防抖定时器，用于延迟应用筛选条件 */
-let applyTimeout: ReturnType<typeof setTimeout> | null = null
+import { useResponsive } from '@/composables'
 
 interface Props {
   /** 当前筛选条件 */
   filters: PostListParams
+  /** 是否显示粘性效果 */
+  sticky?: boolean
 }
 
-const props = defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), {
+  sticky: true,
+})
+
 const emit = defineEmits<{
-  /** 筛选条件更新事件 */
   update: [filters: PostListParams]
+  openSheet: []
 }>()
 
-/**
- * 平台选项配置
- * 包含所有支持的社交媒体平台及其图标
- */
+const { isMobile } = useResponsive()
+
+// Refs
+const filterBarRef = ref<HTMLElement | null>(null)
+const platformScrollRef = ref<HTMLElement | null>(null)
+const sortDropdownOpen = ref(false)
+const isSticky = ref(false)
+
+// 本地筛选状态
+const localFilters = reactive<PostListParams>({
+  sort_by: 'scraped_at',
+  sort_order: 'desc',
+  platform: undefined,
+  has_media: undefined,
+})
+
+// 平台选项
 const platformOptions: { value: '' | Platform; labelKey: string; icon: Component }[] = [
   { value: '', labelKey: 'platform.all', icon: Globe2 },
   { value: 'youtube', labelKey: 'platform.youtube', icon: Youtube },
@@ -131,341 +213,524 @@ const platformOptions: { value: '' | Platform; labelKey: string; icon: Component
   { value: 'instagram', labelKey: 'platform.instagram', icon: Instagram },
 ]
 
-/**
- * 排序选项配置
- * 支持按抓取时间、发布时间、浏览量、点赞数排序
- */
-const sortOptions: {
-  value: 'scraped_at' | 'published_at' | 'view_count' | 'like_count'
-  labelKey: string
-  icon: Component
-}[] = [
-    { value: 'scraped_at', labelKey: 'filter.latest', icon: Clock },
-    { value: 'published_at', labelKey: 'filter.published', icon: CalendarDays },
-    { value: 'view_count', labelKey: 'post.views', icon: Eye },
-    { value: 'like_count', labelKey: 'post.likes', icon: Heart },
-  ]
+// 排序选项
+const sortOptions: { value: string; labelKey: string; icon: Component }[] = [
+  { value: 'scraped_at', labelKey: 'filter.latest', icon: Clock },
+  { value: 'published_at', labelKey: 'filter.published', icon: CalendarDays },
+  { value: 'view_count', labelKey: 'post.views', icon: Eye },
+  { value: 'like_count', labelKey: 'post.likes', icon: Heart },
+]
 
-/** 本地筛选条件状态（用于双向绑定） */
-const localFilters = ref<PostListParams>({ ...props.filters })
-
-/**
- * 判断平台选项是否激活
- * @param value - 平台值（空字符串表示全部平台）
- * @returns 是否为当前选中的平台
- */
+// 计算属性
 const isPlatformActive = (value: '' | Platform) => {
-  if (value === '') {
-    return !localFilters.value.platform
-  }
-  return localFilters.value.platform === value
+  if (value === '') return !localFilters.platform
+  return localFilters.platform === value
 }
 
-/**
- * 选择平台
- * @param value - 平台值（空字符串表示全部平台）
- */
+const currentSortOption = computed(() => {
+  const found = sortOptions.find((opt) => opt.value === localFilters.sort_by)
+  return found ?? sortOptions[0]
+})
+
+const currentSortIcon = computed(() => currentSortOption.value?.icon ?? Clock)
+const currentSortLabel = computed(() => currentSortOption.value?.labelKey ?? 'filter.latest')
+
+const hasActiveFilters = computed(() => {
+  return (
+    localFilters.platform ||
+    localFilters.has_media ||
+    localFilters.sort_by !== 'scraped_at' ||
+    localFilters.sort_order !== 'desc'
+  )
+})
+
+const activeFilterCount = computed(() => {
+  let count = 0
+  if (localFilters.sort_by !== 'scraped_at') count++
+  if (localFilters.sort_order !== 'desc') count++
+  if (localFilters.has_media) count++
+  return count
+})
+
+// 方法
 const selectPlatform = (value: '' | Platform) => {
-  localFilters.value.platform = value === '' ? undefined : value
+  localFilters.platform = value === '' ? undefined : value
+  emitUpdate()
 }
 
-/**
- * 选择排序方式
- * 选择后自动应用筛选（带防抖）
- * @param value - 排序字段
- */
-const selectSort = (value: 'scraped_at' | 'published_at' | 'view_count' | 'like_count') => {
-  if (localFilters.value.sort_by === value) return
-  localFilters.value.sort_by = value
-  applyFilters()
+const selectSort = (value: string) => {
+  localFilters.sort_by = value
+  sortDropdownOpen.value = false
+  if (value === 'scraped_at') {
+    localFilters.sort_order = 'desc'
+  }
+  emitUpdate()
 }
 
-/**
- * 监听外部筛选条件变化
- * 同步更新本地筛选状态
- */
+const toggleSortOrder = () => {
+  localFilters.sort_order = localFilters.sort_order === 'desc' ? 'asc' : 'desc'
+  emitUpdate()
+}
+
+const toggleMediaFilter = () => {
+  localFilters.has_media = localFilters.has_media ? undefined : true
+  emitUpdate()
+}
+
+const resetFilters = () => {
+  localFilters.sort_by = 'scraped_at'
+  localFilters.sort_order = 'desc'
+  localFilters.platform = undefined
+  localFilters.has_media = undefined
+  emitUpdate()
+}
+
+const emitUpdate = () => {
+  emit('update', { ...localFilters, page: 1 })
+}
+
+// 同步外部筛选条件
 watch(
   () => props.filters,
   (newFilters) => {
-    localFilters.value = { ...newFilters }
+    localFilters.sort_by = newFilters.sort_by || 'scraped_at'
+    localFilters.sort_order = newFilters.sort_order || 'desc'
+    localFilters.platform = newFilters.platform
+    localFilters.has_media = newFilters.has_media
   },
+  { immediate: true },
 )
 
-/**
- * 监听排序方式变化
- * 当选择"最新"排序时，自动设置为降序
- */
-watch(
-  () => localFilters.value.sort_by,
-  (newSortBy) => {
-    if (newSortBy === 'scraped_at') {
-      localFilters.value.sort_order = 'desc'
+// 点击外部关闭下拉菜单
+const handleClickOutside = (event: MouseEvent) => {
+  if (sortDropdownOpen.value) {
+    const target = event.target as HTMLElement
+    if (!target.closest('.sort-dropdown')) {
+      sortDropdownOpen.value = false
     }
-  },
-)
-
-/**
- * 防抖应用筛选
- * 延迟 100ms 后触发筛选更新，避免频繁触发
- */
-const applyFilters = () => {
-  if (applyTimeout) {
-    clearTimeout(applyTimeout)
   }
-
-  applyTimeout = setTimeout(() => {
-    emit('update', { ...localFilters.value })
-  }, 100)
 }
 
-/**
- * 立即应用筛选
- * 不使用防抖，立即触发筛选更新（用于重置按钮）
- */
-const applyFiltersImmediate = () => {
-  if (applyTimeout) {
-    clearTimeout(applyTimeout)
-  }
-  emit('update', { ...localFilters.value })
+// 滚动检测粘性状态
+const handleScroll = () => {
+  if (!props.sticky || !filterBarRef.value) return
+  const rect = filterBarRef.value.getBoundingClientRect()
+  isSticky.value = rect.top <= 80
 }
 
-/**
- * 重置筛选条件
- * 恢复到默认筛选状态并立即应用
- */
-const resetFilters = () => {
-  localFilters.value = {
-    page: 1,
-    page_size: 20,
-    sort_by: 'scraped_at',
-    sort_order: 'desc',
-    platform: undefined,
-    has_media: undefined,
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside)
+  if (props.sticky) {
+    window.addEventListener('scroll', handleScroll, { passive: true })
   }
-  applyFiltersImmediate()
-}
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside)
+  window.removeEventListener('scroll', handleScroll)
+})
 </script>
 
 <style scoped>
 .filter-bar {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-lg);
-  padding: var(--spacing-lg);
-  flex-wrap: wrap;
-}
-
-.filter-section {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-xs);
-  min-width: 150px;
-}
-
-.filter-section--platform {
-  flex: 1.5;
-  min-width: 240px;
-}
-
-.platform-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--spacing-xs);
-}
-
-.filter-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--spacing-xs);
-  padding: 6px 10px;
-  border-radius: 999px;
-  background: var(--glass-bg-light);
+  position: relative;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
   border: 1px solid var(--glass-border);
+  border-radius: var(--radius-2xl);
+  padding: var(--spacing-sm) var(--spacing-md);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.filter-bar.is-sticky {
+  position: sticky;
+  top: calc(var(--navbar-height, 72px) + var(--spacing-md));
+  z-index: 100;
+  box-shadow:
+    0 4px 20px rgba(0, 0, 0, 0.08),
+    0 8px 32px rgba(139, 92, 246, 0.1);
+}
+
+/* 桌面端布局 */
+.filter-bar-desktop {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex-wrap: nowrap;
+}
+
+/* 平台 Tabs */
+.platform-tabs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  background: var(--glass-bg-light);
+  border-radius: var(--radius-xl);
+}
+
+.platform-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: none;
+  border-radius: var(--radius-lg);
+  background: transparent;
   color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: all 0.2s ease;
   white-space: nowrap;
 }
 
-.filter-chip:hover {
+.platform-tab:hover:not(.active) {
+  color: var(--color-text-primary);
   background: var(--glass-bg);
+}
+
+.platform-tab.active {
+  color: white;
+  background: var(--color-primary);
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
+}
+
+/* 平台特定颜色 */
+.platform-tab.active.platform-youtube {
+  background: var(--color-youtube);
+  box-shadow: var(--glow-youtube);
+}
+
+.platform-tab.active.platform-twitter {
+  background: var(--color-twitter);
+  box-shadow: var(--glow-twitter);
+}
+
+.platform-tab.active.platform-tiktok {
+  background: var(--color-tiktok);
+  color: var(--color-tiktok-accent);
+  box-shadow: var(--glow-tiktok);
+}
+
+.platform-tab.active.platform-instagram {
+  background: var(--gradient-instagram);
+  box-shadow: var(--glow-instagram);
+}
+
+.tab-label {
+  display: none;
+}
+
+@media (min-width: 1100px) {
+  .tab-label {
+    display: inline;
+  }
+}
+
+/* 分隔线 */
+.filter-divider {
+  width: 1px;
+  height: 24px;
+  background: var(--glass-border);
+  margin: 0 var(--spacing-xs);
+}
+
+/* 排序下拉 */
+.sort-dropdown {
+  position: relative;
+}
+
+.sort-trigger {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  background: var(--glass-bg-light);
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.sort-trigger:hover {
   border-color: var(--color-primary);
   color: var(--color-text-primary);
 }
 
-.filter-chip.active {
+.sort-trigger .chevron {
+  transition: transform 0.2s ease;
+}
+
+.sort-trigger .chevron.rotated {
+  transform: rotate(180deg);
+}
+
+.sort-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  min-width: 180px;
+  padding: var(--spacing-xs);
+  background: var(--color-surface);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  z-index: 200;
+}
+
+.sort-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.sort-option:hover {
+  background: var(--glass-bg-light);
+  color: var(--color-text-primary);
+}
+
+.sort-option.active {
+  color: var(--color-primary);
+  background: rgba(139, 92, 246, 0.08);
+}
+
+.sort-option .check-icon {
+  margin-left: auto;
+  color: var(--color-primary);
+}
+
+/* 排序方向切换 */
+.order-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  background: var(--glass-bg-light);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.order-toggle:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+/* 媒体筛选 */
+.media-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  background: var(--glass-bg-light);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.media-toggle:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.media-toggle.active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: white;
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
+}
+
+/* 重置按钮 */
+.reset-button {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 12px;
+  margin-left: auto;
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text-tertiary);
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.reset-button:hover {
+  color: var(--color-error);
+  background: rgba(239, 68, 68, 0.08);
+}
+
+/* 移动端布局 */
+.filter-bar-mobile {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.platform-scroll {
+  flex: 1;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.platform-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.platform-chips {
+  display: flex;
+  gap: 8px;
+  padding: 4px 0;
+}
+
+.platform-chip {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 12px;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-full);
+  background: var(--glass-bg-light);
+  color: var(--color-text-secondary);
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.platform-chip:hover:not(.active) {
+  border-color: var(--color-primary);
+}
+
+.platform-chip.active {
   color: white;
   background: var(--color-primary);
   border-color: var(--color-primary);
-  box-shadow: 0 0 15px rgba(139, 92, 246, 0.4);
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
 }
 
-/* Platform-specific active states */
-.filter-chip.active[aria-label*='YouTube'] {
+/* 移动端平台特定颜色 */
+.platform-chip.active.platform-youtube {
   background: var(--color-youtube);
   border-color: var(--color-youtube);
   box-shadow: var(--glow-youtube);
 }
 
-.filter-chip.active[aria-label*='Twitter'] {
+.platform-chip.active.platform-twitter {
   background: var(--color-twitter);
   border-color: var(--color-twitter);
   box-shadow: var(--glow-twitter);
 }
 
-.filter-chip.active[aria-label*='TikTok'] {
+.platform-chip.active.platform-tiktok {
   background: var(--color-tiktok);
   border-color: var(--color-tiktok-accent);
-  box-shadow: var(--glow-tiktok);
   color: var(--color-tiktok-accent);
+  box-shadow: var(--glow-tiktok);
 }
 
-.filter-chip.active[aria-label*='Instagram'] {
+.platform-chip.active.platform-instagram {
   background: var(--gradient-instagram);
   border-color: transparent;
   box-shadow: var(--glow-instagram);
 }
 
-.chip-icon {
+/* 筛选触发按钮 */
+.filter-trigger {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-.chip-label {
-  font-size: var(--text-xs);
-  font-weight: var(--font-medium);
-}
-
-.filter-label {
-  font-size: var(--text-sm);
-  font-weight: var(--font-medium);
-  color: var(--color-text-secondary);
-}
-
-.filter-select {
-  padding: var(--spacing-sm) var(--spacing-md);
-  padding-right: calc(var(--spacing-md) + 16px);
-  font-size: var(--text-sm);
+  width: 44px;
+  height: 44px;
   border: 1px solid var(--glass-border);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   background: var(--glass-bg-light);
-  color: var(--color-text-primary);
-  cursor: pointer;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
-  min-width: 100px;
-  appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right var(--spacing-xs) center;
-  background-size: 14px;
-}
-
-.filter-select:focus {
-  outline: none;
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 2px rgba(var(--color-primary-rgb), 0.1);
-}
-
-.filter-buttons {
-  display: flex;
-  gap: var(--spacing-xs);
-}
-
-.filter-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--spacing-sm);
-  border-radius: var(--radius-md);
-  background: var(--glass-bg-light);
-  border: 1px solid var(--glass-border);
   color: var(--color-text-secondary);
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: all 0.2s ease;
+  flex-shrink: 0;
 }
 
-.filter-button:hover {
-  background: var(--glass-bg);
+.filter-trigger:hover {
   border-color: var(--color-primary);
-  color: var(--color-text-primary);
+  color: var(--color-primary);
 }
 
-.filter-button.active {
+.filter-trigger.has-filters {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  background: rgba(139, 92, 246, 0.08);
+}
+
+.filter-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: var(--radius-full);
   background: var(--color-primary);
-  border-color: var(--color-primary);
   color: white;
-  box-shadow: 0 0 10px rgba(139, 92, 246, 0.3);
-}
-
-.filter-actions {
+  font-size: 10px;
+  font-weight: var(--font-bold);
   display: flex;
   align-items: center;
-  gap: var(--spacing-sm);
-  margin-left: auto;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(139, 92, 246, 0.4);
 }
 
-/* 移动端样式优化 */
+/* 下拉动画 */
+.dropdown-enter-active,
+.dropdown-leave-active {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dropdown-enter-from,
+.dropdown-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
+}
+
+/* 移动端响应式 */
 @media (max-width: 768px) {
   .filter-bar {
-    padding: var(--spacing-md);
-    gap: var(--spacing-md);
-  }
-
-  .filter-section {
-    min-width: 0;
-    flex: 1;
-  }
-
-  .filter-section:nth-child(1),
-  .filter-section:nth-child(2) {
-    flex: 1 1 calc(50% - var(--spacing-sm));
-  }
-
-  .filter-section:nth-child(3),
-  .filter-section:nth-child(4) {
-    flex: 0 0 auto;
-  }
-
-  .filter-label {
-    font-size: var(--text-xs);
-  }
-
-  .filter-select {
     padding: var(--spacing-xs) var(--spacing-sm);
-    font-size: var(--text-xs);
+    border-radius: var(--radius-xl);
   }
 
-  .filter-button {
-    padding: var(--spacing-xs);
-  }
-
-  .filter-button svg {
-    width: 14px;
-    height: 14px;
-  }
-
-  .filter-actions {
-    width: 100%;
-    margin-left: 0;
-    justify-content: stretch;
-  }
-
-  .filter-actions button {
-    flex: 1;
-  }
-}
-
-/* 极小屏幕优化 */
-@media (max-width: 480px) {
-  .filter-bar {
-    padding: var(--spacing-sm);
-    gap: var(--spacing-sm);
-  }
-
-  .filter-section:nth-child(1),
-  .filter-section:nth-child(2) {
-    flex: 1 1 100%;
+  .filter-bar.is-sticky {
+    top: calc(var(--navbar-height-mobile, 60px) + var(--spacing-sm));
+    border-radius: var(--radius-lg);
   }
 }
 </style>
