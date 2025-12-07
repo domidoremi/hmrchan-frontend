@@ -1,5 +1,5 @@
 <template>
-  <MainLayout :disable-container="true">
+  <MainLayout :disable-container="true" :enable-back-to-top="false">
     <!-- 阅读进度条 -->
     <div class="reading-progress" :style="{ width: `${readingProgress}%` }"></div>
 

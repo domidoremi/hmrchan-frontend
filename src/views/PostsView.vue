@@ -1,6 +1,9 @@
 <template>
-  <MainLayout :disable-container="true">
-    <div class="posts-page reduce-motion" :class="{ 'mobile-preview-open': previewVisible && !isDesktop }">
+  <MainLayout :disable-container="true" :enable-back-to-top="false">
+    <div
+      class="posts-page reduce-motion"
+      :class="{ 'mobile-preview-open': previewVisible && !isDesktop }"
+    >
       <section ref="heroRef" class="posts-hero">
         <div class="hero-bg"></div>
         <div class="hero-content">
@@ -31,8 +34,14 @@
           <div class="search-block">
             <div class="search-field" :class="{ 'is-focused': isSearchFocused }">
               <Search :size="18" class="search-icon" />
-              <input v-model="searchQuery" type="text" :placeholder="$t('search.placeholder')" @input="onSearchInput"
-                @focus="isSearchFocused = true" @blur="isSearchFocused = false" />
+              <input
+                v-model="searchQuery"
+                type="text"
+                :placeholder="$t('search.placeholder')"
+                @input="onSearchInput"
+                @focus="isSearchFocused = true"
+                @blur="isSearchFocused = false"
+              />
               <Transition name="fade-scale">
                 <button v-if="searchQuery" class="clear-btn" type="button" @click="clearSearch">
                   <X :size="16" />
@@ -43,9 +52,14 @@
 
           <div class="platform-chips-wrapper">
             <div class="platform-chips" ref="platformChipsRef">
-              <button v-for="platform in filterPlatforms" :key="platform.value"
-                :class="['chip', { active: selectedPlatform === platform.value }]" type="button"
-                @click="selectPlatform(platform.value)" :aria-label="`${t('filter.filterBy')} ${platform.label}`">
+              <button
+                v-for="platform in filterPlatforms"
+                :key="platform.value"
+                :class="['chip', { active: selectedPlatform === platform.value }]"
+                type="button"
+                @click="selectPlatform(platform.value)"
+                :aria-label="`${t('filter.filterBy')} ${platform.label}`"
+              >
                 <span class="chip-icon">
                   <component :is="platform.icon" :size="18" />
                 </span>
@@ -73,12 +87,20 @@
             </div>
 
             <div class="view-toggle">
-              <button :class="['view-button', { active: viewMode === 'grid' }]" type="button" @click="viewMode = 'grid'"
-                aria-label="Grid view">
+              <button
+                :class="['view-button', { active: viewMode === 'grid' }]"
+                type="button"
+                @click="viewMode = 'grid'"
+                aria-label="Grid view"
+              >
                 <Grid3x3 :size="18" />
               </button>
-              <button :class="['view-button', { active: viewMode === 'list' }]" type="button" @click="viewMode = 'list'"
-                aria-label="List view">
+              <button
+                :class="['view-button', { active: viewMode === 'list' }]"
+                type="button"
+                @click="viewMode = 'list'"
+                aria-label="List view"
+              >
                 <List :size="18" />
               </button>
             </div>
@@ -102,14 +124,28 @@
             </div>
           </div>
 
-          <div v-else-if="posts.length > 0" ref="postsGridRef"
-            :class="['posts-grid', viewMode === 'list' ? 'is-list' : 'is-grid']">
-            <PostCard v-for="(post, index) in posts" :key="post.id" :post="post" :is-first-screen="index < 6"
-              :preview-enabled="true" :show-actions="false" @open="openPreview" />
+          <div
+            v-else-if="posts.length > 0"
+            ref="postsGridRef"
+            :class="['posts-grid', viewMode === 'list' ? 'is-list' : 'is-grid']"
+          >
+            <PostCard
+              v-for="(post, index) in posts"
+              :key="post.id"
+              :post="post"
+              :is-first-screen="index < 6"
+              :preview-enabled="true"
+              :show-actions="false"
+              @open="openPreview"
+            />
           </div>
 
-          <EmptyState v-else-if="!loading" icon="image" :title="$t('search.noResults')"
-            :description="$t('search.noResultsDesc')" />
+          <EmptyState
+            v-else-if="!loading"
+            icon="image"
+            :title="$t('search.noResults')"
+            :description="$t('search.noResultsDesc')"
+          />
 
           <Transition name="fade">
             <div v-if="isLoadingMore" class="loading-more">
@@ -130,8 +166,14 @@
 
         <aside v-if="isDesktop" class="preview-column">
           <Transition name="preview-fade" mode="out-in">
-            <PostPreviewPanel v-if="previewVisible" :key="previewPost?.id || 'preview-panel'" :post="previewPost"
-              :loading="previewLoading" :error="previewError" @close="closePreview" />
+            <PostPreviewPanel
+              v-if="previewVisible"
+              :key="previewPost?.id || 'preview-panel'"
+              :post="previewPost"
+              :loading="previewLoading"
+              :error="previewError"
+              @close="closePreview"
+            />
             <div v-else class="preview-placeholder" key="preview-empty">
               <p>{{ $t('post.media') }}</p>
               <span>{{ $t('common.select') }}</span>
@@ -145,16 +187,25 @@
           <div v-if="previewVisible && !isDesktop" class="preview-overlay">
             <div class="overlay-backdrop" @click="closePreview"></div>
             <div class="overlay-panel">
-              <PostPreviewPanel :post="previewPost" :loading="previewLoading" :error="previewError"
-                @close="closePreview" />
+              <PostPreviewPanel
+                :post="previewPost"
+                :loading="previewLoading"
+                :error="previewError"
+                @close="closePreview"
+              />
             </div>
           </div>
         </Transition>
       </Teleport>
 
       <Transition name="fab">
-        <button v-show="showScrollTop" class="scroll-top" type="button" @click="scrollToTop"
-          :aria-label="$t('common.backToTop')">
+        <button
+          v-show="showScrollTop"
+          class="scroll-top"
+          type="button"
+          @click="scrollToTop"
+          :aria-label="$t('common.backToTop')"
+        >
           <ArrowUp :size="24" />
           <div class="fab-ripple"></div>
         </button>
@@ -292,13 +343,10 @@ const formatNumber = (num: number) => {
   }).format(num)
 }
 
-const { debounced: debouncedSearch } = useDebounceFn(
-  () => {
-    currentPage.value = 1
-    loadPosts()
-  },
-  300,
-)
+const { debounced: debouncedSearch } = useDebounceFn(() => {
+  currentPage.value = 1
+  loadPosts()
+}, 300)
 
 const checkScrollIndicators = () => {
   const el = platformChipsRef.value
@@ -1061,10 +1109,12 @@ watch(
 
 .skeleton-image,
 .line {
-  background: linear-gradient(120deg,
-      rgba(148, 163, 184, 0.16),
-      rgba(226, 232, 240, 0.3),
-      rgba(148, 163, 184, 0.16));
+  background: linear-gradient(
+    120deg,
+    rgba(148, 163, 184, 0.16),
+    rgba(226, 232, 240, 0.3),
+    rgba(148, 163, 184, 0.16)
+  );
   background-size: 200% 100%;
   animation: shimmer 1.6s linear infinite;
 }
@@ -1124,7 +1174,7 @@ watch(
   align-items: stretch;
 }
 
-.preview-column>* {
+.preview-column > * {
   width: 100%;
 }
 
@@ -1351,7 +1401,7 @@ watch(
     justify-content: stretch;
   }
 
-  .toolbar-controls>* {
+  .toolbar-controls > * {
     flex: 1 1 100%;
   }
 
