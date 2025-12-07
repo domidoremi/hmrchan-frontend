@@ -45,7 +45,10 @@
     "platforms": "プラットフォーム",
     "buffered": "バッファ済み",
     "speed": "速度",
-    "retry": "リトライ"
+    "retry": "リトライ",
+    "posts": "投稿",
+    "scrollToLoadMore": "下にスクロールしてもっと読み込む",
+    "submit": "送信"
   },
   "aria": {
     "skipToMain": "メインコンテンツへスキップ",
@@ -86,5 +89,19 @@
     "personalization": "パーソナライゼーション Cookie",
     "personalizationDesc": "お客様の設定を記憶し、パーソナライズされたコンテンツを提供します。",
     "required": "必須"
+  },
+  "cache": {
+    "justNow": "たった今",
+    "minutesAgo": "{minutes}分前",
+    "hoursAgo": "{hours}時間前",
+    "cachedAt": "キャッシュ時刻: {time}",
+    "fresh": "新鮮なデータ",
+    "stale": "古いデータ",
+    "expired": "期限切れデータ"
+  },
+  "access": {
+    "viewDetails": "詳細を見る",
+    "usage": "使用量",
+    "limit": "制限"
   }
 }
