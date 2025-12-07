@@ -1,66 +1,157 @@
 <template>
   <MainLayout>
     <div class="explore-page">
-      <h1 class="page-title">{{ $t('nav.explore') }}</h1>
+      <!-- 页面头部 -->
+      <header class="explore-header">
+        <div class="header-content">
+          <div class="header-left">
+            <h1 class="page-title">
+              <Compass :size="28" class="title-icon" />
+              {{ $t('nav.explore') }}
+            </h1>
+            <div v-if="pagination.total" class="stats-badge">
+              <span class="stats-count">{{ formatNumber(pagination.total) }}</span>
+              <span class="stats-label">{{ $t('common.posts', '条内容') }}</span>
+            </div>
+          </div>
 
-      <!-- Filter Bar -->
-      <FilterBar :filters="filters" @update="handleFilterUpdate" />
+          <div class="header-right">
+            <!-- 搜索框 (桌面端) -->
+            <SearchInput
+              v-if="!isMobile"
+              v-model="searchQuery"
+              :placeholder="$t('search.placeholder', '搜索内容...')"
+              :loading="loading && !!searchQuery"
+              @search="handleSearch"
+              @clear="handleSearchClear"
+            />
 
-      <!-- Initial Loading State -->
+            <!-- 视图切换 -->
+            <ViewModeToggle
+              v-if="!isMobile"
+              v-model="viewMode"
+              :available-modes="['grid', 'masonry']"
+            />
+          </div>
+        </div>
+
+        <!-- 移动端搜索框 -->
+        <div v-if="isMobile" class="mobile-search">
+          <SearchInput
+            v-model="searchQuery"
+            :placeholder="$t('search.placeholder', '搜索内容...')"
+            :loading="loading && !!searchQuery"
+            :show-shortcut="false"
+            @search="handleSearch"
+            @clear="handleSearchClear"
+          />
+        </div>
+      </header>
+
+      <!-- 筛选栏 -->
+      <FilterBar
+        :filters="filters"
+        :sticky="true"
+        @update="handleFilterUpdate"
+        @open-sheet="showFilterSheet = true"
+      />
+
+      <!-- 初始加载状态 -->
       <div v-if="loading && localPosts.length === 0" class="loading-container">
-        <LoadingSpinner size="lg" :text="$t('common.loading')" />
+        <div class="skeleton-grid">
+          <div v-for="i in 8" :key="i" class="skeleton-card">
+            <div class="skeleton-media"></div>
+            <div class="skeleton-content">
+              <div class="skeleton-title"></div>
+              <div class="skeleton-meta"></div>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <!-- Posts Grid -->
+      <!-- 帖子网格 -->
       <template v-else-if="localPosts.length > 0">
         <p v-if="lastListFromFallback" class="offline-hint">
+          <WifiOff :size="16" />
           {{ $t('offline.usingCache') }}
         </p>
 
         <div class="posts-grid-wrapper">
-          <div ref="postsGrid" class="posts-grid">
-            <PostCard v-for="(post, index) in localPosts" :key="post.id" :post="post" :index="index"
-              :show-actions="false" />
+          <div
+            ref="postsGrid"
+            class="posts-grid"
+            :class="{ 'view-masonry': viewMode === 'masonry' }"
+          >
+            <PostCard
+              v-for="(post, index) in localPosts"
+              :key="post.id"
+              :post="post"
+              :index="index"
+              :show-actions="false"
+            />
           </div>
 
-          <!-- Loading More Indicator -->
+          <!-- 加载更多指示器 -->
           <div v-if="isLoadingMore || scrollLoading" class="loading-more">
-            <LoadingSpinner size="sm" :text="$t('common.loading')" />
+            <Loader2 :size="24" class="spinner" />
+            <span>{{ $t('common.loading') }}</span>
           </div>
 
-          <!-- Load Progress -->
+          <!-- 加载进度 -->
           <div v-if="!pageFullyRendered && localPosts.length > 0" class="load-progress">
-            <span>{{ localPosts.length }} / {{ allPagePosts.length }}</span>
+            <div class="progress-bar">
+              <div
+                class="progress-fill"
+                :style="{ width: `${(localPosts.length / allPagePosts.length) * 100}%` }"
+              ></div>
+            </div>
+            <span class="progress-text">{{ localPosts.length }} / {{ allPagePosts.length }}</span>
           </div>
         </div>
 
-        <!-- Pagination - 只在当前页渲染完成且有多页时显示 -->
-        <Pagination v-if="pageFullyRendered && totalPages > 1" :current-page="currentPage" :total-pages="totalPages"
-          @change="handlePageChange" />
+        <!-- 分页 -->
+        <Pagination
+          v-if="pageFullyRendered && totalPages > 1"
+          :current-page="currentPage"
+          :total-pages="totalPages"
+          @change="handlePageChange"
+        />
       </template>
 
-      <!-- Error State -->
-      <div v-else-if="error" class="error-state glass-card">
-        <AlertCircle :size="64" />
-        <h3>{{ $t('common.error') }}</h3>
-        <p>{{ error }}</p>
-        <GlassButton @click="resetFilters">
+      <!-- 错误状态 -->
+      <div v-else-if="error" class="state-card error-state">
+        <div class="state-icon error">
+          <AlertCircle :size="48" />
+        </div>
+        <h3 class="state-title">{{ $t('common.error') }}</h3>
+        <p class="state-description">{{ error }}</p>
+        <button class="state-action" @click="resetFilters">
           <RotateCcw :size="18" />
           {{ $t('common.retry') }}
-        </GlassButton>
+        </button>
       </div>
 
-      <!-- Empty State -->
-      <div v-else class="empty-state glass-card">
-        <SearchX :size="64" />
-        <h3>{{ $t('search.noResults') }}</h3>
-        <p>{{ $t('search.tryDifferent') }}</p>
-        <GlassButton @click="resetFilters">
+      <!-- 空状态 -->
+      <div v-else class="state-card empty-state">
+        <div class="state-icon">
+          <SearchX :size="48" />
+        </div>
+        <h3 class="state-title">{{ $t('search.noResults') }}</h3>
+        <p class="state-description">{{ $t('search.tryDifferent') }}</p>
+        <button class="state-action" @click="resetFilters">
           <RotateCcw :size="18" />
           {{ $t('common.reset') }}
-        </GlassButton>
+        </button>
       </div>
     </div>
+
+    <!-- 移动端筛选底部抽屉 -->
+    <FilterBottomSheet
+      v-model:is-open="showFilterSheet"
+      :filters="filters"
+      @apply="handleFilterUpdate"
+      @reset="resetFilters"
+    />
   </MainLayout>
 </template>
 
@@ -74,57 +165,60 @@ export default {
 import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
-import { SearchX, RotateCcw, AlertCircle } from 'lucide-vue-next'
+import { Compass, SearchX, RotateCcw, AlertCircle, WifiOff, Loader2 } from 'lucide-vue-next'
 
 import MainLayout from '@/components/layout/MainLayout.vue'
 import FilterBar from '@/components/business/FilterBar.vue'
+import FilterBottomSheet from '@/components/business/FilterBottomSheet.vue'
 import PostCard from '@/components/business/PostCard.vue'
-import GlassButton from '@/components/ui/button/Button.vue'
-import LoadingSpinner from '@/components/ui/loading/LoadingSpinner.vue'
+import SearchInput from '@/components/ui/input/SearchInput.vue'
+import { ViewModeToggle, type ViewMode } from '@/components/ui/toggle'
 import { Pagination } from '@/components/ui/pagination'
 
 import { usePostsStore } from '@/stores'
-import { useWaterfallLayout, useInfiniteScroll } from '@/composables'
+import { useWaterfallLayout, useInfiniteScroll, useResponsive } from '@/composables'
 import type { PostListParams, Post } from '@/types'
 import { logger } from '@/utils/logger'
 
 const route = useRoute()
 const router = useRouter()
 const postsStore = usePostsStore()
+const { isMobile } = useResponsive()
 
 const { loading, error, filters, pagination, lastListFromFallback } = storeToRefs(postsStore)
 
 // ============================================
 // 配置常量
 // ============================================
-const POSTS_PER_PAGE = 20      // 每页总帖子数
-const RENDER_BATCH_SIZE = 5    // 每次渲染的帖子数
+const POSTS_PER_PAGE = 20
+const RENDER_BATCH_SIZE = 5
 
 // ============================================
 // 本地状态
 // ============================================
-const allPagePosts = ref<Post[]>([])  // 当前页的所有帖子（从 API 获取）
-const renderedCount = ref(0)          // 已渲染的帖子数量
-const isLoadingMore = ref(false)      // 是否正在渲染更多
-const isNavigating = ref(false)       // 是否正在导航（防止重复加载）
+const allPagePosts = ref<Post[]>([])
+const renderedCount = ref(0)
+const isLoadingMore = ref(false)
+const isNavigating = ref(false)
+const searchQuery = ref('')
+const viewMode = ref<ViewMode>('masonry')
+const showFilterSheet = ref(false)
 
-// 实际显示的帖子（渐进式渲染）
+// 实际显示的帖子
 const localPosts = computed(() => allPagePosts.value.slice(0, renderedCount.value))
 
-// 分页计算属性
+// 分页计算
 const currentPage = computed(() => filters.value.page || 1)
 const totalPages = computed(() => pagination.value.pages || 0)
 
-// 当前页是否已完全渲染
-const pageFullyRendered = computed(() =>
-  allPagePosts.value.length > 0 && renderedCount.value >= allPagePosts.value.length
+// 当前页是否完全渲染
+const pageFullyRendered = computed(
+  () => allPagePosts.value.length > 0 && renderedCount.value >= allPagePosts.value.length,
 )
 
-// 是否还能继续滚动加载更多渲染
-const canRenderMore = computed(() =>
-  !pageFullyRendered.value &&
-  allPagePosts.value.length > 0 &&
-  !isLoadingMore.value
+// 是否可以继续渲染
+const canRenderMore = computed(
+  () => !pageFullyRendered.value && allPagePosts.value.length > 0 && !isLoadingMore.value,
 )
 
 // 帖子网格容器
@@ -143,7 +237,7 @@ const { updateLayout, smoothUpdateLayout } = useWaterfallLayout(postsGrid, {
 })
 
 // ============================================
-// 无限滚动 - 用于渐进式渲染
+// 无限滚动
 // ============================================
 const { isLoading: scrollLoading } = useInfiniteScroll({
   onLoadMore: renderMorePosts,
@@ -153,25 +247,20 @@ const { isLoading: scrollLoading } = useInfiniteScroll({
 })
 
 /**
- * 渲染更多帖子（滚动触发）
- * 不发起新的 API 请求，只是从已加载的数据中渲染更多
+ * 渲染更多帖子
  */
 async function renderMorePosts() {
   if (!canRenderMore.value) return
 
   isLoadingMore.value = true
 
-  // 增加渲染数量
-  const newCount = Math.min(
-    renderedCount.value + RENDER_BATCH_SIZE,
-    allPagePosts.value.length
-  )
+  const newCount = Math.min(renderedCount.value + RENDER_BATCH_SIZE, allPagePosts.value.length)
   renderedCount.value = newCount
 
   logger.debug('渐进式渲染', {
     category: 'ExplorePage',
     rendered: newCount,
-    total: allPagePosts.value.length
+    total: allPagePosts.value.length,
   })
 
   await nextTick()
@@ -181,10 +270,9 @@ async function renderMorePosts() {
 }
 
 /**
- * 加载当前页的所有帖子
+ * 加载当前页帖子
  */
 async function loadPagePosts() {
-  // 重置状态
   allPagePosts.value = []
   renderedCount.value = 0
   isLoadingMore.value = false
@@ -196,24 +284,18 @@ async function loadPagePosts() {
     })
 
     if (result && result.items && result.items.length > 0) {
-      // 保存所有帖子
       allPagePosts.value = result.items
-
-      // 初始渲染第一批
       renderedCount.value = Math.min(RENDER_BATCH_SIZE, result.items.length)
 
       logger.debug('页面数据加载完成', {
         category: 'ExplorePage',
         total: result.items.length,
         initialRender: renderedCount.value,
-        paginationPages: pagination.value.pages,
-        paginationTotal: pagination.value.total,
       })
     }
 
     await nextTick()
     updateLayout()
-
   } catch (err) {
     logger.error('加载失败', { category: 'ExplorePage', error: err })
   }
@@ -223,24 +305,19 @@ async function loadPagePosts() {
  * 切换页面
  */
 async function handlePageChange(page: number) {
-  // 防止重复加载
   isNavigating.value = true
 
   postsStore.updateFilters({ page })
 
-  // 更新 URL（不触发 watcher 的重新加载）
   const query: Record<string, string> = {}
   if (filters.value.q) query.q = filters.value.q
   if (filters.value.platform) query.platform = filters.value.platform
   if (page > 1) query.page = String(page)
   router.replace({ query })
 
-  // 滚动到顶部
   window.scrollTo({ top: 0, behavior: 'smooth' })
 
   await loadPagePosts()
-
-  // 导航完成
   isNavigating.value = false
 }
 
@@ -253,13 +330,33 @@ async function handleFilterUpdate(newFilters: Partial<PostListParams>) {
   postsStore.updateFilters({ ...newFilters, page: 1 })
 
   const query: Record<string, string> = {}
-  if (newFilters.q) query.q = newFilters.q
-  if (newFilters.platform) query.platform = newFilters.platform
+  if (newFilters.q || filters.value.q) query.q = (newFilters.q || filters.value.q) as string
+  if (newFilters.platform || filters.value.platform) {
+    query.platform = (newFilters.platform || filters.value.platform) as string
+  }
   router.replace({ query })
 
   await loadPagePosts()
-
   isNavigating.value = false
+}
+
+/**
+ * 搜索处理
+ */
+async function handleSearch(query: string) {
+  postsStore.updateFilters({ q: query || undefined, page: 1 })
+
+  const urlQuery: Record<string, string> = {}
+  if (query) urlQuery.q = query
+  if (filters.value.platform) urlQuery.platform = filters.value.platform
+  router.replace({ query: urlQuery })
+
+  await loadPagePosts()
+}
+
+function handleSearchClear() {
+  searchQuery.value = ''
+  handleSearch('')
 }
 
 /**
@@ -267,6 +364,7 @@ async function handleFilterUpdate(newFilters: Partial<PostListParams>) {
  */
 async function resetFilters() {
   isNavigating.value = true
+  searchQuery.value = ''
 
   postsStore.resetFilters()
   router.replace({ query: {} })
@@ -275,17 +373,33 @@ async function resetFilters() {
   isNavigating.value = false
 }
 
+/**
+ * 格式化数字
+ */
+function formatNumber(num: number): string {
+  if (num >= 10000) {
+    return `${(num / 10000).toFixed(1)}万`
+  }
+  if (num >= 1000) {
+    return `${(num / 1000).toFixed(1)}K`
+  }
+  return num.toLocaleString()
+}
+
 // ============================================
 // 生命周期
 // ============================================
 onMounted(async () => {
   postsStore.resetFilters()
 
-  // 从 URL 初始化筛选条件
+  // 从 URL 初始化
   const query = route.query
   const initialFilters: Partial<PostListParams> = {}
 
-  if (query.q) initialFilters.q = query.q as string
+  if (query.q) {
+    initialFilters.q = query.q as string
+    searchQuery.value = query.q as string
+  }
   if (query.platform) initialFilters.platform = query.platform as string
   if (query.page) initialFilters.page = parseInt(query.page as string) || 1
 
@@ -303,14 +417,14 @@ onBeforeUnmount(() => {
   logger.debug('页面卸载', { category: 'ExplorePage' })
 })
 
-// 监听浏览器前进/后退（仅处理用户通过浏览器导航的情况）
+// 监听浏览器前进/后退
 watch(
   () => route.query,
   async (newQuery, oldQuery) => {
-    // 如果是程序导航（handlePageChange 等），跳过
     if (isNavigating.value) return
     if (JSON.stringify(newQuery) === JSON.stringify(oldQuery)) return
 
+    searchQuery.value = (newQuery.q as string) || ''
     postsStore.updateFilters({
       q: (newQuery.q as string) || undefined,
       platform: (newQuery.platform as string) || undefined,
@@ -321,7 +435,7 @@ watch(
   },
 )
 
-// 监听 localPosts 变化更新布局
+// 监听帖子数量变化更新布局
 watch(
   () => localPosts.value.length,
   async () => {
@@ -329,28 +443,159 @@ watch(
     updateLayout()
   },
 )
+
+// 监听视图模式变化
+watch(viewMode, async () => {
+  await nextTick()
+  updateLayout()
+})
 </script>
 
 <style scoped>
 .explore-page {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-xl);
+  gap: var(--spacing-lg);
+  min-height: calc(100vh - var(--navbar-height) - var(--footer-min-height));
+}
+
+/* ========================================
+   页面头部
+   ======================================== */
+.explore-header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-lg);
+  flex-wrap: wrap;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
 }
 
 .page-title {
-  font-size: var(--text-4xl);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-size: var(--text-3xl);
   font-weight: var(--font-bold);
   color: var(--color-text-primary);
-  margin-bottom: var(--spacing-lg);
+  margin: 0;
 }
 
-.loading-container {
+.title-icon {
+  color: var(--color-primary);
+}
+
+.stats-badge {
   display: flex;
-  justify-content: center;
-  padding: var(--spacing-3xl);
+  align-items: baseline;
+  gap: 4px;
+  padding: 6px 12px;
+  background: var(--glass-bg-light);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-full);
 }
 
+.stats-count {
+  font-size: var(--text-lg);
+  font-weight: var(--font-bold);
+  color: var(--color-primary);
+}
+
+.stats-label {
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.mobile-search {
+  width: 100%;
+}
+
+/* ========================================
+   骨架屏加载
+   ======================================== */
+.loading-container {
+  padding: var(--spacing-xl) 0;
+}
+
+.skeleton-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--spacing-lg);
+}
+
+.skeleton-card {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+}
+
+.skeleton-media {
+  width: 100%;
+  height: 200px;
+  background: linear-gradient(
+    90deg,
+    var(--glass-bg-light) 0%,
+    rgba(139, 92, 246, 0.08) 50%,
+    var(--glass-bg-light) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+.skeleton-content {
+  padding: var(--spacing-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.skeleton-title {
+  height: 20px;
+  width: 80%;
+  background: var(--glass-bg-light);
+  border-radius: var(--radius-sm);
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+.skeleton-meta {
+  height: 14px;
+  width: 50%;
+  background: var(--glass-bg-light);
+  border-radius: var(--radius-sm);
+  animation: shimmer 1.5s ease-in-out infinite;
+  animation-delay: 0.1s;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* ========================================
+   帖子网格
+   ======================================== */
 .posts-grid-wrapper {
   position: relative;
 }
@@ -362,66 +607,15 @@ watch(
   transition: opacity 0.3s ease;
 }
 
-.posts-grid.is-loading {
-  opacity: 0.5;
-  pointer-events: none;
-}
-
-.loading-overlay {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 10;
-  background: var(--glass-bg);
-  padding: var(--spacing-lg);
-  border-radius: var(--radius-lg);
-  backdrop-filter: blur(8px);
-}
-
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.2s ease;
-}
-
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-}
-
-.empty-state,
-.error-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: var(--spacing-md);
-  padding: var(--spacing-3xl);
-  text-align: center;
-}
-
-.empty-state h3,
-.error-state h3 {
-  font-size: var(--text-2xl);
-  font-weight: var(--font-semibold);
-  color: var(--color-text-primary);
-}
-
-.empty-state p,
-.error-state p {
-  color: var(--color-text-secondary);
-  margin-bottom: var(--spacing-md);
-}
-
-.error-state {
-  border-color: var(--color-error);
-}
-
-.error-state svg {
-  color: var(--color-error);
+.posts-grid.view-masonry {
+  /* 瀑布流由 useWaterfallLayout 控制 */
+  contain: layout style;
 }
 
 .offline-hint {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
   margin-bottom: var(--spacing-md);
   padding: var(--spacing-sm) var(--spacing-md);
   border-radius: var(--radius-md);
@@ -430,43 +624,187 @@ watch(
   font-size: var(--text-sm);
 }
 
-.loading-more {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: var(--spacing-xl);
-  margin-top: var(--spacing-lg);
+.offline-hint svg {
+  color: var(--color-info);
 }
 
-.load-progress {
-  text-align: center;
-  padding: var(--spacing-md);
-  color: var(--color-text-tertiary);
+/* 加载更多 */
+.loading-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-xl);
+  color: var(--color-text-secondary);
   font-size: var(--text-sm);
 }
 
-/* 响应式优化 */
-@media (min-width: 780px) and (max-width: 900px) {
-  .explore-page {
-    gap: var(--spacing-lg);
-  }
+.spinner {
+  animation: spin 1s linear infinite;
+  color: var(--color-primary);
+}
 
-  .page-title {
-    font-size: var(--text-3xl);
-    margin-bottom: var(--spacing-lg);
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
   }
 }
 
+/* 加载进度 */
+.load-progress {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+}
+
+.progress-bar {
+  width: 200px;
+  height: 4px;
+  background: var(--glass-bg-light);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--color-primary);
+  border-radius: var(--radius-full);
+  transition: width 0.3s ease;
+}
+
+.progress-text {
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+}
+
+/* ========================================
+   状态卡片
+   ======================================== */
+.state-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-3xl);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-2xl);
+  text-align: center;
+}
+
+.state-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 80px;
+  height: 80px;
+  border-radius: var(--radius-full);
+  background: var(--glass-bg-light);
+  color: var(--color-text-tertiary);
+}
+
+.state-icon.error {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--color-error);
+}
+
+.state-title {
+  font-size: var(--text-xl);
+  font-weight: var(--font-semibold);
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.state-description {
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+.state-action {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm) var(--spacing-lg);
+  margin-top: var(--spacing-sm);
+  border: none;
+  border-radius: var(--radius-lg);
+  background: var(--color-primary);
+  color: white;
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.state-action:hover {
+  background: var(--color-primary-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+}
+
+/* ========================================
+   响应式
+   ======================================== */
 @media (max-width: 768px) {
+  .explore-page {
+    gap: var(--spacing-md);
+  }
+
   .page-title {
     font-size: var(--text-2xl);
-    margin-bottom: var(--spacing-md);
+  }
+
+  .stats-badge {
+    padding: 4px 10px;
+  }
+
+  .stats-count {
+    font-size: var(--text-base);
+  }
+
+  .skeleton-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-md);
+  }
+
+  .skeleton-media {
+    height: 150px;
+  }
+
+  .state-card {
+    padding: var(--spacing-2xl);
+  }
+
+  .state-icon {
+    width: 64px;
+    height: 64px;
+  }
+
+  .state-icon svg {
+    width: 32px;
+    height: 32px;
   }
 }
 
 @media (max-width: 480px) {
   .page-title {
     font-size: var(--text-xl);
+  }
+
+  .title-icon {
+    width: 22px;
+    height: 22px;
+  }
+
+  .skeleton-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-sm);
   }
 }
 </style>
@@ -475,6 +813,10 @@ watch(
 <style>
 .explore-page .posts-grid .post-card {
   box-sizing: border-box;
-  transition: opacity 0.3s ease, transform 0.3s ease, left 0.3s ease, top 0.3s ease;
+  transition:
+    opacity 0.3s ease,
+    transform 0.3s ease,
+    left 0.3s ease,
+    top 0.3s ease;
 }
 </style>
