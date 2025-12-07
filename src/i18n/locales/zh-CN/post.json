@@ -36,7 +36,11 @@
     "retrying": "重试中...",
     "loadError": "加载媒体失败",
     "networkError": "网络错误",
-    "preloading": "预加载中..."
+    "preloading": "预加载中...",
+    "stats": "数据统计",
+    "overview": "概览",
+    "expandDescription": "展开全部",
+    "collapseDescription": "收起"
   },
   "posts": {
     "subtitle": "发现并探索来自多个平台的精彩内容",
