@@ -50,7 +50,9 @@
     "live": "Live",
     "updates": "Updates",
     "buffered": "Buffered",
-    "speed": "Speed"
+    "speed": "Speed",
+    "posts": "Posts",
+    "scrollToLoadMore": "Scroll down to load more"
   },
   "aria": {
     "skipToMain": "Skip to main content",
@@ -99,5 +101,10 @@
     "fresh": "Fresh data",
     "stale": "Stale data",
     "expired": "Expired data"
+  },
+  "access": {
+    "viewDetails": "View Details",
+    "usage": "Usage",
+    "limit": "Limit"
   }
 }
