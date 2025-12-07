@@ -1581,6 +1581,8 @@ const scrollToTop = () => {
 
 onMounted(() => {
   updateViewportBreakpoints()
+  // 立即调用一次 handleScroll 确保初始状态正确（避免 isTopbarSticky 在页面加载时错误地为 true）
+  handleScroll()
   window.addEventListener('keydown', handleKeydown)
   window.addEventListener('resize', updateViewportBreakpoints, { passive: true })
   window.addEventListener('scroll', handleScroll, { passive: true })
