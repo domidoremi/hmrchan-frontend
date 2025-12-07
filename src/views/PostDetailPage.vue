@@ -22,12 +22,24 @@
 
       <div v-else-if="post" class="post-detail">
         <div class="detail-topbar" :class="{ 'is-sticky': isTopbarSticky }">
-          <button class="back-button glass-button" @click="goBack">
+          <button class="back-button" @click="goBack" :aria-label="$t('common.back')">
             <ArrowLeft :size="20" />
-            {{ $t('common.back') }}
+            <span class="back-label">{{ $t('common.back') }}</span>
           </button>
-          <PostCardActions :is-favorited="isFavorited" @favorite="toggleFavorite" @share="sharePost"
-            @more="handleMoreOptions" />
+
+          <!-- 滚动时显示标题 -->
+          <Transition name="fade-slide">
+            <h2 v-if="isTopbarSticky && post.title" class="topbar-title">
+              {{ post.title }}
+            </h2>
+          </Transition>
+
+          <PostCardActions
+            :is-favorited="isFavorited"
+            @favorite="toggleFavorite"
+            @share="sharePost"
+            @more="handleMoreOptions"
+          />
         </div>
 
         <div v-if="isOfflineDetail" class="offline-hint">
@@ -36,15 +48,25 @@
 
         <div :class="['detail-grid', { 'single-column': isTabletOrBelow }]">
           <section :class="['media-column', { 'compact-media': isMobileViewport }]">
-            <div v-if="post.thumbnail_url" class="post-thumbnail-container" @click="openMediaViewer(0)">
+            <div
+              v-if="post.thumbnail_url"
+              class="post-thumbnail-container"
+              @click="openMediaViewer(0)"
+            >
               <!-- 模糊背景 -->
               <div class="media-backdrop" aria-hidden="true">
                 <img :src="resolveMediaUrl(post.thumbnail_url)" alt="" decoding="async" />
               </div>
 
               <!-- 主图片 -->
-              <img :src="resolveMediaUrl(post.thumbnail_url)" :alt="post.title || 'Post thumbnail'" class="main-image"
-                loading="eager" decoding="async" fetchpriority="high" />
+              <img
+                :src="resolveMediaUrl(post.thumbnail_url)"
+                :alt="post.title || 'Post thumbnail'"
+                class="main-image"
+                loading="eager"
+                decoding="async"
+                fetchpriority="high"
+              />
 
               <!-- 点击提示 -->
               <div class="thumbnail-overlay">
@@ -59,8 +81,14 @@
           <aside :class="['info-column', { interactive: isTabletOrBelow }]">
             <div :class="['post-content-wrapper', { 'as-accordion': isTabletOrBelow }]">
               <template v-if="isTabletOrBelow">
-                <details class="accordion-block" :open="accordionStates.overview"
-                  @toggle="(event) => saveAccordionState('overview', (event.target as HTMLDetailsElement).open)">
+                <details
+                  class="accordion-block"
+                  :open="accordionStates.overview"
+                  @toggle="
+                    (event) =>
+                      saveAccordionState('overview', (event.target as HTMLDetailsElement).open)
+                  "
+                >
                   <summary class="accordion-summary">
                     <span>{{ $t('post.overview') }}</span>
                     <ChevronRight :size="16" class="chevron" />
@@ -109,9 +137,18 @@
                         </div>
                       </div>
                     </div>
-                    <RouterLink v-else-if="post.author_name" :to="`/authors/${post.author_id || 0}`" custom
-                      v-slot="{ navigate }">
-                      <div class="author-info clickable" @click="navigate" role="button" tabindex="0">
+                    <RouterLink
+                      v-else-if="post.author_name"
+                      :to="`/authors/${post.author_id || 0}`"
+                      custom
+                      v-slot="{ navigate }"
+                    >
+                      <div
+                        class="author-info clickable"
+                        @click="navigate"
+                        role="button"
+                        tabindex="0"
+                      >
                         <div class="author-avatar">
                           <User :size="24" />
                         </div>
@@ -123,44 +160,71 @@
                       </div>
                     </RouterLink>
 
-                    <div v-if="post.description || post.title" ref="descriptionSectionRef"
-                      v-memo="[post && post.id, activeTag, isDescriptionExpanded]" :class="[
+                    <div
+                      v-if="post.description || post.title"
+                      ref="descriptionSectionRef"
+                      v-memo="[post && post.id, activeTag, isDescriptionExpanded]"
+                      :class="[
                         'post-description',
                         {
                           'is-collapsed': !isDescriptionExpanded && isDescriptionLong,
                           'is-expanded': isDescriptionExpanded && isDescriptionLong,
                         },
-                      ]">
+                      ]"
+                    >
                       <p>
                         <template v-for="(segment, index) in descriptionSegments" :key="index">
-                          <a v-if="segment.type === 'link'" class="description-link" :href="segment.href"
-                            target="_blank" rel="noopener noreferrer">
+                          <a
+                            v-if="segment.type === 'link'"
+                            class="description-link"
+                            :href="segment.href"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
                             <span class="description-link-icon" aria-hidden="true">
                               <Instagram v-if="segment.platform === 'instagram'" :size="16" />
                               <Music2 v-else-if="segment.platform === 'tiktok'" :size="16" />
                               <Twitter v-else-if="segment.platform === 'x'" :size="16" />
                               <Youtube v-else-if="segment.platform === 'youtube'" :size="16" />
-                              <Ticket v-else-if="segment.platform === 'legendfes' || segment.platform === 'tiget'"
-                                :size="16" />
-                              <Globe v-else-if="segment.platform === 'takanenonadeshiko'" :size="16" />
+                              <Ticket
+                                v-else-if="
+                                  segment.platform === 'legendfes' || segment.platform === 'tiget'
+                                "
+                                :size="16"
+                              />
+                              <Globe
+                                v-else-if="segment.platform === 'takanenonadeshiko'"
+                                :size="16"
+                              />
                               <ExternalLink v-else :size="16" />
                             </span>
                             <span class="description-link-username">{{ segment.text }}</span>
                           </a>
-                          <span v-else-if="segment.type === 'tag'" class="description-tag" :class="{
-                            'is-link': isKnownTag(segment.tagName),
-                            'is-active': segment.tagName === activeTag,
-                          }" @click="onDescriptionTagClick(segment.tagName)">
+                          <span
+                            v-else-if="segment.type === 'tag'"
+                            class="description-tag"
+                            :class="{
+                              'is-link': isKnownTag(segment.tagName),
+                              'is-active': segment.tagName === activeTag,
+                            }"
+                            @click="onDescriptionTagClick(segment.tagName)"
+                          >
                             <Tag :size="14" class="description-tag-icon" aria-hidden="true" />
-                            <span class="description-tag-text">#{{ segment.tagName || segment.text }}</span>
+                            <span class="description-tag-text"
+                              >#{{ segment.tagName || segment.text }}</span
+                            >
                           </span>
                           <span v-else>
                             {{ segment.text }}
                           </span>
                         </template>
                       </p>
-                      <button v-if="isDescriptionLong" type="button" class="description-toggle"
-                        @click="isDescriptionExpanded = !isDescriptionExpanded">
+                      <button
+                        v-if="isDescriptionLong"
+                        type="button"
+                        class="description-toggle"
+                        @click="isDescriptionExpanded = !isDescriptionExpanded"
+                      >
                         {{
                           isDescriptionExpanded
                             ? t('post.collapseDescription', '收起')
@@ -171,8 +235,15 @@
                   </div>
                 </details>
 
-                <details v-if="yieldedStats.length > 0" class="accordion-block" :open="accordionStates.stats"
-                  @toggle="(event) => saveAccordionState('stats', (event.target as HTMLDetailsElement).open)">
+                <details
+                  v-if="yieldedStats.length > 0"
+                  class="accordion-block"
+                  :open="accordionStates.stats"
+                  @toggle="
+                    (event) =>
+                      saveAccordionState('stats', (event.target as HTMLDetailsElement).open)
+                  "
+                >
                   <summary class="accordion-summary">
                     <span>{{ $t('post.stats') }}</span>
                     <ChevronRight :size="16" class="chevron" />
@@ -181,11 +252,20 @@
                   <div class="accordion-body">
                     <section class="post-stats-section" aria-labelledby="post-stats-heading">
                       <h2 id="post-stats-heading" class="sr-only">{{ $t('post.stats') }}</h2>
-                      <div v-if="yieldedStats.length > 0" class="post-action-stats" role="list"
-                        :aria-label="$t('post.stats')">
-                        <component v-for="stat in yieldedStats" :key="stat.key" :is="stat.linkAttrs ? 'a' : 'div'"
-                          v-bind="stat.linkAttrs ?? {}" :class="['post-stats-row', { 'is-link': !!stat.linkAttrs }]"
-                          role="listitem">
+                      <div
+                        v-if="yieldedStats.length > 0"
+                        class="post-action-stats"
+                        role="list"
+                        :aria-label="$t('post.stats')"
+                      >
+                        <component
+                          v-for="stat in yieldedStats"
+                          :key="stat.key"
+                          :is="stat.linkAttrs ? 'a' : 'div'"
+                          v-bind="stat.linkAttrs ?? {}"
+                          :class="['post-stats-row', { 'is-link': !!stat.linkAttrs }]"
+                          role="listitem"
+                        >
                           <div class="stat-icon">
                             <component :is="stat.icon" :size="20" />
                           </div>
@@ -193,25 +273,45 @@
                             <span class="stat-count">{{ stat.display }}</span>
                             <span class="stat-label">{{ stat.label }}</span>
                           </div>
-                          <ExternalLink v-if="stat.linkAttrs" :size="16" class="link-icon" aria-hidden="true" />
+                          <ExternalLink
+                            v-if="stat.linkAttrs"
+                            :size="16"
+                            class="link-icon"
+                            aria-hidden="true"
+                          />
                         </component>
                       </div>
                     </section>
                   </div>
                 </details>
 
-                <details v-if="post.tags && post.tags.length > 0" class="accordion-block" :open="accordionStates.tags"
-                  @toggle="(event) => saveAccordionState('tags', (event.target as HTMLDetailsElement).open)">
+                <details
+                  v-if="post.tags && post.tags.length > 0"
+                  class="accordion-block"
+                  :open="accordionStates.tags"
+                  @toggle="
+                    (event) => saveAccordionState('tags', (event.target as HTMLDetailsElement).open)
+                  "
+                >
                   <summary class="accordion-summary">
                     <span>{{ $t('post.tags') }}</span>
                     <ChevronRight :size="16" class="chevron" />
                   </summary>
 
                   <div class="accordion-body">
-                    <div class="tags-section" ref="mobileTagsSectionRef" v-memo="[post && post.id, activeTag]">
+                    <div
+                      class="tags-section"
+                      ref="mobileTagsSectionRef"
+                      v-memo="[post && post.id, activeTag]"
+                    >
                       <div class="tags-list">
-                        <span v-for="tag in post.tags" :key="tag" class="tag glass-badge"
-                          :class="{ 'is-active': tag === activeTag }" @click="onTagsListTagClick(tag)">
+                        <span
+                          v-for="tag in post.tags"
+                          :key="tag"
+                          class="tag glass-badge"
+                          :class="{ 'is-active': tag === activeTag }"
+                          @click="onTagsListTagClick(tag)"
+                        >
                           {{ tag }}
                         </span>
                       </div>
@@ -219,8 +319,15 @@
                   </div>
                 </details>
 
-                <details v-if="relatedPosts.length > 0" class="accordion-block" :open="accordionStates.related"
-                  @toggle="(event) => saveAccordionState('related', (event.target as HTMLDetailsElement).open)">
+                <details
+                  v-if="relatedPosts.length > 0"
+                  class="accordion-block"
+                  :open="accordionStates.related"
+                  @toggle="
+                    (event) =>
+                      saveAccordionState('related', (event.target as HTMLDetailsElement).open)
+                  "
+                >
                   <summary class="accordion-summary">
                     <span>{{ $t('post.relatedPosts') }}</span>
                     <ChevronRight :size="16" class="chevron" />
@@ -229,10 +336,18 @@
                   <div class="accordion-body">
                     <div class="related-posts" v-memo="[post && post.id, relatedPosts.length]">
                       <div class="related-grid">
-                        <RouterLink v-for="relatedPost in relatedPosts" :key="relatedPost.id"
-                          :to="`/posts/${relatedPost.id}`" class="related-item">
-                          <img v-if="relatedPost.thumbnail_url" :src="resolveMediaUrl(relatedPost.thumbnail_url)"
-                            :alt="relatedPost.title || ''" loading="lazy" />
+                        <RouterLink
+                          v-for="relatedPost in relatedPosts"
+                          :key="relatedPost.id"
+                          :to="`/posts/${relatedPost.id}`"
+                          class="related-item"
+                        >
+                          <img
+                            v-if="relatedPost.thumbnail_url"
+                            :src="resolveMediaUrl(relatedPost.thumbnail_url)"
+                            :alt="relatedPost.title || ''"
+                            loading="lazy"
+                          />
                           <div class="related-info">
                             <h4>{{ relatedPost.title || $t('post.untitled') }}</h4>
                             <div class="related-stats">
@@ -294,8 +409,12 @@
                     </div>
                   </div>
                 </div>
-                <RouterLink v-else-if="post.author_name" :to="`/authors/${post.author_id || 0}`" custom
-                  v-slot="{ navigate }">
+                <RouterLink
+                  v-else-if="post.author_name"
+                  :to="`/authors/${post.author_id || 0}`"
+                  custom
+                  v-slot="{ navigate }"
+                >
                   <div class="author-info clickable" @click="navigate" role="button" tabindex="0">
                     <div class="author-avatar">
                       <User :size="24" />
@@ -313,33 +432,50 @@
 
           <!-- 桌面端：媒体下方整行，放描述 + 操作按钮 + 统计 -->
           <div v-if="!isTabletOrBelow" class="detail-main full-width-section">
-            <div v-if="post.description || post.title" ref="descriptionSectionRef"
-              v-memo="[post && post.id, activeTag, isDescriptionExpanded]" :class="[
+            <div
+              v-if="post.description || post.title"
+              ref="descriptionSectionRef"
+              v-memo="[post && post.id, activeTag, isDescriptionExpanded]"
+              :class="[
                 'post-description',
                 {
                   'is-collapsed': !isDescriptionExpanded && isDescriptionLong,
                   'is-expanded': isDescriptionExpanded && isDescriptionLong,
                 },
-              ]">
+              ]"
+            >
               <p>
                 <template v-for="(segment, index) in descriptionSegments" :key="index">
-                  <a v-if="segment.type === 'link'" class="description-link" :href="segment.href" target="_blank"
-                    rel="noopener noreferrer">
+                  <a
+                    v-if="segment.type === 'link'"
+                    class="description-link"
+                    :href="segment.href"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
                     <span class="description-link-icon" aria-hidden="true">
                       <Instagram v-if="segment.platform === 'instagram'" :size="16" />
                       <Music2 v-else-if="segment.platform === 'tiktok'" :size="16" />
                       <Twitter v-else-if="segment.platform === 'x'" :size="16" />
                       <Youtube v-else-if="segment.platform === 'youtube'" :size="16" />
-                      <Ticket v-else-if="segment.platform === 'legendfes' || segment.platform === 'tiget'" :size="16" />
+                      <Ticket
+                        v-else-if="segment.platform === 'legendfes' || segment.platform === 'tiget'"
+                        :size="16"
+                      />
                       <Globe v-else-if="segment.platform === 'takanenonadeshiko'" :size="16" />
                       <ExternalLink v-else :size="16" />
                     </span>
                     <span class="description-link-username">{{ segment.text }}</span>
                   </a>
-                  <span v-else-if="segment.type === 'tag'" class="description-tag" :class="{
-                    'is-link': isKnownTag(segment.tagName),
-                    'is-active': segment.tagName === activeTag,
-                  }" @click="onDescriptionTagClick(segment.tagName)">
+                  <span
+                    v-else-if="segment.type === 'tag'"
+                    class="description-tag"
+                    :class="{
+                      'is-link': isKnownTag(segment.tagName),
+                      'is-active': segment.tagName === activeTag,
+                    }"
+                    @click="onDescriptionTagClick(segment.tagName)"
+                  >
                     <Tag :size="14" class="description-tag-icon" aria-hidden="true" />
                     <span class="description-tag-text">#{{ segment.tagName || segment.text }}</span>
                   </span>
@@ -348,8 +484,12 @@
                   </span>
                 </template>
               </p>
-              <button v-if="isDescriptionLong" type="button" class="description-toggle"
-                @click="isDescriptionExpanded = !isDescriptionExpanded">
+              <button
+                v-if="isDescriptionLong"
+                type="button"
+                class="description-toggle"
+                @click="isDescriptionExpanded = !isDescriptionExpanded"
+              >
                 {{
                   isDescriptionExpanded
                     ? t('post.collapseDescription', '收起')
@@ -358,13 +498,22 @@
               </button>
             </div>
 
-            <section v-if="yieldedStats.length > 0" v-memo="[post && post.id]" class="post-stats"
-              aria-labelledby="post-stats-heading">
+            <section
+              v-if="yieldedStats.length > 0"
+              v-memo="[post && post.id]"
+              class="post-stats"
+              aria-labelledby="post-stats-heading"
+            >
               <h2 id="post-stats-heading" class="sr-only">{{ $t('post.stats') }}</h2>
               <div class="post-action-stats" role="list" :aria-label="$t('post.stats')">
-                <component v-for="stat in yieldedStats" :key="stat.key" :is="stat.linkAttrs ? 'a' : 'div'"
-                  v-bind="stat.linkAttrs ?? {}" :class="['post-stats-row', { 'is-link': !!stat.linkAttrs }]"
-                  role="listitem">
+                <component
+                  v-for="stat in yieldedStats"
+                  :key="stat.key"
+                  :is="stat.linkAttrs ? 'a' : 'div'"
+                  v-bind="stat.linkAttrs ?? {}"
+                  :class="['post-stats-row', { 'is-link': !!stat.linkAttrs }]"
+                  role="listitem"
+                >
                   <div class="stat-icon">
                     <component :is="stat.icon" :size="20" />
                   </div>
@@ -372,35 +521,59 @@
                     <span class="stat-count">{{ stat.display }}</span>
                     <span class="stat-label">{{ stat.label }}</span>
                   </div>
-                  <ExternalLink v-if="stat.linkAttrs" :size="16" class="link-icon" aria-hidden="true" />
+                  <ExternalLink
+                    v-if="stat.linkAttrs"
+                    :size="16"
+                    class="link-icon"
+                    aria-hidden="true"
+                  />
                 </component>
               </div>
             </section>
           </div>
 
-          <div v-if="!isTabletOrBelow && post.tags && post.tags.length > 0"
-            class="tags-section glass-card full-width-section" ref="desktopTagsSectionRef"
-            v-memo="[post && post.id, activeTag]">
+          <div
+            v-if="!isTabletOrBelow && post.tags && post.tags.length > 0"
+            class="tags-section glass-card full-width-section"
+            ref="desktopTagsSectionRef"
+            v-memo="[post && post.id, activeTag]"
+          >
             <h3>{{ $t('post.tags') }}</h3>
             <div class="tags-list">
-              <span v-for="tag in post.tags" :key="tag" class="tag glass-badge"
-                :class="{ 'is-active': tag === activeTag }" @click="onTagsListTagClick(tag)">
+              <span
+                v-for="tag in post.tags"
+                :key="tag"
+                class="tag glass-badge"
+                :class="{ 'is-active': tag === activeTag }"
+                @click="onTagsListTagClick(tag)"
+              >
                 {{ tag }}
               </span>
             </div>
           </div>
 
-          <div v-if="!isTabletOrBelow && relatedPosts.length > 0" class="related-posts glass-card full-width-section"
-            v-memo="[post && post.id, relatedPosts.length]">
+          <div
+            v-if="!isTabletOrBelow && relatedPosts.length > 0"
+            class="related-posts glass-card full-width-section"
+            v-memo="[post && post.id, relatedPosts.length]"
+          >
             <h3 class="related-title">
               <Sparkles :size="20" />
               {{ $t('post.relatedPosts') }}
             </h3>
             <div class="related-grid">
-              <RouterLink v-for="relatedPost in relatedPosts" :key="relatedPost.id" :to="`/posts/${relatedPost.id}`"
-                class="related-item">
-                <img v-if="relatedPost.thumbnail_url" :src="resolveMediaUrl(relatedPost.thumbnail_url)"
-                  :alt="relatedPost.title || ''" loading="lazy" />
+              <RouterLink
+                v-for="relatedPost in relatedPosts"
+                :key="relatedPost.id"
+                :to="`/posts/${relatedPost.id}`"
+                class="related-item"
+              >
+                <img
+                  v-if="relatedPost.thumbnail_url"
+                  :src="resolveMediaUrl(relatedPost.thumbnail_url)"
+                  :alt="relatedPost.title || ''"
+                  loading="lazy"
+                />
                 <div class="related-info">
                   <h4>{{ relatedPost.title || $t('post.untitled') }}</h4>
                   <div class="related-stats">
@@ -421,14 +594,33 @@
         <div v-if="post.media_files && post.media_files.length > 0" class="media-section">
           <h2>{{ $t('post.media') }} ({{ post.media_files.length }})</h2>
           <div class="media-grid">
-            <div v-for="(media, index) in post.media_files" :key="media.id" class="media-item glass-card">
-              <img v-if="media.file_type === 'image'" :src="mediaApi.getStreamUrl(media.id)" :alt="post.title || ''"
-                loading="lazy" decoding="async" @click="openMediaViewer(getMediaIndex(index))"
-                class="clickable-image" />
-              <div v-else-if="media.file_type === 'video'" class="video-thumbnail-container"
-                @click="openMediaViewer(getMediaIndex(index))">
-                <img v-if="media.thumbnail_path" :src="mediaApi.getStreamUrl(media.id) + '/thumbnail'"
-                  :alt="post.title || ''" loading="lazy" decoding="async" class="video-thumbnail" />
+            <div
+              v-for="(media, index) in post.media_files"
+              :key="media.id"
+              class="media-item glass-card"
+            >
+              <img
+                v-if="media.file_type === 'image'"
+                :src="mediaApi.getStreamUrl(media.id)"
+                :alt="post.title || ''"
+                loading="lazy"
+                decoding="async"
+                @click="openMediaViewer(getMediaIndex(index))"
+                class="clickable-image"
+              />
+              <div
+                v-else-if="media.file_type === 'video'"
+                class="video-thumbnail-container"
+                @click="openMediaViewer(getMediaIndex(index))"
+              >
+                <img
+                  v-if="media.thumbnail_path"
+                  :src="mediaApi.getStreamUrl(media.id) + '/thumbnail'"
+                  :alt="post.title || ''"
+                  loading="lazy"
+                  decoding="async"
+                  class="video-thumbnail"
+                />
                 <div v-else class="video-placeholder">
                   <Play :size="48" />
                 </div>
@@ -436,7 +628,7 @@
                   <Play :size="48" />
                   <span class="video-duration" v-if="media.duration">{{
                     formatDuration(media.duration)
-                    }}</span>
+                  }}</span>
                 </div>
               </div>
             </div>
@@ -455,19 +647,32 @@
     </div>
 
     <!-- 回到顶部按钮（带进度环） -->
-    <button v-show="showBackToTop" class="back-to-top-btn" @click="scrollToTop"
-      :aria-label="$t('common.backToTop', '回到顶部')">
+    <button
+      v-show="showBackToTop"
+      class="back-to-top-btn"
+      @click="scrollToTop"
+      :aria-label="$t('common.backToTop', '回到顶部')"
+    >
       <svg viewBox="0 0 100 100" class="progress-ring">
         <circle cx="50" cy="50" r="45" class="progress-ring-bg" />
-        <circle cx="50" cy="50" r="45" class="progress-ring-progress"
-          :style="{ strokeDashoffset: progressRingOffset }" />
+        <circle
+          cx="50"
+          cy="50"
+          r="45"
+          class="progress-ring-progress"
+          :style="{ strokeDashoffset: progressRingOffset }"
+        />
       </svg>
       <ArrowUp :size="20" class="arrow-icon" />
     </button>
 
     <!-- 媒体查看器 -->
-    <PhotoSwipeViewer :show="showMediaViewer" :items="viewerMediaItems" :initial-index="viewerInitialIndex"
-      @close="closeMediaViewer" />
+    <PhotoSwipeViewer
+      :show="showMediaViewer"
+      :items="viewerMediaItems"
+      :initial-index="viewerInitialIndex"
+      @close="closeMediaViewer"
+    />
   </MainLayout>
 </template>
 
@@ -691,7 +896,7 @@ function splitTextByTags(text: string, tags: string[]): DescriptionSegment[] {
   // 创建一个正则表达式匹配所有标签
   // 需要对标签进行转义以处理特殊字符，并按长度降序排序以优先匹配长标签
   const sortedTags = [...tags].sort((a, b) => b.length - a.length)
-  const escapedTags = sortedTags.map(tag => tag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+  const escapedTags = sortedTags.map((tag) => tag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
   // 移除 \b 单词边界，改用更灵活的匹配方式
   const tagPattern = new RegExp(`(${escapedTags.join('|')})`, 'gi')
 
@@ -708,7 +913,7 @@ function splitTextByTags(text: string, tags: string[]): DescriptionSegment[] {
     }
 
     // 找到原始标签（保持原始大小写）
-    const originalTag = tags.find(t => t.toLowerCase() === matchedTag.toLowerCase()) || matchedTag
+    const originalTag = tags.find((t) => t.toLowerCase() === matchedTag.toLowerCase()) || matchedTag
 
     // 添加标签段
     segments.push({
@@ -831,7 +1036,7 @@ const accordionStates = ref({
   overview: true,
   stats: true,
   tags: true,
-  related: true
+  related: true,
 })
 
 // 保存 accordion 状态
@@ -839,10 +1044,7 @@ const saveAccordionState = (key: keyof typeof accordionStates.value, isOpen: boo
   accordionStates.value[key] = isOpen
   const postId = route.params.id
   try {
-    sessionStorage.setItem(
-      `${ACCORDION_KEY}:${postId}`,
-      JSON.stringify(accordionStates.value)
-    )
+    sessionStorage.setItem(`${ACCORDION_KEY}:${postId}`, JSON.stringify(accordionStates.value))
   } catch {
     // Silently ignore sessionStorage errors
   }
@@ -884,7 +1086,9 @@ const allMediaItems = computed(() => {
   const firstMediaUrl = post.value.media_files?.[0]
     ? mediaApi.getStreamUrl(post.value.media_files[0].id)
     : null
-  const isThumbnailDuplicate = thumbnailUrl && firstMediaUrl &&
+  const isThumbnailDuplicate =
+    thumbnailUrl &&
+    firstMediaUrl &&
     (thumbnailUrl === firstMediaUrl || thumbnailUrl.includes(post.value.media_files?.[0]?.id || ''))
 
   // 1. 添加缩略图（如果存在且不与第一个媒体文件重复）
@@ -946,10 +1150,10 @@ const yieldedStats = computed<StatEntry[]>(() => {
   const stats: StatEntry[] = []
   const baseLink = post.value.url
     ? {
-      href: post.value.url,
-      target: '_blank',
-      rel: 'noopener noreferrer',
-    }
+        href: post.value.url,
+        target: '_blank',
+        rel: 'noopener noreferrer',
+      }
     : undefined
 
   const pushStat = (
@@ -1025,20 +1229,31 @@ onMounted(async () => {
 
     // 验证媒体文件ID格式（诊断用）
     if (import.meta.env.DEV && post.value?.media_files && post.value.media_files.length > 0) {
-      logger.group('[PostDetailPage] Media ID Validation', () => {
-        post.value!.media_files!.forEach((media, index) => {
-          const isValid = validateMediaId(media.id, `PostDetailPage(post=${postId}, media[${index}])`)
-          if (!isValid) {
-            logger.debug('Media File Details', { category: 'PostDetailPage' }, {
-              index,
-              id: media.id,
-              id_type: typeof media.id,
-              file_type: media.file_type,
-              file_path: media.file_path,
-            })
-          }
-        })
-      }, { category: 'PostDetailPage' })
+      logger.group(
+        '[PostDetailPage] Media ID Validation',
+        () => {
+          post.value!.media_files!.forEach((media, index) => {
+            const isValid = validateMediaId(
+              media.id,
+              `PostDetailPage(post=${postId}, media[${index}])`,
+            )
+            if (!isValid) {
+              logger.debug(
+                'Media File Details',
+                { category: 'PostDetailPage' },
+                {
+                  index,
+                  id: media.id,
+                  id_type: typeof media.id,
+                  file_type: media.file_type,
+                  file_path: media.file_path,
+                },
+              )
+            }
+          })
+        },
+        { category: 'PostDetailPage' },
+      )
     }
 
     // 增加浏览计数（如果该帖子未被浏览过）
@@ -1108,7 +1323,10 @@ const toggleFavorite = async () => {
           await indexedDB.removeFavorite(userId, postId)
         }
       } catch (e) {
-        handleError(e, { silent: true, customMessage: 'Failed to update local favorite in IndexedDB' })
+        handleError(e, {
+          silent: true,
+          customMessage: 'Failed to update local favorite in IndexedDB',
+        })
       }
     }
 
@@ -1206,7 +1424,9 @@ const getMediaIndex = (mediaFileIndex: number): number => {
   const firstMediaUrl = post.value.media_files?.[0]
     ? mediaApi.getStreamUrl(post.value.media_files[0].id)
     : null
-  const isThumbnailDuplicate = thumbnailUrl && firstMediaUrl &&
+  const isThumbnailDuplicate =
+    thumbnailUrl &&
+    firstMediaUrl &&
     (thumbnailUrl === firstMediaUrl || thumbnailUrl.includes(post.value.media_files?.[0]?.id || ''))
 
   const offset = isThumbnailDuplicate ? 0 : 1
@@ -1326,9 +1546,8 @@ const handleScroll = () => {
 
   // 计算阅读进度
   const scrollableHeight = documentHeight - windowHeight
-  readingProgress.value = scrollableHeight > 0
-    ? Math.min((scrollTop / scrollableHeight) * 100, 100)
-    : 0
+  readingProgress.value =
+    scrollableHeight > 0 ? Math.min((scrollTop / scrollableHeight) * 100, 100) : 0
 
   // 显示/隐藏回到顶部按钮
   showBackToTop.value = scrollTop > 300
@@ -1347,7 +1566,7 @@ const handleScroll = () => {
 const scrollToTop = () => {
   window.scrollTo({
     top: 0,
-    behavior: 'smooth'
+    behavior: 'smooth',
   })
 }
 
@@ -1616,6 +1835,33 @@ onUnmounted(() => {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
+/* 顶部栏标题 */
+.topbar-title {
+  flex: 1;
+  margin: 0;
+  padding: 0 var(--spacing-md);
+  font-size: var(--text-base);
+  font-weight: var(--font-semibold);
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
+  max-width: 50%;
+}
+
+/* 标题淡入滑动动画 */
+.fade-slide-enter-active,
+.fade-slide-leave-active {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.fade-slide-enter-from,
+.fade-slide-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
+}
+
 .detail-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(320px, 360px);
@@ -1627,7 +1873,7 @@ onUnmounted(() => {
   grid-template-columns: minmax(0, 1fr);
 }
 
-.detail-grid>.full-width-section {
+.detail-grid > .full-width-section {
   grid-column: 1 / -1;
 }
 
@@ -1638,7 +1884,7 @@ onUnmounted(() => {
 }
 
 @media (min-width: 1024px) {
-  .detail-grid>.full-width-section {
+  .detail-grid > .full-width-section {
     margin-top: clamp(8px, 1.5vw, 16px);
   }
 }
@@ -1834,6 +2080,20 @@ onUnmounted(() => {
     box-shadow 0.2s ease;
 }
 
+/* 移动端简化 accordion 样式，减少边框嵌套 */
+@media (max-width: 768px) {
+  .accordion-block {
+    border-radius: var(--radius-lg);
+    box-shadow: none;
+    border-color: rgba(139, 92, 246, 0.1);
+  }
+
+  /* 包含 related-grid 的 accordion 需要允许横向滚动 */
+  .accordion-block:has(.related-grid) {
+    overflow: visible;
+  }
+}
+
 .accordion-summary {
   list-style: none;
   display: flex;
@@ -1862,6 +2122,24 @@ onUnmounted(() => {
   padding: 0 var(--spacing-lg) var(--spacing-lg);
   display: grid;
   gap: var(--spacing-lg);
+}
+
+/* 移动端：accordion-body 内的 related-posts 需要支持横向滚动 */
+@media (max-width: 768px) {
+  .accordion-body {
+    overflow-x: visible;
+    overflow-y: visible;
+  }
+
+  .accordion-body .related-posts {
+    margin-left: calc(-1 * var(--spacing-lg));
+    margin-right: calc(-1 * var(--spacing-lg));
+    padding-left: 0;
+    padding-right: 0;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+  }
 }
 
 .accordion-body .post-actions {
@@ -2254,9 +2532,7 @@ onUnmounted(() => {
   padding: 6px 14px;
   border-radius: 999px;
   /* 渐变背景 */
-  background: linear-gradient(135deg,
-      rgba(139, 92, 246, 0.2),
-      rgba(192, 132, 252, 0.2));
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(192, 132, 252, 0.2));
   border: 1px solid rgba(139, 92, 246, 0.5);
   color: var(--color-text-secondary);
   font-size: var(--text-sm);
@@ -2273,9 +2549,7 @@ onUnmounted(() => {
 
 .description-toggle:hover {
   color: var(--color-text-primary);
-  background: linear-gradient(135deg,
-      rgba(139, 92, 246, 0.3),
-      rgba(192, 132, 252, 0.3));
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.3), rgba(192, 132, 252, 0.3));
   border-color: rgba(129, 140, 248, 0.7);
   transform: translateX(-50%) translateY(-4px) scale(1.02);
   box-shadow:
@@ -2864,14 +3138,17 @@ onUnmounted(() => {
 .skeleton-stats {
   position: relative;
   overflow: hidden;
-  background: linear-gradient(90deg,
-      var(--glass-bg-light) 0%,
-      rgba(139, 92, 246, 0.08) 20%,
-      rgba(192, 132, 252, 0.12) 40%,
-      rgba(139, 92, 246, 0.08) 60%,
-      var(--glass-bg-light) 100%);
+  background: linear-gradient(
+    90deg,
+    var(--glass-bg-light) 0%,
+    rgba(139, 92, 246, 0.08) 20%,
+    rgba(192, 132, 252, 0.12) 40%,
+    rgba(139, 92, 246, 0.08) 60%,
+    var(--glass-bg-light) 100%
+  );
   background-size: 1000px 100%;
-  animation: skeleton-shimmer 2s ease-in-out infinite,
+  animation:
+    skeleton-shimmer 2s ease-in-out infinite,
     skeleton-pulse 1.5s ease-in-out infinite;
 }
 
@@ -2900,7 +3177,6 @@ onUnmounted(() => {
 }
 
 @keyframes sparkle {
-
   0%,
   100% {
     opacity: 1;
@@ -2982,13 +3258,38 @@ onUnmounted(() => {
 }
 
 @media (max-width: 768px) {
-  .related-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: var(--spacing-md);
+  .related-posts {
+    padding: var(--spacing-md) 0;
+    margin: 0;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
   }
 
-  .related-posts {
-    padding: var(--spacing-lg);
+  .related-grid {
+    display: flex;
+    overflow-x: auto;
+    gap: var(--spacing-md);
+    padding: 0 var(--spacing-lg);
+    padding-bottom: var(--spacing-sm);
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .related-grid::-webkit-scrollbar {
+    display: none;
+  }
+
+  .related-item {
+    flex: 0 0 200px;
+    scroll-snap-align: start;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
   }
 
   .related-item img {
@@ -3005,8 +3306,12 @@ onUnmounted(() => {
 }
 
 @media (max-width: 480px) {
-  .related-grid {
-    grid-template-columns: 1fr;
+  .related-item {
+    flex: 0 0 170px;
+  }
+
+  .related-item img {
+    height: 100px;
   }
 }
 </style>
