@@ -48,7 +48,10 @@
     "updates": "更新",
     "buffered": "已缓冲",
     "speed": "速度",
-    "retry": "重试"
+    "retry": "重试",
+    "posts": "帖子",
+    "scrollToLoadMore": "向下滚动加载更多",
+    "submit": "提交"
   },
   "aria": {
     "skipToMain": "跳转到主内容",
@@ -98,5 +101,10 @@
     "fresh": "新鲜数据",
     "stale": "数据稍旧",
     "expired": "数据已过期"
+  },
+  "access": {
+    "viewDetails": "查看详情",
+    "usage": "使用量",
+    "limit": "限额"
   }
 }
