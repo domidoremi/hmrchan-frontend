@@ -28,7 +28,11 @@
     "shareSuccess": "共有しました",
     "copyLink": "リンクをコピー",
     "copySuccess": "リンクをクリップボードにコピーしました",
-    "copyFailed": "リンクのコピーに失敗しました"
+    "copyFailed": "リンクのコピーに失敗しました",
+    "stats": "統計",
+    "overview": "概要",
+    "expandDescription": "もっと見る",
+    "collapseDescription": "閉じる"
   },
   "posts": {
     "subtitle": "複数のプラットフォームから素晴らしいコンテンツを発見し探索"

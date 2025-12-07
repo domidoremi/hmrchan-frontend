@@ -36,7 +36,11 @@
     "retrying": "Retrying...",
     "loadError": "Failed to load media",
     "networkError": "Network error",
-    "preloading": "Preloading..."
+    "preloading": "Preloading...",
+    "stats": "Statistics",
+    "overview": "Overview",
+    "expandDescription": "Show more",
+    "collapseDescription": "Show less"
   },
   "posts": {
     "subtitle": "Discover and explore amazing content from multiple platforms",
