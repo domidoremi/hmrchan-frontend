@@ -61,7 +61,11 @@ const prepareDataSource = (items: MediaItem[]) => {
       return imageData
     } else {
       // console.log(`[PhotoSwipeViewer] Video ${index}:`, item.url)
-      const videoElement = createNativeVideoElement(item.url, item.mediaId, item.subtitles || undefined)
+      const videoElement = createNativeVideoElement(
+        item.url,
+        item.mediaId,
+        item.subtitles || undefined,
+      )
       return {
         html: videoElement.outerHTML,
       }
@@ -70,7 +74,11 @@ const prepareDataSource = (items: MediaItem[]) => {
 }
 
 // 创建原生视频元素（使用浏览器原生控件）
-const createNativeVideoElement = (url: string, mediaId?: string, subtitles?: Array<{ language: string; format: string; label: string }>) => {
+const createNativeVideoElement = (
+  url: string,
+  mediaId?: string,
+  subtitles?: Array<{ language: string; format: string; label: string }>,
+) => {
   const container = document.createElement('div')
   container.className = 'pswp__video-wrapper'
 
@@ -103,7 +111,11 @@ const createNativeVideoElement = (url: string, mediaId?: string, subtitles?: Arr
 }
 
 // 初始化原生视频播放器（启用字幕）
-const initNativeVideoPlayer = (videoElement: HTMLVideoElement, _container: HTMLElement, url: string) => {
+const initNativeVideoPlayer = (
+  videoElement: HTMLVideoElement,
+  _container: HTMLElement,
+  url: string,
+) => {
   if (videoInstances.has(url)) return videoInstances.get(url)!
 
   // console.log('[PhotoSwipeViewer] Initializing native video player:', url)
@@ -229,7 +241,7 @@ watch(
       closePhotoSwipe()
     }
   },
-  { immediate: true }
+  { immediate: true },
 )
 
 // 组件卸载时清理
@@ -331,5 +343,89 @@ onUnmounted(() => {
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.3s ease;
+}
+
+/* ========== 响应式箭头按钮 ========== */
+/* 基础箭头按钮样式（桌面端） */
+.pswp__button--arrow {
+  width: 56px;
+  height: 56px;
+  margin-top: -28px;
+}
+
+.pswp__button--arrow--prev,
+.pswp__button--arrow--next {
+  top: 50%;
+}
+
+/* 平板端 (max-width: 1024px) */
+@media (max-width: 1024px) {
+  .pswp__button--arrow {
+    width: 48px;
+    height: 48px;
+    margin-top: -24px;
+  }
+}
+
+/* 移动端 (max-width: 768px) */
+@media (max-width: 768px) {
+  .pswp__button--arrow {
+    width: 40px;
+    height: 40px;
+    margin-top: -20px;
+  }
+
+  .pswp__button--arrow--prev {
+    left: 4px;
+  }
+
+  .pswp__button--arrow--next {
+    right: 4px;
+  }
+
+  .pswp__counter {
+    font-size: 12px;
+    padding: 4px 10px;
+    margin: 8px;
+  }
+
+  .pswp__button {
+    width: 40px;
+    height: 40px;
+  }
+}
+
+/* 小屏手机 (max-width: 480px) */
+@media (max-width: 480px) {
+  .pswp__button--arrow {
+    width: 32px;
+    height: 32px;
+    margin-top: -16px;
+    border-radius: 6px;
+  }
+
+  .pswp__button--arrow--prev {
+    left: 2px;
+  }
+
+  .pswp__button--arrow--next {
+    right: 2px;
+  }
+
+  .pswp__counter {
+    font-size: 11px;
+    padding: 3px 8px;
+    margin: 6px;
+  }
+
+  .pswp__button {
+    width: 36px;
+    height: 36px;
+  }
+
+  .pswp__button--close {
+    width: 36px;
+    height: 36px;
+  }
 }
 </style>

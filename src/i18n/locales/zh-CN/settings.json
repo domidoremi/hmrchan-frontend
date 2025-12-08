@@ -25,7 +25,11 @@
     "openAdvanced": "打开完整设置",
     "saving": "保存中...",
     "saved": "已保存",
-    "saveFailed": "保存失败"
+    "saveFailed": "保存失败",
+    "moreAbout": "更多 / 关于",
+    "aboutThisApp": "关于本应用",
+    "termsOfUse": "使用条款",
+    "termsOfUseDesc": "查看本服务的使用条款。"
   },
   "preferences": {
     "title": "用户偏好设置",
