@@ -34,9 +34,8 @@ export {
 // Legacy exports for backward compatibility
 export { formatCompactNumber as formatNumber } from './number'
 
-// Re-export formatDuration from common for backward compatibility
-import { FormatHelper } from '../common'
-export const formatDuration = FormatHelper.formatDuration
+// Duration formatting (migrated from common.ts)
+export { formatDuration } from './date'
 
 // Text formatting
 export {
