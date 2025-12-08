@@ -52,7 +52,13 @@
     "buffered": "Buffered",
     "speed": "Speed",
     "posts": "Posts",
-    "scrollToLoadMore": "Scroll down to load more"
+    "scrollToLoadMore": "Scroll down to load more",
+    "viewMode": "View Mode"
+  },
+  "viewMode": {
+    "grid": "Grid",
+    "compact": "Compact",
+    "masonry": "Masonry"
   },
   "aria": {
     "skipToMain": "Skip to main content",

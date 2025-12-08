@@ -51,7 +51,13 @@
     "retry": "重试",
     "posts": "帖子",
     "scrollToLoadMore": "向下滚动加载更多",
-    "submit": "提交"
+    "submit": "提交",
+    "viewMode": "视图模式"
+  },
+  "viewMode": {
+    "grid": "网格",
+    "compact": "紧凑",
+    "masonry": "瀑布流"
   },
   "aria": {
     "skipToMain": "跳转到主内容",

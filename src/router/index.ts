@@ -62,7 +62,7 @@ export const routes: RouteRecordRaw[] = [
   {
     path: '/posts',
     name: 'posts',
-    component: () => import(/* webpackChunkName: "page-postsview" */ '@/views/PostsView.vue'),
+    component: () => import(/* webpackChunkName: "page-postsview" */ '@/views/posts/PostsView.vue'),
     meta: {
       title: 'Posts',
       preload: true,

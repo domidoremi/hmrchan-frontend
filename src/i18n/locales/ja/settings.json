@@ -25,7 +25,11 @@
     "openAdvanced": "詳細設定を開く",
     "saving": "保存中...",
     "saved": "保存済み",
-    "saveFailed": "保存失敗"
+    "saveFailed": "保存失敗",
+    "moreAbout": "詳細 / アプリについて",
+    "aboutThisApp": "このアプリについて",
+    "termsOfUse": "利用規約",
+    "termsOfUseDesc": "本サービスの利用規約を確認してください。"
   },
   "preferences": {
     "title": "ユーザー設定",
