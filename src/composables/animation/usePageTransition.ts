@@ -6,10 +6,12 @@
 
 import { ref } from 'vue'
 import gsap from 'gsap'
-import { ANIMATION_DURATION, ANIMATION_EASE, prefersReducedMotion } from '@/utils/animation'
+import { ANIMATION_DURATION, ANIMATION_EASE } from '@/utils/animation'
+import { useAnimation } from '@/composables'
 
 export function usePageTransition() {
   const isTransitioning = ref(false)
+  const { shouldAnimate } = useAnimation()
 
   /**
    * 创建页面切换动画
@@ -19,7 +21,7 @@ export function usePageTransition() {
     to: HTMLElement,
     type: 'fade' | 'slide' | 'scale' | 'flip' = 'fade',
   ) => {
-    if (prefersReducedMotion()) {
+    if (!shouldAnimate.value) {
       gsap.set(from, { opacity: 0 })
       gsap.set(to, { opacity: 1 })
       return Promise.resolve()
