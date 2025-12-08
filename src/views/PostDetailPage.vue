@@ -27,13 +27,6 @@
             <span class="back-label">{{ $t('common.back') }}</span>
           </button>
 
-          <!-- 滚动时显示标题 -->
-          <Transition name="fade-slide">
-            <h2 v-if="isTopbarSticky && post.title" class="topbar-title">
-              {{ post.title }}
-            </h2>
-          </Transition>
-
           <PostCardActions
             :is-favorited="isFavorited"
             @favorite="toggleFavorite"
@@ -1844,33 +1837,6 @@ onUnmounted(() => {
 
 .detail-topbar.is-sticky :deep(.action-button) {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-/* 顶部栏标题 */
-.topbar-title {
-  flex: 1;
-  margin: 0;
-  padding: 0 var(--spacing-md);
-  font-size: var(--text-base);
-  font-weight: var(--font-semibold);
-  color: var(--color-text-primary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  text-align: center;
-  max-width: 50%;
-}
-
-/* 标题淡入滑动动画 */
-.fade-slide-enter-active,
-.fade-slide-leave-active {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.fade-slide-enter-from,
-.fade-slide-leave-to {
-  opacity: 0;
-  transform: translateY(-8px);
 }
 
 .detail-grid {

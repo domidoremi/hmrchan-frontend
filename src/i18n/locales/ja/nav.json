@@ -16,6 +16,7 @@
   "nav": {
     "home": "ホーム",
     "explore": "探索",
+    "posts": "投稿",
     "authors": "作者",
     "contact": "お問合せ",
     "profile": "プロフィール",
@@ -43,12 +44,15 @@
   },
   "filter": {
     "sortBy": "並び替え",
+    "filterBy": "フィルター",
     "latest": "最新",
     "popular": "人気",
     "oldest": "古い順",
     "platform": "プラットフォーム",
     "hasMedia": "メディアあり",
     "dateRange": "期間",
-    "published": "公開日"
+    "published": "公開日",
+    "active": "適用中のフィルター",
+    "clearAll": "すべてクリア"
   }
 }
