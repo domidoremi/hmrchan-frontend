@@ -25,7 +25,11 @@
     "openAdvanced": "Open full settings",
     "saving": "Saving...",
     "saved": "Saved",
-    "saveFailed": "Save failed"
+    "saveFailed": "Save failed",
+    "moreAbout": "More / About",
+    "aboutThisApp": "About This App",
+    "termsOfUse": "Terms of Use",
+    "termsOfUseDesc": "View the terms of use for this service."
   },
   "preferences": {
     "title": "User Preferences",

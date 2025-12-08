@@ -52,6 +52,7 @@ const i18n = createI18n({
   messages: {
     en: en,
     'zh-CN': zhCN,
+    zh: zhCN, // Alias for zh-CN to support browsers reporting 'zh'
     ja: ja,
   },
 })
