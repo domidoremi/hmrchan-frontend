@@ -363,13 +363,15 @@ const selectPlatform = (platform: string) => {
   currentPage.value = 1
 
   // Haptic feedback animation
-  gsap.to('.chip.active', {
-    scale: 0.95,
-    duration: 0.1,
-    yoyo: true,
-    repeat: 1,
-    ease: 'power2.inOut',
-  })
+  if (settings.value.enableAnimations) {
+    gsap.to('.chip.active', {
+      scale: 0.95,
+      duration: 0.1,
+      yoyo: true,
+      repeat: 1,
+      ease: 'power2.inOut',
+    })
+  }
 
   loadPosts()
 }
@@ -446,11 +448,15 @@ const ensurePreviewForDesktop = () => {
 }
 
 const scrollToTop = () => {
-  gsap.to(window, {
-    scrollTo: { y: 0 },
-    duration: 0.8,
-    ease: 'power3.inOut',
-  })
+  if (settings.value.enableAnimations) {
+    gsap.to(window, {
+      scrollTo: { y: 0 },
+      duration: 0.8,
+      ease: 'power3.inOut',
+    })
+  } else {
+    window.scrollTo({ top: 0, behavior: 'auto' })
+  }
 }
 
 // Infinite scroll
