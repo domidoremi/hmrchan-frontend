@@ -8,16 +8,18 @@ import { ref, onMounted, onBeforeUnmount, type Ref } from 'vue'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { ANIMATION_DURATION, ANIMATION_EASE, prefersReducedMotion } from '@/utils/animation'
+import { useAnimation } from '../ui/useAnimation'
 
 export function usePostCardAnimation(cardRef: Ref<HTMLElement | undefined>, index: number = 0) {
   const isHovered = ref(false)
   let scrollTrigger: ScrollTrigger | null = null
+  const { shouldAnimate } = useAnimation()
 
   /**
    * 初始化滚动进入动画
    */
   const initScrollAnimation = () => {
-    if (!cardRef.value || prefersReducedMotion()) {
+    if (!cardRef.value || !shouldAnimate.value || prefersReducedMotion()) {
       if (cardRef.value) {
         gsap.set(cardRef.value, { opacity: 1, y: 0 })
       }
@@ -57,7 +59,7 @@ export function usePostCardAnimation(cardRef: Ref<HTMLElement | undefined>, inde
    * 3D悬停动画
    */
   const handleMouseEnter = () => {
-    if (!cardRef.value || prefersReducedMotion()) return
+    if (!cardRef.value || !shouldAnimate.value || prefersReducedMotion()) return
     isHovered.value = true
 
     gsap.to(cardRef.value, {
@@ -83,7 +85,7 @@ export function usePostCardAnimation(cardRef: Ref<HTMLElement | undefined>, inde
   }
 
   const handleMouseLeave = () => {
-    if (!cardRef.value || prefersReducedMotion()) return
+    if (!cardRef.value || !shouldAnimate.value || prefersReducedMotion()) return
     isHovered.value = false
 
     gsap.to(cardRef.value, {
@@ -109,7 +111,7 @@ export function usePostCardAnimation(cardRef: Ref<HTMLElement | undefined>, inde
   }
 
   const handleMouseMove = (e: MouseEvent) => {
-    if (!cardRef.value || prefersReducedMotion() || !isHovered.value) return
+    if (!cardRef.value || !shouldAnimate.value || prefersReducedMotion() || !isHovered.value) return
 
     const rect = cardRef.value.getBoundingClientRect()
     const x = e.clientX - rect.left
