@@ -648,11 +648,12 @@ watch(viewMode, async () => {
   transition: opacity 0.3s ease;
 }
 
-/* 网格模式：使用 CSS Grid 等高排列 */
+/* 网格模式：使用 CSS Grid 自适应高度排列 */
 .posts-grid.view-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: var(--spacing-lg);
+  align-items: start;
 }
 
 .posts-grid.view-grid :deep(.post-card) {
@@ -660,6 +661,7 @@ watch(viewMode, async () => {
   left: auto !important;
   top: auto !important;
   width: 100% !important;
+  height: auto !important;
 }
 
 /* 瀑布流模式：由 useWaterfallLayout 控制 */
