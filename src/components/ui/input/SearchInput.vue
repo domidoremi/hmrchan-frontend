@@ -188,11 +188,12 @@ onUnmounted(() => {
 }
 
 .search-input-wrapper.is-focused .search-input-inner {
-  background: var(--glass-bg);
+  background: var(--color-bg-primary);
   border-color: var(--color-primary);
   box-shadow:
-    0 0 0 3px rgba(139, 92, 246, 0.15),
-    0 4px 12px rgba(139, 92, 246, 0.1);
+    0 0 0 4px rgba(139, 92, 246, 0.2),
+    0 4px 16px rgba(139, 92, 246, 0.15);
+  transform: translateY(-1px);
 }
 
 .search-input-wrapper.is-loading .search-input-inner {
