@@ -263,6 +263,29 @@ interface ExtendedGetOptions extends Omit<KyOptions, 'cache'> {
 interface ExtendedMutationOptions extends KyOptions {
   /** 需要失效的缓存模式列表 */
   invalidatePatterns?: string[]
+  /** 敏感操作验证令牌（用于二次验证） */
+  verificationToken?: string
+}
+
+/**
+ * 构建带有验证令牌的请求头
+ */
+function buildHeadersWithVerification(
+  verificationToken?: string,
+  existingHeaders?: KyOptions['headers'],
+): KyOptions['headers'] {
+  if (!verificationToken) return existingHeaders
+
+  // 将验证令牌添加到现有 headers
+  const baseHeaders =
+    existingHeaders && typeof existingHeaders === 'object' && !Array.isArray(existingHeaders)
+      ? { ...existingHeaders }
+      : {}
+
+  return {
+    ...baseHeaders,
+    'X-Verification-Token': verificationToken,
+  }
 }
 
 /**
@@ -382,9 +405,16 @@ export const api = {
     data?: unknown,
     config?: ExtendedMutationOptions,
   ): Promise<T> {
-    const { invalidatePatterns, ...kyConfig } = config || {}
+    const { invalidatePatterns, verificationToken, ...kyConfig } = config || {}
+    const headers = buildHeadersWithVerification(verificationToken, kyConfig.headers)
 
-    const response = await apiClient.post(normalizeUrl(url), { json: data, ...kyConfig }).json<T>()
+    const response = await apiClient
+      .post(normalizeUrl(url), {
+        json: data,
+        ...kyConfig,
+        ...(headers ? { headers } : {}),
+      })
+      .json<T>()
 
     if (invalidatePatterns && invalidatePatterns.length > 0) {
       await this.invalidateCacheByPatterns(invalidatePatterns)
@@ -411,9 +441,16 @@ export const api = {
     data?: unknown,
     config?: ExtendedMutationOptions,
   ): Promise<T> {
-    const { invalidatePatterns, ...kyConfig } = config || {}
+    const { invalidatePatterns, verificationToken, ...kyConfig } = config || {}
+    const headers = buildHeadersWithVerification(verificationToken, kyConfig.headers)
 
-    const response = await apiClient.put(normalizeUrl(url), { json: data, ...kyConfig }).json<T>()
+    const response = await apiClient
+      .put(normalizeUrl(url), {
+        json: data,
+        ...kyConfig,
+        ...(headers ? { headers } : {}),
+      })
+      .json<T>()
 
     if (invalidatePatterns && invalidatePatterns.length > 0) {
       await this.invalidateCacheByPatterns(invalidatePatterns)
@@ -440,9 +477,16 @@ export const api = {
     data?: unknown,
     config?: ExtendedMutationOptions,
   ): Promise<T> {
-    const { invalidatePatterns, ...kyConfig } = config || {}
+    const { invalidatePatterns, verificationToken, ...kyConfig } = config || {}
+    const headers = buildHeadersWithVerification(verificationToken, kyConfig.headers)
 
-    const response = await apiClient.patch(normalizeUrl(url), { json: data, ...kyConfig }).json<T>()
+    const response = await apiClient
+      .patch(normalizeUrl(url), {
+        json: data,
+        ...kyConfig,
+        ...(headers ? { headers } : {}),
+      })
+      .json<T>()
 
     if (invalidatePatterns && invalidatePatterns.length > 0) {
       await this.invalidateCacheByPatterns(invalidatePatterns)
@@ -464,9 +508,15 @@ export const api = {
    * await api.delete('/posts/123')
    */
   async delete<T = unknown>(url: string, config?: ExtendedMutationOptions): Promise<T> {
-    const { invalidatePatterns, ...kyConfig } = config || {}
+    const { invalidatePatterns, verificationToken, ...kyConfig } = config || {}
+    const headers = buildHeadersWithVerification(verificationToken, kyConfig.headers)
 
-    const response = await apiClient.delete(normalizeUrl(url), kyConfig).json<T>()
+    const response = await apiClient
+      .delete(normalizeUrl(url), {
+        ...kyConfig,
+        ...(headers ? { headers } : {}),
+      })
+      .json<T>()
 
     if (invalidatePatterns && invalidatePatterns.length > 0) {
       await this.invalidateCacheByPatterns(invalidatePatterns)
