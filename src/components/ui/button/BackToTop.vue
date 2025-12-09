@@ -1,7 +1,13 @@
 <template>
   <transition name="fade">
-    <button v-if="visible" class="back-to-top" :style="{ bottom: dynamicBottom }" @click="scrollToTop"
-      :title="$t('common.backToTop')" :aria-label="$t('common.backToTop')">
+    <button
+      v-if="visible"
+      class="back-to-top"
+      :style="{ bottom: dynamicBottom }"
+      @click="scrollToTop"
+      :title="$t('common.backToTop')"
+      :aria-label="$t('common.backToTop')"
+    >
       <ArrowUp :size="24" />
     </button>
   </transition>

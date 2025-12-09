@@ -63,8 +63,12 @@
 
         <!-- 平台链接 -->
         <div class="footer-platforms">
-          <RouterLink v-for="platform in platforms" :key="platform.name" :to="`/explore?platform=${platform.name}`"
-            class="platform-chip">
+          <RouterLink
+            v-for="platform in platforms"
+            :key="platform.name"
+            :to="`/explore?platform=${platform.name}`"
+            class="platform-chip"
+          >
             {{ platform.label }}
           </RouterLink>
         </div>
@@ -250,11 +254,13 @@ const platforms = [
   /* 分隔线 */
   .footer-divider {
     height: 1px;
-    background: linear-gradient(to right,
-        transparent,
-        var(--glass-border) 20%,
-        var(--glass-border) 80%,
-        transparent);
+    background: linear-gradient(
+      to right,
+      transparent,
+      var(--glass-border) 20%,
+      var(--glass-border) 80%,
+      transparent
+    );
     margin: var(--spacing-md) 0;
   }
 

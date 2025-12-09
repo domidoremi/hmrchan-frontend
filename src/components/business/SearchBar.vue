@@ -2,22 +2,48 @@
   <!-- 使用 HTML5 <search> 元素增强语义化和可访问性 -->
   <search class="search-bar glass-card animated" role="search">
     <Search :size="20" class="search-icon" aria-hidden="true" />
-    <input v-model="searchQuery" type="search" :placeholder="$t('search.placeholder')"
-      :aria-label="$t('search.placeholder')" class="search-input" autocomplete="off" @keyup.enter="handleSearch"
-      @input="handleInput" />
-    <button v-if="searchQuery" class="clear-button" type="button" :aria-label="$t('common.clear')" @click="clearSearch">
+    <input
+      v-model="searchQuery"
+      type="search"
+      :placeholder="$t('search.placeholder')"
+      :aria-label="$t('search.placeholder')"
+      class="search-input"
+      autocomplete="off"
+      @keyup.enter="handleSearch"
+      @input="handleInput"
+    />
+    <button
+      v-if="searchQuery"
+      class="clear-button"
+      type="button"
+      :aria-label="$t('common.clear')"
+      @click="clearSearch"
+    >
       <X :size="18" aria-hidden="true" />
     </button>
 
     <!-- 搜索建议下拉 -->
-    <div v-if="showSuggestions && suggestions.length > 0" class="suggestions-dropdown glass-card" role="listbox"
-      :aria-label="$t('search.suggestions')">
-      <div v-for="suggestion in suggestions" :key="suggestion.id" class="suggestion-item" role="option" tabindex="0"
-        @click="selectSuggestion(suggestion)" @keydown.enter="selectSuggestion(suggestion)">
+    <div
+      v-if="showSuggestions && suggestions.length > 0"
+      class="suggestions-dropdown glass-card"
+      role="listbox"
+      :aria-label="$t('search.suggestions')"
+    >
+      <div
+        v-for="suggestion in suggestions"
+        :key="suggestion.id"
+        class="suggestion-item"
+        role="option"
+        tabindex="0"
+        @click="selectSuggestion(suggestion)"
+        @keydown.enter="selectSuggestion(suggestion)"
+      >
         <Search :size="16" aria-hidden="true" />
         <div>
           <div>{{ suggestion.label }}</div>
-          <div v-if="suggestion.subtitle" class="suggestion-subtitle">{{ suggestion.subtitle }}</div>
+          <div v-if="suggestion.subtitle" class="suggestion-subtitle">
+            {{ suggestion.subtitle }}
+          </div>
         </div>
       </div>
     </div>

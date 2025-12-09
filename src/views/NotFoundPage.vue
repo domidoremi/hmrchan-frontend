@@ -3,7 +3,14 @@
     <div class="not-found-content glass-card">
       <div class="error-code">404</div>
       <h1>{{ $t('error.notFound.title', 'Page Not Found') }}</h1>
-      <p>{{ $t('error.notFound.description', "The page you're looking for doesn't exist or has been moved.") }}</p>
+      <p>
+        {{
+          $t(
+            'error.notFound.description',
+            "The page you're looking for doesn't exist or has been moved.",
+          )
+        }}
+      </p>
 
       <div class="actions">
         <GlassButton size="lg" @click="goHome">
