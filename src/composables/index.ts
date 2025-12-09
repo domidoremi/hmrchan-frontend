@@ -9,9 +9,9 @@
  * 目录结构：
  * - core/     核心功能（响应式、国际化、性能监控、防抖节流、事件监听）
  * - ui/       UI 交互（动画、模态框、Toast、无障碍、剪贴板、快捷键）
- * - form/     表单相关（验证、自动保存、输入法检测）
- * - data/     数据处理（分页、搜索、乐观更新、无限滚动）
- * - media/    媒体处理（图片上传、懒加载、预加载、虚拟滚动、瀑布流）
+ * - form/     表单相关（验证、自动保存）
+ * - data/     数据处理（无限滚动）
+ * - media/    媒体处理（图片上传、懒加载、智能预加载、瀑布流）
  * - business/ 业务逻辑（收藏管理、帖子卡片）
  */
 
@@ -37,7 +37,6 @@ export {
 } from './core/useEventListener'
 export type { KeyboardShortcut } from './core/useEventListener'
 
-export { useI18nFallback } from './core/useI18nFallback'
 export { useI18nOptimized } from './core/useI18nOptimized'
 export { usePerformanceMonitoring } from './core/usePerformanceMonitoring'
 export { initAppState } from './core/useAppInit'
@@ -59,6 +58,13 @@ export { useToast } from './ui/useToast'
 export type { ToastOptions } from './ui/useToast'
 
 export {
+  useBodyScrollLock,
+  lockBodyScroll,
+  unlockBodyScroll,
+  forceUnlockBodyScroll,
+} from './ui/useBodyScrollLock'
+
+export {
   useKeyboardNavigation,
   useFocusManagement,
   useAriaLive,
@@ -67,8 +73,7 @@ export {
 } from './ui/useAccessibility'
 
 export { useFocusTrap } from './ui/useFocusTrap'
-export { useKeyboardShortcuts } from './ui/useKeyboardShortcuts' // 使用独立的 useKeyboardShortcuts
-export { useLongPress } from './ui/useLongPress'
+export { useKeyboardShortcuts } from './ui/useKeyboardShortcuts'
 export { useLazyComponent } from './ui/useLazyComponent'
 
 export { usePopover, supportsPopover, usePopoverAnchor } from './ui/usePopover'
@@ -84,27 +89,13 @@ export type { ValidationRule, ValidationSchema, FieldState } from './form/useFor
 export { useAutoSave } from './form/useAutoSave'
 export type { SaveStatus, AutoSaveOptions } from './form/useAutoSave'
 
-export { useInputMethod } from './form/useInputMethod'
-
 // ==================== Data 数据 ====================
-export { usePagination, useCursorPagination } from './data/usePagination'
-export type { PaginationOptions, CursorPaginationOptions } from './data/usePagination'
-
-export { useSearch, useMultiFieldSearch } from './data/useSearch'
-export type { SearchOptions, SearchField, MultiFieldSearchOptions } from './data/useSearch'
-
-export { useOptimisticUpdate, useListOptimisticUpdate } from './data/useOptimisticUpdate'
-export type { OptimisticUpdateOptions } from './data/useOptimisticUpdate'
-
 export { useInfiniteScroll } from './data/useInfiniteScroll'
 
 // ==================== Media 媒体 ====================
 export { useImageUpload } from './media/useImageUpload'
 export { useImageLazyLoad } from './media/useImageLazyLoad'
-export { useImagePreload } from './media/useImagePreload'
 export { useSmartPreload } from './media/useSmartPreload'
-export { useMediaErrorRecovery } from './media/useMediaErrorRecovery'
-export { useVirtualScroll } from './media/useVirtualScroll'
 export { useWaterfallLayout } from './media/useWaterfallLayout'
 
 // ==================== Business 业务 ====================
