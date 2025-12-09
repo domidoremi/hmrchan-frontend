@@ -1,6 +1,4 @@
 # Cloudflare Pages 重定向配置
 # API 代理由 functions/api/[[path]].ts 处理
 # WebSocket 由 functions/ws.ts 处理
-
-# SPA 路由回退（必须放在最后）
-/*    /index.html   200
+# SPA 回退由 Cloudflare Pages 默认处理，无需配置
