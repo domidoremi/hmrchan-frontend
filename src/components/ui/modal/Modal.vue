@@ -76,7 +76,7 @@
 
 import { computed, watch, ref, nextTick, onMounted } from 'vue'
 import { X } from 'lucide-vue-next'
-import { useFocusManagement } from '@/composables'
+import { useFocusManagement, useBodyScrollLock } from '@/composables'
 
 interface Props {
   /** 模态框是否显示 */
@@ -108,6 +108,7 @@ const previousFocusedElement = ref<HTMLElement | null>(null)
 let cleanupFocusTrap: (() => void) | undefined
 
 const { trapFocus, saveFocus, restoreFocus } = useFocusManagement()
+const { isLocked: isScrollLocked } = useBodyScrollLock()
 
 /** 生成唯一的标题 ID，用于无障碍支持 */
 const titleId = computed(() => `modal-title-${Math.random().toString(36).substr(2, 9)}`)
@@ -183,13 +184,7 @@ const onAfterLeave = () => {
 watch(
   () => props.modelValue,
   (isOpen) => {
-    if (isOpen) {
-      // 模态框打开时禁止背景滚动
-      document.body.style.overflow = 'hidden'
-    } else {
-      // 模态框关闭时恢复背景滚动
-      document.body.style.overflow = ''
-    }
+    isScrollLocked.value = isOpen
   },
 )
 
@@ -201,8 +196,6 @@ onMounted(() => {
     if (cleanupFocusTrap) {
       cleanupFocusTrap()
     }
-    // 确保恢复 body 滚动
-    document.body.style.overflow = ''
   }
 })
 </script>
