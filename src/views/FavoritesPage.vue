@@ -10,7 +10,12 @@
           {{ $t('offline.usingCache') }}
         </p>
         <div ref="gridRef" class="favorites-grid">
-          <PostCard v-for="post in favoritePosts" :key="post.id" :post="post" :show-actions="false" />
+          <PostCard
+            v-for="post in favoritePosts"
+            :key="post.id"
+            :post="post"
+            :show-actions="false"
+          />
         </div>
       </div>
 
