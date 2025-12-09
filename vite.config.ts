@@ -13,13 +13,39 @@
  */
 
 import { fileURLToPath, URL } from 'node:url'
+import { copyFileSync, existsSync } from 'node:fs'
+import { resolve } from 'node:path'
 
-import { defineConfig } from 'vite'
+import { defineConfig, type Plugin } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import vueJsx from '@vitejs/plugin-vue-jsx'
 import vueDevTools from 'vite-plugin-vue-devtools'
 import { imagetools } from 'vite-imagetools'
 import { criticalCSSPlugin } from './vite-plugin-critical-css'
+
+/**
+ * Cloudflare Pages 配置文件复制插件
+ * 将 _headers 和 _redirects 复制到 dist 目录
+ */
+function cloudflarePagesPlugin(): Plugin {
+  return {
+    name: 'cloudflare-pages',
+    apply: 'build',
+    closeBundle() {
+      const files = ['_headers', '_redirects']
+      const outDir = resolve(process.cwd(), 'dist')
+
+      for (const file of files) {
+        const src = resolve(process.cwd(), file)
+        const dest = resolve(outDir, file)
+        if (existsSync(src)) {
+          copyFileSync(src, dest)
+          console.log(`✅ Copied ${file} to dist/`)
+        }
+      }
+    },
+  }
+}
 
 export default defineConfig(({ mode }) => ({
   /**
@@ -61,6 +87,9 @@ export default defineConfig(({ mode }) => ({
 
     /** 生产环境内联关键 CSS，优化首屏加载性能 */
     ...(mode === 'production' ? [criticalCSSPlugin()] : []),
+
+    /** Cloudflare Pages 配置文件复制（生产环境） */
+    ...(mode === 'production' ? [cloudflarePagesPlugin()] : []),
   ],
 
   /**
