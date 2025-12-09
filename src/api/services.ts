@@ -39,6 +39,9 @@ import type {
   PostStats,
   UUID,
   SearchSuggestionResponse,
+  VerifyPasswordResponse,
+  VerifyIdentityRequest,
+  VerifyIdentityResponse,
 } from '@/types'
 
 /**
@@ -144,6 +147,59 @@ export const authApi = {
       logger.info('[Auth] User logged out successfully', {})
     } catch (error) {
       logger.error('[Auth] Error during logout', toLogContext(error))
+    }
+  },
+
+  /**
+   * 验证密码
+   *
+   * 用于敏感操作前验证用户密码
+   *
+   * @param password - 当前用户密码
+   * @returns 验证结果和验证令牌
+   *
+   * @example
+   * const result = await authApi.verifyPassword('password123')
+   * if (result.verified) {
+   *   // 使用 result.verification_token 进行敏感操作
+   * }
+   */
+  async verifyPassword(password: string): Promise<VerifyPasswordResponse> {
+    try {
+      return await api.post<VerifyPasswordResponse>('/auth/verify-password', { password })
+    } catch (error) {
+      handleError(error, 'Auth.VerifyPassword', {
+        customMessage: t('api.verifyPasswordFailed'),
+      })
+      throw error
+    }
+  },
+
+  /**
+   * 身份验证（二次验证）
+   *
+   * 用于执行敏感操作前验证用户身份
+   *
+   * @param data - 验证信息
+   * @param data.password - 当前用户密码
+   * @param data.action - 敏感操作类型
+   * @param data.resource_id - 可选，操作的资源 ID
+   * @returns 验证结果和验证令牌
+   *
+   * @example
+   * const result = await authApi.verifyIdentity({
+   *   password: 'password123',
+   *   action: 'delete_account'
+   * })
+   */
+  async verifyIdentity(data: VerifyIdentityRequest): Promise<VerifyIdentityResponse> {
+    try {
+      return await api.post<VerifyIdentityResponse>('/auth/verify-identity', data)
+    } catch (error) {
+      handleError(error, 'Auth.VerifyIdentity', {
+        customMessage: t('api.verifyIdentityFailed'),
+      })
+      throw error
     }
   },
 }

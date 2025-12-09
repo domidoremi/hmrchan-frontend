@@ -19,8 +19,12 @@
           <p>
             {{ $t('contact.githubDesc') }}
           </p>
-          <a href="https://github.com/domidoremi/hmrchan-frontend/issues" class="contact-link" target="_blank"
-            rel="noopener noreferrer">
+          <a
+            href="https://github.com/domidoremi/hmrchan-frontend/issues"
+            class="contact-link"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
             {{ $t('contact.githubLink') }}
           </a>
         </section>
@@ -44,15 +48,15 @@
               <label class="form-label">{{ $t('contact.typeLabel', '反馈类型') }}</label>
               <div class="form-options">
                 <label class="option-pill" :class="{ active: form.type === 'bug' }">
-                  <input v-model="form.type" type="radio" value="bug">
+                  <input v-model="form.type" type="radio" value="bug" />
                   <span>{{ $t('contact.typeBug', 'Bug 反馈') }}</span>
                 </label>
                 <label class="option-pill" :class="{ active: form.type === 'feature' }">
-                  <input v-model="form.type" type="radio" value="feature">
+                  <input v-model="form.type" type="radio" value="feature" />
                   <span>{{ $t('contact.typeFeature', '功能建议') }}</span>
                 </label>
                 <label class="option-pill" :class="{ active: form.type === 'other' }">
-                  <input v-model="form.type" type="radio" value="other">
+                  <input v-model="form.type" type="radio" value="other" />
                   <span>{{ $t('contact.typeOther', '其他') }}</span>
                 </label>
               </div>
@@ -62,12 +66,15 @@
               <label class="form-label">{{ $t('contact.authStatus', '登录状态') }}</label>
               <div class="form-options">
                 <label class="option-pill" :class="{ active: form.authStatus === 'auto' }">
-                  <input v-model="form.authStatus" type="radio" value="auto">
-                  <span>{{ isAuthenticated ? $t('contact.authLoggedIn', '已登录') :
-                    $t('contact.authGuest', '未登录或游客') }}</span>
+                  <input v-model="form.authStatus" type="radio" value="auto" />
+                  <span>{{
+                    isAuthenticated
+                      ? $t('contact.authLoggedIn', '已登录')
+                      : $t('contact.authGuest', '未登录或游客')
+                  }}</span>
                 </label>
                 <label class="option-pill" :class="{ active: form.authStatus === 'guest' }">
-                  <input v-model="form.authStatus" type="radio" value="guest">
+                  <input v-model="form.authStatus" type="radio" value="guest" />
                   <span>{{ $t('contact.authForceGuest', '以访客身份提交') }}</span>
                 </label>
               </div>
@@ -75,22 +82,33 @@
 
             <div class="form-row">
               <label class="form-label">{{ $t('contact.emailLabel', '联系邮箱 (可选)') }}</label>
-              <GlassInput v-model="form.email" type="email" :placeholder="resolvedEmailPlaceholder"
-                autocomplete="email" />
+              <GlassInput
+                v-model="form.email"
+                type="email"
+                :placeholder="resolvedEmailPlaceholder"
+                autocomplete="email"
+              />
             </div>
 
             <div class="form-row">
               <label class="form-label">{{ $t('contact.messageLabel', '反馈内容') }}</label>
-              <textarea v-model="form.message" class="contact-textarea" :maxlength="MAX_MESSAGE_LENGTH"
-                rows="5"></textarea>
-              <div class="field-hint">
-                {{ form.message.length }} / {{ MAX_MESSAGE_LENGTH }}
-              </div>
+              <textarea
+                v-model="form.message"
+                class="contact-textarea"
+                :maxlength="MAX_MESSAGE_LENGTH"
+                rows="5"
+              ></textarea>
+              <div class="field-hint">{{ form.message.length }} / {{ MAX_MESSAGE_LENGTH }}</div>
             </div>
 
             <div class="form-row">
               <label class="form-label">{{ $t('contact.attachmentsLabel', '附件 (可选)') }}</label>
-              <input class="file-input" type="file" :accept="ACCEPTED_FILE_TYPES" @change="handleFileChange">
+              <input
+                class="file-input"
+                type="file"
+                :accept="ACCEPTED_FILE_TYPES"
+                @change="handleFileChange"
+              />
               <div class="field-hint">
                 {{
                   $t(
@@ -134,12 +152,7 @@ const MAX_MESSAGE_LENGTH = 2000
 const MAX_FILE_SIZE = 5 * 1024 * 1024
 const MAX_FILE_COUNT = 1
 const ACCEPTED_FILE_TYPES = '.png,.jpg,.jpeg,.webp,.gif'
-const ALLOWED_MIME_TYPES = [
-  'image/png',
-  'image/jpeg',
-  'image/webp',
-  'image/gif',
-]
+const ALLOWED_MIME_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/gif']
 const FINGERPRINT_STORAGE_KEY = 'hmrchan_feedback_fingerprint'
 
 const getOrCreateFingerprint = (): string | null => {
@@ -169,7 +182,9 @@ const authStore = useAuthStore()
 const toastStore = useToastStore()
 
 const isAuthenticated = computed(() => authStore.isAuthenticated)
-const currentUserEmail = computed(() => (authStore.user && authStore.user.email) ? authStore.user.email : '')
+const currentUserEmail = computed(() =>
+  authStore.user && authStore.user.email ? authStore.user.email : '',
+)
 const resolvedEmailPlaceholder = computed(() => currentUserEmail.value || 'your@email')
 
 const form = ref({
@@ -283,10 +298,12 @@ const handleSubmit = async () => {
       headers['X-Client-Fingerprint'] = fingerprint
     }
 
-    await apiClient.post('feedback', {
-      body: formData,
-      headers,
-    }).json<unknown>()
+    await apiClient
+      .post('feedback', {
+        body: formData,
+        headers,
+      })
+      .json<unknown>()
 
     toastStore.success('反馈已提交, 感谢你的反馈!')
     form.value.message = ''
@@ -394,7 +411,7 @@ const handleSubmit = async () => {
   display: inline-block;
   padding: 0.75rem 1.5rem;
   border-radius: var(--radius-md);
-  background: var(--primary-color);
+  background: var(--color-primary);
   color: white;
   font-weight: 600;
   text-decoration: none;
@@ -402,7 +419,7 @@ const handleSubmit = async () => {
 }
 
 .contact-link:hover {
-  background: var(--primary-dark);
+  background: var(--color-primary-dark);
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
 }
@@ -488,8 +505,8 @@ const handleSubmit = async () => {
 
 .contact-textarea:focus {
   outline: none;
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 1px var(--primary-color);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 1px var(--color-primary);
 }
 
 .field-hint {

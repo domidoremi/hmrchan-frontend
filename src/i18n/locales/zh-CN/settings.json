@@ -21,11 +21,15 @@
     "toggleTheme": "切换主题",
     "toggleHeroSection": "切换首页横幅",
     "toggleAnimations": "切换动效",
-    "toggleSwipeNavigation": "切换滑动导航",
+    "toggleSwipeNavigation": "切换滑动导航（实验性 / 暂未生效）",
     "openAdvanced": "打开完整设置",
     "saving": "保存中...",
     "saved": "已保存",
-    "saveFailed": "保存失败"
+    "saveFailed": "保存失败",
+    "moreAbout": "更多 / 关于",
+    "aboutThisApp": "关于本应用",
+    "termsOfUse": "使用条款",
+    "termsOfUseDesc": "查看本服务的使用条款。"
   },
   "preferences": {
     "title": "用户偏好设置",
@@ -39,7 +43,7 @@
     "enableAnimations": "启用动画效果",
     "enableAnimationsDesc": "启用页面过渡和交互动画",
     "enableSwipeNavigation": "启用滑动切换页面",
-    "enableSwipeNavigationDesc": "在移动端通过左右滑动在主页面之间切换",
+    "enableSwipeNavigationDesc": "在移动端通过左右滑动在主页面之间切换（实验性 / 暂未生效）",
     "postsPerPage": "每页帖子数量",
     "postsPerPageDesc": "设置每页显示的帖子数量",
     "media": "媒体设置",

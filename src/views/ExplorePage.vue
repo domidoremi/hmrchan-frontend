@@ -80,7 +80,10 @@
           <div
             ref="postsGrid"
             class="posts-grid"
-            :class="{ 'view-masonry': viewMode === 'masonry' }"
+            :class="{
+              'view-masonry': viewMode === 'masonry',
+              'view-grid': viewMode === 'grid',
+            }"
           >
             <PostCard
               v-for="(post, index) in localPosts"
@@ -162,7 +165,7 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, onActivated, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { Compass, SearchX, RotateCcw, AlertCircle, WifiOff, Loader2 } from 'lucide-vue-next'
@@ -207,9 +210,12 @@ const showFilterSheet = ref(false)
 // 实际显示的帖子
 const localPosts = computed(() => allPagePosts.value.slice(0, renderedCount.value))
 
+// 本地分页状态（避免被其他页面污染）
+const localPagination = ref({ page: 1, pages: 0, total: 0 })
+
 // 分页计算
-const currentPage = computed(() => filters.value.page || 1)
-const totalPages = computed(() => pagination.value.pages || 0)
+const currentPage = computed(() => localPagination.value.page)
+const totalPages = computed(() => localPagination.value.pages)
 
 // 当前页是否完全渲染
 const pageFullyRendered = computed(
@@ -242,7 +248,8 @@ const { updateLayout, smoothUpdateLayout } = useWaterfallLayout(postsGrid, {
 const { isLoading: scrollLoading } = useInfiniteScroll({
   onLoadMore: renderMorePosts,
   hasMore: () => canRenderMore.value,
-  threshold: 300,
+  threshold: 600, // 提前加载，避免用户看到空白
+  delay: 100, // 减少延迟，响应更快
   enabled: computed(() => canRenderMore.value),
 })
 
@@ -279,7 +286,7 @@ async function loadPagePosts() {
 
   try {
     const result = await postsStore.fetchPosts({
-      page: currentPage.value,
+      page: localPagination.value.page,
       page_size: POSTS_PER_PAGE,
     })
 
@@ -287,11 +294,22 @@ async function loadPagePosts() {
       allPagePosts.value = result.items
       renderedCount.value = Math.min(RENDER_BATCH_SIZE, result.items.length)
 
+      // 更新本地分页状态
+      localPagination.value = {
+        page: result.page || 1,
+        pages: result.pages || Math.ceil((result.total || 0) / POSTS_PER_PAGE),
+        total: result.total || 0,
+      }
+
       logger.debug('页面数据加载完成', {
         category: 'ExplorePage',
         total: result.items.length,
+        pages: localPagination.value.pages,
         initialRender: renderedCount.value,
       })
+    } else {
+      // 没有数据时重置分页
+      localPagination.value = { page: 1, pages: 0, total: 0 }
     }
 
     await nextTick()
@@ -307,7 +325,8 @@ async function loadPagePosts() {
 async function handlePageChange(page: number) {
   isNavigating.value = true
 
-  postsStore.updateFilters({ page })
+  // 更新本地分页状态
+  localPagination.value.page = page
 
   const query: Record<string, string> = {}
   if (filters.value.q) query.q = filters.value.q
@@ -327,7 +346,9 @@ async function handlePageChange(page: number) {
 async function handleFilterUpdate(newFilters: Partial<PostListParams>) {
   isNavigating.value = true
 
-  postsStore.updateFilters({ ...newFilters, page: 1 })
+  postsStore.updateFilters({ ...newFilters })
+  // 筛选条件变化时重置到第一页
+  localPagination.value.page = 1
 
   const query: Record<string, string> = {}
   if (newFilters.q || filters.value.q) query.q = (newFilters.q || filters.value.q) as string
@@ -344,7 +365,9 @@ async function handleFilterUpdate(newFilters: Partial<PostListParams>) {
  * 搜索处理
  */
 async function handleSearch(query: string) {
-  postsStore.updateFilters({ q: query || undefined, page: 1 })
+  postsStore.updateFilters({ q: query || undefined })
+  // 搜索时重置到第一页
+  localPagination.value.page = 1
 
   const urlQuery: Record<string, string> = {}
   if (query) urlQuery.q = query
@@ -367,6 +390,9 @@ async function resetFilters() {
   searchQuery.value = ''
 
   postsStore.resetFilters()
+  // 重置本地分页状态
+  localPagination.value = { page: 1, pages: 0, total: 0 }
+
   router.replace({ query: {} })
   await loadPagePosts()
 
@@ -390,21 +416,18 @@ function formatNumber(num: number): string {
 // 生命周期
 // ============================================
 onMounted(async () => {
-  postsStore.resetFilters()
-
   // 从 URL 初始化
   const query = route.query
-  const initialFilters: Partial<PostListParams> = {}
 
   if (query.q) {
-    initialFilters.q = query.q as string
     searchQuery.value = query.q as string
+    postsStore.updateFilters({ q: query.q as string })
   }
-  if (query.platform) initialFilters.platform = query.platform as string
-  if (query.page) initialFilters.page = parseInt(query.page as string) || 1
-
-  if (Object.keys(initialFilters).length > 0) {
-    postsStore.updateFilters(initialFilters)
+  if (query.platform) {
+    postsStore.updateFilters({ platform: query.platform as string })
+  }
+  if (query.page) {
+    localPagination.value.page = parseInt(query.page as string) || 1
   }
 
   await loadPagePosts()
@@ -415,6 +438,22 @@ onBeforeUnmount(() => {
   renderedCount.value = 0
   postsStore.resetFilters()
   logger.debug('页面卸载', { category: 'ExplorePage' })
+})
+
+/**
+ * 页面激活时重新计算布局
+ * 解决 KeepAlive 缓存导致的瀑布流布局错乱问题
+ */
+onActivated(async () => {
+  if (postsGrid.value && localPosts.value.length > 0) {
+    // 等待 DOM 完全就绪
+    await nextTick()
+    // 再等待一帧确保渲染完成
+    requestAnimationFrame(() => {
+      updateLayout()
+      logger.debug('页面激活，重新计算布局', { category: 'ExplorePage' })
+    })
+  }
 })
 
 // 监听浏览器前进/后退
@@ -428,26 +467,33 @@ watch(
     postsStore.updateFilters({
       q: (newQuery.q as string) || undefined,
       platform: (newQuery.platform as string) || undefined,
-      page: newQuery.page ? parseInt(newQuery.page as string) : 1,
     })
+
+    // 更新本地分页状态
+    localPagination.value.page = newQuery.page ? parseInt(newQuery.page as string) : 1
 
     await loadPagePosts()
   },
 )
 
-// 监听帖子数量变化更新布局
+// 监听帖子数量变化更新布局（仅瀑布流模式）
 watch(
   () => localPosts.value.length,
   async () => {
-    await nextTick()
-    updateLayout()
+    if (viewMode.value === 'masonry') {
+      await nextTick()
+      updateLayout()
+    }
   },
 )
 
 // 监听视图模式变化
-watch(viewMode, async () => {
+watch(viewMode, async (newMode) => {
   await nextTick()
-  updateLayout()
+  // 只在瀑布流模式下重新计算布局
+  if (newMode === 'masonry') {
+    updateLayout()
+  }
 })
 </script>
 
@@ -607,8 +653,50 @@ watch(viewMode, async () => {
   transition: opacity 0.3s ease;
 }
 
+/* 网格模式：使用 CSS Grid 自适应高度排列 */
+.posts-grid.view-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--spacing-lg);
+  align-items: start;
+  /* 重置瀑布流的容器高度 */
+  height: auto !important;
+  min-height: auto;
+}
+
+.posts-grid.view-grid :deep(.post-card) {
+  /* 完全重置瀑布流的绝对定位 */
+  position: relative !important;
+  left: unset !important;
+  top: unset !important;
+  right: unset !important;
+  bottom: unset !important;
+  width: 100% !important;
+  height: auto !important;
+  transform: none !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+/* 网格模式下固定缩略图宽高比 */
+.posts-grid.view-grid :deep(.card-media) {
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+}
+
+.posts-grid.view-grid :deep(.card-media .media-wrapper) {
+  height: 100%;
+}
+
+.posts-grid.view-grid :deep(.card-media .media-wrapper img),
+.posts-grid.view-grid :deep(.card-media .media-wrapper .media-image) {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* 瀑布流模式：由 useWaterfallLayout 控制 */
 .posts-grid.view-masonry {
-  /* 瀑布流由 useWaterfallLayout 控制 */
   contain: layout style;
 }
 

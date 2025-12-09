@@ -310,3 +310,25 @@ export function isThisMonth(date: string | Date | number): boolean {
 export function isThisYear(date: string | Date | number): boolean {
   return dayjs(date).isSame(dayjs(), 'year')
 }
+
+/**
+ * 格式化时长（秒 -> HH:MM:SS 或 MM:SS）
+ * 用于视频/音频时长显示
+ *
+ * @param seconds - 秒数
+ * @returns 格式化的时长字符串
+ *
+ * @example
+ * formatDuration(3661) // "1:01:01"
+ * formatDuration(125)  // "2:05"
+ */
+export function formatDuration(seconds: number): string {
+  const hours = Math.floor(seconds / 3600)
+  const minutes = Math.floor((seconds % 3600) / 60)
+  const secs = Math.floor(seconds % 60)
+
+  if (hours > 0) {
+    return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+  }
+  return `${minutes}:${secs.toString().padStart(2, '0')}`
+}

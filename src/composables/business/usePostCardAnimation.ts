@@ -5,6 +5,7 @@
 import { onMounted, onBeforeUnmount, type Ref } from 'vue'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { useAnimation } from '../ui/useAnimation'
 
 // Register GSAP plugins
 gsap.registerPlugin(ScrollTrigger)
@@ -22,12 +23,18 @@ export function usePostCardAnimation(
   cardRef: Ref<HTMLElement | null>,
   getMediaRef: () => HTMLElement | null,
 ): PostCardAnimationHandlers {
+  const { shouldAnimate } = useAnimation()
   let scrollTriggerInstance: ScrollTrigger | null = null
   let cardYQuickTo: ((value: number) => void) | null = null
 
   // 入场动画
   onMounted(() => {
     if (cardRef.value) {
+      if (!shouldAnimate.value) {
+        // 动效关闭时，直接确保卡片处于可见状态
+        gsap.set(cardRef.value, { opacity: 1, y: 0, scale: 1 })
+        return
+      }
       // 创建 ScrollTrigger 实例
       scrollTriggerInstance = ScrollTrigger.create({
         trigger: cardRef.value,
@@ -62,6 +69,7 @@ export function usePostCardAnimation(
 
   // 悬停动画 - y轴使用quickTo，scale使用普通动画
   const onHover = () => {
+    if (!shouldAnimate.value) return
     if (cardYQuickTo) {
       cardYQuickTo(-12)
     }
@@ -106,6 +114,7 @@ export function usePostCardAnimation(
 
   // 离开动画 - y轴使用quickTo，scale使用普通动画
   const onLeave = () => {
+    if (!shouldAnimate.value) return
     if (cardYQuickTo) {
       cardYQuickTo(0)
     }
