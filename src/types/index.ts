@@ -119,6 +119,68 @@ export interface LoginResponse {
   user: User
 }
 
+/**
+ * 密码验证响应接口
+ *
+ * 验证用户密码后返回的数据
+ */
+export interface VerifyPasswordResponse {
+  /** 验证是否成功 */
+  verified: boolean
+  /** 验证令牌（用于敏感操作） */
+  verification_token: string
+  /** 令牌过期时间（秒） */
+  expires_in: number
+  /** 响应消息 */
+  message: string
+}
+
+/**
+ * 身份验证请求接口
+ *
+ * 用于敏感操作前的二次验证
+ */
+export interface VerifyIdentityRequest {
+  /** 当前用户密码 */
+  password: string
+  /** 敏感操作类型 */
+  action: SensitiveAction
+  /** 操作的资源 ID（可选） */
+  resource_id?: string
+}
+
+/**
+ * 敏感操作类型
+ */
+export type SensitiveAction =
+  | 'delete_account'
+  | 'change_email'
+  | 'change_password'
+  | 'update_security_settings'
+  | 'export_data'
+  | 'revoke_sessions'
+  | 'delete_content'
+  | 'manage_api_keys'
+  | 'admin_operation'
+
+/**
+ * 身份验证响应接口
+ *
+ * 二次验证成功后返回的数据
+ */
+export interface VerifyIdentityResponse {
+  /** 验证是否成功 */
+  verified: boolean
+  /** 验证令牌（用于敏感操作请求头） */
+  verification_token: string
+  /** 验证的操作类型 */
+  action: SensitiveAction
+  /** 令牌过期时间（秒） */
+  expires_in: number
+  /** 响应消息 */
+  message: string
+}
+
 // ========== 内容 ==========
 
 /**
