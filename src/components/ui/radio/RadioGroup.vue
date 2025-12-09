@@ -7,10 +7,18 @@
 
     <!-- Radio Options -->
     <div class="radio-group-options" :class="{ [`direction-${direction}`]: true }">
-      <Radio v-for="option in options" :key="getOptionValue(option)" :model-value="modelValue"
-        :value="getOptionValue(option)" :label="getOptionLabel(option)" :name="name"
-        :disabled="disabled || isOptionDisabled(option)" :size="size" :variant="variant"
-        @update:model-value="handleChange">
+      <Radio
+        v-for="option in options"
+        :key="getOptionValue(option)"
+        :model-value="modelValue"
+        :value="getOptionValue(option)"
+        :label="getOptionLabel(option)"
+        :name="name"
+        :disabled="disabled || isOptionDisabled(option)"
+        :size="size"
+        :variant="variant"
+        @update:model-value="handleChange"
+      >
         <slot name="option" :option="option">
           {{ getOptionLabel(option) }}
         </slot>
@@ -39,12 +47,12 @@ import Radio from './Radio.vue'
 type Option<T> =
   | T
   | {
-    label: string
-    value: T
-    disabled?: boolean
-    description?: string
-    icon?: unknown
-  }
+      label: string
+      value: T
+      disabled?: boolean
+      description?: string
+      icon?: unknown
+    }
 
 /**
  * RadioGroup Props
