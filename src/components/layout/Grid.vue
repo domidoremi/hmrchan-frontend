@@ -89,8 +89,7 @@ const gridStyle = computed(() => {
 
   if (props.autoFit) {
     style.gridTemplateColumns = `repeat(auto-fit, minmax(${props.minColWidth}, 1fr))`
-  }
-  else if (typeof props.cols === 'object') {
+  } else if (typeof props.cols === 'object') {
     const defaultCols = props.cols.xs || props.cols.sm || 1
     style.gridTemplateColumns = `repeat(${defaultCols}, 1fr)`
   }

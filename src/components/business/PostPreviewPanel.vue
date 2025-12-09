@@ -30,10 +30,21 @@
           <p>{{ error }}</p>
         </div>
         <div v-else-if="activeMedia" key="media-active" class="media-display">
-          <video v-if="activeMedia.file_type === 'video'" key="media-video" :src="activeMediaSrc" controls playsinline
-            preload="metadata"></video>
-          <img v-else key="media-image" :src="activeMediaSrc" :alt="post?.title || 'Post media preview'"
-            loading="lazy" />
+          <video
+            v-if="activeMedia.file_type === 'video'"
+            key="media-video"
+            :src="activeMediaSrc"
+            controls
+            playsinline
+            preload="metadata"
+          ></video>
+          <img
+            v-else
+            key="media-image"
+            :src="activeMediaSrc"
+            :alt="post?.title || 'Post media preview'"
+            loading="lazy"
+          />
         </div>
         <div v-else key="media-empty" class="media-empty">
           <ImageIcon :size="32" />
@@ -42,11 +53,21 @@
       </div>
 
       <div v-if="mediaItems.length > 1" class="media-thumbnails" role="tablist">
-        <button v-for="(media, index) in mediaItems" :key="media.id" type="button"
-          :class="['thumbnail-btn', { active: index === activeIndex }]" @click="setActive(index)"
-          :aria-selected="index === activeIndex" role="tab">
-          <img v-if="media.thumbnail_path || media.file_type === 'image'" :src="resolveThumb(media)" alt=""
-            loading="lazy" />
+        <button
+          v-for="(media, index) in mediaItems"
+          :key="media.id"
+          type="button"
+          :class="['thumbnail-btn', { active: index === activeIndex }]"
+          @click="setActive(index)"
+          :aria-selected="index === activeIndex"
+          role="tab"
+        >
+          <img
+            v-if="media.thumbnail_path || media.file_type === 'image'"
+            :src="resolveThumb(media)"
+            alt=""
+            loading="lazy"
+          />
           <span v-else class="thumbnail-placeholder">
             <Play v-if="media.file_type === 'video'" :size="16" />
             <ImageIcon v-else :size="16" />
@@ -66,7 +87,9 @@
           </div>
           <div class="author-meta">
             <span class="author-name">{{ post.author_name || 'Unknown' }}</span>
-            <span v-if="post.author_username" class="author-handle">@{{ post.author_username }}</span>
+            <span v-if="post.author_username" class="author-handle"
+              >@{{ post.author_username }}</span
+            >
           </div>
         </div>
 

@@ -13,27 +13,48 @@
         <form class="register-form" @submit.prevent="handleRegister">
           <div class="form-group">
             <label>{{ $t('auth.username') }} *</label>
-            <GlassInput v-model="formData.username" type="text" :placeholder="$t('auth.usernamePlaceholder')"
-              :icon="User" :disabled="loading" />
+            <GlassInput
+              v-model="formData.username"
+              type="text"
+              :placeholder="$t('auth.usernamePlaceholder')"
+              :icon="User"
+              :disabled="loading"
+            />
           </div>
 
           <div class="form-group">
             <label>{{ $t('auth.email') }} *</label>
-            <GlassInput v-model="formData.email" type="email" :placeholder="$t('auth.emailPlaceholder')" :icon="Mail"
-              :disabled="loading" />
+            <GlassInput
+              v-model="formData.email"
+              type="email"
+              :placeholder="$t('auth.emailPlaceholder')"
+              :icon="Mail"
+              :disabled="loading"
+            />
           </div>
 
           <div class="form-group">
             <label>{{ $t('auth.fullName') }} ({{ $t('profile.notSet') }})</label>
-            <GlassInput v-model="formData.full_name" type="text" :placeholder="$t('auth.fullNamePlaceholder')"
-              :icon="UserCircle" :disabled="loading" />
+            <GlassInput
+              v-model="formData.full_name"
+              type="text"
+              :placeholder="$t('auth.fullNamePlaceholder')"
+              :icon="UserCircle"
+              :disabled="loading"
+            />
           </div>
 
           <div class="form-group">
             <label>{{ $t('auth.password') }} *</label>
-            <GlassInput v-model="formData.password" :type="showPassword ? 'text' : 'password'"
-              :placeholder="$t('auth.passwordPlaceholder')" :icon="Lock" :disabled="loading" autocomplete="new-password"
-              name="password">
+            <GlassInput
+              v-model="formData.password"
+              :type="showPassword ? 'text' : 'password'"
+              :placeholder="$t('auth.passwordPlaceholder')"
+              :icon="Lock"
+              :disabled="loading"
+              autocomplete="new-password"
+              name="password"
+            >
               <template #suffix>
                 <button type="button" class="password-toggle" @click="showPassword = !showPassword">
                   <Eye v-if="!showPassword" :size="18" />
@@ -53,11 +74,21 @@
 
           <div class="form-group">
             <label>{{ $t('auth.confirmPassword') }} *</label>
-            <GlassInput v-model="formData.confirmPassword" :type="showConfirmPassword ? 'text' : 'password'"
-              :placeholder="$t('auth.confirmPasswordPlaceholder')" :icon="Lock" :disabled="loading"
-              autocomplete="new-password" name="confirm-password">
+            <GlassInput
+              v-model="formData.confirmPassword"
+              :type="showConfirmPassword ? 'text' : 'password'"
+              :placeholder="$t('auth.confirmPasswordPlaceholder')"
+              :icon="Lock"
+              :disabled="loading"
+              autocomplete="new-password"
+              name="confirm-password"
+            >
               <template #suffix>
-                <button type="button" class="password-toggle" @click="showConfirmPassword = !showConfirmPassword">
+                <button
+                  type="button"
+                  class="password-toggle"
+                  @click="showConfirmPassword = !showConfirmPassword"
+                >
                   <Eye v-if="!showConfirmPassword" :size="18" />
                   <EyeOff v-else :size="18" />
                 </button>
@@ -460,7 +491,6 @@ async function handleRegister() {
 }
 
 @keyframes float {
-
   0%,
   100% {
     transform: translateY(0) scale(1);
