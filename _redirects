@@ -1,10 +1,5 @@
 # Cloudflare Pages 重定向配置
+# 注意：API 代理已移至 functions/_middleware.ts
 
-# SPA 路由回退
-/*    /index.html   200!
-
-# API 代理到后端 (HTTPS)
-/api/*    https://api.momichan.xyz/:splat    200
-
-# WebSocket 代理
-/ws       https://api.momichan.xyz/ws        200
+# SPA 路由回退（必须放在最后）
+/*    /index.html   200
