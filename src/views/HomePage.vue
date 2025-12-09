@@ -1,12 +1,24 @@
 <template>
-  <MainLayout :access-current="posts.length" :access-limit="accessLimit" :show-access-indicator="true">
+  <MainLayout
+    :access-current="posts.length"
+    :access-limit="accessLimit"
+    :show-access-indicator="true"
+  >
     <div ref="homeContainer" class="home-page">
       <!-- Hero Section - GSAP 动画版本 -->
-      <HeroSection :visible="settingsStore.settings.showHeroSection" :title="$t('app.name')"
-        :description="$t('app.description')" :badge-text="$t('app.tagline', 'Discover Amazing Content')"
-        :primary-button-text="$t('nav.explore')" :secondary-button-text="$t('nav.login')"
-        :show-secondary-button="!isAuthenticated" :stats="heroStats"
-        @close="settingsStore.toggleSetting('showHeroSection')" @explore="goToExplore" @secondary-action="goToLogin" />
+      <HeroSection
+        :visible="settingsStore.settings.showHeroSection"
+        :title="$t('app.name')"
+        :description="$t('app.description')"
+        :badge-text="$t('app.tagline', 'Discover Amazing Content')"
+        :primary-button-text="$t('nav.explore')"
+        :secondary-button-text="$t('nav.login')"
+        :show-secondary-button="!isAuthenticated"
+        :stats="heroStats"
+        @close="settingsStore.toggleSetting('showHeroSection')"
+        @explore="goToExplore"
+        @secondary-action="goToLogin"
+      />
 
       <!-- Platform Stats - Modern Cards -->
       <section class="platforms-section reduce-motion">
@@ -14,16 +26,35 @@
           <h2>{{ $t('common.platforms', '平台统计') }}</h2>
         </div>
         <StatCardGrid :autoplay="true" :autoplay-duration="3000">
-          <StatCard v-for="platform in platforms" :key="platform" :icon="getPlatformIcon(platform)"
-            :icon-color="getPlatformColor(platform)" :title="$t(`platform.${platform}`)"
-            :value="platformStats[platform] || 0" :label="platform === 'youtube' || platform === 'tiktok' ? $t('post.videos') : $t('post.title')
-              " :loading="isStatsLoading" />
-          <template v-for="(platform, index) in platforms" :key="`slide-${index}`" #[`slide-${index}`]>
-            <StatCard :icon="getPlatformIcon(platform)" :icon-color="getPlatformColor(platform)"
-              :title="$t(`platform.${platform}`)" :value="platformStats[platform] || 0" :label="platform === 'youtube' || platform === 'tiktok'
-                ? $t('post.videos')
-                : $t('post.title')
-                " :loading="isStatsLoading" />
+          <StatCard
+            v-for="platform in platforms"
+            :key="platform"
+            :icon="getPlatformIcon(platform)"
+            :icon-color="getPlatformColor(platform)"
+            :title="$t(`platform.${platform}`)"
+            :value="platformStats[platform] || 0"
+            :label="
+              platform === 'youtube' || platform === 'tiktok' ? $t('post.videos') : $t('post.title')
+            "
+            :loading="isStatsLoading"
+          />
+          <template
+            v-for="(platform, index) in platforms"
+            :key="`slide-${index}`"
+            #[`slide-${index}`]
+          >
+            <StatCard
+              :icon="getPlatformIcon(platform)"
+              :icon-color="getPlatformColor(platform)"
+              :title="$t(`platform.${platform}`)"
+              :value="platformStats[platform] || 0"
+              :label="
+                platform === 'youtube' || platform === 'tiktok'
+                  ? $t('post.videos')
+                  : $t('post.title')
+              "
+              :loading="isStatsLoading"
+            />
           </template>
         </StatCardGrid>
       </section>
@@ -50,14 +81,29 @@
         </div>
 
         <!-- Posts列表 -->
-        <div v-else-if="posts.length > 0" ref="postsGrid" class="posts-grid" v-memo="[posts.length]">
-          <PostCard v-for="(post, index) in posts" :key="post.id" :post="post" :index="index" :show-actions="false"
-            :is-first-screen="index < 4" />
+        <div
+          v-else-if="posts.length > 0"
+          ref="postsGrid"
+          class="posts-grid"
+          v-memo="[posts.length]"
+        >
+          <PostCard
+            v-for="(post, index) in posts"
+            :key="post.id"
+            :post="post"
+            :index="index"
+            :show-actions="false"
+            :is-first-screen="index < 4"
+          />
         </div>
 
         <!-- Empty state -->
-        <EmptyState v-else-if="!loading" icon="image" :title="$t('search.noResults')"
-          :description="$t('search.noResultsDesc')" />
+        <EmptyState
+          v-else-if="!loading"
+          icon="image"
+          :title="$t('search.noResults')"
+          :description="$t('search.noResultsDesc')"
+        />
 
         <!-- 加载更多指示器 -->
         <div v-if="isLoadingMore" class="loading-more">
@@ -73,21 +119,10 @@
   </MainLayout>
 </template>
 
-/**
-* 首页组件
-*
-* 功能描述：
-* - 展示应用首页，包含Hero区域、平台统计和最新帖子列表
-* - 支持无限滚动加载更多帖子
-* - 根据用户登录状态限制访问数量
-* - 使用瀑布流布局展示帖子卡片
-*
-* 主要功能：
-* - Hero区域展示应用介绍和统计信息
-* - 平台统计卡片展示各平台帖子数量
-* - 帖子列表支持无限滚动加载
-* - 访问限制：未登录40条，已登录100条，管理员无限制
-*/
+/** * 首页组件 * * 功能描述： * - 展示应用首页，包含Hero区域、平台统计和最新帖子列表 * -
+支持无限滚动加载更多帖子 * - 根据用户登录状态限制访问数量 * - 使用瀑布流布局展示帖子卡片 * *
+主要功能： * - Hero区域展示应用介绍和统计信息 * - 平台统计卡片展示各平台帖子数量 * -
+帖子列表支持无限滚动加载 * - 访问限制：未登录40条，已登录100条，管理员无限制 */
 <script lang="ts">
 export default {
   name: 'HomePage',
@@ -100,14 +135,7 @@ import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
 
-import {
-  ArrowRight,
-  ImageIcon,
-  Youtube,
-  Twitter,
-  Music2,
-  Instagram,
-} from 'lucide-vue-next'
+import { ArrowRight, ImageIcon, Youtube, Twitter, Music2, Instagram } from 'lucide-vue-next'
 
 import MainLayout from '@/components/layout/MainLayout.vue'
 import HeroSection from '@/components/layout/HeroSection.vue'
@@ -242,7 +270,8 @@ const { isLoading: isLoadingMore } = useInfiniteScroll({
     await loadMore()
   },
   hasMore: () => hasMore.value && posts.value.length < accessLimit.value,
-  threshold: 500,
+  threshold: 600, // 提前加载，避免用户看到空白
+  delay: 100, // 减少延迟，响应更快
   enabled: initialLoadComplete,
 })
 
@@ -323,9 +352,13 @@ onUnmounted(() => {
 // 页面激活时重新计算布局（解决页面切换后布局错乱）
 onActivated(async () => {
   if (postsGrid.value && posts.value.length > 0) {
+    // 等待 DOM 完全就绪
     await nextTick()
-    await updateLayout()
-    logger.debug('页面激活，重新计算布局', { category: 'HomePage' })
+    // 再等待一帧确保渲染完成
+    requestAnimationFrame(() => {
+      updateLayout()
+      logger.debug('页面激活，重新计算布局', { category: 'HomePage' })
+    })
   }
 })
 
@@ -401,7 +434,7 @@ const loadMore = async () => {
     if (postsGrid.value) {
       const cards = postsGrid.value.querySelectorAll('a.post-card.card-entering')
       cards.forEach((card) => {
-        ; (card as HTMLElement).classList.remove('card-entering')
+        ;(card as HTMLElement).classList.remove('card-entering')
       })
     }
   }, 600)
