@@ -265,6 +265,13 @@ export default defineConfig(({ mode }) => ({
             if (id.includes('@vueuse/shared')) {
               return 'vueuse-shared'
             }
+            /**
+             * HTTP 客户端库（独立分割）
+             * ky 是 fetch 封装库，独立分割便于缓存
+             */
+            if (id.includes('node_modules/ky')) {
+              return 'http-client'
+            }
 
             /** 其他第三方依赖统一打包 */
             return 'vendor'
@@ -358,6 +365,14 @@ export default defineConfig(({ mode }) => ({
           if (id.includes('/src/utils/')) {
             if (id.includes('/utils/media')) {
               return 'utils-media'
+            }
+            /** 缓存工具独立分割（体积较大） */
+            if (id.includes('/src/utils/cache')) {
+              return 'utils-cache'
+            }
+            /** 存储工具独立分割 */
+            if (id.includes('/src/utils/storage')) {
+              return 'utils-storage'
             }
             return 'utils'
           }

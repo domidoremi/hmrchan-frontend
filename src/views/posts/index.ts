@@ -9,18 +9,18 @@ export { default as PostsView } from './PostsView.vue'
 // 子组件
 export * from './components'
 
-// Composables
-export { usePostsFilters, useMobileDrawer } from './composables'
-export type { UsePostsFiltersReturn, UseMobileDrawerReturn } from './composables'
+// Composables (from main composables)
+export { usePostsFilters, useMobileDrawer } from '@/composables'
+export type { UsePostsFiltersReturn, UseMobileDrawerReturn } from '@/composables'
 
-// 类型 - 仅导出需要的类型
+// 类型 (from main types)
 export type {
   PlatformOption,
   SortOption,
   ViewMode,
   FiltersState,
-  PaginationState,
+  PostsPaginationState,
   PreviewState,
   DrawerDragState,
   DrawerConfig,
-} from './types'
+} from '@/types'
