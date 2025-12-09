@@ -3,7 +3,9 @@
  * This runs before axios, service worker, everything
  */
 
-import { debugLog } from './debugLog'
+import logger from './logger'
+
+const LOG_CONTEXT = { category: 'HTTPS-Enforcer' }
 
 // Helper function to force HTTPS
 function forceHttpsUrl(url: string | URL): string {
@@ -12,7 +14,7 @@ function forceHttpsUrl(url: string | URL): string {
   // Force HTTPS if URL is HTTP and points to api.momichan.xyz
   if (urlString.includes('api.momichan.xyz') && urlString.startsWith('http://')) {
     const httpsUrl = urlString.replace('http://', 'https://')
-    debugLog.error('🚨🚨🚨 [HTTPS Enforcer] Forced HTTP → HTTPS:', urlString, '→', httpsUrl)
+    logger.error(`🚨 Forced HTTP → HTTPS: ${urlString} → ${httpsUrl}`, LOG_CONTEXT)
     return httpsUrl
   }
 
@@ -25,7 +27,7 @@ const OriginalXHR = window.XMLHttpRequest
 class HttpsXHR extends OriginalXHR {
   constructor() {
     super()
-    debugLog.log('[XHR] New XMLHttpRequest created via interceptor')
+    logger.debug('[XHR] New XMLHttpRequest created via interceptor', LOG_CONTEXT)
   }
 
   open(
@@ -36,12 +38,12 @@ class HttpsXHR extends OriginalXHR {
     password?: string | null,
   ): void {
     const urlString = typeof url === 'string' ? url : url.toString()
-    debugLog.log('[XHR] open() called with URL:', urlString)
+    logger.debug(`[XHR] open() called with URL: ${urlString}`, LOG_CONTEXT)
 
     const finalUrl = forceHttpsUrl(url)
 
     if (finalUrl !== urlString) {
-      debugLog.error('🚨🚨🚨 [XHR] FORCED HTTPS:', urlString, '→', finalUrl)
+      logger.error(`🚨 [XHR] FORCED HTTPS: ${urlString} → ${finalUrl}`, LOG_CONTEXT)
     }
 
     // Call original open with forced HTTPS URL
@@ -57,52 +59,45 @@ class HttpsXHR extends OriginalXHR {
   }
 
   send(body?: Document | XMLHttpRequestBodyInit | null): void {
-    debugLog.log('[XHR] send() called, responseURL will be:', this.responseURL)
+    logger.debug(`[XHR] send() called, responseURL: ${this.responseURL}`, LOG_CONTEXT)
     super.send(body)
   }
 }
 
 window.XMLHttpRequest = HttpsXHR as unknown as typeof XMLHttpRequest
-debugLog.log('🔒 [XHR Interceptor] Installed')
-debugLog.log(
-  '[XHR] Test: new XMLHttpRequest() instanceof HttpsXHR:',
-  new window.XMLHttpRequest() instanceof HttpsXHR,
-)
+logger.debug('🔒 [XHR Interceptor] Installed', LOG_CONTEXT)
 
 // ==================== Intercept fetch ====================
 const originalFetch = window.fetch
 
 window.fetch = function (input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
   let url: string
+  const inputType = input instanceof Request ? 'Request' : typeof input
 
-  debugLog.log(
-    '[Fetch Interceptor] Called with input type:',
-    typeof input,
-    input instanceof Request ? '(Request)' : '(string/URL)',
-  )
+  logger.debug(`[Fetch] Called with input type: ${inputType}`, LOG_CONTEXT)
 
   if (typeof input === 'string') {
-    debugLog.log('[Fetch Interceptor] String URL:', input)
+    logger.debug(`[Fetch] String URL: ${input}`, LOG_CONTEXT)
     url = forceHttpsUrl(input)
     if (url !== input) {
-      debugLog.error('🚨🚨🚨 [Fetch Interceptor] FORCED STRING URL:', input, '→', url)
+      logger.error(`🚨 [Fetch] FORCED STRING URL: ${input} → ${url}`, LOG_CONTEXT)
     }
     return originalFetch(url, init)
   } else if (input instanceof URL) {
     const originalUrlStr = input.toString()
-    debugLog.log('[Fetch Interceptor] URL object:', originalUrlStr)
+    logger.debug(`[Fetch] URL object: ${originalUrlStr}`, LOG_CONTEXT)
     url = forceHttpsUrl(originalUrlStr)
     if (url !== originalUrlStr) {
-      debugLog.error('🚨🚨🚨 [Fetch Interceptor] FORCED URL object:', originalUrlStr, '→', url)
+      logger.error(`🚨 [Fetch] FORCED URL object: ${originalUrlStr} → ${url}`, LOG_CONTEXT)
     }
     return originalFetch(url, init)
   } else if (input instanceof Request) {
     const originalUrl = input.url
-    debugLog.log('[Fetch Interceptor] Request object URL:', originalUrl)
+    logger.debug(`[Fetch] Request object URL: ${originalUrl}`, LOG_CONTEXT)
     const forcedUrl = forceHttpsUrl(originalUrl)
 
     if (originalUrl !== forcedUrl) {
-      debugLog.error('🚨🚨🚨 [Fetch Interceptor] FORCED Request URL:', originalUrl, '→', forcedUrl)
+      logger.error(`🚨 [Fetch] FORCED Request URL: ${originalUrl} → ${forcedUrl}`, LOG_CONTEXT)
       // Create new Request with HTTPS URL
       const newRequest = new Request(forcedUrl, {
         method: input.method,
@@ -120,13 +115,11 @@ window.fetch = function (input: RequestInfo | URL, init?: RequestInit): Promise<
     return originalFetch(input, init)
   }
 
-  debugLog.log('[Fetch Interceptor] Unexpected input type, passing through')
+  logger.debug('[Fetch] Unexpected input type, passing through', LOG_CONTEXT)
   return originalFetch(input, init)
 }
 
-debugLog.log('🔒 [Fetch Interceptor] Installed')
-debugLog.log(
-  '🔒 [Global HTTPS Enforcer] All HTTP requests to api.momichan.xyz will be forced to HTTPS',
-)
+logger.debug('🔒 [Fetch Interceptor] Installed', LOG_CONTEXT)
+logger.debug('🔒 All HTTP requests to api.momichan.xyz will be forced to HTTPS', LOG_CONTEXT)
 
 export {}
