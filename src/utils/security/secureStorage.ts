@@ -7,7 +7,7 @@ import logger from '@/utils/logger'
 
 // 简单的加密/解密（生产环境应使用更强的加密）
 const STORAGE_KEY_PREFIX = '__hmrc_'
-const ENCRYPTION_KEY = 'hmrchan_secure_key_v1' // 生产环境应从环境变量读取
+const ENCRYPTION_KEY = import.meta.env.VITE_ENCRYPTION_KEY || 'hmrchan_secure_key_v1'
 
 /**
  * 简单的XOR加密（仅用于混淆，不是强加密）
