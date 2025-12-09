@@ -678,6 +678,23 @@ watch(viewMode, async (newMode) => {
   visibility: visible !important;
 }
 
+/* 网格模式下固定缩略图宽高比 */
+.posts-grid.view-grid :deep(.card-media) {
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+}
+
+.posts-grid.view-grid :deep(.card-media .media-wrapper) {
+  height: 100%;
+}
+
+.posts-grid.view-grid :deep(.card-media .media-wrapper img),
+.posts-grid.view-grid :deep(.card-media .media-wrapper .media-image) {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 /* 瀑布流模式：由 useWaterfallLayout 控制 */
 .posts-grid.view-masonry {
   contain: layout style;
