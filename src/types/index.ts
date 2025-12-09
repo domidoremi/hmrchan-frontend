@@ -119,6 +119,68 @@ export interface LoginResponse {
   user: User
 }
 
+/**
+ * 密码验证响应接口
+ *
+ * 验证用户密码后返回的数据
+ */
+export interface VerifyPasswordResponse {
+  /** 验证是否成功 */
+  verified: boolean
+  /** 验证令牌（用于敏感操作） */
+  verification_token: string
+  /** 令牌过期时间（秒） */
+  expires_in: number
+  /** 响应消息 */
+  message: string
+}
+
+/**
+ * 身份验证请求接口
+ *
+ * 用于敏感操作前的二次验证
+ */
+export interface VerifyIdentityRequest {
+  /** 当前用户密码 */
+  password: string
+  /** 敏感操作类型 */
+  action: SensitiveAction
+  /** 操作的资源 ID（可选） */
+  resource_id?: string
+}
+
+/**
+ * 敏感操作类型
+ */
+export type SensitiveAction =
+  | 'delete_account'
+  | 'change_email'
+  | 'change_password'
+  | 'update_security_settings'
+  | 'export_data'
+  | 'revoke_sessions'
+  | 'delete_content'
+  | 'manage_api_keys'
+  | 'admin_operation'
+
+/**
+ * 身份验证响应接口
+ *
+ * 二次验证成功后返回的数据
+ */
+export interface VerifyIdentityResponse {
+  /** 验证是否成功 */
+  verified: boolean
+  /** 验证令牌（用于敏感操作请求头） */
+  verification_token: string
+  /** 验证的操作类型 */
+  action: SensitiveAction
+  /** 令牌过期时间（秒） */
+  expires_in: number
+  /** 响应消息 */
+  message: string
+}
+
 // ========== 内容 ==========
 
 /**
@@ -530,3 +592,72 @@ export type Theme = 'light' | 'dark' | 'auto'
  * 定义应用支持的语言/区域设置
  */
 export type Locale = 'en' | 'zh-CN' | 'ja'
+
+// ========== Posts View Types ==========
+
+import type { Component } from 'vue'
+
+/**
+ * 平台筛选选项
+ */
+export interface PlatformOption {
+  value: string
+  label: string
+  icon: Component
+}
+
+/**
+ * 排序选项
+ */
+export type SortOption = 'latest' | 'popular' | 'oldest'
+
+/**
+ * 视图模式
+ */
+export type ViewMode = 'grid' | 'list'
+
+/**
+ * 筛选器状态
+ */
+export interface FiltersState {
+  searchQuery: string
+  platform: string
+  sortBy: SortOption
+  viewMode: ViewMode
+}
+
+/**
+ * 分页状态（Posts View）
+ */
+export interface PostsPaginationState {
+  page: number
+  pageSize: number
+  total: number
+  hasMore: boolean
+}
+
+/**
+ * 预览状态
+ */
+export interface PreviewState {
+  isOpen: boolean
+  postId: string | null
+}
+
+/**
+ * 抽屉拖拽状态
+ */
+export interface DrawerDragState {
+  isDragging: boolean
+  startY: number
+  currentY: number
+  translateY: number
+}
+
+/**
+ * 抽屉配置
+ */
+export interface DrawerConfig {
+  closeThreshold: number
+  handleHeight: number
+}

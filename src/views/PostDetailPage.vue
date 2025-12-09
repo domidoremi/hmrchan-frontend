@@ -1,5 +1,5 @@
 <template>
-  <MainLayout :disable-container="true">
+  <MainLayout :disable-container="true" :enable-back-to-top="false">
     <!-- 阅读进度条 -->
     <div class="reading-progress" :style="{ width: `${readingProgress}%` }"></div>
 
@@ -26,13 +26,6 @@
             <ArrowLeft :size="20" />
             <span class="back-label">{{ $t('common.back') }}</span>
           </button>
-
-          <!-- 滚动时显示标题 -->
-          <Transition name="fade-slide">
-            <h2 v-if="isTopbarSticky && post.title" class="topbar-title">
-              {{ post.title }}
-            </h2>
-          </Transition>
 
           <PostCardActions
             :is-favorited="isFavorited"
@@ -650,6 +643,7 @@
     <button
       v-show="showBackToTop"
       class="back-to-top-btn"
+      :style="{ bottom: backToTopBottom }"
       @click="scrollToTop"
       :aria-label="$t('common.backToTop', '回到顶部')"
     >
@@ -714,6 +708,7 @@ import MainLayout from '@/components/layout/MainLayout.vue'
 import GlassButton from '@/components/ui/button/Button.vue'
 import PostCardActions from '@/components/business/PostCard/PostCardActions.vue'
 import PhotoSwipeViewer from '@/components/ui/viewer/PhotoSwipeViewer.vue'
+import { useResponsive } from '@/composables'
 
 import { usePostsStore, useAuthStore, useToastStore } from '@/stores'
 import { api } from '@/api/client'
@@ -757,6 +752,13 @@ const isTopbarSticky = ref(false)
 // 阅读进度相关
 const readingProgress = ref(0)
 const showBackToTop = ref(false)
+
+const { safeAreaBottom, isMobile } = useResponsive()
+
+const backToTopBottom = computed(() => {
+  const base = safeAreaBottom.value + (isMobile.value ? 12 : 32)
+  return `${base}px`
+})
 
 const isTabletOrBelow = computed(() => isTabletViewport.value || isMobileViewport.value)
 
@@ -1572,6 +1574,8 @@ const scrollToTop = () => {
 
 onMounted(() => {
   updateViewportBreakpoints()
+  // 立即调用一次 handleScroll 确保初始状态正确（避免 isTopbarSticky 在页面加载时错误地为 true）
+  handleScroll()
   window.addEventListener('keydown', handleKeydown)
   window.addEventListener('resize', updateViewportBreakpoints, { passive: true })
   window.addEventListener('scroll', handleScroll, { passive: true })
@@ -1833,33 +1837,6 @@ onUnmounted(() => {
 
 .detail-topbar.is-sticky :deep(.action-button) {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-/* 顶部栏标题 */
-.topbar-title {
-  flex: 1;
-  margin: 0;
-  padding: 0 var(--spacing-md);
-  font-size: var(--text-base);
-  font-weight: var(--font-semibold);
-  color: var(--color-text-primary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  text-align: center;
-  max-width: 50%;
-}
-
-/* 标题淡入滑动动画 */
-.fade-slide-enter-active,
-.fade-slide-leave-active {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.fade-slide-enter-from,
-.fade-slide-leave-to {
-  opacity: 0;
-  transform: translateY(-8px);
 }
 
 .detail-grid {

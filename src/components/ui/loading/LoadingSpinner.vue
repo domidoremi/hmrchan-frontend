@@ -22,6 +22,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import gsap from 'gsap'
+import { useAnimation } from '@/composables'
 
 interface Props {
   size?: 'sm' | 'md' | 'lg'
@@ -35,9 +36,15 @@ const props = withDefaults(defineProps<Props>(), {
 const orbitSystem = ref<HTMLElement | null>(null)
 let ctx: gsap.Context
 
+const { shouldAnimate } = useAnimation()
+
 const sizeClass = computed(() => `size-${props.size}`)
 
 onMounted(() => {
+  if (!shouldAnimate.value) {
+    return
+  }
+
   ctx = gsap.context(() => {
     // Core breathing
     gsap.to('.core', {
@@ -46,7 +53,7 @@ onMounted(() => {
       duration: 1.5,
       repeat: -1,
       yoyo: true,
-      ease: 'sine.inOut'
+      ease: 'sine.inOut',
     })
 
     // Ring 1 rotation (Inner)
@@ -54,14 +61,14 @@ onMounted(() => {
       rotation: 360,
       duration: 3,
       repeat: -1,
-      ease: 'none'
+      ease: 'none',
     })
     gsap.to('.p1', {
       scale: 1.2,
       duration: 0.8,
       repeat: -1,
       yoyo: true,
-      ease: 'sine.inOut'
+      ease: 'sine.inOut',
     })
 
     // Ring 2 rotation (Middle)
@@ -69,7 +76,7 @@ onMounted(() => {
       rotation: -360,
       duration: 5,
       repeat: -1,
-      ease: 'none'
+      ease: 'none',
     })
     gsap.to('.p2', {
       scale: 0.8,
@@ -77,7 +84,7 @@ onMounted(() => {
       repeat: -1,
       yoyo: true,
       ease: 'sine.inOut',
-      delay: 0.2
+      delay: 0.2,
     })
 
     // Ring 3 rotation (Outer)
@@ -85,7 +92,7 @@ onMounted(() => {
       rotation: 360,
       duration: 7,
       repeat: -1,
-      ease: 'none'
+      ease: 'none',
     })
     gsap.to('.p3', {
       scale: 1.1,
@@ -93,9 +100,8 @@ onMounted(() => {
       repeat: -1,
       yoyo: true,
       ease: 'sine.inOut',
-      delay: 0.4
+      delay: 0.4,
     })
-
   }, orbitSystem.value!)
 })
 
@@ -123,9 +129,18 @@ onUnmounted(() => {
 }
 
 /* Sizes */
-.size-sm .orbit-system { width: 32px; height: 32px; }
-.size-md .orbit-system { width: 64px; height: 64px; }
-.size-lg .orbit-system { width: 96px; height: 96px; }
+.size-sm .orbit-system {
+  width: 32px;
+  height: 32px;
+}
+.size-md .orbit-system {
+  width: 64px;
+  height: 64px;
+}
+.size-lg .orbit-system {
+  width: 96px;
+  height: 96px;
+}
 
 /* Core */
 .core {
@@ -135,9 +150,18 @@ onUnmounted(() => {
   box-shadow: 0 0 20px var(--color-primary-transparent, rgba(var(--color-primary-rgb), 0.3));
 }
 
-.size-sm .core { width: 8px; height: 8px; }
-.size-md .core { width: 16px; height: 16px; }
-.size-lg .core { width: 24px; height: 24px; }
+.size-sm .core {
+  width: 8px;
+  height: 8px;
+}
+.size-md .core {
+  width: 16px;
+  height: 16px;
+}
+.size-lg .core {
+  width: 24px;
+  height: 24px;
+}
 
 /* Rings Container */
 .orbit-ring {
@@ -159,14 +183,32 @@ onUnmounted(() => {
   transform: translate(-50%, -50%);
 }
 
-.size-sm .particle { width: 4px; height: 4px; }
-.size-md .particle { width: 8px; height: 8px; }
-.size-lg .particle { width: 12px; height: 12px; }
+.size-sm .particle {
+  width: 4px;
+  height: 4px;
+}
+.size-md .particle {
+  width: 8px;
+  height: 8px;
+}
+.size-lg .particle {
+  width: 12px;
+  height: 12px;
+}
 
 /* Ring sizes relative to container */
-.ring-1 { width: 60%; height: 60%; }
-.ring-2 { width: 80%; height: 80%; }
-.ring-3 { width: 100%; height: 100%; }
+.ring-1 {
+  width: 60%;
+  height: 60%;
+}
+.ring-2 {
+  width: 80%;
+  height: 80%;
+}
+.ring-3 {
+  width: 100%;
+  height: 100%;
+}
 
 /* Text */
 .spinner-text {
@@ -178,7 +220,12 @@ onUnmounted(() => {
 }
 
 @keyframes pulse-text {
-  0%, 100% { opacity: 0.6; }
-  50% { opacity: 1; }
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 </style>

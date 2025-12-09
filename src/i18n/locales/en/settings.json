@@ -21,11 +21,15 @@
     "toggleTheme": "Toggle theme",
     "toggleHeroSection": "Toggle home hero banner",
     "toggleAnimations": "Toggle animations",
-    "toggleSwipeNavigation": "Toggle swipe navigation",
+    "toggleSwipeNavigation": "Toggle swipe navigation (experimental / not yet active)",
     "openAdvanced": "Open full settings",
     "saving": "Saving...",
     "saved": "Saved",
-    "saveFailed": "Save failed"
+    "saveFailed": "Save failed",
+    "moreAbout": "More / About",
+    "aboutThisApp": "About This App",
+    "termsOfUse": "Terms of Use",
+    "termsOfUseDesc": "View the terms of use for this service."
   },
   "preferences": {
     "title": "User Preferences",
@@ -38,8 +42,8 @@
     "showHeroSectionDesc": "Display welcome banner and statistics at the top of homepage",
     "enableAnimations": "Enable Animations",
     "enableAnimationsDesc": "Enable page transitions and interaction animations",
-    "enableSwipeNavigation": "Enable swipe navigation",
-    "enableSwipeNavigationDesc": "Allow swiping left and right between main pages on mobile",
+    "enableSwipeNavigation": "Enable swipe navigation (experimental / not yet active)",
+    "enableSwipeNavigationDesc": "Allow swiping left and right between main pages on mobile (experimental / currently not active)",
     "postsPerPage": "Posts Per Page",
     "postsPerPageDesc": "Set the number of posts displayed per page",
     "media": "Media Settings",
