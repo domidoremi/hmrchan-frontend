@@ -29,7 +29,6 @@
           <StatCard
             v-for="platform in platforms"
             :key="platform"
-            :icon="getPlatformIcon(platform)"
             :icon-color="getPlatformColor(platform)"
             :title="$t(`platform.${platform}`)"
             :value="platformStats[platform] || 0"
@@ -37,14 +36,17 @@
               platform === 'youtube' || platform === 'tiktok' ? $t('post.videos') : $t('post.title')
             "
             :loading="isStatsLoading"
-          />
+          >
+            <template #icon>
+              <PlatformIcon :platform="platform" :size="24" />
+            </template>
+          </StatCard>
           <template
             v-for="(platform, index) in platforms"
             :key="`slide-${index}`"
             #[`slide-${index}`]
           >
             <StatCard
-              :icon="getPlatformIcon(platform)"
               :icon-color="getPlatformColor(platform)"
               :title="$t(`platform.${platform}`)"
               :value="platformStats[platform] || 0"
@@ -54,7 +56,11 @@
                   : $t('post.title')
               "
               :loading="isStatsLoading"
-            />
+            >
+              <template #icon>
+                <PlatformIcon :platform="platform" :size="24" />
+              </template>
+            </StatCard>
           </template>
         </StatCardGrid>
       </section>
@@ -135,7 +141,7 @@ import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
 
-import { ArrowRight, ImageIcon, Youtube, Twitter, Music2, Instagram } from 'lucide-vue-next'
+import { ArrowRight } from 'lucide-vue-next'
 
 import MainLayout from '@/components/layout/MainLayout.vue'
 import HeroSection from '@/components/layout/HeroSection.vue'
@@ -145,6 +151,7 @@ import PostCard from '@/components/business/PostCard.vue'
 import EmptyState from '@/components/ui/empty/EmptyState.vue'
 import StatCard from '@/components/ui/card/StatCard.vue'
 import StatCardGrid from '@/components/ui/card/StatCardGrid.vue'
+import { PlatformIcon } from '@/components/ui/icon'
 
 import { useAuthStore, useSettingsStore, usePostsStore } from '@/stores'
 import { useWaterfallLayout } from '@/composables'
@@ -455,16 +462,6 @@ const getPlatformColor = (platform: string) => {
 }
 
 // posts变化的监听由 useSmartPreload 和 useInfiniteScroll 处理
-
-const getPlatformIcon = (platform: string) => {
-  const icons = {
-    youtube: Youtube,
-    twitter: Twitter,
-    tiktok: Music2,
-    instagram: Instagram,
-  } as const
-  return icons[platform as keyof typeof icons] || ImageIcon
-}
 </script>
 
 <style scoped>
