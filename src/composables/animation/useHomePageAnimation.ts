@@ -6,6 +6,7 @@
 
 import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import gsap from 'gsap'
+import { useAnimation } from '@/composables'
 import {
   animateHomePageEntrance,
   createCard3DHoverAnimation,
@@ -18,12 +19,16 @@ export function useHomePageAnimation() {
   const container = ref<HTMLElement>()
   const cleanupFunctions: Array<() => void> = []
   const ctx = ref<gsap.Context | null>(null)
+  const { shouldAnimate } = useAnimation()
 
   /**
    * 初始化所有动画
    */
   const initAnimations = async () => {
     if (!container.value) return
+
+    // 尊重全局动效开关和无障碍设置
+    if (!shouldAnimate.value) return
 
     await nextTick()
 

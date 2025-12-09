@@ -1,7 +1,8 @@
 {
   "app": {
     "name": "Himenshion club",
-    "description": "ソーシャルメディアコンテンツアグリゲーター"
+    "description": "ソーシャルメディアコンテンツアグリゲーター",
+    "tagline": "Himeri のすべてのコンテンツを一か所に"
   },
   "common": {
     "loading": "読み込み中...",
@@ -48,7 +49,15 @@
     "retry": "リトライ",
     "posts": "投稿",
     "scrollToLoadMore": "下にスクロールしてもっと読み込む",
-    "submit": "送信"
+    "submit": "送信",
+    "live": "ライブ",
+    "updates": "更新",
+    "viewMode": "表示モード"
+  },
+  "viewMode": {
+    "grid": "グリッド",
+    "compact": "コンパクト",
+    "masonry": "マソンリー"
   },
   "aria": {
     "skipToMain": "メインコンテンツへスキップ",

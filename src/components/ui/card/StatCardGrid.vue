@@ -7,20 +7,25 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import gsap from 'gsap'
+import { useAnimation } from '@/composables'
 
 const gridRef = ref<HTMLElement | null>(null)
+const { shouldAnimate } = useAnimation()
 
 onMounted(() => {
   if (!gridRef.value) return
 
+  if (!shouldAnimate.value) return
+
   // Animate children (cards) on entry
   const cards = gridRef.value.children
 
-  gsap.fromTo(cards,
+  gsap.fromTo(
+    cards,
     {
       y: 30,
       opacity: 0,
-      scale: 0.9
+      scale: 0.9,
     },
     {
       y: 0,
@@ -29,8 +34,8 @@ onMounted(() => {
       duration: 0.6,
       stagger: 0.1,
       ease: 'back.out(1.2)',
-      clearProps: 'all'
-    }
+      clearProps: 'all',
+    },
   )
 })
 </script>

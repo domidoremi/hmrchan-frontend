@@ -77,6 +77,7 @@ import { X, Compass, ArrowRight } from 'lucide-vue-next'
 import { orchestrateHeroAnimations, animateHeroExit } from '@/utils/animation/hero-animations'
 import type { GSAPContext } from '@/utils/animation/gsap-utils'
 import gsap from 'gsap'
+import { useAnimation } from '@/composables'
 
 /**
  * Hero Section 组件
@@ -127,9 +128,8 @@ const props = withDefaults(defineProps<Props>(), {
   showSecondaryButton: true,
 })
 
-/** Emits 定义 */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const emit = defineEmits<{
+/** Emits 定义 - 模板中通过 $emit 使用 */
+defineEmits<{
   close: []
   explore: []
   'secondary-action': []
@@ -149,11 +149,13 @@ const secondaryBtnRef = ref<HTMLElement>()
 let animationContext: GSAPContext = null
 let masterTimeline: gsap.core.Timeline | null = null
 
+const { shouldAnimate } = useAnimation()
+
 /**
  * Hero进场后触发动画
  */
 const onHeroEnter = () => {
-  if (!heroRef.value) return
+  if (!heroRef.value || !shouldAnimate.value) return
 
   // 创建GSAP上下文
   animationContext = gsap.context(() => {
@@ -168,11 +170,13 @@ const onHeroEnter = () => {
 watch(
   () => props.visible,
   (newVal, oldVal) => {
+    if (!shouldAnimate.value) return
+
     if (!newVal && oldVal && heroRef.value) {
       // 执行退场动画
       animateHeroExit(heroRef.value)
     }
-  }
+  },
 )
 
 /** 组件卸载时清理动画 */
@@ -223,7 +227,8 @@ onBeforeUnmount(() => {
 }
 
 @keyframes particlesFloat {
-  0%, 100% {
+  0%,
+  100% {
     transform: translate(0, 0) rotate(0deg);
   }
   25% {

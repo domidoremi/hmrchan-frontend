@@ -6,8 +6,11 @@
     </a>
 
     <!-- 顶部导航栏 -->
-    <AppNavbar :access-current="props.accessCurrent" :access-limit="props.accessLimit"
-      :show-access-indicator="props.showAccessIndicator" />
+    <AppNavbar
+      :access-current="props.accessCurrent"
+      :access-limit="props.accessLimit"
+      :show-access-indicator="props.showAccessIndicator"
+    />
 
     <!-- 主内容区域 -->
     <main id="main-content" class="main-content" role="main">
@@ -26,14 +29,17 @@
 
     <!-- 浮动访问指示器（移动端） -->
     <AccessLimitBanner
-      v-if="props.showAccessIndicator && isMobile"
+      v-if="shouldShowAccessIndicator"
       :current-count="props.accessCurrent ?? 0"
       :total-limit="props.accessLimit ?? 100"
     />
 
     <!-- 返回顶部浮动按钮 -->
     <Transition name="fade">
-      <BackToTop v-if="showBackToTop" :offset-for-indicator="props.showAccessIndicator && isMobile" />
+      <BackToTop
+        v-if="props.enableBackToTop && showBackToTop"
+        :offset-for-indicator="shouldShowAccessIndicator"
+      />
     </Transition>
   </div>
 </template>
@@ -66,6 +72,7 @@
  */
 
 import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
+import { useRoute } from 'vue-router'
 import AppNavbar from './AppNavbar.vue'
 import AppFooter from './AppFooter.vue'
 import BackToTop from '../ui/button/BackToTop.vue'
@@ -85,6 +92,8 @@ const props = withDefaults(
     accessLimit?: number
     /** 是否在导航栏显示访问限制指示 */
     showAccessIndicator?: boolean
+    /** 是否启用全局返回顶部按钮 */
+    enableBackToTop?: boolean
   }>(),
   {
     disableContainer: false,
@@ -92,6 +101,7 @@ const props = withDefaults(
     accessCurrent: undefined,
     accessLimit: undefined,
     showAccessIndicator: false,
+    enableBackToTop: true,
   },
 )
 
@@ -127,6 +137,15 @@ const handleScroll = () => {
 
 /** 响应式工具 */
 const { isMobile } = useResponsive()
+
+/** 当前路由，用于限制访问指示器显示范围（例如仅首页） */
+const route = useRoute()
+
+const isHomeRoute = computed(() => route.path === '/')
+
+const shouldShowAccessIndicator = computed(
+  () => props.showAccessIndicator && isMobile.value && isHomeRoute.value,
+)
 
 /** 网络状态 Store */
 const networkStore = useNetworkStore()

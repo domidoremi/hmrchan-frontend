@@ -1,45 +1,108 @@
 /**
  * 安全存储工具
- * 提供统一的加密、错误处理和竞态条件防护
+ * 提供统一的 AES-GCM 加密、错误处理和竞态条件防护
+ *
+ * 使用 Web Crypto API 实现强加密：
+ * - 算法：AES-GCM（256位密钥）
+ * - 每次加密生成随机 IV（12字节）
+ * - 支持 TTL 过期机制
  */
 
 import logger from '@/utils/logger'
 
-// 简单的加密/解密（生产环境应使用更强的加密）
 const STORAGE_KEY_PREFIX = '__hmrc_'
-const ENCRYPTION_KEY = 'hmrchan_secure_key_v1' // 生产环境应从环境变量读取
+const ENCRYPTION_KEY_ENV = import.meta.env.VITE_ENCRYPTION_KEY || 'hmrchan_secure_key_v1_default'
+
+// 缓存派生的加密密钥
+let cachedCryptoKey: CryptoKey | null = null
 
 /**
- * 简单的XOR加密（仅用于混淆，不是强加密）
- * 生产环境建议使用 Web Crypto API
+ * 从密码派生 AES-256 密钥
  */
-function simpleEncrypt(text: string): string {
+async function deriveKey(password: string): Promise<CryptoKey> {
+  if (cachedCryptoKey) return cachedCryptoKey
+
+  const encoder = new TextEncoder()
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(password),
+    'PBKDF2',
+    false,
+    ['deriveKey'],
+  )
+
+  // 使用固定盐值（生产环境可以使用环境变量）
+  const salt = encoder.encode('hmrchan_salt_v1')
+
+  cachedCryptoKey = await crypto.subtle.deriveKey(
+    {
+      name: 'PBKDF2',
+      salt,
+      iterations: 100000,
+      hash: 'SHA-256',
+    },
+    keyMaterial,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt', 'decrypt'],
+  )
+
+  return cachedCryptoKey
+}
+
+/**
+ * AES-GCM 加密
+ */
+async function aesEncrypt(text: string): Promise<string> {
   try {
-    const encoded = btoa(encodeURIComponent(text))
-    return encoded
-      .split('')
-      .map((char, i) => {
-        const keyChar = ENCRYPTION_KEY.charCodeAt(i % ENCRYPTION_KEY.length)
-        return String.fromCharCode(char.charCodeAt(0) ^ keyChar)
-      })
-      .join('')
-  } catch {
-    return text // 加密失败，返回原文
+    const key = await deriveKey(ENCRYPTION_KEY_ENV)
+    const encoder = new TextEncoder()
+    const data = encoder.encode(text)
+
+    // 生成随机 IV（12字节是 AES-GCM 推荐长度）
+    const iv = crypto.getRandomValues(new Uint8Array(12))
+
+    const encrypted = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, data)
+
+    // 将 IV 和加密数据合并，然后 Base64 编码
+    const combined = new Uint8Array(iv.length + encrypted.byteLength)
+    combined.set(iv, 0)
+    combined.set(new Uint8Array(encrypted), iv.length)
+
+    return btoa(String.fromCharCode(...combined))
+  } catch (error) {
+    logger.error('[SecureStorage] AES encryption failed', { error })
+    // 降级到简单编码
+    return btoa(encodeURIComponent(text))
   }
 }
 
-function simpleDecrypt(encrypted: string): string {
+/**
+ * AES-GCM 解密
+ */
+async function aesDecrypt(encrypted: string): Promise<string> {
   try {
-    const decrypted = encrypted
-      .split('')
-      .map((char, i) => {
-        const keyChar = ENCRYPTION_KEY.charCodeAt(i % ENCRYPTION_KEY.length)
-        return String.fromCharCode(char.charCodeAt(0) ^ keyChar)
-      })
-      .join('')
-    return decodeURIComponent(atob(decrypted))
-  } catch {
-    return encrypted // 解密失败，返回原文
+    const key = await deriveKey(ENCRYPTION_KEY_ENV)
+
+    // Base64 解码
+    const combined = Uint8Array.from(atob(encrypted), (c) => c.charCodeAt(0))
+
+    // 分离 IV 和加密数据
+    const iv = combined.slice(0, 12)
+    const data = combined.slice(12)
+
+    const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, data)
+
+    const decoder = new TextDecoder()
+    return decoder.decode(decrypted)
+  } catch (error) {
+    // 尝试降级解密（兼容旧数据）
+    try {
+      return decodeURIComponent(atob(encrypted))
+    } catch {
+      logger.error('[SecureStorage] AES decryption failed', { error })
+      return encrypted
+    }
   }
 }
 
@@ -132,7 +195,7 @@ class SecureStorage {
         let data = JSON.stringify(item)
 
         if (options.encrypt) {
-          data = simpleEncrypt(data)
+          data = await aesEncrypt(data)
         }
 
         this.storage.setItem(this.getFullKey(key), data)
@@ -156,11 +219,12 @@ class SecureStorage {
 
     return withLock(key, async () => {
       try {
-        let data = this.storage.getItem(this.getFullKey(key))
-        if (!data) return null
+        const rawData = this.storage.getItem(this.getFullKey(key))
+        if (!rawData) return null
 
+        let data: string = rawData
         if (options.encrypt) {
-          data = simpleDecrypt(data)
+          data = await aesDecrypt(rawData)
         }
 
         const item = JSON.parse(data) as StorageItem<T>
