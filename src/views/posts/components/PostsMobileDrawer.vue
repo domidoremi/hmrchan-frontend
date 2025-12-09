@@ -35,7 +35,7 @@
 <script setup lang="ts">
 import { watch, onUnmounted } from 'vue'
 import PostPreviewPanel from '@/components/business/PostPreviewPanel.vue'
-import { useMobileDrawer } from '../composables/useMobileDrawer'
+import { useMobileDrawer } from '@/composables'
 import type { PostDetail } from '@/types'
 
 // ============================================================================

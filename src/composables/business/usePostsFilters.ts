@@ -6,7 +6,7 @@
 import { ref, computed, watch, type Component } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ImageIcon, Youtube, Twitter, Instagram, Music2 } from 'lucide-vue-next'
-import type { SortOption, ViewMode, PlatformOption } from '../types'
+import type { SortOption, ViewMode, PlatformOption } from '@/types'
 
 // 存储键常量
 const STORAGE_KEYS = {

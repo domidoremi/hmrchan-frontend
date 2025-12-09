@@ -4,7 +4,7 @@
  */
 
 import { ref, computed } from 'vue'
-import type { DrawerDragState } from '../types'
+import type { DrawerDragState } from '@/types'
 
 /**
  * 抽屉配置选项

@@ -24,7 +24,7 @@
           :aria-selected="isPlatformActive(platform.value)"
           @click="selectPlatform(platform.value)"
         >
-          <component :is="platform.icon" :size="16" />
+          <PlatformIcon :platform="platform.value || 'all'" :size="16" />
           <span class="tab-label">{{ $t(platform.labelKey) }}</span>
         </button>
       </div>
@@ -119,7 +119,7 @@
             }"
             @click="selectPlatform(platform.value)"
           >
-            <component :is="platform.icon" :size="14" />
+            <PlatformIcon :platform="platform.value || 'all'" :size="14" />
             <span>{{ $t(platform.labelKey) }}</span>
           </button>
         </div>
@@ -155,20 +155,15 @@ import {
   ChevronDown,
   ArrowDown,
   ArrowUp,
-  ImageIcon,
   RotateCcw,
   Check,
   SlidersHorizontal,
-  Youtube,
-  Twitter,
-  Instagram,
-  Music2,
-  Globe2,
   Clock,
   CalendarDays,
   Eye,
   Heart,
 } from 'lucide-vue-next'
+import { PlatformIcon } from '@/components/ui/icon'
 import type { PostListParams, Platform } from '@/types'
 import { useResponsive } from '@/composables'
 
@@ -205,12 +200,12 @@ const localFilters = reactive<PostListParams>({
 })
 
 // 平台选项
-const platformOptions: { value: '' | Platform; labelKey: string; icon: Component }[] = [
-  { value: '', labelKey: 'platform.all', icon: Globe2 },
-  { value: 'youtube', labelKey: 'platform.youtube', icon: Youtube },
-  { value: 'twitter', labelKey: 'platform.twitter', icon: Twitter },
-  { value: 'tiktok', labelKey: 'platform.tiktok', icon: Music2 },
-  { value: 'instagram', labelKey: 'platform.instagram', icon: Instagram },
+const platformOptions: { value: '' | Platform; labelKey: string }[] = [
+  { value: '', labelKey: 'platform.all' },
+  { value: 'youtube', labelKey: 'platform.youtube' },
+  { value: 'twitter', labelKey: 'platform.twitter' },
+  { value: 'tiktok', labelKey: 'platform.tiktok' },
+  { value: 'instagram', labelKey: 'platform.instagram' },
 ]
 
 // 排序选项

@@ -152,25 +152,11 @@ export function handleError(
 
   // 记录到控制台（使用 logger 而不是 console.error）
   if (logToConsole) {
-    // 动态导入 logger 以避免循环依赖
-    import('@/utils/logger')
-      .then(({ logger }) => {
-        logger.error(`Error: ${errorResponse.message}`, {
-          category: context,
-          code: errorResponse.code,
-          status: errorResponse.status,
-        })
-      })
-      .catch(() => {
-        // 如果 logger 不可用，降级到 console.error
-        console.error(`[${context}] Error:`, {
-          message: errorResponse.message,
-          code: errorResponse.code,
-          status: errorResponse.status,
-          details: errorResponse.details,
-          original: error,
-        })
-      })
+    logger.error(`Error: ${errorResponse.message}`, {
+      category: context,
+      code: errorResponse.code,
+      status: errorResponse.status,
+    })
   }
 
   // 错误监控
