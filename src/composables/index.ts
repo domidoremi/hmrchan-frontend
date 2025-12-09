@@ -115,3 +115,10 @@ export type { PostCardData, PostCardFormatters } from './business/usePostCard'
 
 export { usePostCardAnimation } from './business/usePostCardAnimation'
 export type { PostCardAnimationHandlers } from './business/usePostCardAnimation'
+
+export { usePostsFilters } from './business/usePostsFilters'
+export type { UsePostsFiltersReturn, UsePostsFiltersOptions } from './business/usePostsFilters'
+
+// ==================== UI - Mobile ====================
+export { useMobileDrawer } from './ui/useMobileDrawer'
+export type { UseMobileDrawerReturn, UseMobileDrawerOptions } from './ui/useMobileDrawer'

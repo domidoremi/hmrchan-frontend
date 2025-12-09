@@ -58,7 +58,6 @@ import { computed } from 'vue'
 
 defineOptions({
   inheritAttrs: false,
-  // eslint-disable-next-line vue/multi-word-component-names
   name: 'Radio',
 })
 

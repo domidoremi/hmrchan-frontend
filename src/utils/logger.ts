@@ -95,8 +95,9 @@ class Logger {
     // 上下文信息
     if (this.config.enableContext && (context || Object.keys(this.context).length > 0)) {
       const mergedContext = { ...this.context, ...context }
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { category, ...contextData } = mergedContext
+      // 解构移除 category（已在前缀中使用），保留其他上下文数据
+      const { category: _category, ...contextData } = mergedContext
+      void _category // 显式标记为已使用
       if (Object.keys(contextData).length > 0) {
         parts.push(`| Context: ${JSON.stringify(contextData)}`)
       }
