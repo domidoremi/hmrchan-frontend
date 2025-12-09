@@ -4,6 +4,7 @@
  */
 
 import { ref, computed, watch } from 'vue'
+import { lockBodyScroll, unlockBodyScroll } from './useBodyScrollLock'
 
 export interface ModalOptions {
   /**
@@ -61,7 +62,7 @@ export function useModal(options: ModalOptions = {}) {
     isClosing.value = false
 
     if (preventBodyScroll) {
-      document.body.style.overflow = 'hidden'
+      lockBodyScroll()
     }
 
     onOpen?.()
@@ -85,7 +86,7 @@ export function useModal(options: ModalOptions = {}) {
       isClosing.value = false
 
       if (preventBodyScroll) {
-        document.body.style.overflow = ''
+        unlockBodyScroll()
       }
 
       onClose?.()

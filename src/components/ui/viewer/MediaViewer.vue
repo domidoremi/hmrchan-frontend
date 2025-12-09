@@ -3,37 +3,75 @@
     <div class="media-viewer" @click.stop>
       <!-- 工具栏 -->
       <div class="viewer-toolbar" :class="{ 'controls-hidden': !controlsVisible }">
-        <button class="viewer-btn toolbar-btn" @click="toggleFullscreen" :title="$t('common.fullscreen')">
+        <button
+          class="viewer-btn toolbar-btn"
+          @click="toggleFullscreen"
+          :title="$t('common.fullscreen')"
+        >
           <Maximize :size="20" />
         </button>
-        <button class="viewer-btn toolbar-btn" @click="downloadMedia" :title="$t('common.download')">
+        <button
+          class="viewer-btn toolbar-btn"
+          @click="downloadMedia"
+          :title="$t('common.download')"
+        >
           <Download :size="20" />
         </button>
-        <button class="viewer-btn toolbar-btn close-btn" @click="close" :aria-label="$t('aria.closeViewer')">
+        <button
+          class="viewer-btn toolbar-btn close-btn"
+          @click="close"
+          :aria-label="$t('aria.closeViewer')"
+        >
           <X :size="24" />
         </button>
       </div>
 
       <!-- 上一张按钮 -->
-      <button v-if="mediaItems.length > 1" class="viewer-btn prev-btn" :class="{ 'controls-hidden': !controlsVisible }"
-        @click="prev" :disabled="currentIndex === 0" :aria-label="$t('aria.previousImage')">
+      <button
+        v-if="mediaItems.length > 1"
+        class="viewer-btn prev-btn"
+        :class="{ 'controls-hidden': !controlsVisible }"
+        @click="prev"
+        :disabled="currentIndex === 0"
+        :aria-label="$t('aria.previousImage')"
+      >
         <ChevronLeft :size="32" />
       </button>
 
       <!-- 媒体内容 -->
       <div class="media-container">
         <!-- 图片 -->
-        <img v-if="currentMedia.type === 'image'" :src="currentMedia.url"
-          :alt="`${$t('post.image')} ${currentIndex + 1}`" @load="onMediaLoad" :style="imageStyle"
-          class="media-content-img" />
+        <img
+          v-if="currentMedia.type === 'image'"
+          :src="currentMedia.url"
+          :alt="`${$t('post.image')} ${currentIndex + 1}`"
+          @load="onMediaLoad"
+          :style="imageStyle"
+          class="media-content-img"
+        />
 
         <!-- 视频 -->
-        <video v-else-if="currentMedia.type === 'video'" controls preload="none" playsinline controlsList="nodownload"
-          class="media-content-video" @loadedmetadata="onMediaLoad" @canplay="onMediaLoad" @error="onVideoError"
-          ref="videoElement">
+        <video
+          v-else-if="currentMedia.type === 'video'"
+          controls
+          preload="none"
+          playsinline
+          controlsList="nodownload"
+          class="media-content-video"
+          @loadedmetadata="onMediaLoad"
+          @canplay="onMediaLoad"
+          @error="onVideoError"
+          ref="videoElement"
+        >
           <source :src="currentMedia.url" type="video/mp4" />
-          <track v-if="currentMedia.subtitle" kind="subtitles" :src="currentMedia.subtitle" srclang="zh" label="中文"
-            default />
+          <track
+            v-if="currentMedia.subtitle"
+            kind="subtitles"
+            :src="currentMedia.subtitle"
+            srclang="zh"
+            label="中文"
+            default
+          />
           {{ $t('post.videoNotSupported') }}
         </video>
 
@@ -44,8 +82,14 @@
       </div>
 
       <!-- 下一张按钮 -->
-      <button v-if="mediaItems.length > 1" class="viewer-btn next-btn" :class="{ 'controls-hidden': !controlsVisible }"
-        @click="next" :disabled="currentIndex === mediaItems.length - 1" :aria-label="$t('aria.nextImage')">
+      <button
+        v-if="mediaItems.length > 1"
+        class="viewer-btn next-btn"
+        :class="{ 'controls-hidden': !controlsVisible }"
+        @click="next"
+        :disabled="currentIndex === mediaItems.length - 1"
+        :aria-label="$t('aria.nextImage')"
+      >
         <ChevronRight :size="32" />
       </button>
 
@@ -77,8 +121,13 @@
             {{ playbackRate }}x
           </button>
           <div v-if="showPlaybackMenu" class="playback-menu">
-            <button v-for="rate in playbackRates" :key="rate" @click="changePlaybackRate(rate)"
-              :class="{ active: playbackRate === rate }" class="playback-option">
+            <button
+              v-for="rate in playbackRates"
+              :key="rate"
+              @click="changePlaybackRate(rate)"
+              :class="{ active: playbackRate === rate }"
+              class="playback-option"
+            >
               {{ rate }}x
             </button>
           </div>
@@ -91,6 +140,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onUnmounted } from 'vue'
 import logger from '@/utils/logger'
+import { useBodyScrollLock } from '@/composables'
 import {
   X,
   ChevronLeft,
@@ -134,6 +184,9 @@ let hideControlsTimer: ReturnType<typeof setTimeout> | null = null
 
 const playbackRates = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2]
 
+// 使用 body scroll lock composable
+const { isLocked: isScrollLocked } = useBodyScrollLock()
+
 const currentMedia = computed(
   () =>
     props.mediaItems[currentIndex.value] || {
@@ -156,11 +209,11 @@ watch(
       zoom.value = 1
       // 对于视频且 preload="none"，不需要等待加载
       loading.value = currentMedia.value.type === 'video' ? false : true
-      document.body.style.overflow = 'hidden'
+      isScrollLocked.value = true
       controlsVisible.value = true
       resetHideControlsTimer()
     } else {
-      document.body.style.overflow = ''
+      isScrollLocked.value = false
       if (hideControlsTimer) {
         clearTimeout(hideControlsTimer)
       }
@@ -341,7 +394,6 @@ onUnmounted(() => {
   if (typeof window !== 'undefined') {
     window.removeEventListener('keydown', handleKeydown)
   }
-  document.body.style.overflow = ''
 })
 </script>
 

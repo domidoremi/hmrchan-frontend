@@ -58,13 +58,6 @@ import './styles/tablet-optimizations.css'
 import './styles/desktop-optimizations.css'
 
 // ============================================
-// 自定义指令导入
-// ============================================
-
-/** 图片懒加载指令 */
-import { lazyLoad } from './directives/lazyLoad'
-
-// ============================================
 // 工具和插件导入
 // ============================================
 
@@ -170,16 +163,6 @@ app.use(imagePreloadPlugin, {
   /** 关键图片选择器列表 */
   criticalSelectors: ['.hero-image', '.featured-image', '[data-critical="true"] img'],
 })
-
-// ============================================
-// 注册全局指令
-// ============================================
-
-/**
- * 注册图片懒加载指令
- * 使用方式：<img v-lazy="imageUrl" />
- */
-app.directive('lazy', lazyLoad)
 
 // ============================================
 // 全局错误处理
