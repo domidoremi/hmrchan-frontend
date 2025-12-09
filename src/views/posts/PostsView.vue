@@ -44,7 +44,7 @@
             :class="['posts-grid', viewMode === 'list' ? 'is-list' : 'is-grid']"
           >
             <PostCard
-              v-for="(post, index) in posts"
+              v-for="(post, index) in renderedPosts"
               :key="post.id"
               :post="post"
               :is-first-screen="index < 6"
@@ -67,6 +67,15 @@
             <div v-if="isLoadingMore" class="loading-more">
               <div class="spinner spinner-md"></div>
               <span>{{ $t('common.loading') }}</span>
+            </div>
+          </Transition>
+
+          <!-- 渲染优化提示 -->
+          <Transition name="fade">
+            <div v-if="showTooManyPostsHint" class="render-limit-hint">
+              <span>{{
+                $t('post.renderLimitHint', `显示最近 ${MAX_RENDERED_POSTS} 条，请使用筛选缩小范围`)
+              }}</span>
             </div>
           </Transition>
 
@@ -167,9 +176,7 @@ import PostPreviewPanel from '@/components/business/PostPreviewPanel.vue'
 import { PostsHero, PostsToolbar, PostsMobileDrawer } from './components'
 
 // Composables
-import { usePostsFilters } from './composables'
-import { useInfiniteScroll } from '@/composables'
-import { useWaterfallLayout } from '@/composables'
+import { usePostsFilters, useInfiniteScroll, useWaterfallLayout } from '@/composables'
 
 // Stores & Utils
 import { usePostsStore, useSettingsStore } from '@/stores'
@@ -246,6 +253,22 @@ const previewError = ref<string | null>(null)
 // ============================================================================
 
 const totalPosts = computed(() => pagination.value?.total || posts.value.length)
+
+/**
+ * 渲染优化：限制最大渲染数量
+ * 超过此数量时，只渲染最近的帖子，避免 DOM 无限增长
+ */
+const MAX_RENDERED_POSTS = 50
+const renderedPosts = computed(() => {
+  if (posts.value.length <= MAX_RENDERED_POSTS) {
+    return posts.value
+  }
+  // 保留最近加载的帖子
+  return posts.value.slice(-MAX_RENDERED_POSTS)
+})
+
+/** 是否显示数量过多提示 */
+const showTooManyPostsHint = computed(() => posts.value.length > MAX_RENDERED_POSTS)
 
 // ============================================================================
 // Waterfall Layout
@@ -658,6 +681,19 @@ onUnmounted(() => {
   background: rgba(59, 130, 246, 0.08);
   color: var(--color-text-secondary);
   font-size: var(--text-sm);
+}
+
+.render-limit-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 16px;
+  margin-top: var(--spacing-md);
+  border-radius: var(--radius-md);
+  background: rgba(251, 191, 36, 0.1);
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  text-align: center;
 }
 
 /* ========== 预览面板 ========== */

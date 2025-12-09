@@ -128,9 +128,8 @@ const props = withDefaults(defineProps<Props>(), {
   showSecondaryButton: true,
 })
 
-/** Emits 定义 */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const emit = defineEmits<{
+/** Emits 定义 - 模板中通过 $emit 使用 */
+defineEmits<{
   close: []
   explore: []
   'secondary-action': []

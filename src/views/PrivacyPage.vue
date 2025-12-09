@@ -14,6 +14,11 @@
       <div class="privacy-content glass-card">
         <section v-for="section in sections" :key="section.id" class="privacy-section">
           <h2>{{ section.title }}</h2>
+          <!--
+            安全说明：v-html 内容来自 i18n 翻译文件（受控的静态内容），
+            不包含用户输入，因此 XSS 风险可控。
+            如果将来需要渲染用户内容，请使用 DOMPurify 进行消毒。
+          -->
           <div v-html="section.content"></div>
         </section>
 

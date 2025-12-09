@@ -63,6 +63,8 @@ export default defineConfigWithVueTs(
             'Toast',
             'Loading',
             'Skeleton',
+            'Checkbox',
+            'Radio',
           ],
         },
       ],

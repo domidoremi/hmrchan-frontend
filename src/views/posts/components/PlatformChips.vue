@@ -38,7 +38,7 @@ import { Check } from 'lucide-vue-next'
 import { useSettingsStore } from '@/stores'
 import { storeToRefs } from 'pinia'
 import gsap from 'gsap'
-import type { PlatformOption } from '../types'
+import type { PlatformOption } from '@/types'
 
 // ============================================================================
 // Props & Emits
