@@ -2,9 +2,80 @@
  * i18n 开发工具
  * 仅在开发环境可用，用于调试和验证 i18n 使用
  */
-import { printI18nGuide, validateI18nKey } from './i18nScanner'
 import type { SupportedLocale } from '@/i18n'
 import logger from './logger'
+
+// 标准的 i18n 键值前缀
+const I18N_KEY_PREFIXES = [
+  'app',
+  'nav',
+  'platform',
+  'post',
+  'posts',
+  'search',
+  'filter',
+  'auth',
+  'favorite',
+  'settings',
+  'common',
+  'author',
+  'profile',
+  'access',
+  'upload',
+  'cache',
+  'error',
+  'network',
+  'form',
+  'validation',
+  'success',
+  'confirm',
+  'dialog',
+  'notification',
+  'theme',
+  'language',
+  'footer',
+  'dev',
+  'image',
+  'video',
+  'media',
+]
+
+/**
+ * 打印 i18n 命名规范指南
+ */
+function printI18nGuide(): void {
+  logger.info('\n📖 i18n 键值命名规范指南')
+  logger.info('================================')
+  logger.info('\n格式: prefix.category.key')
+  logger.info('\n有效前缀:')
+  I18N_KEY_PREFIXES.forEach((p) => logger.info(`  - ${p}`))
+  logger.info('\n示例:')
+  logger.info('  - common.button.save')
+  logger.info('  - error.network.timeout')
+  logger.info('  - auth.login.title')
+}
+
+/**
+ * 验证 i18n 键值
+ */
+function validateI18nKey(key: string): { valid: boolean; issues: string[] } {
+  const issues: string[] = []
+  const parts = key.split('.')
+
+  if (parts.length < 2) {
+    issues.push('键值应至少包含两个部分 (prefix.key)')
+  }
+
+  if (parts.length > 0 && !I18N_KEY_PREFIXES.includes(parts[0])) {
+    issues.push(`无效前缀 "${parts[0]}"，应使用: ${I18N_KEY_PREFIXES.join(', ')}`)
+  }
+
+  if (!/^[a-z][a-zA-Z0-9.]*$/.test(key)) {
+    issues.push('键值应使用 camelCase 格式')
+  }
+
+  return { valid: issues.length === 0, issues }
+}
 
 /**
  * 全局 i18n 开发工具
@@ -73,7 +144,7 @@ export function createI18nDevTools(): I18nDevTools | null {
           logger.info('✅ Valid')
         } else {
           logger.info('❌ Invalid')
-          result.issues.forEach((issue) => {
+          result.issues.forEach((issue: string) => {
             logger.info(`  - ${issue}`)
           })
         }

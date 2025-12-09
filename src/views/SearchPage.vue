@@ -10,11 +10,18 @@
       </header>
 
       <div class="search-tabs glass-card">
-        <button type="button" :class="['tab-button', { active: activeTab === 'posts' }]" @click="switchTab('posts')">
+        <button
+          type="button"
+          :class="['tab-button', { active: activeTab === 'posts' }]"
+          @click="switchTab('posts')"
+        >
           {{ $t('nav.posts') }}
         </button>
-        <button type="button" :class="['tab-button', { active: activeTab === 'authors' }]"
-          @click="switchTab('authors')">
+        <button
+          type="button"
+          :class="['tab-button', { active: activeTab === 'authors' }]"
+          @click="switchTab('authors')"
+        >
           {{ $t('nav.authors') }}
         </button>
       </div>
@@ -36,8 +43,13 @@
               {{ $t('offline.usingCache') }}
             </p>
 
-            <InfinitePostGrid :items="posts" :loading="loadingPosts" :has-more="postsHasMore"
-              :is-loading-more="loadingPosts && posts.length > 0" @load-more="handlePostsLoadMore" />
+            <InfinitePostGrid
+              :items="posts"
+              :loading="loadingPosts"
+              :has-more="postsHasMore"
+              :is-loading-more="loadingPosts && posts.length > 0"
+              @load-more="handlePostsLoadMore"
+            />
           </div>
 
           <div v-else class="empty-state glass-card">
@@ -73,8 +85,13 @@
                   </span>
                 </div>
               </div>
-              <a v-if="author.profile_url" :href="author.profile_url" class="author-link" target="_blank"
-                rel="noopener noreferrer">
+              <a
+                v-if="author.profile_url"
+                :href="author.profile_url"
+                class="author-link"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
                 {{ $t('author.viewOriginal') }}
               </a>
             </div>
@@ -152,7 +169,7 @@ useIntersectionObserver(
       handleAuthorsLoadMore()
     }
   },
-  { rootMargin: '200px' }
+  { rootMargin: '200px' },
 )
 
 const syncRoute = () => {

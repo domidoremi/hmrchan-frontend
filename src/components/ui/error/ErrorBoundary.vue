@@ -107,7 +107,6 @@ const reload = () => {
 }
 
 @keyframes shake {
-
   0%,
   100% {
     transform: translateX(0);
