@@ -80,7 +80,10 @@
           <div
             ref="postsGrid"
             class="posts-grid"
-            :class="{ 'view-masonry': viewMode === 'masonry' }"
+            :class="{
+              'view-masonry': viewMode === 'masonry',
+              'view-grid': viewMode === 'grid',
+            }"
           >
             <PostCard
               v-for="(post, index) in localPosts"
@@ -645,8 +648,22 @@ watch(viewMode, async () => {
   transition: opacity 0.3s ease;
 }
 
+/* 网格模式：使用 CSS Grid 等高排列 */
+.posts-grid.view-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--spacing-lg);
+}
+
+.posts-grid.view-grid :deep(.post-card) {
+  position: relative !important;
+  left: auto !important;
+  top: auto !important;
+  width: 100% !important;
+}
+
+/* 瀑布流模式：由 useWaterfallLayout 控制 */
 .posts-grid.view-masonry {
-  /* 瀑布流由 useWaterfallLayout 控制 */
   contain: layout style;
 }
 
