@@ -476,19 +476,24 @@ watch(
   },
 )
 
-// 监听帖子数量变化更新布局
+// 监听帖子数量变化更新布局（仅瀑布流模式）
 watch(
   () => localPosts.value.length,
   async () => {
-    await nextTick()
-    updateLayout()
+    if (viewMode.value === 'masonry') {
+      await nextTick()
+      updateLayout()
+    }
   },
 )
 
 // 监听视图模式变化
-watch(viewMode, async () => {
+watch(viewMode, async (newMode) => {
   await nextTick()
-  updateLayout()
+  // 只在瀑布流模式下重新计算布局
+  if (newMode === 'masonry') {
+    updateLayout()
+  }
 })
 </script>
 
@@ -654,14 +659,23 @@ watch(viewMode, async () => {
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: var(--spacing-lg);
   align-items: start;
+  /* 重置瀑布流的容器高度 */
+  height: auto !important;
+  min-height: auto;
 }
 
 .posts-grid.view-grid :deep(.post-card) {
+  /* 完全重置瀑布流的绝对定位 */
   position: relative !important;
-  left: auto !important;
-  top: auto !important;
+  left: unset !important;
+  top: unset !important;
+  right: unset !important;
+  bottom: unset !important;
   width: 100% !important;
   height: auto !important;
+  transform: none !important;
+  opacity: 1 !important;
+  visibility: visible !important;
 }
 
 /* 瀑布流模式：由 useWaterfallLayout 控制 */
