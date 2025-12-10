@@ -66,7 +66,8 @@ function validateI18nKey(key: string): { valid: boolean; issues: string[] } {
     issues.push('键值应至少包含两个部分 (prefix.key)')
   }
 
-  if (parts.length > 0 && !I18N_KEY_PREFIXES.includes(parts[0])) {
+  const firstPart = parts[0]
+  if (parts.length > 0 && firstPart !== undefined && !I18N_KEY_PREFIXES.includes(firstPart)) {
     issues.push(`无效前缀 "${parts[0]}"，应使用: ${I18N_KEY_PREFIXES.join(', ')}`)
   }
 

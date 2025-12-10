@@ -29,7 +29,7 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 import { Home, ArrowLeft } from 'lucide-vue-next'
-import GlassButton from '@/components/ui/button/Button.vue'
+import GlassButton from '@/components/ui/Button.vue'
 
 const router = useRouter()
 

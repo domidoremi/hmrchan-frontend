@@ -14,7 +14,7 @@ import type { Post, PostDetail, PostListParams, PaginatedResponse, Platform, UUI
 import { api } from '@/api/client'
 import { indexedDB } from '@/utils/storage'
 import { fetchWithFallback } from '@/utils/cache'
-import { handleError } from '@/utils/error'
+import { handleError } from '@/utils'
 import logger from '@/utils/logger'
 import { toLogContext } from '@/utils/typeGuards'
 import { useSettingsStore } from './useSettings'

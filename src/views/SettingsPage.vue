@@ -398,7 +398,7 @@ import {
 } from 'lucide-vue-next'
 
 import MainLayout from '@/components/layout/MainLayout.vue'
-import GlassButton from '@/components/ui/button/Button.vue'
+import GlassButton from '@/components/ui/Button.vue'
 import CacheManagement from '@/components/business/CacheManagement.vue'
 
 import { useAuthStore, useThemeStore, useSettingsStore, useToastStore } from '@/stores'
@@ -406,10 +406,10 @@ import { useAutoSave } from '@/composables'
 import type { Theme } from '@/types'
 import logger from '@/utils/logger'
 
-const appVersion = import.meta.env.VITE_APP_VERSION || '0.0.1'
-const buildMode = import.meta.env.MODE || 'development'
+const appVersion = import.meta.env['VITE_APP_VERSION'] || '0.0.1'
+const buildMode = import.meta.env['MODE'] || 'development'
 const buildInfo = computed(() => `v${appVersion} (${buildMode})`)
-const gitCommit = import.meta.env.VITE_GIT_COMMIT || ''
+const gitCommit = import.meta.env['VITE_GIT_COMMIT'] || ''
 const gitCommitShort = gitCommit ? gitCommit.slice(0, 7) : ''
 const deploymentHost = typeof window !== 'undefined' && window.location ? window.location.host : ''
 const deploymentMeta = computed(() => {

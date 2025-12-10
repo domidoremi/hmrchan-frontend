@@ -162,8 +162,9 @@ import {
   CalendarDays,
   Eye,
   Heart,
+  ImageIcon,
 } from 'lucide-vue-next'
-import { PlatformIcon } from '@/components/ui/icon'
+import { PlatformIcon } from '@/components/ui'
 import type { PostListParams, Platform } from '@/types'
 import { useResponsive } from '@/composables'
 
@@ -187,16 +188,15 @@ const { isMobile } = useResponsive()
 
 // Refs
 const filterBarRef = ref<HTMLElement | null>(null)
-const platformScrollRef = ref<HTMLElement | null>(null)
 const sortDropdownOpen = ref(false)
 const isSticky = ref(false)
 
 // 本地筛选状态
-const localFilters = reactive<PostListParams>({
+const localFilters = reactive({
   sort_by: 'scraped_at',
-  sort_order: 'desc',
-  platform: undefined,
-  has_media: undefined,
+  sort_order: 'desc' as 'asc' | 'desc',
+  platform: undefined as string | undefined,
+  has_media: undefined as boolean | undefined,
 })
 
 // 平台选项
@@ -281,7 +281,15 @@ const resetFilters = () => {
 }
 
 const emitUpdate = () => {
-  emit('update', { ...localFilters, page: 1 })
+  // 过滤掉 undefined 属性以满足 exactOptionalPropertyTypes
+  const filters: PostListParams = {
+    sort_by: localFilters.sort_by,
+    sort_order: localFilters.sort_order,
+    page: 1,
+  }
+  if (localFilters.platform !== undefined) filters.platform = localFilters.platform
+  if (localFilters.has_media !== undefined) filters.has_media = localFilters.has_media
+  emit('update', filters)
 }
 
 // 同步外部筛选条件
@@ -340,7 +348,8 @@ onUnmounted(() => {
 .filter-bar.is-sticky {
   position: sticky;
   top: calc(var(--navbar-height, 72px) + var(--spacing-md));
-  z-index: 100;
+  z-index: 500;
+  will-change: transform;
   box-shadow:
     0 4px 20px rgba(0, 0, 0, 0.08),
     0 8px 32px rgba(139, 92, 246, 0.1);
@@ -475,7 +484,7 @@ onUnmounted(() => {
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-  z-index: 200;
+  z-index: 1000;
 }
 
 .sort-option {

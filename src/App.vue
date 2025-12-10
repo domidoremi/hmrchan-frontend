@@ -21,8 +21,8 @@ import { ref, onMounted, watch } from 'vue'
 import { RouterView, useRouter } from 'vue-router'
 import { useAuthStore, useThemeStore, useSettingsStore } from '@/stores'
 import { storeToRefs } from 'pinia'
-import ErrorBoundary from '@/components/ui/error/ErrorBoundary.vue'
-import Toast from '@/components/ui/toast/Toast.vue'
+import ErrorBoundary from '@/components/ui/ErrorBoundary.vue'
+import Toast from '@/components/ui/Toast.vue'
 import { useKeyboardNavigation, initAppState } from '@/composables'
 
 /** 认证状态管理 Store */
