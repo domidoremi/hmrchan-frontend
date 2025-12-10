@@ -41,10 +41,11 @@ body {
   color: var(--color-text-primary);
   background-color: var(--color-background);
 
-  /* Transitions */
-  transition:
-    background-color var(--transition-base),
-    color var(--transition-base);
+  /*
+   * 移除 color/background-color 过渡动画以避免 CLS
+   * 这些动画会触发重绘并影响布局稳定性
+   * 主题切换使用 CSS 变量即时更新即可
+   */
 
   /* Layout */
   min-height: 100vh;

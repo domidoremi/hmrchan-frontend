@@ -203,6 +203,10 @@ export interface Post {
   url: string | null
   /** 缩略图 URL */
   thumbnail_url: string | null
+  /** 缩略图宽度（像素，可选） */
+  thumbnail_width?: number | null
+  /** 缩略图高度（像素，可选） */
+  thumbnail_height?: number | null
 
   /** 发布者 ID（对应 user 字段，v2.0: 改用 UUID） */
   author_id: UUID | null

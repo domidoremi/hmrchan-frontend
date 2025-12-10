@@ -36,9 +36,9 @@ logger.info('🌐 API Configuration', {
   baseURL: BASE_URL,
   mode: import.meta.env.MODE,
   windowProtocol: typeof window !== 'undefined' ? window.location.protocol : 'N/A',
-  source: import.meta.env.VITE_API_ENDPOINT
+  source: import.meta.env['VITE_API_ENDPOINT']
     ? 'env:VITE_API_ENDPOINT'
-    : import.meta.env.VITE_API_BASE_URL
+    : import.meta.env['VITE_API_BASE_URL']
       ? 'env:VITE_API_BASE_URL'
       : 'runtime-default',
 })
@@ -88,7 +88,7 @@ const apiClient: KyInstance = ky.create({
       },
     ],
     afterResponse: [
-      (request, options, response) => {
+      (request, _options, response) => {
         /** 记录响应日志 */
         logger.debug(`Response: ${request.method} ${request.url}`, {
           status: response.status,
@@ -582,7 +582,12 @@ export const api = {
 
     await Promise.all(
       urls.map(({ url, params, ttl }) =>
-        this.get(url, { params, ttl, cache: true, useMultiLayerCache: true }).catch((error) => {
+        this.get(url, {
+          ...(params !== undefined && { params }),
+          ...(ttl !== undefined && { ttl }),
+          cache: true,
+          useMultiLayerCache: true,
+        }).catch((error) => {
           logger.warn('Failed to preload URL', { url, error: error.message })
         }),
       ),

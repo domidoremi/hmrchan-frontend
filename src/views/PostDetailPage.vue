@@ -674,10 +674,9 @@
 import { ref, computed, onMounted, onUnmounted, nextTick, type Component } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { useMediaPreload } from '@/composables/media/useSmartPreload'
 import { hasViewedPost, markPostAsViewed } from '@/utils/viewTracking'
-import { useErrorHandler } from '@/utils/error'
-import { resolveMediaUrl, validateMediaId } from '@/utils/format'
+import { useErrorHandler } from '@/utils'
+import { resolveMediaUrl, validateMediaId } from '@/utils'
 import { logger } from '@/utils/logger'
 import {
   ArrowLeft,
@@ -705,9 +704,9 @@ import {
 import dayjs from 'dayjs'
 
 import MainLayout from '@/components/layout/MainLayout.vue'
-import GlassButton from '@/components/ui/button/Button.vue'
+import GlassButton from '@/components/ui/Button.vue'
 import PostCardActions from '@/components/business/PostCard/PostCardActions.vue'
-import PhotoSwipeViewer from '@/components/ui/viewer/PhotoSwipeViewer.vue'
+import PhotoSwipeViewer from '@/components/ui/PhotoSwipeViewer.vue'
 import { useResponsive } from '@/composables'
 
 import { usePostsStore, useAuthStore, useToastStore } from '@/stores'
@@ -743,7 +742,6 @@ const viewerMediaItems = ref<
   }>
 >([])
 const viewerInitialIndex = ref(0)
-const currentThumbnailIndex = ref(0)
 const relatedPosts = ref<Post[]>([])
 const isTabletViewport = ref(false)
 const isMobileViewport = ref(false)
@@ -1044,7 +1042,7 @@ const accordionStates = ref({
 // 保存 accordion 状态
 const saveAccordionState = (key: keyof typeof accordionStates.value, isOpen: boolean) => {
   accordionStates.value[key] = isOpen
-  const postId = route.params.id
+  const postId = route.params['id']
   try {
     sessionStorage.setItem(`${ACCORDION_KEY}:${postId}`, JSON.stringify(accordionStates.value))
   } catch {
@@ -1054,7 +1052,7 @@ const saveAccordionState = (key: keyof typeof accordionStates.value, isOpen: boo
 
 // 恢复 accordion 状态
 const restoreAccordionStates = () => {
-  const postId = route.params.id
+  const postId = route.params['id']
   try {
     const saved = sessionStorage.getItem(`${ACCORDION_KEY}:${postId}`)
     if (saved) {
@@ -1198,7 +1196,7 @@ const updateViewportBreakpoints = () => {
 }
 
 onMounted(async () => {
-  const postId = route.params.id as UUID
+  const postId = route.params['id'] as UUID
   try {
     // 🔧 临时修复：强制刷新绕过所有缓存，确保获取最新数据（包含media_files）
     // 原因：旧缓存可能缺少media_files字段
@@ -1438,12 +1436,6 @@ const getMediaIndex = (mediaFileIndex: number): number => {
 const closeMediaViewer = () => {
   showMediaViewer.value = false
 }
-
-// 媒体预加载
-useMediaPreload(allMediaItems, currentThumbnailIndex, {
-  lookahead: 2,
-  enabled: true,
-})
 
 // 加载相关推荐（直接调用API，不污染全局posts状态）
 const loadRelatedPosts = async () => {

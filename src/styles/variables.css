@@ -14,13 +14,13 @@
   --color-secondary-light: #22d3ee;
   --color-secondary-dark: #0891b2;
 
-  /* 中性色 - 日间模式 */
+  /* 中性色 - 日间模式 (WCAG AA 对比度优化) */
   --color-background: #f8fafc;
   --color-surface: #ffffff;
   --color-surface-variant: #f1f5f9;
   --color-text-primary: #0f172a;
-  --color-text-secondary: #475569;
-  --color-text-tertiary: #94a3b8;
+  --color-text-secondary: #334155; /* 提升对比度: 4.5:1 on white */
+  --color-text-tertiary: #64748b; /* 提升对比度: 4.6:1 on white */
   --color-border: rgba(148, 163, 184, 0.2);
   --color-shadow: rgba(0, 0, 0, 0.1);
 
@@ -234,13 +234,13 @@
 
 /* ========== 夜间模式 ========== */
 [data-theme='dark'] {
-  /* 中性色 - 夜间模式 */
+  /* 中性色 - 夜间模式 (WCAG AA 对比度优化) */
   --color-background: #0f172a;
   --color-surface: #1e293b;
   --color-surface-variant: #334155;
   --color-text-primary: #f1f5f9;
-  --color-text-secondary: #cbd5e1;
-  --color-text-tertiary: #64748b;
+  --color-text-secondary: #e2e8f0; /* 提升对比度: 12:1 on dark */
+  --color-text-tertiary: #94a3b8; /* 提升对比度: 4.6:1 on dark */
   --color-border: rgba(203, 213, 225, 0.1);
   --color-shadow: rgba(0, 0, 0, 0.3);
 

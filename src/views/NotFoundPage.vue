@@ -3,7 +3,14 @@
     <div class="not-found-content glass-card">
       <div class="error-code">404</div>
       <h1>{{ $t('error.notFound.title', 'Page Not Found') }}</h1>
-      <p>{{ $t('error.notFound.description', "The page you're looking for doesn't exist or has been moved.") }}</p>
+      <p>
+        {{
+          $t(
+            'error.notFound.description',
+            "The page you're looking for doesn't exist or has been moved.",
+          )
+        }}
+      </p>
 
       <div class="actions">
         <GlassButton size="lg" @click="goHome">
@@ -22,7 +29,7 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 import { Home, ArrowLeft } from 'lucide-vue-next'
-import GlassButton from '@/components/ui/button/Button.vue'
+import GlassButton from '@/components/ui/Button.vue'
 
 const router = useRouter()
 
