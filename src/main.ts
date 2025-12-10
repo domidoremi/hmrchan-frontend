@@ -58,13 +58,6 @@ import './styles/tablet-optimizations.css'
 import './styles/desktop-optimizations.css'
 
 // ============================================
-// 自定义指令导入
-// ============================================
-
-/** 图片懒加载指令 */
-import { lazyLoad } from './directives/lazyLoad'
-
-// ============================================
 // 工具和插件导入
 // ============================================
 
@@ -81,7 +74,7 @@ import { indexedDB } from './utils/storage'
 import { imagePreloadPlugin } from './plugins/imagePreload'
 
 /** 性能监控工具 */
-import { performanceMonitor } from './utils/performance/performanceMonitor'
+import { performanceMonitor } from './utils/performanceMonitor'
 
 // ============================================
 // 状态管理导入
@@ -172,16 +165,6 @@ app.use(imagePreloadPlugin, {
 })
 
 // ============================================
-// 注册全局指令
-// ============================================
-
-/**
- * 注册图片懒加载指令
- * 使用方式：<img v-lazy="imageUrl" />
- */
-app.directive('lazy', lazyLoad)
-
-// ============================================
 // 全局错误处理
 // ============================================
 
@@ -242,7 +225,6 @@ if (import.meta.env.DEV) {
         if (src.includes('pbs.twimg.com') || src.includes('twimg.com')) {
           event.preventDefault()
           event.stopPropagation()
-          return false
         }
       }
     },

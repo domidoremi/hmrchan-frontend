@@ -18,7 +18,7 @@ import { getRuntimeApiEndpoint } from '@/config/runtime'
 import { indexedDB } from '@/utils/storage'
 import { postCache } from '@/utils/cache'
 import { cacheInvalidation } from '@/utils/cache/cacheInvalidation'
-import { handleError } from '@/utils/error'
+import { handleError } from '@/utils'
 import logger from '@/utils/logger'
 import { toLogContext } from '@/utils/typeGuards'
 import i18n from '@/i18n'
@@ -333,7 +333,7 @@ export const postsApi = {
   async getPosts(params?: PostListParams) {
     try {
       const response = await api.get<PaginatedResponse<Post>>('/posts', {
-        params,
+        ...(params !== undefined && { params }),
         cache: true,
         ttl: 60 * 1000, // 1分钟缓存
         useMultiLayerCache: true,
@@ -668,7 +668,7 @@ export const authorsApi = {
   async getAuthors(params?: { page?: number; page_size?: number; platform?: string }) {
     try {
       return await api.get<PaginatedResponse<AuthorListItem>>('/authors', {
-        params,
+        ...(params !== undefined && { params }),
         cache: true,
         ttl: 10 * 60 * 1000, // 10分钟缓存
         useMultiLayerCache: true,
@@ -722,7 +722,7 @@ export const authorsApi = {
   async getAuthorPosts(authorId: UUID, params?: PostListParams) {
     try {
       return await api.get<PaginatedResponse<Post>>(`/authors/${authorId}/posts`, {
-        params,
+        ...(params !== undefined && { params }),
         cache: true,
         ttl: 2 * 60 * 1000, // 2分钟缓存
         useMultiLayerCache: true,
@@ -759,7 +759,7 @@ export const favoritesApi = {
   async getFavorites(params?: { page?: number; page_size?: number; folder_name?: string }) {
     try {
       return await api.get<PaginatedResponse<Favorite>>('/favorites', {
-        params,
+        ...(params !== undefined && { params }),
         cache: true,
         ttl: 60 * 1000, // 1分钟缓存
         useMultiLayerCache: true,
