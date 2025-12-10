@@ -1,57 +1,133 @@
+# =====================
+# Dependencies
+# =====================
+node_modules/
+.pnp
+.pnp.js
+
+# =====================
+# Build outputs
+# =====================
+dist/
+dist-ssr/
+*.local
+
+# =====================
 # Logs
-logs
+# =====================
+logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
+bun-debug.log*
 
-node_modules
-.DS_Store
-dist
-dist-ssr
-coverage
-*.local
-
+# =====================
 # Environment variables
+# =====================
 .env
 .env.local
 .env.*.local
+!.env.example
+!.env.development
 
+# =====================
 # Editor directories and files
-.vscode/*
+# =====================
+.vscode/
 !.vscode/extensions.json
-.idea
+!.vscode/settings.json
+!.vscode/launch.json
+.idea/
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+*.swp
+*.swo
+*~
 
+# =====================
+# OS generated files
+# =====================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# =====================
+# TypeScript
+# =====================
 *.tsbuildinfo
 
-.eslintcache
+# =====================
+# Testing
+# =====================
+coverage/
+*.lcov
+.nyc_output/
 
 # Cypress
-/cypress/videos/
-/cypress/screenshots/
+cypress/videos/
+cypress/screenshots/
+cypress/downloads/
 
 # Vitest
 __screenshots__/
 
-# Documentation
-# 忽略.kiro目录下的所有Markdown文档（规范、总结等）
-.kiro/
+# =====================
+# Linting & Formatting
+# =====================
+.eslintcache
+.stylelintcache
+.prettiercache
 
-# 忽略临时笔记和草稿
+# =====================
+# Cloudflare / Wrangler
+# =====================
+.wrangler/
+.dev.vars
+worker-configuration.d.ts
+
+# =====================
+# Lighthouse Reports
+# =====================
+lighthouse-report.*
+*.report.html
+*.report.json
+
+# =====================
+# Bun
+# =====================
+bun.lockb
+
+# =====================
+# Misc
+# =====================
+*.local
+*.cache
+.cache/
+.temp/
+.tmp/
+
+# =====================
+# Documentation & Notes
+# =====================
+.kiro/
+docs/
 **/notes.md
 **/draft*.md
 **/temp*.md
 **/TODO.md
-# 保留重要文档
-!README.md
-
-docs/*
-.vscode/
 *.md
+!README.md
+!CHANGELOG.md
+!CONTRIBUTING.md
+!LICENSE.md
