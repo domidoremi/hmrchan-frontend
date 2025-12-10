@@ -865,4 +865,3 @@ class IndexedDBManager {
 
 // 导出单例
 export const indexedDB = new IndexedDBManager()
-export default indexedDB

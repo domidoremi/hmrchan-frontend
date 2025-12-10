@@ -132,5 +132,3 @@ export function withCacheInvalidation<T extends (...args: unknown[]) => Promise<
     }
   }) as T
 }
-
-export default cacheInvalidation
