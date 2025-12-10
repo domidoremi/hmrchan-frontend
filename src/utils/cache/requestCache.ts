@@ -196,5 +196,3 @@ if (typeof window !== 'undefined') {
     5 * 60 * 1000,
   )
 }
-
-export default requestCache

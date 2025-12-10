@@ -73,7 +73,7 @@ import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { Search, X } from 'lucide-vue-next'
 import { useDebounce } from '@/composables'
-import services from '@/api/services'
+import { services } from '@/api/services'
 import type { SearchSuggestion } from '@/types'
 
 const router = useRouter()

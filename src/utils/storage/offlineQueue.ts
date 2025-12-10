@@ -280,4 +280,3 @@ class OfflineQueueManager {
 
 // 导出单例
 export const offlineQueue = new OfflineQueueManager()
-export default offlineQueue

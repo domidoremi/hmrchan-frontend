@@ -312,5 +312,3 @@ if (typeof window !== 'undefined') {
     60 * 60 * 1000,
   )
 }
-
-export default storage
