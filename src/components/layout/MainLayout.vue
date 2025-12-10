@@ -1,15 +1,7 @@
 <template>
   <div class="main-layout">
-    <!-- 无障碍：跳转到主内容链接 -->
-    <a href="#main-content" class="skip-to-main">
-      {{ $t('aria.skipToMain', 'Skip to main content') }}
-    </a>
-
-    <!-- 顶部导航栏 -->
-    <AppNavbar />
-
     <!-- 主内容区域 -->
-    <main id="main-content" class="main-content" role="main">
+    <div class="main-content" role="main">
       <!-- 离线状态提示横幅 -->
       <div v-if="isOffline" class="network-banner">
         {{ $t('offline.offlineNow') }}
@@ -18,10 +10,7 @@
         <slot />
       </div>
       <slot v-else />
-    </main>
-
-    <!-- 页脚 -->
-    <AppFooter />
+    </div>
 
     <!-- 返回顶部浮动按钮 -->
     <Transition name="fade">
@@ -58,8 +47,6 @@
  */
 
 import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
-import AppNavbar from './AppNavbar.vue'
-import AppFooter from './AppFooter.vue'
 import BackToTop from '@/components/ui/BackToTop.vue'
 import { useNetworkStore } from '@/stores'
 
@@ -128,46 +115,16 @@ onBeforeUnmount(() => {
 <style scoped>
 /* 主布局容器 */
 .main-layout {
-  min-height: 100vh;
+  min-height: calc(100vh - var(--navbar-height) - var(--footer-min-height));
   display: flex;
   flex-direction: column;
   position: relative;
 }
 
-/* 无障碍：跳转到主内容链接 */
-.skip-to-main {
-  position: fixed;
-  left: 50%;
-  top: -100px;
-  transform: translateX(-50%);
-  z-index: 10000;
-  padding: var(--spacing-3) var(--spacing-6);
-  background: var(--color-primary);
-  color: white;
-  text-decoration: none;
-  border-radius: var(--radius-lg);
-  font-weight: var(--font-semibold);
-  font-size: var(--text-base);
-  box-shadow:
-    0 8px 24px rgba(139, 92, 246, 0.4),
-    0 4px 12px rgba(0, 0, 0, 0.2);
-  transition: top var(--transition-bounce);
-  white-space: nowrap;
-}
-
-.skip-to-main:focus {
-  top: var(--spacing-4);
-  outline: 3px solid white;
-  outline-offset: 3px;
-}
-
 /* 主内容区域 */
 .main-content {
   flex: 1;
-  padding-top: calc(var(--navbar-height) + var(--spacing-4));
   padding-bottom: var(--spacing-12);
-  scroll-margin-top: var(--navbar-height);
-  min-height: calc(100vh - var(--navbar-height) - var(--footer-min-height));
 }
 
 /* 网络状态横幅 */
@@ -194,9 +151,7 @@ onBeforeUnmount(() => {
 /* 移动端响应式样式 */
 @media (max-width: 768px) {
   .main-content {
-    padding-top: calc(var(--navbar-height-mobile) + var(--spacing-3));
     padding-bottom: calc(var(--bottom-nav-height) + var(--spacing-6) + env(safe-area-inset-bottom));
-    scroll-margin-top: var(--navbar-height-mobile);
   }
 }
 </style>
