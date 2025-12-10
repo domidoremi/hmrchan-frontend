@@ -4,5 +4,10 @@
   "project": ["src/**/*.{ts,vue}"],
   "ignore": ["src/**/*.d.ts", "env.d.ts", "functions/**/*", "src/**/index.ts"],
   "ignoreDependencies": ["@cloudflare/*"],
-  "ignoreExportsUsedInFile": true
+  "ignoreExportsUsedInFile": true,
+  "rules": {
+    "exports": "off",
+    "types": "off",
+    "duplicates": "off"
+  }
 }

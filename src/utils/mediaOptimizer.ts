@@ -392,4 +392,3 @@ class MediaOptimizer {
 
 // 导出单例
 export const mediaOptimizer = new MediaOptimizer()
-export default mediaOptimizer

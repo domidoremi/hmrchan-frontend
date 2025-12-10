@@ -238,4 +238,3 @@ class ServiceWorkerManager {
 
 // 导出单例
 export const swManager = new ServiceWorkerManager()
-export default swManager

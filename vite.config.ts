@@ -425,6 +425,10 @@ export default defineConfig(({ mode }) => {
 
             /** 工具函数 - 按功能分割 */
             if (id.includes('/src/utils/')) {
+              /** 动画工具独立分割（依赖 GSAP） */
+              if (id.includes('/utils/animation')) {
+                return 'utils-animation'
+              }
               if (id.includes('/utils/media')) {
                 return 'utils-media'
               }
@@ -437,6 +441,14 @@ export default defineConfig(({ mode }) => {
                 return 'utils-storage'
               }
               return 'utils'
+            }
+
+            /** i18n 相关代码 */
+            if (id.includes('/src/i18n/')) {
+              if (id.includes('/locales/')) {
+                return 'i18n-locales'
+              }
+              return 'i18n-core'
             }
           },
 
