@@ -74,7 +74,7 @@ import { indexedDB } from './utils/storage'
 import { imagePreloadPlugin } from './plugins/imagePreload'
 
 /** 性能监控工具 */
-import { performanceMonitor } from './utils/performance/performanceMonitor'
+import { performanceMonitor } from './utils/performanceMonitor'
 
 // ============================================
 // 状态管理导入
@@ -225,7 +225,6 @@ if (import.meta.env.DEV) {
         if (src.includes('pbs.twimg.com') || src.includes('twimg.com')) {
           event.preventDefault()
           event.stopPropagation()
-          return false
         }
       }
     },

@@ -1,22 +1,40 @@
 /**
- * 工具函数统一导出
+ * Utils - Flat Structure
  */
 
-// Cache utilities
+// Core
+export { default as logger } from './logger'
+export { logger as loggerInstance } from './logger'
+
+// Format
+export * from './date'
+export * from './number'
+export * from './text'
+export * from './url'
+
+// Error
+export * from './errorHandler'
+export * from './errorMonitor'
+
+// Cache (keep subdirectory)
 export * from './cache'
 
-// Format utilities
-export * from './format'
-
-// Storage utilities
+// Storage (keep subdirectory)
 export * from './storage'
 
-// Media utilities
-export * from './media'
+// Animation (keep subdirectory)
+export * from './animation'
 
-// Error utilities
-export * from './error'
+// Media
+export * from './imageOptimizer'
+export * from './mediaOptimizer'
+export * from './platformCache'
+export * from './preload'
 
-// Common utilities (kept in root)
-export { default as logger } from './logger'
-export * from './common'
+// Security
+export * from './secureStorage'
+
+// Misc
+export * from './typeGuards'
+export * from './avatar'
+export * from './viewTracking'

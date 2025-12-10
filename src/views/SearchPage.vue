@@ -125,17 +125,17 @@ import services from '@/api/services'
 import type { Post, AuthorListItem, PaginatedResponse } from '@/types'
 import { indexedDB } from '@/utils/storage'
 import { fetchWithFallback } from '@/utils/cache'
-import { withLogging } from '@/utils/error'
+import { withLogging } from '@/utils'
 
 const route = useRoute()
 const router = useRouter()
 
-const activeTab = ref<'posts' | 'authors'>(route.query.tab === 'authors' ? 'authors' : 'posts')
+const activeTab = ref<'posts' | 'authors'>(route.query['tab'] === 'authors' ? 'authors' : 'posts')
 const query = ref<string>(
-  typeof route.query.q === 'string'
-    ? route.query.q
-    : Array.isArray(route.query.q)
-      ? route.query.q[0] || ''
+  typeof route.query['q'] === 'string'
+    ? route.query['q']
+    : Array.isArray(route.query['q'])
+      ? route.query['q'][0] || ''
       : '',
 )
 
@@ -177,8 +177,8 @@ const syncRoute = () => {
   const tab = activeTab.value
 
   const nextQuery: Record<string, string> = {}
-  if (q) nextQuery.q = q
-  nextQuery.tab = tab
+  if (q) nextQuery['q'] = q
+  nextQuery['tab'] = tab
 
   router.replace({ path: '/search', query: nextQuery })
 }
@@ -353,8 +353,8 @@ onMounted(() => {
 watch(
   () => route.query,
   (newQuery) => {
-    const qRaw = newQuery.q
-    const tabRaw = newQuery.tab
+    const qRaw = newQuery['q']
+    const tabRaw = newQuery['tab']
 
     const q = typeof qRaw === 'string' ? qRaw : Array.isArray(qRaw) ? qRaw[0] || '' : ''
     const tab = tabRaw === 'authors' ? 'authors' : 'posts'
