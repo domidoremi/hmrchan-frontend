@@ -601,7 +601,7 @@ import {
 import { useAuthStore, useSettingsStore, useThemeStore } from '@/stores'
 import type { Theme } from '@/types'
 import { offlineQueue } from '@/utils/storage'
-import { useI18nOptimized } from '@/composables/core/useI18nOptimized'
+import { useI18nOptimized } from '@/composables/useI18nOptimized'
 // import { supportsPopover } from '@/composables' // 暂时禁用，待 CSS Anchor Positioning 支持后启用
 
 const navbarProps = withDefaults(
@@ -670,7 +670,6 @@ const userDropdownRef = ref<HTMLElement | null>(null)
 
 /** 设置面板显示状态 */
 const showSettingsPanel = ref(false)
-const settingsMenuRef = ref<HTMLElement | null>(null)
 const settingsDropdownRef = ref<HTMLElement | null>(null)
 
 /** 离线队列面板显示状态 */
@@ -1533,6 +1532,35 @@ onUnmounted(() => {
 .settings-toggle-label {
   flex: 1;
   text-align: left;
+}
+
+.settings-advanced-button {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  width: 100%;
+  padding: var(--spacing-3);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  background: var(--glass-bg-light);
+  color: var(--color-text-primary);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.settings-advanced-button:hover {
+  background: var(--glass-bg);
+  border-color: var(--color-primary);
+}
+
+.settings-advanced-button .advanced-labels {
+  flex: 1;
+  text-align: left;
+}
+
+.settings-advanced-button .advanced-title {
+  color: var(--color-text-primary);
 }
 
 .user-dropdown {

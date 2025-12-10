@@ -12,12 +12,14 @@
 
       <div class="hero-stats">
         <div class="hero-stat">
-          <span class="stat-value">{{ formattedTotalPosts }}</span>
+          <span v-if="isLoading" class="stat-value stat-skeleton">---</span>
+          <span v-else class="stat-value">{{ formattedTotalPosts }}</span>
           <span class="stat-label">{{ $t('posts.totalPosts') }}</span>
         </div>
         <div class="stat-divider" aria-hidden="true"></div>
         <div class="hero-stat">
-          <span class="stat-value">{{ platformCount }}</span>
+          <span v-if="isLoading" class="stat-value stat-skeleton">-</span>
+          <span v-else class="stat-value">{{ platformCount }}</span>
           <span class="stat-label">{{ $t('posts.platforms') }}</span>
         </div>
       </div>
@@ -41,12 +43,18 @@ interface Props {
   totalPosts: number
   /** 平台数量 */
   platformCount: number
+  /** 是否正在加载 */
+  loading?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   totalPosts: 0,
   platformCount: 0,
+  loading: false,
 })
+
+/** 是否显示加载中骨架屏 */
+const isLoading = computed(() => props.loading && props.totalPosts === 0)
 
 // ============================================================================
 // Refs & Stores
@@ -77,45 +85,54 @@ const formattedTotalPosts = computed(() => {
 onMounted(() => {
   if (!settings.value.enableAnimations) return
 
-  // 入场动画
-  const tl = gsap.timeline()
+  // 使用 requestIdleCallback 延迟动画，避免阻塞主线程
+  const runAnimation = () => {
+    const tl = gsap.timeline()
 
-  tl.from('.hero-badge', {
-    y: -20,
-    opacity: 0,
-    duration: 0.6,
-    ease: 'power3.out',
-  })
-    .from(
-      '.hero-title',
-      {
-        y: 30,
-        opacity: 0,
-        duration: 0.8,
-        ease: 'power3.out',
-      },
-      '-=0.4',
-    )
-    .from(
-      '.hero-subtitle',
-      {
-        y: 20,
-        opacity: 0,
-        duration: 0.6,
-        ease: 'power3.out',
-      },
-      '-=0.4',
-    )
-    .from(
-      '.hero-stats',
-      {
-        y: 20,
-        opacity: 0,
-        duration: 0.6,
-        ease: 'power3.out',
-      },
-      '-=0.3',
-    )
+    tl.from('.hero-badge', {
+      y: -20,
+      opacity: 0,
+      duration: 0.6,
+      ease: 'power3.out',
+    })
+      .from(
+        '.hero-title',
+        {
+          y: 30,
+          opacity: 0,
+          duration: 0.8,
+          ease: 'power3.out',
+        },
+        '-=0.4',
+      )
+      .from(
+        '.hero-subtitle',
+        {
+          y: 20,
+          opacity: 0,
+          duration: 0.6,
+          ease: 'power3.out',
+        },
+        '-=0.4',
+      )
+      .from(
+        '.hero-stats',
+        {
+          y: 20,
+          opacity: 0,
+          duration: 0.6,
+          ease: 'power3.out',
+        },
+        '-=0.3',
+      )
+  }
+
+  // 延迟动画执行，优先让关键内容渲染
+  if ('requestIdleCallback' in window) {
+    requestIdleCallback(runAnimation, { timeout: 100 })
+  } else {
+    setTimeout(runAnimation, 50)
+  }
 })
 
 // ============================================================================
@@ -205,6 +222,28 @@ defineExpose({
   font-size: clamp(1.6rem, 2.6vw, 2.2rem);
   font-weight: 700;
   color: var(--color-primary);
+}
+
+.stat-skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-surface-secondary) 25%,
+    var(--color-surface) 50%,
+    var(--color-surface-secondary) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s infinite;
+  border-radius: var(--radius-sm);
+  color: transparent;
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 .stat-label {

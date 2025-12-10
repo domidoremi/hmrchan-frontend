@@ -99,8 +99,8 @@
                 <button
                   type="button"
                   class="filter-option"
-                  :class="{ active: !localFilters.has_media }"
-                  @click="localFilters.has_media = undefined"
+                  :class="{ active: localFilters.has_media === undefined }"
+                  @click="syncHasMedia(undefined)"
                 >
                   {{ $t('common.all', '全部') }}
                 </button>
@@ -108,7 +108,7 @@
                   type="button"
                   class="filter-option"
                   :class="{ active: localFilters.has_media === true }"
-                  @click="localFilters.has_media = true"
+                  @click="syncHasMedia(true)"
                 >
                   <ImageIcon :size="16" />
                   {{ $t('filter.withMedia', '有媒体') }}
@@ -185,28 +185,43 @@ const sortOptions: { value: string; labelKey: string; icon: Component }[] = [
   { value: 'like_count', labelKey: 'post.likes', icon: Heart },
 ]
 
-// 本地筛选状态
-const localFilters = reactive<PostListParams>({
+// 本地筛选状态（允许局部字段）
+const localFilters = reactive<Partial<PostListParams>>({
   sort_by: 'scraped_at',
   sort_order: 'desc',
-  has_media: undefined,
 })
+
+const syncHasMedia = (value: PostListParams['has_media']) => {
+  if (typeof value === 'boolean') {
+    localFilters.has_media = value
+  } else {
+    delete localFilters.has_media
+  }
+}
 
 // 同步外部筛选条件
 watch(
   () => props.filters,
   (newFilters) => {
-    Object.assign(localFilters, {
-      sort_by: newFilters.sort_by || 'scraped_at',
-      sort_order: newFilters.sort_order || 'desc',
-      has_media: newFilters.has_media,
-    })
+    localFilters.sort_by = newFilters.sort_by || 'scraped_at'
+    localFilters.sort_order = newFilters.sort_order || 'desc'
+    syncHasMedia(newFilters.has_media)
   },
   { immediate: true },
 )
 
+const buildAppliedFilters = (): PostListParams => {
+  const result: PostListParams = {
+    sort_by: localFilters.sort_by || 'scraped_at',
+    sort_order: localFilters.sort_order || 'desc',
+  }
+  if (typeof localFilters.has_media === 'boolean') {
+    result.has_media = localFilters.has_media
+  }
+  return result
+}
+
 // 拖动相关
-const sheetRef = ref<HTMLElement | null>(null)
 const translateY = ref(0)
 const isDragging = ref(false)
 const startY = ref(0)
@@ -220,14 +235,14 @@ const close = () => {
 }
 
 const handleApply = () => {
-  emit('apply', { ...localFilters })
+  emit('apply', buildAppliedFilters())
   close()
 }
 
 const handleReset = () => {
   localFilters.sort_by = 'scraped_at'
   localFilters.sort_order = 'desc'
-  localFilters.has_media = undefined
+  delete localFilters.has_media
   emit('reset')
 }
 
@@ -295,6 +310,7 @@ watch(
       window.addEventListener('keydown', handleEscape)
       return () => window.removeEventListener('keydown', handleEscape)
     }
+    return undefined
   },
 )
 </script>

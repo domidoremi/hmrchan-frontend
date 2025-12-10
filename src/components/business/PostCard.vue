@@ -21,11 +21,16 @@
         :thumbnail-url="cardData.thumbnailUrl.value"
         :alt="post.title || 'Post thumbnail'"
         :is-first-screen="isFirstScreen"
+        :preload-distance="preloadDistance"
+        :eager="eager"
         :platform-color="cardData.platformColor.value"
         :platform-name="cardData.platformName.value"
         :duration="post.duration"
         :media-count="post.media_count"
         :is-retweet="cardData.isRetweet.value"
+        :image-width="post.thumbnail_width ?? 0"
+        :image-height="post.thumbnail_height ?? 0"
+        @aspect-ratio-change="emit('layoutUpdate')"
       />
 
       <!-- 快捷操作按钮 -->
@@ -96,6 +101,10 @@ interface Props {
   post: Post
   /** 是否在首屏（影响图片加载策略） */
   isFirstScreen?: boolean
+  /** 预加载距离（px），0 表示使用默认动态计算 */
+  preloadDistance?: number
+  /** 是否立即加载图片（跳过 IntersectionObserver） */
+  eager?: boolean
   /** 是否启用预览模式 */
   previewEnabled?: boolean
   /** 是否显示快捷操作按钮 */
@@ -104,6 +113,8 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
   isFirstScreen: false,
+  preloadDistance: 0,
+  eager: false,
   previewEnabled: false,
   showActions: true,
 })
@@ -117,6 +128,8 @@ const emit = defineEmits<{
   (e: 'share', post: Post): void
   /** 更多选项 */
   (e: 'more', post: Post): void
+  /** 布局需要更新（宽高比变化） */
+  (e: 'layoutUpdate'): void
 }>()
 
 const router = useRouter()

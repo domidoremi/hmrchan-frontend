@@ -36,15 +36,17 @@
   border-top: 1px solid var(--glass-border-top);
   box-shadow: var(--glass-shadow);
 
-  /* Smooth transitions */
+  /*
+   * 仅对 GPU 加速属性使用过渡动画
+   * 避免对 background/border-color 过渡以减少 CLS
+   */
   transition:
     transform var(--transition-base),
     box-shadow var(--transition-base),
-    border-color var(--transition-base),
-    background var(--transition-base);
+    opacity var(--transition-base);
 
-  /* Performance optimizations */
-  will-change: transform;
+  /* Performance optimizations - only declare during interaction */
+  contain: layout style;
 }
 
 .glass-card:hover {
@@ -93,12 +95,13 @@
   /* Touch target sizing */
   min-height: 44px;
 
-  /* Smooth transitions with spring-like effect */
+  /* 仅使用 GPU 加速的过渡属性 */
   transition:
     transform var(--transition-bounce),
-    background var(--transition-base),
-    border-color var(--transition-base),
-    box-shadow var(--transition-base);
+    box-shadow var(--transition-base),
+    opacity var(--transition-base);
+
+  contain: layout style;
 }
 
 .glass-button::before {
@@ -178,12 +181,11 @@
   width: 100%;
   min-height: 44px;
 
-  /* Smooth transitions */
+  /* 仅使用 GPU 加速的过渡属性 */
   transition:
-    border-color var(--transition-base),
-    background var(--transition-base),
     box-shadow var(--transition-base),
-    transform var(--transition-fast);
+    transform var(--transition-fast),
+    opacity var(--transition-base);
 
   /* Remove default outline */
   outline: none;

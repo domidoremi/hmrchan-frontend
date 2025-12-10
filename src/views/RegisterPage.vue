@@ -151,8 +151,8 @@ import {
   ArrowLeft,
 } from 'lucide-vue-next'
 
-import GlassInput from '@/components/ui/input/Input.vue'
-import GlassButton from '@/components/ui/button/Button.vue'
+import GlassInput from '@/components/ui/Input.vue'
+import GlassButton from '@/components/ui/Button.vue'
 
 import { useAuthStore, useToastStore } from '@/stores'
 

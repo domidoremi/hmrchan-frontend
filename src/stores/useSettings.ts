@@ -11,9 +11,9 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { api } from '@/api/client'
-import { handleError } from '@/utils/error'
+import { handleError } from '@/utils'
 import logger from '@/utils/logger'
-import { secureLocalStorage } from '@/utils/security'
+import { secureLocalStorage } from '@/utils/secureStorage'
 import { useAuthStore } from './useAuth'
 import { useToastStore } from './useToast'
 
