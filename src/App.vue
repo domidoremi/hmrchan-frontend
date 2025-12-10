@@ -23,6 +23,8 @@ import { useAuthStore, useThemeStore, useSettingsStore } from '@/stores'
 import { storeToRefs } from 'pinia'
 import ErrorBoundary from '@/components/ui/ErrorBoundary.vue'
 import Toast from '@/components/ui/Toast.vue'
+import AppNavbar from '@/components/layout/AppNavbar.vue'
+import AppFooter from '@/components/layout/AppFooter.vue'
 import { useKeyboardNavigation, initAppState } from '@/composables'
 
 /** 认证状态管理 Store */
@@ -150,10 +152,18 @@ watch(
 <template>
   <!-- 应用根容器，根据主题模式动态设置 data-theme 属性 -->
   <div id="app" :data-theme="isDark ? 'dark' : 'light'">
+    <!-- 无障碍：跳转到主内容链接 -->
+    <a href="#main-content" class="skip-to-main">
+      {{ $t('aria.skipToMain', 'Skip to main content') }}
+    </a>
+
     <!-- 全局错误边界，捕获并处理组件渲染错误 -->
     <ErrorBoundary>
+      <!-- 顶部导航栏 - 固定在过渡动画外层，避免闪烁 -->
+      <AppNavbar />
+
       <!-- 主内容区域，支持无障碍访问的跳过链接功能 -->
-      <main id="main-content" tabindex="-1">
+      <main id="main-content" class="app-main" tabindex="-1">
         <!-- 路由视图插槽，渲染当前路由对应的页面组件 -->
         <RouterView v-slot="{ Component, route }">
           <Suspense>
@@ -179,6 +189,9 @@ watch(
           </Suspense>
         </RouterView>
       </main>
+
+      <!-- 页脚 - 固定在过渡动画外层 -->
+      <AppFooter />
     </ErrorBoundary>
 
     <!-- 全局 Toast 通知组件，显示操作反馈和系统消息 -->
@@ -190,7 +203,49 @@ watch(
 /* ==================== 应用根容器样式 ==================== */
 #app {
   min-height: 100vh;
-  transition: background-color var(--transition-base);
+  display: flex;
+  flex-direction: column;
+}
+
+/* 主内容区域 */
+.app-main {
+  flex: 1;
+  padding-top: calc(var(--navbar-height) + var(--spacing-4));
+  scroll-margin-top: var(--navbar-height);
+}
+
+@media (max-width: 768px) {
+  .app-main {
+    padding-top: calc(var(--navbar-height-mobile) + var(--spacing-3));
+    scroll-margin-top: var(--navbar-height-mobile);
+  }
+}
+
+/* 无障碍：跳转到主内容链接 */
+.skip-to-main {
+  position: fixed;
+  left: 50%;
+  top: -100px;
+  transform: translateX(-50%);
+  z-index: 10000;
+  padding: var(--spacing-3) var(--spacing-6);
+  background: var(--color-primary);
+  color: white;
+  text-decoration: none;
+  border-radius: var(--radius-lg);
+  font-weight: var(--font-semibold);
+  font-size: var(--text-base);
+  box-shadow:
+    0 8px 24px rgba(139, 92, 246, 0.4),
+    0 4px 12px rgba(0, 0, 0, 0.2);
+  transition: top var(--transition-bounce);
+  white-space: nowrap;
+}
+
+.skip-to-main:focus {
+  top: var(--spacing-4);
+  outline: 3px solid white;
+  outline-offset: 3px;
 }
 
 /* 全局路由 Suspense 加载状态 */
