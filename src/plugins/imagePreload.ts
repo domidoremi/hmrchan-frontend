@@ -202,6 +202,3 @@ export const imagePreloadPlugin = {
     logger.info('[ImagePreload] Plugin installed')
   },
 }
-
-// 导出默认配置
-export default imagePreloadPlugin

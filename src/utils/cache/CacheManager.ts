@@ -598,5 +598,3 @@ export const cacheManager = new CacheManager({
   enablePersistence: true,
   preloadKeys: [],
 })
-
-export default cacheManager
