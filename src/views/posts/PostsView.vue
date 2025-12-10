@@ -2,7 +2,11 @@
   <MainLayout :disable-container="true" :enable-back-to-top="false">
     <div class="posts-page" :class="{ 'mobile-preview-open': previewVisible && !isDesktop }">
       <!-- Hero 区域 -->
-      <PostsHero :total-posts="totalPosts" :platform-count="activePlatformCount" />
+      <PostsHero
+        :total-posts="totalPosts"
+        :platform-count="activePlatformCount"
+        :loading="loading"
+      />
 
       <!-- 工具栏 -->
       <PostsToolbar
@@ -47,7 +51,8 @@
               v-for="(post, index) in renderedPosts"
               :key="post.id"
               :post="post"
-              :is-first-screen="index < 6"
+              :is-first-screen="index < 4"
+              :eager="index < 8"
               :preview-enabled="true"
               :show-actions="false"
               @open="openPreview"
@@ -169,7 +174,7 @@ import { ArrowUp, X, CheckCircle2 } from 'lucide-vue-next'
 // Layout & Components
 import MainLayout from '@/components/layout/MainLayout.vue'
 import PostCard from '@/components/business/PostCard.vue'
-import EmptyState from '@/components/ui/empty/EmptyState.vue'
+import EmptyState from '@/components/ui/EmptyState.vue'
 import PostPreviewPanel from '@/components/business/PostPreviewPanel.vue'
 
 // Local Components
@@ -180,7 +185,7 @@ import { usePostsFilters, useInfiniteScroll, useWaterfallLayout } from '@/compos
 
 // Stores & Utils
 import { usePostsStore, useSettingsStore } from '@/stores'
-import { withLogging } from '@/utils/error'
+import { withLogging } from '@/utils'
 import type { PostDetail } from '@/types'
 
 // ============================================================================

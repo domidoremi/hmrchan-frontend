@@ -18,6 +18,8 @@
         :post="post"
         :index="index"
         :show-actions="false"
+        :is-first-screen="index < 4"
+        :eager="index < 8"
         :class="{ 'content-visible': useContentVisibility }"
       />
     </div>
@@ -54,8 +56,8 @@ import { ref, onMounted, onUnmounted, watch, nextTick, onActivated } from 'vue'
 import { useIntersectionObserver } from '@vueuse/core'
 
 import PostCard from '@/components/business/PostCard.vue'
-import LoadingSpinner from '@/components/ui/loading/LoadingSpinner.vue'
-import EmptyState from '@/components/ui/empty/EmptyState.vue'
+import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
+import EmptyState from '@/components/ui/EmptyState.vue'
 
 import { useWaterfallLayout } from '@/composables'
 import type { Post } from '@/types'

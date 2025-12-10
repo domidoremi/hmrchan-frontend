@@ -707,20 +707,42 @@ class IndexedDBManager {
   async getStorageSize(): Promise<{ posts: number; total: number; totalMB: string }> {
     const db = await this.ensureDB()
 
-    // 简化实现：计算记录数
-    const postsCount = await new Promise<number>((resolve) => {
-      const transaction = db.transaction(['posts'], 'readonly')
-      const store = transaction.objectStore('posts')
-      const request = store.count()
-      request.onsuccess = () => resolve(request.result)
-    })
+    const storeNames = [
+      'posts',
+      'authors',
+      'favorites',
+      'media_metadata',
+      'offline_queue',
+      'metadata',
+    ]
+    const availableStores = storeNames.filter((name) => db.objectStoreNames.contains(name))
 
-    const totalCount = postsCount // 简化版，实际应该计算所有store
-    const estimatedSize = totalCount * 5 * 1024 // 假设每个post约5KB
-    const sizeMB = (estimatedSize / 1024 / 1024).toFixed(2)
+    let totalCount = 0
+    let totalSize = 0
+
+    for (const storeName of availableStores) {
+      try {
+        const count = await new Promise<number>((resolve) => {
+          const transaction = db.transaction([storeName], 'readonly')
+          const store = transaction.objectStore(storeName)
+          const request = store.count()
+          request.onsuccess = () => resolve(request.result)
+          request.onerror = () => resolve(0)
+        })
+        totalCount += count
+
+        // 估算大小：posts ~3KB, authors ~1KB, others ~0.5KB
+        const avgSize = storeName === 'posts' ? 3 * 1024 : storeName === 'authors' ? 1024 : 512
+        totalSize += count * avgSize
+      } catch {
+        // Ignore errors for individual stores
+      }
+    }
+
+    const sizeMB = (totalSize / 1024 / 1024).toFixed(2)
 
     return {
-      posts: postsCount,
+      posts: totalCount,
       total: totalCount,
       totalMB: sizeMB,
     }

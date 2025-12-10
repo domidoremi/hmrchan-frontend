@@ -65,7 +65,7 @@
 
 import { ref, watch } from 'vue'
 import { User, Eye, Heart, Clock } from 'lucide-vue-next'
-import { formatNumber, formatRelativeTime, truncateText } from '@/utils/format'
+import { formatNumber, formatRelativeTime, truncateText } from '@/utils'
 
 interface Props {
   /** 帖子标题 */

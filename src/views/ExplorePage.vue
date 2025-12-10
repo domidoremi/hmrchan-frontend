@@ -91,6 +91,9 @@
               :post="post"
               :index="index"
               :show-actions="false"
+              :is-first-screen="index < 4"
+              :eager="index < 8"
+              @layout-update="handleLayoutUpdate"
             />
           </div>
 
@@ -174,9 +177,9 @@ import MainLayout from '@/components/layout/MainLayout.vue'
 import FilterBar from '@/components/business/FilterBar.vue'
 import FilterBottomSheet from '@/components/business/FilterBottomSheet.vue'
 import PostCard from '@/components/business/PostCard.vue'
-import SearchInput from '@/components/ui/input/SearchInput.vue'
-import { ViewModeToggle, type ViewMode } from '@/components/ui/toggle'
-import { Pagination } from '@/components/ui/pagination'
+import SearchInput from '@/components/ui/SearchInput.vue'
+import { ViewModeToggle, type ViewMode } from '@/components/ui'
+import { Pagination } from '@/components/ui'
 
 import { usePostsStore } from '@/stores'
 import { useWaterfallLayout, useInfiniteScroll, useResponsive } from '@/composables'
@@ -241,6 +244,12 @@ const { updateLayout, smoothUpdateLayout } = useWaterfallLayout(postsGrid, {
     0: 2,
   },
 })
+
+/** 处理卡片布局更新请求（图片加载后宽高比变化） */
+const handleLayoutUpdate = () => {
+  // 使用平滑更新，带防抖避免频繁重计算
+  smoothUpdateLayout()
+}
 
 // ============================================
 // 无限滚动

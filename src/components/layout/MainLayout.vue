@@ -6,11 +6,7 @@
     </a>
 
     <!-- 顶部导航栏 -->
-    <AppNavbar
-      :access-current="props.accessCurrent"
-      :access-limit="props.accessLimit"
-      :show-access-indicator="props.showAccessIndicator"
-    />
+    <AppNavbar />
 
     <!-- 主内容区域 -->
     <main id="main-content" class="main-content" role="main">
@@ -27,19 +23,9 @@
     <!-- 页脚 -->
     <AppFooter />
 
-    <!-- 浮动访问指示器（移动端） -->
-    <AccessLimitBanner
-      v-if="shouldShowAccessIndicator"
-      :current-count="props.accessCurrent ?? 0"
-      :total-limit="props.accessLimit ?? 100"
-    />
-
     <!-- 返回顶部浮动按钮 -->
     <Transition name="fade">
-      <BackToTop
-        v-if="props.enableBackToTop && showBackToTop"
-        :offset-for-indicator="shouldShowAccessIndicator"
-      />
+      <BackToTop v-if="props.enableBackToTop && showBackToTop" />
     </Transition>
   </div>
 </template>
@@ -72,13 +58,10 @@
  */
 
 import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
-import { useRoute } from 'vue-router'
 import AppNavbar from './AppNavbar.vue'
 import AppFooter from './AppFooter.vue'
-import BackToTop from '../ui/button/BackToTop.vue'
-import AccessLimitBanner from '../ui/banner/AccessLimitBanner.vue'
+import BackToTop from '@/components/ui/BackToTop.vue'
 import { useNetworkStore } from '@/stores'
-import { useResponsive } from '@/composables'
 
 const props = withDefaults(
   defineProps<{
@@ -86,21 +69,12 @@ const props = withDefaults(
     disableContainer?: boolean
     /** 自定义容器类名，支持字符串、数组或对象格式 */
     containerClass?: string | string[] | Record<string, boolean>
-    /** 访问限制当前计数（用于导航栏 Access Limit 指示） */
-    accessCurrent?: number
-    /** 访问限制总配额 */
-    accessLimit?: number
-    /** 是否在导航栏显示访问限制指示 */
-    showAccessIndicator?: boolean
     /** 是否启用全局返回顶部按钮 */
     enableBackToTop?: boolean
   }>(),
   {
     disableContainer: false,
     containerClass: '',
-    accessCurrent: undefined,
-    accessLimit: undefined,
-    showAccessIndicator: false,
     enableBackToTop: true,
   },
 )
@@ -134,18 +108,6 @@ const showBackToTop = ref(false)
 const handleScroll = () => {
   showBackToTop.value = window.scrollY > 400
 }
-
-/** 响应式工具 */
-const { isMobile } = useResponsive()
-
-/** 当前路由，用于限制访问指示器显示范围（例如仅首页） */
-const route = useRoute()
-
-const isHomeRoute = computed(() => route.path === '/')
-
-const shouldShowAccessIndicator = computed(
-  () => props.showAccessIndicator && isMobile.value && isHomeRoute.value,
-)
 
 /** 网络状态 Store */
 const networkStore = useNetworkStore()
