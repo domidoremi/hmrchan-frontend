@@ -205,5 +205,3 @@ if (typeof window !== 'undefined') {
     30 * 60 * 1000,
   )
 }
-
-export default hybridCache

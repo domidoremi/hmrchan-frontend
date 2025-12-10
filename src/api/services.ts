@@ -1106,5 +1106,3 @@ export const services = {
   /** 搜索 API */
   search: searchApi,
 }
-
-export default services
