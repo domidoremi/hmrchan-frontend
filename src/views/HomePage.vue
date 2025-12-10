@@ -100,6 +100,8 @@
             :index="index"
             :show-actions="false"
             :is-first-screen="index < 4"
+            :eager="index < 8"
+            @layout-update="smoothUpdateLayout"
           />
         </div>
 
@@ -145,22 +147,22 @@ import { ArrowRight } from 'lucide-vue-next'
 
 import MainLayout from '@/components/layout/MainLayout.vue'
 import HeroSection from '@/components/layout/HeroSection.vue'
-import GlassButton from '@/components/ui/button/Button.vue'
-import LoadingSpinner from '@/components/ui/loading/LoadingSpinner.vue'
+import GlassButton from '@/components/ui/Button.vue'
+import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import PostCard from '@/components/business/PostCard.vue'
-import EmptyState from '@/components/ui/empty/EmptyState.vue'
-import StatCard from '@/components/ui/card/StatCard.vue'
-import StatCardGrid from '@/components/ui/card/StatCardGrid.vue'
-import { PlatformIcon } from '@/components/ui/icon'
+import EmptyState from '@/components/ui/EmptyState.vue'
+import StatCard from '@/components/ui/StatCard.vue'
+import StatCardGrid from '@/components/ui/StatCardGrid.vue'
+import { PlatformIcon } from '@/components/ui'
 
 import { useAuthStore, useSettingsStore, usePostsStore } from '@/stores'
 import { useWaterfallLayout } from '@/composables'
 import { useInfiniteScroll } from '@/composables'
-import { useHomePageAnimation } from '@/composables/animation/useHomePageAnimation'
+import { useHomePageAnimation } from '@/composables/useHomePageAnimation'
 import { PLATFORMS, PLATFORM_COLORS, type Post } from '@/types'
 import { statsApi } from '@/api/services'
-import { formatNumber } from '@/utils/format'
-import { useErrorHandler } from '@/utils/error'
+import { formatNumber } from '@/utils'
+import { useErrorHandler } from '@/utils'
 import { logger } from '@/utils/logger'
 
 /** 路由实例 */
@@ -282,34 +284,96 @@ const { isLoading: isLoadingMore } = useInfiniteScroll({
   enabled: initialLoadComplete,
 })
 
-onMounted(async () => {
+/**
+ * 计算首屏需要加载的卡片数量
+ * 根据视口高度和卡片预估高度动态计算
+ */
+const calculateInitialPageSize = (): number => {
+  const viewportHeight = window.innerHeight
+  const hasHero = settingsStore.settings.showHeroSection
+  // Hero 区域约占 400-500px，平台统计约 200px
+  const availableHeight = hasHero ? viewportHeight - 600 : viewportHeight - 200
+  // 每张卡片预估高度 300px，2 列布局
+  const cardsPerColumn = Math.ceil(availableHeight / 300)
+  const columns = window.innerWidth > 769 ? (window.innerWidth > 1100 ? 4 : 3) : 2
+  // 确保至少加载 6 张，最多 16 张
+  return Math.max(6, Math.min(cardsPerColumn * columns + 4, 16))
+}
+
+/**
+ * 加载统计数据
+ */
+const loadStats = async (): Promise<void> => {
   try {
-    // ✨ 优化：减少初始加载数量，提升首屏速度
-    // 使用明确的参数，不修改全局 store filters，避免与 ExplorePage 冲突
-    const result = await postsStore.fetchPosts({
-      page: currentPage.value,
-      page_size: 6,
-      sort_by: 'scraped_at',
-      sort_order: 'desc',
-      ignoreFilters: true,
+    const data = await statsApi.getPlatformStats()
+    platformStats.value = data
+    isStatsLoading.value = false
+  } catch (err) {
+    handleError(err, {
+      silent: true,
+      customMessage: 'Failed to load platform stats',
     })
+    isStatsLoading.value = false
+  }
+}
 
-    // ✨ 更新本地posts数组
-    if (result && result.items) {
-      posts.value = result.items
-    }
+/**
+ * 加载帖子列表
+ */
+const loadPosts = async (pageSize: number): Promise<void> => {
+  const result = await postsStore.fetchPosts({
+    page: currentPage.value,
+    page_size: pageSize,
+    sort_by: 'scraped_at',
+    sort_order: 'desc',
+    ignoreFilters: true,
+  })
 
-    // 根据分页信息更新hasMore状态
-    if (result && result.page && result.pages) {
-      hasMore.value = result.page < result.pages
-      logger.debug('初始加载分页信息', {
+  if (result && result.items) {
+    posts.value = result.items
+  }
+
+  if (result && result.page && result.pages) {
+    hasMore.value = result.page < result.pages
+    logger.debug('初始加载分页信息', {
+      category: 'HomePage',
+      page: result.page,
+      pages: result.pages,
+      hasMore: hasMore.value,
+    })
+  } else if (result && result.items && result.items.length === 0) {
+    hasMore.value = false
+  }
+}
+
+onMounted(async () => {
+  const hasHero = settingsStore.settings.showHeroSection
+  const initialPageSize = calculateInitialPageSize()
+
+  try {
+    if (hasHero) {
+      // 有 Hero 区域：优先加载统计数据，然后加载帖子
+      logger.debug('Hero 模式：优先加载统计数据', { category: 'HomePage' })
+
+      // 并行加载：统计数据和帖子同时请求
+      await Promise.all([loadStats(), loadPosts(initialPageSize)])
+
+      logger.debug('Hero 模式加载完成', {
         category: 'HomePage',
-        page: result.page,
-        pages: result.pages,
-        hasMore: hasMore.value,
+        statsLoaded: !isStatsLoading.value,
+        postsCount: posts.value.length,
       })
-    } else if (result && result.items && result.items.length === 0) {
-      hasMore.value = false
+    } else {
+      // 无 Hero 区域：直接加载更多卡片填满屏幕
+      logger.debug('无 Hero 模式：加载卡片填满屏幕', {
+        category: 'HomePage',
+        pageSize: initialPageSize,
+      })
+
+      await loadPosts(initialPageSize)
+
+      // 后台加载统计数据（非阻塞）
+      loadStats()
     }
 
     // 记录初始加载的卡片数量
@@ -322,35 +386,12 @@ onMounted(async () => {
     // 标记初始加载完成，启用无限滚动
     initialLoadComplete.value = true
     logger.debug('初始加载完成，启用无限滚动', { category: 'HomePage' })
-
-    // 后台加载统计数据（非阻塞）
-    loadStatsInBackground()
   } catch (error) {
     handleError(error, { customMessage: t('common.loadFailed', 'Failed to load data') })
     // 即使失败也要启用无限滚动
     initialLoadComplete.value = true
   }
 })
-
-// 后台加载统计数据（延迟加载以优先首屏）
-const loadStatsInBackground = () => {
-  // 延迟1秒加载统计数据，优先保证帖子加载
-  setTimeout(() => {
-    statsApi
-      .getPlatformStats()
-      .then((data) => {
-        platformStats.value = data
-        isStatsLoading.value = false
-      })
-      .catch((err) => {
-        handleError(err, {
-          silent: true, // 统计数据失败不显示通知
-          customMessage: 'Failed to load platform stats',
-        })
-        isStatsLoading.value = false
-      })
-  }, 1000)
-}
 
 onUnmounted(() => {
   // 清理工作由 composables 自动处理

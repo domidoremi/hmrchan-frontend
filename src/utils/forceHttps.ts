@@ -30,7 +30,7 @@ class HttpsXHR extends OriginalXHR {
     logger.debug('[XHR] New XMLHttpRequest created via interceptor', LOG_CONTEXT)
   }
 
-  open(
+  override open(
     method: string,
     url: string | URL,
     async?: boolean,
@@ -58,7 +58,7 @@ class HttpsXHR extends OriginalXHR {
     }
   }
 
-  send(body?: Document | XMLHttpRequestBodyInit | null): void {
+  override send(body?: Document | XMLHttpRequestBodyInit | null): void {
     logger.debug(`[XHR] send() called, responseURL: ${this.responseURL}`, LOG_CONTEXT)
     super.send(body)
   }

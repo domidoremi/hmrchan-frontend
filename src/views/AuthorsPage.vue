@@ -79,7 +79,7 @@
       <!-- 作者列表 -->
       <div v-else-if="displayAuthors.length > 0" class="authors-list">
         <div
-          v-for="author in displayAuthors"
+          v-for="(author, index) in displayAuthors"
           :key="author.id"
           class="author-card glass-card"
           @click="handleAuthorClick(author)"
@@ -101,6 +101,8 @@
                   :src="author.avatar_url"
                   :alt="author.name"
                   class="avatar-image"
+                  :loading="index < 6 ? 'eager' : 'lazy'"
+                  :fetchpriority="index < 4 ? 'high' : 'auto'"
                   @error="onImageError"
                 />
                 <div v-else class="avatar-placeholder">
@@ -233,11 +235,11 @@ import {
 import dayjs from 'dayjs'
 
 import MainLayout from '@/components/layout/MainLayout.vue'
-import LoadingSpinner from '@/components/ui/loading/LoadingSpinner.vue'
+import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import { PLATFORM_COLORS, PLATFORM_NAMES, PLATFORMS } from '@/types'
 import { authorsApi } from '@/api/services'
 import type { AuthorListItem } from '@/types'
-import { useErrorHandler } from '@/utils/error'
+import { useErrorHandler } from '@/utils'
 import { useInfiniteScroll } from '@/composables'
 import { indexedDB } from '@/utils/storage'
 import logger from '@/utils/logger'
@@ -446,11 +448,14 @@ const handleFilterChange = () => {
   // 筛选只在客户端过滤已加载的数据
 }
 
-// 点击作者卡片 - 跳转到作者帖子页
+// 点击作者卡片 - 跳转到探索页筛选该作者帖子
 const handleAuthorClick = (author: AuthorListItem) => {
   router.push({
-    path: '/',
-    query: { author_id: author.id, author_name: author.name },
+    path: '/explore',
+    query: {
+      author_id: author.id,
+      platform: author.platform,
+    },
   })
 }
 

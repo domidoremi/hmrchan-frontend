@@ -14,7 +14,7 @@
         </div>
         <div class="stat-body">
           <div class="stat-item">
-            <span class="stat-label">{{ $t('settings.cached Files', '缓存文件') }}</span>
+            <span class="stat-label">{{ $t('settings.cachedFiles', '缓存文件') }}</span>
             <span class="stat-value">{{ stats.memory.count }}</span>
           </div>
           <div class="stat-item">
@@ -126,7 +126,7 @@ import { Database, Zap, HardDrive, Archive, Trash2, AlertTriangle } from 'lucide
 import { hybridCache } from '@/utils/cache'
 import { storage } from '@/utils/storage'
 import { useToastStore } from '@/stores'
-import GlassButton from '@/components/ui/button/Button.vue'
+import GlassButton from '@/components/ui/Button.vue'
 
 /** Toast 通知 store */
 const toastStore = useToastStore()

@@ -11,10 +11,13 @@
         </p>
         <div ref="gridRef" class="favorites-grid">
           <PostCard
-            v-for="post in favoritePosts"
+            v-for="(post, index) in favoritePosts"
             :key="post.id"
             :post="post"
+            :index="index"
             :show-actions="false"
+            :is-first-screen="index < 4"
+            :eager="index < 8"
           />
         </div>
       </div>
@@ -40,11 +43,11 @@ import { Heart, Compass } from 'lucide-vue-next'
 
 import MainLayout from '@/components/layout/MainLayout.vue'
 import PostCard from '@/components/business/PostCard.vue'
-import LoadingSpinner from '@/components/ui/loading/LoadingSpinner.vue'
-import GlassButton from '@/components/ui/button/Button.vue'
+import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
+import GlassButton from '@/components/ui/Button.vue'
 import { useFavorites } from '@/composables'
 import { useWaterfallLayout } from '@/composables'
-import { withLogging } from '@/utils/error'
+import { withLogging } from '@/utils'
 
 const { favoritePosts, loading, fetchFavorites, fromFallback } = useFavorites()
 

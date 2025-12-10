@@ -54,11 +54,11 @@ export function getRuntimeApiBaseUrl(): string {
   }
 
   // 尝试从环境变量获取
-  let baseUrl = import.meta.env.VITE_API_BASE_URL as string | undefined
+  let baseUrl = import.meta.env['VITE_API_BASE_URL'] as string | undefined
 
   // 如果没有 VITE_API_BASE_URL，尝试从 VITE_API_ENDPOINT 提取
-  if (!baseUrl && import.meta.env.VITE_API_ENDPOINT) {
-    baseUrl = (import.meta.env.VITE_API_ENDPOINT as string).replace(/\/api.*$/, '')
+  if (!baseUrl && import.meta.env['VITE_API_ENDPOINT']) {
+    baseUrl = (import.meta.env['VITE_API_ENDPOINT'] as string).replace(/\/api.*$/, '')
   }
 
   // 如果还是没有，使用默认值
@@ -90,7 +90,7 @@ export function getRuntimeApiEndpoint(): string {
   }
 
   // 尝试从环境变量获取
-  let endpoint = import.meta.env.VITE_API_ENDPOINT as string | undefined
+  let endpoint = import.meta.env['VITE_API_ENDPOINT'] as string | undefined
 
   // 如果没有，从 baseUrl 构建
   if (!endpoint) {
