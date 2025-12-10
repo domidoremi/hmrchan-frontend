@@ -431,3 +431,65 @@ select:disabled {
     box-shadow: 0 0 0 4px rgba(96, 165, 250, 0.2);
   }
 }
+
+/* ===== Navigation Touch Targets (WCAG 2.5.8) ===== */
+
+/* 确保导航链接有足够的触摸区域 */
+nav a,
+.nav-link,
+.bottom-nav a,
+.navbar a {
+  min-height: 44px;
+  min-width: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 12px;
+}
+
+/* 底部导航栏确保触摸区域 */
+.bottom-nav .nav-item {
+  min-height: 48px;
+  min-width: 64px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+/* ===== Glass Text Contrast Enhancement ===== */
+
+/* 玻璃效果背景上的文字增强可读性 */
+.glass-card .text-secondary,
+.glass .text-muted,
+.glass-card .stat-label {
+  /* 添加轻微文字阴影提升对比度 */
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5);
+}
+
+[data-theme='dark'] .glass-card .text-secondary,
+[data-theme='dark'] .glass .text-muted,
+[data-theme='dark'] .glass-card .stat-label {
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* ===== Content Visibility for Performance ===== */
+
+/* 屏幕外内容使用 content-visibility 优化渲染 */
+.post-card:not(:nth-child(-n + 8)) {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 400px;
+}
+
+/* 作者卡片屏幕外优化 */
+.author-card:not(:nth-child(-n + 6)) {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 200px;
+}
+
+/* 大型列表项优化 */
+.infinite-scroll-item:not(:nth-child(-n + 10)) {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 300px;
+}

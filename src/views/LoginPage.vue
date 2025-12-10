@@ -37,19 +37,39 @@
 
           <!-- Login Form -->
           <form class="login-form" @submit.prevent="handleLogin">
-            <GlassInput v-model="formData.username" type="text" :label="$t('auth.username')"
-              :placeholder="$t('auth.username')" :icon="User" :disabled="loading"
-              :error="error && !formData.username ? $t('auth.fillAllFields') : ''" clearable autocomplete="username"
-              required />
+            <GlassInput
+              v-model="formData.username"
+              type="text"
+              :label="$t('auth.username')"
+              :placeholder="$t('auth.username')"
+              :icon="User"
+              :disabled="loading"
+              :error="error && !formData.username ? $t('auth.fillAllFields') : ''"
+              clearable
+              autocomplete="username"
+              required
+            />
 
-            <GlassInput v-model="formData.password" :type="showPassword ? 'text' : 'password'"
-              :label="$t('auth.password')" :placeholder="$t('auth.password')" :icon="Lock" :disabled="loading"
+            <GlassInput
+              v-model="formData.password"
+              :type="showPassword ? 'text' : 'password'"
+              :label="$t('auth.password')"
+              :placeholder="$t('auth.password')"
+              :icon="Lock"
+              :disabled="loading"
               :error="error && !formData.password ? $t('auth.fillAllFields') : ''"
-              :hint="$t('auth.passwordHint', 'Enter your password')" autocomplete="current-password" name="password"
-              required>
+              :hint="$t('auth.passwordHint', 'Enter your password')"
+              autocomplete="current-password"
+              name="password"
+              required
+            >
               <template #suffix>
-                <button type="button" class="password-toggle" @click="showPassword = !showPassword"
-                  :aria-label="showPassword ? $t('auth.hidePassword') : $t('auth.showPassword')">
+                <button
+                  type="button"
+                  class="password-toggle"
+                  @click="showPassword = !showPassword"
+                  :aria-label="showPassword ? $t('auth.hidePassword') : $t('auth.showPassword')"
+                >
                   <Eye v-if="!showPassword" :size="18" />
                   <EyeOff v-else :size="18" />
                 </button>
@@ -102,8 +122,8 @@ import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { User, Lock, Eye, EyeOff, AlertCircle, CheckCircle, ArrowLeft } from 'lucide-vue-next'
 
-import GlassInput from '@/components/ui/input/Input.vue'
-import GlassButton from '@/components/ui/button/Button.vue'
+import GlassInput from '@/components/ui/Input.vue'
+import GlassButton from '@/components/ui/Button.vue'
 
 import { useAuthStore, useToastStore } from '@/stores'
 
@@ -153,9 +173,7 @@ const handleLogin = async () => {
       // 登录成功后跳转到redirect参数指定的页面，或首页
       const redirectParam = route.query.redirect
       const redirect =
-        typeof redirectParam === 'string' && redirectParam.startsWith('/')
-          ? redirectParam
-          : '/'
+        typeof redirectParam === 'string' && redirectParam.startsWith('/') ? redirectParam : '/'
       await router.replace(redirect)
     }, 1000)
   } catch (err: unknown) {
@@ -516,7 +534,6 @@ const handleLogin = async () => {
 }
 
 @keyframes float {
-
   0%,
   100% {
     transform: translateY(0) scale(1);

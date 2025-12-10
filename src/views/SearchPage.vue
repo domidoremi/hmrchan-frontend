@@ -10,11 +10,18 @@
       </header>
 
       <div class="search-tabs glass-card">
-        <button type="button" :class="['tab-button', { active: activeTab === 'posts' }]" @click="switchTab('posts')">
+        <button
+          type="button"
+          :class="['tab-button', { active: activeTab === 'posts' }]"
+          @click="switchTab('posts')"
+        >
           {{ $t('nav.posts') }}
         </button>
-        <button type="button" :class="['tab-button', { active: activeTab === 'authors' }]"
-          @click="switchTab('authors')">
+        <button
+          type="button"
+          :class="['tab-button', { active: activeTab === 'authors' }]"
+          @click="switchTab('authors')"
+        >
           {{ $t('nav.authors') }}
         </button>
       </div>
@@ -36,8 +43,13 @@
               {{ $t('offline.usingCache') }}
             </p>
 
-            <InfinitePostGrid :items="posts" :loading="loadingPosts" :has-more="postsHasMore"
-              :is-loading-more="loadingPosts && posts.length > 0" @load-more="handlePostsLoadMore" />
+            <InfinitePostGrid
+              :items="posts"
+              :loading="loadingPosts"
+              :has-more="postsHasMore"
+              :is-loading-more="loadingPosts && posts.length > 0"
+              @load-more="handlePostsLoadMore"
+            />
           </div>
 
           <div v-else class="empty-state glass-card">
@@ -73,8 +85,13 @@
                   </span>
                 </div>
               </div>
-              <a v-if="author.profile_url" :href="author.profile_url" class="author-link" target="_blank"
-                rel="noopener noreferrer">
+              <a
+                v-if="author.profile_url"
+                :href="author.profile_url"
+                class="author-link"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
                 {{ $t('author.viewOriginal') }}
               </a>
             </div>
@@ -108,17 +125,17 @@ import services from '@/api/services'
 import type { Post, AuthorListItem, PaginatedResponse } from '@/types'
 import { indexedDB } from '@/utils/storage'
 import { fetchWithFallback } from '@/utils/cache'
-import { withLogging } from '@/utils/error'
+import { withLogging } from '@/utils'
 
 const route = useRoute()
 const router = useRouter()
 
-const activeTab = ref<'posts' | 'authors'>(route.query.tab === 'authors' ? 'authors' : 'posts')
+const activeTab = ref<'posts' | 'authors'>(route.query['tab'] === 'authors' ? 'authors' : 'posts')
 const query = ref<string>(
-  typeof route.query.q === 'string'
-    ? route.query.q
-    : Array.isArray(route.query.q)
-      ? route.query.q[0] || ''
+  typeof route.query['q'] === 'string'
+    ? route.query['q']
+    : Array.isArray(route.query['q'])
+      ? route.query['q'][0] || ''
       : '',
 )
 
@@ -152,7 +169,7 @@ useIntersectionObserver(
       handleAuthorsLoadMore()
     }
   },
-  { rootMargin: '200px' }
+  { rootMargin: '200px' },
 )
 
 const syncRoute = () => {
@@ -160,8 +177,8 @@ const syncRoute = () => {
   const tab = activeTab.value
 
   const nextQuery: Record<string, string> = {}
-  if (q) nextQuery.q = q
-  nextQuery.tab = tab
+  if (q) nextQuery['q'] = q
+  nextQuery['tab'] = tab
 
   router.replace({ path: '/search', query: nextQuery })
 }
@@ -336,8 +353,8 @@ onMounted(() => {
 watch(
   () => route.query,
   (newQuery) => {
-    const qRaw = newQuery.q
-    const tabRaw = newQuery.tab
+    const qRaw = newQuery['q']
+    const tabRaw = newQuery['tab']
 
     const q = typeof qRaw === 'string' ? qRaw : Array.isArray(qRaw) ? qRaw[0] || '' : ''
     const tab = tabRaw === 'authors' ? 'authors' : 'posts'
