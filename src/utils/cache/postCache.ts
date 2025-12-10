@@ -304,4 +304,3 @@ class PostCacheService {
 
 // 导出单例
 export const postCache = new PostCacheService()
-export default postCache

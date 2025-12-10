@@ -59,7 +59,6 @@
     "@vitest/eslint-plugin": "^1.5.2",
     "@vue/eslint-config-prettier": "^10.2.0",
     "@vue/eslint-config-typescript": "^14.6.0",
-    "@vue/test-utils": "^2.4.6",
     "@vue/tsconfig": "^0.8.1",
     "esbuild": "^0.25.12",
     "eslint": "^9.39.1",
@@ -74,7 +73,7 @@
     "vite-imagetools": "^9.0.2",
     "vite-plugin-vue-devtools": "^8.0.5",
     "vitest": "^4.0.15",
-    "vue-tsc": "^3.1.7"
+    "vue-tsc": "^3.1.8"
   },
   "lint-staged": {
     "*.{ts,tsx,vue}": [
