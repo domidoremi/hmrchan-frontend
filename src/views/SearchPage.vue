@@ -121,7 +121,7 @@ import MainLayout from '@/components/layout/MainLayout.vue'
 import SearchBar from '@/components/business/SearchBar.vue'
 import InfinitePostGrid from '@/components/business/InfinitePostGrid.vue'
 
-import services from '@/api/services'
+import { services } from '@/api/services'
 import type { Post, AuthorListItem, PaginatedResponse } from '@/types'
 import { indexedDB } from '@/utils/storage'
 import { fetchWithFallback } from '@/utils/cache'

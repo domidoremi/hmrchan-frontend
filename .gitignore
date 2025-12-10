@@ -116,6 +116,7 @@ bun.lockb
 .cache/
 .temp/
 .tmp/
+.unused-code/
 
 # =====================
 # Documentation & Notes
@@ -131,3 +132,4 @@ docs/
 !CHANGELOG.md
 !CONTRIBUTING.md
 !LICENSE.md
+.qoderignore
