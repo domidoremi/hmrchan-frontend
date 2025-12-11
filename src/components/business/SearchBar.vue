@@ -25,7 +25,7 @@
     <!-- 搜索建议下拉 -->
     <div
       v-if="showSuggestions && suggestions.length > 0"
-      class="suggestions-dropdown glass-card"
+      class="suggestions-dropdown"
       role="listbox"
       :aria-label="$t('search.suggestions')"
     >
@@ -72,7 +72,7 @@
 import { ref, watch, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Search, X } from 'lucide-vue-next'
-import { useDebounce } from '@/composables'
+import { useDebounceFn } from '@/composables'
 import { services } from '@/api/services'
 import type { SearchSuggestion } from '@/types'
 
@@ -87,6 +87,9 @@ const suggestions = ref<SearchSuggestion[]>([])
 /** 是否显示搜索建议 */
 const showSuggestions = ref(false)
 
+/** 是否已确认搜索（用于阻止延迟的建议显示） */
+const searchConfirmed = ref(false)
+
 const emit = defineEmits<{
   /** 搜索事件 */
   search: [query: string]
@@ -98,7 +101,10 @@ const emit = defineEmits<{
  */
 const handleSearch = () => {
   if (searchQuery.value.trim()) {
+    // 标记已确认搜索，立即关闭建议框并清空建议列表
+    searchConfirmed.value = true
     showSuggestions.value = false
+    suggestions.value = []
     emit('search', searchQuery.value)
   }
 }
@@ -119,8 +125,11 @@ const clearSearch = () => {
  * @param suggestion - 搜索建议对象
  */
 const selectSuggestion = (suggestion: SearchSuggestion) => {
+  // 标记已确认搜索，关闭建议框
+  searchConfirmed.value = true
   searchQuery.value = suggestion.label
   showSuggestions.value = false
+  suggestions.value = []
 
   if (suggestion.type === 'post') {
     router.push({ path: `/posts/${suggestion.id}` })
@@ -141,6 +150,11 @@ const selectSuggestion = (suggestion: SearchSuggestion) => {
  * @param query - 搜索关键词
  */
 const fetchSuggestions = async (query: string) => {
+  // 如果已确认搜索，不再显示建议
+  if (searchConfirmed.value) {
+    return
+  }
+
   if (query.length < 2) {
     suggestions.value = []
     showSuggestions.value = false
@@ -171,13 +185,18 @@ const fetchSuggestions = async (query: string) => {
 }
 
 /** 防抖的搜索建议函数（300ms 延迟） */
-const debouncedFetchSuggestions = useDebounce(fetchSuggestions, 300)
+const { debounced: debouncedFetchSuggestions } = useDebounceFn(
+  (query: unknown) => fetchSuggestions(query as string),
+  300,
+)
 
 /**
  * 处理输入事件
  * 触发防抖的搜索建议获取
  */
 const handleInput = () => {
+  // 重置确认标志，允许显示新的建议
+  searchConfirmed.value = false
   debouncedFetchSuggestions(searchQuery.value)
 }
 
@@ -275,9 +294,9 @@ onUnmounted(() => {
   max-height: 280px;
   overflow-y: auto;
   border-radius: var(--radius-xl);
-  /* 使用不透明背景确保可读性 */
-  background: var(--color-bg-primary);
-  border: 1px solid var(--glass-border);
+  /* 使用实色背景确保可读性，兼容暗色/浅色主题 */
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   box-shadow:
     0 10px 40px rgba(0, 0, 0, 0.2),
     0 4px 12px rgba(0, 0, 0, 0.15);
