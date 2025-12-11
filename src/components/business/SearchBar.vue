@@ -1,6 +1,6 @@
 <template>
-  <!-- 使用 HTML5 <search> 元素增强语义化和可访问性 -->
-  <search class="search-bar glass-card animated" role="search">
+  <!-- 搜索栏容器 -->
+  <div class="search-bar-container glass-card animated" role="search">
     <Search :size="20" class="search-icon" aria-hidden="true" />
     <input
       v-model="searchQuery"
@@ -25,7 +25,7 @@
     <!-- 搜索建议下拉 -->
     <div
       v-if="showSuggestions && suggestions.length > 0"
-      class="suggestions-dropdown glass-card"
+      class="suggestions-dropdown"
       role="listbox"
       :aria-label="$t('search.suggestions')"
     >
@@ -47,7 +47,7 @@
         </div>
       </div>
     </div>
-  </search>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -69,10 +69,10 @@
  * - search: 执行搜索时触发，传递搜索关键词
  */
 
-import { ref, watch } from 'vue'
+import { ref, watch, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Search, X } from 'lucide-vue-next'
-import { useDebounce } from '@/composables'
+import { useDebounceFn } from '@/composables'
 import { services } from '@/api/services'
 import type { SearchSuggestion } from '@/types'
 
@@ -87,6 +87,9 @@ const suggestions = ref<SearchSuggestion[]>([])
 /** 是否显示搜索建议 */
 const showSuggestions = ref(false)
 
+/** 是否已确认搜索（用于阻止延迟的建议显示） */
+const searchConfirmed = ref(false)
+
 const emit = defineEmits<{
   /** 搜索事件 */
   search: [query: string]
@@ -98,7 +101,10 @@ const emit = defineEmits<{
  */
 const handleSearch = () => {
   if (searchQuery.value.trim()) {
+    // 标记已确认搜索，立即关闭建议框并清空建议列表
+    searchConfirmed.value = true
     showSuggestions.value = false
+    suggestions.value = []
     emit('search', searchQuery.value)
   }
 }
@@ -119,8 +125,11 @@ const clearSearch = () => {
  * @param suggestion - 搜索建议对象
  */
 const selectSuggestion = (suggestion: SearchSuggestion) => {
+  // 标记已确认搜索，关闭建议框
+  searchConfirmed.value = true
   searchQuery.value = suggestion.label
   showSuggestions.value = false
+  suggestions.value = []
 
   if (suggestion.type === 'post') {
     router.push({ path: `/posts/${suggestion.id}` })
@@ -141,6 +150,11 @@ const selectSuggestion = (suggestion: SearchSuggestion) => {
  * @param query - 搜索关键词
  */
 const fetchSuggestions = async (query: string) => {
+  // 如果已确认搜索，不再显示建议
+  if (searchConfirmed.value) {
+    return
+  }
+
   if (query.length < 2) {
     suggestions.value = []
     showSuggestions.value = false
@@ -171,13 +185,18 @@ const fetchSuggestions = async (query: string) => {
 }
 
 /** 防抖的搜索建议函数（300ms 延迟） */
-const debouncedFetchSuggestions = useDebounce(fetchSuggestions, 300)
+const { debounced: debouncedFetchSuggestions } = useDebounceFn(
+  (query: unknown) => fetchSuggestions(query as string),
+  300,
+)
 
 /**
  * 处理输入事件
  * 触发防抖的搜索建议获取
  */
 const handleInput = () => {
+  // 重置确认标志，允许显示新的建议
+  searchConfirmed.value = false
   debouncedFetchSuggestions(searchQuery.value)
 }
 
@@ -191,19 +210,39 @@ watch(searchQuery, (newVal) => {
     showSuggestions.value = false
   }
 })
+
+/**
+ * 点击外部关闭建议下拉框
+ */
+const handleClickOutside = (event: MouseEvent) => {
+  const container = document.querySelector('.search-bar-container')
+  if (container && !container.contains(event.target as Node)) {
+    showSuggestions.value = false
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside)
+})
 </script>
 
 <style scoped>
-.search-bar {
+.search-bar-container {
   position: relative;
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
   padding: var(--spacing-md);
-  transition: all var(--transition-base);
+  transition:
+    box-shadow var(--transition-base),
+    border-color var(--transition-base);
 }
 
-.search-bar:focus-within {
+.search-bar-container:focus-within {
   box-shadow:
     var(--glass-shadow),
     0 0 0 3px rgba(139, 92, 246, 0.1);
@@ -247,14 +286,21 @@ watch(searchQuery, (newVal) => {
 
 .suggestions-dropdown {
   position: absolute;
-  top: calc(100% + var(--spacing-sm));
+  top: calc(100% + 4px);
   left: 0;
   right: 0;
   padding: var(--spacing-sm);
-  z-index: var(--z-dropdown);
-  max-height: 300px;
+  z-index: 1000;
+  max-height: 280px;
   overflow-y: auto;
-  animation: slideDown var(--transition-fast);
+  border-radius: var(--radius-xl);
+  /* 使用实色背景确保可读性，兼容暗色/浅色主题 */
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  box-shadow:
+    0 10px 40px rgba(0, 0, 0, 0.2),
+    0 4px 12px rgba(0, 0, 0, 0.15);
+  animation: slideDown 0.15s ease-out;
 }
 
 .suggestion-item {
@@ -266,6 +312,7 @@ watch(searchQuery, (newVal) => {
   color: var(--color-text-secondary);
   cursor: pointer;
   transition: all var(--transition-fast);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
 }
 
 .suggestion-item:hover,
@@ -273,6 +320,10 @@ watch(searchQuery, (newVal) => {
   background: var(--glass-bg-light);
   color: var(--color-text-primary);
   outline: none;
+}
+
+.suggestion-item:last-child {
+  border-bottom: none;
 }
 
 .suggestion-subtitle {

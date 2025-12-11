@@ -40,7 +40,8 @@
     "noResults": "結果が見つかりません",
     "noResultsDesc": "検索条件に一致するコンテンツが見つかりませんでした。別のキーワードをお試しください",
     "searching": "検索中...",
-    "tryDifferent": "別のキーワードを試す"
+    "tryDifferent": "別のキーワードを試す",
+    "suggestions": "検索候補"
   },
   "filter": {
     "sortBy": "並び替え",
