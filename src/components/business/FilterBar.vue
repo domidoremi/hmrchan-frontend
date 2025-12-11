@@ -119,8 +119,8 @@
             }"
             @click="selectPlatform(platform.value)"
           >
-            <PlatformIcon :platform="platform.value || 'all'" :size="14" />
-            <span>{{ $t(platform.labelKey) }}</span>
+            <PlatformIcon :platform="platform.value || 'all'" :size="16" />
+            <span class="chip-label">{{ $t(platform.labelKey) }}</span>
           </button>
         </div>
       </div>
@@ -342,14 +342,15 @@ onUnmounted(() => {
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-2xl);
   padding: var(--spacing-sm) var(--spacing-md);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition:
+    box-shadow 0.3s ease,
+    border-color 0.3s ease;
 }
 
 .filter-bar.is-sticky {
   position: sticky;
   top: calc(var(--navbar-height, 72px) + var(--spacing-md));
   z-index: 500;
-  will-change: transform;
   box-shadow:
     0 4px 20px rgba(0, 0, 0, 0.08),
     0 8px 32px rgba(139, 92, 246, 0.1);
@@ -616,8 +617,11 @@ onUnmounted(() => {
 .platform-chip {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 4px;
-  padding: 8px 12px;
+  padding: 8px;
+  min-width: 40px;
+  min-height: 40px;
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-full);
   background: var(--glass-bg-light);
@@ -626,8 +630,17 @@ onUnmounted(() => {
   font-weight: var(--font-medium);
   white-space: nowrap;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.2s ease;
   flex-shrink: 0;
+}
+
+/* 移动端隐藏平台名称，只显示图标 */
+.platform-chip .chip-label {
+  display: none;
 }
 
 .platform-chip:hover:not(.active) {
