@@ -249,14 +249,18 @@ watch(searchQuery, (newVal) => {
 
 .suggestions-dropdown {
   position: absolute;
-  top: calc(100% + var(--spacing-sm));
+  top: calc(100% + 4px);
   left: 0;
   right: 0;
   padding: var(--spacing-sm);
-  z-index: var(--z-dropdown);
-  max-height: 300px;
+  z-index: 1000;
+  max-height: 280px;
   overflow-y: auto;
-  animation: slideDown var(--transition-fast);
+  border-radius: var(--radius-xl);
+  box-shadow:
+    0 10px 40px rgba(0, 0, 0, 0.15),
+    0 4px 12px rgba(0, 0, 0, 0.1);
+  animation: slideDown 0.15s ease-out;
 }
 
 .suggestion-item {
