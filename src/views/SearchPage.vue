@@ -1,15 +1,13 @@
 <template>
   <MainLayout>
     <div class="search-page">
-      <header class="search-header glass-card">
-        <div class="search-header-text">
-          <h1 class="page-title">Search</h1>
-          <p class="page-subtitle">{{ $t('search.placeholder') }}</p>
-        </div>
+      <!-- 搜索框区域 -->
+      <div class="search-input-section">
         <SearchBar @search="handleSearch" />
-      </header>
+      </div>
 
-      <div class="search-tabs glass-card">
+      <!-- 标签页切换 -->
+      <div class="search-tabs">
         <button
           type="button"
           :class="['tab-button', { active: activeTab === 'posts' }]"
@@ -32,7 +30,7 @@
 
       <section v-else class="search-results-wrapper">
         <!-- Posts Tab -->
-        <div v-if="activeTab === 'posts'" class="results-section glass-card">
+        <div v-if="activeTab === 'posts'" class="results-section">
           <div v-if="loadingPosts" class="loading-state reduce-motion">
             <div class="spinner spinner-md"></div>
             <span>{{ $t('search.searching') }}</span>
@@ -59,7 +57,7 @@
         </div>
 
         <!-- Authors Tab -->
-        <div v-else class="results-section glass-card">
+        <div v-else class="results-section">
           <div v-if="loadingAuthors && authors.length === 0" class="loading-state reduce-motion">
             <div class="spinner spinner-md"></div>
             <span>{{ $t('search.searching') }}</span>
@@ -387,61 +385,32 @@ watch(
 .search-page {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-2xl);
-}
-
-.search-header {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
   gap: var(--spacing-lg);
-  padding: clamp(24px, 4vw, 32px);
+  padding-top: var(--spacing-md);
 }
 
-.search-header-text {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-sm);
+/* 搜索框区域 */
+.search-input-section {
+  position: relative;
+  z-index: 100;
 }
 
-.page-title {
-  font-size: var(--text-4xl);
-  font-weight: var(--font-bold);
-  color: var(--color-text-primary);
-  margin-bottom: var(--spacing-xs);
+.search-input-section :deep(.search-bar-container) {
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
 }
 
-.page-subtitle {
-  color: var(--color-text-secondary);
-}
-
-/* 确保 SearchBar 在 header 中正确显示 */
-.search-header :deep(.search-bar-container) {
-  flex: 1;
-  min-width: 280px;
-  max-width: 500px;
-}
-
-@media (max-width: 768px) {
-  .search-header {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .search-header :deep(.search-bar-container) {
-    max-width: 100%;
-  }
-}
-
+/* 标签页切换 */
 .search-tabs {
   display: inline-flex;
   align-items: center;
-  padding: 6px;
+  padding: 4px;
   border-radius: 999px;
-  background: var(--glass-bg-light);
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
   border: 1px solid var(--glass-border);
-  margin-top: var(--spacing-lg);
+  align-self: flex-start;
 }
 
 .tab-button {
@@ -460,14 +429,20 @@ watch(
 }
 
 .search-empty {
-  padding: var(--spacing-2xl) 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-3xl) var(--spacing-lg);
   color: var(--color-text-tertiary);
+  text-align: center;
+  min-height: 200px;
 }
 
 .search-results-wrapper {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-xl);
+  gap: var(--spacing-md);
 }
 
 .offline-hint {
@@ -483,7 +458,6 @@ watch(
   display: flex;
   flex-direction: column;
   gap: var(--spacing-lg);
-  padding: var(--spacing-xl);
 }
 
 .loading-state {
