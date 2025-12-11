@@ -2379,22 +2379,21 @@ onUnmounted(() => {
   box-shadow:
     0 2px 8px rgba(0, 0, 0, 0.03),
     inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
+  /* 使用 grid 布局实现平滑展开/收起动画 */
+  display: grid;
+  grid-template-rows: 1fr auto;
 }
 
 .post-description p {
   color: var(--color-text-primary);
-  font-size: var(--text-2xl);
-  font-weight: 700;
-  line-height: 1.4;
+  font-size: var(--text-lg);
+  font-weight: 500;
+  line-height: 1.6;
   margin: 0;
   word-break: break-word;
-  background: linear-gradient(135deg, var(--color-text-primary) 0%, rgba(139, 92, 246, 0.9) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  /* 移除渐变文字效果，提升可读性 */
 }
 
 .post-description .description-link {
@@ -2425,16 +2424,19 @@ onUnmounted(() => {
 .description-tag {
   display: inline-flex;
   align-items: center;
-  gap: 0.25rem;
-  padding: 0.2rem 0.7rem;
-  margin-inline: 0.15rem;
+  gap: 0.2rem;
+  padding: 0.15rem 0.5rem;
+  margin-inline: 0.1rem;
   border-radius: 999px;
-  background: rgba(129, 140, 248, 0.18);
-  border: 1px solid rgba(129, 140, 248, 0.4);
+  background: rgba(129, 140, 248, 0.12);
+  border: 1px solid rgba(129, 140, 248, 0.3);
   color: var(--color-primary);
-  -webkit-text-fill-color: currentColor;
-  box-shadow: 0 2px 6px rgba(129, 140, 248, 0.15);
-  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(129, 140, 248, 0.1);
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease;
+  vertical-align: middle;
 }
 
 .description-tag.is-link {
@@ -2465,83 +2467,73 @@ onUnmounted(() => {
 }
 
 .description-tag-text {
-  font-size: var(--text-xs);
+  font-size: var(--text-sm);
   font-weight: 500;
 }
 
-.post-description.is-collapsed {
-  max-height: 18em;
-  /* 固定em值，桌面端 */
+.post-description.is-collapsed p {
+  display: -webkit-box;
+  -webkit-line-clamp: 8;
+  line-clamp: 8;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
-.post-description.is-collapsed::after {
-  content: '';
-  position: absolute;
-  inset-inline: 0;
-  bottom: 0;
-  height: 72px;
-  background: linear-gradient(to top, var(--glass-bg-light), transparent);
-  pointer-events: none;
-}
-
-.post-description.is-expanded {
-  max-height: none !important;
+.post-description.is-expanded p {
+  display: block;
 }
 
 .description-toggle {
-  position: absolute;
-  bottom: var(--spacing-sm);
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 10;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 6px 14px;
+  padding: 8px 16px;
+  margin-top: var(--spacing-md);
   border-radius: 999px;
-  /* 渐变背景 */
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(192, 132, 252, 0.2));
-  border: 1px solid rgba(139, 92, 246, 0.5);
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(192, 132, 252, 0.15));
+  border: 1px solid rgba(139, 92, 246, 0.4);
   color: var(--color-text-secondary);
   font-size: var(--text-sm);
   font-weight: 500;
   cursor: pointer;
-  backdrop-filter: blur(10px);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  /* 增强阴影层次 */
+  backdrop-filter: blur(8px);
+  transition:
+    background 0.25s ease,
+    border-color 0.25s ease,
+    color 0.25s ease,
+    transform 0.25s ease,
+    box-shadow 0.25s ease;
   box-shadow:
-    0 2px 8px rgba(139, 92, 246, 0.25),
-    0 4px 16px rgba(0, 0, 0, 0.12),
-    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    0 2px 8px rgba(139, 92, 246, 0.2),
+    0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .description-toggle:hover {
   color: var(--color-text-primary);
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.3), rgba(192, 132, 252, 0.3));
-  border-color: rgba(129, 140, 248, 0.7);
-  transform: translateX(-50%) translateY(-4px) scale(1.02);
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.25), rgba(192, 132, 252, 0.25));
+  border-color: rgba(129, 140, 248, 0.6);
+  transform: translateY(-2px);
   box-shadow:
-    0 4px 16px rgba(139, 92, 246, 0.4),
-    0 8px 24px rgba(0, 0, 0, 0.18),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    0 4px 12px rgba(139, 92, 246, 0.3),
+    0 6px 20px rgba(0, 0, 0, 0.12);
 }
 
 .description-toggle:active {
-  transform: translateX(-50%) translateY(-2px) scale(1);
+  transform: translateY(0);
   box-shadow:
-    0 2px 8px rgba(139, 92, 246, 0.3),
-    0 4px 12px rgba(0, 0, 0, 0.15);
+    0 2px 6px rgba(139, 92, 246, 0.25),
+    0 3px 10px rgba(0, 0, 0, 0.1);
 }
 
 @media (max-width: 768px) {
-  .post-description.is-collapsed {
-    max-height: 14em;
-    /* 移动端更小的固定值 */
+  .post-description.is-collapsed p {
+    -webkit-line-clamp: 6;
+    line-clamp: 6;
   }
 
   .description-toggle {
-    padding: 4px 12px;
+    padding: 6px 14px;
     font-size: var(--text-xs);
   }
 }
@@ -2552,15 +2544,8 @@ onUnmounted(() => {
   }
 
   .post-description p {
-    font-size: var(--text-3xl);
-    line-height: 1.3;
-  }
-}
-
-@media (min-width: 1280px) {
-  .post-description.is-expanded p {
-    column-count: 2;
-    column-gap: var(--spacing-xl);
+    font-size: var(--text-xl);
+    line-height: 1.5;
   }
 }
 
