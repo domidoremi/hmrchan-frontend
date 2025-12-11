@@ -40,7 +40,8 @@
     "noResults": "No results found",
     "noResultsDesc": "No content matches your search criteria. Please try different keywords",
     "searching": "Searching...",
-    "tryDifferent": "Try different keywords"
+    "tryDifferent": "Try different keywords",
+    "suggestions": "Search suggestions"
   },
   "filter": {
     "sortBy": "Sort By",
