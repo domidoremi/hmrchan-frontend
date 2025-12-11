@@ -1,6 +1,6 @@
 <template>
-  <!-- 使用 HTML5 <search> 元素增强语义化和可访问性 -->
-  <search class="search-bar glass-card animated" role="search">
+  <!-- 搜索栏容器 -->
+  <div class="search-bar-container glass-card animated" role="search">
     <Search :size="20" class="search-icon" aria-hidden="true" />
     <input
       v-model="searchQuery"
@@ -47,7 +47,7 @@
         </div>
       </div>
     </div>
-  </search>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -194,16 +194,18 @@ watch(searchQuery, (newVal) => {
 </script>
 
 <style scoped>
-.search-bar {
+.search-bar-container {
   position: relative;
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
   padding: var(--spacing-md);
-  transition: all var(--transition-base);
+  transition:
+    box-shadow var(--transition-base),
+    border-color var(--transition-base);
 }
 
-.search-bar:focus-within {
+.search-bar-container:focus-within {
   box-shadow:
     var(--glass-shadow),
     0 0 0 3px rgba(139, 92, 246, 0.1);
