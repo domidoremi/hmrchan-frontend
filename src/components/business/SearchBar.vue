@@ -69,7 +69,7 @@
  * - search: 执行搜索时触发，传递搜索关键词
  */
 
-import { ref, watch } from 'vue'
+import { ref, watch, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Search, X } from 'lucide-vue-next'
 import { useDebounce } from '@/composables'
@@ -191,6 +191,24 @@ watch(searchQuery, (newVal) => {
     showSuggestions.value = false
   }
 })
+
+/**
+ * 点击外部关闭建议下拉框
+ */
+const handleClickOutside = (event: MouseEvent) => {
+  const container = document.querySelector('.search-bar-container')
+  if (container && !container.contains(event.target as Node)) {
+    showSuggestions.value = false
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside)
+})
 </script>
 
 <style scoped>
@@ -257,9 +275,12 @@ watch(searchQuery, (newVal) => {
   max-height: 280px;
   overflow-y: auto;
   border-radius: var(--radius-xl);
+  /* 使用不透明背景确保可读性 */
+  background: var(--color-bg-primary);
+  border: 1px solid var(--glass-border);
   box-shadow:
-    0 10px 40px rgba(0, 0, 0, 0.15),
-    0 4px 12px rgba(0, 0, 0, 0.1);
+    0 10px 40px rgba(0, 0, 0, 0.2),
+    0 4px 12px rgba(0, 0, 0, 0.15);
   animation: slideDown 0.15s ease-out;
 }
 

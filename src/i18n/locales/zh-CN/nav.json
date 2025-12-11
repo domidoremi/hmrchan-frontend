@@ -40,7 +40,8 @@
     "noResults": "未找到结果",
     "noResultsDesc": "未找到符合搜索条件的内容，请尝试其他关键词",
     "searching": "搜索中...",
-    "tryDifferent": "尝试其他关键词"
+    "tryDifferent": "尝试其他关键词",
+    "suggestions": "搜索建议"
   },
   "filter": {
     "sortBy": "排序方式",
