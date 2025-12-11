@@ -52,7 +52,8 @@
     "posts": "帖子",
     "scrollToLoadMore": "向下滚动加载更多",
     "submit": "提交",
-    "viewMode": "视图模式"
+    "viewMode": "视图模式",
+    "clear": "清除"
   },
   "viewMode": {
     "grid": "网格",
