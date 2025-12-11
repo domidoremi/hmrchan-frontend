@@ -312,6 +312,7 @@ onUnmounted(() => {
   color: var(--color-text-secondary);
   cursor: pointer;
   transition: all var(--transition-fast);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
 }
 
 .suggestion-item:hover,
@@ -319,6 +320,10 @@ onUnmounted(() => {
   background: var(--glass-bg-light);
   color: var(--color-text-primary);
   outline: none;
+}
+
+.suggestion-item:last-child {
+  border-bottom: none;
 }
 
 .suggestion-subtitle {
