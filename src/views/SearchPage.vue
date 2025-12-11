@@ -417,7 +417,7 @@ watch(
 }
 
 /* 确保 SearchBar 在 header 中正确显示 */
-.search-header :deep(.search-bar) {
+.search-header :deep(.search-bar-container) {
   flex: 1;
   min-width: 280px;
   max-width: 500px;
@@ -429,7 +429,7 @@ watch(
     align-items: stretch;
   }
 
-  .search-header :deep(.search-bar) {
+  .search-header :deep(.search-bar-container) {
     max-width: 100%;
   }
 }

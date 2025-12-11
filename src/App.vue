@@ -54,25 +54,52 @@ const transitionName = ref('fade')
  */
 const cachedComponents = ['HomePage', 'ExplorePage', 'PostsView', 'AuthorsPage']
 
+/** 路由导航层级映射，用于确定动画方向 */
+const routeDepthMap: Record<string, number> = {
+  home: 0,
+  explore: 1,
+  posts: 1,
+  authors: 1,
+  search: 2,
+  'post-detail': 2,
+  favorites: 2,
+  profile: 2,
+  settings: 2,
+  contact: 1,
+  login: 3,
+  register: 3,
+}
+
+/** 上一个路由名称 */
+let previousRouteName = ''
+
 /**
  * 监听路由变化，动态设置页面过渡动画
  *
- * 根据用户设置和路由元信息，选择合适的过渡动画效果：
+ * 根据用户设置和导航方向，选择合适的过渡动画效果：
  * - 用户禁用动画时，不使用任何过渡效果
- * - 根据路由 meta.transition 字段设置动画类型（slide-left、slide-right、fade）
+ * - 前进导航（深入）：向左滑动
+ * - 后退导航（返回）：向右滑动
+ * - 同级导航：淡入淡出
  */
 watch(
   () => router.currentRoute.value,
-  (to) => {
+  (to, from) => {
     if (!settings.value.enableAnimations) {
       transitionName.value = ''
       return
     }
 
-    const transition = to?.meta?.transition
-    if (transition === 'slide-left') {
+    const toName = String(to?.name || '')
+    const fromName = previousRouteName || String(from?.name || '')
+    previousRouteName = toName
+
+    const toDepth = routeDepthMap[toName] ?? 1
+    const fromDepth = routeDepthMap[fromName] ?? 1
+
+    if (toDepth > fromDepth) {
       transitionName.value = 'slide-left'
-    } else if (transition === 'slide-right') {
+    } else if (toDepth < fromDepth) {
       transitionName.value = 'slide-right'
     } else {
       transitionName.value = 'fade'
