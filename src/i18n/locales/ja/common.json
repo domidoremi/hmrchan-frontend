@@ -52,7 +52,8 @@
     "submit": "送信",
     "live": "ライブ",
     "updates": "更新",
-    "viewMode": "表示モード"
+    "viewMode": "表示モード",
+    "clear": "クリア"
   },
   "viewMode": {
     "grid": "グリッド",
