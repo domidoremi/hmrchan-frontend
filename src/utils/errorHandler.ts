@@ -154,17 +154,17 @@ export function handleError(
   if (logToConsole) {
     logger.error(`Error: ${errorResponse.message}`, {
       category: context,
-      code: errorResponse.code,
+      code: errorResponse['code'] || errorResponse.code,
       status: errorResponse.status,
     })
   }
 
   // 错误监控
   errorMonitor.logError(context, errorResponse.message, {
-    code: errorResponse.code,
-    status: errorResponse.status,
+    ...(errorResponse.code !== undefined && { code: errorResponse.code }),
+    ...(errorResponse.status !== undefined && { status: errorResponse.status }),
     stack: error instanceof Error ? error.stack : undefined,
-    details: errorResponse.details,
+    ...(errorResponse.details !== undefined && { details: errorResponse.details }),
   })
 
   // Toast通知
