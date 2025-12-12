@@ -3,7 +3,7 @@
  * 使用 Intl.NumberFormat 根据语言环境格式化数字
  */
 
-import logger from '@/utils/logger'
+import { logger } from '@/utils/logger'
 
 /**
  * 格式化数字（带千分位分隔符）

@@ -6,7 +6,7 @@ import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import localizedFormat from 'dayjs/plugin/localizedFormat'
 import type { SupportedLocale } from '@/i18n'
-import logger from '@/utils/logger'
+import { logger } from '@/utils/logger'
 
 // 扩展 dayjs 插件
 dayjs.extend(relativeTime)

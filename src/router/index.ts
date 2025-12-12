@@ -10,7 +10,7 @@
  */
 
 import { createRouter, createWebHistory } from 'vue-router'
-import logger from '@/utils/logger'
+import { logger } from '@/utils/logger'
 import type { RouteRecordRaw } from 'vue-router'
 import { useAuthStore } from '@/stores'
 

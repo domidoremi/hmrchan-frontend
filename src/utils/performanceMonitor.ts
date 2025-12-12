@@ -6,7 +6,7 @@
  * including FCP, LCP, TTI, CLS, and custom metrics.
  */
 
-import logger from './logger'
+import { logger } from './logger'
 
 export interface PerformanceMetrics {
   // Core Web Vitals

@@ -242,7 +242,7 @@ import type { AuthorListItem } from '@/types'
 import { useErrorHandler } from '@/utils'
 import { useInfiniteScroll } from '@/composables'
 import { indexedDB } from '@/utils/storage'
-import logger from '@/utils/logger'
+import { logger } from '@/utils/logger'
 
 const router = useRouter()
 const { t } = useI18n()

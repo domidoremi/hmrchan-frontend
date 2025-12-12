@@ -10,7 +10,7 @@
 import { defineStore } from 'pinia'
 import { ref, watch } from 'vue'
 import type { Theme } from '@/types'
-import logger from '@/utils/logger'
+import { logger } from '@/utils/logger'
 import { secureLocalStorage } from '@/utils/secureStorage'
 
 export const useThemeStore = defineStore(
