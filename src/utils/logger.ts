@@ -231,6 +231,3 @@ class Logger {
 
 // 导出单例
 export const logger = new Logger()
-
-// 向后兼容的默认导出
-export default logger
