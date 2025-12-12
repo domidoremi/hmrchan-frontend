@@ -192,7 +192,7 @@ export const imagePreloadPlugin = {
     })
 
     // 提供全局方法
-    app.config.globalProperties.$preloadImages = (urls: string[]) => {
+    app.config.globalProperties['$preloadImages'] = (urls: string[]) => {
       return smartPreloadImages(urls, {
         priority: 'high',
         maxConcurrent,
