@@ -12,7 +12,7 @@ import { indexedDB } from '@/utils/storage'
 import { useAuthStore } from '@/stores'
 import { fetchWithFallback } from '@/utils/cache'
 import { handleError } from '@/utils'
-import logger from '@/utils/logger'
+import { logger } from '@/utils/logger'
 import { toLogContext } from '@/utils/typeGuards'
 
 export function useFavorites() {

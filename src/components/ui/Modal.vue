@@ -189,42 +189,38 @@ watch(
 )
 
 /**
- * 组件卸载时清理资源
+ * 组件挂载时设置全局 ESC 键监听
  */
-onMounted(() => {
-  // 全局 ESC 键监听器
-  const handleGlobalEsc = (event: KeyboardEvent) => {
-    if (event.key === 'Escape' && props.modelValue) {
-      close()
-    }
+const handleGlobalEsc = (event: KeyboardEvent) => {
+  if (event.key === 'Escape' && props.modelValue) {
+    close()
   }
+}
 
+// 监听 modalValue 变化
+watch(
+  () => props.modelValue,
+  (isOpen) => {
+    if (isOpen) {
+      document.addEventListener('keydown', handleGlobalEsc)
+    } else {
+      document.removeEventListener('keydown', handleGlobalEsc)
+    }
+  },
+  { immediate: true },
+)
+
+// 组件挂载和卸载时的清理
+onMounted(() => {
   if (props.modelValue) {
     document.addEventListener('keydown', handleGlobalEsc)
   }
+})
 
-  // 监听 modalValue 变化
-  watch(
-    () => props.modelValue,
-    (isOpen) => {
-      if (isOpen) {
-        document.addEventListener('keydown', handleGlobalEsc)
-      } else {
-        document.removeEventListener('keydown', handleGlobalEsc)
-      }
-    },
-    { immediate: true },
-  )
-
-  // 组件卸载时清理
-  onUnmounted(() => {
-    document.removeEventListener('keydown', handleGlobalEsc)
-  })
-
-  return () => {
-    if (cleanupFocusTrap) {
-      cleanupFocusTrap()
-    }
+onUnmounted(() => {
+  document.removeEventListener('keydown', handleGlobalEsc)
+  if (cleanupFocusTrap) {
+    cleanupFocusTrap()
   }
 })
 </script>

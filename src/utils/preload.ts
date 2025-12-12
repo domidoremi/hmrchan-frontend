@@ -2,7 +2,7 @@
  * 媒体预加载工具
  * 支持图片和视频的智能预加载
  */
-import logger from './logger'
+import { logger } from './logger'
 
 /**
  * 图片预加载器

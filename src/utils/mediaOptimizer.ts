@@ -3,7 +3,7 @@
  * 提供图片优化、懒加载、渐进式加载等功能
  */
 
-import logger from './logger'
+import { logger } from './logger'
 
 interface ImageOptimizationOptions {
   quality?: number
