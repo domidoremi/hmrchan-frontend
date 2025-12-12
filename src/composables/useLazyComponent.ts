@@ -1,6 +1,6 @@
 import { defineAsyncComponent, type Component } from 'vue'
 import AsyncComponentLoader from '@/components/ui/AsyncComponentLoader.vue'
-import logger from '@/utils/logger'
+import { logger } from '@/utils/logger'
 
 /**
  * 创建懒加载组件的工具函数

@@ -3,7 +3,7 @@
  * 仅在开发环境可用，用于调试和验证 i18n 使用
  */
 import type { SupportedLocale } from '@/i18n'
-import logger from './logger'
+import { logger } from './logger'
 
 // 标准的 i18n 键值前缀
 const I18N_KEY_PREFIXES = [

@@ -2,7 +2,7 @@
  * 缓存工具统一导出
  */
 
-import logger from '@/utils/logger'
+import { logger } from '@/utils/logger'
 
 export { CacheManager, cacheManager } from './CacheManager'
 export type { CacheConfig, CacheEntry, CacheStats } from './CacheManager'

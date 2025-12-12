@@ -3,7 +3,7 @@
  * Error Monitoring System
  */
 
-import logger from '@/utils/logger'
+import { logger } from '@/utils/logger'
 
 export interface ErrorLog {
   id: string

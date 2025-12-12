@@ -9,7 +9,7 @@
  */
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import logger from '@/utils/logger'
+import { logger } from '@/utils/logger'
 
 /** Toast 通知类型 */
 export type ToastType = 'success' | 'error' | 'warning' | 'info'

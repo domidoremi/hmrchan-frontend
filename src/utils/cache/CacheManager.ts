@@ -5,7 +5,7 @@
  */
 
 import { indexedDB } from '@/utils/storage'
-import logger from '@/utils/logger'
+import { logger } from '@/utils/logger'
 import { toLogContext } from '@/utils/typeGuards'
 
 export interface CacheConfig {

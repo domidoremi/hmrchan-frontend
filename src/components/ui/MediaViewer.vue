@@ -139,7 +139,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onUnmounted } from 'vue'
-import logger from '@/utils/logger'
+import { logger } from '@/utils/logger'
 import { useBodyScrollLock } from '@/composables'
 import {
   X,
