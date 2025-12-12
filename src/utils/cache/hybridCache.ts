@@ -4,7 +4,7 @@
  */
 
 import { indexedDB } from '../storage/indexedDB'
-import logger from '@/utils/logger'
+import { logger } from '@/utils/logger'
 
 interface CacheEntry {
   url: string

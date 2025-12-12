@@ -19,7 +19,7 @@ import { indexedDB } from '@/utils/storage'
 import { postCache } from '@/utils/cache'
 import { cacheInvalidation } from '@/utils/cache/cacheInvalidation'
 import { handleError } from '@/utils'
-import logger from '@/utils/logger'
+import { logger } from '@/utils/logger'
 import { toLogContext } from '@/utils/typeGuards'
 import i18n from '@/i18n'
 import type {

@@ -5,7 +5,7 @@
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useToast } from '@/composables'
-import logger from '@/utils/logger'
+import { logger } from '@/utils/logger'
 import { useAuthStore } from '@/stores'
 import { toLogContext } from '@/utils/typeGuards'
 

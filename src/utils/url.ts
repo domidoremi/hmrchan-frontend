@@ -2,7 +2,7 @@
  * URL处理工具函数
  */
 
-import logger from '@/utils/logger'
+import { logger } from '@/utils/logger'
 
 /**
  * 强制转换为 HTTPS（生产环境）

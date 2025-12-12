@@ -3,7 +3,7 @@
  * 使用浏览器运行时信息动态确定 API URL
  */
 
-import logger from '@/utils/logger'
+import { logger } from '@/utils/logger'
 
 /**
  * 强制 HTTPS 转换助手函数

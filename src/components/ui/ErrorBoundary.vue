@@ -15,7 +15,7 @@
 <script setup lang="ts">
 import { ref, onErrorCaptured } from 'vue'
 import { AlertTriangle } from 'lucide-vue-next'
-import logger from '@/utils/logger'
+import { logger } from '@/utils/logger'
 
 const hasError = ref(false)
 const errorMessage = ref('')

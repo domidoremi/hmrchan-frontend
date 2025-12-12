@@ -3,7 +3,7 @@
  * 处理后端图片的 WebP 转换、尺寸优化和懒加载
  */
 
-import logger from './logger'
+import { logger } from './logger'
 
 /**
  * 检测浏览器是否支持 WebP

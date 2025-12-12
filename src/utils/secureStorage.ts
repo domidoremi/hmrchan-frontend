@@ -8,7 +8,7 @@
  * - 支持 TTL 过期机制
  */
 
-import logger from '@/utils/logger'
+import { logger } from '@/utils/logger'
 
 const STORAGE_KEY_PREFIX = '__hmrc_'
 const ENCRYPTION_KEY_ENV = import.meta.env.VITE_ENCRYPTION_KEY || 'hmrchan_secure_key_v1_default'

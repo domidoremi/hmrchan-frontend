@@ -10,7 +10,7 @@
 
 import type { PostDetail, Post } from '@/types'
 import { indexedDB, hasFullDetail } from '@/utils/storage'
-import logger from '@/utils/logger'
+import { logger } from '@/utils/logger'
 
 // ============================================
 // 缓存配置

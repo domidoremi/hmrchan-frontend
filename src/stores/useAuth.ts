@@ -13,7 +13,7 @@ import { ref, computed } from 'vue'
 import type { User, LoginRequest } from '@/types'
 import { api } from '@/api/client'
 import { handleError } from '@/utils'
-import logger from '@/utils/logger'
+import { logger } from '@/utils/logger'
 import { secureLocalStorage, sanitizeForLog } from '@/utils/secureStorage'
 
 export const useAuthStore = defineStore(
