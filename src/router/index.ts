@@ -457,7 +457,9 @@ router.afterEach((to) => {
     sessionStorage.setItem(LAST_VISITED_ROUTE_KEY, to.fullPath)
   }
 
-  preloadCriticalRoutes({ name: to.name })
+  if (to.name) {
+    preloadCriticalRoutes({ name: to.name })
+  }
 })
 
 /**
