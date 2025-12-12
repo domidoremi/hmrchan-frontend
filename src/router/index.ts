@@ -308,7 +308,7 @@ const router = createRouter({
    * @param savedPosition - 浏览器记录的滚动位置（前进/后退时存在）
    * @returns 滚动位置配置对象
    */
-  scrollBehavior(to, from, savedPosition) {
+  scrollBehavior(to, _from, savedPosition) {
     // 浏览器前进/后退：使用浏览器记录的位置
     if (savedPosition) {
       return {
@@ -327,7 +327,7 @@ const router = createRouter({
 
     // 对于 KeepAlive 缓存的页面，尝试恢复滚动位置
     const cachedPages = ['HomePage', 'ExplorePage', 'PostsView', 'AuthorsPage']
-    const toComponentName = to.matched[0]?.components?.default?.name
+    const toComponentName = to.matched[0]?.components?.['default']?.name
 
     if (toComponentName && cachedPages.includes(toComponentName)) {
       // 从 sessionStorage 恢复位置
@@ -390,7 +390,7 @@ router.beforeEach((to, from, next) => {
 
   // 保存缓存页面的滚动位置
   const cachedPages = ['HomePage', 'ExplorePage', 'PostsView', 'AuthorsPage']
-  const fromComponentName = from.matched[0]?.components?.default?.name
+  const fromComponentName = from.matched[0]?.components?.['default']?.name
 
   if (fromComponentName && cachedPages.includes(fromComponentName)) {
     try {
@@ -410,7 +410,7 @@ router.beforeEach((to, from, next) => {
     sessionStorage.setItem(LAST_VISITED_ROUTE_KEY, from.fullPath)
   }
 
-  if (to.name === 'login' && !to.query.redirect) {
+  if (to.name === 'login' && !to.query['redirect']) {
     const historicalRoute = sessionStorage.getItem(LAST_VISITED_ROUTE_KEY) || '/'
     const redirectTarget = from.name && from.name !== 'login' ? from.fullPath : historicalRoute
 
@@ -425,17 +425,17 @@ router.beforeEach((to, from, next) => {
     return
   }
 
-  const appName = import.meta.env.VITE_APP_NAME || 'himeri chan'
-  if (to.meta.title) {
-    document.title = `${to.meta.title} - ${appName}`
+  const appName = import.meta.env['VITE_APP_NAME'] || 'himeri chan'
+  if (to.meta['title']) {
+    document.title = `${to.meta['title']} - ${appName}`
   }
 
-  if (to.meta.requiresAuth && !authStore.isAuthenticated) {
+  if (to.meta['requiresAuth'] && !authStore.isAuthenticated) {
     next({ name: 'login', query: { redirect: to.fullPath } })
     return
   }
 
-  if (to.meta.guest && authStore.isAuthenticated) {
+  if (to.meta['guest'] && authStore.isAuthenticated) {
     next({ name: 'home' })
     return
   }
