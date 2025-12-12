@@ -62,7 +62,7 @@ import './styles/desktop-optimizations.css'
 // ============================================
 
 /** 日志工具 */
-import logger, { LogLevel } from './utils/logger'
+import { logger, LogLevel } from './utils/logger'
 
 /** Service Worker 管理器 */
 import { swManager } from './utils/serviceWorkerManager'
