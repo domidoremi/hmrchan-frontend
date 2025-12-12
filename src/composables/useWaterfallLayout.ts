@@ -5,7 +5,7 @@
  */
 import { ref, onMounted, onUnmounted, nextTick, type Ref } from 'vue'
 import { useThrottle } from '@/composables'
-import logger from '@/utils/logger'
+import { logger } from '@/utils/logger'
 
 interface WaterfallOptions {
   columnGap?: number // 列间距（px）

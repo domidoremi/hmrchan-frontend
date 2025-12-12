@@ -5,7 +5,7 @@
 
 import { useI18n } from 'vue-i18n'
 import { useToastStore } from '@/stores'
-import logger from '@/utils/logger'
+import { logger } from '@/utils/logger'
 import { errorMonitor } from './errorMonitor'
 
 export interface ErrorResponse {

@@ -3,7 +3,7 @@
  * This runs before axios, service worker, everything
  */
 
-import logger from './logger'
+import { logger } from './logger'
 
 const LOG_CONTEXT = { category: 'HTTPS-Enforcer' }
 

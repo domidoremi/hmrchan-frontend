@@ -11,7 +11,7 @@
  */
 import ky, { type KyInstance, type Options as KyOptions } from 'ky'
 import { useAuthStore } from '@/stores'
-import logger from '@/utils/logger'
+import { logger } from '@/utils/logger'
 import { requestCache } from '@/utils/cache'
 import { offlineQueue } from '@/utils/storage'
 import { cacheManager } from '@/utils/cache/CacheManager'
