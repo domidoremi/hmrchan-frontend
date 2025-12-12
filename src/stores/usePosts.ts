@@ -107,7 +107,7 @@ export const usePostsStore = defineStore(
               const platform = mergedParams.platform
 
               const cachedPosts = await indexedDB.getPosts({
-                platform,
+                ...(platform !== undefined && { platform }),
                 limit,
                 offset,
               })
@@ -330,9 +330,6 @@ export const usePostsStore = defineStore(
         page_size: settingsStore.settings.postsPerPage,
         sort_by: 'scraped_at',
         sort_order: 'desc',
-        platform: undefined,
-        q: undefined,
-        has_media: undefined,
       }
       // 同时重置分页信息
       pagination.value = {
