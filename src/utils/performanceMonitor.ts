@@ -84,7 +84,7 @@ class PerformanceMonitor {
           renderTime: number
           loadTime: number
         }
-        this.metrics.lcp = lastEntry.renderTime || lastEntry.loadTime
+        this.metrics['lcp'] = lastEntry.renderTime || lastEntry.loadTime
         logger.info(`[Performance] LCP: ${this.metrics.lcp.toFixed(2)}ms`)
       })
       lcpObserver.observe({ entryTypes: ['largest-contentful-paint'] })
@@ -97,7 +97,7 @@ class PerformanceMonitor {
           const layoutShift = entry as PerformanceEntry & { value: number; hadRecentInput: boolean }
           if (!layoutShift.hadRecentInput) {
             clsValue += layoutShift.value
-            this.metrics.cls = clsValue
+            this.metrics['cls'] = clsValue
           }
         }
       })
@@ -108,7 +108,7 @@ class PerformanceMonitor {
       const fidObserver = new PerformanceObserver((list) => {
         for (const entry of list.getEntries()) {
           const firstInput = entry as PerformanceEntry & { processingStart: number }
-          this.metrics.fid = firstInput.processingStart - entry.startTime
+          this.metrics['fid'] = firstInput.processingStart - entry.startTime
           logger.info(`[Performance] FID: ${this.metrics.fid.toFixed(2)}ms`)
         }
       })
@@ -132,12 +132,12 @@ class PerformanceMonitor {
     const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming
 
     if (navigation) {
-      this.metrics.ttfb = navigation.responseStart - navigation.requestStart
-      this.metrics.domContentLoaded = navigation.domContentLoadedEventEnd - navigation.fetchStart
-      this.metrics.loadComplete = navigation.loadEventEnd - navigation.fetchStart
-      this.metrics.domInteractive = navigation.domInteractive - navigation.fetchStart
-      this.metrics.navigationStart = navigation.fetchStart
-      this.metrics.responseEnd = navigation.responseEnd
+      this.metrics['ttfb'] = navigation.responseStart - navigation.requestStart
+      this.metrics['domContentLoaded'] = navigation.domContentLoadedEventEnd - navigation.fetchStart
+      this.metrics['loadComplete'] = navigation.loadEventEnd - navigation.fetchStart
+      this.metrics['domInteractive'] = navigation.domInteractive - navigation.fetchStart
+      this.metrics['navigationStart'] = navigation.fetchStart
+      this.metrics['responseEnd'] = navigation.responseEnd
 
       logger.info('[Performance] Navigation Metrics:', {
         TTFB: `${this.metrics.ttfb.toFixed(2)}ms`,
@@ -301,11 +301,11 @@ class PerformanceMonitor {
     let report = '=== Performance Report ===\n\n'
 
     report += '📊 Core Web Vitals:\n'
-    report += `  FCP: ${metrics.fcp?.toFixed(2) ?? 'N/A'}ms ${targets.results.fcp?.passed ? '✅' : '❌'} (target: <1500ms)\n`
-    report += `  LCP: ${metrics.lcp?.toFixed(2) ?? 'N/A'}ms ${targets.results.lcp?.passed ? '✅' : '❌'} (target: <2500ms)\n`
-    report += `  FID: ${metrics.fid?.toFixed(2) ?? 'N/A'}ms ${targets.results.fid?.passed ? '✅' : '❌'} (target: <100ms)\n`
-    report += `  CLS: ${metrics.cls?.toFixed(3) ?? 'N/A'} ${targets.results.cls?.passed ? '✅' : '❌'} (target: <0.1)\n`
-    report += `  TTFB: ${metrics.ttfb?.toFixed(2) ?? 'N/A'}ms ${targets.results.ttfb?.passed ? '✅' : '❌'} (target: <600ms)\n\n`
+    report += `  FCP: ${metrics['fcp']?.toFixed(2) ?? 'N/A'}ms ${targets.results.fcp?.passed ? '✅' : '❌'} (target: <1500ms)\n`
+    report += `  LCP: ${metrics['lcp']?.toFixed(2) ?? 'N/A'}ms ${targets.results.lcp?.passed ? '✅' : '❌'} (target: <2500ms)\n`
+    report += `  FID: ${metrics['fid']?.toFixed(2) ?? 'N/A'}ms ${targets.results.fid?.passed ? '✅' : '❌'} (target: <100ms)\n`
+    report += `  CLS: ${metrics['cls']?.toFixed(3) ?? 'N/A'} ${targets.results.cls?.passed ? '✅' : '❌'} (target: <0.1)\n`
+    report += `  TTFB: ${metrics['ttfb']?.toFixed(2) ?? 'N/A'}ms ${targets.results.ttfb?.passed ? '✅' : '❌'} (target: <600ms)\n\n`
 
     report += '⏱️  Navigation Timing:\n'
     report += `  DOM Content Loaded: ${metrics.domContentLoaded?.toFixed(2) ?? 'N/A'}ms\n`
