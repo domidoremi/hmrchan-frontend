@@ -192,6 +192,35 @@ watch(
  * 组件卸载时清理资源
  */
 onMounted(() => {
+  // 全局 ESC 键监听器
+  const handleGlobalEsc = (event: KeyboardEvent) => {
+    if (event.key === 'Escape' && props.modelValue) {
+      close()
+    }
+  }
+
+  if (props.modelValue) {
+    document.addEventListener('keydown', handleGlobalEsc)
+  }
+
+  // 监听 modalValue 变化
+  watch(
+    () => props.modelValue,
+    (isOpen) => {
+      if (isOpen) {
+        document.addEventListener('keydown', handleGlobalEsc)
+      } else {
+        document.removeEventListener('keydown', handleGlobalEsc)
+      }
+    },
+    { immediate: true },
+  )
+
+  // 组件卸载时清理
+  onUnmounted(() => {
+    document.removeEventListener('keydown', handleGlobalEsc)
+  })
+
   return () => {
     if (cleanupFocusTrap) {
       cleanupFocusTrap()

@@ -671,7 +671,7 @@ class IndexedDBManager {
   // 清理和维护
   // ============================================
 
-  async clearOldPosts(daysToKeep = 7): Promise<number> {
+  async clearOldPosts(daysToKeep = 7, userId?: string): Promise<number> {
     const db = await this.ensureDB()
     const cutoffTime = Date.now() - daysToKeep * 24 * 60 * 60 * 1000
 
@@ -687,13 +687,20 @@ class IndexedDBManager {
         const cursor = (event.target as IDBRequest).result as IDBCursorWithValue | null
         if (cursor) {
           // 不删除收藏的帖子
-          this.isFavorite('current_user', cursor.value.id).then((isFav) => {
-            if (!isFav) {
-              cursor.delete()
-              count++
-            }
+          if (userId) {
+            this.isFavorite(userId, cursor.value.id).then((isFav) => {
+              if (!isFav) {
+                cursor.delete()
+                count++
+              }
+              cursor.continue()
+            })
+          } else {
+            // 如果没有提供 userId，默认删除旧帖子（向后兼容）
+            cursor.delete()
+            count++
             cursor.continue()
-          })
+          }
         } else {
           logger.debug(`Cleared ${count} old posts`, { category: 'IndexedDB' })
           resolve(count)

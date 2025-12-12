@@ -1028,11 +1028,7 @@ export const uploadApi = {
     try {
       const formData = new FormData()
       formData.append('file', file)
-      const result = await api.post<FileUploadResponse>('/upload/avatar', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      })
+      const result = await api.post<FileUploadResponse>('/upload/avatar', formData)
 
       logger.info('[Upload] Avatar uploaded successfully', {})
       return result
@@ -1060,15 +1056,7 @@ export const uploadApi = {
     try {
       const formData = new FormData()
       formData.append('file', file)
-      const result = await api.post<FileUploadResponse>(
-        `/upload/users/${userId}/avatar`,
-        formData,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        },
-      )
+      const result = await api.post<FileUploadResponse>(`/upload/users/${userId}/avatar`, formData)
 
       logger.info('[Upload] User avatar uploaded successfully', { userId })
       return result
