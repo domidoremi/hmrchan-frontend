@@ -59,7 +59,7 @@ export class CacheManager {
   private stats: CacheStats
 
   // IndexedDB store name for cache
-  private readonly CACHE_STORE = 'cache_entries'
+  // private readonly CACHE_STORE = 'cache_entries' // Not used currently
 
   constructor(config: CacheConfig = {}) {
     this.config = {
