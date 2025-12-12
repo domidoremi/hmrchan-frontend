@@ -28,7 +28,7 @@
             <slot />
           </div>
 
-          <div v-if="$slots.footer" class="modal-footer">
+          <div v-if="$slots['footer']" class="modal-footer">
             <slot name="footer" />
           </div>
         </div>
@@ -74,7 +74,7 @@
  * </Modal>
  */
 
-import { computed, watch, ref, nextTick, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { X } from 'lucide-vue-next'
 import { useFocusManagement, useBodyScrollLock } from '@/composables'
 
