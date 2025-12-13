@@ -11,7 +11,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import type { Post, PostDetail, PostListParams, PaginatedResponse, Platform, UUID } from '@/types'
-import { api } from '@/api/client'
+import { services } from '@/api/services'
 import { indexedDB } from '@/utils/storage'
 import { fetchWithFallback } from '@/utils/cache'
 import { handleError } from '@/utils'
@@ -94,10 +94,7 @@ export const usePostsStore = defineStore(
 
       try {
         const { data, fromFallback } = await fetchWithFallback<PaginatedResponse<Post>>({
-          primary: () =>
-            api.get<PaginatedResponse<Post>>('/posts', {
-              params: sanitizedParams,
-            }),
+          primary: () => services.posts.getPosts(sanitizedParams),
           fallback: async () => {
             try {
               const page = mergedParams.page ?? 1
@@ -235,8 +232,8 @@ export const usePostsStore = defineStore(
             lastDetailFromFallback.value = false
             loading.value = false
 
-            api
-              .get<PostDetail>(`/posts/${postId}`)
+            services.posts
+              .getPostById(postId, { forceRefresh: true })
               .then(async (response) => {
                 currentPost.value = response
                 await indexedDB.savePosts([response])
@@ -253,7 +250,7 @@ export const usePostsStore = defineStore(
         }
 
         const { data, fromFallback } = await fetchWithFallback<PostDetail>({
-          primary: () => api.get<PostDetail>(`/posts/${postId}`),
+          primary: () => services.posts.getPostById(postId, { forceRefresh: options.forceFresh }),
           fallback: async () => {
             try {
               const cached = await indexedDB.getPost(postId)
@@ -308,6 +305,18 @@ export const usePostsStore = defineStore(
      */
     async function searchPosts(query: string, params?: PostListParams) {
       return fetchPosts({ ...params, q: query })
+    }
+
+    async function getPostsRaw(params?: PostListParams) {
+      return services.posts.getPosts(params)
+    }
+
+    async function getPostByIdRaw(postId: UUID, options?: { forceRefresh?: boolean }) {
+      return services.posts.getPostById(postId, options)
+    }
+
+    async function incrementView(postId: UUID) {
+      return services.posts.incrementView(postId)
     }
 
     /**
@@ -404,6 +413,9 @@ export const usePostsStore = defineStore(
       fetchPost,
       fetchPostsByPlatform,
       searchPosts,
+      getPostsRaw,
+      getPostByIdRaw,
+      incrementView,
       updateFilters,
       resetFilters,
       nextPage,

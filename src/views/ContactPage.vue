@@ -145,8 +145,7 @@ import { ArrowLeft } from 'lucide-vue-next'
 import MainLayout from '@/components/layout/MainLayout.vue'
 import GlassInput from '@/components/ui/Input.vue'
 import GlassButton from '@/components/ui/Button.vue'
-import { useAuthStore, useToastStore } from '@/stores'
-import apiClient from '@/api/client'
+import { useAuthStore, useToastStore, useFeedbackStore } from '@/stores'
 
 const MAX_MESSAGE_LENGTH = 2000
 const MAX_FILE_SIZE = 5 * 1024 * 1024
@@ -180,6 +179,7 @@ const getOrCreateFingerprint = (): string | null => {
 const router = useRouter()
 const authStore = useAuthStore()
 const toastStore = useToastStore()
+const feedbackStore = useFeedbackStore()
 
 const isAuthenticated = computed(() => authStore.isAuthenticated)
 const currentUserEmail = computed(() =>
@@ -298,12 +298,7 @@ const handleSubmit = async () => {
       headers['X-Client-Fingerprint'] = fingerprint
     }
 
-    await apiClient
-      .post('feedback', {
-        body: formData,
-        headers,
-      })
-      .json<unknown>()
+    await feedbackStore.submitFeedback(formData, headers)
 
     toastStore.success('反馈已提交, 感谢你的反馈!')
     form.value.message = ''
