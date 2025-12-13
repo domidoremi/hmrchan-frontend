@@ -73,10 +73,11 @@ import { ref, watch, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Search, X } from 'lucide-vue-next'
 import { useDebounceFn } from '@/composables'
-import { services } from '@/api/services'
+import { useSearchStore } from '@/stores'
 import type { SearchSuggestion } from '@/types'
 
 const router = useRouter()
+const searchStore = useSearchStore()
 
 /** 搜索关键词 */
 const searchQuery = ref('')
@@ -162,7 +163,7 @@ const fetchSuggestions = async (query: string) => {
   }
 
   try {
-    const response = await services.search.fetchSuggestions(query, {
+    const response = await searchStore.fetchSuggestions(query, {
       type: 'all',
       limit: 10,
     })

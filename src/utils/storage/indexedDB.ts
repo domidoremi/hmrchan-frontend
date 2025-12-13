@@ -100,12 +100,12 @@ export interface OfflineAction {
 
 class IndexedDBManager {
   private dbName = 'hmrchan_db'
-  private version = 3 // v3: 添加metadata store，实现版本化缓存策略
+  private version = 4 // v3: 添加metadata store，实现版本化缓存策略
   private db: IDBDatabase | null = null
 
   // 缓存版本号（应用层）
   private readonly CACHE_STRATEGY_VERSION = '2.0.0'
-  private readonly DATA_SCHEMA_VERSION = 3
+  private readonly DATA_SCHEMA_VERSION = 4
 
   /**
    * 初始化数据库
@@ -150,6 +150,29 @@ class IndexedDBManager {
           logger.debug('Created metadata store', { category: 'IndexedDB' })
         }
 
+        if (!db.objectStoreNames.contains('cache_entries')) {
+          db.createObjectStore('cache_entries', { keyPath: 'key' })
+          logger.debug('Created cache_entries store', { category: 'IndexedDB' })
+        }
+
+        if (oldVersion < 4 && db.objectStoreNames.contains('posts')) {
+          try {
+            const postsStore = transaction.objectStore('posts')
+            const request = postsStore.openCursor()
+            request.onsuccess = () => {
+              const cursor = request.result
+              if (!cursor) return
+
+              const value = cursor.value as { id?: unknown } | undefined
+              const id = typeof value?.id === 'string' ? value.id : ''
+              if (/^(GET|POST|PUT|PATCH|DELETE):/.test(id)) {
+                cursor.delete()
+              }
+              cursor.continue()
+            }
+          } catch {}
+        }
+
         // v1 → v2: 清空posts表（旧缓存缺少media_files字段）
         if (oldVersion < 2) {
           logger.debug('Clearing posts cache (missing media_files in old data)', {
@@ -185,6 +208,15 @@ class IndexedDBManager {
             `Metadata initialized: cache_strategy=${this.CACHE_STRATEGY_VERSION}, data_schema=${this.DATA_SCHEMA_VERSION}`,
             { category: 'IndexedDB' },
           )
+        }
+
+        if (oldVersion < 4) {
+          const metadataStore = transaction.objectStore('metadata')
+          metadataStore.put({
+            key: 'data_schema_version',
+            value: this.DATA_SCHEMA_VERSION,
+            updated_at: new Date().toISOString(),
+          })
         }
 
         // 创建 authors 表
@@ -238,6 +270,10 @@ class IndexedDBManager {
       throw new Error('Database not initialized')
     }
     return this.db
+  }
+
+  async getDB(): Promise<IDBDatabase> {
+    return this.ensureDB()
   }
 
   // ============================================
@@ -721,6 +757,7 @@ class IndexedDBManager {
       'media_metadata',
       'offline_queue',
       'metadata',
+      'cache_entries',
     ]
     const availableStores = storeNames.filter((name) => db.objectStoreNames.contains(name))
 
@@ -764,6 +801,7 @@ class IndexedDBManager {
       'media_metadata',
       'offline_queue',
       'metadata',
+      'cache_entries',
     ]
 
     const transaction = db.transaction(storeNames, 'readwrite')

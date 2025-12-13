@@ -156,11 +156,11 @@ import StatCardGrid from '@/components/ui/StatCardGrid.vue'
 import { PlatformIcon } from '@/components/ui'
 
 import { useAuthStore, useSettingsStore, usePostsStore } from '@/stores'
+import { useStatsStore } from '@/stores'
 import { useWaterfallLayout } from '@/composables'
 import { useInfiniteScroll } from '@/composables'
 import { useHomePageAnimation } from '@/composables/useHomePageAnimation'
 import { PLATFORMS, PLATFORM_COLORS, type Post } from '@/types'
-import { statsApi } from '@/api/services'
 import { formatNumber } from '@/utils'
 import { useErrorHandler } from '@/utils'
 import { logger } from '@/utils/logger'
@@ -173,6 +173,7 @@ const authStore = useAuthStore()
 const settingsStore = useSettingsStore()
 /** 帖子状态管理 */
 const postsStore = usePostsStore()
+const statsStore = useStatsStore()
 
 /** 用户认证状态和用户信息 */
 const { isAuthenticated, user } = storeToRefs(authStore)
@@ -305,7 +306,7 @@ const calculateInitialPageSize = (): number => {
  */
 const loadStats = async (): Promise<void> => {
   try {
-    const data = await statsApi.getPlatformStats()
+    const data = await statsStore.getPlatformStats()
     platformStats.value = data
     isStatsLoading.value = false
   } catch (err) {
