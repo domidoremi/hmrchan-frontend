@@ -5,11 +5,10 @@
  */
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { favoritesApi, postsApi } from '@/api/services'
 import type { Favorite, FavoriteCreate, FavoriteUpdate, Post, UUID } from '@/types'
 import { useToast } from '@/composables'
 import { indexedDB } from '@/utils/storage'
-import { useAuthStore } from '@/stores'
+import { useAuthStore, useFavoritesStore, usePostsStore } from '@/stores'
 import { fetchWithFallback } from '@/utils/cache'
 import { handleError } from '@/utils'
 import { logger } from '@/utils/logger'
@@ -18,6 +17,8 @@ import { toLogContext } from '@/utils/typeGuards'
 export function useFavorites() {
   const { t } = useI18n()
   const authStore = useAuthStore()
+  const favoritesStore = useFavoritesStore()
+  const postsStore = usePostsStore()
   const toast = useToast()
   const favorites = ref<Favorite[]>([])
   const favoritePosts = ref<Post[]>([])
@@ -52,7 +53,7 @@ export function useFavorites() {
         pages: number
       }>({
         primary: async () => {
-          const response = await favoritesApi.getFavorites(params)
+          const response = await favoritesStore.getFavorites(params)
           return response
         },
         fallback: async () => {
@@ -140,7 +141,7 @@ export function useFavorites() {
             const posts = await Promise.all(
               postIds.map(async (id) => {
                 try {
-                  const post = await postsApi.getPostById(id)
+                  const post = await postsStore.getPostByIdRaw(id)
                   return post as Post
                 } catch (err) {
                   logger.warn('Failed to fetch favorite post detail', {
@@ -201,7 +202,7 @@ export function useFavorites() {
    */
   const addFavorite = async (data: FavoriteCreate) => {
     try {
-      const favorite = await favoritesApi.addFavorite(data)
+      const favorite = await favoritesStore.addFavorite(data)
       favorites.value.unshift(favorite)
       toast.success(t('favorite.addSuccess'))
 
@@ -233,7 +234,7 @@ export function useFavorites() {
    */
   const updateFavorite = async (favoriteId: UUID, data: FavoriteUpdate) => {
     try {
-      const favorite = await favoritesApi.updateFavorite(favoriteId, data)
+      const favorite = await favoritesStore.updateFavorite(favoriteId, data)
       const index = favorites.value.findIndex((f) => f.id === favoriteId)
       if (index !== -1) {
         favorites.value[index] = favorite
@@ -261,7 +262,7 @@ export function useFavorites() {
       const postId = favorite?.post_id || favoriteIdOrPostId
 
       // API使用post_id删除
-      await favoritesApi.deleteFavorite(postId)
+      await favoritesStore.deleteFavorite(postId)
 
       // 从本地列表中移除
       favorites.value = favorites.value.filter((f) => f.post_id !== postId)
@@ -294,7 +295,7 @@ export function useFavorites() {
     }
 
     try {
-      return await favoritesApi.isFavorited(postId)
+      return await favoritesStore.isFavorited(postId)
     } catch {
       return false
     }

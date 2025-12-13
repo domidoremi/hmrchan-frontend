@@ -169,7 +169,7 @@ import {
 import { useI18n } from 'vue-i18n'
 
 import type { MediaFile, PostDetail } from '@/types'
-import { mediaApi } from '@/api/services'
+import { useMediaStore } from '@/stores'
 
 interface Props {
   /** 帖子详情数据 */
@@ -191,6 +191,7 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
+const mediaStore = useMediaStore()
 
 /** 当前激活的媒体索引 */
 const activeIndex = ref(0)
@@ -228,7 +229,7 @@ const platformColor = computed(() => {
     default: '#8B5CF6',
   }
   const key = props.post?.platform?.toLowerCase() || 'default'
-  return palette[key] || palette.default
+  return palette[key] || palette['default']
 })
 
 /** 平台名称 */
@@ -247,7 +248,7 @@ const activeMediaSrc = computed(() => {
  * @returns 媒体文件的流式 URL
  */
 function resolveMedia(media: MediaFile): string {
-  return mediaApi.getStreamUrl(media.id)
+  return mediaStore.getStreamUrl(media.id)
 }
 
 /**
@@ -257,7 +258,7 @@ function resolveMedia(media: MediaFile): string {
  * @returns 缩略图 URL
  */
 function resolveThumb(media: MediaFile): string {
-  return mediaApi.getThumbnailUrl(media.id)
+  return `${mediaStore.getStreamUrl(media.id)}/thumbnail`
 }
 
 /**

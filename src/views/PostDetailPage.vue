@@ -594,7 +594,7 @@
             >
               <img
                 v-if="media.file_type === 'image'"
-                :src="mediaApi.getStreamUrl(media.id)"
+                :src="mediaStore.getStreamUrl(media.id)"
                 :alt="post.title || ''"
                 loading="lazy"
                 decoding="async"
@@ -608,7 +608,7 @@
               >
                 <img
                   v-if="media.thumbnail_path"
-                  :src="mediaApi.getStreamUrl(media.id) + '/thumbnail'"
+                  :src="mediaStore.getStreamUrl(media.id) + '/thumbnail'"
                   :alt="post.title || ''"
                   loading="lazy"
                   decoding="async"
@@ -709,12 +709,16 @@ import PostCardActions from '@/components/business/PostCard/PostCardActions.vue'
 import PhotoSwipeViewer from '@/components/ui/PhotoSwipeViewer.vue'
 import { useResponsive } from '@/composables'
 
-import { usePostsStore, useAuthStore, useToastStore } from '@/stores'
-import { api } from '@/api/client'
-import { favoritesApi, mediaApi } from '@/api/services'
+import {
+  usePostsStore,
+  useAuthStore,
+  useToastStore,
+  useFavoritesStore,
+  useMediaStore,
+} from '@/stores'
 import { indexedDB } from '@/utils/storage'
 import { offlineQueue } from '@/utils/storage'
-import type { PostDetail, Post, UUID, PostListParams, PaginatedResponse } from '@/types'
+import type { PostDetail, Post, UUID, PostListParams } from '@/types'
 import { PLATFORM_NAMES, PLATFORM_COLORS } from '@/types'
 
 const route = useRoute()
@@ -724,6 +728,8 @@ const { handleError } = useErrorHandler('PostDetailPage')
 const toastStore = useToastStore()
 const postsStore = usePostsStore()
 const authStore = useAuthStore()
+const favoritesStore = useFavoritesStore()
+const mediaStore = useMediaStore()
 
 const post = ref<PostDetail | null>(null)
 const loading = ref(true)
@@ -853,7 +859,12 @@ function parseDescriptionText(text: string, tags: string[] = []): DescriptionSeg
       const url = token
       const label = getShortLinkLabel(url)
       const platform = getPlatformFromUrl(url)
-      segments.push({ type: 'link', text: label, href: url, platform })
+      segments.push({
+        type: 'link',
+        text: label,
+        href: url,
+        ...(platform ? { platform } : {}),
+      })
     }
 
     lastIndex = index + token.length
@@ -1084,7 +1095,7 @@ const allMediaItems = computed(() => {
 
   // 检查第一个media_file是否与thumbnail重复
   const firstMediaUrl = post.value.media_files?.[0]
-    ? mediaApi.getStreamUrl(post.value.media_files[0].id)
+    ? mediaStore.getStreamUrl(post.value.media_files[0].id)
     : null
   const isThumbnailDuplicate =
     thumbnailUrl &&
@@ -1105,7 +1116,7 @@ const allMediaItems = computed(() => {
   if (post.value.media_files && post.value.media_files.length > 0) {
     post.value.media_files.forEach((media) => {
       if (media.file_type === 'image' || media.file_type === 'video') {
-        const mediaUrl = mediaApi.getStreamUrl(media.id)
+        const mediaUrl = mediaStore.getStreamUrl(media.id)
 
         const item: {
           url: string
@@ -1118,9 +1129,14 @@ const allMediaItems = computed(() => {
         } = {
           url: mediaUrl,
           type: media.file_type as 'image' | 'video',
-          width: media.width || undefined,
-          height: media.height || undefined,
           mediaId: media.id,
+        }
+
+        if (typeof media.width === 'number' && media.width > 0) {
+          item.width = media.width
+        }
+        if (typeof media.height === 'number' && media.height > 0) {
+          item.height = media.height
         }
 
         // 如果是视频且有字幕，添加字幕信息
@@ -1129,10 +1145,10 @@ const allMediaItems = computed(() => {
           if (media.subtitles && Array.isArray(media.subtitles) && media.subtitles.length > 0) {
             item.subtitles = media.subtitles
             // 向后兼容：保留subtitle字段（默认语言）
-            item.subtitle = mediaApi.getSubtitleUrl(media.id)
+            item.subtitle = mediaStore.getSubtitleUrl(media.id)
           } else if (media.has_subtitle) {
             // 回退到旧的单字幕模式
-            item.subtitle = mediaApi.getSubtitleUrl(media.id)
+            item.subtitle = mediaStore.getSubtitleUrl(media.id)
           }
         }
 
@@ -1168,7 +1184,7 @@ const yieldedStats = computed<StatEntry[]>(() => {
       icon,
       display: formatNumber(value),
       label: t(labelKey),
-      linkAttrs: baseLink ? { ...baseLink } : undefined,
+      ...(baseLink ? { linkAttrs: { ...baseLink } } : {}),
     })
   }
 
@@ -1259,18 +1275,18 @@ onMounted(async () => {
     // 增加浏览计数（如果该帖子未被浏览过）
     if (post.value && !hasViewedPost(postId)) {
       try {
-        await api.post(`/posts/${postId}/increment-view`)
+        await postsStore.incrementView(postId)
         markPostAsViewed(postId)
         logger.debug('Post view counted', { category: 'PostDetailPage', postId })
       } catch (error) {
-        logger.debug('Failed to increment view count', { category: 'PostDetailPage' }, error)
+        logger.warn('Failed to increment view count', { category: 'PostDetailPage', postId, error })
       }
     }
 
     // 检查是否已收藏
     if (authStore.isAuthenticated && post.value) {
       try {
-        const result = await favoritesApi.checkFavorite(post.value.id)
+        const result = await favoritesStore.checkFavorite(post.value.id)
         isFavorited.value = result.is_favorited
         favoriteId.value = result.favorite_id
       } catch {
@@ -1350,13 +1366,13 @@ const toggleFavorite = async () => {
 
     // 在线模式：直接调用API并保持本地状态同步
     if (isFavorited.value) {
-      await favoritesApi.deleteFavorite(postId)
+      await favoritesStore.deleteFavorite(postId)
       isFavorited.value = false
       favoriteId.value = null
       await updateLocalFavorite(false)
       toastStore.success(t('favorite.removeSuccess'))
     } else {
-      const favorite = await favoritesApi.addFavorite({ post_id: postId })
+      const favorite = await favoritesStore.addFavorite({ post_id: postId })
       isFavorited.value = true
       favoriteId.value = favorite.id
       await updateLocalFavorite(true)
@@ -1422,7 +1438,7 @@ const getMediaIndex = (mediaFileIndex: number): number => {
 
   const thumbnailUrl = resolveMediaUrl(post.value.thumbnail_url)
   const firstMediaUrl = post.value.media_files?.[0]
-    ? mediaApi.getStreamUrl(post.value.media_files[0].id)
+    ? mediaStore.getStreamUrl(post.value.media_files[0].id)
     : null
   const isThumbnailDuplicate =
     thumbnailUrl &&
@@ -1456,9 +1472,7 @@ const loadRelatedPosts = async () => {
     }
 
     // 直接调用API，不通过store避免污染全局状态
-    const response = await api.get<PaginatedResponse<Post>>('/posts', {
-      params: baseParams,
-    })
+    const response = await postsStore.getPostsRaw(baseParams)
 
     // 过滤掉当前帖子
     relatedPosts.value = (response?.items || [])

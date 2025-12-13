@@ -24,7 +24,6 @@ import { toLogContext } from '@/utils/typeGuards'
 import i18n from '@/i18n'
 import type {
   LoginRequest,
-  LoginResponse,
   User,
   Post,
   PostDetail,
@@ -79,7 +78,7 @@ export const authApi = {
    */
   async register(data: { username: string; email: string; password: string; full_name?: string }) {
     try {
-      return await api.post<LoginResponse>('/auth/register', data)
+      return await api.post<User>('/auth/register', data)
     } catch (error) {
       handleError(error, 'Auth.Register', {
         customMessage: 'Failed to register user',
@@ -104,7 +103,10 @@ export const authApi = {
    */
   async login(credentials: LoginRequest) {
     try {
-      return await api.post<LoginResponse>('/auth/login', credentials)
+      return await api.post<{ access_token: string; token_type: string }>(
+        '/auth/login',
+        credentials,
+      )
     } catch (error) {
       handleError(error, 'Auth.Login', {
         customMessage: 'Failed to login',
@@ -512,6 +514,125 @@ export const postsApi = {
       })
       throw error
     }
+  },
+
+  async incrementView(postId: UUID) {
+    try {
+      return await api.post(`/posts/${postId}/increment-view`)
+    } catch (error) {
+      handleError(error, 'Posts.IncrementView', {
+        customMessage: 'Failed to increment view',
+        silent: true,
+      })
+      throw error
+    }
+  },
+}
+
+export const preferencesApi = {
+  async updatePreferences(settings: Record<string, unknown>) {
+    try {
+      return await api.patch('/preferences', settings)
+    } catch (error) {
+      handleError(error, 'Preferences.Update', {
+        customMessage: 'Failed to update preferences',
+        silent: true,
+      })
+      throw error
+    }
+  },
+
+  async getPreferences() {
+    try {
+      return await api.get<Record<string, unknown> & { updatedAt?: string }>('/preferences', {
+        cache: false,
+      })
+    } catch (error) {
+      handleError(error, 'Preferences.Get', {
+        customMessage: 'Failed to load preferences',
+        silent: true,
+      })
+      throw error
+    }
+  },
+}
+
+export const usersApi = {
+  async getStats(userId: UUID) {
+    try {
+      return await api.get<{ favorites_count?: number; views_count?: number }>(
+        `/users/${userId}/stats`,
+        {
+          cache: false,
+        },
+      )
+    } catch (error) {
+      handleError(error, 'Users.GetStats', {
+        customMessage: 'Failed to load user stats',
+        silent: true,
+      })
+      throw error
+    }
+  },
+
+  async updateUser(userId: UUID, data: { full_name?: string; email?: string }) {
+    try {
+      return await api.patch(`/users/${userId}`, data)
+    } catch (error) {
+      handleError(error, 'Users.Update', {
+        customMessage: 'Failed to update user',
+      })
+      throw error
+    }
+  },
+
+  async resetPassword(userId: UUID, data: { current_password: string; new_password: string }) {
+    try {
+      return await api.post(`/users/${userId}/reset-password`, data)
+    } catch (error) {
+      handleError(error, 'Users.ResetPassword', {
+        customMessage: 'Failed to change password',
+      })
+      throw error
+    }
+  },
+
+  async deleteAccount(userId: UUID, password: string) {
+    try {
+      return await api.delete(`/users/${userId}`, {
+        json: { password },
+      })
+    } catch (error) {
+      handleError(error, 'Users.DeleteAccount', {
+        customMessage: 'Failed to delete account',
+      })
+      throw error
+    }
+  },
+}
+
+export const feedbackApi = {
+  async submitFeedback(formData: FormData, headers?: Record<string, string>) {
+    try {
+      return await api.post('feedback', formData, {
+        ...(headers ? { headers } : {}),
+      })
+    } catch (error) {
+      handleError(error, 'Feedback.Submit', {
+        customMessage: 'Failed to submit feedback',
+        silent: true,
+      })
+      throw error
+    }
+  },
+}
+
+export const cacheApi = {
+  async invalidateCacheByPatterns(patterns: string[]) {
+    return api.invalidateCacheByPatterns(patterns)
+  },
+  async clearCache(url?: string, params?: Record<string, unknown>) {
+    return api.clearCache(url, params)
   },
 }
 
@@ -1093,4 +1214,8 @@ export const services = {
   upload: uploadApi,
   /** 搜索 API */
   search: searchApi,
+  preferences: preferencesApi,
+  users: usersApi,
+  feedback: feedbackApi,
+  cache: cacheApi,
 }

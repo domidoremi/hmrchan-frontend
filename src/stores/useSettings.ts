@@ -10,7 +10,7 @@
  */
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { api } from '@/api/client'
+import { services } from '@/api/services'
 import { handleError } from '@/utils'
 import { logger } from '@/utils/logger'
 import { secureLocalStorage } from '@/utils/secureStorage'
@@ -167,7 +167,9 @@ export const useSettingsStore = defineStore('settings', () => {
       const { enableSwipeNavigation, ...serverSettings } = settings.value
       void enableSwipeNavigation
 
-      await api.patch('/preferences', serverSettings)
+      await services.preferences.updatePreferences(
+        serverSettings as unknown as Record<string, unknown>,
+      )
       lastSyncedAt.value = new Date()
 
       logger.info('Settings synced to server successfully', logContext)
@@ -210,9 +212,9 @@ export const useSettingsStore = defineStore('settings', () => {
       syncing.value = true
       error.value = null
 
-      const data = await api.get<Partial<UserSettings> & { updatedAt?: string }>('/preferences', {
-        cache: false,
-      })
+      const data = (await services.preferences.getPreferences()) as Partial<UserSettings> & {
+        updatedAt?: string
+      }
 
       if (data) {
         settings.value = { ...DEFAULT_SETTINGS, ...data }
