@@ -11,7 +11,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { User, LoginRequest } from '@/types'
-import { api } from '@/api/client'
+import { services } from '@/api/services'
 import { handleError } from '@/utils'
 import { logger } from '@/utils/logger'
 import { secureLocalStorage, sanitizeForLog } from '@/utils/secureStorage'
@@ -79,7 +79,7 @@ export const useAuthStore = defineStore(
       error.value = null
 
       try {
-        const response = await api.post<User>('/auth/register', data)
+        const response = await services.auth.register(data)
         user.value = response
 
         await secureLocalStorage.set('user', response, { silent: true })
@@ -128,10 +128,7 @@ export const useAuthStore = defineStore(
       error.value = null
 
       try {
-        const response = await api.post<{
-          access_token: string
-          token_type: string
-        }>('/auth/login', credentials)
+        const response = await services.auth.login(credentials)
 
         token.value = response.access_token
         await secureLocalStorage.set('access_token', response.access_token, {
@@ -211,7 +208,7 @@ export const useAuthStore = defineStore(
       fetchUserInProgress.value = true
 
       try {
-        const response = await api.get<User>('/auth/me')
+        const response = await services.auth.getCurrentUser()
         user.value = response
 
         try {

@@ -432,9 +432,9 @@ export class CacheManager {
   private async getFromPersistence<T = unknown>(key: string): Promise<T | null> {
     try {
       // 使用 IndexedDB 的通用存储
-      const db = await indexedDB['ensureDB']()
-      const transaction = db.transaction(['posts'], 'readonly')
-      const store = transaction.objectStore('posts')
+      const db = await indexedDB.getDB()
+      const transaction = db.transaction(['cache_entries'], 'readonly')
+      const store = transaction.objectStore('cache_entries')
 
       return new Promise((resolve) => {
         const request = store.get(key)
@@ -485,12 +485,12 @@ export class CacheManager {
       }
 
       // 使用 IndexedDB 的通用存储
-      const db = await indexedDB['ensureDB']()
-      const transaction = db.transaction(['posts'], 'readwrite')
-      const store = transaction.objectStore('posts')
+      const db = await indexedDB.getDB()
+      const transaction = db.transaction(['cache_entries'], 'readwrite')
+      const store = transaction.objectStore('cache_entries')
 
       return new Promise((resolve, reject) => {
-        const request = store.put({ id: key, ...entry })
+        const request = store.put(entry)
 
         request.onsuccess = () => resolve()
         request.onerror = () => {
@@ -510,9 +510,9 @@ export class CacheManager {
    */
   private async deleteFromPersistence(key: string): Promise<void> {
     try {
-      const db = await indexedDB['ensureDB']()
-      const transaction = db.transaction(['posts'], 'readwrite')
-      const store = transaction.objectStore('posts')
+      const db = await indexedDB.getDB()
+      const transaction = db.transaction(['cache_entries'], 'readwrite')
+      const store = transaction.objectStore('cache_entries')
 
       return new Promise((resolve) => {
         const request = store.delete(key)
@@ -534,7 +534,14 @@ export class CacheManager {
    */
   private async clearPersistence(): Promise<void> {
     try {
-      await indexedDB.clearAll()
+      const db = await indexedDB.getDB()
+      const transaction = db.transaction(['cache_entries'], 'readwrite')
+      const store = transaction.objectStore('cache_entries')
+      await new Promise<void>((resolve) => {
+        const request = store.clear()
+        request.onsuccess = () => resolve()
+        request.onerror = () => resolve()
+      })
     } catch (error) {
       logger.error('[CacheManager] Persistence clear failed', toLogContext(error))
     }

@@ -10,13 +10,13 @@
  * - 封装常用 HTTP 方法（GET、POST、PUT、PATCH、DELETE）
  */
 import ky, { type KyInstance, type Options as KyOptions } from 'ky'
-import { useAuthStore } from '@/stores'
 import { logger } from '@/utils/logger'
 import { requestCache } from '@/utils/cache'
 import { offlineQueue } from '@/utils/storage'
 import { cacheManager } from '@/utils/cache/CacheManager'
 import { getRuntimeApiEndpoint } from '@/config/runtime'
 import { getRouter } from '@/router/navigator'
+import { handleUnauthorized, readAuthToken } from './authContext'
 
 /** 设置 API 客户端日志上下文 */
 logger.setContext({ category: 'API' })
@@ -71,9 +71,9 @@ const apiClient: KyInstance = ky.create({
          *
          * 说明：BASE_URL 已通过 runtime 配置强制为 HTTPS，这里不再重复处理协议
          */
-        const authStore = useAuthStore()
-        if (authStore.token) {
-          request.headers.set('Authorization', `Bearer ${authStore.token}`)
+        const token = readAuthToken()
+        if (token) {
+          request.headers.set('Authorization', `Bearer ${token}`)
         }
 
         // 移除 URL 路径中的尾部斜杠（保留根路径）
@@ -122,9 +122,7 @@ const apiClient: KyInstance = ky.create({
 
           if (status === 401) {
             logger.warn('Unauthorized - redirecting to login')
-            const authStore = useAuthStore()
-            // 异步清理本地认证状态（无需阻塞当前错误处理流程）
-            void authStore.logout()
+            await handleUnauthorized()
 
             if (typeof window !== 'undefined') {
               const currentUrl =
@@ -408,9 +406,11 @@ export const api = {
     const { invalidatePatterns, verificationToken, ...kyConfig } = config || {}
     const headers = buildHeadersWithVerification(verificationToken, kyConfig.headers)
 
+    const isFormData = typeof FormData !== 'undefined' && data instanceof FormData
+
     const response = await apiClient
       .post(normalizeUrl(url), {
-        json: data,
+        ...(isFormData ? { body: data } : { json: data }),
         ...kyConfig,
         ...(headers ? { headers } : {}),
       })
@@ -444,9 +444,11 @@ export const api = {
     const { invalidatePatterns, verificationToken, ...kyConfig } = config || {}
     const headers = buildHeadersWithVerification(verificationToken, kyConfig.headers)
 
+    const isFormData = typeof FormData !== 'undefined' && data instanceof FormData
+
     const response = await apiClient
       .put(normalizeUrl(url), {
-        json: data,
+        ...(isFormData ? { body: data } : { json: data }),
         ...kyConfig,
         ...(headers ? { headers } : {}),
       })
@@ -480,9 +482,11 @@ export const api = {
     const { invalidatePatterns, verificationToken, ...kyConfig } = config || {}
     const headers = buildHeadersWithVerification(verificationToken, kyConfig.headers)
 
+    const isFormData = typeof FormData !== 'undefined' && data instanceof FormData
+
     const response = await apiClient
       .patch(normalizeUrl(url), {
-        json: data,
+        ...(isFormData ? { body: data } : { json: data }),
         ...kyConfig,
         ...(headers ? { headers } : {}),
       })
