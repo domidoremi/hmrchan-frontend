@@ -3,10 +3,10 @@
  * Unified Error Handling System
  */
 
-import { useI18n } from 'vue-i18n'
 import { useToastStore } from '@/stores'
 import { logger } from '@/utils/logger'
 import { errorMonitor } from './errorMonitor'
+import i18n from '@/i18n'
 
 export interface ErrorResponse {
   message: string
@@ -35,7 +35,13 @@ interface HttpError extends Error {
  * 解析HTTP错误（兼容axios和ky）
  */
 export function parseHttpError(error: HttpError): ErrorResponse {
-  const { t } = useI18n()
+  const t = (key: string, fallback: string): string => {
+    try {
+      return i18n.global.te(key) ? (i18n.global.t(key) as string) : fallback
+    } catch {
+      return fallback
+    }
+  }
 
   // 兼容 axios 风格（response.data）和 ky 风格（在 beforeError 中附加的 responseData）
   const rawResponse = (error as unknown as { response?: { status?: number; data?: unknown } })
@@ -55,15 +61,17 @@ export function parseHttpError(error: HttpError): ErrorResponse {
     (error as unknown as { responseData?: unknown }).responseData ??
     {}) as Record<string, unknown>
 
-  const errorCode = typeof data?.error_code === 'string' ? (data.error_code as string) : undefined
-  const details = Object.prototype.hasOwnProperty.call(data, 'details') ? data.details : undefined
-  const errorMessage = typeof data?.message === 'string' ? (data.message as string) : undefined
+  const errorCode =
+    typeof data?.['error_code'] === 'string' ? (data['error_code'] as string) : undefined
+  const details = Object.prototype.hasOwnProperty.call(data, 'details')
+    ? data['details']
+    : undefined
 
   // 根据 HTTP 状态码和后端统一错误格式返回错误
   switch (status) {
     case 400:
       return {
-        message: errorMessage || t('errors.badRequest', 'Invalid request'),
+        message: t('errors.badRequest', 'Invalid request'),
         code: errorCode || 'BAD_REQUEST',
         status,
         details,
@@ -71,7 +79,7 @@ export function parseHttpError(error: HttpError): ErrorResponse {
 
     case 401:
       return {
-        message: errorMessage || t('errors.unauthorized', 'Please login first'),
+        message: t('errors.unauthorized', 'Please login first'),
         code: errorCode || 'UNAUTHORIZED',
         status,
         details,
@@ -79,7 +87,7 @@ export function parseHttpError(error: HttpError): ErrorResponse {
 
     case 403:
       return {
-        message: errorMessage || t('errors.permissionDenied', 'Permission denied'),
+        message: t('errors.permissionDenied', 'Permission denied'),
         code: errorCode || 'FORBIDDEN',
         status,
         details,
@@ -87,7 +95,7 @@ export function parseHttpError(error: HttpError): ErrorResponse {
 
     case 404:
       return {
-        message: errorMessage || t('errors.notFound', 'Resource not found'),
+        message: t('errors.notFound', 'Resource not found'),
         code: errorCode || 'NOT_FOUND',
         status,
         details,
@@ -95,8 +103,7 @@ export function parseHttpError(error: HttpError): ErrorResponse {
 
     case 429:
       return {
-        message:
-          errorMessage || t('errors.tooManyRequests', 'Too many requests, please try again later'),
+        message: t('errors.tooManyRequests', 'Too many requests, please try again later'),
         code: errorCode || 'TOO_MANY_REQUESTS',
         status,
         details,
@@ -107,7 +114,7 @@ export function parseHttpError(error: HttpError): ErrorResponse {
     case 503:
     case 504:
       return {
-        message: errorMessage || t('errors.serverError', 'Server error, please try again later'),
+        message: t('errors.serverError', 'Server error, please try again later'),
         code: errorCode || 'SERVER_ERROR',
         status,
         details,
@@ -115,7 +122,7 @@ export function parseHttpError(error: HttpError): ErrorResponse {
 
     default:
       return {
-        message: errorMessage || t('errors.unknownError', 'Unknown error'),
+        message: t('errors.unknownError', 'Unknown error'),
         code: errorCode || 'UNKNOWN_ERROR',
         status,
         details,
@@ -140,12 +147,32 @@ export function handleError(
     errorResponse = parseHttpError(error as HttpError)
   } else if (error instanceof Error) {
     errorResponse = {
-      message: customMessage || error.message,
+      message:
+        customMessage ||
+        (() => {
+          try {
+            return i18n.global.te('errors.unknownError')
+              ? (i18n.global.t('errors.unknownError') as string)
+              : 'Unknown error'
+          } catch {
+            return 'Unknown error'
+          }
+        })(),
       code: 'JS_ERROR',
     }
   } else {
     errorResponse = {
-      message: customMessage || String(error),
+      message:
+        customMessage ||
+        (() => {
+          try {
+            return i18n.global.te('errors.unknownError')
+              ? (i18n.global.t('errors.unknownError') as string)
+              : 'Unknown error'
+          } catch {
+            return 'Unknown error'
+          }
+        })(),
       code: 'UNKNOWN',
     }
   }
@@ -160,10 +187,12 @@ export function handleError(
   }
 
   // 错误监控
+  const stack = error instanceof Error ? error.stack : undefined
+
   errorMonitor.logError(context, errorResponse.message, {
     ...(errorResponse.code !== undefined && { code: errorResponse.code }),
     ...(errorResponse.status !== undefined && { status: errorResponse.status }),
-    stack: error instanceof Error ? error.stack : undefined,
+    ...(stack !== undefined && { stack }),
     ...(errorResponse.details !== undefined && { details: errorResponse.details }),
   })
 
@@ -171,7 +200,7 @@ export function handleError(
   if (!silent) {
     try {
       const toastStore = useToastStore()
-      toastStore.error(errorResponse.message, context)
+      toastStore.error(errorResponse.message)
     } catch (e) {
       // Toast store可能未初始化，降级为logger
       logger.warn('[ErrorHandler] Failed to show toast', {

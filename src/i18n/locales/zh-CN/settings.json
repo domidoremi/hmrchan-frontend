@@ -118,8 +118,18 @@
     "authGuest": "未登录或游客",
     "authForceGuest": "以访客身份提交",
     "emailLabel": "联系邮箱（可选）",
+    "emailPlaceholder": "your@email",
     "messageLabel": "反馈内容",
     "attachmentsLabel": "附件（可选）",
-    "attachmentsHint": "最多 1 个图片文件，不超过 5MB，仅支持 PNG / JPEG / WEBP / GIF。"
+    "attachmentsHint": "最多 1 个图片文件，不超过 5MB，仅支持 PNG / JPEG / WEBP / GIF。",
+    "fileTooLarge": "附件过大（最大 {max}）",
+    "invalidFileType": "不支持的文件类型",
+    "messageRequired": "请填写反馈内容",
+    "messageTooLong": "反馈内容过长（最多 {max} 字）",
+    "submitSuccess": "反馈已提交，感谢你的反馈！",
+    "submitInvalid": "提交内容不符合要求，请检查后重试",
+    "submitTooMany": "提交过于频繁，请稍后再试",
+    "submitServerError": "服务器暂时不可用，请稍后再试",
+    "submitFailed": "提交失败，请稍后重试"
   }
 }
