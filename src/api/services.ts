@@ -24,6 +24,7 @@ import { toLogContext } from '@/utils/typeGuards'
 import i18n from '@/i18n'
 import type {
   LoginRequest,
+  LoginResponse,
   User,
   Post,
   PostDetail,
@@ -81,7 +82,7 @@ export const authApi = {
       return await api.post<User>('/auth/register', data)
     } catch (error) {
       handleError(error, 'Auth.Register', {
-        customMessage: 'Failed to register user',
+        customMessage: t('api.register'),
       })
       throw error
     }
@@ -103,13 +104,10 @@ export const authApi = {
    */
   async login(credentials: LoginRequest) {
     try {
-      return await api.post<{ access_token: string; token_type: string }>(
-        '/auth/login',
-        credentials,
-      )
+      return await api.post<LoginResponse>('/auth/login', credentials)
     } catch (error) {
       handleError(error, 'Auth.Login', {
-        customMessage: 'Failed to login',
+        customMessage: t('api.login'),
       })
       throw error
     }
@@ -127,9 +125,6 @@ export const authApi = {
     try {
       return await api.get<User>('/auth/me')
     } catch (error) {
-      handleError(error, 'Auth.GetCurrentUser', {
-        customMessage: t('api.fetchCurrentUser'),
-      })
       throw error
     }
   },
@@ -142,13 +137,28 @@ export const authApi = {
    * @example
    * authApi.logout()
    */
-  logout() {
+  async logout() {
     try {
-      localStorage.removeItem('access_token')
-      localStorage.removeItem('user')
-      logger.info('[Auth] User logged out successfully', {})
+      await api.post<void>('/auth/logout', {
+        all_devices: false,
+      })
     } catch (error) {
       logger.error('[Auth] Error during logout', toLogContext(error))
+    }
+  },
+
+  /**
+   * 刷新访问令牌
+   *
+   * 使用 HttpOnly cookie 中的 refresh_token 获取新的 access_token
+   *
+   * @returns 登录响应（包含新的 access_token）
+   */
+  async refresh(): Promise<LoginResponse | null> {
+    try {
+      return await api.post<LoginResponse>('/auth/refresh')
+    } catch {
+      return null
     }
   },
 
@@ -229,7 +239,7 @@ export const searchApi = {
       })
     } catch (error) {
       handleError(error, 'Search.SearchPosts', {
-        customMessage: `Failed to search posts with query: ${query}`,
+        customMessage: t('api.searchPosts'),
       })
       throw error
     }
@@ -266,7 +276,7 @@ export const searchApi = {
       })
     } catch (error) {
       handleError(error, 'Search.SearchAuthors', {
-        customMessage: `Failed to search authors with query: ${query}`,
+        customMessage: t('api.searchAuthors'),
       })
       throw error
     }
@@ -457,7 +467,7 @@ export const postsApi = {
       })
     } catch (error) {
       handleError(error, 'Posts.SearchPosts', {
-        customMessage: `Failed to search posts with query: ${query}`,
+        customMessage: t('api.searchPosts'),
       })
       throw error
     }
@@ -521,7 +531,7 @@ export const postsApi = {
       return await api.post(`/posts/${postId}/increment-view`)
     } catch (error) {
       handleError(error, 'Posts.IncrementView', {
-        customMessage: 'Failed to increment view',
+        customMessage: t('api.incrementView'),
         silent: true,
       })
       throw error
@@ -535,7 +545,7 @@ export const preferencesApi = {
       return await api.patch('/preferences', settings)
     } catch (error) {
       handleError(error, 'Preferences.Update', {
-        customMessage: 'Failed to update preferences',
+        customMessage: t('api.updatePreferences'),
         silent: true,
       })
       throw error
@@ -549,7 +559,7 @@ export const preferencesApi = {
       })
     } catch (error) {
       handleError(error, 'Preferences.Get', {
-        customMessage: 'Failed to load preferences',
+        customMessage: t('api.fetchPreferences'),
         silent: true,
       })
       throw error
@@ -568,7 +578,7 @@ export const usersApi = {
       )
     } catch (error) {
       handleError(error, 'Users.GetStats', {
-        customMessage: 'Failed to load user stats',
+        customMessage: t('api.fetchUserStats'),
         silent: true,
       })
       throw error
@@ -580,7 +590,7 @@ export const usersApi = {
       return await api.patch(`/users/${userId}`, data)
     } catch (error) {
       handleError(error, 'Users.Update', {
-        customMessage: 'Failed to update user',
+        customMessage: t('api.updateUser'),
       })
       throw error
     }
@@ -591,7 +601,7 @@ export const usersApi = {
       return await api.post(`/users/${userId}/reset-password`, data)
     } catch (error) {
       handleError(error, 'Users.ResetPassword', {
-        customMessage: 'Failed to change password',
+        customMessage: t('api.resetPassword'),
       })
       throw error
     }
@@ -604,7 +614,7 @@ export const usersApi = {
       })
     } catch (error) {
       handleError(error, 'Users.DeleteAccount', {
-        customMessage: 'Failed to delete account',
+        customMessage: t('api.deleteAccount'),
       })
       throw error
     }
@@ -619,7 +629,7 @@ export const feedbackApi = {
       })
     } catch (error) {
       handleError(error, 'Feedback.Submit', {
-        customMessage: 'Failed to submit feedback',
+        customMessage: t('api.submitFeedback'),
         silent: true,
       })
       throw error
@@ -759,7 +769,7 @@ export const mediaApi = {
       logger.info('[Media] Downloaded media successfully', { mediaId })
     } catch (error) {
       handleError(error, 'Media.DownloadMedia', {
-        customMessage: `Failed to download media: ${mediaId}`,
+        customMessage: t('api.downloadMedia'),
       })
       throw error
     }
@@ -922,7 +932,7 @@ export const favoritesApi = {
       return result
     } catch (error) {
       handleError(error, 'Favorites.AddFavorite', {
-        customMessage: 'Failed to add favorite',
+        customMessage: t('api.addFavorite'),
       })
       throw error
     }
@@ -954,7 +964,7 @@ export const favoritesApi = {
       return result
     } catch (error) {
       handleError(error, 'Favorites.UpdateFavorite', {
-        customMessage: `Failed to update favorite: ${favoriteId}`,
+        customMessage: t('api.updateFavorite'),
       })
       throw error
     }
@@ -982,7 +992,7 @@ export const favoritesApi = {
       return result
     } catch (error) {
       handleError(error, 'Favorites.DeleteFavorite', {
-        customMessage: `Failed to delete favorite: ${postId}`,
+        customMessage: t('api.deleteFavorite'),
       })
       throw error
     }
@@ -1032,7 +1042,7 @@ export const favoritesApi = {
       )
     } catch (error) {
       handleError(error, 'Favorites.CheckFavorite', {
-        customMessage: `Failed to check favorite status: ${postId}`,
+        customMessage: t('api.checkFavorite'),
         silent: true,
       })
       throw error
@@ -1155,7 +1165,7 @@ export const uploadApi = {
       return result
     } catch (error) {
       handleError(error, 'Upload.UploadAvatar', {
-        customMessage: 'Failed to upload avatar',
+        customMessage: t('api.uploadAvatar'),
       })
       throw error
     }
@@ -1183,7 +1193,7 @@ export const uploadApi = {
       return result
     } catch (error) {
       handleError(error, 'Upload.UploadUserAvatar', {
-        customMessage: `Failed to upload avatar for user: ${userId}`,
+        customMessage: t('api.uploadUserAvatar'),
       })
       throw error
     }

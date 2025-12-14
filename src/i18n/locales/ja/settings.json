@@ -118,8 +118,18 @@
     "authGuest": "未ログイン / ゲスト",
     "authForceGuest": "ゲストとして送信する",
     "emailLabel": "連絡用メールアドレス（任意）",
+    "emailPlaceholder": "your@email",
     "messageLabel": "フィードバック内容",
     "attachmentsLabel": "添付ファイル（任意）",
-    "attachmentsHint": "画像ファイルを1つまで（最大5MB、PNG / JPEG / WEBP / GIF のみ）。"
+    "attachmentsHint": "画像ファイルを1つまで（最大5MB、PNG / JPEG / WEBP / GIF のみ）。",
+    "fileTooLarge": "添付ファイルが大きすぎます（最大 {max}）",
+    "invalidFileType": "対応していないファイル形式です",
+    "messageRequired": "フィードバック内容を入力してください",
+    "messageTooLong": "メッセージが長すぎます（最大 {max} 文字）",
+    "submitSuccess": "送信しました。フィードバックありがとうございます！",
+    "submitInvalid": "送信内容に問題があります。確認してから再度お試しください。",
+    "submitTooMany": "送信が多すぎます。しばらくしてから再度お試しください。",
+    "submitServerError": "サーバーが一時的に利用できません。しばらくしてから再度お試しください。",
+    "submitFailed": "送信に失敗しました。しばらくしてから再度お試しください。"
   }
 }

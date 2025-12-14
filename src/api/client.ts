@@ -31,6 +31,33 @@ logger.setContext({ category: 'API' })
  */
 const BASE_URL = getRuntimeApiEndpoint()
 
+const AUTH_REFRESH_ENDPOINT = import.meta.env['VITE_AUTH_REFRESH_ENDPOINT'] || '/auth/refresh'
+const AUTH_REFRESH_PATHNAME = AUTH_REFRESH_ENDPOINT.startsWith('/')
+  ? AUTH_REFRESH_ENDPOINT
+  : `/${AUTH_REFRESH_ENDPOINT}`
+let refreshInFlight: Promise<boolean> | null = null
+
+async function refreshAuthSession(): Promise<boolean> {
+  if (refreshInFlight) return refreshInFlight
+
+  refreshInFlight = (async () => {
+    try {
+      const response = await apiClient.post(normalizeUrl(AUTH_REFRESH_ENDPOINT), {
+        throwHttpErrors: false,
+        timeout: 15000,
+      })
+
+      return response.ok
+    } catch {
+      return false
+    } finally {
+      refreshInFlight = null
+    }
+  })()
+
+  return refreshInFlight
+}
+
 /** 输出当前 API 配置信息（用于诊断） */
 logger.info('🌐 API Configuration', {
   baseURL: BASE_URL,
@@ -56,7 +83,7 @@ logger.info('🌐 API Configuration', {
 const apiClient: KyInstance = ky.create({
   prefixUrl: BASE_URL,
   timeout: 60000,
-  credentials: 'omit',
+  credentials: 'include',
   retry: {
     limit: 2,
     methods: ['get'],
@@ -66,11 +93,7 @@ const apiClient: KyInstance = ky.create({
   hooks: {
     beforeRequest: [
       (request) => {
-        /**
-         * 添加认证 Token 到请求头
-         *
-         * 说明：BASE_URL 已通过 runtime 配置强制为 HTTPS，这里不再重复处理协议
-         */
+        // 注入 Authorization 头
         const token = readAuthToken()
         if (token) {
           request.headers.set('Authorization', `Bearer ${token}`)
@@ -88,8 +111,30 @@ const apiClient: KyInstance = ky.create({
       },
     ],
     afterResponse: [
-      (request, _options, response) => {
-        /** 记录响应日志 */
+      async (request, options, response) => {
+        if (response.status === 401) {
+          try {
+            const { pathname } = new URL(request.url)
+            const context = (options as unknown as { context?: Record<string, unknown> }).context
+            const isRetry = Boolean(context && context['authRetry'])
+            const isLogin = pathname.endsWith('/auth/login')
+            const isRegister = pathname.endsWith('/auth/register')
+            const isRefresh = pathname.endsWith(AUTH_REFRESH_PATHNAME)
+
+            if (!isRetry && !isLogin && !isRegister && !isRefresh) {
+              const refreshed = await refreshAuthSession()
+              if (refreshed) {
+                const retryRequest = request.clone()
+                return await apiClient(retryRequest, {
+                  context: { ...(context || {}), authRetry: true },
+                })
+              }
+            }
+          } catch {
+            // ignore
+          }
+        }
+
         logger.debug(`Response: ${request.method} ${request.url}`, {
           status: response.status,
           statusText: response.statusText,
@@ -121,21 +166,35 @@ const apiClient: KyInstance = ky.create({
           })
 
           if (status === 401) {
-            logger.warn('Unauthorized - redirecting to login')
-            await handleUnauthorized()
+            const pathname = (() => {
+              try {
+                return new URL(request.url).pathname
+              } catch {
+                return ''
+              }
+            })()
 
-            if (typeof window !== 'undefined') {
-              const currentUrl =
-                window.location.pathname + window.location.search + window.location.hash
-              const router = getRouter()
+            const isLogin = pathname.endsWith('/auth/login')
+            const isRegister = pathname.endsWith('/auth/register')
+            const isRefresh = pathname.endsWith(AUTH_REFRESH_PATHNAME)
+            const isMe = pathname.endsWith('/auth/me')
 
-              if (router) {
-                router.push({ name: 'login', query: { redirect: currentUrl } }).catch(() => {
-                  /* ignore navigation errors */
-                })
-              } else {
-                // 兜底：在 Router 尚未就绪时，退回到直接跳转
-                window.location.href = `/login?redirect=${encodeURIComponent(currentUrl)}`
+            if (!isLogin && !isRegister && !isRefresh && !isMe) {
+              logger.warn('Unauthorized - redirecting to login')
+              await handleUnauthorized()
+
+              if (typeof window !== 'undefined') {
+                const currentUrl =
+                  window.location.pathname + window.location.search + window.location.hash
+                const router = getRouter()
+
+                if (router) {
+                  router.push({ name: 'login', query: { redirect: currentUrl } }).catch(() => {
+                    /* ignore navigation errors */
+                  })
+                } else {
+                  window.location.href = `/login?redirect=${encodeURIComponent(currentUrl)}`
+                }
               }
             }
           }
@@ -286,6 +345,27 @@ function buildHeadersWithVerification(
   }
 }
 
+async function parseResponseBody<T>(response: Response): Promise<T> {
+  if (response.status === 204) return undefined as unknown as T
+
+  const contentLength = response.headers.get('content-length')
+  if (contentLength === '0') return undefined as unknown as T
+
+  const text = await response.text()
+  if (!text) return undefined as unknown as T
+
+  const contentType = response.headers.get('content-type') || ''
+  if (contentType.includes('application/json') || contentType.includes('+json')) {
+    return JSON.parse(text) as T
+  }
+
+  try {
+    return JSON.parse(text) as T
+  } catch {
+    return text as unknown as T
+  }
+}
+
 /**
  * API 请求封装对象
  *
@@ -408,19 +488,21 @@ export const api = {
 
     const isFormData = typeof FormData !== 'undefined' && data instanceof FormData
 
-    const response = await apiClient
-      .post(normalizeUrl(url), {
-        ...(isFormData ? { body: data } : { json: data }),
-        ...kyConfig,
-        ...(headers ? { headers } : {}),
-      })
-      .json<T>()
+    const bodyConfig = data === undefined ? {} : isFormData ? { body: data } : { json: data }
+
+    const response = await apiClient.post(normalizeUrl(url), {
+      ...bodyConfig,
+      ...kyConfig,
+      ...(headers ? { headers } : {}),
+    })
+
+    const parsed = await parseResponseBody<T>(response)
 
     if (invalidatePatterns && invalidatePatterns.length > 0) {
       await this.invalidateCacheByPatterns(invalidatePatterns)
     }
 
-    return response
+    return parsed
   },
 
   /**
@@ -446,19 +528,21 @@ export const api = {
 
     const isFormData = typeof FormData !== 'undefined' && data instanceof FormData
 
-    const response = await apiClient
-      .put(normalizeUrl(url), {
-        ...(isFormData ? { body: data } : { json: data }),
-        ...kyConfig,
-        ...(headers ? { headers } : {}),
-      })
-      .json<T>()
+    const bodyConfig = data === undefined ? {} : isFormData ? { body: data } : { json: data }
+
+    const response = await apiClient.put(normalizeUrl(url), {
+      ...bodyConfig,
+      ...kyConfig,
+      ...(headers ? { headers } : {}),
+    })
+
+    const parsed = await parseResponseBody<T>(response)
 
     if (invalidatePatterns && invalidatePatterns.length > 0) {
       await this.invalidateCacheByPatterns(invalidatePatterns)
     }
 
-    return response
+    return parsed
   },
 
   /**
@@ -484,19 +568,21 @@ export const api = {
 
     const isFormData = typeof FormData !== 'undefined' && data instanceof FormData
 
-    const response = await apiClient
-      .patch(normalizeUrl(url), {
-        ...(isFormData ? { body: data } : { json: data }),
-        ...kyConfig,
-        ...(headers ? { headers } : {}),
-      })
-      .json<T>()
+    const bodyConfig = data === undefined ? {} : isFormData ? { body: data } : { json: data }
+
+    const response = await apiClient.patch(normalizeUrl(url), {
+      ...bodyConfig,
+      ...kyConfig,
+      ...(headers ? { headers } : {}),
+    })
+
+    const parsed = await parseResponseBody<T>(response)
 
     if (invalidatePatterns && invalidatePatterns.length > 0) {
       await this.invalidateCacheByPatterns(invalidatePatterns)
     }
 
-    return response
+    return parsed
   },
 
   /**
@@ -515,18 +601,18 @@ export const api = {
     const { invalidatePatterns, verificationToken, ...kyConfig } = config || {}
     const headers = buildHeadersWithVerification(verificationToken, kyConfig.headers)
 
-    const response = await apiClient
-      .delete(normalizeUrl(url), {
-        ...kyConfig,
-        ...(headers ? { headers } : {}),
-      })
-      .json<T>()
+    const response = await apiClient.delete(normalizeUrl(url), {
+      ...kyConfig,
+      ...(headers ? { headers } : {}),
+    })
+
+    const parsed = await parseResponseBody<T>(response)
 
     if (invalidatePatterns && invalidatePatterns.length > 0) {
       await this.invalidateCacheByPatterns(invalidatePatterns)
     }
 
-    return response
+    return parsed
   },
 
   /**

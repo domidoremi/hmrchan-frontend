@@ -12,15 +12,15 @@
           <div class="brand-features">
             <div class="feature-item">
               <div class="feature-icon">✨</div>
-              <div class="feature-text">跨平台内容聚合</div>
+              <div class="feature-text">{{ $t('auth.features.crossPlatform') }}</div>
             </div>
             <div class="feature-item">
               <div class="feature-icon">🎯</div>
-              <div class="feature-text">智能推荐系统</div>
+              <div class="feature-text">{{ $t('auth.features.smartRecommendation') }}</div>
             </div>
             <div class="feature-item">
               <div class="feature-icon">🔒</div>
-              <div class="feature-text">安全可靠</div>
+              <div class="feature-text">{{ $t('auth.features.secureReliable') }}</div>
             </div>
           </div>
         </div>
@@ -165,13 +165,13 @@ const handleLogin = async () => {
 
   try {
     await authStore.login(formData.value)
-    success.value = t('auth.loginSuccess', 'Login successful! Redirecting...')
-    toastStore.success(t('auth.loginSuccess', 'Login successful! Redirecting...'))
+    success.value = t('auth.loginSuccess')
+    toastStore.success(t('auth.loginSuccess'))
 
     // 等待一小段时间让用户看到成功提示
     setTimeout(async () => {
       // 登录成功后跳转到redirect参数指定的页面，或首页
-      const redirectParam = route.query.redirect
+      const redirectParam = route.query['redirect']
       const redirect =
         typeof redirectParam === 'string' && redirectParam.startsWith('/') ? redirectParam : '/'
       await router.replace(redirect)
@@ -179,6 +179,13 @@ const handleLogin = async () => {
   } catch (err: unknown) {
     // 清除成功消息
     success.value = ''
+
+    const userMessageKey = (err as { userMessageKey?: unknown }).userMessageKey
+    if (typeof userMessageKey === 'string') {
+      error.value = t(userMessageKey)
+      toastStore.error(error.value)
+      return
+    }
 
     const httpError = err as {
       response?: { status?: number }
@@ -189,31 +196,26 @@ const handleLogin = async () => {
     const status = httpError.response?.status
     const data = httpError.responseData || {}
     const errorCode = (data as { error_code?: string }).error_code
-    const backendMessage = (data as { message?: string }).message
 
-    if (status === 401 || errorCode === 'AUTH_1001') {
+    if (!status) {
+      error.value = t('errors.networkError')
+    } else if (status === 401 || errorCode === 'AUTH_1001') {
       // 未认证 / 用户名或密码错误
-      error.value = t('auth.invalidCredentials', '用户名或密码错误')
+      error.value = t('auth.invalidCredentials')
     } else if (status === 403 && (errorCode === 'AUTH_1005' || errorCode === 'ACCOUNT_LOCKED')) {
       // 账号被锁定或不可用
-      error.value = t(
-        'auth.accountLocked',
-        '该账号因多次登录失败已被暂时锁定，请稍后再试或联系管理员',
-      )
+      error.value = t('auth.accountLocked')
     } else if (status === 429 || errorCode === 'SECURITY_1604') {
       // 触发速率限制
-      error.value = t('auth.tooManyAttempts', '登录尝试过于频繁，请稍后再试')
+      error.value = t('auth.tooManyAttempts')
     } else if (status === 400) {
       // 请求参数错误
-      error.value = backendMessage || t('auth.invalidInput', '输入信息有误')
-    } else if (status && status >= 500) {
+      error.value = t('auth.invalidInput')
+    } else if (status >= 500) {
       // 服务器错误
-      error.value = t('auth.serverError', '服务器暂时无法处理请求，请稍后再试')
-    } else if (httpError.message) {
-      // 其他错误（例如 JS 错误）
-      error.value = httpError.message
+      error.value = t('auth.serverError')
     } else {
-      error.value = t('auth.loginFailedMessage', '登录失败，请重试')
+      error.value = t('auth.loginFailedMessage')
     }
 
     // 显示错误 Toast 通知

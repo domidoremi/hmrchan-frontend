@@ -76,7 +76,7 @@ import { imagePreloadPlugin } from './plugins/imagePreload'
 /** 性能监控工具 */
 import { performanceMonitor } from './utils/performanceMonitor'
 
-import { setAuthTokenGetter, setUnauthorizedHandler } from './api/authContext'
+import { setUnauthorizedHandler, setAuthTokenGetter } from './api/authContext'
 import { useAuthStore } from './stores'
 
 // ============================================
@@ -138,14 +138,13 @@ pinia.use(piniaPluginPersistedstate)
 
 /** 注册 Pinia 状态管理 */
 app.use(pinia)
-
-setAuthTokenGetter(() => {
-  const authStore = useAuthStore()
-  return authStore.token
-})
 setUnauthorizedHandler(() => {
   const authStore = useAuthStore()
   return authStore.logout()
+})
+setAuthTokenGetter(() => {
+  const authStore = useAuthStore()
+  return authStore.token
 })
 
 /** 注册 Vue Router 路由 */
