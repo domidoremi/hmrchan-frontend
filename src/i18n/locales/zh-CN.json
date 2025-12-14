@@ -15,6 +15,7 @@
     "profile": "个人中心"
   },
   "common": {
+    "skipToContent": "跳转到内容",
     "loading": "加载中...",
     "error": "发生错误",
     "retry": "重试",
