@@ -24,6 +24,10 @@
           <Users :size="20" />
           <span>{{ $t('nav.authors') }}</span>
         </RouterLink>
+        <RouterLink to="/community" class="nav-link">
+          <MessageSquare :size="20" />
+          <span>{{ $t('nav.community') }}</span>
+        </RouterLink>
       </div>
 
       <!-- Actions -->
@@ -96,9 +100,9 @@
       <Users :size="22" />
       <span>{{ $t('nav.authors') }}</span>
     </RouterLink>
-    <RouterLink to="/contact" class="mobile-nav-item">
-      <MessageCircle :size="22" />
-      <span>{{ $t('nav.contact') }}</span>
+    <RouterLink to="/community" class="mobile-nav-item">
+      <MessageSquare :size="22" />
+      <span>{{ $t('nav.community') }}</span>
     </RouterLink>
   </nav>
 </template>
@@ -117,7 +121,7 @@ import {
   LogIn,
   LogOut,
   User,
-  MessageCircle,
+  MessageSquare,
 } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores'
 import SettingsPanel from './SettingsPanel.vue'
