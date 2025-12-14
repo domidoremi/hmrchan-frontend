@@ -1,0 +1,115 @@
+{
+  "app": {
+    "name": "MomiChan"
+  },
+  "nav": {
+    "home": "Home",
+    "explore": "Explore",
+    "favorites": "Favorites",
+    "authors": "Authors",
+    "contact": "Contact",
+    "settings": "Settings",
+    "login": "Login",
+    "logout": "Logout",
+    "register": "Register",
+    "profile": "Profile"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "retry": "Retry",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "search": "Search",
+    "noResults": "No results found",
+    "viewMore": "View More",
+    "showLess": "Show Less"
+  },
+  "auth": {
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "username": "Username",
+    "loginTitle": "Welcome Back",
+    "loginSubtitle": "Sign in to continue",
+    "registerTitle": "Create Account",
+    "registerSubtitle": "Join our community",
+    "forgotPassword": "Forgot password?",
+    "noAccount": "Don't have an account?",
+    "hasAccount": "Already have an account?",
+    "loginButton": "Sign In",
+    "registerButton": "Create Account",
+    "loginSuccess": "Successfully logged in",
+    "registerSuccess": "Account created successfully",
+    "logoutSuccess": "Successfully logged out",
+    "invalidCredentials": "Invalid email or password",
+    "emailRequired": "Email is required",
+    "passwordRequired": "Password is required",
+    "passwordMismatch": "Passwords do not match"
+  },
+  "settings": {
+    "title": "Settings",
+    "theme": "Theme",
+    "light": "Light",
+    "dark": "Dark",
+    "auto": "Auto",
+    "language": "Language",
+    "display": "Display",
+    "toggleHeroSection": "Show Hero Section",
+    "toggleAnimations": "Enable Animations",
+    "toggleSwipeNavigation": "Swipe Navigation",
+    "openAdvanced": "Advanced Settings"
+  },
+  "home": {
+    "hero": {
+      "title": "Discover Amazing Content",
+      "subtitle": "Explore curated collections from talented creators"
+    },
+    "latest": "Latest Posts",
+    "popular": "Popular"
+  },
+  "explore": {
+    "title": "Explore",
+    "searchPlaceholder": "Search posts, authors, tags...",
+    "filters": "Filters",
+    "sortBy": "Sort by",
+    "newest": "Newest",
+    "popular": "Most Popular",
+    "trending": "Trending"
+  },
+  "post": {
+    "by": "by",
+    "views": "views",
+    "likes": "likes",
+    "share": "Share",
+    "favorite": "Add to Favorites",
+    "unfavorite": "Remove from Favorites",
+    "relatedPosts": "Related Posts"
+  },
+  "error": {
+    "notFound": "Page Not Found",
+    "notFoundMessage": "The page you're looking for doesn't exist.",
+    "goHome": "Go Home",
+    "serverError": "Server Error",
+    "networkError": "Network Error",
+    "tryAgain": "Please try again later"
+  },
+  "contact": {
+    "title": "Contact Us",
+    "subtitle": "We'd love to hear from you",
+    "name": "Your Name",
+    "email": "Your Email",
+    "subject": "Subject",
+    "message": "Message",
+    "send": "Send Message",
+    "sending": "Sending...",
+    "success": "Message sent successfully!",
+    "error": "Failed to send message"
+  }
+}

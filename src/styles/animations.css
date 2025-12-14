@@ -1,10 +1,25 @@
-/* Modern Animation System - GSAP-inspired smooth animations */
-/* Following Material Motion principles and Apple Human Interface Guidelines */
-/* All animations use transform and opacity for optimal performance */
+/**
+ * Animations - 高性能动画系统
+ *
+ * 使用 GPU 加速属性 (transform, opacity)
+ * 支持 prefers-reduced-motion
+ */
 
-/* ========== Entrance Animations ========== */
+/* ========== Keyframes ========== */
 
-@keyframes fadeInUp {
+/* Fade In */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+/* Slide animations */
+@keyframes slideInUp {
   from {
     opacity: 0;
     transform: translateY(20px);
@@ -15,7 +30,7 @@
   }
 }
 
-@keyframes fadeInDown {
+@keyframes slideInDown {
   from {
     opacity: 0;
     transform: translateY(-20px);
@@ -26,7 +41,7 @@
   }
 }
 
-@keyframes fadeInLeft {
+@keyframes slideInLeft {
   from {
     opacity: 0;
     transform: translateX(-20px);
@@ -37,7 +52,7 @@
   }
 }
 
-@keyframes fadeInRight {
+@keyframes slideInRight {
   from {
     opacity: 0;
     transform: translateX(20px);
@@ -48,10 +63,11 @@
   }
 }
 
+/* Scale animations */
 @keyframes scaleIn {
   from {
     opacity: 0;
-    transform: scale(0.9);
+    transform: scale(0.95);
   }
   to {
     opacity: 1;
@@ -59,262 +75,257 @@
   }
 }
 
-/* Utility classes for entrance animations */
-.animate-fade-in-up {
-  animation: fadeInUp var(--duration-base) var(--ease-decelerate) both;
-}
-
-.animate-fade-in-down {
-  animation: fadeInDown var(--duration-base) var(--ease-decelerate) both;
-}
-
-.animate-fade-in-left {
-  animation: fadeInLeft var(--duration-base) var(--ease-decelerate) both;
-}
-
-.animate-fade-in-right {
-  animation: fadeInRight var(--duration-base) var(--ease-decelerate) both;
-}
-
-.animate-scale-in {
-  animation: scaleIn var(--duration-base) var(--ease-decelerate) both;
-}
-
-/* Stagger delays for sequential animations */
-.stagger-1 {
-  animation-delay: var(--duration-fast);
-}
-.stagger-2 {
-  animation-delay: calc(var(--duration-fast) * 2);
-}
-.stagger-3 {
-  animation-delay: calc(var(--duration-fast) * 3);
-}
-.stagger-4 {
-  animation-delay: calc(var(--duration-fast) * 4);
-}
-.stagger-5 {
-  animation-delay: calc(var(--duration-fast) * 5);
-}
-
-/* ========== Ambient Animations ========== */
-
-@keyframes liquidGlow {
-  0%,
-  100% {
-    opacity: 0.3;
+@keyframes scaleOut {
+  from {
+    opacity: 1;
     transform: scale(1);
   }
-  50% {
-    opacity: 0.5;
-    transform: scale(1.05);
-  }
-}
-
-/* Applied to body::before in main styles if needed */
-.ambient-glow {
-  animation: liquidGlow 12s var(--ease-smooth) infinite;
-}
-
-[data-animations='off'] .ambient-glow {
-  animation: none !important;
-}
-
-/* ========== Ripple Effects ========== */
-
-@keyframes ripple {
-  0% {
-    transform: translate(-50%, -50%) scale(0);
-    opacity: 0.6;
-  }
-  100% {
-    transform: translate(-50%, -50%) scale(2.5);
+  to {
     opacity: 0;
+    transform: scale(0.95);
   }
 }
 
-.ripple-effect {
-  position: relative;
-  overflow: hidden;
+/* Bounce */
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
 }
 
-.ripple-effect::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 100%;
-  height: 100%;
-  background: radial-gradient(
-    circle,
-    rgba(139, 92, 246, 0.4) 0%,
-    rgba(139, 92, 246, 0.2) 40%,
-    transparent 70%
-  );
-  border-radius: 50%;
-  transform: translate(-50%, -50%) scale(0);
-  pointer-events: none;
-}
-
-.ripple-effect:active::after {
-  animation: ripple var(--duration-slow) var(--ease-decelerate);
-}
-
-/* ========== Shimmer Effects ========== */
-
-@keyframes shimmer {
-  0% {
-    transform: translateX(-100%);
-  }
-  100% {
-    transform: translateX(200%);
-  }
-}
-
-.shimmer {
-  position: relative;
-  overflow: hidden;
-}
-
-.shimmer::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 50%;
-  height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(255, 255, 255, 0.1) 40%,
-    rgba(255, 255, 255, 0.2) 50%,
-    rgba(255, 255, 255, 0.1) 60%,
-    transparent 100%
-  );
-  animation: shimmer 3s var(--ease-smooth) infinite;
-  pointer-events: none;
-}
-
-/* ========== Breathe Effect ========== */
-
-@keyframes breathe {
-  0%,
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.85;
-    transform: scale(1.02);
-  }
-}
-
-.glass-breathe {
-  animation: breathe 4s var(--ease-smooth) infinite;
-}
-
-/* ========== Floating Animation ========== */
-
-@keyframes float {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-10px);
-  }
-}
-
-.float-animation {
-  animation: float 6s var(--ease-smooth) infinite;
-}
-
-/* ========== Gradient Animation ========== */
-
-@keyframes gradientShift {
-  0%,
-  100% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-}
-
-.gradient-animated {
-  background-size: 200% 200%;
-  animation: gradientShift 10s var(--ease-smooth) infinite;
-}
-
-/* ========== Pulse Animation ========== */
-
+/* Pulse */
 @keyframes pulse {
-  0%,
-  100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-  50% {
-    transform: scale(1.05);
-    opacity: 0.85;
-  }
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
 }
 
-@keyframes ping {
-  0% {
-    transform: scale(1);
-    opacity: 0.8;
-  }
-  75%,
-  100% {
+/* Spin */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Shimmer for skeleton loading */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* Float effect */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+/* Ripple effect */
+@keyframes ripple {
+  to {
     transform: scale(2);
     opacity: 0;
   }
 }
 
-.pulse-animation {
-  animation: pulse 2s var(--ease-smooth) infinite;
+/* ========== Animation Classes ========== */
+
+.animate-fade-in {
+  animation: fadeIn var(--duration-normal) var(--ease-out) forwards;
 }
 
-/* Ping effect (like notification dot) */
-.ping {
-  position: relative;
+.animate-fade-out {
+  animation: fadeOut var(--duration-normal) var(--ease-out) forwards;
 }
 
-.ping::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: inherit;
-  animation: ping 1.5s var(--ease-decelerate) infinite;
+.animate-slide-up {
+  animation: slideInUp var(--duration-normal) var(--ease-out) forwards;
 }
 
-/* ========== Scroll-triggered Animations ========== */
-
-@keyframes slideInView {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.animate-slide-down {
+  animation: slideInDown var(--duration-normal) var(--ease-out) forwards;
 }
 
-.scroll-reveal {
+.animate-slide-left {
+  animation: slideInLeft var(--duration-normal) var(--ease-out) forwards;
+}
+
+.animate-slide-right {
+  animation: slideInRight var(--duration-normal) var(--ease-out) forwards;
+}
+
+.animate-scale-in {
+  animation: scaleIn var(--duration-normal) var(--ease-out) forwards;
+}
+
+.animate-scale-out {
+  animation: scaleOut var(--duration-normal) var(--ease-out) forwards;
+}
+
+.animate-bounce {
+  animation: bounce 1s var(--ease-in-out) infinite;
+}
+
+.animate-pulse {
+  animation: pulse 2s var(--ease-in-out) infinite;
+}
+
+.animate-spin {
+  animation: spin 1s var(--ease-linear) infinite;
+}
+
+.animate-float {
+  animation: float 3s var(--ease-in-out) infinite;
+}
+
+/* ========== Stagger Delays ========== */
+
+.stagger-1 { animation-delay: 50ms; }
+.stagger-2 { animation-delay: 100ms; }
+.stagger-3 { animation-delay: 150ms; }
+.stagger-4 { animation-delay: 200ms; }
+.stagger-5 { animation-delay: 250ms; }
+.stagger-6 { animation-delay: 300ms; }
+.stagger-7 { animation-delay: 350ms; }
+.stagger-8 { animation-delay: 400ms; }
+
+/* ========== Vue Transitions ========== */
+
+/* Fade */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity var(--transition-base);
+}
+
+.fade-enter-from,
+.fade-leave-to {
   opacity: 0;
-  transform: translateY(30px);
 }
 
-.scroll-reveal.in-view {
-  animation: slideInView var(--duration-slow) var(--ease-decelerate) forwards;
+/* Slide Up */
+.slide-up-enter-active,
+.slide-up-leave-active {
+  transition: all var(--transition-base);
 }
 
-/* ========== Performance Optimizations ========== */
+.slide-up-enter-from {
+  opacity: 0;
+  transform: translateY(20px);
+}
 
-/* Respect user preferences */
+.slide-up-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+/* Slide Down */
+.slide-down-enter-active,
+.slide-down-leave-active {
+  transition: all var(--transition-base);
+}
+
+.slide-down-enter-from {
+  opacity: 0;
+  transform: translateY(-20px);
+}
+
+.slide-down-leave-to {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+/* Scale */
+.scale-enter-active,
+.scale-leave-active {
+  transition: all var(--transition-base);
+}
+
+.scale-enter-from,
+.scale-leave-to {
+  opacity: 0;
+  transform: scale(0.95);
+}
+
+/* Modal */
+.modal-enter-active,
+.modal-leave-active {
+  transition: opacity var(--transition-base);
+}
+
+.modal-enter-active .modal-content,
+.modal-leave-active .modal-content {
+  transition: all var(--transition-base);
+}
+
+.modal-enter-from,
+.modal-leave-to {
+  opacity: 0;
+}
+
+.modal-enter-from .modal-content,
+.modal-leave-to .modal-content {
+  transform: scale(0.95) translateY(-20px);
+}
+
+/* Dropdown */
+.dropdown-enter-active,
+.dropdown-leave-active {
+  transition: all var(--duration-fast) var(--ease-out);
+  transform-origin: top;
+}
+
+.dropdown-enter-from,
+.dropdown-leave-to {
+  opacity: 0;
+  transform: scaleY(0.95) translateY(-4px);
+}
+
+/* List transitions */
+.list-enter-active,
+.list-leave-active {
+  transition: all var(--transition-base);
+}
+
+.list-enter-from,
+.list-leave-to {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.list-move {
+  transition: transform var(--transition-base);
+}
+
+/* ========== Skeleton Loading ========== */
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-gray-200) 25%,
+    var(--color-gray-100) 50%,
+    var(--color-gray-200) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: var(--radius-md);
+}
+
+[data-theme='dark'] .skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-gray-700) 25%,
+    var(--color-gray-600) 50%,
+    var(--color-gray-700) 75%
+  );
+  background-size: 200% 100%;
+}
+
+/* ========== GPU Acceleration Helpers ========== */
+
+.gpu-accelerated {
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
+/* ========== Reduced Motion ========== */
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -322,32 +333,12 @@
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
   }
 
-  .shimmer::before,
-  .ripple-effect::after,
-  .float-animation,
-  .pulse-animation {
-    animation: none !important;
+  .animate-bounce,
+  .animate-pulse,
+  .animate-spin,
+  .animate-float {
+    animation: none;
   }
-}
-
-/* GPU Acceleration - Only for animated elements */
-.animate-fade-in-up,
-.animate-fade-in-down,
-.animate-fade-in-left,
-.animate-fade-in-right,
-.animate-scale-in {
-  transform: translateZ(0);
-  backface-visibility: hidden;
-}
-
-/* Will-change optimization - use sparingly */
-.animating {
-  will-change: transform, opacity;
-}
-
-.animating.complete {
-  will-change: auto;
 }
