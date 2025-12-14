@@ -58,7 +58,19 @@
     "invalidCredentials": "Invalid email or password",
     "emailRequired": "Email is required",
     "passwordRequired": "Password is required",
-    "passwordMismatch": "Passwords do not match"
+    "passwordMismatch": "Passwords do not match",
+    "error": {
+      "fieldsRequired": "Please fill in all fields",
+      "passwordTooShort": "Password must be at least 6 characters",
+      "loginFailed": "Login failed, please try again",
+      "registerFailed": "Registration failed, please try again",
+      "emailExists": "This email is already registered",
+      "usernameExists": "This username is already taken",
+      "validationError": "Please check your input",
+      "tooManyRequests": "Too many attempts, please try again later",
+      "inProgress": "Please wait...",
+      "unknown": "An unknown error occurred"
+    }
   },
   "settings": {
     "title": "Settings",

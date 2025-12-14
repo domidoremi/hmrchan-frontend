@@ -93,4 +93,30 @@ const router = createRouter({
   },
 })
 
+// 路由守卫
+router.beforeEach((to, _from, next) => {
+  // 延迟导入以避免循环依赖
+  import('@/stores/auth').then(({ useAuthStore }) => {
+    const authStore = useAuthStore()
+    const isAuthenticated = authStore.isAuthenticated
+
+    // 需要认证的页面
+    if (to.meta['requiresAuth'] && !isAuthenticated) {
+      next({
+        path: '/login',
+        query: { redirect: to.fullPath },
+      })
+      return
+    }
+
+    // 仅游客可访问的页面（登录、注册）
+    if (to.meta['guestOnly'] && isAuthenticated) {
+      next('/')
+      return
+    }
+
+    next()
+  })
+})
+
 export default router
