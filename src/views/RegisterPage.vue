@@ -221,12 +221,19 @@ async function handleRegister() {
   success.value = ''
 
   try {
-    await authStore.register({
+    const payload: {
+      username: string
+      email: string
+      password: string
+      full_name?: string
+    } = {
       username: formData.value.username,
       email: formData.value.email,
       password: formData.value.password,
-      full_name: formData.value.full_name || undefined,
-    })
+      ...(formData.value.full_name ? { full_name: formData.value.full_name } : {}),
+    }
+
+    await authStore.register(payload)
 
     success.value = t('auth.registrationSuccess')
     toastStore.success(t('auth.registrationSuccess'))
@@ -238,46 +245,49 @@ async function handleRegister() {
     // 清除成功消息
     success.value = ''
 
+    const userMessageKey = (err as { userMessageKey?: unknown }).userMessageKey
+    if (typeof userMessageKey === 'string') {
+      error.value = t(userMessageKey)
+      toastStore.error(error.value)
+      return
+    }
+
     const httpError = err as {
       response?: { status?: number }
       responseData?: {
         error_code?: string
-        message?: string
         details?: { errors?: string[] }
       }
-      message?: string
     }
 
     const status = httpError.response?.status
     const data = httpError.responseData || {}
     const errorCode = data.error_code
-    const backendMessage = data.message
     const details = data.details
 
-    if (errorCode === 'USER_1104' && details && Array.isArray(details.errors)) {
+    if (!status) {
+      error.value = t('errors.networkError')
+      toastStore.error(error.value)
+    } else if (errorCode === 'USER_1104' && details && Array.isArray(details.errors)) {
       // 弱密码：展示后端返回的规则提示
       passwordErrors.value = details.errors
-      error.value = backendMessage || t('auth.passwordWeak', '密码不符合安全要求')
+      error.value = t('auth.passwordWeak')
       toastStore.error(error.value)
     } else if (status === 429 || errorCode === 'SECURITY_1604') {
       // 触发速率限制
-      error.value = t('auth.tooManyAttempts', '操作过于频繁，请稍后再试')
+      error.value = t('auth.tooManyAttempts')
       toastStore.error(error.value)
     } else if (status === 409) {
       // 用户名或邮箱已存在
-      error.value = backendMessage || t('auth.userAlreadyExists', '用户名或邮箱已存在')
+      error.value = t('auth.userAlreadyExists')
       toastStore.error(error.value)
     } else if (status === 400 || status === 422) {
       // 请求参数/验证错误
-      error.value = backendMessage || t('auth.invalidInput', '输入信息有误，请检查后重试')
+      error.value = t('auth.invalidInput')
       toastStore.error(error.value)
-    } else if (status && status >= 500) {
+    } else if (status >= 500) {
       // 服务器错误
-      error.value = t('auth.serverError', '服务器暂时无法处理请求，请稍后再试')
-      toastStore.error(error.value)
-    } else if (httpError.message) {
-      // 其他错误
-      error.value = httpError.message || t('auth.registrationFailed')
+      error.value = t('auth.serverError')
       toastStore.error(error.value)
     } else {
       error.value = t('auth.registrationFailed')
