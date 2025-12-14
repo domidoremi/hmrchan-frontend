@@ -75,6 +75,10 @@ export { useImageLazyLoad } from './useImageLazyLoad'
 export { useSmartPreload } from './useSmartPreload'
 export { useWaterfallLayout } from './useWaterfallLayout'
 
+// Page Transitions
+export { usePageTransition, useEnterAnimation } from './usePageTransition'
+export type { PageTransitionOptions, AnimateElementsOptions } from './usePageTransition'
+
 // Business
 export { useFavorites } from './useFavorites'
 export { usePostCardData, usePostCardFormatters } from './usePostCard'
