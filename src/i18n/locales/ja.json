@@ -1,0 +1,115 @@
+{
+  "app": {
+    "name": "MomiChan"
+  },
+  "nav": {
+    "home": "ホーム",
+    "explore": "探索",
+    "favorites": "お気に入り",
+    "authors": "作者",
+    "contact": "お問い合わせ",
+    "settings": "設定",
+    "login": "ログイン",
+    "logout": "ログアウト",
+    "register": "登録",
+    "profile": "プロフィール"
+  },
+  "common": {
+    "loading": "読み込み中...",
+    "error": "エラーが発生しました",
+    "retry": "再試行",
+    "cancel": "キャンセル",
+    "confirm": "確認",
+    "save": "保存",
+    "delete": "削除",
+    "edit": "編集",
+    "back": "戻る",
+    "next": "次へ",
+    "previous": "前へ",
+    "search": "検索",
+    "noResults": "結果が見つかりません",
+    "viewMore": "もっと見る",
+    "showLess": "閉じる"
+  },
+  "auth": {
+    "email": "メールアドレス",
+    "password": "パスワード",
+    "confirmPassword": "パスワード確認",
+    "username": "ユーザー名",
+    "loginTitle": "おかえりなさい",
+    "loginSubtitle": "ログインして続ける",
+    "registerTitle": "アカウント作成",
+    "registerSubtitle": "コミュニティに参加",
+    "forgotPassword": "パスワードを忘れた？",
+    "noAccount": "アカウントをお持ちでない？",
+    "hasAccount": "アカウントをお持ちの方",
+    "loginButton": "ログイン",
+    "registerButton": "登録",
+    "loginSuccess": "ログインしました",
+    "registerSuccess": "登録完了",
+    "logoutSuccess": "ログアウトしました",
+    "invalidCredentials": "メールまたはパスワードが正しくありません",
+    "emailRequired": "メールアドレスを入力してください",
+    "passwordRequired": "パスワードを入力してください",
+    "passwordMismatch": "パスワードが一致しません"
+  },
+  "settings": {
+    "title": "設定",
+    "theme": "テーマ",
+    "light": "ライト",
+    "dark": "ダーク",
+    "auto": "自動",
+    "language": "言語",
+    "display": "表示",
+    "toggleHeroSection": "ヒーローセクション表示",
+    "toggleAnimations": "アニメーション有効",
+    "toggleSwipeNavigation": "スワイプナビ",
+    "openAdvanced": "詳細設定"
+  },
+  "home": {
+    "hero": {
+      "title": "素晴らしいコンテンツを発見",
+      "subtitle": "才能あるクリエイターの厳選コレクション"
+    },
+    "latest": "最新",
+    "popular": "人気"
+  },
+  "explore": {
+    "title": "探索",
+    "searchPlaceholder": "投稿、作者、タグを検索...",
+    "filters": "フィルター",
+    "sortBy": "並び替え",
+    "newest": "新着",
+    "popular": "人気順",
+    "trending": "トレンド"
+  },
+  "post": {
+    "by": "作者",
+    "views": "閲覧",
+    "likes": "いいね",
+    "share": "共有",
+    "favorite": "お気に入りに追加",
+    "unfavorite": "お気に入りから削除",
+    "relatedPosts": "関連投稿"
+  },
+  "error": {
+    "notFound": "ページが見つかりません",
+    "notFoundMessage": "お探しのページは存在しません",
+    "goHome": "ホームへ戻る",
+    "serverError": "サーバーエラー",
+    "networkError": "ネットワークエラー",
+    "tryAgain": "後でもう一度お試しください"
+  },
+  "contact": {
+    "title": "お問い合わせ",
+    "subtitle": "ご連絡をお待ちしております",
+    "name": "お名前",
+    "email": "メールアドレス",
+    "subject": "件名",
+    "message": "メッセージ",
+    "send": "送信",
+    "sending": "送信中...",
+    "success": "送信完了！",
+    "error": "送信に失敗しました"
+  }
+}

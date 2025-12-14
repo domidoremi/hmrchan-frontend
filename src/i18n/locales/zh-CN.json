@@ -1,0 +1,115 @@
+{
+  "app": {
+    "name": "MomiChan"
+  },
+  "nav": {
+    "home": "首页",
+    "explore": "探索",
+    "favorites": "收藏",
+    "authors": "作者",
+    "contact": "联系我们",
+    "settings": "设置",
+    "login": "登录",
+    "logout": "退出",
+    "register": "注册",
+    "profile": "个人中心"
+  },
+  "common": {
+    "loading": "加载中...",
+    "error": "发生错误",
+    "retry": "重试",
+    "cancel": "取消",
+    "confirm": "确认",
+    "save": "保存",
+    "delete": "删除",
+    "edit": "编辑",
+    "back": "返回",
+    "next": "下一步",
+    "previous": "上一步",
+    "search": "搜索",
+    "noResults": "未找到结果",
+    "viewMore": "查看更多",
+    "showLess": "收起"
+  },
+  "auth": {
+    "email": "邮箱",
+    "password": "密码",
+    "confirmPassword": "确认密码",
+    "username": "用户名",
+    "loginTitle": "欢迎回来",
+    "loginSubtitle": "登录以继续",
+    "registerTitle": "创建账户",
+    "registerSubtitle": "加入我们的社区",
+    "forgotPassword": "忘记密码？",
+    "noAccount": "还没有账户？",
+    "hasAccount": "已有账户？",
+    "loginButton": "登录",
+    "registerButton": "注册",
+    "loginSuccess": "登录成功",
+    "registerSuccess": "注册成功",
+    "logoutSuccess": "已退出登录",
+    "invalidCredentials": "邮箱或密码错误",
+    "emailRequired": "请输入邮箱",
+    "passwordRequired": "请输入密码",
+    "passwordMismatch": "两次输入的密码不一致"
+  },
+  "settings": {
+    "title": "设置",
+    "theme": "主题",
+    "light": "浅色",
+    "dark": "深色",
+    "auto": "跟随系统",
+    "language": "语言",
+    "display": "显示",
+    "toggleHeroSection": "显示首页横幅",
+    "toggleAnimations": "启用动画",
+    "toggleSwipeNavigation": "滑动导航",
+    "openAdvanced": "高级设置"
+  },
+  "home": {
+    "hero": {
+      "title": "发现精彩内容",
+      "subtitle": "探索来自优秀创作者的精选作品"
+    },
+    "latest": "最新发布",
+    "popular": "热门推荐"
+  },
+  "explore": {
+    "title": "探索",
+    "searchPlaceholder": "搜索帖子、作者、标签...",
+    "filters": "筛选",
+    "sortBy": "排序",
+    "newest": "最新",
+    "popular": "最热门",
+    "trending": "趋势"
+  },
+  "post": {
+    "by": "作者",
+    "views": "浏览",
+    "likes": "喜欢",
+    "share": "分享",
+    "favorite": "收藏",
+    "unfavorite": "取消收藏",
+    "relatedPosts": "相关推荐"
+  },
+  "error": {
+    "notFound": "页面未找到",
+    "notFoundMessage": "您访问的页面不存在",
+    "goHome": "返回首页",
+    "serverError": "服务器错误",
+    "networkError": "网络错误",
+    "tryAgain": "请稍后重试"
+  },
+  "contact": {
+    "title": "联系我们",
+    "subtitle": "我们期待您的来信",
+    "name": "您的姓名",
+    "email": "您的邮箱",
+    "subject": "主题",
+    "message": "留言内容",
+    "send": "发送",
+    "sending": "发送中...",
+    "success": "消息发送成功！",
+    "error": "发送失败"
+  }
+}

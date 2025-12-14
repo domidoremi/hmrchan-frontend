@@ -1,17 +1,11 @@
-/* HMRChan Modern Design System */
-/* Material Design 3 + Apple HIG + GSAP-inspired animations */
+/**
+ * Main Stylesheet Entry Point
+ *
+ * Import order matters for CSS cascade
+ */
 
-/* Import all style modules in order */
-@import './variables.css'; /* Design tokens & CSS variables */
-@import './base.css'; /* Base styles & resets */
-@import './glass.css'; /* Glass morphism effects */
-@import './animations.css'; /* GSAP-style animations */
-@import './transitions.css'; /* Page transitions & micro-interactions */
-@import './utilities.css'; /* Utility classes */
-@import './accessibility.css'; /* Accessibility & WCAG compliance */
-
-/* Component Styles */
-/* navbar.css & post-card.css - 已迁移至组件scoped样式 */
-
-/* Page Styles */
-@import './pages/home.css'; /* HomePage specific styles */
+@import './tokens.css';
+@import './base.css';
+@import './glass.css';
+@import './animations.css';
+@import './utilities.css';
