@@ -41,31 +41,48 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useRouter, RouterLink } from 'vue-router'
+import { ref, computed } from 'vue'
+import { useRouter, useRoute, RouterLink } from 'vue-router'
+import { storeToRefs } from 'pinia'
 import { useAuthStore, useToastStore } from '@/stores'
 import { useI18n } from 'vue-i18n'
 import Button from '@/components/ui/Button.vue'
 
 const router = useRouter()
+const route = useRoute()
 const authStore = useAuthStore()
 const toastStore = useToastStore()
 const { t } = useI18n()
 
+const { isLoading, isAuthenticated } = storeToRefs(authStore)
+
 const email = ref('')
 const password = ref('')
-const isLoading = ref(false)
+
+// 获取重定向目标
+const redirectTo = computed(() => {
+  const redirect = route.query['redirect']
+  return typeof redirect === 'string' ? redirect : '/'
+})
+
+// 如果已登录，重定向到首页
+if (isAuthenticated.value) {
+  router.replace(redirectTo.value)
+}
 
 async function handleLogin() {
-  isLoading.value = true
+  if (!email.value || !password.value) {
+    toastStore.warning(t('auth.error.fieldsRequired'))
+    return
+  }
+
   const result = await authStore.login(email.value, password.value)
-  isLoading.value = false
 
   if (result.success) {
     toastStore.success(t('auth.loginSuccess'))
-    router.push('/')
+    router.push(redirectTo.value)
   } else {
-    toastStore.error(t('auth.invalidCredentials'))
+    toastStore.error(t(result.error || 'auth.invalidCredentials'))
   }
 }
 </script>

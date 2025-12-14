@@ -54,6 +54,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter, RouterLink } from 'vue-router'
+import { storeToRefs } from 'pinia'
 import { useAuthStore, useToastStore } from '@/stores'
 import { useI18n } from 'vue-i18n'
 import Button from '@/components/ui/Button.vue'
@@ -63,21 +64,36 @@ const authStore = useAuthStore()
 const toastStore = useToastStore()
 const { t } = useI18n()
 
+const { isLoading, isAuthenticated } = storeToRefs(authStore)
+
 const username = ref('')
 const email = ref('')
 const password = ref('')
-const isLoading = ref(false)
+
+// 如果已登录，重定向到首页
+if (isAuthenticated.value) {
+  router.replace('/')
+}
 
 async function handleRegister() {
-  isLoading.value = true
+  if (!username.value || !email.value || !password.value) {
+    toastStore.warning(t('auth.error.fieldsRequired'))
+    return
+  }
+
+  // 基础密码验证
+  if (password.value.length < 6) {
+    toastStore.warning(t('auth.error.passwordTooShort'))
+    return
+  }
+
   const result = await authStore.register(username.value, email.value, password.value)
-  isLoading.value = false
 
   if (result.success) {
     toastStore.success(t('auth.registerSuccess'))
-    router.push('/login')
+    router.push('/')
   } else {
-    toastStore.error(t('common.error'))
+    toastStore.error(t(result.error || 'auth.error.registerFailed'))
   }
 }
 </script>
