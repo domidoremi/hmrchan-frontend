@@ -7,6 +7,7 @@
     "explore": "Explore",
     "favorites": "Favorites",
     "authors": "Authors",
+    "community": "Community",
     "contact": "Contact",
     "settings": "Settings",
     "login": "Login",
@@ -30,7 +31,12 @@
     "search": "Search",
     "noResults": "No results found",
     "viewMore": "View More",
-    "showLess": "Show Less"
+    "showLess": "Show Less",
+    "justNow": "Just now",
+    "minutesAgo": "{n} min ago",
+    "hoursAgo": "{n} hours ago",
+    "daysAgo": "{n} days ago",
+    "more": "More"
   },
   "auth": {
     "email": "Email",
@@ -100,6 +106,58 @@
     "serverError": "Server Error",
     "networkError": "Network Error",
     "tryAgain": "Please try again later"
+  },
+  "comment": {
+    "title": "Comments",
+    "placeholder": "Share your thoughts...",
+    "replyPlaceholder": "Reply to {username}...",
+    "submit": "Post",
+    "reply": "Reply",
+    "share": "Share",
+    "report": "Report",
+    "empty": "No comments yet",
+    "beFirst": "Be the first to comment!",
+    "loginRequired": "Please login to comment",
+    "submitSuccess": "Comment posted successfully",
+    "deleteSuccess": "Comment deleted",
+    "favoriteSuccess": "Comment saved",
+    "shareSuccess": "Link copied to clipboard",
+    "reportSubmitted": "Report submitted, thank you",
+    "confirmDelete": "Are you sure you want to delete this comment?",
+    "showReplies": "Show {count} replies",
+    "sort": {
+      "newest": "Newest",
+      "oldest": "Oldest",
+      "popular": "Popular"
+    },
+    "validation": {
+      "required": "Comment cannot be empty",
+      "tooShort": "Comment is too short",
+      "tooLong": "Comment is too long (max 2000 characters)",
+      "spam": "Your comment appears to be spam",
+      "invalid": "Invalid comment content"
+    },
+    "error": {
+      "fetchFailed": "Failed to load comments",
+      "addFailed": "Failed to post comment",
+      "deleteFailed": "Failed to delete comment",
+      "likeFailed": "Failed to like comment",
+      "unlikeFailed": "Failed to unlike comment",
+      "favoriteFailed": "Failed to save comment",
+      "unfavoriteFailed": "Failed to unsave comment",
+      "reportFailed": "Failed to submit report",
+      "unauthorized": "Please login first",
+      "rateLimited": "You're commenting too fast",
+      "rateLimitedWithTime": "Please wait {seconds} seconds before commenting again"
+    }
+  },
+  "community": {
+    "title": "Community",
+    "subtitle": "Join the conversation",
+    "recentDiscussions": "Recent Discussions",
+    "hotTopics": "Hot Topics",
+    "myComments": "My Comments",
+    "savedComments": "Saved Comments"
   },
   "contact": {
     "title": "Contact Us",

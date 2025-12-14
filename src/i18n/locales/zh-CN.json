@@ -7,6 +7,7 @@
     "explore": "探索",
     "favorites": "收藏",
     "authors": "作者",
+    "community": "社区",
     "contact": "联系我们",
     "settings": "设置",
     "login": "登录",
@@ -30,7 +31,12 @@
     "search": "搜索",
     "noResults": "未找到结果",
     "viewMore": "查看更多",
-    "showLess": "收起"
+    "showLess": "收起",
+    "justNow": "刚刚",
+    "minutesAgo": "{n} 分钟前",
+    "hoursAgo": "{n} 小时前",
+    "daysAgo": "{n} 天前",
+    "more": "更多"
   },
   "auth": {
     "email": "邮箱",
@@ -100,6 +106,58 @@
     "serverError": "服务器错误",
     "networkError": "网络错误",
     "tryAgain": "请稍后重试"
+  },
+  "comment": {
+    "title": "评论",
+    "placeholder": "分享你的想法...",
+    "replyPlaceholder": "回复 {username}...",
+    "submit": "发布",
+    "reply": "回复",
+    "share": "分享",
+    "report": "举报",
+    "empty": "暂无评论",
+    "beFirst": "来发表第一条评论吧！",
+    "loginRequired": "请登录后评论",
+    "submitSuccess": "评论发布成功",
+    "deleteSuccess": "评论已删除",
+    "favoriteSuccess": "评论已收藏",
+    "shareSuccess": "链接已复制到剪贴板",
+    "reportSubmitted": "举报已提交，感谢反馈",
+    "confirmDelete": "确定要删除这条评论吗？",
+    "showReplies": "查看 {count} 条回复",
+    "sort": {
+      "newest": "最新",
+      "oldest": "最早",
+      "popular": "热门"
+    },
+    "validation": {
+      "required": "评论内容不能为空",
+      "tooShort": "评论内容太短",
+      "tooLong": "评论内容太长（最多2000字）",
+      "spam": "您的评论疑似垃圾内容",
+      "invalid": "评论内容无效"
+    },
+    "error": {
+      "fetchFailed": "加载评论失败",
+      "addFailed": "发布评论失败",
+      "deleteFailed": "删除评论失败",
+      "likeFailed": "点赞失败",
+      "unlikeFailed": "取消点赞失败",
+      "favoriteFailed": "收藏失败",
+      "unfavoriteFailed": "取消收藏失败",
+      "reportFailed": "举报失败",
+      "unauthorized": "请先登录",
+      "rateLimited": "评论过于频繁",
+      "rateLimitedWithTime": "请等待 {seconds} 秒后再评论"
+    }
+  },
+  "community": {
+    "title": "社区",
+    "subtitle": "加入讨论",
+    "recentDiscussions": "最新讨论",
+    "hotTopics": "热门话题",
+    "myComments": "我的评论",
+    "savedComments": "收藏的评论"
   },
   "contact": {
     "title": "联系我们",

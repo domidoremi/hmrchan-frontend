@@ -7,6 +7,7 @@
     "explore": "探索",
     "favorites": "お気に入り",
     "authors": "作者",
+    "community": "コミュニティ",
     "contact": "お問い合わせ",
     "settings": "設定",
     "login": "ログイン",
@@ -30,7 +31,12 @@
     "search": "検索",
     "noResults": "結果が見つかりません",
     "viewMore": "もっと見る",
-    "showLess": "閉じる"
+    "showLess": "閉じる",
+    "justNow": "たった今",
+    "minutesAgo": "{n} 分前",
+    "hoursAgo": "{n} 時間前",
+    "daysAgo": "{n} 日前",
+    "more": "その他"
   },
   "auth": {
     "email": "メールアドレス",
@@ -100,6 +106,58 @@
     "serverError": "サーバーエラー",
     "networkError": "ネットワークエラー",
     "tryAgain": "後でもう一度お試しください"
+  },
+  "comment": {
+    "title": "コメント",
+    "placeholder": "あなたの考えを共有...",
+    "replyPlaceholder": "{username} に返信...",
+    "submit": "投稿",
+    "reply": "返信",
+    "share": "共有",
+    "report": "報告",
+    "empty": "コメントはまだありません",
+    "beFirst": "最初のコメントを投稿しましょう！",
+    "loginRequired": "コメントするにはログインしてください",
+    "submitSuccess": "コメントを投稿しました",
+    "deleteSuccess": "コメントを削除しました",
+    "favoriteSuccess": "コメントを保存しました",
+    "shareSuccess": "リンクをコピーしました",
+    "reportSubmitted": "報告を送信しました",
+    "confirmDelete": "このコメントを削除しますか？",
+    "showReplies": "{count} 件の返信を表示",
+    "sort": {
+      "newest": "新着",
+      "oldest": "古い順",
+      "popular": "人気"
+    },
+    "validation": {
+      "required": "コメントを入力してください",
+      "tooShort": "コメントが短すぎます",
+      "tooLong": "コメントが長すぎます（最大2000文字）",
+      "spam": "スパムの可能性があります",
+      "invalid": "無効なコメント内容"
+    },
+    "error": {
+      "fetchFailed": "コメントの読み込みに失敗",
+      "addFailed": "コメントの投稿に失敗",
+      "deleteFailed": "コメントの削除に失敗",
+      "likeFailed": "いいねに失敗",
+      "unlikeFailed": "いいね解除に失敗",
+      "favoriteFailed": "保存に失敗",
+      "unfavoriteFailed": "保存解除に失敗",
+      "reportFailed": "報告に失敗",
+      "unauthorized": "先にログインしてください",
+      "rateLimited": "コメントが多すぎます",
+      "rateLimitedWithTime": "{seconds} 秒後に再試行してください"
+    }
+  },
+  "community": {
+    "title": "コミュニティ",
+    "subtitle": "会話に参加",
+    "recentDiscussions": "最近のディスカッション",
+    "hotTopics": "ホットトピック",
+    "myComments": "マイコメント",
+    "savedComments": "保存したコメント"
   },
   "contact": {
     "title": "お問い合わせ",
