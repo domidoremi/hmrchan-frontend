@@ -6,7 +6,7 @@
 
 import { api } from '@/api/client'
 import { postCache } from './postCache'
-import logger from '@/utils/logger'
+import { logger } from '@/utils/logger'
 
 /**
  * 缓存失效规则映射

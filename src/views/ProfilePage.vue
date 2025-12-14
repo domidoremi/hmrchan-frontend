@@ -291,9 +291,7 @@ import GlassInput from '@/components/ui/Input.vue'
 import GlassModal from '@/components/ui/Modal.vue'
 import StatCard from '@/components/ui/StatCard.vue'
 
-import { useAuthStore, useToastStore } from '@/stores'
-import { uploadApi } from '@/api/services'
-import { api } from '@/api/client'
+import { useAuthStore, useToastStore, useUploadStore, useUsersStore } from '@/stores'
 import { useErrorHandler } from '@/utils'
 import { formatRelativeTime } from '@/utils'
 import { getUserAvatar } from '@/utils/avatar'
@@ -308,6 +306,8 @@ const { user } = storeToRefs(authStore)
 const { t } = useI18n()
 const { handleError } = useErrorHandler('ProfilePage')
 const toastStore = useToastStore()
+const usersStore = useUsersStore()
+const uploadStore = useUploadStore()
 
 // 强制刷新标记
 const avatarRefreshKey = ref(Date.now())
@@ -436,8 +436,9 @@ onMounted(() => {
 
 async function loadStats() {
   try {
+    if (!user.value?.id) return
     // 获取用户统计数据
-    const response = await api.get(`/users/${user.value?.id}/stats`, { cache: false })
+    const response = await usersStore.getStats(user.value.id)
 
     // Type guard for response object
     if (response && typeof response === 'object' && 'favorites_count' in response) {
@@ -460,7 +461,7 @@ async function handleUpdateProfile() {
 
   updating.value = true
   try {
-    await api.patch(`/users/${user.value.id}`, {
+    await usersStore.updateUser(user.value.id, {
       full_name: editForm.value.full_name,
       email: editForm.value.email,
     })
@@ -496,7 +497,8 @@ async function handleChangePassword() {
 
   changingPassword.value = true
   try {
-    await api.post(`/users/${user.value?.id}/reset-password`, {
+    if (!user.value?.id) return
+    await usersStore.resetPassword(user.value.id, {
       current_password: passwordForm.value.current_password,
       new_password: passwordForm.value.new_password,
     })
@@ -540,7 +542,7 @@ async function handleAvatarUpload() {
     toastStore.info(t('profile.avatarUploading'))
 
     // 上传到服务器
-    const response = await uploadApi.uploadAvatar(file)
+    const response = await uploadStore.uploadAvatar(file)
     logger.info('Avatar uploaded', { category: 'ProfilePage' }, response)
 
     // 更新用户信息（强制刷新）
@@ -601,9 +603,8 @@ async function handleDeleteAccount() {
 
   deleting.value = true
   try {
-    await api.delete(`/users/${user.value?.id}`, {
-      json: { password: deleteForm.value.password },
-    })
+    if (!user.value?.id) return
+    await usersStore.deleteAccount(user.value.id, deleteForm.value.password)
 
     toastStore.success(t('profile.accountDeleted'))
     authStore.logout()

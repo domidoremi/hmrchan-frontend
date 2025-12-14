@@ -28,7 +28,7 @@
             <slot />
           </div>
 
-          <div v-if="$slots.footer" class="modal-footer">
+          <div v-if="$slots['footer']" class="modal-footer">
             <slot name="footer" />
           </div>
         </div>
@@ -74,7 +74,7 @@
  * </Modal>
  */
 
-import { computed, watch, ref, nextTick, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { X } from 'lucide-vue-next'
 import { useFocusManagement, useBodyScrollLock } from '@/composables'
 
@@ -189,13 +189,38 @@ watch(
 )
 
 /**
- * 组件卸载时清理资源
+ * 组件挂载时设置全局 ESC 键监听
  */
-onMounted(() => {
-  return () => {
-    if (cleanupFocusTrap) {
-      cleanupFocusTrap()
+const handleGlobalEsc = (event: KeyboardEvent) => {
+  if (event.key === 'Escape' && props.modelValue) {
+    close()
+  }
+}
+
+// 监听 modalValue 变化
+watch(
+  () => props.modelValue,
+  (isOpen) => {
+    if (isOpen) {
+      document.addEventListener('keydown', handleGlobalEsc)
+    } else {
+      document.removeEventListener('keydown', handleGlobalEsc)
     }
+  },
+  { immediate: true },
+)
+
+// 组件挂载和卸载时的清理
+onMounted(() => {
+  if (props.modelValue) {
+    document.addEventListener('keydown', handleGlobalEsc)
+  }
+})
+
+onUnmounted(() => {
+  document.removeEventListener('keydown', handleGlobalEsc)
+  if (cleanupFocusTrap) {
+    cleanupFocusTrap()
   }
 })
 </script>

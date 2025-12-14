@@ -4,7 +4,7 @@
  */
 import { ref, onMounted, onBeforeUnmount, watch, type Ref } from 'vue'
 import { smartPreloader } from '@/utils'
-import logger from '@/utils/logger'
+import { logger } from '@/utils/logger'
 
 interface PreloadOptions {
   /**

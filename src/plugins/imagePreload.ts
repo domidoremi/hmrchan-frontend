@@ -5,7 +5,7 @@
 
 import type { App } from 'vue'
 import { smartPreloadImages } from '@/utils'
-import logger from '@/utils/logger'
+import { logger } from '@/utils/logger'
 
 export interface ImagePreloadPluginOptions {
   /**
@@ -192,7 +192,7 @@ export const imagePreloadPlugin = {
     })
 
     // 提供全局方法
-    app.config.globalProperties.$preloadImages = (urls: string[]) => {
+    app.config.globalProperties['$preloadImages'] = (urls: string[]) => {
       return smartPreloadImages(urls, {
         priority: 'high',
         maxConcurrent,

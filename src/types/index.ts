@@ -116,7 +116,7 @@ export interface LoginResponse {
   /** 令牌过期时间（秒） */
   expires_in: number
   /** 用户信息 */
-  user: User
+  user?: User
 }
 
 /**

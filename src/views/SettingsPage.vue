@@ -404,7 +404,7 @@ import CacheManagement from '@/components/business/CacheManagement.vue'
 import { useAuthStore, useThemeStore, useSettingsStore, useToastStore } from '@/stores'
 import { useAutoSave } from '@/composables'
 import type { Theme } from '@/types'
-import logger from '@/utils/logger'
+import { logger } from '@/utils/logger'
 
 const appVersion = import.meta.env['VITE_APP_VERSION'] || '0.0.1'
 const buildMode = import.meta.env['MODE'] || 'development'

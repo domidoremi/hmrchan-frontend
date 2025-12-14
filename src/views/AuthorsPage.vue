@@ -237,16 +237,17 @@ import dayjs from 'dayjs'
 import MainLayout from '@/components/layout/MainLayout.vue'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import { PLATFORM_COLORS, PLATFORM_NAMES, PLATFORMS } from '@/types'
-import { authorsApi } from '@/api/services'
 import type { AuthorListItem } from '@/types'
 import { useErrorHandler } from '@/utils'
 import { useInfiniteScroll } from '@/composables'
 import { indexedDB } from '@/utils/storage'
-import logger from '@/utils/logger'
+import { logger } from '@/utils/logger'
+import { useAuthorsStore } from '@/stores'
 
 const router = useRouter()
 const { t } = useI18n()
 const { handleError } = useErrorHandler('AuthorsPage')
+const authorsStore = useAuthorsStore()
 
 // ============================================
 // 常量
@@ -347,7 +348,7 @@ const loadAuthors = async (reset = false) => {
     loading.value = true
     error.value = null
 
-    const response = await authorsApi.getAuthors({
+    const response = await authorsStore.getAuthors({
       page: currentPage.value,
       page_size: PAGE_SIZE,
     })
@@ -383,7 +384,7 @@ const loadMoreAuthors = async () => {
     loadingMore.value = true
     currentPage.value++
 
-    const response = await authorsApi.getAuthors({
+    const response = await authorsStore.getAuthors({
       page: currentPage.value,
       page_size: PAGE_SIZE,
     })

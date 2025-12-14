@@ -119,7 +119,7 @@ import MainLayout from '@/components/layout/MainLayout.vue'
 import SearchBar from '@/components/business/SearchBar.vue'
 import InfinitePostGrid from '@/components/business/InfinitePostGrid.vue'
 
-import { services } from '@/api/services'
+import { useSearchStore } from '@/stores'
 import type { Post, AuthorListItem, PaginatedResponse } from '@/types'
 import { indexedDB } from '@/utils/storage'
 import { fetchWithFallback } from '@/utils/cache'
@@ -127,6 +127,7 @@ import { withLogging } from '@/utils'
 
 const route = useRoute()
 const router = useRouter()
+const searchStore = useSearchStore()
 
 const activeTab = ref<'posts' | 'authors'>(route.query['tab'] === 'authors' ? 'authors' : 'posts')
 const query = ref<string>(
@@ -197,7 +198,7 @@ const loadPosts = async (append = false) => {
       () =>
         fetchWithFallback<PaginatedResponse<Post>>({
           primary: () =>
-            services.search.searchPosts(currentQuery, {
+            searchStore.searchPosts(currentQuery, {
               page: postsPage.value,
               page_size: postsPageSize,
             }),
@@ -283,7 +284,7 @@ const loadAuthors = async (append = false) => {
   try {
     const response = await withLogging(
       () =>
-        services.search.searchAuthors(query.value.trim(), {
+        searchStore.searchAuthors(query.value.trim(), {
           page: authorsPage.value,
           page_size: authorsPageSize,
         }),

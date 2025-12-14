@@ -3,7 +3,7 @@
  * 用于实现列表的懒加载和分页
  */
 import { ref, watch, onMounted, onUnmounted, type Ref, unref } from 'vue'
-import logger from '@/utils/logger'
+import { logger } from '@/utils/logger'
 
 interface UseInfiniteScrollOptions {
   /**
