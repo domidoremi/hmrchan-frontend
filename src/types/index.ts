@@ -70,3 +70,68 @@ export interface ToastOptions {
   message: string
   duration?: number
 }
+
+// ========== Comment System ==========
+
+export interface Comment {
+  id: string
+  post_id: string
+  user: CommentUser
+  content: string
+  parent_id: string | null
+  replies_count: number
+  likes_count: number
+  is_liked: boolean
+  is_favorited: boolean
+  created_at: string
+  updated_at: string
+  replies?: Comment[]
+}
+
+export interface CommentUser {
+  id: string
+  username: string
+  avatar_url?: string
+  level: UserLevel
+}
+
+export type UserLevel = 'guest' | 'user' | 'vip' | 'moderator' | 'admin'
+
+export interface CommentFormData {
+  content: string
+  parent_id?: string
+}
+
+export interface CommentSortOption {
+  value: 'newest' | 'oldest' | 'popular'
+  label: string
+}
+
+export interface CommunityPost {
+  id: string
+  post_id: string
+  post_title: string
+  post_thumbnail?: string
+  comments_count: number
+  latest_comment?: Comment
+  created_at: string
+}
+
+// ========== Post Favorite ==========
+
+export interface PostFavorite {
+  id: string
+  post_id: string
+  user_id: string
+  created_at: string
+}
+
+// ========== Comment Report ==========
+
+export type ReportReason = 'spam' | 'harassment' | 'inappropriate' | 'other'
+
+export interface CommentReport {
+  comment_id: string
+  reason: ReportReason
+  description?: string
+}

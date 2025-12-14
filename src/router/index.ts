@@ -30,6 +30,12 @@ const routes: RouteRecordRaw[] = [
     meta: { title: 'nav.authors' },
   },
   {
+    path: '/community',
+    name: 'community',
+    component: () => import('@/views/CommunityPage.vue'),
+    meta: { title: 'community.title' },
+  },
+  {
     path: '/author/:id',
     name: 'author-detail',
     component: () => import('@/views/AuthorDetailPage.vue'),
