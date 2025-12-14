@@ -22,4 +22,10 @@ app.use(pinia)
 app.use(router)
 app.use(i18n)
 
+// 初始化认证状态
+import { useAuthStore } from './stores/auth'
+const authStore = useAuthStore()
+authStore.initAuth()
+authStore.setupAuthListener()
+
 app.mount('#app')
