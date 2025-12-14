@@ -8,7 +8,7 @@
  */
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import logger from '@/utils/logger'
+import { logger } from '@/utils/logger'
 
 export const useNetworkStore = defineStore('network', () => {
   /** 日志上下文 */

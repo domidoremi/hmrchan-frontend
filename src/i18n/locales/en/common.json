@@ -6,6 +6,7 @@
   },
   "common": {
     "loading": "Loading...",
+    "sending": "Sending...",
     "error": "Error",
     "success": "Success",
     "cancel": "Cancel",

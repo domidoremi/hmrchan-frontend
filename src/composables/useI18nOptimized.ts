@@ -5,7 +5,7 @@
 import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { SupportedLocale } from '@/i18n'
-import logger from '@/utils/logger'
+import { logger } from '@/utils/logger'
 import dayjs from 'dayjs'
 
 // 语言切换状态

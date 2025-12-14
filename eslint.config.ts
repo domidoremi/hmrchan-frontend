@@ -41,6 +41,45 @@ export default defineConfigWithVueTs(
   /** 跳过格式化相关规则 - 格式化由 Prettier 统一处理 */
   skipFormatting,
 
+  {
+    name: 'app/architecture-boundaries',
+    files: ['src/**/*.{ts,mts,tsx,vue}'],
+    ignores: ['src/api/**', 'src/utils/cache/cacheInvalidation.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: '@/api/client',
+              message:
+                "Do not import '@/api/client' here. Use '@/api/services' (store layer) or call stores from views/composables.",
+            },
+          ],
+        },
+      ],
+    },
+  },
+
+  {
+    name: 'app/architecture-boundaries-route-a',
+    files: ['src/{views,composables}/**/*.{ts,mts,tsx,vue}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: '@/api/services',
+              message:
+                "Do not import '@/api/services' in views/composables. Use stores (Route A) instead.",
+            },
+          ],
+        },
+      ],
+    },
+  },
+
   /** 自定义规则配置 */
   {
     name: 'app/custom-rules',

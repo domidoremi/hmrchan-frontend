@@ -19,7 +19,7 @@ import { indexedDB } from '@/utils/storage'
 import { postCache } from '@/utils/cache'
 import { cacheInvalidation } from '@/utils/cache/cacheInvalidation'
 import { handleError } from '@/utils'
-import logger from '@/utils/logger'
+import { logger } from '@/utils/logger'
 import { toLogContext } from '@/utils/typeGuards'
 import i18n from '@/i18n'
 import type {
@@ -79,10 +79,10 @@ export const authApi = {
    */
   async register(data: { username: string; email: string; password: string; full_name?: string }) {
     try {
-      return await api.post<LoginResponse>('/auth/register', data)
+      return await api.post<User>('/auth/register', data)
     } catch (error) {
       handleError(error, 'Auth.Register', {
-        customMessage: 'Failed to register user',
+        customMessage: t('api.register'),
       })
       throw error
     }
@@ -107,7 +107,7 @@ export const authApi = {
       return await api.post<LoginResponse>('/auth/login', credentials)
     } catch (error) {
       handleError(error, 'Auth.Login', {
-        customMessage: 'Failed to login',
+        customMessage: t('api.login'),
       })
       throw error
     }
@@ -125,9 +125,6 @@ export const authApi = {
     try {
       return await api.get<User>('/auth/me')
     } catch (error) {
-      handleError(error, 'Auth.GetCurrentUser', {
-        customMessage: t('api.fetchCurrentUser'),
-      })
       throw error
     }
   },
@@ -140,13 +137,28 @@ export const authApi = {
    * @example
    * authApi.logout()
    */
-  logout() {
+  async logout() {
     try {
-      localStorage.removeItem('access_token')
-      localStorage.removeItem('user')
-      logger.info('[Auth] User logged out successfully', {})
+      await api.post<void>('/auth/logout', {
+        all_devices: false,
+      })
     } catch (error) {
       logger.error('[Auth] Error during logout', toLogContext(error))
+    }
+  },
+
+  /**
+   * 刷新访问令牌
+   *
+   * 使用 HttpOnly cookie 中的 refresh_token 获取新的 access_token
+   *
+   * @returns 登录响应（包含新的 access_token）
+   */
+  async refresh(): Promise<LoginResponse | null> {
+    try {
+      return await api.post<LoginResponse>('/auth/refresh')
+    } catch {
+      return null
     }
   },
 
@@ -227,7 +239,7 @@ export const searchApi = {
       })
     } catch (error) {
       handleError(error, 'Search.SearchPosts', {
-        customMessage: `Failed to search posts with query: ${query}`,
+        customMessage: t('api.searchPosts'),
       })
       throw error
     }
@@ -264,7 +276,7 @@ export const searchApi = {
       })
     } catch (error) {
       handleError(error, 'Search.SearchAuthors', {
-        customMessage: `Failed to search authors with query: ${query}`,
+        customMessage: t('api.searchAuthors'),
       })
       throw error
     }
@@ -455,7 +467,7 @@ export const postsApi = {
       })
     } catch (error) {
       handleError(error, 'Posts.SearchPosts', {
-        customMessage: `Failed to search posts with query: ${query}`,
+        customMessage: t('api.searchPosts'),
       })
       throw error
     }
@@ -512,6 +524,125 @@ export const postsApi = {
       })
       throw error
     }
+  },
+
+  async incrementView(postId: UUID) {
+    try {
+      return await api.post(`/posts/${postId}/increment-view`)
+    } catch (error) {
+      handleError(error, 'Posts.IncrementView', {
+        customMessage: t('api.incrementView'),
+        silent: true,
+      })
+      throw error
+    }
+  },
+}
+
+export const preferencesApi = {
+  async updatePreferences(settings: Record<string, unknown>) {
+    try {
+      return await api.patch('/preferences', settings)
+    } catch (error) {
+      handleError(error, 'Preferences.Update', {
+        customMessage: t('api.updatePreferences'),
+        silent: true,
+      })
+      throw error
+    }
+  },
+
+  async getPreferences() {
+    try {
+      return await api.get<Record<string, unknown> & { updatedAt?: string }>('/preferences', {
+        cache: false,
+      })
+    } catch (error) {
+      handleError(error, 'Preferences.Get', {
+        customMessage: t('api.fetchPreferences'),
+        silent: true,
+      })
+      throw error
+    }
+  },
+}
+
+export const usersApi = {
+  async getStats(userId: UUID) {
+    try {
+      return await api.get<{ favorites_count?: number; views_count?: number }>(
+        `/users/${userId}/stats`,
+        {
+          cache: false,
+        },
+      )
+    } catch (error) {
+      handleError(error, 'Users.GetStats', {
+        customMessage: t('api.fetchUserStats'),
+        silent: true,
+      })
+      throw error
+    }
+  },
+
+  async updateUser(userId: UUID, data: { full_name?: string; email?: string }) {
+    try {
+      return await api.patch(`/users/${userId}`, data)
+    } catch (error) {
+      handleError(error, 'Users.Update', {
+        customMessage: t('api.updateUser'),
+      })
+      throw error
+    }
+  },
+
+  async resetPassword(userId: UUID, data: { current_password: string; new_password: string }) {
+    try {
+      return await api.post(`/users/${userId}/reset-password`, data)
+    } catch (error) {
+      handleError(error, 'Users.ResetPassword', {
+        customMessage: t('api.resetPassword'),
+      })
+      throw error
+    }
+  },
+
+  async deleteAccount(userId: UUID, password: string) {
+    try {
+      return await api.delete(`/users/${userId}`, {
+        json: { password },
+      })
+    } catch (error) {
+      handleError(error, 'Users.DeleteAccount', {
+        customMessage: t('api.deleteAccount'),
+      })
+      throw error
+    }
+  },
+}
+
+export const feedbackApi = {
+  async submitFeedback(formData: FormData, headers?: Record<string, string>) {
+    try {
+      return await api.post('feedback', formData, {
+        ...(headers ? { headers } : {}),
+      })
+    } catch (error) {
+      handleError(error, 'Feedback.Submit', {
+        customMessage: t('api.submitFeedback'),
+        silent: true,
+      })
+      throw error
+    }
+  },
+}
+
+export const cacheApi = {
+  async invalidateCacheByPatterns(patterns: string[]) {
+    return api.invalidateCacheByPatterns(patterns)
+  },
+  async clearCache(url?: string, params?: Record<string, unknown>) {
+    return api.clearCache(url, params)
   },
 }
 
@@ -638,7 +769,7 @@ export const mediaApi = {
       logger.info('[Media] Downloaded media successfully', { mediaId })
     } catch (error) {
       handleError(error, 'Media.DownloadMedia', {
-        customMessage: `Failed to download media: ${mediaId}`,
+        customMessage: t('api.downloadMedia'),
       })
       throw error
     }
@@ -801,7 +932,7 @@ export const favoritesApi = {
       return result
     } catch (error) {
       handleError(error, 'Favorites.AddFavorite', {
-        customMessage: 'Failed to add favorite',
+        customMessage: t('api.addFavorite'),
       })
       throw error
     }
@@ -833,7 +964,7 @@ export const favoritesApi = {
       return result
     } catch (error) {
       handleError(error, 'Favorites.UpdateFavorite', {
-        customMessage: `Failed to update favorite: ${favoriteId}`,
+        customMessage: t('api.updateFavorite'),
       })
       throw error
     }
@@ -861,7 +992,7 @@ export const favoritesApi = {
       return result
     } catch (error) {
       handleError(error, 'Favorites.DeleteFavorite', {
-        customMessage: `Failed to delete favorite: ${postId}`,
+        customMessage: t('api.deleteFavorite'),
       })
       throw error
     }
@@ -911,7 +1042,7 @@ export const favoritesApi = {
       )
     } catch (error) {
       handleError(error, 'Favorites.CheckFavorite', {
-        customMessage: `Failed to check favorite status: ${postId}`,
+        customMessage: t('api.checkFavorite'),
         silent: true,
       })
       throw error
@@ -1028,17 +1159,13 @@ export const uploadApi = {
     try {
       const formData = new FormData()
       formData.append('file', file)
-      const result = await api.post<FileUploadResponse>('/upload/avatar', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      })
+      const result = await api.post<FileUploadResponse>('/upload/avatar', formData)
 
       logger.info('[Upload] Avatar uploaded successfully', {})
       return result
     } catch (error) {
       handleError(error, 'Upload.UploadAvatar', {
-        customMessage: 'Failed to upload avatar',
+        customMessage: t('api.uploadAvatar'),
       })
       throw error
     }
@@ -1060,21 +1187,13 @@ export const uploadApi = {
     try {
       const formData = new FormData()
       formData.append('file', file)
-      const result = await api.post<FileUploadResponse>(
-        `/upload/users/${userId}/avatar`,
-        formData,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        },
-      )
+      const result = await api.post<FileUploadResponse>(`/upload/users/${userId}/avatar`, formData)
 
       logger.info('[Upload] User avatar uploaded successfully', { userId })
       return result
     } catch (error) {
       handleError(error, 'Upload.UploadUserAvatar', {
-        customMessage: `Failed to upload avatar for user: ${userId}`,
+        customMessage: t('api.uploadUserAvatar'),
       })
       throw error
     }
@@ -1105,4 +1224,8 @@ export const services = {
   upload: uploadApi,
   /** 搜索 API */
   search: searchApi,
+  preferences: preferencesApi,
+  users: usersApi,
+  feedback: feedbackApi,
+  cache: cacheApi,
 }

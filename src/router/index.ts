@@ -10,7 +10,7 @@
  */
 
 import { createRouter, createWebHistory } from 'vue-router'
-import logger from '@/utils/logger'
+import { logger } from '@/utils/logger'
 import type { RouteRecordRaw } from 'vue-router'
 import { useAuthStore } from '@/stores'
 
@@ -308,7 +308,7 @@ const router = createRouter({
    * @param savedPosition - 浏览器记录的滚动位置（前进/后退时存在）
    * @returns 滚动位置配置对象
    */
-  scrollBehavior(to, from, savedPosition) {
+  scrollBehavior(to, _from, savedPosition) {
     // 浏览器前进/后退：使用浏览器记录的位置
     if (savedPosition) {
       return {
@@ -327,7 +327,7 @@ const router = createRouter({
 
     // 对于 KeepAlive 缓存的页面，尝试恢复滚动位置
     const cachedPages = ['HomePage', 'ExplorePage', 'PostsView', 'AuthorsPage']
-    const toComponentName = to.matched[0]?.components?.default?.name
+    const toComponentName = to.matched[0]?.components?.['default']?.name
 
     if (toComponentName && cachedPages.includes(toComponentName)) {
       // 从 sessionStorage 恢复位置
@@ -385,12 +385,14 @@ const router = createRouter({
  * @param from - 来源路由对象
  * @param next - 路由导航函数，必须调用以继续导航
  */
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore()
+
+  await authStore.restoreAuth()
 
   // 保存缓存页面的滚动位置
   const cachedPages = ['HomePage', 'ExplorePage', 'PostsView', 'AuthorsPage']
-  const fromComponentName = from.matched[0]?.components?.default?.name
+  const fromComponentName = from.matched[0]?.components?.['default']?.name
 
   if (fromComponentName && cachedPages.includes(fromComponentName)) {
     try {
@@ -410,7 +412,7 @@ router.beforeEach((to, from, next) => {
     sessionStorage.setItem(LAST_VISITED_ROUTE_KEY, from.fullPath)
   }
 
-  if (to.name === 'login' && !to.query.redirect) {
+  if (to.name === 'login' && !to.query['redirect']) {
     const historicalRoute = sessionStorage.getItem(LAST_VISITED_ROUTE_KEY) || '/'
     const redirectTarget = from.name && from.name !== 'login' ? from.fullPath : historicalRoute
 
@@ -425,17 +427,17 @@ router.beforeEach((to, from, next) => {
     return
   }
 
-  const appName = import.meta.env.VITE_APP_NAME || 'himeri chan'
-  if (to.meta.title) {
-    document.title = `${to.meta.title} - ${appName}`
+  const appName = import.meta.env['VITE_APP_NAME'] || 'himeri chan'
+  if (to.meta['title']) {
+    document.title = `${to.meta['title']} - ${appName}`
   }
 
-  if (to.meta.requiresAuth && !authStore.isAuthenticated) {
+  if (to.meta['requiresAuth'] && !authStore.isAuthenticated) {
     next({ name: 'login', query: { redirect: to.fullPath } })
     return
   }
 
-  if (to.meta.guest && authStore.isAuthenticated) {
+  if (to.meta['guest'] && authStore.isAuthenticated) {
     next({ name: 'home' })
     return
   }
@@ -457,7 +459,9 @@ router.afterEach((to) => {
     sessionStorage.setItem(LAST_VISITED_ROUTE_KEY, to.fullPath)
   }
 
-  preloadCriticalRoutes(to)
+  if (to.name) {
+    preloadCriticalRoutes({ name: to.name })
+  }
 })
 
 /**

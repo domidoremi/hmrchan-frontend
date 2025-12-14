@@ -3,7 +3,7 @@
  * Error Monitoring System
  */
 
-import logger from '@/utils/logger'
+import { logger } from '@/utils/logger'
 
 export interface ErrorLog {
   id: string
@@ -51,12 +51,12 @@ class ErrorMonitor {
       type,
       context,
       message,
-      code: options?.code,
-      status: options?.status,
+      ...(options?.code !== undefined && { code: options.code }),
+      ...(options?.status !== undefined && { status: options.status }),
       userAgent: navigator.userAgent,
       url: window.location.href,
-      stack: options?.stack,
-      details: options?.details,
+      ...(options?.stack !== undefined && { stack: options.stack }),
+      ...(options?.details !== undefined && { details: options.details }),
     }
 
     this.logs.push(log)
