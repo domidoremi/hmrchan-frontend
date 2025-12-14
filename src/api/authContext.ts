@@ -1,23 +1,19 @@
-export type AuthTokenGetter = () => string | null
 export type UnauthorizedHandler = () => void | Promise<void>
+export type AuthTokenGetter = () => string | null
 
-let getAuthToken: AuthTokenGetter = () => null
 let onUnauthorized: UnauthorizedHandler = () => {}
-
-export function setAuthTokenGetter(getter: AuthTokenGetter) {
-  getAuthToken = getter
-}
+let getAuthToken: AuthTokenGetter = () => null
 
 export function setUnauthorizedHandler(handler: UnauthorizedHandler) {
   onUnauthorized = handler
 }
 
+export function setAuthTokenGetter(getter: AuthTokenGetter) {
+  getAuthToken = getter
+}
+
 export function readAuthToken(): string | null {
-  try {
-    return getAuthToken()
-  } catch {
-    return null
-  }
+  return getAuthToken()
 }
 
 export async function handleUnauthorized(): Promise<void> {

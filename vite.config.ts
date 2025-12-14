@@ -15,6 +15,7 @@
 import { fileURLToPath, URL } from 'node:url'
 import { copyFileSync, existsSync } from 'node:fs'
 import { resolve } from 'node:path'
+import type { IncomingMessage } from 'node:http'
 
 import { defineConfig, type Plugin } from 'vite'
 import vue from '@vitejs/plugin-vue'
@@ -22,6 +23,10 @@ import vueJsx from '@vitejs/plugin-vue-jsx'
 import vueDevTools from 'vite-plugin-vue-devtools'
 import { imagetools } from 'vite-imagetools'
 import { criticalCSSPlugin } from './vite-plugin-critical-css'
+
+type DevProxyServer = {
+  on(event: 'proxyRes', listener: (proxyRes: IncomingMessage) => void): void
+}
 
 /** 构建时间戳，用于缓存破坏 */
 const BUILD_TIME = new Date().toISOString()
@@ -592,6 +597,22 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           secure: true,
           followRedirects: true,
+          configure: (proxy: DevProxyServer) => {
+            proxy.on('proxyRes', (proxyRes) => {
+              const setCookie = proxyRes.headers['set-cookie']
+
+              if (!setCookie) return
+
+              if (Array.isArray(setCookie)) {
+                proxyRes.headers['set-cookie'] = setCookie.map((cookie) =>
+                  cookie.replace(/;\s*Secure/gi, ''),
+                )
+                return
+              }
+
+              proxyRes.headers['set-cookie'] = setCookie.replace(/;\s*Secure/gi, '')
+            })
+          },
           rewrite: (path) => {
             const url = new URL(path, 'http://localhost')
             if (!url.pathname.endsWith('/')) {

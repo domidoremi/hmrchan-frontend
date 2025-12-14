@@ -36,52 +36,50 @@
           </p>
         </section>
       </div>
-
+      @@
       <div class="contact-form-card glass-card">
         <section class="contact-section contact-form-section">
-          <h2>{{ $t('contact.formTitle', '站内联系表单') }}</h2>
+          <h2>{{ $t('contact.formTitle') }}</h2>
           <p class="contact-form-hint">
-            {{ $t('contact.formHint', '您可以通过此表单直接向开发者发送反馈, 请勿包含敏感信息。') }}
+            {{ $t('contact.formHint') }}
           </p>
           <form class="contact-form" @submit.prevent="handleSubmit">
             <div class="form-row">
-              <label class="form-label">{{ $t('contact.typeLabel', '反馈类型') }}</label>
+              <label class="form-label">{{ $t('contact.typeLabel') }}</label>
               <div class="form-options">
                 <label class="option-pill" :class="{ active: form.type === 'bug' }">
                   <input v-model="form.type" type="radio" value="bug" />
-                  <span>{{ $t('contact.typeBug', 'Bug 反馈') }}</span>
+                  <span>{{ $t('contact.typeBug') }}</span>
                 </label>
                 <label class="option-pill" :class="{ active: form.type === 'feature' }">
                   <input v-model="form.type" type="radio" value="feature" />
-                  <span>{{ $t('contact.typeFeature', '功能建议') }}</span>
+                  <span>{{ $t('contact.typeFeature') }}</span>
                 </label>
                 <label class="option-pill" :class="{ active: form.type === 'other' }">
                   <input v-model="form.type" type="radio" value="other" />
-                  <span>{{ $t('contact.typeOther', '其他') }}</span>
+                  <span>{{ $t('contact.typeOther') }}</span>
                 </label>
               </div>
             </div>
 
             <div class="form-row">
-              <label class="form-label">{{ $t('contact.authStatus', '登录状态') }}</label>
+              <label class="form-label">{{ $t('contact.authStatus') }}</label>
               <div class="form-options">
                 <label class="option-pill" :class="{ active: form.authStatus === 'auto' }">
                   <input v-model="form.authStatus" type="radio" value="auto" />
                   <span>{{
-                    isAuthenticated
-                      ? $t('contact.authLoggedIn', '已登录')
-                      : $t('contact.authGuest', '未登录或游客')
+                    isAuthenticated ? $t('contact.authLoggedIn') : $t('contact.authGuest')
                   }}</span>
                 </label>
                 <label class="option-pill" :class="{ active: form.authStatus === 'guest' }">
                   <input v-model="form.authStatus" type="radio" value="guest" />
-                  <span>{{ $t('contact.authForceGuest', '以访客身份提交') }}</span>
+                  <span>{{ $t('contact.authForceGuest') }}</span>
                 </label>
               </div>
             </div>
 
             <div class="form-row">
-              <label class="form-label">{{ $t('contact.emailLabel', '联系邮箱 (可选)') }}</label>
+              <label class="form-label">{{ $t('contact.emailLabel') }}</label>
               <GlassInput
                 v-model="form.email"
                 type="email"
@@ -91,7 +89,7 @@
             </div>
 
             <div class="form-row">
-              <label class="form-label">{{ $t('contact.messageLabel', '反馈内容') }}</label>
+              <label class="form-label">{{ $t('contact.messageLabel') }}</label>
               <textarea
                 v-model="form.message"
                 class="contact-textarea"
@@ -102,7 +100,7 @@
             </div>
 
             <div class="form-row">
-              <label class="form-label">{{ $t('contact.attachmentsLabel', '附件 (可选)') }}</label>
+              <label class="form-label">{{ $t('contact.attachmentsLabel') }}</label>
               <input
                 class="file-input"
                 type="file"
@@ -110,12 +108,7 @@
                 @change="handleFileChange"
               />
               <div class="field-hint">
-                {{
-                  $t(
-                    'contact.attachmentsHint',
-                    '最多 1 个图片文件, 不超过 5MB, 仅支持 PNG / JPEG / WEBP / GIF。',
-                  )
-                }}
+                {{ $t('contact.attachmentsHint') }}
               </div>
               <ul v-if="selectedFiles.length" class="file-list">
                 <li v-for="file in selectedFiles" :key="file.name" class="file-item">
@@ -127,8 +120,8 @@
 
             <div class="form-actions">
               <GlassButton :disabled="isSubmitting" type="submit">
-                <span v-if="!isSubmitting">{{ $t('common.submit', '提交') }}</span>
-                <span v-else>{{ $t('common.sending', '正在发送') }}</span>
+                <span v-if="!isSubmitting">{{ $t('common.submit') }}</span>
+                <span v-else>{{ $t('common.sending') }}</span>
               </GlassButton>
             </div>
           </form>
@@ -141,6 +134,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { ArrowLeft } from 'lucide-vue-next'
 import MainLayout from '@/components/layout/MainLayout.vue'
 import GlassInput from '@/components/ui/Input.vue'
@@ -177,6 +171,7 @@ const getOrCreateFingerprint = (): string | null => {
 }
 
 const router = useRouter()
+const { t } = useI18n()
 const authStore = useAuthStore()
 const toastStore = useToastStore()
 const feedbackStore = useFeedbackStore()
@@ -185,7 +180,9 @@ const isAuthenticated = computed(() => authStore.isAuthenticated)
 const currentUserEmail = computed(() =>
   authStore.user && authStore.user.email ? authStore.user.email : '',
 )
-const resolvedEmailPlaceholder = computed(() => currentUserEmail.value || 'your@email')
+const resolvedEmailPlaceholder = computed(
+  () => currentUserEmail.value || t('contact.emailPlaceholder'),
+)
 
 const form = ref({
   type: 'bug',
@@ -225,11 +222,11 @@ const handleFileChange = (event: Event) => {
       break
     }
     if (file.size > MAX_FILE_SIZE) {
-      toastStore.error('单个附件大小不能超过 5MB')
+      toastStore.error(t('contact.fileTooLarge', { max: formatFileSize(MAX_FILE_SIZE) }))
       continue
     }
     if (file.type && !ALLOWED_MIME_TYPES.includes(file.type)) {
-      toastStore.error('不支持的文件类型')
+      toastStore.error(t('contact.invalidFileType'))
       continue
     }
     validFiles.push(file)
@@ -247,11 +244,11 @@ const resolveCategory = (type: string): string => {
 
 const validateForm = () => {
   if (!form.value.message.trim()) {
-    toastStore.error('请填写反馈内容')
+    toastStore.error(t('contact.messageRequired'))
     return false
   }
   if (form.value.message.length > MAX_MESSAGE_LENGTH) {
-    toastStore.error('反馈内容过长')
+    toastStore.error(t('contact.messageTooLong', { max: MAX_MESSAGE_LENGTH }))
     return false
   }
   return true
@@ -300,7 +297,7 @@ const handleSubmit = async () => {
 
     await feedbackStore.submitFeedback(formData, headers)
 
-    toastStore.success('反馈已提交, 感谢你的反馈!')
+    toastStore.success(t('contact.submitSuccess'))
     form.value.message = ''
     form.value.email = ''
     selectedFiles.value = []
@@ -311,17 +308,21 @@ const handleSubmit = async () => {
       message?: string
     }
     const status = httpError.response?.status
-    const data = httpError.responseData || {}
-    const backendMessage = (data as { message?: string }).message
 
-    if (status === 400) {
-      toastStore.error(backendMessage || '提交内容不符合要求, 请检查后重试')
+    if (!status) {
+      toastStore.error(t('errors.networkError'))
+    } else if (status === 400) {
+      toastStore.error(t('contact.submitInvalid'))
+    } else if (status === 401) {
+      toastStore.error(t('errors.unauthorized'))
+    } else if (status === 403) {
+      toastStore.error(t('errors.permissionDenied'))
     } else if (status === 429) {
-      toastStore.error('提交过于频繁, 请稍后再试')
-    } else if (status && status >= 500) {
-      toastStore.error('服务器暂时不可用, 请稍后再试')
+      toastStore.error(t('contact.submitTooMany'))
+    } else if (status >= 500) {
+      toastStore.error(t('contact.submitServerError'))
     } else {
-      toastStore.error(httpError.message || '提交失败, 请稍后重试')
+      toastStore.error(t('contact.submitFailed'))
     }
   } finally {
     isSubmitting.value = false

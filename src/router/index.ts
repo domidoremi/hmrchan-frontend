@@ -385,8 +385,10 @@ const router = createRouter({
  * @param from - 来源路由对象
  * @param next - 路由导航函数，必须调用以继续导航
  */
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore()
+
+  await authStore.restoreAuth()
 
   // 保存缓存页面的滚动位置
   const cachedPages = ['HomePage', 'ExplorePage', 'PostsView', 'AuthorsPage']
