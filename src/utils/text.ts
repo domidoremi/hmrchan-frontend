@@ -2,7 +2,7 @@
  * 文本格式化工具
  */
 
-import logger from '@/utils/logger'
+import { logger } from '@/utils/logger'
 
 /**
  * 截断文本

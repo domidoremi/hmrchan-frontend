@@ -8,10 +8,10 @@
  * - 支持 TTL 过期机制
  */
 
-import logger from '@/utils/logger'
+import { logger } from '@/utils/logger'
 
 const STORAGE_KEY_PREFIX = '__hmrc_'
-const ENCRYPTION_KEY_ENV = import.meta.env.VITE_ENCRYPTION_KEY || 'hmrchan_secure_key_v1_default'
+const ENCRYPTION_KEY_ENV = import.meta.env['VITE_ENCRYPTION_KEY'] || 'hmrchan_secure_key_v1_default'
 
 // 缓存派生的加密密钥
 let cachedCryptoKey: CryptoKey | null = null
@@ -189,7 +189,7 @@ class SecureStorage {
         const item: StorageItem<T> = {
           value,
           timestamp: Date.now(),
-          ttl: options.ttl,
+          ...(options.ttl !== undefined && { ttl: options.ttl }),
         }
 
         let data = JSON.stringify(item)

@@ -118,8 +118,18 @@
     "authGuest": "Not logged in / guest",
     "authForceGuest": "Submit as guest",
     "emailLabel": "Contact email (optional)",
+    "emailPlaceholder": "your@email",
     "messageLabel": "Feedback content",
     "attachmentsLabel": "Attachment (optional)",
-    "attachmentsHint": "Up to 1 image file, max 5MB, PNG / JPEG / WEBP / GIF only."
+    "attachmentsHint": "Up to 1 image file, max 5MB, PNG / JPEG / WEBP / GIF only.",
+    "fileTooLarge": "The attachment is too large (max {max})",
+    "invalidFileType": "Unsupported file type",
+    "messageRequired": "Please enter feedback content",
+    "messageTooLong": "The message is too long (max {max} characters)",
+    "submitSuccess": "Feedback submitted. Thank you!",
+    "submitInvalid": "Submission content is invalid. Please check and try again.",
+    "submitTooMany": "Too many submissions. Please try again later.",
+    "submitServerError": "Server is temporarily unavailable. Please try again later.",
+    "submitFailed": "Submission failed. Please try again later."
   }
 }

@@ -62,7 +62,7 @@ import './styles/desktop-optimizations.css'
 // ============================================
 
 /** 日志工具 */
-import logger, { LogLevel } from './utils/logger'
+import { logger, LogLevel } from './utils/logger'
 
 /** Service Worker 管理器 */
 import { swManager } from './utils/serviceWorkerManager'
@@ -75,6 +75,9 @@ import { imagePreloadPlugin } from './plugins/imagePreload'
 
 /** 性能监控工具 */
 import { performanceMonitor } from './utils/performanceMonitor'
+
+import { setUnauthorizedHandler, setAuthTokenGetter } from './api/authContext'
+import { useAuthStore } from './stores'
 
 // ============================================
 // 状态管理导入
@@ -135,6 +138,14 @@ pinia.use(piniaPluginPersistedstate)
 
 /** 注册 Pinia 状态管理 */
 app.use(pinia)
+setUnauthorizedHandler(() => {
+  const authStore = useAuthStore()
+  return authStore.logout()
+})
+setAuthTokenGetter(() => {
+  const authStore = useAuthStore()
+  return authStore.token
+})
 
 /** 注册 Vue Router 路由 */
 app.use(router)

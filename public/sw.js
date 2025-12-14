@@ -5,6 +5,15 @@
  *       确保完整帖子数据（含 media_files）可离线访问
  */
 
+// AbortSignal.timeout polyfill for compatibility
+if (!AbortSignal.timeout) {
+  AbortSignal.timeout = function delay(ms) {
+    const controller = new AbortController()
+    setTimeout(() => controller.abort(), ms)
+    return controller.signal
+  }
+}
+
 const CACHE_VERSION = 'v3'
 const CACHE_NAMES = {
   static: `hmrchan-static-${CACHE_VERSION}`,

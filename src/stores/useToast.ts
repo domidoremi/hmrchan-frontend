@@ -9,7 +9,7 @@
  */
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import logger from '@/utils/logger'
+import { logger } from '@/utils/logger'
 
 /** Toast 通知类型 */
 export type ToastType = 'success' | 'error' | 'warning' | 'info'
@@ -153,7 +153,12 @@ export const useToastStore = defineStore('toast', () => {
    * @returns Toast 的唯一标识符
    */
   function success(message: string, title?: string, duration?: number): string {
-    return addToast({ type: 'success', message, title, duration })
+    return addToast({
+      type: 'success',
+      message,
+      ...(title !== undefined && { title }),
+      ...(duration !== undefined && { duration }),
+    })
   }
 
   /**
@@ -165,7 +170,12 @@ export const useToastStore = defineStore('toast', () => {
    * @returns Toast 的唯一标识符
    */
   function error(message: string, title?: string, duration?: number): string {
-    return addToast({ type: 'error', message, title, duration: duration ?? 8000 })
+    return addToast({
+      type: 'error',
+      message,
+      ...(title !== undefined && { title }),
+      duration: duration ?? 8000,
+    })
   }
 
   /**
@@ -177,7 +187,12 @@ export const useToastStore = defineStore('toast', () => {
    * @returns Toast 的唯一标识符
    */
   function warning(message: string, title?: string, duration?: number): string {
-    return addToast({ type: 'warning', message, title, duration })
+    return addToast({
+      type: 'warning',
+      message,
+      ...(title !== undefined && { title }),
+      ...(duration !== undefined && { duration }),
+    })
   }
 
   /**
@@ -189,7 +204,12 @@ export const useToastStore = defineStore('toast', () => {
    * @returns Toast 的唯一标识符
    */
   function info(message: string, title?: string, duration?: number): string {
-    return addToast({ type: 'info', message, title, duration })
+    return addToast({
+      type: 'info',
+      message,
+      ...(title !== undefined && { title }),
+      ...(duration !== undefined && { duration }),
+    })
   }
 
   return {

@@ -8,7 +8,7 @@
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { performanceMonitor, type PerformanceMetrics } from '@/utils/performanceMonitor'
 import { useRouter } from 'vue-router'
-import logger from '@/utils/logger'
+import { logger } from '@/utils/logger'
 
 export function usePerformanceMonitoring() {
   const router = useRouter()

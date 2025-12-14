@@ -6,7 +6,7 @@
  * 3. 缓存失效 - 支持TTL和手动清除
  */
 
-import logger from '@/utils/logger'
+import { logger } from '@/utils/logger'
 
 interface CacheConfig {
   ttl?: number // 缓存时间(毫秒)
