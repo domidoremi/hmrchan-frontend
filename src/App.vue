@@ -13,9 +13,15 @@
       <RouterView v-slot="{ Component, route }">
         <Transition :name="transitionName" mode="out-in">
           <Suspense>
-            <component :is="Component" :key="route.path" />
+            <template #default>
+              <div class="route-view" :key="route.path">
+                <component :is="Component" :key="route.path" />
+              </div>
+            </template>
             <template #fallback>
-              <PageLoading />
+              <div class="route-view">
+                <PageLoading />
+              </div>
             </template>
           </Suspense>
         </Transition>

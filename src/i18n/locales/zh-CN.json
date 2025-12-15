@@ -117,6 +117,7 @@
     "goHome": "返回首页",
     "serverError": "服务器错误",
     "networkError": "网络错误",
+    "timeout": "请求超时",
     "tryAgain": "请稍后重试"
   },
   "comment": {

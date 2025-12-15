@@ -117,6 +117,7 @@
     "goHome": "Go Home",
     "serverError": "Server Error",
     "networkError": "Network Error",
+    "timeout": "Request timed out",
     "tryAgain": "Please try again later"
   },
   "comment": {
