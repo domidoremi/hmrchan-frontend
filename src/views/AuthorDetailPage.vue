@@ -1,23 +1,126 @@
 <template>
   <div class="author-detail-page">
     <div class="container">
-      <div class="author-header glass-card">
-        <div class="author-avatar skeleton" />
-        <div class="author-info">
-          <div class="skeleton" style="height: 28px; width: 200px;" />
-          <div class="skeleton" style="height: 16px; width: 120px; margin-top: 8px;" />
-        </div>
-      </div>
+      <StateIndicator v-if="error" variant="error" :description="error" @action="fetchAuthor" />
 
-      <h2 class="section-title">Posts</h2>
-      <div class="posts-grid">
-        <div v-for="i in 6" :key="i" class="post-card glass-card">
-          <div class="post-image skeleton" style="aspect-ratio: 1;" />
+      <template v-else>
+        <div class="author-header glass-card">
+          <template v-if="isLoading">
+            <div class="author-avatar skeleton" />
+            <div class="author-info">
+              <div class="skeleton" style="height: 28px; width: 200px;" />
+              <div class="skeleton" style="height: 16px; width: 120px; margin-top: 8px;" />
+            </div>
+          </template>
+
+          <template v-else-if="author">
+            <img
+              v-if="author.avatar_url"
+              class="author-avatar"
+              :src="author.avatar_url"
+              :alt="author.name"
+              loading="lazy"
+              style="object-fit: cover;"
+            />
+            <div v-else class="author-avatar skeleton" />
+
+            <div class="author-info">
+              <h1 class="author-name">{{ author.name }}</h1>
+              <p class="author-username">@{{ author.username }}</p>
+            </div>
+          </template>
         </div>
-      </div>
+
+        <h2 class="section-title">Posts</h2>
+        <div class="posts-grid">
+          <template v-if="isLoading">
+            <div v-for="i in 6" :key="i" class="post-card glass-card">
+              <div class="post-image skeleton" style="aspect-ratio: 1;" />
+            </div>
+          </template>
+
+          <template v-else>
+            <button
+              v-for="post in posts"
+              :key="post.id"
+              type="button"
+              class="post-card glass-card post-card-btn"
+              @click="goToPost(post.id)"
+            >
+              <img
+                v-if="post.thumbnail_url"
+                class="post-image"
+                :src="post.thumbnail_url"
+                :alt="post.title"
+                loading="lazy"
+                style="aspect-ratio: 1; object-fit: cover;"
+              />
+              <div v-else class="post-image skeleton" style="aspect-ratio: 1;" />
+            </button>
+
+            <StateIndicator v-if="posts.length === 0" variant="empty" />
+          </template>
+        </div>
+      </template>
     </div>
   </div>
 </template>
+
+<script setup lang="ts">
+import { ref, computed, onMounted, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
+import { authorService, type AuthorResponse, type PostListItem, ApiError } from '@/api'
+import StateIndicator from '@/components/ui/StateIndicator.vue'
+
+const route = useRoute()
+const router = useRouter()
+
+const { t } = useI18n()
+
+const authorId = computed(() => route.params['id'] as string)
+
+const author = ref<AuthorResponse | null>(null)
+const posts = ref<PostListItem[]>([])
+const isLoading = ref(false)
+const error = ref<string | null>(null)
+
+async function fetchAuthor() {
+  if (isLoading.value) return
+
+  isLoading.value = true
+  error.value = null
+
+  try {
+    const [authorRes, postsRes] = await Promise.all([
+      authorService.getAuthor(authorId.value),
+      authorService.listAuthorPosts(authorId.value, 1, 24),
+    ])
+    author.value = authorRes
+    posts.value = postsRes.items
+  } catch (err) {
+    if (err instanceof ApiError) {
+      error.value = err.message
+    } else {
+      error.value = t('common.error')
+    }
+  } finally {
+    isLoading.value = false
+  }
+}
+
+function goToPost(postId: string) {
+  router.push(`/post/${postId}`)
+}
+
+onMounted(() => {
+  fetchAuthor()
+})
+
+watch(authorId, () => {
+  fetchAuthor()
+})
+</script>
 
 <style scoped>
 .author-detail-page {
@@ -52,5 +155,15 @@
 
 .post-card {
   overflow: hidden;
+}
+
+.post-card-btn {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
 }
 </style>

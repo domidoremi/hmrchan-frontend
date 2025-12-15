@@ -573,11 +573,9 @@ export default defineConfig(({ mode }) => {
           './src/App.vue',
           './src/views/HomePage.vue',
           './src/views/ExplorePage.vue',
-          './src/components/layout/MainLayout.vue',
           './src/components/layout/AppNavbar.vue',
-          './src/components/business/PostCard.vue',
-          './src/stores/useAuth.ts',
-          './src/stores/useTheme.ts',
+          './src/stores/auth.ts',
+          './src/stores/theme.ts',
         ],
       },
 
