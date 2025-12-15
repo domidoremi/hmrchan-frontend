@@ -2,7 +2,10 @@
   <div class="explore-page">
     <div class="container">
       <header class="page-header">
-        <h1>{{ $t('explore.title') }}</h1>
+        <div class="page-title-row">
+          <h1>{{ $t('explore.title') }}</h1>
+          <span v-if="isLoading && posts.length > 0" class="spinner spinner-sm" />
+        </div>
         <div class="search-bar">
           <Search :size="20" class="search-icon" />
           <input
@@ -26,31 +29,144 @@
         </button>
       </div>
 
-      <div class="posts-grid">
-        <div v-for="i in 12" :key="i" class="post-card glass-card">
-          <div class="post-image skeleton" style="aspect-ratio: 1;" />
-          <div class="post-content">
-            <div class="skeleton" style="height: 20px; width: 80%;" />
-            <div class="skeleton" style="height: 14px; width: 50%; margin-top: 8px;" />
+      <StateIndicator v-if="error" variant="error" :description="error" @action="fetchPosts" />
+
+      <template v-else>
+        <div v-if="isLoading && posts.length === 0" class="posts-grid">
+          <div v-for="i in 12" :key="i" class="post-card glass-card">
+            <div class="post-image skeleton" style="aspect-ratio: 1;" />
+            <div class="post-content">
+              <div class="skeleton" style="height: 20px; width: 80%;" />
+              <div class="skeleton" style="height: 14px; width: 50%; margin-top: 8px;" />
+            </div>
           </div>
         </div>
-      </div>
+
+        <template v-else>
+          <div class="posts-grid">
+          <button
+            v-for="post in posts"
+            :key="post.id"
+            type="button"
+            class="post-card glass-card post-card-btn"
+            @click="goToPost(post.id)"
+          >
+            <img
+              v-if="post.thumbnail_url"
+              class="post-image"
+              :src="post.thumbnail_url"
+              :alt="post.title"
+              loading="lazy"
+              style="aspect-ratio: 1; object-fit: cover;"
+            />
+            <div v-else class="post-image skeleton" style="aspect-ratio: 1;" />
+
+            <div class="post-content">
+              <h3 class="post-title">{{ post.title }}</h3>
+              <p class="post-meta">{{ post.author_name }}</p>
+            </div>
+          </button>
+
+          </div>
+
+          <StateIndicator v-if="posts.length === 0" variant="empty" />
+        </template>
+      </template>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted, watch } from 'vue'
+import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { Search } from 'lucide-vue-next'
+import { postService, type PostListItem, ApiError } from '@/api'
+import StateIndicator from '@/components/ui/StateIndicator.vue'
+
+const router = useRouter()
+
+const { t } = useI18n()
 
 const searchQuery = ref('')
-const currentSort = ref('newest')
+const currentSort = ref<'newest' | 'popular' | 'trending'>('newest')
+
+const posts = ref<PostListItem[]>([])
+const isLoading = ref(false)
+const error = ref<string | null>(null)
 
 const sortOptions = [
-  { value: 'newest' },
-  { value: 'popular' },
-  { value: 'trending' },
+  { value: 'newest' as const },
+  { value: 'popular' as const },
+  { value: 'trending' as const },
 ]
+
+function goToPost(postId: string) {
+  router.push(`/post/${postId}`)
+}
+
+function getSortParams(sort: 'newest' | 'popular' | 'trending') {
+  switch (sort) {
+    case 'popular':
+      return { sort_by: 'like_count' as const, sort_order: 'desc' as const }
+    case 'trending':
+      return { sort_by: 'view_count' as const, sort_order: 'desc' as const }
+    case 'newest':
+    default:
+      return { sort_by: 'published_at' as const, sort_order: 'desc' as const }
+  }
+}
+
+async function fetchPosts() {
+  if (isLoading.value) return
+
+  const hadData = posts.value.length > 0
+
+  isLoading.value = true
+  error.value = null
+
+  try {
+    const { sort_by, sort_order } = getSortParams(currentSort.value)
+    const params = {
+      page: 1,
+      page_size: 24,
+      sort_by,
+      sort_order,
+    }
+
+    const q = searchQuery.value.trim()
+    const res = await postService.listPosts(q ? { ...params, q } : params)
+
+    posts.value = res.items
+  } catch (err) {
+    if (hadData) return
+
+    if (err instanceof ApiError) {
+      error.value = err.message
+    } else {
+      error.value = t('common.error')
+    }
+  } finally {
+    isLoading.value = false
+  }
+}
+
+let searchDebounceTimer: number | undefined
+
+watch(currentSort, () => {
+  fetchPosts()
+})
+
+watch(searchQuery, () => {
+  if (searchDebounceTimer) window.clearTimeout(searchDebounceTimer)
+  searchDebounceTimer = window.setTimeout(() => {
+    fetchPosts()
+  }, 300)
+})
+
+onMounted(() => {
+  fetchPosts()
+})
 </script>
 
 <style scoped>
@@ -62,8 +178,16 @@ const sortOptions = [
   margin-bottom: var(--spacing-6);
 }
 
-.page-header h1 {
+.page-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-3);
   margin-bottom: var(--spacing-4);
+}
+
+.page-title-row h1 {
+  margin-bottom: 0;
 }
 
 .search-bar {
@@ -116,6 +240,16 @@ const sortOptions = [
 
 .post-card {
   overflow: hidden;
+}
+
+.post-card-btn {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
 }
 
 .post-content {

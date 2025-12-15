@@ -117,6 +117,7 @@
     "goHome": "ホームへ戻る",
     "serverError": "サーバーエラー",
     "networkError": "ネットワークエラー",
+    "timeout": "タイムアウトしました",
     "tryAgain": "後でもう一度お試しください"
   },
   "comment": {
