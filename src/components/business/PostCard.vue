@@ -2,17 +2,20 @@
   <button
     type="button"
     class="post-card glass-card post-card-btn"
-    @click="$emit('click', post.id)"
+    @click="handleClick"
   >
-    <img
-      v-if="thumbnailSrc"
-      class="post-image"
-      :src="thumbnailSrc"
-      :alt="post.title"
-      loading="lazy"
-      :style="imageStyle"
-    />
-    <div v-else class="post-image skeleton" :style="imageStyle" />
+    <div class="post-image-wrapper" :style="imageWrapperStyle">
+      <img
+        v-if="thumbnailSrc"
+        ref="imageRef"
+        class="post-image"
+        :src="thumbnailSrc"
+        :alt="post.title"
+        loading="lazy"
+        @load="onImageLoad"
+      />
+      <div v-else class="post-image-placeholder" />
+    </div>
 
     <div v-if="showContent" class="post-content">
       <h3 class="post-title">{{ post.title }}</h3>
@@ -22,43 +25,57 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { ref, computed } from 'vue'
 import type { PostListItem } from '@/api'
-import { normalizeToThumbnailUrl } from '@/utils/mediaOptimizer'
+import { normalizeToThumbnailUrl, getResponsiveThumbnailSize } from '@/utils/mediaOptimizer'
 
 export interface PostCardProps {
   post: PostListItem
-  aspectRatio?: string | 'auto'
+  maxHeight?: number
   showContent?: boolean
   showAuthor?: boolean
-  thumbnailSize?: 'small' | 'medium' | 'large'
+  thumbnailSize?: 'small' | 'medium' | 'large' | 'responsive'
 }
 
 const props = withDefaults(defineProps<PostCardProps>(), {
-  aspectRatio: 'auto',
+  maxHeight: 400,
   showContent: true,
   showAuthor: true,
-  thumbnailSize: 'medium',
+  thumbnailSize: 'responsive',
 })
 
-defineEmits<{
-  click: [postId: string]
+const emit = defineEmits<{
+  click: [postId: string, thumbnailSrc: string | null]
 }>()
+
+const imageRef = ref<HTMLImageElement | null>(null)
+const isImageLoaded = ref(false)
+
+const effectiveThumbnailSize = computed(() => {
+  if (props.thumbnailSize === 'responsive') {
+    return getResponsiveThumbnailSize('small')
+  }
+  return props.thumbnailSize
+})
 
 const thumbnailSrc = computed(() => {
   if (!props.post.thumbnail_url) return null
-  return normalizeToThumbnailUrl(props.post.thumbnail_url, props.thumbnailSize) || props.post.thumbnail_url
+  return normalizeToThumbnailUrl(props.post.thumbnail_url, effectiveThumbnailSize.value) || props.post.thumbnail_url
 })
 
-const imageStyle = computed(() => {
-  if (props.aspectRatio === 'auto') {
-    return { objectFit: 'cover' as const }
-  }
+const imageWrapperStyle = computed(() => {
   return {
-    aspectRatio: props.aspectRatio,
-    objectFit: 'cover' as const,
+    '--max-height': `${props.maxHeight}px`,
   }
 })
+
+function onImageLoad() {
+  isImageLoaded.value = true
+}
+
+function handleClick() {
+  emit('click', props.post.id, thumbnailSrc.value)
+}
 </script>
 
 <style scoped>
@@ -86,9 +103,27 @@ const imageStyle = computed(() => {
   transform: translateY(0);
 }
 
+.post-image-wrapper {
+  position: relative;
+  width: 100%;
+  max-height: var(--max-height, 400px);
+  overflow: hidden;
+  background: var(--glass-bg-light);
+}
+
 .post-image {
   width: 100%;
+  height: auto;
   display: block;
+  max-height: var(--max-height, 400px);
+  object-fit: cover;
+  object-position: top center;
+}
+
+.post-image-placeholder {
+  width: 100%;
+  padding-bottom: 75%;
+  background: var(--glass-bg);
 }
 
 .post-content {
@@ -110,5 +145,16 @@ const imageStyle = computed(() => {
   font-size: var(--text-sm);
   color: var(--color-text-secondary);
   margin: var(--spacing-1) 0 0;
+}
+
+/* 移动端限制更严格的高度 */
+@media (max-width: 600px) {
+  .post-image-wrapper {
+    max-height: min(var(--max-height, 400px), 50vh);
+  }
+
+  .post-image {
+    max-height: min(var(--max-height, 400px), 50vh);
+  }
 }
 </style>
