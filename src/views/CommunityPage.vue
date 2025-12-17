@@ -38,7 +38,10 @@
             @click="goToPost(discussion.post_id)"
           >
             <div class="discussion-thumbnail" v-if="discussion.post_thumbnail">
-              <img :src="discussion.post_thumbnail" :alt="discussion.post_title" />
+              <img
+                :src="normalizeToThumbnailUrl(discussion.post_thumbnail, 'medium') || discussion.post_thumbnail"
+                :alt="discussion.post_title"
+              />
             </div>
             <div class="discussion-content">
               <h3 class="discussion-title">{{ discussion.post_title }}</h3>
@@ -121,6 +124,7 @@ import { MessageSquare, Flame, User, Bookmark } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores'
 import type { CommunityPost, CommentUser } from '@/types'
+import { normalizeToThumbnailUrl } from '@/utils/mediaOptimizer'
 import Button from '@/components/ui/Button.vue'
 
 const router = useRouter()

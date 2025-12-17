@@ -38,7 +38,17 @@
           />
         </div>
 
-        <Button type="submit" :loading="isLoading" full-width>
+        <TurnstileWidget
+          v-if="turnstileEnabled"
+          ref="turnstileRef"
+          :site-key="turnstileSiteKey"
+          action="register"
+          @verify="handleTurnstileVerify"
+          @expire="handleTurnstileExpire"
+          @error="handleTurnstileError"
+        />
+
+        <Button type="submit" :loading="isLoading" :disabled="turnstileEnabled && !turnstileToken" full-width>
           {{ $t('auth.registerButton') }}
         </Button>
       </form>
@@ -58,6 +68,7 @@ import { storeToRefs } from 'pinia'
 import { useAuthStore, useToastStore } from '@/stores'
 import { useI18n } from 'vue-i18n'
 import Button from '@/components/ui/Button.vue'
+import TurnstileWidget from '@/components/ui/TurnstileWidget.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -70,6 +81,11 @@ const username = ref('')
 const email = ref('')
 const password = ref('')
 
+const turnstileSiteKey = (import.meta.env.VITE_TURNSTILE_SITE_KEY ?? '').trim()
+const turnstileEnabled = turnstileSiteKey.length > 0
+const turnstileToken = ref<string | null>(null)
+const turnstileRef = ref<{ reset: () => void; getResponse: () => string | undefined } | null>(null)
+
 // 如果已登录，重定向到首页
 if (isAuthenticated.value) {
   router.replace('/')
@@ -81,20 +97,40 @@ async function handleRegister() {
     return
   }
 
+  if (turnstileEnabled && !turnstileToken.value) {
+    toastStore.warning(t('auth.error.turnstileRequired'))
+    return
+  }
+
   // 基础密码验证
   if (password.value.length < 6) {
     toastStore.warning(t('auth.error.passwordTooShort'))
     return
   }
 
-  const result = await authStore.register(username.value, email.value, password.value)
+  const result = await authStore.register(username.value, email.value, password.value, turnstileToken.value || undefined)
 
   if (result.success) {
     toastStore.success(t('auth.registerSuccess'))
     router.push('/')
   } else {
+    turnstileToken.value = null
+    turnstileRef.value?.reset()
     toastStore.error(t(result.error || 'auth.error.registerFailed'))
   }
+}
+
+function handleTurnstileVerify(token: string) {
+  turnstileToken.value = token
+}
+
+function handleTurnstileExpire() {
+  turnstileToken.value = null
+}
+
+function handleTurnstileError() {
+  turnstileToken.value = null
+  toastStore.error(t('auth.error.turnstileFailed'))
 }
 </script>
 

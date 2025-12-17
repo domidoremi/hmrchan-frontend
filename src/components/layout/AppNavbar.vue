@@ -36,7 +36,12 @@
           <Search :size="20" />
         </button>
 
-        <button class="action-btn" @click="toggleSettings" :aria-label="$t('nav.settings')">
+        <button
+          ref="settingsBtnRef"
+          class="action-btn"
+          @click="toggleSettings"
+          :aria-label="$t('nav.settings')"
+        >
           <Settings :size="20" />
         </button>
 
@@ -45,7 +50,7 @@
           <span class="desktop-only">{{ $t('nav.login') }}</span>
         </RouterLink>
 
-        <button v-else class="user-btn" @click="toggleUserMenu">
+        <button v-else ref="userBtnRef" class="user-btn" @click="toggleUserMenu">
           <img :src="userAvatar" :alt="user?.username" class="user-avatar" />
         </button>
       </div>
@@ -53,14 +58,26 @@
 
     <!-- Settings Dropdown -->
     <Transition name="dropdown">
-      <div v-if="showSettings" class="settings-dropdown glass-dropdown" @click.stop>
+      <div
+        v-if="showSettings"
+        ref="settingsDropdownRef"
+        class="settings-dropdown glass-dropdown"
+        :style="settingsDropdownStyle"
+        @click.stop
+      >
         <SettingsPanel @close="showSettings = false" />
       </div>
     </Transition>
 
     <!-- User Menu Dropdown -->
     <Transition name="dropdown">
-      <div v-if="showUserMenu && isAuthenticated" class="user-dropdown glass-dropdown" @click.stop>
+      <div
+        v-if="showUserMenu && isAuthenticated"
+        ref="userDropdownRef"
+        class="user-dropdown glass-dropdown"
+        :style="userDropdownStyle"
+        @click.stop
+      >
         <div class="user-info">
           <img :src="userAvatar" :alt="user?.username" class="user-avatar-lg" />
           <div>
@@ -69,9 +86,9 @@
           </div>
         </div>
         <div class="dropdown-links">
-          <RouterLink to="/profile" class="dropdown-link" @click="showUserMenu = false">
+          <RouterLink to="/settings/profile" class="dropdown-link" @click="showUserMenu = false">
             <User :size="18" />
-            <span>{{ $t('nav.profile') }}</span>
+            <span>{{ $t('nav.profileSettings') }}</span>
           </RouterLink>
           <button class="dropdown-link danger" @click="handleLogout">
             <LogOut :size="18" />
@@ -108,7 +125,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import {
@@ -133,6 +150,16 @@ const { user, isAuthenticated } = storeToRefs(authStore)
 const showSettings = ref(false)
 const showUserMenu = ref(false)
 
+const settingsBtnRef = ref<HTMLButtonElement | null>(null)
+const userBtnRef = ref<HTMLButtonElement | null>(null)
+const settingsDropdownRef = ref<HTMLDivElement | null>(null)
+const userDropdownRef = ref<HTMLDivElement | null>(null)
+
+const settingsDropdownStyle = ref<Record<string, string>>({})
+const userDropdownStyle = ref<Record<string, string>>({})
+
+const isMobile = ref(false)
+
 const userAvatar = computed(() => {
   if (user.value?.avatar_url) return user.value.avatar_url
   return `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.value?.username || 'default'}`
@@ -145,11 +172,19 @@ function goToSearch() {
 function toggleSettings() {
   showUserMenu.value = false
   showSettings.value = !showSettings.value
+
+  if (showSettings.value) {
+    nextTick(() => updateDropdownPosition('settings'))
+  }
 }
 
 function toggleUserMenu() {
   showSettings.value = false
   showUserMenu.value = !showUserMenu.value
+
+  if (showUserMenu.value) {
+    nextTick(() => updateDropdownPosition('user'))
+  }
 }
 
 function handleLogout() {
@@ -168,12 +203,67 @@ function handleClickOutside(e: MouseEvent) {
   }
 }
 
+function updateIsMobile() {
+  isMobile.value = window.matchMedia('(max-width: 768px)').matches
+}
+
+function updateDropdownPosition(kind: 'settings' | 'user') {
+  updateIsMobile()
+
+  if (isMobile.value) {
+    settingsDropdownStyle.value = {}
+    userDropdownStyle.value = {}
+    return
+  }
+
+  const margin = 16
+  const offsetY = 8
+
+  const triggerEl = kind === 'settings' ? settingsBtnRef.value : userBtnRef.value
+  const dropdownEl = kind === 'settings' ? settingsDropdownRef.value : userDropdownRef.value
+  if (!triggerEl || !dropdownEl) return
+
+  const triggerRect = triggerEl.getBoundingClientRect()
+  const dropdownRect = dropdownEl.getBoundingClientRect()
+
+  let left = triggerRect.right - dropdownRect.width
+  let top = triggerRect.bottom + offsetY
+
+  left = Math.max(margin, Math.min(left, window.innerWidth - dropdownRect.width - margin))
+  top = Math.max(margin, Math.min(top, window.innerHeight - dropdownRect.height - margin))
+
+  const style = {
+    left: `${left}px`,
+    top: `${top}px`,
+    right: 'auto',
+  }
+
+  if (kind === 'settings') {
+    settingsDropdownStyle.value = style
+  } else {
+    userDropdownStyle.value = style
+  }
+}
+
+function handleResize() {
+  updateIsMobile()
+  if (showSettings.value) {
+    nextTick(() => updateDropdownPosition('settings'))
+  }
+  if (showUserMenu.value) {
+    nextTick(() => updateDropdownPosition('user'))
+  }
+}
+
 onMounted(() => {
+  updateIsMobile()
   document.addEventListener('click', handleClickOutside)
+  window.addEventListener('resize', handleResize)
 })
 
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
+  window.removeEventListener('resize', handleResize)
 })
 </script>
 
