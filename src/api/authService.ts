@@ -101,40 +101,20 @@ export const authService = {
   },
 
   /**
-   * 请求密码重置
+   * 验证当前密码（敏感操作前置）
    */
-  async requestPasswordReset(email: string): Promise<void> {
-    return apiClient.post('/auth/forgot-password', { email }, {
-      skipAuth: true,
-    })
+  async verifyPassword(password: string): Promise<{ verification_token: string }> {
+    return apiClient.post('/auth/verify-password', { password })
   },
 
   /**
-   * 重置密码
+   * 二次验证（按动作类型签发短期验证令牌）
    */
-  async resetPassword(token: string, newPassword: string): Promise<void> {
-    return apiClient.post('/auth/reset-password', {
-      token,
-      new_password: newPassword,
-    }, {
-      skipAuth: true,
-    })
-  },
-
-  /**
-   * 验证邮箱
-   */
-  async verifyEmail(token: string): Promise<void> {
-    return apiClient.post('/auth/verify-email', { token }, {
-      skipAuth: true,
-    })
-  },
-
-  /**
-   * 重新发送验证邮件
-   */
-  async resendVerificationEmail(): Promise<void> {
-    return apiClient.post('/auth/resend-verification')
+  async verifyIdentity(
+    action: string,
+    method?: 'password' | 'email'
+  ): Promise<{ verification_token: string }> {
+    return apiClient.post('/auth/verify-identity', { action, method })
   },
 
   /**
