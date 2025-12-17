@@ -132,6 +132,41 @@ export const postService = {
       skipErrorToast: true,
     })
   },
+
+  /**
+   * 按平台获取帖子列表
+   */
+  async listPostsByPlatform(
+    platform: string,
+    params: Omit<ListPostsParams, 'platform'> = {}
+  ): Promise<PaginatedApiResponse<PostListItem>> {
+    const query = buildQuery({
+      page: params.page ?? 1,
+      page_size: params.page_size ?? 20,
+      q: params.q,
+      author_id: params.author_id,
+      has_media: params.has_media ?? null,
+      published_after: params.published_after,
+      published_before: params.published_before,
+      min_views: params.min_views ?? null,
+      min_likes: params.min_likes ?? null,
+      sort_by: params.sort_by ?? 'published_at',
+      sort_order: params.sort_order ?? 'desc',
+    })
+
+    return apiClient.get<PaginatedApiResponse<PostListItem>>(`/posts/platform/${platform}${query}`)
+  },
+
+  /**
+   * 获取帖子统计摘要
+   */
+  async getStatsSummary(): Promise<{
+    total_posts: number
+    by_platform: Record<string, number>
+    recent_count?: number
+  }> {
+    return apiClient.get('/posts/stats/summary')
+  },
 }
 
 export default postService
