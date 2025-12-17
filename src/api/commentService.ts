@@ -46,8 +46,8 @@ export interface Comment {
 
 export interface CreateCommentRequest {
   content: string
-  parent_id?: string | null
-  image_ids?: string[]
+  parent_id?: number | null
+  image_ids?: number[]
 }
 
 export interface CommentListResponse {
@@ -195,7 +195,7 @@ export const commentService = {
    * 编辑评论
    */
   async updateComment(commentId: string, content: string): Promise<Comment> {
-    return apiClient.put<Comment>(`/comments/${commentId}`, { content })
+    return apiClient.patch<Comment>(`/comments/${commentId}`, { content })
   },
 
   /**

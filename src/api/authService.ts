@@ -84,14 +84,6 @@ export const authService = {
     })
   },
 
-  /**
-   * 心跳保活 - 自动刷新 Access Token
-   */
-  async heartbeat(): Promise<{ access_token: string }> {
-    return apiClient.post<{ access_token: string }>('/auth/heartbeat', null, {
-      skipErrorToast: true,
-    })
-  },
 
   /**
    * 获取当前用户信息

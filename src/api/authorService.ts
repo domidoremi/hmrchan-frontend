@@ -71,7 +71,7 @@ export const authorService = {
       platform: params.platform,
       is_verified: params.is_verified ?? null,
       min_followers: params.min_followers ?? null,
-      sort_by: params.sort_by ?? 'first_scraped_at',
+      sort_by: params.sort_by ?? 'created_at',
       sort_order: params.sort_order ?? 'desc',
     })
 
@@ -104,7 +104,7 @@ export const authorService = {
       q: params.q,
       is_verified: params.is_verified ?? null,
       min_followers: params.min_followers ?? null,
-      sort_by: params.sort_by ?? 'first_scraped_at',
+      sort_by: params.sort_by ?? 'created_at',
       sort_order: params.sort_order ?? 'desc',
     })
 
