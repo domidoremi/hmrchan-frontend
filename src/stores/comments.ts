@@ -31,7 +31,7 @@ export const useCommentsStore = defineStore('comments', () => {
 
     try {
       // TODO: 实际 API 调用
-      const response = await fetch(`/api/v1/posts/${postId}/comments?sort=${sort}`, {
+      const response = await fetch(`/api/v1/comments/post/${postId}?sort=${sort}`, {
         credentials: 'include',
       })
 
@@ -75,7 +75,7 @@ export const useCommentsStore = defineStore('comments', () => {
     error.value = null
 
     try {
-      const response = await fetch(`/api/v1/posts/${postId}/comments`, {
+      const response = await fetch(`/api/v1/comments/post/${postId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
