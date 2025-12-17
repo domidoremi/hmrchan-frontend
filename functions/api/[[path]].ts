@@ -9,14 +9,35 @@ interface Env {
   API_BASE_URL: string
 }
 
-interface Context {
+type CFPagesContext = {
   request: Request
   env: Env
   params: { path?: string | string[] }
 }
 
-export async function onRequest(context: Context): Promise<Response> {
+// CORS 预检响应
+function handleCORS(request: Request): Response {
+  const origin = request.headers.get('Origin') || '*'
+  return new Response(null, {
+    status: 204,
+    headers: {
+      'Access-Control-Allow-Origin': origin,
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
+      'Access-Control-Allow-Headers':
+        'Content-Type, Authorization, X-Requested-With, Accept, Origin',
+      'Access-Control-Allow-Credentials': 'true',
+      'Access-Control-Max-Age': '86400',
+    },
+  })
+}
+
+export async function onRequest(context: CFPagesContext): Promise<Response> {
   const { request, env, params } = context
+
+  // 处理 CORS 预检请求
+  if (request.method === 'OPTIONS') {
+    return handleCORS(request)
+  }
 
   // 获取后端 API 地址
   const apiBaseUrl = env.API_BASE_URL || 'https://api.momichan.xyz'
@@ -26,29 +47,49 @@ export async function onRequest(context: Context): Promise<Response> {
   const url = new URL(request.url)
   const targetUrl = `${apiBaseUrl}/api/${path}${url.search}`
 
-  // 复制请求头，移除 Host
-  const headers = new Headers(request.headers)
-  headers.delete('host')
+  // 复制请求头，移除不应转发的头
+  const headers = new Headers()
+  const skipHeaders = ['host', 'cf-connecting-ip', 'cf-ray', 'cf-visitor', 'cf-ipcountry']
+
+  for (const [key, value] of request.headers.entries()) {
+    if (!skipHeaders.includes(key.toLowerCase())) {
+      headers.set(key, value)
+    }
+  }
 
   // 添加代理标识
   headers.set('X-Forwarded-For', request.headers.get('CF-Connecting-IP') || '')
   headers.set('X-Forwarded-Proto', 'https')
+  headers.set('X-Forwarded-Host', url.host)
 
   try {
     // 转发请求
-    const response = await fetch(targetUrl, {
+    const fetchOptions: RequestInit = {
       method: request.method,
       headers,
-      body: request.method !== 'GET' && request.method !== 'HEAD' ? request.body : undefined,
       redirect: 'follow',
-    })
+    }
+
+    // 只有非 GET/HEAD 请求才传递 body
+    if (request.method !== 'GET' && request.method !== 'HEAD') {
+      fetchOptions.body = request.body
+      // @ts-expect-error - Cloudflare Workers 支持 duplex
+      fetchOptions.duplex = 'half'
+    }
+
+    const response = await fetch(targetUrl, fetchOptions)
 
     // 复制响应头
     const responseHeaders = new Headers(response.headers)
 
-    // 添加 CORS 头（如果需要）
-    responseHeaders.set('Access-Control-Allow-Origin', url.origin)
+    // 添加 CORS 头
+    const origin = request.headers.get('Origin') || '*'
+    responseHeaders.set('Access-Control-Allow-Origin', origin)
     responseHeaders.set('Access-Control-Allow-Credentials', 'true')
+
+    // 移除可能导致问题的头
+    responseHeaders.delete('content-encoding')
+    responseHeaders.delete('transfer-encoding')
 
     return new Response(response.body, {
       status: response.status,
@@ -57,14 +98,20 @@ export async function onRequest(context: Context): Promise<Response> {
     })
   } catch (error) {
     console.error('[API Proxy] Error:', error)
+    console.error('[API Proxy] Target URL:', targetUrl)
+
     return new Response(
       JSON.stringify({
         error: 'Proxy Error',
         message: error instanceof Error ? error.message : 'Unknown error',
+        target: targetUrl,
       }),
       {
         status: 502,
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+        },
       },
     )
   }
