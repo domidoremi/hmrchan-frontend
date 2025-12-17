@@ -6,15 +6,15 @@ import { apiClient, type PaginatedApiResponse } from './client'
 
 export type SortOrder = 'asc' | 'desc'
 
-export type PostSortBy = 'published_at' | 'scraped_at' | 'view_count' | 'like_count'
+export type PostSortBy = 'published_at' | 'created_at' | 'view_count' | 'like_count'
 
 export interface PostListItem {
   id: string
   platform: string
-  platform_post_id: string
+  platform_post_id?: string
   title: string
-  description: string
-  url: string
+  content: string
+  url?: string
   thumbnail_url?: string | null
   author_id: string
   author_name: string
@@ -29,7 +29,6 @@ export interface PostListItem {
   comment_count: number
   duration?: number | null
   published_at: string
-  scraped_at: string
   created_at: string
   media_count: number
 }
@@ -51,22 +50,22 @@ export interface MediaFile {
 export interface PostDetailResponse {
   id: string
   platform: string
-  platform_post_id: string
+  platform_post_id?: string
   title: string
-  description: string
-  url: string
+  content: string
+  url?: string
   thumbnail_url?: string | null
   author_id: string
   author_name: string
   author_username: string
+  author_avatar_url?: string | null
   view_count: number
   like_count: number
   comment_count: number
+  media_count: number
   duration?: number | null
   published_at: string
-  scraped_at: string
   created_at: string
-  media_count: number
   original_author_id?: string | null
   original_author_name?: string | null
   original_author_username?: string | null

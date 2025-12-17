@@ -152,7 +152,7 @@ export const useAuthStore = defineStore(
     }
 
     /**
-     * 启动心跳保活
+     * 启动 Token 刷新定时器
      */
     function startHeartbeat() {
       if (heartbeatTimer) return
@@ -164,10 +164,10 @@ export const useAuthStore = defineStore(
         }
 
         try {
-          const response = await authService.heartbeat()
+          const response = await authService.refreshToken()
           token.value = response.access_token
         } catch {
-          // 心跳失败，可能 token 已过期
+          // 刷新失败，可能 refresh_token 已过期
           stopHeartbeat()
         }
       }, HEARTBEAT_INTERVAL)
