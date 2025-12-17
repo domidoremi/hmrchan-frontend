@@ -32,23 +32,38 @@
               </button>
 
               <Transition :name="mediaTransitionName" mode="out-in">
-                <img
+                <div
                   v-if="activeMedia?.file_type === 'image'"
                   :key="`img-${activeMedia.id}`"
-                  class="media-viewer-item"
-                  :src="getMediaStreamUrl(activeMedia.id)"
-                  :alt="post.title"
-                  @load="onMediaLoad"
-                />
+                  class="media-item-container"
+                >
+                  <!-- 模糊占位图 -->
+                  <img
+                    v-if="!isMediaLoaded && placeholderSrc"
+                    class="media-placeholder"
+                    :src="placeholderSrc"
+                    :alt="post.title"
+                    aria-hidden="true"
+                  />
+                  <!-- 原图 -->
+                  <img
+                    class="media-viewer-item"
+                    :class="{ 'is-loaded': isMediaLoaded }"
+                    :src="getMediaStreamUrl(activeMedia.id)"
+                    :alt="post.title"
+                    @load="onMediaLoad"
+                  />
+                </div>
                 <video
                   v-else-if="activeMedia?.file_type === 'video'"
                   :key="`video-${activeMedia.id}`"
-                  class="media-viewer-item"
+                  class="media-viewer-item is-loaded"
                   :src="getMediaStreamUrl(activeMedia.id)"
                   :poster="getMediaThumbnailUrl(activeMedia.id, 'large')"
                   controls
                   playsinline
                   preload="metadata"
+                  @loadedmetadata="onMediaLoad"
                 />
               </Transition>
 
@@ -132,7 +147,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { ArrowLeft, Bookmark, Share2, ChevronLeft, ChevronRight } from 'lucide-vue-next'
@@ -163,6 +178,8 @@ const isFavoriteLoading = ref(false)
 const activeMediaIndex = ref(0)
 const mediaTransitionName = ref('media-fade')
 const isMediaLoaded = ref(false)
+const cachedThumbnailUrl = ref<string | null>(null)
+const preloadedImages = ref<Set<string>>(new Set())
 
 const activeMedia = computed(() => {
   const list = post.value?.media_files ?? []
@@ -170,6 +187,13 @@ const activeMedia = computed(() => {
 })
 
 const hasMultipleMedia = computed(() => (post.value?.media_files?.length ?? 0) > 1)
+
+// 计算媒体宽高比，用于固定容器尺寸防止抖动
+const activeMediaAspectRatio = computed(() => {
+  const media = activeMedia.value
+  if (!media?.width || !media?.height) return 16 / 9
+  return media.width / media.height
+})
 
 const activeMediaViewerStyle = computed<Record<string, string>>(() => {
   const media = activeMedia.value
@@ -179,7 +203,27 @@ const activeMediaViewerStyle = computed<Record<string, string>>(() => {
 
   return {
     '--media-bg': `url("${bgUrl}")`,
+    '--aspect-ratio': String(activeMediaAspectRatio.value),
   }
+})
+
+// 获取缓存的缩略图作为占位图
+const placeholderSrc = computed(() => {
+  const media = activeMedia.value
+  if (!media) return cachedThumbnailUrl.value
+
+  // 优先使用已预加载的缩略图
+  const thumbUrl = getMediaThumbnailUrl(media.id, 'medium')
+  if (preloadedImages.value.has(thumbUrl)) {
+    return thumbUrl
+  }
+
+  // 首次加载时使用从列表页传递的缩略图
+  if (activeMediaIndex.value === 0 && cachedThumbnailUrl.value) {
+    return cachedThumbnailUrl.value
+  }
+
+  return thumbUrl
 })
 
 function selectMedia(index: number) {
@@ -207,6 +251,42 @@ function nextMedia() {
 
 function onMediaLoad() {
   isMediaLoaded.value = true
+
+  // 预加载相邻图片
+  preloadAdjacentMedia()
+}
+
+// 预加载相邻媒体的缩略图和原图
+function preloadAdjacentMedia() {
+  const mediaFiles = post.value?.media_files
+  if (!mediaFiles || mediaFiles.length <= 1) return
+
+  const currentIdx = activeMediaIndex.value
+  const indicesToPreload = [
+    (currentIdx + 1) % mediaFiles.length,
+    (currentIdx - 1 + mediaFiles.length) % mediaFiles.length,
+  ]
+
+  indicesToPreload.forEach(idx => {
+    const media = mediaFiles[idx]
+    if (!media || media.file_type !== 'image') return
+
+    // 预加载缩略图
+    const thumbUrl = getMediaThumbnailUrl(media.id, 'medium')
+    if (!preloadedImages.value.has(thumbUrl)) {
+      const thumbImg = new Image()
+      thumbImg.src = thumbUrl
+      thumbImg.onload = () => preloadedImages.value.add(thumbUrl)
+    }
+
+    // 预加载原图
+    const streamUrl = getMediaStreamUrl(media.id)
+    if (!preloadedImages.value.has(streamUrl)) {
+      const fullImg = new Image()
+      fullImg.src = streamUrl
+      fullImg.onload = () => preloadedImages.value.add(streamUrl)
+    }
+  })
 }
 
 function goBack() {
@@ -240,9 +320,16 @@ async function fetchPost() {
   isLoading.value = true
   error.value = null
 
+  // 从 sessionStorage 获取缓存的缩略图
+  const cachedThumb = sessionStorage.getItem(`post-thumbnail-${postId.value}`)
+  if (cachedThumb) {
+    cachedThumbnailUrl.value = cachedThumb
+  }
+
   try {
     post.value = await postService.getPost(postId.value)
     activeMediaIndex.value = 0
+    isMediaLoaded.value = false
     await fetchFavoriteStatus()
   } catch (err) {
     if (err instanceof ApiError) {
@@ -304,6 +391,11 @@ watch(postId, () => {
 watch(isAuthenticated, () => {
   fetchFavoriteStatus()
 })
+
+// 清理 sessionStorage
+onUnmounted(() => {
+  sessionStorage.removeItem(`post-thumbnail-${postId.value}`)
+})
 </script>
 
 <style scoped>
@@ -341,8 +433,9 @@ watch(isAuthenticated, () => {
 .media-viewer {
   position: relative;
   width: 100%;
-  min-height: 240px;
-  max-height: 70vh;
+  /* 使用固定宽高比防止布局抖动 */
+  aspect-ratio: var(--aspect-ratio, 16 / 9);
+  max-height: min(70vh, 600px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -353,6 +446,12 @@ watch(isAuthenticated, () => {
     rgba(var(--color-secondary-rgb, 59, 130, 246), 0.03) 100%
   );
   border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+}
+
+@media (max-width: 600px) {
+  .media-viewer {
+    max-height: min(50vh, 400px);
+  }
 }
 
 .media-viewer::before {
@@ -381,15 +480,41 @@ watch(isAuthenticated, () => {
   pointer-events: none;
 }
 
+.media-item-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+
+.media-placeholder {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: blur(15px);
+  transform: scale(1.05);
+  opacity: 0.8;
+}
+
 .media-viewer-item {
   position: relative;
   max-width: 100%;
-  max-height: 70vh;
+  max-height: 100%;
   width: auto;
   height: auto;
   object-fit: contain;
-  border-radius: var(--radius-xl);
-  z-index: 1;
+  border-radius: var(--radius-lg);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.media-viewer-item.is-loaded {
+  opacity: 1;
 }
 
 .media-nav {
