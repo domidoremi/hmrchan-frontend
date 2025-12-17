@@ -9,14 +9,16 @@ import { apiClient, ApiError } from './client'
 // ========== 请求/响应类型 ==========
 
 export interface LoginRequest {
-  email: string
+  username: string
   password: string
+  turnstile_token?: string
 }
 
 export interface RegisterRequest {
   username: string
   email: string
   password: string
+  turnstile_token?: string
 }
 
 export interface AuthResponse {
@@ -34,15 +36,7 @@ export interface UserResponse {
   updated_at: string
 }
 
-export interface UpdateProfileRequest {
-  username?: string
-  avatar_url?: string
-}
 
-export interface ChangePasswordRequest {
-  current_password: string
-  new_password: string
-}
 
 // ========== 认证服务 ==========
 
@@ -91,24 +85,19 @@ export const authService = {
   },
 
   /**
+   * 心跳保活 - 自动刷新 Access Token
+   */
+  async heartbeat(): Promise<{ access_token: string }> {
+    return apiClient.post<{ access_token: string }>('/auth/heartbeat', null, {
+      skipErrorToast: true,
+    })
+  },
+
+  /**
    * 获取当前用户信息
    */
   async getCurrentUser(): Promise<UserResponse> {
     return apiClient.get<UserResponse>('/auth/me')
-  },
-
-  /**
-   * 更新用户资料
-   */
-  async updateProfile(data: UpdateProfileRequest): Promise<UserResponse> {
-    return apiClient.patch<UserResponse>('/auth/me', data)
-  },
-
-  /**
-   * 修改密码
-   */
-  async changePassword(data: ChangePasswordRequest): Promise<void> {
-    return apiClient.post('/auth/change-password', data)
   },
 
   /**
@@ -146,6 +135,16 @@ export const authService = {
    */
   async resendVerificationEmail(): Promise<void> {
     return apiClient.post('/auth/resend-verification')
+  },
+
+  /**
+   * 获取 Turnstile 配置
+   */
+  async getTurnstileConfig(): Promise<{ enabled: boolean; site_key: string | null }> {
+    return apiClient.get('/auth/turnstile-config', {
+      skipAuth: true,
+      skipErrorToast: true,
+    })
   },
 }
 

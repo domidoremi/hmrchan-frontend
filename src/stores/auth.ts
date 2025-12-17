@@ -21,22 +21,30 @@ export const useAuthStore = defineStore(
     const isLoading = ref(false)
     const error = ref<string | null>(null)
 
+    let heartbeatTimer: ReturnType<typeof setInterval> | null = null
+    const HEARTBEAT_INTERVAL = 5 * 60 * 1000 // 5 minutes
+
     const isAuthenticated = computed(() => !!user.value && !!token.value)
 
     /**
      * 用户登录
      */
-    async function login(email: string, password: string) {
+    async function login(email: string, password: string, turnstileToken?: string) {
       if (isLoading.value) return { success: false, error: 'auth.error.inProgress' }
 
       isLoading.value = true
       error.value = null
 
       try {
-        const response = await authService.login({ email, password })
+        const response = await authService.login({
+          username: email,
+          password,
+          ...(turnstileToken ? { turnstile_token: turnstileToken } : {}),
+        })
 
         user.value = response.user
         token.value = response.access_token
+        startHeartbeat()
 
         return { success: true, user: response.user }
       } catch (err) {
@@ -53,18 +61,24 @@ export const useAuthStore = defineStore(
     /**
      * 用户注册
      */
-    async function register(username: string, email: string, password: string) {
+    async function register(username: string, email: string, password: string, turnstileToken?: string) {
       if (isLoading.value) return { success: false, error: 'auth.error.inProgress' }
 
       isLoading.value = true
       error.value = null
 
       try {
-        const response = await authService.register({ username, email, password })
+        const response = await authService.register({
+          username,
+          email,
+          password,
+          ...(turnstileToken ? { turnstile_token: turnstileToken } : {}),
+        })
 
         // 注册成功后自动登录
         user.value = response.user
         token.value = response.access_token
+        startHeartbeat()
 
         return { success: true, user: response.user }
       } catch (err) {
@@ -82,6 +96,7 @@ export const useAuthStore = defineStore(
      * 用户登出
      */
     async function logout() {
+      stopHeartbeat()
       try {
         await authService.logout()
       } catch {
@@ -119,6 +134,9 @@ export const useAuthStore = defineStore(
       if (token.value && !user.value) {
         await fetchCurrentUser()
       }
+      if (token.value) {
+        startHeartbeat()
+      }
     }
 
     /**
@@ -128,8 +146,41 @@ export const useAuthStore = defineStore(
       window.addEventListener('auth:logout', () => {
         user.value = null
         token.value = null
+        stopHeartbeat()
         router.push('/login')
       })
+    }
+
+    /**
+     * 启动心跳保活
+     */
+    function startHeartbeat() {
+      if (heartbeatTimer) return
+
+      heartbeatTimer = setInterval(async () => {
+        if (!token.value) {
+          stopHeartbeat()
+          return
+        }
+
+        try {
+          const response = await authService.heartbeat()
+          token.value = response.access_token
+        } catch {
+          // 心跳失败，可能 token 已过期
+          stopHeartbeat()
+        }
+      }, HEARTBEAT_INTERVAL)
+    }
+
+    /**
+     * 停止心跳保活
+     */
+    function stopHeartbeat() {
+      if (heartbeatTimer) {
+        clearInterval(heartbeatTimer)
+        heartbeatTimer = null
+      }
     }
 
     /**
@@ -166,6 +217,8 @@ export const useAuthStore = defineStore(
       fetchCurrentUser,
       initAuth,
       setupAuthListener,
+      startHeartbeat,
+      stopHeartbeat,
     }
   },
   {
