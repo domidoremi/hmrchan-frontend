@@ -13,7 +13,10 @@
     "login": "ログイン",
     "logout": "ログアウト",
     "register": "登録",
-    "profile": "プロフィール"
+    "profile": "プロフィール",
+    "postDetail": "投稿詳細",
+    "authorDetail": "作者詳細",
+    "profileSettings": "プロフィール設定"
   },
   "common": {
     "skipToContent": "コンテンツへスキップ",
@@ -36,10 +39,14 @@
     "minutesAgo": "{n} 分前",
     "hoursAgo": "{n} 時間前",
     "daysAgo": "{n} 日前",
-    "more": "その他"
+    "more": "その他",
+    "show": "表示",
+    "hide": "非表示"
   },
   "auth": {
     "email": "メールアドレス",
+    "usernameOrEmail": "ユーザー名またはメールアドレス",
+    "usernameOrEmailPlaceholder": "ユーザー名またはメールアドレスを入力してください",
     "password": "パスワード",
     "confirmPassword": "パスワード確認",
     "username": "ユーザー名",
@@ -69,6 +76,8 @@
       "validationError": "入力内容を確認してください",
       "tooManyRequests": "リクエストが多すぎます。しばらくしてから再試行してください",
       "inProgress": "お待ちください...",
+      "turnstileRequired": "認証を完了してください",
+      "turnstileFailed": "認証に失敗しました。もう一度お試しください",
       "unknown": "不明なエラーが発生しました"
     }
   },
@@ -118,7 +127,15 @@
     "serverError": "サーバーエラー",
     "networkError": "ネットワークエラー",
     "timeout": "タイムアウトしました",
-    "tryAgain": "後でもう一度お試しください"
+    "tryAgain": "後でもう一度お試しください",
+    "badRequest": "不正なリクエスト",
+    "unauthorized": "認証が必要です",
+    "forbidden": "アクセスが拒否されました",
+    "conflict": "競合が発生しました",
+    "validationError": "入力内容を確認してください",
+    "tooManyRequests": "リクエストが多すぎます",
+    "badGateway": "不正なゲートウェイ",
+    "serviceUnavailable": "サービスは利用できません"
   },
   "comment": {
     "title": "コメント",
@@ -162,6 +179,12 @@
       "unauthorized": "先にログインしてください",
       "rateLimited": "コメントが多すぎます",
       "rateLimitedWithTime": "{seconds} 秒後に再試行してください"
+    },
+    "image": {
+      "invalidFormat": "画像形式が無効です。使用可能: jpg, jpeg, png, webp, gif",
+      "fileTooLarge": "画像ファイルが大きすぎます（最大10MB）",
+      "tooManyImages": "1コメントにつき最大9枚の画像",
+      "totalSizeTooLarge": "画像の合計サイズが大きすぎます（最大50MB）"
     }
   },
   "community": {
@@ -183,5 +206,35 @@
     "sending": "送信中...",
     "success": "送信完了！",
     "error": "送信に失敗しました"
+  },
+  "profile": {
+    "settings": "プロフィール設定",
+    "avatar": "アバター",
+    "uploadAvatar": "アバターをアップロード",
+    "avatarUpdated": "アバターが更新されました",
+    "basicInfo": "基本情報",
+    "username": "ユーザー名",
+    "usernamePlaceholder": "ユーザー名を入力",
+    "usernameHint": "英数字とアンダースコアのみ使用可能",
+    "usernameChangeLimit": "あと {days} 日後にユーザー名を変更できます",
+    "fullName": "表示名",
+    "fullNamePlaceholder": "表示名を入力",
+    "bio": "自己紹介",
+    "bioPlaceholder": "自己紹介を入力",
+    "changePassword": "パスワード変更",
+    "currentPassword": "現在のパスワード",
+    "newPassword": "新しいパスワード",
+    "confirmPassword": "新しいパスワード（確認）",
+    "updateSuccess": "プロフィールが更新されました",
+    "passwordChanged": "パスワードが変更されました",
+    "passwordMismatch": "パスワードが一致しません",
+    "passwordTooShort": "パスワードは8文字以上必要です"
+  },
+  "user": {
+    "username": {
+      "tooShort": "ユーザー名は3文字以上必要です",
+      "tooLong": "ユーザー名は30文字以内にしてください",
+      "invalidFormat": "ユーザー名には英数字とアンダースコアのみ使用できます"
+    }
   }
 }
