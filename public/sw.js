@@ -107,8 +107,11 @@ self.addEventListener('fetch', (event) => {
   if (isStaticAsset(url)) {
     // 静态资源: Cache First
     event.respondWith(cacheFirst(request, CACHE_NAMES.static))
+  } else if (isVideoStreamRequest(url)) {
+    // 视频流: Network Only（不缓存完整视频，太大）
+    event.respondWith(fetch(request))
   } else if (isMediaRequest(url)) {
-    // 媒体文件: Cache First with Network Fallback
+    // 媒体文件/缩略图: Cache First with Network Fallback
     event.respondWith(cacheFirstMedia(request))
   } else if (isPostDetailRequest(url)) {
     // 帖子详情: Stale-While-Revalidate（优先缓存，后台更新）
@@ -390,6 +393,9 @@ function shouldHandleRequest(url) {
   // 同源请求
   if (url.origin === self.location.origin) return true
 
+  // API 域名
+  if (url.hostname === 'api.momichan.xyz') return true
+
   // 允许的外部CDN
   const allowedOrigins = ['pbs.twimg.com', 'i.ytimg.com', 'source.unsplash.com']
 
@@ -413,12 +419,36 @@ function isMediaRequest(url) {
     '.mp4',
     '.webm',
   ]
-  return (
-    mediaExtensions.some((ext) => url.pathname.endsWith(ext)) ||
+
+  // 文件扩展名匹配
+  if (mediaExtensions.some((ext) => url.pathname.endsWith(ext))) {
+    return true
+  }
+
+  // 外部 CDN
+  if (
     url.hostname.includes('pbs.twimg.com') ||
     url.hostname.includes('i.ytimg.com') ||
     url.hostname.includes('unsplash.com')
-  )
+  ) {
+    return true
+  }
+
+  // 媒体 API 端点（缩略图）
+  // /api/v1/media/{media_id}/thumbnail
+  if (/^\/api\/v1\/media\/[0-9a-f-]+\/thumbnail$/i.test(url.pathname)) {
+    return true
+  }
+
+  return false
+}
+
+/**
+ * 检查是否为视频流请求（不缓存完整视频）
+ */
+function isVideoStreamRequest(url) {
+  // /api/v1/media/{media_id}/stream
+  return /^\/api\/v1\/media\/[0-9a-f-]+\/stream$/i.test(url.pathname)
 }
 
 function isApiRequest(url) {
