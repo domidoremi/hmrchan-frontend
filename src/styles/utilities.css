@@ -184,3 +184,31 @@
   width: 32px;
   height: 32px;
 }
+
+/* ========== Content Visibility (渲染优化) ========== */
+/**
+ * 使用 content-visibility: auto 实现浏览器原生"虚拟化"
+ * 屏幕外的元素会被"休眠"，不进行渲染计算
+ * 比虚拟列表更简单，适合百项以内的列表
+ */
+.content-auto {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 300px;
+}
+
+.content-auto-sm {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 150px;
+}
+
+.content-auto-lg {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 500px;
+}
+
+/* 帖子卡片专用 */
+.post-card-optimized {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 400px;
+  contain: layout style paint;
+}
