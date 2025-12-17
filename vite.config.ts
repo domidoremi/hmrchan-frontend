@@ -256,204 +256,27 @@ export default defineConfig(({ mode }) => {
       rollupOptions: {
         output: {
           /**
-           * 手动代码分割策略
-           *
-           * 分割原则：
-           * 1. 核心库独立缓存（变化频率低）
-           * 2. 第三方库按大小和使用频率分割
-           * 3. 业务代码按页面/功能分割
-           * 4. 目标：首屏 < 100KB，单 chunk < 200KB
-           *
-           * @param id - 模块 ID（文件路径）
-           * @returns chunk 名称
+           * 代码分割策略
+           * - 核心框架独立缓存
+           * - 大型库按需加载
+           * - 业务代码按路由分割
            */
           manualChunks(id) {
-            /** 第三方依赖分割 */
             if (id.includes('node_modules')) {
-              /**
-               * Vue 核心库分割（最高优先级）
-               * 将 Vue 运行时、响应式系统、共享工具分别打包
-               * 这些库变化频率低，独立分割有利于长期缓存
-               */
-              if (id.includes('@vue/runtime-dom') || id.includes('@vue/runtime-core')) {
-                return 'vue-runtime'
-              }
-              if (id.includes('@vue/reactivity')) {
-                return 'vue-reactivity'
-              }
-              if (id.includes('@vue/shared')) {
-                return 'vue-shared'
-              }
+              // Vue 核心
+              if (id.includes('@vue/')) return 'vue-core'
+              if (id.includes('vue-router')) return 'vue-router'
+              if (id.includes('pinia')) return 'pinia'
 
-              /**
-               * 路由和状态管理（高优先级）
-               * 应用启动时必需的核心依赖
-               */
-              if (id.includes('vue-router')) {
-                return 'vue-router'
-              }
-              if (id.includes('pinia')) {
-                return 'pinia'
-              }
+              // 大型库独立分割
+              if (id.includes('lucide-vue-next')) return 'icons'
+              if (id.includes('gsap')) return 'animations'
+              if (id.includes('photoswipe')) return 'photo-viewer'
+              if (id.includes('vue-i18n')) return 'i18n'
+              if (id.includes('@vueuse')) return 'vueuse'
 
-              /**
-               * UI 和交互库（按需加载）
-               * 这些库体积较大，按需加载可以减小首屏体积
-               */
-              if (id.includes('lucide-vue-next')) {
-                return 'icons'
-              }
-              if (id.includes('gsap')) {
-                return 'animations'
-              }
-              if (id.includes('photoswipe')) {
-                return 'photo-viewer'
-              }
-              if (id.includes('masonry-layout')) {
-                return 'masonry'
-              }
-
-              /**
-               * 工具库（中等优先级）
-               * 常用但不是启动必需的工具库
-               */
-              if (id.includes('vue-i18n')) {
-                return 'i18n'
-              }
-              if (id.includes('dayjs')) {
-                return 'dayjs'
-              }
-              if (id.includes('axios')) {
-                return 'vendor-axios'
-              }
-              if (id.includes('@vueuse/core')) {
-                return 'vueuse-core'
-              }
-              if (id.includes('@vueuse/shared')) {
-                return 'vueuse-shared'
-              }
-              /**
-               * HTTP 客户端库（独立分割）
-               * ky 是 fetch 封装库，独立分割便于缓存
-               */
-              if (id.includes('node_modules/ky')) {
-                return 'http-client'
-              }
-
-              /** 其他第三方依赖统一打包 */
+              // 其他依赖
               return 'vendor'
-            }
-
-            /**
-             * 应用代码分割
-             * 按页面和功能模块进行细粒度分割
-             */
-
-            /** 页面组件 - 按页面独立分割，实现路由级别的懒加载 */
-            if (id.includes('/src/views/')) {
-              const match = id.match(/\/views\/(.+?)\.vue/)
-              if (match) {
-                const pageName = match[1].toLowerCase()
-                /** 关键页面单独分割 */
-                if (['homepage', 'explorepage', 'postsview'].includes(pageName)) {
-                  return `page-${pageName}`
-                }
-                if (pageName === 'postdetailpage') {
-                  return 'page-postdetail'
-                }
-                if (pageName === 'profilepage') {
-                  return 'page-profile'
-                }
-                /** 其他次要页面分组 */
-                return 'pages-other'
-              }
-            }
-
-            /** 业务组件 - 按使用频率分割 */
-            if (id.includes('/src/components/business/')) {
-              if (id.includes('PostCard')) {
-                return 'component-postcard'
-              }
-              return 'components-business'
-            }
-
-            /** UI 组件 - 按功能类型分割 */
-            if (id.includes('/src/components/ui/')) {
-              if (id.includes('/ui/viewer/PhotoSwipe')) {
-                return 'viewer-photoswipe'
-              }
-              if (id.includes('/ui/viewer')) {
-                return 'components-viewer'
-              }
-              if (id.includes('/ui/card')) {
-                return 'components-card'
-              }
-              if (id.includes('/ui/button') || id.includes('/ui/input')) {
-                return 'components-input'
-              }
-              if (id.includes('/ui/feedback') || id.includes('/ui/indicator')) {
-                return 'components-feedback'
-              }
-              return 'components-ui'
-            }
-
-            /** 布局组件 */
-            if (id.includes('/src/components/layout/')) {
-              return 'components-layout'
-            }
-
-            /** 基础组件 */
-            if (id.includes('/src/components/base/')) {
-              return 'components-base'
-            }
-
-            /** 组合式函数 */
-            if (id.includes('/src/composables/')) {
-              return 'composables'
-            }
-
-            /** API 服务层 - 按模块分割 */
-            if (id.includes('/src/api/')) {
-              if (id.includes('/api/client')) {
-                return 'api-client'
-              }
-              if (id.includes('/api/services')) {
-                return 'api-services'
-              }
-              return 'api-utils'
-            }
-
-            /** 状态管理 */
-            if (id.includes('/src/stores/')) {
-              return 'stores'
-            }
-
-            /** 工具函数 - 按功能分割 */
-            if (id.includes('/src/utils/')) {
-              /** 动画工具独立分割（依赖 GSAP） */
-              if (id.includes('/utils/animation')) {
-                return 'utils-animation'
-              }
-              if (id.includes('/utils/media')) {
-                return 'utils-media'
-              }
-              /** 缓存工具独立分割（体积较大） */
-              if (id.includes('/src/utils/cache')) {
-                return 'utils-cache'
-              }
-              /** 存储工具独立分割 */
-              if (id.includes('/src/utils/storage')) {
-                return 'utils-storage'
-              }
-              return 'utils'
-            }
-
-            /** i18n 相关代码 */
-            if (id.includes('/src/i18n/')) {
-              if (id.includes('/locales/')) {
-                return 'i18n-locales'
-              }
-              return 'i18n-core'
             }
           },
 
@@ -598,17 +421,11 @@ export default defineConfig(({ mode }) => {
           configure: (proxy: DevProxyServer) => {
             proxy.on('proxyRes', (proxyRes) => {
               const setCookie = proxyRes.headers['set-cookie']
-
-              if (!setCookie) return
-
-              if (Array.isArray(setCookie)) {
+              if (setCookie && Array.isArray(setCookie)) {
                 proxyRes.headers['set-cookie'] = setCookie.map((cookie) =>
                   cookie.replace(/;\s*Secure/gi, ''),
                 )
-                return
               }
-
-              proxyRes.headers['set-cookie'] = setCookie.replace(/;\s*Secure/gi, '')
             })
           },
           rewrite: (path) => {
