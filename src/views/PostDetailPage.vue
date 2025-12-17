@@ -118,7 +118,7 @@
             <p class="post-stats">
               {{ post.view_count }} {{ $t('post.views') }} · {{ post.like_count }} {{ $t('post.likes') }}
             </p>
-            <p v-if="post.description" class="post-description">{{ post.description }}</p>
+            <p v-if="post.content" class="post-description">{{ post.content }}</p>
           </div>
         </template>
 
