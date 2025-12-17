@@ -31,22 +31,26 @@
                 <ChevronLeft :size="20" />
               </button>
 
-              <img
-                v-if="activeMedia?.file_type === 'image'"
-                class="media-viewer-item"
-                :src="getMediaStreamUrl(activeMedia.id)"
-                :alt="post.title"
-                loading="lazy"
-              />
-              <video
-                v-else-if="activeMedia?.file_type === 'video'"
-                class="media-viewer-item"
-                :src="getMediaStreamUrl(activeMedia.id)"
-                :poster="getMediaThumbnailUrl(activeMedia.id, 'large')"
-                controls
-                playsinline
-                preload="metadata"
-              />
+              <Transition :name="mediaTransitionName" mode="out-in">
+                <img
+                  v-if="activeMedia?.file_type === 'image'"
+                  :key="`img-${activeMedia.id}`"
+                  class="media-viewer-item"
+                  :src="getMediaStreamUrl(activeMedia.id)"
+                  :alt="post.title"
+                  @load="onMediaLoad"
+                />
+                <video
+                  v-else-if="activeMedia?.file_type === 'video'"
+                  :key="`video-${activeMedia.id}`"
+                  class="media-viewer-item"
+                  :src="getMediaStreamUrl(activeMedia.id)"
+                  :poster="getMediaThumbnailUrl(activeMedia.id, 'large')"
+                  controls
+                  playsinline
+                  preload="metadata"
+                />
+              </Transition>
 
               <button
                 v-if="hasMultipleMedia"
@@ -157,6 +161,8 @@ const favoriteId = ref<number | null>(null)
 const isFavoriteLoading = ref(false)
 
 const activeMediaIndex = ref(0)
+const mediaTransitionName = ref('media-fade')
+const isMediaLoaded = ref(false)
 
 const activeMedia = computed(() => {
   const list = post.value?.media_files ?? []
@@ -177,19 +183,30 @@ const activeMediaViewerStyle = computed<Record<string, string>>(() => {
 })
 
 function selectMedia(index: number) {
+  if (index === activeMediaIndex.value) return
+  mediaTransitionName.value = index > activeMediaIndex.value ? 'media-slide-left' : 'media-slide-right'
+  isMediaLoaded.value = false
   activeMediaIndex.value = index
 }
 
 function prevMedia() {
   const total = post.value?.media_files?.length ?? 0
   if (total <= 1) return
+  mediaTransitionName.value = 'media-slide-right'
+  isMediaLoaded.value = false
   activeMediaIndex.value = (activeMediaIndex.value - 1 + total) % total
 }
 
 function nextMedia() {
   const total = post.value?.media_files?.length ?? 0
   if (total <= 1) return
+  mediaTransitionName.value = 'media-slide-left'
+  isMediaLoaded.value = false
   activeMediaIndex.value = (activeMediaIndex.value + 1) % total
+}
+
+function onMediaLoad() {
+  isMediaLoaded.value = true
 }
 
 function goBack() {
@@ -330,7 +347,12 @@ watch(isAuthenticated, () => {
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  background: rgba(0, 0, 0, 0.04);
+  background: linear-gradient(
+    135deg,
+    rgba(var(--color-primary-rgb, 139, 92, 246), 0.03) 0%,
+    rgba(var(--color-secondary-rgb, 59, 130, 246), 0.03) 100%
+  );
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
 }
 
 .media-viewer::before {
@@ -340,17 +362,23 @@ watch(isAuthenticated, () => {
   background-image: var(--media-bg);
   background-position: center;
   background-size: cover;
-  filter: blur(28px);
-  transform: scale(1.2);
-  opacity: 0.6;
+  filter: blur(40px) saturate(1.2);
+  transform: scale(1.3);
+  opacity: 0.5;
+  transition: opacity 0.5s ease, background-image 0.3s ease;
 }
 
 .media-viewer::after {
   content: '';
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.2);
-  opacity: 0.35;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(0, 0, 0, 0.05) 50%,
+    rgba(0, 0, 0, 0.15) 100%
+  );
+  pointer-events: none;
 }
 
 .media-viewer-item {
@@ -492,5 +520,43 @@ watch(isAuthenticated, () => {
 
 .action-btn.active {
   color: var(--color-primary);
+}
+
+/* Media Transitions */
+.media-fade-enter-active,
+.media-fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.media-fade-enter-from,
+.media-fade-leave-to {
+  opacity: 0;
+}
+
+.media-slide-left-enter-active,
+.media-slide-left-leave-active,
+.media-slide-right-enter-active,
+.media-slide-right-leave-active {
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.media-slide-left-enter-from {
+  opacity: 0;
+  transform: translateX(30px);
+}
+
+.media-slide-left-leave-to {
+  opacity: 0;
+  transform: translateX(-30px);
+}
+
+.media-slide-right-enter-from {
+  opacity: 0;
+  transform: translateX(-30px);
+}
+
+.media-slide-right-leave-to {
+  opacity: 0;
+  transform: translateX(30px);
 }
 </style>
