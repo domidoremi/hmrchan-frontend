@@ -113,7 +113,11 @@ function goToExplore() {
   router.push('/explore')
 }
 
-function goToPost(postId: string) {
+function goToPost(postId: string, thumbnailSrc: string | null) {
+  // 存储缩略图 URL 用于详情页渐进加载
+  if (thumbnailSrc) {
+    sessionStorage.setItem(`post-thumbnail-${postId}`, thumbnailSrc)
+  }
   router.push(`/post/${postId}`)
 }
 
