@@ -54,6 +54,12 @@ const routes: RouteRecordRaw[] = [
     meta: { title: 'nav.settings' },
   },
   {
+    path: '/settings/profile',
+    name: 'profile-settings',
+    component: () => import('@/views/ProfileSettingsPage.vue'),
+    meta: { title: 'nav.profileSettings', requiresAuth: true },
+  },
+  {
     path: '/login',
     name: 'login',
     component: () => import('@/views/LoginPage.vue'),
@@ -84,7 +90,26 @@ const router = createRouter({
   routes,
   scrollBehavior(to, _from, savedPosition) {
     if (savedPosition) {
-      return savedPosition
+      return new Promise((resolve) => {
+        const targetLeft = savedPosition.left ?? 0
+        const targetTop = savedPosition.top ?? 0
+        const maxWaitMs = 2000
+        const startTime = Date.now()
+
+        const check = () => {
+          const maxScrollable = Math.max(0, document.documentElement.scrollHeight - window.innerHeight)
+          const waitedTooLong = Date.now() - startTime > maxWaitMs
+
+          if (maxScrollable >= targetTop || waitedTooLong) {
+            resolve({ left: targetLeft, top: targetTop, behavior: 'auto' })
+            return
+          }
+
+          requestAnimationFrame(check)
+        }
+
+        requestAnimationFrame(check)
+      })
     }
     if (to.hash) {
       return { el: to.hash, behavior: 'smooth' }

@@ -13,7 +13,10 @@
     "login": "Login",
     "logout": "Logout",
     "register": "Register",
-    "profile": "Profile"
+    "profile": "Profile",
+    "postDetail": "Post Detail",
+    "authorDetail": "Author Detail",
+    "profileSettings": "Profile Settings"
   },
   "common": {
     "skipToContent": "Skip to content",
@@ -36,10 +39,14 @@
     "minutesAgo": "{n} min ago",
     "hoursAgo": "{n} hours ago",
     "daysAgo": "{n} days ago",
-    "more": "More"
+    "more": "More",
+    "show": "Show",
+    "hide": "Hide"
   },
   "auth": {
     "email": "Email",
+    "usernameOrEmail": "Username or Email",
+    "usernameOrEmailPlaceholder": "Enter username or email",
     "password": "Password",
     "confirmPassword": "Confirm Password",
     "username": "Username",
@@ -69,6 +76,8 @@
       "validationError": "Please check your input",
       "tooManyRequests": "Too many attempts, please try again later",
       "inProgress": "Please wait...",
+      "turnstileRequired": "Please complete the verification",
+      "turnstileFailed": "Verification failed, please try again",
       "unknown": "An unknown error occurred"
     }
   },
@@ -118,7 +127,15 @@
     "serverError": "Server Error",
     "networkError": "Network Error",
     "timeout": "Request timed out",
-    "tryAgain": "Please try again later"
+    "tryAgain": "Please try again later",
+    "badRequest": "Bad request",
+    "unauthorized": "Unauthorized",
+    "forbidden": "Forbidden",
+    "conflict": "Conflict",
+    "validationError": "Validation error",
+    "tooManyRequests": "Too many requests",
+    "badGateway": "Bad gateway",
+    "serviceUnavailable": "Service unavailable"
   },
   "comment": {
     "title": "Comments",
@@ -162,6 +179,12 @@
       "unauthorized": "Please login first",
       "rateLimited": "You're commenting too fast",
       "rateLimitedWithTime": "Please wait {seconds} seconds before commenting again"
+    },
+    "image": {
+      "invalidFormat": "Invalid image format. Allowed: jpg, jpeg, png, webp, gif",
+      "fileTooLarge": "Image file is too large (max 10MB)",
+      "tooManyImages": "Maximum 9 images per comment",
+      "totalSizeTooLarge": "Total image size is too large (max 50MB)"
     }
   },
   "community": {
@@ -183,5 +206,35 @@
     "sending": "Sending...",
     "success": "Message sent successfully!",
     "error": "Failed to send message"
+  },
+  "profile": {
+    "settings": "Profile Settings",
+    "avatar": "Avatar",
+    "uploadAvatar": "Upload Avatar",
+    "avatarUpdated": "Avatar updated successfully",
+    "basicInfo": "Basic Information",
+    "username": "Username",
+    "usernamePlaceholder": "Enter username",
+    "usernameHint": "Only letters, numbers, and underscores allowed",
+    "usernameChangeLimit": "You can change your username in {days} days",
+    "fullName": "Display Name",
+    "fullNamePlaceholder": "Enter display name",
+    "bio": "Bio",
+    "bioPlaceholder": "Tell us about yourself",
+    "changePassword": "Change Password",
+    "currentPassword": "Current Password",
+    "newPassword": "New Password",
+    "confirmPassword": "Confirm New Password",
+    "updateSuccess": "Profile updated successfully",
+    "passwordChanged": "Password changed successfully",
+    "passwordMismatch": "Passwords do not match",
+    "passwordTooShort": "Password must be at least 8 characters"
+  },
+  "user": {
+    "username": {
+      "tooShort": "Username must be at least 3 characters",
+      "tooLong": "Username must be at most 30 characters",
+      "invalidFormat": "Username can only contain letters, numbers, and underscores"
+    }
   }
 }
