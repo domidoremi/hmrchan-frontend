@@ -29,3 +29,7 @@ authStore.initAuth()
 authStore.setupAuthListener()
 
 app.mount('#app')
+
+// 注册 Service Worker（生产环境）
+import { registerServiceWorker } from './utils/cache'
+registerServiceWorker()
