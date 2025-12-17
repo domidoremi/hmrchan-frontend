@@ -41,29 +41,13 @@
           </div>
 
           <template v-else>
-            <div class="posts-grid">
-              <button
+            <div class="posts-masonry">
+              <PostCard
                 v-for="post in posts"
                 :key="post.id"
-                type="button"
-                class="post-card glass-card post-card-btn"
-                @click="goToPost(post.id)"
-              >
-                <img
-                  v-if="post.thumbnail_url"
-                  class="post-image"
-                  :src="post.thumbnail_url"
-                  :alt="post.title"
-                  loading="lazy"
-                  style="aspect-ratio: 16/9; object-fit: cover;"
-                />
-                <div v-else class="post-image skeleton" style="aspect-ratio: 16/9;" />
-
-                <div class="post-content">
-                  <h3 class="post-title">{{ post.title }}</h3>
-                  <p class="post-meta">{{ post.author_name }}</p>
-                </div>
-              </button>
+                :post="post"
+                @click="goToPost"
+              />
             </div>
 
             <StateIndicator v-if="posts.length === 0" variant="empty" />
@@ -84,6 +68,7 @@ import { useSettingsStore } from '@/stores'
 import { postService, type PostListItem, ApiError } from '@/api'
 import Button from '@/components/ui/Button.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
+import PostCard from '@/components/business/PostCard.vue'
 
 const router = useRouter()
 const settingsStore = useSettingsStore()
@@ -199,6 +184,24 @@ onMounted(() => {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: var(--spacing-6);
+}
+
+.posts-masonry {
+  column-width: 280px;
+  column-gap: var(--spacing-4);
+  column-count: 6;
+}
+
+.posts-masonry > :deep(*) {
+  break-inside: avoid;
+  margin-bottom: var(--spacing-4);
+}
+
+@media (max-width: 600px) {
+  .posts-masonry {
+    column-count: 1;
+    column-width: auto;
+  }
 }
 
 .post-card {

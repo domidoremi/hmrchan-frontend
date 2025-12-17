@@ -19,10 +19,69 @@
         </template>
 
         <template v-else-if="post">
+          <div v-if="post.media_files && post.media_files.length > 0" class="post-media">
+            <div class="media-viewer" :style="activeMediaViewerStyle">
+              <button
+                v-if="hasMultipleMedia"
+                type="button"
+                class="media-nav prev"
+                :aria-label="$t('common.previous')"
+                @click="prevMedia"
+              >
+                <ChevronLeft :size="20" />
+              </button>
+
+              <img
+                v-if="activeMedia?.file_type === 'image'"
+                class="media-viewer-item"
+                :src="getMediaStreamUrl(activeMedia.id)"
+                :alt="post.title"
+                loading="lazy"
+              />
+              <video
+                v-else-if="activeMedia?.file_type === 'video'"
+                class="media-viewer-item"
+                :src="getMediaStreamUrl(activeMedia.id)"
+                :poster="getMediaThumbnailUrl(activeMedia.id, 'large')"
+                controls
+                playsinline
+                preload="metadata"
+              />
+
+              <button
+                v-if="hasMultipleMedia"
+                type="button"
+                class="media-nav next"
+                :aria-label="$t('common.next')"
+                @click="nextMedia"
+              >
+                <ChevronRight :size="20" />
+              </button>
+            </div>
+
+            <div v-if="hasMultipleMedia" class="media-thumbnails">
+              <button
+                v-for="(media, idx) in post.media_files"
+                :key="media.id"
+                type="button"
+                class="thumbnail-btn"
+                :class="{ active: idx === activeMediaIndex }"
+                :aria-label="`${idx + 1}`"
+                @click="selectMedia(idx)"
+              >
+                <img
+                  class="thumbnail-img"
+                  :src="getMediaThumbnailUrl(media.id, 'small')"
+                  :alt="post.title"
+                  loading="lazy"
+                />
+              </button>
+            </div>
+          </div>
           <img
-            v-if="post.thumbnail_url"
+            v-else-if="post.thumbnail_url"
             class="post-image"
-            :src="post.thumbnail_url"
+            :src="normalizeToThumbnailUrl(post.thumbnail_url, 'large') || post.thumbnail_url"
             :alt="post.title"
             loading="lazy"
             style="aspect-ratio: 16/9; object-fit: cover;"
@@ -72,11 +131,12 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
-import { ArrowLeft, Bookmark, Share2 } from 'lucide-vue-next'
+import { ArrowLeft, Bookmark, Share2, ChevronLeft, ChevronRight } from 'lucide-vue-next'
 import { useAuthStore, useToastStore } from '@/stores'
 import { useI18n } from 'vue-i18n'
 import { CommentList } from '@/components/comment'
 import { postService, favoriteService, type PostDetailResponse, ApiError } from '@/api'
+import { getMediaStreamUrl, getMediaThumbnailUrl, normalizeToThumbnailUrl } from '@/utils/mediaOptimizer'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 
 const router = useRouter()
@@ -95,6 +155,42 @@ const error = ref<string | null>(null)
 const isFavorited = ref(false)
 const favoriteId = ref<number | null>(null)
 const isFavoriteLoading = ref(false)
+
+const activeMediaIndex = ref(0)
+
+const activeMedia = computed(() => {
+  const list = post.value?.media_files ?? []
+  return list[activeMediaIndex.value] ?? null
+})
+
+const hasMultipleMedia = computed(() => (post.value?.media_files?.length ?? 0) > 1)
+
+const activeMediaViewerStyle = computed<Record<string, string>>(() => {
+  const media = activeMedia.value
+  if (!media) return {}
+
+  const bgUrl = getMediaThumbnailUrl(media.id, 'large')
+
+  return {
+    '--media-bg': `url("${bgUrl}")`,
+  }
+})
+
+function selectMedia(index: number) {
+  activeMediaIndex.value = index
+}
+
+function prevMedia() {
+  const total = post.value?.media_files?.length ?? 0
+  if (total <= 1) return
+  activeMediaIndex.value = (activeMediaIndex.value - 1 + total) % total
+}
+
+function nextMedia() {
+  const total = post.value?.media_files?.length ?? 0
+  if (total <= 1) return
+  activeMediaIndex.value = (activeMediaIndex.value + 1) % total
+}
 
 function goBack() {
   router.back()
@@ -129,6 +225,7 @@ async function fetchPost() {
 
   try {
     post.value = await postService.getPost(postId.value)
+    activeMediaIndex.value = 0
     await fetchFavoriteStatus()
   } catch (err) {
     if (err instanceof ApiError) {
@@ -216,6 +313,117 @@ watch(isAuthenticated, () => {
 
 .post-content {
   overflow: hidden;
+}
+
+.post-media {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+}
+
+.media-viewer {
+  position: relative;
+  width: 100%;
+  min-height: 240px;
+  max-height: 70vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.media-viewer::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: var(--media-bg);
+  background-position: center;
+  background-size: cover;
+  filter: blur(28px);
+  transform: scale(1.2);
+  opacity: 0.6;
+}
+
+.media-viewer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.2);
+  opacity: 0.35;
+}
+
+.media-viewer-item {
+  position: relative;
+  max-width: 100%;
+  max-height: 70vh;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: var(--radius-xl);
+  z-index: 1;
+}
+
+.media-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-lg);
+  background: var(--glass-bg-strong);
+  border: 1px solid var(--glass-border);
+  color: var(--color-text-primary);
+  transition: all var(--transition-fast);
+  z-index: 2;
+}
+
+.media-nav:hover {
+  transform: translateY(-50%) scale(1.02);
+}
+
+.media-nav.prev {
+  left: var(--spacing-2);
+}
+
+.media-nav.next {
+  right: var(--spacing-2);
+}
+
+.media-thumbnails {
+  display: flex;
+  gap: var(--spacing-2);
+  padding: 0 var(--spacing-3) var(--spacing-3);
+  overflow-x: auto;
+}
+
+.thumbnail-btn {
+  flex: 0 0 auto;
+  width: 72px;
+  height: 72px;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  transition: all var(--transition-fast);
+}
+
+.thumbnail-btn.active {
+  border-color: var(--color-primary);
+}
+
+.thumbnail-btn:hover {
+  transform: translateY(-1px);
+}
+
+.thumbnail-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .post-body {

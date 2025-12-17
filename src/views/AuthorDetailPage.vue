@@ -40,23 +40,14 @@
           </template>
 
           <template v-else>
-            <button
+            <PostCard
               v-for="post in posts"
               :key="post.id"
-              type="button"
-              class="post-card glass-card post-card-btn"
-              @click="goToPost(post.id)"
-            >
-              <img
-                v-if="post.thumbnail_url"
-                class="post-image"
-                :src="post.thumbnail_url"
-                :alt="post.title"
-                loading="lazy"
-                style="aspect-ratio: 1; object-fit: cover;"
-              />
-              <div v-else class="post-image skeleton" style="aspect-ratio: 1;" />
-            </button>
+              :post="post"
+              aspect-ratio="1"
+              :show-content="false"
+              @click="goToPost"
+            />
 
             <StateIndicator v-if="posts.length === 0" variant="empty" />
           </template>
@@ -72,6 +63,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { authorService, type AuthorResponse, type PostListItem, ApiError } from '@/api'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
+import PostCard from '@/components/business/PostCard.vue'
 
 const route = useRoute()
 const router = useRouter()
