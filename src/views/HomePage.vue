@@ -59,6 +59,8 @@
 </template>
 
 <script setup lang="ts">
+defineOptions({ name: 'HomePage' })
+
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
@@ -191,55 +193,66 @@ onMounted(() => {
 }
 
 .posts-masonry {
-  --masonry-column-width: 220px;
+  --masonry-columns: 5;
   --masonry-gap: var(--spacing-4);
 
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(var(--masonry-column-width), 1fr));
-  gap: var(--masonry-gap);
-  align-items: start;
+  column-count: var(--masonry-columns);
+  column-gap: var(--masonry-gap);
 }
 
-/* 大屏幕：更多列 */
-@media (min-width: 1600px) {
+.posts-masonry > :deep(*) {
+  break-inside: avoid;
+  margin-bottom: var(--masonry-gap);
+}
+
+/* 超大屏幕 */
+@media (min-width: 1920px) {
   .posts-masonry {
-    --masonry-column-width: 240px;
+    --masonry-columns: 6;
   }
 }
 
-@media (min-width: 1920px) {
+/* 大屏幕 */
+@media (min-width: 1600px) and (max-width: 1919px) {
   .posts-masonry {
-    --masonry-column-width: 260px;
+    --masonry-columns: 5;
   }
 }
 
 /* 中等屏幕 */
-@media (max-width: 1200px) {
+@media (min-width: 1200px) and (max-width: 1599px) {
   .posts-masonry {
-    --masonry-column-width: 200px;
+    --masonry-columns: 4;
+  }
+}
+
+/* 小屏幕 */
+@media (min-width: 900px) and (max-width: 1199px) {
+  .posts-masonry {
+    --masonry-columns: 3;
   }
 }
 
 /* 平板 */
-@media (max-width: 900px) {
+@media (min-width: 600px) and (max-width: 899px) {
   .posts-masonry {
-    --masonry-column-width: 180px;
+    --masonry-columns: 3;
     --masonry-gap: var(--spacing-3);
   }
 }
 
 /* 手机 */
-@media (max-width: 600px) {
+@media (min-width: 400px) and (max-width: 599px) {
   .posts-masonry {
-    grid-template-columns: repeat(2, 1fr);
+    --masonry-columns: 2;
     --masonry-gap: var(--spacing-2);
   }
 }
 
 /* 小手机 */
-@media (max-width: 400px) {
+@media (max-width: 399px) {
   .posts-masonry {
-    grid-template-columns: 1fr;
+    --masonry-columns: 1;
   }
 }
 

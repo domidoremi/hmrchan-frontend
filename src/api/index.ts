@@ -64,3 +64,13 @@ export {
   type BrowsingHistoryItem,
   type HistoryStats,
 } from './historyService'
+export {
+  discussionService,
+  type Discussion,
+  type DiscussionReply,
+  type DiscussionAuthor,
+  type PostReference,
+  type CreateDiscussionRequest,
+  type CreateReplyRequest,
+  type ListDiscussionsParams,
+} from './discussionService'

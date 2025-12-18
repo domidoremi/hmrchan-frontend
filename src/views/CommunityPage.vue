@@ -21,47 +21,64 @@
         </button>
       </div>
 
+      <!-- Discussion Composer -->
+      <DiscussionComposer
+        v-if="isAuthenticated"
+        class="composer-section"
+        @created="handleDiscussionCreated"
+      />
+      <div v-else class="login-prompt glass-card">
+        <p>{{ $t('community.loginToPost') }}</p>
+        <Button @click="goToLogin">{{ $t('nav.login') }}</Button>
+      </div>
+
       <!-- Recent Discussions -->
       <section v-if="activeTab === 'recent'" class="community-section">
         <div v-if="isLoading" class="loading-state">
           <div class="spinner" />
         </div>
-        <div v-else-if="discussions.length === 0" class="empty-state glass-card">
-          <MessageSquare :size="48" class="empty-icon" />
-          <p>{{ $t('common.noResults') }}</p>
-        </div>
+        <StateIndicator
+          v-else-if="error"
+          variant="error"
+          :description="error"
+          @action="fetchDiscussions"
+        />
+        <StateIndicator
+          v-else-if="discussions.length === 0"
+          variant="empty"
+          :description="$t('common.noResults')"
+        />
         <div v-else class="discussions-list">
           <article
-            v-for="discussion in discussions"
-            :key="discussion.id"
+            v-for="post in discussions"
+            :key="post.id"
             class="discussion-card glass-card"
-            @click="goToPost(discussion.post_id)"
+            @click="goToPost(post.id)"
           >
-            <div class="discussion-thumbnail" v-if="discussion.post_thumbnail">
+            <div class="discussion-thumbnail" v-if="post.thumbnail_url">
               <img
-                :src="normalizeToThumbnailUrl(discussion.post_thumbnail, 'medium') || discussion.post_thumbnail"
-                :alt="discussion.post_title"
+                :src="normalizeToThumbnailUrl(post.thumbnail_url, 'medium') || post.thumbnail_url"
+                :alt="post.title"
+                loading="lazy"
               />
             </div>
             <div class="discussion-content">
-              <h3 class="discussion-title">{{ discussion.post_title }}</h3>
+              <h3 class="discussion-title">{{ post.title }}</h3>
               <div class="discussion-meta">
                 <span class="comment-count">
                   <MessageSquare :size="14" />
-                  {{ discussion.comments_count }}
+                  {{ post.comment_count }}
                 </span>
-                <span class="discussion-time">{{ formatTime(discussion.created_at) }}</span>
+                <span class="discussion-time">{{ formatTime(post.published_at) }}</span>
               </div>
-              <div v-if="discussion.latest_comment" class="latest-comment">
+              <div class="discussion-author">
                 <img
-                  :src="getAvatarUrl(discussion.latest_comment.user)"
-                  :alt="discussion.latest_comment.user.username"
-                  class="comment-avatar"
+                  v-if="post.author_avatar_url"
+                  :src="post.author_avatar_url"
+                  :alt="post.author_name"
+                  class="author-avatar"
                 />
-                <div class="comment-preview">
-                  <span class="comment-author">{{ discussion.latest_comment.user.username }}</span>
-                  <p class="comment-text">{{ truncate(discussion.latest_comment.content, 100) }}</p>
-                </div>
+                <span class="author-name">{{ post.author_name }}</span>
               </div>
             </div>
           </article>
@@ -117,15 +134,19 @@
 </template>
 
 <script setup lang="ts">
+defineOptions({ name: 'CommunityPage' })
+
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { MessageSquare, Flame, User, Bookmark } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores'
-import type { CommunityPost, CommentUser } from '@/types'
+import { postService, type PostListItem, ApiError } from '@/api'
 import { normalizeToThumbnailUrl } from '@/utils/mediaOptimizer'
 import Button from '@/components/ui/Button.vue'
+import StateIndicator from '@/components/ui/StateIndicator.vue'
+import DiscussionComposer from '@/components/community/DiscussionComposer.vue'
 
 const router = useRouter()
 const { t } = useI18n()
@@ -134,7 +155,8 @@ const { isAuthenticated } = storeToRefs(authStore)
 
 const activeTab = ref('recent')
 const isLoading = ref(false)
-const discussions = ref<CommunityPost[]>([])
+const error = ref<string | null>(null)
+const discussions = ref<PostListItem[]>([])
 
 const tabs = [
   { id: 'recent', label: 'community.recentDiscussions', icon: MessageSquare },
@@ -143,14 +165,8 @@ const tabs = [
   { id: 'saved', label: 'community.savedComments', icon: Bookmark },
 ]
 
-function getAvatarUrl(user: CommentUser): string {
-  if (user.avatar_url) return user.avatar_url
-  return `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`
-}
-
-function truncate(text: string, maxLength: number): string {
-  if (text.length <= maxLength) return text
-  return text.slice(0, maxLength) + '...'
+function handleDiscussionCreated() {
+  fetchDiscussions()
 }
 
 function formatTime(dateStr: string): string {
@@ -179,17 +195,21 @@ function goToLogin() {
 
 async function fetchDiscussions() {
   isLoading.value = true
+  error.value = null
   try {
-    // TODO: Implement actual API call
-    const response = await fetch('/api/v1/community/discussions', {
-      credentials: 'include',
+    const res = await postService.listPosts({
+      page: 1,
+      page_size: 20,
+      sort_by: 'published_at',
+      sort_order: 'desc',
     })
-    if (response.ok) {
-      const data = await response.json()
-      discussions.value = data.items || []
+    discussions.value = res.items.filter(p => p.comment_count > 0)
+  } catch (err) {
+    if (err instanceof ApiError) {
+      error.value = err.message
+    } else {
+      error.value = t('common.error')
     }
-  } catch {
-    // Silently fail for now
   } finally {
     isLoading.value = false
   }
@@ -216,6 +236,21 @@ onMounted(() => {
 
 .page-subtitle {
   color: var(--color-text-tertiary);
+}
+
+.composer-section {
+  margin-bottom: var(--spacing-6);
+}
+
+.login-prompt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-3);
+  padding: var(--spacing-6);
+  text-align: center;
+  margin-bottom: var(--spacing-6);
+  color: var(--color-text-secondary);
 }
 
 .community-tabs {
@@ -334,6 +369,25 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: var(--spacing-1);
+}
+
+.discussion-author {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  margin-top: var(--spacing-2);
+}
+
+.author-avatar {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.author-name {
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
 }
 
 .latest-comment {

@@ -193,7 +193,15 @@
     "recentDiscussions": "最新讨论",
     "hotTopics": "热门话题",
     "myComments": "我的评论",
-    "savedComments": "收藏的评论"
+    "savedComments": "收藏的评论",
+    "newDiscussion": "发起讨论",
+    "discussionPlaceholder": "分享你的想法... 输入 @ 可以引用帖子",
+    "addTags": "添加标签（按回车确认）",
+    "mentionHint": "输入 @ 引用帖子，# 添加标签",
+    "publish": "发布",
+    "publishSuccess": "讨论发布成功",
+    "publishFailed": "发布失败，请重试",
+    "loginToPost": "登录后发起讨论"
   },
   "contact": {
     "title": "联系我们",
@@ -228,7 +236,10 @@
     "updateSuccess": "个人资料更新成功",
     "passwordChanged": "密码修改成功",
     "passwordMismatch": "两次输入的密码不一致",
-    "passwordTooShort": "密码至少需要8个字符"
+    "passwordTooShort": "密码至少需要8个字符",
+    "cropAvatar": "裁剪头像",
+    "circleShape": "圆形",
+    "squareShape": "方形"
   },
   "user": {
     "username": {
@@ -236,5 +247,13 @@
       "tooLong": "用户名最多30个字符",
       "invalidFormat": "用户名只能包含字母、数字和下划线"
     }
+  },
+  "favorites": {
+    "loginRequired": "请登录以查看您的收藏",
+    "totalCount": "共 {count} 个收藏",
+    "empty": "您还没有收藏任何内容",
+    "unknownPost": "未知帖子",
+    "remove": "取消收藏",
+    "removed": "已取消收藏"
   }
 }
