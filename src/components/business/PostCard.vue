@@ -4,7 +4,7 @@
     class="post-card glass-card post-card-btn"
     @click="handleClick"
   >
-    <div class="post-image-wrapper" :style="imageWrapperStyle">
+    <div class="post-image-wrapper">
       <img
         v-if="thumbnailSrc"
         ref="imageRef"
@@ -31,14 +31,12 @@ import { normalizeToThumbnailUrl, getResponsiveThumbnailSize } from '@/utils/med
 
 export interface PostCardProps {
   post: PostListItem
-  maxHeight?: number
   showContent?: boolean
   showAuthor?: boolean
   thumbnailSize?: 'small' | 'medium' | 'large' | 'responsive'
 }
 
 const props = withDefaults(defineProps<PostCardProps>(), {
-  maxHeight: 400,
   showContent: true,
   showAuthor: true,
   thumbnailSize: 'responsive',
@@ -53,7 +51,7 @@ const isImageLoaded = ref(false)
 
 const effectiveThumbnailSize = computed(() => {
   if (props.thumbnailSize === 'responsive') {
-    return getResponsiveThumbnailSize('small')
+    return getResponsiveThumbnailSize('medium')
   }
   return props.thumbnailSize
 })
@@ -61,12 +59,6 @@ const effectiveThumbnailSize = computed(() => {
 const thumbnailSrc = computed(() => {
   if (!props.post.thumbnail_url) return null
   return normalizeToThumbnailUrl(props.post.thumbnail_url, effectiveThumbnailSize.value) || props.post.thumbnail_url
-})
-
-const imageWrapperStyle = computed(() => {
-  return {
-    '--max-height': `${props.maxHeight}px`,
-  }
 })
 
 function onImageLoad() {
@@ -106,32 +98,30 @@ function handleClick() {
 .post-image-wrapper {
   position: relative;
   width: 100%;
-  max-height: var(--max-height, 400px);
   overflow: hidden;
   background: var(--glass-bg-light);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
 }
 
 .post-image {
   width: 100%;
   height: auto;
   display: block;
-  max-height: var(--max-height, 400px);
-  object-fit: cover;
-  object-position: top center;
+  object-fit: contain;
 }
 
 .post-image-placeholder {
   width: 100%;
-  padding-bottom: 75%;
+  aspect-ratio: 4 / 3;
   background: var(--glass-bg);
 }
 
 .post-content {
-  padding: var(--spacing-4);
+  padding: var(--spacing-3);
 }
 
 .post-title {
-  font-size: var(--text-base);
+  font-size: var(--text-sm);
   font-weight: var(--font-semibold);
   color: var(--color-text);
   margin: 0;
@@ -139,22 +129,12 @@ function handleClick() {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  line-height: 1.4;
 }
 
 .post-meta {
-  font-size: var(--text-sm);
+  font-size: var(--text-xs);
   color: var(--color-text-secondary);
   margin: var(--spacing-1) 0 0;
-}
-
-/* 移动端限制更严格的高度 */
-@media (max-width: 600px) {
-  .post-image-wrapper {
-    max-height: min(var(--max-height, 400px), 50vh);
-  }
-
-  .post-image {
-    max-height: min(var(--max-height, 400px), 50vh);
-  }
 }
 </style>
