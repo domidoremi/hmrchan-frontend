@@ -12,18 +12,20 @@
     <main id="main-content">
       <RouterView v-slot="{ Component, route }">
         <Transition :name="transitionName" mode="out-in">
-          <Suspense>
-            <template #default>
-              <div class="route-view" :key="route.path">
-                <component :is="Component" :key="route.path" />
-              </div>
-            </template>
-            <template #fallback>
-              <div class="route-view">
-                <PageLoading />
-              </div>
-            </template>
-          </Suspense>
+          <KeepAlive :include="cachedPages" :max="10">
+            <Suspense>
+              <template #default>
+                <div class="route-view" :key="route.path">
+                  <component :is="Component" />
+                </div>
+              </template>
+              <template #fallback>
+                <div class="route-view">
+                  <PageLoading />
+                </div>
+              </template>
+            </Suspense>
+          </KeepAlive>
         </Transition>
       </RouterView>
     </main>
@@ -54,6 +56,14 @@ const settingsStore = useSettingsStore()
 
 const { resolvedTheme } = storeToRefs(themeStore)
 const { settings } = storeToRefs(settingsStore)
+
+const cachedPages = [
+  'HomePage',
+  'ExplorePage',
+  'AuthorsPage',
+  'CommunityPage',
+  'FavoritesPage',
+]
 
 // Page transition name
 const transitionName = ref('fade')

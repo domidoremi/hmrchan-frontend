@@ -193,7 +193,15 @@
     "recentDiscussions": "Recent Discussions",
     "hotTopics": "Hot Topics",
     "myComments": "My Comments",
-    "savedComments": "Saved Comments"
+    "savedComments": "Saved Comments",
+    "newDiscussion": "New Discussion",
+    "discussionPlaceholder": "Share your thoughts... Type @ to reference a post",
+    "addTags": "Add tags (press Enter to confirm)",
+    "mentionHint": "Type @ to reference posts, # to add tags",
+    "publish": "Publish",
+    "publishSuccess": "Discussion published successfully",
+    "publishFailed": "Failed to publish, please try again",
+    "loginToPost": "Login to start a discussion"
   },
   "contact": {
     "title": "Contact Us",
@@ -228,7 +236,10 @@
     "updateSuccess": "Profile updated successfully",
     "passwordChanged": "Password changed successfully",
     "passwordMismatch": "Passwords do not match",
-    "passwordTooShort": "Password must be at least 8 characters"
+    "passwordTooShort": "Password must be at least 8 characters",
+    "cropAvatar": "Crop Avatar",
+    "circleShape": "Circle",
+    "squareShape": "Square"
   },
   "user": {
     "username": {
@@ -236,5 +247,13 @@
       "tooLong": "Username must be at most 30 characters",
       "invalidFormat": "Username can only contain letters, numbers, and underscores"
     }
+  },
+  "favorites": {
+    "loginRequired": "Please login to view your favorites",
+    "totalCount": "{count} favorites",
+    "empty": "You haven't saved any favorites yet",
+    "unknownPost": "Unknown post",
+    "remove": "Remove from favorites",
+    "removed": "Removed from favorites"
   }
 }

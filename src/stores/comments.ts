@@ -6,6 +6,7 @@ import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import type { Comment, CommentFormData } from '@/types'
 import { sanitizeComment, validateComment, commentRateLimiter } from '@/utils/security'
+import { apiClient, type PaginatedApiResponse } from '@/api'
 
 export const useCommentsStore = defineStore('comments', () => {
   const comments = ref<Map<string, Comment[]>>(new Map())
@@ -30,16 +31,10 @@ export const useCommentsStore = defineStore('comments', () => {
     error.value = null
 
     try {
-      // TODO: 实际 API 调用
-      const response = await fetch(`/api/v1/comments/post/${postId}?sort=${sort}`, {
-        credentials: 'include',
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch comments')
-      }
-
-      const data = await response.json()
+      const data = await apiClient.get<PaginatedApiResponse<Comment>>(
+        `/comments/post/${postId}?sort=${sort}`,
+        { skipErrorToast: true }
+      )
       comments.value.set(postId, data.items || [])
       return { success: true, data: data.items }
     } catch (err) {
@@ -75,24 +70,14 @@ export const useCommentsStore = defineStore('comments', () => {
     error.value = null
 
     try {
-      const response = await fetch(`/api/v1/comments/post/${postId}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
+      const newComment = await apiClient.post<Comment>(
+        `/comments/post/${postId}`,
+        {
           content: sanitizedContent,
           parent_id: formData.parent_id || null,
-        }),
-      })
-
-      if (!response.ok) {
-        if (response.status === 401) {
-          return { success: false, error: 'comment.error.unauthorized' }
-        }
-        throw new Error('Failed to add comment')
-      }
-
-      const newComment = await response.json()
+        },
+        { skipErrorToast: true }
+      )
 
       // 记录速率限制
       commentRateLimiter.record()
@@ -125,14 +110,7 @@ export const useCommentsStore = defineStore('comments', () => {
   // 删除评论
   async function deleteComment(postId: string, commentId: string) {
     try {
-      const response = await fetch(`/api/v1/comments/${commentId}`, {
-        method: 'DELETE',
-        credentials: 'include',
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to delete comment')
-      }
+      await apiClient.delete(`/comments/${commentId}`, { skipErrorToast: true })
 
       // 更新本地状态
       const postComments = comments.value.get(postId) || []
@@ -148,17 +126,7 @@ export const useCommentsStore = defineStore('comments', () => {
   // 点赞评论
   async function likeComment(commentId: string) {
     try {
-      const response = await fetch(`/api/v1/comments/${commentId}/like`, {
-        method: 'POST',
-        credentials: 'include',
-      })
-
-      if (!response.ok) {
-        if (response.status === 401) {
-          return { success: false, error: 'comment.error.unauthorized' }
-        }
-        throw new Error('Failed to like comment')
-      }
+      await apiClient.post(`/comments/${commentId}/like`, null, { skipErrorToast: true })
 
       // 更新本地状态
       updateCommentInAll(commentId, (comment) => {
@@ -175,14 +143,7 @@ export const useCommentsStore = defineStore('comments', () => {
   // 取消点赞
   async function unlikeComment(commentId: string) {
     try {
-      const response = await fetch(`/api/v1/comments/${commentId}/like`, {
-        method: 'DELETE',
-        credentials: 'include',
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to unlike comment')
-      }
+      await apiClient.delete(`/comments/${commentId}/like`, { skipErrorToast: true })
 
       // 更新本地状态
       updateCommentInAll(commentId, (comment) => {
@@ -199,17 +160,7 @@ export const useCommentsStore = defineStore('comments', () => {
   // 收藏评论
   async function favoriteComment(commentId: string) {
     try {
-      const response = await fetch(`/api/v1/comments/${commentId}/favorite`, {
-        method: 'POST',
-        credentials: 'include',
-      })
-
-      if (!response.ok) {
-        if (response.status === 401) {
-          return { success: false, error: 'comment.error.unauthorized' }
-        }
-        throw new Error('Failed to favorite comment')
-      }
+      await apiClient.post(`/comments/${commentId}/favorite`, null, { skipErrorToast: true })
 
       updateCommentInAll(commentId, (comment) => {
         comment.is_favorited = true
@@ -224,14 +175,7 @@ export const useCommentsStore = defineStore('comments', () => {
   // 取消收藏评论
   async function unfavoriteComment(commentId: string) {
     try {
-      const response = await fetch(`/api/v1/comments/${commentId}/favorite`, {
-        method: 'DELETE',
-        credentials: 'include',
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to unfavorite comment')
-      }
+      await apiClient.delete(`/comments/${commentId}/favorite`, { skipErrorToast: true })
 
       updateCommentInAll(commentId, (comment) => {
         comment.is_favorited = false
@@ -246,16 +190,11 @@ export const useCommentsStore = defineStore('comments', () => {
   // 举报评论
   async function reportComment(commentId: string, reason: string, description?: string) {
     try {
-      const response = await fetch(`/api/v1/comments/${commentId}/report`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ reason, description }),
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to report comment')
-      }
+      await apiClient.post(
+        `/comments/${commentId}/report`,
+        { reason, description },
+        { skipErrorToast: true }
+      )
 
       return { success: true }
     } catch {
