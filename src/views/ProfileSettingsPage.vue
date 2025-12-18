@@ -39,7 +39,7 @@
                     type="file"
                     accept="image/*"
                     class="sr-only"
-                    @change="handleAvatarUpload"
+                    @change="handleAvatarSelect"
                   />
                 </label>
               </div>
@@ -146,6 +146,15 @@
         </section>
       </template>
     </div>
+
+    <Teleport to="body">
+      <ImageCropper
+        v-if="showCropper"
+        :image-src="cropImageSrc"
+        @crop="handleCroppedImage"
+        @cancel="closeCropper"
+      />
+    </Teleport>
   </div>
 </template>
 
@@ -158,6 +167,7 @@ import { userService, type UserProfile, ApiError } from '@/api'
 import { useToastStore } from '@/stores'
 import Button from '@/components/ui/Button.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
+import ImageCropper from '@/components/ui/ImageCropper.vue'
 
 const router = useRouter()
 const { t } = useI18n()
@@ -168,6 +178,9 @@ const isLoading = ref(false)
 const isSaving = ref(false)
 const isChangingPassword = ref(false)
 const error = ref<string | null>(null)
+
+const showCropper = ref(false)
+const cropImageSrc = ref('')
 
 const form = ref({
   username: '',
@@ -283,10 +296,29 @@ async function changePassword() {
   }
 }
 
-async function handleAvatarUpload(event: Event) {
+function handleAvatarSelect(event: Event) {
   const input = event.target as HTMLInputElement
   const file = input.files?.[0]
   if (!file) return
+
+  const reader = new FileReader()
+  reader.onload = (e) => {
+    cropImageSrc.value = e.target?.result as string
+    showCropper.value = true
+  }
+  reader.readAsDataURL(file)
+  input.value = ''
+}
+
+function closeCropper() {
+  showCropper.value = false
+  cropImageSrc.value = ''
+}
+
+async function handleCroppedImage(blob: Blob) {
+  showCropper.value = false
+
+  const file = new File([blob], 'avatar.png', { type: 'image/png' })
 
   try {
     const result = await userService.uploadAvatar(file)

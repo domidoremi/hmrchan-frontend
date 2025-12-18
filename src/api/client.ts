@@ -173,14 +173,17 @@ async function request<T>(
     skipAuth = false,
     skipErrorToast = false,
     headers: customHeaders = {},
+    body,
     ...fetchConfig
   } = config
 
+  // 检查是否为 FormData（不应设置 Content-Type）
+  const isFormData = body instanceof FormData
+
   // 构建请求头
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-    ...customHeaders,
-  }
+  const headers: HeadersInit = isFormData
+    ? { ...customHeaders }
+    : { 'Content-Type': 'application/json', ...customHeaders }
 
   // 添加认证头
   if (!skipAuth) {
@@ -200,6 +203,7 @@ async function request<T>(
   try {
     const response = await fetch(url, {
       ...fetchConfig,
+      body: body ?? null,
       headers,
       credentials: 'include', // 始终发送 cookies
       signal: controller.signal,
@@ -308,10 +312,13 @@ export const apiClient = {
   },
 
   post<T>(endpoint: string, data?: unknown, config?: RequestConfig): Promise<T> {
+    const isFormData = data instanceof FormData
+    const body = data !== undefined ? (isFormData ? data : JSON.stringify(data)) : null
     return request<T>(endpoint, {
       ...config,
       method: 'POST',
-      body: data !== undefined ? JSON.stringify(data) : null,
+      body,
+      ...(isFormData ? {} : config?.headers ? { headers: config.headers } : {}),
     })
   },
 
