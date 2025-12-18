@@ -164,13 +164,14 @@ import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { ArrowLeft, User, Camera } from 'lucide-vue-next'
 import { userService, type UserProfile, ApiError } from '@/api'
-import { useToastStore } from '@/stores'
+import { useAuthStore, useToastStore } from '@/stores'
 import Button from '@/components/ui/Button.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import ImageCropper from '@/components/ui/ImageCropper.vue'
 
 const router = useRouter()
 const { t } = useI18n()
+const authStore = useAuthStore()
 const toastStore = useToastStore()
 
 const profile = ref<UserProfile | null>(null)
@@ -324,6 +325,9 @@ async function handleCroppedImage(blob: Blob) {
     const result = await userService.uploadAvatar(file)
     if (profile.value) {
       profile.value.avatar_url = result.url
+    }
+    if (authStore.user) {
+      authStore.user.avatar_url = result.url
     }
     toastStore.success(t('profile.avatarUpdated'))
   } catch (err) {
