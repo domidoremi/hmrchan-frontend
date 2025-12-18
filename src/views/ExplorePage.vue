@@ -223,20 +223,50 @@ onMounted(() => {
 }
 
 .posts-masonry {
-  column-width: 240px;
-  column-gap: var(--spacing-4);
-  column-count: 6;
+  --masonry-column-width: 220px;
+  --masonry-gap: var(--spacing-4);
+
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(var(--masonry-column-width), 1fr));
+  gap: var(--masonry-gap);
+  align-items: start;
 }
 
-.posts-masonry > :deep(*) {
-  break-inside: avoid;
-  margin-bottom: var(--spacing-4);
+@media (min-width: 1600px) {
+  .posts-masonry {
+    --masonry-column-width: 240px;
+  }
+}
+
+@media (min-width: 1920px) {
+  .posts-masonry {
+    --masonry-column-width: 260px;
+  }
+}
+
+@media (max-width: 1200px) {
+  .posts-masonry {
+    --masonry-column-width: 200px;
+  }
+}
+
+@media (max-width: 900px) {
+  .posts-masonry {
+    --masonry-column-width: 180px;
+    --masonry-gap: var(--spacing-3);
+  }
 }
 
 @media (max-width: 600px) {
   .posts-masonry {
-    column-count: 1;
-    column-width: auto;
+    grid-template-columns: repeat(2, 1fr);
+    --masonry-gap: var(--spacing-2);
+  }
+}
+
+@media (max-width: 400px) {
+  .posts-masonry {
+    grid-template-columns: 1fr;
   }
 }
 
