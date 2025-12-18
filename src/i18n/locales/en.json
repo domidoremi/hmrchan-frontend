@@ -33,6 +33,9 @@
     "previous": "Previous",
     "search": "Search",
     "noResults": "No results found",
+    "showing": "Showing {count} of {total}",
+    "loadMore": "Load More",
+    "noMoreItems": "No more items",
     "viewMore": "View More",
     "showLess": "Show Less",
     "justNow": "Just now",
@@ -104,6 +107,7 @@
   },
   "explore": {
     "title": "Explore",
+    "allPlatforms": "All",
     "searchPlaceholder": "Search posts, authors, tags...",
     "filters": "Filters",
     "sortBy": "Sort by",

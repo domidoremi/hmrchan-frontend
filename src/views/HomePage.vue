@@ -51,6 +51,23 @@
             </div>
 
             <StateIndicator v-if="posts.length === 0" variant="empty" />
+
+            <!-- Load More / Quota Indicator -->
+            <div v-if="posts.length > 0" class="load-more-section">
+              <div class="quota-indicator">
+                <span class="quota-text">{{ $t('common.showing', { count: posts.length, total }) }}</span>
+              </div>
+              <Button
+                v-if="hasMore"
+                variant="secondary"
+                :disabled="isLoadingMore"
+                @click="loadMore"
+              >
+                <span v-if="isLoadingMore" class="spinner spinner-sm" />
+                {{ $t('common.loadMore') }}
+              </Button>
+              <p v-else class="no-more-text">{{ $t('common.noMoreItems') }}</p>
+            </div>
           </template>
         </template>
       </div>
@@ -61,7 +78,7 @@
 <script setup lang="ts">
 defineOptions({ name: 'HomePage' })
 
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
@@ -80,27 +97,42 @@ const { t } = useI18n()
 
 const posts = ref<PostListItem[]>([])
 const isLoading = ref(false)
+const isLoadingMore = ref(false)
 const error = ref<string | null>(null)
+const page = ref(1)
+const total = ref(0)
+const pageSize = 12
 
-async function fetchLatestPosts() {
-  if (isLoading.value) return
+const hasMore = computed(() => posts.value.length < total.value)
 
-  const hadData = posts.value.length > 0
+async function fetchLatestPosts(reset = true) {
+  if (reset) {
+    if (isLoading.value) return
+    isLoading.value = true
+    page.value = 1
+    posts.value = []
+  } else {
+    if (isLoadingMore.value) return
+    isLoadingMore.value = true
+  }
 
-  isLoading.value = true
   error.value = null
 
   try {
     const res = await postService.listPosts({
-      page: 1,
-      page_size: 12,
+      page: page.value,
+      page_size: pageSize,
       sort_by: 'published_at',
       sort_order: 'desc',
     })
-    posts.value = res.items
-  } catch (err) {
-    if (hadData) return
 
+    if (reset) {
+      posts.value = res.items
+    } else {
+      posts.value.push(...res.items)
+    }
+    total.value = res.total
+  } catch (err) {
     if (err instanceof ApiError) {
       error.value = err.message
     } else {
@@ -108,6 +140,25 @@ async function fetchLatestPosts() {
     }
   } finally {
     isLoading.value = false
+    isLoadingMore.value = false
+  }
+}
+
+async function loadMore() {
+  if (!hasMore.value || isLoadingMore.value) return
+  page.value++
+  await fetchLatestPosts(false)
+}
+
+function handleScroll() {
+  if (!hasMore.value || isLoadingMore.value) return
+
+  const scrollTop = window.scrollY
+  const windowHeight = window.innerHeight
+  const docHeight = document.documentElement.scrollHeight
+
+  if (scrollTop + windowHeight >= docHeight - 500) {
+    loadMore()
   }
 }
 
@@ -125,6 +176,11 @@ function goToPost(postId: string, thumbnailSrc: string | null) {
 
 onMounted(() => {
   fetchLatestPosts()
+  window.addEventListener('scroll', handleScroll)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('scroll', handleScroll)
 })
 </script>
 
@@ -276,6 +332,29 @@ onMounted(() => {
 
 .post-content {
   padding: var(--spacing-4);
+}
+
+.load-more-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-3);
+  margin-top: var(--spacing-8);
+  padding: var(--spacing-4);
+}
+
+.quota-indicator {
+  text-align: center;
+}
+
+.quota-text {
+  font-size: var(--text-sm);
+  color: var(--color-text-tertiary);
+}
+
+.no-more-text {
+  font-size: var(--text-sm);
+  color: var(--color-text-tertiary);
 }
 
 @media (max-width: 768px) {
