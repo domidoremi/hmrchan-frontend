@@ -17,16 +17,31 @@
         </div>
       </header>
 
-      <div class="filters">
-        <button
-          v-for="sort in sortOptions"
-          :key="sort.value"
-          class="filter-btn"
-          :class="{ active: currentSort === sort.value }"
-          @click="currentSort = sort.value"
-        >
-          {{ $t(`explore.${sort.value}`) }}
-        </button>
+      <div class="filters-row">
+        <div class="filters">
+          <button
+            v-for="sort in sortOptions"
+            :key="sort.value"
+            class="filter-btn"
+            :class="{ active: currentSort === sort.value }"
+            @click="currentSort = sort.value"
+          >
+            {{ $t(`explore.${sort.value}`) }}
+          </button>
+        </div>
+
+        <div class="platform-filters">
+          <button
+            v-for="platform in platformOptions"
+            :key="platform.value"
+            class="platform-btn"
+            :class="{ active: currentPlatform === platform.value }"
+            @click="currentPlatform = platform.value"
+          >
+            <component :is="platform.icon" :size="16" />
+            <span class="platform-label">{{ platform.label }}</span>
+          </button>
+        </div>
       </div>
 
       <StateIndicator v-if="error" variant="error" :description="error" @action="fetchPosts" />
@@ -53,6 +68,23 @@
           </div>
 
           <StateIndicator v-if="posts.length === 0" variant="empty" />
+
+          <!-- Load More / Quota Indicator -->
+          <div v-if="posts.length > 0" class="load-more-section">
+            <div class="quota-indicator">
+              <span class="quota-text">{{ $t('common.showing', { count: posts.length, total }) }}</span>
+            </div>
+            <Button
+              v-if="hasMore"
+              variant="secondary"
+              :disabled="isLoadingMore"
+              @click="loadMore"
+            >
+              <span v-if="isLoadingMore" class="spinner spinner-sm" />
+              {{ $t('common.loadMore') }}
+            </Button>
+            <p v-else class="no-more-text">{{ $t('common.noMoreItems') }}</p>
+          </div>
         </template>
       </template>
     </div>
@@ -62,13 +94,14 @@
 <script setup lang="ts">
 defineOptions({ name: 'ExplorePage' })
 
-import { ref, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { Search } from 'lucide-vue-next'
+import { Search, Globe, Youtube, Music2, Twitter } from 'lucide-vue-next'
 import { postService, type PostListItem, ApiError } from '@/api'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import PostCard from '@/components/business/PostCard.vue'
+import Button from '@/components/ui/Button.vue'
 
 const router = useRouter()
 
@@ -76,15 +109,29 @@ const { t } = useI18n()
 
 const searchQuery = ref('')
 const currentSort = ref<'newest' | 'popular' | 'trending'>('newest')
+const currentPlatform = ref<'all' | 'youtube' | 'tiktok' | 'twitter'>('all')
 
 const posts = ref<PostListItem[]>([])
 const isLoading = ref(false)
+const isLoadingMore = ref(false)
 const error = ref<string | null>(null)
+const page = ref(1)
+const total = ref(0)
+const pageSize = 24
+
+const hasMore = computed(() => posts.value.length < total.value)
 
 const sortOptions = [
   { value: 'newest' as const },
   { value: 'popular' as const },
   { value: 'trending' as const },
+]
+
+const platformOptions = [
+  { value: 'all' as const, label: t('explore.allPlatforms'), icon: Globe },
+  { value: 'youtube' as const, label: 'YouTube', icon: Youtube },
+  { value: 'tiktok' as const, label: 'TikTok', icon: Music2 },
+  { value: 'twitter' as const, label: 'Twitter', icon: Twitter },
 ]
 
 function goToPost(postId: string) {
@@ -103,30 +150,39 @@ function getSortParams(sort: 'newest' | 'popular' | 'trending') {
   }
 }
 
-async function fetchPosts() {
-  if (isLoading.value) return
+async function fetchPosts(reset = true) {
+  if (reset) {
+    if (isLoading.value) return
+    isLoading.value = true
+    page.value = 1
+    posts.value = []
+  } else {
+    if (isLoadingMore.value) return
+    isLoadingMore.value = true
+  }
 
-  const hadData = posts.value.length > 0
-
-  isLoading.value = true
   error.value = null
 
   try {
     const { sort_by, sort_order } = getSortParams(currentSort.value)
     const params = {
-      page: 1,
-      page_size: 24,
+      page: page.value,
+      page_size: pageSize,
       sort_by,
       sort_order,
     }
 
     const q = searchQuery.value.trim()
-    const res = await postService.listPosts(q ? { ...params, q } : params)
+    const platform = currentPlatform.value !== 'all' ? currentPlatform.value : undefined
+    const res = await postService.listPosts({ ...params, ...(q ? { q } : {}), ...(platform ? { platform } : {}) })
 
-    posts.value = res.items
+    if (reset) {
+      posts.value = res.items
+    } else {
+      posts.value.push(...res.items)
+    }
+    total.value = res.total
   } catch (err) {
-    if (hadData) return
-
     if (err instanceof ApiError) {
       error.value = err.message
     } else {
@@ -134,12 +190,35 @@ async function fetchPosts() {
     }
   } finally {
     isLoading.value = false
+    isLoadingMore.value = false
+  }
+}
+
+async function loadMore() {
+  if (!hasMore.value || isLoadingMore.value) return
+  page.value++
+  await fetchPosts(false)
+}
+
+function handleScroll() {
+  if (!hasMore.value || isLoadingMore.value) return
+
+  const scrollTop = window.scrollY
+  const windowHeight = window.innerHeight
+  const docHeight = document.documentElement.scrollHeight
+
+  if (scrollTop + windowHeight >= docHeight - 500) {
+    loadMore()
   }
 }
 
 let searchDebounceTimer: number | undefined
 
 watch(currentSort, () => {
+  fetchPosts()
+})
+
+watch(currentPlatform, () => {
   fetchPosts()
 })
 
@@ -152,6 +231,11 @@ watch(searchQuery, () => {
 
 onMounted(() => {
   fetchPosts()
+  window.addEventListener('scroll', handleScroll)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('scroll', handleScroll)
 })
 </script>
 
@@ -196,7 +280,6 @@ onMounted(() => {
 .filters {
   display: flex;
   gap: var(--spacing-2);
-  margin-bottom: var(--spacing-6);
 }
 
 .filter-btn {
@@ -224,51 +307,106 @@ onMounted(() => {
   gap: var(--spacing-4);
 }
 
-.posts-masonry {
-  --masonry-column-width: 220px;
-  --masonry-gap: var(--spacing-4);
-
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(var(--masonry-column-width), 1fr));
-  gap: var(--masonry-gap);
-  align-items: start;
+.filters-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-4);
+  margin-bottom: var(--spacing-6);
 }
 
-@media (min-width: 1600px) {
-  .posts-masonry {
-    --masonry-column-width: 240px;
+.platform-filters {
+  display: flex;
+  gap: var(--spacing-2);
+}
+
+.platform-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-1);
+  padding: var(--spacing-2) var(--spacing-3);
+  border-radius: var(--radius-full);
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--glass-border);
+  transition: all var(--transition-fast);
+}
+
+.platform-btn:hover {
+  background: var(--glass-bg-light);
+}
+
+.platform-btn.active {
+  background: var(--color-primary);
+  color: var(--color-white);
+  border-color: var(--color-primary);
+}
+
+.platform-label {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .platform-label {
+    display: inline;
   }
+}
+
+.posts-masonry {
+  --masonry-columns: 5;
+  --masonry-gap: var(--spacing-4);
+
+  column-count: var(--masonry-columns);
+  column-gap: var(--masonry-gap);
+}
+
+.posts-masonry > :deep(*) {
+  break-inside: avoid;
+  margin-bottom: var(--masonry-gap);
 }
 
 @media (min-width: 1920px) {
   .posts-masonry {
-    --masonry-column-width: 260px;
+    --masonry-columns: 6;
   }
 }
 
-@media (max-width: 1200px) {
+@media (min-width: 1600px) and (max-width: 1919px) {
   .posts-masonry {
-    --masonry-column-width: 200px;
+    --masonry-columns: 5;
   }
 }
 
-@media (max-width: 900px) {
+@media (min-width: 1200px) and (max-width: 1599px) {
   .posts-masonry {
-    --masonry-column-width: 180px;
+    --masonry-columns: 4;
+  }
+}
+
+@media (min-width: 900px) and (max-width: 1199px) {
+  .posts-masonry {
+    --masonry-columns: 3;
+  }
+}
+
+@media (min-width: 600px) and (max-width: 899px) {
+  .posts-masonry {
+    --masonry-columns: 3;
     --masonry-gap: var(--spacing-3);
   }
 }
 
-@media (max-width: 600px) {
+@media (min-width: 400px) and (max-width: 599px) {
   .posts-masonry {
-    grid-template-columns: repeat(2, 1fr);
+    --masonry-columns: 2;
     --masonry-gap: var(--spacing-2);
   }
 }
 
-@media (max-width: 400px) {
+@media (max-width: 399px) {
   .posts-masonry {
-    grid-template-columns: 1fr;
+    --masonry-columns: 1;
   }
 }
 
@@ -288,5 +426,28 @@ onMounted(() => {
 
 .post-content {
   padding: var(--spacing-3);
+}
+
+.load-more-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-3);
+  margin-top: var(--spacing-8);
+  padding: var(--spacing-4);
+}
+
+.quota-indicator {
+  text-align: center;
+}
+
+.quota-text {
+  font-size: var(--text-sm);
+  color: var(--color-text-tertiary);
+}
+
+.no-more-text {
+  font-size: var(--text-sm);
+  color: var(--color-text-tertiary);
 }
 </style>
