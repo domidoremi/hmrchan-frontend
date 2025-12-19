@@ -2,22 +2,28 @@
  * Media Optimizer - 媒体优化工具
  *
  * 根据 THUMBNAIL_API.md 规范实现缩略图 URL 生成和媒体优化
+ *
+ * 使用场景指南：
+ * - small: 卡片列表、网格缩略图（首页、探索页、作者页的帖子卡片）
+ * - medium: 详情页缩略图列表、占位图
+ * - large: 详情页主图预览（非全屏）
+ * - original: Lightbox 全屏查看、下载
  */
 
 export type MediaThumbnailSize = 'small' | 'medium' | 'large' | 'original'
 
 /**
  * 缩略图尺寸配置
- * - small: 200×200 - 列表卡片、网格预览
- * - medium: 400×400 - Feed 流、网格大图
- * - large: 800×800 - 详情页预览、Lightbox
- * - original: 原始尺寸
+ * - small: 200×200 - 列表卡片、网格预览（推荐用于 < 300px 容器）
+ * - medium: 400×400 - Feed 流、网格大图（推荐用于 300-600px 容器）
+ * - large: 800×800 - 详情页预览、Lightbox 占位（推荐用于 > 600px 容器）
+ * - original: 原始尺寸 - 仅用于 Lightbox 全屏查看
  */
 export const THUMBNAIL_SIZES: Record<MediaThumbnailSize, { width: number; height: number; usage: string }> = {
   small: { width: 200, height: 200, usage: '列表卡片、网格预览' },
   medium: { width: 400, height: 400, usage: 'Feed 流、网格大图' },
-  large: { width: 800, height: 800, usage: '详情页预览、Lightbox' },
-  original: { width: 0, height: 0, usage: '原始尺寸' },
+  large: { width: 800, height: 800, usage: '详情页预览、Lightbox 占位' },
+  original: { width: 0, height: 0, usage: 'Lightbox 全屏、下载' },
 }
 
 /**
@@ -69,7 +75,7 @@ export function extractMediaIdFromUrl(url?: string | null): string | null {
   if (!url) return null
 
   const match = url.match(/\/api\/v1\/media\/([0-9a-f-]+)\/(?:stream|thumbnail)/i)
-  return match ? match[1] : null
+  return match?.[1] ?? null
 }
 
 /**
