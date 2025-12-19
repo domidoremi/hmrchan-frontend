@@ -35,7 +35,8 @@
                 <div
                   v-if="activeMedia?.file_type === 'image'"
                   :key="`img-${activeMedia.id}`"
-                  class="media-item-container"
+                  class="media-item-container media-clickable"
+                  @click="openLightbox()"
                 >
                   <!-- 模糊占位图 -->
                   <img
@@ -53,6 +54,11 @@
                     :alt="post.title"
                     @load="onMediaLoad"
                   />
+                  <!-- 点击提示 -->
+                  <div class="media-zoom-hint">
+                    <span class="zoom-icon">🔍</span>
+                    {{ $t('common.clickToEnlarge') }}
+                  </div>
                 </div>
                 <video
                   v-else-if="activeMedia?.file_type === 'video'"
@@ -143,6 +149,15 @@
       <!-- Comments Section -->
       <CommentList :post-id="postId" />
     </div>
+
+    <!-- Media Lightbox -->
+    <MediaLightbox
+      v-if="post?.media_files?.length"
+      v-model:is-open="isLightboxOpen"
+      :media-list="post.media_files"
+      :initial-index="lightboxInitialIndex"
+      :alt="post.title"
+    />
   </div>
 </template>
 
@@ -157,6 +172,7 @@ import { CommentList } from '@/components/comment'
 import { postService, favoriteService, type PostDetailResponse, ApiError } from '@/api'
 import { getMediaStreamUrl, getMediaThumbnailUrl, normalizeToThumbnailUrl } from '@/utils/mediaOptimizer'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
+import MediaLightbox from '@/components/ui/MediaLightbox.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -180,6 +196,10 @@ const mediaTransitionName = ref('media-fade')
 const isMediaLoaded = ref(false)
 const cachedThumbnailUrl = ref<string | null>(null)
 const preloadedImages = ref<Set<string>>(new Set())
+
+// Lightbox 状态
+const isLightboxOpen = ref(false)
+const lightboxInitialIndex = ref(0)
 
 const activeMedia = computed(() => {
   const list = post.value?.media_files ?? []
@@ -295,6 +315,12 @@ function goBack() {
 
 function goToAuthor(authorId: string) {
   router.push(`/author/${authorId}`)
+}
+
+// 打开 Lightbox 查看大图
+function openLightbox(index?: number) {
+  lightboxInitialIndex.value = index ?? activeMediaIndex.value
+  isLightboxOpen.value = true
 }
 
 async function fetchFavoriteStatus() {
@@ -488,6 +514,37 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   z-index: 1;
+}
+
+.media-clickable {
+  cursor: zoom-in;
+}
+
+.media-zoom-hint {
+  position: absolute;
+  bottom: var(--spacing-3);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  padding: var(--spacing-2) var(--spacing-4);
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  border-radius: var(--radius-full);
+  color: white;
+  font-size: var(--text-sm);
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+  pointer-events: none;
+}
+
+.media-clickable:hover .media-zoom-hint {
+  opacity: 1;
+}
+
+.zoom-icon {
+  font-size: var(--text-base);
 }
 
 .media-placeholder {

@@ -41,7 +41,13 @@
     "daysAgo": "{n} 日前",
     "more": "その他",
     "show": "表示",
-    "hide": "非表示"
+    "hide": "非表示",
+    "close": "閉じる",
+    "clickToEnlarge": "クリックで拡大",
+    "imageViewer": "画像ビューアー",
+    "zoomIn": "拡大",
+    "zoomOut": "縮小",
+    "resetZoom": "リセット"
   },
   "auth": {
     "email": "メールアドレス",
