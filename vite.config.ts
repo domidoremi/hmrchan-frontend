@@ -256,28 +256,64 @@ export default defineConfig(({ mode }) => {
       rollupOptions: {
         output: {
           /**
-           * 代码分割策略
-           * - 核心框架独立缓存
+           * 代码分割策略（优化版）
+           * - 核心框架独立缓存（Vue 单独分割确保最大化缓存）
            * - 大型库按需加载
            * - 业务代码按路由分割
+           * - 共享组件/工具独立分割
            */
           manualChunks(id) {
             if (id.includes('node_modules')) {
-              // Vue 核心
+              // Vue 运行时（最稳定，变化最少）
+              if (id.includes('vue/dist') || id.includes('@vue/runtime')) return 'vue-runtime'
+              // Vue 响应式系统
+              if (id.includes('@vue/reactivity') || id.includes('@vue/shared')) return 'vue-reactivity'
+              // Vue 编译器相关（生产环境很少变化）
               if (id.includes('@vue/')) return 'vue-core'
+
+              // 路由和状态管理
               if (id.includes('vue-router')) return 'vue-router'
               if (id.includes('pinia')) return 'pinia'
 
-              // 大型库独立分割
+              // i18n 独立（包含翻译数据，较大）
+              if (id.includes('vue-i18n') || id.includes('@intlify')) return 'i18n'
+
+              // 图标库（较大，按需加载）
               if (id.includes('lucide-vue-next')) return 'icons'
+
+              // 动画和媒体查看器（按需加载）
               if (id.includes('gsap')) return 'animations'
               if (id.includes('photoswipe')) return 'photo-viewer'
-              if (id.includes('vue-i18n')) return 'i18n'
+
+              // VueUse 工具库
               if (id.includes('@vueuse')) return 'vueuse'
 
-              // 其他依赖
+              // HTTP 客户端
+              if (id.includes('ky')) return 'http-client'
+
+              // 日期处理
+              if (id.includes('dayjs')) return 'dayjs'
+
+              // 其他小型依赖合并
               return 'vendor'
             }
+
+            // 业务代码分割：共享组件
+            if (id.includes('/components/ui/')) return 'ui-components'
+            if (id.includes('/components/layout/')) return 'layout'
+            if (id.includes('/components/business/')) return 'business-components'
+
+            // 业务代码分割：stores
+            if (id.includes('/stores/')) return 'stores'
+
+            // 业务代码分割：工具函数
+            if (id.includes('/utils/')) return 'utils'
+
+            // 业务代码分割：API 层
+            if (id.includes('/api/')) return 'api'
+
+            // 业务代码分割：composables
+            if (id.includes('/composables/')) return 'composables'
           },
 
           /**

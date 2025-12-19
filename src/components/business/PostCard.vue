@@ -82,21 +82,24 @@ const thumbnailSrc = computed(() => {
   )
 })
 
+// 卡片视图只使用 small/medium，不加载 large 以节省带宽
 const thumbnailSrcset = computed(() => {
   const mediaId = extractMediaIdFromUrl(props.post.thumbnail_url)
   if (!mediaId) return null
 
   const small = getMediaThumbnailUrl(mediaId, 'small')
   const medium = getMediaThumbnailUrl(mediaId, 'medium')
-  const large = getMediaThumbnailUrl(mediaId, 'large')
 
-  return `${small} ${THUMBNAIL_SIZES.small.width}w, ${medium} ${THUMBNAIL_SIZES.medium.width}w, ${large} ${THUMBNAIL_SIZES.large.width}w`
+  // 不包含 large，限制最大加载 medium (400px)
+  return `${small} ${THUMBNAIL_SIZES.small.width}w, ${medium} ${THUMBNAIL_SIZES.medium.width}w`
 })
 
+// 保守的 sizes 值，确保浏览器不会选择过大的图片
 const thumbnailSizes = computed(() => {
   if (!thumbnailSrcset.value) return undefined
 
-  return '(max-width: 399px) 100vw, (max-width: 599px) 50vw, (max-width: 1199px) 33vw, (max-width: 1599px) 25vw, (max-width: 1919px) 20vw, 16vw'
+  // 卡片实际显示宽度通常 < 300px，即使 2x DPR 也只需 medium
+  return '(max-width: 599px) 50vw, 200px'
 })
 
 const wrapperAspectRatio = computed(() => {
