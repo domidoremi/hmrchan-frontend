@@ -35,19 +35,11 @@ authStore.setupAuthListener()
 
 app.mount('#app')
 
-// 非关键任务：在空闲时执行
-function runWhenIdle(task: () => void, timeout = 2000): void {
-  if ('requestIdleCallback' in window) {
-    ;(window as Window & { requestIdleCallback: (cb: () => void, opts?: { timeout: number }) => number })
-      .requestIdleCallback(task, { timeout })
-  } else {
-    setTimeout(task, 1)
-  }
-}
+// 非关键任务：使用现代 Scheduler API 在空闲时执行
+import { scheduleTask } from './utils/modernAPIs'
 
-// Service Worker 注册延迟到空闲时
-runWhenIdle(() => {
-  import('./utils/cache').then(({ registerServiceWorker }) => {
-    registerServiceWorker()
-  })
-})
+// Service Worker 注册延迟到空闲时（background 优先级）
+scheduleTask(
+  () => import('./utils/cache').then(({ registerServiceWorker }) => registerServiceWorker()),
+  { priority: 'background' }
+)
