@@ -430,3 +430,94 @@
   contain-intrinsic-size: auto 400px;
   contain: layout style paint;
 }
+
+/* ========== GPU 加速 (Composite Layer) ========== */
+/**
+ * 将元素提升到独立合成层，使用 GPU 渲染
+ * 适用于频繁动画的元素（如轮播、拖拽、滚动）
+ * 注意：过度使用会增加内存占用
+ */
+.gpu-layer {
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* 用于即将执行动画的元素（动画前添加，动画后移除） */
+.will-animate {
+  will-change: transform, opacity;
+}
+
+/* 用于固定定位元素（navbar, modal backdrop） */
+.gpu-fixed {
+  will-change: transform;
+  transform: translate3d(0, 0, 0);
+}
+
+/* ========== CSS Containment (渲染隔离) ========== */
+/**
+ * contain 属性告诉浏览器该元素的渲染独立于其他部分
+ * 减少回流范围，提升渲染性能
+ */
+
+/* 严格隔离 - 完全独立渲染 */
+.contain-strict {
+  contain: strict;
+}
+
+/* 内容隔离 - 尺寸由内容决定，布局独立 */
+.contain-content {
+  contain: content;
+}
+
+/* 仅布局隔离 */
+.contain-layout {
+  contain: layout;
+}
+
+/* 仅绘制隔离 - 子元素不会溢出 */
+.contain-paint {
+  contain: paint;
+}
+
+/* 布局+绘制隔离（推荐用于卡片、列表项） */
+.contain-layout-paint {
+  contain: layout paint;
+}
+
+/* ========== 滚动优化 ========== */
+/**
+ * 优化滚动性能
+ */
+.scroll-smooth {
+  scroll-behavior: smooth;
+}
+
+/* 触摸设备滚动优化 */
+.scroll-touch {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+/* 防止滚动链（滚动到边界时不触发父容器滚动） */
+.overscroll-contain {
+  overscroll-behavior: contain;
+}
+
+/* ========== 图片渲染优化 ========== */
+/**
+ * 图片渲染质量与性能平衡
+ */
+.image-crisp {
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+}
+
+.image-smooth {
+  image-rendering: auto;
+}
+
+/* 图片解码优化 - 异步解码避免阻塞主线程 */
+.decode-async {
+  content-visibility: auto;
+}

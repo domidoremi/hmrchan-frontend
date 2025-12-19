@@ -41,6 +41,8 @@ import {
   THUMBNAIL_SIZES,
 } from '@/utils/mediaOptimizer'
 
+const postAspectRatioCache = new Map<string, string>()
+
 export interface PostCardProps {
   post: PostListItem
   showContent?: boolean
@@ -53,7 +55,6 @@ const props = withDefaults(defineProps<PostCardProps>(), {
   showContent: true,
   showAuthor: true,
   thumbnailSize: 'responsive',
-  aspectRatio: '16 / 9',
 })
 
 const emit = defineEmits<{
@@ -61,6 +62,7 @@ const emit = defineEmits<{
 }>()
 
 const isImageLoaded = ref(false)
+const measuredAspectRatio = ref<string | null>(null)
 
 let hasPrefetchedPostDetailPage = false
 
@@ -96,15 +98,35 @@ const thumbnailSizes = computed(() => {
   return '(max-width: 399px) 100vw, (max-width: 599px) 50vw, (max-width: 1199px) 33vw, (max-width: 1599px) 25vw, (max-width: 1919px) 20vw, 16vw'
 })
 
+const wrapperAspectRatio = computed(() => {
+  if (props.aspectRatio !== undefined && props.aspectRatio !== null && props.aspectRatio !== '') {
+    return String(props.aspectRatio)
+  }
+
+  if (measuredAspectRatio.value) return measuredAspectRatio.value
+
+  const cached = postAspectRatioCache.get(props.post.id)
+  if (cached) return cached
+
+  return '16 / 9'
+})
+
 const imageWrapperStyle = computed<Record<string, string>>(() => ({
-  '--post-card-aspect-ratio': String(props.aspectRatio),
+  aspectRatio: wrapperAspectRatio.value,
 }))
 
 watch(thumbnailSrc, () => {
   isImageLoaded.value = false
+  measuredAspectRatio.value = null
 })
 
-function onImageLoad() {
+function onImageLoad(event: Event) {
+  const img = event.target as HTMLImageElement | null
+  if (img?.naturalWidth && img?.naturalHeight) {
+    const ratio = (img.naturalWidth / img.naturalHeight).toFixed(4)
+    measuredAspectRatio.value = ratio
+    postAspectRatioCache.set(props.post.id, ratio)
+  }
   isImageLoaded.value = true
 }
 
@@ -152,13 +174,12 @@ function handleClick() {
   overflow: hidden;
   background: var(--glass-bg-light);
   border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-  aspect-ratio: var(--post-card-aspect-ratio, 16 / 9);
 }
 
 .post-image {
   position: relative;
   width: 100%;
-  height: 100%;
+  height: auto;
   display: block;
   object-fit: cover;
   opacity: 0;

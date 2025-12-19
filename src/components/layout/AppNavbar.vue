@@ -203,6 +203,7 @@ import {
 import { useAuthStore } from '@/stores'
 import SettingsPanel from './SettingsPanel.vue'
 import { prefetchExploreData, prefetchAuthorsData } from '@/utils/prefetch'
+import { throttleRAF, scheduleDOMUpdate } from '@/utils/performance'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -349,36 +350,47 @@ function updateDropdownPosition(kind: 'settings' | 'user') {
     return
   }
 
-  const margin = 16
-  const offsetY = 8
-
   const triggerEl = kind === 'settings' ? settingsBtnRef.value : userBtnRef.value
   const dropdownEl = kind === 'settings' ? settingsDropdownRef.value : userDropdownRef.value
   if (!triggerEl || !dropdownEl) return
 
-  const triggerRect = triggerEl.getBoundingClientRect()
-  const dropdownRect = dropdownEl.getBoundingClientRect()
+  // 使用 scheduleDOMUpdate 分离读写操作，避免布局抖动
+  scheduleDOMUpdate(
+    // 读取阶段：批量获取所有布局值
+    () => ({
+      triggerRect: triggerEl.getBoundingClientRect(),
+      dropdownRect: dropdownEl.getBoundingClientRect(),
+      viewportWidth: window.innerWidth,
+      viewportHeight: window.innerHeight,
+    }),
+    // 写入阶段：基于读取的值更新样式
+    ({ triggerRect, dropdownRect, viewportWidth, viewportHeight }) => {
+      const margin = 16
+      const offsetY = 8
 
-  let left = triggerRect.right - dropdownRect.width
-  let top = triggerRect.bottom + offsetY
+      let left = triggerRect.right - dropdownRect.width
+      let top = triggerRect.bottom + offsetY
 
-  left = Math.max(margin, Math.min(left, window.innerWidth - dropdownRect.width - margin))
-  top = Math.max(margin, Math.min(top, window.innerHeight - dropdownRect.height - margin))
+      left = Math.max(margin, Math.min(left, viewportWidth - dropdownRect.width - margin))
+      top = Math.max(margin, Math.min(top, viewportHeight - dropdownRect.height - margin))
 
-  const style = {
-    left: `${left}px`,
-    top: `${top}px`,
-    right: 'auto',
-  }
+      const style = {
+        left: `${left}px`,
+        top: `${top}px`,
+        right: 'auto',
+      }
 
-  if (kind === 'settings') {
-    settingsDropdownStyle.value = style
-  } else {
-    userDropdownStyle.value = style
-  }
+      if (kind === 'settings') {
+        settingsDropdownStyle.value = style
+      } else {
+        userDropdownStyle.value = style
+      }
+    }
+  )
 }
 
-function handleResize() {
+// 使用 throttleRAF 节流 resize 事件，避免高频触发导致的性能问题
+const handleResize = throttleRAF(() => {
   updateIsMobile()
   if (showSettings.value) {
     nextTick(() => updateDropdownPosition('settings'))
@@ -386,7 +398,7 @@ function handleResize() {
   if (showUserMenu.value) {
     nextTick(() => updateDropdownPosition('user'))
   }
-}
+})
 
 onMounted(() => {
   updateIsMobile()
