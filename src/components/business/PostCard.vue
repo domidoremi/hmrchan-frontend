@@ -68,7 +68,8 @@ let hasPrefetchedPostDetailPage = false
 
 const effectiveThumbnailSize = computed(() => {
   if (props.thumbnailSize === 'responsive') {
-    return getResponsiveThumbnailSize('medium')
+    // 卡片列表使用 small 作为基准，避免加载过大图片
+    return getResponsiveThumbnailSize('small')
   }
   return props.thumbnailSize
 })

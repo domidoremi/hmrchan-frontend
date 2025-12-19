@@ -44,7 +44,13 @@
     "daysAgo": "{n} 天前",
     "more": "更多",
     "show": "显示",
-    "hide": "隐藏"
+    "hide": "隐藏",
+    "close": "关闭",
+    "clickToEnlarge": "点击查看大图",
+    "imageViewer": "图片查看器",
+    "zoomIn": "放大",
+    "zoomOut": "缩小",
+    "resetZoom": "重置缩放"
   },
   "auth": {
     "email": "邮箱",

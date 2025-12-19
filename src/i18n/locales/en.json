@@ -44,7 +44,13 @@
     "daysAgo": "{n} days ago",
     "more": "More",
     "show": "Show",
-    "hide": "Hide"
+    "hide": "Hide",
+    "close": "Close",
+    "clickToEnlarge": "Click to enlarge",
+    "imageViewer": "Image Viewer",
+    "zoomIn": "Zoom In",
+    "zoomOut": "Zoom Out",
+    "resetZoom": "Reset Zoom"
   },
   "auth": {
     "email": "Email",
