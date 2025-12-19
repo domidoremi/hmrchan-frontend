@@ -100,6 +100,7 @@ import { useI18n } from 'vue-i18n'
 import { Search, Globe, Youtube, Music2, Twitter } from 'lucide-vue-next'
 import { postService, type PostListItem, ApiError } from '@/api'
 import { postCache } from '@/utils/cache'
+import { debounce } from '@/utils/performance'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import { useProgressiveRender } from '@/composables/useProgressiveRender'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
@@ -258,7 +259,8 @@ useInfiniteScroll(sentinelRef, loadMore, {
   enabled: () => hasMoreForUi.value && !isLoading.value && !isLoadingMore.value,
 })
 
-let searchDebounceTimer: number | undefined
+// 使用 debounce 优化搜索输入
+const debouncedFetchPosts = debounce(() => fetchPosts(), 300)
 
 watch(currentSort, () => {
   fetchPosts()
@@ -269,10 +271,7 @@ watch(currentPlatform, () => {
 })
 
 watch(searchQuery, () => {
-  if (searchDebounceTimer) window.clearTimeout(searchDebounceTimer)
-  searchDebounceTimer = window.setTimeout(() => {
-    fetchPosts()
-  }, 300)
+  debouncedFetchPosts()
 })
 
 onMounted(() => {

@@ -89,6 +89,7 @@ import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { discussionService, type PostReference, type Discussion } from '@/api'
 import { useToastStore } from '@/stores'
+import { debounce } from '@/utils/performance'
 import Button from '@/components/ui/Button.vue'
 
 const emit = defineEmits<{
@@ -113,7 +114,17 @@ const isSubmitting = ref(false)
 
 const canSubmit = computed(() => content.value.trim().length > 0)
 
-let searchDebounce: ReturnType<typeof setTimeout> | null = null
+// 使用 debounce 优化帖子搜索
+const debouncedSearchPosts = debounce(async (query: string) => {
+  isSearching.value = true
+  try {
+    searchResults.value = await discussionService.searchPosts(query, 5)
+  } catch {
+    searchResults.value = []
+  } finally {
+    isSearching.value = false
+  }
+}, 300)
 
 function handleInput() {
   const textarea = textareaRef.value
@@ -130,7 +141,7 @@ function handleInput() {
 
     if (query.length > 0) {
       showMentions.value = true
-      searchPosts(query)
+      debouncedSearchPosts(query)
     } else {
       showMentions.value = true
       searchResults.value = []
@@ -138,21 +149,6 @@ function handleInput() {
   } else {
     showMentions.value = false
   }
-}
-
-async function searchPosts(query: string) {
-  if (searchDebounce) clearTimeout(searchDebounce)
-
-  searchDebounce = setTimeout(async () => {
-    isSearching.value = true
-    try {
-      searchResults.value = await discussionService.searchPosts(query, 5)
-    } catch {
-      searchResults.value = []
-    } finally {
-      isSearching.value = false
-    }
-  }, 300)
 }
 
 function handleKeydown(e: KeyboardEvent) {
