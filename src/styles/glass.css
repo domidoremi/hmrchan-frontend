@@ -173,6 +173,9 @@
   -webkit-backdrop-filter: var(--glass-blur-strong);
   border-bottom: 1px solid var(--glass-border);
   z-index: var(--z-sticky);
+  /* GPU 加速：固定定位元素提升到合成层 */
+  will-change: transform;
+  transform: translate3d(0, 0, 0);
 }
 
 /* ========== Glass Modal ========== */
@@ -188,6 +191,9 @@
   align-items: center;
   justify-content: center;
   padding: var(--spacing-4);
+  /* GPU 加速：模态框背景提升到合成层 */
+  will-change: opacity;
+  transform: translate3d(0, 0, 0);
 }
 
 .glass-modal {
