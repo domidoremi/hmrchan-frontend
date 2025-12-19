@@ -1,5 +1,10 @@
 /**
  * Application Entry Point
+ *
+ * 性能优化：
+ * 1. 同步导入仅限核心依赖
+ * 2. 认证初始化在 app mount 前完成
+ * 3. Service Worker 在空闲时注册
  */
 
 import { createApp } from 'vue'
@@ -22,7 +27,7 @@ app.use(pinia)
 app.use(router)
 app.use(i18n)
 
-// 初始化认证状态
+// 初始化认证状态（同步，确保路由守卫正常工作）
 import { useAuthStore } from './stores/auth'
 const authStore = useAuthStore()
 authStore.initAuth()
@@ -30,6 +35,19 @@ authStore.setupAuthListener()
 
 app.mount('#app')
 
-// 注册 Service Worker（生产环境）
-import { registerServiceWorker } from './utils/cache'
-registerServiceWorker()
+// 非关键任务：在空闲时执行
+function runWhenIdle(task: () => void, timeout = 2000): void {
+  if ('requestIdleCallback' in window) {
+    ;(window as Window & { requestIdleCallback: (cb: () => void, opts?: { timeout: number }) => number })
+      .requestIdleCallback(task, { timeout })
+  } else {
+    setTimeout(task, 1)
+  }
+}
+
+// Service Worker 注册延迟到空闲时
+runWhenIdle(() => {
+  import('./utils/cache').then(({ registerServiceWorker }) => {
+    registerServiceWorker()
+  })
+})
