@@ -1,17 +1,23 @@
 <template>
   <button
     type="button"
-    class="post-card glass-card post-card-btn"
+    class="post-card glass-card post-card-btn post-card-optimized"
     @click="handleClick"
+    @mouseenter="prefetchPostDetailPage"
+    @focus="prefetchPostDetailPage"
   >
-    <div class="post-image-wrapper">
+    <div class="post-image-wrapper" :style="imageWrapperStyle">
+      <div v-if="thumbnailSrc && !isImageLoaded" class="post-image-skeleton skeleton" />
       <img
         v-if="thumbnailSrc"
-        ref="imageRef"
         class="post-image"
+        :class="{ 'is-loaded': isImageLoaded }"
         :src="thumbnailSrc"
+        :srcset="thumbnailSrcset || undefined"
+        :sizes="thumbnailSizes"
         :alt="post.title"
         loading="lazy"
+        decoding="async"
         @load="onImageLoad"
       />
       <div v-else class="post-image-placeholder" />
@@ -25,29 +31,38 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import type { PostListItem } from '@/api'
-import { normalizeToThumbnailUrl, getResponsiveThumbnailSize } from '@/utils/mediaOptimizer'
+import {
+  normalizeToThumbnailUrl,
+  getResponsiveThumbnailSize,
+  extractMediaIdFromUrl,
+  getMediaThumbnailUrl,
+  THUMBNAIL_SIZES,
+} from '@/utils/mediaOptimizer'
 
 export interface PostCardProps {
   post: PostListItem
   showContent?: boolean
   showAuthor?: boolean
   thumbnailSize?: 'small' | 'medium' | 'large' | 'responsive'
+  aspectRatio?: string | number
 }
 
 const props = withDefaults(defineProps<PostCardProps>(), {
   showContent: true,
   showAuthor: true,
   thumbnailSize: 'responsive',
+  aspectRatio: '16 / 9',
 })
 
 const emit = defineEmits<{
   click: [postId: string, thumbnailSrc: string | null]
 }>()
 
-const imageRef = ref<HTMLImageElement | null>(null)
 const isImageLoaded = ref(false)
+
+let hasPrefetchedPostDetailPage = false
 
 const effectiveThumbnailSize = computed(() => {
   if (props.thumbnailSize === 'responsive') {
@@ -58,11 +73,45 @@ const effectiveThumbnailSize = computed(() => {
 
 const thumbnailSrc = computed(() => {
   if (!props.post.thumbnail_url) return null
-  return normalizeToThumbnailUrl(props.post.thumbnail_url, effectiveThumbnailSize.value) || props.post.thumbnail_url
+  return (
+    normalizeToThumbnailUrl(props.post.thumbnail_url, effectiveThumbnailSize.value) ||
+    props.post.thumbnail_url
+  )
+})
+
+const thumbnailSrcset = computed(() => {
+  const mediaId = extractMediaIdFromUrl(props.post.thumbnail_url)
+  if (!mediaId) return null
+
+  const small = getMediaThumbnailUrl(mediaId, 'small')
+  const medium = getMediaThumbnailUrl(mediaId, 'medium')
+  const large = getMediaThumbnailUrl(mediaId, 'large')
+
+  return `${small} ${THUMBNAIL_SIZES.small.width}w, ${medium} ${THUMBNAIL_SIZES.medium.width}w, ${large} ${THUMBNAIL_SIZES.large.width}w`
+})
+
+const thumbnailSizes = computed(() => {
+  if (!thumbnailSrcset.value) return undefined
+
+  return '(max-width: 399px) 100vw, (max-width: 599px) 50vw, (max-width: 1199px) 33vw, (max-width: 1599px) 25vw, (max-width: 1919px) 20vw, 16vw'
+})
+
+const imageWrapperStyle = computed<Record<string, string>>(() => ({
+  '--post-card-aspect-ratio': String(props.aspectRatio),
+}))
+
+watch(thumbnailSrc, () => {
+  isImageLoaded.value = false
 })
 
 function onImageLoad() {
   isImageLoaded.value = true
+}
+
+function prefetchPostDetailPage() {
+  if (hasPrefetchedPostDetailPage) return
+  hasPrefetchedPostDetailPage = true
+  import('@/views/PostDetailPage.vue').catch(() => {})
 }
 
 function handleClick() {
@@ -83,7 +132,9 @@ function handleClick() {
   padding: 0;
   background: transparent;
   cursor: pointer;
-  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+  transition:
+    transform var(--transition-fast),
+    box-shadow var(--transition-fast);
 }
 
 .post-card-btn:hover {
@@ -101,18 +152,33 @@ function handleClick() {
   overflow: hidden;
   background: var(--glass-bg-light);
   border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  aspect-ratio: var(--post-card-aspect-ratio, 16 / 9);
 }
 
 .post-image {
+  position: relative;
   width: 100%;
-  height: auto;
+  height: 100%;
   display: block;
-  object-fit: contain;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+}
+
+.post-image.is-loaded {
+  opacity: 1;
+}
+
+.post-image-skeleton {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
 }
 
 .post-image-placeholder {
   width: 100%;
-  aspect-ratio: 4 / 3;
+  height: 100%;
   background: var(--glass-bg);
 }
 
@@ -127,6 +193,7 @@ function handleClick() {
   margin: 0;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
   line-height: 1.4;

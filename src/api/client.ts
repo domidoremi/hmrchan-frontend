@@ -10,6 +10,7 @@
 
 import { useToastStore } from '@/stores/toast'
 import i18n from '@/i18n'
+import { memoryCache } from '@/utils/cache'
 
 // API 基础配置
 const API_BASE_URL = '/api/v1'
@@ -48,7 +49,12 @@ export interface RequestConfig extends RequestInit {
   timeout?: number
   skipAuth?: boolean
   skipErrorToast?: boolean
+  /** GET 响应缓存 TTL（毫秒），设为 0 或不传则不缓存 */
+  cacheTtl?: number
 }
+
+// In-flight GET 请求去重 Map
+const inflightRequests = new Map<string, Promise<unknown>>()
 
 // 响应类型
 export interface ApiResponse<T = unknown> {
@@ -80,6 +86,15 @@ function getAccessToken(): string | null {
     // Ignore parse errors
   }
   return null
+}
+
+/**
+ * 生成缓存 key（基于 method + url + auth token hash）
+ */
+function buildCacheKey(method: string, url: string, skipAuth: boolean): string {
+  const token = skipAuth ? '' : getAccessToken() || ''
+  const tokenSuffix = token ? `:${token.slice(-8)}` : ''
+  return `api:${method}:${url}${tokenSuffix}`
 }
 
 /**
@@ -164,10 +179,7 @@ async function handleErrorResponse(response: Response, skipErrorToast?: boolean)
 /**
  * 核心请求函数
  */
-async function request<T>(
-  endpoint: string,
-  config: RequestConfig = {}
-): Promise<T> {
+async function request<T>(endpoint: string, config: RequestConfig = {}): Promise<T> {
   const {
     timeout = REQUEST_TIMEOUT,
     skipAuth = false,
@@ -189,7 +201,7 @@ async function request<T>(
   if (!skipAuth) {
     const token = getAccessToken()
     if (token) {
-      (headers as Record<string, string>)['Authorization'] = `Bearer ${token}`
+      ;(headers as Record<string, string>)['Authorization'] = `Bearer ${token}`
     }
   }
 
@@ -220,9 +232,10 @@ async function request<T>(
         isRefreshing = false
 
         if (newToken) {
-          onTokenRefreshed(newToken)
-          // 使用新 token 重试请求
-          (headers as Record<string, string>)['Authorization'] = `Bearer ${newToken}`
+          onTokenRefreshed(newToken)(
+            // 使用新 token 重试请求
+            headers as Record<string, string>
+          )['Authorization'] = `Bearer ${newToken}`
           const retryResponse = await fetch(url, {
             ...fetchConfig,
             headers,
@@ -249,7 +262,7 @@ async function request<T>(
         return new Promise((resolve, reject) => {
           subscribeTokenRefresh(async (token) => {
             try {
-              (headers as Record<string, string>)['Authorization'] = `Bearer ${token}`
+              ;(headers as Record<string, string>)['Authorization'] = `Bearer ${token}`
               const retryResponse = await fetch(url, {
                 ...fetchConfig,
                 headers,
@@ -307,8 +320,44 @@ async function request<T>(
  * API 客户端
  */
 export const apiClient = {
+  /**
+   * GET 请求（支持 in-flight 去重 + 可选 TTL 缓存）
+   */
   get<T>(endpoint: string, config?: RequestConfig): Promise<T> {
-    return request<T>(endpoint, { ...config, method: 'GET' })
+    const { cacheTtl = 0, skipAuth = false, ...restConfig } = config || {}
+    const url = endpoint.startsWith('http') ? endpoint : `${API_BASE_URL}${endpoint}`
+    const cacheKey = buildCacheKey('GET', url, skipAuth)
+
+    // 1. 检查内存缓存
+    if (cacheTtl > 0) {
+      const cached = memoryCache.get<T>(cacheKey)
+      if (cached !== undefined) {
+        return Promise.resolve(cached)
+      }
+    }
+
+    // 2. 检查 in-flight 请求（去重）
+    const inflight = inflightRequests.get(cacheKey) as Promise<T> | undefined
+    if (inflight) {
+      return inflight
+    }
+
+    // 3. 发起新请求
+    const promise = request<T>(endpoint, { ...restConfig, skipAuth, method: 'GET' })
+      .then((data) => {
+        // 写入缓存
+        if (cacheTtl > 0) {
+          memoryCache.set(cacheKey, data, cacheTtl)
+        }
+        return data
+      })
+      .finally(() => {
+        // 请求完成后移除 in-flight 记录
+        inflightRequests.delete(cacheKey)
+      })
+
+    inflightRequests.set(cacheKey, promise)
+    return promise
   },
 
   post<T>(endpoint: string, data?: unknown, config?: RequestConfig): Promise<T> {

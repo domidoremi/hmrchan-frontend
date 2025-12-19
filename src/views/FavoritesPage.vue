@@ -14,14 +14,14 @@
           v-if="error"
           variant="error"
           :description="error"
-          @action="fetchFavorites"
+          @action="() => fetchFavorites(true)"
         />
 
         <div v-else-if="isLoading && favorites.length === 0" class="posts-grid">
           <div v-for="i in 6" :key="i" class="post-card glass-card">
-            <div class="post-image skeleton" style="aspect-ratio: 1;" />
+            <div class="post-image skeleton" style="aspect-ratio: 1" />
             <div class="post-content">
-              <div class="skeleton" style="height: 18px; width: 80%;" />
+              <div class="skeleton" style="height: 18px; width: 80%" />
             </div>
           </div>
         </div>
@@ -40,17 +40,23 @@
 
           <div v-else class="posts-masonry">
             <article
-              v-for="fav in favorites"
+              v-for="fav in visibleFavorites"
               :key="fav.id"
-              class="favorite-card glass-card"
-              @click="goToPost(fav.post_id)"
+              class="favorite-card glass-card content-auto"
+              @click="goToPost(fav.post_id, fav.post?.thumbnail_url)"
             >
               <div class="favorite-image">
                 <img
                   v-if="fav.post?.thumbnail_url"
-                  :src="normalizeToThumbnailUrl(fav.post.thumbnail_url, 'medium') || fav.post.thumbnail_url"
+                  :src="
+                    normalizeToThumbnailUrl(fav.post.thumbnail_url, 'medium') ||
+                    fav.post.thumbnail_url
+                  "
+                  :srcset="getThumbnailSrcset(fav.post.thumbnail_url) || undefined"
+                  :sizes="thumbnailSizes"
                   :alt="fav.post?.title"
                   loading="lazy"
+                  decoding="async"
                 />
                 <div v-else class="image-placeholder">
                   <Heart :size="24" />
@@ -58,7 +64,9 @@
               </div>
               <div class="favorite-content">
                 <h3 class="favorite-title">{{ fav.post?.title || $t('favorites.unknownPost') }}</h3>
-                <p v-if="fav.post?.author_name" class="favorite-author">{{ fav.post.author_name }}</p>
+                <p v-if="fav.post?.author_name" class="favorite-author">
+                  {{ fav.post.author_name }}
+                </p>
                 <div class="favorite-meta">
                   <span class="favorite-date">{{ formatDate(fav.created_at) }}</span>
                 </div>
@@ -74,9 +82,12 @@
             </article>
           </div>
 
-          <div v-if="hasMore" class="load-more">
-            <Button variant="secondary" :disabled="isLoading" @click="loadMore">
-              <span v-if="isLoading" class="spinner spinner-sm" />
+          <div v-if="hasMoreForUi" class="load-more">
+            <div ref="sentinelRef" class="scroll-sentinel">
+              <span v-if="isLoadingMore" class="spinner spinner-sm" />
+            </div>
+            <Button variant="secondary" :disabled="isLoading || isLoadingMore" @click="loadMore">
+              <span v-if="isLoadingMore" class="spinner spinner-sm" />
               {{ $t('common.viewMore') }}
             </Button>
           </div>
@@ -96,7 +107,14 @@ import { useI18n } from 'vue-i18n'
 import { Heart, X } from 'lucide-vue-next'
 import { useAuthStore, useToastStore } from '@/stores'
 import { favoriteService, type FavoriteResponse, ApiError } from '@/api'
-import { normalizeToThumbnailUrl } from '@/utils/mediaOptimizer'
+import {
+  normalizeToThumbnailUrl,
+  extractMediaIdFromUrl,
+  getMediaThumbnailUrl,
+  THUMBNAIL_SIZES,
+} from '@/utils/mediaOptimizer'
+import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
+import { useProgressiveRender } from '@/composables/useProgressiveRender'
 import Button from '@/components/ui/Button.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 
@@ -108,6 +126,7 @@ const { isAuthenticated } = storeToRefs(authStore)
 
 const favorites = ref<FavoriteResponse[]>([])
 const isLoading = ref(false)
+const isLoadingMore = ref(false)
 const error = ref<string | null>(null)
 const page = ref(1)
 const total = ref(0)
@@ -115,16 +134,47 @@ const pageSize = 20
 
 const hasMore = computed(() => favorites.value.length < total.value)
 
-async function fetchFavorites(reset = false) {
-  if (isLoading.value) return
-  if (!isAuthenticated.value) return
+const sentinelRef = ref<HTMLElement | null>(null)
+
+const {
+  visibleItems: visibleFavorites,
+  hasMoreToRender,
+  revealNextBatch,
+} = useProgressiveRender(favorites, { initialCount: 20, batchSize: 20 })
+
+const hasMoreForUi = computed(() => hasMore.value || hasMoreToRender.value)
+
+const thumbnailSizes =
+  '(max-width: 500px) 100vw, (max-width: 900px) 50vw, (max-width: 1200px) 33vw, 25vw'
+
+function getThumbnailSrcset(thumbnailUrl?: string | null): string | null {
+  const mediaId = extractMediaIdFromUrl(thumbnailUrl)
+  if (!mediaId) return null
+
+  const small = getMediaThumbnailUrl(mediaId, 'small')
+  const medium = getMediaThumbnailUrl(mediaId, 'medium')
+  const large = getMediaThumbnailUrl(mediaId, 'large')
+
+  return `${small} ${THUMBNAIL_SIZES.small.width}w, ${medium} ${THUMBNAIL_SIZES.medium.width}w, ${large} ${THUMBNAIL_SIZES.large.width}w`
+}
+
+async function fetchFavorites(reset = true): Promise<boolean> {
+  if (!isAuthenticated.value) return false
+
+  const hadData = favorites.value.length > 0
 
   if (reset) {
+    if (isLoading.value) return false
+    isLoading.value = true
     page.value = 1
-    favorites.value = []
+    if (!hadData) {
+      favorites.value = []
+    }
+  } else {
+    if (isLoadingMore.value) return false
+    isLoadingMore.value = true
   }
 
-  isLoading.value = true
   error.value = null
 
   try {
@@ -141,26 +191,52 @@ async function fetchFavorites(reset = false) {
       favorites.value.push(...res.items)
     }
     total.value = res.total
+
+    return true
   } catch (err) {
-    if (err instanceof ApiError) {
-      error.value = err.message
-    } else {
-      error.value = t('common.error')
+    if (favorites.value.length === 0) {
+      if (err instanceof ApiError) {
+        error.value = err.message
+      } else {
+        error.value = t('common.error')
+      }
     }
+
+    return false
   } finally {
     isLoading.value = false
+    isLoadingMore.value = false
   }
 }
 
-function loadMore() {
-  page.value++
-  fetchFavorites()
+async function loadMore(): Promise<boolean> {
+  if (hasMoreToRender.value) {
+    revealNextBatch()
+    return true
+  }
+
+  if (!hasMore.value || isLoading.value || isLoadingMore.value) return false
+
+  const nextPage = page.value + 1
+  page.value = nextPage
+  const ok = await fetchFavorites(false)
+  if (!ok) {
+    page.value = nextPage - 1
+    return false
+  }
+
+  return true
 }
+
+useInfiniteScroll(sentinelRef, loadMore, {
+  rootMargin: '400px',
+  enabled: () => hasMoreForUi.value && !isLoading.value && !isLoadingMore.value,
+})
 
 async function removeFavorite(favoriteId: number) {
   try {
     await favoriteService.remove(favoriteId)
-    favorites.value = favorites.value.filter(f => f.id !== favoriteId)
+    favorites.value = favorites.value.filter((f) => f.id !== favoriteId)
     total.value = Math.max(0, total.value - 1)
     toastStore.success(t('favorites.removed'))
   } catch (err) {
@@ -176,7 +252,13 @@ function formatDate(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString()
 }
 
-function goToPost(postId: string) {
+function goToPost(postId: string, thumbnailUrl?: string | null) {
+  if (thumbnailUrl) {
+    sessionStorage.setItem(
+      `post-thumbnail-${postId}`,
+      normalizeToThumbnailUrl(thumbnailUrl, 'medium') || thumbnailUrl
+    )
+  }
   router.push(`/post/${postId}`)
 }
 
@@ -281,7 +363,9 @@ onMounted(() => {
   position: relative;
   overflow: hidden;
   cursor: pointer;
-  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+  transition:
+    transform var(--transition-fast),
+    box-shadow var(--transition-fast);
 }
 
 .favorite-card:hover {
@@ -321,6 +405,7 @@ onMounted(() => {
   margin: 0;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -356,7 +441,9 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   opacity: 0;
-  transition: opacity var(--transition-fast), background var(--transition-fast);
+  transition:
+    opacity var(--transition-fast),
+    background var(--transition-fast);
 }
 
 .favorite-card:hover .remove-btn {
@@ -369,7 +456,9 @@ onMounted(() => {
 
 .load-more {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-3);
   margin-top: var(--spacing-8);
 }
 </style>

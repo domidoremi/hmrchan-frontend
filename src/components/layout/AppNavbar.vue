@@ -12,19 +12,40 @@
           <Home :size="20" />
           <span>{{ $t('nav.home') }}</span>
         </RouterLink>
-        <RouterLink to="/explore" class="nav-link">
+        <RouterLink
+          to="/explore"
+          class="nav-link"
+          @mouseenter="prefetchExplorePage"
+          @focus="prefetchExplorePage"
+        >
           <Compass :size="20" />
           <span>{{ $t('nav.explore') }}</span>
         </RouterLink>
-        <RouterLink v-if="isAuthenticated" to="/favorites" class="nav-link">
+        <RouterLink
+          v-if="isAuthenticated"
+          to="/favorites"
+          class="nav-link"
+          @mouseenter="prefetchFavoritesPage"
+          @focus="prefetchFavoritesPage"
+        >
           <Heart :size="20" />
           <span>{{ $t('nav.favorites') }}</span>
         </RouterLink>
-        <RouterLink to="/authors" class="nav-link">
+        <RouterLink
+          to="/authors"
+          class="nav-link"
+          @mouseenter="prefetchAuthorsPage"
+          @focus="prefetchAuthorsPage"
+        >
           <Users :size="20" />
           <span>{{ $t('nav.authors') }}</span>
         </RouterLink>
-        <RouterLink to="/community" class="nav-link">
+        <RouterLink
+          to="/community"
+          class="nav-link"
+          @mouseenter="prefetchCommunityPage"
+          @focus="prefetchCommunityPage"
+        >
           <MessageSquare :size="20" />
           <span>{{ $t('nav.community') }}</span>
         </RouterLink>
@@ -32,7 +53,13 @@
 
       <!-- Actions -->
       <div class="navbar-actions">
-        <button class="action-btn" @click="goToSearch" :aria-label="$t('common.search')">
+        <button
+          class="action-btn"
+          @click="goToSearch"
+          @mouseenter="prefetchExplorePage"
+          @focus="prefetchExplorePage"
+          :aria-label="$t('common.search')"
+        >
           <Search :size="20" />
         </button>
 
@@ -45,7 +72,13 @@
           <Settings :size="20" />
         </button>
 
-        <RouterLink v-if="!isAuthenticated" to="/login" class="login-btn">
+        <RouterLink
+          v-if="!isAuthenticated"
+          to="/login"
+          class="login-btn"
+          @mouseenter="prefetchLoginPage"
+          @focus="prefetchLoginPage"
+        >
           <LogIn :size="18" />
           <span class="desktop-only">{{ $t('nav.login') }}</span>
         </RouterLink>
@@ -86,7 +119,13 @@
           </div>
         </div>
         <div class="dropdown-links">
-          <RouterLink to="/settings/profile" class="dropdown-link" @click="showUserMenu = false">
+          <RouterLink
+            to="/settings/profile"
+            class="dropdown-link"
+            @click="showUserMenu = false"
+            @mouseenter="prefetchProfileSettingsPage"
+            @focus="prefetchProfileSettingsPage"
+          >
             <User :size="18" />
             <span>{{ $t('nav.profileSettings') }}</span>
           </RouterLink>
@@ -105,19 +144,40 @@
       <Home :size="22" />
       <span>{{ $t('nav.home') }}</span>
     </RouterLink>
-    <RouterLink to="/explore" class="mobile-nav-item">
+    <RouterLink
+      to="/explore"
+      class="mobile-nav-item"
+      @mouseenter="prefetchExplorePage"
+      @focus="prefetchExplorePage"
+    >
       <Compass :size="22" />
       <span>{{ $t('nav.explore') }}</span>
     </RouterLink>
-    <RouterLink v-if="isAuthenticated" to="/favorites" class="mobile-nav-item">
+    <RouterLink
+      v-if="isAuthenticated"
+      to="/favorites"
+      class="mobile-nav-item"
+      @mouseenter="prefetchFavoritesPage"
+      @focus="prefetchFavoritesPage"
+    >
       <Heart :size="22" />
       <span>{{ $t('nav.favorites') }}</span>
     </RouterLink>
-    <RouterLink to="/authors" class="mobile-nav-item">
+    <RouterLink
+      to="/authors"
+      class="mobile-nav-item"
+      @mouseenter="prefetchAuthorsPage"
+      @focus="prefetchAuthorsPage"
+    >
       <Users :size="22" />
       <span>{{ $t('nav.authors') }}</span>
     </RouterLink>
-    <RouterLink to="/community" class="mobile-nav-item">
+    <RouterLink
+      to="/community"
+      class="mobile-nav-item"
+      @mouseenter="prefetchCommunityPage"
+      @focus="prefetchCommunityPage"
+    >
       <MessageSquare :size="22" />
       <span>{{ $t('nav.community') }}</span>
     </RouterLink>
@@ -142,6 +202,7 @@ import {
 } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores'
 import SettingsPanel from './SettingsPanel.vue'
+import { prefetchExploreData, prefetchAuthorsData } from '@/utils/prefetch'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -164,6 +225,78 @@ const userAvatar = computed(() => {
   if (user.value?.avatar_url) return user.value.avatar_url
   return `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.value?.username || 'default'}`
 })
+
+let hasPrefetchedExplorePage = false
+let hasPrefetchedAuthorsPage = false
+let hasPrefetchedCommunityPage = false
+let hasPrefetchedFavoritesPage = false
+let hasPrefetchedLoginPage = false
+let hasPrefetchedProfileSettingsPage = false
+
+function prefetchExplorePage() {
+  if (hasPrefetchedExplorePage) return
+  hasPrefetchedExplorePage = true
+  import('@/views/ExplorePage.vue').catch(() => {})
+  prefetchExploreData()
+}
+
+function prefetchAuthorsPage() {
+  if (hasPrefetchedAuthorsPage) return
+  hasPrefetchedAuthorsPage = true
+  import('@/views/AuthorsPage.vue').catch(() => {})
+  prefetchAuthorsData()
+}
+
+function prefetchCommunityPage() {
+  if (hasPrefetchedCommunityPage) return
+  hasPrefetchedCommunityPage = true
+  import('@/views/CommunityPage.vue').catch(() => {})
+}
+
+function prefetchFavoritesPage() {
+  if (hasPrefetchedFavoritesPage) return
+  hasPrefetchedFavoritesPage = true
+  import('@/views/FavoritesPage.vue').catch(() => {})
+}
+
+function prefetchLoginPage() {
+  if (hasPrefetchedLoginPage) return
+  hasPrefetchedLoginPage = true
+  import('@/views/LoginPage.vue').catch(() => {})
+}
+
+function prefetchProfileSettingsPage() {
+  if (hasPrefetchedProfileSettingsPage) return
+  hasPrefetchedProfileSettingsPage = true
+  import('@/views/ProfileSettingsPage.vue').catch(() => {})
+}
+
+function shouldPrefetchOnIdle(): boolean {
+  if (typeof navigator === 'undefined') return false
+  if (!navigator.onLine) return false
+
+  const connection = (
+    navigator as unknown as { connection?: { saveData?: boolean; effectiveType?: string } }
+  ).connection
+  if (!connection) return true
+  if (connection.saveData) return false
+  if (connection.effectiveType && ['slow-2g', '2g', '3g'].includes(connection.effectiveType))
+    return false
+  return true
+}
+
+function requestIdle(fn: () => void) {
+  const ric = (
+    window as unknown as {
+      requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => void
+    }
+  ).requestIdleCallback
+  if (ric) {
+    ric(fn, { timeout: 2000 })
+  } else {
+    window.setTimeout(fn, 800)
+  }
+}
 
 function goToSearch() {
   router.push('/explore')
@@ -259,6 +392,13 @@ onMounted(() => {
   updateIsMobile()
   document.addEventListener('click', handleClickOutside)
   window.addEventListener('resize', handleResize)
+
+  if (shouldPrefetchOnIdle()) {
+    requestIdle(() => {
+      prefetchExplorePage()
+      prefetchAuthorsPage()
+    })
+  }
 })
 
 onUnmounted(() => {

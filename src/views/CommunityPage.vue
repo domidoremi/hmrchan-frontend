@@ -34,7 +34,7 @@
 
       <!-- Recent Discussions -->
       <section v-if="activeTab === 'recent'" class="community-section">
-        <div v-if="isLoading" class="loading-state">
+        <div v-if="isLoading && discussions.length === 0" class="loading-state">
           <div class="spinner" />
         </div>
         <StateIndicator
@@ -52,14 +52,18 @@
           <article
             v-for="post in discussions"
             :key="post.id"
-            class="discussion-card glass-card"
-            @click="goToPost(post.id)"
+            class="discussion-card glass-card content-auto-sm"
+            @click="goToPost(post.id, post.thumbnail_url)"
+            @mouseenter="prefetchPostDetailPage"
           >
             <div class="discussion-thumbnail" v-if="post.thumbnail_url">
               <img
                 :src="normalizeToThumbnailUrl(post.thumbnail_url, 'medium') || post.thumbnail_url"
+                :srcset="getThumbnailSrcset(post.thumbnail_url) || undefined"
+                :sizes="thumbnailSizes"
                 :alt="post.title"
                 loading="lazy"
+                decoding="async"
               />
             </div>
             <div class="discussion-content">
@@ -77,26 +81,39 @@
                   :src="post.author_avatar_url"
                   :alt="post.author_name"
                   class="author-avatar"
+                  decoding="async"
                 />
                 <span class="author-name">{{ post.author_name }}</span>
               </div>
             </div>
           </article>
+
+          <div v-if="discussions.length > 0" class="load-more-section">
+            <div class="quota-indicator">
+              <span class="quota-text">{{
+                $t('common.showing', { count: discussions.length, total })
+              }}</span>
+            </div>
+            <div v-if="hasMore" ref="sentinelRef" class="scroll-sentinel">
+              <span v-if="isLoadingMore" class="spinner spinner-sm" />
+            </div>
+            <Button v-if="hasMore" variant="secondary" :disabled="isLoadingMore" @click="loadMore">
+              <span v-if="isLoadingMore" class="spinner spinner-sm" />
+              {{ $t('common.loadMore') }}
+            </Button>
+            <p v-else class="no-more-text">{{ $t('common.noMoreItems') }}</p>
+          </div>
         </div>
       </section>
 
       <!-- Hot Topics -->
       <section v-if="activeTab === 'hot'" class="community-section">
         <div class="hot-topics-grid">
-          <article
-            v-for="i in 6"
-            :key="i"
-            class="topic-card glass-card"
-          >
+          <article v-for="i in 6" :key="i" class="topic-card glass-card">
             <div class="topic-rank">#{{ i }}</div>
             <div class="topic-content">
-              <div class="skeleton" style="height: 20px; width: 80%;" />
-              <div class="skeleton" style="height: 14px; width: 50%; margin-top: 8px;" />
+              <div class="skeleton" style="height: 20px; width: 80%" />
+              <div class="skeleton" style="height: 14px; width: 50%; margin-top: 8px" />
             </div>
           </article>
         </div>
@@ -111,7 +128,7 @@
         </div>
         <div v-else class="my-comments-list">
           <div v-for="i in 3" :key="i" class="comment-item glass-card">
-            <div class="skeleton" style="height: 60px;" />
+            <div class="skeleton" style="height: 60px" />
           </div>
         </div>
       </section>
@@ -125,7 +142,7 @@
         </div>
         <div v-else class="saved-comments-list">
           <div v-for="i in 3" :key="i" class="comment-item glass-card">
-            <div class="skeleton" style="height: 60px;" />
+            <div class="skeleton" style="height: 60px" />
           </div>
         </div>
       </section>
@@ -136,14 +153,20 @@
 <script setup lang="ts">
 defineOptions({ name: 'CommunityPage' })
 
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { MessageSquare, Flame, User, Bookmark } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores'
 import { postService, type PostListItem, ApiError } from '@/api'
-import { normalizeToThumbnailUrl } from '@/utils/mediaOptimizer'
+import {
+  normalizeToThumbnailUrl,
+  extractMediaIdFromUrl,
+  getMediaThumbnailUrl,
+  THUMBNAIL_SIZES,
+} from '@/utils/mediaOptimizer'
+import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import Button from '@/components/ui/Button.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import DiscussionComposer from '@/components/community/DiscussionComposer.vue'
@@ -155,8 +178,22 @@ const { isAuthenticated } = storeToRefs(authStore)
 
 const activeTab = ref('recent')
 const isLoading = ref(false)
+const isLoadingMore = ref(false)
 const error = ref<string | null>(null)
 const discussions = ref<PostListItem[]>([])
+
+const page = ref(1)
+const total = ref(0)
+const totalPages = ref(0)
+const pageSize = 20
+
+const hasMore = computed(() => page.value < totalPages.value)
+
+const sentinelRef = ref<HTMLElement | null>(null)
+
+const thumbnailSizes = '(max-width: 640px) 60px, 80px'
+
+let hasPrefetchedPostDetailPage = false
 
 const tabs = [
   { id: 'recent', label: 'community.recentDiscussions', icon: MessageSquare },
@@ -166,7 +203,24 @@ const tabs = [
 ]
 
 function handleDiscussionCreated() {
-  fetchDiscussions()
+  fetchDiscussions(true)
+}
+
+function prefetchPostDetailPage() {
+  if (hasPrefetchedPostDetailPage) return
+  hasPrefetchedPostDetailPage = true
+  import('@/views/PostDetailPage.vue').catch(() => {})
+}
+
+function getThumbnailSrcset(thumbnailUrl?: string | null): string | null {
+  const mediaId = extractMediaIdFromUrl(thumbnailUrl)
+  if (!mediaId) return null
+
+  const small = getMediaThumbnailUrl(mediaId, 'small')
+  const medium = getMediaThumbnailUrl(mediaId, 'medium')
+  const large = getMediaThumbnailUrl(mediaId, 'large')
+
+  return `${small} ${THUMBNAIL_SIZES.small.width}w, ${medium} ${THUMBNAIL_SIZES.medium.width}w, ${large} ${THUMBNAIL_SIZES.large.width}w`
 }
 
 function formatTime(dateStr: string): string {
@@ -185,7 +239,13 @@ function formatTime(dateStr: string): string {
   return date.toLocaleDateString()
 }
 
-function goToPost(postId: string) {
+function goToPost(postId: string, thumbnailUrl?: string | null) {
+  if (thumbnailUrl) {
+    sessionStorage.setItem(
+      `post-thumbnail-${postId}`,
+      normalizeToThumbnailUrl(thumbnailUrl, 'medium') || thumbnailUrl
+    )
+  }
   router.push(`/post/${postId}`)
 }
 
@@ -193,27 +253,76 @@ function goToLogin() {
   router.push('/login')
 }
 
-async function fetchDiscussions() {
-  isLoading.value = true
+async function fetchDiscussions(reset = true): Promise<boolean> {
+  const hadData = discussions.value.length > 0
+
+  if (reset) {
+    if (isLoading.value) return false
+    isLoading.value = true
+    page.value = 1
+    if (!hadData) {
+      discussions.value = []
+    }
+  } else {
+    if (isLoadingMore.value) return false
+    isLoadingMore.value = true
+  }
+
   error.value = null
+
   try {
     const res = await postService.listPosts({
-      page: 1,
-      page_size: 20,
+      page: page.value,
+      page_size: pageSize,
       sort_by: 'published_at',
       sort_order: 'desc',
     })
-    discussions.value = res.items.filter(p => p.comment_count > 0)
-  } catch (err) {
-    if (err instanceof ApiError) {
-      error.value = err.message
+
+    const items = res.items.filter((p) => p.comment_count > 0)
+
+    if (reset) {
+      discussions.value = items
     } else {
-      error.value = t('common.error')
+      discussions.value.push(...items)
     }
+
+    total.value = res.total
+    totalPages.value = res.total_pages
+
+    return true
+  } catch (err) {
+    if (discussions.value.length === 0) {
+      if (err instanceof ApiError) {
+        error.value = err.message
+      } else {
+        error.value = t('common.error')
+      }
+    }
+
+    return false
   } finally {
     isLoading.value = false
+    isLoadingMore.value = false
   }
 }
+
+async function loadMore(): Promise<boolean> {
+  if (!hasMore.value || isLoading.value || isLoadingMore.value) return false
+
+  const nextPage = page.value + 1
+  page.value = nextPage
+  const ok = await fetchDiscussions(false)
+  if (!ok) {
+    page.value = nextPage - 1
+  }
+  return ok
+}
+
+useInfiniteScroll(sentinelRef, loadMore, {
+  rootMargin: '400px',
+  enabled: () =>
+    activeTab.value === 'recent' && hasMore.value && !isLoading.value && !isLoadingMore.value,
+})
 
 onMounted(() => {
   fetchDiscussions()
@@ -312,6 +421,31 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-4);
+}
+
+.load-more-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-3);
+  margin-top: var(--spacing-6);
+}
+
+.quota-indicator {
+  padding: var(--spacing-2) var(--spacing-4);
+  border-radius: var(--radius-full);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+}
+
+.quota-text {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
+.no-more-text {
+  font-size: var(--text-sm);
+  color: var(--color-text-tertiary);
 }
 
 .discussion-card {

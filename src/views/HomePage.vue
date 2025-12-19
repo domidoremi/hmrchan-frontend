@@ -32,10 +32,10 @@
         <template v-else>
           <div v-if="isLoading && posts.length === 0" class="posts-grid">
             <div v-for="i in 6" :key="i" class="post-card glass-card">
-              <div class="post-image skeleton" style="aspect-ratio: 16/9;" />
+              <div class="post-image skeleton" style="aspect-ratio: 16/9" />
               <div class="post-content">
-                <div class="skeleton" style="height: 24px; width: 80%;" />
-                <div class="skeleton" style="height: 16px; width: 60%; margin-top: 8px;" />
+                <div class="skeleton" style="height: 24px; width: 80%" />
+                <div class="skeleton" style="height: 16px; width: 60%; margin-top: 8px" />
               </div>
             </div>
           </div>
@@ -43,7 +43,7 @@
           <template v-else>
             <div class="posts-masonry">
               <PostCard
-                v-for="post in posts"
+                v-for="post in visiblePosts"
                 :key="post.id"
                 :post="post"
                 @click="goToPost"
@@ -55,10 +55,15 @@
             <!-- Load More / Quota Indicator -->
             <div v-if="posts.length > 0" class="load-more-section">
               <div class="quota-indicator">
-                <span class="quota-text">{{ $t('common.showing', { count: posts.length, total }) }}</span>
+                <span class="quota-text">{{
+                  $t('common.showing', { count: visiblePosts.length, total })
+                }}</span>
+              </div>
+              <div v-if="hasMoreForUi" ref="sentinelRef" class="scroll-sentinel">
+                <span v-if="isLoadingMore" class="spinner spinner-sm" />
               </div>
               <Button
-                v-if="hasMore"
+                v-if="hasMoreForUi"
                 variant="secondary"
                 :disabled="isLoadingMore"
                 @click="loadMore"
@@ -78,13 +83,16 @@
 <script setup lang="ts">
 defineOptions({ name: 'HomePage' })
 
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 import { Compass } from 'lucide-vue-next'
 import { useSettingsStore } from '@/stores'
 import { postService, type PostListItem, ApiError } from '@/api'
+import { postCache } from '@/utils/cache'
+import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
+import { useProgressiveRender } from '@/composables/useProgressiveRender'
 import Button from '@/components/ui/Button.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import PostCard from '@/components/business/PostCard.vue'
@@ -105,26 +113,54 @@ const pageSize = 12
 
 const hasMore = computed(() => posts.value.length < total.value)
 
-async function fetchLatestPosts(reset = true) {
+const sentinelRef = ref<HTMLElement | null>(null)
+
+const {
+  visibleItems: visiblePosts,
+  hasMoreToRender,
+  revealNextBatch,
+} = useProgressiveRender(posts, { initialCount: 20, batchSize: 20 })
+
+const hasMoreForUi = computed(() => hasMore.value || hasMoreToRender.value)
+
+function buildListParams(targetPage: number) {
+  return {
+    page: targetPage,
+    page_size: pageSize,
+    sort_by: 'published_at' as const,
+    sort_order: 'desc' as const,
+  }
+}
+
+async function fetchLatestPosts(reset = true): Promise<boolean> {
+  const hadData = posts.value.length > 0
+
   if (reset) {
-    if (isLoading.value) return
+    if (isLoading.value) return false
     isLoading.value = true
     page.value = 1
-    posts.value = []
+    if (!hadData) {
+      posts.value = []
+    }
   } else {
-    if (isLoadingMore.value) return
+    if (isLoadingMore.value) return false
     isLoadingMore.value = true
   }
 
   error.value = null
 
+  const params = buildListParams(page.value)
+
+  if (reset) {
+    const cached = await postCache.getList(params)
+    if (cached && !hadData) {
+      posts.value = cached.data as PostListItem[]
+      total.value = cached.total
+    }
+  }
+
   try {
-    const res = await postService.listPosts({
-      page: page.value,
-      page_size: pageSize,
-      sort_by: 'published_at',
-      sort_order: 'desc',
-    })
+    const res = await postService.listPosts(params)
 
     if (reset) {
       posts.value = res.items
@@ -132,35 +168,51 @@ async function fetchLatestPosts(reset = true) {
       posts.value.push(...res.items)
     }
     total.value = res.total
-  } catch (err) {
-    if (err instanceof ApiError) {
-      error.value = err.message
-    } else {
-      error.value = t('common.error')
+
+    if (reset) {
+      await postCache.setList(params, res.items, res.total)
     }
+
+    return true
+  } catch (err) {
+    if (posts.value.length === 0) {
+      if (err instanceof ApiError) {
+        error.value = err.message
+      } else {
+        error.value = t('common.error')
+      }
+    }
+
+    return false
   } finally {
     isLoading.value = false
     isLoadingMore.value = false
   }
 }
 
-async function loadMore() {
-  if (!hasMore.value || isLoadingMore.value) return
-  page.value++
-  await fetchLatestPosts(false)
-}
-
-function handleScroll() {
-  if (!hasMore.value || isLoadingMore.value) return
-
-  const scrollTop = window.scrollY
-  const windowHeight = window.innerHeight
-  const docHeight = document.documentElement.scrollHeight
-
-  if (scrollTop + windowHeight >= docHeight - 500) {
-    loadMore()
+async function loadMore(): Promise<boolean> {
+  if (hasMoreToRender.value) {
+    revealNextBatch()
+    return true
   }
+
+  if (!hasMore.value || isLoading.value || isLoadingMore.value) return false
+
+  const nextPage = page.value + 1
+  page.value = nextPage
+  const ok = await fetchLatestPosts(false)
+  if (!ok) {
+    page.value = nextPage - 1
+    return false
+  }
+
+  return true
 }
+
+useInfiniteScroll(sentinelRef, loadMore, {
+  rootMargin: '400px',
+  enabled: () => hasMoreForUi.value && !isLoading.value && !isLoadingMore.value,
+})
 
 function goToExplore() {
   router.push('/explore')
@@ -176,11 +228,6 @@ function goToPost(postId: string, thumbnailSrc: string | null) {
 
 onMounted(() => {
   fetchLatestPosts()
-  window.addEventListener('scroll', handleScroll)
-})
-
-onUnmounted(() => {
-  window.removeEventListener('scroll', handleScroll)
 })
 </script>
 
@@ -192,11 +239,7 @@ onUnmounted(() => {
 .hero {
   padding: var(--spacing-20) 0;
   text-align: center;
-  background: linear-gradient(
-    180deg,
-    rgba(139, 92, 246, 0.1) 0%,
-    transparent 100%
-  );
+  background: linear-gradient(180deg, rgba(139, 92, 246, 0.1) 0%, transparent 100%);
 }
 
 .hero-content {
@@ -264,21 +307,21 @@ onUnmounted(() => {
 /* 超大屏幕 */
 @media (min-width: 1920px) {
   .posts-masonry {
-    --masonry-columns: 6;
+    --masonry-columns: 5;
   }
 }
 
 /* 大屏幕 */
 @media (min-width: 1600px) and (max-width: 1919px) {
   .posts-masonry {
-    --masonry-columns: 5;
+    --masonry-columns: 4;
   }
 }
 
 /* 中等屏幕 */
 @media (min-width: 1200px) and (max-width: 1599px) {
   .posts-masonry {
-    --masonry-columns: 4;
+    --masonry-columns: 3;
   }
 }
 

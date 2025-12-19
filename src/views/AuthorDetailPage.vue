@@ -8,8 +8,8 @@
           <template v-if="isLoading">
             <div class="author-avatar skeleton" />
             <div class="author-info">
-              <div class="skeleton" style="height: 28px; width: 200px;" />
-              <div class="skeleton" style="height: 16px; width: 120px; margin-top: 8px;" />
+              <div class="skeleton" style="height: 28px; width: 200px" />
+              <div class="skeleton" style="height: 16px; width: 120px; margin-top: 8px" />
             </div>
           </template>
 
@@ -20,7 +20,8 @@
               :src="author.avatar_url"
               :alt="author.name"
               loading="lazy"
-              style="object-fit: cover;"
+              decoding="async"
+              style="object-fit: cover"
             />
             <div v-else class="author-avatar skeleton" />
 
@@ -35,7 +36,7 @@
         <div class="posts-grid">
           <template v-if="isLoading">
             <div v-for="i in 6" :key="i" class="post-card glass-card">
-              <div class="post-image skeleton" style="aspect-ratio: 1;" />
+              <div class="post-image skeleton" style="aspect-ratio: 1" />
             </div>
           </template>
 
@@ -101,7 +102,10 @@ async function fetchAuthor() {
   }
 }
 
-function goToPost(postId: string) {
+function goToPost(postId: string, thumbnailSrc: string | null) {
+  if (thumbnailSrc) {
+    sessionStorage.setItem(`post-thumbnail-${postId}`, thumbnailSrc)
+  }
   router.push(`/post/${postId}`)
 }
 
