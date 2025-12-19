@@ -49,22 +49,17 @@
       <template v-else>
         <div v-if="isLoading && posts.length === 0" class="posts-grid">
           <div v-for="i in 12" :key="i" class="post-card glass-card">
-            <div class="post-image skeleton" style="aspect-ratio: 1;" />
+            <div class="post-image skeleton" style="aspect-ratio: 1" />
             <div class="post-content">
-              <div class="skeleton" style="height: 20px; width: 80%;" />
-              <div class="skeleton" style="height: 14px; width: 50%; margin-top: 8px;" />
+              <div class="skeleton" style="height: 20px; width: 80%" />
+              <div class="skeleton" style="height: 14px; width: 50%; margin-top: 8px" />
             </div>
           </div>
         </div>
 
         <template v-else>
           <div class="posts-masonry">
-            <PostCard
-              v-for="post in posts"
-              :key="post.id"
-              :post="post"
-              @click="goToPost"
-            />
+            <PostCard v-for="post in visiblePosts" :key="post.id" :post="post" @click="goToPost" />
           </div>
 
           <StateIndicator v-if="posts.length === 0" variant="empty" />
@@ -72,10 +67,15 @@
           <!-- Load More / Quota Indicator -->
           <div v-if="posts.length > 0" class="load-more-section">
             <div class="quota-indicator">
-              <span class="quota-text">{{ $t('common.showing', { count: posts.length, total }) }}</span>
+              <span class="quota-text">{{
+                $t('common.showing', { count: visiblePosts.length, total })
+              }}</span>
+            </div>
+            <div v-if="hasMoreForUi" ref="sentinelRef" class="scroll-sentinel">
+              <span v-if="isLoadingMore" class="spinner spinner-sm" />
             </div>
             <Button
-              v-if="hasMore"
+              v-if="hasMoreForUi"
               variant="secondary"
               :disabled="isLoadingMore"
               @click="loadMore"
@@ -94,11 +94,14 @@
 <script setup lang="ts">
 defineOptions({ name: 'ExplorePage' })
 
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { Search, Globe, Youtube, Music2, Twitter } from 'lucide-vue-next'
 import { postService, type PostListItem, ApiError } from '@/api'
+import { postCache } from '@/utils/cache'
+import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
+import { useProgressiveRender } from '@/composables/useProgressiveRender'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import PostCard from '@/components/business/PostCard.vue'
 import Button from '@/components/ui/Button.vue'
@@ -121,6 +124,16 @@ const pageSize = 24
 
 const hasMore = computed(() => posts.value.length < total.value)
 
+const sentinelRef = ref<HTMLElement | null>(null)
+
+const {
+  visibleItems: visiblePosts,
+  hasMoreToRender,
+  revealNextBatch,
+} = useProgressiveRender(posts, { initialCount: 24, batchSize: 24 })
+
+const hasMoreForUi = computed(() => hasMore.value || hasMoreToRender.value)
+
 const sortOptions = [
   { value: 'newest' as const },
   { value: 'popular' as const },
@@ -134,7 +147,10 @@ const platformOptions = [
   { value: 'twitter' as const, label: 'Twitter', icon: Twitter },
 ]
 
-function goToPost(postId: string) {
+function goToPost(postId: string, thumbnailSrc: string | null) {
+  if (thumbnailSrc) {
+    sessionStorage.setItem(`post-thumbnail-${postId}`, thumbnailSrc)
+  }
   router.push(`/post/${postId}`)
 }
 
@@ -151,30 +167,44 @@ function getSortParams(sort: 'newest' | 'popular' | 'trending') {
 }
 
 async function fetchPosts(reset = true) {
+  const hadData = posts.value.length > 0
+
   if (reset) {
-    if (isLoading.value) return
+    if (isLoading.value) return false
     isLoading.value = true
     page.value = 1
-    posts.value = []
+    if (!hadData) {
+      posts.value = []
+    }
   } else {
-    if (isLoadingMore.value) return
+    if (isLoadingMore.value) return false
     isLoadingMore.value = true
   }
 
   error.value = null
 
-  try {
-    const { sort_by, sort_order } = getSortParams(currentSort.value)
-    const params = {
-      page: page.value,
-      page_size: pageSize,
-      sort_by,
-      sort_order,
-    }
+  const { sort_by, sort_order } = getSortParams(currentSort.value)
+  const params = {
+    page: page.value,
+    page_size: pageSize,
+    sort_by,
+    sort_order,
+  }
 
-    const q = searchQuery.value.trim()
-    const platform = currentPlatform.value !== 'all' ? currentPlatform.value : undefined
-    const res = await postService.listPosts({ ...params, ...(q ? { q } : {}), ...(platform ? { platform } : {}) })
+  const q = searchQuery.value.trim()
+  const platform = currentPlatform.value !== 'all' ? currentPlatform.value : undefined
+  const requestParams = { ...params, ...(q ? { q } : {}), ...(platform ? { platform } : {}) }
+
+  if (reset) {
+    const cached = await postCache.getList(requestParams)
+    if (cached && !hadData) {
+      posts.value = cached.data as PostListItem[]
+      total.value = cached.total
+    }
+  }
+
+  try {
+    const res = await postService.listPosts(requestParams)
 
     if (reset) {
       posts.value = res.items
@@ -182,35 +212,51 @@ async function fetchPosts(reset = true) {
       posts.value.push(...res.items)
     }
     total.value = res.total
-  } catch (err) {
-    if (err instanceof ApiError) {
-      error.value = err.message
-    } else {
-      error.value = t('common.error')
+
+    if (reset) {
+      await postCache.setList(requestParams, res.items, res.total)
     }
+
+    return true
+  } catch (err) {
+    if (posts.value.length === 0) {
+      if (err instanceof ApiError) {
+        error.value = err.message
+      } else {
+        error.value = t('common.error')
+      }
+    }
+
+    return false
   } finally {
     isLoading.value = false
     isLoadingMore.value = false
   }
 }
 
-async function loadMore() {
-  if (!hasMore.value || isLoadingMore.value) return
-  page.value++
-  await fetchPosts(false)
-}
-
-function handleScroll() {
-  if (!hasMore.value || isLoadingMore.value) return
-
-  const scrollTop = window.scrollY
-  const windowHeight = window.innerHeight
-  const docHeight = document.documentElement.scrollHeight
-
-  if (scrollTop + windowHeight >= docHeight - 500) {
-    loadMore()
+async function loadMore(): Promise<boolean> {
+  if (hasMoreToRender.value) {
+    revealNextBatch()
+    return true
   }
+
+  if (!hasMore.value || isLoading.value || isLoadingMore.value) return false
+
+  const nextPage = page.value + 1
+  page.value = nextPage
+  const ok = await fetchPosts(false)
+  if (!ok) {
+    page.value = nextPage - 1
+    return false
+  }
+
+  return true
 }
+
+useInfiniteScroll(sentinelRef, loadMore, {
+  rootMargin: '400px',
+  enabled: () => hasMoreForUi.value && !isLoading.value && !isLoadingMore.value,
+})
 
 let searchDebounceTimer: number | undefined
 
@@ -231,11 +277,6 @@ watch(searchQuery, () => {
 
 onMounted(() => {
   fetchPosts()
-  window.addEventListener('scroll', handleScroll)
-})
-
-onUnmounted(() => {
-  window.removeEventListener('scroll', handleScroll)
 })
 </script>
 
