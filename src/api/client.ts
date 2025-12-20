@@ -232,12 +232,12 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
         isRefreshing = false
 
         if (newToken) {
-          onTokenRefreshed(newToken)(
-            // 使用新 token 重试请求
-            headers as Record<string, string>
-          )['Authorization'] = `Bearer ${newToken}`
+          onTokenRefreshed(newToken)
+          // 使用新 token 重试请求
+          ;(headers as Record<string, string>)['Authorization'] = `Bearer ${newToken}`
           const retryResponse = await fetch(url, {
             ...fetchConfig,
+            body: body ?? null,
             headers,
             credentials: 'include',
           })

@@ -82,21 +82,33 @@ export const useCommentsStore = defineStore('comments', () => {
       // 记录速率限制
       commentRateLimiter.record()
 
-      // 更新本地状态
+      // 更新本地状态 - 深拷贝确保响应式更新
       const postComments = comments.value.get(postId) || []
       if (formData.parent_id) {
-        // 回复 - 添加到父评论的 replies 中
-        const parentComment = findComment(postComments, formData.parent_id)
-        if (parentComment) {
-          parentComment.replies = parentComment.replies || []
-          parentComment.replies.push(newComment)
-          parentComment.replies_count++
+        // 回复 - 递归查找并更新父评论
+        const updateReplies = (commentList: Comment[]): Comment[] => {
+          return commentList.map((comment) => {
+            if (comment.id === formData.parent_id) {
+              return {
+                ...comment,
+                replies: [...(comment.replies || []), newComment],
+                replies_count: (comment.replies_count || 0) + 1,
+              }
+            }
+            if (comment.replies && comment.replies.length > 0) {
+              return {
+                ...comment,
+                replies: updateReplies(comment.replies),
+              }
+            }
+            return comment
+          })
         }
+        comments.value.set(postId, updateReplies(postComments))
       } else {
         // 顶级评论
-        postComments.unshift(newComment)
+        comments.value.set(postId, [newComment, ...postComments])
       }
-      comments.value.set(postId, [...postComments])
 
       return { success: true, data: newComment }
     } catch {
@@ -112,10 +124,11 @@ export const useCommentsStore = defineStore('comments', () => {
     try {
       await apiClient.delete(`/comments/${commentId}`, { skipErrorToast: true })
 
-      // 更新本地状态
+      // 更新本地状态 - 深拷贝并递归删除
       const postComments = comments.value.get(postId) || []
-      removeComment(postComments, commentId)
-      comments.value.set(postId, [...postComments])
+      const updatedComments = JSON.parse(JSON.stringify(postComments)) as Comment[]
+      removeComment(updatedComments, commentId)
+      comments.value.set(postId, updatedComments)
 
       return { success: true }
     } catch {

@@ -1,14 +1,20 @@
 <template>
   <button
+    ref="cardRef"
     type="button"
-    class="post-card glass-card post-card-btn post-card-optimized"
+    class="post-card glass-card post-card-btn"
     @click="handleClick"
     @mouseenter="prefetchPostDetailPage"
     @focus="prefetchPostDetailPage"
   >
     <div class="post-image-wrapper" :style="imageWrapperStyle">
       <div v-if="thumbnailSrc && !isImageLoaded" class="post-image-skeleton skeleton" />
-      <div v-if="post.platform" class="platform-badge">{{ platformLabel }}</div>
+
+      <!-- Platform Icon Badge -->
+      <div v-if="post.platform" class="platform-icon" :title="platformLabel">
+        <component :is="platformIcon" :size="14" />
+      </div>
+
       <img
         v-if="thumbnailSrc"
         class="post-image"
@@ -22,17 +28,38 @@
         @load="onImageLoad"
       />
       <div v-else class="post-image-placeholder" />
+
+      <!-- Duration Badge (for videos) -->
+      <div v-if="post.duration" class="duration-badge">
+        {{ formatDuration(post.duration) }}
+      </div>
     </div>
 
     <div v-if="showContent" class="post-content">
       <h3 class="post-title">{{ post.title }}</h3>
-      <p v-if="showAuthor" class="post-meta">{{ post.author_name }}</p>
+
+      <div class="post-footer">
+        <p v-if="showAuthor" class="post-author">{{ post.author_name }}</p>
+
+        <!-- Stats Row -->
+        <div class="post-stats">
+          <span v-if="post.view_count" class="post-stat" :title="$t('post.views')">
+            <Eye :size="12" />
+            {{ formatCount(post.view_count) }}
+          </span>
+          <span v-if="post.like_count" class="post-stat" :title="$t('post.likes')">
+            <Heart :size="12" />
+            {{ formatCount(post.like_count) }}
+          </span>
+        </div>
+      </div>
     </div>
   </button>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, type Component } from 'vue'
+import { Youtube, Twitter, Globe, Music2, Eye, Heart } from 'lucide-vue-next'
 import type { PostListItem } from '@/api'
 import { prefetchPostDetail } from '@/utils/prefetch'
 import {
@@ -42,6 +69,8 @@ import {
   getMediaThumbnailUrl,
   THUMBNAIL_SIZES,
 } from '@/utils/mediaOptimizer'
+import { thumbnailCache } from '@/utils/thumbnailCache'
+import { useCardAnimation } from '@/composables/useCardAnimation'
 
 const postAspectRatioCache = new Map<string, string>()
 
@@ -63,10 +92,29 @@ const emit = defineEmits<{
   click: [postId: string, thumbnailSrc: string | null]
 }>()
 
+const cardRef = ref<HTMLElement | null>(null)
 const isImageLoaded = ref(false)
 const measuredAspectRatio = ref<string | null>(null)
 
 let hasPrefetchedPostDetailPage = false
+
+// GSAP animation
+useCardAnimation(cardRef)
+
+// Platform icon mapping
+const platformIconMap: Record<string, Component> = {
+  youtube: Youtube,
+  twitter: Twitter,
+  tiktok: Music2,
+  bilibili: Globe,
+  pixiv: Globe,
+  weibo: Globe,
+}
+
+const platformIcon = computed(() => {
+  const platform = props.post.platform?.toLowerCase()
+  return platform ? (platformIconMap[platform] ?? Globe) : Globe
+})
 
 const platformLabel = computed(() => {
   const raw = props.post.platform
@@ -78,6 +126,7 @@ const platformLabel = computed(() => {
     twitter: 'Twitter',
     pixiv: 'Pixiv',
     weibo: 'Weibo',
+    tiktok: 'TikTok',
   }
 
   return map[raw] ?? raw.replace(/[_-]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
@@ -85,7 +134,6 @@ const platformLabel = computed(() => {
 
 const effectiveThumbnailSize = computed(() => {
   if (props.thumbnailSize === 'responsive') {
-    // 卡片列表使用 small 作为基准，避免加载过大图片
     return getResponsiveThumbnailSize('small')
   }
   return props.thumbnailSize
@@ -93,13 +141,27 @@ const effectiveThumbnailSize = computed(() => {
 
 const thumbnailSrc = computed(() => {
   if (!props.post.thumbnail_url) return null
-  return (
-    normalizeToThumbnailUrl(props.post.thumbnail_url, effectiveThumbnailSize.value) ||
-    props.post.thumbnail_url
-  )
+
+  const mediaId = extractMediaIdFromUrl(props.post.thumbnail_url)
+  const rawSize = effectiveThumbnailSize.value || 'medium'
+  const size = rawSize === 'original' ? 'large' : rawSize
+
+  // 尝试从缓存获取
+  if (mediaId) {
+    const cached = thumbnailCache.get(mediaId, size)
+    if (cached) return cached
+  }
+
+  const optimized = normalizeToThumbnailUrl(props.post.thumbnail_url, rawSize) || props.post.thumbnail_url
+
+  // 存入缓存
+  if (mediaId) {
+    thumbnailCache.set(mediaId, optimized, size)
+  }
+
+  return optimized
 })
 
-// 卡片视图只使用 small/medium，不加载 large 以节省带宽
 const thumbnailSrcset = computed(() => {
   const mediaId = extractMediaIdFromUrl(props.post.thumbnail_url)
   if (!mediaId) return null
@@ -107,15 +169,11 @@ const thumbnailSrcset = computed(() => {
   const small = getMediaThumbnailUrl(mediaId, 'small')
   const medium = getMediaThumbnailUrl(mediaId, 'medium')
 
-  // 不包含 large，限制最大加载 medium (400px)
   return `${small} ${THUMBNAIL_SIZES.small.width}w, ${medium} ${THUMBNAIL_SIZES.medium.width}w`
 })
 
-// 保守的 sizes 值，确保浏览器不会选择过大的图片
 const thumbnailSizes = computed(() => {
   if (!thumbnailSrcset.value) return undefined
-
-  // 卡片实际显示宽度通常 < 300px，即使 2x DPR 也只需 medium
   return '(max-width: 599px) 50vw, 200px'
 })
 
@@ -140,6 +198,29 @@ watch(thumbnailSrc, () => {
   isImageLoaded.value = false
   measuredAspectRatio.value = null
 })
+
+/**
+ * Format number to compact form (1.2K, 3.5M)
+ */
+function formatCount(n: number): string {
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M'
+  if (n >= 1_000) return (n / 1_000).toFixed(1).replace(/\.0$/, '') + 'K'
+  return String(n)
+}
+
+/**
+ * Format duration in seconds to MM:SS or HH:MM:SS
+ */
+function formatDuration(seconds: number): string {
+  const h = Math.floor(seconds / 3600)
+  const m = Math.floor((seconds % 3600) / 60)
+  const s = Math.floor(seconds % 60)
+
+  if (h > 0) {
+    return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
+  }
+  return `${m}:${s.toString().padStart(2, '0')}`
+}
 
 function onImageLoad(event: Event) {
   const img = event.target as HTMLImageElement | null
@@ -177,19 +258,16 @@ function handleClick() {
   background: transparent;
   cursor: pointer;
   will-change: transform;
-  transition:
-    transform var(--transition-fast),
-    box-shadow var(--transition-fast);
 }
 
-.post-card-btn:hover,
+/* Remove CSS hover - GSAP handles animation */
 .post-card-btn:focus-visible {
-  transform: translateY(-2px) scale(1.01);
-  box-shadow: var(--shadow-lg);
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 
 .post-card-btn:active {
-  transform: translateY(0);
+  transform: scale(0.99);
 }
 
 .post-image-wrapper {
@@ -200,19 +278,42 @@ function handleClick() {
   border-radius: var(--radius-lg) var(--radius-lg) 0 0;
 }
 
-.platform-badge {
+/* Platform Icon Badge */
+.platform-icon {
   position: absolute;
   top: var(--spacing-2);
   left: var(--spacing-2);
   z-index: 2;
-  padding: var(--spacing-0) var(--spacing-2);
+  width: 28px;
+  height: 28px;
   border-radius: var(--radius-md);
-  font-size: var(--text-xs);
-  font-weight: var(--font-semibold);
-  color: #fff;
-  background: rgba(0, 0, 0, 0.45);
+  background: rgba(0, 0, 0, 0.55);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  transition: background-color 0.2s ease;
+}
+
+.post-card-btn:hover .platform-icon {
+  background: rgba(59, 130, 246, 0.85);
+}
+
+/* Duration Badge */
+.duration-badge {
+  position: absolute;
+  bottom: var(--spacing-2);
+  right: var(--spacing-2);
+  z-index: 2;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  font-weight: var(--font-medium);
+  font-variant-numeric: tabular-nums;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.75);
 }
 
 .post-image {
@@ -223,6 +324,7 @@ function handleClick() {
   object-fit: cover;
   opacity: 0;
   transition: opacity var(--transition-fast);
+  will-change: transform;
 }
 
 .post-image.is-loaded {
@@ -249,7 +351,7 @@ function handleClick() {
 .post-title {
   font-size: var(--text-sm);
   font-weight: var(--font-semibold);
-  color: var(--color-text);
+  color: var(--color-text-primary);
   margin: 0;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -259,9 +361,41 @@ function handleClick() {
   line-height: 1.4;
 }
 
-.post-meta {
+.post-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-2);
+  margin-top: var(--spacing-2);
+}
+
+.post-author {
   font-size: var(--text-xs);
   color: var(--color-text-secondary);
-  margin: var(--spacing-1) 0 0;
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.post-stats {
+  display: flex;
+  gap: var(--spacing-3);
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+  flex-shrink: 0;
+}
+
+.post-stat {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-variant-numeric: tabular-nums;
+}
+
+.post-stat svg {
+  opacity: 0.7;
 }
 </style>
