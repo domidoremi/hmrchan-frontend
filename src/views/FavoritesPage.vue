@@ -63,7 +63,9 @@
                 </div>
               </div>
               <div class="favorite-content">
-                <h3 class="favorite-title">{{ fav.post?.title || $t('favorites.unknownPost') }}</h3>
+                <h3 class="favorite-title" :title="fav.post?.title || $t('favorites.unknownPost')">
+                  {{ fav.post?.title || $t('favorites.unknownPost') }}
+                </h3>
                 <p v-if="fav.post?.author_name" class="favorite-author">
                   {{ fav.post.author_name }}
                 </p>
@@ -106,7 +108,7 @@ import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 import { Heart, X } from 'lucide-vue-next'
 import { useAuthStore, useToastStore } from '@/stores'
-import { favoriteService, type FavoriteResponse, ApiError } from '@/api'
+import { favoriteService, type FavoriteResponse, ApiError, apiClient } from '@/api'
 import {
   normalizeToThumbnailUrl,
   extractMediaIdFromUrl,
@@ -190,10 +192,34 @@ async function fetchFavorites(reset = true): Promise<boolean> {
       sort_order: 'desc',
     })
 
+    // Enrich favorites with post data if missing
+    const enrichedItems = await Promise.all(
+      res.items.map(async (fav): Promise<FavoriteResponse> => {
+        if (!fav.post || !fav.post.title) {
+          try {
+            const postData = await apiClient.get<{ id: string; title: string; thumbnail_url?: string | null; author_name?: string }>(`/posts/${fav.post_id}`)
+            return {
+              ...fav,
+              post: {
+                id: postData.id,
+                title: postData.title,
+                thumbnail_url: postData.thumbnail_url ?? null,
+                author_name: postData.author_name ?? undefined,
+              },
+            } as FavoriteResponse
+          } catch {
+            // Keep original if fetch fails
+            return fav
+          }
+        }
+        return fav
+      })
+    )
+
     if (reset) {
-      favorites.value = res.items
+      favorites.value = enrichedItems
     } else {
-      favorites.value.push(...res.items)
+      favorites.value.push(...enrichedItems)
     }
     total.value = res.total
 

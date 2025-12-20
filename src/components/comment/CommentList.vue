@@ -40,6 +40,7 @@
         v-for="comment in comments"
         :key="comment.id"
         :comment="comment"
+        :post-id="props.postId"
         @reply="handleReply"
         @deleted="handleDeleted"
       />

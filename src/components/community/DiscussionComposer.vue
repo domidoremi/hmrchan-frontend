@@ -3,6 +3,29 @@
     <h3 class="composer-title">{{ $t('community.newDiscussion') }}</h3>
 
     <div class="composer-body">
+      <!-- 标题输入 -->
+      <input
+        v-model="title"
+        type="text"
+        class="glass-input composer-title-input"
+        :placeholder="$t('community.discussionTitle')"
+        maxlength="100"
+      />
+
+      <!-- 分类选择 -->
+      <div class="category-selector">
+        <button
+          v-for="cat in categories"
+          :key="cat.value"
+          type="button"
+          class="category-btn"
+          :class="{ active: category === cat.value }"
+          @click="category = cat.value"
+        >
+          {{ cat.label }}
+        </button>
+      </div>
+
       <textarea
         ref="textareaRef"
         v-model="content"
@@ -80,7 +103,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { discussionService, type PostReference, type Discussion } from '@/api'
+import { discussionService, type PostReference, type Discussion, type CreateDiscussionRequest } from '@/api'
 import { useToastStore } from '@/stores'
 import { debounce } from '@/utils/performance'
 import Button from '@/components/ui/Button.vue'
@@ -97,6 +120,8 @@ const content = ref('')
 const tagInput = ref('')
 const tags = ref<string[]>([])
 const selectedPosts = ref<PostReference[]>([])
+const title = ref('')
+const category = ref<'general' | 'question' | 'sharing' | 'feedback'>('general')
 
 const showMentions = ref(false)
 const searchResults = ref<PostReference[]>([])
@@ -105,7 +130,14 @@ const selectedIndex = ref(0)
 const mentionStart = ref(-1)
 const isSubmitting = ref(false)
 
-const canSubmit = computed(() => content.value.trim().length > 0)
+const canSubmit = computed(() => title.value.trim().length > 0 && content.value.trim().length > 0)
+
+const categories = [
+  { value: 'general' as const, label: '💬 综合' },
+  { value: 'question' as const, label: '❓ 提问' },
+  { value: 'sharing' as const, label: '📢 分享' },
+  { value: 'feedback' as const, label: '💡 反馈' },
+]
 
 // 使用 debounce 优化帖子搜索
 const debouncedSearchPosts = debounce(async (query: string) => {
@@ -198,21 +230,39 @@ async function handleSubmit() {
   if (!canSubmit.value || isSubmitting.value) return
 
   isSubmitting.value = true
-  try {
-    const discussion = await discussionService.create({
-      content: content.value.trim(),
-      post_ids: selectedPosts.value.map((p) => p.id),
-      tags: tags.value,
-    })
 
+  const payload: CreateDiscussionRequest = {
+    title: title.value.trim(),
+    content: content.value.trim(),
+    category: category.value,
+  }
+
+  if (tags.value.length > 0) {
+    payload.tags = tags.value.slice(0, 5)
+  }
+
+  try {
+    const discussion = await discussionService.create(payload)
+
+    title.value = ''
     content.value = ''
     tags.value = []
     selectedPosts.value = []
 
     toastStore.success(t('community.publishSuccess'))
     emit('created', discussion)
-  } catch {
-    toastStore.error(t('community.publishFailed'))
+  } catch (err) {
+    if (err instanceof Error && 'status' in err && (err as { status: number }).status === 422) {
+      console.error('Validation failed:', err)
+      console.error('Request payload was:', payload)
+      console.error('Error details:', (err as { details?: unknown }).details)
+
+      const apiErr = err as { details?: { detail?: string }; message?: string }
+      const errorMsg = apiErr.details?.detail || apiErr.message || t('error.validationError')
+      toastStore.error(errorMsg)
+    } else {
+      toastStore.error(t('community.publishFailed'))
+    }
   } finally {
     isSubmitting.value = false
   }
@@ -236,6 +286,43 @@ watch(searchResults, () => {
 
 .composer-body {
   position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+}
+
+.composer-title-input {
+  width: 100%;
+  font-size: var(--text-base);
+  font-weight: var(--font-medium);
+}
+
+.category-selector {
+  display: flex;
+  gap: var(--spacing-2);
+  flex-wrap: wrap;
+}
+
+.category-btn {
+  padding: var(--spacing-1) var(--spacing-3);
+  border-radius: var(--radius-full);
+  font-size: var(--text-sm);
+  background: var(--glass-bg-light);
+  border: 1px solid var(--glass-border);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.category-btn:hover {
+  background: var(--glass-bg);
+  border-color: var(--color-primary-light);
+}
+
+.category-btn.active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #fff;
 }
 
 .composer-textarea {

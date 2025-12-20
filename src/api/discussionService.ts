@@ -3,9 +3,9 @@
  *
  * 社区讨论独立于帖子评论系统，支持：
  * - 发起独立讨论话题
- * - @帖子 引用平台帖子
- * - #tag 标签分类
- * - 讨论回复
+ * - 分类：general、question、sharing、feedback
+ * - #tag 标签分类（最多 5 个）
+ * - 讨论评论（支持嵌套回复）
  */
 
 import { apiClient, type PaginatedApiResponse } from './client'
@@ -25,38 +25,54 @@ export interface PostReference {
   author_name?: string
 }
 
+export type DiscussionCategory = 'general' | 'question' | 'sharing' | 'feedback'
+
 export interface Discussion {
   id: string
+  title: string
   content: string
+  category: DiscussionCategory
   author: DiscussionAuthor
-  post_references: PostReference[]
+  post_references?: PostReference[]
   tags: string[]
-  replies_count: number
+  view_count: number
   likes_count: number
+  comments_count: number
   is_liked?: boolean
   is_pinned?: boolean
+  is_closed?: boolean
   created_at: string
   updated_at: string
 }
 
-export interface DiscussionReply {
+export interface DiscussionComment {
   id: string
   discussion_id: string
   content: string
   author: DiscussionAuthor
   parent_id?: string | null
+  replies_count: number
   likes_count: number
   is_liked?: boolean
   created_at: string
+  updated_at: string
 }
 
 export interface CreateDiscussionRequest {
+  title: string
   content: string
-  post_ids?: string[]
+  category: DiscussionCategory
   tags?: string[]
 }
 
-export interface CreateReplyRequest {
+export interface UpdateDiscussionRequest {
+  title?: string
+  content?: string
+  category?: DiscussionCategory
+  tags?: string[]
+}
+
+export interface CreateCommentRequest {
   content: string
   parent_id?: string
 }
@@ -64,9 +80,9 @@ export interface CreateReplyRequest {
 export interface ListDiscussionsParams {
   page?: number
   page_size?: number
+  category?: DiscussionCategory
   tag?: string
-  post_id?: string
-  sort_by?: 'created_at' | 'updated_at' | 'likes_count' | 'replies_count'
+  sort_by?: 'created_at' | 'updated_at' | 'likes_count' | 'comments_count' | 'view_count'
   sort_order?: 'asc' | 'desc'
 }
 
@@ -82,8 +98,8 @@ export const discussionService = {
       page_size: String(params.page_size ?? 20),
     })
 
+    if (params.category) query.set('category', params.category)
     if (params.tag) query.set('tag', params.tag)
-    if (params.post_id) query.set('post_id', params.post_id)
     if (params.sort_by) query.set('sort_by', params.sort_by)
     if (params.sort_order) query.set('sort_order', params.sort_order)
 
@@ -105,30 +121,17 @@ export const discussionService = {
   },
 
   /**
+   * 更新讨论
+   */
+  async update(discussionId: string, data: UpdateDiscussionRequest): Promise<Discussion> {
+    return apiClient.put<Discussion>(`/discussions/${discussionId}`, data)
+  },
+
+  /**
    * 删除讨论
    */
   async delete(discussionId: string): Promise<void> {
     await apiClient.delete(`/discussions/${discussionId}`)
-  },
-
-  /**
-   * 获取讨论回复
-   */
-  async getReplies(
-    discussionId: string,
-    page = 1,
-    pageSize = 20
-  ): Promise<PaginatedApiResponse<DiscussionReply>> {
-    return apiClient.get<PaginatedApiResponse<DiscussionReply>>(
-      `/discussions/${discussionId}/replies?page=${page}&page_size=${pageSize}`
-    )
-  },
-
-  /**
-   * 添加讨论回复
-   */
-  async addReply(discussionId: string, data: CreateReplyRequest): Promise<DiscussionReply> {
-    return apiClient.post<DiscussionReply>(`/discussions/${discussionId}/replies`, data)
   },
 
   /**
@@ -145,17 +148,99 @@ export const discussionService = {
     await apiClient.delete(`/discussions/${discussionId}/like`)
   },
 
+  // ========== 讨论评论 ==========
+
   /**
-   * 获取热门标签
+   * 获取讨论评论列表
    */
-  async getPopularTags(limit = 20): Promise<{ tag: string; count: number }[]> {
-    return apiClient.get<{ tag: string; count: number }[]>(
-      `/discussions/tags/popular?limit=${limit}`
+  async getComments(
+    discussionId: string,
+    page = 1,
+    pageSize = 20
+  ): Promise<PaginatedApiResponse<DiscussionComment>> {
+    return apiClient.get<PaginatedApiResponse<DiscussionComment>>(
+      `/discussions/${discussionId}/comments?page=${page}&page_size=${pageSize}`
     )
   },
 
   /**
-   * 搜索帖子（用于 @帖子 提及）
+   * 添加讨论评论
+   */
+  async addComment(discussionId: string, data: CreateCommentRequest): Promise<DiscussionComment> {
+    return apiClient.post<DiscussionComment>(`/discussions/${discussionId}/comments`, data)
+  },
+
+  /**
+   * 获取评论回复列表
+   */
+  async getCommentReplies(
+    commentId: string,
+    page = 1,
+    pageSize = 20
+  ): Promise<PaginatedApiResponse<DiscussionComment>> {
+    return apiClient.get<PaginatedApiResponse<DiscussionComment>>(
+      `/discussions/comments/${commentId}/replies?page=${page}&page_size=${pageSize}`
+    )
+  },
+
+  /**
+   * 更新评论
+   */
+  async updateComment(commentId: string, content: string): Promise<DiscussionComment> {
+    return apiClient.put<DiscussionComment>(`/discussions/comments/${commentId}`, { content })
+  },
+
+  /**
+   * 删除评论
+   */
+  async deleteComment(commentId: string): Promise<void> {
+    await apiClient.delete(`/discussions/comments/${commentId}`)
+  },
+
+  /**
+   * 点赞评论
+   */
+  async likeComment(commentId: string): Promise<void> {
+    await apiClient.post(`/discussions/comments/${commentId}/like`, null)
+  },
+
+  /**
+   * 取消点赞评论
+   */
+  async unlikeComment(commentId: string): Promise<void> {
+    await apiClient.delete(`/discussions/comments/${commentId}/like`)
+  },
+
+  // ========== 用户中心 ==========
+
+  /**
+   * 获取我发起的讨论
+   */
+  async getMyDiscussions(
+    page = 1,
+    pageSize = 20
+  ): Promise<PaginatedApiResponse<Discussion>> {
+    return apiClient.get<PaginatedApiResponse<Discussion>>(
+      `/discussions/user/my-discussions?page=${page}&page_size=${pageSize}`
+    )
+  },
+
+  /**
+   * 获取我的讨论评论
+   */
+  async getMyComments(
+    page = 1,
+    pageSize = 20
+  ): Promise<PaginatedApiResponse<DiscussionComment>> {
+    return apiClient.get<PaginatedApiResponse<DiscussionComment>>(
+      `/discussions/user/my-comments?page=${page}&page_size=${pageSize}`
+    )
+  },
+
+  // ========== 帖子搜索 (用于 @帖子 提及) ==========
+
+  /**
+   * 搜索帖子
    */
   async searchPosts(query: string, limit = 10): Promise<PostReference[]> {
     return apiClient.get<PostReference[]>(

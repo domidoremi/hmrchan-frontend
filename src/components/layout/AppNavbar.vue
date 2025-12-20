@@ -120,13 +120,21 @@
         </div>
         <div class="dropdown-links">
           <RouterLink
+            to="/profile"
+            class="dropdown-link"
+            @click="showUserMenu = false"
+          >
+            <User :size="18" />
+            <span>{{ $t('nav.profile') }}</span>
+          </RouterLink>
+          <RouterLink
             to="/settings/profile"
             class="dropdown-link"
             @click="showUserMenu = false"
             @mouseenter="prefetchProfileSettingsPage"
             @focus="prefetchProfileSettingsPage"
           >
-            <User :size="18" />
+            <Settings :size="18" />
             <span>{{ $t('nav.profileSettings') }}</span>
           </RouterLink>
           <button class="dropdown-link danger" @click="handleLogout">

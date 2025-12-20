@@ -72,8 +72,8 @@
       <div v-if="showReplyForm" class="reply-form-wrapper">
         <CommentForm
           ref="replyFormRef"
-          :post-id="comment.post_id"
-          :reply-to="comment.id"
+          :post-id="postId"
+          :reply-to="String(comment.id)"
           :reply-to-username="comment.user.username"
           @cancel="showReplyForm = false"
           @submitted="handleReplySubmitted"
@@ -98,6 +98,7 @@
             v-for="reply in comment.replies"
             :key="reply.id"
             :comment="reply"
+            :post-id="postId"
             :is-reply="true"
             @reply="$emit('reply', $event)"
             @deleted="$emit('deleted', $event)"
@@ -128,6 +129,7 @@ import CommentForm from './CommentForm.vue'
 
 interface Props {
   comment: Comment
+  postId: string
   isReply?: boolean
   showActions?: boolean
 }
@@ -245,7 +247,7 @@ async function handleDelete() {
   const confirmed = window.confirm(t('comment.confirmDelete'))
   if (!confirmed) return
 
-  const result = await commentsStore.deleteComment(props.comment.post_id, props.comment.id)
+  const result = await commentsStore.deleteComment(props.postId, String(props.comment.id))
   if (result.success) {
     toastStore.success(t('comment.deleteSuccess'))
     emit('deleted', props.comment.id)
@@ -257,7 +259,7 @@ async function handleDelete() {
 function handleShare() {
   showMenu.value = false
 
-  const url = `${window.location.origin}/post/${props.comment.post_id}#comment-${props.comment.id}`
+  const url = `${window.location.origin}/post/${props.postId}#comment-${props.comment.id}`
   navigator.clipboard.writeText(url)
   toastStore.success(t('comment.shareSuccess'))
 }
