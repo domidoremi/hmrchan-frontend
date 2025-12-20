@@ -1,10 +1,5 @@
 <template>
-  <button
-    :class="buttonClass"
-    :disabled="disabled || loading"
-    :type="type"
-    @click="handleClick"
-  >
+  <button :class="buttonClass" :disabled="disabled || loading" :type="type" @click="handleClick">
     <span v-if="loading" class="spinner spinner-sm" />
     <component v-else-if="icon && iconPosition === 'left'" :is="icon" :size="iconSize" />
     <span v-if="$slots['default']" class="btn-content">

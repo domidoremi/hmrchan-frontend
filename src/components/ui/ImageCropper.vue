@@ -193,12 +193,17 @@ function onMouseMove(e: MouseEvent | TouchEvent) {
     let newY = dragStart.value.boxY
 
     const delta = Math.max(Math.abs(deltaX), Math.abs(deltaY))
-    const sign = (handle.includes('e') ? deltaX : -deltaX) > 0 ||
-                 (handle.includes('s') ? deltaY : -deltaY) > 0 ? 1 : -1
+    const sign =
+      (handle.includes('e') ? deltaX : -deltaX) > 0 || (handle.includes('s') ? deltaY : -deltaY) > 0
+        ? 1
+        : -1
 
     newSize = dragStart.value.boxSize + delta * sign
 
-    newSize = Math.max(50, Math.min(newSize, Math.min(imageSize.value.width, imageSize.value.height)))
+    newSize = Math.max(
+      50,
+      Math.min(newSize, Math.min(imageSize.value.width, imageSize.value.height))
+    )
 
     if (handle.includes('w')) {
       newX = dragStart.value.boxX + dragStart.value.boxSize - newSize
@@ -255,11 +260,15 @@ function crop() {
     props.outputSize
   )
 
-  canvas.toBlob((blob) => {
-    if (blob) {
-      emit('crop', blob)
-    }
-  }, 'image/png', 0.95)
+  canvas.toBlob(
+    (blob) => {
+      if (blob) {
+        emit('crop', blob)
+      }
+    },
+    'image/png',
+    0.95
+  )
 }
 
 function cancel() {

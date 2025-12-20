@@ -30,7 +30,9 @@ export const useSettingsStore = defineStore(
       settings.value[key] = value
     }
 
-    function toggleSetting(key: keyof Pick<Settings, 'showHeroSection' | 'enableAnimations' | 'enableSwipeNavigation'>) {
+    function toggleSetting(
+      key: keyof Pick<Settings, 'showHeroSection' | 'enableAnimations' | 'enableSwipeNavigation'>
+    ) {
       settings.value[key] = !settings.value[key]
     }
 
@@ -47,5 +49,5 @@ export const useSettingsStore = defineStore(
   },
   {
     persist: true,
-  },
+  }
 )

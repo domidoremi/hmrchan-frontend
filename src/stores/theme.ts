@@ -42,7 +42,7 @@ export const useThemeStore = defineStore(
           document.documentElement.setAttribute('data-theme', newTheme)
         }
       },
-      { immediate: true },
+      { immediate: true }
     )
 
     return {
@@ -53,5 +53,5 @@ export const useThemeStore = defineStore(
   },
   {
     persist: true,
-  },
+  }
 )

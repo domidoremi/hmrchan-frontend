@@ -46,11 +46,7 @@
     </TransitionGroup>
 
     <!-- Load More -->
-    <button
-      v-if="hasMore && !isLoading"
-      class="load-more-btn glass-button"
-      @click="loadMore"
-    >
+    <button v-if="hasMore && !isLoading" class="load-more-btn glass-button" @click="loadMore">
       {{ $t('common.viewMore') }}
     </button>
   </section>
@@ -120,9 +116,12 @@ onMounted(() => {
   fetchComments()
 })
 
-watch(() => props.postId, () => {
-  fetchComments()
-})
+watch(
+  () => props.postId,
+  () => {
+    fetchComments()
+  }
+)
 </script>
 
 <style scoped>

@@ -12,8 +12,8 @@
 
       <template v-else-if="isLoading">
         <div class="settings-section glass-card">
-          <div class="skeleton" style="height: 80px; width: 80px; border-radius: 50%;" />
-          <div class="skeleton" style="height: 24px; width: 200px; margin-top: 16px;" />
+          <div class="skeleton" style="height: 80px; width: 80px; border-radius: 50%" />
+          <div class="skeleton" style="height: 24px; width: 200px; margin-top: 16px" />
         </div>
       </template>
 

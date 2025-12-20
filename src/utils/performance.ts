@@ -23,10 +23,7 @@ export function batchDOMWrite(writer: () => void): void {
  * 读写分离的 DOM 操作调度器
  * 先批量读取所有需要的布局值，再批量写入
  */
-export function scheduleDOMUpdate<T>(
-  read: () => T,
-  write: (values: T) => void
-): void {
+export function scheduleDOMUpdate<T>(read: () => T, write: (values: T) => void): void {
   // 在当前帧读取
   const values = read()
   // 在下一帧写入
@@ -37,13 +34,10 @@ export function scheduleDOMUpdate<T>(
  * 使用 DocumentFragment 批量插入 DOM 节点
  * 减少多次插入导致的回流
  */
-export function batchInsertNodes(
-  parent: Element,
-  createNodes: () => Node[]
-): void {
+export function batchInsertNodes(parent: Element, createNodes: () => Node[]): void {
   const fragment = document.createDocumentFragment()
   const nodes = createNodes()
-  nodes.forEach(node => fragment.appendChild(node))
+  nodes.forEach((node) => fragment.appendChild(node))
   requestAnimationFrame(() => parent.appendChild(fragment))
 }
 
@@ -104,9 +98,7 @@ export function debounce<T extends (...args: Parameters<T>) => void>(
 /**
  * 节流函数 - 使用 requestAnimationFrame 限制执行频率
  */
-export function throttleRAF<T extends unknown[]>(
-  fn: (...args: T) => void
-): (...args: T) => void {
+export function throttleRAF<T extends unknown[]>(fn: (...args: T) => void): (...args: T) => void {
   let rafId: number | null = null
   let lastArgs: T | null = null
 
@@ -134,7 +126,7 @@ export function createLazyObserver(
 ): IntersectionObserver {
   return new IntersectionObserver(
     (entries) => {
-      entries.forEach(entry => {
+      entries.forEach((entry) => {
         if (entry.isIntersecting) {
           callback(entry)
         }
@@ -181,8 +173,11 @@ export function disableGPUAcceleration(element: HTMLElement): void {
  */
 export function runWhenIdle(task: () => void, timeout = 2000): void {
   if ('requestIdleCallback' in window) {
-    ;(window as Window & { requestIdleCallback: (cb: () => void, opts?: { timeout: number }) => number })
-      .requestIdleCallback(task, { timeout })
+    ;(
+      window as Window & {
+        requestIdleCallback: (cb: () => void, opts?: { timeout: number }) => number
+      }
+    ).requestIdleCallback(task, { timeout })
   } else {
     setTimeout(task, 1)
   }

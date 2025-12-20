@@ -62,7 +62,12 @@
           @error="handleTurnstileError"
         />
 
-        <Button type="submit" :loading="isLoading" :disabled="turnstileEnabled && !turnstileToken" full-width>
+        <Button
+          type="submit"
+          :loading="isLoading"
+          :disabled="turnstileEnabled && !turnstileToken"
+          full-width
+        >
           {{ $t('auth.loginButton') }}
         </Button>
       </form>
@@ -140,7 +145,11 @@ async function handleLogin() {
     return
   }
 
-  const result = await authStore.login(usernameOrEmail.value, password.value, turnstileToken.value || undefined)
+  const result = await authStore.login(
+    usernameOrEmail.value,
+    password.value,
+    turnstileToken.value || undefined
+  )
 
   if (result.success) {
     toastStore.success(t('auth.loginSuccess'))

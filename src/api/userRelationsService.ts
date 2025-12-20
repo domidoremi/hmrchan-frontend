@@ -100,10 +100,7 @@ export const userRelationsService = {
   /**
    * 获取我拉黑的用户列表
    */
-  async getBlockedUsers(
-    page = 1,
-    pageSize = 20
-  ): Promise<PaginatedApiResponse<UserListItem>> {
+  async getBlockedUsers(page = 1, pageSize = 20): Promise<PaginatedApiResponse<UserListItem>> {
     return apiClient.get<PaginatedApiResponse<UserListItem>>(
       `/users/me/blocked?page=${page}&page_size=${pageSize}`
     )

@@ -23,13 +23,7 @@
 
           <div class="form-group">
             <label for="message">{{ $t('contact.message') }}</label>
-            <textarea
-              id="message"
-              v-model="form.message"
-              class="glass-input"
-              rows="5"
-              required
-            />
+            <textarea id="message" v-model="form.message" class="glass-input" rows="5" required />
           </div>
 
           <Button type="submit" :loading="isSubmitting" full-width>
@@ -63,7 +57,7 @@ async function handleSubmit() {
   isSubmitting.value = true
 
   // Simulate API call
-  await new Promise(resolve => setTimeout(resolve, 1000))
+  await new Promise((resolve) => setTimeout(resolve, 1000))
 
   isSubmitting.value = false
   toastStore.success(t('contact.success'))

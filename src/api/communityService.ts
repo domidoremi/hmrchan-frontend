@@ -69,10 +69,7 @@ export const communityService = {
   /**
    * 获取我的评论
    */
-  async getMyComments(
-    page = 1,
-    pageSize = 20
-  ): Promise<PaginatedApiResponse<Comment>> {
+  async getMyComments(page = 1, pageSize = 20): Promise<PaginatedApiResponse<Comment>> {
     return apiClient.get<PaginatedApiResponse<Comment>>(
       `/community/my-comments?page=${page}&page_size=${pageSize}`
     )
@@ -81,10 +78,7 @@ export const communityService = {
   /**
    * 获取收藏的评论
    */
-  async getFavoriteComments(
-    page = 1,
-    pageSize = 20
-  ): Promise<PaginatedApiResponse<Comment>> {
+  async getFavoriteComments(page = 1, pageSize = 20): Promise<PaginatedApiResponse<Comment>> {
     return apiClient.get<PaginatedApiResponse<Comment>>(
       `/community/favorites?page=${page}&page_size=${pageSize}`
     )
