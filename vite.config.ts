@@ -155,6 +155,8 @@ export default defineConfig(({ mode }) => {
         'vue-i18n',
         '@vueuse/core',
         '@vueuse/shared',
+        // 关键优化：预构建 lucide-vue-next 避免 1500+ 个单独请求
+        'lucide-vue-next',
       ],
 
       /**
@@ -163,7 +165,6 @@ export default defineConfig(({ mode }) => {
        */
       exclude: [
         'vite-plugin-vue-devtools',
-        'lucide-vue-next',
         'photoswipe',
         'masonry-layout',
         'gsap',

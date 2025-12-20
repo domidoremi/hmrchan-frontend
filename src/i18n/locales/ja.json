@@ -160,6 +160,8 @@
     "shareSuccess": "リンクをコピーしました",
     "reportSubmitted": "報告を送信しました",
     "confirmDelete": "このコメントを削除しますか？",
+    "confirmDeleteTitle": "コメントを削除",
+    "confirmDeleteMessage": "このコメントを削除しますか？この操作は取り消しできません。",
     "showReplies": "{count} 件の返信を表示",
     "sort": {
       "newest": "新着",
@@ -199,7 +201,16 @@
     "recentDiscussions": "最近のディスカッション",
     "hotTopics": "ホットトピック",
     "myComments": "マイコメント",
-    "savedComments": "保存したコメント"
+    "savedComments": "保存したコメント",
+    "newDiscussion": "新規ディスカッション",
+    "discussionTitle": "ディスカッションタイトル",
+    "discussionPlaceholder": "あなたの考えを共有...",
+    "addTags": "タグを追加（Enterで確定）",
+    "mentionHint": "{'@'} で投稿を参照、# でタグを追加",
+    "publish": "投稿",
+    "publishSuccess": "ディスカッションを投稿しました",
+    "publishFailed": "投稿に失敗しました。もう一度お試しください",
+    "loginToPost": "ディスカッションを始めるにはログイン"
   },
   "contact": {
     "title": "お問い合わせ",
@@ -234,7 +245,40 @@
     "updateSuccess": "プロフィールが更新されました",
     "passwordChanged": "パスワードが変更されました",
     "passwordMismatch": "パスワードが一致しません",
-    "passwordTooShort": "パスワードは8文字以上必要です"
+    "passwordTooShort": "パスワードは8文字以上必要です",
+    "tabs": {
+      "favorites": "お気に入り",
+      "comments": "コメント履歴",
+      "likes": "いいね履歴",
+      "history": "閲覧履歴",
+      "notifications": "通知"
+    },
+    "noComments": "コメントがありません",
+    "noLikes": "いいねした投稿がありません",
+    "noHistory": "閲覧履歴がありません",
+    "noNotifications": "新しい通知はありません",
+    "commentOn": "コメント",
+    "likedOn": "いいね",
+    "today": "今日",
+    "yesterday": "昨日",
+    "clearHistory": "履歴をクリア",
+    "confirmClearHistory": "すべての閲覧履歴をクリアしますか？",
+    "historyCleared": "履歴をクリアしました",
+    "markAsRead": "既読にする",
+    "markAllRead": "すべて既読にする",
+    "allMarkedRead": "すべて既読にしました",
+    "unlike": "いいねを取り消す",
+    "unlikeSuccess": "いいねを取り消しました",
+    "confirmUnlike": "いいねを取り消す",
+    "confirmUnlikeMessage": "このコメントのいいねを取り消しますか？"
+  },
+  "favorites": {
+    "loginRequired": "お気に入りを表示するにはログインしてください",
+    "totalCount": "{count} 件のお気に入り",
+    "empty": "まだお気に入りがありません",
+    "unknownPost": "不明な投稿",
+    "remove": "お気に入りから削除",
+    "removed": "お気に入りから削除しました"
   },
   "user": {
     "username": {
