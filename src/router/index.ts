@@ -42,6 +42,12 @@ const routes: RouteRecordRaw[] = [
     meta: { title: 'nav.authorDetail' },
   },
   {
+    path: '/profile',
+    name: 'profile',
+    component: () => import('@/views/ProfilePage.vue'),
+    meta: { title: 'nav.profile', requiresAuth: true },
+  },
+  {
     path: '/favorites',
     name: 'favorites',
     component: () => import('@/views/FavoritesPage.vue'),

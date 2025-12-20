@@ -101,8 +101,15 @@ function handleClick(event: MouseEvent) {
 }
 
 .btn-primary:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: var(--glass-glow);
+  transform: translateY(-2px);
+  box-shadow:
+    var(--glass-glow),
+    0 8px 16px -4px rgba(59, 130, 246, 0.3);
+}
+
+.btn-primary:active:not(:disabled) {
+  transform: translateY(0) scale(0.98);
+  box-shadow: none;
 }
 
 .btn-secondary {
@@ -114,7 +121,12 @@ function handleClick(event: MouseEvent) {
 
 .btn-secondary:hover:not(:disabled) {
   background: var(--glass-bg-strong);
-  border-color: var(--color-primary-light);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 1px var(--color-primary-100);
+}
+
+.btn-secondary:active:not(:disabled) {
+  transform: scale(0.98);
 }
 
 .btn-ghost {
@@ -124,6 +136,10 @@ function handleClick(event: MouseEvent) {
 
 .btn-ghost:hover:not(:disabled) {
   background: var(--glass-bg-light);
+}
+
+.btn-ghost:active:not(:disabled) {
+  transform: scale(0.98);
 }
 
 .btn-danger {
