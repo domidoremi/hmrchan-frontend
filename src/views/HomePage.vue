@@ -53,26 +53,15 @@
             <StateIndicator v-if="posts.length === 0" variant="empty" />
 
             <!-- Load More / Quota Indicator -->
-            <div v-if="posts.length > 0" class="load-more-section">
-              <div class="quota-indicator">
-                <span class="quota-text">{{
-                  $t('common.showing', { count: visiblePosts.length, total })
-                }}</span>
-              </div>
-              <div v-if="hasMoreForUi" ref="sentinelRef" class="scroll-sentinel">
-                <span v-if="isLoadingMore" class="spinner spinner-sm" />
-              </div>
-              <Button
-                v-if="hasMoreForUi"
-                variant="secondary"
-                :disabled="isLoadingMore"
-                @click="loadMore"
-              >
-                <span v-if="isLoadingMore" class="spinner spinner-sm" />
-                {{ $t('common.loadMore') }}
-              </Button>
-              <p v-else class="no-more-text">{{ $t('common.noMoreItems') }}</p>
-            </div>
+            <LoadMoreSection
+              v-if="posts.length > 0"
+              :count="visiblePosts.length"
+              :total="total"
+              :has-more="hasMoreForUi"
+              :loading="isLoadingMore"
+              :sentinel-ref="setSentinelRef"
+              @load-more="loadMore"
+            />
           </template>
         </template>
       </div>
@@ -94,6 +83,7 @@ import { postCache } from '@/utils/cache'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import { useProgressiveRender } from '@/composables/useProgressiveRender'
 import Button from '@/components/ui/Button.vue'
+import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import PostCard from '@/components/business/PostCard.vue'
 
@@ -114,6 +104,10 @@ const pageSize = 12
 const hasMore = computed(() => posts.value.length < total.value)
 
 const sentinelRef = ref<HTMLElement | null>(null)
+
+const setSentinelRef = (el: Element | null) => {
+  sentinelRef.value = el as HTMLElement | null
+}
 
 const {
   visibleItems: visiblePosts,
@@ -227,7 +221,9 @@ function goToPost(postId: string, thumbnailSrc: string | null) {
 }
 
 onMounted(() => {
-  fetchLatestPosts()
+  if (posts.value.length === 0) {
+    fetchLatestPosts()
+  }
 })
 </script>
 
@@ -375,29 +371,6 @@ onMounted(() => {
 
 .post-content {
   padding: var(--spacing-4);
-}
-
-.load-more-section {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--spacing-3);
-  margin-top: var(--spacing-8);
-  padding: var(--spacing-4);
-}
-
-.quota-indicator {
-  text-align: center;
-}
-
-.quota-text {
-  font-size: var(--text-sm);
-  color: var(--color-text-tertiary);
-}
-
-.no-more-text {
-  font-size: var(--text-sm);
-  color: var(--color-text-tertiary);
 }
 
 @media (max-width: 768px) {

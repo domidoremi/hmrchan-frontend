@@ -103,7 +103,7 @@ export const favoriteService = {
       query.set('folder_name', params.folder_name)
     }
     if (params.tags?.length) {
-      params.tags.forEach(tag => query.append('tags', tag))
+      params.tags.forEach((tag) => query.append('tags', tag))
     }
     if (params.sort_by) {
       query.set('sort_by', params.sort_by)
@@ -112,9 +112,7 @@ export const favoriteService = {
       query.set('sort_order', params.sort_order)
     }
 
-    return apiClient.get<PaginatedApiResponse<FavoriteResponse>>(
-      `/favorites/?${query.toString()}`
-    )
+    return apiClient.get<PaginatedApiResponse<FavoriteResponse>>(`/favorites/?${query.toString()}`)
   },
 
   /**

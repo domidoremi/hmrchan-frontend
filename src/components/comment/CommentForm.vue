@@ -26,20 +26,10 @@
             {{ content.length }}/{{ maxLength }}
           </span>
           <div class="form-actions">
-            <Button
-              v-if="replyTo"
-              variant="ghost"
-              size="sm"
-              @click="$emit('cancel')"
-            >
+            <Button v-if="replyTo" variant="ghost" size="sm" @click="$emit('cancel')">
               {{ $t('common.cancel') }}
             </Button>
-            <Button
-              type="submit"
-              size="sm"
-              :disabled="!canSubmit"
-              :loading="isSubmitting"
-            >
+            <Button type="submit" size="sm" :disabled="!canSubmit" :loading="isSubmitting">
               {{ replyTo ? $t('comment.reply') : $t('comment.submit') }}
             </Button>
           </div>

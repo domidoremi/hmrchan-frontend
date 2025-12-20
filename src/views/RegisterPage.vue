@@ -7,35 +7,17 @@
       <form class="auth-form" @submit.prevent="handleRegister">
         <div class="form-group">
           <label for="username">{{ $t('auth.username') }}</label>
-          <input
-            id="username"
-            v-model="username"
-            type="text"
-            class="glass-input"
-            required
-          />
+          <input id="username" v-model="username" type="text" class="glass-input" required />
         </div>
 
         <div class="form-group">
           <label for="email">{{ $t('auth.email') }}</label>
-          <input
-            id="email"
-            v-model="email"
-            type="email"
-            class="glass-input"
-            required
-          />
+          <input id="email" v-model="email" type="email" class="glass-input" required />
         </div>
 
         <div class="form-group">
           <label for="password">{{ $t('auth.password') }}</label>
-          <input
-            id="password"
-            v-model="password"
-            type="password"
-            class="glass-input"
-            required
-          />
+          <input id="password" v-model="password" type="password" class="glass-input" required />
         </div>
 
         <TurnstileWidget
@@ -48,7 +30,12 @@
           @error="handleTurnstileError"
         />
 
-        <Button type="submit" :loading="isLoading" :disabled="turnstileEnabled && !turnstileToken" full-width>
+        <Button
+          type="submit"
+          :loading="isLoading"
+          :disabled="turnstileEnabled && !turnstileToken"
+          full-width
+        >
           {{ $t('auth.registerButton') }}
         </Button>
       </form>
@@ -108,7 +95,12 @@ async function handleRegister() {
     return
   }
 
-  const result = await authStore.register(username.value, email.value, password.value, turnstileToken.value || undefined)
+  const result = await authStore.register(
+    username.value,
+    email.value,
+    password.value,
+    turnstileToken.value || undefined
+  )
 
   if (result.success) {
     toastStore.success(t('auth.registerSuccess'))

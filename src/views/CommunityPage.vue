@@ -88,21 +88,15 @@
             </div>
           </article>
 
-          <div v-if="discussions.length > 0" class="load-more-section">
-            <div class="quota-indicator">
-              <span class="quota-text">{{
-                $t('common.showing', { count: discussions.length, total })
-              }}</span>
-            </div>
-            <div v-if="hasMore" ref="sentinelRef" class="scroll-sentinel">
-              <span v-if="isLoadingMore" class="spinner spinner-sm" />
-            </div>
-            <Button v-if="hasMore" variant="secondary" :disabled="isLoadingMore" @click="loadMore">
-              <span v-if="isLoadingMore" class="spinner spinner-sm" />
-              {{ $t('common.loadMore') }}
-            </Button>
-            <p v-else class="no-more-text">{{ $t('common.noMoreItems') }}</p>
-          </div>
+          <LoadMoreSection
+            v-if="discussions.length > 0"
+            :count="discussions.length"
+            :total="total"
+            :has-more="hasMore"
+            :loading="isLoadingMore"
+            :sentinel-ref="setSentinelRef"
+            @load-more="loadMore"
+          />
         </div>
       </section>
 
@@ -168,6 +162,7 @@ import {
 } from '@/utils/mediaOptimizer'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import Button from '@/components/ui/Button.vue'
+import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import DiscussionComposer from '@/components/community/DiscussionComposer.vue'
 
@@ -190,6 +185,10 @@ const pageSize = 20
 const hasMore = computed(() => page.value < totalPages.value)
 
 const sentinelRef = ref<HTMLElement | null>(null)
+
+const setSentinelRef = (el: Element | null) => {
+  sentinelRef.value = el as HTMLElement | null
+}
 
 const thumbnailSizes = '(max-width: 640px) 60px, 80px'
 
@@ -325,7 +324,9 @@ useInfiniteScroll(sentinelRef, loadMore, {
 })
 
 onMounted(() => {
-  fetchDiscussions()
+  if (discussions.value.length === 0) {
+    fetchDiscussions()
+  }
 })
 </script>
 
@@ -421,31 +422,6 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-4);
-}
-
-.load-more-section {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--spacing-3);
-  margin-top: var(--spacing-6);
-}
-
-.quota-indicator {
-  padding: var(--spacing-2) var(--spacing-4);
-  border-radius: var(--radius-full);
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
-}
-
-.quota-text {
-  font-size: var(--text-sm);
-  color: var(--color-text-secondary);
-}
-
-.no-more-text {
-  font-size: var(--text-sm);
-  color: var(--color-text-tertiary);
 }
 
 .discussion-card {

@@ -82,15 +82,15 @@
             </article>
           </div>
 
-          <div v-if="hasMoreForUi" class="load-more">
-            <div ref="sentinelRef" class="scroll-sentinel">
-              <span v-if="isLoadingMore" class="spinner spinner-sm" />
-            </div>
-            <Button variant="secondary" :disabled="isLoading || isLoadingMore" @click="loadMore">
-              <span v-if="isLoadingMore" class="spinner spinner-sm" />
-              {{ $t('common.viewMore') }}
-            </Button>
-          </div>
+          <LoadMoreSection
+            v-if="hasMoreForUi"
+            :count="visibleFavorites.length"
+            :total="total"
+            :has-more="hasMoreForUi"
+            :loading="isLoadingMore"
+            :sentinel-ref="setSentinelRef"
+            @load-more="loadMore"
+          />
         </template>
       </template>
     </div>
@@ -116,6 +116,7 @@ import {
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import { useProgressiveRender } from '@/composables/useProgressiveRender'
 import Button from '@/components/ui/Button.vue'
+import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 
 const router = useRouter()
@@ -135,6 +136,10 @@ const pageSize = 20
 const hasMore = computed(() => favorites.value.length < total.value)
 
 const sentinelRef = ref<HTMLElement | null>(null)
+
+const setSentinelRef = (el: Element | null) => {
+  sentinelRef.value = el as HTMLElement | null
+}
 
 const {
   visibleItems: visibleFavorites,
@@ -273,7 +278,7 @@ watch(isAuthenticated, (authenticated) => {
 })
 
 onMounted(() => {
-  if (isAuthenticated.value) {
+  if (isAuthenticated.value && favorites.value.length === 0) {
     fetchFavorites(true)
   }
 })
@@ -452,13 +457,5 @@ onMounted(() => {
 
 .remove-btn:hover {
   background: var(--color-error);
-}
-
-.load-more {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--spacing-3);
-  margin-top: var(--spacing-8);
 }
 </style>

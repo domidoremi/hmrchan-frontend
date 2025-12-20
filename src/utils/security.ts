@@ -18,18 +18,52 @@ const HTML_ENTITIES: Record<string, string> = {
 
 // 危险的 HTML 标签
 const DANGEROUS_TAGS = [
-  'script', 'iframe', 'object', 'embed', 'form', 'input',
-  'button', 'select', 'textarea', 'style', 'link', 'meta',
-  'base', 'applet', 'frame', 'frameset', 'layer', 'ilayer',
+  'script',
+  'iframe',
+  'object',
+  'embed',
+  'form',
+  'input',
+  'button',
+  'select',
+  'textarea',
+  'style',
+  'link',
+  'meta',
+  'base',
+  'applet',
+  'frame',
+  'frameset',
+  'layer',
+  'ilayer',
 ]
 
 // 危险的属性
 const DANGEROUS_ATTRS = [
-  'onclick', 'ondblclick', 'onmousedown', 'onmouseup', 'onmouseover',
-  'onmousemove', 'onmouseout', 'onkeydown', 'onkeypress', 'onkeyup',
-  'onload', 'onerror', 'onunload', 'onabort', 'onblur', 'onchange',
-  'onfocus', 'onreset', 'onsubmit', 'onselect', 'javascript:',
-  'vbscript:', 'data:', 'expression',
+  'onclick',
+  'ondblclick',
+  'onmousedown',
+  'onmouseup',
+  'onmouseover',
+  'onmousemove',
+  'onmouseout',
+  'onkeydown',
+  'onkeypress',
+  'onkeyup',
+  'onload',
+  'onerror',
+  'onunload',
+  'onabort',
+  'onblur',
+  'onchange',
+  'onfocus',
+  'onreset',
+  'onsubmit',
+  'onselect',
+  'javascript:',
+  'vbscript:',
+  'data:',
+  'expression',
 ]
 
 /**
@@ -100,10 +134,13 @@ export interface ValidationResult {
   error?: string
 }
 
-export function validateComment(content: string, options?: {
-  minLength?: number
-  maxLength?: number
-}): ValidationResult {
+export function validateComment(
+  content: string,
+  options?: {
+    minLength?: number
+    maxLength?: number
+  }
+): ValidationResult {
   const { minLength = 1, maxLength = 2000 } = options || {}
 
   if (!content || typeof content !== 'string') {
@@ -171,9 +208,7 @@ export class RateLimiter {
   canProceed(): boolean {
     const now = Date.now()
     // 清理过期的时间戳
-    this.timestamps = this.timestamps.filter(
-      (ts) => now - ts < this.windowMs
-    )
+    this.timestamps = this.timestamps.filter((ts) => now - ts < this.windowMs)
     return this.timestamps.length < this.limit
   }
 
@@ -219,9 +254,7 @@ export function debounce<T extends (...args: unknown[]) => unknown>(
  */
 export function containsSensitiveWords(content: string): boolean {
   // 这里只是示例，实际的敏感词应该从后端获取
-  const sensitivePatterns = [
-    /\b(spam|scam)\b/i,
-  ]
+  const sensitivePatterns = [/\b(spam|scam)\b/i]
 
   return sensitivePatterns.some((pattern) => pattern.test(content))
 }

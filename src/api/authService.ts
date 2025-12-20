@@ -36,8 +36,6 @@ export interface UserResponse {
   updated_at: string
 }
 
-
-
 // ========== 认证服务 ==========
 
 export const authService = {
@@ -83,7 +81,6 @@ export const authService = {
       skipErrorToast: true,
     })
   },
-
 
   /**
    * 获取当前用户信息

@@ -19,7 +19,10 @@ export type MediaThumbnailSize = 'small' | 'medium' | 'large' | 'original'
  * - large: 800×800 - 详情页预览、Lightbox 占位（推荐用于 > 600px 容器）
  * - original: 原始尺寸 - 仅用于 Lightbox 全屏查看
  */
-export const THUMBNAIL_SIZES: Record<MediaThumbnailSize, { width: number; height: number; usage: string }> = {
+export const THUMBNAIL_SIZES: Record<
+  MediaThumbnailSize,
+  { width: number; height: number; usage: string }
+> = {
   small: { width: 200, height: 200, usage: '列表卡片、网格预览' },
   medium: { width: 400, height: 400, usage: 'Feed 流、网格大图' },
   large: { width: 800, height: 800, usage: '详情页预览、Lightbox 占位' },
@@ -46,7 +49,9 @@ export function getMediaThumbnailUrl(mediaId: string, size: MediaThumbnailSize =
  * - 2x 屏幕: medium
  * - 3x 屏幕: large
  */
-export function getResponsiveThumbnailSize(baseSize: 'small' | 'medium' = 'small'): MediaThumbnailSize {
+export function getResponsiveThumbnailSize(
+  baseSize: 'small' | 'medium' = 'small'
+): MediaThumbnailSize {
   const dpr = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1
 
   if (baseSize === 'small') {
@@ -63,7 +68,10 @@ export function getResponsiveThumbnailSize(baseSize: 'small' | 'medium' = 'small
 /**
  * 获取响应式缩略图 URL（根据 DPR 自动选择尺寸）
  */
-export function getResponsiveThumbnailUrl(mediaId: string, baseSize: 'small' | 'medium' = 'small'): string {
+export function getResponsiveThumbnailUrl(
+  mediaId: string,
+  baseSize: 'small' | 'medium' = 'small'
+): string {
   const size = getResponsiveThumbnailSize(baseSize)
   return getMediaThumbnailUrl(mediaId, size)
 }
@@ -83,7 +91,7 @@ export function extractMediaIdFromUrl(url?: string | null): string | null {
  */
 export function normalizeToThumbnailUrl(
   url?: string | null,
-  size: MediaThumbnailSize = 'medium',
+  size: MediaThumbnailSize = 'medium'
 ): string | null {
   if (!url) return null
 

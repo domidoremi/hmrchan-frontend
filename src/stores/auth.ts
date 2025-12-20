@@ -48,9 +48,8 @@ export const useAuthStore = defineStore(
 
         return { success: true, user: response.user }
       } catch (err) {
-        const errorMessage = err instanceof ApiError
-          ? getAuthErrorKey(err.status, err.code)
-          : 'auth.error.loginFailed'
+        const errorMessage =
+          err instanceof ApiError ? getAuthErrorKey(err.status, err.code) : 'auth.error.loginFailed'
         error.value = errorMessage
         return { success: false, error: errorMessage }
       } finally {
@@ -61,7 +60,12 @@ export const useAuthStore = defineStore(
     /**
      * 用户注册
      */
-    async function register(username: string, email: string, password: string, turnstileToken?: string) {
+    async function register(
+      username: string,
+      email: string,
+      password: string,
+      turnstileToken?: string
+    ) {
       if (isLoading.value) return { success: false, error: 'auth.error.inProgress' }
 
       isLoading.value = true
@@ -82,9 +86,10 @@ export const useAuthStore = defineStore(
 
         return { success: true, user: response.user }
       } catch (err) {
-        const errorMessage = err instanceof ApiError
-          ? getAuthErrorKey(err.status, err.code)
-          : 'auth.error.registerFailed'
+        const errorMessage =
+          err instanceof ApiError
+            ? getAuthErrorKey(err.status, err.code)
+            : 'auth.error.registerFailed'
         error.value = errorMessage
         return { success: false, error: errorMessage }
       } finally {
@@ -225,5 +230,5 @@ export const useAuthStore = defineStore(
     persist: {
       pick: ['user', 'token'],
     },
-  },
+  }
 )

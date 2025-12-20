@@ -112,9 +112,12 @@ onUnmounted(() => {
   }
 })
 
-watch(() => props.siteKey, () => {
-  renderWidget()
-})
+watch(
+  () => props.siteKey,
+  () => {
+    renderWidget()
+  }
+)
 
 defineExpose({
   reset,

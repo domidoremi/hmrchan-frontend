@@ -74,11 +74,7 @@ export const commentService = {
   /**
    * 获取帖子评论列表
    */
-  async getPostComments(
-    postId: string,
-    page = 1,
-    pageSize = 20
-  ): Promise<CommentListResponse> {
+  async getPostComments(postId: string, page = 1, pageSize = 20): Promise<CommentListResponse> {
     return apiClient.get<CommentListResponse>(
       `/comments/post/${postId}?page=${page}&page_size=${pageSize}`
     )
@@ -87,10 +83,7 @@ export const commentService = {
   /**
    * 创建评论（支持带图片）
    */
-  async createComment(
-    postId: string,
-    data: CreateCommentRequest
-  ): Promise<Comment> {
+  async createComment(postId: string, data: CreateCommentRequest): Promise<Comment> {
     return apiClient.post<Comment>(`/comments/post/${postId}`, data)
   },
 
@@ -165,17 +158,17 @@ export const commentService = {
   /**
    * 举报评论
    */
-  async reportComment(
-    commentId: string,
-    reason: string,
-    description?: string
-  ): Promise<void> {
-    return apiClient.post(`/comments/${commentId}/report`, {
-      reason,
-      description,
-    }, {
-      skipErrorToast: true,
-    })
+  async reportComment(commentId: string, reason: string, description?: string): Promise<void> {
+    return apiClient.post(
+      `/comments/${commentId}/report`,
+      {
+        reason,
+        description,
+      },
+      {
+        skipErrorToast: true,
+      }
+    )
   },
 
   /**
@@ -204,7 +197,12 @@ export const commentService = {
   validateImageFile(file: File): { valid: boolean; error?: string } {
     // 检查文件格式
     const ext = file.name.split('.').pop()?.toLowerCase()
-    if (!ext || !COMMENT_IMAGE_LIMITS.ALLOWED_FORMATS.includes(ext as typeof COMMENT_IMAGE_LIMITS.ALLOWED_FORMATS[number])) {
+    if (
+      !ext ||
+      !COMMENT_IMAGE_LIMITS.ALLOWED_FORMATS.includes(
+        ext as (typeof COMMENT_IMAGE_LIMITS.ALLOWED_FORMATS)[number]
+      )
+    ) {
       return {
         valid: false,
         error: `comment.image.invalidFormat`,

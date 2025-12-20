@@ -62,11 +62,7 @@
           </button>
 
           <!-- 媒体内容 -->
-          <div
-            class="lightbox-content"
-            ref="contentRef"
-            @wheel.prevent="handleWheel"
-          >
+          <div class="lightbox-content" ref="contentRef" @wheel.prevent="handleWheel">
             <Transition :name="transitionName" mode="out-in">
               <div
                 v-if="currentMedia"
@@ -139,15 +135,18 @@ export interface MediaItem {
   height?: number | null
 }
 
-const props = withDefaults(defineProps<{
-  isOpen: boolean
-  mediaList: MediaItem[]
-  initialIndex?: number
-  alt?: string
-}>(), {
-  initialIndex: 0,
-  alt: '',
-})
+const props = withDefaults(
+  defineProps<{
+    isOpen: boolean
+    mediaList: MediaItem[]
+    initialIndex?: number
+    alt?: string
+  }>(),
+  {
+    initialIndex: 0,
+    alt: '',
+  }
+)
 
 const emit = defineEmits<{
   close: []
@@ -184,23 +183,29 @@ const mediaStyle = computed(() => ({
   cursor: scale.value > 1 ? (isDragging.value ? 'grabbing' : 'grab') : 'default',
 }))
 
-watch(() => props.isOpen, (open) => {
-  if (open) {
-    currentIndex.value = props.initialIndex
-    resetZoom()
-    isLoaded.value = false
-    document.body.style.overflow = 'hidden'
-    nextTick(() => containerRef.value?.focus())
-  } else {
-    document.body.style.overflow = ''
+watch(
+  () => props.isOpen,
+  (open) => {
+    if (open) {
+      currentIndex.value = props.initialIndex
+      resetZoom()
+      isLoaded.value = false
+      document.body.style.overflow = 'hidden'
+      nextTick(() => containerRef.value?.focus())
+    } else {
+      document.body.style.overflow = ''
+    }
   }
-})
+)
 
-watch(() => props.initialIndex, (idx) => {
-  if (props.isOpen) {
-    currentIndex.value = idx
+watch(
+  () => props.initialIndex,
+  (idx) => {
+    if (props.isOpen) {
+      currentIndex.value = idx
+    }
   }
-})
+)
 
 function close() {
   emit('update:isOpen', false)

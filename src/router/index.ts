@@ -97,7 +97,10 @@ const router = createRouter({
         const startTime = Date.now()
 
         const check = () => {
-          const maxScrollable = Math.max(0, document.documentElement.scrollHeight - window.innerHeight)
+          const maxScrollable = Math.max(
+            0,
+            document.documentElement.scrollHeight - window.innerHeight
+          )
           const waitedTooLong = Date.now() - startTime > maxWaitMs
 
           if (maxScrollable >= targetTop || waitedTooLong) {
