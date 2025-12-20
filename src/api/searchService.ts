@@ -38,9 +38,7 @@ export const searchService = {
   /**
    * 搜索帖子
    */
-  async searchPosts(
-    params: SearchPostsParams
-  ): Promise<PaginatedApiResponse<PostListItem>> {
+  async searchPosts(params: SearchPostsParams): Promise<PaginatedApiResponse<PostListItem>> {
     const query = new URLSearchParams({
       q: params.q,
       page: String(params.page ?? 1),
@@ -57,17 +55,13 @@ export const searchService = {
       query.set('sort_order', params.sort_order)
     }
 
-    return apiClient.get<PaginatedApiResponse<PostListItem>>(
-      `/search/posts?${query.toString()}`
-    )
+    return apiClient.get<PaginatedApiResponse<PostListItem>>(`/search/posts?${query.toString()}`)
   },
 
   /**
    * 搜索作者
    */
-  async searchAuthors(
-    params: SearchAuthorsParams
-  ): Promise<PaginatedApiResponse<AuthorListItem>> {
+  async searchAuthors(params: SearchAuthorsParams): Promise<PaginatedApiResponse<AuthorListItem>> {
     const query = new URLSearchParams({
       q: params.q,
       page: String(params.page ?? 1),

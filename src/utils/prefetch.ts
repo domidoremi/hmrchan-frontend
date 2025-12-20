@@ -5,6 +5,7 @@
 
 import { postService } from '@/api/postService'
 import { authorService } from '@/api/authorService'
+import { postCache } from '@/utils/cache'
 
 // 预取状态标记
 const prefetchedData = new Set<string>()
@@ -68,7 +69,22 @@ export function prefetchPostDetail(postId: string): void {
   if (prefetchedData.has(key) || !shouldPrefetch()) return
   prefetchedData.add(key)
 
-  postService.getPost(postId).catch(() => {})
+  postCache
+    .getPost(postId)
+    .then((cached) => {
+      if (cached) return
+      return postService.getPost(postId).then((data) => {
+        postCache.setPost(postId, data).catch(() => {})
+      })
+    })
+    .catch(() => {
+      postService
+        .getPost(postId)
+        .then((data) => {
+          postCache.setPost(postId, data).catch(() => {})
+        })
+        .catch(() => {})
+    })
 }
 
 /**

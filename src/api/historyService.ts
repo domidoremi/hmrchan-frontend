@@ -50,13 +50,17 @@ export const historyService = {
     type: SearchHistoryType = 'keyword',
     resultCount?: number
   ): Promise<void> {
-    return apiClient.post('/history/search', {
-      query,
-      type,
-      result_count: resultCount,
-    }, {
-      skipErrorToast: true,
-    })
+    return apiClient.post(
+      '/history/search',
+      {
+        query,
+        type,
+        result_count: resultCount,
+      },
+      {
+        skipErrorToast: true,
+      }
+    )
   },
 
   /**
@@ -102,12 +106,16 @@ export const historyService = {
    * 记录浏览历史
    */
   async recordBrowsing(postId: string, duration?: number): Promise<void> {
-    return apiClient.post('/history/browsing', {
-      post_id: postId,
-      duration,
-    }, {
-      skipErrorToast: true,
-    })
+    return apiClient.post(
+      '/history/browsing',
+      {
+        post_id: postId,
+        duration,
+      },
+      {
+        skipErrorToast: true,
+      }
+    )
   },
 
   /**

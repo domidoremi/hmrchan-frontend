@@ -5,12 +5,7 @@
     <p class="state-title">{{ resolvedTitle }}</p>
     <p v-if="description" class="state-description">{{ description }}</p>
 
-    <Button
-      v-if="shouldShowAction"
-      size="sm"
-      :loading="actionLoading"
-      @click="emit('action')"
-    >
+    <Button v-if="shouldShowAction" size="sm" :loading="actionLoading" @click="emit('action')">
       {{ resolvedActionLabel }}
     </Button>
   </div>

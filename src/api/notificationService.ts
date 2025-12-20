@@ -58,9 +58,7 @@ export const notificationService = {
       params.set('unread_only', 'true')
     }
 
-    return apiClient.get<PaginatedApiResponse<Notification>>(
-      `/notifications/?${params.toString()}`
-    )
+    return apiClient.get<PaginatedApiResponse<Notification>>(`/notifications/?${params.toString()}`)
   },
 
   /**

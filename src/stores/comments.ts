@@ -53,7 +53,7 @@ export const useCommentsStore = defineStore('comments', () => {
       return {
         success: false,
         error: 'comment.error.rateLimited',
-        remainingSeconds: remaining
+        remainingSeconds: remaining,
       }
     }
 

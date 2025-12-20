@@ -108,7 +108,9 @@ export const authorService = {
       sort_order: params.sort_order ?? 'desc',
     })
 
-    return apiClient.get<PaginatedApiResponse<AuthorListItem>>(`/authors/platform/${platform}/list${query}`)
+    return apiClient.get<PaginatedApiResponse<AuthorListItem>>(
+      `/authors/platform/${platform}/list${query}`
+    )
   },
 }
 

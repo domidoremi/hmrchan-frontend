@@ -1,8 +1,5 @@
 <template>
-  <div
-    class="progressive-image"
-    :style="containerStyle"
-  >
+  <div class="progressive-image" :style="containerStyle">
     <!-- 模糊缩略图占位 -->
     <img
       v-if="placeholderSrc && !isFullLoaded"
@@ -86,10 +83,13 @@ function onFullError() {
 }
 
 // 当 src 变化时重置状态
-watch(() => props.src, () => {
-  isFullLoaded.value = false
-  hasError.value = false
-})
+watch(
+  () => props.src,
+  () => {
+    isFullLoaded.value = false
+    hasError.value = false
+  }
+)
 
 // 检查图片是否已经在缓存中
 onMounted(() => {
@@ -108,12 +108,12 @@ onMounted(() => {
 }
 
 /* 有宽高比时使用 padding-top 技巧 */
-.progressive-image[style*="--aspect-ratio"] {
+.progressive-image[style*='--aspect-ratio'] {
   aspect-ratio: var(--aspect-ratio);
 }
 
 /* 限制最大高度 */
-.progressive-image[style*="--max-height"] {
+.progressive-image[style*='--max-height'] {
   max-height: var(--max-height);
 }
 

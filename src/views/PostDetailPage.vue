@@ -10,11 +10,11 @@
 
       <article v-else class="post-content glass-card">
         <template v-if="isLoading">
-          <div class="post-image skeleton" style="aspect-ratio: 16/9;" />
+          <div class="post-image skeleton" style="aspect-ratio: 16/9" />
           <div class="post-body">
-            <div class="skeleton" style="height: 32px; width: 70%;" />
-            <div class="skeleton" style="height: 20px; width: 40%; margin-top: 12px;" />
-            <div class="skeleton" style="height: 100px; margin-top: 24px;" />
+            <div class="skeleton" style="height: 32px; width: 70%" />
+            <div class="skeleton" style="height: 20px; width: 40%; margin-top: 12px" />
+            <div class="skeleton" style="height: 100px; margin-top: 24px" />
           </div>
         </template>
 
@@ -109,9 +109,9 @@
             :src="normalizeToThumbnailUrl(post.thumbnail_url, 'large') || post.thumbnail_url"
             :alt="post.title"
             loading="lazy"
-            style="aspect-ratio: 16/9; object-fit: cover;"
+            style="aspect-ratio: 16/9; object-fit: cover"
           />
-          <div v-else class="post-image skeleton" style="aspect-ratio: 16/9;" />
+          <div v-else class="post-image skeleton" style="aspect-ratio: 16/9" />
 
           <div class="post-body">
             <h1 class="post-title">{{ post.title }}</h1>
@@ -122,7 +122,8 @@
               </button>
             </p>
             <p class="post-stats">
-              {{ post.view_count }} {{ $t('post.views') }} · {{ post.like_count }} {{ $t('post.likes') }}
+              {{ post.view_count }} {{ $t('post.views') }} · {{ post.like_count }}
+              {{ $t('post.likes') }}
             </p>
             <p v-if="post.content" class="post-description">{{ post.content }}</p>
           </div>
@@ -170,7 +171,13 @@ import { useAuthStore, useToastStore } from '@/stores'
 import { useI18n } from 'vue-i18n'
 import { CommentList } from '@/components/comment'
 import { postService, favoriteService, type PostDetailResponse, ApiError } from '@/api'
-import { getMediaStreamUrl, getMediaThumbnailUrl, normalizeToThumbnailUrl } from '@/utils/mediaOptimizer'
+import {
+  getMediaStreamUrl,
+  getMediaThumbnailUrl,
+  normalizeToThumbnailUrl,
+} from '@/utils/mediaOptimizer'
+import { useCachedPost } from '@/composables/useCachedPosts'
+import { postCache } from '@/utils/cache'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import MediaLightbox from '@/components/ui/MediaLightbox.vue'
 
@@ -186,6 +193,17 @@ const postId = computed(() => route.params['id'] as string)
 const post = ref<PostDetailResponse | null>(null)
 const isLoading = ref(false)
 const error = ref<string | null>(null)
+
+const { data: cachedPost, load: loadCachedPost } = useCachedPost<PostDetailResponse>(
+  postService.getPost,
+  {
+    onUpdate: () => {
+      if (cachedPost.value) {
+        post.value = cachedPost.value
+      }
+    },
+  }
+)
 
 const isFavorited = ref(false)
 const favoriteId = ref<number | null>(null)
@@ -248,7 +266,8 @@ const placeholderSrc = computed(() => {
 
 function selectMedia(index: number) {
   if (index === activeMediaIndex.value) return
-  mediaTransitionName.value = index > activeMediaIndex.value ? 'media-slide-left' : 'media-slide-right'
+  mediaTransitionName.value =
+    index > activeMediaIndex.value ? 'media-slide-left' : 'media-slide-right'
   isMediaLoaded.value = false
   activeMediaIndex.value = index
 }
@@ -287,7 +306,7 @@ function preloadAdjacentMedia() {
     (currentIdx - 1 + mediaFiles.length) % mediaFiles.length,
   ]
 
-  indicesToPreload.forEach(idx => {
+  indicesToPreload.forEach((idx) => {
     const media = mediaFiles[idx]
     if (!media || media.file_type !== 'image') return
 
@@ -353,7 +372,19 @@ async function fetchPost() {
   }
 
   try {
-    post.value = await postService.getPost(postId.value)
+    const cached = await postCache.getPost(postId.value)
+    if (cached) {
+      post.value = cached.data as PostDetailResponse
+      activeMediaIndex.value = 0
+      isMediaLoaded.value = false
+      await fetchFavoriteStatus()
+      isLoading.value = false
+      loadCachedPost(postId.value).catch(() => {})
+      return
+    }
+
+    const res = await loadCachedPost(postId.value)
+    post.value = res.data
     activeMediaIndex.value = 0
     isMediaLoaded.value = false
     await fetchFavoriteStatus()
@@ -490,7 +521,9 @@ onUnmounted(() => {
   filter: blur(40px) saturate(1.2);
   transform: scale(1.3);
   opacity: 0.5;
-  transition: opacity 0.5s ease, background-image 0.3s ease;
+  transition:
+    opacity 0.5s ease,
+    background-image 0.3s ease;
 }
 
 .media-viewer::after {

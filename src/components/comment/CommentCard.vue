@@ -52,11 +52,7 @@
         <span v-if="comment.likes_count > 0">{{ comment.likes_count }}</span>
       </button>
 
-      <button
-        class="action-btn"
-        @click="handleReply"
-        :disabled="!isAuthenticated"
-      >
+      <button class="action-btn" @click="handleReply" :disabled="!isAuthenticated">
         <MessageCircle :size="16" />
         <span>{{ $t('comment.reply') }}</span>
       </button>

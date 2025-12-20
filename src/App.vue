@@ -12,20 +12,18 @@
     <main id="main-content">
       <RouterView v-slot="{ Component, route }">
         <Transition :name="transitionName" mode="out-in">
-          <KeepAlive :include="cachedPages" :max="10">
-            <Suspense>
-              <template #default>
-                <div class="route-view" :key="route.path">
-                  <component :is="Component" />
-                </div>
-              </template>
-              <template #fallback>
-                <div class="route-view">
-                  <PageLoading />
-                </div>
-              </template>
-            </Suspense>
-          </KeepAlive>
+          <Suspense>
+            <template #default>
+              <KeepAlive :include="cachedPages" :max="10">
+                <component :is="Component" class="route-view" :key="route.name ?? route.path" />
+              </KeepAlive>
+            </template>
+            <template #fallback>
+              <div class="route-view">
+                <PageLoading />
+              </div>
+            </template>
+          </Suspense>
         </Transition>
       </RouterView>
     </main>
@@ -57,13 +55,7 @@ const settingsStore = useSettingsStore()
 const { resolvedTheme } = storeToRefs(themeStore)
 const { settings } = storeToRefs(settingsStore)
 
-const cachedPages = [
-  'HomePage',
-  'ExplorePage',
-  'AuthorsPage',
-  'CommunityPage',
-  'FavoritesPage',
-]
+const cachedPages = ['HomePage', 'ExplorePage', 'AuthorsPage', 'CommunityPage', 'FavoritesPage']
 
 // Page transition name
 const transitionName = ref('fade')
@@ -89,7 +81,7 @@ watch(
     } else {
       transitionName.value = 'fade'
     }
-  },
+  }
 )
 </script>
 

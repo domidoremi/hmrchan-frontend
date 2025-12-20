@@ -8,6 +8,7 @@
   >
     <div class="post-image-wrapper" :style="imageWrapperStyle">
       <div v-if="thumbnailSrc && !isImageLoaded" class="post-image-skeleton skeleton" />
+      <div v-if="post.platform" class="platform-badge">{{ platformLabel }}</div>
       <img
         v-if="thumbnailSrc"
         class="post-image"
@@ -33,6 +34,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import type { PostListItem } from '@/api'
+import { prefetchPostDetail } from '@/utils/prefetch'
 import {
   normalizeToThumbnailUrl,
   getResponsiveThumbnailSize,
@@ -65,6 +67,21 @@ const isImageLoaded = ref(false)
 const measuredAspectRatio = ref<string | null>(null)
 
 let hasPrefetchedPostDetailPage = false
+
+const platformLabel = computed(() => {
+  const raw = props.post.platform
+  if (!raw) return ''
+
+  const map: Record<string, string> = {
+    bilibili: 'Bilibili',
+    youtube: 'YouTube',
+    twitter: 'Twitter',
+    pixiv: 'Pixiv',
+    weibo: 'Weibo',
+  }
+
+  return map[raw] ?? raw.replace(/[_-]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+})
 
 const effectiveThumbnailSize = computed(() => {
   if (props.thumbnailSize === 'responsive') {
@@ -138,6 +155,7 @@ function prefetchPostDetailPage() {
   if (hasPrefetchedPostDetailPage) return
   hasPrefetchedPostDetailPage = true
   import('@/views/PostDetailPage.vue').catch(() => {})
+  prefetchPostDetail(props.post.id)
 }
 
 function handleClick() {
@@ -158,13 +176,15 @@ function handleClick() {
   padding: 0;
   background: transparent;
   cursor: pointer;
+  will-change: transform;
   transition:
     transform var(--transition-fast),
     box-shadow var(--transition-fast);
 }
 
-.post-card-btn:hover {
-  transform: translateY(-2px);
+.post-card-btn:hover,
+.post-card-btn:focus-visible {
+  transform: translateY(-2px) scale(1.01);
   box-shadow: var(--shadow-lg);
 }
 
@@ -178,6 +198,21 @@ function handleClick() {
   overflow: hidden;
   background: var(--glass-bg-light);
   border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+
+.platform-badge {
+  position: absolute;
+  top: var(--spacing-2);
+  left: var(--spacing-2);
+  z-index: 2;
+  padding: var(--spacing-0) var(--spacing-2);
+  border-radius: var(--radius-md);
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  color: #fff;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
 .post-image {

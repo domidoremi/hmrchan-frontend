@@ -41,11 +41,7 @@
       </div>
 
       <div v-if="selectedPosts.length > 0" class="selected-posts">
-        <div
-          v-for="post in selectedPosts"
-          :key="post.id"
-          class="selected-post-tag"
-        >
+        <div v-for="post in selectedPosts" :key="post.id" class="selected-post-tag">
           <span>@{{ post.title }}</span>
           <button type="button" class="remove-tag" @click="removePost(post.id)">×</button>
         </div>
@@ -73,10 +69,7 @@
       <div class="composer-hints">
         <span class="hint">{{ $t('community.mentionHint') }}</span>
       </div>
-      <Button
-        :disabled="!canSubmit || isSubmitting"
-        @click="handleSubmit"
-      >
+      <Button :disabled="!canSubmit || isSubmitting" @click="handleSubmit">
         <span v-if="isSubmitting" class="spinner spinner-sm" />
         {{ $t('community.publish') }}
       </Button>
@@ -169,7 +162,7 @@ function handleKeydown(e: KeyboardEvent) {
 }
 
 function selectMention(post: PostReference) {
-  if (!selectedPosts.value.some(p => p.id === post.id)) {
+  if (!selectedPosts.value.some((p) => p.id === post.id)) {
     selectedPosts.value.push(post)
   }
 
@@ -186,7 +179,7 @@ function selectMention(post: PostReference) {
 }
 
 function removePost(postId: string) {
-  selectedPosts.value = selectedPosts.value.filter(p => p.id !== postId)
+  selectedPosts.value = selectedPosts.value.filter((p) => p.id !== postId)
 }
 
 function addTag() {
@@ -198,7 +191,7 @@ function addTag() {
 }
 
 function removeTag(tag: string) {
-  tags.value = tags.value.filter(t => t !== tag)
+  tags.value = tags.value.filter((t) => t !== tag)
 }
 
 async function handleSubmit() {
@@ -208,7 +201,7 @@ async function handleSubmit() {
   try {
     const discussion = await discussionService.create({
       content: content.value.trim(),
-      post_ids: selectedPosts.value.map(p => p.id),
+      post_ids: selectedPosts.value.map((p) => p.id),
       tags: tags.value,
     })
 

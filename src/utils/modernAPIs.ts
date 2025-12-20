@@ -96,9 +96,12 @@ export function scheduleTask<T>(
       }
       const timeoutMs = delay || 5000
       setTimeout(() => {
-        ric.requestIdleCallback(() => {
-          resolve(callback() as T)
-        }, { timeout: timeoutMs })
+        ric.requestIdleCallback(
+          () => {
+            resolve(callback() as T)
+          },
+          { timeout: timeoutMs }
+        )
       }, delay)
     })
   }
@@ -307,10 +310,7 @@ export function prefersHighContrast(): boolean {
 /**
  * 监听媒体查询变化
  */
-export function watchMediaQuery(
-  query: string,
-  callback: (matches: boolean) => void
-): () => void {
+export function watchMediaQuery(query: string, callback: (matches: boolean) => void): () => void {
   const mql = window.matchMedia(query)
   const handler = (e: MediaQueryListEvent) => callback(e.matches)
 
@@ -407,9 +407,10 @@ export function createTimeoutController(timeoutMs: number): {
 /**
  * 创建可取消的 Promise
  */
-export function createCancellablePromise<T>(
-  executor: (signal: AbortSignal) => Promise<T>
-): { promise: Promise<T>; cancel: () => void } {
+export function createCancellablePromise<T>(executor: (signal: AbortSignal) => Promise<T>): {
+  promise: Promise<T>
+  cancel: () => void
+} {
   const controller = new AbortController()
 
   const promise = executor(controller.signal)
