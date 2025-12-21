@@ -37,10 +37,38 @@ export function getMediaStreamUrl(mediaId: string): string {
 }
 
 /**
+ * 检测浏览器是否支持 WebP 格式
+ */
+let webpSupported: boolean | null = null
+export function supportsWebP(): boolean {
+  if (webpSupported !== null) return webpSupported
+
+  if (typeof window === 'undefined') return false
+
+  const canvas = document.createElement('canvas')
+  if (canvas.getContext && canvas.getContext('2d')) {
+    webpSupported = canvas.toDataURL('image/webp').indexOf('data:image/webp') === 0
+  } else {
+    webpSupported = false
+  }
+
+  return webpSupported
+}
+
+/**
  * 获取媒体缩略图 URL
+ * 如果浏览器支持 WebP 且后端已启用，自动请求 WebP 格式
  */
 export function getMediaThumbnailUrl(mediaId: string, size: MediaThumbnailSize = 'medium'): string {
-  return `/api/v1/media/${mediaId}/thumbnail?size=${size}`
+  const baseUrl = `/api/v1/media/${mediaId}/thumbnail?size=${size}`
+
+  // 如果浏览器支持 WebP，添加 format 参数
+  // 后端会根据实际情况返回 WebP 或回退到 JPEG
+  if (supportsWebP()) {
+    return `${baseUrl}&format=webp`
+  }
+
+  return baseUrl
 }
 
 /**

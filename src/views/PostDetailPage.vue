@@ -179,7 +179,10 @@ import {
 import { useCachedPost } from '@/composables/useCachedPosts'
 import { postCache } from '@/utils/cache'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
-import MediaLightbox from '@/components/ui/MediaLightbox.vue'
+import { defineAsyncComponent } from 'vue'
+
+// 动态导入大型组件以减少初始包体积
+const MediaLightbox = defineAsyncComponent(() => import('@/components/ui/MediaLightbox.vue'))
 
 const router = useRouter()
 const route = useRoute()
