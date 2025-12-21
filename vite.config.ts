@@ -163,12 +163,7 @@ export default defineConfig(({ mode }) => {
        * 排除预构建的依赖
        * 这些依赖按需加载，不需要预构建
        */
-      exclude: [
-        'vite-plugin-vue-devtools',
-        'photoswipe',
-        'masonry-layout',
-        'gsap',
-      ],
+      exclude: ['vite-plugin-vue-devtools', 'photoswipe', 'masonry-layout', 'gsap'],
 
       /** 是否强制重新预构建 */
       force: false,
@@ -268,7 +263,8 @@ export default defineConfig(({ mode }) => {
               // Vue 运行时（最稳定，变化最少）
               if (id.includes('vue/dist') || id.includes('@vue/runtime')) return 'vue-runtime'
               // Vue 响应式系统
-              if (id.includes('@vue/reactivity') || id.includes('@vue/shared')) return 'vue-reactivity'
+              if (id.includes('@vue/reactivity') || id.includes('@vue/shared'))
+                return 'vue-reactivity'
               // Vue 编译器相关（生产环境很少变化）
               if (id.includes('@vue/')) return 'vue-core'
 
@@ -310,11 +306,22 @@ export default defineConfig(({ mode }) => {
             // 业务代码分割：工具函数
             if (id.includes('/utils/')) return 'utils'
 
-            // 业务代码分割：API 层
-            if (id.includes('/api/')) return 'api'
-
             // 业务代码分割：composables
             if (id.includes('/composables/')) return 'composables'
+
+            // API 层按服务类型分割，避免统一打包导致未使用代码
+            if (id.includes('/api/')) {
+              // 客户端和类型定义 - 所有服务都依赖
+              if (id.includes('client.ts') || id.includes('index.ts')) return 'api-core'
+              // 用户认证相关
+              if (id.includes('authService')) return 'api-auth'
+              // 帖子服务 - 首页使用
+              if (id.includes('postService')) return 'api-posts'
+              // 作者服务
+              if (id.includes('authorService')) return 'api-authors'
+              // 其他服务按需加载
+              return 'api-misc'
+            }
           },
 
           /**
@@ -460,7 +467,7 @@ export default defineConfig(({ mode }) => {
               const setCookie = proxyRes.headers['set-cookie']
               if (setCookie && Array.isArray(setCookie)) {
                 proxyRes.headers['set-cookie'] = setCookie.map((cookie) =>
-                  cookie.replace(/;\s*Secure/gi, ''),
+                  cookie.replace(/;\s*Secure/gi, '')
                 )
               }
             })

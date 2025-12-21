@@ -1,0 +1,249 @@
+/**
+ * Critical CSS - 关键首屏样式
+ *
+ * 此文件将在构建时内联到 HTML <head> 中
+ * 用于优化 FCP (First Contentful Paint)
+ *
+ * 只包含首屏渲染必需的最小样式：
+ * - CSS 变量定义
+ * - 导航栏布局
+ * - 骨架屏样式
+ * - 基础布局
+ */
+
+/* ========== 核心 CSS 变量 ========== */
+:root {
+  /* 颜色 */
+  --color-primary: #3b82f6;
+  --color-primary-dark: #2563eb;
+  --color-white: #ffffff;
+  --color-gray-50: #f8fafc;
+  --color-gray-100: #f1f5f9;
+  --color-gray-200: #e2e8f0;
+  --color-gray-300: #cbd5e1;
+  --color-gray-600: #475569;
+  --color-gray-900: #0f172a;
+  --color-gray-950: #020617;
+
+  /* 语义颜色 */
+  --color-background: var(--color-gray-50);
+  --color-text-primary: var(--color-gray-900);
+  --color-text-secondary: var(--color-gray-600);
+
+  /* 玻璃态 */
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-bg-light: rgba(255, 255, 255, 0.5);
+  --glass-bg-strong: rgba(255, 255, 255, 0.85);
+  --glass-border: rgba(255, 255, 255, 0.3);
+  --glass-blur: blur(12px);
+
+  /* 间距 */
+  --spacing-2: 0.5rem;
+  --spacing-3: 0.75rem;
+  --spacing-4: 1rem;
+  --spacing-6: 1.5rem;
+
+  /* 圆角 */
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+
+  /* 布局 */
+  --navbar-height: 64px;
+  --container-max: 1400px;
+
+  /* 字体 */
+  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --text-base: 1rem;
+  --text-sm: 0.875rem;
+  --text-xl: 1.25rem;
+  --font-bold: 700;
+  --font-medium: 500;
+  --leading-normal: 1.5;
+
+  /* z-index */
+  --z-sticky: 200;
+  --z-fixed: 300;
+}
+
+/* 暗色模式 */
+[data-theme='dark'] {
+  --color-background: var(--color-gray-950);
+  --color-text-primary: var(--color-gray-50);
+  --color-text-secondary: var(--color-gray-300);
+  --glass-bg: rgba(30, 41, 59, 0.7);
+  --glass-bg-light: rgba(30, 41, 59, 0.5);
+  --glass-bg-strong: rgba(30, 41, 59, 0.9);
+  --glass-border: rgba(71, 85, 105, 0.4);
+}
+
+/* ========== 基础重置 ========== */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  -webkit-text-size-adjust: none;
+  text-size-adjust: none;
+}
+
+body {
+  min-height: 100vh;
+  font-family: var(--font-family);
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
+  color: var(--color-text-primary);
+  background: var(--color-background);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ========== 容器 ========== */
+.container {
+  width: 100%;
+  max-width: var(--container-max);
+  margin-inline: auto;
+  padding-inline: var(--spacing-4);
+}
+
+/* ========== 导航栏 ========== */
+.glass-navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: var(--z-sticky);
+  background: var(--glass-bg-strong);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.navbar {
+  display: flex;
+  align-items: center;
+  height: var(--navbar-height);
+}
+
+.navbar-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-4);
+}
+
+.navbar-brand {
+  font-size: var(--text-xl);
+  font-weight: var(--font-bold);
+  color: var(--color-text-primary);
+  text-decoration: none;
+}
+
+/* ========== 主内容区域 ========== */
+#app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+main {
+  flex: 1;
+  padding-top: var(--navbar-height);
+}
+
+/* ========== 骨架屏 ========== */
+@keyframes skeleton-pulse {
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-gray-200) 25%,
+    var(--color-gray-100) 50%,
+    var(--color-gray-200) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+  border-radius: var(--radius-md);
+  /* 添加固定宽高比以防止布局偏移 */
+  aspect-ratio: 16 / 9;
+}
+
+[data-theme='dark'] .skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(71, 85, 105, 0.3) 25%,
+    rgba(71, 85, 105, 0.5) 50%,
+    rgba(71, 85, 105, 0.3) 75%
+  );
+  background-size: 200% 100%;
+}
+
+/* ========== 玻璃卡片 ========== */
+.glass-card {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+}
+
+/* ========== Skip Link ========== */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: var(--spacing-4);
+  padding: var(--spacing-2) var(--spacing-4);
+  background: var(--color-primary);
+  color: var(--color-white);
+  border-radius: var(--radius-md);
+  font-weight: var(--font-medium);
+  z-index: 9999;
+}
+
+.skip-link:focus {
+  top: var(--spacing-4);
+}
+
+/* ========== 隐藏类 ========== */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ========== 响应式 ========== */
+@media (max-width: 768px) {
+  .container {
+    padding-inline: var(--spacing-4);
+  }
+}
+
+@media (min-width: 768px) {
+  .container {
+    padding-inline: var(--spacing-6);
+  }
+}
+
+/* ========== Reduced Motion ========== */
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+    opacity: 0.6;
+  }
+}
