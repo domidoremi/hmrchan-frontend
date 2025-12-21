@@ -16,6 +16,9 @@ export interface PostListItem {
   content: string
   url?: string
   thumbnail_url?: string | null
+  // 兼容后端未来可能提供的缩略图尺寸信息
+  thumbnail_width?: number | null
+  thumbnail_height?: number | null
   author_id: string
   author_name: string
   author_username: string
