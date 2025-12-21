@@ -363,6 +363,36 @@
   background-size: 200% 100%;
 }
 
+/* Skeleton text - 用于真实 DOM 元素的骨架屏效果 */
+.skeleton-text {
+  color: transparent !important;
+  user-select: none;
+  pointer-events: none;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(
+    90deg,
+    var(--color-gray-200) 25%,
+    var(--color-gray-100) 50%,
+    var(--color-gray-200) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  background-clip: text;
+  -webkit-background-clip: text;
+}
+
+[data-theme='dark'] .skeleton-text {
+  background: linear-gradient(
+    90deg,
+    var(--color-gray-700) 25%,
+    var(--color-gray-600) 50%,
+    var(--color-gray-700) 75%
+  );
+  background-size: 200% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+}
+
 /* ========== GPU Acceleration Helpers ========== */
 
 .gpu-accelerated {
