@@ -193,7 +193,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick, defineAsyncComponent } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import {
@@ -209,9 +209,11 @@ import {
   MessageSquare,
 } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores'
-import SettingsPanel from './SettingsPanel.vue'
 import { prefetchExploreData, prefetchAuthorsData } from '@/utils/prefetch'
 import { throttleRAF, scheduleDOMUpdate } from '@/utils/performance'
+
+// 懒加载设置面板，减少首屏 JS
+const SettingsPanel = defineAsyncComponent(() => import('./SettingsPanel.vue'))
 
 const router = useRouter()
 const authStore = useAuthStore()
