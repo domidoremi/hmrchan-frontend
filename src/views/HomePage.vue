@@ -41,12 +41,26 @@
           </div>
 
           <template v-else>
+            <!-- 为瀑布流容器预设固定列数和间隙，减少布局偏移 -->
             <div class="posts-masonry">
+              <!-- 预渲染骨架屏以稳定布局 -->
+              <template v-if="isLoading && posts.length === 0">
+                <div v-for="i in 12" :key="'skeleton-' + i" class="post-card glass-card">
+                  <div class="post-image skeleton" style="aspect-ratio: 16/9" />
+                  <div class="post-content">
+                    <div class="skeleton" style="height: 24px; width: 80%" />
+                    <div class="skeleton" style="height: 16px; width: 60%; margin-top: 8px" />
+                  </div>
+                </div>
+              </template>
+
+              <!-- 实际内容 -->
               <PostCard
                 v-for="post in visiblePosts"
                 :key="post.id"
                 :post="post"
                 @click="goToPost"
+                style="contain: layout style paint"
               />
             </div>
 
@@ -109,11 +123,19 @@ const setSentinelRef = (el: Element | null) => {
   sentinelRef.value = el as HTMLElement | null
 }
 
+/** 需要过滤的作者名称（无效数据） */
+const FILTERED_AUTHORS = ['twitter_unknown_unknown']
+
+/** 过滤无效作者的帖子 */
+const filteredPosts = computed(() =>
+  posts.value.filter((post) => !FILTERED_AUTHORS.includes(post.author_name?.toLowerCase() ?? ''))
+)
+
 const {
   visibleItems: visiblePosts,
   hasMoreToRender,
   revealNextBatch,
-} = useProgressiveRender(posts, { initialCount: 20, batchSize: 20 })
+} = useProgressiveRender(filteredPosts, { initialCount: 20, batchSize: 20 })
 
 const hasMoreForUi = computed(() => hasMore.value || hasMoreToRender.value)
 
