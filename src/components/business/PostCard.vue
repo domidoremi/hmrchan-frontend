@@ -17,13 +17,13 @@
       <div v-if="!isImageLoaded" class="post-image-placeholder" />
 
       <img
-        v-if="thumbnailSrc"
+        v-if="thumbnailSrc && shouldRenderImage"
         class="post-image"
         :class="{ 'is-loaded': isImageLoaded }"
         :src="thumbnailSrc"
         :alt="post.title"
-        width="640"
-        height="360"
+        :width="imageWidth"
+        :height="imageHeight"
         loading="lazy"
         decoding="async"
         @load="onImageLoad"
@@ -113,6 +113,9 @@ const emit = defineEmits<{
 
 const cardRef = ref<HTMLElement | null>(null)
 const isImageLoaded = ref(false)
+const shouldRenderImage = ref(true)
+const imageWidth = ref(640)
+const imageHeight = ref(360)
 
 let hasPrefetchedPostDetailPage = false
 
@@ -183,26 +186,43 @@ const thumbnailSrc = computed(() => {
 // 移除 srcset 以避免双重加载图片
 
 /**
+ * 真实宽高比状态（预加载获取）
+ */
+const preloadedAspectRatio = ref<string | null>(null)
+
+/**
  * 计算图片容器的宽高比
- * 优化 CLS：使用固定宽高比，不在图片加载后动态更新
+ * 优化 CLS：按优先级使用不同来源的宽高比
+ * 优先级：props > 后端数据 > 预加载 > 缓存 > 平台默认 > 全局默认
  */
 const wrapperAspectRatio = computed(() => {
-  // 优先使用 props 传入的宽高比
+  // 1. 优先使用 props 传入的宽高比（最高优先级）
   if (props.aspectRatio !== undefined && props.aspectRatio !== null && props.aspectRatio !== '') {
     return String(props.aspectRatio)
   }
 
-  // 使用缓存的宽高比（仅用于已知尺寸的帖子）
+  // 2. 使用后端提供的缩略图尺寸（如果后端已升级）
+  if (props.post.thumbnail_width && props.post.thumbnail_height) {
+    const ratio = (props.post.thumbnail_width / props.post.thumbnail_height).toFixed(4)
+    // 缓存后端数据以供后续使用
+    postAspectRatioCache.set(props.post.id, ratio)
+    return ratio
+  }
+
+  // 3. 使用预加载获取的真实宽高比
+  if (preloadedAspectRatio.value) return preloadedAspectRatio.value
+
+  // 4. 使用缓存的宽高比（仅用于已知尺寸的帖子）
   const cached = postAspectRatioCache.get(props.post.id)
   if (cached) return cached
 
-  // 根据平台使用对应的默认宽高比，减少 CLS
+  // 5. 根据平台使用对应的默认宽高比，减少 CLS
   const platform = props.post.platform?.toLowerCase()
   if (platform && PLATFORM_ASPECT_RATIOS[platform]) {
     return PLATFORM_ASPECT_RATIOS[platform]
   }
 
-  // 使用固定的默认宽高比，避免布局偏移
+  // 6. 使用固定的默认宽高比，避免布局偏移
   return DEFAULT_ASPECT_RATIO
 })
 
@@ -210,9 +230,70 @@ const imageWrapperStyle = computed<Record<string, string>>(() => ({
   aspectRatio: wrapperAspectRatio.value,
 }))
 
-watch(thumbnailSrc, () => {
+/**
+ * 预加载图片以获取真实尺寸
+ * 在渲染前获取宽高比，消除 CLS
+ */
+function preloadImageDimensions() {
+  // 1. 优先使用后端提供的尺寸
+  if (props.post.thumbnail_width && props.post.thumbnail_height) {
+    imageWidth.value = props.post.thumbnail_width
+    imageHeight.value = props.post.thumbnail_height
+    const ratio = (props.post.thumbnail_width / props.post.thumbnail_height).toFixed(4)
+    preloadedAspectRatio.value = ratio
+    postAspectRatioCache.set(props.post.id, ratio)
+    return
+  }
+
+  // 2. 检查缓存
+  const cachedRatio = postAspectRatioCache.get(props.post.id)
+  if (cachedRatio) {
+    const ratio = parseFloat(cachedRatio)
+    if (!isNaN(ratio)) {
+      // 根据固定宽度计算高度
+      imageWidth.value = 640
+      imageHeight.value = Math.round(640 / ratio)
+      preloadedAspectRatio.value = cachedRatio
+    }
+    return
+  }
+
+  if (!thumbnailSrc.value) return
+
+  const img = new Image()
+
+  img.onload = () => {
+    if (img.naturalWidth && img.naturalHeight) {
+      const ratio = (img.naturalWidth / img.naturalHeight).toFixed(4)
+      // 更新图片尺寸属性
+      imageWidth.value = img.naturalWidth
+      imageHeight.value = img.naturalHeight
+      // 更新预加载的宽高比
+      preloadedAspectRatio.value = ratio
+      // 同时缓存以供后续使用
+      postAspectRatioCache.set(props.post.id, ratio)
+    }
+  }
+
+  img.onerror = () => {
+    // 预加载失败，使用平台默认值（已在 computed 中处理）
+    // 确保图片仍然可以渲染
+    shouldRenderImage.value = true
+  }
+
+  // 开始预加载
+  img.src = thumbnailSrc.value
+}
+
+watch(thumbnailSrc, (newSrc, oldSrc) => {
   isImageLoaded.value = false
-})
+
+  // 当图片 URL 变化时，重新预加载获取尺寸
+  if (newSrc !== oldSrc) {
+    preloadedAspectRatio.value = null
+    preloadImageDimensions()
+  }
+}, { immediate: true })
 
 /**
  * Format number to compact form (1.2K, 3.5M)
