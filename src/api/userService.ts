@@ -36,6 +36,27 @@ export interface AvatarUploadResponse {
   url: string
 }
 
+/**
+ * 规范化头像 URL
+ * 将后端返回的相对路径转换为可访问的 URL
+ */
+export function normalizeAvatarUrl(url: string | null | undefined): string | null {
+  if (!url) return null
+
+  // 如果已经是完整 URL，直接返回
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return url
+  }
+
+  // 如果是 /uploads/ 开头的相对路径，转换为 API 代理路径
+  if (url.startsWith('/uploads/')) {
+    return `/api/v1${url}`
+  }
+
+  // 其他情况直接返回
+  return url
+}
+
 // 用户名更新限制
 export const USERNAME_LIMITS = {
   MIN_LENGTH: 3,

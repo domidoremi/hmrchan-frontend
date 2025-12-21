@@ -18,6 +18,12 @@ const routes: RouteRecordRaw[] = [
     meta: { title: 'nav.explore' },
   },
   {
+    path: '/search',
+    name: 'search',
+    component: () => import('@/views/SearchPage.vue'),
+    meta: { title: 'nav.search' },
+  },
+  {
     path: '/post/:id',
     name: 'post-detail',
     component: () => import('@/views/PostDetailPage.vue'),
