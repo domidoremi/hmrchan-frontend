@@ -46,21 +46,8 @@
           <template v-else>
             <!-- 为瀑布流容器预设固定列数和间隙，减少布局偏移 -->
             <div class="posts-masonry">
-              <!-- 预渲染骨架屏以稳定布局 -->
-              <template v-if="isLoading && posts.length === 0">
-                <div v-for="i in 12" :key="'skeleton-' + i" class="post-card glass-card">
-                  <div class="post-image skeleton" style="aspect-ratio: 16/9" />
-                  <div class="post-content">
-                    <!-- 使用真实 DOM 结构减少 CLS -->
-                    <h3 class="post-title skeleton-text" style="height: 24px; width: 80%" />
-                    <div class="post-footer">
-                      <p class="post-author skeleton-text" style="height: 16px; width: 60%" />
-                    </div>
-                  </div>
-                </div>
-              </template>
-
-              <!-- 实际内容 -->
+              <!-- 移除骨架屏以避免宽高比不匹配导致的 CLS -->
+              <!-- 直接渲染真实内容，图片未加载前显示占位符背景 -->
               <PostCard
                 v-for="post in visiblePosts"
                 :key="post.id"
@@ -68,6 +55,12 @@
                 @click="goToPost"
                 style="contain: layout style paint"
               />
+
+              <!-- 首次加载且无数据时显示加载指示器 -->
+              <div v-if="isLoading && posts.length === 0" class="loading-indicator">
+                <div class="spinner" />
+                <p>{{ $t('common.loading') }}</p>
+              </div>
             </div>
 
             <StateIndicator v-if="posts.length === 0" variant="empty" />
@@ -412,6 +405,21 @@ onMounted(() => {
 
 .post-content {
   padding: var(--spacing-4);
+}
+
+.loading-indicator {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-16) var(--spacing-4);
+  gap: var(--spacing-4);
+}
+
+.loading-indicator p {
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
 }
 
 @media (max-width: 768px) {
