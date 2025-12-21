@@ -8,26 +8,27 @@
     @focus="prefetchPostDetailPage"
   >
     <div class="post-image-wrapper" :style="imageWrapperStyle">
-      <div v-if="thumbnailSrc && !isImageLoaded" class="post-image-skeleton skeleton" />
-
       <!-- Platform Icon Badge -->
       <div v-if="post.platform" class="platform-icon" :title="platformLabel">
         <component :is="platformIcon" :size="14" />
       </div>
+
+      <!-- 预设固定尺寸的占位符，防止图片加载时的布局偏移 -->
+      <div v-if="!isImageLoaded" class="post-image-placeholder" />
 
       <img
         v-if="thumbnailSrc"
         class="post-image"
         :class="{ 'is-loaded': isImageLoaded }"
         :src="thumbnailSrc"
-        :srcset="thumbnailSrcset || undefined"
-        :sizes="thumbnailSizes"
         :alt="post.title"
+        width="640"
+        height="360"
         loading="lazy"
         decoding="async"
         @load="onImageLoad"
+        @error="onImageError"
       />
-      <div v-else class="post-image-placeholder" />
 
       <!-- Duration Badge (for videos) -->
       <div v-if="post.duration" class="duration-badge">
@@ -66,13 +67,18 @@ import {
   normalizeToThumbnailUrl,
   getResponsiveThumbnailSize,
   extractMediaIdFromUrl,
-  getMediaThumbnailUrl,
-  THUMBNAIL_SIZES,
 } from '@/utils/mediaOptimizer'
 import { thumbnailCache } from '@/utils/thumbnailCache'
 import { useCardAnimation } from '@/composables/useCardAnimation'
 
+/**
+ * 固定宽高比缓存 - 用于保持布局稳定，避免 CLS
+ * 只在首次加载时缓存，不在图片加载后更新
+ */
 const postAspectRatioCache = new Map<string, string>()
+
+/** 默认宽高比，用于防止布局偏移 */
+const DEFAULT_ASPECT_RATIO = '16 / 9'
 
 export interface PostCardProps {
   post: PostListItem
@@ -94,7 +100,6 @@ const emit = defineEmits<{
 
 const cardRef = ref<HTMLElement | null>(null)
 const isImageLoaded = ref(false)
-const measuredAspectRatio = ref<string | null>(null)
 
 let hasPrefetchedPostDetailPage = false
 
@@ -162,32 +167,24 @@ const thumbnailSrc = computed(() => {
   return optimized
 })
 
-const thumbnailSrcset = computed(() => {
-  const mediaId = extractMediaIdFromUrl(props.post.thumbnail_url)
-  if (!mediaId) return null
+// 移除 srcset 以避免双重加载图片
 
-  const small = getMediaThumbnailUrl(mediaId, 'small')
-  const medium = getMediaThumbnailUrl(mediaId, 'medium')
-
-  return `${small} ${THUMBNAIL_SIZES.small.width}w, ${medium} ${THUMBNAIL_SIZES.medium.width}w`
-})
-
-const thumbnailSizes = computed(() => {
-  if (!thumbnailSrcset.value) return undefined
-  return '(max-width: 599px) 50vw, 200px'
-})
-
+/**
+ * 计算图片容器的宽高比
+ * 优化 CLS：使用固定宽高比，不在图片加载后动态更新
+ */
 const wrapperAspectRatio = computed(() => {
+  // 优先使用 props 传入的宽高比
   if (props.aspectRatio !== undefined && props.aspectRatio !== null && props.aspectRatio !== '') {
     return String(props.aspectRatio)
   }
 
-  if (measuredAspectRatio.value) return measuredAspectRatio.value
-
+  // 使用缓存的宽高比（仅用于已知尺寸的帖子）
   const cached = postAspectRatioCache.get(props.post.id)
   if (cached) return cached
 
-  return '16 / 9'
+  // 使用固定的默认宽高比，避免布局偏移
+  return DEFAULT_ASPECT_RATIO
 })
 
 const imageWrapperStyle = computed<Record<string, string>>(() => ({
@@ -196,7 +193,6 @@ const imageWrapperStyle = computed<Record<string, string>>(() => ({
 
 watch(thumbnailSrc, () => {
   isImageLoaded.value = false
-  measuredAspectRatio.value = null
 })
 
 /**
@@ -222,14 +218,28 @@ function formatDuration(seconds: number): string {
   return `${m}:${s.toString().padStart(2, '0')}`
 }
 
+/**
+ * 图片加载完成回调
+ * 注意：为了避免 CLS，不再在加载后更新 aspect-ratio
+ * 只缓存宽高比供下次使用（如从详情页返回）
+ */
 function onImageLoad(event: Event) {
   const img = event.target as HTMLImageElement | null
   if (img?.naturalWidth && img?.naturalHeight) {
+    // 缓存实际宽高比，供后续使用（不触发当前布局更新）
     const ratio = (img.naturalWidth / img.naturalHeight).toFixed(4)
-    measuredAspectRatio.value = ratio
     postAspectRatioCache.set(props.post.id, ratio)
   }
   isImageLoaded.value = true
+}
+
+/**
+ * 图片加载失败回调
+ * 显示占位符并记录错误
+ */
+function onImageError() {
+  isImageLoaded.value = true
+  console.warn(`Failed to load image for post ${props.post.id}`)
 }
 
 function prefetchPostDetailPage() {
@@ -340,7 +350,8 @@ function handleClick() {
 
 .post-image-placeholder {
   width: 100%;
-  height: 100%;
+  /* 固定宽高比，防止布局偏移 */
+  aspect-ratio: 16 / 9;
   background: var(--glass-bg);
 }
 
