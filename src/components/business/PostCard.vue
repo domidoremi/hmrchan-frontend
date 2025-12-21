@@ -352,12 +352,19 @@ function handleClick() {
   display: block;
   object-fit: cover;
   opacity: 0;
-  transition: opacity var(--transition-fast);
-  will-change: transform;
+  filter: blur(10px);
+  transform: scale(1.05);
+  transition:
+    opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    filter 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: opacity, filter, transform;
 }
 
 .post-image.is-loaded {
   opacity: 1;
+  filter: blur(0);
+  transform: scale(1);
 }
 
 .post-image-skeleton {
