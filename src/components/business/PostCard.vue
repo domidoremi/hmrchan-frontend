@@ -77,7 +77,20 @@ import { useCardAnimation } from '@/composables/useCardAnimation'
  */
 const postAspectRatioCache = new Map<string, string>()
 
-/** 默认宽高比，用于防止布局偏移 */
+/**
+ * 根据平台设置默认宽高比，减少 CLS
+ * - TikTok: 9:16 (竖屏短视频)
+ * - YouTube/Twitter/其他: 16:9 (横屏)
+ */
+const PLATFORM_ASPECT_RATIOS: Record<string, string> = {
+  tiktok: '9 / 16',
+  youtube: '16 / 9',
+  twitter: '16 / 9',
+  bilibili: '16 / 9',
+  pixiv: '3 / 4',  // Pixiv 图片通常偏竖屏
+  weibo: '4 / 3',  // 微博图片多为方形或竖屏
+}
+
 const DEFAULT_ASPECT_RATIO = '16 / 9'
 
 export interface PostCardProps {
@@ -182,6 +195,12 @@ const wrapperAspectRatio = computed(() => {
   // 使用缓存的宽高比（仅用于已知尺寸的帖子）
   const cached = postAspectRatioCache.get(props.post.id)
   if (cached) return cached
+
+  // 根据平台使用对应的默认宽高比，减少 CLS
+  const platform = props.post.platform?.toLowerCase()
+  if (platform && PLATFORM_ASPECT_RATIOS[platform]) {
+    return PLATFORM_ASPECT_RATIOS[platform]
+  }
 
   // 使用固定的默认宽高比，避免布局偏移
   return DEFAULT_ASPECT_RATIO
