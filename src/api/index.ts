@@ -37,6 +37,7 @@ export {
 } from './commentService'
 export {
   userService,
+  normalizeAvatarUrl,
   type UserProfile,
   type UpdateProfileRequest,
   type ChangePasswordRequest,
@@ -79,10 +80,10 @@ export {
 export {
   discussionService,
   type Discussion,
-  type DiscussionReply,
+  type DiscussionComment,
   type DiscussionAuthor,
   type PostReference,
   type CreateDiscussionRequest,
-  type CreateReplyRequest,
+  type CreateCommentRequest as CreateDiscussionCommentRequest,
   type ListDiscussionsParams,
 } from './discussionService'

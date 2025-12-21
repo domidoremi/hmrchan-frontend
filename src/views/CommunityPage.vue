@@ -365,23 +365,23 @@ onMounted(() => {
 
 .community-tabs {
   display: flex;
-  gap: var(--spacing-2);
+  width: 100%;
   margin-bottom: var(--spacing-6);
-  overflow-x: auto;
-  padding-bottom: var(--spacing-2);
 }
 
 .tab-btn {
+  flex: 1;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: var(--spacing-2);
-  padding: var(--spacing-2) var(--spacing-4);
+  padding: var(--spacing-3) var(--spacing-4);
   border-radius: var(--radius-lg);
   font-size: var(--text-sm);
   font-weight: var(--font-medium);
   color: var(--color-text-secondary);
-  white-space: nowrap;
   transition: all var(--transition-fast);
+  text-align: center;
 }
 
 .tab-btn:hover {

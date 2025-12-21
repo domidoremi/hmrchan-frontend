@@ -93,6 +93,7 @@ const imageRef = ref<HTMLImageElement>()
 const shape = ref<'circle' | 'square'>('circle')
 
 const imageSize = ref({ width: 0, height: 0 })
+const imageOffset = ref({ x: 0, y: 0 })
 const cropBox = ref({ x: 0, y: 0, size: 150 })
 
 const isDragging = ref(false)
@@ -103,8 +104,8 @@ const dragStart = ref({ x: 0, y: 0, boxX: 0, boxY: 0, boxSize: 0 })
 const resizeHandles = ['nw', 'ne', 'sw', 'se']
 
 const cropBoxStyle = computed(() => ({
-  left: `${cropBox.value.x}px`,
-  top: `${cropBox.value.y}px`,
+  left: `${imageOffset.value.x + cropBox.value.x}px`,
+  top: `${imageOffset.value.y + cropBox.value.y}px`,
   width: `${cropBox.value.size}px`,
   height: `${cropBox.value.size}px`,
 }))
@@ -122,17 +123,26 @@ function onImageLoad() {
     1
   )
 
+  const displayWidth = img.naturalWidth * scale
+  const displayHeight = img.naturalHeight * scale
+
   imageSize.value = {
-    width: img.naturalWidth * scale,
-    height: img.naturalHeight * scale,
+    width: displayWidth,
+    height: displayHeight,
   }
 
-  const minDim = Math.min(imageSize.value.width, imageSize.value.height)
+  // 计算图片在容器中的居中偏移
+  imageOffset.value = {
+    x: (containerRect.width - displayWidth) / 2,
+    y: (containerRect.height - displayHeight) / 2,
+  }
+
+  const minDim = Math.min(displayWidth, displayHeight)
   const initialSize = Math.min(minDim * 0.8, 200)
 
   cropBox.value = {
-    x: (imageSize.value.width - initialSize) / 2,
-    y: (imageSize.value.height - initialSize) / 2,
+    x: (displayWidth - initialSize) / 2,
+    y: (displayHeight - initialSize) / 2,
     size: initialSize,
   }
 }
@@ -237,9 +247,11 @@ function crop() {
   const scaleX = img.naturalWidth / imageSize.value.width
   const scaleY = img.naturalHeight / imageSize.value.height
 
-  const sourceX = cropBox.value.x * scaleX
-  const sourceY = cropBox.value.y * scaleY
-  const sourceSize = cropBox.value.size * Math.max(scaleX, scaleY)
+  // 使用统一的缩放比例（因为图片保持宽高比）
+  const scale = Math.max(scaleX, scaleY)
+  const sourceX = cropBox.value.x * scale
+  const sourceY = cropBox.value.y * scale
+  const sourceSize = cropBox.value.size * scale
 
   if (shape.value === 'circle') {
     ctx.beginPath()
