@@ -102,7 +102,7 @@ worker-configuration.d.ts
 lighthouse-report.*
 *.report.html
 *.report.json
-
+lighthouse-reports/
 # =====================
 # Bun
 # =====================
