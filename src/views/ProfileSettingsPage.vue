@@ -25,7 +25,7 @@
               <img
                 v-if="profile.avatar_url"
                 class="avatar-preview"
-                :src="profile.avatar_url"
+                :src="normalizeAvatarUrl(profile.avatar_url) || profile.avatar_url"
                 :alt="profile.username"
               />
               <div v-else class="avatar-preview avatar-placeholder">
@@ -163,7 +163,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { ArrowLeft, User, Camera } from 'lucide-vue-next'
-import { userService, type UserProfile, ApiError } from '@/api'
+import { userService, normalizeAvatarUrl, type UserProfile, ApiError } from '@/api'
 import { useAuthStore, useToastStore } from '@/stores'
 import Button from '@/components/ui/Button.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
@@ -376,6 +376,8 @@ onMounted(() => {
 .settings-section {
   padding: var(--spacing-6);
   margin-bottom: var(--spacing-6);
+  position: relative;
+  z-index: 1;
 }
 
 .section-title {
@@ -440,10 +442,31 @@ onMounted(() => {
   display: flex;
   justify-content: flex-end;
   gap: var(--spacing-3);
-  margin-top: var(--spacing-4);
+  margin-top: var(--spacing-6);
+  padding-top: var(--spacing-4);
+  border-top: 1px solid var(--glass-border);
 }
 
 .settings-form {
-  display: contents;
+  max-width: 600px;
+}
+
+@media (max-width: 768px) {
+  .settings-section {
+    padding: var(--spacing-4);
+  }
+
+  .avatar-section {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .form-actions {
+    flex-direction: column;
+  }
+
+  .form-actions :deep(button) {
+    width: 100%;
+  }
 }
 </style>

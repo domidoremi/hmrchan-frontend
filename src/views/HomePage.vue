@@ -92,8 +92,6 @@ import { postService, type PostListItem, ApiError } from '@/api'
 import { postCache } from '@/utils/cache'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import { useMasonryColumns } from '@/composables/useMasonryColumns'
-import { preloadImages } from '@/utils/preloadImage'
-import { normalizeToThumbnailUrl } from '@/utils/mediaOptimizer'
 import Button from '@/components/ui/Button.vue'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
@@ -219,17 +217,6 @@ async function fetchLatestPosts(reset = true): Promise<boolean> {
       const containerWidth = getContainerWidth()
       const colWidth = getColumnWidth(containerWidth)
       distributePosts(filtered, colWidth, false)
-
-      // 预加载前 3 张图片以改善 LCP
-      const firstImages = res.items
-        .slice(0, 3)
-        .map(post => post.thumbnail_url)
-        .filter(Boolean)
-        .map(url => normalizeToThumbnailUrl(url, 'small'))
-
-      if (firstImages.length > 0) {
-        preloadImages(firstImages as string[], 3)
-      }
     } else {
       // Load More: 追加新内容到最矮列
       posts.value.push(...res.items)
