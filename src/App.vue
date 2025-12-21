@@ -39,14 +39,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, defineAsyncComponent } from 'vue'
 import { useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useThemeStore, useSettingsStore } from '@/stores'
 import AppNavbar from '@/components/layout/AppNavbar.vue'
 import AppFooter from '@/components/layout/AppFooter.vue'
-import ToastContainer from '@/components/ui/ToastContainer.vue'
 import PageLoading from '@/components/ui/PageLoading.vue'
+
+// Toast 容器懒加载，只在首次显示 toast 时加载
+const ToastContainer = defineAsyncComponent(() => import('@/components/ui/ToastContainer.vue'))
 
 const route = useRoute()
 const themeStore = useThemeStore()
