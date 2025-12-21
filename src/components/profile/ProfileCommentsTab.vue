@@ -91,7 +91,10 @@ import { apiClient, ApiError } from '@/api'
 import { useToastStore } from '@/stores'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
-import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
+import { defineAsyncComponent } from 'vue'
+
+// 动态导入对话框组件以减少初始包体积
+const ConfirmDialog = defineAsyncComponent(() => import('@/components/ui/ConfirmDialog.vue'))
 
 interface UserComment {
   id: string
