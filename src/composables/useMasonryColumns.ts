@@ -1,0 +1,174 @@
+import { ref, watch } from 'vue'
+import type { PostListItem } from '@/api/postService'
+
+/**
+ * 瀑布流多列布局 Composable
+ * 核心原理：JS 智能分发到多个物理隔离的列容器，避免 CSS column-count 的重排问题
+ */
+
+interface MasonryOptions {
+  /** 初始列数 */
+  initialColumnCount?: number
+  /** 卡片元信息高度（标题、作者等） */
+  metaHeight?: number
+  /** 卡片 padding */
+  cardPadding?: number
+}
+
+export function useMasonryColumns(options: MasonryOptions = {}) {
+  const {
+    initialColumnCount = 3,
+    metaHeight = 80,
+    cardPadding = 32
+  } = options
+
+  // 当前列数（响应式）
+  const columnCount = ref(initialColumnCount)
+
+  // 各列的数据
+  const columns = ref<PostListItem[][]>([])
+
+  // 虚拟高度表（内存中维护，避免读取 DOM offsetHeight）
+  const columnHeights = ref<number[]>([])
+
+  /**
+   * 初始化列容器
+   */
+  function initColumns() {
+    columns.value = Array.from({ length: columnCount.value }, () => [])
+    columnHeights.value = Array(columnCount.value).fill(0)
+  }
+
+  /**
+   * 估算单个卡片的渲染高度
+   * @param post - 帖子数据
+   * @param colWidth - 当前列宽
+   */
+  function estimateCardHeight(post: PostListItem, colWidth: number): number {
+    // 1. 图片高度（精确计算，使用后端数据）
+    let imgHeight = 0
+    if (post.thumbnail_width && post.thumbnail_height && post.thumbnail_width > 0) {
+      // 精确计算缩放后的图片高度
+      imgHeight = Math.round((post.thumbnail_height / post.thumbnail_width) * colWidth)
+    } else {
+      // 降级：使用平台默认宽高比
+      const platform = post.platform?.toLowerCase()
+      const aspectRatios: Record<string, number> = {
+        'tiktok': 16 / 9,
+        'youtube': 16 / 9,
+        'twitter': 16 / 9,
+        'bilibili': 16 / 9,
+        'pixiv': 4 / 3,
+        'weibo': 4 / 3
+      }
+      const ratio = aspectRatios[platform] || 16 / 9
+      imgHeight = Math.round(colWidth / ratio)
+    }
+
+    // 2. 标题高度（更精确的估算）
+    const titleLength = post.title?.length || 0
+    // 假设列宽约 300px，字体 14px，每行约 15 个汉字或 30 个英文字符
+    const charsPerLine = Math.floor(colWidth / 20)
+    const titleLines = Math.max(1, Math.ceil(titleLength / charsPerLine))
+    const titleHeight = Math.min(titleLines * 24, 72) // 最多 3 行
+
+    // 3. 总高度 = 图片 + 标题 + 元信息 + padding + gap
+    return imgHeight + titleHeight + metaHeight + cardPadding + 16 // 16px gap
+  }
+
+  /**
+   * 获取当前最矮的列索引（贪心算法）
+   */
+  function getShortestColumnIndex(): number {
+    if (columnHeights.value.length === 0) return 0
+
+    let minIndex = 0
+    let minHeight = columnHeights.value[0] ?? 0
+
+    for (let i = 1; i < columnCount.value; i++) {
+      const height = columnHeights.value[i] ?? 0
+      if (height < minHeight) {
+        minHeight = height
+        minIndex = i
+      }
+    }
+
+    return minIndex
+  }
+
+  /**
+   * 分发单个帖子到最矮的列
+   * @param post - 帖子数据
+   * @param colWidth - 列宽
+   */
+  function distributePost(post: PostListItem, colWidth: number) {
+    // 找到最矮列
+    const targetIndex = getShortestColumnIndex()
+
+    // 添加到该列
+    const targetColumn = columns.value[targetIndex]
+    if (targetColumn) {
+      targetColumn.push(post)
+
+      // 更新虚拟高度
+      const cardHeight = estimateCardHeight(post, colWidth)
+      const currentHeight = columnHeights.value[targetIndex] ?? 0
+      columnHeights.value[targetIndex] = currentHeight + cardHeight
+    }
+  }
+
+  /**
+   * 批量分发帖子列表
+   * @param posts - 帖子列表
+   * @param colWidth - 列宽
+   * @param append - 是否追加模式（false 则清空重建）
+   */
+  function distributePosts(posts: PostListItem[], colWidth: number, append = false) {
+    if (!append) {
+      initColumns()
+    }
+
+    posts.forEach(post => {
+      distributePost(post, colWidth)
+    })
+  }
+
+  /**
+   * 重新分配所有内容（用于响应式变化）
+   * @param allPosts - 所有帖子数据
+   * @param colWidth - 新的列宽
+   */
+  function redistribute(allPosts: PostListItem[], colWidth: number) {
+    distributePosts(allPosts, colWidth, false)
+  }
+
+  /**
+   * 获取当前列宽（基于容器宽度）
+   * @param containerWidth - 容器宽度
+   */
+  function getColumnWidth(containerWidth: number): number {
+    // 容器宽度 - 列间距
+    const gap = 16 // 列间距
+    const totalGap = gap * (columnCount.value - 1)
+    return (containerWidth - totalGap) / columnCount.value
+  }
+
+  // 监听列数变化，需要外部调用 redistribute
+  watch(columnCount, () => {
+    // 列数变化时，外部需要调用 redistribute 重新分配
+  })
+
+  // 初始化
+  initColumns()
+
+  return {
+    columns,
+    columnCount,
+    columnHeights,
+    distributePosts,
+    distributePost,
+    redistribute,
+    getColumnWidth,
+    initColumns
+  }
+}

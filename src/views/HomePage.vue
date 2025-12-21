@@ -44,22 +44,19 @@
           </div>
 
           <template v-else>
-            <!-- 为瀑布流容器预设固定列数和间隙，减少布局偏移 -->
-            <div class="posts-masonry">
-              <!-- 移除骨架屏以避免宽高比不匹配导致的 CLS -->
-              <!-- 直接渲染真实内容，图片未加载前显示占位符背景 -->
-              <PostCard
-                v-for="post in visiblePosts"
-                :key="post.id"
-                :post="post"
-                @click="goToPost"
-                style="contain: layout style paint"
-              />
-
-              <!-- 首次加载且无数据时显示加载指示器 -->
-              <div v-if="isLoading && posts.length === 0" class="loading-indicator">
-                <div class="spinner" />
-                <p>{{ $t('common.loading') }}</p>
+            <!-- 多列瀑布流容器 - 物理隔离，零重排 -->
+            <div ref="containerRef" class="masonry-container">
+              <div
+                v-for="(column, index) in columns"
+                :key="`col-${index}`"
+                class="masonry-column"
+              >
+                <PostCard
+                  v-for="post in column"
+                  :key="post.id"
+                  :post="post"
+                  @click="goToPost"
+                />
               </div>
             </div>
 
@@ -68,7 +65,7 @@
             <!-- Load More / Quota Indicator -->
             <LoadMoreSection
               v-if="posts.length > 0"
-              :count="visiblePosts.length"
+              :count="visiblePostsCount"
               :total="total"
               :has-more="hasMoreForUi"
               :loading="isLoadingMore"
@@ -85,7 +82,7 @@
 <script setup lang="ts">
 defineOptions({ name: 'HomePage' })
 
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
@@ -94,9 +91,8 @@ import { useSettingsStore } from '@/stores'
 import { postService, type PostListItem, ApiError } from '@/api'
 import { postCache } from '@/utils/cache'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
-import { useProgressiveRender } from '@/composables/useProgressiveRender'
+import { useMasonryColumns } from '@/composables/useMasonryColumns'
 import { preloadImages } from '@/utils/preloadImage'
-import { waitForImages } from '@/utils/batchImageLoader'
 import { normalizeToThumbnailUrl } from '@/utils/mediaOptimizer'
 import Button from '@/components/ui/Button.vue'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
@@ -110,13 +106,14 @@ const { settings } = storeToRefs(settingsStore)
 const { t } = useI18n()
 
 const posts = ref<PostListItem[]>([])
-const displayedPosts = ref<PostListItem[]>([])
+const allPosts = ref<PostListItem[]>([])
 const isLoading = ref(false)
 const isLoadingMore = ref(false)
 const error = ref<string | null>(null)
 const page = ref(1)
 const total = ref(0)
-const pageSize = 12
+const pageSize = 20
+const containerRef = ref<HTMLElement | null>(null)
 
 const hasMore = computed(() => posts.value.length < total.value)
 
@@ -129,18 +126,45 @@ const setSentinelRef = (el: Element | null) => {
 /** 需要过滤的作者名称（无效数据） */
 const FILTERED_AUTHORS = ['twitter_unknown_unknown']
 
-/** 过滤无效作者的帖子 */
-const filteredPosts = computed(() =>
-  displayedPosts.value.filter((post) => !FILTERED_AUTHORS.includes(post.author_name?.toLowerCase() ?? ''))
-)
+// 响应式列数配置
+const getResponsiveColumnCount = () => {
+  if (typeof window === 'undefined') return 3
+  const width = window.innerWidth
+  if (width < 640) return 2 // 移动端
+  if (width < 1024) return 3 // 平板
+  return 4 // 桌面
+}
 
-const {
-  visibleItems: visiblePosts,
-  hasMoreToRender,
-  revealNextBatch,
-} = useProgressiveRender(filteredPosts, { initialCount: 20, batchSize: 20 })
+const { columns, columnCount, distributePosts, redistribute, getColumnWidth } = useMasonryColumns({
+  initialColumnCount: getResponsiveColumnCount()
+})
 
-const hasMoreForUi = computed(() => hasMore.value || hasMoreToRender.value)
+// 计算容器宽度
+const getContainerWidth = () => {
+  if (!containerRef.value) return 1200
+  return containerRef.value.offsetWidth
+}
+
+// 响应式调整列数
+let resizeTimer: ReturnType<typeof setTimeout> | null = null
+const handleResize = () => {
+  if (resizeTimer) clearTimeout(resizeTimer)
+  resizeTimer = setTimeout(() => {
+    const newCount = getResponsiveColumnCount()
+    if (newCount !== columnCount.value) {
+      columnCount.value = newCount
+      const containerWidth = getContainerWidth()
+      const colWidth = getColumnWidth(containerWidth)
+      redistribute(allPosts.value, colWidth)
+    }
+  }, 300)
+}
+
+const visiblePostsCount = computed(() => {
+  return columns.value.reduce((sum, col) => sum + col.length, 0)
+})
+
+const hasMoreForUi = computed(() => hasMore.value)
 
 function buildListParams(targetPage: number) {
   return {
@@ -160,6 +184,7 @@ async function fetchLatestPosts(reset = true): Promise<boolean> {
     page.value = 1
     if (!hadData) {
       posts.value = []
+      allPosts.value = []
     }
   } else {
     if (isLoadingMore.value) return false
@@ -184,16 +209,18 @@ async function fetchLatestPosts(reset = true): Promise<boolean> {
     if (reset) {
       posts.value = res.items
 
-      // 批量等待首屏图片全部加载完成，避免渐进式加载导致的列重排 CLS
-      const firstBatchUrls = res.items
-        .slice(0, 12)
-        .map(post => post.thumbnail_url ? normalizeToThumbnailUrl(post.thumbnail_url, 'small') : null)
+      // 过滤无效作者
+      const filtered = res.items.filter(
+        (post) => !FILTERED_AUTHORS.includes(post.author_name?.toLowerCase() ?? '')
+      )
+      allPosts.value = filtered
 
-      // 等待首批图片加载完成后再显示内容
-      await waitForImages(firstBatchUrls)
-      displayedPosts.value = res.items
+      // 智能分发到各列（瀑布流核心逻辑）
+      const containerWidth = getContainerWidth()
+      const colWidth = getColumnWidth(containerWidth)
+      distributePosts(filtered, colWidth, false)
 
-      // 预加载前 3 张图片以改善 LCP（这些已经在 waitForImages 中加载过了）
+      // 预加载前 3 张图片以改善 LCP
       const firstImages = res.items
         .slice(0, 3)
         .map(post => post.thumbnail_url)
@@ -204,13 +231,17 @@ async function fetchLatestPosts(reset = true): Promise<boolean> {
         preloadImages(firstImages as string[], 3)
       }
     } else {
-      // 追加内容时也等待图片加载完成
-      const newBatchUrls = res.items
-        .map(post => post.thumbnail_url ? normalizeToThumbnailUrl(post.thumbnail_url, 'small') : null)
-
-      await waitForImages(newBatchUrls)
+      // Load More: 追加新内容到最矮列
       posts.value.push(...res.items)
-      displayedPosts.value = posts.value
+
+      const filtered = res.items.filter(
+        (post) => !FILTERED_AUTHORS.includes(post.author_name?.toLowerCase() ?? '')
+      )
+      allPosts.value.push(...filtered)
+
+      const containerWidth = getContainerWidth()
+      const colWidth = getColumnWidth(containerWidth)
+      distributePosts(filtered, colWidth, true)
     }
     total.value = res.total
 
@@ -236,11 +267,6 @@ async function fetchLatestPosts(reset = true): Promise<boolean> {
 }
 
 async function loadMore(): Promise<boolean> {
-  if (hasMoreToRender.value) {
-    revealNextBatch()
-    return true
-  }
-
   if (!hasMore.value || isLoading.value || isLoadingMore.value) return false
 
   const nextPage = page.value + 1
@@ -275,6 +301,14 @@ onMounted(() => {
   if (posts.value.length === 0) {
     fetchLatestPosts()
   }
+
+  // 监听窗口大小变化以调整列数
+  window.addEventListener('resize', handleResize)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', handleResize)
+  if (resizeTimer) clearTimeout(resizeTimer)
 })
 </script>
 
@@ -338,67 +372,41 @@ onMounted(() => {
   gap: var(--spacing-6);
 }
 
-.posts-masonry {
-  --masonry-columns: 5;
-  --masonry-gap: var(--spacing-4);
-
-  column-count: var(--masonry-columns);
-  column-gap: var(--masonry-gap);
+/* 多列瀑布流容器 - 使用 Flexbox 实现物理隔离 */
+.masonry-container {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-4);
+  width: 100%;
 }
 
-.posts-masonry > :deep(*) {
-  break-inside: avoid;
-  margin-bottom: var(--masonry-gap);
+/* 单列容器 - 每列独立的 Flex 容器 */
+.masonry-column {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-4);
+  min-width: 0; /* 防止 Flex 子项溢出 */
 }
 
-/* 超大屏幕 */
-@media (min-width: 1920px) {
-  .posts-masonry {
-    --masonry-columns: 5;
+/* 响应式间距调整 */
+@media (max-width: 768px) {
+  .masonry-container {
+    gap: var(--spacing-3);
+  }
+
+  .masonry-column {
+    gap: var(--spacing-3);
   }
 }
 
-/* 大屏幕 */
-@media (min-width: 1600px) and (max-width: 1919px) {
-  .posts-masonry {
-    --masonry-columns: 4;
+@media (max-width: 480px) {
+  .masonry-container {
+    gap: var(--spacing-2);
   }
-}
 
-/* 中等屏幕 */
-@media (min-width: 1200px) and (max-width: 1599px) {
-  .posts-masonry {
-    --masonry-columns: 3;
-  }
-}
-
-/* 小屏幕 */
-@media (min-width: 900px) and (max-width: 1199px) {
-  .posts-masonry {
-    --masonry-columns: 3;
-  }
-}
-
-/* 平板 */
-@media (min-width: 600px) and (max-width: 899px) {
-  .posts-masonry {
-    --masonry-columns: 3;
-    --masonry-gap: var(--spacing-3);
-  }
-}
-
-/* 手机 */
-@media (min-width: 400px) and (max-width: 599px) {
-  .posts-masonry {
-    --masonry-columns: 2;
-    --masonry-gap: var(--spacing-2);
-  }
-}
-
-/* 小手机 */
-@media (max-width: 399px) {
-  .posts-masonry {
-    --masonry-columns: 1;
+  .masonry-column {
+    gap: var(--spacing-2);
   }
 }
 
