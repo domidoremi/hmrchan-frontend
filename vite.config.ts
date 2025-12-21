@@ -295,9 +295,23 @@ export default defineConfig(({ mode }) => {
               return 'vendor'
             }
 
-            // 业务代码分割：共享组件
-            if (id.includes('/components/ui/')) return 'ui-components'
-            if (id.includes('/components/layout/')) return 'layout'
+            // 业务代码分割：UI 组件库（细粒度）
+            if (id.includes('/components/ui/')) {
+              // 首屏必需组件
+              if (id.includes('Button') || id.includes('StateIndicator')) return 'ui-core'
+              // Toast/Modal 等交互组件懒加载
+              if (id.includes('Toast') || id.includes('Modal') || id.includes('Dialog')) return 'ui-interactive'
+              // 其他 UI 组件
+              return 'ui-lazy'
+            }
+            if (id.includes('/components/icons/')) return 'icons'
+
+            // Layout 分层：核心导航 vs 设置面板
+            if (id.includes('/components/layout/')) {
+              if (id.includes('SettingsPanel')) return 'layout-settings'
+              return 'layout'
+            }
+
             if (id.includes('/components/business/')) return 'business-components'
 
             // 业务代码分割：stores
@@ -308,6 +322,12 @@ export default defineConfig(({ mode }) => {
 
             // 业务代码分割：composables
             if (id.includes('/composables/')) return 'composables'
+
+            // 动画工具按需分割
+            if (id.includes('/animations/') || id.includes('gsap')) {
+              if (id.includes('gsap/Flip') || id.includes('gsap/ScrollTrigger')) return 'animations-gsap'
+              return 'animations'
+            }
 
             // API 层按服务类型分割，避免统一打包导致未使用代码
             if (id.includes('/api/')) {
