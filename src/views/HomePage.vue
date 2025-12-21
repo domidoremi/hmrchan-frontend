@@ -96,6 +96,7 @@ import { postCache } from '@/utils/cache'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import { useProgressiveRender } from '@/composables/useProgressiveRender'
 import { preloadImages } from '@/utils/preloadImage'
+import { waitForImages } from '@/utils/batchImageLoader'
 import { normalizeToThumbnailUrl } from '@/utils/mediaOptimizer'
 import Button from '@/components/ui/Button.vue'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
@@ -109,6 +110,7 @@ const { settings } = storeToRefs(settingsStore)
 const { t } = useI18n()
 
 const posts = ref<PostListItem[]>([])
+const displayedPosts = ref<PostListItem[]>([])
 const isLoading = ref(false)
 const isLoadingMore = ref(false)
 const error = ref<string | null>(null)
@@ -129,7 +131,7 @@ const FILTERED_AUTHORS = ['twitter_unknown_unknown']
 
 /** 过滤无效作者的帖子 */
 const filteredPosts = computed(() =>
-  posts.value.filter((post) => !FILTERED_AUTHORS.includes(post.author_name?.toLowerCase() ?? ''))
+  displayedPosts.value.filter((post) => !FILTERED_AUTHORS.includes(post.author_name?.toLowerCase() ?? ''))
 )
 
 const {
@@ -182,7 +184,16 @@ async function fetchLatestPosts(reset = true): Promise<boolean> {
     if (reset) {
       posts.value = res.items
 
-      // 预加载首屏前 3 张图片，改善 LCP
+      // 批量等待首屏图片全部加载完成，避免渐进式加载导致的列重排 CLS
+      const firstBatchUrls = res.items
+        .slice(0, 12)
+        .map(post => post.thumbnail_url ? normalizeToThumbnailUrl(post.thumbnail_url, 'small') : null)
+
+      // 等待首批图片加载完成后再显示内容
+      await waitForImages(firstBatchUrls)
+      displayedPosts.value = res.items
+
+      // 预加载前 3 张图片以改善 LCP（这些已经在 waitForImages 中加载过了）
       const firstImages = res.items
         .slice(0, 3)
         .map(post => post.thumbnail_url)
@@ -193,7 +204,13 @@ async function fetchLatestPosts(reset = true): Promise<boolean> {
         preloadImages(firstImages as string[], 3)
       }
     } else {
+      // 追加内容时也等待图片加载完成
+      const newBatchUrls = res.items
+        .map(post => post.thumbnail_url ? normalizeToThumbnailUrl(post.thumbnail_url, 'small') : null)
+
+      await waitForImages(newBatchUrls)
       posts.value.push(...res.items)
+      displayedPosts.value = posts.value
     }
     total.value = res.total
 
