@@ -167,7 +167,10 @@ import { userService, type UserProfile, ApiError } from '@/api'
 import { useAuthStore, useToastStore } from '@/stores'
 import Button from '@/components/ui/Button.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
-import ImageCropper from '@/components/ui/ImageCropper.vue'
+import { defineAsyncComponent } from 'vue'
+
+// 动态导入大型组件以减少初始包体积
+const ImageCropper = defineAsyncComponent(() => import('@/components/ui/ImageCropper.vue'))
 
 const router = useRouter()
 const { t } = useI18n()
