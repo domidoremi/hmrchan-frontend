@@ -34,8 +34,11 @@
             <div v-for="i in 6" :key="i" class="post-card glass-card">
               <div class="post-image skeleton" style="aspect-ratio: 16/9" />
               <div class="post-content">
-                <div class="skeleton" style="height: 24px; width: 80%" />
-                <div class="skeleton" style="height: 16px; width: 60%; margin-top: 8px" />
+                <!-- 使用真实 DOM 结构减少 CLS -->
+                <h3 class="post-title skeleton-text" style="height: 24px; width: 80%" />
+                <div class="post-footer">
+                  <p class="post-author skeleton-text" style="height: 16px; width: 60%" />
+                </div>
               </div>
             </div>
           </div>
@@ -48,8 +51,11 @@
                 <div v-for="i in 12" :key="'skeleton-' + i" class="post-card glass-card">
                   <div class="post-image skeleton" style="aspect-ratio: 16/9" />
                   <div class="post-content">
-                    <div class="skeleton" style="height: 24px; width: 80%" />
-                    <div class="skeleton" style="height: 16px; width: 60%; margin-top: 8px" />
+                    <!-- 使用真实 DOM 结构减少 CLS -->
+                    <h3 class="post-title skeleton-text" style="height: 24px; width: 80%" />
+                    <div class="post-footer">
+                      <p class="post-author skeleton-text" style="height: 16px; width: 60%" />
+                    </div>
                   </div>
                 </div>
               </template>
@@ -96,6 +102,8 @@ import { postService, type PostListItem, ApiError } from '@/api'
 import { postCache } from '@/utils/cache'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import { useProgressiveRender } from '@/composables/useProgressiveRender'
+import { preloadImages } from '@/utils/preloadImage'
+import { normalizeToThumbnailUrl } from '@/utils/mediaOptimizer'
 import Button from '@/components/ui/Button.vue'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
@@ -180,6 +188,17 @@ async function fetchLatestPosts(reset = true): Promise<boolean> {
 
     if (reset) {
       posts.value = res.items
+
+      // 预加载首屏前 3 张图片，改善 LCP
+      const firstImages = res.items
+        .slice(0, 3)
+        .map(post => post.thumbnail_url)
+        .filter(Boolean)
+        .map(url => normalizeToThumbnailUrl(url, 'small'))
+
+      if (firstImages.length > 0) {
+        preloadImages(firstImages as string[], 3)
+      }
     } else {
       posts.value.push(...res.items)
     }
