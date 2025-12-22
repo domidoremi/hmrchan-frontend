@@ -49,14 +49,10 @@
               <div
                 v-for="(column, index) in columns"
                 :key="`col-${index}`"
+                :ref="(el) => setColumnRef(el, index)"
                 class="masonry-column"
               >
-                <PostCard
-                  v-for="post in column"
-                  :key="post.id"
-                  :post="post"
-                  @click="goToPost"
-                />
+                <PostCard v-for="post in column" :key="post.id" :post="post" @click="goToPost" />
               </div>
             </div>
 
@@ -82,7 +78,7 @@
 <script setup lang="ts">
 defineOptions({ name: 'HomePage' })
 
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, type ComponentPublicInstance } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
@@ -112,8 +108,21 @@ const page = ref(1)
 const total = ref(0)
 const pageSize = 20
 const containerRef = ref<HTMLElement | null>(null)
+const columnRefs = ref<(HTMLElement | null)[]>([])
 
 const hasMore = computed(() => posts.value.length < total.value)
+
+// 设置列元素引用
+const setColumnRef = (el: Element | ComponentPublicInstance | null, index: number) => {
+  if (el) {
+    columnRefs.value[index] = el as HTMLElement
+  }
+}
+
+// 获取所有列的真实 DOM 高度
+const getRealColumnHeights = (): number[] => {
+  return columnRefs.value.map((el) => el?.offsetHeight ?? 0)
+}
 
 const sentinelRef = ref<HTMLElement | null>(null)
 
@@ -134,7 +143,7 @@ const getResponsiveColumnCount = () => {
 }
 
 const { columns, columnCount, distributePosts, redistribute, getColumnWidth } = useMasonryColumns({
-  initialColumnCount: getResponsiveColumnCount()
+  initialColumnCount: getResponsiveColumnCount(),
 })
 
 // 计算容器宽度
@@ -228,7 +237,10 @@ async function fetchLatestPosts(reset = true): Promise<boolean> {
 
       const containerWidth = getContainerWidth()
       const colWidth = getColumnWidth(containerWidth)
-      distributePosts(filtered, colWidth, true)
+
+      // 🔑 关键修复：获取真实 DOM 高度，校准虚拟高度，防止新帖子堆积到单列
+      const realHeights = getRealColumnHeights()
+      distributePosts(filtered, colWidth, true, realHeights)
     }
     total.value = res.total
 
