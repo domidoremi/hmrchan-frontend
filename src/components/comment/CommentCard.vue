@@ -508,4 +508,24 @@ onUnmounted(() => {
   gap: var(--spacing-2);
   margin-top: var(--spacing-2);
 }
+
+/* ========== 响应式 ========== */
+@media (max-width: 768px) {
+  .comment-card.is-reply {
+    margin-left: var(--spacing-4);
+  }
+
+  .reply-form-wrapper {
+    padding-left: var(--spacing-4);
+  }
+
+  .comment-actions {
+    flex-wrap: wrap;
+  }
+
+  .action-btn {
+    font-size: var(--text-xs);
+    padding: var(--spacing-1);
+  }
+}
 </style>
