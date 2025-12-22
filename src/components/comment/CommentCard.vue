@@ -117,6 +117,16 @@
         </div>
       </Transition>
     </div>
+
+    <!-- Delete Confirmation Dialog -->
+    <ConfirmDialog
+      v-model:is-open="showDeleteDialog"
+      :title="$t('comment.confirmDeleteTitle')"
+      :message="$t('comment.confirmDeleteMessage')"
+      :confirm-text="$t('common.delete')"
+      variant="danger"
+      @confirm="confirmDelete"
+    />
   </article>
 </template>
 
@@ -137,6 +147,7 @@ import {
 import { useAuthStore, useCommentsStore, useToastStore } from '@/stores'
 import type { Comment } from '@/types'
 import CommentForm from './CommentForm.vue'
+import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
 
 interface Props {
   comment: Comment
@@ -166,6 +177,7 @@ const showMenu = ref(false)
 const showReplyForm = ref(false)
 const showReplies = ref(false)
 const isLoadingReplies = ref(false)
+const showDeleteDialog = ref(false)
 const replyFormRef = ref<InstanceType<typeof CommentForm>>()
 
 async function handleShowReplies() {
@@ -266,12 +278,12 @@ function handleReplySubmitted() {
   emit('reply', props.comment.id)
 }
 
-async function handleDelete() {
+function handleDelete() {
   showMenu.value = false
+  showDeleteDialog.value = true
+}
 
-  const confirmed = window.confirm(t('comment.confirmDelete'))
-  if (!confirmed) return
-
+async function confirmDelete() {
   const result = await commentsStore.deleteComment(props.postId, String(props.comment.id))
   if (result.success) {
     toastStore.success(t('comment.deleteSuccess'))
