@@ -112,34 +112,6 @@
           </article>
         </div>
       </section>
-
-      <!-- My Comments (requires auth) -->
-      <section v-if="activeTab === 'my'" class="community-section">
-        <div v-if="!isAuthenticated" class="empty-state glass-card">
-          <User :size="48" class="empty-icon" />
-          <p>{{ $t('comment.loginRequired') }}</p>
-          <Button @click="goToLogin">{{ $t('nav.login') }}</Button>
-        </div>
-        <div v-else class="my-comments-list">
-          <div v-for="i in 3" :key="i" class="comment-item glass-card">
-            <div class="skeleton" style="height: 60px" />
-          </div>
-        </div>
-      </section>
-
-      <!-- Saved Comments (requires auth) -->
-      <section v-if="activeTab === 'saved'" class="community-section">
-        <div v-if="!isAuthenticated" class="empty-state glass-card">
-          <Bookmark :size="48" class="empty-icon" />
-          <p>{{ $t('comment.loginRequired') }}</p>
-          <Button @click="goToLogin">{{ $t('nav.login') }}</Button>
-        </div>
-        <div v-else class="saved-comments-list">
-          <div v-for="i in 3" :key="i" class="comment-item glass-card">
-            <div class="skeleton" style="height: 60px" />
-          </div>
-        </div>
-      </section>
     </div>
   </div>
 </template>
@@ -150,7 +122,7 @@ defineOptions({ name: 'CommunityPage' })
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
-import { MessageSquare, Flame, User, Bookmark } from 'lucide-vue-next'
+import { MessageSquare, Flame } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores'
 import { postService, type PostListItem, ApiError } from '@/api'
@@ -197,8 +169,6 @@ let hasPrefetchedPostDetailPage = false
 const tabs = [
   { id: 'recent', label: 'community.recentDiscussions', icon: MessageSquare },
   { id: 'hot', label: 'community.hotTopics', icon: Flame },
-  { id: 'my', label: 'community.myComments', icon: User },
-  { id: 'saved', label: 'community.savedComments', icon: Bookmark },
 ]
 
 function handleDiscussionCreated() {

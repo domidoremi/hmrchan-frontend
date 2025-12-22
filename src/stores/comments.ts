@@ -45,6 +45,80 @@ export const useCommentsStore = defineStore('comments', () => {
     }
   }
 
+  // 获取评论回复
+  async function fetchReplies(commentId: string, page = 1) {
+    // 查找该评论属于哪个帖子 (这里有点低效，但我们的数据结构是 Map<PostID, Comment[]>)
+    // 在实际应用中，组件调用时应该知道 postId
+    let targetPostId = ''
+    let targetComment: Comment | null = null
+
+    // 尝试在所有帖子的评论中查找
+    for (const [pId, pComments] of comments.value.entries()) {
+      const found = findComment(pComments, commentId)
+      if (found) {
+        targetPostId = pId
+        targetComment = found
+        break
+      }
+    }
+
+    if (!targetComment) return { success: false, error: 'comment.notFound' }
+
+    return fetchRepliesForPost(targetPostId, commentId, page)
+  }
+
+  // 内部专用：已知 postId 的回复获取
+  async function fetchRepliesForPost(postId: string, commentId: string, page = 1) {
+    try {
+      const { commentService } = await import('@/api/commentService')
+      const data = await commentService.getCommentReplies(commentId, page)
+
+      // 更新本地状态
+      if (data.items && data.items.length > 0) {
+        // 递归查找并更新 replies
+        const postComments = comments.value.get(postId) || []
+
+        const fetchedReplies = (data.items ?? []) as unknown as Comment[]
+
+        const updateCommentReplies = (list: Comment[]): Comment[] => {
+          return list.map((c) => {
+            if (String(c.id) === String(commentId)) {
+              // 合并现有的回复和新获取的回复，去重
+              const existingReplies: Comment[] = c.replies || []
+              const existingIds = new Set(existingReplies.map((r) => String(r.id)))
+              const newReplies = fetchedReplies.filter((r) => !existingIds.has(String(r.id)))
+
+              const updated: Comment = {
+                ...c,
+                replies: [...existingReplies, ...newReplies],
+                replies_count: Math.max(
+                  c.replies_count || 0,
+                  existingReplies.length + newReplies.length
+                ),
+              }
+              return updated
+            }
+            if (c.replies && c.replies.length > 0) {
+              const updatedReplies = updateCommentReplies(c.replies)
+              const updated: Comment = {
+                ...c,
+                replies: updatedReplies,
+              }
+              return updated
+            }
+            return c
+          })
+        }
+
+        comments.value.set(postId, updateCommentReplies(postComments))
+      }
+
+      return { success: true, data: data.items }
+    } catch {
+      return { success: false, error: 'comment.error.fetchRepliesFailed' }
+    }
+  }
+
   // 添加评论
   async function addComment(postId: string, formData: CommentFormData) {
     // 速率限制检查
@@ -285,5 +359,6 @@ export const useCommentsStore = defineStore('comments', () => {
     reportComment,
     clearPostComments,
     clearAllComments,
+    fetchReplies,
   }
 })

@@ -42,12 +42,7 @@
           </div>
 
           <template v-else-if="activeTab === 'posts'">
-            <StateIndicator
-              v-if="error"
-              variant="error"
-              :description="error"
-              @action="search"
-            />
+            <StateIndicator v-if="error" variant="error" :description="error" @action="search" />
 
             <StateIndicator
               v-else-if="results.length === 0"
@@ -56,19 +51,10 @@
             />
 
             <div v-else class="posts-grid">
-              <PostCard
-                v-for="post in results"
-                :key="post.id"
-                :post="post"
-                @click="goToPost"
-              />
+              <PostCard v-for="post in results" :key="post.id" :post="post" @click="goToPost" />
             </div>
 
-            <LoadMoreSection
-              v-if="hasMore"
-              :is-loading="isLoadingMore"
-              @load-more="loadMore"
-            />
+            <LoadMoreSection v-if="hasMore" :is-loading="isLoadingMore" @load-more="loadMore" />
           </template>
 
           <template v-else-if="activeTab === 'authors'">
@@ -104,7 +90,9 @@
                 <div class="author-info">
                   <h3 class="author-name">{{ author.name }}</h3>
                   <p class="author-platform">{{ author.platform }}</p>
-                  <p class="author-posts">{{ $t('author.postCount', { count: author.post_count }) }}</p>
+                  <p class="author-posts">
+                    {{ $t('author.postCount', { count: author.post_count }) }}
+                  </p>
                 </div>
               </article>
             </div>
@@ -177,7 +165,7 @@ async function search() {
     })
     results.value = res.items
     total.value = res.total
-  } catch (err) {
+  } catch {
     error.value = t('common.error')
     results.value = []
   } finally {
