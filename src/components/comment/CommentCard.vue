@@ -58,7 +58,7 @@
         <span v-if="comment.likes_count > 0">{{ comment.likes_count }}</span>
       </button>
 
-      <button class="action-btn" @click="handleReply" :disabled="!isAuthenticated">
+      <button class="action-btn" @click="handleReply" :disabled="!isAuthenticated || !canReply">
         <MessageCircle :size="16" />
         <span>{{ $t('comment.reply') }}</span>
       </button>
@@ -89,7 +89,10 @@
 
     <!-- Replies -->
     <div
-      v-if="comment.replies_count > 0 || (comment.replies && comment.replies.length > 0)"
+      v-if="
+        canShowNestedReplies &&
+        (comment.replies_count > 0 || (comment.replies && comment.replies.length > 0))
+      "
       class="replies-section"
     >
       <button
@@ -111,6 +114,7 @@
             :comment="reply"
             :post-id="postId"
             :is-reply="true"
+            :depth="currentDepth + 1"
             @reply="$emit('reply', $event)"
             @deleted="$emit('deleted', $event)"
           />
@@ -156,12 +160,20 @@ interface Props {
   postId: string
   isReply?: boolean
   showActions?: boolean
+  depth?: number // 当前嵌套深度
 }
+
+const MAX_DEPTH = 3 // 最大嵌套层级（3层：评论 -> 回复 -> 回复的回复）
 
 const props = withDefaults(defineProps<Props>(), {
   isReply: false,
   showActions: true,
+  depth: 0,
 })
+
+const currentDepth = computed(() => props.depth || 0)
+const canReply = computed(() => currentDepth.value < MAX_DEPTH) // 达到最大深度后不能再回复
+const canShowNestedReplies = computed(() => currentDepth.value < MAX_DEPTH) // 达到最大深度后不显示嵌套回复
 
 const emit = defineEmits<{
   reply: [commentId: string]
