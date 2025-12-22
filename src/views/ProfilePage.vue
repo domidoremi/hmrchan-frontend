@@ -48,6 +48,7 @@ import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { Heart, MessageSquare, ThumbsUp, Clock, Bell, Settings } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores'
+import { normalizeAvatarUrl } from '@/api/userService'
 import Button from '@/components/ui/Button.vue'
 import ProfileFavoritesTab from '@/components/profile/ProfileFavoritesTab.vue'
 import ProfileCommentsTab from '@/components/profile/ProfileCommentsTab.vue'
@@ -63,10 +64,20 @@ const activeTab = ref<'favorites' | 'comments' | 'likes' | 'history' | 'notifica
 
 const tabs = [
   { id: 'favorites' as const, label: 'profile.tabs.favorites', icon: Heart, count: undefined },
-  { id: 'comments' as const, label: 'profile.tabs.comments', icon: MessageSquare, count: undefined },
+  {
+    id: 'comments' as const,
+    label: 'profile.tabs.comments',
+    icon: MessageSquare,
+    count: undefined,
+  },
   { id: 'likes' as const, label: 'profile.tabs.likes', icon: ThumbsUp, count: undefined },
   { id: 'history' as const, label: 'profile.tabs.history', icon: Clock, count: undefined },
-  { id: 'notifications' as const, label: 'profile.tabs.notifications', icon: Bell, count: undefined },
+  {
+    id: 'notifications' as const,
+    label: 'profile.tabs.notifications',
+    icon: Bell,
+    count: undefined,
+  },
 ]
 
 const currentTabComponent = computed(() => {
@@ -81,7 +92,8 @@ const currentTabComponent = computed(() => {
 })
 
 const userAvatar = computed(() => {
-  if (user.value?.avatar_url) return user.value.avatar_url
+  const url = normalizeAvatarUrl(user.value?.avatar_url)
+  if (url) return url
   return `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.value?.username || 'default'}`
 })
 
