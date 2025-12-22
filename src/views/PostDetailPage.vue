@@ -418,6 +418,7 @@ async function toggleFavorite() {
       }
       isFavorited.value = false
       favoriteId.value = null
+      toastStore.success(t('post.unfavorite', '已取消收藏'))
       return
     }
 
@@ -427,7 +428,14 @@ async function toggleFavorite() {
     toastStore.success(t('post.favorite'))
   } catch (err) {
     if (err instanceof ApiError) {
-      toastStore.error(err.message)
+      // 502 网关错误特殊处理
+      if (err.message.includes('502') || err.message.includes('网关')) {
+        toastStore.error(t('post.favoriteServerError', '收藏服务暂时不可用，请稍后重试'))
+      } else {
+        toastStore.error(err.message)
+      }
+    } else {
+      toastStore.error(t('common.error'))
     }
   } finally {
     isFavoriteLoading.value = false

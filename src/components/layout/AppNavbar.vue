@@ -115,9 +115,13 @@
         @click.stop
       >
         <div class="user-info">
-          <img :src="userAvatar" :alt="user?.username" class="user-avatar-lg" />
+          <img
+            :src="userAvatar"
+            :alt="user ? getUserDisplayName(user) : ''"
+            class="user-avatar-lg"
+          />
           <div>
-            <div class="user-name">{{ user?.username }}</div>
+            <div class="user-name">{{ user ? getUserDisplayName(user) : '' }}</div>
             <div class="user-email">{{ user?.email }}</div>
           </div>
         </div>
@@ -208,6 +212,7 @@ import {
   MessageSquare,
 } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores'
+import { getUserDisplayName } from '@/utils/user'
 import { prefetchExploreData, prefetchAuthorsData } from '@/utils/prefetch'
 import { throttleRAF, scheduleDOMUpdate } from '@/utils/performance'
 
