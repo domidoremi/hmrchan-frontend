@@ -17,7 +17,7 @@
             <img
               v-if="author.avatar_url"
               class="author-avatar"
-              :src="author.avatar_url"
+              :src="normalizeAvatarUrl(author.avatar_url) || author.avatar_url"
               :alt="author.name"
               loading="lazy"
               decoding="async"
@@ -63,6 +63,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { authorService, type AuthorResponse, type PostListItem, ApiError } from '@/api'
+import { normalizeAvatarUrl } from '@/api/userService'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import PostCard from '@/components/business/PostCard.vue'
 
