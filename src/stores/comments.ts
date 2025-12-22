@@ -82,10 +82,11 @@ export const useCommentsStore = defineStore('comments', () => {
       // 记录速率限制
       commentRateLimiter.record()
 
-      // 更新本地状态 - 深拷贝确保响应式更新
+      // 更新本地状态
+      // 后端返回的 newComment 已包含 is_thread_owner, replied_to_user, replies 等字段
       const postComments = comments.value.get(postId) || []
       if (formData.parent_id) {
-        // 回复 - 递归查找并更新父评论
+        // 回复 - 递归查找并更新父评论的 replies 数组
         const updateReplies = (commentList: Comment[]): Comment[] => {
           return commentList.map((comment) => {
             if (comment.id === formData.parent_id) {
@@ -106,7 +107,7 @@ export const useCommentsStore = defineStore('comments', () => {
         }
         comments.value.set(postId, updateReplies(postComments))
       } else {
-        // 顶级评论
+        // 顶级评论 - 后端返回的数据已包含 is_thread_owner: true
         comments.value.set(postId, [newComment, ...postComments])
       }
 
