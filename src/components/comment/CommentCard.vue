@@ -2,9 +2,9 @@
   <article class="comment-card" :class="{ 'is-reply': isReply }">
     <!-- Comment Header -->
     <div class="comment-header">
-      <img :src="avatarUrl" :alt="comment.user.username" class="comment-avatar" />
+      <img :src="avatarUrl" :alt="getUserDisplayName(comment.user)" class="comment-avatar" />
       <div class="comment-meta">
-        <span class="comment-author">{{ comment.user.username }}</span>
+        <span class="comment-author">{{ getUserDisplayName(comment.user) }}</span>
         <span v-if="comment.is_thread_owner" class="floor-badge">层主</span>
         <span v-if="userLevelBadge" class="user-level-badge" :class="comment.user.level">
           {{ userLevelBadge }}
@@ -40,7 +40,7 @@
     <div class="comment-content">
       <p>
         <span v-if="comment.replied_to_user" class="reply-to">
-          @{{ comment.replied_to_user.username }}
+          @{{ getUserDisplayName(comment.replied_to_user) }}
         </span>
         {{ comment.content }}
       </p>
@@ -146,6 +146,7 @@ import {
 } from 'lucide-vue-next'
 import { useAuthStore, useCommentsStore, useToastStore } from '@/stores'
 import type { Comment } from '@/types'
+import { getUserDisplayName } from '@/utils/user'
 import CommentForm from './CommentForm.vue'
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
 

@@ -49,20 +49,18 @@
           <section class="settings-section glass-card">
             <h2 class="section-title">{{ $t('profile.basicInfo') }}</h2>
 
+            <!-- 只读用户名显示 -->
             <div class="form-group">
               <label for="username">{{ $t('profile.username') }}</label>
               <input
                 id="username"
-                v-model="form.username"
+                :value="profile.username"
                 type="text"
                 class="glass-input"
-                :disabled="!canChangeUsername"
-                :placeholder="$t('profile.usernamePlaceholder')"
+                disabled
+                readonly
               />
-              <p v-if="!canChangeUsername" class="field-hint">
-                {{ $t('profile.usernameChangeLimit', { days: daysUntilUsernameChange }) }}
-              </p>
-              <p class="field-hint">{{ $t('profile.usernameHint') }}</p>
+              <p class="field-hint">{{ $t('profile.usernameReadonly', '用户名不可修改') }}</p>
             </div>
 
             <div class="form-group">
@@ -75,6 +73,7 @@
                 maxlength="255"
                 :placeholder="$t('profile.fullNamePlaceholder')"
               />
+              <p class="field-hint">{{ $t('profile.displayNameHint', '这是您的公开显示名称') }}</p>
             </div>
 
             <div class="form-group">
@@ -159,7 +158,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { ArrowLeft, User, Camera } from 'lucide-vue-next'
@@ -197,14 +196,6 @@ const passwordForm = ref({
   new_password: '',
   confirm_password: '',
 })
-
-const canChangeUsername = computed(() =>
-  userService.canChangeUsername(profile.value?.username_changed_at)
-)
-
-const daysUntilUsernameChange = computed(() =>
-  userService.getDaysUntilUsernameChange(profile.value?.username_changed_at)
-)
 
 function goBack() {
   router.back()
@@ -326,11 +317,14 @@ async function handleCroppedImage(blob: Blob) {
 
   try {
     const result = await userService.uploadAvatar(file)
+    // 添加时间戳破坏缓存，确保新头像立即显示
+    const avatarUrlWithCache = `${result.url}?t=${Date.now()}`
+
     if (profile.value) {
-      profile.value.avatar_url = result.url
+      profile.value.avatar_url = avatarUrlWithCache
     }
     if (authStore.user) {
-      authStore.user.avatar_url = result.url
+      authStore.user.avatar_url = avatarUrlWithCache
     }
     toastStore.success(t('profile.avatarUpdated'))
   } catch (err) {
