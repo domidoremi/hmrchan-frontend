@@ -35,6 +35,9 @@
     <Teleport to="body">
       <ToastContainer />
     </Teleport>
+
+    <!-- Back to Top Button -->
+    <BackToTop :show-progress="true" />
   </div>
 </template>
 
@@ -46,6 +49,7 @@ import { useThemeStore, useSettingsStore } from '@/stores'
 import AppNavbar from '@/components/layout/AppNavbar.vue'
 import AppFooter from '@/components/layout/AppFooter.vue'
 import PageLoading from '@/components/ui/PageLoading.vue'
+import BackToTop from '@/components/ui/BackToTop.vue'
 
 // Toast 容器懒加载，只在首次显示 toast 时加载
 const ToastContainer = defineAsyncComponent(() => import('@/components/ui/ToastContainer.vue'))

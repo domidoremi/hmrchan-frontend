@@ -9,12 +9,7 @@
       </Button>
     </div>
 
-    <StateIndicator
-      v-if="error"
-      variant="error"
-      :description="error"
-      @action="fetchHistory"
-    />
+    <StateIndicator v-if="error" variant="error" :description="error" @action="fetchHistory" />
 
     <div v-else-if="isLoading && history.length === 0" class="history-skeleton">
       <div v-for="i in 5" :key="i" class="history-item glass-card">
@@ -70,6 +65,16 @@
         @load-more="loadMore"
       />
     </template>
+
+    <!-- Clear History Confirmation -->
+    <ConfirmDialog
+      v-model:is-open="showClearDialog"
+      :title="$t('profile.confirmClearHistoryTitle', '清空浏览历史')"
+      :message="$t('profile.confirmClearHistory')"
+      :confirm-text="$t('common.confirm')"
+      variant="warning"
+      @confirm="confirmClearHistory"
+    />
   </div>
 </template>
 
@@ -84,6 +89,7 @@ import { extractMediaIdFromUrl } from '@/utils/mediaOptimizer'
 import Button from '@/components/ui/Button.vue'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
+import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
 
 interface HistoryItem {
   id: number
@@ -108,6 +114,7 @@ const error = ref<string | null>(null)
 const page = ref(1)
 const total = ref(0)
 const pageSize = 20
+const showClearDialog = ref(false)
 
 const hasMore = computed(() => history.value.length < total.value)
 
@@ -124,9 +131,13 @@ async function fetchHistory(reset = true) {
   error.value = null
 
   try {
-    const res = await apiClient.get<{ items: HistoryItem[]; total: number; page: number; page_size: number; has_more: boolean }>(
-      `/history/browsing?page=${page.value}&page_size=${pageSize}`
-    )
+    const res = await apiClient.get<{
+      items: HistoryItem[]
+      total: number
+      page: number
+      page_size: number
+      has_more: boolean
+    }>(`/history/browsing?page=${page.value}&page_size=${pageSize}`)
 
     if (reset) {
       history.value = res.items
@@ -155,10 +166,11 @@ async function loadMore() {
   await fetchHistory(false)
 }
 
-async function clearHistory() {
-  const confirmed = window.confirm(t('profile.confirmClearHistory'))
-  if (!confirmed) return
+function clearHistory() {
+  showClearDialog.value = true
+}
 
+async function confirmClearHistory() {
   try {
     await apiClient.delete('/history/browsing')
     history.value = []
