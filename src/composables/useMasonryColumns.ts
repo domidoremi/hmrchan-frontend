@@ -16,11 +16,7 @@ interface MasonryOptions {
 }
 
 export function useMasonryColumns(options: MasonryOptions = {}) {
-  const {
-    initialColumnCount = 3,
-    metaHeight = 80,
-    cardPadding = 32
-  } = options
+  const { initialColumnCount = 3, metaHeight = 80, cardPadding = 32 } = options
 
   // 当前列数（响应式）
   const columnCount = ref(initialColumnCount)
@@ -54,12 +50,12 @@ export function useMasonryColumns(options: MasonryOptions = {}) {
       // 降级：使用平台默认宽高比
       const platform = post.platform?.toLowerCase()
       const aspectRatios: Record<string, number> = {
-        'tiktok': 16 / 9,
-        'youtube': 16 / 9,
-        'twitter': 16 / 9,
-        'bilibili': 16 / 9,
-        'pixiv': 4 / 3,
-        'weibo': 4 / 3
+        tiktok: 16 / 9,
+        youtube: 16 / 9,
+        twitter: 16 / 9,
+        bilibili: 16 / 9,
+        pixiv: 4 / 3,
+        weibo: 4 / 3,
       }
       const ratio = aspectRatios[platform] || 16 / 9
       imgHeight = Math.round(colWidth / ratio)
@@ -122,13 +118,23 @@ export function useMasonryColumns(options: MasonryOptions = {}) {
    * @param posts - 帖子列表
    * @param colWidth - 列宽
    * @param append - 是否追加模式（false 则清空重建）
+   * @param realHeights - 真实 DOM 高度（追加模式时必须提供，用于校准累积误差）
    */
-  function distributePosts(posts: PostListItem[], colWidth: number, append = false) {
+  function distributePosts(
+    posts: PostListItem[],
+    colWidth: number,
+    append = false,
+    realHeights?: number[]
+  ) {
     if (!append) {
       initColumns()
+    } else if (realHeights && realHeights.length === columnCount.value) {
+      // 🔑 关键修复：追加模式下，先用真实 DOM 高度校准虚拟高度
+      // 消除之前批次的累积误差，避免所有新帖子堆积到单列
+      columnHeights.value = [...realHeights]
     }
 
-    posts.forEach(post => {
+    posts.forEach((post) => {
       distributePost(post, colWidth)
     })
   }
@@ -169,6 +175,6 @@ export function useMasonryColumns(options: MasonryOptions = {}) {
     distributePost,
     redistribute,
     getColumnWidth,
-    initColumns
+    initColumns,
   }
 }
