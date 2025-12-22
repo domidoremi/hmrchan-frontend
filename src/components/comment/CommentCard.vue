@@ -147,6 +147,7 @@ import {
 import { useAuthStore, useCommentsStore, useToastStore } from '@/stores'
 import type { Comment } from '@/types'
 import { getUserDisplayName } from '@/utils/user'
+import { normalizeAvatarUrl } from '@/api/userService'
 import CommentForm from './CommentForm.vue'
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
 
@@ -194,7 +195,8 @@ async function handleShowReplies() {
 }
 
 const avatarUrl = computed(() => {
-  if (props.comment.user.avatar_url) return props.comment.user.avatar_url
+  const url = normalizeAvatarUrl(props.comment.user.avatar_url)
+  if (url) return url
   return `https://api.dicebear.com/7.x/avataaars/svg?seed=${props.comment.user.username}`
 })
 

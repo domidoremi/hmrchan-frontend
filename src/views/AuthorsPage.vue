@@ -33,7 +33,7 @@
               <img
                 v-if="author.avatar_url"
                 class="author-avatar"
-                :src="author.avatar_url"
+                :src="normalizeAvatarUrl(author.avatar_url) || author.avatar_url"
                 :alt="author.name"
                 loading="lazy"
                 decoding="async"
@@ -72,6 +72,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { authorService, type AuthorListItem, ApiError } from '@/api'
+import { normalizeAvatarUrl } from '@/api/userService'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'

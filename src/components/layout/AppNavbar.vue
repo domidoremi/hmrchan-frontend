@@ -213,6 +213,7 @@ import {
 } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores'
 import { getUserDisplayName } from '@/utils/user'
+import { normalizeAvatarUrl } from '@/api/userService'
 import { prefetchExploreData, prefetchAuthorsData } from '@/utils/prefetch'
 import { throttleRAF, scheduleDOMUpdate } from '@/utils/performance'
 
@@ -237,7 +238,8 @@ const userDropdownStyle = ref<Record<string, string>>({})
 const isMobile = ref(false)
 
 const userAvatar = computed(() => {
-  if (user.value?.avatar_url) return user.value.avatar_url
+  const avatarUrl = normalizeAvatarUrl(user.value?.avatar_url)
+  if (avatarUrl) return avatarUrl
   return `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.value?.username || 'default'}`
 })
 

@@ -47,6 +47,7 @@ import { LogIn } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore, useCommentsStore, useToastStore } from '@/stores'
 import { validateComment } from '@/utils/security'
+import { normalizeAvatarUrl } from '@/api/userService'
 import Button from '@/components/ui/Button.vue'
 
 interface Props {
@@ -76,7 +77,8 @@ const textareaRef = ref<HTMLTextAreaElement>()
 const maxLength = 2000
 
 const userAvatar = computed(() => {
-  if (user.value?.avatar_url) return user.value.avatar_url
+  const url = normalizeAvatarUrl(user.value?.avatar_url)
+  if (url) return url
   return `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.value?.username || 'default'}`
 })
 
