@@ -100,7 +100,7 @@
       >
         <ChevronDown :size="16" />
         <span v-if="isLoadingReplies">{{ $t('common.loading') }}</span>
-        <span v-else>{{ $t('comment.showReplies', { count: comment.replies_count }) }}</span>
+        <span v-else>{{ $t('comment.showReplies', { count: actualRepliesCount }) }}</span>
       </button>
 
       <Transition name="slide-down">
@@ -210,6 +210,13 @@ const canDelete = computed(() => {
   if (!user.value) return false
   // 用户可以删除自己的评论，管理员/版主可以删除任何评论
   return user.value.id === props.comment.user.id
+})
+
+const actualRepliesCount = computed(() => {
+  // 优先使用本地已加载的回复数量，其次使用后端返回的计数
+  const localCount = props.comment.replies?.length || 0
+  const serverCount = props.comment.replies_count || 0
+  return Math.max(localCount, serverCount)
 })
 
 function formatTime(dateStr: string): string {
