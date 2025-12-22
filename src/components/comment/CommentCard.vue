@@ -5,6 +5,7 @@
       <img :src="avatarUrl" :alt="comment.user.username" class="comment-avatar" />
       <div class="comment-meta">
         <span class="comment-author">{{ comment.user.username }}</span>
+        <span v-if="!isReply" class="floor-badge">层主</span>
         <span v-if="userLevelBadge" class="user-level-badge" :class="comment.user.level">
           {{ userLevelBadge }}
         </span>
@@ -37,7 +38,10 @@
 
     <!-- Comment Content -->
     <div class="comment-content">
-      <p>{{ comment.content }}</p>
+      <p>
+        <span v-if="isReply && replyToUsername" class="reply-to">@{{ replyToUsername }} </span>
+        {{ comment.content }}
+      </p>
     </div>
 
     <!-- Comment Actions -->
@@ -100,6 +104,7 @@
             :comment="reply"
             :post-id="postId"
             :is-reply="true"
+            :reply-to-username="comment.user.username"
             @reply="$emit('reply', $event)"
             @deleted="$emit('deleted', $event)"
           />
@@ -132,6 +137,7 @@ interface Props {
   postId: string
   isReply?: boolean
   showActions?: boolean
+  replyToUsername?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -237,6 +243,7 @@ function handleReply() {
 
 function handleReplySubmitted() {
   showReplyForm.value = false
+  // 自动展开回复列表以显示新回复
   showReplies.value = true
   emit('reply', props.comment.id)
 }
@@ -339,6 +346,15 @@ onUnmounted(() => {
   font-size: var(--text-sm);
 }
 
+.floor-badge {
+  padding: var(--spacing-0) var(--spacing-2);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  background: var(--color-primary);
+  color: white;
+}
+
 .user-level-badge {
   padding: var(--spacing-0) var(--spacing-2);
   border-radius: var(--radius-sm);
@@ -425,6 +441,11 @@ onUnmounted(() => {
   color: var(--color-text-primary);
   white-space: pre-wrap;
   word-break: break-word;
+}
+
+.reply-to {
+  color: var(--color-primary);
+  font-weight: var(--font-medium);
 }
 
 .comment-actions {
