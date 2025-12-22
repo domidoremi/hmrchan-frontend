@@ -5,13 +5,14 @@
         <div class="user-info">
           <img :src="userAvatar" :alt="user?.username" class="user-avatar" />
           <div class="user-details">
-            <h1 class="user-name">{{ user?.username }}</h1>
-            <p v-if="user?.email" class="user-email">{{ user.email }}</p>
+            <h1 class="user-name">{{ user?.full_name || user?.username }}</h1>
+            <p class="user-username">@{{ user?.username }}</p>
+            <p v-if="user?.bio" class="user-bio">{{ user.bio }}</p>
           </div>
         </div>
         <Button variant="ghost" size="sm" @click="goToSettings">
           <Settings :size="16" />
-          {{ $t('nav.settings') }}
+          {{ $t('nav.profileSettings') }}
         </Button>
       </div>
 
@@ -98,7 +99,7 @@ const userAvatar = computed(() => {
 })
 
 function goToSettings() {
-  router.push('/settings')
+  router.push('/settings/profile')
 }
 
 onMounted(() => {
