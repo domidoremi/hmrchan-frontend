@@ -88,14 +88,19 @@
     </Transition>
 
     <!-- Replies -->
-    <div v-if="comment.replies && comment.replies.length > 0" class="replies-section">
+    <div
+      v-if="comment.replies_count > 0 || (comment.replies && comment.replies.length > 0)"
+      class="replies-section"
+    >
       <button
-        v-if="!showReplies && comment.replies_count > 0"
+        v-if="!showReplies"
         class="show-replies-btn"
-        @click="showReplies = true"
+        @click="handleShowReplies"
+        :disabled="isLoadingReplies"
       >
         <ChevronDown :size="16" />
-        {{ $t('comment.showReplies', { count: comment.replies_count }) }}
+        <span v-if="isLoadingReplies">{{ $t('common.loading') }}</span>
+        <span v-else>{{ $t('comment.showReplies', { count: comment.replies_count }) }}</span>
       </button>
 
       <Transition name="slide-down">
@@ -160,7 +165,20 @@ const { user, isAuthenticated } = storeToRefs(authStore)
 const showMenu = ref(false)
 const showReplyForm = ref(false)
 const showReplies = ref(false)
+const isLoadingReplies = ref(false)
 const replyFormRef = ref<InstanceType<typeof CommentForm>>()
+
+async function handleShowReplies() {
+  if (!props.comment.replies || props.comment.replies.length === 0) {
+    isLoadingReplies.value = true
+    try {
+      await commentsStore.fetchReplies(props.comment.id)
+    } finally {
+      isLoadingReplies.value = false
+    }
+  }
+  showReplies.value = true
+}
 
 const avatarUrl = computed(() => {
   if (props.comment.user.avatar_url) return props.comment.user.avatar_url

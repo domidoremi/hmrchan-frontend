@@ -74,7 +74,10 @@
 
         <RouterLink
           v-if="!isAuthenticated"
-          to="/login"
+          :to="{
+            path: '/login',
+            query: { redirect: $route.fullPath !== '/' ? $route.fullPath : undefined },
+          }"
           class="login-btn"
           @mouseenter="prefetchLoginPage"
           @focus="prefetchLoginPage"
@@ -119,11 +122,7 @@
           </div>
         </div>
         <div class="dropdown-links">
-          <RouterLink
-            to="/profile"
-            class="dropdown-link"
-            @click="showUserMenu = false"
-          >
+          <RouterLink to="/profile" class="dropdown-link" @click="showUserMenu = false">
             <User :size="18" />
             <span>{{ $t('nav.profile') }}</span>
           </RouterLink>
