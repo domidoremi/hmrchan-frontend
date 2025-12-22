@@ -87,9 +87,11 @@ export const useCommentsStore = defineStore('comments', () => {
       const postComments = comments.value.get(postId) || []
       if (formData.parent_id) {
         // 回复 - 递归查找并更新父评论的 replies 数组
+        // 确保 ID 类型一致（统一转为字符串比对）
+        const parentIdStr = String(formData.parent_id)
         const updateReplies = (commentList: Comment[]): Comment[] => {
           return commentList.map((comment) => {
-            if (comment.id === formData.parent_id) {
+            if (String(comment.id) === parentIdStr) {
               return {
                 ...comment,
                 replies: [...(comment.replies || []), newComment],
@@ -218,8 +220,9 @@ export const useCommentsStore = defineStore('comments', () => {
 
   // 辅助函数：在评论树中查找评论
   function findComment(commentList: Comment[], commentId: string): Comment | null {
+    const commentIdStr = String(commentId)
     for (const comment of commentList) {
-      if (comment.id === commentId) return comment
+      if (String(comment.id) === commentIdStr) return comment
       if (comment.replies) {
         const found = findComment(comment.replies, commentId)
         if (found) return found
@@ -230,7 +233,8 @@ export const useCommentsStore = defineStore('comments', () => {
 
   // 辅助函数：从评论树中移除评论
   function removeComment(commentList: Comment[], commentId: string): boolean {
-    const index = commentList.findIndex((c) => c.id === commentId)
+    const commentIdStr = String(commentId)
+    const index = commentList.findIndex((c) => String(c.id) === commentIdStr)
     if (index !== -1) {
       commentList.splice(index, 1)
       return true
