@@ -5,7 +5,7 @@
       <img :src="avatarUrl" :alt="comment.user.username" class="comment-avatar" />
       <div class="comment-meta">
         <span class="comment-author">{{ comment.user.username }}</span>
-        <span v-if="!isReply" class="floor-badge">层主</span>
+        <span v-if="comment.is_thread_owner" class="floor-badge">层主</span>
         <span v-if="userLevelBadge" class="user-level-badge" :class="comment.user.level">
           {{ userLevelBadge }}
         </span>
@@ -39,7 +39,9 @@
     <!-- Comment Content -->
     <div class="comment-content">
       <p>
-        <span v-if="isReply && replyToUsername" class="reply-to">@{{ replyToUsername }} </span>
+        <span v-if="comment.replied_to_user" class="reply-to">
+          @{{ comment.replied_to_user.username }}
+        </span>
         {{ comment.content }}
       </p>
     </div>
@@ -104,7 +106,6 @@
             :comment="reply"
             :post-id="postId"
             :is-reply="true"
-            :reply-to-username="comment.user.username"
             @reply="$emit('reply', $event)"
             @deleted="$emit('deleted', $event)"
           />
@@ -137,7 +138,6 @@ interface Props {
   postId: string
   isReply?: boolean
   showActions?: boolean
-  replyToUsername?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
