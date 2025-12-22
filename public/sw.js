@@ -239,6 +239,11 @@ async function cacheFirstMedia(request) {
  * 确保完整帖子数据（含 media_files）可快速访问
  */
 async function staleWhileRevalidatePost(request) {
+  // Cache API 只支持 GET 请求
+  if (request.method !== 'GET') {
+    return fetch(request)
+  }
+
   const cache = await caches.open(CACHE_NAMES.posts)
   const cached = await cache.match(request)
 
@@ -344,6 +349,11 @@ async function managePostCache() {
  * Network First - 优先网络，缓存降级
  */
 async function networkFirstApi(request) {
+  // Cache API 只支持 GET 请求，非 GET 请求直接走网络
+  if (request.method !== 'GET') {
+    return fetch(request)
+  }
+
   const cache = await caches.open(CACHE_NAMES.api)
 
   try {
