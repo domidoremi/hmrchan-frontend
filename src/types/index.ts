@@ -85,6 +85,8 @@ export interface Comment {
   is_favorited: boolean
   created_at: string
   updated_at: string
+  is_thread_owner: boolean
+  replied_to_user: CommentUser | null
   replies?: Comment[]
 }
 
