@@ -240,6 +240,9 @@ async function fetchLatestPosts(reset = true): Promise<boolean> {
 
       // 🔑 关键修复：获取真实 DOM 高度，校准虚拟高度，防止新帖子堆积到单列
       const realHeights = getRealColumnHeights()
+      if (import.meta.env.DEV) {
+        console.log('[Home] LoadMore realHeights:', realHeights)
+      }
       distributePosts(filtered, colWidth, true, realHeights)
     }
     total.value = res.total
