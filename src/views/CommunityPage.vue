@@ -14,7 +14,7 @@
           :key="tab.id"
           class="tab-btn"
           :class="{ active: activeTab === tab.id }"
-          @click="activeTab = tab.id"
+          @click="switchTab(tab.id)"
         >
           <component :is="tab.icon" :size="18" />
           <span>{{ $t(tab.label) }}</span>
@@ -102,12 +102,43 @@
 
       <!-- Hot Topics -->
       <section v-if="activeTab === 'hot'" class="community-section">
-        <div class="hot-topics-grid">
+        <div v-if="isLoadingHot && hotTopics.length === 0" class="hot-topics-grid">
           <article v-for="i in 6" :key="i" class="topic-card glass-card">
             <div class="topic-rank">#{{ i }}</div>
             <div class="topic-content">
               <div class="skeleton" style="height: 20px; width: 80%" />
               <div class="skeleton" style="height: 14px; width: 50%; margin-top: 8px" />
+            </div>
+          </article>
+        </div>
+        <StateIndicator
+          v-else-if="hotTopicsError"
+          variant="error"
+          :description="hotTopicsError"
+          @action="fetchHotTopics"
+        />
+        <StateIndicator
+          v-else-if="hotTopics.length === 0"
+          variant="empty"
+          :description="$t('community.noHotTopics', '暂无热门话题')"
+        />
+        <div v-else class="hot-topics-grid">
+          <article
+            v-for="(topic, index) in hotTopics"
+            :key="topic.id"
+            class="topic-card glass-card"
+            @click="goToPost(topic.id, topic.thumbnail_url)"
+          >
+            <div class="topic-rank">#{{ index + 1 }}</div>
+            <div class="topic-content">
+              <h3 class="topic-title">{{ topic.title }}</h3>
+              <div class="topic-meta">
+                <span class="topic-count">
+                  <MessageSquare :size="14" />
+                  {{ topic.comment_count }}
+                </span>
+                <span class="topic-views">{{ topic.view_count }} 浏览</span>
+              </div>
             </div>
           </article>
         </div>
@@ -149,6 +180,10 @@ const isLoadingMore = ref(false)
 const error = ref<string | null>(null)
 const discussions = ref<PostListItem[]>([])
 
+const isLoadingHot = ref(false)
+const hotTopicsError = ref<string | null>(null)
+const hotTopics = ref<PostListItem[]>([])
+
 const page = ref(1)
 const total = ref(0)
 const totalPages = ref(0)
@@ -170,6 +205,13 @@ const tabs = [
   { id: 'recent', label: 'community.recentDiscussions', icon: MessageSquare },
   { id: 'hot', label: 'community.hotTopics', icon: Flame },
 ]
+
+function switchTab(tabId: string) {
+  activeTab.value = tabId
+  if (tabId === 'hot' && hotTopics.value.length === 0) {
+    fetchHotTopics()
+  }
+}
 
 function handleDiscussionCreated() {
   fetchDiscussions(true)
@@ -285,6 +327,31 @@ async function loadMore(): Promise<boolean> {
     page.value = nextPage - 1
   }
   return ok
+}
+
+async function fetchHotTopics() {
+  isLoadingHot.value = true
+  hotTopicsError.value = null
+
+  try {
+    const res = await postService.listPosts({
+      page: 1,
+      page_size: 10,
+      sort_by: 'view_count',
+      sort_order: 'desc',
+    })
+
+    // 过滤出有评论的热门帖子
+    hotTopics.value = res.items.filter((p) => p.comment_count > 0).slice(0, 6)
+  } catch (err) {
+    if (err instanceof ApiError) {
+      hotTopicsError.value = err.message
+    } else {
+      hotTopicsError.value = t('common.error')
+    }
+  } finally {
+    isLoadingHot.value = false
+  }
 }
 
 useInfiniteScroll(sentinelRef, loadMore, {
@@ -530,6 +597,41 @@ onMounted(() => {
 
 .topic-content {
   flex: 1;
+}
+
+.topic-title {
+  font-size: var(--text-base);
+  font-weight: var(--font-semibold);
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-2);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.topic-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+}
+
+.topic-count {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-1);
+}
+
+.topic-views {
+  color: var(--color-text-tertiary);
+}
+
+.topic-card:hover {
+  transform: translateY(-2px);
+  cursor: pointer;
 }
 
 .my-comments-list,
