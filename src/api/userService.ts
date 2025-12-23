@@ -53,6 +53,16 @@ export function normalizeAvatarUrl(url: string | null | undefined): string | nul
     return `/api/v1${url}`
   }
 
+  // 如果是 uploads/ 开头（没有前导斜杠），添加前导斜杠并转换
+  if (url.startsWith('uploads/')) {
+    return `/api/v1/${url}`
+  }
+
+  // 如果是 /api/v1/uploads/ 开头，说明已经规范化，直接返回
+  if (url.startsWith('/api/v1/uploads/')) {
+    return url
+  }
+
   // 其他情况直接返回
   return url
 }
