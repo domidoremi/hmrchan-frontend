@@ -131,7 +131,21 @@ export function useMasonryColumns(options: MasonryOptions = {}) {
     } else if (realHeights && realHeights.length === columnCount.value) {
       // 🔑 关键修复：追加模式下，先用真实 DOM 高度校准虚拟高度
       // 消除之前批次的累积误差，避免所有新帖子堆积到单列
-      columnHeights.value = [...realHeights]
+
+      // Safety Check: 验证 DOM 高度是否合理
+      // 如果某列已有数据，但 DOM 报告高度为 0（可能是 ref 未挂载或隐藏），则忽略本次校准
+      let isValid = true
+      for (let i = 0; i < columnCount.value; i++) {
+        if ((columns.value[i]?.length ?? 0) > 0 && realHeights[i] === 0) {
+          console.warn(`[Masonry] Column ${i} has items but reported 0 height. Ignoring DOM sync.`)
+          isValid = false
+          break
+        }
+      }
+
+      if (isValid) {
+        columnHeights.value = [...realHeights]
+      }
     }
 
     posts.forEach((post) => {
