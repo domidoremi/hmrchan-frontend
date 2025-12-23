@@ -163,7 +163,7 @@ interface Props {
   depth?: number // 当前嵌套深度
 }
 
-const MAX_DEPTH = 3 // 最大嵌套层级（3层：评论 -> 回复 -> 回复的回复）
+const MAX_DEPTH = 1 // 最大嵌套层级（1层：评论 -> 回复）
 
 const props = withDefaults(defineProps<Props>(), {
   isReply: false,
