@@ -69,7 +69,7 @@ const props = defineProps<Props>()
 
 const commentsStore = useCommentsStore()
 
-const currentSort = ref<'newest' | 'oldest' | 'popular'>('newest')
+const currentSort = ref<'newest' | 'oldest' | 'popular'>('popular')
 const hasMore = ref(false)
 
 const sortOptions = [
