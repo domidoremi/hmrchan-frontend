@@ -80,7 +80,7 @@
               >
                 <img
                   v-if="author.avatar_url"
-                  :src="author.avatar_url"
+                  :src="normalizeAvatarUrl(author.avatar_url) || author.avatar_url"
                   :alt="author.name"
                   class="author-avatar"
                 />
@@ -114,10 +114,10 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { Search, FileText, User } from 'lucide-vue-next'
-import { searchService, type PostListItem, type AuthorListItem } from '@/api'
-import SearchBar from '@/components/business/SearchBar.vue'
-import PostCard from '@/components/business/PostCard.vue'
+import { type AuthorListItem, type PostListItem } from '@/api'
+import { normalizeAvatarUrl } from '@/api/userService'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
+import PostCard from '@/components/business/PostCard.vue'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
 
 const route = useRoute()
