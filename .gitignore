@@ -12,6 +12,7 @@ dist/
 dist-ssr/
 *.local
 
+
 # =====================
 # Logs
 # =====================
@@ -133,3 +134,7 @@ docs/
 !CONTRIBUTING.md
 !LICENSE.md
 .qoderignore
+.claude/
+.husky/
+.qoder/
+.vscode/
