@@ -38,12 +38,13 @@
 
     <!-- Comment Content -->
     <div class="comment-content">
-      <p>
-        <span v-if="comment.replied_to_user" class="reply-to">
-          @{{ getUserDisplayName(comment.replied_to_user) }}
-        </span>
-        {{ comment.content }}
-      </p>
+      <!-- 回复对象标识 -->
+      <div v-if="comment.replied_to_user" class="reply-indicator">
+        <span class="reply-icon">↩</span>
+        <span class="reply-label">回复</span>
+        <span class="reply-to-user">{{ getUserDisplayName(comment.replied_to_user) }}</span>
+      </div>
+      <p>{{ comment.content }}</p>
     </div>
 
     <!-- Comment Actions -->
@@ -493,6 +494,32 @@ onUnmounted(() => {
   color: var(--color-text-primary);
   white-space: pre-wrap;
   word-break: break-word;
+}
+
+.reply-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-1);
+  padding: var(--spacing-1) var(--spacing-2);
+  margin-bottom: var(--spacing-2);
+  background: var(--glass-bg-light);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+}
+
+.reply-icon {
+  color: var(--color-primary);
+  font-weight: bold;
+  font-size: var(--text-base);
+}
+
+.reply-label {
+  color: var(--color-text-tertiary);
+}
+
+.reply-to-user {
+  color: var(--color-primary);
+  font-weight: var(--font-medium);
 }
 
 .reply-to {
