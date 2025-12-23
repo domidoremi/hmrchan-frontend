@@ -80,7 +80,7 @@
         <CommentForm
           ref="replyFormRef"
           :post-id="postId"
-          :reply-to="String(comment.id)"
+          :reply-to="depth === 0 ? String(comment.id) : String(rootId || comment.id)"
           :reply-to-username="comment.user.username"
           @cancel="showReplyForm = false"
           @submitted="handleReplySubmitted"
@@ -116,6 +116,7 @@
             :post-id="postId"
             :is-reply="true"
             :depth="currentDepth + 1"
+            :root-id="depth === 0 ? String(comment.id) : rootId || ''"
             @reply="$emit('reply', $event)"
             @deleted="$emit('deleted', $event)"
           />
@@ -162,9 +163,11 @@ interface Props {
   isReply?: boolean
   showActions?: boolean
   depth?: number // 当前嵌套深度
+  rootId?: string // 根评论 ID，用于扁平化回复
 }
 
-const MAX_DEPTH = 1 // 最大嵌套层级（1层：评论 -> 回复）
+const MAX_REPLY_DEPTH = 2 // 允许回复的最大深度（0层和1层可以回复）
+const MAX_NESTING_DEPTH = 1 // 显示嵌套的最大深度（超过此深度不显示子回复，而是展平）
 
 const props = withDefaults(defineProps<Props>(), {
   isReply: false,
@@ -173,8 +176,12 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const currentDepth = computed(() => props.depth || 0)
-const canReply = computed(() => currentDepth.value < MAX_DEPTH) // 达到最大深度后不能再回复
-const canShowNestedReplies = computed(() => currentDepth.value < MAX_DEPTH) // 达到最大深度后不显示嵌套回复
+
+// 允许回复：只要深度小于最大回复深度
+const canReply = computed(() => currentDepth.value < MAX_REPLY_DEPTH)
+
+// 显示嵌套回复：只有深度小于最大嵌套深度时才渲染子组件
+const canShowNestedReplies = computed(() => currentDepth.value < MAX_NESTING_DEPTH)
 
 const emit = defineEmits<{
   reply: [commentId: string]
@@ -290,6 +297,11 @@ function handleReply() {
 
   showReplyForm.value = true
   nextTick(() => {
+    // 如果是在第二层回复（depth=1），需要手动添加 @用户名
+    if (props.depth > 0 && replyFormRef.value) {
+      const mentionText = `@${props.comment.user.username} `
+      replyFormRef.value.setContent(mentionText)
+    }
     replyFormRef.value?.focus()
   })
 }
@@ -298,7 +310,8 @@ function handleReplySubmitted() {
   showReplyForm.value = false
   // 自动展开回复列表以显示新回复
   showReplies.value = true
-  emit('reply', props.comment.id)
+  // 如果是扁平化回复，实际上是回复了 Root，所以 Root 的列表应该更新
+  emit('reply', props.rootId || props.comment.id)
 }
 
 function handleDelete() {

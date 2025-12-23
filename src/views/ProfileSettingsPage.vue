@@ -317,14 +317,14 @@ async function handleCroppedImage(blob: Blob) {
 
   try {
     const result = await userService.uploadAvatar(file)
-    // 添加时间戳破坏缓存，确保新头像立即显示
-    const avatarUrlWithCache = `${result.url}?t=${Date.now()}`
+    // 文件名包含时间戳，本身就是唯一的，无需额外添加参数破坏缓存
+    const cleanUrl = result.url
 
     if (profile.value) {
-      profile.value.avatar_url = avatarUrlWithCache
+      profile.value.avatar_url = cleanUrl
     }
     if (authStore.user) {
-      authStore.user.avatar_url = avatarUrlWithCache
+      authStore.user.avatar_url = cleanUrl
     }
     toastStore.success(t('profile.avatarUpdated'))
   } catch (err) {
