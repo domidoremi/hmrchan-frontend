@@ -138,7 +138,12 @@ function focus() {
   textareaRef.value?.focus()
 }
 
-defineExpose({ focus })
+// 设置内容（用于回复时添加 @用户名）
+function setContent(text: string) {
+  content.value = text
+}
+
+defineExpose({ focus, setContent })
 </script>
 
 <style scoped>
