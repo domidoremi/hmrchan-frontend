@@ -116,12 +116,17 @@ function handleBackdropClick(event: MouseEvent) {
 <style scoped>
 /* 原生 dialog 元素样式 */
 .confirm-dialog {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   max-width: 400px;
   width: 100%;
   padding: 0;
   border: none;
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-xl);
+  margin: 0;
 }
 
 /* dialog 背景遮罩（::backdrop 伪元素） */
