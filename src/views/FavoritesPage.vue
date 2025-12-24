@@ -192,29 +192,58 @@ async function fetchFavorites(reset = true): Promise<boolean> {
       sort_order: 'desc',
     })
 
-    // Enrich favorites with post data if missing
-    const enrichedItems = await Promise.all(
-      res.items.map(async (fav): Promise<FavoriteResponse> => {
-        if (!fav.post || !fav.post.title) {
-          try {
-            const postData = await apiClient.get<{ id: string; title: string; thumbnail_url?: string | null; author_name?: string }>(`/posts/${fav.post_id}`)
-            return {
-              ...fav,
-              post: {
-                id: postData.id,
-                title: postData.title,
-                thumbnail_url: postData.thumbnail_url ?? null,
-                author_name: postData.author_name ?? undefined,
-              },
-            } as FavoriteResponse
-          } catch {
-            // Keep original if fetch fails
-            return fav
+    // 批量获取缺失的 post 数据，避免 N+1 问题
+    const missingPostIds = res.items
+      .filter((fav) => !fav.post || !fav.post.title)
+      .map((fav) => fav.post_id)
+
+    // 使用单次批量请求（如果后端支持）或并行请求但限制并发
+    const postDataMap = new Map<
+      string,
+      { id: string; title: string; thumbnail_url?: string | null; author_name?: string }
+    >()
+
+    if (missingPostIds.length > 0) {
+      // 并行请求但限制并发数为 5
+      const CONCURRENCY = 5
+      for (let i = 0; i < missingPostIds.length; i += CONCURRENCY) {
+        const batch = missingPostIds.slice(i, i + CONCURRENCY)
+        const results = await Promise.allSettled(
+          batch.map((id) =>
+            apiClient.get<{
+              id: string
+              title: string
+              thumbnail_url?: string | null
+              author_name?: string
+            }>(`/posts/${id}`)
+          )
+        )
+        results.forEach((result, idx) => {
+          if (result.status === 'fulfilled') {
+            postDataMap.set(batch[idx]!, result.value)
           }
+        })
+      }
+    }
+
+    // 合并数据
+    const enrichedItems = res.items.map((fav): FavoriteResponse => {
+      if (!fav.post || !fav.post.title) {
+        const postData = postDataMap.get(fav.post_id)
+        if (postData) {
+          return {
+            ...fav,
+            post: {
+              id: postData.id,
+              title: postData.title,
+              thumbnail_url: postData.thumbnail_url ?? null,
+              author_name: postData.author_name ?? undefined,
+            },
+          } as FavoriteResponse
         }
-        return fav
-      })
-    )
+      }
+      return fav
+    })
 
     if (reset) {
       favorites.value = enrichedItems

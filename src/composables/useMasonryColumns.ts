@@ -73,23 +73,35 @@ export function useMasonryColumns(options: MasonryOptions = {}) {
   }
 
   /**
-   * 获取当前最矮的列索引（贪心算法）
+   * 获取当前最矮的列索引（贪心算法 + 抖动处理）
+   * 当多列高度接近时，添加随机性避免堆积
    */
   function getShortestColumnIndex(): number {
     if (columnHeights.value.length === 0) return 0
 
-    let minIndex = 0
-    let minHeight = columnHeights.value[0] ?? 0
+    // 找出所有列的高度
+    const heights = columnHeights.value.slice(0, columnCount.value)
+    const minHeight = Math.min(...heights)
 
-    for (let i = 1; i < columnCount.value; i++) {
-      const height = columnHeights.value[i] ?? 0
-      if (height < minHeight) {
-        minHeight = height
-        minIndex = i
+    // 🔑 修复：找出所有"接近最短"的列（差距在 50px 以内）
+    // 如果有多个列高度接近，随机选择一个，避免全部堆积到同一列
+    const threshold = 50
+    const candidateIndices: number[] = []
+
+    for (let i = 0; i < columnCount.value; i++) {
+      const height = heights[i] ?? 0
+      if (height - minHeight <= threshold) {
+        candidateIndices.push(i)
       }
     }
 
-    return minIndex
+    // 如果有多个候选列，随机选择一个
+    if (candidateIndices.length > 1) {
+      const randomIdx = Math.floor(Math.random() * candidateIndices.length)
+      return candidateIndices[randomIdx] ?? 0
+    }
+
+    return candidateIndices[0] ?? 0
   }
 
   /**
@@ -148,8 +160,24 @@ export function useMasonryColumns(options: MasonryOptions = {}) {
       }
     }
 
+    // 🔑 修复：逐个分发帖子，每次都找当前最矮的列
+    // 确保帖子按顺序均匀分布到各列，而不是全部堆积到同一列
     posts.forEach((post) => {
       distributePost(post, colWidth)
+    })
+  }
+
+  /**
+   * 使用轮询策略分发帖子（备用方案）
+   * 当高度估算不准确时，使用简单的轮询来保证均匀分布
+   */
+  function distributePostsRoundRobin(posts: PostListItem[], startIndex = 0) {
+    posts.forEach((post, idx) => {
+      const targetIndex = (startIndex + idx) % columnCount.value
+      const targetColumn = columns.value[targetIndex]
+      if (targetColumn) {
+        targetColumn.push(post)
+      }
     })
   }
 
@@ -187,6 +215,7 @@ export function useMasonryColumns(options: MasonryOptions = {}) {
     columnHeights,
     distributePosts,
     distributePost,
+    distributePostsRoundRobin,
     redistribute,
     getColumnWidth,
     initColumns,
