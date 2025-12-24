@@ -3,6 +3,7 @@
  */
 
 import { apiClient, type PaginatedApiResponse } from './client'
+import { buildQuery } from '@/utils/queryBuilder'
 
 export type SortOrder = 'asc' | 'desc'
 
@@ -91,16 +92,6 @@ export interface ListPostsParams {
   sort_by?: PostSortBy
   sort_order?: SortOrder
   per_platform_limit?: number
-}
-
-function buildQuery(params: Record<string, string | number | boolean | undefined | null>): string {
-  const query = new URLSearchParams()
-  Object.entries(params).forEach(([key, value]) => {
-    if (value === undefined || value === null || value === '') return
-    query.set(key, String(value))
-  })
-  const qs = query.toString()
-  return qs ? `?${qs}` : ''
 }
 
 export const postService = {

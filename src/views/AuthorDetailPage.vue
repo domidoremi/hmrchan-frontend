@@ -19,8 +19,9 @@
               class="author-avatar"
               :src="normalizeAvatarUrl(author.avatar_url) || author.avatar_url"
               :alt="author.name"
-              loading="lazy"
+              loading="eager"
               decoding="async"
+              fetchpriority="high"
               style="object-fit: cover"
             />
             <div v-else class="author-avatar skeleton" />
@@ -64,6 +65,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { authorService, type AuthorResponse, type PostListItem, ApiError } from '@/api'
 import { normalizeAvatarUrl } from '@/api/userService'
+import { authorCache } from '@/utils/cache'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import PostCard from '@/components/business/PostCard.vue'
 
@@ -85,6 +87,12 @@ async function fetchAuthor() {
   isLoading.value = true
   error.value = null
 
+  // 先从缓存加载（快速显示）
+  const cached = await authorCache.getAuthor(authorId.value)
+  if (cached) {
+    author.value = cached.data as AuthorResponse
+  }
+
   try {
     const [authorRes, postsRes] = await Promise.all([
       authorService.getAuthor(authorId.value),
@@ -92,6 +100,9 @@ async function fetchAuthor() {
     ])
     author.value = authorRes
     posts.value = postsRes.items
+
+    // 写入缓存
+    await authorCache.setAuthor(authorId.value, authorRes)
   } catch (err) {
     if (err instanceof ApiError) {
       error.value = err.message

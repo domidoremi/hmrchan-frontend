@@ -13,8 +13,20 @@ import { idbClear, STORES } from './idb'
 
 export { registerServiceWorker, unregisterServiceWorker } from './swRegister'
 export { postCache, type CachedPost, type CachedPostList } from './postCache'
+export { authorCache, type CachedAuthor, type CachedAuthorList } from './authorCache'
 export { memoryCache }
 export { idbClear, STORES }
+export {
+  CACHE_TTL,
+  CACHE_LIMITS,
+  CACHE_VERSION,
+  CACHE_NAMES,
+  CACHE_STRATEGIES,
+  isCacheExpired,
+  getCacheRemainingTTL,
+  generateCacheKey,
+  type CacheStrategy,
+} from './config'
 
 /**
  * 清理所有缓存数据
@@ -33,7 +45,7 @@ export async function clearAllCaches(): Promise<{ success: boolean; message: str
     // 3. 清理 Service Worker 缓存
     if ('caches' in window) {
       const cacheNames = await caches.keys()
-      await Promise.all(cacheNames.map(name => caches.delete(name)))
+      await Promise.all(cacheNames.map((name) => caches.delete(name)))
     }
 
     // 4. 清理 localStorage 中的缓存相关数据
@@ -44,7 +56,7 @@ export async function clearAllCaches(): Promise<{ success: boolean; message: str
         keysToRemove.push(key)
       }
     }
-    keysToRemove.forEach(key => localStorage.removeItem(key))
+    keysToRemove.forEach((key) => localStorage.removeItem(key))
 
     return { success: true, message: '缓存已清理完成' }
   } catch (error) {

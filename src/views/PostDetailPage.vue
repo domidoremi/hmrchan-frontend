@@ -52,6 +52,7 @@
                     :class="{ 'is-loaded': isMediaLoaded }"
                     :src="getMediaStreamUrl(activeMedia.id)"
                     :alt="post.title"
+                    fetchpriority="high"
                     @load="onMediaLoad"
                   />
                   <!-- 点击提示 -->
