@@ -4,8 +4,10 @@
     type="button"
     class="post-card glass-card post-card-btn"
     @click="handleClick"
-    @mouseenter="prefetchPostDetailPage"
-    @focus="prefetchPostDetailPage"
+    @mouseenter="handleMouseEnter"
+    @mouseleave="handleMouseLeave"
+    @focus="handleMouseEnter"
+    @blur="handleMouseLeave"
   >
     <div class="post-image-wrapper" :style="imageWrapperStyle">
       <!-- Platform Icon Badge -->
@@ -35,6 +37,34 @@
       <div v-if="post.duration" class="duration-badge">
         {{ formatDuration(post.duration) }}
       </div>
+
+      <!-- Hover Details Overlay -->
+      <Transition name="hover-details">
+        <div v-if="showHoverDetails" class="hover-details-overlay">
+          <div class="hover-details-content">
+            <h4 class="hover-title">{{ post.title }}</h4>
+            <p v-if="post.author_name" class="hover-author">{{ post.author_name }}</p>
+            <div class="hover-stats">
+              <span v-if="post.view_count" class="hover-stat">
+                <Eye :size="14" />
+                {{ formatCount(post.view_count) }} {{ $t('post.views') }}
+              </span>
+              <span v-if="post.like_count" class="hover-stat">
+                <Heart :size="14" />
+                {{ formatCount(post.like_count) }} {{ $t('post.likes') }}
+              </span>
+              <span v-if="post.duration" class="hover-stat">
+                <Clock :size="14" />
+                {{ formatDuration(post.duration) }}
+              </span>
+            </div>
+            <p v-if="post.platform" class="hover-platform">
+              <component :is="platformIcon" :size="14" />
+              {{ platformLabel }}
+            </p>
+          </div>
+        </div>
+      </Transition>
     </div>
 
     <div v-if="showContent" class="post-content">
@@ -61,7 +91,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, type Component } from 'vue'
-import { Youtube, Twitter, Globe, Music2, Eye, Heart } from 'lucide-vue-next'
+import { Youtube, Twitter, Globe, Music2, Eye, Heart, Clock } from 'lucide-vue-next'
 import type { PostListItem } from '@/api'
 import { prefetchPostDetail } from '@/utils/prefetch'
 import {
@@ -117,8 +147,10 @@ const isImageLoaded = ref(false)
 const shouldRenderImage = ref(true)
 const imageWidth = ref(640)
 const imageHeight = ref(360)
+const showHoverDetails = ref(false)
 
 let hasPrefetchedPostDetailPage = false
+let hoverTimeout: ReturnType<typeof setTimeout> | null = null
 
 // GSAP animation
 useCardAnimation(cardRef)
@@ -355,6 +387,29 @@ function prefetchPostDetailPage() {
   prefetchPostDetail(props.post.id)
 }
 
+/**
+ * 鼠标进入卡片，延迟显示详情悬浮层
+ * 延迟 300ms 防止快速划过时触发
+ */
+function handleMouseEnter() {
+  prefetchPostDetailPage()
+  if (hoverTimeout) clearTimeout(hoverTimeout)
+  hoverTimeout = setTimeout(() => {
+    showHoverDetails.value = true
+  }, 300)
+}
+
+/**
+ * 鼠标离开卡片，隐藏详情悬浮层
+ */
+function handleMouseLeave() {
+  if (hoverTimeout) {
+    clearTimeout(hoverTimeout)
+    hoverTimeout = null
+  }
+  showHoverDetails.value = false
+}
+
 function handleClick() {
   emit('click', props.post.id, thumbnailSrc.value)
 }
@@ -521,5 +576,113 @@ function handleClick() {
 
 .post-stat svg {
   opacity: 0.7;
+}
+
+/* ========== Hover Details Overlay ========== */
+.hover-details-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: var(--spacing-3);
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.85) 0%,
+    rgba(0, 0, 0, 0.6) 40%,
+    rgba(0, 0, 0, 0.2) 70%,
+    transparent 100%
+  );
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  /* GPU 加速 */
+  will-change: opacity, transform;
+  transform: translate3d(0, 0, 0);
+}
+
+.hover-details-content {
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.hover-title {
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  line-height: 1.4;
+  margin: 0 0 var(--spacing-1);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.hover-author {
+  font-size: var(--text-xs);
+  opacity: 0.9;
+  margin: 0 0 var(--spacing-2);
+}
+
+.hover-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-3);
+  font-size: var(--text-xs);
+  margin-bottom: var(--spacing-2);
+}
+
+.hover-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  opacity: 0.9;
+}
+
+.hover-platform {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--text-xs);
+  opacity: 0.8;
+  margin: 0;
+}
+
+/* GPU 加速过渡动画 */
+.hover-details-enter-active,
+.hover-details-leave-active {
+  transition:
+    opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.hover-details-enter-from {
+  opacity: 0;
+  transform: translate3d(0, 10px, 0);
+}
+
+.hover-details-leave-to {
+  opacity: 0;
+  transform: translate3d(0, 5px, 0);
+}
+
+/* 移动端禁用悬浮详情（触摸设备没有 hover） */
+@media (hover: none) {
+  .hover-details-overlay {
+    display: none !important;
+  }
+}
+
+/* 减少动效偏好 */
+@media (prefers-reduced-motion: reduce) {
+  .hover-details-enter-active,
+  .hover-details-leave-active {
+    transition: opacity 0.1s;
+  }
+
+  .hover-details-enter-from,
+  .hover-details-leave-to {
+    transform: none;
+  }
 }
 </style>
