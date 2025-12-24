@@ -110,6 +110,9 @@ self.addEventListener('fetch', (event) => {
   } else if (isVideoStreamRequest(url)) {
     // 视频流: Network Only（不缓存完整视频，太大）
     event.respondWith(fetch(request))
+  } else if (isAvatarRequest(url)) {
+    // 头像: Cache First with long TTL（头像很少变化）
+    event.respondWith(cacheFirstMedia(request))
   } else if (isMediaRequest(url)) {
     // 媒体文件/缩略图: Cache First with Network Fallback
     event.respondWith(cacheFirstMedia(request))
@@ -120,6 +123,9 @@ self.addEventListener('fetch', (event) => {
   } else if (isPostListRequest(url)) {
     // 帖子列表: Network First（列表需要最新数据）
     event.respondWith(networkFirstApi(request))
+  } else if (isAuthorRequest(url)) {
+    // 作者数据: Stale-While-Revalidate（作者信息变化不频繁）
+    event.respondWith(staleWhileRevalidatePost(request))
   } else if (isApiRequest(url)) {
     // 其他API请求: Network First with Cache Fallback
     event.respondWith(networkFirstApi(request))
@@ -475,6 +481,23 @@ function isPostDetailRequest(url) {
 function isPostListRequest(url) {
   // 匹配 /api/v1/posts 或 /api/v1/posts?... 格式（帖子列表查询）
   return url.pathname === '/api/v1/posts' || url.pathname === '/api/v1/posts/'
+}
+
+function isAuthorRequest(url) {
+  // 匹配 /api/v1/authors 或 /api/v1/authors/{id} 格式
+  return /^\/api\/v1\/authors(\/[0-9a-f-]+)?$/i.test(url.pathname)
+}
+
+function isAvatarRequest(url) {
+  // 匹配头像 URL 模式
+  if (url.pathname.includes('avatar') || url.pathname.includes('profile')) {
+    return true
+  }
+  // Twitter/外部头像 CDN
+  if (url.hostname.includes('pbs.twimg.com') && url.pathname.includes('profile')) {
+    return true
+  }
+  return false
 }
 
 /**

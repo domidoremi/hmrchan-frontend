@@ -26,6 +26,7 @@
         :height="imageHeight"
         loading="lazy"
         decoding="async"
+        fetchpriority="low"
         @load="onImageLoad"
         @error="onImageError"
       />
@@ -87,8 +88,8 @@ const PLATFORM_ASPECT_RATIOS: Record<string, string> = {
   youtube: '16 / 9',
   twitter: '16 / 9',
   bilibili: '16 / 9',
-  pixiv: '3 / 4',  // Pixiv 图片通常偏竖屏
-  weibo: '4 / 3',  // 微博图片多为方形或竖屏
+  pixiv: '3 / 4', // Pixiv 图片通常偏竖屏
+  weibo: '4 / 3', // 微博图片多为方形或竖屏
 }
 
 const DEFAULT_ASPECT_RATIO = '16 / 9'
@@ -173,7 +174,8 @@ const thumbnailSrc = computed(() => {
     if (cached) return cached
   }
 
-  const optimized = normalizeToThumbnailUrl(props.post.thumbnail_url, rawSize) || props.post.thumbnail_url
+  const optimized =
+    normalizeToThumbnailUrl(props.post.thumbnail_url, rawSize) || props.post.thumbnail_url
 
   // 存入缓存
   if (mediaId) {
@@ -285,15 +287,19 @@ function preloadImageDimensions() {
   img.src = thumbnailSrc.value
 }
 
-watch(thumbnailSrc, (newSrc, oldSrc) => {
-  isImageLoaded.value = false
+watch(
+  thumbnailSrc,
+  (newSrc, oldSrc) => {
+    isImageLoaded.value = false
 
-  // 当图片 URL 变化时，重新预加载获取尺寸
-  if (newSrc !== oldSrc) {
-    preloadedAspectRatio.value = null
-    preloadImageDimensions()
-  }
-}, { immediate: true })
+    // 当图片 URL 变化时，重新预加载获取尺寸
+    if (newSrc !== oldSrc) {
+      preloadedAspectRatio.value = null
+      preloadImageDimensions()
+    }
+  },
+  { immediate: true }
+)
 
 /**
  * Format number to compact form (1.2K, 3.5M)

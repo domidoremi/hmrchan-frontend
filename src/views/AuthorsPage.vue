@@ -73,6 +73,7 @@ import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { authorService, type AuthorListItem, ApiError } from '@/api'
 import { normalizeAvatarUrl } from '@/api/userService'
+import { authorCache } from '@/utils/cache'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
@@ -123,11 +124,24 @@ async function fetchAuthors(reset = true): Promise<boolean> {
 
   error.value = null
 
+  const params = { page: page.value, page_size: pageSize }
+
+  // 从缓存快速加载（仅首次加载时）
+  if (reset && !hadData) {
+    const cached = await authorCache.getList(params)
+    if (cached) {
+      authors.value = cached.data as AuthorListItem[]
+      total.value = cached.total
+    }
+  }
+
   try {
-    const res = await authorService.listAuthors({ page: page.value, page_size: pageSize })
+    const res = await authorService.listAuthors(params)
 
     if (reset) {
       authors.value = res.items
+      // 写入缓存
+      await authorCache.setList(params, res.items, res.total)
     } else {
       authors.value.push(...res.items)
     }

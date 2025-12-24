@@ -3,6 +3,7 @@
  */
 
 import { apiClient, type PaginatedApiResponse } from './client'
+import { buildQuery } from '@/utils/queryBuilder'
 import type { PostListItem } from './postService'
 
 export type SortOrder = 'asc' | 'desc'
@@ -50,16 +51,6 @@ export interface ListAuthorsParams {
   min_followers?: number
   sort_by?: string
   sort_order?: SortOrder
-}
-
-function buildQuery(params: Record<string, string | number | boolean | undefined | null>): string {
-  const query = new URLSearchParams()
-  Object.entries(params).forEach(([key, value]) => {
-    if (value === undefined || value === null || value === '') return
-    query.set(key, String(value))
-  })
-  const qs = query.toString()
-  return qs ? `?${qs}` : ''
 }
 
 export const authorService = {

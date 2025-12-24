@@ -5,16 +5,7 @@
 
 import { idbGet, idbSet, idbDelete, idbDeleteExpired, STORES } from './idb'
 import { memoryCache } from './memoryCache'
-
-// 缓存配置
-const CONFIG = {
-  // 帖子详情缓存 24 小时
-  POST_TTL: 24 * 60 * 60 * 1000,
-  // 帖子列表缓存 5 分钟
-  LIST_TTL: 5 * 60 * 1000,
-  // 内存缓存 TTL（更短，用于快速访问）
-  MEMORY_TTL: 2 * 60 * 1000,
-}
+import { CACHE_TTL } from './config'
 
 // 类型定义
 export interface CachedPost {
@@ -65,9 +56,9 @@ export const postCache = {
     const idbCached = await idbGet<CachedPost>(STORES.POSTS, uuid)
     if (idbCached) {
       // 检查是否过期
-      if (Date.now() - idbCached.cached_at < CONFIG.POST_TTL) {
+      if (Date.now() - idbCached.cached_at < CACHE_TTL.POST_DETAIL) {
         // 回填内存缓存
-        memoryCache.set(memKey, idbCached, CONFIG.MEMORY_TTL)
+        memoryCache.set(memKey, idbCached, CACHE_TTL.MEMORY)
         return idbCached
       }
       // 过期则删除
@@ -89,7 +80,7 @@ export const postCache = {
     }
 
     // 同时写入内存和 IDB
-    memoryCache.set(`post:${uuid}`, cached, CONFIG.MEMORY_TTL)
+    memoryCache.set(`post:${uuid}`, cached, CACHE_TTL.MEMORY)
     await idbSet(STORES.POSTS, cached)
   },
 
@@ -118,8 +109,8 @@ export const postCache = {
     // 2. 再查 IndexedDB
     const idbCached = await idbGet<CachedPostList>(STORES.POST_LISTS, cacheKey)
     if (idbCached) {
-      if (Date.now() - idbCached.cached_at < CONFIG.LIST_TTL) {
-        memoryCache.set(cacheKey, idbCached, CONFIG.MEMORY_TTL)
+      if (Date.now() - idbCached.cached_at < CACHE_TTL.POST_LIST) {
+        memoryCache.set(cacheKey, idbCached, CACHE_TTL.MEMORY)
         return idbCached
       }
       await idbDelete(STORES.POST_LISTS, cacheKey)
@@ -146,7 +137,7 @@ export const postCache = {
       etag,
     }
 
-    memoryCache.set(cacheKey, cached, CONFIG.MEMORY_TTL)
+    memoryCache.set(cacheKey, cached, CACHE_TTL.MEMORY)
     await idbSet(STORES.POST_LISTS, cached)
   },
 
@@ -164,8 +155,8 @@ export const postCache = {
    * 清理过期缓存
    */
   async cleanup(): Promise<{ posts: number; lists: number }> {
-    const posts = await idbDeleteExpired(STORES.POSTS, 'cached_at', CONFIG.POST_TTL)
-    const lists = await idbDeleteExpired(STORES.POST_LISTS, 'cached_at', CONFIG.LIST_TTL)
+    const posts = await idbDeleteExpired(STORES.POSTS, 'cached_at', CACHE_TTL.POST_DETAIL)
+    const lists = await idbDeleteExpired(STORES.POST_LISTS, 'cached_at', CACHE_TTL.POST_LIST)
     return { posts, lists }
   },
 
