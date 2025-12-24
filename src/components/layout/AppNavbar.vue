@@ -196,7 +196,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, nextTick, defineAsyncComponent } from 'vue'
+import { ref, watch, onMounted, onUnmounted, defineAsyncComponent, nextTick } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import {
@@ -213,7 +213,7 @@ import {
 } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores'
 import { getUserDisplayName } from '@/utils/user'
-import { normalizeAvatarUrl } from '@/api/userService'
+import { useUserAvatar, preloadUserAvatar } from '@/composables/useUserAvatar'
 import { prefetchExploreData, prefetchAuthorsData } from '@/utils/prefetch'
 import { throttleRAF, scheduleDOMUpdate } from '@/utils/performance'
 
@@ -240,11 +240,19 @@ const isNavbarHidden = ref(false)
 let lastScrollY = 0
 const scrollThreshold = 100
 
-const userAvatar = computed(() => {
-  const avatarUrl = normalizeAvatarUrl(user.value?.avatar_url)
-  if (avatarUrl) return avatarUrl
-  return `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.value?.username || 'default'}`
-})
+// 使用统一的用户头像 composable，确保与其他组件同步
+const { avatarUrl: userAvatar } = useUserAvatar()
+
+// 预加载头像以提高导航栏显示优先级
+watch(
+  userAvatar,
+  (url) => {
+    if (url && isAuthenticated.value) {
+      preloadUserAvatar(url)
+    }
+  },
+  { immediate: true }
+)
 
 let hasPrefetchedExplorePage = false
 let hasPrefetchedAuthorsPage = false

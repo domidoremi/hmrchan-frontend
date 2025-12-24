@@ -47,7 +47,7 @@ import { LogIn } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore, useCommentsStore, useToastStore } from '@/stores'
 import { validateComment } from '@/utils/security'
-import { normalizeAvatarUrl } from '@/api/userService'
+import { useUserAvatar } from '@/composables/useUserAvatar'
 import Button from '@/components/ui/Button.vue'
 
 interface Props {
@@ -76,11 +76,8 @@ const isSubmitting = ref(false)
 const textareaRef = ref<HTMLTextAreaElement>()
 const maxLength = 2000
 
-const userAvatar = computed(() => {
-  const url = normalizeAvatarUrl(user.value?.avatar_url)
-  if (url) return url
-  return `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.value?.username || 'default'}`
-})
+// 使用统一的用户头像 composable，确保与其他组件同步
+const { avatarUrl: userAvatar } = useUserAvatar()
 
 const placeholder = computed(() => {
   if (props.replyToUsername) {

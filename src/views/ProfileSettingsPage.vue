@@ -164,6 +164,7 @@ import { useI18n } from 'vue-i18n'
 import { ArrowLeft, User, Camera } from 'lucide-vue-next'
 import { userService, normalizeAvatarUrl, type UserProfile, ApiError } from '@/api'
 import { useAuthStore, useToastStore } from '@/stores'
+import { refreshAvatarCache } from '@/composables/useUserAvatar'
 import Button from '@/components/ui/Button.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import { defineAsyncComponent } from 'vue'
@@ -326,6 +327,10 @@ async function handleCroppedImage(blob: Blob) {
     if (authStore.user) {
       authStore.user.avatar_url = cleanUrl
     }
+    // 刷新全局头像缓存，确保导航栏等组件立即更新
+    refreshAvatarCache()
+    // 同步更新 auth store 中的用户数据
+    await authStore.fetchCurrentUser()
     toastStore.success(t('profile.avatarUpdated'))
   } catch (err) {
     if (err instanceof ApiError) {
@@ -445,22 +450,107 @@ onMounted(() => {
   max-width: 600px;
 }
 
+/* 平板适配 */
+@media (max-width: 1024px) {
+  .settings-form {
+    max-width: 100%;
+  }
+}
+
+/* 移动端适配 */
 @media (max-width: 768px) {
+  .profile-settings-page {
+    padding: var(--spacing-4) 0;
+  }
+
+  .page-header {
+    gap: var(--spacing-3);
+    margin-bottom: var(--spacing-4);
+  }
+
+  .page-header h1 {
+    font-size: var(--text-xl);
+  }
+
   .settings-section {
     padding: var(--spacing-4);
+    margin-bottom: var(--spacing-4);
+    border-radius: var(--radius-lg);
+  }
+
+  .section-title {
+    font-size: var(--text-base);
+    margin-bottom: var(--spacing-3);
   }
 
   .avatar-section {
     flex-direction: column;
     text-align: center;
+    gap: var(--spacing-4);
+  }
+
+  .avatar-preview {
+    width: 100px;
+    height: 100px;
+  }
+
+  .avatar-actions {
+    width: 100%;
+  }
+
+  .avatar-upload-btn {
+    width: 100%;
+    justify-content: center;
+    padding: var(--spacing-3) var(--spacing-4);
+  }
+
+  .form-group {
+    margin-bottom: var(--spacing-3);
+  }
+
+  .form-group label {
+    font-size: var(--text-sm);
+  }
+
+  .form-group .glass-input {
+    min-height: 48px;
+    font-size: 16px; /* 防止 iOS 自动缩放 */
+  }
+
+  .bio-textarea {
+    min-height: 120px;
   }
 
   .form-actions {
     flex-direction: column;
+    margin-top: var(--spacing-4);
+    padding-top: var(--spacing-3);
   }
 
   .form-actions :deep(button) {
     width: 100%;
+    min-height: 48px;
+  }
+}
+
+/* 小屏手机适配 */
+@media (max-width: 480px) {
+  .profile-settings-page {
+    padding: var(--spacing-3) 0;
+  }
+
+  .page-header h1 {
+    font-size: var(--text-lg);
+  }
+
+  .settings-section {
+    padding: var(--spacing-3);
+    border-radius: var(--radius-md);
+  }
+
+  .avatar-preview {
+    width: 80px;
+    height: 80px;
   }
 }
 </style>
