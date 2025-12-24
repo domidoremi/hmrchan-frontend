@@ -234,12 +234,18 @@
 
 /* ========== Vue Transitions ========== */
 
-/* Fade - GPU加速优化 */
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity var(--transition-base);
+/* Fade - GPU加速优化 + 沉浸式动画 */
+.fade-enter-active {
+  transition: opacity var(--duration-slow) var(--ease-out);
   /* GPU加速：提升到独立合成层 */
   will-change: opacity;
+  backface-visibility: hidden;
+}
+
+.fade-leave-active {
+  transition: opacity var(--duration-normal) var(--ease-in);
+  will-change: opacity;
+  backface-visibility: hidden;
 }
 
 .fade-enter-from,
@@ -247,44 +253,62 @@
   opacity: 0;
 }
 
-/* Slide Up - GPU加速优化 */
-.slide-up-enter-active,
-.slide-up-leave-active {
+/* Slide Up - GPU加速优化 + 沉浸式动画 */
+.slide-up-enter-active {
   transition:
-    opacity var(--transition-base),
-    transform var(--transition-base);
+    opacity var(--duration-slow) var(--ease-out),
+    transform var(--duration-slow) var(--ease-out);
   /* GPU加速：提升到独立合成层 */
   will-change: transform, opacity;
+  backface-visibility: hidden;
+  transform-style: preserve-3d;
+}
+
+.slide-up-leave-active {
+  transition:
+    opacity var(--duration-normal) var(--ease-in),
+    transform var(--duration-normal) var(--ease-in);
+  will-change: transform, opacity;
+  backface-visibility: hidden;
 }
 
 .slide-up-enter-from {
   opacity: 0;
-  transform: translate3d(0, 20px, 0);
+  transform: translate3d(0, 30px, 0);
 }
 
 .slide-up-leave-to {
   opacity: 0;
-  transform: translate3d(0, -10px, 0);
+  transform: translate3d(0, -15px, 0);
 }
 
-/* Slide Down - GPU加速优化 */
-.slide-down-enter-active,
-.slide-down-leave-active {
+/* Slide Down - GPU加速优化 + 沉浸式动画 */
+.slide-down-enter-active {
   transition:
-    opacity var(--transition-base),
-    transform var(--transition-base);
+    opacity var(--duration-slow) var(--ease-out),
+    transform var(--duration-slow) var(--ease-out);
   /* GPU加速：提升到独立合成层 */
   will-change: transform, opacity;
+  backface-visibility: hidden;
+  transform-style: preserve-3d;
+}
+
+.slide-down-leave-active {
+  transition:
+    opacity var(--duration-normal) var(--ease-in),
+    transform var(--duration-normal) var(--ease-in);
+  will-change: transform, opacity;
+  backface-visibility: hidden;
 }
 
 .slide-down-enter-from {
   opacity: 0;
-  transform: translate3d(0, -20px, 0);
+  transform: translate3d(0, -30px, 0);
 }
 
 .slide-down-leave-to {
   opacity: 0;
-  transform: translate3d(0, 10px, 0);
+  transform: translate3d(0, 15px, 0);
 }
 
 /* Scale - GPU加速优化 */

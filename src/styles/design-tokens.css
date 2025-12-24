@@ -30,23 +30,13 @@
   --blur-xl: 40px;
 
   /* 玻璃阴影 - 多层次柔和阴影 */
-  --glass-shadow-sm:
-    0 2px 8px rgba(0, 0, 0, 0.04),
-    0 4px 16px rgba(0, 0, 0, 0.02);
-  --glass-shadow-md:
-    0 4px 16px rgba(0, 0, 0, 0.06),
-    0 8px 32px rgba(0, 0, 0, 0.04);
-  --glass-shadow-lg:
-    0 8px 32px rgba(0, 0, 0, 0.08),
-    0 16px 64px rgba(0, 0, 0, 0.04);
-  --glass-shadow-xl:
-    0 16px 48px rgba(0, 0, 0, 0.1),
-    0 32px 96px rgba(0, 0, 0, 0.06);
+  --glass-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04), 0 4px 16px rgba(0, 0, 0, 0.02);
+  --glass-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.06), 0 8px 32px rgba(0, 0, 0, 0.04);
+  --glass-shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.08), 0 16px 64px rgba(0, 0, 0, 0.04);
+  --glass-shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.1), 0 32px 96px rgba(0, 0, 0, 0.06);
 
   /* 悬停时的阴影增强 */
-  --glass-shadow-hover:
-    0 8px 24px rgba(0, 0, 0, 0.1),
-    0 16px 48px rgba(0, 0, 0, 0.06);
+  --glass-shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.1), 0 16px 48px rgba(0, 0, 0, 0.06);
 
   /* ========== 动效缓动曲线 ========== */
 
@@ -64,12 +54,13 @@
 
   /* ========== 动效时长 ========== */
 
-  --duration-instant: 100ms;
-  --duration-fast: 150ms;
-  --duration-normal: 200ms;
-  --duration-slow: 300ms;
-  --duration-slower: 400ms;
-  --duration-slowest: 500ms;
+  --duration-instant: 80ms;
+  --duration-fast: 200ms;
+  --duration-normal: 350ms;
+  --duration-slow: 500ms;
+  --duration-slower: 700ms;
+  --duration-slowest: 900ms;
+  --duration-immersive: 1200ms;
 
   /* ========== 交互状态 ========== */
 
@@ -98,7 +89,7 @@
 }
 
 /* 暗色模式适配 */
-[data-theme="dark"] {
+[data-theme='dark'] {
   --glass-bg-ultra-light: rgba(30, 30, 35, 0.7);
   --glass-bg-light: rgba(30, 30, 35, 0.6);
   --glass-bg-medium: rgba(30, 30, 35, 0.45);
@@ -108,15 +99,9 @@
   --glass-border-medium: rgba(255, 255, 255, 0.1);
   --glass-border-subtle: rgba(255, 255, 255, 0.05);
 
-  --glass-shadow-sm:
-    0 2px 8px rgba(0, 0, 0, 0.2),
-    0 4px 16px rgba(0, 0, 0, 0.1);
-  --glass-shadow-md:
-    0 4px 16px rgba(0, 0, 0, 0.25),
-    0 8px 32px rgba(0, 0, 0, 0.15);
-  --glass-shadow-lg:
-    0 8px 32px rgba(0, 0, 0, 0.3),
-    0 16px 64px rgba(0, 0, 0, 0.2);
+  --glass-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.2), 0 4px 16px rgba(0, 0, 0, 0.1);
+  --glass-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.25), 0 8px 32px rgba(0, 0, 0, 0.15);
+  --glass-shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.3), 0 16px 64px rgba(0, 0, 0, 0.2);
 
   --highlight-gradient: linear-gradient(
     135deg,
