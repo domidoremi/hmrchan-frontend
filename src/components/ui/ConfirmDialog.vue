@@ -145,19 +145,21 @@ function handleBackdropClick(event: MouseEvent) {
   }
 }
 
-/* 对话框打开动画 */
+/* 对话框打开动画 - GPU加速优化 */
 .confirm-dialog[open] {
-  animation: dialog-enter 0.2s var(--ease-out-cubic);
+  animation: dialog-enter 0.25s var(--ease-out-cubic);
+  /* GPU加速：提升到独立合成层 */
+  will-change: transform, opacity;
 }
 
 @keyframes dialog-enter {
   from {
     opacity: 0;
-    transform: scale(0.95) translateY(-10px);
+    transform: translate3d(-50%, calc(-50% - 10px), 0) scale3d(0.95, 0.95, 1);
   }
   to {
     opacity: 1;
-    transform: scale(1) translateY(0);
+    transform: translate3d(-50%, -50%, 0) scale3d(1, 1, 1);
   }
 }
 

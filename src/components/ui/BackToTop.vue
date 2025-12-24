@@ -47,7 +47,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  threshold: 300,
+  threshold: 200,
   showProgress: true,
   size: 48,
   iconSize: 20,
@@ -112,18 +112,24 @@ onUnmounted(() => {
   color: var(--color-text-primary);
   box-shadow: var(--shadow-lg);
   cursor: pointer;
-  transition: all var(--transition-fast);
-  will-change: transform, opacity;
+  transition:
+    transform 0.3s var(--ease-out-cubic),
+    background 0.2s ease,
+    box-shadow 0.3s ease;
+  /* GPU加速：提升到独立合成层 */
+  transform: translate3d(0, 0, 0);
+  will-change: transform;
 }
 
 .back-to-top:hover {
-  transform: translateY(-4px);
+  transform: translate3d(0, -4px, 0);
   background: var(--glass-bg-light);
   box-shadow: var(--shadow-xl);
 }
 
 .back-to-top:active {
-  transform: translateY(-2px);
+  transform: translate3d(0, -2px, 0);
+  transition-duration: 0.1s;
 }
 
 .back-to-top.with-progress {
@@ -163,19 +169,21 @@ onUnmounted(() => {
   }
 }
 
-/* Transition */
+/* Transition - GPU加速优化 */
 .fade-slide-enter-active,
 .fade-slide-leave-active {
-  transition: all 0.3s var(--ease-out-cubic);
+  transition:
+    opacity 0.3s var(--ease-out-cubic),
+    transform 0.3s var(--ease-out-cubic);
 }
 
 .fade-slide-enter-from {
   opacity: 0;
-  transform: translateY(20px) scale(0.8);
+  transform: translate3d(0, 20px, 0) scale3d(0.8, 0.8, 1);
 }
 
 .fade-slide-leave-to {
   opacity: 0;
-  transform: translateY(10px) scale(0.9);
+  transform: translate3d(0, 10px, 0) scale3d(0.9, 0.9, 1);
 }
 </style>
