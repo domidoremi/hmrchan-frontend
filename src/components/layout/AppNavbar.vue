@@ -466,11 +466,13 @@ onUnmounted(() => {
   align-items: center;
   height: var(--navbar-height);
   transition: transform 0.3s var(--ease-out-cubic);
+  /* GPU加速：提升到独立合成层 */
+  transform: translate3d(0, 0, 0);
   will-change: transform;
 }
 
 .navbar.navbar-hidden {
-  transform: translateY(-100%);
+  transform: translate3d(0, -100%, 0);
 }
 
 .navbar-content {
