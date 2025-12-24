@@ -132,10 +132,6 @@ onUnmounted(() => {
   transition-duration: 0.1s;
 }
 
-.back-to-top.with-progress {
-  position: relative;
-}
-
 .progress-ring {
   position: absolute;
   inset: 0;
