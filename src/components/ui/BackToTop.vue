@@ -135,6 +135,8 @@ onUnmounted(() => {
 .progress-ring {
   position: absolute;
   inset: 0;
+  width: 100%;
+  height: 100%;
   transform: rotate(0deg);
   pointer-events: none;
 }
@@ -162,6 +164,11 @@ onUnmounted(() => {
     width: 56px;
     height: 56px;
   }
+
+  .arrow-icon {
+    width: 22px;
+    height: 22px;
+  }
 }
 
 /* 大屏 */
@@ -169,6 +176,11 @@ onUnmounted(() => {
   .back-to-top {
     width: 64px;
     height: 64px;
+  }
+
+  .arrow-icon {
+    width: 26px;
+    height: 26px;
   }
 }
 
@@ -179,6 +191,11 @@ onUnmounted(() => {
     height: 72px;
     right: var(--spacing-8);
     bottom: var(--spacing-8);
+  }
+
+  .arrow-icon {
+    width: 30px;
+    height: 30px;
   }
 }
 
