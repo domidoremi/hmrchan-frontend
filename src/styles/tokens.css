@@ -122,11 +122,12 @@
   --glass-glow: 0 0 20px rgba(59, 130, 246, 0.25);
 
   /* ========== Motion / Animation ========== */
-  --duration-instant: 50ms;
-  --duration-fast: 150ms;
-  --duration-normal: 250ms;
-  --duration-slow: 400ms;
-  --duration-slower: 600ms;
+  --duration-instant: 80ms;
+  --duration-fast: 200ms;
+  --duration-normal: 350ms;
+  --duration-slow: 500ms;
+  --duration-slower: 700ms;
+  --duration-immersive: 900ms;
 
   --ease-linear: linear;
   --ease-in: cubic-bezier(0.4, 0, 1, 1);
