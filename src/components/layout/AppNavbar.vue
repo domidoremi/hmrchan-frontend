@@ -1,5 +1,5 @@
 <template>
-  <nav class="navbar glass-navbar">
+  <nav class="navbar glass-navbar" :class="{ 'navbar-hidden': isNavbarHidden }">
     <div class="container navbar-content">
       <!-- Logo -->
       <RouterLink to="/" class="navbar-brand">
@@ -236,6 +236,9 @@ const settingsDropdownStyle = ref<Record<string, string>>({})
 const userDropdownStyle = ref<Record<string, string>>({})
 
 const isMobile = ref(false)
+const isNavbarHidden = ref(false)
+let lastScrollY = 0
+const scrollThreshold = 100
 
 const userAvatar = computed(() => {
   const avatarUrl = normalizeAvatarUrl(user.value?.avatar_url)
@@ -405,6 +408,26 @@ function updateDropdownPosition(kind: 'settings' | 'user') {
   )
 }
 
+// 滚动处理：实现导航栏渐进式隐藏
+const handleScroll = throttleRAF(() => {
+  const currentScrollY = window.scrollY
+
+  // 向下滚动且超过阈值时隐藏
+  if (currentScrollY > lastScrollY && currentScrollY > scrollThreshold) {
+    isNavbarHidden.value = true
+  }
+  // 向上滚动时显示
+  else if (currentScrollY < lastScrollY) {
+    isNavbarHidden.value = false
+  }
+  // 接近顶部时显示
+  else if (currentScrollY <= scrollThreshold) {
+    isNavbarHidden.value = false
+  }
+
+  lastScrollY = currentScrollY
+})
+
 // 使用 throttleRAF 节流 resize 事件，避免高频触发导致的性能问题
 const handleResize = throttleRAF(() => {
   updateIsMobile()
@@ -420,6 +443,7 @@ onMounted(() => {
   updateIsMobile()
   document.addEventListener('click', handleClickOutside)
   window.addEventListener('resize', handleResize)
+  window.addEventListener('scroll', handleScroll, { passive: true })
 
   if (shouldPrefetchOnIdle()) {
     requestIdle(() => {
@@ -432,6 +456,7 @@ onMounted(() => {
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
   window.removeEventListener('resize', handleResize)
+  window.removeEventListener('scroll', handleScroll)
 })
 </script>
 
@@ -440,6 +465,12 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   height: var(--navbar-height);
+  transition: transform 0.3s var(--ease-out-cubic);
+  will-change: transform;
+}
+
+.navbar.navbar-hidden {
+  transform: translateY(-100%);
 }
 
 .navbar-content {
