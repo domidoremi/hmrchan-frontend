@@ -99,7 +99,7 @@ onUnmounted(() => {
   position: fixed;
   right: var(--spacing-6);
   bottom: var(--spacing-6);
-  z-index: var(--z-sticky);
+  z-index: var(--z-fixed);
   display: flex;
   align-items: center;
   justify-content: center;
