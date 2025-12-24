@@ -155,7 +155,34 @@ onUnmounted(() => {
   z-index: 1;
 }
 
-/* 移动端适配 */
+/* 响应式尺寸适配 */
+/* 桌面端 - 增大按钮尺寸 */
+@media (min-width: 1024px) {
+  .back-to-top {
+    width: 56px;
+    height: 56px;
+  }
+}
+
+/* 大屏 */
+@media (min-width: 1536px) {
+  .back-to-top {
+    width: 64px;
+    height: 64px;
+  }
+}
+
+/* 超大屏 */
+@media (min-width: 1920px) {
+  .back-to-top {
+    width: 72px;
+    height: 72px;
+    right: var(--spacing-8);
+    bottom: var(--spacing-8);
+  }
+}
+
+/* 移动端 - 保持 WCAG 最小触控目标 44px */
 @media (max-width: 768px) {
   .back-to-top {
     right: var(--spacing-4);
