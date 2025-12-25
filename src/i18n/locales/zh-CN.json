@@ -217,7 +217,11 @@
     "publish": "发布",
     "publishSuccess": "讨论发布成功",
     "publishFailed": "发布失败，请重试",
-    "loginToPost": "登录后发起讨论"
+    "loginToPost": "登录后发起讨论",
+    "pinned": "置顶",
+    "pin": "置顶讨论",
+    "unpin": "取消置顶",
+    "referencedPost": "引用帖子"
   },
   "contact": {
     "title": "联系我们",
