@@ -33,7 +33,7 @@ export interface Discussion {
   content: string
   category: DiscussionCategory
   author: DiscussionAuthor
-  post_references?: PostReference[]
+  referenced_post?: PostReference | null
   tags: string[]
   view_count: number
   likes_count: number
@@ -63,6 +63,7 @@ export interface CreateDiscussionRequest {
   content: string
   category: DiscussionCategory
   tags?: string[]
+  referenced_post_id?: string
 }
 
 export interface UpdateDiscussionRequest {
@@ -70,6 +71,7 @@ export interface UpdateDiscussionRequest {
   content?: string
   category?: DiscussionCategory
   tags?: string[]
+  referenced_post_id?: string | null
 }
 
 export interface CreateCommentRequest {
@@ -148,6 +150,20 @@ export const discussionService = {
     await apiClient.delete(`/discussions/${discussionId}/like`)
   },
 
+  /**
+   * 置顶讨论（管理员）
+   */
+  async pin(discussionId: string): Promise<void> {
+    await apiClient.post(`/discussions/${discussionId}/pin`, null)
+  },
+
+  /**
+   * 取消置顶讨论（管理员）
+   */
+  async unpin(discussionId: string): Promise<void> {
+    await apiClient.delete(`/discussions/${discussionId}/pin`)
+  },
+
   // ========== 讨论评论 ==========
 
   /**
@@ -216,10 +232,7 @@ export const discussionService = {
   /**
    * 获取我发起的讨论
    */
-  async getMyDiscussions(
-    page = 1,
-    pageSize = 20
-  ): Promise<PaginatedApiResponse<Discussion>> {
+  async getMyDiscussions(page = 1, pageSize = 20): Promise<PaginatedApiResponse<Discussion>> {
     return apiClient.get<PaginatedApiResponse<Discussion>>(
       `/discussions/user/my-discussions?page=${page}&page_size=${pageSize}`
     )
@@ -228,24 +241,22 @@ export const discussionService = {
   /**
    * 获取我的讨论评论
    */
-  async getMyComments(
-    page = 1,
-    pageSize = 20
-  ): Promise<PaginatedApiResponse<DiscussionComment>> {
+  async getMyComments(page = 1, pageSize = 20): Promise<PaginatedApiResponse<DiscussionComment>> {
     return apiClient.get<PaginatedApiResponse<DiscussionComment>>(
       `/discussions/user/my-comments?page=${page}&page_size=${pageSize}`
     )
   },
 
-  // ========== 帖子搜索 (用于 @帖子 提及) ==========
+  // ========== 帖子搜索 (用于 @帖子 引用) ==========
 
   /**
-   * 搜索帖子
+   * 搜索帖子（用于@帖子引用）
    */
   async searchPosts(query: string, limit = 10): Promise<PostReference[]> {
-    return apiClient.get<PostReference[]>(
-      `/posts/search?q=${encodeURIComponent(query)}&limit=${limit}`
+    const response = await apiClient.get<{ items: PostReference[] }>(
+      `/posts/?q=${encodeURIComponent(query)}&page_size=${limit}`
     )
+    return response.items
   },
 }
 
