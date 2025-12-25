@@ -13,3 +13,5 @@ pages_build_output_dir = "./dist"
 # Functions 运行时变量（用于 API 代理）
 [vars]
 API_BASE_URL = "https://api.momichan.xyz"
+# Turnstile 站点密钥（公开）
+VITE_TURNSTILE_SITE_KEY = "0x4AAAAAACGjufPO78xio48V"
