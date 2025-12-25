@@ -150,8 +150,6 @@ export default defineConfig(({ mode }) => {
         'vue-router',
         'pinia',
         'pinia-plugin-persistedstate',
-        'ky',
-        'dayjs',
         'vue-i18n',
         '@vueuse/core',
         '@vueuse/shared',
@@ -163,7 +161,7 @@ export default defineConfig(({ mode }) => {
        * 排除预构建的依赖
        * 这些依赖按需加载，不需要预构建
        */
-      exclude: ['vite-plugin-vue-devtools', 'photoswipe', 'masonry-layout', 'gsap'],
+      exclude: ['vite-plugin-vue-devtools', 'gsap'],
 
       /** 是否强制重新预构建 */
       force: false,
@@ -312,7 +310,14 @@ export default defineConfig(({ mode }) => {
               return 'layout'
             }
 
-            if (id.includes('/components/business/')) return 'business-components'
+            // 业务组件按类型分割
+            if (id.includes('/components/business/')) {
+              // PostCard 是首屏核心组件，独立打包便于缓存
+              if (id.includes('PostCard')) return 'post-card'
+              // 搜索栏懒加载
+              if (id.includes('SearchBar')) return 'search-bar'
+              return 'business-components'
+            }
 
             // 业务代码分割：stores
             if (id.includes('/stores/')) return 'stores'
@@ -329,18 +334,9 @@ export default defineConfig(({ mode }) => {
               return 'animations'
             }
 
-            // API 层按服务类型分割，避免统一打包导致未使用代码
+            // API 层统一打包，避免依赖重复（rolldown 对细粒度分割支持有限）
             if (id.includes('/api/')) {
-              // 客户端和类型定义 - 所有服务都依赖
-              if (id.includes('client.ts') || id.includes('index.ts')) return 'api-core'
-              // 用户认证相关
-              if (id.includes('authService')) return 'api-auth'
-              // 帖子服务 - 首页使用
-              if (id.includes('postService')) return 'api-posts'
-              // 作者服务
-              if (id.includes('authorService')) return 'api-authors'
-              // 其他服务按需加载
-              return 'api-misc'
+              return 'api'
             }
           },
 

@@ -59,8 +59,7 @@ export async function clearAllCaches(): Promise<{ success: boolean; message: str
     keysToRemove.forEach((key) => localStorage.removeItem(key))
 
     return { success: true, message: '缓存已清理完成' }
-  } catch (error) {
-    console.error('[Cache] Failed to clear caches:', error)
+  } catch {
     return { success: false, message: '清理缓存失败' }
   }
 }

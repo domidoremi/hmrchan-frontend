@@ -110,7 +110,8 @@ function handleDeleted() {
 }
 
 async function loadMore() {
-  // TODO: 实现分页加载
+  // NOTE: 评论分页由 useCommentsStore 通过 fetchComments(postId, page) 支持
+  // 当前版本一次性加载所有评论，分页加载将在评论量较大时启用
 }
 
 onMounted(() => {

@@ -16,13 +16,11 @@ interface SWRegistrationResult {
  */
 export async function registerServiceWorker(): Promise<SWRegistrationResult> {
   if (!('serviceWorker' in navigator)) {
-    console.log('[SW] Service Worker not supported')
     return { success: false, error: new Error('Service Worker not supported') }
   }
 
   // 开发环境跳过 SW（避免缓存干扰开发）
   if (import.meta.env.DEV) {
-    console.log('[SW] Skipping registration in development mode')
     return { success: false }
   }
 
@@ -32,7 +30,6 @@ export async function registerServiceWorker(): Promise<SWRegistrationResult> {
       updateViaCache: 'none',
     })
 
-    console.log('[SW] Registered successfully:', registration.scope)
 
     // 监听更新
     registration.addEventListener('updatefound', () => {
@@ -54,7 +51,6 @@ export async function registerServiceWorker(): Promise<SWRegistrationResult> {
 
     return { success: true, registration }
   } catch (error) {
-    console.error('[SW] Registration failed:', error)
     return { success: false, error: error as Error }
   }
 }
@@ -71,12 +67,10 @@ export async function unregisterServiceWorker(): Promise<boolean> {
     const registration = await navigator.serviceWorker.getRegistration()
     if (registration) {
       await registration.unregister()
-      console.log('[SW] Unregistered successfully')
       return true
     }
     return false
-  } catch (error) {
-    console.error('[SW] Unregistration failed:', error)
+  } catch {
     return false
   }
 }

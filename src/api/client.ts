@@ -8,9 +8,27 @@
  * - 请求重试
  */
 
-import { useToastStore } from '@/stores/toast'
-import i18n from '@/i18n'
 import { memoryCache } from '@/utils/cache'
+
+// 延迟导入 i18n 和 toast store，避免循环依赖和减少 bundle 大小
+let _toastStore: ReturnType<typeof import('@/stores/toast').useToastStore> | null = null
+let _i18n: typeof import('@/i18n').default | null = null
+
+async function getToastStore() {
+  if (!_toastStore) {
+    const { useToastStore } = await import('@/stores/toast')
+    _toastStore = useToastStore()
+  }
+  return _toastStore
+}
+
+async function getI18n() {
+  if (!_i18n) {
+    const module = await import('@/i18n')
+    _i18n = module.default
+  }
+  return _i18n
+}
 
 // API 基础配置
 const API_BASE_URL = '/api/v1'
@@ -163,13 +181,14 @@ async function handleErrorResponse(response: Response, skipErrorToast?: boolean)
     503: 'error.serviceUnavailable',
   }
 
+  const i18n = await getI18n()
   const { t } = i18n.global
   const statusMessage = statusMessages[response.status]
   const localizedMessage = statusMessage ? t(statusMessage) : errorMessage
 
   // 显示错误提示（除非跳过）
   if (!skipErrorToast && response.status !== 401) {
-    const toastStore = useToastStore()
+    const toastStore = await getToastStore()
     toastStore.error(localizedMessage)
   }
 
@@ -301,8 +320,9 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
     }
 
     // 处理网络错误或超时
+    const i18n = await getI18n()
     const { t } = i18n.global
-    const toastStore = useToastStore()
+    const toastStore = await getToastStore()
 
     if (error instanceof Error) {
       if (error.name === 'AbortError') {

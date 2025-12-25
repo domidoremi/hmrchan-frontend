@@ -149,7 +149,6 @@ export function useMasonryColumns(options: MasonryOptions = {}) {
       let isValid = true
       for (let i = 0; i < columnCount.value; i++) {
         if ((columns.value[i]?.length ?? 0) > 0 && realHeights[i] === 0) {
-          console.warn(`[Masonry] Column ${i} has items but reported 0 height. Ignoring DOM sync.`)
           isValid = false
           break
         }
