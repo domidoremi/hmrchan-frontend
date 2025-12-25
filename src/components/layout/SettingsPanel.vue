@@ -55,6 +55,7 @@ import { Sun, Moon, Monitor } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
 import { useThemeStore, useSettingsStore } from '@/stores'
+import { setLocale, type SupportedLocale } from '@/i18n'
 import type { Theme } from '@/types'
 
 defineEmits<{ close: [] }>()
@@ -72,7 +73,7 @@ const themeOptions = [
   { value: 'auto' as Theme, icon: Monitor },
 ]
 
-const localeOptions = [
+const localeOptions: { code: SupportedLocale; name: string }[] = [
   { code: 'en', name: 'English' },
   { code: 'zh-CN', name: '简体中文' },
   { code: 'ja', name: '日本語' },
@@ -82,8 +83,8 @@ function setTheme(value: Theme) {
   themeStore.setTheme(value)
 }
 
-function changeLocale(code: string) {
-  locale.value = code
+function changeLocale(code: SupportedLocale) {
+  setLocale(code)
 }
 
 function toggleSetting(key: 'showHeroSection' | 'enableAnimations') {

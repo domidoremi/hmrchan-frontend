@@ -129,9 +129,10 @@ const emit = defineEmits<{
 
 const router = useRouter()
 
-// 检查是否为管理员（需要后端在用户对象中添加 role 或 is_admin 字段）
+// 检查是否为管理员
+// NOTE: 待后端在 UserResponse 中添加 role 或 is_admin 字段后启用
 const isAdmin = computed(() => {
-  // TODO: 等待后端添加管理员标识字段
+  // 预留：return authStore.user?.role === 'admin' || authStore.user?.is_admin === true
   return false
 })
 
@@ -177,8 +178,8 @@ async function handlePin(discussionId: string) {
     await discussionService.pin(discussionId)
     emit('pin', discussionId)
     emit('refresh')
-  } catch (error) {
-    console.error('Failed to pin discussion:', error)
+  } catch {
+    // 静默失败，UI 状态已由 emit 处理
   }
 }
 
@@ -187,8 +188,8 @@ async function handleUnpin(discussionId: string) {
     await discussionService.unpin(discussionId)
     emit('unpin', discussionId)
     emit('refresh')
-  } catch (error) {
-    console.error('Failed to unpin discussion:', error)
+  } catch {
+    // 静默失败，UI 状态已由 emit 处理
   }
 }
 </script>

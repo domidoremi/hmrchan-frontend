@@ -22,8 +22,8 @@ export default defineConfigWithVueTs(
     files: ['**/*.{ts,mts,tsx,vue}'],
   },
 
-  /** 全局忽略的目录：构建产物和测试覆盖率报告 */
-  globalIgnores(['**/dist/**', '**/dist-ssr/**', '**/coverage/**']),
+  /** 全局忽略的目录：构建产物、测试覆盖率报告、AI 工具配置 */
+  globalIgnores(['**/dist/**', '**/dist-ssr/**', '**/coverage/**', '**/.claude/**', '**/.agent/**', '**/.qoder/**']),
 
   /** Vue 3 基础规则配置 - 包含 Vue 3 必需的核心规则 */
   pluginVue.configs['flat/essential'],
