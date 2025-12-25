@@ -339,7 +339,8 @@ function handleShare() {
 
 function handleReport() {
   showMenu.value = false
-  // TODO: 打开举报对话框
+  // NOTE: 举报功能待后端 API 支持 (POST /api/v1/reports)
+  // 当前显示反馈提示，后续接入真实举报流程
   toastStore.info(t('comment.reportSubmitted'))
 }
 

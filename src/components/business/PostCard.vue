@@ -377,7 +377,6 @@ function onImageLoad(event: Event) {
  */
 function onImageError() {
   isImageLoaded.value = true
-  console.warn(`Failed to load image for post ${props.post.id}`)
 }
 
 function prefetchPostDetailPage() {

@@ -263,10 +263,6 @@ async function handleSubmit() {
     emit('created', discussion)
   } catch (err) {
     if (err instanceof Error && 'status' in err && (err as { status: number }).status === 422) {
-      console.error('Validation failed:', err)
-      console.error('Request payload was:', payload)
-      console.error('Error details:', (err as { details?: unknown }).details)
-
       const apiErr = err as { details?: { detail?: string }; message?: string }
       const errorMsg = apiErr.details?.detail || apiErr.message || t('error.validationError')
       toastStore.error(errorMsg)

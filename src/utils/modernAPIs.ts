@@ -167,7 +167,6 @@ export function createResizeObserver(
   callback: (entries: ResizeObserverEntry[]) => void
 ): ResizeObserver | null {
   if (!browserSupports.resizeObserver) {
-    console.warn('[ModernAPIs] ResizeObserver not supported')
     return null
   }
 
@@ -210,7 +209,6 @@ export function animate(
   options: KeyframeAnimationOptions = {}
 ): Animation | null {
   if (!browserSupports.webAnimations) {
-    console.warn('[ModernAPIs] Web Animations API not supported')
     return null
   }
 

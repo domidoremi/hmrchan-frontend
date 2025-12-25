@@ -12,7 +12,10 @@ dist/
 dist-ssr/
 *.local
 
-
+.agent
+scripts/
+.vscode/
+.windsurf/
 # =====================
 # Logs
 # =====================
