@@ -121,7 +121,29 @@
     "hero": {
       "title": "Discover Amazing Content",
       "subtitle": "Explore curated collections from talented creators",
-      "badge": "Discover Amazing Content"
+      "badge": "Discover Amazing Content",
+      "highlights": {
+        "aggregate": {
+          "title": "Curated feed",
+          "desc": "Fresh posts across platforms, organized for easy browsing."
+        },
+        "search": {
+          "title": "Smart search",
+          "desc": "Find posts, authors, and tags in seconds."
+        },
+        "save": {
+          "title": "Save & revisit",
+          "desc": "Build your favorites and come back anytime."
+        }
+      }
+    },
+    "quickStart": {
+      "title": "Quick start",
+      "subtitle": "Jump into Explore, search by keywords, discover creators, and save what you love."
+    },
+    "bento": {
+      "featureTitle": "Start exploring in seconds",
+      "featureSubtitle": "Browse the latest posts, discover creators, and build your personal collection."
     },
     "latest": "Latest Posts",
     "popular": "Popular"
