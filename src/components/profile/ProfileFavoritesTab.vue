@@ -378,7 +378,7 @@ onMounted(() => {
 .favorite-card {
   position: relative;
   cursor: pointer;
-  transition: all var(--transition-normal);
+  transition: all var(--transition-base);
   overflow: hidden;
 }
 
@@ -463,7 +463,7 @@ onMounted(() => {
 }
 
 .remove-btn:hover {
-  background: var(--color-danger);
+  background: var(--color-error);
   transform: scale(1.1);
 }
 </style>

@@ -5,7 +5,7 @@
         v-if="isVisible"
         class="back-to-top"
         :class="{ 'with-progress': showProgress }"
-        :aria-label="$t('common.backToTop', '回到顶部')"
+        :aria-label="$t('common.backToTop')"
         @click="scrollToTop"
       >
         <svg
@@ -113,7 +113,7 @@ onUnmounted(() => {
   box-shadow: var(--shadow-lg);
   cursor: pointer;
   transition:
-    transform 0.3s var(--ease-out-cubic),
+    transform var(--transition-base),
     background 0.2s ease,
     box-shadow 0.3s ease;
   /* GPU加速：提升到独立合成层 */
@@ -213,8 +213,8 @@ onUnmounted(() => {
 .fade-slide-enter-active,
 .fade-slide-leave-active {
   transition:
-    opacity 0.3s var(--ease-out-cubic),
-    transform 0.3s var(--ease-out-cubic);
+    opacity var(--transition-base),
+    transform var(--transition-base);
 }
 
 .fade-slide-enter-from {

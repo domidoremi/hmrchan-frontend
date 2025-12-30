@@ -246,7 +246,7 @@ onMounted(() => {
 
 .unread-badge {
   padding: 4px 12px;
-  background: var(--color-danger);
+  background: var(--color-error);
   color: var(--color-white);
   border-radius: var(--radius-full);
   font-size: var(--text-sm);
@@ -313,7 +313,7 @@ onMounted(() => {
 
 .notification-icon.type-like {
   background: rgba(244, 63, 94, 0.1);
-  color: var(--color-danger);
+  color: var(--color-error);
 }
 
 .notification-icon.type-comment,
