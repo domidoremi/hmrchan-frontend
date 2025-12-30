@@ -1,7 +1,7 @@
 <template>
   <div class="home-page">
     <!-- Hero Section - 增强版 v2 -->
-    <section v-if="settings.showHeroSection" class="hero">
+    <section v-if="settings.showHeroSection" class="hero" :class="{ 'hero--animated': shouldAnimate }">
       <div class="hero-bg">
         <div class="hero-glow hero-glow--primary" />
         <div class="hero-glow hero-glow--accent" />
@@ -28,7 +28,19 @@
             {{ $t('common.learnMore') }}
           </Button>
         </div>
-        <div class="hero-scroll-hint animate-slide-up stagger-4">
+        <div class="hero-highlights animate-slide-up stagger-4">
+          <div v-for="item in heroHighlights" :key="item.titleKey" class="hero-highlight">
+            <div class="hero-highlight-icon">
+              <component :is="item.icon" :size="18" />
+            </div>
+            <div class="hero-highlight-text">
+              <div class="hero-highlight-title">{{ $t(item.titleKey) }}</div>
+              <div class="hero-highlight-desc">{{ $t(item.descKey) }}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="hero-scroll-hint animate-slide-up stagger-5">
           <div class="scroll-mouse">
             <div class="scroll-wheel" />
           </div>
@@ -39,6 +51,11 @@
     <!-- Quick Links (Bento Grid) - 增强版 -->
     <section ref="bentoRef" class="section bento">
       <div class="container">
+        <div class="bento-header">
+          <h2 class="bento-header-title">{{ $t('home.quickStart.title') }}</h2>
+          <p class="bento-header-subtitle">{{ $t('home.quickStart.subtitle') }}</p>
+        </div>
+
         <div class="bento-grid">
           <!-- Feature Card - 大卡片 -->
           <RouterLink
@@ -53,8 +70,8 @@
                 <Layers :size="14" />
                 <span>{{ $t('nav.explore') }}</span>
               </div>
-              <div class="bento-feature-title">{{ $t('home.hero.title') }}</div>
-              <div class="bento-feature-subtitle">{{ $t('home.hero.subtitle') }}</div>
+              <div class="bento-feature-title">{{ $t('home.bento.featureTitle') }}</div>
+              <div class="bento-feature-subtitle">{{ $t('home.bento.featureSubtitle') }}</div>
             </div>
             <div class="bento-feature-icon">
               <ArrowUpRight :size="18" />
@@ -201,6 +218,7 @@ import { postService, type PostListItem, ApiError } from '@/api'
 import { postCache } from '@/utils/cache'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import { useMasonryColumns } from '@/composables/useMasonryColumns'
+import { prefersReducedMotion } from '@/utils/performance'
 import Button from '@/components/ui/Button.vue'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
@@ -214,6 +232,26 @@ const { isAuthenticated } = storeToRefs(authStore)
 const { settings } = storeToRefs(settingsStore)
 
 const { t } = useI18n()
+
+const shouldAnimate = computed(() => settings.value.enableAnimations && !prefersReducedMotion())
+
+const heroHighlights = [
+  {
+    icon: Layers,
+    titleKey: 'home.hero.highlights.aggregate.title',
+    descKey: 'home.hero.highlights.aggregate.desc',
+  },
+  {
+    icon: Search,
+    titleKey: 'home.hero.highlights.search.title',
+    descKey: 'home.hero.highlights.search.desc',
+  },
+  {
+    icon: Heart,
+    titleKey: 'home.hero.highlights.save.title',
+    descKey: 'home.hero.highlights.save.desc',
+  },
+]
 
 const bentoRef = ref<HTMLElement | null>(null)
 
@@ -415,7 +453,7 @@ function goToExplore() {
 }
 
 function scrollToBento() {
-  bentoRef.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  bentoRef.value?.scrollIntoView({ behavior: shouldAnimate.value ? 'smooth' : 'auto', block: 'start' })
 }
 
 function goToPost(postId: string, thumbnailSrc: string | null) {
@@ -465,7 +503,15 @@ onBeforeUnmount(() => {
   border-radius: 50%;
   filter: blur(100px);
   opacity: 0.6;
+}
+
+.hero--animated .hero-glow--primary,
+.hero--animated .hero-glow--accent {
   animation: hero-glow-pulse 8s ease-in-out infinite alternate;
+}
+
+.hero--animated .hero-glow--secondary {
+  animation: hero-glow-pulse-center 8s ease-in-out infinite alternate;
 }
 
 .hero-glow--primary {
@@ -535,6 +581,17 @@ onBeforeUnmount(() => {
   }
 }
 
+@keyframes hero-glow-pulse-center {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0.5;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1.1);
+    opacity: 0.65;
+  }
+}
+
 .hero-content {
   position: relative;
   z-index: 1;
@@ -562,6 +619,9 @@ onBeforeUnmount(() => {
   height: 6px;
   background: var(--color-success);
   border-radius: 50%;
+}
+
+.hero--animated .hero-badge-dot {
   animation: pulse-dot 2s ease-in-out infinite;
 }
 
@@ -572,6 +632,9 @@ onBeforeUnmount(() => {
 
 .hero-badge svg {
   color: var(--color-accent);
+}
+
+.hero--animated .hero-badge svg {
   animation: sparkle 3s ease-in-out infinite;
 }
 
@@ -623,6 +686,9 @@ onBeforeUnmount(() => {
 }
 
 .hero-arrow-icon {
+}
+
+.hero--animated .hero-arrow-icon {
   animation: bounce-down 2s ease-in-out infinite;
 }
 
@@ -660,7 +726,66 @@ onBeforeUnmount(() => {
   height: 8px;
   background: var(--color-primary);
   border-radius: 2px;
+}
+
+.hero--animated .scroll-wheel {
   animation: scroll-wheel 2s ease-in-out infinite;
+}
+
+.hero:not(.hero--animated) .animate-slide-up {
+  animation: none !important;
+  opacity: 1 !important;
+  transform: none !important;
+}
+
+/* ========== Hero Highlights ========== */
+.hero-highlights {
+  margin-top: var(--spacing-8);
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--spacing-3);
+  width: 100%;
+}
+
+.hero-highlight {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-3);
+  padding: var(--spacing-4);
+  background: var(--glass-bg-light);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-xl);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.hero-highlight-icon {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-lg);
+  background: rgba(var(--color-primary-rgb), 0.1);
+  color: var(--color-primary);
+  flex-shrink: 0;
+}
+
+.hero-highlight-text {
+  min-width: 0;
+}
+
+.hero-highlight-title {
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  color: var(--color-text-primary);
+  margin-bottom: 2px;
+}
+
+.hero-highlight-desc {
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+  line-height: var(--leading-relaxed);
 }
 
 @keyframes scroll-wheel {
@@ -672,6 +797,22 @@ onBeforeUnmount(() => {
 .bento.section {
   padding-top: var(--spacing-8);
   padding-bottom: var(--spacing-12);
+}
+
+.bento-header {
+  margin-bottom: var(--spacing-6);
+}
+
+.bento-header-title {
+  font-size: var(--text-2xl);
+  font-weight: var(--font-bold);
+  margin-bottom: var(--spacing-2);
+}
+
+.bento-header-subtitle {
+  font-size: var(--text-base);
+  color: var(--color-text-secondary);
+  max-width: 65ch;
 }
 
 .bento-grid {
@@ -981,6 +1122,11 @@ onBeforeUnmount(() => {
 
   .hero-actions {
     justify-content: center;
+  }
+
+  .hero-highlights {
+    grid-template-columns: 1fr;
+    text-align: left;
   }
 
   .hero-glow--primary {
