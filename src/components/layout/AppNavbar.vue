@@ -375,7 +375,7 @@ function requestIdle(fn: () => void) {
 }
 
 function goToSearch() {
-  router.push('/explore')
+  router.push('/search')
 }
 
 function toggleSettings() {
