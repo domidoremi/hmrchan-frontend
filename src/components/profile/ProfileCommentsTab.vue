@@ -263,7 +263,7 @@ onMounted(() => {
 .comment-item {
   padding: var(--spacing-4);
   cursor: default;
-  transition: all 0.3s var(--ease-out-cubic);
+  transition: all var(--transition-base);
   border: 1px solid transparent;
   position: relative;
   background: var(--glass-bg-light);
@@ -272,7 +272,7 @@ onMounted(() => {
 
 .comment-item:hover {
   transform: translateY(-2px);
-  border-color: var(--color-primary-alpha);
+  border-color: rgba(var(--color-primary-rgb), 0.3);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
 }
 
@@ -295,7 +295,7 @@ onMounted(() => {
 
 .comment-content p {
   margin: 0;
-  color: var(--color-text);
+  color: var(--color-text-primary);
 }
 
 .comment-context {
