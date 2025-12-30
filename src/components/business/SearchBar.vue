@@ -7,7 +7,7 @@
         v-model="query"
         type="text"
         class="search-input"
-        :placeholder="$t('search.placeholder', '搜索帖子、作者...')"
+        :placeholder="$t('search.placeholder')"
         @focus="handleFocus"
         @blur="handleBlur"
         @input="handleInput"
@@ -35,9 +35,9 @@
         <template v-else>
           <div v-if="searchHistory.length > 0 && !query" class="dropdown-section">
             <div class="section-header">
-              <span>{{ $t('search.history', '搜索历史') }}</span>
+              <span>{{ $t('search.history') }}</span>
               <button type="button" class="clear-history-btn" @click="clearHistory">
-                {{ $t('search.clearHistory', '清除') }}
+                {{ $t('search.clearHistory') }}
               </button>
             </div>
             <button
@@ -55,7 +55,7 @@
 
           <div v-if="suggestions.length > 0" class="dropdown-section">
             <div class="section-header">
-              <span>{{ $t('search.suggestions', '搜索建议') }}</span>
+              <span>{{ $t('search.suggestions') }}</span>
             </div>
             <button
               v-for="(suggestion, index) in suggestions"
@@ -73,7 +73,7 @@
 
           <div v-if="!query && searchHistory.length === 0" class="dropdown-empty">
             <Search :size="24" class="empty-icon" />
-            <p>{{ $t('search.startTyping', '输入关键词开始搜索') }}</p>
+            <p>{{ $t('search.startTyping') }}</p>
           </div>
         </template>
       </div>
@@ -226,9 +226,9 @@ function getSuggestionIcon(type: string) {
 
 function getSuggestionLabel(type: string) {
   switch (type) {
-    case 'post': return t('search.type.post', '帖子')
-    case 'author': return t('search.type.author', '作者')
-    case 'tag': return t('search.type.tag', '标签')
+    case 'post': return t('search.type.post')
+    case 'author': return t('search.type.author')
+    case 'tag': return t('search.type.tag')
     default: return ''
   }
 }
@@ -277,7 +277,7 @@ defineExpose({
 
 .search-bar.focused .search-input-wrapper {
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px var(--color-primary-alpha);
+  box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.12);
 }
 
 .search-icon {

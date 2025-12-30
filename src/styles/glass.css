@@ -2,26 +2,49 @@
  * Glass Morphism - 玻璃态设计组件
  *
  * 高性能玻璃态效果，仅使用 GPU 加速属性
+ * UI Overhaul v2.0 - 增强版玻璃态系统
  */
 
 /* ========== Glass Card ========== */
 
 .glass-card {
+  position: relative;
   background: var(--glass-bg);
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-xl);
   box-shadow: var(--glass-shadow);
+  overflow: hidden;
   transition:
     transform var(--transition-fast),
     box-shadow var(--transition-fast),
     border-color var(--transition-fast);
 }
 
+/* 卡片内部光泽层 */
+.glass-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.5) 50%,
+    transparent 100%
+  );
+  opacity: 0.6;
+  pointer-events: none;
+}
+
 .glass-card:hover {
   transform: translateY(-4px);
-  box-shadow: var(--glass-shadow), 0 12px 24px -8px rgba(59, 130, 246, 0.15);
+  box-shadow:
+    var(--glass-shadow-lg),
+    0 12px 28px -8px rgba(var(--color-primary-rgb), 0.15);
   border-color: var(--glass-border-strong);
 }
 
@@ -30,21 +53,31 @@
 }
 
 .glass-card--interactive:active {
-  transform: translateY(0) scale(0.99);
+  transform: translateY(-2px) scale(0.99);
+  transition-duration: var(--duration-instant);
 }
 
 .glass-card--flat {
   box-shadow: none;
+  border-color: var(--glass-border-subtle);
 }
 
 .glass-card--flat:hover {
   transform: none;
   box-shadow: none;
+  border-color: var(--glass-border);
+}
+
+.glass-card--glow:hover {
+  box-shadow:
+    var(--glass-shadow-lg),
+    var(--glass-glow);
 }
 
 /* ========== Glass Button ========== */
 
 .glass-button {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -58,6 +91,7 @@
   font-weight: var(--font-medium);
   color: var(--color-text-primary);
   cursor: pointer;
+  overflow: hidden;
   transition:
     transform var(--transition-fast),
     background var(--transition-fast),
@@ -65,14 +99,32 @@
     box-shadow var(--transition-fast);
 }
 
+/* 按钮顶部光泽 */
+.glass-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.15) 0%,
+    transparent 100%
+  );
+  pointer-events: none;
+}
+
 .glass-button:hover {
   background: var(--glass-bg-strong);
   border-color: var(--glass-border-strong);
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+  box-shadow: var(--glass-shadow);
 }
 
 .glass-button:active {
   transform: translateY(0);
+  transition-duration: var(--duration-instant);
 }
 
 .glass-button:disabled {
@@ -83,14 +135,29 @@
 
 /* Primary variant */
 .glass-button--primary {
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+  background: var(--gradient-primary);
   color: var(--color-white);
-  border-color: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.25);
+  font-weight: var(--font-semibold);
 }
 
 .glass-button--primary:hover {
   background: linear-gradient(135deg, var(--color-primary-light) 0%, var(--color-primary) 100%);
   box-shadow: var(--glass-glow);
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+/* Accent variant */
+.glass-button--accent {
+  background: var(--gradient-accent);
+  color: var(--color-white);
+  border-color: rgba(255, 255, 255, 0.25);
+  font-weight: var(--font-semibold);
+}
+
+.glass-button--accent:hover {
+  box-shadow: var(--glass-glow-accent);
+  border-color: rgba(255, 255, 255, 0.35);
 }
 
 /* Ghost variant */
@@ -100,9 +167,14 @@
   backdrop-filter: none;
 }
 
+.glass-button--ghost::before {
+  display: none;
+}
+
 .glass-button--ghost:hover {
   background: var(--glass-bg-light);
   border-color: var(--glass-border);
+  box-shadow: none;
 }
 
 /* Danger variant */
@@ -113,7 +185,7 @@
 }
 
 .glass-button--danger:hover {
-  box-shadow: 0 0 20px rgba(239, 68, 68, 0.4);
+  box-shadow: 0 0 24px rgba(var(--color-error-rgb), 0.4);
 }
 
 /* ========== Glass Input ========== */
@@ -130,7 +202,8 @@
   font-size: var(--text-base);
   transition:
     border-color var(--transition-fast),
-    box-shadow var(--transition-fast);
+    box-shadow var(--transition-fast),
+    background var(--transition-fast);
 }
 
 .glass-input::placeholder {
@@ -139,25 +212,44 @@
 
 .glass-input:hover {
   border-color: var(--glass-border-strong);
+  background: var(--glass-bg);
 }
 
 .glass-input:focus {
   outline: none;
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
+  box-shadow: 0 0 0 2px rgba(var(--color-primary-rgb), 0.12);
+  background: var(--glass-bg);
+}
+
+.glass-input:focus-visible {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 4px rgba(var(--color-primary-rgb), 0.12);
+  background: var(--glass-bg);
 }
 
 .glass-input:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  background: var(--glass-bg-subtle);
 }
 
 .glass-input--error {
   border-color: var(--color-error);
 }
 
+.glass-input[aria-invalid='true'] {
+  border-color: var(--color-error);
+}
+
 .glass-input--error:focus {
-  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+  box-shadow: 0 0 0 4px rgba(var(--color-error-rgb), 0.12);
+}
+
+.glass-input--error:focus-visible,
+.glass-input[aria-invalid='true']:focus-visible {
+  box-shadow: 0 0 0 4px rgba(var(--color-error-rgb), 0.12);
 }
 
 /* ========== Glass Navbar ========== */
@@ -168,7 +260,7 @@
   left: 0;
   right: 0;
   height: var(--navbar-height);
-  background: var(--glass-bg);
+  background: var(--glass-bg-strong);
   backdrop-filter: var(--glass-blur-strong);
   -webkit-backdrop-filter: var(--glass-blur-strong);
   border-bottom: 1px solid var(--glass-border);
@@ -178,14 +270,38 @@
   transform: translate3d(0, 0, 0);
 }
 
+/* Navbar 底部渐变阴影 */
+.glass-navbar::after {
+  content: '';
+  position: absolute;
+  bottom: -20px;
+  left: 0;
+  right: 0;
+  height: 20px;
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.04) 0%,
+    transparent 100%
+  );
+  pointer-events: none;
+}
+
+[data-theme='dark'] .glass-navbar::after {
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.15) 0%,
+    transparent 100%
+  );
+}
+
 /* ========== Glass Modal ========== */
 
 .glass-modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   z-index: var(--z-modal-backdrop);
   display: flex;
   align-items: center;
@@ -196,7 +312,12 @@
   transform: translate3d(0, 0, 0);
 }
 
+[data-theme='dark'] .glass-modal-backdrop {
+  background: rgba(0, 0, 0, 0.6);
+}
+
 .glass-modal {
+  position: relative;
   width: 100%;
   max-width: 500px;
   max-height: calc(100vh - var(--spacing-8));
@@ -207,6 +328,23 @@
   border-radius: var(--radius-2xl);
   box-shadow: var(--shadow-2xl);
   overflow: hidden;
+}
+
+/* Modal 顶部光泽 */
+.glass-modal::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.5) 50%,
+    transparent 100%
+  );
+  opacity: 0.8;
 }
 
 /* ========== Glass Dropdown ========== */
@@ -222,9 +360,38 @@
   -webkit-backdrop-filter: var(--glass-blur-strong);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--glass-shadow-lg);
   z-index: var(--z-dropdown);
   overflow: hidden;
+}
+
+.glass-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  padding: var(--spacing-3) var(--spacing-4);
+  color: var(--color-text-primary);
+  font-size: var(--text-sm);
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast);
+  cursor: pointer;
+}
+
+.glass-dropdown-item:hover {
+  background: var(--glass-bg-subtle);
+  color: var(--color-primary);
+}
+
+.glass-dropdown-item--active {
+  background: rgba(var(--color-primary-rgb), 0.1);
+  color: var(--color-primary);
+}
+
+.glass-dropdown-divider {
+  height: 1px;
+  margin: var(--spacing-2) 0;
+  background: var(--glass-border);
 }
 
 /* ========== Glass Tag/Chip ========== */
@@ -240,16 +407,202 @@
   border-radius: var(--radius-full);
   font-size: var(--text-sm);
   color: var(--color-text-secondary);
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast);
+}
+
+.glass-tag:hover {
+  background: var(--glass-bg-strong);
+  border-color: var(--glass-border-strong);
 }
 
 .glass-tag--primary {
-  background: var(--color-primary-100);
-  color: var(--color-primary-700);
-  border-color: var(--color-primary-200);
+  background: rgba(var(--color-primary-rgb), 0.12);
+  color: var(--color-primary);
+  border-color: rgba(var(--color-primary-rgb), 0.2);
+}
+
+.glass-tag--primary:hover {
+  background: rgba(var(--color-primary-rgb), 0.18);
+  border-color: rgba(var(--color-primary-rgb), 0.3);
+}
+
+.glass-tag--accent {
+  background: rgba(var(--color-accent-rgb), 0.12);
+  color: var(--color-accent);
+  border-color: rgba(var(--color-accent-rgb), 0.2);
+}
+
+/* ========== Glass Panel ========== */
+
+.glass-panel {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--glass-shadow);
+  padding: var(--spacing-6);
+}
+
+.glass-panel--large {
+  padding: var(--spacing-8);
+  border-radius: var(--radius-2xl);
+}
+
+/* ========== Glass Skeleton ========== */
+
+.glass-skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--glass-bg-light) 0%,
+    var(--glass-bg) 50%,
+    var(--glass-bg-light) 100%
+  );
+  background-size: 200% 100%;
+  animation: glass-shimmer 1.5s ease-in-out infinite;
+  border-radius: var(--radius-md);
+}
+
+/* Skeleton variants */
+.glass-skeleton--text {
+  height: 1em;
+  border-radius: var(--radius-sm);
+}
+
+.glass-skeleton--title {
+  height: 1.5em;
+  border-radius: var(--radius-sm);
+}
+
+.glass-skeleton--avatar {
+  border-radius: var(--radius-full);
+}
+
+.glass-skeleton--button {
+  height: 40px;
+  border-radius: var(--radius-lg);
+}
+
+.glass-skeleton--image {
+  aspect-ratio: 16 / 9;
+  border-radius: var(--radius-lg);
+}
+
+.glass-skeleton--card {
+  border-radius: var(--radius-xl);
+}
+
+/* Wave effect skeleton */
+.glass-skeleton--wave {
+  position: relative;
+  overflow: hidden;
+  background: var(--glass-bg-light);
+}
+
+.glass-skeleton--wave::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.4) 50%,
+    transparent 100%
+  );
+  transform: translateX(-100%);
+  animation: glass-wave 1.5s ease-in-out infinite;
+}
+
+[data-theme='dark'] .glass-skeleton--wave::after {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.08) 50%,
+    transparent 100%
+  );
+}
+
+@keyframes glass-wave {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Pulse effect skeleton */
+.glass-skeleton--pulse {
+  background: var(--glass-bg-light);
+  animation: glass-pulse 2s ease-in-out infinite;
+}
+
+@keyframes glass-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes glass-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Skeleton group - for staggered animations */
+.glass-skeleton-group .glass-skeleton:nth-child(1) { animation-delay: 0ms; }
+.glass-skeleton-group .glass-skeleton:nth-child(2) { animation-delay: 100ms; }
+.glass-skeleton-group .glass-skeleton:nth-child(3) { animation-delay: 200ms; }
+.glass-skeleton-group .glass-skeleton:nth-child(4) { animation-delay: 300ms; }
+.glass-skeleton-group .glass-skeleton:nth-child(5) { animation-delay: 400ms; }
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .glass-skeleton,
+  .glass-skeleton--wave::after,
+  .glass-skeleton--pulse {
+    animation: none;
+  }
+}
+
+/* ========== Glass Divider ========== */
+
+.glass-divider {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--glass-border-strong) 50%,
+    transparent 100%
+  );
+  margin: var(--spacing-4) 0;
+}
+
+/* ========== 深色模式增强 ========== */
+
+[data-theme='dark'] .glass-card::before,
+[data-theme='dark'] .glass-button::before,
+[data-theme='dark'] .glass-modal::before {
+  opacity: 0.3;
 }
 
 [data-theme='dark'] .glass-tag--primary {
-  background: rgba(139, 92, 246, 0.2);
-  color: var(--color-primary-light);
-  border-color: rgba(139, 92, 246, 0.3);
+  background: rgba(var(--color-primary-rgb), 0.15);
+  border-color: rgba(var(--color-primary-rgb), 0.25);
+}
+
+[data-theme='dark'] .glass-dropdown-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+[data-theme='dark'] .glass-dropdown-item--active {
+  background: rgba(var(--color-primary-rgb), 0.15);
 }

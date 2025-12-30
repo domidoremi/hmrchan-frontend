@@ -1,5 +1,6 @@
 /**
  * Base Styles - 基础样式重置与全局样式
+ * UI Overhaul v2.0
  */
 
 /* Box sizing */
@@ -35,25 +36,57 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Mesh gradient background */
+/* 增强版 Mesh gradient background - 多层渐变营造深度 */
 body::before {
   content: '';
   position: fixed;
   inset: 0;
   z-index: -1;
   background:
-    radial-gradient(ellipse at 20% 20%, rgba(139, 92, 246, 0.15) 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 80%, rgba(59, 130, 246, 0.1) 0%, transparent 50%),
-    radial-gradient(ellipse at 50% 50%, rgba(236, 72, 153, 0.08) 0%, transparent 50%),
+    /* 主光斑 - 左上 */
+    radial-gradient(
+      ellipse 80% 50% at 10% 20%,
+      rgba(var(--color-primary-rgb), 0.12) 0%,
+      transparent 60%
+    ),
+    /* 次光斑 - 右下 */
+    radial-gradient(
+      ellipse 60% 80% at 85% 75%,
+      rgba(var(--color-accent-rgb), 0.08) 0%,
+      transparent 55%
+    ),
+    /* 柔和光斑 - 中央 */
+    radial-gradient(
+      circle at 50% 40%,
+      rgba(var(--color-secondary-rgb), 0.05) 0%,
+      transparent 45%
+    ),
+    /* 底层纹理 */
     var(--color-background);
   pointer-events: none;
 }
 
 [data-theme='dark'] body::before {
   background:
-    radial-gradient(ellipse at 20% 20%, rgba(139, 92, 246, 0.12) 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 80%, rgba(59, 130, 246, 0.08) 0%, transparent 50%),
-    radial-gradient(ellipse at 50% 50%, rgba(236, 72, 153, 0.05) 0%, transparent 50%),
+    /* 主光斑 - 左上 */
+    radial-gradient(
+      ellipse 80% 50% at 10% 20%,
+      rgba(var(--color-primary-rgb), 0.1) 0%,
+      transparent 60%
+    ),
+    /* 次光斑 - 右下 */
+    radial-gradient(
+      ellipse 60% 80% at 85% 75%,
+      rgba(var(--color-accent-rgb), 0.06) 0%,
+      transparent 55%
+    ),
+    /* 柔和光斑 - 中央 */
+    radial-gradient(
+      circle at 50% 40%,
+      rgba(var(--color-secondary-rgb), 0.04) 0%,
+      transparent 45%
+    ),
+    /* 底层纹理 */
     var(--color-background);
 }
 

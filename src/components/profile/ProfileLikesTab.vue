@@ -295,7 +295,7 @@ onMounted(() => {
 
 .post-card {
   cursor: pointer;
-  transition: all var(--transition-normal);
+  transition: all var(--transition-base);
   overflow: hidden;
 }
 
@@ -330,13 +330,13 @@ onMounted(() => {
 .comment-item {
   padding: var(--spacing-4);
   cursor: default;
-  transition: all 0.3s var(--ease-out-cubic);
+  transition: all var(--transition-base);
   border: 1px solid transparent;
 }
 
 .comment-item:hover {
   transform: translateY(-2px);
-  border-color: var(--color-primary-alpha);
+  border-color: rgba(var(--color-primary-rgb), 0.3);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
 }
 
@@ -355,7 +355,7 @@ onMounted(() => {
 
 .comment-content p {
   margin: 0;
-  color: var(--color-text);
+  color: var(--color-text-primary);
   overflow: hidden;
   text-overflow: ellipsis;
   display: -webkit-box;
@@ -389,7 +389,7 @@ onMounted(() => {
 }
 
 .post-link:hover {
-  color: var(--color-primary-hover);
+  color: var(--color-primary-dark);
   text-decoration-color: currentColor;
 }
 
