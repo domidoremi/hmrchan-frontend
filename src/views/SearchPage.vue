@@ -119,6 +119,7 @@ import { normalizeAvatarUrl } from '@/api/userService'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import PostCard from '@/components/business/PostCard.vue'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
+import SearchBar from '@/components/business/SearchBar.vue'
 
 const route = useRoute()
 const router = useRouter()
