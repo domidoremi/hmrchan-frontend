@@ -16,11 +16,13 @@
     "profile": "Profile",
     "postDetail": "Post Detail",
     "authorDetail": "Author Detail",
-    "profileSettings": "Profile Settings"
+    "profileSettings": "Profile Settings",
+    "search": "Search"
   },
   "common": {
     "skipToContent": "Skip to content",
     "loading": "Loading...",
+    "loadingMore": "Loading more...",
     "error": "An error occurred",
     "retry": "Retry",
     "cancel": "Cancel",
@@ -33,11 +35,14 @@
     "previous": "Previous",
     "search": "Search",
     "noResults": "No results found",
+    "notFound": "Not Found",
     "showing": "Showing {count} of {total}",
     "loadMore": "Load More",
     "noMoreItems": "No more items",
     "viewMore": "View More",
     "showLess": "Show Less",
+    "learnMore": "Learn More",
+    "backToTop": "Back to Top",
     "justNow": "Just now",
     "minutesAgo": "{n} minutes ago",
     "hoursAgo": "{n} hours ago",
@@ -101,14 +106,22 @@
     "language": "Language",
     "display": "Display",
     "toggleHeroSection": "Show Hero Section",
+    "heroSectionDesc": "Show the hero banner on the homepage",
     "toggleAnimations": "Enable Animations",
+    "animationsDesc": "Enable smooth transitions and animations",
     "toggleSwipeNavigation": "Swipe Navigation",
-    "openAdvanced": "Advanced Settings"
+    "openAdvanced": "Advanced Settings",
+    "cache": {
+      "title": "Cache Management",
+      "description": "Clear cached data to free up space",
+      "clear": "Clear Cache"
+    }
   },
   "home": {
     "hero": {
       "title": "Discover Amazing Content",
-      "subtitle": "Explore curated collections from talented creators"
+      "subtitle": "Explore curated collections from talented creators",
+      "badge": "Discover Amazing Content"
     },
     "latest": "Latest Posts",
     "popular": "Popular"
@@ -123,6 +136,31 @@
     "popular": "Most Popular",
     "trending": "Trending"
   },
+  "search": {
+    "title": "Search",
+    "placeholder": "Search posts, authors, tags...",
+    "emptyHint": "Find posts, authors, and more",
+    "noResults": "No results found for \"{query}\"",
+    "noAuthors": "No authors found for \"{query}\"",
+    "history": "Search History",
+    "clearHistory": "Clear History",
+    "suggestions": "Suggestions",
+    "startTyping": "Start typing to search",
+    "tab": {
+      "posts": "Posts",
+      "authors": "Authors"
+    },
+    "sort": {
+      "relevance": "Relevance",
+      "date": "Date",
+      "views": "Views"
+    },
+    "type": {
+      "post": "Post",
+      "author": "Author",
+      "tag": "Tag"
+    }
+  },
   "post": {
     "by": "by",
     "views": "views",
@@ -130,7 +168,11 @@
     "share": "Share",
     "favorite": "Add to Favorites",
     "unfavorite": "Remove from Favorites",
+    "favoriteServerError": "Failed to update favorites",
     "relatedPosts": "Related Posts"
+  },
+  "author": {
+    "postCount": "{count} posts"
   },
   "error": {
     "notFound": "Page Not Found",
@@ -206,6 +248,7 @@
     "subtitle": "Join the conversation",
     "recentDiscussions": "Recent Discussions",
     "hotTopics": "Hot Topics",
+    "noHotTopics": "No hot topics yet",
     "myComments": "My Comments",
     "savedComments": "Saved Comments",
     "newDiscussion": "New Discussion",
@@ -216,7 +259,11 @@
     "publish": "Publish",
     "publishSuccess": "Discussion published successfully",
     "publishFailed": "Failed to publish, please try again",
-    "loginToPost": "Login to start a discussion"
+    "loginToPost": "Login to start a discussion",
+    "pinned": "Pinned",
+    "pin": "Pin Discussion",
+    "unpin": "Unpin",
+    "referencedPost": "Referenced Post"
   },
   "contact": {
     "title": "Contact Us",
@@ -239,9 +286,11 @@
     "username": "Username",
     "usernamePlaceholder": "Enter username",
     "usernameHint": "Only letters, numbers, and underscores allowed",
+    "usernameReadonly": "Username cannot be changed",
     "usernameChangeLimit": "You can change your username in {days} days",
     "fullName": "Display Name",
     "fullNamePlaceholder": "Enter display name",
+    "displayNameHint": "This name will be shown publicly",
     "bio": "Bio",
     "bioPlaceholder": "Tell us about yourself",
     "changePassword": "Change Password",
@@ -272,6 +321,7 @@
     "yesterday": "Yesterday",
     "clearHistory": "Clear History",
     "confirmClearHistory": "Are you sure you want to clear all browsing history?",
+    "confirmClearHistoryTitle": "Clear Browsing History",
     "historyCleared": "History cleared",
     "markAsRead": "Mark as read",
     "markAllRead": "Mark all as read",
