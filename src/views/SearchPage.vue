@@ -23,9 +23,9 @@
 
           <div class="sort-options">
             <select v-model="sortBy" class="glass-input sort-select">
-              <option value="relevance">{{ $t('search.sort.relevance', '相关度') }}</option>
-              <option value="published_at">{{ $t('search.sort.date', '发布时间') }}</option>
-              <option value="view_count">{{ $t('search.sort.views', '浏览量') }}</option>
+              <option value="relevance">{{ $t('search.sort.relevance') }}</option>
+              <option value="published_at">{{ $t('search.sort.date') }}</option>
+              <option value="view_count">{{ $t('search.sort.views') }}</option>
             </select>
           </div>
         </div>
@@ -102,8 +102,8 @@
 
       <div v-else class="search-empty">
         <Search :size="48" class="empty-icon" />
-        <h2>{{ $t('search.title', '搜索') }}</h2>
-        <p>{{ $t('search.emptyHint', '输入关键词搜索帖子和作者') }}</p>
+        <h2>{{ $t('search.title') }}</h2>
+        <p>{{ $t('search.emptyHint') }}</p>
       </div>
     </div>
   </div>
@@ -145,8 +145,8 @@ const authorError = ref<string | null>(null)
 const hasMore = computed(() => results.value.length < total.value)
 
 const tabs = [
-  { id: 'posts' as const, label: t('search.tab.posts', '帖子'), icon: FileText },
-  { id: 'authors' as const, label: t('search.tab.authors', '作者'), icon: User },
+  { id: 'posts' as const, label: t('search.tab.posts'), icon: FileText },
+  { id: 'authors' as const, label: t('search.tab.authors'), icon: User },
 ]
 
 async function search() {

@@ -16,11 +16,13 @@
     "profile": "プロフィール",
     "postDetail": "投稿詳細",
     "authorDetail": "作者詳細",
-    "profileSettings": "プロフィール設定"
+    "profileSettings": "プロフィール設定",
+    "search": "検索"
   },
   "common": {
     "skipToContent": "コンテンツへスキップ",
     "loading": "読み込み中...",
+    "loadingMore": "さらに読み込み中...",
     "error": "エラーが発生しました",
     "retry": "再試行",
     "cancel": "キャンセル",
@@ -33,12 +35,20 @@
     "previous": "前へ",
     "search": "検索",
     "noResults": "結果が見つかりません",
+    "notFound": "見つかりません",
+    "showing": "{count} / {total} 件を表示",
+    "loadMore": "もっと読み込む",
+    "noMoreItems": "すべて読み込みました",
     "viewMore": "もっと見る",
     "showLess": "閉じる",
+    "learnMore": "詳細を見る",
+    "backToTop": "トップへ戻る",
     "justNow": "たった今",
     "minutesAgo": "{n} 分前",
     "hoursAgo": "{n} 時間前",
     "daysAgo": "{n} 日前",
+    "today": "今日",
+    "yesterday": "昨日",
     "more": "その他",
     "show": "表示",
     "hide": "非表示",
@@ -96,26 +106,60 @@
     "language": "言語",
     "display": "表示",
     "toggleHeroSection": "ヒーローセクション表示",
+    "heroSectionDesc": "ホームページにヒーローバナーを表示",
     "toggleAnimations": "アニメーション有効",
+    "animationsDesc": "スムーズなトランジションとアニメーションを有効化",
     "toggleSwipeNavigation": "スワイプナビ",
-    "openAdvanced": "詳細設定"
+    "openAdvanced": "詳細設定",
+    "cache": {
+      "title": "キャッシュ管理",
+      "description": "キャッシュデータを削除して空き容量を確保",
+      "clear": "キャッシュをクリア"
+    }
   },
   "home": {
     "hero": {
       "title": "素晴らしいコンテンツを発見",
-      "subtitle": "才能あるクリエイターの厳選コレクション"
+      "subtitle": "才能あるクリエイターの厳選コレクション",
+      "badge": "素晴らしいコンテンツを発見"
     },
     "latest": "最新",
     "popular": "人気"
   },
   "explore": {
     "title": "探索",
+    "allPlatforms": "すべて",
     "searchPlaceholder": "投稿、作者、タグを検索...",
     "filters": "フィルター",
     "sortBy": "並び替え",
     "newest": "新着",
     "popular": "人気順",
     "trending": "トレンド"
+  },
+  "search": {
+    "title": "検索",
+    "placeholder": "投稿、作者、タグを検索...",
+    "emptyHint": "投稿、作者などを検索",
+    "noResults": "「{query}」の検索結果が見つかりません",
+    "noAuthors": "「{query}」に一致する作者が見つかりません",
+    "history": "検索履歴",
+    "clearHistory": "履歴をクリア",
+    "suggestions": "検索候補",
+    "startTyping": "入力して検索を開始",
+    "tab": {
+      "posts": "投稿",
+      "authors": "作者"
+    },
+    "sort": {
+      "relevance": "関連性",
+      "date": "日付",
+      "views": "閲覧数"
+    },
+    "type": {
+      "post": "投稿",
+      "author": "作者",
+      "tag": "タグ"
+    }
   },
   "post": {
     "by": "作者",
@@ -124,7 +168,11 @@
     "share": "共有",
     "favorite": "お気に入りに追加",
     "unfavorite": "お気に入りから削除",
+    "favoriteServerError": "お気に入りの更新に失敗しました",
     "relatedPosts": "関連投稿"
+  },
+  "author": {
+    "postCount": "{count} 件の投稿"
   },
   "error": {
     "notFound": "ページが見つかりません",
@@ -149,6 +197,7 @@
     "replyPlaceholder": "{username} に返信...",
     "submit": "投稿",
     "reply": "返信",
+    "delete": "削除",
     "share": "共有",
     "report": "報告",
     "empty": "コメントはまだありません",
@@ -200,6 +249,7 @@
     "subtitle": "会話に参加",
     "recentDiscussions": "最近のディスカッション",
     "hotTopics": "ホットトピック",
+    "noHotTopics": "ホットトピックはまだありません",
     "myComments": "マイコメント",
     "savedComments": "保存したコメント",
     "newDiscussion": "新規ディスカッション",
@@ -210,7 +260,11 @@
     "publish": "投稿",
     "publishSuccess": "ディスカッションを投稿しました",
     "publishFailed": "投稿に失敗しました。もう一度お試しください",
-    "loginToPost": "ディスカッションを始めるにはログイン"
+    "loginToPost": "ディスカッションを始めるにはログイン",
+    "pinned": "ピン留め",
+    "pin": "ディスカッションをピン留め",
+    "unpin": "ピン留め解除",
+    "referencedPost": "参照した投稿"
   },
   "contact": {
     "title": "お問い合わせ",
@@ -233,9 +287,11 @@
     "username": "ユーザー名",
     "usernamePlaceholder": "ユーザー名を入力",
     "usernameHint": "英数字とアンダースコアのみ使用可能",
+    "usernameReadonly": "ユーザー名は変更できません",
     "usernameChangeLimit": "あと {days} 日後にユーザー名を変更できます",
     "fullName": "表示名",
     "fullNamePlaceholder": "表示名を入力",
+    "displayNameHint": "この名前は公開されます",
     "bio": "自己紹介",
     "bioPlaceholder": "自己紹介を入力",
     "changePassword": "パスワード変更",
@@ -246,6 +302,9 @@
     "passwordChanged": "パスワードが変更されました",
     "passwordMismatch": "パスワードが一致しません",
     "passwordTooShort": "パスワードは8文字以上必要です",
+    "cropAvatar": "アバターをトリミング",
+    "circleShape": "円形",
+    "squareShape": "四角形",
     "tabs": {
       "favorites": "お気に入り",
       "comments": "コメント履歴",
@@ -263,6 +322,7 @@
     "yesterday": "昨日",
     "clearHistory": "履歴をクリア",
     "confirmClearHistory": "すべての閲覧履歴をクリアしますか？",
+    "confirmClearHistoryTitle": "閲覧履歴をクリア",
     "historyCleared": "履歴をクリアしました",
     "markAsRead": "既読にする",
     "markAllRead": "すべて既読にする",
