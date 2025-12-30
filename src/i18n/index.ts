@@ -4,6 +4,9 @@
  */
 
 import { createI18n } from 'vue-i18n'
+import en from './locales/en.json'
+import zhCN from './locales/zh-CN.json'
+import ja from './locales/ja.json'
 
 export type SupportedLocale = 'en' | 'zh-CN' | 'ja'
 
@@ -20,43 +23,28 @@ function getDefaultLocale(): SupportedLocale {
 
 const defaultLocale = getDefaultLocale()
 
-// 仅预加载默认语言，其他语言按需加载
+// 同步预加载所有语言，避免异步加载导致的警告
 const i18n = createI18n({
   legacy: false,
   locale: defaultLocale,
   fallbackLocale: 'en',
-  messages: {},
+  messages: {
+    en,
+    'zh-CN': zhCN,
+    ja,
+  },
 })
-
-// 已加载的语言缓存
-const loadedLanguages: SupportedLocale[] = []
-
-/**
- * 动态加载语言包
- */
-export async function loadLocaleMessages(locale: SupportedLocale): Promise<void> {
-  if (loadedLanguages.includes(locale)) {
-    i18n.global.locale.value = locale
-    return
-  }
-
-  // 动态导入语言包
-  const messages = await import(`./locales/${locale}.json`)
-  i18n.global.setLocaleMessage(locale, messages.default)
-  loadedLanguages.push(locale)
-  i18n.global.locale.value = locale
-  localStorage.setItem('locale', locale)
-}
 
 /**
  * 切换语言
  */
-export async function setLocale(locale: SupportedLocale): Promise<void> {
-  await loadLocaleMessages(locale)
+export function setLocale(locale: SupportedLocale): void {
+  i18n.global.locale.value = locale
+  localStorage.setItem('locale', locale)
   document.documentElement.lang = locale
 }
 
-// 初始化：加载默认语言
-loadLocaleMessages(defaultLocale)
+// 初始化：设置默认语言和 HTML lang 属性
+document.documentElement.lang = defaultLocale
 
 export default i18n
