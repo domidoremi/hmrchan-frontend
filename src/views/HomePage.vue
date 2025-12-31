@@ -9,33 +9,35 @@
         <div class="hero-grid" />
       </div>
       <div class="container hero-content">
-        <div class="hero-badge animate-slide-up">
-          <span class="hero-badge-dot" />
-          <Sparkles :size="14" />
-          <span>{{ $t('home.hero.badge') }}</span>
-        </div>
-        <h1 class="hero-title animate-slide-up stagger-1">
-          <span class="hero-title-line">{{ $t('home.hero.title') }}</span>
-        </h1>
-        <p class="hero-subtitle animate-slide-up stagger-2">{{ $t('home.hero.subtitle') }}</p>
-        <div class="hero-actions animate-slide-up stagger-3">
-          <Button size="lg" variant="primary" class="hero-btn-primary" @click="goToExplore">
-            <Compass :size="20" />
-            {{ $t('nav.explore') }}
-          </Button>
-          <Button size="lg" variant="ghost" class="hero-btn-ghost" @click="scrollToBento">
-            <ArrowDown :size="20" class="hero-arrow-icon" />
-            {{ $t('common.learnMore') }}
-          </Button>
-        </div>
-        <div class="hero-highlights animate-slide-up stagger-4">
-          <div v-for="item in heroHighlights" :key="item.titleKey" class="hero-highlight">
-            <div class="hero-highlight-icon">
-              <component :is="item.icon" :size="18" />
-            </div>
-            <div class="hero-highlight-text">
-              <div class="hero-highlight-title">{{ $t(item.titleKey) }}</div>
-              <div class="hero-highlight-desc">{{ $t(item.descKey) }}</div>
+        <div class="hero-main">
+          <div class="hero-badge animate-slide-up">
+            <span class="hero-badge-dot" />
+            <Sparkles :size="14" />
+            <span>{{ $t('home.hero.badge') }}</span>
+          </div>
+          <h1 class="hero-title animate-slide-up stagger-1">
+            <span class="hero-title-line">{{ $t('home.hero.title') }}</span>
+          </h1>
+          <p class="hero-subtitle animate-slide-up stagger-2">{{ $t('home.hero.subtitle') }}</p>
+          <div class="hero-actions animate-slide-up stagger-3">
+            <Button size="lg" variant="primary" class="hero-btn-primary" @click="goToExplore">
+              <Compass :size="20" />
+              {{ $t('nav.explore') }}
+            </Button>
+            <Button size="lg" variant="ghost" class="hero-btn-ghost" @click="scrollToBento">
+              <ArrowDown :size="20" class="hero-arrow-icon" />
+              {{ $t('common.learnMore') }}
+            </Button>
+          </div>
+          <div class="hero-highlights animate-slide-up stagger-4">
+            <div v-for="item in heroHighlights" :key="item.titleKey" class="hero-highlight">
+              <div class="hero-highlight-icon">
+                <component :is="item.icon" :size="18" />
+              </div>
+              <div class="hero-highlight-text">
+                <div class="hero-highlight-title">{{ $t(item.titleKey) }}</div>
+                <div class="hero-highlight-desc">{{ $t(item.descKey) }}</div>
+              </div>
             </div>
           </div>
         </div>
@@ -85,7 +87,7 @@
                 <Search :size="22" />
               </div>
               <div class="bento-title">{{ $t('nav.search') }}</div>
-              <div class="bento-meta">{{ $t('common.search') }}</div>
+              <div class="bento-meta">{{ $t('home.bento.searchMeta') }}</div>
             </div>
             <div class="bento-card-arrow">
               <ChevronRight :size="16" />
@@ -99,7 +101,7 @@
                 <MessageSquare :size="22" />
               </div>
               <div class="bento-title">{{ $t('nav.community') }}</div>
-              <div class="bento-meta">{{ $t('community.title') }}</div>
+              <div class="bento-meta">{{ $t('home.bento.communityMeta') }}</div>
             </div>
             <div class="bento-card-arrow">
               <ChevronRight :size="16" />
@@ -113,7 +115,7 @@
                 <Users :size="22" />
               </div>
               <div class="bento-title">{{ $t('nav.authors') }}</div>
-              <div class="bento-meta">{{ $t('nav.authors') }}</div>
+              <div class="bento-meta">{{ $t('home.bento.authorsMeta') }}</div>
             </div>
             <div class="bento-card-arrow">
               <ChevronRight :size="16" />
@@ -128,7 +130,7 @@
               </div>
               <div class="bento-title">{{ $t('nav.favorites') }}</div>
               <div class="bento-meta">
-                {{ isAuthenticated ? $t('nav.favorites') : $t('nav.login') }}
+                {{ isAuthenticated ? $t('home.bento.favoritesMeta') : $t('home.bento.favoritesMetaGuest') }}
               </div>
             </div>
             <div class="bento-card-arrow">
@@ -202,16 +204,19 @@ import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 import {
+  Accessibility,
   ArrowDown,
   ArrowUpRight,
   ChevronRight,
   Compass,
+  Globe,
   Heart,
   Layers,
   MessageSquare,
   Search,
   Sparkles,
-  Users
+  Users,
+  Zap
 } from 'lucide-vue-next'
 import { useAuthStore, useSettingsStore } from '@/stores'
 import { postService, type PostListItem, ApiError } from '@/api'
@@ -237,19 +242,19 @@ const shouldAnimate = computed(() => settings.value.enableAnimations && !prefers
 
 const heroHighlights = [
   {
-    icon: Layers,
-    titleKey: 'home.hero.highlights.aggregate.title',
-    descKey: 'home.hero.highlights.aggregate.desc',
+    icon: Globe,
+    titleKey: 'home.hero.highlights.multilingual.title',
+    descKey: 'home.hero.highlights.multilingual.desc',
   },
   {
-    icon: Search,
-    titleKey: 'home.hero.highlights.search.title',
-    descKey: 'home.hero.highlights.search.desc',
+    icon: Accessibility,
+    titleKey: 'home.hero.highlights.motion.title',
+    descKey: 'home.hero.highlights.motion.desc',
   },
   {
-    icon: Heart,
-    titleKey: 'home.hero.highlights.save.title',
-    descKey: 'home.hero.highlights.save.desc',
+    icon: Zap,
+    titleKey: 'home.hero.highlights.performance.title',
+    descKey: 'home.hero.highlights.performance.desc',
   },
 ]
 
@@ -487,7 +492,11 @@ onBeforeUnmount(() => {
 /* ========== Hero Section - 增强版 ========== */
 .hero {
   position: relative;
-  padding: var(--spacing-24) 0 var(--spacing-16);
+  display: flex;
+  min-height: calc(100vh - var(--navbar-height));
+  min-height: calc(100svh - var(--navbar-height));
+  min-height: calc(100dvh - var(--navbar-height));
+  padding: 0;
   overflow: hidden;
 }
 
@@ -570,6 +579,23 @@ onBeforeUnmount(() => {
   -webkit-mask-image: radial-gradient(ellipse 80% 50% at 50% 0%, black 40%, transparent 100%);
 }
 
+.hero-content {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-rows: 1fr auto;
+  align-items: stretch;
+  justify-items: center;
+  width: 100%;
+  padding: var(--spacing-24) 0 var(--spacing-12);
+}
+
+.hero-main {
+  align-self: center;
+  width: 100%;
+  max-width: 720px;
+}
+
 @keyframes hero-glow-pulse {
   0% {
     transform: scale(1) translate(0, 0);
@@ -586,16 +612,11 @@ onBeforeUnmount(() => {
     transform: translate(-50%, -50%) scale(1);
     opacity: 0.5;
   }
+
   100% {
     transform: translate(-50%, -50%) scale(1.1);
-    opacity: 0.65;
+    opacity: 0.7;
   }
-}
-
-.hero-content {
-  position: relative;
-  z-index: 1;
-  max-width: 720px;
 }
 
 .hero-badge {
@@ -685,9 +706,6 @@ onBeforeUnmount(() => {
   transform: translateX(100%);
 }
 
-.hero-arrow-icon {
-}
-
 .hero--animated .hero-arrow-icon {
   animation: bounce-down 2s ease-in-out infinite;
 }
@@ -700,7 +718,7 @@ onBeforeUnmount(() => {
 .hero-scroll-hint {
   margin-top: var(--spacing-12);
   display: flex;
-  justify-content: flex-start;
+  justify-content: center;
 }
 
 .scroll-mouse {
@@ -838,6 +856,10 @@ onBeforeUnmount(() => {
   z-index: 1;
 }
 
+.bento-card:not(.bento-feature) .bento-card-content {
+  padding-right: 40px;
+}
+
 .bento-card-arrow {
   position: absolute;
   bottom: var(--spacing-4);
@@ -911,11 +933,20 @@ onBeforeUnmount(() => {
   font-weight: var(--font-semibold);
   color: var(--color-text-primary);
   margin-bottom: var(--spacing-1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .bento-meta {
   font-size: var(--text-sm);
   color: var(--color-text-tertiary);
+  line-height: var(--leading-relaxed);
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
 }
 
 /* Feature Card - 特殊样式 */
@@ -1079,6 +1110,48 @@ onBeforeUnmount(() => {
   font-size: var(--text-sm);
 }
 
+@media (min-width: 1024px) {
+  .hero-main {
+    max-width: 880px;
+  }
+
+  .hero-subtitle {
+    font-size: var(--text-2xl);
+    max-width: 660px;
+  }
+
+  .hero-highlights {
+    gap: var(--spacing-4);
+  }
+
+  .hero-highlight {
+    padding: var(--spacing-5);
+  }
+
+  .hero-highlight-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .hero-highlight-title {
+    font-size: var(--text-base);
+  }
+
+  .hero-highlight-desc {
+    font-size: var(--text-sm);
+  }
+}
+
+@media (min-width: 1536px) {
+  .hero-main {
+    max-width: 1040px;
+  }
+
+  .hero-title {
+    font-size: clamp(3.25rem, 4.5vw, 5.25rem);
+  }
+}
+
 /* ========== Responsive ========== */
 @media (max-width: 1024px) {
   .bento-feature {
@@ -1106,14 +1179,19 @@ onBeforeUnmount(() => {
 
 @media (max-width: 768px) {
   .hero {
-    padding: var(--spacing-16) 0 var(--spacing-12);
+    min-height: calc(100vh - var(--navbar-height));
+    min-height: calc(100svh - var(--navbar-height));
+    min-height: calc(100dvh - var(--navbar-height));
     text-align: center;
   }
 
   .hero-content {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+    justify-items: center;
+    padding: var(--spacing-16) 0 var(--spacing-10);
+  }
+
+  .hero-main {
+    width: 100%;
   }
 
   .hero-subtitle {
@@ -1127,6 +1205,10 @@ onBeforeUnmount(() => {
   .hero-highlights {
     grid-template-columns: 1fr;
     text-align: left;
+  }
+
+  .hero-scroll-hint {
+    justify-content: center;
   }
 
   .hero-glow--primary {
@@ -1144,6 +1226,14 @@ onBeforeUnmount(() => {
   .bento-grid {
     grid-template-columns: 1fr 1fr;
     gap: var(--spacing-3);
+  }
+
+  .bento-header-title {
+    font-size: var(--text-xl);
+  }
+
+  .bento-header-subtitle {
+    font-size: var(--text-sm);
   }
 
   .bento-feature {
@@ -1172,6 +1262,10 @@ onBeforeUnmount(() => {
     font-size: var(--text-base);
   }
 
+  .bento-meta {
+    font-size: var(--text-xs);
+  }
+
   .masonry-container {
     gap: var(--spacing-3);
   }
@@ -1192,6 +1286,27 @@ onBeforeUnmount(() => {
 
   .bento-feature-title {
     font-size: var(--text-xl);
+  }
+
+  .bento-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .bento-feature,
+  .bento-search,
+  .bento-community,
+  .bento-authors,
+  .bento-favorites {
+    grid-column: 1 / -1;
+  }
+
+  .bento-card {
+    min-height: 112px;
+  }
+
+  .bento-card-arrow {
+    width: 28px;
+    height: 28px;
   }
 
   .masonry-container {

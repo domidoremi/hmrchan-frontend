@@ -123,17 +123,17 @@
       "subtitle": "探索来自优秀创作者的精选作品",
       "badge": "发现精彩内容",
       "highlights": {
-        "aggregate": {
-          "title": "精选聚合",
-          "desc": "聚合多平台最新内容，浏览更高效。"
+        "multilingual": {
+          "title": "多语言界面",
+          "desc": "随时切换中文、English 与日语。"
         },
-        "search": {
-          "title": "智能搜索",
-          "desc": "快速定位帖子、作者与标签。"
+        "motion": {
+          "title": "动效无障碍",
+          "desc": "动效随设置与系统“减少动态效果”自动调整。"
         },
-        "save": {
-          "title": "收藏回看",
-          "desc": "一键收藏喜欢的内容，随时回来继续探索。"
+        "performance": {
+          "title": "极速与缓存",
+          "desc": "内置缓存与性能优化，浏览更顺滑。"
         }
       }
     },
@@ -143,7 +143,12 @@
     },
     "bento": {
       "featureTitle": "几秒开启探索",
-      "featureSubtitle": "浏览最新内容、发现创作者，打造你的专属收藏。"
+      "featureSubtitle": "浏览最新内容、发现创作者，打造你的专属收藏。",
+      "searchMeta": "支持关键词、标签、作者",
+      "communityMeta": "查看公告与讨论",
+      "authorsMeta": "按平台与热度发现创作者",
+      "favoritesMeta": "收藏内容，随时回看",
+      "favoritesMetaGuest": "登录后开始收藏"
     },
     "latest": "最新发布",
     "popular": "热门推荐"

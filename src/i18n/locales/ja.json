@@ -123,17 +123,17 @@
       "subtitle": "才能あるクリエイターの厳選コレクション",
       "badge": "素晴らしいコンテンツを発見",
       "highlights": {
-        "aggregate": {
-          "title": "厳選フィード",
-          "desc": "複数プラットフォームの最新投稿をまとめてチェック。"
+        "multilingual": {
+          "title": "多言語UI",
+          "desc": "中国語・英語・日本語をいつでも切り替え。"
         },
-        "search": {
-          "title": "スマート検索",
-          "desc": "投稿・作者・タグをすばやく検索。"
+        "motion": {
+          "title": "モーション配慮",
+          "desc": "設定と「動きを減らす」に応じてアニメーションを調整。"
         },
-        "save": {
-          "title": "保存して後で見る",
-          "desc": "お気に入りを作って、いつでも戻れます。"
+        "performance": {
+          "title": "高速＆キャッシュ",
+          "desc": "キャッシュと最適化で快適に閲覧。"
         }
       }
     },
@@ -143,7 +143,12 @@
     },
     "bento": {
       "featureTitle": "数秒で探索を開始",
-      "featureSubtitle": "最新投稿をチェックし、クリエイターを見つけ、自分だけのコレクションに。"
+      "featureSubtitle": "最新投稿をチェックし、クリエイターを見つけ、自分だけのコレクションに。",
+      "searchMeta": "キーワード・タグ・作者をまとめて検索",
+      "communityMeta": "お知らせとディスカッション",
+      "authorsMeta": "プラットフォーム別に作者を探す",
+      "favoritesMeta": "保存して後で見返す",
+      "favoritesMetaGuest": "ログインしてお気に入りを保存"
     },
     "latest": "最新",
     "popular": "人気"
