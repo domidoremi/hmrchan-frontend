@@ -1187,7 +1187,7 @@ onBeforeUnmount(() => {
 
   .hero-content {
     justify-items: center;
-    padding: var(--spacing-16) 0 var(--spacing-10);
+    padding: var(--spacing-16) var(--spacing-5) var(--spacing-10);
   }
 
   .hero-main {
@@ -1225,7 +1225,7 @@ onBeforeUnmount(() => {
 
   .bento-grid {
     grid-template-columns: 1fr 1fr;
-    gap: var(--spacing-3);
+    gap: var(--spacing-4);
   }
 
   .bento-header-title {
@@ -1276,6 +1276,10 @@ onBeforeUnmount(() => {
 }
 
 @media (max-width: 480px) {
+  .hero-content {
+    padding: var(--spacing-12) var(--spacing-4) var(--spacing-8);
+  }
+
   .hero-title {
     font-size: 2rem;
   }
@@ -1289,7 +1293,8 @@ onBeforeUnmount(() => {
   }
 
   .bento-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-3);
   }
 
   .bento-feature,
