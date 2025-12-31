@@ -123,17 +123,17 @@
       "subtitle": "Explore curated collections from talented creators",
       "badge": "Discover Amazing Content",
       "highlights": {
-        "aggregate": {
-          "title": "Curated feed",
-          "desc": "Fresh posts across platforms, organized for easy browsing."
+        "multilingual": {
+          "title": "Multilingual UI",
+          "desc": "Switch between Chinese, English, and Japanese anytime."
         },
-        "search": {
-          "title": "Smart search",
-          "desc": "Find posts, authors, and tags in seconds."
+        "motion": {
+          "title": "Motion-aware",
+          "desc": "Animations respect your settings and reduced-motion preference."
         },
-        "save": {
-          "title": "Save & revisit",
-          "desc": "Build your favorites and come back anytime."
+        "performance": {
+          "title": "Fast & cached",
+          "desc": "Built-in caching and optimizations for a smoother browse."
         }
       }
     },
@@ -143,7 +143,12 @@
     },
     "bento": {
       "featureTitle": "Start exploring in seconds",
-      "featureSubtitle": "Browse the latest posts, discover creators, and build your personal collection."
+      "featureSubtitle": "Browse the latest posts, discover creators, and build your personal collection.",
+      "searchMeta": "Keywords, tags, and creators in one place",
+      "communityMeta": "Announcements and discussions",
+      "authorsMeta": "Browse creators by platform and popularity",
+      "favoritesMeta": "Save posts and revisit anytime",
+      "favoritesMetaGuest": "Log in to start saving favorites"
     },
     "latest": "Latest Posts",
     "popular": "Popular"
