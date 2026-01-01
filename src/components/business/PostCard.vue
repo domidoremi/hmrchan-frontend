@@ -27,9 +27,9 @@
         :alt="post.title"
         :width="imageWidth"
         :height="imageHeight"
-        loading="lazy"
+        :loading="imageLoadingStrategy"
         decoding="async"
-        fetchpriority="low"
+        :fetchpriority="imageFetchPriority"
         @load="onImageLoad"
         @error="onImageError"
       />
@@ -151,12 +151,15 @@ export interface PostCardProps {
   showAuthor?: boolean
   thumbnailSize?: 'small' | 'medium' | 'large' | 'responsive'
   aspectRatio?: string | number
+  /** 是否为首屏图片（前4张优先加载） */
+  priority?: boolean
 }
 
 const props = withDefaults(defineProps<PostCardProps>(), {
   showContent: true,
   showAuthor: true,
   thumbnailSize: 'responsive',
+  priority: false,
 })
 
 const emit = defineEmits<{
@@ -265,6 +268,12 @@ const wrapperAspectRatio = computed(() => {
 const imageWrapperStyle = computed<Record<string, string>>(() => ({
   aspectRatio: wrapperAspectRatio.value,
 }))
+
+// 图片加载策略：首屏图片 eager，其他 lazy
+const imageLoadingStrategy = computed(() => (props.priority ? 'eager' : 'lazy'))
+
+// 图片优先级：首屏图片 high，其他 low
+const imageFetchPriority = computed(() => (props.priority ? 'high' : 'low'))
 
 function preloadImageDimensions() {
   if (props.post.thumbnail_width && props.post.thumbnail_height) {

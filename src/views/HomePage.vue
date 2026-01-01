@@ -173,7 +173,13 @@
                 :ref="(el) => setColumnRef(el, index)"
                 class="masonry-column"
               >
-                <PostCard v-for="post in column" :key="post.id" :post="post" @click="goToPost" />
+                <PostCard
+                  v-for="(post, postIndex) in column"
+                  :key="post.id"
+                  :post="post"
+                  :priority="postIndex < 2"
+                  @click="goToPost"
+                />
               </div>
             </div>
 
