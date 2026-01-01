@@ -277,7 +277,13 @@ export default defineConfig(({ mode }) => {
               if (id.includes('lucide-vue-next')) return 'icons'
 
               // 动画和媒体查看器（按需加载）
-              if (id.includes('gsap')) return 'animations'
+              if (id.includes('gsap')) {
+                // GSAP 核心库独立
+                if (id.includes('gsap/dist/gsap') && !id.includes('ScrollTrigger') && !id.includes('Flip'))
+                  return 'gsap-core'
+                // GSAP 插件独立
+                return 'gsap-plugins'
+              }
               if (id.includes('photoswipe')) return 'photo-viewer'
 
               // VueUse 工具库
@@ -325,8 +331,18 @@ export default defineConfig(({ mode }) => {
             // 业务代码分割：工具函数
             if (id.includes('/utils/')) return 'utils'
 
-            // 业务代码分割：composables
-            if (id.includes('/composables/')) return 'composables'
+            // 业务代码分割：composables（细粒度拆分以优化缓存）
+            if (id.includes('/composables/')) {
+              // 卡片动画相关（包含 GSAP）
+              if (id.includes('useCardAnimation')) return 'composables-animation'
+              // 缓存相关
+              if (id.includes('useCachedPosts') || id.includes('useCache')) return 'composables-cache'
+              // 瀑布流和布局相关
+              if (id.includes('useMasonryColumns') || id.includes('useInfiniteScroll'))
+                return 'composables-layout'
+              // 其他轻量级 composables
+              return 'composables-utils'
+            }
 
             // 动画工具按需分割
             if (id.includes('/animations/') || id.includes('gsap')) {
