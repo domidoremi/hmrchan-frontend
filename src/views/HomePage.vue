@@ -25,7 +25,9 @@
               {{ $t('nav.explore') }}
             </Button>
             <Button size="lg" variant="ghost" class="hero-btn-ghost" @click="scrollToBento">
-              <ArrowDown :size="20" class="hero-arrow-icon" />
+              <span class="hero-arrow-wrapper">
+                <ArrowDown :size="20" class="hero-arrow-icon" />
+              </span>
               {{ $t('common.learnMore') }}
             </Button>
           </div>
@@ -510,7 +512,11 @@ onBeforeUnmount(() => {
 
 .hero-bg {
   position: absolute;
-  inset: 0;
+  /* 调整背景定位，避免延伸到底部空白区域 */
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: var(--spacing-32);
   pointer-events: none;
   overflow: hidden;
 }
@@ -716,7 +722,16 @@ onBeforeUnmount(() => {
   transform: translateX(100%);
 }
 
-.hero--animated .hero-arrow-icon {
+/* 箭头动画包装器 - 创建独立合成层避免 CLS */
+.hero-arrow-wrapper {
+  display: inline-flex;
+  align-items: center;
+  /* 强制创建合成层，隔离动画影响 */
+  will-change: transform;
+  transform: translateZ(0);
+}
+
+.hero--animated .hero-arrow-wrapper {
   animation: bounce-down 2s ease-in-out infinite;
 }
 
