@@ -719,8 +719,14 @@ onBeforeUnmount(() => {
 }
 
 @keyframes bounce-down {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(3px); }
+  0%, 100% {
+    transform: translate3d(0, 0, 0);
+    animation-timing-function: ease-in-out;
+  }
+  50% {
+    transform: translate3d(0, 3px, 0);
+    animation-timing-function: ease-in-out;
+  }
 }
 
 .hero-scroll-hint {
