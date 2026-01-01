@@ -499,12 +499,13 @@ onBeforeUnmount(() => {
 .hero {
   position: relative;
   display: flex;
-  min-height: calc(100vh - var(--navbar-height));
-  min-height: calc(100svh - var(--navbar-height));
-  min-height: calc(100dvh - var(--navbar-height));
+  /* 完整视口高度，内容通过 padding-top 避开导航栏 */
+  min-height: 100vh;
+  min-height: 100svh;
+  min-height: 100dvh;
   padding: 0;
   overflow: hidden;
-  margin-top: var(--navbar-height);
+  /* 移除 margin-top，避免额外高度 */
 }
 
 .hero-bg {
@@ -595,7 +596,8 @@ onBeforeUnmount(() => {
   justify-items: center;
   width: 100%;
   height: 100%;
-  padding: var(--spacing-24) 0 var(--spacing-16);
+  /* 上方留出导航栏空间，下方留出底部空间 */
+  padding: calc(var(--navbar-height) + var(--spacing-24)) 0 var(--spacing-16);
 }
 
 .hero-main {
