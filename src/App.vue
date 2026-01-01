@@ -10,22 +10,22 @@
 
     <!-- Main Content -->
     <main id="main-content">
-      <RouterView v-slot="{ Component, route }">
-        <Transition :name="transitionName" mode="out-in">
-          <Suspense>
-            <template #default>
-              <KeepAlive :include="cachedPages" :max="10">
-                <component :is="Component" class="route-view" :key="route.name ?? route.path" />
-              </KeepAlive>
-            </template>
-            <template #fallback>
-              <div class="route-view">
+      <div class="route-view">
+        <RouterView v-slot="{ Component, route }">
+          <Transition :name="transitionName" mode="out-in">
+            <Suspense>
+              <template #default>
+                <KeepAlive :include="cachedPages" :max="10">
+                  <component :is="Component" :key="route.name ?? route.path" />
+                </KeepAlive>
+              </template>
+              <template #fallback>
                 <PageLoading />
-              </div>
-            </template>
-          </Suspense>
-        </Transition>
-      </RouterView>
+              </template>
+            </Suspense>
+          </Transition>
+        </RouterView>
+      </div>
     </main>
 
     <!-- Footer -->

@@ -384,6 +384,15 @@ async function fetchLatestPosts(reset = true): Promise<boolean> {
     if (cached && !hadData) {
       posts.value = cached.data as PostListItem[]
       total.value = cached.total
+
+      const cachedFiltered = (cached.data as PostListItem[]).filter(
+        (post) => !FILTERED_AUTHORS.includes(post.author_name?.toLowerCase() ?? '')
+      )
+      allPosts.value = cachedFiltered
+
+      const containerWidth = getContainerWidth()
+      const colWidth = getColumnWidth(containerWidth)
+      distributePosts(cachedFiltered, colWidth, false)
     }
   }
 
@@ -478,7 +487,7 @@ function goToPost(postId: string, thumbnailSrc: string | null) {
 }
 
 onMounted(() => {
-  if (posts.value.length === 0) {
+  if (posts.value.length === 0 && !isLoading.value) {
     fetchLatestPosts()
   }
 
@@ -502,9 +511,10 @@ onBeforeUnmount(() => {
   position: relative;
   display: flex;
   /* 完整视口高度，内容通过 padding-top 避开导航栏 */
-  min-height: 100vh;
-  min-height: 100svh;
-  min-height: 100dvh;
+  min-height: calc(100vh - var(--navbar-height));
+  min-height: calc(100svh - var(--navbar-height));
+  height: calc(100vh - var(--navbar-height));
+  height: calc(100svh - var(--navbar-height));
   padding: 0;
   overflow: hidden;
   /* 移除 margin-top，避免额外高度 */
@@ -512,11 +522,10 @@ onBeforeUnmount(() => {
 
 .hero-bg {
   position: absolute;
-  /* 调整背景定位，避免延伸到底部空白区域 */
   top: 0;
   left: 0;
   right: 0;
-  bottom: var(--spacing-32);
+  bottom: var(--spacing-8);
   pointer-events: none;
   overflow: hidden;
 }
@@ -603,7 +612,7 @@ onBeforeUnmount(() => {
   width: 100%;
   height: 100%;
   /* 上方留出导航栏空间，下方留出底部空间 */
-  padding: calc(var(--navbar-height) + var(--spacing-24)) 0 var(--spacing-16);
+  padding: var(--spacing-24) 0 var(--spacing-16);
 }
 
 .hero-main {
@@ -614,24 +623,20 @@ onBeforeUnmount(() => {
 
 @keyframes hero-glow-pulse {
   0% {
-    transform: scale(1) translate(0, 0);
-    opacity: 0.5;
+    opacity: 0.45;
   }
   100% {
-    transform: scale(1.1) translate(20px, -20px);
-    opacity: 0.7;
+    opacity: 0.65;
   }
 }
 
 @keyframes hero-glow-pulse-center {
   0% {
-    transform: translate(-50%, -50%) scale(1);
-    opacity: 0.5;
+    opacity: 0.45;
   }
 
   100% {
-    transform: translate(-50%, -50%) scale(1.1);
-    opacity: 0.7;
+    opacity: 0.65;
   }
 }
 
@@ -721,12 +726,9 @@ onBeforeUnmount(() => {
 .hero-btn-primary:hover::before {
   transform: translateX(100%);
 }
-
-/* 箭头动画包装器 - 创建独立合成层避免 CLS */
 .hero-arrow-wrapper {
   display: inline-flex;
   align-items: center;
-  /* 强制创建合成层，隔离动画影响 */
   will-change: transform;
   transform: translateZ(0);
 }
@@ -1212,11 +1214,19 @@ onBeforeUnmount(() => {
 @media (max-width: 768px) {
   .hero {
     text-align: center;
+    min-height: calc(100vh - var(--navbar-height) - 72px);
+    min-height: calc(100svh - var(--navbar-height) - 72px);
+    height: calc(100vh - var(--navbar-height) - 72px);
+    height: calc(100svh - var(--navbar-height) - 72px);
   }
 
   .hero-content {
     justify-items: center;
-    padding: var(--spacing-16) var(--spacing-5) var(--spacing-12);
+    padding: var(--spacing-12) var(--spacing-5) calc(env(safe-area-inset-bottom, 0) + var(--spacing-10));
+  }
+
+  .hero-scroll-hint {
+    display: none;
   }
 
   .hero-main {

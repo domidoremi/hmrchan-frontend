@@ -202,8 +202,7 @@
       <span>{{ $t('nav.explore') }}</span>
     </RouterLink>
     <RouterLink
-      v-if="isAuthenticated"
-      to="/favorites"
+      :to="mobileFavoritesLink"
       class="mobile-nav-item"
       active-class="mobile-nav-item--active"
       @mouseenter="prefetchFavoritesPage"
@@ -242,7 +241,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, onUnmounted, defineAsyncComponent, nextTick } from 'vue'
+import { ref, watch, onMounted, onUnmounted, defineAsyncComponent, nextTick, computed } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import {
@@ -271,6 +270,14 @@ const SettingsPanel = defineAsyncComponent(() => import('./SettingsPanel.vue'))
 const router = useRouter()
 const authStore = useAuthStore()
 const { user, isAuthenticated } = storeToRefs(authStore)
+
+const mobileFavoritesLink = computed(() => {
+  if (isAuthenticated.value) return '/favorites'
+  return {
+    path: '/login',
+    query: { redirect: '/favorites' },
+  }
+})
 
 const showSettings = ref(false)
 const showUserMenu = ref(false)
@@ -892,6 +899,7 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   align-items: center;
+  flex: 1 1 0;
   gap: var(--spacing-1);
   padding: var(--spacing-2) var(--spacing-3);
   color: var(--color-text-tertiary);
