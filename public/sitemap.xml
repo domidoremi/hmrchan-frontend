@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://momichan.xyz/</loc>
+  </url>
+  <url>
+    <loc>https://momichan.xyz/explore</loc>
+  </url>
+  <url>
+    <loc>https://momichan.xyz/search</loc>
+  </url>
+  <url>
+    <loc>https://momichan.xyz/authors</loc>
+  </url>
+  <url>
+    <loc>https://momichan.xyz/community</loc>
+  </url>
+  <url>
+    <loc>https://momichan.xyz/contact</loc>
+  </url>
+  <url>
+    <loc>https://momichan.xyz/login</loc>
+  </url>
+  <url>
+    <loc>https://momichan.xyz/register</loc>
+  </url>
+  <url>
+    <loc>https://momichan.xyz/settings</loc>
+  </url>
+  <url>
+    <loc>https://momichan.xyz/settings/profile</loc>
+  </url>
+</urlset>

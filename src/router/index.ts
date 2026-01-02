@@ -3,6 +3,7 @@
  */
 
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
+import i18n from '@/i18n'
 
 const routes: RouteRecordRaw[] = [
   {
@@ -157,6 +158,67 @@ router.beforeEach((to, _from, next) => {
 
     next()
   })
+})
+
+const SITE_NAME = 'MomiChan'
+const SITE_ORIGIN = 'https://momichan.xyz'
+let defaultDescription: string | undefined
+
+function ensureMetaName(name: string): HTMLMetaElement {
+  let el = document.querySelector(`meta[name="${name}"]`) as HTMLMetaElement | null
+  if (!el) {
+    el = document.createElement('meta')
+    el.setAttribute('name', name)
+    document.head.appendChild(el)
+  }
+  return el
+}
+
+function ensureMetaProperty(property: string): HTMLMetaElement {
+  let el = document.querySelector(`meta[property="${property}"]`) as HTMLMetaElement | null
+  if (!el) {
+    el = document.createElement('meta')
+    el.setAttribute('property', property)
+    document.head.appendChild(el)
+  }
+  return el
+}
+
+function ensureLinkRel(rel: string): HTMLLinkElement {
+  let el = document.querySelector(`link[rel="${rel}"]`) as HTMLLinkElement | null
+  if (!el) {
+    el = document.createElement('link')
+    el.setAttribute('rel', rel)
+    document.head.appendChild(el)
+  }
+  return el
+}
+
+router.afterEach((to) => {
+  const titleKey = to.meta['title']
+  const translatedTitle = typeof titleKey === 'string' ? String(i18n.global.t(titleKey)) : ''
+  const nextTitle = translatedTitle && translatedTitle !== SITE_NAME ? `${translatedTitle} - ${SITE_NAME}` : SITE_NAME
+
+  document.title = nextTitle
+
+  const canonicalUrl = new URL(to.path, SITE_ORIGIN).toString()
+  ensureLinkRel('canonical').setAttribute('href', canonicalUrl)
+  ensureMetaProperty('og:url').setAttribute('content', canonicalUrl)
+  ensureMetaName('twitter:url').setAttribute('content', canonicalUrl)
+
+  ensureMetaProperty('og:title').setAttribute('content', nextTitle)
+  ensureMetaName('twitter:title').setAttribute('content', nextTitle)
+
+  if (defaultDescription === undefined) {
+    defaultDescription = (document.querySelector('meta[name="description"]') as HTMLMetaElement | null)?.content
+  }
+
+  const description = typeof to.meta['description'] === 'string' ? to.meta['description'] : defaultDescription
+  if (description) {
+    ensureMetaName('description').setAttribute('content', description)
+    ensureMetaProperty('og:description').setAttribute('content', description)
+    ensureMetaName('twitter:description').setAttribute('content', description)
+  }
 })
 
 export default router

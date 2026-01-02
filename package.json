@@ -71,7 +71,9 @@
     "vite-imagetools": "^9.0.2",
     "vite-plugin-vue-devtools": "^8.0.5",
     "vitest": "^4.0.16",
-    "vue-tsc": "^3.2.1"
+    "vue-tsc": "^3.2.1",
+    "chrome-launcher": "^1.2.1",
+    "lighthouse": "^12.8.0"
   },
   "lint-staged": {
     "*.{ts,tsx,vue}": [
