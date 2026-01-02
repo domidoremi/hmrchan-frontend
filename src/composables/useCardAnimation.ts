@@ -37,6 +37,8 @@ export function useCardAnimation(
 
   // Modern API: Use matchMedia for reduced motion detection
   const prefersReducedMotion = (): boolean => {
+    if (typeof window === 'undefined') return false
+    if (typeof window.matchMedia !== 'function') return false
     return window.matchMedia('(prefers-reduced-motion: reduce)').matches
   }
 

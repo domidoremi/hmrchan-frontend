@@ -62,13 +62,11 @@ export function supportsWebP(): boolean {
 export function getMediaThumbnailUrl(mediaId: string, size: MediaThumbnailSize = 'medium'): string {
   const baseUrl = `/api/v1/media/${mediaId}/thumbnail?size=${size}`
 
-  // 如果浏览器支持 WebP，添加 format 参数
-  // 后端会根据实际情况返回 WebP 或回退到 JPEG
-  if (supportsWebP()) {
-    return `${baseUrl}&format=webp`
-  }
-
-  return baseUrl
+  // 始终带 format 参数：避免后端在缺少 format 时出现不稳定的 500
+  // - 浏览器支持 WebP：优先请求 webp（后端也可能回退为 jpeg）
+  // - 不支持 WebP：请求 jpeg，避免返回 webp 导致无法解码
+  const format = supportsWebP() ? 'webp' : 'jpeg'
+  return `${baseUrl}&format=${format}`
 }
 
 /**

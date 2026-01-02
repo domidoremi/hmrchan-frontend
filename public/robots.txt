@@ -5,7 +5,7 @@ User-agent: *
 Allow: /
 
 # Sitemaps
-Sitemap: https://himenshion.club/sitemap.xml
+Sitemap: https://momichan.xyz/sitemap.xml
 
 # Disallow admin/private paths
 Disallow: /api/

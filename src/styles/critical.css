@@ -38,6 +38,7 @@
   --glass-blur: blur(12px);
 
   /* 间距 */
+  --spacing-1: 0.25rem;
   --spacing-2: 0.5rem;
   --spacing-3: 0.75rem;
   --spacing-4: 1rem;
@@ -88,10 +89,12 @@
 html {
   -webkit-text-size-adjust: none;
   text-size-adjust: none;
+  scrollbar-gutter: stable;
 }
 
 body {
   min-height: 100vh;
+  min-height: 100svh;
   font-family: var(--font-family);
   font-size: var(--text-base);
   line-height: var(--leading-normal);
@@ -144,6 +147,7 @@ body {
 /* ========== 主内容区域 ========== */
 #app {
   min-height: 100vh;
+  min-height: 100svh;
   display: flex;
   flex-direction: column;
 }
@@ -151,6 +155,78 @@ body {
 main {
   flex: 1;
   padding-top: var(--navbar-height);
+  min-height: 100vh;
+  min-height: 100svh;
+}
+
+.route-view {
+  min-height: calc(100vh - var(--navbar-height));
+  min-height: calc(100svh - var(--navbar-height));
+}
+
+.hero {
+  min-height: calc(100vh - var(--navbar-height));
+  min-height: calc(100svh - var(--navbar-height));
+}
+
+.page-loading {
+  min-height: calc(100vh - var(--navbar-height));
+  min-height: calc(100svh - var(--navbar-height));
+}
+.desktop-only {
+  display: flex;
+}
+
+.mobile-only {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .desktop-only {
+    display: none;
+  }
+
+  .mobile-only {
+    display: flex;
+  }
+
+  .mobile-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 72px;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    padding-bottom: env(safe-area-inset-bottom);
+    z-index: var(--z-sticky);
+  }
+
+  .hero {
+    min-height: calc(100vh - var(--navbar-height) - 72px);
+    min-height: calc(100svh - var(--navbar-height) - 72px);
+  }
+
+  .mobile-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1 1 0;
+    gap: var(--spacing-1);
+    padding: var(--spacing-2) var(--spacing-3);
+    min-width: 64px;
+    font-size: 10px;
+    text-decoration: none;
+  }
+
+  .mobile-nav-icon {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
 }
 
 /* ========== 骨架屏 ========== */

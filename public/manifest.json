@@ -1,7 +1,7 @@
 {
-  "name": "HMRChan - 内容聚合平台",
-  "short_name": "HMRChan",
-  "description": "聚合平台内容",
+  "name": "MomiChan",
+  "short_name": "MomiChan",
+  "description": "籾山ひめり Fan Hub - 聚合 YouTube、X(Twitter)、TikTok、Instagram 最新内容",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0f172a",
