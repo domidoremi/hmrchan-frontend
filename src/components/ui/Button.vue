@@ -1,5 +1,6 @@
 <template>
   <button :class="buttonClass" :disabled="disabled || loading" :type="type" @click="handleClick">
+    <span class="btn-ripple" />
     <span v-if="loading" class="spinner spinner-sm" />
     <component v-else-if="icon && iconPosition === 'left'" :is="icon" :size="iconSize" />
     <span v-if="$slots['default']" class="btn-content">
@@ -62,6 +63,7 @@ function handleClick(event: MouseEvent) {
 
 <style scoped>
 .btn {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -73,6 +75,16 @@ function handleClick(event: MouseEvent) {
   border: none;
   outline: none;
   white-space: nowrap;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.btn-ripple {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: -1;
 }
 
 /* Sizes */
@@ -103,13 +115,22 @@ function handleClick(event: MouseEvent) {
 .btn-primary:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow:
-    var(--glass-glow),
-    0 8px 16px -4px rgba(59, 130, 246, 0.3);
+    0 0 0 1px rgba(var(--color-primary-rgb), 0.2),
+    0 8px 24px -4px rgba(var(--color-primary-rgb), 0.4),
+    0 4px 8px -2px rgba(var(--color-primary-rgb), 0.2);
+}
+
+.btn-primary:hover:not(:disabled) .btn-ripple {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.2) 0%,
+    transparent 100%
+  );
 }
 
 .btn-primary:active:not(:disabled) {
-  transform: translateY(0) scale(0.98);
-  box-shadow: none;
+  transform: translateY(0) scale(0.97);
+  transition: transform 0.1s ease;
 }
 
 .btn-secondary {
@@ -132,14 +153,17 @@ function handleClick(event: MouseEvent) {
 .btn-ghost {
   background: transparent;
   color: var(--color-text-primary);
+  border: 1px solid transparent;
 }
 
 .btn-ghost:hover:not(:disabled) {
   background: var(--glass-bg-light);
+  border-color: var(--glass-border);
 }
 
 .btn-ghost:active:not(:disabled) {
-  transform: scale(0.98);
+  transform: scale(0.97);
+  background: var(--glass-bg);
 }
 
 .btn-danger {

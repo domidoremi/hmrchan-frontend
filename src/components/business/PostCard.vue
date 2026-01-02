@@ -2,7 +2,7 @@
   <button
     ref="cardRef"
     type="button"
-    class="post-card glass-card post-card-btn"
+    class="post-card glass-card glass-card--interactive"
     @click="handleClick"
     @mouseenter="handleMouseEnter"
     @mouseleave="handleMouseLeave"
@@ -11,12 +11,13 @@
   >
     <div class="post-image-wrapper" :style="imageWrapperStyle">
       <!-- Platform Icon Badge -->
-      <div v-if="post.platform" class="platform-icon" :title="platformLabel">
-        <component :is="platformIcon" :size="14" />
+      <div v-if="post.platform" class="platform-badge" :class="`platform-badge--${post.platform?.toLowerCase()}`">
+        <component :is="platformIcon" :size="12" />
+        <span class="platform-label">{{ platformLabel }}</span>
       </div>
 
       <!-- 预设固定尺寸的占位符，防止图片加载时的布局偏移 -->
-      <div v-if="!isImageLoaded" class="post-image-placeholder" />
+      <div v-if="!isImageLoaded" class="post-image-placeholder glass-skeleton" />
 
       <img
         v-if="thumbnailSrc && shouldRenderImage"
@@ -26,42 +27,50 @@
         :alt="post.title"
         :width="imageWidth"
         :height="imageHeight"
-        loading="lazy"
+        :loading="imageLoadingStrategy"
         decoding="async"
-        fetchpriority="low"
+        :fetchpriority="imageFetchPriority"
         @load="onImageLoad"
         @error="onImageError"
       />
 
       <!-- Duration Badge (for videos) -->
       <div v-if="post.duration" class="duration-badge">
+        <Play :size="10" />
         {{ formatDuration(post.duration) }}
       </div>
 
+      <!-- Image Overlay Gradient -->
+      <div class="image-overlay" />
+
       <!-- Hover Details Overlay -->
       <Transition name="hover-details">
-        <div v-if="showHoverDetails" class="hover-details-overlay">
-          <div class="hover-details-content">
+        <div v-if="showHoverDetails" class="hover-overlay">
+          <div class="hover-content">
             <h4 class="hover-title">{{ post.title }}</h4>
-            <p v-if="post.author_name" class="hover-author">{{ post.author_name }}</p>
+            <p v-if="post.author_name" class="hover-author">
+              <User :size="12" />
+              {{ post.author_name }}
+            </p>
             <div class="hover-stats">
               <span v-if="post.view_count" class="hover-stat">
-                <Eye :size="14" />
-                {{ formatCount(post.view_count) }} {{ $t('post.views') }}
+                <Eye :size="12" />
+                {{ formatCount(post.view_count) }}
               </span>
               <span v-if="post.like_count" class="hover-stat">
-                <Heart :size="14" />
-                {{ formatCount(post.like_count) }} {{ $t('post.likes') }}
+                <Heart :size="12" />
+                {{ formatCount(post.like_count) }}
               </span>
               <span v-if="post.duration" class="hover-stat">
-                <Clock :size="14" />
+                <Clock :size="12" />
                 {{ formatDuration(post.duration) }}
               </span>
             </div>
-            <p v-if="post.platform" class="hover-platform">
-              <component :is="platformIcon" :size="14" />
-              {{ platformLabel }}
-            </p>
+          </div>
+          <div class="hover-action">
+            <div class="hover-action-icon">
+              <ArrowUpRight :size="18" />
+            </div>
           </div>
         </div>
       </Transition>
@@ -70,10 +79,14 @@
     <div v-if="showContent" class="post-content">
       <h3 class="post-title">{{ post.title }}</h3>
 
-      <div class="post-footer">
-        <p v-if="showAuthor" class="post-author">{{ post.author_name }}</p>
+      <div class="post-meta">
+        <div class="post-author-wrapper" v-if="showAuthor && post.author_name">
+          <div class="post-author-avatar">
+            <User :size="12" />
+          </div>
+          <span class="post-author">{{ post.author_name }}</span>
+        </div>
 
-        <!-- Stats Row -->
         <div class="post-stats">
           <span v-if="post.view_count" class="post-stat" :title="$t('post.views')">
             <Eye :size="12" />
@@ -91,7 +104,18 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, type Component } from 'vue'
-import { Youtube, Twitter, Globe, Music2, Eye, Heart, Clock } from 'lucide-vue-next'
+import {
+  ArrowUpRight,
+  Clock,
+  Eye,
+  Globe,
+  Heart,
+  Music2,
+  Play,
+  Twitter,
+  User,
+  Youtube,
+} from 'lucide-vue-next'
 import type { PostListItem } from '@/api'
 import { prefetchPostDetail } from '@/utils/prefetch'
 import {
@@ -104,22 +128,19 @@ import { useCardAnimation } from '@/composables/useCardAnimation'
 
 /**
  * 固定宽高比缓存 - 用于保持布局稳定，避免 CLS
- * 只在首次加载时缓存，不在图片加载后更新
  */
 const postAspectRatioCache = new Map<string, string>()
 
 /**
- * 根据平台设置默认宽高比，减少 CLS
- * - TikTok: 9:16 (竖屏短视频)
- * - YouTube/Twitter/其他: 16:9 (横屏)
+ * 根据平台设置默认宽高比
  */
 const PLATFORM_ASPECT_RATIOS: Record<string, string> = {
   tiktok: '9 / 16',
   youtube: '16 / 9',
   twitter: '16 / 9',
   bilibili: '16 / 9',
-  pixiv: '3 / 4', // Pixiv 图片通常偏竖屏
-  weibo: '4 / 3', // 微博图片多为方形或竖屏
+  pixiv: '3 / 4',
+  weibo: '4 / 3',
 }
 
 const DEFAULT_ASPECT_RATIO = '16 / 9'
@@ -130,12 +151,15 @@ export interface PostCardProps {
   showAuthor?: boolean
   thumbnailSize?: 'small' | 'medium' | 'large' | 'responsive'
   aspectRatio?: string | number
+  /** 是否为首屏图片（前4张优先加载） */
+  priority?: boolean
 }
 
 const props = withDefaults(defineProps<PostCardProps>(), {
   showContent: true,
   showAuthor: true,
   thumbnailSize: 'responsive',
+  priority: false,
 })
 
 const emit = defineEmits<{
@@ -200,7 +224,6 @@ const thumbnailSrc = computed(() => {
   const rawSize = effectiveThumbnailSize.value || 'medium'
   const size = rawSize === 'original' ? 'large' : rawSize
 
-  // 尝试从缓存获取
   if (mediaId) {
     const cached = thumbnailCache.get(mediaId, size)
     if (cached) return cached
@@ -209,7 +232,6 @@ const thumbnailSrc = computed(() => {
   const optimized =
     normalizeToThumbnailUrl(props.post.thumbnail_url, rawSize) || props.post.thumbnail_url
 
-  // 存入缓存
   if (mediaId) {
     thumbnailCache.set(mediaId, optimized, size)
   }
@@ -217,46 +239,29 @@ const thumbnailSrc = computed(() => {
   return optimized
 })
 
-// 移除 srcset 以避免双重加载图片
-
-/**
- * 真实宽高比状态（预加载获取）
- */
 const preloadedAspectRatio = ref<string | null>(null)
 
-/**
- * 计算图片容器的宽高比
- * 优化 CLS：按优先级使用不同来源的宽高比
- * 优先级：props > 后端数据 > 预加载 > 缓存 > 平台默认 > 全局默认
- */
 const wrapperAspectRatio = computed(() => {
-  // 1. 优先使用 props 传入的宽高比（最高优先级）
   if (props.aspectRatio !== undefined && props.aspectRatio !== null && props.aspectRatio !== '') {
     return String(props.aspectRatio)
   }
 
-  // 2. 使用后端提供的缩略图尺寸（如果后端已升级）
   if (props.post.thumbnail_width && props.post.thumbnail_height) {
     const ratio = (props.post.thumbnail_width / props.post.thumbnail_height).toFixed(4)
-    // 缓存后端数据以供后续使用
     postAspectRatioCache.set(props.post.id, ratio)
     return ratio
   }
 
-  // 3. 使用预加载获取的真实宽高比
   if (preloadedAspectRatio.value) return preloadedAspectRatio.value
 
-  // 4. 使用缓存的宽高比（仅用于已知尺寸的帖子）
   const cached = postAspectRatioCache.get(props.post.id)
   if (cached) return cached
 
-  // 5. 根据平台使用对应的默认宽高比，减少 CLS
   const platform = props.post.platform?.toLowerCase()
   if (platform && PLATFORM_ASPECT_RATIOS[platform]) {
     return PLATFORM_ASPECT_RATIOS[platform]
   }
 
-  // 6. 使用固定的默认宽高比，避免布局偏移
   return DEFAULT_ASPECT_RATIO
 })
 
@@ -264,12 +269,13 @@ const imageWrapperStyle = computed<Record<string, string>>(() => ({
   aspectRatio: wrapperAspectRatio.value,
 }))
 
-/**
- * 预加载图片以获取真实尺寸
- * 在渲染前获取宽高比，消除 CLS
- */
+// 图片加载策略：首屏图片 eager，其他 lazy
+const imageLoadingStrategy = computed(() => (props.priority ? 'eager' : 'lazy'))
+
+// 图片优先级：首屏图片 high，其他 low
+const imageFetchPriority = computed(() => (props.priority ? 'high' : 'low'))
+
 function preloadImageDimensions() {
-  // 1. 优先使用后端提供的尺寸
   if (props.post.thumbnail_width && props.post.thumbnail_height) {
     imageWidth.value = props.post.thumbnail_width
     imageHeight.value = props.post.thumbnail_height
@@ -279,12 +285,10 @@ function preloadImageDimensions() {
     return
   }
 
-  // 2. 检查缓存
   const cachedRatio = postAspectRatioCache.get(props.post.id)
   if (cachedRatio) {
     const ratio = parseFloat(cachedRatio)
     if (!isNaN(ratio)) {
-      // 根据固定宽度计算高度
       imageWidth.value = 640
       imageHeight.value = Math.round(640 / ratio)
       preloadedAspectRatio.value = cachedRatio
@@ -299,23 +303,17 @@ function preloadImageDimensions() {
   img.onload = () => {
     if (img.naturalWidth && img.naturalHeight) {
       const ratio = (img.naturalWidth / img.naturalHeight).toFixed(4)
-      // 更新图片尺寸属性
       imageWidth.value = img.naturalWidth
       imageHeight.value = img.naturalHeight
-      // 更新预加载的宽高比
       preloadedAspectRatio.value = ratio
-      // 同时缓存以供后续使用
       postAspectRatioCache.set(props.post.id, ratio)
     }
   }
 
   img.onerror = () => {
-    // 预加载失败，使用平台默认值（已在 computed 中处理）
-    // 确保图片仍然可以渲染
     shouldRenderImage.value = true
   }
 
-  // 开始预加载
   img.src = thumbnailSrc.value
 }
 
@@ -323,8 +321,6 @@ watch(
   thumbnailSrc,
   (newSrc, oldSrc) => {
     isImageLoaded.value = false
-
-    // 当图片 URL 变化时，重新预加载获取尺寸
     if (newSrc !== oldSrc) {
       preloadedAspectRatio.value = null
       preloadImageDimensions()
@@ -333,18 +329,12 @@ watch(
   { immediate: true }
 )
 
-/**
- * Format number to compact form (1.2K, 3.5M)
- */
 function formatCount(n: number): string {
   if (n >= 1_000_000) return (n / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M'
   if (n >= 1_000) return (n / 1_000).toFixed(1).replace(/\.0$/, '') + 'K'
   return String(n)
 }
 
-/**
- * Format duration in seconds to MM:SS or HH:MM:SS
- */
 function formatDuration(seconds: number): string {
   const h = Math.floor(seconds / 3600)
   const m = Math.floor((seconds % 3600) / 60)
@@ -356,25 +346,15 @@ function formatDuration(seconds: number): string {
   return `${m}:${s.toString().padStart(2, '0')}`
 }
 
-/**
- * 图片加载完成回调
- * 注意：为了避免 CLS，不再在加载后更新 aspect-ratio
- * 只缓存宽高比供下次使用（如从详情页返回）
- */
 function onImageLoad(event: Event) {
   const img = event.target as HTMLImageElement | null
   if (img?.naturalWidth && img?.naturalHeight) {
-    // 缓存实际宽高比，供后续使用（不触发当前布局更新）
     const ratio = (img.naturalWidth / img.naturalHeight).toFixed(4)
     postAspectRatioCache.set(props.post.id, ratio)
   }
   isImageLoaded.value = true
 }
 
-/**
- * 图片加载失败回调
- * 显示占位符并记录错误
- */
 function onImageError() {
   isImageLoaded.value = true
 }
@@ -386,21 +366,14 @@ function prefetchPostDetailPage() {
   prefetchPostDetail(props.post.id)
 }
 
-/**
- * 鼠标进入卡片，延迟显示详情悬浮层
- * 延迟 300ms 防止快速划过时触发
- */
 function handleMouseEnter() {
   prefetchPostDetailPage()
   if (hoverTimeout) clearTimeout(hoverTimeout)
   hoverTimeout = setTimeout(() => {
     showHoverDetails.value = true
-  }, 300)
+  }, 200)
 }
 
-/**
- * 鼠标离开卡片，隐藏详情悬浮层
- */
 function handleMouseLeave() {
   if (hoverTimeout) {
     clearTimeout(hoverTimeout)
@@ -416,30 +389,32 @@ function handleClick() {
 
 <style scoped>
 .post-card {
-  overflow: hidden;
-}
-
-.post-card-btn {
   display: block;
   width: 100%;
   text-align: left;
   border: 0;
   padding: 0;
-  background: transparent;
+  background: var(--glass-bg);
   cursor: pointer;
   will-change: transform;
+  transition:
+    transform var(--transition-base),
+    box-shadow var(--transition-base);
 }
 
-/* Remove CSS hover - GSAP handles animation */
-.post-card-btn:focus-visible {
+.post-card:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    0 12px 24px -8px rgba(0, 0, 0, 0.15),
+    0 4px 8px -4px rgba(0, 0, 0, 0.1);
+}
+
+.post-card:focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
 }
 
-.post-card-btn:active {
-  transform: scale(0.99);
-}
-
+/* ========== Image Wrapper ========== */
 .post-image-wrapper {
   position: relative;
   width: 100%;
@@ -448,44 +423,79 @@ function handleClick() {
   border-radius: var(--radius-lg) var(--radius-lg) 0 0;
 }
 
-/* Platform Icon Badge */
-.platform-icon {
+/* ========== Platform Badge - 增强版 v2 ========== */
+.platform-badge {
   position: absolute;
   top: var(--spacing-2);
   left: var(--spacing-2);
-  z-index: 2;
-  width: 28px;
-  height: 28px;
-  border-radius: var(--radius-md);
-  background: rgba(0, 0, 0, 0.55);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  z-index: 3;
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: var(--spacing-1);
+  padding: var(--spacing-1) var(--spacing-2);
+  border-radius: var(--radius-full);
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   color: #fff;
-  transition: background-color 0.2s ease;
+  font-size: 10px;
+  font-weight: var(--font-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  transition: all var(--transition-fast);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.post-card-btn:hover .platform-icon {
-  background: rgba(59, 130, 246, 0.85);
+.post-card:hover .platform-badge {
+  transform: scale(1.05);
 }
 
-/* Duration Badge */
+.platform-label {
+  display: none;
+}
+
+.post-card:hover .platform-label {
+  display: inline;
+}
+
+/* Platform colors */
+.platform-badge--youtube {
+  background: rgba(255, 0, 0, 0.85);
+}
+
+.platform-badge--twitter {
+  background: rgba(29, 161, 242, 0.85);
+}
+
+.platform-badge--tiktok {
+  background: linear-gradient(135deg, #25f4ee 0%, #fe2c55 100%);
+}
+
+.platform-badge--bilibili {
+  background: rgba(251, 114, 153, 0.85);
+}
+
+/* ========== Duration Badge ========== */
 .duration-badge {
   position: absolute;
   bottom: var(--spacing-2);
   right: var(--spacing-2);
-  z-index: 2;
-  padding: 2px 6px;
-  border-radius: var(--radius-sm);
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-1);
+  padding: 3px 8px;
+  border-radius: var(--radius-md);
   font-size: 11px;
-  font-weight: var(--font-medium);
+  font-weight: var(--font-semibold);
   font-variant-numeric: tabular-nums;
   color: #fff;
   background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
 }
 
+/* ========== Image ========== */
 .post-image {
   position: relative;
   width: 100%;
@@ -493,35 +503,149 @@ function handleClick() {
   display: block;
   object-fit: cover;
   opacity: 0;
-  filter: blur(10px);
-  transform: scale(1.05);
+  transform: scale(1.02);
   transition:
-    opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-    filter 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-    transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  will-change: opacity, filter, transform;
+    opacity var(--duration-normal) var(--ease-out),
+    transform var(--duration-normal) var(--ease-out);
+  will-change: opacity, transform;
 }
 
 .post-image.is-loaded {
   opacity: 1;
-  filter: blur(0);
   transform: scale(1);
 }
 
-.post-image-skeleton {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
+.post-card:hover .post-image.is-loaded {
+  transform: scale(1.05);
 }
 
 .post-image-placeholder {
   width: 100%;
-  /* 固定宽高比，防止布局偏移 */
   aspect-ratio: 16 / 9;
-  background: var(--glass-bg);
 }
 
+/* ========== Image Overlay ========== */
+.image-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    transparent 50%,
+    rgba(0, 0, 0, 0.15) 100%
+  );
+  pointer-events: none;
+  transition: opacity var(--transition-fast);
+}
+
+.post-card:hover .image-overlay {
+  opacity: 0;
+}
+
+/* ========== Hover Overlay ========== */
+.hover-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: var(--spacing-3);
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.3) 0%,
+    rgba(0, 0, 0, 0.5) 30%,
+    rgba(0, 0, 0, 0.85) 100%
+  );
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  will-change: opacity, transform;
+  transform: translate3d(0, 0, 0);
+}
+
+.hover-content {
+  margin-top: auto;
+  color: #fff;
+}
+
+.hover-title {
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  line-height: 1.4;
+  margin: 0 0 var(--spacing-2);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.hover-author {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-1);
+  font-size: var(--text-xs);
+  color: rgba(255, 255, 255, 0.8);
+  margin: 0 0 var(--spacing-2);
+}
+
+.hover-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-3);
+}
+
+.hover-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--text-xs);
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.hover-action {
+  position: absolute;
+  top: var(--spacing-3);
+  right: var(--spacing-3);
+}
+
+.hover-action-icon {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius-full);
+  color: #fff;
+  transition: all var(--transition-fast);
+}
+
+.post-card:hover .hover-action-icon {
+  background: var(--color-primary);
+  transform: translate(2px, -2px);
+}
+
+/* ========== Hover Transition ========== */
+.hover-details-enter-active,
+.hover-details-leave-active {
+  transition:
+    opacity var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
+}
+
+.hover-details-enter-from {
+  opacity: 0;
+  transform: translate3d(0, 8px, 0);
+}
+
+.hover-details-leave-to {
+  opacity: 0;
+  transform: translate3d(0, 4px, 0);
+}
+
+/* ========== Content Section ========== */
 .post-content {
   padding: var(--spacing-3);
 }
@@ -537,9 +661,14 @@ function handleClick() {
   -webkit-box-orient: vertical;
   overflow: hidden;
   line-height: 1.4;
+  transition: color var(--transition-fast);
 }
 
-.post-footer {
+.post-card:hover .post-title {
+  color: var(--color-primary);
+}
+
+.post-meta {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -547,12 +676,29 @@ function handleClick() {
   margin-top: var(--spacing-2);
 }
 
+.post-author-wrapper {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  min-width: 0;
+  flex: 1;
+}
+
+.post-author-avatar {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--glass-bg-subtle);
+  border-radius: var(--radius-full);
+  color: var(--color-text-tertiary);
+  flex-shrink: 0;
+}
+
 .post-author {
   font-size: var(--text-xs);
   color: var(--color-text-secondary);
-  margin: 0;
-  flex: 1;
-  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -577,102 +723,18 @@ function handleClick() {
   opacity: 0.7;
 }
 
-/* ========== Hover Details Overlay ========== */
-.hover-details-overlay {
-  position: absolute;
-  inset: 0;
-  z-index: 10;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  padding: var(--spacing-3);
-  background: linear-gradient(
-    to top,
-    rgba(0, 0, 0, 0.85) 0%,
-    rgba(0, 0, 0, 0.6) 40%,
-    rgba(0, 0, 0, 0.2) 70%,
-    transparent 100%
-  );
-  backdrop-filter: blur(2px);
-  -webkit-backdrop-filter: blur(2px);
-  /* GPU 加速 */
-  will-change: opacity, transform;
-  transform: translate3d(0, 0, 0);
-}
-
-.hover-details-content {
-  color: #fff;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
-}
-
-.hover-title {
-  font-size: var(--text-sm);
-  font-weight: var(--font-semibold);
-  line-height: 1.4;
-  margin: 0 0 var(--spacing-1);
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.hover-author {
-  font-size: var(--text-xs);
-  opacity: 0.9;
-  margin: 0 0 var(--spacing-2);
-}
-
-.hover-stats {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--spacing-3);
-  font-size: var(--text-xs);
-  margin-bottom: var(--spacing-2);
-}
-
-.hover-stat {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  opacity: 0.9;
-}
-
-.hover-platform {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: var(--text-xs);
-  opacity: 0.8;
-  margin: 0;
-}
-
-/* GPU 加速过渡动画 */
-.hover-details-enter-active,
-.hover-details-leave-active {
-  transition:
-    opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1),
-    transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.hover-details-enter-from {
-  opacity: 0;
-  transform: translate3d(0, 10px, 0);
-}
-
-.hover-details-leave-to {
-  opacity: 0;
-  transform: translate3d(0, 5px, 0);
-}
-
-/* 移动端禁用悬浮详情（触摸设备没有 hover） */
+/* ========== Mobile - Disable Hover ========== */
 @media (hover: none) {
-  .hover-details-overlay {
+  .hover-overlay {
     display: none !important;
+  }
+
+  .post-card:hover .post-image.is-loaded {
+    transform: scale(1);
   }
 }
 
-/* 减少动效偏好 */
+/* ========== Reduced Motion ========== */
 @media (prefers-reduced-motion: reduce) {
   .hover-details-enter-active,
   .hover-details-leave-active {
@@ -682,6 +744,10 @@ function handleClick() {
   .hover-details-enter-from,
   .hover-details-leave-to {
     transform: none;
+  }
+
+  .post-image {
+    transition: opacity 0.1s;
   }
 }
 </style>

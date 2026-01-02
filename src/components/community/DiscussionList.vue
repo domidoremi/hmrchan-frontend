@@ -444,8 +444,8 @@ async function handleUnpin(discussionId: string) {
 }
 
 .stat svg.liked {
-  color: var(--color-danger);
-  fill: var(--color-danger);
+  color: var(--color-error);
+  fill: var(--color-error);
 }
 
 @media (max-width: 768px) {
