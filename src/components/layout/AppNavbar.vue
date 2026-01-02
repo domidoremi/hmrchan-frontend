@@ -3,50 +3,59 @@
     <div class="container navbar-content">
       <!-- Logo -->
       <RouterLink to="/" class="navbar-brand">
-        <span class="brand-name">{{ $t('app.name') }}</span>
+        <div class="brand-logo">
+          <div class="brand-icon">
+            <Sparkles :size="18" />
+          </div>
+          <span class="brand-name">{{ $t('app.name') }}</span>
+        </div>
       </RouterLink>
 
       <!-- Desktop Navigation -->
       <div class="navbar-links desktop-only">
-        <RouterLink to="/" class="nav-link">
-          <Home :size="20" />
+        <RouterLink to="/" class="nav-link" active-class="nav-link--active">
+          <Home :size="18" />
           <span>{{ $t('nav.home') }}</span>
         </RouterLink>
         <RouterLink
           to="/explore"
           class="nav-link"
+          active-class="nav-link--active"
           @mouseenter="prefetchExplorePage"
           @focus="prefetchExplorePage"
         >
-          <Compass :size="20" />
+          <Compass :size="18" />
           <span>{{ $t('nav.explore') }}</span>
         </RouterLink>
         <RouterLink
           v-if="isAuthenticated"
           to="/favorites"
           class="nav-link"
+          active-class="nav-link--active"
           @mouseenter="prefetchFavoritesPage"
           @focus="prefetchFavoritesPage"
         >
-          <Heart :size="20" />
+          <Heart :size="18" />
           <span>{{ $t('nav.favorites') }}</span>
         </RouterLink>
         <RouterLink
           to="/authors"
           class="nav-link"
+          active-class="nav-link--active"
           @mouseenter="prefetchAuthorsPage"
           @focus="prefetchAuthorsPage"
         >
-          <Users :size="20" />
+          <Users :size="18" />
           <span>{{ $t('nav.authors') }}</span>
         </RouterLink>
         <RouterLink
           to="/community"
           class="nav-link"
+          active-class="nav-link--active"
           @mouseenter="prefetchCommunityPage"
           @focus="prefetchCommunityPage"
         >
-          <MessageSquare :size="20" />
+          <MessageSquare :size="18" />
           <span>{{ $t('nav.community') }}</span>
         </RouterLink>
       </div>
@@ -60,16 +69,17 @@
           @focus="prefetchExplorePage"
           :aria-label="$t('common.search')"
         >
-          <Search :size="20" />
+          <Search :size="18" />
         </button>
 
         <button
           ref="settingsBtnRef"
           class="action-btn"
+          :class="{ 'action-btn--active': showSettings }"
           @click="toggleSettings"
           :aria-label="$t('nav.settings')"
         >
-          <Settings :size="20" />
+          <Settings :size="18" :class="{ 'icon-spin': showSettings }" />
         </button>
 
         <RouterLink
@@ -78,16 +88,23 @@
             path: '/login',
             query: { redirect: $route.fullPath !== '/' ? $route.fullPath : undefined },
           }"
-          class="login-btn"
+          class="login-btn glass-button glass-button--primary"
           @mouseenter="prefetchLoginPage"
           @focus="prefetchLoginPage"
         >
-          <LogIn :size="18" />
+          <LogIn :size="16" />
           <span class="desktop-only">{{ $t('nav.login') }}</span>
         </RouterLink>
 
-        <button v-else ref="userBtnRef" class="user-btn" @click="toggleUserMenu">
+        <button
+          v-else
+          ref="userBtnRef"
+          class="user-btn"
+          :class="{ 'user-btn--active': showUserMenu }"
+          @click="toggleUserMenu"
+        >
           <img :src="userAvatar" :alt="user?.username" class="user-avatar" />
+          <div class="user-status" />
         </button>
       </div>
     </div>
@@ -115,20 +132,27 @@
         @click.stop
       >
         <div class="user-info">
-          <img
-            :src="userAvatar"
-            :alt="user ? getUserDisplayName(user) : ''"
-            class="user-avatar-lg"
-          />
-          <div>
+          <div class="user-avatar-wrapper">
+            <img
+              :src="userAvatar"
+              :alt="user ? getUserDisplayName(user) : ''"
+              class="user-avatar-lg"
+            />
+            <div class="user-status user-status--lg" />
+          </div>
+          <div class="user-details">
             <div class="user-name">{{ user ? getUserDisplayName(user) : '' }}</div>
             <div class="user-email">{{ user?.email }}</div>
           </div>
         </div>
+        <div class="dropdown-divider" />
         <div class="dropdown-links">
           <RouterLink to="/profile" class="dropdown-link" @click="showUserMenu = false">
-            <User :size="18" />
+            <div class="dropdown-link-icon">
+              <User :size="16" />
+            </div>
             <span>{{ $t('nav.profile') }}</span>
+            <ChevronRight :size="14" class="dropdown-link-arrow" />
           </RouterLink>
           <RouterLink
             to="/settings/profile"
@@ -137,11 +161,19 @@
             @mouseenter="prefetchProfileSettingsPage"
             @focus="prefetchProfileSettingsPage"
           >
-            <Settings :size="18" />
+            <div class="dropdown-link-icon">
+              <Settings :size="16" />
+            </div>
             <span>{{ $t('nav.profileSettings') }}</span>
+            <ChevronRight :size="14" class="dropdown-link-arrow" />
           </RouterLink>
-          <button class="dropdown-link danger" @click="handleLogout">
-            <LogOut :size="18" />
+        </div>
+        <div class="dropdown-divider" />
+        <div class="dropdown-links">
+          <button class="dropdown-link dropdown-link--danger" @click="handleLogout">
+            <div class="dropdown-link-icon dropdown-link-icon--danger">
+              <LogOut :size="16" />
+            </div>
             <span>{{ $t('nav.logout') }}</span>
           </button>
         </div>
@@ -151,65 +183,80 @@
 
   <!-- Mobile Bottom Navigation -->
   <nav class="mobile-nav mobile-only">
-    <RouterLink to="/" class="mobile-nav-item">
-      <Home :size="22" />
+    <RouterLink to="/" class="mobile-nav-item" active-class="mobile-nav-item--active">
+      <div class="mobile-nav-icon">
+        <Home :size="20" />
+      </div>
       <span>{{ $t('nav.home') }}</span>
     </RouterLink>
     <RouterLink
       to="/explore"
       class="mobile-nav-item"
+      active-class="mobile-nav-item--active"
       @mouseenter="prefetchExplorePage"
       @focus="prefetchExplorePage"
     >
-      <Compass :size="22" />
+      <div class="mobile-nav-icon">
+        <Compass :size="20" />
+      </div>
       <span>{{ $t('nav.explore') }}</span>
     </RouterLink>
     <RouterLink
-      v-if="isAuthenticated"
-      to="/favorites"
+      :to="mobileFavoritesLink"
       class="mobile-nav-item"
+      active-class="mobile-nav-item--active"
       @mouseenter="prefetchFavoritesPage"
       @focus="prefetchFavoritesPage"
     >
-      <Heart :size="22" />
+      <div class="mobile-nav-icon">
+        <Heart :size="20" />
+      </div>
       <span>{{ $t('nav.favorites') }}</span>
     </RouterLink>
     <RouterLink
       to="/authors"
       class="mobile-nav-item"
+      active-class="mobile-nav-item--active"
       @mouseenter="prefetchAuthorsPage"
       @focus="prefetchAuthorsPage"
     >
-      <Users :size="22" />
+      <div class="mobile-nav-icon">
+        <Users :size="20" />
+      </div>
       <span>{{ $t('nav.authors') }}</span>
     </RouterLink>
     <RouterLink
       to="/community"
       class="mobile-nav-item"
+      active-class="mobile-nav-item--active"
       @mouseenter="prefetchCommunityPage"
       @focus="prefetchCommunityPage"
     >
-      <MessageSquare :size="22" />
+      <div class="mobile-nav-icon">
+        <MessageSquare :size="20" />
+      </div>
       <span>{{ $t('nav.community') }}</span>
     </RouterLink>
   </nav>
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, onUnmounted, defineAsyncComponent, nextTick } from 'vue'
+import { ref, watch, onMounted, onUnmounted, defineAsyncComponent, nextTick, computed } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import {
-  Home,
+  ChevronRight,
   Compass,
   Heart,
-  Users,
-  Search,
-  Settings,
+  Home,
   LogIn,
   LogOut,
-  User,
   MessageSquare,
+  Search,
+  Settings,
+  Sparkles,
+  User,
+  Users,
 } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores'
 import { getUserDisplayName } from '@/utils/user'
@@ -223,6 +270,14 @@ const SettingsPanel = defineAsyncComponent(() => import('./SettingsPanel.vue'))
 const router = useRouter()
 const authStore = useAuthStore()
 const { user, isAuthenticated } = storeToRefs(authStore)
+
+const mobileFavoritesLink = computed(() => {
+  if (isAuthenticated.value) return '/favorites'
+  return {
+    path: '/login',
+    query: { redirect: '/favorites' },
+  }
+})
 
 const showSettings = ref(false)
 const showUserMenu = ref(false)
@@ -327,7 +382,7 @@ function requestIdle(fn: () => void) {
 }
 
 function goToSearch() {
-  router.push('/explore')
+  router.push('/search')
 }
 
 function toggleSettings() {
@@ -473,8 +528,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   height: var(--navbar-height);
-  transition: transform 0.3s var(--ease-out-cubic);
-  /* GPU加速：提升到独立合成层 */
+  transition: transform var(--duration-normal) var(--ease-out);
   transform: translate3d(0, 0, 0);
   will-change: transform;
 }
@@ -490,20 +544,39 @@ onUnmounted(() => {
   gap: var(--spacing-4);
 }
 
+/* ========== Brand ========== */
 .navbar-brand {
-  font-size: var(--text-xl);
-  font-weight: var(--font-bold);
-  color: var(--color-text-primary);
   text-decoration: none;
 }
 
+.brand-logo {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+}
+
+.brand-icon {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--gradient-accent);
+  border-radius: var(--radius-lg);
+  color: var(--color-white);
+  box-shadow: var(--glass-glow);
+}
+
 .brand-name {
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+  font-size: var(--text-xl);
+  font-weight: var(--font-bold);
+  background: var(--gradient-accent);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
+/* ========== Navigation Links ========== */
 .navbar-links {
   display: flex;
   align-items: center;
@@ -511,6 +584,7 @@ onUnmounted(() => {
 }
 
 .nav-link {
+  position: relative;
   display: flex;
   align-items: center;
   gap: var(--spacing-2);
@@ -523,20 +597,44 @@ onUnmounted(() => {
   transition: all var(--transition-fast);
 }
 
+.nav-link::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: transparent;
+  transition: background var(--transition-fast);
+}
+
 .nav-link:hover {
-  background: var(--glass-bg-light);
   color: var(--color-text-primary);
 }
 
-.nav-link.router-link-active {
-  background: var(--color-primary-100);
+.nav-link:hover::before {
+  background: var(--glass-bg-subtle);
+}
+
+.nav-link--active {
   color: var(--color-primary);
 }
 
-[data-theme='dark'] .nav-link.router-link-active {
-  background: rgba(139, 92, 246, 0.2);
+.nav-link--active::before {
+  background: rgba(var(--color-primary-rgb), 0.1);
 }
 
+.nav-link--active::after {
+  content: '';
+  position: absolute;
+  bottom: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 20px;
+  height: 3px;
+  background: var(--color-primary);
+  border-radius: var(--radius-full);
+}
+
+/* ========== Actions ========== */
 .navbar-actions {
   display: flex;
   align-items: center;
@@ -544,6 +642,7 @@ onUnmounted(() => {
 }
 
 .action-btn {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -554,30 +653,71 @@ onUnmounted(() => {
   transition: all var(--transition-fast);
 }
 
+.action-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: transparent;
+  transition: background var(--transition-fast);
+}
+
 .action-btn:hover {
-  background: var(--glass-bg-light);
   color: var(--color-text-primary);
 }
 
+.action-btn:hover::before {
+  background: var(--glass-bg-subtle);
+}
+
+.action-btn--active {
+  color: var(--color-primary);
+}
+
+.action-btn--active::before {
+  background: rgba(var(--color-primary-rgb), 0.1);
+}
+
+.icon-spin {
+  animation: icon-spin var(--duration-slow) var(--ease-out);
+}
+
+@keyframes icon-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(180deg);
+  }
+}
+
+/* ========== Login Button ========== */
 .login-btn {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-2);
   padding: var(--spacing-2) var(--spacing-4);
-  background: var(--color-primary);
-  color: var(--color-white);
-  border-radius: var(--radius-lg);
-  font-weight: var(--font-medium);
-  text-decoration: none;
+  font-size: var(--text-sm);
+}
+
+/* ========== User Button ========== */
+.user-btn {
+  position: relative;
+  padding: 2px;
+  border-radius: 50%;
   transition: all var(--transition-fast);
 }
 
-.login-btn:hover {
-  background: var(--color-primary-dark);
+.user-btn::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 50%;
+  background: transparent;
+  transition: background var(--transition-fast);
 }
 
-.user-btn {
-  padding: 0;
+.user-btn:hover::before,
+.user-btn--active::before {
+  background: var(--gradient-accent);
+  opacity: 0.3;
 }
 
 .user-avatar {
@@ -585,16 +725,33 @@ onUnmounted(() => {
   height: 36px;
   border-radius: 50%;
   object-fit: cover;
-  border: 2px solid var(--glass-border);
+  border: 2px solid var(--glass-border-strong);
+  transition: border-color var(--transition-fast);
 }
 
-/* Dropdowns */
+.user-btn:hover .user-avatar,
+.user-btn--active .user-avatar {
+  border-color: var(--color-primary);
+}
+
+.user-status {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 10px;
+  height: 10px;
+  background: var(--color-success);
+  border: 2px solid var(--glass-bg-strong);
+  border-radius: 50%;
+}
+
+/* ========== Dropdowns ========== */
 .settings-dropdown,
 .user-dropdown {
   position: fixed;
   top: calc(var(--navbar-height) - var(--spacing-2));
   right: var(--spacing-4);
-  min-width: 280px;
+  min-width: 300px;
 }
 
 .user-info {
@@ -602,7 +759,11 @@ onUnmounted(() => {
   align-items: center;
   gap: var(--spacing-3);
   padding: var(--spacing-4);
-  border-bottom: 1px solid var(--glass-border);
+}
+
+.user-avatar-wrapper {
+  position: relative;
+  flex-shrink: 0;
 }
 
 .user-avatar-lg {
@@ -610,16 +771,39 @@ onUnmounted(() => {
   height: 48px;
   border-radius: 50%;
   object-fit: cover;
+  border: 2px solid var(--glass-border-strong);
+}
+
+.user-status--lg {
+  width: 12px;
+  height: 12px;
+  border-width: 2px;
+}
+
+.user-details {
+  min-width: 0;
 }
 
 .user-name {
   font-weight: var(--font-semibold);
   color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .user-email {
   font-size: var(--text-sm);
   color: var(--color-text-tertiary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dropdown-divider {
+  height: 1px;
+  margin: 0 var(--spacing-3);
+  background: var(--glass-border);
 }
 
 .dropdown-links {
@@ -632,55 +816,152 @@ onUnmounted(() => {
   gap: var(--spacing-3);
   width: 100%;
   padding: var(--spacing-3);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   color: var(--color-text-primary);
   font-size: var(--text-sm);
   text-decoration: none;
-  transition: background var(--transition-fast);
+  transition: all var(--transition-fast);
 }
 
 .dropdown-link:hover {
-  background: var(--glass-bg-light);
+  background: var(--glass-bg-subtle);
 }
 
-.dropdown-link.danger {
+.dropdown-link:hover .dropdown-link-arrow {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.dropdown-link-icon {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--glass-bg-subtle);
+  border-radius: var(--radius-md);
+  color: var(--color-text-secondary);
+  transition: all var(--transition-fast);
+}
+
+.dropdown-link:hover .dropdown-link-icon {
+  background: rgba(var(--color-primary-rgb), 0.1);
+  color: var(--color-primary);
+}
+
+.dropdown-link-arrow {
+  margin-left: auto;
+  color: var(--color-text-tertiary);
+  opacity: 0;
+  transform: translateX(-4px);
+  transition: all var(--transition-fast);
+}
+
+.dropdown-link--danger {
   color: var(--color-error);
 }
 
-/* Mobile Navigation */
+.dropdown-link--danger .dropdown-link-icon,
+.dropdown-link-icon--danger {
+  background: rgba(var(--color-error-rgb), 0.1);
+  color: var(--color-error);
+}
+
+.dropdown-link--danger:hover {
+  background: rgba(var(--color-error-rgb), 0.08);
+}
+
+.dropdown-link--danger:hover .dropdown-link-icon {
+  background: rgba(var(--color-error-rgb), 0.15);
+}
+
+/* ========== Mobile Navigation - 增强版 ========== */
 .mobile-nav {
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
-  height: 64px;
+  height: 72px;
   background: var(--glass-bg-strong);
   backdrop-filter: var(--glass-blur-strong);
+  -webkit-backdrop-filter: var(--glass-blur-strong);
   border-top: 1px solid var(--glass-border);
   display: flex;
   align-items: center;
   justify-content: space-around;
+  padding-bottom: env(safe-area-inset-bottom);
   z-index: var(--z-sticky);
+  box-shadow: 0 -4px 16px -4px rgba(0, 0, 0, 0.1);
 }
 
 .mobile-nav-item {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
+  flex: 1 1 0;
   gap: var(--spacing-1);
-  padding: var(--spacing-2);
+  padding: var(--spacing-2) var(--spacing-3);
   color: var(--color-text-tertiary);
   text-decoration: none;
-  font-size: var(--text-xs);
-  transition: color var(--transition-fast);
+  font-size: 10px;
+  font-weight: var(--font-medium);
+  transition: all var(--transition-fast);
+  min-width: 64px;
+}
+
+.mobile-nav-item::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: 50%;
+  transform: translateX(-50%) scaleX(0);
+  width: 32px;
+  height: 3px;
+  background: var(--gradient-primary);
+  border-radius: 0 0 3px 3px;
+  transition: transform var(--transition-fast);
+}
+
+.mobile-nav-item--active::before {
+  transform: translateX(-50%) scaleX(1);
+}
+
+.mobile-nav-icon {
+  position: relative;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-lg);
+  transition: all var(--transition-fast);
+}
+
+.mobile-nav-item:active .mobile-nav-icon {
+  transform: scale(0.9);
 }
 
 .mobile-nav-item:hover,
-.mobile-nav-item.router-link-active {
+.mobile-nav-item--active {
   color: var(--color-primary);
 }
 
-/* Responsive */
+.mobile-nav-item--active .mobile-nav-icon {
+  background: rgba(var(--color-primary-rgb), 0.15);
+  box-shadow: 0 0 0 4px rgba(var(--color-primary-rgb), 0.08);
+}
+
+.mobile-nav-item--active .mobile-nav-icon svg {
+  animation: nav-icon-bounce 0.5s ease-out;
+}
+
+@keyframes nav-icon-bounce {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+}
+
+/* ========== Responsive ========== */
 .desktop-only {
   display: flex;
 }
@@ -696,6 +977,10 @@ onUnmounted(() => {
 
   .mobile-only {
     display: flex;
+  }
+
+  .brand-name {
+    font-size: var(--text-lg);
   }
 
   .settings-dropdown,

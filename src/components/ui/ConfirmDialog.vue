@@ -147,7 +147,7 @@ function handleBackdropClick(event: MouseEvent) {
 
 /* 对话框打开动画 - GPU加速优化 */
 .confirm-dialog[open] {
-  animation: dialog-enter 0.25s var(--ease-out-cubic);
+  animation: dialog-enter 0.25s var(--ease-out);
   /* GPU加速：提升到独立合成层 */
   will-change: transform, opacity;
 }

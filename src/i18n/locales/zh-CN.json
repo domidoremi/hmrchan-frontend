@@ -16,11 +16,13 @@
     "profile": "个人中心",
     "postDetail": "帖子详情",
     "authorDetail": "作者详情",
-    "profileSettings": "个人资料设置"
+    "profileSettings": "个人资料设置",
+    "search": "搜索"
   },
   "common": {
     "skipToContent": "跳转到内容",
     "loading": "加载中...",
+    "loadingMore": "正在加载更多...",
     "error": "发生错误",
     "retry": "重试",
     "cancel": "取消",
@@ -33,11 +35,14 @@
     "previous": "上一步",
     "search": "搜索",
     "noResults": "暂无结果",
+    "notFound": "未找到",
     "showing": "已加载 {count} / {total} 项",
     "loadMore": "加载更多",
     "noMoreItems": "已加载全部内容",
     "viewMore": "查看更多",
     "showLess": "收起",
+    "learnMore": "了解更多",
+    "backToTop": "回到顶部",
     "justNow": "刚刚",
     "minutesAgo": "{n} 分钟前",
     "hoursAgo": "{n} 小时前",
@@ -48,7 +53,6 @@
     "show": "显示",
     "hide": "隐藏",
     "close": "关闭",
-    "backToTop": "回到顶部",
     "clickToEnlarge": "点击查看大图",
     "imageViewer": "图片查看器",
     "zoomIn": "放大",
@@ -102,14 +106,49 @@
     "language": "语言",
     "display": "显示",
     "toggleHeroSection": "显示首页横幅",
+    "heroSectionDesc": "在首页显示横幅区域",
     "toggleAnimations": "启用动画",
+    "animationsDesc": "启用平滑过渡和动画效果",
     "toggleSwipeNavigation": "滑动导航",
-    "openAdvanced": "高级设置"
+    "openAdvanced": "高级设置",
+    "cache": {
+      "title": "缓存管理",
+      "description": "清除缓存数据以释放空间",
+      "clear": "清除缓存"
+    }
   },
   "home": {
     "hero": {
       "title": "发现精彩内容",
-      "subtitle": "探索来自优秀创作者的精选作品"
+      "subtitle": "探索来自优秀创作者的精选作品",
+      "badge": "发现精彩内容",
+      "highlights": {
+        "multilingual": {
+          "title": "多语言界面",
+          "desc": "随时切换中文、English 与日语。"
+        },
+        "motion": {
+          "title": "动效无障碍",
+          "desc": "动效随设置与系统“减少动态效果”自动调整。"
+        },
+        "performance": {
+          "title": "极速与缓存",
+          "desc": "内置缓存与性能优化，浏览更顺滑。"
+        }
+      }
+    },
+    "quickStart": {
+      "title": "快速开始",
+      "subtitle": "从探索开始，按关键词搜索，发现创作者，并收藏你喜欢的内容。"
+    },
+    "bento": {
+      "featureTitle": "几秒开启探索",
+      "featureSubtitle": "浏览最新内容、发现创作者，打造你的专属收藏。",
+      "searchMeta": "支持关键词、标签、作者",
+      "communityMeta": "查看公告与讨论",
+      "authorsMeta": "按平台与热度发现创作者",
+      "favoritesMeta": "收藏内容，随时回看",
+      "favoritesMetaGuest": "登录后开始收藏"
     },
     "latest": "最新发布",
     "popular": "热门推荐"
@@ -124,6 +163,31 @@
     "popular": "最热门",
     "trending": "趋势"
   },
+  "search": {
+    "title": "搜索",
+    "placeholder": "搜索帖子、作者、标签...",
+    "emptyHint": "查找帖子、作者等内容",
+    "noResults": "未找到 \"{query}\" 相关结果",
+    "noAuthors": "未找到 \"{query}\" 相关作者",
+    "history": "搜索历史",
+    "clearHistory": "清除历史",
+    "suggestions": "搜索建议",
+    "startTyping": "开始输入以搜索",
+    "tab": {
+      "posts": "帖子",
+      "authors": "作者"
+    },
+    "sort": {
+      "relevance": "相关性",
+      "date": "日期",
+      "views": "浏览量"
+    },
+    "type": {
+      "post": "帖子",
+      "author": "作者",
+      "tag": "标签"
+    }
+  },
   "post": {
     "by": "作者",
     "views": "浏览",
@@ -131,7 +195,11 @@
     "share": "分享",
     "favorite": "收藏",
     "unfavorite": "取消收藏",
+    "favoriteServerError": "更新收藏失败",
     "relatedPosts": "相关推荐"
+  },
+  "author": {
+    "postCount": "{count} 个作品"
   },
   "error": {
     "notFound": "页面未找到",
@@ -207,6 +275,7 @@
     "subtitle": "加入讨论",
     "recentDiscussions": "最新讨论",
     "hotTopics": "热门话题",
+    "noHotTopics": "暂无热门话题",
     "myComments": "我的评论",
     "savedComments": "收藏的评论",
     "newDiscussion": "发起讨论",
@@ -244,9 +313,11 @@
     "username": "用户名",
     "usernamePlaceholder": "输入用户名",
     "usernameHint": "只能包含字母、数字和下划线",
+    "usernameReadonly": "用户名不可修改",
     "usernameChangeLimit": "您可以在 {days} 天后更改用户名",
     "fullName": "显示名称",
     "fullNamePlaceholder": "输入显示名称",
+    "displayNameHint": "此名称将公开显示",
     "bio": "个人简介",
     "bioPlaceholder": "介绍一下自己",
     "changePassword": "修改密码",
@@ -277,6 +348,7 @@
     "yesterday": "昨天",
     "clearHistory": "清空历史",
     "confirmClearHistory": "确定要清空所有浏览历史吗？",
+    "confirmClearHistoryTitle": "清空浏览历史",
     "historyCleared": "历史记录已清空",
     "markAsRead": "标记为已读",
     "markAllRead": "全部标记为已读",

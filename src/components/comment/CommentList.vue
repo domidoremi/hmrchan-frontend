@@ -159,7 +159,7 @@ watch(
 }
 
 [data-theme='dark'] .comment-count {
-  background: rgba(139, 92, 246, 0.2);
+  background: rgba(var(--color-primary-rgb), 0.2);
 }
 
 .comment-sort {

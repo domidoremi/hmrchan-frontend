@@ -3,7 +3,10 @@
     <div class="container">
       <header class="page-header">
         <div class="page-title-row">
-          <h1>{{ $t('explore.title') }}</h1>
+          <div class="page-title-group">
+            <h1>{{ $t('explore.title') }}</h1>
+            <span class="page-title-badge">{{ total }} {{ $t('search.tab.posts') }}</span>
+          </div>
           <span v-if="isLoading && posts.length > 0" class="spinner spinner-sm" />
         </div>
         <div class="search-bar">
@@ -13,7 +16,11 @@
             type="text"
             class="glass-input search-input"
             :placeholder="$t('explore.searchPlaceholder')"
+            ref="searchInputRef"
+            @focus="isSearchFocused = true"
+            @blur="isSearchFocused = false"
           />
+          <kbd v-if="!searchQuery && !isSearchFocused" class="search-kbd">/</kbd>
         </div>
       </header>
 
@@ -83,7 +90,7 @@
 <script setup lang="ts">
 defineOptions({ name: 'ExplorePage' })
 
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { Search, Globe, Youtube, Music2, Twitter } from 'lucide-vue-next'
@@ -101,6 +108,8 @@ const router = useRouter()
 const { t } = useI18n()
 
 const searchQuery = ref('')
+const searchInputRef = ref<HTMLInputElement | null>(null)
+const isSearchFocused = ref(false)
 const currentSort = ref<'newest' | 'popular' | 'trending'>('newest')
 const currentPlatform = ref<'all' | 'youtube' | 'tiktok' | 'twitter'>('all')
 
@@ -127,6 +136,21 @@ const {
 } = useProgressiveRender(posts, { initialCount: 24, batchSize: 24 })
 
 const hasMoreForUi = computed(() => hasMore.value || hasMoreToRender.value)
+
+const onGlobalKeydown = (event: KeyboardEvent) => {
+  if (event.key !== '/' || event.ctrlKey || event.metaKey || event.altKey) return
+
+  const target = event.target as HTMLElement | null
+  const tagName = target?.tagName?.toLowerCase()
+  const isEditable =
+    tagName === 'input' ||
+    tagName === 'textarea' ||
+    (target instanceof HTMLElement && target.isContentEditable)
+  if (isEditable) return
+
+  event.preventDefault()
+  searchInputRef.value?.focus()
+}
 
 const sortOptions = [
   { value: 'newest' as const },
@@ -271,6 +295,12 @@ onMounted(() => {
   if (posts.value.length === 0) {
     fetchPosts()
   }
+
+  window.addEventListener('keydown', onGlobalKeydown)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', onGlobalKeydown)
 })
 </script>
 
@@ -295,6 +325,21 @@ onMounted(() => {
   margin-bottom: 0;
 }
 
+.page-title-group {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+}
+
+.page-title-badge {
+  padding: var(--spacing-1) var(--spacing-3);
+  background: rgba(var(--color-primary-rgb), 0.1);
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
+  color: var(--color-primary);
+}
+
 .search-bar {
   position: relative;
   max-width: 500px;
@@ -310,6 +355,22 @@ onMounted(() => {
 
 .search-input {
   padding-left: var(--spacing-12);
+  padding-right: var(--spacing-10);
+}
+
+.search-kbd {
+  position: absolute;
+  right: var(--spacing-3);
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 2px 8px;
+  background: var(--glass-bg-subtle);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  font-family: var(--font-mono);
+  color: var(--color-text-tertiary);
+  pointer-events: none;
 }
 
 .filters {
@@ -318,22 +379,45 @@ onMounted(() => {
 }
 
 .filter-btn {
+  position: relative;
   padding: var(--spacing-2) var(--spacing-4);
   border-radius: var(--radius-full);
   font-size: var(--text-sm);
+  font-weight: var(--font-medium);
   color: var(--color-text-secondary);
   border: 1px solid var(--glass-border);
+  background: transparent;
   transition: all var(--transition-fast);
+  overflow: hidden;
+}
+
+.filter-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--glass-bg-subtle);
+  opacity: 0;
+  transition: opacity var(--transition-fast);
 }
 
 .filter-btn:hover {
-  background: var(--glass-bg-light);
+  color: var(--color-text-primary);
+  border-color: rgba(var(--color-primary-rgb), 0.3);
+}
+
+.filter-btn:hover::before {
+  opacity: 1;
 }
 
 .filter-btn.active {
-  background: var(--color-primary);
+  background: var(--gradient-primary);
   color: var(--color-white);
-  border-color: var(--color-primary);
+  border-color: transparent;
+  box-shadow: 0 4px 12px rgba(var(--color-primary-rgb), 0.3);
+}
+
+.filter-btn.active::before {
+  display: none;
 }
 
 .posts-grid {
@@ -361,21 +445,29 @@ onMounted(() => {
   align-items: center;
   gap: var(--spacing-1);
   padding: var(--spacing-2) var(--spacing-3);
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-lg);
   font-size: var(--text-sm);
+  font-weight: var(--font-medium);
   color: var(--color-text-secondary);
-  border: 1px solid var(--glass-border);
+  background: var(--glass-bg-subtle);
+  border: 1px solid transparent;
   transition: all var(--transition-fast);
 }
 
 .platform-btn:hover {
   background: var(--glass-bg-light);
+  color: var(--color-text-primary);
+  transform: translateY(-1px);
 }
 
 .platform-btn.active {
-  background: var(--color-primary);
-  color: var(--color-white);
-  border-color: var(--color-primary);
+  background: rgba(var(--color-primary-rgb), 0.15);
+  color: var(--color-primary);
+  border-color: rgba(var(--color-primary-rgb), 0.3);
+}
+
+.platform-btn.active svg {
+  color: var(--color-primary);
 }
 
 .platform-label {
