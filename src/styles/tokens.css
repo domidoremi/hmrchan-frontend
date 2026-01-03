@@ -256,7 +256,7 @@
   /* Text - 精细的对比度层次 */
   --color-text-primary: #f8fafc;
   --color-text-secondary: #a1a1aa;
-  --color-text-tertiary: #71717a;
+  --color-text-tertiary: #9ca3af; /* 从 #71717a 提升到 #9ca3af，满足 WCAG 4.5:1 对比度要求 */
   --color-text-muted: #52525b;
 
   /* Gray scale - 暗色模式优化 */
