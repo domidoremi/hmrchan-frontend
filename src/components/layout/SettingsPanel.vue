@@ -95,6 +95,10 @@
             <div class="toggle-knob" />
           </div>
         </button>
+        <div v-if="systemReducedMotion" class="reduced-motion-notice">
+          <Info :size="14" />
+          <span>{{ $t('settings.reducedMotionNotice') }}</span>
+        </div>
       </div>
     </div>
 
@@ -108,7 +112,20 @@
 </template>
 
 <script setup lang="ts">
-import { Check, Globe, Palette, Settings, SlidersHorizontal, Sparkles, Sun, Moon, Monitor, Zap } from 'lucide-vue-next'
+import {
+  Check,
+  Globe,
+  Info,
+  Palette,
+  Settings,
+  SlidersHorizontal,
+  Sparkles,
+  Sun,
+  Moon,
+  Monitor,
+  Zap,
+} from 'lucide-vue-next'
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
 import { useThemeStore, useSettingsStore } from '@/stores'
@@ -123,6 +140,13 @@ const settingsStore = useSettingsStore()
 
 const { theme } = storeToRefs(themeStore)
 const { settings } = storeToRefs(settingsStore)
+
+// 检测系统是否设置了 reduced motion
+const systemReducedMotion = computed(() => {
+  if (typeof window === 'undefined') return false
+  if (typeof window.matchMedia !== 'function') return false
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches
+})
 
 const themeOptions = [
   { value: 'light' as Theme, icon: Sun },
@@ -499,5 +523,25 @@ function toggleSetting(key: 'showHeroSection' | 'enableAnimations') {
 
 [data-theme='dark'] .toggle-btn:hover {
   background: rgba(255, 255, 255, 0.06);
+}
+
+/* ========== Reduced Motion Notice ========== */
+.reduced-motion-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-2);
+  padding: var(--spacing-2) var(--spacing-3);
+  background: rgba(var(--color-warning-rgb, 245, 158, 11), 0.1);
+  border: 1px solid rgba(var(--color-warning-rgb, 245, 158, 11), 0.2);
+  border-radius: var(--radius-md);
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+}
+
+.reduced-motion-notice svg {
+  flex-shrink: 0;
+  color: rgb(var(--color-warning-rgb, 245, 158, 11));
+  margin-top: 1px;
 }
 </style>
