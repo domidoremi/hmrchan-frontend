@@ -109,6 +109,7 @@
     "heroSectionDesc": "ホームページにヒーローバナーを表示",
     "toggleAnimations": "アニメーション有効",
     "animationsDesc": "スムーズなトランジションとアニメーションを有効化",
+    "reducedMotionNotice": "システムでモーション軽減が有効になっています。この設定に関係なく、アニメーションは最小限に抑えられます。",
     "toggleSwipeNavigation": "スワイプナビ",
     "openAdvanced": "詳細設定",
     "cache": {
@@ -159,6 +160,7 @@
     "searchPlaceholder": "投稿、作者、タグを検索...",
     "filters": "フィルター",
     "sortBy": "並び替え",
+    "platformFilter": "プラットフォームで絞り込む",
     "newest": "新着",
     "popular": "人気順",
     "trending": "トレンド"

@@ -109,6 +109,7 @@
     "heroSectionDesc": "在首页显示横幅区域",
     "toggleAnimations": "启用动画",
     "animationsDesc": "启用平滑过渡和动画效果",
+    "reducedMotionNotice": "您的系统已启用减少动画设置，无论此选项如何，动画都将被最小化。",
     "toggleSwipeNavigation": "滑动导航",
     "openAdvanced": "高级设置",
     "cache": {
@@ -159,6 +160,7 @@
     "searchPlaceholder": "搜索帖子、作者、标签...",
     "filters": "筛选",
     "sortBy": "排序",
+    "platformFilter": "按平台筛选",
     "newest": "最新",
     "popular": "最热门",
     "trending": "趋势"

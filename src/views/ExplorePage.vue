@@ -24,28 +24,32 @@
         </div>
       </header>
 
-      <div class="filters-row">
-        <div class="filters">
+      <div class="filters-row" role="group" :aria-label="$t('explore.filters')">
+        <div class="filters" role="group" :aria-label="$t('explore.sortBy')">
           <button
             v-for="sort in sortOptions"
             :key="sort.value"
             class="filter-btn"
             :class="{ active: currentSort === sort.value }"
+            :aria-pressed="currentSort === sort.value"
+            :aria-label="$t(`explore.${sort.value}`)"
             @click="currentSort = sort.value"
           >
             {{ $t(`explore.${sort.value}`) }}
           </button>
         </div>
 
-        <div class="platform-filters">
+        <div class="platform-filters" role="group" :aria-label="$t('explore.platformFilter')">
           <button
             v-for="platform in platformOptions"
             :key="platform.value"
             class="platform-btn"
             :class="{ active: currentPlatform === platform.value }"
+            :aria-pressed="currentPlatform === platform.value"
+            :aria-label="platform.label"
             @click="currentPlatform = platform.value"
           >
-            <component :is="platform.icon" :size="16" />
+            <component :is="platform.icon" :size="16" aria-hidden="true" />
             <span class="platform-label">{{ platform.label }}</span>
           </button>
         </div>
