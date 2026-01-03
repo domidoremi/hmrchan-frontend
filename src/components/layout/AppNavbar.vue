@@ -89,6 +89,7 @@
             query: { redirect: $route.fullPath !== '/' ? $route.fullPath : undefined },
           }"
           class="login-btn glass-button glass-button--primary"
+          :aria-label="$t('nav.login')"
           @mouseenter="prefetchLoginPage"
           @focus="prefetchLoginPage"
         >
