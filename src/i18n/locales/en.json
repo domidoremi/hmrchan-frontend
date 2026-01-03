@@ -109,6 +109,7 @@
     "heroSectionDesc": "Show the hero banner on the homepage",
     "toggleAnimations": "Enable Animations",
     "animationsDesc": "Enable smooth transitions and animations",
+    "reducedMotionNotice": "Your system has reduced motion enabled. Animations will be minimized regardless of this setting.",
     "toggleSwipeNavigation": "Swipe Navigation",
     "openAdvanced": "Advanced Settings",
     "cache": {
@@ -159,6 +160,7 @@
     "searchPlaceholder": "Search posts, authors, tags...",
     "filters": "Filters",
     "sortBy": "Sort by",
+    "platformFilter": "Filter by platform",
     "newest": "Newest",
     "popular": "Most Popular",
     "trending": "Trending"
