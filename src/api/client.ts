@@ -247,8 +247,13 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
       if (!isRefreshing) {
         isRefreshing = true
 
-        const newToken = await refreshToken()
-        isRefreshing = false
+        let newToken: string | null = null
+        try {
+          newToken = await refreshToken()
+        } finally {
+          // 确保无论成功或失败都重置刷新状态
+          isRefreshing = false
+        }
 
         if (newToken) {
           onTokenRefreshed(newToken)
