@@ -232,6 +232,7 @@ import { postCache } from '@/utils/cache'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import { useMasonryColumns } from '@/composables/useMasonryColumns'
 import { prefersReducedMotion } from '@/utils/performance'
+import { isFilteredAuthor } from '@/config/filters'
 import Button from '@/components/ui/Button.vue'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
@@ -306,9 +307,6 @@ const sentinelRef = ref<HTMLElement | null>(null)
 const setSentinelRef = (el: Element | null) => {
   sentinelRef.value = el as HTMLElement | null
 }
-
-/** 需要过滤的作者名称（无效数据） */
-const FILTERED_AUTHORS = ['twitter_unknown_unknown']
 
 // 响应式列数配置
 const getResponsiveColumnCount = () => {
@@ -386,7 +384,7 @@ async function fetchLatestPosts(reset = true): Promise<boolean> {
       total.value = cached.total
 
       const cachedFiltered = (cached.data as PostListItem[]).filter(
-        (post) => !FILTERED_AUTHORS.includes(post.author_name?.toLowerCase() ?? '')
+        (post) => !isFilteredAuthor(post.author_name)
       )
       allPosts.value = cachedFiltered
 
@@ -404,7 +402,7 @@ async function fetchLatestPosts(reset = true): Promise<boolean> {
 
       // 过滤无效作者
       const filtered = res.items.filter(
-        (post) => !FILTERED_AUTHORS.includes(post.author_name?.toLowerCase() ?? '')
+        (post) => !isFilteredAuthor(post.author_name)
       )
       allPosts.value = filtered
 
@@ -417,7 +415,7 @@ async function fetchLatestPosts(reset = true): Promise<boolean> {
       posts.value.push(...res.items)
 
       const filtered = res.items.filter(
-        (post) => !FILTERED_AUTHORS.includes(post.author_name?.toLowerCase() ?? '')
+        (post) => !isFilteredAuthor(post.author_name)
       )
       allPosts.value.push(...filtered)
 

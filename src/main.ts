@@ -19,6 +19,27 @@ import './styles/index.css'
 
 const app = createApp(App)
 
+// 全局错误处理
+app.config.errorHandler = (err, instance, info) => {
+  // 生产环境静默处理，开发环境打印详细信息
+  if (import.meta.env.DEV) {
+    console.error('Vue Error:', err)
+    console.error('Component:', instance)
+    console.error('Info:', info)
+  }
+
+  // 可以在这里上报错误到监控服务
+  // reportError({ error: err, component: instance?.$options.name, info })
+}
+
+// 全局 Promise 未捕获异常处理
+app.config.warnHandler = import.meta.env.DEV
+  ? (msg, instance, trace) => {
+      console.warn('Vue Warning:', msg)
+      if (trace) console.warn('Trace:', trace)
+    }
+  : null
+
 // Pinia with persistence
 const pinia = createPinia()
 pinia.use(piniaPluginPersistedstate)
@@ -38,8 +59,9 @@ app.mount('#app')
 // 非关键任务：使用现代 Scheduler API 在空闲时执行
 import { scheduleTask } from './utils/modernAPIs'
 
-// Service Worker 注册延迟到空闲时（background 优先级）
+// Service Worker 注册：页面加载完成后尽快注册（user-visible 优先级）
+// 这样可以更早地启用离线缓存和资源预缓存
 scheduleTask(
   () => import('./utils/cache').then(({ registerServiceWorker }) => registerServiceWorker()),
-  { priority: 'background' }
+  { priority: 'user-visible', delay: 1000 } // 延迟 1 秒，确保首屏渲染完成
 )

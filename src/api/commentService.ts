@@ -5,6 +5,7 @@
  */
 
 import { apiClient } from './client'
+import type { Comment } from '@/types'
 
 // ========== 类型定义 ==========
 
@@ -25,23 +26,6 @@ export interface CommentImageUploadResponse {
   width?: number
   height?: number
   file_size?: number
-}
-
-export interface Comment {
-  id: string
-  post_id: string
-  user_id: string
-  content: string
-  parent_id?: string | null
-  images?: CommentImage[]
-  created_at: string
-  updated_at: string
-  user?: {
-    id: string
-    username: string
-    avatar_url?: string
-  }
-  replies_count?: number
 }
 
 export interface CreateCommentRequest {
