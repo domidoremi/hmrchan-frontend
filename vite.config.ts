@@ -151,8 +151,6 @@ export default defineConfig(({ mode }) => {
         'pinia',
         'pinia-plugin-persistedstate',
         'vue-i18n',
-        '@vueuse/core',
-        '@vueuse/shared',
         // 关键优化：预构建 lucide-vue-next 避免 1500+ 个单独请求
         'lucide-vue-next',
       ],
@@ -284,16 +282,6 @@ export default defineConfig(({ mode }) => {
                 // GSAP 插件独立
                 return 'gsap-plugins'
               }
-              if (id.includes('photoswipe')) return 'photo-viewer'
-
-              // VueUse 工具库
-              if (id.includes('@vueuse')) return 'vueuse'
-
-              // HTTP 客户端
-              if (id.includes('ky')) return 'http-client'
-
-              // 日期处理
-              if (id.includes('dayjs')) return 'dayjs'
 
               // 其他小型依赖合并
               return 'vendor'
