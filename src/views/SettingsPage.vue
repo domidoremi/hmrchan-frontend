@@ -54,12 +54,21 @@ async function handleClearCache() {
   padding: var(--spacing-8) 0;
 }
 
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
 .page-title {
   margin-bottom: var(--spacing-6);
+  width: 100%;
+  max-width: 600px;
 }
 
 .settings-card {
-  max-width: 500px;
+  width: 100%;
+  max-width: 600px;
 }
 
 .cache-section {

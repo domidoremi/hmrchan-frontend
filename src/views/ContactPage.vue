@@ -73,6 +73,9 @@ async function handleSubmit() {
 <style scoped>
 .contact-page {
   padding: var(--spacing-8) 0;
+}
+
+.container {
   display: flex;
   justify-content: center;
 }
@@ -81,6 +84,12 @@ async function handleSubmit() {
   width: 100%;
   max-width: 500px;
   padding: var(--spacing-8);
+}
+
+@media (min-width: 768px) {
+  .contact-card {
+    max-width: 600px;
+  }
 }
 
 .page-title {
