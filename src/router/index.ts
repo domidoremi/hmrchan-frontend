@@ -5,6 +5,16 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 import i18n from '@/i18n'
 
+// 缓存 auth store 模块，避免每次路由切换都动态导入
+let authStoreModule: typeof import('@/stores/auth') | null = null
+
+async function getAuthStore() {
+  if (!authStoreModule) {
+    authStoreModule = await import('@/stores/auth')
+  }
+  return authStoreModule.useAuthStore()
+}
+
 const routes: RouteRecordRaw[] = [
   {
     path: '/',
@@ -135,29 +145,27 @@ const router = createRouter({
 })
 
 // 路由守卫
-router.beforeEach((to, _from, next) => {
-  // 延迟导入以避免循环依赖
-  import('@/stores/auth').then(({ useAuthStore }) => {
-    const authStore = useAuthStore()
-    const isAuthenticated = authStore.isAuthenticated
+router.beforeEach(async (to, _from, next) => {
+  // 使用缓存的 auth store 模块
+  const authStore = await getAuthStore()
+  const isAuthenticated = authStore.isAuthenticated
 
-    // 需要认证的页面
-    if (to.meta['requiresAuth'] && !isAuthenticated) {
-      next({
-        path: '/login',
-        query: { redirect: to.fullPath },
-      })
-      return
-    }
+  // 需要认证的页面
+  if (to.meta['requiresAuth'] && !isAuthenticated) {
+    next({
+      path: '/login',
+      query: { redirect: to.fullPath },
+    })
+    return
+  }
 
-    // 仅游客可访问的页面（登录、注册）
-    if (to.meta['guestOnly'] && isAuthenticated) {
-      next('/')
-      return
-    }
+  // 仅游客可访问的页面（登录、注册）
+  if (to.meta['guestOnly'] && isAuthenticated) {
+    next('/')
+    return
+  }
 
-    next()
-  })
+  next()
 })
 
 const SITE_NAME = 'MomiChan'
