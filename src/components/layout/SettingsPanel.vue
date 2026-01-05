@@ -104,9 +104,7 @@
 
     <!-- Version Info -->
     <div class="settings-footer">
-      <span class="version-text">v2.0.0</span>
-      <span class="version-divider">·</span>
-      <span class="version-text">UI Overhaul</span>
+      <span class="version-text">MomiChan</span>
     </div>
   </div>
 </template>
