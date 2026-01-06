@@ -36,14 +36,25 @@ const REQUEST_TIMEOUT = 30000
 
 // 请求队列（用于 token 刷新时暂存请求）
 let isRefreshing = false
-let refreshSubscribers: Array<(token: string) => void> = []
+let refreshSubscribers: Array<{
+  resolve: (token: string) => void
+  reject: (error: Error) => void
+}> = []
 
-function subscribeTokenRefresh(callback: (token: string) => void) {
-  refreshSubscribers.push(callback)
+function subscribeTokenRefresh(
+  resolve: (token: string) => void,
+  reject: (error: Error) => void
+) {
+  refreshSubscribers.push({ resolve, reject })
 }
 
 function onTokenRefreshed(token: string) {
-  refreshSubscribers.forEach((callback) => callback(token))
+  refreshSubscribers.forEach(({ resolve }) => resolve(token))
+  refreshSubscribers = []
+}
+
+function onTokenRefreshFailed(error: Error) {
+  refreshSubscribers.forEach(({ reject }) => reject(error))
   refreshSubscribers = []
 }
 
@@ -117,6 +128,7 @@ function buildCacheKey(method: string, url: string, skipAuth: boolean): string {
 
 /**
  * 刷新 access token
+ * 使用 HttpOnly cookie 中的 refresh_token 获取新的 access_token
  */
 async function refreshToken(): Promise<string | null> {
   try {
@@ -133,19 +145,28 @@ async function refreshToken(): Promise<string | null> {
     }
 
     const data = await response.json()
+    const newAccessToken = data.access_token
 
-    // 更新存储的 token
-    const authData = localStorage.getItem('auth')
-    if (authData) {
-      const parsed = JSON.parse(authData)
-      parsed.token = data.access_token
-      localStorage.setItem('auth', JSON.stringify(parsed))
+    // 更新存储的 access_token
+    try {
+      const authData = localStorage.getItem('auth')
+      if (authData) {
+        const parsed = JSON.parse(authData)
+        parsed.token = newAccessToken
+        localStorage.setItem('auth', JSON.stringify(parsed))
+      }
+    } catch {
+      // localStorage 操作失败，但 token 仍然有效
     }
 
-    return data.access_token
+    return newAccessToken
   } catch {
     // 刷新失败，清除认证状态
-    localStorage.removeItem('auth')
+    try {
+      localStorage.removeItem('auth')
+    } catch {
+      // Ignore localStorage errors
+    }
     return null
   }
 }
@@ -248,10 +269,12 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
         isRefreshing = true
 
         let newToken: string | null = null
+        let refreshError: Error | null = null
         try {
           newToken = await refreshToken()
+        } catch (err) {
+          refreshError = err instanceof Error ? err : new Error('Token refresh failed')
         } finally {
-          // 确保无论成功或失败都重置刷新状态
           isRefreshing = false
         }
 
@@ -277,31 +300,43 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
 
           return retryResponse.json()
         } else {
-          // Token 刷新失败，需要重新登录
+          // Token 刷新失败，通知所有等待的请求
+          const error = refreshError || new Error('Token refresh failed')
+          onTokenRefreshFailed(error)
+          // 触发登出事件
           window.dispatchEvent(new CustomEvent('auth:logout'))
           await handleErrorResponse(response, skipErrorToast)
         }
       } else {
         // 等待 token 刷新完成后重试
-        return new Promise((resolve, reject) => {
-          subscribeTokenRefresh(async (token) => {
-            try {
-              ;(headers as Record<string, string>)['Authorization'] = `Bearer ${token}`
-              const retryResponse = await fetch(url, {
-                ...fetchConfig,
-                headers,
-                credentials: 'include',
-              })
+        return new Promise<T>((resolve, reject) => {
+          subscribeTokenRefresh(
+            async (token) => {
+              try {
+                ;(headers as Record<string, string>)['Authorization'] = `Bearer ${token}`
+                const retryResponse = await fetch(url, {
+                  ...fetchConfig,
+                  body: body ?? null,
+                  headers,
+                  credentials: 'include',
+                })
 
-              if (!retryResponse.ok) {
-                reject(await handleErrorResponse(retryResponse, skipErrorToast))
+                if (!retryResponse.ok) {
+                  await handleErrorResponse(retryResponse, skipErrorToast)
+                }
+
+                if (retryResponse.status === 204) {
+                  resolve(undefined as T)
+                  return
+                }
+
+                resolve(retryResponse.json())
+              } catch (error) {
+                reject(error)
               }
-
-              resolve(retryResponse.json())
-            } catch (error) {
-              reject(error)
-            }
-          })
+            },
+            reject
+          )
         })
       }
     }
