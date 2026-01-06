@@ -168,13 +168,21 @@
   "search": {
     "title": "搜索",
     "placeholder": "搜索帖子、作者、标签...",
+    "emptyTitle": "搜索内容",
     "emptyHint": "查找帖子、作者等内容",
+    "resultsFor": "搜索结果：",
     "noResults": "未找到 \"{query}\" 相关结果",
     "noAuthors": "未找到 \"{query}\" 相关作者",
     "history": "搜索历史",
     "clearHistory": "清除历史",
     "suggestions": "搜索建议",
     "startTyping": "开始输入以搜索",
+    "tips": {
+      "title": "搜索技巧",
+      "keyword": "使用关键词搜索帖子内容",
+      "author": "输入作者名称查找创作者",
+      "platform": "使用平台筛选缩小范围"
+    },
     "tab": {
       "posts": "帖子",
       "authors": "作者"

@@ -7,20 +7,14 @@
             <h1>{{ $t('explore.title') }}</h1>
             <span class="page-title-badge">{{ total }} {{ $t('search.tab.posts') }}</span>
           </div>
-          <span v-if="isLoading && posts.length > 0" class="spinner spinner-sm" />
-        </div>
-        <div class="search-bar">
-          <Search :size="20" class="search-icon" />
-          <input
-            v-model="searchQuery"
-            type="text"
-            class="glass-input search-input"
-            :placeholder="$t('explore.searchPlaceholder')"
-            ref="searchInputRef"
-            @focus="isSearchFocused = true"
-            @blur="isSearchFocused = false"
-          />
-          <kbd v-if="!searchQuery && !isSearchFocused" class="search-kbd">/</kbd>
+          <div class="page-actions">
+            <button class="search-trigger glass-btn" @click="goToSearch" :aria-label="$t('search.title')">
+              <Search :size="18" />
+              <span class="search-trigger-text">{{ $t('search.title') }}</span>
+              <kbd class="search-kbd">/</kbd>
+            </button>
+            <span v-if="isLoading && posts.length > 0" class="spinner spinner-sm" />
+          </div>
         </div>
       </header>
 
@@ -100,7 +94,6 @@ import { useI18n } from 'vue-i18n'
 import { Search, Globe, Youtube, Music2, Twitter } from 'lucide-vue-next'
 import { postService, type PostListItem, ApiError } from '@/api'
 import { postCache } from '@/utils/cache'
-import { debounce } from '@/utils/performance'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import { useProgressiveRender } from '@/composables/useProgressiveRender'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
@@ -111,9 +104,6 @@ const router = useRouter()
 
 const { t } = useI18n()
 
-const searchQuery = ref('')
-const searchInputRef = ref<HTMLInputElement | null>(null)
-const isSearchFocused = ref(false)
 const currentSort = ref<'newest' | 'popular' | 'trending'>('newest')
 const currentPlatform = ref<'all' | 'youtube' | 'tiktok' | 'twitter'>('all')
 
@@ -153,7 +143,7 @@ const onGlobalKeydown = (event: KeyboardEvent) => {
   if (isEditable) return
 
   event.preventDefault()
-  searchInputRef.value?.focus()
+  goToSearch()
 }
 
 const sortOptions = [
@@ -174,6 +164,10 @@ function goToPost(postId: string, thumbnailSrc: string | null) {
     sessionStorage.setItem(`post-thumbnail-${postId}`, thumbnailSrc)
   }
   router.push(`/post/${postId}`)
+}
+
+function goToSearch() {
+  router.push({ name: 'search' })
 }
 
 function getSortParams(sort: 'newest' | 'popular' | 'trending') {
@@ -213,9 +207,8 @@ async function fetchPosts(reset = true) {
     sort_order,
   }
 
-  const q = searchQuery.value.trim()
   const platform = currentPlatform.value !== 'all' ? currentPlatform.value : undefined
-  const requestParams = { ...params, ...(q ? { q } : {}), ...(platform ? { platform } : {}) }
+  const requestParams = { ...params, ...(platform ? { platform } : {}) }
 
   if (reset) {
     const cached = await postCache.getList(requestParams)
@@ -241,10 +234,9 @@ async function fetchPosts(reset = true) {
 
     return true
   } catch (err) {
-    // 搜索或筛选时，即使有旧数据也要显示错误
-    const isFiltering = q || platform
-    if (posts.value.length === 0 || isFiltering) {
-      if (reset && isFiltering) {
+    // 筛选时，即使有旧数据也要显示错误
+    if (posts.value.length === 0 || platform) {
+      if (reset && platform) {
         // 清空旧数据，显示错误状态
         posts.value = []
         total.value = 0
@@ -287,19 +279,12 @@ useInfiniteScroll(sentinelRef, loadMore, {
   enabled: () => hasMoreForUi.value && !isLoading.value && !isLoadingMore.value,
 })
 
-// 使用 debounce 优化搜索输入
-const debouncedFetchPosts = debounce(() => fetchPosts(), 300)
-
 watch(currentSort, () => {
   fetchPosts()
 })
 
 watch(currentPlatform, () => {
   fetchPosts()
-})
-
-watch(searchQuery, () => {
-  debouncedFetchPosts()
 })
 
 onMounted(() => {
@@ -351,37 +336,50 @@ onBeforeUnmount(() => {
   color: var(--color-primary);
 }
 
-.search-bar {
-  position: relative;
-  max-width: 500px;
+.page-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
 }
 
-.search-icon {
-  position: absolute;
-  left: var(--spacing-4);
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--color-text-tertiary);
+.search-trigger {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  padding: var(--spacing-2) var(--spacing-3);
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  background: var(--glass-bg-subtle);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  transition: all var(--transition-fast);
+  cursor: pointer;
 }
 
-.search-input {
-  padding-left: var(--spacing-12);
-  padding-right: var(--spacing-10);
+.search-trigger:hover {
+  background: var(--glass-bg-light);
+  color: var(--color-text-primary);
+  border-color: rgba(var(--color-primary-rgb), 0.3);
+}
+
+.search-trigger-text {
+  display: none;
+}
+
+@media (min-width: 640px) {
+  .search-trigger-text {
+    display: inline;
+  }
 }
 
 .search-kbd {
-  position: absolute;
-  right: var(--spacing-3);
-  top: 50%;
-  transform: translateY(-50%);
-  padding: 2px 8px;
-  background: var(--glass-bg-subtle);
+  padding: 2px 6px;
+  background: var(--glass-bg);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-sm);
   font-size: var(--text-xs);
   font-family: var(--font-mono);
   color: var(--color-text-tertiary);
-  pointer-events: none;
 }
 
 .filters {

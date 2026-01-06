@@ -168,13 +168,21 @@
   "search": {
     "title": "Search",
     "placeholder": "Search posts, authors, tags...",
+    "emptyTitle": "Search Content",
     "emptyHint": "Find posts, authors, and more",
+    "resultsFor": "Results for",
     "noResults": "No results found for \"{query}\"",
     "noAuthors": "No authors found for \"{query}\"",
     "history": "Search History",
     "clearHistory": "Clear History",
     "suggestions": "Suggestions",
     "startTyping": "Start typing to search",
+    "tips": {
+      "title": "Search Tips",
+      "keyword": "Use keywords to search post content",
+      "author": "Enter author names to find creators",
+      "platform": "Use platform filters to narrow results"
+    },
     "tab": {
       "posts": "Posts",
       "authors": "Authors"

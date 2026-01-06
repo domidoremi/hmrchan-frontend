@@ -2,10 +2,17 @@
   <div class="search-page">
     <div class="container">
       <header class="search-header">
-        <SearchBar ref="searchBarRef" />
+        <h1 class="search-title">{{ $t('search.title') }}</h1>
+        <SearchBar ref="searchBarRef" class="search-bar-main" />
       </header>
 
       <div v-if="query" class="search-content">
+        <div class="search-meta">
+          <p class="search-query-info">
+            {{ $t('search.resultsFor') }} <strong>"{{ query }}"</strong>
+          </p>
+        </div>
+
         <div class="search-filters">
           <div class="filter-tabs">
             <button
@@ -18,11 +25,26 @@
             >
               <component :is="tab.icon" :size="16" />
               {{ tab.label }}
+              <span v-if="tab.id === 'posts' && total > 0" class="tab-count">{{ total }}</span>
+              <span v-if="tab.id === 'authors' && authorTotal > 0" class="tab-count">{{ authorTotal }}</span>
             </button>
           </div>
 
-          <div class="sort-options">
-            <select v-model="sortBy" class="glass-input sort-select">
+          <div class="filter-options">
+            <div v-if="activeTab === 'posts'" class="platform-filters">
+              <button
+                v-for="platform in platformOptions"
+                :key="platform.value"
+                class="platform-btn"
+                :class="{ active: currentPlatform === platform.value }"
+                @click="currentPlatform = platform.value"
+              >
+                <component :is="platform.icon" :size="14" />
+                <span class="platform-label">{{ platform.label }}</span>
+              </button>
+            </div>
+
+            <select v-if="activeTab === 'posts'" v-model="sortBy" class="glass-input sort-select">
               <option value="relevance">{{ $t('search.sort.relevance') }}</option>
               <option value="published_at">{{ $t('search.sort.date') }}</option>
               <option value="view_count">{{ $t('search.sort.views') }}</option>
@@ -50,23 +72,40 @@
               :description="$t('search.noResults', { query })"
             />
 
-            <div v-else class="posts-grid">
+            <div v-else class="posts-masonry">
               <PostCard v-for="post in results" :key="post.id" :post="post" @click="goToPost" />
             </div>
 
-            <LoadMoreSection v-if="hasMore" :is-loading="isLoadingMore" @load-more="loadMore" />
+            <LoadMoreSection
+              v-if="results.length > 0"
+              :count="results.length"
+              :total="total"
+              :has-more="hasMore"
+              :loading="isLoadingMore"
+              @load-more="loadMore"
+            />
           </template>
 
           <template v-else-if="activeTab === 'authors'">
+            <div v-if="isLoadingAuthors && authors.length === 0" class="results-loading">
+              <div v-for="i in 4" :key="i" class="author-skeleton glass-card">
+                <div class="skeleton" style="width: 56px; height: 56px; border-radius: 50%" />
+                <div class="skeleton-content">
+                  <div class="skeleton" style="height: 18px; width: 60%" />
+                  <div class="skeleton" style="height: 14px; width: 40%" />
+                </div>
+              </div>
+            </div>
+
             <StateIndicator
-              v-if="authorError"
+              v-else-if="authorError"
               variant="error"
               :description="authorError"
               @action="searchAuthors"
             />
 
             <StateIndicator
-              v-else-if="authors.length === 0 && !isLoadingAuthors"
+              v-else-if="authors.length === 0"
               variant="empty"
               :description="$t('search.noAuthors', { query })"
             />
@@ -89,7 +128,10 @@
                 </div>
                 <div class="author-info">
                   <h3 class="author-name">{{ author.name }}</h3>
-                  <p class="author-platform">{{ author.platform }}</p>
+                  <p class="author-platform">
+                    <component :is="getPlatformIcon(author.platform)" :size="12" />
+                    {{ author.platform }}
+                  </p>
                   <p class="author-posts">
                     {{ $t('author.postCount', { count: author.post_count }) }}
                   </p>
@@ -101,9 +143,19 @@
       </div>
 
       <div v-else class="search-empty">
-        <Search :size="48" class="empty-icon" />
-        <h2>{{ $t('search.title') }}</h2>
-        <p>{{ $t('search.emptyHint') }}</p>
+        <div class="empty-content">
+          <Search :size="64" class="empty-icon" />
+          <h2>{{ $t('search.emptyTitle') }}</h2>
+          <p>{{ $t('search.emptyHint') }}</p>
+          <div class="search-tips">
+            <h3>{{ $t('search.tips.title') }}</h3>
+            <ul>
+              <li>{{ $t('search.tips.keyword') }}</li>
+              <li>{{ $t('search.tips.author') }}</li>
+              <li>{{ $t('search.tips.platform') }}</li>
+            </ul>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -113,7 +165,7 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { Search, FileText, User } from 'lucide-vue-next'
+import { Search, FileText, User, Globe, Youtube, Music2, Twitter } from 'lucide-vue-next'
 import { searchService, type AuthorListItem, type PostListItem } from '@/api'
 import { normalizeAvatarUrl } from '@/api/userService'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
@@ -125,15 +177,15 @@ const route = useRoute()
 const router = useRouter()
 const { t } = useI18n()
 
-const searchBarRef = ref<InstanceType<typeof SearchBar>>()
-
-const query = computed(() => (route.query.q as string) || '')
+const query = computed(() => (route.query['q'] as string) || '')
 const activeTab = ref<'posts' | 'authors'>('posts')
 const sortBy = ref<'relevance' | 'published_at' | 'view_count'>('relevance')
+const currentPlatform = ref<'all' | 'youtube' | 'tiktok' | 'twitter'>('all')
 
 const results = ref<PostListItem[]>([])
 const authors = ref<AuthorListItem[]>([])
 const total = ref(0)
+const authorTotal = ref(0)
 const page = ref(1)
 const pageSize = 20
 
@@ -150,6 +202,22 @@ const tabs = [
   { id: 'authors' as const, label: t('search.tab.authors'), icon: User },
 ]
 
+const platformOptions = [
+  { value: 'all' as const, label: t('explore.allPlatforms'), icon: Globe },
+  { value: 'youtube' as const, label: 'YouTube', icon: Youtube },
+  { value: 'tiktok' as const, label: 'TikTok', icon: Music2 },
+  { value: 'twitter' as const, label: 'Twitter', icon: Twitter },
+]
+
+function getPlatformIcon(platform: string) {
+  switch (platform.toLowerCase()) {
+    case 'youtube': return Youtube
+    case 'tiktok': return Music2
+    case 'twitter': return Twitter
+    default: return Globe
+  }
+}
+
 async function search() {
   if (!query.value) return
 
@@ -158,17 +226,20 @@ async function search() {
   page.value = 1
 
   try {
+    const platform = currentPlatform.value !== 'all' ? currentPlatform.value : undefined
     const res = await searchService.searchPosts({
       q: query.value,
       page: 1,
       page_size: pageSize,
       sort_by: sortBy.value,
+      ...(platform && { platform }),
     })
     results.value = res.items
     total.value = res.total
   } catch {
     error.value = t('common.error')
     results.value = []
+    total.value = 0
   } finally {
     isLoading.value = false
   }
@@ -181,11 +252,13 @@ async function loadMore() {
 
   try {
     const nextPage = page.value + 1
+    const platform = currentPlatform.value !== 'all' ? currentPlatform.value : undefined
     const res = await searchService.searchPosts({
       q: query.value,
       page: nextPage,
       page_size: pageSize,
       sort_by: sortBy.value,
+      ...(platform && { platform }),
     })
     results.value.push(...res.items)
     page.value = nextPage
@@ -210,16 +283,21 @@ async function searchAuthors() {
       page_size: 20,
     })
     authors.value = res.items
+    authorTotal.value = res.total
   } catch {
     authorError.value = t('common.error')
     authors.value = []
+    authorTotal.value = 0
   } finally {
     isLoadingAuthors.value = false
   }
 }
 
-function goToPost(post: PostListItem) {
-  router.push({ name: 'post-detail', params: { id: post.id } })
+function goToPost(postId: string, thumbnailSrc: string | null) {
+  if (thumbnailSrc) {
+    sessionStorage.setItem(`post-thumbnail-${postId}`, thumbnailSrc)
+  }
+  router.push(`/post/${postId}`)
 }
 
 function goToAuthor(authorId: string) {
@@ -233,10 +311,18 @@ watch(query, () => {
   } else {
     results.value = []
     authors.value = []
+    total.value = 0
+    authorTotal.value = 0
   }
 })
 
 watch(sortBy, () => {
+  if (query.value) {
+    search()
+  }
+})
+
+watch(currentPlatform, () => {
   if (query.value) {
     search()
   }
@@ -256,6 +342,7 @@ onMounted(() => {
 })
 </script>
 
+
 <style scoped>
 .search-page {
   min-height: 100vh;
@@ -264,12 +351,35 @@ onMounted(() => {
 
 .search-header {
   max-width: 800px;
-  margin: 0 auto var(--spacing-6);
+  margin: 0 auto var(--spacing-8);
+  text-align: center;
+}
+
+.search-title {
+  font-size: var(--text-2xl);
+  margin-bottom: var(--spacing-4);
+}
+
+.search-bar-main {
+  max-width: 100%;
 }
 
 .search-content {
   max-width: 1400px;
   margin: 0 auto;
+}
+
+.search-meta {
+  margin-bottom: var(--spacing-4);
+}
+
+.search-query-info {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
+.search-query-info strong {
+  color: var(--color-text);
 }
 
 .search-filters {
@@ -308,6 +418,59 @@ onMounted(() => {
   color: var(--color-white);
 }
 
+.tab-count {
+  padding: 0 var(--spacing-2);
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
+}
+
+.filter-options {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  flex-wrap: wrap;
+}
+
+.platform-filters {
+  display: flex;
+  gap: var(--spacing-1);
+}
+
+.platform-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-1);
+  padding: var(--spacing-1) var(--spacing-2);
+  border-radius: var(--radius-md);
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+  background: var(--glass-bg-subtle);
+  border: 1px solid transparent;
+  transition: all var(--transition-fast);
+}
+
+.platform-btn:hover {
+  background: var(--glass-bg-light);
+  color: var(--color-text-primary);
+}
+
+.platform-btn.active {
+  background: rgba(var(--color-primary-rgb), 0.15);
+  color: var(--color-primary);
+  border-color: rgba(var(--color-primary-rgb), 0.3);
+}
+
+.platform-label {
+  display: none;
+}
+
+@media (min-width: 640px) {
+  .platform-label {
+    display: inline;
+  }
+}
+
 .sort-select {
   padding: var(--spacing-2) var(--spacing-3);
   font-size: var(--text-sm);
@@ -319,26 +482,74 @@ onMounted(() => {
   gap: var(--spacing-4);
 }
 
-.result-skeleton {
+.result-skeleton,
+.author-skeleton {
   padding: var(--spacing-4);
+}
+
+.author-skeleton {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
 }
 
 .skeleton-content {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-2);
+  flex: 1;
+}
+
+.result-skeleton .skeleton-content {
   margin-top: var(--spacing-3);
 }
 
-.posts-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: var(--spacing-4);
+.posts-masonry {
+  --masonry-columns: 4;
+  --masonry-gap: var(--spacing-4);
+
+  column-count: var(--masonry-columns);
+  column-gap: var(--masonry-gap);
+}
+
+.posts-masonry > :deep(*) {
+  break-inside: avoid;
+  margin-bottom: var(--masonry-gap);
+}
+
+@media (min-width: 1600px) {
+  .posts-masonry {
+    --masonry-columns: 5;
+  }
+}
+
+@media (min-width: 1200px) and (max-width: 1599px) {
+  .posts-masonry {
+    --masonry-columns: 4;
+  }
+}
+
+@media (min-width: 900px) and (max-width: 1199px) {
+  .posts-masonry {
+    --masonry-columns: 3;
+  }
+}
+
+@media (min-width: 600px) and (max-width: 899px) {
+  .posts-masonry {
+    --masonry-columns: 2;
+  }
+}
+
+@media (max-width: 599px) {
+  .posts-masonry {
+    --masonry-columns: 1;
+  }
 }
 
 .authors-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: var(--spacing-4);
 }
 
@@ -386,6 +597,9 @@ onMounted(() => {
 }
 
 .author-platform {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-1);
   font-size: var(--text-sm);
   color: var(--color-text-secondary);
   margin: 0 0 var(--spacing-1);
@@ -402,24 +616,58 @@ onMounted(() => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 400px;
+  min-height: 50vh;
   text-align: center;
-  color: var(--color-text-secondary);
+}
+
+.empty-content {
+  max-width: 400px;
 }
 
 .empty-icon {
-  opacity: 0.5;
+  opacity: 0.3;
   margin-bottom: var(--spacing-4);
+  color: var(--color-text-secondary);
 }
 
 .search-empty h2 {
   margin: 0 0 var(--spacing-2);
   font-size: var(--text-xl);
+  color: var(--color-text);
 }
 
 .search-empty p {
+  margin: 0 0 var(--spacing-6);
+  color: var(--color-text-secondary);
+}
+
+.search-tips {
+  text-align: left;
+  padding: var(--spacing-4);
+  background: var(--glass-bg-subtle);
+  border-radius: var(--radius-lg);
+}
+
+.search-tips h3 {
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  margin: 0 0 var(--spacing-2);
+  color: var(--color-text);
+}
+
+.search-tips ul {
   margin: 0;
-  color: var(--color-text-muted);
+  padding-left: var(--spacing-4);
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
+.search-tips li {
+  margin-bottom: var(--spacing-1);
+}
+
+.search-tips li:last-child {
+  margin-bottom: 0;
 }
 
 @media (max-width: 768px) {
@@ -432,12 +680,12 @@ onMounted(() => {
     justify-content: center;
   }
 
-  .sort-options {
-    width: 100%;
+  .filter-options {
+    justify-content: space-between;
   }
 
   .sort-select {
-    width: 100%;
+    flex: 1;
   }
 }
 </style>
