@@ -9,6 +9,7 @@ import { postCache } from '@/utils/cache'
 
 // 预取状态标记
 const prefetchedData = new Set<string>()
+const MAX_PREFETCH_ENTRIES = 200 // 限制预取记录数量，防止内存无限增长
 
 /**
  * 检查网络条件是否适合预取
@@ -67,6 +68,16 @@ export function prefetchAuthorsData(): void {
 export function prefetchPostDetail(postId: string): void {
   const key = `post:${postId}`
   if (prefetchedData.has(key) || !shouldPrefetch()) return
+
+  // 防止 Set 无限增长
+  if (prefetchedData.size >= MAX_PREFETCH_ENTRIES) {
+    // 清除一半旧记录（保留 explore/authors 等页面级标记）
+    const entries = Array.from(prefetchedData)
+    const postEntries = entries.filter((k) => k.startsWith('post:'))
+    const toRemove = postEntries.slice(0, Math.floor(postEntries.length / 2))
+    toRemove.forEach((k) => prefetchedData.delete(k))
+  }
+
   prefetchedData.add(key)
 
   postCache
