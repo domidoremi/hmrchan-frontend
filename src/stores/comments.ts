@@ -203,7 +203,7 @@ export const useCommentsStore = defineStore('comments', () => {
 
       // 更新本地状态 - 深拷贝并递归删除
       const postComments = comments.value.get(postId) || []
-      const updatedComments = JSON.parse(JSON.stringify(postComments)) as Comment[]
+      const updatedComments = structuredClone(postComments)
       removeComment(updatedComments, commentId)
       comments.value.set(postId, updatedComments)
 
