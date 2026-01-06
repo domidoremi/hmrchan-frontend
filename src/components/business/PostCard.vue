@@ -103,7 +103,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, type Component } from 'vue'
+import { ref, computed, watch, onUnmounted, type Component } from 'vue'
 import {
   ArrowUpRight,
   Clock,
@@ -385,6 +385,14 @@ function handleMouseLeave() {
 function handleClick() {
   emit('click', props.post.id, thumbnailSrc.value)
 }
+
+// 组件卸载时清理定时器，防止内存泄漏
+onUnmounted(() => {
+  if (hoverTimeout) {
+    clearTimeout(hoverTimeout)
+    hoverTimeout = null
+  }
+})
 </script>
 
 <style scoped>
