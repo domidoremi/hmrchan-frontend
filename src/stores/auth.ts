@@ -1,5 +1,9 @@
 /**
  * Auth Store - 认证状态管理
+ *
+ * 双 Token 机制：
+ * - access_token: 短期令牌，存储在 localStorage，用于 API 认证
+ * - refresh_token: 长期令牌，存储在 HttpOnly Cookie，用于刷新 access_token
  */
 
 import { ref, computed } from 'vue'
@@ -22,6 +26,7 @@ export const useAuthStore = defineStore(
     const error = ref<string | null>(null)
 
     let heartbeatTimer: ReturnType<typeof setInterval> | null = null
+    let authLogoutHandler: (() => void) | null = null
     const HEARTBEAT_INTERVAL = 5 * 60 * 1000 // 5 minutes
 
     const isAuthenticated = computed(() => !!user.value && !!token.value)
@@ -146,14 +151,41 @@ export const useAuthStore = defineStore(
 
     /**
      * 监听登出事件（由 API client 触发）
+     * 返回清理函数，用于移除事件监听器
      */
-    function setupAuthListener() {
-      window.addEventListener('auth:logout', () => {
+    function setupAuthListener(): () => void {
+      // 先清理旧的监听器
+      if (authLogoutHandler) {
+        window.removeEventListener('auth:logout', authLogoutHandler)
+      }
+
+      authLogoutHandler = () => {
         user.value = null
         token.value = null
         stopHeartbeat()
         router.push('/login')
-      })
+      }
+
+      window.addEventListener('auth:logout', authLogoutHandler)
+
+      // 返回清理函数
+      return () => {
+        if (authLogoutHandler) {
+          window.removeEventListener('auth:logout', authLogoutHandler)
+          authLogoutHandler = null
+        }
+      }
+    }
+
+    /**
+     * 清理所有资源（定时器、事件监听器等）
+     */
+    function cleanup() {
+      stopHeartbeat()
+      if (authLogoutHandler) {
+        window.removeEventListener('auth:logout', authLogoutHandler)
+        authLogoutHandler = null
+      }
     }
 
     /**
@@ -224,6 +256,7 @@ export const useAuthStore = defineStore(
       setupAuthListener,
       startHeartbeat,
       stopHeartbeat,
+      cleanup,
     }
   },
   {
