@@ -1,6 +1,7 @@
 /**
  * 内存缓存层
  * 最快的缓存层，但刷新页面后丢失
+ * 包含自动清理过期条目的机制，防止内存泄漏
  */
 
 interface CacheEntry<T> {
@@ -12,6 +13,50 @@ interface CacheEntry<T> {
 class MemoryCache {
   private cache = new Map<string, CacheEntry<unknown>>()
   private maxSize = 100
+  private cleanupTimer: ReturnType<typeof setInterval> | null = null
+  private readonly CLEANUP_INTERVAL = 60 * 1000 // 每分钟清理一次
+
+  constructor() {
+    this.startCleanupTimer()
+  }
+
+  /**
+   * 启动定期清理定时器
+   */
+  private startCleanupTimer(): void {
+    if (this.cleanupTimer) return
+
+    this.cleanupTimer = setInterval(() => {
+      this.cleanup()
+    }, this.CLEANUP_INTERVAL)
+
+    // 确保定时器不阻止进程退出（Node.js 环境）
+    if (typeof this.cleanupTimer === 'object' && 'unref' in this.cleanupTimer) {
+      this.cleanupTimer.unref()
+    }
+  }
+
+  /**
+   * 停止定期清理定时器
+   */
+  stopCleanupTimer(): void {
+    if (this.cleanupTimer) {
+      clearInterval(this.cleanupTimer)
+      this.cleanupTimer = null
+    }
+  }
+
+  /**
+   * 清理过期条目
+   */
+  private cleanup(): void {
+    const now = Date.now()
+    for (const [key, entry] of this.cache.entries()) {
+      if (now - entry.timestamp > entry.ttl) {
+        this.cache.delete(key)
+      }
+    }
+  }
 
   /**
    * 获取缓存
