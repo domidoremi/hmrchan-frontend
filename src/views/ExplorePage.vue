@@ -241,7 +241,14 @@ async function fetchPosts(reset = true) {
 
     return true
   } catch (err) {
-    if (posts.value.length === 0) {
+    // 搜索或筛选时，即使有旧数据也要显示错误
+    const isFiltering = q || platform
+    if (posts.value.length === 0 || isFiltering) {
+      if (reset && isFiltering) {
+        // 清空旧数据，显示错误状态
+        posts.value = []
+        total.value = 0
+      }
       if (err instanceof ApiError) {
         error.value = err.message
       } else {
