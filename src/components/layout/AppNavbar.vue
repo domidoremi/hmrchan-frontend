@@ -958,8 +958,13 @@ onUnmounted(() => {
 }
 
 @keyframes nav-icon-bounce {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.2); }
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+  }
 }
 
 /* ========== Responsive ========== */

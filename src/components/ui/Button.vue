@@ -121,11 +121,7 @@ function handleClick(event: MouseEvent) {
 }
 
 .btn-primary:hover:not(:disabled) .btn-ripple {
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.2) 0%,
-    transparent 100%
-  );
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, transparent 100%);
 }
 
 .btn-primary:active:not(:disabled) {

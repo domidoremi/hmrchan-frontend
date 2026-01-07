@@ -30,7 +30,6 @@ export async function registerServiceWorker(): Promise<SWRegistrationResult> {
       updateViaCache: 'none',
     })
 
-
     // 监听更新
     registration.addEventListener('updatefound', () => {
       const newWorker = registration.installing

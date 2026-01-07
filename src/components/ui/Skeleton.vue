@@ -1,11 +1,7 @@
 <template>
   <div
     class="skeleton"
-    :class="[
-      `skeleton--${variant}`,
-      `skeleton--${animation}`,
-      { 'skeleton--rounded': rounded }
-    ]"
+    :class="[`skeleton--${variant}`, `skeleton--${animation}`, { 'skeleton--rounded': rounded }]"
     :style="computedStyle"
   />
 </template>
@@ -152,7 +148,8 @@ const computedStyle = computed(() => {
 }
 
 @keyframes skeleton-pulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
   50% {

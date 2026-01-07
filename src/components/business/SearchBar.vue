@@ -16,12 +16,7 @@
         @keydown.down.prevent="selectNext"
         @keydown.up.prevent="selectPrev"
       />
-      <button
-        v-if="query"
-        type="button"
-        class="clear-btn"
-        @click="clearQuery"
-      >
+      <button v-if="query" type="button" class="clear-btn" @click="clearQuery">
         <X :size="16" />
       </button>
     </div>
@@ -113,7 +108,9 @@ const MAX_HISTORY = 10
 
 const searchHistory = ref<string[]>([])
 
-const showDropdown = computed(() => isFocused.value && (query.value || searchHistory.value.length > 0))
+const showDropdown = computed(
+  () => isFocused.value && (query.value || searchHistory.value.length > 0)
+)
 
 function loadHistory() {
   try {
@@ -129,7 +126,7 @@ function loadHistory() {
 function saveHistory(term: string) {
   if (!term.trim()) return
 
-  const filtered = searchHistory.value.filter(h => h !== term)
+  const filtered = searchHistory.value.filter((h) => h !== term)
   searchHistory.value = [term, ...filtered].slice(0, MAX_HISTORY)
   localStorage.setItem(HISTORY_KEY, JSON.stringify(searchHistory.value))
 }
@@ -217,19 +214,27 @@ function selectPrev() {
 
 function getSuggestionIcon(type: string) {
   switch (type) {
-    case 'post': return FileText
-    case 'author': return User
-    case 'tag': return Tag
-    default: return Search
+    case 'post':
+      return FileText
+    case 'author':
+      return User
+    case 'tag':
+      return Tag
+    default:
+      return Search
   }
 }
 
 function getSuggestionLabel(type: string) {
   switch (type) {
-    case 'post': return t('search.type.post')
-    case 'author': return t('search.type.author')
-    case 'tag': return t('search.type.tag')
-    default: return ''
+    case 'post':
+      return t('search.type.post')
+    case 'author':
+      return t('search.type.author')
+    case 'tag':
+      return t('search.type.tag')
+    default:
+      return ''
   }
 }
 
