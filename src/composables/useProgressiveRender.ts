@@ -1,3 +1,15 @@
+/**
+ * useProgressiveRender - 渐进式渲染 Composable
+ *
+ * 分批渲染大量数据，避免一次性渲染导致的页面卡顿
+ * 适用于长列表、瀑布流等场景
+ *
+ * 特性：
+ * - 初始只渲染部分数据，后续按需加载
+ * - 自动响应数据源变化
+ * - 支持自定义初始数量和批次大小
+ */
+
 import { computed, ref, watch, type Ref } from 'vue'
 
 export interface UseProgressiveRenderOptions {
