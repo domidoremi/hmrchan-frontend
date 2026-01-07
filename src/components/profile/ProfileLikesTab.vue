@@ -5,12 +5,7 @@
       <span v-if="total > 0" class="item-count">{{ total }}</span>
     </div>
 
-    <StateIndicator
-      v-if="error"
-      variant="error"
-      :description="error"
-      @action="fetchLikes"
-    />
+    <StateIndicator v-if="error" variant="error" :description="error" @action="fetchLikes" />
 
     <div v-else-if="isLoading && comments.length === 0" class="comments-skeleton">
       <div v-for="i in 5" :key="i" class="comment-skeleton glass-card">
@@ -47,7 +42,9 @@
           <div class="comment-footer">
             <div class="comment-stats">
               <span><Heart :size="14" /> {{ comment.like_count || 0 }}</span>
-              <span v-if="comment.reply_count"><MessageCircle :size="14" /> {{ comment.reply_count }}</span>
+              <span v-if="comment.reply_count"
+                ><MessageCircle :size="14" /> {{ comment.reply_count }}</span
+              >
             </div>
             <button
               class="unlike-btn"
@@ -137,9 +134,13 @@ async function fetchLikes(reset = true) {
   error.value = null
 
   try {
-    const res = await apiClient.get<{ items: LikedComment[]; total: number; page: number; page_size: number; has_more: boolean }>(
-      `/community/my-likes?page=${page.value}&page_size=${pageSize}`
-    )
+    const res = await apiClient.get<{
+      items: LikedComment[]
+      total: number
+      page: number
+      page_size: number
+      has_more: boolean
+    }>(`/community/my-likes?page=${page.value}&page_size=${pageSize}`)
 
     if (reset) {
       comments.value = res.items
@@ -198,7 +199,7 @@ async function confirmUnlike() {
 
   try {
     await apiClient.delete(`/comments/${comment.id}/like`)
-    comments.value = comments.value.filter(c => c.id !== comment.id)
+    comments.value = comments.value.filter((c) => c.id !== comment.id)
     total.value = Math.max(0, total.value - 1)
     toastStore.success(t('profile.unlikeSuccess'))
   } catch (err) {

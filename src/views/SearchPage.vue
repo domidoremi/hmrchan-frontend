@@ -26,7 +26,9 @@
               <component :is="tab.icon" :size="16" />
               {{ tab.label }}
               <span v-if="tab.id === 'posts' && total > 0" class="tab-count">{{ total }}</span>
-              <span v-if="tab.id === 'authors' && authorTotal > 0" class="tab-count">{{ authorTotal }}</span>
+              <span v-if="tab.id === 'authors' && authorTotal > 0" class="tab-count">{{
+                authorTotal
+              }}</span>
             </button>
           </div>
 
@@ -211,10 +213,14 @@ const platformOptions = [
 
 function getPlatformIcon(platform: string) {
   switch (platform.toLowerCase()) {
-    case 'youtube': return Youtube
-    case 'tiktok': return Music2
-    case 'twitter': return Twitter
-    default: return Globe
+    case 'youtube':
+      return Youtube
+    case 'tiktok':
+      return Music2
+    case 'twitter':
+      return Twitter
+    default:
+      return Globe
   }
 }
 
@@ -341,7 +347,6 @@ onMounted(() => {
   }
 })
 </script>
-
 
 <style scoped>
 .search-page {

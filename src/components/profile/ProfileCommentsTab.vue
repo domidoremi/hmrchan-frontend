@@ -5,12 +5,7 @@
       <span v-if="total > 0" class="item-count">{{ total }}</span>
     </div>
 
-    <StateIndicator
-      v-if="error"
-      variant="error"
-      :description="error"
-      @action="fetchComments"
-    />
+    <StateIndicator v-if="error" variant="error" :description="error" @action="fetchComments" />
 
     <div v-else-if="isLoading && comments.length === 0" class="loading-skeleton">
       <div v-for="i in 5" :key="i" class="comment-skeleton glass-card">
@@ -56,7 +51,9 @@
           </div>
           <div class="comment-stats">
             <span><Heart :size="14" /> {{ comment.likes_count || 0 }}</span>
-            <span v-if="comment.replies_count"><MessageCircle :size="14" /> {{ comment.replies_count }}</span>
+            <span v-if="comment.replies_count"
+              ><MessageCircle :size="14" /> {{ comment.replies_count }}</span
+            >
           </div>
         </article>
       </div>
@@ -136,9 +133,13 @@ async function fetchComments(reset = true) {
   error.value = null
 
   try {
-    const res = await apiClient.get<{ items: UserComment[]; total: number; page: number; page_size: number; has_more: boolean }>(
-      `/community/my-comments?page=${page.value}&page_size=${pageSize}`
-    )
+    const res = await apiClient.get<{
+      items: UserComment[]
+      total: number
+      page: number
+      page_size: number
+      has_more: boolean
+    }>(`/community/my-comments?page=${page.value}&page_size=${pageSize}`)
 
     if (reset) {
       comments.value = res.items
@@ -197,7 +198,7 @@ async function confirmDelete() {
 
   try {
     await apiClient.delete(`/comments/${commentId}`)
-    comments.value = comments.value.filter(c => c.id !== commentId)
+    comments.value = comments.value.filter((c) => c.id !== commentId)
     total.value = Math.max(0, total.value - 1)
     toastStore.success(t('comment.deleteSuccess'))
   } catch (err) {

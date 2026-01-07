@@ -51,18 +51,13 @@ body::before {
     ),
     /* 次光斑 - 右下 */
     radial-gradient(
-      ellipse 60% 80% at 85% 75%,
-      rgba(var(--color-accent-rgb), 0.08) 0%,
-      transparent 55%
-    ),
+        ellipse 60% 80% at 85% 75%,
+        rgba(var(--color-accent-rgb), 0.08) 0%,
+        transparent 55%
+      ),
     /* 柔和光斑 - 中央 */
-    radial-gradient(
-      circle at 50% 40%,
-      rgba(var(--color-secondary-rgb), 0.05) 0%,
-      transparent 45%
-    ),
-    /* 底层纹理 */
-    var(--color-background);
+    radial-gradient(circle at 50% 40%, rgba(var(--color-secondary-rgb), 0.05) 0%, transparent 45%),
+    /* 底层纹理 */ var(--color-background);
   pointer-events: none;
 }
 
@@ -76,18 +71,13 @@ body::before {
     ),
     /* 次光斑 - 右下 */
     radial-gradient(
-      ellipse 60% 80% at 85% 75%,
-      rgba(var(--color-accent-rgb), 0.06) 0%,
-      transparent 55%
-    ),
+        ellipse 60% 80% at 85% 75%,
+        rgba(var(--color-accent-rgb), 0.06) 0%,
+        transparent 55%
+      ),
     /* 柔和光斑 - 中央 */
-    radial-gradient(
-      circle at 50% 40%,
-      rgba(var(--color-secondary-rgb), 0.04) 0%,
-      transparent 45%
-    ),
-    /* 底层纹理 */
-    var(--color-background);
+    radial-gradient(circle at 50% 40%, rgba(var(--color-secondary-rgb), 0.04) 0%, transparent 45%),
+    /* 底层纹理 */ var(--color-background);
 }
 
 /* Set shorter line heights on headings */

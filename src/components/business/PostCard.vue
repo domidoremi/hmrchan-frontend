@@ -11,7 +11,11 @@
   >
     <div class="post-image-wrapper" :style="imageWrapperStyle">
       <!-- Platform Icon Badge -->
-      <div v-if="post.platform" class="platform-badge" :class="`platform-badge--${post.platform?.toLowerCase()}`">
+      <div
+        v-if="post.platform"
+        class="platform-badge"
+        :class="`platform-badge--${post.platform?.toLowerCase()}`"
+      >
         <component :is="platformIcon" :size="12" />
         <span class="platform-label">{{ platformLabel }}</span>
       </div>
@@ -104,17 +108,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onUnmounted, type Component } from 'vue'
-import {
-  ArrowUpRight,
-  Clock,
-  Eye,
-  Globe,
-  Heart,
-  Music2,
-  Play,
-  User,
-  Video,
-} from 'lucide-vue-next'
+import { ArrowUpRight, Clock, Eye, Globe, Heart, Music2, Play, User, Video } from 'lucide-vue-next'
 import type { PostListItem } from '@/api'
 import { prefetchPostDetail } from '@/utils/prefetch'
 import {
@@ -534,12 +528,7 @@ onUnmounted(() => {
   position: absolute;
   inset: 0;
   z-index: 1;
-  background: linear-gradient(
-    180deg,
-    transparent 0%,
-    transparent 50%,
-    rgba(0, 0, 0, 0.15) 100%
-  );
+  background: linear-gradient(180deg, transparent 0%, transparent 50%, rgba(0, 0, 0, 0.15) 100%);
   pointer-events: none;
   transition: opacity var(--transition-fast);
 }

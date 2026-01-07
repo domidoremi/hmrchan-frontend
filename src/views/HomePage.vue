@@ -1,7 +1,11 @@
 <template>
   <div class="home-page">
     <!-- Hero Section - 增强版 v2 -->
-    <section v-if="settings.showHeroSection" class="hero" :class="{ 'hero--animated': shouldAnimate }">
+    <section
+      v-if="settings.showHeroSection"
+      class="hero"
+      :class="{ 'hero--animated': shouldAnimate }"
+    >
       <div class="hero-bg">
         <div class="hero-glow hero-glow--primary" />
         <div class="hero-glow hero-glow--accent" />
@@ -83,7 +87,10 @@
           </RouterLink>
 
           <!-- Search Card -->
-          <RouterLink to="/search" class="bento-card bento-search glass-card glass-card--interactive">
+          <RouterLink
+            to="/search"
+            class="bento-card bento-search glass-card glass-card--interactive"
+          >
             <div class="bento-card-content">
               <div class="bento-icon-wrapper bento-icon--search">
                 <Search :size="22" />
@@ -97,7 +104,10 @@
           </RouterLink>
 
           <!-- Community Card -->
-          <RouterLink to="/community" class="bento-card bento-community glass-card glass-card--interactive">
+          <RouterLink
+            to="/community"
+            class="bento-card bento-community glass-card glass-card--interactive"
+          >
             <div class="bento-card-content">
               <div class="bento-icon-wrapper bento-icon--community">
                 <MessageSquare :size="22" />
@@ -111,7 +121,10 @@
           </RouterLink>
 
           <!-- Authors Card -->
-          <RouterLink to="/authors" class="bento-card bento-authors glass-card glass-card--interactive">
+          <RouterLink
+            to="/authors"
+            class="bento-card bento-authors glass-card glass-card--interactive"
+          >
             <div class="bento-card-content">
               <div class="bento-icon-wrapper bento-icon--authors">
                 <Users :size="22" />
@@ -125,14 +138,21 @@
           </RouterLink>
 
           <!-- Favorites Card -->
-          <RouterLink :to="favoritesLink" class="bento-card bento-favorites glass-card glass-card--interactive">
+          <RouterLink
+            :to="favoritesLink"
+            class="bento-card bento-favorites glass-card glass-card--interactive"
+          >
             <div class="bento-card-content">
               <div class="bento-icon-wrapper bento-icon--favorites">
                 <Heart :size="22" />
               </div>
               <div class="bento-title">{{ $t('nav.favorites') }}</div>
               <div class="bento-meta">
-                {{ isAuthenticated ? $t('home.bento.favoritesMeta') : $t('home.bento.favoritesMetaGuest') }}
+                {{
+                  isAuthenticated
+                    ? $t('home.bento.favoritesMeta')
+                    : $t('home.bento.favoritesMetaGuest')
+                }}
               </div>
             </div>
             <div class="bento-card-arrow">
@@ -224,7 +244,7 @@ import {
   Search,
   Sparkles,
   Users,
-  Zap
+  Zap,
 } from 'lucide-vue-next'
 import { useAuthStore, useSettingsStore } from '@/stores'
 import { postService, type PostListItem, ApiError } from '@/api'
@@ -401,9 +421,7 @@ async function fetchLatestPosts(reset = true): Promise<boolean> {
       posts.value = res.items
 
       // 过滤无效作者
-      const filtered = res.items.filter(
-        (post) => !isFilteredAuthor(post.author_name)
-      )
+      const filtered = res.items.filter((post) => !isFilteredAuthor(post.author_name))
       allPosts.value = filtered
 
       // 智能分发到各列（瀑布流核心逻辑）
@@ -414,9 +432,7 @@ async function fetchLatestPosts(reset = true): Promise<boolean> {
       // Load More: 追加新内容到最矮列
       posts.value.push(...res.items)
 
-      const filtered = res.items.filter(
-        (post) => !isFilteredAuthor(post.author_name)
-      )
+      const filtered = res.items.filter((post) => !isFilteredAuthor(post.author_name))
       allPosts.value.push(...filtered)
 
       const containerWidth = getContainerWidth()
@@ -473,7 +489,10 @@ function goToExplore() {
 }
 
 function scrollToBento() {
-  bentoRef.value?.scrollIntoView({ behavior: shouldAnimate.value ? 'smooth' : 'auto', block: 'start' })
+  bentoRef.value?.scrollIntoView({
+    behavior: shouldAnimate.value ? 'smooth' : 'auto',
+    block: 'start',
+  })
 }
 
 function goToPost(postId: string, thumbnailSrc: string | null) {
@@ -549,11 +568,7 @@ onBeforeUnmount(() => {
   height: 600px;
   top: -200px;
   left: -100px;
-  background: radial-gradient(
-    circle,
-    rgba(var(--color-primary-rgb), 0.3) 0%,
-    transparent 70%
-  );
+  background: radial-gradient(circle, rgba(var(--color-primary-rgb), 0.3) 0%, transparent 70%);
 }
 
 .hero-glow--accent {
@@ -561,11 +576,7 @@ onBeforeUnmount(() => {
   height: 500px;
   bottom: -200px;
   right: -100px;
-  background: radial-gradient(
-    circle,
-    rgba(var(--color-accent-rgb), 0.2) 0%,
-    transparent 70%
-  );
+  background: radial-gradient(circle, rgba(var(--color-accent-rgb), 0.2) 0%, transparent 70%);
   animation-delay: 4s;
 }
 
@@ -575,26 +586,16 @@ onBeforeUnmount(() => {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  background: radial-gradient(
-    circle,
-    rgba(var(--color-secondary-rgb), 0.12) 0%,
-    transparent 60%
-  );
+  background: radial-gradient(circle, rgba(var(--color-secondary-rgb), 0.12) 0%, transparent 60%);
   animation-delay: 2s;
 }
 
 .hero-grid {
   position: absolute;
   inset: 0;
-  background-image: linear-gradient(
-    rgba(var(--color-primary-rgb), 0.03) 1px,
-    transparent 1px
-  ),
-  linear-gradient(
-    90deg,
-    rgba(var(--color-primary-rgb), 0.03) 1px,
-    transparent 1px
-  );
+  background-image:
+    linear-gradient(rgba(var(--color-primary-rgb), 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(var(--color-primary-rgb), 0.03) 1px, transparent 1px);
   background-size: 60px 60px;
   mask-image: radial-gradient(ellipse 80% 50% at 50% 0%, black 40%, transparent 100%);
   -webkit-mask-image: radial-gradient(ellipse 80% 50% at 50% 0%, black 40%, transparent 100%);
@@ -666,8 +667,15 @@ onBeforeUnmount(() => {
 }
 
 @keyframes pulse-dot {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.5; transform: scale(0.8); }
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(0.8);
+  }
 }
 
 .hero-badge svg {
@@ -679,8 +687,13 @@ onBeforeUnmount(() => {
 }
 
 @keyframes sparkle {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.6; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
 }
 
 .hero-title {
@@ -716,7 +729,7 @@ onBeforeUnmount(() => {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
   transform: translateX(-100%);
   transition: transform 0.6s ease;
 }
@@ -736,7 +749,8 @@ onBeforeUnmount(() => {
 }
 
 @keyframes bounce-down {
-  0%, 100% {
+  0%,
+  100% {
     transform: translate3d(0, 0, 0);
     animation-timing-function: ease-in-out;
   }
@@ -838,8 +852,15 @@ onBeforeUnmount(() => {
 }
 
 @keyframes scroll-wheel {
-  0%, 100% { opacity: 1; transform: translateX(-50%) translateY(0); }
-  50% { opacity: 0.3; transform: translateX(-50%) translateY(10px); }
+  0%,
+  100% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+  50% {
+    opacity: 0.3;
+    transform: translateX(-50%) translateY(10px);
+  }
 }
 
 /* ========== Bento Grid - 增强版 ========== */
@@ -940,17 +961,29 @@ onBeforeUnmount(() => {
 }
 
 .bento-icon--search {
-  background: linear-gradient(135deg, rgba(var(--color-primary-rgb), 0.15), rgba(var(--color-primary-rgb), 0.05));
+  background: linear-gradient(
+    135deg,
+    rgba(var(--color-primary-rgb), 0.15),
+    rgba(var(--color-primary-rgb), 0.05)
+  );
   color: var(--color-primary);
 }
 
 .bento-icon--community {
-  background: linear-gradient(135deg, rgba(var(--color-accent-rgb), 0.15), rgba(var(--color-accent-rgb), 0.05));
+  background: linear-gradient(
+    135deg,
+    rgba(var(--color-accent-rgb), 0.15),
+    rgba(var(--color-accent-rgb), 0.05)
+  );
   color: var(--color-accent);
 }
 
 .bento-icon--authors {
-  background: linear-gradient(135deg, rgba(var(--color-secondary-rgb), 0.15), rgba(var(--color-secondary-rgb), 0.05));
+  background: linear-gradient(
+    135deg,
+    rgba(var(--color-secondary-rgb), 0.15),
+    rgba(var(--color-secondary-rgb), 0.05)
+  );
   color: var(--color-secondary);
 }
 
@@ -1220,7 +1253,8 @@ onBeforeUnmount(() => {
 
   .hero-content {
     justify-items: center;
-    padding: var(--spacing-12) var(--spacing-5) calc(env(safe-area-inset-bottom, 0) + var(--spacing-10));
+    padding: var(--spacing-12) var(--spacing-5)
+      calc(env(safe-area-inset-bottom, 0) + var(--spacing-10));
   }
 
   .hero-scroll-hint {

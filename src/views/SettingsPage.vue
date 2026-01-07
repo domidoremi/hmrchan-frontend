@@ -9,12 +9,10 @@
 
       <div class="settings-card glass-card cache-section">
         <h2 class="section-title">{{ $t('settings.cache.title', '缓存管理') }}</h2>
-        <p class="section-desc">{{ $t('settings.cache.description', '清理本地缓存数据以释放存储空间或解决数据问题') }}</p>
-        <Button
-          variant="secondary"
-          :loading="isClearingCache"
-          @click="handleClearCache"
-        >
+        <p class="section-desc">
+          {{ $t('settings.cache.description', '清理本地缓存数据以释放存储空间或解决数据问题') }}
+        </p>
+        <Button variant="secondary" :loading="isClearingCache" @click="handleClearCache">
           <Trash2 class="icon" />
           {{ $t('settings.cache.clear', '清理缓存') }}
         </Button>

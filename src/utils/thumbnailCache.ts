@@ -47,8 +47,9 @@ class ThumbnailCache {
 
     // 如果缓存已满，删除最旧的条目
     if (this.cache.size >= this.maxSize) {
-      const entries = Array.from(this.cache.entries())
-        .sort((a, b) => a[1].timestamp - b[1].timestamp)
+      const entries = Array.from(this.cache.entries()).sort(
+        (a, b) => a[1].timestamp - b[1].timestamp
+      )
       const oldestEntry = entries[0]
       if (oldestEntry) {
         this.cache.delete(oldestEntry[0])
@@ -83,10 +84,7 @@ class ThumbnailCache {
   /**
    * 获取优化的缩略图URL
    */
-  getOptimizedUrl(
-    baseUrl: string,
-    size: 'small' | 'medium' | 'large' = 'medium'
-  ): string {
+  getOptimizedUrl(baseUrl: string, size: 'small' | 'medium' | 'large' = 'medium'): string {
     // 如果URL已经包含尺寸参数，直接返回
     if (baseUrl.includes('size=')) return baseUrl
 
@@ -103,9 +101,12 @@ export const thumbnailCache = new ThumbnailCache()
 let cleanupInterval: ReturnType<typeof setInterval> | null = null
 
 if (typeof window !== 'undefined') {
-  cleanupInterval = setInterval(() => {
-    thumbnailCache.cleanup()
-  }, 5 * 60 * 1000)
+  cleanupInterval = setInterval(
+    () => {
+      thumbnailCache.cleanup()
+    },
+    5 * 60 * 1000
+  )
 }
 
 /**

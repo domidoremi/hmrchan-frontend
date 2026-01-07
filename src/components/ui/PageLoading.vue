@@ -97,11 +97,7 @@ withDefaults(defineProps<Props>(), {
 .loading-pulse {
   position: absolute;
   inset: 0;
-  background: radial-gradient(
-    circle,
-    rgba(var(--color-primary-rgb), 0.15) 0%,
-    transparent 70%
-  );
+  background: radial-gradient(circle, rgba(var(--color-primary-rgb), 0.15) 0%, transparent 70%);
   border-radius: var(--radius-full);
   animation: loadingPulse 2s var(--ease-in-out) infinite;
 }
@@ -129,7 +125,8 @@ withDefaults(defineProps<Props>(), {
 }
 
 @keyframes loadingPulse {
-  0%, 100% {
+  0%,
+  100% {
     transform: scale(1);
     opacity: 0.6;
   }
@@ -189,7 +186,9 @@ withDefaults(defineProps<Props>(), {
 }
 
 @keyframes loadingDots {
-  0%, 80%, 100% {
+  0%,
+  80%,
+  100% {
     transform: scale(0.6);
     opacity: 0.4;
   }

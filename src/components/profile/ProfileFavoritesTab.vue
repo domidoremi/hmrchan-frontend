@@ -43,8 +43,7 @@
             <img
               v-if="fav.post?.thumbnail_url"
               :src="
-                normalizeToThumbnailUrl(fav.post.thumbnail_url, 'medium') ||
-                fav.post.thumbnail_url
+                normalizeToThumbnailUrl(fav.post.thumbnail_url, 'medium') || fav.post.thumbnail_url
               "
               :srcset="getThumbnailSrcset(fav.post.thumbnail_url) || undefined"
               :sizes="thumbnailSizes"
@@ -185,7 +184,12 @@ async function fetchFavorites(reset = true): Promise<boolean> {
       res.items.map(async (fav): Promise<FavoriteResponse> => {
         if (!fav.post || !fav.post.title) {
           try {
-            const postData = await apiClient.get<{ id: string; title: string; thumbnail_url?: string | null; author_name?: string }>(`/posts/${fav.post_id}`)
+            const postData = await apiClient.get<{
+              id: string
+              title: string
+              thumbnail_url?: string | null
+              author_name?: string
+            }>(`/posts/${fav.post_id}`)
             return {
               ...fav,
               post: {

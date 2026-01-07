@@ -205,7 +205,10 @@ function ensureLinkRel(rel: string): HTMLLinkElement {
 router.afterEach((to) => {
   const titleKey = to.meta['title']
   const translatedTitle = typeof titleKey === 'string' ? String(i18n.global.t(titleKey)) : ''
-  const nextTitle = translatedTitle && translatedTitle !== SITE_NAME ? `${translatedTitle} - ${SITE_NAME}` : SITE_NAME
+  const nextTitle =
+    translatedTitle && translatedTitle !== SITE_NAME
+      ? `${translatedTitle} - ${SITE_NAME}`
+      : SITE_NAME
 
   document.title = nextTitle
 
@@ -218,10 +221,13 @@ router.afterEach((to) => {
   ensureMetaName('twitter:title').setAttribute('content', nextTitle)
 
   if (defaultDescription === undefined) {
-    defaultDescription = (document.querySelector('meta[name="description"]') as HTMLMetaElement | null)?.content
+    defaultDescription = (
+      document.querySelector('meta[name="description"]') as HTMLMetaElement | null
+    )?.content
   }
 
-  const description = typeof to.meta['description'] === 'string' ? to.meta['description'] : defaultDescription
+  const description =
+    typeof to.meta['description'] === 'string' ? to.meta['description'] : defaultDescription
   if (description) {
     ensureMetaName('description').setAttribute('content', description)
     ensureMetaProperty('og:description').setAttribute('content', description)

@@ -41,10 +41,7 @@ let refreshSubscribers: Array<{
   reject: (error: Error) => void
 }> = []
 
-function subscribeTokenRefresh(
-  resolve: (token: string) => void,
-  reject: (error: Error) => void
-) {
+function subscribeTokenRefresh(resolve: (token: string) => void, reject: (error: Error) => void) {
   refreshSubscribers.push({ resolve, reject })
 }
 
@@ -310,33 +307,30 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
       } else {
         // 等待 token 刷新完成后重试
         return new Promise<T>((resolve, reject) => {
-          subscribeTokenRefresh(
-            async (token) => {
-              try {
-                ;(headers as Record<string, string>)['Authorization'] = `Bearer ${token}`
-                const retryResponse = await fetch(url, {
-                  ...fetchConfig,
-                  body: body ?? null,
-                  headers,
-                  credentials: 'include',
-                })
+          subscribeTokenRefresh(async (token) => {
+            try {
+              ;(headers as Record<string, string>)['Authorization'] = `Bearer ${token}`
+              const retryResponse = await fetch(url, {
+                ...fetchConfig,
+                body: body ?? null,
+                headers,
+                credentials: 'include',
+              })
 
-                if (!retryResponse.ok) {
-                  await handleErrorResponse(retryResponse, skipErrorToast)
-                }
-
-                if (retryResponse.status === 204) {
-                  resolve(undefined as T)
-                  return
-                }
-
-                resolve(retryResponse.json())
-              } catch (error) {
-                reject(error)
+              if (!retryResponse.ok) {
+                await handleErrorResponse(retryResponse, skipErrorToast)
               }
-            },
-            reject
-          )
+
+              if (retryResponse.status === 204) {
+                resolve(undefined as T)
+                return
+              }
+
+              resolve(retryResponse.json())
+            } catch (error) {
+              reject(error)
+            }
+          }, reject)
         })
       }
     }
