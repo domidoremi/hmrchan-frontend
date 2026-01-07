@@ -7,6 +7,7 @@
  * - Platform icon scale
  * - Respects prefers-reduced-motion
  * - Lazy loads GSAP only when needed
+ * - Disabled on mobile (no hover support)
  */
 
 import { onMounted, onUnmounted, type Ref } from 'vue'
@@ -19,6 +20,19 @@ const loadGsap = async () => {
     gsap = module.default
   }
   return gsap
+}
+
+// 检测是否为触摸设备（移动端）
+const isTouchDevice = (): boolean => {
+  if (typeof window === 'undefined') return false
+  return 'ontouchstart' in window || navigator.maxTouchPoints > 0
+}
+
+// 检测是否支持 hover
+const supportsHover = (): boolean => {
+  if (typeof window === 'undefined') return false
+  if (typeof window.matchMedia !== 'function') return true
+  return window.matchMedia('(hover: hover)').matches
 }
 
 export interface CardAnimationOptions {
@@ -42,9 +56,18 @@ export function useCardAnimation(
     return window.matchMedia('(prefers-reduced-motion: reduce)').matches
   }
 
+  // 检查是否应该启用动画
+  const shouldEnableAnimations = (): boolean => {
+    // 移动端/触摸设备不需要 hover 动画
+    if (isTouchDevice() || !supportsHover()) return false
+    // 用户偏好减少动画
+    if (prefersReducedMotion()) return false
+    return true
+  }
+
   const setupAnimations = async () => {
     const card = cardRef.value
-    if (!card || prefersReducedMotion()) return
+    if (!card || !shouldEnableAnimations()) return
 
     // 懒加载 GSAP
     const gsapLib = await loadGsap()
@@ -121,6 +144,9 @@ export function useCardAnimation(
   }
 
   onMounted(async () => {
+    // 移动端跳过 GSAP 加载
+    if (!shouldEnableAnimations()) return
+
     // GSAP context needs a DOM element, not a Vue ref
     if (cardRef.value) {
       const gsapLib = await loadGsap()

@@ -100,8 +100,20 @@ class ThumbnailCache {
 export const thumbnailCache = new ThumbnailCache()
 
 // 定期清理过期缓存（每5分钟）
+let cleanupInterval: ReturnType<typeof setInterval> | null = null
+
 if (typeof window !== 'undefined') {
-  setInterval(() => {
+  cleanupInterval = setInterval(() => {
     thumbnailCache.cleanup()
   }, 5 * 60 * 1000)
+}
+
+/**
+ * 停止定期清理（用于测试或页面卸载）
+ */
+export function stopThumbnailCacheCleanup(): void {
+  if (cleanupInterval) {
+    clearInterval(cleanupInterval)
+    cleanupInterval = null
+  }
 }

@@ -112,9 +112,8 @@ import {
   Heart,
   Music2,
   Play,
-  Twitter,
   User,
-  Youtube,
+  Video,
 } from 'lucide-vue-next'
 import type { PostListItem } from '@/api'
 import { prefetchPostDetail } from '@/utils/prefetch'
@@ -164,6 +163,7 @@ const props = withDefaults(defineProps<PostCardProps>(), {
 
 const emit = defineEmits<{
   click: [postId: string, thumbnailSrc: string | null]
+  'height-change': []
 }>()
 
 const cardRef = ref<HTMLElement | null>(null)
@@ -179,10 +179,10 @@ let hoverTimeout: ReturnType<typeof setTimeout> | null = null
 // GSAP animation
 useCardAnimation(cardRef)
 
-// Platform icon mapping
+// Platform icon mapping - 使用非废弃图标
 const platformIconMap: Record<string, Component> = {
-  youtube: Youtube,
-  twitter: Twitter,
+  youtube: Video,
+  twitter: Globe,
   tiktok: Music2,
   bilibili: Globe,
   pixiv: Globe,
@@ -276,6 +276,7 @@ const imageLoadingStrategy = computed(() => (props.priority ? 'eager' : 'lazy'))
 const imageFetchPriority = computed(() => (props.priority ? 'high' : 'low'))
 
 function preloadImageDimensions() {
+  // 如果后端提供了尺寸数据，使用它
   if (props.post.thumbnail_width && props.post.thumbnail_height) {
     imageWidth.value = props.post.thumbnail_width
     imageHeight.value = props.post.thumbnail_height
@@ -285,6 +286,7 @@ function preloadImageDimensions() {
     return
   }
 
+  // 检查缓存
   const cachedRatio = postAspectRatioCache.get(props.post.id)
   if (cachedRatio) {
     const ratio = parseFloat(cachedRatio)
@@ -296,25 +298,14 @@ function preloadImageDimensions() {
     return
   }
 
-  if (!thumbnailSrc.value) return
-
-  const img = new Image()
-
-  img.onload = () => {
-    if (img.naturalWidth && img.naturalHeight) {
-      const ratio = (img.naturalWidth / img.naturalHeight).toFixed(4)
-      imageWidth.value = img.naturalWidth
-      imageHeight.value = img.naturalHeight
-      preloadedAspectRatio.value = ratio
-      postAspectRatioCache.set(props.post.id, ratio)
-    }
+  // 没有尺寸数据时，使用平台默认比例，不再预加载图片获取尺寸
+  // 这样可以避免图片加载后 aspect-ratio 变化导致的 CLS
+  const platform = props.post.platform?.toLowerCase()
+  if (platform && PLATFORM_ASPECT_RATIOS[platform]) {
+    preloadedAspectRatio.value = PLATFORM_ASPECT_RATIOS[platform]
+  } else {
+    preloadedAspectRatio.value = DEFAULT_ASPECT_RATIO
   }
-
-  img.onerror = () => {
-    shouldRenderImage.value = true
-  }
-
-  img.src = thumbnailSrc.value
 }
 
 watch(
@@ -350,9 +341,12 @@ function onImageLoad(event: Event) {
   const img = event.target as HTMLImageElement | null
   if (img?.naturalWidth && img?.naturalHeight) {
     const ratio = (img.naturalWidth / img.naturalHeight).toFixed(4)
+    // 只缓存比例，不更新当前显示的 aspect-ratio，避免 CLS
     postAspectRatioCache.set(props.post.id, ratio)
   }
   isImageLoaded.value = true
+  // 通知父组件高度可能已变化
+  emit('height-change')
 }
 
 function onImageError() {
@@ -505,9 +499,10 @@ onUnmounted(() => {
 
 /* ========== Image ========== */
 .post-image {
-  position: relative;
+  position: absolute;
+  inset: 0;
   width: 100%;
-  height: auto;
+  height: 100%;
   display: block;
   object-fit: cover;
   opacity: 0;
@@ -528,8 +523,10 @@ onUnmounted(() => {
 }
 
 .post-image-placeholder {
+  position: absolute;
+  inset: 0;
   width: 100%;
-  aspect-ratio: 16 / 9;
+  height: 100%;
 }
 
 /* ========== Image Overlay ========== */

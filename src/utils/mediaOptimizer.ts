@@ -70,16 +70,35 @@ export function getMediaThumbnailUrl(mediaId: string, size: MediaThumbnailSize =
 }
 
 /**
- * 根据设备像素比 (DPR) 获取推荐的缩略图尺寸
- * - 1x 屏幕: small
- * - 2x 屏幕: medium
- * - 3x 屏幕: large
+ * 检测是否为移动设备
+ */
+function isMobileDevice(): boolean {
+  if (typeof window === 'undefined') return false
+  return window.innerWidth < 768
+}
+
+/**
+ * 根据设备像素比 (DPR) 和屏幕尺寸获取推荐的缩略图尺寸
+ * 移动端优化：即使高 DPR 也使用较小尺寸，减少流量
+ * - 移动端: 始终使用 small（200x200 足够）
+ * - 桌面端 1x: small
+ * - 桌面端 2x: medium
+ * - 桌面端 3x: large
  */
 export function getResponsiveThumbnailSize(
   baseSize: 'small' | 'medium' = 'small'
 ): MediaThumbnailSize {
   const dpr = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1
+  const isMobile = isMobileDevice()
 
+  // 移动端优化：使用更小的图片减少流量和加载时间
+  if (isMobile) {
+    if (baseSize === 'small') return 'small'
+    // medium 基础在移动端最多用 medium
+    return dpr >= 2 ? 'medium' : 'small'
+  }
+
+  // 桌面端：根据 DPR 选择
   if (baseSize === 'small') {
     if (dpr >= 3) return 'large'
     if (dpr >= 2) return 'medium'
