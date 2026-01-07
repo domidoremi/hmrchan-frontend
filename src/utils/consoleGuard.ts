@@ -1,0 +1,182 @@
+/**
+ * 控制台保护模块
+ *
+ * 生产环境下禁用控制台，防止：
+ * 1. 用户被诱导在控制台执行恶意代码（Self-XSS 攻击）
+ * 2. 敏感信息通过控制台泄露
+ * 3. 用户意外操作导致的问题
+ *
+ * 注意：这不是绝对的安全措施，有经验的用户可以绕过
+ * 主要目的是保护普通用户免受社会工程攻击
+ */
+
+const WARNING_MESSAGE = `
+%c⚠️ 警告 / Warning / 警告
+
+%c如果有人告诉你在这里粘贴代码，那是骗子！
+这可能会让你的账号被盗或数据泄露。
+
+If someone told you to paste something here, they are trying to scam you!
+This could compromise your account or leak your data.
+
+誰かにここにコードを貼り付けるように言われた場合、それは詐欺です！
+アカウントが乗っ取られたり、データが漏洩する可能性があります。
+`
+
+const TITLE_STYLE = 'color: #ff4444; font-size: 24px; font-weight: bold;'
+const TEXT_STYLE = 'color: #333; font-size: 14px; line-height: 1.6;'
+
+/**
+ * 显示控制台警告信息
+ */
+function showWarning(): void {
+  console.clear()
+  console.log(WARNING_MESSAGE, TITLE_STYLE, TEXT_STYLE)
+}
+
+/**
+ * 禁用控制台方法
+ */
+function disableConsoleMethods(): void {
+  const noop = () => {}
+
+  // 保留 console.log 用于显示警告，但重写其他方法
+  const methodsToDisable = [
+    'debug',
+    'info',
+    'warn',
+    'error',
+    'table',
+    'trace',
+    'dir',
+    'dirxml',
+    'group',
+    'groupCollapsed',
+    'groupEnd',
+    'time',
+    'timeEnd',
+    'timeLog',
+    'count',
+    'countReset',
+    'assert',
+  ] as const
+
+  methodsToDisable.forEach((method) => {
+    if (typeof console[method] === 'function') {
+      ;(console as unknown as Record<string, unknown>)[method] = noop
+    }
+  })
+}
+
+/**
+ * 检测开发者工具是否打开（基于窗口尺寸变化）
+ * 注意：这不是 100% 可靠的检测方法
+ */
+function detectDevTools(): void {
+  const threshold = 160
+
+  const checkDevTools = () => {
+    const widthThreshold = window.outerWidth - window.innerWidth > threshold
+    const heightThreshold = window.outerHeight - window.innerHeight > threshold
+
+    if (widthThreshold || heightThreshold) {
+      showWarning()
+    }
+  }
+
+  // 初始检查
+  checkDevTools()
+
+  // 监听窗口变化
+  window.addEventListener('resize', checkDevTools)
+}
+
+/**
+ * 禁用右键菜单（可选，根据需求启用）
+ */
+export function disableContextMenu(): void {
+  document.addEventListener(
+    'contextmenu',
+    (e) => {
+      // 允许在输入框中使用右键
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return
+      }
+      e.preventDefault()
+    },
+    { capture: true }
+  )
+}
+
+/**
+ * 禁用常用开发者工具快捷键
+ */
+function disableDevToolsShortcuts(): void {
+  document.addEventListener(
+    'keydown',
+    (e) => {
+      // F12
+      if (e.key === 'F12') {
+        e.preventDefault()
+        showWarning()
+        return
+      }
+
+      // Ctrl+Shift+I / Cmd+Option+I (开发者工具)
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'I') {
+        e.preventDefault()
+        showWarning()
+        return
+      }
+
+      // Ctrl+Shift+J / Cmd+Option+J (控制台)
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'J') {
+        e.preventDefault()
+        showWarning()
+        return
+      }
+
+      // Ctrl+Shift+C / Cmd+Option+C (元素检查)
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'C') {
+        e.preventDefault()
+        showWarning()
+        return
+      }
+
+      // Ctrl+U / Cmd+U (查看源代码)
+      if ((e.ctrlKey || e.metaKey) && e.key === 'u') {
+        e.preventDefault()
+        return
+      }
+    },
+    { capture: true }
+  )
+}
+
+/**
+ * 初始化控制台保护
+ * 仅在生产环境启用
+ */
+export function initConsoleGuard(): void {
+  // 仅在生产环境启用
+  if (import.meta.env.DEV) {
+    return
+  }
+
+  // 显示警告信息
+  showWarning()
+
+  // 禁用控制台方法
+  disableConsoleMethods()
+
+  // 检测开发者工具
+  detectDevTools()
+
+  // 禁用快捷键
+  disableDevToolsShortcuts()
+
+  // 可选：禁用右键菜单（取消注释以启用）
+  // disableContextMenu()
+}
+
+export default initConsoleGuard
