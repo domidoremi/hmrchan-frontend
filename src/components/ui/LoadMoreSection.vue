@@ -3,10 +3,7 @@
     <!-- Progress indicator -->
     <div class="progress-indicator">
       <div class="progress-bar-wrapper">
-        <div
-          class="progress-bar-fill"
-          :style="{ width: `${progressPercent}%` }"
-        />
+        <div class="progress-bar-fill" :style="{ width: `${progressPercent}%` }" />
       </div>
       <span class="progress-text">
         {{ t('common.showing', { count, total }) }}

@@ -136,7 +136,9 @@ describe('apiClient', () => {
 
       await apiClient.get('/test', { skipAuth: true })
 
-      const callArgs = mockFetch.mock.calls[0]?.[1] as { headers: Record<string, string> } | undefined
+      const callArgs = mockFetch.mock.calls[0]?.[1] as
+        | { headers: Record<string, string> }
+        | undefined
       expect(callArgs?.headers['Authorization']).toBeUndefined()
     })
   })
@@ -179,7 +181,9 @@ describe('apiClient', () => {
 
       await apiClient.post('/upload', formData)
 
-      const callArgs = mockFetch.mock.calls[0]?.[1] as { headers: Record<string, string> } | undefined
+      const callArgs = mockFetch.mock.calls[0]?.[1] as
+        | { headers: Record<string, string> }
+        | undefined
       // FormData 不应设置 Content-Type，让浏览器自动设置
       expect(callArgs?.headers['Content-Type']).toBeUndefined()
     })

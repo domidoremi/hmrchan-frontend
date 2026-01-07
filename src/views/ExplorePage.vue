@@ -8,7 +8,11 @@
             <span class="page-title-badge">{{ total }} {{ $t('search.tab.posts') }}</span>
           </div>
           <div class="page-actions">
-            <button class="search-trigger glass-btn" @click="goToSearch" :aria-label="$t('search.title')">
+            <button
+              class="search-trigger glass-btn"
+              @click="goToSearch"
+              :aria-label="$t('search.title')"
+            >
               <Search :size="18" />
               <span class="search-trigger-text">{{ $t('search.title') }}</span>
               <kbd class="search-kbd">/</kbd>
@@ -72,7 +76,11 @@
             <div
               v-for="(column, colIndex) in columns"
               :key="colIndex"
-              :ref="(el) => { if (el) columnRefs[colIndex] = el as HTMLElement }"
+              :ref="
+                (el) => {
+                  if (el) columnRefs[colIndex] = el as HTMLElement
+                }
+              "
               class="masonry-column"
             >
               <PostCard
@@ -144,7 +152,14 @@ const masonryContainerRef = ref<HTMLElement | null>(null)
 const columnRefs = ref<HTMLElement[]>([])
 const columnCount = ref(4)
 
-const { columns, distributePosts, distributePostsRoundRobin, redistribute, getColumnWidth, initColumns } = useMasonryColumns({
+const {
+  columns,
+  distributePosts,
+  distributePostsRoundRobin,
+  redistribute,
+  getColumnWidth,
+  initColumns,
+} = useMasonryColumns({
   initialColumnCount: columnCount.value,
 })
 

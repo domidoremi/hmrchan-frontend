@@ -11,7 +11,11 @@
     </div>
 
     <div v-if="shouldShowAction" class="state-actions">
-      <Button :variant="variant === 'error' ? 'primary' : 'secondary'" :loading="actionLoading" @click="emit('action')">
+      <Button
+        :variant="variant === 'error' ? 'primary' : 'secondary'"
+        :loading="actionLoading"
+        @click="emit('action')"
+      >
         <RefreshCw v-if="variant === 'error'" :size="16" />
         {{ resolvedActionLabel }}
       </Button>
@@ -130,7 +134,8 @@ const actionLoading = computed(() => props.actionLoading)
 }
 
 @keyframes stateIconFloat {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(0);
   }
   50% {

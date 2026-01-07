@@ -76,7 +76,15 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { Bell, Heart, MessageCircle, UserPlus, AlertCircle, Check, CheckCheck } from 'lucide-vue-next'
+import {
+  Bell,
+  Heart,
+  MessageCircle,
+  UserPlus,
+  AlertCircle,
+  Check,
+  CheckCheck,
+} from 'lucide-vue-next'
 import { useToastStore } from '@/stores'
 import { apiClient, ApiError } from '@/api'
 import Button from '@/components/ui/Button.vue'
@@ -107,7 +115,7 @@ const total = ref(0)
 const pageSize = 20
 
 const hasMore = computed(() => notifications.value.length < total.value)
-const unreadCount = computed(() => notifications.value.filter(n => !n.is_read).length)
+const unreadCount = computed(() => notifications.value.filter((n) => !n.is_read).length)
 
 function getNotificationIcon(type: NotificationType) {
   const icons = {
@@ -167,7 +175,7 @@ async function loadMore() {
 async function markAsRead(notificationId: string) {
   try {
     await apiClient.put(`/notifications/${notificationId}/read`)
-    const notif = notifications.value.find(n => n.id === notificationId)
+    const notif = notifications.value.find((n) => n.id === notificationId)
     if (notif) {
       notif.is_read = true
     }
@@ -181,7 +189,7 @@ async function markAsRead(notificationId: string) {
 async function markAllAsRead() {
   try {
     await apiClient.put('/notifications/read-all')
-    notifications.value.forEach(n => {
+    notifications.value.forEach((n) => {
       n.is_read = true
     })
     toastStore.success(t('profile.allMarkedRead'))
