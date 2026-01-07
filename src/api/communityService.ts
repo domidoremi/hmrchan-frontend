@@ -5,7 +5,7 @@
  */
 
 import { apiClient, type PaginatedApiResponse } from './client'
-import type { Comment } from './commentService'
+import type { Comment } from '@/types'
 
 // ========== 类型定义 ==========
 
