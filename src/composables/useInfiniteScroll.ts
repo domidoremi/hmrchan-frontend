@@ -1,3 +1,16 @@
+/**
+ * useInfiniteScroll - 无限滚动 Composable
+ *
+ * 使用 IntersectionObserver 实现高性能的无限滚动加载
+ * 支持 KeepAlive 组件的激活/停用生命周期
+ *
+ * 特性：
+ * - 基于 IntersectionObserver，比滚动事件监听更高效
+ * - 自动处理组件挂载/卸载和 KeepAlive 激活/停用
+ * - 支持条件启用/禁用
+ * - 防止重复触发
+ */
+
 import { ref, onMounted, onUnmounted, onActivated, onDeactivated, watch, type Ref } from 'vue'
 
 export interface UseInfiniteScrollOptions {
