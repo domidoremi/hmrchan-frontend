@@ -14,6 +14,7 @@ export interface Toast {
 
 export const useToastStore = defineStore('toast', () => {
   const toasts = ref<Toast[]>([])
+  const timeoutIds = new Map<string, ReturnType<typeof setTimeout>>()
 
   function addToast(type: Toast['type'], message: string, duration = 4000) {
     const id = `toast-${Date.now()}-${Math.random().toString(36).slice(2)}`
@@ -21,13 +22,23 @@ export const useToastStore = defineStore('toast', () => {
     toasts.value.push(toast)
 
     if (duration > 0) {
-      setTimeout(() => removeToast(id), duration)
+      const timeoutId = setTimeout(() => {
+        removeToast(id)
+      }, duration)
+      timeoutIds.set(id, timeoutId)
     }
 
     return id
   }
 
   function removeToast(id: string) {
+    // 清理定时器
+    const timeoutId = timeoutIds.get(id)
+    if (timeoutId) {
+      clearTimeout(timeoutId)
+      timeoutIds.delete(id)
+    }
+
     const index = toasts.value.findIndex((t) => t.id === id)
     if (index !== -1) {
       toasts.value.splice(index, 1)
@@ -51,6 +62,9 @@ export const useToastStore = defineStore('toast', () => {
   }
 
   function clear() {
+    // 清理所有定时器
+    timeoutIds.forEach((timeoutId) => clearTimeout(timeoutId))
+    timeoutIds.clear()
     toasts.value = []
   }
 
