@@ -63,8 +63,27 @@
         </div>
 
         <template v-else>
-          <div class="posts-masonry">
-            <PostCard v-for="post in visiblePosts" :key="post.id" :post="post" @click="goToPost" />
+          <!-- JS Masonry 布局 - 避免 CSS column-count 的 CLS 问题 -->
+          <div
+            ref="masonryContainerRef"
+            class="posts-masonry-js"
+            :style="{ '--masonry-columns': columnCount }"
+          >
+            <div
+              v-for="(column, colIndex) in columns"
+              :key="colIndex"
+              :ref="(el) => { if (el) columnRefs[colIndex] = el as HTMLElement }"
+              class="masonry-column"
+            >
+              <PostCard
+                v-for="post in column"
+                :key="post.id"
+                :post="post"
+                :priority="colIndex === 0 && column.indexOf(post) < 2"
+                @click="goToPost"
+                @height-change="handleCardHeightChange"
+              />
+            </div>
           </div>
 
           <StateIndicator v-if="posts.length === 0" variant="empty" />
@@ -88,14 +107,16 @@
 <script setup lang="ts">
 defineOptions({ name: 'ExplorePage' })
 
-import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { Search, Globe, Youtube, Music2, Twitter } from 'lucide-vue-next'
+import { Search, Globe, Music2, Video } from 'lucide-vue-next'
 import { postService, type PostListItem, ApiError } from '@/api'
 import { postCache } from '@/utils/cache'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import { useProgressiveRender } from '@/composables/useProgressiveRender'
+import { useMasonryColumns } from '@/composables/useMasonryColumns'
+import { throttleRAF } from '@/utils/performance'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import PostCard from '@/components/business/PostCard.vue'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
@@ -113,7 +134,19 @@ const isLoadingMore = ref(false)
 const error = ref<string | null>(null)
 const page = ref(1)
 const total = ref(0)
-const pageSize = 24
+
+// 移动端优化：减少首屏加载数量
+const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
+const pageSize = isMobile ? 8 : 24 // 移动端首屏 8 张，桌面端 24 张
+
+// JS Masonry 布局 - 避免 CSS column-count 的 CLS 问题
+const masonryContainerRef = ref<HTMLElement | null>(null)
+const columnRefs = ref<HTMLElement[]>([])
+const columnCount = ref(4)
+
+const { columns, distributePosts, distributePostsRoundRobin, redistribute, getColumnWidth, initColumns } = useMasonryColumns({
+  initialColumnCount: columnCount.value,
+})
 
 const hasMore = computed(() => posts.value.length < total.value)
 
@@ -123,11 +156,13 @@ const setSentinelRef = (el: Element | null) => {
   sentinelRef.value = el as HTMLElement | null
 }
 
+// 移动端优化：减少初始渲染数量（首屏渲染 6 张，平衡性能和 CLS）
+const initialRenderCount = isMobile ? 6 : 24
 const {
   visibleItems: visiblePosts,
   hasMoreToRender,
   revealNextBatch,
-} = useProgressiveRender(posts, { initialCount: 24, batchSize: 24 })
+} = useProgressiveRender(posts, { initialCount: initialRenderCount, batchSize: 12 })
 
 const hasMoreForUi = computed(() => hasMore.value || hasMoreToRender.value)
 
@@ -152,11 +187,12 @@ const sortOptions = [
   { value: 'trending' as const },
 ]
 
+// 使用非废弃图标：Globe 替代 Twitter，Video 替代 Youtube
 const platformOptions = [
   { value: 'all' as const, label: t('explore.allPlatforms'), icon: Globe },
-  { value: 'youtube' as const, label: 'YouTube', icon: Youtube },
+  { value: 'youtube' as const, label: 'YouTube', icon: Video },
   { value: 'tiktok' as const, label: 'TikTok', icon: Music2 },
-  { value: 'twitter' as const, label: 'Twitter', icon: Twitter },
+  { value: 'twitter' as const, label: 'X', icon: Globe },
 ]
 
 function goToPost(postId: string, thumbnailSrc: string | null) {
@@ -215,6 +251,9 @@ async function fetchPosts(reset = true) {
     if (cached && !hadData) {
       posts.value = cached.data as PostListItem[]
       total.value = cached.total
+      // 分发到 masonry 列
+      await nextTick()
+      updateMasonryLayout(posts.value, reset)
     }
   }
 
@@ -231,6 +270,10 @@ async function fetchPosts(reset = true) {
     if (reset) {
       await postCache.setList(requestParams, res.items, res.total)
     }
+
+    // 更新 masonry 布局
+    await nextTick()
+    updateMasonryLayout(reset ? posts.value : res.items, reset)
 
     return true
   } catch (err) {
@@ -274,9 +317,79 @@ async function loadMore(): Promise<boolean> {
   return true
 }
 
+// 增加预加载距离，让内容提前加载，避免用户等待
 useInfiniteScroll(sentinelRef, loadMore, {
-  rootMargin: '400px',
+  rootMargin: '800px', // 提前 800px 开始加载下一批
   enabled: () => hasMoreForUi.value && !isLoading.value && !isLoadingMore.value,
+})
+
+// ========== Masonry 布局管理 ==========
+
+/**
+ * 计算响应式列数
+ */
+function calculateColumnCount(): number {
+  if (typeof window === 'undefined') return 4
+  const width = window.innerWidth
+  if (width >= 1920) return 6
+  if (width >= 1600) return 5
+  if (width >= 1200) return 4
+  if (width >= 900) return 3
+  if (width >= 600) return 3
+  if (width >= 400) return 2
+  return 1
+}
+
+/**
+ * 更新 masonry 布局
+ */
+function updateMasonryLayout(items: PostListItem[], reset = false) {
+  const newColumnCount = calculateColumnCount()
+  const containerWidth = masonryContainerRef.value?.clientWidth || 1200
+  const colWidth = getColumnWidth(containerWidth)
+
+  if (reset || newColumnCount !== columnCount.value) {
+    columnCount.value = newColumnCount
+    initColumns()
+    // 移动端使用轮询分发，避免高度估算误差导致的 CLS
+    if (isMobile) {
+      distributePostsRoundRobin(posts.value, 0)
+    } else {
+      redistribute(posts.value, colWidth)
+    }
+  } else {
+    // 追加模式：获取真实 DOM 高度校准
+    const realHeights = columnRefs.value.map((el) => el?.offsetHeight || 0)
+    if (isMobile) {
+      // 移动端追加也用轮询
+      const startIndex = columns.value.reduce((sum, col) => sum + col.length, 0)
+      distributePostsRoundRobin(items, startIndex)
+    } else {
+      distributePosts(items, colWidth, true, realHeights)
+    }
+  }
+}
+
+/**
+ * 处理窗口 resize - 使用 RAF 节流
+ */
+const handleResize = throttleRAF(() => {
+  const newColumnCount = calculateColumnCount()
+  if (newColumnCount !== columnCount.value) {
+    columnCount.value = newColumnCount
+    const containerWidth = masonryContainerRef.value?.clientWidth || 1200
+    const colWidth = getColumnWidth(containerWidth)
+    initColumns()
+    redistribute(posts.value, colWidth)
+  }
+})
+
+/**
+ * 处理卡片高度变化（图片加载完成等）
+ */
+const handleCardHeightChange = throttleRAF(() => {
+  // 高度变化时不需要重新分发，因为 JS masonry 是固定列分配
+  // 只有在需要重新平衡时才调用 redistribute
 })
 
 watch(currentSort, () => {
@@ -288,15 +401,26 @@ watch(currentPlatform, () => {
 })
 
 onMounted(() => {
+  // 初始化列数
+  columnCount.value = calculateColumnCount()
+  initColumns()
+
   if (posts.value.length === 0) {
     fetchPosts()
+  } else {
+    // 已有数据时重新分发到列
+    nextTick(() => {
+      updateMasonryLayout(posts.value, true)
+    })
   }
 
   window.addEventListener('keydown', onGlobalKeydown)
+  window.addEventListener('resize', handleResize)
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', onGlobalKeydown)
+  window.removeEventListener('resize', handleResize)
 })
 </script>
 
@@ -489,60 +613,33 @@ onBeforeUnmount(() => {
   }
 }
 
-.posts-masonry {
-  --masonry-columns: 5;
+/* ========== JS Masonry 布局 - 避免 CLS ========== */
+.posts-masonry-js {
   --masonry-gap: var(--spacing-4);
 
-  column-count: var(--masonry-columns);
-  column-gap: var(--masonry-gap);
+  display: flex;
+  gap: var(--masonry-gap);
+  width: 100%;
 }
 
-.posts-masonry > :deep(*) {
-  break-inside: avoid;
-  margin-bottom: var(--masonry-gap);
+.masonry-column {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--masonry-gap);
+  min-width: 0; /* 防止 flex 子项溢出 */
 }
 
-@media (min-width: 1920px) {
-  .posts-masonry {
-    --masonry-columns: 6;
-  }
-}
-
-@media (min-width: 1600px) and (max-width: 1919px) {
-  .posts-masonry {
-    --masonry-columns: 5;
-  }
-}
-
-@media (min-width: 1200px) and (max-width: 1599px) {
-  .posts-masonry {
-    --masonry-columns: 4;
-  }
-}
-
-@media (min-width: 900px) and (max-width: 1199px) {
-  .posts-masonry {
-    --masonry-columns: 3;
-  }
-}
-
-@media (min-width: 600px) and (max-width: 899px) {
-  .posts-masonry {
-    --masonry-columns: 3;
+/* 响应式间距调整 */
+@media (max-width: 899px) {
+  .posts-masonry-js {
     --masonry-gap: var(--spacing-3);
   }
 }
 
-@media (min-width: 400px) and (max-width: 599px) {
-  .posts-masonry {
-    --masonry-columns: 2;
+@media (max-width: 599px) {
+  .posts-masonry-js {
     --masonry-gap: var(--spacing-2);
-  }
-}
-
-@media (max-width: 399px) {
-  .posts-masonry {
-    --masonry-columns: 1;
   }
 }
 
