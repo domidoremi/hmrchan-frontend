@@ -1,8 +1,9 @@
 /**
  * Service Worker - 三层缓存策略
- * 版本: 3.0.0
+ * 版本: 3.0.1
  * 更新: 启用帖子详情智能缓存，使用 Stale-While-Revalidate 策略
  *       确保完整帖子数据（含 media_files）可离线访问
+ *       优化域名配置，支持多环境部署
  */
 
 // AbortSignal.timeout polyfill for compatibility
@@ -21,6 +22,12 @@ const CACHE_NAMES = {
   media: `hmrchan-media-${CACHE_VERSION}`,
   posts: `hmrchan-posts-${CACHE_VERSION}`, // 专用帖子缓存
 }
+
+// API 域名配置（支持多环境）
+const API_HOSTNAMES = [
+  'api.momichan.xyz', // 生产环境
+  // 如需添加其他环境，在此处扩展
+]
 
 // 静态资源列表（预缓存）
 const STATIC_ASSETS = ['/', '/index.html', '/manifest.json', '/favicon.ico']
@@ -58,7 +65,7 @@ self.addEventListener('install', (event) => {
       })
       .catch((error) => {
         console.error('[SW] Install failed:', error)
-      }),
+      })
   )
 })
 
@@ -81,13 +88,13 @@ self.addEventListener('activate', (event) => {
             .map((name) => {
               // console.log('[SW] Deleting old cache:', name)
               return caches.delete(name)
-            }),
+            })
         )
       })
       .then(() => {
         // console.log('[SW] Activation complete')
         return self.clients.claim() // 立即控制所有页面
-      }),
+      })
   )
 })
 
@@ -169,7 +176,7 @@ self.addEventListener('message', (event) => {
       event.waitUntil(
         getCacheSize().then((size) => {
           event.ports[0].postMessage({ size })
-        }),
+        })
       )
       break
 
@@ -409,8 +416,8 @@ function shouldHandleRequest(url) {
   // 同源请求
   if (url.origin === self.location.origin) return true
 
-  // API 域名
-  if (url.hostname === 'api.momichan.xyz') return true
+  // API 域名（使用配置数组，便于多环境扩展）
+  if (API_HOSTNAMES.includes(url.hostname)) return true
 
   // 允许的外部CDN
   const allowedOrigins = ['pbs.twimg.com', 'i.ytimg.com', 'source.unsplash.com']
@@ -557,7 +564,7 @@ async function clearOldMedia() {
 async function clearAllCaches() {
   const cacheNames = await caches.keys()
   await Promise.all(
-    cacheNames.filter((name) => name.startsWith('hmrchan-')).map((name) => caches.delete(name)),
+    cacheNames.filter((name) => name.startsWith('hmrchan-')).map((name) => caches.delete(name))
   )
   console.log('[SW] All caches cleared')
 }

@@ -17,6 +17,10 @@ import i18n from './i18n'
 
 import './styles/index.css'
 
+// 生产环境控制台保护（防止 Self-XSS 攻击）
+import { initConsoleGuard } from './utils/consoleGuard'
+initConsoleGuard()
+
 const app = createApp(App)
 
 // 全局错误处理
