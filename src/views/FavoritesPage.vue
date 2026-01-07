@@ -289,7 +289,7 @@ async function loadMore(): Promise<boolean> {
 }
 
 useInfiniteScroll(sentinelRef, loadMore, {
-  rootMargin: '400px',
+  rootMargin: '800px', // 提前 800px 开始加载
   enabled: () => hasMoreForUi.value && !isLoading.value && !isLoadingMore.value,
 })
 
