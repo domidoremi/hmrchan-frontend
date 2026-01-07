@@ -105,6 +105,12 @@ const selectedIndex = ref(-1)
 
 const HISTORY_KEY = 'search_history'
 const MAX_HISTORY = 10
+const HISTORY_EXPIRY_DAYS = 30 // 搜索历史过期天数
+
+interface HistoryItem {
+  term: string
+  timestamp: number
+}
 
 const searchHistory = ref<string[]>([])
 
@@ -112,25 +118,86 @@ const showDropdown = computed(
   () => isFocused.value && (query.value || searchHistory.value.length > 0)
 )
 
+/**
+ * 加载搜索历史，自动清理过期条目
+ */
 function loadHistory() {
   try {
     const saved = localStorage.getItem(HISTORY_KEY)
     if (saved) {
-      searchHistory.value = JSON.parse(saved)
+      const parsed = JSON.parse(saved)
+      const now = Date.now()
+      const expiryMs = HISTORY_EXPIRY_DAYS * 24 * 60 * 60 * 1000
+
+      // 兼容旧格式（纯字符串数组）和新格式（带时间戳）
+      if (Array.isArray(parsed)) {
+        if (parsed.length > 0 && typeof parsed[0] === 'string') {
+          // 旧格式：迁移到新格式
+          const migrated: HistoryItem[] = parsed.map((term: string) => ({
+            term,
+            timestamp: now,
+          }))
+          localStorage.setItem(HISTORY_KEY, JSON.stringify(migrated))
+          searchHistory.value = parsed.slice(0, MAX_HISTORY)
+        } else {
+          // 新格式：过滤过期条目
+          const validItems = (parsed as HistoryItem[]).filter(
+            (item) => now - item.timestamp < expiryMs
+          )
+          searchHistory.value = validItems.map((item) => item.term).slice(0, MAX_HISTORY)
+
+          // 如果有过期条目被清理，更新存储
+          if (validItems.length < parsed.length) {
+            localStorage.setItem(HISTORY_KEY, JSON.stringify(validItems))
+          }
+        }
+      }
     }
   } catch {
     searchHistory.value = []
+    localStorage.removeItem(HISTORY_KEY)
   }
 }
 
+/**
+ * 保存搜索历史
+ */
 function saveHistory(term: string) {
   if (!term.trim()) return
 
-  const filtered = searchHistory.value.filter((h) => h !== term)
-  searchHistory.value = [term, ...filtered].slice(0, MAX_HISTORY)
-  localStorage.setItem(HISTORY_KEY, JSON.stringify(searchHistory.value))
+  try {
+    const saved = localStorage.getItem(HISTORY_KEY)
+    let items: HistoryItem[] = []
+
+    if (saved) {
+      const parsed = JSON.parse(saved)
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        // 处理新格式
+        if (typeof parsed[0] === 'object') {
+          items = parsed as HistoryItem[]
+        }
+      }
+    }
+
+    // 移除重复项
+    items = items.filter((item) => item.term !== term)
+
+    // 添加新条目到开头
+    items.unshift({ term, timestamp: Date.now() })
+
+    // 限制数量
+    items = items.slice(0, MAX_HISTORY)
+
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(items))
+    searchHistory.value = items.map((item) => item.term)
+  } catch {
+    // 存储失败时静默处理
+  }
 }
 
+/**
+ * 清除搜索历史
+ */
 function clearHistory() {
   searchHistory.value = []
   localStorage.removeItem(HISTORY_KEY)
