@@ -252,6 +252,7 @@ import { postCache } from '@/utils/cache'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import { useMasonryColumns } from '@/composables/useMasonryColumns'
 import { prefersReducedMotion } from '@/utils/performance'
+import { createResizeObserver } from '@/utils/modernAPIs'
 import { isFilteredAuthor } from '@/config/filters'
 import Button from '@/components/ui/Button.vue'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
@@ -347,19 +348,21 @@ const getContainerWidth = () => {
   return containerRef.value.offsetWidth
 }
 
-// 响应式调整列数
-let resizeTimer: ReturnType<typeof setTimeout> | null = null
-const handleResize = () => {
-  if (resizeTimer) clearTimeout(resizeTimer)
-  resizeTimer = setTimeout(() => {
-    const newCount = getResponsiveColumnCount()
-    if (newCount !== columnCount.value) {
-      columnCount.value = newCount
-      const containerWidth = getContainerWidth()
-      const colWidth = getColumnWidth(containerWidth)
-      redistribute(allPosts.value, colWidth)
-    }
-  }, 300)
+// 响应式调整列数 - 使用 ResizeObserver 监听容器而非 window
+let resizeObserver: ResizeObserver | null = null
+let lastContainerWidth = 0
+
+const handleContainerResize = (width: number) => {
+  // 忽略微小变化，避免频繁重排
+  if (Math.abs(width - lastContainerWidth) < 50) return
+  lastContainerWidth = width
+
+  const newCount = getResponsiveColumnCount()
+  if (newCount !== columnCount.value) {
+    columnCount.value = newCount
+    const colWidth = getColumnWidth(width)
+    redistribute(allPosts.value, colWidth)
+  }
 }
 
 const visiblePostsCount = computed(() => {
@@ -508,13 +511,22 @@ onMounted(() => {
     fetchLatestPosts()
   }
 
-  // 监听窗口大小变化以调整列数
-  window.addEventListener('resize', handleResize)
+  // 使用 ResizeObserver 监听容器大小变化，比 window resize 更精确高效
+  if (containerRef.value) {
+    lastContainerWidth = containerRef.value.offsetWidth
+    resizeObserver = createResizeObserver((entries) => {
+      const entry = entries[0]
+      if (entry) {
+        handleContainerResize(entry.contentRect.width)
+      }
+    })
+    resizeObserver?.observe(containerRef.value)
+  }
 })
 
 onBeforeUnmount(() => {
-  window.removeEventListener('resize', handleResize)
-  if (resizeTimer) clearTimeout(resizeTimer)
+  resizeObserver?.disconnect()
+  resizeObserver = null
 })
 </script>
 
