@@ -3,6 +3,7 @@
     ref="cardRef"
     type="button"
     class="post-card glass-card glass-card--interactive"
+    :aria-label="post.title"
     @click="handleClick"
     @mouseenter="handleMouseEnter"
     @mouseleave="handleMouseLeave"
@@ -121,8 +122,22 @@ import { useCardAnimation } from '@/composables/useCardAnimation'
 
 /**
  * 固定宽高比缓存 - 用于保持布局稳定，避免 CLS
+ * 添加大小限制防止内存泄漏
  */
 const postAspectRatioCache = new Map<string, string>()
+const MAX_ASPECT_RATIO_CACHE_SIZE = 500
+
+/**
+ * 设置宽高比缓存，带大小限制
+ */
+function setAspectRatioCache(id: string, ratio: string): void {
+  // 缓存满时清理最早的 100 条
+  if (postAspectRatioCache.size >= MAX_ASPECT_RATIO_CACHE_SIZE) {
+    const keysToDelete = Array.from(postAspectRatioCache.keys()).slice(0, 100)
+    keysToDelete.forEach((k) => postAspectRatioCache.delete(k))
+  }
+  postAspectRatioCache.set(id, ratio)
+}
 
 /**
  * 根据平台设置默认宽高比
@@ -242,7 +257,7 @@ const wrapperAspectRatio = computed(() => {
 
   if (props.post.thumbnail_width && props.post.thumbnail_height) {
     const ratio = (props.post.thumbnail_width / props.post.thumbnail_height).toFixed(4)
-    postAspectRatioCache.set(props.post.id, ratio)
+    setAspectRatioCache(props.post.id, ratio)
     return ratio
   }
 
@@ -276,7 +291,7 @@ function preloadImageDimensions() {
     imageHeight.value = props.post.thumbnail_height
     const ratio = (props.post.thumbnail_width / props.post.thumbnail_height).toFixed(4)
     preloadedAspectRatio.value = ratio
-    postAspectRatioCache.set(props.post.id, ratio)
+    setAspectRatioCache(props.post.id, ratio)
     return
   }
 
@@ -336,7 +351,7 @@ function onImageLoad(event: Event) {
   if (img?.naturalWidth && img?.naturalHeight) {
     const ratio = (img.naturalWidth / img.naturalHeight).toFixed(4)
     // 只缓存比例，不更新当前显示的 aspect-ratio，避免 CLS
-    postAspectRatioCache.set(props.post.id, ratio)
+    setAspectRatioCache(props.post.id, ratio)
   }
   isImageLoaded.value = true
   // 通知父组件高度可能已变化
