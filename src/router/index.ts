@@ -5,6 +5,16 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 import i18n from '@/i18n'
 
+// 扩展 RouteMeta 类型，提供类型安全的路由元信息访问
+declare module 'vue-router' {
+  interface RouteMeta {
+    title?: string
+    description?: string
+    requiresAuth?: boolean
+    guestOnly?: boolean
+  }
+}
+
 // 缓存 auth store 模块，避免每次路由切换都动态导入
 let authStoreModule: typeof import('@/stores/auth') | null = null
 
@@ -151,7 +161,7 @@ router.beforeEach(async (to, _from, next) => {
   const isAuthenticated = authStore.isAuthenticated
 
   // 需要认证的页面
-  if (to.meta['requiresAuth'] && !isAuthenticated) {
+  if (to.meta.requiresAuth && !isAuthenticated) {
     next({
       path: '/login',
       query: { redirect: to.fullPath },
@@ -160,7 +170,7 @@ router.beforeEach(async (to, _from, next) => {
   }
 
   // 仅游客可访问的页面（登录、注册）
-  if (to.meta['guestOnly'] && isAuthenticated) {
+  if (to.meta.guestOnly && isAuthenticated) {
     next('/')
     return
   }
@@ -203,7 +213,7 @@ function ensureLinkRel(rel: string): HTMLLinkElement {
 }
 
 router.afterEach((to) => {
-  const titleKey = to.meta['title']
+  const titleKey = to.meta.title
   const translatedTitle = typeof titleKey === 'string' ? String(i18n.global.t(titleKey)) : ''
   const nextTitle =
     translatedTitle && translatedTitle !== SITE_NAME
@@ -227,7 +237,7 @@ router.afterEach((to) => {
   }
 
   const description =
-    typeof to.meta['description'] === 'string' ? to.meta['description'] : defaultDescription
+    typeof to.meta.description === 'string' ? to.meta.description : defaultDescription
   if (description) {
     ensureMetaName('description').setAttribute('content', description)
     ensureMetaProperty('og:description').setAttribute('content', description)

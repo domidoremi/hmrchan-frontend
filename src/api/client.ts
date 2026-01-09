@@ -33,6 +33,7 @@ async function getI18n() {
 // API 基础配置
 const API_BASE_URL = '/api/v1'
 const REQUEST_TIMEOUT = 30000
+const REFRESH_TIMEOUT = 10000 // Token 刷新超时时间
 
 // 请求队列（用于 token 刷新时暂存请求）
 let isRefreshing = false
@@ -129,13 +130,20 @@ function buildCacheKey(method: string, url: string, skipAuth: boolean): string {
  */
 async function refreshToken(): Promise<string | null> {
   try {
+    // 添加超时机制，防止请求永久挂起
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), REFRESH_TIMEOUT)
+
     const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
       method: 'POST',
       credentials: 'include', // 发送 refresh_token cookie
       headers: {
         'Content-Type': 'application/json',
       },
+      signal: controller.signal,
     })
+
+    clearTimeout(timeoutId)
 
     if (!response.ok) {
       throw new Error('Token refresh failed')
@@ -157,8 +165,11 @@ async function refreshToken(): Promise<string | null> {
     }
 
     return newAccessToken
-  } catch {
-    // 刷新失败，清除认证状态
+  } catch (error) {
+    // 超时或刷新失败，清除认证状态
+    if (error instanceof Error && error.name === 'AbortError') {
+      console.warn('Token refresh timeout')
+    }
     try {
       localStorage.removeItem('auth')
     } catch {
