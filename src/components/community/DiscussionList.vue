@@ -61,6 +61,7 @@
               :src="discussion.referenced_post.thumbnail_url"
               :alt="discussion.referenced_post.title"
               class="ref-thumb"
+              loading="lazy"
             />
             <div class="ref-details">
               <h4 class="ref-title">{{ discussion.referenced_post.title }}</h4>
@@ -84,6 +85,7 @@
             :src="normalizeAvatarUrl(discussion.author.avatar_url) || undefined"
             :alt="discussion.author.username"
             class="author-avatar"
+            loading="lazy"
           />
           <span class="author-name">{{ discussion.author.username }}</span>
           <span class="discussion-time">{{ formatTime(discussion.created_at) }}</span>
