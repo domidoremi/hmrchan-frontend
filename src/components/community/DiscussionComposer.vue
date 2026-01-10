@@ -66,7 +66,14 @@
       <div v-if="selectedPosts.length > 0" class="selected-posts">
         <div v-for="post in selectedPosts" :key="post.id" class="selected-post-tag">
           <span>@{{ post.title }}</span>
-          <button type="button" class="remove-tag" :aria-label="$t('common.remove')" @click="removePost(post.id)">×</button>
+          <button
+            type="button"
+            class="remove-tag"
+            :aria-label="$t('common.remove')"
+            @click="removePost(post.id)"
+          >
+            ×
+          </button>
         </div>
       </div>
 
@@ -82,7 +89,14 @@
         <div v-if="tags.length > 0" class="tags-list">
           <span v-for="tag in tags" :key="tag" class="tag-badge">
             #{{ tag }}
-            <button type="button" class="remove-tag" :aria-label="$t('common.remove')" @click="removeTag(tag)">×</button>
+            <button
+              type="button"
+              class="remove-tag"
+              :aria-label="$t('common.remove')"
+              @click="removeTag(tag)"
+            >
+              ×
+            </button>
           </span>
         </div>
       </div>

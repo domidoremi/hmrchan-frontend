@@ -109,10 +109,7 @@ import { useI18n } from 'vue-i18n'
 import { Heart, X } from 'lucide-vue-next'
 import { useAuthStore, useToastStore } from '@/stores'
 import { favoriteService, type FavoriteResponse, ApiError, apiClient } from '@/api'
-import {
-  normalizeToThumbnailUrl,
-  getThumbnailSrcset,
-} from '@/utils/mediaOptimizer'
+import { normalizeToThumbnailUrl, getThumbnailSrcset } from '@/utils/mediaOptimizer'
 import { formatDate } from '@/utils/date'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import { useProgressiveRender } from '@/composables/useProgressiveRender'
