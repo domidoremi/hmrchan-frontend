@@ -57,7 +57,8 @@
     "imageViewer": "图片查看器",
     "zoomIn": "放大",
     "zoomOut": "缩小",
-    "resetZoom": "重置缩放"
+    "resetZoom": "重置缩放",
+    "remove": "移除"
   },
   "auth": {
     "email": "邮箱",
