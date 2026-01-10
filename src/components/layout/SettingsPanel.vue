@@ -19,6 +19,7 @@
         <button
           v-for="opt in themeOptions"
           :key="opt.value"
+          type="button"
           class="theme-btn"
           :class="{ active: theme === opt.value }"
           @click="setTheme(opt.value)"
@@ -48,6 +49,7 @@
         <button
           v-for="opt in localeOptions"
           :key="opt.code"
+          type="button"
           class="lang-btn"
           :class="{ active: locale === opt.code }"
           @click="changeLocale(opt.code)"
@@ -67,7 +69,7 @@
         <span class="settings-label">{{ $t('settings.display') }}</span>
       </div>
       <div class="toggle-list">
-        <button class="toggle-btn" @click="toggleSetting('showHeroSection')">
+        <button type="button" class="toggle-btn" @click="toggleSetting('showHeroSection')">
           <div class="toggle-btn-content">
             <div class="toggle-btn-icon">
               <Sparkles :size="16" />
@@ -81,7 +83,7 @@
             <div class="toggle-knob" />
           </div>
         </button>
-        <button class="toggle-btn" @click="toggleSetting('enableAnimations')">
+        <button type="button" class="toggle-btn" @click="toggleSetting('enableAnimations')">
           <div class="toggle-btn-content">
             <div class="toggle-btn-icon">
               <Zap :size="16" />

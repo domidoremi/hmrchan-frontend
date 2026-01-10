@@ -9,6 +9,7 @@
           </div>
           <div class="page-actions">
             <button
+              type="button"
               class="search-trigger glass-btn"
               @click="goToSearch"
               :aria-label="$t('search.title')"
@@ -27,6 +28,7 @@
           <button
             v-for="sort in sortOptions"
             :key="sort.value"
+            type="button"
             class="filter-btn"
             :class="{ active: currentSort === sort.value }"
             :aria-pressed="currentSort === sort.value"
@@ -41,6 +43,7 @@
           <button
             v-for="platform in platformOptions"
             :key="platform.value"
+            type="button"
             class="platform-btn"
             :class="{ active: currentPlatform === platform.value }"
             :aria-pressed="currentPlatform === platform.value"

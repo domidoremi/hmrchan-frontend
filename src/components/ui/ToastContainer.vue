@@ -10,7 +10,7 @@
       >
         <component :is="getIcon(toast.type)" :size="20" class="toast-icon" />
         <span class="toast-message">{{ toast.message }}</span>
-        <button class="toast-close" @click="removeToast(toast.id)" aria-label="Close">
+        <button type="button" class="toast-close" @click="removeToast(toast.id)" aria-label="Close">
           <X :size="16" />
         </button>
       </div>

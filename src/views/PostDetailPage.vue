@@ -1,7 +1,7 @@
 <template>
   <div class="post-detail-page">
     <div class="container">
-      <button class="back-btn" @click="goBack">
+      <button type="button" class="back-btn" @click="goBack">
         <ArrowLeft :size="20" />
         {{ $t('common.back') }}
       </button>
@@ -133,6 +133,7 @@
         <!-- Post Actions -->
         <div class="post-actions">
           <button
+            type="button"
             class="action-btn"
             :class="{ active: isFavorited }"
             @click="toggleFavorite"
@@ -141,7 +142,7 @@
             <Bookmark :size="20" :fill="isFavorited ? 'currentColor' : 'none'" />
             <span>{{ isFavorited ? $t('post.unfavorite') : $t('post.favorite') }}</span>
           </button>
-          <button class="action-btn" @click="sharePost">
+          <button type="button" class="action-btn" @click="sharePost">
             <Share2 :size="20" />
             <span>{{ $t('post.share') }}</span>
           </button>

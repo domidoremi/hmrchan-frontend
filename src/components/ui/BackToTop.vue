@@ -3,6 +3,7 @@
     <Transition name="fade-slide">
       <button
         v-if="isVisible"
+        type="button"
         class="back-to-top"
         :class="{ 'with-progress': showProgress }"
         :aria-label="$t('common.backToTop')"
