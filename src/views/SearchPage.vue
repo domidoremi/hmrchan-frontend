@@ -37,6 +37,7 @@
               <button
                 v-for="platform in platformOptions"
                 :key="platform.value"
+                type="button"
                 class="platform-btn"
                 :class="{ active: currentPlatform === platform.value }"
                 @click="currentPlatform = platform.value"
