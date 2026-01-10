@@ -159,9 +159,7 @@ import { useAuthStore } from '@/stores'
 import { postService, type PostListItem, ApiError } from '@/api'
 import {
   normalizeToThumbnailUrl,
-  extractMediaIdFromUrl,
-  getMediaThumbnailUrl,
-  THUMBNAIL_SIZES,
+  getThumbnailSrcset,
 } from '@/utils/mediaOptimizer'
 import { formatRelativeTime } from '@/utils/date'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
@@ -222,17 +220,6 @@ function prefetchPostDetailPage() {
   if (hasPrefetchedPostDetailPage) return
   hasPrefetchedPostDetailPage = true
   import('@/views/PostDetailPage.vue').catch(() => {})
-}
-
-function getThumbnailSrcset(thumbnailUrl?: string | null): string | null {
-  const mediaId = extractMediaIdFromUrl(thumbnailUrl)
-  if (!mediaId) return null
-
-  const small = getMediaThumbnailUrl(mediaId, 'small')
-  const medium = getMediaThumbnailUrl(mediaId, 'medium')
-  const large = getMediaThumbnailUrl(mediaId, 'large')
-
-  return `${small} ${THUMBNAIL_SIZES.small.width}w, ${medium} ${THUMBNAIL_SIZES.medium.width}w, ${large} ${THUMBNAIL_SIZES.large.width}w`
 }
 
 function formatTime(dateStr: string): string {
