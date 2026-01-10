@@ -115,6 +115,7 @@ import {
   getMediaThumbnailUrl,
   THUMBNAIL_SIZES,
 } from '@/utils/mediaOptimizer'
+import { formatDate } from '@/utils/date'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import { useProgressiveRender } from '@/composables/useProgressiveRender'
 import Button from '@/components/ui/Button.vue'
@@ -306,10 +307,6 @@ async function removeFavorite(favoriteId: number) {
       toastStore.error(t('common.error'))
     }
   }
-}
-
-function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString()
 }
 
 function goToPost(postId: string, thumbnailUrl?: string | null) {

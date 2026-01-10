@@ -111,9 +111,11 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { Pin, PinOff, Link2, Eye, Heart, MessageSquare } from 'lucide-vue-next'
 import { normalizeAvatarUrl } from '@/api/userService'
 import { discussionService, type Discussion } from '@/api'
+import { formatRelativeTime } from '@/utils/date'
 
 interface Props {
   discussions: Discussion[]
@@ -128,6 +130,7 @@ const emit = defineEmits<{
 }>()
 
 const router = useRouter()
+const { t } = useI18n()
 
 // 检查是否为管理员
 // NOTE: 待后端在 UserResponse 中添加 role 或 is_admin 字段后启用
@@ -148,25 +151,7 @@ function getCategoryLabel(category: string): string {
 }
 
 function formatTime(dateStr: string): string {
-  const date = new Date(dateStr)
-  const now = new Date()
-  const diff = now.getTime() - date.getTime()
-  const seconds = Math.floor(diff / 1000)
-  const minutes = Math.floor(seconds / 60)
-  const hours = Math.floor(minutes / 60)
-  const days = Math.floor(hours / 24)
-
-  if (days > 7) {
-    return date.toLocaleDateString()
-  } else if (days > 0) {
-    return `${days}天前`
-  } else if (hours > 0) {
-    return `${hours}小时前`
-  } else if (minutes > 0) {
-    return `${minutes}分钟前`
-  } else {
-    return '刚刚'
-  }
+  return formatRelativeTime(dateStr, t)
 }
 
 function handleClick(discussionId: string) {
