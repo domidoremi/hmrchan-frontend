@@ -5,7 +5,9 @@
       <img :src="avatarUrl" :alt="getUserDisplayName(comment.user)" class="comment-avatar" />
       <div class="comment-meta">
         <span class="comment-author">{{ getUserDisplayName(comment.user) }}</span>
-        <span v-if="comment.is_thread_owner" class="floor-badge">{{ $t('comment.threadOwner') }}</span>
+        <span v-if="comment.is_thread_owner" class="floor-badge">{{
+          $t('comment.threadOwner')
+        }}</span>
         <span v-if="userLevelBadge" class="user-level-badge" :class="comment.user.level">
           {{ userLevelBadge }}
         </span>
