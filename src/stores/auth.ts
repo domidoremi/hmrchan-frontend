@@ -51,6 +51,9 @@ export const useAuthStore = defineStore(
         token.value = response.access_token
         startHeartbeat()
 
+        // 登录成功后获取完整的用户资料（包含 avatar_url 等字段）
+        fetchCurrentUser().catch(() => {})
+
         return { success: true, user: response.user }
       } catch (err) {
         const errorMessage =
@@ -88,6 +91,9 @@ export const useAuthStore = defineStore(
         user.value = response.user
         token.value = response.access_token
         startHeartbeat()
+
+        // 获取完整的用户资料（包含 avatar_url 等字段）
+        fetchCurrentUser().catch(() => {})
 
         return { success: true, user: response.user }
       } catch (err) {
