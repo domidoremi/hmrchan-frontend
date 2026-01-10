@@ -125,6 +125,7 @@
                   :src="normalizeAvatarUrl(author.avatar_url) || author.avatar_url"
                   :alt="author.name"
                   class="author-avatar"
+                  loading="lazy"
                 />
                 <div v-else class="author-avatar author-placeholder">
                   <User :size="24" />

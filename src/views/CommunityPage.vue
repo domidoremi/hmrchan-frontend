@@ -82,6 +82,7 @@
                   :src="post.author_avatar_url"
                   :alt="post.author_name"
                   class="author-avatar"
+                  loading="lazy"
                   decoding="async"
                 />
                 <span class="author-name">{{ post.author_name }}</span>
