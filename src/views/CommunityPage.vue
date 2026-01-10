@@ -79,7 +79,7 @@
               <div class="discussion-author">
                 <img
                   v-if="post.author_avatar_url"
-                  :src="post.author_avatar_url"
+                  :src="normalizeAvatarUrl(post.author_avatar_url) || undefined"
                   :alt="post.author_name"
                   class="author-avatar"
                   loading="lazy"
@@ -160,6 +160,7 @@ import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores'
 import { postService, type PostListItem, ApiError } from '@/api'
 import { normalizeToThumbnailUrl, getThumbnailSrcset } from '@/utils/mediaOptimizer'
+import { normalizeAvatarUrl } from '@/api/userService'
 import { formatRelativeTime } from '@/utils/date'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import Button from '@/components/ui/Button.vue'
