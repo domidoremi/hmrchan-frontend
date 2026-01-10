@@ -113,6 +113,12 @@
     "reducedMotionNotice": "システムでモーション軽減が有効になっています。この設定に関係なく、アニメーションは最小限に抑えられます。",
     "toggleSwipeNavigation": "スワイプナビ",
     "openAdvanced": "詳細設定",
+    "animationIntensity": "アニメーション強度",
+    "animationIntensityDesc": "アニメーションの速度と量を調整",
+    "animationNone": "なし",
+    "animationReduced": "軽減",
+    "animationNormal": "通常",
+    "animationFull": "フル",
     "cache": {
       "title": "キャッシュ管理",
       "description": "キャッシュデータを削除して空き容量を確保",
@@ -227,7 +233,9 @@
     "validationError": "入力内容を確認してください",
     "tooManyRequests": "リクエストが多すぎます",
     "badGateway": "不正なゲートウェイ",
-    "serviceUnavailable": "サービスは利用できません"
+    "serviceUnavailable": "サービスは利用できません",
+    "componentError": "問題が発生しました",
+    "technicalDetails": "技術的な詳細"
   },
   "comment": {
     "title": "コメント",

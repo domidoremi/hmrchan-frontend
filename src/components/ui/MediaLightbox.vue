@@ -127,6 +127,7 @@
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { X, ZoomIn, ZoomOut, Maximize2, ChevronLeft, ChevronRight } from 'lucide-vue-next'
 import { getMediaStreamUrl } from '@/utils/mediaOptimizer'
+import { useFocusTrap } from '@/composables/useFocusTrap'
 
 export interface MediaItem {
   id: string
@@ -154,6 +155,16 @@ const emit = defineEmits<{
 }>()
 
 const containerRef = ref<HTMLElement | null>(null)
+
+// Focus Trap
+const isLightboxOpen = computed(() => props.isOpen)
+useFocusTrap(containerRef, isLightboxOpen, {
+  autoFocus: true,
+  restoreFocus: true,
+  escapeDeactivates: true,
+  onEscape: close,
+  initialFocus: '.lightbox-close',
+})
 
 const currentIndex = ref(props.initialIndex)
 const isLoaded = ref(false)
