@@ -153,7 +153,7 @@ import {
 import { useAuthStore, useCommentsStore, useToastStore } from '@/stores'
 import type { Comment } from '@/types'
 import { getUserDisplayName } from '@/utils/user'
-import { normalizeAvatarUrl } from '@/api/userService'
+import { getUserAvatarUrl } from '@/composables/useUserAvatar'
 import { formatRelativeTime } from '@/utils/date'
 import CommentForm from './CommentForm.vue'
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
@@ -216,9 +216,7 @@ async function handleShowReplies() {
 }
 
 const avatarUrl = computed(() => {
-  const url = normalizeAvatarUrl(props.comment.user.avatar_url)
-  if (url) return url
-  return `https://api.dicebear.com/7.x/avataaars/svg?seed=${props.comment.user.username}`
+  return getUserAvatarUrl(props.comment.user.avatar_url, props.comment.user.username)
 })
 
 const userLevelBadge = computed(() => {

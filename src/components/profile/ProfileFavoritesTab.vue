@@ -100,9 +100,7 @@ import { useAuthStore, useToastStore } from '@/stores'
 import { favoriteService, type FavoriteResponse, ApiError, apiClient } from '@/api'
 import {
   normalizeToThumbnailUrl,
-  extractMediaIdFromUrl,
-  getMediaThumbnailUrl,
-  THUMBNAIL_SIZES,
+  getThumbnailSrcset,
 } from '@/utils/mediaOptimizer'
 import { formatDate } from '@/utils/date'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
@@ -142,17 +140,6 @@ const hasMoreForUi = computed(() => hasMore.value || hasMoreToRender.value)
 
 const thumbnailSizes =
   '(max-width: 500px) 100vw, (max-width: 900px) 50vw, (max-width: 1200px) 33vw, 25vw'
-
-function getThumbnailSrcset(thumbnailUrl?: string | null): string | null {
-  const mediaId = extractMediaIdFromUrl(thumbnailUrl)
-  if (!mediaId) return null
-
-  const small = getMediaThumbnailUrl(mediaId, 'small')
-  const medium = getMediaThumbnailUrl(mediaId, 'medium')
-  const large = getMediaThumbnailUrl(mediaId, 'large')
-
-  return `${small} ${THUMBNAIL_SIZES.small.width}w, ${medium} ${THUMBNAIL_SIZES.medium.width}w, ${large} ${THUMBNAIL_SIZES.large.width}w`
-}
 
 async function fetchFavorites(reset = true): Promise<boolean> {
   if (!isAuthenticated.value) return false

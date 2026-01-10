@@ -185,3 +185,21 @@ export function createImageLoader(
     img.src = src
   })
 }
+
+/**
+ * 生成响应式图片 srcset 属性值
+ * 用于 <img srcset="..."> 实现响应式图片加载
+ *
+ * @param thumbnailUrl - 原始缩略图 URL（包含 mediaId）
+ * @returns srcset 字符串，如 "url1 200w, url2 400w, url3 800w"，或 null（无法提取 mediaId）
+ */
+export function getThumbnailSrcset(thumbnailUrl?: string | null): string | null {
+  const mediaId = extractMediaIdFromUrl(thumbnailUrl)
+  if (!mediaId) return null
+
+  const small = getMediaThumbnailUrl(mediaId, 'small')
+  const medium = getMediaThumbnailUrl(mediaId, 'medium')
+  const large = getMediaThumbnailUrl(mediaId, 'large')
+
+  return `${small} ${THUMBNAIL_SIZES.small.width}w, ${medium} ${THUMBNAIL_SIZES.medium.width}w, ${large} ${THUMBNAIL_SIZES.large.width}w`
+}
