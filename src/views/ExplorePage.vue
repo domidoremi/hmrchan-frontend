@@ -125,6 +125,7 @@ import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import { useProgressiveRender } from '@/composables/useProgressiveRender'
 import { useMasonryColumns } from '@/composables/useMasonryColumns'
 import { throttleRAF } from '@/utils/performance'
+import { createResizeObserver } from '@/utils/modernAPIs'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import PostCard from '@/components/business/PostCard.vue'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
@@ -385,15 +386,22 @@ function updateMasonryLayout(items: PostListItem[], reset = false) {
   }
 }
 
+// 响应式调整列数 - 使用 ResizeObserver 监听容器而非 window
+let resizeObserver: ResizeObserver | null = null
+let lastContainerWidth = 0
+
 /**
- * 处理窗口 resize - 使用 RAF 节流
+ * 处理容器 resize - 使用 ResizeObserver 替代 window resize
  */
-const handleResize = throttleRAF(() => {
+const handleContainerResize = throttleRAF((width: number) => {
+  // 忽略微小变化，避免频繁重排
+  if (Math.abs(width - lastContainerWidth) < 50) return
+  lastContainerWidth = width
+
   const newColumnCount = calculateColumnCount()
   if (newColumnCount !== columnCount.value) {
     columnCount.value = newColumnCount
-    const containerWidth = masonryContainerRef.value?.clientWidth || 1200
-    const colWidth = getColumnWidth(containerWidth)
+    const colWidth = getColumnWidth(width)
     initColumns()
     redistribute(posts.value, colWidth)
   }
@@ -430,12 +438,24 @@ onMounted(() => {
   }
 
   window.addEventListener('keydown', onGlobalKeydown)
-  window.addEventListener('resize', handleResize)
+
+  // 使用 ResizeObserver 监听容器大小变化，比 window resize 更精确高效
+  if (masonryContainerRef.value) {
+    lastContainerWidth = masonryContainerRef.value.clientWidth
+    resizeObserver = createResizeObserver((entries) => {
+      const entry = entries[0]
+      if (entry) {
+        handleContainerResize(entry.contentRect.width)
+      }
+    })
+    resizeObserver?.observe(masonryContainerRef.value)
+  }
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', onGlobalKeydown)
-  window.removeEventListener('resize', handleResize)
+  resizeObserver?.disconnect()
+  resizeObserver = null
 })
 </script>
 
