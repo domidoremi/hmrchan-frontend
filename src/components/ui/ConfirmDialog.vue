@@ -6,7 +6,7 @@
       @click="handleBackdropClick"
       @cancel.prevent="handleCancel"
     >
-      <div class="dialog-content">
+      <div class="dialog-content" ref="contentRef">
         <div class="dialog-header">
           <component
             :is="iconComponent"
@@ -21,7 +21,7 @@
         <p class="dialog-message">{{ message }}</p>
 
         <div class="dialog-actions">
-          <Button variant="ghost" size="sm" @click="handleCancel">
+          <Button ref="cancelBtnRef" variant="ghost" size="sm" @click="handleCancel">
             {{ cancelText }}
           </Button>
           <Button :variant="confirmVariant" size="sm" @click="handleConfirm">
@@ -38,6 +38,7 @@ import { ref, computed, watch, type Component } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { AlertTriangle, Trash2, Info, HelpCircle } from 'lucide-vue-next'
 import Button from './Button.vue'
+import { useFocusTrap } from '@/composables/useFocusTrap'
 
 export interface ConfirmDialogProps {
   isOpen: boolean
@@ -60,6 +61,16 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 const dialogRef = ref<HTMLDialogElement | null>(null)
+const contentRef = ref<HTMLElement | null>(null)
+
+// 使用 Focus Trap
+const isDialogOpen = computed(() => props.isOpen)
+useFocusTrap(contentRef, isDialogOpen, {
+  autoFocus: true,
+  restoreFocus: true,
+  escapeDeactivates: true,
+  onEscape: handleCancel,
+})
 
 const iconComponent = computed<Component | null>(() => {
   switch (props.variant) {
