@@ -77,11 +77,7 @@ export const useLoadingStore = defineStore('loading', () => {
    * @param id 可选的任务 ID
    * @param label 可选的任务描述
    */
-  async function withLoading<T>(
-    fn: () => Promise<T>,
-    id?: string,
-    label?: string
-  ): Promise<T> {
+  async function withLoading<T>(fn: () => Promise<T>, id?: string, label?: string): Promise<T> {
     const taskId = startLoading(id, label)
     try {
       return await fn()

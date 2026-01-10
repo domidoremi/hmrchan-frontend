@@ -59,7 +59,10 @@ export const useSettingsStore = defineStore(
      * 是否使用减弱动效（用于 prefers-reduced-motion 兼容）
      */
     const prefersReducedMotion = computed(() => {
-      return settings.value.animationIntensity === 'reduced' || settings.value.animationIntensity === 'none'
+      return (
+        settings.value.animationIntensity === 'reduced' ||
+        settings.value.animationIntensity === 'none'
+      )
     })
 
     function updateSetting<K extends keyof Settings>(key: K, value: Settings[K]) {
