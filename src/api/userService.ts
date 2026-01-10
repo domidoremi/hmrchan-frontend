@@ -38,7 +38,10 @@ export interface AvatarUploadResponse {
 
 /**
  * 规范化头像 URL
- * 将后端返回的相对路径转换为可访问的 URL
+ * 将后端返回的相对路径转换为可访问的完整 URL
+ *
+ * 后端返回格式: /uploads/avatars/xxx.jpg
+ * 实际访问路径: https://api.momichan.xyz/uploads/avatars/xxx.jpg
  */
 export function normalizeAvatarUrl(url: string | null | undefined): string | null {
   if (!url) return null
@@ -48,19 +51,17 @@ export function normalizeAvatarUrl(url: string | null | undefined): string | nul
     return url
   }
 
-  // 如果是 /uploads/ 开头的相对路径，转换为 API 代理路径
+  // 获取 API 基础 URL（从环境变量或默认值）
+  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'https://api.momichan.xyz'
+
+  // 如果是 /uploads/ 开头的相对路径，转换为后端完整 URL
   if (url.startsWith('/uploads/')) {
-    return `/api/v1${url}`
+    return `${apiBaseUrl}${url}`
   }
 
   // 如果是 uploads/ 开头（没有前导斜杠），添加前导斜杠并转换
   if (url.startsWith('uploads/')) {
-    return `/api/v1/${url}`
-  }
-
-  // 如果是 /api/v1/uploads/ 开头，说明已经规范化，直接返回
-  if (url.startsWith('/api/v1/uploads/')) {
-    return url
+    return `${apiBaseUrl}/${url}`
   }
 
   // 其他情况直接返回
