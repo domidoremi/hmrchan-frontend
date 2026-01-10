@@ -86,6 +86,7 @@ import { Clock, Trash2 } from 'lucide-vue-next'
 import { useToastStore } from '@/stores'
 import { apiClient, ApiError } from '@/api'
 import { extractMediaIdFromUrl } from '@/utils/mediaOptimizer'
+import { formatRelativeTime } from '@/utils/date'
 import Button from '@/components/ui/Button.vue'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
@@ -186,19 +187,7 @@ async function confirmClearHistory() {
 }
 
 function formatDate(dateStr: string): string {
-  const date = new Date(dateStr)
-  const now = new Date()
-  const diffMs = now.getTime() - date.getTime()
-  const diffMins = Math.floor(diffMs / 60000)
-  const diffHours = Math.floor(diffMs / 3600000)
-  const diffDays = Math.floor(diffMs / 86400000)
-
-  if (diffMins < 1) return t('common.justNow')
-  if (diffMins < 60) return t('common.minutesAgo', { n: diffMins })
-  if (diffHours < 24) return t('common.hoursAgo', { n: diffHours })
-  if (diffDays < 7) return t('common.daysAgo', { n: diffDays })
-
-  return date.toLocaleDateString()
+  return formatRelativeTime(dateStr, t)
 }
 
 function goToPost(postId: string, thumbnailUrl?: string | null) {

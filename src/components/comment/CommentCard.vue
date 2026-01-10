@@ -154,6 +154,7 @@ import { useAuthStore, useCommentsStore, useToastStore } from '@/stores'
 import type { Comment } from '@/types'
 import { getUserDisplayName } from '@/utils/user'
 import { normalizeAvatarUrl } from '@/api/userService'
+import { formatRelativeTime } from '@/utils/date'
 import CommentForm from './CommentForm.vue'
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
 
@@ -243,19 +244,7 @@ const actualRepliesCount = computed(() => {
 })
 
 function formatTime(dateStr: string): string {
-  const date = new Date(dateStr)
-  const now = new Date()
-  const diffMs = now.getTime() - date.getTime()
-  const diffMins = Math.floor(diffMs / 60000)
-  const diffHours = Math.floor(diffMs / 3600000)
-  const diffDays = Math.floor(diffMs / 86400000)
-
-  if (diffMins < 1) return t('common.justNow')
-  if (diffMins < 60) return t('common.minutesAgo', { n: diffMins })
-  if (diffHours < 24) return t('common.hoursAgo', { n: diffHours })
-  if (diffDays < 7) return t('common.daysAgo', { n: diffDays })
-
-  return date.toLocaleDateString()
+  return formatRelativeTime(dateStr, t)
 }
 
 function toggleMenu() {
