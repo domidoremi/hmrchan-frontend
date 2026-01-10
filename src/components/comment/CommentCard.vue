@@ -5,7 +5,7 @@
       <img :src="avatarUrl" :alt="getUserDisplayName(comment.user)" class="comment-avatar" />
       <div class="comment-meta">
         <span class="comment-author">{{ getUserDisplayName(comment.user) }}</span>
-        <span v-if="comment.is_thread_owner" class="floor-badge">层主</span>
+        <span v-if="comment.is_thread_owner" class="floor-badge">{{ $t('comment.threadOwner') }}</span>
         <span v-if="userLevelBadge" class="user-level-badge" :class="comment.user.level">
           {{ userLevelBadge }}
         </span>
@@ -41,7 +41,7 @@
       <!-- 回复对象标识 -->
       <div v-if="comment.replied_to_user" class="reply-indicator">
         <span class="reply-icon">↩</span>
-        <span class="reply-label">回复</span>
+        <span class="reply-label">{{ $t('comment.replyingTo') }}</span>
         <span class="reply-to-user">{{ getUserDisplayName(comment.replied_to_user) }}</span>
       </div>
       <p>{{ comment.content }}</p>

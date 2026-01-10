@@ -248,6 +248,8 @@
     "confirmDeleteTitle": "删除评论",
     "confirmDeleteMessage": "确定要删除这条评论吗？此操作不可撤销。",
     "showReplies": "查看 {count} 条回复",
+    "threadOwner": "层主",
+    "replyingTo": "回复",
     "sort": {
       "newest": "最新",
       "oldest": "最早",
