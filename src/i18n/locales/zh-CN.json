@@ -113,6 +113,12 @@
     "reducedMotionNotice": "您的系统已启用减少动画设置，无论此选项如何，动画都将被最小化。",
     "toggleSwipeNavigation": "滑动导航",
     "openAdvanced": "高级设置",
+    "animationIntensity": "动效强度",
+    "animationIntensityDesc": "控制动画的速度和数量",
+    "animationNone": "无动效",
+    "animationReduced": "减弱",
+    "animationNormal": "正常",
+    "animationFull": "完整",
     "cache": {
       "title": "缓存管理",
       "description": "清除缓存数据以释放空间",
@@ -227,7 +233,9 @@
     "validationError": "参数验证错误",
     "tooManyRequests": "请求过于频繁",
     "badGateway": "网关错误",
-    "serviceUnavailable": "服务不可用"
+    "serviceUnavailable": "服务不可用",
+    "componentError": "出了点问题",
+    "technicalDetails": "技术详情"
   },
   "comment": {
     "title": "评论",

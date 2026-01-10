@@ -1,11 +1,27 @@
 <template>
   <div class="post-card-skeleton glass-card">
-    <div class="skeleton-image glass-skeleton glass-skeleton--wave" />
-    <div class="skeleton-content">
-      <div class="skeleton-title glass-skeleton glass-skeleton--wave" />
+    <!-- 图片区域 - 与 PostCard 完全匹配 -->
+    <div class="skeleton-image-wrapper" :style="imageWrapperStyle">
+      <!-- Platform Badge 占位 -->
+      <div class="skeleton-platform-badge glass-skeleton glass-skeleton--wave" />
+      <!-- 图片占位 -->
+      <div class="skeleton-image glass-skeleton glass-skeleton--wave" />
+    </div>
+
+    <!-- 内容区域 - 与 PostCard 完全匹配 -->
+    <div v-if="showContent" class="skeleton-content">
+      <!-- 标题：两行，与 PostCard 的 line-clamp-2 匹配 -->
+      <div class="skeleton-title-wrapper">
+        <div class="skeleton-title glass-skeleton glass-skeleton--wave" />
+        <div class="skeleton-title skeleton-title--short glass-skeleton glass-skeleton--wave" />
+      </div>
+
+      <!-- Meta 区域 -->
       <div class="skeleton-meta">
-        <div class="skeleton-avatar glass-skeleton glass-skeleton--wave" />
-        <div class="skeleton-author glass-skeleton glass-skeleton--wave" />
+        <div class="skeleton-author-wrapper">
+          <div class="skeleton-avatar glass-skeleton glass-skeleton--wave" />
+          <div class="skeleton-author glass-skeleton glass-skeleton--wave" />
+        </div>
         <div class="skeleton-stats">
           <div class="skeleton-stat glass-skeleton glass-skeleton--wave" />
           <div class="skeleton-stat glass-skeleton glass-skeleton--wave" />
@@ -15,35 +31,97 @@
   </div>
 </template>
 
+<script setup lang="ts">
+import { computed } from 'vue'
+
+interface Props {
+  /** 是否显示内容区域 */
+  showContent?: boolean
+  /** 自定义宽高比 */
+  aspectRatio?: string | number
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  showContent: true,
+  aspectRatio: '16 / 9',
+})
+
+const imageWrapperStyle = computed(() => ({
+  aspectRatio: String(props.aspectRatio),
+}))
+</script>
+
 <style scoped>
 .post-card-skeleton {
   display: block;
   overflow: hidden;
+  /* 与 PostCard 相同的背景 */
+  background: var(--glass-bg);
 }
 
-.skeleton-image {
+/* ========== 图片区域 ========== */
+.skeleton-image-wrapper {
+  position: relative;
   width: 100%;
-  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: var(--glass-bg-light);
   border-radius: var(--radius-lg) var(--radius-lg) 0 0;
 }
 
+.skeleton-platform-badge {
+  position: absolute;
+  top: var(--spacing-2);
+  left: var(--spacing-2);
+  z-index: 3;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-full);
+}
+
+.skeleton-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 0;
+}
+
+/* ========== 内容区域 ========== */
 .skeleton-content {
   padding: var(--spacing-3);
+}
+
+.skeleton-title-wrapper {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-3);
+  gap: 6px;
+  margin-bottom: var(--spacing-2);
 }
 
 .skeleton-title {
-  height: 20px;
-  width: 85%;
+  height: 14px;
+  width: 100%;
   border-radius: var(--radius-sm);
 }
 
+.skeleton-title--short {
+  width: 65%;
+}
+
+/* ========== Meta 区域 ========== */
 .skeleton-meta {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: var(--spacing-2);
+}
+
+.skeleton-author-wrapper {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  min-width: 0;
+  flex: 1;
 }
 
 .skeleton-avatar {
@@ -54,45 +132,53 @@
 }
 
 .skeleton-author {
-  height: 14px;
-  width: 80px;
+  height: 12px;
+  width: 72px;
   border-radius: var(--radius-sm);
 }
 
 .skeleton-stats {
   display: flex;
   gap: var(--spacing-3);
-  margin-left: auto;
+  flex-shrink: 0;
 }
 
 .skeleton-stat {
-  width: 40px;
-  height: 14px;
+  width: 36px;
+  height: 12px;
   border-radius: var(--radius-sm);
 }
 
-/* Staggered animation delays */
-.post-card-skeleton .skeleton-image {
+/* ========== 交错动画延迟 ========== */
+.post-card-skeleton .skeleton-platform-badge {
   animation-delay: 0ms;
 }
 
-.post-card-skeleton .skeleton-title {
+.post-card-skeleton .skeleton-image {
   animation-delay: 50ms;
 }
 
-.post-card-skeleton .skeleton-avatar {
+.post-card-skeleton .skeleton-title:first-child {
   animation-delay: 100ms;
 }
 
-.post-card-skeleton .skeleton-author {
+.post-card-skeleton .skeleton-title--short {
   animation-delay: 150ms;
 }
 
-.post-card-skeleton .skeleton-stat:nth-child(1) {
+.post-card-skeleton .skeleton-avatar {
   animation-delay: 200ms;
 }
 
-.post-card-skeleton .skeleton-stat:nth-child(2) {
+.post-card-skeleton .skeleton-author {
   animation-delay: 250ms;
+}
+
+.post-card-skeleton .skeleton-stat:nth-child(1) {
+  animation-delay: 300ms;
+}
+
+.post-card-skeleton .skeleton-stat:nth-child(2) {
+  animation-delay: 350ms;
 }
 </style>

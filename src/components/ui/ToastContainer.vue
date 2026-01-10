@@ -41,8 +41,8 @@ function getIcon(type: string) {
 <style scoped>
 .toast-container {
   position: fixed;
-  top: calc(var(--navbar-height) + var(--spacing-4));
-  right: var(--spacing-4);
+  top: calc(var(--navbar-height) + var(--spacing-4) + env(safe-area-inset-top, 0px));
+  right: calc(var(--spacing-4) + env(safe-area-inset-right, 0px));
   z-index: var(--z-toast);
   display: flex;
   flex-direction: column;
@@ -143,8 +143,8 @@ function getIcon(type: string) {
 
 @media (max-width: 640px) {
   .toast-container {
-    left: var(--spacing-4);
-    right: var(--spacing-4);
+    left: calc(var(--spacing-4) + env(safe-area-inset-left, 0px));
+    right: calc(var(--spacing-4) + env(safe-area-inset-right, 0px));
     max-width: none;
   }
 }

@@ -113,6 +113,12 @@
     "reducedMotionNotice": "Your system has reduced motion enabled. Animations will be minimized regardless of this setting.",
     "toggleSwipeNavigation": "Swipe Navigation",
     "openAdvanced": "Advanced Settings",
+    "animationIntensity": "Animation Intensity",
+    "animationIntensityDesc": "Control the speed and amount of animations",
+    "animationNone": "None",
+    "animationReduced": "Reduced",
+    "animationNormal": "Normal",
+    "animationFull": "Full",
     "cache": {
       "title": "Cache Management",
       "description": "Clear cached data to free up space",
@@ -227,7 +233,9 @@
     "validationError": "Validation error",
     "tooManyRequests": "Too many requests",
     "badGateway": "Bad gateway",
-    "serviceUnavailable": "Service unavailable"
+    "serviceUnavailable": "Service unavailable",
+    "componentError": "Something went wrong",
+    "technicalDetails": "Technical Details"
   },
   "comment": {
     "title": "Comments",
