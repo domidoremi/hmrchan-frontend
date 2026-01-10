@@ -158,10 +158,7 @@ import { MessageSquare, Flame } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores'
 import { postService, type PostListItem, ApiError } from '@/api'
-import {
-  normalizeToThumbnailUrl,
-  getThumbnailSrcset,
-} from '@/utils/mediaOptimizer'
+import { normalizeToThumbnailUrl, getThumbnailSrcset } from '@/utils/mediaOptimizer'
 import { formatRelativeTime } from '@/utils/date'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import Button from '@/components/ui/Button.vue'

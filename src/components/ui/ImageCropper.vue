@@ -3,7 +3,12 @@
     <div class="image-cropper glass-card">
       <header class="cropper-header">
         <h3>{{ $t('profile.cropAvatar') }}</h3>
-        <button type="button" class="close-btn glass-button" :aria-label="$t('common.close')" @click="cancel">
+        <button
+          type="button"
+          class="close-btn glass-button"
+          :aria-label="$t('common.close')"
+          @click="cancel"
+        >
           <X :size="20" />
         </button>
       </header>
