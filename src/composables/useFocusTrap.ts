@@ -45,6 +45,10 @@ export function useFocusTrap(
   } = options
 
   const previousActiveElement = ref<HTMLElement | null>(null)
+  // 追踪当前是否已激活，避免重复添加/移除事件监听器
+  const isCurrentlyActive = ref(false)
+  // 保存当前绑定 focusout 的容器元素引用
+  let boundContainer: HTMLElement | null = null
 
   /**
    * 获取容器内所有可聚焦元素
@@ -63,6 +67,8 @@ export function useFocusTrap(
    * 聚焦第一个可聚焦元素
    */
   function focusFirst() {
+    if (!containerRef.value || !isCurrentlyActive.value) return
+
     const elements = getFocusableElements()
 
     // 优先聚焦指定元素
@@ -99,7 +105,8 @@ export function useFocusTrap(
    * 处理 Tab 键导航
    */
   function handleKeyDown(event: KeyboardEvent) {
-    if (!isActive.value || !containerRef.value) return
+    // 严格检查：必须是激活状态且容器存在
+    if (!isCurrentlyActive.value || !containerRef.value) return
 
     // 处理 Escape 键
     if (event.key === 'Escape' && escapeDeactivates) {
@@ -149,7 +156,8 @@ export function useFocusTrap(
    * 处理焦点离开容器的情况
    */
   function handleFocusOut(event: FocusEvent) {
-    if (!isActive.value || !containerRef.value) return
+    // 严格检查：必须是激活状态且容器存在
+    if (!isCurrentlyActive.value || !containerRef.value) return
 
     const relatedTarget = event.relatedTarget as HTMLElement | null
 
@@ -157,7 +165,8 @@ export function useFocusTrap(
     if (relatedTarget && !containerRef.value.contains(relatedTarget)) {
       // 使用 requestAnimationFrame 避免焦点闪烁
       requestAnimationFrame(() => {
-        if (isActive.value) {
+        // 再次检查状态，因为可能在 RAF 期间状态已改变
+        if (isCurrentlyActive.value && containerRef.value) {
           focusFirst()
         }
       })
@@ -168,20 +177,26 @@ export function useFocusTrap(
    * 激活焦点陷阱
    */
   function activate() {
-    if (!containerRef.value) return
+    // 如果已经激活或容器不存在，直接返回
+    if (isCurrentlyActive.value || !containerRef.value) return
+
+    isCurrentlyActive.value = true
+    boundContainer = containerRef.value
 
     // 保存当前焦点
     previousActiveElement.value = document.activeElement as HTMLElement
 
     // 添加事件监听
     document.addEventListener('keydown', handleKeyDown, true)
-    containerRef.value.addEventListener('focusout', handleFocusOut)
+    boundContainer.addEventListener('focusout', handleFocusOut)
 
     // 自动聚焦
     if (autoFocus) {
       // 使用 requestAnimationFrame 确保 DOM 已更新
       requestAnimationFrame(() => {
-        focusFirst()
+        if (isCurrentlyActive.value) {
+          focusFirst()
+        }
       })
     }
   }
@@ -190,32 +205,42 @@ export function useFocusTrap(
    * 停用焦点陷阱
    */
   function deactivate() {
-    // 移除事件监听
+    // 如果未激活，直接返回
+    if (!isCurrentlyActive.value) return
+
+    isCurrentlyActive.value = false
+
+    // 移除事件监听 - 使用保存的容器引用
     document.removeEventListener('keydown', handleKeyDown, true)
-    containerRef.value?.removeEventListener('focusout', handleFocusOut)
+    if (boundContainer) {
+      boundContainer.removeEventListener('focusout', handleFocusOut)
+      boundContainer = null
+    }
 
     // 恢复之前的焦点
     if (restoreFocus && previousActiveElement.value) {
+      const elementToFocus = previousActiveElement.value
+      previousActiveElement.value = null
       // 使用 requestAnimationFrame 避免焦点闪烁
       requestAnimationFrame(() => {
-        previousActiveElement.value?.focus()
-        previousActiveElement.value = null
+        elementToFocus?.focus()
       })
     }
   }
 
-  // 监听激活状态
-  watch(
-    isActive,
-    (active) => {
-      if (active) {
-        activate()
-      } else {
-        deactivate()
-      }
-    },
-    { immediate: true }
-  )
+  // 监听激活状态 - 移除 immediate: true，避免初始化时的问题
+  watch(isActive, (active) => {
+    if (active) {
+      // 延迟激活，确保 DOM 已渲染
+      requestAnimationFrame(() => {
+        if (isActive.value && containerRef.value) {
+          activate()
+        }
+      })
+    } else {
+      deactivate()
+    }
+  })
 
   // 组件卸载时清理
   onUnmounted(() => {
