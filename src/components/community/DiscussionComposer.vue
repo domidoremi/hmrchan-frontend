@@ -52,6 +52,7 @@
             :src="post.thumbnail_url"
             :alt="post.title"
             class="mention-thumb"
+            loading="lazy"
           />
           <div class="mention-info">
             <span class="mention-title">{{ post.title }}</span>
