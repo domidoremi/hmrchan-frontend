@@ -86,6 +86,7 @@ import { useI18n } from 'vue-i18n'
 import { Heart, MessageCircle, HeartOff } from 'lucide-vue-next'
 import { apiClient, ApiError } from '@/api'
 import { useToastStore } from '@/stores'
+import { formatRelativeTime } from '@/utils/date'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import { defineAsyncComponent } from 'vue'
@@ -170,16 +171,7 @@ async function loadMore() {
 }
 
 function formatDate(dateStr: string): string {
-  const date = new Date(dateStr)
-  const now = new Date()
-  const diffMs = now.getTime() - date.getTime()
-  const diffDays = Math.floor(diffMs / 86400000)
-
-  if (diffDays === 0) return t('common.today')
-  if (diffDays === 1) return t('common.yesterday')
-  if (diffDays < 7) return t('common.daysAgo', { n: diffDays })
-
-  return date.toLocaleDateString()
+  return formatRelativeTime(dateStr, t)
 }
 
 function goToPost(postUuid: string) {
