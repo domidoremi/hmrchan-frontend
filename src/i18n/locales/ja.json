@@ -57,7 +57,8 @@
     "imageViewer": "画像ビューアー",
     "zoomIn": "拡大",
     "zoomOut": "縮小",
-    "resetZoom": "リセット"
+    "resetZoom": "リセット",
+    "remove": "削除"
   },
   "auth": {
     "email": "メールアドレス",
