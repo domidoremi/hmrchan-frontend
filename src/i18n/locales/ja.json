@@ -249,6 +249,8 @@
     "confirmDeleteTitle": "コメントを削除",
     "confirmDeleteMessage": "このコメントを削除しますか？この操作は取り消しできません。",
     "showReplies": "{count} 件の返信を表示",
+    "threadOwner": "スレ主",
+    "replyingTo": "返信先",
     "sort": {
       "newest": "新着",
       "oldest": "古い順",
