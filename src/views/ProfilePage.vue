@@ -49,7 +49,7 @@ import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { Heart, MessageSquare, ThumbsUp, Clock, Bell, Settings } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores'
-import { normalizeAvatarUrl } from '@/api/userService'
+import { getUserAvatarUrl } from '@/composables/useUserAvatar'
 import Button from '@/components/ui/Button.vue'
 import ProfileFavoritesTab from '@/components/profile/ProfileFavoritesTab.vue'
 import ProfileCommentsTab from '@/components/profile/ProfileCommentsTab.vue'
@@ -93,9 +93,7 @@ const currentTabComponent = computed(() => {
 })
 
 const userAvatar = computed(() => {
-  const url = normalizeAvatarUrl(user.value?.avatar_url)
-  if (url) return url
-  return `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.value?.username || 'default'}`
+  return getUserAvatarUrl(user.value?.avatar_url, user.value?.username)
 })
 
 function goToSettings() {
