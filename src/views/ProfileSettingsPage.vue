@@ -447,12 +447,29 @@ onMounted(() => {
 }
 
 .settings-form {
-  max-width: 600px;
+  max-width: 640px;
+}
+
+/* 密码修改区域也需要限制宽度 */
+.settings-section:last-of-type {
+  max-width: 640px;
+}
+
+/* 桌面端居中显示 */
+@media (min-width: 1025px) {
+  .profile-settings-page .container {
+    max-width: 800px;
+    margin: 0 auto;
+  }
 }
 
 /* 平板适配 */
 @media (max-width: 1024px) {
   .settings-form {
+    max-width: 100%;
+  }
+
+  .settings-section:last-of-type {
     max-width: 100%;
   }
 }
