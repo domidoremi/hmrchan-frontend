@@ -200,10 +200,6 @@ const imageWidth = ref(640)
 const imageHeight = ref(360)
 const showHoverDetails = ref(false)
 
-// 预加载的大图 URL 和状态
-const preloadedLargeUrl = ref<string | null>(null)
-const isLargeImageLoaded = ref(false)
-
 let hasPrefetchedPostDetailPage = false
 let hasPreloadedLargeImage = false
 let hoverTimeout: ReturnType<typeof setTimeout> | null = null
@@ -250,11 +246,6 @@ const effectiveThumbnailSize = computed(() => {
 })
 
 const thumbnailSrc = computed(() => {
-  // 如果大图已加载完成，使用大图替换小图
-  if (isLargeImageLoaded.value && preloadedLargeUrl.value) {
-    return preloadedLargeUrl.value
-  }
-
   if (!props.post.thumbnail_url) return null
 
   const mediaId = extractMediaIdFromUrl(props.post.thumbnail_url)
@@ -396,7 +387,8 @@ function formatPublishedTime(dateStr: string): string {
 }
 
 /**
- * 预加载大图（hover 时触发）
+ * 预加载大图到浏览器缓存（hover 时触发）
+ * 注意：只预加载到缓存，不替换当前显示的小图，避免 CLS
  */
 function preloadLargeImage() {
   if (hasPreloadedLargeImage || !props.post.thumbnail_url) return
@@ -406,17 +398,10 @@ function preloadLargeImage() {
   if (!mediaId) return
 
   const largeUrl = getMediaThumbnailUrl(mediaId, 'large')
-  preloadedLargeUrl.value = largeUrl
 
-  // 使用 Image 对象预加载
+  // 使用 Image 对象预加载到浏览器缓存
+  // 用户进入详情页时，大图已在缓存中，加载更快
   const img = new Image()
-  img.onload = () => {
-    isLargeImageLoaded.value = true
-  }
-  img.onerror = () => {
-    // 加载失败时不替换，保持使用小图
-    preloadedLargeUrl.value = null
-  }
   img.src = largeUrl
 }
 
