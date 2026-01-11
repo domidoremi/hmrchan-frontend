@@ -51,6 +51,17 @@
       <!-- Hover Details Overlay -->
       <Transition name="hover-details">
         <div v-if="showHoverDetails" class="hover-overlay">
+          <div class="hover-header">
+            <div class="hover-time" v-if="post.published_at">
+              <Calendar :size="12" />
+              <span>{{ formatPublishedTime(post.published_at) }}</span>
+            </div>
+            <div class="hover-action">
+              <div class="hover-action-icon">
+                <ArrowUpRight :size="16" />
+              </div>
+            </div>
+          </div>
           <div class="hover-content">
             <h4 class="hover-title">{{ post.title }}</h4>
             <p v-if="post.author_name" class="hover-author">
@@ -70,11 +81,6 @@
                 <Clock :size="12" />
                 {{ formatDuration(post.duration) }}
               </span>
-            </div>
-          </div>
-          <div class="hover-action">
-            <div class="hover-action-icon">
-              <ArrowUpRight :size="18" />
             </div>
           </div>
         </div>
@@ -109,13 +115,25 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onUnmounted, type Component } from 'vue'
-import { ArrowUpRight, Clock, Eye, Globe, Heart, Music2, Play, User, Video } from 'lucide-vue-next'
+import {
+  ArrowUpRight,
+  Calendar,
+  Clock,
+  Eye,
+  Globe,
+  Heart,
+  Music2,
+  Play,
+  User,
+  Video,
+} from 'lucide-vue-next'
 import type { PostListItem } from '@/api'
 import { prefetchPostDetail } from '@/utils/prefetch'
 import {
   normalizeToThumbnailUrl,
   getResponsiveThumbnailSize,
   extractMediaIdFromUrl,
+  getMediaThumbnailUrl,
 } from '@/utils/mediaOptimizer'
 import { thumbnailCache } from '@/utils/thumbnailCache'
 import { useCardAnimation } from '@/composables/useCardAnimation'
@@ -182,7 +200,12 @@ const imageWidth = ref(640)
 const imageHeight = ref(360)
 const showHoverDetails = ref(false)
 
+// 预加载的大图 URL 和状态
+const preloadedLargeUrl = ref<string | null>(null)
+const isLargeImageLoaded = ref(false)
+
 let hasPrefetchedPostDetailPage = false
+let hasPreloadedLargeImage = false
 let hoverTimeout: ReturnType<typeof setTimeout> | null = null
 
 // GSAP animation
@@ -227,6 +250,11 @@ const effectiveThumbnailSize = computed(() => {
 })
 
 const thumbnailSrc = computed(() => {
+  // 如果大图已加载完成，使用大图替换小图
+  if (isLargeImageLoaded.value && preloadedLargeUrl.value) {
+    return preloadedLargeUrl.value
+  }
+
   if (!props.post.thumbnail_url) return null
 
   const mediaId = extractMediaIdFromUrl(props.post.thumbnail_url)
@@ -346,6 +374,52 @@ function formatDuration(seconds: number): string {
   return `${m}:${s.toString().padStart(2, '0')}`
 }
 
+/**
+ * 格式化发布时间为相对时间或日期
+ */
+function formatPublishedTime(dateStr: string): string {
+  const date = new Date(dateStr)
+  const now = new Date()
+  const diffMs = now.getTime() - date.getTime()
+  const diffSec = Math.floor(diffMs / 1000)
+  const diffMin = Math.floor(diffSec / 60)
+  const diffHour = Math.floor(diffMin / 60)
+  const diffDay = Math.floor(diffHour / 24)
+
+  if (diffSec < 60) return '刚刚'
+  if (diffMin < 60) return `${diffMin}分钟前`
+  if (diffHour < 24) return `${diffHour}小时前`
+  if (diffDay < 7) return `${diffDay}天前`
+  if (diffDay < 30) return `${Math.floor(diffDay / 7)}周前`
+  if (diffDay < 365) return `${Math.floor(diffDay / 30)}个月前`
+  return `${Math.floor(diffDay / 365)}年前`
+}
+
+/**
+ * 预加载大图（hover 时触发）
+ */
+function preloadLargeImage() {
+  if (hasPreloadedLargeImage || !props.post.thumbnail_url) return
+  hasPreloadedLargeImage = true
+
+  const mediaId = extractMediaIdFromUrl(props.post.thumbnail_url)
+  if (!mediaId) return
+
+  const largeUrl = getMediaThumbnailUrl(mediaId, 'large')
+  preloadedLargeUrl.value = largeUrl
+
+  // 使用 Image 对象预加载
+  const img = new Image()
+  img.onload = () => {
+    isLargeImageLoaded.value = true
+  }
+  img.onerror = () => {
+    // 加载失败时不替换，保持使用小图
+    preloadedLargeUrl.value = null
+  }
+  img.src = largeUrl
+}
+
 function onImageLoad(event: Event) {
   const img = event.target as HTMLImageElement | null
   if (img?.naturalWidth && img?.naturalHeight) {
@@ -371,6 +445,7 @@ function prefetchPostDetailPage() {
 
 function handleMouseEnter() {
   prefetchPostDetailPage()
+  preloadLargeImage()
   if (hoverTimeout) clearTimeout(hoverTimeout)
   hoverTimeout = setTimeout(() => {
     showHoverDetails.value = true
@@ -552,7 +627,7 @@ onUnmounted(() => {
   opacity: 0;
 }
 
-/* ========== Hover Overlay ========== */
+/* ========== Hover Overlay - 增强版 ========== */
 .hover-overlay {
   position: absolute;
   inset: 0;
@@ -563,14 +638,41 @@ onUnmounted(() => {
   padding: var(--spacing-3);
   background: linear-gradient(
     180deg,
-    rgba(0, 0, 0, 0.3) 0%,
-    rgba(0, 0, 0, 0.5) 30%,
-    rgba(0, 0, 0, 0.85) 100%
+    rgba(0, 0, 0, 0.4) 0%,
+    rgba(0, 0, 0, 0.2) 40%,
+    rgba(0, 0, 0, 0.6) 70%,
+    rgba(0, 0, 0, 0.9) 100%
   );
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
   will-change: opacity, transform;
   transform: translate3d(0, 0, 0);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+
+.hover-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.hover-time {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: var(--radius-full);
+  font-size: 11px;
+  font-weight: var(--font-medium);
+  color: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.hover-time svg {
+  opacity: 0.8;
 }
 
 .hover-content {
@@ -588,6 +690,7 @@ onUnmounted(() => {
   line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 .hover-author {
@@ -595,8 +698,12 @@ onUnmounted(() => {
   align-items: center;
   gap: var(--spacing-1);
   font-size: var(--text-xs);
-  color: rgba(255, 255, 255, 0.8);
+  color: rgba(255, 255, 255, 0.85);
   margin: 0 0 var(--spacing-2);
+}
+
+.hover-author svg {
+  opacity: 0.7;
 }
 
 .hover-stats {
@@ -610,30 +717,38 @@ onUnmounted(() => {
   align-items: center;
   gap: 4px;
   font-size: var(--text-xs);
-  color: rgba(255, 255, 255, 0.75);
+  color: rgba(255, 255, 255, 0.8);
+  font-variant-numeric: tabular-nums;
+}
+
+.hover-stat svg {
+  opacity: 0.7;
 }
 
 .hover-action {
-  position: absolute;
-  top: var(--spacing-3);
-  right: var(--spacing-3);
+  flex-shrink: 0;
 }
 
 .hover-action-icon {
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   border-radius: var(--radius-full);
   color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
   transition: all var(--transition-fast);
 }
 
 .post-card:hover .hover-action-icon {
   background: var(--color-primary);
+  border-color: var(--color-primary);
   transform: translate(2px, -2px);
+  box-shadow: 0 4px 12px rgba(var(--color-primary-rgb), 0.4);
 }
 
 /* ========== Hover Transition ========== */
