@@ -3,12 +3,7 @@
     <div class="container navbar-content">
       <!-- Logo -->
       <RouterLink to="/" class="navbar-brand">
-        <div class="brand-logo">
-          <div class="brand-icon">
-            <Sparkles :size="18" />
-          </div>
-          <span class="brand-name">{{ $t('app.name') }}</span>
-        </div>
+        <span class="brand-name">mmc</span>
       </RouterLink>
 
       <!-- Desktop Navigation -->
@@ -270,7 +265,6 @@ import {
   MessageSquare,
   Search,
   Settings,
-  Sparkles,
   User,
   Users,
 } from 'lucide-vue-next'
@@ -662,24 +656,6 @@ onUnmounted(() => {
 /* ========== Brand ========== */
 .navbar-brand {
   text-decoration: none;
-}
-
-.brand-logo {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-2);
-}
-
-.brand-icon {
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--gradient-accent);
-  border-radius: var(--radius-lg);
-  color: var(--color-white);
-  box-shadow: var(--glass-glow);
 }
 
 .brand-name {

@@ -60,7 +60,6 @@ function showHimeriMessage(): void {
  * 显示控制台警告信息
  */
 function showWarning(): void {
-  console.clear()
   // 先显示籾山ひめり的信息
   showHimeriMessage()
   // 再显示安全警告
