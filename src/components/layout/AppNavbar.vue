@@ -12,7 +12,13 @@
       </RouterLink>
 
       <!-- Desktop Navigation -->
-      <div class="navbar-links desktop-only">
+      <div ref="navLinksRef" class="navbar-links desktop-only">
+        <!-- 滑动指示器 -->
+        <div
+          ref="navIndicatorRef"
+          class="nav-indicator"
+          :style="navIndicatorStyle"
+        />
         <RouterLink to="/" class="nav-link" active-class="nav-link--active">
           <Home :size="18" />
           <span>{{ $t('nav.home') }}</span>
@@ -242,8 +248,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, onUnmounted, defineAsyncComponent, nextTick, computed } from 'vue'
-import { RouterLink, useRouter } from 'vue-router'
+import {
+  ref,
+  watch,
+  onMounted,
+  onUnmounted,
+  defineAsyncComponent,
+  nextTick,
+  computed,
+  watchEffect,
+} from 'vue'
+import { RouterLink, useRouter, useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import {
   ChevronRight,
@@ -269,6 +284,7 @@ import { throttleRAF, scheduleDOMUpdate } from '@/utils/performance'
 const SettingsPanel = defineAsyncComponent(() => import('./SettingsPanel.vue'))
 
 const router = useRouter()
+const route = useRoute()
 const authStore = useAuthStore()
 const { user, isAuthenticated } = storeToRefs(authStore)
 
@@ -287,9 +303,17 @@ const settingsBtnRef = ref<HTMLButtonElement | null>(null)
 const userBtnRef = ref<HTMLButtonElement | null>(null)
 const settingsDropdownRef = ref<HTMLDivElement | null>(null)
 const userDropdownRef = ref<HTMLDivElement | null>(null)
+const navLinksRef = ref<HTMLDivElement | null>(null)
+const navIndicatorRef = ref<HTMLDivElement | null>(null)
 
 const settingsDropdownStyle = ref<Record<string, string>>({})
 const userDropdownStyle = ref<Record<string, string>>({})
+
+// 导航指示器样式
+const navIndicatorStyle = ref<Record<string, string>>({
+  opacity: '0',
+  transform: 'translateX(0) scaleX(0)',
+})
 
 const isMobile = ref(false)
 const isNavbarHidden = ref(false)
@@ -298,6 +322,90 @@ const scrollThreshold = 100
 
 // 使用统一的用户头像 composable，确保与其他组件同步
 const { avatarUrl: userAvatar } = useUserAvatar()
+
+// 导航路由映射
+const navRoutes = ['/', '/explore', '/favorites', '/authors', '/community']
+
+// 计算当前活跃的导航索引
+const activeNavIndex = computed(() => {
+  const currentPath = route.path
+  // 精确匹配或前缀匹配
+  const index = navRoutes.findIndex((navRoute) => {
+    if (navRoute === '/') return currentPath === '/'
+    return currentPath === navRoute || currentPath.startsWith(navRoute + '/')
+  })
+  return index
+})
+
+// 更新导航指示器位置
+function updateNavIndicator() {
+  if (isMobile.value || !navLinksRef.value) {
+    navIndicatorStyle.value = { opacity: '0', transform: 'translateX(0) scaleX(0)' }
+    return
+  }
+
+  const index = activeNavIndex.value
+  // 如果是收藏页但未登录，不显示指示器
+  if (index === 2 && !isAuthenticated.value) {
+    // 检查是否在其他有效路由
+    const validIndex = navRoutes.findIndex((navRoute, i) => {
+      if (i === 2) return false // 跳过收藏
+      if (navRoute === '/') return route.path === '/'
+      return route.path === navRoute || route.path.startsWith(navRoute + '/')
+    })
+    if (validIndex === -1) {
+      navIndicatorStyle.value = { opacity: '0', transform: 'translateX(0) scaleX(0)' }
+      return
+    }
+  }
+
+  if (index === -1) {
+    navIndicatorStyle.value = { opacity: '0', transform: 'translateX(0) scaleX(0)' }
+    return
+  }
+
+  const navLinks = navLinksRef.value.querySelectorAll('.nav-link')
+  // 调整索引：如果未登录，收藏链接不存在，需要调整
+  let adjustedIndex = index
+  if (!isAuthenticated.value && index > 2) {
+    adjustedIndex = index - 1
+  } else if (!isAuthenticated.value && index === 2) {
+    navIndicatorStyle.value = { opacity: '0', transform: 'translateX(0) scaleX(0)' }
+    return
+  }
+
+  const activeLink = navLinks[adjustedIndex] as HTMLElement
+  if (!activeLink) {
+    navIndicatorStyle.value = { opacity: '0', transform: 'translateX(0) scaleX(0)' }
+    return
+  }
+
+  const containerRect = navLinksRef.value.getBoundingClientRect()
+  const linkRect = activeLink.getBoundingClientRect()
+
+  const left = linkRect.left - containerRect.left
+  const width = linkRect.width
+
+  navIndicatorStyle.value = {
+    opacity: '1',
+    transform: `translateX(${left}px)`,
+    width: `${width}px`,
+  }
+}
+
+// 监听路由变化更新指示器
+watchEffect(() => {
+  // 触发依赖收集
+  const _index = activeNavIndex.value
+  const _auth = isAuthenticated.value
+  // 使用变量避免 lint 警告
+  void _index
+  void _auth
+  // 延迟更新以确保 DOM 已更新
+  nextTick(() => {
+    requestAnimationFrame(updateNavIndicator)
+  })
+})
 
 // 预加载头像以提高导航栏显示优先级
 watch(
@@ -495,6 +603,8 @@ const handleScroll = throttleRAF(() => {
 // 使用 throttleRAF 节流 resize 事件，避免高频触发导致的性能问题
 const handleResize = throttleRAF(() => {
   updateIsMobile()
+  // 更新导航指示器
+  updateNavIndicator()
   if (showSettings.value) {
     nextTick(() => updateDropdownPosition('settings'))
   }
@@ -505,6 +615,10 @@ const handleResize = throttleRAF(() => {
 
 onMounted(() => {
   updateIsMobile()
+  // 初始化导航指示器
+  nextTick(() => {
+    requestAnimationFrame(updateNavIndicator)
+  })
   document.addEventListener('click', handleClickOutside)
   window.addEventListener('resize', handleResize)
   window.addEventListener('scroll', handleScroll, { passive: true })
@@ -579,9 +693,39 @@ onUnmounted(() => {
 
 /* ========== Navigation Links ========== */
 .navbar-links {
+  position: relative;
   display: flex;
   align-items: center;
   gap: var(--spacing-1);
+}
+
+/* 滑动指示器 */
+.nav-indicator {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 100%;
+  background: rgba(var(--color-primary-rgb), 0.08);
+  border-radius: var(--radius-lg);
+  transition:
+    transform var(--duration-normal) var(--ease-spring),
+    width var(--duration-normal) var(--ease-spring),
+    opacity var(--duration-fast) var(--ease-out);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.nav-indicator::after {
+  content: '';
+  position: absolute;
+  bottom: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 20px;
+  height: 3px;
+  background: var(--gradient-primary);
+  border-radius: var(--radius-full);
+  box-shadow: 0 0 8px rgba(var(--color-primary-rgb), 0.4);
 }
 
 .nav-link {
@@ -595,44 +739,46 @@ onUnmounted(() => {
   text-decoration: none;
   font-size: var(--text-sm);
   font-weight: var(--font-medium);
-  transition: all var(--transition-fast);
+  transition:
+    color var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
+  z-index: 1;
 }
 
-.nav-link::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: transparent;
-  transition: background var(--transition-fast);
+.nav-link svg {
+  transition: transform var(--duration-fast) var(--ease-spring);
 }
 
 .nav-link:hover {
   color: var(--color-text-primary);
 }
 
-.nav-link:hover::before {
-  background: var(--glass-bg-subtle);
+.nav-link:hover svg {
+  transform: scale(1.1);
+}
+
+.nav-link:active {
+  transform: scale(0.97);
 }
 
 .nav-link--active {
   color: var(--color-primary);
 }
 
-.nav-link--active::before {
-  background: rgba(var(--color-primary-rgb), 0.1);
+.nav-link--active svg {
+  animation: nav-icon-pop 0.4s var(--ease-spring);
 }
 
-.nav-link--active::after {
-  content: '';
-  position: absolute;
-  bottom: 6px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 20px;
-  height: 3px;
-  background: var(--color-primary);
-  border-radius: var(--radius-full);
+@keyframes nav-icon-pop {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 /* ========== Actions ========== */
