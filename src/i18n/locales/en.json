@@ -397,5 +397,22 @@
     "unknownPost": "Unknown post",
     "remove": "Remove from favorites",
     "removed": "Removed from favorites"
+  },
+  "footer": {
+    "desc": "Discover amazing content from talented creators and explore endless possibilities.",
+    "rights": "All rights reserved.",
+    "cta": {
+      "title1": "Ready to dive in?",
+      "title2": "Start exploring!",
+      "desc": "Discover amazing content, follow your favorite creators, and build your personal collection.",
+      "join": "Join Us",
+      "feature1": "Lightning-fast browsing",
+      "feature2": "Multilingual support",
+      "feature3": "Save your favorites"
+    },
+    "nav": {
+      "explore": "Explore",
+      "support": "Support"
+    }
   }
 }
