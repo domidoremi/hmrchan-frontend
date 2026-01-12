@@ -197,8 +197,11 @@
     "sort": {
       "relevance": "Relevance",
       "date": "Date",
-      "views": "Views"
+      "views": "Views",
+      "ascending": "Ascending",
+      "descending": "Descending"
     },
+    "loginForMore": "Log in to see more results",
     "type": {
       "post": "Post",
       "author": "Author",
