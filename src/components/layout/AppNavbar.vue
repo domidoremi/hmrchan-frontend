@@ -183,61 +183,68 @@
     </Transition>
   </nav>
 
-  <!-- Mobile Bottom Navigation -->
-  <nav class="mobile-nav mobile-only">
-    <RouterLink to="/" class="mobile-nav-item" active-class="mobile-nav-item--active">
+  <!-- Mobile Bottom Navigation - Enhanced -->
+  <nav class="mobile-nav mobile-only" :class="{ 'mobile-nav--animated': shouldAnimateMobile }">
+    <!-- 滑动指示器背景 -->
+    <div class="mobile-nav-indicator" :style="mobileIndicatorStyle" />
+
+    <RouterLink
+      to="/"
+      class="mobile-nav-item"
+      :class="{ 'mobile-nav-item--active': mobileActiveIndex === 0 }"
+    >
       <div class="mobile-nav-icon">
         <Home :size="20" />
       </div>
-      <span>{{ $t('nav.home') }}</span>
+      <span class="mobile-nav-label">{{ $t('nav.home') }}</span>
     </RouterLink>
     <RouterLink
       to="/explore"
       class="mobile-nav-item"
-      active-class="mobile-nav-item--active"
+      :class="{ 'mobile-nav-item--active': mobileActiveIndex === 1 }"
       @mouseenter="prefetchExplorePage"
       @focus="prefetchExplorePage"
     >
       <div class="mobile-nav-icon">
         <Compass :size="20" />
       </div>
-      <span>{{ $t('nav.explore') }}</span>
+      <span class="mobile-nav-label">{{ $t('nav.explore') }}</span>
     </RouterLink>
     <RouterLink
       :to="mobileFavoritesLink"
       class="mobile-nav-item"
-      active-class="mobile-nav-item--active"
+      :class="{ 'mobile-nav-item--active': mobileActiveIndex === 2 }"
       @mouseenter="prefetchFavoritesPage"
       @focus="prefetchFavoritesPage"
     >
       <div class="mobile-nav-icon">
         <Heart :size="20" />
       </div>
-      <span>{{ $t('nav.favorites') }}</span>
+      <span class="mobile-nav-label">{{ $t('nav.favorites') }}</span>
     </RouterLink>
     <RouterLink
       to="/authors"
       class="mobile-nav-item"
-      active-class="mobile-nav-item--active"
+      :class="{ 'mobile-nav-item--active': mobileActiveIndex === 3 }"
       @mouseenter="prefetchAuthorsPage"
       @focus="prefetchAuthorsPage"
     >
       <div class="mobile-nav-icon">
         <Users :size="20" />
       </div>
-      <span>{{ $t('nav.authors') }}</span>
+      <span class="mobile-nav-label">{{ $t('nav.authors') }}</span>
     </RouterLink>
     <RouterLink
       to="/community"
       class="mobile-nav-item"
-      active-class="mobile-nav-item--active"
+      :class="{ 'mobile-nav-item--active': mobileActiveIndex === 4 }"
       @mouseenter="prefetchCommunityPage"
       @focus="prefetchCommunityPage"
     >
       <div class="mobile-nav-icon">
         <MessageSquare :size="20" />
       </div>
-      <span>{{ $t('nav.community') }}</span>
+      <span class="mobile-nav-label">{{ $t('nav.community') }}</span>
     </RouterLink>
   </nav>
 </template>
@@ -268,11 +275,11 @@ import {
   User,
   Users,
 } from 'lucide-vue-next'
-import { useAuthStore } from '@/stores'
+import { useAuthStore, useSettingsStore } from '@/stores'
 import { getUserDisplayName } from '@/utils/user'
 import { useUserAvatar, preloadUserAvatar } from '@/composables/useUserAvatar'
 import { prefetchExploreData, prefetchAuthorsData } from '@/utils/prefetch'
-import { throttleRAF, scheduleDOMUpdate } from '@/utils/performance'
+import { throttleRAF, scheduleDOMUpdate, prefersReducedMotion } from '@/utils/performance'
 
 // 懒加载设置面板，减少首屏 JS
 const SettingsPanel = defineAsyncComponent(() => import('./SettingsPanel.vue'))
@@ -280,7 +287,12 @@ const SettingsPanel = defineAsyncComponent(() => import('./SettingsPanel.vue'))
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
+const settingsStore = useSettingsStore()
 const { user, isAuthenticated } = storeToRefs(authStore)
+const { settings } = storeToRefs(settingsStore)
+
+// 是否启用动画
+const shouldAnimateMobile = computed(() => settings.value.enableAnimations && !prefersReducedMotion())
 
 const mobileFavoritesLink = computed(() => {
   if (isAuthenticated.value) return '/favorites'
@@ -319,6 +331,7 @@ const { avatarUrl: userAvatar } = useUserAvatar()
 
 // 导航路由映射
 const navRoutes = ['/', '/explore', '/favorites', '/authors', '/community']
+const mobileNavRoutes = ['/', '/explore', '/favorites', '/authors', '/community']
 
 // 计算当前活跃的导航索引
 const activeNavIndex = computed(() => {
@@ -329,6 +342,30 @@ const activeNavIndex = computed(() => {
     return currentPath === navRoute || currentPath.startsWith(navRoute + '/')
   })
   return index
+})
+
+// 移动端导航活跃索引
+const mobileActiveIndex = computed(() => {
+  const currentPath = route.path
+  const index = mobileNavRoutes.findIndex((navRoute) => {
+    if (navRoute === '/') return currentPath === '/'
+    return currentPath === navRoute || currentPath.startsWith(navRoute + '/')
+  })
+  return index
+})
+
+// 移动端滑动指示器样式
+const mobileIndicatorStyle = computed(() => {
+  const index = mobileActiveIndex.value
+  if (index === -1) {
+    return { opacity: '0', transform: 'translateX(0)' }
+  }
+  // 每个导航项占 20% 宽度，指示器居中
+  const position = index * 20 + 10 // 10% 是半个导航项宽度
+  return {
+    opacity: '1',
+    transform: `translateX(calc(${position}vw - 50%))`,
+  }
 })
 
 // 更新导航指示器位置
@@ -1014,7 +1051,26 @@ onUnmounted(() => {
   justify-content: space-around;
   padding-bottom: env(safe-area-inset-bottom);
   z-index: var(--z-sticky);
-  box-shadow: 0 -4px 16px -4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 -4px 20px -4px rgba(0, 0, 0, 0.12);
+}
+
+/* 滑动指示器 - 跟随活跃项移动 */
+.mobile-nav-indicator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 48px;
+  height: 3px;
+  background: var(--gradient-primary);
+  border-radius: 0 0 4px 4px;
+  transition:
+    transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+    opacity 0.2s ease;
+  box-shadow: 0 2px 8px rgba(var(--color-primary-rgb), 0.4);
+}
+
+.mobile-nav:not(.mobile-nav--animated) .mobile-nav-indicator {
+  transition: none;
 }
 
 .mobile-nav-item {
@@ -1023,70 +1079,148 @@ onUnmounted(() => {
   flex-direction: column;
   align-items: center;
   flex: 1 1 0;
-  gap: var(--spacing-1);
-  padding: var(--spacing-2) var(--spacing-3);
+  gap: 2px;
+  padding: var(--spacing-2) var(--spacing-1);
   color: var(--color-text-tertiary);
   text-decoration: none;
   font-size: 10px;
   font-weight: var(--font-medium);
-  transition: all var(--transition-fast);
-  min-width: 64px;
-}
-
-.mobile-nav-item::before {
-  content: '';
-  position: absolute;
-  top: -1px;
-  left: 50%;
-  transform: translateX(-50%) scaleX(0);
-  width: 32px;
-  height: 3px;
-  background: var(--gradient-primary);
-  border-radius: 0 0 3px 3px;
-  transition: transform var(--transition-fast);
-}
-
-.mobile-nav-item--active::before {
-  transform: translateX(-50%) scaleX(1);
+  transition: color 0.25s ease;
+  min-width: 0;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .mobile-nav-icon {
   position: relative;
-  width: 32px;
-  height: 32px;
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: var(--radius-lg);
-  transition: all var(--transition-fast);
+  border-radius: var(--radius-xl);
+  transition:
+    background 0.3s ease,
+    transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 0.3s ease;
 }
 
+.mobile-nav-icon svg {
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.mobile-nav-label {
+  transition:
+    transform 0.25s ease,
+    opacity 0.25s ease;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+/* 点击反馈 */
 .mobile-nav-item:active .mobile-nav-icon {
-  transform: scale(0.9);
+  transform: scale(0.85);
 }
 
-.mobile-nav-item:hover,
+.mobile-nav--animated .mobile-nav-item:active .mobile-nav-icon {
+  transition: transform 0.1s ease;
+}
+
+/* Hover 状态 */
+.mobile-nav-item:hover {
+  color: var(--color-text-secondary);
+}
+
+.mobile-nav-item:hover .mobile-nav-icon {
+  background: rgba(var(--color-primary-rgb), 0.06);
+}
+
+/* 活跃状态 */
 .mobile-nav-item--active {
   color: var(--color-primary);
 }
 
 .mobile-nav-item--active .mobile-nav-icon {
-  background: rgba(var(--color-primary-rgb), 0.15);
-  box-shadow: 0 0 0 4px rgba(var(--color-primary-rgb), 0.08);
+  background: rgba(var(--color-primary-rgb), 0.12);
+  box-shadow:
+    0 0 0 4px rgba(var(--color-primary-rgb), 0.06),
+    0 4px 12px -2px rgba(var(--color-primary-rgb), 0.2);
 }
 
 .mobile-nav-item--active .mobile-nav-icon svg {
-  animation: nav-icon-bounce 0.5s ease-out;
+  transform: scale(1.1);
 }
 
-@keyframes nav-icon-bounce {
-  0%,
-  100% {
-    transform: scale(1);
+.mobile-nav-item--active .mobile-nav-label {
+  font-weight: var(--font-semibold);
+}
+
+/* 切换动画 - 仅在启用动画时 */
+.mobile-nav--animated .mobile-nav-item--active .mobile-nav-icon svg {
+  animation: mobile-nav-icon-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.mobile-nav--animated .mobile-nav-item--active .mobile-nav-label {
+  animation: mobile-nav-label-slide 0.3s ease;
+}
+
+@keyframes mobile-nav-icon-pop {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.5;
   }
   50% {
     transform: scale(1.2);
   }
+  100% {
+    transform: scale(1.1);
+  }
+}
+
+@keyframes mobile-nav-label-slide {
+  0% {
+    transform: translateY(4px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* 涟漪效果背景 */
+.mobile-nav-item::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: rgba(var(--color-primary-rgb), 0.1);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition:
+    width 0.4s ease,
+    height 0.4s ease,
+    opacity 0.4s ease;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.mobile-nav--animated .mobile-nav-item:active::after {
+  width: 80px;
+  height: 80px;
+  opacity: 1;
+  transition:
+    width 0s,
+    height 0s,
+    opacity 0s;
+}
+
+/* 旧的顶部指示器样式移除，使用新的滑动指示器 */
+.mobile-nav-item::before {
+  display: none;
 }
 
 /* ========== Responsive ========== */
