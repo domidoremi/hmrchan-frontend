@@ -163,6 +163,9 @@
       </div>
     </section>
 
+    <!-- Stats Section - MindMarket Style -->
+    <StatsSection />
+
     <!-- Latest Posts -->
     <section class="section section--posts">
       <div class="container">
@@ -259,6 +262,7 @@ import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import PostCard from '@/components/business/PostCard.vue'
 import PostCardSkeleton from '@/components/business/PostCardSkeleton.vue'
+import StatsSection from '@/components/ui/StatsSection.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
