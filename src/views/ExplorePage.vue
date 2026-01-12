@@ -351,12 +351,11 @@ useInfiniteScroll(sentinelRef, loadMore, {
 function calculateColumnCount(): number {
   if (typeof window === 'undefined') return 4
   const width = window.innerWidth
-  if (width >= 1920) return 6
-  if (width >= 1600) return 5
-  if (width >= 1200) return 4
-  if (width >= 900) return 3
-  if (width >= 600) return 3
-  return 2 // 移动端始终双列
+  if (width < 640) return 2  // 移动端：双列
+  if (width < 1024) return 3 // 平板：三列
+  if (width < 1600) return 4 // 桌面：四列
+  if (width < 1920) return 5 // 大屏：五列
+  return 6 // 超大屏：六列
 }
 
 /**
