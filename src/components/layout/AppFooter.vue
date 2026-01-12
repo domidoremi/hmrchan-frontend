@@ -1,43 +1,65 @@
 <template>
   <footer class="footer">
-    <!-- CTA Section - 借鉴 MindMarket "Ready when you are" 风格 -->
+    <!-- CTA Section - MindMarket 风格增强版 -->
     <section class="footer-cta">
+      <!-- 有机形状装饰背景 -->
+      <div class="cta-bg">
+        <div class="cta-blob cta-blob--1" />
+        <div class="cta-blob cta-blob--2" />
+        <div class="cta-blob cta-blob--3" />
+        <svg class="cta-wave" viewBox="0 0 1440 120" preserveAspectRatio="none">
+          <path
+            d="M0,60 C360,120 720,0 1080,60 C1260,90 1380,30 1440,60 L1440,120 L0,120 Z"
+            fill="currentColor"
+          />
+        </svg>
+      </div>
+
       <div class="container">
         <div class="cta-content">
+          <!-- 装饰性徽章 -->
+          <div class="cta-badge">
+            <Sparkles :size="14" />
+            <span>{{ $t('app.name') }}</span>
+          </div>
+
           <h2 class="cta-title">
             <span class="cta-title-line">{{ $t('footer.cta.title1') }}</span>
             <span class="cta-title-highlight">{{ $t('footer.cta.title2') }}</span>
           </h2>
           <p class="cta-desc">{{ $t('footer.cta.desc') }}</p>
+
           <div class="cta-actions">
             <RouterLink to="/explore" class="cta-btn cta-btn--primary">
               <Compass :size="18" />
               {{ $t('nav.explore') }}
             </RouterLink>
-            <RouterLink v-if="!isAuthenticated" to="/login" class="cta-btn cta-btn--ghost">
+            <RouterLink v-if="!isAuthenticated" to="/login" class="cta-btn cta-btn--secondary">
               <UserPlus :size="18" />
               {{ $t('footer.cta.join') }}
             </RouterLink>
           </div>
+
           <div class="cta-features">
             <div class="cta-feature">
-              <Zap :size="14" />
+              <div class="cta-feature-icon">
+                <Zap :size="16" />
+              </div>
               <span>{{ $t('footer.cta.feature1') }}</span>
             </div>
             <div class="cta-feature">
-              <Globe :size="14" />
+              <div class="cta-feature-icon">
+                <Globe :size="16" />
+              </div>
               <span>{{ $t('footer.cta.feature2') }}</span>
             </div>
             <div class="cta-feature">
-              <Heart :size="14" />
+              <div class="cta-feature-icon">
+                <Heart :size="16" />
+              </div>
               <span>{{ $t('footer.cta.feature3') }}</span>
             </div>
           </div>
-        </div>
-        <!-- 装饰性有机形状 -->
-        <div class="cta-decoration">
-          <div class="cta-blob cta-blob--1" />
-          <div class="cta-blob cta-blob--2" />
         </div>
       </div>
     </section>
@@ -89,7 +111,7 @@
               class="social-link"
               aria-label="GitHub"
             >
-              <GithubIcon :size="18" />
+              <Github :size="18" />
             </a>
           </div>
         </div>
@@ -112,32 +134,142 @@ const currentYear = computed(() => new Date().getFullYear())
 </script>
 
 <style scoped>
-/* ========== CTA Section ========== */
+/* ========== CTA Section - MindMarket 风格 ========== */
 .footer-cta {
   position: relative;
-  padding: var(--spacing-16) 0;
-  background: linear-gradient(
-    180deg,
-    transparent 0%,
-    rgba(var(--color-primary-rgb), 0.03) 50%,
-    rgba(var(--color-primary-rgb), 0.06) 100%
-  );
+  padding: var(--spacing-20) 0 var(--spacing-16);
   overflow: hidden;
+}
+
+/* 背景装饰 */
+.cta-bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.cta-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  animation: blob-float 20s ease-in-out infinite;
+}
+
+.cta-blob--1 {
+  width: 500px;
+  height: 500px;
+  top: -200px;
+  left: -100px;
+  background: radial-gradient(
+    circle,
+    rgba(var(--color-primary-rgb), 0.25) 0%,
+    rgba(var(--color-primary-rgb), 0.1) 40%,
+    transparent 70%
+  );
+  animation-delay: 0s;
+}
+
+.cta-blob--2 {
+  width: 400px;
+  height: 400px;
+  bottom: -150px;
+  right: -50px;
+  background: radial-gradient(
+    circle,
+    rgba(var(--color-accent-rgb), 0.2) 0%,
+    rgba(var(--color-accent-rgb), 0.08) 40%,
+    transparent 70%
+  );
+  animation-delay: -7s;
+}
+
+.cta-blob--3 {
+  width: 300px;
+  height: 300px;
+  top: 50%;
+  left: 60%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(
+    circle,
+    rgba(var(--color-secondary-rgb), 0.15) 0%,
+    transparent 60%
+  );
+  animation-delay: -14s;
+}
+
+@keyframes blob-float {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  25% {
+    transform: translate(30px, -20px) scale(1.05);
+  }
+  50% {
+    transform: translate(-20px, 20px) scale(0.95);
+  }
+  75% {
+    transform: translate(20px, 10px) scale(1.02);
+  }
+}
+
+.cta-wave {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 80px;
+  color: var(--color-bg-primary);
+  opacity: 0.5;
 }
 
 .cta-content {
   position: relative;
   z-index: 1;
   text-align: center;
-  max-width: 600px;
+  max-width: 640px;
   margin: 0 auto;
 }
 
+/* 徽章 */
+.cta-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  padding: var(--spacing-2) var(--spacing-4);
+  background: rgba(var(--color-primary-rgb), 0.1);
+  border: 1px solid rgba(var(--color-primary-rgb), 0.2);
+  border-radius: var(--radius-full);
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  color: var(--color-primary);
+  margin-bottom: var(--spacing-6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.cta-badge svg {
+  animation: sparkle 2s ease-in-out infinite;
+}
+
+@keyframes sparkle {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(0.9);
+  }
+}
+
 .cta-title {
-  font-size: clamp(1.75rem, 5vw, 2.5rem);
+  font-size: clamp(2rem, 6vw, 3rem);
   font-weight: var(--font-bold);
-  line-height: 1.2;
-  margin-bottom: var(--spacing-4);
+  line-height: 1.15;
+  margin-bottom: var(--spacing-5);
 }
 
 .cta-title-line {
@@ -157,9 +289,10 @@ const currentYear = computed(() => new Date().getFullYear())
   font-size: var(--text-lg);
   color: var(--color-text-secondary);
   margin-bottom: var(--spacing-8);
-  max-width: 480px;
+  max-width: 500px;
   margin-left: auto;
   margin-right: auto;
+  line-height: var(--leading-relaxed);
 }
 
 .cta-actions {
@@ -167,100 +300,88 @@ const currentYear = computed(() => new Date().getFullYear())
   justify-content: center;
   flex-wrap: wrap;
   gap: var(--spacing-4);
-  margin-bottom: var(--spacing-8);
+  margin-bottom: var(--spacing-10);
 }
 
 .cta-btn {
   display: inline-flex;
   align-items: center;
   gap: var(--spacing-2);
-  padding: var(--spacing-3) var(--spacing-6);
+  padding: var(--spacing-4) var(--spacing-8);
   border-radius: var(--radius-full);
-  font-size: var(--text-sm);
+  font-size: var(--text-base);
   font-weight: var(--font-semibold);
   text-decoration: none;
-  transition: all var(--transition-fast);
+  transition: all var(--transition-normal);
 }
 
 .cta-btn--primary {
   background: var(--gradient-primary);
   color: var(--color-white);
-  box-shadow: 0 4px 16px rgba(var(--color-primary-rgb), 0.3);
+  box-shadow:
+    0 4px 20px rgba(var(--color-primary-rgb), 0.35),
+    0 0 0 0 rgba(var(--color-primary-rgb), 0.2);
 }
 
 .cta-btn--primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 24px rgba(var(--color-primary-rgb), 0.4);
+  transform: translateY(-3px);
+  box-shadow:
+    0 8px 30px rgba(var(--color-primary-rgb), 0.45),
+    0 0 0 4px rgba(var(--color-primary-rgb), 0.1);
 }
 
-.cta-btn--ghost {
-  background: var(--glass-bg);
-  color: var(--color-text-primary);
-  border: 1px solid var(--glass-border-strong);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-}
-
-.cta-btn--ghost:hover {
+.cta-btn--secondary {
   background: var(--glass-bg-strong);
+  color: var(--color-text-primary);
+  border: 2px solid var(--glass-border-strong);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.cta-btn--secondary:hover {
+  background: rgba(var(--color-primary-rgb), 0.1);
   border-color: var(--color-primary);
   color: var(--color-primary);
+  transform: translateY(-3px);
 }
 
 .cta-features {
   display: flex;
   justify-content: center;
   flex-wrap: wrap;
-  gap: var(--spacing-4) var(--spacing-6);
+  gap: var(--spacing-4);
 }
 
 .cta-feature {
   display: inline-flex;
   align-items: center;
-  gap: var(--spacing-2);
-  padding: var(--spacing-2) var(--spacing-4);
-  background: var(--glass-bg);
+  gap: var(--spacing-3);
+  padding: var(--spacing-3) var(--spacing-5);
+  background: var(--glass-bg-strong);
   border: 1px solid var(--glass-border);
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-xl);
   font-size: var(--text-sm);
+  font-weight: var(--font-medium);
   color: var(--color-text-secondary);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: all var(--transition-fast);
 }
 
-.cta-feature svg {
+.cta-feature:hover {
+  border-color: rgba(var(--color-primary-rgb), 0.3);
+  transform: translateY(-2px);
+}
+
+.cta-feature-icon {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(var(--color-primary-rgb), 0.12);
+  border-radius: var(--radius-lg);
   color: var(--color-primary);
-}
-
-/* Decorative Blobs */
-.cta-decoration {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  overflow: hidden;
-}
-
-.cta-blob {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(60px);
-  opacity: 0.4;
-}
-
-.cta-blob--1 {
-  width: 300px;
-  height: 300px;
-  top: -100px;
-  left: -50px;
-  background: radial-gradient(circle, rgba(var(--color-primary-rgb), 0.3) 0%, transparent 70%);
-}
-
-.cta-blob--2 {
-  width: 250px;
-  height: 250px;
-  bottom: -80px;
-  right: -30px;
-  background: radial-gradient(circle, rgba(var(--color-accent-rgb), 0.25) 0%, transparent 70%);
 }
 
 /* ========== Main Footer ========== */
@@ -384,12 +505,33 @@ const currentYear = computed(() => new Date().getFullYear())
 /* ========== Responsive ========== */
 @media (max-width: 768px) {
   .footer-cta {
-    padding: var(--spacing-12) 0;
+    padding: var(--spacing-16) 0 var(--spacing-12);
+  }
+
+  .cta-blob--1 {
+    width: 300px;
+    height: 300px;
+  }
+
+  .cta-blob--2 {
+    width: 250px;
+    height: 250px;
+  }
+
+  .cta-blob--3 {
+    display: none;
   }
 
   .cta-features {
     flex-direction: column;
     align-items: center;
+    gap: var(--spacing-3);
+  }
+
+  .cta-feature {
+    width: 100%;
+    max-width: 280px;
+    justify-content: center;
   }
 
   .footer-main {
@@ -417,6 +559,17 @@ const currentYear = computed(() => new Date().getFullYear())
     flex-direction: column;
     gap: var(--spacing-4);
     text-align: center;
+  }
+}
+
+/* 减少动画偏好 */
+@media (prefers-reduced-motion: reduce) {
+  .cta-blob {
+    animation: none;
+  }
+
+  .cta-badge svg {
+    animation: none;
   }
 }
 </style>
