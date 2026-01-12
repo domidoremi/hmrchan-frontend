@@ -414,5 +414,17 @@
       "explore": "Explore",
       "support": "Support"
     }
+  },
+  "stats": {
+    "title": {
+      "prefix": "The ",
+      "highlight": "Story",
+      "suffix": " Behind the Numbers"
+    },
+    "subtitle": "These numbers aren't just milestones — they represent the connections we've built with creators and users.",
+    "languages": "Supporting multiple languages so users worldwide can enjoy amazing content",
+    "creators": "Talented creators onboard, continuously producing high-quality content",
+    "content": "Curated pieces collected, each one worth saving",
+    "growing": "Continuously growing, more exciting things to come"
   }
 }
