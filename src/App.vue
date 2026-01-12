@@ -71,9 +71,9 @@ const animationIntensity = computed(() => settings.value.animationIntensity)
 const cachedPages = ['HomePage', 'ExplorePage', 'AuthorsPage', 'CommunityPage', 'FavoritesPage']
 
 // Page transition name
-const transitionName = ref('fade')
+const transitionName = ref('page-fade')
 
-// Update transition based on route depth
+// Update transition based on route depth and navigation type
 const routeDepth = (path: string) => path.split('/').filter(Boolean).length
 
 watch(
@@ -87,12 +87,16 @@ watch(
     const toDepth = routeDepth(to)
     const fromDepth = routeDepth(from || '/')
 
+    // 根据导航深度选择不同的过渡效果
     if (toDepth > fromDepth) {
-      transitionName.value = 'slide-up'
+      // 进入更深层级 - 向上滑入 + 缩放
+      transitionName.value = 'page-slide-up'
     } else if (toDepth < fromDepth) {
-      transitionName.value = 'slide-down'
+      // 返回上层 - 向下滑出 + 缩放
+      transitionName.value = 'page-slide-down'
     } else {
-      transitionName.value = 'fade'
+      // 同级切换 - 淡入淡出 + 轻微缩放
+      transitionName.value = 'page-fade'
     }
   }
 )

@@ -23,14 +23,47 @@ This could compromise your account or leak your data.
 アカウントが乗っ取られたり、データが漏洩する可能性があります。
 `
 
+const HIMERI_MESSAGE = `
+%c🌸 籾山ひめり 🌸
+
+%c籾山ひめりの活動に関するご報告
+https://takanenonadeshiko.jp/籾山ひめりの活動に関するご報告/
+
+%cひめりちゃん、いつでも待ってるよ。
+あなたの笑顔がまた見られる日を、心から願っています。
+どうか、ゆっくり休んでね。そして、いつか戻ってきてくれたら嬉しいな。
+
+We'll always be waiting for you, Himeri.
+We sincerely hope to see your smile again someday.
+Please take your time to rest. We'd be so happy if you come back one day.
+
+ひめりちゃんの帰りを待っています 💕
+`
+
 const TITLE_STYLE = 'color: #ff4444; font-size: 24px; font-weight: bold;'
 const TEXT_STYLE = 'color: #333; font-size: 14px; line-height: 1.6;'
+
+const HIMERI_TITLE_STYLE =
+  'color: #ff69b4; font-size: 20px; font-weight: bold; text-shadow: 0 0 10px rgba(255, 105, 180, 0.5);'
+const HIMERI_LINK_STYLE =
+  'color: #4a90d9; font-size: 13px; line-height: 1.8; text-decoration: underline;'
+const HIMERI_TEXT_STYLE = 'color: #666; font-size: 13px; line-height: 1.8; font-style: italic;'
+
+/**
+ * 显示籾山ひめり的祝福信息
+ */
+function showHimeriMessage(): void {
+  console.log(HIMERI_MESSAGE, HIMERI_TITLE_STYLE, HIMERI_LINK_STYLE, HIMERI_TEXT_STYLE)
+}
 
 /**
  * 显示控制台警告信息
  */
 function showWarning(): void {
   console.clear()
+  // 先显示籾山ひめり的信息
+  showHimeriMessage()
+  // 再显示安全警告
   console.log(WARNING_MESSAGE, TITLE_STYLE, TEXT_STYLE)
 }
 
