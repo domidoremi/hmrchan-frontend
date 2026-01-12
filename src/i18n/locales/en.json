@@ -232,6 +232,7 @@
     "conflict": "Conflict",
     "validationError": "Validation error",
     "tooManyRequests": "Too many requests",
+    "tooManyRequestsWithTime": "Too many requests, please try again in {seconds} seconds",
     "badGateway": "Bad gateway",
     "serviceUnavailable": "Service unavailable",
     "componentError": "Something went wrong",

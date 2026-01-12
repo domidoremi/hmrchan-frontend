@@ -14,6 +14,7 @@ export type NotificationType =
   | 'comment_mention'
   | 'follow'
   | 'system'
+  | 'report_resolved'
 
 export interface Notification {
   id: string
