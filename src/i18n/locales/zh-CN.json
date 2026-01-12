@@ -232,6 +232,7 @@
     "conflict": "冲突",
     "validationError": "参数验证错误",
     "tooManyRequests": "请求过于频繁",
+    "tooManyRequestsWithTime": "请求过于频繁，请 {seconds} 秒后重试",
     "badGateway": "网关错误",
     "serviceUnavailable": "服务不可用",
     "componentError": "出了点问题",

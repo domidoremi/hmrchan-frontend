@@ -212,8 +212,17 @@ async function handleErrorResponse(response: Response, skipErrorToast?: boolean)
 
   const i18n = await getI18n()
   const { t } = i18n.global
-  const statusMessage = statusMessages[response.status]
-  const localizedMessage = statusMessage ? t(statusMessage) : errorMessage
+  let localizedMessage: string
+
+  // 429 特殊处理：读取 Retry-After 响应头
+  if (response.status === 429) {
+    const retryAfter = response.headers.get('Retry-After')
+    const seconds = retryAfter ? parseInt(retryAfter, 10) : 60
+    localizedMessage = t('error.tooManyRequestsWithTime', { seconds })
+  } else {
+    const statusMessage = statusMessages[response.status]
+    localizedMessage = statusMessage ? t(statusMessage) : errorMessage
+  }
 
   // 显示错误提示（除非跳过）
   if (!skipErrorToast && response.status !== 401) {

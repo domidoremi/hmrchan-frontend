@@ -11,9 +11,13 @@ import { defineStore } from 'pinia'
 import { useRouter } from 'vue-router'
 import { authService, ApiError } from '@/api'
 import type { UserResponse } from '@/api'
+import { getDeviceInfo } from '@/utils/device'
 
 // 用户类型（与 API 响应匹配）
 export type AuthUser = UserResponse
+
+// 默认心跳间隔（5 分钟），可被后端返回的 refresh_threshold 覆盖
+const DEFAULT_HEARTBEAT_INTERVAL = 5 * 60 * 1000
 
 export const useAuthStore = defineStore(
   'auth',
@@ -27,7 +31,7 @@ export const useAuthStore = defineStore(
 
     let heartbeatTimer: ReturnType<typeof setInterval> | null = null
     let authLogoutHandler: (() => void) | null = null
-    const HEARTBEAT_INTERVAL = 5 * 60 * 1000 // 5 minutes
+    let heartbeatInterval = DEFAULT_HEARTBEAT_INTERVAL
 
     const isAuthenticated = computed(() => !!user.value && !!token.value)
 
@@ -41,14 +45,21 @@ export const useAuthStore = defineStore(
       error.value = null
 
       try {
+        const deviceInfo = getDeviceInfo()
         const response = await authService.login({
           username: email,
           password,
+          ...deviceInfo,
           ...(turnstileToken ? { turnstile_token: turnstileToken } : {}),
         })
 
         user.value = response.user
         token.value = response.access_token
+
+        // 使用后端返回的刷新阈值，或使用默认值
+        if (response.refresh_threshold) {
+          heartbeatInterval = response.refresh_threshold * 1000
+        }
         startHeartbeat()
 
         // 登录成功后获取完整的用户资料（包含 avatar_url 等字段）
@@ -80,16 +91,23 @@ export const useAuthStore = defineStore(
       error.value = null
 
       try {
+        const deviceInfo = getDeviceInfo()
         const response = await authService.register({
           username,
           email,
           password,
+          ...deviceInfo,
           ...(turnstileToken ? { turnstile_token: turnstileToken } : {}),
         })
 
         // 注册成功后自动登录
         user.value = response.user
         token.value = response.access_token
+
+        // 使用后端返回的刷新阈值，或使用默认值
+        if (response.refresh_threshold) {
+          heartbeatInterval = response.refresh_threshold * 1000
+        }
         startHeartbeat()
 
         // 获取完整的用户资料（包含 avatar_url 等字段）
@@ -213,7 +231,7 @@ export const useAuthStore = defineStore(
           // 刷新失败，可能 refresh_token 已过期
           stopHeartbeat()
         }
-      }, HEARTBEAT_INTERVAL)
+      }, heartbeatInterval)
     }
 
     /**

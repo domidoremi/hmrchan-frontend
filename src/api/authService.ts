@@ -12,6 +12,8 @@ export interface LoginRequest {
   username: string
   password: string
   turnstile_token?: string
+  device_name?: string
+  device_type?: string
 }
 
 export interface RegisterRequest {
@@ -19,11 +21,15 @@ export interface RegisterRequest {
   email: string
   password: string
   turnstile_token?: string
+  device_name?: string
+  device_type?: string
 }
 
 export interface AuthResponse {
   access_token: string
   token_type: string
+  expires_in?: number
+  refresh_threshold?: number
   user: UserResponse
 }
 

@@ -232,6 +232,7 @@
     "conflict": "競合が発生しました",
     "validationError": "入力内容を確認してください",
     "tooManyRequests": "リクエストが多すぎます",
+    "tooManyRequestsWithTime": "リクエストが多すぎます。{seconds} 秒後に再試行してください",
     "badGateway": "不正なゲートウェイ",
     "serviceUnavailable": "サービスは利用できません",
     "componentError": "問題が発生しました",

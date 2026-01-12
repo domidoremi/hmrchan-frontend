@@ -179,6 +179,7 @@ import {
   normalizeToThumbnailUrl,
 } from '@/utils/mediaOptimizer'
 import { useCachedPost } from '@/composables/useCachedPosts'
+import { trackPostView } from '@/composables/useViewTracking'
 import { postCache } from '@/utils/cache'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import { defineAsyncComponent } from 'vue'
@@ -384,6 +385,10 @@ async function fetchPost() {
       isMediaLoaded.value = false
       await fetchFavoriteStatus()
       isLoading.value = false
+
+      // 追踪浏览量（使用 IndexedDB 去重）
+      trackPostView(postId.value, isAuthenticated.value)
+
       loadCachedPost(postId.value).catch(() => {})
       return
     }
@@ -393,6 +398,9 @@ async function fetchPost() {
     activeMediaIndex.value = 0
     isMediaLoaded.value = false
     await fetchFavoriteStatus()
+
+    // 追踪浏览量（使用 IndexedDB 去重）
+    trackPostView(postId.value, isAuthenticated.value)
   } catch (err) {
     if (err instanceof ApiError) {
       error.value = err.message
