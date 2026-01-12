@@ -47,11 +47,22 @@
               </button>
             </div>
 
-            <select v-if="activeTab === 'posts'" v-model="sortBy" class="glass-input sort-select">
-              <option value="relevance">{{ $t('search.sort.relevance') }}</option>
-              <option value="published_at">{{ $t('search.sort.date') }}</option>
-              <option value="view_count">{{ $t('search.sort.views') }}</option>
-            </select>
+            <div v-if="activeTab === 'posts'" class="sort-controls">
+              <select v-model="sortBy" class="glass-input sort-select">
+                <option v-for="opt in sortOptions" :key="opt.value" :value="opt.value">
+                  {{ opt.label }}
+                </option>
+              </select>
+              <button
+                type="button"
+                class="sort-order-btn"
+                :class="{ 'sort-order-btn--asc': sortOrder === 'asc' }"
+                :title="sortOrder === 'desc' ? $t('search.sort.descending') : $t('search.sort.ascending')"
+                @click="toggleSortOrder"
+              >
+                <ArrowUpDown :size="16" />
+              </button>
+            </div>
           </div>
         </div>
 
@@ -87,6 +98,17 @@
               :loading="isLoadingMore"
               @load-more="loadMore"
             />
+
+            <!-- 未登录用户提示 -->
+            <div v-if="mayHaveMoreResults && results.length > 0" class="login-hint glass-card">
+              <LogIn :size="20" class="login-hint-icon" />
+              <div class="login-hint-content">
+                <p class="login-hint-text">{{ $t('search.loginForMore') }}</p>
+                <button type="button" class="login-hint-btn glass-button glass-button--primary" @click="goToLogin">
+                  {{ $t('nav.login') }}
+                </button>
+              </div>
+            </div>
           </template>
 
           <template v-else-if="activeTab === 'authors'">
@@ -169,9 +191,21 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { Search, FileText, User, Globe, Youtube, Music2, Twitter } from 'lucide-vue-next'
+import { storeToRefs } from 'pinia'
+import {
+  Search,
+  FileText,
+  User,
+  Globe,
+  Youtube,
+  Music2,
+  Twitter,
+  LogIn,
+  ArrowUpDown,
+} from 'lucide-vue-next'
 import { searchService, type AuthorListItem, type PostListItem } from '@/api'
 import { normalizeAvatarUrl } from '@/api/userService'
+import { useAuthStore } from '@/stores'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import PostCard from '@/components/business/PostCard.vue'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
@@ -180,10 +214,13 @@ import SearchBar from '@/components/business/SearchBar.vue'
 const route = useRoute()
 const router = useRouter()
 const { t } = useI18n()
+const authStore = useAuthStore()
+const { isAuthenticated } = storeToRefs(authStore)
 
 const query = computed(() => (route.query['q'] as string) || '')
 const activeTab = ref<'posts' | 'authors'>('posts')
 const sortBy = ref<'relevance' | 'published_at' | 'view_count'>('relevance')
+const sortOrder = ref<'asc' | 'desc'>('desc')
 const currentPlatform = ref<'all' | 'youtube' | 'tiktok' | 'twitter'>('all')
 
 const results = ref<PostListItem[]>([])
@@ -201,17 +238,30 @@ const authorError = ref<string | null>(null)
 
 const hasMore = computed(() => results.value.length < total.value)
 
-const tabs = [
+// 检查是否可能有更多结果（未登录用户每平台限制15条）
+const mayHaveMoreResults = computed(() => {
+  if (isAuthenticated.value) return false
+  // 如果结果数量接近限制，可能有更多
+  return results.value.length >= 15 || total.value > results.value.length
+})
+
+const tabs = computed(() => [
   { id: 'posts' as const, label: t('search.tab.posts'), icon: FileText },
   { id: 'authors' as const, label: t('search.tab.authors'), icon: User },
-]
+])
 
-const platformOptions = [
+const platformOptions = computed(() => [
   { value: 'all' as const, label: t('explore.allPlatforms'), icon: Globe },
   { value: 'youtube' as const, label: 'YouTube', icon: Youtube },
   { value: 'tiktok' as const, label: 'TikTok', icon: Music2 },
   { value: 'twitter' as const, label: 'Twitter', icon: Twitter },
-]
+])
+
+const sortOptions = computed(() => [
+  { value: 'relevance' as const, label: t('search.sort.relevance') },
+  { value: 'published_at' as const, label: t('search.sort.date') },
+  { value: 'view_count' as const, label: t('search.sort.views') },
+])
 
 function getPlatformIcon(platform: string) {
   switch (platform.toLowerCase()) {
@@ -224,6 +274,10 @@ function getPlatformIcon(platform: string) {
     default:
       return Globe
   }
+}
+
+function toggleSortOrder() {
+  sortOrder.value = sortOrder.value === 'desc' ? 'asc' : 'desc'
 }
 
 async function search() {
@@ -240,6 +294,7 @@ async function search() {
       page: 1,
       page_size: pageSize,
       sort_by: sortBy.value,
+      sort_order: sortOrder.value,
       ...(platform && { platform }),
     })
     results.value = res.items
@@ -266,6 +321,7 @@ async function loadMore() {
       page: nextPage,
       page_size: pageSize,
       sort_by: sortBy.value,
+      sort_order: sortOrder.value,
       ...(platform && { platform }),
     })
     results.value.push(...res.items)
@@ -312,6 +368,10 @@ function goToAuthor(authorId: string) {
   router.push({ name: 'author-detail', params: { id: authorId } })
 }
 
+function goToLogin() {
+  router.push({ path: '/login', query: { redirect: route.fullPath } })
+}
+
 watch(query, () => {
   if (query.value) {
     search()
@@ -324,7 +384,7 @@ watch(query, () => {
   }
 })
 
-watch(sortBy, () => {
+watch([sortBy, sortOrder], () => {
   if (query.value) {
     search()
   }
@@ -480,6 +540,73 @@ onMounted(() => {
 
 .sort-select {
   padding: var(--spacing-2) var(--spacing-3);
+  font-size: var(--text-sm);
+}
+
+.sort-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+}
+
+.sort-order-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  background: var(--glass-bg-subtle);
+  color: var(--color-text-secondary);
+  transition: all var(--transition-fast);
+}
+
+.sort-order-btn:hover {
+  background: var(--glass-bg-light);
+  color: var(--color-text-primary);
+}
+
+.sort-order-btn svg {
+  transition: transform var(--transition-fast);
+}
+
+.sort-order-btn--asc svg {
+  transform: rotate(180deg);
+}
+
+.login-hint {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-4);
+  padding: var(--spacing-4);
+  margin-top: var(--spacing-6);
+  background: rgba(var(--color-primary-rgb), 0.05);
+  border: 1px solid rgba(var(--color-primary-rgb), 0.15);
+}
+
+.login-hint-icon {
+  color: var(--color-primary);
+  flex-shrink: 0;
+}
+
+.login-hint-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: 1;
+  gap: var(--spacing-4);
+  flex-wrap: wrap;
+}
+
+.login-hint-text {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
+.login-hint-btn {
+  flex-shrink: 0;
+  padding: var(--spacing-2) var(--spacing-4);
   font-size: var(--text-sm);
 }
 

@@ -197,8 +197,11 @@
     "sort": {
       "relevance": "関連性",
       "date": "日付",
-      "views": "閲覧数"
+      "views": "閲覧数",
+      "ascending": "昇順",
+      "descending": "降順"
     },
+    "loginForMore": "ログインしてより多くの結果を表示",
     "type": {
       "post": "投稿",
       "author": "作者",
