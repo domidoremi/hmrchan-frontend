@@ -154,17 +154,17 @@ const pageSize = isMobile ? 8 : 24 // 移动端首屏 8 张，桌面端 24 张
 // JS Masonry 布局 - 避免 CSS column-count 的 CLS 问题
 const masonryContainerRef = ref<HTMLElement | null>(null)
 const columnRefs = ref<HTMLElement[]>([])
-const columnCount = ref(4)
 
 const {
   columns,
+  columnCount,
   distributePosts,
   distributePostsRoundRobin,
   redistribute,
   getColumnWidth,
   initColumns,
 } = useMasonryColumns({
-  initialColumnCount: columnCount.value,
+  initialColumnCount: calculateColumnCount(),
 })
 
 const hasMore = computed(() => posts.value.length < total.value)
@@ -426,8 +426,8 @@ watch(currentPlatform, () => {
 })
 
 onMounted(() => {
-  // 初始化列数
-  columnCount.value = calculateColumnCount()
+  // 初始化列数（composable 已经用 calculateColumnCount() 初始化了）
+  // 确保 columns 数组与当前列数匹配
   initColumns()
 
   if (posts.value.length === 0) {
