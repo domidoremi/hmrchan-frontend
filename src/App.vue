@@ -119,6 +119,12 @@ main {
   padding-top: var(--navbar-height);
 }
 
+.route-view {
+  position: relative;
+  min-height: calc(100vh - var(--navbar-height));
+  overflow: hidden;
+}
+
 /* 动效强度控制 */
 #app[data-animation-intensity='none'] {
   --duration-instant: 0ms;

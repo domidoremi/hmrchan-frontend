@@ -49,6 +49,9 @@ const HIMERI_LINK_STYLE =
   'color: #4a90d9; font-size: 13px; line-height: 1.8; text-decoration: underline;'
 const HIMERI_TEXT_STYLE = 'color: #666; font-size: 13px; line-height: 1.8; font-style: italic;'
 
+// 标记是否已显示过警告，避免重复
+let hasShownWarning = false
+
 /**
  * 显示籾山ひめり的祝福信息
  */
@@ -57,9 +60,12 @@ function showHimeriMessage(): void {
 }
 
 /**
- * 显示控制台警告信息
+ * 显示控制台警告信息（仅显示一次）
  */
 function showWarning(): void {
+  if (hasShownWarning) return
+  hasShownWarning = true
+
   // 先显示籾山ひめり的信息
   showHimeriMessage()
   // 再显示安全警告
