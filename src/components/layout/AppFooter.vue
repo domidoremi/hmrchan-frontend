@@ -111,7 +111,7 @@
               class="social-link"
               aria-label="GitHub"
             >
-              <Github :size="18" />
+              <GithubIcon :size="18" />
             </a>
           </div>
         </div>
