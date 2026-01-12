@@ -346,6 +346,7 @@ useInfiniteScroll(sentinelRef, loadMore, {
 
 /**
  * 计算响应式列数
+ * 移动端始终保持双列，避免内容被过分压缩
  */
 function calculateColumnCount(): number {
   if (typeof window === 'undefined') return 4
@@ -355,8 +356,7 @@ function calculateColumnCount(): number {
   if (width >= 1200) return 4
   if (width >= 900) return 3
   if (width >= 600) return 3
-  if (width >= 400) return 2
-  return 1
+  return 2 // 移动端始终双列
 }
 
 /**
