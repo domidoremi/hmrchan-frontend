@@ -50,9 +50,10 @@ export const searchService = {
     }
     if (params.sort_by) {
       query.set('sort_by', params.sort_by)
-    }
-    if (params.sort_order) {
-      query.set('sort_order', params.sort_order)
+      // 根据排序字段设置默认排序方向
+      const defaultOrder =
+        params.sort_by === 'relevance' ? 'desc' : params.sort_by === 'published_at' ? 'desc' : 'desc'
+      query.set('sort_order', params.sort_order ?? defaultOrder)
     }
 
     return apiClient.get<PaginatedApiResponse<PostListItem>>(`/search/posts?${query.toString()}`)
