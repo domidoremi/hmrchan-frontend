@@ -89,7 +89,7 @@
               class="social-link"
               aria-label="GitHub"
             >
-              <Github :size="18" />
+              <GithubIcon :size="18" />
             </a>
           </div>
         </div>
@@ -102,7 +102,7 @@
 import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
 import { storeToRefs } from 'pinia'
-import { Compass, Github, Globe, Heart, Sparkles, UserPlus, Zap } from 'lucide-vue-next'
+import { Compass, GithubIcon, Globe, Heart, Sparkles, UserPlus, Zap } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores'
 
 const authStore = useAuthStore()
