@@ -1,5 +1,12 @@
 <template>
   <div class="explore-page">
+    <!-- MindMarket 风格背景装饰 -->
+    <div class="explore-bg" aria-hidden="true">
+      <div class="explore-bg__blob explore-bg__blob--green" />
+      <div class="explore-bg__blob explore-bg__blob--purple" />
+      <div class="explore-bg__blob explore-bg__blob--teal" />
+    </div>
+
     <div class="container">
       <header class="page-header">
         <div class="page-title-row">
@@ -463,7 +470,54 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .explore-page {
+  position: relative;
   padding: var(--spacing-8) 0;
+  min-height: 100vh;
+}
+
+/* ========== MindMarket 风格背景 ========== */
+.explore-bg {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  overflow: hidden;
+}
+
+.explore-bg__blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(100px);
+  opacity: 0.35;
+}
+
+.explore-bg__blob--green {
+  width: 500px;
+  height: 500px;
+  top: -10%;
+  left: -8%;
+  background: radial-gradient(circle, rgba(74, 222, 128, 0.5) 0%, transparent 70%);
+}
+
+.explore-bg__blob--purple {
+  width: 400px;
+  height: 400px;
+  top: 30%;
+  right: -10%;
+  background: radial-gradient(circle, rgba(167, 139, 250, 0.4) 0%, transparent 70%);
+}
+
+.explore-bg__blob--teal {
+  width: 450px;
+  height: 450px;
+  bottom: 5%;
+  left: 20%;
+  background: radial-gradient(circle, rgba(45, 212, 191, 0.35) 0%, transparent 70%);
+}
+
+/* 暗色模式调整 */
+[data-theme='dark'] .explore-bg__blob {
+  opacity: 0.2;
 }
 
 .page-header {
