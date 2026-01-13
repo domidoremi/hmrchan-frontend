@@ -1,60 +1,57 @@
 <template>
   <footer class="footer">
-    <!-- CTA Section - MindMarket 风格增强版 -->
+    <!-- CTA Section - MindMarket 风格 -->
     <section class="footer-cta">
-      <!-- 有机形状装饰背景 -->
-      <div class="cta-bg">
-        <div class="cta-blob cta-blob--1" />
-        <div class="cta-blob cta-blob--2" />
-        <div class="cta-blob cta-blob--3" />
-        <svg class="cta-wave" viewBox="0 0 1440 120" preserveAspectRatio="none">
-          <path
-            d="M0,60 C360,120 720,0 1080,60 C1260,90 1380,30 1440,60 L1440,120 L0,120 Z"
-            fill="currentColor"
-          />
-        </svg>
+      <!-- MindMarket 有机形状背景 -->
+      <div class="mm-hero-bg">
+        <div class="mm-blob mm-blob--green mm-blob--float" style="width: 500px; height: 500px; top: -200px; left: -100px;" />
+        <div class="mm-blob mm-blob--yellow mm-blob--float-reverse" style="width: 400px; height: 400px; bottom: -150px; right: -50px;" />
+        <div class="mm-blob mm-blob--purple mm-blob--float-slow" style="width: 300px; height: 300px; top: 50%; left: 60%;" />
       </div>
 
       <div class="container">
         <div class="cta-content">
-          <!-- 装饰性徽章 -->
-          <div class="cta-badge">
+          <!-- MindMarket 风格徽章 -->
+          <div class="mm-badge">
             <Sparkles :size="14" />
             <span>{{ $t('app.name') }}</span>
           </div>
 
-          <h2 class="cta-title">
+          <h2 class="mm-heading mm-heading--xl cta-title">
             <span class="cta-title-line">{{ $t('footer.cta.title1') }}</span>
-            <span class="cta-title-highlight">{{ $t('footer.cta.title2') }}</span>
+            <span class="mm-heading--gradient">{{ $t('footer.cta.title2') }}</span>
           </h2>
           <p class="cta-desc">{{ $t('footer.cta.desc') }}</p>
 
           <div class="cta-actions">
-            <RouterLink to="/explore" class="cta-btn cta-btn--primary">
+            <RouterLink to="/explore" class="mm-btn mm-btn--green mm-btn--lg">
               <Compass :size="18" />
               {{ $t('nav.explore') }}
+              <span class="mm-btn__icon">
+                <ArrowRight :size="16" />
+              </span>
             </RouterLink>
-            <RouterLink v-if="!isAuthenticated" to="/login" class="cta-btn cta-btn--secondary">
+            <RouterLink v-if="!isAuthenticated" to="/login" class="mm-btn mm-btn--outline mm-btn--lg">
               <UserPlus :size="18" />
               {{ $t('footer.cta.join') }}
             </RouterLink>
           </div>
 
           <div class="cta-features">
-            <div class="cta-feature">
-              <div class="cta-feature-icon">
+            <div class="mm-feature-tag">
+              <div class="mm-feature-tag__icon">
                 <Zap :size="16" />
               </div>
               <span>{{ $t('footer.cta.feature1') }}</span>
             </div>
-            <div class="cta-feature">
-              <div class="cta-feature-icon">
+            <div class="mm-feature-tag mm-feature-tag--orange">
+              <div class="mm-feature-tag__icon">
                 <Globe :size="16" />
               </div>
               <span>{{ $t('footer.cta.feature2') }}</span>
             </div>
-            <div class="cta-feature">
-              <div class="cta-feature-icon">
+            <div class="mm-feature-tag mm-feature-tag--coral">
+              <div class="mm-feature-tag__icon">
                 <Heart :size="16" />
               </div>
               <span>{{ $t('footer.cta.feature3') }}</span>
@@ -124,7 +121,7 @@
 import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
 import { storeToRefs } from 'pinia'
-import { Compass, GithubIcon, Globe, Heart, Sparkles, UserPlus, Zap } from 'lucide-vue-next'
+import { ArrowRight, Compass, GithubIcon, Globe, Heart, Sparkles, UserPlus, Zap } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores'
 
 const authStore = useAuthStore()
@@ -141,89 +138,6 @@ const currentYear = computed(() => new Date().getFullYear())
   overflow: hidden;
 }
 
-/* 背景装饰 */
-.cta-bg {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  overflow: hidden;
-}
-
-.cta-blob {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(80px);
-  animation: blob-float 20s ease-in-out infinite;
-}
-
-.cta-blob--1 {
-  width: 500px;
-  height: 500px;
-  top: -200px;
-  left: -100px;
-  background: radial-gradient(
-    circle,
-    rgba(var(--color-primary-rgb), 0.25) 0%,
-    rgba(var(--color-primary-rgb), 0.1) 40%,
-    transparent 70%
-  );
-  animation-delay: 0s;
-}
-
-.cta-blob--2 {
-  width: 400px;
-  height: 400px;
-  bottom: -150px;
-  right: -50px;
-  background: radial-gradient(
-    circle,
-    rgba(var(--color-accent-rgb), 0.2) 0%,
-    rgba(var(--color-accent-rgb), 0.08) 40%,
-    transparent 70%
-  );
-  animation-delay: -7s;
-}
-
-.cta-blob--3 {
-  width: 300px;
-  height: 300px;
-  top: 50%;
-  left: 60%;
-  transform: translate(-50%, -50%);
-  background: radial-gradient(
-    circle,
-    rgba(var(--color-secondary-rgb), 0.15) 0%,
-    transparent 60%
-  );
-  animation-delay: -14s;
-}
-
-@keyframes blob-float {
-  0%,
-  100% {
-    transform: translate(0, 0) scale(1);
-  }
-  25% {
-    transform: translate(30px, -20px) scale(1.05);
-  }
-  50% {
-    transform: translate(-20px, 20px) scale(0.95);
-  }
-  75% {
-    transform: translate(20px, 10px) scale(1.02);
-  }
-}
-
-.cta-wave {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  height: 80px;
-  color: var(--color-bg-primary);
-  opacity: 0.5;
-}
-
 .cta-content {
   position: relative;
   z-index: 1;
@@ -232,57 +146,17 @@ const currentYear = computed(() => new Date().getFullYear())
   margin: 0 auto;
 }
 
-/* 徽章 */
-.cta-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--spacing-2);
-  padding: var(--spacing-2) var(--spacing-4);
-  background: rgba(var(--color-primary-rgb), 0.1);
-  border: 1px solid rgba(var(--color-primary-rgb), 0.2);
-  border-radius: var(--radius-full);
-  font-size: var(--text-sm);
-  font-weight: var(--font-semibold);
-  color: var(--color-primary);
+.cta-content .mm-badge {
   margin-bottom: var(--spacing-6);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-}
-
-.cta-badge svg {
-  animation: sparkle 2s ease-in-out infinite;
-}
-
-@keyframes sparkle {
-  0%,
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.7;
-    transform: scale(0.9);
-  }
 }
 
 .cta-title {
-  font-size: clamp(2rem, 6vw, 3rem);
-  font-weight: var(--font-bold);
-  line-height: 1.15;
   margin-bottom: var(--spacing-5);
 }
 
 .cta-title-line {
   display: block;
   color: var(--color-text-primary);
-}
-
-.cta-title-highlight {
-  display: block;
-  background: var(--gradient-accent);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
 }
 
 .cta-desc {
@@ -303,85 +177,11 @@ const currentYear = computed(() => new Date().getFullYear())
   margin-bottom: var(--spacing-10);
 }
 
-.cta-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--spacing-2);
-  padding: var(--spacing-4) var(--spacing-8);
-  border-radius: var(--radius-full);
-  font-size: var(--text-base);
-  font-weight: var(--font-semibold);
-  text-decoration: none;
-  transition: all var(--transition-normal);
-}
-
-.cta-btn--primary {
-  background: var(--gradient-primary);
-  color: var(--color-white);
-  box-shadow:
-    0 4px 20px rgba(var(--color-primary-rgb), 0.35),
-    0 0 0 0 rgba(var(--color-primary-rgb), 0.2);
-}
-
-.cta-btn--primary:hover {
-  transform: translateY(-3px);
-  box-shadow:
-    0 8px 30px rgba(var(--color-primary-rgb), 0.45),
-    0 0 0 4px rgba(var(--color-primary-rgb), 0.1);
-}
-
-.cta-btn--secondary {
-  background: var(--glass-bg-strong);
-  color: var(--color-text-primary);
-  border: 2px solid var(--glass-border-strong);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-}
-
-.cta-btn--secondary:hover {
-  background: rgba(var(--color-primary-rgb), 0.1);
-  border-color: var(--color-primary);
-  color: var(--color-primary);
-  transform: translateY(-3px);
-}
-
 .cta-features {
   display: flex;
   justify-content: center;
   flex-wrap: wrap;
   gap: var(--spacing-4);
-}
-
-.cta-feature {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--spacing-3);
-  padding: var(--spacing-3) var(--spacing-5);
-  background: var(--glass-bg-strong);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-xl);
-  font-size: var(--text-sm);
-  font-weight: var(--font-medium);
-  color: var(--color-text-secondary);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  transition: all var(--transition-fast);
-}
-
-.cta-feature:hover {
-  border-color: rgba(var(--color-primary-rgb), 0.3);
-  transform: translateY(-2px);
-}
-
-.cta-feature-icon {
-  width: 28px;
-  height: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(var(--color-primary-rgb), 0.12);
-  border-radius: var(--radius-lg);
-  color: var(--color-primary);
 }
 
 /* ========== Main Footer ========== */
@@ -418,13 +218,13 @@ const currentYear = computed(() => new Date().getFullYear())
 }
 
 .brand-logo svg {
-  color: var(--color-primary);
+  color: var(--mm-green);
 }
 
 .brand-name {
   font-size: var(--text-xl);
   font-weight: var(--font-bold);
-  background: var(--gradient-accent);
+  background: var(--mm-gradient-primary);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -460,7 +260,7 @@ const currentYear = computed(() => new Date().getFullYear())
 }
 
 .footer-links a:hover {
-  color: var(--color-primary);
+  color: var(--mm-green);
 }
 
 /* Bottom Bar */
@@ -492,12 +292,16 @@ const currentYear = computed(() => new Date().getFullYear())
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-full);
   color: var(--color-text-secondary);
-  transition: all var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast),
+    transform var(--transition-fast);
 }
 
 .social-link:hover {
-  background: var(--color-primary);
-  border-color: var(--color-primary);
+  background: var(--mm-green);
+  border-color: var(--mm-green);
   color: var(--color-white);
   transform: translateY(-2px);
 }
@@ -508,27 +312,13 @@ const currentYear = computed(() => new Date().getFullYear())
     padding: var(--spacing-16) 0 var(--spacing-12);
   }
 
-  .cta-blob--1 {
-    width: 300px;
-    height: 300px;
-  }
-
-  .cta-blob--2 {
-    width: 250px;
-    height: 250px;
-  }
-
-  .cta-blob--3 {
-    display: none;
-  }
-
   .cta-features {
     flex-direction: column;
     align-items: center;
     gap: var(--spacing-3);
   }
 
-  .cta-feature {
+  .cta-features .mm-feature-tag {
     width: 100%;
     max-width: 280px;
     justify-content: center;
@@ -564,11 +354,7 @@ const currentYear = computed(() => new Date().getFullYear())
 
 /* 减少动画偏好 */
 @media (prefers-reduced-motion: reduce) {
-  .cta-blob {
-    animation: none;
-  }
-
-  .cta-badge svg {
+  .mm-blob {
     animation: none;
   }
 }
