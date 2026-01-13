@@ -1,5 +1,11 @@
 <template>
   <div class="authors-page">
+    <!-- MindMarket 风格背景装饰 -->
+    <div class="authors-bg" aria-hidden="true">
+      <div class="authors-bg__blob authors-bg__blob--purple" />
+      <div class="authors-bg__blob authors-bg__blob--teal" />
+    </div>
+
     <div class="container">
       <div class="page-title-row">
         <h1 class="page-title">{{ $t('nav.authors') }}</h1>
@@ -194,7 +200,46 @@ onMounted(() => {
 
 <style scoped>
 .authors-page {
+  position: relative;
   padding: var(--spacing-8) 0;
+  min-height: 100vh;
+}
+
+/* ========== MindMarket 风格背景 ========== */
+.authors-bg {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  overflow: hidden;
+}
+
+.authors-bg__blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(100px);
+  opacity: 0.3;
+}
+
+.authors-bg__blob--purple {
+  width: 450px;
+  height: 450px;
+  top: 10%;
+  right: -10%;
+  background: radial-gradient(circle, rgba(167, 139, 250, 0.5) 0%, transparent 70%);
+}
+
+.authors-bg__blob--teal {
+  width: 400px;
+  height: 400px;
+  bottom: 15%;
+  left: -8%;
+  background: radial-gradient(circle, rgba(45, 212, 191, 0.4) 0%, transparent 70%);
+}
+
+/* 暗色模式调整 */
+[data-theme='dark'] .authors-bg__blob {
+  opacity: 0.15;
 }
 
 .page-title-row {

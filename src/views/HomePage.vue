@@ -58,6 +58,10 @@
 
     <!-- Quick Links (Bento Grid) - 增强版 -->
     <section ref="bentoRef" class="section bento">
+      <!-- 区块装饰 blob -->
+      <div class="bento-section-bg" aria-hidden="true">
+        <div class="bento-blob bento-blob--green" />
+      </div>
       <div class="container">
         <div class="bento-header">
           <h2 class="bento-header-title">{{ $t('home.quickStart.title') }}</h2>
@@ -163,8 +167,14 @@
       </div>
     </section>
 
+    <!-- Hero → Bento 过渡 -->
+    <div class="section-transition section-transition--wave" aria-hidden="true" />
+
     <!-- Stats Section - MindMarket Style -->
     <StatsSection />
+
+    <!-- Stats → Posts 过渡 -->
+    <div class="section-transition section-transition--organic" aria-hidden="true" />
 
     <!-- Latest Posts -->
     <section class="section section--posts">
@@ -537,6 +547,78 @@ onBeforeUnmount(() => {
 <style scoped>
 .home-page {
   min-height: 100vh;
+  position: relative;
+}
+
+/* ========== Section Transitions - MindMarket Style ========== */
+.section-transition {
+  position: relative;
+  height: 80px;
+  margin: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.section-transition--wave::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 100%;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 100' preserveAspectRatio='none'%3E%3Cpath fill='%234ade80' fill-opacity='0.06' d='M0,50 C360,100 720,0 1080,50 C1260,75 1380,25 1440,50 L1440,100 L0,100 Z'/%3E%3C/svg%3E") no-repeat bottom;
+  background-size: 100% 100%;
+}
+
+.section-transition--organic {
+  height: 100px;
+}
+
+.section-transition--organic::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 100' preserveAspectRatio='none'%3E%3Cpath fill='none' stroke='%234ade80' stroke-width='2' stroke-opacity='0.12' d='M0,50 Q360,20 720,50 T1440,50'/%3E%3Cpath fill='none' stroke='%23a78bfa' stroke-width='1.5' stroke-opacity='0.08' d='M0,60 Q480,90 960,60 T1440,60'/%3E%3C/svg%3E") no-repeat center;
+  background-size: 100% 100%;
+}
+
+/* Bento Section Background */
+.bento-section-bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 0;
+}
+
+.bento-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.2;
+}
+
+.bento-blob--green {
+  width: 400px;
+  height: 400px;
+  top: -100px;
+  right: -50px;
+  background: radial-gradient(circle, rgba(74, 222, 128, 0.6) 0%, transparent 70%);
+}
+
+/* Dark mode adjustments */
+[data-theme='dark'] .section-transition--wave::before {
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 100' preserveAspectRatio='none'%3E%3Cpath fill='%234ade80' fill-opacity='0.03' d='M0,50 C360,100 720,0 1080,50 C1260,75 1380,25 1440,50 L1440,100 L0,100 Z'/%3E%3C/svg%3E") no-repeat bottom;
+  background-size: 100% 100%;
+}
+
+[data-theme='dark'] .section-transition--organic::before {
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 100' preserveAspectRatio='none'%3E%3Cpath fill='none' stroke='%234ade80' stroke-width='2' stroke-opacity='0.06' d='M0,50 Q360,20 720,50 T1440,50'/%3E%3Cpath fill='none' stroke='%23a78bfa' stroke-width='1.5' stroke-opacity='0.04' d='M0,60 Q480,90 960,60 T1440,60'/%3E%3C/svg%3E") no-repeat center;
+  background-size: 100% 100%;
+}
+
+[data-theme='dark'] .bento-blob {
+  opacity: 0.1;
 }
 
 /* ========== Hero Section - 增强版 ========== */
@@ -881,6 +963,7 @@ onBeforeUnmount(() => {
 
 /* ========== Bento Grid - 增强版 ========== */
 .bento.section {
+  position: relative;
   padding-top: var(--spacing-8);
   padding-bottom: var(--spacing-12);
 }
@@ -1259,6 +1342,20 @@ onBeforeUnmount(() => {
 }
 
 @media (max-width: 768px) {
+  .section-transition {
+    height: 50px;
+  }
+
+  .section-transition--organic {
+    height: 60px;
+  }
+
+  .bento-blob--green {
+    width: 250px;
+    height: 250px;
+    filter: blur(60px);
+  }
+
   .hero {
     text-align: center;
     min-height: calc(100vh - var(--navbar-height) - 72px);

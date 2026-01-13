@@ -213,6 +213,189 @@
   color: var(--mm-green);
 }
 
+/* ========== 页面背景装饰系统 ========== */
+
+/* 背景容器 - 用于页面级装饰 */
+.mm-page-bg {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  overflow: hidden;
+}
+
+/* 有机形状背景 blob */
+.mm-bg-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.4;
+  will-change: transform;
+}
+
+.mm-bg-blob--green {
+  background: radial-gradient(circle, rgba(var(--mm-green-rgb), 0.5) 0%, transparent 70%);
+}
+
+.mm-bg-blob--yellow {
+  background: radial-gradient(circle, rgba(var(--mm-yellow-rgb), 0.4) 0%, transparent 70%);
+}
+
+.mm-bg-blob--purple {
+  background: radial-gradient(circle, rgba(var(--mm-purple-rgb), 0.35) 0%, transparent 70%);
+}
+
+.mm-bg-blob--coral {
+  background: radial-gradient(circle, rgba(var(--mm-coral-rgb), 0.3) 0%, transparent 70%);
+}
+
+.mm-bg-blob--teal {
+  background: radial-gradient(circle, rgba(var(--mm-teal-rgb), 0.35) 0%, transparent 70%);
+}
+
+/* 位置预设 */
+.mm-bg-blob--top-left {
+  top: -10%;
+  left: -5%;
+  width: 500px;
+  height: 500px;
+}
+
+.mm-bg-blob--top-right {
+  top: 5%;
+  right: -10%;
+  width: 400px;
+  height: 400px;
+}
+
+.mm-bg-blob--center {
+  top: 40%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 600px;
+  height: 600px;
+}
+
+.mm-bg-blob--bottom-left {
+  bottom: 10%;
+  left: -8%;
+  width: 450px;
+  height: 450px;
+}
+
+.mm-bg-blob--bottom-right {
+  bottom: -5%;
+  right: -5%;
+  width: 350px;
+  height: 350px;
+}
+
+/* ========== 区块过渡分隔线 ========== */
+
+/* 波浪分隔线 */
+.mm-section-divider {
+  position: relative;
+  height: 80px;
+  margin: 0;
+  overflow: hidden;
+}
+
+.mm-section-divider--wave {
+  background: transparent;
+}
+
+.mm-section-divider--wave::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 100%;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 100' preserveAspectRatio='none'%3E%3Cpath fill='%234ade80' fill-opacity='0.08' d='M0,50 C360,100 720,0 1080,50 C1260,75 1380,25 1440,50 L1440,100 L0,100 Z'/%3E%3C/svg%3E") no-repeat bottom;
+  background-size: 100% 100%;
+}
+
+/* 渐变过渡 */
+.mm-section-divider--gradient {
+  height: 120px;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(var(--mm-green-rgb), 0.03) 50%,
+    transparent 100%
+  );
+}
+
+/* 点状分隔 */
+.mm-section-divider--dots {
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-3);
+}
+
+.mm-section-divider--dots::before,
+.mm-section-divider--dots::after,
+.mm-section-divider--dots span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--mm-green);
+  opacity: 0.4;
+}
+
+.mm-section-divider--dots::before {
+  content: '';
+  opacity: 0.2;
+}
+
+.mm-section-divider--dots::after {
+  content: '';
+  opacity: 0.2;
+}
+
+/* 有机曲线分隔 */
+.mm-section-divider--organic {
+  height: 100px;
+  position: relative;
+}
+
+.mm-section-divider--organic::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 100' preserveAspectRatio='none'%3E%3Cpath fill='none' stroke='%234ade80' stroke-width='2' stroke-opacity='0.15' d='M0,50 Q360,20 720,50 T1440,50'/%3E%3Cpath fill='none' stroke='%23a78bfa' stroke-width='1.5' stroke-opacity='0.1' d='M0,60 Q480,90 960,60 T1440,60'/%3E%3C/svg%3E") no-repeat center;
+  background-size: 100% 100%;
+}
+
+/* ========== 区块背景装饰 ========== */
+
+/* 区块内的装饰性 blob（相对定位） */
+.mm-section-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: 0.25;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.mm-section-blob--sm {
+  width: 200px;
+  height: 200px;
+}
+
+.mm-section-blob--md {
+  width: 300px;
+  height: 300px;
+}
+
+.mm-section-blob--lg {
+  width: 450px;
+  height: 450px;
+}
+
 /* ========== 响应式 ========== */
 @media (max-width: 768px) {
   .mm-card {
@@ -223,4 +406,59 @@
   .mm-btn {
     padding: var(--spacing-2) var(--spacing-4);
   }
+
+  .mm-bg-blob {
+    filter: blur(60px);
+    opacity: 0.3;
+  }
+
+  .mm-bg-blob--top-left {
+    width: 300px;
+    height: 300px;
+  }
+
+  .mm-bg-blob--top-right {
+    width: 250px;
+    height: 250px;
+  }
+
+  .mm-bg-blob--center {
+    width: 350px;
+    height: 350px;
+  }
+
+  .mm-section-divider {
+    height: 50px;
+  }
+
+  .mm-section-divider--gradient {
+    height: 80px;
+  }
+
+  .mm-section-divider--organic {
+    height: 60px;
+  }
+}
+
+/* ========== 暗色模式背景调整 ========== */
+[data-theme='dark'] .mm-bg-blob {
+  opacity: 0.2;
+}
+
+[data-theme='dark'] .mm-section-blob {
+  opacity: 0.15;
+}
+
+[data-theme='dark'] .mm-section-divider--wave::before {
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 100' preserveAspectRatio='none'%3E%3Cpath fill='%234ade80' fill-opacity='0.05' d='M0,50 C360,100 720,0 1080,50 C1260,75 1380,25 1440,50 L1440,100 L0,100 Z'/%3E%3C/svg%3E") no-repeat bottom;
+  background-size: 100% 100%;
+}
+
+[data-theme='dark'] .mm-section-divider--gradient {
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(var(--mm-green-rgb), 0.02) 50%,
+    transparent 100%
+  );
 }

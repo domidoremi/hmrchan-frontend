@@ -1,5 +1,11 @@
 <template>
   <div class="community-page">
+    <!-- MindMarket 风格背景装饰 -->
+    <div class="community-bg" aria-hidden="true">
+      <div class="community-bg__blob community-bg__blob--coral" />
+      <div class="community-bg__blob community-bg__blob--green" />
+    </div>
+
     <div class="container">
       <!-- Header -->
       <header class="page-header">
@@ -345,7 +351,46 @@ onMounted(() => {
 
 <style scoped>
 .community-page {
+  position: relative;
   padding: var(--spacing-8) 0;
+  min-height: 100vh;
+}
+
+/* ========== MindMarket 风格背景 ========== */
+.community-bg {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  overflow: hidden;
+}
+
+.community-bg__blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(100px);
+  opacity: 0.3;
+}
+
+.community-bg__blob--coral {
+  width: 400px;
+  height: 400px;
+  top: 5%;
+  left: -5%;
+  background: radial-gradient(circle, rgba(251, 113, 133, 0.4) 0%, transparent 70%);
+}
+
+.community-bg__blob--green {
+  width: 450px;
+  height: 450px;
+  bottom: 10%;
+  right: -8%;
+  background: radial-gradient(circle, rgba(74, 222, 128, 0.45) 0%, transparent 70%);
+}
+
+/* 暗色模式调整 */
+[data-theme='dark'] .community-bg__blob {
+  opacity: 0.15;
 }
 
 .page-header {
