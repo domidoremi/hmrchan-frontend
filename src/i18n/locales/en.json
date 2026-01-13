@@ -417,14 +417,14 @@
   },
   "stats": {
     "title": {
-      "prefix": "The ",
-      "highlight": "Story",
-      "suffix": " Behind the Numbers"
+      "prefix": "All About ",
+      "highlight": "Himeri",
+      "suffix": ""
     },
-    "subtitle": "These numbers aren't just milestones — they represent the connections we've built with creators and users.",
-    "languages": "Supporting multiple languages so users worldwide can enjoy amazing content",
-    "creators": "Talented creators onboard, continuously producing high-quality content",
-    "content": "Curated pieces collected, each one worth saving",
-    "growing": "Continuously growing, more exciting things to come"
+    "subtitle": "Aggregating content from TikTok, YouTube, Instagram, and X — all in one place.",
+    "tiktok": "TikTok videos synced",
+    "youtube": "YouTube content tracked",
+    "instagram": "Instagram posts collected",
+    "twitter": "X posts archived"
   }
 }

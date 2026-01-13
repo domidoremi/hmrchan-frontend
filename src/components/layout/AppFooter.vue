@@ -1,61 +1,24 @@
 <template>
   <footer class="footer">
-    <!-- CTA Section - MindMarket 风格 -->
+    <!-- CTA Section -->
     <section class="footer-cta">
-      <!-- MindMarket 有机形状背景 -->
-      <div class="mm-hero-bg">
-        <div class="mm-blob mm-blob--green mm-blob--float" style="width: 500px; height: 500px; top: -200px; left: -100px;" />
-        <div class="mm-blob mm-blob--yellow mm-blob--float-reverse" style="width: 400px; height: 400px; bottom: -150px; right: -50px;" />
-        <div class="mm-blob mm-blob--purple mm-blob--float-slow" style="width: 300px; height: 300px; top: 50%; left: 60%;" />
-      </div>
-
       <div class="container">
         <div class="cta-content">
-          <!-- MindMarket 风格徽章 -->
-          <div class="mm-badge">
-            <Sparkles :size="14" />
-            <span>{{ $t('app.name') }}</span>
-          </div>
-
-          <h2 class="mm-heading mm-heading--xl cta-title">
-            <span class="cta-title-line">{{ $t('footer.cta.title1') }}</span>
-            <span class="mm-heading--gradient">{{ $t('footer.cta.title2') }}</span>
+          <h2 class="cta-title">
+            <span>{{ $t('footer.cta.title1') }}</span>
+            <span class="cta-title--highlight">{{ $t('footer.cta.title2') }}</span>
           </h2>
           <p class="cta-desc">{{ $t('footer.cta.desc') }}</p>
 
           <div class="cta-actions">
-            <RouterLink to="/explore" class="mm-btn mm-btn--green mm-btn--lg">
+            <RouterLink to="/explore" class="cta-btn cta-btn--primary">
               <Compass :size="18" />
               {{ $t('nav.explore') }}
-              <span class="mm-btn__icon">
-                <ArrowRight :size="16" />
-              </span>
             </RouterLink>
-            <RouterLink v-if="!isAuthenticated" to="/login" class="mm-btn mm-btn--outline mm-btn--lg">
+            <RouterLink v-if="!isAuthenticated" to="/login" class="cta-btn cta-btn--outline">
               <UserPlus :size="18" />
               {{ $t('footer.cta.join') }}
             </RouterLink>
-          </div>
-
-          <div class="cta-features">
-            <div class="mm-feature-tag">
-              <div class="mm-feature-tag__icon">
-                <Zap :size="16" />
-              </div>
-              <span>{{ $t('footer.cta.feature1') }}</span>
-            </div>
-            <div class="mm-feature-tag mm-feature-tag--orange">
-              <div class="mm-feature-tag__icon">
-                <Globe :size="16" />
-              </div>
-              <span>{{ $t('footer.cta.feature2') }}</span>
-            </div>
-            <div class="mm-feature-tag mm-feature-tag--coral">
-              <div class="mm-feature-tag__icon">
-                <Heart :size="16" />
-              </div>
-              <span>{{ $t('footer.cta.feature3') }}</span>
-            </div>
           </div>
         </div>
       </div>
@@ -108,7 +71,7 @@
               class="social-link"
               aria-label="GitHub"
             >
-              <GithubIcon :size="18" />
+              <Github :size="18" />
             </a>
           </div>
         </div>
@@ -121,7 +84,7 @@
 import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
 import { storeToRefs } from 'pinia'
-import { ArrowRight, Compass, GithubIcon, Globe, Heart, Sparkles, UserPlus, Zap } from 'lucide-vue-next'
+import { Compass, Github, Sparkles, UserPlus } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores'
 
 const authStore = useAuthStore()
@@ -131,41 +94,35 @@ const currentYear = computed(() => new Date().getFullYear())
 </script>
 
 <style scoped>
-/* ========== CTA Section - MindMarket 风格 ========== */
+/* ========== CTA Section ========== */
 .footer-cta {
-  position: relative;
-  padding: var(--spacing-20) 0 var(--spacing-16);
-  overflow: hidden;
+  padding: var(--spacing-16) 0;
+  background: var(--glass-bg-subtle);
+  border-bottom: 1px solid var(--glass-border);
 }
 
 .cta-content {
-  position: relative;
-  z-index: 1;
   text-align: center;
-  max-width: 640px;
+  max-width: 560px;
   margin: 0 auto;
 }
 
-.cta-content .mm-badge {
-  margin-bottom: var(--spacing-6);
-}
-
 .cta-title {
-  margin-bottom: var(--spacing-5);
+  font-size: clamp(1.75rem, 4vw, 2.25rem);
+  font-weight: var(--font-bold);
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-4);
+  line-height: var(--leading-tight);
 }
 
-.cta-title-line {
-  display: block;
-  color: var(--color-text-primary);
+.cta-title--highlight {
+  color: var(--color-primary);
 }
 
 .cta-desc {
-  font-size: var(--text-lg);
+  font-size: var(--text-base);
   color: var(--color-text-secondary);
-  margin-bottom: var(--spacing-8);
-  max-width: 500px;
-  margin-left: auto;
-  margin-right: auto;
+  margin-bottom: var(--spacing-6);
   line-height: var(--leading-relaxed);
 }
 
@@ -173,15 +130,43 @@ const currentYear = computed(() => new Date().getFullYear())
   display: flex;
   justify-content: center;
   flex-wrap: wrap;
-  gap: var(--spacing-4);
-  margin-bottom: var(--spacing-10);
+  gap: var(--spacing-3);
 }
 
-.cta-features {
-  display: flex;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: var(--spacing-4);
+.cta-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  padding: var(--spacing-3) var(--spacing-5);
+  border-radius: var(--radius-full);
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  text-decoration: none;
+  transition: transform 0.1s ease, background 0.15s ease, border-color 0.15s ease;
+}
+
+.cta-btn:active {
+  transform: scale(0.98);
+}
+
+.cta-btn--primary {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.cta-btn--primary:hover {
+  background: var(--color-primary-hover);
+}
+
+.cta-btn--outline {
+  background: transparent;
+  border: 1px solid var(--color-border);
+  color: var(--color-text-primary);
+}
+
+.cta-btn--outline:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
 }
 
 /* ========== Main Footer ========== */
@@ -218,16 +203,13 @@ const currentYear = computed(() => new Date().getFullYear())
 }
 
 .brand-logo svg {
-  color: var(--mm-green);
+  color: var(--color-primary);
 }
 
 .brand-name {
   font-size: var(--text-xl);
   font-weight: var(--font-bold);
-  background: var(--mm-gradient-primary);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--color-primary);
 }
 
 .footer-desc {
@@ -256,11 +238,11 @@ const currentYear = computed(() => new Date().getFullYear())
   color: var(--color-text-secondary);
   text-decoration: none;
   font-size: var(--text-sm);
-  transition: color var(--transition-fast);
+  transition: color 0.15s ease;
 }
 
 .footer-links a:hover {
-  color: var(--mm-green);
+  color: var(--color-primary);
 }
 
 /* Bottom Bar */
@@ -292,36 +274,19 @@ const currentYear = computed(() => new Date().getFullYear())
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-full);
   color: var(--color-text-secondary);
-  transition:
-    background var(--transition-fast),
-    border-color var(--transition-fast),
-    color var(--transition-fast),
-    transform var(--transition-fast);
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
 .social-link:hover {
-  background: var(--mm-green);
-  border-color: var(--mm-green);
-  color: var(--color-white);
-  transform: translateY(-2px);
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #fff;
 }
 
 /* ========== Responsive ========== */
 @media (max-width: 768px) {
   .footer-cta {
-    padding: var(--spacing-16) 0 var(--spacing-12);
-  }
-
-  .cta-features {
-    flex-direction: column;
-    align-items: center;
-    gap: var(--spacing-3);
-  }
-
-  .cta-features .mm-feature-tag {
-    width: 100%;
-    max-width: 280px;
-    justify-content: center;
+    padding: var(--spacing-12) 0;
   }
 
   .footer-main {
@@ -349,13 +314,6 @@ const currentYear = computed(() => new Date().getFullYear())
     flex-direction: column;
     gap: var(--spacing-4);
     text-align: center;
-  }
-}
-
-/* 减少动画偏好 */
-@media (prefers-reduced-motion: reduce) {
-  .mm-blob {
-    animation: none;
   }
 }
 </style>
