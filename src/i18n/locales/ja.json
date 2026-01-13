@@ -418,14 +418,14 @@
   },
   "stats": {
     "title": {
-      "prefix": "数字の裏にある",
-      "highlight": "物語",
-      "suffix": ""
+      "prefix": "",
+      "highlight": "Himeri",
+      "suffix": " について"
     },
-    "subtitle": "これらの数字は単なるマイルストーンではなく、クリエイターやユーザーとの絆を表しています。",
-    "languages": "複数の言語をサポートし、世界中のユーザーが素晴らしいコンテンツを楽しめます",
-    "creators": "才能あるクリエイターが参加し、高品質なコンテンツを継続的に制作",
-    "content": "厳選されたコンテンツを収録、どれも保存する価値があります",
-    "growing": "成長を続け、さらなる素晴らしいコンテンツが登場予定"
+    "subtitle": "TikTok、YouTube、Instagram、X の4つのプラットフォームのコンテンツを一箇所に集約。",
+    "tiktok": "TikTok動画を同期",
+    "youtube": "YouTubeコンテンツを追跡",
+    "instagram": "Instagram投稿を収集",
+    "twitter": "X投稿をアーカイブ"
   }
 }
