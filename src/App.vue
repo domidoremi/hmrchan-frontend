@@ -30,8 +30,8 @@
       </div>
     </main>
 
-    <!-- Footer -->
-    <AppFooter />
+    <!-- Footer - 在特定页面隐藏 -->
+    <AppFooter v-if="!hideFooter" />
 
     <!-- Toast Container -->
     <Teleport to="body">
@@ -69,6 +69,13 @@ const { settings } = storeToRefs(settingsStore)
 const animationIntensity = computed(() => settings.value.animationIntensity)
 
 const cachedPages = ['HomePage', 'ExplorePage', 'AuthorsPage', 'CommunityPage', 'FavoritesPage']
+
+// 隐藏 Footer 的页面
+const hideFooterPages = ['HomePage', 'LoginPage', 'RegisterPage', 'ExplorePage']
+const hideFooter = computed(() => {
+  const routeName = route.name as string | undefined
+  return routeName ? hideFooterPages.includes(routeName) : false
+})
 
 // Page transition name
 const transitionName = ref('page-fade')

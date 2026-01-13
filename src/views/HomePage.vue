@@ -1,198 +1,111 @@
 <template>
   <div class="home-page">
-    <!-- Hero Section - 增强版 v2 -->
+    <!-- 全局背景层 - 连续流动 -->
+    <div class="home-bg" aria-hidden="true">
+      <div class="home-bg__blob home-bg__blob--1" />
+      <div class="home-bg__blob home-bg__blob--2" />
+      <div class="home-bg__blob home-bg__blob--3" />
+    </div>
+
+    <!-- Hero Section -->
     <section
       v-if="settings.showHeroSection"
       class="hero"
       :class="{ 'hero--animated': shouldAnimate }"
     >
-      <div class="hero-bg">
-        <div class="hero-glow hero-glow--primary" />
-        <div class="hero-glow hero-glow--accent" />
-        <div class="hero-glow hero-glow--secondary" />
-        <div class="hero-grid" />
-      </div>
-      <div class="container hero-content">
-        <div class="hero-main">
-          <div class="hero-badge animate-slide-up">
-            <span class="hero-badge-dot" />
-            <Sparkles :size="14" />
-            <span>{{ $t('home.hero.badge') }}</span>
-          </div>
-          <h1 class="hero-title animate-slide-up stagger-1">
-            <span class="hero-title-line">{{ $t('home.hero.title') }}</span>
-          </h1>
-          <p class="hero-subtitle animate-slide-up stagger-2">{{ $t('home.hero.subtitle') }}</p>
-          <div class="hero-actions animate-slide-up stagger-3">
-            <Button size="lg" variant="primary" class="hero-btn-primary" @click="goToExplore">
-              <Compass :size="20" />
-              {{ $t('nav.explore') }}
-            </Button>
-            <Button size="lg" variant="ghost" class="hero-btn-ghost" @click="scrollToBento">
-              <span class="hero-arrow-wrapper">
-                <ArrowDown :size="20" class="hero-arrow-icon" />
-              </span>
-              {{ $t('common.learnMore') }}
-            </Button>
-          </div>
-          <div class="hero-highlights animate-slide-up stagger-4">
-            <div v-for="item in heroHighlights" :key="item.titleKey" class="hero-highlight">
-              <div class="hero-highlight-icon">
-                <component :is="item.icon" :size="18" />
-              </div>
-              <div class="hero-highlight-text">
-                <div class="hero-highlight-title">{{ $t(item.titleKey) }}</div>
-                <div class="hero-highlight-desc">{{ $t(item.descKey) }}</div>
-              </div>
-            </div>
-          </div>
+      <div class="hero-content container">
+        <div class="hero-badge">
+          <span class="hero-badge__dot" />
+          <Sparkles :size="14" />
+          <span>{{ $t('home.hero.badge') }}</span>
         </div>
 
-        <div class="hero-scroll-hint animate-slide-up stagger-5">
-          <div class="scroll-mouse">
-            <div class="scroll-wheel" />
-          </div>
+        <h1 class="hero-title">{{ $t('home.hero.title') }}</h1>
+        <p class="hero-subtitle">{{ $t('home.hero.subtitle') }}</p>
+
+        <div class="hero-actions">
+          <Button size="lg" variant="primary" class="hero-btn" @click="goToExplore">
+            <Compass :size="20" />
+            {{ $t('nav.explore') }}
+          </Button>
+          <Button size="lg" variant="ghost" @click="scrollToBento">
+            <ArrowDown :size="20" class="hero-arrow" />
+            {{ $t('common.learnMore') }}
+          </Button>
         </div>
       </div>
+
+      <!-- Hero → Bento 过渡 -->
+      <div class="hero-transition" />
     </section>
 
-    <!-- Quick Links (Bento Grid) - 增强版 -->
-    <section ref="bentoRef" class="section bento">
-      <!-- 区块装饰 blob -->
-      <div class="bento-section-bg" aria-hidden="true">
-        <div class="bento-blob bento-blob--green" />
-      </div>
+    <!-- Bento Grid -->
+    <section ref="bentoRef" class="bento">
+      <div class="bento-bg" aria-hidden="true" />
       <div class="container">
-        <div class="bento-header">
-          <h2 class="bento-header-title">{{ $t('home.quickStart.title') }}</h2>
-          <p class="bento-header-subtitle">{{ $t('home.quickStart.subtitle') }}</p>
-        </div>
+        <header class="bento-header">
+          <h2>{{ $t('home.quickStart.title') }}</h2>
+          <p>{{ $t('home.quickStart.subtitle') }}</p>
+        </header>
 
         <div class="bento-grid">
-          <!-- Feature Card - 大卡片 -->
-          <RouterLink
-            to="/explore"
-            class="bento-card bento-feature glass-card glass-card--interactive glass-card--glow"
-          >
-            <div class="bento-feature-bg">
-              <div class="bento-feature-pattern" />
+          <RouterLink to="/explore" class="bento-card bento-card--feature glass-card">
+            <div class="bento-card__icon bento-card__icon--primary">
+              <Layers :size="24" />
             </div>
-            <div class="bento-card-content">
-              <div class="bento-eyebrow">
-                <Layers :size="14" />
-                <span>{{ $t('nav.explore') }}</span>
-              </div>
-              <div class="bento-feature-title">{{ $t('home.bento.featureTitle') }}</div>
-              <div class="bento-feature-subtitle">{{ $t('home.bento.featureSubtitle') }}</div>
-            </div>
-            <div class="bento-feature-icon">
-              <ArrowUpRight :size="18" />
-            </div>
+            <h3>{{ $t('home.bento.featureTitle') }}</h3>
+            <p>{{ $t('home.bento.featureSubtitle') }}</p>
+            <ArrowUpRight :size="18" class="bento-card__arrow" />
           </RouterLink>
 
-          <!-- Search Card -->
-          <RouterLink
-            to="/search"
-            class="bento-card bento-search glass-card glass-card--interactive"
-          >
-            <div class="bento-card-content">
-              <div class="bento-icon-wrapper bento-icon--search">
-                <Search :size="22" />
-              </div>
-              <div class="bento-title">{{ $t('nav.search') }}</div>
-              <div class="bento-meta">{{ $t('home.bento.searchMeta') }}</div>
+          <RouterLink to="/search" class="bento-card glass-card">
+            <div class="bento-card__icon bento-card__icon--search">
+              <Search :size="22" />
             </div>
-            <div class="bento-card-arrow">
-              <ChevronRight :size="16" />
-            </div>
+            <h3>{{ $t('nav.search') }}</h3>
+            <p>{{ $t('home.bento.searchMeta') }}</p>
           </RouterLink>
 
-          <!-- Community Card -->
-          <RouterLink
-            to="/community"
-            class="bento-card bento-community glass-card glass-card--interactive"
-          >
-            <div class="bento-card-content">
-              <div class="bento-icon-wrapper bento-icon--community">
-                <MessageSquare :size="22" />
-              </div>
-              <div class="bento-title">{{ $t('nav.community') }}</div>
-              <div class="bento-meta">{{ $t('home.bento.communityMeta') }}</div>
+          <RouterLink to="/community" class="bento-card glass-card">
+            <div class="bento-card__icon bento-card__icon--community">
+              <MessageSquare :size="22" />
             </div>
-            <div class="bento-card-arrow">
-              <ChevronRight :size="16" />
-            </div>
+            <h3>{{ $t('nav.community') }}</h3>
+            <p>{{ $t('home.bento.communityMeta') }}</p>
           </RouterLink>
 
-          <!-- Authors Card -->
-          <RouterLink
-            to="/authors"
-            class="bento-card bento-authors glass-card glass-card--interactive"
-          >
-            <div class="bento-card-content">
-              <div class="bento-icon-wrapper bento-icon--authors">
-                <Users :size="22" />
-              </div>
-              <div class="bento-title">{{ $t('nav.authors') }}</div>
-              <div class="bento-meta">{{ $t('home.bento.authorsMeta') }}</div>
+          <RouterLink to="/authors" class="bento-card glass-card">
+            <div class="bento-card__icon bento-card__icon--authors">
+              <Users :size="22" />
             </div>
-            <div class="bento-card-arrow">
-              <ChevronRight :size="16" />
-            </div>
+            <h3>{{ $t('nav.authors') }}</h3>
+            <p>{{ $t('home.bento.authorsMeta') }}</p>
           </RouterLink>
 
-          <!-- Favorites Card -->
-          <RouterLink
-            :to="favoritesLink"
-            class="bento-card bento-favorites glass-card glass-card--interactive"
-          >
-            <div class="bento-card-content">
-              <div class="bento-icon-wrapper bento-icon--favorites">
-                <Heart :size="22" />
-              </div>
-              <div class="bento-title">{{ $t('nav.favorites') }}</div>
-              <div class="bento-meta">
-                {{
-                  isAuthenticated
-                    ? $t('home.bento.favoritesMeta')
-                    : $t('home.bento.favoritesMetaGuest')
-                }}
-              </div>
+          <RouterLink :to="favoritesLink" class="bento-card glass-card">
+            <div class="bento-card__icon bento-card__icon--favorites">
+              <Heart :size="22" />
             </div>
-            <div class="bento-card-arrow">
-              <ChevronRight :size="16" />
-            </div>
+            <h3>{{ $t('nav.favorites') }}</h3>
+            <p>{{ isAuthenticated ? $t('home.bento.favoritesMeta') : $t('home.bento.favoritesMetaGuest') }}</p>
           </RouterLink>
         </div>
       </div>
+
+      <!-- Bento → Posts 过渡 -->
+      <div class="bento-transition" />
     </section>
 
-    <!-- Hero → Bento 过渡 -->
-    <div class="section-transition section-transition--wave" aria-hidden="true" />
-
-    <!-- Stats Section - MindMarket Style -->
-    <StatsSection />
-
-    <!-- Stats → Posts 过渡 -->
-    <div class="section-transition section-transition--organic" aria-hidden="true" />
-
     <!-- Latest Posts -->
-    <section class="section section--posts">
+    <section class="posts">
+      <div class="posts-bg" aria-hidden="true" />
       <div class="container">
-        <div class="section-header">
-          <div class="section-header-left">
-            <h2 class="section-title">{{ $t('home.latest') }}</h2>
-            <div class="section-title-line" />
-          </div>
+        <header class="posts-header">
+          <h2>{{ $t('home.latest') }}</h2>
           <span v-if="isLoading && posts.length > 0" class="spinner spinner-sm" />
-        </div>
+        </header>
 
-        <StateIndicator
-          v-if="error"
-          variant="error"
-          :description="error"
-          @action="fetchLatestPosts"
-        />
+        <StateIndicator v-if="error" variant="error" :description="error" @action="fetchLatestPosts" />
 
         <template v-else>
           <div v-if="isLoading && posts.length === 0" class="posts-grid">
@@ -200,13 +113,12 @@
           </div>
 
           <template v-else>
-            <!-- 多列瀑布流容器 -->
-            <div ref="containerRef" class="masonry-container">
+            <div ref="containerRef" class="masonry">
               <div
                 v-for="(column, index) in columns"
                 :key="`col-${index}`"
                 :ref="(el) => setColumnRef(el, index)"
-                class="masonry-column"
+                class="masonry__col"
               >
                 <PostCard
                   v-for="(post, postIndex) in column"
@@ -220,12 +132,11 @@
 
             <StateIndicator v-if="posts.length === 0" variant="empty" />
 
-            <!-- Load More / Quota Indicator -->
             <LoadMoreSection
               v-if="posts.length > 0"
               :count="visiblePostsCount"
               :total="total"
-              :has-more="hasMoreForUi"
+              :has-more="hasMore"
               :loading="isLoadingMore"
               :sentinel-ref="setSentinelRef"
               @load-more="loadMore"
@@ -245,19 +156,15 @@ import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 import {
-  Accessibility,
   ArrowDown,
   ArrowUpRight,
-  ChevronRight,
   Compass,
-  Globe,
   Heart,
   Layers,
   MessageSquare,
   Search,
   Sparkles,
   Users,
-  Zap,
 } from 'lucide-vue-next'
 import { useAuthStore, useSettingsStore } from '@/stores'
 import { postService, type PostListItem, ApiError } from '@/api'
@@ -272,46 +179,22 @@ import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import PostCard from '@/components/business/PostCard.vue'
 import PostCardSkeleton from '@/components/business/PostCardSkeleton.vue'
-import StatsSection from '@/components/ui/StatsSection.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
 const settingsStore = useSettingsStore()
 const { isAuthenticated } = storeToRefs(authStore)
 const { settings } = storeToRefs(settingsStore)
-
 const { t } = useI18n()
 
 const shouldAnimate = computed(() => settings.value.enableAnimations && !prefersReducedMotion())
-
-const heroHighlights = [
-  {
-    icon: Globe,
-    titleKey: 'home.hero.highlights.multilingual.title',
-    descKey: 'home.hero.highlights.multilingual.desc',
-  },
-  {
-    icon: Accessibility,
-    titleKey: 'home.hero.highlights.motion.title',
-    descKey: 'home.hero.highlights.motion.desc',
-  },
-  {
-    icon: Zap,
-    titleKey: 'home.hero.highlights.performance.title',
-    descKey: 'home.hero.highlights.performance.desc',
-  },
-]
-
 const bentoRef = ref<HTMLElement | null>(null)
 
-const favoritesLink = computed(() => {
-  if (isAuthenticated.value) return '/favorites'
-  return {
-    path: '/login',
-    query: { redirect: '/favorites' },
-  }
-})
+const favoritesLink = computed(() =>
+  isAuthenticated.value ? '/favorites' : { path: '/login', query: { redirect: '/favorites' } }
+)
 
+// Posts state
 const posts = ref<PostListItem[]>([])
 const allPosts = ref<PostListItem[]>([])
 const isLoading = ref(false)
@@ -322,77 +205,48 @@ const total = ref(0)
 const pageSize = 20
 const containerRef = ref<HTMLElement | null>(null)
 const columnRefs = ref<(HTMLElement | null)[]>([])
+const sentinelRef = ref<HTMLElement | null>(null)
 
 const hasMore = computed(() => posts.value.length < total.value)
 
-// 设置列元素引用
 const setColumnRef = (el: Element | ComponentPublicInstance | null, index: number) => {
-  if (el) {
-    columnRefs.value[index] = el as HTMLElement
-  }
+  if (el) columnRefs.value[index] = el as HTMLElement
 }
 
-// 获取所有列的真实 DOM 高度
-const getRealColumnHeights = (): number[] => {
-  return columnRefs.value.map((el) => el?.offsetHeight ?? 0)
-}
-
-const sentinelRef = ref<HTMLElement | null>(null)
+const getRealColumnHeights = (): number[] => columnRefs.value.map((el) => el?.offsetHeight ?? 0)
 
 const setSentinelRef = (el: Element | null) => {
   sentinelRef.value = el as HTMLElement | null
 }
 
-// 响应式列数配置
 const getResponsiveColumnCount = () => {
   if (typeof window === 'undefined') return 3
   const width = window.innerWidth
-  if (width < 640) return 2 // 移动端
-  if (width < 1024) return 3 // 平板
-  return 4 // 桌面
+  if (width < 640) return 2
+  if (width < 1024) return 3
+  return 4
 }
 
 const { columns, columnCount, distributePosts, redistribute, getColumnWidth } = useMasonryColumns({
   initialColumnCount: getResponsiveColumnCount(),
 })
 
-// 计算容器宽度
-const getContainerWidth = () => {
-  if (!containerRef.value) return 1200
-  return containerRef.value.offsetWidth
-}
+const getContainerWidth = () => containerRef.value?.offsetWidth || 1200
 
-// 响应式调整列数 - 使用 ResizeObserver 监听容器而非 window
 let resizeObserver: ResizeObserver | null = null
 let lastContainerWidth = 0
 
 const handleContainerResize = (width: number) => {
-  // 忽略微小变化，避免频繁重排
   if (Math.abs(width - lastContainerWidth) < 50) return
   lastContainerWidth = width
-
   const newCount = getResponsiveColumnCount()
   if (newCount !== columnCount.value) {
     columnCount.value = newCount
-    const colWidth = getColumnWidth(width)
-    redistribute(allPosts.value, colWidth)
+    redistribute(allPosts.value, getColumnWidth(width))
   }
 }
 
-const visiblePostsCount = computed(() => {
-  return columns.value.reduce((sum, col) => sum + col.length, 0)
-})
-
-const hasMoreForUi = computed(() => hasMore.value)
-
-function buildListParams(targetPage: number) {
-  return {
-    page: targetPage,
-    page_size: pageSize,
-    sort_by: 'published_at' as const,
-    sort_order: 'desc' as const,
-  }
-}
+const visiblePostsCount = computed(() => columns.value.reduce((sum, col) => sum + col.length, 0))
 
 async function fetchLatestPosts(reset = true): Promise<boolean> {
   const hadData = posts.value.length > 0
@@ -411,70 +265,40 @@ async function fetchLatestPosts(reset = true): Promise<boolean> {
   }
 
   error.value = null
-
-  const params = buildListParams(page.value)
+  const params = { page: page.value, page_size: pageSize, sort_by: 'published_at' as const, sort_order: 'desc' as const }
 
   if (reset) {
     const cached = await postCache.getList(params)
     if (cached && !hadData) {
       posts.value = cached.data as PostListItem[]
       total.value = cached.total
-
-      const cachedFiltered = (cached.data as PostListItem[]).filter(
-        (post) => !isFilteredAuthor(post.author_name)
-      )
-      allPosts.value = cachedFiltered
-
-      const containerWidth = getContainerWidth()
-      const colWidth = getColumnWidth(containerWidth)
-      distributePosts(cachedFiltered, colWidth, false)
+      const filtered = (cached.data as PostListItem[]).filter((p) => !isFilteredAuthor(p.author_name))
+      allPosts.value = filtered
+      distributePosts(filtered, getColumnWidth(getContainerWidth()), false)
     }
   }
 
   try {
     const res = await postService.listPosts(params)
+    const filtered = res.items.filter((p) => !isFilteredAuthor(p.author_name))
 
     if (reset) {
       posts.value = res.items
-
-      // 过滤无效作者
-      const filtered = res.items.filter((post) => !isFilteredAuthor(post.author_name))
       allPosts.value = filtered
-
-      // 智能分发到各列（瀑布流核心逻辑）
-      const containerWidth = getContainerWidth()
-      const colWidth = getColumnWidth(containerWidth)
-      distributePosts(filtered, colWidth, false)
+      distributePosts(filtered, getColumnWidth(getContainerWidth()), false)
     } else {
-      // Load More: 追加新内容到最矮列
       posts.value.push(...res.items)
-
-      const filtered = res.items.filter((post) => !isFilteredAuthor(post.author_name))
       allPosts.value.push(...filtered)
-
-      const containerWidth = getContainerWidth()
-      const colWidth = getColumnWidth(containerWidth)
-
-      // 获取真实 DOM 高度，校准虚拟高度，防止新帖子堆积到单列
-      const realHeights = getRealColumnHeights()
-      distributePosts(filtered, colWidth, true, realHeights)
+      distributePosts(filtered, getColumnWidth(getContainerWidth()), true, getRealColumnHeights())
     }
     total.value = res.total
 
-    if (reset) {
-      await postCache.setList(params, res.items, res.total)
-    }
-
+    if (reset) await postCache.setList(params, res.items, res.total)
     return true
   } catch (err) {
     if (posts.value.length === 0) {
-      if (err instanceof ApiError) {
-        error.value = err.message
-      } else {
-        error.value = t('common.error')
-      }
+      error.value = err instanceof ApiError ? err.message : t('common.error')
     }
-
     return false
   } finally {
     isLoading.value = false
@@ -484,21 +308,16 @@ async function fetchLatestPosts(reset = true): Promise<boolean> {
 
 async function loadMore(): Promise<boolean> {
   if (!hasMore.value || isLoading.value || isLoadingMore.value) return false
-
   const nextPage = page.value + 1
   page.value = nextPage
   const ok = await fetchLatestPosts(false)
-  if (!ok) {
-    page.value = nextPage - 1
-    return false
-  }
-
-  return true
+  if (!ok) page.value = nextPage - 1
+  return ok
 }
 
 useInfiniteScroll(sentinelRef, loadMore, {
-  rootMargin: '800px', // 提前 800px 开始加载
-  enabled: () => hasMoreForUi.value && !isLoading.value && !isLoadingMore.value,
+  rootMargin: '800px',
+  enabled: () => hasMore.value && !isLoading.value && !isLoadingMore.value,
 })
 
 function goToExplore() {
@@ -506,33 +325,22 @@ function goToExplore() {
 }
 
 function scrollToBento() {
-  bentoRef.value?.scrollIntoView({
-    behavior: shouldAnimate.value ? 'smooth' : 'auto',
-    block: 'start',
-  })
+  bentoRef.value?.scrollIntoView({ behavior: shouldAnimate.value ? 'smooth' : 'auto', block: 'start' })
 }
 
 function goToPost(postId: string, thumbnailSrc: string | null) {
-  // 存储缩略图 URL 用于详情页渐进加载
-  if (thumbnailSrc) {
-    sessionStorage.setItem(`post-thumbnail-${postId}`, thumbnailSrc)
-  }
+  if (thumbnailSrc) sessionStorage.setItem(`post-thumbnail-${postId}`, thumbnailSrc)
   router.push(`/post/${postId}`)
 }
 
 onMounted(() => {
-  if (posts.value.length === 0 && !isLoading.value) {
-    fetchLatestPosts()
-  }
+  if (posts.value.length === 0 && !isLoading.value) fetchLatestPosts()
 
-  // 使用 ResizeObserver 监听容器大小变化，比 window resize 更精确高效
   if (containerRef.value) {
     lastContainerWidth = containerRef.value.offsetWidth
     resizeObserver = createResizeObserver((entries) => {
       const entry = entries[0]
-      if (entry) {
-        handleContainerResize(entry.contentRect.width)
-      }
+      if (entry) handleContainerResize(entry.contentRect.width)
     })
     resizeObserver?.observe(containerRef.value)
   }
@@ -546,195 +354,94 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .home-page {
+  position: relative;
   min-height: 100vh;
-  position: relative;
 }
 
-/* ========== Section Transitions - MindMarket Style ========== */
-.section-transition {
-  position: relative;
-  height: 80px;
-  margin: 0;
-  overflow: hidden;
-  pointer-events: none;
-}
-
-.section-transition--wave::before {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 100%;
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 100' preserveAspectRatio='none'%3E%3Cpath fill='%234ade80' fill-opacity='0.06' d='M0,50 C360,100 720,0 1080,50 C1260,75 1380,25 1440,50 L1440,100 L0,100 Z'/%3E%3C/svg%3E") no-repeat bottom;
-  background-size: 100% 100%;
-}
-
-.section-transition--organic {
-  height: 100px;
-}
-
-.section-transition--organic::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 100' preserveAspectRatio='none'%3E%3Cpath fill='none' stroke='%234ade80' stroke-width='2' stroke-opacity='0.12' d='M0,50 Q360,20 720,50 T1440,50'/%3E%3Cpath fill='none' stroke='%23a78bfa' stroke-width='1.5' stroke-opacity='0.08' d='M0,60 Q480,90 960,60 T1440,60'/%3E%3C/svg%3E") no-repeat center;
-  background-size: 100% 100%;
-}
-
-/* Bento Section Background */
-.bento-section-bg {
-  position: absolute;
+/* ========== 全局背景层 ========== */
+.home-bg {
+  position: fixed;
   inset: 0;
   pointer-events: none;
+  z-index: -1;
   overflow: hidden;
-  z-index: 0;
 }
 
-.bento-blob {
+.home-bg__blob {
   position: absolute;
   border-radius: 50%;
-  filter: blur(80px);
-  opacity: 0.2;
+  filter: blur(120px);
+  opacity: 0.4;
+  will-change: transform;
 }
 
-.bento-blob--green {
-  width: 400px;
-  height: 400px;
-  top: -100px;
-  right: -50px;
-  background: radial-gradient(circle, rgba(74, 222, 128, 0.6) 0%, transparent 70%);
-}
-
-/* Dark mode adjustments */
-[data-theme='dark'] .section-transition--wave::before {
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 100' preserveAspectRatio='none'%3E%3Cpath fill='%234ade80' fill-opacity='0.03' d='M0,50 C360,100 720,0 1080,50 C1260,75 1380,25 1440,50 L1440,100 L0,100 Z'/%3E%3C/svg%3E") no-repeat bottom;
-  background-size: 100% 100%;
-}
-
-[data-theme='dark'] .section-transition--organic::before {
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 100' preserveAspectRatio='none'%3E%3Cpath fill='none' stroke='%234ade80' stroke-width='2' stroke-opacity='0.06' d='M0,50 Q360,20 720,50 T1440,50'/%3E%3Cpath fill='none' stroke='%23a78bfa' stroke-width='1.5' stroke-opacity='0.04' d='M0,60 Q480,90 960,60 T1440,60'/%3E%3C/svg%3E") no-repeat center;
-  background-size: 100% 100%;
-}
-
-[data-theme='dark'] .bento-blob {
-  opacity: 0.1;
-}
-
-/* ========== Hero Section - 增强版 ========== */
-.hero {
-  position: relative;
-  display: flex;
-  /* 完整视口高度，内容通过 padding-top 避开导航栏 */
-  min-height: calc(100vh - var(--navbar-height));
-  min-height: calc(100svh - var(--navbar-height));
-  height: calc(100vh - var(--navbar-height));
-  height: calc(100svh - var(--navbar-height));
-  padding: 0;
-  overflow: hidden;
-  /* 移除 margin-top，避免额外高度 */
-}
-
-.hero-bg {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: var(--spacing-8);
-  pointer-events: none;
-  overflow: hidden;
-}
-
-.hero-glow {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(100px);
-  opacity: 0.6;
-}
-
-.hero--animated .hero-glow--primary,
-.hero--animated .hero-glow--accent {
-  animation: hero-glow-pulse 8s ease-in-out infinite alternate;
-}
-
-.hero--animated .hero-glow--secondary {
-  animation: hero-glow-pulse-center 8s ease-in-out infinite alternate;
-}
-
-.hero-glow--primary {
+.home-bg__blob--1 {
   width: 600px;
   height: 600px;
-  top: -200px;
-  left: -100px;
-  background: radial-gradient(circle, rgba(var(--color-primary-rgb), 0.3) 0%, transparent 70%);
+  top: -15%;
+  left: -10%;
+  background: radial-gradient(circle, rgba(74, 222, 128, 0.5) 0%, transparent 70%);
 }
 
-.hero-glow--accent {
+.home-bg__blob--2 {
   width: 500px;
   height: 500px;
-  bottom: -200px;
-  right: -100px;
-  background: radial-gradient(circle, rgba(var(--color-accent-rgb), 0.2) 0%, transparent 70%);
-  animation-delay: 4s;
+  top: 40%;
+  right: -15%;
+  background: radial-gradient(circle, rgba(167, 139, 250, 0.4) 0%, transparent 70%);
 }
 
-.hero-glow--secondary {
-  width: 400px;
-  height: 400px;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: radial-gradient(circle, rgba(var(--color-secondary-rgb), 0.12) 0%, transparent 60%);
-  animation-delay: 2s;
+.home-bg__blob--3 {
+  width: 450px;
+  height: 450px;
+  bottom: 10%;
+  left: 20%;
+  background: radial-gradient(circle, rgba(45, 212, 191, 0.35) 0%, transparent 70%);
 }
 
-.hero-grid {
-  position: absolute;
-  inset: 0;
-  background-image:
-    linear-gradient(rgba(var(--color-primary-rgb), 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(var(--color-primary-rgb), 0.03) 1px, transparent 1px);
-  background-size: 60px 60px;
-  mask-image: radial-gradient(ellipse 80% 50% at 50% 0%, black 40%, transparent 100%);
-  -webkit-mask-image: radial-gradient(ellipse 80% 50% at 50% 0%, black 40%, transparent 100%);
+.hero--animated .home-bg__blob--1 {
+  animation: blob-float-1 20s ease-in-out infinite;
+}
+
+.hero--animated .home-bg__blob--2 {
+  animation: blob-float-2 25s ease-in-out infinite;
+}
+
+.hero--animated .home-bg__blob--3 {
+  animation: blob-float-3 22s ease-in-out infinite;
+}
+
+@keyframes blob-float-1 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(30px, 20px) scale(1.05); }
+  66% { transform: translate(-20px, 10px) scale(0.95); }
+}
+
+@keyframes blob-float-2 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-40px, 30px) scale(1.08); }
+}
+
+@keyframes blob-float-3 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  40% { transform: translate(25px, -15px) scale(0.92); }
+  80% { transform: translate(-15px, 25px) scale(1.03); }
+}
+
+/* ========== Hero Section ========== */
+.hero {
+  position: relative;
+  min-height: calc(100vh - var(--navbar-height));
+  min-height: calc(100svh - var(--navbar-height));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: var(--spacing-12) 0;
 }
 
 .hero-content {
-  position: relative;
-  z-index: 1;
-  display: grid;
-  grid-template-rows: 1fr auto;
-  align-items: stretch;
-  justify-items: center;
-  width: 100%;
-  height: 100%;
-  /* 上方留出导航栏空间，下方留出底部空间 */
-  padding: var(--spacing-24) 0 var(--spacing-16);
-}
-
-.hero-main {
-  align-self: center;
-  width: 100%;
   max-width: 720px;
-}
-
-@keyframes hero-glow-pulse {
-  0% {
-    opacity: 0.45;
-  }
-  100% {
-    opacity: 0.65;
-  }
-}
-
-@keyframes hero-glow-pulse-center {
-  0% {
-    opacity: 0.45;
-  }
-
-  100% {
-    opacity: 0.65;
-  }
 }
 
 .hero-badge {
@@ -750,48 +457,26 @@ onBeforeUnmount(() => {
   color: var(--color-primary);
   margin-bottom: var(--spacing-6);
   backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
 }
 
-.hero-badge-dot {
+.hero-badge__dot {
   width: 6px;
   height: 6px;
   background: var(--color-success);
   border-radius: 50%;
 }
 
-.hero--animated .hero-badge-dot {
+.hero--animated .hero-badge__dot {
   animation: pulse-dot 2s ease-in-out infinite;
 }
 
 @keyframes pulse-dot {
-  0%,
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.5;
-    transform: scale(0.8);
-  }
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.8); }
 }
 
 .hero-badge svg {
   color: var(--color-accent);
-}
-
-.hero--animated .hero-badge svg {
-  animation: sparkle 3s ease-in-out infinite;
-}
-
-@keyframes sparkle {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.6;
-  }
 }
 
 .hero-title {
@@ -810,20 +495,22 @@ onBeforeUnmount(() => {
   color: var(--color-text-secondary);
   margin-bottom: var(--spacing-8);
   max-width: 540px;
+  margin-inline: auto;
 }
 
 .hero-actions {
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
   gap: var(--spacing-4);
 }
 
-.hero-btn-primary {
+.hero-btn {
   position: relative;
   overflow: hidden;
 }
 
-.hero-btn-primary::before {
+.hero-btn::before {
   content: '';
   position: absolute;
   inset: 0;
@@ -832,162 +519,63 @@ onBeforeUnmount(() => {
   transition: transform 0.6s ease;
 }
 
-.hero-btn-primary:hover::before {
+.hero-btn:hover::before {
   transform: translateX(100%);
 }
-.hero-arrow-wrapper {
-  display: inline-flex;
-  align-items: center;
-  will-change: transform;
-  transform: translateZ(0);
-}
 
-.hero--animated .hero-arrow-wrapper {
+.hero--animated .hero-arrow {
   animation: bounce-down 2s ease-in-out infinite;
 }
 
 @keyframes bounce-down {
-  0%,
-  100% {
-    transform: translate3d(0, 0, 0);
-    animation-timing-function: ease-in-out;
-  }
-  50% {
-    transform: translate3d(0, 3px, 0);
-    animation-timing-function: ease-in-out;
-  }
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(3px); }
 }
 
-.hero-scroll-hint {
-  margin-top: var(--spacing-12);
-  display: flex;
-  justify-content: center;
-}
-
-.scroll-mouse {
-  width: 24px;
-  height: 40px;
-  border: 2px solid rgba(var(--color-primary-rgb), 0.3);
-  border-radius: 12px;
-  position: relative;
-  opacity: 0.6;
-  transition: opacity var(--transition-fast);
-}
-
-.scroll-mouse:hover {
-  opacity: 1;
-}
-
-.scroll-wheel {
+/* Hero → Bento 过渡 */
+.hero-transition {
   position: absolute;
-  top: 8px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 4px;
-  height: 8px;
-  background: var(--color-primary);
-  border-radius: 2px;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 120px;
+  background: linear-gradient(180deg, transparent 0%, rgba(var(--mm-green-rgb), 0.03) 100%);
+  pointer-events: none;
 }
 
-.hero--animated .scroll-wheel {
-  animation: scroll-wheel 2s ease-in-out infinite;
-}
-
-.hero:not(.hero--animated) .animate-slide-up {
-  animation: none !important;
-  opacity: 1 !important;
-  transform: none !important;
-}
-
-/* ========== Hero Highlights ========== */
-.hero-highlights {
-  margin-top: var(--spacing-8);
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--spacing-3);
-  width: 100%;
-}
-
-.hero-highlight {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--spacing-3);
-  padding: var(--spacing-4);
-  background: var(--glass-bg-light);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-xl);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-}
-
-.hero-highlight-icon {
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--radius-lg);
-  background: rgba(var(--color-primary-rgb), 0.1);
-  color: var(--color-primary);
-  flex-shrink: 0;
-}
-
-.hero-highlight-text {
-  min-width: 0;
-}
-
-.hero-highlight-title {
-  font-size: var(--text-sm);
-  font-weight: var(--font-semibold);
-  color: var(--color-text-primary);
-  margin-bottom: 2px;
-}
-
-.hero-highlight-desc {
-  font-size: var(--text-xs);
-  color: var(--color-text-tertiary);
-  line-height: var(--leading-relaxed);
-}
-
-@keyframes scroll-wheel {
-  0%,
-  100% {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
-  }
-  50% {
-    opacity: 0.3;
-    transform: translateX(-50%) translateY(10px);
-  }
-}
-
-/* ========== Bento Grid - 增强版 ========== */
-.bento.section {
+/* ========== Bento Section ========== */
+.bento {
   position: relative;
-  padding-top: var(--spacing-8);
-  padding-bottom: var(--spacing-12);
+  padding: var(--spacing-16) 0;
+}
+
+.bento-bg {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(var(--mm-green-rgb), 0.02) 0%, transparent 50%, rgba(var(--mm-purple-rgb), 0.02) 100%);
+  pointer-events: none;
 }
 
 .bento-header {
-  margin-bottom: var(--spacing-6);
+  text-align: center;
+  margin-bottom: var(--spacing-10);
 }
 
-.bento-header-title {
+.bento-header h2 {
   font-size: var(--text-2xl);
   font-weight: var(--font-bold);
   margin-bottom: var(--spacing-2);
 }
 
-.bento-header-subtitle {
-  font-size: var(--text-base);
+.bento-header p {
   color: var(--color-text-secondary);
-  max-width: 65ch;
+  max-width: 50ch;
+  margin-inline: auto;
 }
 
 .bento-grid {
   display: grid;
   grid-template-columns: repeat(12, 1fr);
-  grid-template-rows: auto auto;
   gap: var(--spacing-4);
 }
 
@@ -996,55 +584,29 @@ onBeforeUnmount(() => {
   padding: var(--spacing-5);
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
   color: inherit;
   text-decoration: none;
-  min-height: 140px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.bento-card-content {
-  position: relative;
-  z-index: 1;
+.bento-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.08);
 }
 
-.bento-card:not(.bento-feature) .bento-card-content {
-  padding-right: 40px;
-}
-
-.bento-card-arrow {
-  position: absolute;
-  bottom: var(--spacing-4);
-  right: var(--spacing-4);
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--glass-bg-subtle);
-  border-radius: var(--radius-full);
-  color: var(--color-text-tertiary);
-  transition: all var(--transition-fast);
-}
-
-.bento-card:hover .bento-card-arrow {
-  background: var(--color-primary);
-  color: var(--color-white);
-  transform: translateX(4px);
-}
-
-.bento-eyebrow {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-2);
-  font-size: var(--text-xs);
+.bento-card h3 {
+  font-size: var(--text-lg);
   font-weight: var(--font-semibold);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--color-primary);
-  margin-bottom: var(--spacing-3);
+  margin-bottom: var(--spacing-1);
 }
 
-.bento-icon-wrapper {
+.bento-card p {
+  font-size: var(--text-sm);
+  color: var(--color-text-tertiary);
+  line-height: var(--leading-relaxed);
+}
+
+.bento-card__icon {
   width: 48px;
   height: 48px;
   display: flex;
@@ -1052,176 +614,103 @@ onBeforeUnmount(() => {
   justify-content: center;
   border-radius: var(--radius-lg);
   margin-bottom: var(--spacing-3);
-  transition: transform var(--transition-fast);
+  transition: transform 0.2s ease;
 }
 
-.bento-card:hover .bento-icon-wrapper {
+.bento-card:hover .bento-card__icon {
   transform: scale(1.1);
 }
 
-.bento-icon--search {
-  background: linear-gradient(
-    135deg,
-    rgba(var(--color-primary-rgb), 0.15),
-    rgba(var(--color-primary-rgb), 0.05)
-  );
+.bento-card__icon--primary {
+  background: linear-gradient(135deg, rgba(var(--color-primary-rgb), 0.15), rgba(var(--color-primary-rgb), 0.05));
   color: var(--color-primary);
 }
 
-.bento-icon--community {
-  background: linear-gradient(
-    135deg,
-    rgba(var(--color-accent-rgb), 0.15),
-    rgba(var(--color-accent-rgb), 0.05)
-  );
+.bento-card__icon--search {
+  background: linear-gradient(135deg, rgba(var(--color-primary-rgb), 0.15), rgba(var(--color-primary-rgb), 0.05));
+  color: var(--color-primary);
+}
+
+.bento-card__icon--community {
+  background: linear-gradient(135deg, rgba(var(--color-accent-rgb), 0.15), rgba(var(--color-accent-rgb), 0.05));
   color: var(--color-accent);
 }
 
-.bento-icon--authors {
-  background: linear-gradient(
-    135deg,
-    rgba(var(--color-secondary-rgb), 0.15),
-    rgba(var(--color-secondary-rgb), 0.05)
-  );
+.bento-card__icon--authors {
+  background: linear-gradient(135deg, rgba(var(--color-secondary-rgb), 0.15), rgba(var(--color-secondary-rgb), 0.05));
   color: var(--color-secondary);
 }
 
-.bento-icon--favorites {
+.bento-card__icon--favorites {
   background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(239, 68, 68, 0.05));
   color: #ef4444;
 }
 
-.bento-title {
-  font-size: var(--text-lg);
-  font-weight: var(--font-semibold);
-  color: var(--color-text-primary);
-  margin-bottom: var(--spacing-1);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.bento-meta {
-  font-size: var(--text-sm);
+.bento-card__arrow {
+  position: absolute;
+  top: var(--spacing-4);
+  right: var(--spacing-4);
   color: var(--color-text-tertiary);
-  line-height: var(--leading-relaxed);
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  overflow: hidden;
+  transition: transform 0.2s ease, color 0.2s ease;
 }
 
-/* Feature Card - 特殊样式 */
-.bento-feature {
-  grid-column: 1 / span 7;
-  grid-row: 1 / span 2;
-  min-height: 280px;
+.bento-card:hover .bento-card__arrow {
+  transform: translate(2px, -2px);
+  color: var(--color-primary);
+}
+
+/* Feature card */
+.bento-card--feature {
+  grid-column: span 7;
+  grid-row: span 2;
+  min-height: 260px;
   padding: var(--spacing-6);
 }
 
-.bento-feature-bg {
+.bento-card--feature h3 {
+  font-size: var(--text-2xl);
+}
+
+/* Grid layout */
+.bento-grid > :nth-child(2) { grid-column: span 5; }
+.bento-grid > :nth-child(3) { grid-column: span 5; }
+.bento-grid > :nth-child(4) { grid-column: span 4; }
+.bento-grid > :nth-child(5) { grid-column: span 4; }
+
+/* Bento → Posts 过渡 */
+.bento-transition {
   position: absolute;
-  inset: 0;
-  overflow: hidden;
-  border-radius: inherit;
-}
-
-.bento-feature-pattern {
-  position: absolute;
-  inset: 0;
-  background-image:
-    radial-gradient(circle at 20% 30%, rgba(var(--color-primary-rgb), 0.08) 0%, transparent 50%),
-    radial-gradient(circle at 80% 70%, rgba(var(--color-accent-rgb), 0.06) 0%, transparent 50%);
-}
-
-.bento-feature-title {
-  font-size: var(--text-3xl);
-  font-weight: var(--font-bold);
-  color: var(--color-text-primary);
-  line-height: 1.2;
-  margin-bottom: var(--spacing-2);
-}
-
-.bento-feature-subtitle {
-  font-size: var(--text-base);
-  color: var(--color-text-secondary);
-  max-width: 50ch;
-  line-height: var(--leading-relaxed);
-}
-
-.bento-feature-icon {
-  position: absolute;
-  top: var(--spacing-5);
-  right: var(--spacing-5);
-  width: 44px;
-  height: 44px;
-  border-radius: var(--radius-full);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--gradient-primary);
-  color: var(--color-white);
-  box-shadow: var(--glass-glow);
-  transition: transform var(--transition-fast);
-  z-index: 2;
-}
-
-.bento-feature:hover .bento-feature-icon {
-  transform: scale(1.1);
-}
-
-/* Grid Layout */
-.bento-search {
-  grid-column: 8 / span 5;
-}
-
-.bento-community {
-  grid-column: 8 / span 5;
-}
-
-.bento-authors {
-  grid-column: 1 / span 4;
-}
-
-.bento-favorites {
-  grid-column: 5 / span 4;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 100px;
+  background: linear-gradient(180deg, transparent 0%, rgba(var(--mm-teal-rgb), 0.02) 100%);
+  pointer-events: none;
 }
 
 /* ========== Posts Section ========== */
-.section--posts {
-  padding-top: var(--spacing-8);
+.posts {
+  position: relative;
+  padding: var(--spacing-12) 0 var(--spacing-16);
 }
 
-.section {
-  padding: var(--spacing-12) 0;
+.posts-bg {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(var(--mm-teal-rgb), 0.02) 0%, transparent 100%);
+  pointer-events: none;
 }
 
-.section-header {
+.posts-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--spacing-3);
   margin-bottom: var(--spacing-8);
 }
 
-.section-header-left {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-4);
-}
-
-.section-title {
+.posts-header h2 {
   font-size: var(--text-2xl);
   font-weight: var(--font-bold);
-  margin-bottom: 0;
-}
-
-.section-title-line {
-  width: 60px;
-  height: 4px;
-  background: var(--gradient-accent);
-  border-radius: var(--radius-full);
 }
 
 .posts-grid {
@@ -1230,15 +719,12 @@ onBeforeUnmount(() => {
   gap: var(--spacing-5);
 }
 
-/* 多列瀑布流容器 */
-.masonry-container {
+.masonry {
   display: flex;
-  align-items: flex-start;
   gap: var(--spacing-5);
-  width: 100%;
 }
 
-.masonry-column {
+.masonry__col {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -1246,293 +732,60 @@ onBeforeUnmount(() => {
   min-width: 0;
 }
 
-/* ========== Loading States ========== */
-.post-card {
-  overflow: hidden;
+/* ========== Dark Mode ========== */
+[data-theme='dark'] .home-bg__blob {
+  opacity: 0.2;
 }
 
-.post-image {
-  width: 100%;
-}
-
-.post-content {
-  padding: var(--spacing-4);
-}
-
-.loading-indicator {
-  grid-column: 1 / -1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: var(--spacing-16) var(--spacing-4);
-  gap: var(--spacing-4);
-}
-
-.loading-indicator p {
-  color: var(--color-text-secondary);
-  font-size: var(--text-sm);
-}
-
-@media (min-width: 1024px) {
-  .hero-main {
-    max-width: 880px;
-  }
-
-  .hero-subtitle {
-    font-size: var(--text-2xl);
-    max-width: 660px;
-  }
-
-  .hero-highlights {
-    gap: var(--spacing-4);
-  }
-
-  .hero-highlight {
-    padding: var(--spacing-5);
-  }
-
-  .hero-highlight-icon {
-    width: 40px;
-    height: 40px;
-  }
-
-  .hero-highlight-title {
-    font-size: var(--text-base);
-  }
-
-  .hero-highlight-desc {
-    font-size: var(--text-sm);
-  }
-}
-
-@media (min-width: 1536px) {
-  .hero-main {
-    max-width: 1040px;
-  }
-
-  .hero-title {
-    font-size: clamp(3.25rem, 4.5vw, 5.25rem);
-  }
+[data-theme='dark'] .bento-card:hover {
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
 }
 
 /* ========== Responsive ========== */
 @media (max-width: 1024px) {
-  .bento-feature {
-    grid-column: 1 / -1;
-    grid-row: auto;
-    min-height: 200px;
-  }
-
-  .bento-search {
-    grid-column: 1 / span 6;
-  }
-
-  .bento-community {
-    grid-column: 7 / span 6;
-  }
-
-  .bento-authors {
-    grid-column: 1 / span 6;
-  }
-
-  .bento-favorites {
-    grid-column: 7 / span 6;
-  }
+  .bento-card--feature { grid-column: span 12; grid-row: span 1; min-height: 180px; }
+  .bento-grid > :nth-child(2) { grid-column: span 6; }
+  .bento-grid > :nth-child(3) { grid-column: span 6; }
+  .bento-grid > :nth-child(4) { grid-column: span 6; }
+  .bento-grid > :nth-child(5) { grid-column: span 6; }
 }
 
 @media (max-width: 768px) {
-  .section-transition {
-    height: 50px;
-  }
+  .hero { min-height: calc(80vh - var(--navbar-height)); padding: var(--spacing-8) 0; }
+  .hero-title { font-size: clamp(2rem, 7vw, 3rem); }
+  .hero-subtitle { font-size: var(--text-lg); }
 
-  .section-transition--organic {
-    height: 60px;
-  }
+  .bento { padding: var(--spacing-10) 0; }
+  .bento-grid { grid-template-columns: 1fr 1fr; gap: var(--spacing-3); }
+  .bento-card--feature,
+  .bento-grid > :nth-child(2),
+  .bento-grid > :nth-child(3),
+  .bento-grid > :nth-child(4),
+  .bento-grid > :nth-child(5) { grid-column: span 1; }
+  .bento-card--feature { grid-column: span 2; }
 
-  .bento-blob--green {
-    width: 250px;
-    height: 250px;
-    filter: blur(60px);
-  }
+  .home-bg__blob { filter: blur(80px); }
+  .home-bg__blob--1 { width: 350px; height: 350px; }
+  .home-bg__blob--2 { width: 300px; height: 300px; }
+  .home-bg__blob--3 { width: 280px; height: 280px; }
 
-  .hero {
-    text-align: center;
-    min-height: calc(100vh - var(--navbar-height) - 72px);
-    min-height: calc(100svh - var(--navbar-height) - 72px);
-    height: calc(100vh - var(--navbar-height) - 72px);
-    height: calc(100svh - var(--navbar-height) - 72px);
-  }
-
-  .hero-content {
-    justify-items: center;
-    padding: var(--spacing-12) var(--spacing-5)
-      calc(env(safe-area-inset-bottom, 0) + var(--spacing-10));
-  }
-
-  .hero-scroll-hint {
-    display: none;
-  }
-
-  .hero-main {
-    width: 100%;
-  }
-
-  .hero-subtitle {
-    text-align: center;
-  }
-
-  .hero-actions {
-    justify-content: center;
-  }
-
-  .hero-highlights {
-    grid-template-columns: 1fr;
-    text-align: left;
-  }
-
-  .hero-scroll-hint {
-    justify-content: center;
-  }
-
-  .hero-glow--primary {
-    width: 400px;
-    height: 400px;
-    top: -150px;
-    left: -100px;
-  }
-
-  .hero-glow--accent {
-    width: 350px;
-    height: 350px;
-  }
-
-  .bento-grid {
-    grid-template-columns: 1fr 1fr;
-    gap: var(--spacing-4);
-  }
-
-  .bento-header-title {
-    font-size: var(--text-xl);
-  }
-
-  .bento-header-subtitle {
-    font-size: var(--text-sm);
-  }
-
-  .bento-feature {
-    grid-column: 1 / -1;
-    min-height: 160px;
-    padding: var(--spacing-5);
-  }
-
-  .bento-feature-title {
-    font-size: var(--text-2xl);
-  }
-
-  .bento-feature-subtitle {
-    font-size: var(--text-sm);
-  }
-
-  .bento-feature-icon {
-    width: 36px;
-    height: 36px;
-  }
-
-  .bento-search,
-  .bento-community,
-  .bento-authors,
-  .bento-favorites {
-    grid-column: span 1;
-  }
-
-  .bento-card {
-    min-height: 120px;
-    padding: var(--spacing-4);
-  }
-
-  .bento-icon-wrapper {
-    width: 40px;
-    height: 40px;
-  }
-
-  .bento-title {
-    font-size: var(--text-base);
-  }
-
-  .bento-meta {
-    font-size: var(--text-xs);
-  }
-
-  .masonry-container {
-    gap: var(--spacing-3);
-  }
-
-  .masonry-column {
-    gap: var(--spacing-3);
-  }
+  .masonry { gap: var(--spacing-3); }
+  .masonry__col { gap: var(--spacing-3); }
 }
 
 @media (max-width: 480px) {
-  .hero-content {
-    padding: var(--spacing-12) var(--spacing-4) var(--spacing-10);
-  }
+  .hero-actions { flex-direction: column; width: 100%; }
+  .hero-actions > * { width: 100%; justify-content: center; }
+  .bento-card { padding: var(--spacing-4); }
+  .bento-card__icon { width: 40px; height: 40px; }
+  .bento-card h3 { font-size: var(--text-base); }
+}
 
-  .hero-title {
-    font-size: 2rem;
-  }
-
-  .hero-subtitle {
-    font-size: var(--text-lg);
-  }
-
-  .bento-grid {
-    grid-template-columns: 1fr 1fr;
-    gap: var(--spacing-3);
-  }
-
-  .bento-feature {
-    grid-column: 1 / -1;
-    min-height: 140px;
-    padding: var(--spacing-4);
-  }
-
-  .bento-feature-title {
-    font-size: var(--text-xl);
-    margin-bottom: var(--spacing-1);
-  }
-
-  .bento-feature-subtitle {
-    font-size: var(--text-xs);
-  }
-
-  .bento-feature-icon {
-    width: 32px;
-    height: 32px;
-  }
-
-  .bento-search,
-  .bento-community,
-  .bento-authors,
-  .bento-favorites {
-    grid-column: span 1;
-  }
-
-  .bento-card {
-    min-height: 112px;
-  }
-
-  .bento-card-arrow {
-    width: 28px;
-    height: 28px;
-  }
-
-  .masonry-container {
-    gap: var(--spacing-2);
-  }
-
-  .masonry-column {
-    gap: var(--spacing-2);
-  }
+/* ========== Reduced Motion ========== */
+@media (prefers-reduced-motion: reduce) {
+  .home-bg__blob { animation: none !important; }
+  .hero-badge__dot { animation: none !important; }
+  .hero-arrow { animation: none !important; }
+  .bento-card { transition: none; }
 }
 </style>
