@@ -417,14 +417,14 @@
   },
   "stats": {
     "title": {
-      "prefix": "数据背后的",
-      "highlight": "精彩",
+      "prefix": "关于 ",
+      "highlight": "Himeri",
       "suffix": ""
     },
-    "subtitle": "这些数字不仅仅是里程碑，它们代表着我们与创作者和用户之间的连接。",
-    "languages": "支持多种语言，让全球用户都能享受精彩内容",
-    "creators": "优秀创作者入驻，持续产出高质量内容",
-    "content": "精选内容收录，每一个都值得收藏",
-    "growing": "持续成长中，更多精彩即将到来"
+    "subtitle": "聚合 TikTok、YouTube、Instagram、X 四大平台内容，一站式浏览。",
+    "tiktok": "TikTok 视频同步",
+    "youtube": "YouTube 内容追踪",
+    "instagram": "Instagram 帖子收录",
+    "twitter": "X 帖子归档"
   }
 }

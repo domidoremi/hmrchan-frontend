@@ -1,1108 +1,122 @@
 /**
- * MindMarket 风格增强
+ * MindMarket 风格设计系统
  *
- * 借鉴 MindMarket 的设计元素：
- * - 有机形状装饰（blob）- 松散、有机、充满动感
- * - 温暖乐观的配色方案 - 绿色为主，搭配温暖中性色
- * - 人性化的视觉语言 - 不冷漠、不企业化
- * - 流畅的叙事布局 - 像故事一样展开
- * - 慷慨的留白 - 不急于转化，邀请式体验
- * - 数据展示轻量化 - 支持故事而非主导
- *
- * 设计理念：Human-first, expressive but not ornamental
+ * 设计原则：
+ * - 简洁、温暖、人性化
+ * - 高性能优先（GPU 加速、避免重排）
+ * - 支持 prefers-reduced-motion
+ * - 低性能设备友好
  */
 
-/* ========== MindMarket 风格变量 ========== */
+/* ========== 配色变量 ========== */
 :root {
-  /* 核心绿色 - MindMarket 的标志性颜色
-   * 新鲜、有活力、乐观，但不冷漠企业化 */
+  /* 主色调 - 温暖的绿色 */
   --mm-green: #4ade80;
   --mm-green-rgb: 74, 222, 128;
   --mm-green-light: #86efac;
-  --mm-green-lighter: #bbf7d0;
   --mm-green-dark: #22c55e;
-  --mm-green-darker: #16a34a;
 
-  /* 温暖的奶油色背景 - 邀请式、开放的感觉 */
-  --mm-cream: #fefce8;
-  --mm-cream-rgb: 254, 252, 232;
-  --mm-cream-light: #fefdf5;
-  --mm-cream-dark: #fef9c3;
-  --mm-cream-warm: #fef3c7;
-
-  /* 温暖中性色 - 用于文本和边框 */
-  --mm-warm-gray: #78716c;
-  --mm-warm-gray-rgb: 120, 113, 108;
-  --mm-warm-gray-light: #a8a29e;
-  --mm-warm-gray-dark: #57534e;
-
-  /* 橙色强调 - 活力、能量 */
-  --mm-orange: #fb923c;
-  --mm-orange-rgb: 251, 146, 60;
-  --mm-orange-light: #fdba74;
-  --mm-orange-dark: #f97316;
-
-  /* 黄色强调 - 乐观、温暖 */
+  /* 辅助色 */
   --mm-yellow: #fbbf24;
   --mm-yellow-rgb: 251, 191, 36;
-  --mm-yellow-light: #fcd34d;
-  --mm-yellow-dark: #f59e0b;
-
-  /* 紫色强调 - 创意、洞察 */
+  --mm-orange: #fb923c;
+  --mm-orange-rgb: 251, 146, 60;
   --mm-purple: #a78bfa;
   --mm-purple-rgb: 167, 139, 250;
-  --mm-purple-light: #c4b5fd;
-  --mm-purple-dark: #8b5cf6;
-
-  /* 珊瑚色 - 人性化、温暖 */
   --mm-coral: #fb7185;
   --mm-coral-rgb: 251, 113, 133;
-
-  /* 青色 - 清新、现代 */
   --mm-teal: #2dd4bf;
   --mm-teal-rgb: 45, 212, 191;
 
-  /* MindMarket 渐变 */
+  /* 渐变 */
   --mm-gradient-primary: linear-gradient(135deg, var(--mm-green) 0%, var(--mm-teal) 100%);
-  --mm-gradient-warm: linear-gradient(135deg, var(--mm-orange) 0%, var(--mm-yellow) 100%);
-  --mm-gradient-creative: linear-gradient(135deg, var(--mm-purple) 0%, var(--mm-coral) 100%);
-  --mm-gradient-nature: linear-gradient(135deg, var(--mm-green-dark) 0%, var(--mm-green-light) 100%);
-
-  /* 有机形状的模糊半径 */
-  --mm-blob-blur: 80px;
-  --mm-blob-blur-sm: 40px;
-  --mm-blob-blur-lg: 120px;
 }
 
-/* ========== 有机形状装饰 (Organic Blobs) ========== */
-
-/**
- * MindMarket 的有机形状是松散、不完美的
- * 它们传达动感和情感，而非精确的几何图形
- */
-.mm-blob {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(var(--mm-blob-blur));
-  pointer-events: none;
-  will-change: transform;
-  /* 有机形状通常是不规则的椭圆 */
-  transform: rotate(-15deg);
-}
-
-.mm-blob--sm {
-  filter: blur(var(--mm-blob-blur-sm));
-}
-
-.mm-blob--lg {
-  filter: blur(var(--mm-blob-blur-lg));
-}
-
-/* 绿色有机形状 - 主要装饰 */
-.mm-blob--green {
-  background: radial-gradient(
-    circle,
-    rgba(var(--mm-green-rgb), 0.35) 0%,
-    rgba(var(--mm-green-rgb), 0.15) 40%,
-    transparent 70%
-  );
-}
-
-/* 黄色有机形状 - 温暖点缀 */
-.mm-blob--yellow {
-  background: radial-gradient(
-    circle,
-    rgba(var(--mm-yellow-rgb), 0.3) 0%,
-    rgba(var(--mm-yellow-rgb), 0.1) 40%,
-    transparent 70%
-  );
-}
-
-/* 橙色有机形状 - 活力点缀 */
-.mm-blob--orange {
-  background: radial-gradient(
-    circle,
-    rgba(var(--mm-orange-rgb), 0.25) 0%,
-    rgba(var(--mm-orange-rgb), 0.08) 40%,
-    transparent 70%
-  );
-}
-
-/* 紫色有机形状 - 创意点缀 */
-.mm-blob--purple {
-  background: radial-gradient(
-    circle,
-    rgba(var(--mm-purple-rgb), 0.2) 0%,
-    rgba(var(--mm-purple-rgb), 0.06) 40%,
-    transparent 70%
-  );
-}
-
-/* 珊瑚色有机形状 - 人性化点缀 */
-.mm-blob--coral {
-  background: radial-gradient(
-    circle,
-    rgba(var(--mm-coral-rgb), 0.2) 0%,
-    rgba(var(--mm-coral-rgb), 0.06) 40%,
-    transparent 70%
-  );
-}
-
-/* 浮动动画 - 缓慢、有机的运动 */
-.mm-blob--float {
-  animation: mm-blob-float 25s ease-in-out infinite;
-}
-
-.mm-blob--float-reverse {
-  animation: mm-blob-float 25s ease-in-out infinite reverse;
-}
-
-.mm-blob--float-slow {
-  animation: mm-blob-float 35s ease-in-out infinite;
-}
-
-@keyframes mm-blob-float {
-  0%, 100% {
-    transform: translate(0, 0) scale(1) rotate(-15deg);
-  }
-  20% {
-    transform: translate(25px, -15px) scale(1.03) rotate(-10deg);
-  }
-  40% {
-    transform: translate(-15px, 25px) scale(0.97) rotate(-20deg);
-  }
-  60% {
-    transform: translate(20px, 15px) scale(1.02) rotate(-12deg);
-  }
-  80% {
-    transform: translate(-10px, -20px) scale(0.98) rotate(-18deg);
-  }
-}
-
-/* 脉动动画 - 呼吸感 */
-.mm-blob--pulse {
-  animation: mm-blob-pulse 8s ease-in-out infinite;
-}
-
-@keyframes mm-blob-pulse {
-  0%, 100% {
-    opacity: 0.6;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.8;
-    transform: scale(1.05);
-  }
-}
-
-/* ========== MindMarket 风格卡片 ========== */
-
-/**
- * MindMarket 的卡片设计：
- * - 不过度抛光，保持人性化
- * - 柔和的阴影，不咄咄逼人
- * - 慷慨的内边距，呼吸感
- * - 悬停时轻微抬升，不夸张
- */
+/* ========== 卡片组件 ========== */
 .mm-card {
-  position: relative;
   background: var(--color-surface);
   border-radius: var(--radius-2xl);
   padding: var(--spacing-6);
-  box-shadow:
-    0 4px 24px rgba(0, 0, 0, 0.04),
-    0 1px 4px rgba(0, 0, 0, 0.02);
-  transition:
-    transform var(--duration-normal) var(--ease-out),
-    box-shadow var(--duration-normal) var(--ease-out);
-  overflow: hidden;
-}
-
-.mm-card::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  border: 1px solid rgba(0, 0, 0, 0.04);
-  pointer-events: none;
+  border: 1px solid var(--color-border);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  will-change: transform;
 }
 
 .mm-card:hover {
-  transform: translateY(-3px);
-  box-shadow:
-    0 8px 32px rgba(0, 0, 0, 0.06),
-    0 2px 8px rgba(0, 0, 0, 0.03);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
 }
 
-/* 带颜色顶部标签的卡片 */
-.mm-card--tagged {
-  padding-top: calc(var(--spacing-6) + 4px);
-}
-
-.mm-card--tagged::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: var(--spacing-6);
-  right: var(--spacing-6);
-  height: 4px;
-  background: var(--mm-gradient-primary);
-  border-radius: 0 0 var(--radius-full) var(--radius-full);
-}
-
-/* 绿色标签 */
-.mm-card--tagged-green::after {
-  background: var(--mm-gradient-nature);
-}
-
-/* 温暖标签 */
-.mm-card--tagged-warm::after {
-  background: var(--mm-gradient-warm);
-}
-
-/* 创意标签 */
-.mm-card--tagged-creative::after {
-  background: var(--mm-gradient-creative);
-}
-
-/* 玻璃态卡片变体 */
-.mm-card--glass {
-  background: var(--glass-bg-strong);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid var(--glass-border);
-}
-
-.mm-card--glass::before {
-  display: none;
-}
-
-/* 扁平卡片 - 无阴影 */
-.mm-card--flat {
-  box-shadow: none;
-  border: 1px solid var(--color-border);
-}
-
-.mm-card--flat:hover {
-  transform: none;
-  box-shadow: none;
-  border-color: rgba(var(--mm-green-rgb), 0.3);
-}
-
-/* ========== MindMarket 风格按钮 ========== */
-
-/**
- * MindMarket 的按钮设计：
- * - 圆润的胶囊形状
- * - 不咄咄逼人，邀请式
- * - 悬停时轻微抬升和阴影
- * - 图标圆圈是特色元素
- */
+/* ========== 按钮组件 ========== */
 .mm-btn {
   display: inline-flex;
   align-items: center;
-  gap: var(--spacing-3);
-  padding: var(--spacing-4) var(--spacing-6);
+  gap: var(--spacing-2);
+  padding: var(--spacing-3) var(--spacing-5);
   border-radius: var(--radius-full);
-  font-size: var(--text-base);
+  font-size: var(--text-sm);
   font-weight: var(--font-semibold);
-  text-decoration: none;
-  border: 2px solid transparent;
+  border: none;
   cursor: pointer;
-  transition:
-    transform var(--duration-fast) var(--ease-out),
-    box-shadow var(--duration-fast) var(--ease-out),
-    background var(--duration-fast) var(--ease-out),
-    border-color var(--duration-fast) var(--ease-out);
-  position: relative;
-  overflow: hidden;
+  transition: transform 0.1s ease, background 0.15s ease;
+  will-change: transform;
 }
 
-/* 主要按钮 - 深色背景 */
+.mm-btn:active {
+  transform: scale(0.98);
+}
+
 .mm-btn--primary {
   background: var(--color-text-primary);
   color: var(--color-surface);
 }
 
-.mm-btn--primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-}
-
-.mm-btn--primary:active {
-  transform: translateY(0);
-}
-
-/* 绿色按钮 - MindMarket 特色 */
 .mm-btn--green {
   background: var(--mm-green);
-  color: var(--color-white);
-  border-color: var(--mm-green);
+  color: #fff;
 }
 
 .mm-btn--green:hover {
   background: var(--mm-green-dark);
-  border-color: var(--mm-green-dark);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(var(--mm-green-rgb), 0.25);
 }
 
-/* 渐变按钮 */
-.mm-btn--gradient {
-  background: var(--mm-gradient-primary);
-  color: var(--color-white);
-  border-color: transparent;
-}
-
-.mm-btn--gradient:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(var(--mm-green-rgb), 0.3);
-}
-
-/* 轮廓按钮 */
 .mm-btn--outline {
   background: transparent;
-  border-color: var(--color-border);
+  border: 1px solid var(--color-border);
   color: var(--color-text-primary);
 }
 
 .mm-btn--outline:hover {
   border-color: var(--mm-green);
   color: var(--mm-green-dark);
-  background: rgba(var(--mm-green-rgb), 0.05);
 }
 
-/* 幽灵按钮 */
-.mm-btn--ghost {
-  background: transparent;
-  border-color: transparent;
-  color: var(--color-text-secondary);
-}
-
-.mm-btn--ghost:hover {
-  background: rgba(var(--mm-green-rgb), 0.08);
-  color: var(--mm-green-dark);
-}
-
-/* 带图标圆圈的按钮 - MindMarket 特色 */
-.mm-btn__icon {
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--mm-green);
-  border-radius: var(--radius-full);
-  color: var(--color-white);
-  transition: transform var(--duration-fast) var(--ease-spring);
-  flex-shrink: 0;
-}
-
-.mm-btn:hover .mm-btn__icon {
-  transform: translateX(4px);
-}
-
-/* 小尺寸按钮 */
-.mm-btn--sm {
-  padding: var(--spacing-2) var(--spacing-4);
-  font-size: var(--text-sm);
-  gap: var(--spacing-2);
-}
-
-.mm-btn--sm .mm-btn__icon {
-  width: 24px;
-  height: 24px;
-}
-
-/* 大尺寸按钮 */
-.mm-btn--lg {
-  padding: var(--spacing-5) var(--spacing-8);
-  font-size: var(--text-lg);
-  gap: var(--spacing-4);
-}
-
-.mm-btn--lg .mm-btn__icon {
-  width: 40px;
-  height: 40px;
-}
-
-/* ========== MindMarket 风格统计卡片 ========== */
-
-/**
- * MindMarket 的数据展示：
- * - 数据支持故事，而非主导
- * - 视觉轻量，易于扫描
- * - 带有趣味性的图标
- * - 不压倒性，保持温暖
- */
-.mm-stat-card {
-  position: relative;
-  background: var(--color-surface);
-  border-radius: var(--radius-2xl);
-  padding: var(--spacing-8);
-  text-align: center;
-  overflow: hidden;
-  transition:
-    transform var(--duration-normal) var(--ease-out),
-    box-shadow var(--duration-normal) var(--ease-out);
-}
-
-.mm-stat-card::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border: 1px solid var(--glass-border);
-  border-radius: inherit;
-  pointer-events: none;
-}
-
-.mm-stat-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.06);
-}
-
-.mm-stat-card__icon {
-  width: 64px;
-  height: 64px;
-  margin: 0 auto var(--spacing-4);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--radius-xl);
-  transition: transform var(--duration-fast) var(--ease-spring);
-}
-
-.mm-stat-card:hover .mm-stat-card__icon {
-  transform: scale(1.1);
-}
-
-/* 图标颜色变体 */
-.mm-stat-card__icon--green {
-  background: rgba(var(--mm-green-rgb), 0.12);
-  color: var(--mm-green-dark);
-}
-
-.mm-stat-card__icon--orange {
-  background: rgba(var(--mm-orange-rgb), 0.12);
-  color: var(--mm-orange-dark);
-}
-
-.mm-stat-card__icon--purple {
-  background: rgba(var(--mm-purple-rgb), 0.12);
-  color: var(--mm-purple-dark);
-}
-
-.mm-stat-card__icon--coral {
-  background: rgba(var(--mm-coral-rgb), 0.12);
-  color: var(--mm-coral);
-}
-
-.mm-stat-card__icon--teal {
-  background: rgba(var(--mm-teal-rgb), 0.12);
-  color: var(--mm-teal);
-}
-
-.mm-stat-card__number {
-  font-size: var(--text-4xl);
-  font-weight: var(--font-bold);
-  color: var(--color-text-primary);
-  margin-bottom: var(--spacing-2);
-  line-height: 1;
-}
-
-.mm-stat-card__label {
-  font-size: var(--text-sm);
-  color: var(--color-text-secondary);
-  line-height: var(--leading-relaxed);
-}
-
-/* 紧凑版统计卡片 */
-.mm-stat-card--compact {
-  padding: var(--spacing-5);
-}
-
-.mm-stat-card--compact .mm-stat-card__icon {
-  width: 48px;
-  height: 48px;
-  margin-bottom: var(--spacing-3);
-}
-
-.mm-stat-card--compact .mm-stat-card__number {
-  font-size: var(--text-2xl);
-}
-
-/* 水平布局统计卡片 */
-.mm-stat-card--horizontal {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-4);
-  text-align: left;
-  padding: var(--spacing-5);
-}
-
-.mm-stat-card--horizontal .mm-stat-card__icon {
-  margin: 0;
-  flex-shrink: 0;
-}
-
-.mm-stat-card--horizontal .mm-stat-card__content {
-  flex: 1;
-  min-width: 0;
-}
-
-/* ========== MindMarket 风格特性标签 ========== */
-
-/**
- * 特性标签用于展示产品特点
- * 轻量、不压倒性、带有趣味图标
- */
-.mm-feature-tag {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--spacing-3);
-  padding: var(--spacing-3) var(--spacing-5);
-  background: var(--glass-bg-strong);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-full);
-  font-size: var(--text-sm);
-  font-weight: var(--font-medium);
-  color: var(--color-text-secondary);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  transition:
-    transform var(--duration-fast) var(--ease-out),
-    border-color var(--duration-fast) var(--ease-out),
-    background var(--duration-fast) var(--ease-out);
-}
-
-.mm-feature-tag:hover {
-  transform: translateY(-2px);
-  border-color: rgba(var(--mm-green-rgb), 0.3);
-  background: rgba(var(--mm-green-rgb), 0.05);
-}
-
-.mm-feature-tag__icon {
-  width: 28px;
-  height: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(var(--mm-green-rgb), 0.12);
-  border-radius: var(--radius-lg);
-  color: var(--mm-green-dark);
-  transition: transform var(--duration-fast) var(--ease-spring);
-}
-
-.mm-feature-tag:hover .mm-feature-tag__icon {
-  transform: scale(1.1);
-}
-
-/* 颜色变体 */
-.mm-feature-tag--orange .mm-feature-tag__icon {
-  background: rgba(var(--mm-orange-rgb), 0.12);
-  color: var(--mm-orange-dark);
-}
-
-.mm-feature-tag--purple .mm-feature-tag__icon {
-  background: rgba(var(--mm-purple-rgb), 0.12);
-  color: var(--mm-purple-dark);
-}
-
-.mm-feature-tag--coral .mm-feature-tag__icon {
-  background: rgba(var(--mm-coral-rgb), 0.12);
-  color: var(--mm-coral);
-}
-
-/* 小尺寸 */
-.mm-feature-tag--sm {
-  padding: var(--spacing-2) var(--spacing-4);
-  font-size: var(--text-xs);
-  gap: var(--spacing-2);
-}
-
-.mm-feature-tag--sm .mm-feature-tag__icon {
-  width: 24px;
-  height: 24px;
-}
-
-/* ========== MindMarket 风格分隔线 ========== */
-
-/**
- * 波浪形分隔线 - 有机、流动的过渡
- */
-.mm-divider {
-  position: relative;
-  height: 120px;
-  overflow: hidden;
-}
-
-.mm-divider__wave {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-}
-
-.mm-divider__wave path {
-  fill: var(--color-surface);
-}
-
-/* 简单的渐变分隔线 */
-.mm-divider--simple {
-  height: 1px;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    var(--color-border) 20%,
-    var(--color-border) 80%,
-    transparent 100%
-  );
-}
-
-/* 带装饰的分隔线 */
-.mm-divider--decorated {
-  height: auto;
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-4);
-  padding: var(--spacing-8) 0;
-}
-
-.mm-divider--decorated::before,
-.mm-divider--decorated::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    var(--color-border) 100%
-  );
-}
-
-.mm-divider--decorated::after {
-  background: linear-gradient(
-    90deg,
-    var(--color-border) 0%,
-    transparent 100%
-  );
-}
-
-.mm-divider__icon {
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(var(--mm-green-rgb), 0.1);
-  border-radius: var(--radius-full);
-  color: var(--mm-green);
-}
-
-/* ========== MindMarket 风格标题 ========== */
-
-/**
- * MindMarket 的标题设计：
- * - 清晰、自信、不浮夸
- * - 黄色高亮是特色元素
- * - 渐变文字用于强调
- */
+/* ========== 标题样式 ========== */
 .mm-heading {
   font-weight: var(--font-bold);
   line-height: var(--leading-tight);
   color: var(--color-text-primary);
 }
 
-/* 黄色高亮效果 - MindMarket 特色 */
 .mm-heading--highlight {
-  position: relative;
-  display: inline;
-}
-
-.mm-heading--highlight::after {
-  content: '';
-  position: absolute;
-  bottom: 0.05em;
-  left: -0.05em;
-  right: -0.05em;
-  height: 0.35em;
-  background: rgba(var(--mm-yellow-rgb), 0.4);
-  z-index: -1;
-  border-radius: var(--radius-sm);
-  transform: rotate(-1deg);
-}
-
-/* 绿色高亮 */
-.mm-heading--highlight-green::after {
-  background: rgba(var(--mm-green-rgb), 0.25);
-}
-
-/* 渐变文字 */
-.mm-heading--gradient {
-  background: var(--mm-gradient-primary);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-/* 温暖渐变文字 */
-.mm-heading--gradient-warm {
-  background: var(--mm-gradient-warm);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-/* 尺寸变体 */
-.mm-heading--xl {
-  font-size: clamp(2.5rem, 6vw, 4rem);
+  color: var(--mm-green-dark);
 }
 
 .mm-heading--lg {
-  font-size: clamp(2rem, 5vw, 3rem);
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
 }
 
 .mm-heading--md {
-  font-size: clamp(1.5rem, 4vw, 2rem);
+  font-size: clamp(1.5rem, 3vw, 2rem);
 }
 
-.mm-heading--sm {
-  font-size: var(--text-xl);
-}
-
-/* ========== MindMarket 风格引用块 ========== */
-
-/**
- * 引用块用于展示用户评价或重要信息
- * 带有人性化的左边框
- */
-.mm-quote {
-  position: relative;
-  padding: var(--spacing-8);
-  background: var(--glass-bg-light);
-  border-radius: var(--radius-2xl);
-  border-left: 4px solid var(--mm-green);
-}
-
-.mm-quote::before {
-  content: '"';
-  position: absolute;
-  top: var(--spacing-4);
-  left: var(--spacing-6);
-  font-size: 4rem;
-  font-family: Georgia, serif;
-  color: rgba(var(--mm-green-rgb), 0.2);
-  line-height: 1;
-}
-
-.mm-quote__text {
-  font-size: var(--text-xl);
-  font-style: italic;
-  color: var(--color-text-primary);
-  line-height: var(--leading-relaxed);
-  margin-bottom: var(--spacing-4);
-  padding-left: var(--spacing-8);
-}
-
-.mm-quote__author {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-3);
-  padding-left: var(--spacing-8);
-}
-
-.mm-quote__author-avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: var(--radius-full);
-  object-fit: cover;
-}
-
-.mm-quote__author-info {
-  display: flex;
-  flex-direction: column;
-}
-
-.mm-quote__author-name {
-  font-size: var(--text-sm);
-  font-weight: var(--font-semibold);
-  color: var(--color-text-primary);
-}
-
-.mm-quote__author-title {
-  font-size: var(--text-xs);
-  color: var(--color-text-tertiary);
-}
-
-/* 简洁版引用 */
-.mm-quote--simple {
-  padding: var(--spacing-6);
-  background: transparent;
-  border-left-width: 3px;
-}
-
-.mm-quote--simple::before {
-  display: none;
-}
-
-.mm-quote--simple .mm-quote__text {
-  padding-left: 0;
-  font-size: var(--text-lg);
-}
-
-.mm-quote--simple .mm-quote__author {
-  padding-left: 0;
-  font-size: var(--text-sm);
-  font-weight: var(--font-semibold);
-  color: var(--color-text-secondary);
-}
-
-/* ========== 动画效果 ========== */
-
-/**
- * MindMarket 的动画：
- * - 不过度，不让用户等待
- * - 层叠在现有内容上
- * - 由用户交互触发
- * - 让元素感觉"活着"
- */
-
-/* 淡入上移 */
-@keyframes mm-fade-in-up {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.mm-animate-fade-in-up {
-  animation: mm-fade-in-up 0.6s var(--ease-out) forwards;
-  opacity: 0;
-}
-
-/* 淡入缩放 */
-@keyframes mm-fade-in-scale {
-  from {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-.mm-animate-fade-in-scale {
-  animation: mm-fade-in-scale 0.5s var(--ease-out) forwards;
-  opacity: 0;
-}
-
-/* 从左滑入 */
-@keyframes mm-slide-in-left {
-  from {
-    opacity: 0;
-    transform: translateX(-30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-.mm-animate-slide-in-left {
-  animation: mm-slide-in-left 0.6s var(--ease-out) forwards;
-  opacity: 0;
-}
-
-/* 从右滑入 */
-@keyframes mm-slide-in-right {
-  from {
-    opacity: 0;
-    transform: translateX(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-.mm-animate-slide-in-right {
-  animation: mm-slide-in-right 0.6s var(--ease-out) forwards;
-  opacity: 0;
-}
-
-/* 弹跳进入 */
-@keyframes mm-bounce-in {
-  0% {
-    opacity: 0;
-    transform: scale(0.3);
-  }
-  50% {
-    transform: scale(1.05);
-  }
-  70% {
-    transform: scale(0.95);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-.mm-animate-bounce-in {
-  animation: mm-bounce-in 0.6s var(--ease-out) forwards;
-  opacity: 0;
-}
-
-/* 延迟类 */
-.mm-animate-delay-1 { animation-delay: 0.1s; }
-.mm-animate-delay-2 { animation-delay: 0.2s; }
-.mm-animate-delay-3 { animation-delay: 0.3s; }
-.mm-animate-delay-4 { animation-delay: 0.4s; }
-.mm-animate-delay-5 { animation-delay: 0.5s; }
-.mm-animate-delay-6 { animation-delay: 0.6s; }
-
-/* 持续动画 - 让元素感觉"活着" */
-@keyframes mm-float {
-  0%, 100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-8px);
-  }
-}
-
-.mm-animate-float {
-  animation: mm-float 3s ease-in-out infinite;
-}
-
-/* 脉动光晕 */
-@keyframes mm-pulse-glow {
-  0%, 100% {
-    box-shadow: 0 0 0 0 rgba(var(--mm-green-rgb), 0.4);
-  }
-  50% {
-    box-shadow: 0 0 20px 10px rgba(var(--mm-green-rgb), 0);
-  }
-}
-
-.mm-animate-pulse-glow {
-  animation: mm-pulse-glow 2s ease-in-out infinite;
-}
-
-/* 旋转 */
-@keyframes mm-spin-slow {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.mm-animate-spin-slow {
-  animation: mm-spin-slow 20s linear infinite;
-}
-
-/* ========== 响应式调整 ========== */
-@media (max-width: 768px) {
-  .mm-card {
-    padding: var(--spacing-5);
-    border-radius: var(--radius-xl);
-  }
-
-  .mm-stat-card {
-    padding: var(--spacing-6);
-  }
-
-  .mm-stat-card__icon {
-    width: 48px;
-    height: 48px;
-  }
-
-  .mm-stat-card__number {
-    font-size: var(--text-3xl);
-  }
-
-  .mm-btn {
-    padding: var(--spacing-3) var(--spacing-5);
-    font-size: var(--text-sm);
-  }
-
-  .mm-btn__icon {
-    width: 28px;
-    height: 28px;
-  }
-
-  .mm-feature-tag {
-    padding: var(--spacing-2) var(--spacing-4);
-    font-size: var(--text-xs);
-  }
-
-  .mm-feature-tag__icon {
-    width: 24px;
-    height: 24px;
-  }
-
-  .mm-quote {
-    padding: var(--spacing-6);
-  }
-
-  .mm-quote__text {
-    font-size: var(--text-lg);
-    padding-left: var(--spacing-4);
-  }
-
-  .mm-quote__author {
-    padding-left: var(--spacing-4);
-  }
-
-  .mm-quote::before {
-    font-size: 3rem;
-    left: var(--spacing-4);
-  }
-}
-
-/* ========== 减少动画偏好 ========== */
-@media (prefers-reduced-motion: reduce) {
-  .mm-blob--float,
-  .mm-blob--float-reverse,
-  .mm-blob--float-slow,
-  .mm-blob--pulse {
-    animation: none;
-  }
-
-  .mm-animate-fade-in-up,
-  .mm-animate-fade-in-scale,
-  .mm-animate-slide-in-left,
-  .mm-animate-slide-in-right,
-  .mm-animate-bounce-in,
-  .mm-animate-float,
-  .mm-animate-pulse-glow,
-  .mm-animate-spin-slow {
-    animation: none;
-    opacity: 1;
-    transform: none;
-  }
-}
-
-/* ========== MindMarket 徽章 ========== */
-
-/**
- * 小型徽章用于标记状态或类别
- */
+/* ========== 徽章 ========== */
 .mm-badge {
   display: inline-flex;
   align-items: center;
   gap: var(--spacing-1);
   padding: var(--spacing-1) var(--spacing-3);
   background: rgba(var(--mm-green-rgb), 0.1);
-  border: 1px solid rgba(var(--mm-green-rgb), 0.2);
   border-radius: var(--radius-full);
   font-size: var(--text-xs);
   font-weight: var(--font-semibold);
@@ -1111,219 +125,102 @@
 
 .mm-badge--orange {
   background: rgba(var(--mm-orange-rgb), 0.1);
-  border-color: rgba(var(--mm-orange-rgb), 0.2);
-  color: var(--mm-orange-dark);
+  color: var(--mm-orange);
 }
 
 .mm-badge--purple {
   background: rgba(var(--mm-purple-rgb), 0.1);
-  border-color: rgba(var(--mm-purple-rgb), 0.2);
-  color: var(--mm-purple-dark);
+  color: var(--mm-purple);
 }
 
-.mm-badge--coral {
-  background: rgba(var(--mm-coral-rgb), 0.1);
-  border-color: rgba(var(--mm-coral-rgb), 0.2);
-  color: var(--mm-coral);
+/* ========== 特性标签 ========== */
+.mm-feature-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  padding: var(--spacing-2) var(--spacing-4);
+  background: var(--glass-bg-light);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-full);
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
 }
 
-/* ========== MindMarket 英雄区域 ========== */
-
-/**
- * 英雄区域的背景装饰
- */
-.mm-hero-bg {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-  pointer-events: none;
+.mm-feature-tag__icon {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(var(--mm-green-rgb), 0.12);
+  border-radius: var(--radius-md);
+  color: var(--mm-green-dark);
 }
 
-.mm-hero-bg__blob {
-  position: absolute;
+/* ========== 简单动画（高性能） ========== */
+
+/* 淡入 - 仅使用 opacity 和 transform */
+@keyframes mm-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-.mm-hero-bg__blob--1 {
-  width: 600px;
-  height: 600px;
-  top: -200px;
-  right: -150px;
-  background: radial-gradient(
-    circle,
-    rgba(var(--mm-green-rgb), 0.2) 0%,
-    rgba(var(--mm-green-rgb), 0.05) 40%,
-    transparent 70%
-  );
-  filter: blur(80px);
-  animation: mm-blob-float 30s ease-in-out infinite;
+.mm-animate-fade-in {
+  animation: mm-fade-in 0.3s ease-out forwards;
 }
 
-.mm-hero-bg__blob--2 {
-  width: 400px;
-  height: 400px;
-  bottom: -100px;
-  left: -100px;
-  background: radial-gradient(
-    circle,
-    rgba(var(--mm-yellow-rgb), 0.15) 0%,
-    rgba(var(--mm-yellow-rgb), 0.03) 40%,
-    transparent 70%
-  );
-  filter: blur(60px);
-  animation: mm-blob-float 25s ease-in-out infinite reverse;
+/* 延迟类 */
+.mm-animate-delay-1 { animation-delay: 50ms; }
+.mm-animate-delay-2 { animation-delay: 100ms; }
+.mm-animate-delay-3 { animation-delay: 150ms; }
+.mm-animate-delay-4 { animation-delay: 200ms; }
+
+/* ========== 减少动画偏好 ========== */
+@media (prefers-reduced-motion: reduce) {
+  .mm-card,
+  .mm-btn {
+    transition: none;
+  }
+
+  .mm-animate-fade-in {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
 }
 
-.mm-hero-bg__blob--3 {
-  width: 300px;
-  height: 300px;
-  top: 40%;
-  left: 30%;
-  background: radial-gradient(
-    circle,
-    rgba(var(--mm-teal-rgb), 0.1) 0%,
-    transparent 60%
-  );
-  filter: blur(50px);
-  animation: mm-blob-float 20s ease-in-out infinite;
-  animation-delay: -10s;
-}
-
-/* ========== MindMarket 网格装饰 ========== */
-
-/**
- * 点状网格背景
- */
-.mm-grid-pattern {
-  position: absolute;
-  inset: 0;
-  background-image: radial-gradient(
-    circle,
-    rgba(var(--mm-green-rgb), 0.15) 1px,
-    transparent 1px
-  );
-  background-size: 32px 32px;
-  opacity: 0.5;
-  pointer-events: none;
-}
-
-/* ========== MindMarket 连接线 ========== */
-
-/**
- * MindMarket 的标志性连接线元素
- * 一条安静的线，连接人、故事和洞察
- */
-.mm-connector {
-  position: relative;
-}
-
-.mm-connector::before {
-  content: '';
-  position: absolute;
-  width: 2px;
-  background: linear-gradient(
-    180deg,
-    transparent 0%,
-    var(--mm-green) 20%,
-    var(--mm-green) 80%,
-    transparent 100%
-  );
-  left: 50%;
-  transform: translateX(-50%);
-}
-
-.mm-connector--vertical::before {
-  top: 0;
-  bottom: 0;
-}
-
-.mm-connector--horizontal::before {
-  width: auto;
-  height: 2px;
-  left: 0;
-  right: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    var(--mm-green) 20%,
-    var(--mm-green) 80%,
-    transparent 100%
-  );
-}
-
-/* ========== 暗色模式适配 ========== */
-
-[data-theme='dark'] {
-  --mm-green: #4ade80;
-  --mm-green-light: #86efac;
-  --mm-green-dark: #22c55e;
-
-  --mm-cream: #1a1a1a;
-  --mm-cream-light: #222222;
-  --mm-cream-dark: #111111;
-
-  --mm-warm-gray: #a8a29e;
-  --mm-warm-gray-light: #d6d3d1;
-  --mm-warm-gray-dark: #78716c;
-}
-
+/* ========== 暗色模式 ========== */
 [data-theme='dark'] .mm-card {
-  background: var(--color-surface);
-  box-shadow:
-    0 4px 24px rgba(0, 0, 0, 0.2),
-    0 1px 4px rgba(0, 0, 0, 0.1);
-}
-
-[data-theme='dark'] .mm-card::before {
-  border-color: rgba(255, 255, 255, 0.05);
+  box-shadow: none;
 }
 
 [data-theme='dark'] .mm-card:hover {
-  box-shadow:
-    0 8px 32px rgba(0, 0, 0, 0.3),
-    0 2px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
 }
 
-[data-theme='dark'] .mm-stat-card {
-  background: var(--glass-bg-strong);
+[data-theme='dark'] .mm-heading--highlight {
+  color: var(--mm-green);
 }
 
-[data-theme='dark'] .mm-heading--highlight::after {
-  background: rgba(var(--mm-yellow-rgb), 0.25);
+[data-theme='dark'] .mm-badge {
+  background: rgba(var(--mm-green-rgb), 0.15);
+  color: var(--mm-green);
 }
 
-[data-theme='dark'] .mm-quote {
-  background: rgba(255, 255, 255, 0.03);
-}
+/* ========== 响应式 ========== */
+@media (max-width: 768px) {
+  .mm-card {
+    padding: var(--spacing-4);
+    border-radius: var(--radius-xl);
+  }
 
-[data-theme='dark'] .mm-quote::before {
-  color: rgba(var(--mm-green-rgb), 0.15);
-}
-
-[data-theme='dark'] .mm-blob--green {
-  background: radial-gradient(
-    circle,
-    rgba(var(--mm-green-rgb), 0.2) 0%,
-    rgba(var(--mm-green-rgb), 0.08) 40%,
-    transparent 70%
-  );
-}
-
-[data-theme='dark'] .mm-blob--yellow {
-  background: radial-gradient(
-    circle,
-    rgba(var(--mm-yellow-rgb), 0.15) 0%,
-    rgba(var(--mm-yellow-rgb), 0.05) 40%,
-    transparent 70%
-  );
-}
-
-[data-theme='dark'] .mm-grid-pattern {
-  background-image: radial-gradient(
-    circle,
-    rgba(var(--mm-green-rgb), 0.1) 1px,
-    transparent 1px
-  );
-  opacity: 0.3;
+  .mm-btn {
+    padding: var(--spacing-2) var(--spacing-4);
+  }
 }
