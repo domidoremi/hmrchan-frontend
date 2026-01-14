@@ -183,13 +183,13 @@
   }
 }
 
-/* Shimmer for skeleton loading */
+/* Shimmer for skeleton loading - 使用 transform 实现 GPU 加速，避免 CLS */
 @keyframes shimmer {
   0% {
-    background-position: -200% 0;
+    transform: translateX(-100%);
   }
   100% {
-    background-position: 200% 0;
+    transform: translateX(100%);
   }
 }
 
@@ -856,32 +856,53 @@
 }
 
 /* ========== Skeleton Loading ========== */
+/* 使用伪元素 + transform 实现 shimmer，避免 background-position 导致的 CLS */
 
 .skeleton {
-  background: linear-gradient(
-    90deg,
-    var(--glass-bg-light) 25%,
-    var(--glass-bg) 50%,
-    var(--glass-bg-light) 75%
-  );
-  background-size: 200% 100%;
-  animation: shimmer 1.5s var(--ease-in-out) infinite;
+  position: relative;
+  overflow: hidden;
+  background: var(--glass-bg-light);
   border-radius: var(--radius-md);
 }
 
+.skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--glass-bg) 50%,
+    transparent 100%
+  );
+  transform: translateX(-100%);
+  animation: shimmer 1.5s var(--ease-in-out) infinite;
+  will-change: transform;
+}
+
 .skeleton-text {
+  position: relative;
+  overflow: hidden;
   color: transparent !important;
   user-select: none;
   pointer-events: none;
   border-radius: var(--radius-sm);
+  background: var(--glass-bg-light);
+}
+
+.skeleton-text::after {
+  content: '';
+  position: absolute;
+  inset: 0;
   background: linear-gradient(
     90deg,
-    var(--glass-bg-light) 25%,
+    transparent 0%,
     var(--glass-bg) 50%,
-    var(--glass-bg-light) 75%
+    transparent 100%
   );
-  background-size: 200% 100%;
+  transform: translateX(-100%);
   animation: shimmer 1.5s var(--ease-in-out) infinite;
+  will-change: transform;
 }
 
 .skeleton-circle {
@@ -903,7 +924,9 @@
     rgba(255, 255, 255, 0.3) 50%,
     transparent 100%
   );
+  transform: translateX(-100%);
   animation: shimmer 1.5s var(--ease-in-out) infinite;
+  will-change: transform;
 }
 
 [data-theme='dark'] .skeleton-wave::after {
