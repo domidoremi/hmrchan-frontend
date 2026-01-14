@@ -247,16 +247,14 @@
   }
 }
 
-/* Reveal from blur */
+/* Reveal animation - 仅使用合成属性避免 CLS */
 @keyframes revealBlur {
   0% {
     opacity: 0;
-    filter: blur(8px);
     transform: translate3d(0, 8px, 0);
   }
   100% {
     opacity: 1;
-    filter: blur(0);
     transform: translate3d(0, 0, 0);
   }
 }
@@ -692,20 +690,19 @@
 /* ========== Enhanced Page Transitions ========== */
 
 /* Page Fade - 淡入淡出 + 轻微缩放 */
+/* 注意：移除 filter: blur() 以避免 CLS，仅使用合成属性 transform/opacity */
 .page-fade-enter-active {
   transition:
     opacity var(--duration-normal) var(--ease-out),
-    transform var(--duration-normal) var(--ease-spring),
-    filter var(--duration-normal) var(--ease-out);
-  will-change: transform, opacity, filter;
+    transform var(--duration-normal) var(--ease-spring);
+  will-change: transform, opacity;
 }
 
 .page-fade-leave-active {
   transition:
     opacity var(--duration-fast) var(--ease-in),
-    transform var(--duration-fast) var(--ease-in),
-    filter var(--duration-fast) var(--ease-in);
-  will-change: transform, opacity, filter;
+    transform var(--duration-fast) var(--ease-in);
+  will-change: transform, opacity;
   position: absolute;
   width: 100%;
   top: 0;
@@ -715,30 +712,26 @@
 .page-fade-enter-from {
   opacity: 0;
   transform: scale3d(0.98, 0.98, 1);
-  filter: blur(4px);
 }
 
 .page-fade-leave-to {
   opacity: 0;
   transform: scale3d(1.01, 1.01, 1);
-  filter: blur(2px);
 }
 
 /* Page Slide Up - 进入深层页面 */
 .page-slide-up-enter-active {
   transition:
     opacity var(--duration-normal) var(--ease-out),
-    transform var(--duration-normal) var(--ease-spring),
-    filter var(--duration-normal) var(--ease-out);
-  will-change: transform, opacity, filter;
+    transform var(--duration-normal) var(--ease-spring);
+  will-change: transform, opacity;
 }
 
 .page-slide-up-leave-active {
   transition:
     opacity var(--duration-fast) var(--ease-in),
-    transform var(--duration-fast) var(--ease-in),
-    filter var(--duration-fast) var(--ease-in);
-  will-change: transform, opacity, filter;
+    transform var(--duration-fast) var(--ease-in);
+  will-change: transform, opacity;
   position: absolute;
   width: 100%;
   top: 0;
@@ -748,30 +741,26 @@
 .page-slide-up-enter-from {
   opacity: 0;
   transform: translate3d(0, 32px, 0) scale3d(0.97, 0.97, 1);
-  filter: blur(4px);
 }
 
 .page-slide-up-leave-to {
   opacity: 0;
   transform: translate3d(0, -16px, 0) scale3d(1.02, 1.02, 1);
-  filter: blur(2px);
 }
 
 /* Page Slide Down - 返回上层页面 */
 .page-slide-down-enter-active {
   transition:
     opacity var(--duration-normal) var(--ease-out),
-    transform var(--duration-normal) var(--ease-spring),
-    filter var(--duration-normal) var(--ease-out);
-  will-change: transform, opacity, filter;
+    transform var(--duration-normal) var(--ease-spring);
+  will-change: transform, opacity;
 }
 
 .page-slide-down-leave-active {
   transition:
     opacity var(--duration-fast) var(--ease-in),
-    transform var(--duration-fast) var(--ease-in),
-    filter var(--duration-fast) var(--ease-in);
-  will-change: transform, opacity, filter;
+    transform var(--duration-fast) var(--ease-in);
+  will-change: transform, opacity;
   position: absolute;
   width: 100%;
   top: 0;
