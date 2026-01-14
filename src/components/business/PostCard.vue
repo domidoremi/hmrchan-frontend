@@ -161,12 +161,13 @@ function setAspectRatioCache(id: string, ratio: string): void {
  * 根据平台设置默认宽高比
  */
 const PLATFORM_ASPECT_RATIOS: Record<string, string> = {
-  tiktok: '9 / 16',
+  tiktok: '9 / 16', // 竖屏视频
   youtube: '16 / 9',
   twitter: '16 / 9',
   bilibili: '16 / 9',
-  pixiv: '3 / 4',
+  pixiv: '3 / 4', // 竖屏图片
   weibo: '4 / 3',
+  instagram: '4 / 5', // Instagram 常见比例
 }
 
 const DEFAULT_ASPECT_RATIO = '16 / 9'
