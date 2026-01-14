@@ -72,7 +72,11 @@
           class="posts-masonry-js"
           :style="{ '--masonry-columns': skeletonColumnCount }"
         >
-          <div v-for="colIndex in skeletonColumnCount" :key="`skeleton-col-${colIndex}`" class="masonry-column">
+          <div
+            v-for="colIndex in skeletonColumnCount"
+            :key="`skeleton-col-${colIndex}`"
+            class="masonry-column"
+          >
             <PostCardSkeleton v-for="i in skeletonPerColumn" :key="`skeleton-${colIndex}-${i}`" />
           </div>
         </div>
@@ -129,7 +133,7 @@ defineOptions({ name: 'ExplorePage' })
 import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { Search, Globe, Music2, Video } from 'lucide-vue-next'
+import { Search, Globe, Music2, Video, Instagram } from 'lucide-vue-next'
 import { postService, type PostListItem, ApiError } from '@/api'
 import { postCache } from '@/utils/cache'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
@@ -147,7 +151,7 @@ const router = useRouter()
 const { t } = useI18n()
 
 const currentSort = ref<'newest' | 'popular' | 'trending'>('newest')
-const currentPlatform = ref<'all' | 'youtube' | 'tiktok' | 'twitter'>('all')
+const currentPlatform = ref<'all' | 'youtube' | 'tiktok' | 'twitter' | 'instagram'>('all')
 
 const posts = ref<PostListItem[]>([])
 const isLoading = ref(false)
@@ -225,6 +229,7 @@ const platformOptions = [
   { value: 'youtube' as const, label: 'YouTube', icon: Video },
   { value: 'tiktok' as const, label: 'TikTok', icon: Music2 },
   { value: 'twitter' as const, label: 'X', icon: Globe },
+  { value: 'instagram' as const, label: 'Instagram', icon: Instagram },
 ]
 
 function goToPost(postId: string, thumbnailSrc: string | null) {
@@ -364,7 +369,7 @@ useInfiniteScroll(sentinelRef, loadMore, {
 function calculateColumnCount(): number {
   if (typeof window === 'undefined') return 4
   const width = window.innerWidth
-  if (width < 640) return 2  // 移动端：双列
+  if (width < 640) return 2 // 移动端：双列
   if (width < 1024) return 3 // 平板：三列
   if (width < 1600) return 4 // 桌面：四列
   if (width < 1920) return 5 // 大屏：五列
