@@ -8,6 +8,8 @@
 
 ### 1.1 POST /api/v1/history/browsing - 422 Unprocessable Content
 
+**状态**: ❌ 未修复
+
 **触发场景**: 用户浏览帖子详情页时，前端调用浏览历史记录接口
 
 **请求示例**:
@@ -18,36 +20,33 @@ Content-Type: application/json
 Authorization: Bearer <token>
 
 {
-  "post_id": "123"
+  "post_id": "86c888fa-69b7-4b08-b947-e23f455ec843"
 }
 ```
 
-**错误响应**: 422 Unprocessable Content
+**错误响应**:
 
-**建议**: 检查请求体参数验证逻辑，确认 `post_id` 字段类型要求（字符串/数字）
+```json
+{
+  "detail": "invalid literal for int() with base 10: '86c888fa-69b7-4b08-b947-e23f455ec843'"
+}
+```
+
+**问题**: 后端期望 `post_id` 为整数类型，但前端发送的是 UUID 字符串
+
+**建议**: 修改后端接受 UUID 字符串格式的 `post_id`
 
 ---
 
-### 1.2 POST /api/v1/discussions/ - 404 Not Found
+### 1.2 ~~POST /api/v1/discussions/ - 404 Not Found~~
 
-**触发场景**: 社区页面创建新讨论
+**状态**: ✅ 已修复 (2026-01-15 验证通过)
 
-**请求示例**:
+~~**触发场景**: 社区页面创建新讨论~~
 
-```http
-POST /api/v1/discussions/
-Content-Type: application/json
-Authorization: Bearer <token>
+~~**错误响应**: 404 Not Found~~
 
-{
-  "title": "讨论标题",
-  "content": "讨论内容"
-}
-```
-
-**错误响应**: 404 Not Found
-
-**建议**: 确认该 API 端点是否已实现并部署
+**验证结果**: API 返回 201 Created，讨论创建成功
 
 ---
 
@@ -92,6 +91,8 @@ Authorization: Bearer <token>
 
 ### 3.1 缩略图尺寸字段缺失
 
+**状态**: ❌ 未修复
+
 **触发场景**: 帖子列表/卡片显示时，前端需要根据缩略图尺寸计算正确的宽高比
 
 **问题描述**:
@@ -122,12 +123,14 @@ API 响应中缺少 `thumbnail_width` 和 `thumbnail_height` 字段，导致前�
 
 ### 4.1 平台筛选支持
 
+**状态**: ❌ Instagram 筛选未支持
+
 前端已支持以下平台筛选:
 
-- YouTube
-- TikTok
-- Twitter/X
-- Instagram (新增)
+- YouTube ✅
+- TikTok ✅
+- Twitter/X ✅
+- Instagram ❌ (返回 404 Not Found)
 
 请确认后端 API 支持 `platform=instagram` 参数
 
