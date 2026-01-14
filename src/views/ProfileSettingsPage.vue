@@ -108,6 +108,7 @@
                 v-model="passwordForm.current_password"
                 type="password"
                 class="glass-input"
+                autocomplete="current-password"
                 required
               />
             </div>
@@ -119,6 +120,7 @@
                 v-model="passwordForm.new_password"
                 type="password"
                 class="glass-input"
+                autocomplete="new-password"
                 minlength="8"
                 required
               />
@@ -131,6 +133,7 @@
                 v-model="passwordForm.confirm_password"
                 type="password"
                 class="glass-input"
+                autocomplete="new-password"
                 required
               />
             </div>

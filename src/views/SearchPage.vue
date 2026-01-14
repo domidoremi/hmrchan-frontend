@@ -2,7 +2,17 @@
   <div class="search-page">
     <div class="container">
       <header class="search-header">
-        <h1 class="search-title">{{ $t('search.title') }}</h1>
+        <div class="search-header-top">
+          <button
+            type="button"
+            class="back-btn glass-btn"
+            @click="goBack"
+            :aria-label="$t('common.back')"
+          >
+            <ArrowLeft :size="20" />
+          </button>
+          <h1 class="search-title">{{ $t('search.title') }}</h1>
+        </div>
         <SearchBar ref="searchBarRef" class="search-bar-main" />
       </header>
 
@@ -57,7 +67,9 @@
                 type="button"
                 class="sort-order-btn"
                 :class="{ 'sort-order-btn--asc': sortOrder === 'asc' }"
-                :title="sortOrder === 'desc' ? $t('search.sort.descending') : $t('search.sort.ascending')"
+                :title="
+                  sortOrder === 'desc' ? $t('search.sort.descending') : $t('search.sort.ascending')
+                "
                 @click="toggleSortOrder"
               >
                 <ArrowUpDown :size="16" />
@@ -104,7 +116,11 @@
               <LogIn :size="20" class="login-hint-icon" />
               <div class="login-hint-content">
                 <p class="login-hint-text">{{ $t('search.loginForMore') }}</p>
-                <button type="button" class="login-hint-btn glass-button glass-button--primary" @click="goToLogin">
+                <button
+                  type="button"
+                  class="login-hint-btn glass-button glass-button--primary"
+                  @click="goToLogin"
+                >
                   {{ $t('nav.login') }}
                 </button>
               </div>
@@ -200,8 +216,10 @@ import {
   Youtube,
   Music2,
   Twitter,
+  Instagram,
   LogIn,
   ArrowUpDown,
+  ArrowLeft,
 } from 'lucide-vue-next'
 import { searchService, type AuthorListItem, type PostListItem } from '@/api'
 import { normalizeAvatarUrl } from '@/api/userService'
@@ -221,7 +239,7 @@ const query = computed(() => (route.query['q'] as string) || '')
 const activeTab = ref<'posts' | 'authors'>('posts')
 const sortBy = ref<'relevance' | 'published_at' | 'view_count'>('relevance')
 const sortOrder = ref<'asc' | 'desc'>('desc')
-const currentPlatform = ref<'all' | 'youtube' | 'tiktok' | 'twitter'>('all')
+const currentPlatform = ref<'all' | 'youtube' | 'tiktok' | 'twitter' | 'instagram'>('all')
 
 const results = ref<PostListItem[]>([])
 const authors = ref<AuthorListItem[]>([])
@@ -254,7 +272,8 @@ const platformOptions = computed(() => [
   { value: 'all' as const, label: t('explore.allPlatforms'), icon: Globe },
   { value: 'youtube' as const, label: 'YouTube', icon: Youtube },
   { value: 'tiktok' as const, label: 'TikTok', icon: Music2 },
-  { value: 'twitter' as const, label: 'Twitter', icon: Twitter },
+  { value: 'twitter' as const, label: 'X', icon: Twitter },
+  { value: 'instagram' as const, label: 'Instagram', icon: Instagram },
 ])
 
 const sortOptions = computed(() => [
@@ -271,9 +290,15 @@ function getPlatformIcon(platform: string) {
       return Music2
     case 'twitter':
       return Twitter
+    case 'instagram':
+      return Instagram
     default:
       return Globe
   }
+}
+
+function goBack() {
+  router.back()
 }
 
 function toggleSortOrder() {
@@ -422,9 +447,39 @@ onMounted(() => {
   text-align: center;
 }
 
+.search-header-top {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-3);
+  margin-bottom: var(--spacing-4);
+  position: relative;
+}
+
+.search-header .back-btn {
+  position: absolute;
+  left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border-radius: var(--radius-lg);
+  color: var(--color-text-secondary);
+  background: var(--glass-bg-subtle);
+  border: 1px solid var(--glass-border);
+  transition: all var(--transition-fast);
+}
+
+.search-header .back-btn:hover {
+  background: var(--glass-bg-light);
+  color: var(--color-text-primary);
+}
+
 .search-title {
   font-size: var(--text-2xl);
-  margin-bottom: var(--spacing-4);
+  margin: 0;
 }
 
 .search-bar-main {
