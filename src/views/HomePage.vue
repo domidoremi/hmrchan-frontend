@@ -108,8 +108,15 @@
         <StateIndicator v-if="error" variant="error" :description="error" @action="fetchLatestPosts" />
 
         <template v-else>
-          <div v-if="isLoading && posts.length === 0" class="posts-grid">
-            <PostCardSkeleton v-for="i in 8" :key="i" />
+          <!-- 骨架屏：使用与真实内容相同的 masonry 布局结构，避免 CLS -->
+          <div v-if="isLoading && posts.length === 0" ref="containerRef" class="masonry">
+            <div
+              v-for="colIndex in skeletonColumnCount"
+              :key="`skeleton-col-${colIndex}`"
+              class="masonry__col"
+            >
+              <PostCardSkeleton v-for="i in skeletonPerColumn" :key="`skeleton-${colIndex}-${i}`" />
+            </div>
           </div>
 
           <template v-else>
@@ -247,6 +254,10 @@ const handleContainerResize = (width: number) => {
 }
 
 const visiblePostsCount = computed(() => columns.value.reduce((sum, col) => sum + col.length, 0))
+
+// 骨架屏列数和每列数量 - 与真实 masonry 布局保持一致，避免 CLS
+const skeletonColumnCount = computed(() => columnCount.value)
+const skeletonPerColumn = computed(() => Math.ceil(8 / skeletonColumnCount.value))
 
 async function fetchLatestPosts(reset = true): Promise<boolean> {
   const hadData = posts.value.length > 0
@@ -711,12 +722,6 @@ onBeforeUnmount(() => {
 .posts-header h2 {
   font-size: var(--text-2xl);
   font-weight: var(--font-bold);
-}
-
-.posts-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: var(--spacing-5);
 }
 
 .masonry {
