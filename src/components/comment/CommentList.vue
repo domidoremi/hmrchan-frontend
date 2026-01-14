@@ -131,6 +131,8 @@ watch(
   padding: var(--spacing-6);
   background: var(--glass-bg-light);
   border-radius: var(--radius-xl);
+  /* 预留最小高度防止 CLS */
+  min-height: 200px;
 }
 
 .comment-header {
