@@ -352,7 +352,7 @@ onMounted(() => {
 <style scoped>
 .community-page {
   position: relative;
-  padding: var(--spacing-8) 0;
+  padding: var(--spacing-4) 0 var(--spacing-8);
   min-height: 100vh;
 }
 
@@ -394,20 +394,27 @@ onMounted(() => {
 }
 
 .page-header {
-  text-align: center;
-  margin-bottom: var(--spacing-8);
+  margin-bottom: var(--spacing-4);
 }
 
 .page-header h1 {
-  margin-bottom: var(--spacing-2);
+  margin-bottom: var(--spacing-1);
+  font-size: var(--text-xl);
+}
+
+@media (min-width: 768px) {
+  .page-header h1 {
+    font-size: var(--text-2xl);
+  }
 }
 
 .page-subtitle {
   color: var(--color-text-tertiary);
+  font-size: var(--text-sm);
 }
 
 .composer-section {
-  margin-bottom: var(--spacing-6);
+  margin-bottom: var(--spacing-4);
 }
 
 .login-prompt {
@@ -415,16 +422,18 @@ onMounted(() => {
   flex-direction: column;
   align-items: center;
   gap: var(--spacing-3);
-  padding: var(--spacing-6);
+  padding: var(--spacing-4);
   text-align: center;
-  margin-bottom: var(--spacing-6);
+  margin-bottom: var(--spacing-4);
   color: var(--color-text-secondary);
+  font-size: var(--text-sm);
 }
 
 .community-tabs {
   display: flex;
   width: 100%;
-  margin-bottom: var(--spacing-6);
+  margin-bottom: var(--spacing-4);
+  gap: var(--spacing-2);
 }
 
 .tab-btn {
@@ -433,7 +442,7 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   gap: var(--spacing-2);
-  padding: var(--spacing-3) var(--spacing-4);
+  padding: var(--spacing-2) var(--spacing-3);
   border-radius: var(--radius-lg);
   font-size: var(--text-sm);
   font-weight: var(--font-medium);
@@ -477,15 +486,27 @@ onMounted(() => {
 }
 
 .discussions-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-4);
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--spacing-3);
+}
+
+@media (min-width: 768px) {
+  .discussions-list {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1280px) {
+  .discussions-list {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 
 .discussion-card {
   display: flex;
-  gap: var(--spacing-4);
-  padding: var(--spacing-4);
+  gap: var(--spacing-3);
+  padding: var(--spacing-3);
   cursor: pointer;
   transition: transform var(--transition-fast);
 }
@@ -598,15 +619,27 @@ onMounted(() => {
 
 .hot-topics-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: var(--spacing-4);
+  grid-template-columns: 1fr;
+  gap: var(--spacing-3);
+}
+
+@media (min-width: 640px) {
+  .hot-topics-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .hot-topics-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 
 .topic-card {
   display: flex;
   align-items: center;
-  gap: var(--spacing-4);
-  padding: var(--spacing-4);
+  gap: var(--spacing-3);
+  padding: var(--spacing-3);
 }
 
 .topic-rank {

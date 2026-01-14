@@ -478,7 +478,13 @@ onUnmounted(() => {
 
 <style scoped>
 .post-detail-page {
-  padding: var(--spacing-6) 0;
+  padding: var(--spacing-4) 0;
+}
+
+@media (min-width: 768px) {
+  .post-detail-page {
+    padding: var(--spacing-5) 0;
+  }
 }
 
 .back-btn {
@@ -691,7 +697,13 @@ onUnmounted(() => {
 }
 
 .post-body {
-  padding: var(--spacing-6);
+  padding: var(--spacing-4);
+}
+
+@media (min-width: 768px) {
+  .post-body {
+    padding: var(--spacing-5);
+  }
 }
 
 .post-title {
@@ -729,8 +741,14 @@ onUnmounted(() => {
 .post-actions {
   display: flex;
   gap: var(--spacing-2);
-  padding: var(--spacing-4) var(--spacing-6);
+  padding: var(--spacing-3) var(--spacing-4);
   border-top: 1px solid var(--glass-border);
+}
+
+@media (min-width: 768px) {
+  .post-actions {
+    padding: var(--spacing-4) var(--spacing-5);
+  }
 }
 
 .action-btn {

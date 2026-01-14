@@ -482,7 +482,7 @@ onBeforeUnmount(() => {
 <style scoped>
 .explore-page {
   position: relative;
-  padding: var(--spacing-8) 0;
+  padding: var(--spacing-4) 0 var(--spacing-8);
   min-height: 100vh;
 }
 
@@ -532,7 +532,7 @@ onBeforeUnmount(() => {
 }
 
 .page-header {
-  margin-bottom: var(--spacing-6);
+  margin-bottom: var(--spacing-3);
 }
 
 .page-title-row {
@@ -540,11 +540,18 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: space-between;
   gap: var(--spacing-3);
-  margin-bottom: var(--spacing-4);
+  margin-bottom: var(--spacing-3);
 }
 
 .page-title-row h1 {
   margin-bottom: 0;
+  font-size: var(--text-xl);
+}
+
+@media (min-width: 768px) {
+  .page-title-row h1 {
+    font-size: var(--text-2xl);
+  }
 }
 
 .page-title-group {
@@ -660,27 +667,35 @@ onBeforeUnmount(() => {
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: var(--spacing-4);
-  margin-bottom: var(--spacing-6);
+  gap: var(--spacing-3);
+  margin-bottom: var(--spacing-4);
 }
 
 .platform-filters {
   display: flex;
-  gap: var(--spacing-2);
+  gap: var(--spacing-1);
+  flex-wrap: wrap;
 }
 
 .platform-btn {
   display: flex;
   align-items: center;
   gap: var(--spacing-1);
-  padding: var(--spacing-2) var(--spacing-3);
+  padding: var(--spacing-1) var(--spacing-2);
   border-radius: var(--radius-lg);
-  font-size: var(--text-sm);
+  font-size: var(--text-xs);
   font-weight: var(--font-medium);
   color: var(--color-text-secondary);
   background: var(--glass-bg-subtle);
   border: 1px solid transparent;
   transition: all var(--transition-fast);
+}
+
+@media (min-width: 768px) {
+  .platform-btn {
+    padding: var(--spacing-2) var(--spacing-3);
+    font-size: var(--text-sm);
+  }
 }
 
 .platform-btn:hover {
@@ -711,7 +726,7 @@ onBeforeUnmount(() => {
 
 /* ========== JS Masonry 布局 - 避免 CLS ========== */
 .posts-masonry-js {
-  --masonry-gap: var(--spacing-4);
+  --masonry-gap: var(--spacing-3);
 
   display: flex;
   gap: var(--masonry-gap);
@@ -727,15 +742,9 @@ onBeforeUnmount(() => {
 }
 
 /* 响应式间距调整 */
-@media (max-width: 899px) {
+@media (min-width: 1024px) {
   .posts-masonry-js {
-    --masonry-gap: var(--spacing-3);
-  }
-}
-
-@media (max-width: 599px) {
-  .posts-masonry-js {
-    --masonry-gap: var(--spacing-2);
+    --masonry-gap: var(--spacing-4);
   }
 }
 
