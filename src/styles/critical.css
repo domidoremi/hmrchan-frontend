@@ -238,38 +238,51 @@ main {
 }
 
 /* ========== 骨架屏 ========== */
+/* 使用 transform 实现 shimmer 效果，避免 background-position 导致的 CLS */
 @keyframes skeleton-pulse {
-  0%,
-  100% {
-    opacity: 0.4;
+  0% {
+    transform: translateX(-100%);
   }
-  50% {
-    opacity: 0.8;
+  100% {
+    transform: translateX(100%);
   }
 }
 
 .skeleton {
-  background: linear-gradient(
-    90deg,
-    var(--color-gray-200) 25%,
-    var(--color-gray-100) 50%,
-    var(--color-gray-200) 75%
-  );
-  background-size: 200% 100%;
-  animation: skeleton-pulse 1.5s ease-in-out infinite;
+  position: relative;
+  overflow: hidden;
+  background: var(--color-gray-200);
   border-radius: var(--radius-md);
   /* 添加固定宽高比以防止布局偏移 */
   aspect-ratio: 16 / 9;
 }
 
-[data-theme='dark'] .skeleton {
+.skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
   background: linear-gradient(
     90deg,
-    rgba(71, 85, 105, 0.3) 25%,
-    rgba(71, 85, 105, 0.5) 50%,
-    rgba(71, 85, 105, 0.3) 75%
+    transparent 0%,
+    var(--color-gray-100) 50%,
+    transparent 100%
   );
-  background-size: 200% 100%;
+  transform: translateX(-100%);
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+  will-change: transform;
+}
+
+[data-theme='dark'] .skeleton {
+  background: rgba(71, 85, 105, 0.3);
+}
+
+[data-theme='dark'] .skeleton::after {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(71, 85, 105, 0.5) 50%,
+    transparent 100%
+  );
 }
 
 /* ========== 玻璃卡片 ========== */
