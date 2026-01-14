@@ -88,9 +88,39 @@ Authorization: Bearer <token>
 
 ---
 
-## 3. 功能建议
+## 3. 数据问题
 
-### 3.1 平台筛选支持
+### 3.1 缩略图尺寸字段缺失
+
+**触发场景**: 帖子列表/卡片显示时，前端需要根据缩略图尺寸计算正确的宽高比
+
+**问题描述**:
+
+API 响应中缺少 `thumbnail_width` 和 `thumbnail_height` 字段，导致前端无法正确显示竖屏视频的卡片比例。
+
+**示例**:
+
+帖子 ID: `86c888fa-69b7-4b08-b947-e23f455ec843`
+
+- 后端存储的缩略图: `2026-01-11_GMgzeF1yriA_720x1280.webp` (720×1280, 9:16 竖屏)
+- API 返回的 platform: `youtube`
+- API 未返回: `thumbnail_width`, `thumbnail_height`
+
+**当前行为**: 前端根据 `platform=youtube` 使用默认 16:9 比例，导致竖屏视频显示为横屏卡片
+
+**期望行为**: API 返回 `thumbnail_width: 720`, `thumbnail_height: 1280`，前端可正确计算 9:16 比例
+
+**建议**:
+
+1. 在 `PostListItem` 响应中添加 `thumbnail_width` 和 `thumbnail_height` 字段
+2. 从缩略图文件名或元数据中提取尺寸信息
+3. 或者识别 YouTube Shorts 并设置特殊的 platform 类型（如 `youtube_shorts`）
+
+---
+
+## 4. 功能建议
+
+### 4.1 平台筛选支持
 
 前端已支持以下平台筛选:
 
@@ -101,7 +131,7 @@ Authorization: Bearer <token>
 
 请确认后端 API 支持 `platform=instagram` 参数
 
-### 3.2 排序参数
+### 4.2 排序参数
 
 前端使用的排序参数:
 
@@ -110,7 +140,7 @@ Authorization: Bearer <token>
 
 ---
 
-## 4. 前端已处理的问题
+## 5. 前端已处理的问题
 
 以下问题已在前端修复，无需后端处理:
 
