@@ -101,6 +101,17 @@
         <section class="settings-section glass-card">
           <h2 class="section-title">{{ $t('profile.changePassword') }}</h2>
           <form @submit.prevent="changePassword">
+            <!-- 隐藏的用户名字段，用于密码管理器和无障碍 -->
+            <input
+              type="text"
+              :value="profile?.username"
+              autocomplete="username"
+              class="sr-only"
+              tabindex="-1"
+              aria-hidden="true"
+              readonly
+            />
+
             <div class="form-group">
               <label for="current_password">{{ $t('profile.currentPassword') }}</label>
               <input
