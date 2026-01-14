@@ -50,12 +50,13 @@ export function useMasonryColumns(options: MasonryOptions = {}) {
       // 降级：使用平台默认宽高比
       const platform = post.platform?.toLowerCase()
       const aspectRatios: Record<string, number> = {
-        tiktok: 16 / 9,
+        tiktok: 9 / 16, // 竖屏视频
         youtube: 16 / 9,
         twitter: 16 / 9,
         bilibili: 16 / 9,
-        pixiv: 4 / 3,
+        pixiv: 3 / 4, // 竖屏图片
         weibo: 4 / 3,
+        instagram: 4 / 5, // Instagram 常见比例
       }
       const ratio = aspectRatios[platform] || 16 / 9
       imgHeight = Math.round(colWidth / ratio)
