@@ -322,19 +322,26 @@ onMounted(() => {
 
 <style scoped>
 .favorites-page {
-  padding: var(--spacing-8) 0;
+  padding: var(--spacing-4) 0 var(--spacing-8);
   min-height: 100vh;
 }
 
 .page-title {
-  margin-bottom: var(--spacing-6);
+  margin-bottom: var(--spacing-4);
+  font-size: var(--text-xl);
+}
+
+@media (min-width: 768px) {
+  .page-title {
+    font-size: var(--text-2xl);
+  }
 }
 
 .favorites-header {
   display: flex;
   align-items: center;
   gap: var(--spacing-3);
-  margin-bottom: var(--spacing-4);
+  margin-bottom: var(--spacing-3);
 }
 
 .favorites-count {
@@ -362,8 +369,8 @@ onMounted(() => {
 }
 
 .posts-masonry {
-  --masonry-columns: 4;
-  --masonry-gap: var(--spacing-4);
+  --masonry-columns: 2;
+  --masonry-gap: var(--spacing-3);
 
   column-count: var(--masonry-columns);
   column-gap: var(--masonry-gap);
@@ -374,21 +381,27 @@ onMounted(() => {
   margin-bottom: var(--masonry-gap);
 }
 
-@media (max-width: 1200px) {
+@media (min-width: 640px) {
   .posts-masonry {
     --masonry-columns: 3;
   }
 }
 
-@media (max-width: 900px) {
+@media (min-width: 1024px) {
   .posts-masonry {
-    --masonry-columns: 2;
+    --masonry-columns: 4;
   }
 }
 
-@media (max-width: 500px) {
+@media (min-width: 1280px) {
   .posts-masonry {
-    --masonry-columns: 1;
+    --masonry-columns: 5;
+  }
+}
+
+@media (min-width: 1600px) {
+  .posts-masonry {
+    --masonry-columns: 6;
   }
 }
 

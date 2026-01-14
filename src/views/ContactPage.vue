@@ -72,7 +72,7 @@ async function handleSubmit() {
 
 <style scoped>
 .contact-page {
-  padding: var(--spacing-8) 0;
+  padding: var(--spacing-4) 0;
 }
 
 .container {
@@ -82,32 +82,44 @@ async function handleSubmit() {
 
 .contact-card {
   width: 100%;
-  max-width: 500px;
-  padding: var(--spacing-8);
+  max-width: 480px;
+  padding: var(--spacing-5);
 }
 
 @media (min-width: 768px) {
+  .contact-page {
+    padding: var(--spacing-6) 0;
+  }
+
   .contact-card {
-    max-width: 600px;
+    max-width: 520px;
+    padding: var(--spacing-6);
   }
 }
 
 .page-title {
-  font-size: var(--text-2xl);
+  font-size: var(--text-xl);
   text-align: center;
-  margin-bottom: var(--spacing-2);
+  margin-bottom: var(--spacing-1);
+}
+
+@media (min-width: 640px) {
+  .page-title {
+    font-size: var(--text-2xl);
+  }
 }
 
 .page-subtitle {
   text-align: center;
   color: var(--color-text-tertiary);
-  margin-bottom: var(--spacing-6);
+  margin-bottom: var(--spacing-4);
+  font-size: var(--text-sm);
 }
 
 .contact-form {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-4);
+  gap: var(--spacing-3);
 }
 
 .form-group {

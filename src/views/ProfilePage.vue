@@ -111,16 +111,16 @@ onMounted(() => {
 <style scoped>
 .profile-page {
   min-height: 100vh;
-  padding: var(--spacing-8) 0;
+  padding: var(--spacing-4) 0;
 }
 
 .profile-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--spacing-4);
-  margin-bottom: var(--spacing-8);
-  padding: var(--spacing-6);
+  gap: var(--spacing-3);
+  margin-bottom: var(--spacing-4);
+  padding: var(--spacing-4);
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
@@ -130,25 +130,25 @@ onMounted(() => {
 .user-info {
   display: flex;
   align-items: center;
-  gap: var(--spacing-4);
+  gap: var(--spacing-3);
 }
 
 .user-avatar {
-  width: 80px;
-  height: 80px;
+  width: 64px;
+  height: 64px;
   border-radius: var(--radius-full);
-  border: 3px solid var(--color-primary);
+  border: 2px solid var(--color-primary);
   object-fit: cover;
 }
 
 .user-details {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-1);
+  gap: 2px;
 }
 
 .user-name {
-  font-size: var(--text-2xl);
+  font-size: var(--text-xl);
   font-weight: var(--font-bold);
   margin: 0;
 }
@@ -215,23 +215,24 @@ onMounted(() => {
 }
 
 .tab-content {
-  padding: var(--spacing-6);
-  min-height: 400px;
+  padding: var(--spacing-4);
+  min-height: 300px;
 }
 
 @media (max-width: 768px) {
   .profile-header {
     flex-direction: column;
     align-items: flex-start;
+    padding: var(--spacing-3);
   }
 
   .user-avatar {
-    width: 60px;
-    height: 60px;
+    width: 52px;
+    height: 52px;
   }
 
   .user-name {
-    font-size: var(--text-xl);
+    font-size: var(--text-lg);
   }
 
   .tab-btn span {
@@ -239,11 +240,22 @@ onMounted(() => {
   }
 
   .tab-btn {
-    padding: var(--spacing-3);
+    padding: var(--spacing-2);
   }
 
   .tab-content {
-    padding: var(--spacing-4);
+    padding: var(--spacing-3);
+  }
+}
+
+@media (min-width: 1200px) {
+  .profile-header {
+    padding: var(--spacing-5);
+  }
+
+  .user-avatar {
+    width: 72px;
+    height: 72px;
   }
 }
 </style>

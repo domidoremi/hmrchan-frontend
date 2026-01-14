@@ -201,7 +201,7 @@ onMounted(() => {
 <style scoped>
 .authors-page {
   position: relative;
-  padding: var(--spacing-8) 0;
+  padding: var(--spacing-4) 0 var(--spacing-8);
   min-height: 100vh;
 }
 
@@ -247,24 +247,61 @@ onMounted(() => {
   align-items: center;
   justify-content: space-between;
   gap: var(--spacing-3);
-  margin-bottom: var(--spacing-6);
+  margin-bottom: var(--spacing-4);
 }
 
 .page-title {
   margin-bottom: 0;
+  font-size: var(--text-xl);
+}
+
+@media (min-width: 768px) {
+  .page-title {
+    font-size: var(--text-2xl);
+  }
 }
 
 .authors-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: var(--spacing-4);
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--spacing-3);
+}
+
+@media (min-width: 640px) {
+  .authors-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .authors-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (min-width: 1280px) {
+  .authors-grid {
+    grid-template-columns: repeat(5, 1fr);
+  }
+}
+
+@media (min-width: 1600px) {
+  .authors-grid {
+    grid-template-columns: repeat(6, 1fr);
+  }
+}
+
+@media (min-width: 1920px) {
+  .authors-grid {
+    grid-template-columns: repeat(7, 1fr);
+  }
 }
 
 .author-card {
   display: flex;
   align-items: center;
-  gap: var(--spacing-4);
-  padding: var(--spacing-4);
+  gap: var(--spacing-3);
+  padding: var(--spacing-3);
 }
 
 .author-card-btn {
@@ -276,14 +313,39 @@ onMounted(() => {
 }
 
 .author-avatar {
-  width: 64px;
-  height: 64px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   flex-shrink: 0;
+}
+
+@media (min-width: 768px) {
+  .author-avatar {
+    width: 56px;
+    height: 56px;
+  }
 }
 
 .author-info {
   flex: 1;
   min-width: 0;
+}
+
+.author-name {
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.author-username {
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+  margin: var(--spacing-1) 0 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 </style>
