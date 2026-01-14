@@ -66,13 +66,14 @@
       <StateIndicator v-if="error" variant="error" :description="error" @action="fetchPosts" />
 
       <template v-else>
-        <div v-if="isLoading && posts.length === 0" class="posts-grid">
-          <div v-for="i in 12" :key="i" class="post-card glass-card">
-            <div class="post-image skeleton" style="aspect-ratio: 1" />
-            <div class="post-content">
-              <div class="skeleton" style="height: 20px; width: 80%" />
-              <div class="skeleton" style="height: 14px; width: 50%; margin-top: 8px" />
-            </div>
+        <!-- 骨架屏：使用与真实内容相同的 masonry 布局结构，避免 CLS -->
+        <div
+          v-if="isLoading && posts.length === 0"
+          class="posts-masonry-js"
+          :style="{ '--masonry-columns': skeletonColumnCount }"
+        >
+          <div v-for="colIndex in skeletonColumnCount" :key="`skeleton-col-${colIndex}`" class="masonry-column">
+            <PostCardSkeleton v-for="i in skeletonPerColumn" :key="`skeleton-${colIndex}-${i}`" />
           </div>
         </div>
 
@@ -138,6 +139,7 @@ import { throttleRAF } from '@/utils/performance'
 import { createResizeObserver } from '@/utils/modernAPIs'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import PostCard from '@/components/business/PostCard.vue'
+import PostCardSkeleton from '@/components/business/PostCardSkeleton.vue'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
 
 const router = useRouter()
@@ -175,6 +177,10 @@ const {
 })
 
 const hasMore = computed(() => posts.value.length < total.value)
+
+// 骨架屏列数和每列数量 - 与真实 masonry 布局保持一致，避免 CLS
+const skeletonColumnCount = computed(() => columnCount.value)
+const skeletonPerColumn = computed(() => Math.ceil(12 / skeletonColumnCount.value))
 
 const sentinelRef = ref<HTMLElement | null>(null)
 
@@ -642,12 +648,6 @@ onBeforeUnmount(() => {
 
 .filter-btn.active::before {
   display: none;
-}
-
-.posts-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: var(--spacing-4);
 }
 
 .filters-row {
