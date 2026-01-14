@@ -49,7 +49,7 @@ async function handleClearCache() {
 
 <style scoped>
 .settings-page {
-  padding: var(--spacing-8) 0;
+  padding: var(--spacing-4) 0;
 }
 
 .container {
@@ -59,19 +59,30 @@ async function handleClearCache() {
 }
 
 .page-title {
-  margin-bottom: var(--spacing-6);
+  margin-bottom: var(--spacing-4);
   width: 100%;
-  max-width: 600px;
+  max-width: 560px;
+  font-size: var(--text-xl);
 }
 
 .settings-card {
   width: 100%;
-  max-width: 600px;
+  max-width: 560px;
 }
 
 .cache-section {
-  margin-top: var(--spacing-6);
-  padding: var(--spacing-6);
+  margin-top: var(--spacing-4);
+  padding: var(--spacing-4);
+}
+
+@media (min-width: 768px) {
+  .settings-page {
+    padding: var(--spacing-6) 0;
+  }
+
+  .cache-section {
+    padding: var(--spacing-5);
+  }
 }
 
 .section-title {

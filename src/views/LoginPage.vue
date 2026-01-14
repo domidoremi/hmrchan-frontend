@@ -181,13 +181,19 @@ function handleTurnstileError() {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: var(--spacing-4);
+  padding: var(--spacing-3);
 }
 
 .auth-card {
   width: 100%;
-  max-width: 400px;
-  padding: var(--spacing-8);
+  max-width: 380px;
+  padding: var(--spacing-5);
+}
+
+@media (min-width: 640px) {
+  .auth-card {
+    padding: var(--spacing-6);
+  }
 }
 
 .auth-header {
@@ -203,21 +209,28 @@ function handleTurnstileError() {
 }
 
 .auth-title {
-  font-size: var(--text-2xl);
+  font-size: var(--text-xl);
   text-align: center;
-  margin-bottom: var(--spacing-2);
+  margin-bottom: var(--spacing-1);
+}
+
+@media (min-width: 640px) {
+  .auth-title {
+    font-size: var(--text-2xl);
+  }
 }
 
 .auth-subtitle {
   text-align: center;
   color: var(--color-text-tertiary);
-  margin-bottom: var(--spacing-6);
+  margin-bottom: var(--spacing-4);
+  font-size: var(--text-sm);
 }
 
 .auth-form {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-4);
+  gap: var(--spacing-3);
 }
 
 .form-group {
@@ -261,7 +274,7 @@ function handleTurnstileError() {
 
 .auth-footer {
   text-align: center;
-  margin-top: var(--spacing-6);
+  margin-top: var(--spacing-4);
   font-size: var(--text-sm);
   color: var(--color-text-tertiary);
 }

@@ -132,33 +132,75 @@ watch(authorId, () => {
 
 <style scoped>
 .author-detail-page {
-  padding: var(--spacing-8) 0;
+  padding: var(--spacing-4) 0;
 }
 
 .author-header {
   display: flex;
   align-items: center;
-  gap: var(--spacing-6);
-  padding: var(--spacing-6);
-  margin-bottom: var(--spacing-8);
+  gap: var(--spacing-4);
+  padding: var(--spacing-4);
+  margin-bottom: var(--spacing-4);
 }
 
 .author-avatar {
-  width: 100px;
-  height: 100px;
+  width: 72px;
+  height: 72px;
   border-radius: 50%;
   flex-shrink: 0;
 }
 
+@media (min-width: 768px) {
+  .author-header {
+    padding: var(--spacing-5);
+    gap: var(--spacing-5);
+  }
+
+  .author-avatar {
+    width: 88px;
+    height: 88px;
+  }
+}
+
 .section-title {
-  font-size: var(--text-xl);
-  margin-bottom: var(--spacing-4);
+  font-size: var(--text-lg);
+  margin-bottom: var(--spacing-3);
 }
 
 .posts-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: var(--spacing-4);
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--spacing-3);
+}
+
+@media (min-width: 480px) {
+  .posts-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (min-width: 768px) {
+  .posts-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .posts-grid {
+    grid-template-columns: repeat(5, 1fr);
+  }
+}
+
+@media (min-width: 1400px) {
+  .posts-grid {
+    grid-template-columns: repeat(6, 1fr);
+  }
+}
+
+@media (min-width: 1800px) {
+  .posts-grid {
+    grid-template-columns: repeat(7, 1fr);
+  }
 }
 
 .post-card {

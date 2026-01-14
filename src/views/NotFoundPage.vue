@@ -31,27 +31,40 @@ function goHome() {
   align-items: center;
   justify-content: center;
   text-align: center;
-  padding: var(--spacing-4);
+  padding: var(--spacing-3);
 }
 
 .error-code {
-  font-size: 120px;
+  font-size: 80px;
   font-weight: var(--font-bold);
   background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
   line-height: 1;
-  margin-bottom: var(--spacing-4);
+  margin-bottom: var(--spacing-3);
+}
+
+@media (min-width: 640px) {
+  .error-code {
+    font-size: 100px;
+  }
 }
 
 .error-title {
-  font-size: var(--text-2xl);
+  font-size: var(--text-xl);
   margin-bottom: var(--spacing-2);
+}
+
+@media (min-width: 640px) {
+  .error-title {
+    font-size: var(--text-2xl);
+  }
 }
 
 .error-message {
   color: var(--color-text-tertiary);
-  margin-bottom: var(--spacing-6);
+  margin-bottom: var(--spacing-4);
+  font-size: var(--text-sm);
 }
 </style>
