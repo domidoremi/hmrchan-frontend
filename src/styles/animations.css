@@ -749,6 +749,7 @@
 }
 
 /* Page Slide Down - 返回上层页面 */
+/* 注意：移除 filter: blur() 以避免 CLS，仅使用合成属性 transform/opacity */
 .page-slide-down-enter-active {
   transition:
     opacity var(--duration-normal) var(--ease-out),
@@ -770,13 +771,11 @@
 .page-slide-down-enter-from {
   opacity: 0;
   transform: translate3d(0, -24px, 0) scale3d(1.02, 1.02, 1);
-  filter: blur(4px);
 }
 
 .page-slide-down-leave-to {
   opacity: 0;
   transform: translate3d(0, 24px, 0) scale3d(0.97, 0.97, 1);
-  filter: blur(2px);
 }
 
 /* ========== Loading Indicators ========== */
