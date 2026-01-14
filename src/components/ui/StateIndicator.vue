@@ -130,16 +130,18 @@ const actionLoading = computed(() => props.actionLoading)
   z-index: 1;
   color: var(--color-text-tertiary);
   opacity: 0.6;
+  /* 使用 translate3d 确保 GPU 加速，避免 CLS */
+  will-change: transform;
   animation: stateIconFloat 3s var(--ease-in-out) infinite;
 }
 
 @keyframes stateIconFloat {
   0%,
   100% {
-    transform: translateY(0);
+    transform: translate3d(0, 0, 0);
   }
   50% {
-    transform: translateY(-6px);
+    transform: translate3d(0, -6px, 0);
   }
 }
 
