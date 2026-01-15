@@ -87,3 +87,8 @@ export {
   type CreateCommentRequest as CreateDiscussionCommentRequest,
   type ListDiscussionsParams,
 } from './discussionService'
+export {
+  sessionService,
+  type Session,
+  type SessionListResponse,
+} from './sessionService'

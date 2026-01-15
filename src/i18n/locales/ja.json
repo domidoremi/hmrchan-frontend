@@ -362,7 +362,8 @@
       "comments": "コメント履歴",
       "likes": "いいね履歴",
       "history": "閲覧履歴",
-      "notifications": "通知"
+      "notifications": "通知",
+      "devices": "デバイス管理"
     },
     "noComments": "コメントがありません",
     "noLikes": "いいねした投稿がありません",
@@ -427,5 +428,43 @@
     "youtube": "YouTubeコンテンツを追跡",
     "instagram": "Instagram投稿を収集",
     "twitter": "X投稿をアーカイブ"
+  },
+  "devices": {
+    "title": "アクティブなデバイス",
+    "description": "アカウントにアクセスできるデバイスを管理",
+    "currentDevice": "現在のデバイス",
+    "trusted": "信頼済み",
+    "trust": "デバイスを信頼",
+    "untrust": "信頼を解除",
+    "revoke": "ログアウト",
+    "revokeAll": "他のすべてのデバイスからログアウト",
+    "lastActive": "最終アクティブ",
+    "namePlaceholder": "デバイス名を入力",
+    "ipChangeWarning": "IPアドレスが {count} 回変更されました",
+    "time": {
+      "justNow": "たった今",
+      "minutesAgo": "{count} 分前",
+      "hoursAgo": "{count} 時間前",
+      "daysAgo": "{count} 日前"
+    },
+    "confirm": {
+      "revoke": "このデバイスからログアウトしますか？",
+      "revokeAll": "他のすべてのデバイスからログアウトしますか？"
+    },
+    "success": {
+      "revoked": "デバイスからログアウトしました",
+      "revokedAll": "他のすべてのデバイスからログアウトしました",
+      "trusted": "デバイスを信頼しました",
+      "untrusted": "デバイスの信頼を解除しました",
+      "nameUpdated": "デバイス名を更新しました"
+    },
+    "error": {
+      "fetchFailed": "デバイスの読み込みに失敗",
+      "revokeFailed": "デバイスのログアウトに失敗",
+      "revokeAllFailed": "すべてのデバイスのログアウトに失敗",
+      "trustFailed": "デバイスの信頼状態の更新に失敗",
+      "updateNameFailed": "デバイス名の更新に失敗",
+      "emptyName": "デバイス名を入力してください"
+    }
   }
 }

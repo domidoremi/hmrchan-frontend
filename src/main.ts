@@ -58,6 +58,12 @@ const authStore = useAuthStore()
 authStore.initAuth()
 authStore.setupAuthListener()
 
+// 初始化设备指纹（异步，不阻塞应用启动）
+import { initFingerprint } from './utils/fingerprint'
+initFingerprint().catch(() => {
+  // 指纹初始化失败不影响应用运行
+})
+
 app.mount('#app')
 
 // 非关键任务：使用现代 Scheduler API 在空闲时执行
