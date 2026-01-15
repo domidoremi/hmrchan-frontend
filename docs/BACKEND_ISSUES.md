@@ -16,25 +16,21 @@
 
 ---
 
-### 1.2 POST /api/v1/discussions/ - 404 Not Found
+### 1.2 ~~POST /api/v1/discussions/ - 404 Not Found~~
 
-**状态**: ❌ 未修复
+**状态**: ✅ 已修复 (前端 Cloudflare Pages Functions 配置问题)
 
-**问题**: 创建新讨论时返回 404 Not Found
+**问题分析**:
 
-**触发场景**: 在社区页面 `/community` 填写讨论标题和内容后点击发布
+- `https://api.momichan.xyz/api/v1/discussions/` → 401 (后端正常，需要认证)
+- `https://momichan.xyz/api/v1/discussions/` → 404 (前端代理未生效)
 
-**请求**:
+**原因**: Cloudflare Pages Functions 没有正确处理 `/api/*` 路由
 
-```
-POST https://momichan.xyz/api/v1/discussions/
-```
+**修复**:
 
-**响应**: 404 Not Found
-
-**影响**: 用户无法发起新讨论
-
-**前端验证时间**: 2026-01-15
+1. 添加 `public/_routes.json` 明确指定 Functions 路由
+2. 修复 `functions/api/[[path]].ts` 保留 URL 尾部斜杠
 
 ---
 

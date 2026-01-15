@@ -43,9 +43,13 @@ export async function onRequest(context: CFPagesContext): Promise<Response> {
   const apiBaseUrl = env.API_BASE_URL || 'https://api.momichan.xyz'
 
   // 构建目标 URL
+  // 保留原始请求的尾部斜杠
   const path = Array.isArray(params.path) ? params.path.join('/') : params.path || ''
   const url = new URL(request.url)
-  const targetUrl = `${apiBaseUrl}/api/${path}${url.search}`
+  const originalPath = url.pathname
+  const hasTrailingSlash = originalPath.endsWith('/')
+  const normalizedPath = path + (hasTrailingSlash && !path.endsWith('/') ? '/' : '')
+  const targetUrl = `${apiBaseUrl}/api/${normalizedPath}${url.search}`
 
   // 复制请求头，移除不应转发的头
   const headers = new Headers()
