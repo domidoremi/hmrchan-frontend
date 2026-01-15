@@ -12,11 +12,6 @@ dist/
 dist-ssr/
 *.local
 
-.agent
-scripts/
-.vscode/
-.windsurf/
-.mcp.json
 # =====================
 # Logs
 # =====================
@@ -39,12 +34,8 @@ bun-debug.log*
 !.env.development
 
 # =====================
-# Editor directories and files
+# Editor & IDE
 # =====================
-.vscode/
-!.vscode/extensions.json
-!.vscode/settings.json
-!.vscode/launch.json
 .idea/
 *.suo
 *.ntvs*
@@ -108,37 +99,42 @@ lighthouse-report.*
 *.report.html
 *.report.json
 lighthouse-reports/
+
 # =====================
 # Bun
 # =====================
 bun.lockb
 
 # =====================
-# Misc
+# Cache & Temp
 # =====================
-*.local
 *.cache
 .cache/
 .temp/
 .tmp/
-.unused-code/
 
 # =====================
-# Documentation & Notes
+# AI Agent Tools
 # =====================
+.agent/
+.claude/
 .kiro/
-docs/
+.qoder/
+.qoderignore
+.windsurf/
+.mcp.json
+
+# =====================
+# Project specific
+# =====================
+scripts/
+.unused-code/
+lighthouse-reports/
+
+# =====================
+# Draft & Notes (not for production)
+# =====================
 **/notes.md
 **/draft*.md
 **/temp*.md
 **/TODO.md
-*.md
-!README.md
-!CHANGELOG.md
-!CONTRIBUTING.md
-!LICENSE.md
-.qoderignore
-.claude/
-.husky/
-.qoder/
-.vscode/
