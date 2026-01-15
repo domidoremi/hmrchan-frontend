@@ -142,8 +142,10 @@ async function fetchNotifications(reset = true) {
   error.value = null
 
   try {
+    // 尝试获取通知，如果 API 不存在则显示空状态
     const res = await apiClient.get<{ items: Notification[]; total: number }>(
-      `/users/me/notifications?page=${page.value}&page_size=${pageSize}`
+      `/notifications?page=${page.value}&page_size=${pageSize}`,
+      { skipErrorToast: true }
     )
 
     if (reset) {
@@ -153,6 +155,16 @@ async function fetchNotifications(reset = true) {
     }
     total.value = res.total
   } catch (err) {
+    // 如果是 404，说明 API 尚未实现，显示空状态而不是错误
+    if (err instanceof ApiError && err.status === 404) {
+      if (reset) {
+        notifications.value = []
+        total.value = 0
+      }
+      // 不设置 error，让组件显示空状态
+      return
+    }
+
     if (notifications.value.length === 0) {
       if (err instanceof ApiError) {
         error.value = err.message
