@@ -163,7 +163,7 @@ function handleClick(event: MouseEvent) {
 }
 
 .btn-danger {
-  background: linear-gradient(135deg, var(--color-error) 0%, #dc2626 100%);
+  background: linear-gradient(135deg, var(--color-error) 0%, var(--color-error-hover) 100%);
   color: var(--color-white);
 }
 
