@@ -361,7 +361,8 @@
       "comments": "评论记录",
       "likes": "点赞记录",
       "history": "浏览历史",
-      "notifications": "消息通知"
+      "notifications": "消息通知",
+      "devices": "设备管理"
     },
     "noComments": "暂无评论记录",
     "noLikes": "暂无点赞记录",
@@ -426,5 +427,43 @@
     "youtube": "YouTube 内容追踪",
     "instagram": "Instagram 帖子收录",
     "twitter": "X 帖子归档"
+  },
+  "devices": {
+    "title": "活跃设备",
+    "description": "管理可以访问您账户的设备",
+    "currentDevice": "当前设备",
+    "trusted": "已信任",
+    "trust": "信任设备",
+    "untrust": "取消信任",
+    "revoke": "退出登录",
+    "revokeAll": "退出所有其他设备",
+    "lastActive": "最后活跃",
+    "namePlaceholder": "输入设备名称",
+    "ipChangeWarning": "IP 地址已更改 {count} 次",
+    "time": {
+      "justNow": "刚刚",
+      "minutesAgo": "{count} 分钟前",
+      "hoursAgo": "{count} 小时前",
+      "daysAgo": "{count} 天前"
+    },
+    "confirm": {
+      "revoke": "确定要退出此设备的登录吗？",
+      "revokeAll": "确定要退出所有其他设备的登录吗？"
+    },
+    "success": {
+      "revoked": "设备已退出登录",
+      "revokedAll": "所有其他设备已退出登录",
+      "trusted": "设备已信任",
+      "untrusted": "设备已取消信任",
+      "nameUpdated": "设备名称已更新"
+    },
+    "error": {
+      "fetchFailed": "加载设备列表失败",
+      "revokeFailed": "退出设备登录失败",
+      "revokeAllFailed": "退出所有设备登录失败",
+      "trustFailed": "更新设备信任状态失败",
+      "updateNameFailed": "更新设备名称失败",
+      "emptyName": "设备名称不能为空"
+    }
   }
 }

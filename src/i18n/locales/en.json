@@ -361,7 +361,8 @@
       "comments": "Comment History",
       "likes": "Liked Posts",
       "history": "Browsing History",
-      "notifications": "Notifications"
+      "notifications": "Notifications",
+      "devices": "Devices"
     },
     "noComments": "No comments yet",
     "noLikes": "No liked posts yet",
@@ -426,5 +427,43 @@
     "youtube": "YouTube content tracked",
     "instagram": "Instagram posts collected",
     "twitter": "X posts archived"
+  },
+  "devices": {
+    "title": "Active Devices",
+    "description": "Manage devices that have access to your account",
+    "currentDevice": "Current Device",
+    "trusted": "Trusted",
+    "trust": "Trust Device",
+    "untrust": "Untrust Device",
+    "revoke": "Sign Out",
+    "revokeAll": "Sign Out All Other Devices",
+    "lastActive": "Last active",
+    "namePlaceholder": "Enter device name",
+    "ipChangeWarning": "IP address changed {count} times",
+    "time": {
+      "justNow": "Just now",
+      "minutesAgo": "{count} minute ago | {count} minutes ago",
+      "hoursAgo": "{count} hour ago | {count} hours ago",
+      "daysAgo": "{count} day ago | {count} days ago"
+    },
+    "confirm": {
+      "revoke": "Are you sure you want to sign out this device?",
+      "revokeAll": "Are you sure you want to sign out all other devices?"
+    },
+    "success": {
+      "revoked": "Device signed out successfully",
+      "revokedAll": "All other devices signed out successfully",
+      "trusted": "Device trusted successfully",
+      "untrusted": "Device untrusted successfully",
+      "nameUpdated": "Device name updated successfully"
+    },
+    "error": {
+      "fetchFailed": "Failed to load devices",
+      "revokeFailed": "Failed to sign out device",
+      "revokeAllFailed": "Failed to sign out all devices",
+      "trustFailed": "Failed to update device trust status",
+      "updateNameFailed": "Failed to update device name",
+      "emptyName": "Device name cannot be empty"
+    }
   }
 }

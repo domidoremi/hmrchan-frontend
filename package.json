@@ -38,6 +38,7 @@
     "clean": "rm -rf dist node_modules/.vite .tsbuildinfo"
   },
   "dependencies": {
+    "@fingerprintjs/fingerprintjs": "^5.0.1",
     "gsap": "^3.14.2",
     "lucide-vue-next": "^0.562.0",
     "pinia": "^3.0.4",
