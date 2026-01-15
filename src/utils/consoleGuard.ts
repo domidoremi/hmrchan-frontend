@@ -75,6 +75,7 @@ function showWarning(): void {
 /**
  * 禁用控制台方法
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function disableConsoleMethods(): void {
   const noop = () => {}
 
@@ -110,6 +111,7 @@ function disableConsoleMethods(): void {
  * 检测开发者工具是否打开（基于窗口尺寸变化）
  * 注意：这不是 100% 可靠的检测方法
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function detectDevTools(): void {
   const threshold = 160
 
@@ -149,6 +151,7 @@ export function disableContextMenu(): void {
 /**
  * 禁用常用开发者工具快捷键
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function disableDevToolsShortcuts(): void {
   document.addEventListener(
     'keydown',
