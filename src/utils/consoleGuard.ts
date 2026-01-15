@@ -196,6 +196,10 @@ function disableDevToolsShortcuts(): void {
  * 仅在生产环境启用
  */
 export function initConsoleGuard(): void {
+  // 控制台保护已禁用
+  // 如需启用，请取消下面代码的注释
+
+  /*
   // 仅在生产环境启用
   if (import.meta.env.DEV) {
     return
@@ -215,6 +219,7 @@ export function initConsoleGuard(): void {
 
   // 可选：禁用右键菜单（取消注释以启用）
   // disableContextMenu()
+  */
 }
 
 export default initConsoleGuard
