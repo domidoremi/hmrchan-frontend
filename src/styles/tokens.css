@@ -11,6 +11,7 @@
   /* Primary - 现代蓝紫渐变基调 */
   --color-primary: #6366f1;
   --color-primary-rgb: 99, 102, 241;
+  --color-primary-alpha: rgba(99, 102, 241, 0.1);
   --color-primary-light: #818cf8;
   --color-primary-lighter: #a5b4fc;
   --color-primary-dark: #4f46e5;
@@ -41,12 +42,20 @@
   /* Semantic Colors - 更鲜明的语义色 */
   --color-success: #10b981;
   --color-success-rgb: 16, 185, 129;
+  --color-success-alpha: rgba(16, 185, 129, 0.1);
+  --color-success-hover: #059669;
   --color-warning: #f59e0b;
   --color-warning-rgb: 245, 158, 11;
+  --color-warning-alpha: rgba(245, 158, 11, 0.1);
+  --color-warning-hover: #d97706;
   --color-error: #ef4444;
   --color-error-rgb: 239, 68, 68;
+  --color-error-alpha: rgba(239, 68, 68, 0.1);
+  --color-error-hover: #dc2626;
   --color-info: #3b82f6;
   --color-info-rgb: 59, 130, 246;
+  --color-info-alpha: rgba(59, 130, 246, 0.1);
+  --color-info-hover: #2563eb;
 
   /* Neutral - 灰度 */
   --color-white: #ffffff;
@@ -230,6 +239,7 @@
   /* Primary - 暗色模式下更明亮的主色调 */
   --color-primary: #818cf8;
   --color-primary-rgb: 129, 140, 248;
+  --color-primary-alpha: rgba(129, 140, 248, 0.1);
   --color-primary-light: #a5b4fc;
   --color-primary-lighter: #c7d2fe;
   --color-primary-dark: #6366f1;
@@ -250,12 +260,20 @@
   /* Semantic Colors - 暗色模式优化 */
   --color-success: #34d399;
   --color-success-rgb: 52, 211, 153;
+  --color-success-alpha: rgba(52, 211, 153, 0.1);
+  --color-success-hover: #10b981;
   --color-warning: #fbbf24;
   --color-warning-rgb: 251, 191, 36;
+  --color-warning-alpha: rgba(251, 191, 36, 0.1);
+  --color-warning-hover: #f59e0b;
   --color-error: #f87171;
   --color-error-rgb: 248, 113, 113;
+  --color-error-alpha: rgba(248, 113, 113, 0.1);
+  --color-error-hover: #ef4444;
   --color-info: #60a5fa;
   --color-info-rgb: 96, 165, 250;
+  --color-info-alpha: rgba(96, 165, 250, 0.1);
+  --color-info-hover: #3b82f6;
 
   /* Surface & Background - 深邃的层次感 */
   --color-surface: #0c1017;
