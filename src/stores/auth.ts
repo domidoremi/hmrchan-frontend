@@ -11,7 +11,7 @@ import { defineStore } from 'pinia'
 import { useRouter } from 'vue-router'
 import { authService, ApiError } from '@/api'
 import type { UserResponse } from '@/api'
-import { getDeviceInfo } from '@/utils/device'
+import { getFullDeviceInfo } from '@/utils/device'
 
 // 用户类型（与 API 响应匹配）
 export type AuthUser = UserResponse
@@ -45,11 +45,11 @@ export const useAuthStore = defineStore(
       error.value = null
 
       try {
-        const deviceInfo = getDeviceInfo()
+        const deviceInfo = await getFullDeviceInfo()
         const response = await authService.login({
           username: email,
           password,
-          ...deviceInfo,
+          device_info: deviceInfo,
           ...(turnstileToken ? { turnstile_token: turnstileToken } : {}),
         })
 
@@ -91,12 +91,12 @@ export const useAuthStore = defineStore(
       error.value = null
 
       try {
-        const deviceInfo = getDeviceInfo()
+        const deviceInfo = await getFullDeviceInfo()
         const response = await authService.register({
           username,
           email,
           password,
-          ...deviceInfo,
+          device_info: deviceInfo,
           ...(turnstileToken ? { turnstile_token: turnstileToken } : {}),
         })
 

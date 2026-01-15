@@ -12,8 +12,16 @@ export interface LoginRequest {
   username: string
   password: string
   turnstile_token?: string
-  device_name?: string
-  device_type?: string
+  device_info?: {
+    device_fingerprint: string
+    device_name?: string
+    device_type: string
+    device_os: string
+    device_browser: string
+    screen_resolution: string
+    timezone: string
+    language: string
+  }
 }
 
 export interface RegisterRequest {
@@ -21,8 +29,16 @@ export interface RegisterRequest {
   email: string
   password: string
   turnstile_token?: string
-  device_name?: string
-  device_type?: string
+  device_info?: {
+    device_fingerprint: string
+    device_name?: string
+    device_type: string
+    device_os: string
+    device_browser: string
+    screen_resolution: string
+    timezone: string
+    language: string
+  }
 }
 
 export interface AuthResponse {

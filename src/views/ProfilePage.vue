@@ -48,7 +48,7 @@ defineOptions({ name: 'ProfilePage' })
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
-import { Heart, MessageSquare, ThumbsUp, Clock, Bell, Settings } from 'lucide-vue-next'
+import { Heart, MessageSquare, ThumbsUp, Clock, Bell, Settings, Smartphone } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores'
 import { getUserAvatarUrl } from '@/composables/useUserAvatar'
 import Button from '@/components/ui/Button.vue'
@@ -57,12 +57,13 @@ import ProfileCommentsTab from '@/components/profile/ProfileCommentsTab.vue'
 import ProfileLikesTab from '@/components/profile/ProfileLikesTab.vue'
 import ProfileHistoryTab from '@/components/profile/ProfileHistoryTab.vue'
 import ProfileNotificationsTab from '@/components/profile/ProfileNotificationsTab.vue'
+import DeviceManagement from '@/components/profile/DeviceManagement.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
 const { user, isAuthenticated } = storeToRefs(authStore)
 
-const activeTab = ref<'favorites' | 'comments' | 'likes' | 'history' | 'notifications'>('favorites')
+const activeTab = ref<'favorites' | 'comments' | 'likes' | 'history' | 'notifications' | 'devices'>('favorites')
 
 const tabs = [
   { id: 'favorites' as const, label: 'profile.tabs.favorites', icon: Heart, count: undefined },
@@ -80,6 +81,12 @@ const tabs = [
     icon: Bell,
     count: undefined,
   },
+  {
+    id: 'devices' as const,
+    label: 'profile.tabs.devices',
+    icon: Smartphone,
+    count: undefined,
+  },
 ]
 
 const currentTabComponent = computed(() => {
@@ -89,6 +96,7 @@ const currentTabComponent = computed(() => {
     likes: ProfileLikesTab,
     history: ProfileHistoryTab,
     notifications: ProfileNotificationsTab,
+    devices: DeviceManagement,
   }
   return components[activeTab.value]
 })
