@@ -92,6 +92,23 @@ import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
 
+// API 返回的原始数据结构
+interface ApiHistoryItem {
+  id: number
+  content_type: string
+  content_id: number
+  content_uuid: string
+  source: string
+  duration_seconds: number | null
+  created_at: string
+  content_preview: {
+    title?: string
+    thumbnail_url?: string | null
+    author_name?: string
+  } | null
+}
+
+// 前端使用的数据结构
 interface HistoryItem {
   id: number
   post_uuid: string
@@ -102,6 +119,21 @@ interface HistoryItem {
     author_name?: string
   }
   viewed_at: string
+}
+
+// 转换 API 数据为前端格式
+function transformHistoryItem(item: ApiHistoryItem): HistoryItem {
+  return {
+    id: item.id,
+    post_uuid: item.content_uuid,
+    post: {
+      uuid: item.content_uuid,
+      title: item.content_preview?.title || t('profile.unknownPost'),
+      thumbnail_url: item.content_preview?.thumbnail_url || null,
+      author_name: item.content_preview?.author_name,
+    },
+    viewed_at: item.created_at,
+  }
 }
 
 const router = useRouter()
@@ -133,17 +165,19 @@ async function fetchHistory(reset = true) {
 
   try {
     const res = await apiClient.get<{
-      items: HistoryItem[]
+      items: ApiHistoryItem[]
       total: number
       page: number
       page_size: number
       has_more: boolean
     }>(`/history/browsing?page=${page.value}&page_size=${pageSize}`)
 
+    const transformedItems = res.items.map(transformHistoryItem)
+
     if (reset) {
-      history.value = res.items
+      history.value = transformedItems
     } else {
-      history.value.push(...res.items)
+      history.value.push(...transformedItems)
     }
     total.value = res.total
   } catch (err) {
