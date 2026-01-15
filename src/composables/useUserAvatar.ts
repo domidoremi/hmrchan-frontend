@@ -5,14 +5,13 @@
  * 解决导航栏、评论区等多处头像不同步的问题
  */
 
-import { computed, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useAuthStore } from '@/stores'
 import { normalizeAvatarUrl } from '@/api/userService'
 
 // 全局头像缓存（带版本号防止浏览器缓存）
-// 使用 Map 存储每个用户的头像版本，避免不必要的缓存破坏
-const avatarVersionMap = new Map<string, number>()
+const avatarVersion = ref(Date.now())
 
 // 默认头像生成器
 function getDefaultAvatar(seed: string): string {
@@ -29,16 +28,9 @@ export function getUserAvatarUrl(
   const normalized = normalizeAvatarUrl(avatarUrl)
 
   if (normalized) {
-    // 获取该头像的版本号（如果不存在则创建）
-    const cacheKey = normalized
-    if (!avatarVersionMap.has(cacheKey)) {
-      avatarVersionMap.set(cacheKey, Date.now())
-    }
-    const version = avatarVersionMap.get(cacheKey)!
-
     // 添加版本参数以破坏浏览器缓存（仅在头像更新后）
     const separator = normalized.includes('?') ? '&' : '?'
-    return `${normalized}${separator}v=${version}`
+    return `${normalized}${separator}v=${avatarVersion.value}`
   }
 
   return getDefaultAvatar(username || 'default')
@@ -48,8 +40,7 @@ export function getUserAvatarUrl(
  * 刷新头像缓存（在头像上传成功后调用）
  */
 export function refreshAvatarCache(): void {
-  // 清空所有版本号，强制刷新
-  avatarVersionMap.clear()
+  avatarVersion.value = Date.now()
 }
 
 /**
@@ -82,35 +73,50 @@ export function useUserAvatar() {
 
 /**
  * 预加载头像图片（提高导航栏头像显示优先级）
- * 使用 Set 防止重复预加载相同的 URL
+ * 使用 Map 存储 URL 和对应的 link 元素，防止重复预加载
  */
-const preloadedUrls = new Set<string>()
+const MAX_PRELOADED_AVATARS = 5
+const preloadCache = new Map<string, HTMLLinkElement>()
 
 export function preloadUserAvatar(url: string): void {
   if (!url || url.includes('dicebear.com')) return
 
   // 如果已经预加载过，跳过
-  if (preloadedUrls.has(url)) return
+  if (preloadCache.has(url)) return
 
-  const link = document.createElement('link')
-  link.rel = 'preload'
-  link.as = 'image'
-  link.href = url
-  link.fetchPriority = 'high'
-  document.head.appendChild(link)
+  try {
+    const link = document.createElement('link')
+    link.rel = 'preload'
+    link.as = 'image'
+    link.href = url
+    // TypeScript 可能不识别 fetchPriority，使用类型断言
+    ;(link as HTMLLinkElement & { fetchPriority: string }).fetchPriority = 'high'
+    document.head.appendChild(link)
 
-  // 记录已预加载的 URL
-  preloadedUrls.add(url)
+    // 记录已预加载的 URL 和对应的 link 元素
+    preloadCache.set(url, link)
 
-  // 清理旧的 preload 标签（保留最近 5 个）
-  if (preloadedUrls.size > 5) {
-    const oldestUrl = preloadedUrls.values().next().value
-    preloadedUrls.delete(oldestUrl)
-
-    // 移除对应的 link 标签
-    const oldLink = document.querySelector(`link[rel="preload"][href="${oldestUrl}"]`)
-    if (oldLink) {
-      oldLink.remove()
+    // 清理旧的 preload 标签（保留最近 5 个）
+    if (preloadCache.size > MAX_PRELOADED_AVATARS) {
+      const oldestUrl = preloadCache.keys().next().value
+      const oldLink = preloadCache.get(oldestUrl)
+      if (oldLink) {
+        oldLink.remove()
+      }
+      preloadCache.delete(oldestUrl)
+    }
+  } catch (error) {
+    // 静默失败，预加载失败不应影响应用功能
+    if (import.meta.env.DEV) {
+      console.warn('Failed to preload avatar:', url, error)
     }
   }
+}
+
+/**
+ * 清理所有预加载的头像（用于测试或内存清理）
+ */
+export function clearAvatarPreloadCache(): void {
+  preloadCache.forEach((link) => link.remove())
+  preloadCache.clear()
 }
