@@ -18,7 +18,7 @@
 
 ### 1.2 ~~POST /api/v1/discussions/ - 404 Not Found~~
 
-**状态**: ✅ 已修复 (前端 Cloudflare Pages Functions 配置问题)
+**状态**: ✅ 已修复并验证 (2026-01-15)
 
 **问题分析**:
 
@@ -31,6 +31,25 @@
 
 1. 添加 `public/_routes.json` 明确指定 Functions 路由
 2. 修复 `functions/api/[[path]].ts` 保留 URL 尾部斜杠
+
+**验证结果**: POST /api/v1/discussions/ 返回 201 Created ✅
+
+---
+
+### 1.3 GET /api/v1/posts/ - 404 Not Found
+
+**状态**: ❌ 后端问题 (2026-01-15 发现)
+
+**问题**: 后端 `/api/v1/posts/` 端点返回 404
+
+**验证**:
+
+- `https://api.momichan.xyz/api/v1/posts/?page=1&page_size=1` → 404 Not Found
+- `https://api.momichan.xyz/api/v1/discussions/?page=1&page_size=1` → 200 OK
+
+**影响**: 首页、探索页、作者页无法加载内容
+
+**建议**: 检查后端 posts 路由配置
 
 ---
 
@@ -144,9 +163,10 @@
 
 ### 6.2 存在问题的功能
 
-| 功能       | 状态 | 问题描述                           |
-| ---------- | ---- | ---------------------------------- |
-| 发起新讨论 | ❌   | POST /api/v1/discussions/ 返回 404 |
+| 功能           | 状态 | 问题描述                                      |
+| -------------- | ---- | --------------------------------------------- |
+| ~~发起新讨论~~ | ✅   | ~~POST /api/v1/discussions/ 返回 404~~ 已修复 |
+| 帖子列表       | ❌   | GET /api/v1/posts/ 返回 404 (后端问题)        |
 
 ---
 
