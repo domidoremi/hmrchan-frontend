@@ -78,6 +78,8 @@
           class="action-btn"
           :class="{ 'action-btn--active': showSettings }"
           @click="toggleSettings"
+          @mouseenter="prefetchSettingsPanel"
+          @focus="prefetchSettingsPanel"
           :aria-label="$t('nav.settings')"
         >
           <Settings :size="18" :class="{ 'icon-spin': showSettings }" />
@@ -283,6 +285,16 @@ import { throttleRAF, scheduleDOMUpdate, prefersReducedMotion } from '@/utils/pe
 
 // 懒加载设置面板，减少首屏 JS
 const SettingsPanel = defineAsyncComponent(() => import('./SettingsPanel.vue'))
+
+// 预加载设置面板的标志
+let hasPrefetchedSettingsPanel = false
+
+// 预加载设置面板组件
+function prefetchSettingsPanel() {
+  if (hasPrefetchedSettingsPanel) return
+  hasPrefetchedSettingsPanel = true
+  import('./SettingsPanel.vue').catch(() => {})
+}
 
 const router = useRouter()
 const route = useRoute()
