@@ -9,10 +9,13 @@
 
     <div v-else-if="isLoading && comments.length === 0" class="loading-skeleton">
       <div v-for="i in 5" :key="i" class="comment-skeleton glass-card">
-        <div class="skeleton" style="height: 40px; width: 40px; border-radius: 50%" />
-        <div style="flex: 1">
-          <div class="skeleton" style="height: 16px; width: 30%; margin-bottom: 8px" />
-          <div class="skeleton" style="height: 14px; width: 100%" />
+        <div class="skeleton-content">
+          <div class="skeleton-header">
+            <div class="skeleton" style="height: 14px; width: 80px" />
+            <div class="skeleton" style="height: 14px; width: 60px" />
+          </div>
+          <div class="skeleton" style="height: 16px; width: 100%; margin: 12px 0" />
+          <div class="skeleton" style="height: 14px; width: 70%" />
         </div>
       </div>
     </div>
@@ -25,35 +28,54 @@
       />
 
       <div v-else class="comments-list">
-        <article v-for="comment in comments" :key="comment.id" class="comment-item glass-card">
+        <article
+          v-for="comment in comments"
+          :key="comment.id"
+          class="comment-item glass-card"
+          :class="{ 'comment-item--deleting': deletingId === comment.id }"
+        >
+          <!-- Comment Header -->
           <div class="comment-header">
-            <span class="comment-date">{{ formatDate(comment.created_at) }}</span>
-          </div>
-          <div class="comment-content">
-            <p>{{ comment.content }}</p>
-          </div>
-          <div v-if="comment.post_title" class="comment-context">
-            <MessageSquare :size="14" />
-            <span>{{ $t('profile.commentOn') }}: </span>
-            <button class="post-link" @click="goToPost(comment.post_id)">
-              {{ comment.post_title }}
-            </button>
-          </div>
-          <div class="comment-actions">
+            <div class="comment-meta">
+              <span class="comment-date">
+                <Clock :size="12" />
+                {{ formatDate(comment.created_at) }}
+              </span>
+              <span v-if="comment.replies_count" class="comment-replies">
+                <MessageCircle :size="12" />
+                {{ comment.replies_count }} {{ $t('comment.replies', '回复') }}
+              </span>
+            </div>
             <button
-              class="action-btn delete-btn"
+              class="delete-btn"
+              :disabled="deletingId === comment.id"
               @click.stop="handleDelete(comment.id)"
               :aria-label="$t('common.delete')"
             >
-              <Trash2 :size="16" />
-              <span>{{ $t('common.delete') }}</span>
+              <Trash2 :size="14" />
             </button>
           </div>
-          <div class="comment-stats">
-            <span><Heart :size="14" /> {{ comment.likes_count || 0 }}</span>
-            <span v-if="comment.replies_count"
-              ><MessageCircle :size="14" /> {{ comment.replies_count }}</span
-            >
+
+          <!-- Comment Content -->
+          <div class="comment-body">
+            <p class="comment-text">{{ comment.content }}</p>
+          </div>
+
+          <!-- Comment Footer -->
+          <div class="comment-footer">
+            <div v-if="comment.post_title" class="comment-context">
+              <MessageSquare :size="14" />
+              <span class="context-label">{{ $t('profile.commentOn') }}</span>
+              <button class="post-link" @click="goToPost(comment.post_id)">
+                {{ comment.post_title }}
+              </button>
+            </div>
+            <div class="comment-stats">
+              <span class="stat-item">
+                <Heart :size="14" :class="{ 'stat-icon--active': comment.likes_count > 0 }" />
+                {{ comment.likes_count || 0 }}
+              </span>
+            </div>
           </div>
         </article>
       </div>
@@ -83,7 +105,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { Heart, MessageCircle, MessageSquare, Trash2 } from 'lucide-vue-next'
+import { Heart, MessageCircle, MessageSquare, Trash2, Clock } from 'lucide-vue-next'
 import { apiClient, ApiError } from '@/api'
 import { useToastStore } from '@/stores'
 import { formatRelativeTime } from '@/utils/date'
@@ -112,6 +134,7 @@ const toastStore = useToastStore()
 const comments = ref<UserComment[]>([])
 const showConfirmDialog = ref(false)
 const pendingDeleteId = ref<string | null>(null)
+const deletingId = ref<string | null>(null)
 const isLoading = ref(false)
 const isLoadingMore = ref(false)
 const error = ref<string | null>(null)
@@ -186,6 +209,7 @@ async function confirmDelete() {
   if (!pendingDeleteId.value) return
 
   const commentId = pendingDeleteId.value
+  deletingId.value = commentId
 
   try {
     await apiClient.delete(`/comments/${commentId}`)
@@ -200,6 +224,7 @@ async function confirmDelete() {
     }
   } finally {
     pendingDeleteId.value = null
+    deletingId.value = null
   }
 }
 
@@ -234,6 +259,7 @@ onMounted(() => {
   color: var(--color-text-secondary);
 }
 
+/* Loading Skeleton */
 .loading-skeleton {
   display: flex;
   flex-direction: column;
@@ -241,96 +267,138 @@ onMounted(() => {
 }
 
 .comment-skeleton {
-  display: flex;
-  gap: var(--spacing-3);
   padding: var(--spacing-4);
 }
 
+.skeleton-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.skeleton-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-2);
+}
+
+/* Comments List */
 .comments-list {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-4);
 }
 
+/* Comment Item */
 .comment-item {
   padding: var(--spacing-4);
-  cursor: default;
   transition: all var(--transition-base);
   border: 1px solid transparent;
   position: relative;
   background: var(--glass-bg-light);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
 }
 
 .comment-item:hover {
-  transform: translateY(-2px);
-  border-color: rgba(var(--color-primary-rgb), 0.3);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  border-color: rgba(var(--color-primary-rgb), 0.2);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
 }
 
+.comment-item--deleting {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* Comment Header */
 .comment-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: var(--spacing-2);
+  margin-bottom: var(--spacing-3);
 }
 
-.comment-date {
+.comment-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-4);
+}
+
+.comment-date,
+.comment-replies {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-1);
   font-size: var(--text-xs);
   color: var(--color-text-tertiary);
 }
 
-.comment-content {
-  margin-bottom: var(--spacing-3);
-  line-height: 1.6;
+.comment-replies {
+  color: var(--color-text-secondary);
 }
 
-.comment-content p {
+/* Delete Button */
+.delete-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  border: none;
+  color: var(--color-text-tertiary);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  opacity: 0;
+  transition: all var(--transition-fast);
+}
+
+.comment-item:hover .delete-btn {
+  opacity: 1;
+}
+
+.delete-btn:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--color-error);
+}
+
+.delete-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* Comment Body */
+.comment-body {
+  margin-bottom: var(--spacing-3);
+}
+
+.comment-text {
   margin: 0;
   color: var(--color-text-primary);
+  line-height: 1.6;
+  font-size: var(--text-base);
+  word-break: break-word;
+}
+
+/* Comment Footer */
+.comment-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: var(--spacing-3);
+  border-top: 1px solid var(--glass-border);
 }
 
 .comment-context {
   display: flex;
   align-items: center;
   gap: var(--spacing-2);
-  margin-top: var(--spacing-3);
-  padding-top: var(--spacing-3);
-  border-top: 1px solid var(--color-border);
   font-size: var(--text-sm);
   color: var(--color-text-secondary);
+  flex: 1;
+  min-width: 0;
 }
 
-.comment-actions {
-  display: flex;
-  gap: var(--spacing-2);
-  margin-top: var(--spacing-3);
-}
-
-.action-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--spacing-1);
-  padding: var(--spacing-1) var(--spacing-2);
-  border-radius: var(--radius-sm);
-  font-size: var(--text-xs);
-  font-weight: var(--font-medium);
-  transition: all 0.2s ease;
-  background: transparent;
-  border: 1px solid var(--color-border);
-  color: var(--color-text-secondary);
-  cursor: pointer;
-}
-
-.action-btn:hover {
-  background: var(--color-bg-secondary);
-  transform: scale(1.05);
-}
-
-.delete-btn:hover {
-  border-color: var(--color-error);
-  color: var(--color-error);
-  background: rgba(239, 68, 68, 0.1);
+.context-label {
+  flex-shrink: 0;
 }
 
 .post-link {
@@ -340,24 +408,95 @@ onMounted(() => {
   padding: 0;
   font: inherit;
   cursor: pointer;
-  text-decoration: underline;
   transition: color var(--transition-fast);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .post-link:hover {
   color: var(--color-primary-dark);
+  text-decoration: underline;
 }
 
+/* Comment Stats */
 .comment-stats {
   display: flex;
-  gap: var(--spacing-4);
-  font-size: var(--text-sm);
-  color: var(--color-text-secondary);
+  gap: var(--spacing-3);
+  flex-shrink: 0;
 }
 
-.comment-stats span {
+.stat-item {
   display: flex;
   align-items: center;
   gap: var(--spacing-1);
+  font-size: var(--text-sm);
+  color: var(--color-text-tertiary);
+}
+
+.stat-icon--active {
+  color: var(--color-error);
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .tab-header {
+    margin-bottom: var(--spacing-4);
+  }
+
+  .tab-title {
+    font-size: var(--text-lg);
+  }
+
+  .comments-list {
+    gap: var(--spacing-3);
+  }
+
+  .comment-item {
+    padding: var(--spacing-3);
+  }
+
+  .comment-item .delete-btn {
+    opacity: 1;
+  }
+
+  .comment-header {
+    margin-bottom: var(--spacing-2);
+  }
+
+  .comment-meta {
+    gap: var(--spacing-3);
+  }
+
+  .comment-text {
+    font-size: var(--text-sm);
+  }
+
+  .comment-footer {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-2);
+    padding-top: var(--spacing-2);
+  }
+
+  .comment-context {
+    width: 100%;
+  }
+
+  .comment-stats {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 480px) {
+  .comment-item {
+    border-radius: var(--radius-md);
+  }
+
+  .comment-meta {
+    flex-wrap: wrap;
+    gap: var(--spacing-2);
+  }
 }
 </style>
