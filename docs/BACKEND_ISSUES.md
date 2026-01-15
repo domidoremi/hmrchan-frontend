@@ -1,6 +1,6 @@
 # 后端 API 问题汇总
 
-> 前端版本: 2025-01-15
+> 前端版本: 2026-01-15
 > 生产环境: https://momichan.xyz/
 > API 基础路径: https://api.momichan.xyz/api/v1/
 
@@ -8,11 +8,11 @@
 
 ### 1.1 ~~POST /api/v1/history/browsing - 422 Unprocessable Content~~
 
-**状态**: ✅ 已修复 (2026-01-15)
+**状态**: ✅ 已修复 (2026-01-15 前端验证通过)
 
 ~~**问题**: 后端期望 `post_id` 为整数类型，但前端发送的是 UUID 字符串~~
 
-**修复**: 后端已支持 UUID 格式的 `post_id`
+**修复**: 后端已支持 UUID 格式的 `post_id`，返回 201 Created
 
 ---
 
@@ -50,11 +50,22 @@
 
 ### 3.1 ~~缩略图尺寸字段缺失~~
 
-**状态**: ✅ 已修复 (2026-01-15)
+**状态**: ✅ 已修复 (2026-01-15 前端验证通过)
 
 ~~**问题**: API 响应中缺少 `thumbnail_width` 和 `thumbnail_height` 字段~~
 
 **修复**: API 已添加 `thumbnail_width` 和 `thumbnail_height` 字段到 `PostListItem` 响应
+
+**验证结果**:
+
+```json
+{
+  "id": "86c888fa-69b7-4b08-b947-e23f455ec843",
+  "platform": "youtube",
+  "thumbnail_width": 720,
+  "thumbnail_height": 1280
+}
+```
 
 ---
 
@@ -74,14 +85,14 @@
 
 ### 4.1 ~~平台筛选支持~~
 
-**状态**: ✅ 全部支持 (2026-01-15)
+**状态**: ✅ 全部支持 (2026-01-15 前端验证通过)
 
 前端已支持以下平台筛选:
 
 - YouTube ✅
 - TikTok ✅
 - Twitter/X ✅
-- Instagram ✅
+- Instagram ✅ (共 10 条记录)
 
 ### 4.2 排序参数
 
