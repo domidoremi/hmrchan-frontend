@@ -1,52 +1,24 @@
 # 后端 API 问题汇总
 
-> 前端版本: 2025-01-14
+> 前端版本: 2025-01-15
 > 生产环境: https://momichan.xyz/
 > API 基础路径: https://api.momichan.xyz/api/v1/
 
 ## 1. API 错误
 
-### 1.1 POST /api/v1/history/browsing - 422 Unprocessable Content
+### 1.1 ~~POST /api/v1/history/browsing - 422 Unprocessable Content~~
 
-**状态**: ❌ 未修复
+**状态**: ✅ 已修复 (2026-01-15)
 
-**触发场景**: 用户浏览帖子详情页时，前端调用浏览历史记录接口
+~~**问题**: 后端期望 `post_id` 为整数类型，但前端发送的是 UUID 字符串~~
 
-**请求示例**:
-
-```http
-POST /api/v1/history/browsing
-Content-Type: application/json
-Authorization: Bearer <token>
-
-{
-  "post_id": "86c888fa-69b7-4b08-b947-e23f455ec843"
-}
-```
-
-**错误响应**:
-
-```json
-{
-  "detail": "invalid literal for int() with base 10: '86c888fa-69b7-4b08-b947-e23f455ec843'"
-}
-```
-
-**问题**: 后端期望 `post_id` 为整数类型，但前端发送的是 UUID 字符串
-
-**建议**: 修改后端接受 UUID 字符串格式的 `post_id`
+**修复**: 后端已支持 UUID 格式的 `post_id`
 
 ---
 
 ### 1.2 ~~POST /api/v1/discussions/ - 404 Not Found~~
 
 **状态**: ✅ 已修复 (2026-01-15 验证通过)
-
-~~**触发场景**: 社区页面创建新讨论~~
-
-~~**错误响应**: 404 Not Found~~
-
-**验证结果**: API 返回 201 Created，讨论创建成功
 
 ---
 
@@ -61,20 +33,7 @@ Authorization: Bearer <token>
 - `https://pbs.twimg.com/profile_images/1990736764563304448/P10_8s_q.jpg`
 - `https://pbs.twimg.com/profile_images/1873716222233341952/ytP02nMC.jpg`
 - `https://pbs.twimg.com/profile_images/1941761364084633600/WPftFLFA.jpg`
-- `https://pbs.twimg.com/profile_images/.../H3p_S7z_.jpg`
-- `https://pbs.twimg.com/profile_images/.../gvpuEIBu.jpg`
-- `https://pbs.twimg.com/profile_images/.../REDJRSnL.jpg`
-- `https://pbs.twimg.com/profile_images/.../RZZDmM9G.jpg`
-- `https://pbs.twimg.com/profile_images/.../9ldXwqJv.jpg`
-- `https://pbs.twimg.com/profile_images/.../iXaKjTPT.jpg`
-- `https://pbs.twimg.com/profile_images/.../zhnq0Jyb.jpg`
-- `https://pbs.twimg.com/profile_images/.../ppQJyDpD.jpg`
-- `https://pbs.twimg.com/profile_images/.../ZwtcCXCZ.jpg`
-- `https://pbs.twimg.com/profile_images/.../n5pshklx.jpg`
-- `https://pbs.twimg.com/profile_images/.../qRHiz8ew.jpg`
-- `https://pbs.twimg.com/profile_images/.../NsxBYcU4.jpg`
-- `https://pbs.twimg.com/profile_images/.../bAsRvl0G.jpg`
-- `https://pbs.twimg.com/profile_images/.../QIcmFbO6.jpg`
+- 等...
 
 **影响范围**: 大量作者头像失效，严重影响用户体验
 
@@ -89,50 +48,40 @@ Authorization: Bearer <token>
 
 ## 3. 数据问题
 
-### 3.1 缩略图尺寸字段缺失
+### 3.1 ~~缩略图尺寸字段缺失~~
 
-**状态**: ❌ 未修复
+**状态**: ✅ 已修复 (2026-01-15)
 
-**触发场景**: 帖子列表/卡片显示时，前端需要根据缩略图尺寸计算正确的宽高比
+~~**问题**: API 响应中缺少 `thumbnail_width` 和 `thumbnail_height` 字段~~
 
-**问题描述**:
+**修复**: API 已添加 `thumbnail_width` 和 `thumbnail_height` 字段到 `PostListItem` 响应
 
-API 响应中缺少 `thumbnail_width` 和 `thumbnail_height` 字段，导致前端无法正确显示竖屏视频的卡片比例。
+---
 
-**示例**:
+### 3.2 ~~缩略图生成器 Bug~~
 
-帖子 ID: `86c888fa-69b7-4b08-b947-e23f455ec843`
+**状态**: ✅ 已修复 (2026-01-15)
 
-- 后端存储的缩略图: `2026-01-11_GMgzeF1yriA_720x1280.webp` (720×1280, 9:16 竖屏)
-- API 返回的 platform: `youtube`
-- API 未返回: `thumbnail_width`, `thumbnail_height`
+**修复内容**:
 
-**当前行为**: 前端根据 `platform=youtube` 使用默认 16:9 比例，导致竖屏视频显示为横屏卡片
-
-**期望行为**: API 返回 `thumbnail_width: 720`, `thumbnail_height: 1280`，前端可正确计算 9:16 比例
-
-**建议**:
-
-1. 在 `PostListItem` 响应中添加 `thumbnail_width` 和 `thumbnail_height` 字段
-2. 从缩略图文件名或元数据中提取尺寸信息
-3. 或者识别 YouTube Shorts 并设置特殊的 platform 类型（如 `youtube_shorts`）
+- 修复递归创建 `.thumbnails` 目录的问题
+- 修复文件名后缀叠加的问题
+- 清理了 68.5 万条损坏的缩略图记录
 
 ---
 
 ## 4. 功能建议
 
-### 4.1 平台筛选支持
+### 4.1 ~~平台筛选支持~~
 
-**状态**: ❌ Instagram 筛选未支持
+**状态**: ✅ 全部支持 (2026-01-15)
 
 前端已支持以下平台筛选:
 
 - YouTube ✅
 - TikTok ✅
 - Twitter/X ✅
-- Instagram ❌ (返回 404 Not Found)
-
-请确认后端 API 支持 `platform=instagram` 参数
+- Instagram ✅
 
 ### 4.2 排序参数
 
@@ -151,6 +100,7 @@ API 响应中缺少 `thumbnail_width` 和 `thumbnail_height` 字段，导致前�
 - ✅ 密码表单隐藏用户名字段（无障碍）
 - ✅ CLS 布局偏移优化
 - ✅ 动画 GPU 加速
+- ✅ 平台宽高比修正 (TikTok 9:16, Pixiv 3:4, Instagram 4:5)
 
 ---
 
