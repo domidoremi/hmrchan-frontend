@@ -494,10 +494,31 @@ async function changePassword() {
   }
 }
 
+// 头像上传限制
+const AVATAR_LIMITS = {
+  MAX_FILE_SIZE_MB: 5,
+  ALLOWED_TYPES: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
+}
+
 function handleAvatarSelect(event: Event) {
   const input = event.target as HTMLInputElement
   const file = input.files?.[0]
   if (!file) return
+
+  // 验证文件类型
+  if (!AVATAR_LIMITS.ALLOWED_TYPES.includes(file.type)) {
+    toastStore.error(t('profile.avatarTypeError', '仅支持 JPG、PNG、GIF、WebP 格式'))
+    input.value = ''
+    return
+  }
+
+  // 验证文件大小
+  const sizeMB = file.size / (1024 * 1024)
+  if (sizeMB > AVATAR_LIMITS.MAX_FILE_SIZE_MB) {
+    toastStore.error(t('profile.avatarSizeError', `文件大小不能超过 ${AVATAR_LIMITS.MAX_FILE_SIZE_MB}MB`))
+    input.value = ''
+    return
+  }
 
   const reader = new FileReader()
   reader.onload = (e) => {
