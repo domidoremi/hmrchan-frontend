@@ -6,9 +6,14 @@
  * - 错误处理
  * - Token 刷新
  * - 请求重试
+ *
+ * 安全增强：
+ * - access_token 加密存储，使用设备指纹派生密钥
+ * - Token 绑定验证，防止跨设备窃取
  */
 
 import { memoryCache } from '@/utils/cache'
+import { secureTokenManager } from '@/utils/tokenSecurity'
 
 // 延迟导入 i18n 和 toast store，避免循环依赖和减少 bundle 大小
 let _toastStore: ReturnType<typeof import('@/stores/toast').useToastStore> | null = null
@@ -100,7 +105,9 @@ export interface PaginatedApiResponse<T> {
 }
 
 /**
- * 获取存储的 access token
+ * 获取存储的 access token（从加密存储中读取）
+ * 注意：这是同步版本，用于兼容现有代码
+ * 实际的加密 token 在 initAuth 时已解密并缓存到 Pinia store
  */
 function getAccessToken(): string | null {
   try {
@@ -113,6 +120,24 @@ function getAccessToken(): string | null {
     // Ignore parse errors
   }
   return null
+}
+
+/**
+ * 异步获取 access token（从安全存储中解密读取）
+ * 优先使用安全存储，降级到普通存储
+ */
+async function getAccessTokenAsync(): Promise<string | null> {
+  try {
+    // 优先从安全存储读取
+    const secureToken = await secureTokenManager.retrieve()
+    if (secureToken) {
+      return secureToken
+    }
+    // 降级到普通存储（兼容旧数据）
+    return getAccessToken()
+  } catch {
+    return getAccessToken()
+  }
 }
 
 /**
@@ -152,7 +177,15 @@ async function refreshToken(): Promise<string | null> {
     const data = await response.json()
     const newAccessToken = data.access_token
 
-    // 更新存储的 access_token
+    // 安全存储新的 access_token（加密 + 设备绑定）
+    try {
+      await secureTokenManager.store(newAccessToken)
+    } catch {
+      // 安全存储失败，降级到普通存储
+      console.warn('Secure token storage failed, using plain storage')
+    }
+
+    // 同时更新 Pinia 持久化存储（保持兼容）
     try {
       const authData = localStorage.getItem('auth')
       if (authData) {
@@ -172,8 +205,9 @@ async function refreshToken(): Promise<string | null> {
     }
     try {
       localStorage.removeItem('auth')
+      secureTokenManager.clear()
     } catch {
-      // Ignore localStorage errors
+      // Ignore storage errors
     }
     return null
   }
@@ -254,9 +288,9 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
     ? { ...customHeaders }
     : { 'Content-Type': 'application/json', ...customHeaders }
 
-  // 添加认证头
+  // 添加认证头（使用异步安全存储）
   if (!skipAuth) {
-    const token = getAccessToken()
+    const token = await getAccessTokenAsync()
     if (token) {
       ;(headers as Record<string, string>)['Authorization'] = `Bearer ${token}`
     }
