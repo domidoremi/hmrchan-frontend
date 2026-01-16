@@ -54,6 +54,68 @@ if (isRefreshing) {
 }
 ```
 
+### Token 安全增强（可选）
+
+**实现位置**: `src/utils/tokenSecurity.ts`
+
+提供可选的 Token 安全增强功能，增加 XSS 攻击后的利用难度：
+
+#### 1. 设备绑定加密存储
+
+```typescript
+import { secureTokenManager } from '@/utils/tokenSecurity'
+
+// 加密存储 Token（使用设备指纹派生密钥）
+await secureTokenManager.store(accessToken)
+
+// 解密读取（自动验证设备绑定）
+const token = await secureTokenManager.retrieve()
+```
+
+加密参数：
+
+- 密钥派生：设备指纹 + 固定盐值 → SHA-256
+- 加密算法：AES-256-GCM（与 crypto.ts 一致）
+
+#### 2. Token 绑定验证
+
+```typescript
+import { createTokenBinding, validateTokenBinding } from '@/utils/tokenSecurity'
+
+// 创建绑定信息
+const binding = await createTokenBinding()
+// { fingerprint, userAgent, createdAt, nonce }
+
+// 验证绑定（检测设备/浏览器变更）
+const result = await validateTokenBinding(binding)
+if (!result.valid) {
+  console.warn('Token binding failed:', result.reason)
+  // device_mismatch | browser_mismatch | binding_expired
+}
+```
+
+#### 3. 完整性校验
+
+```typescript
+import { generateTokenIntegrity, verifyTokenIntegrity } from '@/utils/tokenSecurity'
+
+// 生成完整性哈希（含设备指纹和时间戳）
+const integrity = await generateTokenIntegrity(token)
+
+// 验证完整性（1 小时时间窗口）
+const isValid = await verifyTokenIntegrity(token, integrity)
+```
+
+#### 安全增强效果
+
+| 攻击场景         | 无增强     | 有增强                    |
+| ---------------- | ---------- | ------------------------- |
+| XSS 窃取 Token   | 可直接使用 | 需解密，密钥绑定设备      |
+| Token 跨设备使用 | 可用       | 绑定验证失败              |
+| Token 篡改       | 后端验证   | 前端完整性检测 + 后端验证 |
+
+> ⚠️ **注意**: 此增强为可选功能，需权衡安全性与性能。核心安全仍依赖后端 Token 验证。
+
 ### 路由守卫
 
 ```typescript
@@ -490,23 +552,25 @@ interface DeviceInfo {
 
 ## 相关文件
 
-| 文件                                    | 职责                            |
-| --------------------------------------- | ------------------------------- |
-| `src/api/client.ts`                     | HTTP 客户端、Token 管理         |
-| `src/stores/auth.ts`                    | 认证状态、心跳刷新              |
-| `src/router/index.ts`                   | 路由守卫                        |
-| `src/composables/useThrottle.ts`        | 请求节流                        |
-| `src/utils/crypto.ts`                   | 加密工具（哈希、AES、密码强度） |
-| `src/utils/fingerprint.ts`              | 设备指纹生成                    |
-| `src/utils/device.ts`                   | 设备信息收集                    |
-| `functions/api/[[path]].ts`             | API 代理、CORS 白名单           |
-| `_headers`                              | HTTP 安全头                     |
-| `src/components/ui/TurnstileWidget.vue` | 人机验证                        |
+| 文件                                    | 职责                             |
+| --------------------------------------- | -------------------------------- |
+| `src/api/client.ts`                     | HTTP 客户端、Token 管理          |
+| `src/stores/auth.ts`                    | 认证状态、心跳刷新               |
+| `src/router/index.ts`                   | 路由守卫                         |
+| `src/composables/useThrottle.ts`        | 请求节流                         |
+| `src/utils/crypto.ts`                   | 加密工具（哈希、AES、密码强度）  |
+| `src/utils/tokenSecurity.ts`            | Token 安全增强（加密存储、绑定） |
+| `src/utils/fingerprint.ts`              | 设备指纹生成                     |
+| `src/utils/device.ts`                   | 设备信息收集                     |
+| `functions/api/[[path]].ts`             | API 代理、CORS 白名单            |
+| `_headers`                              | HTTP 安全头                      |
+| `src/components/ui/TurnstileWidget.vue` | 人机验证                         |
 
 ---
 
 ## 版本历史
 
-| 版本 | 日期       | 变更     |
-| ---- | ---------- | -------- |
-| 1.0  | 2026-01-16 | 初始文档 |
+| 版本 | 日期       | 变更                        |
+| ---- | ---------- | --------------------------- |
+| 1.0  | 2026-01-16 | 初始文档                    |
+| 1.1  | 2026-01-16 | 添加 Token 安全增强模块说明 |
