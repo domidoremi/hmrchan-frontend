@@ -5,6 +5,7 @@
 ## 目录
 
 - [认证与授权](#认证与授权)
+- [加密与哈希](#加密与哈希)
 - [XSS 防护](#xss-防护)
 - [CSRF 防护](#csrf-防护)
 - [HTTP 安全头](#http-安全头)
@@ -70,6 +71,109 @@ router.beforeEach(async (to, _from, next) => {
     return
   }
 })
+```
+
+---
+
+## 加密与哈希
+
+### Web Crypto API
+
+项目使用浏览器原生 Web Crypto API 实现加密功能，避免引入第三方加密库的安全风险。
+
+**实现位置**: `src/utils/crypto.ts`
+
+### 哈希算法
+
+```typescript
+// SHA-256 哈希
+import { sha256 } from '@/utils/crypto'
+const hash = await sha256('sensitive data')
+
+// SHA-512 哈希
+import { sha512 } from '@/utils/crypto'
+const hash = await sha512('sensitive data')
+
+// HMAC-SHA256 签名
+import { hmacSha256 } from '@/utils/crypto'
+const signature = await hmacSha256(secretKey, data)
+```
+
+### 对称加密 (AES-256-GCM)
+
+用于本地敏感数据加密存储：
+
+```typescript
+import { encrypt, decrypt } from '@/utils/crypto'
+
+// 加密（自动生成 salt 和 IV）
+const encrypted = await encrypt('sensitive data', userPassword)
+// 输出: Base64(salt + iv + ciphertext + tag)
+
+// 解密
+const decrypted = await decrypt(encrypted, userPassword)
+```
+
+**加密参数**:
+
+- 算法: AES-256-GCM（认证加密）
+- 密钥派生: PBKDF2 (100,000 iterations, SHA-256)
+- Salt: 16 字节随机
+- IV: 12 字节随机
+- 认证标签: 128 位
+
+### 设备指纹
+
+使用 FingerprintJS + SHA-256 生成设备唯一标识：
+
+```typescript
+// src/utils/fingerprint.ts
+const hashBuffer = await crypto.subtle.digest('SHA-256', data)
+```
+
+### 安全随机数
+
+```typescript
+import { getRandomBytes, getRandomHex, generateUUID } from '@/utils/crypto'
+
+// 生成随机字节
+const bytes = getRandomBytes(32)
+
+// 生成随机十六进制字符串
+const hex = getRandomHex(64)
+
+// 生成 UUID v4
+const uuid = generateUUID()
+```
+
+### 密码强度检测
+
+```typescript
+import { checkPasswordStrength } from '@/utils/crypto'
+
+const result = checkPasswordStrength('MyP@ssw0rd!')
+// { score: 7, level: 'strong', suggestions: [] }
+```
+
+### 敏感数据脱敏
+
+```typescript
+import { maskSensitiveData } from '@/utils/crypto'
+
+maskSensitiveData('user@example.com', 'email') // u**r@example.com
+maskSensitiveData('13812345678', 'phone') // 138****5678
+maskSensitiveData('6222021234567890', 'card') // 6222********7890
+```
+
+### 安全比较
+
+防止时序攻击的字符串比较：
+
+```typescript
+import { secureCompare } from '@/utils/crypto'
+
+// 恒定时间比较，防止通过响应时间推断内容
+const isEqual = secureCompare(userInput, expectedValue)
 ```
 
 ---
@@ -386,16 +490,18 @@ interface DeviceInfo {
 
 ## 相关文件
 
-| 文件                                    | 职责                    |
-| --------------------------------------- | ----------------------- |
-| `src/api/client.ts`                     | HTTP 客户端、Token 管理 |
-| `src/stores/auth.ts`                    | 认证状态、心跳刷新      |
-| `src/router/index.ts`                   | 路由守卫                |
-| `src/composables/useThrottle.ts`        | 请求节流                |
-| `functions/api/[[path]].ts`             | API 代理、CORS          |
-| `_headers`                              | HTTP 安全头             |
-| `src/components/ui/TurnstileWidget.vue` | 人机验证                |
-| `src/utils/device.ts`                   | 设备指纹                |
+| 文件                                    | 职责                            |
+| --------------------------------------- | ------------------------------- |
+| `src/api/client.ts`                     | HTTP 客户端、Token 管理         |
+| `src/stores/auth.ts`                    | 认证状态、心跳刷新              |
+| `src/router/index.ts`                   | 路由守卫                        |
+| `src/composables/useThrottle.ts`        | 请求节流                        |
+| `src/utils/crypto.ts`                   | 加密工具（哈希、AES、密码强度） |
+| `src/utils/fingerprint.ts`              | 设备指纹生成                    |
+| `src/utils/device.ts`                   | 设备信息收集                    |
+| `functions/api/[[path]].ts`             | API 代理、CORS 白名单           |
+| `_headers`                              | HTTP 安全头                     |
+| `src/components/ui/TurnstileWidget.vue` | 人机验证                        |
 
 ---
 
