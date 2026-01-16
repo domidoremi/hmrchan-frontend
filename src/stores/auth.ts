@@ -2,8 +2,12 @@
  * Auth Store - 认证状态管理
  *
  * 双 Token 机制：
- * - access_token: 短期令牌，存储在 localStorage，用于 API 认证
+ * - access_token: 短期令牌，加密存储在 localStorage，用于 API 认证
  * - refresh_token: 长期令牌，存储在 HttpOnly Cookie，用于刷新 access_token
+ *
+ * 安全增强：
+ * - access_token 使用设备指纹派生密钥加密存储
+ * - Token 绑定设备指纹，防止跨设备窃取
  */
 
 import { ref, computed } from 'vue'
@@ -12,6 +16,7 @@ import { useRouter } from 'vue-router'
 import { authService, ApiError } from '@/api'
 import type { UserResponse } from '@/api'
 import { getFullDeviceInfo } from '@/utils/device'
+import { secureTokenManager } from '@/utils/tokenSecurity'
 
 // 用户类型（与 API 响应匹配）
 export type AuthUser = UserResponse
@@ -55,6 +60,9 @@ export const useAuthStore = defineStore(
 
         user.value = response.user
         token.value = response.access_token
+
+        // 安全存储 token（加密 + 设备绑定）
+        await secureTokenManager.store(response.access_token)
 
         // 使用后端返回的刷新阈值，或使用默认值
         if (response.refresh_threshold) {
@@ -104,6 +112,9 @@ export const useAuthStore = defineStore(
         user.value = response.user
         token.value = response.access_token
 
+        // 安全存储 token（加密 + 设备绑定）
+        await secureTokenManager.store(response.access_token)
+
         // 使用后端返回的刷新阈值，或使用默认值
         if (response.refresh_threshold) {
           heartbeatInterval = response.refresh_threshold * 1000
@@ -139,6 +150,8 @@ export const useAuthStore = defineStore(
         user.value = null
         token.value = null
         error.value = null
+        // 清除安全存储的 token
+        secureTokenManager.clear()
         router.push('/login')
       }
     }
@@ -187,6 +200,8 @@ export const useAuthStore = defineStore(
         user.value = null
         token.value = null
         stopHeartbeat()
+        // 清除安全存储的 token
+        secureTokenManager.clear()
         router.push('/login')
       }
 
