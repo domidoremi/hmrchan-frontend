@@ -176,8 +176,23 @@ export const useAuthStore = defineStore(
 
     /**
      * 初始化认证状态（应用启动时调用）
+     * 验证安全存储的 token 绑定，防止跨设备窃取
      */
     async function initAuth() {
+      // 验证安全存储的 token 绑定
+      if (token.value) {
+        const secureToken = await secureTokenManager.retrieve()
+        if (!secureToken) {
+          // 安全存储验证失败（设备不匹配或绑定过期）
+          // 清除认证状态，要求重新登录
+          console.warn('Token binding validation failed, clearing auth state')
+          user.value = null
+          token.value = null
+          secureTokenManager.clear()
+          return
+        }
+      }
+
       if (token.value && !user.value) {
         await fetchCurrentUser()
       }
@@ -242,6 +257,7 @@ export const useAuthStore = defineStore(
         try {
           const response = await authService.refreshToken()
           token.value = response.access_token
+          // 更新安全存储（client.ts 已处理，这里确保 Pinia 状态同步）
         } catch {
           // 刷新失败，可能 refresh_token 已过期
           stopHeartbeat()
