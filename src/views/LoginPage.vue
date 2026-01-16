@@ -107,10 +107,25 @@ const turnstileEnabled = turnstileSiteKey.length > 0
 const turnstileToken = ref<string | null>(null)
 const turnstileRef = ref<{ reset: () => void; getResponse: () => string | undefined } | null>(null)
 
-// 获取重定向目标
+// 获取重定向目标（验证安全性，防止 Open Redirect 攻击）
 const redirectTo = computed(() => {
   const redirect = route.query['redirect']
-  return typeof redirect === 'string' ? redirect : '/'
+  if (typeof redirect !== 'string' || !redirect) {
+    return '/'
+  }
+  // 只允许相对路径，禁止外部 URL 和协议
+  // 阻止: https://evil.com, //evil.com, javascript:, data:
+  if (
+    redirect.startsWith('//') ||
+    redirect.includes('://') ||
+    redirect.startsWith('javascript:') ||
+    redirect.startsWith('data:') ||
+    redirect.startsWith('vbscript:')
+  ) {
+    return '/'
+  }
+  // 确保以 / 开头的相对路径
+  return redirect.startsWith('/') ? redirect : '/'
 })
 
 function handleBack() {
