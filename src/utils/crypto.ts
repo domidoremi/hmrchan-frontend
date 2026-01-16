@@ -253,17 +253,23 @@ export function checkPasswordStrength(password: string): {
   score: number
   level: 'weak' | 'fair' | 'good' | 'strong'
   suggestions: string[]
+  /** 0-100 百分比，用于进度条显示 */
+  percentage: number
 } {
+  if (!password) {
+    return { score: 0, level: 'weak', suggestions: [], percentage: 0 }
+  }
+
   let score = 0
   const suggestions: string[] = []
 
-  // 长度检查
+  // 长度检查（最多 3 分）
   if (password.length >= 8) score += 1
   if (password.length >= 12) score += 1
   if (password.length >= 16) score += 1
   if (password.length < 8) suggestions.push('使用至少 8 个字符')
 
-  // 字符类型检查
+  // 字符类型检查（最多 4 分）
   if (/[a-z]/.test(password)) score += 1
   else suggestions.push('添加小写字母')
 
@@ -276,27 +282,42 @@ export function checkPasswordStrength(password: string): {
   if (/[^a-zA-Z0-9]/.test(password)) score += 1
   else suggestions.push('添加特殊字符')
 
-  // 连续字符检查
+  // 连续字符检查（扣分）
   if (/(.)\1{2,}/.test(password)) {
     score -= 1
     suggestions.push('避免连续重复字符')
   }
 
-  // 常见模式检查
-  const commonPatterns = ['123456', 'password', 'qwerty', 'abc123']
+  // 常见模式检查（扣分）
+  const commonPatterns = ['123456', 'password', 'qwerty', 'abc123', 'admin', 'letmein']
   if (commonPatterns.some((p) => password.toLowerCase().includes(p))) {
     score -= 2
     suggestions.push('避免使用常见密码模式')
   }
 
+  // 键盘序列检查
+  const keyboardSequences = ['qwerty', 'asdfgh', 'zxcvbn', '123456', '654321']
+  if (keyboardSequences.some((seq) => password.toLowerCase().includes(seq))) {
+    score -= 1
+    if (!suggestions.includes('避免使用常见密码模式')) {
+      suggestions.push('避免使用键盘序列')
+    }
+  }
+
+  // 确保分数在有效范围内
+  const normalizedScore = Math.max(0, Math.min(score, 8))
+
   // 计算等级
   let level: 'weak' | 'fair' | 'good' | 'strong'
-  if (score <= 2) level = 'weak'
-  else if (score <= 4) level = 'fair'
-  else if (score <= 6) level = 'good'
+  if (normalizedScore <= 2) level = 'weak'
+  else if (normalizedScore <= 4) level = 'fair'
+  else if (normalizedScore <= 6) level = 'good'
   else level = 'strong'
 
-  return { score: Math.max(0, Math.min(score, 8)), level, suggestions }
+  // 计算百分比（用于 UI 显示）
+  const percentage = Math.round((normalizedScore / 8) * 100)
+
+  return { score: normalizedScore, level, suggestions, percentage }
 }
 
 export default {

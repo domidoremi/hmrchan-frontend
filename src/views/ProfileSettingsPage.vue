@@ -319,6 +319,7 @@ import {
 import { userService, normalizeAvatarUrl, type UserProfile, ApiError } from '@/api'
 import { useAuthStore, useToastStore } from '@/stores'
 import { refreshAvatarCache } from '@/composables/useUserAvatar'
+import { checkPasswordStrength } from '@/utils/crypto'
 import Button from '@/components/ui/Button.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import { defineAsyncComponent } from 'vue'
@@ -357,32 +358,34 @@ const passwordForm = ref({
   confirm_password: '',
 })
 
-// Password strength calculation
+// Password strength calculation - 使用 crypto 模块
+const passwordStrengthResult = computed(() => {
+  return checkPasswordStrength(passwordForm.value.new_password)
+})
+
 const passwordStrength = computed(() => {
-  const pwd = passwordForm.value.new_password
-  if (!pwd) return 0
-  let strength = 0
-  if (pwd.length >= 8) strength++
-  if (/[a-z]/.test(pwd) && /[A-Z]/.test(pwd)) strength++
-  if (/\d/.test(pwd)) strength++
-  if (/[^a-zA-Z0-9]/.test(pwd)) strength++
-  return strength
+  // 映射到 0-4 范围以兼容现有 UI
+  const { level } = passwordStrengthResult.value
+  if (level === 'weak') return 1
+  if (level === 'fair') return 2
+  if (level === 'good') return 3
+  return 4
 })
 
 const passwordStrengthClass = computed(() => {
-  const s = passwordStrength.value
-  if (s <= 1) return 'strength-weak'
-  if (s === 2) return 'strength-fair'
-  if (s === 3) return 'strength-good'
-  return 'strength-strong'
+  const { level } = passwordStrengthResult.value
+  return `strength-${level}`
 })
 
 const passwordStrengthText = computed(() => {
-  const s = passwordStrength.value
-  if (s <= 1) return t('profile.passwordWeak', '弱')
-  if (s === 2) return t('profile.passwordFair', '一般')
-  if (s === 3) return t('profile.passwordGood', '良好')
-  return t('profile.passwordStrong', '强')
+  const { level } = passwordStrengthResult.value
+  const textMap = {
+    weak: t('profile.passwordWeak', '弱'),
+    fair: t('profile.passwordFair', '一般'),
+    good: t('profile.passwordGood', '良好'),
+    strong: t('profile.passwordStrong', '强'),
+  }
+  return textMap[level]
 })
 
 const passwordsMatch = computed(() => {
