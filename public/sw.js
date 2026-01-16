@@ -367,6 +367,12 @@ async function networkFirstApi(request) {
     return fetch(request)
   }
 
+  // 不缓存认证相关的 API 响应（安全考虑）
+  const url = new URL(request.url)
+  if (url.pathname.includes('/auth/')) {
+    return fetch(request)
+  }
+
   const cache = await caches.open(CACHE_NAMES.api)
 
   try {
