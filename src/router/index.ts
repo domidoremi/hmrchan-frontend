@@ -111,6 +111,12 @@ const routes: RouteRecordRaw[] = [
     meta: { title: 'nav.contact' },
   },
   {
+    path: '/about',
+    name: 'about',
+    component: () => import('@/views/AboutPage.vue'),
+    meta: { title: 'nav.about' },
+  },
+  {
     path: '/:pathMatch(.*)*',
     name: 'not-found',
     component: () => import('@/views/NotFoundPage.vue'),
