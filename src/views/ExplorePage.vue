@@ -66,9 +66,6 @@
       <StateIndicator v-if="error" variant="error" :description="error" @action="fetchPosts" />
 
       <template v-else>
-        <!-- 访客限制提示 -->
-        <GuestLimitBanner :limit-info="limitInfo" />
-
         <!-- 骨架屏：使用与真实内容相同的 masonry 布局结构，避免 CLS -->
         <div
           v-if="isLoading && posts.length === 0"
@@ -149,7 +146,6 @@ import StateIndicator from '@/components/ui/StateIndicator.vue'
 import PostCard from '@/components/business/PostCard.vue'
 import PostCardSkeleton from '@/components/business/PostCardSkeleton.vue'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
-import GuestLimitBanner from '@/components/ui/GuestLimitBanner.vue'
 
 const router = useRouter()
 
@@ -283,8 +279,7 @@ async function fetchPosts(reset = true) {
   const getThumbnailQuality = () => {
     if (typeof window === 'undefined') return 'medium'
     const width = window.innerWidth
-    if (width < 640) return 'small'
-    if (width < 1024) return 'medium'
+    if (width < 640) return 'medium'
     return 'large'
   }
 
