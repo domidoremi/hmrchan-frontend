@@ -324,6 +324,10 @@ const userDropdownRef = ref<HTMLDivElement | null>(null)
 const navLinksRef = ref<HTMLDivElement | null>(null)
 const navIndicatorRef = ref<HTMLDivElement | null>(null)
 
+// 记录原始 body 样式，用于恢复
+let originalBodyOverflow = ''
+let originalBodyPaddingRight = ''
+
 const settingsDropdownStyle = ref<Record<string, string>>({})
 const userDropdownStyle = ref<Record<string, string>>({})
 
@@ -537,12 +541,42 @@ function goToSearch() {
   router.push('/search')
 }
 
+/**
+ * 锁定 body 滚动，防止滚动穿透
+ */
+function lockBodyScroll() {
+  if (typeof document === 'undefined') return
+
+  const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth
+
+  originalBodyOverflow = document.body.style.overflow
+  originalBodyPaddingRight = document.body.style.paddingRight
+
+  document.body.style.overflow = 'hidden'
+  if (scrollbarWidth > 0) {
+    document.body.style.paddingRight = `${scrollbarWidth}px`
+  }
+}
+
+/**
+ * 解锁 body 滚动
+ */
+function unlockBodyScroll() {
+  if (typeof document === 'undefined') return
+
+  document.body.style.overflow = originalBodyOverflow
+  document.body.style.paddingRight = originalBodyPaddingRight
+}
+
 function toggleSettings() {
   showUserMenu.value = false
   showSettings.value = !showSettings.value
 
   if (showSettings.value) {
+    lockBodyScroll()
     nextTick(() => updateDropdownPosition('settings'))
+  } else {
+    unlockBodyScroll()
   }
 }
 
@@ -551,23 +585,35 @@ function toggleUserMenu() {
   showUserMenu.value = !showUserMenu.value
 
   if (showUserMenu.value) {
+    lockBodyScroll()
     nextTick(() => updateDropdownPosition('user'))
+  } else {
+    unlockBodyScroll()
   }
 }
 
 function handleLogout() {
   authStore.logout()
   showUserMenu.value = false
+  unlockBodyScroll()
   router.push('/')
 }
 
 function handleClickOutside(e: MouseEvent) {
   const target = e.target as HTMLElement
+  const wasSettingsOpen = showSettings.value
+  const wasUserMenuOpen = showUserMenu.value
+
   if (!target.closest('.settings-dropdown') && !target.closest('.action-btn')) {
     showSettings.value = false
   }
   if (!target.closest('.user-dropdown') && !target.closest('.user-btn')) {
     showUserMenu.value = false
+  }
+
+  // 如果关闭了任何菜单，解锁滚动
+  if ((wasSettingsOpen && !showSettings.value) || (wasUserMenuOpen && !showUserMenu.value)) {
+    unlockBodyScroll()
   }
 }
 
@@ -678,6 +724,8 @@ onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
   window.removeEventListener('resize', handleResize)
   window.removeEventListener('scroll', handleScroll)
+  // 清理：确保解锁滚动
+  unlockBodyScroll()
 })
 </script>
 

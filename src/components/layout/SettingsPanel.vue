@@ -177,6 +177,18 @@ function toggleSetting(key: 'showHeroSection' | 'enableAnimations') {
 .settings-panel {
   padding: var(--spacing-2);
   min-width: 280px;
+  max-height: calc(100vh - 120px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* 移动端优化：确保面板可以滚动 */
+@media (max-width: 768px) {
+  .settings-panel {
+    max-height: calc(100vh - 160px);
+  }
 }
 
 /* ========== Header ========== */
