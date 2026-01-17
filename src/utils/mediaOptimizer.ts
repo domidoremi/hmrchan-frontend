@@ -4,9 +4,9 @@
  * 根据 THUMBNAIL_API.md 规范实现缩略图 URL 生成和媒体优化
  *
  * 使用场景指南：
- * - small: 卡片列表、网格缩略图（首页、探索页、作者页的帖子卡片）
- * - medium: 详情页缩略图列表、占位图
- * - large: 详情页主图预览（非全屏）
+ * - small: 小尺寸预览（特殊场景）
+ * - medium: 移动端卡片列表、网格缩略图（< 640px）
+ * - large: 桌面端卡片列表、详情页预览（≥ 640px）
  * - original: Lightbox 全屏查看、下载
  */
 
@@ -14,9 +14,9 @@ export type MediaThumbnailSize = 'small' | 'medium' | 'large' | 'original'
 
 /**
  * 缩略图尺寸配置
- * - small: 200×200 - 列表卡片、网格预览（推荐用于 < 300px 容器）
- * - medium: 400×400 - Feed 流、网格大图（推荐用于 300-600px 容器）
- * - large: 800×800 - 详情页预览、Lightbox 占位（推荐用于 > 600px 容器）
+ * - small: 200×200 - 小尺寸预览（特殊场景）
+ * - medium: 400×400 - 移动端列表卡片、网格预览（< 640px）
+ * - large: 800×800 - 桌面端列表卡片、详情页预览（≥ 640px）
  * - original: 原始尺寸 - 仅用于 Lightbox 全屏查看
  */
 export const THUMBNAIL_SIZES: Record<
