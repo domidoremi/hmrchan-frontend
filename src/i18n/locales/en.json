@@ -465,10 +465,5 @@
       "updateNameFailed": "Failed to update device name",
       "emptyName": "Device name cannot be empty"
     }
-  },
-  "guestLimit": {
-    "title": "Limited Content for Guests",
-    "singlePlatformDescription": "As a guest, you can view up to {limit} posts. Sign in to see more content.",
-    "multiPlatformDescription": "As a guest, you can view up to {perPlatform} posts per platform (max {total} total). Sign in to see more content."
   }
 }
