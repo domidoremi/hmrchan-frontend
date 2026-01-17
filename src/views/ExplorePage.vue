@@ -135,7 +135,6 @@ import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { Search, Globe, Music2, Video, Instagram } from 'lucide-vue-next'
 import { postService, type PostListItem, ApiError } from '@/api'
-import type { ContentLimitInfo } from '@/api/client'
 import { postCache } from '@/utils/cache'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import { useProgressiveRender } from '@/composables/useProgressiveRender'
@@ -155,7 +154,6 @@ const currentSort = ref<'newest' | 'popular' | 'trending'>('newest')
 const currentPlatform = ref<'all' | 'youtube' | 'tiktok' | 'twitter' | 'instagram'>('all')
 
 const posts = ref<PostListItem[]>([])
-const limitInfo = ref<ContentLimitInfo | undefined>(undefined)
 const isLoading = ref(false)
 const isLoadingMore = ref(false)
 const error = ref<string | null>(null)
@@ -266,7 +264,6 @@ async function fetchPosts(reset = true) {
     page.value = 1
     if (!hadData) {
       posts.value = []
-      limitInfo.value = undefined
     }
   } else {
     if (isLoadingMore.value) return false
@@ -311,12 +308,8 @@ async function fetchPosts(reset = true) {
 
     if (reset) {
       posts.value = res.items
-      limitInfo.value = res.limitInfo
     } else {
       posts.value.push(...res.items)
-      if (res.limitInfo) {
-        limitInfo.value = res.limitInfo
-      }
     }
     total.value = res.total
 

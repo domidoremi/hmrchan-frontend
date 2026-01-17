@@ -224,7 +224,6 @@ import {
   ArrowLeft,
 } from 'lucide-vue-next'
 import { searchService, type AuthorListItem, type PostListItem } from '@/api'
-import type { ContentLimitInfo } from '@/api/client'
 import { normalizeAvatarUrl } from '@/api/userService'
 import { useAuthStore } from '@/stores'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
@@ -246,7 +245,6 @@ const currentPlatform = ref<'all' | 'youtube' | 'tiktok' | 'twitter' | 'instagra
 
 const results = ref<PostListItem[]>([])
 const authors = ref<AuthorListItem[]>([])
-const limitInfo = ref<ContentLimitInfo | undefined>(undefined)
 const total = ref(0)
 const authorTotal = ref(0)
 const page = ref(1)
@@ -315,7 +313,6 @@ async function search() {
   isLoading.value = true
   error.value = null
   page.value = 1
-  limitInfo.value = undefined
 
   try {
     // 根据屏幕尺寸选择缩略图质量
@@ -338,7 +335,6 @@ async function search() {
     })
     results.value = res.items
     total.value = res.total
-    limitInfo.value = res.limitInfo
   } catch {
     error.value = t('common.error')
     results.value = []
@@ -375,9 +371,6 @@ async function loadMore() {
     results.value.push(...res.items)
     page.value = nextPage
     total.value = res.total
-    if (res.limitInfo) {
-      limitInfo.value = res.limitInfo
-    }
   } catch {
     // Silent fail for load more
   } finally {
