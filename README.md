@@ -20,24 +20,29 @@
 ## 🛠 技术栈
 
 ### 核心框架
+
 - **Vue 3.5** - 组合式 API + `<script setup>` 语法
 - **TypeScript 5.9** - 类型安全开发体验
 - **Vite 7.2** (Rolldown) - 极速构建工具
 
 ### 状态管理与路由
+
 - **Pinia 3.0** - 轻量级状态管理
 - **Vue Router 4.6** - 官方路由解决方案
 - **pinia-plugin-persistedstate** - 状态持久化
 
 ### UI 与动画
+
 - **Lucide Vue Next** - 现代化图标库
 - **GSAP 3.14** - 高性能动画引擎
 - **CSS Variables** - 主题系统与响应式设计
 
 ### 国际化
+
 - **Vue I18n 11.2** - 多语言支持 (简体中文/English/日本語)
 
 ### 开发工具
+
 - **ESLint 9** + **Prettier 3** - 代码规范与格式化
 - **Husky** + **lint-staged** - Git hooks 自动化检查
 - **Vitest** - 单元测试框架
@@ -94,16 +99,16 @@ VITE_TURNSTILE_SITE_KEY=your_site_key_here
 
 ### 环境变量说明
 
-| 变量名 | 说明 | 必填 |
-|--------|------|------|
-| `VITE_API_BASE_URL` | API 基础 URL | ✅ |
-| `VITE_API_ENDPOINT` | API 完整端点 | ✅ |
-| `VITE_API_URL` | API 代理路径 | ✅ |
-| `VITE_APP_NAME` | 应用名称 | ✅ |
-| `VITE_APP_DESCRIPTION` | 应用描述 | ✅ |
-| `VITE_ENABLE_DEBUG` | 启用调试模式 | ❌ |
-| `VITE_ENABLE_DEVTOOLS` | 启用开发者工具 | ❌ |
-| `VITE_TURNSTILE_SITE_KEY` | Cloudflare 人机验证密钥 | ❌ |
+| 变量名                    | 说明                    | 必填 |
+| ------------------------- | ----------------------- | ---- |
+| `VITE_API_BASE_URL`       | API 基础 URL            | ✅   |
+| `VITE_API_ENDPOINT`       | API 完整端点            | ✅   |
+| `VITE_API_URL`            | API 代理路径            | ✅   |
+| `VITE_APP_NAME`           | 应用名称                | ✅   |
+| `VITE_APP_DESCRIPTION`    | 应用描述                | ✅   |
+| `VITE_ENABLE_DEBUG`       | 启用调试模式            | ❌   |
+| `VITE_ENABLE_DEVTOOLS`    | 启用开发者工具          | ❌   |
+| `VITE_TURNSTILE_SITE_KEY` | Cloudflare 人机验证密钥 | ❌   |
 
 ## 📜 可用脚本
 
@@ -276,25 +281,30 @@ frontend/
 ## ✨ 功能特性
 
 ### 内容浏览
+
 - **瀑布流布局** - 响应式多列布局，自动适配屏幕尺寸
 - **图片查看器** - 支持缩放、拖拽、键盘导航
 - **视频播放** - 内嵌视频播放器
 - **点赞收藏** - 一键收藏喜欢的内容
 
 ### 内容发现
+
 - **关键词搜索** - 全文搜索帖子内容
 - **标签筛选** - 按标签浏览相关内容
 - **作者筛选** - 发现感兴趣的创作者
 - **热门推荐** - 智能推荐热门内容
 
 ### 用户体验
+
 - **主题切换** - 支持明暗主题
 - **个性化设置** - 自定义动画、语言等偏好
 - **国际化** - 简体中文/English/日本語
 - **响应式设计** - 完美适配桌面和移动设备
 - **无障碍支持** - 支持 `prefers-reduced-motion` 等可访问性特性
+- **访客限制提示** - 未登录用户友好的内容限制提示和登录引导
 
 ### 性能特性
+
 - **懒加载** - 图片和组件按需加载
 - **虚拟滚动** - 大列表高性能渲染
 - **请求缓存** - 内存缓存 (50MB/30min)
@@ -304,6 +314,7 @@ frontend/
 ## ⚡ 性能优化
 
 ### 构建优化
+
 - **代码分割** - 路由级别的懒加载
 - **Tree Shaking** - 移除未使用的代码
 - **资源压缩** - Brotli/Gzip 压缩
@@ -311,6 +322,7 @@ frontend/
 - **CSS 内联** - 关键 CSS 内联到 HTML
 
 ### 运行时优化
+
 - **图片懒加载** - Intersection Observer API
 - **虚拟滚动** - 仅渲染可见区域
 - **防抖节流** - `requestAnimationFrame` 优化
@@ -318,6 +330,7 @@ frontend/
 - **预取策略** - 智能预加载路由和数据
 
 ### 缓存策略
+
 - **内存缓存** - 50MB 限制，30 分钟过期
 - **Service Worker** - 离线支持和资源缓存
 - **CDN 缓存** - Cloudflare CDN 全球加速
@@ -331,6 +344,7 @@ frontend/
    - Pages → Create a project → Connect Git
 
 2. **配置构建设置**
+
    ```
    构建命令: bun run build
    构建输出目录: dist
@@ -349,6 +363,7 @@ frontend/
 ### 其他平台
 
 #### Vercel
+
 ```bash
 # 安装 Vercel CLI
 npm i -g vercel
@@ -358,6 +373,7 @@ vercel --prod
 ```
 
 #### Netlify
+
 ```bash
 # 安装 Netlify CLI
 npm i -g netlify-cli
@@ -367,6 +383,7 @@ netlify deploy --prod --dir=dist
 ```
 
 #### 静态托管
+
 ```bash
 # 构建
 bun run build
@@ -382,6 +399,7 @@ bun run build
 ### 开发流程
 
 1. **Fork 仓库**
+
    ```bash
    # Fork 后克隆到本地
    git clone https://github.com/your-username/hmrchan-frontend.git
@@ -389,33 +407,36 @@ bun run build
    ```
 
 2. **创建分支**
+
    ```bash
    # 功能分支
    git checkout -b feature/your-feature-name
-   
+
    # 修复分支
    git checkout -b fix/your-bugfix-name
    ```
 
 3. **开发与测试**
+
    ```bash
    # 安装依赖
    bun install
-   
+
    # 启动开发服务器
    bun run dev
-   
+
    # 运行测试
    bun run test:unit
    ```
 
 4. **提交代码**
+
    ```bash
    # 提交前检查
    bun run lint:strict
    bun run type-check
    bun run test:unit
-   
+
    # 提交 (遵循 Conventional Commits)
    git commit -m "feat: add new feature"
    git commit -m "fix: resolve bug in component"
@@ -451,7 +472,7 @@ bun run build
 ## 🌐 浏览器支持
 
 | Browser | Version |
-|---------|---------|
+| ------- | ------- |
 | Chrome  | 90+     |
 | Firefox | 88+     |
 | Safari  | 14+     |
