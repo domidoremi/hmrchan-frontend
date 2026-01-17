@@ -465,5 +465,77 @@
       "updateNameFailed": "更新设备名称失败",
       "emptyName": "设备名称不能为空"
     }
+  },
+  "about": {
+    "title": "关于",
+    "subtitle": "了解 MomiChan Frontend 项目",
+    "projectInfo": {
+      "title": "项目信息",
+      "name": "项目名称",
+      "version": "版本",
+      "buildTime": "构建时间",
+      "commit": "Git 提交"
+    },
+    "techStack": {
+      "title": "技术栈",
+      "vue": "渐进式 JavaScript 框架",
+      "typescript": "类型安全的 JavaScript 超集",
+      "vite": "下一代前端构建工具",
+      "pinia": "轻量级状态管理",
+      "router": "官方路由解决方案",
+      "i18n": "国际化支持"
+    },
+    "gitChecklist": {
+      "title": "Git 推送清单",
+      "description": "在推送代码前，请确保完成以下检查项",
+      "basic": {
+        "title": "基础检查",
+        "typeCheck": "通过 TypeScript 类型检查",
+        "lint": "通过 ESLint 代码规范检查",
+        "format": "代码已格式化",
+        "test": "相关测试已通过",
+        "commit": "提交信息符合规范",
+        "docs": "已更新相关文档"
+      },
+      "feature": {
+        "title": "功能分支检查",
+        "complete": "功能已完整实现",
+        "tests": "已添加必要的单元测试",
+        "responsive": "已测试多种屏幕尺寸",
+        "theme": "已测试明暗主题",
+        "i18n": "已测试多语言切换",
+        "performance": "性能指标符合要求"
+      },
+      "production": {
+        "title": "生产环境检查",
+        "allTests": "所有测试通过",
+        "codeReview": "代码已经过审查",
+        "preview": "已在预览环境验证",
+        "version": "已更新版本号",
+        "changelog": "已更新 CHANGELOG",
+        "notify": "已通知相关人员"
+      }
+    },
+    "deployment": {
+      "title": "部署信息",
+      "platform": "部署平台",
+      "buildCommand": "构建命令",
+      "outputDir": "输出目录",
+      "cdn": "CDN 加速",
+      "globalCdn": "全球 CDN 加速"
+    },
+    "links": {
+      "title": "快速链接",
+      "github": "查看源代码",
+      "readme": "项目文档",
+      "readmeDesc": "快速开始和使用指南",
+      "docs": "详细文档",
+      "docsDesc": "项目架构和技术细节"
+    },
+    "footer": {
+      "madeWith": "用",
+      "by": "制作，作者",
+      "rights": "保留所有权利"
+    }
   }
 }
