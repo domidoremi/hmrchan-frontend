@@ -104,19 +104,6 @@ export interface PaginatedApiResponse<T> {
   total_pages: number
 }
 
-// 访问限制信息
-export interface ContentLimitInfo {
-  isLimited: boolean
-  guestLimit?: number
-  perPlatformLimit?: number
-  maxResults?: number
-}
-
-// 扩展的分页响应（包含限制信息）
-export interface PaginatedApiResponseWithLimit<T> extends PaginatedApiResponse<T> {
-  limitInfo?: ContentLimitInfo
-}
-
 /**
  * 获取存储的 access token（从加密存储中读取）
  * 注意：这是同步版本，用于兼容现有代码
@@ -281,25 +268,6 @@ async function handleErrorResponse(response: Response, skipErrorToast?: boolean)
 }
 
 /**
- * 从响应头提取访问限制信息
- */
-function extractLimitInfo(response: Response): ContentLimitInfo | undefined {
-  const isLimited = response.headers.get('X-Content-Limited') === 'true'
-  if (!isLimited) return undefined
-
-  const guestLimit = response.headers.get('X-Guest-Limit')
-  const perPlatformLimit = response.headers.get('X-Per-Platform-Limit')
-  const maxResults = response.headers.get('X-Max-Results')
-
-  return {
-    isLimited: true,
-    guestLimit: guestLimit ? parseInt(guestLimit, 10) : undefined,
-    perPlatformLimit: perPlatformLimit ? parseInt(perPlatformLimit, 10) : undefined,
-    maxResults: maxResults ? parseInt(maxResults, 10) : undefined,
-  }
-}
-
-/**
  * 核心请求函数
  */
 async function request<T>(endpoint: string, config: RequestConfig = {}): Promise<T> {
@@ -382,11 +350,6 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
           }
 
           const retryData = await retryResponse.json()
-          const retryLimitInfo = extractLimitInfo(retryResponse)
-          if (retryLimitInfo && retryData && typeof retryData === 'object' && 'items' in retryData) {
-            return { ...retryData, limitInfo: retryLimitInfo } as T
-          }
-
           return retryData
         } else {
           // Token 刷新失败，通知所有等待的请求
@@ -419,12 +382,7 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
               }
 
               const retryData = await retryResponse.json()
-              const retryLimitInfo = extractLimitInfo(retryResponse)
-              if (retryLimitInfo && retryData && typeof retryData === 'object' && 'items' in retryData) {
-                resolve({ ...retryData, limitInfo: retryLimitInfo } as T)
-              } else {
-                resolve(retryData)
-              }
+              resolve(retryData)
             } catch (error) {
               reject(error)
             }
@@ -444,13 +402,6 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
     }
 
     const data = await response.json()
-
-    // 如果是分页响应，附加限制信息
-    const limitInfo = extractLimitInfo(response)
-    if (limitInfo && data && typeof data === 'object' && 'items' in data) {
-      return { ...data, limitInfo } as T
-    }
-
     return data
   } catch (error) {
     clearTimeout(timeoutId)

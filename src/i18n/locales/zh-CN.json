@@ -465,10 +465,5 @@
       "updateNameFailed": "更新设备名称失败",
       "emptyName": "设备名称不能为空"
     }
-  },
-  "guestLimit": {
-    "title": "访客内容限制",
-    "singlePlatformDescription": "作为访客，您最多可以查看 {limit} 条内容。登录以查看更多内容。",
-    "multiPlatformDescription": "作为访客，每个平台最多可以查看 {perPlatform} 条内容（总计最多 {total} 条）。登录以查看更多内容。"
   }
 }
