@@ -16,7 +16,7 @@ export {
   type AuthResponse,
   type UserResponse,
 } from './authService'
-export { postService, type PostListItem, type PostDetailResponse } from './postService'
+export { postService, type PostListItem, type PostDetailResponse, type ThumbnailQuality } from './postService'
 export { authorService, type AuthorListItem, type AuthorResponse } from './authorService'
 export {
   favoriteService,
