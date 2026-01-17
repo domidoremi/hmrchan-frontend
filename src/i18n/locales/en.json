@@ -465,5 +465,77 @@
       "updateNameFailed": "Failed to update device name",
       "emptyName": "Device name cannot be empty"
     }
+  },
+  "about": {
+    "title": "About",
+    "subtitle": "Learn about MomiChan Frontend",
+    "projectInfo": {
+      "title": "Project Information",
+      "name": "Project Name",
+      "version": "Version",
+      "buildTime": "Build Time",
+      "commit": "Git Commit"
+    },
+    "techStack": {
+      "title": "Tech Stack",
+      "vue": "Progressive JavaScript Framework",
+      "typescript": "Type-safe JavaScript Superset",
+      "vite": "Next Generation Frontend Tooling",
+      "pinia": "Lightweight State Management",
+      "router": "Official Routing Solution",
+      "i18n": "Internationalization Support"
+    },
+    "gitChecklist": {
+      "title": "Git Push Checklist",
+      "description": "Please complete the following checks before pushing code",
+      "basic": {
+        "title": "Basic Checks",
+        "typeCheck": "Pass TypeScript type check",
+        "lint": "Pass ESLint code check",
+        "format": "Code is formatted",
+        "test": "Related tests passed",
+        "commit": "Commit message follows convention",
+        "docs": "Documentation updated"
+      },
+      "feature": {
+        "title": "Feature Branch Checks",
+        "complete": "Feature fully implemented",
+        "tests": "Unit tests added",
+        "responsive": "Tested on multiple screen sizes",
+        "theme": "Tested light/dark themes",
+        "i18n": "Tested language switching",
+        "performance": "Performance metrics met"
+      },
+      "production": {
+        "title": "Production Checks",
+        "allTests": "All tests passed",
+        "codeReview": "Code reviewed",
+        "preview": "Verified in preview environment",
+        "version": "Version number updated",
+        "changelog": "CHANGELOG updated",
+        "notify": "Team notified"
+      }
+    },
+    "deployment": {
+      "title": "Deployment Information",
+      "platform": "Platform",
+      "buildCommand": "Build Command",
+      "outputDir": "Output Directory",
+      "cdn": "CDN",
+      "globalCdn": "Global CDN Acceleration"
+    },
+    "links": {
+      "title": "Quick Links",
+      "github": "View Source Code",
+      "readme": "Documentation",
+      "readmeDesc": "Quick start and usage guide",
+      "docs": "Detailed Docs",
+      "docsDesc": "Architecture and technical details"
+    },
+    "footer": {
+      "madeWith": "Made with",
+      "by": "by",
+      "rights": "All rights reserved"
+    }
   }
 }

@@ -9,11 +9,7 @@
       <!-- Desktop Navigation -->
       <div ref="navLinksRef" class="navbar-links desktop-only">
         <!-- 滑动指示器 -->
-        <div
-          ref="navIndicatorRef"
-          class="nav-indicator"
-          :style="navIndicatorStyle"
-        />
+        <div ref="navIndicatorRef" class="nav-indicator" :style="navIndicatorStyle" />
         <RouterLink to="/" class="nav-link" active-class="nav-link--active">
           <Home :size="18" />
           <span>{{ $t('nav.home') }}</span>
@@ -58,6 +54,10 @@
         >
           <MessageSquare :size="18" />
           <span>{{ $t('nav.community') }}</span>
+        </RouterLink>
+        <RouterLink to="/about" class="nav-link" active-class="nav-link--active">
+          <Info :size="18" />
+          <span>{{ $t('nav.about') }}</span>
         </RouterLink>
       </div>
 
@@ -269,6 +269,7 @@ import {
   Compass,
   Heart,
   Home,
+  Info,
   LogIn,
   LogOut,
   MessageSquare,
@@ -304,7 +305,9 @@ const { user, isAuthenticated } = storeToRefs(authStore)
 const { settings } = storeToRefs(settingsStore)
 
 // 是否启用动画
-const shouldAnimateMobile = computed(() => settings.value.enableAnimations && !prefersReducedMotion())
+const shouldAnimateMobile = computed(
+  () => settings.value.enableAnimations && !prefersReducedMotion()
+)
 
 const mobileFavoritesLink = computed(() => {
   if (isAuthenticated.value) return '/favorites'
