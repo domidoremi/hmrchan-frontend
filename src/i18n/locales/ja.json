@@ -466,5 +466,10 @@
       "updateNameFailed": "デバイス名の更新に失敗",
       "emptyName": "デバイス名を入力してください"
     }
+  },
+  "guestLimit": {
+    "title": "ゲストコンテンツ制限",
+    "singlePlatformDescription": "ゲストとして、最大 {limit} 件の投稿を表示できます。ログインしてさらに表示してください。",
+    "multiPlatformDescription": "ゲストとして、プラットフォームごとに最大 {perPlatform} 件（合計最大 {total} 件）の投稿を表示できます。ログインしてさらに表示してください。"
   }
 }

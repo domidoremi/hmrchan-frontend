@@ -4,8 +4,8 @@
  * 提供全站搜索相关的 API 调用
  */
 
-import { apiClient, type PaginatedApiResponse } from './client'
-import type { PostListItem } from './postService'
+import { apiClient, type PaginatedApiResponse, type PaginatedApiResponseWithLimit } from './client'
+import type { PostListItem, ThumbnailQuality } from './postService'
 import type { AuthorListItem } from './authorService'
 
 // ========== 类型定义 ==========
@@ -23,6 +23,7 @@ export interface SearchPostsParams {
   platform?: string
   sort_by?: 'relevance' | 'published_at' | 'view_count'
   sort_order?: 'asc' | 'desc'
+  thumbnail_quality?: ThumbnailQuality
 }
 
 export interface SearchAuthorsParams {
@@ -38,7 +39,7 @@ export const searchService = {
   /**
    * 搜索帖子
    */
-  async searchPosts(params: SearchPostsParams): Promise<PaginatedApiResponse<PostListItem>> {
+  async searchPosts(params: SearchPostsParams): Promise<PaginatedApiResponseWithLimit<PostListItem>> {
     const query = new URLSearchParams({
       q: params.q,
       page: String(params.page ?? 1),
@@ -55,8 +56,11 @@ export const searchService = {
         params.sort_by === 'relevance' ? 'desc' : params.sort_by === 'published_at' ? 'desc' : 'desc'
       query.set('sort_order', params.sort_order ?? defaultOrder)
     }
+    if (params.thumbnail_quality) {
+      query.set('thumbnail_quality', params.thumbnail_quality)
+    }
 
-    return apiClient.get<PaginatedApiResponse<PostListItem>>(`/search/posts?${query.toString()}`)
+    return apiClient.get<PaginatedApiResponseWithLimit<PostListItem>>(`/search/posts?${query.toString()}`)
   },
 
   /**
