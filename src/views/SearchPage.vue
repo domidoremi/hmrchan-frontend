@@ -99,9 +99,6 @@
             />
 
             <template v-else>
-              <!-- 访客限制提示 -->
-              <GuestLimitBanner :limit-info="limitInfo" />
-
               <div class="posts-masonry">
                 <PostCard v-for="post in results" :key="post.id" :post="post" @click="goToPost" />
               </div>
@@ -234,7 +231,6 @@ import StateIndicator from '@/components/ui/StateIndicator.vue'
 import PostCard from '@/components/business/PostCard.vue'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
 import SearchBar from '@/components/business/SearchBar.vue'
-import GuestLimitBanner from '@/components/ui/GuestLimitBanner.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -326,8 +322,7 @@ async function search() {
     const getThumbnailQuality = () => {
       if (typeof window === 'undefined') return 'medium'
       const width = window.innerWidth
-      if (width < 640) return 'small'
-      if (width < 1024) return 'medium'
+      if (width < 640) return 'medium'
       return 'large'
     }
 
@@ -362,8 +357,7 @@ async function loadMore() {
     const getThumbnailQuality = () => {
       if (typeof window === 'undefined') return 'medium'
       const width = window.innerWidth
-      if (width < 640) return 'small'
-      if (width < 1024) return 'medium'
+      if (width < 640) return 'medium'
       return 'large'
     }
 
