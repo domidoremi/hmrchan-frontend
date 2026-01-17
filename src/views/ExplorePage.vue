@@ -66,6 +66,9 @@
       <StateIndicator v-if="error" variant="error" :description="error" @action="fetchPosts" />
 
       <template v-else>
+        <!-- 访客限制提示 -->
+        <GuestLimitBanner :limit-info="limitInfo" />
+
         <!-- 骨架屏：使用与真实内容相同的 masonry 布局结构，避免 CLS -->
         <div
           v-if="isLoading && posts.length === 0"
@@ -135,6 +138,7 @@ import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { Search, Globe, Music2, Video, Instagram } from 'lucide-vue-next'
 import { postService, type PostListItem, ApiError } from '@/api'
+import type { ContentLimitInfo } from '@/api/client'
 import { postCache } from '@/utils/cache'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import { useProgressiveRender } from '@/composables/useProgressiveRender'
@@ -145,6 +149,7 @@ import StateIndicator from '@/components/ui/StateIndicator.vue'
 import PostCard from '@/components/business/PostCard.vue'
 import PostCardSkeleton from '@/components/business/PostCardSkeleton.vue'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
+import GuestLimitBanner from '@/components/ui/GuestLimitBanner.vue'
 
 const router = useRouter()
 
@@ -154,6 +159,7 @@ const currentSort = ref<'newest' | 'popular' | 'trending'>('newest')
 const currentPlatform = ref<'all' | 'youtube' | 'tiktok' | 'twitter' | 'instagram'>('all')
 
 const posts = ref<PostListItem[]>([])
+const limitInfo = ref<ContentLimitInfo | undefined>(undefined)
 const isLoading = ref(false)
 const isLoadingMore = ref(false)
 const error = ref<string | null>(null)
@@ -264,6 +270,7 @@ async function fetchPosts(reset = true) {
     page.value = 1
     if (!hadData) {
       posts.value = []
+      limitInfo.value = undefined
     }
   } else {
     if (isLoadingMore.value) return false
@@ -272,12 +279,22 @@ async function fetchPosts(reset = true) {
 
   error.value = null
 
+  // 根据屏幕尺寸选择缩略图质量
+  const getThumbnailQuality = () => {
+    if (typeof window === 'undefined') return 'medium'
+    const width = window.innerWidth
+    if (width < 640) return 'small'
+    if (width < 1024) return 'medium'
+    return 'large'
+  }
+
   const { sort_by, sort_order } = getSortParams(currentSort.value)
   const params = {
     page: page.value,
     page_size: pageSize,
     sort_by,
     sort_order,
+    thumbnail_quality: getThumbnailQuality() as const,
   }
 
   const platform = currentPlatform.value !== 'all' ? currentPlatform.value : undefined
@@ -299,8 +316,12 @@ async function fetchPosts(reset = true) {
 
     if (reset) {
       posts.value = res.items
+      limitInfo.value = res.limitInfo
     } else {
       posts.value.push(...res.items)
+      if (res.limitInfo) {
+        limitInfo.value = res.limitInfo
+      }
     }
     total.value = res.total
 

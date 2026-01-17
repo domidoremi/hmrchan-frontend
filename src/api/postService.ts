@@ -2,12 +2,50 @@
  * Posts Service - 帖子相关 API
  */
 
-import { apiClient, type PaginatedApiResponse } from './client'
+import { apiClient, type PaginatedApiResponse, type PaginatedApiResponseWithLimit } from './client'
 import { buildQuery } from '@/utils/queryBuilder'
 
 export type SortOrder = 'asc' | 'desc'
 
 export type PostSortBy = 'published_at' | 'created_at' | 'view_count' | 'like_count'
+
+/**
+ * Thumbnail quality levels for optimized image loading
+ * - small: Low resolution for previews/thumbnails
+ * - medium: Balanced quality for grid views
+ * - large: High resolution for detail views
+ */
+export type ThumbnailQuality = 'small' | 'medium' | 'large'
+
+/**
+ * Parameters for listing posts with filtering, sorting, and pagination
+ */
+export interface ListPostsParams {
+  page?: number
+  page_size?: number
+  q?: string
+  platform?: string
+  author_id?: string
+  has_media?: boolean
+  published_after?: string
+  published_before?: string
+  min_views?: number
+  min_likes?: number
+  sort_by?: PostSortBy
+  sort_order?: SortOrder
+  per_platform_limit?: number
+  thumbnail_quality?: ThumbnailQuality
+}
+
+/**
+ * Default values for post listing parameters
+ */
+const DEFAULT_LIST_PARAMS = {
+  page: 1,
+  page_size: 20,
+  sort_by: 'published_at' as PostSortBy,
+  sort_order: 'desc' as SortOrder,
+} as const
 
 export interface PostListItem {
   id: string
@@ -78,27 +116,11 @@ export interface PostDetailResponse {
   tags?: string[]
 }
 
-export interface ListPostsParams {
-  page?: number
-  page_size?: number
-  q?: string
-  platform?: string
-  author_id?: string
-  has_media?: boolean
-  published_after?: string
-  published_before?: string
-  min_views?: number
-  min_likes?: number
-  sort_by?: PostSortBy
-  sort_order?: SortOrder
-  per_platform_limit?: number
-}
-
 export const postService = {
-  async listPosts(params: ListPostsParams = {}): Promise<PaginatedApiResponse<PostListItem>> {
+  async listPosts(params: ListPostsParams = {}): Promise<PaginatedApiResponseWithLimit<PostListItem>> {
     const query = buildQuery({
-      page: params.page ?? 1,
-      page_size: params.page_size ?? 20,
+      page: params.page ?? DEFAULT_LIST_PARAMS.page,
+      page_size: params.page_size ?? DEFAULT_LIST_PARAMS.page_size,
       q: params.q,
       platform: params.platform,
       author_id: params.author_id,
@@ -107,12 +129,13 @@ export const postService = {
       published_before: params.published_before,
       min_views: params.min_views ?? null,
       min_likes: params.min_likes ?? null,
-      sort_by: params.sort_by ?? 'published_at',
-      sort_order: params.sort_order ?? 'desc',
+      sort_by: params.sort_by ?? DEFAULT_LIST_PARAMS.sort_by,
+      sort_order: params.sort_order ?? DEFAULT_LIST_PARAMS.sort_order,
       per_platform_limit: params.per_platform_limit ?? null,
+      thumbnail_quality: params.thumbnail_quality ?? null,
     })
 
-    return apiClient.get<PaginatedApiResponse<PostListItem>>(`/posts/${query}`)
+    return apiClient.get<PaginatedApiResponseWithLimit<PostListItem>>(`/posts/${query}`)
   },
 
   async getPost(postId: string): Promise<PostDetailResponse> {
@@ -134,8 +157,8 @@ export const postService = {
     params: Omit<ListPostsParams, 'platform'> = {}
   ): Promise<PaginatedApiResponse<PostListItem>> {
     const query = buildQuery({
-      page: params.page ?? 1,
-      page_size: params.page_size ?? 20,
+      page: params.page ?? DEFAULT_LIST_PARAMS.page,
+      page_size: params.page_size ?? DEFAULT_LIST_PARAMS.page_size,
       q: params.q,
       author_id: params.author_id,
       has_media: params.has_media ?? null,
@@ -143,8 +166,9 @@ export const postService = {
       published_before: params.published_before,
       min_views: params.min_views ?? null,
       min_likes: params.min_likes ?? null,
-      sort_by: params.sort_by ?? 'published_at',
-      sort_order: params.sort_order ?? 'desc',
+      sort_by: params.sort_by ?? DEFAULT_LIST_PARAMS.sort_by,
+      sort_order: params.sort_order ?? DEFAULT_LIST_PARAMS.sort_order,
+      thumbnail_quality: params.thumbnail_quality ?? null,
     })
 
     return apiClient.get<PaginatedApiResponse<PostListItem>>(`/posts/platform/${platform}${query}`)

@@ -105,9 +105,14 @@
           <span v-if="isLoading && posts.length > 0" class="spinner spinner-sm" />
         </header>
 
+        <GuestLimitBanner :limit-info="limitInfo" />
+
         <StateIndicator v-if="error" variant="error" :description="error" @action="fetchLatestPosts" />
 
         <template v-else>
+          <!-- 访客限制提示 -->
+          <GuestLimitBanner :limit-info="limitInfo" />
+
           <!-- 骨架屏：使用与真实内容相同的 masonry 布局结构，避免 CLS -->
           <div v-if="isLoading && posts.length === 0" ref="containerRef" class="masonry">
             <div
@@ -174,7 +179,8 @@ import {
   Users,
 } from 'lucide-vue-next'
 import { useAuthStore, useSettingsStore } from '@/stores'
-import { postService, type PostListItem, ApiError } from '@/api'
+import { postService, type PostListItem, ApiError, type ThumbnailQuality } from '@/api'
+import type { ContentLimitInfo } from '@/api/client'
 import { postCache } from '@/utils/cache'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import { useMasonryColumns } from '@/composables/useMasonryColumns'
@@ -186,6 +192,7 @@ import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import PostCard from '@/components/business/PostCard.vue'
 import PostCardSkeleton from '@/components/business/PostCardSkeleton.vue'
+import GuestLimitBanner from '@/components/ui/GuestLimitBanner.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -204,12 +211,19 @@ const favoritesLink = computed(() =>
 // Posts state
 const posts = ref<PostListItem[]>([])
 const allPosts = ref<PostListItem[]>([])
+const limitInfo = ref<ContentLimitInfo | undefined>(undefined)
+
+// Loading & error state
 const isLoading = ref(false)
 const isLoadingMore = ref(false)
 const error = ref<string | null>(null)
+
+// Pagination state
 const page = ref(1)
 const total = ref(0)
 const pageSize = 20
+
+// DOM refs
 const containerRef = ref<HTMLElement | null>(null)
 const columnRefs = ref<(HTMLElement | null)[]>([])
 const sentinelRef = ref<HTMLElement | null>(null)
@@ -232,6 +246,14 @@ const getResponsiveColumnCount = () => {
   if (width < 640) return 2
   if (width < 1024) return 3
   return 4
+}
+
+const getResponsiveThumbnailQuality = (): ThumbnailQuality => {
+  if (typeof window === 'undefined') return 'medium'
+  const width = window.innerWidth
+  if (width < 640) return 'small'
+  if (width < 1024) return 'medium'
+  return 'large'
 }
 
 const { columns, columnCount, distributePosts, redistribute, getColumnWidth } = useMasonryColumns({
@@ -269,6 +291,7 @@ async function fetchLatestPosts(reset = true): Promise<boolean> {
     if (!hadData) {
       posts.value = []
       allPosts.value = []
+      limitInfo.value = undefined
     }
   } else {
     if (isLoadingMore.value) return false
@@ -276,7 +299,14 @@ async function fetchLatestPosts(reset = true): Promise<boolean> {
   }
 
   error.value = null
-  const params = { page: page.value, page_size: pageSize, sort_by: 'published_at' as const, sort_order: 'desc' as const }
+
+  const params = {
+    page: page.value,
+    page_size: pageSize,
+    sort_by: 'published_at' as const,
+    sort_order: 'desc' as const,
+    thumbnail_quality: getResponsiveThumbnailQuality(),
+  }
 
   if (reset) {
     const cached = await postCache.getList(params)
@@ -296,10 +326,12 @@ async function fetchLatestPosts(reset = true): Promise<boolean> {
     if (reset) {
       posts.value = res.items
       allPosts.value = filtered
+      limitInfo.value = res.limitInfo
       distributePosts(filtered, getColumnWidth(getContainerWidth()), false)
     } else {
       posts.value.push(...res.items)
       allPosts.value.push(...filtered)
+      // Don't update limitInfo on pagination - it's only relevant for initial load
       distributePosts(filtered, getColumnWidth(getContainerWidth()), true, getRealColumnHeights())
     }
     total.value = res.total
