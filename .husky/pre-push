@@ -1,0 +1,38 @@
+#!/usr/bin/env sh
+. "$(dirname "$0")/_/husky.sh"
+
+echo "🔍 运行推送前检查..."
+
+# Type check
+echo "📝 类型检查..."
+bun run type-check
+if [ $? -ne 0 ]; then
+  echo "❌ 类型检查失败，请修复后再推送"
+  exit 1
+fi
+
+# Lint check
+echo "🔧 代码规范检查..."
+bun run lint:strict
+if [ $? -ne 0 ]; then
+  echo "❌ 代码规范检查失败，请修复后再推送"
+  exit 1
+fi
+
+# Format check
+echo "💅 代码格式检查..."
+bun run format:check
+if [ $? -ne 0 ]; then
+  echo "❌ 代码格式检查失败，请运行 'bun run format' 修复"
+  exit 1
+fi
+
+# Unit tests
+echo "🧪 运行单元测试..."
+bun run test:unit
+if [ $? -ne 0 ]; then
+  echo "❌ 单元测试失败，请修复后再推送"
+  exit 1
+fi
+
+echo "✅ 所有检查通过，准备推送..."
