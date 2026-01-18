@@ -64,8 +64,10 @@
         </div>
         <div class="tech-grid">
           <div v-for="tech in techStack" :key="tech.name" class="tech-card glass-card">
-            <div class="tech-name">{{ tech.name }}</div>
-            <div class="tech-version">{{ tech.version }}</div>
+            <div class="tech-header">
+              <div class="tech-name">{{ tech.name }}</div>
+              <div class="tech-version-badge">v{{ tech.version }}</div>
+            </div>
             <div class="tech-description">{{ tech.description }}</div>
           </div>
         </div>
@@ -135,11 +137,12 @@ import {
   Shield,
 } from 'lucide-vue-next'
 import { useAboutData } from '@/composables/useAboutData'
+import packageJson from '../../package.json'
 
 const { locale, t } = useI18n()
 
-// 项目信息
-const version = import.meta.env['VITE_APP_VERSION'] || '1.0.0'
+// 项目版本从 package.json 读取
+const version = packageJson.version
 
 // Build time - should be injected at build time, fallback to current date for dev
 const buildTime = computed(() => {
@@ -350,29 +353,63 @@ const { techStack, quickLinks } = useAboutData()
 /* 技术栈网格 */
 .tech-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: var(--spacing-3);
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--spacing-4);
 }
 
 .tech-card {
-  padding: var(--spacing-4);
-  transition: transform 0.2s ease;
+  padding: var(--spacing-5);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.tech-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--gradient-primary);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.3s ease;
 }
 
 .tech-card:hover {
-  transform: translateY(-2px);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+}
+
+.tech-card:hover::before {
+  transform: scaleX(1);
+}
+
+.tech-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-3);
+  gap: var(--spacing-2);
 }
 
 .tech-name {
   font-size: var(--text-lg);
-  font-weight: var(--font-semibold);
-  margin-bottom: var(--spacing-1);
+  font-weight: var(--font-bold);
+  color: var(--color-text);
 }
 
-.tech-version {
-  font-size: var(--text-sm);
-  color: var(--color-primary);
-  margin-bottom: var(--spacing-2);
+.tech-version-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--spacing-1) var(--spacing-2);
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  color: var(--color-white);
+  background: var(--gradient-primary);
+  border-radius: var(--radius-full);
+  white-space: nowrap;
 }
 
 .tech-description {
