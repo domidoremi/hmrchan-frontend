@@ -51,33 +51,6 @@ export function useAboutData() {
     },
   ])
 
-  const basicChecklist = computed<string[]>(() => [
-    t('about.gitChecklist.basic.typeCheck'),
-    t('about.gitChecklist.basic.lint'),
-    t('about.gitChecklist.basic.format'),
-    t('about.gitChecklist.basic.test'),
-    t('about.gitChecklist.basic.commit'),
-    t('about.gitChecklist.basic.docs'),
-  ])
-
-  const featureChecklist = computed<string[]>(() => [
-    t('about.gitChecklist.feature.complete'),
-    t('about.gitChecklist.feature.tests'),
-    t('about.gitChecklist.feature.responsive'),
-    t('about.gitChecklist.feature.theme'),
-    t('about.gitChecklist.feature.i18n'),
-    t('about.gitChecklist.feature.performance'),
-  ])
-
-  const productionChecklist = computed<string[]>(() => [
-    t('about.gitChecklist.production.allTests'),
-    t('about.gitChecklist.production.codeReview'),
-    t('about.gitChecklist.production.preview'),
-    t('about.gitChecklist.production.version'),
-    t('about.gitChecklist.production.changelog'),
-    t('about.gitChecklist.production.notify'),
-  ])
-
   const quickLinks = computed<QuickLink[]>(() => [
     {
       name: 'GitHub',
@@ -101,9 +74,6 @@ export function useAboutData() {
 
   return {
     techStack,
-    basicChecklist,
-    featureChecklist,
-    productionChecklist,
     quickLinks,
   }
 }
