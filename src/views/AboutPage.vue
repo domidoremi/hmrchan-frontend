@@ -7,6 +7,26 @@
         <p class="page-subtitle">{{ $t('about.subtitle') }}</p>
       </header>
 
+      <!-- 前端介绍 -->
+      <section class="section">
+        <div class="section-header">
+          <Sparkles :size="24" class="section-icon" />
+          <h2 class="section-title">{{ $t('about.introduction.title') }}</h2>
+        </div>
+        <div class="intro-content glass-card">
+          <p class="intro-text">{{ $t('about.introduction.description') }}</p>
+          <div class="features-grid">
+            <div v-for="feature in features" :key="feature.title" class="feature-item">
+              <component :is="feature.icon" :size="20" class="feature-icon" />
+              <div class="feature-content">
+                <div class="feature-title">{{ feature.title }}</div>
+                <div class="feature-description">{{ feature.description }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <!-- 项目信息 -->
       <section class="section">
         <div class="section-header">
@@ -27,8 +47,11 @@
             <div class="info-value">{{ buildTime }}</div>
           </div>
           <div class="info-card glass-card">
-            <div class="info-label">{{ $t('about.projectInfo.commit') }}</div>
-            <div class="info-value commit-hash">{{ gitCommit }}</div>
+            <div class="info-label">{{ $t('about.projectInfo.status') }}</div>
+            <div class="info-value status-active">
+              <span class="status-dot"></span>
+              {{ $t('about.projectInfo.active') }}
+            </div>
           </div>
         </div>
       </section>
@@ -44,86 +67,6 @@
             <div class="tech-name">{{ tech.name }}</div>
             <div class="tech-version">{{ tech.version }}</div>
             <div class="tech-description">{{ tech.description }}</div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Git 推送清单 -->
-      <section class="section">
-        <div class="section-header">
-          <GitBranch :size="24" class="section-icon" />
-          <h2 class="section-title">{{ $t('about.gitChecklist.title') }}</h2>
-        </div>
-        <div class="checklist-container glass-card">
-          <div class="checklist-intro">
-            <p>{{ $t('about.gitChecklist.description') }}</p>
-          </div>
-
-          <div class="checklist-section">
-            <h3 class="checklist-section-title">
-              <CheckCircle :size="20" />
-              {{ $t('about.gitChecklist.basic.title') }}
-            </h3>
-            <ul class="checklist">
-              <li v-for="item in basicChecklist" :key="item">
-                <Check :size="16" class="check-icon" />
-                <span>{{ item }}</span>
-              </li>
-            </ul>
-          </div>
-
-          <div class="checklist-section">
-            <h3 class="checklist-section-title">
-              <AlertCircle :size="20" />
-              {{ $t('about.gitChecklist.feature.title') }}
-            </h3>
-            <ul class="checklist">
-              <li v-for="item in featureChecklist" :key="item">
-                <Check :size="16" class="check-icon" />
-                <span>{{ item }}</span>
-              </li>
-            </ul>
-          </div>
-
-          <div class="checklist-section">
-            <h3 class="checklist-section-title">
-              <Rocket :size="20" />
-              {{ $t('about.gitChecklist.production.title') }}
-            </h3>
-            <ul class="checklist">
-              <li v-for="item in productionChecklist" :key="item">
-                <Check :size="16" class="check-icon" />
-                <span>{{ item }}</span>
-              </li>
-            </ul>
-          </div>
-        </div>
-      </section>
-
-      <!-- 部署信息 -->
-      <section class="section">
-        <div class="section-header">
-          <Cloud :size="24" class="section-icon" />
-          <h2 class="section-title">{{ $t('about.deployment.title') }}</h2>
-        </div>
-        <div class="deployment-info glass-card">
-          <div class="deployment-item">
-            <div class="deployment-label">{{ $t('about.deployment.platform') }}</div>
-            <div class="deployment-value">Cloudflare Pages</div>
-          </div>
-          <div class="deployment-item">
-            <div class="deployment-label">{{ $t('about.deployment.buildCommand') }}</div>
-            <code class="deployment-code"
-              >bun install && VITE_GIT_COMMIT=$CF_PAGES_COMMIT_SHA bun run build</code
-            >
-          </div>
-          <div class="deployment-item">
-            <div class="deployment-label">{{ $t('about.deployment.outputDir') }}</div>
-            <code class="deployment-code">dist</code>
-          </div>
-          <div class="deployment-item">
-            <div class="deployment-label">{{ $t('about.deployment.cdn') }}</div>
-            <div class="deployment-value">{{ $t('about.deployment.globalCdn') }}</div>
           </div>
         </div>
       </section>
@@ -182,23 +125,21 @@ import { useI18n } from 'vue-i18n'
 import {
   Info,
   Code,
-  GitBranch,
-  Cloud,
   BookOpen,
-  Check,
-  CheckCircle,
-  AlertCircle,
-  Rocket,
   Heart,
   ExternalLink,
+  Sparkles,
+  Zap,
+  Palette,
+  Globe,
+  Shield,
 } from 'lucide-vue-next'
 import { useAboutData } from '@/composables/useAboutData'
 
-const { locale } = useI18n()
+const { locale, t } = useI18n()
 
 // 项目信息
 const version = import.meta.env['VITE_APP_VERSION'] || '1.0.0'
-const gitCommit = import.meta.env['VITE_GIT_COMMIT']?.slice(0, 7) || 'dev'
 
 // Build time - should be injected at build time, fallback to current date for dev
 const buildTime = computed(() => {
@@ -211,9 +152,32 @@ const buildTime = computed(() => {
   })
 })
 
+// 前端特性
+const features = computed(() => [
+  {
+    icon: Zap,
+    title: t('about.introduction.features.performance'),
+    description: t('about.introduction.features.performanceDesc'),
+  },
+  {
+    icon: Palette,
+    title: t('about.introduction.features.design'),
+    description: t('about.introduction.features.designDesc'),
+  },
+  {
+    icon: Globe,
+    title: t('about.introduction.features.i18n'),
+    description: t('about.introduction.features.i18nDesc'),
+  },
+  {
+    icon: Shield,
+    title: t('about.introduction.features.security'),
+    description: t('about.introduction.features.securityDesc'),
+  },
+])
+
 // Extract data from composable
-const { techStack, basicChecklist, featureChecklist, productionChecklist, quickLinks } =
-  useAboutData()
+const { techStack, quickLinks } = useAboutData()
 </script>
 
 <style scoped>
@@ -304,6 +268,85 @@ const { techStack, basicChecklist, featureChecklist, productionChecklist, quickL
   font-size: var(--text-base);
 }
 
+.status-active {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  color: var(--color-success);
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  background: var(--color-success);
+  border-radius: 50%;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* 前端介绍 */
+.intro-content {
+  padding: var(--spacing-6);
+}
+
+.intro-text {
+  font-size: var(--text-lg);
+  line-height: var(--leading-relaxed);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--spacing-6);
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: var(--spacing-4);
+}
+
+.feature-item {
+  display: flex;
+  gap: var(--spacing-3);
+  padding: var(--spacing-3);
+  border-radius: var(--radius-lg);
+  transition: background 0.2s ease;
+}
+
+.feature-item:hover {
+  background: rgba(var(--color-primary-rgb), 0.05);
+}
+
+.feature-icon {
+  flex-shrink: 0;
+  color: var(--color-primary);
+  margin-top: 2px;
+}
+
+.feature-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.feature-title {
+  font-size: var(--text-base);
+  font-weight: var(--font-semibold);
+  margin-bottom: var(--spacing-1);
+  color: var(--color-text);
+}
+
+.feature-description {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  line-height: var(--leading-relaxed);
+}
+
 /* 技术栈网格 */
 .tech-grid {
   display: grid;
@@ -336,96 +379,6 @@ const { techStack, basicChecklist, featureChecklist, productionChecklist, quickL
   font-size: var(--text-sm);
   color: var(--color-text-secondary);
   line-height: var(--leading-relaxed);
-}
-
-/* 检查清单 */
-.checklist-container {
-  padding: var(--spacing-6);
-}
-
-.checklist-intro {
-  margin-bottom: var(--spacing-6);
-  padding-bottom: var(--spacing-4);
-  border-bottom: 1px solid var(--glass-border);
-}
-
-.checklist-intro p {
-  color: var(--color-text-secondary);
-  line-height: var(--leading-relaxed);
-}
-
-.checklist-section {
-  margin-bottom: var(--spacing-6);
-}
-
-.checklist-section:last-child {
-  margin-bottom: 0;
-}
-
-.checklist-section-title {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-2);
-  font-size: var(--text-lg);
-  font-weight: var(--font-semibold);
-  margin-bottom: var(--spacing-3);
-  color: var(--color-primary);
-}
-
-.checklist {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.checklist li {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--spacing-2);
-  padding: var(--spacing-2) 0;
-  color: var(--color-text-secondary);
-}
-
-.check-icon {
-  flex-shrink: 0;
-  margin-top: 2px;
-  color: var(--color-success);
-}
-
-/* 部署信息 */
-.deployment-info {
-  padding: var(--spacing-6);
-}
-
-.deployment-item {
-  margin-bottom: var(--spacing-4);
-}
-
-.deployment-item:last-child {
-  margin-bottom: 0;
-}
-
-.deployment-label {
-  font-size: var(--text-sm);
-  color: var(--color-text-secondary);
-  margin-bottom: var(--spacing-1);
-}
-
-.deployment-value {
-  font-size: var(--text-base);
-  color: var(--color-text);
-}
-
-.deployment-code {
-  display: block;
-  padding: var(--spacing-2) var(--spacing-3);
-  background: rgba(var(--color-primary-rgb), 0.05);
-  border: 1px solid rgba(var(--color-primary-rgb), 0.1);
-  border-radius: var(--radius-md);
-  font-family: var(--font-mono);
-  font-size: var(--text-sm);
-  color: var(--color-primary);
-  overflow-x: auto;
 }
 
 /* 快速链接 */
@@ -544,12 +497,12 @@ const { techStack, basicChecklist, featureChecklist, productionChecklist, quickL
     grid-template-columns: 1fr;
   }
 
-  .checklist-container {
+  .intro-content {
     padding: var(--spacing-4);
   }
 
-  .deployment-info {
-    padding: var(--spacing-4);
+  .features-grid {
+    grid-template-columns: 1fr;
   }
 
   .footer-text {
@@ -558,8 +511,7 @@ const { techStack, basicChecklist, featureChecklist, productionChecklist, quickL
 }
 
 /* 暗色主题 */
-[data-theme='dark'] .deployment-code {
-  background: rgba(var(--color-primary-rgb), 0.1);
-  border-color: rgba(var(--color-primary-rgb), 0.2);
+[data-theme='dark'] .feature-item:hover {
+  background: rgba(var(--color-primary-rgb), 0.08);
 }
 </style>

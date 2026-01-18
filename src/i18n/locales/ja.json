@@ -471,12 +471,27 @@
   "about": {
     "title": "について",
     "subtitle": "MomiChan Frontend について",
+    "introduction": {
+      "title": "フロントエンド紹介",
+      "description": "MomiChan Frontend は、Vue 3 エコシステムで構築された現代的な画像・動画コンテンツコミュニティアプリケーションで、スムーズなユーザー体験とエレガントなインターフェースデザインを提供します。",
+      "features": {
+        "performance": "高性能",
+        "performanceDesc": "Vite 7 で構築され、コード分割と遅延読み込みをサポートし、高速なページ読み込みを実現",
+        "design": "美しいデザイン",
+        "designDesc": "Glass Morphism デザインスタイルを採用し、ライト・ダークテーマに対応した没入型体験を提供",
+        "i18n": "多言語対応",
+        "i18nDesc": "中国語、英語、日本語を内蔵し、簡単に言語を切り替え可能",
+        "security": "安全で信頼性の高い",
+        "securityDesc": "JWT 認証と自動トークン更新でユーザーデータを保護"
+      }
+    },
     "projectInfo": {
       "title": "プロジェクト情報",
       "name": "プロジェクト名",
       "version": "バージョン",
       "buildTime": "ビルド時刻",
-      "commit": "Git コミット"
+      "status": "ステータス",
+      "active": "稼働中"
     },
     "techStack": {
       "title": "技術スタック",
@@ -487,52 +502,13 @@
       "router": "公式ルーティングソリューション",
       "i18n": "国際化サポート"
     },
-    "gitChecklist": {
-      "title": "Git プッシュチェックリスト",
-      "description": "コードをプッシュする前に、以下の項目を確認してください",
-      "basic": {
-        "title": "基本チェック",
-        "typeCheck": "TypeScript 型チェックに合格",
-        "lint": "ESLint コードチェックに合格",
-        "format": "コードがフォーマット済み",
-        "test": "関連テストに合格",
-        "commit": "コミットメッセージが規約に従っている",
-        "docs": "ドキュメントを更新"
-      },
-      "feature": {
-        "title": "機能ブランチチェック",
-        "complete": "機能が完全に実装されている",
-        "tests": "ユニットテストを追加",
-        "responsive": "複数の画面サイズでテスト済み",
-        "theme": "ライト/ダークテーマをテスト済み",
-        "i18n": "言語切り替えをテスト済み",
-        "performance": "パフォーマンス指標を満たしている"
-      },
-      "production": {
-        "title": "本番環境チェック",
-        "allTests": "すべてのテストに合格",
-        "codeReview": "コードレビュー済み",
-        "preview": "プレビュー環境で検証済み",
-        "version": "バージョン番号を更新",
-        "changelog": "CHANGELOG を更新",
-        "notify": "チームに通知済み"
-      }
-    },
-    "deployment": {
-      "title": "デプロイ情報",
-      "platform": "プラットフォーム",
-      "buildCommand": "ビルドコマンド",
-      "outputDir": "出力ディレクトリ",
-      "cdn": "CDN",
-      "globalCdn": "グローバル CDN アクセラレーション"
-    },
     "links": {
       "title": "クイックリンク",
       "github": "ソースコードを表示",
-      "readme": "ドキュメント",
+      "readme": "プロジェクトドキュメント",
       "readmeDesc": "クイックスタートと使用ガイド",
       "docs": "詳細ドキュメント",
-      "docsDesc": "アーキテクチャと技術詳細"
+      "docsDesc": "プロジェクトアーキテクチャと技術詳細"
     },
     "footer": {
       "madeWith": "で作成、作者",
