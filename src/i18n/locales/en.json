@@ -499,7 +499,9 @@
       "vite": "Next Generation Frontend Tooling",
       "pinia": "Lightweight State Management",
       "router": "Official Routing Solution",
-      "i18n": "Internationalization Support"
+      "i18n": "Internationalization Support",
+      "gsap": "Professional Animation Library",
+      "lucide": "Beautiful Open Source Icons"
     },
     "links": {
       "title": "Quick Links",

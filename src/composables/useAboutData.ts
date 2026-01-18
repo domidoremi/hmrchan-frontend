@@ -1,6 +1,5 @@
-import { computed, type Component } from 'vue'
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Github as GithubIcon, FileText, Book } from 'lucide-vue-next'
 import packageJson from '../../package.json'
 
 export interface TechItem {
@@ -9,12 +8,7 @@ export interface TechItem {
   description: string
 }
 
-export interface QuickLink {
-  name: string
-  description: string
-  url: string
-  icon: Component
-}
+// QuickLink interface removed - repository is private
 
 /**
  * 从 package.json 版本号中提取主版本号
@@ -69,31 +63,19 @@ export function useAboutData() {
       version: extractVersion(deps['vue-i18n']),
       description: t('about.techStack.i18n'),
     },
-  ])
-
-  const quickLinks = computed<QuickLink[]>(() => [
     {
-      name: 'GitHub',
-      description: t('about.links.github'),
-      url: 'https://github.com/domidoremi/hmrchan-frontend',
-      icon: GithubIcon,
+      name: 'GSAP',
+      version: extractVersion(deps.gsap),
+      description: t('about.techStack.gsap'),
     },
     {
-      name: t('about.links.readme'),
-      description: t('about.links.readmeDesc'),
-      url: 'https://github.com/domidoremi/hmrchan-frontend/blob/main/README.md',
-      icon: FileText,
-    },
-    {
-      name: t('about.links.docs'),
-      description: t('about.links.docsDesc'),
-      url: 'https://github.com/domidoremi/hmrchan-frontend/blob/main/ABOUT.md',
-      icon: Book,
+      name: 'Lucide Icons',
+      version: extractVersion(deps['lucide-vue-next']),
+      description: t('about.techStack.lucide'),
     },
   ])
 
   return {
     techStack,
-    quickLinks,
   }
 }
