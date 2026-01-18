@@ -87,7 +87,13 @@
               <Heart :size="22" />
             </div>
             <h3>{{ $t('nav.favorites') }}</h3>
-            <p>{{ isAuthenticated ? $t('home.bento.favoritesMeta') : $t('home.bento.favoritesMetaGuest') }}</p>
+            <p>
+              {{
+                isAuthenticated
+                  ? $t('home.bento.favoritesMeta')
+                  : $t('home.bento.favoritesMetaGuest')
+              }}
+            </p>
           </RouterLink>
         </div>
       </div>
@@ -105,7 +111,12 @@
           <span v-if="isLoading && posts.length > 0" class="spinner spinner-sm" />
         </header>
 
-        <StateIndicator v-if="error" variant="error" :description="error" @action="fetchLatestPosts" />
+        <StateIndicator
+          v-if="error"
+          variant="error"
+          :description="error"
+          @action="fetchLatestPosts"
+        />
 
         <template v-else>
           <!-- 骨架屏：使用与真实内容相同的 masonry 布局结构，避免 CLS -->
@@ -303,7 +314,9 @@ async function fetchLatestPosts(reset = true): Promise<boolean> {
     if (cached && !hadData) {
       posts.value = cached.data as PostListItem[]
       total.value = cached.total
-      const filtered = (cached.data as PostListItem[]).filter((p) => !isFilteredAuthor(p.author_name))
+      const filtered = (cached.data as PostListItem[]).filter(
+        (p) => !isFilteredAuthor(p.author_name)
+      )
       allPosts.value = filtered
       distributePosts(filtered, getColumnWidth(getContainerWidth()), false)
     }
@@ -356,7 +369,10 @@ function goToExplore() {
 }
 
 function scrollToBento() {
-  bentoRef.value?.scrollIntoView({ behavior: shouldAnimate.value ? 'smooth' : 'auto', block: 'start' })
+  bentoRef.value?.scrollIntoView({
+    behavior: shouldAnimate.value ? 'smooth' : 'auto',
+    block: 'start',
+  })
 }
 
 function goToPost(postId: string, thumbnailSrc: string | null) {
@@ -443,20 +459,39 @@ onBeforeUnmount(() => {
 }
 
 @keyframes blob-float-1 {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  33% { transform: translate(30px, 20px) scale(1.05); }
-  66% { transform: translate(-20px, 10px) scale(0.95); }
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(30px, 20px) scale(1.05);
+  }
+  66% {
+    transform: translate(-20px, 10px) scale(0.95);
+  }
 }
 
 @keyframes blob-float-2 {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  50% { transform: translate(-40px, 30px) scale(1.08); }
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(-40px, 30px) scale(1.08);
+  }
 }
 
 @keyframes blob-float-3 {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  40% { transform: translate(25px, -15px) scale(0.92); }
-  80% { transform: translate(-15px, 25px) scale(1.03); }
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  40% {
+    transform: translate(25px, -15px) scale(0.92);
+  }
+  80% {
+    transform: translate(-15px, 25px) scale(1.03);
+  }
 }
 
 /* ========== Hero Section ========== */
@@ -502,8 +537,15 @@ onBeforeUnmount(() => {
 }
 
 @keyframes pulse-dot {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.5; transform: scale(0.8); }
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(0.8);
+  }
 }
 
 .hero-badge svg {
@@ -559,8 +601,13 @@ onBeforeUnmount(() => {
 }
 
 @keyframes bounce-down {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(3px); }
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(3px);
+  }
 }
 
 /* Hero → Bento 过渡 */
@@ -589,7 +636,12 @@ onBeforeUnmount(() => {
 .bento-bg {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(var(--mm-green-rgb), 0.02) 0%, transparent 50%, rgba(var(--mm-purple-rgb), 0.02) 100%);
+  background: linear-gradient(
+    180deg,
+    rgba(var(--mm-green-rgb), 0.02) 0%,
+    transparent 50%,
+    rgba(var(--mm-purple-rgb), 0.02) 100%
+  );
   pointer-events: none;
 }
 
@@ -636,7 +688,9 @@ onBeforeUnmount(() => {
   flex-direction: column;
   color: inherit;
   text-decoration: none;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .bento-card:hover {
@@ -672,22 +726,38 @@ onBeforeUnmount(() => {
 }
 
 .bento-card__icon--primary {
-  background: linear-gradient(135deg, rgba(var(--color-primary-rgb), 0.15), rgba(var(--color-primary-rgb), 0.05));
+  background: linear-gradient(
+    135deg,
+    rgba(var(--color-primary-rgb), 0.15),
+    rgba(var(--color-primary-rgb), 0.05)
+  );
   color: var(--color-primary);
 }
 
 .bento-card__icon--search {
-  background: linear-gradient(135deg, rgba(var(--color-primary-rgb), 0.15), rgba(var(--color-primary-rgb), 0.05));
+  background: linear-gradient(
+    135deg,
+    rgba(var(--color-primary-rgb), 0.15),
+    rgba(var(--color-primary-rgb), 0.05)
+  );
   color: var(--color-primary);
 }
 
 .bento-card__icon--community {
-  background: linear-gradient(135deg, rgba(var(--color-accent-rgb), 0.15), rgba(var(--color-accent-rgb), 0.05));
+  background: linear-gradient(
+    135deg,
+    rgba(var(--color-accent-rgb), 0.15),
+    rgba(var(--color-accent-rgb), 0.05)
+  );
   color: var(--color-accent);
 }
 
 .bento-card__icon--authors {
-  background: linear-gradient(135deg, rgba(var(--color-secondary-rgb), 0.15), rgba(var(--color-secondary-rgb), 0.05));
+  background: linear-gradient(
+    135deg,
+    rgba(var(--color-secondary-rgb), 0.15),
+    rgba(var(--color-secondary-rgb), 0.05)
+  );
   color: var(--color-secondary);
 }
 
@@ -701,7 +771,9 @@ onBeforeUnmount(() => {
   top: var(--spacing-4);
   right: var(--spacing-4);
   color: var(--color-text-tertiary);
-  transition: transform 0.2s ease, color 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    color 0.2s ease;
 }
 
 .bento-card:hover .bento-card__arrow {
@@ -737,10 +809,18 @@ onBeforeUnmount(() => {
 
 /* Grid layout - 仅桌面端 */
 @media (min-width: 768px) {
-  .bento-grid > :nth-child(2) { grid-column: span 5; }
-  .bento-grid > :nth-child(3) { grid-column: span 5; }
-  .bento-grid > :nth-child(4) { grid-column: span 4; }
-  .bento-grid > :nth-child(5) { grid-column: span 4; }
+  .bento-grid > :nth-child(2) {
+    grid-column: span 5;
+  }
+  .bento-grid > :nth-child(3) {
+    grid-column: span 5;
+  }
+  .bento-grid > :nth-child(4) {
+    grid-column: span 4;
+  }
+  .bento-grid > :nth-child(5) {
+    grid-column: span 4;
+  }
 }
 
 /* Bento → Posts 过渡 */
@@ -827,37 +907,88 @@ onBeforeUnmount(() => {
 
 /* ========== Responsive ========== */
 @media (max-width: 1024px) {
-  .bento-card--feature { grid-column: span 12; grid-row: span 1; min-height: 160px; }
-  .bento-grid > :nth-child(2) { grid-column: span 6; }
-  .bento-grid > :nth-child(3) { grid-column: span 6; }
-  .bento-grid > :nth-child(4) { grid-column: span 6; }
-  .bento-grid > :nth-child(5) { grid-column: span 6; }
+  .bento-card--feature {
+    grid-column: span 12;
+    grid-row: span 1;
+    min-height: 160px;
+  }
+  .bento-grid > :nth-child(2) {
+    grid-column: span 6;
+  }
+  .bento-grid > :nth-child(3) {
+    grid-column: span 6;
+  }
+  .bento-grid > :nth-child(4) {
+    grid-column: span 6;
+  }
+  .bento-grid > :nth-child(5) {
+    grid-column: span 6;
+  }
 }
 
 @media (max-width: 768px) {
-  .hero { min-height: calc(70vh - var(--navbar-height)); padding: var(--spacing-6) 0; }
-  .hero-title { font-size: clamp(1.75rem, 6vw, 2.5rem); }
-  .hero-subtitle { font-size: var(--text-base); }
+  .hero {
+    min-height: calc(70vh - var(--navbar-height));
+    padding: var(--spacing-6) 0;
+  }
+  .hero-title {
+    font-size: clamp(1.75rem, 6vw, 2.5rem);
+  }
+  .hero-subtitle {
+    font-size: var(--text-base);
+  }
 
-  .home-bg__blob { filter: blur(80px); }
-  .home-bg__blob--1 { width: 350px; height: 350px; }
-  .home-bg__blob--2 { width: 300px; height: 300px; }
-  .home-bg__blob--3 { width: 280px; height: 280px; }
+  .home-bg__blob {
+    filter: blur(80px);
+  }
+  .home-bg__blob--1 {
+    width: 350px;
+    height: 350px;
+  }
+  .home-bg__blob--2 {
+    width: 300px;
+    height: 300px;
+  }
+  .home-bg__blob--3 {
+    width: 280px;
+    height: 280px;
+  }
 }
 
 @media (max-width: 480px) {
-  .hero-actions { flex-direction: column; width: 100%; }
-  .hero-actions > * { width: 100%; justify-content: center; }
-  .bento-card { padding: var(--spacing-3); }
-  .bento-card__icon { width: 36px; height: 36px; }
-  .bento-card h3 { font-size: var(--text-sm); }
+  .hero-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+  .hero-actions > * {
+    width: 100%;
+    justify-content: center;
+  }
+  .bento-card {
+    padding: var(--spacing-3);
+  }
+  .bento-card__icon {
+    width: 36px;
+    height: 36px;
+  }
+  .bento-card h3 {
+    font-size: var(--text-sm);
+  }
 }
 
 /* ========== Reduced Motion ========== */
 @media (prefers-reduced-motion: reduce) {
-  .home-bg__blob { animation: none !important; }
-  .hero-badge__dot { animation: none !important; }
-  .hero-arrow { animation: none !important; }
-  .bento-card { transition: none; }
+  .home-bg__blob {
+    animation: none !important;
+  }
+  .hero-badge__dot {
+    animation: none !important;
+  }
+  .hero-arrow {
+    animation: none !important;
+  }
+  .bento-card {
+    transition: none;
+  }
 }
 </style>

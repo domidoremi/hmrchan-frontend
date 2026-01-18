@@ -201,7 +201,6 @@ function disableDevToolsShortcuts(): void {
 export function initConsoleGuard(): void {
   // 控制台保护已禁用
   // 如需启用，请取消下面代码的注释
-
   /*
   // 仅在生产环境启用
   if (import.meta.env.DEV) {

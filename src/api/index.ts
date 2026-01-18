@@ -16,7 +16,12 @@ export {
   type AuthResponse,
   type UserResponse,
 } from './authService'
-export { postService, type PostListItem, type PostDetailResponse, type ThumbnailQuality } from './postService'
+export {
+  postService,
+  type PostListItem,
+  type PostDetailResponse,
+  type ThumbnailQuality,
+} from './postService'
 export { authorService, type AuthorListItem, type AuthorResponse } from './authorService'
 export {
   favoriteService,
@@ -87,8 +92,4 @@ export {
   type CreateCommentRequest as CreateDiscussionCommentRequest,
   type ListDiscussionsParams,
 } from './discussionService'
-export {
-  sessionService,
-  type Session,
-  type SessionListResponse,
-} from './sessionService'
+export { sessionService, type Session, type SessionListResponse } from './sessionService'

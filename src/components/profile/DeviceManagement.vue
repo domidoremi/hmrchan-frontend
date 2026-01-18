@@ -1,7 +1,17 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { MapPin, Clock, AlertTriangle, Shield, ShieldOff, Trash2, Edit2, Check, X } from 'lucide-vue-next'
+import {
+  MapPin,
+  Clock,
+  AlertTriangle,
+  Shield,
+  ShieldOff,
+  Trash2,
+  Edit2,
+  Check,
+  X,
+} from 'lucide-vue-next'
 import { useSessionManagement } from '@/composables/useSessionManagement'
 import { useDeviceNameEditor } from '@/composables/useDeviceNameEditor'
 import { getDeviceIcon, formatRelativeTime } from '@/utils/deviceHelpers'
@@ -48,11 +58,7 @@ function formatDate(dateString: string): string {
     </div>
 
     <div v-if="otherSessionsCount > 0" class="revoke-all-section">
-      <button
-        class="btn-revoke-all"
-        :disabled="isRevoking"
-        @click="revokeAllOthers"
-      >
+      <button class="btn-revoke-all" :disabled="isRevoking" @click="revokeAllOthers">
         <Trash2 :size="18" />
         {{ t('devices.revokeAll') }}
       </button>
@@ -102,19 +108,13 @@ function formatDate(dateString: string): string {
                   {{ t('devices.trusted') }}
                 </span>
               </h3>
-              <button
-                v-if="!session.is_current"
-                class="btn-edit"
-                @click="startEditing(session)"
-              >
+              <button v-if="!session.is_current" class="btn-edit" @click="startEditing(session)">
                 <Edit2 :size="14" />
               </button>
             </div>
           </div>
 
-          <p class="device-details">
-            {{ session.device_browser }} · {{ session.device_os }}
-          </p>
+          <p class="device-details">{{ session.device_browser }} · {{ session.device_os }}</p>
 
           <div class="device-meta">
             <div class="meta-item">

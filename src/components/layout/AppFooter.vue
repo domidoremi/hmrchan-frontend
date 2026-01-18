@@ -120,7 +120,9 @@ const currentYear = computed(() => new Date().getFullYear())
   border-radius: var(--radius-full);
   background: var(--glass-bg-subtle);
   color: var(--color-text-secondary);
-  transition: background 0.15s ease, color 0.15s ease;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
 }
 
 .social-link:hover {

@@ -89,7 +89,9 @@ export async function trackPostView(postId: string, isAuthenticated: boolean): P
  */
 export async function cleanupViewRecords(): Promise<number> {
   try {
-    const allRecords = await import('@/utils/cache/idb').then((m) => m.idbGetAll<ViewRecord>(STORES.META))
+    const allRecords = await import('@/utils/cache/idb').then((m) =>
+      m.idbGetAll<ViewRecord>(STORES.META)
+    )
     const expireTime = Date.now() - VIEW_RECORD_TTL
     let cleaned = 0
 
