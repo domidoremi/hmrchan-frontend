@@ -470,12 +470,27 @@
   "about": {
     "title": "About",
     "subtitle": "Learn about MomiChan Frontend",
+    "introduction": {
+      "title": "Frontend Introduction",
+      "description": "MomiChan Frontend is a modern image/video content community application built with Vue 3 ecosystem, providing smooth user experience and elegant interface design.",
+      "features": {
+        "performance": "High Performance",
+        "performanceDesc": "Built with Vite 7, supports code splitting and lazy loading for fast page loads",
+        "design": "Beautiful Design",
+        "designDesc": "Glass Morphism design style with light/dark theme support for immersive experience",
+        "i18n": "Multilingual",
+        "i18nDesc": "Built-in support for Chinese, English, and Japanese with easy language switching",
+        "security": "Secure & Reliable",
+        "securityDesc": "JWT authentication with automatic token refresh to protect user data"
+      }
+    },
     "projectInfo": {
       "title": "Project Information",
       "name": "Project Name",
       "version": "Version",
       "buildTime": "Build Time",
-      "commit": "Git Commit"
+      "status": "Status",
+      "active": "Active"
     },
     "techStack": {
       "title": "Tech Stack",
@@ -485,45 +500,6 @@
       "pinia": "Lightweight State Management",
       "router": "Official Routing Solution",
       "i18n": "Internationalization Support"
-    },
-    "gitChecklist": {
-      "title": "Git Push Checklist",
-      "description": "Please complete the following checks before pushing code",
-      "basic": {
-        "title": "Basic Checks",
-        "typeCheck": "Pass TypeScript type check",
-        "lint": "Pass ESLint code check",
-        "format": "Code is formatted",
-        "test": "Related tests passed",
-        "commit": "Commit message follows convention",
-        "docs": "Documentation updated"
-      },
-      "feature": {
-        "title": "Feature Branch Checks",
-        "complete": "Feature fully implemented",
-        "tests": "Unit tests added",
-        "responsive": "Tested on multiple screen sizes",
-        "theme": "Tested light/dark themes",
-        "i18n": "Tested language switching",
-        "performance": "Performance metrics met"
-      },
-      "production": {
-        "title": "Production Checks",
-        "allTests": "All tests passed",
-        "codeReview": "Code reviewed",
-        "preview": "Verified in preview environment",
-        "version": "Version number updated",
-        "changelog": "CHANGELOG updated",
-        "notify": "Team notified"
-      }
-    },
-    "deployment": {
-      "title": "Deployment Information",
-      "platform": "Platform",
-      "buildCommand": "Build Command",
-      "outputDir": "Output Directory",
-      "cdn": "CDN",
-      "globalCdn": "Global CDN Acceleration"
     },
     "links": {
       "title": "Quick Links",
