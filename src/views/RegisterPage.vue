@@ -31,7 +31,10 @@
               {{ passwordStrengthText }}
             </span>
           </div>
-          <ul v-if="password && passwordStrengthResult.suggestions.length > 0" class="password-suggestions">
+          <ul
+            v-if="password && passwordStrengthResult.suggestions.length > 0"
+            class="password-suggestions"
+          >
             <li v-for="suggestion in passwordStrengthResult.suggestions" :key="suggestion">
               {{ suggestion }}
             </li>
@@ -252,7 +255,9 @@ function handleTurnstileError() {
 .strength-fill {
   height: 100%;
   border-radius: var(--radius-full);
-  transition: width 0.3s ease, background 0.3s ease;
+  transition:
+    width 0.3s ease,
+    background 0.3s ease;
 }
 
 .strength-fill.strength-weak {

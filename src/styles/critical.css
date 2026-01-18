@@ -261,12 +261,7 @@ main {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    var(--color-gray-100) 50%,
-    transparent 100%
-  );
+  background: linear-gradient(90deg, transparent 0%, var(--color-gray-100) 50%, transparent 100%);
   transform: translateX(-100%);
   animation: skeleton-pulse 1.5s ease-in-out infinite;
   will-change: transform;
@@ -277,12 +272,7 @@ main {
 }
 
 [data-theme='dark'] .skeleton::after {
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(71, 85, 105, 0.5) 50%,
-    transparent 100%
-  );
+  background: linear-gradient(90deg, transparent 0%, rgba(71, 85, 105, 0.5) 50%, transparent 100%);
 }
 
 /* ========== 玻璃卡片 ========== */

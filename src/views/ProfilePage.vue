@@ -63,7 +63,9 @@ const router = useRouter()
 const authStore = useAuthStore()
 const { user, isAuthenticated } = storeToRefs(authStore)
 
-const activeTab = ref<'favorites' | 'comments' | 'likes' | 'history' | 'notifications' | 'devices'>('favorites')
+const activeTab = ref<'favorites' | 'comments' | 'likes' | 'history' | 'notifications' | 'devices'>(
+  'favorites'
+)
 
 const tabs = [
   { id: 'favorites' as const, label: 'profile.tabs.favorites', icon: Heart, count: undefined },

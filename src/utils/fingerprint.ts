@@ -82,13 +82,16 @@ async function getFallbackFingerprint(): Promise<string> {
     const data = encoder.encode(fingerprint)
     const hashBuffer = await crypto.subtle.digest('SHA-256', data)
     const hashArray = Array.from(new Uint8Array(hashBuffer))
-    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('').slice(0, 32)
+    return hashArray
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('')
+      .slice(0, 32)
   } catch {
     // 降级到简单的字符串哈希（仅在 SubtleCrypto 不可用时）
     let hash = 0
     for (let i = 0; i < fingerprint.length; i++) {
       const char = fingerprint.charCodeAt(i)
-      hash = ((hash << 5) - hash) + char
+      hash = (hash << 5) - hash + char
       hash = hash & hash // Convert to 32bit integer
     }
     return Math.abs(hash).toString(16).padStart(8, '0')

@@ -16,9 +16,7 @@ export function useSessionManagement() {
   const isLoading = ref(true)
   const isRevoking = ref(false)
 
-  const otherSessionsCount = computed(() =>
-    sessions.value.filter((s) => !s.is_current).length
-  )
+  const otherSessionsCount = computed(() => sessions.value.filter((s) => !s.is_current).length)
 
   async function fetchSessions() {
     isLoading.value = true

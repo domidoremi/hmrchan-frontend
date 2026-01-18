@@ -117,7 +117,9 @@ export interface PostDetailResponse {
 }
 
 export const postService = {
-  async listPosts(params: ListPostsParams = {}): Promise<PaginatedApiResponseWithLimit<PostListItem>> {
+  async listPosts(
+    params: ListPostsParams = {}
+  ): Promise<PaginatedApiResponseWithLimit<PostListItem>> {
     const query = buildQuery({
       page: params.page ?? DEFAULT_LIST_PARAMS.page,
       page_size: params.page_size ?? DEFAULT_LIST_PARAMS.page_size,

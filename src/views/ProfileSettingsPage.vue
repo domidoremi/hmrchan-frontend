@@ -60,7 +60,9 @@
                 </div>
               </div>
               <div class="avatar-info">
-                <p class="avatar-hint">{{ $t('profile.avatarHint', '支持 JPG、PNG 格式，建议尺寸 200×200') }}</p>
+                <p class="avatar-hint">
+                  {{ $t('profile.avatarHint', '支持 JPG、PNG 格式，建议尺寸 200×200') }}
+                </p>
                 <label class="glass-button avatar-upload-btn">
                   <Upload :size="16" />
                   {{ $t('profile.uploadAvatar') }}
@@ -141,7 +143,10 @@
               </div>
               <div class="field-hint-row">
                 <p class="field-hint">{{ $t('profile.bioHint', '介绍一下自己吧') }}</p>
-                <span class="char-count" :class="{ 'char-count--warning': (form.bio?.length || 0) > 450 }">
+                <span
+                  class="char-count"
+                  :class="{ 'char-count--warning': (form.bio?.length || 0) > 450 }"
+                >
                   {{ form.bio?.length || 0 }}/500
                 </span>
               </div>
@@ -515,7 +520,9 @@ function handleAvatarSelect(event: Event) {
   // 验证文件大小
   const sizeMB = file.size / (1024 * 1024)
   if (sizeMB > AVATAR_LIMITS.MAX_FILE_SIZE_MB) {
-    toastStore.error(t('profile.avatarSizeError', `文件大小不能超过 ${AVATAR_LIMITS.MAX_FILE_SIZE_MB}MB`))
+    toastStore.error(
+      t('profile.avatarSizeError', `文件大小不能超过 ${AVATAR_LIMITS.MAX_FILE_SIZE_MB}MB`)
+    )
     input.value = ''
     return
   }

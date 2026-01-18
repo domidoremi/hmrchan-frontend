@@ -241,7 +241,11 @@ export function maskSensitiveData(
       if (data.length <= visibleChars * 2) {
         return '*'.repeat(data.length)
       }
-      return data.slice(0, visibleChars) + '*'.repeat(data.length - visibleChars * 2) + data.slice(-visibleChars)
+      return (
+        data.slice(0, visibleChars) +
+        '*'.repeat(data.length - visibleChars * 2) +
+        data.slice(-visibleChars)
+      )
     }
   }
 }
