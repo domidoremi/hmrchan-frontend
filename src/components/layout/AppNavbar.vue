@@ -10,54 +10,19 @@
       <div ref="navLinksRef" class="navbar-links desktop-only">
         <!-- 滑动指示器 -->
         <div ref="navIndicatorRef" class="nav-indicator" :style="navIndicatorStyle" />
-        <RouterLink to="/" class="nav-link" active-class="nav-link--active">
-          <Home :size="18" />
-          <span>{{ $t('nav.home') }}</span>
-        </RouterLink>
+
+        <!-- 动态渲染导航项 -->
         <RouterLink
-          to="/explore"
+          v-for="item in desktopNavItems"
+          :key="item.path"
+          :to="item.path"
           class="nav-link"
           active-class="nav-link--active"
-          @mouseenter="prefetchExplorePage"
-          @focus="prefetchExplorePage"
+          @mouseenter="handlePrefetch(item)"
+          @focus="handlePrefetch(item)"
         >
-          <Compass :size="18" />
-          <span>{{ $t('nav.explore') }}</span>
-        </RouterLink>
-        <RouterLink
-          v-if="isAuthenticated"
-          to="/favorites"
-          class="nav-link"
-          active-class="nav-link--active"
-          @mouseenter="prefetchFavoritesPage"
-          @focus="prefetchFavoritesPage"
-        >
-          <Heart :size="18" />
-          <span>{{ $t('nav.favorites') }}</span>
-        </RouterLink>
-        <RouterLink
-          to="/authors"
-          class="nav-link"
-          active-class="nav-link--active"
-          @mouseenter="prefetchAuthorsPage"
-          @focus="prefetchAuthorsPage"
-        >
-          <Users :size="18" />
-          <span>{{ $t('nav.authors') }}</span>
-        </RouterLink>
-        <RouterLink
-          to="/community"
-          class="nav-link"
-          active-class="nav-link--active"
-          @mouseenter="prefetchCommunityPage"
-          @focus="prefetchCommunityPage"
-        >
-          <MessageSquare :size="18" />
-          <span>{{ $t('nav.community') }}</span>
-        </RouterLink>
-        <RouterLink to="/about" class="nav-link" active-class="nav-link--active">
-          <Info :size="18" />
-          <span>{{ $t('nav.about') }}</span>
+          <component :is="item.icon" :size="item.desktopIconSize || 18" />
+          <span>{{ $t(item.i18nKey) }}</span>
         </RouterLink>
       </div>
 
@@ -190,63 +155,20 @@
     <!-- 滑动指示器背景 -->
     <div class="mobile-nav-indicator" :style="mobileIndicatorStyle" />
 
+    <!-- 动态渲染移动端导航项 -->
     <RouterLink
-      to="/"
+      v-for="(item, index) in mobileNavItems"
+      :key="item.path"
+      :to="item.requiresAuth && !isAuthenticated ? getMobileFavoritesLink : item.path"
       class="mobile-nav-item"
-      :class="{ 'mobile-nav-item--active': mobileActiveIndex === 0 }"
+      :class="{ 'mobile-nav-item--active': activeMobileIndex === index }"
+      @mouseenter="handlePrefetch(item)"
+      @focus="handlePrefetch(item)"
     >
       <div class="mobile-nav-icon">
-        <Home :size="20" />
+        <component :is="item.icon" :size="item.mobileIconSize || 20" />
       </div>
-      <span class="mobile-nav-label">{{ $t('nav.home') }}</span>
-    </RouterLink>
-    <RouterLink
-      to="/explore"
-      class="mobile-nav-item"
-      :class="{ 'mobile-nav-item--active': mobileActiveIndex === 1 }"
-      @mouseenter="prefetchExplorePage"
-      @focus="prefetchExplorePage"
-    >
-      <div class="mobile-nav-icon">
-        <Compass :size="20" />
-      </div>
-      <span class="mobile-nav-label">{{ $t('nav.explore') }}</span>
-    </RouterLink>
-    <RouterLink
-      :to="mobileFavoritesLink"
-      class="mobile-nav-item"
-      :class="{ 'mobile-nav-item--active': mobileActiveIndex === 2 }"
-      @mouseenter="prefetchFavoritesPage"
-      @focus="prefetchFavoritesPage"
-    >
-      <div class="mobile-nav-icon">
-        <Heart :size="20" />
-      </div>
-      <span class="mobile-nav-label">{{ $t('nav.favorites') }}</span>
-    </RouterLink>
-    <RouterLink
-      to="/authors"
-      class="mobile-nav-item"
-      :class="{ 'mobile-nav-item--active': mobileActiveIndex === 3 }"
-      @mouseenter="prefetchAuthorsPage"
-      @focus="prefetchAuthorsPage"
-    >
-      <div class="mobile-nav-icon">
-        <Users :size="20" />
-      </div>
-      <span class="mobile-nav-label">{{ $t('nav.authors') }}</span>
-    </RouterLink>
-    <RouterLink
-      to="/community"
-      class="mobile-nav-item"
-      :class="{ 'mobile-nav-item--active': mobileActiveIndex === 4 }"
-      @mouseenter="prefetchCommunityPage"
-      @focus="prefetchCommunityPage"
-    >
-      <div class="mobile-nav-icon">
-        <MessageSquare :size="20" />
-      </div>
-      <span class="mobile-nav-label">{{ $t('nav.community') }}</span>
+      <span class="mobile-nav-label">{{ $t(item.i18nKey) }}</span>
     </RouterLink>
   </nav>
 </template>
@@ -262,27 +184,16 @@ import {
   computed,
   watchEffect,
 } from 'vue'
-import { RouterLink, useRouter, useRoute } from 'vue-router'
+import { RouterLink, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
-import {
-  ChevronRight,
-  Compass,
-  Heart,
-  Home,
-  Info,
-  LogIn,
-  LogOut,
-  MessageSquare,
-  Search,
-  Settings,
-  User,
-  Users,
-} from 'lucide-vue-next'
+import { ChevronRight, LogIn, LogOut, Search, Settings, User } from 'lucide-vue-next'
 import { useAuthStore, useSettingsStore } from '@/stores'
 import { getUserDisplayName } from '@/utils/user'
 import { useUserAvatar, preloadUserAvatar } from '@/composables/useUserAvatar'
 import { prefetchExploreData, prefetchAuthorsData } from '@/utils/prefetch'
 import { throttleRAF, scheduleDOMUpdate, prefersReducedMotion } from '@/utils/performance'
+import { useNavigation, registerPrefetchFunction } from '@/composables/useNavigation'
+import type { NavigationItem } from '@/config/navigation'
 
 // 懒加载设置面板，减少首屏 JS
 const SettingsPanel = defineAsyncComponent(() => import('./SettingsPanel.vue'))
@@ -298,24 +209,25 @@ function prefetchSettingsPanel() {
 }
 
 const router = useRouter()
-const route = useRoute()
 const authStore = useAuthStore()
 const settingsStore = useSettingsStore()
 const { user, isAuthenticated } = storeToRefs(authStore)
 const { settings } = storeToRefs(settingsStore)
 
+// 使用导航 composable
+const {
+  desktopNavItems,
+  mobileNavItems,
+  activeDesktopIndex,
+  activeMobileIndex,
+  getMobileFavoritesLink,
+  handlePrefetch: handleNavPrefetch,
+} = useNavigation()
+
 // 是否启用动画
 const shouldAnimateMobile = computed(
   () => settings.value.enableAnimations && !prefersReducedMotion()
 )
-
-const mobileFavoritesLink = computed(() => {
-  if (isAuthenticated.value) return '/favorites'
-  return {
-    path: '/login',
-    query: { redirect: '/favorites' },
-  }
-})
 
 const showSettings = ref(false)
 const showUserMenu = ref(false)
@@ -348,34 +260,9 @@ const scrollThreshold = 100
 // 使用统一的用户头像 composable，确保与其他组件同步
 const { avatarUrl: userAvatar } = useUserAvatar()
 
-// 导航路由映射
-const navRoutes = ['/', '/explore', '/favorites', '/authors', '/community']
-const mobileNavRoutes = ['/', '/explore', '/favorites', '/authors', '/community']
-
-// 计算当前活跃的导航索引
-const activeNavIndex = computed(() => {
-  const currentPath = route.path
-  // 精确匹配或前缀匹配
-  const index = navRoutes.findIndex((navRoute) => {
-    if (navRoute === '/') return currentPath === '/'
-    return currentPath === navRoute || currentPath.startsWith(navRoute + '/')
-  })
-  return index
-})
-
-// 移动端导航活跃索引
-const mobileActiveIndex = computed(() => {
-  const currentPath = route.path
-  const index = mobileNavRoutes.findIndex((navRoute) => {
-    if (navRoute === '/') return currentPath === '/'
-    return currentPath === navRoute || currentPath.startsWith(navRoute + '/')
-  })
-  return index
-})
-
 // 移动端滑动指示器样式
 const mobileIndicatorStyle = computed(() => {
-  const index = mobileActiveIndex.value
+  const index = activeMobileIndex.value
   if (index === -1) {
     return { opacity: '0', transform: 'translateX(0)' }
   }
@@ -387,87 +274,7 @@ const mobileIndicatorStyle = computed(() => {
   }
 })
 
-// 更新导航指示器位置
-function updateNavIndicator() {
-  if (isMobile.value || !navLinksRef.value) {
-    navIndicatorStyle.value = { opacity: '0', transform: 'translateX(0) scaleX(0)' }
-    return
-  }
-
-  const index = activeNavIndex.value
-  // 如果是收藏页但未登录，不显示指示器
-  if (index === 2 && !isAuthenticated.value) {
-    // 检查是否在其他有效路由
-    const validIndex = navRoutes.findIndex((navRoute, i) => {
-      if (i === 2) return false // 跳过收藏
-      if (navRoute === '/') return route.path === '/'
-      return route.path === navRoute || route.path.startsWith(navRoute + '/')
-    })
-    if (validIndex === -1) {
-      navIndicatorStyle.value = { opacity: '0', transform: 'translateX(0) scaleX(0)' }
-      return
-    }
-  }
-
-  if (index === -1) {
-    navIndicatorStyle.value = { opacity: '0', transform: 'translateX(0) scaleX(0)' }
-    return
-  }
-
-  const navLinks = navLinksRef.value.querySelectorAll('.nav-link')
-  // 调整索引：如果未登录，收藏链接不存在，需要调整
-  let adjustedIndex = index
-  if (!isAuthenticated.value && index > 2) {
-    adjustedIndex = index - 1
-  } else if (!isAuthenticated.value && index === 2) {
-    navIndicatorStyle.value = { opacity: '0', transform: 'translateX(0) scaleX(0)' }
-    return
-  }
-
-  const activeLink = navLinks[adjustedIndex] as HTMLElement
-  if (!activeLink) {
-    navIndicatorStyle.value = { opacity: '0', transform: 'translateX(0) scaleX(0)' }
-    return
-  }
-
-  const containerRect = navLinksRef.value.getBoundingClientRect()
-  const linkRect = activeLink.getBoundingClientRect()
-
-  const left = linkRect.left - containerRect.left
-  const width = linkRect.width
-
-  navIndicatorStyle.value = {
-    opacity: '1',
-    transform: `translateX(${left}px)`,
-    width: `${width}px`,
-  }
-}
-
-// 监听路由变化更新指示器
-watchEffect(() => {
-  // 触发依赖收集
-  const _index = activeNavIndex.value
-  const _auth = isAuthenticated.value
-  // 使用变量避免 lint 警告
-  void _index
-  void _auth
-  // 延迟更新以确保 DOM 已更新
-  nextTick(() => {
-    requestAnimationFrame(updateNavIndicator)
-  })
-})
-
-// 预加载头像以提高导航栏显示优先级
-watch(
-  userAvatar,
-  (url) => {
-    if (url && isAuthenticated.value) {
-      preloadUserAvatar(url)
-    }
-  },
-  { immediate: true }
-)
-
+// 预加载函数标志
 let hasPrefetchedExplorePage = false
 let hasPrefetchedAuthorsPage = false
 let hasPrefetchedCommunityPage = false
@@ -512,6 +319,75 @@ function prefetchProfileSettingsPage() {
   hasPrefetchedProfileSettingsPage = true
   import('@/views/ProfileSettingsPage.vue').catch(() => {})
 }
+
+// 注册预加载函数到 composable
+registerPrefetchFunction('prefetchExplorePage', prefetchExplorePage)
+registerPrefetchFunction('prefetchAuthorsPage', prefetchAuthorsPage)
+registerPrefetchFunction('prefetchCommunityPage', prefetchCommunityPage)
+registerPrefetchFunction('prefetchFavoritesPage', prefetchFavoritesPage)
+
+// 处理导航项预加载的包装函数
+function handlePrefetch(item: NavigationItem) {
+  handleNavPrefetch(item)
+}
+
+// 更新导航指示器位置
+function updateNavIndicator() {
+  if (isMobile.value || !navLinksRef.value) {
+    navIndicatorStyle.value = { opacity: '0', transform: 'translateX(0) scaleX(0)' }
+    return
+  }
+
+  const index = activeDesktopIndex.value
+  if (index === -1) {
+    navIndicatorStyle.value = { opacity: '0', transform: 'translateX(0) scaleX(0)' }
+    return
+  }
+
+  const navLinks = navLinksRef.value.querySelectorAll('.nav-link')
+  const activeLink = navLinks[index] as HTMLElement
+  if (!activeLink) {
+    navIndicatorStyle.value = { opacity: '0', transform: 'translateX(0) scaleX(0)' }
+    return
+  }
+
+  const containerRect = navLinksRef.value.getBoundingClientRect()
+  const linkRect = activeLink.getBoundingClientRect()
+
+  const left = linkRect.left - containerRect.left
+  const width = linkRect.width
+
+  navIndicatorStyle.value = {
+    opacity: '1',
+    transform: `translateX(${left}px)`,
+    width: `${width}px`,
+  }
+}
+
+// 监听路由变化更新指示器
+watchEffect(() => {
+  // 触发依赖收集
+  const _index = activeDesktopIndex.value
+  const _auth = isAuthenticated.value
+  // 使用变量避免 lint 警告
+  void _index
+  void _auth
+  // 延迟更新以确保 DOM 已更新
+  nextTick(() => {
+    requestAnimationFrame(updateNavIndicator)
+  })
+})
+
+// 预加载头像以提高导航栏显示优先级
+watch(
+  userAvatar,
+  (url) => {
+    if (url && isAuthenticated.value) {
+      preloadUserAvatar(url)
+    }
+  },
+  { immediate: true }
+)
 
 function shouldPrefetchOnIdle(): boolean {
   if (typeof navigator === 'undefined') return false
