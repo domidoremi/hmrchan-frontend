@@ -73,30 +73,7 @@
         </div>
       </section>
 
-      <!-- 快速链接 -->
-      <section class="section">
-        <div class="section-header">
-          <BookOpen :size="24" class="section-icon" />
-          <h2 class="section-title">{{ $t('about.links.title') }}</h2>
-        </div>
-        <div class="links-grid">
-          <a
-            v-for="link in quickLinks"
-            :key="link.name"
-            :href="link.url"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="link-card glass-card"
-          >
-            <component :is="link.icon" :size="20" class="link-icon" />
-            <div class="link-content">
-              <div class="link-name">{{ link.name }}</div>
-              <div class="link-description">{{ link.description }}</div>
-            </div>
-            <ExternalLink :size="16" class="link-external" />
-          </a>
-        </div>
-      </section>
+      <!-- Quick Links section removed - repository is private -->
 
       <!-- 页脚信息 -->
       <footer class="about-footer">
@@ -124,18 +101,7 @@ defineOptions({ name: 'AboutPage' })
 
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import {
-  Info,
-  Code,
-  BookOpen,
-  Heart,
-  ExternalLink,
-  Sparkles,
-  Zap,
-  Palette,
-  Globe,
-  Shield,
-} from 'lucide-vue-next'
+import { Info, Code, Heart, Sparkles, Zap, Palette, Globe, Shield } from 'lucide-vue-next'
 import { useAboutData } from '@/composables/useAboutData'
 import packageJson from '../../package.json'
 
@@ -180,7 +146,7 @@ const features = computed(() => [
 ])
 
 // Extract data from composable
-const { techStack, quickLinks } = useAboutData()
+const { techStack } = useAboutData()
 </script>
 
 <style scoped>
