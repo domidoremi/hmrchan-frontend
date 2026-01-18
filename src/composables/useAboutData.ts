@@ -1,6 +1,7 @@
 import { computed, type Component } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Github, FileText, Book } from 'lucide-vue-next'
+import { Github as GithubIcon, FileText, Book } from 'lucide-vue-next'
+import packageJson from '../../package.json'
 
 export interface TechItem {
   name: string
@@ -15,38 +16,57 @@ export interface QuickLink {
   icon: Component
 }
 
+/**
+ * 从 package.json 版本号中提取主版本号
+ * 例如: "^3.5.26" -> "3.5", "~5.9.3" -> "5.9", "npm:rolldown-vite@^7.3.1" -> "7.3"
+ */
+export function extractVersion(version: string | undefined): string {
+  if (!version?.trim()) return 'N/A'
+
+  // 处理 npm: 前缀的特殊情况 (如 vite)
+  const cleanVersion = version.includes('@') ? version.split('@')[1] : version
+  if (!cleanVersion) return 'N/A'
+
+  // 移除 ^, ~, >= 等前缀
+  const versionNumber = cleanVersion.replace(/^[^\d]+/, '')
+  // 提取主版本号和次版本号
+  const parts = versionNumber.split('.')
+  return parts.length >= 2 ? `${parts[0]}.${parts[1]}` : parts[0] || 'N/A'
+}
+
 export function useAboutData() {
   const { t } = useI18n()
+  const { dependencies: deps, devDependencies: devDeps } = packageJson
 
   const techStack = computed<TechItem[]>(() => [
     {
       name: 'Vue',
-      version: '3.5',
+      version: extractVersion(deps.vue),
       description: t('about.techStack.vue'),
     },
     {
       name: 'TypeScript',
-      version: '5.9',
+      version: extractVersion(devDeps.typescript),
       description: t('about.techStack.typescript'),
     },
     {
       name: 'Vite',
-      version: '7.0',
+      version: extractVersion(devDeps.vite),
       description: t('about.techStack.vite'),
     },
     {
       name: 'Pinia',
-      version: '3.0',
+      version: extractVersion(deps.pinia),
       description: t('about.techStack.pinia'),
     },
     {
       name: 'Vue Router',
-      version: '4.6',
+      version: extractVersion(deps['vue-router']),
       description: t('about.techStack.router'),
     },
     {
       name: 'Vue I18n',
-      version: '11.2',
+      version: extractVersion(deps['vue-i18n']),
       description: t('about.techStack.i18n'),
     },
   ])
@@ -56,7 +76,7 @@ export function useAboutData() {
       name: 'GitHub',
       description: t('about.links.github'),
       url: 'https://github.com/domidoremi/hmrchan-frontend',
-      icon: Github,
+      icon: GithubIcon,
     },
     {
       name: t('about.links.readme'),
