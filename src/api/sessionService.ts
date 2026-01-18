@@ -89,7 +89,10 @@ export const sessionService = {
    * 更新设备名称
    */
   async updateDeviceName(sessionId: string, deviceName: string): Promise<{ success: boolean }> {
-    return apiClient.put('/sessions/device-name', { session_id: sessionId, device_name: deviceName })
+    return apiClient.put('/sessions/device-name', {
+      session_id: sessionId,
+      device_name: deviceName,
+    })
   },
 }
 

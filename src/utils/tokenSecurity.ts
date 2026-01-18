@@ -69,7 +69,10 @@ export async function generateTokenIntegrity(token: string): Promise<string> {
 /**
  * 验证 Token 完整性
  */
-export async function verifyTokenIntegrity(token: string, storedIntegrity: string): Promise<boolean> {
+export async function verifyTokenIntegrity(
+  token: string,
+  storedIntegrity: string
+): Promise<boolean> {
   const fingerprint = await getDeviceFingerprint()
   const currentHour = Math.floor(Date.now() / 1000 / 3600)
 
