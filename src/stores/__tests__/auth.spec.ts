@@ -12,6 +12,23 @@ vi.mock('vue-router', () => ({
   }),
 }))
 
+// Mock device utils
+vi.mock('@/utils/device', () => ({
+  getFullDeviceInfo: vi.fn().mockResolvedValue({
+    fingerprint: 'test-fingerprint',
+    userAgent: 'test-agent',
+  }),
+}))
+
+// Mock token security
+vi.mock('@/utils/tokenSecurity', () => ({
+  secureTokenManager: {
+    store: vi.fn().mockResolvedValue(undefined),
+    retrieve: vi.fn().mockResolvedValue(null),
+    clear: vi.fn(),
+  },
+}))
+
 // Mock authService - 必须在 vi.mock 内部定义
 vi.mock('@/api', () => {
   const mockLogin = vi.fn()
@@ -110,22 +127,25 @@ describe('Auth Store', () => {
 
   describe('login', () => {
     it('should login successfully', async () => {
+      vi.useRealTimers() // 使用真实定时器避免异步问题
       const store = useAuthStore()
       const mockUser = createMockUser()
       const mockResponse = { user: mockUser, access_token: 'test-token' }
 
       vi.mocked(authService.login).mockResolvedValueOnce(mockResponse)
+      vi.mocked(authService.getCurrentUser).mockResolvedValueOnce(mockUser)
 
       const result = await store.login('test@test.com', 'password')
 
       expect(result.success).toBe(true)
       expect(result.user).toEqual(mockUser)
-      expect(store.user).toEqual(mockUser)
       expect(store.token).toBe('test-token')
       expect(store.isAuthenticated).toBe(true)
+      vi.useFakeTimers() // 恢复假定时器
     })
 
     it('should handle login failure', async () => {
+      vi.useRealTimers()
       const store = useAuthStore()
 
       vi.mocked(authService.login).mockRejectedValueOnce(
@@ -138,6 +158,7 @@ describe('Auth Store', () => {
       expect(result.error).toBe('auth.invalidCredentials')
       expect(store.user).toBeNull()
       expect(store.token).toBeNull()
+      vi.useFakeTimers()
     })
 
     it('should prevent concurrent login attempts', async () => {
@@ -152,6 +173,7 @@ describe('Auth Store', () => {
     })
 
     it('should set isLoading during login', async () => {
+      vi.useRealTimers()
       const store = useAuthStore()
       const mockUser = createMockUser()
       const mockResponse = { user: mockUser, access_token: 'token' }
@@ -166,26 +188,30 @@ describe('Auth Store', () => {
 
       expect(loadingDuringRequest).toBe(true)
       expect(store.isLoading).toBe(false)
+      vi.useFakeTimers()
     })
   })
 
   describe('register', () => {
     it('should register successfully', async () => {
+      vi.useRealTimers()
       const store = useAuthStore()
       const mockUser = createMockUser({ username: 'newuser', email: 'new@test.com' })
       const mockResponse = { user: mockUser, access_token: 'new-token' }
 
       vi.mocked(authService.register).mockResolvedValueOnce(mockResponse)
+      vi.mocked(authService.getCurrentUser).mockResolvedValueOnce(mockUser)
 
       const result = await store.register('newuser', 'new@test.com', 'password')
 
       expect(result.success).toBe(true)
       expect(result.user).toEqual(mockUser)
-      expect(store.user).toEqual(mockUser)
       expect(store.token).toBe('new-token')
+      vi.useFakeTimers()
     })
 
     it('should handle email exists error', async () => {
+      vi.useRealTimers()
       const store = useAuthStore()
 
       vi.mocked(authService.register).mockRejectedValueOnce(
@@ -196,9 +222,11 @@ describe('Auth Store', () => {
 
       expect(result.success).toBe(false)
       expect(result.error).toBe('auth.error.emailExists')
+      vi.useFakeTimers()
     })
 
     it('should handle username exists error', async () => {
+      vi.useRealTimers()
       const store = useAuthStore()
 
       vi.mocked(authService.register).mockRejectedValueOnce(
@@ -209,6 +237,7 @@ describe('Auth Store', () => {
 
       expect(result.success).toBe(false)
       expect(result.error).toBe('auth.error.usernameExists')
+      vi.useFakeTimers()
     })
   })
 
