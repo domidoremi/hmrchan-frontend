@@ -6,16 +6,18 @@
 import { createI18n } from 'vue-i18n'
 import en from './locales/en.json'
 import zhCN from './locales/zh-CN.json'
+import zhTW from './locales/zh-TW.json'
 import ja from './locales/ja.json'
 
-export type SupportedLocale = 'en' | 'zh-CN' | 'ja'
+export type SupportedLocale = 'en' | 'zh-CN' | 'zh-TW' | 'ja'
 
 // 获取用户首选语言
 function getDefaultLocale(): SupportedLocale {
   const saved = localStorage.getItem('locale') as SupportedLocale | null
-  if (saved && ['en', 'zh-CN', 'ja'].includes(saved)) return saved
+  if (saved && ['en', 'zh-CN', 'zh-TW', 'ja'].includes(saved)) return saved
 
   const browserLang = navigator.language
+  if (browserLang === 'zh-TW' || browserLang === 'zh-HK') return 'zh-TW'
   if (browserLang.startsWith('zh')) return 'zh-CN'
   if (browserLang.startsWith('ja')) return 'ja'
   return 'en'
@@ -31,6 +33,7 @@ const i18n = createI18n({
   messages: {
     en,
     'zh-CN': zhCN,
+    'zh-TW': zhTW,
     ja,
   },
 })

@@ -1,0 +1,518 @@
+{
+  "app": {
+    "name": "MomiChan"
+  },
+  "nav": {
+    "home": "首頁",
+    "explore": "探索",
+    "favorites": "收藏",
+    "authors": "作者",
+    "community": "社群",
+    "about": "關於",
+    "contact": "聯絡我們",
+    "settings": "設定",
+    "login": "登入",
+    "logout": "登出",
+    "register": "註冊",
+    "profile": "個人中心",
+    "postDetail": "貼文詳情",
+    "authorDetail": "作者詳情",
+    "profileSettings": "個人資料設定",
+    "search": "搜尋"
+  },
+  "common": {
+    "skipToContent": "跳转到內容",
+    "loading": "載入中...",
+    "loadingMore": "正在載入更多...",
+    "error": "发生錯誤",
+    "retry": "重試",
+    "cancel": "取消",
+    "confirm": "確認",
+    "save": "儲存",
+    "delete": "刪除",
+    "edit": "編輯",
+    "back": "返回",
+    "next": "下一步",
+    "previous": "上一步",
+    "search": "搜尋",
+    "noResults": "暫無結果",
+    "notFound": "未找到",
+    "showing": "已載入 {count} / {total} 項",
+    "loadMore": "載入更多",
+    "noMoreItems": "已載入全部內容",
+    "viewMore": "檢視更多",
+    "showLess": "收起",
+    "learnMore": "瞭解更多",
+    "backToTop": "回到顶部",
+    "justNow": "刚刚",
+    "minutesAgo": "{n} 分钟前",
+    "hoursAgo": "{n} 小时前",
+    "daysAgo": "{n} 天前",
+    "today": "今天",
+    "yesterday": "昨天",
+    "more": "更多",
+    "show": "顯示",
+    "hide": "隐藏",
+    "close": "關閉",
+    "clickToEnlarge": "點選檢視大图",
+    "imageViewer": "圖片檢視器",
+    "zoomIn": "放大",
+    "zoomOut": "縮小",
+    "resetZoom": "重置缩放",
+    "remove": "移除"
+  },
+  "auth": {
+    "email": "電子郵件",
+    "usernameOrEmail": "使用者名或電子郵件",
+    "usernameOrEmailPlaceholder": "請輸入使用者名或電子郵件",
+    "password": "密碼",
+    "confirmPassword": "確認密碼",
+    "username": "使用者名",
+    "loginTitle": "歡迎回來",
+    "loginSubtitle": "登入以繼續",
+    "registerTitle": "建立帳戶",
+    "registerSubtitle": "加入我們的社群",
+    "forgotPassword": "忘记密碼？",
+    "noAccount": "還沒有帳戶？",
+    "hasAccount": "已有帳戶？",
+    "loginButton": "登入",
+    "registerButton": "建立帳戶",
+    "loginSuccess": "登入成功",
+    "registerSuccess": "註冊成功",
+    "logoutSuccess": "已登出登入",
+    "invalidCredentials": "電子郵件或密碼錯誤",
+    "emailRequired": "請輸入電子郵件",
+    "passwordRequired": "請輸入密碼",
+    "passwordMismatch": "兩次輸入的密碼不一致",
+    "error": {
+      "fieldsRequired": "請填写所有欄位",
+      "passwordTooShort": "密碼至少需要6個字元",
+      "loginFailed": "登入失敗，請重試",
+      "registerFailed": "註冊失敗，請重試",
+      "emailExists": "該電子郵件已被註冊",
+      "usernameExists": "該使用者名已被使用",
+      "validationError": "請檢查輸入內容",
+      "tooManyRequests": "請求過於頻繁，請稍後再试",
+      "inProgress": "請稍候...",
+      "turnstileRequired": "請完成人机驗證",
+      "turnstileFailed": "人机驗證失敗，請重試",
+      "unknown": "发生未知錯誤"
+    }
+  },
+  "settings": {
+    "title": "設定",
+    "theme": "主題",
+    "light": "浅色",
+    "dark": "深色",
+    "auto": "跟隨系統",
+    "language": "語言",
+    "display": "顯示",
+    "toggleHeroSection": "顯示首頁橫幅",
+    "heroSectionDesc": "在首頁顯示橫幅區域",
+    "toggleAnimations": "啟用動畫",
+    "animationsDesc": "啟用平滑過渡和動畫效果",
+    "reducedMotionNotice": "您的系統已啟用減少動畫設定，無论此選項如何，動畫都將被最小化。",
+    "toggleSwipeNavigation": "滑動導航",
+    "openAdvanced": "進階設定",
+    "animationIntensity": "動效強度",
+    "animationIntensityDesc": "控制動畫的速度和数量",
+    "animationNone": "無動效",
+    "animationReduced": "減弱",
+    "animationNormal": "正常",
+    "animationFull": "完整",
+    "cache": {
+      "title": "快取管理",
+      "description": "清除快取資料以釋放空間",
+      "clear": "清除快取"
+    }
+  },
+  "home": {
+    "hero": {
+      "title": "發現精彩內容",
+      "subtitle": "探索來自優秀創作者的精選作品",
+      "badge": "發現精彩內容",
+      "highlights": {
+        "multilingual": {
+          "title": "多語言介面",
+          "desc": "隨時切換中文、English 與日语。"
+        },
+        "motion": {
+          "title": "動效無障礙",
+          "desc": "動效隨設定與系統“減少动态效果”自動調整。"
+        },
+        "performance": {
+          "title": "極速與快取",
+          "desc": "內建快取與效能最佳化，瀏覽更順暢。"
+        }
+      }
+    },
+    "quickStart": {
+      "title": "快速開始",
+      "subtitle": "从探索開始，按關鍵詞搜尋，發現創作者，并收藏你喜歡的內容。"
+    },
+    "bento": {
+      "featureTitle": "幾秒開啟探索",
+      "featureSubtitle": "瀏覽最新內容、發現創作者，打造你的專屬收藏。",
+      "searchMeta": "支援關鍵詞、標籤、作者",
+      "communityMeta": "檢視公告與討論",
+      "authorsMeta": "按平台與热度發現創作者",
+      "favoritesMeta": "收藏內容，隨時回看",
+      "favoritesMetaGuest": "登入後開始收藏"
+    },
+    "latest": "最新發布",
+    "popular": "熱門推薦"
+  },
+  "explore": {
+    "title": "探索",
+    "allPlatforms": "全部",
+    "searchPlaceholder": "搜尋貼文、作者、標籤...",
+    "filters": "篩選",
+    "sortBy": "排序",
+    "platformFilter": "按平台篩選",
+    "newest": "最新",
+    "popular": "最熱門",
+    "trending": "趨勢"
+  },
+  "search": {
+    "title": "搜尋",
+    "placeholder": "搜尋貼文、作者、標籤...",
+    "emptyTitle": "搜尋內容",
+    "emptyHint": "查找貼文、作者等內容",
+    "resultsFor": "搜尋結果：",
+    "noResults": "未找到 \"{query}\" 相關結果",
+    "noAuthors": "未找到 \"{query}\" 相關作者",
+    "history": "搜尋歷史",
+    "clearHistory": "清除歷史",
+    "suggestions": "搜尋建議",
+    "startTyping": "開始輸入以搜尋",
+    "tips": {
+      "title": "搜尋技巧",
+      "keyword": "使用關鍵詞搜尋貼文內容",
+      "author": "輸入作者名稱查找創作者",
+      "platform": "使用平台篩選縮小範圍"
+    },
+    "tab": {
+      "posts": "貼文",
+      "authors": "作者"
+    },
+    "sort": {
+      "relevance": "相關性",
+      "date": "日期",
+      "views": "瀏覽量",
+      "ascending": "升序",
+      "descending": "降序"
+    },
+    "loginForMore": "登入以檢視更多結果",
+    "type": {
+      "post": "貼文",
+      "author": "作者",
+      "tag": "標籤"
+    }
+  },
+  "post": {
+    "by": "作者",
+    "views": "瀏覽",
+    "likes": "喜歡",
+    "share": "分享",
+    "favorite": "收藏",
+    "unfavorite": "取消收藏",
+    "favoriteServerError": "更新收藏失敗",
+    "relatedPosts": "相關推薦"
+  },
+  "author": {
+    "postCount": "{count} 個作品"
+  },
+  "error": {
+    "notFound": "頁面未找到",
+    "notFoundMessage": "您訪問的頁面不存在",
+    "goHome": "返回首頁",
+    "serverError": "伺服器錯誤",
+    "networkError": "網路錯誤",
+    "timeout": "請求逾時",
+    "tryAgain": "請稍後重試",
+    "badRequest": "請求錯誤",
+    "unauthorized": "未授权",
+    "forbidden": "禁止訪問",
+    "conflict": "衝突",
+    "validationError": "參數驗證錯誤",
+    "tooManyRequests": "請求過於頻繁",
+    "tooManyRequestsWithTime": "請求過於頻繁，請 {seconds} 秒後重試",
+    "badGateway": "閘道錯誤",
+    "serviceUnavailable": "服务不可用",
+    "componentError": "出了点問題",
+    "technicalDetails": "技術詳情"
+  },
+  "comment": {
+    "title": "評論",
+    "placeholder": "分享你的想法...",
+    "replyPlaceholder": "回覆 {username}...",
+    "submit": "發布",
+    "reply": "回覆",
+    "share": "分享",
+    "report": "檢舉",
+    "empty": "暫無評論",
+    "beFirst": "來發表第一條評論吧！",
+    "loginRequired": "請登入後評論",
+    "submitSuccess": "評論發布成功",
+    "deleteSuccess": "評論已刪除",
+    "favoriteSuccess": "評論已收藏",
+    "shareSuccess": "連結已複製到剪貼簿",
+    "reportSubmitted": "檢舉已提交，感謝回饋",
+    "confirmDelete": "確定要刪除這條評論嗎？",
+    "confirmDeleteTitle": "刪除評論",
+    "confirmDeleteMessage": "確定要刪除這條評論嗎？此操作不可撤銷。",
+    "showReplies": "檢視 {count} 條回覆",
+    "threadOwner": "層主",
+    "replyingTo": "回覆",
+    "sort": {
+      "newest": "最新",
+      "oldest": "最早",
+      "popular": "熱門"
+    },
+    "validation": {
+      "required": "評論內容不能為空",
+      "tooShort": "評論內容太短",
+      "tooLong": "評論內容太长（最多2000字）",
+      "spam": "您的評論疑似垃圾內容",
+      "invalid": "評論內容無效"
+    },
+    "error": {
+      "fetchFailed": "載入評論失敗",
+      "addFailed": "發布評論失敗",
+      "deleteFailed": "刪除評論失敗",
+      "likeFailed": "按讚失敗",
+      "unlikeFailed": "取消按讚失敗",
+      "favoriteFailed": "收藏失敗",
+      "unfavoriteFailed": "取消收藏失敗",
+      "reportFailed": "檢舉失敗",
+      "unauthorized": "請先登入",
+      "rateLimited": "評論過於頻繁",
+      "rateLimitedWithTime": "請等待 {seconds} 秒後再評論"
+    },
+    "image": {
+      "invalidFormat": "圖片格式無效，支援: jpg, jpeg, png, webp, gif",
+      "fileTooLarge": "圖片檔案過大（最大10MB）",
+      "tooManyImages": "每條評論最多9張圖片",
+      "totalSizeTooLarge": "圖片總大小過大（最大50MB）"
+    }
+  },
+  "community": {
+    "title": "社群",
+    "subtitle": "加入討論",
+    "recentDiscussions": "最新討論",
+    "hotTopics": "熱門話題",
+    "noHotTopics": "暫無熱門話題",
+    "myComments": "我的評論",
+    "savedComments": "收藏的評論",
+    "newDiscussion": "發起討論",
+    "discussionTitle": "討論標題",
+    "discussionPlaceholder": "分享你的想法...",
+    "addTags": "新增標籤（按 Enter確認）",
+    "mentionHint": "使用 {'@'} 引用貼文，# 新增標籤",
+    "publish": "發布",
+    "publishSuccess": "討論發布成功",
+    "publishFailed": "發布失敗，請重試",
+    "loginToPost": "登入後發起討論",
+    "pinned": "置頂",
+    "pin": "置頂討論",
+    "unpin": "取消置頂",
+    "referencedPost": "引用貼文"
+  },
+  "contact": {
+    "title": "聯絡我們",
+    "subtitle": "我們期待您的來信",
+    "name": "您的姓名",
+    "email": "您的電子郵件",
+    "subject": "主題",
+    "message": "留言內容",
+    "send": "傳送",
+    "sending": "傳送中...",
+    "success": "訊息傳送成功！",
+    "error": "傳送失敗"
+  },
+  "profile": {
+    "settings": "個人設定",
+    "avatar": "頭像",
+    "uploadAvatar": "上传頭像",
+    "avatarUpdated": "頭像更新成功",
+    "basicInfo": "基本資訊",
+    "username": "使用者名",
+    "usernamePlaceholder": "輸入使用者名",
+    "usernameHint": "只能包含字母、數字和底線",
+    "usernameReadonly": "使用者名不可修改",
+    "usernameChangeLimit": "您可以在 {days} 天後更改使用者名",
+    "fullName": "顯示名稱",
+    "fullNamePlaceholder": "輸入顯示名稱",
+    "displayNameHint": "此名稱將公開顯示",
+    "bio": "個人簡介",
+    "bioPlaceholder": "介紹一下自己",
+    "changePassword": "修改密碼",
+    "currentPassword": "目前密碼",
+    "newPassword": "新密碼",
+    "confirmPassword": "確認新密碼",
+    "updateSuccess": "個人資料更新成功",
+    "passwordChanged": "密碼修改成功",
+    "passwordMismatch": "兩次輸入的密碼不一致",
+    "passwordTooShort": "密碼至少需要8個字元",
+    "cropAvatar": "裁剪頭像",
+    "circleShape": "圓形",
+    "squareShape": "方形",
+    "tabs": {
+      "favorites": "我的收藏",
+      "comments": "評論記錄",
+      "likes": "按讚記錄",
+      "history": "瀏覽歷史",
+      "notifications": "訊息通知",
+      "devices": "裝置管理"
+    },
+    "noComments": "暫無評論記錄",
+    "noLikes": "暫無按讚記錄",
+    "noHistory": "暫無瀏覽歷史",
+    "noNotifications": "暫無新訊息",
+    "commentOn": "評論了",
+    "likedOn": "按讚了",
+    "today": "今天",
+    "yesterday": "昨天",
+    "clearHistory": "清空歷史",
+    "confirmClearHistory": "確定要清空所有瀏覽歷史嗎？",
+    "confirmClearHistoryTitle": "清空瀏覽歷史",
+    "historyCleared": "歷史記錄已清空",
+    "markAsRead": "標記為已读",
+    "markAllRead": "全部標記為已读",
+    "allMarkedRead": "所有訊息已標記為已读",
+    "unlike": "取消按讚",
+    "unlikeSuccess": "已取消按讚",
+    "confirmUnlike": "取消按讚",
+    "confirmUnlikeMessage": "確定要取消對這條評論的按讚嗎？"
+  },
+  "user": {
+    "username": {
+      "tooShort": "使用者名至少需要3個字元",
+      "tooLong": "使用者名最多30個字元",
+      "invalidFormat": "使用者名只能包含字母、數字和底線"
+    }
+  },
+  "favorites": {
+    "loginRequired": "請登入以檢視您的收藏",
+    "totalCount": "共 {count} 個收藏",
+    "empty": "您還沒有收藏任何內容",
+    "unknownPost": "未知貼文",
+    "remove": "取消收藏",
+    "removed": "已取消收藏"
+  },
+  "footer": {
+    "desc": "發現來自優秀創作者的精彩內容，探索無限可能。",
+    "rights": "保留所有權利。",
+    "cta": {
+      "title1": "準備好了嗎？",
+      "title2": "開始探索吧！",
+      "desc": "發現精彩內容，關注喜愛的創作者，打造你的專屬收藏。",
+      "join": "加入我們",
+      "feature1": "極速瀏覽體驗",
+      "feature2": "多語言支援",
+      "feature3": "收藏喜愛內容"
+    },
+    "nav": {
+      "explore": "探索",
+      "support": "支援"
+    }
+  },
+  "stats": {
+    "title": {
+      "prefix": "關於 ",
+      "highlight": "Himeri",
+      "suffix": ""
+    },
+    "subtitle": "聚合 TikTok、YouTube、Instagram、X 四大平台內容，一站式瀏覽。",
+    "tiktok": "TikTok 影片同步",
+    "youtube": "YouTube 內容追蹤",
+    "instagram": "Instagram 貼文收錄",
+    "twitter": "X 貼文歸檔"
+  },
+  "devices": {
+    "title": "活躍裝置",
+    "description": "管理可以訪問您帳戶的裝置",
+    "currentDevice": "目前裝置",
+    "trusted": "已信任",
+    "trust": "信任裝置",
+    "untrust": "取消信任",
+    "revoke": "登出登入",
+    "revokeAll": "登出所有其他裝置",
+    "lastActive": "最後活躍",
+    "namePlaceholder": "輸入裝置名稱",
+    "ipChangeWarning": "IP 位址已更改 {count} 次",
+    "time": {
+      "justNow": "刚刚",
+      "minutesAgo": "{count} 分钟前",
+      "hoursAgo": "{count} 小时前",
+      "daysAgo": "{count} 天前"
+    },
+    "confirm": {
+      "revoke": "確定要登出此裝置的登入嗎？",
+      "revokeAll": "確定要登出所有其他裝置的登入嗎？"
+    },
+    "success": {
+      "revoked": "裝置已登出登入",
+      "revokedAll": "所有其他裝置已登出登入",
+      "trusted": "裝置已信任",
+      "untrusted": "裝置已取消信任",
+      "nameUpdated": "裝置名稱已更新"
+    },
+    "error": {
+      "fetchFailed": "載入裝置列表失敗",
+      "revokeFailed": "登出裝置登入失敗",
+      "revokeAllFailed": "登出所有裝置登入失敗",
+      "trustFailed": "更新裝置信任狀態失敗",
+      "updateNameFailed": "更新裝置名稱失敗",
+      "emptyName": "裝置名稱不能為空"
+    }
+  },
+  "about": {
+    "title": "關於",
+    "subtitle": "瞭解 MomiChan Frontend 專案",
+    "introduction": {
+      "title": "前端介紹",
+      "description": "MomiChan Frontend 是一個現代化的圖片/影片內容社群应用，基於 Vue 3 生态系統建構，提供流暢的使用者體驗和優雅的介面设计。",
+      "features": {
+        "performance": "高效能",
+        "performanceDesc": "基於 Vite 7 建構，支援程式碼分割和懒載入，實現快速的頁面載入",
+        "design": "精美设计",
+        "designDesc": "採用 Glass Morphism 设计風格，支援明暗主題切換，带來沉浸式體驗",
+        "i18n": "多語言",
+        "i18nDesc": "內建中文、英文、日文支援，輕鬆切換語言",
+        "security": "安全可靠",
+        "securityDesc": "JWT 認證機制，自動重新整理權杖，保護使用者資料安全"
+      }
+    },
+    "projectInfo": {
+      "title": "專案資訊",
+      "name": "專案名稱",
+      "version": "版本",
+      "buildTime": "建構时间",
+      "status": "狀態",
+      "active": "執行中"
+    },
+    "techStack": {
+      "title": "技術栈",
+      "vue": "漸進式 JavaScript 框架",
+      "typescript": "型別安全的 JavaScript 超集",
+      "vite": "下一代前端建構工具",
+      "pinia": "輕量級狀態管理",
+      "router": "官方路由解決方案",
+      "i18n": "國際化支援"
+    },
+    "links": {
+      "title": "快速連結",
+      "github": "檢視源程式碼",
+      "readme": "專案文件",
+      "readmeDesc": "快速開始和使用指南",
+      "docs": "詳細文件",
+      "docsDesc": "專案架構和技術細節"
+    },
+    "footer": {
+      "madeWith": "用",
+      "by": "製作，作者",
+      "rights": "保留所有權利"
+    }
+  }
+}
