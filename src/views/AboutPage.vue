@@ -22,29 +22,9 @@
           </div>
 
           <div class="profile-grid">
-            <div class="profile-item">
-              <Cake :size="18" class="profile-icon" />
-              <span>{{ $t('about.origin.profile.birthday') }}</span>
-            </div>
-            <div class="profile-item">
-              <User :size="18" class="profile-icon" />
-              <span>{{ $t('about.origin.profile.age') }}</span>
-            </div>
-            <div class="profile-item">
-              <Users :size="18" class="profile-icon" />
-              <span>{{ $t('about.origin.profile.group') }}</span>
-            </div>
-            <div class="profile-item">
-              <Star :size="18" class="profile-icon" />
-              <span>{{ $t('about.origin.profile.position') }}</span>
-            </div>
-            <div class="profile-item">
-              <Smile :size="18" class="profile-icon" />
-              <span>{{ $t('about.origin.profile.nickname') }}</span>
-            </div>
-            <div class="profile-item">
-              <Ruler :size="18" class="profile-icon" />
-              <span>{{ $t('about.origin.profile.height') }}</span>
+            <div v-for="item in profileItems" :key="item.label" class="profile-item">
+              <component :is="item.icon" :size="18" class="profile-icon" />
+              <span>{{ item.label }}</span>
             </div>
           </div>
 
@@ -165,6 +145,16 @@ import {
 import { useAboutData } from '@/composables/useAboutData'
 
 const { locale, t } = useI18n()
+
+// Profile items configuration
+const profileItems = computed(() => [
+  { icon: Cake, label: t('about.origin.profile.birthday') },
+  { icon: User, label: t('about.origin.profile.age') },
+  { icon: Users, label: t('about.origin.profile.group') },
+  { icon: Star, label: t('about.origin.profile.position') },
+  { icon: Smile, label: t('about.origin.profile.nickname') },
+  { icon: Ruler, label: t('about.origin.profile.height') },
+])
 
 // Build hash - should be injected at build time, fallback to 'dev' for development
 const buildHash = typeof __BUILD_HASH__ !== 'undefined' ? __BUILD_HASH__ : 'dev'
