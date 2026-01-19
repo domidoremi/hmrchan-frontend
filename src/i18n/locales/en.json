@@ -477,13 +477,19 @@
       "profile": {
         "birthday": "Birthday: March 22, 2004",
         "age": "21 years old",
+        "bloodType": "Blood Type: B",
+        "zodiac": "Zodiac: Aries",
+        "height": "Height: 158cm",
+        "birthplace": "Birthplace: Tochigi Prefecture",
         "group": "Takane no Nadeshiko",
         "position": "Captain · Blue Member",
-        "nickname": "Momi-chan, Himerin",
-        "height": "Height: 158cm"
+        "nickname": "Hime-chan, Himerin",
+        "hobbies": "Hobbies: Video editing, Fashion, Music, Drinking café latte",
+        "skills": "Skills: Choreography, Roller skating"
       },
-      "career": "Momiyama Himeri is the captain of the Japanese idol group \"Takane no Nadeshiko\". She was a 1st generation member of Last Idol and is beloved by fans for her signature twin-tail hairstyle and cheerful personality.",
-      "platforms": "She is active on multiple social platforms including TikTok, Instagram, X (Twitter), and YouTube, sharing her daily life and performance activities with fans.",
+      "career": "Momiyama Himeri is the captain of the Japanese idol group \"Takane no Nadeshiko\". She began her idol career in 2014 as an early member of the local Tochigi idol group \"Watarase Bridge 43\", later joined the roller skating idol group \"Spindle\", and became a member of \"Last Idol\" Someday Somewhere unit in 2017. She joined \"Takane no Nadeshiko\" in 2022 and has been serving as captain since then.",
+      "personality": "She is beloved by fans for her signature twin-tail hairstyle, cheerful personality, and excellent choreography skills. As a choreographer, she not only creates dances for her own group but also showcases her unique talent in roller skating performances.",
+      "platforms": "She is active on multiple social platforms including TikTok, Instagram, X (Twitter), and YouTube, sharing her daily life, performance activities, and creative content with fans.",
       "purpose": "MomiChan aggregates content scattered across these platforms, making it easier for fans to keep up with her latest updates."
     },
     "features": {

@@ -477,13 +477,19 @@
       "profile": {
         "birthday": "生日：2004年3月22日",
         "age": "21歲",
+        "bloodType": "血液型：B型",
+        "zodiac": "星座：白羊座",
+        "height": "身高：158cm",
+        "birthplace": "出身地：栃木縣",
         "group": "高嶺のなでしこ",
         "position": "隊長 · 藍色擔當",
-        "nickname": "もみちゃん（Momi-chan）、ひめりん（Himerin）",
-        "height": "身高：158cm"
+        "nickname": "ひめちゃん、ひめりん",
+        "hobbies": "興趣：影片編輯、時尚、音樂、喝咖啡拿鐵",
+        "skills": "特技：編舞（Choreography）、輪滑"
       },
-      "career": "籾山 ひめり 是日本偶像組合「高嶺のなでしこ」的隊長。她曾是 Last Idol 的一期生成員，以其標誌性的雙馬尾髮型和活潑可愛的性格深受粉絲喜愛。",
-      "platforms": "她活躍在多個社交平台，包括 TikTok、Instagram、X（Twitter）和 YouTube，與粉絲分享日常生活和演出活動。",
+      "career": "籾山 ひめり 是日本偶像組合「高嶺のなでしこ」的隊長。她從 2014 年開始偶像活動，曾是栃木縣足利市本地偶像組合「渡良瀬橋43」的初期成員，後加入輪滑偶像組合「Spindle」，2017 年成為「Last Idol」Someday Somewhere 小隊成員。2022 年加入「高嶺のなでしこ」並擔任隊長至今。",
+      "personality": "她以標誌性的雙馬尾髮型、活潑開朗的性格和出色的舞蹈編排能力深受粉絲喜愛。作為振付師，她不僅為自己的組合編舞，還展現了在輪滑表演方面的獨特才能。",
+      "platforms": "她活躍在 TikTok、Instagram、X（Twitter）、YouTube 等多個社交平台，與粉絲分享日常生活、演出活動和創作內容。",
       "purpose": "MomiChan 將這些分散在各個平台的內容聚合在一起，讓粉絲可以更方便地追蹤她的最新動態。"
     },
     "features": {
