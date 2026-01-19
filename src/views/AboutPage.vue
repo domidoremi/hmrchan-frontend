@@ -7,61 +7,45 @@
         <p class="page-subtitle">{{ $t('about.subtitle') }}</p>
       </header>
 
-      <!-- 前端介绍 -->
+      <!-- 网站起源 -->
+      <section class="section">
+        <div class="section-header">
+          <Heart :size="24" class="section-icon" />
+          <h2 class="section-title">{{ $t('about.origin.title') }}</h2>
+        </div>
+        <div class="origin-content glass-card">
+          <div class="himeri-name">
+            <span class="himeri-jp">{{ $t('about.origin.himeri') }}</span>
+            <span class="himeri-romaji">{{ $t('about.origin.himeriRomaji') }}</span>
+          </div>
+          <p class="origin-text">{{ $t('about.origin.story') }}</p>
+          <p class="origin-text">{{ $t('about.origin.purpose') }}</p>
+          <p class="origin-text highlight">{{ $t('about.origin.vision') }}</p>
+        </div>
+      </section>
+
+      <!-- 核心功能 -->
       <section class="section">
         <div class="section-header">
           <Sparkles :size="24" class="section-icon" />
-          <h2 class="section-title">{{ $t('about.introduction.title') }}</h2>
+          <h2 class="section-title">{{ $t('about.features.title') }}</h2>
         </div>
-        <div class="intro-content glass-card">
-          <p class="intro-text">{{ $t('about.introduction.description') }}</p>
-          <div class="features-grid">
-            <div v-for="feature in features" :key="feature.title" class="feature-item">
-              <component :is="feature.icon" :size="20" class="feature-icon" />
-              <div class="feature-content">
-                <div class="feature-title">{{ feature.title }}</div>
-                <div class="feature-description">{{ feature.description }}</div>
-              </div>
-            </div>
+        <div class="features-grid">
+          <div v-for="feature in features" :key="feature.title" class="feature-card glass-card">
+            <component :is="feature.icon" :size="32" class="feature-icon" />
+            <div class="feature-title">{{ feature.title }}</div>
+            <div class="feature-description">{{ feature.description }}</div>
           </div>
         </div>
       </section>
 
-      <!-- 项目信息 -->
-      <section class="section">
-        <div class="section-header">
-          <Info :size="24" class="section-icon" />
-          <h2 class="section-title">{{ $t('about.projectInfo.title') }}</h2>
-        </div>
-        <div class="info-grid">
-          <div class="info-card glass-card">
-            <div class="info-label">{{ $t('about.projectInfo.name') }}</div>
-            <div class="info-value">MomiChan Frontend</div>
-          </div>
-          <div class="info-card glass-card">
-            <div class="info-label">{{ $t('about.projectInfo.version') }}</div>
-            <div class="info-value">{{ version }}</div>
-          </div>
-          <div class="info-card glass-card">
-            <div class="info-label">{{ $t('about.projectInfo.buildTime') }}</div>
-            <div class="info-value">{{ buildTime }}</div>
-          </div>
-          <div class="info-card glass-card">
-            <div class="info-label">{{ $t('about.projectInfo.status') }}</div>
-            <div class="info-value status-active">
-              <span class="status-dot"></span>
-              {{ $t('about.projectInfo.active') }}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- 技术栈 -->
+      <!-- 技术实现 -->
       <section class="section">
         <div class="section-header">
           <Code :size="24" class="section-icon" />
-          <h2 class="section-title">{{ $t('about.techStack.title') }}</h2>
+          <h2 class="section-title">{{ $t('about.tech.title') }}</h2>
         </div>
+        <p class="tech-intro">{{ $t('about.tech.description') }}</p>
         <div class="tech-grid">
           <a
             v-for="tech in techStack"
@@ -80,7 +64,30 @@
         </div>
       </section>
 
-      <!-- Quick Links section removed - repository is private -->
+      <!-- 项目信息 -->
+      <section class="section">
+        <div class="section-header">
+          <Info :size="24" class="section-icon" />
+          <h2 class="section-title">{{ $t('about.projectInfo.title') }}</h2>
+        </div>
+        <div class="info-grid">
+          <div class="info-card glass-card">
+            <div class="info-label">{{ $t('about.projectInfo.version') }}</div>
+            <div class="info-value">{{ version }}</div>
+          </div>
+          <div class="info-card glass-card">
+            <div class="info-label">{{ $t('about.projectInfo.buildTime') }}</div>
+            <div class="info-value">{{ buildTime }}</div>
+          </div>
+          <div class="info-card glass-card">
+            <div class="info-label">{{ $t('about.projectInfo.status') }}</div>
+            <div class="info-value status-active">
+              <span class="status-dot"></span>
+              {{ $t('about.projectInfo.active') }}
+            </div>
+          </div>
+        </div>
+      </section>
 
       <!-- 页脚信息 -->
       <footer class="about-footer">
@@ -98,6 +105,7 @@
           </a>
         </p>
         <p class="footer-copyright">© 2025 MomiChan. {{ $t('about.footer.rights') }}</p>
+        <p class="footer-disclaimer">{{ $t('about.footer.fanProject') }}</p>
       </footer>
     </div>
   </div>
@@ -108,7 +116,16 @@ defineOptions({ name: 'AboutPage' })
 
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Info, Code, Heart, Sparkles, Zap, Palette, Globe, Shield } from 'lucide-vue-next'
+import {
+  Info,
+  Code,
+  Heart,
+  Sparkles,
+  Layers,
+  Users,
+  Star,
+  Globe,
+} from 'lucide-vue-next'
 import { useAboutData } from '@/composables/useAboutData'
 import packageJson from '../../package.json'
 
@@ -128,27 +145,27 @@ const buildTime = computed(() => {
   })
 })
 
-// 前端特性
+// 核心功能
 const features = computed(() => [
   {
-    icon: Zap,
-    title: t('about.introduction.features.performance'),
-    description: t('about.introduction.features.performanceDesc'),
+    icon: Layers,
+    title: t('about.features.aggregation'),
+    description: t('about.features.aggregationDesc'),
   },
   {
-    icon: Palette,
-    title: t('about.introduction.features.design'),
-    description: t('about.introduction.features.designDesc'),
+    icon: Users,
+    title: t('about.features.community'),
+    description: t('about.features.communityDesc'),
+  },
+  {
+    icon: Star,
+    title: t('about.features.personalization'),
+    description: t('about.features.personalizationDesc'),
   },
   {
     icon: Globe,
-    title: t('about.introduction.features.i18n'),
-    description: t('about.introduction.features.i18nDesc'),
-  },
-  {
-    icon: Shield,
-    title: t('about.introduction.features.security'),
-    description: t('about.introduction.features.securityDesc'),
+    title: t('about.features.multilingual'),
+    description: t('about.features.multilinguralDesc'),
   },
 ])
 
@@ -216,104 +233,75 @@ const { techStack } = useAboutData()
   font-weight: var(--font-semibold);
 }
 
-/* 信息网格 */
-.info-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: var(--spacing-4);
-}
-
-.info-card {
-  padding: var(--spacing-4);
-}
-
-.info-label {
-  font-size: var(--text-sm);
-  color: var(--color-text-secondary);
-  margin-bottom: var(--spacing-1);
-}
-
-.info-value {
-  font-size: var(--text-lg);
-  font-weight: var(--font-semibold);
-  color: var(--color-text);
-}
-
-.commit-hash {
-  font-family: var(--font-mono);
-  font-size: var(--text-base);
-}
-
-.status-active {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-2);
-  color: var(--color-success);
-}
-
-.status-dot {
-  width: 8px;
-  height: 8px;
-  background: var(--color-success);
-  border-radius: 50%;
-  animation: pulse 2s ease-in-out infinite;
-}
-
-@keyframes pulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
-}
-
-/* 前端介绍 */
-.intro-content {
+/* 网站起源 */
+.origin-content {
   padding: var(--spacing-6);
 }
 
-.intro-text {
-  font-size: var(--text-lg);
-  line-height: var(--leading-relaxed);
-  color: var(--color-text-secondary);
-  margin-bottom: var(--spacing-6);
+.himeri-name {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  margin-bottom: var(--spacing-4);
+  padding-bottom: var(--spacing-4);
+  border-bottom: 2px solid var(--glass-border);
 }
 
+.himeri-jp {
+  font-size: var(--text-2xl);
+  font-weight: var(--font-bold);
+  color: var(--color-primary);
+}
+
+.himeri-romaji {
+  font-size: var(--text-lg);
+  color: var(--color-text-secondary);
+  font-style: italic;
+}
+
+.origin-text {
+  font-size: var(--text-base);
+  line-height: var(--leading-relaxed);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--spacing-4);
+}
+
+.origin-text.highlight {
+  color: var(--color-text);
+  font-weight: var(--font-medium);
+  padding: var(--spacing-3);
+  background: rgba(var(--color-primary-rgb), 0.05);
+  border-left: 3px solid var(--color-primary);
+  border-radius: var(--radius-md);
+}
+
+/* 核心功能 */
 .features-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: var(--spacing-4);
 }
 
-.feature-item {
-  display: flex;
-  gap: var(--spacing-3);
-  padding: var(--spacing-3);
-  border-radius: var(--radius-lg);
-  transition: background 0.2s ease;
+.feature-card {
+  padding: var(--spacing-5);
+  text-align: center;
+  transition: all 0.3s ease;
 }
 
-.feature-item:hover {
-  background: rgba(var(--color-primary-rgb), 0.05);
+.feature-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
 }
 
 .feature-icon {
-  flex-shrink: 0;
   color: var(--color-primary);
-  margin-top: 2px;
-}
-
-.feature-content {
-  flex: 1;
-  min-width: 0;
+  margin: 0 auto var(--spacing-3);
 }
 
 .feature-title {
-  font-size: var(--text-base);
+  font-size: var(--text-lg);
   font-weight: var(--font-semibold);
-  margin-bottom: var(--spacing-1);
+  margin-bottom: var(--spacing-2);
   color: var(--color-text);
 }
 
@@ -323,7 +311,14 @@ const { techStack } = useAboutData()
   line-height: var(--leading-relaxed);
 }
 
-/* 技术栈网格 */
+/* 技术实现 */
+.tech-intro {
+  font-size: var(--text-base);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--spacing-6);
+  line-height: var(--leading-relaxed);
+}
+
 .tech-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
@@ -399,52 +394,52 @@ const { techStack } = useAboutData()
   line-height: var(--leading-relaxed);
 }
 
-/* 快速链接 */
-.links-grid {
+/* 项目信息 */
+.info-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: var(--spacing-4);
 }
 
-.link-card {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-3);
+.info-card {
   padding: var(--spacing-4);
-  text-decoration: none;
-  color: inherit;
-  transition: all 0.2s ease;
 }
 
-.link-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
-}
-
-.link-icon {
-  flex-shrink: 0;
-  color: var(--color-primary);
-}
-
-.link-content {
-  flex: 1;
-  min-width: 0;
-}
-
-.link-name {
-  font-size: var(--text-base);
-  font-weight: var(--font-semibold);
+.info-label {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
   margin-bottom: var(--spacing-1);
 }
 
-.link-description {
-  font-size: var(--text-sm);
-  color: var(--color-text-secondary);
+.info-value {
+  font-size: var(--text-lg);
+  font-weight: var(--font-semibold);
+  color: var(--color-text);
 }
 
-.link-external {
-  flex-shrink: 0;
-  color: var(--color-text-tertiary);
+.status-active {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  color: var(--color-success);
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  background: var(--color-success);
+  border-radius: 50%;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 
 /* 页脚 */
@@ -484,15 +479,24 @@ const { techStack } = useAboutData()
   color: var(--color-primary);
   text-decoration: none;
   font-weight: var(--font-medium);
+  transition: color 0.2s ease;
 }
 
 .footer-link:hover {
+  color: var(--color-primary-hover);
   text-decoration: underline;
 }
 
 .footer-copyright {
   font-size: var(--text-sm);
   color: var(--color-text-tertiary);
+  margin-bottom: var(--spacing-1);
+}
+
+.footer-disclaimer {
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+  font-style: italic;
 }
 
 /* 响应式 */
@@ -501,35 +505,22 @@ const { techStack } = useAboutData()
     font-size: var(--text-2xl);
   }
 
-  .page-subtitle {
-    font-size: var(--text-base);
-  }
-
-  .section-title {
-    font-size: var(--text-xl);
-  }
-
-  .info-grid,
-  .tech-grid,
-  .links-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .intro-content {
-    padding: var(--spacing-4);
+  .himeri-name {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-2);
   }
 
   .features-grid {
     grid-template-columns: 1fr;
   }
 
-  .footer-text {
-    flex-wrap: wrap;
+  .tech-grid {
+    grid-template-columns: 1fr;
   }
-}
 
-/* 暗色主题 */
-[data-theme='dark'] .feature-item:hover {
-  background: rgba(var(--color-primary-rgb), 0.08);
+  .info-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

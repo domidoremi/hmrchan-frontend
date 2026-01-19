@@ -469,32 +469,31 @@
     }
   },
   "about": {
-    "title": "について",
-    "subtitle": "MomiChan Frontend について",
-    "introduction": {
-      "title": "フロントエンド紹介",
-      "description": "MomiChan Frontend は、Vue 3 エコシステムで構築された現代的な画像・動画コンテンツコミュニティアプリケーションで、スムーズなユーザー体験とエレガントなインターフェースデザインを提供します。",
-      "features": {
-        "performance": "高性能",
-        "performanceDesc": "Vite 7 で構築され、コード分割と遅延読み込みをサポートし、高速なページ読み込みを実現",
-        "design": "美しいデザイン",
-        "designDesc": "Glass Morphism デザインスタイルを採用し、ライト・ダークテーマに対応した没入型体験を提供",
-        "i18n": "多言語対応",
-        "i18nDesc": "中国語、英語、日本語を内蔵し、簡単に言語を切り替え可能",
-        "security": "安全で信頼性の高い",
-        "securityDesc": "JWT 認証と自動トークン更新でユーザーデータを保護"
-      }
+    "title": "MomiChan について",
+    "subtitle": "ファンのために作られたコンテンツ集約プラットフォーム",
+    "origin": {
+      "title": "サイトの起源",
+      "himeri": "籾山 ひめり",
+      "himeriRomaji": "Momiyama Himeri",
+      "story": "MomiChan は、日本のバーチャルアイドル「籾山 ひめり」（Momiyama Himeri）に由来しています。彼女のファンとして、最新の活動を追うには YouTube、Twitter、公式サイトなど、複数のプラットフォームを行き来する必要があり、とても煩雑で分散していました。",
+      "purpose": "そこで、すべての関連コンテンツを一箇所に集約するプラットフォーム、MomiChan を作りました。ここでは、ファンが Himeri に関するすべてのコンテンツを簡単に閲覧、ブックマーク、議論でき、複数のサイトを行き来する必要がありません。",
+      "vision": "これは単なるコンテンツ展示サイトではなく、ファンコミュニティです。MomiChan が、Himeri を愛するすべての人々が交流し、共有できる温かい場所になることを願っています。"
     },
-    "projectInfo": {
-      "title": "プロジェクト情報",
-      "name": "プロジェクト名",
-      "version": "バージョン",
-      "buildTime": "ビルド時刻",
-      "status": "ステータス",
-      "active": "稼働中"
+    "features": {
+      "title": "コア機能",
+      "aggregation": "コンテンツ集約",
+      "aggregationDesc": "複数のプラットフォームからコンテンツを統合し、シームレスな閲覧体験を提供",
+      "community": "ファンコミュニティ",
+      "communityDesc": "コメント、議論、共有で他のファンと交流",
+      "personalization": "パーソナライゼーション",
+      "personalizationDesc": "お気に入りのコンテンツをブックマークし、閲覧履歴を追跡",
+      "multilingual": "多言語対応",
+      "multilinguralDesc": "中国語、英語、日本語をサポートし、世界中のファンにサービスを提供"
     },
-    "techStack": {
-      "title": "技術スタック",
+    "tech": {
+      "title": "技術実装",
+      "description": "MomiChan は、スムーズなユーザー体験とエレガントなインターフェースデザインを確保するため、最新のフロントエンド技術スタックで構築されています。",
+      "stack": "技術スタック",
       "vue": "プログレッシブ JavaScript フレームワーク",
       "typescript": "型安全な JavaScript スーパーセット",
       "vite": "次世代フロントエンドツール",
@@ -504,18 +503,18 @@
       "gsap": "プロフェッショナルアニメーションライブラリ",
       "lucide": "美しいオープンソースアイコン"
     },
-    "links": {
-      "title": "クイックリンク",
-      "github": "ソースコードを表示",
-      "readme": "プロジェクトドキュメント",
-      "readmeDesc": "クイックスタートと使用ガイド",
-      "docs": "詳細ドキュメント",
-      "docsDesc": "プロジェクトアーキテクチャと技術詳細"
+    "projectInfo": {
+      "title": "プロジェクト情報",
+      "version": "バージョン",
+      "buildTime": "ビルド時刻",
+      "status": "ステータス",
+      "active": "稼働中"
     },
     "footer": {
       "madeWith": "で作成、作者",
       "by": "",
-      "rights": "すべての権利を保有"
+      "rights": "すべての権利を保有",
+      "fanProject": "これはファンプロジェクトであり、公式とは関係ありません"
     }
   }
 }
