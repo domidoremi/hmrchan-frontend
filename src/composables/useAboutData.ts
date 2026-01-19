@@ -6,6 +6,7 @@ export interface TechItem {
   name: string
   version: string
   description: string
+  url: string
 }
 
 // QuickLink interface removed - repository is private
@@ -37,41 +38,49 @@ export function useAboutData() {
       name: 'Vue',
       version: extractVersion(deps.vue),
       description: t('about.techStack.vue'),
+      url: 'https://vuejs.org',
     },
     {
       name: 'TypeScript',
       version: extractVersion(devDeps.typescript),
       description: t('about.techStack.typescript'),
+      url: 'https://www.typescriptlang.org',
     },
     {
       name: 'Vite',
       version: extractVersion(devDeps.vite),
       description: t('about.techStack.vite'),
+      url: 'https://vitejs.dev',
     },
     {
       name: 'Pinia',
       version: extractVersion(deps.pinia),
       description: t('about.techStack.pinia'),
+      url: 'https://pinia.vuejs.org',
     },
     {
       name: 'Vue Router',
       version: extractVersion(deps['vue-router']),
       description: t('about.techStack.router'),
+      url: 'https://router.vuejs.org',
     },
     {
       name: 'Vue I18n',
       version: extractVersion(deps['vue-i18n']),
       description: t('about.techStack.i18n'),
+      url: 'https://vue-i18n.intlify.dev',
     },
     {
       name: 'GSAP',
       version: extractVersion(deps.gsap),
       description: t('about.techStack.gsap'),
+      url: 'https://gsap.com',
     },
     {
       name: 'Lucide Icons',
       version: extractVersion(deps['lucide-vue-next']),
       description: t('about.techStack.lucide'),
+      url: 'https://lucide.dev',
     },
   ])
 
