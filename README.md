@@ -36,6 +36,7 @@
 - **Lucide Vue Next** - 现代化图标库
 - **GSAP 3.14** - 高性能动画引擎
 - **CSS Variables** - 主题系统与响应式设计
+- **3D 动画系统** - 平台感知的动态背景效果 (BluePolymorph)
 
 ### 国际化
 
@@ -217,11 +218,12 @@ frontend/
 │   ├── components/       # Vue 组件
 │   │   ├── business/     # 业务组件 (PostCard, SearchBar, etc.)
 │   │   ├── layout/       # 布局组件 (AppNavbar, AppFooter, etc.)
-│   │   └── ui/           # 通用 UI 组件 (Button, Input, etc.)
+│   │   └── ui/           # 通用 UI 组件 (Button, Input, BluePolymorph, etc.)
 │   │
 │   ├── composables/      # 组合式函数
 │   │   ├── useInfiniteScroll.ts
 │   │   ├── useMasonryColumns.ts
+│   │   ├── useBluePolymorph.ts  # 3D 动画系统
 │   │   └── useCardAnimation.ts
 │   │
 │   ├── i18n/             # 国际化配置
@@ -302,6 +304,7 @@ frontend/
 - **响应式设计** - 完美适配桌面和移动设备
 - **无障碍支持** - 支持 `prefers-reduced-motion` 等可访问性特性
 - **访客限制提示** - 未登录用户友好的内容限制提示和登录引导
+- **3D 动态背景** - 探索页面根据平台筛选展示不同形态的 3D 动画效果
 
 ### 性能特性
 
