@@ -25,6 +25,7 @@ interface ImportMeta {
 
 /** 编译时常量 */
 declare const __BUILD_TIME__: string
+declare const __BUILD_HASH__: string
 declare const __PROD__: boolean
 declare const __DEV__: boolean
 

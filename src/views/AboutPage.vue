@@ -72,8 +72,8 @@
         </div>
         <div class="info-grid">
           <div class="info-card glass-card">
-            <div class="info-label">{{ $t('about.projectInfo.version') }}</div>
-            <div class="info-value">{{ version }}</div>
+            <div class="info-label">{{ $t('about.projectInfo.buildHash') }}</div>
+            <div class="info-value commit-hash">{{ buildHash }}</div>
           </div>
           <div class="info-card glass-card">
             <div class="info-label">{{ $t('about.projectInfo.buildTime') }}</div>
@@ -127,12 +127,11 @@ import {
   Globe,
 } from 'lucide-vue-next'
 import { useAboutData } from '@/composables/useAboutData'
-import packageJson from '../../package.json'
 
 const { locale, t } = useI18n()
 
-// 项目版本从 package.json 读取
-const version = packageJson.version
+// Build hash - should be injected at build time, fallback to 'dev' for development
+const buildHash = typeof __BUILD_HASH__ !== 'undefined' ? __BUILD_HASH__ : 'dev'
 
 // Build time - should be injected at build time, fallback to current date for dev
 const buildTime = computed(() => {

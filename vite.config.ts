@@ -15,6 +15,7 @@
 import { fileURLToPath, URL } from 'node:url'
 import { copyFileSync, existsSync } from 'node:fs'
 import { resolve } from 'node:path'
+import { execSync } from 'node:child_process'
 import type { IncomingMessage } from 'node:http'
 
 import { defineConfig, type Plugin } from 'vite'
@@ -30,6 +31,17 @@ type DevProxyServer = {
 
 /** 构建时间戳，用于缓存破坏 */
 const BUILD_TIME = new Date().toISOString()
+
+/** 获取 Git commit hash */
+function getBuildHash(): string {
+  try {
+    return execSync('git rev-parse --short HEAD').toString().trim()
+  } catch {
+    return 'unknown'
+  }
+}
+
+const BUILD_HASH = getBuildHash()
 
 /**
  * Cloudflare Pages 配置文件复制插件
@@ -122,6 +134,8 @@ export default defineConfig(({ mode }) => {
     define: {
       /** 编译时间戳 */
       __BUILD_TIME__: JSON.stringify(BUILD_TIME),
+      /** Git commit hash */
+      __BUILD_HASH__: JSON.stringify(BUILD_HASH),
       /** 生产环境标识 */
       __PROD__: isProd,
       /** 开发环境标识 */

@@ -504,7 +504,7 @@
     },
     "projectInfo": {
       "title": "專案資訊",
-      "version": "版本",
+      "buildHash": "建構雜湊",
       "buildTime": "建構時間",
       "status": "狀態",
       "active": "執行中"

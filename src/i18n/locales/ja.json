@@ -505,7 +505,7 @@
     },
     "projectInfo": {
       "title": "プロジェクト情報",
-      "version": "バージョン",
+      "buildHash": "ビルドハッシュ",
       "buildTime": "ビルド時刻",
       "status": "ステータス",
       "active": "稼働中"
