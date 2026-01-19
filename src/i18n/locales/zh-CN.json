@@ -504,7 +504,7 @@
     },
     "projectInfo": {
       "title": "项目信息",
-      "version": "版本",
+      "buildHash": "构建哈希",
       "buildTime": "构建时间",
       "status": "状态",
       "active": "运行中"

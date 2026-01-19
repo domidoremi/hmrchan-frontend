@@ -504,7 +504,7 @@
     },
     "projectInfo": {
       "title": "Project Information",
-      "version": "Version",
+      "buildHash": "Build Hash",
       "buildTime": "Build Time",
       "status": "Status",
       "active": "Active"
