@@ -469,14 +469,22 @@
   },
   "about": {
     "title": "关于 MomiChan",
-    "subtitle": "一个为粉丝而生的内容聚合平台",
+    "subtitle": "籾山 ひめり 的内容聚合平台",
     "origin": {
-      "title": "网站起源",
+      "title": "关于 Himeri",
       "himeri": "籾山 ひめり",
       "himeriRomaji": "Momiyama Himeri",
-      "story": "MomiChan 源自日本偶像「籾山 ひめり」（Momiyama Himeri）。作为她的粉丝，我发现想要了解她的最新动态需要在多个不同的平台之间切换——YouTube、Twitter、官方网站等等。这让追踪她的活动变得繁琐而分散。",
-      "purpose": "因此，我创建了 MomiChan，一个将所有相关内容聚合在一起的平台。在这里，粉丝们可以方便地浏览、收藏和讨论关于 Himeri 的一切内容，不再需要在多个网站间跳转。",
-      "vision": "这不仅仅是一个内容展示网站，更是一个粉丝社区。我希望 MomiChan 能成为所有喜欢 Himeri 的人们交流和分享的温馨家园。"
+      "profile": {
+        "birthday": "生日：2004年3月22日",
+        "age": "21岁",
+        "group": "高嶺のなでしこ",
+        "position": "队长 · 蓝色担当",
+        "nickname": "もみちゃん（Momi-chan）、ひめりん（Himerin）",
+        "height": "身高：158cm"
+      },
+      "career": "籾山 ひめり 是日本偶像组合「高嶺のなでしこ」的队长。她曾是 Last Idol 的一期生成员，以其标志性的双马尾发型和活泼可爱的性格深受粉丝喜爱。",
+      "platforms": "她活跃在多个社交平台，包括 TikTok、Instagram、X（Twitter）和 YouTube，与粉丝分享日常生活和演出活动。",
+      "purpose": "MomiChan 将这些分散在各个平台的内容聚合在一起，让粉丝可以更方便地追踪她的最新动态。"
     },
     "features": {
       "title": "核心功能",

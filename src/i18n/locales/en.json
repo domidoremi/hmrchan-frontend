@@ -469,14 +469,22 @@
   },
   "about": {
     "title": "About MomiChan",
-    "subtitle": "A Content Aggregation Platform Built for Fans",
+    "subtitle": "Content Aggregation Platform for Momiyama Himeri",
     "origin": {
-      "title": "Origin Story",
+      "title": "About Himeri",
       "himeri": "籾山 ひめり",
       "himeriRomaji": "Momiyama Himeri",
-      "story": "MomiChan is inspired by the Japanese idol \"Momiyama Himeri\" (籾山 ひめり). As a fan, I found it tedious to keep up with her latest activities across multiple platforms—YouTube, Twitter, official website, and more. Tracking her content felt scattered and inconvenient.",
-      "purpose": "That's why I created MomiChan, a platform that aggregates all related content in one place. Here, fans can easily browse, bookmark, and discuss everything about Himeri without jumping between different websites.",
-      "vision": "This is more than just a content showcase—it's a fan community. I hope MomiChan becomes a warm home where everyone who loves Himeri can connect and share."
+      "profile": {
+        "birthday": "Birthday: March 22, 2004",
+        "age": "21 years old",
+        "group": "Takane no Nadeshiko",
+        "position": "Captain · Blue Member",
+        "nickname": "Momi-chan, Himerin",
+        "height": "Height: 158cm"
+      },
+      "career": "Momiyama Himeri is the captain of the Japanese idol group \"Takane no Nadeshiko\". She was a 1st generation member of Last Idol and is beloved by fans for her signature twin-tail hairstyle and cheerful personality.",
+      "platforms": "She is active on multiple social platforms including TikTok, Instagram, X (Twitter), and YouTube, sharing her daily life and performance activities with fans.",
+      "purpose": "MomiChan aggregates content scattered across these platforms, making it easier for fans to keep up with her latest updates."
     },
     "features": {
       "title": "Core Features",

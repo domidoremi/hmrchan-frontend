@@ -7,20 +7,52 @@
         <p class="page-subtitle">{{ $t('about.subtitle') }}</p>
       </header>
 
-      <!-- 网站起源 -->
+      <!-- 关于 Himeri -->
       <section class="section">
         <div class="section-header">
           <Heart :size="24" class="section-icon" />
           <h2 class="section-title">{{ $t('about.origin.title') }}</h2>
         </div>
         <div class="origin-content glass-card">
-          <div class="himeri-name">
-            <span class="himeri-jp">{{ $t('about.origin.himeri') }}</span>
-            <span class="himeri-romaji">{{ $t('about.origin.himeriRomaji') }}</span>
+          <div class="himeri-header">
+            <div class="himeri-name">
+              <span class="himeri-jp">{{ $t('about.origin.himeri') }}</span>
+              <span class="himeri-romaji">{{ $t('about.origin.himeriRomaji') }}</span>
+            </div>
           </div>
-          <p class="origin-text">{{ $t('about.origin.story') }}</p>
-          <p class="origin-text">{{ $t('about.origin.purpose') }}</p>
-          <p class="origin-text highlight">{{ $t('about.origin.vision') }}</p>
+
+          <div class="profile-grid">
+            <div class="profile-item">
+              <Cake :size="18" class="profile-icon" />
+              <span>{{ $t('about.origin.profile.birthday') }}</span>
+            </div>
+            <div class="profile-item">
+              <User :size="18" class="profile-icon" />
+              <span>{{ $t('about.origin.profile.age') }}</span>
+            </div>
+            <div class="profile-item">
+              <Users :size="18" class="profile-icon" />
+              <span>{{ $t('about.origin.profile.group') }}</span>
+            </div>
+            <div class="profile-item">
+              <Star :size="18" class="profile-icon" />
+              <span>{{ $t('about.origin.profile.position') }}</span>
+            </div>
+            <div class="profile-item">
+              <Smile :size="18" class="profile-icon" />
+              <span>{{ $t('about.origin.profile.nickname') }}</span>
+            </div>
+            <div class="profile-item">
+              <Ruler :size="18" class="profile-icon" />
+              <span>{{ $t('about.origin.profile.height') }}</span>
+            </div>
+          </div>
+
+          <div class="bio-section">
+            <p class="bio-text">{{ $t('about.origin.career') }}</p>
+            <p class="bio-text">{{ $t('about.origin.platforms') }}</p>
+            <p class="bio-text purpose">{{ $t('about.origin.purpose') }}</p>
+          </div>
         </div>
       </section>
 
@@ -116,7 +148,20 @@ defineOptions({ name: 'AboutPage' })
 
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Info, Code, Heart, Sparkles, Layers, Users, Star, Globe } from 'lucide-vue-next'
+import {
+  Info,
+  Code,
+  Heart,
+  Sparkles,
+  Layers,
+  Users,
+  Star,
+  Globe,
+  Cake,
+  User,
+  Smile,
+  Ruler,
+} from 'lucide-vue-next'
 import { useAboutData } from '@/composables/useAboutData'
 
 const { locale, t } = useI18n()
@@ -223,45 +268,85 @@ const { techStack } = useAboutData()
   font-weight: var(--font-semibold);
 }
 
-/* 网站起源 */
+/* 关于 Himeri */
 .origin-content {
   padding: var(--spacing-6);
+}
+
+.himeri-header {
+  margin-bottom: var(--spacing-6);
+  padding-bottom: var(--spacing-4);
+  border-bottom: 2px solid var(--glass-border);
 }
 
 .himeri-name {
   display: flex;
   align-items: center;
   gap: var(--spacing-3);
-  margin-bottom: var(--spacing-4);
-  padding-bottom: var(--spacing-4);
-  border-bottom: 2px solid var(--glass-border);
 }
 
 .himeri-jp {
-  font-size: var(--text-2xl);
+  font-size: var(--text-3xl);
   font-weight: var(--font-bold);
-  color: var(--color-primary);
+  background: var(--gradient-accent);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .himeri-romaji {
-  font-size: var(--text-lg);
+  font-size: var(--text-xl);
   color: var(--color-text-secondary);
   font-style: italic;
 }
 
-.origin-text {
+.profile-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--spacing-3);
+  margin-bottom: var(--spacing-6);
+}
+
+.profile-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  padding: var(--spacing-3);
+  background: rgba(var(--color-primary-rgb), 0.05);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  transition: all 0.2s ease;
+}
+
+.profile-item:hover {
+  background: rgba(var(--color-primary-rgb), 0.1);
+  transform: translateX(4px);
+}
+
+.profile-icon {
+  color: var(--color-primary);
+  flex-shrink: 0;
+}
+
+.bio-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-4);
+}
+
+.bio-text {
   font-size: var(--text-base);
   line-height: var(--leading-relaxed);
   color: var(--color-text-secondary);
-  margin-bottom: var(--spacing-4);
 }
 
-.origin-text.highlight {
+.bio-text.purpose {
   color: var(--color-text);
   font-weight: var(--font-medium);
-  padding: var(--spacing-3);
-  background: rgba(var(--color-primary-rgb), 0.05);
-  border-left: 3px solid var(--color-primary);
+  padding: var(--spacing-4);
+  background: rgba(var(--color-primary-rgb), 0.08);
+  border-left: 4px solid var(--color-primary);
   border-radius: var(--radius-md);
 }
 
@@ -499,6 +584,18 @@ const { techStack } = useAboutData()
     flex-direction: column;
     align-items: flex-start;
     gap: var(--spacing-2);
+  }
+
+  .himeri-jp {
+    font-size: var(--text-2xl);
+  }
+
+  .himeri-romaji {
+    font-size: var(--text-lg);
+  }
+
+  .profile-grid {
+    grid-template-columns: 1fr;
   }
 
   .features-grid {
