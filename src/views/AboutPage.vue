@@ -30,6 +30,7 @@
 
           <div class="bio-section">
             <p class="bio-text">{{ $t('about.origin.career') }}</p>
+            <p class="bio-text">{{ $t('about.origin.personality') }}</p>
             <p class="bio-text">{{ $t('about.origin.platforms') }}</p>
             <p class="bio-text purpose">{{ $t('about.origin.purpose') }}</p>
           </div>
@@ -141,6 +142,11 @@ import {
   User,
   Smile,
   Ruler,
+  Droplet,
+  Sparkle,
+  MapPin,
+  Music,
+  Palette,
 } from 'lucide-vue-next'
 import { useAboutData } from '@/composables/useAboutData'
 
@@ -150,10 +156,15 @@ const { locale, t } = useI18n()
 const profileItems = computed(() => [
   { icon: Cake, label: t('about.origin.profile.birthday') },
   { icon: User, label: t('about.origin.profile.age') },
+  { icon: Droplet, label: t('about.origin.profile.bloodType') },
+  { icon: Sparkle, label: t('about.origin.profile.zodiac') },
+  { icon: Ruler, label: t('about.origin.profile.height') },
+  { icon: MapPin, label: t('about.origin.profile.birthplace') },
   { icon: Users, label: t('about.origin.profile.group') },
   { icon: Star, label: t('about.origin.profile.position') },
   { icon: Smile, label: t('about.origin.profile.nickname') },
-  { icon: Ruler, label: t('about.origin.profile.height') },
+  { icon: Music, label: t('about.origin.profile.hobbies') },
+  { icon: Palette, label: t('about.origin.profile.skills') },
 ])
 
 // Build hash - should be injected at build time, fallback to 'dev' for development
