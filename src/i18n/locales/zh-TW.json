@@ -468,32 +468,31 @@
     }
   },
   "about": {
-    "title": "關於",
-    "subtitle": "瞭解 MomiChan Frontend 專案",
-    "introduction": {
-      "title": "前端介紹",
-      "description": "MomiChan Frontend 是一個現代化的圖片/影片內容社群應用，基於 Vue 3 生態系統建構，提供流暢的使用者體驗和優雅的介面設計。",
-      "features": {
-        "performance": "高效能",
-        "performanceDesc": "基於 Vite 7 建構，支援程式碼分割和懶載入，實現快速的頁面載入",
-        "design": "精美設計",
-        "designDesc": "採用 Glass Morphism 設計風格，支援明暗主題切換，帶來沉浸式體驗",
-        "i18n": "多語言",
-        "i18nDesc": "內建中文、英文、日文支援，輕鬆切換語言",
-        "security": "安全可靠",
-        "securityDesc": "JWT 認證機制，自動重新整理權杖，保護使用者資料安全"
-      }
+    "title": "關於 MomiChan",
+    "subtitle": "一個為粉絲而生的內容聚合平台",
+    "origin": {
+      "title": "網站起源",
+      "himeri": "籾山 ひめり",
+      "himeriRomaji": "Momiyama Himeri",
+      "story": "MomiChan 源自日本虛擬偶像「籾山 ひめり」（Momiyama Himeri）。作為她的粉絲，我發現想要瞭解她的最新動態需要在多個不同的平台之間切換——YouTube、Twitter、官方網站等等。這讓追蹤她的活動變得繁瑣而分散。",
+      "purpose": "因此，我創建了 MomiChan，一個將所有相關內容聚合在一起的平台。在這裡，粉絲們可以方便地瀏覽、收藏和討論關於 Himeri 的一切內容，不再需要在多個網站間跳轉。",
+      "vision": "這不僅僅是一個內容展示網站，更是一個粉絲社群。我希望 MomiChan 能成為所有喜歡 Himeri 的人們交流和分享的溫馨家園。"
     },
-    "projectInfo": {
-      "title": "專案資訊",
-      "name": "專案名稱",
-      "version": "版本",
-      "buildTime": "建構時間",
-      "status": "狀態",
-      "active": "執行中"
+    "features": {
+      "title": "核心功能",
+      "aggregation": "內容聚合",
+      "aggregationDesc": "整合來自多個平台的內容，一站式瀏覽體驗",
+      "community": "粉絲社群",
+      "communityDesc": "評論、討論、分享，與其他粉絲互動交流",
+      "personalization": "個人化",
+      "personalizationDesc": "收藏喜歡的內容，追蹤瀏覽歷史",
+      "multilingual": "多語言",
+      "multilinguralDesc": "支援中文、英文、日文，服務全球粉絲"
     },
-    "techStack": {
-      "title": "技術棧",
+    "tech": {
+      "title": "技術實現",
+      "description": "MomiChan 採用現代化的前端技術棧建構，確保流暢的使用者體驗和優雅的介面設計。",
+      "stack": "技術棧",
       "vue": "漸進式 JavaScript 框架",
       "typescript": "型別安全的 JavaScript 超集",
       "vite": "下一代前端建構工具",
@@ -503,18 +502,18 @@
       "gsap": "專業級動畫庫",
       "lucide": "精美的開源圖示庫"
     },
-    "links": {
-      "title": "快速連結",
-      "github": "檢視源程式碼",
-      "readme": "專案文件",
-      "readmeDesc": "快速開始和使用指南",
-      "docs": "詳細文件",
-      "docsDesc": "專案架構和技術細節"
+    "projectInfo": {
+      "title": "專案資訊",
+      "version": "版本",
+      "buildTime": "建構時間",
+      "status": "狀態",
+      "active": "執行中"
     },
     "footer": {
       "madeWith": "用",
       "by": "製作，作者",
-      "rights": "保留所有權利"
+      "rights": "保留所有權利",
+      "fanProject": "本站為粉絲專案，與官方無關"
     }
   }
 }
