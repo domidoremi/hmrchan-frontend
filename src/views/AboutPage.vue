@@ -8,31 +8,65 @@
       </header>
 
       <!-- 关于 Himeri -->
-      <section class="section">
+      <section class="section himeri-section">
         <div class="section-header">
           <Heart :size="24" class="section-icon" />
           <h2 class="section-title">{{ $t('about.origin.title') }}</h2>
         </div>
         <div class="origin-content glass-card">
+          <!-- 名字展示 -->
           <div class="himeri-header">
-            <div class="himeri-name">
-              <span class="himeri-jp">{{ $t('about.origin.himeri') }}</span>
-              <span class="himeri-romaji">{{ $t('about.origin.himeriRomaji') }}</span>
+            <div class="himeri-name-card">
+              <div class="name-wrapper">
+                <h3 class="himeri-jp">{{ $t('about.origin.himeri') }}</h3>
+                <p class="himeri-romaji">{{ $t('about.origin.himeriRomaji') }}</p>
+              </div>
+              <div class="name-decoration">
+                <Heart :size="32" class="decoration-icon" />
+              </div>
             </div>
           </div>
 
-          <div class="profile-grid">
-            <div v-for="item in profileItems" :key="item.label" class="profile-item">
-              <component :is="item.icon" :size="18" class="profile-icon" />
-              <span>{{ item.label }}</span>
+          <!-- 个人资料 -->
+          <div class="profile-section">
+            <h4 class="subsection-title">
+              <User :size="20" />
+              <span>Profile</span>
+            </h4>
+            <div class="profile-grid-enhanced">
+              <div
+                v-for="(item, index) in profileItems"
+                :key="item.label"
+                class="profile-card"
+                :style="{ animationDelay: `${index * 0.05}s` }"
+              >
+                <div class="profile-card-icon">
+                  <component :is="item.icon" :size="20" />
+                </div>
+                <div class="profile-card-content">
+                  <span class="profile-card-text">{{ item.label }}</span>
+                </div>
+              </div>
             </div>
           </div>
 
+          <!-- 简介 -->
           <div class="bio-section">
-            <p class="bio-text">{{ $t('about.origin.career') }}</p>
-            <p class="bio-text">{{ $t('about.origin.personality') }}</p>
-            <p class="bio-text">{{ $t('about.origin.platforms') }}</p>
-            <p class="bio-text purpose">{{ $t('about.origin.purpose') }}</p>
+            <h4 class="subsection-title">
+              <Sparkles :size="20" />
+              <span>About</span>
+            </h4>
+            <div class="bio-content">
+              <p class="bio-text">{{ $t('about.origin.career') }}</p>
+              <p class="bio-text">{{ $t('about.origin.personality') }}</p>
+              <p class="bio-text">{{ $t('about.origin.platforms') }}</p>
+              <div class="bio-highlight">
+                <div class="highlight-icon">
+                  <Star :size="20" />
+                </div>
+                <p class="bio-text-highlight">{{ $t('about.origin.purpose') }}</p>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -269,68 +303,227 @@ const { techStack } = useAboutData()
   font-weight: var(--font-semibold);
 }
 
-/* 关于 Himeri */
+/* 关于 Himeri - 优化版 */
+.himeri-section {
+  position: relative;
+}
+
 .origin-content {
-  padding: var(--spacing-6);
+  padding: 0;
+  overflow: hidden;
 }
 
+/* 名字卡片 */
 .himeri-header {
-  margin-bottom: var(--spacing-6);
-  padding-bottom: var(--spacing-4);
-  border-bottom: 2px solid var(--glass-border);
+  padding: var(--spacing-8) var(--spacing-6);
+  background: linear-gradient(
+    135deg,
+    rgba(var(--color-primary-rgb), 0.1) 0%,
+    rgba(var(--color-primary-rgb), 0.05) 100%
+  );
+  border-bottom: 1px solid var(--glass-border);
+  position: relative;
+  overflow: hidden;
 }
 
-.himeri-name {
+.himeri-header::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -10%;
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(var(--color-primary-rgb), 0.15) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.himeri-name-card {
   display: flex;
   align-items: center;
-  gap: var(--spacing-3);
+  justify-content: space-between;
+  gap: var(--spacing-4);
+  position: relative;
+  z-index: 1;
+}
+
+.name-wrapper {
+  flex: 1;
 }
 
 .himeri-jp {
-  font-size: var(--text-3xl);
+  font-size: var(--text-4xl);
   font-weight: var(--font-bold);
   background: var(--gradient-accent);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  margin: 0 0 var(--spacing-2) 0;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
 }
 
 .himeri-romaji {
   font-size: var(--text-xl);
   color: var(--color-text-secondary);
   font-style: italic;
+  font-weight: var(--font-medium);
+  margin: 0;
+  letter-spacing: 0.05em;
 }
 
-.profile-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: var(--spacing-3);
-  margin-bottom: var(--spacing-6);
+.name-decoration {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 80px;
+  height: 80px;
+  background: rgba(var(--color-primary-rgb), 0.1);
+  border-radius: 50%;
+  position: relative;
 }
 
-.profile-item {
+.name-decoration::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  background: var(--gradient-primary);
+  opacity: 0.2;
+  animation: rotate 8s linear infinite;
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.decoration-icon {
+  color: var(--color-primary);
+  position: relative;
+  z-index: 1;
+  animation: heartbeat 2s ease-in-out infinite;
+}
+
+/* 子标题 */
+.subsection-title {
   display: flex;
   align-items: center;
   gap: var(--spacing-2);
-  padding: var(--spacing-3);
-  background: rgba(var(--color-primary-rgb), 0.05);
-  border-radius: var(--radius-md);
-  font-size: var(--text-sm);
-  color: var(--color-text-secondary);
-  transition: all 0.2s ease;
+  font-size: var(--text-lg);
+  font-weight: var(--font-semibold);
+  color: var(--color-text);
+  margin-bottom: var(--spacing-4);
+  padding-bottom: var(--spacing-2);
+  border-bottom: 2px solid var(--glass-border);
 }
 
-.profile-item:hover {
+.subsection-title svg {
+  color: var(--color-primary);
+}
+
+/* 个人资料区域 */
+.profile-section {
+  padding: var(--spacing-6);
+  background: rgba(var(--color-background-rgb), 0.3);
+}
+
+.profile-grid-enhanced {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--spacing-3);
+}
+
+.profile-card {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  padding: var(--spacing-4);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: fadeInUp 0.5s ease-out backwards;
+  position: relative;
+  overflow: hidden;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.profile-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: var(--gradient-primary);
+  transform: scaleY(0);
+  transform-origin: bottom;
+  transition: transform 0.3s ease;
+}
+
+.profile-card:hover {
+  transform: translateX(8px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  border-color: rgba(var(--color-primary-rgb), 0.3);
+}
+
+.profile-card:hover::before {
+  transform: scaleY(1);
+  transform-origin: top;
+}
+
+.profile-card-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
   background: rgba(var(--color-primary-rgb), 0.1);
-  transform: translateX(4px);
-}
-
-.profile-icon {
+  border-radius: var(--radius-md);
   color: var(--color-primary);
   flex-shrink: 0;
+  transition: all 0.3s ease;
 }
 
+.profile-card:hover .profile-card-icon {
+  background: rgba(var(--color-primary-rgb), 0.2);
+  transform: scale(1.1) rotate(5deg);
+}
+
+.profile-card-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.profile-card-text {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  line-height: var(--leading-relaxed);
+  display: block;
+  word-break: break-word;
+}
+
+/* 简介区域 */
 .bio-section {
+  padding: var(--spacing-6);
+}
+
+.bio-content {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-4);
@@ -340,15 +533,52 @@ const { techStack } = useAboutData()
   font-size: var(--text-base);
   line-height: var(--leading-relaxed);
   color: var(--color-text-secondary);
+  margin: 0;
+  text-align: justify;
 }
 
-.bio-text.purpose {
+.bio-highlight {
+  display: flex;
+  gap: var(--spacing-3);
+  padding: var(--spacing-5);
+  background: linear-gradient(
+    135deg,
+    rgba(var(--color-primary-rgb), 0.08) 0%,
+    rgba(var(--color-primary-rgb), 0.03) 100%
+  );
+  border-left: 4px solid var(--color-primary);
+  border-radius: var(--radius-lg);
+  position: relative;
+  overflow: hidden;
+}
+
+.bio-highlight::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 100px;
+  height: 100%;
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.05) 100%);
+  pointer-events: none;
+}
+
+.highlight-icon {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 2px;
+  color: var(--color-primary);
+  flex-shrink: 0;
+}
+
+.bio-text-highlight {
+  flex: 1;
+  font-size: var(--text-base);
+  line-height: var(--leading-relaxed);
   color: var(--color-text);
   font-weight: var(--font-medium);
-  padding: var(--spacing-4);
-  background: rgba(var(--color-primary-rgb), 0.08);
-  border-left: 4px solid var(--color-primary);
-  border-radius: var(--radius-md);
+  margin: 0;
 }
 
 /* 核心功能 */
@@ -581,10 +811,13 @@ const { techStack } = useAboutData()
     font-size: var(--text-2xl);
   }
 
-  .himeri-name {
+  .himeri-header {
+    padding: var(--spacing-6) var(--spacing-4);
+  }
+
+  .himeri-name-card {
     flex-direction: column;
     align-items: flex-start;
-    gap: var(--spacing-2);
   }
 
   .himeri-jp {
@@ -595,7 +828,23 @@ const { techStack } = useAboutData()
     font-size: var(--text-lg);
   }
 
-  .profile-grid {
+  .name-decoration {
+    width: 60px;
+    height: 60px;
+    align-self: flex-end;
+  }
+
+  .decoration-icon {
+    width: 24px;
+    height: 24px;
+  }
+
+  .profile-section,
+  .bio-section {
+    padding: var(--spacing-4);
+  }
+
+  .profile-grid-enhanced {
     grid-template-columns: 1fr;
   }
 
