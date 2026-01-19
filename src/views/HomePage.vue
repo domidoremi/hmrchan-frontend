@@ -324,7 +324,7 @@ async function fetchLatestPosts(reset = true): Promise<boolean> {
 
   try {
     const res = await postService.listPosts(params)
-    const filtered = res.items.filter((p) => !isFilteredAuthor(p.author_name))
+    const filtered = res.items.filter((p: PostListItem) => !isFilteredAuthor(p.author_name))
 
     if (reset) {
       posts.value = res.items

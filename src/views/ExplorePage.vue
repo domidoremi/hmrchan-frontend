@@ -1,5 +1,12 @@
 <template>
   <div class="explore-page">
+    <!-- Blue Polymorph 3D 动画背景 -->
+    <BluePolymorph
+      v-if="shouldShowPolymorph"
+      :morph-class-name="morphClassName"
+      :morph-c-s-s-vars="morphCSSVars"
+    />
+
     <!-- MindMarket 风格背景装饰 -->
     <div class="explore-bg" aria-hidden="true">
       <div class="explore-bg__blob explore-bg__blob--green" />
@@ -133,25 +140,39 @@ defineOptions({ name: 'ExplorePage' })
 import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
+import { storeToRefs } from 'pinia'
 import { Search, Globe, Music2, Video, Instagram } from 'lucide-vue-next'
 import { postService, type PostListItem, ApiError } from '@/api'
 import { postCache } from '@/utils/cache'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import { useProgressiveRender } from '@/composables/useProgressiveRender'
 import { useMasonryColumns } from '@/composables/useMasonryColumns'
-import { throttleRAF } from '@/utils/performance'
+import { useBluePolymorph, type PlatformMorphState } from '@/composables/useBluePolymorph'
+import { useSettingsStore } from '@/stores'
+import { throttleRAF, prefersReducedMotion } from '@/utils/performance'
 import { createResizeObserver } from '@/utils/modernAPIs'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import PostCard from '@/components/business/PostCard.vue'
 import PostCardSkeleton from '@/components/business/PostCardSkeleton.vue'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
+import BluePolymorph from '@/components/ui/BluePolymorph.vue'
 
 const router = useRouter()
-
 const { t } = useI18n()
+const settingsStore = useSettingsStore()
+const { settings } = storeToRefs(settingsStore)
+
+const shouldShowPolymorph = computed(
+  () => settings.value.enableAnimations && !prefersReducedMotion()
+)
 
 const currentSort = ref<'newest' | 'popular' | 'trending'>('newest')
-const currentPlatform = ref<'all' | 'youtube' | 'tiktok' | 'twitter' | 'instagram'>('all')
+const currentPlatform = ref<PlatformMorphState>('all')
+
+// Blue Polymorph 动画系统
+const { morphClassName, morphCSSVars } = useBluePolymorph(currentPlatform, {
+  enabled: computed(() => settings.value.enableAnimations),
+})
 
 const posts = ref<PostListItem[]>([])
 const isLoading = ref(false)
