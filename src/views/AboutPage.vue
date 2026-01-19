@@ -63,13 +63,20 @@
           <h2 class="section-title">{{ $t('about.techStack.title') }}</h2>
         </div>
         <div class="tech-grid">
-          <div v-for="tech in techStack" :key="tech.name" class="tech-card glass-card">
+          <a
+            v-for="tech in techStack"
+            :key="tech.name"
+            :href="tech.url"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="tech-card glass-card"
+          >
             <div class="tech-header">
               <div class="tech-name">{{ tech.name }}</div>
               <div class="tech-version-badge">v{{ tech.version }}</div>
             </div>
             <div class="tech-description">{{ tech.description }}</div>
-          </div>
+          </a>
         </div>
       </section>
 
@@ -328,6 +335,9 @@ const { techStack } = useAboutData()
   transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
+  display: block;
+  text-decoration: none;
+  color: inherit;
 }
 
 .tech-card::before {
@@ -346,10 +356,15 @@ const { techStack } = useAboutData()
 .tech-card:hover {
   transform: translateY(-4px);
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+  cursor: pointer;
 }
 
 .tech-card:hover::before {
   transform: scaleX(1);
+}
+
+.tech-card:active {
+  transform: translateY(-2px);
 }
 
 .tech-header {
