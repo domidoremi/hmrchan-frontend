@@ -131,9 +131,9 @@ import type { PostListItem } from '@/api'
 import { prefetchPostDetail } from '@/utils/prefetch'
 import {
   normalizeToThumbnailUrl,
-  getResponsiveThumbnailSize,
   extractMediaIdFromUrl,
   getMediaThumbnailUrl,
+  isMobileDevice,
 } from '@/utils/mediaOptimizer'
 import { thumbnailCache } from '@/utils/thumbnailCache'
 import { useCardAnimation } from '@/composables/useCardAnimation'
@@ -241,7 +241,9 @@ const platformLabel = computed(() => {
 
 const effectiveThumbnailSize = computed(() => {
   if (props.thumbnailSize === 'responsive') {
-    return getResponsiveThumbnailSize('small')
+    // 移动端使用 medium，桌面端使用 large 作为基础尺寸
+    const baseSize = isMobileDevice() ? 'medium' : 'large'
+    return baseSize
   }
   return props.thumbnailSize
 })

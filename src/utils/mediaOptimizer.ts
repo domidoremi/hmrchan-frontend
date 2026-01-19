@@ -72,7 +72,7 @@ export function getMediaThumbnailUrl(mediaId: string, size: MediaThumbnailSize =
 /**
  * 检测是否为移动设备
  */
-function isMobileDevice(): boolean {
+export function isMobileDevice(): boolean {
   if (typeof window === 'undefined') return false
   return window.innerWidth < 768
 }
