@@ -116,16 +116,7 @@ defineOptions({ name: 'AboutPage' })
 
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import {
-  Info,
-  Code,
-  Heart,
-  Sparkles,
-  Layers,
-  Users,
-  Star,
-  Globe,
-} from 'lucide-vue-next'
+import { Info, Code, Heart, Sparkles, Layers, Users, Star, Globe } from 'lucide-vue-next'
 import { useAboutData } from '@/composables/useAboutData'
 
 const { locale, t } = useI18n()
