@@ -227,7 +227,12 @@ const pageSize = 20
 
 // 使用缓存感知的帖子列表加载
 const { total, load: loadCachedPosts } = useCachedPostList<PostListItem>(
-  (params) => postService.listPosts(params as Parameters<typeof postService.listPosts>[0]),
+  async (params) => {
+    const result = await postService.listPosts(
+      params as Parameters<typeof postService.listPosts>[0]
+    )
+    return { data: result.items, total: result.total }
+  },
   { revalidate: false } // 不自动后台更新，减少重复请求
 )
 
