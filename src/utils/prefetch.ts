@@ -143,6 +143,7 @@ function executePrefetch(): void {
  */
 export function setupHoverPrefetch(): void {
   let hoverTimer: number | null = null
+  const HOVER_DELAY = 100 // 延迟 100ms 后预加载，避免快速划过时触发
 
   document.addEventListener(
     'mouseover',
@@ -160,7 +161,7 @@ export function setupHoverPrefetch(): void {
         clearTimeout(hoverTimer)
       }
 
-      // 延迟 100ms 后预加载，避免快速划过时触发
+      // 延迟后预加载，避免快速划过时触发
       hoverTimer = window.setTimeout(() => {
         const path = new URL(link.href).pathname
         const routeName = getRouteNameFromPath(path)
@@ -171,7 +172,7 @@ export function setupHoverPrefetch(): void {
             prefetchRoute(routeName, importFn, { priority: 'high' })
           }
         }
-      }, 100)
+      }, HOVER_DELAY)
     },
     { passive: true }
   )
