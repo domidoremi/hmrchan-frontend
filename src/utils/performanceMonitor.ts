@@ -33,7 +33,7 @@ function observeLCP(): void {
     })
 
     observer.observe({ type: 'largest-contentful-paint', buffered: true })
-  } catch (e) {
+  } catch {
     // 某些浏览器可能不支持
   }
 }
@@ -59,7 +59,7 @@ function observeFID(): void {
     })
 
     observer.observe({ type: 'first-input', buffered: true })
-  } catch (e) {
+  } catch {
     // 某些浏览器可能不支持
   }
 }
@@ -89,7 +89,7 @@ function observeCLS(): void {
     })
 
     observer.observe({ type: 'layout-shift', buffered: true })
-  } catch (e) {
+  } catch {
     // 某些浏览器可能不支持
   }
 }
@@ -113,7 +113,7 @@ function observeFCP(): void {
     })
 
     observer.observe({ type: 'paint', buffered: true })
-  } catch (e) {
+  } catch {
     // 某些浏览器可能不支持
   }
 }
@@ -174,7 +174,7 @@ function observeLongTasks(): void {
     })
 
     observer.observe({ type: 'longtask', buffered: true })
-  } catch (e) {
+  } catch {
     // 某些浏览器可能不支持
   }
 }
@@ -202,7 +202,7 @@ function observeResourceTiming(): void {
     })
 
     observer.observe({ type: 'resource', buffered: true })
-  } catch (e) {
+  } catch {
     // 某些浏览器可能不支持
   }
 }
