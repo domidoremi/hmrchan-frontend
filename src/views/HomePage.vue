@@ -186,7 +186,7 @@ import {
 } from 'lucide-vue-next'
 import { useAuthStore, useSettingsStore } from '@/stores'
 import { postService, type PostListItem, ApiError, type ThumbnailQuality } from '@/api'
-import { postCache } from '@/utils/cache'
+import { useCachedPostList } from '@/composables/useCachedPosts'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import { useMasonryColumns } from '@/composables/useMasonryColumns'
 import { prefersReducedMotion } from '@/utils/performance'
@@ -223,8 +223,13 @@ const error = ref<string | null>(null)
 
 // Pagination state
 const page = ref(1)
-const total = ref(0)
 const pageSize = 20
+
+// 使用缓存感知的帖子列表加载
+const { total, load: loadCachedPosts } = useCachedPostList<PostListItem>(
+  (params) => postService.listPosts(params as Parameters<typeof postService.listPosts>[0]),
+  { revalidate: false } // 不自动后台更新，减少重复请求
+)
 
 // DOM refs
 const containerRef = ref<HTMLElement | null>(null)
@@ -309,35 +314,20 @@ async function fetchLatestPosts(reset = true): Promise<boolean> {
     thumbnail_quality: getResponsiveThumbnailQuality(),
   }
 
-  if (reset) {
-    const cached = await postCache.getList(params)
-    if (cached && !hadData) {
-      posts.value = cached.data as PostListItem[]
-      total.value = cached.total
-      const filtered = (cached.data as PostListItem[]).filter(
-        (p) => !isFilteredAuthor(p.author_name)
-      )
-      allPosts.value = filtered
-      distributePosts(filtered, getColumnWidth(getContainerWidth()), false)
-    }
-  }
-
   try {
-    const res = await postService.listPosts(params)
-    const filtered = res.items.filter((p: PostListItem) => !isFilteredAuthor(p.author_name))
+    // 使用缓存感知加载，避免重复请求
+    const result = await loadCachedPosts(params)
+    const filtered = result.data.filter((p: PostListItem) => !isFilteredAuthor(p.author_name))
 
     if (reset) {
-      posts.value = res.items
+      posts.value = result.data
       allPosts.value = filtered
       distributePosts(filtered, getColumnWidth(getContainerWidth()), false)
     } else {
-      posts.value.push(...res.items)
+      posts.value.push(...result.data)
       allPosts.value.push(...filtered)
       distributePosts(filtered, getColumnWidth(getContainerWidth()), true, getRealColumnHeights())
     }
-    total.value = res.total
-
-    if (reset) await postCache.setList(params, res.items, res.total)
     return true
   } catch (err) {
     if (posts.value.length === 0) {
