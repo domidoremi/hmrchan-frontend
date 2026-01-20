@@ -1,10 +1,9 @@
 # Cloudflare Pages 重定向配置
-
-# API 代理 - 转发到 functions/api/[[path]].ts
-/api/*  /api/:splat  200
-
-# WebSocket 代理 - 转发到 functions/ws.ts
-/ws  /ws  200
-
-# SPA 回退 - 所有其他请求返回 index.html
-/*  /index.html  200
+#
+# 路由由 public/_routes.json 控制：
+# - /api/* → functions/api/[[path]].ts
+# - /uploads/* → functions/uploads/[[path]].ts  
+# - /ws → functions/ws.ts
+# - 其他 → 静态资源（SPA 自动回退）
+#
+# 此文件保留为空，避免干扰 Functions 路由
