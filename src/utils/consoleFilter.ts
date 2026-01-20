@@ -18,8 +18,6 @@ declare global {
 type ConsoleMethod = 'log' | 'warn' | 'error' | 'info'
 type OriginalConsole = Record<ConsoleMethod, (...args: unknown[]) => void>
 
-let isInitialized = false
-
 const CLOUDFLARE_PATTERNS = [
   // Private Access Token
   /Private Access Token/i,
