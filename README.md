@@ -37,6 +37,7 @@
 - **GSAP 3.14** - 高性能动画引擎
 - **CSS Variables** - 主题系统与响应式设计
 - **3D 动画系统** - 平台感知的动态背景效果 (BluePolymorph)
+- **情境化背景系统** - 根据页面和平台筛选动态变化的 3D 背景效果 (ContextualBackground)
 - **原生视频播放器** - 基于 HTML5 `<video>` 的自定义播放器实现
 
 ### 国际化
@@ -220,14 +221,15 @@ frontend/
 │   │   └── index.ts
 │   │
 │   ├── components/       # Vue 组件
-│   │   ├── business/     # 业务组件 (PostCard, SearchBar, etc.)
-│   │   ├── layout/       # 布局组件 (AppNavbar, AppFooter, etc.)
+│   │   ├── business/     # 业务组件 (PostCard, SearchBar, PlatformFilter, etc.)
+│   │   ├── layout/       # 布局组件 (AppNavbar, AppFooter, ContextualBackground, etc.)
 │   │   └── ui/           # 通用 UI 组件 (Button, Input, BluePolymorph, etc.)
 │   │
 │   ├── composables/      # 组合式函数
 │   │   ├── useInfiniteScroll.ts
 │   │   ├── useMasonryColumns.ts
 │   │   ├── useBluePolymorph.ts  # 3D 动画系统
+│   │   ├── useContextualBackground.ts  # 情境化背景系统
 │   │   └── useCardAnimation.ts
 │   │
 │   ├── i18n/             # 国际化配置
@@ -273,6 +275,9 @@ frontend/
 │   ├── analyze-bundle.js
 │   └── measure-build-time.js
 │
+├── docs/                 # 文档
+│   └── CONTEXTUAL_BACKGROUNDS.md  # 情境化背景系统文档
+│
 ├── functions/            # Cloudflare Functions (边缘函数)
 │
 ├── .env.example          # 环境变量示例
@@ -317,7 +322,13 @@ frontend/
 - **响应式设计** - 完美适配桌面和移动设备
 - **无障碍支持** - 支持 `prefers-reduced-motion` 等可访问性特性
 - **访客限制提示** - 未登录用户友好的内容限制提示和登录引导
-- **3D 动态背景** - 探索页面根据平台筛选展示不同形态的 3D 动画效果
+- **情境化 3D 背景** - 根据页面上下文和平台筛选动态变化的 3D 背景效果
+  - 主页：The Core（旋转晶体核心）
+  - 探索页默认：Aerogel（漂浮气泡）
+  - Instagram：Optical Glass（棱镜网格）
+  - TikTok：Liquid Silk（流动丝绸）
+  - YouTube：Deep Ripples（深度涟漪）
+  - Twitter/X：Fiber Optic Network（光纤网络）
 
 ### 性能特性
 
