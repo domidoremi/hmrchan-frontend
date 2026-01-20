@@ -141,9 +141,7 @@ export const postCache = {
   async getPostEntities(uuids: string[]): Promise<Map<string, unknown>> {
     log(`Fetching ${uuids.length} posts from cache`)
 
-    const entities = await Promise.all(
-      uuids.map(uuid => this.getPostEntity(uuid))
-    )
+    const entities = await Promise.all(uuids.map((uuid) => this.getPostEntity(uuid)))
 
     const result = new Map<string, unknown>()
     entities.forEach((entity, index) => {
@@ -180,7 +178,7 @@ export const postCache = {
     log(`Caching ${posts.length} posts`)
 
     await Promise.all(
-      posts.map(post => {
+      posts.map((post) => {
         const uuid = post.uuid || post.id
         if (uuid && typeof uuid === 'string') {
           return this.setPostEntity(uuid, post)
@@ -224,30 +222,26 @@ export const postCache = {
     // 2. 帖子实体缓存层：批量获取帖子数据
     const entityMap = await this.getPostEntities(listCache.uuids)
 
-    // 3. 检查是否所有帖子都在缓存中
-    if (entityMap.size === listCache.uuids.length) {
-      // 完全命中！按原始顺序组装结果
-      const data = listCache.uuids
-        .map((uuid) => entityMap.get(uuid))
-        .filter((entity): entity is unknown => entity !== undefined)
-
-      // 如果过滤后数量不匹配，说明有缺失，需要网络请求
-      if (data.length !== listCache.uuids.length) {
-        log(`Entity cache incomplete (${data.length}/${listCache.uuids.length}), network request needed`)
+    // 3. 按原始顺序组装结果，检查完整性
+    const data: unknown[] = []
+    for (const uuid of listCache.uuids) {
+      const entity = entityMap.get(uuid)
+      if (entity === undefined) {
+        log(
+          `Entity cache incomplete (${data.length}/${listCache.uuids.length}), network request needed`
+        )
         return undefined
       }
-
-      log('Full cache HIT - no network request needed!')
-      return {
-        data,
-        total: listCache.total,
-        fromCache: true,
-      }
+      data.push(entity)
     }
 
-    // 部分命中，需要网络请求
-    log(`Partial cache hit (${entityMap.size}/${listCache.uuids.length}), network request needed`)
-    return undefined
+    // 完全命中！
+    log(`Cache result: FULL HIT (${data.length} posts)`)
+    return {
+      data,
+      total: listCache.total,
+      fromCache: true,
+    }
   },
 
   /**
