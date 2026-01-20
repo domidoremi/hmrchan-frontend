@@ -9,7 +9,7 @@
 import { ref, shallowRef } from 'vue'
 import { postCache } from '@/utils/cache'
 
-const DEBUG = import.meta.env.DEV && import.meta.env.VITE_ENABLE_DEBUG === 'true'
+const DEBUG = import.meta.env.DEV && import.meta.env['VITE_ENABLE_DEBUG'] === 'true'
 const log = (...args: unknown[]) => DEBUG && console.log('[useCachedPosts]', ...args)
 
 interface UseCachedPostsOptions {
@@ -34,7 +34,7 @@ interface FetchState {
 
 interface LoadResult<T> {
   data: T
-  total?: number
+  total?: number | undefined
   fromCache: boolean
 }
 
@@ -145,31 +145,34 @@ export function useCachedPostList<T>(
   })
 
   async function load(params: Record<string, unknown> = {}) {
-    console.log('[useCachedPostList] Loading with params:', params)
+    log('Loading with params:', params)
     const result = await loadWithCache(
       params,
       async (p) => {
         const cached = await postCache.getList(p)
-        console.log('[useCachedPostList] Cache lookup result:', cached ? 'HIT' : 'MISS')
-        return cached ? { data: cached.data as T[], total: cached.total } : null
+        log('Cache lookup result:', cached ? 'HIT' : 'MISS')
+        if (!cached) return null
+
+        // Type-safe validation: ensure cached data is an array
+        if (!Array.isArray(cached.data)) {
+          log('Invalid cached data format, expected array')
+          return null
+        }
+
+        return { data: cached.data as T[], total: cached.total }
       },
-      async (p) => {
-        console.log('[useCachedPostList] Fetching from network...')
-        const result = await fetchFn(p)
-        console.log('[useCachedPostList] Network fetch complete')
-        return result
-      },
+      fetchFn,
       async (p, d, t) => {
-        console.log('[useCachedPostList] Caching data...')
+        log('Caching data...')
         await postCache.setList(p, d, t!)
-        console.log('[useCachedPostList] Data cached')
+        log('Data cached')
       },
       state,
       data,
       total,
       options
     )
-    console.log('[useCachedPostList] Load complete, fromCache:', result.fromCache)
+    log('Load complete, fromCache:', result.fromCache)
     return result
   }
 
