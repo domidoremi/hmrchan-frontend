@@ -37,7 +37,7 @@ function buildListKey(params: Record<string, unknown>): string {
     params,
     key,
     paramCount: Object.keys(params).length,
-    filteredCount: Object.entries(params).filter(([, v]) => v !== undefined && v !== null).length
+    filteredCount: Object.entries(params).filter(([, v]) => v !== undefined && v !== null).length,
   })
   return key
 }
@@ -124,7 +124,7 @@ export const postCache = {
       console.log('[postCache.getList] IDB cache found:', {
         age: `${Math.floor(age / 1000)}s`,
         ttl: `${Math.floor(ttl / 1000)}s`,
-        expired: age >= ttl
+        expired: age >= ttl,
       })
 
       if (Date.now() - idbCached.cached_at < CACHE_TTL.POST_LIST) {
