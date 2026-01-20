@@ -26,6 +26,9 @@ const CLOUDFLARE_PATTERNS = [
   // CSP 警告
   /script-src.*was not explicitly set/i,
   /default-src.*is used as a fallback/i,
+  /Executing inline script violates/i,
+  /Either the 'unsafe-inline' keyword/i,
+  /Content Security Policy directive/i,
 
   // document.write 警告
   /Avoid using document\.write/i,
@@ -39,10 +42,15 @@ const CLOUDFLARE_PATTERNS = [
   /challenge-platform/i,
   /cf-chl-/i,
   /turnstile/i,
+  /rocket-loader/i,
 
   // Cloudflare 域名相关
   /challenges\.cloudflare\.com/i,
   /cloudflareinsights\.com/i,
+
+  // Token 安全检查（正常的警告日志）
+  /Token integrity check failed/i,
+  /Token binding validation failed/i,
 ]
 
 /**
