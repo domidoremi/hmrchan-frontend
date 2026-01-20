@@ -227,7 +227,16 @@ export const postCache = {
     // 3. 检查是否所有帖子都在缓存中
     if (entityMap.size === listCache.uuids.length) {
       // 完全命中！按原始顺序组装结果
-      const data = listCache.uuids.map((uuid) => entityMap.get(uuid)!)
+      const data = listCache.uuids
+        .map((uuid) => entityMap.get(uuid))
+        .filter((entity): entity is unknown => entity !== undefined)
+
+      // 如果过滤后数量不匹配，说明有缺失，需要网络请求
+      if (data.length !== listCache.uuids.length) {
+        log(`Entity cache incomplete (${data.length}/${listCache.uuids.length}), network request needed`)
+        return undefined
+      }
+
       log('Full cache HIT - no network request needed!')
       return {
         data,
