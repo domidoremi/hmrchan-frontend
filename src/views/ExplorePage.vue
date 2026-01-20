@@ -143,7 +143,7 @@ import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
 import { Search, Globe, Music2, Video, Instagram } from 'lucide-vue-next'
 import { postService, type PostListItem, ApiError } from '@/api'
-import { postCache } from '@/utils/cache'
+import { useCachedPostList } from '@/composables/useCachedPosts'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import { useProgressiveRender } from '@/composables/useProgressiveRender'
 import { useMasonryColumns } from '@/composables/useMasonryColumns'
@@ -178,8 +178,13 @@ const posts = ref<PostListItem[]>([])
 const isLoading = ref(false)
 const isLoadingMore = ref(false)
 const error = ref<string | null>(null)
+
+// 使用缓存感知的帖子列表加载
+const { total, load: loadCachedPosts } = useCachedPostList<PostListItem>(
+  (params) => postService.listPosts(params as Parameters<typeof postService.listPosts>[0]),
+  { revalidate: false } // 不自动后台更新，减少重复请求
+)
 const page = ref(1)
-const total = ref(0)
 
 // 移动端优化：减少首屏加载数量
 const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
@@ -313,34 +318,20 @@ async function fetchPosts(reset = true) {
   const platform = currentPlatform.value !== 'all' ? currentPlatform.value : undefined
   const requestParams = { ...params, ...(platform ? { platform } : {}) }
 
-  if (reset) {
-    const cached = await postCache.getList(requestParams)
-    if (cached && !hadData) {
-      posts.value = cached.data as PostListItem[]
-      total.value = cached.total
-      // 分发到 masonry 列
-      await nextTick()
-      updateMasonryLayout(posts.value, reset)
-    }
-  }
-
   try {
-    const res = await postService.listPosts(requestParams)
+    // 使用缓存感知加载，避免重复请求
+    const result = await loadCachedPosts(requestParams)
+    const items = result.data as PostListItem[]
 
     if (reset) {
-      posts.value = res.items
+      posts.value = items
     } else {
-      posts.value.push(...res.items)
-    }
-    total.value = res.total
-
-    if (reset) {
-      await postCache.setList(requestParams, res.items, res.total)
+      posts.value.push(...items)
     }
 
     // 更新 masonry 布局
     await nextTick()
-    updateMasonryLayout(reset ? posts.value : res.items, reset)
+    updateMasonryLayout(reset ? posts.value : items, reset)
 
     return true
   } catch (err) {
