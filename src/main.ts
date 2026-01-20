@@ -21,6 +21,10 @@ import './styles/index.css'
 import { initConsoleGuard } from './utils/consoleGuard'
 initConsoleGuard()
 
+// 过滤 Cloudflare 相关的控制台警告
+import { initConsoleFilter } from './utils/consoleFilter'
+initConsoleFilter()
+
 const app = createApp(App)
 
 // 全局错误处理
