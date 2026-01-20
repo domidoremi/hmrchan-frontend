@@ -33,7 +33,12 @@ function buildListKey(params: Record<string, unknown>): string {
     .map(([k, v]) => `${k}=${v}`)
     .join('&')
   const key = `post_list:${sorted || 'default'}`
-  console.log('[postCache] buildListKey:', { params, key })
+  console.log('[postCache] buildListKey:', {
+    params,
+    key,
+    paramCount: Object.keys(params).length,
+    filteredCount: Object.entries(params).filter(([, v]) => v !== undefined && v !== null).length
+  })
   return key
 }
 
@@ -101,21 +106,36 @@ export const postCache = {
    */
   async getList(params: Record<string, unknown>): Promise<CachedPostList | undefined> {
     const cacheKey = buildListKey(params)
+    console.log('[postCache.getList] Looking up cache with key:', cacheKey)
 
     // 1. 先查内存
     const memCached = memoryCache.get<CachedPostList>(cacheKey)
     if (memCached) {
+      console.log('[postCache.getList] Memory cache HIT')
       return memCached
     }
+    console.log('[postCache.getList] Memory cache MISS')
 
     // 2. 再查 IndexedDB
     const idbCached = await idbGet<CachedPostList>(STORES.POST_LISTS, cacheKey)
     if (idbCached) {
+      const age = Date.now() - idbCached.cached_at
+      const ttl = CACHE_TTL.POST_LIST
+      console.log('[postCache.getList] IDB cache found:', {
+        age: `${Math.floor(age / 1000)}s`,
+        ttl: `${Math.floor(ttl / 1000)}s`,
+        expired: age >= ttl
+      })
+
       if (Date.now() - idbCached.cached_at < CACHE_TTL.POST_LIST) {
         memoryCache.set(cacheKey, idbCached, CACHE_TTL.MEMORY)
+        console.log('[postCache.getList] IDB cache HIT, backfilled to memory')
         return idbCached
       }
+      console.log('[postCache.getList] IDB cache EXPIRED, deleting')
       await idbDelete(STORES.POST_LISTS, cacheKey)
+    } else {
+      console.log('[postCache.getList] IDB cache MISS')
     }
 
     return undefined
