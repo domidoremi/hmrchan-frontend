@@ -81,7 +81,7 @@ export function useNavigation() {
    * @param item - 导航项或路径字符串
    * @returns 路由位置（字符串或对象）
    */
-  function getNavigationLink(item: NavigationItem | string) {
+  function getNavigationLink(item: NavigationItem | string): string | RouteLocationRaw {
     // 支持直接传入路径字符串
     const path = typeof item === 'string' ? item : item.path
     const requiresAuth = typeof item === 'string' ? false : item.requiresAuth
@@ -99,7 +99,7 @@ export function useNavigation() {
    * 获取收藏页链接（处理认证重定向）
    * 便捷方法，用于需要认证的收藏页
    */
-  const favoritesLink = computed(() =>
+  const favoritesLink = computed<string | RouteLocationRaw>(() =>
     getNavigationLink({ path: '/favorites', requiresAuth: true } as NavigationItem)
   )
 
