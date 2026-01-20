@@ -70,6 +70,10 @@ initFingerprint().catch(() => {
 
 app.mount('#app')
 
+// 性能监控：立即启动以捕获所有指标
+import { initPerformanceMonitoring } from './utils/performanceMonitor'
+initPerformanceMonitoring()
+
 // 非关键任务：使用现代 Scheduler API 在空闲时执行
 import { scheduleTask } from './utils/modernAPIs'
 
@@ -78,4 +82,14 @@ import { scheduleTask } from './utils/modernAPIs'
 scheduleTask(
   () => import('./utils/cache').then(({ registerServiceWorker }) => registerServiceWorker()),
   { priority: 'user-visible', delay: 1000 } // 延迟 1 秒，确保首屏渲染完成
+)
+
+// 智能路由预加载：在首屏渲染完成后预加载关键路由
+import { prefetchCriticalRoutes, setupHoverPrefetch } from './utils/prefetch'
+scheduleTask(
+  () => {
+    prefetchCriticalRoutes()
+    setupHoverPrefetch()
+  },
+  { priority: 'background', delay: 2000 } // 延迟 2 秒，低优先级后台任务
 )

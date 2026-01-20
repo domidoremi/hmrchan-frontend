@@ -1,106 +1,230 @@
 /**
- * 路由/数据预取工具
- * 配合 apiClient 的 cacheTtl 实现数据预热
+ * 智能路由预加载工具
+ * 基于用户行为和网络状况预加载关键路由
  */
 
-import { postService } from '@/api/postService'
-import { authorService } from '@/api/authorService'
-import { postCache } from '@/utils/cache'
+// 配置常量
+const PREFETCH_DELAY_MS = 1000 // 首屏渲染后延迟
+const HOVER_DELAY_MS = 100 // 鼠标悬停延迟
+const DEFAULT_TIMEOUT_MS = 5000 // 默认超时
+const IDLE_TIMEOUT_MS = 100 // requestIdleCallback 降级延迟
 
-// 预取状态标记
-const prefetchedData = new Set<string>()
-const MAX_PREFETCH_ENTRIES = 200 // 限制预取记录数量，防止内存无限增长
+interface PrefetchOptions {
+  priority?: 'high' | 'low'
+  timeout?: number
+}
 
-/**
- * 检查网络条件是否适合预取
- */
-export function shouldPrefetch(): boolean {
-  if (typeof navigator === 'undefined') return false
-  if (!navigator.onLine) return false
+// 已预加载的路由缓存
+const prefetchedRoutes = new Set<string>()
 
-  const connection = (
-    navigator as unknown as { connection?: { saveData?: boolean; effectiveType?: string } }
-  ).connection
-  if (!connection) return true
-  if (connection.saveData) return false
-  if (connection.effectiveType && ['slow-2g', '2g', '3g'].includes(connection.effectiveType))
-    return false
-  return true
+// 网络状况检测
+function getNetworkQuality(): 'slow' | 'fast' {
+  if ('connection' in navigator) {
+    const conn = (navigator as Navigator & { connection?: { effectiveType?: string } }).connection
+    const effectiveType = conn?.effectiveType
+    return effectiveType === '4g' || effectiveType === 'wifi' ? 'fast' : 'slow'
+  }
+  return 'fast' // 默认假设快速网络
+}
+
+// 检查是否在省电模式
+function isSavingData(): boolean {
+  if ('connection' in navigator) {
+    const conn = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection
+    return conn?.saveData ?? false
+  }
+  return false
 }
 
 /**
- * 预取 Explore 页首屏数据
+ * 预加载路由组件
  */
-export function prefetchExploreData(): void {
-  if (prefetchedData.has('explore') || !shouldPrefetch()) return
-  prefetchedData.add('explore')
-
-  postService
-    .listPosts({
-      page: 1,
-      page_size: 24,
-      sort_by: 'published_at',
-      sort_order: 'desc',
-    })
-    .catch(() => {})
-}
-
-/**
- * 预取 Authors 页首屏数据
- */
-export function prefetchAuthorsData(): void {
-  if (prefetchedData.has('authors') || !shouldPrefetch()) return
-  prefetchedData.add('authors')
-
-  authorService
-    .listAuthors({
-      page: 1,
-      page_size: 20,
-      sort_by: 'post_count',
-      sort_order: 'desc',
-    })
-    .catch(() => {})
-}
-
-/**
- * 预取帖子详情数据
- */
-export function prefetchPostDetail(postId: string): void {
-  const key = `post:${postId}`
-  if (prefetchedData.has(key) || !shouldPrefetch()) return
-
-  // 防止 Set 无限增长
-  if (prefetchedData.size >= MAX_PREFETCH_ENTRIES) {
-    // 清除一半旧记录（保留 explore/authors 等页面级标记）
-    const entries = Array.from(prefetchedData)
-    const postEntries = entries.filter((k) => k.startsWith('post:'))
-    const toRemove = postEntries.slice(0, Math.floor(postEntries.length / 2))
-    toRemove.forEach((k) => prefetchedData.delete(k))
+export async function prefetchRoute(
+  routeName: string,
+  importFn: () => Promise<unknown>,
+  options: PrefetchOptions = {}
+): Promise<void> {
+  // 避免重复预加载
+  if (prefetchedRoutes.has(routeName)) {
+    return
   }
 
-  prefetchedData.add(key)
+  // 省电模式下不预加载
+  if (isSavingData()) {
+    return
+  }
 
-  postCache
-    .getPost(postId)
-    .then((cached) => {
-      if (cached) return
-      return postService.getPost(postId).then((data) => {
-        postCache.setPost(postId, data).catch(() => {})
+  // 慢速网络下只预加载高优先级路由
+  if (getNetworkQuality() === 'slow' && options.priority !== 'high') {
+    return
+  }
+
+  const { timeout = DEFAULT_TIMEOUT_MS } = options
+
+  try {
+    // 使用 requestIdleCallback 在空闲时预加载
+    if ('requestIdleCallback' in window) {
+      await new Promise<void>((resolve) => {
+        requestIdleCallback(
+          async () => {
+            await importFn()
+            prefetchedRoutes.add(routeName)
+            resolve()
+          },
+          { timeout }
+        )
       })
-    })
-    .catch(() => {
-      postService
-        .getPost(postId)
-        .then((data) => {
-          postCache.setPost(postId, data).catch(() => {})
-        })
-        .catch(() => {})
-    })
+    } else {
+      // 降级方案：使用 setTimeout
+      await new Promise<void>((resolve) => {
+        setTimeout(async () => {
+          await importFn()
+          prefetchedRoutes.add(routeName)
+          resolve()
+        }, IDLE_TIMEOUT_MS)
+      })
+    }
+  } catch (error) {
+    console.warn(`Failed to prefetch route: ${routeName}`, error)
+  }
 }
 
 /**
- * 重置预取状态（用于登出后重新预取）
+ * 批量预加载路由
  */
-export function resetPrefetchState(): void {
-  prefetchedData.clear()
+export async function prefetchRoutes(
+  routes: Array<{ name: string; importFn: () => Promise<unknown>; priority?: 'high' | 'low' }>
+): Promise<void> {
+  // 按优先级排序
+  const sortedRoutes = routes.sort((a, b) => {
+    if (a.priority === 'high' && b.priority !== 'high') return -1
+    if (a.priority !== 'high' && b.priority === 'high') return 1
+    return 0
+  })
+
+  // 串行预加载，避免同时加载过多资源
+  for (const route of sortedRoutes) {
+    const options: PrefetchOptions = route.priority ? { priority: route.priority } : {}
+    await prefetchRoute(route.name, route.importFn, options)
+  }
+}
+
+/**
+ * 预加载关键路由（首页加载后立即执行）
+ */
+export function prefetchCriticalRoutes(): void {
+  // 在页面加载完成后预加载
+  if (document.readyState === 'complete') {
+    executePrefetch()
+  } else {
+    window.addEventListener('load', executePrefetch, { once: true })
+  }
+}
+
+function executePrefetch(): void {
+  // 延迟后开始预加载，确保首屏已完全渲染
+  setTimeout(() => {
+    prefetchRoutes([
+      // 高优先级：用户最可能访问的页面
+      { name: 'explore', importFn: ROUTE_CONFIG.explore.importFn, priority: 'high' },
+      { name: 'search', importFn: ROUTE_CONFIG.search.importFn, priority: 'high' },
+      { name: 'post-detail', importFn: ROUTE_CONFIG['post-detail'].importFn, priority: 'high' },
+      // 低优先级：次要页面
+      { name: 'authors', importFn: ROUTE_CONFIG.authors.importFn, priority: 'low' },
+      { name: 'community', importFn: ROUTE_CONFIG.community.importFn, priority: 'low' },
+      { name: 'profile', importFn: ROUTE_CONFIG.profile.importFn, priority: 'low' },
+    ])
+  }, PREFETCH_DELAY_MS)
+}
+
+/**
+ * 鼠标悬停预加载
+ * 当用户鼠标悬停在链接上时预加载目标页面
+ */
+export function setupHoverPrefetch(): void {
+  let hoverTimer: number | null = null
+
+  document.addEventListener(
+    'mouseover',
+    (e) => {
+      const target = e.target as HTMLElement
+      const link = target.closest('a[href]') as HTMLAnchorElement | null
+
+      if (!link || !link.href) return
+
+      // 只处理内部链接
+      if (link.origin !== window.location.origin) return
+
+      // 清除之前的定时器
+      if (hoverTimer) {
+        clearTimeout(hoverTimer)
+      }
+
+      // 延迟 100ms 后预加载，避免快速划过时触发
+      hoverTimer = window.setTimeout(() => {
+        const path = new URL(link.href).pathname
+        const routeName = getRouteNameFromPath(path)
+
+        if (routeName) {
+          const importFn = getRouteImportFn(routeName)
+          if (importFn) {
+            prefetchRoute(routeName, importFn, { priority: 'high' })
+          }
+        }
+      }, 100)
+    },
+    { passive: true }
+  )
+}
+
+// 路由配置映射 - 单一数据源
+const ROUTE_CONFIG = {
+  home: { path: '/', importFn: () => import('@/views/HomePage.vue') },
+  explore: { path: '/explore', importFn: () => import('@/views/ExplorePage.vue') },
+  search: { path: '/search', importFn: () => import('@/views/SearchPage.vue') },
+  'post-detail': { pathPattern: /^\/post\//, importFn: () => import('@/views/PostDetailPage.vue') },
+  authors: { path: '/authors', importFn: () => import('@/views/AuthorsPage.vue') },
+  'author-detail': {
+    pathPattern: /^\/author\//,
+    importFn: () => import('@/views/AuthorDetailPage.vue'),
+  },
+  community: { path: '/community', importFn: () => import('@/views/CommunityPage.vue') },
+  profile: { path: '/profile', importFn: () => import('@/views/ProfilePage.vue') },
+  favorites: { path: '/favorites', importFn: () => import('@/views/FavoritesPage.vue') },
+  settings: { path: '/settings', importFn: () => import('@/views/SettingsPage.vue') },
+  'profile-settings': {
+    pathPattern: /^\/settings\//,
+    importFn: () => import('@/views/ProfileSettingsPage.vue'),
+  },
+  login: { path: '/login', importFn: () => import('@/views/LoginPage.vue') },
+  register: { path: '/register', importFn: () => import('@/views/RegisterPage.vue') },
+  about: { path: '/about', importFn: () => import('@/views/AboutPage.vue') },
+  contact: { path: '/contact', importFn: () => import('@/views/ContactPage.vue') },
+} as const
+
+type RouteName = keyof typeof ROUTE_CONFIG
+
+// 路径到路由名称的映射
+function getRouteNameFromPath(path: string): RouteName | null {
+  // 先检查精确匹配
+  for (const [name, config] of Object.entries(ROUTE_CONFIG)) {
+    if ('path' in config && config.path === path) {
+      return name as RouteName
+    }
+  }
+
+  // 再检查模式匹配
+  for (const [name, config] of Object.entries(ROUTE_CONFIG)) {
+    if ('pathPattern' in config && config.pathPattern.test(path)) {
+      return name as RouteName
+    }
+  }
+
+  return null
+}
+
+// 路由名称到导入函数的映射
+function getRouteImportFn(routeName: string): (() => Promise<unknown>) | null {
+  const config = ROUTE_CONFIG[routeName as RouteName]
+  return config?.importFn ?? null
 }

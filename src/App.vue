@@ -75,7 +75,41 @@ const { settings } = storeToRefs(settingsStore)
 // 动效强度
 const animationIntensity = computed(() => settings.value.animationIntensity)
 
-const cachedPages = ['HomePage', 'ExplorePage', 'AuthorsPage', 'CommunityPage', 'FavoritesPage']
+// 智能缓存策略：根据页面访问频率动态调整
+const cachedPages = ref<string[]>(['HomePage', 'ExplorePage'])
+const pageVisitCount = new Map<string, number>()
+const MAX_CACHED_PAGES = 10
+
+// 记录页面访问
+watch(
+  () => route.name,
+  (newName) => {
+    if (!newName) return
+
+    const pageName = String(newName)
+    const count = pageVisitCount.get(pageName) || 0
+    pageVisitCount.set(pageName, count + 1)
+
+    // 访问超过 2 次的页面加入缓存
+    if (count >= 1 && !cachedPages.value.includes(pageName)) {
+      if (cachedPages.value.length >= MAX_CACHED_PAGES) {
+        // 移除访问次数最少的页面
+        const leastVisited = Array.from(pageVisitCount.entries())
+          .filter(([name]) => cachedPages.value.includes(name))
+          .sort((a, b) => a[1] - b[1])[0]
+
+        if (leastVisited) {
+          const index = cachedPages.value.indexOf(leastVisited[0])
+          if (index > -1) {
+            cachedPages.value.splice(index, 1)
+          }
+        }
+      }
+      cachedPages.value.push(pageName)
+    }
+  },
+  { immediate: true }
+)
 
 // 隐藏 Footer 的页面
 const hideFooterPages = ['HomePage', 'LoginPage', 'RegisterPage', 'ExplorePage']
