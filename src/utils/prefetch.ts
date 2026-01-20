@@ -3,12 +3,6 @@
  * 基于用户行为和网络状况预加载关键路由
  */
 
-// 配置常量
-const PREFETCH_DELAY_MS = 1000 // 首屏渲染后延迟
-const HOVER_DELAY_MS = 100 // 鼠标悬停延迟
-const DEFAULT_TIMEOUT_MS = 5000 // 默认超时
-const IDLE_TIMEOUT_MS = 100 // requestIdleCallback 降级延迟
-
 interface PrefetchOptions {
   priority?: 'high' | 'low'
   timeout?: number
