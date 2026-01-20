@@ -90,14 +90,13 @@
                 />
 
                 <!-- 视频 -->
-                <video
+                <VideoPlayer
                   v-else-if="currentMedia.file_type === 'video'"
                   ref="mediaRef"
                   class="lightbox-media is-loaded"
                   :src="fullSizeUrl"
-                  controls
                   playsinline
-                  @loadedmetadata="onMediaLoad"
+                  @ready="onMediaLoad"
                 />
               </div>
             </Transition>
@@ -128,6 +127,7 @@ import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { X, ZoomIn, ZoomOut, Maximize2, ChevronLeft, ChevronRight } from 'lucide-vue-next'
 import { getMediaStreamUrl } from '@/utils/mediaOptimizer'
 import { useFocusTrap } from '@/composables/useFocusTrap'
+import VideoPlayer from './VideoPlayer.vue'
 
 export interface MediaItem {
   id: string
