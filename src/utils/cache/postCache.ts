@@ -32,7 +32,9 @@ function buildListKey(params: Record<string, unknown>): string {
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([k, v]) => `${k}=${v}`)
     .join('&')
-  return `post_list:${sorted || 'default'}`
+  const key = `post_list:${sorted || 'default'}`
+  console.log('[postCache] buildListKey:', { params, key })
+  return key
 }
 
 /**
