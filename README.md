@@ -121,6 +121,9 @@ bun run dev
 
 # 启动开发服务器并测试启动性能
 bun run perf:dev
+
+# 开发环境下可使用缓存调试工具
+# 在浏览器控制台输入: window.__cacheDebug.stats()
 ```
 
 ### 构建
@@ -247,7 +250,8 @@ frontend/
 │   │   └── index.ts
 │   │
 │   ├── utils/            # 工具函数
-│   │   ├── cache.ts      # 缓存管理
+│   │   ├── cache/        # 缓存管理 (内存 + IndexedDB)
+│   │   ├── cacheDebug.ts # 缓存调试工具
 │   │   ├── performance.ts # 性能优化
 │   │   └── validation.ts
 │   │
@@ -335,8 +339,28 @@ frontend/
 ### 缓存策略
 
 - **内存缓存** - 50MB 限制，30 分钟过期
+- **IndexedDB 缓存** - 持久化本地存储
 - **Service Worker** - 离线支持和资源缓存
 - **CDN 缓存** - Cloudflare CDN 全球加速
+
+### 缓存调试工具
+
+开发环境下提供缓存调试工具，用于追踪四层缓存的命中情况：
+
+```javascript
+// 在浏览器控制台使用
+window.__cacheDebug.stats() // 查看缓存统计
+window.__cacheDebug.clear() // 清除统计数据
+window.__cacheDebug.enable() // 启用调试
+window.__cacheDebug.disable() // 禁用调试
+```
+
+缓存层级（从快到慢）：
+
+- ⚡ **Memory Cache** - 内存缓存（最快）
+- 💾 **IndexedDB Cache** - 本地数据库缓存
+- 🔧 **Service Worker Cache** - 离线缓存
+- 🌐 **Network** - 网络请求（最慢）
 
 ## 🚢 部署指南
 
