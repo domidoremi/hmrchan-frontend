@@ -414,7 +414,11 @@ const handleFullscreenChange = () => {
 }
 
 const handleClickOutside = (event: MouseEvent) => {
-  if (showSettings.value && settingsMenuRef.value && !settingsMenuRef.value.contains(event.target as Node)) {
+  if (
+    showSettings.value &&
+    settingsMenuRef.value &&
+    !settingsMenuRef.value.contains(event.target as Node)
+  ) {
     showSettings.value = false
   }
 }
