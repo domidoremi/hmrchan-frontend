@@ -90,6 +90,19 @@ export function useNavigation() {
   }
 
   /**
+   * 获取移动端收藏页链接（处理认证重定向）
+   */
+  const getMobileFavoritesLink = computed(() => {
+    if (!isAuthenticated.value) {
+      return {
+        path: '/login',
+        query: { redirect: '/favorites' },
+      }
+    }
+    return '/favorites'
+  })
+
+  /**
    * 处理导航项的预加载
    */
   function handlePrefetch(item: NavigationItem) {
@@ -110,6 +123,7 @@ export function useNavigation() {
 
     // 辅助函数
     getNavigationLink,
+    getMobileFavoritesLink,
     getIconSize,
     handlePrefetch,
     executePrefetch,
