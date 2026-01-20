@@ -105,10 +105,12 @@ function observeFCP(): void {
       const entries = list.getEntries()
       const firstEntry = entries[0]
 
-      metrics.fcp = firstEntry.startTime
+      if (firstEntry) {
+        metrics.fcp = firstEntry.startTime
 
-      if (import.meta.env.DEV) {
-        console.log('FCP:', metrics.fcp, 'ms')
+        if (import.meta.env.DEV) {
+          console.log('FCP:', metrics.fcp, 'ms')
+        }
       }
     })
 
@@ -122,13 +124,23 @@ function observeFCP(): void {
  * 获取 TTFB (Time to First Byte)
  */
 function measureTTFB(): void {
-  if (!('performance' in window) || !performance.timing) return
+  if (!('performance' in window)) return
 
-  const navigationTiming = performance.timing
-  metrics.ttfb = navigationTiming.responseStart - navigationTiming.requestStart
+  try {
+    // Use modern Navigation Timing API Level 2
+    const navigationEntry = performance.getEntriesByType(
+      'navigation'
+    )[0] as PerformanceNavigationTiming
 
-  if (import.meta.env.DEV) {
-    console.log('TTFB:', metrics.ttfb, 'ms')
+    if (navigationEntry) {
+      metrics.ttfb = navigationEntry.responseStart - navigationEntry.requestStart
+
+      if (import.meta.env.DEV) {
+        console.log('TTFB:', metrics.ttfb, 'ms')
+      }
+    }
+  } catch {
+    // Fallback silently if API not supported
   }
 }
 
@@ -143,11 +155,20 @@ function estimateTTI(): void {
     'load',
     () => {
       setTimeout(() => {
-        const navigationTiming = performance.timing
-        metrics.tti = navigationTiming.loadEventEnd - navigationTiming.navigationStart
+        try {
+          const navigationEntry = performance.getEntriesByType(
+            'navigation'
+          )[0] as PerformanceNavigationTiming
 
-        if (import.meta.env.DEV) {
-          console.log('TTI (estimated):', metrics.tti, 'ms')
+          if (navigationEntry) {
+            metrics.tti = navigationEntry.loadEventEnd - navigationEntry.fetchStart
+
+            if (import.meta.env.DEV) {
+              console.log('TTI (estimated):', metrics.tti, 'ms')
+            }
+          }
+        } catch {
+          // Fallback silently if API not supported
         }
       }, 0)
     },

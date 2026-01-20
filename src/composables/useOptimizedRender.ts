@@ -102,7 +102,10 @@ export function useIntersectionObserver(
     if (!target.value) return
 
     observer = new IntersectionObserver((entries) => {
-      isVisible.value = entries[0].isIntersecting
+      const entry = entries[0]
+      if (entry) {
+        isVisible.value = entry.isIntersecting
+      }
     }, options)
 
     observer.observe(target.value)
@@ -172,10 +175,14 @@ export function useVirtualScroll<T>(
 
   const totalHeight = computed(() => items.value.length * itemHeight)
 
-  const handleScroll = useRAFThrottle((event: Event) => {
+  const handleScroll = (event: Event) => {
     const target = event.target as HTMLElement
-    scrollTop.value = target.scrollTop
-  })
+    if (!target) return
+
+    requestAnimationFrame(() => {
+      scrollTop.value = target.scrollTop
+    })
+  }
 
   return {
     visibleItems,
