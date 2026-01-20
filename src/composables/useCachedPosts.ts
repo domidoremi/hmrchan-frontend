@@ -9,6 +9,9 @@
 import { ref, shallowRef } from 'vue'
 import { postCache } from '@/utils/cache'
 
+const DEBUG = import.meta.env.DEV && import.meta.env.VITE_ENABLE_DEBUG === 'true'
+const log = (...args: unknown[]) => DEBUG && console.log('[useCachedPosts]', ...args)
+
 interface UseCachedPostsOptions {
   /** 是否在缓存命中后仍然发起网络请求更新 */
   revalidate?: boolean
@@ -63,7 +66,7 @@ async function loadWithCache<T, P>(
 
   // 通道 A：立即查缓存
   const cached = await getCached(params)
-  console.log('[loadWithCache] Cached result:', cached ? 'HIT' : 'MISS', 'revalidate:', revalidate)
+  log('Cache lookup:', cached ? 'HIT' : 'MISS', 'revalidate:', revalidate)
 
   if (cached) {
     dataRef.value = cached.data
@@ -74,7 +77,7 @@ async function loadWithCache<T, P>(
 
     // 如果不需要重新验证，直接返回缓存数据
     if (!revalidate) {
-      console.log('[loadWithCache] Returning cached data without revalidation')
+      log('Returning cached data without revalidation')
       return {
         data: dataRef.value,
         total: totalRef?.value,
@@ -83,16 +86,16 @@ async function loadWithCache<T, P>(
     }
 
     // 有缓存且需要重新验证，后台静默更新
-    console.log('[loadWithCache] Revalidating in background')
+    log('Revalidating in background')
     state.value.revalidating = true
   } else {
     // 无缓存，显示加载状态
-    console.log('[loadWithCache] No cache found, loading from network')
+    log('No cache found, loading from network')
     state.value.loading = true
   }
 
-  // 通道 B：网络请求
-  console.log('[loadWithCache] Starting network request')
+  // 通道 B：网络请求（只有在需要时才执行）
+  log('Starting network request')
   try {
     const result = await fetchFn(params)
 
