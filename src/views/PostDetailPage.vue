@@ -516,9 +516,10 @@ onUnmounted(() => {
 .media-viewer {
   position: relative;
   width: 100%;
-  /* 使用固定宽高比防止布局抖动 */
+  /* 动态宽高比，支持横屏和竖屏视频 */
   aspect-ratio: var(--aspect-ratio, 16 / 9);
-  max-height: min(70vh, 600px);
+  /* 竖屏视频限制最大高度，横屏视频限制最大宽度 */
+  max-height: min(80vh, 800px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -533,7 +534,8 @@ onUnmounted(() => {
 
 @media (max-width: 600px) {
   .media-viewer {
-    max-height: min(50vh, 400px);
+    /* 移动端竖屏视频需要更多空间 */
+    max-height: min(70vh, 600px);
   }
 }
 
@@ -619,10 +621,8 @@ onUnmounted(() => {
 
 .media-viewer-item {
   position: relative;
-  max-width: 100%;
-  max-height: 100%;
-  width: auto;
-  height: auto;
+  width: 100%;
+  height: 100%;
   object-fit: contain;
   border-radius: var(--radius-lg);
   opacity: 0;

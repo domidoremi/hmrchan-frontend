@@ -212,6 +212,11 @@ const supportsPiP = computed(() => {
   return document.pictureInPictureEnabled
 })
 
+// Constants
+const CONTROLS_HIDE_DELAY = 3000
+const SEEK_STEP = 5
+const VOLUME_STEP = 0.1
+
 let controlsTimeout: ReturnType<typeof setTimeout> | null = null
 
 function formatTime(seconds: number): string {
@@ -341,7 +346,7 @@ function startControlsTimer() {
     if (isPlaying.value) {
       showControls.value = false
     }
-  }, 3000)
+  }, CONTROLS_HIDE_DELAY)
 }
 
 function stopControlsTimer() {
@@ -414,6 +419,7 @@ onBeforeUnmount(() => {
   position: relative;
   width: 100%;
   height: 100%;
+  min-height: 200px;
   background: #000;
   border-radius: var(--radius-lg);
   overflow: hidden;
@@ -425,6 +431,9 @@ onBeforeUnmount(() => {
 }
 
 .video-element {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
   display: block;
