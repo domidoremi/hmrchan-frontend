@@ -322,6 +322,7 @@ Increase `.background-overlay` opacity from 0.9 to 0.95.
 - [ ] Integration with GSAP for advanced animations
 - [ ] Real image/video backgrounds (requires assets)
 - [x] Dark mode support with theme-aware colors
+- [x] Consistent color palette using Tailwind Indigo scale
 - [ ] Custom color schemes per platform
 - [ ] Accessibility contrast adjustment controls
 
