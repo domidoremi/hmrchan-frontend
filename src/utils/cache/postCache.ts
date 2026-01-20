@@ -155,13 +155,13 @@ export const postCache = {
    */
   async setPostEntity(uuid: string, data: unknown): Promise<void> {
     const cached: CachedPostEntity = {
-      uuid,
+      uuid: `entity:${uuid}`, // 统一使用带前缀的 key
       data,
       cached_at: Date.now(),
     }
 
     memoryCache.set(`post_entity:${uuid}`, cached, CACHE_TTL.MEMORY)
-    await idbSet(STORES.POSTS, { ...cached, uuid: `entity:${uuid}` })
+    await idbSet(STORES.POSTS, cached)
   },
 
   /**
