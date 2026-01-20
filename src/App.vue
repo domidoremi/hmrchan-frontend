@@ -1,5 +1,9 @@
 <template>
   <div id="app" :data-theme="resolvedTheme" :data-animation-intensity="animationIntensity">
+    <!-- Contextual 3D Background -->
+    <ContextualBackground />
+    <BackgroundTransition />
+
     <!-- Skip to main content -->
     <a href="#main-content" class="skip-link">
       {{ $t('common.skipToContent') }}
@@ -54,7 +58,10 @@ import PageLoading from '@/components/ui/PageLoading.vue'
 import BackToTop from '@/components/ui/BackToTop.vue'
 import ErrorBoundary from '@/components/ui/ErrorBoundary.vue'
 
-// Toast 容器懒加载，只在首次显示 toast 时加载
+// Lazy-load non-critical components
+const ContextualBackground = defineAsyncComponent(
+  () => import('@/components/layout/ContextualBackground.vue')
+)
 const ToastContainer = defineAsyncComponent(() => import('@/components/ui/ToastContainer.vue'))
 
 const route = useRoute()
