@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useContextualBackground } from '@/composables/useContextualBackground'
+import { useThemeStore } from '@/stores/theme'
 
 const { config, isTransitioning } = useContextualBackground()
+const themeStore = useThemeStore()
 
 const scrollY = ref(0)
 const mouseX = ref(0)
@@ -58,8 +60,8 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="contextual-background">
-    <!-- Base layer with white overlay for content readability -->
+  <div class="contextual-background" :data-theme="themeStore.resolvedTheme">
+    <!-- Base layer with overlay for content readability -->
     <div class="background-overlay" />
 
     <!-- 3D background layer -->
@@ -82,7 +84,8 @@ onUnmounted(() => {
   height: 100%;
   z-index: -1;
   overflow: hidden;
-  background: #ffffff;
+  background: var(--color-background);
+  transition: background-color 0.3s ease;
 }
 
 .background-overlay {
@@ -91,6 +94,12 @@ onUnmounted(() => {
   background: rgba(255, 255, 255, 0.9);
   z-index: 2;
   pointer-events: none;
+  transition: background-color 0.3s ease;
+}
+
+/* Dark mode overlay */
+.contextual-background[data-theme='dark'] .background-overlay {
+  background: rgba(6, 8, 16, 0.85);
 }
 
 .background-layer {
@@ -115,12 +124,12 @@ onUnmounted(() => {
   animation: float 20s ease-in-out infinite;
 }
 
-/* Home - The Core */
+/* ========== Home - The Core ========== */
 .bg-home-core .background-content {
   background-image: radial-gradient(
     ellipse at center,
-    rgba(65, 105, 225, 0.15) 0%,
-    rgba(65, 105, 225, 0.05) 50%,
+    rgba(99, 102, 241, 0.15) 0%,
+    rgba(99, 102, 241, 0.05) 50%,
     transparent 100%
   );
 }
@@ -135,39 +144,67 @@ onUnmounted(() => {
   transform: translate(-50%, -50%) rotate(0deg);
   background: linear-gradient(
     135deg,
-    rgba(65, 105, 225, 0.3) 0%,
-    rgba(100, 149, 237, 0.2) 50%,
-    rgba(135, 206, 250, 0.1) 100%
+    rgba(99, 102, 241, 0.3) 0%,
+    rgba(129, 140, 248, 0.2) 50%,
+    rgba(165, 180, 252, 0.1) 100%
   );
   clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
-  filter: blur(1px) drop-shadow(0 20px 40px rgba(65, 105, 225, 0.3));
+  filter: blur(1px) drop-shadow(0 20px 40px rgba(99, 102, 241, 0.3));
   animation: rotate-core 30s linear infinite;
 }
 
-/* Explore Default - Aerogel */
+/* Dark mode - Home Core */
+.contextual-background[data-theme='dark'] .bg-home-core .background-content {
+  background-image: radial-gradient(
+    ellipse at center,
+    rgba(129, 140, 248, 0.25) 0%,
+    rgba(129, 140, 248, 0.1) 50%,
+    transparent 100%
+  );
+}
+
+.contextual-background[data-theme='dark'] .bg-home-core .background-content::before {
+  background: linear-gradient(
+    135deg,
+    rgba(129, 140, 248, 0.4) 0%,
+    rgba(165, 180, 252, 0.3) 50%,
+    rgba(199, 210, 254, 0.15) 100%
+  );
+  filter: blur(2px) drop-shadow(0 20px 60px rgba(129, 140, 248, 0.5));
+}
+
+/* ========== Explore Default - Aerogel ========== */
 .bg-explore-aerogel .background-content {
   background:
-    radial-gradient(circle at 30% 40%, rgba(173, 216, 230, 0.2) 0%, transparent 50%),
-    radial-gradient(circle at 70% 60%, rgba(135, 206, 250, 0.15) 0%, transparent 50%),
-    radial-gradient(circle at 50% 80%, rgba(176, 224, 230, 0.1) 0%, transparent 50%);
+    radial-gradient(circle at 30% 40%, rgba(165, 180, 252, 0.2) 0%, transparent 50%),
+    radial-gradient(circle at 70% 60%, rgba(129, 140, 248, 0.15) 0%, transparent 50%),
+    radial-gradient(circle at 50% 80%, rgba(199, 210, 254, 0.1) 0%, transparent 50%);
   animation: float-bubbles 25s ease-in-out infinite;
 }
 
-/* Explore Instagram - Optical Glass */
+/* Dark mode - Aerogel */
+.contextual-background[data-theme='dark'] .bg-explore-aerogel .background-content {
+  background:
+    radial-gradient(circle at 30% 40%, rgba(129, 140, 248, 0.15) 0%, transparent 50%),
+    radial-gradient(circle at 70% 60%, rgba(99, 102, 241, 0.12) 0%, transparent 50%),
+    radial-gradient(circle at 50% 80%, rgba(165, 180, 252, 0.08) 0%, transparent 50%);
+}
+
+/* ========== Explore Instagram - Optical Glass ========== */
 .bg-explore-glass .background-content {
   background-image:
     linear-gradient(
       45deg,
       transparent 48%,
-      rgba(65, 105, 225, 0.1) 49%,
-      rgba(65, 105, 225, 0.1) 51%,
+      rgba(99, 102, 241, 0.1) 49%,
+      rgba(99, 102, 241, 0.1) 51%,
       transparent 52%
     ),
     linear-gradient(
       -45deg,
       transparent 48%,
-      rgba(100, 149, 237, 0.08) 49%,
-      rgba(100, 149, 237, 0.08) 51%,
+      rgba(129, 140, 248, 0.08) 49%,
+      rgba(129, 140, 248, 0.08) 51%,
       transparent 52%
     );
   background-size: 80px 80px;
@@ -181,18 +218,41 @@ onUnmounted(() => {
   content: '';
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at 50% 50%, rgba(65, 105, 225, 0.05) 0%, transparent 70%);
+  background: radial-gradient(circle at 50% 50%, rgba(99, 102, 241, 0.05) 0%, transparent 70%);
 }
 
-/* Explore TikTok - Liquid Silk */
+/* Dark mode - Glass */
+.contextual-background[data-theme='dark'] .bg-explore-glass .background-content {
+  background-image:
+    linear-gradient(
+      45deg,
+      transparent 48%,
+      rgba(129, 140, 248, 0.15) 49%,
+      rgba(129, 140, 248, 0.15) 51%,
+      transparent 52%
+    ),
+    linear-gradient(
+      -45deg,
+      transparent 48%,
+      rgba(165, 180, 252, 0.12) 49%,
+      rgba(165, 180, 252, 0.12) 51%,
+      transparent 52%
+    );
+}
+
+.contextual-background[data-theme='dark'] .bg-explore-glass .background-content::after {
+  background: radial-gradient(circle at 50% 50%, rgba(129, 140, 248, 0.1) 0%, transparent 70%);
+}
+
+/* ========== Explore TikTok - Liquid Silk ========== */
 .bg-explore-liquid .background-content {
   background: linear-gradient(
     120deg,
-    rgba(65, 105, 225, 0.15) 0%,
-    rgba(100, 149, 237, 0.1) 25%,
-    rgba(135, 206, 250, 0.15) 50%,
-    rgba(100, 149, 237, 0.1) 75%,
-    rgba(65, 105, 225, 0.15) 100%
+    rgba(99, 102, 241, 0.15) 0%,
+    rgba(129, 140, 248, 0.1) 25%,
+    rgba(165, 180, 252, 0.15) 50%,
+    rgba(129, 140, 248, 0.1) 75%,
+    rgba(99, 102, 241, 0.15) 100%
   );
   background-size: 200% 200%;
   animation: liquid-flow 8s ease-in-out infinite;
@@ -206,40 +266,85 @@ onUnmounted(() => {
   animation: silk-shimmer 6s ease-in-out infinite;
 }
 
-/* Explore YouTube - Deep Ripples */
+/* Dark mode - Liquid */
+.contextual-background[data-theme='dark'] .bg-explore-liquid .background-content {
+  background: linear-gradient(
+    120deg,
+    rgba(129, 140, 248, 0.2) 0%,
+    rgba(165, 180, 252, 0.15) 25%,
+    rgba(199, 210, 254, 0.2) 50%,
+    rgba(165, 180, 252, 0.15) 75%,
+    rgba(129, 140, 248, 0.2) 100%
+  );
+}
+
+.contextual-background[data-theme='dark'] .bg-explore-liquid .background-content::before {
+  background: radial-gradient(ellipse at 30% 50%, rgba(255, 255, 255, 0.08) 0%, transparent 40%);
+}
+
+/* ========== Explore YouTube - Deep Ripples ========== */
 .bg-explore-ripples .background-content {
   background:
     radial-gradient(
       circle at center,
       transparent 30%,
-      rgba(25, 25, 112, 0.03) 31%,
+      rgba(67, 56, 202, 0.03) 31%,
       transparent 32%
     ),
     radial-gradient(
       circle at center,
       transparent 45%,
-      rgba(25, 25, 112, 0.05) 46%,
+      rgba(67, 56, 202, 0.05) 46%,
       transparent 47%
     ),
     radial-gradient(
       circle at center,
       transparent 60%,
-      rgba(25, 25, 112, 0.04) 61%,
+      rgba(67, 56, 202, 0.04) 61%,
       transparent 62%
     ),
-    radial-gradient(circle at center, transparent 75%, rgba(25, 25, 112, 0.03) 76%, transparent 77%);
+    radial-gradient(circle at center, transparent 75%, rgba(67, 56, 202, 0.03) 76%, transparent 77%);
   background-size: 100% 100%;
   animation: ripple-expand 12s ease-out infinite;
 }
 
-/* Explore Twitter - Fiber Optic Network */
+/* Dark mode - Ripples */
+.contextual-background[data-theme='dark'] .bg-explore-ripples .background-content {
+  background:
+    radial-gradient(
+      circle at center,
+      transparent 30%,
+      rgba(129, 140, 248, 0.08) 31%,
+      transparent 32%
+    ),
+    radial-gradient(
+      circle at center,
+      transparent 45%,
+      rgba(129, 140, 248, 0.12) 46%,
+      transparent 47%
+    ),
+    radial-gradient(
+      circle at center,
+      transparent 60%,
+      rgba(129, 140, 248, 0.1) 61%,
+      transparent 62%
+    ),
+    radial-gradient(
+      circle at center,
+      transparent 75%,
+      rgba(129, 140, 248, 0.08) 76%,
+      transparent 77%
+    );
+}
+
+/* ========== Explore Twitter - Fiber Optic Network ========== */
 .bg-explore-network .background-content {
   background-image:
-    radial-gradient(circle at 20% 30%, rgba(65, 105, 225, 0.15) 0%, transparent 2%),
-    radial-gradient(circle at 80% 20%, rgba(65, 105, 225, 0.15) 0%, transparent 2%),
-    radial-gradient(circle at 40% 70%, rgba(65, 105, 225, 0.15) 0%, transparent 2%),
-    radial-gradient(circle at 70% 80%, rgba(65, 105, 225, 0.15) 0%, transparent 2%),
-    radial-gradient(circle at 50% 50%, rgba(65, 105, 225, 0.15) 0%, transparent 2%);
+    radial-gradient(circle at 20% 30%, rgba(99, 102, 241, 0.15) 0%, transparent 2%),
+    radial-gradient(circle at 80% 20%, rgba(99, 102, 241, 0.15) 0%, transparent 2%),
+    radial-gradient(circle at 40% 70%, rgba(99, 102, 241, 0.15) 0%, transparent 2%),
+    radial-gradient(circle at 70% 80%, rgba(99, 102, 241, 0.15) 0%, transparent 2%),
+    radial-gradient(circle at 50% 50%, rgba(99, 102, 241, 0.15) 0%, transparent 2%);
   animation: network-pulse 4s ease-in-out infinite;
 }
 
@@ -251,21 +356,49 @@ onUnmounted(() => {
     linear-gradient(
       45deg,
       transparent 48%,
-      rgba(65, 105, 225, 0.05) 49%,
-      rgba(65, 105, 225, 0.05) 50%,
+      rgba(99, 102, 241, 0.05) 49%,
+      rgba(99, 102, 241, 0.05) 50%,
       transparent 51%
     ),
     linear-gradient(
       -45deg,
       transparent 48%,
-      rgba(65, 105, 225, 0.05) 49%,
-      rgba(65, 105, 225, 0.05) 50%,
+      rgba(99, 102, 241, 0.05) 49%,
+      rgba(99, 102, 241, 0.05) 50%,
       transparent 51%
     );
   background-size: 200px 200px;
 }
 
-/* Animations */
+/* Dark mode - Network */
+.contextual-background[data-theme='dark'] .bg-explore-network .background-content {
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(129, 140, 248, 0.25) 0%, transparent 2%),
+    radial-gradient(circle at 80% 20%, rgba(129, 140, 248, 0.25) 0%, transparent 2%),
+    radial-gradient(circle at 40% 70%, rgba(129, 140, 248, 0.25) 0%, transparent 2%),
+    radial-gradient(circle at 70% 80%, rgba(129, 140, 248, 0.25) 0%, transparent 2%),
+    radial-gradient(circle at 50% 50%, rgba(129, 140, 248, 0.25) 0%, transparent 2%);
+}
+
+.contextual-background[data-theme='dark'] .bg-explore-network .background-content::before {
+  background:
+    linear-gradient(
+      45deg,
+      transparent 48%,
+      rgba(129, 140, 248, 0.1) 49%,
+      rgba(129, 140, 248, 0.1) 50%,
+      transparent 51%
+    ),
+    linear-gradient(
+      -45deg,
+      transparent 48%,
+      rgba(129, 140, 248, 0.1) 49%,
+      rgba(129, 140, 248, 0.1) 50%,
+      transparent 51%
+    );
+}
+
+/* ========== Animations ========== */
 @keyframes float {
   0%,
   100% {
@@ -352,7 +485,7 @@ onUnmounted(() => {
   }
 }
 
-/* Responsive adjustments */
+/* ========== Responsive adjustments ========== */
 @media (max-width: 768px) {
   .bg-home-core .background-content::before {
     width: 250px;

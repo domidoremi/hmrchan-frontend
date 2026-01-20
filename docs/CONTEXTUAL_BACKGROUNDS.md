@@ -4,7 +4,7 @@ A sophisticated 3D background system that morphs based on page context and user 
 
 ## Overview
 
-The system provides **6 distinct background states**:
+The system provides **6 distinct background states** with full **light/dark mode support**:
 
 1. **Home** - The Core (crystalline prism)
 2. **Explore Default** - Aerogel (floating bubbles)
@@ -12,6 +12,8 @@ The system provides **6 distinct background states**:
 4. **Explore TikTok** - Liquid Silk (flowing gradients)
 5. **Explore YouTube** - Deep Ripples (concentric waves)
 6. **Explore Twitter/X** - Fiber Optic Network (connected nodes)
+
+All backgrounds automatically adapt to the user's theme preference (light/dark/auto) with enhanced contrast and visibility in dark mode.
 
 ## Architecture
 
@@ -75,45 +77,79 @@ setExploreFilter('tiktok')
 
 **Visual**: Large crystalline dodecahedron rotating slowly
 **Effect**: Parallax movement with mouse and scroll
-**Color**: Royal blue with transparency
+**Color**: Royal blue (light) / Bright indigo (dark)
 **Metaphor**: The origin, potential energy
+
+**Light Mode**: Subtle blue glow with soft shadows
+**Dark Mode**: Enhanced luminosity with stronger glow effect
 
 ### Explore Default - Aerogel
 
 **Visual**: Soft floating bubbles in pale blue
 **Effect**: Gentle floating animation
-**Color**: Light blue gradients
+**Color**: Light blue gradients (light) / Deep blue tones (dark)
 **Metaphor**: Undefined potential, all possibilities
+
+**Light Mode**: Airy, cloud-like appearance
+**Dark Mode**: Deeper, more mysterious atmosphere
 
 ### Explore Instagram - Optical Glass
 
 **Visual**: Geometric grid of glass prisms
 **Effect**: Subtle refraction patterns
-**Color**: Structured blue tones
+**Color**: Structured blue tones (light) / Brighter prisms (dark)
 **Metaphor**: Frozen moments, framed memories
+
+**Light Mode**: Clean, minimal glass effect
+**Dark Mode**: Enhanced contrast with glowing edges
 
 ### Explore TikTok - Liquid Silk
 
 **Visual**: Flowing metallic gradients
 **Effect**: Smooth wave-like motion
-**Color**: Glossy blue with highlights
+**Color**: Glossy blue with highlights (light) / Vibrant flow (dark)
 **Metaphor**: Trends flowing, viral movement
+
+**Light Mode**: Soft shimmer with white highlights
+**Dark Mode**: Reduced highlight intensity for comfort
 
 ### Explore YouTube - Deep Ripples
 
 **Visual**: Concentric circles expanding
 **Effect**: Pulsing depth effect
-**Color**: Deep navy to royal blue
+**Color**: Deep navy to royal blue (light) / Bright ripples (dark)
 **Metaphor**: Immersive depth, time investment
+
+**Light Mode**: Subtle, barely-there ripples
+**Dark Mode**: More pronounced, glowing ripples
 
 ### Explore Twitter/X - Fiber Optic Network
 
 **Visual**: Connected nodes with glowing lines
 **Effect**: Pulsing network connections
-**Color**: Bright blue nodes on white
+**Color**: Bright blue nodes on white (light) / Glowing nodes (dark)
 **Metaphor**: Information flow, connectivity
 
+**Light Mode**: Delicate connection lines
+**Dark Mode**: Enhanced glow on nodes and connections
+
 ## Customization
+
+### Theme Support
+
+The background system automatically adapts to light and dark themes using the `useThemeStore`:
+
+```typescript
+// Automatically detects theme changes
+const themeStore = useThemeStore()
+// Background updates via data-theme attribute
+```
+
+**Color Adjustments by Theme:**
+
+- **Light Mode**: Subtle, low-opacity backgrounds (0.05-0.15 alpha)
+- **Dark Mode**: Enhanced visibility with higher opacity (0.08-0.25 alpha)
+- **Overlay**: White 90% (light) / Dark blue 85% (dark)
 
 ### Adjust Animation Speed
 
@@ -125,28 +161,57 @@ animation: float 20s ease-in-out infinite; /* Change 20s */
 
 ### Change Colors
 
+The system uses a **consistent indigo/violet palette** (Tailwind Indigo scale) across all backgrounds for visual cohesion:
+
+- **Indigo-500**: `rgba(99, 102, 241, ...)` - Primary accent
+- **Indigo-400**: `rgba(129, 140, 248, ...)` - Mid-tone
+- **Indigo-300**: `rgba(165, 180, 252, ...)` - Light accent
+- **Indigo-200**: `rgba(199, 210, 254, ...)` - Subtle highlights (dark mode)
+
 Modify the RGBA values in each background state:
 
 ```css
 .bg-home-core .background-content::before {
   background: linear-gradient(
     135deg,
-    rgba(65, 105, 225, 0.3) 0%,
-    /* Adjust these */ rgba(100, 149, 237, 0.2) 50%,
-    rgba(135, 206, 250, 0.1) 100%
+    rgba(99, 102, 241, 0.3) 0%,
+    /* Indigo-500 */ rgba(129, 140, 248, 0.2) 50%,
+    /* Indigo-400 */ rgba(165, 180, 252, 0.1) 100% /* Indigo-300 */
+  );
+}
+
+/* Dark mode variant */
+.contextual-background[data-theme='dark'] .bg-home-core .background-content::before {
+  background: linear-gradient(
+    135deg,
+    rgba(129, 140, 248, 0.4) 0%,
+    /* Brighter in dark mode */ rgba(165, 180, 252, 0.3) 50%,
+    rgba(199, 210, 254, 0.15) 100%
   );
 }
 ```
 
 ### Adjust Overlay Opacity
 
-Control content readability by adjusting the white overlay:
+Control content readability by adjusting the overlay for each theme:
 
 ```css
+/* Light mode overlay */
 .background-overlay {
   background: rgba(255, 255, 255, 0.9); /* 0.9 = 90% opacity */
 }
+
+/* Dark mode overlay */
+.contextual-background[data-theme='dark'] .background-overlay {
+  background: rgba(6, 8, 16, 0.85); /* 0.85 = 85% opacity */
+}
 ```
+
+**Recommendations:**
+
+- Light mode: 0.85-0.95 for optimal readability
+- Dark mode: 0.80-0.90 to balance background visibility
+- Lower values = more background visible, less content contrast
 
 ### Add New Platform
 
@@ -219,9 +284,12 @@ const platforms = [
 ## Accessibility
 
 - Background is purely decorative (`z-index: -1`)
-- Does not interfere with content readability (90% white overlay)
+- Does not interfere with content readability (overlay system)
 - Respects `prefers-reduced-motion` user preference
 - No interactive elements in background layer
+- **Theme-aware**: Automatically adapts to light/dark mode
+- **Contrast ratios**: Tested for WCAG AA compliance in both themes
+- **Color blind friendly**: Uses luminosity differences, not just hue
 
 ## Browser Support
 
@@ -253,6 +321,9 @@ Increase `.background-overlay` opacity from 0.9 to 0.95.
 - [ ] Seasonal theme variations
 - [ ] Integration with GSAP for advanced animations
 - [ ] Real image/video backgrounds (requires assets)
+- [x] Dark mode support with theme-aware colors
+- [ ] Custom color schemes per platform
+- [ ] Accessibility contrast adjustment controls
 
 ## Credits
 

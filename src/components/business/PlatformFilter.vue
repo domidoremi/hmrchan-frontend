@@ -1,11 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import {
-  Instagram as InstagramIcon,
-  Video,
-  Youtube as YoutubeIcon,
-  Twitter as TwitterIcon,
-} from 'lucide-vue-next'
+import { Video, X } from 'lucide-vue-next'
 import { useContextualBackground } from '@/composables/useContextualBackground'
 
 type Platform = 'all' | 'instagram' | 'tiktok' | 'youtube' | 'twitter'
@@ -23,10 +18,10 @@ const { setExploreFilter } = useContextualBackground()
 
 const platforms = [
   { id: 'all' as const, label: 'All', icon: null },
-  { id: 'instagram' as const, label: 'Instagram', icon: InstagramIcon },
+  { id: 'instagram' as const, label: 'Instagram', icon: null },
   { id: 'tiktok' as const, label: 'TikTok', icon: Video },
-  { id: 'youtube' as const, label: 'YouTube', icon: YoutubeIcon },
-  { id: 'twitter' as const, label: 'X', icon: TwitterIcon },
+  { id: 'youtube' as const, label: 'YouTube', icon: null },
+  { id: 'twitter' as const, label: 'X', icon: X },
 ]
 
 const selected = ref<Platform>(modelValue)
@@ -58,11 +53,12 @@ const selectPlatform = (platform: Platform) => {
   display: flex;
   gap: 0.5rem;
   padding: 1rem;
-  background: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(10px);
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
   border-radius: 12px;
-  border: 1px solid rgba(65, 105, 225, 0.1);
+  border: 1px solid var(--glass-border);
   flex-wrap: wrap;
+  transition: all 0.3s ease;
 }
 
 .platform-btn {
@@ -77,7 +73,7 @@ const selectPlatform = (platform: Platform) => {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   font-size: 0.95rem;
   font-weight: 500;
-  color: var(--color-text-secondary, #666);
+  color: var(--color-text-secondary);
   position: relative;
   overflow: hidden;
 }
@@ -95,12 +91,12 @@ const selectPlatform = (platform: Platform) => {
 }
 
 .platform-btn:hover {
-  background: rgba(65, 105, 225, 0.05);
+  background: var(--color-primary-alpha);
 }
 
 .platform-btn.is-active {
-  color: var(--color-primary, #4169e1);
-  background: rgba(65, 105, 225, 0.1);
+  color: var(--color-primary);
+  background: var(--color-primary-alpha);
 }
 
 .platform-btn.is-active::before {
