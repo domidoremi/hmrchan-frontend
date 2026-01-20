@@ -429,6 +429,7 @@ onBeforeUnmount(() => {
   height: 100%;
   display: block;
   object-fit: contain;
+  background: #000;
 }
 
 /* 控制栏 */

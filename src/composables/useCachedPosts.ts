@@ -9,9 +9,6 @@
 import { ref, shallowRef } from 'vue'
 import { postCache } from '@/utils/cache'
 
-const DEBUG = import.meta.env.DEV && import.meta.env['VITE_ENABLE_DEBUG'] === 'true'
-const log = (...args: unknown[]) => DEBUG && console.log('[useCachedPosts]', ...args)
-
 interface UseCachedPostsOptions {
   /** 是否在缓存命中后仍然发起网络请求更新 */
   revalidate?: boolean
@@ -66,7 +63,6 @@ async function loadWithCache<T, P>(
 
   // 通道 A：立即查缓存
   const cached = await getCached(params)
-  log('Cache lookup:', cached ? 'HIT' : 'MISS', 'revalidate:', revalidate)
 
   if (cached) {
     dataRef.value = cached.data
@@ -77,7 +73,6 @@ async function loadWithCache<T, P>(
 
     // 如果不需要重新验证，直接返回缓存数据
     if (!revalidate) {
-      log('Returning cached data without revalidation')
       return {
         data: dataRef.value,
         total: totalRef?.value,
@@ -86,16 +81,13 @@ async function loadWithCache<T, P>(
     }
 
     // 有缓存且需要重新验证，后台静默更新
-    log('Revalidating in background')
     state.value.revalidating = true
   } else {
     // 无缓存，显示加载状态
-    log('No cache found, loading from network')
     state.value.loading = true
   }
 
   // 通道 B：网络请求（只有在需要时才执行）
-  log('Starting network request')
   try {
     const result = await fetchFn(params)
 
@@ -145,17 +137,14 @@ export function useCachedPostList<T>(
   })
 
   async function load(params: Record<string, unknown> = {}) {
-    log('Loading with params:', params)
     const result = await loadWithCache(
       params,
       async (p) => {
         const cached = await postCache.getList(p)
-        log('Cache lookup result:', cached ? 'HIT' : 'MISS')
         if (!cached) return null
 
         // 两层缓存返回的数据已经是完整的帖子数组
         if (!Array.isArray(cached.data)) {
-          log('Invalid cached data format, expected array')
           return null
         }
 
@@ -163,17 +152,14 @@ export function useCachedPostList<T>(
       },
       fetchFn,
       async (p, d, t) => {
-        log('Caching data with two-layer architecture...')
         // 使用两层缓存：查询缓存 + 帖子实体缓存
         await postCache.setList(p, d as Array<{ uuid?: string; id?: string }>, t!)
-        log('Two-layer cache updated')
       },
       state,
       data,
       total,
       options
     )
-    log('Load complete, fromCache:', result.fromCache)
     return result
   }
 
