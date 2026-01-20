@@ -146,9 +146,7 @@ export const postCache = {
       }
     }
 
-    console.log(
-      `[postCache.getPostEntities] Cache hit: ${result.size}/${uuids.length} posts`
-    )
+    console.log(`[postCache.getPostEntities] Cache hit: ${result.size}/${uuids.length} posts`)
     return result
   },
 
@@ -163,13 +161,15 @@ export const postCache = {
     }
 
     memoryCache.set(`post_entity:${uuid}`, cached, CACHE_TTL.MEMORY)
-    await idbSet(STORES.POSTS, cached, `entity:${uuid}`)
+    await idbSet(STORES.POSTS, { ...cached, uuid: `entity:${uuid}` })
   },
 
   /**
    * 批量缓存帖子实体
    */
-  async setPostEntities(posts: Array<{ uuid?: string; id?: string; [key: string]: unknown }>): Promise<void> {
+  async setPostEntities(
+    posts: Array<{ uuid?: string; id?: string; [key: string]: unknown }>
+  ): Promise<void> {
     console.log(`[postCache.setPostEntities] Caching ${posts.length} posts`)
     for (const post of posts) {
       const uuid = post.uuid || post.id
