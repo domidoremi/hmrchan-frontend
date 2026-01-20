@@ -1,5 +1,5 @@
 <template>
-  <div class="video-player" :class="{ 'is-fullscreen': isFullscreen }">
+  <div ref="playerElement" class="video-player" :class="{ 'is-fullscreen': isFullscreen }">
     <video
       ref="videoRef"
       class="video-element"
@@ -77,7 +77,7 @@
             </div>
 
             <!-- 设置菜单 -->
-            <div class="settings-menu" @click.stop>
+            <div ref="settingsMenuRef" class="settings-menu" @click.stop>
               <button type="button" class="control-btn" @click="showSettings = !showSettings">
                 <Settings :size="20" />
               </button>
@@ -187,6 +187,8 @@ const emit = defineEmits<{
 }>()
 
 const videoRef = ref<HTMLVideoElement | null>(null)
+const playerElement = ref<HTMLElement | null>(null)
+const settingsMenuRef = ref<HTMLElement | null>(null)
 const isPlaying = ref(false)
 const isBuffering = ref(false)
 const currentTime = ref(0)
@@ -277,9 +279,10 @@ function onVolumeChange() {
 }
 
 function seek(event: MouseEvent) {
-  if (!videoRef.value) return
-  const rect = (event.currentTarget as HTMLElement).getBoundingClientRect()
-  const percent = (event.clientX - rect.left) / rect.width
+  if (!videoRef.value || !event.currentTarget) return
+  const target = event.currentTarget as HTMLElement
+  const rect = target.getBoundingClientRect()
+  const percent = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width))
   videoRef.value.currentTime = percent * duration.value
 }
 
@@ -289,9 +292,12 @@ function toggleMute() {
 }
 
 function setVolume(event: Event) {
-  if (!videoRef.value) return
-  const value = parseInt((event.target as HTMLInputElement).value)
-  videoRef.value.volume = value / 100
+  if (!videoRef.value || !event.target) return
+  const target = event.target as HTMLInputElement
+  const value = parseInt(target.value, 10)
+  if (isNaN(value)) return
+
+  videoRef.value.volume = Math.max(0, Math.min(1, value / 100))
   if (value > 0) {
     videoRef.value.muted = false
   }
@@ -366,6 +372,10 @@ function handleMouseMove() {
 function handleKeydown(event: KeyboardEvent) {
   if (!videoRef.value) return
 
+  // Only handle keyboard events when video player is focused or contains active element
+  const isPlayerFocused = playerElement.value?.contains(document.activeElement)
+  if (!isPlayerFocused && document.activeElement?.tagName !== 'BODY') return
+
   switch (event.key) {
     case ' ':
     case 'k':
@@ -374,19 +384,19 @@ function handleKeydown(event: KeyboardEvent) {
       break
     case 'ArrowLeft':
       event.preventDefault()
-      videoRef.value.currentTime = Math.max(0, currentTime.value - 5)
+      videoRef.value.currentTime = Math.max(0, currentTime.value - SEEK_STEP)
       break
     case 'ArrowRight':
       event.preventDefault()
-      videoRef.value.currentTime = Math.min(duration.value, currentTime.value + 5)
+      videoRef.value.currentTime = Math.min(duration.value, currentTime.value + SEEK_STEP)
       break
     case 'ArrowUp':
       event.preventDefault()
-      videoRef.value.volume = Math.min(1, volume.value + 0.1)
+      videoRef.value.volume = Math.min(1, volume.value + VOLUME_STEP)
       break
     case 'ArrowDown':
       event.preventDefault()
-      videoRef.value.volume = Math.max(0, volume.value - 0.1)
+      videoRef.value.volume = Math.max(0, volume.value - VOLUME_STEP)
       break
     case 'm':
       event.preventDefault()
@@ -399,17 +409,29 @@ function handleKeydown(event: KeyboardEvent) {
   }
 }
 
+const handleFullscreenChange = () => {
+  isFullscreen.value = !!document.fullscreenElement
+}
+
+const handleClickOutside = (event: MouseEvent) => {
+  if (showSettings.value && settingsMenuRef.value && !settingsMenuRef.value.contains(event.target as Node)) {
+    showSettings.value = false
+  }
+}
+
 onMounted(() => {
-  document.addEventListener('mousemove', handleMouseMove)
+  // Use local event listeners instead of global document listeners
+  playerElement.value?.addEventListener('mousemove', handleMouseMove)
   document.addEventListener('keydown', handleKeydown)
-  document.addEventListener('fullscreenchange', () => {
-    isFullscreen.value = !!document.fullscreenElement
-  })
+  document.addEventListener('fullscreenchange', handleFullscreenChange)
+  document.addEventListener('click', handleClickOutside)
 })
 
 onBeforeUnmount(() => {
-  document.removeEventListener('mousemove', handleMouseMove)
+  playerElement.value?.removeEventListener('mousemove', handleMouseMove)
   document.removeEventListener('keydown', handleKeydown)
+  document.removeEventListener('fullscreenchange', handleFullscreenChange)
+  document.removeEventListener('click', handleClickOutside)
   stopControlsTimer()
 })
 </script>
