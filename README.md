@@ -51,6 +51,14 @@
 - **Vitest** - 单元测试框架
 - **Vue DevTools** - 开发调试工具
 
+### 性能优化
+
+- **智能路由预加载** - 基于网络状况和用户行为的自适应预加载
+- **动态组件缓存** - 基于访问频率的 KeepAlive 策略
+- **性能监控** - Core Web Vitals 实时追踪
+- **渲染优化** - RAF 防抖/节流、延迟渲染、可见性检测
+- **Service Worker** - 离线缓存和资源预缓存
+
 ## 🚀 快速开始
 
 ### 前置要求
@@ -340,6 +348,83 @@ frontend/
 
 ## ⚡ 性能优化
 
+### 当前性能指标
+
+基于 [momichan.xyz](https://momichan.xyz) 的实际测试结果：
+
+| 指标                               | 值    | 评级    | 目标   |
+| ---------------------------------- | ----- | ------- | ------ |
+| **LCP** (Largest Contentful Paint) | 976ms | ✅ 良好 | <2.5s  |
+| **CLS** (Cumulative Layout Shift)  | 0.00  | ✅ 优秀 | <0.1   |
+| **TTFB** (Time to First Byte)      | 450ms | ✅ 良好 | <800ms |
+| **渲染延迟**                       | 525ms | ✅ 良好 | <600ms |
+
+### 优化策略
+
+#### 1. 智能路由预加载
+
+- **自适应预加载**：根据网络状况（4G/WiFi vs 3G）调整预加载策略
+- **省电模式检测**：在省电模式下禁用预加载
+- **鼠标悬停预加载**：用户悬停链接时预加载目标页面
+- **优先级队列**：高优先级路由（explore, search）优先预加载
+
+```typescript
+// 自动启用
+import { prefetchCriticalRoutes, setupHoverPrefetch } from '@/utils/prefetch'
+prefetchCriticalRoutes()
+setupHoverPrefetch()
+```
+
+#### 2. 动态组件缓存
+
+- **智能 KeepAlive**：基于访问频率动态调整缓存列表
+- **自动淘汰**：缓存满时移除最少访问的页面
+- **最大缓存数**：10 个组件，平衡内存和性能
+
+#### 3. 性能监控
+
+实时追踪 Core Web Vitals：
+
+- LCP (Largest Contentful Paint)
+- FID (First Input Delay)
+- CLS (Cumulative Layout Shift)
+- FCP (First Contentful Paint)
+- TTFB (Time to First Byte)
+- Long Tasks 检测（>50ms）
+
+```typescript
+import { getMetrics, getPerformanceScore } from '@/utils/performanceMonitor'
+const { score, grade } = getPerformanceScore() // A-F 评级
+```
+
+#### 4. 渲染优化工具
+
+提供多种性能优化组合式函数：
+
+```typescript
+// RAF 防抖/节流
+const debouncedFn = useRAFDebounce(fn, 100)
+const throttledFn = useRAFThrottle(fn)
+
+// 延迟渲染
+const shouldRender = useDeferredRender(1000)
+
+// 可见性检测
+const isVisible = useIntersectionObserver(target)
+
+// 批量更新
+const batchUpdate = useBatchUpdate(updateFn, 16)
+```
+
+#### 5. 其他优化
+
+- **Service Worker**：离线缓存和资源预缓存
+- **代码分割**：路由和组件级别懒加载
+- **图片优化**：渐进式加载、WebP 支持
+- **CSS 优化**：关键 CSS 内联、非关键 CSS 异步加载
+
+详细文档：[性能优化指南](docs/PERFORMANCE_OPTIMIZATION.md)
+
 ### 构建优化
 
 - **代码分割** - 路由级别的懒加载
@@ -354,7 +439,12 @@ frontend/
 - **虚拟滚动** - 仅渲染可见区域
 - **防抖节流** - `requestAnimationFrame` 优化
 - **请求缓存** - 内存 + IndexedDB 双层缓存
-- **预取策略** - 智能预加载路由和数据
+- **智能路由预加载** - 基于用户行为和网络状况的路由预加载
+  - 首屏渲染后自动预加载关键路由（Explore、Search、PostDetail）
+  - 鼠标悬停链接时预加载目标页面
+  - 网络感知：慢速网络下仅预加载高优先级路由
+  - 省电模式检测：自动禁用预加载节省流量
+  - 使用 `requestIdleCallback` 在浏览器空闲时执行
 
 ### 缓存策略
 
