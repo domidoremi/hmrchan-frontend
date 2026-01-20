@@ -4,7 +4,7 @@
  */
 
 import { computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, type RouteLocationRaw } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useAuthStore } from '@/stores'
 import {
@@ -78,29 +78,30 @@ export function useNavigation() {
 
   /**
    * 获取导航链接（处理认证重定向）
+   * @param item - 导航项或路径字符串
+   * @returns 路由位置（字符串或对象）
    */
-  function getNavigationLink(item: NavigationItem) {
-    if (item.requiresAuth && !isAuthenticated.value) {
+  function getNavigationLink(item: NavigationItem | string) {
+    // 支持直接传入路径字符串
+    const path = typeof item === 'string' ? item : item.path
+    const requiresAuth = typeof item === 'string' ? false : item.requiresAuth
+
+    if (requiresAuth && !isAuthenticated.value) {
       return {
         path: '/login',
-        query: { redirect: item.path },
+        query: { redirect: path },
       }
     }
-    return item.path
+    return path
   }
 
   /**
-   * 获取移动端收藏页链接（处理认证重定向）
+   * 获取收藏页链接（处理认证重定向）
+   * 便捷方法，用于需要认证的收藏页
    */
-  const getMobileFavoritesLink = computed(() => {
-    if (!isAuthenticated.value) {
-      return {
-        path: '/login',
-        query: { redirect: '/favorites' },
-      }
-    }
-    return '/favorites'
-  })
+  const favoritesLink = computed(() =>
+    getNavigationLink({ path: '/favorites', requiresAuth: true } as NavigationItem)
+  )
 
   /**
    * 处理导航项的预加载
@@ -123,7 +124,7 @@ export function useNavigation() {
 
     // 辅助函数
     getNavigationLink,
-    getMobileFavoritesLink,
+    favoritesLink,
     getIconSize,
     handlePrefetch,
     executePrefetch,
