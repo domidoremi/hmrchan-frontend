@@ -1,4 +1,10 @@
 # Cloudflare Pages 重定向配置
-# API 代理由 functions/api/[[path]].ts 处理
-# WebSocket 由 functions/ws.ts 处理
-# SPA 回退由 Cloudflare Pages 默认处理，无需配置
+
+# API 代理 - 转发到 functions/api/[[path]].ts
+/api/*  /api/:splat  200
+
+# WebSocket 代理 - 转发到 functions/ws.ts
+/ws  /ws  200
+
+# SPA 回退 - 所有其他请求返回 index.html
+/*  /index.html  200
