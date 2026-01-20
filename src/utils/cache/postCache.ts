@@ -6,9 +6,6 @@
 import { idbGet, idbSet, idbDelete, idbDeleteExpired, STORES } from './idb'
 import { memoryCache } from './memoryCache'
 import { CACHE_TTL } from './config'
-import { createLogger } from './logger'
-
-const log = createLogger('postCache')
 
 // 类型定义
 export interface CachedPost {
