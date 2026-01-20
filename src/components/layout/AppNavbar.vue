@@ -159,7 +159,7 @@
     <RouterLink
       v-for="(item, index) in mobileNavItems"
       :key="item.path"
-      :to="item.requiresAuth && !isAuthenticated ? getMobileFavoritesLink : item.path"
+      :to="item.requiresAuth && !isAuthenticated ? favoritesLink : item.path"
       class="mobile-nav-item"
       :class="{ 'mobile-nav-item--active': activeMobileIndex === index }"
       @mouseenter="handlePrefetch(item)"
@@ -220,7 +220,7 @@ const {
   mobileNavItems,
   activeDesktopIndex,
   activeMobileIndex,
-  getMobileFavoritesLink,
+  favoritesLink,
   handlePrefetch: handleNavPrefetch,
 } = useNavigation()
 
