@@ -297,5 +297,27 @@ describe('VideoPlayer', () => {
 
       expect(mockPlay).toHaveBeenCalledTimes(1)
     })
+
+    it('seeks to correct position when clicking progress bar', async () => {
+      const wrapper = createWrapper({
+        src: 'https://example.com/video.mp4',
+      })
+
+      const video = wrapper.find('video')
+      const videoElement = video.element as HTMLVideoElement
+      Object.defineProperty(videoElement, 'duration', { value: 100, writable: true })
+      Object.defineProperty(videoElement, 'currentTime', { value: 0, writable: true })
+
+      await video.trigger('loadedmetadata')
+
+      const progressBar = wrapper.find('.progress-container')
+      const rect = { left: 0, width: 100 }
+      vi.spyOn(progressBar.element, 'getBoundingClientRect').mockReturnValue(rect as DOMRect)
+
+      await progressBar.trigger('click', { clientX: 50 })
+      await wrapper.vm.$nextTick()
+
+      expect(videoElement.currentTime).toBe(50)
+    })
   })
 })
