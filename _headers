@@ -2,14 +2,41 @@
 
 # 通用安全头
 /*
+  # HSTS - 强制 HTTPS
   Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+  
+  # 防止点击劫持
   X-Frame-Options: SAMEORIGIN
+  
+  # 防止 MIME 类型嗅探
   X-Content-Type-Options: nosniff
+  
+  # Referrer 策略
   Referrer-Policy: strict-origin-when-cross-origin
+  
+  # 跨域策略
   Cross-Origin-Opener-Policy: same-origin-allow-popups
   Cross-Origin-Resource-Policy: cross-origin
+  
+  # 权限策略
   Permissions-Policy: camera=(), microphone=(), geolocation=(), fullscreen=(self), payment=()
-  Content-Security-Policy: default-src 'self'; img-src 'self' data: https: blob:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://static.cloudflareinsights.com https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; font-src 'self' data:; connect-src 'self' https: wss:; media-src 'self' https: blob:; object-src 'none'; worker-src 'self' blob:; frame-src 'self' https://challenges.cloudflare.com; frame-ancestors 'self'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests
+  
+  # 内容安全策略（优化版）
+  # default-src: 默认只允许同源
+  # script-src: 允许自身脚本 + Cloudflare 服务（移除 unsafe-inline 和 unsafe-eval）
+  # style-src: 允许自身样式 + 内联样式（Vue 需要）
+  # img-src: 允许所有 HTTPS 图片 + data URI + blob
+  # font-src: 允许自身字体 + data URI
+  # connect-src: 明确指定允许的 API 端点
+  # media-src: 允许 HTTPS 媒体 + blob
+  # object-src: 禁止插件
+  # worker-src: 允许 Service Worker
+  # frame-src: 只允许 Cloudflare Turnstile
+  # frame-ancestors: 只允许同源嵌入
+  # base-uri: 限制 base 标签
+  # form-action: 限制表单提交
+  # upgrade-insecure-requests: 自动升级到 HTTPS
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://static.cloudflareinsights.com https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; font-src 'self' data:; connect-src 'self' https://api.momichan.xyz https://challenges.cloudflare.com https://static.cloudflareinsights.com; media-src 'self' https: blob:; object-src 'none'; worker-src 'self' blob:; frame-src 'self' https://challenges.cloudflare.com; frame-ancestors 'self'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests
 
 # HTML 页面 - 短缓存，便于快速更新
 /*.html
