@@ -18,6 +18,8 @@ declare global {
 type ConsoleMethod = 'log' | 'warn' | 'error' | 'info'
 type OriginalConsole = Record<ConsoleMethod, (...args: unknown[]) => void>
 
+let isInitialized = false
+
 const CLOUDFLARE_PATTERNS = [
   // Private Access Token
   /Private Access Token/i,
@@ -53,6 +55,23 @@ function shouldFilter(message: string): boolean {
 }
 
 /**
+ * 将参数转换为字符串用于模式匹配
+ */
+function argsToString(args: unknown[]): string {
+  return args
+    .map((arg) => {
+      if (typeof arg === 'string') return arg
+      if (arg instanceof Error) return arg.message
+      try {
+        return JSON.stringify(arg)
+      } catch {
+        return String(arg)
+      }
+    })
+    .join(' ')
+}
+
+/**
  * 初始化控制台过滤器
  */
 export function initConsoleFilter(): void {
@@ -60,30 +79,17 @@ export function initConsoleFilter(): void {
   if (typeof window === 'undefined') return
 
   // 保存原始的控制台方法
-  const originalConsole = {
-    log: console.log,
-    warn: console.warn,
-    error: console.error,
-    info: console.info,
+  const originalConsole: OriginalConsole = {
+    log: console.log.bind(console),
+    warn: console.warn.bind(console),
+    error: console.error.bind(console),
+    info: console.info.bind(console),
   }
 
   // 创建过滤包装器
-  function createFilteredMethod(
-    method: 'log' | 'warn' | 'error' | 'info'
-  ): (...args: unknown[]) => void {
+  function createFilteredMethod(method: ConsoleMethod): (...args: unknown[]) => void {
     return (...args: unknown[]) => {
-      // 将所有参数转换为字符串进行检查
-      const message = args
-        .map((arg) => {
-          if (typeof arg === 'string') return arg
-          if (arg instanceof Error) return arg.message
-          try {
-            return JSON.stringify(arg)
-          } catch {
-            return String(arg)
-          }
-        })
-        .join(' ')
+      const message = argsToString(args)
 
       // 如果消息匹配 Cloudflare 模式，则过滤掉
       if (shouldFilter(message)) {
@@ -96,18 +102,17 @@ export function initConsoleFilter(): void {
   }
 
   // 替换控制台方法
-  console.log = createFilteredMethod('log')
-  console.warn = createFilteredMethod('warn')
-  console.error = createFilteredMethod('error')
-  console.info = createFilteredMethod('info')
+  const methods: ConsoleMethod[] = ['log', 'warn', 'error', 'info']
+  methods.forEach((method) => {
+    console[method] = createFilteredMethod(method)
+  })
 
   // 开发环境下提供恢复方法
   if (import.meta.env.DEV) {
-    ;(window as unknown as { __restoreConsole?: () => void }).__restoreConsole = () => {
-      console.log = originalConsole.log
-      console.warn = originalConsole.warn
-      console.error = originalConsole.error
-      console.info = originalConsole.info
+    window.__restoreConsole = () => {
+      methods.forEach((method) => {
+        console[method] = originalConsole[method]
+      })
       console.log('✅ Console filter removed. Original console methods restored.')
     }
 
