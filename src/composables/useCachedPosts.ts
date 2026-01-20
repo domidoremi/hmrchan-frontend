@@ -153,7 +153,7 @@ export function useCachedPostList<T>(
         log('Cache lookup result:', cached ? 'HIT' : 'MISS')
         if (!cached) return null
 
-        // Type-safe validation: ensure cached data is an array
+        // 两层缓存返回的数据已经是完整的帖子数组
         if (!Array.isArray(cached.data)) {
           log('Invalid cached data format, expected array')
           return null
@@ -163,9 +163,10 @@ export function useCachedPostList<T>(
       },
       fetchFn,
       async (p, d, t) => {
-        log('Caching data...')
-        await postCache.setList(p, d, t!)
-        log('Data cached')
+        log('Caching data with two-layer architecture...')
+        // 使用两层缓存：查询缓存 + 帖子实体缓存
+        await postCache.setList(p, d as Array<{ uuid?: string; id?: string }>, t!)
+        log('Two-layer cache updated')
       },
       state,
       data,

@@ -17,10 +17,16 @@ export interface CachedPost {
 
 export interface CachedPostList {
   cache_key: string
-  data: unknown[]
+  uuids: string[] // 只存储 UUID 列表，不存储完整数据
   total: number
   cached_at: number
   etag?: string | undefined
+}
+
+export interface CachedPostEntity {
+  uuid: string
+  data: unknown // 完整帖子数据
+  cached_at: number
 }
 
 /**
@@ -99,68 +105,167 @@ export const postCache = {
     await idbDelete(STORES.POSTS, uuid)
   },
 
-  // ==================== 帖子列表 ====================
+  // ==================== 帖子实体缓存（新增）====================
 
   /**
-   * 获取帖子列表
+   * 获取单个帖子实体
    */
-  async getList(params: Record<string, unknown>): Promise<CachedPostList | undefined> {
-    const cacheKey = buildListKey(params)
-    console.log('[postCache.getList] Looking up cache with key:', cacheKey)
-
-    // 1. 先查内存
-    const memCached = memoryCache.get<CachedPostList>(cacheKey)
+  async getPostEntity(uuid: string): Promise<unknown | undefined> {
+    const memKey = `post_entity:${uuid}`
+    const memCached = memoryCache.get<CachedPostEntity>(memKey)
     if (memCached) {
-      console.log('[postCache.getList] Memory cache HIT')
-      return memCached
+      console.log(`[postCache.getPostEntity] Memory cache HIT for ${uuid}`)
+      return memCached.data
     }
-    console.log('[postCache.getList] Memory cache MISS')
 
-    // 2. 再查 IndexedDB
-    const idbCached = await idbGet<CachedPostList>(STORES.POST_LISTS, cacheKey)
+    const idbCached = await idbGet<CachedPostEntity>(STORES.POSTS, `entity:${uuid}`)
     if (idbCached) {
-      const age = Date.now() - idbCached.cached_at
-      const ttl = CACHE_TTL.POST_LIST
-      console.log('[postCache.getList] IDB cache found:', {
-        age: `${Math.floor(age / 1000)}s`,
-        ttl: `${Math.floor(ttl / 1000)}s`,
-        expired: age >= ttl,
-      })
-
-      if (Date.now() - idbCached.cached_at < CACHE_TTL.POST_LIST) {
-        memoryCache.set(cacheKey, idbCached, CACHE_TTL.MEMORY)
-        console.log('[postCache.getList] IDB cache HIT, backfilled to memory')
-        return idbCached
+      if (Date.now() - idbCached.cached_at < CACHE_TTL.POST_ENTITY) {
+        memoryCache.set(memKey, idbCached, CACHE_TTL.MEMORY)
+        console.log(`[postCache.getPostEntity] IDB cache HIT for ${uuid}`)
+        return idbCached.data
       }
-      console.log('[postCache.getList] IDB cache EXPIRED, deleting')
-      await idbDelete(STORES.POST_LISTS, cacheKey)
-    } else {
-      console.log('[postCache.getList] IDB cache MISS')
+      await idbDelete(STORES.POSTS, `entity:${uuid}`)
     }
 
+    console.log(`[postCache.getPostEntity] Cache MISS for ${uuid}`)
     return undefined
   },
 
   /**
-   * 缓存帖子列表
+   * 批量获取帖子实体
+   */
+  async getPostEntities(uuids: string[]): Promise<Map<string, unknown>> {
+    console.log(`[postCache.getPostEntities] Fetching ${uuids.length} posts from cache`)
+    const result = new Map<string, unknown>()
+
+    for (const uuid of uuids) {
+      const entity = await this.getPostEntity(uuid)
+      if (entity) {
+        result.set(uuid, entity)
+      }
+    }
+
+    console.log(
+      `[postCache.getPostEntities] Cache hit: ${result.size}/${uuids.length} posts`
+    )
+    return result
+  },
+
+  /**
+   * 缓存单个帖子实体
+   */
+  async setPostEntity(uuid: string, data: unknown): Promise<void> {
+    const cached: CachedPostEntity = {
+      uuid,
+      data,
+      cached_at: Date.now(),
+    }
+
+    memoryCache.set(`post_entity:${uuid}`, cached, CACHE_TTL.MEMORY)
+    await idbSet(STORES.POSTS, cached, `entity:${uuid}`)
+  },
+
+  /**
+   * 批量缓存帖子实体
+   */
+  async setPostEntities(posts: Array<{ uuid?: string; id?: string; [key: string]: unknown }>): Promise<void> {
+    console.log(`[postCache.setPostEntities] Caching ${posts.length} posts`)
+    for (const post of posts) {
+      const uuid = post.uuid || post.id
+      if (uuid && typeof uuid === 'string') {
+        await this.setPostEntity(uuid, post)
+      }
+    }
+  },
+
+  // ==================== 帖子列表（重构为两层缓存）====================
+
+  /**
+   * 获取帖子列表（两层缓存架构）
+   * 返回：{ data: 完整帖子数组, total: 总数, fromCache: 是否完全来自缓存 }
+   */
+  async getList(
+    params: Record<string, unknown>
+  ): Promise<{ data: unknown[]; total: number; fromCache: boolean } | undefined> {
+    const cacheKey = buildListKey(params)
+    console.log('[postCache.getList] Looking up cache with key:', cacheKey)
+
+    // 1. 查询缓存层：获取 UUID 列表
+    const memCached = memoryCache.get<CachedPostList>(cacheKey)
+    const listCache = memCached || (await idbGet<CachedPostList>(STORES.POST_LISTS, cacheKey))
+
+    if (!listCache) {
+      console.log('[postCache.getList] Query cache MISS')
+      return undefined
+    }
+
+    // 检查查询缓存是否过期
+    const age = Date.now() - listCache.cached_at
+    if (age >= CACHE_TTL.POST_LIST) {
+      console.log('[postCache.getList] Query cache EXPIRED')
+      await idbDelete(STORES.POST_LISTS, cacheKey)
+      return undefined
+    }
+
+    console.log(
+      `[postCache.getList] Query cache HIT, fetching ${listCache.uuids.length} posts from entity cache`
+    )
+
+    // 2. 帖子实体缓存层：批量获取帖子数据
+    const entityMap = await this.getPostEntities(listCache.uuids)
+
+    // 3. 检查是否所有帖子都在缓存中
+    if (entityMap.size === listCache.uuids.length) {
+      // 完全命中！按原始顺序组装结果
+      const data = listCache.uuids.map((uuid) => entityMap.get(uuid)!)
+      console.log('[postCache.getList] Full cache HIT - no network request needed!')
+      return {
+        data,
+        total: listCache.total,
+        fromCache: true,
+      }
+    }
+
+    // 部分命中，需要网络请求
+    console.log(
+      `[postCache.getList] Partial cache hit (${entityMap.size}/${listCache.uuids.length}), network request needed`
+    )
+    return undefined
+  },
+
+  /**
+   * 缓存帖子列表（两层缓存架构）
    */
   async setList(
     params: Record<string, unknown>,
-    data: unknown[],
+    posts: Array<{ uuid?: string; id?: string; [key: string]: unknown }>,
     total: number,
     etag?: string
   ): Promise<void> {
     const cacheKey = buildListKey(params)
-    const cached: CachedPostList = {
+    console.log(`[postCache.setList] Caching list with ${posts.length} posts`)
+
+    // 1. 提取 UUID 列表
+    const uuids = posts
+      .map((post) => post.uuid || post.id)
+      .filter((uuid): uuid is string => typeof uuid === 'string')
+
+    // 2. 缓存查询结果（只存 UUID 列表）
+    const listCache: CachedPostList = {
       cache_key: cacheKey,
-      data,
+      uuids,
       total,
       cached_at: Date.now(),
       etag,
     }
+    memoryCache.set(cacheKey, listCache, CACHE_TTL.MEMORY)
+    await idbSet(STORES.POST_LISTS, listCache)
 
-    memoryCache.set(cacheKey, cached, CACHE_TTL.MEMORY)
-    await idbSet(STORES.POST_LISTS, cached)
+    // 3. 批量缓存帖子实体
+    await this.setPostEntities(posts)
+
+    console.log('[postCache.setList] Two-layer cache updated successfully')
   },
 
   /**
