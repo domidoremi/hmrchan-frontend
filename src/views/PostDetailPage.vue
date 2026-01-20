@@ -61,16 +61,14 @@
                     {{ $t('common.clickToEnlarge') }}
                   </div>
                 </div>
-                <video
+                <VideoPlayer
                   v-else-if="activeMedia?.file_type === 'video'"
                   :key="`video-${activeMedia.id}`"
                   class="media-viewer-item is-loaded"
                   :src="getMediaStreamUrl(activeMedia.id)"
                   :poster="getMediaThumbnailUrl(activeMedia.id, 'large')"
-                  controls
                   playsinline
-                  preload="metadata"
-                  @loadedmetadata="onMediaLoad"
+                  @ready="onMediaLoad"
                 />
               </Transition>
 
@@ -182,6 +180,7 @@ import { useCachedPost } from '@/composables/useCachedPosts'
 import { trackPostView } from '@/composables/useViewTracking'
 import { postCache } from '@/utils/cache'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
+import VideoPlayer from '@/components/ui/VideoPlayer.vue'
 import { defineAsyncComponent } from 'vue'
 
 // 动态导入大型组件以减少初始包体积

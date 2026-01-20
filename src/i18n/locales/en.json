@@ -99,6 +99,11 @@
       "unknown": "An unknown error occurred"
     }
   },
+  "video": {
+    "playbackSpeed": "Playback Speed",
+    "quality": "Quality",
+    "auto": "Auto"
+  },
   "settings": {
     "title": "Settings",
     "theme": "Theme",

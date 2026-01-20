@@ -99,6 +99,11 @@
       "unknown": "不明なエラーが発生しました"
     }
   },
+  "video": {
+    "playbackSpeed": "再生速度",
+    "quality": "画質",
+    "auto": "自動"
+  },
   "settings": {
     "title": "設定",
     "theme": "テーマ",

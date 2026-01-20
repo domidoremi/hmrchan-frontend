@@ -99,6 +99,11 @@
       "unknown": "發生未知錯誤"
     }
   },
+  "video": {
+    "playbackSpeed": "播放速度",
+    "quality": "畫質",
+    "auto": "自動"
+  },
   "settings": {
     "title": "設定",
     "theme": "主題",
