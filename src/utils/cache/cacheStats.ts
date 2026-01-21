@@ -139,7 +139,9 @@ class CacheStatsCollector {
     for (const [cacheType, stats] of Object.entries(allStats)) {
       console.group(`${cacheType}`)
       console.log(`Hit Rate: ${stats.hitRate}%`)
-      console.log(`Total Requests: ${stats.totalRequests} (${stats.hits} hits, ${stats.misses} misses)`)
+      console.log(
+        `Total Requests: ${stats.totalRequests} (${stats.hits} hits, ${stats.misses} misses)`
+      )
       console.log(`Sets: ${stats.sets}, Deletes: ${stats.deletes}, Errors: ${stats.errors}`)
       console.log(`Avg Response Time: ${stats.avgResponseTime}ms`)
       console.groupEnd()

@@ -81,7 +81,9 @@ class MemoryCache {
     if (hitRate > 0.8 && this.cache.size > this.maxSize * 0.9 && this.maxSize < this.MAX_SIZE) {
       this.maxSize = Math.min(this.maxSize + 50, this.MAX_SIZE)
       if (import.meta.env.DEV) {
-        console.log(`[MemoryCache] Increased capacity to ${this.maxSize} (hit rate: ${(hitRate * 100).toFixed(1)}%)`)
+        console.log(
+          `[MemoryCache] Increased capacity to ${this.maxSize} (hit rate: ${(hitRate * 100).toFixed(1)}%)`
+        )
       }
     }
 
@@ -89,7 +91,9 @@ class MemoryCache {
     if (hitRate < 0.5 && this.maxSize > this.MIN_SIZE) {
       this.maxSize = Math.max(this.maxSize - 50, this.MIN_SIZE)
       if (import.meta.env.DEV) {
-        console.log(`[MemoryCache] Decreased capacity to ${this.maxSize} (hit rate: ${(hitRate * 100).toFixed(1)}%)`)
+        console.log(
+          `[MemoryCache] Decreased capacity to ${this.maxSize} (hit rate: ${(hitRate * 100).toFixed(1)}%)`
+        )
       }
     }
 
