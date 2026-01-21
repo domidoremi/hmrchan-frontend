@@ -128,7 +128,10 @@ bun.lockb
 # =====================
 # Project specific
 # =====================
-scripts/
+scripts/analyze-*.js
+scripts/measure-*.js
+scripts/compare-*.js
+scripts/lighthouse-audit.mjs
 .unused-code/
 lighthouse-reports/
 
