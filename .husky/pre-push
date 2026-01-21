@@ -1,18 +1,22 @@
+#!/bin/sh
 echo "🔍 运行推送前检查..."
+echo ""
 
 # Type check
 echo "📝 类型检查..."
 bun run type-check
 if [ $? -ne 0 ]; then
-  echo "❌ 类型检查失败，请修复后再推送"
+  echo ""
+  echo "❌ 类型检查失败，请修复 TypeScript 错误后再推送"
   exit 1
 fi
 
-# Lint check
+# Lint check (strict mode - no warnings allowed)
 echo "🔧 代码规范检查..."
 bun run lint:strict
 if [ $? -ne 0 ]; then
-  echo "❌ 代码规范检查失败，请修复后再推送"
+  echo ""
+  echo "❌ 代码规范检查失败，请运行 'bun run lint' 自动修复"
   exit 1
 fi
 
@@ -20,7 +24,8 @@ fi
 echo "💅 代码格式检查..."
 bun run format:check
 if [ $? -ne 0 ]; then
-  echo "❌ 代码格式检查失败，请运行 'bun run format' 修复"
+  echo ""
+  echo "❌ 代码格式检查失败，请运行 'bun run format' 格式化代码"
   exit 1
 fi
 
@@ -28,8 +33,10 @@ fi
 echo "🧪 运行单元测试..."
 bun run test:unit
 if [ $? -ne 0 ]; then
-  echo "❌ 单元测试失败，请修复后再推送"
+  echo ""
+  echo "❌ 单元测试失败，请修复测试后再推送"
   exit 1
 fi
 
+echo ""
 echo "✅ 所有检查通过，准备推送..."

@@ -8,21 +8,49 @@ pattern="^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\(.+\))
 if ! echo "$commit_msg" | grep -qE "$pattern"; then
   echo "❌ 提交信息格式错误！"
   echo ""
-  echo "请使用 Conventional Commits 规范："
-  echo "  feat(scope): 新功能描述"
-  echo "  fix(scope): 修复问题描述"
-  echo "  docs(scope): 文档更新"
-  echo "  style(scope): 代码格式调整"
-  echo "  refactor(scope): 代码重构"
-  echo "  perf(scope): 性能优化"
-  echo "  test(scope): 测试相关"
-  echo "  build(scope): 构建系统"
-  echo "  ci(scope): CI配置"
-  echo "  chore(scope): 其他杂项"
+  echo "📝 请使用 Conventional Commits 规范："
   echo ""
-  echo "示例："
-  echo "  feat(auth): 添加用户登录功能"
-  echo "  fix(ui): 修复按钮样式问题"
+  echo "格式: <type>(<scope>): <subject>"
+  echo ""
+  echo "类型 (type):"
+  echo "  feat     - 新功能"
+  echo "  fix      - 修复 bug"
+  echo "  docs     - 文档更新"
+  echo "  style    - 代码格式调整（不影响功能）"
+  echo "  refactor - 代码重构"
+  echo "  perf     - 性能优化"
+  echo "  test     - 测试相关"
+  echo "  build    - 构建系统或依赖更新"
+  echo "  ci       - CI 配置"
+  echo "  chore    - 其他杂项"
+  echo "  revert   - 回滚提交"
+  echo ""
+  echo "示例:"
+  echo "  feat: 添加用户登录功能"
+  echo "  feat(auth): 添加 JWT 认证"
+  echo "  fix: 修复按钮点击无响应问题"
+  echo "  fix(ui): 修复移动端布局错位"
+  echo "  docs: 更新 README 安装说明"
+  echo "  perf(api): 优化接口响应速度"
+  echo ""
+  echo "当前提交信息:"
+  echo "  $commit_msg"
   echo ""
   exit 1
 fi
+
+# Check subject length (should be concise)
+subject=$(echo "$commit_msg" | head -n 1 | sed -E 's/^[a-z]+(\([^)]+\))?: //')
+subject_length=${#subject}
+
+if [ $subject_length -lt 5 ]; then
+  echo "⚠️  提交信息太短，请提供更详细的描述（至少 5 个字符）"
+  exit 1
+fi
+
+if [ $subject_length -gt 100 ]; then
+  echo "⚠️  提交信息太长（${subject_length} 字符），请保持在 100 字符以内"
+  exit 1
+fi
+
+echo "✅ 提交信息格式正确"
