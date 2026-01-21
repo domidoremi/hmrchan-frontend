@@ -1,6 +1,15 @@
 /**
- * 帖子数据缓存层
+ * 帖子数据缓存层（两层架构）
  * 结合 IndexedDB 持久化 + Memory 热缓存
+ *
+ * 架构说明：
+ * 1. 查询缓存层（POST_LIST）：存储查询参数 → UUID列表的映射
+ * 2. 实体缓存层（POST_ENTITY）：存储 UUID → 完整帖子数据的映射
+ *
+ * 优点：
+ * - 单一数据源，避免不一致
+ * - 查询缓存和实体缓存分离，可独立管理 TTL
+ * - 实体可被多个查询共享，提高缓存利用率
  */
 
 import { idbGet, idbSet, idbDelete, idbDeleteExpired, STORES } from './idb'
@@ -8,13 +17,6 @@ import { memoryCache } from './memoryCache'
 import { CACHE_TTL } from './config'
 
 // 类型定义
-export interface CachedPost {
-  uuid: string
-  data: unknown
-  cached_at: number
-  etag?: string | undefined
-}
-
 export interface CachedPostList {
   cache_key: string
   uuids: string[] // 只存储 UUID 列表，不存储完整数据
@@ -42,63 +44,10 @@ function buildListKey(params: Record<string, unknown>): string {
 }
 
 /**
- * 帖子缓存管理器
+ * 帖子缓存管理器（两层架构）
  */
 export const postCache = {
-  // ==================== 帖子详情 ====================
-
-  /**
-   * 获取帖子详情（先内存，再 IDB）
-   */
-  async getPost(uuid: string): Promise<CachedPost | undefined> {
-    // 1. 先查内存
-    const memKey = `post:${uuid}`
-    const memCached = memoryCache.get<CachedPost>(memKey)
-    if (memCached) {
-      return memCached
-    }
-
-    // 2. 再查 IndexedDB
-    const idbCached = await idbGet<CachedPost>(STORES.POSTS, uuid)
-    if (idbCached) {
-      // 检查是否过期
-      if (Date.now() - idbCached.cached_at < CACHE_TTL.POST_DETAIL) {
-        // 回填内存缓存
-        memoryCache.set(memKey, idbCached, CACHE_TTL.MEMORY)
-        return idbCached
-      }
-      // 过期则删除
-      await idbDelete(STORES.POSTS, uuid)
-    }
-
-    return undefined
-  },
-
-  /**
-   * 缓存帖子详情
-   */
-  async setPost(uuid: string, data: unknown, etag?: string): Promise<void> {
-    const cached: CachedPost = {
-      uuid,
-      data,
-      cached_at: Date.now(),
-      etag,
-    }
-
-    // 同时写入内存和 IDB
-    memoryCache.set(`post:${uuid}`, cached, CACHE_TTL.MEMORY)
-    await idbSet(STORES.POSTS, cached)
-  },
-
-  /**
-   * 删除帖子缓存
-   */
-  async deletePost(uuid: string): Promise<void> {
-    memoryCache.delete(`post:${uuid}`)
-    await idbDelete(STORES.POSTS, uuid)
-  },
-
-  // ==================== 帖子实体缓存（新增）====================
+  // ==================== 帖子实体缓存（唯一数据源）====================
 
   /**
    * 获取单个帖子实体
@@ -175,7 +124,15 @@ export const postCache = {
     )
   },
 
-  // ==================== 帖子列表（重构为两层缓存）====================
+  /**
+   * 删除帖子实体缓存
+   */
+  async deletePostEntity(uuid: string): Promise<void> {
+    memoryCache.delete(`post_entity:${uuid}`)
+    await idbDelete(STORES.POSTS, `entity:${uuid}`)
+  },
+
+  // ==================== 帖子列表（两层缓存架构）====================
 
   /**
    * 获取帖子列表（两层缓存架构）
@@ -267,7 +224,7 @@ export const postCache = {
    * 清理过期缓存
    */
   async cleanup(): Promise<{ posts: number; lists: number }> {
-    const posts = await idbDeleteExpired(STORES.POSTS, 'cached_at', CACHE_TTL.POST_DETAIL)
+    const posts = await idbDeleteExpired(STORES.POSTS, 'cached_at', CACHE_TTL.POST_ENTITY)
     const lists = await idbDeleteExpired(STORES.POST_LISTS, 'cached_at', CACHE_TTL.POST_LIST)
     return { posts, lists }
   },

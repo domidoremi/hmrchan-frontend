@@ -377,9 +377,9 @@ async function fetchPost() {
   }
 
   try {
-    const cached = await postCache.getPost(postId.value)
+    const cached = await postCache.getPostEntity(postId.value)
     if (cached) {
-      post.value = cached.data as PostDetailResponse
+      post.value = cached as PostDetailResponse
       activeMediaIndex.value = 0
       isMediaLoaded.value = false
       await fetchFavoriteStatus()
