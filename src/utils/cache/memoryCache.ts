@@ -12,7 +12,7 @@ interface CacheEntry<T> {
 
 class MemoryCache {
   private cache = new Map<string, CacheEntry<unknown>>()
-  private maxSize = 100
+  private maxSize = 300 // 增加默认容量
   private cleanupTimer: ReturnType<typeof setInterval> | null = null
   private readonly CLEANUP_INTERVAL = 60 * 1000 // 每分钟清理一次
 

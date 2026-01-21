@@ -72,7 +72,8 @@ export async function idbGet<T>(store: StoreName, key: IDBValidKey): Promise<T |
       request.onsuccess = () => resolve(request.result as T | undefined)
       request.onerror = () => reject(request.error)
     })
-  } catch {
+  } catch (error) {
+    console.warn(`[IDB] Failed to get from ${store}:`, error)
     return undefined
   }
 }
@@ -89,7 +90,8 @@ export async function idbSet<T>(store: StoreName, value: T): Promise<void> {
       request.onsuccess = () => resolve()
       request.onerror = () => reject(request.error)
     })
-  } catch {
+  } catch (error) {
+    console.warn(`[IDB] Failed to set in ${store}:`, error)
     // 静默失败，缓存不是关键路径
   }
 }
@@ -106,7 +108,8 @@ export async function idbDelete(store: StoreName, key: IDBValidKey): Promise<voi
       request.onsuccess = () => resolve()
       request.onerror = () => reject(request.error)
     })
-  } catch {
+  } catch (error) {
+    console.warn(`[IDB] Failed to delete from ${store}:`, error)
     // 静默失败
   }
 }
@@ -123,7 +126,8 @@ export async function idbGetAll<T>(store: StoreName): Promise<T[]> {
       request.onsuccess = () => resolve(request.result as T[])
       request.onerror = () => reject(request.error)
     })
-  } catch {
+  } catch (error) {
+    console.warn(`[IDB] Failed to get all from ${store}:`, error)
     return []
   }
 }
@@ -140,7 +144,8 @@ export async function idbClear(store: StoreName): Promise<void> {
       request.onsuccess = () => resolve()
       request.onerror = () => reject(request.error)
     })
-  } catch {
+  } catch (error) {
+    console.warn(`[IDB] Failed to clear ${store}:`, error)
     // 静默失败
   }
 }
@@ -179,7 +184,8 @@ export async function idbDeleteExpired(
 
       request.onerror = () => reject(request.error)
     })
-  } catch {
+  } catch (error) {
+    console.warn(`[IDB] Failed to delete expired from ${store}:`, error)
     return 0
   }
 }
