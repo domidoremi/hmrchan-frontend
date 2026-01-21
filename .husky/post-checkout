@@ -1,12 +1,23 @@
+#!/bin/sh
+# Post-checkout hook
 # $1 = previous HEAD, $2 = new HEAD, $3 = 1 for branch checkout, 0 for file checkout
+
 if [ "$3" = "1" ]; then
+  echo "🔄 检查依赖变更..."
+  
   # Check if package.json or bun.lock changed
   changed_files="$(git diff --name-only $1 $2)"
   
-  check_run() {
-    echo "$changed_files" | grep -q "$1" && echo "📦 检测到 $1 变更，建议运行: bun install"
+  check_dependency_change() {
+    if echo "$changed_files" | grep -q "$1"; then
+      echo ""
+      echo "📦 检测到 $1 变更"
+      echo "💡 建议运行: bun install"
+      echo ""
+      return 0
+    fi
+    return 1
   }
   
-  check_run package.json
-  check_run bun.lock
+  check_dependency_change "package.json" || check_dependency_change "bun.lock"
 fi
