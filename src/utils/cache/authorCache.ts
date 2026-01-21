@@ -10,7 +10,7 @@
 
 import { idbGet, idbSet, idbDelete, idbDeleteExpired, STORES } from './idb'
 import { memoryCache } from './memoryCache'
-import { CACHE_TTL } from './config'
+import { CACHE_TTL, generateCacheKey } from './config'
 
 export interface CachedAuthor {
   id: string
@@ -25,15 +25,6 @@ export interface CachedAuthorList {
   total: number
   cached_at: number
   etag?: string | undefined
-}
-
-function buildListKey(params: Record<string, unknown>): string {
-  const sorted = Object.entries(params)
-    .filter(([, v]) => v !== undefined && v !== null)
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([k, v]) => `${k}=${v}`)
-    .join('&')
-  return `author_list:${sorted || 'default'}`
 }
 
 export const authorCache = {
@@ -76,7 +67,7 @@ export const authorCache = {
   // ==================== 作者列表 ====================
 
   async getList(params: Record<string, unknown>): Promise<CachedAuthorList | undefined> {
-    const cacheKey = buildListKey(params)
+    const cacheKey = generateCacheKey('author_list', params)
 
     const memCached = memoryCache.get<CachedAuthorList>(cacheKey)
     if (memCached) return memCached
@@ -99,7 +90,7 @@ export const authorCache = {
     total: number,
     etag?: string
   ): Promise<void> {
-    const cacheKey = buildListKey(params)
+    const cacheKey = generateCacheKey('author_list', params)
     const cached: CachedAuthorList = {
       cache_key: cacheKey,
       data,
