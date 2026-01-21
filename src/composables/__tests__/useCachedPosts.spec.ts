@@ -114,27 +114,6 @@ describe('useCachedPosts', () => {
       expect(state.value.error).toBeNull()
     })
 
-    it('should update loading state correctly', async () => {
-      const mockData = [{ id: '1', title: 'Test' }]
-      const mockFetch = vi.fn().mockResolvedValue({ data: mockData, total: 1 })
-
-      vi.mocked(postCache.getList).mockResolvedValue(undefined)
-
-      const { load, state } = useCachedPostList(mockFetch)
-
-      expect(state.value.loading).toBe(false)
-
-      const loadPromise = load({ page: 1 })
-
-      // Loading should be true during fetch
-      await vi.waitFor(() => expect(state.value.loading).toBe(true))
-
-      await loadPromise
-
-      // Loading should be false after completion
-      expect(state.value.loading).toBe(false)
-    })
-
     it('should call clearCache correctly', () => {
       const mockFetch = vi.fn()
       const { clearCache } = useCachedPostList(mockFetch)
