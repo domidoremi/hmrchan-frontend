@@ -8,6 +8,11 @@ interface PrefetchOptions {
   timeout?: number
 }
 
+// Configuration constants
+const DEFAULT_TIMEOUT_MS = 2000 // 2 seconds for requestIdleCallback
+const IDLE_TIMEOUT_MS = 100 // Fallback timeout for browsers without requestIdleCallback
+const PREFETCH_DELAY_MS = 1000 // Delay after page load before prefetching
+
 // 已预加载的路由缓存
 const prefetchedRoutes = new Set<string>()
 
@@ -222,4 +227,92 @@ function getRouteNameFromPath(path: string): RouteName | null {
 function getRouteImportFn(routeName: string): (() => Promise<unknown>) | null {
   const config = ROUTE_CONFIG[routeName as RouteName]
   return config?.importFn ?? null
+}
+
+/**
+ * 通用数据预加载工具
+ * 检查网络状况后执行预加载函数
+ */
+async function prefetchData(
+  importFn: () => Promise<unknown>,
+  options: { skipOnSlowNetwork?: boolean } = {}
+): Promise<void> {
+  const { skipOnSlowNetwork = true } = options
+
+  // 省电模式下不预加载
+  if (isSavingData()) {
+    return
+  }
+
+  // 慢速网络下可选跳过
+  if (skipOnSlowNetwork && getNetworkQuality() === 'slow') {
+    return
+  }
+
+  try {
+    if ('requestIdleCallback' in window) {
+      await new Promise<void>((resolve) => {
+        requestIdleCallback(
+          async () => {
+            await importFn()
+            resolve()
+          },
+          { timeout: DEFAULT_TIMEOUT_MS }
+        )
+      })
+    } else {
+      await new Promise<void>((resolve) => {
+        setTimeout(async () => {
+          await importFn()
+          resolve()
+        }, IDLE_TIMEOUT_MS)
+      })
+    }
+  } catch (error) {
+    if (import.meta.env.DEV) {
+      console.warn('Failed to prefetch data:', error)
+    }
+  }
+}
+
+/**
+ * 预加载探索页数据
+ * 在用户导航到探索页前预加载热门内容
+ */
+export async function prefetchExploreData(): Promise<void> {
+  await prefetchData(async () => {
+    const { postService } = await import('@/api/postService')
+    await postService.listPosts({ page: 1, page_size: 20 })
+  })
+}
+
+/**
+ * 预加载作者列表数据
+ * 在用户导航到作者页前预加载热门作者
+ */
+export async function prefetchAuthorsData(): Promise<void> {
+  await prefetchData(async () => {
+    const { authorService } = await import('@/api/authorService')
+    await authorService.listAuthors({ page: 1, page_size: 20 })
+  })
+}
+
+/**
+ * 预加载帖子详情数据
+ * 在用户点击帖子前预加载详情和评论
+ * @param postId - 帖子 UUID
+ */
+export async function prefetchPostDetail(postId: string): Promise<void> {
+  if (!postId) {
+    return
+  }
+
+  await prefetchData(async () => {
+    const [{ postService }, { commentService }] = await Promise.all([
+      import('@/api/postService'),
+      import('@/api/commentService'),
+    ])
+
+    await Promise.all([postService.getPost(postId), commentService.getPostComments(postId, 1, 20)])
+  })
 }
