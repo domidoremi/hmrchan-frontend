@@ -195,11 +195,11 @@ export function useCachedPost<T>(
     return loadWithCache(
       uuid,
       async (id) => {
-        const cached = await postCache.getPost(id)
-        return cached ? { data: cached.data as T } : null
+        const cached = await postCache.getPostEntity(id)
+        return cached ? { data: cached as T } : null
       },
       async (id) => ({ data: await fetchFn(id) }),
-      (id, d) => postCache.setPost(id, d),
+      (id, d) => postCache.setPostEntity(id, d),
       state,
       data as { value: T },
       null,
@@ -208,7 +208,7 @@ export function useCachedPost<T>(
   }
 
   async function invalidate(uuid: string) {
-    await postCache.deletePost(uuid)
+    await postCache.deletePostEntity(uuid)
   }
 
   return {

@@ -12,7 +12,6 @@
  * - Token 绑定验证，防止跨设备窃取
  */
 
-import { memoryCache } from '@/utils/cache'
 import { secureTokenManager } from '@/utils/tokenSecurity'
 
 // 延迟导入 i18n 和 toast store，避免循环依赖和减少 bundle 大小
@@ -81,8 +80,6 @@ export interface RequestConfig extends RequestInit {
   timeout?: number
   skipAuth?: boolean
   skipErrorToast?: boolean
-  /** GET 响应缓存 TTL（毫秒），设为 0 或不传则不缓存 */
-  cacheTtl?: number
 }
 
 // In-flight GET 请求去重 Map
@@ -432,40 +429,25 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
  */
 export const apiClient = {
   /**
-   * GET 请求（支持 in-flight 去重 + 可选 TTL 缓存）
+   * GET 请求（支持 in-flight 去重，避免重复请求）
+   * 注意：不再提供内置缓存，缓存由业务层（如 postCache）管理
    */
   get<T>(endpoint: string, config?: RequestConfig): Promise<T> {
-    const { cacheTtl = 0, skipAuth = false, ...restConfig } = config || {}
+    const { skipAuth = false, ...restConfig } = config || {}
     const url = endpoint.startsWith('http') ? endpoint : `${API_BASE_URL}${endpoint}`
     const cacheKey = buildCacheKey('GET', url, skipAuth)
 
-    // 1. 检查内存缓存
-    if (cacheTtl > 0) {
-      const cached = memoryCache.get<T>(cacheKey)
-      if (cached !== undefined) {
-        return Promise.resolve(cached)
-      }
-    }
-
-    // 2. 检查 in-flight 请求（去重）
+    // 检查 in-flight 请求（去重）
     const inflight = inflightRequests.get(cacheKey) as Promise<T> | undefined
     if (inflight) {
       return inflight
     }
 
-    // 3. 发起新请求
-    const promise = request<T>(endpoint, { ...restConfig, skipAuth, method: 'GET' })
-      .then((data) => {
-        // 写入缓存
-        if (cacheTtl > 0) {
-          memoryCache.set(cacheKey, data, cacheTtl)
-        }
-        return data
-      })
-      .finally(() => {
-        // 请求完成后移除 in-flight 记录
-        inflightRequests.delete(cacheKey)
-      })
+    // 发起新请求
+    const promise = request<T>(endpoint, { ...restConfig, skipAuth, method: 'GET' }).finally(() => {
+      // 请求完成后移除 in-flight 记录
+      inflightRequests.delete(cacheKey)
+    })
 
     inflightRequests.set(cacheKey, promise)
     return promise

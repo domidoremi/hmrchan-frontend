@@ -250,6 +250,8 @@ async function cacheFirstMedia(request) {
  * Stale-While-Revalidate - 帖子详情专用
  * 优先返回缓存，同时后台更新
  * 确保完整帖子数据（含 media_files）可快速访问
+ *
+ * 优化：标准化缓存键，忽略查询参数差异
  */
 async function staleWhileRevalidatePost(request) {
   // Cache API 只支持 GET 请求
@@ -258,7 +260,17 @@ async function staleWhileRevalidatePost(request) {
   }
 
   const cache = await caches.open(CACHE_NAMES.posts)
-  const cached = await cache.match(request)
+
+  // 标准化缓存键：提取核心路径，忽略查询参数
+  // 例如：/api/v1/posts/123?include=media_files 和 /api/v1/posts/123 使用同一个缓存
+  const url = new URL(request.url)
+  const normalizedUrl = `${url.origin}${url.pathname}`
+  const normalizedRequest = new Request(normalizedUrl, {
+    method: request.method,
+    headers: request.headers,
+  })
+
+  const cached = await cache.match(normalizedRequest)
 
   // 后台更新函数
   const fetchAndUpdate = async () => {
@@ -268,7 +280,7 @@ async function staleWhileRevalidatePost(request) {
       })
 
       if (response.ok) {
-        // 克隆响应并缓存
+        // 克隆响应并缓存（使用标准化的键）
         const clonedResponse = response.clone()
 
         // 添加缓存时间戳
@@ -281,7 +293,7 @@ async function staleWhileRevalidatePost(request) {
           headers,
         })
 
-        await cache.put(request, cachedResponse)
+        await cache.put(normalizedRequest, cachedResponse)
 
         // 管理缓存容量
         await managePostCache()
