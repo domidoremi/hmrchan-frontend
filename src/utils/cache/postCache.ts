@@ -14,7 +14,7 @@
 
 import { idbGet, idbSet, idbDelete, idbDeleteExpired, STORES } from './idb'
 import { memoryCache } from './memoryCache'
-import { CACHE_TTL } from './config'
+import { CACHE_TTL, generateCacheKey } from './config'
 
 // 类型定义
 export interface CachedPostList {
@@ -29,18 +29,6 @@ export interface CachedPostEntity {
   uuid: string // 实际的帖子 UUID（不带前缀）
   data: unknown // 完整帖子数据
   cached_at: number
-}
-
-/**
- * 生成列表缓存 Key
- */
-function buildListKey(params: Record<string, unknown>): string {
-  const sorted = Object.entries(params)
-    .filter(([, v]) => v !== undefined && v !== null)
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([k, v]) => `${k}=${v}`)
-    .join('&')
-  return `post_list:${sorted || 'default'}`
 }
 
 /**
@@ -141,7 +129,7 @@ export const postCache = {
   async getList(
     params: Record<string, unknown>
   ): Promise<{ data: unknown[]; total: number; fromCache: boolean } | undefined> {
-    const cacheKey = buildListKey(params)
+    const cacheKey = generateCacheKey('post_list', params)
 
     // 1. 查询缓存层：获取 UUID 列表
     const memCached = memoryCache.get<CachedPostList>(cacheKey)
@@ -188,7 +176,7 @@ export const postCache = {
     total: number,
     etag?: string
   ): Promise<void> {
-    const cacheKey = buildListKey(params)
+    const cacheKey = generateCacheKey('post_list', params)
 
     // 1. 提取 UUID 列表
     const uuids = posts

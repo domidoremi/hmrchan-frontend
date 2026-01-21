@@ -1,7 +1,8 @@
 /**
  * Service Worker - 三层缓存策略
- * 版本: 3.0.1
- * 更新: 启用帖子详情智能缓存，使用 Stale-While-Revalidate 策略
+ * 版本: 3.1.0
+ * 更新: 优化帖子详情缓存键标准化，忽略查询参数差异
+ *       使用 Stale-While-Revalidate 策略
  *       确保完整帖子数据（含 media_files）可离线访问
  *       优化域名配置，支持多环境部署
  */
