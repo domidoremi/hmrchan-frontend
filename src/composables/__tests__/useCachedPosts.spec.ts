@@ -62,7 +62,10 @@ describe('useCachedPosts', () => {
 
     it('should revalidate cached data in background when revalidate is true', async () => {
       const cachedData = [{ id: '1', title: 'Cached' }]
-      const freshData = [{ id: '1', title: 'Fresh' }, { id: '2', title: 'New' }]
+      const freshData = [
+        { id: '1', title: 'Fresh' },
+        { id: '2', title: 'New' },
+      ]
       const mockFetch = vi.fn().mockResolvedValue({ data: freshData, total: 2 })
 
       vi.mocked(postCache.getList).mockResolvedValue({
