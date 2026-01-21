@@ -104,6 +104,32 @@
       </div>
     </div>
 
+    <!-- Links -->
+    <div class="settings-group">
+      <div class="settings-group-header">
+        <div class="settings-group-icon">
+          <Info :size="14" />
+        </div>
+        <span class="settings-label">{{ $t('settings.links') }}</span>
+      </div>
+      <div class="link-list">
+        <RouterLink to="/about" class="link-btn" @click="$emit('close')">
+          <div class="link-btn-icon">
+            <Info :size="16" />
+          </div>
+          <span class="link-btn-text">{{ $t('nav.about') }}</span>
+          <ChevronRight :size="14" class="link-btn-arrow" />
+        </RouterLink>
+        <RouterLink to="/contact" class="link-btn" @click="$emit('close')">
+          <div class="link-btn-icon">
+            <Mail :size="16" />
+          </div>
+          <span class="link-btn-text">{{ $t('nav.contact') }}</span>
+          <ChevronRight :size="14" class="link-btn-arrow" />
+        </RouterLink>
+      </div>
+    </div>
+
     <!-- Version Info -->
     <div class="settings-footer">
       <span class="version-text">MomiChan</span>
@@ -114,8 +140,10 @@
 <script setup lang="ts">
 import {
   Check,
+  ChevronRight,
   Globe,
   Info,
+  Mail,
   Palette,
   Settings,
   SlidersHorizontal,
@@ -125,6 +153,7 @@ import {
   Monitor,
   Zap,
 } from 'lucide-vue-next'
+import { RouterLink } from 'vue-router'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
@@ -501,6 +530,69 @@ function toggleSetting(key: 'showHeroSection' | 'enableAnimations') {
   transform: translateX(20px);
 }
 
+/* ========== Link List ========== */
+.link-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+}
+
+.link-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  width: 100%;
+  padding: var(--spacing-3);
+  background: var(--glass-bg-light);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  color: var(--color-text-primary);
+  text-decoration: none;
+  transition: all var(--transition-fast);
+}
+
+.link-btn:hover {
+  background: var(--glass-bg);
+  border-color: var(--glass-border-strong);
+  transform: translateX(2px);
+}
+
+.link-btn-icon {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--glass-bg-subtle);
+  border-radius: var(--radius-md);
+  color: var(--color-text-tertiary);
+  flex-shrink: 0;
+  transition: all var(--transition-fast);
+}
+
+.link-btn:hover .link-btn-icon {
+  background: rgba(var(--color-primary-rgb), 0.1);
+  color: var(--color-primary);
+}
+
+.link-btn-text {
+  flex: 1;
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+}
+
+.link-btn-arrow {
+  color: var(--color-text-tertiary);
+  opacity: 0;
+  transform: translateX(-4px);
+  transition: all var(--transition-fast);
+}
+
+.link-btn:hover .link-btn-arrow {
+  opacity: 1;
+  transform: translateX(0);
+}
+
 /* ========== Footer ========== */
 .settings-footer {
   display: flex;
@@ -556,5 +648,77 @@ function toggleSetting(key: 'showHeroSection' | 'enableAnimations') {
   flex-shrink: 0;
   color: rgb(var(--color-warning-rgb, 245, 158, 11));
   margin-top: 1px;
+}
+
+/* ========== Link List ========== */
+.link-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+}
+
+.link-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  width: 100%;
+  padding: var(--spacing-3);
+  background: var(--glass-bg-light);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  text-decoration: none;
+  color: var(--color-text-primary);
+  transition: all var(--transition-fast);
+}
+
+.link-btn:hover {
+  background: var(--glass-bg);
+  border-color: var(--glass-border-strong);
+  transform: translateX(4px);
+}
+
+.link-btn-icon {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--glass-bg-subtle);
+  border-radius: var(--radius-md);
+  color: var(--color-text-tertiary);
+  flex-shrink: 0;
+  transition: all var(--transition-fast);
+}
+
+.link-btn:hover .link-btn-icon {
+  background: rgba(var(--color-primary-rgb), 0.1);
+  color: var(--color-primary);
+}
+
+.link-btn-text {
+  flex: 1;
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  text-align: left;
+}
+
+.link-btn-arrow {
+  color: var(--color-text-tertiary);
+  flex-shrink: 0;
+  transition: transform var(--transition-fast);
+}
+
+.link-btn:hover .link-btn-arrow {
+  transform: translateX(4px);
+  color: var(--color-primary);
+}
+
+/* Dark mode adjustments */
+[data-theme='dark'] .link-btn {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+[data-theme='dark'] .link-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
 }
 </style>
