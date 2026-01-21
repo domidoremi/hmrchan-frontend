@@ -367,12 +367,19 @@ frontend/
 - **省电模式检测**：在省电模式下禁用预加载
 - **鼠标悬停预加载**：用户悬停链接时预加载目标页面
 - **优先级队列**：高优先级路由（explore, search）优先预加载
+- **数据预加载**：预加载探索页、作者列表、帖子详情等关键数据
 
 ```typescript
-// 自动启用
+// 自动启用路由预加载
 import { prefetchCriticalRoutes, setupHoverPrefetch } from '@/utils/prefetch'
 prefetchCriticalRoutes()
 setupHoverPrefetch()
+
+// 手动预加载数据
+import { prefetchExploreData, prefetchAuthorsData, prefetchPostDetail } from '@/utils/prefetch'
+await prefetchExploreData() // 预加载探索页热门内容
+await prefetchAuthorsData() // 预加载热门作者
+await prefetchPostDetail(postId) // 预加载帖子详情和评论
 ```
 
 #### 2. 动态组件缓存
