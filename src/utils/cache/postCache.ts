@@ -15,6 +15,7 @@
 import { idbGet, idbSet, idbDelete, idbDeleteExpired, STORES } from './idb'
 import { memoryCache } from './memoryCache'
 import { CACHE_TTL, generateCacheKey } from './config'
+import { cacheStats } from './cacheStats'
 
 // 类型定义
 export interface CachedPostList {
@@ -41,22 +42,37 @@ export const postCache = {
    * 获取单个帖子实体
    */
   async getPostEntity(uuid: string): Promise<unknown | undefined> {
+    const startTime = performance.now()
     const memKey = `post_entity:${uuid}`
-    const memCached = memoryCache.get<CachedPostEntity>(memKey)
-    if (memCached) {
-      return memCached.data
-    }
 
-    const idbCached = await idbGet<CachedPostEntity>(STORES.POSTS, `entity:${uuid}`)
-    if (idbCached) {
-      if (Date.now() - idbCached.cached_at < CACHE_TTL.POST_ENTITY) {
-        memoryCache.set(memKey, idbCached, CACHE_TTL.MEMORY)
-        return idbCached.data
+    try {
+      const memCached = memoryCache.get<CachedPostEntity>(memKey)
+      if (memCached) {
+        cacheStats.recordHit('POST_ENTITY')
+        cacheStats.recordResponseTime('POST_ENTITY', performance.now() - startTime)
+        return memCached.data
       }
-      await idbDelete(STORES.POSTS, `entity:${uuid}`)
-    }
 
-    return undefined
+      const idbCached = await idbGet<CachedPostEntity>(STORES.POSTS, `entity:${uuid}`)
+      if (idbCached) {
+        if (Date.now() - idbCached.cached_at < CACHE_TTL.POST_ENTITY) {
+          memoryCache.set(memKey, idbCached, CACHE_TTL.MEMORY)
+          cacheStats.recordHit('POST_ENTITY')
+          cacheStats.recordResponseTime('POST_ENTITY', performance.now() - startTime)
+          return idbCached.data
+        }
+        await idbDelete(STORES.POSTS, `entity:${uuid}`)
+      }
+
+      cacheStats.recordMiss('POST_ENTITY')
+      cacheStats.recordResponseTime('POST_ENTITY', performance.now() - startTime)
+      return undefined
+    } catch (error) {
+      cacheStats.recordError('POST_ENTITY')
+      cacheStats.recordResponseTime('POST_ENTITY', performance.now() - startTime)
+      console.error('[postCache] getPostEntity error:', error)
+      return undefined
+    }
   },
 
   /**
@@ -93,6 +109,7 @@ export const postCache = {
     memoryCache.set(`post_entity:${uuid}`, cached, CACHE_TTL.MEMORY)
     // IDB 使用带前缀的 key 来区分不同类型的缓存
     await idbSet(STORES.POSTS, { ...cached, uuid: `entity:${uuid}` })
+    cacheStats.recordSet('POST_ENTITY')
   },
 
   /**
@@ -118,6 +135,7 @@ export const postCache = {
   async deletePostEntity(uuid: string): Promise<void> {
     memoryCache.delete(`post_entity:${uuid}`)
     await idbDelete(STORES.POSTS, `entity:${uuid}`)
+    cacheStats.recordDelete('POST_ENTITY')
   },
 
   // ==================== 帖子列表（两层缓存架构）====================
@@ -129,6 +147,7 @@ export const postCache = {
   async getList(
     params: Record<string, unknown>
   ): Promise<{ data: unknown[]; total: number; fromCache: boolean } | undefined> {
+    const startTime = performance.now()
     const cacheKey = generateCacheKey('post_list', params)
 
     // 1. 查询缓存层：获取 UUID 列表
@@ -136,6 +155,8 @@ export const postCache = {
     const listCache = memCached || (await idbGet<CachedPostList>(STORES.POST_LISTS, cacheKey))
 
     if (!listCache) {
+      cacheStats.recordMiss('POST_LIST')
+      cacheStats.recordResponseTime('POST_LIST', performance.now() - startTime)
       return undefined
     }
 
@@ -143,6 +164,8 @@ export const postCache = {
     const age = Date.now() - listCache.cached_at
     if (age >= CACHE_TTL.POST_LIST) {
       await idbDelete(STORES.POST_LISTS, cacheKey)
+      cacheStats.recordMiss('POST_LIST')
+      cacheStats.recordResponseTime('POST_LIST', performance.now() - startTime)
       return undefined
     }
 
@@ -154,12 +177,16 @@ export const postCache = {
     for (const uuid of listCache.uuids) {
       const entity = entityMap.get(uuid)
       if (entity === undefined) {
+        cacheStats.recordMiss('POST_LIST')
+        cacheStats.recordResponseTime('POST_LIST', performance.now() - startTime)
         return undefined
       }
       data.push(entity)
     }
 
     // 完全命中！
+    cacheStats.recordHit('POST_LIST')
+    cacheStats.recordResponseTime('POST_LIST', performance.now() - startTime)
     return {
       data,
       total: listCache.total,
@@ -193,6 +220,7 @@ export const postCache = {
     }
     memoryCache.set(cacheKey, listCache, CACHE_TTL.MEMORY)
     await idbSet(STORES.POST_LISTS, listCache)
+    cacheStats.recordSet('POST_LIST')
 
     // 3. 批量缓存帖子实体
     await this.setPostEntities(posts)
