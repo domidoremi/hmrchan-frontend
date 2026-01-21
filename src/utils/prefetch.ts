@@ -123,6 +123,7 @@ export function prefetchCriticalRoutes(): void {
 function executePrefetch(): void {
   // 延迟后开始预加载，确保首屏已完全渲染
   setTimeout(() => {
+    // 预加载路由组件
     prefetchRoutes([
       // 高优先级：用户最可能访问的页面
       { name: 'explore', importFn: ROUTE_CONFIG.explore.importFn, priority: 'high' },
@@ -133,6 +134,12 @@ function executePrefetch(): void {
       { name: 'community', importFn: ROUTE_CONFIG.community.importFn, priority: 'low' },
       { name: 'profile', importFn: ROUTE_CONFIG.profile.importFn, priority: 'low' },
     ])
+
+    // 预加载关键数据（延迟更长，避免影响首屏）
+    setTimeout(() => {
+      prefetchExploreData()
+      prefetchAuthorsData()
+    }, 2000)
   }, PREFETCH_DELAY_MS)
 }
 
@@ -282,7 +289,11 @@ async function prefetchData(
 export async function prefetchExploreData(): Promise<void> {
   await prefetchData(async () => {
     const { postService } = await import('@/api/postService')
-    await postService.listPosts({ page: 1, page_size: 20 })
+    // 预加载前两页数据，提升滚动体验
+    await Promise.all([
+      postService.listPosts({ page: 1, page_size: 20 }),
+      postService.listPosts({ page: 2, page_size: 20 }),
+    ])
   })
 }
 
@@ -293,7 +304,11 @@ export async function prefetchExploreData(): Promise<void> {
 export async function prefetchAuthorsData(): Promise<void> {
   await prefetchData(async () => {
     const { authorService } = await import('@/api/authorService')
-    await authorService.listAuthors({ page: 1, page_size: 20 })
+    // 预加载前两页数据
+    await Promise.all([
+      authorService.listAuthors({ page: 1, page_size: 20 }),
+      authorService.listAuthors({ page: 2, page_size: 20 }),
+    ])
   })
 }
 

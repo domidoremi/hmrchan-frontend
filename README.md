@@ -109,6 +109,10 @@ bun run type-check       # TypeScript 类型检查
 
 # 测试
 bun run test:unit        # 运行单元测试
+
+# 性能测试
+bun run test:perf        # 性能测试（启动开发服务器并运行 Lighthouse）
+bun run lighthouse       # Lighthouse 性能审计
 ```
 
 ## 📁 项目结构
@@ -153,6 +157,23 @@ frontend/
 - **响应式设计** - 完美适配桌面和移动端
 - **3D 动态背景** - 根据页面和平台动态变化的背景效果
 - **性能优化** - 智能预加载、缓存策略、懒加载
+
+### 性能指标
+
+项目通过 Lighthouse CI 持续监控性能，确保达到以下标准：
+
+- **Performance**: ≥80 分
+- **Accessibility**: ≥90 分
+- **Best Practices**: ≥90 分
+- **SEO**: ≥90 分
+
+核心 Web Vitals 目标：
+
+- **FCP** (First Contentful Paint): ≤2s
+- **LCP** (Largest Contentful Paint): ≤3s
+- **CLS** (Cumulative Layout Shift): ≤0.1
+- **TBT** (Total Blocking Time): ≤300ms
+- **Speed Index**: ≤3s
 
 ## 🚢 部署指南
 

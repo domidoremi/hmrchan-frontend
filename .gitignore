@@ -99,6 +99,7 @@ lighthouse-report.*
 *.report.html
 *.report.json
 lighthouse-reports/
+.lighthouse/
 
 # =====================
 # Bun
