@@ -4,6 +4,8 @@
  * 包含自动清理过期条目的机制，防止内存泄漏
  */
 
+import { cacheStats } from './cacheStats'
+
 interface CacheEntry<T> {
   data: T
   timestamp: number
@@ -15,6 +17,10 @@ class MemoryCache {
   private maxSize = 300 // 增加默认容量
   private cleanupTimer: ReturnType<typeof setInterval> | null = null
   private readonly CLEANUP_INTERVAL = 60 * 1000 // 每分钟清理一次
+  private readonly MIN_SIZE = 200
+  private readonly MAX_SIZE = 500
+  private hitCount = 0
+  private missCount = 0
 
   constructor() {
     this.startCleanupTimer()
@@ -56,21 +62,67 @@ class MemoryCache {
         this.cache.delete(key)
       }
     }
+
+    // 自适应容量调整：每次清理时评估命中率
+    this.adjustCapacity()
+  }
+
+  /**
+   * 自适应容量调整
+   * 根据命中率动态调整缓存容量
+   */
+  private adjustCapacity(): void {
+    const totalRequests = this.hitCount + this.missCount
+    if (totalRequests < 100) return // 样本量太小，不调整
+
+    const hitRate = this.hitCount / totalRequests
+
+    // 命中率高（>80%）且接近容量上限 → 增加容量
+    if (hitRate > 0.8 && this.cache.size > this.maxSize * 0.9 && this.maxSize < this.MAX_SIZE) {
+      this.maxSize = Math.min(this.maxSize + 50, this.MAX_SIZE)
+      if (import.meta.env.DEV) {
+        console.log(`[MemoryCache] Increased capacity to ${this.maxSize} (hit rate: ${(hitRate * 100).toFixed(1)}%)`)
+      }
+    }
+
+    // 命中率低（<50%）且容量较大 → 减少容量
+    if (hitRate < 0.5 && this.maxSize > this.MIN_SIZE) {
+      this.maxSize = Math.max(this.maxSize - 50, this.MIN_SIZE)
+      if (import.meta.env.DEV) {
+        console.log(`[MemoryCache] Decreased capacity to ${this.maxSize} (hit rate: ${(hitRate * 100).toFixed(1)}%)`)
+      }
+    }
+
+    // 重置计数器
+    this.hitCount = 0
+    this.missCount = 0
   }
 
   /**
    * 获取缓存
    */
   get<T>(key: string): T | undefined {
+    const startTime = performance.now()
     const entry = this.cache.get(key) as CacheEntry<T> | undefined
-    if (!entry) return undefined
+    if (!entry) {
+      this.missCount++
+      cacheStats.recordMiss('MEMORY')
+      cacheStats.recordResponseTime('MEMORY', performance.now() - startTime)
+      return undefined
+    }
 
     // 检查是否过期
     if (Date.now() - entry.timestamp > entry.ttl) {
       this.cache.delete(key)
+      this.missCount++
+      cacheStats.recordMiss('MEMORY')
+      cacheStats.recordResponseTime('MEMORY', performance.now() - startTime)
       return undefined
     }
 
+    this.hitCount++
+    cacheStats.recordHit('MEMORY')
+    cacheStats.recordResponseTime('MEMORY', performance.now() - startTime)
     return entry.data
   }
 
@@ -90,6 +142,7 @@ class MemoryCache {
       timestamp: Date.now(),
       ttl,
     })
+    cacheStats.recordSet('MEMORY')
   }
 
   /**
@@ -97,6 +150,7 @@ class MemoryCache {
    */
   delete(key: string): void {
     this.cache.delete(key)
+    cacheStats.recordDelete('MEMORY')
   }
 
   /**

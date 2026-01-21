@@ -16,6 +16,7 @@ export { postCache, type CachedPost, type CachedPostList } from './postCache'
 export { authorCache, type CachedAuthor, type CachedAuthorList } from './authorCache'
 export { memoryCache }
 export { idbClear, STORES }
+export { cacheStats } from './cacheStats'
 export {
   CACHE_TTL,
   CACHE_LIMITS,

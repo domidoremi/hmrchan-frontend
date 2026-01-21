@@ -21,6 +21,7 @@
     "preview": "vite preview",
     "test:unit": "vitest run --passWithNoTests",
     "test:unit:watch": "vitest",
+    "test:perf": "bun run scripts/test-performance.ts",
     "type-check": "vue-tsc --noEmit --pretty",
     "type-check:watch": "vue-tsc --noEmit --watch --pretty",
     "prepare": "husky",
