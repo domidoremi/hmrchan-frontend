@@ -1,12 +1,12 @@
 <template>
-  <button :class="buttonClass" :disabled="props.disabled || props.loading" :type="props.type" @click="handleClick">
+  <button
+    :class="buttonClass"
+    :disabled="props.disabled || props.loading"
+    :type="props.type"
+    @click="handleClick"
+  >
     <span v-if="loading" class="btn-spinner">
-      <svg
-        class="animate-spin"
-        xmlns="http://www.w3.org/2000/svg"
-        fill="none"
-        viewBox="0 0 24 24"
-      >
+      <svg class="animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
         <circle
           class="opacity-25"
           cx="12"
@@ -83,7 +83,9 @@ const hasDefaultSlot = computed(() => !!slots['default'])
 
 const showLeftIcon = computed(() => !!props.icon && props.iconPosition === 'left' && !props.loading)
 
-const showRightIcon = computed(() => !!props.icon && props.iconPosition === 'right' && !props.loading)
+const showRightIcon = computed(
+  () => !!props.icon && props.iconPosition === 'right' && !props.loading
+)
 
 function handleClick(event: MouseEvent) {
   if (!props.disabled && !props.loading) {
