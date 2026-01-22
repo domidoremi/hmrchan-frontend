@@ -117,6 +117,12 @@ const routes: RouteRecordRaw[] = [
     meta: { title: 'nav.about' },
   },
   {
+    path: '/components',
+    name: 'components',
+    component: () => import('@/views/ComponentsShowcase.vue'),
+    meta: { title: 'shadcn/ui 组件展示' },
+  },
+  {
     path: '/:pathMatch(.*)*',
     name: 'not-found',
     component: () => import('@/views/NotFoundPage.vue'),
