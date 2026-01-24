@@ -1,44 +1,62 @@
 <template>
   <Teleport to="body">
-    <dialog
-      ref="dialogRef"
-      class="confirm-dialog glass-card"
-      @click="handleBackdropClick"
-      @cancel.prevent="handleCancel"
-    >
-      <div class="dialog-content" ref="contentRef">
-        <div class="dialog-header">
-          <component
-            :is="iconComponent"
-            v-if="iconComponent"
-            :size="24"
-            class="dialog-icon"
-            :class="variant"
-          />
-          <h3 class="dialog-title">{{ title }}</h3>
-        </div>
+    <Transition name="confirm-dialog">
+      <div v-if="isOpen" class="confirm-dialog-overlay" @click.self="handleBackdropClick">
+        <div
+          ref="contentRef"
+          class="confirm-dialog"
+          role="alertdialog"
+          aria-modal="true"
+          :aria-labelledby="titleId"
+          :aria-describedby="descriptionId"
+        >
+          <div class="confirm-dialog__icon-wrapper" :class="`confirm-dialog__icon-wrapper--${variant}`">
+            <component :is="iconComponent" :size="24" class="confirm-dialog__icon" />
+          </div>
 
-        <p class="dialog-message">{{ message }}</p>
+          <div class="confirm-dialog__content">
+            <h3 :id="titleId" class="confirm-dialog__title">
+              {{ title || defaultTitle }}
+            </h3>
+            <p :id="descriptionId" class="confirm-dialog__message">
+              {{ message }}
+            </p>
+          </div>
 
-        <div class="dialog-actions">
-          <Button ref="cancelBtnRef" variant="ghost" size="sm" @click="handleCancel">
-            {{ cancelText }}
-          </Button>
-          <Button :variant="confirmVariant" size="sm" @click="handleConfirm">
-            {{ confirmText }}
-          </Button>
+          <div class="confirm-dialog__actions">
+            <Button
+              ref="cancelBtnRef"
+              variant="outline"
+              size="sm"
+              class="confirm-dialog__btn"
+              @click="handleCancel"
+            >
+              {{ cancelText }}
+            </Button>
+            <Button
+              :variant="confirmVariant"
+              size="sm"
+              :loading="loading"
+              class="confirm-dialog__btn"
+              @click="handleConfirm"
+            >
+              {{ confirmText }}
+            </Button>
+          </div>
         </div>
       </div>
-    </dialog>
+    </Transition>
   </Teleport>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, type Component } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted, type Component } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { AlertTriangle, Trash2, Info, HelpCircle } from 'lucide-vue-next'
+import { AlertTriangle, Trash2, Info, HelpCircle, CheckCircle } from 'lucide-vue-next'
 import Button from './Button.vue'
 import { useFocusTrap } from '@/composables/useFocusTrap'
+
+defineOptions({ name: 'UiConfirmDialog' })
 
 export interface ConfirmDialogProps {
   isOpen: boolean
@@ -46,11 +64,15 @@ export interface ConfirmDialogProps {
   message: string
   confirmText?: string
   cancelText?: string
-  variant?: 'danger' | 'warning' | 'info' | 'default'
+  variant?: 'danger' | 'warning' | 'info' | 'success' | 'default'
+  loading?: boolean
+  closeOnBackdrop?: boolean
 }
 
 const props = withDefaults(defineProps<ConfirmDialogProps>(), {
   variant: 'default',
+  loading: false,
+  closeOnBackdrop: true,
 })
 
 const emit = defineEmits<{
@@ -60,11 +82,12 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
-const dialogRef = ref<HTMLDialogElement | null>(null)
 const contentRef = ref<HTMLElement | null>(null)
+const titleId = `confirm-title-${Math.random().toString(36).slice(2, 9)}`
+const descriptionId = `confirm-desc-${Math.random().toString(36).slice(2, 9)}`
 
-// 使用 Focus Trap
 const isDialogOpen = computed(() => props.isOpen)
+
 useFocusTrap(contentRef, isDialogOpen, {
   autoFocus: true,
   restoreFocus: true,
@@ -72,7 +95,7 @@ useFocusTrap(contentRef, isDialogOpen, {
   onEscape: handleCancel,
 })
 
-const iconComponent = computed<Component | null>(() => {
+const iconComponent = computed<Component>(() => {
   switch (props.variant) {
     case 'danger':
       return Trash2
@@ -80,150 +103,232 @@ const iconComponent = computed<Component | null>(() => {
       return AlertTriangle
     case 'info':
       return Info
+    case 'success':
+      return CheckCircle
     default:
       return HelpCircle
   }
 })
 
+const defaultTitle = computed(() => {
+  switch (props.variant) {
+    case 'danger':
+      return t('common.confirmDelete', '确认删除')
+    case 'warning':
+      return t('common.warning', '警告')
+    case 'success':
+      return t('common.success', '成功')
+    default:
+      return t('common.confirm', '确认')
+  }
+})
+
 const confirmVariant = computed(() => {
-  return props.variant === 'danger' ? 'danger' : 'primary'
+  switch (props.variant) {
+    case 'danger':
+      return 'destructive'
+    case 'success':
+      return 'default'
+    default:
+      return 'default'
+  }
 })
 
 const confirmText = computed(() => props.confirmText || t('common.confirm'))
 const cancelText = computed(() => props.cancelText || t('common.cancel'))
 
-// 使用原生 dialog API
-watch(
-  () => props.isOpen,
-  (newValue) => {
-    if (!dialogRef.value) return
-
-    if (newValue) {
-      dialogRef.value.showModal()
-    } else {
-      dialogRef.value.close()
-    }
-  }
-)
-
 function handleConfirm() {
+  if (props.loading) return
   emit('confirm')
   emit('update:isOpen', false)
 }
 
 function handleCancel() {
+  if (props.loading) return
   emit('cancel')
   emit('update:isOpen', false)
 }
 
-// 点击背景关闭（可选，根据 UX 需求）
-function handleBackdropClick(event: MouseEvent) {
-  if (event.target === dialogRef.value) {
+function handleBackdropClick() {
+  if (props.closeOnBackdrop && !props.loading) {
     handleCancel()
   }
 }
+
+function handleKeydown(event: KeyboardEvent) {
+  if (event.key === 'Escape' && props.isOpen && !props.loading) {
+    handleCancel()
+  }
+}
+
+watch(
+  () => props.isOpen,
+  (isOpen) => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+  }
+)
+
+onMounted(() => {
+  document.addEventListener('keydown', handleKeydown)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('keydown', handleKeydown)
+  document.body.style.overflow = ''
+})
 </script>
 
 <style scoped>
-/* 原生 dialog 元素样式 */
-.confirm-dialog {
+.confirm-dialog-overlay {
   position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  max-width: 400px;
-  width: 100%;
-  padding: 0;
-  border: none;
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-xl);
-  margin: 0;
-}
-
-/* dialog 背景遮罩（::backdrop 伪元素） */
-.confirm-dialog::backdrop {
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(4px);
-  animation: backdrop-fade-in 0.2s ease;
-}
-
-@keyframes backdrop-fade-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-/* 对话框打开动画 - GPU加速优化 */
-.confirm-dialog[open] {
-  animation: dialog-enter 0.25s var(--ease-out);
-  /* GPU加速：提升到独立合成层 */
-  will-change: transform, opacity;
-}
-
-@keyframes dialog-enter {
-  from {
-    opacity: 0;
-    transform: translate3d(-50%, calc(-50% - 10px), 0) scale3d(0.95, 0.95, 1);
-  }
-  to {
-    opacity: 1;
-    transform: translate3d(-50%, -50%, 0) scale3d(1, 1, 1);
-  }
-}
-
-.dialog-content {
-  padding: var(--spacing-5);
-}
-
-.dialog-header {
+  inset: 0;
+  z-index: var(--z-modal-backdrop);
   display: flex;
   align-items: center;
-  gap: var(--spacing-3);
-  margin-bottom: var(--spacing-3);
+  justify-content: center;
+  padding: var(--spacing-4);
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
 }
 
-.dialog-icon {
-  flex-shrink: 0;
+.confirm-dialog {
+  position: relative;
+  z-index: var(--z-modal);
+  width: 100%;
+  max-width: 24rem;
+  padding: var(--spacing-6);
+  border-radius: var(--radius-xl);
+  background: var(--glass-bg-strong);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-2xl);
+  text-align: center;
 }
 
-.dialog-icon.danger {
+.confirm-dialog::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.4) 50%, transparent 100%);
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.confirm-dialog__icon-wrapper {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3.5rem;
+  height: 3.5rem;
+  margin-bottom: var(--spacing-4);
+  border-radius: var(--radius-full);
+  background: var(--glass-bg-light);
+}
+
+.confirm-dialog__icon-wrapper--danger {
+  background: var(--color-error-alpha);
+}
+
+.confirm-dialog__icon-wrapper--danger .confirm-dialog__icon {
   color: var(--color-error);
 }
 
-.dialog-icon.warning {
+.confirm-dialog__icon-wrapper--warning {
+  background: var(--color-warning-alpha);
+}
+
+.confirm-dialog__icon-wrapper--warning .confirm-dialog__icon {
   color: var(--color-warning);
 }
 
-.dialog-icon.info {
+.confirm-dialog__icon-wrapper--info {
+  background: var(--color-info-alpha);
+}
+
+.confirm-dialog__icon-wrapper--info .confirm-dialog__icon {
   color: var(--color-info);
 }
 
-.dialog-title {
+.confirm-dialog__icon-wrapper--success {
+  background: var(--color-success-alpha);
+}
+
+.confirm-dialog__icon-wrapper--success .confirm-dialog__icon {
+  color: var(--color-success);
+}
+
+.confirm-dialog__icon-wrapper--default {
+  background: var(--color-primary-alpha);
+}
+
+.confirm-dialog__icon-wrapper--default .confirm-dialog__icon {
+  color: var(--color-primary);
+}
+
+.confirm-dialog__content {
+  margin-bottom: var(--spacing-5);
+}
+
+.confirm-dialog__title {
   font-size: var(--text-lg);
   font-weight: var(--font-semibold);
+  color: var(--color-foreground);
+  margin: 0 0 var(--spacing-2);
+}
+
+.confirm-dialog__message {
+  font-size: var(--text-sm);
+  color: var(--color-muted-foreground);
   margin: 0;
-  color: var(--color-text-primary);
+  line-height: var(--leading-relaxed);
 }
 
-.dialog-message {
-  color: var(--color-text-secondary);
-  margin: 0 0 var(--spacing-5) 0;
-  line-height: 1.5;
-}
-
-.dialog-actions {
+.confirm-dialog__actions {
   display: flex;
-  justify-content: flex-end;
-  gap: var(--spacing-2);
+  gap: var(--spacing-3);
 }
 
-/* 移动端适配 */
-@media (max-width: 768px) {
+.confirm-dialog__btn {
+  flex: 1;
+}
+
+/* Transition */
+.confirm-dialog-enter-active,
+.confirm-dialog-leave-active {
+  transition: opacity 200ms var(--ease-out);
+}
+
+.confirm-dialog-enter-active .confirm-dialog,
+.confirm-dialog-leave-active .confirm-dialog {
+  transition: transform 200ms var(--ease-out), opacity 200ms var(--ease-out);
+}
+
+.confirm-dialog-enter-from,
+.confirm-dialog-leave-to {
+  opacity: 0;
+}
+
+.confirm-dialog-enter-from .confirm-dialog,
+.confirm-dialog-leave-to .confirm-dialog {
+  opacity: 0;
+  transform: scale(0.9) translateY(10px);
+}
+
+@media (max-width: 640px) {
   .confirm-dialog {
     max-width: calc(100vw - var(--spacing-8));
+    padding: var(--spacing-5);
+  }
+
+  .confirm-dialog__actions {
+    flex-direction: column-reverse;
   }
 }
 </style>

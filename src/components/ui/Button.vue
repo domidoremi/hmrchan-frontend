@@ -1,21 +1,29 @@
 <template>
   <button :class="buttonClass" :disabled="disabled || loading" :type="type" @click="handleClick">
-    <span class="btn-ripple" />
     <span v-if="loading" class="spinner spinner-sm" />
-    <component v-else-if="icon && iconPosition === 'left'" :is="icon" :size="iconSize" />
-    <span v-if="$slots['default']" class="btn-content">
+    <component v-else-if="showLeftIcon" :is="icon" :size="iconSize" />
+    <span v-if="hasDefaultSlot" class="btn-content">
       <slot />
     </span>
-    <component v-if="icon && iconPosition === 'right' && !loading" :is="icon" :size="iconSize" />
+    <component v-if="showRightIcon" :is="icon" :size="iconSize" />
   </button>
 </template>
 
 <script setup lang="ts">
-import { computed, type Component } from 'vue'
+import { computed, useSlots, type Component } from 'vue'
 
 interface Props {
-  variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'success'
-  size?: 'sm' | 'md' | 'lg'
+  variant?:
+    | 'primary'
+    | 'secondary'
+    | 'ghost'
+    | 'danger'
+    | 'success'
+    | 'default'
+    | 'destructive'
+    | 'outline'
+    | 'link'
+  size?: 'sm' | 'md' | 'lg' | 'default' | 'icon'
   disabled?: boolean
   loading?: boolean
   icon?: Component
@@ -25,8 +33,8 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  variant: 'primary',
-  size: 'md',
+  variant: 'default',
+  size: 'default',
   disabled: false,
   loading: false,
   iconPosition: 'left',
@@ -38,21 +46,55 @@ const emit = defineEmits<{
   click: [event: MouseEvent]
 }>()
 
+const slots = useSlots()
+
+const VARIANT_MAP: Record<string, string> = {
+  primary: 'default',
+  default: 'default',
+  destructive: 'destructive',
+  danger: 'destructive',
+  secondary: 'secondary',
+  ghost: 'ghost',
+  outline: 'outline',
+  link: 'link',
+  success: 'success',
+}
+
+const SIZE_MAP: Record<string, string> = {
+  sm: 'sm',
+  md: 'md',
+  default: 'md',
+  lg: 'lg',
+  icon: 'icon',
+}
+
+const normalizedVariant = computed(() => VARIANT_MAP[props.variant] ?? 'default')
+const normalizedSize = computed(() => SIZE_MAP[props.size] ?? 'md')
+const hasDefaultSlot = computed(() => !!slots['default'])
+const isIconOnly = computed(() => !!props.icon && !props.loading && !hasDefaultSlot.value)
+
 const buttonClass = computed(() => [
   'btn',
-  `btn-${props.variant}`,
-  `btn-${props.size}`,
+  `btn-${normalizedVariant.value}`,
+  `btn-${normalizedSize.value}`,
   {
     'btn-loading': props.loading,
     'btn-full-width': props.fullWidth,
-    'btn-icon-only': props.icon && !props.loading,
+    'btn-icon-only': isIconOnly.value,
   },
 ])
 
 const iconSize = computed(() => {
-  const sizes = { sm: 16, md: 18, lg: 20 }
-  return sizes[props.size]
+  const sizes = { sm: 16, md: 18, lg: 20, icon: 18 }
+  return sizes[normalizedSize.value] ?? 18
 })
+
+const showLeftIcon = computed(
+  () => !!props.icon && props.iconPosition === 'left' && !props.loading
+)
+const showRightIcon = computed(
+  () => !!props.icon && props.iconPosition === 'right' && !props.loading
+)
 
 function handleClick(event: MouseEvent) {
   if (!props.disabled && !props.loading) {
@@ -69,111 +111,133 @@ function handleClick(event: MouseEvent) {
   justify-content: center;
   gap: var(--spacing-2);
   font-weight: var(--font-medium);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius);
   cursor: pointer;
-  transition: all var(--transition-fast);
-  border: none;
+  transition-property: color, background-color, border-color, box-shadow, transform;
+  transition-duration: 150ms;
+  transition-timing-function: var(--ease-out);
+  border: 1px solid transparent;
   outline: none;
   white-space: nowrap;
-  overflow: hidden;
-  isolation: isolate;
-}
-
-.btn-ripple {
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  z-index: -1;
+  user-select: none;
 }
 
 /* Sizes */
 .btn-sm {
-  padding: var(--spacing-1) var(--spacing-3);
-  font-size: var(--text-sm);
-  min-height: 32px;
+  height: 2.25rem;
+  padding: 0 0.75rem;
+  font-size: var(--text-xs);
 }
 
 .btn-md {
-  padding: var(--spacing-2) var(--spacing-4);
-  font-size: var(--text-base);
-  min-height: 40px;
+  height: 2.5rem;
+  padding: 0 1rem;
+  font-size: var(--text-sm);
 }
 
 .btn-lg {
-  padding: var(--spacing-3) var(--spacing-6);
-  font-size: var(--text-lg);
-  min-height: 48px;
+  height: 2.75rem;
+  padding: 0 2rem;
+  font-size: var(--text-base);
+}
+
+.btn-icon {
+  height: 2.5rem;
+  width: 2.5rem;
+  padding: 0;
+}
+
+.btn-icon-only.btn-sm {
+  height: 2.25rem;
+  width: 2.25rem;
+}
+
+.btn-icon-only.btn-lg {
+  height: 2.75rem;
+  width: 2.75rem;
 }
 
 /* Variants */
-.btn-primary {
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+.btn-default {
+  background: var(--color-primary);
   color: var(--color-white);
+  box-shadow: var(--shadow-sm);
 }
 
-.btn-primary:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow:
-    0 0 0 1px rgba(var(--color-primary-rgb), 0.2),
-    0 8px 24px -4px rgba(var(--color-primary-rgb), 0.4),
-    0 4px 8px -2px rgba(var(--color-primary-rgb), 0.2);
+.btn-default:hover:not(:disabled) {
+  background: var(--color-primary-dark);
+  box-shadow: var(--shadow-md);
 }
 
-.btn-primary:hover:not(:disabled) .btn-ripple {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, transparent 100%);
-}
-
-.btn-primary:active:not(:disabled) {
-  transform: translateY(0) scale(0.97);
-  transition: transform 0.1s ease;
+.btn-default:active:not(:disabled) {
+  transform: scale(0.98);
 }
 
 .btn-secondary {
   background: var(--glass-bg);
   backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--glass-border);
-  color: var(--color-text-primary);
+  border-color: var(--glass-border);
+  color: var(--color-foreground);
 }
 
 .btn-secondary:hover:not(:disabled) {
   background: var(--glass-bg-strong);
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 1px var(--color-primary-100);
+  box-shadow: 0 0 0 1px rgba(var(--color-primary-rgb), 0.16);
 }
 
-.btn-secondary:active:not(:disabled) {
-  transform: scale(0.98);
+.btn-outline {
+  background: transparent;
+  border-color: var(--color-input);
+  color: var(--color-foreground);
+}
+
+.btn-outline:hover:not(:disabled) {
+  background: var(--color-muted);
+  border-color: var(--color-primary);
 }
 
 .btn-ghost {
   background: transparent;
-  color: var(--color-text-primary);
-  border: 1px solid transparent;
+  color: var(--color-foreground);
 }
 
 .btn-ghost:hover:not(:disabled) {
   background: var(--glass-bg-light);
-  border-color: var(--glass-border);
 }
 
-.btn-ghost:active:not(:disabled) {
-  transform: scale(0.97);
-  background: var(--glass-bg);
+.btn-link {
+  background: transparent;
+  color: var(--color-primary);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  box-shadow: none;
 }
 
-.btn-danger {
-  background: linear-gradient(135deg, var(--color-error) 0%, var(--color-error-hover) 100%);
-  color: var(--color-white);
+.btn-link:hover:not(:disabled) {
+  text-decoration: none;
 }
 
-.btn-danger:hover:not(:disabled) {
-  box-shadow: 0 0 20px rgba(239, 68, 68, 0.4);
+.btn-destructive {
+  background: var(--color-destructive);
+  color: var(--color-destructive-foreground);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-destructive:hover:not(:disabled) {
+  background: var(--color-error-hover);
+  box-shadow: var(--shadow-md);
 }
 
 .btn-success {
-  background: linear-gradient(135deg, var(--color-success) 0%, #059669 100%);
+  background: var(--color-success);
   color: var(--color-white);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-success:hover:not(:disabled) {
+  background: var(--color-success-hover);
+  box-shadow: var(--shadow-md);
 }
 
 /* States */
@@ -193,7 +257,7 @@ function handleClick(event: MouseEvent) {
 
 /* Focus */
 .btn:focus-visible {
-  outline: 2px solid var(--color-primary);
+  outline: 2px solid var(--color-ring);
   outline-offset: 2px;
 }
 

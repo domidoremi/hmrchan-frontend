@@ -59,7 +59,12 @@
     "zoomIn": "Zoom In",
     "zoomOut": "Zoom Out",
     "resetZoom": "Reset Zoom",
-    "remove": "Remove"
+    "remove": "Remove",
+    "download": "Download",
+    "scrollToLoad": "Scroll to load more",
+    "loadingFailed": "Failed to load",
+    "imageLoadFailed": "Image failed to load",
+    "reset": "Reset"
   },
   "auth": {
     "email": "Email",
@@ -102,7 +107,15 @@
   "video": {
     "playbackSpeed": "Playback Speed",
     "quality": "Quality",
-    "auto": "Auto"
+    "auto": "Auto",
+    "player": "Video player",
+    "play": "Play",
+    "pause": "Pause",
+    "mute": "Mute",
+    "unmute": "Unmute",
+    "fullscreen": "Fullscreen",
+    "pip": "Picture in picture",
+    "settings": "Settings"
   },
   "settings": {
     "title": "Settings",
@@ -245,7 +258,11 @@
     "badGateway": "Bad gateway",
     "serviceUnavailable": "Service unavailable",
     "componentError": "Something went wrong",
-    "technicalDetails": "Technical Details"
+    "technicalDetails": "Technical Details",
+    "mediaLoadFailed": "Media failed to load",
+    "copyReport": "Copy report",
+    "copySuccess": "Copied",
+    "copyFailed": "Copy failed"
   },
   "comment": {
     "title": "Comments",
@@ -360,6 +377,8 @@
     "passwordMismatch": "Passwords do not match",
     "passwordTooShort": "Password must be at least 8 characters",
     "cropAvatar": "Crop Avatar",
+    "zoom": "Zoom",
+    "rotate": "Rotate",
     "circleShape": "Circle",
     "squareShape": "Square",
     "tabs": {
@@ -429,6 +448,7 @@
       "suffix": ""
     },
     "subtitle": "Aggregating content from TikTok, YouTube, Instagram, and X — all in one place.",
+    "ctaLabel": "Live sync",
     "tiktok": "TikTok videos synced",
     "youtube": "YouTube content tracked",
     "instagram": "Instagram posts collected",

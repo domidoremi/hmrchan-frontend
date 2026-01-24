@@ -1,5 +1,12 @@
 <template>
-  <div ref="playerElement" class="video-player" :class="{ 'is-fullscreen': isFullscreen }">
+  <div
+    ref="playerElement"
+    class="video-player"
+    :class="{ 'is-fullscreen': isFullscreen, 'is-buffering': isBuffering }"
+    tabindex="0"
+    role="group"
+    :aria-label="$t('video.player')"
+  >
     <video
       ref="videoRef"
       class="video-element"
@@ -7,6 +14,7 @@
       :poster="poster"
       :playsinline="playsinline"
       :loop="loop"
+      :preload="preload"
       @loadedmetadata="onLoadedMetadata"
       @timeupdate="onTimeUpdate"
       @play="onPlay"
@@ -31,7 +39,13 @@
       <!-- 底部控制区 -->
       <div class="controls-bottom">
         <!-- 进度条 -->
-        <div class="progress-container" @click="seek">
+        <div
+          class="progress-container"
+          :class="{ 'is-seeking': isSeeking }"
+          @click="seek"
+          @mousedown.prevent="startSeekDrag"
+          @touchstart.prevent="startSeekDrag"
+        >
           <div class="progress-bar">
             <div class="progress-buffered" :style="{ width: `${bufferedPercent}%` }" />
             <div class="progress-played" :style="{ width: `${playedPercent}%` }" />
@@ -43,7 +57,12 @@
         <div class="controls-row">
           <!-- 左侧 -->
           <div class="controls-group">
-            <button type="button" class="control-btn" @click="togglePlay">
+            <button
+              type="button"
+              class="control-btn"
+              :aria-label="isPlaying ? $t('video.pause') : $t('video.play')"
+              @click="togglePlay"
+            >
               <Play v-if="!isPlaying" :size="20" />
               <Pause v-else :size="20" />
             </button>
@@ -59,7 +78,12 @@
           <div class="controls-group">
             <!-- 音量 -->
             <div class="volume-control">
-              <button type="button" class="control-btn" @click="toggleMute">
+            <button
+              type="button"
+              class="control-btn"
+              :aria-label="isMuted ? $t('video.unmute') : $t('video.mute')"
+              @click="toggleMute"
+            >
                 <Volume2 v-if="!isMuted && volume > 0.5" :size="20" />
                 <Volume1 v-else-if="!isMuted && volume > 0" :size="20" />
                 <VolumeX v-else :size="20" />
@@ -78,7 +102,12 @@
 
             <!-- 设置菜单 -->
             <div ref="settingsMenuRef" class="settings-menu" @click.stop>
-              <button type="button" class="control-btn" @click="showSettings = !showSettings">
+              <button
+                type="button"
+                class="control-btn"
+                :aria-label="$t('video.settings')"
+                @click="showSettings = !showSettings"
+              >
                 <Settings :size="20" />
               </button>
               <div v-if="showSettings" class="settings-panel glass-card">
@@ -119,12 +148,17 @@
             </div>
 
             <!-- 画中画 -->
-            <button v-if="supportsPiP" type="button" class="control-btn" @click="togglePiP">
+            <button v-if="supportsPiP" type="button" class="control-btn" :aria-label="$t('video.pip')" @click="togglePiP">
               <PictureInPicture :size="20" />
             </button>
 
             <!-- 全屏 -->
-            <button type="button" class="control-btn" @click="toggleFullscreen">
+            <button
+              type="button"
+              class="control-btn"
+              :aria-label="$t('video.fullscreen')"
+              @click="toggleFullscreen"
+            >
               <Maximize v-if="!isFullscreen" :size="20" />
               <Minimize v-else :size="20" />
             </button>
@@ -141,6 +175,7 @@
       v-if="!isPlaying && !isBuffering"
       type="button"
       class="center-play-btn"
+      :aria-label="$t('video.play')"
       @click="togglePlay"
     >
       <div class="center-play-icon">
@@ -174,9 +209,10 @@ interface Props {
   poster?: string
   playsinline?: boolean
   loop?: boolean
+  preload?: 'auto' | 'metadata' | 'none'
 }
 
-const { playsinline = true, loop = false } = defineProps<Props>()
+const { playsinline = true, loop = false, preload = 'metadata' } = defineProps<Props>()
 
 const emit = defineEmits<{
   ready: []
@@ -201,6 +237,7 @@ const isFullscreen = ref(false)
 const showControls = ref(false)
 const showSettings = ref(false)
 const bufferedPercent = ref(0)
+const isSeeking = ref(false)
 
 const playbackSpeeds = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2]
 const qualities = ref<string[]>(['auto']) // 可扩展支持多画质
@@ -284,6 +321,36 @@ function seek(event: MouseEvent) {
   const rect = target.getBoundingClientRect()
   const percent = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width))
   videoRef.value.currentTime = percent * duration.value
+}
+
+function startSeekDrag(event: MouseEvent | TouchEvent) {
+  if (!videoRef.value) return
+  isSeeking.value = true
+  updateSeek(event)
+  document.addEventListener('mousemove', updateSeek)
+  document.addEventListener('mouseup', stopSeekDrag)
+  document.addEventListener('touchmove', updateSeek, { passive: false })
+  document.addEventListener('touchend', stopSeekDrag)
+}
+
+function updateSeek(event: MouseEvent | TouchEvent) {
+  if (!videoRef.value) return
+  const progress = playerElement.value?.querySelector('.progress-container') as HTMLElement | null
+  const rect = progress?.getBoundingClientRect()
+  if (!rect) return
+  const clientX = 'touches' in event ? event.touches[0]?.clientX : (event as MouseEvent).clientX
+  if (clientX === undefined) return
+  if ('preventDefault' in event && isSeeking.value) event.preventDefault()
+  const percent = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width))
+  videoRef.value.currentTime = percent * duration.value
+}
+
+function stopSeekDrag() {
+  isSeeking.value = false
+  document.removeEventListener('mousemove', updateSeek)
+  document.removeEventListener('mouseup', stopSeekDrag)
+  document.removeEventListener('touchmove', updateSeek)
+  document.removeEventListener('touchend', stopSeekDrag)
 }
 
 function toggleMute() {
@@ -437,6 +504,7 @@ onBeforeUnmount(() => {
   document.removeEventListener('fullscreenchange', handleFullscreenChange)
   document.removeEventListener('click', handleClickOutside)
   stopControlsTimer()
+  stopSeekDrag()
 })
 </script>
 
@@ -452,8 +520,17 @@ onBeforeUnmount(() => {
   cursor: default;
 }
 
+.video-player:focus-visible {
+  outline: 2px solid var(--color-ring);
+  outline-offset: 4px;
+}
+
 .video-player.is-fullscreen {
   border-radius: 0;
+}
+
+.video-player.is-buffering .video-element {
+  filter: brightness(0.75);
 }
 
 .video-element {
@@ -574,7 +651,8 @@ onBeforeUnmount(() => {
   transition: opacity 0.2s ease;
 }
 
-.progress-container:hover .progress-thumb {
+.progress-container:hover .progress-thumb,
+.progress-container.is-seeking .progress-thumb {
   opacity: 1;
 }
 

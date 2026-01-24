@@ -59,7 +59,12 @@
     "zoomIn": "拡大",
     "zoomOut": "縮小",
     "resetZoom": "リセット",
-    "remove": "削除"
+    "remove": "削除",
+    "download": "ダウンロード",
+    "scrollToLoad": "スクロールしてさらに読み込む",
+    "loadingFailed": "読み込みに失敗しました",
+    "imageLoadFailed": "画像の読み込みに失敗しました",
+    "reset": "リセット"
   },
   "auth": {
     "email": "メールアドレス",
@@ -102,7 +107,15 @@
   "video": {
     "playbackSpeed": "再生速度",
     "quality": "画質",
-    "auto": "自動"
+    "auto": "自動",
+    "player": "動画プレイヤー",
+    "play": "再生",
+    "pause": "一時停止",
+    "mute": "ミュート",
+    "unmute": "ミュート解除",
+    "fullscreen": "全画面",
+    "pip": "ピクチャーインピクチャー",
+    "settings": "設定"
   },
   "settings": {
     "title": "設定",
@@ -245,7 +258,11 @@
     "badGateway": "不正なゲートウェイ",
     "serviceUnavailable": "サービスは利用できません",
     "componentError": "問題が発生しました",
-    "technicalDetails": "技術的な詳細"
+    "technicalDetails": "技術的な詳細",
+    "mediaLoadFailed": "メディアの読み込みに失敗しました",
+    "copyReport": "レポートをコピー",
+    "copySuccess": "コピーしました",
+    "copyFailed": "コピーに失敗しました"
   },
   "comment": {
     "title": "コメント",
@@ -361,6 +378,8 @@
     "passwordMismatch": "パスワードが一致しません",
     "passwordTooShort": "パスワードは8文字以上必要です",
     "cropAvatar": "アバターをトリミング",
+    "zoom": "ズーム",
+    "rotate": "回転",
     "circleShape": "円形",
     "squareShape": "四角形",
     "tabs": {
@@ -430,6 +449,7 @@
       "suffix": " について"
     },
     "subtitle": "TikTok、YouTube、Instagram、X の4つのプラットフォームのコンテンツを一箇所に集約。",
+    "ctaLabel": "ライブ同期",
     "tiktok": "TikTok動画を同期",
     "youtube": "YouTubeコンテンツを追跡",
     "instagram": "Instagram投稿を収集",

@@ -1,35 +1,43 @@
 <template>
   <Teleport to="body">
-    <Transition name="fade-slide">
+    <Transition name="back-to-top">
       <button
         v-if="isVisible"
         type="button"
         class="back-to-top"
-        :class="{ 'with-progress': showProgress }"
+        :class="{ 'back-to-top--progress': showProgress }"
         :aria-label="$t('common.backToTop')"
         @click="scrollToTop"
       >
         <svg
           v-if="showProgress"
-          class="progress-ring"
-          :width="size"
-          :height="size"
+          class="back-to-top__ring"
           viewBox="0 0 36 36"
         >
-          <circle class="progress-ring-bg" cx="18" cy="18" r="16" fill="none" stroke-width="2" />
           <circle
-            class="progress-ring-indicator"
+            class="back-to-top__ring-bg"
             cx="18"
             cy="18"
             r="16"
             fill="none"
             stroke-width="2"
+          />
+          <circle
+            class="back-to-top__ring-indicator"
+            cx="18"
+            cy="18"
+            r="16"
+            fill="none"
+            stroke-width="2.5"
             :stroke-dasharray="circumference"
             :stroke-dashoffset="dashOffset"
             transform="rotate(-90 18 18)"
           />
         </svg>
-        <ArrowUp :size="iconSize" class="arrow-icon" />
+        <span class="back-to-top__icon">
+          <ArrowUp :size="iconSize" />
+        </span>
+        <span class="back-to-top__pulse" />
       </button>
     </Transition>
   </Teleport>
@@ -39,6 +47,8 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { ArrowUp } from 'lucide-vue-next'
 import { throttleRAF } from '@/utils/performance'
+
+defineOptions({ name: 'UiBackToTop' })
 
 interface Props {
   threshold?: number
@@ -78,7 +88,6 @@ function updateScrollState() {
 const handleScroll = throttleRAF(updateScrollState)
 
 function scrollToTop() {
-  // 使用现代 scrollTo API 平滑滚动
   window.scrollTo({
     top: 0,
     behavior: 'smooth',
@@ -97,6 +106,7 @@ onUnmounted(() => {
 
 <style scoped>
 .back-to-top {
+  --btn-size: v-bind('size + "px"');
   position: fixed;
   right: var(--spacing-6);
   bottom: var(--spacing-6);
@@ -104,127 +114,164 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: v-bind('size + "px"');
-  height: v-bind('size + "px"');
-  border-radius: 50%;
+  width: var(--btn-size);
+  height: var(--btn-size);
+  border-radius: var(--radius-full);
   background: var(--glass-bg);
   backdrop-filter: var(--glass-blur);
   border: 1px solid var(--glass-border);
-  color: var(--color-text-primary);
-  box-shadow: var(--shadow-lg);
+  color: var(--color-foreground);
+  box-shadow: var(--glass-shadow);
   cursor: pointer;
-  transition:
-    transform var(--transition-base),
-    background 0.2s ease,
-    box-shadow 0.3s ease;
-  /* GPU加速：提升到独立合成层 */
+  transition-property: transform, background-color, box-shadow, border-color;
+  transition-duration: 200ms;
+  transition-timing-function: var(--ease-out);
   transform: translate3d(0, 0, 0);
   will-change: transform;
 }
 
+.back-to-top::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  background: var(--gradient-primary);
+  opacity: 0;
+  z-index: -1;
+  transition: opacity 200ms var(--ease-out);
+}
+
 .back-to-top:hover {
   transform: translate3d(0, -4px, 0);
-  background: var(--glass-bg-light);
-  box-shadow: var(--shadow-xl);
+  border-color: var(--color-primary);
+  box-shadow: var(--glass-shadow-lg), 0 0 20px rgba(var(--color-primary-rgb), 0.2);
+}
+
+.back-to-top:hover::before {
+  opacity: 0.1;
 }
 
 .back-to-top:active {
-  transform: translate3d(0, -2px, 0);
-  transition-duration: 0.1s;
+  transform: translate3d(0, -2px, 0) scale(0.95);
+  transition-duration: 100ms;
 }
 
-.progress-ring {
+.back-to-top:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.3);
+}
+
+.back-to-top__ring {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
-  transform: rotate(0deg);
   pointer-events: none;
 }
 
-.progress-ring-bg {
+.back-to-top__ring-bg {
   stroke: var(--glass-border);
-  opacity: 0.3;
+  opacity: 0.5;
 }
 
-.progress-ring-indicator {
+.back-to-top__ring-indicator {
   stroke: var(--color-primary);
   stroke-linecap: round;
-  transition: stroke-dashoffset 0.1s linear;
+  transition: stroke-dashoffset 80ms linear;
+  filter: drop-shadow(0 0 4px rgba(var(--color-primary-rgb), 0.4));
 }
 
-.arrow-icon {
+.back-to-top__icon {
   position: relative;
   z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 200ms var(--ease-spring);
 }
 
-/* 响应式尺寸适配 */
-/* 桌面端 - 增大按钮尺寸 */
+.back-to-top:hover .back-to-top__icon {
+  transform: translateY(-2px);
+}
+
+.back-to-top__pulse {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--color-primary);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.back-to-top:active .back-to-top__pulse {
+  animation: pulse-out 400ms var(--ease-out);
+}
+
+@keyframes pulse-out {
+  0% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.5);
+  }
+}
+
+/* Responsive */
 @media (min-width: 1024px) {
   .back-to-top {
-    width: 56px;
-    height: 56px;
-  }
-
-  .arrow-icon {
-    width: 22px;
-    height: 22px;
+    --btn-size: 56px;
   }
 }
 
-/* 大屏 */
 @media (min-width: 1536px) {
   .back-to-top {
-    width: 64px;
-    height: 64px;
-  }
-
-  .arrow-icon {
-    width: 26px;
-    height: 26px;
+    --btn-size: 64px;
   }
 }
 
-/* 超大屏 */
 @media (min-width: 1920px) {
   .back-to-top {
-    width: 72px;
-    height: 72px;
+    --btn-size: 72px;
     right: var(--spacing-8);
     bottom: var(--spacing-8);
   }
-
-  .arrow-icon {
-    width: 30px;
-    height: 30px;
-  }
 }
 
-/* 移动端 - 保持 WCAG 最小触控目标 44px */
 @media (max-width: 768px) {
   .back-to-top {
+    --btn-size: 44px;
     right: var(--spacing-4);
-    bottom: calc(var(--spacing-4) + 64px); /* 避开底部导航 */
-    width: 44px;
-    height: 44px;
+    bottom: calc(var(--spacing-4) + 64px);
   }
 }
 
-/* Transition - GPU加速优化 */
-.fade-slide-enter-active,
-.fade-slide-leave-active {
-  transition:
-    opacity var(--transition-base),
-    transform var(--transition-base);
+/* Transition */
+.back-to-top-enter-active,
+.back-to-top-leave-active {
+  transition: opacity 250ms var(--ease-out), transform 250ms var(--ease-spring);
 }
 
-.fade-slide-enter-from {
+.back-to-top-enter-from {
   opacity: 0;
-  transform: translate3d(0, 20px, 0) scale3d(0.8, 0.8, 1);
+  transform: translate3d(0, 24px, 0) scale(0.8);
 }
 
-.fade-slide-leave-to {
+.back-to-top-leave-to {
   opacity: 0;
-  transform: translate3d(0, 10px, 0) scale3d(0.9, 0.9, 1);
+  transform: translate3d(0, 16px, 0) scale(0.85);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .back-to-top,
+  .back-to-top__icon,
+  .back-to-top__ring-indicator {
+    transition: none;
+  }
+
+  .back-to-top:active .back-to-top__pulse {
+    animation: none;
+  }
 }
 </style>
