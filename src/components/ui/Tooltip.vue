@@ -164,7 +164,9 @@ onUnmounted(() => {
 /* Transition */
 .tooltip-enter-active,
 .tooltip-leave-active {
-  transition: opacity 150ms var(--ease-out), transform 150ms var(--ease-out);
+  transition:
+    opacity 150ms var(--ease-out),
+    transform 150ms var(--ease-out);
 }
 
 .tooltip-enter-from,

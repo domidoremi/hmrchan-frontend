@@ -14,7 +14,11 @@
             <h2 :id="titleId" class="ui-alert-dialog__title">
               <slot name="title">{{ title }}</slot>
             </h2>
-            <p v-if="description || $slots['description']" :id="descriptionId" class="ui-alert-dialog__description">
+            <p
+              v-if="description || $slots['description']"
+              :id="descriptionId"
+              class="ui-alert-dialog__description"
+            >
               <slot name="description">{{ description }}</slot>
             </p>
           </div>
@@ -154,7 +158,12 @@ onUnmounted(() => {
   left: 0;
   right: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.35) 50%, transparent 100%);
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.35) 50%,
+    transparent 100%
+  );
   opacity: 0.5;
   pointer-events: none;
 }
@@ -196,7 +205,9 @@ onUnmounted(() => {
 
 .dialog-enter-active .ui-alert-dialog,
 .dialog-leave-active .ui-alert-dialog {
-  transition: transform 200ms var(--ease-out), opacity 200ms var(--ease-out);
+  transition:
+    transform 200ms var(--ease-out),
+    opacity 200ms var(--ease-out);
 }
 
 .dialog-enter-from,
