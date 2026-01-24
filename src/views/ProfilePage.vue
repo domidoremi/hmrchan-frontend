@@ -3,41 +3,46 @@
     <div class="container">
       <div class="profile-header">
         <div class="user-info">
-          <img :src="userAvatar" :alt="user?.username" class="user-avatar" />
+          <Avatar :src="userAvatar" :alt="user?.username" size="xl" class="user-avatar" />
           <div class="user-details">
             <h1 class="user-name">{{ user?.full_name || user?.username }}</h1>
             <p class="user-username">@{{ user?.username }}</p>
             <p v-if="user?.bio" class="user-bio">{{ user.bio }}</p>
+            <div class="user-meta">
+              <span>{{ $t('profile.summary') }}</span>
+              <span class="meta-dot" />
+              <span>{{ $t('profile.tabs.favorites') }}</span>
+            </div>
           </div>
         </div>
-        <Button variant="ghost" size="sm" @click="goToSettings">
-          <Settings :size="16" />
-          {{ $t('nav.profileSettings') }}
-        </Button>
+        <div class="profile-actions">
+          <Button variant="ghost" size="sm" @click="goToSettings">
+            <Settings :size="16" />
+            {{ $t('nav.profileSettings') }}
+          </Button>
+          <Button variant="secondary" size="sm" @click="editProfile">
+            <Pencil :size="16" />
+            {{ $t('profile.editProfile') }}
+          </Button>
+        </div>
       </div>
 
-      <div class="profile-tabs glass-card">
-        <nav class="tabs-nav">
-          <button
-            v-for="tab in tabs"
-            :key="tab.id"
-            type="button"
-            class="tab-btn"
-            :class="{ active: activeTab === tab.id }"
-            @click="activeTab = tab.id"
-          >
-            <component :is="tab.icon" :size="18" />
-            <span>{{ $t(tab.label) }}</span>
-            <span v-if="tab.count !== undefined" class="tab-count">{{ tab.count }}</span>
-          </button>
-        </nav>
-
+      <Card class="profile-tabs" variant="subtle">
+        <template #header>
+          <div class="tabs-header">
+            <div class="tabs-title">
+              <h2>{{ $t('profile.activity') }}</h2>
+              <p>{{ $t('profile.activityHint') }}</p>
+            </div>
+            <Tabs v-model="activeTab" :tabs="tabs" />
+          </div>
+        </template>
         <div class="tab-content">
           <KeepAlive>
             <component :is="currentTabComponent" />
           </KeepAlive>
         </div>
-      </div>
+      </Card>
     </div>
   </div>
 </template>
@@ -48,48 +53,32 @@ defineOptions({ name: 'ProfilePage' })
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
-import { Heart, MessageSquare, ThumbsUp, Clock, Bell, Settings, Smartphone } from 'lucide-vue-next'
+import { Heart, MessageSquare, ThumbsUp, Clock, Settings, Pencil } from 'lucide-vue-next'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores'
 import { getUserAvatarUrl } from '@/composables/useUserAvatar'
 import Button from '@/components/ui/Button.vue'
+import Avatar from '@/components/ui/Avatar.vue'
+import Card from '@/components/ui/Card.vue'
+import Tabs from '@/components/ui/Tabs.vue'
 import ProfileFavoritesTab from '@/components/profile/ProfileFavoritesTab.vue'
 import ProfileCommentsTab from '@/components/profile/ProfileCommentsTab.vue'
 import ProfileLikesTab from '@/components/profile/ProfileLikesTab.vue'
 import ProfileHistoryTab from '@/components/profile/ProfileHistoryTab.vue'
-import ProfileNotificationsTab from '@/components/profile/ProfileNotificationsTab.vue'
-import DeviceManagement from '@/components/profile/DeviceManagement.vue'
 
 const router = useRouter()
+const { t } = useI18n()
 const authStore = useAuthStore()
 const { user, isAuthenticated } = storeToRefs(authStore)
 
-const activeTab = ref<'favorites' | 'comments' | 'likes' | 'history' | 'notifications' | 'devices'>(
-  'favorites'
-)
+const activeTab = ref<'favorites' | 'comments' | 'likes' | 'history'>('favorites')
 
-const tabs = [
-  { id: 'favorites' as const, label: 'profile.tabs.favorites', icon: Heart, count: undefined },
-  {
-    id: 'comments' as const,
-    label: 'profile.tabs.comments',
-    icon: MessageSquare,
-    count: undefined,
-  },
-  { id: 'likes' as const, label: 'profile.tabs.likes', icon: ThumbsUp, count: undefined },
-  { id: 'history' as const, label: 'profile.tabs.history', icon: Clock, count: undefined },
-  {
-    id: 'notifications' as const,
-    label: 'profile.tabs.notifications',
-    icon: Bell,
-    count: undefined,
-  },
-  {
-    id: 'devices' as const,
-    label: 'profile.tabs.devices',
-    icon: Smartphone,
-    count: undefined,
-  },
-]
+const tabs = computed(() => [
+  { value: 'favorites', label: t('profile.tabs.favorites'), icon: Heart },
+  { value: 'comments', label: t('profile.tabs.comments'), icon: MessageSquare },
+  { value: 'likes', label: t('profile.tabs.likes'), icon: ThumbsUp },
+  { value: 'history', label: t('profile.tabs.history'), icon: Clock },
+])
 
 const currentTabComponent = computed(() => {
   const components = {
@@ -97,8 +86,6 @@ const currentTabComponent = computed(() => {
     comments: ProfileCommentsTab,
     likes: ProfileLikesTab,
     history: ProfileHistoryTab,
-    notifications: ProfileNotificationsTab,
-    devices: DeviceManagement,
   }
   return components[activeTab.value]
 })
@@ -107,8 +94,14 @@ const userAvatar = computed(() => {
   return getUserAvatarUrl(user.value?.avatar_url, user.value?.username)
 })
 
+const profileRoute = '/profile/settings'
+
 function goToSettings() {
-  router.push('/settings/profile')
+  router.push(profileRoute)
+}
+
+function editProfile() {
+  router.push(profileRoute)
 }
 
 onMounted(() => {
@@ -137,6 +130,12 @@ onMounted(() => {
   backdrop-filter: blur(10px);
 }
 
+.profile-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+}
+
 .user-info {
   display: flex;
   align-items: center;
@@ -144,11 +143,7 @@ onMounted(() => {
 }
 
 .user-avatar {
-  width: 64px;
-  height: 64px;
-  border-radius: var(--radius-full);
   border: 2px solid var(--color-primary);
-  object-fit: cover;
 }
 
 .user-details {
@@ -163,69 +158,57 @@ onMounted(() => {
   margin: 0;
 }
 
-.user-email {
+.user-username {
   color: var(--color-text-secondary);
   font-size: var(--text-sm);
   margin: 0;
+}
+
+.user-bio {
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  margin: 0;
+}
+
+.user-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+  margin-top: var(--spacing-1);
+}
+
+.meta-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: var(--radius-full);
+  background: var(--color-text-tertiary);
 }
 
 .profile-tabs {
   overflow: hidden;
 }
 
-.tabs-nav {
-  display: flex;
-  gap: var(--spacing-1);
-  padding: var(--spacing-2);
-  border-bottom: 1px solid var(--glass-border);
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-
-.tabs-nav::-webkit-scrollbar {
-  display: none;
-}
-
-.tab-btn {
+.tabs-header {
   display: flex;
   align-items: center;
-  gap: var(--spacing-2);
-  padding: var(--spacing-3) var(--spacing-4);
-  border: none;
-  background: transparent;
-  color: var(--color-text-secondary);
+  justify-content: space-between;
+  gap: var(--spacing-4);
+}
+
+.tabs-title h2 {
+  margin: 0;
+  font-size: var(--text-lg);
+}
+
+.tabs-title p {
+  margin: 0;
   font-size: var(--text-sm);
-  font-weight: var(--font-medium);
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-  white-space: nowrap;
-}
-
-.tab-btn:hover {
-  background: var(--glass-bg-light);
-  color: var(--color-text);
-}
-
-.tab-btn.active {
-  background: var(--color-primary);
-  color: var(--color-white);
-}
-
-.tab-count {
-  padding: 2px 8px;
-  background: var(--glass-bg-light);
-  border-radius: var(--radius-full);
-  font-size: var(--text-xs);
-  font-weight: var(--font-semibold);
-}
-
-.tab-btn.active .tab-count {
-  background: rgba(255, 255, 255, 0.2);
+  color: var(--color-text-secondary);
 }
 
 .tab-content {
-  padding: var(--spacing-4);
   min-height: 300px;
 }
 
@@ -245,16 +228,15 @@ onMounted(() => {
     font-size: var(--text-lg);
   }
 
-  .tab-btn span {
-    display: none;
+  .profile-actions {
+    width: 100%;
+    justify-content: flex-start;
+    flex-wrap: wrap;
   }
 
-  .tab-btn {
-    padding: var(--spacing-2);
-  }
-
-  .tab-content {
-    padding: var(--spacing-3);
+  .tabs-header {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }
 
