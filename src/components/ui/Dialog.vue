@@ -15,7 +15,11 @@
               <h2 v-if="title || $slots['title']" :id="titleId" class="ui-dialog__title">
                 <slot name="title">{{ title }}</slot>
               </h2>
-              <p v-if="description || $slots['description']" :id="descriptionId" class="ui-dialog__description">
+              <p
+                v-if="description || $slots['description']"
+                :id="descriptionId"
+                class="ui-dialog__description"
+              >
                 <slot name="description">{{ description }}</slot>
               </p>
             </div>
@@ -96,10 +100,7 @@ const showHeader = computed(() => {
   return props.title || props.showClose
 })
 
-const dialogClass = computed(() => [
-  'ui-dialog',
-  `ui-dialog--${props.size}`,
-])
+const dialogClass = computed(() => ['ui-dialog', `ui-dialog--${props.size}`])
 
 function close() {
   emit('close')
@@ -175,7 +176,12 @@ onUnmounted(() => {
   left: 0;
   right: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.35) 50%, transparent 100%);
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.35) 50%,
+    transparent 100%
+  );
   opacity: 0.5;
   pointer-events: none;
 }
@@ -240,7 +246,9 @@ onUnmounted(() => {
   height: 2rem;
   border-radius: var(--radius);
   color: var(--color-muted-foreground);
-  transition: background-color 150ms var(--ease-out), color 150ms var(--ease-out);
+  transition:
+    background-color 150ms var(--ease-out),
+    color 150ms var(--ease-out);
 }
 
 .ui-dialog__close:hover {
@@ -283,7 +291,9 @@ onUnmounted(() => {
 
 .dialog-enter-active .ui-dialog,
 .dialog-leave-active .ui-dialog {
-  transition: transform 200ms var(--ease-out), opacity 200ms var(--ease-out);
+  transition:
+    transform 200ms var(--ease-out),
+    opacity 200ms var(--ease-out);
 }
 
 .dialog-enter-from,

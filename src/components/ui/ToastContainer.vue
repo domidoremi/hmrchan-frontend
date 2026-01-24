@@ -57,7 +57,13 @@ import { useToastStore, type Toast } from '@/stores'
 defineOptions({ name: 'UiToastContainer' })
 
 interface Props {
-  position?: 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left' | 'top-center' | 'bottom-center'
+  position?:
+    | 'top-right'
+    | 'top-left'
+    | 'bottom-right'
+    | 'bottom-left'
+    | 'top-center'
+    | 'bottom-center'
 }
 
 withDefaults(defineProps<Props>(), {
@@ -152,7 +158,12 @@ function handleAction(toast: Toast) {
   left: 0;
   right: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.3) 50%, transparent 100%);
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.3) 50%,
+    transparent 100%
+  );
   opacity: 0.5;
 }
 
@@ -234,7 +245,9 @@ function handleAction(toast: Toast) {
   height: 1.5rem;
   border-radius: var(--radius-sm);
   color: var(--color-muted-foreground);
-  transition: background-color 150ms var(--ease-out), color 150ms var(--ease-out);
+  transition:
+    background-color 150ms var(--ease-out),
+    color 150ms var(--ease-out);
 }
 
 .toast__close:hover {

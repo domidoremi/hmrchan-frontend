@@ -46,7 +46,9 @@ const cardClass = computed(() => [
   -webkit-backdrop-filter: var(--glass-blur);
   box-shadow: var(--glass-shadow);
   overflow: hidden;
-  transition: box-shadow 150ms var(--ease-out), transform 150ms var(--ease-out),
+  transition:
+    box-shadow 150ms var(--ease-out),
+    transform 150ms var(--ease-out),
     border-color 150ms var(--ease-out);
 }
 
@@ -57,7 +59,12 @@ const cardClass = computed(() => [
   left: 0;
   right: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.45) 50%, transparent 100%);
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.45) 50%,
+    transparent 100%
+  );
   opacity: 0.6;
   pointer-events: none;
 }
@@ -79,7 +86,9 @@ const cardClass = computed(() => [
 .ui-card--interactive:hover {
   transform: translateY(-2px);
   border-color: var(--glass-border-strong);
-  box-shadow: var(--glass-shadow-lg), 0 12px 28px -8px rgba(var(--color-primary-rgb), 0.12);
+  box-shadow:
+    var(--glass-shadow-lg),
+    0 12px 28px -8px rgba(var(--color-primary-rgb), 0.12);
 }
 
 .ui-card__header,

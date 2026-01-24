@@ -23,7 +23,13 @@
 
           <div class="form-group">
             <label for="message">{{ $t('contact.message') }}</label>
-            <Textarea id="message" v-model="form.message" class="contact-textarea" rows="5" required />
+            <Textarea
+              id="message"
+              v-model="form.message"
+              class="contact-textarea"
+              rows="5"
+              required
+            />
           </div>
 
           <Button type="submit" :loading="isSubmitting" full-width>

@@ -176,7 +176,8 @@ withDefaults(defineProps<Props>(), {
 }
 
 @keyframes glow-pulse {
-  0%, 100% {
+  0%,
+  100% {
     transform: scale(1);
     opacity: 0.7;
   }
@@ -260,7 +261,9 @@ withDefaults(defineProps<Props>(), {
 }
 
 @keyframes dot-bounce {
-  0%, 80%, 100% {
+  0%,
+  80%,
+  100% {
     transform: scale(0.6);
     opacity: 0.4;
   }

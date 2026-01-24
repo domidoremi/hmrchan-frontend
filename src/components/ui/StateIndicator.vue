@@ -138,7 +138,8 @@ const resolvedActionLabel = computed(() => props.actionLabel ?? t('common.retry'
 }
 
 @keyframes state-glow {
-  0%, 100% {
+  0%,
+  100% {
     transform: scale(1);
     opacity: 0.4;
   }
@@ -149,7 +150,8 @@ const resolvedActionLabel = computed(() => props.actionLabel ?? t('common.retry'
 }
 
 @keyframes state-float {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(0);
   }
   50% {

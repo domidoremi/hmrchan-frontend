@@ -48,14 +48,7 @@
         <div class="cropper-controls">
           <label class="control-label">
             {{ $t('profile.zoom') }}
-            <input
-              type="range"
-              min="1"
-              max="3"
-              step="0.05"
-              :value="zoom"
-              @input="updateZoom"
-            />
+            <input type="range" min="1" max="3" step="0.05" :value="zoom" @input="updateZoom" />
           </label>
           <label class="control-label">
             {{ $t('profile.rotate') }}
