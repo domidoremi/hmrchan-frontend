@@ -75,6 +75,18 @@ const routes: RouteRecordRaw[] = [
     meta: { title: 'nav.profile', requiresAuth: true },
   },
   {
+    path: '/profile/notifications',
+    name: 'profile-notifications',
+    component: () => import('@/views/ProfileNotificationsPage.vue'),
+    meta: { title: 'profile.tabs.notifications', requiresAuth: true },
+  },
+  {
+    path: '/profile/devices',
+    name: 'profile-devices',
+    component: () => import('@/views/ProfileDevicesPage.vue'),
+    meta: { title: 'profile.tabs.devices', requiresAuth: true },
+  },
+  {
     path: '/favorites',
     name: 'favorites',
     component: () => import('@/views/FavoritesPage.vue'),
@@ -87,10 +99,14 @@ const routes: RouteRecordRaw[] = [
     meta: { title: 'nav.settings' },
   },
   {
-    path: '/settings/profile',
+    path: '/profile/settings',
     name: 'profile-settings',
     component: () => import('@/views/ProfileSettingsPage.vue'),
     meta: { title: 'nav.profileSettings', requiresAuth: true },
+  },
+  {
+    path: '/settings/profile',
+    redirect: '/profile/settings',
   },
   {
     path: '/login',
