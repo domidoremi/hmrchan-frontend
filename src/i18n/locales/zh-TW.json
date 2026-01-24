@@ -59,7 +59,12 @@
     "zoomIn": "放大",
     "zoomOut": "縮小",
     "resetZoom": "重置縮放",
-    "remove": "移除"
+    "remove": "移除",
+    "download": "下載",
+    "scrollToLoad": "繼續滾動以載入更多",
+    "loadingFailed": "載入失敗",
+    "imageLoadFailed": "圖片載入失敗",
+    "reset": "重置"
   },
   "auth": {
     "email": "電子郵件",
@@ -102,7 +107,15 @@
   "video": {
     "playbackSpeed": "播放速度",
     "quality": "畫質",
-    "auto": "自動"
+    "auto": "自動",
+    "player": "影片播放器",
+    "play": "播放",
+    "pause": "暫停",
+    "mute": "靜音",
+    "unmute": "取消靜音",
+    "fullscreen": "全螢幕",
+    "pip": "子母畫面",
+    "settings": "設定"
   },
   "settings": {
     "title": "設定",
@@ -245,7 +258,11 @@
     "badGateway": "閘道錯誤",
     "serviceUnavailable": "服務不可用",
     "componentError": "出了點問題",
-    "technicalDetails": "技術詳情"
+    "technicalDetails": "技術詳情",
+    "mediaLoadFailed": "媒體載入失敗",
+    "copyReport": "複製報告",
+    "copySuccess": "已複製",
+    "copyFailed": "複製失敗"
   },
   "comment": {
     "title": "評論",
@@ -360,6 +377,8 @@
     "passwordMismatch": "兩次輸入的密碼不一致",
     "passwordTooShort": "密碼至少需要8個字元",
     "cropAvatar": "裁剪頭像",
+    "zoom": "縮放",
+    "rotate": "旋轉",
     "circleShape": "圓形",
     "squareShape": "方形",
     "tabs": {
@@ -429,6 +448,7 @@
       "suffix": ""
     },
     "subtitle": "聚合 TikTok、YouTube、Instagram、X 四大平台內容，一站式瀏覽。",
+    "ctaLabel": "即時同步",
     "tiktok": "TikTok 影片同步",
     "youtube": "YouTube 內容追蹤",
     "instagram": "Instagram 貼文收錄",

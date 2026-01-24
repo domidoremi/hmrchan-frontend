@@ -11,15 +11,15 @@
         <img :src="userAvatar" :alt="user?.username" />
       </div>
       <div class="form-input-wrapper">
-        <textarea
+        <Textarea
           ref="textareaRef"
           v-model="content"
-          class="glass-input comment-textarea"
+          class="comment-textarea"
           :placeholder="placeholder"
           :disabled="isSubmitting"
           rows="3"
           :maxlength="maxLength"
-          @input="autoResize"
+          @update:modelValue="autoResize"
         />
         <div class="form-footer">
           <span class="char-count" :class="{ warning: content.length > maxLength * 0.9 }">
@@ -49,6 +49,7 @@ import { useAuthStore, useCommentsStore, useToastStore } from '@/stores'
 import { validateComment } from '@/utils/security'
 import { useUserAvatar } from '@/composables/useUserAvatar'
 import Button from '@/components/ui/Button.vue'
+import Textarea from '@/components/ui/Textarea.vue'
 
 interface Props {
   postId: string
@@ -73,7 +74,7 @@ const { user, isAuthenticated } = storeToRefs(authStore)
 
 const content = ref('')
 const isSubmitting = ref(false)
-const textareaRef = ref<HTMLTextAreaElement>()
+const textareaRef = ref<{ el: HTMLTextAreaElement | null } | null>(null)
 const maxLength = 2000
 
 // 使用统一的用户头像 composable，确保与其他组件同步
@@ -93,9 +94,10 @@ const canSubmit = computed(() => {
 
 function autoResize() {
   nextTick(() => {
-    if (textareaRef.value) {
-      textareaRef.value.style.height = 'auto'
-      textareaRef.value.style.height = `${textareaRef.value.scrollHeight}px`
+    const textarea = textareaRef.value?.el
+    if (textarea) {
+      textarea.style.height = 'auto'
+      textarea.style.height = `${textarea.scrollHeight}px`
     }
   })
 }
@@ -132,7 +134,7 @@ async function handleSubmit() {
 
 // 聚焦输入框
 function focus() {
-  textareaRef.value?.focus()
+  textareaRef.value?.el?.focus()
 }
 
 // 设置内容（用于回复时添加 @用户名）

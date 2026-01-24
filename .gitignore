@@ -124,7 +124,7 @@ bun.lockb
 .qoderignore
 .windsurf/
 .mcp.json
-
+.skills/
 # =====================
 # Project specific
 # =====================

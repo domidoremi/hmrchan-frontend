@@ -7,17 +7,17 @@
       <form class="auth-form" @submit.prevent="handleRegister">
         <div class="form-group">
           <label for="username">{{ $t('auth.username') }}</label>
-          <input id="username" v-model="username" type="text" class="glass-input" required />
+          <Input id="username" v-model="username" type="text" required />
         </div>
 
         <div class="form-group">
           <label for="email">{{ $t('auth.email') }}</label>
-          <input id="email" v-model="email" type="email" class="glass-input" required />
+          <Input id="email" v-model="email" type="email" required />
         </div>
 
         <div class="form-group">
           <label for="password">{{ $t('auth.password') }}</label>
-          <input id="password" v-model="password" type="password" class="glass-input" required />
+          <Input id="password" v-model="password" type="password" required />
           <!-- Password Strength Indicator -->
           <div v-if="password" class="password-strength">
             <div class="strength-bar">
@@ -77,6 +77,7 @@ import { useAuthStore, useToastStore } from '@/stores'
 import { useI18n } from 'vue-i18n'
 import { checkPasswordStrength } from '@/utils/crypto'
 import Button from '@/components/ui/Button.vue'
+import Input from '@/components/ui/Input.vue'
 import TurnstileWidget from '@/components/ui/TurnstileWidget.vue'
 
 const router = useRouter()

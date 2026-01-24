@@ -206,6 +206,112 @@ export default defineConfig(({ mode }) => {
      * - 优化资源处理和文件命名
      */
     build: {
+      rollupOptions: {
+        external: ['@/views/ComponentsShowcase.vue'],
+        output: {
+          /**
+           * 代码分割策略（优化版）
+           * - 核心框架独立缓存（Vue 单独分割确保最大化缓存）
+           * - 大型库按需加载
+           * - 业务代码按路由分割
+           * - 共享组件/工具独立分割
+           */
+          manualChunks(id) {
+            if (id.includes('node_modules')) {
+              // Vue 运行时（最稳定，变化最少）
+              if (id.includes('vue/dist') || id.includes('@vue/runtime')) return 'vue-runtime'
+              // Vue 响应式系统
+              if (id.includes('@vue/reactivity') || id.includes('@vue/shared'))
+                return 'vue-reactivity'
+              // Vue 编译器相关（生产环境很少变化）
+              if (id.includes('@vue/')) return 'vue-core'
+
+              // 路由和状态管理
+              if (id.includes('vue-router')) return 'vue-router'
+              if (id.includes('pinia')) return 'pinia'
+
+              // i18n 独立（包含翻译数据，较大）
+              if (id.includes('vue-i18n') || id.includes('@intlify')) return 'i18n'
+
+              // 图标库（较大，按需加载）
+              if (id.includes('lucide-vue-next')) return 'icons'
+
+              // 动画和媒体查看器（按需加载）
+              if (id.includes('gsap')) {
+                // GSAP 核心库独立
+                if (
+                  id.includes('gsap/dist/gsap') &&
+                  !id.includes('ScrollTrigger') &&
+                  !id.includes('Flip')
+                )
+                  return 'gsap-core'
+                // GSAP 插件独立
+                return 'gsap-plugins'
+              }
+
+              // 其他小型依赖合并
+              return 'vendor'
+            }
+
+            // 业务代码分割：UI 组件库（细粒度）
+            if (id.includes('/components/ui/')) {
+              // 首屏必需组件
+              if (id.includes('Button') || id.includes('StateIndicator')) return 'ui-core'
+              // Toast/Modal 等交互组件懒加载
+              if (id.includes('Toast') || id.includes('Modal') || id.includes('Dialog')) return 'ui-interactive'
+              // 其他 UI 组件
+              return 'ui-lazy'
+            }
+            if (id.includes('/components/icons/')) return 'icons'
+
+            // Layout 分层：核心导航 vs 设置面板
+            if (id.includes('/components/layout/')) {
+              if (id.includes('SettingsPanel')) return 'layout-settings'
+              return 'layout'
+            }
+
+            // 业务组件按类型分割
+            if (id.includes('/components/business/')) {
+              // PostCard 是首屏核心组件，独立打包便于缓存
+              if (id.includes('PostCard')) return 'post-card'
+              // 搜索栏懒加载
+              if (id.includes('SearchBar')) return 'search-bar'
+              return 'business-components'
+            }
+
+            // 业务代码分割：stores
+            if (id.includes('/stores/')) return 'stores'
+
+            // 业务代码分割：工具函数
+            if (id.includes('/utils/')) return 'utils'
+
+            // 业务代码分割：composables（细粒度拆分以优化缓存）
+            if (id.includes('/composables/')) {
+              // 卡片动画相关（包含 GSAP）
+              if (id.includes('useCardAnimation')) return 'composables-animation'
+              // 缓存相关
+              if (id.includes('useCachedPosts') || id.includes('useCache')) return 'composables-cache'
+              // 瀑布流和布局相关
+              if (id.includes('useMasonryColumns') || id.includes('useInfiniteScroll'))
+                return 'composables-layout'
+              // 其他轻量级 composables
+              return 'composables-utils'
+            }
+
+            // 动画工具按需分割
+            if (id.includes('/animations/') || id.includes('gsap')) {
+              if (id.includes('gsap/Flip') || id.includes('gsap/ScrollTrigger'))
+                return 'animations-gsap'
+              return 'animations'
+            }
+
+            // API 层统一打包，避免依赖重复（rolldown 对细粒度分割支持有限）
+            if (id.includes('/api/')) {
+              return 'api'
+            }
+          },
+        },
+      },
       /** 构建目标，使用最新的 ES 特性 */
       target: 'esnext',
 
@@ -260,6 +366,7 @@ export default defineConfig(({ mode }) => {
        * 主要用于配置代码分割策略
        */
       rollupOptions: {
+        external: ['@/views/ComponentsShowcase.vue'],
         output: {
           /**
            * 代码分割策略（优化版）

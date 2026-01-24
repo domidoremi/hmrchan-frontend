@@ -18,11 +18,10 @@
       <form class="auth-form" @submit.prevent="handleLogin">
         <div class="form-group">
           <label for="usernameOrEmail">{{ $t('auth.usernameOrEmail') }}</label>
-          <input
+          <Input
             id="usernameOrEmail"
             v-model="usernameOrEmail"
             type="text"
-            class="glass-input"
             :placeholder="$t('auth.usernameOrEmailPlaceholder')"
             autocomplete="username"
             required
@@ -32,11 +31,11 @@
         <div class="form-group">
           <label for="password">{{ $t('auth.password') }}</label>
           <div class="password-field">
-            <input
+            <Input
               id="password"
               v-model="password"
               :type="showPassword ? 'text' : 'password'"
-              class="glass-input password-input"
+              class="password-input"
               autocomplete="current-password"
               required
             />
@@ -88,6 +87,7 @@ import { useAuthStore, useToastStore } from '@/stores'
 import { useI18n } from 'vue-i18n'
 import { ArrowLeft, Eye, EyeOff } from 'lucide-vue-next'
 import Button from '@/components/ui/Button.vue'
+import Input from '@/components/ui/Input.vue'
 import TurnstileWidget from '@/components/ui/TurnstileWidget.vue'
 
 const router = useRouter()

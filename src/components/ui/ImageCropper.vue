@@ -1,6 +1,6 @@
 <template>
   <div class="image-cropper-overlay" @click.self="cancel">
-    <div class="image-cropper glass-card">
+    <div class="image-cropper glass-card" role="dialog" aria-modal="true">
       <header class="cropper-header">
         <h3>{{ $t('profile.cropAvatar') }}</h3>
         <button
@@ -20,6 +20,7 @@
             :src="imageSrc"
             alt="Crop preview"
             class="crop-image"
+            :style="{ '--image-transform': imageTransform }"
             @load="onImageLoad"
           />
           <div
@@ -37,6 +38,40 @@
               @mousedown.stop="startResize($event, handle)"
               @touchstart.prevent.stop="startResize($event, handle)"
             />
+          </div>
+          <div class="crop-grid" aria-hidden="true">
+            <span v-for="line in 2" :key="`v-${line}`" class="grid-line vertical" />
+            <span v-for="line in 2" :key="`h-${line}`" class="grid-line horizontal" />
+          </div>
+        </div>
+
+        <div class="cropper-controls">
+          <label class="control-label">
+            {{ $t('profile.zoom') }}
+            <input
+              type="range"
+              min="1"
+              max="3"
+              step="0.05"
+              :value="zoom"
+              @input="updateZoom"
+            />
+          </label>
+          <label class="control-label">
+            {{ $t('profile.rotate') }}
+            <input
+              type="range"
+              min="-180"
+              max="180"
+              step="1"
+              :value="rotation"
+              @input="updateRotation"
+            />
+          </label>
+          <div class="control-actions">
+            <button type="button" class="ghost-btn" @click="resetAdjustments">
+              {{ $t('common.reset') }}
+            </button>
           </div>
         </div>
 
@@ -100,6 +135,8 @@ const shape = ref<'circle' | 'square'>('circle')
 const imageSize = ref({ width: 0, height: 0 })
 const imageOffset = ref({ x: 0, y: 0 })
 const cropBox = ref({ x: 0, y: 0, size: 150 })
+const zoom = ref(1)
+const rotation = ref(0)
 
 const isDragging = ref(false)
 const isResizing = ref(false)
@@ -114,6 +151,10 @@ const cropBoxStyle = computed(() => ({
   width: `${cropBox.value.size}px`,
   height: `${cropBox.value.size}px`,
 }))
+
+const imageTransform = computed(
+  () => `translate(-50%, -50%) scale(${zoom.value}) rotate(${rotation.value}deg)`
+)
 
 function onImageLoad() {
   if (!imageRef.value || !containerRef.value) return
@@ -249,14 +290,9 @@ function crop() {
   if (!ctx) return
 
   const img = imageRef.value
-  const scaleX = img.naturalWidth / imageSize.value.width
-  const scaleY = img.naturalHeight / imageSize.value.height
-
-  // 使用统一的缩放比例（因为图片保持宽高比）
-  const scale = Math.max(scaleX, scaleY)
-  const sourceX = cropBox.value.x * scale
-  const sourceY = cropBox.value.y * scale
-  const sourceSize = cropBox.value.size * scale
+  const cropLeft = imageOffset.value.x + cropBox.value.x
+  const cropTop = imageOffset.value.y + cropBox.value.y
+  const scaleToOutput = props.outputSize / cropBox.value.size
 
   if (shape.value === 'circle') {
     ctx.beginPath()
@@ -265,17 +301,22 @@ function crop() {
     ctx.clip()
   }
 
+  ctx.save()
+  ctx.scale(scaleToOutput, scaleToOutput)
+  ctx.translate(-cropLeft, -cropTop)
+  const centerX = imageOffset.value.x + imageSize.value.width / 2
+  const centerY = imageOffset.value.y + imageSize.value.height / 2
+  ctx.translate(centerX, centerY)
+  ctx.rotate((rotation.value * Math.PI) / 180)
+  ctx.scale(zoom.value, zoom.value)
   ctx.drawImage(
     img,
-    sourceX,
-    sourceY,
-    sourceSize,
-    sourceSize,
-    0,
-    0,
-    props.outputSize,
-    props.outputSize
+    -imageSize.value.width / 2,
+    -imageSize.value.height / 2,
+    imageSize.value.width,
+    imageSize.value.height
   )
+  ctx.restore()
 
   canvas.toBlob(
     (blob) => {
@@ -290,6 +331,25 @@ function crop() {
 
 function cancel() {
   emit('cancel')
+}
+
+function updateZoom(event: Event) {
+  const value = Number((event.target as HTMLInputElement).value)
+  if (!Number.isNaN(value)) {
+    zoom.value = value
+  }
+}
+
+function updateRotation(event: Event) {
+  const value = Number((event.target as HTMLInputElement).value)
+  if (!Number.isNaN(value)) {
+    rotation.value = value
+  }
+}
+
+function resetAdjustments() {
+  zoom.value = 1
+  rotation.value = 0
 }
 
 onMounted(() => {
@@ -369,11 +429,19 @@ onUnmounted(() => {
 }
 
 .crop-image {
+  width: auto;
+  height: auto;
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
   user-select: none;
   -webkit-user-drag: none;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: var(--image-transform, translate(-50%, -50%));
+  transition: transform 0.2s ease;
+  will-change: transform;
 }
 
 .crop-overlay {
@@ -425,6 +493,89 @@ onUnmounted(() => {
   bottom: -8px;
   right: -8px;
   cursor: se-resize;
+}
+
+.crop-grid {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.grid-line {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.grid-line.vertical {
+  top: 0;
+  bottom: 0;
+  width: 1px;
+}
+
+.grid-line.horizontal {
+  left: 0;
+  right: 0;
+  height: 1px;
+}
+
+.grid-line.vertical:nth-child(1) {
+  left: 33.333%;
+}
+
+.grid-line.vertical:nth-child(2) {
+  left: 66.666%;
+}
+
+.grid-line.horizontal:nth-child(1) {
+  top: 33.333%;
+}
+
+.grid-line.horizontal:nth-child(2) {
+  top: 66.666%;
+}
+
+.cropper-controls {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+  margin-top: var(--spacing-4);
+  padding: var(--spacing-3);
+  border-radius: var(--radius-lg);
+  background: var(--glass-bg-light);
+  border: 1px solid var(--glass-border);
+}
+
+.control-label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
+.control-label input[type='range'] {
+  accent-color: var(--color-primary);
+}
+
+.control-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.ghost-btn {
+  border: 1px solid var(--color-border);
+  background: transparent;
+  border-radius: var(--radius-full);
+  padding: 0.35rem 0.9rem;
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.ghost-btn:hover {
+  background: var(--color-muted);
+  color: var(--color-text-primary);
 }
 
 .shape-selector {

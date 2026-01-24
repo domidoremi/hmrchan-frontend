@@ -4,10 +4,10 @@
 
     <div class="composer-body">
       <!-- 标题输入 -->
-      <input
+      <Input
         v-model="title"
         type="text"
-        class="glass-input composer-title-input"
+        class="composer-title-input"
         :placeholder="$t('community.discussionTitle')"
         maxlength="100"
       />
@@ -26,13 +26,13 @@
         </button>
       </div>
 
-      <textarea
+      <Textarea
         ref="textareaRef"
         v-model="content"
-        class="glass-input composer-textarea"
+        class="composer-textarea"
         :placeholder="$t('community.discussionPlaceholder')"
         rows="4"
-        @input="handleInput"
+        @update:modelValue="handleInput"
         @keydown="handleKeydown"
       />
 
@@ -79,10 +79,10 @@
       </div>
 
       <div class="tags-input">
-        <input
+        <Input
           v-model="tagInput"
           type="text"
-          class="glass-input tag-input"
+          class="tag-input"
           :placeholder="$t('community.addTags')"
           @keydown.enter.prevent="addTag"
           @keydown.space.prevent="addTag"
@@ -127,6 +127,8 @@ import {
 import { useToastStore } from '@/stores'
 import { debounce } from '@/utils/performance'
 import Button from '@/components/ui/Button.vue'
+import Input from '@/components/ui/Input.vue'
+import Textarea from '@/components/ui/Textarea.vue'
 
 const emit = defineEmits<{
   created: [discussion: Discussion]
@@ -135,7 +137,7 @@ const emit = defineEmits<{
 const { t } = useI18n()
 const toastStore = useToastStore()
 
-const textareaRef = ref<HTMLTextAreaElement | null>(null)
+const textareaRef = ref<{ el: HTMLTextAreaElement | null } | null>(null)
 const content = ref('')
 const tagInput = ref('')
 const tags = ref<string[]>([])
@@ -172,7 +174,7 @@ const debouncedSearchPosts = debounce(async (query: string) => {
 }, 300)
 
 function handleInput() {
-  const textarea = textareaRef.value
+  const textarea = textareaRef.value?.el
   if (!textarea) return
 
   const cursorPos = textarea.selectionStart
@@ -218,7 +220,7 @@ function selectMention(post: PostReference) {
     selectedPosts.value.push(post)
   }
 
-  const textarea = textareaRef.value
+  const textarea = textareaRef.value?.el
   if (textarea && mentionStart.value >= 0) {
     const before = content.value.slice(0, mentionStart.value)
     const after = content.value.slice(textarea.selectionStart)
@@ -227,7 +229,7 @@ function selectMention(post: PostReference) {
 
   showMentions.value = false
   selectedIndex.value = 0
-  textareaRef.value?.focus()
+  textareaRef.value?.el?.focus()
 }
 
 function removePost(postId: string) {

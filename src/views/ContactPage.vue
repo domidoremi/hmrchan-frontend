@@ -8,22 +8,22 @@
         <form class="contact-form" @submit.prevent="handleSubmit">
           <div class="form-group">
             <label for="name">{{ $t('contact.name') }}</label>
-            <input id="name" v-model="form.name" type="text" class="glass-input" required />
+            <Input id="name" v-model="form.name" type="text" required />
           </div>
 
           <div class="form-group">
             <label for="email">{{ $t('contact.email') }}</label>
-            <input id="email" v-model="form.email" type="email" class="glass-input" required />
+            <Input id="email" v-model="form.email" type="email" required />
           </div>
 
           <div class="form-group">
             <label for="subject">{{ $t('contact.subject') }}</label>
-            <input id="subject" v-model="form.subject" type="text" class="glass-input" required />
+            <Input id="subject" v-model="form.subject" type="text" required />
           </div>
 
           <div class="form-group">
             <label for="message">{{ $t('contact.message') }}</label>
-            <textarea id="message" v-model="form.message" class="glass-input" rows="5" required />
+            <Textarea id="message" v-model="form.message" class="contact-textarea" rows="5" required />
           </div>
 
           <Button type="submit" :loading="isSubmitting" full-width>
@@ -40,6 +40,8 @@ import { ref, reactive } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useToastStore } from '@/stores'
 import Button from '@/components/ui/Button.vue'
+import Input from '@/components/ui/Input.vue'
+import Textarea from '@/components/ui/Textarea.vue'
 
 const { t } = useI18n()
 const toastStore = useToastStore()
@@ -134,7 +136,7 @@ async function handleSubmit() {
   color: var(--color-text-secondary);
 }
 
-textarea.glass-input {
+.contact-textarea {
   resize: vertical;
   min-height: 120px;
 }

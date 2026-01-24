@@ -58,11 +58,11 @@
             </div>
 
             <div v-if="activeTab === 'posts'" class="sort-controls">
-              <select v-model="sortBy" class="glass-input sort-select">
+              <Select v-model="sortBy" class="sort-select">
                 <option v-for="opt in sortOptions" :key="opt.value" :value="opt.value">
                   {{ opt.label }}
                 </option>
-              </select>
+              </Select>
               <button
                 type="button"
                 class="sort-order-btn"
@@ -229,6 +229,7 @@ import { useAuthStore } from '@/stores'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import PostCard from '@/components/business/PostCard.vue'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
+import Select from '@/components/ui/Select.vue'
 import SearchBar from '@/components/business/SearchBar.vue'
 
 const route = useRoute()
@@ -316,7 +317,7 @@ async function search() {
 
   try {
     // 根据屏幕尺寸选择缩略图质量
-    const getThumbnailQuality = () => {
+    const getThumbnailQuality = (): 'medium' | 'large' => {
       if (typeof window === 'undefined') return 'medium'
       const width = window.innerWidth
       if (width < 640) return 'medium'
@@ -330,7 +331,7 @@ async function search() {
       page_size: pageSize,
       sort_by: sortBy.value,
       sort_order: sortOrder.value,
-      thumbnail_quality: getThumbnailQuality() as const,
+      thumbnail_quality: getThumbnailQuality(),
       ...(platform && { platform }),
     })
     results.value = res.items
@@ -350,7 +351,7 @@ async function loadMore() {
   isLoadingMore.value = true
 
   try {
-    const getThumbnailQuality = () => {
+    const getThumbnailQuality = (): 'medium' | 'large' => {
       if (typeof window === 'undefined') return 'medium'
       const width = window.innerWidth
       if (width < 640) return 'medium'
@@ -365,7 +366,7 @@ async function loadMore() {
       page_size: pageSize,
       sort_by: sortBy.value,
       sort_order: sortOrder.value,
-      thumbnail_quality: getThumbnailQuality() as const,
+      thumbnail_quality: getThumbnailQuality(),
       ...(platform && { platform }),
     })
     results.value.push(...res.items)
@@ -619,8 +620,7 @@ onMounted(() => {
 }
 
 .sort-select {
-  padding: var(--spacing-2) var(--spacing-3);
-  font-size: var(--text-sm);
+  min-width: 180px;
 }
 
 .sort-controls {
