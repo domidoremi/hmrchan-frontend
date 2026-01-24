@@ -124,7 +124,7 @@
             <ChevronRight :size="14" class="dropdown-link-arrow" />
           </RouterLink>
           <RouterLink
-            to="/settings/profile"
+            to="/profile/settings"
             class="dropdown-link"
             @click="showUserMenu = false"
             @mouseenter="prefetchProfileSettingsPage"
@@ -134,6 +134,24 @@
               <Settings :size="16" />
             </div>
             <span>{{ $t('nav.profileSettings') }}</span>
+            <ChevronRight :size="14" class="dropdown-link-arrow" />
+          </RouterLink>
+          <RouterLink
+            to="/profile/notifications"
+            class="dropdown-link"
+            @click="showUserMenu = false"
+          >
+            <div class="dropdown-link-icon">
+              <Bell :size="16" />
+            </div>
+            <span>{{ $t('profile.tabs.notifications') }}</span>
+            <ChevronRight :size="14" class="dropdown-link-arrow" />
+          </RouterLink>
+          <RouterLink to="/profile/devices" class="dropdown-link" @click="showUserMenu = false">
+            <div class="dropdown-link-icon">
+              <Smartphone :size="16" />
+            </div>
+            <span>{{ $t('profile.tabs.devices') }}</span>
             <ChevronRight :size="14" class="dropdown-link-arrow" />
           </RouterLink>
         </div>
@@ -186,7 +204,16 @@ import {
 } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
-import { ChevronRight, LogIn, LogOut, Search, Settings, User } from 'lucide-vue-next'
+import {
+  Bell,
+  ChevronRight,
+  LogIn,
+  LogOut,
+  Search,
+  Settings,
+  Smartphone,
+  User,
+} from 'lucide-vue-next'
 import { useAuthStore, useSettingsStore } from '@/stores'
 import { getUserDisplayName } from '@/utils/user'
 import { useUserAvatar, preloadUserAvatar } from '@/composables/useUserAvatar'

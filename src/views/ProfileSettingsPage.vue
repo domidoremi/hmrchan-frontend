@@ -5,7 +5,10 @@
         <button type="button" class="back-btn glass-button" @click="goBack">
           <ArrowLeft :size="20" />
         </button>
-        <h1>{{ $t('profile.settings') }}</h1>
+        <div>
+          <h1>{{ $t('profile.settings') }}</h1>
+          <p class="page-subtitle">{{ $t('profile.settingsSubtitle') }}</p>
+        </div>
       </header>
 
       <StateIndicator v-if="error" variant="error" :description="error" @action="fetchProfile" />
@@ -42,7 +45,10 @@
               <div class="section-icon">
                 <User :size="18" />
               </div>
-              <h2 class="section-title">{{ $t('profile.avatar') }}</h2>
+              <div>
+                <h2 class="section-title">{{ $t('profile.avatar') }}</h2>
+                <p class="section-desc">{{ $t('profile.avatarSectionHint') }}</p>
+              </div>
             </div>
             <div class="avatar-section">
               <div class="avatar-wrapper">
@@ -83,7 +89,10 @@
               <div class="section-icon">
                 <FileText :size="18" />
               </div>
-              <h2 class="section-title">{{ $t('profile.basicInfo') }}</h2>
+              <div>
+                <h2 class="section-title">{{ $t('profile.basicInfo') }}</h2>
+                <p class="section-desc">{{ $t('profile.basicInfoHint') }}</p>
+              </div>
             </div>
 
             <!-- Username (readonly) -->
@@ -168,7 +177,10 @@
             <div class="section-icon section-icon--warning">
               <Shield :size="18" />
             </div>
-            <h2 class="section-title">{{ $t('profile.changePassword') }}</h2>
+            <div>
+              <h2 class="section-title">{{ $t('profile.changePassword') }}</h2>
+              <p class="section-desc">{{ $t('profile.passwordHint') }}</p>
+            </div>
           </div>
           <form @submit.prevent="changePassword">
             <!-- Hidden username for password managers -->
@@ -591,6 +603,12 @@ onMounted(() => {
   margin-bottom: var(--spacing-6);
 }
 
+.page-subtitle {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+}
+
 .page-header h1 {
   margin: 0;
   font-size: var(--text-2xl);
@@ -673,6 +691,12 @@ onMounted(() => {
   font-size: var(--text-lg);
   font-weight: var(--font-semibold);
   margin: 0;
+}
+
+.section-desc {
+  margin: 0;
+  color: var(--color-text-tertiary);
+  font-size: var(--text-sm);
 }
 
 /* Avatar Section */

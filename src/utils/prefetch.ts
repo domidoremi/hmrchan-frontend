@@ -197,10 +197,18 @@ const ROUTE_CONFIG = {
   },
   community: { path: '/community', importFn: () => import('@/views/CommunityPage.vue') },
   profile: { path: '/profile', importFn: () => import('@/views/ProfilePage.vue') },
+  'profile-notifications': {
+    path: '/profile/notifications',
+    importFn: () => import('@/views/ProfileNotificationsPage.vue'),
+  },
+  'profile-devices': {
+    path: '/profile/devices',
+    importFn: () => import('@/views/ProfileDevicesPage.vue'),
+  },
   favorites: { path: '/favorites', importFn: () => import('@/views/FavoritesPage.vue') },
   settings: { path: '/settings', importFn: () => import('@/views/SettingsPage.vue') },
   'profile-settings': {
-    pathPattern: /^\/settings\//,
+    path: '/profile/settings',
     importFn: () => import('@/views/ProfileSettingsPage.vue'),
   },
   login: { path: '/login', importFn: () => import('@/views/LoginPage.vue') },
