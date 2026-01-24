@@ -252,7 +252,9 @@ const fullSizeUrl = computed(() => {
   return getMediaStreamUrl(currentMedia.value.id)
 })
 
-const currentMediaKey = computed(() => `${currentMedia.value?.id ?? 'unknown'}-${imageReloadToken.value}`)
+const currentMediaKey = computed(
+  () => `${currentMedia.value?.id ?? 'unknown'}-${imageReloadToken.value}`
+)
 const imageKey = computed(() => `${currentMedia.value?.id ?? 'unknown'}-${imageReloadToken.value}`)
 
 const mediaStyle = computed(() => ({
@@ -587,7 +589,9 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: transform var(--transition-fast), background var(--transition-fast);
+  transition:
+    transform var(--transition-fast),
+    background var(--transition-fast);
 }
 
 .icon-btn:hover {
@@ -682,7 +686,9 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: transform var(--transition-fast), background var(--transition-fast);
+  transition:
+    transform var(--transition-fast),
+    background var(--transition-fast);
 }
 
 .lightbox-nav:hover {
@@ -712,7 +718,9 @@ onUnmounted(() => {
   background: rgba(0, 0, 0, 0.55);
   backdrop-filter: blur(12px);
   color: white;
-  transition: opacity var(--transition-fast), transform var(--transition-fast);
+  transition:
+    opacity var(--transition-fast),
+    transform var(--transition-fast);
 }
 
 .lightbox-toolbar.hidden {

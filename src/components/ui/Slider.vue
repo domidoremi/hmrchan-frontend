@@ -63,7 +63,9 @@ const thumbStyle = computed(() => ({
 }))
 
 const displayValue = computed(() => {
-  return props.modelValue.toFixed(props.step < 1 ? String(props.step).split('.')[1]?.length || 0 : 0)
+  return props.modelValue.toFixed(
+    props.step < 1 ? String(props.step).split('.')[1]?.length || 0 : 0
+  )
 })
 
 function clamp(value: number, min: number, max: number): number {
@@ -195,7 +197,9 @@ onUnmounted(() => {
   border-radius: var(--radius-full);
   box-shadow: var(--shadow-sm);
   cursor: grab;
-  transition: box-shadow 150ms var(--ease-out), transform 150ms var(--ease-out);
+  transition:
+    box-shadow 150ms var(--ease-out),
+    transform 150ms var(--ease-out);
 }
 
 .ui-slider__thumb:hover {

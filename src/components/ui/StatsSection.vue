@@ -156,7 +156,9 @@ const platforms = [
   gap: var(--spacing-4);
   padding: var(--spacing-4) var(--spacing-5);
   border-radius: var(--radius-xl);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .platform-card:hover {

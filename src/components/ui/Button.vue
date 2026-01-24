@@ -89,9 +89,7 @@ const iconSize = computed(() => {
   return sizes[normalizedSize.value] ?? 18
 })
 
-const showLeftIcon = computed(
-  () => !!props.icon && props.iconPosition === 'left' && !props.loading
-)
+const showLeftIcon = computed(() => !!props.icon && props.iconPosition === 'left' && !props.loading)
 const showRightIcon = computed(
   () => !!props.icon && props.iconPosition === 'right' && !props.loading
 )

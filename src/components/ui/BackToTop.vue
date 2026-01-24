@@ -9,11 +9,7 @@
         :aria-label="$t('common.backToTop')"
         @click="scrollToTop"
       >
-        <svg
-          v-if="showProgress"
-          class="back-to-top__ring"
-          viewBox="0 0 36 36"
-        >
+        <svg v-if="showProgress" class="back-to-top__ring" viewBox="0 0 36 36">
           <circle
             class="back-to-top__ring-bg"
             cx="18"
@@ -144,7 +140,9 @@ onUnmounted(() => {
 .back-to-top:hover {
   transform: translate3d(0, -4px, 0);
   border-color: var(--color-primary);
-  box-shadow: var(--glass-shadow-lg), 0 0 20px rgba(var(--color-primary-rgb), 0.2);
+  box-shadow:
+    var(--glass-shadow-lg),
+    0 0 20px rgba(var(--color-primary-rgb), 0.2);
 }
 
 .back-to-top:hover::before {
@@ -250,7 +248,9 @@ onUnmounted(() => {
 /* Transition */
 .back-to-top-enter-active,
 .back-to-top-leave-active {
-  transition: opacity 250ms var(--ease-out), transform 250ms var(--ease-spring);
+  transition:
+    opacity 250ms var(--ease-out),
+    transform 250ms var(--ease-spring);
 }
 
 .back-to-top-enter-from {

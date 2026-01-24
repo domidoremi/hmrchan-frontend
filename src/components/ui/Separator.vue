@@ -19,10 +19,7 @@ const props = withDefaults(defineProps<Props>(), {
   decorative: false,
 })
 
-const separatorClass = computed(() => [
-  'ui-separator',
-  `ui-separator--${props.orientation}`,
-])
+const separatorClass = computed(() => ['ui-separator', `ui-separator--${props.orientation}`])
 </script>
 
 <style scoped>

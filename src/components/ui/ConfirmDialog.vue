@@ -10,7 +10,10 @@
           :aria-labelledby="titleId"
           :aria-describedby="descriptionId"
         >
-          <div class="confirm-dialog__icon-wrapper" :class="`confirm-dialog__icon-wrapper--${variant}`">
+          <div
+            class="confirm-dialog__icon-wrapper"
+            :class="`confirm-dialog__icon-wrapper--${variant}`"
+          >
             <component :is="iconComponent" :size="24" class="confirm-dialog__icon" />
           </div>
 
@@ -216,7 +219,12 @@ onUnmounted(() => {
   left: 0;
   right: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.4) 50%, transparent 100%);
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.4) 50%,
+    transparent 100%
+  );
   opacity: 0.6;
   pointer-events: none;
 }
@@ -307,7 +315,9 @@ onUnmounted(() => {
 
 .confirm-dialog-enter-active .confirm-dialog,
 .confirm-dialog-leave-active .confirm-dialog {
-  transition: transform 200ms var(--ease-out), opacity 200ms var(--ease-out);
+  transition:
+    transform 200ms var(--ease-out),
+    opacity 200ms var(--ease-out);
 }
 
 .confirm-dialog-enter-from,

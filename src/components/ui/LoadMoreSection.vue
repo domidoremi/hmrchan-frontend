@@ -165,7 +165,12 @@ const progressPercent = computed(() => {
 .progress-glow {
   position: absolute;
   inset: 0;
-  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.4) 50%, transparent 100%);
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.4) 50%,
+    transparent 100%
+  );
   animation: progressShine 1.5s ease-in-out infinite;
 }
 
@@ -253,12 +258,7 @@ const progressPercent = computed(() => {
 .end-line {
   flex: 1;
   height: 1px;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    var(--color-border) 50%,
-    transparent 100%
-  );
+  background: linear-gradient(90deg, transparent 0%, var(--color-border) 50%, transparent 100%);
 }
 
 .end-text {

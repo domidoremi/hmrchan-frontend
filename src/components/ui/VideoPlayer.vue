@@ -78,12 +78,12 @@
           <div class="controls-group">
             <!-- 音量 -->
             <div class="volume-control">
-            <button
-              type="button"
-              class="control-btn"
-              :aria-label="isMuted ? $t('video.unmute') : $t('video.mute')"
-              @click="toggleMute"
-            >
+              <button
+                type="button"
+                class="control-btn"
+                :aria-label="isMuted ? $t('video.unmute') : $t('video.mute')"
+                @click="toggleMute"
+              >
                 <Volume2 v-if="!isMuted && volume > 0.5" :size="20" />
                 <Volume1 v-else-if="!isMuted && volume > 0" :size="20" />
                 <VolumeX v-else :size="20" />
@@ -148,7 +148,13 @@
             </div>
 
             <!-- 画中画 -->
-            <button v-if="supportsPiP" type="button" class="control-btn" :aria-label="$t('video.pip')" @click="togglePiP">
+            <button
+              v-if="supportsPiP"
+              type="button"
+              class="control-btn"
+              :aria-label="$t('video.pip')"
+              @click="togglePiP"
+            >
               <PictureInPicture :size="20" />
             </button>
 

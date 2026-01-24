@@ -1,5 +1,11 @@
 <template>
-  <div :class="progressClass" role="progressbar" :aria-valuenow="value" aria-valuemin="0" :aria-valuemax="max">
+  <div
+    :class="progressClass"
+    role="progressbar"
+    :aria-valuenow="value"
+    aria-valuemin="0"
+    :aria-valuemax="max"
+  >
     <div class="ui-progress__indicator" :style="indicatorStyle" />
   </div>
 </template>
