@@ -1,11 +1,13 @@
 <template>
   <slot v-if="!hasError" />
   <div v-else class="error-boundary">
-    <div class="error-content glass-card">
-      <div class="error-icon">
-        <AlertTriangle :size="48" />
+    <div class="error-panel glass-card">
+      <div class="error-badge">
+        <AlertTriangle :size="26" />
+        <span>{{ $t('error.componentError') }}</span>
       </div>
-      <h2 class="error-title">{{ $t('error.componentError') }}</h2>
+
+      <h2 class="error-title">{{ headline }}</h2>
       <p class="error-message">{{ errorMessage }}</p>
 
       <div class="error-actions">
@@ -13,15 +15,24 @@
           <RefreshCw :size="16" />
           {{ $t('common.retry') }}
         </Button>
+        <Button variant="secondary" @click="copyReport">
+          <Copy :size="16" />
+          {{ copyLabel }}
+        </Button>
         <Button variant="ghost" @click="goHome">
           <Home :size="16" />
           {{ $t('nav.home') }}
         </Button>
       </div>
 
-      <!-- 开发环境显示详细错误信息 -->
+      <div class="error-meta">
+        <span>{{ $t('error.technicalDetails') }}</span>
+        <span class="error-meta-divider">•</span>
+        <span>{{ timestamp }}</span>
+      </div>
+
       <details v-if="isDev && errorDetails" class="error-details">
-        <summary>{{ $t('error.technicalDetails') }}</summary>
+        <summary>{{ $t('error.technicalDetails') || 'Technical details' }}</summary>
         <pre class="error-stack">{{ errorDetails }}</pre>
       </details>
     </div>
@@ -30,16 +41,15 @@
 
 <script setup lang="ts">
 import { ref, onErrorCaptured, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
-import { AlertTriangle, RefreshCw, Home } from 'lucide-vue-next'
+import { AlertTriangle, RefreshCw, Home, Copy } from 'lucide-vue-next'
 import Button from './Button.vue'
 
 interface Props {
-  /** 自定义错误消息 */
   fallbackMessage?: string
-  /** 是否在控制台输出错误 */
+  headline?: string
   logError?: boolean
-  /** 错误回调 */
   onError?: (error: Error, info: string) => void
 }
 
@@ -53,30 +63,30 @@ const emit = defineEmits<{
 }>()
 
 const router = useRouter()
-
+const { t } = useI18n()
 const hasError = ref(false)
 const errorMessage = ref('')
 const errorDetails = ref('')
+const timestamp = ref('')
+const copyLabel = ref(t('error.copyReport'))
 
 const isDev = computed(() => import.meta.env.DEV)
+const headline = computed(() => props.headline || t('error.componentError'))
 
-// 捕获子组件错误
 onErrorCaptured((error: Error, instance, info: string) => {
   hasError.value = true
   errorMessage.value = props.fallbackMessage || error.message || 'An unexpected error occurred'
   errorDetails.value = `${error.name}: ${error.message}\n\nComponent: ${instance?.$options?.name || 'Unknown'}\nInfo: ${info}\n\nStack:\n${error.stack || 'No stack trace available'}`
+  timestamp.value = new Date().toLocaleString()
 
-  // 控制台输出
   if (props.logError) {
     console.error('[ErrorBoundary] Caught error:', error)
     console.error('[ErrorBoundary] Component info:', info)
   }
 
-  // 触发回调
   props.onError?.(error, info)
   emit('error', error, info)
 
-  // 阻止错误继续向上传播
   return false
 })
 
@@ -84,12 +94,23 @@ function retry() {
   hasError.value = false
   errorMessage.value = ''
   errorDetails.value = ''
+  copyLabel.value = t('error.copyReport')
   emit('retry')
 }
 
 function goHome() {
   hasError.value = false
   router.push('/')
+}
+
+async function copyReport() {
+  const report = `${errorMessage.value}\n${errorDetails.value}\nTime: ${timestamp.value}`
+  try {
+    await navigator.clipboard.writeText(report)
+    copyLabel.value = t('error.copySuccess')
+  } catch {
+    copyLabel.value = t('error.copyFailed')
+  }
 }
 </script>
 
@@ -98,41 +119,44 @@ function goHome() {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 300px;
+  min-height: 320px;
   padding: var(--spacing-6);
 }
 
-.error-content {
-  max-width: 480px;
+.error-panel {
+  max-width: 520px;
   width: 100%;
   padding: var(--spacing-8);
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-4);
 }
 
-.error-icon {
-  display: flex;
+.error-badge {
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  width: 80px;
-  height: 80px;
-  margin: 0 auto var(--spacing-4);
-  background: rgba(var(--color-error-rgb), 0.1);
+  gap: var(--spacing-2);
+  padding: var(--spacing-2) var(--spacing-4);
   border-radius: var(--radius-full);
+  background: rgba(var(--color-error-rgb), 0.12);
   color: var(--color-error);
+  font-size: var(--text-sm);
+  margin: 0 auto;
 }
 
 .error-title {
-  font-size: var(--text-xl);
+  font-size: var(--text-2xl);
   font-weight: var(--font-semibold);
   color: var(--color-text-primary);
-  margin: 0 0 var(--spacing-2);
+  margin: 0;
 }
 
 .error-message {
   font-size: var(--text-sm);
   color: var(--color-text-secondary);
-  margin: 0 0 var(--spacing-6);
   line-height: 1.6;
+  margin: 0;
 }
 
 .error-actions {
@@ -142,8 +166,20 @@ function goHome() {
   flex-wrap: wrap;
 }
 
+.error-meta {
+  display: flex;
+  justify-content: center;
+  gap: var(--spacing-2);
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+}
+
+.error-meta-divider {
+  opacity: 0.6;
+}
+
 .error-details {
-  margin-top: var(--spacing-6);
+  margin-top: var(--spacing-2);
   text-align: left;
 }
 
@@ -171,24 +207,13 @@ function goHome() {
   overflow-x: auto;
   white-space: pre-wrap;
   word-break: break-all;
-  max-height: 200px;
+  max-height: 220px;
   overflow-y: auto;
 }
 
-/* 移动端适配 */
 @media (max-width: 640px) {
-  .error-content {
+  .error-panel {
     padding: var(--spacing-6);
-  }
-
-  .error-icon {
-    width: 64px;
-    height: 64px;
-  }
-
-  .error-icon svg {
-    width: 32px;
-    height: 32px;
   }
 
   .error-actions {

@@ -1,40 +1,55 @@
 <template>
-  <div class="load-more-section">
-    <!-- Progress indicator -->
-    <div class="progress-indicator">
-      <div class="progress-bar-wrapper">
-        <div class="progress-bar-fill" :style="{ width: `${progressPercent}%` }" />
+  <section class="load-more-section">
+    <header class="load-more-header">
+      <div class="progress-pill glass-card">
+        <span class="progress-label">{{ t('common.showing', { count, total }) }}</span>
+        <span class="progress-value">{{ Math.round(progressPercent) }}%</span>
       </div>
-      <span class="progress-text">
-        {{ t('common.showing', { count, total }) }}
-      </span>
-    </div>
-
-    <!-- Infinite scroll sentinel -->
-    <div v-if="hasMore" :ref="sentinelRef" class="scroll-sentinel">
-      <Transition name="fade" mode="out-in">
-        <div v-if="loading" class="sentinel-loading">
-          <div class="sentinel-spinner">
-            <span class="spinner spinner-sm" />
-          </div>
-          <span class="sentinel-text">{{ t('common.loadingMore') || t('common.loading') }}</span>
-        </div>
-      </Transition>
-    </div>
-
-    <!-- Manual load button -->
-    <div class="load-more-actions">
-      <Button
-        v-if="hasMore"
-        variant="secondary"
-        size="md"
-        :loading="loading"
-        class="load-more-btn"
+      <button
+        v-if="hasMore && allowManual"
+        type="button"
+        class="ghost-action"
         @click="emit('load-more')"
       >
-        <ChevronDown :size="18" class="load-more-icon" />
         {{ t('common.loadMore') }}
-      </Button>
+      </button>
+    </header>
+
+    <div class="progress-track">
+      <div class="progress-fill" :style="{ width: `${progressPercent}%` }">
+        <div class="progress-glow" />
+      </div>
+    </div>
+
+    <div class="load-more-body">
+      <div v-if="hasMore" class="load-more-state">
+        <div :ref="sentinelRef" class="scroll-sentinel">
+          <Transition name="fade" mode="out-in">
+            <div v-if="loading" class="sentinel-loading glass-card">
+              <span class="spinner spinner-sm" />
+              <span>{{ t('common.loadingMore') || t('common.loading') }}</span>
+            </div>
+            <div v-else class="sentinel-idle">
+              <span class="idle-dot" />
+              <span>{{ t('common.scrollToLoad') || t('common.loadMore') }}</span>
+            </div>
+          </Transition>
+        </div>
+
+        <div class="load-more-actions">
+          <Button
+            v-if="allowManual"
+            variant="secondary"
+            size="md"
+            :loading="loading"
+            class="load-more-btn"
+            @click="emit('load-more')"
+          >
+            <ChevronDown :size="18" class="load-more-icon" />
+            {{ t('common.loadMore') }}
+          </Button>
+        </div>
+      </div>
 
       <div v-else class="end-indicator">
         <div class="end-line" />
@@ -42,7 +57,7 @@
         <div class="end-line" />
       </div>
     </div>
-  </div>
+  </section>
 </template>
 
 <script setup lang="ts">
@@ -57,10 +72,12 @@ interface Props {
   hasMore: boolean
   loading?: boolean
   sentinelRef?: (el: Element | null) => void
+  allowManual?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   loading: false,
+  allowManual: true,
 })
 
 const emit = defineEmits<{
@@ -79,106 +96,137 @@ const progressPercent = computed(() => {
 .load-more-section {
   display: flex;
   flex-direction: column;
-  align-items: center;
   gap: var(--spacing-4);
   margin-top: var(--spacing-8);
   padding: var(--spacing-4);
+  border-radius: var(--radius-2xl);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
 }
 
-/* ========== Progress Indicator ========== */
-.progress-indicator {
+.load-more-header {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: var(--spacing-2);
-  width: 100%;
-  max-width: 300px;
+  justify-content: space-between;
+  gap: var(--spacing-3);
 }
 
-.progress-bar-wrapper {
+.progress-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  padding: var(--spacing-2) var(--spacing-4);
+  border-radius: var(--radius-full);
+  font-size: var(--text-sm);
+}
+
+.progress-label {
+  color: var(--color-text-secondary);
+}
+
+.progress-value {
+  font-weight: var(--font-semibold);
+  color: var(--color-text-primary);
+}
+
+.ghost-action {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  padding: 0.35rem 0.9rem;
+  background: transparent;
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.ghost-action:hover {
+  background: var(--color-muted);
+  color: var(--color-text-primary);
+}
+
+.progress-track {
   width: 100%;
-  height: 4px;
-  background: var(--glass-bg-light);
+  height: 6px;
+  background: var(--color-muted);
   border-radius: var(--radius-full);
   overflow: hidden;
 }
 
-.progress-bar-fill {
+.progress-fill {
   height: 100%;
   background: var(--gradient-primary);
   border-radius: inherit;
-  transition: width var(--duration-slow) var(--ease-out);
   position: relative;
+  transition: width var(--duration-slow) var(--ease-out);
 }
 
-.progress-bar-fill::after {
-  content: '';
+.progress-glow {
   position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  width: 20px;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(255, 255, 255, 0.4) 50%,
-    transparent 100%
-  );
+  inset: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.4) 50%, transparent 100%);
   animation: progressShine 1.5s ease-in-out infinite;
 }
 
 @keyframes progressShine {
   0% {
     opacity: 0;
-    transform: translateX(-20px);
+    transform: translateX(-30%);
   }
   50% {
     opacity: 1;
   }
   100% {
     opacity: 0;
-    transform: translateX(20px);
+    transform: translateX(30%);
   }
 }
 
-.progress-text {
-  font-size: var(--text-sm);
-  font-weight: var(--font-medium);
-  color: var(--color-text-secondary);
-  font-variant-numeric: tabular-nums;
+.load-more-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
 }
 
-/* ========== Scroll Sentinel ========== */
+.load-more-state {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+}
+
 .scroll-sentinel {
   width: 100%;
-  min-height: 60px;
+  min-height: 56px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.sentinel-loading {
-  display: flex;
+.sentinel-loading,
+.sentinel-idle {
+  display: inline-flex;
   align-items: center;
-  gap: var(--spacing-3);
-  padding: var(--spacing-3) var(--spacing-4);
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
+  gap: var(--spacing-2);
+  padding: var(--spacing-2) var(--spacing-4);
   border-radius: var(--radius-full);
-}
-
-.sentinel-spinner {
-  color: var(--color-primary);
-}
-
-.sentinel-text {
   font-size: var(--text-sm);
   color: var(--color-text-secondary);
 }
 
-/* ========== Load More Button ========== */
+.sentinel-idle {
+  background: var(--color-muted);
+}
+
+.idle-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  box-shadow: 0 0 10px rgba(var(--color-primary-rgb), 0.6);
+}
+
 .load-more-actions {
-  width: 100%;
   display: flex;
   justify-content: center;
 }
@@ -195,13 +243,11 @@ const progressPercent = computed(() => {
   transform: translateY(2px);
 }
 
-/* ========== End Indicator ========== */
 .end-indicator {
   display: flex;
   align-items: center;
   gap: var(--spacing-4);
   width: 100%;
-  max-width: 400px;
 }
 
 .end-line {
@@ -210,7 +256,7 @@ const progressPercent = computed(() => {
   background: linear-gradient(
     90deg,
     transparent 0%,
-    var(--glass-border-strong) 50%,
+    var(--color-border) 50%,
     transparent 100%
   );
 }
@@ -221,7 +267,6 @@ const progressPercent = computed(() => {
   white-space: nowrap;
 }
 
-/* ========== Transitions ========== */
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity var(--duration-fast) var(--ease-out);
@@ -232,9 +277,8 @@ const progressPercent = computed(() => {
   opacity: 0;
 }
 
-/* ========== Reduced Motion ========== */
 @media (prefers-reduced-motion: reduce) {
-  .progress-bar-fill::after {
+  .progress-glow {
     animation: none;
   }
 }

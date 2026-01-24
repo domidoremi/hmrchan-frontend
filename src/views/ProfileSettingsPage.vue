@@ -93,11 +93,11 @@
                 {{ $t('profile.username') }}
               </label>
               <div class="input-wrapper input-readonly">
-                <input
+                <Input
                   id="username"
-                  :value="profile.username"
+                  :model-value="profile.username"
                   type="text"
-                  class="glass-input"
+                  class="input-with-icon"
                   disabled
                   readonly
                 />
@@ -113,11 +113,11 @@
                 {{ $t('profile.fullName') }}
               </label>
               <div class="input-wrapper">
-                <input
+                <Input
                   id="full_name"
                   v-model="form.full_name"
                   type="text"
-                  class="glass-input"
+                  class="input-with-icon"
                   maxlength="255"
                   :placeholder="$t('profile.fullNamePlaceholder')"
                 />
@@ -132,10 +132,10 @@
                 {{ $t('profile.bio') }}
               </label>
               <div class="input-wrapper">
-                <textarea
+                <Textarea
                   id="bio"
                   v-model="form.bio"
-                  class="glass-input bio-textarea"
+                  class="bio-textarea"
                   maxlength="500"
                   rows="4"
                   :placeholder="$t('profile.bioPlaceholder')"
@@ -188,11 +188,11 @@
                 {{ $t('profile.currentPassword') }}
               </label>
               <div class="input-wrapper">
-                <input
+                <Input
                   id="current_password"
                   v-model="passwordForm.current_password"
                   :type="showCurrentPassword ? 'text' : 'password'"
-                  class="glass-input"
+                  class="input-with-icon"
                   autocomplete="current-password"
                   required
                 />
@@ -213,11 +213,11 @@
                 {{ $t('profile.newPassword') }}
               </label>
               <div class="input-wrapper">
-                <input
+                <Input
                   id="new_password"
                   v-model="passwordForm.new_password"
                   :type="showNewPassword ? 'text' : 'password'"
-                  class="glass-input"
+                  class="input-with-icon"
                   autocomplete="new-password"
                   minlength="8"
                   required
@@ -252,12 +252,12 @@
                 {{ $t('profile.confirmPassword') }}
               </label>
               <div class="input-wrapper">
-                <input
+                <Input
                   id="confirm_password"
                   v-model="passwordForm.confirm_password"
                   :type="showConfirmPassword ? 'text' : 'password'"
-                  class="glass-input"
-                  :class="{ 'input-error': passwordForm.confirm_password && !passwordsMatch }"
+                  class="input-with-icon"
+                  :error="Boolean(passwordForm.confirm_password && !passwordsMatch)"
                   autocomplete="new-password"
                   required
                 />
@@ -326,6 +326,8 @@ import { useAuthStore, useToastStore } from '@/stores'
 import { refreshAvatarCache } from '@/composables/useUserAvatar'
 import { checkPasswordStrength } from '@/utils/crypto'
 import Button from '@/components/ui/Button.vue'
+import Input from '@/components/ui/Input.vue'
+import Textarea from '@/components/ui/Textarea.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import { defineAsyncComponent } from 'vue'
 
@@ -767,12 +769,12 @@ onMounted(() => {
   position: relative;
 }
 
-.input-wrapper .glass-input {
+.input-wrapper .input-with-icon {
   width: 100%;
   padding-right: var(--spacing-10);
 }
 
-.input-readonly .glass-input {
+.input-readonly .input-with-icon {
   opacity: 0.7;
   cursor: not-allowed;
   background: var(--glass-bg-subtle);
@@ -784,10 +786,6 @@ onMounted(() => {
   top: 50%;
   transform: translateY(-50%);
   color: var(--color-text-tertiary);
-}
-
-.input-error {
-  border-color: var(--color-error) !important;
 }
 
 .bio-textarea {
@@ -999,7 +997,7 @@ onMounted(() => {
     font-size: var(--text-sm);
   }
 
-  .form-group .glass-input {
+  .form-group :deep(.ui-input) {
     min-height: 48px;
     font-size: 16px; /* Prevent iOS zoom */
   }

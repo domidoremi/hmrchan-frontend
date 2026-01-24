@@ -1,6 +1,5 @@
 <template>
   <div class="progressive-image" :style="containerStyle">
-    <!-- 模糊缩略图占位 -->
     <img
       v-if="placeholderSrc && !isFullLoaded"
       class="progressive-image__placeholder"
@@ -9,26 +8,37 @@
       aria-hidden="true"
     />
 
-    <!-- 原图 -->
     <img
       ref="fullImageRef"
       class="progressive-image__full"
-      :class="{ 'is-loaded': isFullLoaded }"
+      :class="{ 'is-loaded': isFullLoaded, 'is-error': hasError }"
       :src="src"
       :alt="alt"
+      :loading="loadingStrategy"
+      :decoding="decoding"
       @load="onFullLoad"
       @error="onFullError"
     />
 
-    <!-- 加载指示器 -->
-    <div v-if="!isFullLoaded && showSpinner" class="progressive-image__loader">
+    <div v-if="!isFullLoaded && showSpinner && !hasError" class="progressive-image__loader">
       <span class="spinner spinner-sm" />
+    </div>
+
+    <div v-if="hasError" class="progressive-image__error glass-card">
+      <AlertTriangle :size="18" />
+      <span>{{ errorLabel }}</span>
+      <button type="button" class="retry-btn" @click="retry">
+        <RefreshCw :size="14" />
+        {{ $t('common.retry') }}
+      </button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { AlertTriangle, RefreshCw } from 'lucide-vue-next'
 
 export interface ProgressiveImageProps {
   src: string
@@ -38,6 +48,9 @@ export interface ProgressiveImageProps {
   objectFit?: 'cover' | 'contain'
   showSpinner?: boolean
   maxHeight?: string
+  loading?: 'lazy' | 'eager'
+  decoding?: 'async' | 'sync' | 'auto'
+  errorLabel?: string
 }
 
 const props = withDefaults(defineProps<ProgressiveImageProps>(), {
@@ -45,6 +58,9 @@ const props = withDefaults(defineProps<ProgressiveImageProps>(), {
   aspectRatio: null,
   objectFit: 'cover',
   showSpinner: true,
+  loading: 'lazy',
+  decoding: 'async',
+  errorLabel: '',
 })
 
 const emit = defineEmits<{
@@ -52,9 +68,12 @@ const emit = defineEmits<{
   error: [error: Error]
 }>()
 
+const { t } = useI18n()
+
 const fullImageRef = ref<HTMLImageElement | null>(null)
 const isFullLoaded = ref(false)
 const hasError = ref(false)
+const reloadToken = ref(0)
 
 const containerStyle = computed(() => {
   const style: Record<string, string> = {}
@@ -72,6 +91,10 @@ const containerStyle = computed(() => {
   return style
 })
 
+const loadingStrategy = computed(() => props.loading)
+const decoding = computed(() => props.decoding)
+const errorLabel = computed(() => props.errorLabel || t('common.imageLoadFailed'))
+
 function onFullLoad() {
   isFullLoaded.value = true
   emit('load')
@@ -88,6 +111,7 @@ watch(
   () => {
     isFullLoaded.value = false
     hasError.value = false
+    reloadToken.value += 1
   }
 )
 
@@ -97,6 +121,15 @@ onMounted(() => {
     isFullLoaded.value = true
   }
 })
+
+function retry() {
+  hasError.value = false
+  isFullLoaded.value = false
+  reloadToken.value += 1
+  if (fullImageRef.value) {
+    fullImageRef.value.src = `${props.src}${props.src.includes('?') ? '&' : '?'}retry=${reloadToken.value}`
+  }
+}
 </script>
 
 <style scoped>
@@ -105,6 +138,7 @@ onMounted(() => {
   width: 100%;
   overflow: hidden;
   background: var(--glass-bg-light);
+  border-radius: var(--radius-lg);
 }
 
 /* 有宽高比时使用 padding-top 技巧 */
@@ -142,6 +176,10 @@ onMounted(() => {
   opacity: 1;
 }
 
+.progressive-image__full.is-error {
+  opacity: 0.15;
+}
+
 .progressive-image__loader {
   position: absolute;
   inset: 0;
@@ -149,5 +187,35 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   background: rgba(0, 0, 0, 0.1);
+}
+
+.progressive-image__error {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-2);
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
+.retry-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-1);
+  padding: 0.35rem 0.75rem;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.retry-btn:hover {
+  background: var(--color-muted);
+  color: var(--color-text-primary);
 }
 </style>

@@ -1,29 +1,28 @@
 <template>
-  <div class="state-indicator glass-card" :class="`state-indicator--${variant}`">
-    <div class="state-icon-wrapper">
-      <div class="state-icon-bg" />
-      <component :is="iconComponent" :size="48" class="state-icon" />
+  <div class="state-indicator" :class="`state-indicator--${variant}`">
+    <div class="state-indicator__visual">
+      <div class="state-indicator__glow" />
+      <div class="state-indicator__icon-wrapper">
+        <component :is="iconComponent" :size="32" class="state-indicator__icon" />
+      </div>
     </div>
 
-    <div class="state-content">
-      <h3 class="state-title">{{ resolvedTitle }}</h3>
-      <p v-if="description" class="state-description">{{ description }}</p>
+    <div class="state-indicator__content">
+      <h3 class="state-indicator__title">{{ resolvedTitle }}</h3>
+      <p v-if="description" class="state-indicator__description">{{ description }}</p>
     </div>
 
-    <div v-if="shouldShowAction" class="state-actions">
+    <div v-if="shouldShowAction" class="state-indicator__actions">
       <Button
-        :variant="variant === 'error' ? 'primary' : 'secondary'"
+        :variant="variant === 'error' ? 'default' : 'outline'"
+        size="sm"
         :loading="actionLoading"
+        :icon="variant === 'error' ? RefreshCw : undefined"
         @click="emit('action')"
       >
-        <RefreshCw v-if="variant === 'error'" :size="16" />
         {{ resolvedActionLabel }}
       </Button>
     </div>
-
-    <!-- Decorative elements -->
-    <div class="state-decor state-decor--1" />
-    <div class="state-decor state-decor--2" />
   </div>
 </template>
 
@@ -38,7 +37,9 @@ import {
   RefreshCw,
   type LucideIcon,
 } from 'lucide-vue-next'
-import Button from '@/components/ui/Button.vue'
+import Button from './Button.vue'
+
+defineOptions({ name: 'UiStateIndicator' })
 
 interface Props {
   variant?: 'empty' | 'error' | 'not-found' | 'no-results'
@@ -59,8 +60,6 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
-
-const variant = computed(() => props.variant)
 
 const resolvedTitle = computed(() => {
   if (props.title) return props.title
@@ -90,158 +89,139 @@ const shouldShowAction = computed(() => {
 })
 
 const resolvedActionLabel = computed(() => props.actionLabel ?? t('common.retry'))
-
-const description = computed(() => props.description)
-const actionLoading = computed(() => props.actionLoading)
 </script>
 
 <style scoped>
 .state-indicator {
-  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--spacing-4);
-  padding: var(--spacing-12) var(--spacing-6);
+  gap: var(--spacing-5);
+  padding: var(--spacing-10) var(--spacing-6);
   text-align: center;
-  overflow: hidden;
 }
 
-/* ========== Icon Wrapper ========== */
-.state-icon-wrapper {
+.state-indicator__visual {
   position: relative;
-  width: 100px;
-  height: 100px;
+  width: 80px;
+  height: 80px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.state-icon-bg {
+.state-indicator__glow {
   position: absolute;
-  inset: 0;
+  inset: -20%;
   border-radius: var(--radius-full);
-  background: var(--glass-bg-light);
-  opacity: 0.8;
+  opacity: 0.6;
+  animation: state-glow 3s ease-in-out infinite;
 }
 
-.state-icon {
+.state-indicator__icon-wrapper {
   position: relative;
   z-index: 1;
-  color: var(--color-text-tertiary);
-  opacity: 0.6;
-  /* 使用 translate3d 确保 GPU 加速，避免 CLS */
-  will-change: transform;
-  animation: stateIconFloat 3s var(--ease-in-out) infinite;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  border-radius: var(--radius-full);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-md);
+  animation: state-float 3s ease-in-out infinite;
 }
 
-@keyframes stateIconFloat {
-  0%,
-  100% {
-    transform: translate3d(0, 0, 0);
-  }
-  50% {
-    transform: translate3d(0, -6px, 0);
-  }
-}
-
-/* ========== Variant Colors ========== */
-.state-indicator--error .state-icon-bg {
-  background: rgba(var(--color-error-rgb), 0.1);
-}
-
-.state-indicator--error .state-icon {
-  color: var(--color-error);
-  opacity: 0.8;
-}
-
-.state-indicator--empty .state-icon-bg,
-.state-indicator--no-results .state-icon-bg {
-  background: rgba(var(--color-primary-rgb), 0.08);
-}
-
-.state-indicator--empty .state-icon,
-.state-indicator--no-results .state-icon {
-  color: var(--color-primary);
-  opacity: 0.5;
-}
-
-.state-indicator--not-found .state-icon-bg {
-  background: rgba(var(--color-warning-rgb), 0.1);
-}
-
-.state-indicator--not-found .state-icon {
-  color: var(--color-warning);
+.state-indicator__icon {
   opacity: 0.7;
 }
 
-/* ========== Content ========== */
-.state-content {
+@keyframes state-glow {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.4;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.2;
+  }
+}
+
+@keyframes state-float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+/* Variant: Empty / No Results */
+.state-indicator--empty .state-indicator__glow,
+.state-indicator--no-results .state-indicator__glow {
+  background: radial-gradient(circle, rgba(var(--color-primary-rgb), 0.15) 0%, transparent 70%);
+}
+
+.state-indicator--empty .state-indicator__icon,
+.state-indicator--no-results .state-indicator__icon {
+  color: var(--color-primary);
+}
+
+/* Variant: Error */
+.state-indicator--error .state-indicator__glow {
+  background: radial-gradient(circle, rgba(var(--color-error-rgb), 0.15) 0%, transparent 70%);
+}
+
+.state-indicator--error .state-indicator__icon-wrapper {
+  border-color: rgba(var(--color-error-rgb), 0.2);
+}
+
+.state-indicator--error .state-indicator__icon {
+  color: var(--color-error);
+}
+
+/* Variant: Not Found */
+.state-indicator--not-found .state-indicator__glow {
+  background: radial-gradient(circle, rgba(var(--color-warning-rgb), 0.15) 0%, transparent 70%);
+}
+
+.state-indicator--not-found .state-indicator__icon-wrapper {
+  border-color: rgba(var(--color-warning-rgb), 0.2);
+}
+
+.state-indicator--not-found .state-indicator__icon {
+  color: var(--color-warning);
+}
+
+.state-indicator__content {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-2);
-  max-width: 400px;
+  max-width: 320px;
 }
 
-.state-title {
+.state-indicator__title {
   font-size: var(--text-lg);
   font-weight: var(--font-semibold);
-  color: var(--color-text-primary);
+  color: var(--color-foreground);
   margin: 0;
 }
 
-.state-description {
+.state-indicator__description {
   font-size: var(--text-sm);
-  color: var(--color-text-secondary);
-  line-height: 1.6;
+  color: var(--color-muted-foreground);
+  line-height: var(--leading-relaxed);
   margin: 0;
 }
 
-/* ========== Actions ========== */
-.state-actions {
-  margin-top: var(--spacing-2);
+.state-indicator__actions {
+  margin-top: var(--spacing-1);
 }
 
-/* ========== Decorative Elements ========== */
-.state-decor {
-  position: absolute;
-  border-radius: var(--radius-full);
-  background: var(--gradient-primary);
-  opacity: 0.03;
-  pointer-events: none;
-}
-
-.state-decor--1 {
-  width: 200px;
-  height: 200px;
-  top: -80px;
-  right: -60px;
-}
-
-.state-decor--2 {
-  width: 150px;
-  height: 150px;
-  bottom: -60px;
-  left: -40px;
-}
-
-.state-indicator--error .state-decor {
-  background: var(--color-error);
-  opacity: 0.02;
-}
-
-/* ========== Dark Mode ========== */
-[data-theme='dark'] .state-icon-bg {
-  opacity: 0.5;
-}
-
-[data-theme='dark'] .state-decor {
-  opacity: 0.05;
-}
-
-/* ========== Reduced Motion ========== */
 @media (prefers-reduced-motion: reduce) {
-  .state-icon {
+  .state-indicator__glow,
+  .state-indicator__icon-wrapper {
     animation: none;
   }
 }

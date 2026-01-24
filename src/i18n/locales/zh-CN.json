@@ -59,7 +59,12 @@
     "zoomIn": "放大",
     "zoomOut": "缩小",
     "resetZoom": "重置缩放",
-    "remove": "移除"
+    "remove": "移除",
+    "download": "下载",
+    "scrollToLoad": "继续滚动以加载更多",
+    "loadingFailed": "加载失败",
+    "imageLoadFailed": "图片加载失败",
+    "reset": "重置"
   },
   "auth": {
     "email": "邮箱",
@@ -102,7 +107,15 @@
   "video": {
     "playbackSpeed": "播放速度",
     "quality": "画质",
-    "auto": "自动"
+    "auto": "自动",
+    "player": "视频播放器",
+    "play": "播放",
+    "pause": "暂停",
+    "mute": "静音",
+    "unmute": "取消静音",
+    "fullscreen": "全屏",
+    "pip": "画中画",
+    "settings": "设置"
   },
   "settings": {
     "title": "设置",
@@ -245,7 +258,11 @@
     "badGateway": "网关错误",
     "serviceUnavailable": "服务不可用",
     "componentError": "出了点问题",
-    "technicalDetails": "技术详情"
+    "technicalDetails": "技术详情",
+    "mediaLoadFailed": "媒体加载失败",
+    "copyReport": "复制报告",
+    "copySuccess": "已复制",
+    "copyFailed": "复制失败"
   },
   "comment": {
     "title": "评论",
@@ -360,6 +377,8 @@
     "passwordMismatch": "两次输入的密码不一致",
     "passwordTooShort": "密码至少需要8个字符",
     "cropAvatar": "裁剪头像",
+    "zoom": "缩放",
+    "rotate": "旋转",
     "circleShape": "圆形",
     "squareShape": "方形",
     "tabs": {
@@ -429,6 +448,7 @@
       "suffix": ""
     },
     "subtitle": "聚合 TikTok、YouTube、Instagram、X 四大平台内容，一站式浏览。",
+    "ctaLabel": "实时同步",
     "tiktok": "TikTok 视频同步",
     "youtube": "YouTube 内容追踪",
     "instagram": "Instagram 帖子收录",

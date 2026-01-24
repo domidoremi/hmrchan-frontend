@@ -1,95 +1,96 @@
 <template>
   <Teleport to="body">
-    <Transition name="lightbox">
+    <Transition name="lightbox-fade">
       <div
         v-if="isOpen"
-        class="lightbox-backdrop"
+        class="lightbox-overlay"
         role="dialog"
         aria-modal="true"
         :aria-label="$t('common.imageViewer')"
         @click.self="close"
-        @keydown.esc="close"
       >
-        <div class="lightbox-container" ref="containerRef">
-          <!-- 关闭按钮 -->
-          <button
-            type="button"
-            class="lightbox-close"
-            :aria-label="$t('common.close')"
-            @click="close"
-          >
-            <X :size="24" />
-          </button>
+        <div
+          ref="containerRef"
+          class="lightbox-shell"
+          tabindex="-1"
+          @mousemove="handleMouseMove"
+          @touchstart="handleTouchStart"
+        >
+          <header class="lightbox-header">
+            <div class="lightbox-title">
+              <span class="lightbox-label">{{ $t('common.imageViewer') }}</span>
+              <span v-if="hasMultiple" class="lightbox-count">
+                {{ currentIndex + 1 }} / {{ mediaList.length }}
+              </span>
+            </div>
+            <div class="lightbox-header-actions">
+              <button
+                v-if="allowDownload && currentMedia?.file_type === 'image'"
+                type="button"
+                class="icon-btn"
+                :aria-label="$t('common.download')"
+                @click="downloadCurrent"
+              >
+                <Download :size="18" />
+              </button>
+              <button
+                type="button"
+                class="icon-btn"
+                :aria-label="$t('common.close')"
+                @click="close"
+              >
+                <X :size="20" />
+              </button>
+            </div>
+          </header>
 
-          <!-- 工具栏 -->
-          <div class="lightbox-toolbar">
-            <button
-              type="button"
-              class="toolbar-btn"
-              :aria-label="$t('common.zoomIn')"
-              @click="zoomIn"
+          <Transition :name="transitionName" mode="out-in">
+            <div
+              v-if="currentMedia"
+              :key="currentMediaKey"
+              class="lightbox-content"
+              ref="contentRef"
+              @wheel.prevent="handleWheel"
             >
-              <ZoomIn :size="20" />
-            </button>
-            <button
-              type="button"
-              class="toolbar-btn"
-              :aria-label="$t('common.zoomOut')"
-              @click="zoomOut"
-            >
-              <ZoomOut :size="20" />
-            </button>
-            <button
-              type="button"
-              class="toolbar-btn"
-              :aria-label="$t('common.resetZoom')"
-              @click="resetZoom"
-            >
-              <Maximize2 :size="20" />
-            </button>
-            <span class="zoom-indicator">{{ Math.round(scale * 100) }}%</span>
-          </div>
-
-          <!-- 导航按钮 -->
-          <button
-            v-if="hasMultiple"
-            type="button"
-            class="lightbox-nav prev"
-            :aria-label="$t('common.previous')"
-            @click="prev"
-          >
-            <ChevronLeft :size="32" />
-          </button>
-
-          <!-- 媒体内容 -->
-          <div class="lightbox-content" ref="contentRef" @wheel.prevent="handleWheel">
-            <Transition :name="transitionName" mode="out-in">
               <div
-                v-if="currentMedia"
-                :key="currentMedia.id"
-                class="media-wrapper"
+                class="media-stage"
                 :style="mediaStyle"
                 @mousedown="startDrag"
-                @touchstart="startDrag"
+                @touchstart.prevent="startDrag"
+                @dblclick="toggleZoom"
               >
-                <!-- 加载占位 -->
-                <div v-if="!isLoaded" class="loading-placeholder">
+                <div v-if="!isLoaded && !hasError" class="media-loading">
                   <span class="spinner spinner-lg" />
+                  <span class="media-loading-text">{{ $t('common.loading') }}</span>
                 </div>
 
-                <!-- 图片 -->
+                <div v-if="hasError" class="media-error glass-card">
+                  <AlertTriangle :size="28" />
+                  <p>{{ $t('error.mediaLoadFailed') || $t('common.loadingFailed') }}</p>
+                  <div class="media-error-actions">
+                    <Button size="sm" variant="secondary" @click="retryLoad">
+                      <RefreshCw :size="16" />
+                      {{ $t('common.retry') }}
+                    </Button>
+                    <Button size="sm" variant="ghost" @click="close">
+                      {{ $t('common.close') }}
+                    </Button>
+                  </div>
+                </div>
+
                 <img
                   v-if="currentMedia.file_type === 'image'"
                   ref="mediaRef"
+                  :key="imageKey"
                   class="lightbox-media"
                   :class="{ 'is-loaded': isLoaded, 'is-dragging': isDragging }"
                   :src="fullSizeUrl"
                   :alt="alt"
                   draggable="false"
                   @load="onMediaLoad"
+                  @error="onMediaError"
                 />
 
-                <!-- 视频 -->
                 <VideoPlayer
                   v-else-if="currentMedia.file_type === 'video'"
                   ref="mediaRef"
@@ -99,9 +100,18 @@
                   @ready="onMediaLoad"
                 />
               </div>
-            </Transition>
-          </div>
+            </div>
+          </Transition>
 
+          <button
+            v-if="hasMultiple"
+            type="button"
+            class="lightbox-nav prev"
+            :aria-label="$t('common.previous')"
+            @click="prev"
+          >
+            <ChevronLeft :size="30" />
+          </button>
           <button
             v-if="hasMultiple"
             type="button"
@@ -109,12 +119,46 @@
             :aria-label="$t('common.next')"
             @click="next"
           >
-            <ChevronRight :size="32" />
+            <ChevronRight :size="30" />
           </button>
 
-          <!-- 计数器 -->
-          <div v-if="hasMultiple" class="lightbox-counter">
-            {{ currentIndex + 1 }} / {{ mediaList.length }}
+          <div v-if="showToolbar" class="lightbox-toolbar" :class="{ hidden: !controlsVisible }">
+            <button
+              type="button"
+              class="icon-btn"
+              :aria-label="$t('common.zoomOut')"
+              @click="zoomOut"
+            >
+              <ZoomOut :size="18" />
+            </button>
+            <div class="zoom-slider">
+              <input
+                type="range"
+                min="0.5"
+                max="4"
+                step="0.25"
+                :value="scale"
+                aria-label="Zoom"
+                @input="onZoomInput"
+              />
+            </div>
+            <button
+              type="button"
+              class="icon-btn"
+              :aria-label="$t('common.zoomIn')"
+              @click="zoomIn"
+            >
+              <ZoomIn :size="18" />
+            </button>
+            <button
+              type="button"
+              class="icon-btn"
+              :aria-label="$t('common.resetZoom')"
+              @click="resetZoom"
+            >
+              <RotateCcw :size="18" />
+            </button>
+            <span class="zoom-indicator">{{ Math.round(scale * 100) }}%</span>
           </div>
         </div>
       </div>
@@ -124,10 +168,21 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
-import { X, ZoomIn, ZoomOut, Maximize2, ChevronLeft, ChevronRight } from 'lucide-vue-next'
+import {
+  X,
+  ZoomIn,
+  ZoomOut,
+  RotateCcw,
+  ChevronLeft,
+  ChevronRight,
+  Download,
+  AlertTriangle,
+  RefreshCw,
+} from 'lucide-vue-next'
 import { getMediaStreamUrl } from '@/utils/mediaOptimizer'
 import { useFocusTrap } from '@/composables/useFocusTrap'
 import VideoPlayer from './VideoPlayer.vue'
+import Button from './Button.vue'
 
 export interface MediaItem {
   id: string
@@ -142,10 +197,14 @@ const props = withDefaults(
     mediaList: MediaItem[]
     initialIndex?: number
     alt?: string
+    allowDownload?: boolean
+    showToolbar?: boolean
   }>(),
   {
     initialIndex: 0,
     alt: '',
+    allowDownload: false,
+    showToolbar: true,
   }
 )
 
@@ -155,22 +214,25 @@ const emit = defineEmits<{
 }>()
 
 const containerRef = ref<HTMLElement | null>(null)
+const contentRef = ref<HTMLElement | null>(null)
+const mediaRef = ref<HTMLElement | null>(null)
 
-// Focus Trap
 const isLightboxOpen = computed(() => props.isOpen)
 useFocusTrap(containerRef, isLightboxOpen, {
   autoFocus: true,
   restoreFocus: true,
   escapeDeactivates: true,
   onEscape: close,
-  initialFocus: '.lightbox-close',
+  initialFocus: '.lightbox-shell',
 })
 
 const currentIndex = ref(props.initialIndex)
 const isLoaded = ref(false)
+const hasError = ref(false)
+const imageReloadToken = ref(0)
+const controlsVisible = ref(true)
 const transitionName = ref('lightbox-slide-left')
 
-// 缩放和拖拽状态
 const scale = ref(1)
 const translateX = ref(0)
 const translateY = ref(0)
@@ -178,16 +240,20 @@ const isDragging = ref(false)
 const dragStart = ref({ x: 0, y: 0, translateX: 0, translateY: 0 })
 
 const MIN_SCALE = 0.5
-const MAX_SCALE = 5
+const MAX_SCALE = 4
 const ZOOM_STEP = 0.25
+const CONTROLS_HIDE_DELAY = 2500
+let controlsTimer: ReturnType<typeof setTimeout> | null = null
 
 const currentMedia = computed(() => props.mediaList[currentIndex.value] ?? null)
 const hasMultiple = computed(() => props.mediaList.length > 1)
-
 const fullSizeUrl = computed(() => {
   if (!currentMedia.value) return ''
   return getMediaStreamUrl(currentMedia.value.id)
 })
+
+const currentMediaKey = computed(() => `${currentMedia.value?.id ?? 'unknown'}-${imageReloadToken.value}`)
+const imageKey = computed(() => `${currentMedia.value?.id ?? 'unknown'}-${imageReloadToken.value}`)
 
 const mediaStyle = computed(() => ({
   transform: `translate(${translateX.value}px, ${translateY.value}px) scale(${scale.value})`,
@@ -201,10 +267,17 @@ watch(
       currentIndex.value = props.initialIndex
       resetZoom()
       isLoaded.value = false
+      hasError.value = false
+      imageReloadToken.value += 1
       document.body.style.overflow = 'hidden'
-      nextTick(() => containerRef.value?.focus())
+      nextTick(() => {
+        containerRef.value?.focus()
+        showControlsTemporarily()
+      })
+      prefetchAround(currentIndex.value)
     } else {
       document.body.style.overflow = ''
+      clearControlsTimer()
     }
   }
 )
@@ -218,6 +291,14 @@ watch(
   }
 )
 
+watch(currentIndex, (idx) => {
+  isLoaded.value = false
+  hasError.value = false
+  imageReloadToken.value += 1
+  resetZoom()
+  prefetchAround(idx)
+})
+
 function close() {
   emit('update:isOpen', false)
   emit('close')
@@ -226,33 +307,36 @@ function close() {
 function prev() {
   if (!hasMultiple.value) return
   transitionName.value = 'lightbox-slide-right'
-  isLoaded.value = false
-  resetZoom()
   currentIndex.value = (currentIndex.value - 1 + props.mediaList.length) % props.mediaList.length
 }
 
 function next() {
   if (!hasMultiple.value) return
   transitionName.value = 'lightbox-slide-left'
-  isLoaded.value = false
-  resetZoom()
   currentIndex.value = (currentIndex.value + 1) % props.mediaList.length
 }
 
 function onMediaLoad() {
   isLoaded.value = true
+  hasError.value = false
+}
+
+function onMediaError() {
+  hasError.value = true
+}
+
+function retryLoad() {
+  hasError.value = false
+  isLoaded.value = false
+  imageReloadToken.value += 1
 }
 
 function zoomIn() {
-  scale.value = Math.min(scale.value + ZOOM_STEP, MAX_SCALE)
+  setScale(scale.value + ZOOM_STEP)
 }
 
 function zoomOut() {
-  scale.value = Math.max(scale.value - ZOOM_STEP, MIN_SCALE)
-  if (scale.value <= 1) {
-    translateX.value = 0
-    translateY.value = 0
-  }
+  setScale(scale.value - ZOOM_STEP)
 }
 
 function resetZoom() {
@@ -261,22 +345,48 @@ function resetZoom() {
   translateY.value = 0
 }
 
+function setScale(value: number, anchor?: { x: number; y: number }) {
+  const nextScale = Math.max(MIN_SCALE, Math.min(value, MAX_SCALE))
+  if (nextScale === scale.value) return
+
+  if (anchor && contentRef.value) {
+    const rect = contentRef.value.getBoundingClientRect()
+    const offsetX = anchor.x - (rect.left + rect.width / 2)
+    const offsetY = anchor.y - (rect.top + rect.height / 2)
+    const ratio = nextScale / scale.value
+    translateX.value = (translateX.value - offsetX) * ratio + offsetX
+    translateY.value = (translateY.value - offsetY) * ratio + offsetY
+  }
+
+  scale.value = nextScale
+  if (scale.value <= 1) {
+    translateX.value = 0
+    translateY.value = 0
+  }
+}
+
+function onZoomInput(event: Event) {
+  const value = Number((event.target as HTMLInputElement).value)
+  if (!Number.isNaN(value)) {
+    setScale(value)
+  }
+}
+
 function handleWheel(e: WheelEvent) {
   const delta = e.deltaY > 0 ? -ZOOM_STEP : ZOOM_STEP
-  const newScale = Math.max(MIN_SCALE, Math.min(scale.value + delta, MAX_SCALE))
+  setScale(scale.value + delta, { x: e.clientX, y: e.clientY })
+}
 
-  if (newScale !== scale.value) {
-    scale.value = newScale
-    if (newScale <= 1) {
-      translateX.value = 0
-      translateY.value = 0
-    }
+function toggleZoom(event: MouseEvent) {
+  if (scale.value > 1) {
+    resetZoom()
+    return
   }
+  setScale(2, { x: event.clientX, y: event.clientY })
 }
 
 function startDrag(e: MouseEvent | TouchEvent) {
   if (scale.value <= 1) return
-
   isDragging.value = true
   const point = 'touches' in e ? e.touches[0] : e
   if (!point) return
@@ -290,19 +400,19 @@ function startDrag(e: MouseEvent | TouchEvent) {
 
   document.addEventListener('mousemove', onDrag)
   document.addEventListener('mouseup', stopDrag)
-  document.addEventListener('touchmove', onDrag)
+  document.addEventListener('touchmove', onDrag, { passive: false })
   document.addEventListener('touchend', stopDrag)
 }
 
 function onDrag(e: MouseEvent | TouchEvent) {
   if (!isDragging.value) return
-
+  if ('preventDefault' in e) {
+    e.preventDefault()
+  }
   const point = 'touches' in e ? e.touches[0] : e
   if (!point) return
-
   const deltaX = point.clientX - dragStart.value.x
   const deltaY = point.clientY - dragStart.value.y
-
   translateX.value = dragStart.value.translateX + deltaX
   translateY.value = dragStart.value.translateY + deltaY
 }
@@ -317,7 +427,6 @@ function stopDrag() {
 
 function handleKeydown(e: KeyboardEvent) {
   if (!props.isOpen) return
-
   switch (e.key) {
     case 'Escape':
       close()
@@ -341,6 +450,59 @@ function handleKeydown(e: KeyboardEvent) {
   }
 }
 
+function showControlsTemporarily() {
+  controlsVisible.value = true
+  clearControlsTimer()
+  controlsTimer = setTimeout(() => {
+    controlsVisible.value = false
+  }, CONTROLS_HIDE_DELAY)
+}
+
+function clearControlsTimer() {
+  if (controlsTimer) {
+    clearTimeout(controlsTimer)
+    controlsTimer = null
+  }
+}
+
+function handleMouseMove() {
+  if (!props.isOpen) return
+  showControlsTemporarily()
+}
+
+function handleTouchStart() {
+  if (!props.isOpen) return
+  showControlsTemporarily()
+}
+
+function downloadCurrent() {
+  if (!currentMedia.value) return
+  const link = document.createElement('a')
+  link.href = fullSizeUrl.value
+  link.download = `media-${currentMedia.value.id}`
+  link.rel = 'noopener'
+  link.click()
+}
+
+function prefetchImage(url: string) {
+  const img = new Image()
+  img.src = url
+}
+
+function prefetchAround(index: number) {
+  if (!props.mediaList.length) return
+  const nextIndex = (index + 1) % props.mediaList.length
+  const prevIndex = (index - 1 + props.mediaList.length) % props.mediaList.length
+  const nextItem = props.mediaList[nextIndex]
+  const prevItem = props.mediaList[prevIndex]
+  if (nextItem?.file_type === 'image') {
+    prefetchImage(getMediaStreamUrl(nextItem.id))
+  }
+  if (prevItem?.file_type === 'image') {
+    prefetchImage(getMediaStreamUrl(prevItem.id))
+  }
+}
+
 onMounted(() => {
   document.addEventListener('keydown', handleKeydown)
 })
@@ -348,158 +510,130 @@ onMounted(() => {
 onUnmounted(() => {
   document.removeEventListener('keydown', handleKeydown)
   document.body.style.overflow = ''
+  clearControlsTimer()
 })
 </script>
 
 <style scoped>
-.lightbox-backdrop {
+.lightbox-overlay {
   position: fixed;
   inset: 0;
   z-index: var(--z-modal);
-  background: rgba(0, 0, 0, 0.95);
+  background: rgba(9, 9, 11, 0.9);
   display: flex;
   align-items: center;
   justify-content: center;
-  /* GPU 加速 */
-  will-change: opacity;
-  transform: translate3d(0, 0, 0);
+  backdrop-filter: blur(10px);
 }
 
-.lightbox-container {
+.lightbox-shell {
   position: relative;
-  width: 100%;
-  height: 100%;
+  width: min(96vw, 1400px);
+  height: min(92vh, 900px);
   display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;
+  border-radius: var(--radius-2xl);
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: var(--shadow-2xl);
+  overflow: hidden;
   outline: none;
 }
 
-.lightbox-close {
-  position: absolute;
-  top: var(--spacing-4);
-  right: var(--spacing-4);
-  z-index: 10;
-  width: 44px;
-  height: 44px;
+.lightbox-header {
   display: flex;
   align-items: center;
-  justify-content: center;
-  background: rgba(255, 255, 255, 0.1);
-  border: none;
-  border-radius: var(--radius-full);
-  color: white;
-  cursor: pointer;
-  transition: background var(--transition-fast);
+  justify-content: space-between;
+  padding: var(--spacing-4) var(--spacing-5);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.35);
 }
 
-.lightbox-close:hover {
-  background: rgba(255, 255, 255, 0.2);
-}
-
-.lightbox-toolbar {
-  position: absolute;
-  top: var(--spacing-4);
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 10;
+.lightbox-title {
   display: flex;
   align-items: center;
-  gap: var(--spacing-2);
-  padding: var(--spacing-2);
-  background: rgba(0, 0, 0, 0.6);
-  border-radius: var(--radius-lg);
-  backdrop-filter: blur(8px);
-}
-
-.toolbar-btn {
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-  border: none;
-  border-radius: var(--radius-md);
-  color: white;
-  cursor: pointer;
-  transition: background var(--transition-fast);
-}
-
-.toolbar-btn:hover {
-  background: rgba(255, 255, 255, 0.15);
-}
-
-.zoom-indicator {
-  min-width: 48px;
-  text-align: center;
-  font-size: var(--text-sm);
+  gap: var(--spacing-3);
   color: rgba(255, 255, 255, 0.8);
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+}
+
+.lightbox-label {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.lightbox-count {
+  padding: 0.25rem 0.6rem;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.12);
   font-variant-numeric: tabular-nums;
 }
 
-.lightbox-nav {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 10;
-  width: 48px;
-  height: 48px;
+.lightbox-header-actions {
   display: flex;
   align-items: center;
-  justify-content: center;
-  background: rgba(255, 255, 255, 0.1);
-  border: none;
+  gap: var(--spacing-2);
+}
+
+.icon-btn {
+  width: 36px;
+  height: 36px;
   border-radius: var(--radius-full);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.08);
   color: white;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: transform var(--transition-fast), background var(--transition-fast);
 }
 
-.lightbox-nav:hover {
-  background: rgba(255, 255, 255, 0.2);
-  transform: translateY(-50%) scale(1.05);
-}
-
-.lightbox-nav.prev {
-  left: var(--spacing-4);
-}
-
-.lightbox-nav.next {
-  right: var(--spacing-4);
+.icon-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+  transform: translateY(-1px);
 }
 
 .lightbox-content {
-  max-width: 100%;
-  max-height: 100%;
+  position: relative;
+  flex: 1;
   overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.media-wrapper {
+.media-stage {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: transform 0.1s ease-out;
   will-change: transform;
+  transition: transform 0.12s ease-out;
 }
 
-.loading-placeholder {
+.media-loading {
   position: absolute;
+  inset: 0;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: white;
+  gap: var(--spacing-3);
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.media-loading-text {
+  font-size: var(--text-sm);
 }
 
 .lightbox-media {
   max-width: 90vw;
-  max-height: 90vh;
+  max-height: 78vh;
   object-fit: contain;
   opacity: 0;
-  transition: opacity 0.3s ease;
+  transition: opacity 0.35s ease;
   user-select: none;
   -webkit-user-drag: none;
 }
@@ -512,27 +646,101 @@ onUnmounted(() => {
   transition: none;
 }
 
-.lightbox-counter {
+.media-error {
+  position: absolute;
+  inset: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-3);
+  padding: var(--spacing-6);
+  color: var(--color-text-primary);
+}
+
+.media-error p {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
+.media-error-actions {
+  display: flex;
+  gap: var(--spacing-2);
+}
+
+.lightbox-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-full);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.4);
+  color: white;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform var(--transition-fast), background var(--transition-fast);
+}
+
+.lightbox-nav:hover {
+  background: rgba(255, 255, 255, 0.12);
+  transform: translateY(-50%) scale(1.05);
+}
+
+.lightbox-nav.prev {
+  left: var(--spacing-4);
+}
+
+.lightbox-nav.next {
+  right: var(--spacing-4);
+}
+
+.lightbox-toolbar {
   position: absolute;
   bottom: var(--spacing-4);
   left: 50%;
   transform: translateX(-50%);
-  padding: var(--spacing-2) var(--spacing-4);
-  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  padding: var(--spacing-2) var(--spacing-3);
   border-radius: var(--radius-full);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(12px);
   color: white;
-  font-size: var(--text-sm);
-  backdrop-filter: blur(8px);
+  transition: opacity var(--transition-fast), transform var(--transition-fast);
 }
 
-/* 过渡动画 */
-.lightbox-enter-active,
-.lightbox-leave-active {
+.lightbox-toolbar.hidden {
+  opacity: 0;
+  transform: translateX(-50%) translateY(10px);
+  pointer-events: none;
+}
+
+.zoom-slider input[type='range'] {
+  width: 120px;
+  accent-color: var(--color-primary);
+}
+
+.zoom-indicator {
+  min-width: 48px;
+  text-align: center;
+  font-size: var(--text-xs);
+  color: rgba(255, 255, 255, 0.7);
+  font-variant-numeric: tabular-nums;
+}
+
+.lightbox-fade-enter-active,
+.lightbox-fade-leave-active {
   transition: opacity 0.25s ease;
 }
 
-.lightbox-enter-from,
-.lightbox-leave-to {
+.lightbox-fade-enter-from,
+.lightbox-fade-leave-to {
   opacity: 0;
 }
 
@@ -540,52 +748,51 @@ onUnmounted(() => {
 .lightbox-slide-left-leave-active,
 .lightbox-slide-right-enter-active,
 .lightbox-slide-right-leave-active {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.3s var(--ease-out);
 }
 
 .lightbox-slide-left-enter-from {
   opacity: 0;
-  transform: translateX(50px) scale(0.95);
+  transform: translateX(24px) scale(0.98);
 }
 
 .lightbox-slide-left-leave-to {
   opacity: 0;
-  transform: translateX(-50px) scale(0.95);
+  transform: translateX(-24px) scale(0.98);
 }
 
 .lightbox-slide-right-enter-from {
   opacity: 0;
-  transform: translateX(-50px) scale(0.95);
+  transform: translateX(-24px) scale(0.98);
 }
 
 .lightbox-slide-right-leave-to {
   opacity: 0;
-  transform: translateX(50px) scale(0.95);
+  transform: translateX(24px) scale(0.98);
 }
 
-/* 移动端适配 */
 @media (max-width: 768px) {
+  .lightbox-shell {
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
+  }
+
   .lightbox-toolbar {
-    top: auto;
-    bottom: calc(var(--spacing-4) + 40px);
-  }
-
-  .lightbox-nav {
-    width: 40px;
-    height: 40px;
-  }
-
-  .lightbox-nav.prev {
-    left: var(--spacing-2);
-  }
-
-  .lightbox-nav.next {
-    right: var(--spacing-2);
+    bottom: var(--spacing-3);
   }
 
   .lightbox-media {
     max-width: 100vw;
-    max-height: 85vh;
+    max-height: 80vh;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lightbox-toolbar,
+  .lightbox-nav,
+  .media-stage {
+    transition: none;
   }
 }
 </style>

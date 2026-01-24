@@ -1,26 +1,41 @@
 <template>
   <section class="stats-section">
     <div class="container">
-      <div class="stats-header">
-        <h2 class="stats-title">
-          <span>{{ $t('stats.title.prefix') }}</span>
-          <span class="stats-title__highlight">{{ $t('stats.title.highlight') }}</span>
-          <span>{{ $t('stats.title.suffix') }}</span>
-        </h2>
-        <p class="stats-subtitle">{{ $t('stats.subtitle') }}</p>
+      <div class="stats-header glass-panel">
+        <div>
+          <h2 class="stats-title">
+            <span>{{ $t('stats.title.prefix') }}</span>
+            <span class="stats-title__highlight">{{ $t('stats.title.highlight') }}</span>
+            <span>{{ $t('stats.title.suffix') }}</span>
+          </h2>
+          <p class="stats-subtitle">{{ $t('stats.subtitle') }}</p>
+        </div>
+        <div class="stats-cta">
+          <span class="cta-label">{{ $t('stats.ctaLabel') }}</span>
+          <span class="cta-dot" />
+        </div>
       </div>
 
       <div class="stats-grid">
         <div
           v-for="platform in platforms"
           :key="platform.key"
-          class="platform-card"
+          class="platform-card glass-card"
           :class="`platform-card--${platform.key}`"
         >
           <div class="platform-card__icon">
             <component :is="platform.icon" :size="20" :stroke-width="2" />
           </div>
-          <span class="platform-card__label">{{ $t(platform.labelKey) }}</span>
+          <div class="platform-card__body">
+            <span class="platform-card__label">{{ $t(platform.labelKey) }}</span>
+            <span class="platform-card__value">{{ platform.value }}</span>
+          </div>
+          <div
+            class="platform-card__trend"
+            :class="{ up: platform.trend === 'up', down: platform.trend === 'down' }"
+          >
+            <span>{{ platform.trend === 'up' ? '+' : '-' }}{{ platform.trendValue }}%</span>
+          </div>
         </div>
       </div>
     </div>
@@ -35,21 +50,33 @@ const platforms = [
     key: 'tiktok',
     icon: Music2,
     labelKey: 'stats.tiktok',
+    value: '128k',
+    trend: 'up',
+    trendValue: 12.4,
   },
   {
     key: 'youtube',
     icon: Youtube,
     labelKey: 'stats.youtube',
+    value: '64k',
+    trend: 'up',
+    trendValue: 6.8,
   },
   {
     key: 'instagram',
     icon: Instagram,
     labelKey: 'stats.instagram',
+    value: '92k',
+    trend: 'up',
+    trendValue: 9.2,
   },
   {
     key: 'twitter',
     icon: Twitter,
     labelKey: 'stats.twitter',
+    value: '45k',
+    trend: 'down',
+    trendValue: 2.1,
   },
 ]
 </script>
@@ -57,11 +84,17 @@ const platforms = [
 <style scoped>
 .stats-section {
   padding: var(--spacing-16) 0;
+  position: relative;
 }
 
 .stats-header {
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-6);
   margin-bottom: var(--spacing-10);
+  padding: var(--spacing-6) var(--spacing-8);
+  border-radius: var(--radius-2xl);
 }
 
 .stats-title {
@@ -80,7 +113,34 @@ const platforms = [
   font-size: var(--text-base);
   color: var(--color-text-secondary);
   max-width: 480px;
-  margin: 0 auto;
+  margin: 0;
+}
+
+.glass-panel {
+  background: var(--glass-bg-strong);
+  border: 1px solid var(--glass-border-strong);
+  box-shadow: var(--glass-shadow);
+  backdrop-filter: var(--glass-blur-strong);
+}
+
+.stats-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  padding: var(--spacing-2) var(--spacing-4);
+  border-radius: var(--radius-full);
+  background: rgba(var(--color-success-rgb), 0.12);
+  color: var(--color-success);
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+}
+
+.cta-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 10px rgba(var(--color-success-rgb), 0.6);
 }
 
 .stats-grid {
@@ -92,18 +152,16 @@ const platforms = [
 .platform-card {
   display: flex;
   align-items: center;
-  gap: var(--spacing-3);
+  justify-content: space-between;
+  gap: var(--spacing-4);
   padding: var(--spacing-4) var(--spacing-5);
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
   border-radius: var(--radius-xl);
-  transition:
-    border-color 0.15s ease,
-    transform 0.15s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .platform-card:hover {
   transform: translateY(-2px);
+  box-shadow: var(--glass-shadow-lg);
 }
 
 .platform-card__icon {
@@ -116,10 +174,37 @@ const platforms = [
   flex-shrink: 0;
 }
 
+.platform-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-1);
+  flex: 1;
+}
+
 .platform-card__label {
   font-size: var(--text-sm);
   font-weight: var(--font-medium);
   color: var(--color-text-primary);
+}
+
+.platform-card__value {
+  font-size: var(--text-lg);
+  font-weight: var(--font-semibold);
+  color: var(--color-text-primary);
+}
+
+.platform-card__trend {
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
+  padding: 0.3rem 0.6rem;
+  border-radius: var(--radius-full);
+  background: rgba(var(--color-error-rgb), 0.12);
+  color: var(--color-error);
+}
+
+.platform-card__trend.up {
+  background: rgba(var(--color-success-rgb), 0.12);
+  color: var(--color-success);
 }
 
 /* 平台颜色 */
@@ -182,6 +267,11 @@ const platforms = [
 @media (max-width: 1024px) {
   .stats-grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  .stats-header {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }
 
