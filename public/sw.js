@@ -1,7 +1,8 @@
 /**
  * Service Worker - 三层缓存策略
- * 版本: 3.1.0
- * 更新: 优化帖子详情缓存键标准化，忽略查询参数差异
+ * 版本: 3.2.0
+ * 更新: 强制清除旧缓存以应用新的 CSP 策略
+ *       优化帖子详情缓存键标准化，忽略查询参数差异
  *       使用 Stale-While-Revalidate 策略
  *       确保完整帖子数据（含 media_files）可离线访问
  *       优化域名配置，支持多环境部署
@@ -16,7 +17,7 @@ if (!AbortSignal.timeout) {
   }
 }
 
-const CACHE_VERSION = 'v3'
+const CACHE_VERSION = 'v4'
 const CACHE_NAMES = {
   static: `hmrchan-static-${CACHE_VERSION}`,
   api: `hmrchan-api-${CACHE_VERSION}`,
