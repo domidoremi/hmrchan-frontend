@@ -47,14 +47,52 @@ function loadTurnstileScript(): Promise<void> {
       return
     }
 
-    const existingScript = document.querySelector('script[src*="turnstile"]')
+    const waitForTurnstile = (timeoutMs = 2000) => {
+      const start = Date.now()
+      const check = () => {
+        if (window.turnstile) {
+          resolve()
+          return
+        }
+        if (Date.now() - start >= timeoutMs) {
+          reject(new Error('Turnstile script loaded but API is unavailable'))
+          return
+        }
+        requestAnimationFrame(check)
+      }
+      requestAnimationFrame(check)
+    }
+
+    const existingScript = document.querySelector(
+      'script[src*="challenges.cloudflare.com/turnstile/v0/api.js"]'
+    )
     if (existingScript) {
-      window.onTurnstileLoad = () => resolve()
+      if (window.turnstile) {
+        resolve()
+        return
+      }
+      if ((existingScript as HTMLScriptElement).readyState === 'complete') {
+        waitForTurnstile()
+        return
+      }
+      const handleLoad = () => {
+        existingScript.removeEventListener('load', handleLoad)
+        existingScript.removeEventListener('error', handleError)
+        waitForTurnstile()
+      }
+      const handleError = () => {
+        existingScript.removeEventListener('load', handleLoad)
+        existingScript.removeEventListener('error', handleError)
+        reject(new Error('Failed to load Turnstile script'))
+      }
+      existingScript.addEventListener('load', handleLoad, { once: true })
+      existingScript.addEventListener('error', handleError, { once: true })
       return
     }
 
     const script = document.createElement('script')
-    script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onTurnstileLoad'
+    script.src =
+      'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=onTurnstileLoad'
     script.async = true
     script.defer = true
 
@@ -78,6 +116,7 @@ function renderWidget() {
     size: props.size,
     action: props.action,
     appearance: props.appearance,
+    cData: props.action ?? 'auth',
     callback: (token: string) => emit('verify', token),
     'expired-callback': () => emit('expire'),
     'error-callback': (error: Error) => emit('error', error),
