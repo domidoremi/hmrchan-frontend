@@ -63,6 +63,15 @@
                   <span class="spinner spinner-lg" />
                   <span class="media-loading-text">{{ $t('common.loading') }}</span>
                 </div>
+                <div
+                  class="media-hint"
+                  :class="{ 'is-visible': showHints }"
+                  aria-hidden="true"
+                >
+                  <span>{{ $t('media.zoomHint') }}</span>
+                  <span class="media-dot" />
+                  <span>{{ $t('media.dragHint') }}</span>
+                </div>
 
                 <div v-if="hasError" class="media-error glass-card">
                   <AlertTriangle :size="28" />
@@ -160,6 +169,9 @@
             </button>
             <span class="zoom-indicator">{{ Math.round(scale * 100) }}%</span>
           </div>
+          <div class="lightbox-footer" :class="{ hidden: !controlsVisible }" aria-hidden="true">
+            <span>{{ $t('media.shortcutHint') }}</span>
+          </div>
         </div>
       </div>
     </Transition>
@@ -231,6 +243,7 @@ const isLoaded = ref(false)
 const hasError = ref(false)
 const imageReloadToken = ref(0)
 const controlsVisible = ref(true)
+const showHints = ref(true)
 const transitionName = ref('lightbox-slide-left')
 
 const scale = ref(1)
@@ -275,6 +288,7 @@ watch(
       nextTick(() => {
         containerRef.value?.focus()
         showControlsTemporarily()
+        startHintsTimer()
       })
       prefetchAround(currentIndex.value)
     } else {
@@ -299,6 +313,7 @@ watch(currentIndex, (idx) => {
   imageReloadToken.value += 1
   resetZoom()
   prefetchAround(idx)
+  startHintsTimer()
 })
 
 function close() {
@@ -477,6 +492,13 @@ function handleTouchStart() {
   showControlsTemporarily()
 }
 
+function startHintsTimer() {
+  showHints.value = true
+  window.setTimeout(() => {
+    showHints.value = false
+  }, 2200)
+}
+
 function downloadCurrent() {
   if (!currentMedia.value) return
   const link = document.createElement('a')
@@ -632,6 +654,36 @@ onUnmounted(() => {
   font-size: var(--text-sm);
 }
 
+.media-hint {
+  position: absolute;
+  bottom: var(--spacing-4);
+  left: 50%;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  padding: 0.4rem 0.9rem;
+  border-radius: var(--radius-full);
+  background: rgba(0, 0, 0, 0.6);
+  color: rgba(255, 255, 255, 0.8);
+  font-size: var(--text-xs);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  opacity: 0;
+  transition: opacity var(--transition-fast), transform var(--transition-fast);
+  pointer-events: none;
+}
+
+.media-hint.is-visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(-4px);
+}
+
+.media-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.6);
+}
 .lightbox-media {
   max-width: 90vw;
   max-height: 78vh;
@@ -729,6 +781,21 @@ onUnmounted(() => {
   pointer-events: none;
 }
 
+.lightbox-footer {
+  position: absolute;
+  bottom: var(--spacing-2);
+  right: var(--spacing-4);
+  font-size: var(--text-xs);
+  color: rgba(255, 255, 255, 0.6);
+  opacity: 1;
+  transition: opacity var(--transition-fast), transform var(--transition-fast);
+}
+
+.lightbox-footer.hidden {
+  opacity: 0;
+  transform: translateY(6px);
+  pointer-events: none;
+}
 .zoom-slider input[type='range'] {
   width: 120px;
   accent-color: var(--color-primary);

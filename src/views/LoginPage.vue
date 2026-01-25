@@ -1,6 +1,10 @@
 <template>
   <div class="auth-page">
     <div class="auth-card glass-card">
+      <div class="auth-badge">
+        <span class="auth-badge-dot" />
+        <span>{{ $t('auth.secureBadge') }}</span>
+      </div>
       <div class="auth-header">
         <button
           type="button"
@@ -14,6 +18,7 @@
 
       <h1 class="auth-title">{{ $t('auth.loginTitle') }}</h1>
       <p class="auth-subtitle">{{ $t('auth.loginSubtitle') }}</p>
+      <p class="auth-helper">{{ $t('auth.loginHint') }}</p>
 
       <form class="auth-form" @submit.prevent="handleLogin">
         <div class="form-group">
@@ -51,15 +56,20 @@
           </div>
         </div>
 
-        <TurnstileWidget
-          v-if="turnstileEnabled"
-          ref="turnstileRef"
-          :site-key="turnstileSiteKey"
-          action="login"
-          @verify="handleTurnstileVerify"
-          @expire="handleTurnstileExpire"
-          @error="handleTurnstileError"
-        />
+        <div v-if="turnstileEnabled" class="turnstile-block">
+          <div class="turnstile-header">
+            <span class="turnstile-title">{{ $t('auth.verifyTitle') }}</span>
+            <span class="turnstile-hint">{{ $t('auth.verifyHint') }}</span>
+          </div>
+          <TurnstileWidget
+            ref="turnstileRef"
+            :site-key="turnstileSiteKey"
+            action="login"
+            @verify="handleTurnstileVerify"
+            @expire="handleTurnstileExpire"
+            @error="handleTurnstileError"
+          />
+        </div>
 
         <Button
           type="submit"
@@ -203,6 +213,10 @@ function handleTurnstileError() {
   width: 100%;
   max-width: 380px;
   padding: var(--spacing-5);
+  border: 1px solid rgba(var(--color-border-rgb), 0.6);
+  box-shadow:
+    0 16px 40px -24px rgba(15, 23, 42, 0.4),
+    0 6px 20px -12px rgba(15, 23, 42, 0.35);
 }
 
 @media (min-width: 640px) {
@@ -216,6 +230,29 @@ function handleTurnstileError() {
   align-items: center;
   justify-content: flex-start;
   margin-bottom: var(--spacing-2);
+}
+
+.auth-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  padding: 0.35rem 0.75rem;
+  border-radius: var(--radius-full);
+  background: rgba(var(--color-primary-rgb), 0.12);
+  color: var(--color-text-primary);
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  width: fit-content;
+  margin-bottom: var(--spacing-3);
+  border: 1px solid rgba(var(--color-primary-rgb), 0.2);
+}
+
+.auth-badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: var(--color-primary);
+  box-shadow: 0 0 8px rgba(var(--color-primary-rgb), 0.6);
 }
 
 .back-btn {
@@ -240,6 +277,14 @@ function handleTurnstileError() {
   color: var(--color-text-tertiary);
   margin-bottom: var(--spacing-4);
   font-size: var(--text-sm);
+}
+
+.auth-helper {
+  text-align: center;
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+  margin-top: calc(var(--spacing-4) * -1 + var(--spacing-2));
+  margin-bottom: var(--spacing-4);
 }
 
 .auth-form {
@@ -287,6 +332,34 @@ function handleTurnstileError() {
   color: var(--color-text-secondary);
 }
 
+.turnstile-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+  padding: var(--spacing-3);
+  border-radius: var(--radius-lg);
+  background: rgba(var(--color-surface-rgb), 0.6);
+  border: 1px solid rgba(var(--color-border-rgb), 0.6);
+}
+
+.turnstile-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-2);
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+}
+
+.turnstile-title {
+  font-weight: var(--font-semibold);
+  color: var(--color-text-secondary);
+}
+
+.turnstile-hint {
+  font-variant-numeric: tabular-nums;
+}
+
 .auth-footer {
   text-align: center;
   margin-top: var(--spacing-4);
@@ -297,5 +370,9 @@ function handleTurnstileError() {
 .auth-footer a {
   color: var(--color-primary);
   font-weight: var(--font-medium);
+}
+
+.auth-footer a:hover {
+  text-decoration: underline;
 }
 </style>

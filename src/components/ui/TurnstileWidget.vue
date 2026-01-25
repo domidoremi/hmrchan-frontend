@@ -36,7 +36,7 @@ declare global {
       remove: (widgetId: string) => void
       getResponse: (widgetId: string) => string | undefined
     }
-    onTurnstileLoad?: () => void
+  onTurnstileLoad?: () => void
   }
 }
 
@@ -91,12 +91,12 @@ function loadTurnstileScript(): Promise<void> {
     }
 
     const script = document.createElement('script')
-    script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onTurnstileLoad'
+    script.src =
+      'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=onTurnstileLoad'
     script.async = true
     script.defer = true
 
     window.onTurnstileLoad = () => {
-      console.log('[Turnstile] Script loaded via callback')
       waitForTurnstile()
     }
     script.onerror = () => reject(new Error('Failed to load Turnstile script'))

@@ -6,6 +6,7 @@
     tabindex="0"
     role="group"
     :aria-label="$t('video.player')"
+    @mousemove="handleMouseMove"
   >
     <video
       ref="videoRef"
@@ -175,6 +176,13 @@
       <!-- 底部渐变 -->
       <div class="controls-gradient controls-gradient--bottom" />
     </div>
+    <div
+      class="controls-hint"
+      :class="{ 'is-visible': showControls && !isPlaying && showControlHints }"
+      aria-hidden="true"
+    >
+      {{ $t('video.keyboardHint') }}
+    </div>
 
     <!-- 中央播放按钮 -->
     <button
@@ -241,6 +249,7 @@ const playbackRate = ref(1)
 const currentQuality = ref('auto')
 const isFullscreen = ref(false)
 const showControls = ref(false)
+const showControlHints = ref(true)
 const showSettings = ref(false)
 const bufferedPercent = ref(0)
 const isSeeking = ref(false)
@@ -497,21 +506,26 @@ const handleClickOutside = (event: MouseEvent) => {
 }
 
 onMounted(() => {
-  // Use local event listeners instead of global document listeners
-  playerElement.value?.addEventListener('mousemove', handleMouseMove)
+  startHintTimer()
   document.addEventListener('keydown', handleKeydown)
   document.addEventListener('fullscreenchange', handleFullscreenChange)
   document.addEventListener('click', handleClickOutside)
 })
 
 onBeforeUnmount(() => {
-  playerElement.value?.removeEventListener('mousemove', handleMouseMove)
   document.removeEventListener('keydown', handleKeydown)
   document.removeEventListener('fullscreenchange', handleFullscreenChange)
   document.removeEventListener('click', handleClickOutside)
   stopControlsTimer()
   stopSeekDrag()
 })
+
+function startHintTimer() {
+  showControlHints.value = true
+  window.setTimeout(() => {
+    showControlHints.value = false
+  }, 2600)
+}
 </script>
 
 <style scoped>
@@ -589,6 +603,26 @@ onBeforeUnmount(() => {
 .controls-gradient--bottom {
   bottom: 0;
   background: linear-gradient(0deg, rgba(0, 0, 0, 0.8) 0%, transparent 100%);
+}
+
+.controls-hint {
+  position: absolute;
+  bottom: 16px;
+  left: 16px;
+  padding: 0.4rem 0.75rem;
+  border-radius: var(--radius-full);
+  background: rgba(0, 0, 0, 0.55);
+  color: rgba(255, 255, 255, 0.7);
+  font-size: var(--text-xs);
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity var(--transition-fast), transform var(--transition-fast);
+  pointer-events: none;
+}
+
+.controls-hint.is-visible {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 /* 底部控制区 */

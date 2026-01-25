@@ -115,6 +115,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onUnmounted, type Component } from 'vue'
+import { useI18n } from 'vue-i18n'
 import {
   ArrowUpRight,
   Calendar,
@@ -193,6 +194,8 @@ const emit = defineEmits<{
   click: [postId: string, thumbnailSrc: string | null]
   'height-change': []
 }>()
+
+const { t } = useI18n()
 
 const cardRef = ref<HTMLElement | null>(null)
 const isImageLoaded = ref(false)
@@ -380,13 +383,13 @@ function formatPublishedTime(dateStr: string): string {
   const diffHour = Math.floor(diffMin / 60)
   const diffDay = Math.floor(diffHour / 24)
 
-  if (diffSec < 60) return '刚刚'
-  if (diffMin < 60) return `${diffMin}分钟前`
-  if (diffHour < 24) return `${diffHour}小时前`
-  if (diffDay < 7) return `${diffDay}天前`
-  if (diffDay < 30) return `${Math.floor(diffDay / 7)}周前`
-  if (diffDay < 365) return `${Math.floor(diffDay / 30)}个月前`
-  return `${Math.floor(diffDay / 365)}年前`
+  if (diffSec < 60) return t('common.justNow')
+  if (diffMin < 60) return t('common.minutesAgo', { n: diffMin })
+  if (diffHour < 24) return t('common.hoursAgo', { n: diffHour })
+  if (diffDay < 7) return t('common.daysAgo', { n: diffDay })
+  if (diffDay < 30) return t('common.weeksAgo', { n: Math.floor(diffDay / 7) })
+  if (diffDay < 365) return t('common.monthsAgo', { n: Math.floor(diffDay / 30) })
+  return t('common.yearsAgo', { n: Math.floor(diffDay / 365) })
 }
 
 /**
