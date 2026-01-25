@@ -17,7 +17,7 @@ export interface SwUpdateOptions {
 /**
  * 初始化 Service Worker 更新检测
  */
-export function initSwUpdateChecker(options: SwUpdateOptions = {}) {
+export function initSwUpdateChecker(options: SwUpdateOptions = {}): void {
   const {
     checkInterval = 30 * 60 * 1000, // 30 分钟
     autoRefresh = false,
@@ -59,13 +59,28 @@ export function initSwUpdateChecker(options: SwUpdateOptions = {}) {
 /**
  * 检查 Service Worker 更新
  */
-async function checkForUpdates() {
+async function checkForUpdates(): Promise<void> {
   try {
     const registration = await navigator.serviceWorker.getRegistration()
     if (!registration) return
 
+    // 检查 registration 状态是否有效
+    if (!registration.active && !registration.installing && !registration.waiting) {
+      console.warn('[SW Update] Invalid registration state, skipping update check')
+      return
+    }
+
     // 手动触发更新检查
-    await registration.update()
+    try {
+      await registration.update()
+    } catch (error) {
+      // 忽略 InvalidStateError，这通常发生在 SW 正在更新时
+      if (isInvalidStateError(error)) {
+        console.log('[SW Update] Update already in progress')
+        return
+      }
+      throw error
+    }
 
     // 如果有等待中的 SW，提示用户
     if (registration.waiting) {
@@ -78,9 +93,16 @@ async function checkForUpdates() {
 }
 
 /**
+ * Type guard for InvalidStateError
+ */
+function isInvalidStateError(error: unknown): boolean {
+  return error instanceof DOMException && error.name === 'InvalidStateError'
+}
+
+/**
  * 显示更新提示
  */
-function showUpdateToast() {
+function showUpdateToast(): void {
   const toastStore = useToastStore()
 
   // Toast store doesn't support action buttons, use long duration instead
@@ -101,7 +123,7 @@ function showUpdateToast() {
 /**
  * 强制清除所有缓存（调试用）
  */
-export async function clearAllCaches() {
+export async function clearAllCaches(): Promise<boolean> {
   try {
     const cacheNames = await caches.keys()
     await Promise.all(cacheNames.map((name) => caches.delete(name)))
@@ -116,7 +138,7 @@ export async function clearAllCaches() {
 /**
  * 注销 Service Worker（调试用）
  */
-export async function unregisterServiceWorker() {
+export async function unregisterServiceWorker(): Promise<boolean> {
   try {
     const registration = await navigator.serviceWorker.getRegistration()
     if (registration) {

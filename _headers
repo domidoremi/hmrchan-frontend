@@ -22,6 +22,9 @@
   Permissions-Policy: camera=(), microphone=(), geolocation=(), fullscreen=(self), payment=()
   
   # 内容安全策略（安全优化版）
+  # 注意：Cloudflare Pages 的 _headers 文件有时会被忽略
+  # 如果此配置未生效，需要在 Cloudflare Dashboard 中手动配置 Transform Rules
+  # 
   # default-src: 默认只允许同源
   # script-src: 允许自身脚本 + Cloudflare 服务（通过域名白名单，不使用 unsafe-inline）
   # style-src: 允许自身样式 + 内联样式（Vue 单文件组件需要）
