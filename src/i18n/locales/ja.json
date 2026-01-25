@@ -119,6 +119,7 @@
   },
   "settings": {
     "title": "設定",
+    "links": "リンク",
     "theme": "テーマ",
     "light": "ライト",
     "dark": "ダーク",
