@@ -36,7 +36,7 @@ declare global {
       remove: (widgetId: string) => void
       getResponse: (widgetId: string) => string | undefined
     }
-  onTurnstileLoad?: () => void
+    onTurnstileLoad?: () => void
   }
 }
 
