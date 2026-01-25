@@ -63,11 +63,7 @@
                   <span class="spinner spinner-lg" />
                   <span class="media-loading-text">{{ $t('common.loading') }}</span>
                 </div>
-                <div
-                  class="media-hint"
-                  :class="{ 'is-visible': showHints }"
-                  aria-hidden="true"
-                >
+                <div class="media-hint" :class="{ 'is-visible': showHints }" aria-hidden="true">
                   <span>{{ $t('media.zoomHint') }}</span>
                   <span class="media-dot" />
                   <span>{{ $t('media.dragHint') }}</span>
@@ -669,7 +665,9 @@ onUnmounted(() => {
   font-size: var(--text-xs);
   border: 1px solid rgba(255, 255, 255, 0.12);
   opacity: 0;
-  transition: opacity var(--transition-fast), transform var(--transition-fast);
+  transition:
+    opacity var(--transition-fast),
+    transform var(--transition-fast);
   pointer-events: none;
 }
 
@@ -788,7 +786,9 @@ onUnmounted(() => {
   font-size: var(--text-xs);
   color: rgba(255, 255, 255, 0.6);
   opacity: 1;
-  transition: opacity var(--transition-fast), transform var(--transition-fast);
+  transition:
+    opacity var(--transition-fast),
+    transform var(--transition-fast);
 }
 
 .lightbox-footer.hidden {

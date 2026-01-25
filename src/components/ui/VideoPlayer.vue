@@ -616,7 +616,9 @@ function startHintTimer() {
   font-size: var(--text-xs);
   opacity: 0;
   transform: translateY(6px);
-  transition: opacity var(--transition-fast), transform var(--transition-fast);
+  transition:
+    opacity var(--transition-fast),
+    transform var(--transition-fast);
   pointer-events: none;
 }
 
