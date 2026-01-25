@@ -105,57 +105,88 @@ function loadTurnstileScript(): Promise<void> {
   })
 }
 
-function renderWidget() {
+// Constants
+const LOG_PREFIX = '[Turnstile]'
+const SITE_KEY_PREVIEW_LENGTH = 10
+
+// Helper functions
+function maskSiteKey(key: string): string {
+  return key.length > SITE_KEY_PREVIEW_LENGTH
+    ? `${key.substring(0, SITE_KEY_PREVIEW_LENGTH)}...`
+    : key
+}
+
+function validateRenderConditions(): boolean {
   if (!containerRef.value || !window.turnstile) {
-    console.warn('[Turnstile] Cannot render: missing container or API')
-    return
+    console.warn(`${LOG_PREFIX} Cannot render: missing container or API`)
+    return false
   }
 
   if (!props.siteKey) {
-    console.error('[Turnstile] Cannot render: missing siteKey')
+    console.error(`${LOG_PREFIX} Cannot render: missing siteKey`)
     emit('error', new Error('Turnstile siteKey is required'))
-    return
+    return false
   }
 
-  // 清理旧的 widget
-  if (widgetId.value) {
-    try {
-      window.turnstile.remove(widgetId.value)
-    } catch (e) {
-      console.warn('[Turnstile] Failed to remove old widget:', e)
-    }
-    widgetId.value = null
-  }
+  return true
+}
 
-  // 确保容器为空
-  containerRef.value.innerHTML = ''
+function cleanupWidget(): void {
+  if (!widgetId.value || !window.turnstile) return
 
   try {
-    console.log('[Turnstile] Rendering widget with siteKey:', props.siteKey.substring(0, 10) + '...')
+    window.turnstile.remove(widgetId.value)
+    console.log(`${LOG_PREFIX} Widget removed:`, widgetId.value)
+  } catch (e) {
+    console.warn(`${LOG_PREFIX} Failed to remove old widget:`, e)
+  } finally {
+    widgetId.value = null
+  }
+}
 
-    widgetId.value = window.turnstile.render(containerRef.value, {
-      sitekey: props.siteKey,
-      theme: props.theme,
-      size: props.size,
-      action: props.action,
-      appearance: props.appearance,
-      callback: (token: string) => {
-        console.log('[Turnstile] Verification successful')
-        emit('verify', token)
-      },
-      'expired-callback': () => {
-        console.log('[Turnstile] Token expired')
-        emit('expire')
-      },
-      'error-callback': (errorCode: string) => {
-        console.error('[Turnstile] Error:', errorCode)
-        emit('error', new Error(`Turnstile error: ${errorCode}`))
-      },
-    })
+function createTurnstileConfig() {
+  return {
+    sitekey: props.siteKey,
+    theme: props.theme,
+    size: props.size,
+    action: props.action,
+    appearance: props.appearance,
+    callback: (token: string) => {
+      console.log(`${LOG_PREFIX} Verification successful`)
+      emit('verify', token)
+    },
+    'expired-callback': () => {
+      console.log(`${LOG_PREFIX} Token expired`)
+      emit('expire')
+    },
+    'error-callback': (errorCode: unknown) => {
+      console.error(`${LOG_PREFIX} Error:`, errorCode)
+      const message =
+        typeof errorCode === 'string' ? `Turnstile error: ${errorCode}` : 'Turnstile error occurred'
+      emit('error', new Error(message))
+    },
+  }
+}
 
-    console.log('[Turnstile] Widget rendered with ID:', widgetId.value)
+function renderWidget() {
+  if (!validateRenderConditions()) return
+
+  cleanupWidget()
+
+  // Clear container only if needed
+  if (containerRef.value!.innerHTML) {
+    containerRef.value!.innerHTML = ''
+  }
+
+  try {
+    console.log(`${LOG_PREFIX} Rendering widget with siteKey:`, maskSiteKey(props.siteKey))
+
+    widgetId.value = window.turnstile!.render(containerRef.value!, createTurnstileConfig())
+
+    console.log(`${LOG_PREFIX} Widget rendered with ID:`, widgetId.value)
   } catch (error) {
-    console.error('[Turnstile] Render failed:', error)
+    console.error(`${LOG_PREFIX} Render failed:`, error)
+    widgetId.value = null // Ensure clean state on error
     emit('error', error as Error)
   }
 }
@@ -163,6 +194,7 @@ function renderWidget() {
 function reset() {
   if (widgetId.value && window.turnstile) {
     window.turnstile.reset(widgetId.value)
+    console.log(`${LOG_PREFIX} Widget reset`)
   }
 }
 
@@ -175,24 +207,22 @@ function getResponse(): string | undefined {
 
 onMounted(async () => {
   try {
-    console.log('[Turnstile] Component mounted, loading script...')
+    console.log(`${LOG_PREFIX} Component mounted, loading script...`)
     await loadTurnstileScript()
-    console.log('[Turnstile] Script loaded, rendering widget...')
+    console.log(`${LOG_PREFIX} Script loaded, rendering widget...`)
 
     // 等待下一个 tick 确保 DOM 完全准备好
     await new Promise((resolve) => setTimeout(resolve, 100))
 
     renderWidget()
   } catch (error) {
-    console.error('[Turnstile] Mount failed:', error)
+    console.error(`${LOG_PREFIX} Mount failed:`, error)
     emit('error', error as Error)
   }
 })
 
 onUnmounted(() => {
-  if (widgetId.value && window.turnstile) {
-    window.turnstile.remove(widgetId.value)
-  }
+  cleanupWidget()
 })
 
 watch(
