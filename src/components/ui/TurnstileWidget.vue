@@ -91,12 +91,14 @@ function loadTurnstileScript(): Promise<void> {
     }
 
     const script = document.createElement('script')
-    script.src =
-      'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=onTurnstileLoad'
+    script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onTurnstileLoad'
     script.async = true
     script.defer = true
 
-    window.onTurnstileLoad = () => resolve()
+    window.onTurnstileLoad = () => {
+      console.log('[Turnstile] Script loaded via callback')
+      waitForTurnstile()
+    }
     script.onerror = () => reject(new Error('Failed to load Turnstile script'))
 
     document.head.appendChild(script)
@@ -104,23 +106,58 @@ function loadTurnstileScript(): Promise<void> {
 }
 
 function renderWidget() {
-  if (!containerRef.value || !window.turnstile) return
-
-  if (widgetId.value) {
-    window.turnstile.remove(widgetId.value)
+  if (!containerRef.value || !window.turnstile) {
+    console.warn('[Turnstile] Cannot render: missing container or API')
+    return
   }
 
-  widgetId.value = window.turnstile.render(containerRef.value, {
-    sitekey: props.siteKey,
-    theme: props.theme,
-    size: props.size,
-    action: props.action,
-    appearance: props.appearance,
-    cData: props.action ?? 'auth',
-    callback: (token: string) => emit('verify', token),
-    'expired-callback': () => emit('expire'),
-    'error-callback': (error: Error) => emit('error', error),
-  })
+  if (!props.siteKey) {
+    console.error('[Turnstile] Cannot render: missing siteKey')
+    emit('error', new Error('Turnstile siteKey is required'))
+    return
+  }
+
+  // 清理旧的 widget
+  if (widgetId.value) {
+    try {
+      window.turnstile.remove(widgetId.value)
+    } catch (e) {
+      console.warn('[Turnstile] Failed to remove old widget:', e)
+    }
+    widgetId.value = null
+  }
+
+  // 确保容器为空
+  containerRef.value.innerHTML = ''
+
+  try {
+    console.log('[Turnstile] Rendering widget with siteKey:', props.siteKey.substring(0, 10) + '...')
+
+    widgetId.value = window.turnstile.render(containerRef.value, {
+      sitekey: props.siteKey,
+      theme: props.theme,
+      size: props.size,
+      action: props.action,
+      appearance: props.appearance,
+      callback: (token: string) => {
+        console.log('[Turnstile] Verification successful')
+        emit('verify', token)
+      },
+      'expired-callback': () => {
+        console.log('[Turnstile] Token expired')
+        emit('expire')
+      },
+      'error-callback': (errorCode: string) => {
+        console.error('[Turnstile] Error:', errorCode)
+        emit('error', new Error(`Turnstile error: ${errorCode}`))
+      },
+    })
+
+    console.log('[Turnstile] Widget rendered with ID:', widgetId.value)
+  } catch (error) {
+    console.error('[Turnstile] Render failed:', error)
+    emit('error', error as Error)
+  }
 }
 
 function reset() {
@@ -138,9 +175,16 @@ function getResponse(): string | undefined {
 
 onMounted(async () => {
   try {
+    console.log('[Turnstile] Component mounted, loading script...')
     await loadTurnstileScript()
+    console.log('[Turnstile] Script loaded, rendering widget...')
+
+    // 等待下一个 tick 确保 DOM 完全准备好
+    await new Promise((resolve) => setTimeout(resolve, 100))
+
     renderWidget()
   } catch (error) {
+    console.error('[Turnstile] Mount failed:', error)
     emit('error', error as Error)
   }
 })
