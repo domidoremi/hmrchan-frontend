@@ -16,6 +16,7 @@
       :alt="alt"
       :loading="loadingStrategy"
       :decoding="decoding"
+      :fetchpriority="fetchPriority"
       @load="onFullLoad"
       @error="onFullError"
     />
@@ -51,6 +52,7 @@ export interface ProgressiveImageProps {
   loading?: 'lazy' | 'eager'
   decoding?: 'async' | 'sync' | 'auto'
   errorLabel?: string
+  priority?: boolean
 }
 
 const props = withDefaults(defineProps<ProgressiveImageProps>(), {
@@ -61,6 +63,7 @@ const props = withDefaults(defineProps<ProgressiveImageProps>(), {
   loading: 'lazy',
   decoding: 'async',
   errorLabel: '',
+  priority: false,
 })
 
 const emit = defineEmits<{
@@ -94,6 +97,7 @@ const containerStyle = computed(() => {
 const loadingStrategy = computed(() => props.loading)
 const decoding = computed(() => props.decoding)
 const errorLabel = computed(() => props.errorLabel || t('common.imageLoadFailed'))
+const fetchPriority = computed(() => (props.priority ? 'high' : 'auto'))
 
 function onFullLoad() {
   isFullLoaded.value = true
@@ -139,6 +143,7 @@ function retry() {
   overflow: hidden;
   background: var(--glass-bg-light);
   border-radius: var(--radius-lg);
+  border: 1px solid rgba(var(--color-border-rgb), 0.6);
 }
 
 /* 有宽高比时使用 padding-top 技巧 */
@@ -186,7 +191,8 @@ function retry() {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.1);
+  background: rgba(15, 23, 42, 0.2);
+  backdrop-filter: blur(6px);
 }
 
 .progressive-image__error {
@@ -199,6 +205,9 @@ function retry() {
   gap: var(--spacing-2);
   font-size: var(--text-sm);
   color: var(--color-text-secondary);
+  background: rgba(var(--color-surface-rgb), 0.6);
+  backdrop-filter: blur(6px);
+  border-radius: inherit;
 }
 
 .retry-btn {
@@ -207,7 +216,7 @@ function retry() {
   gap: var(--spacing-1);
   padding: 0.35rem 0.75rem;
   border-radius: var(--radius-full);
-  border: 1px solid var(--color-border);
+  border: 1px solid rgba(var(--color-border-rgb), 0.8);
   background: transparent;
   color: var(--color-text-secondary);
   cursor: pointer;

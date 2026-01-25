@@ -48,6 +48,9 @@
     "minutesAgo": "{n} 分前",
     "hoursAgo": "{n} 時間前",
     "daysAgo": "{n} 日前",
+    "weeksAgo": "{n} 週間前",
+    "monthsAgo": "{n} か月前",
+    "yearsAgo": "{n} 年前",
     "today": "今日",
     "yesterday": "昨日",
     "more": "その他",
@@ -64,7 +67,8 @@
     "scrollToLoad": "スクロールしてさらに読み込む",
     "loadingFailed": "読み込みに失敗しました",
     "imageLoadFailed": "画像の読み込みに失敗しました",
-    "reset": "リセット"
+    "reset": "リセット",
+    "refresh": "更新"
   },
   "auth": {
     "email": "メールアドレス",
@@ -102,7 +106,12 @@
       "turnstileRequired": "認証を完了してください",
       "turnstileFailed": "認証に失敗しました。もう一度お試しください",
       "unknown": "不明なエラーが発生しました"
-    }
+    },
+    "secureBadge": "セキュア保護",
+    "loginHint": "ユーザー名またはメールで安全にログインできます。",
+    "registerHint": "認証を済ませて数秒で登録できます。",
+    "verifyTitle": "セキュリティチェック",
+    "verifyHint": "すぐに完了"
   },
   "video": {
     "playbackSpeed": "再生速度",
@@ -115,7 +124,13 @@
     "unmute": "ミュート解除",
     "fullscreen": "全画面",
     "pip": "ピクチャーインピクチャー",
-    "settings": "設定"
+    "settings": "設定",
+    "keyboardHint": "Space: 再生/停止 · ←/→ 早送り/巻き戻し · M ミュート · F 全画面"
+  },
+  "media": {
+    "zoomHint": "ダブルクリックで拡大",
+    "dragHint": "ドラッグで移動",
+    "shortcutHint": "Esc 閉じる · +/- 拡大/縮小 · 0 リセット · ←/→ 切替"
   },
   "settings": {
     "title": "設定",
@@ -384,11 +399,25 @@
     "activityHint": "保存済みコンテンツと操作履歴を管理",
     "editProfile": "プロフィールを編集",
     "settingsSubtitle": "公開プロフィールとセキュリティを管理",
+    "settingsHint": "プロフィールと安全設定をまとめて管理できます。",
     "avatarSectionHint": "新しいアバターをアップロードしてプロフィールを彩る",
+    "avatarMetaHint": "自動で1:1にトリミング",
+    "avatarMetaPrivacy": "プロフィールに表示されます",
     "basicInfoHint": "表示名と自己紹介を更新します",
     "passwordHint": "強力なパスワードで安全性を保ちます",
     "notificationsSubtitle": "いいね・返信・システム通知を確認",
     "devicesSubtitle": "ログイン中のデバイスと信頼済みセッションを管理",
+    "insights": {
+      "activity": "アクティビティ",
+      "activityValue": "安定",
+      "activityHint": "エンゲージメントが伸びています",
+      "favorites": "お気に入り",
+      "favoritesValue": "厳選済み",
+      "favoritesHint": "保存内容は同期されます",
+      "security": "セキュリティ",
+      "securityValue": "保護済み",
+      "securityHint": "Turnstile セッション認証"
+    },
     "zoom": "ズーム",
     "rotate": "回転",
     "circleShape": "円形",

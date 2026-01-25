@@ -48,6 +48,9 @@
     "minutesAgo": "{n} minutes ago",
     "hoursAgo": "{n} hours ago",
     "daysAgo": "{n} days ago",
+    "weeksAgo": "{n} weeks ago",
+    "monthsAgo": "{n} months ago",
+    "yearsAgo": "{n} years ago",
     "today": "Today",
     "yesterday": "Yesterday",
     "more": "More",
@@ -64,7 +67,8 @@
     "scrollToLoad": "Scroll to load more",
     "loadingFailed": "Failed to load",
     "imageLoadFailed": "Image failed to load",
-    "reset": "Reset"
+    "reset": "Reset",
+    "refresh": "Refresh"
   },
   "auth": {
     "email": "Email",
@@ -102,7 +106,12 @@
       "turnstileRequired": "Please complete the verification",
       "turnstileFailed": "Verification failed, please try again",
       "unknown": "An unknown error occurred"
-    }
+    },
+    "secureBadge": "Security protected",
+    "loginHint": "Use your username or email to sign in securely.",
+    "registerHint": "Create an account in seconds with secure verification.",
+    "verifyTitle": "Security check",
+    "verifyHint": "Takes a moment"
   },
   "video": {
     "playbackSpeed": "Playback Speed",
@@ -115,7 +124,13 @@
     "unmute": "Unmute",
     "fullscreen": "Fullscreen",
     "pip": "Picture in picture",
-    "settings": "Settings"
+    "settings": "Settings",
+    "keyboardHint": "Space: play/pause · ←/→ seek · M mute · F fullscreen"
+  },
+  "media": {
+    "zoomHint": "Double click to zoom",
+    "dragHint": "Drag to pan",
+    "shortcutHint": "Esc close · +/- zoom · 0 reset · ←/→ switch"
   },
   "settings": {
     "title": "Settings",
@@ -383,11 +398,25 @@
     "activityHint": "Manage your saved content and interactions",
     "editProfile": "Edit profile",
     "settingsSubtitle": "Manage public profile and security settings",
+    "settingsHint": "Update your profile and security preferences in one place.",
     "avatarSectionHint": "Upload a new avatar to personalize your profile.",
+    "avatarMetaHint": "Auto-cropped to 1:1",
+    "avatarMetaPrivacy": "Visible on your profile",
     "basicInfoHint": "Update your display name and bio.",
     "passwordHint": "Use a strong password to keep your account secure.",
     "notificationsSubtitle": "Keep up with likes, replies, and system messages.",
     "devicesSubtitle": "Review active devices and manage trusted sessions.",
+    "insights": {
+      "activity": "Activity",
+      "activityValue": "Steady",
+      "activityHint": "Your engagement is growing",
+      "favorites": "Favorites",
+      "favoritesValue": "Curated",
+      "favoritesHint": "Saved posts stay synced",
+      "security": "Security",
+      "securityValue": "Protected",
+      "securityHint": "Turnstile verified sessions"
+    },
     "zoom": "Zoom",
     "rotate": "Rotate",
     "circleShape": "Circle",
