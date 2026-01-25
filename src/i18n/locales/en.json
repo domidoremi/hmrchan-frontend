@@ -119,6 +119,7 @@
   },
   "settings": {
     "title": "Settings",
+    "links": "Links",
     "theme": "Theme",
     "light": "Light",
     "dark": "Dark",
