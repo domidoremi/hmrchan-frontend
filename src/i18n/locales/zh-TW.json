@@ -119,6 +119,7 @@
   },
   "settings": {
     "title": "設定",
+    "links": "連結",
     "theme": "主題",
     "light": "淺色",
     "dark": "深色",
