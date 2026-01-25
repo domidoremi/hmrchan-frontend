@@ -640,7 +640,9 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   height: var(--navbar-height);
-  transition: transform var(--duration-normal) var(--ease-out);
+  transition:
+    transform var(--duration-normal) var(--ease-out),
+    box-shadow var(--transition-fast);
   transform: translate3d(0, 0, 0);
   will-change: transform;
 }
@@ -656,6 +658,12 @@ onUnmounted(() => {
   gap: var(--spacing-4);
 }
 
+.glass-navbar {
+  box-shadow:
+    0 16px 30px -24px rgba(15, 23, 42, 0.4),
+    0 6px 16px -12px rgba(15, 23, 42, 0.25);
+}
+
 /* ========== Brand ========== */
 .navbar-brand {
   text-decoration: none;
@@ -664,6 +672,7 @@ onUnmounted(() => {
 .brand-name {
   font-size: var(--text-xl);
   font-weight: var(--font-bold);
+  letter-spacing: 0.08em;
   background: var(--gradient-accent);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -720,7 +729,8 @@ onUnmounted(() => {
   font-weight: var(--font-medium);
   transition:
     color var(--duration-fast) var(--ease-out),
-    transform var(--duration-fast) var(--ease-out);
+    transform var(--duration-fast) var(--ease-out),
+    background var(--duration-fast) var(--ease-out);
   z-index: 1;
 }
 
@@ -730,6 +740,7 @@ onUnmounted(() => {
 
 .nav-link:hover {
   color: var(--color-text-primary);
+  background: rgba(var(--color-primary-rgb), 0.08);
 }
 
 .nav-link:hover svg {

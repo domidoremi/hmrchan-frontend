@@ -8,6 +8,13 @@
         <div>
           <h1>{{ $t('profile.settings') }}</h1>
           <p class="page-subtitle">{{ $t('profile.settingsSubtitle') }}</p>
+          <p class="page-hint">{{ $t('profile.settingsHint') }}</p>
+        </div>
+        <div class="page-actions">
+          <Button variant="ghost" size="sm" type="button" @click="fetchProfile">
+            <RefreshCw :size="16" />
+            {{ $t('common.refresh') }}
+          </Button>
         </div>
       </header>
 
@@ -79,6 +86,11 @@
                     @change="handleAvatarSelect"
                   />
                 </label>
+                <div class="avatar-meta">
+                  <span>{{ $t('profile.avatarMetaHint') }}</span>
+                  <span class="meta-dot" />
+                  <span>{{ $t('profile.avatarMetaPrivacy') }}</span>
+                </div>
               </div>
             </div>
           </section>
@@ -166,6 +178,10 @@
                 <span v-if="isSaving" class="spinner spinner-sm" />
                 <Save v-else :size="16" />
                 {{ $t('common.save') }}
+              </Button>
+              <Button type="button" variant="ghost" :disabled="isSaving" @click="fetchProfile">
+                <RefreshCw :size="16" />
+                {{ $t('common.reset') }}
               </Button>
             </div>
           </section>
@@ -332,6 +348,7 @@ import {
   Shield,
   Save,
   CheckCircle,
+  RefreshCw,
 } from 'lucide-vue-next'
 import { userService, normalizeAvatarUrl, type UserProfile, ApiError } from '@/api'
 import { useAuthStore, useToastStore } from '@/stores'
@@ -609,6 +626,19 @@ onMounted(() => {
   font-size: var(--text-sm);
 }
 
+.page-hint {
+  margin-top: var(--spacing-1);
+  font-size: var(--text-sm);
+  color: var(--color-text-tertiary);
+}
+
+.page-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  margin-left: auto;
+}
+
 .page-header h1 {
   margin: 0;
   font-size: var(--text-2xl);
@@ -751,6 +781,21 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-3);
+}
+
+.avatar-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+}
+
+.avatar-meta .meta-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: var(--radius-full);
+  background: var(--color-text-tertiary);
 }
 
 .avatar-hint {
@@ -965,6 +1010,12 @@ onMounted(() => {
   .page-header {
     gap: var(--spacing-3);
     margin-bottom: var(--spacing-4);
+  }
+
+  .page-actions {
+    width: 100%;
+    justify-content: flex-start;
+    margin-left: 0;
   }
 
   .page-header h1 {
