@@ -48,7 +48,8 @@ export function useServiceWorkerDebug() {
     const appCaches = cacheNames.filter((name) => name.startsWith(`${cachePrefix}-`))
 
     if (appCaches.length > 0) {
-      cacheVersion.value = appCaches[0].split('-').pop() || '未知'
+      const lastCache = appCaches[0]
+      cacheVersion.value = lastCache?.split('-').pop() || '未知'
     }
   }
 
