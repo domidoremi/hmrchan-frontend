@@ -80,7 +80,18 @@ import { scheduleTask } from './utils/modernAPIs'
 // Service Worker 注册：页面加载完成后尽快注册（user-visible 优先级）
 // 这样可以更早地启用离线缓存和资源预缓存
 scheduleTask(
-  () => import('./utils/cache').then(({ registerServiceWorker }) => registerServiceWorker()),
+  () =>
+    import('./utils/cache').then(({ registerServiceWorker }) => {
+      registerServiceWorker()
+      // 初始化 SW 更新检测器
+      import('./utils/sw-update-checker').then(({ initSwUpdateChecker }) => {
+        initSwUpdateChecker({
+          checkInterval: 30 * 60 * 1000, // 30 分钟检查一次
+          autoRefresh: false, // 不自动刷新，让用户决定
+          showToast: true, // 显示更新提示
+        })
+      })
+    }),
   { priority: 'user-visible', delay: 1000 } // 延迟 1 秒，确保首屏渲染完成
 )
 

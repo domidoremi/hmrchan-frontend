@@ -15,8 +15,8 @@
   ],
   "scripts": {
     "dev": "vite",
-    "build": "bun run type-check && vite build",
-    "build:analyze": "vite build && node scripts/analyze-bundle.js",
+    "build": "node scripts/update-sw-version.js && bun run type-check && vite build",
+    "build:analyze": "node scripts/update-sw-version.js && vite build && node scripts/analyze-bundle.js",
     "build:measure": "node scripts/measure-build-time.js",
     "preview": "vite preview",
     "test:unit": "vitest run --passWithNoTests",
