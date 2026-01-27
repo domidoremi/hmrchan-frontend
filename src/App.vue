@@ -52,6 +52,7 @@ import { ref, watch, computed, defineAsyncComponent } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useThemeStore, useSettingsStore } from '@/stores'
+import { usePageTitle } from '@/composables/usePageTitle'
 import AppNavbar from '@/components/layout/AppNavbar.vue'
 import AppFooter from '@/components/layout/AppFooter.vue'
 import PageLoading from '@/components/ui/PageLoading.vue'
@@ -71,6 +72,9 @@ const settingsStore = useSettingsStore()
 
 const { resolvedTheme } = storeToRefs(themeStore)
 const { settings } = storeToRefs(settingsStore)
+
+// 初始化动态标题管理
+usePageTitle()
 
 // 动效强度
 const animationIntensity = computed(() => settings.value.animationIntensity)

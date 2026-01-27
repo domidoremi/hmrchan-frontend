@@ -27,6 +27,29 @@
       @click="togglePlay"
     />
 
+    <!-- 手势指示器 -->
+    <Transition name="fade">
+      <div v-if="showVolumeIndicator" class="gesture-indicator">
+        <Volume2 :size="32" />
+        <div class="indicator-value">{{ indicatorValue }}%</div>
+      </div>
+    </Transition>
+
+    <Transition name="fade">
+      <div v-if="showBrightnessIndicator" class="gesture-indicator">
+        <Sun :size="32" />
+        <div class="indicator-value">{{ indicatorValue }}%</div>
+      </div>
+    </Transition>
+
+    <Transition name="fade">
+      <div v-if="showSeekIndicator" class="gesture-indicator">
+        <FastForward v-if="seekDirection === 'forward'" :size="32" />
+        <Rewind v-else :size="32" />
+        <div class="indicator-value">{{ indicatorValue }}s</div>
+      </div>
+    </Transition>
+
     <!-- 控制栏 -->
     <div
       class="controls"
@@ -205,7 +228,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import {
   Play,
   Pause,
@@ -216,7 +239,12 @@ import {
   Maximize,
   Minimize,
   PictureInPicture,
+  Sun,
+  FastForward,
+  Rewind,
 } from 'lucide-vue-next'
+import { useVideoSettings } from '@/composables/useVideoSettings'
+import { useVideoGestures } from '@/composables/useVideoGestures'
 
 interface Props {
   src: string
@@ -243,8 +271,6 @@ const isPlaying = ref(false)
 const isBuffering = ref(false)
 const currentTime = ref(0)
 const duration = ref(0)
-const volume = ref(1)
-const isMuted = ref(false)
 const playbackRate = ref(1)
 const currentQuality = ref('auto')
 const isFullscreen = ref(false)
@@ -253,6 +279,42 @@ const showControlHints = ref(true)
 const showSettings = ref(false)
 const bufferedPercent = ref(0)
 const isSeeking = ref(false)
+
+// 使用视频设置 composable
+const { settings: videoSettings, setVolume: updateVolume, setMuted: updateMuted, setPlaybackRate: updatePlaybackRate, setBrightness: updateBrightness } = useVideoSettings()
+
+// 从设置中获取音量和静音状态
+const volume = computed(() => videoSettings.value.volume)
+const isMuted = computed(() => videoSettings.value.muted)
+const brightness = computed(() => videoSettings.value.brightness)
+
+// 使用手势控制 composable
+const {
+  showVolumeIndicator,
+  showBrightnessIndicator,
+  showSeekIndicator,
+  indicatorValue,
+  seekDirection,
+  currentVolume,
+  currentBrightness,
+} = useVideoGestures({
+  videoRef,
+  containerRef: playerElement,
+  onVolumeChange: (vol) => {
+    updateVolume(vol)
+  },
+  onBrightnessChange: (bright) => {
+    updateBrightness(bright)
+  },
+  onSeek: (time) => {
+    if (videoRef.value) {
+      videoRef.value.currentTime = time
+    }
+  },
+  onTogglePlay: () => {
+    togglePlay()
+  },
+})
 
 const playbackSpeeds = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2]
 const qualities = ref<string[]>(['auto']) // 可扩展支持多画质
@@ -326,8 +388,8 @@ function onTimeUpdate() {
 
 function onVolumeChange() {
   if (!videoRef.value) return
-  volume.value = videoRef.value.volume
-  isMuted.value = videoRef.value.muted
+  updateVolume(videoRef.value.volume)
+  updateMuted(videoRef.value.muted)
 }
 
 function seek(event: MouseEvent) {
@@ -379,9 +441,12 @@ function setVolume(event: Event) {
   const value = parseInt(target.value, 10)
   if (isNaN(value)) return
 
-  videoRef.value.volume = Math.max(0, Math.min(1, value / 100))
+  const newVolume = Math.max(0, Math.min(1, value / 100))
+  videoRef.value.volume = newVolume
+  updateVolume(newVolume)
   if (value > 0) {
     videoRef.value.muted = false
+    updateMuted(false)
   }
 }
 
@@ -389,6 +454,7 @@ function setPlaybackRate(rate: number) {
   if (!videoRef.value) return
   videoRef.value.playbackRate = rate
   playbackRate.value = rate
+  updatePlaybackRate(rate)
   showSettings.value = false
 }
 
@@ -510,6 +576,25 @@ onMounted(() => {
   document.addEventListener('keydown', handleKeydown)
   document.addEventListener('fullscreenchange', handleFullscreenChange)
   document.addEventListener('click', handleClickOutside)
+
+  // 应用保存的设置
+  if (videoRef.value) {
+    videoRef.value.volume = videoSettings.value.volume
+    videoRef.value.muted = videoSettings.value.muted
+    videoRef.value.playbackRate = videoSettings.value.playbackRate
+    playbackRate.value = videoSettings.value.playbackRate
+  }
+
+  // 初始化手势控制的当前值
+  currentVolume.value = videoSettings.value.volume
+  currentBrightness.value = videoSettings.value.brightness
+})
+
+// 监听亮度变化并应用滤镜
+watch(brightness, (newBrightness) => {
+  if (videoRef.value) {
+    videoRef.value.style.filter = `brightness(${newBrightness})`
+  }
 })
 
 onBeforeUnmount(() => {
@@ -607,12 +692,13 @@ function startHintTimer() {
 
 .controls-hint {
   position: absolute;
-  bottom: 16px;
+  bottom: 80px; /* 提高位置，避免被控制栏遮挡 */
   left: 16px;
-  padding: 0.4rem 0.75rem;
+  padding: 0.5rem 0.875rem;
   border-radius: var(--radius-full);
-  background: rgba(0, 0, 0, 0.55);
-  color: rgba(255, 255, 255, 0.7);
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  color: rgba(255, 255, 255, 0.9);
   font-size: var(--text-xs);
   opacity: 0;
   transform: translateY(6px);
@@ -620,11 +706,49 @@ function startHintTimer() {
     opacity var(--transition-fast),
     transform var(--transition-fast);
   pointer-events: none;
+  z-index: 10;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .controls-hint.is-visible {
   opacity: 1;
   transform: translateY(0);
+}
+
+/* 手势指示器 */
+.gesture-indicator {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-2);
+  padding: var(--spacing-4);
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(12px);
+  border-radius: var(--radius-xl);
+  color: white;
+  pointer-events: none;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.indicator-value {
+  font-size: var(--text-xl);
+  font-weight: var(--font-semibold);
+  font-variant-numeric: tabular-nums;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 
 /* 底部控制区 */
