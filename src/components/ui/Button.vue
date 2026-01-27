@@ -1,16 +1,54 @@
 <template>
-  <button :class="buttonClass" :disabled="disabled || loading" :type="type" @click="handleClick">
-    <span v-if="loading" class="spinner spinner-sm" />
-    <component v-else-if="showLeftIcon" :is="icon" :size="iconSize" />
-    <span v-if="hasDefaultSlot" class="btn-content">
-      <slot />
+  <button
+    ref="buttonRef"
+    :class="buttonClass"
+    :disabled="disabled || loading"
+    :type="type"
+    @click="handleClick"
+    @mousedown="handleMouseDown"
+    @mouseup="handleMouseUp"
+    @mouseleave="handleMouseLeave"
+  >
+    <!-- Ripple 容器 -->
+    <span ref="rippleContainer" class="btn-ripple-container" />
+
+    <!-- 加载状态 -->
+    <span v-if="loading" class="btn-loader">
+      <span class="btn-loader-dot" />
+      <span class="btn-loader-dot" />
+      <span class="btn-loader-dot" />
     </span>
-    <component v-if="showRightIcon" :is="icon" :size="iconSize" />
+
+    <!-- 图标和内容 -->
+    <template v-else>
+      <component v-if="showLeftIcon" :is="icon" :size="iconSize" class="btn-icon-el" />
+      <span v-if="hasDefaultSlot" class="btn-content">
+        <slot />
+      </span>
+      <component v-if="showRightIcon" :is="icon" :size="iconSize" class="btn-icon-el" />
+    </template>
   </button>
 </template>
 
 <script setup lang="ts">
-import { computed, useSlots, type Component } from 'vue'
+import { computed, useSlots, type Component, ref, onMounted } from 'vue'
+
+// 懒加载 GSAP
+let gsap: typeof import('gsap').default | null = null
+const loadGsap = async () => {
+  if (!gsap) {
+    const module = await import('gsap')
+    gsap = module.default
+  }
+  return gsap
+}
+
+// 检测是否偏好减少动画
+const prefersReducedMotion = (): boolean => {
+  if (typeof window === 'undefined') return false
+  if (typeof window.matchMedia !== 'function') return false
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches
+}
 
 interface Props {
   variant?:
@@ -30,6 +68,10 @@ interface Props {
   iconPosition?: 'left' | 'right'
   fullWidth?: boolean
   type?: 'button' | 'submit' | 'reset'
+  /** 是否启用 ripple 效果 */
+  ripple?: boolean
+  /** 是否启用弹簧动画 */
+  springAnimation?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -40,6 +82,8 @@ const props = withDefaults(defineProps<Props>(), {
   iconPosition: 'left',
   fullWidth: false,
   type: 'button',
+  ripple: true,
+  springAnimation: true,
 })
 
 const emit = defineEmits<{
@@ -47,6 +91,10 @@ const emit = defineEmits<{
 }>()
 
 const slots = useSlots()
+
+const buttonRef = ref<HTMLButtonElement | null>(null)
+const rippleContainer = ref<HTMLSpanElement | null>(null)
+const isPressed = ref(false)
 
 const VARIANT_MAP: Record<string, string> = {
   primary: 'default',
@@ -81,11 +129,13 @@ const buttonClass = computed(() => [
     'btn-loading': props.loading,
     'btn-full-width': props.fullWidth,
     'btn-icon-only': isIconOnly.value,
+    'btn-pressed': isPressed.value,
+    'btn-with-ripple': props.ripple,
   },
 ])
 
 const iconSize = computed(() => {
-  const sizes = { sm: 16, md: 18, lg: 20, icon: 18 }
+  const sizes: Record<string, number> = { sm: 16, md: 18, lg: 20, icon: 18 }
   return sizes[normalizedSize.value] ?? 18
 })
 
@@ -94,11 +144,105 @@ const showRightIcon = computed(
   () => !!props.icon && props.iconPosition === 'right' && !props.loading
 )
 
+// 创建 Ripple 效果
+async function createRipple(event: MouseEvent) {
+  if (!props.ripple || prefersReducedMotion() || !rippleContainer.value || !buttonRef.value) return
+
+  const gsapLib = await loadGsap()
+  if (!gsapLib) return
+
+  const button = buttonRef.value
+  const rect = button.getBoundingClientRect()
+  const x = event.clientX - rect.left
+  const y = event.clientY - rect.top
+
+  const ripple = document.createElement('span')
+  ripple.className = 'btn-ripple'
+  ripple.style.left = `${x}px`
+  ripple.style.top = `${y}px`
+
+  rippleContainer.value.appendChild(ripple)
+
+  const size = Math.max(rect.width, rect.height) * 2.5
+
+  gsapLib.fromTo(
+    ripple,
+    { width: 0, height: 0, opacity: 0.5 },
+    {
+      width: size,
+      height: size,
+      opacity: 0,
+      duration: 0.6,
+      ease: 'power2.out',
+      onComplete: () => {
+        ripple.remove()
+      },
+    }
+  )
+}
+
+// 按压动画
+async function animatePress() {
+  if (!props.springAnimation || prefersReducedMotion() || !buttonRef.value) return
+
+  const gsapLib = await loadGsap()
+  if (!gsapLib) return
+
+  gsapLib.to(buttonRef.value, {
+    scale: 0.96,
+    duration: 0.1,
+    ease: 'power2.out',
+  })
+}
+
+// 释放动画
+async function animateRelease() {
+  if (!props.springAnimation || prefersReducedMotion() || !buttonRef.value) return
+
+  const gsapLib = await loadGsap()
+  if (!gsapLib) return
+
+  gsapLib.to(buttonRef.value, {
+    scale: 1,
+    duration: 0.4,
+    ease: 'elastic.out(1, 0.5)',
+  })
+}
+
 function handleClick(event: MouseEvent) {
   if (!props.disabled && !props.loading) {
+    createRipple(event)
     emit('click', event)
   }
 }
+
+function handleMouseDown() {
+  if (!props.disabled && !props.loading) {
+    isPressed.value = true
+    animatePress()
+  }
+}
+
+function handleMouseUp() {
+  if (isPressed.value) {
+    isPressed.value = false
+    animateRelease()
+  }
+}
+
+function handleMouseLeave() {
+  if (isPressed.value) {
+    isPressed.value = false
+    animateRelease()
+  }
+}
+
+// 预加载 GSAP
+onMounted(() => {
+  if (props.springAnimation || props.ripple) {
+    loadGsap()
+  }
+})
 </script>
 
 <style scoped>
@@ -111,13 +255,79 @@ function handleClick(event: MouseEvent) {
   font-weight: var(--font-medium);
   border-radius: var(--radius);
   cursor: pointer;
-  transition-property: color, background-color, border-color, box-shadow, transform;
+  transition-property: color, background-color, border-color, box-shadow;
   transition-duration: 150ms;
   transition-timing-function: var(--ease-out);
   border: 1px solid transparent;
   outline: none;
   white-space: nowrap;
   user-select: none;
+  overflow: hidden;
+  transform-origin: center;
+  will-change: transform;
+}
+
+/* Ripple 容器 */
+.btn-ripple-container {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.btn-ripple-container :deep(.btn-ripple) {
+  position: absolute;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.3;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+/* Loader Animation */
+.btn-loader {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.btn-loader-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.6;
+  animation: btn-loader-bounce 1.4s ease-in-out infinite both;
+}
+
+.btn-loader-dot:nth-child(1) {
+  animation-delay: -0.32s;
+}
+
+.btn-loader-dot:nth-child(2) {
+  animation-delay: -0.16s;
+}
+
+@keyframes btn-loader-bounce {
+  0%,
+  80%,
+  100% {
+    transform: scale(0.6);
+  }
+  40% {
+    transform: scale(1);
+  }
+}
+
+/* Icon element */
+.btn-icon-el {
+  flex-shrink: 0;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.btn:hover:not(:disabled) .btn-icon-el {
+  transform: scale(1.1);
 }
 
 /* Sizes */
@@ -164,11 +374,9 @@ function handleClick(event: MouseEvent) {
 
 .btn-default:hover:not(:disabled) {
   background: var(--color-primary-dark);
-  box-shadow: var(--shadow-md);
-}
-
-.btn-default:active:not(:disabled) {
-  transform: scale(0.98);
+  box-shadow:
+    var(--shadow-md),
+    0 0 20px rgba(var(--color-primary-rgb), 0.3);
 }
 
 .btn-secondary {
@@ -224,7 +432,9 @@ function handleClick(event: MouseEvent) {
 
 .btn-destructive:hover:not(:disabled) {
   background: var(--color-error-hover);
-  box-shadow: var(--shadow-md);
+  box-shadow:
+    var(--shadow-md),
+    0 0 20px rgba(var(--color-error-rgb), 0.3);
 }
 
 .btn-success {
@@ -235,7 +445,9 @@ function handleClick(event: MouseEvent) {
 
 .btn-success:hover:not(:disabled) {
   background: var(--color-success-hover);
-  box-shadow: var(--shadow-md);
+  box-shadow:
+    var(--shadow-md),
+    0 0 20px rgba(var(--color-success-rgb), 0.3);
 }
 
 /* States */
@@ -262,5 +474,20 @@ function handleClick(event: MouseEvent) {
 .btn-content {
   display: inline-flex;
   align-items: center;
+}
+
+/* Reduced motion - 禁用弹簧动画，保留基本反馈 */
+@media (prefers-reduced-motion: reduce) {
+  .btn {
+    transition: none;
+  }
+
+  .btn-icon-el {
+    transition: none;
+  }
+
+  .btn-loader-dot {
+    animation: none;
+  }
 }
 </style>
