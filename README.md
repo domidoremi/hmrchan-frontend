@@ -21,7 +21,7 @@
 
 - **Vue 3.5** - 组合式 API + `<script setup>` 语法
 - **TypeScript 5.9** - 类型安全开发
-- **Vite 7** (Rolldown) - 极速构建工具
+- **Vite 8** (Rolldown) - 极速构建工具
 - **Pinia 3** - 状态管理
 - **Vue Router 4** - 路由管理
 - **Vue I18n 11** - 国际化 (简中/英/日)
