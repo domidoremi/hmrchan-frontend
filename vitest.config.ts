@@ -94,12 +94,10 @@ export default defineConfig({
     pool: 'threads',
 
     /** 最大并发线程数 */
-    poolOptions: {
-      threads: {
-        singleThread: false,
-        maxThreads: 4,
-        minThreads: 1,
-      },
+    threads: {
+      singleThread: false,
+      maxThreads: 4,
+      minThreads: 1,
     },
 
     /** 启用快照测试 */
