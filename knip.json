@@ -1,13 +1,38 @@
 {
   "$schema": "https://unpkg.com/knip@5/schema.json",
-  "entry": ["src/main.ts", "src/router/index.ts", "vite.config.ts", "src/**/*.vue"],
-  "project": ["src/**/*.{ts,vue}"],
-  "ignore": ["src/**/*.d.ts", "env.d.ts", "functions/**/*", "src/**/index.ts"],
-  "ignoreDependencies": ["@cloudflare/*"],
+  "entry": [
+    "src/main.ts",
+    "src/router/index.ts",
+    "vite.config.ts",
+    "vitest.config.ts",
+    "eslint.config.ts",
+    "src/**/*.vue"
+  ],
+  "project": ["src/**/*.{ts,vue}", "*.config.ts", "vite-plugin-*.ts"],
+  "ignore": [
+    "src/**/*.d.ts",
+    "env.d.ts",
+    "functions/**/*",
+    "src/**/index.ts",
+    "**/__tests__/**",
+    "**/*.spec.ts",
+    "**/*.test.ts",
+    "scripts/**/*"
+  ],
+  "ignoreDependencies": [
+    "@cloudflare/*",
+    "@rolldown/*",
+    "chrome-launcher",
+    "lighthouse",
+    "jiti",
+    "esbuild"
+  ],
   "ignoreExportsUsedInFile": true,
+  "ignoreBinaries": ["bunx", "uvx"],
   "rules": {
     "exports": "off",
     "types": "off",
-    "duplicates": "off"
+    "duplicates": "off",
+    "unlisted": "off"
   }
 }

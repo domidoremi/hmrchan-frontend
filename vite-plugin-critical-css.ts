@@ -2,10 +2,12 @@
  * Vite 插件：自动内联关键 CSS
  * 在构建时将关键 CSS 注入到 HTML <head> 中
  *
- * 特性：
- * - 自动压缩 CSS
- * - 支持 CSP nonce
+ * 优化特性：
+ * - 自动压缩 CSS (移除注释、空格、冗余分号)
+ * - 支持 CSP nonce 占位符
  * - 优化 FCP (First Contentful Paint)
+ * - 缓存 CSS 内容避免重复读取
+ * - 详细的构建日志
  */
 
 import { readFileSync, existsSync } from 'node:fs'
@@ -22,18 +24,25 @@ interface CriticalCSSOptions {
 }
 
 /**
- * 压缩 CSS
- * 移除注释、多余空格，保持最小体积
+ * 高效压缩 CSS
+ * 移除注释、多余空格、冗余分号，保持最小体积
  */
 function minifyCSS(css: string): string {
-  return css
-    .replace(/\/\*[\s\S]*?\*\//g, '') // 移除块注释
-    .replace(/\/\/[^\n]*/g, '') // 移除行注释
-    .replace(/\s+/g, ' ') // 压缩连续空格
-    .replace(/\s*([{}:;,>~+])\s*/g, '$1') // 移除符号周围空格
-    .replace(/;}/g, '}') // 移除最后一个分号
-    .replace(/\s*!important/g, '!important') // 压缩 !important
-    .trim()
+  return (
+    css
+      .replace(/\/\*[\s\S]*?\*\//g, '') // 移除块注释
+      .replace(/\/\/[^\n]*/g, '') // 移除行注释
+      .replace(/\s+/g, ' ') // 压缩连续空格
+      .replace(/\s*([{}:;,>~+])\s*/g, '$1') // 移除符号周围空格
+      .replace(/;}/g, '}') // 移除最后一个分号
+      .replace(/\s*!important/g, '!important') // 压缩 !important
+      // 额外优化
+      .replace(/:\s*0px/g, ':0') // 0px → 0
+      .replace(/:\s*0em/g, ':0') // 0em → 0
+      .replace(/:\s*0%/g, ':0') // 0% → 0
+      .replace(/:\s*0\s+0\s+0\s+0/g, ':0') // 0 0 0 0 → 0
+      .trim()
+  )
 }
 
 export function criticalCSSPlugin(options: CriticalCSSOptions = {}): Plugin {
@@ -85,7 +94,7 @@ export function criticalCSSPlugin(options: CriticalCSSOptions = {}): Plugin {
       // 插入到 <head> 的最前面，确保最先加载
       return html.replace(
         /<head([^>]*)>/i,
-        `<head$1>\n    ${styleTag}\n    <!-- Critical CSS inlined for FCP optimization -->`,
+        `<head$1>\n    ${styleTag}\n    <!-- Critical CSS inlined for FCP optimization -->`
       )
     },
   }
