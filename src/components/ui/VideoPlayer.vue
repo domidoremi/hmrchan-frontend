@@ -281,7 +281,13 @@ const bufferedPercent = ref(0)
 const isSeeking = ref(false)
 
 // 使用视频设置 composable
-const { settings: videoSettings, setVolume: updateVolume, setMuted: updateMuted, setPlaybackRate: updatePlaybackRate, setBrightness: updateBrightness } = useVideoSettings()
+const {
+  settings: videoSettings,
+  setVolume: updateVolume,
+  setMuted: updateMuted,
+  setPlaybackRate: updatePlaybackRate,
+  setBrightness: updateBrightness,
+} = useVideoSettings()
 
 // 从设置中获取音量和静音状态
 const volume = computed(() => videoSettings.value.volume)
