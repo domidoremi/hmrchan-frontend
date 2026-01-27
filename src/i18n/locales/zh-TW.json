@@ -154,6 +154,9 @@
     "animationReduced": "減弱",
     "animationNormal": "正常",
     "animationFull": "完整",
+    "videoSettings": "影片設定",
+    "resetVideoSettings": "重置影片設定",
+    "videoSettingsReset": "影片設定已重置為預設值",
     "cache": {
       "title": "快取管理",
       "description": "清除快取資料以釋放空間",

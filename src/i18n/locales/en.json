@@ -156,7 +156,7 @@
     "animationFull": "Full",
     "videoSettings": "Video Settings",
     "resetVideoSettings": "Reset Video Settings",
-    "videoSettingsReset": "Video settings reset to defaults",
+    "videoSettingsReset": "Video settings have been reset to defaults",
     "cache": {
       "title": "Cache Management",
       "description": "Clear cached data to free up space",
