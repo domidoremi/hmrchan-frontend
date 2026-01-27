@@ -166,9 +166,10 @@ async function main() {
     try {
       await generateScreenshot(browser, config)
       successCount++
-    } catch (error) {
+    } catch (err) {
       failureCount++
       // Error already logged in generateScreenshot
+      console.error(err)
     }
   }
 
@@ -190,7 +191,7 @@ async function main() {
   }
 }
 
-main().catch((error) => {
-  console.error('❌ 执行失败:', error)
+main().catch((err) => {
+  console.error('❌ 执行失败:', err)
   process.exit(1)
 })
