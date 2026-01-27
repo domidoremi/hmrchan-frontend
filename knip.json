@@ -17,7 +17,11 @@
     "**/__tests__/**",
     "**/*.spec.ts",
     "**/*.test.ts",
-    "scripts/**/*"
+    "scripts/**/*",
+    "dist/**/*",
+    "node_modules/**/*",
+    ".husky/**/*",
+    "public/**/*"
   ],
   "ignoreDependencies": [
     "@cloudflare/*",
@@ -25,14 +29,33 @@
     "chrome-launcher",
     "lighthouse",
     "jiti",
-    "esbuild"
+    "esbuild",
+    "@types/*",
+    "@tsconfig/*",
+    "husky",
+    "lint-staged",
+    "prettier"
   ],
   "ignoreExportsUsedInFile": true,
-  "ignoreBinaries": ["bunx", "uvx"],
+  "ignoreBinaries": ["bunx", "uvx", "bun", "node"],
   "rules": {
     "exports": "off",
     "types": "off",
-    "duplicates": "off",
-    "unlisted": "off"
+    "duplicates": "warn",
+    "unlisted": "error",
+    "unresolved": "warn",
+    "nsExports": "warn",
+    "nsTypes": "warn"
+  },
+  "workspaces": {
+    ".": {
+      "entry": [
+        "src/main.ts",
+        "src/router/index.ts"
+      ],
+      "project": [
+        "src/**/*.{ts,vue}"
+      ]
+    }
   }
 }

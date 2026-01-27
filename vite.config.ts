@@ -187,9 +187,32 @@ export default defineConfig(({ mode }: { mode: string }) => {
 
     /**
      * Oxc 配置 (Vite 8 默认使用 Oxc 替代 esbuild)
+     * Oxc 是用 Rust 编写的高性能 JavaScript 工具链
      */
     oxc: {
+      /** 编译目标 */
       target: 'esnext',
+      /** 启用所有优化 */
+      minify: {
+        compress: {
+          /** 移除 console 语句 */
+          drop_console: isProd,
+          /** 移除 debugger 语句 */
+          drop_debugger: isProd,
+          /** 移除未使用的代码 */
+          dead_code: true,
+          /** 内联常量 */
+          evaluate: true,
+          /** 合并变量声明 */
+          join_vars: true,
+          /** 循环优化 */
+          loops: true,
+          /** 移除未使用的函数参数 */
+          unused: true,
+        },
+        /** 启用变量名混淆 */
+        mangle: isProd,
+      },
     },
 
     /**
@@ -211,17 +234,9 @@ export default defineConfig(({ mode }: { mode: string }) => {
 
       /**
        * 生产环境代码压缩配置
-       * Vite 8 使用 Oxc Minifier
+       * Vite 8 使用 Oxc Minifier（已在 oxc 配置中设置）
        */
-      ...(isProd && {
-        minify: {
-          compress: {
-            drop_console: true,
-            drop_debugger: true,
-          },
-          mangle: true,
-        },
-      }),
+      minify: isProd,
 
       /**
        * 模块预加载配置
@@ -241,10 +256,13 @@ export default defineConfig(({ mode }: { mode: string }) => {
       cssCodeSplit: true,
 
       /** 使用 Lightning CSS 压缩 (Vite 8 默认) */
-      cssMinify: 'lightningcss',
+      cssMinify: 'lightningcss' as const,
 
       /** CSS 目标版本 */
       cssTarget: 'esnext',
+
+      /** 启用 CSS 树摇 */
+      cssTreeShaking: true,
 
       /** 禁用压缩大小报告，加快构建速度 */
       reportCompressedSize: false,
@@ -262,9 +280,22 @@ export default defineConfig(({ mode }: { mode: string }) => {
 
       /**
        * Rolldown 打包配置
+       * Rolldown 是用 Rust 编写的高性能打包器
        */
       rolldownOptions: {
+        /** 外部依赖（不打包） */
         external: ['@/views/ComponentsShowcase.vue'],
+
+        /** Tree-shaking 配置 */
+        treeshake: {
+          /** 启用模块副作用检测 */
+          moduleSideEffects: 'no-external' as const,
+          /** 移除未使用的导出 */
+          propertyReadSideEffects: false as const,
+          /** 移除未使用的代码 */
+          unknownGlobalSideEffects: false,
+        },
+
         output: {
           /**
            * 代码分割策略
@@ -331,8 +362,10 @@ export default defineConfig(({ mode }: { mode: string }) => {
      */
     server: {
       port: 5173,
+      host: true,
+      strictPort: false,
 
-      /** 文件预热 */
+      /** 文件预热 - 预加载关键文件加速首次访问 */
       warmup: {
         clientFiles: [
           './src/main.ts',
@@ -344,6 +377,9 @@ export default defineConfig(({ mode }: { mode: string }) => {
           './src/stores/theme.ts',
         ],
       },
+
+      /** 启用 CORS */
+      cors: true,
 
       /** 文件系统安全配置 */
       fs: {
@@ -400,7 +436,12 @@ export default defineConfig(({ mode }: { mode: string }) => {
      * Worker 配置
      */
     worker: {
-      format: 'es',
+      format: 'es' as const,
+      rollupOptions: {
+        output: {
+          format: 'es' as const,
+        },
+      },
     },
 
     /**
@@ -411,6 +452,20 @@ export default defineConfig(({ mode }: { mode: string }) => {
       namedExports: true,
       /** 小 JSON 直接内联 */
       stringify: true,
+    },
+
+    /**
+     * 实验性功能
+     */
+    experimental: {
+      /** 启用渲染内置 HTML */
+      renderBuiltUrl: (filename: string) => {
+        // 对于关键资源使用相对路径
+        if (filename.includes('critical') || filename.includes('main')) {
+          return `./${filename}`
+        }
+        return `/${filename}`
+      },
     },
   }
 })

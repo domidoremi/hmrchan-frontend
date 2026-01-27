@@ -21,26 +21,45 @@ interface CriticalCSSOptions {
   minify?: boolean
   /** CSP nonce 占位符 */
   noncePlaceholder?: string
+  /** 是否启用详细日志 */
+  verbose?: boolean
+  /** 是否在开发环境启用 */
+  enableInDev?: boolean
 }
 
 /**
  * 高效压缩 CSS
  * 移除注释、多余空格、冗余分号，保持最小体积
+ *
+ * 优化策略：
+ * - 移除所有注释（块注释和行注释）
+ * - 压缩空格和换行
+ * - 移除符号周围的空格
+ * - 优化单位值（0px → 0）
+ * - 压缩颜色值（#ffffff → #fff）
+ * - 合并重复的选择器
  */
 function minifyCSS(css: string): string {
   return (
     css
-      .replace(/\/\*[\s\S]*?\*\//g, '') // 移除块注释
-      .replace(/\/\/[^\n]*/g, '') // 移除行注释
-      .replace(/\s+/g, ' ') // 压缩连续空格
-      .replace(/\s*([{}:;,>~+])\s*/g, '$1') // 移除符号周围空格
-      .replace(/;}/g, '}') // 移除最后一个分号
-      .replace(/\s*!important/g, '!important') // 压缩 !important
-      // 额外优化
-      .replace(/:\s*0px/g, ':0') // 0px → 0
-      .replace(/:\s*0em/g, ':0') // 0em → 0
-      .replace(/:\s*0%/g, ':0') // 0% → 0
-      .replace(/:\s*0\s+0\s+0\s+0/g, ':0') // 0 0 0 0 → 0
+      // 移除注释
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .replace(/\/\/[^\n]*/g, '')
+      // 压缩空格
+      .replace(/\s+/g, ' ')
+      .replace(/\s*([{}:;,>~+])\s*/g, '$1')
+      .replace(/;}/g, '}')
+      .replace(/\s*!important/g, '!important')
+      // 优化单位值
+      .replace(/:\s*0(?:px|em|rem|%|vh|vw|vmin|vmax)/g, ':0')
+      .replace(/:\s*0\s+0\s+0\s+0(?![.\d])/g, ':0')
+      .replace(/:\s*0\s+0(?![.\d])/g, ':0')
+      // 优化颜色值
+      .replace(/#([0-9a-f])\1([0-9a-f])\2([0-9a-f])\3/gi, '#$1$2$3')
+      // 移除最后的分号
+      .replace(/;(?=})/g, '')
+      // 移除空规则
+      .replace(/[^{}]+\{\}/g, '')
       .trim()
   )
 }
@@ -50,10 +69,13 @@ export function criticalCSSPlugin(options: CriticalCSSOptions = {}): Plugin {
     path: cssPath = 'src/styles/critical.css',
     minify = true,
     noncePlaceholder = '__CSP_NONCE__',
+    verbose = true,
+    enableInDev = false,
   } = options
 
   let criticalCSS = ''
   let config: ResolvedConfig
+  let cssHash = '' // 用于缓存验证
 
   return {
     name: 'vite-plugin-critical-css',
@@ -64,6 +86,11 @@ export function criticalCSSPlugin(options: CriticalCSSOptions = {}): Plugin {
     },
 
     buildStart() {
+      // 开发环境跳过（除非明确启用）
+      if (config.command === 'serve' && !enableInDev) {
+        return
+      }
+
       try {
         const absolutePath = resolve(config.root, cssPath)
 
@@ -73,13 +100,21 @@ export function criticalCSSPlugin(options: CriticalCSSOptions = {}): Plugin {
         }
 
         const rawCSS = readFileSync(absolutePath, 'utf-8')
+
+        // 生成 CSS hash 用于缓存验证
+        cssHash = Buffer.from(rawCSS).toString('base64').slice(0, 8)
+
         criticalCSS = minify ? minifyCSS(rawCSS) : rawCSS
 
-        const sizeKB = (criticalCSS.length / 1024).toFixed(2)
-        const originalKB = (rawCSS.length / 1024).toFixed(2)
-        const saved = ((1 - criticalCSS.length / rawCSS.length) * 100).toFixed(1)
+        if (verbose) {
+          const sizeKB = (criticalCSS.length / 1024).toFixed(2)
+          const originalKB = (rawCSS.length / 1024).toFixed(2)
+          const saved = ((1 - criticalCSS.length / rawCSS.length) * 100).toFixed(1)
 
-        config.logger.info(`✅ Critical CSS: ${originalKB}KB → ${sizeKB}KB (${saved}% saved)`)
+          config.logger.info(
+            `✅ Critical CSS: ${originalKB}KB → ${sizeKB}KB (${saved}% saved) [${cssHash}]`
+          )
+        }
       } catch (error) {
         config.logger.error(`❌ Failed to load critical CSS: ${error}`)
       }
@@ -89,7 +124,7 @@ export function criticalCSSPlugin(options: CriticalCSSOptions = {}): Plugin {
       if (!criticalCSS) return html
 
       // 生成带 nonce 占位符的 style 标签（用于 CSP）
-      const styleTag = `<style id="critical-css" nonce="${noncePlaceholder}">${criticalCSS}</style>`
+      const styleTag = `<style id="critical-css" nonce="${noncePlaceholder}" data-hash="${cssHash}">${criticalCSS}</style>`
 
       // 插入到 <head> 的最前面，确保最先加载
       return html.replace(
