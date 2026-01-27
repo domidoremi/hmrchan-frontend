@@ -41,7 +41,9 @@
     "format:check": "prettier --check src/",
     "lint-staged": "lint-staged",
     "serve:dist": "bunx serve dist -l 3000",
-    "clean": "rm -rf dist node_modules/.vite .tsbuildinfo"
+    "clean": "rm -rf dist node_modules/.vite .tsbuildinfo",
+    "sitemap:generate": "node scripts/generate-sitemap.js",
+    "sitemap:preview": "node scripts/generate-sitemap.js --dry-run"
   },
   "dependencies": {
     "@fingerprintjs/fingerprintjs": "^5.0.1",
