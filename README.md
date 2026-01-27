@@ -113,7 +113,15 @@ bun run test:unit        # 运行单元测试
 
 # 性能测试
 bun run test:perf        # 性能测试（启动开发服务器并运行 Lighthouse）
-bun run lighthouse       # Lighthouse 性能审计
+bun run perf:lighthouse  # Lighthouse 性能审计
+
+# PWA 资源生成
+bun run icons:generate   # 生成 PWA 图标（需要源图标）
+bun run screenshots:generate  # 生成应用截图（需要开发服务器运行）
+
+# SEO
+bun run sitemap:generate # 生成 sitemap.xml
+bun run sitemap:preview  # 预览 sitemap（不写入文件）
 ```
 
 ## 📁 项目结构
@@ -193,6 +201,33 @@ frontend/
 - **CLS** (Cumulative Layout Shift): ≤0.1
 - **TBT** (Total Blocking Time): ≤300ms
 - **Speed Index**: ≤3s
+
+### PWA 资源生成
+
+项目提供自动化脚本生成 PWA 所需的图标和截图：
+
+**快速开始**：
+
+```bash
+# 1. 安装依赖
+bun add -d sharp puppeteer
+
+# 2. 生成图标（需要准备 512x512 源图标）
+node scripts/generate-icons.js source-icon.png
+
+# 3. 生成截图（需要开发服务器运行）
+bun run dev  # 终端 1
+node scripts/generate-screenshots.js  # 终端 2
+```
+
+**生成内容**：
+
+- 8 个标准图标（72x72 到 512x512）
+- 2 个 maskable 图标（192x192、512x512）
+- 4 个快捷方式图标（96x96）
+- 移动端和桌面端应用截图
+
+详细指南：[GENERATE_PWA_ASSETS.md](GENERATE_PWA_ASSETS.md) | [完整文档](docs/pwa-assets-generation-guide.md)
 
 ## 🚢 部署指南
 
