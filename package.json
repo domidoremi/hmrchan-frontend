@@ -45,7 +45,7 @@
     "sitemap:generate": "node scripts/generate-sitemap.js",
     "sitemap:preview": "node scripts/generate-sitemap.js --dry-run",
     "icons:generate": "node scripts/generate-icons.js",
-    "screenshots:generate": "node scripts/generate-screenshots.js"
+    "screenshots:generate": "bun run scripts/generate-screenshots.ts"
   },
   "dependencies": {
     "@fingerprintjs/fingerprintjs": "^5.0.1",
