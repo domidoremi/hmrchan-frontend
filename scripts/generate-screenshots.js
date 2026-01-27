@@ -19,8 +19,9 @@ import puppeteer from 'puppeteer'
 import { existsSync, mkdirSync } from 'fs'
 import { resolve } from 'path'
 
-const OUTPUT_DIR = resolve(process.cwd(), 'public/screenshots')
-const BASE_URL = 'http://localhost:5173'
+const OUTPUT_DIR = resolve(process.cwd(), process.env.SCREENSHOT_OUTPUT_DIR || 'public/screenshots')
+const BASE_URL = process.env.SCREENSHOT_BASE_URL || 'http://localhost:5173'
+const WAIT_AFTER_LOAD = parseInt(process.env.SCREENSHOT_WAIT || '2000', 10)
 
 // 截图配置
 const SCREENSHOTS = [
@@ -64,6 +65,12 @@ async function checkServer() {
 
 /**
  * 生成截图
+ * @param {import('puppeteer').Browser} browser - Puppeteer browser instance
+ * @param {Object} config - Screenshot configuration
+ * @param {string} config.name - Output filename
+ * @param {string} config.url - Page URL path
+ * @param {{width: number, height: number}} config.viewport - Viewport dimensions
+ * @param {string} config.description - Human-readable description
  */
 async function generateScreenshot(browser, config) {
   const { name, url, viewport, description } = config
@@ -73,9 +80,9 @@ async function generateScreenshot(browser, config) {
   console.log(`   URL: ${BASE_URL}${url}`)
   console.log(`   尺寸: ${viewport.width}x${viewport.height}`)
 
-  try {
-    const page = await browser.newPage()
+  const page = await browser.newPage()
 
+  try {
     // 设置视口
     await page.setViewport(viewport)
 
@@ -85,8 +92,11 @@ async function generateScreenshot(browser, config) {
       timeout: 30000,
     })
 
-    // 等待页面完全加载
-    await page.waitForTimeout(2000)
+    // 等待页面完全加载和内容渲染
+    await new Promise((resolve) => setTimeout(resolve, WAIT_AFTER_LOAD))
+
+    // 可选：等待特定元素加载完成（更可靠）
+    // await page.waitForSelector('.main-content', { timeout: 5000 }).catch(() => {})
 
     // 截图
     await page.screenshot({
@@ -94,13 +104,14 @@ async function generateScreenshot(browser, config) {
       fullPage: false, // 只截取视口内容
     })
 
-    await page.close()
-
     console.log(`✅ 已保存: ${name}`)
     console.log('')
   } catch (error) {
     console.error(`❌ 生成 ${name} 失败:`, error.message)
     console.log('')
+    throw error // Re-throw to allow retry logic
+  } finally {
+    await page.close().catch(() => {}) // Ensure cleanup even on error
   }
 }
 
@@ -136,24 +147,36 @@ async function main() {
 
   // 启动浏览器
   console.log('🚀 启动浏览器...')
+
+  // 尝试使用系统已安装的 Chrome
   const browser = await puppeteer.launch({
     headless: 'new',
     args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
   })
 
   console.log('✅ 浏览器已启动')
   console.log('')
 
   // 生成所有截图
+  let successCount = 0
+  let failureCount = 0
+
   for (const config of SCREENSHOTS) {
-    await generateScreenshot(browser, config)
+    try {
+      await generateScreenshot(browser, config)
+      successCount++
+    } catch (error) {
+      failureCount++
+      // Error already logged in generateScreenshot
+    }
   }
 
   // 关闭浏览器
   await browser.close()
 
   console.log('═'.repeat(60))
-  console.log('✅ 所有截图生成完成！')
+  console.log(`✅ 截图生成完成！成功: ${successCount}, 失败: ${failureCount}`)
   console.log('')
   console.log('📁 输出目录:', OUTPUT_DIR)
   console.log('')
@@ -161,6 +184,10 @@ async function main() {
   console.log('  1. 检查截图质量')
   console.log('  2. 根据需要调整截图内容')
   console.log('  3. 提交到 Git 仓库')
+
+  if (failureCount > 0) {
+    process.exit(1)
+  }
 }
 
 main().catch((error) => {
