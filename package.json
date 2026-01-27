@@ -13,6 +13,11 @@
   "browserslist": [
     "defaults and fully supports es6-module"
   ],
+  "overrides": {
+    "vite-plugin-vue-devtools": {
+      "vite": "8.0.0-beta.10"
+    }
+  },
   "scripts": {
     "dev": "vite",
     "build": "node scripts/update-sw-version.js && bun run type-check && vite build",
