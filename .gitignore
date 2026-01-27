@@ -142,3 +142,11 @@ lighthouse-reports/
 **/draft*.md
 **/temp*.md
 **/TODO.md
+
+# =====================
+# Documentation (except README.md)
+# =====================
+*_MIGRATION.md
+CHANGELOG.md
+CONTRIBUTING.md
+ARCHITECTURE.md
