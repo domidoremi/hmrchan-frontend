@@ -58,9 +58,18 @@ function cloudflarePagesPlugin(): Plugin {
       for (const file of files) {
         const src = resolve(process.cwd(), file)
         const dest = resolve(outDir, file)
-        if (existsSync(src)) {
+
+        // 检查源文件是否存在
+        if (!existsSync(src)) {
+          console.warn(`⚠️ ${file} not found, skipping`)
+          continue
+        }
+
+        try {
           copyFileSync(src, dest)
           console.log(`✅ Copied ${file} to dist/`)
+        } catch (error) {
+          console.warn(`⚠️ Failed to copy ${file}:`, error)
         }
       }
     },

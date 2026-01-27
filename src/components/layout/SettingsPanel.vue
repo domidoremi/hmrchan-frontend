@@ -229,11 +229,6 @@ function resetVideoSettings() {
   resetSettings()
   toastStore.success(t('settings.videoSettingsReset'))
 }
-
-function resetVideoSettings() {
-  resetSettings()
-  toastStore.success('视频设置已重置')
-}
 </script>
 
 <style scoped>
