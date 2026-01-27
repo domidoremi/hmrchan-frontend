@@ -67,7 +67,7 @@ function cloudflarePagesPlugin(): Plugin {
   }
 }
 
-export default defineConfig(({ mode }) => {
+export default defineConfig(({ mode }: { mode: string }) => {
   const isProd = mode === 'production'
   const isDev = mode === 'development'
 
@@ -186,13 +186,10 @@ export default defineConfig(({ mode }) => {
     },
 
     /**
-     * esbuild 配置
+     * Oxc 配置 (Vite 8 默认使用 Oxc 替代 esbuild)
      */
-    esbuild: {
+    oxc: {
       target: 'esnext',
-      supported: {
-        'top-level-await': true,
-      },
     },
 
     /**
@@ -200,156 +197,29 @@ export default defineConfig(({ mode }) => {
      *
      * 优化策略：
      * - 使用 ESNext 目标，生成现代化代码
-     * - 使用 esbuild 进行快速压缩
+     * - 使用 Oxc 进行快速压缩和转换
      * - 生产环境移除 console 和 debugger
      * - 细粒度代码分割，优化缓存策略
      * - 优化资源处理和文件命名
      */
     build: {
-      rollupOptions: {
-        external: ['@/views/ComponentsShowcase.vue'],
-        output: {
-          /**
-           * 代码分割策略（优化版）
-           * - 核心框架独立缓存（Vue 单独分割确保最大化缓存）
-           * - 大型库按需加载
-           * - 业务代码按路由分割
-           * - 共享组件/工具独立分割
-           */
-          manualChunks(id) {
-            if (id.includes('node_modules')) {
-              // Vue 运行时（最稳定，变化最少）
-              if (id.includes('vue/dist') || id.includes('@vue/runtime')) return 'vue-runtime'
-              // Vue 响应式系统
-              if (id.includes('@vue/reactivity') || id.includes('@vue/shared'))
-                return 'vue-reactivity'
-              // Vue 编译器相关（生产环境很少变化）
-              if (id.includes('@vue/')) return 'vue-core'
-
-              // 路由和状态管理
-              if (id.includes('vue-router')) return 'vue-router'
-              if (id.includes('pinia')) return 'pinia'
-
-              // i18n 独立（包含翻译数据，较大）
-              if (id.includes('vue-i18n') || id.includes('@intlify')) return 'i18n'
-
-              // 图标库（较大，按需加载）
-              if (id.includes('lucide-vue-next')) return 'icons'
-
-              // 动画和媒体查看器（按需加载）
-              if (id.includes('gsap')) {
-                // GSAP 核心库独立
-                if (
-                  id.includes('gsap/dist/gsap') &&
-                  !id.includes('ScrollTrigger') &&
-                  !id.includes('Flip')
-                )
-                  return 'gsap-core'
-                // GSAP 插件独立
-                return 'gsap-plugins'
-              }
-
-              // 其他小型依赖合并
-              return 'vendor'
-            }
-
-            // 业务代码分割：UI 组件库（细粒度）
-            if (id.includes('/components/ui/')) {
-              // 首屏必需组件
-              if (id.includes('Button') || id.includes('StateIndicator')) return 'ui-core'
-              // Toast/Modal 等交互组件懒加载
-              if (id.includes('Toast') || id.includes('Modal') || id.includes('Dialog')) return 'ui-interactive'
-              // 其他 UI 组件
-              return 'ui-lazy'
-            }
-            if (id.includes('/components/icons/')) return 'icons'
-
-            // Layout 分层：核心导航 vs 设置面板
-            if (id.includes('/components/layout/')) {
-              if (id.includes('SettingsPanel')) return 'layout-settings'
-              return 'layout'
-            }
-
-            // 业务组件按类型分割
-            if (id.includes('/components/business/')) {
-              // PostCard 是首屏核心组件，独立打包便于缓存
-              if (id.includes('PostCard')) return 'post-card'
-              // 搜索栏懒加载
-              if (id.includes('SearchBar')) return 'search-bar'
-              return 'business-components'
-            }
-
-            // 业务代码分割：stores
-            if (id.includes('/stores/')) return 'stores'
-
-            // 业务代码分割：工具函数
-            if (id.includes('/utils/')) return 'utils'
-
-            // 业务代码分割：composables（细粒度拆分以优化缓存）
-            if (id.includes('/composables/')) {
-              // 卡片动画相关（包含 GSAP）
-              if (id.includes('useCardAnimation')) return 'composables-animation'
-              // 缓存相关
-              if (id.includes('useCachedPosts') || id.includes('useCache')) return 'composables-cache'
-              // 瀑布流和布局相关
-              if (id.includes('useMasonryColumns') || id.includes('useInfiniteScroll'))
-                return 'composables-layout'
-              // 其他轻量级 composables
-              return 'composables-utils'
-            }
-
-            // 动画工具按需分割
-            if (id.includes('/animations/') || id.includes('gsap')) {
-              if (id.includes('gsap/Flip') || id.includes('gsap/ScrollTrigger'))
-                return 'animations-gsap'
-              return 'animations'
-            }
-
-            // API 层统一打包，避免依赖重复（rolldown 对细粒度分割支持有限）
-            if (id.includes('/api/')) {
-              return 'api'
-            }
-          },
-        },
-      },
       /** 构建目标，使用最新的 ES 特性 */
       target: 'esnext',
-
-      /** 代码压缩工具，esbuild 速度更快 */
-      minify: mode === 'production' ? 'esbuild' : false,
 
       /** 禁用 sourcemap 以加快构建速度和减小体积 */
       sourcemap: false,
 
       /**
-       * esbuild 压缩配置
-       * 生产环境移除 console、debugger 和注释
+       * 生产环境代码压缩配置
+       * Vite 8 使用 Oxc Minifier
        */
-      ...(mode === 'production' && {
-        esbuildOptions: {
-          /** 移除 console 和 debugger 语句 */
-          drop: ['console', 'debugger'],
-
-          /** 移除代码中的法律注释 */
-          legalComments: 'none',
-
-          /** 启用 Tree Shaking */
-          treeShaking: true,
-
-          /** 只输出错误日志，减少构建输出 */
-          logLevel: 'error',
-
-          /** 压缩标识符名称 */
-          minifyIdentifiers: true,
-
-          /** 压缩语法结构 */
-          minifySyntax: true,
-
-          /** 压缩空白字符 */
-          minifyWhitespace: true,
-
-          /** 不保留函数和类名，进一步减小体积 */
-          keepNames: false,
+      ...(isProd && {
+        minify: {
+          compress: {
+            drop_console: true,
+            drop_debugger: true,
+          },
+          mangle: true,
         },
       }),
 
@@ -361,114 +231,69 @@ export default defineConfig(({ mode }) => {
         polyfill: false,
       },
 
+      /** chunk 大小警告阈值（KB） */
+      chunkSizeWarningLimit: 500,
+
+      /** 小于 4KB 的资源内联为 base64 */
+      assetsInlineLimit: 4096,
+
+      /** 启用 CSS 代码分割 */
+      cssCodeSplit: true,
+
+      /** 使用 Lightning CSS 压缩 (Vite 8 默认) */
+      cssMinify: 'lightningcss',
+
+      /** CSS 目标版本 */
+      cssTarget: 'esnext',
+
+      /** 禁用压缩大小报告，加快构建速度 */
+      reportCompressedSize: false,
+
+      /** 构建前清空输出目录 */
+      emptyOutDir: true,
+
       /**
-       * Rollup 打包配置
-       * 主要用于配置代码分割策略
+       * 生产环境额外配置
        */
-      rollupOptions: {
+      ...(isProd && {
+        assetsDir: 'assets',
+        manifest: true,
+      }),
+
+      /**
+       * Rolldown 打包配置
+       */
+      rolldownOptions: {
         external: ['@/views/ComponentsShowcase.vue'],
         output: {
           /**
-           * 代码分割策略（优化版）
-           * - 核心框架独立缓存（Vue 单独分割确保最大化缓存）
-           * - 大型库按需加载
-           * - 业务代码按路由分割
-           * - 共享组件/工具独立分割
+           * 代码分割策略
+           * 使用 Rolldown 的 codeSplitting 替代 manualChunks
            */
-          manualChunks(id) {
-            if (id.includes('node_modules')) {
-              // Vue 运行时（最稳定，变化最少）
-              if (id.includes('vue/dist') || id.includes('@vue/runtime')) return 'vue-runtime'
-              // Vue 响应式系统
-              if (id.includes('@vue/reactivity') || id.includes('@vue/shared'))
-                return 'vue-reactivity'
-              // Vue 编译器相关（生产环境很少变化）
-              if (id.includes('@vue/')) return 'vue-core'
+          codeSplitting: {
+            groups: [
+              // Vue 核心库（最稳定，变化最少）
+              { test: /vue\/dist|@vue\/runtime/, name: 'vue-runtime' },
+              { test: /@vue\/reactivity|@vue\/shared/, name: 'vue-reactivity' },
+              { test: /@vue\//, name: 'vue-core' },
 
               // 路由和状态管理
-              if (id.includes('vue-router')) return 'vue-router'
-              if (id.includes('pinia')) return 'pinia'
+              { test: /vue-router/, name: 'vue-router' },
+              { test: /pinia/, name: 'pinia' },
 
-              // i18n 独立（包含翻译数据，较大）
-              if (id.includes('vue-i18n') || id.includes('@intlify')) return 'i18n'
+              // i18n 独立
+              { test: /vue-i18n|@intlify/, name: 'i18n' },
 
-              // 图标库（较大，按需加载）
-              if (id.includes('lucide-vue-next')) return 'icons'
+              // 图标库
+              { test: /lucide-vue-next/, name: 'icons' },
 
-              // 动画和媒体查看器（按需加载）
-              if (id.includes('gsap')) {
-                // GSAP 核心库独立
-                if (id.includes('gsap/dist/gsap') && !id.includes('ScrollTrigger') && !id.includes('Flip'))
-                  return 'gsap-core'
-                // GSAP 插件独立
-                return 'gsap-plugins'
-              }
+              // GSAP 动画库
+              { test: /gsap/, name: 'gsap' },
 
-              // 其他小型依赖合并
-              return 'vendor'
-            }
-
-            // 业务代码分割：UI 组件库（细粒度）
-            if (id.includes('/components/ui/')) {
-              // 首屏必需组件
-              if (id.includes('Button') || id.includes('StateIndicator')) return 'ui-core'
-              // Toast/Modal 等交互组件懒加载
-              if (id.includes('Toast') || id.includes('Modal') || id.includes('Dialog')) return 'ui-interactive'
-              // 其他 UI 组件
-              return 'ui-lazy'
-            }
-            if (id.includes('/components/icons/')) return 'icons'
-
-            // Layout 分层：核心导航 vs 设置面板
-            if (id.includes('/components/layout/')) {
-              if (id.includes('SettingsPanel')) return 'layout-settings'
-              return 'layout'
-            }
-
-            // 业务组件按类型分割
-            if (id.includes('/components/business/')) {
-              // PostCard 是首屏核心组件，独立打包便于缓存
-              if (id.includes('PostCard')) return 'post-card'
-              // 搜索栏懒加载
-              if (id.includes('SearchBar')) return 'search-bar'
-              return 'business-components'
-            }
-
-            // 业务代码分割：stores
-            if (id.includes('/stores/')) return 'stores'
-
-            // 业务代码分割：工具函数
-            if (id.includes('/utils/')) return 'utils'
-
-            // 业务代码分割：composables（细粒度拆分以优化缓存）
-            if (id.includes('/composables/')) {
-              // 卡片动画相关（包含 GSAP）
-              if (id.includes('useCardAnimation')) return 'composables-animation'
-              // 缓存相关
-              if (id.includes('useCachedPosts') || id.includes('useCache')) return 'composables-cache'
-              // 瀑布流和布局相关
-              if (id.includes('useMasonryColumns') || id.includes('useInfiniteScroll'))
-                return 'composables-layout'
-              // 其他轻量级 composables
-              return 'composables-utils'
-            }
-
-            // 动画工具按需分割
-            if (id.includes('/animations/') || id.includes('gsap')) {
-              if (id.includes('gsap/Flip') || id.includes('gsap/ScrollTrigger')) return 'animations-gsap'
-              return 'animations'
-            }
-
-            // API 层统一打包，避免依赖重复（rolldown 对细粒度分割支持有限）
-            if (id.includes('/api/')) {
-              return 'api'
-            }
+              // 其他 node_modules 依赖
+              { test: /node_modules/, name: 'vendor' },
+            ],
           },
-
-          /**
-           * 输出文件命名规则
-           * 使用 hash 确保文件变化时缓存失效
-           */
 
           /** JS chunk 文件命名 */
           chunkFileNames: 'assets/js/[name]-[hash].js',
@@ -478,94 +303,27 @@ export default defineConfig(({ mode }) => {
 
           /**
            * 静态资源文件命名
-           * 根据文件类型分类存放到不同目录
+           * 根据文件类型分类存放
            */
-          assetFileNames: (assetInfo) => {
-            const info = assetInfo.name?.split('.')
-            const ext = info?.[info.length - 1]
+          assetFileNames: (assetInfo: { name?: string }) => {
+            const name = assetInfo.name || ''
 
-            /** 图片资源 */
-            if (/\.(png|jpe?g|gif|svg|webp|avif)$/i.test(assetInfo.name || '')) {
+            if (/\.(png|jpe?g|gif|svg|webp|avif)$/i.test(name)) {
               return 'assets/images/[name]-[hash][extname]'
             }
 
-            /** 字体资源 */
-            if (/\.(woff2?|eot|ttf|otf)$/i.test(assetInfo.name || '')) {
+            if (/\.(woff2?|eot|ttf|otf)$/i.test(name)) {
               return 'assets/fonts/[name]-[hash][extname]'
             }
 
-            /** CSS 文件 */
-            if (ext === 'css') {
+            if (name.endsWith('.css')) {
               return 'assets/css/[name]-[hash][extname]'
             }
 
-            /** 其他资源 */
             return 'assets/[name]-[hash][extname]'
           },
         },
       },
-
-      /**
-       * 资源处理配置
-       */
-
-      /** chunk 大小警告阈值（KB），降低阈值促进更细的分割 */
-      chunkSizeWarningLimit: 500,
-
-      /** 小于 4KB 的资源内联为 base64，减少 HTTP 请求 */
-      assetsInlineLimit: 4096,
-
-      /**
-       * CSS 处理配置
-       */
-
-      /** 启用 CSS 代码分割，每个异步 chunk 生成独立的 CSS 文件 */
-      cssCodeSplit: true,
-
-      /** 使用 esbuild 压缩 CSS，速度更快 */
-      cssMinify: 'esbuild',
-
-      /** CSS 目标版本 */
-      cssTarget: 'esnext',
-
-      /**
-       * 构建性能优化
-       */
-
-      /** 禁用压缩大小报告，加快构建速度 */
-      reportCompressedSize: false,
-
-      /** 构建前清空输出目录 */
-      emptyOutDir: true,
-
-      /**
-       * CommonJS 模块处理配置
-       * 优化 CommonJS 模块的转换性能
-       */
-      commonjsOptions: {
-        /** 只处理 node_modules 中的 CommonJS 模块 */
-        include: [/node_modules/],
-
-        /** 支持的文件扩展名 */
-        extensions: ['.js', '.cjs'],
-
-        /** 严格的 require 处理 */
-        strictRequires: true,
-
-        /** 转换混合的 ES 模块 */
-        transformMixedEsModules: true,
-      },
-
-      /**
-       * 生产环境额外配置
-       */
-      ...(mode === 'production' && {
-        /** 资源输出目录 */
-        assetsDir: 'assets',
-
-        /** 生成 manifest.json 文件，用于资源映射 */
-        manifest: true,
-      }),
     },
 
     /**
@@ -613,7 +371,7 @@ export default defineConfig(({ mode }) => {
               }
             })
           },
-          rewrite: (path) => {
+          rewrite: (path: string) => {
             const url = new URL(path, 'http://localhost')
             if (!url.pathname.endsWith('/')) {
               return url.pathname + '/' + url.search
