@@ -42,9 +42,18 @@ const i18n = createI18n({
  * 切换语言
  */
 export function setLocale(locale: SupportedLocale): void {
+  const currentLocale = i18n.global.locale.value
+  if (currentLocale === locale) return
+
   i18n.global.locale.value = locale
   localStorage.setItem('locale', locale)
   document.documentElement.lang = locale
+
+  // 强制刷新页面以确保所有组件都使用新语言
+  // 使用 nextTick 确保 DOM 更新后再刷新
+  setTimeout(() => {
+    window.location.reload()
+  }, 100)
 }
 
 // 初始化：设置默认语言和 HTML lang 属性
