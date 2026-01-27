@@ -5,7 +5,8 @@
  * - 使用 jsdom 环境模拟浏览器
  * - 启用全局 API 简化测试代码
  * - 配置覆盖率报告
- * - 优化测试性能
+ * - 优化测试性能和并发
+ * - 启用快照测试
  */
 
 import { fileURLToPath } from 'node:url'
@@ -28,23 +29,47 @@ export default defineConfig({
     globals: true,
 
     /** 排除不需要测试的文件 */
-    exclude: [...configDefaults.exclude, 'e2e/**'],
+    exclude: [...configDefaults.exclude, 'e2e/**', 'dist/**', 'node_modules/**'],
 
     /** 测试根目录 */
     root: fileURLToPath(new URL('./', import.meta.url)),
 
     /** 覆盖率配置 */
     coverage: {
+      /** 使用 v8 引擎收集覆盖率（更快） */
       provider: 'v8',
-      reporter: ['text', 'json', 'html'],
+
+      /** 报告格式 */
+      reporter: ['text', 'json', 'html', 'lcov'],
+
+      /** 覆盖率阈值 */
+      thresholds: {
+        lines: 60,
+        functions: 60,
+        branches: 60,
+        statements: 60,
+      },
+
+      /** 排除不需要覆盖率的文件 */
       exclude: [
         ...(configDefaults.coverage.exclude || []),
         '**/*.config.*',
-        '**/mockData',
+        '**/*.d.ts',
+        '**/mockData/**',
+        '**/types/**',
         'src/main.ts',
         'src/router/**',
         'src/types/**',
+        'functions/**',
+        'scripts/**',
+        'public/**',
       ],
+
+      /** 包含的文件 */
+      include: ['src/**/*.{ts,vue}'],
+
+      /** 清理之前的覆盖率报告 */
+      clean: true,
     },
 
     /** 测试超时时间 (ms) */
@@ -64,5 +89,47 @@ export default defineConfig({
 
     /** Setup files for global test configuration */
     setupFiles: [],
+
+    /** 并发运行测试 */
+    pool: 'threads',
+
+    /** 最大并发线程数 */
+    poolOptions: {
+      threads: {
+        singleThread: false,
+        maxThreads: 4,
+        minThreads: 1,
+      },
+    },
+
+    /** 启用快照测试 */
+    snapshotFormat: {
+      escapeString: true,
+      printBasicPrototype: true,
+    },
+
+    /** 测试报告器 */
+    reporters: ['default'],
+
+    /** 静默模式 */
+    silent: false,
+
+    /** 启用 UI 模式 */
+    ui: false,
+
+    /** 启用浏览器模式 */
+    browser: {
+      enabled: false,
+    },
+
+    /** 性能优化 */
+    cache: {
+      dir: 'node_modules/.vitest',
+    },
+
+    /** 启用类型检查 */
+    typecheck: {
+      enabled: false,
+    },
   },
 })
