@@ -2,30 +2,65 @@
 echo "🔍 运行推送前检查..."
 echo ""
 
-# Type check
+# Auto-fix: Format code
+echo "💅 自动格式化代码..."
+bun run format
+if [ $? -ne 0 ]; then
+  echo ""
+  echo "⚠️  代码格式化失败，但继续检查..."
+fi
+
+# Auto-fix: Lint code
+echo "🔧 自动修复代码规范问题..."
+bun run lint
+if [ $? -ne 0 ]; then
+  echo ""
+  echo "⚠️  部分代码规范问题无法自动修复，但继续检查..."
+fi
+
+# Check if auto-fix created changes
+if ! git diff --quiet; then
+  echo ""
+  echo "📝 检测到自动修复的更改："
+  git diff --stat
+  echo ""
+  echo "💡 提示：代码已自动格式化和修复，请检查更改并重新提交"
+  echo ""
+  echo "建议操作："
+  echo "  1. 查看更改: git diff"
+  echo "  2. 暂存更改: git add ."
+  echo "  3. 修正提交: git commit --amend --no-edit"
+  echo "  4. 重新推送: git push"
+  echo ""
+  exit 1
+fi
+
+# Type check (cannot auto-fix)
 echo "📝 类型检查..."
 bun run type-check
 if [ $? -ne 0 ]; then
   echo ""
-  echo "❌ 类型检查失败，请修复 TypeScript 错误后再推送"
+  echo "❌ 类型检查失败，请手动修复 TypeScript 错误后再推送"
   exit 1
 fi
 
-# Lint check (strict mode - no warnings allowed)
-echo "🔧 代码规范检查..."
+# Strict lint check (ensure no warnings)
+echo "🔍 严格代码规范检查..."
 bun run lint:strict
 if [ $? -ne 0 ]; then
   echo ""
-  echo "❌ 代码规范检查失败，请运行 'bun run lint' 自动修复"
+  echo "❌ 代码规范检查失败（存在警告或错误）"
+  echo "💡 提示：大部分问题应该已自动修复，请检查剩余问题"
   exit 1
 fi
 
-# Format check
-echo "💅 代码格式检查..."
+# Format check (ensure all files are formatted)
+echo "✨ 验证代码格式..."
 bun run format:check
 if [ $? -ne 0 ]; then
   echo ""
-  echo "❌ 代码格式检查失败，请运行 'bun run format' 格式化代码"
+  echo "❌ 代码格式验证失败"
+  echo "💡 提示：这不应该发生，请重新运行 'bun run format'"
   exit 1
 fi
 
