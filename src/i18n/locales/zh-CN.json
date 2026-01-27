@@ -154,6 +154,8 @@
     "animationReduced": "减弱",
     "animationNormal": "正常",
     "animationFull": "完整",
+    "videoSettings": "视频设置",
+    "resetVideoSettings": "重置视频设置",
     "cache": {
       "title": "缓存管理",
       "description": "清除缓存数据以释放空间",
