@@ -66,9 +66,7 @@ interface Props {
     | 'bottom-center'
 }
 
-withDefaults(defineProps<Props>(), {
-  position: 'top-right',
-})
+const { position = 'top-right' } = defineProps<Props>()
 
 const toastStore = useToastStore()
 const { toasts } = storeToRefs(toastStore)
@@ -348,14 +346,35 @@ function handleAction(toast: Toast) {
     transform: none;
   }
 
+  /* 移动端统一从底部弹出，避免遮挡内容 */
+  .toast-container--top-right,
+  .toast-container--top-left,
+  .toast-container--top-center {
+    top: auto;
+    bottom: calc(var(--spacing-4) + env(safe-area-inset-bottom, 0px));
+  }
+
   .toast-container--top-center,
   .toast-container--bottom-center {
     left: calc(var(--spacing-3) + env(safe-area-inset-left, 0px));
   }
 
-  .toast-enter-from,
+  /* 移动端从底部滑入 */
+  .toast-enter-from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+
   .toast-leave-to {
-    transform: translateY(-20px) scale(0.95);
+    opacity: 0;
+    transform: translateY(10px) scale(0.95);
+  }
+
+  /* 增加关闭按钮的点击区域，避免误触 */
+  .toast__close {
+    width: 2.5rem;
+    height: 2.5rem;
+    margin: calc(var(--spacing-1) * -1);
   }
 }
 

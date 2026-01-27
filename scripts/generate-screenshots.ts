@@ -118,6 +118,57 @@ async function sleep(ms: number): Promise<void> {
 }
 
 /**
+ * Generate mock post data for screenshots
+ */
+function generateMockPosts(count: number) {
+  const tags = ['风景', '人物', '动物', '建筑', '美食', '旅行', '艺术', '自然']
+  const platforms = ['pixiv', 'twitter', 'danbooru', 'gelbooru']
+
+  return Array.from({ length: count }, (_, i) => ({
+    id: `post-${i + 1}`,
+    title: `精美作品 ${i + 1}`,
+    description: '这是一张精美的图片作品',
+    media_url: `https://picsum.photos/seed/${i + 1}/800/1200`,
+    thumbnail_url: `https://picsum.photos/seed/${i + 1}/400/600`,
+    media_type: 'image',
+    width: 800,
+    height: 1200,
+    file_size: 1024000,
+    tags: tags.slice(0, Math.floor(Math.random() * 3) + 2),
+    author: {
+      id: `author-${(i % 5) + 1}`,
+      name: `创作者${(i % 5) + 1}`,
+      avatar: `https://i.pravatar.cc/150?img=${(i % 5) + 1}`,
+      post_count: Math.floor(Math.random() * 1000) + 100,
+    },
+    platform: platforms[i % platforms.length],
+    platform_id: `${platforms[i % platforms.length]}_${i + 1}`,
+    view_count: Math.floor(Math.random() * 10000) + 100,
+    like_count: Math.floor(Math.random() * 1000) + 10,
+    favorite_count: Math.floor(Math.random() * 500) + 5,
+    comment_count: Math.floor(Math.random() * 100) + 1,
+    created_at: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
+    updated_at: new Date().toISOString(),
+  }))
+}
+
+/**
+ * Generate mock author data for screenshots
+ */
+function generateMockAuthors(count: number) {
+  return Array.from({ length: count }, (_, i) => ({
+    id: `author-${i + 1}`,
+    name: `创作者${i + 1}`,
+    avatar: `https://i.pravatar.cc/150?img=${i + 1}`,
+    bio: `这是创作者${i + 1}的个人简介`,
+    post_count: Math.floor(Math.random() * 1000) + 100,
+    follower_count: Math.floor(Math.random() * 5000) + 500,
+    following_count: Math.floor(Math.random() * 500) + 50,
+    created_at: new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000).toISOString(),
+  }))
+}
+
+/**
  * Generate a single screenshot with retry logic
  */
 async function generateScreenshot(
@@ -137,6 +188,52 @@ async function generateScreenshot(
 
   try {
     await page.setViewport(viewport)
+
+    // 拦截 API 请求，返回 mock 数据
+    await page.setRequestInterception(true)
+    page.on('request', (request) => {
+      const url = request.url()
+
+      // 放行非 API 请求
+      if (!url.includes('/api/v1/')) {
+        request.continue()
+        return
+      }
+
+      // Mock API 响应
+      if (url.includes('/posts')) {
+        request.respond({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            items: generateMockPosts(12),
+            total: 100,
+            page: 1,
+            page_size: 12,
+            total_pages: 9,
+          }),
+        })
+      } else if (url.includes('/authors')) {
+        request.respond({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            items: generateMockAuthors(8),
+            total: 50,
+            page: 1,
+            page_size: 8,
+            total_pages: 7,
+          }),
+        })
+      } else {
+        // 其他 API 请求返回空数据
+        request.respond({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ items: [], total: 0 }),
+        })
+      }
+    })
 
     await page.goto(`${options.baseUrl}${url}`, {
       waitUntil: 'networkidle2',
