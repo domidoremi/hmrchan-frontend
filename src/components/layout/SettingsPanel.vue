@@ -104,6 +104,24 @@
       </div>
     </div>
 
+    <!-- Video Settings -->
+    <div class="settings-group">
+      <div class="settings-group-header">
+        <div class="settings-group-icon">
+          <Video :size="14" />
+        </div>
+        <span class="settings-label">{{ $t('settings.videoSettings') }}</span>
+      </div>
+      <div class="link-list">
+        <button type="button" class="link-btn" @click="resetVideoSettings">
+          <div class="link-btn-icon">
+            <RotateCcw :size="16" />
+          </div>
+          <span class="link-btn-text">{{ $t('settings.resetVideoSettings') }}</span>
+        </button>
+      </div>
+    </div>
+
     <!-- Links -->
     <div class="settings-group">
       <div class="settings-group-header">
@@ -152,20 +170,25 @@ import {
   Moon,
   Monitor,
   Zap,
+  Video,
+  RotateCcw,
 } from 'lucide-vue-next'
 import { RouterLink } from 'vue-router'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
-import { useThemeStore, useSettingsStore } from '@/stores'
+import { useThemeStore, useSettingsStore, useToastStore } from '@/stores'
 import { setLocale, type SupportedLocale } from '@/i18n'
+import { useVideoSettings } from '@/composables/useVideoSettings'
 import type { Theme } from '@/types'
 
 defineEmits<{ close: [] }>()
 
-const { locale } = useI18n()
+const { locale, t } = useI18n()
 const themeStore = useThemeStore()
 const settingsStore = useSettingsStore()
+const toastStore = useToastStore()
+const { resetSettings } = useVideoSettings()
 
 const { theme } = storeToRefs(themeStore)
 const { settings } = storeToRefs(settingsStore)
@@ -200,6 +223,16 @@ function changeLocale(code: SupportedLocale) {
 
 function toggleSetting(key: 'showHeroSection' | 'enableAnimations') {
   settingsStore.toggleSetting(key)
+}
+
+function resetVideoSettings() {
+  resetSettings()
+  toastStore.success(t('settings.videoSettingsReset'))
+}
+
+function resetVideoSettings() {
+  resetSettings()
+  toastStore.success('视频设置已重置')
 }
 </script>
 

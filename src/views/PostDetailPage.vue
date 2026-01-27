@@ -169,6 +169,7 @@ import { storeToRefs } from 'pinia'
 import { ArrowLeft, Bookmark, Share2, ChevronLeft, ChevronRight } from 'lucide-vue-next'
 import { useAuthStore, useToastStore } from '@/stores'
 import { useI18n } from 'vue-i18n'
+import { usePageTitle } from '@/composables/usePageTitle'
 import { CommentList } from '@/components/comment'
 import { postService, favoriteService, type PostDetailResponse, ApiError } from '@/api'
 import {
@@ -193,6 +194,9 @@ const authStore = useAuthStore()
 const toastStore = useToastStore()
 
 const { isAuthenticated } = storeToRefs(authStore)
+
+// 动态标题管理
+const { updateTitle } = usePageTitle()
 
 const postId = computed(() => route.params['id'] as string)
 const post = ref<PostDetailResponse | null>(null)
@@ -382,6 +386,10 @@ async function fetchPost() {
       post.value = cached as PostDetailResponse
       activeMediaIndex.value = 0
       isMediaLoaded.value = false
+
+      // 更新页面标题
+      updateTitle(post.value.title)
+
       await fetchFavoriteStatus()
       isLoading.value = false
 
@@ -396,6 +404,10 @@ async function fetchPost() {
     post.value = res.data
     activeMediaIndex.value = 0
     isMediaLoaded.value = false
+
+    // 更新页面标题
+    updateTitle(post.value.title)
+
     await fetchFavoriteStatus()
 
     // 追踪浏览量（使用 IndexedDB 去重）

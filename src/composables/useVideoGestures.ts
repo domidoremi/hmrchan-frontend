@@ -1,0 +1,281 @@
+/**
+ * 视频播放器手势控制
+ * 支持触摸、鼠标、手写笔等多种输入方式
+ *
+ * 手势功能：
+ * - 左侧上下滑动：调节亮度
+ * - 右侧上下滑动：调节音量
+ * - 左右滑动：快进/快退
+ * - 双击：播放/暂停
+ */
+
+import { ref, onMounted, onBeforeUnmount, type Ref } from 'vue'
+
+export interface GestureOptions {
+  /** 视频元素引用 */
+  videoRef: Ref<HTMLVideoElement | null>
+  /** 容器元素引用 */
+  containerRef: Ref<HTMLElement | null>
+  /** 音量变化回调 */
+  onVolumeChange?: (volume: number) => void
+  /** 亮度变化回调 */
+  onBrightnessChange?: (brightness: number) => void
+  /** 进度变化回调 */
+  onSeek?: (time: number) => void
+  /** 播放/暂停回调 */
+  onTogglePlay?: () => void
+}
+
+interface TouchState {
+  startX: number
+  startY: number
+  startTime: number
+  lastX: number
+  lastY: number
+  isLeft: boolean // 是否在左侧
+  isDragging: boolean
+  lastTapTime: number // 用于检测双击
+}
+
+const SWIPE_THRESHOLD = 10 // 最小滑动距离
+const DOUBLE_TAP_DELAY = 300 // 双击间隔时间
+const BRIGHTNESS_STEP = 0.01 // 亮度调节步长
+const VOLUME_STEP = 0.01 // 音量调节步长
+const SEEK_STEP = 0.5 // 快进/快退步长（秒）
+
+export function useVideoGestures(options: GestureOptions) {
+  const { videoRef, containerRef, onVolumeChange, onBrightnessChange, onSeek, onTogglePlay } =
+    options
+
+  const touchState = ref<TouchState>({
+    startX: 0,
+    startY: 0,
+    startTime: 0,
+    lastX: 0,
+    lastY: 0,
+    isLeft: false,
+    isDragging: false,
+    lastTapTime: 0,
+  })
+
+  const currentVolume = ref(1)
+  const currentBrightness = ref(1)
+  const showVolumeIndicator = ref(false)
+  const showBrightnessIndicator = ref(false)
+  const showSeekIndicator = ref(false)
+  const indicatorValue = ref(0)
+  const seekDirection = ref<'forward' | 'backward'>('forward')
+
+  let indicatorTimeout: ReturnType<typeof setTimeout> | null = null
+
+  /**
+   * 显示指示器
+   */
+  function showIndicator(type: 'volume' | 'brightness' | 'seek', value: number) {
+    if (indicatorTimeout) {
+      clearTimeout(indicatorTimeout)
+    }
+
+    indicatorValue.value = value
+
+    if (type === 'volume') {
+      showVolumeIndicator.value = true
+      showBrightnessIndicator.value = false
+      showSeekIndicator.value = false
+    } else if (type === 'brightness') {
+      showBrightnessIndicator.value = true
+      showVolumeIndicator.value = false
+      showSeekIndicator.value = false
+    } else {
+      showSeekIndicator.value = true
+      showVolumeIndicator.value = false
+      showBrightnessIndicator.value = false
+    }
+
+    indicatorTimeout = setTimeout(() => {
+      showVolumeIndicator.value = false
+      showBrightnessIndicator.value = false
+      showSeekIndicator.value = false
+    }, 1000)
+  }
+
+  /**
+   * 处理触摸/鼠标/手写笔开始
+   */
+  function handleStart(event: TouchEvent | MouseEvent | PointerEvent) {
+    if (!containerRef.value) return
+
+    const clientX = 'touches' in event ? event.touches[0]?.clientX : event.clientX
+    const clientY = 'touches' in event ? event.touches[0]?.clientY : event.clientY
+
+    if (clientX === undefined || clientY === undefined) return
+
+    const rect = containerRef.value.getBoundingClientRect()
+    const x = clientX - rect.left
+    const y = clientY - rect.top
+
+    touchState.value = {
+      startX: x,
+      startY: y,
+      startTime: Date.now(),
+      lastX: x,
+      lastY: y,
+      isLeft: x < rect.width / 2,
+      isDragging: false,
+      lastTapTime: touchState.value.lastTapTime,
+    }
+
+    // 检测双击
+    const now = Date.now()
+    if (now - touchState.value.lastTapTime < DOUBLE_TAP_DELAY) {
+      onTogglePlay?.()
+      touchState.value.lastTapTime = 0
+    } else {
+      touchState.value.lastTapTime = now
+    }
+  }
+
+  /**
+   * 处理触摸/鼠标/手写笔移动
+   */
+  function handleMove(event: TouchEvent | MouseEvent | PointerEvent) {
+    if (!containerRef.value || !videoRef.value) return
+
+    const clientX = 'touches' in event ? event.touches[0]?.clientX : event.clientX
+    const clientY = 'touches' in event ? event.touches[0]?.clientY : event.clientY
+
+    if (clientX === undefined || clientY === undefined) return
+
+    const rect = containerRef.value.getBoundingClientRect()
+    const x = clientX - rect.left
+    const y = clientY - rect.top
+
+    const deltaX = x - touchState.value.startX
+    const deltaY = y - touchState.value.startY
+
+    // 判断是否开始拖动
+    if (
+      !touchState.value.isDragging &&
+      (Math.abs(deltaX) > SWIPE_THRESHOLD || Math.abs(deltaY) > SWIPE_THRESHOLD)
+    ) {
+      touchState.value.isDragging = true
+    }
+
+    if (!touchState.value.isDragging) return
+
+    // 阻止默认行为（如页面滚动）
+    if ('preventDefault' in event) {
+      event.preventDefault()
+    }
+
+    // 垂直滑动：调节亮度或音量
+    if (Math.abs(deltaY) > Math.abs(deltaX)) {
+      if (touchState.value.isLeft) {
+        // 左侧：调节亮度
+        const brightnessChange = -deltaY * BRIGHTNESS_STEP
+        const newBrightness = Math.max(0, Math.min(1, currentBrightness.value + brightnessChange))
+        currentBrightness.value = newBrightness
+        onBrightnessChange?.(newBrightness)
+        showIndicator('brightness', Math.round(newBrightness * 100))
+      } else {
+        // 右侧：调节音量
+        const volumeChange = -deltaY * VOLUME_STEP
+        const newVolume = Math.max(0, Math.min(1, currentVolume.value + volumeChange))
+        currentVolume.value = newVolume
+        videoRef.value.volume = newVolume
+        onVolumeChange?.(newVolume)
+        showIndicator('volume', Math.round(newVolume * 100))
+      }
+    }
+    // 水平滑动：快进/快退
+    else {
+      const seekChange = deltaX * SEEK_STEP
+      const currentTime = videoRef.value.currentTime
+      const newTime = Math.max(0, Math.min(videoRef.value.duration, currentTime + seekChange))
+      seekDirection.value = seekChange > 0 ? 'forward' : 'backward'
+      onSeek?.(newTime)
+      showIndicator('seek', Math.abs(Math.round(seekChange)))
+    }
+
+    touchState.value.lastX = x
+    touchState.value.lastY = y
+  }
+
+  /**
+   * 处理触摸/鼠标/手写笔结束
+   */
+  function handleEnd() {
+    touchState.value.isDragging = false
+  }
+
+  /**
+   * 初始化事件监听
+   */
+  function initListeners() {
+    if (!containerRef.value) return
+
+    const container = containerRef.value
+
+    // 触摸事件
+    container.addEventListener('touchstart', handleStart as EventListener, { passive: false })
+    container.addEventListener('touchmove', handleMove as EventListener, { passive: false })
+    container.addEventListener('touchend', handleEnd)
+
+    // 鼠标事件
+    container.addEventListener('mousedown', handleStart as EventListener)
+    container.addEventListener('mousemove', handleMove as EventListener)
+    container.addEventListener('mouseup', handleEnd)
+
+    // 手写笔事件（Pointer Events）
+    if ('PointerEvent' in window) {
+      container.addEventListener('pointerdown', handleStart as EventListener)
+      container.addEventListener('pointermove', handleMove as EventListener)
+      container.addEventListener('pointerup', handleEnd)
+    }
+  }
+
+  /**
+   * 清理事件监听
+   */
+  function cleanupListeners() {
+    if (!containerRef.value) return
+
+    const container = containerRef.value
+
+    container.removeEventListener('touchstart', handleStart as EventListener)
+    container.removeEventListener('touchmove', handleMove as EventListener)
+    container.removeEventListener('touchend', handleEnd)
+
+    container.removeEventListener('mousedown', handleStart as EventListener)
+    container.removeEventListener('mousemove', handleMove as EventListener)
+    container.removeEventListener('mouseup', handleEnd)
+
+    if ('PointerEvent' in window) {
+      container.removeEventListener('pointerdown', handleStart as EventListener)
+      container.removeEventListener('pointermove', handleMove as EventListener)
+      container.removeEventListener('pointerup', handleEnd)
+    }
+
+    if (indicatorTimeout) {
+      clearTimeout(indicatorTimeout)
+    }
+  }
+
+  onMounted(() => {
+    initListeners()
+  })
+
+  onBeforeUnmount(() => {
+    cleanupListeners()
+  })
+
+  return {
+    showVolumeIndicator,
+    showBrightnessIndicator,
+    showSeekIndicator,
+    indicatorValue,
+    seekDirection,
+    currentVolume,
+    currentBrightness,
+  }
+}
