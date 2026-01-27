@@ -156,6 +156,7 @@
     "animationFull": "完整",
     "videoSettings": "视频设置",
     "resetVideoSettings": "重置视频设置",
+    "videoSettingsReset": "视频设置已重置为默认值",
     "cache": {
       "title": "缓存管理",
       "description": "清除缓存数据以释放空间",

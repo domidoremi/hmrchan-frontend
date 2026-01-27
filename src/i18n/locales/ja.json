@@ -154,6 +154,9 @@
     "animationReduced": "軽減",
     "animationNormal": "通常",
     "animationFull": "フル",
+    "videoSettings": "動画設定",
+    "resetVideoSettings": "動画設定をリセット",
+    "videoSettingsReset": "動画設定をデフォルトにリセットしました",
     "cache": {
       "title": "キャッシュ管理",
       "description": "キャッシュデータを削除して空き容量を確保",
