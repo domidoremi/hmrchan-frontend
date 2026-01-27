@@ -102,9 +102,24 @@ lighthouse-reports/
 .lighthouse/
 
 # =====================
-# Bun
+# Package Managers
 # =====================
+# Bun (项目使用)
 bun.lockb
+
+# npm (不使用,忽略)
+package-lock.json
+npm-shrinkwrap.json
+
+# Yarn (不使用,忽略)
+yarn.lock
+.yarn/
+.yarnrc
+.yarnrc.yml
+
+# pnpm (不使用,忽略)
+pnpm-lock.yaml
+.pnpm-store/
 
 # =====================
 # Cache & Temp
