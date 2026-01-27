@@ -137,6 +137,11 @@ frontend/
 │   ├── App.vue           # 根组件
 │   └── main.ts           # 应用入口
 ├── public/               # 静态资源
+│   ├── icons/            # PWA 图标（多尺寸）
+│   ├── screenshots/      # PWA 应用截图
+│   ├── manifest.json     # PWA 配置
+│   ├── sw.js             # Service Worker
+│   └── ...
 ├── functions/            # Cloudflare Functions
 └── dist/                 # 构建输出
 ```
@@ -165,6 +170,12 @@ frontend/
 - **响应式设计** - 完美适配桌面和移动端
 - **3D 动态背景** - 根据页面和平台动态变化的背景效果
 - **性能优化** - 智能预加载、缓存策略、懒加载
+- **PWA 支持** - 可安装为桌面/移动应用
+  - 离线浏览支持
+  - 应用快捷方式（首页、探索、收藏、设置）
+  - 分享目标集成（接收图片/视频分享）
+  - 自适应图标（标准 + Maskable）
+  - 应用截图展示
 
 ### 性能指标
 

@@ -1,12 +1,61 @@
-# Robots.txt for Himenshion Club
+# Robots.txt for MomiChan
 # https://www.robotstxt.org/robotstxt.html
+# 更新时间: 2026-01-27
 
+# 全局规则 - 允许所有爬虫
 User-agent: *
 Allow: /
+Crawl-delay: 1
 
-# Sitemaps
-Sitemap: https://momichan.xyz/sitemap.xml
-
-# Disallow admin/private paths
+# 禁止访问的路径
 Disallow: /api/
 Disallow: /admin/
+Disallow: /settings/
+Disallow: /profile/
+Disallow: /_next/
+Disallow: /dist/
+Disallow: /node_modules/
+
+# 禁止访问查询参数页面（避免重复内容）
+Disallow: /*?*source=
+Disallow: /*?*utm_
+Disallow: /*?*ref=
+
+# Google 爬虫特殊规则
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 0.5
+
+# Google 图片爬虫
+User-agent: Googlebot-Image
+Allow: /
+Disallow: /api/
+
+# Bing 爬虫
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 1
+
+# 百度爬虫
+User-agent: Baiduspider
+Allow: /
+Crawl-delay: 2
+
+# 禁止不良爬虫
+User-agent: AhrefsBot
+Disallow: /
+
+User-agent: SemrushBot
+Disallow: /
+
+User-agent: DotBot
+Disallow: /
+
+User-agent: MJ12bot
+Disallow: /
+
+# Sitemap 位置
+Sitemap: https://momichan.xyz/sitemap.xml
+
+# 主机信息（可选）
+Host: https://momichan.xyz
