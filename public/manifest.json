@@ -1,8 +1,8 @@
 {
-  "name": "MomiChan",
+  "name": "MomiChan - 籾山ひめり Fan Hub",
   "short_name": "MomiChan",
-  "description": "籾山ひめり Fan Hub - 聚合 YouTube、X(Twitter)、TikTok、Instagram 最新内容",
-  "start_url": "/",
+  "description": "籾山ひめり Fan Hub - 聚合 YouTube、X(Twitter)、TikTok、Instagram 最新内容，支持离线浏览和实时通知",
+  "start_url": "/?source=pwa",
   "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#8b5cf6",
@@ -17,43 +17,144 @@
       "type": "image/x-icon"
     },
     {
-      "src": "/icons/icon-183x183.png",
-      "sizes": "183x183",
+      "src": "/icons/icon-72x72.png",
+      "sizes": "72x72",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-128x128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-144x144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-152x152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-384x384.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/icon-maskable-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/home-mobile.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "首页 - 移动端"
+    },
+    {
+      "src": "/screenshots/home-desktop.png",
+      "sizes": "1920x1080",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "首页 - 桌面端"
     }
   ],
   "shortcuts": [
     {
       "name": "首页",
       "short_name": "首页",
-      "description": "返回首页浏览内容",
-      "url": "/"
+      "description": "返回首页浏览最新内容",
+      "url": "/?source=shortcut",
+      "icons": [
+        {
+          "src": "/icons/shortcut-home.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "探索",
+      "short_name": "探索",
+      "description": "发现更多精彩内容",
+      "url": "/explore?source=shortcut",
+      "icons": [
+        {
+          "src": "/icons/shortcut-explore.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
     },
     {
       "name": "收藏",
       "short_name": "收藏",
-      "description": "查看我的收藏",
-      "url": "/favorites"
+      "description": "查看我的收藏内容",
+      "url": "/favorites?source=shortcut",
+      "icons": [
+        {
+          "src": "/icons/shortcut-favorites.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
     },
     {
       "name": "设置",
       "short_name": "设置",
-      "description": "打开设置页面",
-      "url": "/settings"
+      "description": "个性化设置和偏好",
+      "url": "/settings?source=shortcut",
+      "icons": [
+        {
+          "src": "/icons/shortcut-settings.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
     }
   ],
   "related_applications": [],
   "prefer_related_applications": false,
   "scope": "/",
-  "iarc_rating_id": "",
-  "display_override": ["window-controls-overlay", "standalone"],
-  "features": ["Cross Origin Isolated"],
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
   "handle_links": "preferred",
   "launch_handler": {
     "client_mode": ["navigate-existing", "auto"]
   },
-  "protocol_handlers": [],
   "share_target": {
     "action": "/share",
     "method": "POST",
@@ -61,10 +162,15 @@
     "params": {
       "title": "title",
       "text": "text",
-      "url": "url"
+      "url": "url",
+      "files": [
+        {
+          "name": "media",
+          "accept": ["image/*", "video/*"]
+        }
+      ]
     }
   },
-  "file_handlers": [],
   "edge_side_panel": {
     "preferred_width": 400
   }
