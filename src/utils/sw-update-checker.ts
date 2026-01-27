@@ -105,19 +105,23 @@ function isInvalidStateError(error: unknown): boolean {
 function showUpdateToast(): void {
   const toastStore = useToastStore()
 
-  // Toast store doesn't support action buttons, use long duration instead
-  const toastId = toastStore.info('发现新版本，请刷新页面以更新', 0)
-
-  // Auto-trigger update after showing toast
-  setTimeout(() => {
-    navigator.serviceWorker.getRegistration().then((registration) => {
-      if (registration?.waiting) {
-        registration.waiting.postMessage({ type: 'SKIP_WAITING' })
-        // Remove toast before reload
-        toastStore.removeToast(toastId)
-      }
-    })
-  }, 3000)
+  toastStore.info('发现新版本，点击立即更新', 0, {
+    title: '应用更新',
+    action: {
+      label: '立即更新',
+      onClick: () => {
+        navigator.serviceWorker.getRegistration().then((registration) => {
+          if (registration?.waiting) {
+            registration.waiting.postMessage({ type: 'SKIP_WAITING' })
+            // 等待新 SW 激活后刷新页面
+            setTimeout(() => {
+              window.location.reload()
+            }, 500)
+          }
+        })
+      },
+    },
+  })
 }
 
 /**

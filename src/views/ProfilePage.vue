@@ -30,17 +30,14 @@
         <div class="insight-card glass-card">
           <div class="insight-label">{{ $t('profile.insights.activity') }}</div>
           <div class="insight-value">{{ $t('profile.insights.activityValue') }}</div>
-          <div class="insight-hint">{{ $t('profile.insights.activityHint') }}</div>
         </div>
         <div class="insight-card glass-card">
           <div class="insight-label">{{ $t('profile.insights.favorites') }}</div>
           <div class="insight-value">{{ $t('profile.insights.favoritesValue') }}</div>
-          <div class="insight-hint">{{ $t('profile.insights.favoritesHint') }}</div>
         </div>
         <div class="insight-card glass-card">
           <div class="insight-label">{{ $t('profile.insights.security') }}</div>
           <div class="insight-value">{{ $t('profile.insights.securityValue') }}</div>
-          <div class="insight-hint">{{ $t('profile.insights.securityHint') }}</div>
         </div>
       </div>
 
@@ -55,9 +52,7 @@
           </div>
         </template>
         <div class="tab-content">
-          <KeepAlive>
-            <component :is="currentTabComponent" />
-          </KeepAlive>
+          <component :is="currentTabComponent" />
         </div>
       </Card>
     </div>
@@ -235,11 +230,6 @@ onMounted(() => {
   font-size: var(--text-lg);
   font-weight: var(--font-semibold);
   color: var(--color-text-primary);
-}
-
-.insight-hint {
-  font-size: var(--text-xs);
-  color: var(--color-text-secondary);
 }
 
 .tabs-header {
