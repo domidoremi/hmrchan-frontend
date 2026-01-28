@@ -110,6 +110,7 @@ bun run type-check       # TypeScript 类型检查
 
 # 测试
 bun run test:unit        # 运行单元测试
+bun run test:unit:watch  # 监听模式运行测试
 
 # 性能测试
 bun run test:perf        # 性能测试（启动开发服务器并运行 Lighthouse）
