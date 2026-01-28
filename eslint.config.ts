@@ -6,6 +6,8 @@
  * - Vitest 测试文件的特殊规则
  * - 自定义规则配置
  * - 格式化规则跳过配置（由 Prettier 处理）
+ *
+ * 注意：TypeScript 可能会显示类型推断警告，这是 ESLint 9 flat config 的已知问题，不影响实际运行
  */
 
 import { defineConfigWithVueTs, vueTsConfigs } from '@vue/eslint-config-typescript'
@@ -80,5 +82,5 @@ export default defineConfigWithVueTs(
         },
       ],
     },
-  },
+  }
 )
