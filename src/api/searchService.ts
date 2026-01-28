@@ -106,5 +106,3 @@ export const searchService = {
     )
   },
 }
-
-export default searchService

@@ -484,5 +484,3 @@ export const apiClient = {
     return request<T>(endpoint, { ...config, method: 'DELETE' })
   },
 }
-
-export default apiClient

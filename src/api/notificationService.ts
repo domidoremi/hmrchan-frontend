@@ -99,5 +99,3 @@ export const notificationService = {
     return apiClient.delete(`/notifications/${params}`)
   },
 }
-
-export default notificationService
