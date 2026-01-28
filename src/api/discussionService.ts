@@ -259,5 +259,3 @@ export const discussionService = {
     return response.items
   },
 }
-
-export default discussionService

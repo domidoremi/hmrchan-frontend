@@ -213,5 +213,3 @@ export const secureTokenManager = {
     return localStorage.getItem(STORAGE_KEY_PREFIX + 'data') !== null
   },
 }
-
-export default secureTokenManager

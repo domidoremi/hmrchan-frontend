@@ -223,5 +223,3 @@ export function initConsoleGuard(): void {
   // disableContextMenu()
   */
 }
-
-export default initConsoleGuard

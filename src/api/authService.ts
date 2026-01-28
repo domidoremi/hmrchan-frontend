@@ -140,4 +140,3 @@ export const authService = {
 }
 
 export { ApiError }
-export default authService
