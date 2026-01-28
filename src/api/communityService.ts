@@ -91,5 +91,3 @@ export const communityService = {
     return apiClient.get<CommunityStats>('/community/stats')
   },
 }
-
-export default communityService

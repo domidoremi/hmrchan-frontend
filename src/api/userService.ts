@@ -162,5 +162,3 @@ export const userService = {
     return Math.max(0, USERNAME_LIMITS.CHANGE_COOLDOWN_DAYS - diffDays)
   },
 }
-
-export default userService

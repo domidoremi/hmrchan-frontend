@@ -187,5 +187,3 @@ export const postService = {
     return apiClient.get('/posts/stats/summary')
   },
 }
-
-export default postService

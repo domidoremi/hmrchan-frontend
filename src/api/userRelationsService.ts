@@ -120,5 +120,3 @@ export const userRelationsService = {
     return apiClient.get<UserPublicProfile>(`/users/${userId}/profile`)
   },
 }
-
-export default userRelationsService

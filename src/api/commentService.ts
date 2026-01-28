@@ -237,5 +237,3 @@ export const commentService = {
     return { valid: true }
   },
 }
-
-export default commentService

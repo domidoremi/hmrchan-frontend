@@ -152,5 +152,3 @@ export const favoriteService = {
     return apiClient.get<FavoriteTagStats[]>('/favorites/tags/list')
   },
 }
-
-export default favoriteService

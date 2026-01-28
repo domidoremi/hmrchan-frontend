@@ -95,5 +95,3 @@ export const sessionService = {
     })
   },
 }
-
-export default sessionService

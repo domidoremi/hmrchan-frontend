@@ -160,5 +160,3 @@ export const historyService = {
     return apiClient.get<HistoryStats>('/history/stats')
   },
 }
-
-export default historyService
