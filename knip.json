@@ -29,7 +29,6 @@
     "chrome-launcher",
     "lighthouse",
     "jiti",
-    "esbuild",
     "@types/*",
     "@tsconfig/*",
     "husky",
