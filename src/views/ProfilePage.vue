@@ -3,11 +3,11 @@
     <div class="container">
       <div class="profile-header">
         <div class="user-info">
-          <Avatar :src="userAvatar" :alt="user?.username" size="xl" class="user-avatar" />
+          <Avatar :src="userAvatar" :alt="username" size="xl" class="user-avatar" />
           <div class="user-details">
-            <h1 class="user-name">{{ user?.full_name || user?.username }}</h1>
-            <p class="user-username">@{{ user?.username }}</p>
-            <p v-if="user?.bio" class="user-bio">{{ user.bio }}</p>
+            <h1 class="user-name">{{ displayName }}</h1>
+            <p class="user-username">@{{ username }}</p>
+            <p v-if="userBio" class="user-bio">{{ userBio }}</p>
             <div class="user-meta">
               <span>{{ $t('profile.summary') }}</span>
               <span class="meta-dot" />
@@ -17,11 +17,11 @@
         </div>
         <div class="profile-actions">
           <Button variant="ghost" size="sm" @click="goToSettings">
-            <Settings :size="16" />
+            <AnimatedIcon name="sparkle" :fallback-icon="Settings" size="sm" />
             {{ $t('nav.profileSettings') }}
           </Button>
           <Button variant="secondary" size="sm" @click="editProfile">
-            <Pencil :size="16" />
+            <AnimatedIcon name="explore" :fallback-icon="Pencil" size="sm" />
             {{ $t('profile.editProfile') }}
           </Button>
         </div>
@@ -77,6 +77,7 @@ import ProfileFavoritesTab from '@/components/profile/ProfileFavoritesTab.vue'
 import ProfileCommentsTab from '@/components/profile/ProfileCommentsTab.vue'
 import ProfileLikesTab from '@/components/profile/ProfileLikesTab.vue'
 import ProfileHistoryTab from '@/components/profile/ProfileHistoryTab.vue'
+import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 
 const router = useRouter()
 const { t } = useI18n()
@@ -102,6 +103,12 @@ const currentTabComponent = computed(() => {
   return components[activeTab.value]
 })
 
+const username = computed(() => user.value?.username ?? '')
+const displayName = computed(() => {
+  const fullName = (user.value as { full_name?: string } | null)?.full_name
+  return fullName || user.value?.username || ''
+})
+const userBio = computed(() => (user.value as { bio?: string } | null)?.bio)
 const userAvatar = computed(() => {
   return getUserAvatarUrl(user.value?.avatar_url, user.value?.username)
 })

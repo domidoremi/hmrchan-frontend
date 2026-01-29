@@ -10,7 +10,7 @@
       <!-- 关于 Himeri -->
       <section class="section himeri-section">
         <div class="section-header">
-          <Heart :size="24" class="section-icon" />
+          <AnimatedIcon name="heart" :fallback-icon="Heart" size="lg" class="section-icon" />
           <h2 class="section-title">{{ $t('about.origin.title') }}</h2>
         </div>
         <div class="origin-content glass-card">
@@ -22,7 +22,12 @@
                 <p class="himeri-romaji">{{ $t('about.origin.himeriRomaji') }}</p>
               </div>
               <div class="name-decoration">
-                <Heart :size="32" class="decoration-icon" />
+                <AnimatedIcon
+                  name="heart"
+                  :fallback-icon="Heart"
+                  size="xl"
+                  class="decoration-icon"
+                />
               </div>
             </div>
           </div>
@@ -30,7 +35,7 @@
           <!-- 个人资料 -->
           <div class="profile-section">
             <h4 class="subsection-title">
-              <User :size="20" />
+              <AnimatedIcon name="user" :fallback-icon="User" size="md" />
               <span>Profile</span>
             </h4>
             <div class="profile-grid-enhanced">
@@ -41,7 +46,7 @@
                 :style="{ animationDelay: `${index * 0.05}s` }"
               >
                 <div class="profile-card-icon">
-                  <component :is="item.icon" :size="20" />
+                  <AnimatedIcon name="explore" :fallback-icon="item.icon" size="md" />
                 </div>
                 <div class="profile-card-content">
                   <span class="profile-card-text">{{ item.label }}</span>
@@ -53,7 +58,7 @@
           <!-- 简介 -->
           <div class="bio-section">
             <h4 class="subsection-title">
-              <Sparkles :size="20" />
+              <AnimatedIcon name="sparkle" :fallback-icon="Sparkles" size="md" />
               <span>About</span>
             </h4>
             <div class="bio-content">
@@ -62,7 +67,7 @@
               <p class="bio-text">{{ $t('about.origin.platforms') }}</p>
               <div class="bio-highlight">
                 <div class="highlight-icon">
-                  <Star :size="20" />
+                  <AnimatedIcon name="sparkle" :fallback-icon="Star" size="md" />
                 </div>
                 <p class="bio-text-highlight">{{ $t('about.origin.purpose') }}</p>
               </div>
@@ -74,12 +79,17 @@
       <!-- 核心功能 -->
       <section class="section">
         <div class="section-header">
-          <Sparkles :size="24" class="section-icon" />
+          <AnimatedIcon name="sparkle" :fallback-icon="Sparkles" size="lg" class="section-icon" />
           <h2 class="section-title">{{ $t('about.features.title') }}</h2>
         </div>
         <div class="features-grid">
           <div v-for="feature in features" :key="feature.title" class="feature-card glass-card">
-            <component :is="feature.icon" :size="32" class="feature-icon" />
+            <AnimatedIcon
+              name="explore"
+              :fallback-icon="feature.icon"
+              size="xl"
+              class="feature-icon"
+            />
             <div class="feature-title">{{ feature.title }}</div>
             <div class="feature-description">{{ feature.description }}</div>
           </div>
@@ -89,7 +99,7 @@
       <!-- 技术实现 -->
       <section class="section">
         <div class="section-header">
-          <Code :size="24" class="section-icon" />
+          <AnimatedIcon name="explore" :fallback-icon="Code" size="lg" class="section-icon" />
           <h2 class="section-title">{{ $t('about.tech.title') }}</h2>
         </div>
         <p class="tech-intro">{{ $t('about.tech.description') }}</p>
@@ -114,7 +124,7 @@
       <!-- 项目信息 -->
       <section class="section">
         <div class="section-header">
-          <Info :size="24" class="section-icon" />
+          <AnimatedIcon name="sparkle" :fallback-icon="Info" size="lg" class="section-icon" />
           <h2 class="section-title">{{ $t('about.projectInfo.title') }}</h2>
         </div>
         <div class="info-grid">
@@ -140,7 +150,7 @@
       <footer class="about-footer">
         <p class="footer-text">
           {{ $t('about.footer.madeWith') }}
-          <Heart :size="16" class="heart-icon" />
+          <AnimatedIcon name="heart" :fallback-icon="Heart" size="sm" class="heart-icon" />
           {{ $t('about.footer.by') }}
           <a
             href="https://github.com/domidoremi"
@@ -183,6 +193,7 @@ import {
   Palette,
 } from 'lucide-vue-next'
 import { useAboutData } from '@/composables/useAboutData'
+import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 
 const { locale, t } = useI18n()
 

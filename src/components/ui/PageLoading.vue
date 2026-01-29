@@ -26,7 +26,12 @@
           </svg>
         </div>
         <div class="page-loading__logo">
-          <Loader2 :size="24" class="page-loading__icon" />
+          <AnimatedIcon
+            name="loading"
+            :fallback-icon="Loader2"
+            size="lg"
+            class="page-loading__icon"
+          />
         </div>
       </div>
 
@@ -61,6 +66,7 @@
 
 <script setup lang="ts">
 import { Loader2 } from 'lucide-vue-next'
+import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 
 defineOptions({ name: 'UiPageLoading' })
 

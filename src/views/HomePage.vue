@@ -16,20 +16,31 @@
       <div class="hero-content container">
         <div class="hero-badge">
           <span class="hero-badge__dot" />
-          <Sparkles :size="14" />
+          <AnimatedIcon name="sparkle" :fallback-icon="Sparkles" size="sm" />
           <span>{{ $t('home.hero.badge') }}</span>
         </div>
+
+        <LottiePlayer
+          v-if="shouldAnimate"
+          class="hero-lottie"
+          :animation-data="sparkleSweep"
+          :loop="true"
+          :autoplay="true"
+          :speed="0.8"
+          :width="120"
+          :height="120"
+        />
 
         <h1 class="hero-title">{{ $t('home.hero.title') }}</h1>
         <p class="hero-subtitle">{{ $t('home.hero.subtitle') }}</p>
 
         <div class="hero-actions">
           <Button size="lg" variant="primary" class="hero-btn" @click="goToExplore">
-            <Compass :size="20" />
+            <AnimatedIcon name="explore" :fallback-icon="Compass" size="md" />
             {{ $t('nav.explore') }}
           </Button>
           <Button size="lg" variant="ghost" @click="scrollToBento">
-            <ArrowDown :size="20" class="hero-arrow" />
+            <AnimatedIcon name="explore" :fallback-icon="ArrowDown" size="md" class="hero-arrow" />
             {{ $t('common.learnMore') }}
           </Button>
         </div>
@@ -51,16 +62,21 @@
         <div class="bento-grid">
           <RouterLink to="/explore" class="bento-card bento-card--feature glass-card">
             <div class="bento-card__icon bento-card__icon--primary">
-              <Layers :size="24" />
+              <AnimatedIcon name="explore" :fallback-icon="Layers" size="lg" />
             </div>
             <h3>{{ $t('home.bento.featureTitle') }}</h3>
             <p>{{ $t('home.bento.featureSubtitle') }}</p>
-            <ArrowUpRight :size="18" class="bento-card__arrow" />
+            <AnimatedIcon
+              name="explore"
+              :fallback-icon="ArrowUpRight"
+              size="sm"
+              class="bento-card__arrow"
+            />
           </RouterLink>
 
           <RouterLink to="/search" class="bento-card glass-card">
             <div class="bento-card__icon bento-card__icon--search">
-              <Search :size="22" />
+              <AnimatedIcon name="search" :fallback-icon="Search" size="lg" />
             </div>
             <h3>{{ $t('nav.search') }}</h3>
             <p>{{ $t('home.bento.searchMeta') }}</p>
@@ -68,7 +84,7 @@
 
           <RouterLink to="/community" class="bento-card glass-card">
             <div class="bento-card__icon bento-card__icon--community">
-              <MessageSquare :size="22" />
+              <AnimatedIcon name="sparkle" :fallback-icon="MessageSquare" size="lg" />
             </div>
             <h3>{{ $t('nav.community') }}</h3>
             <p>{{ $t('home.bento.communityMeta') }}</p>
@@ -76,7 +92,7 @@
 
           <RouterLink to="/authors" class="bento-card glass-card">
             <div class="bento-card__icon bento-card__icon--authors">
-              <Users :size="22" />
+              <AnimatedIcon name="user" :fallback-icon="Users" size="lg" />
             </div>
             <h3>{{ $t('nav.authors') }}</h3>
             <p>{{ $t('home.bento.authorsMeta') }}</p>
@@ -84,7 +100,7 @@
 
           <RouterLink :to="favoritesLink" class="bento-card glass-card">
             <div class="bento-card__icon bento-card__icon--favorites">
-              <Heart :size="22" />
+              <AnimatedIcon name="heart" :fallback-icon="Heart" size="lg" />
             </div>
             <h3>{{ $t('nav.favorites') }}</h3>
             <p>
@@ -189,10 +205,13 @@ import { postService, type PostListItem, ApiError, type ThumbnailQuality } from 
 import { useCachedPostList } from '@/composables/useCachedPosts'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import { useMasonryColumns } from '@/composables/useMasonryColumns'
-import { prefersReducedMotion } from '@/utils/performance'
-import { createResizeObserver } from '@/utils/modernAPIs'
+import { prefersReducedMotion, throttleRAF } from '@/utils/performance'
+import { createResizeObserver, scheduleTask } from '@/utils/modernAPIs'
 import { isFilteredAuthor } from '@/config/filters'
 import Button from '@/components/ui/Button.vue'
+import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
+import LottiePlayer from '@/components/animation/LottiePlayer.vue'
+import sparkleSweep from '@/assets/animations/sparkle-sweep.json'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import PostCard from '@/components/business/PostCard.vue'
@@ -224,6 +243,7 @@ const error = ref<string | null>(null)
 // Pagination state
 const page = ref(1)
 const pageSize = 20
+const initialMasonryCount = typeof window !== 'undefined' && window.innerWidth < 640 ? 6 : 12
 
 // 使用缓存感知的帖子列表加载
 const { total, load: loadCachedPosts } = useCachedPostList<PostListItem>(
@@ -246,8 +266,6 @@ const hasMore = computed(() => posts.value.length < total.value)
 const setColumnRef = (el: Element | ComponentPublicInstance | null, index: number) => {
   if (el) columnRefs.value[index] = el as HTMLElement
 }
-
-const getRealColumnHeights = (): number[] => columnRefs.value.map((el) => el?.offsetHeight ?? 0)
 
 const setSentinelRef = (el: Element | null) => {
   sentinelRef.value = el as HTMLElement | null
@@ -277,7 +295,7 @@ const getContainerWidth = () => containerRef.value?.offsetWidth || 1200
 let resizeObserver: ResizeObserver | null = null
 let lastContainerWidth = 0
 
-const handleContainerResize = (width: number) => {
+const handleContainerResize = throttleRAF((width: number) => {
   if (Math.abs(width - lastContainerWidth) < 50) return
   lastContainerWidth = width
   const newCount = getResponsiveColumnCount()
@@ -285,13 +303,15 @@ const handleContainerResize = (width: number) => {
     columnCount.value = newCount
     redistribute(allPosts.value, getColumnWidth(width))
   }
-}
+})
 
 const visiblePostsCount = computed(() => columns.value.reduce((sum, col) => sum + col.length, 0))
 
 // 骨架屏列数和每列数量 - 与真实 masonry 布局保持一致，避免 CLS
 const skeletonColumnCount = computed(() => columnCount.value)
 const skeletonPerColumn = computed(() => Math.ceil(8 / skeletonColumnCount.value))
+
+let masonryTaskId = 0
 
 async function fetchLatestPosts(reset = true): Promise<boolean> {
   const hadData = posts.value.length > 0
@@ -327,11 +347,25 @@ async function fetchLatestPosts(reset = true): Promise<boolean> {
     if (reset) {
       posts.value = result.data
       allPosts.value = filtered
-      distributePosts(filtered, getColumnWidth(getContainerWidth()), false)
+
+      const initialPosts = filtered.slice(0, initialMasonryCount)
+      distributePosts(initialPosts, getColumnWidth(getContainerWidth()), false)
+
+      const remaining = filtered.slice(initialMasonryCount)
+      if (remaining.length > 0) {
+        const taskId = ++masonryTaskId
+        void scheduleTask(
+          () => {
+            if (taskId !== masonryTaskId) return
+            distributePosts(remaining, getColumnWidth(getContainerWidth()), true)
+          },
+          { priority: 'background', delay: 200 }
+        )
+      }
     } else {
       posts.value.push(...result.data)
       allPosts.value.push(...filtered)
-      distributePosts(filtered, getColumnWidth(getContainerWidth()), true, getRealColumnHeights())
+      distributePosts(filtered, getColumnWidth(getContainerWidth()), true)
     }
     return true
   } catch (err) {
@@ -545,6 +579,11 @@ onBeforeUnmount(() => {
 
 .hero-badge svg {
   color: var(--color-accent);
+}
+
+.hero-lottie {
+  margin: 0 auto var(--spacing-6);
+  opacity: 0.85;
 }
 
 .hero-title {

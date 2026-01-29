@@ -23,7 +23,7 @@
           :class="{ active: activeTab === tab.id }"
           @click="switchTab(tab.id)"
         >
-          <component :is="tab.icon" :size="18" />
+          <AnimatedIcon name="explore" :fallback-icon="tab.icon" size="sm" />
           <span>{{ $t(tab.label) }}</span>
         </button>
       </div>
@@ -77,7 +77,7 @@
               <h3 class="discussion-title">{{ post.title }}</h3>
               <div class="discussion-meta">
                 <span class="comment-count">
-                  <MessageSquare :size="14" />
+                  <AnimatedIcon name="sparkle" :fallback-icon="MessageSquare" size="sm" />
                   {{ post.comment_count }}
                 </span>
                 <span class="discussion-time">{{ formatTime(post.published_at) }}</span>
@@ -142,7 +142,7 @@
               <h3 class="topic-title">{{ topic.title }}</h3>
               <div class="topic-meta">
                 <span class="topic-count">
-                  <MessageSquare :size="14" />
+                  <AnimatedIcon name="sparkle" :fallback-icon="MessageSquare" size="sm" />
                   {{ topic.comment_count }}
                 </span>
                 <span class="topic-views">{{ topic.view_count }} 浏览</span>
@@ -173,6 +173,7 @@ import Button from '@/components/ui/Button.vue'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import DiscussionComposer from '@/components/community/DiscussionComposer.vue'
+import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 
 const router = useRouter()
 const { t } = useI18n()
@@ -271,7 +272,7 @@ async function fetchDiscussions(reset = true): Promise<boolean> {
       sort_order: 'desc',
     })
 
-    const items = res.items.filter((p) => p.comment_count > 0)
+    const items = res.items.filter((p: PostListItem) => p.comment_count > 0)
 
     if (reset) {
       discussions.value = items
@@ -324,7 +325,7 @@ async function fetchHotTopics() {
     })
 
     // 过滤出有评论的热门帖子
-    hotTopics.value = res.items.filter((p) => p.comment_count > 0).slice(0, 6)
+    hotTopics.value = res.items.filter((p: PostListItem) => p.comment_count > 0).slice(0, 6)
   } catch (err) {
     if (err instanceof ApiError) {
       hotTopicsError.value = err.message

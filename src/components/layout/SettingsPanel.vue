@@ -2,7 +2,7 @@
   <div class="settings-panel">
     <div class="settings-header">
       <div class="settings-header-icon">
-        <Settings :size="16" />
+        <AnimatedIcon name="sparkle" :fallback-icon="Settings" size="sm" />
       </div>
       <span>{{ $t('nav.settings') }}</span>
     </div>
@@ -11,7 +11,7 @@
     <div class="settings-group">
       <div class="settings-group-header">
         <div class="settings-group-icon">
-          <Palette :size="14" />
+          <AnimatedIcon name="explore" :fallback-icon="Palette" size="sm" />
         </div>
         <span class="settings-label">{{ $t('settings.theme') }}</span>
       </div>
@@ -25,12 +25,12 @@
           @click="setTheme(opt.value)"
         >
           <div class="theme-btn-icon">
-            <component :is="opt.icon" :size="18" />
+            <AnimatedIcon name="explore" :fallback-icon="opt.icon" size="md" />
           </div>
           <span class="theme-btn-label">{{ $t(`settings.${opt.value}`) }}</span>
           <Transition name="check">
             <div v-if="theme === opt.value" class="theme-btn-check">
-              <Check :size="12" />
+              <AnimatedIcon name="sparkle" :fallback-icon="Check" size="sm" />
             </div>
           </Transition>
         </button>
@@ -41,7 +41,7 @@
     <div class="settings-group">
       <div class="settings-group-header">
         <div class="settings-group-icon">
-          <Globe :size="14" />
+          <AnimatedIcon name="user" :fallback-icon="Globe" size="sm" />
         </div>
         <span class="settings-label">{{ $t('settings.language') }}</span>
       </div>
@@ -64,7 +64,7 @@
     <div class="settings-group">
       <div class="settings-group-header">
         <div class="settings-group-icon">
-          <SlidersHorizontal :size="14" />
+          <AnimatedIcon name="sparkle" :fallback-icon="SlidersHorizontal" size="sm" />
         </div>
         <span class="settings-label">{{ $t('settings.display') }}</span>
       </div>
@@ -72,7 +72,7 @@
         <button type="button" class="toggle-btn" @click="toggleSetting('showHeroSection')">
           <div class="toggle-btn-content">
             <div class="toggle-btn-icon">
-              <Sparkles :size="16" />
+              <AnimatedIcon name="sparkle" :fallback-icon="Sparkles" size="sm" />
             </div>
             <div class="toggle-btn-text">
               <span class="toggle-btn-title">{{ $t('settings.toggleHeroSection') }}</span>
@@ -86,7 +86,7 @@
         <button type="button" class="toggle-btn" @click="toggleSetting('enableAnimations')">
           <div class="toggle-btn-content">
             <div class="toggle-btn-icon">
-              <Zap :size="16" />
+              <AnimatedIcon name="loading" :fallback-icon="Zap" size="sm" />
             </div>
             <div class="toggle-btn-text">
               <span class="toggle-btn-title">{{ $t('settings.toggleAnimations') }}</span>
@@ -98,7 +98,7 @@
           </div>
         </button>
         <div v-if="systemReducedMotion" class="reduced-motion-notice">
-          <Info :size="14" />
+          <AnimatedIcon name="sparkle" :fallback-icon="Info" size="sm" />
           <span>{{ $t('settings.reducedMotionNotice') }}</span>
         </div>
       </div>
@@ -108,14 +108,14 @@
     <div class="settings-group">
       <div class="settings-group-header">
         <div class="settings-group-icon">
-          <Video :size="14" />
+          <AnimatedIcon name="explore" :fallback-icon="Video" size="sm" />
         </div>
         <span class="settings-label">{{ $t('settings.videoSettings') }}</span>
       </div>
       <div class="link-list">
         <button type="button" class="link-btn" @click="resetVideoSettings">
           <div class="link-btn-icon">
-            <RotateCcw :size="16" />
+            <AnimatedIcon name="loading" :fallback-icon="RotateCcw" size="sm" />
           </div>
           <span class="link-btn-text">{{ $t('settings.resetVideoSettings') }}</span>
         </button>
@@ -126,24 +126,34 @@
     <div class="settings-group">
       <div class="settings-group-header">
         <div class="settings-group-icon">
-          <Info :size="14" />
+          <AnimatedIcon name="sparkle" :fallback-icon="Info" size="sm" />
         </div>
         <span class="settings-label">{{ $t('settings.links') }}</span>
       </div>
       <div class="link-list">
         <RouterLink to="/about" class="link-btn" @click="$emit('close')">
           <div class="link-btn-icon">
-            <Info :size="16" />
+            <AnimatedIcon name="explore" :fallback-icon="Info" size="sm" />
           </div>
           <span class="link-btn-text">{{ $t('nav.about') }}</span>
-          <ChevronRight :size="14" class="link-btn-arrow" />
+          <AnimatedIcon
+            name="explore"
+            :fallback-icon="ChevronRight"
+            size="sm"
+            class="link-btn-arrow"
+          />
         </RouterLink>
         <RouterLink to="/contact" class="link-btn" @click="$emit('close')">
           <div class="link-btn-icon">
-            <Mail :size="16" />
+            <AnimatedIcon name="sparkle" :fallback-icon="Mail" size="sm" />
           </div>
           <span class="link-btn-text">{{ $t('nav.contact') }}</span>
-          <ChevronRight :size="14" class="link-btn-arrow" />
+          <AnimatedIcon
+            name="explore"
+            :fallback-icon="ChevronRight"
+            size="sm"
+            class="link-btn-arrow"
+          />
         </RouterLink>
       </div>
     </div>
@@ -181,6 +191,7 @@ import { useThemeStore, useSettingsStore, useToastStore } from '@/stores'
 import { setLocale, type SupportedLocale } from '@/i18n'
 import { useVideoSettings } from '@/composables/useVideoSettings'
 import type { Theme } from '@/types'
+import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 
 defineEmits<{ close: [] }>()
 

@@ -88,7 +88,7 @@ export default defineConfig({
     include: ['src/**/__tests__/**/*.{test,spec}.{js,ts,jsx,tsx}'],
 
     /** Setup files for global test configuration */
-    setupFiles: [],
+    setupFiles: ['vitest.setup.ts'],
 
     /** 并发运行测试 */
     pool: 'threads',

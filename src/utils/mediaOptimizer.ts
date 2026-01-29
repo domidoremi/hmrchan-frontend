@@ -33,7 +33,9 @@ export const THUMBNAIL_SIZES: Record<
  * 获取媒体流 URL
  */
 export function getMediaStreamUrl(mediaId: string): string {
-  return `/api/v1/media/${mediaId}/stream`
+  const apiBaseUrl =
+    import.meta.env.VITE_API_ENDPOINT || `${import.meta.env.VITE_API_URL || '/api'}/v1`
+  return `${apiBaseUrl}/media/${mediaId}/stream`
 }
 
 /**
@@ -60,7 +62,9 @@ export function supportsWebP(): boolean {
  * 如果浏览器支持 WebP 且后端已启用，自动请求 WebP 格式
  */
 export function getMediaThumbnailUrl(mediaId: string, size: MediaThumbnailSize = 'medium'): string {
-  const baseUrl = `/api/v1/media/${mediaId}/thumbnail?size=${size}`
+  const apiBaseUrl =
+    import.meta.env.VITE_API_ENDPOINT || `${import.meta.env.VITE_API_URL || '/api'}/v1`
+  const baseUrl = `${apiBaseUrl}/media/${mediaId}/thumbnail?size=${size}`
 
   // 始终带 format 参数：避免后端在缺少 format 时出现不稳定的 500
   // - 浏览器支持 WebP：优先请求 webp（后端也可能回退为 jpeg）

@@ -24,7 +24,7 @@
           :class="`platform-card--${platform.key}`"
         >
           <div class="platform-card__icon">
-            <component :is="platform.icon" :size="20" :stroke-width="2" />
+            <AnimatedIcon :name="platform.animation" :fallback-icon="platform.icon" size="md" />
           </div>
           <div class="platform-card__body">
             <span class="platform-card__label">{{ $t(platform.labelKey) }}</span>
@@ -44,11 +44,13 @@
 
 <script setup lang="ts">
 import { Music2, Youtube, Instagram, Twitter } from 'lucide-vue-next'
+import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 
 const platforms = [
   {
     key: 'tiktok',
     icon: Music2,
+    animation: 'explore',
     labelKey: 'stats.tiktok',
     value: '128k',
     trend: 'up',
@@ -57,6 +59,7 @@ const platforms = [
   {
     key: 'youtube',
     icon: Youtube,
+    animation: 'sparkle',
     labelKey: 'stats.youtube',
     value: '64k',
     trend: 'up',
@@ -65,6 +68,7 @@ const platforms = [
   {
     key: 'instagram',
     icon: Instagram,
+    animation: 'heart',
     labelKey: 'stats.instagram',
     value: '92k',
     trend: 'up',
@@ -73,6 +77,7 @@ const platforms = [
   {
     key: 'twitter',
     icon: Twitter,
+    animation: 'search',
     labelKey: 'stats.twitter',
     value: '45k',
     trend: 'down',

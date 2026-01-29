@@ -9,7 +9,7 @@
             @click="goBack"
             :aria-label="$t('common.back')"
           >
-            <ArrowLeft :size="20" />
+            <AnimatedIcon name="explore" :fallback-icon="ArrowLeft" size="md" />
           </button>
           <h1 class="search-title">{{ $t('search.title') }}</h1>
         </div>
@@ -33,7 +33,12 @@
               :class="{ active: activeTab === tab.id }"
               @click="activeTab = tab.id"
             >
-              <component :is="tab.icon" :size="16" />
+              <AnimatedIcon
+                :name="tab.id === 'posts' ? 'search' : 'user'"
+                :fallback-icon="tab.icon"
+                size="sm"
+                :active="activeTab === tab.id"
+              />
               {{ tab.label }}
               <span v-if="tab.id === 'posts' && total > 0" class="tab-count">{{ total }}</span>
               <span v-if="tab.id === 'authors' && authorTotal > 0" class="tab-count">{{
@@ -52,7 +57,12 @@
                 :class="{ active: currentPlatform === platform.value }"
                 @click="currentPlatform = platform.value"
               >
-                <component :is="platform.icon" :size="14" />
+                <AnimatedIcon
+                  :name="platform.value === 'all' ? 'explore' : 'sparkle'"
+                  :fallback-icon="platform.icon"
+                  size="sm"
+                  :active="currentPlatform === platform.value"
+                />
                 <span class="platform-label">{{ platform.label }}</span>
               </button>
             </div>
@@ -72,7 +82,7 @@
                 "
                 @click="toggleSortOrder"
               >
-                <ArrowUpDown :size="16" />
+                <AnimatedIcon name="explore" :fallback-icon="ArrowUpDown" size="sm" />
               </button>
             </div>
           </div>
@@ -115,7 +125,7 @@
 
             <!-- 未登录用户提示 -->
             <div v-if="mayHaveMoreResults && results.length > 0" class="login-hint glass-card">
-              <LogIn :size="20" class="login-hint-icon" />
+              <AnimatedIcon name="user" :fallback-icon="LogIn" size="md" class="login-hint-icon" />
               <div class="login-hint-content">
                 <p class="login-hint-text">{{ $t('search.loginForMore') }}</p>
                 <button
@@ -168,12 +178,16 @@
                   loading="lazy"
                 />
                 <div v-else class="author-avatar author-placeholder">
-                  <User :size="24" />
+                  <AnimatedIcon name="user" :fallback-icon="User" size="lg" />
                 </div>
                 <div class="author-info">
                   <h3 class="author-name">{{ author.name }}</h3>
                   <p class="author-platform">
-                    <component :is="getPlatformIcon(author.platform)" :size="12" />
+                    <AnimatedIcon
+                      name="explore"
+                      :fallback-icon="getPlatformIcon(author.platform)"
+                      size="sm"
+                    />
                     {{ author.platform }}
                   </p>
                   <p class="author-posts">
@@ -188,7 +202,14 @@
 
       <div v-else class="search-empty">
         <div class="empty-content">
-          <Search :size="64" class="empty-icon" />
+          <LottiePlayer
+            class="empty-icon"
+            :animation-data="orbitDot"
+            :loop="true"
+            :autoplay="true"
+            :width="96"
+            :height="96"
+          />
           <h2>{{ $t('search.emptyTitle') }}</h2>
           <p>{{ $t('search.emptyHint') }}</p>
           <div class="search-tips">
@@ -211,7 +232,6 @@ import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
 import {
-  Search,
   FileText,
   User,
   Globe,
@@ -227,6 +247,9 @@ import { searchService, type AuthorListItem, type PostListItem } from '@/api'
 import { normalizeAvatarUrl } from '@/api/userService'
 import { useAuthStore } from '@/stores'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
+import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
+import LottiePlayer from '@/components/animation/LottiePlayer.vue'
+import orbitDot from '@/assets/animations/orbit-dot.json'
 import PostCard from '@/components/business/PostCard.vue'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
 import Select from '@/components/ui/Select.vue'

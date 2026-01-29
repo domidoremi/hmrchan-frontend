@@ -4,7 +4,7 @@
       <header class="profile-page-header glass-card">
         <div class="header-left">
           <button type="button" class="back-btn glass-button" @click="goBack">
-            <ArrowLeft :size="18" />
+            <AnimatedIcon name="explore" :fallback-icon="ArrowLeft" size="sm" />
           </button>
           <div>
             <h1>{{ $t('profile.tabs.notifications') }}</h1>
@@ -12,7 +12,7 @@
           </div>
         </div>
         <Button variant="ghost" size="sm" @click="goToProfile">
-          <User :size="16" />
+          <AnimatedIcon name="user" :fallback-icon="User" size="sm" />
           {{ $t('nav.profile') }}
         </Button>
       </header>
@@ -30,6 +30,7 @@ import { ArrowLeft, User } from 'lucide-vue-next'
 import Button from '@/components/ui/Button.vue'
 import Card from '@/components/ui/Card.vue'
 import ProfileNotificationsTab from '@/components/profile/ProfileNotificationsTab.vue'
+import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 
 const router = useRouter()
 

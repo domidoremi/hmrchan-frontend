@@ -14,6 +14,8 @@ export interface VideoSettings {
   playbackRate: number
   /** 亮度 (0-1) */
   brightness: number
+  /** 字幕语言偏好 */
+  subtitleLanguage: string | null
 }
 
 const STORAGE_KEY = 'video-player-settings'
@@ -23,6 +25,7 @@ const defaultSettings: VideoSettings = {
   muted: false,
   playbackRate: 1,
   brightness: 1,
+  subtitleLanguage: null,
 }
 
 // 从 localStorage 加载设置
@@ -96,6 +99,13 @@ export function useVideoSettings() {
   }
 
   /**
+   * 更新字幕语言偏好
+   */
+  function setSubtitleLanguage(language: string | null) {
+    settings.value.subtitleLanguage = language
+  }
+
+  /**
    * 重置所有设置为默认值
    */
   function resetSettings() {
@@ -108,6 +118,7 @@ export function useVideoSettings() {
     setMuted,
     setPlaybackRate,
     setBrightness,
+    setSubtitleLanguage,
     resetSettings,
   }
 }

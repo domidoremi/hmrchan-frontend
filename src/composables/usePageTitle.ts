@@ -4,13 +4,13 @@
  */
 
 import { watch, onBeforeUnmount } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, type RouteLocationNormalizedLoadedGeneric } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 
 // Extend Vue Router's RouteMeta to include title
 declare module 'vue-router' {
   interface RouteMeta {
-    title?: string | ((route: ReturnType<typeof useRoute>) => string)
+    title?: string | ((route: RouteLocationNormalizedLoadedGeneric) => string)
   }
 }
 
@@ -43,9 +43,12 @@ export function usePageTitle(title?: string) {
   function getRouteTitleFromMeta(currentRoute: typeof route): string {
     // 从路由 meta 中获取标题
     if (currentRoute.meta.title) {
-      return typeof currentRoute.meta.title === 'function'
-        ? currentRoute.meta.title(currentRoute)
-        : String(currentRoute.meta.title)
+      const rawTitle =
+        typeof currentRoute.meta.title === 'function'
+          ? currentRoute.meta.title(currentRoute)
+          : String(currentRoute.meta.title)
+      const translated = t(rawTitle)
+      return translated !== rawTitle ? translated : rawTitle
     }
 
     // 根据路由名称生成标题

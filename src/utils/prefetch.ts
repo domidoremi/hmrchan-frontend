@@ -299,8 +299,8 @@ export async function prefetchExploreData(): Promise<void> {
     const { postService } = await import('@/api/postService')
     // 预加载前两页数据，提升滚动体验
     await Promise.all([
-      postService.listPosts({ page: 1, page_size: 20 }),
-      postService.listPosts({ page: 2, page_size: 20 }),
+      postService.listPosts({ page: 1, page_size: 20 }, { skipErrorToast: true }),
+      postService.listPosts({ page: 2, page_size: 20 }, { skipErrorToast: true }),
     ])
   })
 }
@@ -314,8 +314,8 @@ export async function prefetchAuthorsData(): Promise<void> {
     const { authorService } = await import('@/api/authorService')
     // 预加载前两页数据
     await Promise.all([
-      authorService.listAuthors({ page: 1, page_size: 20 }),
-      authorService.listAuthors({ page: 2, page_size: 20 }),
+      authorService.listAuthors({ page: 1, page_size: 20 }, { skipErrorToast: true }),
+      authorService.listAuthors({ page: 2, page_size: 20 }, { skipErrorToast: true }),
     ])
   })
 }

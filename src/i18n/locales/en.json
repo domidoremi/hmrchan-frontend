@@ -117,6 +117,8 @@
     "playbackSpeed": "Playback Speed",
     "quality": "Quality",
     "auto": "Auto",
+    "subtitles": "Subtitles",
+    "subtitlesOff": "Off",
     "player": "Video player",
     "play": "Play",
     "pause": "Pause",

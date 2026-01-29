@@ -14,7 +14,12 @@
             class="confirm-dialog__icon-wrapper"
             :class="`confirm-dialog__icon-wrapper--${variant}`"
           >
-            <component :is="iconComponent" :size="24" class="confirm-dialog__icon" />
+            <AnimatedIcon
+              :name="iconAnimation"
+              :fallback-icon="iconComponent"
+              size="xl"
+              class="confirm-dialog__icon"
+            />
           </div>
 
           <div class="confirm-dialog__content">
@@ -58,6 +63,7 @@ import { useI18n } from 'vue-i18n'
 import { AlertTriangle, Trash2, Info, HelpCircle, CheckCircle } from 'lucide-vue-next'
 import Button from './Button.vue'
 import { useFocusTrap } from '@/composables/useFocusTrap'
+import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 
 defineOptions({ name: 'UiConfirmDialog' })
 
@@ -110,6 +116,21 @@ const iconComponent = computed<Component>(() => {
       return CheckCircle
     default:
       return HelpCircle
+  }
+})
+
+const iconAnimation = computed(() => {
+  switch (props.variant) {
+    case 'danger':
+      return 'heart'
+    case 'warning':
+      return 'sparkle'
+    case 'info':
+      return 'explore'
+    case 'success':
+      return 'sparkle'
+    default:
+      return 'search'
   }
 })
 

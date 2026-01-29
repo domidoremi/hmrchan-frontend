@@ -183,14 +183,28 @@ function observeLongTasks(): void {
   if (!('PerformanceObserver' in window)) return
 
   try {
+    const LONG_TASK_THRESHOLD = 200
+    const LOG_INTERVAL_MS = 2000
+    let lastLogTime = 0
+
     const observer = new PerformanceObserver((list) => {
       for (const entry of list.getEntries()) {
-        if (import.meta.env.DEV) {
-          console.warn('Long Task detected:', {
-            duration: entry.duration,
-            startTime: entry.startTime,
-          })
+        if (!import.meta.env.DEV) return
+
+        if (entry.duration < LONG_TASK_THRESHOLD) {
+          continue
         }
+
+        const now = performance.now()
+        if (now - lastLogTime < LOG_INTERVAL_MS) {
+          continue
+        }
+
+        lastLogTime = now
+        console.warn('Long Task detected:', {
+          duration: entry.duration,
+          startTime: entry.startTime,
+        })
       }
     })
 

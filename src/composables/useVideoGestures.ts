@@ -35,13 +35,15 @@ interface TouchState {
   isLeft: boolean // 是否在左侧
   isDragging: boolean
   lastTapTime: number // 用于检测双击
+  isPointerDown: boolean
+  gestureAxis: 'horizontal' | 'vertical' | null
 }
 
 const SWIPE_THRESHOLD = 10 // 最小滑动距离
 const DOUBLE_TAP_DELAY = 300 // 双击间隔时间
-const BRIGHTNESS_STEP = 0.01 // 亮度调节步长
-const VOLUME_STEP = 0.01 // 音量调节步长
-const SEEK_STEP = 0.5 // 快进/快退步长（秒）
+const BRIGHTNESS_STEP = 0.006 // 亮度调节步长
+const VOLUME_STEP = 0.006 // 音量调节步长
+const SEEK_STEP = 0.12 // 快进/快退步长（秒/像素）
 
 export function useVideoGestures(options: GestureOptions) {
   const { videoRef, containerRef, onVolumeChange, onBrightnessChange, onSeek, onTogglePlay } =
@@ -56,6 +58,8 @@ export function useVideoGestures(options: GestureOptions) {
     isLeft: false,
     isDragging: false,
     lastTapTime: 0,
+    isPointerDown: false,
+    gestureAxis: null,
   })
 
   const currentVolume = ref(1)
@@ -105,6 +109,8 @@ export function useVideoGestures(options: GestureOptions) {
   function handleStart(event: TouchEvent | MouseEvent | PointerEvent) {
     if (!containerRef.value) return
 
+    if ('buttons' in event && event.buttons === 0) return
+
     const clientX = 'touches' in event ? event.touches[0]?.clientX : event.clientX
     const clientY = 'touches' in event ? event.touches[0]?.clientY : event.clientY
 
@@ -123,6 +129,8 @@ export function useVideoGestures(options: GestureOptions) {
       isLeft: x < rect.width / 2,
       isDragging: false,
       lastTapTime: touchState.value.lastTapTime,
+      isPointerDown: true,
+      gestureAxis: null,
     }
 
     // 检测双击
@@ -140,6 +148,8 @@ export function useVideoGestures(options: GestureOptions) {
    */
   function handleMove(event: TouchEvent | MouseEvent | PointerEvent) {
     if (!containerRef.value || !videoRef.value) return
+    if (!touchState.value.isPointerDown) return
+    if ('buttons' in event && event.buttons === 0) return
 
     const clientX = 'touches' in event ? event.touches[0]?.clientX : event.clientX
     const clientY = 'touches' in event ? event.touches[0]?.clientY : event.clientY
@@ -150,15 +160,19 @@ export function useVideoGestures(options: GestureOptions) {
     const x = clientX - rect.left
     const y = clientY - rect.top
 
-    const deltaX = x - touchState.value.startX
-    const deltaY = y - touchState.value.startY
+    const totalDeltaX = x - touchState.value.startX
+    const totalDeltaY = y - touchState.value.startY
+    const deltaX = x - touchState.value.lastX
+    const deltaY = y - touchState.value.lastY
 
     // 判断是否开始拖动
     if (
       !touchState.value.isDragging &&
-      (Math.abs(deltaX) > SWIPE_THRESHOLD || Math.abs(deltaY) > SWIPE_THRESHOLD)
+      (Math.abs(totalDeltaX) > SWIPE_THRESHOLD || Math.abs(totalDeltaY) > SWIPE_THRESHOLD)
     ) {
       touchState.value.isDragging = true
+      touchState.value.gestureAxis =
+        Math.abs(totalDeltaX) > Math.abs(totalDeltaY) ? 'horizontal' : 'vertical'
     }
 
     if (!touchState.value.isDragging) return
@@ -169,7 +183,7 @@ export function useVideoGestures(options: GestureOptions) {
     }
 
     // 垂直滑动：调节亮度或音量
-    if (Math.abs(deltaY) > Math.abs(deltaX)) {
+    if (touchState.value.gestureAxis === 'vertical') {
       if (touchState.value.isLeft) {
         // 左侧：调节亮度
         const brightnessChange = -deltaY * BRIGHTNESS_STEP
@@ -188,13 +202,14 @@ export function useVideoGestures(options: GestureOptions) {
       }
     }
     // 水平滑动：快进/快退
-    else {
+    else if (touchState.value.gestureAxis === 'horizontal') {
       const seekChange = deltaX * SEEK_STEP
       const currentTime = videoRef.value.currentTime
       const newTime = Math.max(0, Math.min(videoRef.value.duration, currentTime + seekChange))
       seekDirection.value = seekChange > 0 ? 'forward' : 'backward'
       onSeek?.(newTime)
-      showIndicator('seek', Math.abs(Math.round(seekChange)))
+      const indicatorValue = Math.max(1, Math.round(Math.abs(seekChange)))
+      showIndicator('seek', indicatorValue)
     }
 
     touchState.value.lastX = x
@@ -206,6 +221,8 @@ export function useVideoGestures(options: GestureOptions) {
    */
   function handleEnd() {
     touchState.value.isDragging = false
+    touchState.value.isPointerDown = false
+    touchState.value.gestureAxis = null
   }
 
   /**
@@ -216,22 +233,25 @@ export function useVideoGestures(options: GestureOptions) {
 
     const container = containerRef.value
 
+    // 手写笔事件（Pointer Events）
+    if ('PointerEvent' in window) {
+      container.addEventListener('pointerdown', handleStart as EventListener)
+      container.addEventListener('pointermove', handleMove as EventListener, { passive: false })
+      container.addEventListener('pointerup', handleEnd)
+      container.addEventListener('pointercancel', handleEnd)
+      return
+    }
+
     // 触摸事件
     container.addEventListener('touchstart', handleStart as EventListener, { passive: false })
     container.addEventListener('touchmove', handleMove as EventListener, { passive: false })
     container.addEventListener('touchend', handleEnd)
+    container.addEventListener('touchcancel', handleEnd)
 
     // 鼠标事件
     container.addEventListener('mousedown', handleStart as EventListener)
     container.addEventListener('mousemove', handleMove as EventListener)
     container.addEventListener('mouseup', handleEnd)
-
-    // 手写笔事件（Pointer Events）
-    if ('PointerEvent' in window) {
-      container.addEventListener('pointerdown', handleStart as EventListener)
-      container.addEventListener('pointermove', handleMove as EventListener)
-      container.addEventListener('pointerup', handleEnd)
-    }
   }
 
   /**
@@ -245,6 +265,7 @@ export function useVideoGestures(options: GestureOptions) {
     container.removeEventListener('touchstart', handleStart as EventListener)
     container.removeEventListener('touchmove', handleMove as EventListener)
     container.removeEventListener('touchend', handleEnd)
+    container.removeEventListener('touchcancel', handleEnd)
 
     container.removeEventListener('mousedown', handleStart as EventListener)
     container.removeEventListener('mousemove', handleMove as EventListener)
@@ -254,6 +275,7 @@ export function useVideoGestures(options: GestureOptions) {
       container.removeEventListener('pointerdown', handleStart as EventListener)
       container.removeEventListener('pointermove', handleMove as EventListener)
       container.removeEventListener('pointerup', handleEnd)
+      container.removeEventListener('pointercancel', handleEnd)
     }
 
     if (indicatorTimeout) {
@@ -277,5 +299,11 @@ export function useVideoGestures(options: GestureOptions) {
     seekDirection,
     currentVolume,
     currentBrightness,
+    triggerVolumeIndicator: (value: number) => showIndicator('volume', value),
+    triggerBrightnessIndicator: (value: number) => showIndicator('brightness', value),
+    triggerSeekIndicator: (direction: 'forward' | 'backward', value: number) => {
+      seekDirection.value = direction
+      showIndicator('seek', value)
+    },
   }
 }

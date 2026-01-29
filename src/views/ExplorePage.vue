@@ -28,7 +28,7 @@
               @click="goToSearch"
               :aria-label="$t('search.title')"
             >
-              <Search :size="18" />
+              <AnimatedIcon name="search" :fallback-icon="Search" size="sm" />
               <span class="search-trigger-text">{{ $t('search.title') }}</span>
               <kbd class="search-kbd">/</kbd>
             </button>
@@ -64,7 +64,7 @@
             :aria-label="platform.label"
             @click="currentPlatform = platform.value"
           >
-            <component :is="platform.icon" :size="16" aria-hidden="true" />
+            <AnimatedIcon name="explore" :fallback-icon="platform.icon" size="sm" />
             <span class="platform-label">{{ platform.label }}</span>
           </button>
         </div>
@@ -156,6 +156,7 @@ import PostCard from '@/components/business/PostCard.vue'
 import PostCardSkeleton from '@/components/business/PostCardSkeleton.vue'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
 import BluePolymorph from '@/components/ui/BluePolymorph.vue'
+import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 
 const router = useRouter()
 const { t } = useI18n()
@@ -198,6 +199,7 @@ const pageSize = isMobile ? 8 : 24 // 移动端首屏 8 张，桌面端 24 张
 // JS Masonry 布局 - 避免 CSS column-count 的 CLS 问题
 const masonryContainerRef = ref<HTMLElement | null>(null)
 const columnRefs = ref<HTMLElement[]>([])
+const cachedColumnHeights = ref<number[]>([])
 
 const {
   columns,
@@ -230,6 +232,8 @@ const {
   hasMoreToRender,
   revealNextBatch,
 } = useProgressiveRender(posts, { initialCount: initialRenderCount, batchSize: 12 })
+
+const lastVisibleCount = ref(0)
 
 const hasMoreForUi = computed(() => hasMore.value || hasMoreToRender.value)
 
@@ -317,7 +321,7 @@ async function fetchPosts(reset = true) {
     page_size: pageSize,
     sort_by,
     sort_order,
-    thumbnail_quality: getThumbnailQuality() as const,
+    thumbnail_quality: getThumbnailQuality(),
   }
 
   const platform = currentPlatform.value !== 'all' ? currentPlatform.value : undefined
@@ -334,9 +338,9 @@ async function fetchPosts(reset = true) {
       posts.value.push(...items)
     }
 
-    // 更新 masonry 布局
+    // 更新 masonry 布局（仅渲染可见部分）
     await nextTick()
-    updateMasonryLayout(reset ? posts.value : items, reset)
+    applyVisiblePosts(reset)
 
     return true
   } catch (err) {
@@ -364,6 +368,8 @@ async function fetchPosts(reset = true) {
 async function loadMore(): Promise<boolean> {
   if (hasMoreToRender.value) {
     revealNextBatch()
+    await nextTick()
+    applyVisiblePosts(false)
     return true
   }
 
@@ -415,13 +421,14 @@ function updateMasonryLayout(items: PostListItem[], reset = false) {
     initColumns()
     // 移动端使用轮询分发，避免高度估算误差导致的 CLS
     if (isMobile) {
-      distributePostsRoundRobin(posts.value, 0)
+      distributePostsRoundRobin(items, 0)
     } else {
-      redistribute(posts.value, colWidth)
+      redistribute(items, colWidth)
     }
   } else {
-    // 追加模式：获取真实 DOM 高度校准
-    const realHeights = columnRefs.value.map((el) => el?.offsetHeight || 0)
+    // 追加模式：使用缓存高度避免同步读取导致强制重排
+    const realHeights =
+      cachedColumnHeights.value.length === columnCount.value ? cachedColumnHeights.value : undefined
     if (isMobile) {
       // 移动端追加也用轮询
       const startIndex = columns.value.reduce((sum, col) => sum + col.length, 0)
@@ -430,6 +437,8 @@ function updateMasonryLayout(items: PostListItem[], reset = false) {
       distributePosts(items, colWidth, true, realHeights)
     }
   }
+
+  updateCachedColumnHeights()
 }
 
 // 响应式调整列数 - 使用 ResizeObserver 监听容器而非 window
@@ -449,9 +458,38 @@ const handleContainerResize = throttleRAF((width: number) => {
     columnCount.value = newColumnCount
     const colWidth = getColumnWidth(width)
     initColumns()
-    redistribute(posts.value, colWidth)
+    redistribute(visiblePosts.value, colWidth)
+    lastVisibleCount.value = visiblePosts.value.length
   }
 })
+
+function applyVisiblePosts(reset = false) {
+  const current = visiblePosts.value
+  if (current.length === 0) {
+    initColumns()
+    lastVisibleCount.value = 0
+    cachedColumnHeights.value = []
+    return
+  }
+
+  if (reset || lastVisibleCount.value === 0 || current.length < lastVisibleCount.value) {
+    updateMasonryLayout(current, true)
+    lastVisibleCount.value = current.length
+    return
+  }
+
+  const newItems = current.slice(lastVisibleCount.value)
+  if (newItems.length > 0) {
+    updateMasonryLayout(newItems, false)
+    lastVisibleCount.value = current.length
+  }
+}
+
+function updateCachedColumnHeights() {
+  requestAnimationFrame(() => {
+    cachedColumnHeights.value = columnRefs.value.map((el) => el?.offsetHeight || 0)
+  })
+}
 
 /**
  * 处理卡片高度变化（图片加载完成等）
@@ -479,7 +517,7 @@ onMounted(() => {
   } else {
     // 已有数据时重新分发到列
     nextTick(() => {
-      updateMasonryLayout(posts.value, true)
+      applyVisiblePosts(true)
     })
   }
 

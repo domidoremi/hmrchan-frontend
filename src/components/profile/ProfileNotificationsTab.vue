@@ -4,7 +4,7 @@
       <h2 class="tab-title">{{ $t('profile.tabs.notifications') }}</h2>
       <span v-if="unreadCount > 0" class="unread-badge">{{ unreadCount }}</span>
       <Button v-if="notifications.length > 0" variant="ghost" size="sm" @click="markAllAsRead">
-        <CheckCheck :size="16" />
+        <AnimatedIcon name="sparkle" :fallback-icon="CheckCheck" size="sm" />
         {{ $t('profile.markAllRead') }}
       </Button>
     </div>
@@ -42,7 +42,11 @@
           @click="handleNotificationClick(notif)"
         >
           <div class="notification-icon" :class="`type-${notif.type}`">
-            <component :is="getNotificationIcon(notif.type)" :size="20" />
+            <AnimatedIcon
+              :name="getNotificationAnimation(notif.type)"
+              :fallback-icon="getNotificationIcon(notif.type)"
+              size="md"
+            />
           </div>
           <div class="notification-content">
             <p class="notification-text">{{ notif.message }}</p>
@@ -55,7 +59,7 @@
             :title="$t('profile.markAsRead')"
             @click.stop="markAsRead(notif.id)"
           >
-            <Check :size="16" />
+            <AnimatedIcon name="sparkle" :fallback-icon="Check" size="sm" />
           </button>
         </article>
       </div>
@@ -91,6 +95,7 @@ import { formatRelativeTime } from '@/utils/date'
 import Button from '@/components/ui/Button.vue'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
+import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 
 type NotificationType = 'like' | 'comment' | 'reply' | 'follow' | 'system'
 
@@ -127,6 +132,17 @@ function getNotificationIcon(type: NotificationType) {
     system: AlertCircle,
   }
   return icons[type] || Bell
+}
+
+function getNotificationAnimation(type: NotificationType) {
+  const animations = {
+    like: 'heart',
+    comment: 'sparkle',
+    reply: 'sparkle',
+    follow: 'user',
+    system: 'explore',
+  }
+  return animations[type] || 'sparkle'
 }
 
 async function fetchNotifications(reset = true) {

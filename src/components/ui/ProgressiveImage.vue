@@ -26,10 +26,10 @@
     </div>
 
     <div v-if="hasError" class="progressive-image__error glass-card">
-      <AlertTriangle :size="18" />
+      <AnimatedIcon name="sparkle" :fallback-icon="AlertTriangle" size="sm" />
       <span>{{ errorLabel }}</span>
       <button type="button" class="retry-btn" @click="retry">
-        <RefreshCw :size="14" />
+        <AnimatedIcon name="loading" :fallback-icon="RefreshCw" size="sm" />
         {{ $t('common.retry') }}
       </button>
     </div>
@@ -40,6 +40,7 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { AlertTriangle, RefreshCw } from 'lucide-vue-next'
+import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 
 export interface ProgressiveImageProps {
   src: string

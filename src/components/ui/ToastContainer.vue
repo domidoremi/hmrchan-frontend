@@ -12,7 +12,12 @@
           @mouseleave="resumeTimer(toast.id)"
         >
           <div class="toast__icon-wrapper" :class="`toast__icon-wrapper--${toast.type}`">
-            <component :is="getIcon(toast.type)" :size="18" class="toast__icon" />
+            <AnimatedIcon
+              :name="getAnimation(toast.type)"
+              :fallback-icon="getIcon(toast.type)"
+              size="md"
+              class="toast__icon"
+            />
           </div>
 
           <div class="toast__content">
@@ -35,7 +40,7 @@
             :aria-label="$t('common.close')"
             @click="removeToast(toast.id)"
           >
-            <X :size="14" />
+            <AnimatedIcon name="sparkle" :fallback-icon="X" size="sm" />
           </button>
 
           <div
@@ -53,6 +58,7 @@
 import { storeToRefs } from 'pinia'
 import { CheckCircle, XCircle, AlertTriangle, Info, X, Bell } from 'lucide-vue-next'
 import { useToastStore, type Toast } from '@/stores'
+import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 
 defineOptions({ name: 'UiToastContainer' })
 
@@ -81,6 +87,17 @@ function getIcon(type: string) {
     default: Bell,
   }
   return icons[type as keyof typeof icons] || Info
+}
+
+function getAnimation(type: string) {
+  const animations = {
+    success: 'sparkle',
+    error: 'heart',
+    warning: 'sparkle',
+    info: 'explore',
+    default: 'sparkle',
+  }
+  return animations[type as keyof typeof animations] || 'sparkle'
 }
 
 function handleAction(toast: Toast) {
@@ -346,12 +363,12 @@ function handleAction(toast: Toast) {
     transform: none;
   }
 
-  /* 移动端统一从底部弹出，避免遮挡内容 */
+  /* 移动端统一从顶部弹出，贴近系统通知区域 */
   .toast-container--top-right,
   .toast-container--top-left,
   .toast-container--top-center {
-    top: auto;
-    bottom: calc(var(--spacing-4) + env(safe-area-inset-bottom, 0px));
+    top: calc(env(safe-area-inset-top, 0px) + var(--spacing-4));
+    bottom: auto;
   }
 
   .toast-container--top-center,
@@ -359,15 +376,15 @@ function handleAction(toast: Toast) {
     left: calc(var(--spacing-3) + env(safe-area-inset-left, 0px));
   }
 
-  /* 移动端从底部滑入 */
+  /* 移动端从顶部滑入 */
   .toast-enter-from {
     opacity: 0;
-    transform: translateY(20px) scale(0.95);
+    transform: translateY(-16px) scale(0.95);
   }
 
   .toast-leave-to {
     opacity: 0;
-    transform: translateY(10px) scale(0.95);
+    transform: translateY(-8px) scale(0.95);
   }
 
   /* 增加关闭按钮的点击区域，避免误触 */

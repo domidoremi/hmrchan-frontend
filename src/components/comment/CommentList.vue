@@ -2,7 +2,7 @@
   <section class="comment-section">
     <header class="comment-header">
       <h3 class="comment-title">
-        <MessageSquare :size="20" />
+        <AnimatedIcon name="sparkle" :fallback-icon="MessageSquare" size="md" />
         {{ $t('comment.title') }}
         <span v-if="commentsCount > 0" class="comment-count">{{ commentsCount }}</span>
       </h3>
@@ -30,7 +30,7 @@
     </div>
 
     <div v-else-if="comments.length === 0" class="empty-state">
-      <MessageSquare :size="48" class="empty-icon" />
+      <AnimatedIcon name="explore" :fallback-icon="MessageSquare" size="xl" class="empty-icon" />
       <p>{{ $t('comment.empty') }}</p>
       <p class="empty-hint">{{ $t('comment.beFirst') }}</p>
     </div>
@@ -58,8 +58,9 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { MessageSquare } from 'lucide-vue-next'
 import { useCommentsStore } from '@/stores'
 import type { Comment } from '@/types'
-import CommentForm from './CommentForm.vue'
 import CommentCard from './CommentCard.vue'
+import CommentForm from './CommentForm.vue'
+import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 
 interface Props {
   postId: string
