@@ -2,7 +2,7 @@
   <div class="post-detail-page">
     <div class="container">
       <button type="button" class="back-btn" @click="goBack">
-        <ArrowLeft :size="20" />
+        <AnimatedIcon name="explore" :fallback-icon="ArrowLeft" size="md" />
         {{ $t('common.back') }}
       </button>
 
@@ -28,7 +28,7 @@
                 :aria-label="$t('common.previous')"
                 @click="prevMedia"
               >
-                <ChevronLeft :size="20" />
+                <AnimatedIcon name="explore" :fallback-icon="ChevronLeft" size="md" />
               </button>
 
               <Transition :name="mediaTransitionName" mode="out-in">
@@ -67,6 +67,7 @@
                   class="media-viewer-item is-loaded"
                   :src="getMediaStreamUrl(activeMedia.id)"
                   :poster="getMediaThumbnailUrl(activeMedia.id, 'large')"
+                  :subtitles="activeMedia.subtitles ?? null"
                   playsinline
                   @ready="onMediaLoad"
                 />
@@ -79,7 +80,7 @@
                 :aria-label="$t('common.next')"
                 @click="nextMedia"
               >
-                <ChevronRight :size="20" />
+                <AnimatedIcon name="explore" :fallback-icon="ChevronRight" size="md" />
               </button>
             </div>
 
@@ -137,11 +138,13 @@
             @click="toggleFavorite"
             :disabled="!isAuthenticated || isFavoriteLoading"
           >
-            <Bookmark :size="20" :fill="isFavorited ? 'currentColor' : 'none'" />
+            <AnimatedIcon name="heart" :fallback-icon="Bookmark" size="md" :active="isFavorited">
+              <Bookmark :size="20" :fill="isFavorited ? 'currentColor' : 'none'" />
+            </AnimatedIcon>
             <span>{{ isFavorited ? $t('post.unfavorite') : $t('post.favorite') }}</span>
           </button>
           <button type="button" class="action-btn" @click="sharePost">
-            <Share2 :size="20" />
+            <AnimatedIcon name="explore" :fallback-icon="Share2" size="md" />
             <span>{{ $t('post.share') }}</span>
           </button>
         </div>
@@ -183,6 +186,7 @@ import { postCache } from '@/utils/cache'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import VideoPlayer from '@/components/ui/VideoPlayer.vue'
 import { defineAsyncComponent } from 'vue'
+import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 
 // 动态导入大型组件以减少初始包体积
 const MediaLightbox = defineAsyncComponent(() => import('@/components/ui/MediaLightbox.vue'))
@@ -390,11 +394,12 @@ async function fetchPost() {
       // 更新页面标题
       updateTitle(post.value.title)
 
-      await fetchFavoriteStatus()
       isLoading.value = false
 
-      // 追踪浏览量（使用 IndexedDB 去重）
-      trackPostView(postId.value, isAuthenticated.value)
+      void Promise.allSettled([
+        fetchFavoriteStatus(),
+        trackPostView(postId.value, isAuthenticated.value),
+      ])
 
       loadCachedPost(postId.value).catch(() => {})
       return
@@ -408,10 +413,10 @@ async function fetchPost() {
     // 更新页面标题
     updateTitle(post.value.title)
 
-    await fetchFavoriteStatus()
-
-    // 追踪浏览量（使用 IndexedDB 去重）
-    trackPostView(postId.value, isAuthenticated.value)
+    void Promise.allSettled([
+      fetchFavoriteStatus(),
+      trackPostView(postId.value, isAuthenticated.value),
+    ])
   } catch (err) {
     if (err instanceof ApiError) {
       error.value = err.message

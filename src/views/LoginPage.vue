@@ -12,7 +12,7 @@
           :aria-label="$t('common.back')"
           @click="handleBack"
         >
-          <ArrowLeft :size="18" />
+          <AnimatedIcon name="explore" :fallback-icon="ArrowLeft" size="sm" />
         </button>
       </div>
 
@@ -50,8 +50,8 @@
               :aria-label="showPassword ? $t('common.hide') : $t('common.show')"
               @click="showPassword = !showPassword"
             >
-              <EyeOff v-if="showPassword" :size="18" />
-              <Eye v-else :size="18" />
+              <AnimatedIcon v-if="showPassword" name="explore" :fallback-icon="EyeOff" size="sm" />
+              <AnimatedIcon v-else name="explore" :fallback-icon="Eye" size="sm" />
             </button>
           </div>
         </div>
@@ -99,6 +99,7 @@ import { ArrowLeft, Eye, EyeOff } from 'lucide-vue-next'
 import Button from '@/components/ui/Button.vue'
 import Input from '@/components/ui/Input.vue'
 import TurnstileWidget from '@/components/ui/TurnstileWidget.vue'
+import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 
 const router = useRouter()
 const route = useRoute()

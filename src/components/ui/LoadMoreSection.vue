@@ -23,7 +23,7 @@
 
     <div class="load-more-body">
       <div v-if="hasMore" class="load-more-state">
-        <div :ref="sentinelRef" class="scroll-sentinel">
+        <div :ref="setSentinelRef" class="scroll-sentinel">
           <Transition name="fade" mode="out-in">
             <div v-if="loading" class="sentinel-loading glass-card">
               <span class="spinner spinner-sm" />
@@ -45,7 +45,12 @@
             class="load-more-btn"
             @click="emit('load-more')"
           >
-            <ChevronDown :size="18" class="load-more-icon" />
+            <AnimatedIcon
+              name="explore"
+              :fallback-icon="ChevronDown"
+              size="md"
+              class="load-more-icon"
+            />
             {{ t('common.loadMore') }}
           </Button>
         </div>
@@ -61,10 +66,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, type ComponentPublicInstance } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ChevronDown } from 'lucide-vue-next'
 import Button from '@/components/ui/Button.vue'
+import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 
 interface Props {
   count: number
@@ -90,6 +96,11 @@ const progressPercent = computed(() => {
   if (props.total === 0) return 0
   return Math.min((props.count / props.total) * 100, 100)
 })
+
+const setSentinelRef = (el: Element | ComponentPublicInstance | null) => {
+  const resolved = el instanceof Element ? el : null
+  props.sentinelRef?.(resolved)
+}
 </script>
 
 <style scoped>
@@ -224,11 +235,11 @@ const progressPercent = computed(() => {
 }
 
 .idle-dot {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
-  background: var(--color-primary);
-  box-shadow: 0 0 10px rgba(var(--color-primary-rgb), 0.6);
+  background: var(--color-text-tertiary);
+  box-shadow: none;
 }
 
 .load-more-actions {

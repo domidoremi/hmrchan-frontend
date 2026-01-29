@@ -4,7 +4,7 @@
       <h2 class="tab-title">{{ $t('profile.tabs.history') }}</h2>
       <span v-if="total > 0" class="item-count">{{ total }}</span>
       <Button v-if="history.length > 0" variant="ghost" size="sm" @click="clearHistory">
-        <Trash2 :size="16" />
+        <AnimatedIcon name="sparkle" :fallback-icon="Trash2" size="sm" />
         {{ $t('profile.clearHistory') }}
       </Button>
     </div>
@@ -43,14 +43,17 @@
               loading="lazy"
             />
             <div v-else class="thumbnail-placeholder">
-              <Clock :size="20" />
+              <AnimatedIcon name="explore" :fallback-icon="Clock" size="md" />
             </div>
           </div>
           <div class="history-content">
             <h3 class="history-title">{{ item.post.title }}</h3>
             <p v-if="item.post.author_name" class="history-author">{{ item.post.author_name }}</p>
             <div class="history-meta">
-              <span><Clock :size="14" /> {{ formatDate(item.viewed_at) }}</span>
+              <span>
+                <AnimatedIcon name="explore" :fallback-icon="Clock" size="sm" />
+                {{ formatDate(item.viewed_at) }}
+              </span>
             </div>
           </div>
         </article>
@@ -91,6 +94,7 @@ import Button from '@/components/ui/Button.vue'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
+import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 
 // API 返回的原始数据结构
 interface ApiHistoryItem {
@@ -123,6 +127,7 @@ interface HistoryItem {
 
 // 转换 API 数据为前端格式
 function transformHistoryItem(item: ApiHistoryItem): HistoryItem {
+  const authorName = item.content_preview?.author_name
   return {
     id: item.id,
     post_uuid: item.content_uuid,
@@ -130,7 +135,7 @@ function transformHistoryItem(item: ApiHistoryItem): HistoryItem {
       uuid: item.content_uuid,
       title: item.content_preview?.title || t('profile.unknownPost'),
       thumbnail_url: item.content_preview?.thumbnail_url || null,
-      author_name: item.content_preview?.author_name,
+      ...(authorName ? { author_name: authorName } : {}),
     },
     viewed_at: item.created_at,
   }

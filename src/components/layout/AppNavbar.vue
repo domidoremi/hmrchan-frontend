@@ -9,11 +9,11 @@
       <!-- Desktop Navigation -->
       <div ref="navLinksRef" class="navbar-links desktop-only">
         <!-- 滑动指示器 -->
-        <div ref="navIndicatorRef" class="nav-indicator" :style="navIndicatorStyle" />
+        <div class="nav-indicator" :style="navIndicatorStyle" />
 
         <!-- 动态渲染导航项 -->
         <RouterLink
-          v-for="item in desktopNavItems"
+          v-for="(item, index) in desktopNavItems"
           :key="item.path"
           :to="item.path"
           class="nav-link"
@@ -21,7 +21,12 @@
           @mouseenter="handlePrefetch(item)"
           @focus="handlePrefetch(item)"
         >
-          <component :is="item.icon" :size="item.desktopIconSize || 18" />
+          <AnimatedIcon
+            :name="getNavAnimation(item)"
+            :fallback-icon="item.icon"
+            size="md"
+            :active="activeDesktopIndex === index"
+          />
           <span>{{ $t(item.i18nKey) }}</span>
         </RouterLink>
       </div>
@@ -35,7 +40,7 @@
           @focus="prefetchExplorePage"
           :aria-label="$t('common.search')"
         >
-          <Search :size="18" />
+          <AnimatedIcon name="search" :fallback-icon="Search" size="md" />
         </button>
 
         <button
@@ -47,7 +52,7 @@
           @focus="prefetchSettingsPanel"
           :aria-label="$t('nav.settings')"
         >
-          <Settings :size="18" :class="{ 'icon-spin': showSettings }" />
+          <AnimatedIcon name="sparkle" :fallback-icon="Settings" size="md" :active="showSettings" />
         </button>
 
         <RouterLink
@@ -61,7 +66,7 @@
           @mouseenter="prefetchLoginPage"
           @focus="prefetchLoginPage"
         >
-          <LogIn :size="16" />
+          <AnimatedIcon name="user" :fallback-icon="LogIn" size="sm" />
           <span class="desktop-only">{{ $t('nav.login') }}</span>
         </RouterLink>
 
@@ -118,10 +123,15 @@
         <div class="dropdown-links">
           <RouterLink to="/profile" class="dropdown-link" @click="showUserMenu = false">
             <div class="dropdown-link-icon">
-              <User :size="16" />
+              <AnimatedIcon name="user" :fallback-icon="User" size="sm" />
             </div>
             <span>{{ $t('nav.profile') }}</span>
-            <ChevronRight :size="14" class="dropdown-link-arrow" />
+            <AnimatedIcon
+              name="explore"
+              :fallback-icon="ChevronRight"
+              size="sm"
+              class="dropdown-link-arrow"
+            />
           </RouterLink>
           <RouterLink
             to="/profile/settings"
@@ -131,10 +141,15 @@
             @focus="prefetchProfileSettingsPage"
           >
             <div class="dropdown-link-icon">
-              <Settings :size="16" />
+              <AnimatedIcon name="sparkle" :fallback-icon="Settings" size="sm" />
             </div>
             <span>{{ $t('nav.profileSettings') }}</span>
-            <ChevronRight :size="14" class="dropdown-link-arrow" />
+            <AnimatedIcon
+              name="explore"
+              :fallback-icon="ChevronRight"
+              size="sm"
+              class="dropdown-link-arrow"
+            />
           </RouterLink>
           <RouterLink
             to="/profile/notifications"
@@ -142,24 +157,34 @@
             @click="showUserMenu = false"
           >
             <div class="dropdown-link-icon">
-              <Bell :size="16" />
+              <AnimatedIcon name="sparkle" :fallback-icon="Bell" size="sm" />
             </div>
             <span>{{ $t('profile.tabs.notifications') }}</span>
-            <ChevronRight :size="14" class="dropdown-link-arrow" />
+            <AnimatedIcon
+              name="explore"
+              :fallback-icon="ChevronRight"
+              size="sm"
+              class="dropdown-link-arrow"
+            />
           </RouterLink>
           <RouterLink to="/profile/devices" class="dropdown-link" @click="showUserMenu = false">
             <div class="dropdown-link-icon">
-              <Smartphone :size="16" />
+              <AnimatedIcon name="explore" :fallback-icon="Smartphone" size="sm" />
             </div>
             <span>{{ $t('profile.tabs.devices') }}</span>
-            <ChevronRight :size="14" class="dropdown-link-arrow" />
+            <AnimatedIcon
+              name="explore"
+              :fallback-icon="ChevronRight"
+              size="sm"
+              class="dropdown-link-arrow"
+            />
           </RouterLink>
         </div>
         <div class="dropdown-divider" />
         <div class="dropdown-links">
           <button class="dropdown-link dropdown-link--danger" @click="handleLogout">
             <div class="dropdown-link-icon dropdown-link-icon--danger">
-              <LogOut :size="16" />
+              <AnimatedIcon name="sparkle" :fallback-icon="LogOut" size="sm" />
             </div>
             <span>{{ $t('nav.logout') }}</span>
           </button>
@@ -184,7 +209,12 @@
       @focus="handlePrefetch(item)"
     >
       <div class="mobile-nav-icon">
-        <component :is="item.icon" :size="item.mobileIconSize || 20" />
+        <AnimatedIcon
+          :name="getNavAnimation(item)"
+          :fallback-icon="item.icon"
+          size="lg"
+          :active="activeMobileIndex === index"
+        />
       </div>
       <span class="mobile-nav-label">{{ $t(item.i18nKey) }}</span>
     </RouterLink>
@@ -221,6 +251,7 @@ import { prefetchExploreData, prefetchAuthorsData } from '@/utils/prefetch'
 import { throttleRAF, scheduleDOMUpdate, prefersReducedMotion } from '@/utils/performance'
 import { useNavigation, registerPrefetchFunction } from '@/composables/useNavigation'
 import type { NavigationItem } from '@/config/navigation'
+import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 
 // 懒加载设置面板，减少首屏 JS
 const SettingsPanel = defineAsyncComponent(() => import('./SettingsPanel.vue'))
@@ -259,13 +290,23 @@ const shouldAnimateMobile = computed(
 const showSettings = ref(false)
 const showUserMenu = ref(false)
 
+const navAnimationMap: Record<string, string> = {
+  '/': 'home',
+  '/explore': 'explore',
+  '/favorites': 'heart',
+  '/authors': 'user',
+  '/community': 'sparkle',
+}
+
+function getNavAnimation(item: NavigationItem) {
+  return navAnimationMap[item.path] || 'sparkle'
+}
+
 const settingsBtnRef = ref<HTMLButtonElement | null>(null)
 const userBtnRef = ref<HTMLButtonElement | null>(null)
 const settingsDropdownRef = ref<HTMLDivElement | null>(null)
 const userDropdownRef = ref<HTMLDivElement | null>(null)
 const navLinksRef = ref<HTMLDivElement | null>(null)
-const navIndicatorRef = ref<HTMLDivElement | null>(null)
-
 // 记录原始 body 样式，用于恢复
 let originalBodyOverflow = ''
 let originalBodyPaddingRight = ''

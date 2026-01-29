@@ -418,10 +418,7 @@ export default defineConfig(({ mode }: { mode: string }) => {
           },
           rewrite: (path: string) => {
             const url = new URL(path, 'http://localhost')
-            if (!url.pathname.endsWith('/')) {
-              return url.pathname + '/' + url.search
-            }
-            return path
+            return url.pathname + url.search
           },
         },
         '/uploads': {

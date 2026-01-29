@@ -38,11 +38,11 @@
           <div class="comment-header">
             <div class="comment-meta">
               <span class="comment-date">
-                <Clock :size="12" />
+                <AnimatedIcon name="explore" :fallback-icon="Clock" size="sm" />
                 {{ formatDate(comment.created_at) }}
               </span>
               <span v-if="comment.replies_count" class="comment-replies">
-                <MessageCircle :size="12" />
+                <AnimatedIcon name="sparkle" :fallback-icon="MessageCircle" size="sm" />
                 {{ comment.replies_count }} {{ $t('comment.replies', '回复') }}
               </span>
             </div>
@@ -52,7 +52,7 @@
               @click.stop="handleDelete(comment.id)"
               :aria-label="$t('common.delete')"
             >
-              <Trash2 :size="14" />
+              <AnimatedIcon name="sparkle" :fallback-icon="Trash2" size="sm" />
             </button>
           </div>
 
@@ -64,7 +64,7 @@
           <!-- Comment Footer -->
           <div class="comment-footer">
             <div v-if="comment.post_title" class="comment-context">
-              <MessageSquare :size="14" />
+              <AnimatedIcon name="explore" :fallback-icon="MessageSquare" size="sm" />
               <span class="context-label">{{ $t('profile.commentOn') }}</span>
               <button class="post-link" @click="goToPost(comment.post_id)">
                 {{ comment.post_title }}
@@ -72,7 +72,12 @@
             </div>
             <div class="comment-stats">
               <span class="stat-item">
-                <Heart :size="14" :class="{ 'stat-icon--active': comment.likes_count > 0 }" />
+                <AnimatedIcon
+                  name="heart"
+                  :fallback-icon="Heart"
+                  size="sm"
+                  :active="comment.likes_count > 0"
+                />
                 {{ comment.likes_count || 0 }}
               </span>
             </div>
@@ -112,6 +117,7 @@ import { formatRelativeTime } from '@/utils/date'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import { defineAsyncComponent } from 'vue'
+import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 
 // 动态导入对话框组件以减少初始包体积
 const ConfirmDialog = defineAsyncComponent(() => import('@/components/ui/ConfirmDialog.vue'))

@@ -63,6 +63,9 @@ import ErrorBoundary from '@/components/ui/ErrorBoundary.vue'
 const ContextualBackground = defineAsyncComponent(
   () => import('@/components/layout/ContextualBackground.vue')
 )
+const BackgroundTransition = defineAsyncComponent(
+  () => import('@/components/layout/BackgroundTransition.vue')
+)
 const ToastContainer = defineAsyncComponent(() => import('@/components/ui/ToastContainer.vue'))
 
 const route = useRoute()

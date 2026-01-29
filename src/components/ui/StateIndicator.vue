@@ -3,7 +3,12 @@
     <div class="state-indicator__visual">
       <div class="state-indicator__glow" />
       <div class="state-indicator__icon-wrapper">
-        <component :is="iconComponent" :size="32" class="state-indicator__icon" />
+        <AnimatedIcon
+          :name="iconName"
+          :fallback-icon="iconComponent"
+          size="xl"
+          class="state-indicator__icon"
+        />
       </div>
     </div>
 
@@ -17,7 +22,7 @@
         :variant="variant === 'error' ? 'default' : 'outline'"
         size="sm"
         :loading="actionLoading"
-        :icon="variant === 'error' ? RefreshCw : undefined"
+        v-bind="variant === 'error' ? { icon: RefreshCw } : {}"
         @click="emit('action')"
       >
         {{ resolvedActionLabel }}
@@ -38,6 +43,7 @@ import {
   type LucideIcon,
 } from 'lucide-vue-next'
 import Button from './Button.vue'
+import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 
 defineOptions({ name: 'UiStateIndicator' })
 
@@ -82,6 +88,17 @@ const iconMap: Record<string, LucideIcon> = {
 }
 
 const iconComponent = computed(() => iconMap[props.variant] ?? Inbox)
+
+const iconName = computed(() => {
+  const names: Record<string, string> = {
+    error: 'sparkle',
+    empty: 'explore',
+    'not-found': 'search',
+    'no-results': 'search',
+  }
+
+  return names[props.variant] ?? 'sparkle'
+})
 
 const shouldShowAction = computed(() => {
   if (props.showAction !== undefined) return props.showAction

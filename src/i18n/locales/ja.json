@@ -117,6 +117,8 @@
     "playbackSpeed": "再生速度",
     "quality": "画質",
     "auto": "自動",
+    "subtitles": "字幕",
+    "subtitlesOff": "オフ",
     "player": "動画プレイヤー",
     "play": "再生",
     "pause": "一時停止",

@@ -31,7 +31,7 @@
           />
         </svg>
         <span class="back-to-top__icon">
-          <ArrowUp :size="iconSize" />
+          <AnimatedIcon name="home" :fallback-icon="ArrowUp" :size="iconSizeToken" />
         </span>
         <span class="back-to-top__pulse" />
       </button>
@@ -43,6 +43,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { ArrowUp } from 'lucide-vue-next'
 import { throttleRAF } from '@/utils/performance'
+import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 
 defineOptions({ name: 'UiBackToTop' })
 
@@ -68,6 +69,13 @@ const circumference = 2 * Math.PI * radius
 
 const dashOffset = computed(() => {
   return circumference * (1 - scrollProgress.value)
+})
+
+const iconSizeToken = computed(() => {
+  if (props.iconSize <= 16) return 'sm'
+  if (props.iconSize <= 20) return 'md'
+  if (props.iconSize <= 24) return 'lg'
+  return 'xl'
 })
 
 function updateScrollState() {

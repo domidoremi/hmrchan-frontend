@@ -5,7 +5,7 @@
       <h2 class="error-title">{{ $t('error.notFound') }}</h2>
       <p class="error-message">{{ $t('error.notFoundMessage') }}</p>
       <Button @click="goHome">
-        <Home :size="18" />
+        <AnimatedIcon name="home" :fallback-icon="Home" size="sm" />
         {{ $t('error.goHome') }}
       </Button>
     </div>
@@ -16,6 +16,7 @@
 import { useRouter } from 'vue-router'
 import { Home } from 'lucide-vue-next'
 import Button from '@/components/ui/Button.vue'
+import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 
 const router = useRouter()
 

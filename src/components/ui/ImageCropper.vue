@@ -9,7 +9,7 @@
           :aria-label="$t('common.close')"
           @click="cancel"
         >
-          <X :size="20" />
+          <AnimatedIcon name="sparkle" :fallback-icon="X" size="md" />
         </button>
       </header>
 
@@ -75,7 +75,7 @@
             :class="{ active: shape === 'circle' }"
             @click="shape = 'circle'"
           >
-            <Circle :size="20" />
+            <AnimatedIcon name="explore" :fallback-icon="Circle" size="md" />
             {{ $t('profile.circleShape') }}
           </button>
           <button
@@ -84,7 +84,7 @@
             :class="{ active: shape === 'square' }"
             @click="shape = 'square'"
           >
-            <Square :size="20" />
+            <AnimatedIcon name="explore" :fallback-icon="Square" size="md" />
             {{ $t('profile.squareShape') }}
           </button>
         </div>
@@ -106,6 +106,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { X, Circle, Square } from 'lucide-vue-next'
 import Button from './Button.vue'
+import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 
 interface Props {
   imageSrc: string

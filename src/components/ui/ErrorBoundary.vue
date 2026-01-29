@@ -3,7 +3,7 @@
   <div v-else class="error-boundary">
     <div class="error-panel glass-card">
       <div class="error-badge">
-        <AlertTriangle :size="26" />
+        <AnimatedIcon name="sparkle" :fallback-icon="AlertTriangle" size="lg" />
         <span>{{ $t('error.componentError') }}</span>
       </div>
 
@@ -12,15 +12,15 @@
 
       <div class="error-actions">
         <Button variant="primary" @click="retry">
-          <RefreshCw :size="16" />
+          <AnimatedIcon name="loading" :fallback-icon="RefreshCw" size="sm" />
           {{ $t('common.retry') }}
         </Button>
         <Button variant="secondary" @click="copyReport">
-          <Copy :size="16" />
+          <AnimatedIcon name="explore" :fallback-icon="Copy" size="sm" />
           {{ copyLabel }}
         </Button>
         <Button variant="ghost" @click="goHome">
-          <Home :size="16" />
+          <AnimatedIcon name="home" :fallback-icon="Home" size="sm" />
           {{ $t('nav.home') }}
         </Button>
       </div>
@@ -45,6 +45,7 @@ import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { AlertTriangle, RefreshCw, Home, Copy } from 'lucide-vue-next'
 import Button from './Button.vue'
+import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 
 interface Props {
   fallbackMessage?: string

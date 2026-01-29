@@ -15,6 +15,7 @@ import {
 import { useSessionManagement } from '@/composables/useSessionManagement'
 import { useDeviceNameEditor } from '@/composables/useDeviceNameEditor'
 import { getDeviceIcon, formatRelativeTime } from '@/utils/deviceHelpers'
+import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 
 const { t } = useI18n()
 
@@ -59,7 +60,7 @@ function formatDate(dateString: string): string {
 
     <div v-if="otherSessionsCount > 0" class="revoke-all-section">
       <button class="btn-revoke-all" :disabled="isRevoking" @click="revokeAllOthers">
-        <Trash2 :size="18" />
+        <AnimatedIcon name="sparkle" :fallback-icon="Trash2" size="md" />
         {{ t('devices.revokeAll') }}
       </button>
     </div>
@@ -76,7 +77,11 @@ function formatDate(dateString: string): string {
         :class="{ 'is-current': session.is_current }"
       >
         <div class="device-icon">
-          <component :is="getDeviceIcon(session.device_type)" :size="32" />
+          <AnimatedIcon
+            name="explore"
+            :fallback-icon="getDeviceIcon(session.device_type)"
+            size="xl"
+          />
         </div>
 
         <div class="device-info">
@@ -91,10 +96,10 @@ function formatDate(dateString: string): string {
                 @keyup.esc="cancelEditing"
               />
               <button class="btn-icon" @click="saveDeviceName(session.id)">
-                <Check :size="16" />
+                <AnimatedIcon name="sparkle" :fallback-icon="Check" size="sm" />
               </button>
               <button class="btn-icon" @click="cancelEditing">
-                <X :size="16" />
+                <AnimatedIcon name="sparkle" :fallback-icon="X" size="sm" />
               </button>
             </div>
             <div v-else class="device-name-display">
@@ -104,12 +109,12 @@ function formatDate(dateString: string): string {
                   {{ t('devices.currentDevice') }}
                 </span>
                 <span v-if="session.is_trusted" class="badge-trusted">
-                  <Shield :size="14" />
+                  <AnimatedIcon name="sparkle" :fallback-icon="Shield" size="sm" />
                   {{ t('devices.trusted') }}
                 </span>
               </h3>
               <button v-if="!session.is_current" class="btn-edit" @click="startEditing(session)">
-                <Edit2 :size="14" />
+                <AnimatedIcon name="explore" :fallback-icon="Edit2" size="sm" />
               </button>
             </div>
           </div>
@@ -118,7 +123,7 @@ function formatDate(dateString: string): string {
 
           <div class="device-meta">
             <div class="meta-item">
-              <MapPin :size="14" />
+              <AnimatedIcon name="explore" :fallback-icon="MapPin" size="sm" />
               <span>{{ session.ip_address }}</span>
               <span v-if="session.city">
                 · {{ session.city }}<span v-if="session.country">, {{ session.country }}</span>
@@ -126,7 +131,7 @@ function formatDate(dateString: string): string {
             </div>
 
             <div class="meta-item">
-              <Clock :size="14" />
+              <AnimatedIcon name="explore" :fallback-icon="Clock" size="sm" />
               <span>{{ t('devices.lastActive') }}: {{ formatDate(session.last_used_at) }}</span>
             </div>
 
@@ -134,7 +139,7 @@ function formatDate(dateString: string): string {
               v-if="session.ip_change_count && session.ip_change_count > 5"
               class="meta-item warning"
             >
-              <AlertTriangle :size="14" />
+              <AnimatedIcon name="sparkle" :fallback-icon="AlertTriangle" size="sm" />
               <span>
                 {{ t('devices.ipChangeWarning', { count: session.ip_change_count }) }}
               </span>
@@ -148,11 +153,15 @@ function formatDate(dateString: string): string {
             :class="{ trusted: session.is_trusted }"
             @click="toggleTrust(session)"
           >
-            <component :is="session.is_trusted ? ShieldOff : Shield" :size="18" />
+            <AnimatedIcon
+              name="sparkle"
+              :fallback-icon="session.is_trusted ? ShieldOff : Shield"
+              size="md"
+            />
             {{ session.is_trusted ? t('devices.untrust') : t('devices.trust') }}
           </button>
           <button class="btn-revoke" @click="revokeSession(session.id)">
-            <Trash2 :size="18" />
+            <AnimatedIcon name="sparkle" :fallback-icon="Trash2" size="md" />
             {{ t('devices.revoke') }}
           </button>
         </div>

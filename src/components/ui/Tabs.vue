@@ -12,7 +12,13 @@
         :disabled="tab.disabled"
         @click="selectTab(tab.value)"
       >
-        <component v-if="tab.icon" :is="tab.icon" :size="16" class="ui-tabs__icon" />
+        <AnimatedIcon
+          v-if="tab.icon"
+          name="explore"
+          :fallback-icon="tab.icon"
+          size="sm"
+          class="ui-tabs__icon"
+        />
         {{ tab.label }}
       </button>
     </div>
@@ -24,6 +30,7 @@
 
 <script setup lang="ts">
 import type { Component } from 'vue'
+import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 
 defineOptions({ name: 'UiTabs' })
 

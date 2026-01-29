@@ -94,6 +94,24 @@ export function useInfiniteScroll(
     }
   })
 
+  watch(
+    () => getEnabled(),
+    (isEnabled) => {
+      if (!isEnabled) {
+        stopObserving()
+        return
+      }
+
+      if (sentinelRef.value) {
+        startObserving()
+        if (observer) {
+          observer.unobserve(sentinelRef.value)
+          observer.observe(sentinelRef.value)
+        }
+      }
+    }
+  )
+
   onMounted(() => {
     if (sentinelRef.value) {
       startObserving()

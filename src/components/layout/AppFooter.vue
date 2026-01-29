@@ -4,7 +4,7 @@
       <!-- Brand -->
       <div class="footer-brand">
         <RouterLink to="/" class="brand-logo">
-          <Sparkles :size="18" />
+          <AnimatedIcon name="sparkle" :fallback-icon="Sparkles" size="md" />
           <span>{{ $t('app.name') }}</span>
         </RouterLink>
         <p>{{ $t('footer.desc') }}</p>
@@ -28,7 +28,7 @@
           aria-label="GitHub"
           class="social-link"
         >
-          <Github :size="16" />
+          <AnimatedIcon name="explore" :fallback-icon="Github" size="sm" />
         </a>
       </div>
     </div>
@@ -39,6 +39,7 @@
 import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
 import { Github, Sparkles } from 'lucide-vue-next'
+import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 
 const currentYear = computed(() => new Date().getFullYear())
 </script>

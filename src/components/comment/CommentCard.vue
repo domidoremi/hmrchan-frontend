@@ -17,20 +17,20 @@
       <!-- More Actions Menu -->
       <div class="comment-menu" v-if="showActions">
         <button class="menu-btn" @click="toggleMenu" :aria-label="$t('common.more')">
-          <MoreHorizontal :size="18" />
+          <AnimatedIcon name="sparkle" :fallback-icon="MoreHorizontal" size="md" />
         </button>
         <Transition name="dropdown">
           <div v-if="showMenu" class="menu-dropdown glass-dropdown" @click.stop>
             <button v-if="canDelete" class="menu-item danger" @click="handleDelete">
-              <Trash2 :size="16" />
+              <AnimatedIcon name="loading" :fallback-icon="Trash2" size="sm" />
               <span>{{ $t('common.delete') }}</span>
             </button>
             <button class="menu-item" @click="handleShare">
-              <Share2 :size="16" />
+              <AnimatedIcon name="explore" :fallback-icon="Share2" size="sm" />
               <span>{{ $t('comment.share') }}</span>
             </button>
             <button class="menu-item" @click="handleReport">
-              <Flag :size="16" />
+              <AnimatedIcon name="sparkle" :fallback-icon="Flag" size="sm" />
               <span>{{ $t('comment.report') }}</span>
             </button>
           </div>
@@ -57,12 +57,12 @@
         @click="handleLike"
         :disabled="!isAuthenticated"
       >
-        <Heart :size="16" :fill="comment.is_liked ? 'currentColor' : 'none'" />
+        <AnimatedIcon name="heart" :fallback-icon="Heart" size="sm" :active="comment.is_liked" />
         <span v-if="comment.likes_count > 0">{{ comment.likes_count }}</span>
       </button>
 
       <button class="action-btn" @click="handleReply" :disabled="!isAuthenticated || !canReply">
-        <MessageCircle :size="16" />
+        <AnimatedIcon name="sparkle" :fallback-icon="MessageCircle" size="sm" />
         <span>{{ $t('comment.reply') }}</span>
       </button>
 
@@ -72,7 +72,12 @@
         @click="handleFavorite"
         :disabled="!isAuthenticated"
       >
-        <Bookmark :size="16" :fill="comment.is_favorited ? 'currentColor' : 'none'" />
+        <AnimatedIcon
+          name="explore"
+          :fallback-icon="Bookmark"
+          size="sm"
+          :active="comment.is_favorited"
+        />
       </button>
     </div>
 
@@ -104,7 +109,7 @@
         @click="handleShowReplies"
         :disabled="isLoadingReplies"
       >
-        <ChevronDown :size="16" />
+        <AnimatedIcon name="explore" :fallback-icon="ChevronDown" size="sm" />
         <span v-if="isLoadingReplies">{{ $t('common.loading') }}</span>
         <span v-else>{{ $t('comment.showReplies', { count: actualRepliesCount }) }}</span>
       </button>
@@ -159,6 +164,7 @@ import { getUserAvatarUrl } from '@/composables/useUserAvatar'
 import { formatRelativeTime } from '@/utils/date'
 import CommentForm from './CommentForm.vue'
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
+import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 
 interface Props {
   comment: Comment

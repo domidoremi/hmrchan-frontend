@@ -2,7 +2,12 @@
  * Posts Service - 帖子相关 API
  */
 
-import { apiClient, type PaginatedApiResponse, type PaginatedApiResponseWithLimit } from './client'
+import {
+  apiClient,
+  type PaginatedApiResponse,
+  type PaginatedApiResponseWithLimit,
+  type RequestConfig,
+} from './client'
 import { buildQuery } from '@/utils/queryBuilder'
 
 export type SortOrder = 'asc' | 'desc'
@@ -86,7 +91,20 @@ export interface MediaFile {
   duration?: number | null
   thumbnail_path?: string | null
   is_downloaded: boolean
+  subtitle_language?: string | null
+  subtitle_format?: string | null
+  has_subtitle?: boolean | null
+  subtitles?: MediaSubtitle[] | null
   created_at: string
+}
+
+export interface MediaSubtitle {
+  language: string
+  format?: string | null
+  label?: string | null
+  url?: string | null
+  file_path?: string | null
+  path?: string | null
 }
 
 export interface PostDetailResponse {
@@ -118,7 +136,8 @@ export interface PostDetailResponse {
 
 export const postService = {
   async listPosts(
-    params: ListPostsParams = {}
+    params: ListPostsParams = {},
+    config?: RequestConfig
   ): Promise<PaginatedApiResponseWithLimit<PostListItem>> {
     const query = buildQuery({
       page: params.page ?? DEFAULT_LIST_PARAMS.page,
@@ -137,7 +156,7 @@ export const postService = {
       thumbnail_quality: params.thumbnail_quality ?? null,
     })
 
-    return apiClient.get<PaginatedApiResponseWithLimit<PostListItem>>(`/posts/${query}`)
+    return apiClient.get<PaginatedApiResponseWithLimit<PostListItem>>(`/posts/${query}`, config)
   },
 
   async getPost(postId: string): Promise<PostDetailResponse> {
