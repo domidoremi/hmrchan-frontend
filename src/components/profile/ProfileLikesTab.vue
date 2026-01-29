@@ -33,7 +33,7 @@
             <p>{{ comment.content }}</p>
           </div>
           <div v-if="comment.post_title" class="comment-context">
-            <Heart :size="14" />
+            <AnimatedIcon name="heart" :fallback-icon="Heart" size="sm" />
             <span>{{ $t('profile.likedOn') }}: </span>
             <button class="post-link" @click="goToPost(comment.post_uuid)">
               {{ comment.post_title }}
@@ -41,9 +41,13 @@
           </div>
           <div class="comment-footer">
             <div class="comment-stats">
-              <span><Heart :size="14" /> {{ comment.like_count || 0 }}</span>
+              <span>
+                <AnimatedIcon name="heart" :fallback-icon="Heart" size="sm" />
+                {{ comment.like_count || 0 }}
+              </span>
               <span v-if="comment.reply_count"
-                ><MessageCircle :size="14" /> {{ comment.reply_count }}</span
+                ><AnimatedIcon name="sparkle" :fallback-icon="MessageCircle" size="sm" />
+                {{ comment.reply_count }}</span
               >
             </div>
             <button
@@ -51,7 +55,7 @@
               @click.stop="handleUnlike(comment)"
               :disabled="unlikingId === comment.id"
             >
-              <HeartOff :size="14" />
+              <AnimatedIcon name="sparkle" :fallback-icon="HeartOff" size="sm" />
               <span>{{ $t('profile.unlike') }}</span>
             </button>
           </div>
@@ -90,6 +94,7 @@ import { formatRelativeTime } from '@/utils/date'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import { defineAsyncComponent } from 'vue'
+import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 
 // 动态导入对话框组件以减少初始包体积
 const ConfirmDialog = defineAsyncComponent(() => import('@/components/ui/ConfirmDialog.vue'))

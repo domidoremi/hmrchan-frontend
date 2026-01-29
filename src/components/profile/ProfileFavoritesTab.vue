@@ -52,7 +52,7 @@
               decoding="async"
             />
             <div v-else class="image-placeholder">
-              <Heart :size="24" />
+              <AnimatedIcon name="heart" :fallback-icon="Heart" size="lg" />
             </div>
           </div>
           <div class="favorite-content">
@@ -72,7 +72,7 @@
             :title="$t('favorites.remove')"
             @click.stop="removeFavorite(fav.id)"
           >
-            <X :size="16" />
+            <AnimatedIcon name="sparkle" :fallback-icon="X" size="sm" />
           </button>
         </article>
       </div>
@@ -98,12 +98,17 @@ import { useI18n } from 'vue-i18n'
 import { Heart, X } from 'lucide-vue-next'
 import { useAuthStore, useToastStore } from '@/stores'
 import { favoriteService, type FavoriteResponse, ApiError, apiClient } from '@/api'
-import { normalizeToThumbnailUrl, getThumbnailSrcset } from '@/utils/mediaOptimizer'
+import {
+  normalizeToThumbnailUrl,
+  getThumbnailSrcset,
+  extractMediaIdFromUrl,
+} from '@/utils/mediaOptimizer'
 import { formatDate } from '@/utils/date'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import { useProgressiveRender } from '@/composables/useProgressiveRender'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
+import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 
 const router = useRouter()
 const { t } = useI18n()
@@ -406,6 +411,7 @@ onMounted(() => {
   overflow: hidden;
   text-overflow: ellipsis;
   display: -webkit-box;
+  line-clamp: 2;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   line-height: 1.4;

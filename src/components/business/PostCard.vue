@@ -17,7 +17,7 @@
         class="platform-badge"
         :class="`platform-badge--${post.platform?.toLowerCase()}`"
       >
-        <component :is="platformIcon" :size="12" />
+        <AnimatedIcon :name="platformAnimation" :fallback-icon="platformIcon" size="sm" />
         <span class="platform-label">{{ platformLabel }}</span>
       </div>
 
@@ -41,7 +41,7 @@
 
       <!-- Duration Badge (for videos) -->
       <div v-if="post.duration" class="duration-badge">
-        <Play :size="10" />
+        <AnimatedIcon name="explore" :fallback-icon="Play" size="sm" />
         {{ formatDuration(post.duration) }}
       </div>
 
@@ -53,32 +53,32 @@
         <div v-if="showHoverDetails" class="hover-overlay">
           <div class="hover-header">
             <div class="hover-time" v-if="post.published_at">
-              <Calendar :size="12" />
+              <AnimatedIcon name="explore" :fallback-icon="Calendar" size="sm" />
               <span>{{ formatPublishedTime(post.published_at) }}</span>
             </div>
             <div class="hover-action">
               <div class="hover-action-icon">
-                <ArrowUpRight :size="16" />
+                <AnimatedIcon name="sparkle" :fallback-icon="ArrowUpRight" size="md" />
               </div>
             </div>
           </div>
           <div class="hover-content">
             <h4 class="hover-title">{{ post.title }}</h4>
             <p v-if="post.author_name" class="hover-author">
-              <User :size="12" />
+              <AnimatedIcon name="user" :fallback-icon="User" size="sm" />
               {{ post.author_name }}
             </p>
             <div class="hover-stats">
               <span v-if="post.view_count" class="hover-stat">
-                <Eye :size="12" />
+                <AnimatedIcon name="explore" :fallback-icon="Eye" size="sm" />
                 {{ formatCount(post.view_count) }}
               </span>
               <span v-if="post.like_count" class="hover-stat">
-                <Heart :size="12" />
+                <AnimatedIcon name="heart" :fallback-icon="Heart" size="sm" />
                 {{ formatCount(post.like_count) }}
               </span>
               <span v-if="post.duration" class="hover-stat">
-                <Clock :size="12" />
+                <AnimatedIcon name="explore" :fallback-icon="Clock" size="sm" />
                 {{ formatDuration(post.duration) }}
               </span>
             </div>
@@ -93,18 +93,18 @@
       <div class="post-meta">
         <div class="post-author-wrapper" v-if="showAuthor && post.author_name">
           <div class="post-author-avatar">
-            <User :size="12" />
+            <AnimatedIcon name="user" :fallback-icon="User" size="sm" />
           </div>
           <span class="post-author">{{ post.author_name }}</span>
         </div>
 
         <div class="post-stats">
           <span v-if="post.view_count" class="post-stat" :title="$t('post.views')">
-            <Eye :size="12" />
+            <AnimatedIcon name="explore" :fallback-icon="Eye" size="sm" />
             {{ formatCount(post.view_count) }}
           </span>
           <span v-if="post.like_count" class="post-stat" :title="$t('post.likes')">
-            <Heart :size="12" />
+            <AnimatedIcon name="heart" :fallback-icon="Heart" size="sm" />
             {{ formatCount(post.like_count) }}
           </span>
         </div>
@@ -138,6 +138,7 @@ import {
 } from '@/utils/mediaOptimizer'
 import { thumbnailCache } from '@/utils/thumbnailCache'
 import { useCardAnimation } from '@/composables/useCardAnimation'
+import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 
 /**
  * 固定宽高比缓存 - 用于保持布局稳定，避免 CLS
@@ -226,6 +227,19 @@ const platformIcon = computed(() => {
   return platform ? (platformIconMap[platform] ?? Globe) : Globe
 })
 
+const platformAnimation = computed(() => {
+  const platform = props.post.platform?.toLowerCase()
+  const map: Record<string, string> = {
+    youtube: 'sparkle',
+    twitter: 'explore',
+    tiktok: 'explore',
+    bilibili: 'sparkle',
+    pixiv: 'heart',
+    weibo: 'explore',
+  }
+  return platform ? (map[platform] ?? 'explore') : 'explore'
+})
+
 const platformLabel = computed(() => {
   const raw = props.post.platform
   if (!raw) return ''
@@ -256,7 +270,7 @@ const thumbnailSrc = computed(() => {
 
   const mediaId = extractMediaIdFromUrl(props.post.thumbnail_url)
   const rawSize = effectiveThumbnailSize.value || 'medium'
-  const size = rawSize === 'original' ? 'large' : rawSize
+  const size = rawSize
 
   if (mediaId) {
     const cached = thumbnailCache.get(mediaId, size)

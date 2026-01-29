@@ -2,13 +2,18 @@
  * Vue Router Configuration
  */
 
-import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
+import {
+  createRouter,
+  createWebHistory,
+  type RouteRecordRaw,
+  type RouteLocationNormalizedLoadedGeneric,
+} from 'vue-router'
 import i18n from '@/i18n'
 
 // 扩展 RouteMeta 类型，提供类型安全的路由元信息访问
 declare module 'vue-router' {
   interface RouteMeta {
-    title?: string
+    title?: string | ((route: RouteLocationNormalizedLoadedGeneric) => string)
     description?: string
     requiresAuth?: boolean
     guestOnly?: boolean
@@ -132,16 +137,6 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/views/AboutPage.vue'),
     meta: { title: 'nav.about' },
   },
-  ...(import.meta.env.DEV
-    ? [
-        {
-          path: '/components',
-          name: 'components',
-          component: () => import('@/views/ComponentsShowcase.vue'),
-          meta: { title: 'shadcn/ui 组件展示' },
-        },
-      ]
-    : []),
   {
     path: '/:pathMatch(.*)*',
     name: 'not-found',
@@ -245,8 +240,9 @@ function ensureLinkRel(rel: string): HTMLLinkElement {
 }
 
 router.afterEach((to) => {
-  const titleKey = to.meta.title
-  const translatedTitle = typeof titleKey === 'string' ? String(i18n.global.t(titleKey)) : ''
+  const titleValue = typeof to.meta.title === 'function' ? to.meta.title(to) : to.meta.title
+  const rawTitle = titleValue ? String(titleValue) : ''
+  const translatedTitle = rawTitle ? String(i18n.global.t(rawTitle)) : ''
   const nextTitle =
     translatedTitle && translatedTitle !== SITE_NAME
       ? `${translatedTitle} - ${SITE_NAME}`

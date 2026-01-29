@@ -25,27 +25,42 @@
       @waiting="isBuffering = true"
       @canplay="isBuffering = false"
       @click="togglePlay"
-    />
+    >
+      <track
+        v-for="track in normalizedSubtitles"
+        :key="`${track.language}-${track.src}`"
+        kind="subtitles"
+        :label="track.label"
+        :srclang="track.language"
+        :src="track.src"
+        :default="track.language === selectedSubtitleLanguage"
+      />
+    </video>
 
     <!-- 手势指示器 -->
     <Transition name="fade">
       <div v-if="showVolumeIndicator" class="gesture-indicator">
-        <Volume2 :size="32" />
+        <AnimatedIcon name="explore" :fallback-icon="Volume2" size="xl" />
         <div class="indicator-value">{{ indicatorValue }}%</div>
       </div>
     </Transition>
 
     <Transition name="fade">
       <div v-if="showBrightnessIndicator" class="gesture-indicator">
-        <Sun :size="32" />
+        <AnimatedIcon name="sparkle" :fallback-icon="Sun" size="xl" />
         <div class="indicator-value">{{ indicatorValue }}%</div>
       </div>
     </Transition>
 
     <Transition name="fade">
       <div v-if="showSeekIndicator" class="gesture-indicator">
-        <FastForward v-if="seekDirection === 'forward'" :size="32" />
-        <Rewind v-else :size="32" />
+        <AnimatedIcon
+          v-if="seekDirection === 'forward'"
+          name="explore"
+          :fallback-icon="FastForward"
+          size="xl"
+        />
+        <AnimatedIcon v-else name="explore" :fallback-icon="Rewind" size="xl" />
         <div class="indicator-value">{{ indicatorValue }}s</div>
       </div>
     </Transition>
@@ -87,8 +102,8 @@
               :aria-label="isPlaying ? $t('video.pause') : $t('video.play')"
               @click="togglePlay"
             >
-              <Play v-if="!isPlaying" :size="20" />
-              <Pause v-else :size="20" />
+              <AnimatedIcon v-if="!isPlaying" name="explore" :fallback-icon="Play" size="md" />
+              <AnimatedIcon v-else name="explore" :fallback-icon="Pause" size="md" />
             </button>
 
             <div class="time-display">
@@ -108,9 +123,19 @@
                 :aria-label="isMuted ? $t('video.unmute') : $t('video.mute')"
                 @click="toggleMute"
               >
-                <Volume2 v-if="!isMuted && volume > 0.5" :size="20" />
-                <Volume1 v-else-if="!isMuted && volume > 0" :size="20" />
-                <VolumeX v-else :size="20" />
+                <AnimatedIcon
+                  v-if="!isMuted && volume > 0.5"
+                  name="explore"
+                  :fallback-icon="Volume2"
+                  size="md"
+                />
+                <AnimatedIcon
+                  v-else-if="!isMuted && volume > 0"
+                  name="explore"
+                  :fallback-icon="Volume1"
+                  size="md"
+                />
+                <AnimatedIcon v-else name="explore" :fallback-icon="VolumeX" size="md" />
               </button>
               <div class="volume-slider-container">
                 <input
@@ -124,6 +149,26 @@
               </div>
             </div>
 
+            <!-- 字幕快捷开关 -->
+            <button
+              v-if="normalizedSubtitles.length"
+              type="button"
+              class="control-btn control-btn--text"
+              :class="{ 'is-active': !!selectedSubtitleLanguage }"
+              :aria-label="$t('video.subtitles')"
+              :title="
+                activeSubtitleLabel
+                  ? `${$t('video.subtitles')}: ${activeSubtitleLabel}`
+                  : $t('video.subtitlesOff')
+              "
+              @click="toggleSubtitles"
+            >
+              CC
+              <span v-if="activeSubtitleLabel" class="control-btn__badge">
+                {{ activeSubtitleLabel }}
+              </span>
+            </button>
+
             <!-- 设置菜单 -->
             <div ref="settingsMenuRef" class="settings-menu" @click.stop>
               <button
@@ -132,7 +177,7 @@
                 :aria-label="$t('video.settings')"
                 @click="showSettings = !showSettings"
               >
-                <Settings :size="20" />
+                <AnimatedIcon name="sparkle" :fallback-icon="Settings" size="md" />
               </button>
               <div v-if="showSettings" class="settings-panel glass-card">
                 <!-- 播放速度 -->
@@ -148,6 +193,31 @@
                       @click="setPlaybackRate(speed)"
                     >
                       {{ speed }}x
+                    </button>
+                  </div>
+                </div>
+
+                <!-- 字幕 -->
+                <div v-if="normalizedSubtitles.length" class="settings-section">
+                  <div class="settings-label">{{ $t('video.subtitles') }}</div>
+                  <div class="settings-options">
+                    <button
+                      type="button"
+                      class="settings-option"
+                      :class="{ active: !selectedSubtitleLanguage }"
+                      @click="setSubtitleLanguage(null)"
+                    >
+                      {{ $t('video.subtitlesOff') }}
+                    </button>
+                    <button
+                      v-for="track in normalizedSubtitles"
+                      :key="`subtitle-${track.language}`"
+                      type="button"
+                      class="settings-option"
+                      :class="{ active: selectedSubtitleLanguage === track.language }"
+                      @click="setSubtitleLanguage(track.language)"
+                    >
+                      {{ track.label }}
                     </button>
                   </div>
                 </div>
@@ -179,7 +249,7 @@
               :aria-label="$t('video.pip')"
               @click="togglePiP"
             >
-              <PictureInPicture :size="20" />
+              <AnimatedIcon name="explore" :fallback-icon="PictureInPicture" size="md" />
             </button>
 
             <!-- 全屏 -->
@@ -189,8 +259,13 @@
               :aria-label="$t('video.fullscreen')"
               @click="toggleFullscreen"
             >
-              <Maximize v-if="!isFullscreen" :size="20" />
-              <Minimize v-else :size="20" />
+              <AnimatedIcon
+                v-if="!isFullscreen"
+                name="explore"
+                :fallback-icon="Maximize"
+                size="md"
+              />
+              <AnimatedIcon v-else name="explore" :fallback-icon="Minimize" size="md" />
             </button>
           </div>
         </div>
@@ -216,7 +291,7 @@
       @click="togglePlay"
     >
       <div class="center-play-icon">
-        <Play :size="48" />
+        <AnimatedIcon name="explore" :fallback-icon="Play" size="xl" />
       </div>
     </button>
 
@@ -229,6 +304,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import {
   Play,
   Pause,
@@ -245,6 +321,7 @@ import {
 } from 'lucide-vue-next'
 import { useVideoSettings } from '@/composables/useVideoSettings'
 import { useVideoGestures } from '@/composables/useVideoGestures'
+import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 
 interface Props {
   src: string
@@ -252,9 +329,31 @@ interface Props {
   playsinline?: boolean
   loop?: boolean
   preload?: 'auto' | 'metadata' | 'none'
+  subtitles?: SubtitleTrack[] | null | undefined
 }
 
-const { playsinline = true, loop = false, preload = 'metadata' } = defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), {
+  playsinline: true,
+  loop: false,
+  preload: 'metadata',
+  subtitles: null,
+})
+
+interface SubtitleTrack {
+  language: string
+  format?: string | null
+  label?: string | null
+  url?: string | null
+  file_path?: string | null
+  path?: string | null
+}
+
+interface NormalizedSubtitleTrack {
+  language: string
+  label: string
+  src: string
+  format?: string | null | undefined
+}
 
 const emit = defineEmits<{
   ready: []
@@ -281,12 +380,15 @@ const bufferedPercent = ref(0)
 const isSeeking = ref(false)
 
 // 使用视频设置 composable
+const { locale } = useI18n()
+
 const {
   settings: videoSettings,
   setVolume: updateVolume,
   setMuted: updateMuted,
   setPlaybackRate: updatePlaybackRate,
   setBrightness: updateBrightness,
+  setSubtitleLanguage: updateSubtitleLanguage,
 } = useVideoSettings()
 
 // 从设置中获取音量和静音状态
@@ -303,6 +405,8 @@ const {
   seekDirection,
   currentVolume,
   currentBrightness,
+  triggerVolumeIndicator,
+  triggerSeekIndicator,
 } = useVideoGestures({
   videoRef,
   containerRef: playerElement,
@@ -325,6 +429,23 @@ const {
 const playbackSpeeds = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2]
 const qualities = ref<string[]>(['auto']) // 可扩展支持多画质
 
+const subtitleOverrides = ref<Record<string, string>>({})
+const selectedSubtitleLanguage = ref<string | null>(null)
+
+const normalizedSubtitles = computed<NormalizedSubtitleTrack[]>(() => {
+  const tracks = props.subtitles ?? []
+  if (!tracks.length) return []
+
+  return tracks.reduce<NormalizedSubtitleTrack[]>((acc, track) => {
+    const src = normalizeSubtitleSrc(track)
+    if (!src || !track.language) return acc
+    const label = track.label || track.language.toUpperCase()
+    const override = subtitleOverrides.value[src]
+    acc.push({ language: track.language, label, src: override || src, format: track.format })
+    return acc
+  }, [])
+})
+
 const playedPercent = computed(() => {
   if (duration.value === 0) return 0
   return (currentTime.value / duration.value) * 100
@@ -333,6 +454,96 @@ const playedPercent = computed(() => {
 const supportsPiP = computed(() => {
   return document.pictureInPictureEnabled
 })
+
+const activeSubtitleLabel = computed(() => {
+  if (!selectedSubtitleLanguage.value) return null
+  return (
+    normalizedSubtitles.value.find((track) => track.language === selectedSubtitleLanguage.value)
+      ?.label || selectedSubtitleLanguage.value.toUpperCase()
+  )
+})
+
+function normalizeSubtitleSrc(track: SubtitleTrack): string | null {
+  const raw = track.url || track.file_path || track.path
+  if (!raw) return null
+  if (raw.startsWith('http://') || raw.startsWith('https://')) return raw
+
+  const apiBaseUrl =
+    import.meta.env.VITE_API_ENDPOINT || `${import.meta.env.VITE_API_URL || '/api'}/v1`
+  if (raw.startsWith('/')) {
+    return `${apiBaseUrl}${raw}`
+  }
+  return `${apiBaseUrl}/${raw}`
+}
+
+function isSrtTrack(track: NormalizedSubtitleTrack): boolean {
+  if (track.format?.toLowerCase() === 'srt') return true
+  return track.src.toLowerCase().endsWith('.srt')
+}
+
+function toLocaleMatches(trackLanguage: string, target: string): boolean {
+  const normalized = trackLanguage.toLowerCase()
+  const localeValue = target.toLowerCase()
+  if (normalized === localeValue) return true
+  const base = localeValue.split('-')[0]
+  return normalized === base || normalized.startsWith(`${base}-`)
+}
+
+function pickDefaultSubtitle(tracks: NormalizedSubtitleTrack[]) {
+  if (!tracks.length) return null
+  const preferred = videoSettings.value.subtitleLanguage
+  if (preferred) {
+    const match = tracks.find((track) => toLocaleMatches(track.language, preferred))
+    if (match) return match.language
+  }
+
+  const localeMatch = tracks.find((track) => toLocaleMatches(track.language, locale.value))
+  if (localeMatch) return localeMatch.language
+  return tracks[0]?.language ?? null
+}
+
+async function ensureVttFallback(track: NormalizedSubtitleTrack) {
+  if (!isSrtTrack(track)) return
+  if (subtitleOverrides.value[track.src]) return
+
+  try {
+    const response = await fetch(track.src)
+    if (!response.ok) return
+    const rawText = await response.text()
+    const normalized = rawText.replace(/\r+/g, '')
+    const body = normalized.replace(/(\d{2}:\d{2}:\d{2}),(\d{3})/g, '$1.$2')
+    const vttText = body.startsWith('WEBVTT') ? body : `WEBVTT\n\n${body.trim()}\n`
+    const blobUrl = URL.createObjectURL(new Blob([vttText], { type: 'text/vtt' }))
+    subtitleOverrides.value = {
+      ...subtitleOverrides.value,
+      [track.src]: blobUrl,
+    }
+  } catch (error) {
+    console.warn('Subtitle fallback failed:', error)
+  }
+}
+
+function syncSubtitleSelection(tracks: NormalizedSubtitleTrack[]) {
+  if (!tracks.length) {
+    selectedSubtitleLanguage.value = null
+    return
+  }
+
+  const current = selectedSubtitleLanguage.value
+  if (current && tracks.some((track) => track.language === current)) return
+  selectedSubtitleLanguage.value = pickDefaultSubtitle(tracks)
+}
+
+function applySubtitleMode() {
+  const textTracks = videoRef.value?.textTracks
+  if (!textTracks) return
+  const target = selectedSubtitleLanguage.value
+  for (let i = 0; i < textTracks.length; i += 1) {
+    const track = textTracks[i]
+    if (!track) continue
+    track.mode = target && track.language === target ? 'showing' : 'disabled'
+  }
+}
 
 // Constants
 const CONTROLS_HIDE_DELAY = 3000
@@ -378,6 +589,7 @@ function onLoadedMetadata() {
   if (!videoRef.value) return
   duration.value = videoRef.value.duration
   emit('ready')
+  applySubtitleMode()
 }
 
 function onTimeUpdate() {
@@ -403,7 +615,12 @@ function seek(event: MouseEvent) {
   const target = event.currentTarget as HTMLElement
   const rect = target.getBoundingClientRect()
   const percent = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width))
-  videoRef.value.currentTime = percent * duration.value
+  const newTime = percent * duration.value
+  const delta = newTime - currentTime.value
+  videoRef.value.currentTime = newTime
+  if (Math.abs(delta) > 0.2) {
+    triggerSeekIndicator(delta > 0 ? 'forward' : 'backward', Math.round(Math.abs(delta)))
+  }
 }
 
 function startSeekDrag(event: MouseEvent | TouchEvent) {
@@ -425,7 +642,12 @@ function updateSeek(event: MouseEvent | TouchEvent) {
   if (clientX === undefined) return
   if ('preventDefault' in event && isSeeking.value) event.preventDefault()
   const percent = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width))
-  videoRef.value.currentTime = percent * duration.value
+  const newTime = percent * duration.value
+  const delta = newTime - currentTime.value
+  videoRef.value.currentTime = newTime
+  if (Math.abs(delta) > 0.2) {
+    triggerSeekIndicator(delta > 0 ? 'forward' : 'backward', Math.round(Math.abs(delta)))
+  }
 }
 
 function stopSeekDrag() {
@@ -439,6 +661,7 @@ function stopSeekDrag() {
 function toggleMute() {
   if (!videoRef.value) return
   videoRef.value.muted = !videoRef.value.muted
+  triggerVolumeIndicator(videoRef.value.muted ? 0 : Math.round(volume.value * 100))
 }
 
 function setVolume(event: Event) {
@@ -450,6 +673,7 @@ function setVolume(event: Event) {
   const newVolume = Math.max(0, Math.min(1, value / 100))
   videoRef.value.volume = newVolume
   updateVolume(newVolume)
+  triggerVolumeIndicator(Math.round(newVolume * 100))
   if (value > 0) {
     videoRef.value.muted = false
     updateMuted(false)
@@ -539,18 +763,22 @@ function handleKeydown(event: KeyboardEvent) {
     case 'ArrowLeft':
       event.preventDefault()
       videoRef.value.currentTime = Math.max(0, currentTime.value - SEEK_STEP)
+      triggerSeekIndicator('backward', SEEK_STEP)
       break
     case 'ArrowRight':
       event.preventDefault()
       videoRef.value.currentTime = Math.min(duration.value, currentTime.value + SEEK_STEP)
+      triggerSeekIndicator('forward', SEEK_STEP)
       break
     case 'ArrowUp':
       event.preventDefault()
       videoRef.value.volume = Math.min(1, volume.value + VOLUME_STEP)
+      triggerVolumeIndicator(Math.round(videoRef.value.volume * 100))
       break
     case 'ArrowDown':
       event.preventDefault()
       videoRef.value.volume = Math.max(0, volume.value - VOLUME_STEP)
+      triggerVolumeIndicator(Math.round(videoRef.value.volume * 100))
       break
     case 'm':
       event.preventDefault()
@@ -603,13 +831,53 @@ watch(brightness, (newBrightness) => {
   }
 })
 
+watch(normalizedSubtitles, (tracks) => {
+  syncSubtitleSelection(tracks)
+  tracks.forEach((track) => {
+    void ensureVttFallback(track)
+  })
+})
+
+watch(
+  [selectedSubtitleLanguage, () => videoSettings.value.subtitleLanguage],
+  ([currentSelection, storedSelection]) => {
+    if (currentSelection !== storedSelection) {
+      updateSubtitleLanguage(currentSelection)
+    }
+    applySubtitleMode()
+  }
+)
+
+watch(
+  () => locale.value,
+  () => {
+    syncSubtitleSelection(normalizedSubtitles.value)
+  }
+)
+
 onBeforeUnmount(() => {
+  Object.values(subtitleOverrides.value).forEach((url) => URL.revokeObjectURL(url))
   document.removeEventListener('keydown', handleKeydown)
   document.removeEventListener('fullscreenchange', handleFullscreenChange)
   document.removeEventListener('click', handleClickOutside)
   stopControlsTimer()
   stopSeekDrag()
 })
+
+function setSubtitleLanguage(language: string | null) {
+  selectedSubtitleLanguage.value = language
+  showSettings.value = false
+}
+
+function toggleSubtitles() {
+  if (selectedSubtitleLanguage.value) {
+    setSubtitleLanguage(null)
+    return
+  }
+
+  const fallback = pickDefaultSubtitle(normalizedSubtitles.value)
+  setSubtitleLanguage(fallback)
+}
 
 function startHintTimer() {
   showControlHints.value = true
@@ -854,6 +1122,37 @@ function startHintTimer() {
   color: white;
   cursor: pointer;
   transition: all 0.2s ease;
+}
+
+.control-btn--text {
+  width: auto;
+  min-width: 40px;
+  padding: 0 var(--spacing-2);
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  letter-spacing: 0.04em;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(0, 0, 0, 0.25);
+  gap: var(--spacing-1);
+}
+
+.control-btn--text.is-active {
+  border-color: rgba(var(--color-primary-rgb), 0.7);
+  color: var(--color-primary);
+  box-shadow: 0 0 0 1px rgba(var(--color-primary-rgb), 0.3);
+}
+
+.control-btn__badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 var(--spacing-1);
+  margin-left: var(--spacing-1);
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
+  letter-spacing: 0.01em;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.85);
 }
 
 .control-btn:hover {

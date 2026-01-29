@@ -35,7 +35,8 @@ async function getI18n() {
 }
 
 // API 基础配置
-const API_BASE_URL = '/api/v1'
+const API_BASE_URL =
+  import.meta.env.VITE_API_ENDPOINT || `${import.meta.env.VITE_API_URL || '/api'}/v1`
 const REQUEST_TIMEOUT = 30000
 const REFRESH_TIMEOUT = 10000 // Token 刷新超时时间
 
@@ -99,6 +100,11 @@ export interface PaginatedApiResponse<T> {
   page: number
   page_size: number
   total_pages: number
+}
+
+export interface PaginatedApiResponseWithLimit<T> extends PaginatedApiResponse<T> {
+  limit?: number
+  total_limit?: number
 }
 
 /**
@@ -410,16 +416,19 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
     // 处理网络错误或超时
     const i18n = await getI18n()
     const { t } = i18n.global
-    const toastStore = await getToastStore()
 
-    if (error instanceof Error) {
-      if (error.name === 'AbortError') {
+    if (error instanceof Error && error.name === 'AbortError') {
+      if (!skipErrorToast) {
+        const toastStore = await getToastStore()
         toastStore.error(t('error.timeout'))
-        throw new ApiError(t('error.timeout'), 408)
       }
+      throw new ApiError(t('error.timeout'), 408)
     }
 
-    toastStore.error(t('error.networkError'))
+    if (!skipErrorToast) {
+      const toastStore = await getToastStore()
+      toastStore.error(t('error.networkError'))
+    }
     throw new ApiError(t('error.networkError'), 0)
   }
 }

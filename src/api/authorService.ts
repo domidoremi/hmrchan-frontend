@@ -2,7 +2,7 @@
  * Authors Service - 作者相关 API
  */
 
-import { apiClient, type PaginatedApiResponse } from './client'
+import { apiClient, type PaginatedApiResponse, type RequestConfig } from './client'
 import { buildQuery } from '@/utils/queryBuilder'
 import type { PostListItem } from './postService'
 
@@ -54,7 +54,10 @@ export interface ListAuthorsParams {
 }
 
 export const authorService = {
-  async listAuthors(params: ListAuthorsParams = {}): Promise<PaginatedApiResponse<AuthorListItem>> {
+  async listAuthors(
+    params: ListAuthorsParams = {},
+    config?: RequestConfig
+  ): Promise<PaginatedApiResponse<AuthorListItem>> {
     const query = buildQuery({
       page: params.page ?? 1,
       page_size: params.page_size ?? 20,
@@ -66,7 +69,7 @@ export const authorService = {
       sort_order: params.sort_order ?? 'desc',
     })
 
-    return apiClient.get<PaginatedApiResponse<AuthorListItem>>(`/authors/${query}`)
+    return apiClient.get<PaginatedApiResponse<AuthorListItem>>(`/authors/${query}`, config)
   },
 
   async getAuthor(authorId: string): Promise<AuthorResponse> {

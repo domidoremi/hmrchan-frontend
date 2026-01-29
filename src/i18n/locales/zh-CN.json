@@ -117,6 +117,8 @@
     "playbackSpeed": "播放速度",
     "quality": "画质",
     "auto": "自动",
+    "subtitles": "字幕",
+    "subtitlesOff": "关闭",
     "player": "视频播放器",
     "play": "播放",
     "pause": "暂停",

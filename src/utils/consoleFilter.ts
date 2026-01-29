@@ -51,6 +51,13 @@ const CLOUDFLARE_PATTERNS = [
   // Token 安全检查（正常的警告日志）
   /Token integrity check failed/i,
   /Token binding validation failed/i,
+
+  // fetch/headers polyfill noise
+  /setupReplaceUnsafeHeader\(\) should be called only once/i,
+
+  // ResizeObserver loop warnings (layout thrash benign noise)
+  /ResizeObserver loop limit exceeded/i,
+  /ResizeObserver loop completed with undelivered notifications/i,
 ]
 
 /**

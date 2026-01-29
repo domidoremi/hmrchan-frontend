@@ -8,12 +8,21 @@
       </div>
 
       <div class="settings-card glass-card cache-section">
-        <h2 class="section-title">{{ $t('settings.cache.title', '缓存管理') }}</h2>
+        <div class="section-title-row">
+          <RivePlayer
+            class="cache-rive"
+            :src="cacheRive"
+            :autoplay="true"
+            :width="36"
+            :height="36"
+          />
+          <h2 class="section-title">{{ $t('settings.cache.title', '缓存管理') }}</h2>
+        </div>
         <p class="section-desc">
           {{ $t('settings.cache.description', '清理本地缓存数据以释放存储空间或解决数据问题') }}
         </p>
         <Button variant="secondary" :loading="isClearingCache" @click="handleClearCache">
-          <Trash2 class="icon" />
+          <AnimatedIcon name="sparkle" :fallback-icon="Trash2" size="sm" class="icon" />
           {{ $t('settings.cache.clear', '清理缓存') }}
         </Button>
       </div>
@@ -28,6 +37,9 @@ import { useToastStore } from '@/stores/toast'
 import { clearAllCaches } from '@/utils/cache'
 import SettingsPanel from '@/components/layout/SettingsPanel.vue'
 import Button from '@/components/ui/Button.vue'
+import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
+import RivePlayer from '@/components/animation/RivePlayer.vue'
+import cacheRive from '@/assets/animations/animated-icon-set.riv?url'
 
 const toast = useToastStore()
 const isClearingCache = ref(false)
@@ -89,6 +101,17 @@ async function handleClearCache() {
   font-size: var(--text-lg);
   font-weight: 600;
   margin-bottom: var(--spacing-2);
+}
+
+.section-title-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+}
+
+.cache-rive {
+  width: 36px;
+  height: 36px;
 }
 
 .section-desc {

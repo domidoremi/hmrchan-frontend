@@ -1,7 +1,7 @@
 <template>
   <form class="comment-form" @submit.prevent="handleSubmit">
     <div v-if="!isAuthenticated" class="login-prompt glass-card">
-      <LogIn :size="24" class="prompt-icon" />
+      <AnimatedIcon name="user" :fallback-icon="LogIn" size="lg" class="prompt-icon" />
       <p>{{ $t('comment.loginRequired') }}</p>
       <Button size="sm" @click="goToLogin">{{ $t('nav.login') }}</Button>
     </div>
@@ -50,6 +50,7 @@ import { validateComment } from '@/utils/security'
 import { useUserAvatar } from '@/composables/useUserAvatar'
 import Button from '@/components/ui/Button.vue'
 import Textarea from '@/components/ui/Textarea.vue'
+import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 
 interface Props {
   postId: string

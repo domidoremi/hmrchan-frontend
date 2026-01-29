@@ -3,7 +3,6 @@
     <Transition name="dialog">
       <div v-if="isOpen" class="ui-dialog-overlay" @click.self="handleOverlayClick">
         <div
-          ref="dialogRef"
           :class="dialogClass"
           role="dialog"
           aria-modal="true"
@@ -30,19 +29,12 @@
               :aria-label="closeLabel"
               @click="close"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
+              <AnimatedIcon
+                name="sparkle"
+                :fallback-icon="X"
+                size="sm"
                 class="ui-dialog__close-icon"
-              >
-                <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
+              />
             </button>
           </div>
 
@@ -60,8 +52,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { computed, watch, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { X } from 'lucide-vue-next'
+import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 
 defineOptions({ name: 'UiDialog' })
 
@@ -90,7 +84,6 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 
-const dialogRef = ref<HTMLElement | null>(null)
 const titleId = `dialog-title-${Math.random().toString(36).slice(2, 9)}`
 const descriptionId = `dialog-desc-${Math.random().toString(36).slice(2, 9)}`
 

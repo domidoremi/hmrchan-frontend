@@ -1,7 +1,7 @@
 <template>
   <div class="search-bar" :class="{ focused: isFocused, expanded: isExpanded }">
     <div class="search-input-wrapper">
-      <Search :size="18" class="search-icon" />
+      <AnimatedIcon name="search" :fallback-icon="Search" size="md" class="search-icon" />
       <input
         ref="inputRef"
         v-model="query"
@@ -17,7 +17,7 @@
         @keydown.up.prevent="selectPrev"
       />
       <button v-if="query" type="button" class="clear-btn" @click="clearQuery">
-        <X :size="16" />
+        <AnimatedIcon name="sparkle" :fallback-icon="X" size="sm" />
       </button>
     </div>
 
@@ -43,7 +43,7 @@
               :class="{ selected: selectedIndex === index }"
               @click="selectHistoryItem(item)"
             >
-              <History :size="14" class="item-icon" />
+              <AnimatedIcon name="explore" :fallback-icon="History" size="sm" class="item-icon" />
               <span class="item-text">{{ item }}</span>
             </button>
           </div>
@@ -60,14 +60,19 @@
               :class="{ selected: selectedIndex === searchHistory.length + index }"
               @click="selectSuggestion(suggestion)"
             >
-              <component :is="getSuggestionIcon(suggestion.type)" :size="14" class="item-icon" />
+              <AnimatedIcon
+                :name="getSuggestionAnimation(suggestion.type)"
+                :fallback-icon="getSuggestionIcon(suggestion.type)"
+                size="sm"
+                class="item-icon"
+              />
               <span class="item-text">{{ suggestion.text }}</span>
               <span class="item-type">{{ getSuggestionLabel(suggestion.type) }}</span>
             </button>
           </div>
 
           <div v-if="!query && searchHistory.length === 0" class="dropdown-empty">
-            <Search :size="24" class="empty-icon" />
+            <AnimatedIcon name="search" :fallback-icon="Search" size="lg" class="empty-icon" />
             <p>{{ $t('search.startTyping') }}</p>
           </div>
         </template>
@@ -82,6 +87,7 @@ import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { Search, X, History, FileText, User, Tag } from 'lucide-vue-next'
 import { searchService, type SearchSuggestion } from '@/api/searchService'
+import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 
 // 简单的 debounce 实现，避免引入整个 VueUse
 function debounce<T extends (...args: Parameters<T>) => void>(fn: T, delay: number): T {
@@ -289,6 +295,19 @@ function getSuggestionIcon(type: string) {
       return Tag
     default:
       return Search
+  }
+}
+
+function getSuggestionAnimation(type: string) {
+  switch (type) {
+    case 'post':
+      return 'explore'
+    case 'author':
+      return 'user'
+    case 'tag':
+      return 'sparkle'
+    default:
+      return 'search'
   }
 }
 

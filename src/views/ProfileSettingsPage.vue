@@ -3,7 +3,7 @@
     <div class="container">
       <header class="page-header">
         <button type="button" class="back-btn glass-button" @click="goBack">
-          <ArrowLeft :size="20" />
+          <AnimatedIcon name="explore" :fallback-icon="ArrowLeft" size="md" />
         </button>
         <div>
           <h1>{{ $t('profile.settings') }}</h1>
@@ -12,7 +12,7 @@
         </div>
         <div class="page-actions">
           <Button variant="ghost" size="sm" type="button" @click="fetchProfile">
-            <RefreshCw :size="16" />
+            <AnimatedIcon name="loading" :fallback-icon="RefreshCw" size="sm" />
             {{ $t('common.refresh') }}
           </Button>
         </div>
@@ -50,7 +50,7 @@
           <section class="settings-section glass-card">
             <div class="section-header">
               <div class="section-icon">
-                <User :size="18" />
+                <AnimatedIcon name="user" :fallback-icon="User" size="sm" />
               </div>
               <div>
                 <h2 class="section-title">{{ $t('profile.avatar') }}</h2>
@@ -66,10 +66,10 @@
                   :alt="profile.username"
                 />
                 <div v-else class="avatar-preview avatar-placeholder">
-                  <User :size="40" />
+                  <AnimatedIcon name="user" :fallback-icon="User" size="xl" />
                 </div>
                 <div class="avatar-badge">
-                  <Camera :size="14" />
+                  <AnimatedIcon name="sparkle" :fallback-icon="Camera" size="sm" />
                 </div>
               </div>
               <div class="avatar-info">
@@ -77,7 +77,7 @@
                   {{ $t('profile.avatarHint', '支持 JPG、PNG 格式，建议尺寸 200×200') }}
                 </p>
                 <label class="glass-button avatar-upload-btn">
-                  <Upload :size="16" />
+                  <AnimatedIcon name="explore" :fallback-icon="Upload" size="sm" />
                   {{ $t('profile.uploadAvatar') }}
                   <input
                     type="file"
@@ -99,7 +99,7 @@
           <section class="settings-section glass-card">
             <div class="section-header">
               <div class="section-icon">
-                <FileText :size="18" />
+                <AnimatedIcon name="explore" :fallback-icon="FileText" size="sm" />
               </div>
               <div>
                 <h2 class="section-title">{{ $t('profile.basicInfo') }}</h2>
@@ -110,7 +110,7 @@
             <!-- Username (readonly) -->
             <div class="form-group">
               <label for="username">
-                <AtSign :size="14" />
+                <AnimatedIcon name="explore" :fallback-icon="AtSign" size="sm" />
                 {{ $t('profile.username') }}
               </label>
               <div class="input-wrapper input-readonly">
@@ -122,7 +122,12 @@
                   disabled
                   readonly
                 />
-                <Lock :size="16" class="input-icon-right" />
+                <AnimatedIcon
+                  name="sparkle"
+                  :fallback-icon="Lock"
+                  size="sm"
+                  class="input-icon-right"
+                />
               </div>
               <p class="field-hint">{{ $t('profile.usernameReadonly', '用户名不可修改') }}</p>
             </div>
@@ -130,7 +135,7 @@
             <!-- Display Name -->
             <div class="form-group">
               <label for="full_name">
-                <User :size="14" />
+                <AnimatedIcon name="user" :fallback-icon="User" size="sm" />
                 {{ $t('profile.fullName') }}
               </label>
               <div class="input-wrapper">
@@ -149,7 +154,7 @@
             <!-- Bio -->
             <div class="form-group">
               <label for="bio">
-                <FileText :size="14" />
+                <AnimatedIcon name="explore" :fallback-icon="FileText" size="sm" />
                 {{ $t('profile.bio') }}
               </label>
               <div class="input-wrapper">
@@ -176,11 +181,11 @@
             <div class="form-actions">
               <Button type="submit" :disabled="isSaving">
                 <span v-if="isSaving" class="spinner spinner-sm" />
-                <Save v-else :size="16" />
+                <AnimatedIcon v-else name="sparkle" :fallback-icon="Save" size="sm" />
                 {{ $t('common.save') }}
               </Button>
               <Button type="button" variant="ghost" :disabled="isSaving" @click="fetchProfile">
-                <RefreshCw :size="16" />
+                <AnimatedIcon name="loading" :fallback-icon="RefreshCw" size="sm" />
                 {{ $t('common.reset') }}
               </Button>
             </div>
@@ -191,7 +196,7 @@
         <section class="settings-section glass-card password-section">
           <div class="section-header">
             <div class="section-icon section-icon--warning">
-              <Shield :size="18" />
+              <AnimatedIcon name="sparkle" :fallback-icon="Shield" size="sm" />
             </div>
             <div>
               <h2 class="section-title">{{ $t('profile.changePassword') }}</h2>
@@ -212,7 +217,7 @@
 
             <div class="form-group">
               <label for="current_password">
-                <Key :size="14" />
+                <AnimatedIcon name="sparkle" :fallback-icon="Key" size="sm" />
                 {{ $t('profile.currentPassword') }}
               </label>
               <div class="input-wrapper">
@@ -229,15 +234,20 @@
                   class="password-toggle"
                   @click="showCurrentPassword = !showCurrentPassword"
                 >
-                  <EyeOff v-if="showCurrentPassword" :size="16" />
-                  <Eye v-else :size="16" />
+                  <AnimatedIcon
+                    v-if="showCurrentPassword"
+                    name="explore"
+                    :fallback-icon="EyeOff"
+                    size="sm"
+                  />
+                  <AnimatedIcon v-else name="explore" :fallback-icon="Eye" size="sm" />
                 </button>
               </div>
             </div>
 
             <div class="form-group">
               <label for="new_password">
-                <Lock :size="14" />
+                <AnimatedIcon name="sparkle" :fallback-icon="Lock" size="sm" />
                 {{ $t('profile.newPassword') }}
               </label>
               <div class="input-wrapper">
@@ -255,8 +265,13 @@
                   class="password-toggle"
                   @click="showNewPassword = !showNewPassword"
                 >
-                  <EyeOff v-if="showNewPassword" :size="16" />
-                  <Eye v-else :size="16" />
+                  <AnimatedIcon
+                    v-if="showNewPassword"
+                    name="explore"
+                    :fallback-icon="EyeOff"
+                    size="sm"
+                  />
+                  <AnimatedIcon v-else name="explore" :fallback-icon="Eye" size="sm" />
                 </button>
               </div>
               <!-- Password Strength Indicator -->
@@ -276,7 +291,7 @@
 
             <div class="form-group">
               <label for="confirm_password">
-                <CheckCircle :size="14" />
+                <AnimatedIcon name="sparkle" :fallback-icon="CheckCircle" size="sm" />
                 {{ $t('profile.confirmPassword') }}
               </label>
               <div class="input-wrapper">
@@ -294,8 +309,13 @@
                   class="password-toggle"
                   @click="showConfirmPassword = !showConfirmPassword"
                 >
-                  <EyeOff v-if="showConfirmPassword" :size="16" />
-                  <Eye v-else :size="16" />
+                  <AnimatedIcon
+                    v-if="showConfirmPassword"
+                    name="explore"
+                    :fallback-icon="EyeOff"
+                    size="sm"
+                  />
+                  <AnimatedIcon v-else name="explore" :fallback-icon="Eye" size="sm" />
                 </button>
               </div>
               <p v-if="passwordForm.confirm_password && !passwordsMatch" class="field-error">
@@ -310,7 +330,7 @@
                 :disabled="isChangingPassword || !canChangePassword"
               >
                 <span v-if="isChangingPassword" class="spinner spinner-sm" />
-                <Shield v-else :size="16" />
+                <AnimatedIcon v-else name="sparkle" :fallback-icon="Shield" size="sm" />
                 {{ $t('profile.changePassword') }}
               </Button>
             </div>
@@ -359,6 +379,7 @@ import Input from '@/components/ui/Input.vue'
 import Textarea from '@/components/ui/Textarea.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import { defineAsyncComponent } from 'vue'
+import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 
 // 动态导入大型组件以减少初始包体积
 const ImageCropper = defineAsyncComponent(() => import('@/components/ui/ImageCropper.vue'))

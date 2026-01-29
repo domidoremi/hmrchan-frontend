@@ -31,7 +31,7 @@
                 :aria-label="$t('common.download')"
                 @click="downloadCurrent"
               >
-                <Download :size="18" />
+                <AnimatedIcon name="explore" :fallback-icon="Download" size="sm" />
               </button>
               <button
                 type="button"
@@ -39,7 +39,7 @@
                 :aria-label="$t('common.close')"
                 @click="close"
               >
-                <X :size="20" />
+                <AnimatedIcon name="sparkle" :fallback-icon="X" size="md" />
               </button>
             </div>
           </header>
@@ -70,11 +70,11 @@
                 </div>
 
                 <div v-if="hasError" class="media-error glass-card">
-                  <AlertTriangle :size="28" />
+                  <AnimatedIcon name="sparkle" :fallback-icon="AlertTriangle" size="lg" />
                   <p>{{ $t('error.mediaLoadFailed') || $t('common.loadingFailed') }}</p>
                   <div class="media-error-actions">
                     <Button size="sm" variant="secondary" @click="retryLoad">
-                      <RefreshCw :size="16" />
+                      <AnimatedIcon name="loading" :fallback-icon="RefreshCw" size="sm" />
                       {{ $t('common.retry') }}
                     </Button>
                     <Button size="sm" variant="ghost" @click="close">
@@ -85,7 +85,6 @@
 
                 <img
                   v-if="currentMedia.file_type === 'image'"
-                  ref="mediaRef"
                   :key="imageKey"
                   class="lightbox-media"
                   :class="{ 'is-loaded': isLoaded, 'is-dragging': isDragging }"
@@ -98,9 +97,9 @@
 
                 <VideoPlayer
                   v-else-if="currentMedia.file_type === 'video'"
-                  ref="mediaRef"
                   class="lightbox-media is-loaded"
                   :src="fullSizeUrl"
+                  :subtitles="currentMedia?.subtitles ?? null"
                   playsinline
                   @ready="onMediaLoad"
                 />
@@ -115,7 +114,7 @@
             :aria-label="$t('common.previous')"
             @click="prev"
           >
-            <ChevronLeft :size="30" />
+            <AnimatedIcon name="explore" :fallback-icon="ChevronLeft" size="xl" />
           </button>
           <button
             v-if="hasMultiple"
@@ -124,7 +123,7 @@
             :aria-label="$t('common.next')"
             @click="next"
           >
-            <ChevronRight :size="30" />
+            <AnimatedIcon name="explore" :fallback-icon="ChevronRight" size="xl" />
           </button>
 
           <div v-if="showToolbar" class="lightbox-toolbar" :class="{ hidden: !controlsVisible }">
@@ -134,7 +133,7 @@
               :aria-label="$t('common.zoomOut')"
               @click="zoomOut"
             >
-              <ZoomOut :size="18" />
+              <AnimatedIcon name="explore" :fallback-icon="ZoomOut" size="sm" />
             </button>
             <div class="zoom-slider">
               <input
@@ -153,7 +152,7 @@
               :aria-label="$t('common.zoomIn')"
               @click="zoomIn"
             >
-              <ZoomIn :size="18" />
+              <AnimatedIcon name="explore" :fallback-icon="ZoomIn" size="sm" />
             </button>
             <button
               type="button"
@@ -161,7 +160,7 @@
               :aria-label="$t('common.resetZoom')"
               @click="resetZoom"
             >
-              <RotateCcw :size="18" />
+              <AnimatedIcon name="loading" :fallback-icon="RotateCcw" size="sm" />
             </button>
             <span class="zoom-indicator">{{ Math.round(scale * 100) }}%</span>
           </div>
@@ -191,12 +190,25 @@ import { getMediaStreamUrl } from '@/utils/mediaOptimizer'
 import { useFocusTrap } from '@/composables/useFocusTrap'
 import VideoPlayer from './VideoPlayer.vue'
 import Button from './Button.vue'
+import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 
 export interface MediaItem {
   id: string
   file_type: string
   width?: number | null
   height?: number | null
+  duration?: number | null
+  subtitles?:
+    | Array<{
+        language: string
+        format?: string | null
+        label?: string | null
+        url?: string | null
+        file_path?: string | null
+        path?: string | null
+      }>
+    | null
+    | undefined
 }
 
 const props = withDefaults(
@@ -223,7 +235,6 @@ const emit = defineEmits<{
 
 const containerRef = ref<HTMLElement | null>(null)
 const contentRef = ref<HTMLElement | null>(null)
-const mediaRef = ref<HTMLElement | null>(null)
 
 const isLightboxOpen = computed(() => props.isOpen)
 useFocusTrap(containerRef, isLightboxOpen, {

@@ -6,7 +6,9 @@
       "name": "frontend",
       "dependencies": {
         "@fingerprintjs/fingerprintjs": "^5.0.1",
+        "@rive-app/canvas": "^2.34.1",
         "gsap": "^3.14.2",
+        "lottie-web": "^5.13.0",
         "lucide-vue-next": "^0.563.0",
         "pinia": "^3.0.4",
         "pinia-plugin-persistedstate": "^4.7.1",
@@ -431,6 +433,8 @@
     "@prisma/instrumentation": ["@prisma/instrumentation@6.11.1", "", { "dependencies": { "@opentelemetry/instrumentation": "^0.52.0 || ^0.53.0 || ^0.54.0 || ^0.55.0 || ^0.56.0 || ^0.57.0" }, "peerDependencies": { "@opentelemetry/api": "^1.8" } }, "sha512-mrZOev24EDhnefmnZX7WVVT7v+r9LttPRqf54ONvj6re4XMF7wFTpK2tLJi4XHB7fFp/6xhYbgRel8YV7gQiyA=="],
 
     "@puppeteer/browsers": ["@puppeteer/browsers@2.11.1", "", { "dependencies": { "debug": "^4.4.3", "extract-zip": "^2.0.1", "progress": "^2.0.3", "proxy-agent": "^6.5.0", "semver": "^7.7.3", "tar-fs": "^3.1.1", "yargs": "^17.7.2" }, "bin": { "browsers": "lib/cjs/main-cli.js" } }, "sha512-YmhAxs7XPuxN0j7LJloHpfD1ylhDuFmmwMvfy/+6nBSrETT2ycL53LrhgPtR+f+GcPSybQVuQ5inWWu5MrWCpA=="],
+
+    "@rive-app/canvas": ["@rive-app/canvas@2.34.1", "", {}, "sha512-mYtyVRY0yRT6nmb4EFm4a5KxqOYZviDkn+3O1CHAEvQBUu0cDf3UtKiReOkl5dHoQ8kF284NzTCXTqPBfmLxWQ=="],
 
     "@rolldown/binding-android-arm64": ["@rolldown/binding-android-arm64@1.0.0-rc.1", "", { "os": "android", "cpu": "arm64" }, "sha512-He6ZoCfv5D7dlRbrhNBkuMVIHd0GDnjJwbICE1OWpG7G3S2gmJ+eXkcNLJjzjNDpeI2aRy56ou39AJM9AD8YFA=="],
 
@@ -1075,6 +1079,8 @@
     "log-update": ["log-update@6.1.0", "", { "dependencies": { "ansi-escapes": "^7.0.0", "cli-cursor": "^5.0.0", "slice-ansi": "^7.1.0", "strip-ansi": "^7.1.0", "wrap-ansi": "^9.0.0" } }, "sha512-9ie8ItPR6tjY5uYJh8K/Zrv/RMZ5VOlOWvtZdEHYSTFKZfIBPQa9tOAEeAWhd+AnIneLJ22w5fjOYtoutpWq5w=="],
 
     "lookup-closest-locale": ["lookup-closest-locale@6.2.0", "", {}, "sha512-/c2kL+Vnp1jnV6K6RpDTHK3dgg0Tu2VVp+elEiJpjfS1UyY7AjOYHohRug6wT0OpoX2qFgNORndE9RqesfVxWQ=="],
+
+    "lottie-web": ["lottie-web@5.13.0", "", {}, "sha512-+gfBXl6sxXMPe8tKQm7qzLnUy5DUPJPKIyRHwtpCpyUEYjHYRJC/5gjUvdkuO2c3JllrPtHXH5UJJK8LRYl5yQ=="],
 
     "lru-cache": ["lru-cache@11.2.4", "", {}, "sha512-B5Y16Jr9LB9dHVkh6ZevG+vAbOsNOYCX+sXvFWFu7B3Iz5mijW3zdbMyhsh8ANd2mSWBYdJgnqi+mL7/LrOPYg=="],
 

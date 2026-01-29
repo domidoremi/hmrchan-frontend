@@ -4,7 +4,7 @@
       <h1 class="page-title">{{ $t('nav.favorites') }}</h1>
 
       <div v-if="!isAuthenticated" class="empty-state glass-card">
-        <Heart :size="48" class="empty-icon" />
+        <AnimatedIcon name="heart" :fallback-icon="Heart" size="xl" class="empty-icon" />
         <p>{{ $t('favorites.loginRequired') }}</p>
         <Button @click="goToLogin">{{ $t('nav.login') }}</Button>
       </div>
@@ -59,7 +59,7 @@
                   decoding="async"
                 />
                 <div v-else class="image-placeholder">
-                  <Heart :size="24" />
+                  <AnimatedIcon name="heart" :fallback-icon="Heart" size="lg" />
                 </div>
               </div>
               <div class="favorite-content">
@@ -79,7 +79,7 @@
                 :title="$t('favorites.remove')"
                 @click.stop="removeFavorite(fav.id)"
               >
-                <X :size="16" />
+                <AnimatedIcon name="sparkle" :fallback-icon="X" size="sm" />
               </button>
             </article>
           </div>
@@ -116,6 +116,7 @@ import { useProgressiveRender } from '@/composables/useProgressiveRender'
 import Button from '@/components/ui/Button.vue'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
+import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 
 const router = useRouter()
 const { t } = useI18n()
