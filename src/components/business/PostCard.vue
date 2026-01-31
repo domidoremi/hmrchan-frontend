@@ -3,7 +3,9 @@
     ref="cardRef"
     type="button"
     class="post-card glass-card glass-card--interactive"
-    :aria-label="post.title"
+    :class="{ 'post-card--contain': imageFit === 'contain' }"
+    :data-post-id="post.id"
+    :aria-label="displayTitle"
     @click="handleClick"
     @mouseenter="handleMouseEnter"
     @mouseleave="handleMouseLeave"
@@ -29,7 +31,7 @@
         class="post-image"
         :class="{ 'is-loaded': isImageLoaded }"
         :src="thumbnailSrc"
-        :alt="post.title"
+        :alt="displayTitle"
         :width="imageWidth"
         :height="imageHeight"
         :loading="imageLoadingStrategy"
@@ -52,50 +54,73 @@
       <Transition name="hover-details">
         <div v-if="showHoverDetails" class="hover-overlay">
           <div class="hover-header">
-            <div class="hover-time" v-if="post.published_at">
-              <AnimatedIcon name="explore" :fallback-icon="Calendar" size="sm" />
-              <span>{{ formatPublishedTime(post.published_at) }}</span>
-            </div>
             <div class="hover-action">
               <div class="hover-action-icon">
                 <AnimatedIcon name="sparkle" :fallback-icon="ArrowUpRight" size="md" />
               </div>
             </div>
           </div>
-          <div class="hover-content">
-            <h4 class="hover-title">{{ post.title }}</h4>
-            <p v-if="post.author_name" class="hover-author">
-              <AnimatedIcon name="user" :fallback-icon="User" size="sm" />
-              {{ post.author_name }}
-            </p>
-            <div class="hover-stats">
-              <span v-if="post.view_count" class="hover-stat">
-                <AnimatedIcon name="explore" :fallback-icon="Eye" size="sm" />
-                {{ formatCount(post.view_count) }}
-              </span>
-              <span v-if="post.like_count" class="hover-stat">
-                <AnimatedIcon name="heart" :fallback-icon="Heart" size="sm" />
-                {{ formatCount(post.like_count) }}
-              </span>
-              <span v-if="post.duration" class="hover-stat">
+          <div class="hover-scroll">
+            <div class="hover-meta">
+              <div class="hover-pill">
+                <AnimatedIcon name="explore" :fallback-icon="platformIcon" size="sm" />
+                <span>{{ platformLabel }}</span>
+              </div>
+              <div v-if="post.published_at" class="hover-pill">
+                <AnimatedIcon name="explore" :fallback-icon="Calendar" size="sm" />
+                <span>{{ formatPublishedTime(post.published_at) }}</span>
+              </div>
+              <div v-if="post.duration" class="hover-pill">
                 <AnimatedIcon name="explore" :fallback-icon="Clock" size="sm" />
-                {{ formatDuration(post.duration) }}
-              </span>
+                <span>{{ formatDuration(post.duration) }}</span>
+              </div>
+              <div v-else-if="post.media_count && post.media_count > 1" class="hover-pill">
+                <AnimatedIcon name="explore" :fallback-icon="Images" size="sm" />
+                <span>{{ post.media_count }}</span>
+              </div>
             </div>
+            <!-- Only show title/author in hover overlay when the card hides its content -->
+            <h4 v-if="!showContent" class="hover-title">{{ displayTitle }}</h4>
+            <div v-if="!showContent && displayAuthorName" class="hover-author">
+              <Avatar
+                v-if="showAuthorAvatar && post.author_avatar_url"
+                :src="normalizeAvatarUrl(post.author_avatar_url) || undefined"
+                :alt="displayAuthorName"
+                size="xs"
+                class="hover-author-avatar"
+              />
+              <AnimatedIcon v-else name="user" :fallback-icon="User" size="sm" />
+              <span>{{ displayAuthorName }}</span>
+            </div>
+            <p v-if="hoverContent" class="hover-text">
+              {{ hoverContent }}
+            </p>
           </div>
         </div>
       </Transition>
     </div>
 
     <div v-if="showContent" class="post-content">
-      <h3 class="post-title">{{ post.title }}</h3>
+      <h3 class="post-title">{{ displayTitle }}</h3>
+
+      <p v-if="cardExcerpt" class="post-excerpt">
+        {{ cardExcerpt }}
+      </p>
 
       <div class="post-meta">
-        <div class="post-author-wrapper" v-if="showAuthor && post.author_name">
-          <div class="post-author-avatar">
+        <div class="post-author-wrapper" v-if="showAuthor && displayAuthorName">
+          <img
+            v-if="post.author_avatar_url"
+            class="post-author-avatar"
+            :src="normalizeAvatarUrl(post.author_avatar_url) || undefined"
+            :alt="displayAuthorName"
+            loading="lazy"
+            decoding="async"
+          />
+          <div v-else class="post-author-avatar post-author-avatar--fallback">
             <AnimatedIcon name="user" :fallback-icon="User" size="sm" />
           </div>
-          <span class="post-author">{{ post.author_name }}</span>
+          <span class="post-author">{{ displayAuthorName }}</span>
         </div>
 
         <div class="post-stats">
@@ -123,12 +148,15 @@ import {
   Eye,
   Globe,
   Heart,
+  Images,
+  Instagram,
   Music2,
   Play,
   User,
   Video,
 } from 'lucide-vue-next'
 import type { PostListItem } from '@/api'
+import { normalizeAvatarUrl } from '@/api/userService'
 import { prefetchPostDetail } from '@/utils/prefetch'
 import {
   normalizeToThumbnailUrl,
@@ -139,6 +167,7 @@ import {
 import { thumbnailCache } from '@/utils/thumbnailCache'
 import { useCardAnimation } from '@/composables/useCardAnimation'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
+import Avatar from '@/components/ui/Avatar.vue'
 
 /**
  * 固定宽高比缓存 - 用于保持布局稳定，避免 CLS
@@ -178,8 +207,14 @@ export interface PostCardProps {
   post: PostListItem
   showContent?: boolean
   showAuthor?: boolean
+  /** 是否在悬浮overlay中显示作者头像 */
+  showAuthorAvatar?: boolean
+  /** 是否显示文本摘要（在content区域） */
+  showExcerpt?: boolean
   thumbnailSize?: 'small' | 'medium' | 'large' | 'responsive'
   aspectRatio?: string | number
+  /** Media sizing strategy for the card thumbnail */
+  imageFit?: 'cover' | 'contain'
   /** 是否为首屏图片（前4张优先加载） */
   priority?: boolean
 }
@@ -187,9 +222,15 @@ export interface PostCardProps {
 const props = withDefaults(defineProps<PostCardProps>(), {
   showContent: true,
   showAuthor: true,
+  showAuthorAvatar: false,
+  // on touch devices we default to showing excerpt in the card (no hover)
+  showExcerpt: isMobileDevice(),
   thumbnailSize: 'responsive',
+  imageFit: 'cover',
   priority: false,
 })
+
+const imageFit = computed(() => props.imageFit)
 
 const emit = defineEmits<{
   click: [postId: string, thumbnailSrc: string | null]
@@ -197,6 +238,76 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
+
+function normalizeText(input: string | null | undefined): string {
+  return String(input ?? '').replace(/\s+/g, ' ').trim()
+}
+
+const displayAuthorName = computed(() => {
+  const name = normalizeText(props.post.author_name)
+  if (name) return name
+  const username = normalizeText(props.post.author_username)
+  return username ? `@${username}` : ''
+})
+
+const titleFromContent = computed(() => {
+  const title = normalizeText(props.post.title)
+  const content = normalizeText(props.post.content)
+  if (!title && content) return true
+  if (title && content && title === content) return true
+  // very short titles are often placeholders on some platforms
+  if (title.length > 0 && title.length <= 3 && content) return true
+  return false
+})
+
+const displayTitle = computed(() => {
+  const title = normalizeText(props.post.title)
+  const content = normalizeText(props.post.content)
+
+  if (!titleFromContent.value) {
+    return title || content || t('post.untitled', 'Untitled')
+  }
+
+  // Use the first line / sentence of content as title
+  if (content) {
+    const firstLine = content.split(/\n/)[0] || content
+    return firstLine.length > 120 ? firstLine.slice(0, 120) + '…' : firstLine
+  }
+
+  return title || t('post.untitled', 'Untitled')
+})
+
+const displayExcerpt = computed(() => {
+  const content = normalizeText(props.post.content)
+  if (!content) return ''
+
+  // If title already came from content, avoid duplicating excerpt.
+  if (titleFromContent.value) return ''
+
+  return content
+})
+
+const cardExcerpt = computed(() => {
+  if (!props.showContent) return ''
+  if (!props.showExcerpt) return ''
+  return displayExcerpt.value
+})
+
+const hoverContent = computed(() => {
+  const content = normalizeText(props.post.content)
+  if (!content) return ''
+
+  // When card hides its content, hover overlay becomes the primary reading surface.
+  // If we already show the first line as title, avoid duplicating it in the body.
+  if (!props.showContent && titleFromContent.value) {
+    const firstLine = content.split(/\n/)[0] || content
+    const rest = content.slice(firstLine.length).trim()
+    return rest
+  }
+
+  // Requirement: hover overlay should include full content for reading (no line-clamp).
+  return content
+})
 
 const cardRef = ref<HTMLElement | null>(null)
 const isImageLoaded = ref(false)
@@ -217,6 +328,7 @@ const platformIconMap: Record<string, Component> = {
   youtube: Video,
   twitter: Globe,
   tiktok: Music2,
+  instagram: Instagram,
   bilibili: Globe,
   pixiv: Globe,
   weibo: Globe,
@@ -233,6 +345,7 @@ const platformAnimation = computed(() => {
     youtube: 'sparkle',
     twitter: 'explore',
     tiktok: 'explore',
+    instagram: 'heart',
     bilibili: 'sparkle',
     pixiv: 'heart',
     weibo: 'explore',
@@ -247,7 +360,8 @@ const platformLabel = computed(() => {
   const map: Record<string, string> = {
     bilibili: 'Bilibili',
     youtube: 'YouTube',
-    twitter: 'Twitter',
+    twitter: 'X',
+    instagram: 'Instagram',
     pixiv: 'Pixiv',
     weibo: 'Weibo',
     tiktok: 'TikTok',
@@ -519,7 +633,7 @@ onUnmounted(() => {
   position: absolute;
   top: var(--spacing-2);
   left: var(--spacing-2);
-  z-index: 3;
+  z-index: 12;
   display: flex;
   align-items: center;
   gap: var(--spacing-1);
@@ -566,6 +680,10 @@ onUnmounted(() => {
   background: rgba(251, 114, 153, 0.85);
 }
 
+.platform-badge--instagram {
+  background: linear-gradient(135deg, #f9ce34 0%, #ee2a7b 45%, #6228d7 100%);
+}
+
 /* ========== Duration Badge ========== */
 .duration-badge {
   position: absolute;
@@ -602,6 +720,11 @@ onUnmounted(() => {
   will-change: opacity, transform;
 }
 
+.post-card--contain .post-image {
+  object-fit: contain;
+  background: #000;
+}
+
 .post-image.is-loaded {
   opacity: 1;
   transform: scale(1);
@@ -609,6 +732,10 @@ onUnmounted(() => {
 
 .post-card:hover .post-image.is-loaded {
   transform: scale(1.05);
+}
+
+.post-card--contain:hover .post-image.is-loaded {
+  transform: scale(1);
 }
 
 .post-image-placeholder {
@@ -639,7 +766,8 @@ onUnmounted(() => {
   z-index: 10;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: flex-start;
+  gap: var(--spacing-3);
   padding: var(--spacing-3);
   background: linear-gradient(
     180deg,
@@ -658,10 +786,10 @@ onUnmounted(() => {
 .hover-header {
   display: flex;
   align-items: flex-start;
-  justify-content: space-between;
+  justify-content: flex-end;
 }
 
-.hover-time {
+.hover-pill {
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -674,15 +802,27 @@ onUnmounted(() => {
   font-weight: var(--font-medium);
   color: rgba(255, 255, 255, 0.9);
   border: 1px solid rgba(255, 255, 255, 0.1);
+  width: fit-content;
 }
 
-.hover-time svg {
-  opacity: 0.8;
+.hover-pill :deep(svg) {
+  opacity: 0.85;
 }
 
-.hover-content {
-  margin-top: auto;
+.hover-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding-right: 4px;
   color: #fff;
+  overscroll-behavior: contain;
+}
+
+.hover-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-2);
+  margin: 0 0 var(--spacing-2);
 }
 
 .hover-title {
@@ -707,10 +847,15 @@ onUnmounted(() => {
   margin: 0 0 var(--spacing-2);
 }
 
+.hover-author-avatar {
+  flex-shrink: 0;
+}
+
 .hover-author svg {
   opacity: 0.7;
 }
 
+/* Legacy hover-stats kept for compatibility (older markup) */
 .hover-stats {
   display: flex;
   flex-wrap: wrap;
@@ -724,6 +869,14 @@ onUnmounted(() => {
   font-size: var(--text-xs);
   color: rgba(255, 255, 255, 0.8);
   font-variant-numeric: tabular-nums;
+}
+
+.hover-text {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: rgba(255, 255, 255, 0.9);
+  line-height: 1.6;
+  white-space: pre-wrap;
 }
 
 .hover-stat svg {
@@ -793,6 +946,18 @@ onUnmounted(() => {
   transition: color var(--transition-fast);
 }
 
+.post-excerpt {
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+  margin: var(--spacing-2) 0 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.5;
+}
+
 .post-card:hover .post-title {
   color: var(--color-primary);
 }
@@ -816,13 +981,18 @@ onUnmounted(() => {
 .post-author-avatar {
   width: 20px;
   height: 20px;
+  border-radius: var(--radius-full);
+  flex-shrink: 0;
+  object-fit: cover;
+  background: var(--glass-bg-subtle);
+  border: 1px solid var(--glass-border);
+}
+
+.post-author-avatar--fallback {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--glass-bg-subtle);
-  border-radius: var(--radius-full);
   color: var(--color-text-tertiary);
-  flex-shrink: 0;
 }
 
 .post-author {
