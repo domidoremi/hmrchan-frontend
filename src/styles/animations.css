@@ -778,6 +778,47 @@
   transform: translate3d(0, 24px, 0) scale3d(0.97, 0.97, 1);
 }
 
+/* Page Slide Left/Right - Post-to-post navigation */
+.page-slide-left-enter-active,
+.page-slide-right-enter-active {
+  transition:
+    opacity var(--duration-normal) var(--ease-out),
+    transform var(--duration-normal) var(--ease-spring);
+  will-change: transform, opacity;
+}
+
+.page-slide-left-leave-active,
+.page-slide-right-leave-active {
+  transition:
+    opacity var(--duration-fast) var(--ease-in),
+    transform var(--duration-fast) var(--ease-in);
+  will-change: transform, opacity;
+  position: absolute;
+  width: 100%;
+  top: 0;
+  left: 0;
+}
+
+.page-slide-left-enter-from {
+  opacity: 0;
+  transform: translate3d(48px, 0, 0);
+}
+
+.page-slide-left-leave-to {
+  opacity: 0;
+  transform: translate3d(-48px, 0, 0);
+}
+
+.page-slide-right-enter-from {
+  opacity: 0;
+  transform: translate3d(-48px, 0, 0);
+}
+
+.page-slide-right-leave-to {
+  opacity: 0;
+  transform: translate3d(48px, 0, 0);
+}
+
 /* ========== Loading Indicators ========== */
 
 /* Spinner */
