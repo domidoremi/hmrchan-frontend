@@ -24,8 +24,12 @@
       <template v-else-if="post">
         <div class="post-shell" :class="peekDirection ? `is-peeking-${peekDirection}` : undefined">
           <div class="post-media">
-            <div v-if="post.media_files && post.media_files.length > 0" class="media-viewer" :style="activeMediaViewerStyle">
-            <button
+            <div
+              v-if="post.media_files && post.media_files.length > 0"
+              class="media-viewer"
+              :style="activeMediaViewerStyle"
+            >
+              <button
                 v-if="hasMultipleMedia"
                 type="button"
                 class="media-nav prev"
@@ -95,7 +99,9 @@
                 v-if="post?.thumbnail_url"
                 class="post-image"
                 :src="
-                  normalizeToThumbnailUrl(post?.thumbnail_url ?? '', 'large') || post?.thumbnail_url || ''
+                  normalizeToThumbnailUrl(post?.thumbnail_url ?? '', 'large') ||
+                  post?.thumbnail_url ||
+                  ''
                 "
                 :alt="post?.title || ''"
                 loading="lazy"
@@ -919,7 +925,8 @@ onUnmounted(() => {
 .post-detail-page {
   min-height: 100vh;
   overflow-x: hidden;
-  background: radial-gradient(
+  background:
+    radial-gradient(
       circle at 20% 20%,
       rgba(var(--color-primary-rgb, 139, 92, 246), 0.12),
       transparent 55%
@@ -1468,7 +1475,6 @@ onUnmounted(() => {
   color: #fff;
   border-color: rgba(255, 255, 255, 0.45);
 }
-
 
 /* Media Transitions */
 .media-fade-enter-active,

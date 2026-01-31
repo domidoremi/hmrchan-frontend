@@ -240,7 +240,9 @@ const emit = defineEmits<{
 const { t } = useI18n()
 
 function normalizeText(input: string | null | undefined): string {
-  return String(input ?? '').replace(/\s+/g, ' ').trim()
+  return String(input ?? '')
+    .replace(/\s+/g, ' ')
+    .trim()
 }
 
 const displayAuthorName = computed(() => {
