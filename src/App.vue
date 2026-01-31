@@ -34,8 +34,8 @@
       </div>
     </main>
 
-    <!-- Footer - 在特定页面隐藏 -->
-    <AppFooter v-if="!hideFooter" />
+    <!-- Footer - only show on key routes -->
+    <AppFooter v-if="showFooter" />
 
     <!-- Toast Container -->
     <Teleport to="body">
@@ -118,12 +118,8 @@ watch(
   { immediate: true }
 )
 
-// 隐藏 Footer 的页面
-const hideFooterPages = ['HomePage', 'LoginPage', 'RegisterPage', 'ExplorePage']
-const hideFooter = computed(() => {
-  const routeName = route.name as string | undefined
-  return routeName ? hideFooterPages.includes(routeName) : false
-})
+// Footer only appears on key pages (configured via route meta)
+const showFooter = computed(() => Boolean(route.meta.showFooter))
 
 // Page transition name
 const transitionName = ref('page-fade')
@@ -132,15 +128,30 @@ const transitionName = ref('page-fade')
 const routeDepth = (path: string) => path.split('/').filter(Boolean).length
 
 watch(
-  () => route.path,
-  (to, from) => {
+  () => [route.name as string | undefined, route.path] as const,
+  ([toName, toPath], [fromName, fromPath]) => {
     if (!settings.value.enableAnimations) {
       transitionName.value = ''
       return
     }
 
-    const toDepth = routeDepth(to)
-    const fromDepth = routeDepth(from || '/')
+    // Post -> Post: use horizontal slide transition
+    if (toName === 'post-detail' && fromName === 'post-detail') {
+      let dir: string | null = null
+      try {
+        dir = sessionStorage.getItem('post-detail-transition')
+        sessionStorage.removeItem('post-detail-transition')
+      } catch {
+        // ignore
+      }
+
+      transitionName.value =
+        dir === 'right' ? 'page-slide-right' : dir === 'left' ? 'page-slide-left' : 'page-fade'
+      return
+    }
+
+    const toDepth = routeDepth(toPath)
+    const fromDepth = routeDepth(fromPath || '/')
 
     // 根据导航深度选择不同的过渡效果
     if (toDepth > fromDepth) {
