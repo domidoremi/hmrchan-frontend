@@ -103,7 +103,9 @@ export interface MediaSubtitle {
   format?: string | null
   label?: string | null
   url?: string | null
+  subtitle_url?: string | null
   file_path?: string | null
+  subtitle_path?: string | null
   path?: string | null
 }
 
