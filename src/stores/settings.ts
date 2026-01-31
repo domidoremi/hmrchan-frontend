@@ -15,6 +15,8 @@ export interface Settings {
   defaultSort: 'newest' | 'popular' | 'trending'
   /** 动效强度：none=无动效, reduced=减弱, normal=正常, full=完整 */
   animationIntensity: AnimationIntensity
+  /** 帖子详情视图模式：stream=流媒体，data=数据展示 */
+  postDetailViewMode: 'stream' | 'data'
 }
 
 const defaultSettings: Settings = {
@@ -24,6 +26,7 @@ const defaultSettings: Settings = {
   postsPerPage: 20,
   defaultSort: 'newest',
   animationIntensity: 'normal',
+  postDetailViewMode: 'stream',
 }
 
 export const useSettingsStore = defineStore(

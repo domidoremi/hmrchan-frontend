@@ -17,6 +17,8 @@ declare module 'vue-router' {
     description?: string
     requiresAuth?: boolean
     guestOnly?: boolean
+    /** Show global footer on this route */
+    showFooter?: boolean
   }
 }
 
@@ -35,7 +37,7 @@ const routes: RouteRecordRaw[] = [
     path: '/',
     name: 'home',
     component: () => import('@/views/HomePage.vue'),
-    meta: { title: 'nav.home' },
+    meta: { title: 'nav.home', showFooter: true },
   },
   {
     path: '/explore',
@@ -129,13 +131,13 @@ const routes: RouteRecordRaw[] = [
     path: '/contact',
     name: 'contact',
     component: () => import('@/views/ContactPage.vue'),
-    meta: { title: 'nav.contact' },
+    meta: { title: 'nav.contact', showFooter: true },
   },
   {
     path: '/about',
     name: 'about',
     component: () => import('@/views/AboutPage.vue'),
-    meta: { title: 'nav.about' },
+    meta: { title: 'nav.about', showFooter: true },
   },
   {
     path: '/:pathMatch(.*)*',
