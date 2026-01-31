@@ -14,7 +14,7 @@
       :src="src"
       :poster="poster"
       :playsinline="playsinline"
-      :loop="loop"
+      :loop="loopEnabled"
       :preload="preload"
       @loadedmetadata="onLoadedMetadata"
       @timeupdate="onTimeUpdate"
@@ -197,6 +197,29 @@
                   </div>
                 </div>
 
+                <!-- 循环播放 -->
+                <div class="settings-section">
+                  <div class="settings-label">{{ $t('video.loop') }}</div>
+                  <div class="settings-options">
+                    <button
+                      type="button"
+                      class="settings-option"
+                      :class="{ active: loopEnabled }"
+                      @click="setLoopEnabled(true)"
+                    >
+                      {{ $t('video.loopOn') }}
+                    </button>
+                    <button
+                      type="button"
+                      class="settings-option"
+                      :class="{ active: !loopEnabled }"
+                      @click="setLoopEnabled(false)"
+                    >
+                      {{ $t('video.loopOff') }}
+                    </button>
+                  </div>
+                </div>
+
                 <!-- 字幕 -->
                 <div v-if="normalizedSubtitles.length" class="settings-section">
                   <div class="settings-label">{{ $t('video.subtitles') }}</div>
@@ -344,7 +367,9 @@ interface SubtitleTrack {
   format?: string | null
   label?: string | null
   url?: string | null
+  subtitle_url?: string | null
   file_path?: string | null
+  subtitle_path?: string | null
   path?: string | null
 }
 
@@ -387,6 +412,7 @@ const {
   setVolume: updateVolume,
   setMuted: updateMuted,
   setPlaybackRate: updatePlaybackRate,
+  setLoop: updateLoop,
   setBrightness: updateBrightness,
   setSubtitleLanguage: updateSubtitleLanguage,
 } = useVideoSettings()
@@ -395,6 +421,11 @@ const {
 const volume = computed(() => videoSettings.value.volume)
 const isMuted = computed(() => videoSettings.value.muted)
 const brightness = computed(() => videoSettings.value.brightness)
+const loopEnabled = computed(() => props.loop || videoSettings.value.loop)
+
+function setLoopEnabled(enabled: boolean) {
+  updateLoop(enabled)
+}
 
 // 使用手势控制 composable
 const {
@@ -464,7 +495,12 @@ const activeSubtitleLabel = computed(() => {
 })
 
 function normalizeSubtitleSrc(track: SubtitleTrack): string | null {
-  const raw = track.url || track.file_path || track.path
+  const raw =
+    track.url ||
+    track.subtitle_url ||
+    track.file_path ||
+    track.subtitle_path ||
+    track.path
   if (!raw) return null
   if (raw.startsWith('http://') || raw.startsWith('https://')) return raw
 

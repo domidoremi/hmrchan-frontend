@@ -12,6 +12,8 @@ export interface VideoSettings {
   muted: boolean
   /** 播放速度 */
   playbackRate: number
+  /** 是否循环播放 */
+  loop: boolean
   /** 亮度 (0-1) */
   brightness: number
   /** 字幕语言偏好 */
@@ -19,11 +21,13 @@ export interface VideoSettings {
 }
 
 const STORAGE_KEY = 'video-player-settings'
+const BRIGHTNESS_SESSION_KEY = 'video-player-brightness'
 
 const defaultSettings: VideoSettings = {
   volume: 1,
   muted: false,
   playbackRate: 1,
+  loop: false,
   brightness: 1,
   subtitleLanguage: null,
 }
@@ -32,12 +36,14 @@ const defaultSettings: VideoSettings = {
 function loadSettings(): VideoSettings {
   try {
     const stored = localStorage.getItem(STORAGE_KEY)
-    if (stored) {
-      const parsed = JSON.parse(stored)
-      return {
-        ...defaultSettings,
-        ...parsed,
-      }
+    const parsed = stored ? (JSON.parse(stored) as Partial<VideoSettings>) : null
+    const sessionBrightness = sessionStorage.getItem(BRIGHTNESS_SESSION_KEY)
+    const brightness = sessionBrightness !== null ? Number(sessionBrightness) : Number.NaN
+
+    return {
+      ...defaultSettings,
+      ...(parsed || {}),
+      brightness: Number.isFinite(brightness) ? brightness : defaultSettings.brightness,
     }
   } catch (error) {
     console.error('Failed to load video settings:', error)
@@ -48,7 +54,9 @@ function loadSettings(): VideoSettings {
 // 保存设置到 localStorage
 function saveSettings(settings: VideoSettings) {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(settings))
+    const { brightness, ...rest } = settings
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(rest))
+    sessionStorage.setItem(BRIGHTNESS_SESSION_KEY, String(brightness))
   } catch (error) {
     console.error('Failed to save video settings:', error)
   }
@@ -92,6 +100,13 @@ export function useVideoSettings() {
   }
 
   /**
+   * 更新循环播放
+   */
+  function setLoop(loop: boolean) {
+    settings.value.loop = loop
+  }
+
+  /**
    * 更新亮度
    */
   function setBrightness(brightness: number) {
@@ -110,6 +125,11 @@ export function useVideoSettings() {
    */
   function resetSettings() {
     settings.value = { ...defaultSettings }
+    try {
+      sessionStorage.removeItem(BRIGHTNESS_SESSION_KEY)
+    } catch (error) {
+      console.error('Failed to reset brightness settings:', error)
+    }
   }
 
   return {
@@ -117,6 +137,7 @@ export function useVideoSettings() {
     setVolume,
     setMuted,
     setPlaybackRate,
+    setLoop,
     setBrightness,
     setSubtitleLanguage,
     resetSettings,
