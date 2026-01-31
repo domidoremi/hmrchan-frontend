@@ -496,11 +496,7 @@ const activeSubtitleLabel = computed(() => {
 
 function normalizeSubtitleSrc(track: SubtitleTrack): string | null {
   const raw =
-    track.url ||
-    track.subtitle_url ||
-    track.file_path ||
-    track.subtitle_path ||
-    track.path
+    track.url || track.subtitle_url || track.file_path || track.subtitle_path || track.path
   if (!raw) return null
   if (raw.startsWith('http://') || raw.startsWith('https://')) return raw
 
