@@ -56,7 +56,9 @@
                 class="media-stage"
                 :style="mediaStyle"
                 @mousedown="startDrag"
-                @touchstart.prevent="startDrag"
+                @touchstart="handleStageTouchStart"
+                @touchmove="handleStageTouchMove"
+                @touchend="handleStageTouchEnd"
                 @dblclick="toggleZoom"
               >
                 <div v-if="!isLoaded && !hasError" class="media-loading">
@@ -259,6 +261,11 @@ const translateY = ref(0)
 const isDragging = ref(false)
 const dragStart = ref({ x: 0, y: 0, translateX: 0, translateY: 0 })
 
+const swipeStart = ref<{ x: number; y: number } | null>(null)
+const swipeOffsetX = ref(0)
+const swipeOffsetY = ref(0)
+const isSwiping = ref(false)
+
 const MIN_SCALE = 0.5
 const MAX_SCALE = 4
 const ZOOM_STEP = 0.25
@@ -277,10 +284,16 @@ const currentMediaKey = computed(
 )
 const imageKey = computed(() => `${currentMedia.value?.id ?? 'unknown'}-${imageReloadToken.value}`)
 
-const mediaStyle = computed(() => ({
-  transform: `translate(${translateX.value}px, ${translateY.value}px) scale(${scale.value})`,
-  cursor: scale.value > 1 ? (isDragging.value ? 'grabbing' : 'grab') : 'default',
-}))
+const mediaStyle = computed(() => {
+  const x = translateX.value + (scale.value <= 1 ? swipeOffsetX.value : 0)
+  const y = translateY.value + (scale.value <= 1 ? swipeOffsetY.value : 0)
+
+  return {
+    transform: `translate(${x}px, ${y}px) scale(${scale.value})`,
+    cursor: scale.value > 1 ? (isDragging.value ? 'grabbing' : 'grab') : 'default',
+    transition: isDragging.value || isSwiping.value ? 'none' : 'transform 180ms var(--ease-out)',
+  }
+})
 
 watch(
   () => props.isOpen,
@@ -288,6 +301,10 @@ watch(
     if (open) {
       currentIndex.value = props.initialIndex
       resetZoom()
+      swipeOffsetX.value = 0
+      swipeOffsetY.value = 0
+      swipeStart.value = null
+      isSwiping.value = false
       isLoaded.value = false
       hasError.value = false
       imageReloadToken.value += 1
@@ -319,6 +336,10 @@ watch(currentIndex, (idx) => {
   hasError.value = false
   imageReloadToken.value += 1
   resetZoom()
+  swipeOffsetX.value = 0
+  swipeOffsetY.value = 0
+  swipeStart.value = null
+  isSwiping.value = false
   prefetchAround(idx)
   startHintsTimer()
 })
@@ -426,6 +447,81 @@ function startDrag(e: MouseEvent | TouchEvent) {
   document.addEventListener('mouseup', stopDrag)
   document.addEventListener('touchmove', onDrag, { passive: false })
   document.addEventListener('touchend', stopDrag)
+}
+
+function handleStageTouchStart(e: TouchEvent) {
+  if (!props.isOpen) return
+
+  // When zoomed, drag to pan.
+  if (scale.value > 1) {
+    startDrag(e)
+    return
+  }
+
+  const point = e.touches[0]
+  if (!point) return
+
+  swipeStart.value = { x: point.clientX, y: point.clientY }
+  swipeOffsetX.value = 0
+  swipeOffsetY.value = 0
+  isSwiping.value = false
+}
+
+function handleStageTouchMove(e: TouchEvent) {
+  if (!props.isOpen) return
+  if (!swipeStart.value) return
+  if (scale.value > 1) return
+
+  const point = e.touches[0]
+  if (!point) return
+
+  const dx = point.clientX - swipeStart.value.x
+  const dy = point.clientY - swipeStart.value.y
+
+  // Lock direction by intent.
+  if (Math.abs(dx) > Math.abs(dy) && hasMultiple.value) {
+    isSwiping.value = true
+    swipeOffsetX.value = dx
+    swipeOffsetY.value = 0
+    e.preventDefault()
+    return
+  }
+
+  // Swipe down to close (when not zoomed)
+  if (Math.abs(dy) > Math.abs(dx)) {
+    isSwiping.value = true
+    swipeOffsetY.value = dy
+    swipeOffsetX.value = 0
+    e.preventDefault()
+  }
+}
+
+function handleStageTouchEnd() {
+  if (!props.isOpen) return
+  if (scale.value > 1) return
+
+  const dx = swipeOffsetX.value
+  const dy = swipeOffsetY.value
+
+  swipeStart.value = null
+  isSwiping.value = false
+
+  // Horizontal swipe => prev/next
+  if (hasMultiple.value && Math.abs(dx) > 90 && Math.abs(dx) > Math.abs(dy)) {
+    if (dx < 0) {
+      next()
+    } else {
+      prev()
+    }
+  }
+
+  // Vertical swipe down => close
+  if (dy > 120 && Math.abs(dy) > Math.abs(dx)) {
+    close()
+  }
+
+  swipeOffsetX.value = 0
+  swipeOffsetY.value = 0
 }
 
 function onDrag(e: MouseEvent | TouchEvent) {
