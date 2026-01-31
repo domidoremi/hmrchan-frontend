@@ -109,6 +109,7 @@
                 v-for="post in column"
                 :key="post.id"
                 :post="post"
+                image-fit="contain"
                 :priority="colIndex === 0 && column.indexOf(post) < 2"
                 @click="goToPost"
                 @height-change="handleCardHeightChange"
@@ -151,6 +152,7 @@ import { useBluePolymorph, type PlatformMorphState } from '@/composables/useBlue
 import { useSettingsStore } from '@/stores'
 import { throttleRAF, prefersReducedMotion } from '@/utils/performance'
 import { createResizeObserver } from '@/utils/modernAPIs'
+import { storePostNavigationContext } from '@/utils/postNavigation'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import PostCard from '@/components/business/PostCard.vue'
 import PostCardSkeleton from '@/components/business/PostCardSkeleton.vue'
@@ -160,8 +162,7 @@ import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 
 const router = useRouter()
 const { t } = useI18n()
-const settingsStore = useSettingsStore()
-const { settings } = storeToRefs(settingsStore)
+const { settings } = storeToRefs(useSettingsStore())
 
 const shouldShowPolymorph = computed(
   () => settings.value.enableAnimations && !prefersReducedMotion()
@@ -268,6 +269,7 @@ const platformOptions = [
 ]
 
 function goToPost(postId: string, thumbnailSrc: string | null) {
+  storePostNavigationContext(posts.value, postId, 'explore')
   if (thumbnailSrc) {
     sessionStorage.setItem(`post-thumbnail-${postId}`, thumbnailSrc)
   }
@@ -395,17 +397,19 @@ useInfiniteScroll(sentinelRef, loadMore, {
 // ========== Masonry 布局管理 ==========
 
 /**
- * 计算响应式列数
- * 移动端始终保持双列，避免内容被过分压缩
+ * 计算响应式列数（Explore Masonry）
+ * - Mobile: 1 column
+ * - Desktop: 3–5 columns
  */
 function calculateColumnCount(): number {
   if (typeof window === 'undefined') return 4
   const width = window.innerWidth
-  if (width < 640) return 2 // 移动端：双列
-  if (width < 1024) return 3 // 平板：三列
-  if (width < 1600) return 4 // 桌面：四列
-  if (width < 1920) return 5 // 大屏：五列
-  return 6 // 超大屏：六列
+
+  if (width < 768) return 1
+  if (width < 1024) return 2
+  if (width < 1440) return 3
+  if (width < 1920) return 4
+  return 5
 }
 
 /**
@@ -463,6 +467,24 @@ const handleContainerResize = throttleRAF((width: number) => {
   }
 })
 
+function detachResizeObserver() {
+  resizeObserver?.disconnect()
+  resizeObserver = null
+}
+
+function attachResizeObserver(el: HTMLElement) {
+  detachResizeObserver()
+
+  lastContainerWidth = el.clientWidth
+  resizeObserver = createResizeObserver((entries) => {
+    const entry = entries[0]
+    if (entry) {
+      handleContainerResize(entry.contentRect.width)
+    }
+  })
+  resizeObserver?.observe(el)
+}
+
 function applyVisiblePosts(reset = false) {
   const current = visiblePosts.value
   if (current.length === 0) {
@@ -507,6 +529,7 @@ watch(currentPlatform, () => {
   fetchPosts()
 })
 
+
 onMounted(() => {
   // 初始化列数（composable 已经用 calculateColumnCount() 初始化了）
   // 确保 columns 数组与当前列数匹配
@@ -523,23 +546,24 @@ onMounted(() => {
 
   window.addEventListener('keydown', onGlobalKeydown)
 
-  // 使用 ResizeObserver 监听容器大小变化，比 window resize 更精确高效
-  if (masonryContainerRef.value) {
-    lastContainerWidth = masonryContainerRef.value.clientWidth
-    resizeObserver = createResizeObserver((entries) => {
-      const entry = entries[0]
-      if (entry) {
-        handleContainerResize(entry.contentRect.width)
-      }
-    })
-    resizeObserver?.observe(masonryContainerRef.value)
-  }
+  // ResizeObserver will be attached by watcher below.
 })
+
+watch(
+  masonryContainerRef,
+  (el) => {
+    if (!el) {
+      detachResizeObserver()
+      return
+    }
+    attachResizeObserver(el)
+  },
+  { immediate: true }
+)
 
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', onGlobalKeydown)
-  resizeObserver?.disconnect()
-  resizeObserver = null
+  detachResizeObserver()
 })
 </script>
 
@@ -638,6 +662,7 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: var(--spacing-3);
 }
+
 
 .search-trigger {
   display: flex;
@@ -829,4 +854,5 @@ onBeforeUnmount(() => {
 .post-content {
   padding: var(--spacing-3);
 }
+
 </style>

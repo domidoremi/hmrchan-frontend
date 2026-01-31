@@ -159,7 +159,7 @@
                   :key="post.id"
                   :post="post"
                   :priority="postIndex < 2"
-                  @click="goToPost"
+                  @click="(_id, thumb) => openPostPreview(post, thumb)"
                 />
               </div>
             </div>
@@ -179,6 +179,14 @@
         </template>
       </div>
     </section>
+
+    <PostPreviewModal
+      v-model:isOpen="isPreviewOpen"
+      :post-id="previewPostId"
+      :initial-post="previewPost"
+      :initial-thumbnail-src="previewThumbnailSrc"
+      @open-detail="openDetailFromPreview"
+    />
   </div>
 </template>
 
@@ -208,6 +216,7 @@ import { useMasonryColumns } from '@/composables/useMasonryColumns'
 import { prefersReducedMotion, throttleRAF } from '@/utils/performance'
 import { createResizeObserver, scheduleTask } from '@/utils/modernAPIs'
 import { isFilteredAuthor } from '@/config/filters'
+import { storePostNavigationContext } from '@/utils/postNavigation'
 import Button from '@/components/ui/Button.vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import LottiePlayer from '@/components/animation/LottiePlayer.vue'
@@ -216,6 +225,7 @@ import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import PostCard from '@/components/business/PostCard.vue'
 import PostCardSkeleton from '@/components/business/PostCardSkeleton.vue'
+import PostPreviewModal from '@/components/business/PostPreviewModal.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -234,6 +244,12 @@ const favoritesLink = computed(() =>
 // Posts state
 const posts = ref<PostListItem[]>([])
 const allPosts = ref<PostListItem[]>([])
+
+// Home click → preview modal
+const isPreviewOpen = ref(false)
+const previewPostId = ref<string | null>(null)
+const previewThumbnailSrc = ref<string | null>(null)
+const previewPost = ref<PostListItem | null>(null)
 
 // Loading & error state
 const isLoading = ref(false)
@@ -404,8 +420,19 @@ function scrollToBento() {
   })
 }
 
-function goToPost(postId: string, thumbnailSrc: string | null) {
-  if (thumbnailSrc) sessionStorage.setItem(`post-thumbnail-${postId}`, thumbnailSrc)
+function openPostPreview(post: PostListItem, thumbnailSrc: string | null) {
+  previewPostId.value = post.id
+  previewPost.value = post
+  previewThumbnailSrc.value = thumbnailSrc
+  isPreviewOpen.value = true
+}
+
+function openDetailFromPreview(postId: string) {
+  storePostNavigationContext(allPosts.value, postId, 'home')
+  if (previewThumbnailSrc.value) {
+    sessionStorage.setItem(`post-thumbnail-${postId}`, previewThumbnailSrc.value)
+  }
+  isPreviewOpen.value = false
   router.push(`/post/${postId}`)
 }
 
