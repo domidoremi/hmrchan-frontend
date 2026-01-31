@@ -57,6 +57,7 @@
     "show": "顯示",
     "hide": "隱藏",
     "close": "關閉",
+    "noDescription": "暫無描述",
     "clickToEnlarge": "點選檢視大圖",
     "imageViewer": "圖片檢視器",
     "zoomIn": "放大",
@@ -119,6 +120,9 @@
     "auto": "自動",
     "subtitles": "字幕",
     "subtitlesOff": "關閉",
+    "loop": "循環播放",
+    "loopOn": "開啟",
+    "loopOff": "關閉",
     "player": "影片播放器",
     "play": "播放",
     "pause": "暫停",
@@ -256,7 +260,12 @@
     "favorite": "收藏",
     "unfavorite": "取消收藏",
     "favoriteServerError": "更新收藏失敗",
-    "relatedPosts": "相關推薦"
+    "relatedPosts": "相關推薦",
+    "preview": "貼文預覽",
+    "viewDetail": "查看詳情",
+    "noMedia": "暫無媒體",
+    "content": "內容",
+    "readFullText": "閱讀全文"
   },
   "author": {
     "postCount": "{count} 個作品"

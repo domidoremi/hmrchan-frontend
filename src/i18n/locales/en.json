@@ -57,6 +57,7 @@
     "show": "Show",
     "hide": "Hide",
     "close": "Close",
+    "noDescription": "No description",
     "clickToEnlarge": "Click to enlarge",
     "imageViewer": "Image Viewer",
     "zoomIn": "Zoom In",
@@ -119,6 +120,9 @@
     "auto": "Auto",
     "subtitles": "Subtitles",
     "subtitlesOff": "Off",
+    "loop": "Loop",
+    "loopOn": "On",
+    "loopOff": "Off",
     "player": "Video player",
     "play": "Play",
     "pause": "Pause",
@@ -256,7 +260,12 @@
     "favorite": "Add to Favorites",
     "unfavorite": "Remove from Favorites",
     "favoriteServerError": "Failed to update favorites",
-    "relatedPosts": "Related Posts"
+    "relatedPosts": "Related Posts",
+    "preview": "Post preview",
+    "viewDetail": "View detail",
+    "noMedia": "No media",
+    "content": "Content",
+    "readFullText": "Read full text"
   },
   "author": {
     "postCount": "{count} posts"
