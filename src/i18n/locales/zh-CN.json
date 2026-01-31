@@ -57,6 +57,7 @@
     "show": "显示",
     "hide": "隐藏",
     "close": "关闭",
+    "noDescription": "暂无描述",
     "clickToEnlarge": "点击查看大图",
     "imageViewer": "图片查看器",
     "zoomIn": "放大",
@@ -119,6 +120,9 @@
     "auto": "自动",
     "subtitles": "字幕",
     "subtitlesOff": "关闭",
+    "loop": "循环播放",
+    "loopOn": "开启",
+    "loopOff": "关闭",
     "player": "视频播放器",
     "play": "播放",
     "pause": "暂停",
@@ -256,7 +260,12 @@
     "favorite": "收藏",
     "unfavorite": "取消收藏",
     "favoriteServerError": "更新收藏失败",
-    "relatedPosts": "相关推荐"
+    "relatedPosts": "相关推荐",
+    "preview": "帖子预览",
+    "viewDetail": "查看详情",
+    "noMedia": "暂无媒体",
+    "content": "内容",
+    "readFullText": "阅读全文"
   },
   "author": {
     "postCount": "{count} 个作品"

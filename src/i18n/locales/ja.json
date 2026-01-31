@@ -57,6 +57,7 @@
     "show": "表示",
     "hide": "非表示",
     "close": "閉じる",
+    "noDescription": "説明はありません",
     "clickToEnlarge": "クリックで拡大",
     "imageViewer": "画像ビューアー",
     "zoomIn": "拡大",
@@ -119,6 +120,9 @@
     "auto": "自動",
     "subtitles": "字幕",
     "subtitlesOff": "オフ",
+    "loop": "ループ再生",
+    "loopOn": "オン",
+    "loopOff": "オフ",
     "player": "動画プレイヤー",
     "play": "再生",
     "pause": "一時停止",
@@ -256,7 +260,12 @@
     "favorite": "お気に入りに追加",
     "unfavorite": "お気に入りから削除",
     "favoriteServerError": "お気に入りの更新に失敗しました",
-    "relatedPosts": "関連投稿"
+    "relatedPosts": "関連投稿",
+    "preview": "プレビュー",
+    "viewDetail": "詳細を見る",
+    "noMedia": "メディアがありません",
+    "content": "本文",
+    "readFullText": "全文を見る"
   },
   "author": {
     "postCount": "{count} 件の投稿"
