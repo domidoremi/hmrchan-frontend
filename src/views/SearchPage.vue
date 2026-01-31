@@ -13,7 +13,7 @@
           </button>
           <h1 class="search-title">{{ $t('search.title') }}</h1>
         </div>
-        <SearchBar ref="searchBarRef" class="search-bar-main" />
+        <SearchBar class="search-bar-main" />
       </header>
 
       <div v-if="query" class="search-content">
@@ -243,17 +243,18 @@ import {
   ArrowUpDown,
   ArrowLeft,
 } from 'lucide-vue-next'
-import { searchService, type AuthorListItem, type PostListItem } from '@/api'
+import { searchService, type PostListItem, type AuthorListItem } from '@/api'
 import { normalizeAvatarUrl } from '@/api/userService'
 import { useAuthStore } from '@/stores'
-import StateIndicator from '@/components/ui/StateIndicator.vue'
+import { storePostNavigationContext } from '@/utils/postNavigation'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import LottiePlayer from '@/components/animation/LottiePlayer.vue'
-import orbitDot from '@/assets/animations/orbit-dot.json'
+import SearchBar from '@/components/business/SearchBar.vue'
+import StateIndicator from '@/components/ui/StateIndicator.vue'
+import Select from '@/components/ui/Select.vue'
 import PostCard from '@/components/business/PostCard.vue'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
-import Select from '@/components/ui/Select.vue'
-import SearchBar from '@/components/business/SearchBar.vue'
+import orbitDot from '@/assets/animations/orbit-dot.json'
 
 const route = useRoute()
 const router = useRouter()
@@ -426,6 +427,7 @@ async function searchAuthors() {
 }
 
 function goToPost(postId: string, thumbnailSrc: string | null) {
+  storePostNavigationContext(results.value, postId, 'search')
   if (thumbnailSrc) {
     sessionStorage.setItem(`post-thumbnail-${postId}`, thumbnailSrc)
   }

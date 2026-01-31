@@ -111,6 +111,7 @@ import { useAuthStore, useToastStore } from '@/stores'
 import { favoriteService, type FavoriteResponse, ApiError, apiClient } from '@/api'
 import { normalizeToThumbnailUrl, getThumbnailSrcset } from '@/utils/mediaOptimizer'
 import { formatDate } from '@/utils/date'
+import { storePostNavigationContext } from '@/utils/postNavigation'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import { useProgressiveRender } from '@/composables/useProgressiveRender'
 import Button from '@/components/ui/Button.vue'
@@ -295,6 +296,8 @@ async function removeFavorite(favoriteId: number) {
 }
 
 function goToPost(postId: string, thumbnailUrl?: string | null) {
+  const navigationItems = favorites.value.map((favorite) => ({ post_id: favorite.post_id }))
+  storePostNavigationContext(navigationItems, postId, 'favorites')
   if (thumbnailUrl) {
     sessionStorage.setItem(
       `post-thumbnail-${postId}`,

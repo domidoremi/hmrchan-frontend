@@ -66,6 +66,7 @@ import { useI18n } from 'vue-i18n'
 import { authorService, type AuthorResponse, type PostListItem, ApiError } from '@/api'
 import { normalizeAvatarUrl } from '@/api/userService'
 import { authorCache } from '@/utils/cache'
+import { storePostNavigationContext } from '@/utils/postNavigation'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import PostCard from '@/components/business/PostCard.vue'
 
@@ -115,6 +116,7 @@ async function fetchAuthor() {
 }
 
 function goToPost(postId: string, thumbnailSrc: string | null) {
+  storePostNavigationContext(posts.value, postId, 'author')
   if (thumbnailSrc) {
     sessionStorage.setItem(`post-thumbnail-${postId}`, thumbnailSrc)
   }
