@@ -168,6 +168,7 @@ import { postService, type PostListItem, ApiError } from '@/api'
 import { normalizeToThumbnailUrl, getThumbnailSrcset } from '@/utils/mediaOptimizer'
 import { normalizeAvatarUrl } from '@/api/userService'
 import { formatRelativeTime } from '@/utils/date'
+import { storePostNavigationContext } from '@/utils/postNavigation'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import Button from '@/components/ui/Button.vue'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
@@ -234,6 +235,8 @@ function formatTime(dateStr: string): string {
 }
 
 function goToPost(postId: string, thumbnailUrl?: string | null) {
+  const navigationItems = activeTab.value === 'hot' ? hotTopics.value : discussions.value
+  storePostNavigationContext(navigationItems, postId, 'community')
   if (thumbnailUrl) {
     sessionStorage.setItem(
       `post-thumbnail-${postId}`,
