@@ -529,7 +529,6 @@ watch(currentPlatform, () => {
   fetchPosts()
 })
 
-
 onMounted(() => {
   // 初始化列数（composable 已经用 calculateColumnCount() 初始化了）
   // 确保 columns 数组与当前列数匹配
@@ -662,7 +661,6 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: var(--spacing-3);
 }
-
 
 .search-trigger {
   display: flex;
@@ -854,5 +852,4 @@ onBeforeUnmount(() => {
 .post-content {
   padding: var(--spacing-3);
 }
-
 </style>

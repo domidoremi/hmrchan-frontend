@@ -26,9 +26,7 @@ function extractPostId(item: PostIdSource): string | null {
 }
 
 function normalizeIds(items: PostIdSource[]): string[] {
-  return items
-    .map((item) => extractPostId(item))
-    .filter((id): id is string => Boolean(id))
+  return items.map((item) => extractPostId(item)).filter((id): id is string => Boolean(id))
 }
 
 export function storePostNavigationContext(

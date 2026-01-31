@@ -15,7 +15,11 @@
               <h2 class="post-preview-heading">{{ displayTitle }}</h2>
               <p v-if="displayAuthor" class="post-preview-author">{{ displayAuthor }}</p>
 
-              <div v-if="displayPlatform || displayPublishedAt || displayDuration || displayMediaCount" class="post-preview-meta" aria-hidden="true">
+              <div
+                v-if="displayPlatform || displayPublishedAt || displayDuration || displayMediaCount"
+                class="post-preview-meta"
+                aria-hidden="true"
+              >
                 <span v-if="platformLabel" class="meta-pill">{{ platformLabel }}</span>
                 <span v-if="displayPublishedAt" class="meta-pill">{{ publishedLabel }}</span>
                 <span v-if="displayDuration" class="meta-pill">{{ durationLabel }}</span>
@@ -83,7 +87,10 @@
                 <p v-else class="post-preview-empty-text">{{ $t('post.noMedia', 'No media') }}</p>
               </div>
 
-              <div v-if="post?.media_files?.length && post.media_files.length > 1" class="post-preview-thumbs">
+              <div
+                v-if="post?.media_files?.length && post.media_files.length > 1"
+                class="post-preview-thumbs"
+              >
                 <button
                   v-for="(m, idx) in post.media_files"
                   :key="m.id"
@@ -92,7 +99,11 @@
                   :class="{ active: idx === activeMediaIndex }"
                   @click="activeMediaIndex = idx"
                 >
-                  <img class="thumb-img" :src="getMediaThumbnailUrl(m.id, 'small')" :alt="post?.title || ''" />
+                  <img
+                    class="thumb-img"
+                    :src="getMediaThumbnailUrl(m.id, 'small')"
+                    :alt="post?.title || ''"
+                  />
                 </button>
               </div>
             </div>
@@ -255,11 +266,13 @@ onBeforeUnmount(() => {
 
 const primaryMedia = computed(() => post.value?.media_files?.[activeMediaIndex.value] ?? null)
 
-const displayTitle = computed(() =>
-  post.value?.title || props.initialPost?.title || t('post.preview', 'Post preview')
+const displayTitle = computed(
+  () => post.value?.title || props.initialPost?.title || t('post.preview', 'Post preview')
 )
 
-const displayAuthor = computed(() => post.value?.author_name || props.initialPost?.author_name || '')
+const displayAuthor = computed(
+  () => post.value?.author_name || props.initialPost?.author_name || ''
+)
 
 const displayContent = computed(() => post.value?.content || props.initialPost?.content || '')
 
@@ -267,11 +280,15 @@ const hasDisplayContent = computed(() => Boolean(displayContent.value?.trim()))
 
 const displayPlatform = computed(() => post.value?.platform || props.initialPost?.platform || '')
 
-const displayPublishedAt = computed(() => post.value?.published_at || props.initialPost?.published_at || '')
+const displayPublishedAt = computed(
+  () => post.value?.published_at || props.initialPost?.published_at || ''
+)
 
 const displayDuration = computed(() => post.value?.duration || props.initialPost?.duration || null)
 
-const displayMediaCount = computed(() => post.value?.media_count || props.initialPost?.media_count || null)
+const displayMediaCount = computed(
+  () => post.value?.media_count || props.initialPost?.media_count || null
+)
 
 const displayViews = computed(() => {
   const v = post.value?.view_count ?? props.initialPost?.view_count
