@@ -43,7 +43,7 @@
   --ui-radius-dialog: 12px;
 
   --ui-backdrop-dim: rgba(0, 0, 0, 0.52);
-  --ui-backdrop-blur: blur(8px) saturate(1.0);
+  --ui-backdrop-blur: blur(8px) saturate(1);
 
   /* Make the switch obvious: tune the global radii for descendants */
   --radius: 0.625rem; /* 10px */
@@ -58,23 +58,23 @@
 }
 
 #app[data-ui-style='material'][data-theme='light'] {
-  --ui-surface-border: rgba(15, 23, 42, 0.10);
+  --ui-surface-border: rgba(15, 23, 42, 0.1);
   --ui-surface-bg: rgba(255, 255, 255, 0.92);
 
   --glass-bg: rgba(255, 255, 255, 0.82);
   --glass-bg-light: rgba(255, 255, 255, 0.62);
   --glass-bg-strong: rgba(255, 255, 255, 0.96);
-  --glass-border: rgba(15, 23, 42, 0.10);
+  --glass-border: rgba(15, 23, 42, 0.1);
   --glass-border-strong: rgba(15, 23, 42, 0.16);
 }
 
 #app[data-ui-style='material'][data-theme='dark'] {
-  --ui-surface-border: rgba(255, 255, 255, 0.10);
+  --ui-surface-border: rgba(255, 255, 255, 0.1);
   --ui-surface-bg: rgba(18, 18, 20, 0.92);
 
   --glass-bg: rgba(18, 18, 20, 0.88);
   --glass-bg-light: rgba(18, 18, 20, 0.72);
   --glass-bg-strong: rgba(18, 18, 20, 0.96);
-  --glass-border: rgba(255, 255, 255, 0.10);
+  --glass-border: rgba(255, 255, 255, 0.1);
   --glass-border-strong: rgba(255, 255, 255, 0.16);
 }

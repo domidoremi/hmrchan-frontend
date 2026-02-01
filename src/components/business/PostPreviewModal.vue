@@ -73,7 +73,6 @@
                   </span>
                 </div>
               </div>
-
             </header>
 
             <div class="post-preview-body">
@@ -650,7 +649,9 @@ function openDetail() {
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.12);
   color: rgba(255, 255, 255, 0.9);
-  transition: background var(--transition-fast), transform var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    transform var(--transition-fast);
   flex: 0 0 auto;
 }
 
@@ -722,7 +723,6 @@ function openDetail() {
   flex: 0 0 auto;
 }
 
-
 .post-preview-btn {
   padding: var(--spacing-2) var(--spacing-3);
   border-radius: var(--radius-lg);
@@ -745,7 +745,6 @@ function openDetail() {
   opacity: 0.55;
   cursor: not-allowed;
 }
-
 
 .post-preview-cta {
   font-weight: var(--font-semibold);
