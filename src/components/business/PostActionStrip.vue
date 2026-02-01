@@ -27,7 +27,9 @@
         <Bookmark :size="20" :fill="isFavorited ? 'currentColor' : 'none'" />
       </AnimatedIcon>
       <span v-if="showLabels">{{ isFavorited ? t('post.unfavorite') : t('post.favorite') }}</span>
-      <span v-else class="sr-only">{{ isFavorited ? t('post.unfavorite') : t('post.favorite') }}</span>
+      <span v-else class="sr-only">{{
+        isFavorited ? t('post.unfavorite') : t('post.favorite')
+      }}</span>
     </button>
 
     <button

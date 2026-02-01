@@ -666,7 +666,9 @@ onMounted(() => {
 
   // Cache CSS variable for navbar height.
   try {
-    const raw = getComputedStyle(document.documentElement).getPropertyValue('--navbar-height').trim()
+    const raw = getComputedStyle(document.documentElement)
+      .getPropertyValue('--navbar-height')
+      .trim()
     if (raw) navbarHeightPx = raw
   } catch {
     // ignore
