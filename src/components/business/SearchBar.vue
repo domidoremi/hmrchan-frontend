@@ -83,7 +83,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { Search, X, History, FileText, User, Tag } from 'lucide-vue-next'
 import { searchService, type SearchSuggestion } from '@/api/searchService'
@@ -99,6 +99,7 @@ function debounce<T extends (...args: Parameters<T>) => void>(fn: T, delay: numb
 }
 
 const router = useRouter()
+const route = useRoute()
 const { t } = useI18n()
 
 const inputRef = ref<HTMLInputElement>()
@@ -222,6 +223,7 @@ function handleBlur() {
 
 function handleClose() {
   query.value = ''
+  void syncRouteQuery('')
   isFocused.value = false
   isExpanded.value = false
   inputRef.value?.blur()
@@ -230,6 +232,7 @@ function handleClose() {
 function clearQuery() {
   query.value = ''
   suggestions.value = []
+  void syncRouteQuery('')
   inputRef.value?.focus()
 }
 
@@ -249,17 +252,31 @@ const fetchSuggestions = debounce(async (q: string) => {
   }
 }, 300)
 
+const syncRouteQuery = debounce(async (term: string) => {
+  // Keep URL in sync with input for better UX and shareable links.
+  // Use replace to avoid polluting browser history on every keystroke.
+  const q = term.trim()
+  try {
+    await router.replace({ name: 'search', query: q ? { q } : {} })
+  } catch {
+    // ignore
+  }
+}, 300)
+
 function handleInput() {
   selectedIndex.value = -1
   fetchSuggestions(query.value)
+  void syncRouteQuery(query.value)
 }
 
-function handleSearch() {
+async function handleSearch() {
   const term = query.value.trim()
   if (!term) return
 
   saveHistory(term)
-  router.push({ name: 'search', query: { q: term } })
+
+  // Create a navigable history entry when user confirms (Enter)
+  await router.push({ name: 'search', query: { q: term } })
   handleClose()
 }
 
@@ -340,7 +357,21 @@ watch(selectedIndex, (index) => {
 
 onMounted(() => {
   loadHistory()
+
+  // Sync initial query from URL
+  const q = route.query['q']
+  query.value = typeof q === 'string' ? q : ''
 })
+
+watch(
+  () => route.query['q'],
+  (q) => {
+    const next = typeof q === 'string' ? q : ''
+    // Avoid fighting user typing.
+    if (isFocused.value) return
+    query.value = next
+  }
+)
 
 defineExpose({
   focus: () => inputRef.value?.focus(),
