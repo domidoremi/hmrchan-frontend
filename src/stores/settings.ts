@@ -2,10 +2,11 @@
  * Settings Store - 用户设置状态管理
  */
 
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { defineStore } from 'pinia'
 
 export type AnimationIntensity = 'none' | 'reduced' | 'normal' | 'full'
+export type UiStyle = 'ios' | 'material'
 
 export interface Settings {
   showHeroSection: boolean
@@ -17,6 +18,8 @@ export interface Settings {
   animationIntensity: AnimationIntensity
   /** 帖子详情视图模式：stream=流媒体，data=数据展示 */
   postDetailViewMode: 'stream' | 'data'
+  /** UI 风格（默认 iOS/SwiftUI；可切换 Material） */
+  uiStyle: UiStyle
 }
 
 const defaultSettings: Settings = {
@@ -27,12 +30,22 @@ const defaultSettings: Settings = {
   defaultSort: 'newest',
   animationIntensity: 'normal',
   postDetailViewMode: 'stream',
+  uiStyle: 'ios',
 }
 
 export const useSettingsStore = defineStore(
   'settings',
   () => {
     const settings = ref<Settings>({ ...defaultSettings })
+
+    // Backward-compatible normalization for persisted state (e.g. older versions missing new keys)
+    watch(
+      settings,
+      (next) => {
+        if (!next.uiStyle) next.uiStyle = 'ios'
+      },
+      { immediate: true, deep: true }
+    )
 
     /**
      * 计算实际的动效时长倍数
@@ -88,6 +101,10 @@ export const useSettingsStore = defineStore(
       }
     }
 
+    function setUiStyle(style: UiStyle) {
+      settings.value.uiStyle = style
+    }
+
     function resetSettings() {
       settings.value = { ...defaultSettings }
     }
@@ -100,6 +117,7 @@ export const useSettingsStore = defineStore(
       updateSetting,
       toggleSetting,
       setAnimationIntensity,
+      setUiStyle,
       resetSettings,
     }
   },
