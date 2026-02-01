@@ -1,10 +1,34 @@
 <template>
   <div class="post-detail-page">
-    <section ref="stageRef" class="post-stage">
-      <button type="button" class="back-btn" @click="goBack">
+    <button type="button" class="post-back-fab" :aria-label="$t('common.back')" @click="goBack">
+      <svg class="post-back-fab__ring" viewBox="0 0 36 36" aria-hidden="true">
+        <circle
+          class="post-back-fab__ring-bg"
+          cx="18"
+          cy="18"
+          r="16"
+          fill="none"
+          stroke-width="2"
+        />
+        <circle
+          class="post-back-fab__ring-indicator"
+          cx="18"
+          cy="18"
+          r="16"
+          fill="none"
+          stroke-width="2.5"
+          :stroke-dasharray="backCircumference"
+          :stroke-dashoffset="backDashOffset"
+          transform="rotate(-90 18 18)"
+        />
+      </svg>
+      <span class="post-back-fab__icon">
         <AnimatedIcon name="explore" :fallback-icon="ArrowLeft" size="md" />
-        {{ $t('common.back') }}
-      </button>
+      </span>
+      <span class="post-back-fab__pulse" />
+    </button>
+
+    <section ref="stageRef" class="post-stage">
 
       <StateIndicator v-if="error" variant="error" :description="error" @action="fetchPost" />
 
@@ -160,29 +184,7 @@
               </button>
             </div>
 
-            <div class="post-actions">
-              <button
-                type="button"
-                class="action-btn"
-                :class="{ active: isFavorited }"
-                @click="toggleFavorite"
-                :disabled="!isAuthenticated || isFavoriteLoading"
-              >
-                <AnimatedIcon
-                  name="heart"
-                  :fallback-icon="Bookmark"
-                  size="md"
-                  :active="isFavorited"
-                >
-                  <Bookmark :size="20" :fill="isFavorited ? 'currentColor' : 'none'" />
-                </AnimatedIcon>
-                <span>{{ isFavorited ? $t('post.unfavorite') : $t('post.favorite') }}</span>
-              </button>
-              <button type="button" class="action-btn" @click="sharePost">
-                <AnimatedIcon name="explore" :fallback-icon="Share2" size="md" />
-                <span>{{ $t('post.share') }}</span>
-              </button>
-            </div>
+            <PostActionStrip :post-id="postId" :subtitles-available="subtitlesAvailable" />
           </aside>
         </div>
       </template>
@@ -221,6 +223,23 @@
       </Transition>
     </section>
 
+    <div class="post-topbar" role="navigation" :aria-label="$t('common.back')">
+      <button type="button" class="post-topbar__back" :aria-label="$t('common.back')" @click="goBack">
+        <ArrowLeft :size="18" />
+      </button>
+      <div class="post-topbar__title">
+        {{ post?.title || $t('post.preview', 'Post') }}
+      </div>
+      <div class="post-topbar__actions">
+        <PostActionStrip
+          v-if="postId"
+          :post-id="postId"
+          variant="compact"
+          :subtitles-available="subtitlesAvailable"
+        />
+      </div>
+    </div>
+
     <section class="post-comments container">
       <CommentList :post-id="postId" />
     </section>
@@ -240,12 +259,14 @@
 import { ref, computed, onMounted, watch, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
-import { ArrowLeft, Bookmark, Share2, ChevronLeft, ChevronRight } from 'lucide-vue-next'
-import { useAuthStore, useToastStore, useSettingsStore } from '@/stores'
+import { throttleRAF } from '@/utils/performance'
+import { ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-vue-next'
+import { useAuthStore, useSettingsStore } from '@/stores'
 import { useI18n } from 'vue-i18n'
 import { usePageTitle } from '@/composables/usePageTitle'
 import { CommentList } from '@/components/comment'
-import { postService, favoriteService, type PostDetailResponse, ApiError } from '@/api'
+import { postService, type PostDetailResponse, ApiError } from '@/api'
+import PostActionStrip from '@/components/business/PostActionStrip.vue'
 import {
   getMediaStreamUrl,
   getMediaThumbnailUrl,
@@ -272,7 +293,6 @@ const router = useRouter()
 const route = useRoute()
 const { t } = useI18n()
 const authStore = useAuthStore()
-const toastStore = useToastStore()
 const settingsStore = useSettingsStore()
 
 const { isAuthenticated } = storeToRefs(authStore)
@@ -297,9 +317,6 @@ const { data: cachedPost, load: loadCachedPost } = useCachedPost<PostDetailRespo
   }
 )
 
-const isFavorited = ref(false)
-const favoriteId = ref<number | null>(null)
-const isFavoriteLoading = ref(false)
 
 const activeMediaIndex = ref(0)
 const mediaTransitionName = ref('media-fade')
@@ -312,6 +329,22 @@ const isAutoPlayPaused = ref(false)
 
 const stageRef = ref<HTMLElement | null>(null)
 const navigationContext = ref<PostNavigationContext | null>(null)
+
+// Back FAB progress (matches BackToTop visual language)
+const backScrollProgress = ref(0)
+const backRingRadius = 16
+const backCircumference = 2 * Math.PI * backRingRadius
+
+const backDashOffset = computed(() => {
+  return backCircumference * (1 - backScrollProgress.value)
+})
+
+const handleScroll = throttleRAF(() => {
+  const scrollTop = window.scrollY || document.documentElement.scrollTop
+  const docHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight
+  backScrollProgress.value = docHeight > 0 ? Math.min(scrollTop / docHeight, 1) : 0
+})
+
 const isSwitchingPost = ref(false)
 const wheelAccumulator = ref(0)
 const touchStartX = ref<number | null>(null)
@@ -364,6 +397,11 @@ function onTextModalKeydown(e: KeyboardEvent) {
 const activeMedia = computed(() => {
   const list = post.value?.media_files ?? []
   return list[activeMediaIndex.value] ?? null
+})
+
+const subtitlesAvailable = computed(() => {
+  const m = activeMedia.value
+  return Boolean(m && m.file_type === 'video' && (m.subtitles?.length ?? 0) > 0)
 })
 
 const hasMultipleMedia = computed(() => (post.value?.media_files?.length ?? 0) > 1)
@@ -714,22 +752,6 @@ function openLightbox(index?: number) {
   isLightboxOpen.value = true
 }
 
-async function fetchFavoriteStatus() {
-  if (!isAuthenticated.value) {
-    isFavorited.value = false
-    favoriteId.value = null
-    return
-  }
-
-  try {
-    const res = await favoriteService.check(postId.value)
-    isFavorited.value = res.is_favorited
-    favoriteId.value = res.favorite_id
-  } catch {
-    isFavorited.value = false
-    favoriteId.value = null
-  }
-}
 
 async function fetchPost() {
   if (isLoading.value) return
@@ -758,10 +780,7 @@ async function fetchPost() {
 
       isLoading.value = false
 
-      void Promise.allSettled([
-        fetchFavoriteStatus(),
-        trackPostView(postId.value, isAuthenticated.value),
-      ])
+      void Promise.allSettled([trackPostView(postId.value, isAuthenticated.value)])
 
       loadCachedPost(postId.value).catch(() => {})
       return
@@ -778,10 +797,7 @@ async function fetchPost() {
     // 更新页面标题
     updateTitle(post.value.title)
 
-    void Promise.allSettled([
-      fetchFavoriteStatus(),
-      trackPostView(postId.value, isAuthenticated.value),
-    ])
+    void Promise.allSettled([trackPostView(postId.value, isAuthenticated.value)])
   } catch (err) {
     if (err instanceof ApiError) {
       error.value = err.message
@@ -793,56 +809,14 @@ async function fetchPost() {
   }
 }
 
-async function toggleFavorite() {
-  if (!isAuthenticated.value) {
-    toastStore.warning(t('comment.loginRequired'))
-    return
-  }
-
-  if (isFavoriteLoading.value) return
-  isFavoriteLoading.value = true
-
-  try {
-    if (isFavorited.value) {
-      if (favoriteId.value !== null) {
-        await favoriteService.remove(favoriteId.value)
-      }
-      isFavorited.value = false
-      favoriteId.value = null
-      toastStore.success(t('post.unfavorite', '已取消收藏'))
-      return
-    }
-
-    const created = await favoriteService.create(postId.value)
-    isFavorited.value = true
-    favoriteId.value = created.id
-    toastStore.success(t('post.favorite'))
-  } catch (err) {
-    if (err instanceof ApiError) {
-      // 502 网关错误特殊处理
-      if (err.message.includes('502') || err.message.includes('网关')) {
-        toastStore.error(t('post.favoriteServerError', '收藏服务暂时不可用，请稍后重试'))
-      } else {
-        toastStore.error(err.message)
-      }
-    } else {
-      toastStore.error(t('common.error'))
-    }
-  } finally {
-    isFavoriteLoading.value = false
-  }
-}
-
-function sharePost() {
-  const url = window.location.href
-  navigator.clipboard.writeText(url)
-  toastStore.success(t('comment.shareSuccess'))
-}
 
 onMounted(() => {
   syncNavigationContext()
   prefetchAdjacentPosts()
   fetchPost()
+
+  handleScroll()
+  window.addEventListener('scroll', handleScroll, { passive: true })
 
   if (stageRef.value) {
     stageRef.value.addEventListener('wheel', handleWheel, { passive: false })
@@ -893,6 +867,8 @@ watch(isAuthenticated, () => {
 
 // 清理 sessionStorage
 onUnmounted(() => {
+  window.removeEventListener('scroll', handleScroll)
+
   if (stageRef.value) {
     stageRef.value.removeEventListener('wheel', handleWheel)
     stageRef.value.removeEventListener('touchstart', handleTouchStart)
@@ -942,8 +918,8 @@ onUnmounted(() => {
 
 .post-stage {
   position: relative;
-  height: calc(100svh - var(--navbar-height));
   height: calc(100vh - var(--navbar-height));
+  height: calc(100svh - var(--navbar-height));
   display: flex;
   align-items: stretch;
   justify-content: center;
@@ -952,28 +928,181 @@ onUnmounted(() => {
 
 .post-comments {
   padding: var(--spacing-6) 0 var(--spacing-8);
+  /* Improve long-form readability (comments / text) */
+  max-width: min(var(--container-max), 900px);
 }
 
-.back-btn {
-  position: absolute;
-  top: var(--spacing-4);
-  left: var(--spacing-4);
-  z-index: 10;
+.post-topbar {
+  position: sticky;
+  top: var(--navbar-visible-height, var(--navbar-height));
+  z-index: var(--z-sticky);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  padding: var(--spacing-2) var(--spacing-4);
+  background: var(--glass-bg-strong);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.post-topbar__back {
+  width: var(--ui-control-min-size, 44px);
+  height: var(--ui-control-min-size, 44px);
   display: inline-flex;
   align-items: center;
-  gap: var(--spacing-2);
-  padding: var(--spacing-2) var(--spacing-3);
+  justify-content: center;
   border-radius: var(--radius-lg);
-  color: rgba(255, 255, 255, 0.9);
-  background: rgba(20, 20, 20, 0.45);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(10px);
-  font-size: var(--text-sm);
-  transition: all var(--transition-fast);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.92);
+  transition: transform var(--transition-fast), background var(--transition-fast);
 }
 
-.back-btn:hover {
-  background: rgba(20, 20, 20, 0.75);
+.post-topbar__back:hover {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.post-topbar__title {
+  flex: 1;
+  min-width: 0;
+  text-align: center;
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  color: rgba(255, 255, 255, 0.92);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.post-topbar__actions {
+  display: flex;
+  justify-content: flex-end;
+  min-width: 0;
+}
+
+
+.post-back-fab {
+  position: fixed;
+  left: var(--spacing-6);
+  bottom: calc(var(--spacing-6) + env(safe-area-inset-bottom, 0px));
+  z-index: var(--z-fixed);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-full);
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  color: var(--color-foreground);
+  box-shadow: var(--glass-shadow);
+  cursor: pointer;
+  transition-property: transform, background-color, box-shadow, border-color;
+  transition-duration: 200ms;
+  transition-timing-function: var(--ease-out);
+  transform: translate3d(0, 0, 0);
+  will-change: transform;
+}
+
+.post-back-fab::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  background: var(--gradient-primary);
+  opacity: 0;
+  z-index: -1;
+  transition: opacity 200ms var(--ease-out);
+}
+
+.post-back-fab:hover {
+  transform: translate3d(0, -4px, 0);
+  border-color: var(--color-primary);
+  box-shadow:
+    var(--glass-shadow-lg),
+    0 0 20px rgba(var(--color-primary-rgb), 0.2);
+}
+
+.post-back-fab:hover::before {
+  opacity: 0.1;
+}
+
+.post-back-fab:active {
+  transform: translate3d(0, -2px, 0) scale(0.95);
+  transition-duration: 100ms;
+}
+
+.post-back-fab:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.3);
+}
+
+.post-back-fab__ring {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.post-back-fab__ring-bg {
+  stroke: var(--glass-border);
+  opacity: 0.5;
+}
+
+.post-back-fab__ring-indicator {
+  stroke: var(--color-primary);
+  stroke-linecap: round;
+  transition: stroke-dashoffset 80ms linear;
+  filter: drop-shadow(0 0 4px rgba(var(--color-primary-rgb), 0.4));
+}
+
+.post-back-fab__icon {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 200ms var(--ease-spring);
+}
+
+.post-back-fab:hover .post-back-fab__icon {
+  transform: translateY(-2px);
+}
+
+.post-back-fab__pulse {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--color-primary);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.post-back-fab:active .post-back-fab__pulse {
+  animation: post-back-pulse-out 400ms var(--ease-out);
+}
+
+@keyframes post-back-pulse-out {
+  0% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.6);
+  }
+}
+
+@media (max-width: 768px) {
+  /* Avoid overlap with the bottom mobile nav (72px) */
+  .post-back-fab {
+    bottom: calc(var(--spacing-6) + 72px + env(safe-area-inset-bottom, 0px));
+    left: var(--spacing-4);
+  }
 }
 
 .post-shell--skeleton .media-skeleton {
@@ -983,8 +1112,9 @@ onUnmounted(() => {
 }
 
 .post-shell {
-  width: 100%;
+  width: min(100%, var(--container-max));
   height: 100%;
+  margin-inline: auto;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   transition: transform 180ms var(--ease-out);
@@ -998,9 +1128,20 @@ onUnmounted(() => {
   transform: translateX(16px);
 }
 
-@media (min-width: 900px) {
+@media (min-width: 768px) {
   .post-shell {
-    grid-template-columns: minmax(0, 1fr) clamp(320px, 30vw, 440px);
+    grid-template-columns: minmax(0, 1fr) clamp(300px, 34vw, 420px);
+  }
+
+  .post-panel {
+    border-left: 1px solid rgba(255, 255, 255, 0.08);
+    border-top: 0;
+  }
+}
+
+@media (min-width: 1100px) {
+  .post-shell {
+    grid-template-columns: minmax(0, 1fr) clamp(340px, 30vw, 460px);
   }
 }
 
@@ -1214,6 +1355,21 @@ onUnmounted(() => {
   }
 }
 
+/* Mid-size screens (landscape phones / tablets): avoid the "mobile-only" stacked layout */
+@media (min-width: 768px) and (max-width: 899px) {
+  .post-shell {
+    grid-template-columns: minmax(0, 1fr) clamp(280px, 36vw, 380px);
+    grid-template-rows: 1fr;
+  }
+
+  .post-panel {
+    border-left: 1px solid rgba(255, 255, 255, 0.08);
+    border-top: 0;
+    padding: var(--spacing-5);
+  }
+}
+
+
 .post-header {
   display: flex;
   flex-direction: column;
@@ -1390,34 +1546,6 @@ onUnmounted(() => {
   text-decoration: underline;
 }
 
-.post-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--spacing-2);
-}
-
-.action-btn {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-2);
-  padding: var(--spacing-2) var(--spacing-4);
-  border-radius: var(--radius-lg);
-  font-size: var(--text-sm);
-  color: rgba(255, 255, 255, 0.85);
-  background: rgba(10, 10, 14, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  transition: all var(--transition-fast);
-}
-
-.action-btn:hover:not(:disabled) {
-  background: rgba(15, 15, 20, 0.8);
-}
-
-.action-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
 .post-nav-hint {
   position: absolute;
   left: 50%;
@@ -1469,11 +1597,6 @@ onUnmounted(() => {
     opacity: 0;
     transform: translateX(-50%);
   }
-}
-
-.action-btn.active {
-  color: #fff;
-  border-color: rgba(255, 255, 255, 0.45);
 }
 
 /* Media Transitions */
