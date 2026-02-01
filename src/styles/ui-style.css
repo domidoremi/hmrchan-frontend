@@ -1,0 +1,80 @@
+/**
+ * UI Style Tokens
+ *
+ * Goal:
+ * - Default look: iOS / SwiftUI-like (soft corners, glass + blur, subtle borders)
+ * - Reserve an interface for alternative design languages (e.g. Google Material)
+ *
+ * Usage:
+ * - App root sets: #app[data-ui-style="ios" | "material"]
+ * - Components should consume --ui-* variables (instead of hard-coding) where practical.
+ */
+
+/* Defaults (iOS / SwiftUI-like) */
+#app {
+  --ui-style: ios;
+
+  /* Touch targets */
+  --ui-control-min-size: 44px;
+
+  /* Corner radii */
+  --ui-radius-sheet: 18px;
+  --ui-radius-dialog: 16px;
+
+  /* Backdrop / scrim */
+  --ui-backdrop-dim: rgba(0, 0, 0, 0.45);
+  --ui-backdrop-blur: blur(18px) saturate(1.05);
+
+  /* Surfaces */
+  --ui-surface-border: rgba(255, 255, 255, 0.12);
+  --ui-surface-bg: rgba(10, 10, 14, 0.86);
+}
+
+#app[data-ui-style='ios'] {
+  --ui-style: ios;
+}
+
+/* Material-ish defaults (kept intentionally conservative; can be refined later) */
+#app[data-ui-style='material'] {
+  --ui-style: material;
+
+  /* Material tends to use smaller radii + clearer elevation */
+  --ui-radius-sheet: 20px;
+  --ui-radius-dialog: 12px;
+
+  --ui-backdrop-dim: rgba(0, 0, 0, 0.52);
+  --ui-backdrop-blur: blur(8px) saturate(1.0);
+
+  /* Make the switch obvious: tune the global radii for descendants */
+  --radius: 0.625rem; /* 10px */
+  --radius-lg: 0.625rem;
+  --radius-xl: 0.875rem;
+  --radius-2xl: 1.125rem;
+
+  /* Material: reduce blur, increase elevation cues */
+  --glass-blur: blur(10px);
+  --glass-shadow: 0 10px 30px rgba(0, 0, 0, 0.28);
+  --glass-shadow-lg: 0 18px 60px rgba(0, 0, 0, 0.34);
+}
+
+#app[data-ui-style='material'][data-theme='light'] {
+  --ui-surface-border: rgba(15, 23, 42, 0.10);
+  --ui-surface-bg: rgba(255, 255, 255, 0.92);
+
+  --glass-bg: rgba(255, 255, 255, 0.82);
+  --glass-bg-light: rgba(255, 255, 255, 0.62);
+  --glass-bg-strong: rgba(255, 255, 255, 0.96);
+  --glass-border: rgba(15, 23, 42, 0.10);
+  --glass-border-strong: rgba(15, 23, 42, 0.16);
+}
+
+#app[data-ui-style='material'][data-theme='dark'] {
+  --ui-surface-border: rgba(255, 255, 255, 0.10);
+  --ui-surface-bg: rgba(18, 18, 20, 0.92);
+
+  --glass-bg: rgba(18, 18, 20, 0.88);
+  --glass-bg-light: rgba(18, 18, 20, 0.72);
+  --glass-bg-strong: rgba(18, 18, 20, 0.96);
+  --glass-border: rgba(255, 255, 255, 0.10);
+  --glass-border-strong: rgba(255, 255, 255, 0.16);
+}
