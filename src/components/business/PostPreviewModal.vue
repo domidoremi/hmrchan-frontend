@@ -10,126 +10,169 @@
         @click.self="close"
       >
         <div ref="panelRef" class="post-preview-panel" tabindex="-1">
-          <header class="post-preview-header">
-            <div class="post-preview-title">
-              <h2 class="post-preview-heading">{{ displayTitle }}</h2>
-              <p v-if="displayAuthor" class="post-preview-author">{{ displayAuthor }}</p>
+          <div
+            ref="sheetRef"
+            class="post-preview-sheet"
+            :class="{ 'is-dragging': isSheetDragging }"
+            :style="sheetDragStyle"
+          >
+            <button
+              type="button"
+              class="post-preview-handle"
+              :aria-label="$t('common.close')"
+              @click="onHandleClick"
+              @pointerdown="onHandlePointerDown"
+              @pointermove="onHandlePointerMove"
+              @pointerup="onHandlePointerUp"
+              @pointercancel="onHandlePointerCancel"
+            >
+              <span class="post-preview-handle-bar" aria-hidden="true" />
+            </button>
 
-              <div
-                v-if="displayPlatform || displayPublishedAt || displayDuration || displayMediaCount"
-                class="post-preview-meta"
-                aria-hidden="true"
-              >
-                <span v-if="platformLabel" class="meta-pill">{{ platformLabel }}</span>
-                <span v-if="displayPublishedAt" class="meta-pill">{{ publishedLabel }}</span>
-                <span v-if="displayDuration" class="meta-pill">{{ durationLabel }}</span>
-                <span v-else-if="displayMediaCount && displayMediaCount > 1" class="meta-pill">
-                  {{ displayMediaCount }}
-                </span>
-                <span v-if="displayViews !== null" class="meta-pill">
-                  {{ displayViews }} {{ $t('post.views') }}
-                </span>
-                <span v-if="displayLikes !== null" class="meta-pill">
-                  {{ displayLikes }} {{ $t('post.likes') }}
-                </span>
-              </div>
-            </div>
-
-            <div class="post-preview-actions">
+            <header class="post-preview-header">
               <button
                 type="button"
-                class="post-preview-btn post-preview-btn--primary"
-                :disabled="!postId"
-                @click="openDetail"
+                class="post-preview-close-icon"
+                :aria-label="$t('common.close')"
+                @click="close"
               >
-                {{ $t('post.viewDetail', 'View detail') }}
+                <X :size="18" />
               </button>
-              <button type="button" class="post-preview-btn" @click="close">
-                {{ $t('common.close') }}
-              </button>
-            </div>
-          </header>
 
-          <div class="post-preview-body">
-            <div class="post-preview-media">
-              <div v-if="primaryMedia" class="post-preview-media-frame">
-                <img
-                  v-if="primaryMedia.file_type === 'image'"
-                  class="post-preview-media-item"
-                  :src="imageSrc"
-                  :alt="post?.title || ''"
-                  loading="eager"
-                  decoding="async"
-                />
+              <div class="post-preview-title">
+                <h2 class="post-preview-heading">{{ displayTitle }}</h2>
+                <p v-if="displayAuthor" class="post-preview-author">{{ displayAuthor }}</p>
 
-                <VideoPlayer
-                  v-else-if="primaryMedia.file_type === 'video'"
-                  class="post-preview-media-item"
-                  :src="videoSrc"
-                  :poster="videoPoster"
-                  :subtitles="primaryMedia.subtitles ?? null"
-                  playsinline
-                />
-              </div>
-              <div v-else-if="initialMediaSrc" class="post-preview-media-frame">
-                <img
-                  class="post-preview-media-item"
-                  :src="initialMediaSrc"
-                  :alt="displayTitle || ''"
-                  loading="eager"
-                  decoding="async"
-                />
-              </div>
-              <div v-else class="post-preview-media-empty">
-                <div v-if="isLoading" class="post-preview-loading" aria-label="loading">
-                  <span class="spinner" />
-                </div>
-                <p v-else class="post-preview-empty-text">{{ $t('post.noMedia', 'No media') }}</p>
-              </div>
-
-              <div
-                v-if="post?.media_files?.length && post.media_files.length > 1"
-                class="post-preview-thumbs"
-              >
-                <button
-                  v-for="(m, idx) in post.media_files"
-                  :key="m.id"
-                  type="button"
-                  class="thumb"
-                  :class="{ active: idx === activeMediaIndex }"
-                  @click="activeMediaIndex = idx"
+                <div
+                  v-if="
+                    platformLabel ||
+                    displayPublishedAt ||
+                    displayDuration ||
+                    (displayMediaCount && displayMediaCount > 1) ||
+                    displayViews !== null ||
+                    displayLikes !== null ||
+                    subtitlesAvailable
+                  "
+                  class="post-preview-meta"
+                  aria-hidden="true"
                 >
-                  <img
-                    class="thumb-img"
-                    :src="getMediaThumbnailUrl(m.id, 'small')"
-                    :alt="post?.title || ''"
-                  />
+                  <span v-if="platformLabel" class="meta-pill">{{ platformLabel }}</span>
+                  <span v-if="displayPublishedAt" class="meta-pill">{{ publishedLabel }}</span>
+                  <span v-if="displayDuration" class="meta-pill">{{ durationLabel }}</span>
+                  <span v-else-if="displayMediaCount && displayMediaCount > 1" class="meta-pill">
+                    {{ displayMediaCount }}
+                  </span>
+                  <span v-if="displayViews !== null" class="meta-pill">
+                    {{ displayViews }} {{ $t('post.views') }}
+                  </span>
+                  <span v-if="displayLikes !== null" class="meta-pill">
+                    {{ displayLikes }} {{ $t('post.likes') }}
+                  </span>
+                  <span v-if="subtitlesAvailable" class="meta-pill">
+                    {{ $t('post.subtitlesAvailable', 'Subtitles available') }}
+                  </span>
+                </div>
+              </div>
+
+            </header>
+
+            <div class="post-preview-body">
+              <div class="post-preview-scroll">
+                <div class="post-preview-media">
+                  <div v-if="primaryMedia" class="post-preview-media-frame">
+                    <img
+                      v-if="primaryMedia.file_type === 'image'"
+                      class="post-preview-media-item"
+                      :src="imageSrc"
+                      :alt="post?.title || ''"
+                      loading="eager"
+                      decoding="async"
+                    />
+
+                    <VideoPlayer
+                      v-else-if="primaryMedia.file_type === 'video'"
+                      class="post-preview-media-item"
+                      :src="videoSrc"
+                      :poster="videoPoster"
+                      :subtitles="primaryMedia.subtitles ?? null"
+                      playsinline
+                    />
+                  </div>
+                  <div v-else-if="initialMediaSrc" class="post-preview-media-frame">
+                    <img
+                      class="post-preview-media-item"
+                      :src="initialMediaSrc"
+                      :alt="displayTitle || ''"
+                      loading="eager"
+                      decoding="async"
+                    />
+                  </div>
+                  <div v-else class="post-preview-media-empty">
+                    <div v-if="isLoading" class="post-preview-loading" aria-label="loading">
+                      <span class="spinner" />
+                    </div>
+                    <p v-else class="post-preview-empty-text">
+                      {{ $t('post.noMedia', 'No media') }}
+                    </p>
+                  </div>
+
+                  <div
+                    v-if="post?.media_files?.length && post.media_files.length > 1"
+                    class="post-preview-thumbs"
+                  >
+                    <button
+                      v-for="(m, idx) in post.media_files"
+                      :key="m.id"
+                      type="button"
+                      class="thumb"
+                      :class="{ active: idx === activeMediaIndex }"
+                      @click="activeMediaIndex = idx"
+                    >
+                      <img
+                        class="thumb-img"
+                        :src="getMediaThumbnailUrl(m.id, 'small')"
+                        :alt="post?.title || ''"
+                      />
+                    </button>
+                  </div>
+                </div>
+
+                <div class="post-preview-content">
+                  <div v-if="loadError" class="post-preview-error">
+                    <p class="post-preview-error-text">{{ loadError }}</p>
+                    <button type="button" class="glass-button" @click="reload">
+                      {{ $t('common.retry') }}
+                    </button>
+                  </div>
+
+                  <p v-else-if="hasDisplayContent" class="post-preview-text">
+                    {{ displayContent }}
+                  </p>
+
+                  <div v-else-if="isLoading" class="post-preview-skeleton" aria-hidden="true">
+                    <div class="skeleton" style="height: 18px; width: 75%" />
+                    <div class="skeleton" style="height: 18px; width: 92%" />
+                    <div class="skeleton" style="height: 18px; width: 88%" />
+                    <div class="skeleton" style="height: 18px; width: 80%" />
+                  </div>
+
+                  <p v-else class="post-preview-text post-preview-text--muted">
+                    {{ displayTitle }}
+                  </p>
+                </div>
+              </div>
+
+              <div class="post-preview-action-bar">
+                <PostActionStrip v-if="postId" :post-id="postId" variant="compact" />
+                <button
+                  type="button"
+                  class="glass-button glass-button--primary post-preview-cta"
+                  :disabled="!postId"
+                  @click="openDetail"
+                >
+                  {{ $t('post.viewDetail', 'View detail') }}
                 </button>
               </div>
-            </div>
-
-            <div class="post-preview-content">
-              <div v-if="loadError" class="post-preview-error">
-                <p class="post-preview-error-text">{{ loadError }}</p>
-                <button type="button" class="post-preview-btn" @click="reload">
-                  {{ $t('common.retry') }}
-                </button>
-              </div>
-
-              <p v-else-if="hasDisplayContent" class="post-preview-text">
-                {{ displayContent }}
-              </p>
-
-              <div v-else-if="isLoading" class="post-preview-skeleton" aria-hidden="true">
-                <div class="skeleton" style="height: 18px; width: 75%" />
-                <div class="skeleton" style="height: 18px; width: 92%" />
-                <div class="skeleton" style="height: 18px; width: 88%" />
-                <div class="skeleton" style="height: 18px; width: 80%" />
-              </div>
-
-              <p v-else class="post-preview-text post-preview-text--muted">
-                {{ $t('common.noDescription', 'No description') }}
-              </p>
             </div>
           </div>
         </div>
@@ -141,10 +184,13 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { X } from 'lucide-vue-next'
 import { postService, type PostDetailResponse, type PostListItem } from '@/api'
 import { useCachedPost } from '@/composables/useCachedPosts'
+import { prefetchPostDetail } from '@/utils/prefetch'
 import { getMediaStreamUrl, getMediaThumbnailUrl } from '@/utils/mediaOptimizer'
 import { formatRelativeTime } from '@/utils/date'
+import PostActionStrip from '@/components/business/PostActionStrip.vue'
 import VideoPlayer from '@/components/ui/VideoPlayer.vue'
 
 const props = withDefaults(
@@ -172,6 +218,83 @@ const emit = defineEmits<{
 }>()
 
 const panelRef = ref<HTMLElement | null>(null)
+const sheetRef = ref<HTMLElement | null>(null)
+
+const sheetDragY = ref(0)
+const isSheetDragging = ref(false)
+
+const sheetDragStyle = computed<Record<string, string>>(() => {
+  return { '--sheet-drag-y': `${sheetDragY.value}px` }
+})
+
+let activePointerId: number | null = null
+let dragStartY = 0
+let didHandleDrag = false
+
+function onHandlePointerDown(e: PointerEvent) {
+  if (e.pointerType === 'mouse' && e.button !== 0) return
+  if (!props.isOpen) return
+
+  activePointerId = e.pointerId
+  dragStartY = e.clientY
+  didHandleDrag = false
+  isSheetDragging.value = true
+
+  try {
+    ;(e.currentTarget as HTMLElement | null)?.setPointerCapture(e.pointerId)
+  } catch {
+    // ignore
+  }
+}
+
+function onHandlePointerMove(e: PointerEvent) {
+  if (!isSheetDragging.value) return
+  if (activePointerId === null || e.pointerId !== activePointerId) return
+
+  const dy = e.clientY - dragStartY
+  if (dy <= 0) {
+    sheetDragY.value = 0
+    return
+  }
+
+  sheetDragY.value = dy
+  if (dy > 4) didHandleDrag = true
+}
+
+function finishHandleDrag(shouldClose: boolean) {
+  isSheetDragging.value = false
+  activePointerId = null
+
+  if (shouldClose) {
+    close()
+    return
+  }
+
+  // Snap back
+  sheetDragY.value = 0
+}
+
+function onHandlePointerUp(e: PointerEvent) {
+  if (!isSheetDragging.value) return
+  if (activePointerId === null || e.pointerId !== activePointerId) return
+
+  const height = sheetRef.value?.getBoundingClientRect().height ?? 600
+  const threshold = Math.min(180, Math.max(90, Math.round(height * 0.22)))
+  const shouldClose = sheetDragY.value > threshold
+
+  finishHandleDrag(shouldClose)
+}
+
+function onHandlePointerCancel() {
+  if (!isSheetDragging.value) return
+  finishHandleDrag(false)
+}
+
+function onHandleClick() {
+  // Only treat as click-to-close when user didn't drag.
+  if (didHandleDrag) return
+  close()
+}
 
 let previousBodyOverflow: string | null = null
 
@@ -201,11 +324,27 @@ const activeMediaIndex = ref(0)
 const isLoading = ref(false)
 const loadError = ref<string | null>(null)
 
+let loadingTimer: ReturnType<typeof setTimeout> | null = null
+let reloadSeq = 0
+
 async function reload() {
   const id = props.postId
   if (!props.isOpen || !id) return
 
-  isLoading.value = true
+  const seq = ++reloadSeq
+
+  // Avoid flashing loading UI on cache hits.
+  if (loadingTimer) {
+    clearTimeout(loadingTimer)
+    loadingTimer = null
+  }
+  isLoading.value = false
+
+  loadingTimer = setTimeout(() => {
+    if (seq !== reloadSeq) return
+    isLoading.value = true
+  }, 220)
+
   loadError.value = null
 
   try {
@@ -215,6 +354,10 @@ async function reload() {
     post.value = null
     loadError.value = e instanceof Error ? e.message : t('common.error')
   } finally {
+    if (loadingTimer) {
+      clearTimeout(loadingTimer)
+      loadingTimer = null
+    }
     isLoading.value = false
   }
 }
@@ -239,7 +382,12 @@ watch(
       return
     }
 
+    // Load detail (cache-aware) for the preview itself.
     void reload()
+
+    // Warm post comments and other detail-only data for users that click "View detail".
+    // This is especially helpful on mobile where hover prefetch doesn't run.
+    void prefetchPostDetail(id)
   },
   { immediate: true }
 )
@@ -249,9 +397,26 @@ watch(
   (open) => {
     if (typeof window === 'undefined') return
     if (open) {
+      // reset drag state each time we open
+      sheetDragY.value = 0
+      isSheetDragging.value = false
+      activePointerId = null
+
       lockBodyScroll()
       window.addEventListener('keydown', onKeydown)
     } else {
+      // Cancel any delayed loading UI.
+      if (loadingTimer) {
+        clearTimeout(loadingTimer)
+        loadingTimer = null
+      }
+      reloadSeq += 1
+      isLoading.value = false
+
+      sheetDragY.value = 0
+      isSheetDragging.value = false
+      activePointerId = null
+
       unlockBodyScroll()
       window.removeEventListener('keydown', onKeydown)
     }
@@ -265,6 +430,11 @@ onBeforeUnmount(() => {
 })
 
 const primaryMedia = computed(() => post.value?.media_files?.[activeMediaIndex.value] ?? null)
+
+const subtitlesAvailable = computed(() => {
+  const m = primaryMedia.value
+  return Boolean(m && m.file_type === 'video' && (m.subtitles?.length ?? 0) > 0)
+})
 
 const displayTitle = computed(
   () => post.value?.title || props.initialPost?.title || t('post.preview', 'Post preview')
@@ -375,9 +545,9 @@ function openDetail() {
   align-items: center;
   justify-content: center;
   padding: var(--spacing-4);
-  background: rgba(0, 0, 0, 0.45);
-  backdrop-filter: blur(14px) saturate(1.1);
-  -webkit-backdrop-filter: blur(14px) saturate(1.1);
+  background: var(--ui-backdrop-dim, rgba(0, 0, 0, 0.45));
+  backdrop-filter: var(--ui-backdrop-blur, blur(14px) saturate(1.1));
+  -webkit-backdrop-filter: var(--ui-backdrop-blur, blur(14px) saturate(1.1));
   will-change: opacity;
 }
 
@@ -405,7 +575,7 @@ function openDetail() {
 .post-preview-enter-from .post-preview-panel,
 .post-preview-leave-to .post-preview-panel {
   opacity: 0;
-  transform: translate3d(0, 18px, 0) scale(0.98);
+  transform: translate3d(0, 28px, 0) scale(0.98);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -431,23 +601,81 @@ function openDetail() {
 .post-preview-panel {
   width: min(1100px, calc(100vw - 2 * var(--spacing-4)));
   height: min(760px, calc(100vh - 2 * var(--spacing-4)));
-  border-radius: var(--radius-xl);
+  height: min(760px, calc(100svh - 2 * var(--spacing-4)));
+  border-radius: var(--ui-radius-dialog, var(--radius-xl));
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(10, 10, 14, 0.86);
+  border: 1px solid var(--ui-surface-border, rgba(255, 255, 255, 0.12));
+  background: var(--ui-surface-bg, rgba(10, 10, 14, 0.86));
   backdrop-filter: blur(14px);
   display: flex;
   flex-direction: column;
   outline: none;
 }
 
-.post-preview-header {
-  padding: var(--spacing-4);
+.post-preview-sheet {
+  height: 100%;
+  min-height: 0;
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
+  flex-direction: column;
+  transform: translate3d(0, var(--sheet-drag-y, 0px), 0);
+  transition: transform 200ms var(--ease-out);
+  will-change: transform;
+}
+
+.post-preview-sheet.is-dragging {
+  transition: none;
+}
+
+.post-preview-header {
+  position: relative;
+  padding: var(--spacing-4);
+  padding-right: calc(var(--spacing-4) + var(--ui-control-min-size, 44px));
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
   gap: var(--spacing-3);
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.post-preview-close-icon {
+  position: absolute;
+  top: var(--spacing-3);
+  right: var(--spacing-3);
+  width: var(--ui-control-min-size, 44px);
+  height: var(--ui-control-min-size, 44px);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-lg);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.9);
+  transition: background var(--transition-fast), transform var(--transition-fast);
+  flex: 0 0 auto;
+}
+
+.post-preview-close-icon:hover {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.post-preview-close-icon:active {
+  transform: scale(0.98);
+}
+
+.post-preview-handle {
+  display: none;
+}
+
+.post-preview-handle-bar {
+  width: 40px;
+  height: 5px;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.post-preview-title {
+  min-width: 0;
 }
 
 .post-preview-heading {
@@ -455,6 +683,11 @@ function openDetail() {
   font-size: var(--text-lg);
   line-height: 1.2;
   color: rgba(255, 255, 255, 0.95);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .post-preview-author {
@@ -466,9 +699,15 @@ function openDetail() {
 
 .post-preview-meta {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: var(--spacing-2);
   margin-top: var(--spacing-2);
+  overflow: hidden;
+  white-space: nowrap;
+
+  /* soften cut-off without introducing scrollbars */
+  -webkit-mask-image: linear-gradient(90deg, #000 0%, #000 88%, transparent 100%);
+  mask-image: linear-gradient(90deg, #000 0%, #000 88%, transparent 100%);
 }
 
 .meta-pill {
@@ -480,12 +719,9 @@ function openDetail() {
   color: rgba(255, 255, 255, 0.86);
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.12);
+  flex: 0 0 auto;
 }
 
-.post-preview-actions {
-  display: flex;
-  gap: var(--spacing-2);
-}
 
 .post-preview-btn {
   padding: var(--spacing-2) var(--spacing-3);
@@ -493,6 +729,7 @@ function openDetail() {
   border: 1px solid rgba(255, 255, 255, 0.12);
   background: rgba(255, 255, 255, 0.06);
   color: rgba(255, 255, 255, 0.9);
+  white-space: nowrap;
   transition:
     transform var(--transition-fast),
     background var(--transition-fast),
@@ -509,6 +746,11 @@ function openDetail() {
   cursor: not-allowed;
 }
 
+
+.post-preview-cta {
+  font-weight: var(--font-semibold);
+}
+
 .post-preview-btn--primary {
   background: var(--gradient-primary);
   border-color: transparent;
@@ -518,8 +760,8 @@ function openDetail() {
 .post-preview-body {
   flex: 1;
   min-height: 0;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
+  display: flex;
+  flex-direction: column;
 }
 
 .post-preview-loading {
@@ -529,9 +771,48 @@ function openDetail() {
 }
 
 @media (min-width: 900px) {
-  .post-preview-body {
+  .post-preview-scroll {
     grid-template-columns: minmax(0, 1fr) 420px;
   }
+}
+
+.post-preview-scroll {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.post-preview-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.post-preview-action-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-3);
+  padding: var(--spacing-3) var(--spacing-4);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(10, 10, 14, 0.7);
+  backdrop-filter: blur(14px);
+}
+
+.post-preview-action-bar .glass-button {
+  min-height: var(--ui-control-min-size, 44px);
+}
+
+.post-preview-action-bar .post-action-strip {
+  flex: 1;
+  min-width: 0;
+}
+
+.post-preview-action-bar .post-preview-cta {
+  flex: 0 0 auto;
 }
 
 .post-preview-media {
@@ -549,12 +830,13 @@ function openDetail() {
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
 }
 
 .post-preview-media-item {
   width: 100%;
   height: 100%;
-  max-width: 900px;
+  max-width: 100%;
   max-height: 100%;
   object-fit: contain;
   border-radius: var(--radius-xl);
@@ -616,13 +898,6 @@ function openDetail() {
   min-width: 0;
   padding: var(--spacing-4);
   border-left: 1px solid rgba(255, 255, 255, 0.08);
-  overflow: auto;
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE/Edge legacy */
-}
-
-.post-preview-content::-webkit-scrollbar {
-  display: none;
 }
 
 .post-preview-skeleton {
@@ -640,6 +915,67 @@ function openDetail() {
   .post-preview-content {
     border-left: 0;
     border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+}
+
+/* iOS-like mobile sheet */
+@media (max-width: 640px) {
+  .post-preview-overlay {
+    align-items: flex-end;
+    justify-content: center;
+    padding: 0;
+  }
+
+  .post-preview-panel {
+    width: 100vw;
+    height: 92vh;
+    height: 92svh;
+    border-radius: var(--ui-radius-sheet, 18px) var(--ui-radius-sheet, 18px) 0 0;
+  }
+
+  .post-preview-handle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding: 10px 0 6px;
+    cursor: pointer;
+    touch-action: none; /* handle the drag ourselves */
+  }
+
+  .post-preview-header {
+    grid-template-columns: 1fr;
+    padding-top: var(--spacing-3);
+  }
+  .post-preview-scroll {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .post-preview-media {
+    padding: var(--spacing-3);
+    flex: 0 0 auto;
+  }
+
+  .post-preview-media-frame {
+    height: min(44svh, 420px);
+    flex: 0 0 auto;
+  }
+
+  .post-preview-content {
+    flex: 1;
+    min-height: 0;
+    padding-bottom: calc(var(--spacing-6) + env(safe-area-inset-bottom, 0px));
+  }
+
+  .post-preview-action-bar {
+    flex-direction: column;
+    align-items: stretch;
+    padding-bottom: calc(var(--spacing-3) + env(safe-area-inset-bottom, 0px));
+  }
+
+  .post-preview-action-bar .post-preview-cta {
+    width: 100%;
   }
 }
 
