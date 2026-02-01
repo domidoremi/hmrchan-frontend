@@ -1,5 +1,5 @@
 # Cloudflare Pages 配置
-# 参考：https://developers.cloudflare.com/pages/configuration/wrangler-configuration/
+# 参考：https://developers.cloudflare.com/pages/functions/wrangler-configuration/
 
 name = "hmrchan-frontend"
 compatibility_date = "2024-12-09"
@@ -9,9 +9,11 @@ pages_build_output_dir = "./dist"
 # 构建命令需要在 Cloudflare Dashboard > Pages > Settings > Builds & deployments 中配置
 # 推荐构建命令：bun run build
 
-# 构建时环境变量（Build environment variables）
-# 这些变量在构建过程中可用，会被 Vite 注入到前端代码中
+# ============================================================================
+# Production 环境配置
+# ============================================================================
 [env.production.vars]
+# 构建时环境变量（会被 Vite 注入到前端代码中）
 VITE_API_BASE_URL = "https://api.momichan.xyz"
 VITE_API_ENDPOINT = "/api/v1"
 VITE_API_URL = "https://api.momichan.xyz/api"
@@ -20,8 +22,14 @@ VITE_APP_DESCRIPTION = "Image and video content community"
 VITE_ENABLE_DEBUG = "false"
 VITE_ENABLE_DEVTOOLS = "false"
 
-# Preview 环境变量（可选）
+# Functions 运行时变量（用于 functions/ 目录中的边缘函数）
+API_BASE_URL = "https://api.momichan.xyz"
+
+# ============================================================================
+# Preview 环境配置
+# ============================================================================
 [env.preview.vars]
+# 构建时环境变量（会被 Vite 注入到前端代码中）
 VITE_API_BASE_URL = "https://api.momichan.xyz"
 VITE_API_ENDPOINT = "/api/v1"
 VITE_API_URL = "https://api.momichan.xyz/api"
@@ -30,12 +38,12 @@ VITE_APP_DESCRIPTION = "Image and video content community"
 VITE_ENABLE_DEBUG = "true"
 VITE_ENABLE_DEVTOOLS = "true"
 
-# Functions 运行时变量（用于 API 代理）
-# 这些变量在 Cloudflare Pages Functions 中可用
-[vars]
+# Functions 运行时变量（用于 functions/ 目录中的边缘函数）
 API_BASE_URL = "https://api.momichan.xyz"
 
+# ============================================================================
 # 机密变量（Secrets）
-# 敏感信息如 API 密钥应该通过 Dashboard 添加为 Secret
+# ============================================================================
+# 敏感信息如 API 密钥应该通过 Cloudflare Dashboard 添加为 Secret
 # 例如：VITE_TURNSTILE_SITE_KEY
 # 在 Dashboard > Settings > Environment variables > Add variable > Type: Secret
