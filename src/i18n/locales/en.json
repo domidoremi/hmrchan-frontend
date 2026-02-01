@@ -265,7 +265,8 @@
     "viewDetail": "View detail",
     "noMedia": "No media",
     "content": "Content",
-    "readFullText": "Read full text"
+    "readFullText": "Read full text",
+    "subtitlesAvailable": "Subtitles available"
   },
   "author": {
     "postCount": "{count} posts"

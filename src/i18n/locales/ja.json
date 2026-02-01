@@ -265,7 +265,8 @@
     "viewDetail": "詳細を見る",
     "noMedia": "メディアがありません",
     "content": "本文",
-    "readFullText": "全文を見る"
+    "readFullText": "全文を見る",
+    "subtitlesAvailable": "字幕あり"
   },
   "author": {
     "postCount": "{count} 件の投稿"

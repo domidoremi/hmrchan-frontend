@@ -265,7 +265,8 @@
     "viewDetail": "查看详情",
     "noMedia": "暂无媒体",
     "content": "内容",
-    "readFullText": "阅读全文"
+    "readFullText": "阅读全文",
+    "subtitlesAvailable": "字幕可用"
   },
   "author": {
     "postCount": "{count} 个作品"

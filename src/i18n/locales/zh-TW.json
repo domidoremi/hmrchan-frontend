@@ -265,7 +265,8 @@
     "viewDetail": "查看詳情",
     "noMedia": "暫無媒體",
     "content": "內容",
-    "readFullText": "閱讀全文"
+    "readFullText": "閱讀全文",
+    "subtitlesAvailable": "字幕可用"
   },
   "author": {
     "postCount": "{count} 個作品"
