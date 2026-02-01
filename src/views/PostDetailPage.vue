@@ -29,7 +29,6 @@
     </button>
 
     <section ref="stageRef" class="post-stage">
-
       <StateIndicator v-if="error" variant="error" :description="error" @action="fetchPost" />
 
       <div v-else-if="isLoading" class="post-shell post-shell--skeleton">
@@ -224,7 +223,12 @@
     </section>
 
     <div class="post-topbar" role="navigation" :aria-label="$t('common.back')">
-      <button type="button" class="post-topbar__back" :aria-label="$t('common.back')" @click="goBack">
+      <button
+        type="button"
+        class="post-topbar__back"
+        :aria-label="$t('common.back')"
+        @click="goBack"
+      >
         <ArrowLeft :size="18" />
       </button>
       <div class="post-topbar__title">
@@ -316,7 +320,6 @@ const { data: cachedPost, load: loadCachedPost } = useCachedPost<PostDetailRespo
     },
   }
 )
-
 
 const activeMediaIndex = ref(0)
 const mediaTransitionName = ref('media-fade')
@@ -752,7 +755,6 @@ function openLightbox(index?: number) {
   isLightboxOpen.value = true
 }
 
-
 async function fetchPost() {
   if (isLoading.value) return
 
@@ -808,7 +810,6 @@ async function fetchPost() {
     isLoading.value = false
   }
 }
-
 
 onMounted(() => {
   syncNavigationContext()
@@ -956,7 +957,9 @@ onUnmounted(() => {
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.12);
   color: rgba(255, 255, 255, 0.92);
-  transition: transform var(--transition-fast), background var(--transition-fast);
+  transition:
+    transform var(--transition-fast),
+    background var(--transition-fast);
 }
 
 .post-topbar__back:hover {
@@ -981,7 +984,6 @@ onUnmounted(() => {
   justify-content: flex-end;
   min-width: 0;
 }
-
 
 .post-back-fab {
   position: fixed;
@@ -1368,7 +1370,6 @@ onUnmounted(() => {
     padding: var(--spacing-5);
   }
 }
-
 
 .post-header {
   display: flex;
