@@ -137,3 +137,34 @@ export interface CommentReport {
   reason: ReportReason
   description?: string
 }
+
+// ========== Media & Subtitles ==========
+
+export interface SubtitleTrack {
+  language: string
+  format?: string | null
+  label?: string | null
+  url?: string | null
+  subtitle_url?: string | null
+  file_path?: string | null
+  subtitle_path?: string | null
+  path?: string | null
+}
+
+export interface SubtitleDebugInfo {
+  hasSubtitles: boolean
+  subtitleCount: number
+  languages: string[]
+  formats: string[]
+  urls: string[]
+  rawData: unknown
+}
+
+export interface SubtitleTestResult {
+  success: boolean
+  url: string
+  contentType: string | null
+  preview?: string
+  error?: string
+  statusCode?: number
+}
