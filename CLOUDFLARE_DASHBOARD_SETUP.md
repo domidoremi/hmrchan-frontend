@@ -2,7 +2,8 @@
 
 ## 🚨 重要提示
 
-Cloudflare Pages 的构建配置**必须在 Dashboard 中设置**，不能在 `wrangler.toml` 中配置。
+1. **构建配置**必须在 Dashboard 中设置（不能在 `wrangler.toml` 中配置）
+2. **环境变量**应在 `wrangler.toml` 中管理（Dashboard 仅用于机密）
 
 ## 配置步骤
 
@@ -34,37 +35,56 @@ Cloudflare Pages 的构建配置**必须在 Dashboard 中设置**，不能在 `w
 - **Build command**: 使用 `bun run build` 因为项目已升级到 Vite 8.0.0-beta.10
 - 如果遇到问题，可以改用 `bash scripts/cloudflare-build.sh`（会自动处理 Bun/npm 兼容）
 
-### 4. 配置环境变量
+### 4. 环境变量配置
 
-进入 **Environment variables** 部分：
+#### ✅ 推荐方式：通过 wrangler.toml
 
-#### Production 环境变量
+环境变量已在 `wrangler.toml` 中配置，**无需在 Dashboard 中重复添加**。
 
-点击 **Add variable** 添加以下变量：
+查看 `wrangler.toml` 文件：
 
-| 变量名                    | 值                                  | 说明                         |
-| ------------------------- | ----------------------------------- | ---------------------------- |
-| `VITE_API_BASE_URL`       | `https://api.momichan.xyz`          | API 基础 URL                 |
-| `VITE_API_ENDPOINT`       | `/api/v1`                           | API 端点路径                 |
-| `VITE_API_URL`            | `https://api.momichan.xyz/api`      | 完整 API URL                 |
-| `VITE_APP_NAME`           | `MomiChan`                          | 应用名称                     |
-| `VITE_APP_DESCRIPTION`    | `Image and video content community` | 应用描述                     |
-| `VITE_ENABLE_DEBUG`       | `false`                             | 调试模式（生产环境关闭）     |
-| `VITE_ENABLE_DEVTOOLS`    | `false`                             | Vue DevTools（生产环境关闭） |
-| `VITE_TURNSTILE_SITE_KEY` | `<your-site-key>`                   | Cloudflare Turnstile 密钥    |
+```toml
+# 生产环境变量
+[env.production.vars]
+VITE_API_BASE_URL = "https://api.momichan.xyz"
+VITE_API_ENDPOINT = "/api/v1"
+VITE_API_URL = "https://api.momichan.xyz/api"
+VITE_APP_NAME = "MomiChan"
+VITE_APP_DESCRIPTION = "Image and video content community"
+VITE_ENABLE_DEBUG = "false"
+VITE_ENABLE_DEVTOOLS = "false"
 
-#### Preview 环境变量（可选）
+# Preview 环境变量
+[env.preview.vars]
+VITE_ENABLE_DEBUG = "true"
+VITE_ENABLE_DEVTOOLS = "true"
+# ... 其他变量
+```
 
-可以为 Preview 部署配置不同的值，例如：
+#### 🔐 Dashboard 配置（仅用于机密）
 
-- `VITE_ENABLE_DEBUG=true`
-- `VITE_ENABLE_DEVTOOLS=true`
+**仅用于敏感信息（Secrets）**，例如 API 密钥：
+
+1. 进入 **Environment variables** 部分
+2. 点击 **Add variable**
+3. 选择 **Type: Secret**
+4. 添加敏感变量：
+
+| 变量名                    | 类型   | 说明                      |
+| ------------------------- | ------ | ------------------------- |
+| `VITE_TURNSTILE_SITE_KEY` | Secret | Cloudflare Turnstile 密钥 |
+
+**重要提示**：
+
+- Dashboard 会显示："此项目的环境变量在通过 wrangler.toml 进行管理"
+- 这是正常的，普通变量应该在 `wrangler.toml` 中配置
+- 只有敏感信息才需要在 Dashboard 中添加为 Secret
 
 ### 5. 保存并重新部署
 
 1. 点击 **Save** 保存配置
-2. 进入 **Deployments** 标签
-3. 点击 **Retry deployment** 重新部署最新的 commit
+2. 如果修改了 `wrangler.toml`，提交并推送到 GitHub
+3. Cloudflare Pages 会自动触发新的部署
 
 ## 验证部署
 
@@ -105,9 +125,10 @@ npm error Could not resolve dependency
 
 **解决方案**：
 
-1. 确认所有变量名以 `VITE_` 开头
-2. 检查变量值是否正确
-3. 重新部署以应用新的环境变量
+1. 检查 `wrangler.toml` 中的环境变量配置
+2. 确认所有变量名以 `VITE_` 开头
+3. 提交并推送 `wrangler.toml` 更改
+4. 等待自动部署完成
 
 #### 问题 3：构建超时
 
@@ -135,13 +156,13 @@ npm error Could not resolve dependency
 
 - **Branch**: `main`
 - 自动部署到生产环境
-- 使用 Production 环境变量
+- 使用 `[env.production.vars]` 中的环境变量
 
 ### Preview 分支
 
 - **Branch**: 所有其他分支
 - 自动部署到预览环境
-- 使用 Preview 环境变量（如果配置）
+- 使用 `[env.preview.vars]` 中的环境变量
 
 ## 监控和告警
 
@@ -160,7 +181,7 @@ npm error Could not resolve dependency
 
 ## 相关文档
 
-- `wrangler.toml` - Wrangler 配置文件（仅用于 Functions）
+- `wrangler.toml` - 环境变量和 Functions 配置
 - `CLOUDFLARE_BUILD_COMMAND.md` - 构建命令说明
 - `docs/CLOUDFLARE_DEPLOYMENT.md` - 详细部署指南
 - `DEPLOYMENT_FIX_SUMMARY.md` - 部署问题修复总结
