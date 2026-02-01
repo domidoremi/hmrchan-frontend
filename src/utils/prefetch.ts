@@ -18,6 +18,7 @@ const prefetchedRoutes = new Set<string>()
 
 // 网络状况检测
 function getNetworkQuality(): 'slow' | 'fast' {
+  if (typeof navigator === 'undefined') return 'fast'
   if ('connection' in navigator) {
     const conn = (navigator as Navigator & { connection?: { effectiveType?: string } }).connection
     const effectiveType = conn?.effectiveType
@@ -28,6 +29,7 @@ function getNetworkQuality(): 'slow' | 'fast' {
 
 // 检查是否在省电模式
 function isSavingData(): boolean {
+  if (typeof navigator === 'undefined') return false
   if ('connection' in navigator) {
     const conn = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection
     return conn?.saveData ?? false
@@ -43,6 +45,8 @@ export async function prefetchRoute(
   importFn: () => Promise<unknown>,
   options: PrefetchOptions = {}
 ): Promise<void> {
+  if (typeof window === 'undefined') return
+
   // 避免重复预加载
   if (prefetchedRoutes.has(routeName)) {
     return
@@ -112,6 +116,8 @@ export async function prefetchRoutes(
  * 预加载关键路由（首页加载后立即执行）
  */
 export function prefetchCriticalRoutes(): void {
+  if (typeof window === 'undefined' || typeof document === 'undefined') return
+
   // 在页面加载完成后预加载
   if (document.readyState === 'complete') {
     executePrefetch()
@@ -148,6 +154,8 @@ function executePrefetch(): void {
  * 当用户鼠标悬停在链接上时预加载目标页面
  */
 export function setupHoverPrefetch(): void {
+  if (typeof document === 'undefined') return
+
   let hoverTimer: number | null = null
   const HOVER_DELAY = 100 // 延迟 100ms 后预加载，避免快速划过时触发
 
@@ -252,6 +260,8 @@ async function prefetchData(
   importFn: () => Promise<unknown>,
   options: { skipOnSlowNetwork?: boolean } = {}
 ): Promise<void> {
+  if (typeof window === 'undefined') return
+
   const { skipOnSlowNetwork = true } = options
 
   // 省电模式下不预加载
@@ -331,11 +341,23 @@ export async function prefetchPostDetail(postId: string): Promise<void> {
   }
 
   await prefetchData(async () => {
-    const [{ postService }, { commentService }] = await Promise.all([
+    const [{ postService }, { commentService }, { postCache }] = await Promise.all([
       import('@/api/postService'),
       import('@/api/commentService'),
+      import('@/utils/cache'),
     ])
 
-    await Promise.all([postService.getPost(postId), commentService.getPostComments(postId, 1, 20)])
+    // Avoid duplicate post requests if the entity is already cached (e.g. preview modal just loaded it).
+    const cached = await postCache.getPostEntity(postId)
+
+    const postPromise = cached
+      ? Promise.resolve(cached)
+      : postService.getPost(postId).then((p) => {
+          // Write through to app-level caches so later reads are instant.
+          void postCache.setPostEntity(postId, p)
+          return p
+        })
+
+    await Promise.all([postPromise, commentService.getPostComments(postId, 1, 20)])
   })
 }
