@@ -108,22 +108,97 @@ Vite 8.0.0-beta.10 是测试版本，可能存在以下问题：
 
 或者等待 Vite 8 正式版发布后再升级。
 
+## 后续修复：环境变量继承问题
+
+### 问题发现
+
+根据 [Cloudflare 官方文档](https://developers.cloudflare.com/pages/functions/wrangler-configuration/)，`vars` 是 **non-inheritable key**：
+
+> Non-inheritable keys are configurable at the top-level, but, if any one non-inheritable key is overridden for any environment, **all non-inheritable keys must also be specified in the environment configuration and overridden**.
+
+原配置中：
+
+```toml
+[env.production.vars]
+VITE_API_BASE_URL = "..."
+# ... 其他变量
+
+[vars]
+API_BASE_URL = "https://api.momichan.xyz"
+```
+
+**问题**：当 `[env.production.vars]` 覆盖了 `vars` 时，顶层的 `[vars]` 中的 `API_BASE_URL` **不会被继承**到 production 环境，导致 Functions 运行时缺少该变量。
+
+### 解决方案
+
+将 `API_BASE_URL` 添加到每个环境配置中：
+
+```toml
+[env.production.vars]
+# 构建时环境变量
+VITE_API_BASE_URL = "https://api.momichan.xyz"
+# ... 其他 VITE_ 变量
+
+# Functions 运行时变量
+API_BASE_URL = "https://api.momichan.xyz"
+
+[env.preview.vars]
+# 构建时环境变量
+VITE_API_BASE_URL = "https://api.momichan.xyz"
+# ... 其他 VITE_ 变量
+
+# Functions 运行时变量
+API_BASE_URL = "https://api.momichan.xyz"
+```
+
+移除顶层的 `[vars]` 配置，避免混淆。
+
+### 提交信息
+
+```
+fix: 修复 wrangler.toml 环境变量继承问题
+
+- 将 API_BASE_URL 添加到每个环境配置中（production 和 preview）
+- 根据 Cloudflare 官方文档，vars 是 non-inheritable key，必须在每个环境中明确定义
+- 移除顶层 [vars] 配置，避免混淆
+- 更新文档链接为正确的 Functions 配置页面
+- 优化注释结构，使配置更清晰
+```
+
 ## 相关文档
 
 - `docs/CLOUDFLARE_DEPLOYMENT.md` - 详细部署指南
+- `CLOUDFLARE_DASHBOARD_SETUP.md` - Dashboard 配置指南
+- `CLOUDFLARE_BUILD_COMMAND.md` - 构建命令说明
 - `scripts/cloudflare-build.sh` - 构建脚本
 - `.npmrc` - npm 配置
+- `wrangler.toml` - Cloudflare Pages 配置
 
-## 提交信息
+## 提交历史
+
+### 第一次修复（2026-02-01）
 
 ```
-fix: 修复 Cloudflare Pages 部署失败问题
+fix: 升级 Vite 到 8.0.0-beta.10 解决部署冲突
 
 - 升级 Vite 到 8.0.0-beta.10 以匹配 vite-plugin-vue-devtools 要求
 - 移除 package.json 中的 overrides 配置
 - 添加 .npmrc 配置文件作为保险措施
 - 添加 .node-version 文件指定 Node.js 22.12.0 版本
 - 创建 cloudflare-build.sh 构建脚本
-- 更新 wrangler.toml 使用新的构建脚本
+- 从 wrangler.toml 移除 [build] 配置（不支持）
+- 在 wrangler.toml 中添加环境变量配置
 - 添加详细的 Cloudflare Pages 部署文档
+```
+
+### 第二次修复（2026-02-01）
+
+```
+fix: 修复 wrangler.toml 环境变量继承问题
+
+- 将 API_BASE_URL 添加到每个环境配置中（production 和 preview）
+- 根据 Cloudflare 官方文档，vars 是 non-inheritable key，必须在每个环境中明确定义
+- 移除顶层 [vars] 配置，避免混淆
+- 更新文档链接为正确的 Functions 配置页面
+- 优化注释结构，使配置更清晰
 ```
