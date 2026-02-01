@@ -5,9 +5,10 @@ name = "hmrchan-frontend"
 compatibility_date = "2024-12-09"
 pages_build_output_dir = "./dist"
 
-# 构建配置
-[build]
-command = "bash scripts/cloudflare-build.sh"
+# 注意：Cloudflare Pages 不支持在 wrangler.toml 中配置 [build]
+# 构建命令需要在 Cloudflare Dashboard > Pages > Settings > Builds & deployments 中配置
+# 推荐构建命令：bun run build
+# 或使用：bash scripts/cloudflare-build.sh（如果需要兼容 npm）
 
 # 注意：以下变量已在 Cloudflare Dashboard 中配置，无需在此重复
 # - VITE_API_BASE_URL
