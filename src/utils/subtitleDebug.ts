@@ -43,12 +43,7 @@ function isSubtitleTrackLike(obj: unknown): obj is SubtitleTrack {
  */
 function extractSubtitleUrl(track: SubtitleTrack): string | null {
   return (
-    track.url ||
-    track.subtitle_url ||
-    track.file_path ||
-    track.subtitle_path ||
-    track.path ||
-    null
+    track.url || track.subtitle_url || track.file_path || track.subtitle_path || track.path || null
   )
 }
 

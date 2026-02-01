@@ -48,9 +48,25 @@ npm error peer overridden vite@"8.0.0-beta.10" from vite-plugin-vue-devtools@8.0
    command = "bash scripts/cloudflare-build.sh"
    ```
 
-#### 方案 2：降级 vite-plugin-vue-devtools（备选）
+#### 方案 2：移除 package.json overrides（已实施）
 
-如果方案 1 不工作，可以降级插件版本：
+如果遇到依赖冲突，可以移除 `package.json` 中的 `overrides` 配置：
+
+```json
+{
+  "overrides": {
+    "vite-plugin-vue-devtools": {
+      "vite": "8.0.0-beta.10"
+    }
+  }
+}
+```
+
+这个配置已从项目中移除，因为它会导致 npm 安装时的 peer dependency 冲突。
+
+#### 方案 3：降级 vite-plugin-vue-devtools（备选）
+
+如果方案 1 和 2 都不工作，可以降级插件版本：
 
 ```json
 {
@@ -60,7 +76,7 @@ npm error peer overridden vite@"8.0.0-beta.10" from vite-plugin-vue-devtools@8.0
 }
 ```
 
-#### 方案 3：升级到 Vite 8（未来）
+#### 方案 4：升级到 Vite 8（未来）
 
 等待 Vite 8 正式发布后升级：
 
