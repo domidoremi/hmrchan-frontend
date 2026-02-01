@@ -325,6 +325,17 @@ const isNavbarHidden = ref(false)
 let lastScrollY = 0
 const scrollThreshold = 100
 
+let navbarHeightPx = '64px'
+
+function syncNavbarVisibleHeight() {
+  if (typeof document === 'undefined') return
+  // When navbar is hidden via translateY(-100%), expose 0px so fixed headers can pin to top.
+  document.documentElement.style.setProperty(
+    '--navbar-visible-height',
+    isNavbarHidden.value ? '0px' : navbarHeightPx
+  )
+}
+
 // 使用统一的用户头像 composable，确保与其他组件同步
 const { avatarUrl: userAvatar } = useUserAvatar()
 
@@ -633,6 +644,7 @@ const handleScroll = throttleRAF(() => {
     isNavbarHidden.value = false
   }
 
+  syncNavbarVisibleHeight()
   lastScrollY = currentScrollY
 })
 
@@ -651,6 +663,18 @@ const handleResize = throttleRAF(() => {
 
 onMounted(() => {
   updateIsMobile()
+
+  // Cache CSS variable for navbar height.
+  try {
+    const raw = getComputedStyle(document.documentElement).getPropertyValue('--navbar-height').trim()
+    if (raw) navbarHeightPx = raw
+  } catch {
+    // ignore
+  }
+
+  // Initialize visible height.
+  syncNavbarVisibleHeight()
+
   // 初始化导航指示器
   nextTick(() => {
     requestAnimationFrame(updateNavIndicator)
@@ -671,6 +695,12 @@ onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
   window.removeEventListener('resize', handleResize)
   window.removeEventListener('scroll', handleScroll)
+
+  // Reset to default on unmount.
+  if (typeof document !== 'undefined') {
+    document.documentElement.style.setProperty('--navbar-visible-height', '')
+  }
+
   // 清理：确保解锁滚动
   unlockBodyScroll()
 })
