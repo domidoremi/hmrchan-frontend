@@ -6,6 +6,7 @@
 
 @import './tokens.css';
 @import './design-tokens.css';
+@import './ui-style.css';
 @import './base.css';
 @import './glass.css';
 @import './animations.css';

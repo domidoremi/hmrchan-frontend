@@ -50,6 +50,7 @@
 
   /* 布局 */
   --navbar-height: 64px;
+  --navbar-visible-height: var(--navbar-height);
   --container-max: 1400px;
 
   /* 字体 */
