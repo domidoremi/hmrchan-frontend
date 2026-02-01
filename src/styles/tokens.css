@@ -232,6 +232,8 @@
 
   /* ========== Layout ========== */
   --navbar-height: 64px;
+  /* Runtime-updated by AppNavbar: 0px when hidden, navbar-height when visible */
+  --navbar-visible-height: var(--navbar-height);
   --footer-height: 200px;
   --sidebar-width: 280px;
   --container-max: 1400px;
