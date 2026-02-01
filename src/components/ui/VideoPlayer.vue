@@ -528,8 +528,8 @@ const activeSubtitleLabel = computed(() => {
 })
 
 // Helper to get API base URL consistently
-const apiBaseUrl = computed(() =>
-  import.meta.env.VITE_API_ENDPOINT || `${import.meta.env.VITE_API_URL || '/api'}/v1`
+const apiBaseUrl = computed(
+  () => import.meta.env.VITE_API_ENDPOINT || `${import.meta.env.VITE_API_URL || '/api'}/v1`
 )
 
 function extractMediaIdFromSrc(src: string): string | null {

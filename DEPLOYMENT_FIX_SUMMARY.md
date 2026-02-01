@@ -13,13 +13,32 @@ npm error peer overridden vite@"8.0.0-beta.10" from vite-plugin-vue-devtools@8.0
 
 1. 项目使用 **Bun** 作为包管理器
 2. Cloudflare Pages 默认使用 **npm**
-3. `vite-plugin-vue-devtools@8.0.5` 期望 `vite@8.0.0-beta.10`
-4. 项目实际使用 `vite@7.3.1`
-5. npm 的 peer dependency 检查比 Bun 更严格，导致安装失败
+3. `package.json` 中存在版本冲突：
+   - `devDependencies` 中定义 `vite: "7.3.1"`
+   - `overrides` 中强制 `vite-plugin-vue-devtools` 使用 `vite: "8.0.0-beta.10"`
+4. Bun 能处理这种 override，但 npm 会报错
+5. npm 的 peer dependency 检查比 Bun 更严格
 
 ## 解决方案
 
-### 1. 添加 `.npmrc` 配置
+### 方案 1：统一 Vite 版本（已实施）
+
+直接升级到 Vite 8.0.0-beta.10，移除 overrides 配置：
+
+```json
+{
+  "devDependencies": {
+    "vite": "8.0.0-beta.10",
+    "vite-plugin-vue-devtools": "^8.0.5"
+  }
+}
+```
+
+这样 Bun 和 npm 都能正常工作，不需要任何 workaround。
+
+### 方案 2：使用 legacy-peer-deps（备选）
+
+如果不想升级 Vite，可以添加 `.npmrc`：
 
 ```
 legacy-peer-deps=true
@@ -27,32 +46,10 @@ legacy-peer-deps=true
 
 允许 npm 忽略 peer dependency 冲突。
 
-### 2. 添加 `.node-version` 文件
-
-```
-22.12.0
-```
-
-明确指定 Node.js 版本，确保构建环境一致。
-
-### 3. 创建智能构建脚本
-
-`scripts/cloudflare-build.sh`：
-
-- 优先检测并使用 Bun（如果可用）
-- 回退到 npm + `--legacy-peer-deps`
-- 确保在任何环境下都能成功构建
-
-### 4. 更新 Wrangler 配置
-
-```toml
-[build]
-command = "bash scripts/cloudflare-build.sh"
-```
-
 ## 文件变更
 
-- ✅ `.npmrc` - npm 配置（新增）
+- ✅ `package.json` - 升级 Vite 到 8.0.0-beta.10，移除 overrides
+- ✅ `.npmrc` - npm 配置（保险措施，新增）
 - ✅ `.node-version` - Node.js 版本（新增）
 - ✅ `scripts/cloudflare-build.sh` - 构建脚本（新增）
 - ✅ `wrangler.toml` - 更新构建命令
@@ -63,12 +60,15 @@ command = "bash scripts/cloudflare-build.sh"
 ### 本地测试
 
 ```bash
-# 测试构建脚本
-bash scripts/cloudflare-build.sh
+# 清理依赖
+rm -rf node_modules bun.lockb package-lock.json
 
-# 测试 npm 构建
-rm -rf node_modules package-lock.json
-npm install --legacy-peer-deps
+# 使用 Bun 安装（推荐）
+bun install
+bun run build
+
+# 或使用 npm 安装
+npm install
 npm run build
 ```
 
@@ -80,43 +80,33 @@ npm run build
 
 ## 预期结果
 
-✅ npm 安装成功（使用 legacy-peer-deps）
+✅ Bun 和 npm 都能正常安装依赖
 ✅ 构建成功生成 `dist/` 目录
 ✅ 部署到 Cloudflare Pages
 ✅ 网站正常访问
 
-## 备选方案
+## Vite 8 Beta 注意事项
 
-如果当前方案不工作，可以考虑：
+Vite 8.0.0-beta.10 是测试版本，可能存在以下问题：
 
-### 方案 A：降级 vite-plugin-vue-devtools
+1. **API 变更**：部分 API 可能在正式版中改变
+2. **插件兼容性**：某些插件可能尚未完全支持
+3. **稳定性**：可能存在未发现的 bug
+
+### 如果遇到问题
+
+可以回退到 Vite 7 + legacy-peer-deps：
 
 ```json
 {
   "devDependencies": {
+    "vite": "^7.3.1",
     "vite-plugin-vue-devtools": "^7.5.4"
   }
 }
 ```
 
-### 方案 B：升级到 Vite 8（未来）
-
-等待 Vite 8 正式发布后升级。
-
-### 方案 C：移除 devtools 插件
-
-在生产构建中禁用 devtools 插件：
-
-```typescript
-// vite.config.ts
-export default defineConfig({
-  plugins: [
-    vue(),
-    // 仅在开发环境启用
-    process.env.NODE_ENV === 'development' && vueDevTools(),
-  ].filter(Boolean),
-})
-```
+或者等待 Vite 8 正式版发布后再升级。
 
 ## 相关文档
 
@@ -129,11 +119,11 @@ export default defineConfig({
 ```
 fix: 修复 Cloudflare Pages 部署失败问题
 
-- 添加 .npmrc 配置文件，使用 legacy-peer-deps 解决 npm 依赖冲突
+- 升级 Vite 到 8.0.0-beta.10 以匹配 vite-plugin-vue-devtools 要求
+- 移除 package.json 中的 overrides 配置
+- 添加 .npmrc 配置文件作为保险措施
 - 添加 .node-version 文件指定 Node.js 22.12.0 版本
-- 创建 cloudflare-build.sh 构建脚本，优先使用 Bun，回退到 npm
+- 创建 cloudflare-build.sh 构建脚本
 - 更新 wrangler.toml 使用新的构建脚本
 - 添加详细的 Cloudflare Pages 部署文档
 ```
-
-Commit: `5552680`

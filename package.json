@@ -13,11 +13,6 @@
   "browserslist": [
     "defaults and fully supports es6-module"
   ],
-  "overrides": {
-    "vite-plugin-vue-devtools": {
-      "vite": "8.0.0-beta.10"
-    }
-  },
   "scripts": {
     "dev": "vite",
     "build": "node scripts/update-sw-version.js && bun run type-check && vite build",
@@ -79,7 +74,7 @@
     "puppeteer": "^24.36.1",
     "sharp": "^0.34.5",
     "typescript": "~5.9.3",
-    "vite": "7.3.1",
+    "vite": "8.0.0-beta.10",
     "vite-imagetools": "^9.0.2",
     "vite-plugin-vue-devtools": "^8.0.5",
     "vitest": "^4.0.18",
