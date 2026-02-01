@@ -37,6 +37,36 @@
       </div>
     </div>
 
+    <!-- UI Style -->
+    <div class="settings-group">
+      <div class="settings-group-header">
+        <div class="settings-group-icon">
+          <AnimatedIcon name="sparkle" :fallback-icon="Layers" size="sm" />
+        </div>
+        <span class="settings-label">{{ $t('settings.uiStyle', 'UI Style') }}</span>
+      </div>
+      <div class="settings-options theme-options">
+        <button
+          v-for="opt in uiStyleOptions"
+          :key="opt.value"
+          type="button"
+          class="theme-btn"
+          :class="{ active: settings.uiStyle === opt.value }"
+          @click="setUiStyle(opt.value)"
+        >
+          <div class="theme-btn-icon">
+            <AnimatedIcon name="explore" :fallback-icon="opt.icon" size="md" />
+          </div>
+          <span class="theme-btn-label">{{ opt.label }}</span>
+          <Transition name="check">
+            <div v-if="settings.uiStyle === opt.value" class="theme-btn-check">
+              <AnimatedIcon name="sparkle" :fallback-icon="Check" size="sm" />
+            </div>
+          </Transition>
+        </button>
+      </div>
+    </div>
+
     <!-- Language -->
     <div class="settings-group">
       <div class="settings-group-header">
@@ -182,6 +212,8 @@ import {
   Zap,
   Video,
   RotateCcw,
+  Layers,
+  Smartphone,
 } from 'lucide-vue-next'
 import { RouterLink } from 'vue-router'
 import { computed } from 'vue'
@@ -191,6 +223,7 @@ import { useThemeStore, useSettingsStore, useToastStore } from '@/stores'
 import { setLocale, type SupportedLocale } from '@/i18n'
 import { useVideoSettings } from '@/composables/useVideoSettings'
 import type { Theme } from '@/types'
+import type { UiStyle } from '@/stores/settings'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 
 defineEmits<{ close: [] }>()
@@ -217,6 +250,11 @@ const themeOptions = [
   { value: 'auto' as Theme, icon: Monitor },
 ]
 
+const uiStyleOptions: { value: UiStyle; icon: unknown; label: string }[] = [
+  { value: 'ios', icon: Smartphone, label: t('settings.uiStyleIos', 'iOS (SwiftUI)') },
+  { value: 'material', icon: Layers, label: t('settings.uiStyleMaterial', 'Material') },
+]
+
 const localeOptions: { code: SupportedLocale; name: string; flag: string }[] = [
   { code: 'en', name: 'English', flag: '🇺🇸' },
   { code: 'zh-CN', name: '简体中文', flag: '🇨🇳' },
@@ -226,6 +264,10 @@ const localeOptions: { code: SupportedLocale; name: string; flag: string }[] = [
 
 function setTheme(value: Theme) {
   themeStore.setTheme(value)
+}
+
+function setUiStyle(value: UiStyle) {
+  settingsStore.setUiStyle(value)
 }
 
 function changeLocale(code: SupportedLocale) {
