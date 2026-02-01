@@ -56,6 +56,10 @@ app.use(pinia)
 app.use(router)
 app.use(i18n)
 
+// Track last pointer position for click-origin animations (e.g. opening preview modal)
+import { initLastPointerTracker } from './utils/lastPointer'
+initLastPointerTracker()
+
 // 初始化认证状态（同步，确保路由守卫正常工作）
 import { useAuthStore } from './stores/auth'
 const authStore = useAuthStore()
