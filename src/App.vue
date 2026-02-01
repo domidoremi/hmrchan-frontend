@@ -1,5 +1,10 @@
 <template>
-  <div id="app" :data-theme="resolvedTheme" :data-animation-intensity="animationIntensity">
+  <div
+    id="app"
+    :data-theme="resolvedTheme"
+    :data-animation-intensity="animationIntensity"
+    :data-ui-style="uiStyle"
+  >
     <!-- Contextual 3D Background -->
     <ContextualBackground />
     <BackgroundTransition />
@@ -81,6 +86,9 @@ usePageTitle()
 
 // 动效强度
 const animationIntensity = computed(() => settings.value.animationIntensity)
+
+// UI 风格（默认 iOS/SwiftUI）
+const uiStyle = computed(() => settings.value.uiStyle)
 
 // 智能缓存策略：根据页面访问频率动态调整
 const cachedPages = ref<string[]>(['HomePage', 'ExplorePage'])
