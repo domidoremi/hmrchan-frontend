@@ -465,16 +465,49 @@ const selectedSubtitleLanguage = ref<string | null>(null)
 
 const normalizedSubtitles = computed<NormalizedSubtitleTrack[]>(() => {
   const tracks = props.subtitles ?? []
-  if (!tracks.length) return []
+  if (!tracks.length) {
+    if (import.meta.env['VITE_ENABLE_DEBUG'] === 'true') {
+      console.log('[VideoPlayer] 没有字幕数据')
+    }
+    return []
+  }
 
-  return tracks.reduce<NormalizedSubtitleTrack[]>((acc, track) => {
+  if (import.meta.env['VITE_ENABLE_DEBUG'] === 'true') {
+    console.group('[VideoPlayer] 字幕数据处理')
+    console.log('原始字幕数据:', tracks)
+  }
+
+  const result = tracks.reduce<NormalizedSubtitleTrack[]>((acc, track) => {
     const src = normalizeSubtitleSrc(track)
-    if (!src || !track.language) return acc
+    if (!src || !track.language) {
+      if (import.meta.env['VITE_ENABLE_DEBUG'] === 'true') {
+        console.warn('跳过无效字幕轨道:', track, '原因:', !src ? '无 URL' : '无语言')
+      }
+      return acc
+    }
     const label = track.label || track.language.toUpperCase()
     const override = subtitleOverrides.value[src]
-    acc.push({ language: track.language, label, src: override || src, format: track.format })
+    const finalSrc = override || src
+
+    if (import.meta.env['VITE_ENABLE_DEBUG'] === 'true') {
+      console.log(`✅ 字幕轨道 [${track.language}]:`, {
+        label,
+        src: finalSrc,
+        format: track.format,
+        override: !!override,
+      })
+    }
+
+    acc.push({ language: track.language, label, src: finalSrc, format: track.format })
     return acc
   }, [])
+
+  if (import.meta.env['VITE_ENABLE_DEBUG'] === 'true') {
+    console.log('处理后的字幕轨道:', result)
+    console.groupEnd()
+  }
+
+  return result
 })
 
 const playedPercent = computed(() => {
@@ -494,18 +527,46 @@ const activeSubtitleLabel = computed(() => {
   )
 })
 
+// Helper to get API base URL consistently
+const apiBaseUrl = computed(() =>
+  import.meta.env.VITE_API_ENDPOINT || `${import.meta.env.VITE_API_URL || '/api'}/v1`
+)
+
+function extractMediaIdFromSrc(src: string): string | null {
+  if (!src?.trim()) return null
+
+  // 从视频 src 中提取 media_id
+  // 格式: /api/v1/media/{media_id}/stream
+  const match = src.match(/\/media\/([0-9a-f-]+)\/stream/i)
+  return match?.[1] ?? null
+}
+
 function normalizeSubtitleSrc(track: SubtitleTrack): string | null {
+  // 优先使用已构建的 URL
   const raw =
     track.url || track.subtitle_url || track.file_path || track.subtitle_path || track.path
-  if (!raw) return null
-  if (raw.startsWith('http://') || raw.startsWith('https://')) return raw
 
-  const apiBaseUrl =
-    import.meta.env.VITE_API_ENDPOINT || `${import.meta.env.VITE_API_URL || '/api'}/v1`
-  if (raw.startsWith('/')) {
-    return `${apiBaseUrl}${raw}`
+  if (raw) {
+    // 已经是完整 URL
+    if (raw.startsWith('http://') || raw.startsWith('https://')) {
+      return raw
+    }
+
+    // 构建相对路径的完整 URL
+    const base = apiBaseUrl.value
+    return raw.startsWith('/') ? `${base}${raw}` : `${base}/${raw}`
   }
-  return `${apiBaseUrl}/${raw}`
+
+  // 如果没有 URL，但有 language，则构建标准字幕 API URL
+  // 根据后端 API: /api/v1/media/{media_id}/subtitle?language={language}
+  if (track.language && props.src?.trim()) {
+    const mediaId = extractMediaIdFromSrc(props.src)
+    if (mediaId) {
+      return `${apiBaseUrl.value}/media/${mediaId}/subtitle?language=${track.language}`
+    }
+  }
+
+  return null
 }
 
 function isSrtTrack(track: NormalizedSubtitleTrack): boolean {
