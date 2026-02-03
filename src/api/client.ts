@@ -245,6 +245,7 @@ async function handleErrorResponse(response: Response, skipErrorToast?: boolean)
     500: 'error.serverError',
     502: 'error.badGateway',
     503: 'error.serviceUnavailable',
+    530: 'error.serviceUnavailable', // Cloudflare error
   }
 
   const i18n = await getI18n()
@@ -423,6 +424,15 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
         toastStore.error(t('error.timeout'))
       }
       throw new ApiError(t('error.timeout'), 408)
+    }
+
+    // 处理网络错误（包括 fetch 失败、CORS 错误等）
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      if (!skipErrorToast) {
+        const toastStore = await getToastStore()
+        toastStore.error(t('error.serviceUnavailable'))
+      }
+      throw new ApiError(t('error.serviceUnavailable'), 503)
     }
 
     if (!skipErrorToast) {
