@@ -279,7 +279,14 @@ async function prefetchData(
       await new Promise<void>((resolve) => {
         requestIdleCallback(
           async () => {
-            await importFn()
+            try {
+              await importFn()
+            } catch (error) {
+              // 静默失败 - 预加载失败不应影响用户体验
+              if (import.meta.env.DEV) {
+                console.warn('Prefetch failed:', error)
+              }
+            }
             resolve()
           },
           { timeout: DEFAULT_TIMEOUT_MS }
@@ -288,14 +295,22 @@ async function prefetchData(
     } else {
       await new Promise<void>((resolve) => {
         setTimeout(async () => {
-          await importFn()
+          try {
+            await importFn()
+          } catch (error) {
+            // 静默失败 - 预加载失败不应影响用户体验
+            if (import.meta.env.DEV) {
+              console.warn('Prefetch failed:', error)
+            }
+          }
           resolve()
         }, IDLE_TIMEOUT_MS)
       })
     }
   } catch (error) {
+    // 外层错误捕获（requestIdleCallback 本身的错误）
     if (import.meta.env.DEV) {
-      console.warn('Failed to prefetch data:', error)
+      console.warn('Failed to schedule prefetch:', error)
     }
   }
 }
