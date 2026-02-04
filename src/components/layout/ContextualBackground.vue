@@ -1,10 +1,19 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, defineAsyncComponent, onMounted, onUnmounted, ref } from 'vue'
 import { useContextualBackground } from '@/composables/useContextualBackground'
-import { useThemeStore } from '@/stores/theme'
+import { useThemeStore, useSettingsStore } from '@/stores'
+import { prefersReducedMotion } from '@/utils/performance'
 
 const { config, isTransitioning } = useContextualBackground()
 const themeStore = useThemeStore()
+const settingsStore = useSettingsStore()
+
+// Lazy-load the WebGL background so it doesn't block first paint.
+const PlatformHubBackground = defineAsyncComponent(
+  () => import('@/components/layout/PlatformHubBackground.vue')
+)
+
+const enableHub = computed(() => settingsStore.shouldAnimate && !prefersReducedMotion())
 
 const scrollY = ref(0)
 const mouseX = ref(0)
@@ -61,10 +70,7 @@ onUnmounted(() => {
 
 <template>
   <div class="contextual-background" :data-theme="themeStore.resolvedTheme">
-    <!-- Base layer with overlay for content readability -->
-    <div class="background-overlay" />
-
-    <!-- 3D background layer -->
+    <!-- Gradient underlay (route/platform contextual) -->
     <div
       class="background-layer"
       :class="[config.className, { 'is-transitioning': isTransitioning }]"
@@ -72,6 +78,12 @@ onUnmounted(() => {
     >
       <div class="background-content" />
     </div>
+
+    <!-- Premium 3D hub (WebGL) -->
+    <PlatformHubBackground v-if="enableHub" />
+
+    <!-- Readability scrim (lets the 3D show through, but keeps text legible) -->
+    <div class="background-overlay" />
   </div>
 </template>
 
@@ -91,15 +103,62 @@ onUnmounted(() => {
 .background-overlay {
   position: absolute;
   inset: 0;
-  background: rgba(255, 255, 255, 0.9);
   z-index: 2;
   pointer-events: none;
   transition: background-color 0.3s ease;
+  /* Make sure the background stays premium but readable */
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  background:
+    radial-gradient(
+      ellipse 80% 60% at 65% 25%,
+      rgba(255, 255, 255, 0.24) 0%,
+      rgba(255, 255, 255, 0.68) 55%,
+      rgba(255, 255, 255, 0.82) 100%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.5) 0%,
+      rgba(255, 255, 255, 0.78) 40%,
+      rgba(255, 255, 255, 0.8) 100%
+    );
+}
+
+.background-overlay::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  /* Subtle film grain / highlight breakup using pure CSS */
+  background:
+    repeating-linear-gradient(
+      90deg,
+      rgba(0, 0, 0, 0.035) 0px,
+      rgba(0, 0, 0, 0.035) 1px,
+      transparent 1px,
+      transparent 6px
+    ),
+    radial-gradient(circle at 35% 20%, rgba(var(--color-primary-rgb), 0.06) 0%, transparent 55%),
+    radial-gradient(circle at 80% 70%, rgba(var(--color-accent-rgb), 0.04) 0%, transparent 60%);
+  opacity: 0.35;
+  mix-blend-mode: overlay;
+  pointer-events: none;
 }
 
 /* Dark mode overlay */
 .contextual-background[data-theme='dark'] .background-overlay {
-  background: rgba(6, 8, 16, 0.85);
+  background:
+    radial-gradient(
+      ellipse 80% 60% at 65% 25%,
+      rgba(6, 8, 16, 0.1) 0%,
+      rgba(6, 8, 16, 0.55) 55%,
+      rgba(6, 8, 16, 0.72) 100%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(6, 8, 16, 0.45) 0%,
+      rgba(6, 8, 16, 0.7) 40%,
+      rgba(6, 8, 16, 0.72) 100%
+    );
 }
 
 .background-layer {
@@ -107,8 +166,10 @@ onUnmounted(() => {
   inset: -10%;
   width: 120%;
   height: 120%;
+  z-index: 0;
   transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
   will-change: transform;
+  filter: saturate(1.12) contrast(1.02);
 }
 
 .background-layer.is-transitioning {
@@ -116,6 +177,7 @@ onUnmounted(() => {
 }
 
 .background-content {
+  position: relative;
   width: 100%;
   height: 100%;
   background-size: cover;

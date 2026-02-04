@@ -780,14 +780,7 @@ function openDetail() {
   min-height: 0;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  overflow: auto;
-  overscroll-behavior: contain;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-.post-preview-scroll::-webkit-scrollbar {
-  display: none;
+  overflow: hidden;
 }
 
 .post-preview-action-bar {
@@ -817,10 +810,12 @@ function openDetail() {
 .post-preview-media {
   position: relative;
   min-width: 0;
+  min-height: 0;
   padding: var(--spacing-4);
   display: flex;
   flex-direction: column;
   gap: var(--spacing-3);
+  overflow: hidden;
 }
 
 .post-preview-media-frame {
@@ -830,6 +825,7 @@ function openDetail() {
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  max-height: min(58vh, 560px);
 }
 
 .post-preview-media-item {
@@ -862,14 +858,10 @@ function openDetail() {
 .post-preview-thumbs {
   display: flex;
   gap: var(--spacing-2);
-  overflow-x: auto;
+  flex-wrap: wrap;
+  overflow: hidden;
   padding-bottom: var(--spacing-1);
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-.post-preview-thumbs::-webkit-scrollbar {
-  display: none;
+  max-height: 120px;
 }
 
 .thumb {
@@ -895,6 +887,10 @@ function openDetail() {
 
 .post-preview-content {
   min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
   padding: var(--spacing-4);
   border-left: 1px solid rgba(255, 255, 255, 0.08);
 }
@@ -965,6 +961,7 @@ function openDetail() {
     flex: 1;
     min-height: 0;
     padding-bottom: calc(var(--spacing-6) + env(safe-area-inset-bottom, 0px));
+    --preview-lines: 6;
   }
 
   .post-preview-action-bar {
@@ -978,12 +975,29 @@ function openDetail() {
   }
 }
 
+@media (min-width: 641px) and (max-width: 1023px) {
+  .post-preview-content {
+    --preview-lines: 8;
+  }
+}
+
+@media (min-width: 1024px) {
+  .post-preview-content {
+    --preview-lines: 10;
+  }
+}
+
 .post-preview-text {
   margin: 0;
   white-space: pre-wrap;
   line-height: 1.6;
   color: rgba(255, 255, 255, 0.9);
   overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: var(--preview-lines, 10);
+  line-clamp: var(--preview-lines, 10);
+  overflow: hidden;
 }
 
 .post-preview-text--muted {
