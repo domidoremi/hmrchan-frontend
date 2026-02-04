@@ -986,15 +986,18 @@ onUnmounted(() => {
 }
 
 .post-back-fab {
+  --fab-size: clamp(44px, 4vw, 60px);
+  --edge: clamp(var(--spacing-3), 3.2vw, var(--spacing-7));
+  --fab-gap: 12px;
   position: fixed;
-  left: var(--spacing-6);
-  bottom: calc(var(--spacing-6) + env(safe-area-inset-bottom, 0px));
+  right: var(--edge);
+  bottom: calc(var(--edge) + var(--fab-size) + var(--fab-gap));
   z-index: var(--z-fixed);
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 48px;
-  height: 48px;
+  width: var(--fab-size);
+  height: var(--fab-size);
   border-radius: var(--radius-full);
   background: var(--glass-bg);
   backdrop-filter: var(--glass-blur);
@@ -1003,8 +1006,8 @@ onUnmounted(() => {
   box-shadow: var(--glass-shadow);
   cursor: pointer;
   transition-property: transform, background-color, box-shadow, border-color;
-  transition-duration: 200ms;
-  transition-timing-function: var(--ease-out);
+  transition-duration: 220ms;
+  transition-timing-function: var(--ease-spring);
   transform: translate3d(0, 0, 0);
   will-change: transform;
 }
@@ -1018,6 +1021,19 @@ onUnmounted(() => {
   opacity: 0;
   z-index: -1;
   transition: opacity 200ms var(--ease-out);
+}
+
+.post-back-fab::after {
+  content: '';
+  position: absolute;
+  inset: -10px;
+  border-radius: inherit;
+  background: radial-gradient(circle, rgba(var(--color-primary-rgb), 0.35) 0%, transparent 70%);
+  opacity: 0.2;
+  filter: blur(12px);
+  z-index: -2;
+  pointer-events: none;
+  animation: post-back-glow 6s ease-in-out infinite;
 }
 
 .post-back-fab:hover {
@@ -1099,11 +1115,45 @@ onUnmounted(() => {
   }
 }
 
+@keyframes post-back-glow {
+  0%,
+  100% {
+    opacity: 0.18;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+/* Responsive sizing and positioning - stacked above back-to-top button */
 @media (max-width: 768px) {
-  /* Avoid overlap with the bottom mobile nav (72px) */
   .post-back-fab {
-    bottom: calc(var(--spacing-6) + 72px + env(safe-area-inset-bottom, 0px));
-    left: var(--spacing-4);
+    /* Position above back-to-top: bottom nav (72px) + safe area */
+    bottom: calc(var(--edge) + 72px + var(--fab-size) + var(--fab-gap) + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .post-back-fab::after {
+    animation: none;
+  }
+}
+
+@media (min-width: 1536px) and (max-width: 1919px) {
+  .post-back-fab {
+    --fab-size: 64px;
+    --fab-gap: 16px;
+    right: var(--spacing-7);
+    bottom: calc(var(--spacing-7) + 64px + var(--fab-gap));
+  }
+}
+
+@media (min-width: 1920px) {
+  .post-back-fab {
+    --fab-size: 68px;
+    --fab-gap: 16px;
+    right: var(--spacing-8);
+    bottom: calc(var(--spacing-8) + 68px + var(--fab-gap));
   }
 }
 

@@ -110,10 +110,11 @@ onUnmounted(() => {
 
 <style scoped>
 .back-to-top {
-  --btn-size: v-bind('size + "px"');
+  --btn-size: clamp(44px, 4vw, 60px);
+  --edge: clamp(var(--spacing-3), 3.2vw, var(--spacing-7));
   position: fixed;
-  right: var(--spacing-6);
-  bottom: var(--spacing-6);
+  right: var(--edge);
+  bottom: var(--edge);
   z-index: var(--z-fixed);
   display: flex;
   align-items: center;
@@ -128,8 +129,8 @@ onUnmounted(() => {
   box-shadow: var(--glass-shadow);
   cursor: pointer;
   transition-property: transform, background-color, box-shadow, border-color;
-  transition-duration: 200ms;
-  transition-timing-function: var(--ease-out);
+  transition-duration: 220ms;
+  transition-timing-function: var(--ease-spring);
   transform: translate3d(0, 0, 0);
   will-change: transform;
 }
@@ -143,6 +144,19 @@ onUnmounted(() => {
   opacity: 0;
   z-index: -1;
   transition: opacity 200ms var(--ease-out);
+}
+
+.back-to-top::after {
+  content: '';
+  position: absolute;
+  inset: -10px;
+  border-radius: inherit;
+  background: radial-gradient(circle, rgba(var(--color-primary-rgb), 0.35) 0%, transparent 70%);
+  opacity: 0.18;
+  filter: blur(12px);
+  z-index: -2;
+  pointer-events: none;
+  animation: back-to-top-glow 6s ease-in-out infinite;
 }
 
 .back-to-top:hover {
@@ -224,32 +238,20 @@ onUnmounted(() => {
   }
 }
 
+@keyframes back-to-top-glow {
+  0%,
+  100% {
+    opacity: 0.16;
+  }
+  50% {
+    opacity: 0.28;
+  }
+}
+
 /* Responsive */
-@media (min-width: 1024px) {
-  .back-to-top {
-    --btn-size: 56px;
-  }
-}
-
-@media (min-width: 1536px) {
-  .back-to-top {
-    --btn-size: 64px;
-  }
-}
-
-@media (min-width: 1920px) {
-  .back-to-top {
-    --btn-size: 72px;
-    right: var(--spacing-8);
-    bottom: var(--spacing-8);
-  }
-}
-
 @media (max-width: 768px) {
   .back-to-top {
-    --btn-size: 44px;
-    right: var(--spacing-4);
-    bottom: calc(var(--spacing-4) + 64px);
+    bottom: calc(var(--edge) + 72px + env(safe-area-inset-bottom, 0px));
   }
 }
 
@@ -279,6 +281,10 @@ onUnmounted(() => {
   }
 
   .back-to-top:active .back-to-top__pulse {
+    animation: none;
+  }
+
+  .back-to-top::after {
     animation: none;
   }
 }
