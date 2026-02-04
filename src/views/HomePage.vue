@@ -466,7 +466,8 @@ onBeforeUnmount(() => {
   position: fixed;
   inset: 0;
   pointer-events: none;
-  z-index: -1;
+  /* Keep page blobs behind the global contextual 3D background */
+  z-index: -2;
   overflow: hidden;
 }
 

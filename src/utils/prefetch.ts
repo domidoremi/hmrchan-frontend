@@ -281,11 +281,9 @@ async function prefetchData(
           async () => {
             try {
               await importFn()
-            } catch (error) {
+            } catch {
               // 静默失败 - 预加载失败不应影响用户体验
-              if (import.meta.env.DEV) {
-                console.warn('Prefetch failed:', error)
-              }
+              // 在开发模式下也不记录，避免控制台噪音
             }
             resolve()
           },
@@ -297,21 +295,17 @@ async function prefetchData(
         setTimeout(async () => {
           try {
             await importFn()
-          } catch (error) {
+          } catch {
             // 静默失败 - 预加载失败不应影响用户体验
-            if (import.meta.env.DEV) {
-              console.warn('Prefetch failed:', error)
-            }
+            // 在开发模式下也不记录，避免控制台噪音
           }
           resolve()
         }, IDLE_TIMEOUT_MS)
       })
     }
-  } catch (error) {
+  } catch {
     // 外层错误捕获（requestIdleCallback 本身的错误）
-    if (import.meta.env.DEV) {
-      console.warn('Failed to schedule prefetch:', error)
-    }
+    // 完全静默，避免控制台噪音
   }
 }
 

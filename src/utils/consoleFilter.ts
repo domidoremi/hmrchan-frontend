@@ -58,6 +58,10 @@ const CLOUDFLARE_PATTERNS = [
   // ResizeObserver loop warnings (layout thrash benign noise)
   /ResizeObserver loop limit exceeded/i,
   /ResizeObserver loop completed with undelivered notifications/i,
+
+  // Prefetch failures (expected when backend is down)
+  /Prefetch failed.*ApiError/i,
+  /Failed to prefetch/i,
 ]
 
 /**
