@@ -1129,7 +1129,9 @@ onUnmounted(() => {
 @media (max-width: 768px) {
   .post-back-fab {
     /* Position above back-to-top: bottom nav (72px) + safe area */
-    bottom: calc(var(--edge) + 72px + var(--fab-size) + var(--fab-gap) + env(safe-area-inset-bottom, 0px));
+    bottom: calc(
+      var(--edge) + 72px + var(--fab-size) + var(--fab-gap) + env(safe-area-inset-bottom, 0px)
+    );
   }
 }
 
