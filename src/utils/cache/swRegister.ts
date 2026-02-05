@@ -4,6 +4,36 @@
 
 const SW_PATH = '/sw.js'
 
+function buildSwConfig(): { apiBase: string; apiHostnames: string[] } {
+  const apiBase =
+    import.meta.env.VITE_API_ENDPOINT || `${import.meta.env.VITE_API_URL || '/api'}/v1`
+  const hostnames = new Set<string>()
+
+  try {
+    if (apiBase.startsWith('http')) {
+      hostnames.add(new URL(apiBase).hostname)
+    }
+  } catch {
+    // ignore
+  }
+
+  // Fallback to current origin if API base is relative
+  if (!hostnames.size && typeof window !== 'undefined') {
+    hostnames.add(window.location.hostname)
+  }
+
+  return { apiBase, apiHostnames: Array.from(hostnames) }
+}
+
+function postConfigToSW(registration: ServiceWorkerRegistration): void {
+  const message = { type: 'CONFIG', payload: buildSwConfig() }
+  if (registration.active) {
+    registration.active.postMessage(message)
+    return
+  }
+  navigator.serviceWorker.controller?.postMessage(message)
+}
+
 interface SWRegistrationResult {
   success: boolean
   registration?: ServiceWorkerRegistration
@@ -29,6 +59,8 @@ export async function registerServiceWorker(): Promise<SWRegistrationResult> {
       scope: '/',
       updateViaCache: 'none',
     })
+    // 向 SW 发送运行时配置
+    postConfigToSW(registration)
 
     // 监听更新
     registration.addEventListener('updatefound', () => {
@@ -46,6 +78,11 @@ export async function registerServiceWorker(): Promise<SWRegistrationResult> {
     // 立即检查更新
     registration.update().catch(() => {
       // 静默失败
+    })
+
+    // 确保 ready 后再次发送配置（防止首次控制权为空）
+    navigator.serviceWorker.ready.then((ready) => {
+      postConfigToSW(ready)
     })
 
     return { success: true, registration }

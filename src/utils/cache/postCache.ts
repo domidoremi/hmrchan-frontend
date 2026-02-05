@@ -12,9 +12,9 @@
  * - 实体可被多个查询共享，提高缓存利用率
  */
 
-import { idbGet, idbSet, idbDelete, idbDeleteExpired, STORES } from './idb'
+import { idbGet, idbSet, idbDelete, idbDeleteExpired, idbPruneByIndex, STORES } from './idb'
 import { memoryCache } from './memoryCache'
-import { CACHE_TTL, generateCacheKey } from './config'
+import { CACHE_LIMITS, CACHE_TTL, generateCacheKey } from './config'
 import { cacheStats } from './cacheStats'
 
 // 类型定义
@@ -24,6 +24,26 @@ export interface CachedPostList {
   total: number
   cached_at: number
   etag?: string | undefined
+}
+
+// -------------------- Internal prune scheduling --------------------
+let postEntityPruneTimer: ReturnType<typeof setTimeout> | null = null
+let postListPruneTimer: ReturnType<typeof setTimeout> | null = null
+
+function schedulePostEntityPrune(): void {
+  if (postEntityPruneTimer) return
+  postEntityPruneTimer = setTimeout(() => {
+    postEntityPruneTimer = null
+    void idbPruneByIndex(STORES.POSTS, 'cached_at', CACHE_LIMITS.IDB_POSTS_MAX_SIZE)
+  }, 500)
+}
+
+function schedulePostListPrune(): void {
+  if (postListPruneTimer) return
+  postListPruneTimer = setTimeout(() => {
+    postListPruneTimer = null
+    void idbPruneByIndex(STORES.POST_LISTS, 'cached_at', CACHE_LIMITS.IDB_LISTS_MAX_SIZE)
+  }, 500)
 }
 
 export interface CachedPostEntity {
@@ -109,6 +129,7 @@ export const postCache = {
     memoryCache.set(`post_entity:${uuid}`, cached, CACHE_TTL.MEMORY)
     // IDB 使用带前缀的 key 来区分不同类型的缓存
     await idbSet(STORES.POSTS, { ...cached, uuid: `entity:${uuid}` })
+    schedulePostEntityPrune()
     cacheStats.recordSet('POST_ENTITY')
   },
 
@@ -220,6 +241,7 @@ export const postCache = {
     }
     memoryCache.set(cacheKey, listCache, CACHE_TTL.MEMORY)
     await idbSet(STORES.POST_LISTS, listCache)
+    schedulePostListPrune()
     cacheStats.recordSet('POST_LIST')
 
     // 3. 批量缓存帖子实体
