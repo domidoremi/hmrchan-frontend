@@ -3,7 +3,7 @@
  * 基于用户行为预加载常访问内容
  */
 
-import { idbGet, idbSet, idbGetAll, idbClear, STORES } from './idb'
+import { idbGet, idbSet, idbGetAll, idbClear, idbDelete, STORES } from './idb'
 import { prefetchPostDetail } from '../prefetch'
 
 interface AccessRecord {
@@ -154,10 +154,7 @@ async function cleanupOldRecords(): Promise<void> {
   records.sort((a, b) => a.lastAccess - b.lastAccess)
   const toDelete = records.slice(0, records.length - MAX_RECORDS)
 
-  const { idbDelete } = await import('./idb')
-  for (const record of toDelete) {
-    await idbDelete(ACCESS_STORE, record.id)
-  }
+  await Promise.all(toDelete.map((record) => idbDelete(ACCESS_STORE, record.id)))
 }
 
 /**
