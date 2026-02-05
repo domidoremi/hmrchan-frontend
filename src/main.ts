@@ -95,6 +95,10 @@ scheduleTask(
           showToast: true, // 显示更新提示
         })
       })
+      // 初始化后台同步监听器
+      import('./utils/cache/syncManager').then(({ setupAutoSync }) => {
+        setupAutoSync()
+      })
     }),
   { priority: 'user-visible', delay: 1000 } // 延迟 1 秒，确保首屏渲染完成
 )
@@ -107,4 +111,16 @@ scheduleTask(
     setupHoverPrefetch()
   },
   { priority: 'background', delay: 2000 } // 延迟 2 秒，低优先级后台任务
+)
+
+// 智能预缓存：在空闲时预加载热门内容
+scheduleTask(
+  () => {
+    import('./utils/cache/smartPrefetch').then(({ prefetchPopularContent }) => {
+      prefetchPopularContent().then((result) => {
+        console.log('[Prefetch] Popular content prefetched:', result)
+      })
+    })
+  },
+  { priority: 'background', delay: 5000 } // 延迟 5 秒，最低优先级
 )

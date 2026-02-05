@@ -4,13 +4,15 @@
  */
 
 const DB_NAME = 'hmrchan-cache'
-const DB_VERSION = 1
+const DB_VERSION = 2 // 增加版本以添加新的 stores
 
 // Store 名称
 export const STORES = {
   POSTS: 'posts',
   POST_LISTS: 'post-lists',
   META: 'meta',
+  OFFLINE_QUEUE: 'offline-queue',
+  ACCESS_HISTORY: 'access-history',
 } as const
 
 type StoreName = (typeof STORES)[keyof typeof STORES]
@@ -53,6 +55,21 @@ function getDB(): Promise<IDBDatabase> {
       // 元数据存储
       if (!db.objectStoreNames.contains(STORES.META)) {
         db.createObjectStore(STORES.META, { keyPath: 'key' })
+      }
+
+      // 离线操作队列
+      if (!db.objectStoreNames.contains(STORES.OFFLINE_QUEUE)) {
+        const queueStore = db.createObjectStore(STORES.OFFLINE_QUEUE, { keyPath: 'id' })
+        queueStore.createIndex('status', 'status', { unique: false })
+        queueStore.createIndex('timestamp', 'timestamp', { unique: false })
+      }
+
+      // 访问历史记录
+      if (!db.objectStoreNames.contains(STORES.ACCESS_HISTORY)) {
+        const historyStore = db.createObjectStore(STORES.ACCESS_HISTORY, { keyPath: 'id' })
+        historyStore.createIndex('type', 'type', { unique: false })
+        historyStore.createIndex('lastAccess', 'lastAccess', { unique: false })
+        historyStore.createIndex('accessCount', 'accessCount', { unique: false })
       }
     }
   })
@@ -129,6 +146,26 @@ export async function idbGetAll<T>(store: StoreName): Promise<T[]> {
   } catch (error) {
     console.warn(`[IDB] Failed to get all from ${store}:`, error)
     return []
+  }
+}
+
+/**
+ * 简化的 openDB 接口（兼容新代码）
+ */
+export interface IDBPDatabase {
+  get<T>(store: StoreName, key: IDBValidKey): Promise<T | undefined>
+  put<T>(store: StoreName, value: T): Promise<void>
+  delete(store: StoreName, key: IDBValidKey): Promise<void>
+  getAll<T>(store: StoreName): Promise<T[]>
+}
+
+export async function openDB(): Promise<IDBPDatabase> {
+  await getDB() // 确保数据库已初始化
+  return {
+    get: idbGet,
+    put: idbSet,
+    delete: idbDelete,
+    getAll: idbGetAll,
   }
 }
 

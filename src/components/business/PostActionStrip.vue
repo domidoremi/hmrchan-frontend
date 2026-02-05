@@ -138,6 +138,16 @@ async function toggleFavorite() {
     } else {
       toastStore.error(t('common.error'))
     }
+
+    // 离线时添加到队列
+    if (!navigator.onLine) {
+      const { addOfflineAction } = await import('@/utils/cache/offlineQueue')
+      const actionType = isFavorited.value ? 'unfavorite' : 'favorite'
+      const data =
+        isFavorited.value && favoriteId.value ? { favoriteId: favoriteId.value } : undefined
+      await addOfflineAction(actionType, props.postId, data)
+      toastStore.info(t('post.offlineQueued'))
+    }
   } finally {
     isFavoriteLoading.value = false
   }

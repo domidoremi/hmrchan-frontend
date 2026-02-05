@@ -9,7 +9,8 @@ import {
   removeAction,
   cleanupFailedActions,
 } from './offlineQueue'
-import { postService } from '@/api'
+import { favoriteService } from '@/api/favoriteService'
+import { commentService } from '@/api/commentService'
 
 /**
  * 同步所有待处理的离线操作
@@ -33,21 +34,26 @@ export async function syncOfflineActions(): Promise<{
       // 根据操作类型执行相应的 API 调用
       switch (action.type) {
         case 'like':
-          await postService.likePost(action.resourceId)
+          // TODO: 实现点赞 API（当前后端未提供）
+          console.warn('[Sync] Like API not implemented yet')
           break
         case 'unlike':
-          await postService.unlikePost(action.resourceId)
+          // TODO: 实现取消点赞 API（当前后端未提供）
+          console.warn('[Sync] Unlike API not implemented yet')
           break
         case 'favorite':
-          await postService.favoritePost(action.resourceId)
+          await favoriteService.create(action.resourceId)
           break
         case 'unfavorite':
-          await postService.unfavoritePost(action.resourceId)
+          if (action.data?.['favoriteId']) {
+            await favoriteService.remove(action.data['favoriteId'] as number)
+          }
           break
         case 'comment':
-          if (action.data?.content) {
-            // 评论同步需要特殊处理
-            // await commentService.createComment(action.resourceId, action.data.content as string)
+          if (action.data?.['content']) {
+            await commentService.createComment(action.resourceId, {
+              content: action.data['content'] as string,
+            })
           }
           break
       }
@@ -76,9 +82,20 @@ export async function syncOfflineActions(): Promise<{
  * 手动触发同步
  */
 export async function triggerSync(): Promise<void> {
-  if ('serviceWorker' in navigator && 'sync' in ServiceWorkerRegistration.prototype) {
-    const registration = await navigator.serviceWorker.ready
-    await registration.sync.register('sync-offline-actions')
+  if (
+    'serviceWorker' in navigator &&
+    'sync' in ServiceWorkerRegistration.prototype &&
+    navigator.serviceWorker.controller
+  ) {
+    try {
+      const registration = await navigator.serviceWorker.ready
+      // @ts-expect-error - Background Sync API not fully typed
+      await registration.sync.register('sync-offline-actions')
+    } catch (error) {
+      console.warn('[SyncManager] Background sync registration failed:', error)
+      // Fallback to direct sync
+      await syncOfflineActions()
+    }
   } else {
     // 不支持后台同步，直接执行
     await syncOfflineActions()
@@ -93,7 +110,7 @@ export function setupAutoSync(): void {
 
   window.addEventListener('online', () => {
     console.log('[Sync] Network restored, triggering sync...')
-    triggerSync().catch((error) => {
+    triggerSync().catch((error: unknown) => {
       console.error('[Sync] Auto sync failed:', error)
     })
   })

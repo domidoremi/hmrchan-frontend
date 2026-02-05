@@ -148,11 +148,74 @@ self.addEventListener('fetch', (event) => {
 // 后台同步：离线操作队列
 // ============================================
 self.addEventListener('sync', (event) => {
-  // console.log('[SW] Background sync:', event.tag)
+  console.log('[SW] Background sync:', event.tag)
 
   if (event.tag === 'sync-offline-actions') {
     event.waitUntil(syncOfflineActions())
   }
+})
+
+// ============================================
+// Push 通知处理
+// ============================================
+self.addEventListener('push', (event) => {
+  console.log('[SW] Push notification received')
+
+  let data = { title: '新消息', body: '您有新的内容更新' }
+
+  if (event.data) {
+    try {
+      data = event.data.json()
+    } catch {
+      data = { title: '新消息', body: event.data.text() }
+    }
+  }
+
+  const options = {
+    body: data.body,
+    icon: '/icons/icon-192x192.png',
+    badge: '/icons/icon-96x96.png',
+    data: data.url || '/',
+    actions: [
+      { action: 'open', title: '查看' },
+      { action: 'close', title: '关闭' },
+    ],
+  }
+
+  event.waitUntil(self.registration.showNotification(data.title, options))
+})
+
+// ============================================
+// 通知点击处理
+// ============================================
+self.addEventListener('notificationclick', (event) => {
+  console.log('[SW] Notification clicked:', event.action)
+
+  event.notification.close()
+
+  if (event.action === 'close') {
+    return
+  }
+
+  // 打开或聚焦到应用
+  const urlToOpen = event.notification.data || '/'
+
+  event.waitUntil(
+    clients
+      .matchAll({ type: 'window', includeUncontrolled: true })
+      .then((clientList) => {
+        // 查找已打开的窗口
+        for (const client of clientList) {
+          if (client.url === urlToOpen && 'focus' in client) {
+            return client.focus()
+          }
+        }
+        // 打开新窗口
+        if (clients.openWindow) {
+          return clients.openWindow(urlToOpen)
+        }
+      })
+  )
 })
 
 // ============================================
@@ -647,17 +710,138 @@ function updateMediaAccessTime() {
  * 同步离线操作
  */
 async function syncOfflineActions() {
-  // 从 IndexedDB 读取离线队列
-  // 这部分需要配合 IndexedDB 管理器实现
   console.log('[SW] Syncing offline actions...')
 
   try {
-    // TODO: 实现实际的同步逻辑
+    // 打开 IndexedDB
+    const db = await openDatabase()
+    const tx = db.transaction('offline-queue', 'readonly')
+    const store = tx.objectStore('offline-queue')
+    const actions = await getAllFromStore(store)
+
+    console.log(`[SW] Found ${actions.length} offline actions to sync`)
+
+    let synced = 0
+    let failed = 0
+
+    for (const action of actions) {
+      try {
+        // 根据操作类型执行 API 调用
+        const response = await syncAction(action)
+
+        if (response.ok) {
+          // 删除已同步的操作
+          await deleteAction(db, action.id)
+          synced++
+        } else {
+          failed++
+        }
+      } catch (error) {
+        console.error('[SW] Sync action failed:', error)
+        failed++
+      }
+    }
+
+    console.log(`[SW] Sync complete: ${synced} synced, ${failed} failed`)
+
+    // 通知客户端同步结果
+    const clients = await self.clients.matchAll()
+    clients.forEach((client) => {
+      client.postMessage({
+        type: 'SYNC_COMPLETE',
+        synced,
+        failed,
+      })
+    })
+
     return true
   } catch (error) {
     console.error('[SW] Sync failed:', error)
     throw error
   }
+}
+
+/**
+ * 打开 IndexedDB
+ */
+function openDatabase() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open('hmrchan-cache', 2)
+    request.onsuccess = () => resolve(request.result)
+    request.onerror = () => reject(request.error)
+  })
+}
+
+/**
+ * 从 store 获取所有记录
+ */
+function getAllFromStore(store) {
+  return new Promise((resolve, reject) => {
+    const request = store.getAll()
+    request.onsuccess = () => resolve(request.result)
+    request.onerror = () => reject(request.error)
+  })
+}
+
+/**
+ * 删除操作
+ */
+async function deleteAction(db, actionId) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('offline-queue', 'readwrite')
+    const store = tx.objectStore('offline-queue')
+    const request = store.delete(actionId)
+    request.onsuccess = () => resolve()
+    request.onerror = () => reject(request.error)
+  })
+}
+
+/**
+ * 同步单个操作
+ */
+async function syncAction(action) {
+  const apiBase = 'https://api.momichan.xyz/api/v1'
+
+  let url = ''
+  let method = 'POST'
+  let body = null
+
+  switch (action.type) {
+    case 'favorite':
+      url = `${apiBase}/favorites/`
+      body = JSON.stringify({ post_id: action.resourceId })
+      break
+    case 'unfavorite':
+      if (action.data && action.data.favoriteId) {
+        url = `${apiBase}/favorites/${action.data.favoriteId}`
+        method = 'DELETE'
+      }
+      break
+    case 'comment':
+      if (action.data && action.data.content) {
+        url = `${apiBase}/comments/`
+        body = JSON.stringify({
+          post_id: action.resourceId,
+          content: action.data.content,
+        })
+      }
+      break
+    default:
+      console.warn('[SW] Unknown action type:', action.type)
+      return { ok: false }
+  }
+
+  if (!url) {
+    return { ok: false }
+  }
+
+  return fetch(url, {
+    method,
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body,
+  })
 }
 
 console.log('[SW] Service Worker loaded')
