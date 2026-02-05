@@ -610,52 +610,63 @@ function openDetail() {
   background: var(--ui-backdrop-dim, rgba(0, 0, 0, 0.45));
   backdrop-filter: var(--ui-backdrop-blur, blur(14px) saturate(1.1));
   -webkit-backdrop-filter: var(--ui-backdrop-blur, blur(14px) saturate(1.1));
-  will-change: opacity;}
+  will-change: opacity;
+}
 
 .post-preview-panel {
-  will-change: transform, opacity;}
+  will-change: transform, opacity;
+}
 
 .post-preview-enter-active,
 .post-preview-leave-active {
-  transition: opacity 0.32s var(--ease-out);}
+  transition: opacity 0.32s var(--ease-out);
+}
 
 .post-preview-enter-from,
 .post-preview-leave-to {
-  opacity: 0;}
+  opacity: 0;
+}
 
 .post-preview-enter-active .post-preview-panel {
   transition:
     transform 0.38s cubic-bezier(0.34, 1.56, 0.64, 1),
-    opacity 0.25s var(--ease-out);}
+    opacity 0.25s var(--ease-out);
+}
 
 .post-preview-leave-active .post-preview-panel {
   transition:
     transform 0.32s cubic-bezier(0.4, 0, 0.2, 1),
-    opacity 0.28s var(--ease-out);}
+    opacity 0.28s var(--ease-out);
+}
 
 .post-preview-enter-from .post-preview-panel {
   opacity: 0;
-  transform: translate3d(0, 48px, 0) scale(0.96);}
+  transform: translate3d(0, 48px, 0) scale(0.96);
+}
 
 .post-preview-leave-to .post-preview-panel {
   opacity: 0;
-  transform: translate3d(0, 100%, 0) scale(0.98);}
+  transform: translate3d(0, 100%, 0) scale(0.98);
+}
 
 @media (prefers-reduced-motion: reduce) {
   .post-preview-enter-active,
   .post-preview-leave-active,
   .post-preview-enter-active .post-preview-panel,
   .post-preview-leave-active .post-preview-panel {
-    transition: opacity 0.12s ease;}
+    transition: opacity 0.12s ease;
+  }
 
   .post-preview-enter-from .post-preview-panel,
   .post-preview-leave-to .post-preview-panel {
-    transform: none;}
+    transform: none;
+  }
 }
 
 @supports not (backdrop-filter: blur(1px)) {
   .post-preview-overlay {
-    background: rgba(0, 0, 0, 0.75);}
+    background: rgba(0, 0, 0, 0.75);
+  }
 }
 
 .post-preview-panel {
@@ -669,7 +680,8 @@ function openDetail() {
   backdrop-filter: blur(14px);
   display: flex;
   flex-direction: column;
-  outline: none;}
+  outline: none;
+}
 
 .post-preview-sheet {
   height: 100%;
@@ -679,10 +691,12 @@ function openDetail() {
   transform: translate3d(0, var(--sheet-drag-y, 0px), 0);
   touch-action: none;
   transition: transform 200ms var(--ease-out);
-  will-change: transform;}
+  will-change: transform;
+}
 
 .post-preview-sheet.is-dragging {
-  transition: none;}
+  transition: none;
+}
 
 .post-preview-header {
   position: relative;
@@ -692,7 +706,8 @@ function openDetail() {
   grid-template-columns: minmax(0, 1fr);
   align-items: start;
   gap: var(--spacing-3);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);}
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
 
 .post-preview-close-icon {
   position: absolute;
@@ -710,26 +725,32 @@ function openDetail() {
   transition:
     background var(--transition-fast),
     transform var(--transition-fast);
-  flex: 0 0 auto;}
+  flex: 0 0 auto;
+}
 
 .post-preview-close-icon:hover {
   transform: translateY(-1px);
-  background: rgba(255, 255, 255, 0.1);}
+  background: rgba(255, 255, 255, 0.1);
+}
 
 .post-preview-close-icon:active {
-  transform: scale(0.98);}
+  transform: scale(0.98);
+}
 
 .post-preview-handle {
-  display: none;}
+  display: none;
+}
 
 .post-preview-handle-bar {
   width: 40px;
   height: 5px;
   border-radius: var(--radius-full);
-  background: rgba(255, 255, 255, 0.22);}
+  background: rgba(255, 255, 255, 0.22);
+}
 
 .post-preview-title {
-  min-width: 0;}
+  min-width: 0;
+}
 
 .post-preview-heading {
   margin: 0;
@@ -740,13 +761,15 @@ function openDetail() {
   -webkit-line-clamp: 2;
   line-clamp: 2;
   -webkit-box-orient: vertical;
-  overflow: hidden;}
+  overflow: hidden;
+}
 
 .post-preview-author {
   margin: var(--spacing-1) 0 0;
   color: rgba(255, 255, 255, 0.7);
   font-size: var(--text-sm);
-  overflow-wrap: anywhere;}
+  overflow-wrap: anywhere;
+}
 
 .post-preview-meta {
   display: flex;
@@ -758,7 +781,8 @@ function openDetail() {
 
   /* soften cut-off without introducing scrollbars */
   -webkit-mask-image: linear-gradient(90deg, #000 0%, #000 88%, transparent 100%);
-  mask-image: linear-gradient(90deg, #000 0%, #000 88%, transparent 100%);}
+  mask-image: linear-gradient(90deg, #000 0%, #000 88%, transparent 100%);
+}
 
 .meta-pill {
   display: inline-flex;
@@ -769,7 +793,8 @@ function openDetail() {
   color: rgba(255, 255, 255, 0.86);
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.12);
-  flex: 0 0 auto;}
+  flex: 0 0 auto;
+}
 
 .post-preview-btn {
   padding: var(--spacing-2) var(--spacing-3);
@@ -781,38 +806,46 @@ function openDetail() {
   transition:
     transform var(--transition-fast),
     background var(--transition-fast),
-    border-color var(--transition-fast);}
+    border-color var(--transition-fast);
+}
 
 .post-preview-btn:hover {
   transform: translateY(-1px);
-  background: rgba(255, 255, 255, 0.1);}
+  background: rgba(255, 255, 255, 0.1);
+}
 
 .post-preview-btn:disabled {
   opacity: 0.55;
-  cursor: not-allowed;}
+  cursor: not-allowed;
+}
 
 .post-preview-cta {
-  font-weight: var(--font-semibold);}
+  font-weight: var(--font-semibold);
+}
 
 .post-preview-btn--primary {
   background: var(--gradient-primary);
   border-color: transparent;
-  color: white;}
+  color: white;
+}
 
 .post-preview-body {
   flex: 1;
   min-height: 0;
   display: flex;
-  flex-direction: column;}
+  flex-direction: column;
+}
 
 .post-preview-loading {
   display: flex;
   align-items: center;
-  justify-content: center;}
+  justify-content: center;
+}
 
 @media (min-width: 900px) {
   .post-preview-scroll {
-    grid-template-columns: minmax(0, 1fr) 420px;}
+    grid-template-columns: minmax(0, 1fr) 420px;
+  }
 }
 
 .post-preview-scroll {
@@ -820,7 +853,8 @@ function openDetail() {
   min-height: 0;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  overflow: hidden;}
+  overflow: hidden;
+}
 
 .post-preview-action-bar {
   display: flex;
@@ -830,17 +864,21 @@ function openDetail() {
   padding: var(--spacing-3) var(--spacing-4);
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   background: rgba(10, 10, 14, 0.7);
-  backdrop-filter: blur(14px);}
+  backdrop-filter: blur(14px);
+}
 
 .post-preview-action-bar .glass-button {
-  min-height: var(--ui-control-min-size, 44px);}
+  min-height: var(--ui-control-min-size, 44px);
+}
 
 .post-preview-action-bar .post-action-strip {
   flex: 1;
-  min-width: 0;}
+  min-width: 0;
+}
 
 .post-preview-action-bar .post-preview-cta {
-  flex: 0 0 auto;}
+  flex: 0 0 auto;
+}
 
 .post-preview-media {
   position: relative;
@@ -850,7 +888,8 @@ function openDetail() {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-3);
-  overflow: hidden;}
+  overflow: hidden;
+}
 
 .post-preview-media-frame {
   flex: 1;
@@ -859,7 +898,8 @@ function openDetail() {
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  max-height: min(58vh, 560px);}
+  max-height: min(58vh, 560px);
+}
 
 .post-preview-media-item {
   width: 100%;
@@ -871,7 +911,8 @@ function openDetail() {
   background: rgba(0, 0, 0, 0.35);
   box-shadow:
     0 24px 64px rgba(0, 0, 0, 0.35),
-    0 8px 24px rgba(0, 0, 0, 0.25);}
+    0 8px 24px rgba(0, 0, 0, 0.25);
+}
 
 .post-preview-media-empty {
   flex: 1;
@@ -879,11 +920,13 @@ function openDetail() {
   align-items: center;
   justify-content: center;
   border-radius: var(--radius-xl);
-  border: 1px dashed rgba(255, 255, 255, 0.15);}
+  border: 1px dashed rgba(255, 255, 255, 0.15);
+}
 
 .post-preview-empty-text {
   margin: 0;
-  color: rgba(255, 255, 255, 0.7);}
+  color: rgba(255, 255, 255, 0.7);
+}
 
 .post-preview-thumbs {
   display: flex;
@@ -891,7 +934,8 @@ function openDetail() {
   flex-wrap: wrap;
   overflow: hidden;
   padding-bottom: var(--spacing-1);
-  max-height: 120px;}
+  max-height: 120px;
+}
 
 .thumb {
   width: 56px;
@@ -900,16 +944,19 @@ function openDetail() {
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.12);
   background: rgba(255, 255, 255, 0.06);
-  flex: 0 0 auto;}
+  flex: 0 0 auto;
+}
 
 .thumb.active {
-  border-color: rgba(var(--color-primary-rgb), 0.8);}
+  border-color: rgba(var(--color-primary-rgb), 0.8);
+}
 
 .thumb-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  display: block;}
+  display: block;
+}
 
 .post-preview-content {
   min-width: 0;
@@ -918,21 +965,25 @@ function openDetail() {
   display: flex;
   flex-direction: column;
   padding: var(--spacing-4);
-  border-left: 1px solid rgba(255, 255, 255, 0.08);}
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+}
 
 .post-preview-skeleton {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-3);}
+  gap: var(--spacing-3);
+}
 
 .post-preview-error-text {
   margin: 0 0 var(--spacing-3);
-  color: rgba(255, 255, 255, 0.75);}
+  color: rgba(255, 255, 255, 0.75);
+}
 
 @media (max-width: 899px) {
   .post-preview-content {
     border-left: 0;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);}
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
 }
 
 /* iOS-like mobile sheet */
@@ -940,21 +991,24 @@ function openDetail() {
   .post-preview-overlay {
     align-items: flex-end;
     justify-content: center;
-    padding: 0;}
+    padding: 0;
+  }
 
   .post-preview-panel {
     width: 100vw;
     height: 92vh;
     height: 92svh;
-    border-radius: var(--ui-radius-sheet, 18px) var(--ui-radius-sheet, 18px) 0 0;}
+    border-radius: var(--ui-radius-sheet, 18px) var(--ui-radius-sheet, 18px) 0 0;
+  }
 
   /* Mobile sheet animation: slide from/to bottom instead of scaling */
   .post-preview-enter-from .post-preview-panel {
-    transform: translate3d(0, 100%, 0);}
+    transform: translate3d(0, 100%, 0);
+  }
 
   .post-preview-leave-to .post-preview-panel {
-    transform: translate3d(0, 100%, 0);}
-}
+    transform: translate3d(0, 100%, 0);
+  }
 
   .post-preview-handle {
     display: flex;
@@ -963,47 +1017,57 @@ function openDetail() {
     width: 100%;
     padding: 10px 0 6px;
     cursor: pointer;
-    touch-action: none; /* handle the drag ourselves */
+    touch-action: none;
   }
 
   .post-preview-header {
     grid-template-columns: 1fr;
-    padding-top: var(--spacing-3);}
+    padding-top: var(--spacing-3);
+  }
+
   .post-preview-scroll {
     display: flex;
-    flex-direction: column;}
+    flex-direction: column;
+  }
 
   .post-preview-media {
     padding: var(--spacing-3);
-    flex: 0 0 auto;}
+    flex: 0 0 auto;
+  }
 
   .post-preview-media-frame {
     height: min(44svh, 420px);
-    flex: 0 0 auto;}
+    flex: 0 0 auto;
+  }
 
   .post-preview-content {
     flex: 1;
     min-height: 0;
     padding-bottom: calc(var(--spacing-6) + env(safe-area-inset-bottom, 0px));
-    --preview-lines: 6;}
+    --preview-lines: 6;
+  }
 
   .post-preview-action-bar {
     flex-direction: column;
     align-items: stretch;
-    padding-bottom: calc(var(--spacing-3) + env(safe-area-inset-bottom, 0px));}
+    padding-bottom: calc(var(--spacing-3) + env(safe-area-inset-bottom, 0px));
+  }
 
   .post-preview-action-bar .post-preview-cta {
-    width: 100%;}
+    width: 100%;
+  }
 }
 
 @media (min-width: 641px) and (max-width: 1023px) {
   .post-preview-content {
-    --preview-lines: 8;}
+    --preview-lines: 8;
+  }
 }
 
 @media (min-width: 1024px) {
   .post-preview-content {
-    --preview-lines: 10;}
+    --preview-lines: 10;
+  }
 }
 
 .post-preview-text {
@@ -1016,8 +1080,10 @@ function openDetail() {
   -webkit-box-orient: vertical;
   -webkit-line-clamp: var(--preview-lines, 10);
   line-clamp: var(--preview-lines, 10);
-  overflow: hidden;}
+  overflow: hidden;
+}
 
 .post-preview-text--muted {
-  color: rgba(255, 255, 255, 0.65);}
+  color: rgba(255, 255, 255, 0.65);
+}
 </style>
