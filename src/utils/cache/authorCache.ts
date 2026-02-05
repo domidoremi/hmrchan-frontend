@@ -8,9 +8,9 @@
  * - 作者头像 URL: 由 SW 媒体缓存处理
  */
 
-import { idbGet, idbSet, idbDelete, idbDeleteExpired, STORES } from './idb'
+import { idbGet, idbSet, idbDelete, idbDeleteExpired, idbPruneByIndex, STORES } from './idb'
 import { memoryCache } from './memoryCache'
-import { CACHE_TTL, generateCacheKey } from './config'
+import { CACHE_LIMITS, CACHE_TTL, generateCacheKey } from './config'
 import { cacheStats } from './cacheStats'
 
 export interface CachedAuthor {
@@ -18,6 +18,17 @@ export interface CachedAuthor {
   data: unknown
   cached_at: number
   etag?: string | undefined
+}
+
+// -------------------- Internal prune scheduling --------------------
+let metaPruneTimer: ReturnType<typeof setTimeout> | null = null
+
+function scheduleMetaPrune(): void {
+  if (metaPruneTimer) return
+  metaPruneTimer = setTimeout(() => {
+    metaPruneTimer = null
+    void idbPruneByIndex(STORES.META, 'cached_at', CACHE_LIMITS.IDB_META_MAX_SIZE)
+  }, 500)
 }
 
 export interface CachedAuthorList {
@@ -67,6 +78,7 @@ export const authorCache = {
 
     memoryCache.set(`author:${id}`, cached, CACHE_TTL.MEMORY_EXTENDED)
     await idbSet(STORES.META, { key: `author:${id}`, ...cached })
+    scheduleMetaPrune()
     cacheStats.recordSet('AUTHOR_DETAIL')
   },
 
@@ -122,6 +134,7 @@ export const authorCache = {
 
     memoryCache.set(cacheKey, cached, CACHE_TTL.MEMORY_EXTENDED)
     await idbSet(STORES.META, { key: cacheKey, ...cached })
+    scheduleMetaPrune()
     cacheStats.recordSet('AUTHOR_LIST')
   },
 

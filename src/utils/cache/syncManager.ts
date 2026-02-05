@@ -115,3 +115,32 @@ export function setupAutoSync(): void {
     })
   })
 }
+
+// ==================== Service Worker -> Client sync bridge ====================
+let swSyncListenerAttached = false
+
+/**
+ * 监听来自 Service Worker 的同步请求
+ * 用于 SW 在后台同步时无法携带 auth 的场景
+ */
+export function setupSwSyncListener(): void {
+  if (typeof window === 'undefined') return
+  if (!('serviceWorker' in navigator)) return
+  if (swSyncListenerAttached) return
+  swSyncListenerAttached = true
+
+  navigator.serviceWorker.addEventListener('message', async (event) => {
+    const data = event.data as { type?: string } | undefined
+    if (data?.type !== 'SYNC_OFFLINE_ACTIONS') return
+
+    const replyPort = event.ports?.[0]
+
+    try {
+      const result = await syncOfflineActions()
+      replyPort?.postMessage({ ok: true, result })
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error'
+      replyPort?.postMessage({ ok: false, error: message })
+    }
+  })
+}
