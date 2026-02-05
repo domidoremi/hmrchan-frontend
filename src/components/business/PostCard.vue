@@ -47,6 +47,12 @@
         {{ formatDuration(post.duration) }}
       </div>
 
+      <!-- Published Time Badge -->
+      <div v-if="post.published_at" class="time-badge">
+        <AnimatedIcon name="explore" :fallback-icon="Calendar" size="sm" />
+        {{ formatPublishedTime(post.published_at) }}
+      </div>
+
       <!-- Image Overlay Gradient -->
       <div class="image-overlay" />
 
@@ -693,6 +699,26 @@ onUnmounted(() => {
   right: var(--spacing-2);
   z-index: 3;
   display: flex;
+  align-items: center;
+  gap: var(--spacing-1);
+  padding: 3px 8px;
+  border-radius: var(--radius-md);
+  font-size: 11px;
+  font-weight: var(--font-semibold);
+  font-variant-numeric: tabular-nums;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+/* ========== Time Badge ========== */
+.time-badge {
+  position: absolute;
+  bottom: var(--spacing-2);
+  left: var(--spacing-2);
+  z-index: 3;
+  display: inline-flex;
   align-items: center;
   gap: var(--spacing-1);
   padding: 3px 8px;
