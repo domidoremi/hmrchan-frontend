@@ -189,7 +189,7 @@ import { postService, type PostDetailResponse, type PostListItem } from '@/api'
 import { useCachedPost } from '@/composables/useCachedPosts'
 import { prefetchPostDetail } from '@/utils/prefetch'
 import { getMediaStreamUrl, getMediaThumbnailUrl } from '@/utils/mediaOptimizer'
-import { formatRelativeTime } from '@/utils/date'
+import { formatDate } from '@/utils/date'
 import PostActionStrip from '@/components/business/PostActionStrip.vue'
 import VideoPlayer from '@/components/ui/VideoPlayer.vue'
 
@@ -549,7 +549,7 @@ const platformLabel = computed(() => {
 const publishedLabel = computed(() => {
   const v = displayPublishedAt.value
   if (!v) return ''
-  return formatRelativeTime(v, t)
+  return formatDate(v)
 })
 
 const durationLabel = computed(() => {

@@ -265,6 +265,7 @@
   },
   "post": {
     "by": "by",
+    "publishedAt": "Published {date}",
     "views": "views",
     "likes": "likes",
     "share": "Share",

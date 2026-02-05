@@ -31,6 +31,19 @@
 }
 
 #app[data-ui-style='ios'] {
+  --font-family:
+    -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', 'Inter', 'Segoe UI',
+    sans-serif;
+
+  font-family: var(--font-family);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.32, 0, 0.67, 0);
+  --ease-in-out: cubic-bezier(0.25, 0.1, 0.25, 1);
+  --ease-spring: cubic-bezier(0.22, 1.2, 0.36, 1);
+
+  --shadow-sm: 0 2px 10px rgba(15, 23, 42, 0.08);
+  --shadow-md: 0 8px 24px rgba(15, 23, 42, 0.12);
+  --shadow-lg: 0 20px 48px rgba(15, 23, 42, 0.18);
   --ui-style: ios;
   --radius: 0.9rem;
   --radius-lg: 1.05rem;
@@ -45,6 +58,17 @@
 /* Material-ish defaults (kept intentionally conservative; can be refined later) */
 #app[data-ui-style='material'] {
   --ui-style: material;
+  --font-family: 'Roboto', 'Noto Sans', 'Inter', 'Segoe UI', sans-serif;
+  font-family: var(--font-family);
+
+  --ease-out: cubic-bezier(0.2, 0, 0, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-in-out: cubic-bezier(0.2, 0, 0, 1);
+  --ease-spring: cubic-bezier(0.2, 0, 0, 1);
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12);
+  --shadow-md: 0 4px 10px rgba(0, 0, 0, 0.16);
+  --shadow-lg: 0 10px 20px rgba(0, 0, 0, 0.2);
 
   /* Material tends to use smaller radii + clearer elevation */
   --ui-radius-sheet: 16px;
@@ -172,6 +196,41 @@
   --glass-border-strong: rgba(255, 255, 255, 0.16);
   --glass-shadow: 0 2px 8px rgba(0, 0, 0, 0.32), 0 4px 16px rgba(0, 0, 0, 0.24);
   --glass-shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+/* ========== iOS Motion & Interaction ========== */
+#app[data-ui-style='ios'] .glass-card {
+  transition:
+    transform var(--duration-normal) var(--ease-spring),
+    box-shadow var(--duration-normal) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out);
+}
+
+#app[data-ui-style='ios'] .glass-button {
+  transition:
+    transform var(--duration-fast) var(--ease-spring),
+    box-shadow var(--duration-fast) var(--ease-out),
+    background var(--duration-fast) var(--ease-out);
+}
+
+/* ========== Material Motion & Interaction ========== */
+#app[data-ui-style='material'] .glass-card {
+  transition:
+    transform var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out);
+}
+
+#app[data-ui-style='material'] .glass-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--glass-shadow-lg);
+}
+
+#app[data-ui-style='material'] .glass-button {
+  transition:
+    transform var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out),
+    background var(--duration-fast) var(--ease-out);
 }
 
 /* ========== Material Elevation System ========== */

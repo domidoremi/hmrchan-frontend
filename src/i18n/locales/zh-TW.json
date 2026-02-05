@@ -265,6 +265,7 @@
   },
   "post": {
     "by": "作者",
+    "publishedAt": "發布於 {date}",
     "views": "瀏覽",
     "likes": "喜歡",
     "share": "分享",
