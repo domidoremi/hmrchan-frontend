@@ -1,12 +1,12 @@
 <template>
   <Teleport to="body">
-    <Transition name="post-preview">
+    <Transition name="post-preview" @after-leave="onAfterLeave">
       <div
         v-if="isOpen"
         class="post-preview-overlay"
         role="dialog"
         aria-modal="true"
-        :aria-label="$t('post.preview', 'Post preview')"
+        :aria-label="$t('post.preview')"
         @click.self="close"
       >
         <div ref="panelRef" class="post-preview-panel" tabindex="-1">
@@ -15,6 +15,10 @@
             class="post-preview-sheet"
             :class="{ 'is-dragging': isSheetDragging }"
             :style="sheetDragStyle"
+            @pointerdown="onSheetPointerDown"
+            @pointermove="onHandlePointerMove"
+            @pointerup="onHandlePointerUp"
+            @pointercancel="onHandlePointerCancel"
           >
             <button
               type="button"
@@ -22,9 +26,6 @@
               :aria-label="$t('common.close')"
               @click="onHandleClick"
               @pointerdown="onHandlePointerDown"
-              @pointermove="onHandlePointerMove"
-              @pointerup="onHandlePointerUp"
-              @pointercancel="onHandlePointerCancel"
             >
               <span class="post-preview-handle-bar" aria-hidden="true" />
             </button>
@@ -69,7 +70,7 @@
                     {{ displayLikes }} {{ $t('post.likes') }}
                   </span>
                   <span v-if="subtitlesAvailable" class="meta-pill">
-                    {{ $t('post.subtitlesAvailable', 'Subtitles available') }}
+                    {{ $t('post.subtitlesAvailable') }}
                   </span>
                 </div>
               </div>
@@ -111,7 +112,7 @@
                       <span class="spinner" />
                     </div>
                     <p v-else class="post-preview-empty-text">
-                      {{ $t('post.noMedia', 'No media') }}
+                      {{ $t('post.noMedia') }}
                     </p>
                   </div>
 
@@ -169,7 +170,7 @@
                   :disabled="!postId"
                   @click="openDetail"
                 >
-                  {{ $t('post.viewDetail', 'View detail') }}
+                  {{ $t('post.viewDetail') }}
                 </button>
               </div>
             </div>
@@ -265,7 +266,7 @@ function finishHandleDrag(shouldClose: boolean) {
   activePointerId = null
 
   if (shouldClose) {
-    close()
+    requestClose()
     return
   }
 
@@ -292,7 +293,21 @@ function onHandlePointerCancel() {
 function onHandleClick() {
   // Only treat as click-to-close when user didn't drag.
   if (didHandleDrag) return
-  close()
+  requestClose()
+}
+
+function onSheetPointerDown(e: PointerEvent) {
+  // Allow dragging from most of the sheet, but avoid stealing pointer events from interactive controls.
+  const target = e.target as HTMLElement | null
+  if (!target) return
+
+  // Handle already has its own pointerdown.
+  if (target.closest('.post-preview-handle')) return
+
+  // Ignore interactive elements.
+  if (target.closest('button, a, input, textarea, select, video, [role="button"], .thumb')) return
+
+  onHandlePointerDown(e)
 }
 
 let previousBodyOverflow: string | null = null
@@ -311,7 +326,34 @@ function unlockBodyScroll() {
 }
 
 function onKeydown(e: KeyboardEvent) {
-  if (e.key === 'Escape') close()
+  if (e.key === 'Escape') requestClose()
+}
+
+const HISTORY_MODAL_KEY = '__postPreviewModal'
+let isClosingFromPopState = false
+
+function hasModalHistoryEntry() {
+  if (typeof window === 'undefined') return false
+  return Boolean(
+    window.history.state && (window.history.state as Record<string, unknown>)[HISTORY_MODAL_KEY]
+  )
+}
+
+function requestClose() {
+  // If we injected a history entry for the modal, remove it first so that "Back" always closes the modal.
+  if (typeof window !== 'undefined' && hasModalHistoryEntry()) {
+    isClosingFromPopState = true
+    window.history.back()
+    return
+  }
+
+  emit('update:isOpen', false)
+}
+
+function onPopState() {
+  if (!props.isOpen) return
+  isClosingFromPopState = true
+  emit('update:isOpen', false)
 }
 
 const { load } = useCachedPost<PostDetailResponse>(postService.getPost, {
@@ -395,14 +437,21 @@ watch(
   () => props.isOpen,
   (open) => {
     if (typeof window === 'undefined') return
+
     if (open) {
       // reset drag state each time we open
       sheetDragY.value = 0
       isSheetDragging.value = false
       activePointerId = null
 
+      // History integration: add a synthetic entry so Back closes the modal first.
+      if (!hasModalHistoryEntry()) {
+        window.history.pushState({ ...(window.history.state ?? {}), [HISTORY_MODAL_KEY]: true }, '')
+      }
+
       lockBodyScroll()
       window.addEventListener('keydown', onKeydown)
+      window.addEventListener('popstate', onPopState)
     } else {
       // Cancel any delayed loading UI.
       if (loadingTimer) {
@@ -412,12 +461,16 @@ watch(
       reloadSeq += 1
       isLoading.value = false
 
-      sheetDragY.value = 0
-      isSheetDragging.value = false
-      activePointerId = null
+      // NOTE: drag state is cleaned up in <Transition @after-leave> to preserve the dismiss animation.
 
       unlockBodyScroll()
       window.removeEventListener('keydown', onKeydown)
+      window.removeEventListener('popstate', onPopState)
+
+      // If the modal was closed by popstate, reset the flag.
+      if (isClosingFromPopState) {
+        isClosingFromPopState = false
+      }
     }
   },
   { immediate: true }
@@ -425,7 +478,10 @@ watch(
 
 onBeforeUnmount(() => {
   unlockBodyScroll()
-  if (typeof window !== 'undefined') window.removeEventListener('keydown', onKeydown)
+  if (typeof window !== 'undefined') {
+    window.removeEventListener('keydown', onKeydown)
+    window.removeEventListener('popstate', onPopState)
+  }
 })
 
 const primaryMedia = computed(() => post.value?.media_files?.[activeMediaIndex.value] ?? null)
@@ -436,7 +492,7 @@ const subtitlesAvailable = computed(() => {
 })
 
 const displayTitle = computed(
-  () => post.value?.title || props.initialPost?.title || t('post.preview', 'Post preview')
+  () => post.value?.title || props.initialPost?.title || t('post.preview')
 )
 
 const displayAuthor = computed(
@@ -525,7 +581,14 @@ const imageSrc = computed(() => {
 })
 
 function close() {
-  emit('update:isOpen', false)
+  requestClose()
+}
+
+function onAfterLeave() {
+  // Cleanup drag state after the leave animation (avoids snapping back before the sheet slides down).
+  sheetDragY.value = 0
+  isSheetDragging.value = false
+  activePointerId = null
 }
 
 function openDetail() {
@@ -556,7 +619,7 @@ function openDetail() {
 
 .post-preview-enter-active,
 .post-preview-leave-active {
-  transition: opacity 0.22s var(--ease-out);
+  transition: opacity 0.32s var(--ease-out);
 }
 
 .post-preview-enter-from,
@@ -564,17 +627,26 @@ function openDetail() {
   opacity: 0;
 }
 
-.post-preview-enter-active .post-preview-panel,
-.post-preview-leave-active .post-preview-panel {
+.post-preview-enter-active .post-preview-panel {
   transition:
-    transform 0.28s var(--ease-spring),
-    opacity 0.2s var(--ease-out);
+    transform 0.38s cubic-bezier(0.34, 1.56, 0.64, 1),
+    opacity 0.25s var(--ease-out);
 }
 
-.post-preview-enter-from .post-preview-panel,
+.post-preview-leave-active .post-preview-panel {
+  transition:
+    transform 0.32s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.28s var(--ease-out);
+}
+
+.post-preview-enter-from .post-preview-panel {
+  opacity: 0;
+  transform: translate3d(0, 48px, 0) scale(0.96);
+}
+
 .post-preview-leave-to .post-preview-panel {
   opacity: 0;
-  transform: translate3d(0, 28px, 0) scale(0.98);
+  transform: translate3d(0, 100%, 0) scale(0.98);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -617,6 +689,7 @@ function openDetail() {
   display: flex;
   flex-direction: column;
   transform: translate3d(0, var(--sheet-drag-y, 0px), 0);
+  touch-action: none;
   transition: transform 200ms var(--ease-out);
   will-change: transform;
 }
@@ -927,6 +1000,16 @@ function openDetail() {
     height: 92svh;
     border-radius: var(--ui-radius-sheet, 18px) var(--ui-radius-sheet, 18px) 0 0;
   }
+
+  /* Mobile sheet animation: slide from/to bottom instead of scaling */
+  .post-preview-enter-from .post-preview-panel {
+    transform: translate3d(0, 100%, 0);
+  }
+
+  .post-preview-leave-to .post-preview-panel {
+    transform: translate3d(0, 100%, 0);
+  }
+}
 
   .post-preview-handle {
     display: flex;

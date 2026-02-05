@@ -16,14 +16,14 @@
             :width="36"
             :height="36"
           />
-          <h2 class="section-title">{{ $t('settings.cache.title', '缓存管理') }}</h2>
+          <h2 class="section-title">{{ $t('settings.cache.title') }}</h2>
         </div>
         <p class="section-desc">
-          {{ $t('settings.cache.description', '清理本地缓存数据以释放存储空间或解决数据问题') }}
+          {{ $t('settings.cache.description') }}
         </p>
         <Button variant="secondary" :loading="isClearingCache" @click="handleClearCache">
           <AnimatedIcon name="sparkle" :fallback-icon="Trash2" size="sm" class="icon" />
-          {{ $t('settings.cache.clear', '清理缓存') }}
+          {{ $t('settings.cache.clear') }}
         </Button>
       </div>
     </div>

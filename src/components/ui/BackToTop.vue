@@ -110,11 +110,11 @@ onUnmounted(() => {
 
 <style scoped>
 .back-to-top {
-  --btn-size: clamp(44px, 4vw, 60px);
-  --edge: clamp(var(--spacing-3), 3.2vw, var(--spacing-7));
+  --btn-size: clamp(44px, 5vw, 62px);
+  --edge: clamp(18px, 3.4vw, 36px);
   position: fixed;
   right: var(--edge);
-  bottom: var(--edge);
+  bottom: calc(var(--edge) + env(safe-area-inset-bottom, 0px));
   z-index: var(--z-fixed);
   display: flex;
   align-items: center;

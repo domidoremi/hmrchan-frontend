@@ -69,7 +69,10 @@
     "loadingFailed": "載入失敗",
     "imageLoadFailed": "圖片載入失敗",
     "reset": "重置",
-    "refresh": "重新整理"
+    "refresh": "刷新",
+    "confirmDelete": "確認刪除",
+    "warning": "警告",
+    "success": "成功"
   },
   "auth": {
     "email": "電子郵件",
@@ -97,6 +100,7 @@
     "error": {
       "fieldsRequired": "請填寫所有欄位",
       "passwordTooShort": "密碼至少需要6個字元",
+      "passwordTooWeak": "密碼強度太弱，請增加複雜度",
       "loginFailed": "登入失敗，請重試",
       "registerFailed": "註冊失敗，請重試",
       "emailExists": "該電子郵件已被註冊",
@@ -112,7 +116,11 @@
     "loginHint": "使用使用者名稱或電子郵件安全登入。",
     "registerHint": "完成驗證即可快速建立帳戶。",
     "verifyTitle": "安全驗證",
-    "verifyHint": "只需片刻"
+    "verifyHint": "僅需片刻",
+    "passwordWeak": "弱",
+    "passwordFair": "一般",
+    "passwordGood": "良好",
+    "passwordStrong": "強"
   },
   "video": {
     "playbackSpeed": "播放速度",
@@ -146,6 +154,9 @@
     "dark": "深色",
     "auto": "跟隨系統",
     "language": "語言",
+    "uiStyle": "UI 風格",
+    "uiStyleIos": "iOS (SwiftUI)",
+    "uiStyleMaterial": "Material",
     "display": "顯示",
     "toggleHeroSection": "顯示首頁橫幅",
     "heroSectionDesc": "在首頁顯示橫幅區域",
@@ -266,7 +277,10 @@
     "noMedia": "暫無媒體",
     "content": "內容",
     "readFullText": "閱讀全文",
-    "subtitlesAvailable": "字幕可用"
+    "subtitlesAvailable": "字幕可用",
+    "untitled": "未命名",
+    "swipeAgainNext": "再次滑動以進入下一篇",
+    "swipeAgainPrev": "再次滑動以返回上一篇"
   },
   "author": {
     "postCount": "{count} 個作品"
@@ -297,11 +311,13 @@
   },
   "comment": {
     "title": "評論",
+    "loginRequiredTitle": "登入後留言",
     "placeholder": "分享你的想法...",
-    "replyPlaceholder": "回覆 @{name}...",
+    "replyPlaceholder": "回覆 @{username}...",
     "submit": "發布",
     "reply": "回覆",
-    "delete": "刪除",
+    "replies": "回覆",
+    "share": "分享",
     "report": "檢舉",
     "empty": "暫無評論",
     "beFirst": "來發表第一條評論吧！",
@@ -387,6 +403,7 @@
     "settings": "個人設定",
     "avatar": "頭像",
     "uploadAvatar": "上傳頭像",
+    "avatarHint": "支援 JPG、PNG 格式，建議尺寸 200×200",
     "avatarUpdated": "頭像更新成功",
     "basicInfo": "基本資訊",
     "username": "使用者名稱",
@@ -399,6 +416,7 @@
     "displayNameHint": "此名稱將公開顯示",
     "bio": "個人簡介",
     "bioPlaceholder": "介紹一下自己",
+    "bioHint": "介紹一下自己吧",
     "changePassword": "修改密碼",
     "currentPassword": "目前密碼",
     "newPassword": "新密碼",
@@ -462,7 +480,14 @@
     "unlike": "取消按讚",
     "unlikeSuccess": "已取消按讚",
     "confirmUnlike": "取消按讚",
-    "confirmUnlikeMessage": "確定要取消對這條評論的按讚嗎？"
+    "confirmUnlikeMessage": "確定要取消對這條評論的按讚嗎？",
+    "unknownPost": "未知貼文",
+    "passwordWeak": "弱",
+    "passwordFair": "一般",
+    "passwordGood": "良好",
+    "passwordStrong": "強",
+    "avatarTypeError": "僅支援 JPG、PNG、GIF、WebP 格式",
+    "avatarSizeError": "檔案大小不能超過 {max}MB"
   },
   "user": {
     "username": {

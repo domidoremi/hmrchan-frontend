@@ -128,7 +128,7 @@
         <StateIndicator
           v-else-if="hotTopics.length === 0"
           variant="empty"
-          :description="$t('community.noHotTopics', '暂无热门话题')"
+          :description="$t('community.noHotTopics')"
         />
         <div v-else class="hot-topics-grid">
           <article

@@ -267,7 +267,7 @@ const displayTitle = computed(() => {
   const content = normalizeText(props.post.content)
 
   if (!titleFromContent.value) {
-    return title || content || t('post.untitled', 'Untitled')
+    return title || content || t('post.untitled')
   }
 
   // Use the first line / sentence of content as title
@@ -276,7 +276,7 @@ const displayTitle = computed(() => {
     return firstLine.length > 120 ? firstLine.slice(0, 120) + '…' : firstLine
   }
 
-  return title || t('post.untitled', 'Untitled')
+  return title || t('post.untitled')
 })
 
 const displayExcerpt = computed(() => {
