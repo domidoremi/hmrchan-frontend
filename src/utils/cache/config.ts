@@ -52,6 +52,8 @@ export const CACHE_LIMITS = {
   IDB_POSTS_MAX_SIZE: 1000,
   /** IndexedDB 列表缓存最大条目数 */
   IDB_LISTS_MAX_SIZE: 50,
+  /** IndexedDB 元数据缓存最大条目数 */
+  IDB_META_MAX_SIZE: 300,
 } as const
 
 // ============================================

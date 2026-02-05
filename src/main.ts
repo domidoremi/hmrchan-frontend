@@ -96,8 +96,9 @@ scheduleTask(
         })
       })
       // 初始化后台同步监听器
-      import('./utils/cache/syncManager').then(({ setupAutoSync }) => {
+      import('./utils/cache/syncManager').then(({ setupAutoSync, setupSwSyncListener }) => {
         setupAutoSync()
+        setupSwSyncListener()
       })
     }),
   { priority: 'user-visible', delay: 1000 } // 延迟 1 秒，确保首屏渲染完成
@@ -123,4 +124,24 @@ scheduleTask(
     })
   },
   { priority: 'background', delay: 5000 } // 延迟 5 秒，最低优先级
+)
+
+// 后台维护任务：清理过期缓存/队列
+scheduleTask(
+  async () => {
+    const [{ postCache, authorCache }, { cleanupViewRecords }, { cleanupFailedActions }] =
+      await Promise.all([
+        import('./utils/cache'),
+        import('./composables/useViewTracking'),
+        import('./utils/cache/offlineQueue'),
+      ])
+
+    await Promise.allSettled([
+      postCache.cleanup(),
+      authorCache.cleanup(),
+      cleanupViewRecords(),
+      cleanupFailedActions(),
+    ])
+  },
+  { priority: 'background', delay: 8000 }
 )

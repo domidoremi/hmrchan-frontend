@@ -5,7 +5,7 @@
  * 同时调用后端 API 增加浏览量和记录浏览历史
  */
 
-import { idbGet, idbSet, STORES } from '@/utils/cache/idb'
+import { idbDelete, idbGet, idbSet, STORES } from '@/utils/cache/idb'
 import { postService, historyService } from '@/api'
 
 // 浏览记录在 IndexedDB 中的 TTL（7 天后允许重新计数）
@@ -28,6 +28,7 @@ async function hasViewed(postId: string): Promise<boolean> {
 
   // 检查是否过期
   if (Date.now() - record.viewedAt > VIEW_RECORD_TTL) {
+    await idbDelete(STORES.META, key)
     return false
   }
 

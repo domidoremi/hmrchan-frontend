@@ -17,6 +17,35 @@ if (!AbortSignal.timeout) {
   }
 }
 
+async function getMediaMetaStats() {
+  try {
+    const db = await openDatabase()
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(MEDIA_META_STORE, 'readonly')
+      const store = tx.objectStore(MEDIA_META_STORE)
+      let count = 0
+      let totalSize = 0
+      const request = store.openCursor()
+
+      request.onsuccess = (event) => {
+        const cursor = event.target.result
+        if (!cursor) {
+          resolve({ count, totalSize })
+          return
+        }
+        const value = cursor.value
+        count += 1
+        totalSize += value?.size || 0
+        cursor.continue()
+      }
+
+      request.onerror = () => reject(request.error)
+    })
+  } catch {
+    return null
+  }
+}
+
 const CACHE_VERSION = 'v1-0-0-425ba033-b746'
 const CACHE_NAMES = {
   static: `hmrchan-static-${CACHE_VERSION}`,
@@ -31,8 +60,15 @@ const API_HOSTNAMES = [
   // 如需添加其他环境，在此处扩展
 ]
 
+// 运行时配置（由客户端注入）
+const RUNTIME_CONFIG = {
+  apiBase: null,
+  apiHostnames: [...API_HOSTNAMES],
+}
+
 // 静态资源列表（预缓存）
-const STATIC_ASSETS = ['/', '/index.html', '/manifest.json', '/favicon.ico']
+const OFFLINE_FALLBACK = '/offline.html'
+const STATIC_ASSETS = ['/', '/index.html', '/manifest.json', '/favicon.ico', OFFLINE_FALLBACK]
 
 // 媒体缓存配置
 const MEDIA_CACHE_CONFIG = {
@@ -78,25 +114,28 @@ self.addEventListener('activate', (event) => {
   // console.log('[SW] Activating...')
 
   event.waitUntil(
-    caches
-      .keys()
-      .then((cacheNames) => {
-        // 删除旧版本缓存
-        return Promise.all(
-          cacheNames
-            .filter((name) => {
-              return name.startsWith('hmrchan-') && !Object.values(CACHE_NAMES).includes(name)
-            })
-            .map((name) => {
-              // console.log('[SW] Deleting old cache:', name)
-              return caches.delete(name)
-            })
-        )
-      })
-      .then(() => {
-        // console.log('[SW] Activation complete')
-        return self.clients.claim() // 立即控制所有页面
-      })
+    (async () => {
+      const cacheNames = await caches.keys()
+      await Promise.all(
+        cacheNames
+          .filter((name) => {
+            return name.startsWith('hmrchan-') && !Object.values(CACHE_NAMES).includes(name)
+          })
+          .map((name) => caches.delete(name))
+      )
+
+      // 启用 Navigation Preload（如果支持）
+      if (self.registration && 'navigationPreload' in self.registration) {
+        try {
+          await self.registration.navigationPreload.enable()
+        } catch {
+          // ignore
+        }
+      }
+
+      // console.log('[SW] Activation complete')
+      await self.clients.claim() // 立即控制所有页面
+    })()
   )
 })
 
@@ -109,6 +148,12 @@ self.addEventListener('fetch', (event) => {
 
   // 只处理同源请求和指定的外部资源
   if (!shouldHandleRequest(url)) {
+    return
+  }
+
+  // 导航请求：Network First + Navigation Preload + 离线兜底
+  if (request.mode === 'navigate') {
+    event.respondWith(handleNavigationRequest(event))
     return
   }
 
@@ -151,7 +196,7 @@ self.addEventListener('sync', (event) => {
   console.log('[SW] Background sync:', event.tag)
 
   if (event.tag === 'sync-offline-actions') {
-    event.waitUntil(syncOfflineActions())
+    event.waitUntil(triggerClientSync())
   }
 })
 
@@ -225,6 +270,17 @@ self.addEventListener('message', (event) => {
   const { type } = event.data
 
   switch (type) {
+    case 'CONFIG': {
+      const payload = event.data?.payload || {}
+      if (typeof payload.apiBase === 'string') {
+        RUNTIME_CONFIG.apiBase = payload.apiBase
+      }
+      if (Array.isArray(payload.apiHostnames) && payload.apiHostnames.length > 0) {
+        const merged = new Set([...API_HOSTNAMES, ...payload.apiHostnames])
+        RUNTIME_CONFIG.apiHostnames = Array.from(merged)
+      }
+      break
+    }
     case 'SKIP_WAITING':
       self.skipWaiting()
       break
@@ -254,6 +310,49 @@ self.addEventListener('message', (event) => {
 // ============================================
 // 缓存策略实现
 // ============================================
+/**
+ * 导航请求处理（SPA 入口）
+ */
+async function handleNavigationRequest(event) {
+  const { request } = event
+
+  try {
+    // 优先使用 navigation preload（如果可用）
+    const preload = await event.preloadResponse
+    if (preload) {
+      return preload
+    }
+
+    const networkResponse = await fetch(request)
+    if (networkResponse && networkResponse.ok) {
+      return networkResponse
+    }
+  } catch {
+    // ignore
+  }
+
+  // 离线兜底：优先 index.html，其次 offline.html
+  const cache = await caches.open(CACHE_NAMES.static)
+  const cached = await cache.match('/index.html')
+  if (cached) return cached
+
+  const offline = await cache.match(OFFLINE_FALLBACK)
+  if (offline) return offline
+
+  return new Response('Offline', { status: 503 })
+}
+/**
+ * 为缓存响应添加时间戳
+ */
+function withCacheTimestamp(response) {
+  const headers = new Headers(response.headers)
+  headers.set('X-Cached-At', new Date().toISOString())
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  })
+}
 
 /**
  * Cache First - 优先使用缓存
@@ -270,8 +369,9 @@ async function cacheFirst(request, cacheName) {
   // console.log('[SW] Cache miss, fetching:', request.url)
   try {
     const response = await fetch(request)
-    if (response.ok) {
-      cache.put(request, response.clone())
+    if (isCacheableResponse(response)) {
+      const cachedResponse = withCacheTimestamp(response.clone())
+      cache.put(request, cachedResponse)
     }
     return response
   } catch (error) {
@@ -296,7 +396,7 @@ async function cacheFirstMedia(request) {
   try {
     const response = await fetch(request)
 
-    if (response.ok && response.status === 200) {
+    if (response.ok && response.status === 200 && isCacheableResponse(response)) {
       const clonedResponse = response.clone()
 
       // 检查容量并缓存
@@ -344,19 +444,9 @@ async function staleWhileRevalidatePost(request) {
         signal: AbortSignal.timeout(10000), // 10秒超时
       })
 
-      if (response.ok) {
+      if (isCacheableResponse(response)) {
         // 克隆响应并缓存（使用标准化的键）
-        const clonedResponse = response.clone()
-
-        // 添加缓存时间戳
-        const headers = new Headers(clonedResponse.headers)
-        headers.set('X-Cached-At', new Date().toISOString())
-
-        const cachedResponse = new Response(clonedResponse.body, {
-          status: clonedResponse.status,
-          statusText: clonedResponse.statusText,
-          headers,
-        })
+        const cachedResponse = withCacheTimestamp(response.clone())
 
         await cache.put(normalizedRequest, cachedResponse)
 
@@ -458,10 +548,10 @@ async function networkFirstApi(request) {
       signal: AbortSignal.timeout(5000),
     })
 
-    if (response.ok) {
+    if (isCacheableResponse(response) && isCacheableApiRequest(url, request)) {
       // 缓存API响应（带过期时间）
-      const clonedResponse = response.clone()
-      cache.put(request, clonedResponse)
+      const cachedResponse = withCacheTimestamp(response.clone())
+      cache.put(request, cachedResponse)
     }
 
     return response
@@ -491,6 +581,28 @@ async function networkFirstApi(request) {
 // ============================================
 // 工具函数
 // ============================================
+function isCacheableResponse(response) {
+  if (!response || !response.ok) return false
+  if (response.type === 'opaque') return false
+  const cacheControl = response.headers.get('Cache-Control') || ''
+  if (cacheControl.includes('no-store') || cacheControl.includes('private')) {
+    return false
+  }
+  if (response.headers.has('Set-Cookie')) return false
+  return true
+}
+
+function isCacheableApiRequest(url, request) {
+  const hasAuth = request.headers.has('Authorization')
+  if (!hasAuth) return true
+
+  // 允许缓存公开资源（即使携带 Authorization）
+  if (isPostDetailRequest(url) || isPostListRequest(url) || isAuthorRequest(url)) {
+    return true
+  }
+
+  return false
+}
 
 function shouldHandleRequest(url) {
   // 只处理 http/https 请求
@@ -499,8 +611,11 @@ function shouldHandleRequest(url) {
   // 同源请求
   if (url.origin === self.location.origin) return true
 
-  // API 域名（使用配置数组，便于多环境扩展）
-  if (API_HOSTNAMES.includes(url.hostname)) return true
+  // API 域名（使用运行时配置，便于多环境扩展）
+  const apiHosts = RUNTIME_CONFIG.apiHostnames.length
+    ? RUNTIME_CONFIG.apiHostnames
+    : API_HOSTNAMES
+  if (apiHosts.includes(url.hostname)) return true
 
   // 允许的外部CDN
   const allowedOrigins = ['pbs.twimg.com', 'i.ytimg.com', 'source.unsplash.com']
@@ -589,27 +704,190 @@ function isAvatarRequest(url) {
   }
   return false
 }
+// IndexedDB store for media metadata (LRU + size tracking)
+const MEDIA_META_STORE = 'media-meta'
+
+function openDatabase() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open('hmrchan-cache', 3)
+
+    request.onupgradeneeded = () => {
+      const db = request.result
+
+      if (!db.objectStoreNames.contains('offline-queue')) {
+        const queueStore = db.createObjectStore('offline-queue', { keyPath: 'id' })
+        queueStore.createIndex('status', 'status', { unique: false })
+        queueStore.createIndex('timestamp', 'timestamp', { unique: false })
+      }
+
+      if (!db.objectStoreNames.contains(MEDIA_META_STORE)) {
+        const mediaStore = db.createObjectStore(MEDIA_META_STORE, { keyPath: 'url' })
+        mediaStore.createIndex('lastAccess', 'lastAccess', { unique: false })
+        mediaStore.createIndex('cachedAt', 'cachedAt', { unique: false })
+        mediaStore.createIndex('size', 'size', { unique: false })
+      }
+    }
+
+    request.onsuccess = () => resolve(request.result)
+    request.onerror = () => reject(request.error)
+    request.onblocked = () => {
+      console.warn('[SW] IDB upgrade blocked')
+    }
+  })
+}
+
+function idbGet(store, key) {
+  return new Promise((resolve, reject) => {
+    openDatabase()
+      .then((db) => {
+        const tx = db.transaction(store, 'readonly')
+        const request = tx.objectStore(store).get(key)
+        request.onsuccess = () => resolve(request.result)
+        request.onerror = () => reject(request.error)
+      })
+      .catch(reject)
+  })
+}
+
+function idbPut(store, value) {
+  return new Promise((resolve, reject) => {
+    openDatabase()
+      .then((db) => {
+        const tx = db.transaction(store, 'readwrite')
+        const request = tx.objectStore(store).put(value)
+        request.onsuccess = () => resolve()
+        request.onerror = () => reject(request.error)
+      })
+      .catch(reject)
+  })
+}
+
+function idbDelete(store, key) {
+  return new Promise((resolve, reject) => {
+    openDatabase()
+      .then((db) => {
+        const tx = db.transaction(store, 'readwrite')
+        const request = tx.objectStore(store).delete(key)
+        request.onsuccess = () => resolve()
+        request.onerror = () => reject(request.error)
+      })
+      .catch(reject)
+  })
+}
+
+function idbGetAll(store) {
+  return new Promise((resolve, reject) => {
+    openDatabase()
+      .then((db) => {
+        const tx = db.transaction(store, 'readonly')
+        const request = tx.objectStore(store).getAll()
+        request.onsuccess = () => resolve(request.result || [])
+        request.onerror = () => reject(request.error)
+      })
+      .catch(reject)
+  })
+}
 
 /**
  * 管理媒体缓存容量
  */
 async function manageMediaCache(request, response) {
   const cache = await caches.open(CACHE_NAMES.media)
-
-  // 检查当前缓存大小
-  const keys = await cache.keys()
-
-  // 如果超过限制，删除最旧的
-  if (keys.length >= MEDIA_CACHE_CONFIG.maxItems) {
-    console.log('[SW] Media cache full, removing oldest items')
-
-    // 删除前10个（LRU）
-    const toDelete = keys.slice(0, 10)
-    await Promise.all(toDelete.map((key) => cache.delete(key)))
-  }
+  const size = await getResponseSize(response)
+  const now = Date.now()
 
   // 缓存新的媒体文件
   await cache.put(request, response)
+
+  // 记录元数据
+  await idbPut(MEDIA_META_STORE, {
+    url: request.url,
+    size,
+    cachedAt: now,
+    lastAccess: now,
+  })
+
+  // 执行 LRU/容量清理
+  await enforceMediaLimits(cache)
+}
+
+/**
+ * 获取响应体大小
+ */
+async function getResponseSize(response) {
+  try {
+    const contentLength = response.headers.get('content-length')
+    if (contentLength) {
+      const parsed = Number(contentLength)
+      if (!Number.isNaN(parsed) && parsed > 0) return parsed
+    }
+    const blob = await response.clone().blob()
+    return blob.size || 0
+  } catch {
+    return 0
+  }
+}
+
+/**
+ * 媒体缓存 LRU + 容量限制
+ */
+async function enforceMediaLimits(cache) {
+  const stats = await getMediaMetaStats()
+  if (!stats) return
+
+  let currentSize = stats.totalSize
+  let currentCount = stats.count
+  const maxEvictions = 50
+  let evicted = 0
+  if (
+    currentCount <= MEDIA_CACHE_CONFIG.maxItems &&
+    currentSize <= MEDIA_CACHE_CONFIG.maxSize
+  ) {
+    return
+  }
+
+  const db = await openDatabase()
+
+  await new Promise((resolve, reject) => {
+    const deletePromises = []
+    const tx = db.transaction(MEDIA_META_STORE, 'readwrite')
+    const store = tx.objectStore(MEDIA_META_STORE)
+    const cursorRequest = store.indexNames.contains('lastAccess')
+      ? store.index('lastAccess').openCursor()
+      : store.openCursor()
+
+    cursorRequest.onsuccess = (event) => {
+      const cursor = event.target.result
+      if (!cursor) return
+      if (
+        currentCount <= MEDIA_CACHE_CONFIG.maxItems &&
+        currentSize <= MEDIA_CACHE_CONFIG.maxSize
+      ) {
+        return
+      }
+      if (evicted >= maxEvictions) return
+
+      const value = cursor.value
+      const url = value?.url
+      if (url) {
+        deletePromises.push(cache.delete(url))
+        store.delete(cursor.primaryKey)
+        currentCount -= 1
+        currentSize -= value?.size || 0
+        evicted += 1
+      }
+
+      cursor.continue()
+    }
+
+    cursorRequest.onerror = () => reject(cursorRequest.error)
+    tx.oncomplete = () => {
+      Promise.all(deletePromises)
+        .then(() => resolve())
+        .catch(() => resolve())
+    }
+    tx.onerror = () => reject(tx.error)
+  })
 }
 
 /**
@@ -617,22 +895,15 @@ async function manageMediaCache(request, response) {
  */
 async function clearOldMedia() {
   const cache = await caches.open(CACHE_NAMES.media)
-  const keys = await cache.keys()
-  const now = Date.now()
-
+  const metas = await idbGetAll(MEDIA_META_STORE)
+  const cutoff = Date.now() - MEDIA_CACHE_CONFIG.maxAge
   let deleted = 0
 
-  for (const request of keys) {
-    const response = await cache.match(request)
-    if (!response) continue
-
-    const dateHeader = response.headers.get('date')
-    if (!dateHeader) continue
-
-    const age = now - new Date(dateHeader).getTime()
-
-    if (age > MEDIA_CACHE_CONFIG.maxAge) {
-      await cache.delete(request)
+  for (const meta of metas) {
+    const cachedAt = meta?.cachedAt || 0
+    if (cachedAt && cachedAt < cutoff) {
+      await cache.delete(meta.url)
+      await idbDelete(MEDIA_META_STORE, meta.url)
       deleted++
     }
   }
@@ -649,6 +920,12 @@ async function clearAllCaches() {
   await Promise.all(
     cacheNames.filter((name) => name.startsWith('hmrchan-')).map((name) => caches.delete(name))
   )
+  try {
+    const metas = await idbGetAll(MEDIA_META_STORE)
+    await Promise.all(metas.map((meta) => idbDelete(MEDIA_META_STORE, meta.url)))
+  } catch {
+    // ignore
+  }
   console.log('[SW] All caches cleared')
 }
 
@@ -701,147 +978,47 @@ function getPlaceholderImage() {
 /**
  * 更新媒体访问时间（简化版LRU）
  */
-function updateMediaAccessTime() {
-  // 在实际实现中，可以使用 IndexedDB 存储访问时间
-  // 这里简化处理
+const mediaAccessWriteBuffer = new Map()
+async function updateMediaAccessTime(url) {
+  try {
+    const now = Date.now()
+    const last = mediaAccessWriteBuffer.get(url) || 0
+    if (now - last < 5000) return
+    mediaAccessWriteBuffer.set(url, now)
+    const meta = await idbGet(MEDIA_META_STORE, url)
+    if (meta) {
+      meta.lastAccess = now
+      await idbPut(MEDIA_META_STORE, meta)
+    }
+  } catch {
+    // ignore
+  }
 }
 
 /**
- * 同步离线操作
+ * 触发客户端执行离线同步（带认证）
  */
-async function syncOfflineActions() {
-  console.log('[SW] Syncing offline actions...')
+async function triggerClientSync() {
+  const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true })
+  if (!clients.length) return true
 
-  try {
-    // 打开 IndexedDB
-    const db = await openDatabase()
-    const tx = db.transaction('offline-queue', 'readonly')
-    const store = tx.objectStore('offline-queue')
-    const actions = await getAllFromStore(store)
+  const results = await Promise.all(
+    clients.map((client) => {
+      return new Promise((resolve) => {
+        const channel = new MessageChannel()
+        const timeout = setTimeout(() => resolve({ ok: false, error: 'timeout' }), 15000)
 
-    console.log(`[SW] Found ${actions.length} offline actions to sync`)
-
-    let synced = 0
-    let failed = 0
-
-    for (const action of actions) {
-      try {
-        // 根据操作类型执行 API 调用
-        const response = await syncAction(action)
-
-        if (response.ok) {
-          // 删除已同步的操作
-          await deleteAction(db, action.id)
-          synced++
-        } else {
-          failed++
+        channel.port1.onmessage = (event) => {
+          clearTimeout(timeout)
+          resolve(event.data || { ok: true })
         }
-      } catch (error) {
-        console.error('[SW] Sync action failed:', error)
-        failed++
-      }
-    }
 
-    console.log(`[SW] Sync complete: ${synced} synced, ${failed} failed`)
-
-    // 通知客户端同步结果
-    const clients = await self.clients.matchAll()
-    clients.forEach((client) => {
-      client.postMessage({
-        type: 'SYNC_COMPLETE',
-        synced,
-        failed,
+        client.postMessage({ type: 'SYNC_OFFLINE_ACTIONS' }, [channel.port2])
       })
     })
+  )
 
-    return true
-  } catch (error) {
-    console.error('[SW] Sync failed:', error)
-    throw error
-  }
-}
-
-/**
- * 打开 IndexedDB
- */
-function openDatabase() {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open('hmrchan-cache', 2)
-    request.onsuccess = () => resolve(request.result)
-    request.onerror = () => reject(request.error)
-  })
-}
-
-/**
- * 从 store 获取所有记录
- */
-function getAllFromStore(store) {
-  return new Promise((resolve, reject) => {
-    const request = store.getAll()
-    request.onsuccess = () => resolve(request.result)
-    request.onerror = () => reject(request.error)
-  })
-}
-
-/**
- * 删除操作
- */
-async function deleteAction(db, actionId) {
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction('offline-queue', 'readwrite')
-    const store = tx.objectStore('offline-queue')
-    const request = store.delete(actionId)
-    request.onsuccess = () => resolve()
-    request.onerror = () => reject(request.error)
-  })
-}
-
-/**
- * 同步单个操作
- */
-async function syncAction(action) {
-  const apiBase = 'https://api.momichan.xyz/api/v1'
-
-  let url = ''
-  let method = 'POST'
-  let body = null
-
-  switch (action.type) {
-    case 'favorite':
-      url = `${apiBase}/favorites/`
-      body = JSON.stringify({ post_id: action.resourceId })
-      break
-    case 'unfavorite':
-      if (action.data && action.data.favoriteId) {
-        url = `${apiBase}/favorites/${action.data.favoriteId}`
-        method = 'DELETE'
-      }
-      break
-    case 'comment':
-      if (action.data && action.data.content) {
-        url = `${apiBase}/comments/`
-        body = JSON.stringify({
-          post_id: action.resourceId,
-          content: action.data.content,
-        })
-      }
-      break
-    default:
-      console.warn('[SW] Unknown action type:', action.type)
-      return { ok: false }
-  }
-
-  if (!url) {
-    return { ok: false }
-  }
-
-  return fetch(url, {
-    method,
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body,
-  })
+  return results.some((r) => r && r.ok)
 }
 
 console.log('[SW] Service Worker loaded')
