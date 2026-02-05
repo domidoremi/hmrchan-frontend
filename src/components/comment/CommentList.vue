@@ -216,7 +216,7 @@ watch(
   flex-direction: column;
   align-items: center;
   gap: var(--spacing-2);
-  padding: var(--spacing-7) var(--spacing-4);
+  padding: var(--spacing-8) var(--spacing-6);
   text-align: center;
   border-radius: var(--radius-lg);
   border: 1px dashed var(--glass-border);
@@ -225,12 +225,20 @@ watch(
     rgba(var(--color-primary-rgb), 0.08),
     rgba(var(--color-secondary-rgb), 0.04)
   );
+  min-height: 220px;
 }
 
 .empty-state--guest {
   border-style: solid;
   background: var(--glass-bg-light);
   box-shadow: var(--shadow-sm);
+}
+
+@media (max-width: 768px) {
+  .empty-state {
+    padding: var(--spacing-7) var(--spacing-4);
+    min-height: 180px;
+  }
 }
 
 .empty-title {

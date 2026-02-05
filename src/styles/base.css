@@ -42,21 +42,24 @@ body::before {
   position: fixed;
   inset: 0;
   z-index: -1;
+  will-change: transform;
+  transform: translate3d(0, 0, 0);
+  contain: paint;
   background:
     /* 主光斑 - 左上 */
     radial-gradient(
       ellipse 80% 50% at 10% 20%,
-      rgba(var(--color-primary-rgb), 0.12) 0%,
+      rgba(var(--color-primary-rgb), 0.2) 0%,
       transparent 60%
     ),
     /* 次光斑 - 右下 */
     radial-gradient(
         ellipse 60% 80% at 85% 75%,
-        rgba(var(--color-accent-rgb), 0.08) 0%,
+        rgba(var(--color-accent-rgb), 0.16) 0%,
         transparent 55%
       ),
     /* 柔和光斑 - 中央 */
-    radial-gradient(circle at 50% 40%, rgba(var(--color-secondary-rgb), 0.05) 0%, transparent 45%),
+    radial-gradient(circle at 50% 40%, rgba(var(--color-secondary-rgb), 0.1) 0%, transparent 45%),
     /* 底层纹理 */ var(--color-background);
   pointer-events: none;
 }
