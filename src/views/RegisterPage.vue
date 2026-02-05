@@ -105,10 +105,10 @@ const password = ref('')
 const passwordStrengthResult = computed(() => checkPasswordStrength(password.value))
 const passwordStrengthText = computed(() => {
   const textMap: Record<string, string> = {
-    weak: t('auth.passwordWeak', '弱'),
-    fair: t('auth.passwordFair', '一般'),
-    good: t('auth.passwordGood', '良好'),
-    strong: t('auth.passwordStrong', '强'),
+    weak: t('auth.passwordWeak'),
+    fair: t('auth.passwordFair'),
+    good: t('auth.passwordGood'),
+    strong: t('auth.passwordStrong'),
   }
   return textMap[passwordStrengthResult.value.level]
 })
@@ -142,7 +142,7 @@ async function handleRegister() {
 
   // 密码强度检查
   if (passwordStrengthResult.value.level === 'weak') {
-    toastStore.warning(t('auth.error.passwordTooWeak', '密码强度太弱，请增加复杂度'))
+    toastStore.warning(t('auth.error.passwordTooWeak'))
     return
   }
 

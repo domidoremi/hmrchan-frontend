@@ -32,6 +32,14 @@
 
 #app[data-ui-style='ios'] {
   --ui-style: ios;
+  --radius: 0.9rem;
+  --radius-lg: 1.05rem;
+  --radius-xl: 1.3rem;
+  --radius-2xl: 1.6rem;
+
+  --glass-blur: blur(18px);
+  --glass-shadow: 0 18px 50px rgba(15, 23, 42, 0.18);
+  --glass-shadow-lg: 0 30px 80px rgba(15, 23, 42, 0.24);
 }
 
 /* Material-ish defaults (kept intentionally conservative; can be refined later) */
@@ -39,22 +47,24 @@
   --ui-style: material;
 
   /* Material tends to use smaller radii + clearer elevation */
-  --ui-radius-sheet: 20px;
+  --ui-radius-sheet: 16px;
   --ui-radius-dialog: 12px;
 
   --ui-backdrop-dim: rgba(0, 0, 0, 0.52);
-  --ui-backdrop-blur: blur(8px) saturate(1);
+  --ui-backdrop-blur: blur(6px) saturate(1);
 
   /* Make the switch obvious: tune the global radii for descendants */
-  --radius: 0.625rem; /* 10px */
+  --radius: 0.5rem; /* 8px */
   --radius-lg: 0.625rem;
-  --radius-xl: 0.875rem;
-  --radius-2xl: 1.125rem;
+  --radius-xl: 0.75rem;
+  --radius-2xl: 1rem;
 
   /* Material: reduce blur, increase elevation cues */
-  --glass-blur: blur(10px);
-  --glass-shadow: 0 10px 30px rgba(0, 0, 0, 0.28);
-  --glass-shadow-lg: 0 18px 60px rgba(0, 0, 0, 0.34);
+  --glass-blur: blur(6px);
+  --glass-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+  --glass-shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.34);
+
+  --transition-fast: 150ms;
 }
 
 #app[data-ui-style='material'][data-theme='light'] {
@@ -77,4 +87,152 @@
   --glass-bg-strong: rgba(18, 18, 20, 0.96);
   --glass-border: rgba(255, 255, 255, 0.1);
   --glass-border-strong: rgba(255, 255, 255, 0.16);
+}
+
+/* ========== iOS / SwiftUI Style ========== */
+#app[data-ui-style='ios'] .glass-card {
+  border-radius: var(--radius-2xl);
+}
+
+#app[data-ui-style='ios'] .glass-card::before {
+  opacity: 0.45;
+}
+
+#app[data-ui-style='ios'] .btn,
+#app[data-ui-style='ios'] .glass-button {
+  border-radius: 999px;
+}
+
+/* iOS Light Mode */
+#app[data-ui-style='ios'][data-theme='light'] {
+  --ui-surface-border: rgba(15, 23, 42, 0.08);
+  --ui-surface-bg: rgba(255, 255, 255, 0.88);
+  --glass-bg: rgba(255, 255, 255, 0.72);
+  --glass-bg-light: rgba(255, 255, 255, 0.55);
+  --glass-bg-strong: rgba(255, 255, 255, 0.94);
+  --glass-border: rgba(15, 23, 42, 0.08);
+  --glass-border-strong: rgba(15, 23, 42, 0.12);
+}
+
+/* iOS Dark Mode */
+#app[data-ui-style='ios'][data-theme='dark'] {
+  --ui-surface-border: rgba(255, 255, 255, 0.12);
+  --ui-surface-bg: rgba(10, 10, 14, 0.86);
+  --glass-bg: rgba(30, 30, 35, 0.78);
+  --glass-bg-light: rgba(30, 30, 35, 0.58);
+  --glass-bg-strong: rgba(20, 20, 24, 0.94);
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --glass-border-strong: rgba(255, 255, 255, 0.18);
+}
+
+/* ========== Material Style ========== */
+#app[data-ui-style='material'] .glass-card {
+  border-radius: var(--radius);
+  box-shadow: var(--glass-shadow);
+}
+
+#app[data-ui-style='material'] .glass-card::before {
+  opacity: 0.2;
+}
+
+#app[data-ui-style='material'] .btn,
+#app[data-ui-style='material'] .glass-button {
+  border-radius: var(--radius);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+}
+
+#app[data-ui-style='material'] input,
+#app[data-ui-style='material'] textarea {
+  border-radius: var(--radius);
+}
+
+/* Material Light Mode - Enhanced */
+#app[data-ui-style='material'][data-theme='light'] {
+  --ui-surface-border: rgba(15, 23, 42, 0.1);
+  --ui-surface-bg: rgba(255, 255, 255, 0.95);
+  --glass-bg: rgba(255, 255, 255, 0.88);
+  --glass-bg-light: rgba(255, 255, 255, 0.72);
+  --glass-bg-strong: rgba(255, 255, 255, 0.98);
+  --glass-border: rgba(15, 23, 42, 0.1);
+  --glass-border-strong: rgba(15, 23, 42, 0.16);
+  --glass-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 4px 16px rgba(0, 0, 0, 0.04);
+  --glass-shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.12);
+}
+
+/* Material Dark Mode - Enhanced */
+#app[data-ui-style='material'][data-theme='dark'] {
+  --ui-surface-border: rgba(255, 255, 255, 0.1);
+  --ui-surface-bg: rgba(18, 18, 20, 0.95);
+  --glass-bg: rgba(28, 28, 32, 0.92);
+  --glass-bg-light: rgba(28, 28, 32, 0.78);
+  --glass-bg-strong: rgba(18, 18, 20, 0.98);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-border-strong: rgba(255, 255, 255, 0.16);
+  --glass-shadow: 0 2px 8px rgba(0, 0, 0, 0.32), 0 4px 16px rgba(0, 0, 0, 0.24);
+  --glass-shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+/* ========== Material Elevation System ========== */
+#app[data-ui-style='material'] .elevation-1 {
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.12),
+    0 1px 2px rgba(0, 0, 0, 0.24);
+}
+
+#app[data-ui-style='material'] .elevation-2 {
+  box-shadow:
+    0 3px 6px rgba(0, 0, 0, 0.15),
+    0 2px 4px rgba(0, 0, 0, 0.12);
+}
+
+#app[data-ui-style='material'] .elevation-3 {
+  box-shadow:
+    0 10px 20px rgba(0, 0, 0, 0.15),
+    0 3px 6px rgba(0, 0, 0, 0.1);
+}
+
+#app[data-ui-style='material'][data-theme='dark'] .elevation-1 {
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.4),
+    0 1px 2px rgba(0, 0, 0, 0.48);
+}
+
+#app[data-ui-style='material'][data-theme='dark'] .elevation-2 {
+  box-shadow:
+    0 3px 6px rgba(0, 0, 0, 0.4),
+    0 2px 4px rgba(0, 0, 0, 0.32);
+}
+
+#app[data-ui-style='material'][data-theme='dark'] .elevation-3 {
+  box-shadow:
+    0 10px 20px rgba(0, 0, 0, 0.4),
+    0 3px 6px rgba(0, 0, 0, 0.28);
+}
+
+/* ========== iOS Blur Effects ========== */
+#app[data-ui-style='ios'] .glass-card {
+  backdrop-filter: blur(18px) saturate(1.2);
+  -webkit-backdrop-filter: blur(18px) saturate(1.2);
+}
+
+#app[data-ui-style='ios'][data-theme='light'] .glass-card {
+  background: rgba(255, 255, 255, 0.72);
+}
+
+#app[data-ui-style='ios'][data-theme='dark'] .glass-card {
+  background: rgba(30, 30, 35, 0.72);
+}
+
+/* ========== Material Ripple Indicator ========== */
+#app[data-ui-style='material'] .btn:active,
+#app[data-ui-style='material'] .glass-button:active {
+  transform: scale(0.98);
+}
+
+#app[data-ui-style='material'] .btn:focus-visible,
+#app[data-ui-style='material'] .glass-button:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }

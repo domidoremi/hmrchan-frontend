@@ -69,7 +69,10 @@
     "loadingFailed": "Failed to load",
     "imageLoadFailed": "Image failed to load",
     "reset": "Reset",
-    "refresh": "Refresh"
+    "refresh": "Refresh",
+    "confirmDelete": "Confirm delete",
+    "warning": "Warning",
+    "success": "Success"
   },
   "auth": {
     "email": "Email",
@@ -97,6 +100,7 @@
     "error": {
       "fieldsRequired": "Please fill in all fields",
       "passwordTooShort": "Password must be at least 6 characters",
+      "passwordTooWeak": "Password is too weak, please increase complexity",
       "loginFailed": "Login failed, please try again",
       "registerFailed": "Registration failed, please try again",
       "emailExists": "This email is already registered",
@@ -112,7 +116,11 @@
     "loginHint": "Use your username or email to sign in securely.",
     "registerHint": "Create an account in seconds with secure verification.",
     "verifyTitle": "Security check",
-    "verifyHint": "Takes a moment"
+    "verifyHint": "Takes a moment",
+    "passwordWeak": "Weak",
+    "passwordFair": "Fair",
+    "passwordGood": "Good",
+    "passwordStrong": "Strong"
   },
   "video": {
     "playbackSpeed": "Playback Speed",
@@ -146,6 +154,9 @@
     "dark": "Dark",
     "auto": "Auto",
     "language": "Language",
+    "uiStyle": "UI Style",
+    "uiStyleIos": "iOS (SwiftUI)",
+    "uiStyleMaterial": "Material",
     "display": "Display",
     "toggleHeroSection": "Show Hero Section",
     "heroSectionDesc": "Show the hero banner on the homepage",
@@ -266,7 +277,10 @@
     "noMedia": "No media",
     "content": "Content",
     "readFullText": "Read full text",
-    "subtitlesAvailable": "Subtitles available"
+    "subtitlesAvailable": "Subtitles available",
+    "untitled": "Untitled",
+    "swipeAgainNext": "Swipe again to go to next post",
+    "swipeAgainPrev": "Swipe again to go to previous post"
   },
   "author": {
     "postCount": "{count} posts"
@@ -297,10 +311,12 @@
   },
   "comment": {
     "title": "Comments",
+    "loginRequiredTitle": "Sign in to comment",
     "placeholder": "Write your comment...",
-    "replyPlaceholder": "Reply to @{name}...",
+    "replyPlaceholder": "Reply to @{username}...",
     "submit": "Submit",
     "reply": "Reply",
+    "replies": "replies",
     "delete": "Delete",
     "report": "Report",
     "empty": "No comments yet",
@@ -387,6 +403,7 @@
     "settings": "Profile Settings",
     "avatar": "Avatar",
     "uploadAvatar": "Upload Avatar",
+    "avatarHint": "Supports JPG/PNG, recommended 200×200",
     "avatarUpdated": "Avatar updated successfully",
     "basicInfo": "Basic Information",
     "username": "Username",
@@ -399,6 +416,7 @@
     "displayNameHint": "This name will be shown publicly",
     "bio": "Bio",
     "bioPlaceholder": "Tell us about yourself",
+    "bioHint": "Tell people a bit about you",
     "changePassword": "Change Password",
     "currentPassword": "Current Password",
     "newPassword": "New Password",
@@ -462,7 +480,14 @@
     "unlike": "Unlike",
     "unlikeSuccess": "Unliked successfully",
     "confirmUnlike": "Confirm Unlike",
-    "confirmUnlikeMessage": "Are you sure you want to unlike this comment?"
+    "confirmUnlikeMessage": "Are you sure you want to unlike this comment?",
+    "unknownPost": "Unknown post",
+    "passwordWeak": "Weak",
+    "passwordFair": "Fair",
+    "passwordGood": "Good",
+    "passwordStrong": "Strong",
+    "avatarTypeError": "Only JPG, PNG, GIF, and WebP formats are supported",
+    "avatarSizeError": "File size must be less than or equal to {max}MB"
   },
   "user": {
     "username": {

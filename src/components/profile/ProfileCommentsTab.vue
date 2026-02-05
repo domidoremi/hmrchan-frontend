@@ -43,7 +43,7 @@
               </span>
               <span v-if="comment.replies_count" class="comment-replies">
                 <AnimatedIcon name="sparkle" :fallback-icon="MessageCircle" size="sm" />
-                {{ comment.replies_count }} {{ $t('comment.replies', '回复') }}
+                {{ comment.replies_count }} {{ $t('comment.replies') }}
               </span>
             </div>
             <button

@@ -190,11 +190,7 @@
 
       <Transition name="fade">
         <div v-if="postNavHint" class="post-nav-hint" :data-direction="postNavHint">
-          {{
-            postNavHint === 'left'
-              ? $t('post.swipeAgainNext', 'Swipe again to go to next post')
-              : $t('post.swipeAgainPrev', 'Swipe again to go to previous post')
-          }}
+          {{ postNavHint === 'left' ? $t('post.swipeAgainNext') : $t('post.swipeAgainPrev') }}
         </div>
       </Transition>
 
@@ -221,28 +217,6 @@
         </div>
       </Transition>
     </section>
-
-    <div class="post-topbar" role="navigation" :aria-label="$t('common.back')">
-      <button
-        type="button"
-        class="post-topbar__back"
-        :aria-label="$t('common.back')"
-        @click="goBack"
-      >
-        <ArrowLeft :size="18" />
-      </button>
-      <div class="post-topbar__title">
-        {{ post?.title || $t('post.preview', 'Post') }}
-      </div>
-      <div class="post-topbar__actions">
-        <PostActionStrip
-          v-if="postId"
-          :post-id="postId"
-          variant="compact"
-          :subtitles-available="subtitlesAvailable"
-        />
-      </div>
-    </div>
 
     <section class="post-comments container">
       <CommentList :post-id="postId" />
@@ -900,21 +874,44 @@ onUnmounted(() => {
 
 <style scoped>
 .post-detail-page {
+  --post-bg-base: var(--color-background);
+  --post-bg-spot-1: rgba(var(--color-primary-rgb, 139, 92, 246), 0.12);
+  --post-bg-spot-2: rgba(var(--color-secondary-rgb, 59, 130, 246), 0.16);
+  --post-text-primary: var(--color-text-primary);
+  --post-text-secondary: var(--color-text-secondary);
+  --post-text-tertiary: var(--color-text-tertiary);
+  --post-panel-bg: var(--glass-bg-strong);
+  --post-panel-border: var(--glass-border);
+  --post-overlay: rgba(15, 23, 42, 0.52);
+  --post-overlay-soft: rgba(15, 23, 42, 0.28);
+  --post-overlay-text: #f8fafc;
+  --post-media-bg: rgba(15, 23, 42, 0.08);
+  --post-modal-bg: var(--glass-bg-strong);
+  --post-modal-border: var(--glass-border);
+
   min-height: 100vh;
   overflow-x: hidden;
   background:
-    radial-gradient(
-      circle at 20% 20%,
-      rgba(var(--color-primary-rgb, 139, 92, 246), 0.12),
-      transparent 55%
-    ),
-    radial-gradient(
-      circle at 80% 0%,
-      rgba(var(--color-secondary-rgb, 59, 130, 246), 0.18),
-      transparent 50%
-    ),
-    #050507;
-  color: #f5f5f7;
+    radial-gradient(circle at 20% 20%, var(--post-bg-spot-1), transparent 55%),
+    radial-gradient(circle at 80% 0%, var(--post-bg-spot-2), transparent 50%), var(--post-bg-base);
+  color: var(--post-text-primary);
+}
+
+[data-theme='dark'] .post-detail-page {
+  --post-bg-base: #050507;
+  --post-bg-spot-1: rgba(var(--color-primary-rgb, 139, 92, 246), 0.16);
+  --post-bg-spot-2: rgba(var(--color-secondary-rgb, 59, 130, 246), 0.2);
+  --post-text-primary: #f5f5f7;
+  --post-text-secondary: rgba(255, 255, 255, 0.7);
+  --post-text-tertiary: rgba(255, 255, 255, 0.5);
+  --post-panel-bg: rgba(8, 8, 12, 0.78);
+  --post-panel-border: rgba(255, 255, 255, 0.08);
+  --post-overlay: rgba(0, 0, 0, 0.6);
+  --post-overlay-soft: rgba(0, 0, 0, 0.35);
+  --post-overlay-text: #f8fafc;
+  --post-media-bg: #0b0b0f;
+  --post-modal-bg: rgba(10, 10, 14, 0.92);
+  --post-modal-border: rgba(255, 255, 255, 0.12);
 }
 
 .post-stage {
@@ -954,9 +951,9 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   border-radius: var(--radius-lg);
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: rgba(255, 255, 255, 0.92);
+  background: var(--post-overlay-soft);
+  border: 1px solid var(--post-panel-border);
+  color: var(--post-overlay-text);
   transition:
     transform var(--transition-fast),
     background var(--transition-fast);
@@ -964,7 +961,7 @@ onUnmounted(() => {
 
 .post-topbar__back:hover {
   transform: translateY(-1px);
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--post-overlay);
 }
 
 .post-topbar__title {
@@ -973,7 +970,7 @@ onUnmounted(() => {
   text-align: center;
   font-size: var(--text-sm);
   font-weight: var(--font-semibold);
-  color: rgba(255, 255, 255, 0.92);
+  color: var(--post-text-primary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -986,12 +983,12 @@ onUnmounted(() => {
 }
 
 .post-back-fab {
-  --fab-size: clamp(44px, 4vw, 60px);
-  --edge: clamp(var(--spacing-3), 3.2vw, var(--spacing-7));
+  --fab-size: clamp(46px, 5vw, 64px);
+  --edge: clamp(18px, 3.4vw, 36px);
   --fab-gap: 12px;
   position: fixed;
   right: var(--edge);
-  bottom: calc(var(--edge) + var(--fab-size) + var(--fab-gap));
+  bottom: calc(var(--edge) + env(safe-area-inset-bottom, 0px) + var(--fab-size) + var(--fab-gap));
   z-index: var(--z-fixed);
   display: flex;
   align-items: center;
@@ -1141,24 +1138,6 @@ onUnmounted(() => {
   }
 }
 
-@media (min-width: 1536px) and (max-width: 1919px) {
-  .post-back-fab {
-    --fab-size: 64px;
-    --fab-gap: 16px;
-    right: var(--spacing-7);
-    bottom: calc(var(--spacing-7) + 64px + var(--fab-gap));
-  }
-}
-
-@media (min-width: 1920px) {
-  .post-back-fab {
-    --fab-size: 68px;
-    --fab-gap: 16px;
-    right: var(--spacing-8);
-    bottom: calc(var(--spacing-8) + 68px + var(--fab-gap));
-  }
-}
-
 .post-shell--skeleton .media-skeleton {
   width: 100%;
   height: 100%;
@@ -1188,7 +1167,7 @@ onUnmounted(() => {
   }
 
   .post-panel {
-    border-left: 1px solid rgba(255, 255, 255, 0.08);
+    border-left: 1px solid var(--post-panel-border);
     border-top: 0;
   }
 }
@@ -1214,7 +1193,7 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  background: #0b0b0f;
+  background: var(--post-media-bg);
 }
 
 .post-media-empty {
@@ -1247,8 +1226,8 @@ onUnmounted(() => {
   background: linear-gradient(
     180deg,
     transparent 0%,
-    rgba(0, 0, 0, 0.05) 50%,
-    rgba(0, 0, 0, 0.15) 100%
+    rgba(0, 0, 0, 0.08) 50%,
+    var(--post-overlay-soft) 100%
   );
   pointer-events: none;
 }
@@ -1283,10 +1262,10 @@ onUnmounted(() => {
   align-items: center;
   gap: var(--spacing-2);
   padding: var(--spacing-2) var(--spacing-4);
-  background: rgba(0, 0, 0, 0.6);
+  background: var(--post-overlay);
   backdrop-filter: blur(8px);
   border-radius: var(--radius-full);
-  color: white;
+  color: var(--post-overlay-text);
   font-size: var(--text-sm);
   opacity: 0;
   transition: opacity var(--transition-fast);
@@ -1330,7 +1309,7 @@ onUnmounted(() => {
     box-shadow:
       0 24px 64px rgba(0, 0, 0, 0.35),
       0 8px 24px rgba(0, 0, 0, 0.25);
-    background: rgba(0, 0, 0, 0.35);
+    background: var(--post-overlay-soft);
   }
 }
 
@@ -1376,8 +1355,8 @@ onUnmounted(() => {
   height: 100%;
   min-width: 0;
   padding: var(--spacing-5);
-  background: rgba(8, 8, 12, 0.78);
-  border-left: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--post-panel-bg);
+  border-left: 1px solid var(--post-panel-border);
   backdrop-filter: blur(14px);
   overflow: hidden;
   display: flex;
@@ -1393,7 +1372,7 @@ onUnmounted(() => {
 
   .post-panel {
     border-left: 0;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    border-top: 1px solid var(--post-panel-border);
     padding: var(--spacing-4);
     gap: var(--spacing-3);
   }
@@ -1417,7 +1396,7 @@ onUnmounted(() => {
   }
 
   .post-panel {
-    border-left: 1px solid rgba(255, 255, 255, 0.08);
+    border-left: 1px solid var(--post-panel-border);
     border-top: 0;
     padding: var(--spacing-5);
   }
@@ -1436,12 +1415,12 @@ onUnmounted(() => {
 }
 
 .post-meta {
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--post-text-secondary);
   font-size: var(--text-sm);
 }
 
 .post-stats {
-  color: rgba(255, 255, 255, 0.55);
+  color: var(--post-text-tertiary);
   font-size: var(--text-sm);
 }
 
@@ -1451,7 +1430,7 @@ onUnmounted(() => {
 
 .post-description {
   max-width: 520px;
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--post-text-secondary);
   line-height: 1.6;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
@@ -1490,7 +1469,7 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   padding: var(--spacing-4);
-  background: rgba(0, 0, 0, 0.55);
+  background: var(--post-overlay);
   backdrop-filter: blur(14px) saturate(1.1);
   -webkit-backdrop-filter: blur(14px) saturate(1.1);
 }
@@ -1500,8 +1479,8 @@ onUnmounted(() => {
   height: min(82svh, calc(100vh - 2 * var(--spacing-4)));
   border-radius: var(--radius-xl);
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(10, 10, 14, 0.92);
+  border: 1px solid var(--post-modal-border);
+  background: var(--post-modal-bg);
   display: flex;
   flex-direction: column;
 }
@@ -1512,21 +1491,21 @@ onUnmounted(() => {
   justify-content: space-between;
   gap: var(--spacing-2);
   padding: var(--spacing-4);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid var(--post-panel-border);
 }
 
 .post-text-title {
   margin: 0;
   font-size: var(--text-lg);
-  color: rgba(255, 255, 255, 0.95);
+  color: var(--post-text-primary);
 }
 
 .post-text-close {
   padding: var(--spacing-2) var(--spacing-3);
   border-radius: var(--radius-lg);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.9);
+  border: 1px solid var(--post-panel-border);
+  background: var(--post-overlay-soft);
+  color: var(--post-overlay-text);
 }
 
 .post-text-body {
@@ -1544,7 +1523,7 @@ onUnmounted(() => {
 
 .post-text-content {
   margin: 0;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--post-text-secondary);
   white-space: pre-wrap;
   line-height: 1.6;
   overflow-wrap: anywhere;
@@ -1591,7 +1570,7 @@ onUnmounted(() => {
 
 .author-link {
   margin-left: var(--spacing-2);
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--post-text-primary);
   font-weight: var(--font-medium);
 }
 
@@ -1606,9 +1585,9 @@ onUnmounted(() => {
   transform: translateX(-50%);
   padding: var(--spacing-2) var(--spacing-4);
   border-radius: var(--radius-full);
-  background: rgba(0, 0, 0, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: rgba(255, 255, 255, 0.9);
+  background: var(--post-overlay);
+  border: 1px solid var(--post-panel-border);
+  color: var(--post-overlay-text);
   font-size: var(--text-sm);
   backdrop-filter: blur(10px);
   pointer-events: none;

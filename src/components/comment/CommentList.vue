@@ -1,5 +1,5 @@
 <template>
-  <section class="comment-section">
+  <section class="comment-section" :class="{ 'comment-section--guest': !isAuthenticated }">
     <header class="comment-header">
       <h3 class="comment-title">
         <AnimatedIcon name="sparkle" :fallback-icon="MessageSquare" size="md" />
@@ -29,9 +29,13 @@
       <span>{{ $t('common.loading') }}</span>
     </div>
 
-    <div v-else-if="comments.length === 0" class="empty-state">
+    <div
+      v-else-if="comments.length === 0"
+      class="empty-state"
+      :class="{ 'empty-state--guest': !isAuthenticated }"
+    >
       <AnimatedIcon name="explore" :fallback-icon="MessageSquare" size="xl" class="empty-icon" />
-      <p>{{ $t('comment.empty') }}</p>
+      <h4 class="empty-title">{{ $t('comment.empty') }}</h4>
       <p class="empty-hint">{{ $t('comment.beFirst') }}</p>
     </div>
 
@@ -56,7 +60,8 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { MessageSquare } from 'lucide-vue-next'
-import { useCommentsStore } from '@/stores'
+import { storeToRefs } from 'pinia'
+import { useAuthStore, useCommentsStore } from '@/stores'
 import type { Comment } from '@/types'
 import CommentCard from './CommentCard.vue'
 import CommentForm from './CommentForm.vue'
@@ -69,6 +74,8 @@ interface Props {
 const props = defineProps<Props>()
 
 const commentsStore = useCommentsStore()
+const authStore = useAuthStore()
+const { isAuthenticated } = storeToRefs(authStore)
 
 const currentSort = ref<'newest' | 'oldest' | 'popular'>('popular')
 const hasMore = ref(false)
@@ -132,8 +139,15 @@ watch(
   padding: var(--spacing-6);
   background: var(--glass-bg-light);
   border-radius: var(--radius-xl);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  backdrop-filter: var(--glass-blur);
   /* 预留最小高度防止 CLS */
   min-height: 200px;
+}
+
+.comment-section--guest {
+  background: var(--glass-bg);
 }
 
 .comment-header {
@@ -202,8 +216,28 @@ watch(
   flex-direction: column;
   align-items: center;
   gap: var(--spacing-2);
-  padding: var(--spacing-8);
+  padding: var(--spacing-7) var(--spacing-4);
   text-align: center;
+  border-radius: var(--radius-lg);
+  border: 1px dashed var(--glass-border);
+  background: linear-gradient(
+    135deg,
+    rgba(var(--color-primary-rgb), 0.08),
+    rgba(var(--color-secondary-rgb), 0.04)
+  );
+}
+
+.empty-state--guest {
+  border-style: solid;
+  background: var(--glass-bg-light);
+  box-shadow: var(--shadow-sm);
+}
+
+.empty-title {
+  margin: 0;
+  font-size: var(--text-base);
+  font-weight: var(--font-semibold);
+  color: var(--color-text-primary);
 }
 
 .empty-icon {

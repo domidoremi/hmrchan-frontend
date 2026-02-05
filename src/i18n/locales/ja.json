@@ -69,7 +69,10 @@
     "loadingFailed": "読み込みに失敗しました",
     "imageLoadFailed": "画像の読み込みに失敗しました",
     "reset": "リセット",
-    "refresh": "更新"
+    "refresh": "更新",
+    "confirmDelete": "削除を確認",
+    "warning": "警告",
+    "success": "成功"
   },
   "auth": {
     "email": "メールアドレス",
@@ -97,7 +100,8 @@
     "error": {
       "fieldsRequired": "すべての項目を入力してください",
       "passwordTooShort": "パスワードは6文字以上必要です",
-      "loginFailed": "ログインに失敗しました",
+      "passwordTooWeak": "パスワードが弱すぎます。複雑さを上げてください",
+      "loginFailed": "ログインに失敗しました。もう一度お試しください",
       "registerFailed": "登録に失敗しました",
       "emailExists": "このメールアドレスは既に登録されています",
       "usernameExists": "このユーザー名は既に使用されています",
@@ -112,7 +116,11 @@
     "loginHint": "ユーザー名またはメールで安全にログインできます。",
     "registerHint": "認証を済ませて数秒で登録できます。",
     "verifyTitle": "セキュリティチェック",
-    "verifyHint": "すぐに完了"
+    "verifyHint": "少しお待ちください",
+    "passwordWeak": "弱い",
+    "passwordFair": "普通",
+    "passwordGood": "良い",
+    "passwordStrong": "強い"
   },
   "video": {
     "playbackSpeed": "再生速度",
@@ -146,6 +154,9 @@
     "dark": "ダーク",
     "auto": "自動",
     "language": "言語",
+    "uiStyle": "UI スタイル",
+    "uiStyleIos": "iOS (SwiftUI)",
+    "uiStyleMaterial": "Material",
     "display": "表示",
     "toggleHeroSection": "ヒーローセクション表示",
     "heroSectionDesc": "ホームページにヒーローバナーを表示",
@@ -266,7 +277,10 @@
     "noMedia": "メディアがありません",
     "content": "本文",
     "readFullText": "全文を見る",
-    "subtitlesAvailable": "字幕あり"
+    "subtitlesAvailable": "字幕あり",
+    "untitled": "無題",
+    "swipeAgainNext": "もう一度スワイプして次の投稿へ",
+    "swipeAgainPrev": "もう一度スワイプして前の投稿へ"
   },
   "author": {
     "postCount": "{count} 件の投稿"
@@ -297,11 +311,13 @@
   },
   "comment": {
     "title": "コメント",
-    "placeholder": "あなたの考えを共有...",
-    "replyPlaceholder": "{username} に返信...",
+    "loginRequiredTitle": "ログインしてコメント",
+    "placeholder": "コメントを書く...",
+    "replyPlaceholder": "@{username} に返信...",
     "submit": "投稿",
     "reply": "返信",
-    "delete": "削除",
+    "replies": "返信",
+    "share": "共有",
     "share": "共有",
     "report": "報告",
     "empty": "コメントはまだありません",
@@ -388,6 +404,7 @@
     "settings": "プロフィール設定",
     "avatar": "アバター",
     "uploadAvatar": "アバターをアップロード",
+    "avatarHint": "JPG/PNG 対応、推奨サイズ 200×200",
     "avatarUpdated": "アバターが更新されました",
     "basicInfo": "基本情報",
     "username": "ユーザー名",
@@ -400,6 +417,7 @@
     "displayNameHint": "この名前は公開されます",
     "bio": "自己紹介",
     "bioPlaceholder": "自己紹介を入力",
+    "bioHint": "自己紹介を書いてみましょう",
     "changePassword": "パスワード変更",
     "currentPassword": "現在のパスワード",
     "newPassword": "新しいパスワード",
@@ -463,7 +481,14 @@
     "unlike": "いいねを取り消す",
     "unlikeSuccess": "いいねを取り消しました",
     "confirmUnlike": "いいねを取り消す",
-    "confirmUnlikeMessage": "このコメントのいいねを取り消しますか？"
+    "confirmUnlikeMessage": "このコメントのいいねを取り消しますか？",
+    "unknownPost": "不明な投稿",
+    "passwordWeak": "弱い",
+    "passwordFair": "普通",
+    "passwordGood": "良い",
+    "passwordStrong": "強い",
+    "avatarTypeError": "JPG/PNG/GIF/WebP のみ対応",
+    "avatarSizeError": "ファイルサイズは {max}MB 以下にしてください"
   },
   "favorites": {
     "loginRequired": "お気に入りを表示するにはログインしてください",

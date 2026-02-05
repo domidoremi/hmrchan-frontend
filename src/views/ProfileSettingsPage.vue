@@ -74,7 +74,7 @@
               </div>
               <div class="avatar-info">
                 <p class="avatar-hint">
-                  {{ $t('profile.avatarHint', '支持 JPG、PNG 格式，建议尺寸 200×200') }}
+                  {{ $t('profile.avatarHint') }}
                 </p>
                 <label class="glass-button avatar-upload-btn">
                   <AnimatedIcon name="explore" :fallback-icon="Upload" size="sm" />
@@ -129,7 +129,7 @@
                   class="input-icon-right"
                 />
               </div>
-              <p class="field-hint">{{ $t('profile.usernameReadonly', '用户名不可修改') }}</p>
+              <p class="field-hint">{{ $t('profile.usernameReadonly') }}</p>
             </div>
 
             <!-- Display Name -->
@@ -148,7 +148,7 @@
                   :placeholder="$t('profile.fullNamePlaceholder')"
                 />
               </div>
-              <p class="field-hint">{{ $t('profile.displayNameHint', '这是您的公开显示名称') }}</p>
+              <p class="field-hint">{{ $t('profile.displayNameHint') }}</p>
             </div>
 
             <!-- Bio -->
@@ -168,7 +168,7 @@
                 />
               </div>
               <div class="field-hint-row">
-                <p class="field-hint">{{ $t('profile.bioHint', '介绍一下自己吧') }}</p>
+                <p class="field-hint">{{ $t('profile.bioHint') }}</p>
                 <span
                   class="char-count"
                   :class="{ 'char-count--warning': (form.bio?.length || 0) > 450 }"
@@ -437,10 +437,10 @@ const passwordStrengthClass = computed(() => {
 const passwordStrengthText = computed(() => {
   const { level } = passwordStrengthResult.value
   const textMap = {
-    weak: t('profile.passwordWeak', '弱'),
-    fair: t('profile.passwordFair', '一般'),
-    good: t('profile.passwordGood', '良好'),
-    strong: t('profile.passwordStrong', '强'),
+    weak: t('profile.passwordWeak'),
+    fair: t('profile.passwordFair'),
+    good: t('profile.passwordGood'),
+    strong: t('profile.passwordStrong'),
   }
   return textMap[level]
 })
@@ -564,7 +564,7 @@ function handleAvatarSelect(event: Event) {
 
   // 验证文件类型
   if (!AVATAR_LIMITS.ALLOWED_TYPES.includes(file.type)) {
-    toastStore.error(t('profile.avatarTypeError', '仅支持 JPG、PNG、GIF、WebP 格式'))
+    toastStore.error(t('profile.avatarTypeError'))
     input.value = ''
     return
   }
@@ -572,9 +572,7 @@ function handleAvatarSelect(event: Event) {
   // 验证文件大小
   const sizeMB = file.size / (1024 * 1024)
   if (sizeMB > AVATAR_LIMITS.MAX_FILE_SIZE_MB) {
-    toastStore.error(
-      t('profile.avatarSizeError', `文件大小不能超过 ${AVATAR_LIMITS.MAX_FILE_SIZE_MB}MB`)
-    )
+    toastStore.error(t('profile.avatarSizeError', { max: AVATAR_LIMITS.MAX_FILE_SIZE_MB }))
     input.value = ''
     return
   }

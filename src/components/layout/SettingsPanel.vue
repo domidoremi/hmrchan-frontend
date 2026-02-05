@@ -43,7 +43,7 @@
         <div class="settings-group-icon">
           <AnimatedIcon name="sparkle" :fallback-icon="Layers" size="sm" />
         </div>
-        <span class="settings-label">{{ $t('settings.uiStyle', 'UI Style') }}</span>
+        <span class="settings-label">{{ $t('settings.uiStyle') }}</span>
       </div>
       <div class="settings-options theme-options">
         <button
@@ -251,8 +251,8 @@ const themeOptions = [
 ]
 
 const uiStyleOptions: { value: UiStyle; icon: unknown; label: string }[] = [
-  { value: 'ios', icon: Smartphone, label: t('settings.uiStyleIos', 'iOS (SwiftUI)') },
-  { value: 'material', icon: Layers, label: t('settings.uiStyleMaterial', 'Material') },
+  { value: 'ios', icon: Smartphone, label: t('settings.uiStyleIos') },
+  { value: 'material', icon: Layers, label: t('settings.uiStyleMaterial') },
 ]
 
 const localeOptions: { code: SupportedLocale; name: string; flag: string }[] = [

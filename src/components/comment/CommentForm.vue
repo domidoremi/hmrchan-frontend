@@ -1,9 +1,21 @@
 <template>
   <form class="comment-form" @submit.prevent="handleSubmit">
     <div v-if="!isAuthenticated" class="login-prompt glass-card">
-      <AnimatedIcon name="user" :fallback-icon="LogIn" size="lg" class="prompt-icon" />
-      <p>{{ $t('comment.loginRequired') }}</p>
-      <Button size="sm" @click="goToLogin">{{ $t('nav.login') }}</Button>
+      <div class="prompt-icon-wrap">
+        <AnimatedIcon name="user" :fallback-icon="LogIn" size="lg" class="prompt-icon" />
+      </div>
+      <div class="prompt-text">
+        <h4 class="prompt-title">{{ $t('comment.loginRequiredTitle') }}</h4>
+        <p class="prompt-desc">{{ $t('comment.loginRequired') }}</p>
+      </div>
+      <div class="prompt-actions">
+        <Button type="button" size="sm" class="prompt-btn" @click="goToLogin">{{
+          $t('nav.login')
+        }}</Button>
+        <Button type="button" variant="ghost" size="sm" class="prompt-btn" @click="goToRegister">
+          {{ $t('nav.register') }}
+        </Button>
+      </div>
     </div>
 
     <div v-else class="form-content">
@@ -107,6 +119,10 @@ function goToLogin() {
   router.push('/login')
 }
 
+function goToRegister() {
+  router.push('/register')
+}
+
 async function handleSubmit() {
   if (!canSubmit.value) return
 
@@ -152,16 +168,53 @@ defineExpose({ focus, setContent })
 }
 
 .login-prompt {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
   align-items: center;
-  gap: var(--spacing-3);
-  padding: var(--spacing-6);
-  text-align: center;
+  gap: var(--spacing-4);
+  padding: var(--spacing-5) var(--spacing-6);
+  text-align: left;
+  border: 1px solid var(--glass-border);
+}
+.prompt-icon-wrap {
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-full);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .prompt-icon {
   color: var(--color-text-tertiary);
+}
+.prompt-text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-1);
+  min-width: 0;
+}
+
+.prompt-title {
+  margin: 0;
+  font-size: var(--text-base);
+  font-weight: var(--font-semibold);
+  color: var(--color-text-primary);
+}
+
+.prompt-desc {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
+.prompt-actions {
+  justify-self: end;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
 }
 
 .form-content {
@@ -207,5 +260,23 @@ defineExpose({ focus, setContent })
 .form-actions {
   display: flex;
   gap: var(--spacing-2);
+}
+
+@media (max-width: 640px) {
+  .login-prompt {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    text-align: center;
+  }
+
+  .prompt-actions {
+    width: 100%;
+    justify-self: stretch;
+    flex-direction: column;
+  }
+
+  .prompt-btn {
+    width: 100%;
+  }
 }
 </style>
