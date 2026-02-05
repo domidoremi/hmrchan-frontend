@@ -607,10 +607,24 @@ function openDetail() {
   align-items: center;
   justify-content: center;
   padding: var(--spacing-4);
+  --preview-surface-bg: var(--glass-bg-strong);
+  --preview-surface-border: var(--glass-border);
+  --preview-divider: var(--glass-border);
+  --preview-control-bg: var(--glass-bg);
+  --preview-control-border: var(--glass-border);
+  --preview-pill-bg: var(--glass-bg);
+  --preview-pill-border: var(--glass-border);
+  --preview-text-primary: var(--color-text-primary);
+  --preview-text-secondary: var(--color-text-secondary);
+  --preview-text-muted: var(--color-text-tertiary);
+  --preview-media-bg: rgba(15, 23, 42, 0.12);
   background: var(--ui-backdrop-dim, rgba(0, 0, 0, 0.45));
   backdrop-filter: var(--ui-backdrop-blur, blur(14px) saturate(1.1));
   -webkit-backdrop-filter: var(--ui-backdrop-blur, blur(14px) saturate(1.1));
   will-change: opacity;
+}
+:global(#app[data-theme='dark'] .post-preview-overlay) {
+  --preview-media-bg: rgba(0, 0, 0, 0.35);
 }
 
 .post-preview-panel {
@@ -675,8 +689,8 @@ function openDetail() {
   height: min(760px, calc(100svh - 2 * var(--spacing-4)));
   border-radius: var(--ui-radius-dialog, var(--radius-xl));
   overflow: hidden;
-  border: 1px solid var(--ui-surface-border, rgba(255, 255, 255, 0.12));
-  background: var(--ui-surface-bg, rgba(10, 10, 14, 0.86));
+  border: 1px solid var(--preview-surface-border);
+  background: var(--preview-surface-bg);
   backdrop-filter: blur(14px);
   display: flex;
   flex-direction: column;
@@ -706,7 +720,7 @@ function openDetail() {
   grid-template-columns: minmax(0, 1fr);
   align-items: start;
   gap: var(--spacing-3);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid var(--preview-divider);
 }
 
 .post-preview-close-icon {
@@ -719,9 +733,9 @@ function openDetail() {
   align-items: center;
   justify-content: center;
   border-radius: var(--radius-lg);
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: rgba(255, 255, 255, 0.9);
+  background: var(--preview-control-bg);
+  border: 1px solid var(--preview-control-border);
+  color: var(--preview-text-primary);
   transition:
     background var(--transition-fast),
     transform var(--transition-fast);
@@ -730,7 +744,7 @@ function openDetail() {
 
 .post-preview-close-icon:hover {
   transform: translateY(-1px);
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--glass-bg-strong);
 }
 
 .post-preview-close-icon:active {
@@ -745,7 +759,7 @@ function openDetail() {
   width: 40px;
   height: 5px;
   border-radius: var(--radius-full);
-  background: rgba(255, 255, 255, 0.22);
+  background: var(--preview-control-border);
 }
 
 .post-preview-title {
@@ -756,7 +770,7 @@ function openDetail() {
   margin: 0;
   font-size: var(--text-lg);
   line-height: 1.2;
-  color: rgba(255, 255, 255, 0.95);
+  color: var(--preview-text-primary);
   display: -webkit-box;
   -webkit-line-clamp: 2;
   line-clamp: 2;
@@ -766,7 +780,7 @@ function openDetail() {
 
 .post-preview-author {
   margin: var(--spacing-1) 0 0;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--preview-text-secondary);
   font-size: var(--text-sm);
   overflow-wrap: anywhere;
 }
@@ -790,18 +804,18 @@ function openDetail() {
   padding: 4px 10px;
   border-radius: var(--radius-full);
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.86);
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--preview-text-secondary);
+  background: var(--preview-pill-bg);
+  border: 1px solid var(--preview-pill-border);
   flex: 0 0 auto;
 }
 
 .post-preview-btn {
   padding: var(--spacing-2) var(--spacing-3);
   border-radius: var(--radius-lg);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.9);
+  border: 1px solid var(--preview-control-border);
+  background: var(--preview-control-bg);
+  color: var(--preview-text-primary);
   white-space: nowrap;
   transition:
     transform var(--transition-fast),
@@ -811,7 +825,7 @@ function openDetail() {
 
 .post-preview-btn:hover {
   transform: translateY(-1px);
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--glass-bg-strong);
 }
 
 .post-preview-btn:disabled {
@@ -862,8 +876,8 @@ function openDetail() {
   justify-content: space-between;
   gap: var(--spacing-3);
   padding: var(--spacing-3) var(--spacing-4);
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(10, 10, 14, 0.7);
+  border-top: 1px solid var(--preview-divider);
+  background: var(--preview-surface-bg);
   backdrop-filter: blur(14px);
 }
 
@@ -908,7 +922,7 @@ function openDetail() {
   max-height: 100%;
   object-fit: contain;
   border-radius: var(--radius-xl);
-  background: rgba(0, 0, 0, 0.35);
+  background: var(--preview-media-bg);
   box-shadow:
     0 24px 64px rgba(0, 0, 0, 0.35),
     0 8px 24px rgba(0, 0, 0, 0.25);
@@ -920,12 +934,12 @@ function openDetail() {
   align-items: center;
   justify-content: center;
   border-radius: var(--radius-xl);
-  border: 1px dashed rgba(255, 255, 255, 0.15);
+  border: 1px dashed var(--preview-divider);
 }
 
 .post-preview-empty-text {
   margin: 0;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--preview-text-secondary);
 }
 
 .post-preview-thumbs {
@@ -942,8 +956,8 @@ function openDetail() {
   height: 56px;
   border-radius: var(--radius-lg);
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--preview-control-border);
+  background: var(--preview-control-bg);
   flex: 0 0 auto;
 }
 
@@ -965,7 +979,7 @@ function openDetail() {
   display: flex;
   flex-direction: column;
   padding: var(--spacing-4);
-  border-left: 1px solid rgba(255, 255, 255, 0.08);
+  border-left: 1px solid var(--preview-divider);
 }
 
 .post-preview-skeleton {
@@ -976,13 +990,13 @@ function openDetail() {
 
 .post-preview-error-text {
   margin: 0 0 var(--spacing-3);
-  color: rgba(255, 255, 255, 0.75);
+  color: var(--preview-text-secondary);
 }
 
 @media (max-width: 899px) {
   .post-preview-content {
     border-left: 0;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    border-top: 1px solid var(--preview-divider);
   }
 }
 
@@ -1074,7 +1088,7 @@ function openDetail() {
   margin: 0;
   white-space: pre-wrap;
   line-height: 1.6;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--preview-text-primary);
   overflow-wrap: anywhere;
   display: -webkit-box;
   -webkit-box-orient: vertical;
@@ -1084,6 +1098,6 @@ function openDetail() {
 }
 
 .post-preview-text--muted {
-  color: rgba(255, 255, 255, 0.65);
+  color: var(--preview-text-muted);
 }
 </style>

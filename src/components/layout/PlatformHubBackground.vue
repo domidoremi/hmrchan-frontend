@@ -146,6 +146,9 @@ const loopProfiles: Record<'hero' | 'bento' | 'posts', LoopProfile> = {
 
 const clock = new THREE.Clock()
 const tmpVec3 = new THREE.Vector3()
+const tmpVec3B = new THREE.Vector3()
+const raycaster = new THREE.Raycaster()
+const pointerVec = new THREE.Vector2()
 let rafId: number | null = null
 let resizeObserver: ResizeObserver | null = null
 let isVisible = true
@@ -168,6 +171,14 @@ const mouseInteraction = {
 }
 
 let clickPulse = 0
+let orbitBoost = 0
+const orbitBoostDecay = 0.9
+let orbitCollapse = 1
+
+const heroAnchor = { x: 0, y: 0, targetX: 0, targetY: 0 }
+let heroAnchorActive = false
+let heroAnchorObserver: ResizeObserver | null = null
+let pendingHeroAnchor = false
 
 function handleMouseMove(e: MouseEvent) {
   lastMouseX = (e.clientX / window.innerWidth - 0.5) * 2
@@ -192,6 +203,91 @@ function handleMouseClick(e: MouseEvent) {
   // 临时增强鼠标位置响应
   mouse.targetX = clickX * 1.5
   mouse.targetY = clickY * 1.5
+
+  const renderer = rendererRef.value
+  const camera = cameraRef.value
+  const cards = cardsRef.value
+
+  if (renderer && camera && cards) {
+    const rect = renderer.domElement.getBoundingClientRect()
+    pointerVec.x = ((e.clientX - rect.left) / rect.width) * 2 - 1
+    pointerVec.y = -((e.clientY - rect.top) / rect.height) * 2 + 1
+    raycaster.setFromCamera(pointerVec, camera)
+
+    const meshes: THREE.Object3D[] = []
+    ;(['instagram', 'tiktok', 'youtube', 'twitter'] as const).forEach((k) => {
+      const mesh = cards[k].userData.cardMesh as THREE.Mesh | undefined
+      if (mesh) meshes.push(mesh)
+    })
+
+    const hits = raycaster.intersectObjects(meshes, false)
+    if (hits.length > 0) {
+      orbitBoost = Math.min(orbitBoost + 0.28, 0.55)
+    }
+  }
+}
+
+function scheduleHeroAnchorUpdate() {
+  if (pendingHeroAnchor) return
+  pendingHeroAnchor = true
+  requestAnimationFrame(() => {
+    updateHeroAnchorTarget()
+    pendingHeroAnchor = false
+  })
+}
+
+function updateHeroAnchorTarget() {
+  if (!heroAnchorActive) return
+  const hero = document.querySelector('.hero')
+  const heroContent =
+    (hero?.querySelector('.hero-content') as HTMLElement | null) ?? (hero as HTMLElement | null)
+
+  if (!heroContent) {
+    heroAnchor.targetX = 0
+    heroAnchor.targetY = 0
+    return
+  }
+
+  const rect = heroContent.getBoundingClientRect()
+  if (rect.width <= 0 || rect.height <= 0) return
+
+  const centerX = rect.left + rect.width / 2
+  const centerY = rect.top + rect.height / 2
+  const nx = (centerX / window.innerWidth - 0.5) * 2
+  const ny = (centerY / window.innerHeight - 0.5) * 2
+
+  heroAnchor.targetX = THREE.MathUtils.clamp(nx, -1, 1)
+  heroAnchor.targetY = THREE.MathUtils.clamp(ny, -1, 1)
+
+  if (!heroAnchorObserver && heroContent) {
+    heroAnchorObserver = new ResizeObserver(() => {
+      scheduleHeroAnchorUpdate()
+    })
+    heroAnchorObserver.observe(heroContent)
+  }
+}
+
+function setHeroAnchorActive(active: boolean) {
+  if (heroAnchorActive === active) return
+  heroAnchorActive = active
+
+  if (active) {
+    window.addEventListener('scroll', scheduleHeroAnchorUpdate, { passive: true })
+    window.addEventListener('resize', scheduleHeroAnchorUpdate)
+    scheduleHeroAnchorUpdate()
+    return
+  }
+
+  window.removeEventListener('scroll', scheduleHeroAnchorUpdate)
+  window.removeEventListener('resize', scheduleHeroAnchorUpdate)
+
+  if (heroAnchorObserver) {
+    heroAnchorObserver.disconnect()
+    heroAnchorObserver = null
+  }
+
+  heroAnchor.targetX = 0
+  heroAnchor.targetY = 0
 }
 
 function startLoop() {
@@ -257,6 +353,15 @@ function createCardTexture(platform: Exclude<PlatformKey, 'core'>, theme: ThemeM
   bg.addColorStop(1, isDark ? 'rgba(15, 23, 42, 0.7)' : 'rgba(241, 245, 249, 0.64)')
   ctx.fillStyle = bg
   ctx.fillRect(0, 0, w, h)
+  // Accent base tint
+  const accentTint = ctx.createLinearGradient(0, h, w, 0)
+  accentTint.addColorStop(0, config.accent)
+  accentTint.addColorStop(1, 'rgba(255,255,255,0)')
+  ctx.save()
+  ctx.globalAlpha = isDark ? 0.18 : 0.14
+  ctx.fillStyle = accentTint
+  ctx.fillRect(0, 0, w, h)
+  ctx.restore()
 
   // Accent wash
   const wash = ctx.createRadialGradient(w * 0.2, h * 0.2, 0, w * 0.2, h * 0.2, w * 0.9)
@@ -264,7 +369,7 @@ function createCardTexture(platform: Exclude<PlatformKey, 'core'>, theme: ThemeM
   wash.addColorStop(0.65, 'rgba(255,255,255,0)')
   wash.addColorStop(1, 'rgba(255,255,255,0)')
   ctx.save()
-  ctx.globalAlpha = isDark ? 0.25 : 0.4
+  ctx.globalAlpha = isDark ? 0.3 : 0.52
   ctx.fillStyle = wash
   ctx.fillRect(0, 0, w, h)
   ctx.restore()
@@ -297,6 +402,13 @@ function createCardTexture(platform: Exclude<PlatformKey, 'core'>, theme: ThemeM
   shine.addColorStop(1.0, 'rgba(255,255,255,0)')
   ctx.fillStyle = shine
   ctx.fillRect(0, 0, w, h)
+
+  // Accent edge
+  ctx.save()
+  ctx.globalAlpha = isDark ? 0.65 : 0.55
+  ctx.fillStyle = config.accent
+  ctx.fillRect(0, 0, w, 6)
+  ctx.restore()
   // Icon badge
   const badgeSize = 72
   const badgeX = w - badgeSize - 40
@@ -426,7 +538,7 @@ function setLoopProfile(name: keyof typeof loopProfiles, immediate = false) {
 }
 
 function setRendererSize(renderer: THREE.WebGLRenderer, camera: THREE.PerspectiveCamera) {
-  const dpr = Math.min(window.devicePixelRatio || 1, 1.5)
+  const dpr = Math.min(window.devicePixelRatio || 1, 1.35)
   const w = window.innerWidth
   const h = window.innerHeight
   renderer.setPixelRatio(dpr)
@@ -453,6 +565,7 @@ function disposeScene() {
   window.removeEventListener('mousemove', handleMouseMove)
   window.removeEventListener('click', handleMouseClick)
   document.removeEventListener('visibilitychange', handleVisibilityChange)
+  setHeroAnchorActive(false)
 
   // GSAP cleanup
   clearHubScrollTriggers()
@@ -617,13 +730,13 @@ function applyTheme(mode: ThemeMode) {
   const isDark = mode === 'dark'
 
   if (renderer) {
-    renderer.toneMappingExposure = isDark ? 1.05 : 1
+    renderer.toneMappingExposure = isDark ? 1.05 : 0.95
   }
 
   const coreMat = core.material as THREE.MeshPhysicalMaterial
-  coreMat.color.set(isDark ? '#c7d2fe' : '#ffffff')
-  coreMat.emissive.set(isDark ? '#6366f1' : '#7c83ff')
-  coreMat.emissiveIntensity = isDark ? 0.55 : 0.45
+  coreMat.color.set(isDark ? '#c7d2fe' : '#e0e7ff')
+  coreMat.emissive.set(isDark ? '#6366f1' : '#4f46e5')
+  coreMat.emissiveIntensity = isDark ? 0.55 : 0.6
   coreMat.opacity = isDark ? 0.95 : 0.98
   coreMat.needsUpdate = true
 
@@ -642,13 +755,13 @@ function applyTheme(mode: ThemeMode) {
 
     if (mesh) {
       const mat = mesh.material as THREE.MeshPhysicalMaterial
-      mat.color.set(isDark ? '#ffffff' : '#f8fafc')
+      mat.color.set(isDark ? '#ffffff' : '#f1f5ff')
       mat.emissive.set(accent)
-      mat.emissiveIntensity = isDark ? 0.35 : 0.45
-      mat.opacity = isDark ? 0.88 : 0.94
+      mat.emissiveIntensity = isDark ? 0.35 : 0.6
+      mat.opacity = isDark ? 0.88 : 0.96
       g.userData.emissiveBase = mat.emissiveIntensity
       g.userData.opacityBase = mat.opacity
-      g.userData.glowBase = isDark ? 0.18 : 0.26
+      g.userData.glowBase = isDark ? 0.18 : 0.32
       if (mat.map) mat.map.dispose()
       mat.map = createCardTexture(k, mode) ?? undefined
       mat.needsUpdate = true
@@ -660,7 +773,7 @@ function applyTheme(mode: ThemeMode) {
     }
 
     if (line) {
-      line.userData.baseOpacity = isDark ? 0.22 : 0.3
+      line.userData.baseOpacity = isDark ? 0.22 : 0.4
       const lineMat = line.material as THREE.LineBasicMaterial
       lineMat.color.set(accent)
       lineMat.opacity = line.userData.baseOpacity
@@ -670,8 +783,8 @@ function applyTheme(mode: ThemeMode) {
 
   if (particles) {
     const particleMat = particles.material as THREE.MeshBasicMaterial
-    particleMat.color.set(isDark ? '#ffffff' : '#6366f1')
-    particleMat.opacity = isDark ? 0.85 : 0.65
+    particleMat.color.set(isDark ? '#ffffff' : '#4f46e5')
+    particleMat.opacity = isDark ? 0.85 : 0.72
     particleMat.blending = isDark ? THREE.AdditiveBlending : THREE.NormalBlending
     particleMat.needsUpdate = true
   }
@@ -699,8 +812,21 @@ function tick() {
   const dt = clock.getDelta()
   const t = clock.getElapsedTime()
 
+  const collapse = THREE.MathUtils.clamp(orbitCollapse, 0, 1)
+  const orbitRadius = THREE.MathUtils.lerp(0.55, 1.85, collapse)
+  const orbitZScale = THREE.MathUtils.lerp(0.3, 0.9, collapse)
+  const orbitYLift = THREE.MathUtils.lerp(0.05, 0.2, collapse)
+  const orbitScale = THREE.MathUtils.lerp(0.72, 1, collapse)
+  layoutOrbit(orbitRadius, orbitZScale, orbitYLift, orbitScale)
+
+  if (orbitBoost > 0.001) {
+    orbitBoost *= orbitBoostDecay
+  } else {
+    orbitBoost = 0
+  }
+
   // Idle motion: subtle drift (kept even when ScrollTrigger is active)
-  idleRig.rotation.y += dt * loopState.orbitSpeed
+  idleRig.rotation.y += dt * (loopState.orbitSpeed + orbitBoost)
   core.rotation.y += dt * loopState.coreSpin
   core.rotation.x += dt * loopState.coreTilt
 
@@ -779,7 +905,14 @@ function tick() {
 
   // Always keep camera aimed at the core.
   core.getWorldPosition(tmpVec3)
-  camera.lookAt(tmpVec3)
+  heroAnchor.x += (heroAnchor.targetX - heroAnchor.x) * 0.08
+  heroAnchor.y += (heroAnchor.targetY - heroAnchor.y) * 0.08
+
+  const anchorWeight = collapse
+  const lookAtOffsetX = -heroAnchor.x * anchorWeight * 0.65
+  const lookAtOffsetY = heroAnchor.y * anchorWeight * 0.45
+  tmpVec3B.set(tmpVec3.x + lookAtOffsetX, tmpVec3.y + lookAtOffsetY, tmpVec3.z)
+  camera.lookAt(tmpVec3B)
 
   updateLinks()
   updateParticles(t, loopState.particleSpeed)
@@ -795,6 +928,22 @@ async function setupSectionLoops() {
   clearHubScrollTriggers()
   layoutOrbit()
   setLoopProfile('hero', true)
+  orbitCollapse = 1
+  setHeroAnchorActive(true)
+
+  const heroEl = document.querySelector('.hero')
+  if (heroEl) {
+    const trigger = st.create({
+      trigger: heroEl,
+      start: 'top top',
+      end: 'bottom top',
+      scrub: true,
+      onUpdate: (self) => {
+        orbitCollapse = 1 - self.progress
+      },
+    })
+    hubScrollTriggers.push(trigger)
+  }
 
   const sections: Array<{ selector: string; profile: keyof typeof loopProfiles }> = [
     { selector: '.hero', profile: 'hero' },
@@ -934,6 +1083,7 @@ function createScene() {
     mesh.receiveShadow = false
     g.add(mesh)
     g.userData.cardMesh = mesh
+    mesh.userData.platformKey = key
     g.userData.highlight = 0
     g.userData.platformKey = key
     g.userData.emissiveBase = 0.35
@@ -1063,6 +1213,8 @@ watch(
 
     // Non-home: clear section triggers and rely on idle + state highlight
     clearHubScrollTriggers()
+    setHeroAnchorActive(false)
+    orbitCollapse = 1
     applyPlatformHighlight(activePlatformFromState.value)
   },
   { immediate: true }
@@ -1074,6 +1226,7 @@ watch(
     if (!enabled) {
       stopLoop()
       clearHubScrollTriggers()
+      setHeroAnchorActive(false)
 
       // If animations turned off at runtime, freeze to a single frame
       const renderer = rendererRef.value
@@ -1125,16 +1278,18 @@ onUnmounted(() => {
   /* Below overlay, above gradient underlay */
   z-index: 1;
   opacity: 0.9;
+  transform: translateZ(0);
+  will-change: transform;
 }
 
 :global(#app[data-theme='light'] .platform-hub-canvas) {
   opacity: 0.98;
-  filter: saturate(1.12) contrast(1.08);
+  filter: saturate(1.2) contrast(1.15) brightness(0.96);
 }
 
 :global(#app[data-theme='dark'] .platform-hub-canvas) {
   opacity: 0.92;
-  filter: saturate(1.1);
+  filter: saturate(1.08) contrast(1.05);
 }
 
 @media (max-width: 768px) {

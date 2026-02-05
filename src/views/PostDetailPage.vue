@@ -149,10 +149,16 @@
                 </button>
                 <span v-if="publishedMeta" class="post-date">· {{ publishedMeta }}</span>
               </p>
-              <p class="post-stats">
-                {{ post?.view_count ?? 0 }} {{ $t('post.views') }} · {{ post?.like_count ?? 0 }}
-                {{ $t('post.likes') }}
-              </p>
+              <div class="post-stats">
+                <span class="post-stat">
+                  <AnimatedIcon name="explore" :fallback-icon="Eye" size="sm" />
+                  {{ post?.view_count ?? 0 }} {{ $t('post.views') }}
+                </span>
+                <span class="post-stat">
+                  <AnimatedIcon name="heart" :fallback-icon="Heart" size="sm" />
+                  {{ post?.like_count ?? 0 }} {{ $t('post.likes') }}
+                </span>
+              </div>
             </header>
 
             <div v-if="post?.content" class="post-description-block">
@@ -186,7 +192,9 @@
               </button>
             </div>
 
-            <PostActionStrip :post-id="postId" :subtitles-available="subtitlesAvailable" />
+            <div class="post-actions">
+              <PostActionStrip :post-id="postId" :subtitles-available="subtitlesAvailable" />
+            </div>
           </aside>
         </div>
       </template>
@@ -221,7 +229,7 @@
       </Transition>
     </section>
 
-    <section class="post-comments container">
+    <section class="post-comments">
       <CommentList :post-id="postId" />
     </section>
 
@@ -242,7 +250,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { throttleRAF } from '@/utils/performance'
 import { formatDate } from '@/utils/date'
-import { ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-vue-next'
+import { ArrowLeft, ChevronLeft, ChevronRight, Eye, Heart } from 'lucide-vue-next'
 import { useAuthStore, useSettingsStore } from '@/stores'
 import { useI18n } from 'vue-i18n'
 import { usePageTitle } from '@/composables/usePageTitle'
@@ -898,6 +906,8 @@ onUnmounted(() => {
   --post-media-bg: rgba(15, 23, 42, 0.08);
   --post-modal-bg: var(--glass-bg-strong);
   --post-modal-border: var(--glass-border);
+  --post-gutter: clamp(14px, 2vw, 28px);
+  --post-vert-pad: clamp(12px, 1.6vw, 24px);
 
   min-height: 100vh;
   overflow-x: hidden;
@@ -931,14 +941,34 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: clamp(16px, 2.2vw, 32px) var(--spacing-4) var(--spacing-8);
+  padding: var(--post-vert-pad) var(--post-gutter) var(--spacing-6);
   overflow: visible;
 }
 
 .post-comments {
-  padding: var(--spacing-6) 0 var(--spacing-8);
-  /* Improve long-form readability (comments / text) */
-  max-width: min(var(--container-max), 900px);
+  width: min(100%, calc(var(--container-max) + var(--post-gutter) * 2));
+  margin-inline: auto;
+  padding: var(--spacing-5) var(--post-gutter) var(--spacing-6);
+}
+
+@media (max-width: 768px) {
+  .post-stage {
+    min-height: auto;
+    padding: var(--spacing-1) 0 var(--spacing-3);
+    align-items: stretch;
+  }
+  .post-comments {
+    max-width: 100%;
+    padding-top: var(--spacing-4);
+    padding-inline: var(--spacing-3);
+    padding-bottom: calc(
+      var(--spacing-10) + var(--navbar-height) + env(safe-area-inset-bottom, 0px)
+    );
+  }
+}
+
+.post-actions {
+  margin-top: auto;
 }
 
 .post-topbar {
@@ -1160,7 +1190,7 @@ onUnmounted(() => {
   margin-inline: auto;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--spacing-6);
+  gap: clamp(16px, 2.4vw, 32px);
   align-items: start;
   transition: transform 180ms var(--ease-out);
 }
@@ -1206,11 +1236,11 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: clamp(12px, 2.2vw, 28px);
-  background: var(--post-panel-bg);
-  border: 1px solid var(--post-panel-border);
-  border-radius: var(--radius-2xl);
-  box-shadow: var(--glass-shadow);
+  padding: clamp(6px, 1.3vw, 16px);
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
 }
 
 .media-viewer {
@@ -1224,8 +1254,9 @@ onUnmounted(() => {
   justify-content: center;
   overflow: hidden;
   background: var(--post-media-bg);
-  border-radius: calc(var(--radius-2xl) - 6px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-2xl);
+  border: 1px solid var(--post-panel-border);
+  box-shadow: var(--shadow-lg);
 }
 
 .post-media-empty {
@@ -1272,12 +1303,12 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   z-index: 1;
-  padding: clamp(12px, 2vw, 28px);
+  padding: clamp(10px, 1.6vw, 24px);
 }
 
 @media (min-width: 900px) {
   .media-item-container {
-    padding: clamp(20px, 2.4vw, 36px);
+    padding: clamp(14px, 2vw, 30px);
   }
 }
 
@@ -1337,11 +1368,9 @@ onUnmounted(() => {
 
 @media (min-width: 900px) {
   .media-viewer-item {
-    border-radius: var(--radius-xl);
-    box-shadow:
-      0 24px 64px rgba(0, 0, 0, 0.35),
-      0 8px 24px rgba(0, 0, 0, 0.25);
-    background: var(--post-overlay-soft);
+    border-radius: 0;
+    box-shadow: none;
+    background: transparent;
   }
 }
 
@@ -1386,44 +1415,54 @@ onUnmounted(() => {
 .post-panel {
   height: 100%;
   min-width: 0;
-  padding: var(--spacing-5);
+  padding: var(--spacing-4);
   background: var(--post-panel-bg);
   border-left: 1px solid var(--post-panel-border);
   backdrop-filter: blur(14px);
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-4);
+  gap: var(--spacing-3);
+  align-items: stretch;
 }
 
 @media (max-width: 899px) {
   .post-stage {
-    padding: var(--spacing-4) var(--spacing-3) var(--spacing-6);
+    padding: var(--spacing-2) 0 var(--spacing-4);
   }
 
   .media-stage {
-    padding: var(--spacing-3);
-    border-radius: var(--radius-xl);
+    padding: var(--spacing-2);
+    border-radius: 0;
   }
 
   .media-viewer {
     width: 100%;
     max-height: min(56svh, 520px);
-    border-radius: var(--radius-xl);
+    border-radius: 0;
   }
 
   .post-shell {
     grid-template-columns: 1fr;
     grid-template-rows: minmax(0, auto) minmax(0, 42svh);
+    gap: var(--spacing-3);
   }
 
   .post-panel {
     border-left: 0;
     border-top: 1px solid var(--post-panel-border);
-    padding: var(--spacing-4);
+    padding: var(--spacing-3);
     gap: var(--spacing-3);
-    border-radius: 0 0 var(--radius-xl) var(--radius-xl);
+    border-radius: 0;
     box-shadow: none;
+  }
+  .post-header {
+    gap: var(--spacing-1);
+    padding-bottom: var(--spacing-2);
+  }
+
+  .media-item-container {
+    padding: var(--spacing-2);
   }
 
   .post-description--clamped {
@@ -1455,6 +1494,8 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-2);
+  padding-bottom: var(--spacing-2);
+  border-bottom: 1px solid var(--post-panel-border);
 }
 
 .post-title {
@@ -1473,8 +1514,18 @@ onUnmounted(() => {
 }
 
 .post-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-2);
   color: var(--post-text-tertiary);
   font-size: var(--text-sm);
+}
+
+.post-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-1);
+  font-variant-numeric: tabular-nums;
 }
 
 .post-description-block {
@@ -1493,8 +1544,8 @@ onUnmounted(() => {
 
 .post-description--clamped {
   display: -webkit-box;
-  -webkit-line-clamp: 8;
-  line-clamp: 8;
+  -webkit-line-clamp: 7;
+  line-clamp: 7;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
