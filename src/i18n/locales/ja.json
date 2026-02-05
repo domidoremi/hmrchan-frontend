@@ -265,6 +265,7 @@
   },
   "post": {
     "by": "作者",
+    "publishedAt": "公開日 {date}",
     "views": "閲覧",
     "likes": "いいね",
     "share": "共有",

@@ -265,6 +265,7 @@
   },
   "post": {
     "by": "作者",
+    "publishedAt": "发布于 {date}",
     "views": "浏览",
     "likes": "喜欢",
     "share": "分享",

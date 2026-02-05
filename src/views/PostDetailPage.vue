@@ -47,89 +47,91 @@
       <template v-else-if="post">
         <div class="post-shell" :class="peekDirection ? `is-peeking-${peekDirection}` : undefined">
           <div class="post-media">
-            <div
-              v-if="post.media_files && post.media_files.length > 0"
-              class="media-viewer"
-              :style="activeMediaViewerStyle"
-            >
-              <button
-                v-if="hasMultipleMedia"
-                type="button"
-                class="media-nav prev"
-                :aria-label="$t('common.previous')"
-                :disabled="!canGoPrevMedia"
-                @click="prevMedia"
+            <div class="media-stage">
+              <div
+                v-if="post.media_files && post.media_files.length > 0"
+                class="media-viewer"
+                :style="activeMediaViewerStyle"
               >
-                <AnimatedIcon name="explore" :fallback-icon="ChevronLeft" size="md" />
-              </button>
-
-              <Transition :name="mediaTransitionName" mode="out-in">
-                <div
-                  v-if="activeMedia?.file_type === 'image'"
-                  :key="`img-${activeMedia.id}`"
-                  class="media-item-container media-clickable"
-                  @click="openLightbox()"
+                <button
+                  v-if="hasMultipleMedia"
+                  type="button"
+                  class="media-nav prev"
+                  :aria-label="$t('common.previous')"
+                  :disabled="!canGoPrevMedia"
+                  @click="prevMedia"
                 >
-                  <!-- 模糊占位图 -->
-                  <img
-                    v-if="!isMediaLoaded && placeholderSrc"
-                    class="media-placeholder"
-                    :src="placeholderSrc"
-                    :alt="post?.title || ''"
-                    aria-hidden="true"
-                  />
-                  <!-- 原图 -->
-                  <img
-                    class="media-viewer-item"
-                    :class="{ 'is-loaded': isMediaLoaded }"
-                    :src="getMediaStreamUrl(activeMedia.id)"
-                    :alt="post?.title || ''"
-                    fetchpriority="high"
-                    @load="onMediaLoad"
-                  />
-                  <!-- 点击提示 -->
-                  <div class="media-zoom-hint">
-                    <span class="zoom-icon">🔍</span>
-                    {{ $t('common.clickToEnlarge') }}
+                  <AnimatedIcon name="explore" :fallback-icon="ChevronLeft" size="md" />
+                </button>
+
+                <Transition :name="mediaTransitionName" mode="out-in">
+                  <div
+                    v-if="activeMedia?.file_type === 'image'"
+                    :key="`img-${activeMedia.id}`"
+                    class="media-item-container media-clickable"
+                    @click="openLightbox()"
+                  >
+                    <!-- 模糊占位图 -->
+                    <img
+                      v-if="!isMediaLoaded && placeholderSrc"
+                      class="media-placeholder"
+                      :src="placeholderSrc"
+                      :alt="post?.title || ''"
+                      aria-hidden="true"
+                    />
+                    <!-- 原图 -->
+                    <img
+                      class="media-viewer-item"
+                      :class="{ 'is-loaded': isMediaLoaded }"
+                      :src="getMediaStreamUrl(activeMedia.id)"
+                      :alt="post?.title || ''"
+                      fetchpriority="high"
+                      @load="onMediaLoad"
+                    />
+                    <!-- 点击提示 -->
+                    <div class="media-zoom-hint">
+                      <span class="zoom-icon">🔍</span>
+                      {{ $t('common.clickToEnlarge') }}
+                    </div>
                   </div>
-                </div>
-                <VideoPlayer
-                  v-else-if="activeMedia?.file_type === 'video'"
-                  :key="`video-${activeMedia.id}`"
-                  class="media-viewer-item is-loaded"
-                  :src="getMediaStreamUrl(activeMedia.id)"
-                  :poster="getMediaThumbnailUrl(activeMedia.id, 'large')"
-                  :subtitles="activeMedia.subtitles ?? null"
-                  playsinline
-                  @ready="onMediaLoad"
+                  <VideoPlayer
+                    v-else-if="activeMedia?.file_type === 'video'"
+                    :key="`video-${activeMedia.id}`"
+                    class="media-viewer-item is-loaded"
+                    :src="getMediaStreamUrl(activeMedia.id)"
+                    :poster="getMediaThumbnailUrl(activeMedia.id, 'large')"
+                    :subtitles="activeMedia.subtitles ?? null"
+                    playsinline
+                    @ready="onMediaLoad"
+                  />
+                </Transition>
+
+                <button
+                  v-if="hasMultipleMedia"
+                  type="button"
+                  class="media-nav next"
+                  :aria-label="$t('common.next')"
+                  :disabled="!canGoNextMedia"
+                  @click="nextMedia"
+                >
+                  <AnimatedIcon name="explore" :fallback-icon="ChevronRight" size="md" />
+                </button>
+              </div>
+
+              <div v-else class="post-media-empty">
+                <img
+                  v-if="post?.thumbnail_url"
+                  class="post-image"
+                  :src="
+                    normalizeToThumbnailUrl(post?.thumbnail_url ?? '', 'large') ||
+                    post?.thumbnail_url ||
+                    ''
+                  "
+                  :alt="post?.title || ''"
+                  loading="lazy"
                 />
-              </Transition>
-
-              <button
-                v-if="hasMultipleMedia"
-                type="button"
-                class="media-nav next"
-                :aria-label="$t('common.next')"
-                :disabled="!canGoNextMedia"
-                @click="nextMedia"
-              >
-                <AnimatedIcon name="explore" :fallback-icon="ChevronRight" size="md" />
-              </button>
-            </div>
-
-            <div v-else class="post-media-empty">
-              <img
-                v-if="post?.thumbnail_url"
-                class="post-image"
-                :src="
-                  normalizeToThumbnailUrl(post?.thumbnail_url ?? '', 'large') ||
-                  post?.thumbnail_url ||
-                  ''
-                "
-                :alt="post?.title || ''"
-                loading="lazy"
-              />
-              <div class="post-image skeleton" v-else />
+                <div class="post-image skeleton" v-else />
+              </div>
             </div>
           </div>
 
@@ -145,6 +147,7 @@
                 >
                   {{ post?.author_name || '' }}
                 </button>
+                <span v-if="publishedMeta" class="post-date">· {{ publishedMeta }}</span>
               </p>
               <p class="post-stats">
                 {{ post?.view_count ?? 0 }} {{ $t('post.views') }} · {{ post?.like_count ?? 0 }}
@@ -238,6 +241,7 @@ import { ref, computed, onMounted, watch, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { throttleRAF } from '@/utils/performance'
+import { formatDate } from '@/utils/date'
 import { ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-vue-next'
 import { useAuthStore, useSettingsStore } from '@/stores'
 import { useI18n } from 'vue-i18n'
@@ -342,6 +346,12 @@ const lightboxInitialIndex = ref(0)
 // Long text → open in overlay modal (avoid nested scrollbars in panel)
 const isTextModalOpen = ref(false)
 const shouldShowReadFullText = computed(() => (post.value?.content?.length ?? 0) > 280)
+
+const publishedMeta = computed(() => {
+  const publishedAt = post.value?.published_at
+  if (!publishedAt) return ''
+  return t('post.publishedAt', { date: formatDate(publishedAt) })
+})
 
 let previousBodyOverflow: string | null = null
 
@@ -916,12 +926,13 @@ onUnmounted(() => {
 
 .post-stage {
   position: relative;
-  height: calc(100vh - var(--navbar-height));
-  height: calc(100svh - var(--navbar-height));
+  min-height: calc(100vh - var(--navbar-height));
+  min-height: calc(100svh - var(--navbar-height));
   display: flex;
-  align-items: stretch;
+  align-items: center;
   justify-content: center;
-  overflow: hidden;
+  padding: clamp(16px, 2.2vw, 32px) var(--spacing-4) var(--spacing-8);
+  overflow: visible;
 }
 
 .post-comments {
@@ -1146,10 +1157,11 @@ onUnmounted(() => {
 
 .post-shell {
   width: min(100%, var(--container-max));
-  height: 100%;
   margin-inline: auto;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
+  gap: var(--spacing-6);
+  align-items: start;
   transition: transform 180ms var(--ease-out);
 }
 
@@ -1163,42 +1175,62 @@ onUnmounted(() => {
 
 @media (min-width: 768px) {
   .post-shell {
-    grid-template-columns: minmax(0, 1fr) clamp(300px, 34vw, 420px);
+    grid-template-columns: minmax(0, 1fr) clamp(320px, 32vw, 460px);
+    gap: clamp(20px, 3vw, 48px);
   }
 
   .post-panel {
     border-left: 1px solid var(--post-panel-border);
     border-top: 0;
+    border-radius: var(--radius-2xl);
+    box-shadow: var(--glass-shadow);
   }
 }
 
 @media (min-width: 1100px) {
   .post-shell {
-    grid-template-columns: minmax(0, 1fr) clamp(340px, 30vw, 460px);
+    grid-template-columns: minmax(0, 1.05fr) clamp(360px, 28vw, 480px);
   }
 }
 
 .post-media {
   position: relative;
   min-width: 0;
-  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.media-stage {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(12px, 2.2vw, 28px);
+  background: var(--post-panel-bg);
+  border: 1px solid var(--post-panel-border);
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--glass-shadow);
 }
 
 .media-viewer {
   position: relative;
-  width: 100%;
-  height: 100%;
+  width: min(100%, 960px);
+  max-width: 100%;
+  max-height: clamp(320px, 62vh, 720px);
   aspect-ratio: var(--aspect-ratio, 16 / 9);
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
   background: var(--post-media-bg);
+  border-radius: calc(var(--radius-2xl) - 6px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .post-media-empty {
   width: 100%;
-  height: 100%;
+  min-height: clamp(260px, 40vh, 520px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1240,12 +1272,12 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   z-index: 1;
-  padding: var(--spacing-4);
+  padding: clamp(12px, 2vw, 28px);
 }
 
 @media (min-width: 900px) {
   .media-item-container {
-    padding: var(--spacing-6);
+    padding: clamp(20px, 2.4vw, 36px);
   }
 }
 
@@ -1295,7 +1327,7 @@ onUnmounted(() => {
   position: relative;
   width: 100%;
   height: 100%;
-  max-width: 1200px;
+  max-width: 100%;
   max-height: 100%;
   object-fit: contain;
   border-radius: 0;
@@ -1365,9 +1397,24 @@ onUnmounted(() => {
 }
 
 @media (max-width: 899px) {
+  .post-stage {
+    padding: var(--spacing-4) var(--spacing-3) var(--spacing-6);
+  }
+
+  .media-stage {
+    padding: var(--spacing-3);
+    border-radius: var(--radius-xl);
+  }
+
+  .media-viewer {
+    width: 100%;
+    max-height: min(56svh, 520px);
+    border-radius: var(--radius-xl);
+  }
+
   .post-shell {
     grid-template-columns: 1fr;
-    grid-template-rows: minmax(0, 1fr) minmax(0, 42svh);
+    grid-template-rows: minmax(0, auto) minmax(0, 42svh);
   }
 
   .post-panel {
@@ -1375,6 +1422,8 @@ onUnmounted(() => {
     border-top: 1px solid var(--post-panel-border);
     padding: var(--spacing-4);
     gap: var(--spacing-3);
+    border-radius: 0 0 var(--radius-xl) var(--radius-xl);
+    box-shadow: none;
   }
 
   .post-description--clamped {
@@ -1415,6 +1464,10 @@ onUnmounted(() => {
 }
 
 .post-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-2);
   color: var(--post-text-secondary);
   font-size: var(--text-sm);
 }
