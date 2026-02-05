@@ -816,6 +816,19 @@ onMounted(() => {
     stageRef.value.addEventListener('touchstart', handleTouchStart, { passive: true })
     stageRef.value.addEventListener('touchend', handleTouchEnd, { passive: true })
   }
+
+  // 记录访问开始时间（用于智能预缓存）
+  const accessStartTime = Date.now()
+
+  // 在组件卸载时记录访问
+  onUnmounted(() => {
+    const timeSpent = Date.now() - accessStartTime
+    if (postId.value) {
+      import('@/utils/cache/smartPrefetch').then(({ recordAccess }) => {
+        recordAccess('post', postId.value, timeSpent)
+      })
+    }
+  })
 })
 
 watch(postId, () => {
@@ -853,10 +866,6 @@ watch(
   },
   { immediate: true }
 )
-
-watch(isAuthenticated, () => {
-  fetchFavoriteStatus()
-})
 
 // 清理 sessionStorage
 onUnmounted(() => {
