@@ -3,7 +3,7 @@
  * 基于用户行为预加载常访问内容
  */
 
-import { openDB } from './idb'
+import { idbGet, idbSet, idbGetAll, idbClear, STORES } from './idb'
 import { prefetchPostDetail } from '../prefetch'
 
 interface AccessRecord {
@@ -15,7 +15,7 @@ interface AccessRecord {
   avgTimeSpent: number // 平均停留时间（毫秒）
 }
 
-const ACCESS_STORE = 'access-history'
+const ACCESS_STORE = STORES.ACCESS_HISTORY
 const MAX_RECORDS = 500
 const PREFETCH_THRESHOLD = 3 // 访问3次以上才预缓存
 const RECENT_DAYS = 7 // 只考虑最近7天的访问
@@ -28,10 +28,9 @@ export async function recordAccess(
   resourceId: string,
   timeSpent: number = 0
 ): Promise<void> {
-  const db = await openDB()
   const id = `${type}-${resourceId}`
 
-  const existing = await db.get(ACCESS_STORE, id)
+  const existing = await idbGet<AccessRecord>(ACCESS_STORE, id)
 
   if (existing) {
     // 更新现有记录
@@ -39,7 +38,7 @@ export async function recordAccess(
     existing.lastAccess = Date.now()
     existing.avgTimeSpent =
       (existing.avgTimeSpent * (existing.accessCount - 1) + timeSpent) / existing.accessCount
-    await db.put(ACCESS_STORE, existing)
+    await idbSet(ACCESS_STORE, existing)
   } else {
     // 创建新记录
     const record: AccessRecord = {
@@ -50,7 +49,7 @@ export async function recordAccess(
       lastAccess: Date.now(),
       avgTimeSpent: timeSpent,
     }
-    await db.put(ACCESS_STORE, record)
+    await idbSet(ACCESS_STORE, record)
   }
 
   // 清理旧记录
@@ -64,8 +63,7 @@ export async function getPopularResources(
   type?: AccessRecord['type'],
   limit: number = 10
 ): Promise<AccessRecord[]> {
-  const db = await openDB()
-  let records = await db.getAll(ACCESS_STORE)
+  let records = await idbGetAll<AccessRecord>(ACCESS_STORE)
 
   // 过滤类型
   if (type) {
@@ -146,8 +144,7 @@ export async function prefetchRelatedContent(
  * 清理旧的访问记录
  */
 async function cleanupOldRecords(): Promise<void> {
-  const db = await openDB()
-  const records = await db.getAll(ACCESS_STORE)
+  const records = await idbGetAll<AccessRecord>(ACCESS_STORE)
 
   if (records.length <= MAX_RECORDS) {
     return
@@ -157,8 +154,9 @@ async function cleanupOldRecords(): Promise<void> {
   records.sort((a, b) => a.lastAccess - b.lastAccess)
   const toDelete = records.slice(0, records.length - MAX_RECORDS)
 
+  const { idbDelete } = await import('./idb')
   for (const record of toDelete) {
-    await db.delete(ACCESS_STORE, record.id)
+    await idbDelete(ACCESS_STORE, record.id)
   }
 }
 
@@ -171,8 +169,7 @@ export async function getAccessStats(): Promise<{
   authorAccess: number
   avgAccessCount: number
 }> {
-  const db = await openDB()
-  const records = await db.getAll(ACCESS_STORE)
+  const records = await idbGetAll<AccessRecord>(ACCESS_STORE)
 
   const postRecords = records.filter((r) => r.type === 'post')
   const authorRecords = records.filter((r) => r.type === 'author')
@@ -190,10 +187,5 @@ export async function getAccessStats(): Promise<{
  * 清除所有访问历史
  */
 export async function clearAccessHistory(): Promise<void> {
-  const db = await openDB()
-  const records = await db.getAll(ACCESS_STORE)
-
-  for (const record of records) {
-    await db.delete(ACCESS_STORE, record.id)
-  }
+  await idbClear(ACCESS_STORE)
 }
