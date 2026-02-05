@@ -62,9 +62,10 @@ export async function subscribeToPush(
 
   if (!subscription) {
     // 创建新订阅
+    const applicationServerKey = urlBase64ToUint8Array(vapidPublicKey)
     subscription = await registration.pushManager.subscribe({
       userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
+      applicationServerKey: applicationServerKey as BufferSource,
     })
   }
 
@@ -142,7 +143,6 @@ export async function showLocalNotification(
   await registration.showNotification(title, {
     icon: '/icons/icon-192x192.png',
     badge: '/icons/icon-96x96.png',
-    vibrate: [200, 100, 200],
     ...options,
   })
 }
