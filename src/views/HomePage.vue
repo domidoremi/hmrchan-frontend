@@ -1,12 +1,5 @@
 <template>
   <div class="home-page">
-    <!-- 全局背景层 - 连续流动 -->
-    <div class="home-bg" aria-hidden="true">
-      <div class="home-bg__blob home-bg__blob--1" />
-      <div class="home-bg__blob home-bg__blob--2" />
-      <div class="home-bg__blob home-bg__blob--3" />
-    </div>
-
     <!-- Hero Section -->
     <section
       v-if="settings.showHeroSection"
@@ -461,96 +454,6 @@ onBeforeUnmount(() => {
   min-height: 100vh;
 }
 
-/* ========== 全局背景层 ========== */
-.home-bg {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  /* Keep page blobs behind the global contextual 3D background */
-  z-index: -2;
-  overflow: hidden;
-}
-
-.home-bg__blob {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(120px);
-  opacity: 0.4;
-  will-change: transform;
-}
-
-.home-bg__blob--1 {
-  width: 600px;
-  height: 600px;
-  top: -15%;
-  left: -10%;
-  background: radial-gradient(circle, rgba(74, 222, 128, 0.5) 0%, transparent 70%);
-}
-
-.home-bg__blob--2 {
-  width: 500px;
-  height: 500px;
-  top: 40%;
-  right: -15%;
-  background: radial-gradient(circle, rgba(167, 139, 250, 0.4) 0%, transparent 70%);
-}
-
-.home-bg__blob--3 {
-  width: 450px;
-  height: 450px;
-  bottom: 10%;
-  left: 20%;
-  background: radial-gradient(circle, rgba(45, 212, 191, 0.35) 0%, transparent 70%);
-}
-
-.hero--animated .home-bg__blob--1 {
-  animation: blob-float-1 20s ease-in-out infinite;
-}
-
-.hero--animated .home-bg__blob--2 {
-  animation: blob-float-2 25s ease-in-out infinite;
-}
-
-.hero--animated .home-bg__blob--3 {
-  animation: blob-float-3 22s ease-in-out infinite;
-}
-
-@keyframes blob-float-1 {
-  0%,
-  100% {
-    transform: translate(0, 0) scale(1);
-  }
-  33% {
-    transform: translate(30px, 20px) scale(1.05);
-  }
-  66% {
-    transform: translate(-20px, 10px) scale(0.95);
-  }
-}
-
-@keyframes blob-float-2 {
-  0%,
-  100% {
-    transform: translate(0, 0) scale(1);
-  }
-  50% {
-    transform: translate(-40px, 30px) scale(1.08);
-  }
-}
-
-@keyframes blob-float-3 {
-  0%,
-  100% {
-    transform: translate(0, 0) scale(1);
-  }
-  40% {
-    transform: translate(25px, -15px) scale(0.92);
-  }
-  80% {
-    transform: translate(-15px, 25px) scale(1.03);
-  }
-}
-
 /* ========== Hero Section ========== */
 .hero {
   position: relative;
@@ -959,10 +862,6 @@ onBeforeUnmount(() => {
 }
 
 /* ========== Dark Mode ========== */
-[data-theme='dark'] .home-bg__blob {
-  opacity: 0.2;
-}
-
 [data-theme='dark'] .bento-card:hover {
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
 }
@@ -999,22 +898,6 @@ onBeforeUnmount(() => {
   .hero-subtitle {
     font-size: var(--text-base);
   }
-
-  .home-bg__blob {
-    filter: blur(80px);
-  }
-  .home-bg__blob--1 {
-    width: 350px;
-    height: 350px;
-  }
-  .home-bg__blob--2 {
-    width: 300px;
-    height: 300px;
-  }
-  .home-bg__blob--3 {
-    width: 280px;
-    height: 280px;
-  }
 }
 
 @media (max-width: 480px) {
@@ -1040,9 +923,6 @@ onBeforeUnmount(() => {
 
 /* ========== Reduced Motion ========== */
 @media (prefers-reduced-motion: reduce) {
-  .home-bg__blob {
-    animation: none !important;
-  }
   .hero-badge__dot {
     animation: none !important;
   }

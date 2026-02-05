@@ -87,7 +87,7 @@ const { t } = useI18n()
 const titleId = `dialog-title-${Math.random().toString(36).slice(2, 9)}`
 const descriptionId = `dialog-desc-${Math.random().toString(36).slice(2, 9)}`
 
-const closeLabel = computed(() => t('common.close', 'Close'))
+const closeLabel = computed(() => t('common.close'))
 
 const showHeader = computed(() => {
   return props.title || props.showClose

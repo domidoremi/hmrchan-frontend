@@ -137,13 +137,13 @@ const iconAnimation = computed(() => {
 const defaultTitle = computed(() => {
   switch (props.variant) {
     case 'danger':
-      return t('common.confirmDelete', '确认删除')
+      return t('common.confirmDelete')
     case 'warning':
-      return t('common.warning', '警告')
+      return t('common.warning')
     case 'success':
-      return t('common.success', '成功')
+      return t('common.success')
     default:
-      return t('common.confirm', '确认')
+      return t('common.confirm')
   }
 })
 

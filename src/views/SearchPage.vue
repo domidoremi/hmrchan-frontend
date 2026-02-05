@@ -620,18 +620,166 @@ onMounted(() => {
   color: var(--color-text-secondary);
   background: var(--glass-bg-subtle);
   border: 1px solid transparent;
-  transition: all var(--transition-fast);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.platform-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 
 .platform-btn:hover {
   background: var(--glass-bg-light);
   color: var(--color-text-primary);
+  transform: translateY(-2px);
 }
 
 .platform-btn.active {
-  background: rgba(var(--color-primary-rgb), 0.15);
-  color: var(--color-primary);
-  border-color: rgba(var(--color-primary-rgb), 0.3);
+  transform: translateY(-1px) scale(1.02);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* All Platforms - 紫色渐变 */
+.platform-btn:nth-child(1).active {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.15));
+  color: #6366f1;
+  border-color: rgba(99, 102, 241, 0.4);
+}
+
+.platform-btn:nth-child(1).active::before {
+  background: radial-gradient(circle at 50% 50%, rgba(99, 102, 241, 0.3), transparent 70%);
+  opacity: 1;
+  animation: platform-pulse 2s ease-in-out infinite;
+}
+
+/* YouTube - 红色 */
+.platform-btn:nth-child(2).active {
+  background: linear-gradient(135deg, rgba(255, 0, 51, 0.15), rgba(255, 68, 68, 0.1));
+  color: #ff0033;
+  border-color: rgba(255, 0, 51, 0.4);
+}
+
+.platform-btn:nth-child(2).active::before {
+  background: radial-gradient(circle at 50% 50%, rgba(255, 0, 51, 0.3), transparent 70%);
+  opacity: 1;
+  animation: platform-pulse-youtube 1.5s ease-in-out infinite;
+}
+
+/* TikTok - 青色渐变 */
+.platform-btn:nth-child(3).active {
+  background: linear-gradient(135deg, rgba(0, 242, 234, 0.15), rgba(255, 0, 80, 0.1));
+  color: #00f2ea;
+  border-color: rgba(0, 242, 234, 0.4);
+}
+
+.platform-btn:nth-child(3).active::before {
+  background: linear-gradient(45deg, rgba(0, 242, 234, 0.3), rgba(255, 0, 80, 0.2));
+  opacity: 1;
+  animation: platform-pulse-tiktok 1.2s ease-in-out infinite;
+}
+
+/* X/Twitter - 蓝色 */
+.platform-btn:nth-child(4).active {
+  background: linear-gradient(135deg, rgba(29, 155, 240, 0.2), rgba(29, 155, 240, 0.1));
+  color: #1d9bf0;
+  border-color: rgba(29, 155, 240, 0.4);
+}
+
+.platform-btn:nth-child(4).active::before {
+  background: radial-gradient(circle at 30% 30%, rgba(29, 155, 240, 0.4), transparent 60%);
+  opacity: 1;
+  animation: platform-pulse-twitter 2.5s ease-in-out infinite;
+}
+
+/* Instagram - 渐变紫红 */
+.platform-btn:nth-child(5).active {
+  background: linear-gradient(135deg, rgba(225, 48, 108, 0.15), rgba(131, 58, 180, 0.1));
+  color: #e1306c;
+  border-color: rgba(225, 48, 108, 0.4);
+}
+
+.platform-btn:nth-child(5).active::before {
+  background: linear-gradient(
+    45deg,
+    rgba(252, 175, 69, 0.25),
+    rgba(225, 48, 108, 0.3),
+    rgba(131, 58, 180, 0.25)
+  );
+  opacity: 1;
+  animation: platform-pulse-instagram 3s ease-in-out infinite;
+}
+
+@keyframes platform-pulse {
+  0%,
+  100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+}
+
+@keyframes platform-pulse-youtube {
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 0.9;
+  }
+}
+
+@keyframes platform-pulse-tiktok {
+  0%,
+  100% {
+    opacity: 0.5;
+    background-position: 0% 50%;
+  }
+  50% {
+    opacity: 0.9;
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes platform-pulse-twitter {
+  0%,
+  100% {
+    opacity: 0.4;
+    transform: translateX(-10%) translateY(-10%);
+  }
+  50% {
+    opacity: 0.8;
+    transform: translateX(10%) translateY(10%);
+  }
+}
+
+@keyframes platform-pulse-instagram {
+  0%,
+  100% {
+    opacity: 0.5;
+    filter: hue-rotate(0deg);
+  }
+  50% {
+    opacity: 0.9;
+    filter: hue-rotate(15deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .platform-btn::before {
+    animation: none !important;
+  }
+  .platform-btn:hover,
+  .platform-btn.active {
+    transform: none;
+  }
 }
 
 .platform-label {

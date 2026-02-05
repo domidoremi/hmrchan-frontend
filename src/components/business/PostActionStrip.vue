@@ -1,16 +1,12 @@
 <template>
   <div class="post-action-strip" :class="`post-action-strip--${variant}`">
-    <span
-      v-if="subtitlesAvailable"
-      class="subtitles-pill"
-      :title="t('post.subtitlesAvailable', 'Subtitles available')"
-    >
+    <span v-if="subtitlesAvailable" class="subtitles-pill" :title="t('post.subtitlesAvailable')">
       CC
       <span v-if="showLabels" class="subtitles-pill__text">
-        {{ t('post.subtitlesAvailable', 'Subtitles available') }}
+        {{ t('post.subtitlesAvailable') }}
       </span>
       <span v-else class="sr-only">
-        {{ t('post.subtitlesAvailable', 'Subtitles available') }}
+        {{ t('post.subtitlesAvailable') }}
       </span>
     </span>
 
@@ -23,9 +19,7 @@
       :aria-label="isFavorited ? t('post.unfavorite') : t('post.favorite')"
       @click="toggleFavorite"
     >
-      <AnimatedIcon name="heart" :fallback-icon="Bookmark" size="md" :active="isFavorited">
-        <Bookmark :size="20" :fill="isFavorited ? 'currentColor' : 'none'" />
-      </AnimatedIcon>
+      <AnimatedIcon name="heart" :fallback-icon="Bookmark" size="md" :active="isFavorited" />
       <span v-if="showLabels">{{ isFavorited ? t('post.unfavorite') : t('post.favorite') }}</span>
       <span v-else class="sr-only">{{
         isFavorited ? t('post.unfavorite') : t('post.favorite')
@@ -125,7 +119,7 @@ async function toggleFavorite() {
       }
       isFavorited.value = false
       favoriteId.value = null
-      toastStore.success(t('post.unfavorite', '已取消收藏'))
+      toastStore.success(t('post.unfavorite'))
       return
     }
 
@@ -137,7 +131,7 @@ async function toggleFavorite() {
     if (err instanceof ApiError) {
       // 502 网关错误特殊处理
       if (err.message.includes('502') || err.message.includes('网关')) {
-        toastStore.error(t('post.favoriteServerError', '收藏服务暂时不可用，请稍后重试'))
+        toastStore.error(t('post.favoriteServerError'))
       } else {
         toastStore.error(err.message)
       }
@@ -216,6 +210,10 @@ async function sharePost() {
 .action-btn.active {
   color: #fff;
   border-color: rgba(255, 255, 255, 0.45);
+}
+
+.action-btn.active :deep(.animated-icon__fallback) {
+  fill: currentColor;
 }
 
 .post-action-strip--compact .action-btn {

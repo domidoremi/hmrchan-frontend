@@ -69,7 +69,10 @@
     "loadingFailed": "加载失败",
     "imageLoadFailed": "图片加载失败",
     "reset": "重置",
-    "refresh": "刷新"
+    "refresh": "刷新",
+    "confirmDelete": "确认删除",
+    "warning": "警告",
+    "success": "成功"
   },
   "auth": {
     "email": "邮箱",
@@ -97,6 +100,7 @@
     "error": {
       "fieldsRequired": "请填写所有字段",
       "passwordTooShort": "密码至少需要6个字符",
+      "passwordTooWeak": "密码强度太弱，请增加复杂度",
       "loginFailed": "登录失败，请重试",
       "registerFailed": "注册失败，请重试",
       "emailExists": "该邮箱已被注册",
@@ -112,7 +116,11 @@
     "loginHint": "使用用户名或邮箱安全登录。",
     "registerHint": "完成验证即可快速创建账户。",
     "verifyTitle": "安全验证",
-    "verifyHint": "仅需片刻"
+    "verifyHint": "仅需片刻",
+    "passwordWeak": "弱",
+    "passwordFair": "一般",
+    "passwordGood": "良好",
+    "passwordStrong": "强"
   },
   "video": {
     "playbackSpeed": "播放速度",
@@ -146,6 +154,9 @@
     "dark": "深色",
     "auto": "跟随系统",
     "language": "语言",
+    "uiStyle": "UI 风格",
+    "uiStyleIos": "iOS (SwiftUI)",
+    "uiStyleMaterial": "Material",
     "display": "显示",
     "toggleHeroSection": "显示首页横幅",
     "heroSectionDesc": "在首页显示横幅区域",
@@ -266,7 +277,10 @@
     "noMedia": "暂无媒体",
     "content": "内容",
     "readFullText": "阅读全文",
-    "subtitlesAvailable": "字幕可用"
+    "subtitlesAvailable": "字幕可用",
+    "untitled": "未命名",
+    "swipeAgainNext": "再次滑动以进入下一篇",
+    "swipeAgainPrev": "再次滑动以返回上一篇"
   },
   "author": {
     "postCount": "{count} 个作品"
@@ -297,10 +311,12 @@
   },
   "comment": {
     "title": "评论",
+    "loginRequiredTitle": "登录后评论",
     "placeholder": "分享你的想法...",
-    "replyPlaceholder": "回复 {username}...",
+    "replyPlaceholder": "回复 @{username}...",
     "submit": "发布",
     "reply": "回复",
+    "replies": "回复",
     "share": "分享",
     "report": "举报",
     "empty": "暂无评论",
@@ -387,6 +403,7 @@
     "settings": "个人设置",
     "avatar": "头像",
     "uploadAvatar": "上传头像",
+    "avatarHint": "支持 JPG、PNG 格式，建议尺寸 200×200",
     "avatarUpdated": "头像更新成功",
     "basicInfo": "基本信息",
     "username": "用户名",
@@ -399,6 +416,7 @@
     "displayNameHint": "此名称将公开显示",
     "bio": "个人简介",
     "bioPlaceholder": "介绍一下自己",
+    "bioHint": "介绍一下自己吧",
     "changePassword": "修改密码",
     "currentPassword": "当前密码",
     "newPassword": "新密码",
@@ -462,7 +480,14 @@
     "unlike": "取消点赞",
     "unlikeSuccess": "已取消点赞",
     "confirmUnlike": "取消点赞",
-    "confirmUnlikeMessage": "确定要取消对这条评论的点赞吗？"
+    "confirmUnlikeMessage": "确定要取消对这条评论的点赞吗？",
+    "unknownPost": "未知帖子",
+    "passwordWeak": "弱",
+    "passwordFair": "一般",
+    "passwordGood": "良好",
+    "passwordStrong": "强",
+    "avatarTypeError": "仅支持 JPG、PNG、GIF、WebP 格式",
+    "avatarSizeError": "文件大小不能超过 {max}MB"
   },
   "user": {
     "username": {

@@ -72,7 +72,7 @@
     <!-- Clear History Confirmation -->
     <ConfirmDialog
       v-model:is-open="showClearDialog"
-      :title="$t('profile.confirmClearHistoryTitle', '清空浏览历史')"
+      :title="$t('profile.confirmClearHistoryTitle')"
       :message="$t('profile.confirmClearHistory')"
       :confirm-text="$t('common.confirm')"
       variant="warning"

@@ -3,19 +3,34 @@ import { computed, onUnmounted, ref, shallowRef, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import * as THREE from 'three'
 import { prefersReducedMotion } from '@/utils/performance'
-import { useSettingsStore } from '@/stores'
+import { storeToRefs } from 'pinia'
+import { useSettingsStore, useThemeStore } from '@/stores'
 import {
   useContextualBackground,
   type BackgroundState,
 } from '@/composables/useContextualBackground'
 
 type PlatformKey = 'core' | 'instagram' | 'tiktok' | 'youtube' | 'twitter'
+type ThemeMode = 'light' | 'dark'
+
+const PLATFORM_CONFIG: Record<
+  Exclude<PlatformKey, 'core'>,
+  { label: string; accent: string; icon: string }
+> = {
+  instagram: { label: 'Instagram', accent: '#E1306C', icon: 'IG' },
+  tiktok: { label: 'TikTok', accent: '#00F2EA', icon: 'TT' },
+  youtube: { label: 'YouTube', accent: '#FF0033', icon: 'YT' },
+  twitter: { label: 'X', accent: '#1D9BF0', icon: 'X' },
+}
 
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 const route = useRoute()
 
 const settingsStore = useSettingsStore()
+const themeStore = useThemeStore()
 const { currentState } = useContextualBackground()
+const { resolvedTheme } = storeToRefs(themeStore)
+const themeMode = computed(() => (resolvedTheme.value === 'dark' ? 'dark' : 'light'))
 
 const shouldRender3D = computed(
   () => settingsStore.shouldAnimate && !prefersReducedMotion() && !!canvasRef.value
@@ -135,10 +150,24 @@ let rafId: number | null = null
 let resizeObserver: ResizeObserver | null = null
 let isVisible = true
 
-const mouse = { x: 0, y: 0 }
+const mouse = { x: 0, y: 0, targetX: 0, targetY: 0 }
 let pendingMouse = false
 let lastMouseX = 0
 let lastMouseY = 0
+
+// 鼠标交互响应参数
+const mouseInteraction = {
+  /** 鼠标悬停时的响应强度 */
+  parallaxStrength: 0.08,
+  /** 点击时的脉冲强度 */
+  clickPulseStrength: 0.3,
+  /** 平滑插值因子 */
+  smoothFactor: 0.08,
+  /** 点击脉冲衰减 */
+  pulseDecay: 0.95,
+}
+
+let clickPulse = 0
 
 function handleMouseMove(e: MouseEvent) {
   lastMouseX = (e.clientX / window.innerWidth - 0.5) * 2
@@ -146,10 +175,23 @@ function handleMouseMove(e: MouseEvent) {
   if (pendingMouse) return
   pendingMouse = true
   requestAnimationFrame(() => {
-    mouse.x = lastMouseX
-    mouse.y = lastMouseY
+    mouse.targetX = lastMouseX
+    mouse.targetY = lastMouseY
     pendingMouse = false
   })
+}
+
+function handleMouseClick(e: MouseEvent) {
+  // 触发点击脉冲效果
+  clickPulse = mouseInteraction.clickPulseStrength
+
+  // 计算点击位置的世界坐标方向
+  const clickX = (e.clientX / window.innerWidth - 0.5) * 2
+  const clickY = (e.clientY / window.innerHeight - 0.5) * 2
+
+  // 临时增强鼠标位置响应
+  mouse.targetX = clickX * 1.5
+  mouse.targetY = clickY * 1.5
 }
 
 function startLoop() {
@@ -195,7 +237,7 @@ function createGlowTexture(size = 256) {
   return tex
 }
 
-function createCardTexture(label: string, accent: string) {
+function createCardTexture(platform: Exclude<PlatformKey, 'core'>, theme: ThemeMode) {
   const w = 512
   const h = 320
   const canvas = document.createElement('canvas')
@@ -203,27 +245,34 @@ function createCardTexture(label: string, accent: string) {
   canvas.height = h
   const ctx = canvas.getContext('2d')
   if (!ctx) return null
+  const config = PLATFORM_CONFIG[platform]
+  const isDark = theme === 'dark'
+  const textPrimary = isDark ? 'rgba(255, 255, 255, 0.92)' : 'rgba(15, 23, 42, 0.86)'
+  const textSecondary = isDark ? 'rgba(226, 232, 240, 0.7)' : 'rgba(100, 116, 139, 0.76)'
 
   // Background gradient
   const bg = ctx.createLinearGradient(0, 0, w, h)
-  bg.addColorStop(0, 'rgba(255,255,255,0.92)')
-  bg.addColorStop(0.55, 'rgba(255,255,255,0.55)')
-  bg.addColorStop(1, 'rgba(255,255,255,0.25)')
+  bg.addColorStop(0, isDark ? 'rgba(15, 23, 42, 0.95)' : 'rgba(255, 255, 255, 0.96)')
+  bg.addColorStop(0.55, isDark ? 'rgba(30, 41, 59, 0.82)' : 'rgba(248, 250, 252, 0.78)')
+  bg.addColorStop(1, isDark ? 'rgba(15, 23, 42, 0.7)' : 'rgba(241, 245, 249, 0.64)')
   ctx.fillStyle = bg
   ctx.fillRect(0, 0, w, h)
 
   // Accent wash
   const wash = ctx.createRadialGradient(w * 0.2, h * 0.2, 0, w * 0.2, h * 0.2, w * 0.9)
-  wash.addColorStop(0, `${accent}33`)
-  wash.addColorStop(0.5, `${accent}14`)
+  wash.addColorStop(0, config.accent)
+  wash.addColorStop(0.65, 'rgba(255,255,255,0)')
   wash.addColorStop(1, 'rgba(255,255,255,0)')
+  ctx.save()
+  ctx.globalAlpha = isDark ? 0.25 : 0.4
   ctx.fillStyle = wash
   ctx.fillRect(0, 0, w, h)
+  ctx.restore()
 
   // Subtle grid
   ctx.save()
-  ctx.globalAlpha = 0.12
-  ctx.strokeStyle = '#000'
+  ctx.globalAlpha = isDark ? 0.18 : 0.12
+  ctx.strokeStyle = isDark ? '#ffffff' : '#0f172a'
   ctx.lineWidth = 1
   for (let x = 48; x < w; x += 48) {
     ctx.beginPath()
@@ -243,24 +292,44 @@ function createCardTexture(label: string, accent: string) {
   const shine = ctx.createLinearGradient(0, 0, w, h)
   shine.addColorStop(0.0, 'rgba(255,255,255,0)')
   shine.addColorStop(0.45, 'rgba(255,255,255,0)')
-  shine.addColorStop(0.55, 'rgba(255,255,255,0.55)')
+  shine.addColorStop(0.55, isDark ? 'rgba(255,255,255,0.35)' : 'rgba(255,255,255,0.55)')
   shine.addColorStop(0.75, 'rgba(255,255,255,0)')
   shine.addColorStop(1.0, 'rgba(255,255,255,0)')
   ctx.fillStyle = shine
   ctx.fillRect(0, 0, w, h)
+  // Icon badge
+  const badgeSize = 72
+  const badgeX = w - badgeSize - 40
+  const badgeY = 32
+  ctx.save()
+  ctx.shadowColor = config.accent
+  ctx.shadowBlur = isDark ? 24 : 18
+  ctx.fillStyle = config.accent
+  ctx.beginPath()
+  ctx.arc(badgeX + badgeSize / 2, badgeY + badgeSize / 2, badgeSize / 2, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.restore()
+
+  ctx.fillStyle = '#fff'
+  ctx.font = '700 26px Inter, system-ui, -apple-system, Segoe UI, sans-serif'
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.fillText(config.icon, badgeX + badgeSize / 2, badgeY + badgeSize / 2)
 
   // Label
-  ctx.fillStyle = 'rgba(0,0,0,0.72)'
-  ctx.font = '700 56px Inter, system-ui, -apple-system, Segoe UI, sans-serif'
-  ctx.fillText(label, 36, 86)
+  ctx.fillStyle = textPrimary
+  ctx.font = '700 54px Inter, system-ui, -apple-system, Segoe UI, sans-serif'
+  ctx.textAlign = 'left'
+  ctx.textBaseline = 'alphabetic'
+  ctx.fillText(config.label, 36, 96)
 
-  ctx.fillStyle = 'rgba(0,0,0,0.5)'
+  ctx.fillStyle = textSecondary
   ctx.font = '500 22px Inter, system-ui, -apple-system, Segoe UI, sans-serif'
-  ctx.fillText('Connected Platform', 36, 124)
+  ctx.fillText('Connected Platform', 36, 136)
 
   // Accent bar
-  ctx.fillStyle = accent
-  ctx.globalAlpha = 0.9
+  ctx.fillStyle = config.accent
+  ctx.globalAlpha = isDark ? 0.9 : 0.95
   ctx.fillRect(36, h - 34, w - 72, 10)
   ctx.globalAlpha = 1
 
@@ -301,19 +370,8 @@ function createRoundedRectExtrude(width: number, height: number, radius: number,
 }
 
 function platformAccent(platform: PlatformKey): string {
-  switch (platform) {
-    case 'instagram':
-      return '#8B5CF6'
-    case 'tiktok':
-      return '#22D3EE'
-    case 'youtube':
-      return '#6366F1'
-    case 'twitter':
-      return '#A5B4FC'
-    case 'core':
-    default:
-      return '#6366F1'
-  }
+  if (platform === 'core') return '#6366F1'
+  return PLATFORM_CONFIG[platform].accent
 }
 
 function stateToPlatformKey(state: BackgroundState): PlatformKey {
@@ -393,6 +451,7 @@ function disposeScene() {
   }
 
   window.removeEventListener('mousemove', handleMouseMove)
+  window.removeEventListener('click', handleMouseClick)
   document.removeEventListener('visibilitychange', handleVisibilityChange)
 
   // GSAP cleanup
@@ -546,6 +605,78 @@ function applyPlatformHighlight(active: PlatformKey) {
   })
 }
 
+function applyTheme(mode: ThemeMode) {
+  const renderer = rendererRef.value
+  const core = coreRef.value
+  const cards = cardsRef.value
+  const lines = linkLinesRef.value
+  const particles = particlesRef.value
+
+  if (!core || !cards || !lines) return
+
+  const isDark = mode === 'dark'
+
+  if (renderer) {
+    renderer.toneMappingExposure = isDark ? 1.05 : 1
+  }
+
+  const coreMat = core.material as THREE.MeshPhysicalMaterial
+  coreMat.color.set(isDark ? '#c7d2fe' : '#ffffff')
+  coreMat.emissive.set(isDark ? '#6366f1' : '#7c83ff')
+  coreMat.emissiveIntensity = isDark ? 0.55 : 0.45
+  coreMat.opacity = isDark ? 0.95 : 0.98
+  coreMat.needsUpdate = true
+
+  const coreGlow = core.userData.glow as THREE.Sprite | undefined
+  if (coreGlow) {
+    coreGlow.material.opacity = isDark ? 0.22 : 0.28
+    coreGlow.material.needsUpdate = true
+  }
+
+  ;(['instagram', 'tiktok', 'youtube', 'twitter'] as const).forEach((k) => {
+    const g = cards[k]
+    const accent = platformAccent(k)
+    const mesh = g.userData.cardMesh as THREE.Mesh | undefined
+    const glow = g.userData.glow as THREE.Sprite | undefined
+    const line = lines[k]
+
+    if (mesh) {
+      const mat = mesh.material as THREE.MeshPhysicalMaterial
+      mat.color.set(isDark ? '#ffffff' : '#f8fafc')
+      mat.emissive.set(accent)
+      mat.emissiveIntensity = isDark ? 0.35 : 0.45
+      mat.opacity = isDark ? 0.88 : 0.94
+      g.userData.emissiveBase = mat.emissiveIntensity
+      g.userData.opacityBase = mat.opacity
+      g.userData.glowBase = isDark ? 0.18 : 0.26
+      if (mat.map) mat.map.dispose()
+      mat.map = createCardTexture(k, mode) ?? undefined
+      mat.needsUpdate = true
+    }
+
+    if (glow) {
+      glow.material.opacity = g.userData.glowBase ?? (isDark ? 0.18 : 0.26)
+      glow.material.needsUpdate = true
+    }
+
+    if (line) {
+      line.userData.baseOpacity = isDark ? 0.22 : 0.3
+      const lineMat = line.material as THREE.LineBasicMaterial
+      lineMat.color.set(accent)
+      lineMat.opacity = line.userData.baseOpacity
+      lineMat.needsUpdate = true
+    }
+  })
+
+  if (particles) {
+    const particleMat = particles.material as THREE.MeshBasicMaterial
+    particleMat.color.set(isDark ? '#ffffff' : '#6366f1')
+    particleMat.opacity = isDark ? 0.85 : 0.65
+    particleMat.blending = isDark ? THREE.AdditiveBlending : THREE.NormalBlending
+    particleMat.needsUpdate = true
+  }
+}
+
 function tick() {
   const renderer = rendererRef.value
   const scene = sceneRef.value
@@ -583,15 +714,18 @@ function tick() {
     const highlight = Number(g.userData.highlight || 0)
     const glow = g.userData.glow as THREE.Sprite | undefined
     if (glow) {
-      glow.material.opacity = 0.18 + highlight * 0.35
+      const glowBase = Number(g.userData.glowBase ?? 0.18)
+      glow.material.opacity = glowBase + highlight * 0.35
       glow.scale.setScalar(1.3 + highlight * 0.55)
     }
 
     const mesh = g.userData.cardMesh as THREE.Mesh | undefined
     if (mesh) {
       const mat = mesh.material as THREE.MeshPhysicalMaterial
-      mat.emissiveIntensity = 0.25 + highlight * 0.9
-      mat.opacity = 0.82 + highlight * 0.18
+      const emissiveBase = Number(g.userData.emissiveBase ?? 0.25)
+      const opacityBase = Number(g.userData.opacityBase ?? 0.82)
+      mat.emissiveIntensity = emissiveBase + highlight * 0.9
+      mat.opacity = opacityBase + highlight * 0.18
     }
   })
 
@@ -600,19 +734,47 @@ function tick() {
     ;(['instagram', 'tiktok', 'youtube', 'twitter'] as const).forEach((k, idx) => {
       const lineMat = lines[k].material as THREE.LineBasicMaterial
       const highlight = Number(cards[k].userData.highlight || 0)
+      const baseOpacity = Number(lines[k].userData.baseOpacity ?? 0.22)
       const pulse = 0.12 + loopState.linkPulse * (0.2 + 0.08 * Math.sin(t * 0.8 + idx))
-      lineMat.opacity = pulse + highlight * 0.12
+      lineMat.opacity = (pulse + highlight * 0.12) * baseOpacity
     })
   }
 
-  // Mouse-driven camera micro parallax (small, to keep it premium but not distracting)
-  const targetRotX = -mouse.y * 0.04
-  const targetRotY = mouse.x * 0.06
-  idleRig.rotation.x += (targetRotX - idleRig.rotation.x) * 0.04
-  idleRig.rotation.y += (targetRotY - idleRig.rotation.y) * 0.02
+  // 平滑插值鼠标位置
+  mouse.x += (mouse.targetX - mouse.x) * mouseInteraction.smoothFactor
+  mouse.y += (mouse.targetY - mouse.y) * mouseInteraction.smoothFactor
+
+  // 处理点击脉冲衰减
+  if (clickPulse > 0.001) {
+    clickPulse *= mouseInteraction.pulseDecay
+  } else {
+    clickPulse = 0
+  }
+
+  // 增强的鼠标驱动相机视差
+  const parallaxMult = mouseInteraction.parallaxStrength + clickPulse
+  const targetRotX = -mouse.y * (0.04 + parallaxMult)
+  const targetRotY = mouse.x * (0.06 + parallaxMult)
+  idleRig.rotation.x += (targetRotX - idleRig.rotation.x) * (0.04 + clickPulse * 0.1)
+  idleRig.rotation.y += (targetRotY - idleRig.rotation.y) * (0.02 + clickPulse * 0.05)
+
+  // 点击时核心球体脉冲效果
+  if (clickPulse > 0.01) {
+    const pulseScale = 1 + clickPulse * 0.15
+    core.scale.setScalar(pulseScale)
+
+    // 核心发光增强
+    const coreMat = core.material as THREE.MeshPhysicalMaterial
+    coreMat.emissiveIntensity = 0.55 + clickPulse * 1.5
+  } else {
+    core.scale.setScalar(1)
+    const coreMat = core.material as THREE.MeshPhysicalMaterial
+    const isDark = themeMode.value === 'dark'
+    coreMat.emissiveIntensity = isDark ? 0.55 : 0.45
+  }
 
   const breath = Math.sin(t * loopState.cameraBreathSpeed) * loopState.cameraBreath
-  camera.position.z = loopState.cameraZ + breath
+  camera.position.z = loopState.cameraZ + breath + clickPulse * 0.3
   camera.position.y = loopState.cameraY + breath * 0.25
 
   // Always keep camera aimed at the core.
@@ -725,6 +887,7 @@ function createScene() {
     const glow = new THREE.Sprite(spriteMat)
     glow.scale.set(2.8, 2.8, 1)
     core.add(glow)
+    core.userData.glow = glow
   }
 
   // Platform cards
@@ -738,17 +901,17 @@ function createScene() {
     twitter: new THREE.Group(),
   }
 
-  const platforms: Array<{ key: Exclude<PlatformKey, 'core'>; label: string }> = [
-    { key: 'instagram', label: 'Instagram' },
-    { key: 'tiktok', label: 'TikTok' },
-    { key: 'youtube', label: 'YouTube' },
-    { key: 'twitter', label: 'X' },
-  ]
+  const platforms = Object.keys(PLATFORM_CONFIG).map((key) => {
+    const typedKey = key as Exclude<PlatformKey, 'core'>
+    return {
+      key: typedKey,
+      ...PLATFORM_CONFIG[typedKey],
+    }
+  })
 
-  platforms.forEach(({ key, label }) => {
+  platforms.forEach(({ key, accent }) => {
     const g = cards[key]
-    const accent = platformAccent(key)
-    const tex = createCardTexture(label, accent)
+    const tex = createCardTexture(key, themeMode.value)
 
     const mat = new THREE.MeshPhysicalMaterial({
       color: new THREE.Color('#ffffff'),
@@ -762,7 +925,7 @@ function createScene() {
       emissive: new THREE.Color(accent),
       emissiveIntensity: 0.35,
       transparent: true,
-      opacity: 0.85,
+      opacity: 0.88,
       map: tex ?? undefined,
     })
 
@@ -772,6 +935,10 @@ function createScene() {
     g.add(mesh)
     g.userData.cardMesh = mesh
     g.userData.highlight = 0
+    g.userData.platformKey = key
+    g.userData.emissiveBase = 0.35
+    g.userData.opacityBase = 0.88
+    g.userData.glowBase = 0.18
 
     if (glowTex) {
       const cardGlowMat = new THREE.SpriteMaterial({
@@ -842,9 +1009,11 @@ function createScene() {
 
   // Initial highlight from state
   applyPlatformHighlight(stateToPlatformKey(currentState.value))
+  applyTheme(themeMode.value)
 
   // Events
   window.addEventListener('mousemove', handleMouseMove, { passive: true })
+  window.addEventListener('click', handleMouseClick, { passive: true })
   document.addEventListener('visibilitychange', handleVisibilityChange)
 
   // Resize
@@ -870,6 +1039,11 @@ watch(activePlatformFromState, (p) => {
     .catch(() => {
       applyPlatformHighlight(p)
     })
+})
+
+watch(themeMode, (mode) => {
+  if (!shouldRender3D.value || !rendererRef.value) return
+  applyTheme(mode)
 })
 
 watch(
@@ -950,12 +1124,26 @@ onUnmounted(() => {
   pointer-events: none;
   /* Below overlay, above gradient underlay */
   z-index: 1;
+  opacity: 0.9;
+}
+
+:global(#app[data-theme='light'] .platform-hub-canvas) {
+  opacity: 0.98;
+  filter: saturate(1.12) contrast(1.08);
+}
+
+:global(#app[data-theme='dark'] .platform-hub-canvas) {
   opacity: 0.92;
+  filter: saturate(1.1);
 }
 
 @media (max-width: 768px) {
   .platform-hub-canvas {
-    opacity: 0.72;
+    opacity: 0.7;
+  }
+
+  :global(#app[data-theme='light'] .platform-hub-canvas) {
+    opacity: 0.82;
   }
 }
 
