@@ -93,6 +93,13 @@ export async function onRequest(context: CFPagesContext): Promise<Response> {
   headers.set('X-Forwarded-Proto', 'https')
   headers.set('X-Forwarded-Host', url.host)
 
+  // 安全增强：添加共享密钥验证（可选）
+  // 后端可以验证此密钥，确保请求来自 Cloudflare Functions
+  // const SECRET_KEY = env.API_SECRET_KEY
+  // if (SECRET_KEY) {
+  //   headers.set('X-Proxy-Secret', SECRET_KEY)
+  // }
+
   try {
     // 转发请求
     const fetchOptions: RequestInit = {
@@ -155,7 +162,7 @@ export async function onRequest(context: CFPagesContext): Promise<Response> {
           'Access-Control-Allow-Origin': allowedOrigin!,
           'Access-Control-Allow-Credentials': 'true',
         },
-      },
+      }
     )
   }
 }
