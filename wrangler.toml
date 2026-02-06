@@ -1,5 +1,14 @@
 # Cloudflare Pages 配置
 # 参考：https://developers.cloudflare.com/pages/functions/wrangler-configuration/
+#
+# 绑定使用示例（在 functions/ 目录的函数中）：
+# export async function onRequest(context) {
+#   const { env } = context;
+#   // 访问 KV: await env.KV.get('key')
+#   // 访问 D1: await env.DB.prepare('SELECT * FROM users').all()
+#   // 访问 R2: await env.BUCKET.get('file.jpg')
+#   // 访问 AI: await env.AI.run('@cf/meta/llama-2-7b-chat-int8', { prompt: 'Hello' })
+# }
 
 name = "hmrchan-frontend"
 compatibility_date = "2024-12-09"
@@ -40,6 +49,87 @@ VITE_ENABLE_DEVTOOLS = "true"
 
 # Functions 运行时变量（用于 functions/ 目录中的边缘函数）
 API_BASE_URL = "https://api.momichan.xyz"
+
+# ============================================================================
+# 绑定配置（Bindings）
+# ============================================================================
+# 以下是可用的绑定类型示例，根据实际需求取消注释并配置
+
+# --- KV 命名空间（键值存储）---
+# [[env.production.kv_namespaces]]
+# binding = "KV"  # 在代码中通过 env.KV 访问
+# id = "your_kv_namespace_id"
+
+# [[env.preview.kv_namespaces]]
+# binding = "KV"
+# id = "your_preview_kv_namespace_id"
+
+# --- D1 数据库（SQLite）---
+# [[env.production.d1_databases]]
+# binding = "DB"  # 在代码中通过 env.DB 访问
+# database_name = "your_database_name"
+# database_id = "your_database_id"
+
+# [[env.preview.d1_databases]]
+# binding = "DB"
+# database_name = "your_preview_database_name"
+# database_id = "your_preview_database_id"
+
+# --- R2 存储桶（对象存储）---
+# [[env.production.r2_buckets]]
+# binding = "BUCKET"  # 在代码中通过 env.BUCKET 访问
+# bucket_name = "your_bucket_name"
+
+# [[env.preview.r2_buckets]]
+# binding = "BUCKET"
+# bucket_name = "your_preview_bucket_name"
+
+# --- Durable Objects ---
+# [[env.production.durable_objects.bindings]]
+# name = "MY_DURABLE_OBJECT"
+# class_name = "MyDurableObject"
+# script_name = "my-worker"
+
+# --- Workers AI ---
+# [env.production.ai]
+# binding = "AI"  # 在代码中通过 env.AI 访问
+
+# [env.preview.ai]
+# binding = "AI"
+
+# --- Vectorize（向量数据库）---
+# [[env.production.vectorize]]
+# binding = "VECTORIZE"
+# index_name = "your_index_name"
+
+# [[env.preview.vectorize]]
+# binding = "VECTORIZE"
+# index_name = "your_preview_index_name"
+
+# --- Queue（消息队列）---
+# [[env.production.queues.producers]]
+# binding = "MY_QUEUE"
+# queue = "your_queue_name"
+
+# [[env.production.queues.consumers]]
+# queue = "your_queue_name"
+# max_batch_size = 10
+# max_batch_timeout = 30
+
+# --- Service Bindings（调用其他 Worker）---
+# [[env.production.services]]
+# binding = "MY_SERVICE"
+# service = "my-worker-name"
+# environment = "production"
+
+# --- Analytics Engine ---
+# [[env.production.analytics_engine_datasets]]
+# binding = "ANALYTICS"
+
+# --- Hyperdrive（数据库连接池）---
+# [[env.production.hyperdrive]]
+# binding = "HYPERDRIVE"
+# id = "your_hyperdrive_id"
 
 # ============================================================================
 # 机密变量（Secrets）
