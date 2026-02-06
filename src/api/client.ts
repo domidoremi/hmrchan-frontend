@@ -287,10 +287,11 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
   // 检查是否为 FormData（不应设置 Content-Type）
   const isFormData = body instanceof FormData
 
-  // 构建请求头
-  const headers: HeadersInit = isFormData
-    ? { ...customHeaders }
-    : { 'Content-Type': 'application/json', ...customHeaders }
+  // 构建请求头（只在有 body 且非 FormData 时设置 Content-Type）
+  const headers: HeadersInit = { ...customHeaders }
+  if (body && !isFormData) {
+    ;(headers as Record<string, string>)['Content-Type'] = 'application/json'
+  }
 
   // 添加认证头（使用异步安全存储）
   if (!skipAuth) {
