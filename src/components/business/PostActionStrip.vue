@@ -169,11 +169,31 @@ async function sharePost() {
 </script>
 
 <style scoped>
+:global(#app[data-theme='dark'] .post-action-strip) {
+  --action-text: rgba(255, 255, 255, 0.88);
+  --action-bg: rgba(255, 255, 255, 0.08);
+  --action-border: rgba(255, 255, 255, 0.16);
+  --action-hover-bg: rgba(255, 255, 255, 0.14);
+  --action-pill-bg: rgba(255, 255, 255, 0.1);
+  --action-pill-border: rgba(255, 255, 255, 0.18);
+  --action-active-text: #fff;
+  --action-active-bg: rgba(255, 255, 255, 0.18);
+  --action-active-border: rgba(255, 255, 255, 0.45);
+}
 .post-action-strip {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--spacing-2);
+  --action-text: rgba(15, 23, 42, 0.86);
+  --action-bg: rgba(15, 23, 42, 0.06);
+  --action-border: rgba(15, 23, 42, 0.12);
+  --action-hover-bg: rgba(15, 23, 42, 0.1);
+  --action-pill-bg: rgba(15, 23, 42, 0.08);
+  --action-pill-border: rgba(15, 23, 42, 0.14);
+  --action-active-text: rgba(var(--color-primary-rgb), 0.95);
+  --action-active-bg: rgba(var(--color-primary-rgb), 0.12);
+  --action-active-border: rgba(var(--color-primary-rgb), 0.45);
 }
 
 .subtitles-pill {
@@ -183,9 +203,9 @@ async function sharePost() {
   padding: 4px 10px;
   border-radius: var(--radius-full);
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.86);
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--action-text);
+  background: var(--action-pill-bg);
+  border: 1px solid var(--action-pill-border);
   white-space: nowrap;
 }
 
@@ -201,15 +221,15 @@ async function sharePost() {
   padding: var(--spacing-2) var(--spacing-4);
   border-radius: var(--radius-lg);
   font-size: var(--text-sm);
-  color: rgba(255, 255, 255, 0.85);
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--action-text);
+  background: var(--action-bg);
+  border: 1px solid var(--action-border);
   white-space: nowrap;
   transition: all var(--transition-fast);
 }
 
 .action-btn:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--action-hover-bg);
 }
 
 .action-btn:disabled {
@@ -218,8 +238,9 @@ async function sharePost() {
 }
 
 .action-btn.active {
-  color: #fff;
-  border-color: rgba(255, 255, 255, 0.45);
+  color: var(--action-active-text);
+  border-color: var(--action-active-border);
+  background: var(--action-active-bg);
 }
 
 .action-btn.active :deep(.animated-icon__fallback) {

@@ -607,24 +607,32 @@ function openDetail() {
   align-items: center;
   justify-content: center;
   padding: var(--spacing-4);
+  --preview-overlay-bg: var(--color-background);
   --preview-surface-bg: var(--glass-bg-strong);
   --preview-surface-border: var(--glass-border);
   --preview-divider: var(--glass-border);
-  --preview-control-bg: var(--glass-bg);
-  --preview-control-border: var(--glass-border);
-  --preview-pill-bg: var(--glass-bg);
-  --preview-pill-border: var(--glass-border);
+  --preview-control-bg: rgba(15, 23, 42, 0.04);
+  --preview-control-border: rgba(15, 23, 42, 0.12);
+  --preview-pill-bg: rgba(15, 23, 42, 0.06);
+  --preview-pill-border: rgba(15, 23, 42, 0.12);
   --preview-text-primary: var(--color-text-primary);
-  --preview-text-secondary: var(--color-text-secondary);
-  --preview-text-muted: var(--color-text-tertiary);
-  --preview-media-bg: rgba(15, 23, 42, 0.12);
-  background: var(--ui-backdrop-dim, rgba(0, 0, 0, 0.45));
-  backdrop-filter: var(--ui-backdrop-blur, blur(14px) saturate(1.1));
-  -webkit-backdrop-filter: var(--ui-backdrop-blur, blur(14px) saturate(1.1));
+  --preview-text-secondary: rgba(30, 41, 59, 0.78);
+  --preview-text-muted: rgba(30, 41, 59, 0.6);
+  --preview-media-bg: rgba(15, 23, 42, 0.04);
+  background: var(--preview-overlay-bg);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   will-change: opacity;
 }
 :global(#app[data-theme='dark'] .post-preview-overlay) {
-  --preview-media-bg: rgba(0, 0, 0, 0.35);
+  --preview-overlay-bg: #0b0d14;
+  --preview-control-bg: rgba(255, 255, 255, 0.08);
+  --preview-control-border: rgba(255, 255, 255, 0.12);
+  --preview-pill-bg: rgba(255, 255, 255, 0.1);
+  --preview-pill-border: rgba(255, 255, 255, 0.16);
+  --preview-text-secondary: rgba(226, 232, 240, 0.78);
+  --preview-text-muted: rgba(226, 232, 240, 0.6);
+  --preview-media-bg: rgba(255, 255, 255, 0.04);
 }
 
 .post-preview-panel {
@@ -679,7 +687,7 @@ function openDetail() {
 
 @supports not (backdrop-filter: blur(1px)) {
   .post-preview-overlay {
-    background: rgba(0, 0, 0, 0.75);
+    background: var(--preview-overlay-bg);
   }
 }
 
@@ -913,6 +921,12 @@ function openDetail() {
   justify-content: center;
   overflow: hidden;
   max-height: min(58vh, 560px);
+  border-radius: var(--radius-2xl);
+  background: var(--preview-media-bg);
+  border: 1px solid var(--preview-surface-border);
+  box-shadow:
+    0 24px 64px rgba(0, 0, 0, 0.28),
+    0 8px 24px rgba(0, 0, 0, 0.18);
 }
 
 .post-preview-media-item {
@@ -921,11 +935,9 @@ function openDetail() {
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
-  border-radius: var(--radius-xl);
-  background: var(--preview-media-bg);
-  box-shadow:
-    0 24px 64px rgba(0, 0, 0, 0.35),
-    0 8px 24px rgba(0, 0, 0, 0.25);
+  border-radius: inherit;
+  background: transparent;
+  box-shadow: none;
 }
 
 .post-preview-media-empty {

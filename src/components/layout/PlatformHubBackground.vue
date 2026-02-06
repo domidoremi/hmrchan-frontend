@@ -158,6 +158,27 @@ let pendingMouse = false
 let lastMouseX = 0
 let lastMouseY = 0
 
+const dragState = {
+  isDragging: false,
+  pointerId: null as number | null,
+  startX: 0,
+  startY: 0,
+  baseX: 0,
+  baseY: 0,
+  targetX: 0,
+  targetY: 0,
+  currentX: 0,
+  currentY: 0,
+}
+
+const dragConfig = {
+  sensitivity: 0.0022,
+  maxX: 0.55,
+  maxY: 0.8,
+  decay: 0.92,
+  smooth: 0.08,
+}
+
 // 鼠标交互响应参数
 const mouseInteraction = {
   /** 鼠标悬停时的响应强度 */
@@ -181,6 +202,7 @@ let heroAnchorObserver: ResizeObserver | null = null
 let pendingHeroAnchor = false
 
 function handleMouseMove(e: MouseEvent) {
+  if (dragState.isDragging) return
   lastMouseX = (e.clientX / window.innerWidth - 0.5) * 2
   lastMouseY = (e.clientY / window.innerHeight - 0.5) * 2
   if (pendingMouse) return
@@ -190,6 +212,51 @@ function handleMouseMove(e: MouseEvent) {
     mouse.targetY = lastMouseY
     pendingMouse = false
   })
+}
+
+function isDragBlockedTarget(target: EventTarget | null): boolean {
+  const el = target as HTMLElement | null
+  if (!el) return false
+  return Boolean(
+    el.closest(
+      'a, button, input, textarea, select, [role="button"], [role="link"], .video-player, .post-card, .glass-button, .navbar, .mobile-nav'
+    )
+  )
+}
+
+function handlePointerDown(e: PointerEvent) {
+  if (e.pointerType === 'mouse' && e.button !== 0) return
+  if (isDragBlockedTarget(e.target)) return
+  dragState.isDragging = true
+  dragState.pointerId = e.pointerId
+  dragState.startX = e.clientX
+  dragState.startY = e.clientY
+  dragState.baseX = dragState.targetX
+  dragState.baseY = dragState.targetY
+}
+
+function handlePointerMove(e: PointerEvent) {
+  if (!dragState.isDragging) return
+  if (dragState.pointerId !== null && e.pointerId !== dragState.pointerId) return
+  const dx = e.clientX - dragState.startX
+  const dy = e.clientY - dragState.startY
+  dragState.targetY = THREE.MathUtils.clamp(
+    dragState.baseY + dx * dragConfig.sensitivity,
+    -dragConfig.maxY,
+    dragConfig.maxY
+  )
+  dragState.targetX = THREE.MathUtils.clamp(
+    dragState.baseX + dy * dragConfig.sensitivity,
+    -dragConfig.maxX,
+    dragConfig.maxX
+  )
+}
+
+function handlePointerUp(e: PointerEvent) {
+  if (!dragState.isDragging) return
+  if (dragState.pointerId !== null && e.pointerId !== dragState.pointerId) return
+  dragState.isDragging = false
+  dragState.pointerId = null
 }
 
 function handleMouseClick(e: MouseEvent) {
@@ -333,6 +400,113 @@ function createGlowTexture(size = 256) {
   return tex
 }
 
+function drawRoundedRect(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  r: number
+) {
+  const radius = Math.min(r, w / 2, h / 2)
+  ctx.beginPath()
+  ctx.moveTo(x + radius, y)
+  ctx.lineTo(x + w - radius, y)
+  ctx.quadraticCurveTo(x + w, y, x + w, y + radius)
+  ctx.lineTo(x + w, y + h - radius)
+  ctx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h)
+  ctx.lineTo(x + radius, y + h)
+  ctx.quadraticCurveTo(x, y + h, x, y + h - radius)
+  ctx.lineTo(x, y + radius)
+  ctx.quadraticCurveTo(x, y, x + radius, y)
+  ctx.closePath()
+}
+
+function drawPlatformBadgeIcon(
+  ctx: CanvasRenderingContext2D,
+  platform: Exclude<PlatformKey, 'core'>,
+  cx: number,
+  cy: number,
+  size: number
+): boolean {
+  ctx.save()
+  ctx.fillStyle = '#fff'
+  ctx.strokeStyle = '#fff'
+
+  if (platform === 'youtube') {
+    const rectW = size * 0.6
+    const rectH = size * 0.42
+    const rectR = rectH * 0.28
+    ctx.lineWidth = Math.max(2, size * 0.05)
+    drawRoundedRect(ctx, cx - rectW / 2, cy - rectH / 2, rectW, rectH, rectR)
+    ctx.stroke()
+    const tri = size * 0.2
+    ctx.beginPath()
+    ctx.moveTo(cx - tri * 0.5, cy - tri * 0.9)
+    ctx.lineTo(cx + tri * 0.85, cy)
+    ctx.lineTo(cx - tri * 0.5, cy + tri * 0.9)
+    ctx.closePath()
+    ctx.fill()
+    ctx.restore()
+    return true
+  }
+
+  if (platform === 'instagram') {
+    const box = size * 0.48
+    const r = box * 0.22
+    ctx.lineWidth = Math.max(2, size * 0.045)
+    drawRoundedRect(ctx, cx - box / 2, cy - box / 2, box, box, r)
+    ctx.stroke()
+    ctx.beginPath()
+    ctx.arc(cx, cy, box * 0.16, 0, Math.PI * 2)
+    ctx.stroke()
+    ctx.beginPath()
+    ctx.arc(cx + box * 0.2, cy - box * 0.2, box * 0.05, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.restore()
+    return true
+  }
+
+  if (platform === 'tiktok') {
+    const stemX = cx + size * 0.08
+    const stemTopY = cy - size * 0.26
+    const stemBottomY = cy + size * 0.18
+    ctx.lineWidth = Math.max(2, size * 0.08)
+    ctx.lineCap = 'round'
+    ctx.lineJoin = 'round'
+    ctx.beginPath()
+    ctx.moveTo(stemX, stemTopY)
+    ctx.lineTo(stemX, stemBottomY)
+    ctx.stroke()
+    ctx.beginPath()
+    ctx.moveTo(stemX, stemTopY)
+    ctx.lineTo(stemX + size * 0.22, stemTopY + size * 0.08)
+    ctx.stroke()
+    ctx.beginPath()
+    ctx.arc(stemX - size * 0.18, stemBottomY, size * 0.16, 0, Math.PI * 2)
+    ctx.stroke()
+    ctx.restore()
+    return true
+  }
+
+  if (platform === 'twitter') {
+    const half = size * 0.24
+    ctx.lineWidth = Math.max(2, size * 0.1)
+    ctx.lineCap = 'round'
+    ctx.beginPath()
+    ctx.moveTo(cx - half, cy - half)
+    ctx.lineTo(cx + half, cy + half)
+    ctx.moveTo(cx + half, cy - half)
+    ctx.lineTo(cx - half, cy + half)
+    ctx.stroke()
+    ctx.restore()
+    return true
+  }
+
+  ctx.restore()
+  return false
+}
+
 function createCardTexture(platform: Exclude<PlatformKey, 'core'>, theme: ThemeMode) {
   const w = 512
   const h = 320
@@ -423,10 +597,19 @@ function createCardTexture(platform: Exclude<PlatformKey, 'core'>, theme: ThemeM
   ctx.restore()
 
   ctx.fillStyle = '#fff'
-  ctx.font = '700 26px Inter, system-ui, -apple-system, Segoe UI, sans-serif'
-  ctx.textAlign = 'center'
-  ctx.textBaseline = 'middle'
-  ctx.fillText(config.icon, badgeX + badgeSize / 2, badgeY + badgeSize / 2)
+  const iconDrawn = drawPlatformBadgeIcon(
+    ctx,
+    platform,
+    badgeX + badgeSize / 2,
+    badgeY + badgeSize / 2,
+    badgeSize
+  )
+  if (!iconDrawn) {
+    ctx.font = '700 26px Inter, system-ui, -apple-system, Segoe UI, sans-serif'
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    ctx.fillText(config.icon, badgeX + badgeSize / 2, badgeY + badgeSize / 2)
+  }
 
   // Label
   ctx.fillStyle = textPrimary
@@ -564,6 +747,10 @@ function disposeScene() {
 
   window.removeEventListener('mousemove', handleMouseMove)
   window.removeEventListener('click', handleMouseClick)
+  window.removeEventListener('pointerdown', handlePointerDown)
+  window.removeEventListener('pointermove', handlePointerMove)
+  window.removeEventListener('pointerup', handlePointerUp)
+  window.removeEventListener('pointercancel', handlePointerUp)
   document.removeEventListener('visibilitychange', handleVisibilityChange)
   setHeroAnchorActive(false)
 
@@ -870,6 +1057,14 @@ function tick() {
   mouse.x += (mouse.targetX - mouse.x) * mouseInteraction.smoothFactor
   mouse.y += (mouse.targetY - mouse.y) * mouseInteraction.smoothFactor
 
+  // 拖拽旋转平滑
+  dragState.currentX += (dragState.targetX - dragState.currentX) * dragConfig.smooth
+  dragState.currentY += (dragState.targetY - dragState.currentY) * dragConfig.smooth
+  if (!dragState.isDragging) {
+    dragState.targetX *= dragConfig.decay
+    dragState.targetY *= dragConfig.decay
+  }
+
   // 处理点击脉冲衰减
   if (clickPulse > 0.001) {
     clickPulse *= mouseInteraction.pulseDecay
@@ -879,8 +1074,8 @@ function tick() {
 
   // 增强的鼠标驱动相机视差
   const parallaxMult = mouseInteraction.parallaxStrength + clickPulse
-  const targetRotX = -mouse.y * (0.04 + parallaxMult)
-  const targetRotY = mouse.x * (0.06 + parallaxMult)
+  const targetRotX = -mouse.y * (0.04 + parallaxMult) + dragState.currentX
+  const targetRotY = mouse.x * (0.06 + parallaxMult) + dragState.currentY
   idleRig.rotation.x += (targetRotX - idleRig.rotation.x) * (0.04 + clickPulse * 0.1)
   idleRig.rotation.y += (targetRotY - idleRig.rotation.y) * (0.02 + clickPulse * 0.05)
 
@@ -1164,6 +1359,10 @@ function createScene() {
   // Events
   window.addEventListener('mousemove', handleMouseMove, { passive: true })
   window.addEventListener('click', handleMouseClick, { passive: true })
+  window.addEventListener('pointerdown', handlePointerDown, { passive: true })
+  window.addEventListener('pointermove', handlePointerMove, { passive: true })
+  window.addEventListener('pointerup', handlePointerUp, { passive: true })
+  window.addEventListener('pointercancel', handlePointerUp, { passive: true })
   document.addEventListener('visibilitychange', handleVisibilityChange)
 
   // Resize

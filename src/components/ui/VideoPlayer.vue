@@ -512,8 +512,10 @@ const normalizedSubtitles = computed<NormalizedSubtitleTrack[]>(() => {
 })
 
 const playedPercent = computed(() => {
-  if (duration.value === 0) return 0
-  return (currentTime.value / duration.value) * 100
+  const dur = duration.value
+  if (!isFinite(dur) || dur <= 0) return 0
+  const percent = (currentTime.value / dur) * 100
+  return Math.min(100, Math.max(0, percent))
 })
 
 const supportsPiP = computed(() => {
@@ -687,7 +689,8 @@ function onEnded() {
 
 function onLoadedMetadata() {
   if (!videoRef.value) return
-  duration.value = videoRef.value.duration
+  const raw = videoRef.value.duration
+  duration.value = isFinite(raw) && raw > 0 ? raw : 0
   emit('ready')
   applySubtitleMode()
 }
@@ -698,9 +701,14 @@ function onTimeUpdate() {
   emit('timeupdate', currentTime.value)
 
   // 更新缓冲进度
+  const dur = duration.value
+  if (!isFinite(dur) || dur <= 0) {
+    bufferedPercent.value = 0
+    return
+  }
   if (videoRef.value.buffered.length > 0) {
     const buffered = videoRef.value.buffered.end(videoRef.value.buffered.length - 1)
-    bufferedPercent.value = (buffered / duration.value) * 100
+    bufferedPercent.value = Math.min(100, Math.max(0, (buffered / dur) * 100))
   }
 }
 
