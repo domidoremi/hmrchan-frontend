@@ -62,12 +62,12 @@ bun run dev
 
 ## 🔧 环境变量
 
-创建 `.env` 文件并配置以下变量：
+创建 `.env` 文件并配置以下变量（生产/预览环境以 `wrangler.toml` 为准，机密变量仅在 Dashboard 管理）：
 
 ```bash
 # API 配置
 VITE_API_BASE_URL=https://api.momichan.xyz
-VITE_API_ENDPOINT=https://api.momichan.xyz/api/v1
+VITE_API_ENDPOINT=/api/v1
 VITE_API_URL=/api
 
 # 应用信息
@@ -81,6 +81,8 @@ VITE_ENABLE_DEVTOOLS=false
 # Cloudflare Turnstile (可选)
 VITE_TURNSTILE_SITE_KEY=your_site_key_here
 ```
+
+> 生产环境推荐使用同源 `/api` 代理（Cloudflare Pages Functions）以避免 CORS。若直连后端域名，请确保后端允许 `Content-Type`/`Authorization` 等跨域请求头并开启凭据。
 
 ### 环境变量说明
 
