@@ -8,6 +8,7 @@ import { useToastStore } from '@/stores/toast'
 let isInitialized = false
 let isChecking = false
 let lastNotifiedScriptUrl: string | null = null
+const SW_UPDATE_DEBUG = import.meta.env.DEV || import.meta.env['VITE_ENABLE_DEBUG'] === 'true'
 
 export interface SwUpdateOptions {
   /** 检查更新的间隔时间（毫秒），默认 30 分钟 */
@@ -31,7 +32,9 @@ export function initSwUpdateChecker(options: SwUpdateOptions = {}): void {
   } = options
 
   if (!('serviceWorker' in navigator)) {
-    console.warn('[SW Update] Service Worker not supported')
+    if (SW_UPDATE_DEBUG) {
+      console.warn('[SW Update] Service Worker not supported')
+    }
     return
   }
 
@@ -40,7 +43,9 @@ export function initSwUpdateChecker(options: SwUpdateOptions = {}): void {
     .then(() => {
       // 监听 SW 激活
       navigator.serviceWorker.addEventListener('controllerchange', () => {
-        console.log('[SW Update] New service worker activated')
+        if (SW_UPDATE_DEBUG) {
+          console.log('[SW Update] New service worker activated')
+        }
         if (autoRefresh) {
           window.location.reload()
         }
@@ -86,7 +91,9 @@ async function checkForUpdates(showToast: boolean): Promise<void> {
     } catch (error) {
       // 忽略 InvalidStateError，这通常发生在 SW 正在更新时
       if (isInvalidStateError(error)) {
-        console.log('[SW Update] Update already in progress')
+        if (SW_UPDATE_DEBUG) {
+          console.log('[SW Update] Update already in progress')
+        }
         return
       }
       throw error
@@ -97,12 +104,16 @@ async function checkForUpdates(showToast: boolean): Promise<void> {
       const scriptUrl = registration.waiting.scriptURL || 'waiting'
       if (lastNotifiedScriptUrl !== scriptUrl) {
         lastNotifiedScriptUrl = scriptUrl
-        console.log('[SW Update] Update available')
+        if (SW_UPDATE_DEBUG) {
+          console.log('[SW Update] Update available')
+        }
         showUpdateToast()
       }
     }
   } catch (error) {
-    console.error('[SW Update] Check failed:', error)
+    if (SW_UPDATE_DEBUG) {
+      console.error('[SW Update] Check failed:', error)
+    }
   } finally {
     isChecking = false
   }
@@ -148,10 +159,14 @@ export async function clearAllCaches(): Promise<boolean> {
   try {
     const cacheNames = await caches.keys()
     await Promise.all(cacheNames.map((name) => caches.delete(name)))
-    console.log('[SW Update] All caches cleared')
+    if (SW_UPDATE_DEBUG) {
+      console.log('[SW Update] All caches cleared')
+    }
     return true
   } catch (error) {
-    console.error('[SW Update] Clear caches failed:', error)
+    if (SW_UPDATE_DEBUG) {
+      console.error('[SW Update] Clear caches failed:', error)
+    }
     return false
   }
 }
@@ -164,12 +179,16 @@ export async function unregisterServiceWorker(): Promise<boolean> {
     const registration = await navigator.serviceWorker.getRegistration()
     if (registration) {
       await registration.unregister()
-      console.log('[SW Update] Service Worker unregistered')
+      if (SW_UPDATE_DEBUG) {
+        console.log('[SW Update] Service Worker unregistered')
+      }
       return true
     }
     return false
   } catch (error) {
-    console.error('[SW Update] Unregister failed:', error)
+    if (SW_UPDATE_DEBUG) {
+      console.error('[SW Update] Unregister failed:', error)
+    }
     return false
   }
 }

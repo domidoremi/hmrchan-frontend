@@ -231,6 +231,7 @@ onUnmounted(() => {
   border: 1px solid var(--glass-border);
   box-shadow: var(--shadow-2xl);
   text-align: center;
+  color: var(--color-text-primary);
 }
 
 .confirm-dialog::before {
@@ -314,7 +315,7 @@ onUnmounted(() => {
 
 .confirm-dialog__message {
   font-size: var(--text-sm);
-  color: var(--color-muted-foreground);
+  color: var(--color-text-secondary);
   margin: 0;
   line-height: var(--leading-relaxed);
 }
