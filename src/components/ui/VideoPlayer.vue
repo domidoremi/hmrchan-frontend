@@ -345,6 +345,7 @@ import {
 import { useVideoSettings } from '@/composables/useVideoSettings'
 import { useVideoGestures } from '@/composables/useVideoGestures'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
+import { normalizeToProxyPath } from '@/utils/url'
 
 interface Props {
   src: string
@@ -547,9 +548,15 @@ function normalizeSubtitleSrc(track: SubtitleTrack): string | null {
     track.url || track.subtitle_url || track.file_path || track.subtitle_path || track.path
 
   if (raw) {
-    // 已经是完整 URL
-    if (raw.startsWith('http://') || raw.startsWith('https://')) {
-      return raw
+    const normalized = normalizeToProxyPath(raw)
+    if (normalized) {
+      // 已经是完整 URL（第三方）或可直接使用的代理路径
+      if (normalized.startsWith('http://') || normalized.startsWith('https://')) {
+        return normalized
+      }
+      if (normalized.startsWith('/')) {
+        return normalized
+      }
     }
 
     // 构建相对路径的完整 URL
