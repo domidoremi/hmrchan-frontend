@@ -843,7 +843,14 @@ onUnmounted(() => {
   overflow: auto;
   padding-right: 4px;
   color: #fff;
-  overscroll-behavior: contain;
+  overscroll-behavior: auto;
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .hover-scroll {
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
 }
 
 .hover-meta {

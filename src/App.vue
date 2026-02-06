@@ -196,7 +196,8 @@ main {
 .route-view {
   position: relative;
   min-height: calc(100vh - var(--navbar-height));
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: visible;
 }
 
 /* 动效强度控制 */

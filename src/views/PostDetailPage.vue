@@ -977,7 +977,7 @@ onUnmounted(() => {
 }
 
 .post-actions {
-  margin-top: auto;
+  margin-top: var(--spacing-3);
 }
 
 .post-topbar {
