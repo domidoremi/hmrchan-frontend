@@ -5,6 +5,7 @@
  */
 
 import { apiClient } from './client'
+import { normalizeToProxyPath } from '@/utils/url'
 
 // ========== 类型定义 ==========
 
@@ -46,29 +47,8 @@ export interface AvatarUploadResponse {
  */
 export function normalizeAvatarUrl(url: string | null | undefined): string | null {
   if (!url) return null
-
-  // 如果已经是完整 URL 且指向后端，转换为代理路径
-  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'https://api.momichan.xyz'
-  if (url.startsWith(apiBaseUrl + '/uploads/')) {
-    return url.replace(apiBaseUrl, '')
-  }
-
-  // 如果已经是其他完整 URL（如 dicebear），直接返回
-  if (url.startsWith('http://') || url.startsWith('https://')) {
-    return url
-  }
-
-  // 如果是 /uploads/ 开头的相对路径，保持原样（通过代理访问）
-  if (url.startsWith('/uploads/')) {
-    return url
-  }
-
-  // 如果是 uploads/ 开头（没有前导斜杠），添加前导斜杠
-  if (url.startsWith('uploads/')) {
-    return `/${url}`
-  }
-
-  // 其他情况直接返回
+  const normalized = normalizeToProxyPath(url)
+  return normalized ?? url
   return url
 }
 

@@ -83,6 +83,7 @@ VITE_TURNSTILE_SITE_KEY=your_site_key_here
 ```
 
 > 生产环境推荐使用同源 `/api` 代理（Cloudflare Pages Functions）以避免 CORS。若直连后端域名，请确保后端允许 `Content-Type`/`Authorization` 等跨域请求头并开启凭据。
+> 前端会将指向后端的 `/api/*` 与 `/uploads/*` 绝对链接归一化为同源路径，避免泄露后端地址；建议后端返回相对路径或上述标准路径。
 
 ### 环境变量说明
 
@@ -153,7 +154,10 @@ frontend/
 │   ├── manifest.json     # PWA 配置
 │   ├── sw.js             # Service Worker
 │   └── ...
-├── functions/            # Cloudflare Functions
+├── functions/            # Cloudflare Pages Functions
+│   ├── api/              # API 代理（/api/* → 后端服务器）
+│   └── uploads/          # 上传代理
+├── wrangler.toml         # Cloudflare 配置
 └── dist/                 # 构建输出
 ```
 
@@ -256,8 +260,33 @@ node scripts/generate-screenshots.js  # 终端 2
 3. **环境变量配置**
    - 在 Cloudflare Dashboard 中配置生产环境变量
    - 必填变量参考[环境变量](#环境变量)章节
+   - 机密变量（如 `API_SECRET_KEY`）必须在 Dashboard 中添加为 Secret
 
-4. **部署**
+4. **API 代理配置**
+
+   项目使用 Cloudflare Pages Functions 实现 API 代理，避免 CORS 问题：
+   - **代理路径**: `/api/*` → `API_BASE_URL/api/*`
+   - **配置文件**: `functions/api/[[path]].ts`
+   - **环境变量**: 在 `wrangler.toml` 中配置 `API_BASE_URL`
+
+   **安全增强（可选）**：
+
+   可以在后端验证共享密钥，确保请求来自 Cloudflare Functions：
+
+   ```typescript
+   // 在 wrangler.toml 的 [env.production] 中添加（或在 Dashboard 中配置为 Secret）
+   // API_SECRET_KEY = "your-secret-key"
+
+   // functions/api/[[path]].ts 中取消注释以下代码：
+   const SECRET_KEY = env.API_SECRET_KEY
+   if (SECRET_KEY) {
+     headers.set('X-Proxy-Secret', SECRET_KEY)
+   }
+
+   // 后端验证请求头中的 X-Proxy-Secret
+   ```
+
+5. **部署**
    - 推送代码到 Git 仓库自动触发部署
    - 或使用 Wrangler CLI: `bunx wrangler pages deploy dist`
 

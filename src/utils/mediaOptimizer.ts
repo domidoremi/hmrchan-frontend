@@ -10,6 +10,8 @@
  * - original: Lightbox 全屏查看、下载
  */
 
+import { normalizeToProxyPath } from '@/utils/url'
+
 export type MediaThumbnailSize = 'small' | 'medium' | 'large' | 'original'
 
 /**
@@ -143,8 +145,9 @@ export function normalizeToThumbnailUrl(
   size: MediaThumbnailSize = 'medium'
 ): string | null {
   if (!url) return null
-
-  const mediaId = extractMediaIdFromUrl(url)
+  const normalized = normalizeToProxyPath(url) ?? url
+  const mediaId = extractMediaIdFromUrl(normalized)
+  if (!mediaId) return normalized
   if (!mediaId) return url
 
   return getMediaThumbnailUrl(mediaId, size)
