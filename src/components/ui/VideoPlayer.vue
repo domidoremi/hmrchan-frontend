@@ -2,7 +2,7 @@
   <div
     ref="playerElement"
     class="video-player"
-    :class="{ 'is-fullscreen': isFullscreen, 'is-buffering': isBuffering }"
+    :class="{ 'is-fullscreen': isFullscreen, 'is-buffering': isBuffering || isSeekPending }"
     tabindex="0"
     role="group"
     :aria-label="$t('video.player')"
@@ -22,8 +22,11 @@
       @pause="onPause"
       @ended="onEnded"
       @volumechange="onVolumeChange"
-      @waiting="isBuffering = true"
-      @canplay="isBuffering = false"
+      @waiting="onWaiting"
+      @canplay="onCanPlay"
+      @progress="onProgress"
+      @seeking="onSeeking"
+      @seeked="onSeeked"
       @click="togglePlay"
     >
       <track
@@ -80,15 +83,25 @@
         <!-- 进度条 -->
         <div
           class="progress-container"
-          :class="{ 'is-seeking': isSeeking }"
+          :class="{
+            'is-seeking': isSeeking || isSeekPending,
+            'is-buffering': isBuffering || isSeekPending,
+          }"
           @click="seek"
           @mousedown.prevent="startSeekDrag"
           @touchstart.prevent="startSeekDrag"
         >
           <div class="progress-bar">
             <div class="progress-buffered" :style="{ width: `${bufferedPercent}%` }" />
-            <div class="progress-played" :style="{ width: `${playedPercent}%` }" />
-            <div class="progress-thumb" :style="{ left: `${playedPercent}%` }" />
+            <div class="progress-played" :style="{ width: `${displayPercent}%` }" />
+            <div class="progress-thumb" :style="{ left: `${displayPercent}%` }" />
+            <div
+              v-if="isBuffering || isSeekPending"
+              class="progress-loading"
+              :style="{ left: `${displayPercent}%` }"
+            >
+              <span class="spinner spinner-sm" />
+            </div>
           </div>
         </div>
 
@@ -355,6 +368,20 @@ interface Props {
   preload?: 'auto' | 'metadata' | 'none'
   subtitles?: SubtitleTrack[] | null | undefined
 }
+function updateBufferedPercent() {
+  if (!videoRef.value) return
+  const dur = duration.value
+  if (!isFinite(dur) || dur <= 0) {
+    bufferedPercent.value = 0
+    return
+  }
+  if (videoRef.value.buffered.length > 0) {
+    const buffered = videoRef.value.buffered.end(videoRef.value.buffered.length - 1)
+    bufferedPercent.value = Math.min(100, Math.max(0, (buffered / dur) * 100))
+  } else {
+    bufferedPercent.value = 0
+  }
+}
 
 const props = withDefaults(defineProps<Props>(), {
   playsinline: true,
@@ -404,6 +431,8 @@ const showControlHints = ref(true)
 const showSettings = ref(false)
 const bufferedPercent = ref(0)
 const isSeeking = ref(false)
+const isSeekPending = ref(false)
+const seekPreviewPercent = ref<number | null>(null)
 
 // 使用视频设置 composable
 const { locale } = useI18n()
@@ -516,6 +545,12 @@ const playedPercent = computed(() => {
   if (!isFinite(dur) || dur <= 0) return 0
   const percent = (currentTime.value / dur) * 100
   return Math.min(100, Math.max(0, percent))
+})
+
+const displayPercent = computed(() => {
+  const raw = seekPreviewPercent.value ?? playedPercent.value
+  if (!isFinite(raw)) return 0
+  return Math.min(100, Math.max(0, raw))
 })
 
 const supportsPiP = computed(() => {
@@ -653,6 +688,7 @@ const SEEK_STEP = 5
 const VOLUME_STEP = 0.1
 
 let controlsTimeout: ReturnType<typeof setTimeout> | null = null
+let seekPendingTimeout: ReturnType<typeof setTimeout> | null = null
 
 function formatTime(seconds: number): string {
   if (!isFinite(seconds)) return '0:00'
@@ -691,6 +727,7 @@ function onLoadedMetadata() {
   if (!videoRef.value) return
   const raw = videoRef.value.duration
   duration.value = isFinite(raw) && raw > 0 ? raw : 0
+  updateBufferedPercent()
   emit('ready')
   applySubtitleMode()
 }
@@ -699,17 +736,7 @@ function onTimeUpdate() {
   if (!videoRef.value) return
   currentTime.value = videoRef.value.currentTime
   emit('timeupdate', currentTime.value)
-
-  // 更新缓冲进度
-  const dur = duration.value
-  if (!isFinite(dur) || dur <= 0) {
-    bufferedPercent.value = 0
-    return
-  }
-  if (videoRef.value.buffered.length > 0) {
-    const buffered = videoRef.value.buffered.end(videoRef.value.buffered.length - 1)
-    bufferedPercent.value = Math.min(100, Math.max(0, (buffered / dur) * 100))
-  }
+  updateBufferedPercent()
 }
 
 function onVolumeChange() {
@@ -717,14 +744,39 @@ function onVolumeChange() {
   updateVolume(videoRef.value.volume)
   updateMuted(videoRef.value.muted)
 }
+function markSeekPending(percent?: number) {
+  if (typeof percent === 'number') {
+    seekPreviewPercent.value = Math.min(100, Math.max(0, percent))
+  }
+  isSeekPending.value = true
+  if (seekPendingTimeout) {
+    clearTimeout(seekPendingTimeout)
+  }
+  seekPendingTimeout = setTimeout(() => {
+    isSeekPending.value = false
+    seekPreviewPercent.value = null
+  }, 1200)
+}
+
+function clearSeekPending() {
+  isSeekPending.value = false
+  seekPreviewPercent.value = null
+  if (seekPendingTimeout) {
+    clearTimeout(seekPendingTimeout)
+    seekPendingTimeout = null
+  }
+}
 
 function seek(event: MouseEvent) {
   if (!videoRef.value || !event.currentTarget) return
   const target = event.currentTarget as HTMLElement
   const rect = target.getBoundingClientRect()
   const percent = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width))
+  if (duration.value <= 0) return
   const newTime = percent * duration.value
   const delta = newTime - currentTime.value
+  currentTime.value = newTime
+  markSeekPending(percent * 100)
   videoRef.value.currentTime = newTime
   if (Math.abs(delta) > 0.2) {
     triggerSeekIndicator(delta > 0 ? 'forward' : 'backward', Math.round(Math.abs(delta)))
@@ -750,8 +802,11 @@ function updateSeek(event: MouseEvent | TouchEvent) {
   if (clientX === undefined) return
   if ('preventDefault' in event && isSeeking.value) event.preventDefault()
   const percent = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width))
+  if (duration.value <= 0) return
   const newTime = percent * duration.value
   const delta = newTime - currentTime.value
+  currentTime.value = newTime
+  markSeekPending(percent * 100)
   videoRef.value.currentTime = newTime
   if (Math.abs(delta) > 0.2) {
     triggerSeekIndicator(delta > 0 ? 'forward' : 'backward', Math.round(Math.abs(delta)))
@@ -764,6 +819,36 @@ function stopSeekDrag() {
   document.removeEventListener('mouseup', stopSeekDrag)
   document.removeEventListener('touchmove', updateSeek)
   document.removeEventListener('touchend', stopSeekDrag)
+}
+
+function onWaiting() {
+  isBuffering.value = true
+}
+
+function onCanPlay() {
+  isBuffering.value = false
+  clearSeekPending()
+}
+
+function onProgress() {
+  updateBufferedPercent()
+}
+
+function onSeeking() {
+  const dur = duration.value
+  if (!isFinite(dur) || dur <= 0) {
+    isSeekPending.value = true
+    return
+  }
+  const percent = (videoRef.value?.currentTime ?? 0) / dur
+  markSeekPending(percent * 100)
+}
+
+function onSeeked() {
+  // keep seek preview until canplay unless no buffering occurs
+  if (!isBuffering.value) {
+    clearSeekPending()
+  }
 }
 
 function toggleMute() {
@@ -970,6 +1055,7 @@ onBeforeUnmount(() => {
   document.removeEventListener('click', handleClickOutside)
   stopControlsTimer()
   stopSeekDrag()
+  clearSeekPending()
 })
 
 function setSubtitleLanguage(language: string | null) {
@@ -1202,6 +1288,30 @@ function startHintTimer() {
 .progress-container:hover .progress-thumb,
 .progress-container.is-seeking .progress-thumb {
   opacity: 1;
+}
+
+.progress-container.is-buffering .progress-thumb {
+  opacity: 1;
+}
+
+.progress-container.is-buffering .progress-bar {
+  height: 6px;
+}
+
+.progress-loading {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  pointer-events: none;
+  color: white;
 }
 
 /* 控制按钮行 */

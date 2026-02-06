@@ -62,6 +62,15 @@ const CLOUDFLARE_PATTERNS = [
   // Prefetch failures (expected when backend is down)
   /Prefetch failed.*ApiError/i,
   /Failed to prefetch/i,
+
+  // Service worker / prefetch noise
+  /\[SW\]/i,
+  /\[SW Update\]/i,
+  /Service Worker was updated because/i,
+  /\[Prefetch\]/i,
+
+  // Non-passive touch listener warnings (often from third-party loaders)
+  /Added non-passive event listener to a scroll-blocking 'touchstart' event/i,
 ]
 
 /**

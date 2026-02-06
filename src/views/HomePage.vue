@@ -24,7 +24,7 @@
           :height="120"
         />
 
-        <h1 class="hero-title">{{ $t('home.hero.title') }}</h1>
+        <h1 class="hero-title gradient-text">{{ $t('home.hero.title') }}</h1>
         <p class="hero-subtitle">{{ $t('home.hero.subtitle') }}</p>
 
         <div class="hero-actions">
@@ -520,10 +520,6 @@ onBeforeUnmount(() => {
 .hero-title {
   font-size: clamp(2.5rem, 8vw, 4rem);
   font-weight: var(--font-bold);
-  background: var(--gradient-accent);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
   margin-bottom: var(--spacing-4);
   line-height: 1.1;
 }
