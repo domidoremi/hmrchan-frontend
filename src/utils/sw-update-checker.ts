@@ -5,6 +5,10 @@
 
 import { useToastStore } from '@/stores/toast'
 
+let isInitialized = false
+let isChecking = false
+let lastNotifiedScriptUrl: string | null = null
+
 export interface SwUpdateOptions {
   /** 检查更新的间隔时间（毫秒），默认 30 分钟 */
   checkInterval?: number
@@ -18,6 +22,8 @@ export interface SwUpdateOptions {
  * 初始化 Service Worker 更新检测
  */
 export function initSwUpdateChecker(options: SwUpdateOptions = {}): void {
+  if (isInitialized) return
+  isInitialized = true
   const {
     checkInterval = 30 * 60 * 1000, // 30 分钟
     autoRefresh = false,
@@ -29,46 +35,50 @@ export function initSwUpdateChecker(options: SwUpdateOptions = {}): void {
     return
   }
 
-  // 监听 SW 更新
-  navigator.serviceWorker.addEventListener('controllerchange', () => {
-    console.log('[SW Update] New service worker activated')
+  // 等待 SW 就绪后再开始检查，避免无效状态噪音
+  navigator.serviceWorker.ready
+    .then(() => {
+      // 监听 SW 激活
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        console.log('[SW Update] New service worker activated')
+        if (autoRefresh) {
+          window.location.reload()
+        }
+      })
 
-    if (autoRefresh) {
-      window.location.reload()
-    } else if (showToast) {
-      showUpdateToast()
-    }
-  })
+      // 定期检查更新
+      setInterval(() => {
+        checkForUpdates(showToast)
+      }, checkInterval)
 
-  // 定期检查更新
-  setInterval(() => {
-    checkForUpdates()
-  }, checkInterval)
+      // 页面可见时检查更新
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+          checkForUpdates(showToast)
+        }
+      })
 
-  // 页面可见时检查更新
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') {
-      checkForUpdates()
-    }
-  })
-
-  // 初始检查
-  checkForUpdates()
+      // 初始检查
+      checkForUpdates(showToast)
+    })
+    .catch(() => {
+      // ignore
+    })
 }
 
 /**
  * 检查 Service Worker 更新
  */
-async function checkForUpdates(): Promise<void> {
+async function checkForUpdates(showToast: boolean): Promise<void> {
+  if (isChecking) return
+  isChecking = true
   try {
-    const registration = await navigator.serviceWorker.getRegistration()
+    const registration =
+      (await navigator.serviceWorker.getRegistration()) || (await navigator.serviceWorker.ready)
     if (!registration) return
 
     // 检查 registration 状态是否有效
-    if (!registration.active && !registration.installing && !registration.waiting) {
-      console.warn('[SW Update] Invalid registration state, skipping update check')
-      return
-    }
+    if (!registration.active && !registration.installing && !registration.waiting) return
 
     // 手动触发更新检查
     try {
@@ -83,12 +93,18 @@ async function checkForUpdates(): Promise<void> {
     }
 
     // 如果有等待中的 SW，提示用户
-    if (registration.waiting) {
-      console.log('[SW Update] Update available')
-      showUpdateToast()
+    if (registration.waiting && showToast) {
+      const scriptUrl = registration.waiting.scriptURL || 'waiting'
+      if (lastNotifiedScriptUrl !== scriptUrl) {
+        lastNotifiedScriptUrl = scriptUrl
+        console.log('[SW Update] Update available')
+        showUpdateToast()
+      }
     }
   } catch (error) {
     console.error('[SW Update] Check failed:', error)
+  } finally {
+    isChecking = false
   }
 }
 
@@ -112,6 +128,7 @@ function showUpdateToast(): void {
       onClick: () => {
         navigator.serviceWorker.getRegistration().then((registration) => {
           if (registration?.waiting) {
+            lastNotifiedScriptUrl = registration.waiting.scriptURL || null
             registration.waiting.postMessage({ type: 'SKIP_WAITING' })
             // 等待新 SW 激活后刷新页面
             setTimeout(() => {
