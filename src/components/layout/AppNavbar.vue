@@ -3,7 +3,7 @@
     <div class="container navbar-content">
       <!-- Logo -->
       <RouterLink to="/" class="navbar-brand">
-        <span class="brand-name">mmc</span>
+        <span class="brand-name gradient-text">mmc</span>
       </RouterLink>
 
       <!-- Desktop Navigation -->
@@ -746,10 +746,6 @@ onUnmounted(() => {
   font-size: var(--text-xl);
   font-weight: var(--font-bold);
   letter-spacing: 0.08em;
-  background: var(--gradient-accent);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
 }
 
 /* ========== Navigation Links ========== */

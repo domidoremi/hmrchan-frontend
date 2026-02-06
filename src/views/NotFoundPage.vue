@@ -1,7 +1,7 @@
 <template>
   <div class="not-found-page">
     <div class="content">
-      <h1 class="error-code">404</h1>
+      <h1 class="error-code gradient-text">404</h1>
       <h2 class="error-title">{{ $t('error.notFound') }}</h2>
       <p class="error-message">{{ $t('error.notFoundMessage') }}</p>
       <Button @click="goHome">
@@ -38,10 +38,6 @@ function goHome() {
 .error-code {
   font-size: 80px;
   font-weight: var(--font-bold);
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
   line-height: 1;
   margin-bottom: var(--spacing-3);
 }

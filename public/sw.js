@@ -17,6 +17,23 @@ if (!AbortSignal.timeout) {
   }
 }
 
+const SW_DEBUG =
+  self.location.hostname === 'localhost' ||
+  self.location.hostname === '127.0.0.1' ||
+  self.location.hostname === '::1'
+
+function swLog(...args) {
+  if (SW_DEBUG) {
+    console.log(...args)
+  }
+}
+
+function swWarn(...args) {
+  if (SW_DEBUG) {
+    console.warn(...args)
+  }
+}
+
 async function getMediaMetaStats() {
   try {
     const db = await openDatabase()
@@ -193,7 +210,7 @@ self.addEventListener('fetch', (event) => {
 // 后台同步：离线操作队列
 // ============================================
 self.addEventListener('sync', (event) => {
-  console.log('[SW] Background sync:', event.tag)
+  swLog('[SW] Background sync:', event.tag)
 
   if (event.tag === 'sync-offline-actions') {
     event.waitUntil(triggerClientSync())
@@ -204,7 +221,7 @@ self.addEventListener('sync', (event) => {
 // Push 通知处理
 // ============================================
 self.addEventListener('push', (event) => {
-  console.log('[SW] Push notification received')
+  swLog('[SW] Push notification received')
 
   let data = { title: '新消息', body: '您有新的内容更新' }
 
@@ -234,7 +251,7 @@ self.addEventListener('push', (event) => {
 // 通知点击处理
 // ============================================
 self.addEventListener('notificationclick', (event) => {
-  console.log('[SW] Notification clicked:', event.action)
+  swLog('[SW] Notification clicked:', event.action)
 
   event.notification.close()
 
@@ -457,7 +474,7 @@ async function staleWhileRevalidatePost(request) {
       }
       return response
     } catch (error) {
-      console.log('[SW] Post fetch failed:', error.message)
+      swLog('[SW] Post fetch failed:', error.message)
       return null
     }
   }
@@ -469,18 +486,18 @@ async function staleWhileRevalidatePost(request) {
 
     if (cacheAge < POST_CACHE_CONFIG.staleWhileRevalidate) {
       // 缓存新鲜，直接返回
-      console.log('[SW] Post cache hit (fresh):', request.url)
+      swLog('[SW] Post cache hit (fresh):', request.url)
       return cached
     }
 
     // 缓存过期但可用，返回缓存同时后台更新
-    console.log('[SW] Post cache hit (stale), revalidating:', request.url)
+    swLog('[SW] Post cache hit (stale), revalidating:', request.url)
     fetchAndUpdate() // 不等待，后台执行
     return addCacheHeader(cached, true)
   }
 
   // 无缓存，等待网络
-  console.log('[SW] Post cache miss:', request.url)
+  swLog('[SW] Post cache miss:', request.url)
   const networkResponse = await fetchAndUpdate()
 
   if (networkResponse) {
@@ -521,7 +538,7 @@ async function managePostCache() {
     // 删除最旧的条目（简单 FIFO）
     const toDelete = keys.slice(0, keys.length - POST_CACHE_CONFIG.maxItems)
     await Promise.all(toDelete.map((key) => cache.delete(key)))
-    console.log(`[SW] Post cache cleanup: removed ${toDelete.length} items`)
+    swLog(`[SW] Post cache cleanup: removed ${toDelete.length} items`)
   }
 }
 
@@ -556,7 +573,7 @@ async function networkFirstApi(request) {
 
     return response
   } catch {
-    console.log('[SW] Network failed, using cache:', request.url)
+    swLog('[SW] Network failed, using cache:', request.url)
 
     const cached = await cache.match(request)
     if (cached) {
@@ -731,7 +748,7 @@ function openDatabase() {
     request.onsuccess = () => resolve(request.result)
     request.onerror = () => reject(request.error)
     request.onblocked = () => {
-      console.warn('[SW] IDB upgrade blocked')
+      swWarn('[SW] IDB upgrade blocked')
     }
   })
 }
@@ -908,7 +925,7 @@ async function clearOldMedia() {
     }
   }
 
-  console.log(`[SW] Cleared ${deleted} old media files`)
+  swLog(`[SW] Cleared ${deleted} old media files`)
   return deleted
 }
 
@@ -926,7 +943,7 @@ async function clearAllCaches() {
   } catch {
     // ignore
   }
-  console.log('[SW] All caches cleared')
+  swLog('[SW] All caches cleared')
 }
 
 /**
@@ -1021,4 +1038,4 @@ async function triggerClientSync() {
   return results.some((r) => r && r.ok)
 }
 
-console.log('[SW] Service Worker loaded')
+swLog('[SW] Service Worker loaded')

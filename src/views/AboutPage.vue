@@ -3,7 +3,7 @@
     <div class="container">
       <!-- 页面标题 -->
       <header class="page-header">
-        <h1 class="page-title">{{ $t('about.title') }}</h1>
+        <h1 class="page-title gradient-text">{{ $t('about.title') }}</h1>
         <p class="page-subtitle">{{ $t('about.subtitle') }}</p>
       </header>
 
@@ -18,7 +18,7 @@
           <div class="himeri-header">
             <div class="himeri-name-card">
               <div class="name-wrapper">
-                <h3 class="himeri-jp">{{ $t('about.origin.himeri') }}</h3>
+                <h3 class="himeri-jp gradient-text">{{ $t('about.origin.himeri') }}</h3>
                 <p class="himeri-romaji">{{ $t('about.origin.himeriRomaji') }}</p>
               </div>
               <div class="name-decoration">
@@ -97,50 +97,54 @@
       </section>
 
       <!-- 技术实现 -->
-      <section class="section">
+      <section class="section tech-section">
         <div class="section-header">
           <AnimatedIcon name="explore" :fallback-icon="Code" size="lg" class="section-icon" />
           <h2 class="section-title">{{ $t('about.tech.title') }}</h2>
         </div>
-        <p class="tech-intro">{{ $t('about.tech.description') }}</p>
-        <div class="tech-grid">
-          <a
-            v-for="tech in techStack"
-            :key="tech.name"
-            :href="tech.url"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="tech-card glass-card"
-          >
-            <div class="tech-header">
-              <div class="tech-name">{{ tech.name }}</div>
-              <div class="tech-version-badge">v{{ tech.version }}</div>
-            </div>
-            <div class="tech-description">{{ tech.description }}</div>
-          </a>
+        <div class="section-surface tech-surface">
+          <p class="tech-intro">{{ $t('about.tech.description') }}</p>
+          <div class="tech-grid">
+            <a
+              v-for="tech in techStack"
+              :key="tech.name"
+              :href="tech.url"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="tech-card glass-card"
+            >
+              <div class="tech-header">
+                <div class="tech-name">{{ tech.name }}</div>
+                <div class="tech-version-badge">v{{ tech.version }}</div>
+              </div>
+              <div class="tech-description">{{ tech.description }}</div>
+            </a>
+          </div>
         </div>
       </section>
 
       <!-- 项目信息 -->
-      <section class="section">
+      <section class="section info-section">
         <div class="section-header">
           <AnimatedIcon name="sparkle" :fallback-icon="Info" size="lg" class="section-icon" />
           <h2 class="section-title">{{ $t('about.projectInfo.title') }}</h2>
         </div>
-        <div class="info-grid">
-          <div class="info-card glass-card">
-            <div class="info-label">{{ $t('about.projectInfo.buildHash') }}</div>
-            <div class="info-value commit-hash">{{ buildHash }}</div>
-          </div>
-          <div class="info-card glass-card">
-            <div class="info-label">{{ $t('about.projectInfo.buildTime') }}</div>
-            <div class="info-value">{{ buildTime }}</div>
-          </div>
-          <div class="info-card glass-card">
-            <div class="info-label">{{ $t('about.projectInfo.status') }}</div>
-            <div class="info-value status-active">
-              <span class="status-dot"></span>
-              {{ $t('about.projectInfo.active') }}
+        <div class="section-surface info-surface">
+          <div class="info-grid">
+            <div class="info-card glass-card">
+              <div class="info-label">{{ $t('about.projectInfo.buildHash') }}</div>
+              <div class="info-value commit-hash">{{ buildHash }}</div>
+            </div>
+            <div class="info-card glass-card">
+              <div class="info-label">{{ $t('about.projectInfo.buildTime') }}</div>
+              <div class="info-value">{{ buildTime }}</div>
+            </div>
+            <div class="info-card glass-card">
+              <div class="info-label">{{ $t('about.projectInfo.status') }}</div>
+              <div class="info-value status-active">
+                <span class="status-dot"></span>
+                {{ $t('about.projectInfo.active') }}
+              </div>
             </div>
           </div>
         </div>
@@ -282,10 +286,6 @@ const { techStack } = useAboutData()
   font-size: var(--text-3xl);
   font-weight: var(--font-bold);
   margin-bottom: var(--spacing-2);
-  background: var(--gradient-accent);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
 }
 
 .page-subtitle {
@@ -365,10 +365,6 @@ const { techStack } = useAboutData()
 .himeri-jp {
   font-size: var(--text-4xl);
   font-weight: var(--font-bold);
-  background: var(--gradient-accent);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
   margin: 0 0 var(--spacing-2) 0;
   letter-spacing: 0.02em;
   line-height: 1.2;
@@ -627,18 +623,41 @@ const { techStack } = useAboutData()
   color: var(--color-text-secondary);
   line-height: var(--leading-relaxed);
 }
+.section-surface {
+  position: relative;
+  padding: var(--spacing-5);
+  border-radius: var(--radius-2xl);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  overflow: hidden;
+}
+
+.section-surface::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--gradient-surface, var(--gradient-card-hover));
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.section-surface > * {
+  position: relative;
+  z-index: 1;
+}
 
 /* 技术实现 */
 .tech-intro {
   font-size: var(--text-base);
   color: var(--color-text-secondary);
-  margin-bottom: var(--spacing-6);
+  margin-bottom: var(--spacing-5);
   line-height: var(--leading-relaxed);
 }
 
 .tech-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: var(--spacing-4);
 }
 
@@ -650,6 +669,7 @@ const { techStack } = useAboutData()
   display: block;
   text-decoration: none;
   color: inherit;
+  min-height: 160px;
 }
 
 .tech-card::before {
@@ -703,6 +723,7 @@ const { techStack } = useAboutData()
   background: var(--gradient-primary);
   border-radius: var(--radius-full);
   white-space: nowrap;
+  box-shadow: 0 6px 16px rgba(var(--color-primary-rgb), 0.25);
 }
 
 .tech-description {
@@ -714,24 +735,35 @@ const { techStack } = useAboutData()
 /* 项目信息 */
 .info-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: var(--spacing-4);
 }
 
 .info-card {
   padding: var(--spacing-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+  min-height: 120px;
 }
 
 .info-label {
   font-size: var(--text-sm);
   color: var(--color-text-secondary);
-  margin-bottom: var(--spacing-1);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .info-value {
   font-size: var(--text-lg);
   font-weight: var(--font-semibold);
   color: var(--color-text);
+}
+.commit-hash {
+  font-family: var(--font-mono);
+  font-size: var(--text-base);
+  letter-spacing: 0.04em;
+  word-break: break-all;
 }
 
 .status-active {
@@ -747,6 +779,7 @@ const { techStack } = useAboutData()
   background: var(--color-success);
   border-radius: 50%;
   animation: pulse 2s ease-in-out infinite;
+  box-shadow: 0 0 0 6px rgba(var(--color-success-rgb), 0.15);
 }
 
 @keyframes pulse {
@@ -869,6 +902,10 @@ const { techStack } = useAboutData()
 
   .info-grid {
     grid-template-columns: 1fr;
+  }
+
+  .section-surface {
+    padding: var(--spacing-4);
   }
 }
 </style>

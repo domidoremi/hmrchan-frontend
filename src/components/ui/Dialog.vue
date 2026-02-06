@@ -160,6 +160,7 @@ onUnmounted(() => {
   border: 1px solid var(--glass-border);
   box-shadow: var(--shadow-xl);
   overflow: hidden;
+  color: var(--color-text-primary);
 }
 
 .ui-dialog::before {
@@ -225,7 +226,7 @@ onUnmounted(() => {
 
 .ui-dialog__description {
   font-size: var(--text-sm);
-  color: var(--color-muted-foreground);
+  color: var(--color-text-secondary);
   margin: var(--spacing-1) 0 0;
   line-height: var(--leading-relaxed);
 }
@@ -238,7 +239,7 @@ onUnmounted(() => {
   width: 2rem;
   height: 2rem;
   border-radius: var(--radius);
-  color: var(--color-muted-foreground);
+  color: var(--color-text-secondary);
   transition:
     background-color 150ms var(--ease-out),
     color 150ms var(--ease-out);

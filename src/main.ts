@@ -119,7 +119,9 @@ scheduleTask(
   () => {
     import('./utils/cache/smartPrefetch').then(({ prefetchPopularContent }) => {
       prefetchPopularContent().then((result) => {
-        console.log('[Prefetch] Popular content prefetched:', result)
+        if (import.meta.env.DEV || import.meta.env['VITE_ENABLE_DEBUG'] === 'true') {
+          console.log('[Prefetch] Popular content prefetched:', result)
+        }
       })
     })
   },

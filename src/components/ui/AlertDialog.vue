@@ -149,6 +149,7 @@ onUnmounted(() => {
   border: 1px solid var(--glass-border);
   box-shadow: var(--shadow-xl);
   overflow: hidden;
+  color: var(--color-text-primary);
 }
 
 .ui-alert-dialog::before {
@@ -181,7 +182,7 @@ onUnmounted(() => {
 
 .ui-alert-dialog__description {
   font-size: var(--text-sm);
-  color: var(--color-muted-foreground);
+  color: var(--color-text-secondary);
   margin: var(--spacing-2) 0 0;
   line-height: var(--leading-relaxed);
 }
