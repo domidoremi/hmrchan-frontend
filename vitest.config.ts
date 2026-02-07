@@ -16,6 +16,10 @@ import vue from '@vitejs/plugin-vue'
 export default defineConfig({
   // @ts-expect-error - Vite 8 (Rolldown) plugin compatibility with Vitest
   plugins: [vue()],
+
+  /** Vite缓存目录（Vitest会使用cacheDir/vitest） */
+  cacheDir: 'node_modules/.vite',
+
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
@@ -118,11 +122,6 @@ export default defineConfig({
     /** 启用浏览器模式 */
     browser: {
       enabled: false,
-    },
-
-    /** 性能优化 */
-    cache: {
-      dir: 'node_modules/.vitest',
     },
 
     /** 启用类型检查 */
