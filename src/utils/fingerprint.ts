@@ -5,18 +5,25 @@
  * 提供降级方案以确保在 FingerprintJS 失败时仍能生成标识符
  */
 
-import type { Agent } from '@fingerprintjs/fingerprintjs'
-import FingerprintJS from '@fingerprintjs/fingerprintjs'
+type FpAgent = { get: () => Promise<{ visitorId: string }> }
 
-let fpPromise: Promise<Agent> | null = null
+let fpPromise: Promise<FpAgent> | null = null
 let cachedFingerprint: string | null = null
+
+/**
+ * 懒加载 FingerprintJS（避免阻塞首屏）
+ */
+async function loadFingerprintJS(): Promise<FpAgent> {
+  const mod = await import('@fingerprintjs/fingerprintjs')
+  return mod.default.load()
+}
 
 /**
  * 初始化 FingerprintJS（应用启动时调用一次）
  */
 export function initFingerprint() {
   if (!fpPromise) {
-    fpPromise = FingerprintJS.load()
+    fpPromise = loadFingerprintJS()
   }
   return fpPromise
 }
@@ -42,7 +49,7 @@ export async function getDeviceFingerprint(): Promise<string> {
 
   try {
     if (!fpPromise) {
-      fpPromise = FingerprintJS.load()
+      fpPromise = loadFingerprintJS()
     }
     const fp = await fpPromise
     const result = await fp.get()

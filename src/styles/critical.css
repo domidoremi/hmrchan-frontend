@@ -13,17 +13,18 @@
 
 /* ========== 核心 CSS 变量 ========== */
 :root {
-  /* 颜色 */
-  --color-primary: #3b82f6;
-  --color-primary-dark: #2563eb;
+  /* 颜色 - 与 tokens.css zinc 体系保持一致 */
+  --color-primary: #18181b;
+  --color-primary-rgb: 24, 24, 27;
+  --color-primary-dark: #09090b;
   --color-white: #ffffff;
-  --color-gray-50: #f8fafc;
-  --color-gray-100: #f1f5f9;
-  --color-gray-200: #e2e8f0;
-  --color-gray-300: #cbd5e1;
-  --color-gray-600: #475569;
-  --color-gray-900: #0f172a;
-  --color-gray-950: #020617;
+  --color-gray-50: #fafafa;
+  --color-gray-100: #f4f4f5;
+  --color-gray-200: #e4e4e7;
+  --color-gray-300: #d4d4d8;
+  --color-gray-600: #52525b;
+  --color-gray-900: #18181b;
+  --color-gray-950: #09090b;
 
   /* 语义颜色 */
   --color-background: var(--color-gray-50);
@@ -67,15 +68,18 @@
   --z-fixed: 300;
 }
 
-/* 暗色模式 */
+/* 暗色模式 - 与 tokens.css 暗色体系保持一致 */
 [data-theme='dark'] {
-  --color-background: var(--color-gray-950);
-  --color-text-primary: var(--color-gray-50);
-  --color-text-secondary: var(--color-gray-300);
-  --glass-bg: rgba(30, 41, 59, 0.7);
-  --glass-bg-light: rgba(30, 41, 59, 0.5);
-  --glass-bg-strong: rgba(30, 41, 59, 0.9);
-  --glass-border: rgba(71, 85, 105, 0.4);
+  --color-primary: #f4f4f5;
+  --color-primary-rgb: 244, 244, 245;
+  --color-primary-dark: #fafafa;
+  --color-background: #060810;
+  --color-text-primary: #f8fafc;
+  --color-text-secondary: #a1a1aa;
+  --glass-bg: rgba(12, 16, 23, 0.78);
+  --glass-bg-light: rgba(12, 16, 23, 0.55);
+  --glass-bg-strong: rgba(12, 16, 23, 0.95);
+  --glass-border: rgba(255, 255, 255, 0.06);
 }
 
 /* ========== 基础重置 ========== */

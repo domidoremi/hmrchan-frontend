@@ -210,10 +210,13 @@
 /* ========== 暗色模式 ========== */
 [data-theme='dark'] .mm-card {
   box-shadow: none;
+  background: var(--color-surface);
+  border-color: rgba(255, 255, 255, 0.06);
 }
 
 [data-theme='dark'] .mm-card:hover {
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  border-color: rgba(255, 255, 255, 0.1);
 }
 
 [data-theme='dark'] .mm-heading--highlight {
@@ -222,6 +225,51 @@
 
 [data-theme='dark'] .mm-badge {
   background: rgba(var(--mm-green-rgb), 0.15);
+  color: var(--mm-green);
+}
+
+[data-theme='dark'] .mm-badge--orange {
+  background: rgba(var(--mm-orange-rgb), 0.15);
+  color: var(--mm-orange);
+}
+
+[data-theme='dark'] .mm-badge--purple {
+  background: rgba(var(--mm-purple-rgb), 0.15);
+  color: var(--mm-purple);
+}
+
+[data-theme='dark'] .mm-btn--primary {
+  background: var(--color-text-primary);
+  color: var(--color-surface);
+}
+
+[data-theme='dark'] .mm-btn--outline {
+  border-color: rgba(255, 255, 255, 0.12);
+  color: var(--color-text-primary);
+}
+
+[data-theme='dark'] .mm-btn--outline:hover {
+  border-color: var(--mm-green);
+  color: var(--mm-green);
+}
+
+[data-theme='dark'] .mm-btn--green {
+  background: var(--mm-green);
+  color: #000;
+}
+
+[data-theme='dark'] .mm-btn--green:hover {
+  background: var(--mm-green-light);
+}
+
+[data-theme='dark'] .mm-feature-tag {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
+  color: var(--color-text-secondary);
+}
+
+[data-theme='dark'] .mm-feature-tag__icon {
+  background: rgba(var(--mm-green-rgb), 0.16);
   color: var(--mm-green);
 }
 

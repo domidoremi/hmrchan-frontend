@@ -10,11 +10,11 @@
 
 import { ref, onMounted, onUnmounted, watch, type Ref, shallowRef } from 'vue'
 
-// 懒加载 lottie-web
-let lottieModule: typeof import('lottie-web') | null = null
+// 懒加载 lottie-web（使用 light 版本，减少体积并消除 eval 警告）
+let lottieModule: typeof import('lottie-web/build/player/lottie_light') | null = null
 const loadLottie = async () => {
   if (!lottieModule) {
-    lottieModule = await import('lottie-web')
+    lottieModule = await import('lottie-web/build/player/lottie_light')
   }
   return lottieModule.default
 }

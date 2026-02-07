@@ -270,6 +270,21 @@ router.afterEach((to) => {
 
   document.title = nextTitle
 
+  // 记录访问历史（用于智能预缓存）
+  if (to.name === 'post-detail' && to.params.id) {
+    import('@/utils/cache/smartPrefetch').then(({ recordAccess }) => {
+      recordAccess('post', String(to.params.id)).catch(() => {
+        // 忽略错误
+      })
+    })
+  } else if (to.name === 'author-detail' && to.params.id) {
+    import('@/utils/cache/smartPrefetch').then(({ recordAccess }) => {
+      recordAccess('author', String(to.params.id)).catch(() => {
+        // 忽略错误
+      })
+    })
+  }
+
   const canonicalUrl = new URL(to.path, SITE_ORIGIN).toString()
   ensureLinkRel('canonical').setAttribute('href', canonicalUrl)
   ensureMetaProperty('og:url').setAttribute('content', canonicalUrl)

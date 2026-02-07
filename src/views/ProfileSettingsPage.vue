@@ -729,7 +729,7 @@ async function handleEmailVerified(verificationToken: string) {
   if (pendingAction.value === 'change_email') {
     await executeChangeEmail(verificationToken)
   } else if (pendingAction.value === 'change_password') {
-    await executeChangePassword(verificationToken)
+    await executeChangePassword()
   }
   pendingAction.value = null
 }

@@ -330,6 +330,12 @@ export default defineConfig(({ mode }: { mode: string }) => {
               // GSAP 动画库
               { test: /gsap/, name: 'gsap' },
 
+              // 重型库：按需加载，独立分块避免阻塞首屏
+              { test: /three/, name: 'three' },
+              { test: /lottie-web/, name: 'lottie' },
+              { test: /@rive-app/, name: 'rive' },
+              { test: /@fingerprintjs/, name: 'fingerprint' },
+
               // 其他 node_modules 依赖
               { test: /node_modules/, name: 'vendor' },
             ],

@@ -51,6 +51,11 @@ body::before {
       rgba(var(--color-accent-rgb), 0.05) 0%,
       transparent 60%
     ),
+    radial-gradient(
+      ellipse 50% 40% at 80% 70%,
+      rgba(var(--color-primary-rgb), 0.02) 0%,
+      transparent 50%
+    ),
     var(--color-background);
   pointer-events: none;
 }
@@ -58,11 +63,28 @@ body::before {
 [data-theme='dark'] body::before {
   background:
     radial-gradient(
-      ellipse 80% 60% at 30% 20%,
-      rgba(var(--color-accent-rgb), 0.03) 0%,
-      transparent 60%
+      ellipse 80% 60% at 25% 15%,
+      rgba(var(--color-accent-rgb), 0.04) 0%,
+      transparent 55%
     ),
+    radial-gradient(
+      ellipse 60% 50% at 75% 70%,
+      rgba(var(--color-primary-rgb), 0.03) 0%,
+      transparent 50%
+    ),
+    radial-gradient(ellipse 40% 30% at 50% 50%, rgba(255, 255, 255, 0.01) 0%, transparent 60%),
     var(--color-background);
+}
+
+/* Dark mode: subtle noise overlay for depth */
+[data-theme='dark'] body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  opacity: 0.015;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  pointer-events: none;
 }
 
 /* Set shorter line heights on headings */
@@ -200,6 +222,15 @@ ol {
 [data-theme='dark'] ::selection {
   background: var(--color-primary-700);
   color: var(--color-white);
+}
+
+/* Dark mode link colors */
+[data-theme='dark'] a {
+  color: var(--color-primary);
+}
+
+[data-theme='dark'] a:hover {
+  color: var(--color-primary-light);
 }
 
 /* Scrollbar styling */

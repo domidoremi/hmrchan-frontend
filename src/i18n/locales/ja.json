@@ -97,10 +97,16 @@
     "emailRequired": "メールアドレスを入力してください",
     "passwordRequired": "パスワードを入力してください",
     "passwordMismatch": "パスワードが一致しません",
+    "emailPlaceholder": "メールアドレスを入力",
+    "usernamePlaceholder": "ユーザー名を入力",
+    "usernameHint": "3～20文字、英数字とアンダースコアのみ",
+    "passwordPlaceholder": "8文字以上",
+    "confirmPasswordPlaceholder": "パスワードを再入力",
     "error": {
       "fieldsRequired": "すべての項目を入力してください",
-      "passwordTooShort": "パスワードは6文字以上必要です",
+      "passwordTooShort": "パスワードは8文字以上必要です",
       "passwordTooWeak": "パスワードが弱すぎます。複雑さを上げてください",
+      "invalidEmail": "有効なメールアドレスを入力してください",
       "loginFailed": "ログインに失敗しました。もう一度お試しください",
       "registerFailed": "登録に失敗しました",
       "emailExists": "このメールアドレスは既に登録されています",
@@ -110,7 +116,8 @@
       "inProgress": "お待ちください...",
       "turnstileRequired": "認証を完了してください",
       "turnstileFailed": "認証に失敗しました。もう一度お試しください",
-      "unknown": "不明なエラーが発生しました"
+      "unknown": "不明なエラーが発生しました",
+      "codeRequired": "6桁の認証コードを入力してください"
     },
     "secureBadge": "セキュア保護",
     "loginHint": "ユーザー名またはメールで安全にログインできます。",
@@ -120,7 +127,14 @@
     "passwordWeak": "弱い",
     "passwordFair": "普通",
     "passwordGood": "良い",
-    "passwordStrong": "強い"
+    "passwordStrong": "強い",
+    "stepEmail": "メール認証",
+    "stepRegister": "アカウント作成",
+    "registerEmailHint": "メールアドレスを入力して認証コードを受け取ります。",
+    "sendCodeButton": "認証コードを送信",
+    "codeSentBanner": "{email} にコードを送信しました",
+    "verificationCode": "認証コード",
+    "changeEmail": "メールを変更"
   },
   "video": {
     "playbackSpeed": "再生速度",
