@@ -192,6 +192,103 @@
           </section>
         </form>
 
+        <!-- Change Email Section -->
+        <section class="settings-section glass-card email-section">
+          <div class="section-header">
+            <div class="section-icon">
+              <AnimatedIcon name="explore" :fallback-icon="Mail" size="sm" />
+            </div>
+            <div>
+              <h2 class="section-title">{{ $t('email.changeEmailTitle') }}</h2>
+              <p class="section-desc">{{ $t('email.changeEmailHint') }}</p>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>
+              <AnimatedIcon name="explore" :fallback-icon="Mail" size="sm" />
+              {{ $t('email.currentEmail') }}
+            </label>
+            <div class="input-wrapper input-readonly">
+              <Input
+                :model-value="profile.email"
+                type="email"
+                class="input-with-icon"
+                disabled
+                readonly
+              />
+              <AnimatedIcon
+                name="sparkle"
+                :fallback-icon="Lock"
+                size="sm"
+                class="input-icon-right"
+              />
+            </div>
+          </div>
+
+          <form @submit.prevent="handleChangeEmail">
+            <div class="form-group">
+              <label for="new_email">
+                <AnimatedIcon name="explore" :fallback-icon="Mail" size="sm" />
+                {{ $t('email.newEmail') }}
+              </label>
+              <div class="input-wrapper">
+                <Input
+                  id="new_email"
+                  v-model="emailForm.new_email"
+                  type="email"
+                  class="input-with-icon"
+                  :placeholder="$t('email.newEmailPlaceholder')"
+                  required
+                />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="email_password">
+                <AnimatedIcon name="sparkle" :fallback-icon="Key" size="sm" />
+                {{ $t('email.confirmWithPassword') }}
+              </label>
+              <div class="input-wrapper">
+                <Input
+                  id="email_password"
+                  v-model="emailForm.password"
+                  :type="showEmailPassword ? 'text' : 'password'"
+                  class="input-with-icon"
+                  autocomplete="current-password"
+                  required
+                />
+                <button
+                  type="button"
+                  class="password-toggle"
+                  @click="showEmailPassword = !showEmailPassword"
+                >
+                  <AnimatedIcon
+                    v-if="showEmailPassword"
+                    name="explore"
+                    :fallback-icon="EyeOff"
+                    size="sm"
+                  />
+                  <AnimatedIcon v-else name="explore" :fallback-icon="Eye" size="sm" />
+                </button>
+              </div>
+              <p class="field-hint">{{ $t('email.changeEmailVerifyHint') }}</p>
+            </div>
+
+            <div class="form-actions">
+              <Button
+                type="submit"
+                variant="secondary"
+                :disabled="isChangingEmail || !canChangeEmail"
+              >
+                <span v-if="isChangingEmail" class="spinner spinner-sm" />
+                <AnimatedIcon v-else name="explore" :fallback-icon="Mail" size="sm" />
+                {{ $t('email.changeEmailButton') }}
+              </Button>
+            </div>
+          </form>
+        </section>
+
         <!-- Password Section -->
         <section class="settings-section glass-card password-section">
           <div class="section-header">
@@ -369,8 +466,9 @@ import {
   Save,
   CheckCircle,
   RefreshCw,
+  Mail,
 } from 'lucide-vue-next'
-import { userService, normalizeAvatarUrl, type UserProfile, ApiError } from '@/api'
+import { userService, normalizeAvatarUrl, type UserProfile, ApiError, authService } from '@/api'
 import { useAuthStore, useToastStore } from '@/stores'
 import { refreshAvatarCache } from '@/composables/useUserAvatar'
 import { checkPasswordStrength } from '@/utils/crypto'
@@ -402,6 +500,22 @@ const cropImageSrc = ref('')
 const showCurrentPassword = ref(false)
 const showNewPassword = ref(false)
 const showConfirmPassword = ref(false)
+const showEmailPassword = ref(false)
+
+// Change email
+const isChangingEmail = ref(false)
+const emailForm = ref({
+  new_email: '',
+  password: '',
+})
+
+const canChangeEmail = computed(() => {
+  return (
+    emailForm.value.new_email &&
+    emailForm.value.new_email !== profile.value?.email &&
+    emailForm.value.password
+  )
+})
 
 const form = ref({
   username: '',
@@ -548,6 +662,37 @@ async function changePassword() {
     }
   } finally {
     isChangingPassword.value = false
+  }
+}
+
+async function handleChangeEmail() {
+  if (isChangingEmail.value || !canChangeEmail.value) return
+
+  isChangingEmail.value = true
+
+  try {
+    // First verify password to get a verification token
+    const { verification_token } = await authService.verifyPassword(emailForm.value.password)
+
+    // Then request email change
+    await authService.changeEmail({
+      new_email: emailForm.value.new_email,
+      verification_token,
+    })
+
+    toastStore.success(t('email.changeEmailSuccess'))
+    emailForm.value = { new_email: '', password: '' }
+
+    // Refresh profile to show updated email
+    await fetchProfile()
+  } catch (err) {
+    if (err instanceof ApiError) {
+      toastStore.error(err.message)
+    } else {
+      toastStore.error(t('common.error'))
+    }
+  } finally {
+    isChangingEmail.value = false
   }
 }
 
@@ -835,7 +980,8 @@ onMounted(() => {
   max-width: 640px;
 }
 
-.password-section {
+.password-section,
+.email-section {
   max-width: 640px;
 }
 

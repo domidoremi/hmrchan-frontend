@@ -128,6 +128,24 @@ const routes: RouteRecordRaw[] = [
     meta: { title: 'nav.register', guestOnly: true },
   },
   {
+    path: '/forgot-password',
+    name: 'forgot-password',
+    component: () => import('@/views/ForgotPasswordPage.vue'),
+    meta: { title: 'email.forgotPasswordTitle', guestOnly: true },
+  },
+  {
+    path: '/reset-password',
+    name: 'reset-password',
+    component: () => import('@/views/ResetPasswordPage.vue'),
+    meta: { title: 'email.resetPasswordTitle', guestOnly: true },
+  },
+  {
+    path: '/verify-email',
+    name: 'verify-email',
+    component: () => import('@/views/VerifyEmailPage.vue'),
+    meta: { title: 'email.verifyTitle' },
+  },
+  {
     path: '/contact',
     name: 'contact',
     component: () => import('@/views/ContactPage.vue'),

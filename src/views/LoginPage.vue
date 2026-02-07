@@ -81,6 +81,10 @@
         </Button>
       </form>
 
+      <p class="auth-forgot">
+        <RouterLink to="/forgot-password">{{ $t('auth.forgotPassword') }}</RouterLink>
+      </p>
+
       <p class="auth-footer">
         {{ $t('auth.noAccount') }}
         <RouterLink to="/register">{{ $t('nav.register') }}</RouterLink>
@@ -359,6 +363,21 @@ function handleTurnstileError() {
 
 .turnstile-hint {
   font-variant-numeric: tabular-nums;
+}
+
+.auth-forgot {
+  text-align: right;
+  margin-top: var(--spacing-2);
+  font-size: var(--text-sm);
+}
+
+.auth-forgot a {
+  color: var(--color-text-tertiary);
+}
+
+.auth-forgot a:hover {
+  color: var(--color-primary);
+  text-decoration: underline;
 }
 
 .auth-footer {

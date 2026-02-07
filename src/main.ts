@@ -95,13 +95,19 @@ scheduleTask(
           showToast: true, // 显示更新提示
         })
       })
-      // 初始化后台同步监听器
-      import('./utils/cache/syncManager').then(({ setupAutoSync, setupSwSyncListener }) => {
-        setupAutoSync()
-        setupSwSyncListener()
-      })
     }),
   { priority: 'user-visible', delay: 1000 } // 延迟 1 秒，确保首屏渲染完成
+)
+
+// 后台同步管理器：监听网络状态和 SW 消息
+scheduleTask(
+  () => {
+    import('./utils/cache/syncManager').then(({ setupAutoSync, setupSwSyncListener }) => {
+      setupAutoSync()
+      setupSwSyncListener()
+    })
+  },
+  { priority: 'user-visible', delay: 1500 }
 )
 
 // 智能路由预加载：在首屏渲染完成后预加载关键路由

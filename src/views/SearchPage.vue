@@ -644,15 +644,19 @@ onMounted(() => {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-/* All Platforms - 紫色渐变 */
+/* All Platforms - 简约主色 */
 .platform-btn:nth-child(1).active {
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.15));
-  color: #6366f1;
-  border-color: rgba(99, 102, 241, 0.4);
+  background: rgba(var(--color-accent-rgb), 0.15);
+  color: var(--color-accent);
+  border-color: rgba(var(--color-accent-rgb), 0.4);
 }
 
 .platform-btn:nth-child(1).active::before {
-  background: radial-gradient(circle at 50% 50%, rgba(99, 102, 241, 0.3), transparent 70%);
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgba(var(--color-accent-rgb), 0.3),
+    transparent 70%
+  );
   opacity: 1;
   animation: platform-pulse 2s ease-in-out infinite;
 }
