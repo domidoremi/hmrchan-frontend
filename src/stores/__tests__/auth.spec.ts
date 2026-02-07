@@ -36,6 +36,7 @@ vi.mock('@/api', () => {
   const mockLogout = vi.fn()
   const mockGetCurrentUser = vi.fn()
   const mockRefreshToken = vi.fn()
+  const mockSendVerificationEmail = vi.fn()
 
   return {
     authService: {
@@ -44,6 +45,7 @@ vi.mock('@/api', () => {
       logout: mockLogout,
       getCurrentUser: mockGetCurrentUser,
       refreshToken: mockRefreshToken,
+      sendVerificationEmail: mockSendVerificationEmail,
     },
     ApiError: class ApiError extends Error {
       status: number
@@ -201,6 +203,7 @@ describe('Auth Store', () => {
 
       vi.mocked(authService.register).mockResolvedValueOnce(mockResponse)
       vi.mocked(authService.getCurrentUser).mockResolvedValueOnce(mockUser)
+      vi.mocked(authService.sendVerificationEmail).mockResolvedValueOnce(undefined)
 
       const result = await store.register('newuser', 'new@test.com', 'password')
 
