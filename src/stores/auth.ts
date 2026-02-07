@@ -91,6 +91,7 @@ export const useAuthStore = defineStore(
       username: string,
       email: string,
       password: string,
+      verificationCode: string,
       turnstileToken?: string
     ) {
       if (isLoading.value) return { success: false, error: 'auth.error.inProgress' }
@@ -104,6 +105,7 @@ export const useAuthStore = defineStore(
           username,
           email,
           password,
+          verification_code: verificationCode,
           device_info: deviceInfo,
           ...(turnstileToken ? { turnstile_token: turnstileToken } : {}),
         })
@@ -124,10 +126,7 @@ export const useAuthStore = defineStore(
         // 获取完整的用户资料（包含 avatar_url 等字段）
         fetchCurrentUser().catch(() => {})
 
-        // 注册后尝试发送邮箱验证邮件（不阻塞注册流程）
-        authService.sendVerificationEmail({ email }).catch(() => {})
-
-        return { success: true, user: response.user, needsEmailVerification: true }
+        return { success: true, user: response.user }
       } catch (err) {
         const errorMessage =
           err instanceof ApiError

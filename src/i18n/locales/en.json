@@ -97,10 +97,16 @@
     "emailRequired": "Email is required",
     "passwordRequired": "Password is required",
     "passwordMismatch": "Passwords do not match",
+    "emailPlaceholder": "Enter your email address",
+    "usernamePlaceholder": "Choose a username",
+    "usernameHint": "3–20 characters, letters, numbers and underscores only",
+    "passwordPlaceholder": "At least 8 characters",
+    "confirmPasswordPlaceholder": "Re-enter your password",
     "error": {
       "fieldsRequired": "Please fill in all fields",
-      "passwordTooShort": "Password must be at least 6 characters",
+      "passwordTooShort": "Password must be at least 8 characters",
       "passwordTooWeak": "Password is too weak, please increase complexity",
+      "invalidEmail": "Please enter a valid email address",
       "loginFailed": "Login failed, please try again",
       "registerFailed": "Registration failed, please try again",
       "emailExists": "This email is already registered",
@@ -110,7 +116,8 @@
       "inProgress": "Please wait...",
       "turnstileRequired": "Please complete the verification",
       "turnstileFailed": "Verification failed, please try again",
-      "unknown": "An unknown error occurred"
+      "unknown": "An unknown error occurred",
+      "codeRequired": "Please enter the 6-digit verification code"
     },
     "secureBadge": "Security protected",
     "loginHint": "Use your username or email to sign in securely.",
@@ -120,7 +127,14 @@
     "passwordWeak": "Weak",
     "passwordFair": "Fair",
     "passwordGood": "Good",
-    "passwordStrong": "Strong"
+    "passwordStrong": "Strong",
+    "stepEmail": "Verify Email",
+    "stepRegister": "Create Account",
+    "registerEmailHint": "Enter your email to receive a verification code.",
+    "sendCodeButton": "Send Verification Code",
+    "codeSentBanner": "Code sent to {email}",
+    "verificationCode": "Verification Code",
+    "changeEmail": "Change email"
   },
   "video": {
     "playbackSpeed": "Playback Speed",

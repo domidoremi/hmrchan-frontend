@@ -28,6 +28,7 @@ export interface RegisterRequest {
   username: string
   email: string
   password: string
+  verification_code: string
   turnstile_token?: string
   device_info?: {
     device_fingerprint: string
@@ -39,6 +40,11 @@ export interface RegisterRequest {
     timezone: string
     language: string
   }
+}
+
+export interface SendRegistrationCodeRequest {
+  email: string
+  turnstile_token?: string
 }
 
 export interface AuthResponse {
@@ -171,6 +177,18 @@ export const authService = {
    */
   async getTurnstileConfig(): Promise<{ enabled: boolean; site_key: string | null }> {
     return apiClient.get('/auth/turnstile-config', {
+      skipAuth: true,
+      skipErrorToast: true,
+    })
+  },
+
+  // ========== 注册验证码 ==========
+
+  /**
+   * 发送注册验证码（6位，限流3次/小时，需Turnstile）
+   */
+  async sendRegistrationCode(data: SendRegistrationCodeRequest): Promise<{ message: string }> {
+    return apiClient.post('/email/send-registration-code', data, {
       skipAuth: true,
       skipErrorToast: true,
     })
