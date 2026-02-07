@@ -20,6 +20,9 @@ export {
   type RequestPasswordResetRequest,
   type ResetPasswordRequest,
   type ChangeEmailRequest,
+  type SendEmailCodeRequest,
+  type VerifyEmailCodeRequest,
+  type VerifyEmailCodeResponse,
 } from './authService'
 export {
   postService,

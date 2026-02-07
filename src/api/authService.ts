@@ -83,6 +83,19 @@ export interface ChangeEmailRequest {
   verification_token: string
 }
 
+export interface SendEmailCodeRequest {
+  action: string
+}
+
+export interface VerifyEmailCodeRequest {
+  action: string
+  code: string
+}
+
+export interface VerifyEmailCodeResponse {
+  verification_token: string
+}
+
 // ========== 认证服务 ==========
 
 export const authService = {
@@ -209,6 +222,26 @@ export const authService = {
    */
   async changeEmail(data: ChangeEmailRequest): Promise<{ message: string }> {
     return apiClient.post('/change-email', data, {
+      skipErrorToast: true,
+    })
+  },
+
+  // ========== 邮箱验证码 ==========
+
+  /**
+   * 发送邮箱验证码（用于敏感操作二次确认）
+   */
+  async sendEmailCode(data: SendEmailCodeRequest): Promise<{ message: string }> {
+    return apiClient.post('/email/send-code', data, {
+      skipErrorToast: true,
+    })
+  },
+
+  /**
+   * 验证邮箱验证码，返回短期验证令牌
+   */
+  async verifyEmailCode(data: VerifyEmailCodeRequest): Promise<VerifyEmailCodeResponse> {
+    return apiClient.post('/email/verify-code', data, {
       skipErrorToast: true,
     })
   },

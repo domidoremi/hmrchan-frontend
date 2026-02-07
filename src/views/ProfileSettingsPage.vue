@@ -444,6 +444,15 @@
         @cancel="closeCropper"
       />
     </Teleport>
+
+    <!-- Email Verify Dialog -->
+    <EmailVerifyDialog
+      :is-open="showEmailVerify"
+      :action="emailVerifyAction"
+      :email="profile?.email ?? ''"
+      @close="showEmailVerify = false"
+      @verified="handleEmailVerified"
+    />
   </div>
 </template>
 
@@ -481,6 +490,9 @@ import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 
 // 动态导入大型组件以减少初始包体积
 const ImageCropper = defineAsyncComponent(() => import('@/components/ui/ImageCropper.vue'))
+const EmailVerifyDialog = defineAsyncComponent(
+  () => import('@/components/ui/EmailVerifyDialog.vue')
+)
 
 const router = useRouter()
 const { t } = useI18n()
@@ -516,6 +528,13 @@ const canChangeEmail = computed(() => {
     emailForm.value.password
   )
 })
+
+// Email verification code dialog
+const showEmailVerify = ref(false)
+const emailVerifyAction = ref('')
+// 'change_email' | 'change_password'
+type PendingAction = 'change_email' | 'change_password'
+const pendingAction = ref<PendingAction | null>(null)
 
 const form = ref({
   username: '',
@@ -628,7 +647,7 @@ async function saveProfile() {
   }
 }
 
-async function changePassword() {
+function changePassword() {
   if (isChangingPassword.value) return
 
   if (passwordForm.value.new_password !== passwordForm.value.confirm_password) {
@@ -641,6 +660,13 @@ async function changePassword() {
     return
   }
 
+  // Open email verification dialog
+  pendingAction.value = 'change_password'
+  emailVerifyAction.value = 'change_password'
+  showEmailVerify.value = true
+}
+
+async function executeChangePassword() {
   isChangingPassword.value = true
 
   try {
@@ -665,25 +691,25 @@ async function changePassword() {
   }
 }
 
-async function handleChangeEmail() {
-  if (isChangingEmail.value || !canChangeEmail.value) return
+function handleChangeEmail() {
+  if (!canChangeEmail.value) return
+  // Open email verification dialog
+  pendingAction.value = 'change_email'
+  emailVerifyAction.value = 'change_email'
+  showEmailVerify.value = true
+}
 
+async function executeChangeEmail(verificationToken: string) {
   isChangingEmail.value = true
 
   try {
-    // First verify password to get a verification token
-    const { verification_token } = await authService.verifyPassword(emailForm.value.password)
-
-    // Then request email change
     await authService.changeEmail({
       new_email: emailForm.value.new_email,
-      verification_token,
+      verification_token: verificationToken,
     })
 
     toastStore.success(t('email.changeEmailSuccess'))
     emailForm.value = { new_email: '', password: '' }
-
-    // Refresh profile to show updated email
     await fetchProfile()
   } catch (err) {
     if (err instanceof ApiError) {
@@ -694,6 +720,18 @@ async function handleChangeEmail() {
   } finally {
     isChangingEmail.value = false
   }
+}
+
+/** Called when email OTP verification succeeds */
+async function handleEmailVerified(verificationToken: string) {
+  showEmailVerify.value = false
+
+  if (pendingAction.value === 'change_email') {
+    await executeChangeEmail(verificationToken)
+  } else if (pendingAction.value === 'change_password') {
+    await executeChangePassword(verificationToken)
+  }
+  pendingAction.value = null
 }
 
 // 头像上传限制

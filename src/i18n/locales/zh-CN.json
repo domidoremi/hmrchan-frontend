@@ -678,5 +678,22 @@
     "changeEmailVerifyHint": "输入当前密码以确认此操作。",
     "changeEmailButton": "更新邮箱",
     "changeEmailSuccess": "验证邮件已发送至您的新邮箱地址。"
+  },
+  "emailCode": {
+    "title": "邮箱验证",
+    "description": "验证码将发送至您的邮箱",
+    "sendHint": "我们将向 {email} 发送6位数验证码",
+    "sendButton": "发送验证码",
+    "codeSentTo": "验证码已发送至 {email}",
+    "verifyButton": "验证",
+    "resendCooldown": "{seconds} 秒后可重新发送",
+    "resend": "重新发送验证码",
+    "codeSent": "验证码已发送",
+    "tooManyRequests": "请求过于频繁，请稍后再试",
+    "sendFailed": "发送验证码失败",
+    "invalidCode": "验证码无效",
+    "codeExpired": "验证码已过期，请重新发送",
+    "tooManyAttempts": "尝试次数过多，请稍后再试",
+    "verifyFailed": "验证失败，请重试"
   }
 }
