@@ -678,5 +678,22 @@
     "changeEmailVerifyHint": "輸入目前密碼以確認此操作。",
     "changeEmailButton": "更新信箱",
     "changeEmailSuccess": "驗證信已傳送至您的新信箱地址。"
+  },
+  "emailCode": {
+    "title": "信箱驗證",
+    "description": "驗證碼將傳送至您的信箱",
+    "sendHint": "我們將向 {email} 傳送6位數驗證碼",
+    "sendButton": "傳送驗證碼",
+    "codeSentTo": "驗證碼已傳送至 {email}",
+    "verifyButton": "驗證",
+    "resendCooldown": "{seconds} 秒後可重新傳送",
+    "resend": "重新傳送驗證碼",
+    "codeSent": "驗證碼已傳送",
+    "tooManyRequests": "請求過於頻繁，請稍後再試",
+    "sendFailed": "傳送驗證碼失敗",
+    "invalidCode": "驗證碼無效",
+    "codeExpired": "驗證碼已過期，請重新傳送",
+    "tooManyAttempts": "嘗試次數過多，請稍後再試",
+    "verifyFailed": "驗證失敗，請重試"
   }
 }

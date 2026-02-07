@@ -678,5 +678,22 @@
     "changeEmailVerifyHint": "Enter your current password to confirm this change.",
     "changeEmailButton": "Update Email",
     "changeEmailSuccess": "A verification email has been sent to your new email address."
+  },
+  "emailCode": {
+    "title": "Email Verification",
+    "description": "A verification code will be sent to your email",
+    "sendHint": "We will send a 6-digit verification code to {email}",
+    "sendButton": "Send Verification Code",
+    "codeSentTo": "Code sent to {email}",
+    "verifyButton": "Verify",
+    "resendCooldown": "Resend in {seconds}s",
+    "resend": "Resend Code",
+    "codeSent": "Verification code sent",
+    "tooManyRequests": "Too many requests, please try again later",
+    "sendFailed": "Failed to send verification code",
+    "invalidCode": "Invalid verification code",
+    "codeExpired": "Verification code has expired, please resend",
+    "tooManyAttempts": "Too many attempts, please try again later",
+    "verifyFailed": "Verification failed, please try again"
   }
 }

@@ -64,16 +64,16 @@ import { authService, ApiError } from '@/api'
 import { useAuthStore, type AuthUser } from '../auth'
 
 // 测试用的 mock 用户数据
-const createMockUser = (overrides?: Partial<AuthUser>): AuthUser => ({
-  id: '1',
-  username: 'test',
-  email: 'test@test.com',
-  avatar_url: null,
-  bio: null,
-  created_at: '2024-01-01T00:00:00Z',
-  updated_at: '2024-01-01T00:00:00Z',
-  ...overrides,
-})
+const createMockUser = (overrides?: Partial<AuthUser>): AuthUser => {
+  const base: AuthUser = {
+    id: '1',
+    username: 'test',
+    email: 'test@test.com',
+    created_at: '2024-01-01T00:00:00Z',
+    updated_at: '2024-01-01T00:00:00Z',
+  }
+  return { ...base, ...overrides }
+}
 
 describe('Auth Store', () => {
   beforeEach(() => {
@@ -132,7 +132,11 @@ describe('Auth Store', () => {
       vi.useRealTimers() // 使用真实定时器避免异步问题
       const store = useAuthStore()
       const mockUser = createMockUser()
-      const mockResponse = { user: mockUser, access_token: 'test-token' }
+      const mockResponse = {
+        user: mockUser,
+        access_token: 'test-token',
+        token_type: 'Bearer',
+      }
 
       vi.mocked(authService.login).mockResolvedValueOnce(mockResponse)
       vi.mocked(authService.getCurrentUser).mockResolvedValueOnce(mockUser)
@@ -178,7 +182,11 @@ describe('Auth Store', () => {
       vi.useRealTimers()
       const store = useAuthStore()
       const mockUser = createMockUser()
-      const mockResponse = { user: mockUser, access_token: 'token' }
+      const mockResponse = {
+        user: mockUser,
+        access_token: 'token',
+        token_type: 'Bearer',
+      }
 
       let loadingDuringRequest = false
       vi.mocked(authService.login).mockImplementationOnce(async () => {
@@ -199,11 +207,15 @@ describe('Auth Store', () => {
       vi.useRealTimers()
       const store = useAuthStore()
       const mockUser = createMockUser({ username: 'newuser', email: 'new@test.com' })
-      const mockResponse = { user: mockUser, access_token: 'new-token' }
+      const mockResponse = {
+        user: mockUser,
+        access_token: 'new-token',
+        token_type: 'Bearer',
+      }
 
       vi.mocked(authService.register).mockResolvedValueOnce(mockResponse)
       vi.mocked(authService.getCurrentUser).mockResolvedValueOnce(mockUser)
-      vi.mocked(authService.sendVerificationEmail).mockResolvedValueOnce(undefined)
+      vi.mocked(authService.sendVerificationEmail).mockResolvedValueOnce({ message: 'Email sent' })
 
       const result = await store.register('newuser', 'new@test.com', 'password')
 

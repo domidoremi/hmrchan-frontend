@@ -679,5 +679,22 @@
     "changeEmailVerifyHint": "この変更を確認するために現在のパスワードを入力してください。",
     "changeEmailButton": "メールアドレスを更新",
     "changeEmailSuccess": "新しいメールアドレスに認証メールを送信しました。"
+  },
+  "emailCode": {
+    "title": "メール認証",
+    "description": "認証コードがメールに送信されます",
+    "sendHint": "{email} に6桁の認証コードを送信します",
+    "sendButton": "認証コードを送信",
+    "codeSentTo": "{email} にコードを送信しました",
+    "verifyButton": "認証する",
+    "resendCooldown": "{seconds}秒後に再送信可能",
+    "resend": "コードを再送信",
+    "codeSent": "認証コードを送信しました",
+    "tooManyRequests": "リクエストが多すぎます。しばらくしてから再試行してください",
+    "sendFailed": "認証コードの送信に失敗しました",
+    "invalidCode": "認証コードが無効です",
+    "codeExpired": "認証コードの有効期限が切れました。再送信してください",
+    "tooManyAttempts": "試行回数が多すぎます。しばらくしてから再試行してください",
+    "verifyFailed": "認証に失敗しました。再試行してください"
   }
 }
