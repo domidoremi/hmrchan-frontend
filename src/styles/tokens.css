@@ -199,8 +199,13 @@
     rgba(255, 255, 255, 0.4) 50%,
     transparent 100%
   );
-  --gradient-text: var(--gradient-accent);
-  --gradient-text-shadow: 0 1px 10px rgba(var(--color-primary-rgb), 0.25);
+  --gradient-text: linear-gradient(
+    120deg,
+    var(--color-primary) 0%,
+    var(--color-accent) 55%,
+    var(--color-secondary) 100%
+  );
+  --gradient-text-shadow: 0 1px 12px rgba(var(--color-primary-rgb), 0.28);
 
   /* ========== Motion / Animation ========== */
   --duration-instant: 80ms;
@@ -379,7 +384,13 @@
     transparent 100%
   );
   --gradient-surface: linear-gradient(180deg, rgba(255, 255, 255, 0.02) 0%, transparent 100%);
-  --gradient-text-shadow: 0 1px 14px rgba(var(--color-primary-rgb), 0.45);
+  --gradient-text: linear-gradient(
+    120deg,
+    var(--color-primary-light) 0%,
+    var(--color-accent-light) 55%,
+    var(--color-secondary-light) 100%
+  );
+  --gradient-text-shadow: 0 1px 14px rgba(var(--color-primary-rgb), 0.5);
 
   /* 暗色模式特有阴影 */
   --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.3), 0 1px 2px -1px rgb(0 0 0 / 0.3);

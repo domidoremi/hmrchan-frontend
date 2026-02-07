@@ -977,7 +977,8 @@ onUnmounted(() => {
 }
 
 .post-actions {
-  margin-top: var(--spacing-3);
+  margin-top: var(--spacing-2);
+  padding-bottom: var(--spacing-2);
 }
 
 .post-topbar {
@@ -1422,7 +1423,8 @@ onUnmounted(() => {
 }
 
 .post-panel {
-  height: 100%;
+  height: auto;
+  align-self: start;
   min-width: 0;
   padding: var(--spacing-4);
   background: var(--post-panel-bg);
@@ -1464,6 +1466,9 @@ onUnmounted(() => {
     gap: var(--spacing-3);
     border-radius: 0;
     box-shadow: none;
+  }
+  .post-actions {
+    padding-bottom: var(--spacing-1);
   }
   .post-header {
     gap: var(--spacing-1);
