@@ -215,9 +215,8 @@ describe('Auth Store', () => {
 
       vi.mocked(authService.register).mockResolvedValueOnce(mockResponse)
       vi.mocked(authService.getCurrentUser).mockResolvedValueOnce(mockUser)
-      vi.mocked(authService.sendVerificationEmail).mockResolvedValueOnce({ message: 'Email sent' })
 
-      const result = await store.register('newuser', 'new@test.com', 'password')
+      const result = await store.register('newuser', 'new@test.com', 'password', '123456')
 
       expect(result.success).toBe(true)
       expect(result.user).toEqual(mockUser)
@@ -233,7 +232,7 @@ describe('Auth Store', () => {
         new ApiError('Email exists', 409, 'EMAIL_EXISTS')
       )
 
-      const result = await store.register('user', 'exists@test.com', 'password')
+      const result = await store.register('user', 'exists@test.com', 'password', '123456')
 
       expect(result.success).toBe(false)
       expect(result.error).toBe('auth.error.emailExists')
@@ -248,7 +247,7 @@ describe('Auth Store', () => {
         new ApiError('Username exists', 400, 'USERNAME_EXISTS')
       )
 
-      const result = await store.register('existinguser', 'new@test.com', 'password')
+      const result = await store.register('existinguser', 'new@test.com', 'password', '123456')
 
       expect(result.success).toBe(false)
       expect(result.error).toBe('auth.error.usernameExists')
