@@ -8,36 +8,36 @@
 :root {
   /* ========== Colors ========== */
 
-  /* Primary - 现代蓝紫渐变基调 */
-  --color-primary: #6366f1;
-  --color-primary-rgb: 99, 102, 241;
-  --color-primary-alpha: rgba(99, 102, 241, 0.1);
-  --color-primary-light: #818cf8;
-  --color-primary-lighter: #a5b4fc;
-  --color-primary-dark: #4f46e5;
-  --color-primary-darker: #4338ca;
-  --color-primary-50: #eef2ff;
-  --color-primary-100: #e0e7ff;
-  --color-primary-200: #c7d2fe;
-  --color-primary-300: #a5b4fc;
-  --color-primary-400: #818cf8;
-  --color-primary-500: #6366f1;
-  --color-primary-600: #4f46e5;
-  --color-primary-700: #4338ca;
-  --color-primary-800: #3730a3;
-  --color-primary-900: #312e81;
+  /* Primary - 简约石墨黑体系 (zinc) */
+  --color-primary: #18181b;
+  --color-primary-rgb: 24, 24, 27;
+  --color-primary-alpha: rgba(24, 24, 27, 0.08);
+  --color-primary-light: #3f3f46;
+  --color-primary-lighter: #52525b;
+  --color-primary-dark: #09090b;
+  --color-primary-darker: #000000;
+  --color-primary-50: #fafafa;
+  --color-primary-100: #f4f4f5;
+  --color-primary-200: #e4e4e7;
+  --color-primary-300: #d4d4d8;
+  --color-primary-400: #a1a1aa;
+  --color-primary-500: #71717a;
+  --color-primary-600: #52525b;
+  --color-primary-700: #3f3f46;
+  --color-primary-800: #27272a;
+  --color-primary-900: #18181b;
 
-  /* Accent - 活力紫粉色（用于高亮和点缀） */
-  --color-accent: #ec4899;
-  --color-accent-rgb: 236, 72, 153;
-  --color-accent-light: #f472b6;
-  --color-accent-dark: #db2777;
+  /* Accent - 清新绿色（沿用 MindMarket 绿） */
+  --color-accent: #22c55e;
+  --color-accent-rgb: 34, 197, 94;
+  --color-accent-light: #4ade80;
+  --color-accent-dark: #16a34a;
 
-  /* Secondary - 青蓝色（用于次要交互） */
-  --color-secondary: #06b6d4;
-  --color-secondary-rgb: 6, 182, 212;
-  --color-secondary-light: #22d3ee;
-  --color-secondary-dark: #0891b2;
+  /* Secondary - 中性灰 (zinc) */
+  --color-secondary: #a1a1aa;
+  --color-secondary-rgb: 161, 161, 170;
+  --color-secondary-light: #d4d4d8;
+  --color-secondary-dark: #71717a;
 
   /* Semantic Colors - 更鲜明的语义色 */
   --color-success: #10b981;
@@ -175,23 +175,22 @@
   --glass-glow: 0 0 24px rgba(var(--color-primary-rgb), 0.3);
   --glass-glow-accent: 0 0 24px rgba(var(--color-accent-rgb), 0.25);
 
-  /* 渐变背景 */
+  /* 渐变背景 - 简约单色微妙渐变 */
   --gradient-primary: linear-gradient(
     135deg,
     var(--color-primary) 0%,
     var(--color-primary-dark) 100%
   );
-  --gradient-accent: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
+  --gradient-accent: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-dark) 100%);
   --gradient-hero: linear-gradient(
     135deg,
-    rgba(var(--color-primary-rgb), 0.15) 0%,
-    rgba(var(--color-accent-rgb), 0.08) 50%,
+    rgba(var(--color-primary-rgb), 0.04) 0%,
     transparent 100%
   );
   --gradient-card-hover: linear-gradient(
     180deg,
     transparent 0%,
-    rgba(var(--color-primary-rgb), 0.04) 100%
+    rgba(var(--color-primary-rgb), 0.03) 100%
   );
   --gradient-shine: linear-gradient(
     90deg,
@@ -199,13 +198,8 @@
     rgba(255, 255, 255, 0.4) 50%,
     transparent 100%
   );
-  --gradient-text: linear-gradient(
-    120deg,
-    var(--color-primary) 0%,
-    var(--color-accent) 55%,
-    var(--color-secondary) 100%
-  );
-  --gradient-text-shadow: 0 1px 12px rgba(var(--color-primary-rgb), 0.28);
+  --gradient-text: var(--color-primary);
+  --gradient-text-shadow: none;
 
   /* ========== Motion / Animation ========== */
   --duration-instant: 80ms;
@@ -255,28 +249,28 @@
   --breakpoint-3xl: 1920px;
 }
 
-/* ========== Dark Theme - 增强版 ========== */
+/* ========== Dark Theme - 简约中性 ========== */
 [data-theme='dark'] {
-  /* Primary - 暗色模式下更明亮的主色调 */
-  --color-primary: #818cf8;
-  --color-primary-rgb: 129, 140, 248;
-  --color-primary-alpha: rgba(129, 140, 248, 0.1);
-  --color-primary-light: #a5b4fc;
-  --color-primary-lighter: #c7d2fe;
-  --color-primary-dark: #6366f1;
-  --color-primary-darker: #4f46e5;
+  /* Primary - 暗色模式下反转为亮灰 */
+  --color-primary: #f4f4f5;
+  --color-primary-rgb: 244, 244, 245;
+  --color-primary-alpha: rgba(244, 244, 245, 0.1);
+  --color-primary-light: #e4e4e7;
+  --color-primary-lighter: #d4d4d8;
+  --color-primary-dark: #fafafa;
+  --color-primary-darker: #ffffff;
 
-  /* Accent - 暗色模式下稍微调亮 */
-  --color-accent: #f472b6;
-  --color-accent-rgb: 244, 114, 182;
-  --color-accent-light: #f9a8d4;
-  --color-accent-dark: #ec4899;
+  /* Accent - 暗色模式下绿色稍亮 */
+  --color-accent: #4ade80;
+  --color-accent-rgb: 74, 222, 128;
+  --color-accent-light: #86efac;
+  --color-accent-dark: #22c55e;
 
-  /* Secondary - 暗色模式下更明亮 */
-  --color-secondary: #22d3ee;
-  --color-secondary-rgb: 34, 211, 238;
-  --color-secondary-light: #67e8f9;
-  --color-secondary-dark: #06b6d4;
+  /* Secondary - 暗色模式下中性灰 */
+  --color-secondary: #71717a;
+  --color-secondary-rgb: 113, 113, 122;
+  --color-secondary-light: #a1a1aa;
+  --color-secondary-dark: #52525b;
 
   /* Semantic Colors - 暗色模式优化 */
   --color-success: #34d399;
@@ -359,23 +353,22 @@
   --glass-glow-accent:
     0 0 40px rgba(var(--color-accent-rgb), 0.2), 0 0 80px rgba(var(--color-accent-rgb), 0.08);
 
-  /* 暗色渐变 - 更丰富的层次 */
+  /* 暗色渐变 - 简约单色 */
   --gradient-primary: linear-gradient(
     135deg,
     var(--color-primary) 0%,
     var(--color-primary-dark) 100%
   );
-  --gradient-accent: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
+  --gradient-accent: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-dark) 100%);
   --gradient-hero: linear-gradient(
     135deg,
-    rgba(var(--color-primary-rgb), 0.15) 0%,
-    rgba(var(--color-accent-rgb), 0.08) 50%,
+    rgba(var(--color-primary-rgb), 0.04) 0%,
     transparent 100%
   );
   --gradient-card-hover: linear-gradient(
     180deg,
     transparent 0%,
-    rgba(var(--color-primary-rgb), 0.08) 100%
+    rgba(var(--color-primary-rgb), 0.04) 100%
   );
   --gradient-shine: linear-gradient(
     90deg,
@@ -384,13 +377,8 @@
     transparent 100%
   );
   --gradient-surface: linear-gradient(180deg, rgba(255, 255, 255, 0.02) 0%, transparent 100%);
-  --gradient-text: linear-gradient(
-    120deg,
-    var(--color-primary-light) 0%,
-    var(--color-accent-light) 55%,
-    var(--color-secondary-light) 100%
-  );
-  --gradient-text-shadow: 0 1px 14px rgba(var(--color-primary-rgb), 0.5);
+  --gradient-text: var(--color-primary);
+  --gradient-text-shadow: none;
 
   /* 暗色模式特有阴影 */
   --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.3), 0 1px 2px -1px rgb(0 0 0 / 0.3);

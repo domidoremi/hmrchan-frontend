@@ -599,7 +599,7 @@ onBeforeUnmount(() => {
   height: 500px;
   top: -10%;
   left: -8%;
-  background: radial-gradient(circle, rgba(74, 222, 128, 0.5) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(var(--color-accent-rgb), 0.25) 0%, transparent 70%);
 }
 
 .explore-bg__blob--purple {
@@ -607,7 +607,7 @@ onBeforeUnmount(() => {
   height: 400px;
   top: 30%;
   right: -10%;
-  background: radial-gradient(circle, rgba(167, 139, 250, 0.4) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(var(--color-secondary-rgb), 0.15) 0%, transparent 70%);
 }
 
 .explore-bg__blob--teal {
@@ -615,7 +615,7 @@ onBeforeUnmount(() => {
   height: 450px;
   bottom: 5%;
   left: 20%;
-  background: radial-gradient(circle, rgba(45, 212, 191, 0.35) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(var(--color-accent-rgb), 0.15) 0%, transparent 70%);
 }
 
 /* 暗色模式调整 */
@@ -744,10 +744,10 @@ onBeforeUnmount(() => {
 }
 
 .filter-btn.active {
-  background: var(--gradient-primary);
-  color: var(--color-white);
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
   border-color: transparent;
-  box-shadow: 0 4px 12px rgba(var(--color-primary-rgb), 0.3);
+  box-shadow: var(--shadow-md);
 }
 
 .filter-btn.active::before {

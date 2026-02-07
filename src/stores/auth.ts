@@ -124,7 +124,10 @@ export const useAuthStore = defineStore(
         // 获取完整的用户资料（包含 avatar_url 等字段）
         fetchCurrentUser().catch(() => {})
 
-        return { success: true, user: response.user }
+        // 注册后尝试发送邮箱验证邮件（不阻塞注册流程）
+        authService.sendVerificationEmail({ email }).catch(() => {})
+
+        return { success: true, user: response.user, needsEmailVerification: true }
       } catch (err) {
         const errorMessage =
           err instanceof ApiError
@@ -134,6 +137,19 @@ export const useAuthStore = defineStore(
         return { success: false, error: errorMessage }
       } finally {
         isLoading.value = false
+      }
+    }
+
+    /**
+     * 重新发送邮箱验证邮件
+     */
+    async function resendVerificationEmail(email?: string) {
+      try {
+        await authService.sendVerificationEmail(email ? { email } : undefined)
+        return { success: true }
+      } catch (err) {
+        const errorMessage = err instanceof ApiError ? err.message : 'auth.error.unknown'
+        return { success: false, error: errorMessage }
       }
     }
 
@@ -312,6 +328,7 @@ export const useAuthStore = defineStore(
       startHeartbeat,
       stopHeartbeat,
       cleanup,
+      resendVerificationEmail,
     }
   },
   {

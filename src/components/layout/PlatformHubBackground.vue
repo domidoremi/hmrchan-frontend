@@ -921,8 +921,8 @@ function applyTheme(mode: ThemeMode) {
   }
 
   const coreMat = core.material as THREE.MeshPhysicalMaterial
-  coreMat.color.set(isDark ? '#c7d2fe' : '#e0e7ff')
-  coreMat.emissive.set(isDark ? '#6366f1' : '#4f46e5')
+  coreMat.color.set(isDark ? '#d4d4d8' : '#e4e4e7')
+  coreMat.emissive.set(isDark ? '#4ade80' : '#22c55e')
   coreMat.emissiveIntensity = isDark ? 0.55 : 0.6
   coreMat.opacity = isDark ? 0.95 : 0.98
   coreMat.needsUpdate = true
@@ -970,7 +970,7 @@ function applyTheme(mode: ThemeMode) {
 
   if (particles) {
     const particleMat = particles.material as THREE.MeshBasicMaterial
-    particleMat.color.set(isDark ? '#ffffff' : '#4f46e5')
+    particleMat.color.set(isDark ? '#ffffff' : '#22c55e')
     particleMat.opacity = isDark ? 0.85 : 0.72
     particleMat.blending = isDark ? THREE.AdditiveBlending : THREE.NormalBlending
     particleMat.needsUpdate = true
@@ -1201,7 +1201,7 @@ function createScene() {
   // Core: crystalline / glassy sphere
   const coreGeo = new THREE.IcosahedronGeometry(0.62, 4)
   const coreMat = new THREE.MeshPhysicalMaterial({
-    color: new THREE.Color('#c7d2fe'),
+    color: new THREE.Color('#d4d4d8'),
     roughness: 0.12,
     metalness: 0.05,
     transmission: 1,
@@ -1209,7 +1209,7 @@ function createScene() {
     ior: 1.35,
     clearcoat: 1,
     clearcoatRoughness: 0.18,
-    emissive: new THREE.Color('#6366f1'),
+    emissive: new THREE.Color('#4ade80'),
     emissiveIntensity: 0.55,
     transparent: true,
     opacity: 0.95,
@@ -1222,7 +1222,7 @@ function createScene() {
   if (glowTex) {
     const spriteMat = new THREE.SpriteMaterial({
       map: glowTex,
-      color: new THREE.Color('#6366f1'),
+      color: new THREE.Color('#4ade80'),
       transparent: true,
       opacity: 0.22,
       depthWrite: false,

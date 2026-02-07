@@ -1219,20 +1219,8 @@
  */
 .gradient-text {
   display: inline-block;
-  background: var(--gradient-text);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  color: transparent;
-  text-shadow: var(--gradient-text-shadow);
-}
-
-@supports not (-webkit-text-fill-color: transparent) {
-  .gradient-text {
-    background: none;
-    color: var(--color-primary);
-    text-shadow: none;
-  }
+  color: var(--color-primary);
+  text-shadow: none;
 }
 .dark-invert {
   filter: none;
