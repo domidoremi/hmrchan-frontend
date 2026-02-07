@@ -597,12 +597,7 @@ onBeforeUnmount(() => {
 .bento-bg {
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    180deg,
-    rgba(var(--mm-green-rgb), 0.02) 0%,
-    transparent 50%,
-    rgba(var(--mm-purple-rgb), 0.02) 100%
-  );
+  background: linear-gradient(180deg, rgba(var(--color-accent-rgb), 0.02) 0%, transparent 100%);
   pointer-events: none;
 }
 
@@ -687,44 +682,28 @@ onBeforeUnmount(() => {
 }
 
 .bento-card__icon--primary {
-  background: linear-gradient(
-    135deg,
-    rgba(var(--color-primary-rgb), 0.15),
-    rgba(var(--color-primary-rgb), 0.05)
-  );
+  background: rgba(var(--color-primary-rgb), 0.08);
   color: var(--color-primary);
 }
 
 .bento-card__icon--search {
-  background: linear-gradient(
-    135deg,
-    rgba(var(--color-primary-rgb), 0.15),
-    rgba(var(--color-primary-rgb), 0.05)
-  );
+  background: rgba(var(--color-primary-rgb), 0.08);
   color: var(--color-primary);
 }
 
 .bento-card__icon--community {
-  background: linear-gradient(
-    135deg,
-    rgba(var(--color-accent-rgb), 0.15),
-    rgba(var(--color-accent-rgb), 0.05)
-  );
+  background: rgba(var(--color-accent-rgb), 0.1);
   color: var(--color-accent);
 }
 
 .bento-card__icon--authors {
-  background: linear-gradient(
-    135deg,
-    rgba(var(--color-secondary-rgb), 0.15),
-    rgba(var(--color-secondary-rgb), 0.05)
-  );
+  background: rgba(var(--color-secondary-rgb), 0.1);
   color: var(--color-secondary);
 }
 
 .bento-card__icon--favorites {
-  background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(239, 68, 68, 0.05));
-  color: #ef4444;
+  background: rgba(var(--color-error-rgb), 0.1);
+  color: var(--color-error);
 }
 
 .bento-card__arrow {

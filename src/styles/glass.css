@@ -129,29 +129,30 @@
 
 /* Primary variant */
 .glass-button--primary {
-  background: var(--gradient-primary);
-  color: var(--color-white);
-  border-color: rgba(255, 255, 255, 0.25);
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+  border-color: transparent;
   font-weight: var(--font-semibold);
 }
 
 .glass-button--primary:hover {
-  background: linear-gradient(135deg, var(--color-primary-light) 0%, var(--color-primary) 100%);
-  box-shadow: var(--glass-glow);
-  border-color: rgba(255, 255, 255, 0.35);
+  background: var(--color-primary-light);
+  box-shadow: var(--shadow-md);
+  border-color: transparent;
 }
 
 /* Accent variant */
 .glass-button--accent {
-  background: var(--gradient-accent);
+  background: var(--color-accent);
   color: var(--color-white);
-  border-color: rgba(255, 255, 255, 0.25);
+  border-color: transparent;
   font-weight: var(--font-semibold);
 }
 
 .glass-button--accent:hover {
-  box-shadow: var(--glass-glow-accent);
-  border-color: rgba(255, 255, 255, 0.35);
+  background: var(--color-accent-dark);
+  box-shadow: var(--shadow-md);
+  border-color: transparent;
 }
 
 /* Ghost variant */
@@ -173,9 +174,9 @@
 
 /* Danger variant */
 .glass-button--danger {
-  background: linear-gradient(135deg, var(--color-error) 0%, var(--color-error-hover) 100%);
+  background: var(--color-error);
   color: var(--color-white);
-  border-color: rgba(255, 255, 255, 0.2);
+  border-color: transparent;
 }
 
 .glass-button--danger:hover {

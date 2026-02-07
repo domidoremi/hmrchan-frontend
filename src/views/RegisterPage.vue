@@ -1,6 +1,7 @@
 <template>
   <div class="auth-page">
-    <div class="auth-card glass-card">
+    <!-- Registration Form -->
+    <div v-if="!showVerificationPending" class="auth-card glass-card">
       <div class="auth-badge">
         <span class="auth-badge-dot" />
         <span>{{ $t('auth.secureBadge') }}</span>
@@ -76,6 +77,30 @@
         <RouterLink to="/login">{{ $t('nav.login') }}</RouterLink>
       </p>
     </div>
+
+    <!-- Email Verification Pending -->
+    <div v-else class="auth-card glass-card verification-pending">
+      <div class="status-icon">
+        <Mail :size="40" />
+      </div>
+      <h1 class="auth-title">{{ $t('email.verificationSent') }}</h1>
+      <p class="auth-subtitle">
+        {{ $t('email.verificationSentHint', { email: registeredEmail }) }}
+      </p>
+
+      <div class="action-group">
+        <Button variant="ghost" full-width :disabled="resendCooldown > 0" @click="resendEmail">
+          {{
+            resendCooldown > 0
+              ? $t('email.resendCooldown', { seconds: resendCooldown })
+              : $t('email.resend')
+          }}
+        </Button>
+        <Button full-width @click="router.push('/')">
+          {{ $t('email.continueToHome') }}
+        </Button>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -85,6 +110,7 @@ import { useRouter, RouterLink } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useAuthStore, useToastStore } from '@/stores'
 import { useI18n } from 'vue-i18n'
+import { Mail } from 'lucide-vue-next'
 import { checkPasswordStrength } from '@/utils/crypto'
 import Button from '@/components/ui/Button.vue'
 import Input from '@/components/ui/Input.vue'
@@ -118,9 +144,37 @@ const turnstileEnabled = turnstileSiteKey.length > 0
 const turnstileToken = ref<string | null>(null)
 const turnstileRef = ref<{ reset: () => void; getResponse: () => string | undefined } | null>(null)
 
+// 邮箱验证状态
+const showVerificationPending = ref(false)
+const registeredEmail = ref('')
+const resendCooldown = ref(0)
+let cooldownTimer: ReturnType<typeof setInterval> | null = null
+
 // 如果已登录，重定向到首页
 if (isAuthenticated.value) {
   router.replace('/')
+}
+
+function startCooldown() {
+  resendCooldown.value = 60
+  if (cooldownTimer) clearInterval(cooldownTimer)
+  cooldownTimer = setInterval(() => {
+    resendCooldown.value--
+    if (resendCooldown.value <= 0 && cooldownTimer) {
+      clearInterval(cooldownTimer)
+      cooldownTimer = null
+    }
+  }, 1000)
+}
+
+async function resendEmail() {
+  const result = await authStore.resendVerificationEmail(registeredEmail.value)
+  if (result.success) {
+    toastStore.success(t('email.resendSuccess'))
+    startCooldown()
+  } else {
+    toastStore.error(result.error || t('email.resendFailed'))
+  }
 }
 
 async function handleRegister() {
@@ -155,7 +209,9 @@ async function handleRegister() {
 
   if (result.success) {
     toastStore.success(t('auth.registerSuccess'))
-    router.push('/')
+    registeredEmail.value = email.value
+    showVerificationPending.value = true
+    startCooldown()
   } else {
     turnstileToken.value = null
     turnstileRef.value?.reset()
@@ -385,5 +441,28 @@ function handleTurnstileError() {
 
 .password-suggestions li {
   margin-bottom: var(--spacing-1);
+}
+
+/* Verification Pending */
+.verification-pending {
+  text-align: center;
+}
+
+.status-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 72px;
+  border-radius: var(--radius-full);
+  margin: 0 auto var(--spacing-4);
+  background: rgba(var(--color-success-rgb, 34, 197, 94), 0.1);
+  color: var(--color-success);
+}
+
+.action-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
 }
 </style>

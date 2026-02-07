@@ -401,6 +401,11 @@ async function cacheFirst(request, cacheName) {
  * Cache First (Media) - 媒体文件专用，带容量管理
  */
 async function cacheFirstMedia(request) {
+  // Cache API 只支持 GET 请求，非 GET 直接走网络
+  if (request.method !== 'GET') {
+    return fetch(request)
+  }
+
   const cache = await caches.open(CACHE_NAMES.media)
   const cached = await cache.match(request)
 

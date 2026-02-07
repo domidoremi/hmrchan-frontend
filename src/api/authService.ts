@@ -58,6 +58,31 @@ export interface UserResponse {
   updated_at: string
 }
 
+// ========== 邮箱验证相关类型 ==========
+
+export interface SendVerificationEmailRequest {
+  email?: string
+}
+
+export interface VerifyEmailRequest {
+  token: string
+}
+
+export interface RequestPasswordResetRequest {
+  email: string
+  turnstile_token?: string
+}
+
+export interface ResetPasswordRequest {
+  token: string
+  new_password: string
+}
+
+export interface ChangeEmailRequest {
+  new_email: string
+  verification_token: string
+}
+
 // ========== 认证服务 ==========
 
 export const authService = {
@@ -134,6 +159,56 @@ export const authService = {
   async getTurnstileConfig(): Promise<{ enabled: boolean; site_key: string | null }> {
     return apiClient.get('/auth/turnstile-config', {
       skipAuth: true,
+      skipErrorToast: true,
+    })
+  },
+
+  // ========== 邮箱验证相关 ==========
+
+  /**
+   * 发送邮箱验证邮件
+   */
+  async sendVerificationEmail(data?: SendVerificationEmailRequest): Promise<{ message: string }> {
+    return apiClient.post('/email/send-verification-email', data ?? null, {
+      skipErrorToast: true,
+    })
+  },
+
+  /**
+   * 验证邮箱（通过邮件中的 token）
+   */
+  async verifyEmail(token: string): Promise<{ message: string }> {
+    return apiClient.get(`/verify-email?token=${encodeURIComponent(token)}`, {
+      skipAuth: true,
+      skipErrorToast: true,
+    })
+  },
+
+  /**
+   * 请求重置密码（发送重置邮件）
+   */
+  async requestPasswordReset(data: RequestPasswordResetRequest): Promise<{ message: string }> {
+    return apiClient.post('/request-password-reset', data, {
+      skipAuth: true,
+      skipErrorToast: true,
+    })
+  },
+
+  /**
+   * 重置密码（通过邮件中的 token）
+   */
+  async resetPassword(data: ResetPasswordRequest): Promise<{ message: string }> {
+    return apiClient.post('/reset-password', data, {
+      skipAuth: true,
+      skipErrorToast: true,
+    })
+  },
+
+  /**
+   * 更换邮箱
+   */
+  async changeEmail(data: ChangeEmailRequest): Promise<{ message: string }> {
+    return apiClient.post('/change-email', data, {
       skipErrorToast: true,
     })
   },

@@ -15,6 +15,11 @@ export {
   type RegisterRequest,
   type AuthResponse,
   type UserResponse,
+  type SendVerificationEmailRequest,
+  type VerifyEmailRequest,
+  type RequestPasswordResetRequest,
+  type ResetPasswordRequest,
+  type ChangeEmailRequest,
 } from './authService'
 export {
   postService,
