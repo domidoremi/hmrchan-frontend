@@ -24,7 +24,7 @@ const STORAGE_KEY = 'video-player-settings'
 const BRIGHTNESS_SESSION_KEY = 'video-player-brightness'
 
 const defaultSettings: VideoSettings = {
-  volume: 1,
+  volume: 0.5,
   muted: false,
   playbackRate: 1,
   loop: false,

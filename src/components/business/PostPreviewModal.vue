@@ -616,8 +616,8 @@ function openDetail() {
   --preview-pill-bg: rgba(15, 23, 42, 0.06);
   --preview-pill-border: rgba(15, 23, 42, 0.12);
   --preview-text-primary: var(--color-text-primary);
-  --preview-text-secondary: rgba(30, 41, 59, 0.78);
-  --preview-text-muted: rgba(30, 41, 59, 0.6);
+  --preview-text-secondary: var(--color-text-secondary);
+  --preview-text-muted: var(--color-text-secondary);
   --preview-media-bg: rgba(15, 23, 42, 0.04);
   background: var(--preview-overlay-bg);
   backdrop-filter: none;
@@ -630,8 +630,8 @@ function openDetail() {
   --preview-control-border: rgba(255, 255, 255, 0.12);
   --preview-pill-bg: rgba(255, 255, 255, 0.1);
   --preview-pill-border: rgba(255, 255, 255, 0.16);
-  --preview-text-secondary: rgba(226, 232, 240, 0.78);
-  --preview-text-muted: rgba(226, 232, 240, 0.6);
+  --preview-text-secondary: var(--color-text-secondary);
+  --preview-text-muted: var(--color-text-secondary);
   --preview-media-bg: rgba(255, 255, 255, 0.04);
 }
 

@@ -93,3 +93,8 @@ export {
   type ListDiscussionsParams,
 } from './discussionService'
 export { sessionService, type Session, type SessionListResponse } from './sessionService'
+export {
+  contactService,
+  type ContactMessageRequest,
+  type ContactMessageResponse,
+} from './contactService'
