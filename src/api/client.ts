@@ -292,8 +292,10 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
 
   // 只在 POST/PUT/PATCH 且有 body 且非 FormData 时设置 Content-Type
   // GET/DELETE 请求不应设置 Content-Type（避免触发 CORS 预检）
-  const method = fetchConfig.method?.toUpperCase()
-  if (body && !isFormData && (method === 'POST' || method === 'PUT' || method === 'PATCH')) {
+  const method = fetchConfig.method?.toUpperCase() || 'GET'
+  const shouldSetContentType = body && !isFormData && ['POST', 'PUT', 'PATCH'].includes(method)
+
+  if (shouldSetContentType) {
     ;(headers as Record<string, string>)['Content-Type'] = 'application/json'
   }
 
