@@ -295,3 +295,393 @@
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
 }
+
+/* ================================================================
+ *  Extended Component Coverage
+ *  iOS (SwiftUI) vs Material Design overrides
+ * ================================================================ */
+
+/* ========== Glass Input ========== */
+#app[data-ui-style='ios'] .glass-input {
+  border-radius: var(--radius-lg);
+  padding: 11px var(--spacing-4);
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg-light);
+}
+
+#app[data-ui-style='ios'] .glass-input:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 4px rgba(var(--color-primary-rgb), 0.12);
+}
+
+#app[data-ui-style='material'] .glass-input {
+  border-radius: var(--radius);
+  padding: 14px var(--spacing-4) 10px;
+  border: none;
+  border-bottom: 2px solid var(--glass-border-strong);
+  background: var(--glass-bg-subtle);
+}
+
+#app[data-ui-style='material'] .glass-input:focus {
+  border-bottom-color: var(--color-primary);
+  box-shadow: none;
+  background: var(--glass-bg-light);
+}
+
+/* ========== Navbar ========== */
+#app[data-ui-style='ios'] .glass-navbar {
+  border-bottom: 0.5px solid var(--glass-border);
+  backdrop-filter: blur(20px) saturate(1.4);
+  -webkit-backdrop-filter: blur(20px) saturate(1.4);
+}
+
+#app[data-ui-style='material'] .glass-navbar {
+  border-bottom: none;
+  box-shadow: var(--shadow-md);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* ========== Nav Links ========== */
+#app[data-ui-style='ios'] .nav-link {
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-2) var(--spacing-3);
+  transition: background var(--duration-fast) var(--ease-out);
+}
+
+#app[data-ui-style='ios'] .nav-link:hover {
+  background: rgba(var(--color-primary-rgb), 0.08);
+}
+
+#app[data-ui-style='material'] .nav-link {
+  border-radius: var(--radius);
+  padding: var(--spacing-2) var(--spacing-4);
+  position: relative;
+  transition: color var(--duration-fast) var(--ease-out);
+}
+
+#app[data-ui-style='material'] .nav-link::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 0;
+  height: 2px;
+  background: var(--color-primary);
+  transition: all var(--duration-fast) var(--ease-out);
+  transform: translateX(-50%);
+}
+
+#app[data-ui-style='material'] .nav-link:hover::after,
+#app[data-ui-style='material'] .nav-link--active::after {
+  width: 60%;
+}
+
+/* ========== Dropdown Menus ========== */
+#app[data-ui-style='ios'] .glass-dropdown {
+  border-radius: var(--ui-radius-dialog);
+  border: 0.5px solid var(--glass-border);
+  backdrop-filter: blur(20px) saturate(1.3);
+  -webkit-backdrop-filter: blur(20px) saturate(1.3);
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.2);
+}
+
+#app[data-ui-style='material'] .glass-dropdown {
+  border-radius: var(--radius);
+  border: none;
+  box-shadow: var(--glass-shadow-lg);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+/* ========== Toggle Switch ========== */
+#app[data-ui-style='ios'] .toggle-switch {
+  width: 48px;
+  height: 28px;
+  border-radius: 14px;
+  background: var(--color-gray-300);
+  transition: background var(--duration-fast) var(--ease-spring);
+}
+
+#app[data-ui-style='ios'] .toggle-switch .toggle-knob {
+  width: 24px;
+  height: 24px;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.16);
+  transition: transform var(--duration-fast) var(--ease-spring);
+}
+
+#app[data-ui-style='ios'] .toggle-switch.active {
+  background: var(--color-primary);
+}
+
+#app[data-ui-style='material'] .toggle-switch {
+  width: 42px;
+  height: 24px;
+  border-radius: 12px;
+  background: var(--color-gray-300);
+  transition: background var(--duration-fast) var(--ease-out);
+}
+
+#app[data-ui-style='material'] .toggle-switch .toggle-knob {
+  width: 20px;
+  height: 20px;
+  border-radius: 10px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+
+#app[data-ui-style='material'] .toggle-switch.active {
+  background: rgba(var(--color-primary-rgb), 0.5);
+}
+
+#app[data-ui-style='material'] .toggle-switch.active .toggle-knob {
+  background: var(--color-primary);
+}
+
+/* ========== Modal / Dialog Overrides ========== */
+#app[data-ui-style='ios'] .modal-overlay {
+  backdrop-filter: var(--ui-backdrop-blur);
+  -webkit-backdrop-filter: var(--ui-backdrop-blur);
+  background: var(--ui-backdrop-dim);
+}
+
+#app[data-ui-style='ios'] .modal-content,
+#app[data-ui-style='ios'] .dialog-content {
+  border-radius: var(--ui-radius-dialog);
+  border: 0.5px solid var(--glass-border);
+  backdrop-filter: blur(24px) saturate(1.3);
+  -webkit-backdrop-filter: blur(24px) saturate(1.3);
+}
+
+#app[data-ui-style='material'] .modal-overlay {
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  background: var(--ui-backdrop-dim);
+}
+
+#app[data-ui-style='material'] .modal-content,
+#app[data-ui-style='material'] .dialog-content {
+  border-radius: var(--ui-radius-dialog);
+  border: none;
+  box-shadow: var(--shadow-2xl);
+}
+
+/* ========== Badges & Chips ========== */
+#app[data-ui-style='ios'] .badge,
+#app[data-ui-style='ios'] .chip,
+#app[data-ui-style='ios'] .tag {
+  border-radius: 999px;
+  padding: var(--spacing-1) var(--spacing-3);
+  font-weight: var(--font-medium);
+  border: none;
+  background: rgba(var(--color-primary-rgb), 0.1);
+  color: var(--color-primary);
+}
+
+#app[data-ui-style='material'] .badge,
+#app[data-ui-style='material'] .chip,
+#app[data-ui-style='material'] .tag {
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-1) var(--spacing-2);
+  font-weight: var(--font-semibold);
+  border: 1px solid rgba(var(--color-primary-rgb), 0.2);
+  background: rgba(var(--color-primary-rgb), 0.08);
+  color: var(--color-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  font-size: 0.8em;
+}
+
+/* ========== Tabs ========== */
+#app[data-ui-style='ios'] .tab-btn {
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-2) var(--spacing-4);
+  transition: all var(--duration-fast) var(--ease-spring);
+}
+
+#app[data-ui-style='ios'] .tab-btn.active,
+#app[data-ui-style='ios'] .tab-btn--active {
+  background: rgba(var(--color-primary-rgb), 0.1);
+  color: var(--color-primary);
+}
+
+#app[data-ui-style='material'] .tab-btn {
+  border-radius: 0;
+  padding: var(--spacing-3) var(--spacing-4);
+  position: relative;
+  transition: color var(--duration-fast) var(--ease-out);
+}
+
+#app[data-ui-style='material'] .tab-btn::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--color-primary);
+  transform: scaleX(0);
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+
+#app[data-ui-style='material'] .tab-btn.active::after,
+#app[data-ui-style='material'] .tab-btn--active::after {
+  transform: scaleX(1);
+}
+
+/* ========== Mobile Bottom Nav ========== */
+#app[data-ui-style='ios'] .mobile-nav {
+  border-top: 0.5px solid var(--glass-border);
+  backdrop-filter: blur(20px) saturate(1.4);
+  -webkit-backdrop-filter: blur(20px) saturate(1.4);
+  background: var(--glass-bg-strong);
+}
+
+#app[data-ui-style='material'] .mobile-nav {
+  border-top: none;
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.12);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  background: var(--glass-bg-strong);
+}
+
+/* ========== Toast Notifications ========== */
+#app[data-ui-style='ios'] .toast {
+  border-radius: var(--radius-xl);
+  backdrop-filter: blur(16px) saturate(1.2);
+  -webkit-backdrop-filter: blur(16px) saturate(1.2);
+  border: 0.5px solid var(--glass-border);
+}
+
+#app[data-ui-style='material'] .toast {
+  border-radius: var(--radius);
+  border: none;
+  box-shadow: var(--shadow-lg);
+}
+
+/* ========== Scrollbar ========== */
+#app[data-ui-style='ios'] ::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+#app[data-ui-style='ios'] ::-webkit-scrollbar-thumb {
+  background: rgba(var(--color-primary-rgb), 0.2);
+  border-radius: 3px;
+}
+
+#app[data-ui-style='ios'] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(var(--color-primary-rgb), 0.35);
+}
+
+#app[data-ui-style='material'] ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+#app[data-ui-style='material'] ::-webkit-scrollbar-thumb {
+  background: var(--color-gray-300);
+  border-radius: var(--radius-sm);
+}
+
+#app[data-ui-style='material'] ::-webkit-scrollbar-thumb:hover {
+  background: var(--color-gray-400);
+}
+
+/* ========== Action Buttons (icon buttons in navbar etc.) ========== */
+#app[data-ui-style='ios'] .action-btn {
+  border-radius: var(--radius-lg);
+  transition: background var(--duration-fast) var(--ease-out);
+}
+
+#app[data-ui-style='ios'] .action-btn:hover {
+  background: rgba(var(--color-primary-rgb), 0.08);
+}
+
+#app[data-ui-style='material'] .action-btn {
+  border-radius: 50%;
+  transition:
+    background var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out);
+}
+
+#app[data-ui-style='material'] .action-btn:hover {
+  background: rgba(var(--color-primary-rgb), 0.12);
+}
+
+#app[data-ui-style='material'] .action-btn:active {
+  box-shadow: inset 0 0 0 100px rgba(var(--color-primary-rgb), 0.08);
+}
+
+/* ========== Video Player Controls ========== */
+#app[data-ui-style='ios'] .video-player .progress-thumb {
+  border-radius: 50%;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+}
+
+#app[data-ui-style='ios'] .video-player .settings-panel {
+  border-radius: var(--ui-radius-dialog);
+  backdrop-filter: blur(20px) saturate(1.3);
+  -webkit-backdrop-filter: blur(20px) saturate(1.3);
+}
+
+#app[data-ui-style='material'] .video-player .settings-panel {
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-xl);
+}
+
+/* ========== Back to Top Button ========== */
+#app[data-ui-style='ios'] .back-to-top {
+  border-radius: 999px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+#app[data-ui-style='material'] .back-to-top {
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+}
+
+/* ========== Dark Mode Specific Enhancements ========== */
+
+/* iOS Dark: more luminous glass borders */
+#app[data-ui-style='ios'][data-theme='dark'] .glass-button {
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+#app[data-ui-style='ios'][data-theme='dark'] .glass-button:hover {
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+/* Material Dark: elevated surfaces stand out with subtle tint */
+#app[data-ui-style='material'][data-theme='dark'] .glass-card {
+  background: rgba(28, 28, 32, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+#app[data-ui-style='material'][data-theme='dark'] .glass-card:hover {
+  background: rgba(34, 34, 38, 0.95);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Material Dark: toggle switch contrast */
+#app[data-ui-style='material'][data-theme='dark'] .toggle-switch {
+  background: var(--color-gray-200);
+}
+
+#app[data-ui-style='material'][data-theme='dark'] .toggle-switch.active {
+  background: rgba(var(--color-primary-rgb), 0.4);
+}
+
+/* iOS Light: softer card hover */
+#app[data-ui-style='ios'][data-theme='light'] .glass-card:hover {
+  box-shadow:
+    0 18px 50px rgba(15, 23, 42, 0.12),
+    0 6px 16px rgba(var(--color-primary-rgb), 0.06);
+}
+
+/* Material Light: crisp elevation on hover */
+#app[data-ui-style='material'][data-theme='light'] .glass-card:hover {
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}

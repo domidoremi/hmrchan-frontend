@@ -45,6 +45,7 @@
 import { ref, reactive } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useToastStore } from '@/stores'
+import { contactService } from '@/api/contactService'
 import Button from '@/components/ui/Button.vue'
 import Input from '@/components/ui/Input.vue'
 import Textarea from '@/components/ui/Textarea.vue'
@@ -64,17 +65,26 @@ const isSubmitting = ref(false)
 async function handleSubmit() {
   isSubmitting.value = true
 
-  // Simulate API call
-  await new Promise((resolve) => setTimeout(resolve, 1000))
+  try {
+    await contactService.sendMessage({
+      name: form.name,
+      email: form.email,
+      subject: form.subject,
+      message: form.message,
+    })
 
-  isSubmitting.value = false
-  toastStore.success(t('contact.success'))
+    toastStore.success(t('contact.success'))
 
-  // Reset form
-  form.name = ''
-  form.email = ''
-  form.subject = ''
-  form.message = ''
+    // Reset form
+    form.name = ''
+    form.email = ''
+    form.subject = ''
+    form.message = ''
+  } catch {
+    toastStore.error(t('contact.error'))
+  } finally {
+    isSubmitting.value = false
+  }
 }
 </script>
 

@@ -625,7 +625,9 @@ const { techStack } = useAboutData()
 }
 .section-surface {
   position: relative;
-  padding: var(--spacing-5);
+  width: min(100%, 1040px);
+  margin-inline: auto;
+  padding: var(--spacing-4);
   border-radius: var(--radius-2xl);
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
@@ -905,7 +907,8 @@ const { techStack } = useAboutData()
   }
 
   .section-surface {
-    padding: var(--spacing-4);
+    width: calc(100% - var(--spacing-5));
+    padding: var(--spacing-3);
   }
 }
 </style>
