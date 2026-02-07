@@ -1,120 +1,243 @@
 <template>
   <div class="auth-page">
-    <!-- Registration Form -->
-    <div v-if="!showVerificationPending" class="auth-card glass-card">
+    <div class="auth-card glass-card">
       <div class="auth-badge">
         <span class="auth-badge-dot" />
         <span>{{ $t('auth.secureBadge') }}</span>
       </div>
+      <div class="auth-header">
+        <button
+          type="button"
+          class="back-btn glass-button"
+          :aria-label="$t('common.back')"
+          @click="handleBack"
+        >
+          <ArrowLeft :size="18" />
+        </button>
+      </div>
+
       <h1 class="auth-title">{{ $t('auth.registerTitle') }}</h1>
       <p class="auth-subtitle">{{ $t('auth.registerSubtitle') }}</p>
-      <p class="auth-helper">{{ $t('auth.registerHint') }}</p>
 
-      <form class="auth-form" @submit.prevent="handleRegister">
-        <div class="form-group">
-          <label for="username">{{ $t('auth.username') }}</label>
-          <Input id="username" v-model="username" type="text" required />
+      <!-- Step indicator -->
+      <div
+        class="step-indicator"
+        role="progressbar"
+        :aria-valuenow="step === 'email' ? 1 : 2"
+        aria-valuemin="1"
+        aria-valuemax="2"
+      >
+        <div class="step" :class="{ active: true, done: step === 'register' }">
+          <span class="step-num">1</span>
+          <span class="step-label">{{ $t('auth.stepEmail') }}</span>
         </div>
-
-        <div class="form-group">
-          <label for="email">{{ $t('auth.email') }}</label>
-          <Input id="email" v-model="email" type="email" required />
+        <div class="step-line" :class="{ active: step === 'register' }" />
+        <div class="step" :class="{ active: step === 'register' }">
+          <span class="step-num">2</span>
+          <span class="step-label">{{ $t('auth.stepRegister') }}</span>
         </div>
+      </div>
 
-        <div class="form-group">
-          <label for="password">{{ $t('auth.password') }}</label>
-          <Input id="password" v-model="password" type="password" required />
-          <!-- Password Strength Indicator -->
-          <div v-if="password" class="password-strength">
-            <div class="strength-bar">
-              <div
-                class="strength-fill"
-                :class="`strength-${passwordStrengthResult.level}`"
-                :style="{ width: `${passwordStrengthResult.percentage}%` }"
-              />
-            </div>
-            <span class="strength-text" :class="`strength-${passwordStrengthResult.level}`">
-              {{ passwordStrengthText }}
-            </span>
-          </div>
-          <ul
-            v-if="password && passwordStrengthResult.suggestions.length > 0"
-            class="password-suggestions"
-          >
-            <li v-for="suggestion in passwordStrengthResult.suggestions" :key="suggestion">
-              {{ suggestion }}
-            </li>
-          </ul>
-        </div>
-
-        <div v-if="turnstileEnabled" class="turnstile-block">
-          <div class="turnstile-header">
-            <span class="turnstile-title">{{ $t('auth.verifyTitle') }}</span>
-            <span class="turnstile-hint">{{ $t('auth.verifyHint') }}</span>
-          </div>
-          <TurnstileWidget
-            ref="turnstileRef"
-            :site-key="turnstileSiteKey"
-            action="register"
-            @verify="handleTurnstileVerify"
-            @expire="handleTurnstileExpire"
-            @error="handleTurnstileError"
-          />
-        </div>
-
-        <Button
-          type="submit"
-          :loading="isLoading"
-          :disabled="turnstileEnabled && !turnstileToken"
-          full-width
+      <!-- Step 1: Email + Turnstile → Send code -->
+      <Transition name="step-fade" mode="out-in">
+        <form
+          v-if="step === 'email'"
+          key="step-email"
+          class="auth-form"
+          @submit.prevent="handleSendCode"
         >
-          {{ $t('auth.registerButton') }}
-        </Button>
-      </form>
+          <p class="auth-helper">{{ $t('auth.registerEmailHint') }}</p>
+
+          <div class="form-group">
+            <label for="reg-email">{{ $t('auth.email') }}</label>
+            <Input
+              id="reg-email"
+              v-model="email"
+              type="email"
+              :placeholder="$t('auth.emailPlaceholder')"
+              autocomplete="email"
+              required
+            />
+          </div>
+
+          <div v-if="turnstileEnabled" class="turnstile-block">
+            <div class="turnstile-header">
+              <span class="turnstile-title">{{ $t('auth.verifyTitle') }}</span>
+              <span class="turnstile-hint">{{ $t('auth.verifyHint') }}</span>
+            </div>
+            <TurnstileWidget
+              ref="turnstileRef"
+              :site-key="turnstileSiteKey"
+              action="register"
+              @verify="handleTurnstileVerify"
+              @expire="handleTurnstileExpire"
+              @error="handleTurnstileError"
+            />
+          </div>
+
+          <Button
+            type="submit"
+            :loading="isSendingCode"
+            :disabled="!email || (turnstileEnabled && !turnstileToken)"
+            full-width
+          >
+            {{ $t('auth.sendCodeButton') }}
+          </Button>
+        </form>
+
+        <!-- Step 2: Username + Password + Code → Register -->
+        <form v-else key="step-register" class="auth-form" @submit.prevent="handleRegister">
+          <div class="code-sent-banner">
+            <Mail :size="16" />
+            <span>{{ $t('auth.codeSentBanner', { email: maskedEmail }) }}</span>
+          </div>
+
+          <div class="form-group">
+            <label for="reg-username">{{ $t('auth.username') }}</label>
+            <Input
+              id="reg-username"
+              v-model="username"
+              type="text"
+              :placeholder="$t('auth.usernamePlaceholder')"
+              autocomplete="username"
+              required
+            />
+            <p class="field-hint">{{ $t('auth.usernameHint') }}</p>
+          </div>
+
+          <div class="form-group">
+            <label for="reg-password">{{ $t('auth.password') }}</label>
+            <div class="password-field">
+              <Input
+                id="reg-password"
+                v-model="password"
+                :type="showPassword ? 'text' : 'password'"
+                :placeholder="$t('auth.passwordPlaceholder')"
+                class="password-input"
+                autocomplete="new-password"
+                required
+              />
+              <button
+                type="button"
+                class="password-toggle"
+                :aria-label="showPassword ? $t('common.hide') : $t('common.show')"
+                @click="showPassword = !showPassword"
+              >
+                <component :is="showPassword ? EyeOff : Eye" :size="16" />
+              </button>
+            </div>
+            <!-- Password Strength Indicator -->
+            <div v-if="password" class="password-strength">
+              <div class="strength-bar">
+                <div
+                  class="strength-fill"
+                  :class="`strength-${passwordStrengthResult.level}`"
+                  :style="{ width: `${passwordStrengthResult.percentage}%` }"
+                />
+              </div>
+              <span class="strength-text" :class="`strength-${passwordStrengthResult.level}`">
+                {{ passwordStrengthText }}
+              </span>
+            </div>
+            <ul
+              v-if="password && passwordStrengthResult.suggestions.length > 0"
+              class="password-suggestions"
+            >
+              <li v-for="suggestion in passwordStrengthResult.suggestions" :key="suggestion">
+                {{ suggestion }}
+              </li>
+            </ul>
+          </div>
+
+          <div class="form-group">
+            <label for="reg-confirm-password">{{ $t('auth.confirmPassword') }}</label>
+            <div class="password-field">
+              <Input
+                id="reg-confirm-password"
+                v-model="confirmPassword"
+                :type="showConfirmPassword ? 'text' : 'password'"
+                :placeholder="$t('auth.confirmPasswordPlaceholder')"
+                class="password-input"
+                autocomplete="new-password"
+                :error="!!confirmPassword && password !== confirmPassword"
+                required
+              />
+              <button
+                type="button"
+                class="password-toggle"
+                :aria-label="showConfirmPassword ? $t('common.hide') : $t('common.show')"
+                @click="showConfirmPassword = !showConfirmPassword"
+              >
+                <component :is="showConfirmPassword ? EyeOff : Eye" :size="16" />
+              </button>
+            </div>
+            <p v-if="confirmPassword && password !== confirmPassword" class="field-error">
+              {{ $t('auth.passwordMismatch') }}
+            </p>
+          </div>
+
+          <div class="form-group">
+            <label>{{ $t('auth.verificationCode') }}</label>
+            <EmailCodeInput
+              ref="codeInputRef"
+              :disabled="isLoading"
+              :error="codeError"
+              @complete="handleCodeComplete"
+            />
+            <div class="resend-row">
+              <button
+                type="button"
+                class="resend-btn"
+                :disabled="resendCooldown > 0 || isSendingCode"
+                @click="handleResendCode"
+              >
+                <span v-if="isSendingCode" class="spinner spinner-xs" />
+                {{
+                  resendCooldown > 0
+                    ? $t('emailCode.resendCooldown', { seconds: resendCooldown })
+                    : $t('emailCode.resend')
+                }}
+              </button>
+              <button type="button" class="change-email-btn" @click="goBackToEmail">
+                {{ $t('auth.changeEmail') }}
+              </button>
+            </div>
+          </div>
+
+          <Button
+            type="submit"
+            :loading="isLoading"
+            :disabled="
+              verificationCode.length !== 6 || (!!confirmPassword && password !== confirmPassword)
+            "
+            full-width
+          >
+            {{ $t('auth.registerButton') }}
+          </Button>
+        </form>
+      </Transition>
 
       <p class="auth-footer">
         {{ $t('auth.hasAccount') }}
         <RouterLink to="/login">{{ $t('nav.login') }}</RouterLink>
       </p>
     </div>
-
-    <!-- Email Verification Pending -->
-    <div v-else class="auth-card glass-card verification-pending">
-      <div class="status-icon">
-        <Mail :size="40" />
-      </div>
-      <h1 class="auth-title">{{ $t('email.verificationSent') }}</h1>
-      <p class="auth-subtitle">
-        {{ $t('email.verificationSentHint', { email: registeredEmail }) }}
-      </p>
-
-      <div class="action-group">
-        <Button variant="ghost" full-width :disabled="resendCooldown > 0" @click="resendEmail">
-          {{
-            resendCooldown > 0
-              ? $t('email.resendCooldown', { seconds: resendCooldown })
-              : $t('email.resend')
-          }}
-        </Button>
-        <Button full-width @click="router.push('/')">
-          {{ $t('email.continueToHome') }}
-        </Button>
-      </div>
-    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onUnmounted } from 'vue'
 import { useRouter, RouterLink } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useAuthStore, useToastStore } from '@/stores'
+import { authService, ApiError } from '@/api'
 import { useI18n } from 'vue-i18n'
-import { Mail } from 'lucide-vue-next'
+import { Mail, ArrowLeft, Eye, EyeOff } from 'lucide-vue-next'
 import { checkPasswordStrength } from '@/utils/crypto'
 import Button from '@/components/ui/Button.vue'
 import Input from '@/components/ui/Input.vue'
 import TurnstileWidget from '@/components/ui/TurnstileWidget.vue'
+import EmailCodeInput from '@/components/ui/EmailCodeInput.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -123,9 +246,20 @@ const { t } = useI18n()
 
 const { isLoading, isAuthenticated } = storeToRefs(authStore)
 
-const username = ref('')
+type Step = 'email' | 'register'
+const step = ref<Step>('email')
+
 const email = ref('')
+const username = ref('')
 const password = ref('')
+const confirmPassword = ref('')
+const showPassword = ref(false)
+const showConfirmPassword = ref(false)
+const verificationCode = ref('')
+const codeError = ref(false)
+const isSendingCode = ref(false)
+
+const codeInputRef = ref<InstanceType<typeof EmailCodeInput> | null>(null)
 
 // Password strength
 const passwordStrengthResult = computed(() => checkPasswordStrength(password.value))
@@ -139,20 +273,44 @@ const passwordStrengthText = computed(() => {
   return textMap[passwordStrengthResult.value.level]
 })
 
+// Turnstile
 const turnstileSiteKey = (import.meta.env.VITE_TURNSTILE_SITE_KEY ?? '').trim()
 const turnstileEnabled = turnstileSiteKey.length > 0
 const turnstileToken = ref<string | null>(null)
 const turnstileRef = ref<{ reset: () => void; getResponse: () => string | undefined } | null>(null)
 
-// 邮箱验证状态
-const showVerificationPending = ref(false)
-const registeredEmail = ref('')
+// Resend cooldown
 const resendCooldown = ref(0)
 let cooldownTimer: ReturnType<typeof setInterval> | null = null
+
+const maskedEmail = computed(() => {
+  if (!email.value) return ''
+  const parts = email.value.split('@')
+  const local = parts[0] ?? ''
+  const domain = parts[1]
+  if (!domain) return email.value
+  const visible = local.length <= 2 ? local : local.slice(0, 2)
+  return `${visible}***@${domain}`
+})
+
+// Email format regex (basic check)
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 // 如果已登录，重定向到首页
 if (isAuthenticated.value) {
   router.replace('/')
+}
+
+function handleBack() {
+  if (step.value === 'register') {
+    goBackToEmail()
+    return
+  }
+  if (window.history.length > 1) {
+    router.back()
+  } else {
+    router.replace('/')
+  }
 }
 
 function startCooldown() {
@@ -167,34 +325,109 @@ function startCooldown() {
   }, 1000)
 }
 
-async function resendEmail() {
-  const result = await authStore.resendVerificationEmail(registeredEmail.value)
-  if (result.success) {
-    toastStore.success(t('email.resendSuccess'))
-    startCooldown()
-  } else {
-    toastStore.error(result.error || t('email.resendFailed'))
+// Cleanup cooldown timer on unmount
+onUnmounted(() => {
+  if (cooldownTimer) {
+    clearInterval(cooldownTimer)
+    cooldownTimer = null
   }
-}
+})
 
-async function handleRegister() {
-  if (!username.value || !email.value || !password.value) {
-    toastStore.warning(t('auth.error.fieldsRequired'))
+/** Step 1: Send registration code */
+async function handleSendCode() {
+  if (!email.value) {
+    toastStore.warning(t('auth.emailRequired'))
     return
   }
-
+  if (!emailRegex.test(email.value)) {
+    toastStore.warning(t('auth.error.invalidEmail'))
+    return
+  }
   if (turnstileEnabled && !turnstileToken.value) {
     toastStore.warning(t('auth.error.turnstileRequired'))
     return
   }
 
-  // 基础密码验证 - 使用 crypto 模块检查强度
+  isSendingCode.value = true
+  try {
+    await authService.sendRegistrationCode({
+      email: email.value,
+      ...(turnstileToken.value ? { turnstile_token: turnstileToken.value } : {}),
+    })
+    toastStore.success(t('emailCode.codeSent'))
+    step.value = 'register'
+    startCooldown()
+  } catch (err) {
+    turnstileToken.value = null
+    turnstileRef.value?.reset()
+    if (err instanceof ApiError) {
+      if (err.status === 429) {
+        toastStore.error(t('emailCode.tooManyRequests'))
+      } else if (err.code === 'EMAIL_EXISTS') {
+        toastStore.error(t('auth.error.emailExists'))
+      } else {
+        toastStore.error(err.message)
+      }
+    } else {
+      toastStore.error(t('emailCode.sendFailed'))
+    }
+  } finally {
+    isSendingCode.value = false
+  }
+}
+
+/** Resend code from step 2 */
+async function handleResendCode() {
+  isSendingCode.value = true
+  try {
+    await authService.sendRegistrationCode({ email: email.value })
+    toastStore.success(t('emailCode.codeSent'))
+    startCooldown()
+    codeError.value = false
+    codeInputRef.value?.reset()
+  } catch (err) {
+    if (err instanceof ApiError) {
+      if (err.status === 429) {
+        toastStore.error(t('emailCode.tooManyRequests'))
+      } else {
+        toastStore.error(err.message)
+      }
+    } else {
+      toastStore.error(t('emailCode.sendFailed'))
+    }
+  } finally {
+    isSendingCode.value = false
+  }
+}
+
+function handleCodeComplete(code: string) {
+  verificationCode.value = code
+}
+
+function goBackToEmail() {
+  step.value = 'email'
+  verificationCode.value = ''
+  codeError.value = false
+}
+
+/** Step 2: Register with code */
+async function handleRegister() {
+  if (!username.value || !password.value || !confirmPassword.value) {
+    toastStore.warning(t('auth.error.fieldsRequired'))
+    return
+  }
+  if (password.value !== confirmPassword.value) {
+    toastStore.warning(t('auth.passwordMismatch'))
+    return
+  }
+  if (verificationCode.value.length !== 6) {
+    toastStore.warning(t('auth.error.codeRequired'))
+    return
+  }
   if (password.value.length < 8) {
     toastStore.warning(t('auth.error.passwordTooShort'))
     return
   }
-
-  // 密码强度检查
   if (passwordStrengthResult.value.level === 'weak') {
     toastStore.warning(t('auth.error.passwordTooWeak'))
     return
@@ -204,17 +437,16 @@ async function handleRegister() {
     username.value,
     email.value,
     password.value,
+    verificationCode.value,
     turnstileToken.value || undefined
   )
 
   if (result.success) {
     toastStore.success(t('auth.registerSuccess'))
-    registeredEmail.value = email.value
-    showVerificationPending.value = true
-    startCooldown()
+    router.replace('/')
   } else {
-    turnstileToken.value = null
-    turnstileRef.value?.reset()
+    codeError.value = true
+    codeInputRef.value?.reset()
     toastStore.error(t(result.error || 'auth.error.registerFailed'))
   }
 }
@@ -370,6 +602,76 @@ function handleTurnstileError() {
   text-decoration: underline;
 }
 
+/* Back button */
+.auth-header {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  margin-bottom: var(--spacing-2);
+}
+
+.back-btn {
+  padding: var(--spacing-2);
+  border-radius: var(--radius-full);
+}
+
+/* Password field with toggle */
+.password-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-input {
+  padding-right: 44px;
+}
+
+.password-toggle {
+  position: absolute;
+  right: var(--spacing-3);
+  height: 32px;
+  width: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  color: var(--color-text-tertiary);
+}
+
+.password-toggle:hover {
+  background: var(--glass-bg-light);
+  color: var(--color-text-secondary);
+}
+
+/* Field hint & error */
+.field-hint {
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+}
+
+.field-error {
+  font-size: var(--text-xs);
+  color: var(--color-error);
+}
+
+/* Step transition */
+.step-fade-enter-active,
+.step-fade-leave-active {
+  transition:
+    opacity 200ms ease,
+    transform 200ms ease;
+}
+
+.step-fade-enter-from {
+  opacity: 0;
+  transform: translateX(12px);
+}
+
+.step-fade-leave-to {
+  opacity: 0;
+  transform: translateX(-12px);
+}
+
 /* Password Strength */
 .password-strength {
   margin-top: var(--spacing-2);
@@ -443,26 +745,98 @@ function handleTurnstileError() {
   margin-bottom: var(--spacing-1);
 }
 
-/* Verification Pending */
-.verification-pending {
-  text-align: center;
-}
-
-.status-icon {
+/* Step indicator */
+.step-indicator {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 72px;
-  height: 72px;
-  border-radius: var(--radius-full);
-  margin: 0 auto var(--spacing-4);
-  background: rgba(var(--color-success-rgb, 34, 197, 94), 0.1);
+  gap: var(--spacing-2);
+  margin-bottom: var(--spacing-4);
+}
+
+.step {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-1);
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+  transition: color 200ms ease;
+}
+
+.step.active {
+  color: var(--color-primary);
+  font-weight: var(--font-medium);
+}
+
+.step.done {
   color: var(--color-success);
 }
 
-.action-group {
+.step-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-full);
+  border: 1.5px solid currentColor;
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+}
+
+.step.active .step-num,
+.step.done .step-num {
+  background: currentColor;
+  color: var(--color-bg);
+}
+
+.step-line {
+  width: 32px;
+  height: 1.5px;
+  background: var(--color-border);
+  transition: background 200ms ease;
+}
+
+.step-line.active {
+  background: var(--color-primary);
+}
+
+/* Code sent banner */
+.code-sent-banner {
   display: flex;
-  flex-direction: column;
+  align-items: center;
   gap: var(--spacing-2);
+  padding: var(--spacing-2) var(--spacing-3);
+  border-radius: var(--radius-md);
+  background: rgba(var(--color-success-rgb, 34, 197, 94), 0.08);
+  color: var(--color-success);
+  font-size: var(--text-xs);
+  border: 1px solid rgba(var(--color-success-rgb, 34, 197, 94), 0.2);
+}
+
+/* Resend row */
+.resend-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: var(--spacing-1);
+}
+
+.resend-btn,
+.change-email-btn {
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+  padding: var(--spacing-1) 0;
+  transition: color 150ms ease;
+}
+
+.resend-btn:not(:disabled):hover,
+.change-email-btn:hover {
+  color: var(--color-primary);
+}
+
+.resend-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 </style>

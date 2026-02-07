@@ -97,10 +97,16 @@
     "emailRequired": "请输入邮箱",
     "passwordRequired": "请输入密码",
     "passwordMismatch": "两次输入的密码不一致",
+    "emailPlaceholder": "请输入邮箱地址",
+    "usernamePlaceholder": "请输入用户名",
+    "usernameHint": "3–20 个字符，仅支持字母、数字和下划线",
+    "passwordPlaceholder": "至少 8 个字符",
+    "confirmPasswordPlaceholder": "再次输入密码",
     "error": {
       "fieldsRequired": "请填写所有字段",
-      "passwordTooShort": "密码至少需要6个字符",
+      "passwordTooShort": "密码至少需要 8 个字符",
       "passwordTooWeak": "密码强度太弱，请增加复杂度",
+      "invalidEmail": "请输入有效的邮箱地址",
       "loginFailed": "登录失败，请重试",
       "registerFailed": "注册失败，请重试",
       "emailExists": "该邮箱已被注册",
@@ -110,7 +116,8 @@
       "inProgress": "请稍候...",
       "turnstileRequired": "请完成人机验证",
       "turnstileFailed": "人机验证失败，请重试",
-      "unknown": "发生未知错误"
+      "unknown": "发生未知错误",
+      "codeRequired": "请输入6位数验证码"
     },
     "secureBadge": "安全防护已启用",
     "loginHint": "使用用户名或邮箱安全登录。",
@@ -120,7 +127,14 @@
     "passwordWeak": "弱",
     "passwordFair": "一般",
     "passwordGood": "良好",
-    "passwordStrong": "强"
+    "passwordStrong": "强",
+    "stepEmail": "验证邮箱",
+    "stepRegister": "创建账户",
+    "registerEmailHint": "输入邮箱以接收验证码。",
+    "sendCodeButton": "发送验证码",
+    "codeSentBanner": "验证码已发送至 {email}",
+    "verificationCode": "验证码",
+    "changeEmail": "更换邮箱"
   },
   "video": {
     "playbackSpeed": "播放速度",

@@ -290,9 +290,10 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
   // 构建请求头
   const headers: HeadersInit = { ...customHeaders }
 
-  // 只在有 body 且非 FormData 时设置 Content-Type
-  // GET/DELETE 请求通常没有 body，不应设置 Content-Type（避免 CORS 预检）
-  if (body && !isFormData && fetchConfig.method !== 'GET' && fetchConfig.method !== 'DELETE') {
+  // 只在 POST/PUT/PATCH 且有 body 且非 FormData 时设置 Content-Type
+  // GET/DELETE 请求不应设置 Content-Type（避免触发 CORS 预检）
+  const method = fetchConfig.method?.toUpperCase()
+  if (body && !isFormData && (method === 'POST' || method === 'PUT' || method === 'PATCH')) {
     ;(headers as Record<string, string>)['Content-Type'] = 'application/json'
   }
 

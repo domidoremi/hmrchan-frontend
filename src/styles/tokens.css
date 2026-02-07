@@ -82,6 +82,24 @@
   --color-bg-secondary: var(--color-gray-100);
   --color-bg-tertiary: var(--color-gray-50);
 
+  /* Surface Elevation System - 表面层级 */
+  --color-surface-1: rgba(0, 0, 0, 0.02);
+  --color-surface-2: rgba(0, 0, 0, 0.04);
+  --color-surface-3: rgba(0, 0, 0, 0.06);
+  --color-surface-4: rgba(0, 0, 0, 0.08);
+  --color-surface-5: rgba(0, 0, 0, 0.1);
+
+  /* Overlay / Scrim */
+  --color-overlay: rgba(0, 0, 0, 0.4);
+  --color-overlay-heavy: rgba(0, 0, 0, 0.6);
+  --color-scrim: rgba(0, 0, 0, 0.32);
+
+  /* Divider & Outline */
+  --color-divider: var(--color-gray-200);
+  --color-divider-strong: var(--color-gray-300);
+  --color-outline: var(--color-gray-300);
+  --color-outline-variant: var(--color-gray-200);
+
   /* Text */
   --color-text-primary: var(--color-gray-900);
   --color-text-secondary: var(--color-gray-600);
@@ -303,6 +321,24 @@
   /* Elevated surfaces - 用于卡片和浮层 */
   --color-surface-elevated: #151b24;
   --color-surface-elevated-high: #1c2432;
+
+  /* Surface Elevation System - 暗色表面层级 */
+  --color-surface-1: rgba(255, 255, 255, 0.05);
+  --color-surface-2: rgba(255, 255, 255, 0.08);
+  --color-surface-3: rgba(255, 255, 255, 0.11);
+  --color-surface-4: rgba(255, 255, 255, 0.12);
+  --color-surface-5: rgba(255, 255, 255, 0.14);
+
+  /* Overlay / Scrim */
+  --color-overlay: rgba(0, 0, 0, 0.6);
+  --color-overlay-heavy: rgba(0, 0, 0, 0.8);
+  --color-scrim: rgba(0, 0, 0, 0.5);
+
+  /* Divider & Outline */
+  --color-divider: rgba(255, 255, 255, 0.08);
+  --color-divider-strong: rgba(255, 255, 255, 0.14);
+  --color-outline: rgba(255, 255, 255, 0.16);
+  --color-outline-variant: rgba(255, 255, 255, 0.08);
 
   /* Text - 精细的对比度层次 */
   --color-text-primary: #f8fafc;
