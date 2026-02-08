@@ -161,8 +161,8 @@
               </div>
             </header>
 
-            <div v-if="post?.content" class="post-description-block">
-              <p class="post-description post-description--clamped">{{ post?.content }}</p>
+            <div v-if="post?.description" class="post-description-block">
+              <p class="post-description post-description--clamped">{{ post?.description }}</p>
               <button
                 v-if="shouldShowReadFullText"
                 type="button"
@@ -211,18 +211,18 @@
           class="post-text-overlay"
           role="dialog"
           aria-modal="true"
-          :aria-label="$t('post.content')"
+          :aria-label="$t('post.description')"
           @click.self="closeTextModal"
         >
           <div class="post-text-panel" tabindex="-1">
             <header class="post-text-header">
-              <h3 class="post-text-title">{{ $t('post.content') }}</h3>
+              <h3 class="post-text-title">{{ $t('post.description') }}</h3>
               <button type="button" class="post-text-close" @click="closeTextModal">
                 {{ $t('common.close') }}
               </button>
             </header>
             <div class="post-text-body">
-              <p class="post-text-content">{{ post?.content }}</p>
+              <p class="post-text-content">{{ post?.description }}</p>
             </div>
           </div>
         </div>
@@ -353,7 +353,7 @@ const lightboxInitialIndex = ref(0)
 
 // Long text → open in overlay modal (avoid nested scrollbars in panel)
 const isTextModalOpen = ref(false)
-const shouldShowReadFullText = computed(() => (post.value?.content?.length ?? 0) > 280)
+const shouldShowReadFullText = computed(() => (post.value?.description?.length ?? 0) > 280)
 
 const publishedMeta = computed(() => {
   const publishedAt = post.value?.published_at
@@ -377,7 +377,7 @@ function unlockBodyScroll() {
 }
 
 function openTextModal() {
-  if (!post.value?.content) return
+  if (!post.value?.description) return
   isTextModalOpen.value = true
 }
 

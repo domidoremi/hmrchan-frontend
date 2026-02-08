@@ -101,9 +101,26 @@ export {
   type CreateCommentRequest as CreateDiscussionCommentRequest,
   type ListDiscussionsParams,
 } from './discussionService'
-export { sessionService, type Session, type SessionListResponse } from './sessionService'
+export { deviceService, type Device, type DeviceListResponse } from './deviceService'
+export {
+  mediaService,
+  type MediaFileListItem,
+  type MediaFileResponse,
+  type ListMediaParams,
+} from './mediaService'
+export {
+  twoFactorService,
+  type TwoFactorSetupResponse,
+  type TwoFactorVerifyRequest,
+  type BackupCodesResponse,
+} from './twoFactorService'
+export { preferencesService, type UserPreferences } from './preferencesService'
 export {
   contactService,
   type ContactMessageRequest,
   type ContactMessageResponse,
 } from './contactService'
+
+// Legacy alias: sessionService → deviceService
+export { deviceService as sessionService } from './deviceService'
+export type { Device as Session, DeviceListResponse as SessionListResponse } from './deviceService'

@@ -70,7 +70,7 @@
             type="button"
             class="remove-btn"
             :title="$t('favorites.remove')"
-            @click.stop="removeFavorite(fav.id)"
+            @click.stop="removeFavorite(fav.post_id)"
           >
             <AnimatedIcon name="sparkle" :fallback-icon="X" size="sm" />
           </button>
@@ -245,10 +245,10 @@ useInfiniteScroll(sentinelRef, loadMore, {
   enabled: () => hasMoreForUi.value && !isLoading.value && !isLoadingMore.value,
 })
 
-async function removeFavorite(favoriteId: number) {
+async function removeFavorite(postId: string) {
   try {
-    await favoriteService.remove(favoriteId)
-    favorites.value = favorites.value.filter((f) => f.id !== favoriteId)
+    await favoriteService.remove(postId)
+    favorites.value = favorites.value.filter((f) => f.post_id !== postId)
     total.value = Math.max(0, total.value - 1)
     toastStore.success(t('favorites.removed'))
   } catch (err) {

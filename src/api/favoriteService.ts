@@ -75,19 +75,8 @@ export const favoriteService = {
   /**
    * 添加收藏
    */
-  async create(
-    postId: string,
-    options?: {
-      folder_name?: string
-      tags?: string[]
-      notes?: string
-    }
-  ): Promise<FavoriteResponse> {
-    const payload: FavoriteCreateRequest = {
-      post_id: postId,
-      ...options,
-    }
-    return apiClient.post<FavoriteResponse>('/favorites/', payload)
+  async create(postId: string): Promise<FavoriteResponse> {
+    return apiClient.post<FavoriteResponse>(`/favorites/${postId}`)
   },
 
   /**
@@ -132,8 +121,8 @@ export const favoriteService = {
   /**
    * 删除收藏
    */
-  async remove(favoriteId: number): Promise<void> {
-    await apiClient.delete(`/favorites/${favoriteId}`, {
+  async remove(postId: string): Promise<void> {
+    await apiClient.delete(`/favorites/${postId}`, {
       skipErrorToast: true,
     })
   },
