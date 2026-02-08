@@ -100,6 +100,8 @@ export interface PaginatedApiResponse<T> {
   page: number
   page_size: number
   total_pages: number
+  has_next: boolean
+  has_prev: boolean
 }
 
 export interface PaginatedApiResponseWithLimit<T> extends PaginatedApiResponse<T> {

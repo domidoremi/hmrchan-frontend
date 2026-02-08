@@ -260,7 +260,7 @@ const displayAuthorName = computed(() => {
 
 const titleFromContent = computed(() => {
   const title = normalizeText(props.post.title)
-  const content = normalizeText(props.post.content)
+  const content = normalizeText(props.post.description)
   if (!title && content) return true
   if (title && content && title === content) return true
   // very short titles are often placeholders on some platforms
@@ -270,7 +270,7 @@ const titleFromContent = computed(() => {
 
 const displayTitle = computed(() => {
   const title = normalizeText(props.post.title)
-  const content = normalizeText(props.post.content)
+  const content = normalizeText(props.post.description)
 
   if (!titleFromContent.value) {
     return title || content || t('post.untitled')
@@ -286,7 +286,7 @@ const displayTitle = computed(() => {
 })
 
 const displayExcerpt = computed(() => {
-  const content = normalizeText(props.post.content)
+  const content = normalizeText(props.post.description)
   if (!content) return ''
 
   // If title already came from content, avoid duplicating excerpt.
@@ -302,7 +302,7 @@ const cardExcerpt = computed(() => {
 })
 
 const hoverContent = computed(() => {
-  const content = normalizeText(props.post.content)
+  const content = normalizeText(props.post.description)
   if (!content) return ''
 
   // When card hides its content, hover overlay becomes the primary reading surface.

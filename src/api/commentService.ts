@@ -172,7 +172,7 @@ export const commentService = {
    * 编辑评论
    */
   async updateComment(commentId: string, content: string): Promise<Comment> {
-    return apiClient.patch<Comment>(`/comments/${commentId}`, { content })
+    return apiClient.put<Comment>(`/comments/${commentId}`, { content })
   },
 
   /**

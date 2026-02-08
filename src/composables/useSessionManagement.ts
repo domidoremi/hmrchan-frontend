@@ -4,7 +4,7 @@
  */
 
 import { ref, computed } from 'vue'
-import { sessionService, type Session } from '@/api'
+import { deviceService, type Device } from '@/api'
 import { useToastStore } from '@/stores/toast'
 import { useI18n } from 'vue-i18n'
 
@@ -12,7 +12,7 @@ export function useSessionManagement() {
   const { t } = useI18n()
   const toastStore = useToastStore()
 
-  const sessions = ref<Session[]>([])
+  const sessions = ref<Device[]>([])
   const isLoading = ref(true)
   const isRevoking = ref(false)
 
@@ -21,8 +21,8 @@ export function useSessionManagement() {
   async function fetchSessions() {
     isLoading.value = true
     try {
-      const response = await sessionService.getSessions()
-      sessions.value = response.sessions
+      const response = await deviceService.getDevices()
+      sessions.value = response.devices
     } catch {
       toastStore.error(t('devices.error.fetchFailed'))
     } finally {
@@ -30,11 +30,11 @@ export function useSessionManagement() {
     }
   }
 
-  async function revokeSession(sessionId: string) {
+  async function revokeSession(deviceId: string) {
     if (!confirm(t('devices.confirm.revoke'))) return
 
     try {
-      await sessionService.revokeSession(sessionId)
+      await deviceService.revokeDevice(deviceId)
       toastStore.success(t('devices.success.revoked'))
       await fetchSessions()
     } catch {
@@ -47,7 +47,7 @@ export function useSessionManagement() {
 
     isRevoking.value = true
     try {
-      await sessionService.revokeAllOtherSessions()
+      await deviceService.revokeAllDevices()
       toastStore.success(t('devices.success.revokedAll'))
       await fetchSessions()
     } catch {
@@ -57,9 +57,9 @@ export function useSessionManagement() {
     }
   }
 
-  async function toggleTrust(session: Session) {
+  async function toggleTrust(session: Device) {
     try {
-      await sessionService.trustSession(session.id, !session.is_trusted)
+      await deviceService.trustDevice(session.id, !session.is_trusted)
       toastStore.success(
         session.is_trusted ? t('devices.success.untrusted') : t('devices.success.trusted')
       )
@@ -69,14 +69,14 @@ export function useSessionManagement() {
     }
   }
 
-  async function updateDeviceName(sessionId: string, deviceName: string) {
+  async function updateDeviceName(deviceId: string, deviceName: string) {
     if (!deviceName.trim()) {
       toastStore.error(t('devices.error.emptyName'))
       return false
     }
 
     try {
-      await sessionService.updateDeviceName(sessionId, deviceName.trim())
+      await deviceService.updateDeviceName(deviceId, deviceName.trim())
       toastStore.success(t('devices.success.nameUpdated'))
       await fetchSessions()
       return true
