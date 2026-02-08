@@ -378,14 +378,33 @@ async function handleSendCode() {
 
 /** Resend code from step 2 */
 async function handleResendCode() {
+  // 如果启用了 Turnstile，需要重新验证
+  if (turnstileEnabled && !turnstileToken.value) {
+    toastStore.warning(t('auth.error.turnstileRequired'))
+    return
+  }
+
   isSendingCode.value = true
   try {
-    await authService.sendRegistrationCode({ email: email.value })
+    await authService.sendRegistrationCode({
+      email: email.value,
+      ...(turnstileToken.value ? { turnstile_token: turnstileToken.value } : {}),
+    })
     toastStore.success(t('emailCode.codeSent'))
     startCooldown()
     codeError.value = false
     codeInputRef.value?.reset()
+    // 重置 Turnstile token，要求用户重新验证
+    if (turnstileEnabled) {
+      turnstileToken.value = null
+      turnstileRef.value?.reset()
+    }
   } catch (err) {
+    // 重置 Turnstile token
+    if (turnstileEnabled) {
+      turnstileToken.value = null
+      turnstileRef.value?.reset()
+    }
     if (err instanceof ApiError) {
       if (err.status === 429) {
         toastStore.error(t('emailCode.tooManyRequests'))
