@@ -81,6 +81,7 @@
     "password": "Password",
     "confirmPassword": "Confirm Password",
     "username": "Username",
+    "fullName": "Full Name",
     "loginTitle": "Welcome Back",
     "loginSubtitle": "Sign in to continue",
     "registerTitle": "Create Account",
@@ -100,6 +101,8 @@
     "emailPlaceholder": "Enter your email address",
     "usernamePlaceholder": "Choose a username",
     "usernameHint": "3–20 characters, letters, numbers and underscores only",
+    "fullNamePlaceholder": "Enter your name (optional)",
+    "fullNameHint": "Optional, shown on your profile",
     "passwordPlaceholder": "At least 8 characters",
     "confirmPasswordPlaceholder": "Re-enter your password",
     "error": {

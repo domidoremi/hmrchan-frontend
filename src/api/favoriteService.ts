@@ -2,7 +2,7 @@
  * Favorites Service - 收藏相关 API
  */
 
-import { apiClient, type PaginatedApiResponse } from './client'
+import { apiClient, ApiError, type PaginatedApiResponse } from './client'
 
 // ========== 类型定义 ==========
 
@@ -83,25 +83,46 @@ export const favoriteService = {
    * 获取收藏列表
    */
   async list(params: ListFavoritesParams = {}): Promise<PaginatedApiResponse<FavoriteResponse>> {
-    const query = new URLSearchParams({
-      page: String(params.page ?? 1),
-      page_size: String(params.page_size ?? 20),
-    })
+    const buildQuery = (override?: Partial<ListFavoritesParams>) => {
+      const merged = { ...params, ...override }
+      const query = new URLSearchParams({
+        page: String(merged.page ?? 1),
+        page_size: String(merged.page_size ?? 20),
+      })
 
-    if (params.folder_name) {
-      query.set('folder_name', params.folder_name)
-    }
-    if (params.tags?.length) {
-      params.tags.forEach((tag) => query.append('tags', tag))
-    }
-    if (params.sort_by) {
-      query.set('sort_by', params.sort_by)
-    }
-    if (params.sort_order) {
-      query.set('sort_order', params.sort_order)
+      if (merged.folder_name) {
+        query.set('folder_name', merged.folder_name)
+      }
+      if (merged.tags?.length) {
+        merged.tags.forEach((tag) => query.append('tags', tag))
+      }
+      if (merged.sort_by) {
+        query.set('sort_by', merged.sort_by)
+      }
+      if (merged.sort_order) {
+        query.set('sort_order', merged.sort_order)
+      }
+
+      return query.toString()
     }
 
-    return apiClient.get<PaginatedApiResponse<FavoriteResponse>>(`/favorites/?${query.toString()}`)
+    const query = buildQuery()
+
+    try {
+      return await apiClient.get<PaginatedApiResponse<FavoriteResponse>>(`/favorites?${query}`)
+    } catch (error) {
+      const shouldRetry =
+        error instanceof ApiError &&
+        (error.status === 422 || error.status >= 500) &&
+        (params.sort_by || params.sort_order)
+
+      if (!shouldRetry) {
+        throw error
+      }
+
+      const fallbackQuery = buildQuery({ sort_by: undefined, sort_order: undefined })
+      return apiClient.get<PaginatedApiResponse<FavoriteResponse>>(`/favorites?${fallbackQuery}`)
+    }
   },
 
   /**

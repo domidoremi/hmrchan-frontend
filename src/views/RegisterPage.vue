@@ -106,6 +106,18 @@
           </div>
 
           <div class="form-group">
+            <label for="reg-full-name">{{ $t('auth.fullName') }}</label>
+            <Input
+              id="reg-full-name"
+              v-model="fullName"
+              type="text"
+              :placeholder="$t('auth.fullNamePlaceholder')"
+              autocomplete="name"
+            />
+            <p class="field-hint">{{ $t('auth.fullNameHint') }}</p>
+          </div>
+
+          <div class="form-group">
             <label for="reg-password">{{ $t('auth.password') }}</label>
             <div class="password-field">
               <Input
@@ -251,6 +263,7 @@ const step = ref<Step>('email')
 
 const email = ref('')
 const username = ref('')
+const fullName = ref('')
 const password = ref('')
 const confirmPassword = ref('')
 const showPassword = ref(false)
@@ -457,6 +470,7 @@ async function handleRegister() {
     email.value,
     password.value,
     verificationCode.value,
+    fullName.value.trim() || undefined,
     turnstileToken.value || undefined
   )
 

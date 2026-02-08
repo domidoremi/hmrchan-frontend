@@ -81,6 +81,7 @@
     "password": "パスワード",
     "confirmPassword": "パスワード確認",
     "username": "ユーザー名",
+    "fullName": "氏名",
     "loginTitle": "おかえりなさい",
     "loginSubtitle": "ログインして続ける",
     "registerTitle": "アカウント作成",
@@ -100,6 +101,8 @@
     "emailPlaceholder": "メールアドレスを入力",
     "usernamePlaceholder": "ユーザー名を入力",
     "usernameHint": "3～20文字、英数字とアンダースコアのみ",
+    "fullNamePlaceholder": "名前を入力（任意）",
+    "fullNameHint": "任意。プロフィールに表示されます",
     "passwordPlaceholder": "8文字以上",
     "confirmPasswordPlaceholder": "パスワードを再入力",
     "error": {

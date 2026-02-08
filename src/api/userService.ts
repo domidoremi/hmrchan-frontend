@@ -4,7 +4,7 @@
  * 提供用户资料相关的 API 调用
  */
 
-import { apiClient } from './client'
+import { apiClient, ApiError } from './client'
 import { normalizeToProxyPath } from '@/utils/url'
 
 // ========== 类型定义 ==========
@@ -72,28 +72,60 @@ export const userService = {
    * 获取当前用户资料
    */
   async getProfile(): Promise<UserProfile> {
-    return apiClient.get<UserProfile>('/account/profile')
+    try {
+      return await apiClient.get<UserProfile>('/users/me/profile')
+    } catch (error) {
+      if (error instanceof ApiError && (error.status === 404 || error.status === 405)) {
+        return apiClient.get<UserProfile>('/account/profile')
+      }
+      throw error
+    }
   },
 
   /**
    * 更新用户资料
    */
   async updateProfile(data: UpdateProfileRequest): Promise<UserProfile> {
-    return apiClient.put<UserProfile>('/account/profile', data)
+    try {
+      return await apiClient.patch<UserProfile>('/users/me/profile', data)
+    } catch (error) {
+      if (error instanceof ApiError && (error.status === 404 || error.status === 405)) {
+        return apiClient.put<UserProfile>('/account/profile', data)
+      }
+      throw error
+    }
   },
 
   /**
    * 修改密码
    */
   async changePassword(data: ChangePasswordRequest): Promise<void> {
-    return apiClient.put('/account/password', data)
+    try {
+      await apiClient.post('/users/me/change-password', data)
+      return
+    } catch (error) {
+      if (error instanceof ApiError && (error.status === 404 || error.status === 405)) {
+        await apiClient.put('/account/password', data)
+        return
+      }
+      throw error
+    }
   },
 
   /**
    * 删除账号
    */
   async deleteAccount(): Promise<void> {
-    return apiClient.delete('/account/')
+    try {
+      await apiClient.delete('/users/me')
+      return
+    } catch (error) {
+      if (error instanceof ApiError && (error.status === 404 || error.status === 405)) {
+        await apiClient.delete('/account/')
+        return
+      }
+      throw error
+    }
   },
 
   /**
