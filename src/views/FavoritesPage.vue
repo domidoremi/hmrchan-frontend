@@ -175,8 +175,6 @@ async function fetchFavorites(reset = true): Promise<boolean> {
     const res = await favoriteService.list({
       page: page.value,
       page_size: pageSize,
-      sort_by: 'created_at',
-      sort_order: 'desc',
     })
 
     // 批量获取缺失的 post 数据，避免 N+1 问题

@@ -31,6 +31,7 @@ export {
   type PostDetailResponse,
   type ThumbnailQuality,
 } from './postService'
+export { postsLightService, type PostsLightParams, type PostLightItem } from './postsLightService'
 export { authorService, type AuthorListItem, type AuthorResponse } from './authorService'
 export {
   favoriteService,

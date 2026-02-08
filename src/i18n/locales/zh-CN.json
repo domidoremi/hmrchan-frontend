@@ -81,6 +81,7 @@
     "password": "密码",
     "confirmPassword": "确认密码",
     "username": "用户名",
+    "fullName": "姓名",
     "loginTitle": "欢迎回来",
     "loginSubtitle": "登录以继续",
     "registerTitle": "创建账户",
@@ -100,6 +101,8 @@
     "emailPlaceholder": "请输入邮箱地址",
     "usernamePlaceholder": "请输入用户名",
     "usernameHint": "3–20 个字符，仅支持字母、数字和下划线",
+    "fullNamePlaceholder": "填写你的姓名（可选）",
+    "fullNameHint": "可选，将展示在个人资料中",
     "passwordPlaceholder": "至少 8 个字符",
     "confirmPasswordPlaceholder": "再次输入密码",
     "error": {
