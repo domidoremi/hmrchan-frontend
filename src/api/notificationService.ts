@@ -73,7 +73,7 @@ export const notificationService = {
    * 标记单条通知为已读
    */
   async markAsRead(notificationId: string): Promise<void> {
-    return apiClient.patch(`/notifications/${notificationId}/read`)
+    return apiClient.put(`/notifications/${notificationId}/read`)
   },
 
   /**
@@ -81,7 +81,7 @@ export const notificationService = {
    */
   async markAllAsRead(type?: NotificationType): Promise<void> {
     const body = type ? { type } : undefined
-    return apiClient.post('/notifications/read-all', body)
+    return apiClient.put('/notifications/read-all', body)
   },
 
   /**

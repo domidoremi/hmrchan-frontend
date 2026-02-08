@@ -499,7 +499,9 @@ const displayAuthor = computed(
   () => post.value?.author_name || props.initialPost?.author_name || ''
 )
 
-const displayContent = computed(() => post.value?.content || props.initialPost?.content || '')
+const displayContent = computed(
+  () => post.value?.description || props.initialPost?.description || ''
+)
 
 const hasDisplayContent = computed(() => Boolean(displayContent.value?.trim()))
 

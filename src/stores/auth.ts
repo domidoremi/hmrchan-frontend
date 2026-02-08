@@ -294,21 +294,49 @@ export const useAuthStore = defineStore(
      * 根据错误状态码返回对应的 i18n key
      */
     function getAuthErrorKey(status: number, code?: string): string {
-      if (code === 'INVALID_CREDENTIALS' || status === 401) {
-        return 'auth.invalidCredentials'
+      // 合约错误码映射
+      switch (code) {
+        // AUTH 类
+        case 'AUTH_1001':
+        case 'INVALID_CREDENTIALS':
+          return 'auth.invalidCredentials'
+        case 'AUTH_1002':
+        case 'TOKEN_EXPIRED':
+          return 'auth.error.tokenExpired'
+        case 'AUTH_1003':
+        case 'TOKEN_INVALID':
+          return 'auth.error.tokenInvalid'
+        case 'AUTH_1004':
+        case 'PERMISSION_DENIED':
+          return 'auth.error.permissionDenied'
+        case 'AUTH_1005':
+        case 'ACCOUNT_LOCKED':
+          return 'auth.error.accountLocked'
+        case 'AUTH_1006':
+        case 'TWO_FACTOR_REQUIRED':
+          return 'auth.error.twoFactorRequired'
+        // USER 类
+        case 'USER_1101':
+        case 'USER_EXISTS':
+        case 'USERNAME_EXISTS':
+          return 'auth.error.usernameExists'
+        case 'USER_1103':
+        case 'EMAIL_EXISTS':
+          return 'auth.error.emailExists'
+        case 'USER_1104':
+        case 'WEAK_PASSWORD':
+          return 'auth.error.weakPassword'
+        case 'USER_1105':
+        case 'INVALID_EMAIL':
+          return 'auth.error.invalidEmail'
       }
-      if (code === 'EMAIL_EXISTS' || status === 409) {
-        return 'auth.error.emailExists'
-      }
-      if (code === 'USERNAME_EXISTS') {
-        return 'auth.error.usernameExists'
-      }
-      if (status === 422) {
-        return 'auth.error.validationError'
-      }
-      if (status === 429) {
-        return 'auth.error.tooManyRequests'
-      }
+
+      // 按 HTTP 状态码兜底
+      if (status === 401) return 'auth.invalidCredentials'
+      if (status === 403) return 'auth.error.permissionDenied'
+      if (status === 409) return 'auth.error.emailExists'
+      if (status === 422) return 'auth.error.validationError'
+      if (status === 429) return 'auth.error.tooManyRequests'
       return 'auth.error.unknown'
     }
 

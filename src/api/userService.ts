@@ -49,7 +49,6 @@ export function normalizeAvatarUrl(url: string | null | undefined): string | nul
   if (!url) return null
   const normalized = normalizeToProxyPath(url)
   return normalized ?? url
-  return url
 }
 
 // 用户名更新限制
@@ -73,21 +72,28 @@ export const userService = {
    * 获取当前用户资料
    */
   async getProfile(): Promise<UserProfile> {
-    return apiClient.get<UserProfile>('/users/me/profile')
+    return apiClient.get<UserProfile>('/account/profile')
   },
 
   /**
    * 更新用户资料
    */
   async updateProfile(data: UpdateProfileRequest): Promise<UserProfile> {
-    return apiClient.patch<UserProfile>('/users/me/profile', data)
+    return apiClient.put<UserProfile>('/account/profile', data)
   },
 
   /**
    * 修改密码
    */
   async changePassword(data: ChangePasswordRequest): Promise<void> {
-    return apiClient.post('/users/me/change-password', data)
+    return apiClient.put('/account/password', data)
+  },
+
+  /**
+   * 删除账号
+   */
+  async deleteAccount(): Promise<void> {
+    return apiClient.delete('/account/')
   },
 
   /**

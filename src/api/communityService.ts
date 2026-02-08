@@ -42,27 +42,33 @@ export type TimeRange = '24h' | '7d' | '30d' | 'all'
 
 export const communityService = {
   /**
-   * 获取最新讨论
+   * 获取社区动态流
    */
-  async getLatestDiscussions(
-    page = 1,
-    pageSize = 20
-  ): Promise<PaginatedApiResponse<DiscussionItem>> {
+  async getFeed(page = 1, pageSize = 20): Promise<PaginatedApiResponse<DiscussionItem>> {
     return apiClient.get<PaginatedApiResponse<DiscussionItem>>(
-      `/community/latest?page=${page}&page_size=${pageSize}`
+      `/community/feed?page=${page}&page_size=${pageSize}`
     )
   },
 
   /**
-   * 获取热门话题
+   * 获取热门内容
    */
-  async getHotTopics(
+  async getTrending(
     timeRange: TimeRange = '7d',
     page = 1,
     pageSize = 20
   ): Promise<PaginatedApiResponse<HotTopicItem>> {
     return apiClient.get<PaginatedApiResponse<HotTopicItem>>(
-      `/community/hot?time_range=${timeRange}&page=${page}&page_size=${pageSize}`
+      `/community/trending?time_range=${timeRange}&page=${page}&page_size=${pageSize}`
+    )
+  },
+
+  /**
+   * 获取最新评论
+   */
+  async getRecentComments(page = 1, pageSize = 20): Promise<PaginatedApiResponse<Comment>> {
+    return apiClient.get<PaginatedApiResponse<Comment>>(
+      `/community/recent-comments?page=${page}&page_size=${pageSize}`
     )
   },
 

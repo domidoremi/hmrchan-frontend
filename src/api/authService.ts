@@ -159,7 +159,7 @@ export const authService = {
    * 验证当前密码（敏感操作前置）
    */
   async verifyPassword(password: string): Promise<{ verification_token: string }> {
-    return apiClient.post('/auth/verify-password', { password })
+    return apiClient.post('/account/verify-password', { password })
   },
 
   /**
@@ -209,17 +209,21 @@ export const authService = {
    * 验证邮箱（通过邮件中的 token）
    */
   async verifyEmail(token: string): Promise<{ message: string }> {
-    return apiClient.get(`/verify-email?token=${encodeURIComponent(token)}`, {
-      skipAuth: true,
-      skipErrorToast: true,
-    })
+    return apiClient.post(
+      '/email/verify',
+      { token },
+      {
+        skipAuth: true,
+        skipErrorToast: true,
+      }
+    )
   },
 
   /**
    * 请求重置密码（发送重置邮件）
    */
   async requestPasswordReset(data: RequestPasswordResetRequest): Promise<{ message: string }> {
-    return apiClient.post('/request-password-reset', data, {
+    return apiClient.post('/email/request-password-reset', data, {
       skipAuth: true,
       skipErrorToast: true,
     })
@@ -229,7 +233,7 @@ export const authService = {
    * 重置密码（通过邮件中的 token）
    */
   async resetPassword(data: ResetPasswordRequest): Promise<{ message: string }> {
-    return apiClient.post('/reset-password', data, {
+    return apiClient.post('/email/reset-password', data, {
       skipAuth: true,
       skipErrorToast: true,
     })
@@ -239,7 +243,7 @@ export const authService = {
    * 更换邮箱
    */
   async changeEmail(data: ChangeEmailRequest): Promise<{ message: string }> {
-    return apiClient.post('/change-email', data, {
+    return apiClient.post('/email/change-email', data, {
       skipErrorToast: true,
     })
   },

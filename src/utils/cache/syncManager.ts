@@ -45,9 +45,7 @@ export async function syncOfflineActions(): Promise<{
           await favoriteService.create(action.resourceId)
           break
         case 'unfavorite':
-          if (action.data?.['favoriteId']) {
-            await favoriteService.remove(action.data['favoriteId'] as number)
-          }
+          await favoriteService.remove(action.resourceId)
           break
         case 'comment':
           if (action.data?.['content']) {

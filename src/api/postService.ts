@@ -57,7 +57,7 @@ export interface PostListItem {
   platform: string
   platform_post_id?: string
   title: string
-  content: string
+  description: string
   url?: string
   thumbnail_url?: string | null
   // 兼容后端未来可能提供的缩略图尺寸信息
@@ -114,7 +114,7 @@ export interface PostDetailResponse {
   platform: string
   platform_post_id?: string
   title: string
-  content: string
+  description: string
   url?: string
   thumbnail_url?: string | null
   author_id: string
@@ -201,9 +201,7 @@ export const postService = {
    * 获取帖子统计摘要
    */
   async getStatsSummary(): Promise<{
-    total_posts: number
-    by_platform: Record<string, number>
-    recent_count?: number
+    platforms: Array<{ platform: string; post_count: number; media_count: number }>
   }> {
     return apiClient.get('/posts/stats/summary')
   },
