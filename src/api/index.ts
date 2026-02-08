@@ -120,7 +120,3 @@ export {
   type ContactMessageRequest,
   type ContactMessageResponse,
 } from './contactService'
-
-// Legacy alias: sessionService → deviceService
-export { deviceService as sessionService } from './deviceService'
-export type { Device as Session, DeviceListResponse as SessionListResponse } from './deviceService'

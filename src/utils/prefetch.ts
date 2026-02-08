@@ -344,7 +344,10 @@ export async function prefetchAuthorsData(): Promise<void> {
  * 在用户点击帖子前预加载详情和评论
  * @param postId - 帖子 UUID
  */
-export async function prefetchPostDetail(postId: string): Promise<void> {
+export async function prefetchPostDetail(
+  postId: string,
+  options: { includeComments?: boolean } = {}
+): Promise<void> {
   if (!postId) {
     return
   }
@@ -367,6 +370,10 @@ export async function prefetchPostDetail(postId: string): Promise<void> {
           return p
         })
 
-    await Promise.all([postPromise, commentService.getPostComments(postId, 1, 20)])
+    if (options.includeComments) {
+      await Promise.all([postPromise, commentService.getPostComments(postId, 1, 20)])
+    } else {
+      await postPromise
+    }
   })
 }

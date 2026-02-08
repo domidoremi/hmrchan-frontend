@@ -15,7 +15,7 @@ import { defineStore } from 'pinia'
 import { useRouter } from 'vue-router'
 import { authService, ApiError } from '@/api'
 import type { UserResponse } from '@/api'
-import { getFullDeviceInfo } from '@/utils/device'
+import { getDeviceInfo } from '@/utils/device'
 import { secureTokenManager } from '@/utils/tokenSecurity'
 
 // 用户类型（与 API 响应匹配）
@@ -31,6 +31,7 @@ export const useAuthStore = defineStore(
 
     const user = ref<AuthUser | null>(null)
     const token = ref<string | null>(null)
+    const refreshToken = ref<string | null>(null)
     const isLoading = ref(false)
     const error = ref<string | null>(null)
 
@@ -50,16 +51,18 @@ export const useAuthStore = defineStore(
       error.value = null
 
       try {
-        const deviceInfo = await getFullDeviceInfo()
+        const deviceInfo = getDeviceInfo()
         const response = await authService.login({
           username: email,
           password,
-          device_info: deviceInfo,
+          device_name: deviceInfo.device_name,
+          device_type: deviceInfo.device_type,
           ...(turnstileToken ? { turnstile_token: turnstileToken } : {}),
         })
 
         user.value = response.user
         token.value = response.access_token
+        refreshToken.value = response.refresh_token ?? null
 
         // 安全存储 token（加密 + 设备绑定）
         await secureTokenManager.store(response.access_token)
@@ -100,19 +103,21 @@ export const useAuthStore = defineStore(
       error.value = null
 
       try {
-        const deviceInfo = await getFullDeviceInfo()
+        const deviceInfo = getDeviceInfo()
         const response = await authService.register({
           username,
           email,
           password,
           verification_code: verificationCode,
-          device_info: deviceInfo,
+          device_name: deviceInfo.device_name,
+          device_type: deviceInfo.device_type,
           ...(turnstileToken ? { turnstile_token: turnstileToken } : {}),
         })
 
         // 注册成功后自动登录
         user.value = response.user
         token.value = response.access_token
+        refreshToken.value = response.refresh_token ?? null
 
         // 安全存储 token（加密 + 设备绑定）
         await secureTokenManager.store(response.access_token)
@@ -164,6 +169,7 @@ export const useAuthStore = defineStore(
       } finally {
         user.value = null
         token.value = null
+        refreshToken.value = null
         error.value = null
         // 清除安全存储的 token
         secureTokenManager.clear()
@@ -229,6 +235,7 @@ export const useAuthStore = defineStore(
       authLogoutHandler = () => {
         user.value = null
         token.value = null
+        refreshToken.value = null
         stopHeartbeat()
         // 清除安全存储的 token
         secureTokenManager.clear()
@@ -270,8 +277,11 @@ export const useAuthStore = defineStore(
         }
 
         try {
-          const response = await authService.refreshToken()
+          const response = await authService.refreshToken(refreshToken.value ?? undefined)
           token.value = response.access_token
+          if (response.refresh_token) {
+            refreshToken.value = response.refresh_token
+          }
           // 更新安全存储（client.ts 已处理，这里确保 Pinia 状态同步）
         } catch {
           // 刷新失败，可能 refresh_token 已过期
@@ -343,6 +353,7 @@ export const useAuthStore = defineStore(
     return {
       user,
       token,
+      refreshToken,
       isLoading,
       error,
       isAuthenticated,
@@ -360,7 +371,7 @@ export const useAuthStore = defineStore(
   },
   {
     persist: {
-      pick: ['user', 'token'],
+      pick: ['user', 'token', 'refreshToken'],
     },
   }
 )

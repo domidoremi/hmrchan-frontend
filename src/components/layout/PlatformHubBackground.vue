@@ -153,6 +153,11 @@ let rafId: number | null = null
 let resizeObserver: ResizeObserver | null = null
 let isVisible = true
 
+// Frame budget: skip frames if the previous frame took too long
+let lastFrameTime = 0
+const TARGET_FPS = 30
+const FRAME_INTERVAL = 1000 / TARGET_FPS
+
 const mouse = { x: 0, y: 0, targetX: 0, targetY: 0 }
 let pendingMouse = false
 let lastMouseX = 0
@@ -977,7 +982,7 @@ function applyTheme(mode: ThemeMode) {
   }
 }
 
-function tick() {
+function tick(now?: DOMHighResTimeStamp) {
   const renderer = rendererRef.value
   const scene = sceneRef.value
   const camera = cameraRef.value
@@ -995,6 +1000,14 @@ function tick() {
     stopLoop()
     return
   }
+
+  // Frame budget: throttle to ~30fps to avoid RAF stalls
+  const timestamp = now ?? performance.now()
+  if (timestamp - lastFrameTime < FRAME_INTERVAL) {
+    rafId = requestAnimationFrame(tick)
+    return
+  }
+  lastFrameTime = timestamp
 
   const dt = clock.getDelta()
   const t = clock.getElapsedTime()

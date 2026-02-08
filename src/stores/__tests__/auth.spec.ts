@@ -14,9 +14,9 @@ vi.mock('vue-router', () => ({
 
 // Mock device utils
 vi.mock('@/utils/device', () => ({
-  getFullDeviceInfo: vi.fn().mockResolvedValue({
-    fingerprint: 'test-fingerprint',
-    userAgent: 'test-agent',
+  getDeviceInfo: vi.fn().mockReturnValue({
+    device_name: 'Test Browser',
+    device_type: 'desktop',
   }),
 }))
 

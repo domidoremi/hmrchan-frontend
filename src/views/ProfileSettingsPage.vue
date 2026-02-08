@@ -47,7 +47,7 @@
       <template v-else-if="profile">
         <form class="settings-form" @submit.prevent="saveProfile">
           <!-- Avatar Section -->
-          <section class="settings-section glass-card">
+          <section id="avatar-section" class="settings-section glass-card">
             <div class="section-header">
               <div class="section-icon">
                 <AnimatedIcon name="user" :fallback-icon="User" size="sm" />
@@ -96,7 +96,7 @@
           </section>
 
           <!-- Basic Info Section -->
-          <section class="settings-section glass-card">
+          <section id="basic-info" class="settings-section glass-card">
             <div class="section-header">
               <div class="section-icon">
                 <AnimatedIcon name="explore" :fallback-icon="FileText" size="sm" />
