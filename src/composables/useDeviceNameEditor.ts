@@ -4,13 +4,13 @@
  */
 
 import { ref } from 'vue'
-import type { Session } from '@/api'
+import type { Device } from '@/api'
 
 export function useDeviceNameEditor() {
   const editingSessionId = ref<string | null>(null)
   const editingDeviceName = ref('')
 
-  function startEditing(session: Session) {
+  function startEditing(session: Device) {
     editingSessionId.value = session.id
     editingDeviceName.value = session.device_name
   }

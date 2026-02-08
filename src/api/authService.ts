@@ -12,16 +12,8 @@ export interface LoginRequest {
   username: string
   password: string
   turnstile_token?: string
-  device_info?: {
-    device_fingerprint: string
-    device_name?: string
-    device_type: string
-    device_os: string
-    device_browser: string
-    screen_resolution: string
-    timezone: string
-    language: string
-  }
+  device_name?: string
+  device_type?: string
 }
 
 export interface RegisterRequest {
@@ -29,6 +21,7 @@ export interface RegisterRequest {
   email: string
   password: string
   verification_code: string
+  full_name?: string
   turnstile_token?: string
   device_info?: {
     device_fingerprint: string
@@ -49,6 +42,7 @@ export interface SendRegistrationCodeRequest {
 
 export interface AuthResponse {
   access_token: string
+  refresh_token?: string
   token_type: string
   expires_in?: number
   refresh_threshold?: number
@@ -60,6 +54,11 @@ export interface UserResponse {
   username: string
   email: string
   avatar_url?: string
+  full_name?: string | null
+  is_admin?: boolean
+  is_verified?: boolean
+  totp_enabled?: boolean
+  roles?: string[]
   created_at: string
   updated_at: string
 }
@@ -128,11 +127,15 @@ export const authService = {
   /**
    * 用户登出
    */
-  async logout(): Promise<void> {
+  async logout(allDevices = false): Promise<void> {
     try {
-      await apiClient.post('/auth/logout', null, {
-        skipErrorToast: true,
-      })
+      await apiClient.post(
+        '/auth/logout',
+        { all_devices: allDevices },
+        {
+          skipErrorToast: true,
+        }
+      )
     } catch {
       // 即使登出 API 失败，也要清理本地状态
     }
@@ -141,8 +144,11 @@ export const authService = {
   /**
    * 刷新 Token
    */
-  async refreshToken(): Promise<{ access_token: string }> {
-    return apiClient.post<{ access_token: string }>('/auth/refresh', null, {
+  async refreshToken(
+    refreshToken?: string
+  ): Promise<{ access_token: string; refresh_token?: string }> {
+    const body = refreshToken ? { refresh_token: refreshToken } : {}
+    return apiClient.post<{ access_token: string; refresh_token?: string }>('/auth/refresh', body, {
       skipAuth: true,
       skipErrorToast: true,
     })

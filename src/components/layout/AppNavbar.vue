@@ -222,17 +222,8 @@
 </template>
 
 <script setup lang="ts">
-import {
-  ref,
-  watch,
-  onMounted,
-  onUnmounted,
-  defineAsyncComponent,
-  nextTick,
-  computed,
-  watchEffect,
-} from 'vue'
-import { RouterLink, useRouter } from 'vue-router'
+import { ref, watch, onMounted, onUnmounted, defineAsyncComponent, nextTick, computed } from 'vue'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import {
   Bell,
@@ -267,6 +258,7 @@ function prefetchSettingsPanel() {
 }
 
 const router = useRouter()
+const route = useRoute()
 const authStore = useAuthStore()
 const settingsStore = useSettingsStore()
 const { user, isAuthenticated } = storeToRefs(authStore)
@@ -444,18 +436,27 @@ function updateNavIndicator() {
 }
 
 // 监听路由变化更新指示器
-watchEffect(() => {
-  // 触发依赖收集
-  const _index = activeDesktopIndex.value
-  const _auth = isAuthenticated.value
-  // 使用变量避免 lint 警告
-  void _index
-  void _auth
-  // 延迟更新以确保 DOM 已更新
-  nextTick(() => {
-    requestAnimationFrame(updateNavIndicator)
-  })
-})
+watch(
+  [() => route.path, activeDesktopIndex, isAuthenticated],
+  () => {
+    nextTick(() => {
+      requestAnimationFrame(updateNavIndicator)
+    })
+  },
+  { immediate: true }
+)
+
+// 路由变化时关闭所有菜单并解锁滚动
+watch(
+  () => route.fullPath,
+  () => {
+    if (showSettings.value || showUserMenu.value) {
+      showSettings.value = false
+      showUserMenu.value = false
+      unlockBodyScroll()
+    }
+  }
+)
 
 // 预加载头像以提高导航栏显示优先级
 watch(

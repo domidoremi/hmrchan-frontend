@@ -127,6 +127,19 @@ function getAccessToken(): string | null {
   return null
 }
 
+function getRefreshToken(): string | null {
+  try {
+    const authData = localStorage.getItem('auth')
+    if (authData) {
+      const parsed = JSON.parse(authData)
+      return parsed.refreshToken || parsed.refresh_token || null
+    }
+  } catch {
+    // Ignore parse errors
+  }
+  return null
+}
+
 /**
  * 异步获取 access token（从安全存储中解密读取）
  * 优先使用安全存储，降级到普通存储
@@ -164,12 +177,16 @@ async function refreshToken(): Promise<string | null> {
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), REFRESH_TIMEOUT)
 
+    const refreshTokenValue = getRefreshToken()
+    const refreshBody = refreshTokenValue ? { refresh_token: refreshTokenValue } : {}
+
     const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
       method: 'POST',
       credentials: 'include', // 发送 refresh_token cookie
       headers: {
         'Content-Type': 'application/json',
       },
+      body: JSON.stringify(refreshBody),
       signal: controller.signal,
     })
 
@@ -181,6 +198,7 @@ async function refreshToken(): Promise<string | null> {
 
     const data = await response.json()
     const newAccessToken = data.access_token
+    const newRefreshToken = data.refresh_token
 
     // 安全存储新的 access_token（加密 + 设备绑定）
     try {
@@ -196,6 +214,9 @@ async function refreshToken(): Promise<string | null> {
       if (authData) {
         const parsed = JSON.parse(authData)
         parsed.token = newAccessToken
+        if (newRefreshToken) {
+          parsed.refreshToken = newRefreshToken
+        }
         localStorage.setItem('auth', JSON.stringify(parsed))
       }
     } catch {
@@ -228,9 +249,15 @@ async function handleErrorResponse(response: Response, skipErrorToast?: boolean)
 
   try {
     const errorData = await response.json()
-    errorMessage = errorData.detail || errorData.message || errorMessage
-    errorCode = errorData.code
-    errorDetails = errorData.details
+    if (errorData?.detail && typeof errorData.detail === 'object') {
+      errorMessage = errorData.detail.message || errorMessage
+      errorCode = errorData.detail.code || errorData.code
+      errorDetails = errorData.detail.details || errorData.details
+    } else {
+      errorMessage = errorData.detail || errorData.message || errorMessage
+      errorCode = errorData.code
+      errorDetails = errorData.details
+    }
   } catch {
     // 无法解析错误响应
   }

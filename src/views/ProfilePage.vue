@@ -113,14 +113,15 @@ const userAvatar = computed(() => {
   return getUserAvatarUrl(user.value?.avatar_url, user.value?.username)
 })
 
-const profileRoute = '/profile/settings'
+const profileSettingsRoute = '/profile/settings'
+const editProfileRoute = '/profile/settings#basic-info'
 
 function goToSettings() {
-  router.push(profileRoute)
+  router.push(profileSettingsRoute)
 }
 
 function editProfile() {
-  router.push(profileRoute)
+  router.push(editProfileRoute)
 }
 
 onMounted(() => {

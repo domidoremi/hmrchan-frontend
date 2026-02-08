@@ -199,6 +199,11 @@ defineExpose({
   pointer-events: none;
 }
 
+:global(#app[data-theme='light'] .animated-icon__lottie),
+:global(#app[data-theme='light'] .animated-icon__fallback) {
+  filter: drop-shadow(0 0 1px rgba(15, 23, 42, 0.35));
+}
+
 .animated-icon__fallback--blend {
   opacity: 0.8;
 }

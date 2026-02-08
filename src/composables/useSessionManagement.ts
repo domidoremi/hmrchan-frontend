@@ -30,11 +30,11 @@ export function useSessionManagement() {
     }
   }
 
-  async function revokeSession(deviceId: string) {
+  async function revokeSession(sessionId: string) {
     if (!confirm(t('devices.confirm.revoke'))) return
 
     try {
-      await deviceService.revokeDevice(deviceId)
+      await deviceService.revokeDevice(sessionId)
       toastStore.success(t('devices.success.revoked'))
       await fetchSessions()
     } catch {
@@ -69,14 +69,14 @@ export function useSessionManagement() {
     }
   }
 
-  async function updateDeviceName(deviceId: string, deviceName: string) {
+  async function updateDeviceName(sessionId: string, deviceName: string) {
     if (!deviceName.trim()) {
       toastStore.error(t('devices.error.emptyName'))
       return false
     }
 
     try {
-      await deviceService.updateDeviceName(deviceId, deviceName.trim())
+      await deviceService.updateDeviceName(sessionId, deviceName.trim())
       toastStore.success(t('devices.success.nameUpdated'))
       await fetchSessions()
       return true
