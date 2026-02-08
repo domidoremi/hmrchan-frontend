@@ -4,7 +4,7 @@
  * 提供搜索和浏览历史管理的 API 调用
  */
 
-import { apiClient, type PaginatedApiResponse } from './client'
+import { apiClient, ApiError, type PaginatedApiResponse } from './client'
 
 // ========== 类型定义 ==========
 
@@ -106,16 +106,25 @@ export const historyService = {
    * 记录浏览历史
    */
   async recordBrowsing(postId: string, duration?: number): Promise<void> {
-    return apiClient.post(
-      '/history/browsing',
-      {
-        post_id: postId,
-        duration,
-      },
-      {
-        skipErrorToast: true,
+    const payload = {
+      post_id: postId,
+      ...(typeof duration === 'number' ? { view_duration: duration } : {}),
+    }
+
+    try {
+      await apiClient.post('/history/browsing', payload, { skipErrorToast: true })
+      return
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 422) {
+        const legacyPayload = {
+          post_id: postId,
+          ...(typeof duration === 'number' ? { duration } : {}),
+        }
+        await apiClient.post('/history/browsing', legacyPayload, { skipErrorToast: true })
+        return
       }
-    )
+      throw error
+    }
   },
 
   /**

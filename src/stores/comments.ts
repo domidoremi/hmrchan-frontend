@@ -6,7 +6,7 @@ import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import type { Comment, CommentFormData } from '@/types'
 import { sanitizeComment, validateComment, commentRateLimiter } from '@/utils/security'
-import { apiClient, type PaginatedApiResponse } from '@/api'
+import { apiClient, ApiError, type PaginatedApiResponse } from '@/api'
 
 export const useCommentsStore = defineStore('comments', () => {
   const comments = ref<Map<string, Comment[]>>(new Map())
@@ -16,6 +16,32 @@ export const useCommentsStore = defineStore('comments', () => {
   // 获取某个帖子的评论
   function getCommentsByPostId(postId: string): Comment[] {
     return comments.value.get(postId) || []
+  }
+
+  function sortComments(list: Comment[], sort: 'newest' | 'oldest' | 'popular'): Comment[] {
+    const items = [...list]
+    const toTime = (value?: string) => {
+      if (!value) return 0
+      const ts = Date.parse(value)
+      return Number.isNaN(ts) ? 0 : ts
+    }
+
+    if (sort === 'popular') {
+      items.sort((a, b) => {
+        const likeDiff = (b.likes_count || 0) - (a.likes_count || 0)
+        if (likeDiff !== 0) return likeDiff
+        return toTime(b.created_at) - toTime(a.created_at)
+      })
+      return items
+    }
+
+    if (sort === 'oldest') {
+      items.sort((a, b) => toTime(a.created_at) - toTime(b.created_at))
+      return items
+    }
+
+    items.sort((a, b) => toTime(b.created_at) - toTime(a.created_at))
+    return items
   }
 
   // 获取评论数量
@@ -31,12 +57,24 @@ export const useCommentsStore = defineStore('comments', () => {
     error.value = null
 
     try {
-      const data = await apiClient.get<PaginatedApiResponse<Comment>>(
-        `/comments/post/${postId}?sort=${sort}`,
-        { skipErrorToast: true }
-      )
-      comments.value.set(postId, data.items || [])
-      return { success: true, data: data.items }
+      const baseUrl = `/comments/post/${postId}`
+      let data: PaginatedApiResponse<Comment>
+
+      try {
+        data = await apiClient.get<PaginatedApiResponse<Comment>>(baseUrl, { skipErrorToast: true })
+      } catch (err) {
+        if (err instanceof ApiError && (err.status === 400 || err.status === 422)) {
+          data = await apiClient.get<PaginatedApiResponse<Comment>>(`${baseUrl}?sort=${sort}`, {
+            skipErrorToast: true,
+          })
+        } else {
+          throw err
+        }
+      }
+
+      const items = sortComments(data.items || [], sort)
+      comments.value.set(postId, items)
+      return { success: true, data: items }
     } catch (err) {
       error.value = 'comment.error.fetchFailed'
       return { success: false, error: err }

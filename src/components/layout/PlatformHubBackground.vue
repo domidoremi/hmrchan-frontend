@@ -147,6 +147,18 @@ const loopProfiles: Record<'hero' | 'bento' | 'posts', LoopProfile> = {
 const clock = new THREE.Clock()
 const tmpVec3 = new THREE.Vector3()
 const tmpVec3B = new THREE.Vector3()
+const linkCorePos = new THREE.Vector3()
+const linkCardPos = new THREE.Vector3()
+const particleCorePos = new THREE.Vector3()
+const particleTemp = new THREE.Object3D()
+const particlePos = new THREE.Vector3()
+const particleTargets = [
+  new THREE.Vector3(),
+  new THREE.Vector3(),
+  new THREE.Vector3(),
+  new THREE.Vector3(),
+]
+const particleSeeds = [0, 0.37, 0.74, 1.11]
 const raycaster = new THREE.Raycaster()
 const pointerVec = new THREE.Vector2()
 let rafId: number | null = null
@@ -157,11 +169,13 @@ let isVisible = true
 let lastFrameTime = 0
 const TARGET_FPS = 30
 const FRAME_INTERVAL = 1000 / TARGET_FPS
+const MAX_DPR = 1
 
 const mouse = { x: 0, y: 0, targetX: 0, targetY: 0 }
 let pendingMouse = false
 let lastMouseX = 0
 let lastMouseY = 0
+let frameCount = 0
 
 const dragState = {
   isDragging: false,
@@ -726,7 +740,7 @@ function setLoopProfile(name: keyof typeof loopProfiles, immediate = false) {
 }
 
 function setRendererSize(renderer: THREE.WebGLRenderer, camera: THREE.PerspectiveCamera) {
-  const dpr = Math.min(window.devicePixelRatio || 1, 1.35)
+  const dpr = Math.min(window.devicePixelRatio || 1, MAX_DPR)
   const w = window.innerWidth
   const h = window.innerHeight
   renderer.setPixelRatio(dpr)
@@ -814,24 +828,20 @@ function updateLinks() {
   const cards = cardsRef.value
   const core = coreRef.value
   if (!lines || !cards || !core) return
-
-  const corePos = new THREE.Vector3()
-  core.getWorldPosition(corePos)
+  core.getWorldPosition(linkCorePos)
   ;(['instagram', 'tiktok', 'youtube', 'twitter'] as const).forEach((k) => {
     const card = cards[k]
     const line = lines[k]
     if (!card || !line) return
-
-    const cardPos = new THREE.Vector3()
-    card.getWorldPosition(cardPos)
+    card.getWorldPosition(linkCardPos)
 
     const arr = (line.geometry as THREE.BufferGeometry).attributes.position.array as Float32Array
-    arr[0] = corePos.x
-    arr[1] = corePos.y
-    arr[2] = corePos.z
-    arr[3] = cardPos.x
-    arr[4] = cardPos.y
-    arr[5] = cardPos.z
+    arr[0] = linkCorePos.x
+    arr[1] = linkCorePos.y
+    arr[2] = linkCorePos.z
+    arr[3] = linkCardPos.x
+    arr[4] = linkCardPos.y
+    arr[5] = linkCardPos.z
     ;(line.geometry as THREE.BufferGeometry).attributes.position.needsUpdate = true
   })
 }
@@ -841,40 +851,33 @@ function updateParticles(t: number, speed: number) {
   const cards = cardsRef.value
   const core = coreRef.value
   if (!mesh || !cards || !core) return
-
-  const corePos = new THREE.Vector3()
-  core.getWorldPosition(corePos)
-
-  const tempObj = new THREE.Object3D()
-
-  const links: Array<{ from: THREE.Vector3; to: THREE.Vector3; seed: number }> = []
+  core.getWorldPosition(particleCorePos)
   ;(['instagram', 'tiktok', 'youtube', 'twitter'] as const).forEach((k, idx) => {
     const g = cards[k]
     if (!g) return
-    const to = new THREE.Vector3()
-    g.getWorldPosition(to)
-    links.push({ from: corePos, to, seed: idx * 0.37 })
+    g.getWorldPosition(particleTargets[idx]!)
   })
 
   const countPerLink = 3
   let instance = 0
-  for (let i = 0; i < links.length; i++) {
-    const link = links[i]
-    if (!link) continue
+  for (let i = 0; i < particleTargets.length; i++) {
+    const to = particleTargets[i]
+    if (!to) continue
+    const seed = particleSeeds[i] ?? 0
 
     for (let j = 0; j < countPerLink; j++) {
-      const u = (((t * (0.12 * speed) + link.seed + j / countPerLink) % 1) + 1) % 1
-      const p = new THREE.Vector3().lerpVectors(link.from, link.to, u)
+      const u = (((t * (0.12 * speed) + seed + j / countPerLink) % 1) + 1) % 1
+      particlePos.lerpVectors(particleCorePos, to, u)
 
       // Slight arc
       const arc = Math.sin(u * Math.PI) * 0.25
-      p.y += arc
+      particlePos.y += arc
 
       const s = 0.018 + 0.01 * Math.sin((u + j) * Math.PI * 2)
-      tempObj.position.copy(p)
-      tempObj.scale.setScalar(s)
-      tempObj.updateMatrix()
-      mesh.setMatrixAt(instance, tempObj.matrix)
+      particleTemp.position.copy(particlePos)
+      particleTemp.scale.setScalar(s)
+      particleTemp.updateMatrix()
+      mesh.setMatrixAt(instance, particleTemp.matrix)
       instance++
     }
   }
@@ -1011,6 +1014,8 @@ function tick(now?: DOMHighResTimeStamp) {
 
   const dt = clock.getDelta()
   const t = clock.getElapsedTime()
+  frameCount += 1
+  const shouldUpdateDynamic = frameCount % 2 === 0
 
   const collapse = THREE.MathUtils.clamp(orbitCollapse, 0, 1)
   const orbitRadius = THREE.MathUtils.lerp(0.55, 1.85, collapse)
@@ -1122,8 +1127,10 @@ function tick(now?: DOMHighResTimeStamp) {
   tmpVec3B.set(tmpVec3.x + lookAtOffsetX, tmpVec3.y + lookAtOffsetY, tmpVec3.z)
   camera.lookAt(tmpVec3B)
 
-  updateLinks()
-  updateParticles(t, loopState.particleSpeed)
+  if (shouldUpdateDynamic) {
+    updateLinks()
+    updateParticles(t, loopState.particleSpeed)
+  }
 
   renderer.render(scene, camera)
   rafId = requestAnimationFrame(tick)

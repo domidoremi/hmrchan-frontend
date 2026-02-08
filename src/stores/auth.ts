@@ -95,6 +95,7 @@ export const useAuthStore = defineStore(
       email: string,
       password: string,
       verificationCode: string,
+      fullName?: string,
       turnstileToken?: string
     ) {
       if (isLoading.value) return { success: false, error: 'auth.error.inProgress' }
@@ -109,6 +110,7 @@ export const useAuthStore = defineStore(
           email,
           password,
           verification_code: verificationCode,
+          ...(fullName ? { full_name: fullName } : {}),
           device_name: deviceInfo.device_name,
           device_type: deviceInfo.device_type,
           ...(turnstileToken ? { turnstile_token: turnstileToken } : {}),

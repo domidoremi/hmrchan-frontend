@@ -23,6 +23,8 @@ export interface RegisterRequest {
   verification_code: string
   full_name?: string
   turnstile_token?: string
+  device_name?: string
+  device_type?: string
   device_info?: {
     device_fingerprint: string
     device_name?: string
