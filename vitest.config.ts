@@ -14,7 +14,7 @@ import { defineConfig, configDefaults } from 'vitest/config'
 import vue from '@vitejs/plugin-vue'
 
 export default defineConfig({
-  // @ts-expect-error - Vite 8 (Rolldown) plugin compatibility with Vitest
+  // @ts-expect-error - Vite 8 (Rolldown) plugin compatibility with Vitest - type mismatch in hotUpdate hook
   plugins: [vue()],
 
   /** Vite缓存目录（Vitest会使用cacheDir/vitest） */
@@ -96,13 +96,6 @@ export default defineConfig({
 
     /** 并发运行测试 */
     pool: 'threads',
-
-    /** 最大并发线程数 */
-    threads: {
-      singleThread: false,
-      maxThreads: 4,
-      minThreads: 1,
-    },
 
     /** 启用快照测试 */
     snapshotFormat: {
