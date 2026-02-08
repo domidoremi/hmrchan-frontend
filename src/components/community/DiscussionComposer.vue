@@ -236,8 +236,12 @@ function removePost(postId: string) {
   selectedPosts.value = selectedPosts.value.filter((p) => p.id !== postId)
 }
 
+function normalizeTag(raw: string): string {
+  return raw.trim().replace(/^#/, '').replace(/\s+/g, '')
+}
+
 function addTag() {
-  const tag = tagInput.value.trim().replace(/^#/, '')
+  const tag = normalizeTag(tagInput.value)
   if (tag && !tags.value.includes(tag)) {
     tags.value.push(tag)
   }
@@ -259,8 +263,9 @@ async function handleSubmit() {
     category: category.value,
   }
 
-  if (tags.value.length > 0) {
-    payload.tags = tags.value.slice(0, 5)
+  const normalizedTags = tags.value.map(normalizeTag).filter(Boolean)
+  if (normalizedTags.length > 0) {
+    payload.tags = normalizedTags.slice(0, 5)
   }
 
   // 添加引用帖子（只支持单个引用）
@@ -279,7 +284,31 @@ async function handleSubmit() {
     toastStore.success(t('community.publishSuccess'))
     emit('created', discussion)
   } catch (err) {
-    if (err instanceof Error && 'status' in err && (err as { status: number }).status === 422) {
+    const status = err instanceof Error && 'status' in err ? (err as { status: number }).status : 0
+    const canRetry = status === 422 && (payload.tags?.length || payload.referenced_post_id)
+    if (canRetry) {
+      try {
+        const fallbackPayload: CreateDiscussionRequest = {
+          title: payload.title,
+          content: payload.content,
+          category: payload.category,
+        }
+        const discussion = await discussionService.create(fallbackPayload)
+
+        title.value = ''
+        content.value = ''
+        tags.value = []
+        selectedPosts.value = []
+
+        toastStore.success(t('community.publishSuccess'))
+        emit('created', discussion)
+        return
+      } catch {
+        // fall through to error handling
+      }
+    }
+
+    if (status === 422) {
       const apiErr = err as { details?: { detail?: string }; message?: string }
       const errorMsg = apiErr.details?.detail || apiErr.message || t('error.validationError')
       toastStore.error(errorMsg)

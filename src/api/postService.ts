@@ -76,6 +76,7 @@ export interface PostListItem {
   comment_count: number
   duration?: number | null
   published_at: string
+  scraped_at?: string
   created_at: string
   media_count: number
 }
