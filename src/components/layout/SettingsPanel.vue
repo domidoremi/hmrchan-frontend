@@ -237,7 +237,7 @@ function resetVideoSettings() {
 <style scoped>
 .settings-panel {
   padding: var(--spacing-2);
-  min-width: 280px;
+  min-width: 15rem;
   max-height: calc(100svh - 7.5rem);
   max-height: calc(100dvh - 7.5rem);
   overflow-y: auto;
@@ -278,7 +278,7 @@ function resetVideoSettings() {
 
 /* ========== Group ========== */
 .settings-group {
-  padding: var(--spacing-3);
+  padding: var(--spacing-2);
 }
 
 .settings-group + .settings-group {
