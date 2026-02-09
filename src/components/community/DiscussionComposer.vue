@@ -109,6 +109,7 @@
     <div class="composer-footer">
       <div class="composer-hints">
         <span class="hint">{{ $t('community.mentionHint') }}</span>
+        <span class="hint">{{ $t('community.tagHint') }}</span>
       </div>
       <Button :disabled="!canSubmit || isSubmitting" @click="handleSubmit">
         <span v-if="isSubmitting" class="spinner spinner-sm" />
@@ -123,6 +124,7 @@ import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
   discussionService,
+  searchService,
   type PostReference,
   type Discussion,
   type CreateDiscussionRequest,
@@ -174,7 +176,19 @@ const categories = [
 const debouncedSearchPosts = debounce(async (query: string) => {
   isSearching.value = true
   try {
-    searchResults.value = await discussionService.searchPosts(query, 5)
+    const result = await searchService.searchPosts({
+      q: query,
+      page: 1,
+      page_size: 5,
+      sort_by: 'relevance',
+      thumbnail_quality: 'small',
+    })
+    searchResults.value = result.items.map((post) => ({
+      id: post.id,
+      title: post.title,
+      thumbnail_url: post.thumbnail_url || null,
+      author_name: post.author_name,
+    }))
   } catch {
     searchResults.value = []
   } finally {
@@ -189,7 +203,7 @@ function handleInput() {
   const cursorPos = textarea.selectionStart
   const textBeforeCursor = content.value.slice(0, cursorPos)
 
-  const atMatch = textBeforeCursor.match(/@(\S*)$/)
+  const atMatch = textBeforeCursor.match(/@([^\s@#]*)$/)
 
   if (atMatch && atMatch[1] !== undefined) {
     mentionStart.value = cursorPos - atMatch[0].length
@@ -248,8 +262,23 @@ function removePost(postId: string) {
 function normalizeTag(raw: string): string {
   return raw.trim().replace(/^#/, '').replace(/\s+/g, '')
 }
+function extractTagsFromContent(text: string): string[] {
+  const matches = text.matchAll(/#([\p{L}\p{N}_-]{1,30})/gu)
+  const extracted: string[] = []
+  for (const match of matches) {
+    const tag = normalizeTag(match[1] ?? '')
+    if (tag && !extracted.includes(tag)) {
+      extracted.push(tag)
+    }
+  }
+  return extracted
+}
 
 function addTag() {
+  if (tags.value.length >= 5) {
+    tagInput.value = ''
+    return
+  }
   const tag = normalizeTag(tagInput.value)
   if (tag && !tags.value.includes(tag)) {
     tags.value.push(tag)
@@ -273,8 +302,10 @@ async function handleSubmit() {
   }
 
   const normalizedTags = tags.value.map(normalizeTag).filter(Boolean)
-  if (normalizedTags.length > 0) {
-    payload.tags = normalizedTags.slice(0, 5)
+  const contentTags = extractTagsFromContent(payload.content)
+  const combinedTags = Array.from(new Set([...normalizedTags, ...contentTags])).slice(0, 5)
+  if (combinedTags.length > 0) {
+    payload.tags = combinedTags
   }
 
   // 添加引用帖子（只支持单个引用）

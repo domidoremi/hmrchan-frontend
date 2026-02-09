@@ -204,6 +204,10 @@ const ROUTE_CONFIG = {
     importFn: () => import('@/views/AuthorDetailPage.vue'),
   },
   community: { path: '/community', importFn: () => import('@/views/CommunityPage.vue') },
+  'discussion-detail': {
+    pathPattern: /^\/community\/discussions\//,
+    importFn: () => import('@/views/DiscussionDetailPage.vue'),
+  },
   profile: { path: '/profile', importFn: () => import('@/views/ProfilePage.vue') },
   'profile-notifications': {
     path: '/profile/notifications',
