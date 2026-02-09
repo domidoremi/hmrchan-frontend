@@ -5,7 +5,7 @@
  * 合约端点: /devices/
  */
 
-import { apiClient } from './client'
+import { apiClient, type RequestConfig } from './client'
 
 // ========== 请求/响应类型 ==========
 
@@ -49,8 +49,8 @@ export const deviceService = {
   /**
    * 获取当前设备信息
    */
-  async getCurrentDevice(): Promise<Device> {
-    return apiClient.get<Device>('/devices/current')
+  async getCurrentDevice(config?: RequestConfig): Promise<Device> {
+    return apiClient.get<Device>('/devices/current', config)
   },
 
   /**

@@ -23,17 +23,22 @@ export function useSessionManagement() {
     try {
       const response = await deviceService.getDevices()
       let devices = response.devices ?? []
+      const hasCurrentDevice = devices.some((device) => device.is_current)
 
-      try {
-        const currentDevice = await deviceService.getCurrentDevice()
-        const currentIndex = devices.findIndex((device) => device.id === currentDevice.id)
-        if (currentIndex >= 0) {
-          devices[currentIndex] = { ...devices[currentIndex], ...currentDevice, is_current: true }
-        } else {
-          devices = [{ ...currentDevice, is_current: true }, ...devices]
+      if (!hasCurrentDevice) {
+        try {
+          const currentDevice = await deviceService.getCurrentDevice({ skipErrorToast: true })
+          const currentIndex = devices.findIndex((device) => device.id === currentDevice.id)
+          if (currentIndex >= 0) {
+            devices[currentIndex] = { ...devices[currentIndex], ...currentDevice, is_current: true }
+          } else {
+            devices = [{ ...currentDevice, is_current: true }, ...devices]
+          }
+        } catch (error) {
+          if (import.meta.env.DEV) {
+            console.warn('[Devices] Failed to fetch current device:', error)
+          }
         }
-      } catch {
-        // If current device endpoint fails, fall back to the list as-is.
       }
 
       sessions.value = devices
