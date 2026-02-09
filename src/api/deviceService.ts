@@ -10,7 +10,7 @@ import { apiClient } from './client'
 // ========== 请求/响应类型 ==========
 
 export interface Device {
-  id: string
+  id: number
   device_name: string
   device_type: 'desktop' | 'mobile' | 'tablet'
   device_os: string
@@ -42,7 +42,7 @@ export const deviceService = {
   },
 
   /** 取消信任设备 */
-  async untrustDevice(deviceId: string): Promise<{ success: boolean }> {
+  async untrustDevice(deviceId: number): Promise<{ success: boolean }> {
     return apiClient.post('/devices/untrust', { device_id: deviceId })
   },
 
@@ -56,7 +56,7 @@ export const deviceService = {
   /**
    * 注销指定设备
    */
-  async revokeDevice(deviceId: string): Promise<void> {
+  async revokeDevice(deviceId: number): Promise<void> {
     return apiClient.delete(`/devices/${deviceId}`)
   },
 
@@ -70,14 +70,14 @@ export const deviceService = {
   /**
    * 信任/取消信任设备
    */
-  async trustDevice(deviceId: string): Promise<{ success: boolean }> {
+  async trustDevice(deviceId: number): Promise<{ success: boolean }> {
     return apiClient.post('/devices/trust', { device_id: deviceId })
   },
 
   /**
    * 更新设备名称
    */
-  async updateDeviceName(deviceId: string, deviceName: string): Promise<{ success: boolean }> {
+  async updateDeviceName(deviceId: number, deviceName: string): Promise<{ success: boolean }> {
     return apiClient.post('/devices/rename', {
       device_id: deviceId,
       device_name: deviceName,

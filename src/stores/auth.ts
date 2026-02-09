@@ -104,15 +104,12 @@ export const useAuthStore = defineStore(
       error.value = null
 
       try {
-        const deviceInfo = getDeviceInfo()
         const response = await authService.register({
           username,
           email,
           password,
           verification_code: verificationCode,
           ...(fullName ? { full_name: fullName } : {}),
-          device_name: deviceInfo.device_name,
-          device_type: deviceInfo.device_type,
           ...(turnstileToken ? { turnstile_token: turnstileToken } : {}),
         })
 

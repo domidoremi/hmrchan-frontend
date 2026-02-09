@@ -30,7 +30,7 @@ export function useSessionManagement() {
     }
   }
 
-  async function revokeSession(sessionId: string) {
+  async function revokeSession(sessionId: number) {
     if (!confirm(t('devices.confirm.revoke'))) return
 
     try {
@@ -73,7 +73,7 @@ export function useSessionManagement() {
     }
   }
 
-  async function updateDeviceName(sessionId: string, deviceName: string) {
+  async function updateDeviceName(sessionId: number, deviceName: string) {
     if (!deviceName.trim()) {
       toastStore.error(t('devices.error.emptyName'))
       return false
