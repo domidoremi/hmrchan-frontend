@@ -439,7 +439,11 @@
     "pinned": "置顶",
     "pin": "置顶讨论",
     "unpin": "取消置顶",
-    "referencedPost": "引用帖子"
+    "referencedPost": "引用帖子",
+    "deleteDiscussion": "删除讨论",
+    "confirmDeleteTitle": "删除讨论",
+    "confirmDeleteMessage": "确定要删除这个讨论吗？此操作不可撤销。",
+    "deleteSuccess": "讨论已删除"
   },
   "contact": {
     "title": "联系我们",

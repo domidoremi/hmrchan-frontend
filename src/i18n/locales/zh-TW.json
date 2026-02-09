@@ -439,7 +439,11 @@
     "pinned": "置頂",
     "pin": "置頂討論",
     "unpin": "取消置頂",
-    "referencedPost": "引用貼文"
+    "referencedPost": "引用貼文",
+    "deleteDiscussion": "刪除討論",
+    "confirmDeleteTitle": "刪除討論",
+    "confirmDeleteMessage": "確定要刪除這個討論嗎？此操作不可撤銷。",
+    "deleteSuccess": "討論已刪除"
   },
   "contact": {
     "title": "聯絡我們",
