@@ -15,6 +15,10 @@ export interface SearchSuggestion {
   type: 'post' | 'author' | 'tag' | 'recent'
   score?: number
 }
+export interface SearchSuggestionResponse {
+  query: string
+  results: SearchSuggestion[]
+}
 
 export interface SearchPostsParams {
   q: string
@@ -42,52 +46,31 @@ export const searchService = {
   async searchPosts(
     params: SearchPostsParams
   ): Promise<PaginatedApiResponseWithLimit<PostListItem>> {
-    const query = new URLSearchParams({
+    const query = buildQuery({
       q: params.q,
-      page: String(params.page ?? 1),
-      page_size: String(params.page_size ?? 20),
+      page: params.page ?? 1,
+      page_size: params.page_size ?? 20,
+      platform: params.platform,
+      sort_by: params.sort_by,
+      sort_order: params.sort_order ?? (params.sort_by ? 'desc' : undefined),
+      thumbnail_quality: params.thumbnail_quality,
     })
 
-    if (params.platform) {
-      query.set('platform', params.platform)
-    }
-    if (params.sort_by) {
-      query.set('sort_by', params.sort_by)
-      // 根据排序字段设置默认排序方向
-      const defaultOrder =
-        params.sort_by === 'relevance'
-          ? 'desc'
-          : params.sort_by === 'published_at'
-            ? 'desc'
-            : 'desc'
-      query.set('sort_order', params.sort_order ?? defaultOrder)
-    }
-    if (params.thumbnail_quality) {
-      query.set('thumbnail_quality', params.thumbnail_quality)
-    }
-
-    return apiClient.get<PaginatedApiResponseWithLimit<PostListItem>>(
-      `/search/posts?${query.toString()}`
-    )
+    return apiClient.get<PaginatedApiResponseWithLimit<PostListItem>>(`/search/posts${query}`)
   },
 
   /**
    * 搜索作者
    */
   async searchAuthors(params: SearchAuthorsParams): Promise<PaginatedApiResponse<AuthorListItem>> {
-    const query = new URLSearchParams({
+    const query = buildQuery({
       q: params.q,
-      page: String(params.page ?? 1),
-      page_size: String(params.page_size ?? 20),
+      page: params.page ?? 1,
+      page_size: params.page_size ?? 20,
+      platform: params.platform,
     })
 
-    if (params.platform) {
-      query.set('platform', params.platform)
-    }
-
-    return apiClient.get<PaginatedApiResponse<AuthorListItem>>(
-      `/search/authors?${query.toString()}`
-    )
+    return apiClient.get<PaginatedApiResponse<AuthorListItem>>(`/search/authors${query}`)
   },
 
   /**
@@ -97,12 +80,28 @@ export const searchService = {
     if (!q.trim()) {
       return []
     }
-
-    return apiClient.get<SearchSuggestion[]>(
+    const result = await apiClient.get<SearchSuggestion[] | SearchSuggestionResponse>(
       `/search/suggestions?q=${encodeURIComponent(q)}&limit=${limit}`,
       {
         skipErrorToast: true,
       }
     )
+
+    // Handle array response (direct suggestions)
+    if (Array.isArray(result)) {
+      return result
+    }
+
+    // Handle object response (wrapped suggestions)
+    if (
+      result &&
+      typeof result === 'object' &&
+      'results' in result &&
+      Array.isArray(result.results)
+    ) {
+      return result.results
+    }
+
+    return []
   },
 }

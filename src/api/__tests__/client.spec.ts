@@ -85,7 +85,7 @@ describe('apiClient', () => {
 
   describe('GET requests', () => {
     it('should make GET request successfully', async () => {
-      const mockData = { id: 1, name: 'Test' }
+      const mockData = { success: true, data: { id: 1, name: 'Test' }, meta: { api_version: '1' } }
       mockFetch.mockResolvedValueOnce({
         ok: true,
         status: 200,
@@ -101,6 +101,43 @@ describe('apiClient', () => {
           credentials: 'include',
         })
       )
+      expect(result).toEqual({ id: 1, name: 'Test' })
+    })
+
+    it('should normalize paginated array responses', async () => {
+      const mockData = {
+        success: true,
+        data: [{ id: 1 }, { id: 2 }],
+        pagination: { page: 1, page_size: 20, total: 2, total_pages: 1 },
+        meta: { api_version: '1' },
+      }
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve(mockData),
+      })
+
+      const result = await apiClient.get('/test')
+
+      expect(result).toEqual({
+        items: [{ id: 1 }, { id: 2 }],
+        page: 1,
+        page_size: 20,
+        total: 2,
+        total_pages: 1,
+      })
+    })
+
+    it('should keep raw responses when no envelope is present', async () => {
+      const mockData = { id: 1, name: 'Raw' }
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve(mockData),
+      })
+
+      const result = await apiClient.get('/raw')
+
       expect(result).toEqual(mockData)
     })
 
