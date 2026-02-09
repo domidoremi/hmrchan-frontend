@@ -902,6 +902,17 @@ onUnmounted(() => {
 .login-btn {
   padding: var(--spacing-2) var(--spacing-4);
   font-size: var(--text-sm);
+  color: var(--color-on-primary);
+  text-decoration: none;
+}
+
+.login-btn:hover,
+.login-btn:focus,
+.login-btn:active,
+.login-btn:visited,
+.login-btn.router-link-active,
+.login-btn.router-link-exact-active {
+  color: var(--color-on-primary);
 }
 
 /* ========== User Button ========== */

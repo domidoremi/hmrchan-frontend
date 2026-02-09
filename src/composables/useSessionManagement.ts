@@ -22,7 +22,21 @@ export function useSessionManagement() {
     isLoading.value = true
     try {
       const response = await deviceService.getDevices()
-      sessions.value = response.devices
+      let devices = response.devices ?? []
+
+      try {
+        const currentDevice = await deviceService.getCurrentDevice()
+        const currentIndex = devices.findIndex((device) => device.id === currentDevice.id)
+        if (currentIndex >= 0) {
+          devices[currentIndex] = { ...devices[currentIndex], ...currentDevice, is_current: true }
+        } else {
+          devices = [{ ...currentDevice, is_current: true }, ...devices]
+        }
+      } catch {
+        // If current device endpoint fails, fall back to the list as-is.
+      }
+
+      sessions.value = devices
     } catch {
       toastStore.error(t('devices.error.fetchFailed'))
     } finally {

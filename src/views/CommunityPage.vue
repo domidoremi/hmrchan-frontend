@@ -13,6 +13,17 @@
         <p class="page-subtitle">{{ $t('community.subtitle') }}</p>
       </header>
 
+      <!-- Guidance -->
+      <div class="community-guide glass-card">
+        <h2 class="guide-title">{{ $t('community.guideTitle') }}</h2>
+        <p class="guide-text">{{ $t('community.guideDescription') }}</p>
+        <ul class="guide-list">
+          <li>{{ $t('community.guidePoint1') }}</li>
+          <li>{{ $t('community.guidePoint2') }}</li>
+          <li>{{ $t('community.guidePoint3') }}</li>
+        </ul>
+      </div>
+
       <!-- Tabs -->
       <div class="community-tabs">
         <button
@@ -57,41 +68,81 @@
         />
         <div v-else class="discussions-list">
           <article
-            v-for="post in discussions"
-            :key="post.id"
+            v-for="discussion in discussions"
+            :key="discussion.id"
             class="discussion-card glass-card content-auto-sm"
-            @click="goToPost(post.id, post.thumbnail_url)"
-            @mouseenter="prefetchPostDetailPage"
+            @click="goToDiscussion(discussion.id)"
+            @mouseenter="prefetchDiscussionDetailPage"
           >
-            <div class="discussion-thumbnail" v-if="post.thumbnail_url">
+            <div
+              class="discussion-thumbnail"
+              v-if="discussion.referenced_post && discussion.referenced_post.thumbnail_url"
+            >
               <img
-                :src="normalizeToThumbnailUrl(post.thumbnail_url, 'medium') || post.thumbnail_url"
-                :srcset="getThumbnailSrcset(post.thumbnail_url) || undefined"
+                :src="
+                  normalizeToThumbnailUrl(discussion.referenced_post.thumbnail_url, 'medium') ||
+                  discussion.referenced_post.thumbnail_url
+                "
+                :srcset="getThumbnailSrcset(discussion.referenced_post.thumbnail_url) || undefined"
                 :sizes="thumbnailSizes"
-                :alt="post.title"
+                :alt="discussion.referenced_post.title"
                 loading="lazy"
                 decoding="async"
               />
             </div>
             <div class="discussion-content">
-              <h3 class="discussion-title">{{ post.title }}</h3>
+              <div class="discussion-title-row">
+                <h3 class="discussion-title">{{ discussion.title }}</h3>
+                <span v-if="discussion.is_pinned" class="discussion-pin">{{
+                  $t('community.pinned')
+                }}</span>
+              </div>
+              <p class="discussion-excerpt">{{ discussion.content }}</p>
               <div class="discussion-meta">
                 <span class="comment-count">
                   <AnimatedIcon name="sparkle" :fallback-icon="MessageSquare" size="sm" />
-                  {{ post.comment_count }}
+                  {{ discussion.comments_count }}
                 </span>
-                <span class="discussion-time">{{ formatTime(post.published_at) }}</span>
+                <span class="discussion-time">{{
+                  formatTime(discussion.updated_at || discussion.created_at)
+                }}</span>
+              </div>
+              <div v-if="discussion.tags.length > 0" class="discussion-tags">
+                <span v-for="tag in discussion.tags" :key="tag" class="discussion-tag glass-tag">
+                  #{{ tag }}
+                </span>
+              </div>
+              <div
+                v-if="discussion.referenced_post"
+                class="referenced-post"
+                @click.stop="goToReferencedPost(discussion.referenced_post)"
+              >
+                <img
+                  v-if="discussion.referenced_post.thumbnail_url"
+                  :src="
+                    normalizeToThumbnailUrl(discussion.referenced_post.thumbnail_url, 'medium') ||
+                    discussion.referenced_post.thumbnail_url
+                  "
+                  :alt="discussion.referenced_post.title"
+                  class="referenced-thumb"
+                  loading="lazy"
+                  decoding="async"
+                />
+                <div class="referenced-content">
+                  <span class="referenced-label">{{ $t('community.referencedPost') }}</span>
+                  <span class="referenced-title">{{ discussion.referenced_post.title }}</span>
+                </div>
               </div>
               <div class="discussion-author">
                 <img
-                  v-if="post.author_avatar_url"
-                  :src="normalizeAvatarUrl(post.author_avatar_url) || undefined"
-                  :alt="post.author_name"
+                  v-if="discussion.author.avatar_url"
+                  :src="normalizeAvatarUrl(discussion.author.avatar_url) || undefined"
+                  :alt="discussion.author.username"
                   class="author-avatar"
                   loading="lazy"
                   decoding="async"
                 />
-                <span class="author-name">{{ post.author_name }}</span>
+                <span class="author-name">{{ discussion.author.username }}</span>
               </div>
             </div>
           </article>
@@ -135,7 +186,7 @@
             v-for="(topic, index) in hotTopics"
             :key="topic.id"
             class="topic-card glass-card"
-            @click="goToPost(topic.id, topic.thumbnail_url)"
+            @click="goToDiscussion(topic.id)"
           >
             <div class="topic-rank">#{{ index + 1 }}</div>
             <div class="topic-content">
@@ -143,9 +194,9 @@
               <div class="topic-meta">
                 <span class="topic-count">
                   <AnimatedIcon name="sparkle" :fallback-icon="MessageSquare" size="sm" />
-                  {{ topic.comment_count }}
+                  {{ topic.comments_count }}
                 </span>
-                <span class="topic-views">{{ topic.view_count }} 浏览</span>
+                <span class="topic-views">{{ topic.view_count }} {{ $t('post.views') }}</span>
               </div>
             </div>
           </article>
@@ -164,11 +215,10 @@ import { storeToRefs } from 'pinia'
 import { MessageSquare, Flame } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores'
-import { postService, type PostListItem, ApiError } from '@/api'
+import { discussionService, type Discussion, ApiError } from '@/api'
 import { normalizeToThumbnailUrl, getThumbnailSrcset } from '@/utils/mediaOptimizer'
 import { normalizeAvatarUrl } from '@/api/userService'
 import { formatRelativeTime } from '@/utils/date'
-import { storePostNavigationContext } from '@/utils/postNavigation'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import Button from '@/components/ui/Button.vue'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
@@ -185,11 +235,11 @@ const activeTab = ref('recent')
 const isLoading = ref(false)
 const isLoadingMore = ref(false)
 const error = ref<string | null>(null)
-const discussions = ref<PostListItem[]>([])
+const discussions = ref<Discussion[]>([])
 
 const isLoadingHot = ref(false)
 const hotTopicsError = ref<string | null>(null)
-const hotTopics = ref<PostListItem[]>([])
+const hotTopics = ref<Discussion[]>([])
 
 const page = ref(1)
 const total = ref(0)
@@ -206,7 +256,7 @@ const setSentinelRef = (el: Element | null) => {
 
 const thumbnailSizes = '(max-width: 640px) 60px, 80px'
 
-let hasPrefetchedPostDetailPage = false
+let hasPrefetchedDiscussionDetailPage = false
 
 const tabs = [
   { id: 'recent', label: 'community.recentDiscussions', icon: MessageSquare },
@@ -224,26 +274,28 @@ function handleDiscussionCreated() {
   fetchDiscussions(true)
 }
 
-function prefetchPostDetailPage() {
-  if (hasPrefetchedPostDetailPage) return
-  hasPrefetchedPostDetailPage = true
-  import('@/views/PostDetailPage.vue').catch(() => {})
+function prefetchDiscussionDetailPage() {
+  if (hasPrefetchedDiscussionDetailPage) return
+  hasPrefetchedDiscussionDetailPage = true
+  import('@/views/DiscussionDetailPage.vue').catch(() => {})
 }
 
 function formatTime(dateStr: string): string {
   return formatRelativeTime(dateStr, t)
 }
 
-function goToPost(postId: string, thumbnailUrl?: string | null) {
-  const navigationItems = activeTab.value === 'hot' ? hotTopics.value : discussions.value
-  storePostNavigationContext(navigationItems, postId, 'community')
-  if (thumbnailUrl) {
+function goToDiscussion(discussionId: string) {
+  router.push(`/community/discussions/${discussionId}`)
+}
+
+function goToReferencedPost(post: { id: string; thumbnail_url?: string | null }) {
+  if (post.thumbnail_url) {
     sessionStorage.setItem(
-      `post-thumbnail-${postId}`,
-      normalizeToThumbnailUrl(thumbnailUrl, 'medium') || thumbnailUrl
+      `post-thumbnail-${post.id}`,
+      normalizeToThumbnailUrl(post.thumbnail_url, 'medium') || post.thumbnail_url
     )
   }
-  router.push(`/post/${postId}`)
+  router.push(`/post/${post.id}`)
 }
 
 function goToLogin() {
@@ -268,19 +320,17 @@ async function fetchDiscussions(reset = true): Promise<boolean> {
   error.value = null
 
   try {
-    const res = await postService.listPosts({
+    const res = await discussionService.list({
       page: page.value,
       page_size: pageSize,
-      sort_by: 'published_at',
+      sort_by: 'created_at',
       sort_order: 'desc',
     })
 
-    const items = res.items.filter((p: PostListItem) => p.comment_count > 0)
-
     if (reset) {
-      discussions.value = items
+      discussions.value = res.items
     } else {
-      discussions.value.push(...items)
+      discussions.value.push(...res.items)
     }
 
     total.value = res.total
@@ -320,15 +370,13 @@ async function fetchHotTopics() {
   hotTopicsError.value = null
 
   try {
-    const res = await postService.listPosts({
+    const res = await discussionService.list({
       page: 1,
-      page_size: 10,
-      sort_by: 'view_count',
+      page_size: 6,
+      sort_by: 'comments_count',
       sort_order: 'desc',
     })
-
-    // 过滤出有评论的热门帖子
-    hotTopics.value = res.items.filter((p: PostListItem) => p.comment_count > 0).slice(0, 6)
+    hotTopics.value = res.items.slice(0, 6)
   } catch (err) {
     if (err instanceof ApiError) {
       hotTopicsError.value = err.message
@@ -416,6 +464,33 @@ onMounted(() => {
 .page-subtitle {
   color: var(--color-text-tertiary);
   font-size: var(--text-sm);
+}
+
+.community-guide {
+  margin-bottom: var(--spacing-4);
+  padding: var(--spacing-4);
+}
+
+.guide-title {
+  font-size: var(--text-base);
+  font-weight: var(--font-semibold);
+  margin-bottom: var(--spacing-2);
+}
+
+.guide-text {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--spacing-2);
+}
+
+.guide-list {
+  display: grid;
+  gap: var(--spacing-1);
+  padding-left: var(--spacing-5);
+  margin: 0;
+  list-style: disc;
+  color: var(--color-text-tertiary);
+  font-size: var(--text-xs);
 }
 
 .composer-section {
@@ -550,10 +625,36 @@ onMounted(() => {
   overflow: hidden;
 }
 
+.discussion-title-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+}
+
+.discussion-pin {
+  font-size: var(--text-xs);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  background: rgba(var(--color-primary-rgb), 0.12);
+  color: var(--color-primary);
+}
+
+.discussion-excerpt {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--spacing-2);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 .discussion-meta {
   display: flex;
   align-items: center;
   gap: var(--spacing-4);
+  flex-wrap: wrap;
   font-size: var(--text-xs);
   color: var(--color-text-tertiary);
   margin-bottom: var(--spacing-3);
@@ -570,6 +671,112 @@ onMounted(() => {
   align-items: center;
   gap: var(--spacing-2);
   margin-top: var(--spacing-2);
+}
+
+.discussion-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-1);
+  margin-bottom: var(--spacing-2);
+}
+
+.discussion-tag {
+  font-size: var(--text-xs);
+}
+
+.referenced-post {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  padding: var(--spacing-2);
+  border-radius: var(--radius-md);
+  background: var(--glass-bg-light);
+  margin-top: var(--spacing-2);
+  cursor: pointer;
+}
+
+.referenced-post:hover {
+  background: var(--glass-bg);
+}
+
+.referenced-thumb {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.referenced-content {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.referenced-label {
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+}
+
+.referenced-title {
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.discussion-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-1);
+  margin-bottom: var(--spacing-2);
+}
+
+.discussion-tag {
+  font-size: var(--text-xs);
+}
+
+.referenced-post {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  padding: var(--spacing-2);
+  border-radius: var(--radius-md);
+  background: var(--glass-bg-light);
+  margin-top: var(--spacing-2);
+  cursor: pointer;
+}
+
+.referenced-post:hover {
+  background: var(--glass-bg);
+}
+
+.referenced-thumb {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.referenced-content {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.referenced-label {
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+}
+
+.referenced-title {
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .author-avatar {
