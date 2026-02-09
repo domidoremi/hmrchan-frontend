@@ -96,7 +96,8 @@ export const useAuthStore = defineStore(
       password: string,
       verificationCode: string,
       fullName?: string,
-      turnstileToken?: string
+      turnstileToken?: string,
+      registerToken?: string
     ) {
       if (isLoading.value) return { success: false, error: 'auth.error.inProgress' }
 
@@ -110,6 +111,7 @@ export const useAuthStore = defineStore(
           password,
           verification_code: verificationCode,
           ...(fullName ? { full_name: fullName } : {}),
+          ...(registerToken ? { register_token: registerToken } : {}),
           ...(turnstileToken ? { turnstile_token: turnstileToken } : {}),
         })
 
