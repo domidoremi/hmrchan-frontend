@@ -130,7 +130,7 @@
 /* Primary variant */
 .glass-button--primary {
   background: var(--color-primary);
-  color: var(--color-text-inverse);
+  color: var(--color-on-primary);
   border-color: transparent;
   font-weight: var(--font-semibold);
 }
@@ -139,15 +139,6 @@
   background: var(--color-primary-light);
   box-shadow: var(--shadow-md);
   border-color: transparent;
-}
-
-/* Dark mode: primary inverts to light, need dark text */
-[data-theme='dark'] .glass-button--primary {
-  color: #09090b;
-}
-
-[data-theme='dark'] .glass-button--primary:hover {
-  color: #09090b;
 }
 
 /* Accent variant */

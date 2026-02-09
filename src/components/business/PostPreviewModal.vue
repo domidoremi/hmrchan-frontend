@@ -850,7 +850,7 @@ function openDetail() {
 .post-preview-btn--primary {
   background: var(--gradient-primary);
   border-color: transparent;
-  color: white;
+  color: var(--color-on-primary);
 }
 
 .post-preview-body {

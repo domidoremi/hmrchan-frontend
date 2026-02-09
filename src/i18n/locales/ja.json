@@ -110,6 +110,7 @@
       "passwordTooShort": "パスワードは8文字以上必要です",
       "passwordTooWeak": "パスワードが弱すぎます。複雑さを上げてください",
       "invalidEmail": "有効なメールアドレスを入力してください",
+      "usernameInvalid": "ユーザー名は3〜50文字で入力してください",
       "loginFailed": "ログインに失敗しました。もう一度お試しください",
       "registerFailed": "登録に失敗しました",
       "emailExists": "このメールアドレスは既に登録されています",

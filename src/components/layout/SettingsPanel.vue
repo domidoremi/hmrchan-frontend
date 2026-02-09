@@ -321,7 +321,7 @@ function resetVideoSettings() {
   justify-content: center;
   background: var(--gradient-primary);
   border-radius: var(--radius-md);
-  color: var(--color-white);
+  color: var(--color-on-primary);
 }
 
 /* ========== Group ========== */
@@ -409,7 +409,7 @@ function resetVideoSettings() {
 
 .theme-btn.active .theme-btn-icon {
   background: var(--color-primary);
-  color: var(--color-white);
+  color: var(--color-on-primary);
   box-shadow: 0 4px 12px rgba(var(--color-primary-rgb), 0.3);
 }
 
@@ -436,7 +436,7 @@ function resetVideoSettings() {
   justify-content: center;
   background: var(--color-primary);
   border-radius: var(--radius-full);
-  color: var(--color-white);
+  color: var(--color-on-primary);
 }
 
 /* Check animation */
@@ -491,7 +491,7 @@ function resetVideoSettings() {
 .lang-btn.active {
   background: var(--gradient-primary);
   border-color: transparent;
-  color: var(--color-white);
+  color: var(--color-on-primary);
   box-shadow: 0 4px 12px rgba(var(--color-primary-rgb), 0.3);
 }
 

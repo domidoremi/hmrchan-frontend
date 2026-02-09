@@ -105,6 +105,7 @@
   --color-text-secondary: var(--color-gray-600);
   --color-text-tertiary: var(--color-gray-400);
   --color-text-inverse: var(--color-white);
+  --color-on-primary: #ffffff;
 
   /* shadcn/ui style colors */
   --color-foreground: var(--color-gray-900);
@@ -345,6 +346,7 @@
   --color-text-secondary: #a1a1aa;
   --color-text-tertiary: #a3a3a3; /* 从 #9ca3af 提升到 #a3a3a3，确保在所有背景上满足 WCAG AA 4.5:1 对比度 */
   --color-text-muted: #71717a;
+  --color-on-primary: #09090b;
 
   /* shadcn/ui style colors - dark mode */
   --color-foreground: #f8fafc;

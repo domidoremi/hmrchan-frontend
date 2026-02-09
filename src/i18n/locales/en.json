@@ -110,6 +110,7 @@
       "passwordTooShort": "Password must be at least 8 characters",
       "passwordTooWeak": "Password is too weak, please increase complexity",
       "invalidEmail": "Please enter a valid email address",
+      "usernameInvalid": "Username must be 3–50 characters",
       "loginFailed": "Login failed, please try again",
       "registerFailed": "Registration failed, please try again",
       "emailExists": "This email is already registered",

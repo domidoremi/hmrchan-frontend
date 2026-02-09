@@ -588,7 +588,7 @@ onMounted(() => {
 
 .filter-tab.active {
   background: var(--color-primary);
-  color: var(--color-white);
+  color: var(--color-on-primary);
 }
 
 .tab-count {
