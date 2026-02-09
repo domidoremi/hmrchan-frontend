@@ -216,11 +216,28 @@
             </div>
           </div>
 
+          <div v-if="turnstileEnabled" class="turnstile-block">
+            <div class="turnstile-header">
+              <span class="turnstile-title">{{ $t('auth.verifyTitle') }}</span>
+              <span class="turnstile-hint">{{ $t('auth.verifyHint') }}</span>
+            </div>
+            <TurnstileWidget
+              ref="turnstileRef"
+              :site-key="turnstileSiteKey"
+              action="register"
+              @verify="handleTurnstileVerify"
+              @expire="handleTurnstileExpire"
+              @error="handleTurnstileError"
+            />
+          </div>
+
           <Button
             type="submit"
             :loading="isLoading"
             :disabled="
-              verificationCode.length !== 6 || (!!confirmPassword && password !== confirmPassword)
+              verificationCode.length !== 6 ||
+              (!!confirmPassword && password !== confirmPassword) ||
+              (turnstileEnabled && !isTurnstileTokenFresh())
             "
             full-width
           >
@@ -290,6 +307,7 @@ const passwordStrengthText = computed(() => {
 const turnstileSiteKey = (import.meta.env.VITE_TURNSTILE_SITE_KEY ?? '').trim()
 const turnstileEnabled = turnstileSiteKey.length > 0
 const turnstileToken = ref<string | null>(null)
+const turnstileIssuedAt = ref<number | null>(null)
 const turnstileRef = ref<{ reset: () => void; getResponse: () => string | undefined } | null>(null)
 
 // Resend cooldown
@@ -348,15 +366,16 @@ onUnmounted(() => {
 
 /** Step 1: Send registration code */
 async function handleSendCode() {
-  if (!email.value) {
+  const trimmedEmail = email.value.trim()
+  if (!trimmedEmail) {
     toastStore.warning(t('auth.emailRequired'))
     return
   }
-  if (!emailRegex.test(email.value)) {
+  if (!emailRegex.test(trimmedEmail)) {
     toastStore.warning(t('auth.error.invalidEmail'))
     return
   }
-  if (turnstileEnabled && !turnstileToken.value) {
+  if (turnstileEnabled && !isTurnstileTokenFresh()) {
     toastStore.warning(t('auth.error.turnstileRequired'))
     return
   }
@@ -364,14 +383,21 @@ async function handleSendCode() {
   isSendingCode.value = true
   try {
     await authService.sendRegistrationCode({
-      email: email.value,
+      email: trimmedEmail,
+
       ...(turnstileToken.value ? { turnstile_token: turnstileToken.value } : {}),
     })
     toastStore.success(t('emailCode.codeSent'))
     step.value = 'register'
     startCooldown()
+    if (turnstileEnabled) {
+      turnstileToken.value = null
+      turnstileIssuedAt.value = null
+      turnstileRef.value?.reset()
+    }
   } catch (err) {
     turnstileToken.value = null
+    turnstileIssuedAt.value = null
     turnstileRef.value?.reset()
     if (err instanceof ApiError) {
       if (err.status === 429) {
@@ -392,7 +418,16 @@ async function handleSendCode() {
 /** Resend code from step 2 */
 async function handleResendCode() {
   // 如果启用了 Turnstile，需要重新验证
-  if (turnstileEnabled && !turnstileToken.value) {
+  const trimmedEmail = email.value.trim()
+  if (!trimmedEmail) {
+    toastStore.warning(t('auth.emailRequired'))
+    return
+  }
+  if (!emailRegex.test(trimmedEmail)) {
+    toastStore.warning(t('auth.error.invalidEmail'))
+    return
+  }
+  if (turnstileEnabled && !isTurnstileTokenFresh()) {
     toastStore.warning(t('auth.error.turnstileRequired'))
     return
   }
@@ -400,7 +435,7 @@ async function handleResendCode() {
   isSendingCode.value = true
   try {
     await authService.sendRegistrationCode({
-      email: email.value,
+      email: trimmedEmail,
       ...(turnstileToken.value ? { turnstile_token: turnstileToken.value } : {}),
     })
     toastStore.success(t('emailCode.codeSent'))
@@ -410,12 +445,14 @@ async function handleResendCode() {
     // 重置 Turnstile token，要求用户重新验证
     if (turnstileEnabled) {
       turnstileToken.value = null
+      turnstileIssuedAt.value = null
       turnstileRef.value?.reset()
     }
   } catch (err) {
     // 重置 Turnstile token
     if (turnstileEnabled) {
       turnstileToken.value = null
+      turnstileIssuedAt.value = null
       turnstileRef.value?.reset()
     }
     if (err instanceof ApiError) {
@@ -440,12 +477,24 @@ function goBackToEmail() {
   step.value = 'email'
   verificationCode.value = ''
   codeError.value = false
+  if (turnstileEnabled) {
+    turnstileToken.value = null
+    turnstileIssuedAt.value = null
+    turnstileRef.value?.reset()
+  }
 }
 
 /** Step 2: Register with code */
 async function handleRegister() {
-  if (!username.value || !password.value || !confirmPassword.value) {
+  const trimmedUsername = username.value.trim()
+  const trimmedEmail = email.value.trim()
+
+  if (!trimmedUsername || !password.value || !confirmPassword.value) {
     toastStore.warning(t('auth.error.fieldsRequired'))
+    return
+  }
+  if (trimmedUsername.length < 3 || trimmedUsername.length > 50) {
+    toastStore.warning(t('auth.error.usernameInvalid'))
     return
   }
   if (password.value !== confirmPassword.value) {
@@ -464,10 +513,14 @@ async function handleRegister() {
     toastStore.warning(t('auth.error.passwordTooWeak'))
     return
   }
+  if (turnstileEnabled && !isTurnstileTokenFresh()) {
+    toastStore.warning(t('auth.error.turnstileRequired'))
+    return
+  }
 
   const result = await authStore.register(
-    username.value,
-    email.value,
+    trimmedUsername,
+    trimmedEmail,
     password.value,
     verificationCode.value,
     fullName.value.trim() || undefined,
@@ -480,21 +533,38 @@ async function handleRegister() {
   } else {
     codeError.value = true
     codeInputRef.value?.reset()
-    toastStore.error(t(result.error || 'auth.error.registerFailed'))
+    if (result.error) {
+      const message =
+        result.error.startsWith('auth.') || result.error.startsWith('error.')
+          ? t(result.error)
+          : result.error
+      toastStore.error(message)
+    } else {
+      toastStore.error(t('auth.error.registerFailed'))
+    }
   }
 }
 
 function handleTurnstileVerify(token: string) {
   turnstileToken.value = token
+  turnstileIssuedAt.value = Date.now()
 }
 
 function handleTurnstileExpire() {
   turnstileToken.value = null
+  turnstileIssuedAt.value = null
 }
 
 function handleTurnstileError() {
   turnstileToken.value = null
+  turnstileIssuedAt.value = null
   toastStore.error(t('auth.error.turnstileFailed'))
+}
+
+function isTurnstileTokenFresh() {
+  if (!turnstileEnabled) return true
+  if (!turnstileToken.value || !turnstileIssuedAt.value) return false
+  return Date.now() - turnstileIssuedAt.value < 4 * 60 * 1000
 }
 </script>
 

@@ -377,7 +377,7 @@ onMounted(() => {
 /* Variants */
 .btn-default {
   background: var(--color-primary);
-  color: var(--color-white);
+  color: var(--color-on-primary);
   box-shadow: var(--shadow-sm);
 }
 
@@ -472,23 +472,6 @@ onMounted(() => {
 
 .btn-full-width {
   width: 100%;
-}
-
-/* Dark mode: primary color inverts to near-white, need dark text for contrast */
-:global([data-theme='dark']) .btn-default {
-  color: #09090b;
-}
-
-:global([data-theme='dark']) .btn-default:hover:not(:disabled) {
-  color: #09090b;
-}
-
-:global([data-theme='dark']) .btn-success {
-  color: #09090b;
-}
-
-:global([data-theme='dark']) .btn-success:hover:not(:disabled) {
-  color: #09090b;
 }
 
 /* Focus */

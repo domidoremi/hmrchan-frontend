@@ -128,7 +128,7 @@ const currentYear = computed(() => new Date().getFullYear())
 
 .social-link:hover {
   background: var(--color-primary);
-  color: #fff;
+  color: var(--color-on-primary);
 }
 
 @media (max-width: 768px) {

@@ -189,7 +189,7 @@ ol {
   left: var(--spacing-4);
   padding: var(--spacing-2) var(--spacing-4);
   background: var(--color-primary);
-  color: var(--color-white);
+  color: var(--color-on-primary);
   border-radius: var(--radius-md);
   font-weight: var(--font-medium);
   z-index: var(--z-tooltip);

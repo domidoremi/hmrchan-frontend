@@ -745,7 +745,7 @@ onBeforeUnmount(() => {
 
 .filter-btn.active {
   background: var(--color-primary);
-  color: var(--color-text-inverse);
+  color: var(--color-on-primary);
   border-color: transparent;
   box-shadow: var(--shadow-md);
 }
