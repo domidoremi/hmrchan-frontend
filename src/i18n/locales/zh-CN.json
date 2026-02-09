@@ -104,6 +104,7 @@
     "fullNamePlaceholder": "填写你的姓名（可选）",
     "fullNameHint": "可选，将展示在个人资料中",
     "passwordPlaceholder": "至少 8 个字符",
+    "passwordRequirement": "至少 8 个字符，建议混合大小写字母、数字和符号以提高强度。",
     "confirmPasswordPlaceholder": "再次输入密码",
     "error": {
       "fieldsRequired": "请填写所有字段",
@@ -173,8 +174,8 @@
     "auto": "跟随系统",
     "language": "语言",
     "uiStyle": "UI 风格",
-    "uiStyleIos": "iOS (SwiftUI)",
-    "uiStyleMaterial": "Material",
+    "uiStyleIos": "圆润",
+    "uiStyleMaterial": "棱角",
     "display": "显示",
     "toggleHeroSection": "显示首页横幅",
     "heroSectionDesc": "在首页显示横幅区域",

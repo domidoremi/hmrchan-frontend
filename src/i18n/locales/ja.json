@@ -104,6 +104,7 @@
     "fullNamePlaceholder": "名前を入力（任意）",
     "fullNameHint": "任意。プロフィールに表示されます",
     "passwordPlaceholder": "8文字以上",
+    "passwordRequirement": "8文字以上。大文字・小文字・数字・記号を混ぜるとより安全です。",
     "confirmPasswordPlaceholder": "パスワードを再入力",
     "error": {
       "fieldsRequired": "すべての項目を入力してください",
@@ -173,8 +174,8 @@
     "auto": "自動",
     "language": "言語",
     "uiStyle": "UI スタイル",
-    "uiStyleIos": "iOS (SwiftUI)",
-    "uiStyleMaterial": "Material",
+    "uiStyleIos": "ラウンド",
+    "uiStyleMaterial": "シャープ",
     "display": "表示",
     "toggleHeroSection": "ヒーローセクション表示",
     "heroSectionDesc": "ホームページにヒーローバナーを表示",

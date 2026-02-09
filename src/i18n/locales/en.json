@@ -104,6 +104,7 @@
     "fullNamePlaceholder": "Enter your name (optional)",
     "fullNameHint": "Optional, shown on your profile",
     "passwordPlaceholder": "At least 8 characters",
+    "passwordRequirement": "At least 8 characters; mix upper/lowercase, numbers, and symbols for best strength.",
     "confirmPasswordPlaceholder": "Re-enter your password",
     "error": {
       "fieldsRequired": "Please fill in all fields",
@@ -173,8 +174,8 @@
     "auto": "Auto",
     "language": "Language",
     "uiStyle": "UI Style",
-    "uiStyleIos": "iOS (SwiftUI)",
-    "uiStyleMaterial": "Material",
+    "uiStyleIos": "Rounded",
+    "uiStyleMaterial": "Sharp",
     "display": "Display",
     "toggleHeroSection": "Show Hero Section",
     "heroSectionDesc": "Show the hero banner on the homepage",

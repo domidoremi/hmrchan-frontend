@@ -1,10 +1,6 @@
 <template>
   <div class="auth-page">
     <div class="auth-card glass-card">
-      <div class="auth-badge">
-        <span class="auth-badge-dot" />
-        <span>{{ $t('auth.secureBadge') }}</span>
-      </div>
       <div class="auth-header">
         <button
           type="button"
@@ -56,8 +52,10 @@
               type="email"
               :placeholder="$t('auth.emailPlaceholder')"
               autocomplete="email"
+              :error="!!emailError"
               required
             />
+            <p v-if="emailError" class="field-error">{{ emailError }}</p>
           </div>
 
           <div v-if="turnstileEnabled && forceTurnstileForSend" class="turnstile-block">
@@ -108,18 +106,6 @@
           </div>
 
           <div class="form-group">
-            <label for="reg-full-name">{{ $t('auth.fullName') }}</label>
-            <Input
-              id="reg-full-name"
-              v-model="fullName"
-              type="text"
-              :placeholder="$t('auth.fullNamePlaceholder')"
-              autocomplete="name"
-            />
-            <p class="field-hint">{{ $t('auth.fullNameHint') }}</p>
-          </div>
-
-          <div class="form-group">
             <label for="reg-password">{{ $t('auth.password') }}</label>
             <div class="password-field">
               <Input
@@ -140,6 +126,7 @@
                 <component :is="showPassword ? EyeOff : Eye" :size="16" />
               </button>
             </div>
+            <p class="field-hint">{{ $t('auth.passwordRequirement') }}</p>
             <!-- Password Strength Indicator -->
             <div v-if="password" class="password-strength">
               <div class="strength-bar">
@@ -259,7 +246,7 @@
 <script setup lang="ts">
 defineOptions({ name: 'RegisterPage' })
 
-import { ref, computed, onUnmounted } from 'vue'
+import { ref, computed, watch, onUnmounted } from 'vue'
 import { useRouter, RouterLink } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useAuthStore, useToastStore } from '@/stores'
@@ -284,7 +271,6 @@ const step = ref<Step>('email')
 
 const email = ref('')
 const username = ref('')
-const fullName = ref('')
 const password = ref('')
 const confirmPassword = ref('')
 const showPassword = ref(false)
@@ -297,6 +283,12 @@ const registerTokenExpiresAt = ref<number | null>(null)
 const forceTurnstileForSend = ref(false)
 
 const codeInputRef = ref<InstanceType<typeof EmailCodeInput> | null>(null)
+const emailError = ref('')
+
+// Clear email error when user types
+watch(email, () => {
+  emailError.value = ''
+})
 
 // Password strength
 const passwordStrengthResult = computed(() => checkPasswordStrength(password.value))
@@ -438,7 +430,7 @@ async function handleSendCode() {
       if (err.status === 429) {
         toastStore.error(t('emailCode.tooManyRequests'))
       } else if (err.code === 'EMAIL_EXISTS') {
-        toastStore.error(t('auth.error.emailExists'))
+        emailError.value = t('auth.error.emailExists')
       } else {
         toastStore.error(err.message)
       }
@@ -569,7 +561,7 @@ async function handleRegister() {
     trimmedEmail,
     password.value,
     verificationCode.value,
-    fullName.value.trim() || undefined,
+    undefined,
     needsTurnstile ? turnstileToken.value || undefined : undefined,
     hasValidRegisterToken() ? registerToken.value || undefined : undefined
   )
@@ -684,29 +676,6 @@ function isTurnstileTokenFresh() {
   font-size: var(--text-sm);
   font-weight: var(--font-medium);
   color: var(--color-text-secondary);
-}
-
-.auth-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--spacing-2);
-  padding: 0.35rem 0.75rem;
-  border-radius: var(--radius-full);
-  background: rgba(var(--color-primary-rgb), 0.12);
-  color: var(--color-text-primary);
-  font-size: var(--text-xs);
-  font-weight: var(--font-semibold);
-  width: fit-content;
-  margin-bottom: var(--spacing-3);
-  border: 1px solid rgba(var(--color-primary-rgb), 0.2);
-}
-
-.auth-badge-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: var(--radius-full);
-  background: var(--color-primary);
-  box-shadow: 0 0 8px rgba(var(--color-primary-rgb), 0.6);
 }
 
 .turnstile-block {

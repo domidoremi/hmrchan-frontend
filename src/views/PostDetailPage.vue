@@ -1453,7 +1453,7 @@ onUnmounted(() => {
   background: var(--post-panel-bg);
   border-left: 1px solid var(--post-panel-border);
   backdrop-filter: blur(14px);
-  overflow: hidden;
+  overflow: auto;
   display: flex;
   flex-direction: column;
   gap: var(--spacing-3);
@@ -1478,7 +1478,7 @@ onUnmounted(() => {
 
   .post-shell {
     grid-template-columns: 1fr;
-    grid-template-rows: minmax(0, auto) minmax(0, 42svh);
+    grid-template-rows: minmax(0, auto) auto;
     gap: var(--spacing-3);
   }
 
