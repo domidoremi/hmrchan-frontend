@@ -149,7 +149,6 @@ import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import { useProgressiveRender } from '@/composables/useProgressiveRender'
 import { useMasonryColumns } from '@/composables/useMasonryColumns'
 import { useBluePolymorph, type PlatformMorphState } from '@/composables/useBluePolymorph'
-import { useContextualBackground } from '@/composables/useContextualBackground'
 import { useSettingsStore } from '@/stores'
 import { throttleRAF, prefersReducedMotion } from '@/utils/performance'
 import { createResizeObserver } from '@/utils/modernAPIs'
@@ -164,7 +163,6 @@ import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 const router = useRouter()
 const { t } = useI18n()
 const { settings } = storeToRefs(useSettingsStore())
-const { setExploreFilter } = useContextualBackground()
 
 const shouldShowPolymorph = computed(
   () => settings.value.enableAnimations && !prefersReducedMotion()
@@ -527,9 +525,7 @@ watch(currentSort, () => {
   fetchPosts()
 })
 
-watch(currentPlatform, (p) => {
-  // Also drive the global background theme.
-  setExploreFilter(p)
+watch(currentPlatform, () => {
   fetchPosts()
 })
 

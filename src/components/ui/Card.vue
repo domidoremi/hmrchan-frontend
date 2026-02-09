@@ -26,36 +26,19 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted } from 'vue'
+import { computed, ref } from 'vue'
 
 defineOptions({ name: 'UiCard' })
-
-// 懒加载 GSAP
-let gsap: typeof import('gsap').default | null = null
-const loadGsap = async () => {
-  if (!gsap) {
-    const module = await import('gsap')
-    gsap = module.default
-  }
-  return gsap
-}
-
-// 检测是否偏好减少动画
-const prefersReducedMotion = (): boolean => {
-  if (typeof window === 'undefined') return false
-  if (typeof window.matchMedia !== 'function') return false
-  return window.matchMedia('(prefers-reduced-motion: reduce)').matches
-}
 
 interface Props {
   as?: string
   variant?: 'default' | 'outline' | 'subtle' | 'elevated'
   interactive?: boolean
-  /** 是否启用 3D 悬停效果 */
+  /** Kept for API compat — hover effects now use CSS */
   hover3d?: boolean
-  /** 是否启用光泽扫过效果 */
+  /** Kept for API compat */
   shine?: boolean
-  /** 是否启用入场动画 */
+  /** Kept for API compat */
   animate?: boolean
 }
 
@@ -83,111 +66,17 @@ const cardClass = computed(() => [
   },
 ])
 
-// 3D 悬停效果
-async function handleMouseMove(event: MouseEvent) {
-  if (!props.hover3d || prefersReducedMotion() || !cardRef.value) return
-
-  const gsapLib = await loadGsap()
-  if (!gsapLib) return
-
-  const card = cardRef.value
-  const rect = card.getBoundingClientRect()
-  const x = event.clientX - rect.left
-  const y = event.clientY - rect.top
-  const centerX = rect.width / 2
-  const centerY = rect.height / 2
-
-  const rotateX = ((y - centerY) / centerY) * -8
-  const rotateY = ((x - centerX) / centerX) * 8
-
-  gsapLib.to(card, {
-    rotateX,
-    rotateY,
-    duration: 0.3,
-    ease: 'power2.out',
-    transformPerspective: 1000,
-  })
-
-  // 光泽跟随鼠标
-  if (props.shine && shineRef.value) {
-    gsapLib.to(shineRef.value, {
-      x: x - rect.width / 2,
-      y: y - rect.height / 2,
-      duration: 0.3,
-      ease: 'power2.out',
-    })
-  }
+function handleMouseMove() {
+  // CSS-only hover; no JS needed
 }
 
-async function handleMouseEnter() {
+function handleMouseEnter() {
   isHovered.value = true
-
-  if (prefersReducedMotion() || !cardRef.value) return
-
-  const gsapLib = await loadGsap()
-  if (!gsapLib) return
-
-  // 轻微抬起效果
-  gsapLib.to(cardRef.value, {
-    y: -4,
-    scale: 1.02,
-    duration: 0.3,
-    ease: 'power2.out',
-  })
-
-  // 显示光泽
-  if (props.shine && shineRef.value) {
-    gsapLib.to(shineRef.value, {
-      opacity: 1,
-      duration: 0.3,
-    })
-  }
 }
 
-async function handleMouseLeave() {
+function handleMouseLeave() {
   isHovered.value = false
-
-  if (prefersReducedMotion() || !cardRef.value) return
-
-  const gsapLib = await loadGsap()
-  if (!gsapLib) return
-
-  // 重置变换
-  gsapLib.to(cardRef.value, {
-    rotateX: 0,
-    rotateY: 0,
-    y: 0,
-    scale: 1,
-    duration: 0.5,
-    ease: 'elastic.out(1, 0.5)',
-  })
-
-  // 隐藏光泽
-  if (props.shine && shineRef.value) {
-    gsapLib.to(shineRef.value, {
-      opacity: 0,
-      duration: 0.3,
-    })
-  }
 }
-
-// 入场动画
-async function animateEntrance() {
-  if (!props.animate || prefersReducedMotion() || !cardRef.value) return
-
-  const gsapLib = await loadGsap()
-  if (!gsapLib) return
-
-  gsapLib.fromTo(
-    cardRef.value,
-    { opacity: 0, y: 30 },
-    { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' }
-  )
-}
-
-onMounted(() => {
-  animateEntrance()
-})
 </script>
 
 <style scoped>

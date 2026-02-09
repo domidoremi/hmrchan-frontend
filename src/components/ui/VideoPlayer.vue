@@ -1565,7 +1565,11 @@ function startHintTimer() {
   }
 
   .volume-control {
-    display: none;
+    flex-shrink: 0;
+  }
+
+  .volume-slider-container {
+    width: 64px;
   }
 
   .time-display {
@@ -1580,6 +1584,21 @@ function startHintTimer() {
   .center-play-icon svg {
     width: 32px;
     height: 32px;
+  }
+
+  .settings-panel {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    top: auto;
+    min-width: unset;
+    width: 100%;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    padding: var(--spacing-4);
+    max-height: 60svh;
+    overflow-y: auto;
+    z-index: 100;
   }
 }
 

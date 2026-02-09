@@ -202,14 +202,6 @@
 
       <div v-else class="search-empty">
         <div class="empty-content">
-          <LottiePlayer
-            class="empty-icon"
-            :animation-data="orbitDot"
-            :loop="true"
-            :autoplay="true"
-            :width="96"
-            :height="96"
-          />
           <h2>{{ $t('search.emptyTitle') }}</h2>
           <p>{{ $t('search.emptyHint') }}</p>
           <div class="search-tips">
@@ -250,13 +242,11 @@ import { normalizeAvatarUrl } from '@/api/userService'
 import { useAuthStore } from '@/stores'
 import { storePostNavigationContext } from '@/utils/postNavigation'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
-import LottiePlayer from '@/components/animation/LottiePlayer.vue'
 import SearchBar from '@/components/business/SearchBar.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import Select from '@/components/ui/Select.vue'
 import PostCard from '@/components/business/PostCard.vue'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
-import orbitDot from '@/assets/animations/orbit-dot.json'
 
 const route = useRoute()
 const router = useRouter()

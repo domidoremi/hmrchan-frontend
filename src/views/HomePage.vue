@@ -13,17 +13,6 @@
           <span>{{ $t('home.hero.badge') }}</span>
         </div>
 
-        <LottiePlayer
-          v-if="shouldAnimate"
-          class="hero-lottie"
-          :animation-data="sparkleSweep"
-          :loop="true"
-          :autoplay="true"
-          :speed="0.8"
-          :width="120"
-          :height="120"
-        />
-
         <h1 class="hero-title gradient-text">{{ $t('home.hero.title') }}</h1>
         <p class="hero-subtitle">{{ $t('home.hero.subtitle') }}</p>
 
@@ -212,8 +201,6 @@ import { isFilteredAuthor } from '@/config/filters'
 import { storePostNavigationContext } from '@/utils/postNavigation'
 import Button from '@/components/ui/Button.vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
-import LottiePlayer from '@/components/animation/LottiePlayer.vue'
-import sparkleSweep from '@/assets/animations/sparkle-sweep.json'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import PostCard from '@/components/business/PostCard.vue'
