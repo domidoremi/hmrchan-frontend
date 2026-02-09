@@ -162,7 +162,6 @@ const CONTENT_MAX = 10000
 const canSubmit = computed(
   () => title.value.trim().length >= TITLE_MIN && content.value.trim().length >= CONTENT_MIN
 )
-const canSubmit = computed(() => title.value.trim().length > 0 && content.value.trim().length > 0)
 
 const categories = [
   { value: 'general' as const, label: '💬 综合' },
