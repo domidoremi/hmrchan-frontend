@@ -5,6 +5,7 @@
  */
 
 import { apiClient, type PaginatedApiResponse, type PaginatedApiResponseWithLimit } from './client'
+import { buildQuery } from '@/utils/queryBuilder'
 import type { PostListItem, ThumbnailQuality } from './postService'
 import type { AuthorListItem } from './authorService'
 
