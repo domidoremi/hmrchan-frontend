@@ -10,9 +10,9 @@
 
       <div v-else>
         <div v-if="isLoading" class="discussion-skeleton glass-card">
-          <div class="skeleton" style="height: 28px; width: 60%; margin-bottom: 12px" />
-          <div class="skeleton" style="height: 16px; width: 40%; margin-bottom: 16px" />
-          <div class="skeleton" style="height: 120px; width: 100%" />
+          <div class="skeleton" style="height: 1.75rem; width: 60%; margin-bottom: 0.75rem" />
+          <div class="skeleton" style="height: 1rem; width: 40%; margin-bottom: 1rem" />
+          <div class="skeleton" style="height: 7.5rem; width: 100%" />
         </div>
 
         <article v-else-if="discussion" class="discussion-card glass-card">

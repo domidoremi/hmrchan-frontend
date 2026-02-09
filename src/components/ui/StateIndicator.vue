@@ -217,7 +217,7 @@ const resolvedActionLabel = computed(() => props.actionLabel ?? t('common.retry'
   display: flex;
   flex-direction: column;
   gap: var(--spacing-2);
-  max-width: 320px;
+  max-width: min(90vw, 20rem);
 }
 
 .state-indicator__title {

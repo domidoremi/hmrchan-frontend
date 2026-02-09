@@ -102,24 +102,22 @@
           <AnimatedIcon name="explore" :fallback-icon="Code" size="lg" class="section-icon" />
           <h2 class="section-title">{{ $t('about.tech.title') }}</h2>
         </div>
-        <div class="section-surface tech-surface">
-          <p class="tech-intro">{{ $t('about.tech.description') }}</p>
-          <div class="tech-grid">
-            <a
-              v-for="tech in techStack"
-              :key="tech.name"
-              :href="tech.url"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="tech-card glass-card"
-            >
-              <div class="tech-header">
-                <div class="tech-name">{{ tech.name }}</div>
-                <div class="tech-version-badge">v{{ tech.version }}</div>
-              </div>
-              <div class="tech-description">{{ tech.description }}</div>
-            </a>
-          </div>
+        <p class="tech-intro">{{ $t('about.tech.description') }}</p>
+        <div class="tech-grid">
+          <a
+            v-for="tech in techStack"
+            :key="tech.name"
+            :href="tech.url"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="tech-card glass-card"
+          >
+            <div class="tech-header">
+              <div class="tech-name">{{ tech.name }}</div>
+              <div class="tech-version-badge">v{{ tech.version }}</div>
+            </div>
+            <div class="tech-description">{{ tech.description }}</div>
+          </a>
         </div>
       </section>
 
@@ -129,22 +127,20 @@
           <AnimatedIcon name="sparkle" :fallback-icon="Info" size="lg" class="section-icon" />
           <h2 class="section-title">{{ $t('about.projectInfo.title') }}</h2>
         </div>
-        <div class="section-surface info-surface">
-          <div class="info-grid">
-            <div class="info-card glass-card">
-              <div class="info-label">{{ $t('about.projectInfo.buildHash') }}</div>
-              <div class="info-value commit-hash">{{ buildHash }}</div>
-            </div>
-            <div class="info-card glass-card">
-              <div class="info-label">{{ $t('about.projectInfo.buildTime') }}</div>
-              <div class="info-value">{{ buildTime }}</div>
-            </div>
-            <div class="info-card glass-card">
-              <div class="info-label">{{ $t('about.projectInfo.status') }}</div>
-              <div class="info-value status-active">
-                <span class="status-dot"></span>
-                {{ $t('about.projectInfo.active') }}
-              </div>
+        <div class="info-grid">
+          <div class="info-card glass-card">
+            <div class="info-label">{{ $t('about.projectInfo.buildHash') }}</div>
+            <div class="info-value commit-hash">{{ buildHash }}</div>
+          </div>
+          <div class="info-card glass-card">
+            <div class="info-label">{{ $t('about.projectInfo.buildTime') }}</div>
+            <div class="info-value">{{ buildTime }}</div>
+          </div>
+          <div class="info-card glass-card">
+            <div class="info-label">{{ $t('about.projectInfo.status') }}</div>
+            <div class="info-value status-active">
+              <span class="status-dot"></span>
+              {{ $t('about.projectInfo.active') }}
             </div>
           </div>
         </div>
@@ -260,7 +256,8 @@ const { techStack } = useAboutData()
 
 <style scoped>
 .about-page {
-  min-height: 100vh;
+  min-height: 100svh;
+  min-height: 100dvh;
   padding: var(--spacing-6) 0;
   background: linear-gradient(
     180deg,
@@ -271,9 +268,9 @@ const { techStack } = useAboutData()
 }
 
 .container {
-  max-width: 1200px;
+  max-width: var(--container-max-fluid);
   margin: 0 auto;
-  padding: 0 var(--spacing-4);
+  padding: 0 var(--page-padding);
 }
 
 /* 页面标题 */
@@ -625,7 +622,7 @@ const { techStack } = useAboutData()
 }
 .section-surface {
   position: relative;
-  width: min(100%, 1040px);
+  width: min(100%, 65rem);
   margin-inline: auto;
   padding: var(--spacing-4);
   border-radius: var(--radius-2xl);
@@ -671,7 +668,7 @@ const { techStack } = useAboutData()
   display: block;
   text-decoration: none;
   color: inherit;
-  min-height: 160px;
+  min-height: 10rem;
 }
 
 .tech-card::before {
@@ -746,7 +743,7 @@ const { techStack } = useAboutData()
   display: flex;
   flex-direction: column;
   gap: var(--spacing-2);
-  min-height: 120px;
+  min-height: 7.5rem;
 }
 
 .info-label {

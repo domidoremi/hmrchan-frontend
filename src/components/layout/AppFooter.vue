@@ -84,7 +84,7 @@ const currentYear = computed(() => new Date().getFullYear())
 .footer-brand p {
   font-size: var(--text-sm);
   color: var(--color-text-tertiary);
-  max-width: 280px;
+  max-width: min(90vw, 17.5rem);
 }
 
 .footer-nav {
@@ -133,7 +133,7 @@ const currentYear = computed(() => new Date().getFullYear())
 
 @media (max-width: 768px) {
   .footer {
-    padding-bottom: calc(72px + var(--spacing-6));
+    padding-bottom: calc(var(--mobile-nav-height) + var(--spacing-6));
   }
 
   .footer-content {

@@ -615,7 +615,8 @@ function isTurnstileTokenFresh() {
 
 <style scoped>
 .auth-page {
-  min-height: calc(100vh - var(--navbar-height));
+  min-height: calc(100svh - var(--navbar-height));
+  min-height: calc(100dvh - var(--navbar-height));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -624,7 +625,7 @@ function isTurnstileTokenFresh() {
 
 .auth-card {
   width: 100%;
-  max-width: 380px;
+  max-width: min(90vw, 23.75rem);
   padding: var(--spacing-5);
   border: 1px solid rgba(var(--color-border-rgb), 0.6);
   box-shadow:

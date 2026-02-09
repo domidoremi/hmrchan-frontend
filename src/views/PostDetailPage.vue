@@ -938,8 +938,8 @@ onUnmounted(() => {
   --post-modal-border: var(--glass-border);
   --post-gutter: clamp(14px, 2vw, 28px);
   --post-vert-pad: clamp(12px, 1.6vw, 24px);
-
-  min-height: 100vh;
+  min-height: 100svh;
+  min-height: 100dvh;
   overflow-x: hidden;
   background:
     radial-gradient(circle at 20% 20%, var(--post-bg-spot-1), transparent 55%),
@@ -966,8 +966,8 @@ onUnmounted(() => {
 
 .post-stage {
   position: relative;
-  min-height: calc(100vh - var(--navbar-height));
   min-height: calc(100svh - var(--navbar-height));
+  min-height: calc(100dvh - var(--navbar-height));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1568,7 +1568,7 @@ onUnmounted(() => {
 }
 
 .post-description {
-  max-width: 520px;
+  max-width: 65ch;
   color: var(--post-text-secondary);
   line-height: 1.6;
   white-space: pre-wrap;
@@ -1615,7 +1615,8 @@ onUnmounted(() => {
 
 .post-text-panel {
   width: min(780px, calc(100vw - 2 * var(--spacing-4)));
-  height: min(82svh, calc(100vh - 2 * var(--spacing-4)));
+  height: min(82svh, calc(100svh - 2 * var(--spacing-4)));
+  height: min(82svh, calc(100dvh - 2 * var(--spacing-4)));
   border-radius: var(--radius-xl);
   overflow: hidden;
   border: 1px solid var(--post-modal-border);

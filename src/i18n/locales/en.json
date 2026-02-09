@@ -603,12 +603,19 @@
     "revokeAll": "Sign Out All Other Devices",
     "lastActive": "Last active",
     "namePlaceholder": "Enter device name",
+    "unknownDevice": "Unknown device",
+    "unknownIp": "Unknown IP",
+    "deviceInfo": "Device info",
+    "firstSeen": "First seen",
+    "lastLogin": "Last login",
+    "loginCount": "Login count",
     "ipChangeWarning": "IP address changed {count} times",
     "time": {
       "justNow": "Just now",
       "minutesAgo": "{count} minute ago | {count} minutes ago",
       "hoursAgo": "{count} hour ago | {count} hours ago",
-      "daysAgo": "{count} day ago | {count} days ago"
+      "daysAgo": "{count} day ago | {count} days ago",
+      "unknown": "Unknown"
     },
     "confirm": {
       "revoke": "Are you sure you want to sign out this device?",

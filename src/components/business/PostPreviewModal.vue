@@ -695,8 +695,8 @@ function openDetail() {
 
 .post-preview-panel {
   width: min(1100px, calc(100vw - 2 * var(--spacing-4)));
-  height: min(760px, calc(100vh - 2 * var(--spacing-4)));
   height: min(760px, calc(100svh - 2 * var(--spacing-4)));
+  height: min(760px, calc(100dvh - 2 * var(--spacing-4)));
   border-radius: var(--ui-radius-dialog, var(--radius-xl));
   overflow: hidden;
   border: 1px solid var(--preview-surface-border);

@@ -180,7 +180,29 @@
   height: 100%;
 }
 .min-h-screen {
-  min-height: 100vh;
+  min-height: 100svh;
+  min-height: 100dvh;
+}
+.min-h-dvh {
+  min-height: 100dvh;
+}
+.min-h-svh {
+  min-height: 100svh;
+}
+.h-dvh {
+  height: 100dvh;
+}
+.h-svh {
+  height: 100svh;
+}
+
+.page-pad {
+  padding-inline: var(--page-padding);
+}
+
+.content-prose {
+  width: 100%;
+  max-width: var(--content-max);
 }
 
 /* ========== Text ========== */

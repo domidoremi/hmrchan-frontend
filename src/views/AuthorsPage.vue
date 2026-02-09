@@ -202,7 +202,8 @@ onMounted(() => {
 .authors-page {
   position: relative;
   padding: var(--spacing-4) 0 var(--spacing-8);
-  min-height: 100vh;
+  min-height: 100svh;
+  min-height: 100dvh;
 }
 
 /* ========== MindMarket 风格背景 ========== */

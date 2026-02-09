@@ -251,13 +251,17 @@
   --z-toast: 800;
 
   /* ========== Layout ========== */
-  --navbar-height: 64px;
+  --navbar-height: clamp(3.5rem, 4vw, 4rem);
+  --mobile-nav-height: clamp(4rem, 8vw, 4.5rem);
   /* Runtime-updated by AppNavbar: 0px when hidden, navbar-height when visible */
   --navbar-visible-height: var(--navbar-height);
-  --footer-height: 200px;
-  --sidebar-width: 280px;
-  --container-max: 1400px;
-  --content-max: 720px;
+  --footer-height: clamp(10rem, 18vw, 12.5rem);
+  --sidebar-width: clamp(14rem, 20vw, 18rem);
+  --container-max: 90rem;
+  --container-max-fluid: min(90vw, var(--container-max));
+  --content-max-ch: 70ch;
+  --content-max: min(100%, var(--content-max-ch));
+  --page-padding: clamp(1rem, 3vw, 2.5rem);
 
   /* Breakpoints (for reference, use in media queries) */
   --breakpoint-sm: 640px;

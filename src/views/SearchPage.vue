@@ -482,12 +482,13 @@ onMounted(() => {
 
 <style scoped>
 .search-page {
-  min-height: 100vh;
+  min-height: 100svh;
+  min-height: 100dvh;
   padding: var(--spacing-3) 0;
 }
 
 .search-header {
-  max-width: 560px;
+  max-width: min(90vw, 35rem);
   margin: 0 auto var(--spacing-3);
   text-align: center;
 }
@@ -538,7 +539,7 @@ onMounted(() => {
 }
 
 .search-content {
-  max-width: 1400px;
+  max-width: var(--container-max-fluid);
   margin: 0 auto;
 }
 
@@ -797,7 +798,7 @@ onMounted(() => {
 }
 
 .sort-select {
-  min-width: 180px;
+  min-width: 11.25rem;
 }
 
 .sort-controls {
@@ -1042,7 +1043,7 @@ onMounted(() => {
 }
 
 .empty-content {
-  max-width: 400px;
+  max-width: min(90vw, 25rem);
 }
 
 .empty-icon {

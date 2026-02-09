@@ -11,11 +11,15 @@ import {
   Edit2,
   Check,
   X,
+  Info,
+  Calendar,
+  Hash,
 } from 'lucide-vue-next'
 import { useSessionManagement } from '@/composables/useSessionManagement'
 import { useDeviceNameEditor } from '@/composables/useDeviceNameEditor'
 import { getDeviceIcon, formatRelativeTime } from '@/utils/deviceHelpers'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
+import type { Device } from '@/api'
 
 const { t } = useI18n()
 
@@ -39,15 +43,55 @@ onMounted(() => {
   fetchSessions()
 })
 
-async function saveDeviceName(sessionId: string) {
+async function saveDeviceName(sessionId: number) {
   const success = await updateDeviceName(sessionId, editingDeviceName.value)
   if (success) {
     cancelEditing()
   }
 }
 
-function formatDate(dateString: string): string {
+function formatDate(dateString?: string | null): string {
   return formatRelativeTime(dateString, t)
+}
+function getDeviceDisplayName(session: Device): string {
+  if (session.device_name) return session.device_name
+  if (session.device_info) return session.device_info
+
+  const browser = session.device_browser ?? session.browser ?? ''
+  const os = session.device_os ?? session.os ?? ''
+  if (browser && os) return `${browser} on ${os}`
+  if (browser) return browser
+  if (os) return os
+  return t('devices.unknownDevice')
+}
+
+function getDeviceDetails(session: Device): string {
+  const browser = session.device_browser ?? session.browser ?? ''
+  const os = session.device_os ?? session.os ?? ''
+  const details = [browser, os].filter(Boolean).join(' · ')
+  if (details) return details
+  if (session.device_info) return session.device_info
+  return t('devices.unknownDevice')
+}
+
+function hasDeviceDetails(session: Device): boolean {
+  const browser = session.device_browser ?? session.browser ?? ''
+  const os = session.device_os ?? session.os ?? ''
+  return Boolean(browser || os || session.device_info)
+}
+
+function getLastActiveAt(session: Device): string | null | undefined {
+  return session.last_active_at ?? session.last_used_at ?? session.last_login_at
+}
+
+function getLocationText(session: Device): string {
+  const ip = session.ip_address ?? session.last_ip ?? ''
+  const location = session.city
+    ? `${session.city}${session.country ? `, ${session.country}` : ''}`
+    : (session.country ?? '')
+
+  if (ip && location) return `${ip} · ${location}`
+  return ip || location
 }
 </script>
 
@@ -104,7 +148,7 @@ function formatDate(dateString: string): string {
             </div>
             <div v-else class="device-name-display">
               <h3>
-                {{ session.device_name }}
+                {{ getDeviceDisplayName(session) }}
                 <span v-if="session.is_current" class="badge-current">
                   {{ t('devices.currentDevice') }}
                 </span>
@@ -113,26 +157,50 @@ function formatDate(dateString: string): string {
                   {{ t('devices.trusted') }}
                 </span>
               </h3>
-              <button v-if="!session.is_current" class="btn-edit" @click="startEditing(session)">
+              <button class="btn-edit" @click="startEditing(session)">
                 <AnimatedIcon name="explore" :fallback-icon="Edit2" size="sm" />
               </button>
             </div>
           </div>
 
-          <p class="device-details">{{ session.device_browser }} · {{ session.device_os }}</p>
+          <p
+            class="device-details"
+            :class="{ 'device-details--empty': !hasDeviceDetails(session) }"
+          >
+            {{ getDeviceDetails(session) }}
+          </p>
 
           <div class="device-meta">
-            <div class="meta-item">
+            <div v-if="getLocationText(session)" class="meta-item">
               <AnimatedIcon name="explore" :fallback-icon="MapPin" size="sm" />
-              <span>{{ session.ip_address }}</span>
-              <span v-if="session.city">
-                · {{ session.city }}<span v-if="session.country">, {{ session.country }}</span>
-              </span>
+              <span>{{ getLocationText(session) }}</span>
             </div>
 
             <div class="meta-item">
               <AnimatedIcon name="explore" :fallback-icon="Clock" size="sm" />
-              <span>{{ t('devices.lastActive') }}: {{ formatDate(session.last_used_at) }}</span>
+              <span>{{ t('devices.lastActive') }}: {{ formatDate(getLastActiveAt(session)) }}</span>
+            </div>
+            <div v-if="session.last_login_at" class="meta-item">
+              <AnimatedIcon name="explore" :fallback-icon="Clock" size="sm" />
+              <span>{{ t('devices.lastLogin') }}: {{ formatDate(session.last_login_at) }}</span>
+            </div>
+
+            <div v-if="session.first_seen_at" class="meta-item">
+              <AnimatedIcon name="explore" :fallback-icon="Calendar" size="sm" />
+              <span>{{ t('devices.firstSeen') }}: {{ formatDate(session.first_seen_at) }}</span>
+            </div>
+
+            <div
+              v-if="session.login_count !== null && session.login_count !== undefined"
+              class="meta-item"
+            >
+              <AnimatedIcon name="explore" :fallback-icon="Hash" size="sm" />
+              <span>{{ t('devices.loginCount') }}: {{ session.login_count }}</span>
+            </div>
+
+            <div v-if="session.device_info" class="meta-item">
+              <AnimatedIcon name="explore" :fallback-icon="Info" size="sm" />
+              <span>{{ t('devices.deviceInfo') }}: {{ session.device_info }}</span>
             </div>
 
             <div
@@ -172,8 +240,8 @@ function formatDate(dateString: string): string {
 
 <style scoped>
 .device-management {
-  max-width: 900px;
-  margin: 0 auto;
+  max-width: 100%;
+  margin: 0;
   padding: 2rem;
 }
 
@@ -391,6 +459,11 @@ function formatDate(dateString: string): string {
   color: var(--color-text-secondary);
   font-size: 0.9rem;
   margin-bottom: 0.75rem;
+}
+
+.device-details--empty {
+  color: var(--color-text-tertiary);
+  font-style: italic;
 }
 
 .device-meta {
