@@ -160,8 +160,7 @@ const CONTENT_MIN = 10
 const CONTENT_MAX = 10000
 
 const canSubmit = computed(
-  () =>
-    title.value.trim().length >= TITLE_MIN && content.value.trim().length >= CONTENT_MIN
+  () => title.value.trim().length >= TITLE_MIN && content.value.trim().length >= CONTENT_MIN
 )
 const canSubmit = computed(() => title.value.trim().length > 0 && content.value.trim().length > 0)
 
