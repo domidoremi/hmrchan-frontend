@@ -32,9 +32,25 @@ const { currentState } = useContextualBackground()
 const { resolvedTheme } = storeToRefs(themeStore)
 const themeMode = computed(() => (resolvedTheme.value === 'dark' ? 'dark' : 'light'))
 
-const shouldRender3D = computed(
-  () => settingsStore.shouldAnimate && !prefersReducedMotion() && !!canvasRef.value
-)
+const render3DRoutes = new Set([
+  'home',
+  'explore',
+  'community',
+  'search',
+  'post-detail',
+  'authors',
+  'author-detail',
+])
+
+const shouldRender3D = computed(() => {
+  const routeName = String(route.name ?? '')
+  return (
+    settingsStore.shouldAnimate &&
+    !prefersReducedMotion() &&
+    !!canvasRef.value &&
+    render3DRoutes.has(routeName)
+  )
+})
 
 // GSAP is lazy-loaded (to avoid blocking initial render)
 let gsap: typeof import('gsap').default | null = null

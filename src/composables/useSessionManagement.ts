@@ -59,7 +59,11 @@ export function useSessionManagement() {
 
   async function toggleTrust(session: Device) {
     try {
-      await deviceService.trustDevice(session.id, !session.is_trusted)
+      if (session.is_trusted) {
+        await deviceService.untrustDevice(session.id)
+      } else {
+        await deviceService.trustDevice(session.id)
+      }
       toastStore.success(
         session.is_trusted ? t('devices.success.untrusted') : t('devices.success.trusted')
       )

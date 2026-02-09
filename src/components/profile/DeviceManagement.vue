@@ -232,7 +232,7 @@ function formatDate(dateString: string): string {
 
 .skeleton-card {
   height: 150px;
-  background: var(--color-glass-bg);
+  background: var(--glass-bg-light);
   border-radius: 12px;
   animation: pulse 1.5s ease-in-out infinite;
 }
@@ -257,9 +257,9 @@ function formatDate(dateString: string): string {
   display: flex;
   gap: 1.25rem;
   padding: 1.5rem;
-  background: var(--color-glass-bg);
+  background: var(--glass-bg);
   backdrop-filter: blur(10px);
-  border: 1px solid var(--color-glass-border);
+  border: 1px solid var(--glass-border);
   border-radius: 12px;
   transition: all 0.2s;
 }
@@ -271,7 +271,7 @@ function formatDate(dateString: string): string {
 
 .device-card.is-current {
   border-color: var(--color-primary);
-  background: var(--color-glass-bg-hover);
+  background: var(--glass-bg-strong);
 }
 
 .device-icon {
@@ -345,7 +345,7 @@ function formatDate(dateString: string): string {
 }
 
 .btn-edit:hover {
-  background: var(--color-glass-bg-hover);
+  background: var(--glass-bg-light);
   color: var(--color-primary);
 }
 
@@ -358,8 +358,8 @@ function formatDate(dateString: string): string {
 .device-name-input {
   flex: 1;
   padding: 0.5rem;
-  background: var(--color-input-bg);
-  border: 1px solid var(--color-input-border);
+  background: var(--glass-bg-light);
+  border: 1px solid var(--glass-border);
   border-radius: 6px;
   color: var(--color-text-primary);
   font-size: 0.95rem;
