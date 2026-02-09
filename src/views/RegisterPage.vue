@@ -60,7 +60,7 @@
             />
           </div>
 
-          <div v-if="turnstileEnabled" class="turnstile-block">
+          <div v-if="turnstileEnabled && forceTurnstileForSend" class="turnstile-block">
             <div class="turnstile-header">
               <span class="turnstile-title">{{ $t('auth.verifyTitle') }}</span>
               <span class="turnstile-hint">{{ $t('auth.verifyHint') }}</span>
@@ -78,7 +78,9 @@
           <Button
             type="submit"
             :loading="isSendingCode"
-            :disabled="!email || (turnstileEnabled && !turnstileToken)"
+            :disabled="
+              !email || (turnstileEnabled && forceTurnstileForSend && !isTurnstileTokenFresh())
+            "
             full-width
           >
             {{ $t('auth.sendCodeButton') }}
@@ -216,7 +218,7 @@
             </div>
           </div>
 
-          <div v-if="turnstileEnabled" class="turnstile-block">
+          <div v-if="turnstileEnabled && !hasValidRegisterToken()" class="turnstile-block">
             <div class="turnstile-header">
               <span class="turnstile-title">{{ $t('auth.verifyTitle') }}</span>
               <span class="turnstile-hint">{{ $t('auth.verifyHint') }}</span>
@@ -237,7 +239,7 @@
             :disabled="
               verificationCode.length !== 6 ||
               (!!confirmPassword && password !== confirmPassword) ||
-              (turnstileEnabled && !isTurnstileTokenFresh())
+              (turnstileEnabled && !hasValidRegisterToken() && !isTurnstileTokenFresh())
             "
             full-width
           >
@@ -288,6 +290,9 @@ const showConfirmPassword = ref(false)
 const verificationCode = ref('')
 const codeError = ref(false)
 const isSendingCode = ref(false)
+const registerToken = ref<string | null>(null)
+const registerTokenExpiresAt = ref<number | null>(null)
+const forceTurnstileForSend = ref(false)
 
 const codeInputRef = ref<InstanceType<typeof EmailCodeInput> | null>(null)
 
@@ -365,6 +370,28 @@ onUnmounted(() => {
 })
 
 /** Step 1: Send registration code */
+function setRegisterToken(token?: string, expiresIn?: number) {
+  if (!token) {
+    registerToken.value = null
+    registerTokenExpiresAt.value = null
+    return
+  }
+  registerToken.value = token
+  registerTokenExpiresAt.value = Date.now() + (expiresIn ?? 600) * 1000
+}
+
+function hasValidRegisterToken() {
+  if (!registerToken.value || !registerTokenExpiresAt.value) return false
+  return Date.now() < registerTokenExpiresAt.value
+}
+
+function isTurnstileRequiredError(error: unknown): boolean {
+  if (!(error instanceof ApiError)) return false
+  const code = error.code?.toString().toLowerCase() || ''
+  const message = error.message?.toLowerCase() || ''
+  return code.includes('turnstile') || message.includes('turnstile')
+}
+
 async function handleSendCode() {
   const trimmedEmail = email.value.trim()
   if (!trimmedEmail) {
@@ -375,21 +402,22 @@ async function handleSendCode() {
     toastStore.warning(t('auth.error.invalidEmail'))
     return
   }
-  if (turnstileEnabled && !isTurnstileTokenFresh()) {
+  if (turnstileEnabled && forceTurnstileForSend.value && !isTurnstileTokenFresh()) {
     toastStore.warning(t('auth.error.turnstileRequired'))
     return
   }
 
   isSendingCode.value = true
   try {
-    await authService.sendRegistrationCode({
+    const response = await authService.sendRegistrationCode({
       email: trimmedEmail,
-
       ...(turnstileToken.value ? { turnstile_token: turnstileToken.value } : {}),
     })
+    setRegisterToken(response.register_token, response.expires_in)
     toastStore.success(t('emailCode.codeSent'))
     step.value = 'register'
     startCooldown()
+    forceTurnstileForSend.value = false
     if (turnstileEnabled) {
       turnstileToken.value = null
       turnstileIssuedAt.value = null
@@ -400,6 +428,11 @@ async function handleSendCode() {
     turnstileIssuedAt.value = null
     turnstileRef.value?.reset()
     if (err instanceof ApiError) {
+      if (isTurnstileRequiredError(err)) {
+        forceTurnstileForSend.value = true
+        toastStore.warning(t('auth.error.turnstileRequired'))
+        return
+      }
       if (err.status === 429) {
         toastStore.error(t('emailCode.tooManyRequests'))
       } else if (err.code === 'EMAIL_EXISTS') {
@@ -427,21 +460,23 @@ async function handleResendCode() {
     toastStore.warning(t('auth.error.invalidEmail'))
     return
   }
-  if (turnstileEnabled && !isTurnstileTokenFresh()) {
+  if (turnstileEnabled && forceTurnstileForSend.value && !isTurnstileTokenFresh()) {
     toastStore.warning(t('auth.error.turnstileRequired'))
     return
   }
 
   isSendingCode.value = true
   try {
-    await authService.sendRegistrationCode({
+    const response = await authService.sendRegistrationCode({
       email: trimmedEmail,
       ...(turnstileToken.value ? { turnstile_token: turnstileToken.value } : {}),
     })
+    setRegisterToken(response.register_token, response.expires_in)
     toastStore.success(t('emailCode.codeSent'))
     startCooldown()
     codeError.value = false
     codeInputRef.value?.reset()
+    forceTurnstileForSend.value = false
     // 重置 Turnstile token，要求用户重新验证
     if (turnstileEnabled) {
       turnstileToken.value = null
@@ -456,6 +491,11 @@ async function handleResendCode() {
       turnstileRef.value?.reset()
     }
     if (err instanceof ApiError) {
+      if (isTurnstileRequiredError(err)) {
+        forceTurnstileForSend.value = true
+        toastStore.warning(t('auth.error.turnstileRequired'))
+        return
+      }
       if (err.status === 429) {
         toastStore.error(t('emailCode.tooManyRequests'))
       } else {
@@ -477,11 +517,14 @@ function goBackToEmail() {
   step.value = 'email'
   verificationCode.value = ''
   codeError.value = false
+  registerToken.value = null
+  registerTokenExpiresAt.value = null
   if (turnstileEnabled) {
     turnstileToken.value = null
     turnstileIssuedAt.value = null
     turnstileRef.value?.reset()
   }
+  forceTurnstileForSend.value = false
 }
 
 /** Step 2: Register with code */
@@ -513,7 +556,8 @@ async function handleRegister() {
     toastStore.warning(t('auth.error.passwordTooWeak'))
     return
   }
-  if (turnstileEnabled && !isTurnstileTokenFresh()) {
+  const needsTurnstile = !hasValidRegisterToken()
+  if (turnstileEnabled && needsTurnstile && !isTurnstileTokenFresh()) {
     toastStore.warning(t('auth.error.turnstileRequired'))
     return
   }
@@ -524,7 +568,8 @@ async function handleRegister() {
     password.value,
     verificationCode.value,
     fullName.value.trim() || undefined,
-    turnstileToken.value || undefined
+    needsTurnstile ? turnstileToken.value || undefined : undefined,
+    hasValidRegisterToken() ? registerToken.value || undefined : undefined
   )
 
   if (result.success) {
