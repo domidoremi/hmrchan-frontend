@@ -440,7 +440,11 @@
     "pinned": "ピン留め",
     "pin": "ディスカッションをピン留め",
     "unpin": "ピン留め解除",
-    "referencedPost": "参照した投稿"
+    "referencedPost": "参照した投稿",
+    "deleteDiscussion": "ディスカッションを削除",
+    "confirmDeleteTitle": "ディスカッションを削除",
+    "confirmDeleteMessage": "このディスカッションを削除しますか？この操作は取り消しできません。",
+    "deleteSuccess": "ディスカッションを削除しました"
   },
   "contact": {
     "title": "お問い合わせ",

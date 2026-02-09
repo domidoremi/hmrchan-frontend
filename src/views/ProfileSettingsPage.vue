@@ -867,7 +867,7 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-6);
-  max-width: 640px;
+  max-width: 960px;
 }
 
 .skeleton-header {
@@ -898,6 +898,7 @@ onMounted(() => {
   margin-bottom: var(--spacing-6);
   position: relative;
   z-index: 1;
+  max-width: 960px;
 }
 
 .section-header {
@@ -1021,12 +1022,7 @@ onMounted(() => {
 
 /* Form Styles */
 .settings-form {
-  max-width: 640px;
-}
-
-.password-section,
-.email-section {
-  max-width: 640px;
+  max-width: 960px;
 }
 
 .form-group {
@@ -1194,18 +1190,10 @@ onMounted(() => {
   border-top: 1px solid var(--glass-border);
 }
 
-/* Desktop */
-@media (min-width: 1025px) {
-  .profile-page .container {
-    max-width: 800px;
-    margin: 0 auto;
-  }
-}
-
-/* Tablet */
+/* Tablet and below */
 @media (max-width: 1024px) {
   .settings-form,
-  .password-section {
+  .settings-section {
     max-width: 100%;
   }
 }

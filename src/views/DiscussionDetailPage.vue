@@ -53,6 +53,30 @@
                 #{{ tag }}
               </span>
             </div>
+
+            <!-- Admin / Owner Actions -->
+            <div v-if="canDelete || isAdmin" class="discussion-actions">
+              <Button
+                v-if="isAdmin"
+                variant="ghost"
+                size="sm"
+                @click="handleTogglePin"
+                :disabled="isPinning"
+              >
+                <AnimatedIcon name="sparkle" :fallback-icon="Pin" size="sm" />
+                {{ discussion.is_pinned ? $t('community.unpin') : $t('community.pin') }}
+              </Button>
+              <Button
+                v-if="canDelete"
+                variant="ghost"
+                size="sm"
+                class="action-danger"
+                @click="showDeleteDialog = true"
+              >
+                <AnimatedIcon name="loading" :fallback-icon="Trash2" size="sm" />
+                {{ $t('community.deleteDiscussion') }}
+              </Button>
+            </div>
           </header>
 
           <div class="discussion-content">
@@ -90,6 +114,16 @@
         </section>
       </div>
     </div>
+
+    <ConfirmDialog
+      v-model:is-open="showDeleteDialog"
+      :title="$t('community.confirmDeleteTitle')"
+      :message="$t('community.confirmDeleteMessage')"
+      :confirm-text="$t('common.delete')"
+      variant="danger"
+      :loading="isDeleting"
+      @confirm="handleDeleteDiscussion"
+    />
   </div>
 </template>
 
@@ -98,8 +132,10 @@ defineOptions({ name: 'DiscussionDetailPage' })
 
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
-import { ArrowLeft, Eye, MessageSquare } from 'lucide-vue-next'
+import { ArrowLeft, Eye, MessageSquare, Trash2, Pin } from 'lucide-vue-next'
+import { useAuthStore, useToastStore } from '@/stores'
 import { discussionService, type Discussion, ApiError } from '@/api'
 import { normalizeAvatarUrl } from '@/api/userService'
 import { normalizeToThumbnailUrl } from '@/utils/mediaOptimizer'
@@ -108,15 +144,31 @@ import Button from '@/components/ui/Button.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import DiscussionCommentList from '@/components/community/DiscussionCommentList.vue'
+import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
 
 const route = useRoute()
 const router = useRouter()
 const { t } = useI18n()
+const authStore = useAuthStore()
+const toastStore = useToastStore()
+const { user } = storeToRefs(authStore)
 
 const discussionId = computed(() => route.params['id'] as string)
 const discussion = ref<Discussion | null>(null)
 const isLoading = ref(false)
 const error = ref<string | null>(null)
+const showDeleteDialog = ref(false)
+const isDeleting = ref(false)
+const isPinning = ref(false)
+
+const isAdmin = computed(() => {
+  return Boolean(user.value?.is_admin || user.value?.roles?.includes('admin'))
+})
+
+const canDelete = computed(() => {
+  if (!user.value || !discussion.value) return false
+  return isAdmin.value || String(user.value.id) === String(discussion.value.author.id)
+})
 
 function formatTime(dateStr: string): string {
   return formatRelativeTime(dateStr, t)
@@ -159,6 +211,46 @@ async function fetchDiscussion() {
     }
   } finally {
     isLoading.value = false
+  }
+}
+
+async function handleDeleteDiscussion() {
+  if (!discussion.value || isDeleting.value) return
+  isDeleting.value = true
+  try {
+    await discussionService.delete(discussion.value.id)
+    toastStore.success(t('community.deleteSuccess'))
+    router.replace('/community')
+  } catch (err) {
+    if (err instanceof ApiError) {
+      toastStore.error(err.message)
+    } else {
+      toastStore.error(t('common.error'))
+    }
+  } finally {
+    isDeleting.value = false
+  }
+}
+
+async function handleTogglePin() {
+  if (!discussion.value || isPinning.value) return
+  isPinning.value = true
+  try {
+    if (discussion.value.is_pinned) {
+      await discussionService.unpin(discussion.value.id)
+      discussion.value.is_pinned = false
+    } else {
+      await discussionService.pin(discussion.value.id)
+      discussion.value.is_pinned = true
+    }
+  } catch (err) {
+    if (err instanceof ApiError) {
+      toastStore.error(err.message)
+    } else {
+      toastStore.error(t('common.error'))
+    }
+  } finally {
+    isPinning.value = false
   }
 }
 
@@ -259,6 +351,22 @@ watch(discussionId, fetchDiscussion)
 
 .discussion-tag {
   font-size: var(--text-xs);
+}
+
+.discussion-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  padding-top: var(--spacing-3);
+  border-top: 1px solid var(--glass-border);
+}
+
+.action-danger {
+  color: var(--color-error) !important;
+}
+
+.action-danger:hover {
+  background: var(--color-error-alpha) !important;
 }
 
 .discussion-content {

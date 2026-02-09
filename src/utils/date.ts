@@ -8,13 +8,29 @@ import type { ComposerTranslation } from 'vue-i18n'
 type TranslateFunction = ComposerTranslation
 
 /**
+ * 将服务端时间字符串解析为 Date 对象。
+ * 服务端可能返回不带时区标识的 ISO 字符串（如 "2024-01-15T10:30:00"），
+ * 浏览器会将其视为本地时间。此函数确保无时区标识时按 UTC 解析。
+ */
+function parseServerDate(dateStr: string): Date {
+  if (!dateStr) return new Date(NaN)
+  const trimmed = dateStr.trim()
+  // 已带时区标识（Z / +HH:MM / -HH:MM）则直接解析
+  if (/[Zz]$/.test(trimmed) || /[+-]\d{2}:\d{2}$/.test(trimmed)) {
+    return new Date(trimmed)
+  }
+  // 无时区标识，视为 UTC
+  return new Date(trimmed + 'Z')
+}
+
+/**
  * 格式化为相对时间（如 "3分钟前"、"2小时前"）
  * @param dateStr - ISO 日期字符串
  * @param t - i18n 翻译函数
  * @returns 格式化后的相对时间字符串
  */
 export function formatRelativeTime(dateStr: string, t: TranslateFunction): string {
-  const date = new Date(dateStr)
+  const date = parseServerDate(dateStr)
   const now = new Date()
   const diffMs = now.getTime() - date.getTime()
   const diffMins = Math.floor(diffMs / 60000)
@@ -35,7 +51,7 @@ export function formatRelativeTime(dateStr: string, t: TranslateFunction): strin
  * @returns 本地化日期字符串
  */
 export function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString()
+  return parseServerDate(dateStr).toLocaleDateString()
 }
 
 /**
@@ -44,5 +60,5 @@ export function formatDate(dateStr: string): string {
  * @returns 本地化日期时间字符串
  */
 export function formatDateTime(dateStr: string): string {
-  return new Date(dateStr).toLocaleString()
+  return parseServerDate(dateStr).toLocaleString()
 }
