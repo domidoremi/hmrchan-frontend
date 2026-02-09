@@ -227,6 +227,8 @@
 </template>
 
 <script setup lang="ts">
+defineOptions({ name: 'SearchPage' })
+
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'

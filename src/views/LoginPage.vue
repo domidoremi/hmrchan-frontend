@@ -94,6 +94,8 @@
 </template>
 
 <script setup lang="ts">
+defineOptions({ name: 'LoginPage' })
+
 import { ref, computed } from 'vue'
 import { useRouter, useRoute, RouterLink } from 'vue-router'
 import { storeToRefs } from 'pinia'

@@ -1,22 +1,18 @@
 <template>
   <div class="profile-page">
     <div class="container">
-      <header class="profile-page-header glass-card">
-        <div class="header-left">
-          <button type="button" class="back-btn glass-button" @click="goBack">
-            <AnimatedIcon name="explore" :fallback-icon="ArrowLeft" size="sm" />
-          </button>
-          <div>
-            <h1>{{ $t('profile.settings') }}</h1>
-            <p class="header-subtitle">{{ $t('profile.settingsSubtitle') }}</p>
-            <p class="header-hint">{{ $t('profile.settingsHint') }}</p>
-          </div>
-        </div>
-        <Button variant="ghost" size="sm" type="button" @click="fetchProfile">
-          <AnimatedIcon name="loading" :fallback-icon="RefreshCw" size="sm" />
-          {{ $t('common.refresh') }}
-        </Button>
-      </header>
+      <ProfileSubPageHeader
+        :title="$t('profile.settings')"
+        :subtitle="$t('profile.settingsSubtitle')"
+        :hint="$t('profile.settingsHint')"
+      >
+        <template #actions>
+          <Button variant="ghost" size="sm" type="button" @click="fetchProfile">
+            <AnimatedIcon name="loading" :fallback-icon="RefreshCw" size="sm" />
+            {{ $t('common.refresh') }}
+          </Button>
+        </template>
+      </ProfileSubPageHeader>
 
       <StateIndicator v-if="error" variant="error" :description="error" @action="fetchProfile" />
 
@@ -494,11 +490,11 @@
 </template>
 
 <script setup lang="ts">
+defineOptions({ name: 'ProfileSettingsPage' })
+
 import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import {
-  ArrowLeft,
   User,
   Camera,
   Upload,
@@ -524,6 +520,7 @@ import Textarea from '@/components/ui/Textarea.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import { defineAsyncComponent } from 'vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
+import ProfileSubPageHeader from '@/components/profile/ProfileSubPageHeader.vue'
 
 // 动态导入大型组件以减少初始包体积
 const ImageCropper = defineAsyncComponent(() => import('@/components/ui/ImageCropper.vue'))
@@ -531,7 +528,6 @@ const EmailVerifyDialog = defineAsyncComponent(
   () => import('@/components/ui/EmailVerifyDialog.vue')
 )
 
-const router = useRouter()
 const { t } = useI18n()
 const authStore = useAuthStore()
 const toastStore = useToastStore()
@@ -626,10 +622,6 @@ const canChangePassword = computed(() => {
     passwordsMatch.value
   )
 })
-
-function goBack() {
-  router.back()
-}
 
 async function fetchProfile() {
   isLoading.value = true
@@ -924,49 +916,6 @@ onMounted(() => {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.profile-page-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--spacing-4);
-  margin-bottom: var(--spacing-4);
-  padding: var(--spacing-4);
-  border-radius: var(--radius-lg);
-}
-
-.header-left {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-3);
-}
-
-.header-left h1 {
-  margin: 0;
-  font-size: var(--text-xl);
-  font-weight: var(--font-semibold);
-}
-
-.header-subtitle {
-  margin: 0;
-  color: var(--color-text-secondary);
-  font-size: var(--text-sm);
-}
-
-.header-hint {
-  margin-top: var(--spacing-1);
-  font-size: var(--text-sm);
-  color: var(--color-text-tertiary);
-}
-
-.back-btn {
-  width: 36px;
-  height: 36px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
 }
 
 /* Skeleton Loading */

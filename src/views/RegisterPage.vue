@@ -257,6 +257,8 @@
 </template>
 
 <script setup lang="ts">
+defineOptions({ name: 'RegisterPage' })
+
 import { ref, computed, onUnmounted } from 'vue'
 import { useRouter, RouterLink } from 'vue-router'
 import { storeToRefs } from 'pinia'

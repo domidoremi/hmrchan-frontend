@@ -55,6 +55,8 @@
 </template>
 
 <script setup lang="ts">
+defineOptions({ name: 'VerifyEmailPage' })
+
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
