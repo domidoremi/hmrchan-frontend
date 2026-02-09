@@ -65,15 +65,21 @@ const routes: RouteRecordRaw[] = [
   },
   {
     path: '/community',
-    name: 'community',
-    component: () => import('@/views/CommunityPage.vue'),
+    component: () => import('@/layouts/CommunityLayout.vue'),
     meta: { title: 'community.title' },
-  },
-  {
-    path: '/community/discussions/:id',
-    name: 'discussion-detail',
-    component: () => import('@/views/DiscussionDetailPage.vue'),
-    meta: { title: 'community.recentDiscussions' },
+    children: [
+      {
+        path: '',
+        name: 'community',
+        component: () => import('@/views/CommunityPage.vue'),
+      },
+      {
+        path: 'discussions/:id',
+        name: 'discussion-detail',
+        component: () => import('@/views/DiscussionDetailPage.vue'),
+        meta: { title: 'community.recentDiscussions' },
+      },
+    ],
   },
   {
     path: '/author/:id',
@@ -83,21 +89,34 @@ const routes: RouteRecordRaw[] = [
   },
   {
     path: '/profile',
-    name: 'profile',
-    component: () => import('@/views/ProfilePage.vue'),
-    meta: { title: 'nav.profile', requiresAuth: true },
-  },
-  {
-    path: '/profile/notifications',
-    name: 'profile-notifications',
-    component: () => import('@/views/ProfileNotificationsPage.vue'),
-    meta: { title: 'profile.tabs.notifications', requiresAuth: true },
-  },
-  {
-    path: '/profile/devices',
-    name: 'profile-devices',
-    component: () => import('@/views/ProfileDevicesPage.vue'),
-    meta: { title: 'profile.tabs.devices', requiresAuth: true },
+    component: () => import('@/layouts/ProfileLayout.vue'),
+    meta: { requiresAuth: true },
+    children: [
+      {
+        path: '',
+        name: 'profile',
+        component: () => import('@/views/ProfilePage.vue'),
+        meta: { title: 'nav.profile' },
+      },
+      {
+        path: 'notifications',
+        name: 'profile-notifications',
+        component: () => import('@/views/ProfileNotificationsPage.vue'),
+        meta: { title: 'profile.tabs.notifications' },
+      },
+      {
+        path: 'devices',
+        name: 'profile-devices',
+        component: () => import('@/views/ProfileDevicesPage.vue'),
+        meta: { title: 'profile.tabs.devices' },
+      },
+      {
+        path: 'settings',
+        name: 'profile-settings',
+        component: () => import('@/views/ProfileSettingsPage.vue'),
+        meta: { title: 'nav.profileSettings' },
+      },
+    ],
   },
   {
     path: '/favorites',
@@ -110,12 +129,6 @@ const routes: RouteRecordRaw[] = [
     name: 'settings',
     component: () => import('@/views/SettingsPage.vue'),
     meta: { title: 'nav.settings' },
-  },
-  {
-    path: '/profile/settings',
-    name: 'profile-settings',
-    component: () => import('@/views/ProfileSettingsPage.vue'),
-    meta: { title: 'nav.profileSettings', requiresAuth: true },
   },
   {
     path: '/settings/profile',

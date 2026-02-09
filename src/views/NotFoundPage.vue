@@ -13,6 +13,8 @@
 </template>
 
 <script setup lang="ts">
+defineOptions({ name: 'NotFoundPage' })
+
 import { useRouter } from 'vue-router'
 import { Home } from 'lucide-vue-next'
 import Button from '@/components/ui/Button.vue'

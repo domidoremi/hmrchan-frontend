@@ -42,6 +42,8 @@
 </template>
 
 <script setup lang="ts">
+defineOptions({ name: 'ContactPage' })
+
 import { ref, reactive } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useToastStore } from '@/stores'

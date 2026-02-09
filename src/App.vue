@@ -26,7 +26,10 @@
               <Suspense>
                 <template #default>
                   <KeepAlive :include="cachedPages" :max="10">
-                    <component :is="Component" :key="route.name ?? route.path" />
+                    <component
+                      :is="Component"
+                      :key="route.matched[0]?.name ?? route.name ?? route.path"
+                    />
                   </KeepAlive>
                 </template>
                 <template #fallback>

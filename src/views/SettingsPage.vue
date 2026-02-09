@@ -31,6 +31,8 @@
 </template>
 
 <script setup lang="ts">
+defineOptions({ name: 'SettingsPage' })
+
 import { ref } from 'vue'
 import { Trash2 } from 'lucide-vue-next'
 import { useToastStore } from '@/stores/toast'
