@@ -93,8 +93,8 @@ withDefaults(defineProps<Props>(), {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: calc(100vh - var(--navbar-height));
   min-height: calc(100svh - var(--navbar-height));
+  min-height: calc(100dvh - var(--navbar-height));
   padding: var(--spacing-6);
 }
 
@@ -102,8 +102,8 @@ withDefaults(defineProps<Props>(), {
   position: fixed;
   inset: 0;
   z-index: var(--z-modal);
-  min-height: 100vh;
   min-height: 100svh;
+  min-height: 100dvh;
   background: var(--glass-bg-strong);
   backdrop-filter: var(--glass-blur-strong);
 }

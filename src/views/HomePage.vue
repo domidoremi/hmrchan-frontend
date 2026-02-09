@@ -451,14 +451,15 @@ onBeforeUnmount(() => {
 <style scoped>
 .home-page {
   position: relative;
-  min-height: 100vh;
+  min-height: 100svh;
+  min-height: 100dvh;
 }
 
 /* ========== Hero Section ========== */
 .hero {
   position: relative;
-  min-height: calc(100vh - var(--navbar-height));
   min-height: calc(100svh - var(--navbar-height));
+  min-height: calc(100dvh - var(--navbar-height));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -467,7 +468,7 @@ onBeforeUnmount(() => {
 }
 
 .hero-content {
-  max-width: 720px;
+  max-width: min(90vw, 45rem);
 }
 
 .hero-badge {
@@ -528,7 +529,7 @@ onBeforeUnmount(() => {
   font-size: var(--text-xl);
   color: var(--color-text-secondary);
   margin-bottom: var(--spacing-8);
-  max-width: 540px;
+  max-width: min(90vw, 34rem);
   margin-inline: auto;
 }
 
@@ -724,7 +725,7 @@ onBeforeUnmount(() => {
 /* Feature card */
 .bento-card--feature {
   grid-column: span 2;
-  min-height: 160px;
+  min-height: 10rem;
   padding: var(--spacing-4);
 }
 
@@ -732,7 +733,7 @@ onBeforeUnmount(() => {
   .bento-card--feature {
     grid-column: span 7;
     grid-row: span 2;
-    min-height: 220px;
+    min-height: 13.75rem;
     padding: var(--spacing-5);
   }
 }
@@ -846,7 +847,7 @@ onBeforeUnmount(() => {
   .bento-card--feature {
     grid-column: span 12;
     grid-row: span 1;
-    min-height: 160px;
+    min-height: 10rem;
   }
   .bento-grid > :nth-child(2) {
     grid-column: span 6;
@@ -864,7 +865,8 @@ onBeforeUnmount(() => {
 
 @media (max-width: 768px) {
   .hero {
-    min-height: calc(70vh - var(--navbar-height));
+    min-height: calc(70svh - var(--navbar-height));
+    min-height: calc(70dvh - var(--navbar-height));
     padding: var(--spacing-6) 0;
   }
   .hero-title {

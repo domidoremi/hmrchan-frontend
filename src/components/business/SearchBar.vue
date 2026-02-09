@@ -383,7 +383,7 @@ defineExpose({
 .search-bar {
   position: relative;
   width: 100%;
-  max-width: 400px;
+  max-width: min(90vw, 25rem);
 }
 
 .search-input-wrapper {

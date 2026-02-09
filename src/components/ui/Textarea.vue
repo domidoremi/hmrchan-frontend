@@ -68,7 +68,7 @@ defineExpose({ el: textareaRef })
   font-size: var(--text-sm);
   line-height: 1.6;
   padding: 0.75rem 1rem;
-  min-height: 120px;
+  min-height: 7.5rem;
   resize: vertical;
   transition-property: border-color, box-shadow, background-color;
   transition-duration: 150ms;
@@ -92,13 +92,13 @@ defineExpose({ el: textareaRef })
 }
 
 .ui-textarea--sm {
-  min-height: 80px;
+  min-height: 5rem;
   padding: 0.5rem 0.75rem;
   font-size: var(--text-xs);
 }
 
 .ui-textarea--lg {
-  min-height: 160px;
+  min-height: 10rem;
   padding: 1rem 1.25rem;
   font-size: var(--text-base);
 }
@@ -128,7 +128,7 @@ defineExpose({ el: textareaRef })
 
 @media (max-width: 768px) {
   .ui-textarea {
-    font-size: 16px;
+    font-size: 1rem;
   }
 }
 </style>

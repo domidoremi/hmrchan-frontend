@@ -420,7 +420,7 @@ watch(searchResults, () => {
 .composer-textarea {
   width: 100%;
   resize: vertical;
-  min-height: 100px;
+  min-height: 6.25rem;
   font-size: var(--text-base);
 }
 

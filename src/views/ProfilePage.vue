@@ -16,10 +16,6 @@
           </div>
         </div>
         <div class="profile-actions">
-          <Button variant="ghost" size="sm" @click="goToSettings">
-            <AnimatedIcon name="sparkle" :fallback-icon="Settings" size="sm" />
-            {{ $t('nav.profileSettings') }}
-          </Button>
           <Button variant="secondary" size="sm" @click="editProfile">
             <AnimatedIcon name="explore" :fallback-icon="Pencil" size="sm" />
             {{ $t('profile.editProfile') }}
@@ -65,7 +61,7 @@ defineOptions({ name: 'ProfilePage' })
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
-import { Heart, MessageSquare, ThumbsUp, Clock, Settings, Pencil } from 'lucide-vue-next'
+import { Heart, MessageSquare, ThumbsUp, Clock, Pencil } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores'
 import { getUserAvatarUrl } from '@/composables/useUserAvatar'
@@ -113,12 +109,7 @@ const userAvatar = computed(() => {
   return getUserAvatarUrl(user.value?.avatar_url, user.value?.username)
 })
 
-const profileSettingsRoute = '/profile/settings'
 const editProfileRoute = '/profile/settings#basic-info'
-
-function goToSettings() {
-  router.push(profileSettingsRoute)
-}
 
 function editProfile() {
   router.push(editProfileRoute)
@@ -133,7 +124,8 @@ onMounted(() => {
 
 <style scoped>
 .profile-page {
-  min-height: 100vh;
+  min-height: 100svh;
+  min-height: 100dvh;
   padding: var(--spacing-4) 0;
 }
 
@@ -259,7 +251,7 @@ onMounted(() => {
 }
 
 .tab-content {
-  min-height: 300px;
+  min-height: 18.75rem;
 }
 
 @media (max-width: 768px) {

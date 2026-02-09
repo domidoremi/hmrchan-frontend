@@ -120,12 +120,12 @@ async function copyReport() {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 320px;
+  min-height: 20rem;
   padding: var(--spacing-6);
 }
 
 .error-panel {
-  max-width: 520px;
+  max-width: min(90vw, 32.5rem);
   width: 100%;
   padding: var(--spacing-8);
   text-align: center;
@@ -208,7 +208,7 @@ async function copyReport() {
   overflow-x: auto;
   white-space: pre-wrap;
   word-break: break-all;
-  max-height: 220px;
+  max-height: 13.75rem;
   overflow-y: auto;
 }
 

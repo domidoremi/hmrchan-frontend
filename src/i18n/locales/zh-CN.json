@@ -603,12 +603,19 @@
     "revokeAll": "退出所有其他设备",
     "lastActive": "最后活跃",
     "namePlaceholder": "输入设备名称",
+    "unknownDevice": "未知设备",
+    "unknownIp": "未知 IP",
+    "deviceInfo": "设备信息",
+    "firstSeen": "首次登录",
+    "lastLogin": "上次登录",
+    "loginCount": "登录次数",
     "ipChangeWarning": "IP 地址已更改 {count} 次",
     "time": {
       "justNow": "刚刚",
       "minutesAgo": "{count} 分钟前",
       "hoursAgo": "{count} 小时前",
-      "daysAgo": "{count} 天前"
+      "daysAgo": "{count} 天前",
+      "unknown": "未知"
     },
     "confirm": {
       "revoke": "确定要退出此设备的登录吗？",

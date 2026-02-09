@@ -11,13 +11,24 @@ import { apiClient, type RequestConfig } from './client'
 
 export interface Device {
   id: number
-  device_name: string
+  fingerprint?: string | null
+  device_name?: string | null
   device_type: 'desktop' | 'mobile' | 'tablet'
-  device_os: string
-  device_browser: string
-  ip_address: string
-  last_used_at: string
-  created_at: string
+  // New API fields
+  browser?: string | null
+  os?: string | null
+  device_info?: string | null
+  last_active_at?: string | null
+  last_login_at?: string | null
+  first_seen_at?: string | null
+  last_ip?: string | null
+  login_count?: number | null
+  // Legacy fields (fallback)
+  device_os?: string | null
+  device_browser?: string | null
+  last_used_at?: string | null
+  ip_address?: string | null
+  created_at?: string | null
   is_current: boolean
   is_trusted: boolean
   country?: string

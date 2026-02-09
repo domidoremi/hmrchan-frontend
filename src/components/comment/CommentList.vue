@@ -143,7 +143,7 @@ watch(
   box-shadow: var(--glass-shadow);
   backdrop-filter: var(--glass-blur);
   /* 预留最小高度防止 CLS */
-  min-height: 200px;
+  min-height: 12.5rem;
 }
 
 .comment-section--guest {
@@ -225,7 +225,7 @@ watch(
     rgba(var(--color-primary-rgb), 0.08),
     rgba(var(--color-secondary-rgb), 0.04)
   );
-  min-height: 220px;
+  min-height: 13.75rem;
 }
 
 .empty-state--guest {
@@ -237,7 +237,7 @@ watch(
 @media (max-width: 768px) {
   .empty-state {
     padding: var(--spacing-7) var(--spacing-4);
-    min-height: 180px;
+    min-height: 11.25rem;
   }
 }
 

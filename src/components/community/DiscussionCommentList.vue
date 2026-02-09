@@ -284,7 +284,7 @@ watch([currentSort, currentFilter, preloadReplies], () => {
   border: 1px solid var(--glass-border);
   box-shadow: var(--glass-shadow);
   backdrop-filter: var(--glass-blur);
-  min-height: 200px;
+  min-height: 12.5rem;
 }
 
 .comment-section--guest {
@@ -368,7 +368,7 @@ watch([currentSort, currentFilter, preloadReplies], () => {
     rgba(var(--color-primary-rgb), 0.08),
     rgba(var(--color-secondary-rgb), 0.04)
   );
-  min-height: 220px;
+  min-height: 13.75rem;
 }
 
 .empty-state--guest {

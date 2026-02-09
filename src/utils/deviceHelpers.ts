@@ -28,12 +28,14 @@ export function getDeviceIcon(type: string): Component {
  * @param t i18n translation function
  */
 export function formatRelativeTime(
-  dateString: string,
+  dateString: string | null | undefined,
   t: (key: string, params?: Record<string, unknown>) => string
 ): string {
+  if (!dateString) return t('devices.time.unknown')
   const date = new Date(dateString)
+  if (Number.isNaN(date.getTime())) return t('devices.time.unknown')
   const now = new Date()
-  const diff = now.getTime() - date.getTime()
+  const diff = Math.max(0, now.getTime() - date.getTime())
   const minutes = Math.floor(diff / 60000)
 
   if (minutes < 1) return t('devices.time.justNow')
