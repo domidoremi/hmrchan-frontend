@@ -352,6 +352,34 @@
     "showReplies": "查看 {count} 条回复",
     "threadOwner": "层主",
     "replyingTo": "回复",
+    "pinned": "置顶",
+    "featured": "精选",
+    "pin": "置顶",
+    "unpin": "取消置顶",
+    "feature": "精选",
+    "unfeature": "取消精选",
+    "filterLabel": "筛选",
+    "sortLabel": "排序",
+    "preloadLabel": "回复预览",
+    "preloadOff": "关闭",
+    "preloadFew": "2 条回复",
+    "preloadMore": "5 条回复",
+    "loadMoreReplies": "加载更多回复",
+    "reportTitle": "举报评论",
+    "reportReasonLabel": "举报原因",
+    "reportDescriptionLabel": "补充说明（可选）",
+    "reportSubmit": "提交举报",
+    "reportReason": {
+      "spam": "垃圾信息",
+      "harassment": "骚扰",
+      "inappropriate": "不当内容",
+      "other": "其他"
+    },
+    "filter": {
+      "all": "全部",
+      "author": "只看作者",
+      "admin": "只看管理员"
+    },
     "sort": {
       "newest": "最新",
       "oldest": "最早",
@@ -366,6 +394,7 @@
     },
     "error": {
       "fetchFailed": "加载评论失败",
+      "fetchRepliesFailed": "加载回复失败",
       "addFailed": "发布评论失败",
       "deleteFailed": "删除评论失败",
       "likeFailed": "点赞失败",

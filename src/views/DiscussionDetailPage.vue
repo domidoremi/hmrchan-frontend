@@ -81,6 +81,13 @@
             </div>
           </div>
         </article>
+
+        <section v-if="discussion" class="discussion-comments">
+          <DiscussionCommentList
+            :discussion-id="discussion.id"
+            :discussion-author-id="discussion.author.id"
+          />
+        </section>
       </div>
     </div>
   </div>
@@ -100,6 +107,7 @@ import { formatRelativeTime } from '@/utils/date'
 import Button from '@/components/ui/Button.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
+import DiscussionCommentList from '@/components/community/DiscussionCommentList.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -258,6 +266,10 @@ watch(discussionId, fetchDiscussion)
   font-size: var(--text-base);
   color: var(--color-text-primary);
   line-height: var(--leading-relaxed);
+}
+
+.discussion-comments {
+  margin-top: var(--spacing-6);
 }
 
 .referenced-post {

@@ -37,25 +37,33 @@ export interface Discussion {
   tags: string[]
   view_count: number
   likes_count: number
+  like_count?: number
   comments_count: number
+  comment_count?: number
   is_liked?: boolean
   is_pinned?: boolean
   is_closed?: boolean
   created_at: string
-  updated_at: string
+  updated_at?: string | null
+  last_activity_at?: string
 }
 
 export interface DiscussionComment {
   id: string
   discussion_id: string
   content: string
-  author: DiscussionAuthor
+  user: DiscussionAuthor
   parent_id?: string | null
-  replies_count: number
-  likes_count: number
+  like_count: number
+  reply_count: number
+  likes_count?: number
+  replies_count?: number
   is_liked?: boolean
+  is_pinned?: boolean
+  is_featured?: boolean
   created_at: string
-  updated_at: string
+  updated_at?: string | null
+  replies?: DiscussionComment[]
 }
 
 export interface CreateDiscussionRequest {
@@ -84,8 +92,114 @@ export interface ListDiscussionsParams {
   page_size?: number
   category?: DiscussionCategory
   tag?: string
+  sort?: 'latest' | 'popular' | 'active'
   sort_by?: 'created_at' | 'updated_at' | 'likes_count' | 'comments_count' | 'view_count'
   sort_order?: 'asc' | 'desc'
+}
+
+export interface ListDiscussionCommentsParams {
+  page?: number
+  page_size?: number
+  sort?: 'newest' | 'oldest' | 'popular'
+  sort_by?: 'newest' | 'oldest' | 'popular' | 'created_at' | 'like_count'
+  preload_replies?: number
+  author_only?: boolean
+  admin_only?: boolean
+  filter?: 'author' | 'admin'
+}
+
+const toNumber = (value: unknown, fallback = 0) => {
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? parsed : fallback
+}
+
+const toString = (value: unknown) => {
+  if (value === null || value === undefined) return ''
+  return String(value)
+}
+
+function normalizeDiscussionAuthor(raw: unknown): DiscussionAuthor {
+  const data = (raw || {}) as Record<string, unknown>
+  return {
+    id: toString(data.id ?? data.user_id ?? ''),
+    username: toString(data.username ?? data.name ?? 'Anonymous'),
+    avatar_url: (data.avatar_url as string | null | undefined) ?? null,
+  }
+}
+
+function normalizePostReference(raw: unknown): PostReference {
+  const data = (raw || {}) as Record<string, unknown>
+  return {
+    id: toString(data.id ?? data.post_id ?? data.uuid ?? ''),
+    title: toString(data.title ?? ''),
+    thumbnail_url: (data.thumbnail_url as string | null | undefined) ?? null,
+    author_name: toString(data.author_name ?? data.author ?? ''),
+  }
+}
+
+function normalizeDiscussion(raw: unknown): Discussion {
+  const data = (raw || {}) as Record<string, unknown>
+  const author = normalizeDiscussionAuthor(data.author ?? data.user ?? {})
+  const likeCount = toNumber(data.likes_count ?? data.like_count)
+  const commentCount = toNumber(data.comments_count ?? data.comment_count)
+
+  return {
+    id: toString(data.uuid ?? data.id ?? ''),
+    title: toString(data.title ?? ''),
+    content: toString(data.content ?? ''),
+    category: (data.category as DiscussionCategory) ?? 'general',
+    author,
+    referenced_post: data.referenced_post ? normalizePostReference(data.referenced_post) : null,
+    tags: Array.isArray(data.tags) ? (data.tags as string[]) : [],
+    view_count: toNumber(data.view_count),
+    likes_count: likeCount,
+    like_count: likeCount,
+    comments_count: commentCount,
+    comment_count: commentCount,
+    is_liked: Boolean(data.is_liked),
+    is_pinned: Boolean(data.is_pinned),
+    is_closed: Boolean(data.is_closed),
+    created_at: toString(data.created_at ?? ''),
+    updated_at: (data.updated_at as string | null | undefined) ?? null,
+    last_activity_at: toString(data.last_activity_at ?? ''),
+  }
+}
+
+function normalizeDiscussionComment(raw: unknown): DiscussionComment {
+  const data = (raw || {}) as Record<string, unknown>
+  const likeCount = toNumber(data.like_count ?? data.likes_count)
+  const replyCount = toNumber(data.reply_count ?? data.replies_count)
+  const replies = Array.isArray(data.replies)
+    ? (data.replies as unknown[]).map((item) => normalizeDiscussionComment(item))
+    : undefined
+
+  return {
+    id: toString(data.id ?? data.uuid ?? ''),
+    discussion_id: toString(data.discussion_id ?? ''),
+    content: toString(data.content ?? ''),
+    user: normalizeDiscussionAuthor(data.user ?? data.author ?? {}),
+    parent_id: (data.parent_id as string | null | undefined) ?? null,
+    like_count: likeCount,
+    reply_count: replyCount,
+    likes_count: likeCount,
+    replies_count: replyCount,
+    is_liked: Boolean(data.is_liked),
+    is_pinned: Boolean(data.is_pinned),
+    is_featured: Boolean(data.is_featured),
+    created_at: toString(data.created_at ?? ''),
+    updated_at: (data.updated_at as string | null | undefined) ?? null,
+    replies,
+  }
+}
+
+function normalizePaginated<T, R>(
+  response: PaginatedApiResponse<T>,
+  mapper: (item: T) => R
+): PaginatedApiResponse<R> {
+  return {
+    ...response,
+    items: (response.items || []).map((item) => mapper(item)),
+  }
 }
 
 // ========== 讨论服务 ==========
@@ -102,31 +216,37 @@ export const discussionService = {
 
     if (params.category) query.set('category', params.category)
     if (params.tag) query.set('tag', params.tag)
+    if (params.sort) query.set('sort', params.sort)
     if (params.sort_by) query.set('sort_by', params.sort_by)
     if (params.sort_order) query.set('sort_order', params.sort_order)
-
-    return apiClient.get<PaginatedApiResponse<Discussion>>(`/discussions/?${query.toString()}`)
+    const data = await apiClient.get<PaginatedApiResponse<Discussion>>(
+      `/discussions/?${query.toString()}`
+    )
+    return normalizePaginated(data, normalizeDiscussion)
   },
 
   /**
    * 获取单个讨论详情
    */
   async get(discussionId: string): Promise<Discussion> {
-    return apiClient.get<Discussion>(`/discussions/${discussionId}`)
+    const data = await apiClient.get<Discussion>(`/discussions/${discussionId}`)
+    return normalizeDiscussion(data)
   },
 
   /**
    * 创建讨论
    */
   async create(data: CreateDiscussionRequest): Promise<Discussion> {
-    return apiClient.post<Discussion>('/discussions/', data)
+    const response = await apiClient.post<Discussion>('/discussions/', data)
+    return normalizeDiscussion(response)
   },
 
   /**
    * 更新讨论
    */
   async update(discussionId: string, data: UpdateDiscussionRequest): Promise<Discussion> {
-    return apiClient.put<Discussion>(`/discussions/${discussionId}`, data)
+    const response = await apiClient.put<Discussion>(`/discussions/${discussionId}`, data)
+    return normalizeDiscussion(response)
   },
 
   /**
@@ -171,19 +291,41 @@ export const discussionService = {
    */
   async getComments(
     discussionId: string,
-    page = 1,
-    pageSize = 20
+    params: ListDiscussionCommentsParams = {}
   ): Promise<PaginatedApiResponse<DiscussionComment>> {
-    return apiClient.get<PaginatedApiResponse<DiscussionComment>>(
-      `/discussions/${discussionId}/comments?page=${page}&page_size=${pageSize}`
+    const query = new URLSearchParams({
+      page: String(params.page ?? 1),
+      page_size: String(params.page_size ?? 20),
+    })
+
+    if (params.sort) query.set('sort', params.sort)
+    if (params.sort_by) query.set('sort_by', params.sort_by)
+    if (typeof params.preload_replies === 'number') {
+      query.set('preload_replies', String(params.preload_replies))
+    }
+
+    if (params.filter) {
+      query.set('filter', params.filter)
+    } else {
+      if (params.author_only) query.set('author_only', 'true')
+      if (params.admin_only) query.set('admin_only', 'true')
+    }
+
+    const data = await apiClient.get<PaginatedApiResponse<DiscussionComment>>(
+      `/discussions/${discussionId}/comments?${query.toString()}`
     )
+    return normalizePaginated(data, normalizeDiscussionComment)
   },
 
   /**
    * 添加讨论评论
    */
   async addComment(discussionId: string, data: CreateCommentRequest): Promise<DiscussionComment> {
-    return apiClient.post<DiscussionComment>(`/discussions/${discussionId}/comments`, data)
+    const response = await apiClient.post<DiscussionComment>(
+      `/discussions/${discussionId}/comments`,
+      data
+    )
+    return normalizeDiscussionComment(response)
   },
 
   /**
@@ -194,16 +336,20 @@ export const discussionService = {
     page = 1,
     pageSize = 20
   ): Promise<PaginatedApiResponse<DiscussionComment>> {
-    return apiClient.get<PaginatedApiResponse<DiscussionComment>>(
+    const data = await apiClient.get<PaginatedApiResponse<DiscussionComment>>(
       `/discussions/comments/${commentId}/replies?page=${page}&page_size=${pageSize}`
     )
+    return normalizePaginated(data, normalizeDiscussionComment)
   },
 
   /**
    * 更新评论
    */
   async updateComment(commentId: string, content: string): Promise<DiscussionComment> {
-    return apiClient.put<DiscussionComment>(`/discussions/comments/${commentId}`, { content })
+    const response = await apiClient.put<DiscussionComment>(`/discussions/comments/${commentId}`, {
+      content,
+    })
+    return normalizeDiscussionComment(response)
   },
 
   /**
@@ -227,24 +373,73 @@ export const discussionService = {
     await apiClient.delete(`/discussions/comments/${commentId}/like`)
   },
 
+  /**
+   * 获取评论详情
+   */
+  async getComment(commentId: string): Promise<DiscussionComment> {
+    const data = await apiClient.get<DiscussionComment>(`/discussions/comments/${commentId}`)
+    return normalizeDiscussionComment(data)
+  },
+
+  /**
+   * 举报评论
+   */
+  async reportComment(commentId: string, reason: string, description?: string): Promise<void> {
+    await apiClient.post(
+      `/discussions/comments/${commentId}/report`,
+      { reason, description },
+      { skipErrorToast: true }
+    )
+  },
+
+  /**
+   * 置顶评论（管理员）
+   */
+  async pinComment(commentId: string): Promise<void> {
+    await apiClient.post(`/discussions/comments/${commentId}/pin`, null)
+  },
+
+  /**
+   * 取消置顶评论（管理员）
+   */
+  async unpinComment(commentId: string): Promise<void> {
+    await apiClient.delete(`/discussions/comments/${commentId}/pin`)
+  },
+
+  /**
+   * 精选评论（管理员）
+   */
+  async featureComment(commentId: string): Promise<void> {
+    await apiClient.post(`/discussions/comments/${commentId}/feature`, null)
+  },
+
+  /**
+   * 取消精选评论（管理员）
+   */
+  async unfeatureComment(commentId: string): Promise<void> {
+    await apiClient.delete(`/discussions/comments/${commentId}/feature`)
+  },
+
   // ========== 用户中心 ==========
 
   /**
    * 获取我发起的讨论
    */
   async getMyDiscussions(page = 1, pageSize = 20): Promise<PaginatedApiResponse<Discussion>> {
-    return apiClient.get<PaginatedApiResponse<Discussion>>(
+    const data = await apiClient.get<PaginatedApiResponse<Discussion>>(
       `/discussions/user/my-discussions?page=${page}&page_size=${pageSize}`
     )
+    return normalizePaginated(data, normalizeDiscussion)
   },
 
   /**
    * 获取我的讨论评论
    */
   async getMyComments(page = 1, pageSize = 20): Promise<PaginatedApiResponse<DiscussionComment>> {
-    return apiClient.get<PaginatedApiResponse<DiscussionComment>>(
+    const data = await apiClient.get<PaginatedApiResponse<DiscussionComment>>(
       `/discussions/user/my-comments?page=${page}&page_size=${pageSize}`
     )
+    return normalizePaginated(data, normalizeDiscussionComment)
   },
 
   // ========== 帖子搜索 (用于 @帖子 引用) ==========

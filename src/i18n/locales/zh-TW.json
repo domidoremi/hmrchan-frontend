@@ -352,6 +352,34 @@
     "showReplies": "檢視 {count} 條回覆",
     "threadOwner": "層主",
     "replyingTo": "回覆",
+    "pinned": "置頂",
+    "featured": "精選",
+    "pin": "置頂",
+    "unpin": "取消置頂",
+    "feature": "精選",
+    "unfeature": "取消精選",
+    "filterLabel": "篩選",
+    "sortLabel": "排序",
+    "preloadLabel": "回覆預覽",
+    "preloadOff": "關閉",
+    "preloadFew": "2 則回覆",
+    "preloadMore": "5 則回覆",
+    "loadMoreReplies": "載入更多回覆",
+    "reportTitle": "檢舉評論",
+    "reportReasonLabel": "檢舉原因",
+    "reportDescriptionLabel": "補充說明（可選）",
+    "reportSubmit": "提交檢舉",
+    "reportReason": {
+      "spam": "垃圾資訊",
+      "harassment": "騷擾",
+      "inappropriate": "不當內容",
+      "other": "其他"
+    },
+    "filter": {
+      "all": "全部",
+      "author": "只看作者",
+      "admin": "只看管理員"
+    },
     "sort": {
       "newest": "最新",
       "oldest": "最早",
@@ -366,6 +394,7 @@
     },
     "error": {
       "fetchFailed": "載入評論失敗",
+      "fetchRepliesFailed": "載入回覆失敗",
       "addFailed": "發布評論失敗",
       "deleteFailed": "刪除評論失敗",
       "likeFailed": "按讚失敗",
