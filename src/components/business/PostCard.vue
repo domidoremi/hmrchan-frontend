@@ -67,24 +67,6 @@
             </div>
           </div>
           <div class="hover-scroll">
-            <div class="hover-meta">
-              <div class="hover-pill">
-                <AnimatedIcon name="explore" :fallback-icon="platformIcon" size="sm" />
-                <span>{{ platformLabel }}</span>
-              </div>
-              <div v-if="post.published_at" class="hover-pill">
-                <AnimatedIcon name="explore" :fallback-icon="Calendar" size="sm" />
-                <span>{{ formatPublishedTime(post.published_at) }}</span>
-              </div>
-              <div v-if="post.duration" class="hover-pill">
-                <AnimatedIcon name="explore" :fallback-icon="Clock" size="sm" />
-                <span>{{ formatDuration(post.duration) }}</span>
-              </div>
-              <div v-else-if="post.media_count && post.media_count > 1" class="hover-pill">
-                <AnimatedIcon name="explore" :fallback-icon="Images" size="sm" />
-                <span>{{ post.media_count }}</span>
-              </div>
-            </div>
             <!-- Only show title/author in hover overlay when the card hides its content -->
             <h4 v-if="!showContent" class="hover-title">{{ displayTitle }}</h4>
             <div v-if="!showContent && displayAuthorName" class="hover-author">
@@ -150,11 +132,9 @@ import { useI18n } from 'vue-i18n'
 import {
   ArrowUpRight,
   Calendar,
-  Clock,
   Eye,
   Globe,
   Heart,
-  Images,
   Instagram,
   Music2,
   Play,
@@ -836,10 +816,8 @@ onUnmounted(() => {
 .hover-scroll {
   flex: 1;
   min-height: 0;
-  overflow: auto;
-  padding-right: 4px;
+  overflow: hidden;
   color: #fff;
-  overscroll-behavior: auto;
 }
 
 @media (hover: none) and (pointer: coarse) {
@@ -906,8 +884,12 @@ onUnmounted(() => {
   margin: 0;
   font-size: var(--text-xs);
   color: rgba(255, 255, 255, 0.9);
-  line-height: 1.6;
-  white-space: pre-wrap;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .hover-stat svg {

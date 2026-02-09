@@ -1,10 +1,6 @@
 <template>
   <div class="auth-page">
     <div class="auth-card glass-card">
-      <div class="auth-badge">
-        <span class="auth-badge-dot" />
-        <span>{{ $t('auth.secureBadge') }}</span>
-      </div>
       <div class="auth-header">
         <button
           type="button"
@@ -18,8 +14,6 @@
 
       <h1 class="auth-title">{{ $t('auth.loginTitle') }}</h1>
       <p class="auth-subtitle">{{ $t('auth.loginSubtitle') }}</p>
-      <p class="auth-helper">{{ $t('auth.loginHint') }}</p>
-
       <form class="auth-form" @submit.prevent="handleLogin">
         <div class="form-group">
           <label for="usernameOrEmail">{{ $t('auth.usernameOrEmail') }}</label>
@@ -71,6 +65,8 @@
           />
         </div>
 
+        <p v-if="formError" class="field-error">{{ formError }}</p>
+
         <Button
           type="submit"
           :loading="isLoading"
@@ -118,6 +114,7 @@ const { isLoading, isAuthenticated } = storeToRefs(authStore)
 const usernameOrEmail = ref('')
 const password = ref('')
 const showPassword = ref(false)
+const formError = ref('')
 
 const turnstileSiteKey = (import.meta.env.VITE_TURNSTILE_SITE_KEY ?? '').trim()
 const turnstileEnabled = turnstileSiteKey.length > 0
@@ -167,8 +164,9 @@ if (isAuthenticated.value) {
 }
 
 async function handleLogin() {
+  formError.value = ''
   if (!usernameOrEmail.value || !password.value) {
-    toastStore.warning(t('auth.error.fieldsRequired'))
+    formError.value = t('auth.error.fieldsRequired')
     return
   }
 
@@ -221,6 +219,7 @@ function handleTurnstileError() {
   width: 100%;
   max-width: min(90vw, 23.75rem);
   padding: var(--spacing-5);
+  border-radius: var(--radius-xl);
   border: 1px solid rgba(var(--color-border-rgb), 0.6);
   box-shadow:
     0 16px 40px -24px rgba(15, 23, 42, 0.4),
@@ -238,29 +237,6 @@ function handleTurnstileError() {
   align-items: center;
   justify-content: flex-start;
   margin-bottom: var(--spacing-2);
-}
-
-.auth-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--spacing-2);
-  padding: 0.35rem 0.75rem;
-  border-radius: var(--radius-full);
-  background: rgba(var(--color-primary-rgb), 0.12);
-  color: var(--color-text-primary);
-  font-size: var(--text-xs);
-  font-weight: var(--font-semibold);
-  width: fit-content;
-  margin-bottom: var(--spacing-3);
-  border: 1px solid rgba(var(--color-primary-rgb), 0.2);
-}
-
-.auth-badge-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: var(--radius-full);
-  background: var(--color-primary);
-  box-shadow: 0 0 8px rgba(var(--color-primary-rgb), 0.6);
 }
 
 .back-btn {
@@ -287,12 +263,9 @@ function handleTurnstileError() {
   font-size: var(--text-sm);
 }
 
-.auth-helper {
-  text-align: center;
+.field-error {
   font-size: var(--text-xs);
-  color: var(--color-text-tertiary);
-  margin-top: calc(var(--spacing-4) * -1 + var(--spacing-2));
-  margin-bottom: var(--spacing-4);
+  color: var(--color-error);
 }
 
 .auth-form {

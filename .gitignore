@@ -162,6 +162,7 @@ lighthouse-reports/
 # Documentation (except README.md)
 # =====================
 *_MIGRATION.md
+FRONTEND_API_CONTRACT.md
 CHANGELOG.md
 CONTRIBUTING.md
 ARCHITECTURE.md
