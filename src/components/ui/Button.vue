@@ -120,6 +120,9 @@ const normalizedVariant = computed(() => VARIANT_MAP[props.variant] ?? 'default'
 const normalizedSize = computed(() => SIZE_MAP[props.size] ?? 'md')
 const hasDefaultSlot = computed(() => !!slots['default'])
 const isIconOnly = computed(() => !!props.icon && !props.loading && !hasDefaultSlot.value)
+const shouldUseRipple = computed(
+  () => props.ripple && !(normalizedVariant.value === 'ghost' && normalizedSize.value === 'sm')
+)
 
 const buttonClass = computed(() => [
   'btn',
@@ -130,7 +133,7 @@ const buttonClass = computed(() => [
     'btn-full-width': props.fullWidth,
     'btn-icon-only': isIconOnly.value,
     'btn-pressed': isPressed.value,
-    'btn-with-ripple': props.ripple,
+    'btn-with-ripple': shouldUseRipple.value,
   },
 ])
 
@@ -146,7 +149,13 @@ const showRightIcon = computed(
 
 // 创建 Ripple 效果
 async function createRipple(event: MouseEvent) {
-  if (!props.ripple || prefersReducedMotion() || !rippleContainer.value || !buttonRef.value) return
+  if (
+    !shouldUseRipple.value ||
+    prefersReducedMotion() ||
+    !rippleContainer.value ||
+    !buttonRef.value
+  )
+    return
 
   const gsapLib = await loadGsap()
   if (!gsapLib) return

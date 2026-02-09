@@ -47,6 +47,7 @@ const CLOUDFLARE_PATTERNS = [
   // Cloudflare 域名相关
   /challenges\.cloudflare\.com/i,
   /cloudflareinsights\.com/i,
+  /cdn-cgi\/rum/i,
 
   // Token 安全检查（正常的警告日志）
   /Token integrity check failed/i,

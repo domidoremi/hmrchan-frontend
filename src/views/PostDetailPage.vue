@@ -211,12 +211,12 @@
           class="post-text-overlay"
           role="dialog"
           aria-modal="true"
-          :aria-label="$t('post.description')"
+          :aria-label="$t('post.content')"
           @click.self="closeTextModal"
         >
           <div class="post-text-panel" tabindex="-1">
             <header class="post-text-header">
-              <h3 class="post-text-title">{{ $t('post.description') }}</h3>
+              <h3 class="post-text-title">{{ $t('post.content') }}</h3>
               <button type="button" class="post-text-close" @click="closeTextModal">
                 {{ $t('common.close') }}
               </button>
@@ -245,7 +245,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch, onUnmounted } from 'vue'
+import { ref, computed, onMounted, watch, onUnmounted, onActivated, onDeactivated } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { throttleRAF } from '@/utils/performance'
@@ -803,32 +803,32 @@ async function fetchPost() {
   }
 }
 
+// 记录访问开始时间（用于智能预缓存）
+const accessStartTime = ref(Date.now())
+
+// 记录访问时长的辅助函数
+function recordAccessTime() {
+  const timeSpent = Date.now() - accessStartTime.value
+  if (postId.value && timeSpent > 0) {
+    import('@/utils/cache/smartPrefetch').then(({ recordAccess }) => {
+      recordAccess('post', postId.value, timeSpent)
+    })
+  }
+}
+
 onMounted(() => {
+  // 重置访问开始时间（处理组件复用情况）
+  accessStartTime.value = Date.now()
+
   syncNavigationContext()
   prefetchAdjacentPosts()
   fetchPost()
+  attachStageListeners()
+})
 
-  handleScroll()
-  window.addEventListener('scroll', handleScroll, { passive: true })
-
-  if (stageRef.value) {
-    stageRef.value.addEventListener('wheel', handleWheel, { passive: false })
-    stageRef.value.addEventListener('touchstart', handleTouchStart, { passive: true })
-    stageRef.value.addEventListener('touchend', handleTouchEnd, { passive: true })
-  }
-
-  // 记录访问开始时间（用于智能预缓存）
-  const accessStartTime = Date.now()
-
-  // 在组件卸载时记录访问
-  onUnmounted(() => {
-    const timeSpent = Date.now() - accessStartTime
-    if (postId.value) {
-      import('@/utils/cache/smartPrefetch').then(({ recordAccess }) => {
-        recordAccess('post', postId.value, timeSpent)
-      })
-    }
-  })
+// 在组件卸载时记录访问
+onUnmounted(() => {
+  recordAccessTime()
 })
 
 watch(postId, () => {
@@ -866,9 +866,18 @@ watch(
   },
   { immediate: true }
 )
+function attachStageListeners() {
+  handleScroll()
+  window.addEventListener('scroll', handleScroll, { passive: true })
 
-// 清理 sessionStorage
-onUnmounted(() => {
+  if (stageRef.value) {
+    stageRef.value.addEventListener('wheel', handleWheel, { passive: false })
+    stageRef.value.addEventListener('touchstart', handleTouchStart, { passive: true })
+    stageRef.value.addEventListener('touchend', handleTouchEnd, { passive: true })
+  }
+}
+
+function detachStageListeners() {
   window.removeEventListener('scroll', handleScroll)
 
   if (stageRef.value) {
@@ -876,6 +885,32 @@ onUnmounted(() => {
     stageRef.value.removeEventListener('touchstart', handleTouchStart)
     stageRef.value.removeEventListener('touchend', handleTouchEnd)
   }
+}
+
+onActivated(() => {
+  // 重置访问开始时间（keep-alive 激活时）
+  accessStartTime.value = Date.now()
+
+  attachStageListeners()
+  if (isTextModalOpen.value) {
+    lockBodyScroll()
+    if (typeof window !== 'undefined') window.addEventListener('keydown', onTextModalKeydown)
+  }
+})
+
+onDeactivated(() => {
+  // 记录访问时长（keep-alive 停用时）
+  recordAccessTime()
+
+  isTextModalOpen.value = false
+  detachStageListeners()
+  unlockBodyScroll()
+  if (typeof window !== 'undefined') window.removeEventListener('keydown', onTextModalKeydown)
+})
+
+// 清理 sessionStorage
+onUnmounted(() => {
+  detachStageListeners()
   stopAutoPlay()
   unlockBodyScroll()
   if (typeof window !== 'undefined') window.removeEventListener('keydown', onTextModalKeydown)

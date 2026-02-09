@@ -119,6 +119,7 @@
                   :model-value="profile.username"
                   type="text"
                   class="input-with-icon"
+                  autocomplete="username"
                   disabled
                   readonly
                 />
@@ -146,6 +147,7 @@
                   class="input-with-icon"
                   maxlength="255"
                   :placeholder="$t('profile.fullNamePlaceholder')"
+                  autocomplete="name"
                 />
               </div>
               <p class="field-hint">{{ $t('profile.displayNameHint') }}</p>
@@ -214,6 +216,7 @@
                 :model-value="profile.email"
                 type="email"
                 class="input-with-icon"
+                autocomplete="email"
                 disabled
                 readonly
               />
@@ -239,6 +242,7 @@
                   type="email"
                   class="input-with-icon"
                   :placeholder="$t('email.newEmailPlaceholder')"
+                  autocomplete="email"
                   required
                 />
               </div>
