@@ -178,9 +178,14 @@ import type { Theme } from '@/types'
 import type { UiStyle } from '@/stores/settings'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 
-defineProps<{
-  compact?: boolean
-}>()
+withDefaults(
+  defineProps<{
+    compact?: boolean
+  }>(),
+  {
+    compact: true,
+  }
+)
 
 defineEmits<{ close: [] }>()
 
@@ -199,9 +204,9 @@ const themeOptions = [
   { value: 'auto' as Theme, icon: Monitor },
 ]
 
-const uiStyleOptions: { value: UiStyle; icon: unknown; label: string }[] = [
-  { value: 'ios', icon: Smartphone, label: t('settings.uiStyleIos') },
-  { value: 'material', icon: Layers, label: t('settings.uiStyleMaterial') },
+const uiStyleOptions = [
+  { value: 'ios' as UiStyle, icon: Smartphone, label: t('settings.uiStyleIos') },
+  { value: 'material' as UiStyle, icon: Layers, label: t('settings.uiStyleMaterial') },
 ]
 
 const localeOptions: { code: SupportedLocale; name: string; flag: string }[] = [

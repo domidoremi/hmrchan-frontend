@@ -218,7 +218,6 @@ const ROUTE_CONFIG = {
     importFn: () => import('@/views/ProfileDevicesPage.vue'),
   },
   favorites: { path: '/favorites', importFn: () => import('@/views/FavoritesPage.vue') },
-  settings: { path: '/settings', importFn: () => import('@/views/SettingsPage.vue') },
   'profile-settings': {
     path: '/profile/settings',
     importFn: () => import('@/views/ProfileSettingsPage.vue'),
