@@ -28,6 +28,7 @@ export interface Device {
 export interface DeviceListResponse {
   devices: Device[]
   total: number
+  current_fingerprint?: string | null
 }
 
 // ========== 设备服务 ==========
@@ -37,7 +38,12 @@ export const deviceService = {
    * 获取设备列表
    */
   async getDevices(): Promise<DeviceListResponse> {
-    return apiClient.get<DeviceListResponse>('/devices/')
+    return apiClient.get<DeviceListResponse>('/devices')
+  },
+
+  /** 取消信任设备 */
+  async untrustDevice(deviceId: string): Promise<{ success: boolean }> {
+    return apiClient.post('/devices/untrust', { device_id: deviceId })
   },
 
   /**
@@ -58,21 +64,21 @@ export const deviceService = {
    * 注销所有设备
    */
   async revokeAllDevices(): Promise<void> {
-    return apiClient.delete('/devices/all')
+    return apiClient.delete('/devices')
   },
 
   /**
    * 信任/取消信任设备
    */
-  async trustDevice(deviceId: string, trusted: boolean): Promise<{ success: boolean }> {
-    return apiClient.post('/devices/trust', { device_id: deviceId, trusted })
+  async trustDevice(deviceId: string): Promise<{ success: boolean }> {
+    return apiClient.post('/devices/trust', { device_id: deviceId })
   },
 
   /**
    * 更新设备名称
    */
   async updateDeviceName(deviceId: string, deviceName: string): Promise<{ success: boolean }> {
-    return apiClient.put('/devices/device-name', {
+    return apiClient.post('/devices/rename', {
       device_id: deviceId,
       device_name: deviceName,
     })
