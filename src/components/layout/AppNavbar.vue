@@ -969,7 +969,7 @@ onUnmounted(() => {
   position: fixed;
   top: calc(var(--navbar-height) - var(--spacing-2));
   right: var(--spacing-4);
-  min-width: 300px;
+  min-width: 16rem;
 }
 
 .user-info {

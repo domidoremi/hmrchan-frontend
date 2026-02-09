@@ -7,12 +7,6 @@
       :class="{ 'hero--animated': shouldAnimate }"
     >
       <div class="hero-content container">
-        <div class="hero-badge">
-          <span class="hero-badge__dot" />
-          <AnimatedIcon name="sparkle" :fallback-icon="Sparkles" size="sm" />
-          <span>{{ $t('home.hero.badge') }}</span>
-        </div>
-
         <h1 class="hero-title gradient-text">{{ $t('home.hero.title') }}</h1>
         <p class="hero-subtitle">{{ $t('home.hero.subtitle') }}</p>
 
@@ -21,15 +15,8 @@
             <AnimatedIcon name="explore" :fallback-icon="Compass" size="md" />
             {{ $t('nav.explore') }}
           </Button>
-          <Button size="lg" variant="ghost" @click="scrollToBento">
-            <AnimatedIcon name="explore" :fallback-icon="ArrowDown" size="md" class="hero-arrow" />
-            {{ $t('common.learnMore') }}
-          </Button>
         </div>
       </div>
-
-      <!-- Hero → Bento 过渡 -->
-      <div class="hero-transition" />
     </section>
 
     <!-- Bento Grid -->
@@ -179,17 +166,7 @@ import { ref, computed, onMounted, onBeforeUnmount, type ComponentPublicInstance
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
-import {
-  ArrowDown,
-  ArrowUpRight,
-  Compass,
-  Heart,
-  Layers,
-  MessageSquare,
-  Search,
-  Sparkles,
-  Users,
-} from 'lucide-vue-next'
+import { ArrowUpRight, Compass, Heart, Layers, MessageSquare, Search, Users } from 'lucide-vue-next'
 import { useAuthStore, useSettingsStore } from '@/stores'
 import { postService, type PostListItem, ApiError, type ThumbnailQuality } from '@/api'
 import { useCachedPostList } from '@/composables/useCachedPosts'
@@ -393,13 +370,6 @@ function goToExplore() {
   router.push('/explore')
 }
 
-function scrollToBento() {
-  bentoRef.value?.scrollIntoView({
-    behavior: shouldAnimate.value ? 'smooth' : 'auto',
-    block: 'start',
-  })
-}
-
 function openPostPreview(post: PostListItem, thumbnailSrc: string | null) {
   previewPostId.value = post.id
   previewPost.value = post
@@ -445,64 +415,17 @@ onBeforeUnmount(() => {
 /* ========== Hero Section ========== */
 .hero {
   position: relative;
-  min-height: calc(100svh - var(--navbar-height));
-  min-height: calc(100dvh - var(--navbar-height));
+  min-height: min(60svh, 28rem);
+  min-height: min(60dvh, 28rem);
   display: flex;
   align-items: center;
   justify-content: center;
   text-align: center;
-  padding: var(--spacing-12) 0;
+  padding: var(--spacing-8) 0;
 }
 
 .hero-content {
   max-width: min(90vw, 45rem);
-}
-
-.hero-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--spacing-2);
-  padding: var(--spacing-1) var(--spacing-4);
-  background: rgba(var(--color-primary-rgb), 0.08);
-  border: 1px solid rgba(var(--color-primary-rgb), 0.15);
-  border-radius: var(--radius-full);
-  font-size: var(--text-sm);
-  font-weight: var(--font-medium);
-  color: var(--color-primary);
-  margin-bottom: var(--spacing-6);
-  backdrop-filter: blur(8px);
-}
-
-.hero-badge__dot {
-  width: 6px;
-  height: 6px;
-  background: var(--color-success);
-  border-radius: 50%;
-}
-
-.hero--animated .hero-badge__dot {
-  animation: pulse-dot 2s ease-in-out infinite;
-}
-
-@keyframes pulse-dot {
-  0%,
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.5;
-    transform: scale(0.8);
-  }
-}
-
-.hero-badge svg {
-  color: var(--color-accent);
-}
-
-.hero-lottie {
-  margin: 0 auto var(--spacing-6);
-  opacity: 0.85;
 }
 
 .hero-title {
@@ -543,31 +466,6 @@ onBeforeUnmount(() => {
 
 .hero-btn:hover::before {
   transform: translateX(100%);
-}
-
-.hero--animated .hero-arrow {
-  animation: bounce-down 2s ease-in-out infinite;
-}
-
-@keyframes bounce-down {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(3px);
-  }
-}
-
-/* Hero → Bento 过渡 */
-.hero-transition {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 120px;
-  background: linear-gradient(180deg, transparent 0%, rgba(var(--mm-green-rgb), 0.03) 100%);
-  pointer-events: none;
 }
 
 /* ========== Bento Section ========== */

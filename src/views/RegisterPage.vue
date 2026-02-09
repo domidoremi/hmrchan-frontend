@@ -387,13 +387,14 @@ function isTurnstileRequiredError(error: unknown): boolean {
 }
 
 async function handleSendCode() {
+  emailError.value = ''
   const trimmedEmail = email.value.trim()
   if (!trimmedEmail) {
-    toastStore.warning(t('auth.emailRequired'))
+    emailError.value = t('auth.emailRequired')
     return
   }
   if (!emailRegex.test(trimmedEmail)) {
-    toastStore.warning(t('auth.error.invalidEmail'))
+    emailError.value = t('auth.error.invalidEmail')
     return
   }
   if (turnstileEnabled && forceTurnstileForSend.value && !isTurnstileTokenFresh()) {
@@ -621,6 +622,7 @@ function isTurnstileTokenFresh() {
   width: 100%;
   max-width: min(90vw, 23.75rem);
   padding: var(--spacing-5);
+  border-radius: var(--radius-xl);
   border: 1px solid rgba(var(--color-border-rgb), 0.6);
   box-shadow:
     0 16px 40px -24px rgba(15, 23, 42, 0.4),
@@ -871,7 +873,7 @@ function isTurnstileTokenFresh() {
   align-items: center;
   justify-content: center;
   gap: var(--spacing-2);
-  margin-bottom: var(--spacing-4);
+  margin-bottom: var(--spacing-3);
 }
 
 .step {
