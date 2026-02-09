@@ -125,6 +125,10 @@ function toggle() {
   border-color: var(--color-primary);
 }
 
+.ui-switch--checked .ui-switch__thumb {
+  background: var(--color-on-primary);
+}
+
 .ui-switch--checked:hover:not(.ui-switch--disabled) {
   background: var(--color-primary-dark);
   border-color: var(--color-primary-dark);

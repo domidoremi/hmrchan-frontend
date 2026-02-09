@@ -392,7 +392,7 @@ onMounted(() => {
 
 .mark-read-btn:hover {
   background: var(--color-primary);
-  color: var(--color-white);
+  color: var(--color-on-primary);
   border-color: var(--color-primary);
 }
 

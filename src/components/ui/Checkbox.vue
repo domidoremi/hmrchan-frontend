@@ -121,7 +121,7 @@ function toggle() {
 .ui-checkbox__check {
   width: 75%;
   height: 75%;
-  color: var(--color-white);
+  color: var(--color-on-primary);
 }
 
 /* Checked state */

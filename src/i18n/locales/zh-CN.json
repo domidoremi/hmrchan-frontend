@@ -110,6 +110,7 @@
       "passwordTooShort": "密码至少需要 8 个字符",
       "passwordTooWeak": "密码强度太弱，请增加复杂度",
       "invalidEmail": "请输入有效的邮箱地址",
+      "usernameInvalid": "用户名长度需为 3-50 个字符",
       "loginFailed": "登录失败，请重试",
       "registerFailed": "注册失败，请重试",
       "emailExists": "该邮箱已被注册",

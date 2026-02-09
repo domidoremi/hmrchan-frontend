@@ -62,7 +62,7 @@ const badgeClass = computed(() => [
 /* Variants */
 .ui-badge--default {
   background: var(--color-primary);
-  color: var(--color-white);
+  color: var(--color-on-primary);
 }
 
 .ui-badge--secondary {

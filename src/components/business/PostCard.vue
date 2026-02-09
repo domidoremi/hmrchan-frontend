@@ -940,6 +940,7 @@ onUnmounted(() => {
 .post-card:hover .hover-action-icon {
   background: var(--color-primary);
   border-color: var(--color-primary);
+  color: var(--color-on-primary);
   transform: translate(2px, -2px);
   box-shadow: 0 4px 12px rgba(var(--color-primary-rgb), 0.4);
 }

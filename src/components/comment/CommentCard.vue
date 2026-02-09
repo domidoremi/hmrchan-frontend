@@ -414,7 +414,7 @@ onUnmounted(() => {
   font-size: var(--text-xs);
   font-weight: var(--font-semibold);
   background: var(--color-primary);
-  color: white;
+  color: var(--color-on-primary);
 }
 
 .user-level-badge {

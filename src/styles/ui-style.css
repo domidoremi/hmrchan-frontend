@@ -721,7 +721,7 @@
 #app[data-ui-style='material'] .btn--filled,
 #app[data-ui-style='material'] .glass-button--filled {
   background: var(--color-primary);
-  color: var(--color-text-inverse);
+  color: var(--color-on-primary);
   border: none;
   border-radius: 20px;
   padding: 10px 24px;
@@ -1482,7 +1482,7 @@
 
 #app[data-ui-style='ios'] .btn--pill-primary {
   background: var(--color-primary);
-  color: var(--color-text-inverse);
+  color: var(--color-on-primary);
 }
 
 /* ========== Responsive Overrides ========== */

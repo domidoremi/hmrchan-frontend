@@ -132,10 +132,12 @@ export const useAuthStore = defineStore(
 
         return { success: true, user: response.user }
       } catch (err) {
-        const errorMessage =
-          err instanceof ApiError
-            ? getAuthErrorKey(err.status, err.code)
-            : 'auth.error.registerFailed'
+        let errorMessage = 'auth.error.registerFailed'
+        if (err instanceof ApiError) {
+          const detailMessage =
+            err.status === 400 || err.status === 422 ? extractApiErrorMessage(err.details) : null
+          errorMessage = detailMessage ?? getAuthErrorKey(err.status, err.code)
+        }
         error.value = errorMessage
         return { success: false, error: errorMessage }
       } finally {
@@ -347,6 +349,29 @@ export const useAuthStore = defineStore(
       if (status === 422) return 'auth.error.validationError'
       if (status === 429) return 'auth.error.tooManyRequests'
       return 'auth.error.unknown'
+    }
+
+    function extractApiErrorMessage(details?: Record<string, unknown>): string | null {
+      if (!details) return null
+      if (typeof details === 'string') return details
+
+      const detail = (details as { detail?: unknown }).detail
+      if (typeof detail === 'string') return detail
+
+      const message = (details as { message?: unknown }).message
+      if (typeof message === 'string') return message
+
+      for (const [key, value] of Object.entries(details)) {
+        if (typeof value === 'string') return value
+        if (Array.isArray(value) && value.length && typeof value[0] === 'string') {
+          return `${key}: ${value[0]}`
+        }
+        if (value && typeof value === 'object') {
+          const nestedMessage = (value as { message?: unknown }).message
+          if (typeof nestedMessage === 'string') return nestedMessage
+        }
+      }
+      return null
     }
 
     return {

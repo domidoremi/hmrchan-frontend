@@ -978,7 +978,7 @@ onMounted(() => {
   width: 28px;
   height: 28px;
   background: var(--color-primary);
-  color: white;
+  color: var(--color-on-primary);
   border-radius: 50%;
   border: 2px solid var(--color-bg);
 }
