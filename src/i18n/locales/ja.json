@@ -353,6 +353,34 @@
     "showReplies": "{count} 件の返信を表示",
     "threadOwner": "スレ主",
     "replyingTo": "返信先",
+    "pinned": "ピン留め",
+    "featured": "注目",
+    "pin": "ピン留め",
+    "unpin": "ピン留め解除",
+    "feature": "注目にする",
+    "unfeature": "注目を解除",
+    "filterLabel": "フィルター",
+    "sortLabel": "並び替え",
+    "preloadLabel": "返信プレビュー",
+    "preloadOff": "オフ",
+    "preloadFew": "返信 2 件",
+    "preloadMore": "返信 5 件",
+    "loadMoreReplies": "返信をさらに読み込む",
+    "reportTitle": "コメントを報告",
+    "reportReasonLabel": "理由",
+    "reportDescriptionLabel": "詳細（任意）",
+    "reportSubmit": "報告を送信",
+    "reportReason": {
+      "spam": "スパム",
+      "harassment": "嫌がらせ",
+      "inappropriate": "不適切な内容",
+      "other": "その他"
+    },
+    "filter": {
+      "all": "すべて",
+      "author": "投稿者のみ",
+      "admin": "管理者のみ"
+    },
     "sort": {
       "newest": "新着",
       "oldest": "古い順",
@@ -367,6 +395,7 @@
     },
     "error": {
       "fetchFailed": "コメントの読み込みに失敗",
+      "fetchRepliesFailed": "返信の読み込みに失敗",
       "addFailed": "コメントの投稿に失敗",
       "deleteFailed": "コメントの削除に失敗",
       "likeFailed": "いいねに失敗",

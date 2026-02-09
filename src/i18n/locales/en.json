@@ -352,6 +352,34 @@
     "showReplies": "Show {count} replies",
     "threadOwner": "OP",
     "replyingTo": "Reply to",
+    "pinned": "Pinned",
+    "featured": "Featured",
+    "pin": "Pin",
+    "unpin": "Unpin",
+    "feature": "Feature",
+    "unfeature": "Unfeature",
+    "filterLabel": "Filter",
+    "sortLabel": "Sort",
+    "preloadLabel": "Replies preview",
+    "preloadOff": "Off",
+    "preloadFew": "2 replies",
+    "preloadMore": "5 replies",
+    "loadMoreReplies": "Load more replies",
+    "reportTitle": "Report comment",
+    "reportReasonLabel": "Reason",
+    "reportDescriptionLabel": "Details (optional)",
+    "reportSubmit": "Submit report",
+    "reportReason": {
+      "spam": "Spam",
+      "harassment": "Harassment",
+      "inappropriate": "Inappropriate",
+      "other": "Other"
+    },
+    "filter": {
+      "all": "All",
+      "author": "Author only",
+      "admin": "Admins only"
+    },
     "sort": {
       "newest": "Newest",
       "oldest": "Oldest",
@@ -366,6 +394,7 @@
     },
     "error": {
       "fetchFailed": "Failed to load comments",
+      "fetchRepliesFailed": "Failed to load replies",
       "addFailed": "Failed to post comment",
       "deleteFailed": "Failed to delete comment",
       "likeFailed": "Failed to like comment",
