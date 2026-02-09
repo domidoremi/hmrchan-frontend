@@ -22,12 +22,19 @@ export interface RegisterRequest {
   password: string
   verification_code: string
   full_name?: string
+  register_token?: string
   turnstile_token?: string
 }
 
 export interface SendRegistrationCodeRequest {
   email: string
   turnstile_token?: string
+}
+
+export interface SendRegistrationCodeResponse {
+  message: string
+  expires_in?: number
+  register_token?: string
 }
 
 export interface AuthResponse {
@@ -191,7 +198,9 @@ export const authService = {
   /**
    * 发送注册验证码（6位，限流3次/小时，需Turnstile）
    */
-  async sendRegistrationCode(data: SendRegistrationCodeRequest): Promise<{ message: string }> {
+  async sendRegistrationCode(
+    data: SendRegistrationCodeRequest
+  ): Promise<SendRegistrationCodeResponse> {
     return apiClient.post('/email/send-registration-code', data, {
       skipAuth: true,
       skipErrorToast: true,

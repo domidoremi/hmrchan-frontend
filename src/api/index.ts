@@ -24,6 +24,7 @@ export {
   type VerifyEmailCodeRequest,
   type VerifyEmailCodeResponse,
   type SendRegistrationCodeRequest,
+  type SendRegistrationCodeResponse,
 } from './authService'
 export {
   postService,
