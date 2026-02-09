@@ -125,12 +125,6 @@ const routes: RouteRecordRaw[] = [
     meta: { title: 'nav.favorites', requiresAuth: true },
   },
   {
-    path: '/settings',
-    name: 'settings',
-    component: () => import('@/views/SettingsPage.vue'),
-    meta: { title: 'nav.settings' },
-  },
-  {
     path: '/settings/profile',
     redirect: '/profile/settings',
   },

@@ -18,7 +18,7 @@ export interface Settings {
   animationIntensity: AnimationIntensity
   /** 帖子详情视图模式：stream=流媒体，data=数据展示 */
   postDetailViewMode: 'stream' | 'data'
-  /** UI 风格（默认 iOS/SwiftUI；可切换 Material） */
+  /** UI 风格（默认圆润；可切换棱角） */
   uiStyle: UiStyle
 }
 

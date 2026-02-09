@@ -1,13 +1,23 @@
 <template>
   <Teleport to="body">
     <Transition name="dialog">
-      <div v-if="isOpen" class="ui-dialog-overlay" @click.self="handleOverlayClick">
+      <div
+        v-if="isOpen"
+        class="ui-dialog-overlay"
+        :style="overlayStyle"
+        @click.self="handleOverlayClick"
+      >
         <div
+          ref="dialogEl"
           :class="dialogClass"
+          :style="dialogDragStyle"
           role="dialog"
           aria-modal="true"
           :aria-labelledby="titleId"
           :aria-describedby="descriptionId"
+          @touchstart.passive="onTouchStart"
+          @touchmove.passive="onTouchMove"
+          @touchend="onTouchEnd"
         >
           <div v-if="showHeader" class="ui-dialog__header">
             <div class="ui-dialog__header-content">
@@ -52,10 +62,21 @@
 </template>
 
 <script setup lang="ts">
-import { computed, watch, onMounted, onUnmounted } from 'vue'
+import { computed, watch, onMounted, onUnmounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { X } from 'lucide-vue-next'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
+
+/* ── ref-counted body scroll lock ── */
+let lockCount = 0
+function lockScroll() {
+  lockCount++
+  if (lockCount === 1) document.body.style.overflow = 'hidden'
+}
+function unlockScroll() {
+  lockCount = Math.max(0, lockCount - 1)
+  if (lockCount === 0) document.body.style.overflow = ''
+}
 
 defineOptions({ name: 'UiDialog' })
 
@@ -95,6 +116,73 @@ const showHeader = computed(() => {
 
 const dialogClass = computed(() => ['ui-dialog', `ui-dialog--${props.size}`])
 
+/* ── touch drag-to-dismiss ── */
+const dialogEl = ref<HTMLElement | null>(null)
+const dragY = ref(0)
+const isDragging = ref(false)
+let touchStartY = 0
+let touchStartX = 0
+let directionLocked = false
+let isVertical = false
+const DISMISS_THRESHOLD = 120
+
+function onTouchStart(e: TouchEvent) {
+  const touch = e.touches[0]
+  touchStartY = touch.clientY
+  touchStartX = touch.clientX
+  dragY.value = 0
+  isDragging.value = false
+  directionLocked = false
+  isVertical = false
+}
+
+function onTouchMove(e: TouchEvent) {
+  const touch = e.touches[0]
+  const dy = touch.clientY - touchStartY
+  const dx = touch.clientX - touchStartX
+
+  if (!directionLocked) {
+    if (Math.abs(dy) > 8 || Math.abs(dx) > 8) {
+      directionLocked = true
+      isVertical = Math.abs(dy) > Math.abs(dx)
+    }
+    return
+  }
+
+  if (!isVertical) return
+
+  // Only allow dragging downward
+  isDragging.value = true
+  dragY.value = Math.max(0, dy)
+}
+
+function onTouchEnd() {
+  if (!isDragging.value) return
+  if (dragY.value > DISMISS_THRESHOLD) {
+    close()
+  }
+  dragY.value = 0
+  isDragging.value = false
+}
+
+const dialogDragStyle = computed(() => {
+  if (!isDragging.value || dragY.value === 0) return undefined
+  return {
+    transform: `translateY(${dragY.value}px)`,
+    transition: 'none',
+  }
+})
+
+const overlayStyle = computed(() => {
+  if (!isDragging.value || dragY.value === 0) return undefined
+  const progress = Math.min(dragY.value / DISMISS_THRESHOLD, 1)
+  const opacity = 1 - progress * 0.6
+  return {
+    backgroundColor: `rgba(0, 0, 0, ${0.5 * opacity})`,
+    transition: 'none',
+  }
+})
+
 function close() {
   emit('close')
   emit('update:isOpen', false)
@@ -114,22 +202,20 @@ function handleKeydown(event: KeyboardEvent) {
 
 watch(
   () => props.isOpen,
-  (isOpen) => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden'
-    } else {
-      document.body.style.overflow = ''
-    }
+  (isOpen, wasOpen) => {
+    if (isOpen && !wasOpen) lockScroll()
+    if (!isOpen && wasOpen) unlockScroll()
   }
 )
 
 onMounted(() => {
   document.addEventListener('keydown', handleKeydown)
+  if (props.isOpen) lockScroll()
 })
 
 onUnmounted(() => {
   document.removeEventListener('keydown', handleKeydown)
-  document.body.style.overflow = ''
+  if (props.isOpen) unlockScroll()
 })
 </script>
 
@@ -300,7 +386,7 @@ onUnmounted(() => {
 .dialog-enter-from .ui-dialog,
 .dialog-leave-to .ui-dialog {
   opacity: 0;
-  transform: scale(0.95);
+  transform: translateY(2rem);
 }
 
 @media (max-width: 640px) {

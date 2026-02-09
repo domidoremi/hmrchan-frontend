@@ -90,52 +90,8 @@
       </div>
     </div>
 
-    <!-- Display Toggles -->
-    <div class="settings-group">
-      <div class="settings-group-header">
-        <div class="settings-group-icon">
-          <AnimatedIcon name="sparkle" :fallback-icon="SlidersHorizontal" size="sm" />
-        </div>
-        <span class="settings-label">{{ $t('settings.display') }}</span>
-      </div>
-      <div class="toggle-list">
-        <button type="button" class="toggle-btn" @click="toggleSetting('showHeroSection')">
-          <div class="toggle-btn-content">
-            <div class="toggle-btn-icon">
-              <AnimatedIcon name="sparkle" :fallback-icon="Sparkles" size="sm" />
-            </div>
-            <div class="toggle-btn-text">
-              <span class="toggle-btn-title">{{ $t('settings.toggleHeroSection') }}</span>
-              <span class="toggle-btn-desc">{{ $t('settings.heroSectionDesc') }}</span>
-            </div>
-          </div>
-          <div class="toggle-switch" :class="{ active: settings.showHeroSection }">
-            <div class="toggle-knob" />
-          </div>
-        </button>
-        <button type="button" class="toggle-btn" @click="toggleSetting('enableAnimations')">
-          <div class="toggle-btn-content">
-            <div class="toggle-btn-icon">
-              <AnimatedIcon name="loading" :fallback-icon="Zap" size="sm" />
-            </div>
-            <div class="toggle-btn-text">
-              <span class="toggle-btn-title">{{ $t('settings.toggleAnimations') }}</span>
-              <span class="toggle-btn-desc">{{ $t('settings.animationsDesc') }}</span>
-            </div>
-          </div>
-          <div class="toggle-switch" :class="{ active: settings.enableAnimations }">
-            <div class="toggle-knob" />
-          </div>
-        </button>
-        <div v-if="systemReducedMotion" class="reduced-motion-notice">
-          <AnimatedIcon name="sparkle" :fallback-icon="Info" size="sm" />
-          <span>{{ $t('settings.reducedMotionNotice') }}</span>
-        </div>
-      </div>
-    </div>
-
     <!-- Video Settings -->
-    <div v-if="!isCompact" class="settings-group">
+    <div class="settings-group">
       <div class="settings-group-header">
         <div class="settings-group-icon">
           <AnimatedIcon name="explore" :fallback-icon="Video" size="sm" />
@@ -153,7 +109,7 @@
     </div>
 
     <!-- Links -->
-    <div v-if="!isCompact" class="settings-group">
+    <div class="settings-group">
       <div class="settings-group-header">
         <div class="settings-group-icon">
           <AnimatedIcon name="sparkle" :fallback-icon="Info" size="sm" />
@@ -188,24 +144,6 @@
       </div>
     </div>
 
-    <!-- More Settings -->
-    <div v-if="shouldShowAdvancedLink" class="settings-group">
-      <div class="link-list">
-        <RouterLink to="/settings" class="link-btn" @click="$emit('close')">
-          <div class="link-btn-icon">
-            <AnimatedIcon name="explore" :fallback-icon="SlidersHorizontal" size="sm" />
-          </div>
-          <span class="link-btn-text">{{ $t('settings.openAdvanced') }}</span>
-          <AnimatedIcon
-            name="explore"
-            :fallback-icon="ChevronRight"
-            size="sm"
-            class="link-btn-arrow"
-          />
-        </RouterLink>
-      </div>
-    </div>
-
     <!-- Version Info -->
     <div class="settings-footer">
       <span class="version-text">MomiChan</span>
@@ -222,19 +160,15 @@ import {
   Mail,
   Palette,
   Settings,
-  SlidersHorizontal,
-  Sparkles,
   Sun,
   Moon,
   Monitor,
-  Zap,
   Video,
   RotateCcw,
   Layers,
   Smartphone,
 } from 'lucide-vue-next'
 import { RouterLink } from 'vue-router'
-import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
 import { useThemeStore, useSettingsStore, useToastStore } from '@/stores'
@@ -244,16 +178,9 @@ import type { Theme } from '@/types'
 import type { UiStyle } from '@/stores/settings'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 
-const props = withDefaults(
-  defineProps<{
-    compact?: boolean
-    showAdvancedLink?: boolean
-  }>(),
-  {
-    compact: true,
-    showAdvancedLink: true,
-  }
-)
+defineProps<{
+  compact?: boolean
+}>()
 
 defineEmits<{ close: [] }>()
 
@@ -265,15 +192,6 @@ const { resetSettings } = useVideoSettings()
 
 const { theme } = storeToRefs(themeStore)
 const { settings } = storeToRefs(settingsStore)
-const isCompact = computed(() => props.compact)
-const shouldShowAdvancedLink = computed(() => props.showAdvancedLink && props.compact)
-
-// 检测系统是否设置了 reduced motion
-const systemReducedMotion = computed(() => {
-  if (typeof window === 'undefined') return false
-  if (typeof window.matchMedia !== 'function') return false
-  return window.matchMedia('(prefers-reduced-motion: reduce)').matches
-})
 
 const themeOptions = [
   { value: 'light' as Theme, icon: Sun },
@@ -303,10 +221,6 @@ function setUiStyle(value: UiStyle) {
 
 function changeLocale(code: SupportedLocale) {
   setLocale(code)
-}
-
-function toggleSetting(key: 'showHeroSection' | 'enableAnimations') {
-  settingsStore.toggleSetting(key)
 }
 
 function resetVideoSettings() {

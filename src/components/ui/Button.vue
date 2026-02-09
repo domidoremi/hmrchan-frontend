@@ -31,24 +31,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, useSlots, type Component, ref, onMounted } from 'vue'
-
-// 懒加载 GSAP
-let gsap: typeof import('gsap').default | null = null
-const loadGsap = async () => {
-  if (!gsap) {
-    const module = await import('gsap')
-    gsap = module.default
-  }
-  return gsap
-}
-
-// 检测是否偏好减少动画
-const prefersReducedMotion = (): boolean => {
-  if (typeof window === 'undefined') return false
-  if (typeof window.matchMedia !== 'function') return false
-  return window.matchMedia('(prefers-reduced-motion: reduce)').matches
-}
+import { computed, useSlots, type Component, ref } from 'vue'
 
 interface Props {
   variant?:
@@ -147,18 +130,9 @@ const showRightIcon = computed(
   () => !!props.icon && props.iconPosition === 'right' && !props.loading
 )
 
-// 创建 Ripple 效果
-async function createRipple(event: MouseEvent) {
-  if (
-    !shouldUseRipple.value ||
-    prefersReducedMotion() ||
-    !rippleContainer.value ||
-    !buttonRef.value
-  )
-    return
-
-  const gsapLib = await loadGsap()
-  if (!gsapLib) return
+// CSS-based ripple effect (no GSAP)
+function createRipple(event: MouseEvent) {
+  if (!shouldUseRipple.value || !rippleContainer.value || !buttonRef.value) return
 
   const button = buttonRef.value
   const rect = button.getBoundingClientRect()
@@ -170,52 +144,12 @@ async function createRipple(event: MouseEvent) {
   ripple.style.left = `${x}px`
   ripple.style.top = `${y}px`
 
+  const size = Math.max(rect.width, rect.height) * 2.5
+  ripple.style.setProperty('--ripple-size', `${size}px`)
+
   rippleContainer.value.appendChild(ripple)
 
-  const size = Math.max(rect.width, rect.height) * 2.5
-
-  gsapLib.fromTo(
-    ripple,
-    { width: 0, height: 0, opacity: 0.5 },
-    {
-      width: size,
-      height: size,
-      opacity: 0,
-      duration: 0.6,
-      ease: 'power2.out',
-      onComplete: () => {
-        ripple.remove()
-      },
-    }
-  )
-}
-
-// 按压动画
-async function animatePress() {
-  if (!props.springAnimation || prefersReducedMotion() || !buttonRef.value) return
-
-  const gsapLib = await loadGsap()
-  if (!gsapLib) return
-
-  gsapLib.to(buttonRef.value, {
-    scale: 0.96,
-    duration: 0.1,
-    ease: 'power2.out',
-  })
-}
-
-// 释放动画
-async function animateRelease() {
-  if (!props.springAnimation || prefersReducedMotion() || !buttonRef.value) return
-
-  const gsapLib = await loadGsap()
-  if (!gsapLib) return
-
-  gsapLib.to(buttonRef.value, {
-    scale: 1,
-    duration: 0.4,
-    ease: 'elastic.out(1, 0.5)',
-  })
+  ripple.addEventListener('animationend', () => ripple.remove(), { once: true })
 }
 
 function handleClick(event: MouseEvent) {
@@ -228,30 +162,20 @@ function handleClick(event: MouseEvent) {
 function handleMouseDown() {
   if (!props.disabled && !props.loading) {
     isPressed.value = true
-    animatePress()
   }
 }
 
 function handleMouseUp() {
   if (isPressed.value) {
     isPressed.value = false
-    animateRelease()
   }
 }
 
 function handleMouseLeave() {
   if (isPressed.value) {
     isPressed.value = false
-    animateRelease()
   }
 }
-
-// 预加载 GSAP
-onMounted(() => {
-  if (props.springAnimation || props.ripple) {
-    loadGsap()
-  }
-})
 </script>
 
 <style scoped>
@@ -289,9 +213,33 @@ onMounted(() => {
   position: absolute;
   border-radius: 50%;
   background: currentColor;
-  opacity: 0.3;
+  opacity: 0;
   transform: translate(-50%, -50%);
   pointer-events: none;
+  width: var(--ripple-size, 0);
+  height: var(--ripple-size, 0);
+  animation: btn-ripple-expand 0.6s ease-out forwards;
+}
+
+@keyframes btn-ripple-expand {
+  0% {
+    width: 0;
+    height: 0;
+    opacity: 0.35;
+  }
+  100% {
+    width: var(--ripple-size, 200px);
+    height: var(--ripple-size, 200px);
+    opacity: 0;
+  }
+}
+
+.btn-pressed {
+  transform: scale(0.96);
+}
+
+.btn:not(:disabled) {
+  transition-property: color, background-color, border-color, box-shadow, transform;
 }
 
 /* Loader Animation */

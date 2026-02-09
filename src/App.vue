@@ -5,10 +5,6 @@
     :data-animation-intensity="animationIntensity"
     :data-ui-style="uiStyle"
   >
-    <!-- Contextual 3D Background -->
-    <ContextualBackground />
-    <BackgroundTransition />
-
     <!-- Skip to main content -->
     <a href="#main-content" class="skip-link">
       {{ $t('common.skipToContent') }}
@@ -67,13 +63,6 @@ import PageLoading from '@/components/ui/PageLoading.vue'
 import BackToTop from '@/components/ui/BackToTop.vue'
 import ErrorBoundary from '@/components/ui/ErrorBoundary.vue'
 
-// Lazy-load non-critical components
-const ContextualBackground = defineAsyncComponent(
-  () => import('@/components/layout/ContextualBackground.vue')
-)
-const BackgroundTransition = defineAsyncComponent(
-  () => import('@/components/layout/BackgroundTransition.vue')
-)
 const ToastContainer = defineAsyncComponent(() => import('@/components/ui/ToastContainer.vue'))
 
 const route = useRoute()
@@ -190,6 +179,8 @@ function handleRetry() {
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
+  background: var(--color-background);
+  transition: background-color 0.3s ease;
 }
 
 main {

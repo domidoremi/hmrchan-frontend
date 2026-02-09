@@ -171,7 +171,6 @@ import {
   isMobileDevice,
 } from '@/utils/mediaOptimizer'
 import { thumbnailCache } from '@/utils/thumbnailCache'
-import { useCardAnimation } from '@/composables/useCardAnimation'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import Avatar from '@/components/ui/Avatar.vue'
 
@@ -327,9 +326,6 @@ const showHoverDetails = ref(false)
 let hasPrefetchedPostDetailPage = false
 let hasPreloadedLargeImage = false
 let hoverTimeout: ReturnType<typeof setTimeout> | null = null
-
-// GSAP animation
-useCardAnimation(cardRef)
 
 // Platform icon mapping - 使用非废弃图标
 const platformIconMap: Record<string, Component> = {
