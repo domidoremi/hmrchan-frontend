@@ -27,7 +27,8 @@ function goHome() {
 
 <style scoped>
 .not-found-page {
-  min-height: calc(100vh - var(--navbar-height));
+  min-height: calc(100svh - var(--navbar-height));
+  min-height: calc(100dvh - var(--navbar-height));
   display: flex;
   align-items: center;
   justify-content: center;

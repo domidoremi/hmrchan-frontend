@@ -151,7 +151,8 @@ onUnmounted(() => {
   position: relative;
   z-index: var(--z-modal);
   width: 100%;
-  max-height: calc(100vh - var(--spacing-8));
+  max-height: calc(100svh - var(--spacing-8));
+  max-height: calc(100dvh - var(--spacing-8));
   display: flex;
   flex-direction: column;
   border-radius: var(--radius-lg);
@@ -199,7 +200,8 @@ onUnmounted(() => {
 
 .ui-dialog--full {
   max-width: calc(100vw - var(--spacing-8));
-  max-height: calc(100vh - var(--spacing-8));
+  max-height: calc(100svh - var(--spacing-8));
+  max-height: calc(100dvh - var(--spacing-8));
 }
 
 /* Header */

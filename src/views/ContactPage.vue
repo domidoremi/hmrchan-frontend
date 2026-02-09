@@ -100,7 +100,7 @@ async function handleSubmit() {
 
 .contact-card {
   width: 100%;
-  max-width: 480px;
+  max-width: min(90vw, 32.5rem);
   padding: var(--spacing-5);
 }
 
@@ -110,7 +110,6 @@ async function handleSubmit() {
   }
 
   .contact-card {
-    max-width: 520px;
     padding: var(--spacing-6);
   }
 }
@@ -154,6 +153,6 @@ async function handleSubmit() {
 
 .contact-textarea {
   resize: vertical;
-  min-height: 120px;
+  min-height: 7.5rem;
 }
 </style>

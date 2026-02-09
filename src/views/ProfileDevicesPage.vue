@@ -45,7 +45,8 @@ function goToProfile() {
 
 <style scoped>
 .profile-page {
-  min-height: 100vh;
+  min-height: 100svh;
+  min-height: 100dvh;
   padding: var(--spacing-4) 0;
 }
 

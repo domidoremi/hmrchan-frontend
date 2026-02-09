@@ -15,7 +15,7 @@
         </div>
         <span class="settings-label">{{ $t('settings.theme') }}</span>
       </div>
-      <div class="settings-options theme-options">
+      <div class="settings-options ui-style-options">
         <button
           v-for="opt in themeOptions"
           :key="opt.value"
@@ -135,7 +135,7 @@
     </div>
 
     <!-- Video Settings -->
-    <div class="settings-group">
+    <div v-if="!isCompact" class="settings-group">
       <div class="settings-group-header">
         <div class="settings-group-icon">
           <AnimatedIcon name="explore" :fallback-icon="Video" size="sm" />
@@ -153,7 +153,7 @@
     </div>
 
     <!-- Links -->
-    <div class="settings-group">
+    <div v-if="!isCompact" class="settings-group">
       <div class="settings-group-header">
         <div class="settings-group-icon">
           <AnimatedIcon name="sparkle" :fallback-icon="Info" size="sm" />
@@ -178,6 +178,24 @@
             <AnimatedIcon name="sparkle" :fallback-icon="Mail" size="sm" />
           </div>
           <span class="link-btn-text">{{ $t('nav.contact') }}</span>
+          <AnimatedIcon
+            name="explore"
+            :fallback-icon="ChevronRight"
+            size="sm"
+            class="link-btn-arrow"
+          />
+        </RouterLink>
+      </div>
+    </div>
+
+    <!-- More Settings -->
+    <div v-if="shouldShowAdvancedLink" class="settings-group">
+      <div class="link-list">
+        <RouterLink to="/settings" class="link-btn" @click="$emit('close')">
+          <div class="link-btn-icon">
+            <AnimatedIcon name="explore" :fallback-icon="SlidersHorizontal" size="sm" />
+          </div>
+          <span class="link-btn-text">{{ $t('settings.openAdvanced') }}</span>
           <AnimatedIcon
             name="explore"
             :fallback-icon="ChevronRight"
@@ -226,6 +244,17 @@ import type { Theme } from '@/types'
 import type { UiStyle } from '@/stores/settings'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 
+const props = withDefaults(
+  defineProps<{
+    compact?: boolean
+    showAdvancedLink?: boolean
+  }>(),
+  {
+    compact: true,
+    showAdvancedLink: true,
+  }
+)
+
 defineEmits<{ close: [] }>()
 
 const { locale, t } = useI18n()
@@ -236,6 +265,8 @@ const { resetSettings } = useVideoSettings()
 
 const { theme } = storeToRefs(themeStore)
 const { settings } = storeToRefs(settingsStore)
+const isCompact = computed(() => props.compact)
+const shouldShowAdvancedLink = computed(() => props.showAdvancedLink && props.compact)
 
 // 检测系统是否设置了 reduced motion
 const systemReducedMotion = computed(() => {
@@ -288,7 +319,8 @@ function resetVideoSettings() {
 .settings-panel {
   padding: var(--spacing-2);
   min-width: 280px;
-  max-height: calc(100vh - 120px);
+  max-height: calc(100svh - 7.5rem);
+  max-height: calc(100dvh - 7.5rem);
   overflow-y: auto;
   overflow-x: hidden;
   overscroll-behavior: contain;
@@ -298,7 +330,8 @@ function resetVideoSettings() {
 /* 移动端优化：确保面板可以滚动 */
 @media (max-width: 768px) {
   .settings-panel {
-    max-height: calc(100vh - 160px);
+    max-height: calc(100svh - 10rem);
+    max-height: calc(100dvh - 10rem);
   }
 }
 
@@ -360,7 +393,8 @@ function resetVideoSettings() {
 }
 
 /* ========== Theme Options ========== */
-.theme-options {
+.theme-options,
+.ui-style-options {
   display: flex;
   gap: var(--spacing-2);
 }

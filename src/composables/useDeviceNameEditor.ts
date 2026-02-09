@@ -12,7 +12,7 @@ export function useDeviceNameEditor() {
 
   function startEditing(session: Device) {
     editingSessionId.value = session.id
-    editingDeviceName.value = session.device_name
+    editingDeviceName.value = session.device_name ?? ''
   }
 
   function cancelEditing() {

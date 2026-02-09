@@ -45,398 +45,431 @@
       </template>
 
       <template v-else-if="profile">
-        <form class="settings-form" @submit.prevent="saveProfile">
-          <!-- Avatar Section -->
-          <section id="avatar-section" class="settings-section glass-card">
-            <div class="section-header">
-              <div class="section-icon">
-                <AnimatedIcon name="user" :fallback-icon="User" size="sm" />
-              </div>
-              <div>
-                <h2 class="section-title">{{ $t('profile.avatar') }}</h2>
-                <p class="section-desc">{{ $t('profile.avatarSectionHint') }}</p>
-              </div>
-            </div>
-            <div class="avatar-section">
-              <div class="avatar-wrapper">
-                <img
-                  v-if="profile.avatar_url"
-                  class="avatar-preview"
-                  :src="normalizeAvatarUrl(profile.avatar_url) || profile.avatar_url"
-                  :alt="profile.username"
-                />
-                <div v-else class="avatar-preview avatar-placeholder">
-                  <AnimatedIcon name="user" :fallback-icon="User" size="xl" />
+        <div class="settings-layout">
+          <div class="settings-main">
+            <form class="settings-form" @submit.prevent="saveProfile">
+              <!-- Avatar Section -->
+              <section id="avatar-section" class="settings-section glass-card">
+                <div class="section-header">
+                  <div class="section-icon">
+                    <AnimatedIcon name="user" :fallback-icon="User" size="sm" />
+                  </div>
+                  <div>
+                    <h2 class="section-title">{{ $t('profile.avatar') }}</h2>
+                    <p class="section-desc">{{ $t('profile.avatarSectionHint') }}</p>
+                  </div>
                 </div>
-                <div class="avatar-badge">
-                  <AnimatedIcon name="sparkle" :fallback-icon="Camera" size="sm" />
+                <div class="avatar-section">
+                  <div class="avatar-wrapper">
+                    <img
+                      v-if="profile.avatar_url"
+                      class="avatar-preview"
+                      :src="normalizeAvatarUrl(profile.avatar_url) || profile.avatar_url"
+                      :alt="profile.username"
+                    />
+                    <div v-else class="avatar-preview avatar-placeholder">
+                      <AnimatedIcon name="user" :fallback-icon="User" size="xl" />
+                    </div>
+                    <div class="avatar-badge">
+                      <AnimatedIcon name="sparkle" :fallback-icon="Camera" size="sm" />
+                    </div>
+                  </div>
+                  <div class="avatar-info">
+                    <p class="avatar-hint">
+                      {{ $t('profile.avatarHint') }}
+                    </p>
+                    <label class="glass-button avatar-upload-btn">
+                      <AnimatedIcon name="explore" :fallback-icon="Upload" size="sm" />
+                      {{ $t('profile.uploadAvatar') }}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        class="sr-only"
+                        @change="handleAvatarSelect"
+                      />
+                    </label>
+                    <div class="avatar-meta">
+                      <span>{{ $t('profile.avatarMetaHint') }}</span>
+                      <span class="meta-dot" />
+                      <span>{{ $t('profile.avatarMetaPrivacy') }}</span>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <!-- Basic Info Section -->
+              <section id="basic-info" class="settings-section glass-card">
+                <div class="section-header">
+                  <div class="section-icon">
+                    <AnimatedIcon name="explore" :fallback-icon="FileText" size="sm" />
+                  </div>
+                  <div>
+                    <h2 class="section-title">{{ $t('profile.basicInfo') }}</h2>
+                    <p class="section-desc">{{ $t('profile.basicInfoHint') }}</p>
+                  </div>
+                </div>
+
+                <!-- Username (readonly) -->
+                <div class="form-group">
+                  <label for="username">
+                    <AnimatedIcon name="explore" :fallback-icon="AtSign" size="sm" />
+                    {{ $t('profile.username') }}
+                  </label>
+                  <div class="input-wrapper input-readonly">
+                    <Input
+                      id="username"
+                      :model-value="profile.username"
+                      type="text"
+                      class="input-with-icon"
+                      autocomplete="username"
+                      disabled
+                      readonly
+                    />
+                    <AnimatedIcon
+                      name="sparkle"
+                      :fallback-icon="Lock"
+                      size="sm"
+                      class="input-icon-right"
+                    />
+                  </div>
+                  <p class="field-hint">{{ $t('profile.usernameReadonly') }}</p>
+                </div>
+
+                <!-- Display Name -->
+                <div class="form-group">
+                  <label for="full_name">
+                    <AnimatedIcon name="user" :fallback-icon="User" size="sm" />
+                    {{ $t('profile.fullName') }}
+                  </label>
+                  <div class="input-wrapper">
+                    <Input
+                      id="full_name"
+                      v-model="form.full_name"
+                      type="text"
+                      class="input-with-icon"
+                      maxlength="255"
+                      :placeholder="$t('profile.fullNamePlaceholder')"
+                      autocomplete="name"
+                    />
+                  </div>
+                  <p class="field-hint">{{ $t('profile.displayNameHint') }}</p>
+                </div>
+
+                <!-- Bio -->
+                <div class="form-group">
+                  <label for="bio">
+                    <AnimatedIcon name="explore" :fallback-icon="FileText" size="sm" />
+                    {{ $t('profile.bio') }}
+                  </label>
+                  <div class="input-wrapper">
+                    <Textarea
+                      id="bio"
+                      v-model="form.bio"
+                      class="bio-textarea"
+                      maxlength="500"
+                      rows="4"
+                      :placeholder="$t('profile.bioPlaceholder')"
+                    />
+                  </div>
+                  <div class="field-hint-row">
+                    <p class="field-hint">{{ $t('profile.bioHint') }}</p>
+                    <span
+                      class="char-count"
+                      :class="{ 'char-count--warning': (form.bio?.length || 0) > 450 }"
+                    >
+                      {{ form.bio?.length || 0 }}/500
+                    </span>
+                  </div>
+                </div>
+
+                <div class="form-actions">
+                  <Button type="submit" :disabled="isSaving">
+                    <span v-if="isSaving" class="spinner spinner-sm" />
+                    <AnimatedIcon v-else name="sparkle" :fallback-icon="Save" size="sm" />
+                    {{ $t('common.save') }}
+                  </Button>
+                  <Button type="button" variant="ghost" :disabled="isSaving" @click="fetchProfile">
+                    <AnimatedIcon name="loading" :fallback-icon="RefreshCw" size="sm" />
+                    {{ $t('common.reset') }}
+                  </Button>
+                </div>
+              </section>
+            </form>
+
+            <!-- Change Email Section -->
+            <section id="email-section" class="settings-section glass-card email-section">
+              <div class="section-header">
+                <div class="section-icon">
+                  <AnimatedIcon name="explore" :fallback-icon="Mail" size="sm" />
+                </div>
+                <div>
+                  <h2 class="section-title">{{ $t('email.changeEmailTitle') }}</h2>
+                  <p class="section-desc">{{ $t('email.changeEmailHint') }}</p>
                 </div>
               </div>
-              <div class="avatar-info">
-                <p class="avatar-hint">
-                  {{ $t('profile.avatarHint') }}
-                </p>
-                <label class="glass-button avatar-upload-btn">
-                  <AnimatedIcon name="explore" :fallback-icon="Upload" size="sm" />
-                  {{ $t('profile.uploadAvatar') }}
-                  <input
-                    type="file"
-                    accept="image/*"
-                    class="sr-only"
-                    @change="handleAvatarSelect"
-                  />
+
+              <div class="form-group">
+                <label>
+                  <AnimatedIcon name="explore" :fallback-icon="Mail" size="sm" />
+                  {{ $t('email.currentEmail') }}
                 </label>
-                <div class="avatar-meta">
-                  <span>{{ $t('profile.avatarMetaHint') }}</span>
-                  <span class="meta-dot" />
-                  <span>{{ $t('profile.avatarMetaPrivacy') }}</span>
+                <div class="input-wrapper input-readonly">
+                  <Input
+                    :model-value="profile.email"
+                    type="email"
+                    class="input-with-icon"
+                    autocomplete="email"
+                    disabled
+                    readonly
+                  />
+                  <AnimatedIcon
+                    name="sparkle"
+                    :fallback-icon="Lock"
+                    size="sm"
+                    class="input-icon-right"
+                  />
                 </div>
               </div>
-            </div>
-          </section>
 
-          <!-- Basic Info Section -->
-          <section id="basic-info" class="settings-section glass-card">
-            <div class="section-header">
-              <div class="section-icon">
-                <AnimatedIcon name="explore" :fallback-icon="FileText" size="sm" />
-              </div>
-              <div>
-                <h2 class="section-title">{{ $t('profile.basicInfo') }}</h2>
-                <p class="section-desc">{{ $t('profile.basicInfoHint') }}</p>
-              </div>
-            </div>
+              <form @submit.prevent="handleChangeEmail">
+                <div class="form-group">
+                  <label for="new_email">
+                    <AnimatedIcon name="explore" :fallback-icon="Mail" size="sm" />
+                    {{ $t('email.newEmail') }}
+                  </label>
+                  <div class="input-wrapper">
+                    <Input
+                      id="new_email"
+                      v-model="emailForm.new_email"
+                      type="email"
+                      class="input-with-icon"
+                      :placeholder="$t('email.newEmailPlaceholder')"
+                      autocomplete="email"
+                      required
+                    />
+                  </div>
+                </div>
 
-            <!-- Username (readonly) -->
-            <div class="form-group">
-              <label for="username">
-                <AnimatedIcon name="explore" :fallback-icon="AtSign" size="sm" />
-                {{ $t('profile.username') }}
-              </label>
-              <div class="input-wrapper input-readonly">
-                <Input
-                  id="username"
-                  :model-value="profile.username"
+                <div class="form-group">
+                  <label for="email_password">
+                    <AnimatedIcon name="sparkle" :fallback-icon="Key" size="sm" />
+                    {{ $t('email.confirmWithPassword') }}
+                  </label>
+                  <div class="input-wrapper">
+                    <Input
+                      id="email_password"
+                      v-model="emailForm.password"
+                      :type="showEmailPassword ? 'text' : 'password'"
+                      class="input-with-icon"
+                      autocomplete="current-password"
+                      required
+                    />
+                    <button
+                      type="button"
+                      class="password-toggle"
+                      @click="showEmailPassword = !showEmailPassword"
+                    >
+                      <AnimatedIcon
+                        v-if="showEmailPassword"
+                        name="explore"
+                        :fallback-icon="EyeOff"
+                        size="sm"
+                      />
+                      <AnimatedIcon v-else name="explore" :fallback-icon="Eye" size="sm" />
+                    </button>
+                  </div>
+                  <p class="field-hint">{{ $t('email.changeEmailVerifyHint') }}</p>
+                </div>
+
+                <div class="form-actions">
+                  <Button
+                    type="submit"
+                    variant="secondary"
+                    :disabled="isChangingEmail || !canChangeEmail"
+                  >
+                    <span v-if="isChangingEmail" class="spinner spinner-sm" />
+                    <AnimatedIcon v-else name="explore" :fallback-icon="Mail" size="sm" />
+                    {{ $t('email.changeEmailButton') }}
+                  </Button>
+                </div>
+              </form>
+            </section>
+
+            <!-- Password Section -->
+            <section id="password-section" class="settings-section glass-card password-section">
+              <div class="section-header">
+                <div class="section-icon section-icon--warning">
+                  <AnimatedIcon name="sparkle" :fallback-icon="Shield" size="sm" />
+                </div>
+                <div>
+                  <h2 class="section-title">{{ $t('profile.changePassword') }}</h2>
+                  <p class="section-desc">{{ $t('profile.passwordHint') }}</p>
+                </div>
+              </div>
+              <form @submit.prevent="changePassword">
+                <!-- Hidden username for password managers -->
+                <input
                   type="text"
-                  class="input-with-icon"
+                  :value="profile?.username"
                   autocomplete="username"
-                  disabled
+                  class="sr-only"
+                  tabindex="-1"
+                  aria-hidden="true"
                   readonly
                 />
-                <AnimatedIcon
-                  name="sparkle"
-                  :fallback-icon="Lock"
-                  size="sm"
-                  class="input-icon-right"
-                />
-              </div>
-              <p class="field-hint">{{ $t('profile.usernameReadonly') }}</p>
-            </div>
 
-            <!-- Display Name -->
-            <div class="form-group">
-              <label for="full_name">
-                <AnimatedIcon name="user" :fallback-icon="User" size="sm" />
-                {{ $t('profile.fullName') }}
-              </label>
-              <div class="input-wrapper">
-                <Input
-                  id="full_name"
-                  v-model="form.full_name"
-                  type="text"
-                  class="input-with-icon"
-                  maxlength="255"
-                  :placeholder="$t('profile.fullNamePlaceholder')"
-                  autocomplete="name"
-                />
-              </div>
-              <p class="field-hint">{{ $t('profile.displayNameHint') }}</p>
-            </div>
-
-            <!-- Bio -->
-            <div class="form-group">
-              <label for="bio">
-                <AnimatedIcon name="explore" :fallback-icon="FileText" size="sm" />
-                {{ $t('profile.bio') }}
-              </label>
-              <div class="input-wrapper">
-                <Textarea
-                  id="bio"
-                  v-model="form.bio"
-                  class="bio-textarea"
-                  maxlength="500"
-                  rows="4"
-                  :placeholder="$t('profile.bioPlaceholder')"
-                />
-              </div>
-              <div class="field-hint-row">
-                <p class="field-hint">{{ $t('profile.bioHint') }}</p>
-                <span
-                  class="char-count"
-                  :class="{ 'char-count--warning': (form.bio?.length || 0) > 450 }"
-                >
-                  {{ form.bio?.length || 0 }}/500
-                </span>
-              </div>
-            </div>
-
-            <div class="form-actions">
-              <Button type="submit" :disabled="isSaving">
-                <span v-if="isSaving" class="spinner spinner-sm" />
-                <AnimatedIcon v-else name="sparkle" :fallback-icon="Save" size="sm" />
-                {{ $t('common.save') }}
-              </Button>
-              <Button type="button" variant="ghost" :disabled="isSaving" @click="fetchProfile">
-                <AnimatedIcon name="loading" :fallback-icon="RefreshCw" size="sm" />
-                {{ $t('common.reset') }}
-              </Button>
-            </div>
-          </section>
-        </form>
-
-        <!-- Change Email Section -->
-        <section class="settings-section glass-card email-section">
-          <div class="section-header">
-            <div class="section-icon">
-              <AnimatedIcon name="explore" :fallback-icon="Mail" size="sm" />
-            </div>
-            <div>
-              <h2 class="section-title">{{ $t('email.changeEmailTitle') }}</h2>
-              <p class="section-desc">{{ $t('email.changeEmailHint') }}</p>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label>
-              <AnimatedIcon name="explore" :fallback-icon="Mail" size="sm" />
-              {{ $t('email.currentEmail') }}
-            </label>
-            <div class="input-wrapper input-readonly">
-              <Input
-                :model-value="profile.email"
-                type="email"
-                class="input-with-icon"
-                autocomplete="email"
-                disabled
-                readonly
-              />
-              <AnimatedIcon
-                name="sparkle"
-                :fallback-icon="Lock"
-                size="sm"
-                class="input-icon-right"
-              />
-            </div>
-          </div>
-
-          <form @submit.prevent="handleChangeEmail">
-            <div class="form-group">
-              <label for="new_email">
-                <AnimatedIcon name="explore" :fallback-icon="Mail" size="sm" />
-                {{ $t('email.newEmail') }}
-              </label>
-              <div class="input-wrapper">
-                <Input
-                  id="new_email"
-                  v-model="emailForm.new_email"
-                  type="email"
-                  class="input-with-icon"
-                  :placeholder="$t('email.newEmailPlaceholder')"
-                  autocomplete="email"
-                  required
-                />
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label for="email_password">
-                <AnimatedIcon name="sparkle" :fallback-icon="Key" size="sm" />
-                {{ $t('email.confirmWithPassword') }}
-              </label>
-              <div class="input-wrapper">
-                <Input
-                  id="email_password"
-                  v-model="emailForm.password"
-                  :type="showEmailPassword ? 'text' : 'password'"
-                  class="input-with-icon"
-                  autocomplete="current-password"
-                  required
-                />
-                <button
-                  type="button"
-                  class="password-toggle"
-                  @click="showEmailPassword = !showEmailPassword"
-                >
-                  <AnimatedIcon
-                    v-if="showEmailPassword"
-                    name="explore"
-                    :fallback-icon="EyeOff"
-                    size="sm"
-                  />
-                  <AnimatedIcon v-else name="explore" :fallback-icon="Eye" size="sm" />
-                </button>
-              </div>
-              <p class="field-hint">{{ $t('email.changeEmailVerifyHint') }}</p>
-            </div>
-
-            <div class="form-actions">
-              <Button
-                type="submit"
-                variant="secondary"
-                :disabled="isChangingEmail || !canChangeEmail"
-              >
-                <span v-if="isChangingEmail" class="spinner spinner-sm" />
-                <AnimatedIcon v-else name="explore" :fallback-icon="Mail" size="sm" />
-                {{ $t('email.changeEmailButton') }}
-              </Button>
-            </div>
-          </form>
-        </section>
-
-        <!-- Password Section -->
-        <section class="settings-section glass-card password-section">
-          <div class="section-header">
-            <div class="section-icon section-icon--warning">
-              <AnimatedIcon name="sparkle" :fallback-icon="Shield" size="sm" />
-            </div>
-            <div>
-              <h2 class="section-title">{{ $t('profile.changePassword') }}</h2>
-              <p class="section-desc">{{ $t('profile.passwordHint') }}</p>
-            </div>
-          </div>
-          <form @submit.prevent="changePassword">
-            <!-- Hidden username for password managers -->
-            <input
-              type="text"
-              :value="profile?.username"
-              autocomplete="username"
-              class="sr-only"
-              tabindex="-1"
-              aria-hidden="true"
-              readonly
-            />
-
-            <div class="form-group">
-              <label for="current_password">
-                <AnimatedIcon name="sparkle" :fallback-icon="Key" size="sm" />
-                {{ $t('profile.currentPassword') }}
-              </label>
-              <div class="input-wrapper">
-                <Input
-                  id="current_password"
-                  v-model="passwordForm.current_password"
-                  :type="showCurrentPassword ? 'text' : 'password'"
-                  class="input-with-icon"
-                  autocomplete="current-password"
-                  required
-                />
-                <button
-                  type="button"
-                  class="password-toggle"
-                  @click="showCurrentPassword = !showCurrentPassword"
-                >
-                  <AnimatedIcon
-                    v-if="showCurrentPassword"
-                    name="explore"
-                    :fallback-icon="EyeOff"
-                    size="sm"
-                  />
-                  <AnimatedIcon v-else name="explore" :fallback-icon="Eye" size="sm" />
-                </button>
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label for="new_password">
-                <AnimatedIcon name="sparkle" :fallback-icon="Lock" size="sm" />
-                {{ $t('profile.newPassword') }}
-              </label>
-              <div class="input-wrapper">
-                <Input
-                  id="new_password"
-                  v-model="passwordForm.new_password"
-                  :type="showNewPassword ? 'text' : 'password'"
-                  class="input-with-icon"
-                  autocomplete="new-password"
-                  minlength="8"
-                  required
-                />
-                <button
-                  type="button"
-                  class="password-toggle"
-                  @click="showNewPassword = !showNewPassword"
-                >
-                  <AnimatedIcon
-                    v-if="showNewPassword"
-                    name="explore"
-                    :fallback-icon="EyeOff"
-                    size="sm"
-                  />
-                  <AnimatedIcon v-else name="explore" :fallback-icon="Eye" size="sm" />
-                </button>
-              </div>
-              <!-- Password Strength Indicator -->
-              <div v-if="passwordForm.new_password" class="password-strength">
-                <div class="strength-bar">
-                  <div
-                    class="strength-fill"
-                    :class="passwordStrengthClass"
-                    :style="{ width: `${passwordStrength * 25}%` }"
-                  />
+                <div class="form-group">
+                  <label for="current_password">
+                    <AnimatedIcon name="sparkle" :fallback-icon="Key" size="sm" />
+                    {{ $t('profile.currentPassword') }}
+                  </label>
+                  <div class="input-wrapper">
+                    <Input
+                      id="current_password"
+                      v-model="passwordForm.current_password"
+                      :type="showCurrentPassword ? 'text' : 'password'"
+                      class="input-with-icon"
+                      autocomplete="current-password"
+                      required
+                    />
+                    <button
+                      type="button"
+                      class="password-toggle"
+                      @click="showCurrentPassword = !showCurrentPassword"
+                    >
+                      <AnimatedIcon
+                        v-if="showCurrentPassword"
+                        name="explore"
+                        :fallback-icon="EyeOff"
+                        size="sm"
+                      />
+                      <AnimatedIcon v-else name="explore" :fallback-icon="Eye" size="sm" />
+                    </button>
+                  </div>
                 </div>
-                <span class="strength-text" :class="passwordStrengthClass">
-                  {{ passwordStrengthText }}
-                </span>
-              </div>
+
+                <div class="form-group">
+                  <label for="new_password">
+                    <AnimatedIcon name="sparkle" :fallback-icon="Lock" size="sm" />
+                    {{ $t('profile.newPassword') }}
+                  </label>
+                  <div class="input-wrapper">
+                    <Input
+                      id="new_password"
+                      v-model="passwordForm.new_password"
+                      :type="showNewPassword ? 'text' : 'password'"
+                      class="input-with-icon"
+                      autocomplete="new-password"
+                      minlength="8"
+                      required
+                    />
+                    <button
+                      type="button"
+                      class="password-toggle"
+                      @click="showNewPassword = !showNewPassword"
+                    >
+                      <AnimatedIcon
+                        v-if="showNewPassword"
+                        name="explore"
+                        :fallback-icon="EyeOff"
+                        size="sm"
+                      />
+                      <AnimatedIcon v-else name="explore" :fallback-icon="Eye" size="sm" />
+                    </button>
+                  </div>
+                  <!-- Password Strength Indicator -->
+                  <div v-if="passwordForm.new_password" class="password-strength">
+                    <div class="strength-bar">
+                      <div
+                        class="strength-fill"
+                        :class="passwordStrengthClass"
+                        :style="{ width: `${passwordStrength * 25}%` }"
+                      />
+                    </div>
+                    <span class="strength-text" :class="passwordStrengthClass">
+                      {{ passwordStrengthText }}
+                    </span>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label for="confirm_password">
+                    <AnimatedIcon name="sparkle" :fallback-icon="CheckCircle" size="sm" />
+                    {{ $t('profile.confirmPassword') }}
+                  </label>
+                  <div class="input-wrapper">
+                    <Input
+                      id="confirm_password"
+                      v-model="passwordForm.confirm_password"
+                      :type="showConfirmPassword ? 'text' : 'password'"
+                      class="input-with-icon"
+                      :error="Boolean(passwordForm.confirm_password && !passwordsMatch)"
+                      autocomplete="new-password"
+                      required
+                    />
+                    <button
+                      type="button"
+                      class="password-toggle"
+                      @click="showConfirmPassword = !showConfirmPassword"
+                    >
+                      <AnimatedIcon
+                        v-if="showConfirmPassword"
+                        name="explore"
+                        :fallback-icon="EyeOff"
+                        size="sm"
+                      />
+                      <AnimatedIcon v-else name="explore" :fallback-icon="Eye" size="sm" />
+                    </button>
+                  </div>
+                  <p v-if="passwordForm.confirm_password && !passwordsMatch" class="field-error">
+                    {{ $t('profile.passwordMismatch') }}
+                  </p>
+                </div>
+
+                <div class="form-actions">
+                  <Button
+                    type="submit"
+                    variant="secondary"
+                    :disabled="isChangingPassword || !canChangePassword"
+                  >
+                    <span v-if="isChangingPassword" class="spinner spinner-sm" />
+                    <AnimatedIcon v-else name="sparkle" :fallback-icon="Shield" size="sm" />
+                    {{ $t('profile.changePassword') }}
+                  </Button>
+                </div>
+              </form>
+            </section>
+          </div>
+
+          <!-- Right Aside (Wide Screens) -->
+          <aside class="settings-aside">
+            <div class="settings-aside-card glass-card">
+              <h3 class="aside-title">{{ $t('profile.settings') }}</h3>
+              <nav class="aside-nav">
+                <a class="aside-link" href="#avatar-section">{{ $t('profile.avatar') }}</a>
+                <a class="aside-link" href="#basic-info">{{ $t('profile.basicInfo') }}</a>
+                <a class="aside-link" href="#email-section">{{ $t('email.changeEmailTitle') }}</a>
+                <a class="aside-link" href="#password-section">{{
+                  $t('profile.changePassword')
+                }}</a>
+              </nav>
             </div>
 
-            <div class="form-group">
-              <label for="confirm_password">
-                <AnimatedIcon name="sparkle" :fallback-icon="CheckCircle" size="sm" />
-                {{ $t('profile.confirmPassword') }}
-              </label>
-              <div class="input-wrapper">
-                <Input
-                  id="confirm_password"
-                  v-model="passwordForm.confirm_password"
-                  :type="showConfirmPassword ? 'text' : 'password'"
-                  class="input-with-icon"
-                  :error="Boolean(passwordForm.confirm_password && !passwordsMatch)"
-                  autocomplete="new-password"
-                  required
-                />
-                <button
-                  type="button"
-                  class="password-toggle"
-                  @click="showConfirmPassword = !showConfirmPassword"
-                >
-                  <AnimatedIcon
-                    v-if="showConfirmPassword"
-                    name="explore"
-                    :fallback-icon="EyeOff"
-                    size="sm"
-                  />
-                  <AnimatedIcon v-else name="explore" :fallback-icon="Eye" size="sm" />
-                </button>
+            <div class="settings-aside-card glass-card">
+              <h3 class="aside-title">{{ $t('profile.summary') }}</h3>
+              <div class="aside-meta">
+                <div class="meta-row">
+                  <span class="meta-label">{{ $t('profile.username') }}</span>
+                  <span class="meta-value">@{{ profile.username }}</span>
+                </div>
+                <div class="meta-row">
+                  <span class="meta-label">{{ $t('email.currentEmail') }}</span>
+                  <span class="meta-value">{{ profile.email }}</span>
+                </div>
               </div>
-              <p v-if="passwordForm.confirm_password && !passwordsMatch" class="field-error">
-                {{ $t('profile.passwordMismatch') }}
-              </p>
             </div>
-
-            <div class="form-actions">
-              <Button
-                type="submit"
-                variant="secondary"
-                :disabled="isChangingPassword || !canChangePassword"
-              >
-                <span v-if="isChangingPassword" class="spinner spinner-sm" />
-                <AnimatedIcon v-else name="sparkle" :fallback-icon="Shield" size="sm" />
-                {{ $t('profile.changePassword') }}
-              </Button>
-            </div>
-          </form>
-        </section>
+          </aside>
+        </div>
       </template>
     </div>
 
@@ -815,8 +848,82 @@ onMounted(() => {
 
 <style scoped>
 .profile-page {
-  min-height: 100vh;
+  min-height: 100svh;
+  min-height: 100dvh;
   padding: var(--spacing-4) 0;
+}
+
+.settings-layout {
+  display: grid;
+  gap: var(--spacing-6);
+}
+
+.settings-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.settings-aside {
+  display: none;
+}
+
+.settings-aside-card {
+  padding: var(--spacing-4);
+  border-radius: var(--radius-lg);
+}
+
+.aside-title {
+  margin: 0 0 var(--spacing-3);
+  font-size: var(--text-base);
+  font-weight: var(--font-semibold);
+  color: var(--color-text-primary);
+}
+
+.aside-nav {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+}
+
+.aside-link {
+  text-decoration: none;
+  color: var(--color-text-secondary);
+  padding: var(--spacing-2) var(--spacing-3);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+}
+
+.aside-link:hover {
+  color: var(--color-text-primary);
+  background: var(--glass-bg-subtle);
+}
+
+.aside-meta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+}
+
+.meta-row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--spacing-3);
+  font-size: var(--text-sm);
+}
+
+.meta-label {
+  color: var(--color-text-tertiary);
+}
+
+.meta-value {
+  color: var(--color-text-primary);
+  font-weight: var(--font-medium);
+  text-align: right;
+  max-width: 11.25rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .profile-page-header {
@@ -867,7 +974,7 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-6);
-  max-width: 960px;
+  max-width: 60rem;
 }
 
 .skeleton-header {
@@ -898,7 +1005,7 @@ onMounted(() => {
   margin-bottom: var(--spacing-6);
   position: relative;
   z-index: 1;
-  max-width: 960px;
+  max-width: 60rem;
 }
 
 .section-header {
@@ -1022,7 +1129,7 @@ onMounted(() => {
 
 /* Form Styles */
 .settings-form {
-  max-width: 960px;
+  max-width: 60rem;
 }
 
 .form-group {
@@ -1064,7 +1171,7 @@ onMounted(() => {
 
 .bio-textarea {
   resize: vertical;
-  min-height: 100px;
+  min-height: 6.25rem;
   padding-right: var(--spacing-4) !important;
 }
 
@@ -1198,6 +1305,30 @@ onMounted(() => {
   }
 }
 
+/* Wide screens */
+@media (min-width: 1200px) {
+  .settings-layout {
+    grid-template-columns: minmax(0, 1fr) 280px;
+    align-items: start;
+  }
+
+  .settings-aside {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-4);
+    position: sticky;
+    top: calc(var(--navbar-height) + var(--spacing-4));
+    max-height: calc(100dvh - var(--navbar-height) - var(--spacing-8));
+    height: fit-content;
+    overflow-y: auto;
+  }
+
+  .settings-form,
+  .settings-section {
+    max-width: 100%;
+  }
+}
+
 /* Mobile */
 @media (max-width: 768px) {
   .profile-page {
@@ -1263,12 +1394,12 @@ onMounted(() => {
   }
 
   .form-group :deep(.ui-input) {
-    min-height: 48px;
-    font-size: 16px; /* Prevent iOS zoom */
+    min-height: 3rem;
+    font-size: 1rem; /* Prevent iOS zoom */
   }
 
   .bio-textarea {
-    min-height: 120px;
+    min-height: 7.5rem;
   }
 
   .form-actions {
@@ -1279,7 +1410,7 @@ onMounted(() => {
 
   .form-actions :deep(button) {
     width: 100%;
-    min-height: 48px;
+    min-height: 3rem;
   }
 }
 

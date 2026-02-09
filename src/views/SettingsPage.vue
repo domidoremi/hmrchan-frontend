@@ -4,7 +4,7 @@
       <h1 class="page-title">{{ $t('settings.title') }}</h1>
 
       <div class="settings-card glass-card">
-        <SettingsPanel :show-advanced-link="false" />
+        <SettingsPanel :compact="false" :show-advanced-link="false" />
       </div>
 
       <div class="settings-card glass-card cache-section">
@@ -73,13 +73,13 @@ async function handleClearCache() {
 .page-title {
   margin-bottom: var(--spacing-4);
   width: 100%;
-  max-width: 560px;
+  max-width: min(90vw, 35rem);
   font-size: var(--text-xl);
 }
 
 .settings-card {
   width: 100%;
-  max-width: 560px;
+  max-width: min(90vw, 35rem);
 }
 
 .cache-section {

@@ -183,7 +183,8 @@ function handleRetry() {
 
 <style scoped>
 #app {
-  min-height: 100vh;
+  min-height: 100svh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
 }
@@ -195,7 +196,8 @@ main {
 
 .route-view {
   position: relative;
-  min-height: calc(100vh - var(--navbar-height));
+  min-height: calc(100svh - var(--navbar-height));
+  min-height: calc(100dvh - var(--navbar-height));
   overflow-x: hidden;
   overflow-y: visible;
 }

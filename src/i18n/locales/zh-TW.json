@@ -603,12 +603,19 @@
     "revokeAll": "登出所有其他裝置",
     "lastActive": "最後活躍",
     "namePlaceholder": "輸入裝置名稱",
+    "unknownDevice": "未知裝置",
+    "unknownIp": "未知 IP",
+    "deviceInfo": "裝置資訊",
+    "firstSeen": "首次登入",
+    "lastLogin": "上次登入",
+    "loginCount": "登入次數",
     "ipChangeWarning": "IP 位址已更改 {count} 次",
     "time": {
       "justNow": "剛剛",
       "minutesAgo": "{count} 分鐘前",
       "hoursAgo": "{count} 小時前",
-      "daysAgo": "{count} 天前"
+      "daysAgo": "{count} 天前",
+      "unknown": "未知"
     },
     "confirm": {
       "revoke": "確定要登出此裝置嗎？",

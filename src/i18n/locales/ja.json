@@ -604,12 +604,19 @@
     "revokeAll": "他のすべてのデバイスからログアウト",
     "lastActive": "最終アクティブ",
     "namePlaceholder": "デバイス名を入力",
+    "unknownDevice": "不明なデバイス",
+    "unknownIp": "不明なIP",
+    "deviceInfo": "デバイス情報",
+    "firstSeen": "初回ログイン",
+    "lastLogin": "最終ログイン",
+    "loginCount": "ログイン回数",
     "ipChangeWarning": "IPアドレスが {count} 回変更されました",
     "time": {
       "justNow": "たった今",
       "minutesAgo": "{count} 分前",
       "hoursAgo": "{count} 時間前",
-      "daysAgo": "{count} 日前"
+      "daysAgo": "{count}日前",
+      "unknown": "不明"
     },
     "confirm": {
       "revoke": "このデバイスからログアウトしますか？",
