@@ -60,6 +60,8 @@
 </template>
 
 <script setup lang="ts">
+defineOptions({ name: 'AuthorDetailPage' })
+
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'

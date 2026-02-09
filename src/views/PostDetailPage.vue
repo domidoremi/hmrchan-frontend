@@ -245,6 +245,8 @@
 </template>
 
 <script setup lang="ts">
+defineOptions({ name: 'PostDetailPage' })
+
 import { ref, computed, onMounted, watch, onUnmounted, onActivated, onDeactivated } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
