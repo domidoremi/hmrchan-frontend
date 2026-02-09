@@ -803,32 +803,24 @@ async function fetchPost() {
   }
 }
 
-// 记录访问开始时间（用于智能预缓存）
-const accessStartTime = ref(Date.now())
-
-// 记录访问时长的辅助函数
-function recordAccessTime() {
-  const timeSpent = Date.now() - accessStartTime.value
-  if (postId.value && timeSpent > 0) {
-    import('@/utils/cache/smartPrefetch').then(({ recordAccess }) => {
-      recordAccess('post', postId.value, timeSpent)
-    })
-  }
-}
-
 onMounted(() => {
-  // 重置访问开始时间（处理组件复用情况）
-  accessStartTime.value = Date.now()
-
   syncNavigationContext()
   prefetchAdjacentPosts()
   fetchPost()
   attachStageListeners()
 })
 
+// 记录访问开始时间（用于智能预缓存）
+const accessStartTime = Date.now()
+
 // 在组件卸载时记录访问
 onUnmounted(() => {
-  recordAccessTime()
+  const timeSpent = Date.now() - accessStartTime
+  if (postId.value) {
+    import('@/utils/cache/smartPrefetch').then(({ recordAccess }) => {
+      recordAccess('post', postId.value, timeSpent)
+    })
+  }
 })
 
 watch(postId, () => {
@@ -888,9 +880,6 @@ function detachStageListeners() {
 }
 
 onActivated(() => {
-  // 重置访问开始时间（keep-alive 激活时）
-  accessStartTime.value = Date.now()
-
   attachStageListeners()
   if (isTextModalOpen.value) {
     lockBodyScroll()
@@ -899,9 +888,6 @@ onActivated(() => {
 })
 
 onDeactivated(() => {
-  // 记录访问时长（keep-alive 停用时）
-  recordAccessTime()
-
   isTextModalOpen.value = false
   detachStageListeners()
   unlockBodyScroll()

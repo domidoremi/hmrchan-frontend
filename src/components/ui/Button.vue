@@ -474,6 +474,23 @@ onMounted(() => {
   width: 100%;
 }
 
+/* Dark mode: primary color inverts to near-white, need dark text for contrast */
+:global([data-theme='dark']) .btn-default {
+  color: #09090b;
+}
+
+:global([data-theme='dark']) .btn-default:hover:not(:disabled) {
+  color: #09090b;
+}
+
+:global([data-theme='dark']) .btn-success {
+  color: #09090b;
+}
+
+:global([data-theme='dark']) .btn-success:hover:not(:disabled) {
+  color: #09090b;
+}
+
 /* Focus */
 .btn:focus-visible {
   outline: 2px solid var(--color-ring);
