@@ -70,6 +70,12 @@ const routes: RouteRecordRaw[] = [
     meta: { title: 'community.title' },
   },
   {
+    path: '/community/discussions/:id',
+    name: 'discussion-detail',
+    component: () => import('@/views/DiscussionDetailPage.vue'),
+    meta: { title: 'community.recentDiscussions' },
+  },
+  {
     path: '/author/:id',
     name: 'author-detail',
     component: () => import('@/views/AuthorDetailPage.vue'),

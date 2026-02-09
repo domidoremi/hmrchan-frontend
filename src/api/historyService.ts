@@ -106,9 +106,12 @@ export const historyService = {
    * 记录浏览历史
    */
   async recordBrowsing(postId: string, duration?: number): Promise<void> {
+    const numericId = /^\d+$/.test(postId) ? Number(postId) : undefined
     const payload = {
-      post_id: postId,
-      ...(typeof duration === 'number' ? { view_duration: duration } : {}),
+      content_type: 'post',
+      content_uuid: postId,
+      ...(typeof numericId === 'number' ? { content_id: numericId } : {}),
+      ...(typeof duration === 'number' ? { duration_seconds: duration } : {}),
     }
 
     try {
@@ -116,12 +119,24 @@ export const historyService = {
       return
     } catch (error) {
       if (error instanceof ApiError && error.status === 422) {
-        const legacyPayload = {
-          post_id: postId,
-          ...(typeof duration === 'number' ? { duration } : {}),
+        try {
+          const legacyPayload = {
+            post_id: postId,
+            ...(typeof duration === 'number' ? { view_duration: duration } : {}),
+          }
+          await apiClient.post('/history/browsing', legacyPayload, { skipErrorToast: true })
+          return
+        } catch (legacyError) {
+          if (legacyError instanceof ApiError && legacyError.status === 422) {
+            const fallbackPayload = {
+              post_id: postId,
+              ...(typeof duration === 'number' ? { duration } : {}),
+            }
+            await apiClient.post('/history/browsing', fallbackPayload, { skipErrorToast: true })
+            return
+          }
+          throw legacyError
         }
-        await apiClient.post('/history/browsing', legacyPayload, { skipErrorToast: true })
-        return
       }
       throw error
     }

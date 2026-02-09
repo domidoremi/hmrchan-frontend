@@ -1,21 +1,21 @@
 <template>
-  <div class="profile-settings-page">
+  <div class="profile-page">
     <div class="container">
-      <header class="page-header">
-        <button type="button" class="back-btn glass-button" @click="goBack">
-          <AnimatedIcon name="explore" :fallback-icon="ArrowLeft" size="md" />
-        </button>
-        <div>
-          <h1>{{ $t('profile.settings') }}</h1>
-          <p class="page-subtitle">{{ $t('profile.settingsSubtitle') }}</p>
-          <p class="page-hint">{{ $t('profile.settingsHint') }}</p>
+      <header class="profile-page-header glass-card">
+        <div class="header-left">
+          <button type="button" class="back-btn glass-button" @click="goBack">
+            <AnimatedIcon name="explore" :fallback-icon="ArrowLeft" size="sm" />
+          </button>
+          <div>
+            <h1>{{ $t('profile.settings') }}</h1>
+            <p class="header-subtitle">{{ $t('profile.settingsSubtitle') }}</p>
+            <p class="header-hint">{{ $t('profile.settingsHint') }}</p>
+          </div>
         </div>
-        <div class="page-actions">
-          <Button variant="ghost" size="sm" type="button" @click="fetchProfile">
-            <AnimatedIcon name="loading" :fallback-icon="RefreshCw" size="sm" />
-            {{ $t('common.refresh') }}
-          </Button>
-        </div>
+        <Button variant="ghost" size="sm" type="button" @click="fetchProfile">
+          <AnimatedIcon name="loading" :fallback-icon="RefreshCw" size="sm" />
+          {{ $t('common.refresh') }}
+        </Button>
       </header>
 
       <StateIndicator v-if="error" variant="error" :description="error" @action="fetchProfile" />
@@ -814,49 +814,51 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.profile-settings-page {
+.profile-page {
   min-height: 100vh;
-  padding: var(--spacing-6) 0;
+  padding: var(--spacing-4) 0;
 }
 
-.page-header {
+.profile-page-header {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: var(--spacing-4);
-  margin-bottom: var(--spacing-6);
+  margin-bottom: var(--spacing-4);
+  padding: var(--spacing-4);
+  border-radius: var(--radius-lg);
 }
 
-.page-subtitle {
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+}
+
+.header-left h1 {
+  margin: 0;
+  font-size: var(--text-xl);
+  font-weight: var(--font-semibold);
+}
+
+.header-subtitle {
   margin: 0;
   color: var(--color-text-secondary);
   font-size: var(--text-sm);
 }
 
-.page-hint {
+.header-hint {
   margin-top: var(--spacing-1);
   font-size: var(--text-sm);
   color: var(--color-text-tertiary);
 }
 
-.page-actions {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-2);
-  margin-left: auto;
-}
-
-.page-header h1 {
-  margin: 0;
-  font-size: var(--text-2xl);
-  font-weight: var(--font-bold);
-}
-
 .back-btn {
-  display: flex;
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
   padding: 0;
 }
 
@@ -1194,7 +1196,7 @@ onMounted(() => {
 
 /* Desktop */
 @media (min-width: 1025px) {
-  .profile-settings-page .container {
+  .profile-page .container {
     max-width: 800px;
     margin: 0 auto;
   }
@@ -1210,23 +1212,16 @@ onMounted(() => {
 
 /* Mobile */
 @media (max-width: 768px) {
-  .profile-settings-page {
+  .profile-page {
     padding: var(--spacing-4) 0;
   }
-
-  .page-header {
-    gap: var(--spacing-3);
-    margin-bottom: var(--spacing-4);
+  .profile-page-header {
+    flex-direction: column;
+    align-items: flex-start;
   }
 
-  .page-actions {
+  .header-left {
     width: 100%;
-    justify-content: flex-start;
-    margin-left: 0;
-  }
-
-  .page-header h1 {
-    font-size: var(--text-xl);
   }
 
   .settings-section {
@@ -1302,11 +1297,10 @@ onMounted(() => {
 
 /* Small Mobile */
 @media (max-width: 480px) {
-  .profile-settings-page {
+  .profile-page {
     padding: var(--spacing-3) 0;
   }
-
-  .page-header h1 {
+  .header-left h1 {
     font-size: var(--text-lg);
   }
 
