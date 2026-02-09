@@ -108,6 +108,47 @@ export interface PaginatedApiResponseWithLimit<T> extends PaginatedApiResponse<T
   limit?: number
   total_limit?: number
 }
+type ApiEnvelope<T = unknown> = {
+  success?: boolean
+  data?: T
+  meta?: Record<string, unknown>
+  pagination?: Record<string, unknown>
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null
+}
+
+function normalizeResponse<T>(payload: unknown): T {
+  if (isRecord(payload)) {
+    const maybeEnvelope = payload as ApiEnvelope
+    const hasEnvelopeHint =
+      'data' in maybeEnvelope && ('success' in maybeEnvelope || 'meta' in maybeEnvelope)
+
+    if (hasEnvelopeHint) {
+      const data = maybeEnvelope.data
+      const pagination = maybeEnvelope.pagination
+
+      if (pagination && isRecord(pagination)) {
+        if (Array.isArray(data)) {
+          return { items: data, ...pagination } as T
+        }
+
+        if (isRecord(data)) {
+          const hasPaginationFields =
+            'page' in data || 'page_size' in data || 'total' in data || 'total_pages' in data
+          if (!hasPaginationFields) {
+            return { ...data, ...pagination } as T
+          }
+        }
+      }
+
+      return data as T
+    }
+  }
+
+  return payload as T
+}
 
 /**
  * 获取存储的 access token（从加密存储中读取）
@@ -442,7 +483,7 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
     }
 
     const data = await response.json()
-    return data
+    return normalizeResponse<T>(data)
   } catch (error) {
     clearTimeout(timeoutId)
 

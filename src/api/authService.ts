@@ -87,7 +87,8 @@ export interface ResetPasswordRequest {
 
 export interface ChangeEmailRequest {
   new_email: string
-  verification_token: string
+  password?: string
+  verification_token?: string
 }
 
 export interface SendEmailCodeRequest {
@@ -167,7 +168,14 @@ export const authService = {
    * 验证当前密码（敏感操作前置）
    */
   async verifyPassword(password: string): Promise<{ verification_token: string }> {
-    return apiClient.post('/account/verify-password', { password })
+    try {
+      return await apiClient.post('/auth/verify-password', { password })
+    } catch (error) {
+      if (error instanceof ApiError && (error.status === 404 || error.status === 405)) {
+        return apiClient.post('/account/verify-password', { password })
+      }
+      throw error
+    }
   },
 
   /**

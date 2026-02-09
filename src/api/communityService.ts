@@ -46,7 +46,7 @@ export const communityService = {
    */
   async getFeed(page = 1, pageSize = 20): Promise<PaginatedApiResponse<DiscussionItem>> {
     return apiClient.get<PaginatedApiResponse<DiscussionItem>>(
-      `/community/feed?page=${page}&page_size=${pageSize}`
+      `/community/latest?page=${page}&page_size=${pageSize}`
     )
   },
 
@@ -58,9 +58,20 @@ export const communityService = {
     page = 1,
     pageSize = 20
   ): Promise<PaginatedApiResponse<HotTopicItem>> {
-    return apiClient.get<PaginatedApiResponse<HotTopicItem>>(
-      `/community/trending?time_range=${timeRange}&page=${page}&page_size=${pageSize}`
+    const days = timeRange === '24h' ? 1 : timeRange === '7d' ? 7 : timeRange === '30d' ? 30 : 30
+    const result = await apiClient.get<{ items: HotTopicItem[] } | HotTopicItem[]>(
+      `/community/hot?limit=${pageSize}&days=${days}`
     )
+    const items = Array.isArray(result) ? result : (result.items ?? [])
+    return {
+      items,
+      total: items.length,
+      page,
+      page_size: pageSize,
+      total_pages: 1,
+      has_next: false,
+      has_prev: false,
+    }
   },
 
   /**
