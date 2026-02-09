@@ -9,20 +9,33 @@
     <div class="container">
       <!-- Header -->
       <header class="page-header">
-        <h1>{{ $t('community.title') }}</h1>
-        <p class="page-subtitle">{{ $t('community.subtitle') }}</p>
+        <div class="page-header-row">
+          <div>
+            <h1>{{ $t('community.title') }}</h1>
+            <p class="page-subtitle">{{ $t('community.subtitle') }}</p>
+          </div>
+          <button
+            type="button"
+            class="guide-trigger glass-button"
+            :aria-label="$t('community.guideTitle')"
+            @click="showGuide = true"
+          >
+            <AnimatedIcon name="sparkle" :fallback-icon="HelpCircle" size="sm" />
+          </button>
+        </div>
       </header>
 
-      <!-- Guidance -->
-      <div class="community-guide glass-card">
-        <h2 class="guide-title">{{ $t('community.guideTitle') }}</h2>
-        <p class="guide-text">{{ $t('community.guideDescription') }}</p>
-        <ul class="guide-list">
-          <li>{{ $t('community.guidePoint1') }}</li>
-          <li>{{ $t('community.guidePoint2') }}</li>
-          <li>{{ $t('community.guidePoint3') }}</li>
-        </ul>
-      </div>
+      <!-- Community Guide Dialog -->
+      <Dialog v-model:isOpen="showGuide" :title="$t('community.guideTitle')" size="sm">
+        <div class="guide-dialog-body">
+          <p class="guide-text">{{ $t('community.guideDescription') }}</p>
+          <ul class="guide-list">
+            <li>{{ $t('community.guidePoint1') }}</li>
+            <li>{{ $t('community.guidePoint2') }}</li>
+            <li>{{ $t('community.guidePoint3') }}</li>
+          </ul>
+        </div>
+      </Dialog>
 
       <!-- Tabs -->
       <div class="community-tabs">
@@ -212,7 +225,7 @@ defineOptions({ name: 'CommunityPage' })
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
-import { MessageSquare, Flame } from 'lucide-vue-next'
+import { MessageSquare, Flame, HelpCircle } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores'
 import { discussionService, type Discussion, ApiError } from '@/api'
@@ -225,12 +238,14 @@ import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import DiscussionComposer from '@/components/community/DiscussionComposer.vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
+import Dialog from '@/components/ui/Dialog.vue'
 
 const router = useRouter()
 const { t } = useI18n()
 const authStore = useAuthStore()
 const { isAuthenticated } = storeToRefs(authStore)
 
+const showGuide = ref(false)
 const activeTab = ref('recent')
 const isLoading = ref(false)
 const isLoadingMore = ref(false)
@@ -450,6 +465,13 @@ onMounted(() => {
   margin-bottom: var(--spacing-4);
 }
 
+.page-header-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--spacing-3);
+}
+
 .page-header h1 {
   margin-bottom: var(--spacing-1);
   font-size: var(--text-xl);
@@ -466,31 +488,41 @@ onMounted(() => {
   font-size: var(--text-sm);
 }
 
-.community-guide {
-  margin-bottom: var(--spacing-4);
-  padding: var(--spacing-4);
+.guide-trigger {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-lg);
+  color: var(--color-text-secondary);
 }
 
-.guide-title {
-  font-size: var(--text-base);
-  font-weight: var(--font-semibold);
-  margin-bottom: var(--spacing-2);
+.guide-trigger:hover {
+  color: var(--color-text-primary);
+}
+
+.guide-dialog-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
 }
 
 .guide-text {
   font-size: var(--text-sm);
   color: var(--color-text-secondary);
-  margin-bottom: var(--spacing-2);
+  margin: 0;
 }
 
 .guide-list {
   display: grid;
-  gap: var(--spacing-1);
+  gap: var(--spacing-2);
   padding-left: var(--spacing-5);
   margin: 0;
   list-style: disc;
-  color: var(--color-text-tertiary);
-  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
 }
 
 .composer-section {
