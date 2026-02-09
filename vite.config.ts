@@ -13,12 +13,10 @@
  */
 
 import { fileURLToPath, URL } from 'node:url'
-import { copyFileSync, existsSync } from 'node:fs'
-import { resolve } from 'node:path'
 import { execSync } from 'node:child_process'
 import type { IncomingMessage } from 'node:http'
 
-import { defineConfig, type Plugin } from 'vite'
+import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import vueJsx from '@vitejs/plugin-vue-jsx'
 import vueDevTools from 'vite-plugin-vue-devtools'
@@ -43,38 +41,6 @@ function getBuildHash(): string {
 
 const BUILD_HASH = getBuildHash()
 
-/**
- * Cloudflare Pages 配置文件复制插件
- * 将 _headers 和 _redirects 复制到 dist 目录
- */
-function cloudflarePagesPlugin(): Plugin {
-  return {
-    name: 'cloudflare-pages',
-    apply: 'build',
-    closeBundle() {
-      const files = ['_headers', '_redirects']
-      const outDir = resolve(process.cwd(), 'dist')
-
-      for (const file of files) {
-        const src = resolve(process.cwd(), file)
-        const dest = resolve(outDir, file)
-
-        // 检查源文件是否存在
-        if (!existsSync(src)) {
-          console.warn(`⚠️ ${file} not found, skipping`)
-          continue
-        }
-
-        try {
-          copyFileSync(src, dest)
-          console.log(`✅ Copied ${file} to dist/`)
-        } catch (error) {
-          console.warn(`⚠️ Failed to copy ${file}:`, error)
-        }
-      }
-    },
-  }
-}
 
 export default defineConfig(({ mode }: { mode: string }) => {
   const isProd = mode === 'production'
@@ -122,9 +88,6 @@ export default defineConfig(({ mode }: { mode: string }) => {
 
       /** 生产环境内联关键 CSS */
       ...(isProd ? [criticalCSSPlugin()] : []),
-
-      /** Cloudflare Pages 配置文件复制 */
-      ...(isProd ? [cloudflarePagesPlugin()] : []),
     ],
 
     /**
