@@ -55,7 +55,9 @@ export interface ListFavoritesParams {
   page?: number
   page_size?: number
   folder_name?: string
+  tag?: string
   tags?: string[]
+  platform?: string
   sort_by?: 'created_at' | 'updated_at'
   sort_order?: 'asc' | 'desc'
 }
@@ -75,8 +77,14 @@ export const favoriteService = {
   /**
    * 添加收藏
    */
-  async create(postId: string): Promise<FavoriteResponse> {
-    return apiClient.post<FavoriteResponse>(`/favorites/${postId}`)
+  async create(
+    postId: string,
+    data: Omit<FavoriteCreateRequest, 'post_id'> = {}
+  ): Promise<FavoriteResponse> {
+    return apiClient.post<FavoriteResponse>('/favorites/', {
+      post_id: postId,
+      ...data,
+    })
   },
 
   /**
@@ -93,8 +101,13 @@ export const favoriteService = {
       if (merged.folder_name) {
         query.set('folder_name', merged.folder_name)
       }
-      if (merged.tags?.length) {
-        merged.tags.forEach((tag) => query.append('tags', tag))
+      if (merged.tag) {
+        query.set('tag', merged.tag)
+      } else if (merged.tags?.length) {
+        query.set('tag', merged.tags[0]!)
+      }
+      if (merged.platform) {
+        query.set('platform', merged.platform)
       }
       if (merged.sort_by) {
         query.set('sort_by', merged.sort_by)
@@ -109,7 +122,7 @@ export const favoriteService = {
     const query = buildQuery()
 
     try {
-      return await apiClient.get<PaginatedApiResponse<FavoriteResponse>>(`/favorites?${query}`)
+      return await apiClient.get<PaginatedApiResponse<FavoriteResponse>>(`/favorites/?${query}`)
     } catch (error) {
       const shouldRetry =
         error instanceof ApiError &&
@@ -121,7 +134,7 @@ export const favoriteService = {
       }
 
       const fallbackQuery = buildQuery({ sort_by: undefined, sort_order: undefined })
-      return apiClient.get<PaginatedApiResponse<FavoriteResponse>>(`/favorites?${fallbackQuery}`)
+      return apiClient.get<PaginatedApiResponse<FavoriteResponse>>(`/favorites/?${fallbackQuery}`)
     }
   },
 
@@ -142,8 +155,8 @@ export const favoriteService = {
   /**
    * 删除收藏
    */
-  async remove(postId: string): Promise<void> {
-    await apiClient.delete(`/favorites/${postId}`, {
+  async remove(favoriteId: number): Promise<void> {
+    await apiClient.delete(`/favorites/${favoriteId}`, {
       skipErrorToast: true,
     })
   },

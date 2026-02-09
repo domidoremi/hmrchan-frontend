@@ -9,7 +9,8 @@
         type="text"
         class="composer-title-input"
         :placeholder="$t('community.discussionTitle')"
-        maxlength="100"
+        :minlength="TITLE_MIN"
+        :maxlength="TITLE_MAX"
       />
 
       <!-- 分类选择 -->
@@ -31,6 +32,8 @@
         v-model="content"
         class="composer-textarea"
         :placeholder="$t('community.discussionPlaceholder')"
+        :minlength="CONTENT_MIN"
+        :maxlength="CONTENT_MAX"
         rows="4"
         @update:modelValue="handleInput"
         @keydown="handleKeydown"
@@ -151,7 +154,15 @@ const isSearching = ref(false)
 const selectedIndex = ref(0)
 const mentionStart = ref(-1)
 const isSubmitting = ref(false)
+const TITLE_MIN = 2
+const TITLE_MAX = 200
+const CONTENT_MIN = 10
+const CONTENT_MAX = 10000
 
+const canSubmit = computed(
+  () =>
+    title.value.trim().length >= TITLE_MIN && content.value.trim().length >= CONTENT_MIN
+)
 const canSubmit = computed(() => title.value.trim().length > 0 && content.value.trim().length > 0)
 
 const categories = [

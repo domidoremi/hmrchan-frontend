@@ -114,7 +114,15 @@ async function toggleFavorite() {
 
   try {
     if (isFavorited.value) {
-      await favoriteService.remove(props.postId)
+      const id = favoriteId.value
+      if (id) {
+        await favoriteService.remove(id)
+      } else {
+        const res = await favoriteService.check(props.postId)
+        if (res.favorite_id) {
+          await favoriteService.remove(res.favorite_id)
+        }
+      }
       isFavorited.value = false
       favoriteId.value = null
       toastStore.success(t('post.unfavorite'))
