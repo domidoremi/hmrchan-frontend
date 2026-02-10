@@ -970,6 +970,7 @@ onUnmounted(() => {
   top: calc(var(--navbar-height) - var(--spacing-2));
   right: var(--spacing-4);
   min-width: 16rem;
+  transform-origin: top right;
 }
 
 .user-info {

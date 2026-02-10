@@ -143,11 +143,6 @@
         </RouterLink>
       </div>
     </div>
-
-    <!-- Version Info -->
-    <div class="settings-footer">
-      <span class="version-text">MomiChan</span>
-    </div>
   </div>
 </template>
 
@@ -289,7 +284,7 @@ function resetVideoSettings() {
   display: flex;
   align-items: center;
   gap: var(--spacing-2);
-  margin-bottom: var(--spacing-3);
+  margin-bottom: var(--spacing-2);
 }
 
 .settings-group-icon {
@@ -625,26 +620,6 @@ function resetVideoSettings() {
 .link-btn:hover .link-btn-arrow {
   opacity: 1;
   transform: translateX(0);
-}
-
-/* ========== Footer ========== */
-.settings-footer {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--spacing-2);
-  padding: var(--spacing-3);
-  border-top: 1px solid var(--glass-border);
-}
-
-.version-text {
-  font-size: var(--text-xs);
-  color: var(--color-text-tertiary);
-}
-
-.version-divider {
-  color: var(--color-text-tertiary);
-  opacity: 0.5;
 }
 
 /* ========== Dark Mode ========== */
