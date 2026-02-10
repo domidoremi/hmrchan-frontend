@@ -584,6 +584,7 @@ onUnmounted(() => {
   border: 0;
   padding: 0;
   background: var(--glass-bg);
+  overflow: hidden;
   cursor: pointer;
   will-change: transform;
   transition:
@@ -609,7 +610,6 @@ onUnmounted(() => {
   width: 100%;
   overflow: hidden;
   background: var(--glass-bg-light);
-  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
 }
 
 /* ========== Platform Badge - 增强版 v2 ========== */
@@ -784,7 +784,6 @@ onUnmounted(() => {
   -webkit-backdrop-filter: blur(2px);
   will-change: opacity, transform;
   transform: translate3d(0, 0, 0);
-  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
 }
 
 .hover-header {

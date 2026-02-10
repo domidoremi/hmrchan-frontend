@@ -322,11 +322,17 @@ async function handleErrorResponse(response: Response, skipErrorToast?: boolean)
   const { t } = i18n.global
   let localizedMessage: string
 
+  // 服务端提供了具体的错误码或消息时，优先保留而非覆盖为泛化状态码消息
+  const hasSpecificServerError = errorCode || (errorMessage && errorMessage !== 'error.unknown')
+
   // 429 特殊处理：读取 Retry-After 响应头
   if (response.status === 429) {
     const retryAfter = response.headers.get('Retry-After')
     const seconds = retryAfter ? parseInt(retryAfter, 10) : 60
     localizedMessage = t('error.tooManyRequestsWithTime', { seconds })
+  } else if (hasSpecificServerError) {
+    // 保留服务端提供的具体错误消息
+    localizedMessage = errorMessage
   } else {
     const statusMessage = statusMessages[response.status]
     localizedMessage = statusMessage ? t(statusMessage) : errorMessage
