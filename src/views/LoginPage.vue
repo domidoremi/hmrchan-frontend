@@ -215,6 +215,13 @@ function handleTurnstileError() {
   padding: var(--spacing-3);
 }
 
+@media (max-width: 768px) {
+  .auth-page {
+    min-height: calc(100svh - var(--navbar-height) - var(--mobile-nav-height));
+    min-height: calc(100dvh - var(--navbar-height) - var(--mobile-nav-height));
+  }
+}
+
 .auth-card {
   width: 100%;
   max-width: min(90vw, 23.75rem);

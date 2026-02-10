@@ -430,8 +430,10 @@ async function handleSendCode() {
       }
       if (err.status === 429) {
         toastStore.error(t('emailCode.tooManyRequests'))
-      } else if (err.code === 'EMAIL_EXISTS') {
+      } else if (err.code === 'EMAIL_EXISTS' || err.status === 409) {
         emailError.value = t('auth.error.emailExists')
+      } else if (err.status === 400) {
+        emailError.value = err.message || t('error.badRequest')
       } else {
         toastStore.error(err.message)
       }
@@ -616,6 +618,13 @@ function isTurnstileTokenFresh() {
   align-items: center;
   justify-content: center;
   padding: var(--spacing-3);
+}
+
+@media (max-width: 768px) {
+  .auth-page {
+    min-height: calc(100svh - var(--navbar-height) - var(--mobile-nav-height));
+    min-height: calc(100dvh - var(--navbar-height) - var(--mobile-nav-height));
+  }
 }
 
 .auth-card {
