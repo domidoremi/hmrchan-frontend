@@ -44,6 +44,16 @@ vi.mock('@/stores/toast', () => ({
   }),
 }))
 
+// Mock secure token manager
+const mockSecureTokenManager = {
+  retrieve: vi.fn(() => Promise.resolve(null)),
+  store: vi.fn(() => Promise.resolve()),
+  clear: vi.fn(),
+}
+vi.mock('@/utils/tokenSecurity', () => ({
+  secureTokenManager: mockSecureTokenManager,
+}))
+
 // Mock memory cache
 vi.mock('@/utils/cache', () => ({
   memoryCache: {
@@ -77,6 +87,7 @@ describe('apiClient', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     localStorageMock.clear()
+    mockSecureTokenManager.retrieve.mockResolvedValue(null)
   })
 
   afterEach(() => {
@@ -142,7 +153,7 @@ describe('apiClient', () => {
     })
 
     it('should include auth header when token exists', async () => {
-      localStorageMock.setItem('auth', JSON.stringify({ token: 'test-token-12345678' }))
+      mockSecureTokenManager.retrieve.mockResolvedValueOnce('test-token-12345678')
 
       mockFetch.mockResolvedValueOnce({
         ok: true,
