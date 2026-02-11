@@ -9,6 +9,9 @@ let isInitialized = false
 let isChecking = false
 let lastNotifiedScriptUrl: string | null = null
 const SW_UPDATE_DEBUG = import.meta.env.DEV || import.meta.env['VITE_ENABLE_DEBUG'] === 'true'
+let checkIntervalId: ReturnType<typeof setInterval> | null = null
+let visibilityHandler: (() => void) | null = null
+let controllerChangeHandler: (() => void) | null = null
 
 export interface SwUpdateOptions {
   /** 检查更新的间隔时间（毫秒），默认 30 分钟 */
@@ -17,6 +20,32 @@ export interface SwUpdateOptions {
   autoRefresh?: boolean
   /** 是否显示更新提示，默认 true */
   showToast?: boolean
+}
+
+/**
+ * 清理更新检测器（移除监听器/定时器）
+ */
+export function disposeSwUpdateChecker(): void {
+  if (!isInitialized) return
+
+  if (checkIntervalId) {
+    clearInterval(checkIntervalId)
+    checkIntervalId = null
+  }
+
+  if (visibilityHandler) {
+    document.removeEventListener('visibilitychange', visibilityHandler)
+    visibilityHandler = null
+  }
+
+  if (controllerChangeHandler && 'serviceWorker' in navigator) {
+    navigator.serviceWorker.removeEventListener('controllerchange', controllerChangeHandler)
+    controllerChangeHandler = null
+  }
+
+  isInitialized = false
+  isChecking = false
+  lastNotifiedScriptUrl = null
 }
 
 /**
@@ -42,26 +71,28 @@ export function initSwUpdateChecker(options: SwUpdateOptions = {}): void {
   navigator.serviceWorker.ready
     .then(() => {
       // 监听 SW 激活
-      navigator.serviceWorker.addEventListener('controllerchange', () => {
+      controllerChangeHandler = () => {
         if (SW_UPDATE_DEBUG) {
           console.log('[SW Update] New service worker activated')
         }
         if (autoRefresh) {
           window.location.reload()
         }
-      })
+      }
+      navigator.serviceWorker.addEventListener('controllerchange', controllerChangeHandler)
 
       // 定期检查更新
-      setInterval(() => {
+      checkIntervalId = setInterval(() => {
         checkForUpdates(showToast)
       }, checkInterval)
 
       // 页面可见时检查更新
-      document.addEventListener('visibilitychange', () => {
+      visibilityHandler = () => {
         if (document.visibilityState === 'visible') {
           checkForUpdates(showToast)
         }
-      })
+      }
+      document.addEventListener('visibilitychange', visibilityHandler)
 
       // 初始检查
       checkForUpdates(showToast)

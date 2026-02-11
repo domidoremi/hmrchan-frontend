@@ -14,11 +14,11 @@ interface CacheEntry<T> {
 
 class MemoryCache {
   private cache = new Map<string, CacheEntry<unknown>>()
-  private maxSize = 300 // 增加默认容量
+  private maxSize = 150
   private cleanupTimer: ReturnType<typeof setInterval> | null = null
   private readonly CLEANUP_INTERVAL = 60 * 1000 // 每分钟清理一次
-  private readonly MIN_SIZE = 200
-  private readonly MAX_SIZE = 500
+  private readonly MIN_SIZE = 100
+  private readonly MAX_SIZE = 300
   private hitCount = 0
   private missCount = 0
 
@@ -124,6 +124,10 @@ class MemoryCache {
       return undefined
     }
 
+    // LRU: 将命中条目移至 Map 末尾（重新插入）
+    this.cache.delete(key)
+    this.cache.set(key, entry)
+
     this.hitCount++
     cacheStats.recordHit('MEMORY')
     cacheStats.recordResponseTime('MEMORY', performance.now() - startTime)
@@ -184,3 +188,9 @@ class MemoryCache {
 }
 
 export const memoryCache = new MemoryCache()
+
+if (import.meta.hot) {
+  import.meta.hot.dispose(() => {
+    memoryCache.stopCleanupTimer()
+  })
+}

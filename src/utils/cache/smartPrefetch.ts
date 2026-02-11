@@ -3,7 +3,7 @@
  * 基于用户行为预加载常访问内容
  */
 
-import { idbGet, idbSet, idbGetAll, idbClear, idbDelete, STORES } from './idb'
+import { idbGet, idbSet, idbGetAll, idbClear, idbDelete, idbCount, STORES } from './idb'
 import { prefetchPostDetail } from '../prefetch'
 
 interface AccessRecord {
@@ -144,15 +144,17 @@ export async function prefetchRelatedContent(
  * 清理旧的访问记录
  */
 async function cleanupOldRecords(): Promise<void> {
-  const records = await idbGetAll<AccessRecord>(ACCESS_STORE)
-
-  if (records.length <= MAX_RECORDS) {
+  // 先检查记录数量，避免不必要的全量读取
+  const count = await idbCount(ACCESS_STORE)
+  if (count <= MAX_RECORDS) {
     return
   }
 
+  const records = await idbGetAll<AccessRecord>(ACCESS_STORE)
+
   // 按最后访问时间排序，删除最旧的
   records.sort((a, b) => a.lastAccess - b.lastAccess)
-  const toDelete = records.slice(0, records.length - MAX_RECORDS)
+  const toDelete = records.slice(0, count - MAX_RECORDS)
 
   await Promise.all(toDelete.map((record) => idbDelete(ACCESS_STORE, record.id)))
 }

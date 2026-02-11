@@ -47,6 +47,7 @@ export function batchInsertNodes(parent: Element, createNodes: () => Node[]): vo
 export class LayoutCache {
   private cache = new Map<string, { value: unknown; timestamp: number }>()
   private maxAge = 16 // 约一帧的时间 (ms)
+  private maxSize = 100 // 防止快速调用时无限增长
 
   get<T>(key: string, getter: () => T): T {
     const cached = this.cache.get(key)
@@ -54,6 +55,12 @@ export class LayoutCache {
 
     if (cached && now - cached.timestamp < this.maxAge) {
       return cached.value as T
+    }
+
+    // 容量保护：淘汰最旧条目
+    if (this.cache.size >= this.maxSize) {
+      const oldest = this.cache.keys().next().value
+      if (oldest !== undefined) this.cache.delete(oldest)
     }
 
     const value = getter()

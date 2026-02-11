@@ -8,6 +8,23 @@ interface PrefetchOptions {
   timeout?: number
 }
 
+let hoverPrefetchAttached = false
+let hoverHandler: ((e: MouseEvent) => void) | null = null
+let hoverTimer: number | null = null
+
+export function disposeHoverPrefetch(): void {
+  if (!hoverPrefetchAttached) return
+  if (hoverHandler) {
+    document.removeEventListener('mouseover', hoverHandler)
+    hoverHandler = null
+  }
+  if (hoverTimer) {
+    clearTimeout(hoverTimer)
+    hoverTimer = null
+  }
+  hoverPrefetchAttached = false
+}
+
 // Configuration constants
 const DEFAULT_TIMEOUT_MS = 2000 // 2 seconds for requestIdleCallback
 const IDLE_TIMEOUT_MS = 100 // Fallback timeout for browsers without requestIdleCallback
@@ -155,41 +172,40 @@ function executePrefetch(): void {
  */
 export function setupHoverPrefetch(): void {
   if (typeof document === 'undefined') return
+  if (hoverPrefetchAttached) return
+  hoverPrefetchAttached = true
 
-  let hoverTimer: number | null = null
   const HOVER_DELAY = 100 // 延迟 100ms 后预加载，避免快速划过时触发
 
-  document.addEventListener(
-    'mouseover',
-    (e) => {
-      const target = e.target as HTMLElement
-      const link = target.closest('a[href]') as HTMLAnchorElement | null
+  hoverHandler = (e: MouseEvent) => {
+    const target = e.target as HTMLElement
+    const link = target.closest('a[href]') as HTMLAnchorElement | null
 
-      if (!link || !link.href) return
+    if (!link || !link.href) return
 
-      // 只处理内部链接
-      if (link.origin !== window.location.origin) return
+    // 只处理内部链接
+    if (link.origin !== window.location.origin) return
 
-      // 清除之前的定时器
-      if (hoverTimer) {
-        clearTimeout(hoverTimer)
-      }
+    // 清除之前的定时器
+    if (hoverTimer) {
+      clearTimeout(hoverTimer)
+    }
 
-      // 延迟后预加载，避免快速划过时触发
-      hoverTimer = window.setTimeout(() => {
-        const path = new URL(link.href).pathname
-        const routeName = getRouteNameFromPath(path)
+    // 延迟后预加载，避免快速划过时触发
+    hoverTimer = window.setTimeout(() => {
+      const path = new URL(link.href).pathname
+      const routeName = getRouteNameFromPath(path)
 
-        if (routeName) {
-          const importFn = getRouteImportFn(routeName)
-          if (importFn) {
-            prefetchRoute(routeName, importFn, { priority: 'high' })
-          }
+      if (routeName) {
+        const importFn = getRouteImportFn(routeName)
+        if (importFn) {
+          prefetchRoute(routeName, importFn, { priority: 'high' })
         }
-      }, HOVER_DELAY)
-    },
-    { passive: true }
-  )
+      }
+    }, HOVER_DELAY)
+  }
+
+  document.addEventListener('mouseover', hoverHandler, { passive: true })
 }
 
 // 路由配置映射 - 单一数据源

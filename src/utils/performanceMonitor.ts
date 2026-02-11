@@ -13,6 +13,15 @@ interface PerformanceMetrics {
 }
 
 const metrics: PerformanceMetrics = {}
+let isInitialized = false
+let lcpObserver: PerformanceObserver | null = null
+let fidObserver: PerformanceObserver | null = null
+let clsObserver: PerformanceObserver | null = null
+let fcpObserver: PerformanceObserver | null = null
+let longTaskObserver: PerformanceObserver | null = null
+let resourceObserver: PerformanceObserver | null = null
+let visibilityHandler: (() => void) | null = null
+let ttiLoadHandler: (() => void) | null = null
 
 /**
  * 监控 LCP (Largest Contentful Paint)
@@ -30,8 +39,13 @@ function observeLCP(): void {
       if (import.meta.env.DEV) {
         console.log('LCP:', metrics.lcp, 'ms')
       }
+
+      // 一次性指标，采集后断开以释放内存
+      observer.disconnect()
+      lcpObserver = null
     })
 
+    lcpObserver = observer
     observer.observe({ type: 'largest-contentful-paint', buffered: true })
   } catch {
     // 某些浏览器可能不支持
@@ -56,8 +70,14 @@ function observeFID(): void {
       if (import.meta.env.DEV) {
         console.log('FID:', metrics.fid, 'ms')
       }
+
+      // 一次性指标，采集后断开
+      observer.disconnect()
+      fcpObserver = null
+      fidObserver = null
     })
 
+    fidObserver = observer
     observer.observe({ type: 'first-input', buffered: true })
   } catch {
     // 某些浏览器可能不支持
@@ -87,6 +107,7 @@ function observeCLS(): void {
         console.log('CLS:', metrics.cls.toFixed(4))
       }
     })
+    clsObserver = observer
 
     observer.observe({ type: 'layout-shift', buffered: true })
   } catch {
@@ -112,8 +133,12 @@ function observeFCP(): void {
           console.log('FCP:', metrics.fcp, 'ms')
         }
       }
+
+      // 一次性指标，采集后断开
+      observer.disconnect()
     })
 
+    fcpObserver = observer
     observer.observe({ type: 'paint', buffered: true })
   } catch {
     // 某些浏览器可能不支持
@@ -151,29 +176,29 @@ function estimateTTI(): void {
   if (!('performance' in window)) return
 
   // 使用 load 事件作为 TTI 的近似值
-  window.addEventListener(
-    'load',
-    () => {
-      setTimeout(() => {
-        try {
-          const navigationEntry = performance.getEntriesByType(
-            'navigation'
-          )[0] as PerformanceNavigationTiming
+  ttiLoadHandler = () => {
+    setTimeout(() => {
+      try {
+        const navigationEntry = performance.getEntriesByType(
+          'navigation'
+        )[0] as PerformanceNavigationTiming
 
-          if (navigationEntry) {
-            metrics.tti = navigationEntry.loadEventEnd - navigationEntry.fetchStart
+        if (navigationEntry) {
+          metrics.tti = navigationEntry.loadEventEnd - navigationEntry.fetchStart
 
-            if (import.meta.env.DEV) {
-              console.log('TTI (estimated):', metrics.tti, 'ms')
-            }
+          if (import.meta.env.DEV) {
+            console.log('TTI (estimated):', metrics.tti, 'ms')
           }
-        } catch {
-          // Fallback silently if API not supported
         }
-      }, 0)
-    },
-    { once: true }
-  )
+      } catch {
+        // Fallback silently if API not supported
+      } finally {
+        ttiLoadHandler = null
+      }
+    }, 0)
+  }
+
+  window.addEventListener('load', ttiLoadHandler, { once: true })
 }
 
 /**
@@ -208,6 +233,7 @@ function observeLongTasks(): void {
       }
     })
 
+    longTaskObserver = observer
     observer.observe({ type: 'longtask', buffered: true })
   } catch {
     // 某些浏览器可能不支持
@@ -236,6 +262,7 @@ function observeResourceTiming(): void {
       }
     })
 
+    resourceObserver = observer
     observer.observe({ type: 'resource', buffered: true })
   } catch {
     // 某些浏览器可能不支持
@@ -255,6 +282,8 @@ export function getMetrics(): PerformanceMetrics {
 export function initPerformanceMonitoring(): void {
   // 只在浏览器环境中运行
   if (typeof window === 'undefined') return
+  if (isInitialized) return
+  isInitialized = true
 
   observeLCP()
   observeFID()
@@ -270,7 +299,7 @@ export function initPerformanceMonitoring(): void {
   }
 
   // 页面卸载时上报指标（生产环境可以发送到分析服务）
-  window.addEventListener('visibilitychange', () => {
+  visibilityHandler = () => {
     if (document.visibilityState === 'hidden') {
       const finalMetrics = getMetrics()
 
@@ -281,7 +310,38 @@ export function initPerformanceMonitoring(): void {
       // 生产环境可以在这里上报到分析服务
       // sendToAnalytics(finalMetrics)
     }
-  })
+  }
+
+  window.addEventListener('visibilitychange', visibilityHandler)
+}
+
+export function disposePerformanceMonitoring(): void {
+  if (typeof window === 'undefined') return
+  if (!isInitialized) return
+
+  lcpObserver?.disconnect()
+  fidObserver?.disconnect()
+  clsObserver?.disconnect()
+  fcpObserver?.disconnect()
+  longTaskObserver?.disconnect()
+  resourceObserver?.disconnect()
+  lcpObserver = null
+  fidObserver = null
+  clsObserver = null
+  fcpObserver = null
+  longTaskObserver = null
+  resourceObserver = null
+
+  if (visibilityHandler) {
+    window.removeEventListener('visibilitychange', visibilityHandler)
+    visibilityHandler = null
+  }
+  if (ttiLoadHandler) {
+    window.removeEventListener('load', ttiLoadHandler)
+    ttiLoadHandler = null
+  }
+
+  isInitialized = false
 }
 
 /**
