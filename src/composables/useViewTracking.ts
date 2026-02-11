@@ -90,15 +90,16 @@ export async function trackPostView(postId: string, isAuthenticated: boolean): P
  */
 export async function cleanupViewRecords(): Promise<number> {
   try {
-    const allRecords = await import('@/utils/cache/idb').then((m) =>
-      m.idbGetAll<ViewRecord>(STORES.META)
+    const { idbGetAll: getAllRecords, idbDelete: deleteRecord } = await import(
+      '@/utils/cache/idb'
     )
+    const allRecords = await getAllRecords<ViewRecord>(STORES.META)
     const expireTime = Date.now() - VIEW_RECORD_TTL
     let cleaned = 0
 
     for (const record of allRecords) {
       if (record.key?.startsWith('viewed:') && record.viewedAt < expireTime) {
-        await import('@/utils/cache/idb').then((m) => m.idbDelete(STORES.META, record.key))
+        await deleteRecord(STORES.META, record.key)
         cleaned++
       }
     }
