@@ -45,15 +45,10 @@ class ThumbnailCache {
   set(mediaId: string, url: string, size: 'small' | 'medium' | 'large' = 'medium'): void {
     const key = this.buildKey(mediaId, size)
 
-    // 如果缓存已满，删除最旧的条目
+    // 如果缓存已满，FIFO 淘汰最旧条目（Map 迭代顺序即插入顺序）
     if (this.cache.size >= this.maxSize) {
-      const entries = Array.from(this.cache.entries()).sort(
-        (a, b) => a[1].timestamp - b[1].timestamp
-      )
-      const oldestEntry = entries[0]
-      if (oldestEntry) {
-        this.cache.delete(oldestEntry[0])
-      }
+      const oldestKey = this.cache.keys().next().value
+      if (oldestKey !== undefined) this.cache.delete(oldestKey)
     }
 
     this.cache.set(key, {
@@ -117,4 +112,10 @@ export function stopThumbnailCacheCleanup(): void {
     clearInterval(cleanupInterval)
     cleanupInterval = null
   }
+}
+
+if (import.meta.hot) {
+  import.meta.hot.dispose(() => {
+    stopThumbnailCacheCleanup()
+  })
 }

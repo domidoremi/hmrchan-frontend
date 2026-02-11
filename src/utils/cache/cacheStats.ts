@@ -179,13 +179,21 @@ export const cacheStats = new CacheStatsCollector()
 
 // 在开发环境下，每 30 秒打印一次报告
 if (import.meta.env.DEV && import.meta.env['VITE_ENABLE_DEBUG'] === 'true') {
-  setInterval(() => {
+  const reportInterval: ReturnType<typeof setInterval> | null = setInterval(() => {
     cacheStats.printReport()
   }, 30000)
+
+  if (import.meta.hot) {
+    import.meta.hot.dispose(() => {
+      if (reportInterval) {
+        clearInterval(reportInterval)
+      }
+    })
+  }
 }
 
-// 暴露到全局，方便在控制台调试
-if (typeof window !== 'undefined') {
+// 仅在调试模式下暴露到全局，避免生产环境占用
+if (typeof window !== 'undefined' && import.meta.env['VITE_ENABLE_DEBUG'] === 'true') {
   interface WindowWithCacheStats extends Window {
     __cacheStats?: CacheStatsCollector
   }
