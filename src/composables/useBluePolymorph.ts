@@ -1,4 +1,13 @@
-import { ref, computed, watch, onMounted, onBeforeUnmount, type Ref } from 'vue'
+import {
+  ref,
+  computed,
+  watch,
+  onMounted,
+  onBeforeUnmount,
+  onActivated,
+  onDeactivated,
+  type Ref,
+} from 'vue'
 import { prefersReducedMotion } from '@/utils/performance'
 
 export type PlatformMorphState = 'all' | 'instagram' | 'tiktok' | 'youtube' | 'twitter'
@@ -73,6 +82,7 @@ export function useBluePolymorph(
   const shouldAnimate = computed(() => enabled.value && !prefersReducedMotion())
 
   let animationFrameId: number | null = null
+  let isActive = true
 
   /**
    * 清理动画资源
@@ -92,21 +102,20 @@ export function useBluePolymorph(
 
     // 清理之前的动画
     cleanupAnimation()
-
-    isTransitioning.value = true
-    morphProgress.value = 0
     currentMorph.value = newState
 
-    const config = MORPH_CONFIGS[newState]
-    const duration = config.duration * 1000
-
-    if (!shouldAnimate.value) {
-      // 无动画模式：立即完成
+    if (!isActive || !shouldAnimate.value) {
       morphProgress.value = 1
       isTransitioning.value = false
       onMorphComplete?.(newState)
       return
     }
+
+    isTransitioning.value = true
+    morphProgress.value = 0
+
+    const config = MORPH_CONFIGS[newState]
+    const duration = config.duration * 1000
 
     // 动画进度更新
     const startTime = Date.now()
@@ -157,6 +166,18 @@ export function useBluePolymorph(
   onMounted(() => {
     // 初始化为当前平台状态
     currentMorph.value = currentPlatform.value
+  })
+  onActivated(() => {
+    isActive = true
+  })
+
+  onDeactivated(() => {
+    isActive = false
+    cleanupAnimation()
+    if (isTransitioning.value) {
+      morphProgress.value = 1
+      isTransitioning.value = false
+    }
   })
 
   onBeforeUnmount(() => {

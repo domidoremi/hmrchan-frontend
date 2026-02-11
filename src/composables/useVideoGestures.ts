@@ -71,6 +71,9 @@ export function useVideoGestures(options: GestureOptions) {
   const seekDirection = ref<'forward' | 'backward'>('forward')
 
   let indicatorTimeout: ReturnType<typeof setTimeout> | null = null
+  // Save the container element when listeners are attached so cleanup
+  // can reference it even if the ref becomes null during unmount.
+  let boundContainer: HTMLElement | null = null
 
   /**
    * 显示指示器
@@ -232,6 +235,7 @@ export function useVideoGestures(options: GestureOptions) {
     if (!containerRef.value) return
 
     const container = containerRef.value
+    boundContainer = container
 
     // 手写笔事件（Pointer Events）
     if ('PointerEvent' in window) {
@@ -258,9 +262,10 @@ export function useVideoGestures(options: GestureOptions) {
    * 清理事件监听
    */
   function cleanupListeners() {
-    if (!containerRef.value) return
-
-    const container = containerRef.value
+    // Use the saved container reference to ensure cleanup works even if
+    // the ref has already been nulled during component unmount.
+    const container = boundContainer ?? containerRef.value
+    if (!container) return
 
     container.removeEventListener('touchstart', handleStart as EventListener)
     container.removeEventListener('touchmove', handleMove as EventListener)
@@ -278,8 +283,11 @@ export function useVideoGestures(options: GestureOptions) {
       container.removeEventListener('pointercancel', handleEnd)
     }
 
+    boundContainer = null
+
     if (indicatorTimeout) {
       clearTimeout(indicatorTimeout)
+      indicatorTimeout = null
     }
   }
 

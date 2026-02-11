@@ -138,7 +138,16 @@
 <script setup lang="ts">
 defineOptions({ name: 'ExplorePage' })
 
-import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
+import {
+  ref,
+  computed,
+  onMounted,
+  onBeforeUnmount,
+  onActivated,
+  onDeactivated,
+  watch,
+  nextTick,
+} from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
@@ -235,6 +244,7 @@ const {
 } = useProgressiveRender(posts, { initialCount: initialRenderCount, batchSize: 12 })
 
 const lastVisibleCount = ref(0)
+let isActive = true
 
 const hasMoreForUi = computed(() => hasMore.value || hasMoreToRender.value)
 
@@ -448,6 +458,7 @@ function updateMasonryLayout(items: PostListItem[], reset = false) {
 // 响应式调整列数 - 使用 ResizeObserver 监听容器而非 window
 let resizeObserver: ResizeObserver | null = null
 let lastContainerWidth = 0
+let cachedHeightsRaf: number | null = null
 
 /**
  * 处理容器 resize - 使用 ResizeObserver 替代 window resize
@@ -470,6 +481,20 @@ const handleContainerResize = throttleRAF((width: number) => {
 function detachResizeObserver() {
   resizeObserver?.disconnect()
   resizeObserver = null
+}
+function attachGlobalListeners() {
+  window.addEventListener('keydown', onGlobalKeydown)
+}
+
+function detachGlobalListeners() {
+  window.removeEventListener('keydown', onGlobalKeydown)
+}
+
+function cancelCachedHeightsRaf() {
+  if (cachedHeightsRaf !== null) {
+    cancelAnimationFrame(cachedHeightsRaf)
+    cachedHeightsRaf = null
+  }
 }
 
 function attachResizeObserver(el: HTMLElement) {
@@ -508,7 +533,9 @@ function applyVisiblePosts(reset = false) {
 }
 
 function updateCachedColumnHeights() {
-  requestAnimationFrame(() => {
+  cancelCachedHeightsRaf()
+  cachedHeightsRaf = requestAnimationFrame(() => {
+    cachedHeightsRaf = null
     cachedColumnHeights.value = columnRefs.value.map((el) => el?.offsetHeight || 0)
   })
 }
@@ -543,9 +570,10 @@ onMounted(() => {
     })
   }
 
-  window.addEventListener('keydown', onGlobalKeydown)
-
-  // ResizeObserver will be attached by watcher below.
+  attachGlobalListeners()
+  if (masonryContainerRef.value) {
+    attachResizeObserver(masonryContainerRef.value)
+  }
 })
 
 watch(
@@ -555,16 +583,38 @@ watch(
       detachResizeObserver()
       return
     }
+    if (!isActive) {
+      detachResizeObserver()
+      return
+    }
     attachResizeObserver(el)
   },
   { immediate: true }
 )
+onActivated(() => {
+  isActive = true
+  attachGlobalListeners()
+  if (masonryContainerRef.value) {
+    attachResizeObserver(masonryContainerRef.value)
+  }
+})
 
-onBeforeUnmount(() => {
-  window.removeEventListener('keydown', onGlobalKeydown)
+onDeactivated(() => {
+  isActive = false
+  detachGlobalListeners()
   detachResizeObserver()
   handleContainerResize.cancel?.()
   handleCardHeightChange.cancel?.()
+  cancelCachedHeightsRaf()
+})
+
+onBeforeUnmount(() => {
+  isActive = false
+  detachGlobalListeners()
+  detachResizeObserver()
+  handleContainerResize.cancel?.()
+  handleCardHeightChange.cancel?.()
+  cancelCachedHeightsRaf()
 })
 </script>
 

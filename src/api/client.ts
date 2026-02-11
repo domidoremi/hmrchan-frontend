@@ -369,14 +369,18 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
 
         if (newToken) {
           onTokenRefreshed(newToken)
-          // 使用新 token 重试请求
+          // 使用新 token 重试请求（带超时保护）
           ;(headers as Record<string, string>)['Authorization'] = `Bearer ${newToken}`
+          const retryController = new AbortController()
+          const retryTimeoutId = setTimeout(() => retryController.abort(), timeout)
           const retryResponse = await fetch(url, {
             ...fetchConfig,
             body: body ?? null,
             headers,
             credentials: 'include',
+            signal: retryController.signal,
           })
+          clearTimeout(retryTimeoutId)
 
           if (!retryResponse.ok) {
             await handleErrorResponse(retryResponse, skipErrorToast)
@@ -401,6 +405,8 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
         // 等待 token 刷新完成后重试
         return new Promise<T>((resolve, reject) => {
           subscribeTokenRefresh(async (token) => {
+            const subRetryController = new AbortController()
+            const subRetryTimeoutId = setTimeout(() => subRetryController.abort(), timeout)
             try {
               ;(headers as Record<string, string>)['Authorization'] = `Bearer ${token}`
               const retryResponse = await fetch(url, {
@@ -408,7 +414,9 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
                 body: body ?? null,
                 headers,
                 credentials: 'include',
+                signal: subRetryController.signal,
               })
+              clearTimeout(subRetryTimeoutId)
 
               if (!retryResponse.ok) {
                 await handleErrorResponse(retryResponse, skipErrorToast)
@@ -422,6 +430,7 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
               const retryData = await retryResponse.json()
               resolve(retryData)
             } catch (error) {
+              clearTimeout(subRetryTimeoutId)
               reject(error)
             }
           }, reject)
