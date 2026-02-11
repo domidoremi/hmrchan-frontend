@@ -27,6 +27,9 @@ const emit = defineEmits<{
 
 const containerRef = ref<HTMLDivElement | null>(null)
 const widgetId = ref<string | null>(null)
+let isUnmounted = false
+let previousOnloadHandler: (() => void) | null = null
+let turnstileOnloadHandler: (() => void) | null = null
 
 declare global {
   interface Window {
@@ -96,9 +99,12 @@ function loadTurnstileScript(): Promise<void> {
     script.async = true
     script.defer = true
 
-    window.onTurnstileLoad = () => {
+    previousOnloadHandler = window.onTurnstileLoad ?? null
+    turnstileOnloadHandler = () => {
+      previousOnloadHandler?.()
       waitForTurnstile()
     }
+    window.onTurnstileLoad = turnstileOnloadHandler
     script.onerror = () => reject(new Error('Failed to load Turnstile script'))
 
     document.head.appendChild(script)
@@ -213,6 +219,7 @@ onMounted(async () => {
 
     // 等待下一个 tick 确保 DOM 完全准备好
     await new Promise((resolve) => setTimeout(resolve, 100))
+    if (isUnmounted) return
 
     renderWidget()
   } catch (error) {
@@ -222,7 +229,11 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
+  isUnmounted = true
   cleanupWidget()
+  if (turnstileOnloadHandler && window.onTurnstileLoad === turnstileOnloadHandler) {
+    window.onTurnstileLoad = previousOnloadHandler ?? undefined
+  }
 })
 
 watch(
