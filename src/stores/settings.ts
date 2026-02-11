@@ -8,6 +8,23 @@ import { defineStore } from 'pinia'
 export type AnimationIntensity = 'none' | 'reduced' | 'normal' | 'full'
 export type UiStyle = 'ios' | 'material'
 
+/** 背景粒子效果类型 */
+export type ParticleEffectType = 'none' | 'rain' | 'snow' | 'stars'
+
+/** 粒子效果自定义参数 */
+export interface ParticleEffectConfig {
+  /** 效果类型 */
+  type: ParticleEffectType
+  /** 粒子密度 0.1–1（默认 0.5）。实际数量 = density × 基准数量 */
+  density: number
+  /** 速度倍率 0.2–2（默认 1） */
+  speed: number
+  /** 自定义颜色（CSS 颜色值，空字符串表示使用主题默认色） */
+  color: string
+  /** 粒子透明度 0.1–1（默认 0.6） */
+  opacity: number
+}
+
 export interface Settings {
   showHeroSection: boolean
   enableAnimations: boolean
@@ -20,6 +37,8 @@ export interface Settings {
   postDetailViewMode: 'stream' | 'data'
   /** UI 风格（默认圆润；可切换棱角） */
   uiStyle: UiStyle
+  /** 全局背景粒子效果 */
+  backgroundEffect: ParticleEffectConfig
 }
 
 const defaultSettings: Settings = {
@@ -31,6 +50,13 @@ const defaultSettings: Settings = {
   animationIntensity: 'normal',
   postDetailViewMode: 'stream',
   uiStyle: 'ios',
+  backgroundEffect: {
+    type: 'none',
+    density: 0.5,
+    speed: 1,
+    color: '',
+    opacity: 0.6,
+  },
 }
 
 export const useSettingsStore = defineStore(
@@ -43,6 +69,9 @@ export const useSettingsStore = defineStore(
       settings,
       (next) => {
         if (!next.uiStyle) next.uiStyle = 'ios'
+        if (!next.backgroundEffect) {
+          next.backgroundEffect = { ...defaultSettings.backgroundEffect }
+        }
       },
       { immediate: true, deep: true }
     )
@@ -105,8 +134,18 @@ export const useSettingsStore = defineStore(
       settings.value.uiStyle = style
     }
 
+    function setBackgroundEffect(config: Partial<ParticleEffectConfig>) {
+      settings.value.backgroundEffect = {
+        ...settings.value.backgroundEffect,
+        ...config,
+      }
+    }
+
     function resetSettings() {
-      settings.value = { ...defaultSettings }
+      settings.value = {
+        ...defaultSettings,
+        backgroundEffect: { ...defaultSettings.backgroundEffect },
+      }
     }
 
     return {
@@ -118,6 +157,7 @@ export const useSettingsStore = defineStore(
       toggleSetting,
       setAnimationIntensity,
       setUiStyle,
+      setBackgroundEffect,
       resetSettings,
     }
   },
