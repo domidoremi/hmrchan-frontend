@@ -22,20 +22,6 @@
           </Button>
         </div>
       </div>
-      <div class="profile-insights">
-        <div class="insight-card glass-card">
-          <div class="insight-label">{{ $t('profile.insights.activity') }}</div>
-          <div class="insight-value">{{ $t('profile.insights.activityValue') }}</div>
-        </div>
-        <div class="insight-card glass-card">
-          <div class="insight-label">{{ $t('profile.insights.favorites') }}</div>
-          <div class="insight-value">{{ $t('profile.insights.favoritesValue') }}</div>
-        </div>
-        <div class="insight-card glass-card">
-          <div class="insight-label">{{ $t('profile.insights.security') }}</div>
-          <div class="insight-value">{{ $t('profile.insights.securityValue') }}</div>
-        </div>
-      </div>
 
       <Card class="profile-tabs" variant="subtle">
         <template #header>
@@ -202,36 +188,6 @@ onMounted(() => {
   overflow: hidden;
 }
 
-.profile-insights {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--spacing-3);
-  margin-bottom: var(--spacing-4);
-}
-
-.insight-card {
-  padding: var(--spacing-3);
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--glass-border);
-  background: var(--glass-bg);
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-1);
-}
-
-.insight-label {
-  font-size: var(--text-xs);
-  color: var(--color-text-tertiary);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-
-.insight-value {
-  font-size: var(--text-lg);
-  font-weight: var(--font-semibold);
-  color: var(--color-text-primary);
-}
-
 .tabs-header {
   display: flex;
   align-items: center;
@@ -279,10 +235,6 @@ onMounted(() => {
   .tabs-header {
     flex-direction: column;
     align-items: flex-start;
-  }
-
-  .profile-insights {
-    grid-template-columns: 1fr;
   }
 }
 
