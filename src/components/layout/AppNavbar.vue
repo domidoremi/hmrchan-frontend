@@ -656,7 +656,6 @@ onUnmounted(() => {
   if (typeof document !== 'undefined') {
     document.documentElement.style.setProperty('--navbar-visible-height', '')
   }
-
 })
 </script>
 
