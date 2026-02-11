@@ -311,7 +311,6 @@ function onSheetPointerDown(e: PointerEvent) {
   onHandlePointerDown(e)
 }
 
-
 function onKeydown(e: KeyboardEvent) {
   if (e.key === 'Escape') requestClose()
 }

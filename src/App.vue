@@ -86,6 +86,8 @@ const uiStyle = computed(() => settings.value.uiStyle)
 const cachedPages = ref<string[]>(['HomePage', 'ExplorePage'])
 const pageVisitCount = new Map<string, number>()
 const MAX_CACHED_PAGES = 10
+/** 限制 pageVisitCount 不超过路由数量（避免无限增长） */
+const MAX_VISIT_ENTRIES = 50
 
 // 记录页面访问
 watch(
@@ -96,6 +98,12 @@ watch(
     const pageName = String(newName)
     const count = pageVisitCount.get(pageName) || 0
     pageVisitCount.set(pageName, count + 1)
+
+    // 淘汰最早的访问记录，防止 Map 无限增长
+    if (pageVisitCount.size > MAX_VISIT_ENTRIES) {
+      const oldest = pageVisitCount.keys().next().value
+      if (oldest !== undefined) pageVisitCount.delete(oldest)
+    }
 
     // 访问超过 2 次的页面加入缓存
     if (count >= 1 && !cachedPages.value.includes(pageName)) {

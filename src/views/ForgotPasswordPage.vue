@@ -83,7 +83,7 @@
 <script setup lang="ts">
 defineOptions({ name: 'ForgotPasswordPage' })
 
-import { ref } from 'vue'
+import { ref, onUnmounted } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { ArrowLeft, Mail } from 'lucide-vue-next'
@@ -129,6 +129,13 @@ function startCooldown() {
     }
   }, 1000)
 }
+
+onUnmounted(() => {
+  if (cooldownTimer) {
+    clearInterval(cooldownTimer)
+    cooldownTimer = null
+  }
+})
 
 async function handleSubmit() {
   if (!email.value) {
