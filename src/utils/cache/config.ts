@@ -42,8 +42,8 @@ export const CACHE_TTL = {
 // ============================================
 
 export const CACHE_LIMITS = {
-  /** 内存缓存最大条目数（增加容量以支持更多并发浏览）*/
-  MEMORY_MAX_SIZE: 300,
+  /** 内存缓存最大条目数 */
+  MEMORY_MAX_SIZE: 150,
   /** SW 媒体缓存最大条目数 */
   SW_MEDIA_MAX_SIZE: 500,
   /** SW API 缓存最大条目数 */

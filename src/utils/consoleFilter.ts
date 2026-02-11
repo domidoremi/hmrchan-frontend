@@ -12,6 +12,8 @@
 declare global {
   interface Window {
     __restoreConsole?: () => void
+    __consoleFilterApplied?: boolean
+    __originalConsole?: OriginalConsole
   }
 }
 
@@ -104,14 +106,17 @@ function argsToString(args: unknown[]): string {
 export function initConsoleFilter(): void {
   // 只在浏览器环境中运行
   if (typeof window === 'undefined') return
+  if (window.__consoleFilterApplied) return
 
   // 保存原始的控制台方法
-  const originalConsole: OriginalConsole = {
-    log: console.log.bind(console),
-    warn: console.warn.bind(console),
-    error: console.error.bind(console),
-    info: console.info.bind(console),
-  }
+  const originalConsole: OriginalConsole =
+    window.__originalConsole ?? {
+      log: console.log.bind(console),
+      warn: console.warn.bind(console),
+      error: console.error.bind(console),
+      info: console.info.bind(console),
+    }
+  window.__originalConsole = originalConsole
 
   // 创建过滤包装器
   function createFilteredMethod(method: ConsoleMethod): (...args: unknown[]) => void {
@@ -133,6 +138,7 @@ export function initConsoleFilter(): void {
   methods.forEach((method) => {
     console[method] = createFilteredMethod(method)
   })
+  window.__consoleFilterApplied = true
 
   // 开发环境下提供恢复方法
   if (import.meta.env.DEV) {
@@ -140,9 +146,24 @@ export function initConsoleFilter(): void {
       methods.forEach((method) => {
         console[method] = originalConsole[method]
       })
+      window.__consoleFilterApplied = false
       console.log('✅ Console filter removed. Original console methods restored.')
     }
 
     console.log('🔇 Cloudflare console filter enabled. Call window.__restoreConsole() to disable.')
   }
+}
+
+export function disposeConsoleFilter(): void {
+  if (typeof window === 'undefined') return
+  if (!window.__consoleFilterApplied) return
+
+  const originalConsole = window.__originalConsole
+  if (!originalConsole) return
+
+  const methods: ConsoleMethod[] = ['log', 'warn', 'error', 'info']
+  methods.forEach((method) => {
+    console[method] = originalConsole[method]
+  })
+  window.__consoleFilterApplied = false
 }
