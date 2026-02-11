@@ -223,7 +223,6 @@ function handleBlur() {
 
 function handleClose() {
   query.value = ''
-  void syncRouteQuery('')
   isFocused.value = false
   isExpanded.value = false
   inputRef.value?.blur()
@@ -232,7 +231,6 @@ function handleClose() {
 function clearQuery() {
   query.value = ''
   suggestions.value = []
-  void syncRouteQuery('')
   inputRef.value?.focus()
 }
 
@@ -252,21 +250,10 @@ const fetchSuggestions = debounce(async (q: string) => {
   }
 }, 300)
 
-const syncRouteQuery = debounce(async (term: string) => {
-  // Keep URL in sync with input for better UX and shareable links.
-  // Use replace to avoid polluting browser history on every keystroke.
-  const q = term.trim()
-  try {
-    await router.replace({ name: 'search', query: q ? { q } : {} })
-  } catch {
-    // ignore
-  }
-}, 300)
 
 function handleInput() {
   selectedIndex.value = -1
   fetchSuggestions(query.value)
-  void syncRouteQuery(query.value)
 }
 
 async function handleSearch() {

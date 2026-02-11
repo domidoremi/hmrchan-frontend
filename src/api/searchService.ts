@@ -88,21 +88,24 @@ export const searchService = {
       }
     )
 
+    let suggestions: SearchSuggestion[]
+
     // Handle array response (direct suggestions)
     if (Array.isArray(result)) {
-      return result
-    }
-
-    // Handle object response (wrapped suggestions)
-    if (
+      suggestions = result
+    } else if (
       result &&
       typeof result === 'object' &&
       'results' in result &&
       Array.isArray(result.results)
     ) {
-      return result.results
+      // Handle object response (wrapped suggestions)
+      suggestions = result.results
+    } else {
+      return []
     }
 
-    return []
+    // Filter out suggestions with empty or whitespace-only text
+    return suggestions.filter((s) => s.text && s.text.trim().length > 0)
   },
 }
