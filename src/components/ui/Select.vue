@@ -56,7 +56,7 @@ function handleChange(event: Event) {
   width: 100%;
   border-radius: var(--radius);
   border: 1px solid var(--glass-border);
-  background: var(--glass-bg-light);
+  background-color: var(--glass-bg-light);
   color: var(--color-foreground);
   font-size: var(--text-sm);
   appearance: none;
@@ -71,6 +71,17 @@ function handleChange(event: Event) {
     calc(100% - 13px) 50%;
   background-size: 6px 6px;
   background-repeat: no-repeat;
+}
+
+.ui-select option {
+  background-color: var(--color-background, #fff);
+  color: var(--color-foreground, #000);
+  padding: 0.5rem;
+}
+
+[data-theme='dark'] .ui-select option {
+  background-color: var(--color-background, #1a1a2e);
+  color: var(--color-foreground, #e0e0e0);
 }
 
 .ui-select:hover:not(:disabled) {
