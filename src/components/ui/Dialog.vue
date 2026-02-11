@@ -66,17 +66,8 @@ import { computed, watch, onMounted, onUnmounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { X } from 'lucide-vue-next'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
+import { lockBodyScroll, unlockBodyScroll } from '@/utils/bodyScrollLock'
 
-/* ── ref-counted body scroll lock ── */
-let lockCount = 0
-function lockScroll() {
-  lockCount++
-  if (lockCount === 1) document.body.style.overflow = 'hidden'
-}
-function unlockScroll() {
-  lockCount = Math.max(0, lockCount - 1)
-  if (lockCount === 0) document.body.style.overflow = ''
-}
 
 defineOptions({ name: 'UiDialog' })
 
@@ -203,19 +194,19 @@ function handleKeydown(event: KeyboardEvent) {
 watch(
   () => props.isOpen,
   (isOpen, wasOpen) => {
-    if (isOpen && !wasOpen) lockScroll()
-    if (!isOpen && wasOpen) unlockScroll()
+    if (isOpen && !wasOpen) lockBodyScroll()
+    if (!isOpen && wasOpen) unlockBodyScroll()
   }
 )
 
 onMounted(() => {
   document.addEventListener('keydown', handleKeydown)
-  if (props.isOpen) lockScroll()
+  if (props.isOpen) lockBodyScroll()
 })
 
 onUnmounted(() => {
   document.removeEventListener('keydown', handleKeydown)
-  if (props.isOpen) unlockScroll()
+  if (props.isOpen) unlockBodyScroll()
 })
 </script>
 

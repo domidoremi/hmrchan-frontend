@@ -193,6 +193,7 @@ import { useFocusTrap } from '@/composables/useFocusTrap'
 import VideoPlayer from './VideoPlayer.vue'
 import Button from './Button.vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
+import { lockBodyScroll, unlockBodyScroll } from '@/utils/bodyScrollLock'
 
 export interface MediaItem {
   id: string
@@ -308,7 +309,7 @@ watch(
       isLoaded.value = false
       hasError.value = false
       imageReloadToken.value += 1
-      document.body.style.overflow = 'hidden'
+      lockBodyScroll()
       nextTick(() => {
         containerRef.value?.focus()
         showControlsTemporarily()
@@ -316,7 +317,7 @@ watch(
       })
       prefetchAround(currentIndex.value)
     } else {
-      document.body.style.overflow = ''
+      unlockBodyScroll()
       clearControlsTimer()
     }
   }
@@ -636,7 +637,9 @@ onMounted(() => {
 
 onUnmounted(() => {
   document.removeEventListener('keydown', handleKeydown)
-  document.body.style.overflow = ''
+  // 确保拖拽中的事件监听器被移除，防止内存泄漏
+  stopDrag()
+  unlockBodyScroll()
   clearControlsTimer()
 })
 </script>

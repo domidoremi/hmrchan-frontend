@@ -82,7 +82,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { Search, X, History, FileText, User, Tag } from 'lucide-vue-next'
@@ -90,11 +90,11 @@ import { searchService, type SearchSuggestion } from '@/api/searchService'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 
 // 简单的 debounce 实现，避免引入整个 VueUse
+let suggestionTimer: ReturnType<typeof setTimeout> | null = null
 function debounce<T extends (...args: Parameters<T>) => void>(fn: T, delay: number): T {
-  let timer: ReturnType<typeof setTimeout> | null = null
   return ((...args: Parameters<T>) => {
-    if (timer) clearTimeout(timer)
-    timer = setTimeout(() => fn(...args), delay)
+    if (suggestionTimer) clearTimeout(suggestionTimer)
+    suggestionTimer = setTimeout(() => fn(...args), delay)
   }) as T
 }
 
@@ -215,8 +215,10 @@ function handleFocus() {
   isExpanded.value = true
 }
 
+let blurTimer: ReturnType<typeof setTimeout> | null = null
 function handleBlur() {
-  setTimeout(() => {
+  if (blurTimer) clearTimeout(blurTimer)
+  blurTimer = setTimeout(() => {
     isFocused.value = false
   }, 200)
 }
@@ -338,6 +340,17 @@ watch(selectedIndex, (index) => {
         query.value = suggestion.text
       }
     }
+  }
+})
+
+onUnmounted(() => {
+  if (suggestionTimer) {
+    clearTimeout(suggestionTimer)
+    suggestionTimer = null
+  }
+  if (blurTimer) {
+    clearTimeout(blurTimer)
+    blurTimer = null
   }
 })
 
