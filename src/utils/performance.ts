@@ -212,12 +212,15 @@ export function runWhenIdle(task: () => void, timeout = 2000): void {
 }
 
 /**
- * 预加载关键资源
+ * 预加载关键资源（带去重，避免重复插入 link 元素）
  */
 export function preloadResource(
   url: string,
   as: 'script' | 'style' | 'image' | 'font' | 'fetch' = 'fetch'
 ): void {
+  // Deduplicate: skip if a preload link for this URL already exists
+  if (document.querySelector(`link[rel="preload"][href="${CSS.escape(url)}"]`)) return
+
   const link = document.createElement('link')
   link.rel = 'preload'
   link.href = url
@@ -231,9 +234,11 @@ export function preloadResource(
 }
 
 /**
- * 预连接到指定域名
+ * 预连接到指定域名（带去重，避免重复插入 link 元素）
  */
 export function preconnect(url: string): void {
+  if (document.querySelector(`link[rel="preconnect"][href="${CSS.escape(url)}"]`)) return
+
   const link = document.createElement('link')
   link.rel = 'preconnect'
   link.href = url
