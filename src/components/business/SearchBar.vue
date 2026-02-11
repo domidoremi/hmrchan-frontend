@@ -250,7 +250,6 @@ const fetchSuggestions = debounce(async (q: string) => {
   }
 }, 300)
 
-
 function handleInput() {
   selectedIndex.value = -1
   fetchSuggestions(query.value)
