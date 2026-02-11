@@ -91,7 +91,6 @@ export function debounce<T extends (...args: Parameters<T>) => void>(
 ): ((...args: Parameters<T>) => void) & { cancel?: () => void } {
   let timeoutId: ReturnType<typeof setTimeout> | null = null
   const debounced = (...args: Parameters<T>) => {
-  return (...args: Parameters<T>) => {
     if (timeoutId) {
       clearTimeout(timeoutId)
     }
@@ -118,9 +117,7 @@ export type ThrottledRafHandler<T extends unknown[]> = ((...args: T) => void) & 
   cancel?: () => void
 }
 
-export function throttleRAF<T extends unknown[]>(
-  fn: (...args: T) => void
-): ThrottledRafHandler<T> {
+export function throttleRAF<T extends unknown[]>(fn: (...args: T) => void): ThrottledRafHandler<T> {
   let rafId: number | null = null
   let lastArgs: T | null = null
   const throttled = (...args: T) => {
