@@ -143,7 +143,6 @@ export async function triggerSync(): Promise<void> {
   }
 }
 
-
 export function setupAutoSync(): void {
   if (typeof window === 'undefined') return
   if (autoSyncAttached) return
@@ -158,7 +157,6 @@ export function setupAutoSync(): void {
   window.addEventListener('online', autoSyncHandler)
   autoSyncAttached = true
 }
-
 
 /**
  * 监听来自 Service Worker 的同步请求
