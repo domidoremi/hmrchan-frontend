@@ -88,9 +88,9 @@ export const layoutCache = new LayoutCache()
 export function debounce<T extends (...args: Parameters<T>) => void>(
   fn: T,
   delay: number
-): (...args: Parameters<T>) => void {
+): ((...args: Parameters<T>) => void) & { cancel?: () => void } {
   let timeoutId: ReturnType<typeof setTimeout> | null = null
-
+  const debounced = (...args: Parameters<T>) => {
   return (...args: Parameters<T>) => {
     if (timeoutId) {
       clearTimeout(timeoutId)
@@ -100,16 +100,30 @@ export function debounce<T extends (...args: Parameters<T>) => void>(
       timeoutId = null
     }, delay)
   }
+
+  debounced.cancel = () => {
+    if (timeoutId) {
+      clearTimeout(timeoutId)
+      timeoutId = null
+    }
+  }
+
+  return debounced
 }
 
 /**
  * 节流函数 - 使用 requestAnimationFrame 限制执行频率
  */
-export function throttleRAF<T extends unknown[]>(fn: (...args: T) => void): (...args: T) => void {
+export type ThrottledRafHandler<T extends unknown[]> = ((...args: T) => void) & {
+  cancel?: () => void
+}
+
+export function throttleRAF<T extends unknown[]>(
+  fn: (...args: T) => void
+): ThrottledRafHandler<T> {
   let rafId: number | null = null
   let lastArgs: T | null = null
-
-  return (...args: T) => {
+  const throttled = (...args: T) => {
     lastArgs = args
 
     if (rafId === null) {
@@ -121,6 +135,16 @@ export function throttleRAF<T extends unknown[]>(fn: (...args: T) => void): (...
       })
     }
   }
+
+  throttled.cancel = () => {
+    if (rafId !== null) {
+      cancelAnimationFrame(rafId)
+      rafId = null
+    }
+    lastArgs = null
+  }
+
+  return throttled
 }
 
 /**

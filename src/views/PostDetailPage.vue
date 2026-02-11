@@ -866,6 +866,7 @@ function attachStageListeners() {
 
 function detachStageListeners() {
   window.removeEventListener('scroll', handleScroll)
+  handleScroll.cancel?.()
 
   if (stageRef.value) {
     stageRef.value.removeEventListener('wheel', handleWheel)

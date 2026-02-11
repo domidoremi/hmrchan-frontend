@@ -11,6 +11,11 @@ interface PrefetchOptions {
 let hoverPrefetchAttached = false
 let hoverHandler: ((e: MouseEvent) => void) | null = null
 let hoverTimer: number | null = null
+let prefetchScheduled = false
+let prefetchLoadHandler: (() => void) | null = null
+let prefetchLoadListenerAttached = false
+let prefetchStartTimer: number | null = null
+let prefetchDataTimer: number | null = null
 
 export function disposeHoverPrefetch(): void {
   if (!hoverPrefetchAttached) return
@@ -23,6 +28,26 @@ export function disposeHoverPrefetch(): void {
     hoverTimer = null
   }
   hoverPrefetchAttached = false
+}
+export function disposePrefetch(): void {
+  disposeHoverPrefetch()
+
+  if (prefetchLoadHandler) {
+    window.removeEventListener('load', prefetchLoadHandler)
+    prefetchLoadHandler = null
+  }
+
+  if (prefetchStartTimer) {
+    clearTimeout(prefetchStartTimer)
+    prefetchStartTimer = null
+  }
+  if (prefetchDataTimer) {
+    clearTimeout(prefetchDataTimer)
+    prefetchDataTimer = null
+  }
+
+  prefetchScheduled = false
+  prefetchLoadListenerAttached = false
 }
 
 // Configuration constants
@@ -134,18 +159,25 @@ export async function prefetchRoutes(
  */
 export function prefetchCriticalRoutes(): void {
   if (typeof window === 'undefined' || typeof document === 'undefined') return
+  if (prefetchScheduled) return
 
   // 在页面加载完成后预加载
   if (document.readyState === 'complete') {
     executePrefetch()
   } else {
-    window.addEventListener('load', executePrefetch, { once: true })
+    if (prefetchLoadListenerAttached) return
+    prefetchLoadHandler = executePrefetch
+    window.addEventListener('load', prefetchLoadHandler, { once: true })
+    prefetchLoadListenerAttached = true
   }
 }
 
 function executePrefetch(): void {
+  if (prefetchScheduled) return
+  prefetchScheduled = true
   // 延迟后开始预加载，确保首屏已完全渲染
-  setTimeout(() => {
+  prefetchStartTimer = window.setTimeout(() => {
+    prefetchStartTimer = null
     // 预加载路由组件
     prefetchRoutes([
       // 高优先级：用户最可能访问的页面
@@ -159,7 +191,8 @@ function executePrefetch(): void {
     ])
 
     // 预加载关键数据（延迟更长，避免影响首屏）
-    setTimeout(() => {
+    prefetchDataTimer = window.setTimeout(() => {
+      prefetchDataTimer = null
       prefetchExploreData()
       prefetchAuthorsData()
     }, 2000)

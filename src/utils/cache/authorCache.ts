@@ -153,3 +153,12 @@ export const authorCache = {
     memoryCache.deleteByPrefix('author_list:')
   },
 }
+
+if (import.meta.hot) {
+  import.meta.hot.dispose(() => {
+    if (metaPruneTimer) {
+      clearTimeout(metaPruneTimer)
+      metaPruneTimer = null
+    }
+  })
+}

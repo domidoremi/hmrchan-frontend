@@ -92,6 +92,12 @@ export const useThemeStore = defineStore(
     // 初始化
     setupSystemThemeDetection()
 
+    if (import.meta.hot) {
+      import.meta.hot.dispose(() => {
+        cleanup()
+      })
+    }
+
     return {
       theme,
       systemTheme,

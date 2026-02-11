@@ -478,15 +478,19 @@ function shouldPrefetchOnIdle(): boolean {
 }
 
 function requestIdle(fn: () => void) {
-  const ric = (
-    window as unknown as {
-      requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => void
-    }
-  ).requestIdleCallback
-  if (ric) {
-    ric(fn, { timeout: 2000 })
+  const idleApi = window as unknown as {
+    requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number
+    cancelIdleCallback?: (id: number) => void
+  }
+  const run = () => {
+    idlePrefetchTimer = null
+    idlePrefetchHandle = null
+    fn()
+  }
+  if (idleApi.requestIdleCallback) {
+    idlePrefetchHandle = idleApi.requestIdleCallback(run, { timeout: 2000 })
   } else {
-    window.setTimeout(fn, 800)
+    idlePrefetchTimer = window.setTimeout(run, 800)
   }
 }
 
@@ -615,6 +619,20 @@ const handleResize = throttleRAF(() => {
   }
 })
 
+let idlePrefetchHandle: number | null = null
+let idlePrefetchTimer: number | null = null
+
+function cancelIdlePrefetch() {
+  const idleApi = window as unknown as { cancelIdleCallback?: (id: number) => void }
+  if (idlePrefetchHandle !== null && idleApi.cancelIdleCallback) {
+    idleApi.cancelIdleCallback(idlePrefetchHandle)
+    idlePrefetchHandle = null
+  }
+  if (idlePrefetchTimer !== null) {
+    clearTimeout(idlePrefetchTimer)
+    idlePrefetchTimer = null
+  }
+}
 onMounted(() => {
   updateIsMobile()
 
@@ -638,7 +656,6 @@ onMounted(() => {
   document.addEventListener('click', handleClickOutside)
   window.addEventListener('resize', handleResize)
   window.addEventListener('scroll', handleScroll, { passive: true })
-
   if (shouldPrefetchOnIdle()) {
     requestIdle(() => {
       prefetchExplorePage()
@@ -651,6 +668,9 @@ onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
   window.removeEventListener('resize', handleResize)
   window.removeEventListener('scroll', handleScroll)
+  handleResize.cancel?.()
+  handleScroll.cancel?.()
+  cancelIdlePrefetch()
 
   // Reset to default on unmount.
   if (typeof document !== 'undefined') {

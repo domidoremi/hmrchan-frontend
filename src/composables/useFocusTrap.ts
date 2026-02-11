@@ -49,6 +49,27 @@ export function useFocusTrap(
   const isCurrentlyActive = ref(false)
   // 保存当前绑定 focusout 的容器元素引用
   let boundContainer: HTMLElement | null = null
+  let focusOutRaf: number | null = null
+  let autoFocusRaf: number | null = null
+  let restoreFocusRaf: number | null = null
+  let activationRaf: number | null = null
+
+  function clearRaf(id: number | null) {
+    if (id !== null) {
+      cancelAnimationFrame(id)
+    }
+  }
+
+  function clearAllRafs() {
+    clearRaf(focusOutRaf)
+    clearRaf(autoFocusRaf)
+    clearRaf(restoreFocusRaf)
+    clearRaf(activationRaf)
+    focusOutRaf = null
+    autoFocusRaf = null
+    restoreFocusRaf = null
+    activationRaf = null
+  }
 
   /**
    * 获取容器内所有可聚焦元素
@@ -164,7 +185,11 @@ export function useFocusTrap(
     // 如果焦点移出容器，强制拉回
     if (relatedTarget && !containerRef.value.contains(relatedTarget)) {
       // 使用 requestAnimationFrame 避免焦点闪烁
-      requestAnimationFrame(() => {
+      if (focusOutRaf !== null) {
+        cancelAnimationFrame(focusOutRaf)
+      }
+      focusOutRaf = requestAnimationFrame(() => {
+        focusOutRaf = null
         // 再次检查状态，因为可能在 RAF 期间状态已改变
         if (isCurrentlyActive.value && containerRef.value) {
           focusFirst()
@@ -193,7 +218,11 @@ export function useFocusTrap(
     // 自动聚焦
     if (autoFocus) {
       // 使用 requestAnimationFrame 确保 DOM 已更新
-      requestAnimationFrame(() => {
+      if (autoFocusRaf !== null) {
+        cancelAnimationFrame(autoFocusRaf)
+      }
+      autoFocusRaf = requestAnimationFrame(() => {
+        autoFocusRaf = null
         if (isCurrentlyActive.value) {
           focusFirst()
         }
@@ -222,7 +251,11 @@ export function useFocusTrap(
       const elementToFocus = previousActiveElement.value
       previousActiveElement.value = null
       // 使用 requestAnimationFrame 避免焦点闪烁
-      requestAnimationFrame(() => {
+      if (restoreFocusRaf !== null) {
+        cancelAnimationFrame(restoreFocusRaf)
+      }
+      restoreFocusRaf = requestAnimationFrame(() => {
+        restoreFocusRaf = null
         elementToFocus?.focus()
       })
     }
@@ -232,12 +265,20 @@ export function useFocusTrap(
   watch(isActive, (active) => {
     if (active) {
       // 延迟激活，确保 DOM 已渲染
-      requestAnimationFrame(() => {
+      if (activationRaf !== null) {
+        cancelAnimationFrame(activationRaf)
+      }
+      activationRaf = requestAnimationFrame(() => {
+        activationRaf = null
         if (isActive.value && containerRef.value) {
           activate()
         }
       })
     } else {
+      if (activationRaf !== null) {
+        cancelAnimationFrame(activationRaf)
+        activationRaf = null
+      }
       deactivate()
     }
   })
@@ -245,6 +286,7 @@ export function useFocusTrap(
   // 组件卸载时清理
   onUnmounted(() => {
     deactivate()
+    clearAllRafs()
   })
 
   return {

@@ -120,7 +120,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
   discussionService,
@@ -195,6 +195,10 @@ const debouncedSearchPosts = debounce(async (query: string) => {
     isSearching.value = false
   }
 }, 300)
+
+onUnmounted(() => {
+  debouncedSearchPosts.cancel?.()
+})
 
 function handleInput() {
   const textarea = textareaRef.value?.el

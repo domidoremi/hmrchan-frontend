@@ -100,7 +100,7 @@
 <script setup lang="ts">
 defineOptions({ name: 'ResetPasswordPage' })
 
-import { ref, computed } from 'vue'
+import { ref, computed, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { CheckCircle, AlertTriangle, Eye, EyeOff } from 'lucide-vue-next'
@@ -126,6 +126,7 @@ const showPassword = ref(false)
 const showConfirm = ref(false)
 const isLoading = ref(false)
 const resetSuccess = ref(false)
+let redirectTimer: ReturnType<typeof setTimeout> | null = null
 
 const passwordStrengthResult = computed(() => checkPasswordStrength(newPassword.value))
 const passwordStrengthText = computed(() => {
@@ -169,7 +170,10 @@ async function handleReset() {
       toastStore.error(err.message)
       // If token expired/invalid, offer to request a new link
       if (err.status === 400 || err.status === 404) {
-        setTimeout(() => router.push('/forgot-password'), 2000)
+        if (redirectTimer) {
+          clearTimeout(redirectTimer)
+        }
+        redirectTimer = setTimeout(() => router.push('/forgot-password'), 2000)
       }
     } else {
       toastStore.error(t('auth.error.unknown'))
@@ -178,6 +182,13 @@ async function handleReset() {
     isLoading.value = false
   }
 }
+
+onUnmounted(() => {
+  if (redirectTimer) {
+    clearTimeout(redirectTimer)
+    redirectTimer = null
+  }
+})
 </script>
 
 <style scoped>

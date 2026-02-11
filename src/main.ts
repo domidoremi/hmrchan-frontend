@@ -74,7 +74,13 @@ if (import.meta.hot) {
 import { useAuthStore } from './stores/auth'
 const authStore = useAuthStore()
 authStore.initAuth()
-authStore.setupAuthListener()
+const disposeAuthListener = authStore.setupAuthListener()
+if (import.meta.hot) {
+  import.meta.hot.dispose(() => {
+    disposeAuthListener?.()
+    authStore.cleanup?.()
+  })
+}
 
 // 初始化设备指纹（异步，不阻塞应用启动）
 import { initFingerprint } from './utils/fingerprint'
@@ -95,11 +101,18 @@ if (import.meta.hot) {
 
 // 非关键任务：使用现代 Scheduler API 在空闲时执行
 import { scheduleTask } from './utils/modernAPIs'
+let scheduledTasksDisposed = false
+if (import.meta.hot) {
+  import.meta.hot.dispose(() => {
+    scheduledTasksDisposed = true
+  })
+}
 
 // Service Worker 注册：页面加载完成后尽快注册（user-visible 优先级）
 // 这样可以更早地启用离线缓存和资源预缓存
 scheduleTask(
-  () =>
+  () => {
+    if (scheduledTasksDisposed) return
     import('./utils/cache').then(({ registerServiceWorker }) => {
       registerServiceWorker()
       // 初始化 SW 更新检测器
@@ -118,33 +131,43 @@ scheduleTask(
           }
         }
       )
-    }),
+    })
+  },
   { priority: 'user-visible', delay: 1000 } // 延迟 1 秒，确保首屏渲染完成
 )
 
 // 后台同步管理器：监听网络状态和 SW 消息
 scheduleTask(
   () => {
-    import('./utils/cache/syncManager').then(({ setupAutoSync, setupSwSyncListener }) => {
-      setupAutoSync()
-      setupSwSyncListener()
-    })
+    if (scheduledTasksDisposed) return
+    import('./utils/cache/syncManager').then(
+      ({ setupAutoSync, setupSwSyncListener, disposeAutoSync, disposeSwSyncListener }) => {
+        setupAutoSync()
+        setupSwSyncListener()
+        if (import.meta.hot) {
+          import.meta.hot.dispose(() => {
+            disposeAutoSync()
+            disposeSwSyncListener()
+          })
+        }
+      }
+    )
   },
   { priority: 'user-visible', delay: 1500 }
 )
 
 // 智能路由预加载：在首屏渲染完成后预加载关键路由
-import { disposeHoverPrefetch, prefetchCriticalRoutes, setupHoverPrefetch } from './utils/prefetch'
+import { disposePrefetch, prefetchCriticalRoutes, setupHoverPrefetch } from './utils/prefetch'
 let prefetchTaskDisposed = false
 if (import.meta.hot) {
   import.meta.hot.dispose(() => {
     prefetchTaskDisposed = true
-    disposeHoverPrefetch()
+    disposePrefetch()
   })
 }
 scheduleTask(
   () => {
-    if (prefetchTaskDisposed) return
+    if (scheduledTasksDisposed || prefetchTaskDisposed) return
     prefetchCriticalRoutes()
     setupHoverPrefetch()
   },
@@ -154,6 +177,7 @@ scheduleTask(
 // 智能预缓存：在空闲时预加载热门内容
 scheduleTask(
   () => {
+    if (scheduledTasksDisposed) return
     import('./utils/cache/smartPrefetch').then(({ prefetchPopularContent }) => {
       prefetchPopularContent().then((result) => {
         if (import.meta.env.DEV || import.meta.env['VITE_ENABLE_DEBUG'] === 'true') {
@@ -168,6 +192,7 @@ scheduleTask(
 // 后台维护任务：清理过期缓存/队列
 scheduleTask(
   async () => {
+    if (scheduledTasksDisposed) return
     const [{ postCache, authorCache }, { cleanupViewRecords }, { cleanupFailedActions }] =
       await Promise.all([
         import('./utils/cache'),
