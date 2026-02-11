@@ -68,7 +68,6 @@ import { X } from 'lucide-vue-next'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import { lockBodyScroll, unlockBodyScroll } from '@/utils/bodyScrollLock'
 
-
 defineOptions({ name: 'UiDialog' })
 
 interface Props {

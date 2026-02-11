@@ -109,13 +109,12 @@ export function initConsoleFilter(): void {
   if (window.__consoleFilterApplied) return
 
   // 保存原始的控制台方法
-  const originalConsole: OriginalConsole =
-    window.__originalConsole ?? {
-      log: console.log.bind(console),
-      warn: console.warn.bind(console),
-      error: console.error.bind(console),
-      info: console.info.bind(console),
-    }
+  const originalConsole: OriginalConsole = window.__originalConsole ?? {
+    log: console.log.bind(console),
+    warn: console.warn.bind(console),
+    error: console.error.bind(console),
+    info: console.info.bind(console),
+  }
   window.__originalConsole = originalConsole
 
   // 创建过滤包装器

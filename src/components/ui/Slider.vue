@@ -108,17 +108,20 @@ function startDrag(event: MouseEvent | TouchEvent) {
   if (props.disabled) return
   event.preventDefault()
   isDragging.value = true
-  dragMoveHandler = (e: MouseEvent | TouchEvent) => {
+
   const handleMove = (e: MouseEvent | TouchEvent) => {
     const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX
     const value = getValueFromPosition(clientX)
     emit('update:modelValue', value)
   }
-  dragEndHandler = () => {
+
   const handleEnd = () => {
     isDragging.value = false
     cleanupDragListeners()
   }
+
+  dragMoveHandler = handleMove
+  dragEndHandler = handleEnd
 
   document.addEventListener('mousemove', dragMoveHandler)
   document.addEventListener('mouseup', dragEndHandler)

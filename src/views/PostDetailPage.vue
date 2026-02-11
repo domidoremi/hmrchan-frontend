@@ -277,6 +277,7 @@ import StateIndicator from '@/components/ui/StateIndicator.vue'
 import VideoPlayer from '@/components/ui/VideoPlayer.vue'
 import { defineAsyncComponent } from 'vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
+import { lockBodyScroll, unlockBodyScroll } from '@/utils/bodyScrollLock'
 
 // 动态导入大型组件以减少初始包体积
 const MediaLightbox = defineAsyncComponent(() => import('@/components/ui/MediaLightbox.vue'))
@@ -362,21 +363,6 @@ const publishedMeta = computed(() => {
   if (!publishedAt) return ''
   return t('post.publishedAt', { date: formatDate(publishedAt) })
 })
-
-let previousBodyOverflow: string | null = null
-
-function lockBodyScroll() {
-  if (typeof document === 'undefined') return
-  if (previousBodyOverflow === null) previousBodyOverflow = document.body.style.overflow
-  document.body.style.overflow = 'hidden'
-}
-
-function unlockBodyScroll() {
-  if (typeof document === 'undefined') return
-  if (previousBodyOverflow === null) return
-  document.body.style.overflow = previousBodyOverflow
-  previousBodyOverflow = null
-}
 
 function openTextModal() {
   if (!post.value?.description) return
@@ -825,8 +811,15 @@ onUnmounted(() => {
   }
 })
 
-watch(postId, () => {
+watch(postId, (nextId, prevId) => {
   isSwitchingPost.value = false
+  // 清理上一条内容的缓存，避免长时间浏览造成内存堆积
+  if (prevId && prevId !== nextId) {
+    sessionStorage.removeItem(`post-thumbnail-${prevId}`)
+  }
+  cachedThumbnailUrl.value = null
+  preloadedImages.value = new Set()
+  lastPostId = nextId
   syncNavigationContext()
   prefetchAdjacentPosts()
   fetchPost()
