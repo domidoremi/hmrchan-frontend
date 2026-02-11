@@ -8,6 +8,9 @@ import type { Comment, CommentFormData } from '@/types'
 import { sanitizeComment, validateComment, commentRateLimiter } from '@/utils/security'
 import { apiClient, ApiError, type PaginatedApiResponse } from '@/api'
 
+/** 最多缓存多少个帖子的评论，超限时 FIFO 淘汰最早的 */
+const MAX_CACHED_POSTS = 20
+
 export const useCommentsStore = defineStore('comments', () => {
   const comments = ref<Map<string, Comment[]>>(new Map())
   const isLoading = ref(false)
@@ -74,6 +77,13 @@ export const useCommentsStore = defineStore('comments', () => {
 
       const items = sortComments(data.items || [], sort)
       comments.value.set(postId, items)
+
+      // 淘汰超限的帖子评论缓存（FIFO：Map 迭代顺序即插入顺序）
+      while (comments.value.size > MAX_CACHED_POSTS) {
+        const oldestKey = comments.value.keys().next().value
+        if (oldestKey !== undefined) comments.value.delete(oldestKey)
+      }
+
       return { success: true, data: items }
     } catch (err) {
       error.value = 'comment.error.fetchFailed'
@@ -239,11 +249,10 @@ export const useCommentsStore = defineStore('comments', () => {
     try {
       await apiClient.delete(`/comments/${commentId}`, { skipErrorToast: true })
 
-      // 更新本地状态 - 深拷贝并递归删除
+      // 更新本地状态 - 原地递归删除 + 浅拷贝触发响应式
       const postComments = comments.value.get(postId) || []
-      const updatedComments = structuredClone(postComments)
-      removeComment(updatedComments, commentId)
-      comments.value.set(postId, updatedComments)
+      removeComment(postComments, commentId)
+      comments.value.set(postId, [...postComments])
 
       return { success: true }
     } catch {

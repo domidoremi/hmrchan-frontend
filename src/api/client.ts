@@ -150,7 +150,6 @@ function normalizeResponse<T>(payload: unknown): T {
   return payload as T
 }
 
-
 /**
  * 异步获取 access token（从安全存储中解密读取）
  * 优先使用安全存储
@@ -171,7 +170,7 @@ async function getAccessTokenAsync(): Promise<string | null> {
 /**
  * 生成缓存 key（基于 method + url + auth token hash）
  */
-function buildCacheKey(method: string, url: string, _skipAuth: boolean): string {
+function buildCacheKey(method: string, url: string): string {
   return `api:${method}:${url}`
 }
 
@@ -205,7 +204,6 @@ async function refreshToken(): Promise<string | null> {
 
     const data = await response.json()
     const newAccessToken = data.access_token
-    const newRefreshToken = data.refresh_token
 
     // 安全存储新的 access_token（加密 + 设备绑定）
     try {
@@ -490,7 +488,7 @@ export const apiClient = {
   get<T>(endpoint: string, config?: RequestConfig): Promise<T> {
     const { skipAuth = false, ...restConfig } = config || {}
     const url = endpoint.startsWith('http') ? endpoint : `${API_BASE_URL}${endpoint}`
-    const cacheKey = buildCacheKey('GET', url, skipAuth)
+    const cacheKey = buildCacheKey('GET', url)
 
     // 检查 in-flight 请求（去重）
     const inflight = inflightRequests.get(cacheKey) as Promise<T> | undefined

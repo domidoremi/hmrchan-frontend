@@ -22,8 +22,13 @@ import { initConsoleGuard } from './utils/consoleGuard'
 initConsoleGuard()
 
 // 过滤 Cloudflare 相关的控制台警告
-import { initConsoleFilter } from './utils/consoleFilter'
+import { disposeConsoleFilter, initConsoleFilter } from './utils/consoleFilter'
 initConsoleFilter()
+if (import.meta.hot) {
+  import.meta.hot.dispose(() => {
+    disposeConsoleFilter()
+  })
+}
 
 const app = createApp(App)
 
@@ -57,8 +62,13 @@ app.use(router)
 app.use(i18n)
 
 // Track last pointer position for click-origin animations (e.g. opening preview modal)
-import { initLastPointerTracker } from './utils/lastPointer'
+import { disposeLastPointerTracker, initLastPointerTracker } from './utils/lastPointer'
 initLastPointerTracker()
+if (import.meta.hot) {
+  import.meta.hot.dispose(() => {
+    disposeLastPointerTracker()
+  })
+}
 
 // 初始化认证状态（同步，确保路由守卫正常工作）
 import { useAuthStore } from './stores/auth'
@@ -75,8 +85,13 @@ initFingerprint().catch(() => {
 app.mount('#app')
 
 // 性能监控：立即启动以捕获所有指标
-import { initPerformanceMonitoring } from './utils/performanceMonitor'
+import { disposePerformanceMonitoring, initPerformanceMonitoring } from './utils/performanceMonitor'
 initPerformanceMonitoring()
+if (import.meta.hot) {
+  import.meta.hot.dispose(() => {
+    disposePerformanceMonitoring()
+  })
+}
 
 // 非关键任务：使用现代 Scheduler API 在空闲时执行
 import { scheduleTask } from './utils/modernAPIs'
@@ -88,13 +103,21 @@ scheduleTask(
     import('./utils/cache').then(({ registerServiceWorker }) => {
       registerServiceWorker()
       // 初始化 SW 更新检测器
-      import('./utils/sw-update-checker').then(({ initSwUpdateChecker }) => {
-        initSwUpdateChecker({
-          checkInterval: 30 * 60 * 1000, // 30 分钟检查一次
-          autoRefresh: false, // 不自动刷新，让用户决定
-          showToast: true, // 显示更新提示
-        })
-      })
+      import('./utils/sw-update-checker').then(
+        ({ initSwUpdateChecker, disposeSwUpdateChecker }) => {
+          initSwUpdateChecker({
+            checkInterval: 30 * 60 * 1000, // 30 分钟检查一次
+            autoRefresh: false, // 不自动刷新，让用户决定
+            showToast: true, // 显示更新提示
+          })
+          // HMR 下避免重复注册监听器
+          if (import.meta.hot) {
+            import.meta.hot.dispose(() => {
+              disposeSwUpdateChecker()
+            })
+          }
+        }
+      )
     }),
   { priority: 'user-visible', delay: 1000 } // 延迟 1 秒，确保首屏渲染完成
 )
@@ -111,9 +134,17 @@ scheduleTask(
 )
 
 // 智能路由预加载：在首屏渲染完成后预加载关键路由
-import { prefetchCriticalRoutes, setupHoverPrefetch } from './utils/prefetch'
+import { disposeHoverPrefetch, prefetchCriticalRoutes, setupHoverPrefetch } from './utils/prefetch'
+let prefetchTaskDisposed = false
+if (import.meta.hot) {
+  import.meta.hot.dispose(() => {
+    prefetchTaskDisposed = true
+    disposeHoverPrefetch()
+  })
+}
 scheduleTask(
   () => {
+    if (prefetchTaskDisposed) return
     prefetchCriticalRoutes()
     setupHoverPrefetch()
   },
