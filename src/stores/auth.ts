@@ -203,18 +203,13 @@ export const useAuthStore = defineStore(
      * 验证安全存储的 token 绑定，防止跨设备窃取
      */
     async function initAuth() {
-      // 验证安全存储的 token 绑定
-      if (token.value) {
-        const secureToken = await secureTokenManager.retrieve()
-        if (!secureToken) {
-          // 安全存储验证失败（设备不匹配或绑定过期）
-          // 清除认证状态，要求重新登录
-          console.warn('Token binding validation failed, clearing auth state')
-          user.value = null
-          token.value = null
-          secureTokenManager.clear()
-          return
-        }
+      // 始终尝试从安全存储恢复 token（避免依赖 localStorage 明文）
+      const secureToken = await secureTokenManager.retrieve()
+      token.value = secureToken
+      if (!secureToken) {
+        user.value = null
+        refreshToken.value = null
+        return
       }
 
       if (token.value && !user.value) {
@@ -397,7 +392,7 @@ export const useAuthStore = defineStore(
   },
   {
     persist: {
-      pick: ['user', 'token', 'refreshToken'],
+      pick: ['user'],
     },
   }
 )
