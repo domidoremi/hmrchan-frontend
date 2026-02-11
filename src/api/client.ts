@@ -150,40 +150,10 @@ function normalizeResponse<T>(payload: unknown): T {
   return payload as T
 }
 
-/**
- * 获取存储的 access token（从加密存储中读取）
- * 注意：这是同步版本，用于兼容现有代码
- * 实际的加密 token 在 initAuth 时已解密并缓存到 Pinia store
- */
-function getAccessToken(): string | null {
-  try {
-    const authData = localStorage.getItem('auth')
-    if (authData) {
-      const parsed = JSON.parse(authData)
-      return parsed.token || null
-    }
-  } catch {
-    // Ignore parse errors
-  }
-  return null
-}
-
-function getRefreshToken(): string | null {
-  try {
-    const authData = localStorage.getItem('auth')
-    if (authData) {
-      const parsed = JSON.parse(authData)
-      return parsed.refreshToken || parsed.refresh_token || null
-    }
-  } catch {
-    // Ignore parse errors
-  }
-  return null
-}
 
 /**
  * 异步获取 access token（从安全存储中解密读取）
- * 优先使用安全存储，降级到普通存储
+ * 优先使用安全存储
  */
 async function getAccessTokenAsync(): Promise<string | null> {
   try {
@@ -192,8 +162,7 @@ async function getAccessTokenAsync(): Promise<string | null> {
     if (secureToken) {
       return secureToken
     }
-    // 降级到普通存储（兼容旧数据）
-    return getAccessToken()
+    return null
   } catch {
     return getAccessToken()
   }
@@ -202,10 +171,8 @@ async function getAccessTokenAsync(): Promise<string | null> {
 /**
  * 生成缓存 key（基于 method + url + auth token hash）
  */
-function buildCacheKey(method: string, url: string, skipAuth: boolean): string {
-  const token = skipAuth ? '' : getAccessToken() || ''
-  const tokenSuffix = token ? `:${token.slice(-8)}` : ''
-  return `api:${method}:${url}${tokenSuffix}`
+function buildCacheKey(method: string, url: string, _skipAuth: boolean): string {
+  return `api:${method}:${url}`
 }
 
 /**
@@ -218,8 +185,7 @@ async function refreshToken(): Promise<string | null> {
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), REFRESH_TIMEOUT)
 
-    const refreshTokenValue = getRefreshToken()
-    const refreshBody = refreshTokenValue ? { refresh_token: refreshTokenValue } : {}
+    const refreshBody = {}
 
     const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
       method: 'POST',
@@ -249,20 +215,7 @@ async function refreshToken(): Promise<string | null> {
       console.warn('Secure token storage failed, using plain storage')
     }
 
-    // 同时更新 Pinia 持久化存储（保持兼容）
-    try {
-      const authData = localStorage.getItem('auth')
-      if (authData) {
-        const parsed = JSON.parse(authData)
-        parsed.token = newAccessToken
-        if (newRefreshToken) {
-          parsed.refreshToken = newRefreshToken
-        }
-        localStorage.setItem('auth', JSON.stringify(parsed))
-      }
-    } catch {
-      // localStorage 操作失败，但 token 仍然有效
-    }
+    // 不再写入 localStorage（避免明文 token 暴露）
 
     return newAccessToken
   } catch (error) {
