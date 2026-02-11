@@ -563,6 +563,8 @@ watch(
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', onGlobalKeydown)
   detachResizeObserver()
+  handleContainerResize.cancel?.()
+  handleCardHeightChange.cancel?.()
 })
 </script>
 

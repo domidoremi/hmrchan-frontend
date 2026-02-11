@@ -272,6 +272,7 @@ const MAX_SCALE = 4
 const ZOOM_STEP = 0.25
 const CONTROLS_HIDE_DELAY = 2500
 let controlsTimer: ReturnType<typeof setTimeout> | null = null
+let hintsTimer: ReturnType<typeof setTimeout> | null = null
 
 const currentMedia = computed(() => props.mediaList[currentIndex.value] ?? null)
 const hasMultiple = computed(() => props.mediaList.length > 1)
@@ -598,7 +599,10 @@ function handleTouchStart() {
 
 function startHintsTimer() {
   showHints.value = true
-  window.setTimeout(() => {
+  if (hintsTimer) {
+    window.clearTimeout(hintsTimer)
+  }
+  hintsTimer = window.setTimeout(() => {
     showHints.value = false
   }, 2200)
 }
@@ -641,6 +645,10 @@ onUnmounted(() => {
   stopDrag()
   unlockBodyScroll()
   clearControlsTimer()
+  if (hintsTimer) {
+    window.clearTimeout(hintsTimer)
+    hintsTimer = null
+  }
 })
 </script>
 

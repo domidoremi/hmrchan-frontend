@@ -402,6 +402,8 @@ onMounted(() => {
 onBeforeUnmount(() => {
   resizeObserver?.disconnect()
   resizeObserver = null
+  masonryTaskId += 1
+  handleContainerResize.cancel?.()
 })
 </script>
 

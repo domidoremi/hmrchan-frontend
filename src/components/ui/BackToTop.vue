@@ -105,6 +105,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll)
+  handleScroll.cancel?.()
 })
 </script>
 
