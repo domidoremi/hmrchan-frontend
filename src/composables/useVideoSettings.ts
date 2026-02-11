@@ -66,13 +66,19 @@ function saveSettings(settings: VideoSettings) {
 const settings = ref<VideoSettings>(loadSettings())
 
 // 监听设置变化并自动保存
-watch(
+const stopSaveWatcher = watch(
   settings,
   (newSettings) => {
     saveSettings(newSettings)
   },
   { deep: true }
 )
+
+if (import.meta.hot) {
+  import.meta.hot.dispose(() => {
+    stopSaveWatcher()
+  })
+}
 
 /**
  * 视频设置 Composable
