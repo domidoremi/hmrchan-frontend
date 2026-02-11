@@ -258,3 +258,182 @@ export function containsSensitiveWords(content: string): boolean {
 
   return sensitivePatterns.some((pattern) => pattern.test(content))
 }
+
+// ==================== Prototype Pollution 防护 ====================
+
+/** 原型链污染中常见的危险 key */
+const DANGEROUS_PROTO_KEYS = new Set(['__proto__', 'constructor', 'prototype'])
+
+/**
+ * 检查对象 key 是否为原型链污染攻击向量
+ */
+export function hasDangerousKey(key: string): boolean {
+  return DANGEROUS_PROTO_KEYS.has(key)
+}
+
+/**
+ * 安全的对象深合并，过滤 __proto__ / constructor / prototype
+ * 用于替代 lodash.merge 等可能被污染的深合并操作
+ */
+export function safeMerge<T extends Record<string, unknown>>(
+  target: T,
+  ...sources: Array<Record<string, unknown>>
+): T {
+  for (const source of sources) {
+    if (!source || typeof source !== 'object') continue
+
+    for (const key of Object.keys(source)) {
+      if (hasDangerousKey(key)) continue
+      if (!Object.prototype.hasOwnProperty.call(source, key)) continue
+
+      const sourceVal = source[key]
+      const targetVal = (target as Record<string, unknown>)[key]
+
+      if (
+        sourceVal !== null &&
+        typeof sourceVal === 'object' &&
+        !Array.isArray(sourceVal) &&
+        targetVal !== null &&
+        typeof targetVal === 'object' &&
+        !Array.isArray(targetVal)
+      ) {
+        ;(target as Record<string, unknown>)[key] = safeMerge(
+          { ...(targetVal as Record<string, unknown>) },
+          sourceVal as Record<string, unknown>
+        )
+      } else {
+        ;(target as Record<string, unknown>)[key] = sourceVal
+      }
+    }
+  }
+
+  return target
+}
+
+/**
+ * 从 JSON 字符串安全解析，移除原型链污染 key
+ */
+export function safeJsonParse<T = unknown>(json: string): T | null {
+  try {
+    return JSON.parse(json, (_key, value) => {
+      if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+        for (const k of Object.keys(value)) {
+          if (hasDangerousKey(k)) {
+            delete value[k]
+          }
+        }
+      }
+      return value
+    }) as T
+  } catch {
+    return null
+  }
+}
+
+// ==================== Open Redirect 防护 ====================
+
+/** 允许重定向的域名白名单 */
+const REDIRECT_WHITELIST = [
+  'momichan.xyz',
+  'www.momichan.xyz',
+  'himeri.momichan.xyz',
+  'api.momichan.xyz',
+]
+
+/**
+ * 校验重定向 URL 是否安全（仅允许同站或白名单域名）
+ * 防止 Open Redirect 攻击
+ */
+export function isSafeRedirect(url: string): boolean {
+  if (!url || typeof url !== 'string') return false
+
+  // 相对路径始终安全
+  if (url.startsWith('/') && !url.startsWith('//')) return true
+
+  try {
+    const parsed = new URL(url, window.location.origin)
+
+    // 仅允许 http/https
+    if (!['http:', 'https:'].includes(parsed.protocol)) return false
+
+    // 检查是否在白名单中
+    return REDIRECT_WHITELIST.some(
+      (domain) => parsed.hostname === domain || parsed.hostname.endsWith(`.${domain}`)
+    )
+  } catch {
+    return false
+  }
+}
+
+/**
+ * 安全地执行页面跳转，拒绝不安全的 URL
+ */
+export function safeRedirect(url: string, fallback: string = '/'): void {
+  if (isSafeRedirect(url)) {
+    window.location.href = url
+  } else {
+    window.location.href = fallback
+  }
+}
+
+// ==================== PostMessage 安全 ====================
+
+/** 可信的 postMessage 来源 */
+const TRUSTED_ORIGINS = new Set([
+  window.location.origin,
+  'https://momichan.xyz',
+  'https://www.momichan.xyz',
+  'https://challenges.cloudflare.com',
+])
+
+export type MessageHandler<T = unknown> = (data: T, event: MessageEvent) => void
+
+/**
+ * 创建带 origin 校验的安全 postMessage 处理器
+ *
+ * @param handler - 消息处理回调
+ * @param options.allowedOrigins - 额外允许的 origin 列表
+ * @param options.validateData - 可选的数据结构校验函数
+ * @returns dispose 函数，调用后移除监听
+ */
+export function createSecureMessageHandler<T = unknown>(
+  handler: MessageHandler<T>,
+  options?: {
+    allowedOrigins?: string[]
+    validateData?: (data: unknown) => data is T
+  }
+): () => void {
+  const origins = new Set(TRUSTED_ORIGINS)
+  if (options?.allowedOrigins) {
+    for (const o of options.allowedOrigins) {
+      origins.add(o)
+    }
+  }
+
+  function onMessage(event: MessageEvent): void {
+    // 校验 origin
+    if (!origins.has(event.origin)) return
+
+    // 可选的数据结构校验
+    if (options?.validateData && !options.validateData(event.data)) return
+
+    handler(event.data as T, event)
+  }
+
+  window.addEventListener('message', onMessage)
+
+  return () => {
+    window.removeEventListener('message', onMessage)
+  }
+}
+
+/**
+ * 安全地发送 postMessage，始终指定目标 origin
+ */
+export function safePostMessage(target: Window, data: unknown, targetOrigin: string): void {
+  if (!targetOrigin || targetOrigin === '*') {
+    console.warn('[Security] postMessage with wildcard origin is not allowed')
+    return
+  }
+  target.postMessage(data, targetOrigin)
+}
