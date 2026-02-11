@@ -162,7 +162,15 @@
 <script setup lang="ts">
 defineOptions({ name: 'HomePage' })
 
-import { ref, computed, onMounted, onBeforeUnmount, type ComponentPublicInstance } from 'vue'
+import {
+  ref,
+  computed,
+  onMounted,
+  onBeforeUnmount,
+  onActivated,
+  onDeactivated,
+  type ComponentPublicInstance,
+} from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
@@ -263,6 +271,15 @@ const { columns, columnCount, distributePosts, redistribute, getColumnWidth } = 
   initialColumnCount: getResponsiveColumnCount(),
 })
 
+onActivated(() => {
+  attachResizeObserver()
+})
+
+onDeactivated(() => {
+  detachResizeObserver()
+  handleContainerResize.cancel?.()
+})
+
 const getContainerWidth = () => containerRef.value?.offsetWidth || 1200
 
 let resizeObserver: ResizeObserver | null = null
@@ -277,6 +294,23 @@ const handleContainerResize = throttleRAF((width: number) => {
     redistribute(allPosts.value, getColumnWidth(width))
   }
 })
+
+function detachResizeObserver() {
+  resizeObserver?.disconnect()
+  resizeObserver = null
+}
+
+function attachResizeObserver() {
+  const el = containerRef.value
+  if (!el) return
+  detachResizeObserver()
+  lastContainerWidth = el.offsetWidth
+  resizeObserver = createResizeObserver((entries) => {
+    const entry = entries[0]
+    if (entry) handleContainerResize(entry.contentRect.width)
+  })
+  resizeObserver?.observe(el)
+}
 
 const visiblePostsCount = computed(() => columns.value.reduce((sum, col) => sum + col.length, 0))
 
@@ -388,20 +422,11 @@ function openDetailFromPreview(postId: string) {
 
 onMounted(() => {
   if (posts.value.length === 0 && !isLoading.value) fetchLatestPosts()
-
-  if (containerRef.value) {
-    lastContainerWidth = containerRef.value.offsetWidth
-    resizeObserver = createResizeObserver((entries) => {
-      const entry = entries[0]
-      if (entry) handleContainerResize(entry.contentRect.width)
-    })
-    resizeObserver?.observe(containerRef.value)
-  }
+  attachResizeObserver()
 })
 
 onBeforeUnmount(() => {
-  resizeObserver?.disconnect()
-  resizeObserver = null
+  detachResizeObserver()
   masonryTaskId += 1
   handleContainerResize.cancel?.()
 })

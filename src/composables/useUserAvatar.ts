@@ -120,3 +120,9 @@ export function clearAvatarPreloadCache(): void {
   preloadCache.forEach((link) => link.remove())
   preloadCache.clear()
 }
+
+if (import.meta.hot) {
+  import.meta.hot.dispose(() => {
+    clearAvatarPreloadCache()
+  })
+}
