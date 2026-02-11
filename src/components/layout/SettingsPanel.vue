@@ -90,6 +90,82 @@
       </div>
     </div>
 
+    <!-- Background Effect -->
+    <div class="settings-group">
+      <div class="settings-group-header">
+        <div class="settings-group-icon">
+          <AnimatedIcon name="sparkle" :fallback-icon="Sparkles" size="sm" />
+        </div>
+        <span class="settings-label">{{ $t('settings.backgroundEffect') }}</span>
+      </div>
+      <div class="settings-options bg-effect-options">
+        <button
+          v-for="opt in bgEffectOptions"
+          :key="opt.value"
+          type="button"
+          class="bg-effect-btn"
+          :class="{ active: settings.backgroundEffect.type === opt.value }"
+          @click="setBackgroundEffect(opt.value)"
+        >
+          <span class="bg-effect-emoji">{{ opt.emoji }}</span>
+          <span class="bg-effect-label">{{ opt.label }}</span>
+        </button>
+      </div>
+
+      <!-- Density / Speed sliders (only when effect is active) -->
+      <template v-if="settings.backgroundEffect.type !== 'none'">
+        <div class="slider-group">
+          <label class="slider-label">
+            {{ $t('settings.bgDensity') }}
+            <span class="slider-value"
+              >{{ Math.round(settings.backgroundEffect.density * 100) }}%</span
+            >
+          </label>
+          <input
+            type="range"
+            class="settings-slider"
+            min="0.1"
+            max="1"
+            step="0.1"
+            :value="settings.backgroundEffect.density"
+            @input="onDensityChange"
+          />
+        </div>
+        <div class="slider-group">
+          <label class="slider-label">
+            {{ $t('settings.bgSpeed') }}
+            <span class="slider-value">{{ settings.backgroundEffect.speed.toFixed(1) }}x</span>
+          </label>
+          <input
+            type="range"
+            class="settings-slider"
+            min="0.2"
+            max="2"
+            step="0.2"
+            :value="settings.backgroundEffect.speed"
+            @input="onSpeedChange"
+          />
+        </div>
+        <div class="slider-group">
+          <label class="slider-label">
+            {{ $t('settings.bgOpacity') }}
+            <span class="slider-value"
+              >{{ Math.round(settings.backgroundEffect.opacity * 100) }}%</span
+            >
+          </label>
+          <input
+            type="range"
+            class="settings-slider"
+            min="0.1"
+            max="1"
+            step="0.1"
+            :value="settings.backgroundEffect.opacity"
+            @input="onOpacityChange"
+          />
+        </div>
+      </template>
+    </div>
+
     <!-- Video Settings -->
     <div class="settings-group">
       <div class="settings-group-header">
@@ -162,6 +238,7 @@ import {
   RotateCcw,
   Layers,
   Smartphone,
+  Sparkles,
 } from 'lucide-vue-next'
 import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
@@ -170,7 +247,7 @@ import { useThemeStore, useSettingsStore, useToastStore } from '@/stores'
 import { setLocale, type SupportedLocale } from '@/i18n'
 import { useVideoSettings } from '@/composables/useVideoSettings'
 import type { Theme } from '@/types'
-import type { UiStyle } from '@/stores/settings'
+import type { UiStyle, ParticleEffectType } from '@/stores/settings'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 
 withDefaults(
@@ -221,6 +298,32 @@ function setUiStyle(value: UiStyle) {
 
 function changeLocale(code: SupportedLocale) {
   setLocale(code)
+}
+
+const bgEffectOptions: { value: ParticleEffectType; emoji: string; label: string }[] = [
+  { value: 'none', emoji: '✕', label: t('settings.bgNone') },
+  { value: 'rain', emoji: '🌧', label: t('settings.bgRain') },
+  { value: 'snow', emoji: '❄', label: t('settings.bgSnow') },
+  { value: 'stars', emoji: '✨', label: t('settings.bgStars') },
+]
+
+function setBackgroundEffect(type: ParticleEffectType) {
+  settingsStore.setBackgroundEffect({ type })
+}
+
+function onDensityChange(e: Event) {
+  const value = parseFloat((e.target as HTMLInputElement).value)
+  settingsStore.setBackgroundEffect({ density: value })
+}
+
+function onSpeedChange(e: Event) {
+  const value = parseFloat((e.target as HTMLInputElement).value)
+  settingsStore.setBackgroundEffect({ speed: value })
+}
+
+function onOpacityChange(e: Event) {
+  const value = parseFloat((e.target as HTMLInputElement).value)
+  settingsStore.setBackgroundEffect({ opacity: value })
 }
 
 function resetVideoSettings() {
@@ -622,8 +725,120 @@ function resetVideoSettings() {
   transform: translateX(0);
 }
 
+/* ========== Background Effect Options ========== */
+.bg-effect-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-2);
+}
+
+.bg-effect-btn {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-1);
+  padding: var(--spacing-2) var(--spacing-1);
+  background: var(--glass-bg-light);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  transition: all var(--transition-fast);
+}
+
+.bg-effect-btn:hover {
+  background: var(--glass-bg);
+  border-color: var(--glass-border-strong);
+  transform: translateY(-2px);
+}
+
+.bg-effect-btn.active {
+  background: rgba(var(--color-primary-rgb), 0.1);
+  border-color: var(--color-primary);
+}
+
+.bg-effect-emoji {
+  font-size: var(--text-lg);
+  line-height: 1;
+}
+
+.bg-effect-label {
+  font-size: 0.625rem;
+  font-weight: var(--font-medium);
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.bg-effect-btn.active .bg-effect-label {
+  color: var(--color-primary);
+  font-weight: var(--font-semibold);
+}
+
+/* ========== Slider Group ========== */
+.slider-group {
+  padding: var(--spacing-2) 0 0;
+}
+
+.slider-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+  margin-bottom: var(--spacing-1);
+}
+
+.slider-value {
+  font-weight: var(--font-semibold);
+  color: var(--color-text-secondary);
+}
+
+.settings-slider {
+  width: 100%;
+  height: 4px;
+  appearance: none;
+  background: var(--color-gray-200);
+  border-radius: var(--radius-full);
+  outline: none;
+  cursor: pointer;
+}
+
+.settings-slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  background: var(--color-primary);
+  border-radius: var(--radius-full);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: transform var(--transition-fast);
+}
+
+.settings-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
+
+.settings-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  background: var(--color-primary);
+  border-radius: var(--radius-full);
+  border: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+[data-theme='dark'] .settings-slider {
+  background: var(--color-gray-700);
+}
+
 /* ========== Dark Mode ========== */
 [data-theme='dark'] .theme-btn.active {
+  background: rgba(var(--color-primary-rgb), 0.15);
+}
+
+[data-theme='dark'] .bg-effect-btn:not(.active) {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+[data-theme='dark'] .bg-effect-btn.active {
   background: rgba(var(--color-primary-rgb), 0.15);
 }
 

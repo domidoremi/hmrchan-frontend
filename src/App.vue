@@ -48,6 +48,9 @@
 
     <!-- Back to Top Button -->
     <BackToTop :show-progress="true" />
+
+    <!-- Global Particle Background -->
+    <ParticleBackground />
   </div>
 </template>
 
@@ -62,6 +65,10 @@ import AppFooter from '@/components/layout/AppFooter.vue'
 import PageLoading from '@/components/ui/PageLoading.vue'
 import BackToTop from '@/components/ui/BackToTop.vue'
 import ErrorBoundary from '@/components/ui/ErrorBoundary.vue'
+
+const ParticleBackground = defineAsyncComponent(
+  () => import('@/components/ui/ParticleBackground.vue')
+)
 
 const ToastContainer = defineAsyncComponent(() => import('@/components/ui/ToastContainer.vue'))
 
