@@ -192,6 +192,7 @@ import { getMediaStreamUrl, getMediaThumbnailUrl } from '@/utils/mediaOptimizer'
 import { formatDate } from '@/utils/date'
 import PostActionStrip from '@/components/business/PostActionStrip.vue'
 import VideoPlayer from '@/components/ui/VideoPlayer.vue'
+import { lockBodyScroll, unlockBodyScroll } from '@/utils/bodyScrollLock'
 
 const props = withDefaults(
   defineProps<{
@@ -310,20 +311,6 @@ function onSheetPointerDown(e: PointerEvent) {
   onHandlePointerDown(e)
 }
 
-let previousBodyOverflow: string | null = null
-
-function lockBodyScroll() {
-  if (typeof document === 'undefined') return
-  if (previousBodyOverflow === null) previousBodyOverflow = document.body.style.overflow
-  document.body.style.overflow = 'hidden'
-}
-
-function unlockBodyScroll() {
-  if (typeof document === 'undefined') return
-  if (previousBodyOverflow === null) return
-  document.body.style.overflow = previousBodyOverflow
-  previousBodyOverflow = null
-}
 
 function onKeydown(e: KeyboardEvent) {
   if (e.key === 'Escape') requestClose()

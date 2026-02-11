@@ -21,7 +21,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, nextTick } from 'vue'
+import { ref, watch, nextTick, onUnmounted } from 'vue'
 
 interface Props {
   length?: number
@@ -135,16 +135,26 @@ function focus() {
   inputRefs[0]?.focus()
 }
 
+let resetTimer: ReturnType<typeof setTimeout> | null = null
+
 // Watch for external error to shake
 watch(
   () => props.error,
   (hasError) => {
     if (hasError) {
       // Reset after shake animation
-      setTimeout(() => reset(), 600)
+      if (resetTimer) clearTimeout(resetTimer)
+      resetTimer = setTimeout(() => reset(), 600)
     }
   }
 )
+
+onUnmounted(() => {
+  if (resetTimer) {
+    clearTimeout(resetTimer)
+    resetTimer = null
+  }
+})
 
 defineExpose({ reset, focus })
 </script>

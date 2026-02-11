@@ -33,6 +33,18 @@ interface Props {
   disabled?: boolean
   showValue?: boolean
 }
+function cleanupDragListeners() {
+  if (dragMoveHandler) {
+    document.removeEventListener('mousemove', dragMoveHandler)
+    document.removeEventListener('touchmove', dragMoveHandler)
+    dragMoveHandler = null
+  }
+  if (dragEndHandler) {
+    document.removeEventListener('mouseup', dragEndHandler)
+    document.removeEventListener('touchend', dragEndHandler)
+    dragEndHandler = null
+  }
+}
 
 const props = withDefaults(defineProps<Props>(), {
   modelValue: 0,
@@ -49,6 +61,8 @@ const emit = defineEmits<{
 
 const trackRef = ref<HTMLElement | null>(null)
 const isDragging = ref(false)
+let dragMoveHandler: ((e: MouseEvent | TouchEvent) => void) | null = null
+let dragEndHandler: (() => void) | null = null
 
 const percentage = computed(() => {
   return ((props.modelValue - props.min) / (props.max - props.min)) * 100
@@ -94,25 +108,22 @@ function startDrag(event: MouseEvent | TouchEvent) {
   if (props.disabled) return
   event.preventDefault()
   isDragging.value = true
-
+  dragMoveHandler = (e: MouseEvent | TouchEvent) => {
   const handleMove = (e: MouseEvent | TouchEvent) => {
     const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX
     const value = getValueFromPosition(clientX)
     emit('update:modelValue', value)
   }
-
+  dragEndHandler = () => {
   const handleEnd = () => {
     isDragging.value = false
-    document.removeEventListener('mousemove', handleMove)
-    document.removeEventListener('mouseup', handleEnd)
-    document.removeEventListener('touchmove', handleMove)
-    document.removeEventListener('touchend', handleEnd)
+    cleanupDragListeners()
   }
 
-  document.addEventListener('mousemove', handleMove)
-  document.addEventListener('mouseup', handleEnd)
-  document.addEventListener('touchmove', handleMove)
-  document.addEventListener('touchend', handleEnd)
+  document.addEventListener('mousemove', dragMoveHandler)
+  document.addEventListener('mouseup', dragEndHandler)
+  document.addEventListener('touchmove', dragMoveHandler)
+  document.addEventListener('touchend', dragEndHandler)
 }
 
 function handleKeydown(event: KeyboardEvent) {
@@ -152,6 +163,7 @@ function handleKeydown(event: KeyboardEvent) {
 
 onUnmounted(() => {
   isDragging.value = false
+  cleanupDragListeners()
 })
 </script>
 

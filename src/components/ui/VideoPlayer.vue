@@ -689,6 +689,7 @@ const VOLUME_STEP = 0.1
 
 let controlsTimeout: ReturnType<typeof setTimeout> | null = null
 let seekPendingTimeout: ReturnType<typeof setTimeout> | null = null
+let hintTimeout: ReturnType<typeof setTimeout> | null = null
 
 function formatTime(seconds: number): string {
   if (!isFinite(seconds)) return '0:00'
@@ -1056,6 +1057,10 @@ onBeforeUnmount(() => {
   stopControlsTimer()
   stopSeekDrag()
   clearSeekPending()
+  if (hintTimeout) {
+    clearTimeout(hintTimeout)
+    hintTimeout = null
+  }
 })
 
 function setSubtitleLanguage(language: string | null) {
@@ -1075,7 +1080,10 @@ function toggleSubtitles() {
 
 function startHintTimer() {
   showControlHints.value = true
-  window.setTimeout(() => {
+  if (hintTimeout) {
+    clearTimeout(hintTimeout)
+  }
+  hintTimeout = window.setTimeout(() => {
     showControlHints.value = false
   }, 2600)
 }

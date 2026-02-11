@@ -63,7 +63,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, nextTick } from 'vue'
+import { ref, computed, watch, nextTick, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Mail } from 'lucide-vue-next'
 import { authService, ApiError } from '@/api'
@@ -223,9 +223,22 @@ watch(
       if (props.autoSend) {
         sendCode()
       }
+      return
+    }
+    // 关闭时清理计时器，避免后台计时占用
+    if (cooldownTimer) {
+      clearInterval(cooldownTimer)
+      cooldownTimer = null
     }
   }
 )
+
+onUnmounted(() => {
+  if (cooldownTimer) {
+    clearInterval(cooldownTimer)
+    cooldownTimer = null
+  }
+})
 </script>
 
 <style scoped>

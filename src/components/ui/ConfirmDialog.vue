@@ -64,6 +64,7 @@ import { AlertTriangle, Trash2, Info, HelpCircle, CheckCircle } from 'lucide-vue
 import Button from './Button.vue'
 import { useFocusTrap } from '@/composables/useFocusTrap'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
+import { lockBodyScroll, unlockBodyScroll } from '@/utils/bodyScrollLock'
 
 defineOptions({ name: 'UiConfirmDialog' })
 
@@ -187,22 +188,20 @@ function handleKeydown(event: KeyboardEvent) {
 
 watch(
   () => props.isOpen,
-  (isOpen) => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden'
-    } else {
-      document.body.style.overflow = ''
-    }
+  (isOpen, wasOpen) => {
+    if (isOpen && !wasOpen) lockBodyScroll()
+    if (!isOpen && wasOpen) unlockBodyScroll()
   }
 )
 
 onMounted(() => {
   document.addEventListener('keydown', handleKeydown)
+  if (props.isOpen) lockBodyScroll()
 })
 
 onUnmounted(() => {
   document.removeEventListener('keydown', handleKeydown)
-  document.body.style.overflow = ''
+  if (props.isOpen) unlockBodyScroll()
 })
 </script>
 
