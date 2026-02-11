@@ -11,6 +11,11 @@ import {
 } from './offlineQueue'
 import { favoriteService } from '@/api/favoriteService'
 import { commentService } from '@/api/commentService'
+// ==================== Listener state ====================
+let autoSyncAttached = false
+let autoSyncHandler: (() => void) | null = null
+let swSyncListenerAttached = false
+let swSyncHandler: ((event: MessageEvent) => void) | null = null
 
 /**
  * 同步所有待处理的离线操作
@@ -89,6 +94,31 @@ export async function syncOfflineActions(): Promise<{
   return results
 }
 
+export function disposeAutoSync(): void {
+  if (typeof window === 'undefined') return
+  if (!autoSyncAttached) return
+
+  if (autoSyncHandler) {
+    window.removeEventListener('online', autoSyncHandler)
+    autoSyncHandler = null
+  }
+
+  autoSyncAttached = false
+}
+
+export function disposeSwSyncListener(): void {
+  if (typeof window === 'undefined') return
+  if (!('serviceWorker' in navigator)) return
+  if (!swSyncListenerAttached) return
+
+  if (swSyncHandler) {
+    navigator.serviceWorker.removeEventListener('message', swSyncHandler)
+    swSyncHandler = null
+  }
+
+  swSyncListenerAttached = false
+}
+
 /**
  * 手动触发同步
  */
@@ -113,22 +143,22 @@ export async function triggerSync(): Promise<void> {
   }
 }
 
-/**
- * 监听网络状态变化，自动触发同步
- */
+
 export function setupAutoSync(): void {
   if (typeof window === 'undefined') return
+  if (autoSyncAttached) return
 
-  window.addEventListener('online', () => {
+  autoSyncHandler = () => {
     console.log('[Sync] Network restored, triggering sync...')
     triggerSync().catch((error: unknown) => {
       console.error('[Sync] Auto sync failed:', error)
     })
-  })
+  }
+
+  window.addEventListener('online', autoSyncHandler)
+  autoSyncAttached = true
 }
 
-// ==================== Service Worker -> Client sync bridge ====================
-let swSyncListenerAttached = false
 
 /**
  * 监听来自 Service Worker 的同步请求
@@ -139,8 +169,7 @@ export function setupSwSyncListener(): void {
   if (!('serviceWorker' in navigator)) return
   if (swSyncListenerAttached) return
   swSyncListenerAttached = true
-
-  navigator.serviceWorker.addEventListener('message', async (event) => {
+  swSyncHandler = async (event: MessageEvent) => {
     const data = event.data as { type?: string } | undefined
     if (data?.type !== 'SYNC_OFFLINE_ACTIONS') return
 
@@ -153,5 +182,7 @@ export function setupSwSyncListener(): void {
       const message = error instanceof Error ? error.message : 'Unknown error'
       replyPort?.postMessage({ ok: false, error: message })
     }
-  })
+  }
+
+  navigator.serviceWorker.addEventListener('message', swSyncHandler)
 }

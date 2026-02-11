@@ -30,6 +30,10 @@ const widgetId = ref<string | null>(null)
 let isUnmounted = false
 let previousOnloadHandler: (() => void) | null = null
 let turnstileOnloadHandler: (() => void) | null = null
+let mountDelayTimer: ReturnType<typeof setTimeout> | null = null
+let mountDelayResolve: (() => void) | null = null
+let turnstilePollRaf: number | null = null
+let turnstilePollReject: ((reason?: Error) => void) | null = null
 
 declare global {
   interface Window {
@@ -52,18 +56,30 @@ function loadTurnstileScript(): Promise<void> {
 
     const waitForTurnstile = (timeoutMs = 2000) => {
       const start = Date.now()
+      turnstilePollReject = reject
       const check = () => {
+        if (isUnmounted) {
+          const err = new Error('Turnstile widget unmounted before API became available')
+          turnstilePollReject?.(err)
+          turnstilePollReject = null
+          turnstilePollRaf = null
+          return
+        }
         if (window.turnstile) {
+          turnstilePollReject = null
+          turnstilePollRaf = null
           resolve()
           return
         }
         if (Date.now() - start >= timeoutMs) {
-          reject(new Error('Turnstile script loaded but API is unavailable'))
+          turnstilePollReject?.(new Error('Turnstile script loaded but API is unavailable'))
+          turnstilePollReject = null
+          turnstilePollRaf = null
           return
         }
-        requestAnimationFrame(check)
+        turnstilePollRaf = requestAnimationFrame(check)
       }
-      requestAnimationFrame(check)
+      turnstilePollRaf = requestAnimationFrame(check)
     }
 
     const existingScript = document.querySelector(
@@ -197,6 +213,16 @@ function renderWidget() {
   }
 }
 
+function waitForMountDelay(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    mountDelayResolve = resolve
+    mountDelayTimer = window.setTimeout(() => {
+      mountDelayTimer = null
+      mountDelayResolve = null
+      resolve()
+    }, ms)
+  })
+}
 function reset() {
   if (widgetId.value && window.turnstile) {
     window.turnstile.reset(widgetId.value)
@@ -218,7 +244,7 @@ onMounted(async () => {
     console.log(`${LOG_PREFIX} Script loaded, rendering widget...`)
 
     // 等待下一个 tick 确保 DOM 完全准备好
-    await new Promise((resolve) => setTimeout(resolve, 100))
+    await waitForMountDelay(100)
     if (isUnmounted) return
 
     renderWidget()
@@ -230,6 +256,22 @@ onMounted(async () => {
 
 onUnmounted(() => {
   isUnmounted = true
+  if (turnstilePollRaf !== null) {
+    cancelAnimationFrame(turnstilePollRaf)
+    turnstilePollRaf = null
+  }
+  if (turnstilePollReject) {
+    turnstilePollReject(new Error('Turnstile widget unmounted'))
+    turnstilePollReject = null
+  }
+  if (mountDelayTimer) {
+    clearTimeout(mountDelayTimer)
+    mountDelayTimer = null
+  }
+  if (mountDelayResolve) {
+    mountDelayResolve()
+    mountDelayResolve = null
+  }
   cleanupWidget()
   if (turnstileOnloadHandler && window.onTurnstileLoad === turnstileOnloadHandler) {
     window.onTurnstileLoad = previousOnloadHandler ?? undefined

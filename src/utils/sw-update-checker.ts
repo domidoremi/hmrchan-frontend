@@ -12,6 +12,7 @@ const SW_UPDATE_DEBUG = import.meta.env.DEV || import.meta.env['VITE_ENABLE_DEBU
 let checkIntervalId: ReturnType<typeof setInterval> | null = null
 let visibilityHandler: (() => void) | null = null
 let controllerChangeHandler: (() => void) | null = null
+let initToken = 0
 
 export interface SwUpdateOptions {
   /** 检查更新的间隔时间（毫秒），默认 30 分钟 */
@@ -27,6 +28,7 @@ export interface SwUpdateOptions {
  */
 export function disposeSwUpdateChecker(): void {
   if (!isInitialized) return
+  initToken += 1
 
   if (checkIntervalId) {
     clearInterval(checkIntervalId)
@@ -54,6 +56,7 @@ export function disposeSwUpdateChecker(): void {
 export function initSwUpdateChecker(options: SwUpdateOptions = {}): void {
   if (isInitialized) return
   isInitialized = true
+  const token = ++initToken
   const {
     checkInterval = 30 * 60 * 1000, // 30 分钟
     autoRefresh = false,
@@ -70,6 +73,7 @@ export function initSwUpdateChecker(options: SwUpdateOptions = {}): void {
   // 等待 SW 就绪后再开始检查，避免无效状态噪音
   navigator.serviceWorker.ready
     .then(() => {
+      if (!isInitialized || token !== initToken) return
       // 监听 SW 激活
       controllerChangeHandler = () => {
         if (SW_UPDATE_DEBUG) {

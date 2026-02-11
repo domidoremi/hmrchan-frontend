@@ -464,6 +464,10 @@ watch(
 
 onBeforeUnmount(() => {
   unlockBodyScroll()
+  if (loadingTimer) {
+    clearTimeout(loadingTimer)
+    loadingTimer = null
+  }
   if (typeof window !== 'undefined') {
     window.removeEventListener('keydown', onKeydown)
     window.removeEventListener('popstate', onPopState)

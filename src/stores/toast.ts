@@ -116,6 +116,12 @@ export const useToastStore = defineStore('toast', () => {
     toasts.value = []
   }
 
+  if (import.meta.hot) {
+    import.meta.hot.dispose(() => {
+      clear()
+    })
+  }
+
   return {
     toasts,
     addToast,

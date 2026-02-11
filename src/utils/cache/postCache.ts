@@ -275,3 +275,16 @@ export const postCache = {
     // IDB 清理交给 SW 或手动触发
   },
 }
+
+if (import.meta.hot) {
+  import.meta.hot.dispose(() => {
+    if (postEntityPruneTimer) {
+      clearTimeout(postEntityPruneTimer)
+      postEntityPruneTimer = null
+    }
+    if (postListPruneTimer) {
+      clearTimeout(postListPruneTimer)
+      postListPruneTimer = null
+    }
+  })
+}
