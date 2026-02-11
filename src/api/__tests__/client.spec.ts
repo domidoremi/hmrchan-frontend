@@ -44,12 +44,13 @@ vi.mock('@/stores/toast', () => ({
   }),
 }))
 
-// Mock secure token manager
-const mockSecureTokenManager = {
+// Mock secure token manager - use vi.hoisted to avoid hoisting issues
+const mockSecureTokenManager = vi.hoisted(() => ({
   retrieve: vi.fn(() => Promise.resolve(null)),
   store: vi.fn(() => Promise.resolve()),
   clear: vi.fn(),
-}
+}))
+
 vi.mock('@/utils/tokenSecurity', () => ({
   secureTokenManager: mockSecureTokenManager,
 }))
