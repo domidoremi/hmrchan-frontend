@@ -224,7 +224,7 @@ router.beforeEach(async (to, _from, next) => {
   if (to.meta.requiresAuth && !isAuthenticated) {
     next({
       path: '/login',
-      query: { redirect: to.fullPath },
+      query: { redirect: encodeURIComponent(to.fullPath) },
     })
     return
   }

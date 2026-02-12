@@ -4,7 +4,6 @@
       <!-- 页面标题 -->
       <header class="page-header">
         <h1 class="page-title gradient-text">{{ $t('about.title') }}</h1>
-        <p class="page-subtitle">{{ $t('about.subtitle') }}</p>
       </header>
 
       <!-- 关于 Himeri -->
@@ -102,7 +101,6 @@
           <AnimatedIcon name="explore" :fallback-icon="Code" size="lg" class="section-icon" />
           <h2 class="section-title">{{ $t('about.tech.title') }}</h2>
         </div>
-        <p class="tech-intro">{{ $t('about.tech.description') }}</p>
         <div class="tech-grid">
           <a
             v-for="tech in techStack"
@@ -276,18 +274,13 @@ const { techStack } = useAboutData()
 /* 页面标题 */
 .page-header {
   text-align: center;
-  margin-bottom: var(--spacing-8);
+  margin-bottom: var(--spacing-6);
 }
 
 .page-title {
   font-size: var(--text-3xl);
   font-weight: var(--font-bold);
   margin-bottom: var(--spacing-2);
-}
-
-.page-subtitle {
-  font-size: var(--text-lg);
-  color: var(--color-text-secondary);
 }
 
 /* 章节 */
@@ -644,14 +637,6 @@ const { techStack } = useAboutData()
 .section-surface > * {
   position: relative;
   z-index: 1;
-}
-
-/* 技术实现 */
-.tech-intro {
-  font-size: var(--text-base);
-  color: var(--color-text-secondary);
-  margin-bottom: var(--spacing-5);
-  line-height: var(--leading-relaxed);
 }
 
 .tech-grid {
