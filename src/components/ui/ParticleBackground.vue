@@ -12,11 +12,13 @@
 
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { storeToRefs } from 'pinia'
-import { useSettingsStore } from '@/stores'
+import { useSettingsStore, useThemeStore } from '@/stores'
 import { useParticleEngine } from '@/composables/useParticleEngine'
 
 const settingsStore = useSettingsStore()
+const themeStore = useThemeStore()
 const { settings } = storeToRefs(settingsStore)
+const { resolvedTheme } = storeToRefs(themeStore)
 
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 
@@ -31,6 +33,7 @@ const engine = useParticleEngine({
   canvas: canvasRef,
   config: effectConfig,
   animationIntensity,
+  resolvedTheme,
 })
 
 onMounted(() => {
@@ -52,9 +55,9 @@ onBeforeUnmount(() => {
   height: 100dvh;
   pointer-events: none;
   contain: strict;
-  /* GPU 合成层 */
-  will-change: contents;
-  transform: translate3d(0, 0, 0);
+  /* 提升至独立合成层，避免页面滚动触发 canvas 重绘 */
+  will-change: transform;
+  transform: translateZ(0);
 }
 
 /* 减少动态效果时隐藏 */

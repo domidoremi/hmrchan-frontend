@@ -7,6 +7,7 @@
 
 import { sha256, encrypt, decrypt, getRandomHex } from './crypto'
 import { getDeviceFingerprint } from './fingerprint'
+import { safeJsonParse } from './security'
 
 // 存储密钥的 key（基于设备指纹派生）
 const STORAGE_KEY_PREFIX = 'auth_secure_'
@@ -171,7 +172,12 @@ export const secureTokenManager = {
       const stored = localStorage.getItem(STORAGE_KEY_PREFIX + 'data')
       if (!stored) return null
 
-      const data = JSON.parse(stored)
+      const data = safeJsonParse<{
+        token: string
+        binding: TokenBinding
+        integrity: string
+      }>(stored)
+      if (!data) return null
 
       // 验证绑定
       const bindingResult = await validateTokenBinding(data.binding)

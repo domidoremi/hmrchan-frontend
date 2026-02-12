@@ -36,7 +36,7 @@ const defaultSettings: VideoSettings = {
 function loadSettings(): VideoSettings {
   try {
     const stored = localStorage.getItem(STORAGE_KEY)
-    const parsed = stored ? (JSON.parse(stored) as Partial<VideoSettings>) : null
+    const parsed = stored ? safeJsonParse<Partial<VideoSettings>>(stored) : null
     const sessionBrightness = sessionStorage.getItem(BRIGHTNESS_SESSION_KEY)
     const brightness = sessionBrightness !== null ? Number(sessionBrightness) : Number.NaN
 

@@ -618,6 +618,9 @@ function isTurnstileTokenFresh() {
   align-items: center;
   justify-content: center;
   padding: var(--spacing-3);
+  background:
+    radial-gradient(circle at top, rgba(var(--mm-green-rgb), 0.12), transparent 55%),
+    linear-gradient(180deg, rgba(var(--mm-teal-rgb), 0.04) 0%, transparent 70%);
 }
 
 @media (max-width: 768px) {
@@ -629,13 +632,20 @@ function isTurnstileTokenFresh() {
 
 .auth-card {
   width: 100%;
-  max-width: min(90vw, 23.75rem);
-  padding: var(--spacing-5);
-  border-radius: var(--radius-xl);
-  border: 1px solid rgba(var(--color-border-rgb), 0.6);
+  max-width: min(92vw, 26rem);
+  padding: var(--spacing-6);
+  border-radius: var(--radius-2xl);
+  border: 1px solid var(--glass-border);
+  background: var(--color-surface);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   box-shadow:
-    0 16px 40px -24px rgba(15, 23, 42, 0.4),
-    0 6px 20px -12px rgba(15, 23, 42, 0.35);
+    0 1.25rem 3rem -2rem rgba(15, 23, 42, 0.35),
+    0 0.75rem 1.5rem -1.25rem rgba(15, 23, 42, 0.2);
+}
+
+.auth-card::before {
+  display: none;
 }
 
 @media (min-width: 640px) {
@@ -645,9 +655,10 @@ function isTurnstileTokenFresh() {
 }
 
 .auth-title {
-  font-size: var(--text-xl);
+  font-size: var(--text-2xl);
   text-align: center;
   margin-bottom: var(--spacing-1);
+  letter-spacing: 0.02em;
 }
 
 @media (min-width: 640px) {
@@ -659,7 +670,7 @@ function isTurnstileTokenFresh() {
 .auth-subtitle {
   text-align: center;
   color: var(--color-text-tertiary);
-  margin-bottom: var(--spacing-4);
+  margin-bottom: var(--spacing-5);
   font-size: var(--text-sm);
 }
 
@@ -674,7 +685,7 @@ function isTurnstileTokenFresh() {
 .auth-form {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-3);
+  gap: var(--spacing-4);
 }
 
 .form-group {
@@ -695,8 +706,8 @@ function isTurnstileTokenFresh() {
   gap: var(--spacing-2);
   padding: var(--spacing-3);
   border-radius: var(--radius-lg);
-  background: rgba(var(--color-surface-rgb), 0.6);
-  border: 1px solid rgba(var(--color-border-rgb), 0.6);
+  background: rgba(var(--color-surface-rgb), 0.9);
+  border: 1px solid var(--glass-border);
 }
 
 .turnstile-header {
@@ -738,12 +749,14 @@ function isTurnstileTokenFresh() {
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  margin-bottom: var(--spacing-2);
+  margin-bottom: var(--spacing-3);
 }
 
 .back-btn {
   padding: var(--spacing-2);
   border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--color-text-tertiary);
 }
 
 /* Password field with toggle */

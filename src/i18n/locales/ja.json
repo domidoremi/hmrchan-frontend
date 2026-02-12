@@ -259,6 +259,8 @@
     "placeholder": "投稿、作者、タグを検索...",
     "emptyTitle": "コンテンツを検索",
     "emptyHint": "投稿、作者などを検索",
+    "discoverTitle": "ランダムピック",
+    "discoverHint": "まずはランダム投稿を眺めてから検索できます",
     "resultsFor": "検索結果：",
     "noResults": "「{query}」の検索結果が見つかりません",
     "noAuthors": "「{query}」に一致する作者が見つかりません",
