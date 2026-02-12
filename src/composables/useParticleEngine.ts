@@ -515,6 +515,7 @@ export function useParticleEngine(options: UseParticleEngineOptions) {
   let dpr = 1
   let resizeTimer: ReturnType<typeof setTimeout> | null = null
   let currentEffect: EffectDescriptor | null = null
+  let needsInit = false
 
   const reducedMotionQuery =
     typeof window !== 'undefined' ? window.matchMedia('(prefers-reduced-motion: reduce)') : null
@@ -599,6 +600,7 @@ export function useParticleEngine(options: UseParticleEngineOptions) {
     if (type === 'none') return
 
     currentEffect = EFFECTS[type]
+    needsInit = false
     const count = getParticleCount()
 
     if (pool.length < count) {
@@ -696,14 +698,17 @@ export function useParticleEngine(options: UseParticleEngineOptions) {
     rafId = requestAnimationFrame(tick)
   }
 
-  function start() {
+  function start(forceInit = false) {
     if (running) {
       if (paused) resume()
       return
     }
     if (!shouldRun()) return
     resize()
-    if (!pool.length) initParticles()
+    if (forceInit || needsInit || !pool.length || !currentEffect) {
+      initParticles()
+      needsInit = false
+    }
     running = true
     paused = false
     renderQuality = quality
@@ -836,12 +841,14 @@ export function useParticleEngine(options: UseParticleEngineOptions) {
     config,
     (newCfg, oldCfg) => {
       if (newCfg.type === 'none') {
+        needsInit = true
         stop()
         return
       }
       if (newCfg.type !== oldCfg?.type) {
+        needsInit = true
         stop()
-        if (shouldRun()) start()
+        if (shouldRun()) start(true)
         return
       }
       if (newCfg.density !== oldCfg?.density) initParticles()

@@ -76,18 +76,18 @@ function toggle() {
 
 /* Sizes */
 .ui-switch--sm {
-  width: 2rem;
-  height: 1.125rem;
+  width: var(--ui-switch-width-sm);
+  height: var(--ui-switch-height-sm);
 }
 
 .ui-switch--default {
-  width: 2.75rem;
-  height: 1.5rem;
+  width: var(--ui-switch-width-md);
+  height: var(--ui-switch-height-md);
 }
 
 .ui-switch--lg {
-  width: 3.25rem;
-  height: 1.75rem;
+  width: var(--ui-switch-width-lg);
+  height: var(--ui-switch-height-lg);
 }
 
 /* Thumb */
@@ -102,20 +102,20 @@ function toggle() {
 }
 
 .ui-switch--sm .ui-switch__thumb {
-  width: 0.875rem;
-  height: 0.875rem;
+  width: var(--ui-switch-thumb-sm);
+  height: var(--ui-switch-thumb-sm);
   left: 2px;
 }
 
 .ui-switch--default .ui-switch__thumb {
-  width: 1.25rem;
-  height: 1.25rem;
+  width: var(--ui-switch-thumb-md);
+  height: var(--ui-switch-thumb-md);
   left: 2px;
 }
 
 .ui-switch--lg .ui-switch__thumb {
-  width: 1.5rem;
-  height: 1.5rem;
+  width: var(--ui-switch-thumb-lg);
+  height: var(--ui-switch-thumb-lg);
   left: 2px;
 }
 
@@ -135,15 +135,15 @@ function toggle() {
 }
 
 .ui-switch--checked.ui-switch--sm .ui-switch__thumb {
-  transform: translateX(calc(2rem - 0.875rem - 6px));
+  transform: translateX(var(--ui-switch-translate-sm));
 }
 
 .ui-switch--checked.ui-switch--default .ui-switch__thumb {
-  transform: translateX(calc(2.75rem - 1.25rem - 6px));
+  transform: translateX(var(--ui-switch-translate-md));
 }
 
 .ui-switch--checked.ui-switch--lg .ui-switch__thumb {
-  transform: translateX(calc(3.25rem - 1.5rem - 6px));
+  transform: translateX(var(--ui-switch-translate-lg));
 }
 
 /* Disabled state */

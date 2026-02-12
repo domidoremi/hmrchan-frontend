@@ -54,7 +54,7 @@ function handleChange(event: Event) {
 <style scoped>
 .ui-select {
   width: 100%;
-  border-radius: var(--radius);
+  border-radius: var(--ui-radius-input, var(--radius));
   border: 1px solid var(--glass-border);
   background-color: var(--glass-bg-light);
   color: var(--color-foreground);
@@ -97,19 +97,19 @@ function handleChange(event: Event) {
 }
 
 .ui-select--sm {
-  height: 2.25rem;
-  padding: 0 2rem 0 0.75rem;
+  height: var(--ui-control-height-sm);
+  padding: 0 calc(var(--ui-control-padding-x-sm) + 1.25rem) 0 var(--ui-control-padding-x-sm);
   font-size: var(--text-xs);
 }
 
 .ui-select--default {
-  height: 2.5rem;
-  padding: 0 2rem 0 1rem;
+  height: var(--ui-control-height-md);
+  padding: 0 calc(var(--ui-control-padding-x-md) + 1.25rem) 0 var(--ui-control-padding-x-md);
 }
 
 .ui-select--lg {
-  height: 2.75rem;
-  padding: 0 2.25rem 0 1.25rem;
+  height: var(--ui-control-height-lg);
+  padding: 0 calc(var(--ui-control-padding-x-lg) + 1.25rem) 0 var(--ui-control-padding-x-lg);
   font-size: var(--text-base);
 }
 

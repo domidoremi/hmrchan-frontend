@@ -33,7 +33,7 @@ const badgeClass = computed(() => [
   justify-content: center;
   gap: var(--spacing-1);
   font-weight: var(--font-medium);
-  border-radius: var(--radius-full);
+  border-radius: var(--ui-radius-badge, var(--radius-full));
   white-space: nowrap;
   transition-property: color, background-color, border-color;
   transition-duration: 150ms;

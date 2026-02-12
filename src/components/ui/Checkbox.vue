@@ -84,7 +84,7 @@ function toggle() {
   justify-content: center;
   flex-shrink: 0;
   cursor: pointer;
-  border-radius: var(--radius-sm);
+  border-radius: var(--ui-radius-checkbox, var(--radius-sm));
   background: transparent;
   border: 1px solid var(--glass-border-strong);
   transition-property: background-color, border-color, box-shadow;
