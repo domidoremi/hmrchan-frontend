@@ -69,7 +69,7 @@ function selectTab(value: string) {
   align-items: center;
   padding: var(--spacing-1);
   background: var(--glass-bg-light);
-  border-radius: var(--radius-lg);
+  border-radius: var(--ui-radius-tabs, var(--radius-lg));
   border: 1px solid var(--glass-border);
 }
 
@@ -83,7 +83,7 @@ function selectTab(value: string) {
   font-size: var(--text-sm);
   font-weight: var(--font-medium);
   color: var(--color-muted-foreground);
-  border-radius: var(--radius);
+  border-radius: var(--ui-radius-button, var(--radius));
   cursor: pointer;
   transition-property: color, background-color;
   transition-duration: 150ms;

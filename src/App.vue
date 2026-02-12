@@ -84,7 +84,9 @@ const { settings } = storeToRefs(settingsStore)
 usePageTitle()
 
 // 动效强度
-const animationIntensity = computed(() => settings.value.animationIntensity)
+const animationIntensity = computed(() =>
+  settings.value.enableAnimations ? settings.value.animationIntensity : 'none'
+)
 
 // UI 风格（默认 iOS/SwiftUI）
 const uiStyle = computed(() => settings.value.uiStyle)
@@ -150,22 +152,29 @@ watch(
       return
     }
 
-    // 页面切换时触发粒子干扰效果
-    try {
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(
-          new CustomEvent('particle-burst', {
-            detail: {
-              x: window.innerWidth * 0.5,
-              y: window.innerHeight * 0.35,
-              strength: 220,
-              radius: 380,
-            },
-          })
-        )
+    // 页面切换时触发粒子干扰效果（仅在启用时）
+    const shouldBurst =
+      settings.value.enableAnimations &&
+      settings.value.animationIntensity !== 'none' &&
+      settings.value.backgroundEffect.type !== 'none'
+
+    if (shouldBurst) {
+      try {
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(
+            new CustomEvent('particle-burst', {
+              detail: {
+                x: window.innerWidth * 0.5,
+                y: window.innerHeight * 0.35,
+                strength: 220,
+                radius: 380,
+              },
+            })
+          )
+        }
+      } catch {
+        // ignore
       }
-    } catch {
-      // ignore
     }
 
     // Post -> Post: use horizontal slide transition

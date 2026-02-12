@@ -156,11 +156,11 @@ function handleAction(toast: Toast) {
   display: flex;
   align-items: flex-start;
   gap: var(--spacing-3);
-  padding: var(--spacing-3) var(--spacing-4);
+  padding: var(--ui-toast-padding-y) var(--ui-toast-padding-x);
   background: var(--glass-bg-strong);
   backdrop-filter: var(--glass-blur);
   border: 1px solid var(--glass-border);
-  border-radius: var(--radius-lg);
+  border-radius: var(--ui-radius-toast, var(--radius-lg));
   box-shadow: var(--shadow-lg);
   pointer-events: auto;
   overflow: hidden;
@@ -187,8 +187,8 @@ function handleAction(toast: Toast) {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  width: 2rem;
-  height: 2rem;
+  width: var(--ui-toast-icon-size);
+  height: var(--ui-toast-icon-size);
   border-radius: var(--radius-full);
 }
 
@@ -243,7 +243,7 @@ function handleAction(toast: Toast) {
   font-size: var(--text-xs);
   font-weight: var(--font-medium);
   color: var(--color-primary);
-  border-radius: var(--radius-sm);
+  border-radius: var(--ui-radius-button, var(--radius-sm));
   transition: background-color 150ms var(--ease-out);
 }
 
@@ -256,9 +256,9 @@ function handleAction(toast: Toast) {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 1.5rem;
-  height: 1.5rem;
-  border-radius: var(--radius-sm);
+  width: var(--ui-toast-close-size);
+  height: var(--ui-toast-close-size);
+  border-radius: var(--ui-radius-button, var(--radius-sm));
   color: var(--color-muted-foreground);
   transition:
     background-color 150ms var(--ease-out),

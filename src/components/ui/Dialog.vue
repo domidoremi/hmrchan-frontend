@@ -218,8 +218,9 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   padding: var(--spacing-4);
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(4px);
+  background: var(--ui-backdrop-dim);
+  backdrop-filter: var(--ui-backdrop-blur);
+  -webkit-backdrop-filter: var(--ui-backdrop-blur);
   overflow-y: auto;
 }
 
@@ -231,10 +232,10 @@ onUnmounted(() => {
   max-height: calc(100dvh - var(--spacing-8));
   display: flex;
   flex-direction: column;
-  border-radius: var(--radius-lg);
-  background: var(--glass-bg-strong);
+  border-radius: var(--ui-radius-dialog);
+  background: var(--ui-surface-bg, var(--glass-bg-strong));
   backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--glass-border);
+  border: 1px solid var(--ui-surface-border, var(--glass-border));
   box-shadow: var(--shadow-xl);
   overflow: hidden;
   color: var(--color-text-primary);
@@ -314,9 +315,9 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 2rem;
-  height: 2rem;
-  border-radius: var(--radius);
+  width: var(--ui-dialog-close-size);
+  height: var(--ui-dialog-close-size);
+  border-radius: var(--ui-radius-button, var(--radius));
   color: var(--color-text-secondary);
   transition:
     background-color 150ms var(--ease-out),

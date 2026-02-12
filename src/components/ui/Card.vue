@@ -82,7 +82,7 @@ function handleMouseLeave() {
 <style scoped>
 .ui-card {
   position: relative;
-  border-radius: var(--radius-xl);
+  border-radius: var(--ui-radius-card, var(--radius-xl));
   border: 1px solid var(--glass-border);
   background: var(--glass-bg);
   backdrop-filter: var(--glass-blur);

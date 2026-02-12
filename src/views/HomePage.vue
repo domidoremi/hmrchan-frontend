@@ -443,6 +443,25 @@ onBeforeUnmount(() => {
     rgba(var(--mm-green-rgb), 0.02) 55%,
     transparent 100%
   );
+  --home-section-fade: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(var(--mm-green-rgb), 0.02) 100%
+  );
+}
+
+:global([data-theme='dark']) .home-page {
+  --home-section-bg: linear-gradient(
+    180deg,
+    rgba(var(--mm-teal-rgb), 0.015) 0%,
+    rgba(var(--mm-green-rgb), 0.015) 55%,
+    transparent 100%
+  );
+  --home-section-fade: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(var(--mm-green-rgb), 0.015) 100%
+  );
 }
 
 /* ========== Hero Section ========== */
@@ -463,6 +482,7 @@ onBeforeUnmount(() => {
   inset: 0;
   background: var(--home-section-bg);
   pointer-events: none;
+  z-index: 0;
 }
 
 .hero > * {
@@ -531,9 +551,12 @@ onBeforeUnmount(() => {
   inset: 0;
   background: var(--home-section-bg);
   pointer-events: none;
+  z-index: 0;
 }
 
 .bento-header {
+  position: relative;
+  z-index: 1;
   text-align: center;
   margin-bottom: var(--spacing-6);
 }
@@ -557,6 +580,8 @@ onBeforeUnmount(() => {
 }
 
 .bento-grid {
+  position: relative;
+  z-index: 1;
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: var(--spacing-3);
@@ -702,8 +727,9 @@ onBeforeUnmount(() => {
   left: 0;
   right: 0;
   height: 100px;
-  background: linear-gradient(180deg, transparent 0%, rgba(var(--mm-green-rgb), 0.02) 100%);
+  background: var(--home-section-fade);
   pointer-events: none;
+  z-index: 0;
 }
 
 /* ========== Posts Section ========== */
@@ -723,9 +749,12 @@ onBeforeUnmount(() => {
   inset: 0;
   background: var(--home-section-bg);
   pointer-events: none;
+  z-index: 0;
 }
 
 .posts-header {
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -744,6 +773,8 @@ onBeforeUnmount(() => {
 }
 
 .masonry {
+  position: relative;
+  z-index: 1;
   display: flex;
   gap: var(--spacing-3);
 }
