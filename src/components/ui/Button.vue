@@ -186,7 +186,7 @@ function handleMouseLeave() {
   justify-content: center;
   gap: var(--spacing-2);
   font-weight: var(--font-medium);
-  border-radius: var(--radius);
+  border-radius: var(--ui-radius-button, var(--radius));
   cursor: pointer;
   transition-property: color, background-color, border-color, box-shadow;
   transition-duration: 150ms;
@@ -289,37 +289,37 @@ function handleMouseLeave() {
 
 /* Sizes */
 .btn-sm {
-  height: 2.25rem;
-  padding: 0 0.75rem;
+  height: var(--ui-control-height-sm);
+  padding: 0 var(--ui-control-padding-x-sm);
   font-size: var(--text-xs);
 }
 
 .btn-md {
-  height: 2.5rem;
-  padding: 0 1rem;
+  height: var(--ui-control-height-md);
+  padding: 0 var(--ui-control-padding-x-md);
   font-size: var(--text-sm);
 }
 
 .btn-lg {
-  height: 2.75rem;
-  padding: 0 2rem;
+  height: var(--ui-control-height-lg);
+  padding: 0 var(--ui-control-padding-x-lg);
   font-size: var(--text-base);
 }
 
 .btn-icon {
-  height: 2.5rem;
-  width: 2.5rem;
+  height: var(--ui-control-height-md);
+  width: var(--ui-control-height-md);
   padding: 0;
 }
 
 .btn-icon-only.btn-sm {
-  height: 2.25rem;
-  width: 2.25rem;
+  height: var(--ui-control-height-sm);
+  width: var(--ui-control-height-sm);
 }
 
 .btn-icon-only.btn-lg {
-  height: 2.75rem;
-  width: 2.75rem;
+  height: var(--ui-control-height-lg);
+  width: var(--ui-control-height-lg);
 }
 
 /* Variants */

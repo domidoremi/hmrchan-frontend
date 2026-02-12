@@ -23,7 +23,9 @@ const { resolvedTheme } = storeToRefs(themeStore)
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 
 const effectConfig = computed(() => settings.value.backgroundEffect)
-const animationIntensity = computed(() => settings.value.animationIntensity)
+const animationIntensity = computed(() =>
+  settings.value.enableAnimations ? settings.value.animationIntensity : 'none'
+)
 
 const isActive = computed(() => {
   return effectConfig.value.type !== 'none' && animationIntensity.value !== 'none'

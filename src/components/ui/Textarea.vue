@@ -61,13 +61,13 @@ defineExpose({ el: textareaRef })
 <style scoped>
 .ui-textarea {
   width: 100%;
-  border-radius: var(--radius);
+  border-radius: var(--ui-radius-input, var(--radius));
   border: 1px solid var(--glass-border);
   background: var(--glass-bg-light);
   color: var(--color-foreground);
   font-size: var(--text-sm);
   line-height: 1.6;
-  padding: 0.75rem 1rem;
+  padding: 0.75rem var(--ui-control-padding-x-md);
   min-height: 7.5rem;
   resize: vertical;
   transition-property: border-color, box-shadow, background-color;
@@ -93,13 +93,13 @@ defineExpose({ el: textareaRef })
 
 .ui-textarea--sm {
   min-height: 5rem;
-  padding: 0.5rem 0.75rem;
+  padding: 0.5rem var(--ui-control-padding-x-sm);
   font-size: var(--text-xs);
 }
 
 .ui-textarea--lg {
   min-height: 10rem;
-  padding: 1rem 1.25rem;
+  padding: 1rem var(--ui-control-padding-x-lg);
   font-size: var(--text-base);
 }
 

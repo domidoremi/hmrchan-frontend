@@ -755,7 +755,7 @@ onUnmounted(() => {
   left: 0;
   height: 100%;
   background: rgba(var(--color-primary-rgb), 0.08);
-  border-radius: var(--radius-lg);
+  border-radius: var(--ui-radius-nav, var(--radius-lg));
   transition:
     transform var(--duration-normal) var(--ease-spring),
     width var(--duration-normal) var(--ease-spring),
@@ -783,7 +783,7 @@ onUnmounted(() => {
   align-items: center;
   gap: var(--spacing-2);
   padding: var(--spacing-2) var(--spacing-3);
-  border-radius: var(--radius-lg);
+  border-radius: var(--ui-radius-nav, var(--radius-lg));
   color: var(--color-text-secondary);
   text-decoration: none;
   font-size: var(--text-sm);
@@ -844,9 +844,9 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: var(--radius-lg);
+  width: var(--ui-action-size, 40px);
+  height: var(--ui-action-size, 40px);
+  border-radius: var(--ui-radius-button, var(--radius-lg));
   color: var(--color-text-secondary);
   transition: all var(--transition-fast);
 }
@@ -1026,7 +1026,7 @@ onUnmounted(() => {
   gap: var(--spacing-3);
   width: 100%;
   padding: var(--spacing-3);
-  border-radius: var(--radius-lg);
+  border-radius: var(--ui-radius-button, var(--radius-lg));
   color: var(--color-text-primary);
   font-size: var(--text-sm);
   text-decoration: none;
@@ -1147,7 +1147,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: var(--radius-xl);
+  border-radius: var(--ui-radius-nav-icon, var(--radius-xl));
   transition:
     background 0.3s ease,
     transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),

@@ -186,7 +186,7 @@ onUnmounted(() => {
 .ui-slider__track {
   position: relative;
   flex: 1;
-  height: 0.5rem;
+  height: var(--ui-slider-track-height);
   background: var(--glass-bg-light);
   border-radius: var(--radius-full);
   cursor: pointer;
@@ -203,12 +203,12 @@ onUnmounted(() => {
 .ui-slider__thumb {
   position: absolute;
   top: 50%;
-  width: 1.25rem;
-  height: 1.25rem;
-  margin-left: -0.625rem;
-  margin-top: -0.625rem;
+  width: var(--ui-slider-thumb-size);
+  height: var(--ui-slider-thumb-size);
+  margin-left: calc(var(--ui-slider-thumb-size) / -2);
+  margin-top: calc(var(--ui-slider-thumb-size) / -2);
   background: var(--color-white);
-  border: 2px solid var(--color-primary);
+  border: var(--ui-slider-thumb-border) solid var(--color-primary);
   border-radius: var(--radius-full);
   box-shadow: var(--shadow-sm);
   cursor: grab;
