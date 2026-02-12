@@ -313,6 +313,10 @@ const isMobile = ref(false)
 const isNavbarHidden = ref(false)
 let lastScrollY = 0
 const scrollThreshold = 100
+const hideHysteresis = 24
+const showHysteresis = 16
+const minScrollDelta = 4
+let lastToggleTime = 0
 
 let navbarHeightPx = '64px'
 
@@ -588,21 +592,38 @@ function updateDropdownPosition(kind: 'settings' | 'user') {
 // 滚动处理：实现导航栏渐进式隐藏
 const handleScroll = throttleRAF(() => {
   const currentScrollY = window.scrollY
+  const delta = currentScrollY - lastScrollY
 
-  // 向下滚动且超过阈值时隐藏
-  if (currentScrollY > lastScrollY && currentScrollY > scrollThreshold) {
-    isNavbarHidden.value = true
-  }
-  // 向上滚动时显示
-  else if (currentScrollY < lastScrollY) {
-    isNavbarHidden.value = false
-  }
-  // 接近顶部时显示
-  else if (currentScrollY <= scrollThreshold) {
-    isNavbarHidden.value = false
+  if (Math.abs(delta) < minScrollDelta) {
+    lastScrollY = currentScrollY
+    return
   }
 
-  syncNavbarVisibleHeight()
+  const hideAt = scrollThreshold + hideHysteresis
+  const showAt = Math.max(0, scrollThreshold - showHysteresis)
+
+  let nextHidden = isNavbarHidden.value
+
+  if (delta > 0 && currentScrollY > hideAt) {
+    nextHidden = true
+  } else if (delta < 0) {
+    nextHidden = false
+  } else if (currentScrollY <= showAt) {
+    nextHidden = false
+  }
+
+  if (nextHidden !== isNavbarHidden.value) {
+    const now = performance.now()
+    if (now - lastToggleTime >= 120) {
+      isNavbarHidden.value = nextHidden
+      syncNavbarVisibleHeight()
+      lastToggleTime = now
+    }
+  } else if (currentScrollY <= showAt) {
+    // 确保靠近顶部时高度变量正确
+    syncNavbarVisibleHeight()
+  }
+
   lastScrollY = currentScrollY
 })
 
@@ -1278,6 +1299,13 @@ onUnmounted(() => {
   .user-dropdown {
     left: var(--spacing-4);
     right: var(--spacing-4);
+    min-width: auto;
+  }
+
+  .settings-dropdown {
+    left: auto;
+    right: var(--spacing-4);
+    width: min(92vw, 22rem);
     min-width: auto;
   }
 }

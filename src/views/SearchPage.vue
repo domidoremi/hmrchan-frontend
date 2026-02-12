@@ -213,6 +213,47 @@
             </ul>
           </div>
         </div>
+
+        <section class="discover-section">
+          <div class="discover-header">
+            <div>
+              <h2 class="discover-title">{{ $t('search.discoverTitle') }}</h2>
+              <p class="discover-subtitle">{{ $t('search.discoverHint') }}</p>
+            </div>
+            <button
+              type="button"
+              class="discover-refresh glass-button"
+              :disabled="isDiscoverLoading"
+              @click="fetchDiscoverPosts"
+            >
+              <AnimatedIcon name="loading" :fallback-icon="RotateCcw" size="sm" />
+              <span>{{ $t('common.refresh') }}</span>
+            </button>
+          </div>
+
+          <div v-if="isDiscoverLoading" class="results-loading">
+            <div v-for="i in 6" :key="`discover-skeleton-${i}`" class="result-skeleton glass-card">
+              <div class="skeleton" style="aspect-ratio: 16/9; border-radius: var(--radius-md)" />
+              <div class="skeleton-content">
+                <div class="skeleton" style="height: 18px; width: 80%" />
+                <div class="skeleton" style="height: 14px; width: 50%" />
+              </div>
+            </div>
+          </div>
+
+          <StateIndicator
+            v-else-if="discoverError"
+            variant="error"
+            :description="discoverError"
+            @action="fetchDiscoverPosts"
+          />
+
+          <StateIndicator v-else-if="discoverPosts.length === 0" variant="empty" />
+
+          <div v-else class="posts-masonry discover-masonry">
+            <PostCard v-for="post in discoverPosts" :key="post.id" :post="post" @click="goToPost" />
+          </div>
+        </section>
       </div>
     </div>
   </div>
@@ -236,8 +277,9 @@ import {
   LogIn,
   ArrowUpDown,
   ArrowLeft,
+  RotateCcw,
 } from 'lucide-vue-next'
-import { searchService, type PostListItem, type AuthorListItem } from '@/api'
+import { searchService, postService, type PostListItem, type AuthorListItem } from '@/api'
 import { normalizeAvatarUrl } from '@/api/userService'
 import { useAuthStore } from '@/stores'
 import { storePostNavigationContext } from '@/utils/postNavigation'
@@ -261,17 +303,21 @@ const sortOrder = ref<'asc' | 'desc'>('desc')
 const currentPlatform = ref<'all' | 'youtube' | 'tiktok' | 'twitter' | 'instagram'>('all')
 
 const results = ref<PostListItem[]>([])
+const discoverPosts = ref<PostListItem[]>([])
 const authors = ref<AuthorListItem[]>([])
 const total = ref(0)
 const authorTotal = ref(0)
 const page = ref(1)
 const pageSize = 20
+const discoverPageSize = 12
 
 const isLoading = ref(false)
 const isLoadingMore = ref(false)
 const isLoadingAuthors = ref(false)
+const isDiscoverLoading = ref(false)
 const error = ref<string | null>(null)
 const authorError = ref<string | null>(null)
+const discoverError = ref<string | null>(null)
 
 const hasMore = computed(() => results.value.length < total.value)
 
@@ -301,6 +347,13 @@ const sortOptions = computed(() => [
   { value: 'view_count' as const, label: t('search.sort.views') },
 ])
 
+const getThumbnailQuality = (): 'medium' | 'large' => {
+  if (typeof window === 'undefined') return 'medium'
+  const width = window.innerWidth
+  if (width < 640) return 'medium'
+  return 'large'
+}
+
 function getPlatformIcon(platform: string) {
   switch (platform.toLowerCase()) {
     case 'youtube':
@@ -323,6 +376,36 @@ function goBack() {
 function toggleSortOrder() {
   sortOrder.value = sortOrder.value === 'desc' ? 'asc' : 'desc'
 }
+function shufflePosts(items: PostListItem[]) {
+  const copy = [...items]
+  for (let i = copy.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[copy[i], copy[j]] = [copy[j], copy[i]]
+  }
+  return copy
+}
+
+async function fetchDiscoverPosts() {
+  if (isDiscoverLoading.value) return
+  isDiscoverLoading.value = true
+  discoverError.value = null
+
+  try {
+    const res = await postService.listPosts({
+      page: 1,
+      page_size: discoverPageSize,
+      sort_by: 'published_at',
+      sort_order: 'desc',
+      thumbnail_quality: getThumbnailQuality(),
+    })
+    discoverPosts.value = shufflePosts(res.items)
+  } catch {
+    discoverError.value = t('common.error')
+    discoverPosts.value = []
+  } finally {
+    isDiscoverLoading.value = false
+  }
+}
 
 async function search() {
   if (!query.value) return
@@ -332,14 +415,6 @@ async function search() {
   page.value = 1
 
   try {
-    // 根据屏幕尺寸选择缩略图质量
-    const getThumbnailQuality = (): 'medium' | 'large' => {
-      if (typeof window === 'undefined') return 'medium'
-      const width = window.innerWidth
-      if (width < 640) return 'medium'
-      return 'large'
-    }
-
     const platform = currentPlatform.value !== 'all' ? currentPlatform.value : undefined
     const res = await searchService.searchPosts({
       q: query.value,
@@ -367,13 +442,6 @@ async function loadMore() {
   isLoadingMore.value = true
 
   try {
-    const getThumbnailQuality = (): 'medium' | 'large' => {
-      if (typeof window === 'undefined') return 'medium'
-      const width = window.innerWidth
-      if (width < 640) return 'medium'
-      return 'large'
-    }
-
     const nextPage = page.value + 1
     const platform = currentPlatform.value !== 'all' ? currentPlatform.value : undefined
     const res = await searchService.searchPosts({
@@ -419,7 +487,8 @@ async function searchAuthors() {
 }
 
 function goToPost(postId: string, thumbnailSrc: string | null) {
-  storePostNavigationContext(results.value, postId, 'search')
+  const contextPosts = results.value.length > 0 ? results.value : discoverPosts.value
+  storePostNavigationContext(contextPosts, postId, 'search')
   if (thumbnailSrc) {
     sessionStorage.setItem(`post-thumbnail-${postId}`, thumbnailSrc)
   }
@@ -443,6 +512,8 @@ watch(query, () => {
     authors.value = []
     total.value = 0
     authorTotal.value = 0
+    activeTab.value = 'posts'
+    fetchDiscoverPosts()
   }
 })
 
@@ -468,6 +539,8 @@ onMounted(() => {
   if (query.value) {
     search()
     searchAuthors()
+  } else {
+    fetchDiscoverPosts()
   }
 })
 </script>
@@ -1029,7 +1102,8 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
+  gap: var(--spacing-6);
   min-height: 50vh;
   text-align: center;
 }
@@ -1082,6 +1156,49 @@ onMounted(() => {
 
 .search-tips li:last-child {
   margin-bottom: 0;
+}
+
+.discover-section {
+  width: 100%;
+}
+
+.discover-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--spacing-3);
+  margin-bottom: var(--spacing-3);
+  flex-wrap: wrap;
+  text-align: left;
+}
+
+.discover-title {
+  margin: 0 0 var(--spacing-1);
+  font-size: var(--text-lg);
+  color: var(--color-text);
+}
+
+.discover-subtitle {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
+.discover-refresh {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-1);
+  padding: var(--spacing-2) var(--spacing-3);
+  font-size: var(--text-xs);
+}
+
+.discover-refresh:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.discover-masonry {
+  margin-bottom: var(--spacing-4);
 }
 
 @media (max-width: 768px) {

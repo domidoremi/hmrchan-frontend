@@ -150,6 +150,24 @@ watch(
       return
     }
 
+    // 页面切换时触发粒子干扰效果
+    try {
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(
+          new CustomEvent('particle-burst', {
+            detail: {
+              x: window.innerWidth * 0.5,
+              y: window.innerHeight * 0.35,
+              strength: 220,
+              radius: 380,
+            },
+          })
+        )
+      }
+    } catch {
+      // ignore
+    }
+
     // Post -> Post: use horizontal slide transition
     if (toName === 'post-detail' && fromName === 'post-detail') {
       let dir: string | null = null
@@ -196,6 +214,8 @@ function handleRetry() {
   flex-direction: column;
   background: var(--color-background);
   transition: background-color 0.3s ease;
+  /* 创建层叠上下文，使粒子背景 canvas (z-index:-1) 可见于背景之上、内容之下 */
+  isolation: isolate;
 }
 
 main {

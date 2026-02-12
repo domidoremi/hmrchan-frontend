@@ -1,11 +1,39 @@
 <template>
   <div class="explore-page">
-    <!-- Blue Polymorph 3D 动画背景 -->
-    <BluePolymorph
-      v-if="shouldShowPolymorph"
-      :morph-class-name="morphClassName"
-      :morph-c-s-s-vars="morphCSSVars"
-    />
+    <!-- Platform-specific animated background -->
+    <div
+      v-if="shouldShowPlatformBg"
+      class="explore-platform-bg"
+      :data-platform="currentPlatform"
+      aria-hidden="true"
+    >
+      <div v-if="currentPlatform === 'tiktok'" class="platform-scene platform-scene--tiktok">
+        <Music2 class="platform-icon platform-icon--note platform-icon--a" />
+        <Music2 class="platform-icon platform-icon--note platform-icon--b" />
+        <Music2 class="platform-icon platform-icon--note platform-icon--c" />
+      </div>
+      <div v-else-if="currentPlatform === 'twitter'" class="platform-scene platform-scene--twitter">
+        <Twitter class="platform-icon platform-icon--bird" />
+        <span class="platform-x">X</span>
+      </div>
+      <div
+        v-else-if="currentPlatform === 'instagram'"
+        class="platform-scene platform-scene--instagram"
+      >
+        <Instagram class="platform-icon platform-icon--insta" />
+        <span class="platform-ring" />
+      </div>
+      <div v-else-if="currentPlatform === 'youtube'" class="platform-scene platform-scene--youtube">
+        <div class="platform-tv">
+          <span class="platform-play" />
+        </div>
+      </div>
+      <div v-else class="platform-scene platform-scene--default">
+        <span class="platform-orb platform-orb--one" />
+        <span class="platform-orb platform-orb--two" />
+        <span class="platform-orb platform-orb--three" />
+      </div>
+    </div>
 
     <!-- MindMarket 风格背景装饰 -->
     <div class="explore-bg" aria-hidden="true">
@@ -151,39 +179,31 @@ import {
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
-import { Search, Globe, Music2, Video, Instagram } from 'lucide-vue-next'
+import { Search, Globe, Music2, Video, Instagram, Twitter } from 'lucide-vue-next'
 import { postService, type PostListItem, ApiError } from '@/api'
 import { useCachedPostList } from '@/composables/useCachedPosts'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import { useProgressiveRender } from '@/composables/useProgressiveRender'
 import { useMasonryColumns } from '@/composables/useMasonryColumns'
-import { useBluePolymorph, type PlatformMorphState } from '@/composables/useBluePolymorph'
 import { useSettingsStore } from '@/stores'
-import { throttleRAF, prefersReducedMotion } from '@/utils/performance'
+import { throttleRAF } from '@/utils/performance'
 import { createResizeObserver } from '@/utils/modernAPIs'
 import { storePostNavigationContext } from '@/utils/postNavigation'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import PostCard from '@/components/business/PostCard.vue'
 import PostCardSkeleton from '@/components/business/PostCardSkeleton.vue'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
-import BluePolymorph from '@/components/ui/BluePolymorph.vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 
 const router = useRouter()
 const { t } = useI18n()
 const { settings } = storeToRefs(useSettingsStore())
 
-const shouldShowPolymorph = computed(
-  () => settings.value.enableAnimations && !prefersReducedMotion()
-)
+const shouldShowPlatformBg = computed(() => settings.value.enableAnimations)
 
 const currentSort = ref<'newest' | 'popular' | 'trending'>('newest')
-const currentPlatform = ref<PlatformMorphState>('all')
-
-// Blue Polymorph 动画系统
-const { morphClassName, morphCSSVars } = useBluePolymorph(currentPlatform, {
-  enabled: computed(() => settings.value.enableAnimations),
-})
+type ExplorePlatform = 'all' | 'youtube' | 'tiktok' | 'twitter' | 'instagram'
+const currentPlatform = ref<ExplorePlatform>('all')
 
 const posts = ref<PostListItem[]>([])
 const isLoading = ref(false)
@@ -624,6 +644,192 @@ onBeforeUnmount(() => {
   padding: var(--spacing-4) 0 var(--spacing-8);
   min-height: 100svh;
   min-height: 100dvh;
+}
+
+/* ========== Platform Background ========== */
+.explore-platform-bg {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  overflow: hidden;
+}
+
+.platform-scene {
+  position: absolute;
+  inset: 0;
+}
+
+.platform-icon {
+  position: absolute;
+  opacity: 0.32;
+  animation: float-slow 16s ease-in-out infinite;
+}
+
+.platform-icon--note {
+  width: clamp(3rem, 7vw, 6rem);
+  height: clamp(3rem, 7vw, 6rem);
+  color: #00f2ea;
+  filter: drop-shadow(0 var(--spacing-2) var(--spacing-6) rgba(0, 242, 234, 0.25));
+}
+
+.platform-icon--a {
+  top: 18%;
+  left: 12%;
+  animation-duration: 14s;
+}
+
+.platform-icon--b {
+  top: 58%;
+  left: 62%;
+  color: #ff0050;
+  animation-duration: 18s;
+}
+
+.platform-icon--c {
+  top: 30%;
+  right: 14%;
+  color: #6ef7ff;
+  animation-duration: 20s;
+}
+
+.platform-scene--twitter .platform-icon--bird {
+  width: clamp(4rem, 9vw, 8rem);
+  height: clamp(4rem, 9vw, 8rem);
+  top: 22%;
+  left: 18%;
+  color: #1d9bf0;
+  opacity: 0.35;
+  animation: float-rotate 18s ease-in-out infinite;
+}
+
+.platform-x {
+  position: absolute;
+  top: 55%;
+  left: 58%;
+  font-size: clamp(4rem, 10vw, 9rem);
+  font-weight: var(--font-bold);
+  color: #111827;
+  opacity: 0.28;
+  animation: float-slow 20s ease-in-out infinite;
+}
+
+[data-theme='dark'] .platform-x {
+  color: #f8fafc;
+  opacity: 0.16;
+}
+
+.platform-scene--instagram .platform-icon--insta {
+  width: clamp(4rem, 9vw, 8rem);
+  height: clamp(4rem, 9vw, 8rem);
+  top: 25%;
+  left: 16%;
+  color: #e1306c;
+  opacity: 0.35;
+  animation: float-rotate 16s ease-in-out infinite;
+}
+
+.platform-ring {
+  position: absolute;
+  top: 52%;
+  left: 58%;
+  width: clamp(6rem, 14vw, 12rem);
+  height: clamp(6rem, 14vw, 12rem);
+  border-radius: 24%;
+  background: conic-gradient(from 120deg, #f9ce34, #ee2a7b, #6228d7, #f9ce34);
+  opacity: 0.18;
+  animation: rotate-slow 22s linear infinite;
+}
+
+.platform-scene--youtube .platform-tv {
+  position: absolute;
+  top: 34%;
+  left: 56%;
+  width: clamp(7rem, 16vw, 13rem);
+  height: clamp(4.5rem, 10vw, 8.5rem);
+  border-radius: var(--radius-xl);
+  background: rgba(255, 0, 51, 0.14);
+  border: 1px solid rgba(255, 0, 51, 0.35);
+  box-shadow: 0 var(--spacing-4) var(--spacing-8) rgba(255, 0, 51, 0.15);
+  animation: float-slow 18s ease-in-out infinite;
+}
+
+.platform-play {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-top: 0.75rem solid transparent;
+  border-bottom: 0.75rem solid transparent;
+  border-left: 1.25rem solid rgba(255, 255, 255, 0.85);
+  transform: translate(-40%, -50%);
+}
+
+.platform-scene--default .platform-orb {
+  position: absolute;
+  border-radius: 50%;
+  opacity: 0.2;
+  background: radial-gradient(circle, rgba(var(--color-primary-rgb), 0.4) 0%, transparent 70%);
+  animation: float-slow 20s ease-in-out infinite;
+}
+
+.platform-orb--one {
+  width: clamp(8rem, 20vw, 16rem);
+  height: clamp(8rem, 20vw, 16rem);
+  top: 20%;
+  left: 10%;
+}
+
+.platform-orb--two {
+  width: clamp(6rem, 16vw, 12rem);
+  height: clamp(6rem, 16vw, 12rem);
+  top: 55%;
+  left: 60%;
+  animation-duration: 24s;
+}
+
+.platform-orb--three {
+  width: clamp(5rem, 12vw, 10rem);
+  height: clamp(5rem, 12vw, 10rem);
+  top: 32%;
+  right: 12%;
+  animation-duration: 18s;
+}
+
+@keyframes float-slow {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, calc(-1 * var(--spacing-4)), 0);
+  }
+}
+
+@keyframes float-rotate {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(-6deg);
+  }
+  50% {
+    transform: translate3d(0, calc(-1 * var(--spacing-3)), 0) rotate(6deg);
+  }
+}
+
+@keyframes rotate-slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .explore-platform-bg * {
+    animation: none !important;
+  }
 }
 
 /* ========== MindMarket 风格背景 ========== */

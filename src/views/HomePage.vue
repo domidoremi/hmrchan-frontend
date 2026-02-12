@@ -437,6 +437,12 @@ onBeforeUnmount(() => {
   position: relative;
   min-height: 100svh;
   min-height: 100dvh;
+  --home-section-bg: linear-gradient(
+    180deg,
+    rgba(var(--mm-teal-rgb), 0.02) 0%,
+    rgba(var(--mm-green-rgb), 0.02) 55%,
+    transparent 100%
+  );
 }
 
 /* ========== Hero Section ========== */
@@ -449,6 +455,19 @@ onBeforeUnmount(() => {
   justify-content: center;
   text-align: center;
   padding: var(--spacing-8) 0;
+}
+
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--home-section-bg);
+  pointer-events: none;
+}
+
+.hero > * {
+  position: relative;
+  z-index: 1;
 }
 
 .hero-content {
@@ -510,7 +529,7 @@ onBeforeUnmount(() => {
 .bento-bg {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(var(--color-accent-rgb), 0.02) 0%, transparent 100%);
+  background: var(--home-section-bg);
   pointer-events: none;
 }
 
@@ -683,7 +702,7 @@ onBeforeUnmount(() => {
   left: 0;
   right: 0;
   height: 100px;
-  background: linear-gradient(180deg, transparent 0%, rgba(var(--mm-teal-rgb), 0.02) 100%);
+  background: linear-gradient(180deg, transparent 0%, rgba(var(--mm-green-rgb), 0.02) 100%);
   pointer-events: none;
 }
 
@@ -702,7 +721,7 @@ onBeforeUnmount(() => {
 .posts-bg {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(var(--mm-teal-rgb), 0.02) 0%, transparent 100%);
+  background: var(--home-section-bg);
   pointer-events: none;
 }
 

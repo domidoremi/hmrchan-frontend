@@ -259,6 +259,8 @@
     "placeholder": "搜尋貼文、作者、標籤...",
     "emptyTitle": "搜尋內容",
     "emptyHint": "尋找貼文、作者等內容",
+    "discoverTitle": "隨機推薦",
+    "discoverHint": "先看看隨機貼文，想好再搜尋",
     "resultsFor": "搜尋結果：",
     "noResults": "未找到 \"{query}\" 相關結果",
     "noAuthors": "未找到 \"{query}\" 相關作者",

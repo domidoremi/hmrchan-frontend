@@ -259,6 +259,8 @@
     "placeholder": "Search posts, authors, tags...",
     "emptyTitle": "Search Content",
     "emptyHint": "Find posts, authors, and more",
+    "discoverTitle": "Discover posts",
+    "discoverHint": "A quick mix of posts to explore while you decide what to search",
     "resultsFor": "Results for",
     "noResults": "No results found for \"{query}\"",
     "noAuthors": "No authors found for \"{query}\"",

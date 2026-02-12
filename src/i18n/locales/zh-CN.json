@@ -259,6 +259,8 @@
     "placeholder": "搜索帖子、作者、标签...",
     "emptyTitle": "搜索内容",
     "emptyHint": "查找帖子、作者等内容",
+    "discoverTitle": "随机推荐",
+    "discoverHint": "先看看随机帖子，想好再搜索",
     "resultsFor": "搜索结果：",
     "noResults": "未找到 \"{query}\" 相关结果",
     "noAuthors": "未找到 \"{query}\" 相关作者",

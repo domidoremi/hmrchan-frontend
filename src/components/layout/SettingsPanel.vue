@@ -1,10 +1,20 @@
 <template>
-  <div class="settings-panel">
+  <div class="settings-panel" :class="{ 'settings-panel--compact': compact }">
     <div class="settings-header">
-      <div class="settings-header-icon">
-        <AnimatedIcon name="sparkle" :fallback-icon="Settings" size="sm" />
+      <div class="settings-header-main">
+        <div class="settings-header-icon">
+          <AnimatedIcon name="sparkle" :fallback-icon="Settings" size="sm" />
+        </div>
+        <span>{{ $t('nav.settings') }}</span>
       </div>
-      <span>{{ $t('nav.settings') }}</span>
+      <button
+        type="button"
+        class="settings-close-btn"
+        :aria-label="$t('common.close')"
+        @click="$emit('close')"
+      >
+        <AnimatedIcon name="sparkle" :fallback-icon="X" size="sm" />
+      </button>
     </div>
 
     <!-- Theme -->
@@ -230,6 +240,7 @@ import {
   Info,
   Mail,
   Palette,
+  X,
   Settings,
   Sun,
   Moon,
@@ -344,11 +355,24 @@ function resetVideoSettings() {
   -webkit-overflow-scrolling: touch;
 }
 
+.settings-panel--compact {
+  min-width: 13.5rem;
+  width: min(90vw, 20rem);
+  max-height: min(70svh, calc(100svh - 9rem));
+  max-height: min(70dvh, calc(100dvh - 9rem));
+}
+
 /* 移动端优化：确保面板可以滚动 */
 @media (max-width: 768px) {
   .settings-panel {
     max-height: calc(100svh - 10rem);
     max-height: calc(100dvh - 10rem);
+  }
+
+  .settings-panel--compact {
+    width: min(92vw, 20rem);
+    max-height: min(65svh, calc(100svh - 8rem));
+    max-height: min(65dvh, calc(100dvh - 8rem));
   }
 }
 
@@ -356,11 +380,28 @@ function resetVideoSettings() {
 .settings-header {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: var(--spacing-2);
   padding: var(--spacing-3) var(--spacing-3) var(--spacing-2);
   font-size: var(--text-sm);
   font-weight: var(--font-semibold);
   color: var(--color-text-primary);
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--glass-bg-strong);
+  backdrop-filter: var(--glass-blur-strong);
+  -webkit-backdrop-filter: var(--glass-blur-strong);
+}
+
+.settings-header-main {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+}
+
+.settings-panel--compact .settings-header {
+  padding: var(--spacing-2) var(--spacing-2);
 }
 
 .settings-header-icon {
@@ -374,6 +415,35 @@ function resetVideoSettings() {
   color: var(--color-on-primary);
 }
 
+.settings-panel--compact .settings-header-icon {
+  width: 24px;
+  height: 24px;
+}
+
+.settings-close-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-md);
+  color: var(--color-text-secondary);
+  background: var(--glass-bg-subtle);
+  border: 1px solid var(--glass-border);
+  transition: all var(--transition-fast);
+}
+
+.settings-panel--compact .settings-close-btn {
+  width: 28px;
+  height: 28px;
+}
+
+.settings-close-btn:hover {
+  color: var(--color-text-primary);
+  background: var(--glass-bg-light);
+  border-color: var(--glass-border-strong);
+}
+
 /* ========== Group ========== */
 .settings-group {
   padding: var(--spacing-2);
@@ -381,6 +451,10 @@ function resetVideoSettings() {
 
 .settings-group + .settings-group {
   border-top: 1px solid var(--glass-border);
+}
+
+.settings-panel--compact .settings-group {
+  padding: var(--spacing-2) var(--spacing-1);
 }
 
 .settings-group-header {
@@ -430,6 +504,11 @@ function resetVideoSettings() {
   transition: all var(--transition-fast);
 }
 
+.settings-panel--compact .theme-btn {
+  padding: var(--spacing-2) var(--spacing-1);
+  gap: var(--spacing-1);
+}
+
 .theme-btn:hover {
   background: var(--glass-bg);
   border-color: var(--glass-border-strong);
@@ -451,6 +530,11 @@ function resetVideoSettings() {
   border-radius: var(--radius-md);
   color: var(--color-text-secondary);
   transition: all var(--transition-fast);
+}
+
+.settings-panel--compact .theme-btn-icon {
+  width: 32px;
+  height: 32px;
 }
 
 .theme-btn:hover .theme-btn-icon {
@@ -531,6 +615,11 @@ function resetVideoSettings() {
   font-size: var(--text-sm);
   color: var(--color-text-secondary);
   transition: all var(--transition-fast);
+}
+
+.settings-panel--compact .lang-btn {
+  padding: var(--spacing-1) var(--spacing-2);
+  font-size: var(--text-xs);
 }
 
 .lang-btn:hover {
@@ -683,6 +772,10 @@ function resetVideoSettings() {
   transition: all var(--transition-fast);
 }
 
+.settings-panel--compact .link-btn {
+  padding: var(--spacing-2);
+}
+
 .link-btn:hover {
   background: var(--glass-bg);
   border-color: var(--glass-border-strong);
@@ -744,6 +837,10 @@ function resetVideoSettings() {
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
   transition: all var(--transition-fast);
+}
+
+.settings-panel--compact .bg-effect-btn {
+  padding: var(--spacing-1) var(--spacing-1);
 }
 
 .bg-effect-btn:hover {

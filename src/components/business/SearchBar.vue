@@ -19,6 +19,15 @@
       <button v-if="query" type="button" class="clear-btn" @click="clearQuery">
         <AnimatedIcon name="sparkle" :fallback-icon="X" size="sm" />
       </button>
+      <button
+        type="button"
+        class="search-submit-btn"
+        :disabled="!query.trim()"
+        @click="handleSearch"
+      >
+        <AnimatedIcon name="search" :fallback-icon="Search" size="sm" />
+        <span class="search-submit-text">{{ $t('common.search') }}</span>
+      </button>
     </div>
 
     <Transition name="dropdown">
@@ -432,6 +441,39 @@ defineExpose({
 .clear-btn:hover {
   background: var(--glass-bg-light);
   color: var(--color-text);
+}
+
+.search-submit-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-1);
+  padding: var(--spacing-1) var(--spacing-2);
+  border-radius: var(--radius-md);
+  background: var(--glass-bg-subtle);
+  color: var(--color-text-secondary);
+  transition: all var(--transition-fast);
+}
+
+.search-submit-btn:hover:not(:disabled) {
+  background: var(--glass-bg-light);
+  color: var(--color-text);
+}
+
+.search-submit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.search-submit-text {
+  display: none;
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
+}
+
+@media (min-width: 640px) {
+  .search-submit-text {
+    display: inline;
+  }
 }
 
 .search-dropdown {
