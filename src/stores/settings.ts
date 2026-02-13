@@ -2,7 +2,7 @@
  * Settings Store - 用户设置状态管理
  */
 
-import { ref, computed, watch } from 'vue'
+import { ref, computed, nextTick } from 'vue'
 import { defineStore } from 'pinia'
 
 export type AnimationIntensity = 'none' | 'reduced' | 'normal' | 'full'
@@ -64,17 +64,15 @@ export const useSettingsStore = defineStore(
   () => {
     const settings = ref<Settings>({ ...defaultSettings })
 
-    // Backward-compatible normalization for persisted state (e.g. older versions missing new keys)
-    watch(
-      settings,
-      (next) => {
-        if (!next.uiStyle) next.uiStyle = 'ios'
-        if (!next.backgroundEffect) {
-          next.backgroundEffect = { ...defaultSettings.backgroundEffect }
-        }
-      },
-      { immediate: true, deep: true }
-    )
+    // 一次性兼容迁移：补全旧版本持久化数据中缺失的新字段
+    // pinia-plugin-persistedstate 在 store 创建后恢复数据，
+    // 使用 nextTick 确保持久化数据已写入 ref
+    nextTick(() => {
+      if (!settings.value.uiStyle) settings.value.uiStyle = 'ios'
+      if (!settings.value.backgroundEffect) {
+        settings.value.backgroundEffect = { ...defaultSettings.backgroundEffect }
+      }
+    })
 
     /**
      * 计算实际的动效时长倍数
