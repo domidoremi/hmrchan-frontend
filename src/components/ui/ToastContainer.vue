@@ -1,53 +1,68 @@
 <template>
   <Teleport to="body">
-    <div class="toast-container" :class="`toast-container--${position}`" aria-live="polite">
-      <TransitionGroup name="toast">
+    <div class="toast-viewport" :class="`toast-viewport--${position}`">
+      <TransitionGroup
+        name="toast-stack"
+        tag="div"
+        class="toast-stack"
+        :style="{ '--toasts-count': visibleToasts.length }"
+      >
         <div
-          v-for="toast in toasts"
+          v-for="(toast, index) in visibleToasts"
           :key="toast.id"
-          class="toast"
-          :class="[`toast--${toast.type}`, { 'toast--with-action': toast.action }]"
+          class="toast-card"
+          :class="[`toast-card--${toast.type}`, { 'toast-card--with-action': toast.action }]"
+          :style="{
+            '--index': index,
+            '--offset': `${index * 12}px`,
+            '--scale': `${1 - index * 0.05}`,
+            '--opacity': `${1 - index * 0.15}`,
+            zIndex: visibleToasts.length - index,
+          }"
           role="alert"
           @mouseenter="pauseTimer(toast.id)"
           @mouseleave="resumeTimer(toast.id)"
         >
-          <div class="toast__icon-wrapper" :class="`toast__icon-wrapper--${toast.type}`">
-            <AnimatedIcon
-              :name="getAnimation(toast.type)"
-              :fallback-icon="getIcon(toast.type)"
-              size="md"
-              class="toast__icon"
-            />
-          </div>
-
-          <div class="toast__content">
-            <p v-if="toast.title" class="toast__title">{{ toast.title }}</p>
-            <p class="toast__message">{{ toast.message }}</p>
-          </div>
-
-          <button
-            v-if="toast.action"
-            type="button"
-            class="toast__action"
-            @click="handleAction(toast)"
-          >
-            {{ toast.action.label }}
-          </button>
-
-          <button
-            type="button"
-            class="toast__close"
-            :aria-label="$t('common.close')"
-            @click="removeToast(toast.id)"
-          >
-            <AnimatedIcon name="sparkle" :fallback-icon="X" size="sm" />
-          </button>
-
+          <!-- Progress Bar Background (Subtle) -->
           <div
-            v-if="toast.duration && toast.duration > 0"
-            class="toast__progress"
+            v-if="toast.duration && toast.duration > 0 && index === 0"
+            class="toast-progress-bg"
             :style="{ animationDuration: `${toast.duration}ms` }"
           />
+
+          <div class="toast-content-wrapper">
+            <div class="toast-icon-box" :class="`toast-icon-box--${toast.type}`">
+              <AnimatedIcon
+                :name="getAnimation(toast.type)"
+                :fallback-icon="getIcon(toast.type)"
+                size="md"
+              />
+            </div>
+
+            <div class="toast-text">
+              <h4 v-if="toast.title" class="toast-title">{{ toast.title }}</h4>
+              <p class="toast-msg">{{ toast.message }}</p>
+            </div>
+
+            <div v-if="toast.action" class="toast-actions">
+              <button
+                type="button"
+                class="toast-btn toast-btn--action"
+                @click="handleAction(toast)"
+              >
+                {{ toast.action.label }}
+              </button>
+            </div>
+
+            <button
+              type="button"
+              class="toast-btn toast-btn--close"
+              :aria-label="$t('common.close')"
+              @click="removeToast(toast.id)"
+            >
+              <AnimatedIcon name="sparkle" :fallback-icon="X" size="sm" />
+            </button>
+          </div>
         </div>
       </TransitionGroup>
     </div>
@@ -55,6 +70,7 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { CheckCircle, XCircle, AlertTriangle, Info, X, Bell } from 'lucide-vue-next'
 import { useToastStore, type Toast } from '@/stores'
@@ -77,6 +93,11 @@ const { position = 'top-right' } = defineProps<Props>()
 const toastStore = useToastStore()
 const { toasts } = storeToRefs(toastStore)
 const { removeToast, pauseTimer, resumeTimer } = toastStore
+
+// Only show top 5 toasts to prevent DOM clutter, but stack visuals handle top 3 best
+const visibleToasts = computed(() => {
+  return toasts.value.slice(0, 5)
+})
 
 function getIcon(type: string) {
   const icons = {
@@ -109,295 +130,307 @@ function handleAction(toast: Toast) {
 </script>
 
 <style scoped>
-.toast-container {
+.toast-viewport {
   position: fixed;
   z-index: var(--z-toast);
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-3);
-  max-width: 420px;
   pointer-events: none;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom)
+    env(safe-area-inset-left);
 }
 
-.toast-container--top-right {
-  top: calc(var(--navbar-height) + var(--spacing-4) + env(safe-area-inset-top, 0px));
-  right: calc(var(--spacing-4) + env(safe-area-inset-right, 0px));
+/* Position Variants */
+.toast-viewport--top-right {
+  top: var(--spacing-4);
+  right: var(--spacing-4);
 }
-
-.toast-container--top-left {
-  top: calc(var(--navbar-height) + var(--spacing-4) + env(safe-area-inset-top, 0px));
-  left: calc(var(--spacing-4) + env(safe-area-inset-left, 0px));
+.toast-viewport--top-left {
+  top: var(--spacing-4);
+  left: var(--spacing-4);
 }
-
-.toast-container--bottom-right {
-  bottom: calc(var(--spacing-4) + env(safe-area-inset-bottom, 0px));
-  right: calc(var(--spacing-4) + env(safe-area-inset-right, 0px));
+.toast-viewport--bottom-right {
+  bottom: var(--spacing-4);
+  right: var(--spacing-4);
 }
-
-.toast-container--bottom-left {
-  bottom: calc(var(--spacing-4) + env(safe-area-inset-bottom, 0px));
-  left: calc(var(--spacing-4) + env(safe-area-inset-left, 0px));
+.toast-viewport--bottom-left {
+  bottom: var(--spacing-4);
+  left: var(--spacing-4);
 }
-
-.toast-container--top-center {
-  top: calc(var(--navbar-height) + var(--spacing-4) + env(safe-area-inset-top, 0px));
+.toast-viewport--top-center {
+  top: var(--spacing-4);
+  left: 50%;
+  transform: translateX(-50%);
+}
+.toast-viewport--bottom-center {
+  bottom: var(--spacing-4);
   left: 50%;
   transform: translateX(-50%);
 }
 
-.toast-container--bottom-center {
-  bottom: calc(var(--spacing-4) + env(safe-area-inset-bottom, 0px));
-  left: 50%;
-  transform: translateX(-50%);
-}
-
-.toast {
+.toast-stack {
   position: relative;
-  display: flex;
-  align-items: flex-start;
-  gap: var(--spacing-3);
-  padding: var(--ui-toast-padding-y) var(--ui-toast-padding-x);
-  background: var(--glass-bg-strong);
-  backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--ui-radius-toast, var(--radius-lg));
-  box-shadow: var(--shadow-lg);
-  pointer-events: auto;
-  overflow: hidden;
+  width: 360px;
+  max-width: 90vw;
 }
 
-.toast::before {
-  content: '';
+.toast-card {
   position: absolute;
   top: 0;
   left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(255, 255, 255, 0.3) 50%,
-    transparent 100%
-  );
-  opacity: 0.5;
+  width: 100%;
+  pointer-events: auto;
+
+  /* Glassmorphism */
+  background: var(--glass-bg-strong);
+  backdrop-filter: var(--glass-blur-strong);
+  -webkit-backdrop-filter: var(--glass-blur-strong);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  box-shadow:
+    0 4px 24px -4px rgba(0, 0, 0, 0.12),
+    0 1px 4px rgba(0, 0, 0, 0.06);
+
+  /* Left accent border */
+  border-left: 3px solid var(--glass-border);
+
+  /* Stacking */
+  transform-origin: center top;
+  transition: all 350ms cubic-bezier(0.32, 0.72, 0, 1);
+  transform: translateY(var(--offset)) scale(var(--scale));
+  opacity: var(--opacity);
+  overflow: hidden;
 }
 
-.toast__icon-wrapper {
+/* Type-specific accent borders */
+.toast-card--success {
+  border-left-color: var(--color-success);
+}
+.toast-card--error {
+  border-left-color: var(--color-error);
+}
+.toast-card--warning {
+  border-left-color: var(--color-warning);
+}
+.toast-card--info {
+  border-left-color: var(--color-info);
+}
+
+.toast-content-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  padding: var(--spacing-3);
+  z-index: 2;
+}
+
+/* Icon */
+.toast-icon-box {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
-  width: var(--ui-toast-icon-size);
-  height: var(--ui-toast-icon-size);
-  border-radius: var(--radius-full);
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--radius-md);
+  color: var(--color-text-primary);
 }
 
-.toast__icon-wrapper--success {
-  background: var(--color-success-alpha);
+.toast-icon-box--success {
   color: var(--color-success);
 }
-
-.toast__icon-wrapper--error {
-  background: var(--color-error-alpha);
+.toast-icon-box--error {
   color: var(--color-error);
 }
-
-.toast__icon-wrapper--warning {
-  background: var(--color-warning-alpha);
+.toast-icon-box--warning {
   color: var(--color-warning);
 }
-
-.toast__icon-wrapper--info {
-  background: var(--color-info-alpha);
+.toast-icon-box--info {
   color: var(--color-info);
 }
 
-.toast__icon-wrapper--default {
-  background: var(--color-primary-alpha);
-  color: var(--color-primary);
-}
-
-.toast__content {
+/* Text */
+.toast-text {
   flex: 1;
   min-width: 0;
-  padding-top: var(--spacing-1);
 }
 
-.toast__title {
+.toast-title {
   font-size: var(--text-sm);
   font-weight: var(--font-semibold);
-  color: var(--color-foreground);
-  margin: 0 0 var(--spacing-1);
+  color: var(--color-text-primary);
+  margin: 0 0 1px;
+  line-height: 1.3;
 }
 
-.toast__message {
+.toast-msg {
   font-size: var(--text-sm);
-  color: var(--color-muted-foreground);
+  color: var(--color-text-secondary);
+  line-height: 1.4;
   margin: 0;
-  line-height: var(--leading-snug);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
 }
 
-.toast__action {
-  flex-shrink: 0;
-  padding: var(--spacing-1) var(--spacing-2);
-  font-size: var(--text-xs);
-  font-weight: var(--font-medium);
-  color: var(--color-primary);
-  border-radius: var(--ui-radius-button, var(--radius-sm));
-  transition: background-color 150ms var(--ease-out);
-}
-
-.toast__action:hover {
-  background: var(--color-primary-alpha);
-}
-
-.toast__close {
-  flex-shrink: 0;
+/* Buttons */
+.toast-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: var(--ui-toast-close-size);
-  height: var(--ui-toast-close-size);
-  border-radius: var(--ui-radius-button, var(--radius-sm));
-  color: var(--color-muted-foreground);
-  transition:
-    background-color 150ms var(--ease-out),
-    color 150ms var(--ease-out);
+  border-radius: var(--radius-md);
+  transition: all 0.15s ease;
+  cursor: pointer;
 }
 
-.toast__close:hover {
-  background: var(--glass-bg-light);
-  color: var(--color-foreground);
+.toast-btn--close {
+  flex-shrink: 0;
+  width: 1.5rem;
+  height: 1.5rem;
+  color: var(--color-text-tertiary);
+  opacity: 0.6;
+  transition: opacity 0.15s ease;
 }
 
-.toast__progress {
+.toast-card:hover .toast-btn--close {
+  opacity: 1;
+}
+
+.toast-btn--close:hover {
+  color: var(--color-text-primary);
+}
+
+.toast-btn--action {
+  padding: 0.25rem 0.625rem;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--color-primary);
+  background: rgba(var(--color-primary-rgb), 0.08);
+  margin-left: var(--spacing-1);
+  white-space: nowrap;
+  border-radius: var(--radius-sm);
+}
+
+.toast-btn--action:hover {
+  background: rgba(var(--color-primary-rgb), 0.15);
+}
+
+/* Progress Bar */
+.toast-progress-bg {
   position: absolute;
   bottom: 0;
   left: 0;
   height: 2px;
-  background: var(--color-primary);
-  animation: toast-progress linear forwards;
-  animation-play-state: running;
+  width: 100%;
+  opacity: 0.35;
+  transform-origin: left;
+  animation: toast-timer linear forwards;
 }
 
-.toast:hover .toast__progress {
-  animation-play-state: paused;
-}
-
-@keyframes toast-progress {
-  from {
-    width: 100%;
-  }
-  to {
-    width: 0%;
-  }
-}
-
-/* Type-specific progress colors */
-.toast--success .toast__progress {
+.toast-card--success .toast-progress-bg {
   background: var(--color-success);
 }
-
-.toast--error .toast__progress {
+.toast-card--error .toast-progress-bg {
   background: var(--color-error);
 }
-
-.toast--warning .toast__progress {
+.toast-card--warning .toast-progress-bg {
   background: var(--color-warning);
 }
-
-.toast--info .toast__progress {
+.toast-card--info .toast-progress-bg {
   background: var(--color-info);
 }
 
-/* Transitions */
-.toast-enter-active {
-  transition: all 300ms var(--ease-spring);
+@keyframes toast-timer {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
 }
 
-.toast-leave-active {
-  transition: all 200ms var(--ease-out);
+/* Animations */
+.toast-stack-enter-active,
+.toast-stack-leave-active,
+.toast-stack-move {
+  transition: all 350ms cubic-bezier(0.32, 0.72, 0, 1);
 }
 
-.toast-enter-from {
+.toast-stack-enter-from {
   opacity: 0;
-  transform: translateX(100%) scale(0.9);
+  transform: translateX(24px) scale(0.96);
 }
 
-.toast-leave-to {
+.toast-stack-leave-to {
   opacity: 0;
-  transform: translateX(100%) scale(0.95);
+  transform: translateX(24px) scale(0.96);
 }
 
-.toast-move {
-  transition: transform 300ms var(--ease-spring);
-}
-
-/* Left-side positions */
-.toast-container--top-left .toast-enter-from,
-.toast-container--bottom-left .toast-enter-from {
-  transform: translateX(-100%) scale(0.9);
-}
-
-.toast-container--top-left .toast-leave-to,
-.toast-container--bottom-left .toast-leave-to {
-  transform: translateX(-100%) scale(0.95);
-}
-
-/* Center positions */
-.toast-container--top-center .toast-enter-from,
-.toast-container--bottom-center .toast-enter-from {
-  transform: translateY(-20px) scale(0.9);
-}
-
-.toast-container--top-center .toast-leave-to,
-.toast-container--bottom-center .toast-leave-to {
-  transform: translateY(-10px) scale(0.95);
-}
-
+/* Mobile */
 @media (max-width: 640px) {
-  .toast-container {
-    left: calc(var(--spacing-3) + env(safe-area-inset-left, 0px));
-    right: calc(var(--spacing-3) + env(safe-area-inset-right, 0px));
-    max-width: none;
+  .toast-viewport {
+    left: var(--spacing-3);
+    right: var(--spacing-3);
+    top: var(--spacing-3);
+    bottom: auto;
+    align-items: center;
     transform: none;
   }
 
-  /* 移动端统一从顶部弹出，贴近系统通知区域 */
-  .toast-container--top-right,
-  .toast-container--top-left,
-  .toast-container--top-center {
-    top: calc(env(safe-area-inset-top, 0px) + var(--spacing-4));
-    bottom: auto;
+  .toast-stack {
+    width: 100%;
   }
 
-  .toast-container--top-center,
-  .toast-container--bottom-center {
-    left: calc(var(--spacing-3) + env(safe-area-inset-left, 0px));
+  .toast-card {
+    border-radius: var(--radius-md);
+    box-shadow: 0 2px 12px -2px rgba(0, 0, 0, 0.1);
   }
 
-  /* 移动端从顶部滑入 */
-  .toast-enter-from {
-    opacity: 0;
-    transform: translateY(-16px) scale(0.95);
+  .toast-content-wrapper {
+    padding: var(--spacing-2) var(--spacing-3);
   }
 
-  .toast-leave-to {
-    opacity: 0;
-    transform: translateY(-8px) scale(0.95);
+  .toast-icon-box {
+    width: 1.75rem;
+    height: 1.75rem;
   }
 
-  /* 增加关闭按钮的点击区域，避免误触 */
-  .toast__close {
-    width: 2.5rem;
-    height: 2.5rem;
-    margin: calc(var(--spacing-1) * -1);
+  .toast-msg {
+    font-size: var(--text-xs);
+  }
+
+  /* Mobile enter: slide in from top */
+  .toast-stack-enter-from {
+    transform: translateY(-16px) scale(0.96);
+  }
+
+  .toast-stack-leave-to {
+    transform: translateY(-16px) scale(0.96);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .toast__progress {
-    animation: none;
+  .toast-card {
+    transition: none;
+  }
+
+  .toast-stack-enter-active,
+  .toast-stack-leave-active,
+  .toast-stack-move {
+    transition: none;
+  }
+
+  .toast-stack-enter-from,
+  .toast-stack-leave-to {
+    opacity: 0;
+    transform: none;
+  }
+
+  .toast-progress-bg {
+    animation-duration: 0ms;
   }
 }
 </style>
