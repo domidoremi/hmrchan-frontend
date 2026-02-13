@@ -1085,7 +1085,7 @@ function startHintTimer() {
   }
   hintTimeout = window.setTimeout(() => {
     showControlHints.value = false
-  }, 2600)
+  }, 2600) as unknown as number
 }
 </script>
 
@@ -1602,11 +1602,32 @@ function startHintTimer() {
     top: auto;
     min-width: unset;
     width: 100%;
-    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
     padding: var(--spacing-4);
-    max-height: 60svh;
+    padding-bottom: calc(var(--spacing-4) + env(safe-area-inset-bottom));
+    max-height: 70svh;
     overflow-y: auto;
-    z-index: 100;
+    z-index: 1100; /* Above mobile nav (usually z-100/1000) */
+    background: var(--glass-bg-strong); /* Theme-aware background */
+    backdrop-filter: var(--glass-blur-strong);
+    -webkit-backdrop-filter: var(--glass-blur-strong);
+    border: 1px solid var(--glass-border);
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.2);
+  }
+
+  /* Adjust settings panel text for theme adaptation */
+  .settings-label {
+    color: var(--color-text-secondary);
+  }
+
+  .settings-option {
+    border-color: var(--glass-border);
+    color: var(--color-text-primary);
+  }
+
+  .settings-option:hover {
+    background: var(--glass-bg-hover);
+    border-color: var(--glass-border-strong);
   }
 }
 

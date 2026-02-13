@@ -6,18 +6,23 @@
 .hidden {
   display: none;
 }
+
 .block {
   display: block;
 }
+
 .inline-block {
   display: inline-block;
 }
+
 .flex {
   display: flex;
 }
+
 .inline-flex {
   display: inline-flex;
 }
+
 .grid {
   display: grid;
 }
@@ -26,18 +31,23 @@
 .flex-row {
   flex-direction: row;
 }
+
 .flex-col {
   flex-direction: column;
 }
+
 .flex-wrap {
   flex-wrap: wrap;
 }
+
 .flex-1 {
   flex: 1 1 0%;
 }
+
 .flex-auto {
   flex: 1 1 auto;
 }
+
 .flex-none {
   flex: none;
 }
@@ -45,12 +55,15 @@
 .items-start {
   align-items: flex-start;
 }
+
 .items-center {
   align-items: center;
 }
+
 .items-end {
   align-items: flex-end;
 }
+
 .items-stretch {
   align-items: stretch;
 }
@@ -58,15 +71,19 @@
 .justify-start {
   justify-content: flex-start;
 }
+
 .justify-center {
   justify-content: center;
 }
+
 .justify-end {
   justify-content: flex-end;
 }
+
 .justify-between {
   justify-content: space-between;
 }
+
 .justify-around {
   justify-content: space-around;
 }
@@ -74,18 +91,23 @@
 .gap-1 {
   gap: var(--spacing-1);
 }
+
 .gap-2 {
   gap: var(--spacing-2);
 }
+
 .gap-3 {
   gap: var(--spacing-3);
 }
+
 .gap-4 {
   gap: var(--spacing-4);
 }
+
 .gap-6 {
   gap: var(--spacing-6);
 }
+
 .gap-8 {
   gap: var(--spacing-8);
 }
@@ -94,21 +116,27 @@
 .p-0 {
   padding: var(--spacing-0);
 }
+
 .p-1 {
   padding: var(--spacing-1);
 }
+
 .p-2 {
   padding: var(--spacing-2);
 }
+
 .p-3 {
   padding: var(--spacing-3);
 }
+
 .p-4 {
   padding: var(--spacing-4);
 }
+
 .p-6 {
   padding: var(--spacing-6);
 }
+
 .p-8 {
   padding: var(--spacing-8);
 }
@@ -116,9 +144,11 @@
 .px-2 {
   padding-inline: var(--spacing-2);
 }
+
 .px-4 {
   padding-inline: var(--spacing-4);
 }
+
 .px-6 {
   padding-inline: var(--spacing-6);
 }
@@ -126,9 +156,11 @@
 .py-2 {
   padding-block: var(--spacing-2);
 }
+
 .py-4 {
   padding-block: var(--spacing-4);
 }
+
 .py-6 {
   padding-block: var(--spacing-6);
 }
@@ -136,12 +168,15 @@
 .m-0 {
   margin: var(--spacing-0);
 }
+
 .m-auto {
   margin: auto;
 }
+
 .mx-auto {
   margin-inline: auto;
 }
+
 .my-auto {
   margin-block: auto;
 }
@@ -149,12 +184,15 @@
 .mt-2 {
   margin-top: var(--spacing-2);
 }
+
 .mt-4 {
   margin-top: var(--spacing-4);
 }
+
 .mt-6 {
   margin-top: var(--spacing-6);
 }
+
 .mt-8 {
   margin-top: var(--spacing-8);
 }
@@ -162,12 +200,15 @@
 .mb-2 {
   margin-bottom: var(--spacing-2);
 }
+
 .mb-4 {
   margin-bottom: var(--spacing-4);
 }
+
 .mb-6 {
   margin-bottom: var(--spacing-6);
 }
+
 .mb-8 {
   margin-bottom: var(--spacing-8);
 }
@@ -176,22 +217,28 @@
 .w-full {
   width: 100%;
 }
+
 .h-full {
   height: 100%;
 }
+
 .min-h-screen {
   min-height: 100svh;
   min-height: 100dvh;
 }
+
 .min-h-dvh {
   min-height: 100dvh;
 }
+
 .min-h-svh {
   min-height: 100svh;
 }
+
 .h-dvh {
   height: 100dvh;
 }
+
 .h-svh {
   height: 100svh;
 }
@@ -209,21 +256,27 @@
 .text-xs {
   font-size: var(--text-xs);
 }
+
 .text-sm {
   font-size: var(--text-sm);
 }
+
 .text-base {
   font-size: var(--text-base);
 }
+
 .text-lg {
   font-size: var(--text-lg);
 }
+
 .text-xl {
   font-size: var(--text-xl);
 }
+
 .text-2xl {
   font-size: var(--text-2xl);
 }
+
 .text-3xl {
   font-size: var(--text-3xl);
 }
@@ -231,12 +284,15 @@
 .font-normal {
   font-weight: var(--font-normal);
 }
+
 .font-medium {
   font-weight: var(--font-medium);
 }
+
 .font-semibold {
   font-weight: var(--font-semibold);
 }
+
 .font-bold {
   font-weight: var(--font-bold);
 }
@@ -244,9 +300,11 @@
 .text-left {
   text-align: left;
 }
+
 .text-center {
   text-align: center;
 }
+
 .text-right {
   text-align: right;
 }
@@ -254,18 +312,23 @@
 .text-primary {
   color: var(--color-text-primary);
 }
+
 .text-secondary {
   color: var(--color-text-secondary);
 }
+
 .text-tertiary {
   color: var(--color-text-tertiary);
 }
+
 .text-accent {
   color: var(--color-primary);
 }
+
 .text-error {
   color: var(--color-error);
 }
+
 .text-success {
   color: var(--color-success);
 }
@@ -296,21 +359,27 @@
 .rounded-none {
   border-radius: var(--radius-none);
 }
+
 .rounded-sm {
   border-radius: var(--radius-sm);
 }
+
 .rounded-md {
   border-radius: var(--radius-md);
 }
+
 .rounded-lg {
   border-radius: var(--radius-lg);
 }
+
 .rounded-xl {
   border-radius: var(--radius-xl);
 }
+
 .rounded-2xl {
   border-radius: var(--radius-2xl);
 }
+
 .rounded-full {
   border-radius: var(--radius-full);
 }
@@ -319,12 +388,15 @@
 .relative {
   position: relative;
 }
+
 .absolute {
   position: absolute;
 }
+
 .fixed {
   position: fixed;
 }
+
 .sticky {
   position: sticky;
 }
@@ -332,15 +404,19 @@
 .inset-0 {
   inset: 0;
 }
+
 .top-0 {
   top: 0;
 }
+
 .right-0 {
   right: 0;
 }
+
 .bottom-0 {
   bottom: 0;
 }
+
 .left-0 {
   left: 0;
 }
@@ -349,12 +425,15 @@
 .overflow-hidden {
   overflow: hidden;
 }
+
 .overflow-auto {
   overflow: auto;
 }
+
 .overflow-y-auto {
   overflow-y: auto;
 }
+
 .overflow-x-hidden {
   overflow-x: hidden;
 }
@@ -363,12 +442,15 @@
 .opacity-0 {
   opacity: 0;
 }
+
 .opacity-50 {
   opacity: 0.5;
 }
+
 .opacity-75 {
   opacity: 0.75;
 }
+
 .opacity-100 {
   opacity: 1;
 }
@@ -377,6 +459,7 @@
 .cursor-pointer {
   cursor: pointer;
 }
+
 .cursor-not-allowed {
   cursor: not-allowed;
 }
@@ -385,6 +468,7 @@
 .pointer-events-none {
   pointer-events: none;
 }
+
 .pointer-events-auto {
   pointer-events: auto;
 }
@@ -393,6 +477,7 @@
 .select-none {
   user-select: none;
 }
+
 .select-text {
   user-select: text;
 }
@@ -738,7 +823,8 @@
   /* 移动端输入框优化 */
   .input-mobile {
     min-height: 48px;
-    font-size: 16px; /* 防止 iOS 自动缩放 */
+    font-size: 16px;
+    /* 防止 iOS 自动缩放 */
   }
 
   /* 移动端列表项 */
@@ -823,12 +909,15 @@
   .hidden-mobile {
     display: block;
   }
+
   .hidden-mobile.flex {
     display: flex;
   }
+
   .hidden-mobile.inline-flex {
     display: inline-flex;
   }
+
   .hidden-mobile.grid {
     display: grid;
   }
@@ -860,6 +949,7 @@
   .show-ultrawide {
     display: block;
   }
+
   .show-ultrawide.flex {
     display: flex;
   }
@@ -1244,6 +1334,7 @@
   color: var(--color-primary);
   text-shadow: none;
 }
+
 .dark-invert {
   filter: none;
 }
@@ -1289,33 +1380,109 @@
 .z-0 {
   z-index: 0;
 }
+
 .z-10 {
   z-index: 10;
 }
+
 .z-20 {
   z-index: 20;
 }
+
 .z-30 {
   z-index: 30;
 }
+
 .z-40 {
   z-index: 40;
 }
+
 .z-50 {
   z-index: 50;
 }
+
 .z-dropdown {
   z-index: var(--z-dropdown);
 }
+
 .z-sticky {
   z-index: var(--z-sticky);
 }
+
 .z-modal {
   z-index: var(--z-modal);
 }
+
 .z-tooltip {
   z-index: var(--z-tooltip);
 }
+
 .z-toast {
   z-index: var(--z-toast);
+}
+
+/* ========== Prose & Text Width (ch units) ========== */
+/** Per CSS规范: 正文容器使用 ch 单位 (50-75 字符/行) */
+.prose-width {
+  max-width: 65ch;
+}
+
+.prose-width-wide {
+  max-width: 75ch;
+}
+
+.prose-width-narrow {
+  max-width: 50ch;
+}
+
+/* ========== Fluid Container ========== */
+/** Per CSS规范: max-width: min(90vw, limit) */
+.container-fluid {
+  max-width: var(--container-max-fluid);
+  margin-inline: auto;
+  padding-inline: var(--page-padding);
+}
+
+/* ========== Dynamic Viewport Height (dvh/svh) ========== */
+/** Per CSS规范: 使用 dvh/svh 代替 vh，避免移动端地址栏布局跳动 */
+.min-h-screen {
+  min-height: 100svh;
+  min-height: 100dvh;
+}
+
+.h-screen {
+  height: 100svh;
+  height: 100dvh;
+}
+
+/* ========== Inline Icon Sizing (em-based) ========== */
+/** Per CSS规范: 行内图标使用 em，随文本大小同步缩放 */
+.icon-inline {
+  width: var(--icon-inline);
+  height: var(--icon-inline);
+  vertical-align: -0.125em;
+}
+
+.icon-inline-lg {
+  width: var(--icon-inline-lg);
+  height: var(--icon-inline-lg);
+  vertical-align: -0.125em;
+}
+
+/* ========== Fluid Spacing ========== */
+/** Per CSS规范: 间距结合 clamp() 实现平滑缩放 */
+.p-fluid {
+  padding: clamp(1rem, 3vw, 2.5rem);
+}
+
+.px-fluid {
+  padding-inline: clamp(1rem, 3vw, 2.5rem);
+}
+
+.py-fluid {
+  padding-block: clamp(0.75rem, 2vw, 2rem);
+}
+
+.gap-fluid {
+  gap: clamp(0.75rem, 2vw, 1.5rem);
 }

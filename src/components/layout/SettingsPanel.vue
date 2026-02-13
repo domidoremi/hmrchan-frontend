@@ -284,6 +284,7 @@ const { settings } = storeToRefs(settingsStore)
 const themeOptions = [
   { value: 'light' as Theme, icon: Sun },
   { value: 'dark' as Theme, icon: Moon },
+  { value: 'blue' as Theme, icon: Palette },
   { value: 'auto' as Theme, icon: Monitor },
 ]
 
@@ -356,6 +357,8 @@ function resetVideoSettings() {
 }
 
 .settings-panel--compact {
+  padding: var(--spacing-2);
+  gap: var(--spacing-2);
   min-width: 13.5rem;
   width: min(90vw, 20rem);
   max-height: min(70svh, calc(100svh - 9rem));
