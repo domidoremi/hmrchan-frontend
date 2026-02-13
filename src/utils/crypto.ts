@@ -203,10 +203,25 @@ export function generateSecurePassword(
     charset = 'abcdefghijklmnopqrstuvwxyz0123456789'
   }
 
-  const randomBytes = getRandomBytes(length)
+  // 使用 rejection sampling 消除模偏差
+  // 计算不会产生偏差的最大值（charset.length 的最大整数倍 - 1）
+  const maxUnbiased = 256 - (256 % charset.length)
   let password = ''
-  for (let i = 0; i < length; i++) {
-    password += charset[randomBytes[i]! % charset.length]
+  let offset = 0
+  let randomBytes = getRandomBytes(length * 2) // 预分配足够的随机字节
+
+  for (let i = 0; i < length; ) {
+    if (offset >= randomBytes.length) {
+      // 随机字节用完，重新生成
+      randomBytes = getRandomBytes(length * 2)
+      offset = 0
+    }
+    const byte = randomBytes[offset++]!
+    // 丢弃会产生偏差的值
+    if (byte < maxUnbiased) {
+      password += charset[byte % charset.length]
+      i++
+    }
   }
   return password
 }
