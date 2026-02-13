@@ -215,7 +215,7 @@ async function handleShowReplies() {
   if (!props.comment.replies || props.comment.replies.length === 0) {
     isLoadingReplies.value = true
     try {
-      await commentsStore.fetchReplies(props.comment.id)
+      await commentsStore.fetchReplies(props.comment.id, 1, props.postId)
     } finally {
       isLoadingReplies.value = false
     }

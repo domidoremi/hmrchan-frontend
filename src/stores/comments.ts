@@ -94,25 +94,24 @@ export const useCommentsStore = defineStore('comments', () => {
   }
 
   // 获取评论回复
-  async function fetchReplies(commentId: string, page = 1) {
-    // 查找该评论属于哪个帖子 (这里有点低效，但我们的数据结构是 Map<PostID, Comment[]>)
-    // 在实际应用中，组件调用时应该知道 postId
-    let targetPostId = ''
-    let targetComment: Comment | null = null
-
-    // 尝试在所有帖子的评论中查找
-    for (const [pId, pComments] of comments.value.entries()) {
-      const found = findComment(pComments, commentId)
-      if (found) {
-        targetPostId = pId
-        targetComment = found
-        break
+  async function fetchReplies(commentId: string, page = 1, postId?: string) {
+    // 如果调用方提供了 postId，直接使用，避免遍历查找
+    if (postId) {
+      const postComments = comments.value.get(postId)
+      if (postComments && findComment(postComments, commentId)) {
+        return fetchRepliesForPost(postId, commentId, page)
       }
     }
 
-    if (!targetComment) return { success: false, error: 'comment.notFound' }
+    // 降级：遍历查找（兼容未传 postId 的调用方）
+    for (const [pId, pComments] of comments.value.entries()) {
+      const found = findComment(pComments, commentId)
+      if (found) {
+        return fetchRepliesForPost(pId, commentId, page)
+      }
+    }
 
-    return fetchRepliesForPost(targetPostId, commentId, page)
+    return { success: false, error: 'comment.notFound' }
   }
 
   // 内部专用：已知 postId 的回复获取

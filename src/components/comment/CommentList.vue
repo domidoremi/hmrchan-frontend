@@ -21,7 +21,9 @@
     </header>
 
     <!-- Comment Form -->
-    <CommentForm :post-id="postId" @submitted="handleCommentAdded" />
+    <div :class="{ 'comment-form-centered': !isLoading && comments.length === 0 }">
+      <CommentForm :post-id="postId" @submitted="handleCommentAdded" />
+    </div>
 
     <!-- Comments List -->
     <div v-if="isLoading" class="loading-state">
@@ -148,6 +150,11 @@ watch(
 
 .comment-section--guest {
   background: var(--glass-bg);
+}
+
+.comment-form-centered {
+  max-width: 480px;
+  margin-inline: auto;
 }
 
 .comment-header {
