@@ -59,7 +59,6 @@ import { ref, watch, computed, defineAsyncComponent } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useThemeStore, useSettingsStore } from '@/stores'
-import { usePageTitle } from '@/composables/usePageTitle'
 import AppNavbar from '@/components/layout/AppNavbar.vue'
 import AppFooter from '@/components/layout/AppFooter.vue'
 import PageLoading from '@/components/ui/PageLoading.vue'
@@ -79,9 +78,6 @@ const settingsStore = useSettingsStore()
 
 const { resolvedTheme } = storeToRefs(themeStore)
 const { settings } = storeToRefs(settingsStore)
-
-// 初始化动态标题管理
-usePageTitle()
 
 // 动效强度
 const animationIntensity = computed(() =>
@@ -106,9 +102,12 @@ watch(
 
     const pageName = String(newName)
     const count = pageVisitCount.get(pageName) || 0
+
+    // 删除再插入，确保 Map 迭代顺序反映最近访问时间
+    pageVisitCount.delete(pageName)
     pageVisitCount.set(pageName, count + 1)
 
-    // 淘汰最早的访问记录，防止 Map 无限增长
+    // 淘汰最久未访问的记录（Map 迭代顺序 = 插入顺序 = LRU 顺序）
     if (pageVisitCount.size > MAX_VISIT_ENTRIES) {
       const oldest = pageVisitCount.keys().next().value
       if (oldest !== undefined) pageVisitCount.delete(oldest)
