@@ -162,8 +162,10 @@ async function getAccessTokenAsync(): Promise<string | null> {
       return secureToken
     }
     return null
-  } catch {
-    return getAccessToken()
+  } catch (error) {
+    // 安全存储读取失败（localStorage 被禁用、解密失败等）
+    console.error('Failed to retrieve access token from secure storage:', error)
+    return null
   }
 }
 
