@@ -120,25 +120,73 @@
 
 /* 暗色模式适配 */
 [data-theme='dark'] {
-  --glass-bg-ultra-light: rgba(30, 30, 35, 0.7);
-  --glass-bg-light: rgba(30, 30, 35, 0.6);
-  --glass-bg-medium: rgba(30, 30, 35, 0.45);
-  --glass-bg-dark: rgba(30, 30, 35, 0.3);
+  --glass-bg-ultra-light: rgba(20, 24, 32, 0.75);
+  --glass-bg-light: rgba(20, 24, 32, 0.65);
+  --glass-bg-medium: rgba(20, 24, 32, 0.5);
+  --glass-bg-dark: rgba(20, 24, 32, 0.35);
 
-  --glass-border-light: rgba(255, 255, 255, 0.15);
-  --glass-border-medium: rgba(255, 255, 255, 0.1);
-  --glass-border-subtle: rgba(255, 255, 255, 0.05);
+  --glass-border-light: rgba(255, 255, 255, 0.14);
+  --glass-border-medium: rgba(255, 255, 255, 0.09);
+  --glass-border-subtle: rgba(255, 255, 255, 0.04);
 
-  --glass-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.2), 0 4px 16px rgba(0, 0, 0, 0.1);
-  --glass-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.25), 0 8px 32px rgba(0, 0, 0, 0.15);
-  --glass-shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.3), 0 16px 64px rgba(0, 0, 0, 0.2);
+  --glass-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.25), 0 4px 16px rgba(0, 0, 0, 0.12);
+  --glass-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.3), 0 8px 32px rgba(0, 0, 0, 0.18);
+  --glass-shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.35), 0 16px 64px rgba(0, 0, 0, 0.22);
+  --glass-shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.4), 0 32px 96px rgba(0, 0, 0, 0.28);
+  --glass-shadow-hover:
+    0 8px 24px rgba(0, 0, 0, 0.35), 0 16px 48px rgba(0, 0, 0, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
 
   --highlight-gradient: linear-gradient(
     135deg,
-    rgba(255, 255, 255, 0.1) 0%,
-    rgba(255, 255, 255, 0.03) 50%,
+    rgba(255, 255, 255, 0.08) 0%,
+    rgba(255, 255, 255, 0.02) 50%,
     rgba(255, 255, 255, 0) 100%
   );
+
+  /* Dark mode glow enhancement */
+  --glow-primary:
+    0 0 24px rgba(var(--color-primary-rgb), 0.2), 0 0 48px rgba(var(--color-primary-rgb), 0.08);
+  --glow-accent:
+    0 0 24px rgba(var(--color-accent-rgb), 0.2), 0 0 48px rgba(var(--color-accent-rgb), 0.08);
+
+  /* Material 3 surface tint for dark mode elevation */
+  --surface-tint: rgba(var(--color-accent-rgb), 0.05);
+  --surface-tint-hover: rgba(var(--color-accent-rgb), 0.08);
+}
+
+/* Blue Theme - Minimalist Professional Glass Effects */
+[data-theme='blue'] {
+  --glass-bg-ultra-light: rgba(255, 255, 255, 0.7);
+  --glass-bg-light: rgba(255, 255, 255, 0.55);
+  --glass-bg-medium: rgba(255, 255, 255, 0.4);
+  --glass-bg-dark: rgba(255, 255, 255, 0.25);
+
+  --glass-border-light: rgba(59, 130, 246, 0.3);
+  --glass-border-medium: rgba(59, 130, 246, 0.2);
+  --glass-border-subtle: rgba(59, 130, 246, 0.1);
+
+  --glass-shadow-sm: 0 2px 8px rgba(59, 130, 246, 0.05), 0 1px 4px rgba(0, 0, 0, 0.02);
+  --glass-shadow-md: 0 4px 16px rgba(59, 130, 246, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
+  --glass-shadow-lg: 0 8px 32px rgba(59, 130, 246, 0.12), 0 4px 16px rgba(0, 0, 0, 0.06);
+  --glass-shadow-xl: 0 16px 48px rgba(59, 130, 246, 0.15), 0 8px 24px rgba(0, 0, 0, 0.08);
+  --glass-shadow-hover:
+    0 8px 24px rgba(59, 130, 246, 0.15), 0 4px 12px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+
+  --highlight-gradient: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.6) 0%,
+    rgba(255, 255, 255, 0.2) 50%,
+    transparent 100%
+  );
+
+  /* Soft Blue Glows */
+  --glow-primary: 0 0 30px rgba(59, 130, 246, 0.2), 0 0 60px rgba(59, 130, 246, 0.1);
+  --glow-accent: 0 0 30px rgba(99, 102, 241, 0.2), 0 0 60px rgba(99, 102, 241, 0.1);
+
+  --surface-tint: rgba(59, 130, 246, 0.04);
+  --surface-tint-hover: rgba(59, 130, 246, 0.08);
 }
 
 /* ========== 通用玻璃卡片增强 ========== */
@@ -173,6 +221,17 @@
   transform: var(--lift-sm);
   box-shadow: var(--glass-shadow-hover);
   border-color: var(--glass-border-light);
+}
+
+/* ========== Theme Transition Smoothing ========== */
+/** Smooth visual transition when switching between light/dark themes */
+.theme-transition,
+.theme-transition * {
+  transition:
+    background-color var(--duration-normal) var(--ease-smooth),
+    border-color var(--duration-normal) var(--ease-smooth),
+    box-shadow var(--duration-normal) var(--ease-smooth),
+    color var(--duration-fast) var(--ease-smooth) !important;
 }
 
 /* ========== 按钮动效增强 ========== */
@@ -210,6 +269,7 @@
     opacity: 0;
     transform: translateY(10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -227,6 +287,7 @@
   0% {
     background-position: -200% 0;
   }
+
   100% {
     background-position: 200% 0;
   }

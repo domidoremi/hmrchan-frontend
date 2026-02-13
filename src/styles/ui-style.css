@@ -88,18 +88,18 @@
   --ease-in-out: cubic-bezier(0.25, 0.1, 0.25, 1);
   --ease-spring: cubic-bezier(0.22, 1.2, 0.36, 1);
 
-  --shadow-sm: 0 2px 10px rgba(15, 23, 42, 0.08);
-  --shadow-md: 0 8px 24px rgba(15, 23, 42, 0.12);
-  --shadow-lg: 0 20px 48px rgba(15, 23, 42, 0.18);
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 20px 48px rgba(0, 0, 0, 0.12);
   --ui-style: ios;
   --radius: 0.9rem;
   --radius-lg: 1.05rem;
   --radius-xl: 1.3rem;
   --radius-2xl: 1.6rem;
 
-  --glass-blur: blur(18px);
-  --glass-shadow: 0 18px 50px rgba(15, 23, 42, 0.18);
-  --glass-shadow-lg: 0 30px 80px rgba(15, 23, 42, 0.24);
+  --glass-blur: blur(24px);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+  --glass-shadow-lg: 0 24px 64px rgba(0, 0, 0, 0.12);
 
   --ui-control-height-sm: 2.375rem;
   --ui-control-height-md: 2.75rem;
@@ -117,6 +117,7 @@
   --ui-radius-nav-icon: var(--radius-2xl);
   --ui-radius-checkbox: var(--radius-full);
   --ui-radius-badge: var(--radius-full);
+  --ui-radius-dialog: var(--radius-2xl);
 
   --ui-dialog-close-size: 2.25rem;
 
@@ -145,129 +146,197 @@
   --ease-in-out: cubic-bezier(0.2, 0, 0, 1);
   --ease-spring: cubic-bezier(0.2, 0, 0, 1);
 
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12);
-  --shadow-md: 0 4px 10px rgba(0, 0, 0, 0.16);
-  --shadow-lg: 0 10px 20px rgba(0, 0, 0, 0.2);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.12);
+  --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.14);
+  --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.16);
 
   /* Material tends to use smaller radii + clearer elevation */
   --ui-radius-sheet: 16px;
-  --ui-radius-dialog: 12px;
+  --ui-radius-dialog: 28px;
+  /* M3 Dialog radius */
 
   --ui-backdrop-dim: rgba(0, 0, 0, 0.52);
-  --ui-backdrop-blur: blur(6px) saturate(1);
+  --ui-backdrop-blur: blur(0px);
+  /* Material typically uses dimming, minimal blur */
 
   /* Make the switch obvious: tune the global radii for descendants */
-  --radius: 0.5rem; /* 8px */
-  --radius-lg: 0.625rem;
-  --radius-xl: 0.75rem;
-  --radius-2xl: 1rem;
+  --radius: 0.25rem;
+  /* 4px M2 / 12-20px M3 usually varies */
+  --radius-lg: 0.75rem;
+  /* 12px */
+  --radius-xl: 1rem;
+  /* 16px */
+  --radius-2xl: 1.5rem;
+  /* 24px */
 
   /* Material: reduce blur, increase elevation cues */
-  --glass-blur: blur(6px);
-  --glass-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
-  --glass-shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.34);
+  --glass-blur: blur(0px);
+  --glass-shadow: var(--shadow-md);
+  --glass-shadow-lg: var(--shadow-lg);
 
   --transition-fast: 150ms;
 
   --ui-control-min-size: 40px;
   --ui-control-height-sm: 2.125rem;
-  --ui-control-height-md: 2.375rem;
-  --ui-control-height-lg: 2.625rem;
-  --ui-control-padding-x-sm: 0.625rem;
-  --ui-control-padding-x-md: 0.875rem;
-  --ui-control-padding-x-lg: 1.5rem;
+  --ui-control-height-md: 2.5rem;
+  /* M3 Filled Button height is 40px */
+  --ui-control-height-lg: 2.75rem;
+  --ui-control-padding-x-sm: 0.75rem;
+  --ui-control-padding-x-md: 1.5rem;
+  --ui-control-padding-x-lg: 2rem;
 
-  --ui-radius-button: var(--radius);
-  --ui-radius-input: var(--radius);
-  --ui-radius-card: var(--radius-lg);
-  --ui-radius-tabs: var(--radius);
-  --ui-radius-toast: var(--radius);
-  --ui-radius-nav: var(--radius);
-  --ui-radius-nav-icon: var(--radius-lg);
-  --ui-radius-checkbox: var(--radius-sm);
-  --ui-radius-badge: var(--radius-sm);
+  --ui-radius-button: 9999px;
+  /* M3 Buttons are pill-shaped (full) */
+  --ui-radius-input: 4px;
+  /* Text fields usually small radius or 0 for filled */
+  --ui-radius-card: 12px;
+  /* M3 Card */
+  --ui-radius-tabs: 9999px;
+  /* Navigation bar/rail items */
+  --ui-radius-toast: 4px;
+  /* Snackbar */
+  --ui-radius-nav: 0;
+  --ui-radius-nav-icon: 16px;
+  /* Active indicator */
+  --ui-radius-checkbox: 2px;
+  --ui-radius-badge: 9999px;
 
   --ui-dialog-close-size: 2rem;
 
-  --ui-slider-track-height: 4px;
-  --ui-slider-thumb-size: 1rem;
-  --ui-slider-thumb-border: 2px;
+  /* Material Switch Overrides */
+  --ui-switch-width-sm: 2.25rem;
+  --ui-switch-height-sm: 1.25rem;
+  --ui-switch-thumb-sm: 0.875rem;
+  /* Smaller thumb vs track */
+  --ui-switch-translate-sm: calc(var(--ui-switch-width-sm) - var(--ui-switch-thumb-sm) - 6px);
+
+  --ui-switch-width-md: 3.25rem;
+  /* ~52px */
+  --ui-switch-height-md: 2rem;
+  /* 32px */
+  --ui-switch-thumb-md: 1.5rem;
+  /* 24px */
+  --ui-switch-translate-md: calc(var(--ui-switch-width-md) - var(--ui-switch-thumb-md) - 8px);
+
+  --ui-switch-width-lg: 3.75rem;
+  --ui-switch-height-lg: 2.25rem;
+  --ui-switch-thumb-lg: 1.75rem;
+  --ui-switch-translate-lg: calc(var(--ui-switch-width-lg) - var(--ui-switch-thumb-lg) - 8px);
 }
 
 #app[data-ui-style='material'][data-theme='light'] {
-  --ui-surface-border: rgba(15, 23, 42, 0.1);
-  --ui-surface-bg: rgba(255, 255, 255, 0.92);
+  --ui-surface-border: rgba(121, 116, 126, 0.1);
+  /* M3 Outline Variant */
+  --ui-surface-bg: #fdfcff;
 
-  --glass-bg: rgba(255, 255, 255, 0.82);
-  --glass-bg-light: rgba(255, 255, 255, 0.62);
-  --glass-bg-strong: rgba(255, 255, 255, 0.96);
-  --glass-border: rgba(15, 23, 42, 0.1);
-  --glass-border-strong: rgba(15, 23, 42, 0.16);
+  --glass-bg: #fdfcff;
+  --glass-bg-light: #f3f3fa;
+  --glass-bg-strong: #ffffff;
+  --glass-border: rgba(121, 116, 126, 0.2);
+  --glass-border-strong: rgba(121, 116, 126, 0.4);
 }
 
 #app[data-ui-style='material'][data-theme='dark'] {
-  --ui-surface-border: rgba(255, 255, 255, 0.1);
-  --ui-surface-bg: rgba(18, 18, 20, 0.92);
+  --ui-surface-border: rgba(147, 143, 153, 0.2);
+  --ui-surface-bg: #1a1c1e;
 
-  --glass-bg: rgba(18, 18, 20, 0.88);
-  --glass-bg-light: rgba(18, 18, 20, 0.72);
-  --glass-bg-strong: rgba(18, 18, 20, 0.96);
-  --glass-border: rgba(255, 255, 255, 0.1);
-  --glass-border-strong: rgba(255, 255, 255, 0.16);
+  --glass-bg: #1a1c1e;
+  --glass-bg-light: #2f3033;
+  --glass-bg-strong: #141218;
+  --glass-border: rgba(147, 143, 153, 0.2);
+  --glass-border-strong: rgba(147, 143, 153, 0.4);
+}
+
+/* Material Blue Theme - Clean & Solid */
+#app[data-ui-style='material'][data-theme='blue'] {
+  --ui-surface-border: rgba(59, 130, 246, 0.2);
+  /* Blue-tinted outline */
+  --ui-surface-bg: #ffffff;
+  /* Solid White */
+
+  /* Override glass vars to be solid/tinted */
+  --glass-bg: #ffffff;
+  --glass-bg-light: #eff6ff;
+  /* blue-50 */
+  --glass-bg-strong: #ffffff;
+  --glass-border: rgba(59, 130, 246, 0.2);
+  --glass-border-strong: rgba(59, 130, 246, 0.4);
+
+  /* Shadows with blue tint */
+  --shadow-sm: 0 1px 2px rgba(59, 130, 246, 0.1);
+  --shadow-md: 0 4px 6px -1px rgba(59, 130, 246, 0.1), 0 2px 4px -2px rgba(59, 130, 246, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(59, 130, 246, 0.1), 0 4px 6px -4px rgba(59, 130, 246, 0.05);
+
+  /* Specific Material Overrides for Blue */
+  --color-surface: #ffffff;
+  --color-background: #eff6ff;
+  /* blue-50 */
 }
 
 /* ========== iOS / SwiftUI Style ========== */
 #app[data-ui-style='ios'] .glass-card {
   border-radius: var(--radius-2xl);
+  border: 1px solid var(--glass-border);
 }
 
 #app[data-ui-style='ios'] .glass-card::before {
-  opacity: 0.45;
+  opacity: 0.6;
 }
 
 #app[data-ui-style='ios'] .btn,
 #app[data-ui-style='ios'] .glass-button {
   border-radius: 999px;
+  letter-spacing: -0.01em;
 }
 
 /* iOS Light Mode */
 #app[data-ui-style='ios'][data-theme='light'] {
-  --ui-surface-border: rgba(15, 23, 42, 0.08);
-  --ui-surface-bg: rgba(255, 255, 255, 0.88);
-  --glass-bg: rgba(255, 255, 255, 0.72);
-  --glass-bg-light: rgba(255, 255, 255, 0.55);
-  --glass-bg-strong: rgba(255, 255, 255, 0.94);
-  --glass-border: rgba(15, 23, 42, 0.08);
-  --glass-border-strong: rgba(15, 23, 42, 0.12);
+  --ui-surface-border: rgba(0, 0, 0, 0.08);
+  --ui-surface-bg: rgba(255, 255, 255, 0.85);
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-bg-strong: rgba(255, 255, 255, 0.9);
+  --glass-border: rgba(0, 0, 0, 0.08);
 }
 
 /* iOS Dark Mode */
 #app[data-ui-style='ios'][data-theme='dark'] {
   --ui-surface-border: rgba(255, 255, 255, 0.12);
-  --ui-surface-bg: rgba(10, 10, 14, 0.86);
-  --glass-bg: rgba(30, 30, 35, 0.78);
-  --glass-bg-light: rgba(30, 30, 35, 0.58);
-  --glass-bg-strong: rgba(20, 20, 24, 0.94);
+  --ui-surface-bg: rgba(30, 30, 30, 0.8);
+  --glass-bg: rgba(30, 30, 30, 0.65);
+  --glass-bg-strong: rgba(44, 44, 46, 0.85);
   --glass-border: rgba(255, 255, 255, 0.12);
-  --glass-border-strong: rgba(255, 255, 255, 0.18);
 }
 
 /* ========== Material Style ========== */
 #app[data-ui-style='material'] .glass-card {
-  border-radius: var(--radius);
-  box-shadow: var(--glass-shadow);
+  border-radius: var(--ui-radius-card);
+  box-shadow: var(--shadow-sm);
+  background: var(--color-surface);
+  /* Solid background for Material */
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border: 1px solid var(--ui-surface-border);
 }
 
 #app[data-ui-style='material'] .glass-card::before {
-  opacity: 0.2;
+  display: none;
+  /* No top gloss for material */
 }
 
 #app[data-ui-style='material'] .btn,
 #app[data-ui-style='material'] .glass-button {
-  border-radius: var(--radius);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  font-weight: 600;
+  border-radius: var(--ui-radius-button);
+  text-transform: none;
+  /* M3 removed uppercase constraint */
+  letter-spacing: 0.01em;
+  font-weight: 500;
+  box-shadow: none;
+  /* M3 filled buttons flat by default until hover/elevated */
+}
+
+#app[data-ui-style='material'] .btn-default,
+#app[data-ui-style='material'] .glass-button--primary {
+  box-shadow: var(--shadow-sm);
 }
 
 #app[data-ui-style='material'] input,
@@ -276,29 +345,19 @@
 }
 
 /* Material Light Mode - Enhanced */
-#app[data-ui-style='material'][data-theme='light'] {
-  --ui-surface-border: rgba(15, 23, 42, 0.1);
-  --ui-surface-bg: rgba(255, 255, 255, 0.95);
-  --glass-bg: rgba(255, 255, 255, 0.88);
-  --glass-bg-light: rgba(255, 255, 255, 0.72);
-  --glass-bg-strong: rgba(255, 255, 255, 0.98);
-  --glass-border: rgba(15, 23, 42, 0.1);
-  --glass-border-strong: rgba(15, 23, 42, 0.16);
-  --glass-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 4px 16px rgba(0, 0, 0, 0.04);
-  --glass-shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.12);
+#app[data-ui-style='material'][data-theme='light'] .glass-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
 }
 
 /* Material Dark Mode - Enhanced */
-#app[data-ui-style='material'][data-theme='dark'] {
-  --ui-surface-border: rgba(255, 255, 255, 0.1);
-  --ui-surface-bg: rgba(18, 18, 20, 0.95);
-  --glass-bg: rgba(28, 28, 32, 0.92);
-  --glass-bg-light: rgba(28, 28, 32, 0.78);
-  --glass-bg-strong: rgba(18, 18, 20, 0.98);
-  --glass-border: rgba(255, 255, 255, 0.1);
-  --glass-border-strong: rgba(255, 255, 255, 0.16);
-  --glass-shadow: 0 2px 8px rgba(0, 0, 0, 0.32), 0 4px 16px rgba(0, 0, 0, 0.24);
-  --glass-shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.4);
+#app[data-ui-style='material'][data-theme='dark'] .glass-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+  background:
+    linear-gradient(0deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05)),
+    var(--color-surface);
+  /* M3 Surface Tint */
 }
 
 /* ========== iOS Motion & Interaction ========== */
@@ -316,83 +375,39 @@
     background var(--duration-fast) var(--ease-out);
 }
 
+#app[data-ui-style='ios'] .glass-button:active {
+  transform: scale(0.96);
+}
+
 /* ========== Material Motion & Interaction ========== */
 #app[data-ui-style='material'] .glass-card {
   transition:
     transform var(--duration-fast) var(--ease-out),
     box-shadow var(--duration-fast) var(--ease-out),
-    border-color var(--duration-fast) var(--ease-out);
-}
-
-#app[data-ui-style='material'] .glass-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--glass-shadow-lg);
+    background-color var(--duration-fast) var(--ease-out);
 }
 
 #app[data-ui-style='material'] .glass-button {
   transition:
-    transform var(--duration-fast) var(--ease-out),
-    box-shadow var(--duration-fast) var(--ease-out),
-    background var(--duration-fast) var(--ease-out);
+    background-color var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out);
 }
 
-/* ========== Material Elevation System ========== */
-#app[data-ui-style='material'] .elevation-1 {
-  box-shadow:
-    0 1px 3px rgba(0, 0, 0, 0.12),
-    0 1px 2px rgba(0, 0, 0, 0.24);
-}
-
-#app[data-ui-style='material'] .elevation-2 {
-  box-shadow:
-    0 3px 6px rgba(0, 0, 0, 0.15),
-    0 2px 4px rgba(0, 0, 0, 0.12);
-}
-
-#app[data-ui-style='material'] .elevation-3 {
-  box-shadow:
-    0 10px 20px rgba(0, 0, 0, 0.15),
-    0 3px 6px rgba(0, 0, 0, 0.1);
-}
-
-#app[data-ui-style='material'][data-theme='dark'] .elevation-1 {
-  box-shadow:
-    0 1px 3px rgba(0, 0, 0, 0.4),
-    0 1px 2px rgba(0, 0, 0, 0.48);
-}
-
-#app[data-ui-style='material'][data-theme='dark'] .elevation-2 {
-  box-shadow:
-    0 3px 6px rgba(0, 0, 0, 0.4),
-    0 2px 4px rgba(0, 0, 0, 0.32);
-}
-
-#app[data-ui-style='material'][data-theme='dark'] .elevation-3 {
-  box-shadow:
-    0 10px 20px rgba(0, 0, 0, 0.4),
-    0 3px 6px rgba(0, 0, 0, 0.28);
+#app[data-ui-style='material'] .btn:active,
+#app[data-ui-style='material'] .glass-button:active {
+  transform: none;
+  /* Material buttons don't shrink */
+  box-shadow: inset 0 0 0 100px rgba(0, 0, 0, 0.1);
+  /* Ripple-like darken */
 }
 
 /* ========== iOS Blur Effects ========== */
 #app[data-ui-style='ios'] .glass-card {
-  backdrop-filter: blur(18px) saturate(1.2);
-  -webkit-backdrop-filter: blur(18px) saturate(1.2);
-}
-
-#app[data-ui-style='ios'][data-theme='light'] .glass-card {
-  background: rgba(255, 255, 255, 0.72);
-}
-
-#app[data-ui-style='ios'][data-theme='dark'] .glass-card {
-  background: rgba(30, 30, 35, 0.72);
+  backdrop-filter: blur(24px) saturate(1.4);
+  -webkit-backdrop-filter: blur(24px) saturate(1.4);
 }
 
 /* ========== Material Ripple Indicator ========== */
-#app[data-ui-style='material'] .btn:active,
-#app[data-ui-style='material'] .glass-button:active {
-  transform: scale(0.98);
-}
-
 #app[data-ui-style='material'] .btn:focus-visible,
 #app[data-ui-style='material'] .glass-button:focus-visible {
   outline: 2px solid var(--color-primary);

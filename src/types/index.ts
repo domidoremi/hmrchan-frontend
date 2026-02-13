@@ -2,7 +2,7 @@
  * 全局类型定义
  */
 
-export type Theme = 'light' | 'dark' | 'auto'
+export type Theme = 'light' | 'dark' | 'auto' | 'blue'
 
 export type Locale = 'en' | 'zh-CN' | 'ja'
 
