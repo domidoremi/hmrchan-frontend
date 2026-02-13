@@ -4,6 +4,8 @@
  * 提供 XSS 防护、输入验证、内容过滤等安全功能
  */
 
+import DOMPurify from 'dompurify'
+
 // HTML 实体编码映射
 const HTML_ENTITIES: Record<string, string> = {
   '&': '&amp;',
@@ -16,56 +18,6 @@ const HTML_ENTITIES: Record<string, string> = {
   '=': '&#x3D;',
 }
 
-// 危险的 HTML 标签
-const DANGEROUS_TAGS = [
-  'script',
-  'iframe',
-  'object',
-  'embed',
-  'form',
-  'input',
-  'button',
-  'select',
-  'textarea',
-  'style',
-  'link',
-  'meta',
-  'base',
-  'applet',
-  'frame',
-  'frameset',
-  'layer',
-  'ilayer',
-]
-
-// 危险的属性
-const DANGEROUS_ATTRS = [
-  'onclick',
-  'ondblclick',
-  'onmousedown',
-  'onmouseup',
-  'onmouseover',
-  'onmousemove',
-  'onmouseout',
-  'onkeydown',
-  'onkeypress',
-  'onkeyup',
-  'onload',
-  'onerror',
-  'onunload',
-  'onabort',
-  'onblur',
-  'onchange',
-  'onfocus',
-  'onreset',
-  'onsubmit',
-  'onselect',
-  'javascript:',
-  'vbscript:',
-  'data:',
-  'expression',
-]
-
 /**
  * 转义 HTML 特殊字符，防止 XSS 攻击
  */
@@ -76,33 +28,51 @@ export function escapeHtml(str: string): string {
 
 /**
  * 清理 HTML 内容，移除危险标签和属性
+ * 使用 DOMPurify 进行可靠的 DOM 级清理，替代易被绕过的正则方案
  */
 export function sanitizeHtml(html: string): string {
   if (!html || typeof html !== 'string') return ''
-
-  let clean = html
-
-  // 移除危险标签
-  DANGEROUS_TAGS.forEach((tag) => {
-    const regex = new RegExp(`<${tag}[^>]*>.*?</${tag}>|<${tag}[^>]*/?>`, 'gi')
-    clean = clean.replace(regex, '')
+  return DOMPurify.sanitize(html, {
+    ALLOWED_TAGS: [
+      'b',
+      'i',
+      'em',
+      'strong',
+      'a',
+      'p',
+      'br',
+      'ul',
+      'ol',
+      'li',
+      'blockquote',
+      'code',
+      'pre',
+      'h1',
+      'h2',
+      'h3',
+      'h4',
+      'h5',
+      'h6',
+      'span',
+      'div',
+      'img',
+      'figure',
+      'figcaption',
+      'hr',
+      'table',
+      'thead',
+      'tbody',
+      'tr',
+      'th',
+      'td',
+      'sup',
+      'sub',
+      'del',
+      'ins',
+    ],
+    ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'class', 'id', 'width', 'height'],
+    ALLOW_DATA_ATTR: false,
   })
-
-  // 移除危险属性
-  DANGEROUS_ATTRS.forEach((attr) => {
-    const regex = new RegExp(`\\s*${attr}\\s*=\\s*["'][^"']*["']`, 'gi')
-    clean = clean.replace(regex, '')
-    // 处理无引号的情况
-    const regexNoQuote = new RegExp(`\\s*${attr}\\s*=\\s*[^\\s>]+`, 'gi')
-    clean = clean.replace(regexNoQuote, '')
-  })
-
-  // 移除 javascript: 协议
-  clean = clean.replace(/javascript:/gi, '')
-  clean = clean.replace(/vbscript:/gi, '')
-  clean = clean.replace(/data:/gi, '')
-
-  return clean
 }
 
 /**
