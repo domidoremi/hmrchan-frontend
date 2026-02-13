@@ -14,9 +14,11 @@
 
 import { secureTokenManager } from '@/utils/tokenSecurity'
 
-// 延迟导入 i18n 和 toast store，避免循环依赖和减少 bundle 大小
+// i18n 已在 main.ts 同步加载，此处直接静态导入消除 Rolldown 警告
+import i18nInstance from '@/i18n'
+
+// 延迟导入 toast store，避免循环依赖
 let _toastStore: ReturnType<typeof import('@/stores/toast').useToastStore> | null = null
-let _i18n: typeof import('@/i18n').default | null = null
 
 async function getToastStore() {
   if (!_toastStore) {
@@ -24,14 +26,6 @@ async function getToastStore() {
     _toastStore = useToastStore()
   }
   return _toastStore
-}
-
-async function getI18n() {
-  if (!_i18n) {
-    const module = await import('@/i18n')
-    _i18n = module.default
-  }
-  return _i18n
 }
 
 // API 基础配置
@@ -271,8 +265,7 @@ async function handleErrorResponse(response: Response, skipErrorToast?: boolean)
     530: 'error.serviceUnavailable', // Cloudflare error
   }
 
-  const i18n = await getI18n()
-  const { t } = i18n.global
+  const { t } = i18nInstance.global
   let localizedMessage: string
 
   // 服务端提供了具体的错误码或消息时，优先保留而非覆盖为泛化状态码消息
@@ -460,8 +453,7 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
     }
 
     // 处理网络错误或超时
-    const i18n = await getI18n()
-    const { t } = i18n.global
+    const { t } = i18nInstance.global
 
     if (error instanceof Error && error.name === 'AbortError') {
       if (!skipErrorToast) {
