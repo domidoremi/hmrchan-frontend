@@ -70,10 +70,10 @@ if (import.meta.hot) {
   })
 }
 
-// 初始化认证状态（同步，确保路由守卫正常工作）
+// 初始化认证状态（异步：需要从安全存储解密 token）
+// 必须在 mount 前完成，确保路由守卫能正确判断认证状态
 import { useAuthStore } from './stores/auth'
 const authStore = useAuthStore()
-authStore.initAuth()
 const disposeAuthListener = authStore.setupAuthListener()
 if (import.meta.hot) {
   import.meta.hot.dispose(() => {
@@ -88,7 +88,13 @@ initFingerprint().catch(() => {
   // 指纹初始化失败不影响应用运行
 })
 
-app.mount('#app')
+// 等待认证初始化完成后再挂载，避免路由守卫竞态
+authStore
+  .initAuth()
+  .catch(() => {})
+  .finally(() => {
+    app.mount('#app')
+  })
 
 // 性能监控：立即启动以捕获所有指标
 import { disposePerformanceMonitoring, initPerformanceMonitoring } from './utils/performanceMonitor'
