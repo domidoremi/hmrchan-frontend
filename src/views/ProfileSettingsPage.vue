@@ -483,6 +483,7 @@
       :is-open="showEmailVerify"
       :action="emailVerifyAction"
       :email="profile?.email ?? ''"
+      :target-email="emailVerifyTarget"
       @close="showEmailVerify = false"
       @verified="handleEmailVerified"
     />
@@ -494,6 +495,7 @@ defineOptions({ name: 'ProfileSettingsPage' })
 
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
+// ... icons imports ...
 import {
   User,
   Camera,
@@ -533,6 +535,7 @@ const authStore = useAuthStore()
 const toastStore = useToastStore()
 
 const profile = ref<UserProfile | null>(null)
+// ... refs ...
 const isLoading = ref(false)
 const isSaving = ref(false)
 const isChangingPassword = ref(false)
@@ -569,6 +572,13 @@ const emailVerifyAction = ref('')
 type PendingAction = 'change_email' | 'change_password'
 const pendingAction = ref<PendingAction | null>(null)
 
+const emailVerifyTarget = computed(() => {
+  if (pendingAction.value === 'change_email') {
+    return emailForm.value.new_email
+  }
+  return undefined
+})
+
 const form = ref({
   username: '',
   full_name: '',
@@ -581,7 +591,7 @@ const passwordForm = ref({
   confirm_password: '',
 })
 
-// Password strength calculation - 使用 crypto 模块
+// ... password strength computed ...
 const passwordStrengthResult = computed(() => {
   return checkPasswordStrength(passwordForm.value.new_password)
 })
@@ -695,13 +705,14 @@ function changePassword() {
   showEmailVerify.value = true
 }
 
-async function executeChangePassword() {
+async function executeChangePassword(verificationToken: string) {
   isChangingPassword.value = true
 
   try {
     await userService.changePassword({
       current_password: passwordForm.value.current_password,
       new_password: passwordForm.value.new_password,
+      verification_token: verificationToken,
     })
     toastStore.success(t('profile.passwordChanged'))
     passwordForm.value = {
@@ -758,7 +769,7 @@ async function handleEmailVerified(verificationToken: string) {
   if (pendingAction.value === 'change_email') {
     await executeChangeEmail(verificationToken)
   } else if (pendingAction.value === 'change_password') {
-    await executeChangePassword()
+    await executeChangePassword(verificationToken)
   }
   pendingAction.value = null
 }
