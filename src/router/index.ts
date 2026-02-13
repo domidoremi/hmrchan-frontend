@@ -22,14 +22,11 @@ declare module 'vue-router' {
   }
 }
 
-// 缓存 auth store 模块，避免每次路由切换都动态导入
-let authStoreModule: typeof import('@/stores/auth') | null = null
+// auth store 已在 main.ts 同步加载，此处直接静态导入消除 Rolldown 警告
+import { useAuthStore } from '@/stores/auth'
 
-async function getAuthStore() {
-  if (!authStoreModule) {
-    authStoreModule = await import('@/stores/auth')
-  }
-  return authStoreModule.useAuthStore()
+function getAuthStore() {
+  return useAuthStore()
 }
 
 const routes: RouteRecordRaw[] = [
@@ -215,9 +212,8 @@ const router = createRouter({
 })
 
 // 路由守卫
-router.beforeEach(async (to, _from, next) => {
-  // 使用缓存的 auth store 模块
-  const authStore = await getAuthStore()
+router.beforeEach((to, _from, next) => {
+  const authStore = getAuthStore()
   const isAuthenticated = authStore.isAuthenticated
 
   // 需要认证的页面
