@@ -278,7 +278,7 @@ router.afterEach((to) => {
   const translatedTitle = rawTitle ? String(i18n.global.t(rawTitle)) : ''
   const nextTitle =
     translatedTitle && translatedTitle !== SITE_NAME
-      ? `${translatedTitle} - ${SITE_NAME}`
+      ? `${translatedTitle} · ${SITE_NAME}`
       : SITE_NAME
 
   document.title = nextTitle
