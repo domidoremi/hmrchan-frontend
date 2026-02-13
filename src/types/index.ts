@@ -4,7 +4,7 @@
 
 export type Theme = 'light' | 'dark' | 'auto' | 'blue'
 
-export type Locale = 'en' | 'zh-CN' | 'ja'
+export type Locale = 'en' | 'zh-CN' | 'zh-TW' | 'ja'
 
 export interface User {
   id: string
@@ -52,7 +52,11 @@ export interface PaginatedResponse<T> {
   has_more: boolean
 }
 
-export interface ApiError {
+/**
+ * API 错误响应结构（用于类型标注后端返回的错误 JSON）
+ * 注意：运行时错误类请使用 api/client.ts 导出的 ApiError class
+ */
+export interface ApiErrorResponse {
   status: number
   error_code: string
   message: string

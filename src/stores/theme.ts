@@ -68,13 +68,17 @@ export const useThemeStore = defineStore(
 
     /**
      * 切换主题（在 light/dark 之间切换）
+     * 如果当前是特殊主题（如 blue），先切换到与系统相反的标准主题
      */
     function toggleTheme() {
       if (theme.value === 'auto') {
         // auto 模式下，切换到与当前相反的固定主题
         theme.value = systemTheme.value === 'dark' ? 'light' : 'dark'
-      } else {
+      } else if (theme.value === 'light' || theme.value === 'dark') {
         theme.value = theme.value === 'dark' ? 'light' : 'dark'
+      } else {
+        // 特殊主题（如 blue）：切换到与系统偏好相反的标准主题
+        theme.value = systemTheme.value === 'dark' ? 'light' : 'dark'
       }
     }
 
