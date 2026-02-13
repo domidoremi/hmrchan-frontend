@@ -137,7 +137,7 @@
       "name": "设置",
       "short_name": "设置",
       "description": "个性化设置和偏好",
-      "url": "/settings?source=shortcut",
+      "url": "/profile/settings?source=shortcut",
       "icons": [
         {
           "src": "/icons/shortcut-settings.png",
