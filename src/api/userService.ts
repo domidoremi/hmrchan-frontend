@@ -31,6 +31,7 @@ export interface UpdateProfileRequest {
 export interface ChangePasswordRequest {
   current_password: string
   new_password: string
+  verification_token?: string
 }
 
 export interface AvatarUploadResponse {

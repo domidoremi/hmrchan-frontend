@@ -88,6 +88,7 @@ export interface ChangeEmailRequest {
 
 export interface SendEmailCodeRequest {
   action: string
+  email?: string
 }
 
 export interface VerifyEmailCodeRequest {

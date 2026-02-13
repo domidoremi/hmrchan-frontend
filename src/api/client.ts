@@ -394,7 +394,7 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
           }
 
           const retryData = await retryResponse.json()
-          return retryData
+          return normalizeResponse<T>(retryData)
         } else {
           // Token 刷新失败，通知所有等待的请求
           const error = refreshError || new Error('Token refresh failed')
@@ -430,7 +430,7 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
               }
 
               const retryData = await retryResponse.json()
-              resolve(retryData)
+              resolve(normalizeResponse<T>(retryData))
             } catch (error) {
               clearTimeout(subRetryTimeoutId)
               reject(error)
