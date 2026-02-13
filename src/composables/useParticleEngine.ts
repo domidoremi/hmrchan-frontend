@@ -46,13 +46,13 @@ let renderQuality = 2
 // ==================== 主题色 ====================
 
 function defaultRainColor(isDark: boolean): string {
-  return isDark ? '#aec2e0' : '#334155'
+  return isDark ? '#94b8d4' : '#4a6178'
 }
 function defaultSnowColor(isDark: boolean): string {
-  return isDark ? '#e2e8f0' : '#475569'
+  return isDark ? '#dce5f0' : '#5a6a7a'
 }
 function defaultStarColor(isDark: boolean): string {
-  return isDark ? '#fef3c7' : '#b45309'
+  return isDark ? '#fcd87a' : '#a16207'
 }
 
 function resolveColor(
@@ -257,6 +257,12 @@ const updateRain: Updater = (p, w, h, dt, cfg) => {
     p.alpha = ([0.14, 0.28, 0.5][p.depth]! + Math.random() * 0.15) * cfg.opacity
     p.splash = 0
   }
+
+  // Animate splash decay
+  if (p.splash > 0) {
+    p.splash -= 0.03 * dt
+    if (p.splash < 0) p.splash = 0
+  }
 }
 
 const renderRain: Renderer = (ctx, p, cfg, isDark) => {
@@ -289,6 +295,27 @@ const renderRain: Renderer = (ctx, p, cfg, isDark) => {
     ctx.lineWidth = Math.max(0.4, p.size * 0.35)
     ctx.stroke()
   }
+
+  // Splash circle effect when rain hits bottom
+  if (p.splash > 0 && renderQuality >= 1) {
+    const splashProgress = 1 - p.splash
+    const splashRadius = (4 + p.depth * 6) * splashProgress
+    const splashAlpha = alpha * p.splash * 0.5
+    ctx.beginPath()
+    ctx.arc(p.x, p.y, splashRadius, 0, Math.PI * 2)
+    ctx.strokeStyle = withAlpha(color, splashAlpha)
+    ctx.lineWidth = Math.max(0.3, 0.8 - splashProgress * 0.5)
+    ctx.stroke()
+    // Second ripple ring for depth 2 particles
+    if (p.depth === 2 && renderQuality === 2) {
+      const r2 = splashRadius * 0.6
+      ctx.beginPath()
+      ctx.arc(p.x, p.y, r2, 0, Math.PI * 2)
+      ctx.strokeStyle = withAlpha(color, splashAlpha * 0.5)
+      ctx.lineWidth = 0.3
+      ctx.stroke()
+    }
+  }
 }
 
 // ==================== Snow ====================
@@ -314,14 +341,23 @@ const initSnow: Initializer = (p, w, h, cfg) => {
   p.active = true
 }
 
+let windGustPhase = 0
+let windGustStrength = 0
+
 const updateSnow: Updater = (p, w, h, dt, cfg) => {
   const speed = cfg.speed * dt
   p.phase += 0.008 * speed * [1.2, 1, 0.7][p.depth]!
   p.rot += p.spin * dt
 
+  // Wind gusts: periodic bursts of horizontal drift
+  windGustPhase += 0.0003 * dt
+  const gustCycle = Math.sin(windGustPhase) * Math.sin(windGustPhase * 3.7)
+  windGustStrength = Math.max(0, gustCycle) * 1.2
+
   const drift = Math.sin(p.phase) * (0.4 + p.depth * 0.25) * speed
+  const gust = windGustStrength * (0.8 + p.depth * 0.4) * speed
   const jitter = (Math.random() - 0.5) * 0.12 * speed
-  p.x += drift + jitter + p.vx * speed
+  p.x += drift + jitter + p.vx * speed + gust
   p.y += p.vy * speed
 
   if (p.y > h + 20) {
@@ -377,6 +413,8 @@ const initStars: Initializer = (p, w, h, cfg) => {
   p.active = true
 }
 
+let shootingStarTimer = 0
+
 const updateStars: Updater = (p, w, h, dt, cfg) => {
   p.px = p.x
   p.py = p.y
@@ -395,13 +433,65 @@ const updateStars: Updater = (p, w, h, dt, cfg) => {
   const baseAlpha = ([0.18, 0.4, 0.62][p.depth]! + p.size * 0.05) * cfg.opacity
   const twinkle = p.depth === 0 ? 0.25 : p.depth === 1 ? 0.4 : 0.55
   p.alpha = baseAlpha * (1 - twinkle + twinkle * Math.sin(p.phase))
+
+  // Shooting star: randomly boost a depth-2 star's velocity
+  if (p.depth === 2 && p.splash === 0) {
+    shootingStarTimer += dt * 0.001
+    if (shootingStarTimer > 1 && Math.random() < 0.0004 * cfg.speed) {
+      shootingStarTimer = 0
+      const angle = -Math.PI * 0.15 + Math.random() * -Math.PI * 0.2
+      p.vx = Math.cos(angle) * 3.5
+      p.vy = Math.sin(angle) * 3.5
+      p.splash = 1 // reuse splash as shooting star life
+      p.alpha = cfg.opacity * 0.9
+    }
+  }
+
+  // Animate shooting star
+  if (p.splash > 0) {
+    p.splash -= 0.008 * dt
+    if (p.splash <= 0) {
+      p.splash = 0
+      // Reset to normal drift
+      const ang = Math.random() * Math.PI * 2
+      const speed = 0.05 + Math.random() * 0.08
+      p.vx = Math.cos(ang) * speed
+      p.vy = Math.sin(ang) * speed
+    }
+  }
 }
 
 const renderStars: Renderer = (ctx, p, cfg, isDark) => {
   const color = resolveColor(cfg, 'stars', isDark)
   const alpha = clampAlpha(p.alpha * (isDark ? 1 : 1.35))
 
-  // 尾迹（仅中/近景 + 中高质量）
+  // Shooting star: extended trail
+  if (p.splash > 0) {
+    const trailLen = 40 + p.splash * 60
+    const speed = Math.hypot(p.vx, p.vy)
+    const dir = speed > 0.001 ? Math.atan2(p.vy, p.vx) : 0
+    const tx = Math.cos(dir)
+    const ty = Math.sin(dir)
+    const x0 = p.x - tx * trailLen
+    const y0 = p.y - ty * trailLen
+    if (renderQuality >= 1) {
+      const grad = ctx.createLinearGradient(x0, y0, p.x, p.y)
+      grad.addColorStop(0, withAlpha(color, 0))
+      grad.addColorStop(0.6, withAlpha(color, alpha * 0.4 * p.splash))
+      grad.addColorStop(1, withAlpha(color, alpha * 0.9))
+      ctx.beginPath()
+      ctx.moveTo(x0, y0)
+      ctx.lineTo(p.x, p.y)
+      ctx.strokeStyle = grad
+      ctx.lineWidth = 1.8
+      ctx.lineCap = 'round'
+      ctx.stroke()
+    }
+    drawStarCore(ctx, p.x, p.y, p.size * 1.3, color, alpha)
+    return
+  }
+
+  // Normal star: trail (mid/near + mid/high quality)
   if (renderQuality >= 1 && p.depth >= 1) {
     const dx = p.x - p.px
     const dy = p.y - p.py
