@@ -66,7 +66,7 @@
 import { ref, computed, watch, nextTick, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Mail } from 'lucide-vue-next'
-import { authService, ApiError } from '@/api'
+import { authService, ApiError, type SendEmailCodeRequest } from '@/api'
 import { useToastStore } from '@/stores'
 import Dialog from '@/components/ui/Dialog.vue'
 import Button from '@/components/ui/Button.vue'
@@ -78,6 +78,11 @@ interface Props {
   action: string
   /** User's current email (will be masked in display) */
   email: string
+  /**
+   * Optional target email to send code to (for Change Email flow).
+   * If provided, code is sent here instead of current email.
+   */
+  targetEmail?: string | undefined
   /** Auto-send code when dialog opens */
   autoSend?: boolean
 }
@@ -108,11 +113,12 @@ let cooldownTimer: ReturnType<typeof setInterval> | null = null
 const codeInputRef = ref<InstanceType<typeof EmailCodeInput> | null>(null)
 
 const maskedEmail = computed(() => {
-  if (!props.email) return ''
-  const parts = props.email.split('@')
+  const emailToMask = props.targetEmail || props.email
+  if (!emailToMask) return ''
+  const parts = emailToMask.split('@')
   const local = parts[0] ?? ''
   const domain = parts[1]
-  if (!domain) return props.email
+  if (!domain) return emailToMask
   const visible = local.length <= 2 ? local : local.slice(0, 2)
   return `${visible}***@${domain}`
 })
@@ -150,7 +156,11 @@ async function sendCode() {
   errorMessage.value = ''
 
   try {
-    await authService.sendEmailCode({ action: props.action })
+    const payload: SendEmailCodeRequest = { action: props.action }
+    if (props.targetEmail) {
+      payload.email = props.targetEmail
+    }
+    await authService.sendEmailCode(payload)
     step.value = 'code'
     startCooldown()
     toastStore.success(t('emailCode.codeSent'))
