@@ -185,14 +185,27 @@
             <!-- 设置菜单 -->
             <div ref="settingsMenuRef" class="settings-menu" @click.stop>
               <button
+                ref="settingsBtnRef"
                 type="button"
                 class="control-btn"
                 :aria-label="$t('video.settings')"
-                @click="showSettings = !showSettings"
+                @click="toggleSettingsPanel"
               >
                 <AnimatedIcon name="sparkle" :fallback-icon="Settings" size="md" />
               </button>
-              <div v-if="showSettings" class="settings-panel glass-card">
+            </div>
+
+            <Teleport to="body" :disabled="isFullscreen">
+              <div
+                v-if="showSettings"
+                class="settings-panel glass-card"
+                :class="{
+                  'settings-panel--fullscreen': isFullscreen,
+                  'settings-panel--teleported': !isFullscreen,
+                }"
+                :style="settingsPanelPosition"
+                @click.stop
+              >
                 <!-- 播放速度 -->
                 <div class="settings-section">
                   <div class="settings-label">{{ $t('video.playbackSpeed') }}</div>
@@ -275,7 +288,7 @@
                   </div>
                 </div>
               </div>
-            </div>
+            </Teleport>
 
             <!-- 画中画 -->
             <button
@@ -339,7 +352,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
+import { ref, computed, nextTick, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
   Play,
@@ -419,6 +432,7 @@ const emit = defineEmits<{
 const videoRef = ref<HTMLVideoElement | null>(null)
 const playerElement = ref<HTMLElement | null>(null)
 const settingsMenuRef = ref<HTMLElement | null>(null)
+const settingsBtnRef = ref<HTMLElement | null>(null)
 const isPlaying = ref(false)
 const isBuffering = ref(false)
 const currentTime = ref(0)
@@ -489,6 +503,41 @@ const {
 
 const playbackSpeeds = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2]
 const qualities = ref<string[]>(['auto']) // 可扩展支持多画质
+
+// 设置面板定位（Teleport 到 body 时使用 fixed 定位，全屏时也用 fixed）
+const settingsPanelPosition = ref<Record<string, string>>({})
+
+function updateSettingsPanelPosition() {
+  if (!settingsBtnRef.value) return
+  const rect = settingsBtnRef.value.getBoundingClientRect()
+  const isMobile = window.innerWidth <= 768
+
+  if (!isFullscreen.value && isMobile) {
+    // 非全屏移动端：底部弹出式
+    settingsPanelPosition.value = {
+      position: 'fixed',
+      bottom: '0',
+      left: '0',
+      right: '0',
+      zIndex: 'var(--z-modal)',
+    }
+  } else {
+    // 桌面端 & 全屏模式：从按钮上方弹出
+    settingsPanelPosition.value = {
+      position: 'fixed',
+      bottom: `${window.innerHeight - rect.top + 8}px`,
+      right: `${window.innerWidth - rect.right}px`,
+      zIndex: 'var(--z-modal)',
+    }
+  }
+}
+
+function toggleSettingsPanel() {
+  showSettings.value = !showSettings.value
+  if (showSettings.value) {
+    nextTick(() => updateSettingsPanelPosition())
+  }
+}
 
 const subtitleOverrides = ref<Record<string, string>>({})
 const selectedSubtitleLanguage = ref<string | null>(null)
@@ -990,13 +1039,12 @@ const handleFullscreenChange = () => {
 }
 
 const handleClickOutside = (event: MouseEvent) => {
-  if (
-    showSettings.value &&
-    settingsMenuRef.value &&
-    !settingsMenuRef.value.contains(event.target as Node)
-  ) {
-    showSettings.value = false
-  }
+  if (!showSettings.value) return
+  const target = event.target as Node
+  // 检查点击是否在设置按钮或 Teleport 出去的设置面板内
+  if (settingsMenuRef.value?.contains(target)) return
+  if ((target as Element).closest?.('.settings-panel')) return
+  showSettings.value = false
 }
 
 onMounted(() => {
@@ -1460,16 +1508,16 @@ function startHintTimer() {
 }
 
 .settings-panel {
-  position: absolute;
-  bottom: calc(100% + var(--spacing-2));
-  right: 0;
   min-width: 200px;
   padding: var(--spacing-3);
   background: rgba(28, 28, 30, 0.95);
   backdrop-filter: blur(20px);
   border: 1px solid var(--glass-border);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  border-radius: var(--radius-xl);
 }
+
+/* Teleport 到 body 和全屏模式均由 JS 内联样式控制 position/z-index */
 
 .settings-section {
   display: flex;
@@ -1594,25 +1642,26 @@ function startHintTimer() {
     height: 32px;
   }
 
-  .settings-panel {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    top: auto;
+  .settings-panel--teleported {
+    /* JS 已设置 position:fixed; bottom:0; left:0; right:0 */
     min-width: unset;
-    width: 100%;
+    width: auto;
     border-radius: var(--radius-xl) var(--radius-xl) 0 0;
     padding: var(--spacing-4);
     padding-bottom: calc(var(--spacing-4) + env(safe-area-inset-bottom));
     max-height: 70svh;
     overflow-y: auto;
-    z-index: 1100; /* Above mobile nav (usually z-100/1000) */
-    background: var(--glass-bg-strong); /* Theme-aware background */
+    background: var(--glass-bg-strong);
     backdrop-filter: var(--glass-blur-strong);
     -webkit-backdrop-filter: var(--glass-blur-strong);
     border: 1px solid var(--glass-border);
     box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.2);
+  }
+
+  /* 全屏模式下移动端：从按钮上方弹出（JS 定位），仅补充视觉样式 */
+  .settings-panel--fullscreen {
+    max-height: 60svh;
+    overflow-y: auto;
   }
 
   /* Adjust settings panel text for theme adaptation */
