@@ -74,35 +74,25 @@ export function useMasonryColumns(options: MasonryOptions = {}) {
   }
 
   /**
-   * 获取当前最矮的列索引（贪心算法 + 抖动处理）
-   * 当多列高度接近时，添加随机性避免堆积
+   * 获取当前最矮的列索引（贪心算法 + 确定性平衡）
+   * 当多列高度接近时，选择索引最小的列，保证结果可预测
    */
   function getShortestColumnIndex(): number {
     if (columnHeights.value.length === 0) return 0
 
-    // 找出所有列的高度
     const heights = columnHeights.value.slice(0, columnCount.value)
-    const minHeight = Math.min(...heights)
-
-    // 🔑 修复：找出所有"接近最短"的列（差距在 50px 以内）
-    // 如果有多个列高度接近，随机选择一个，避免全部堆积到同一列
-    const threshold = 50
-    const candidateIndices: number[] = []
+    let minHeight = Infinity
+    let minIndex = 0
 
     for (let i = 0; i < columnCount.value; i++) {
       const height = heights[i] ?? 0
-      if (height - minHeight <= threshold) {
-        candidateIndices.push(i)
+      if (height < minHeight) {
+        minHeight = height
+        minIndex = i
       }
     }
 
-    // 如果有多个候选列，随机选择一个
-    if (candidateIndices.length > 1) {
-      const randomIdx = Math.floor(Math.random() * candidateIndices.length)
-      return candidateIndices[randomIdx] ?? 0
-    }
-
-    return candidateIndices[0] ?? 0
+    return minIndex
   }
 
   /**
