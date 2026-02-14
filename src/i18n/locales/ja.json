@@ -482,6 +482,12 @@
       "media": "メディア",
       "birth": "誕生日",
       "other": "その他"
+    },
+    "detail": {
+      "draft": "下書き",
+      "eventPage": "イベントページ",
+      "buyTicket": "チケット購入",
+      "source": "ソース"
     }
   },
   "contact": {

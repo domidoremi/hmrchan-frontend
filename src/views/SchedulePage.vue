@@ -113,6 +113,108 @@
 
       <StateIndicator v-if="error" variant="error" :description="error" @action="fetchEvents" />
 
+      <!-- 日程详情弹窗 -->
+      <Dialog
+        :is-open="!!detailEvent"
+        :title="detailEvent?.title ?? ''"
+        size="lg"
+        @close="detailEvent = null"
+      >
+        <div v-if="detailLoading" class="detail-loading">
+          <div class="detail-skeleton" />
+          <div class="detail-skeleton detail-skeleton--short" />
+          <div class="detail-skeleton detail-skeleton--long" />
+        </div>
+        <div v-else-if="detailEvent" class="event-detail">
+          <!-- 分类 & 时间 -->
+          <div class="detail-meta">
+            <span
+              class="event-badge"
+              :style="{
+                background: getCategoryColor(detailEvent.category) + '20',
+                color: getCategoryColor(detailEvent.category),
+              }"
+            >
+              {{ $t(`schedule.categories.${detailEvent.category}`) }}
+            </span>
+            <span v-if="detailEvent.is_published === false" class="draft-badge">
+              {{ $t('schedule.detail.draft') }}
+            </span>
+          </div>
+
+          <!-- 时间信息 -->
+          <div class="detail-row">
+            <Clock :size="16" class="detail-icon" />
+            <div class="detail-row-content">
+              <span v-if="detailEvent.is_all_day">{{ $t('schedule.allDay') }}</span>
+              <span v-else>{{ formatDetailTime(detailEvent.start_date) }}</span>
+              <template v-if="detailEvent.end_date">
+                <span class="detail-separator">—</span>
+                <span v-if="detailEvent.is_all_day">
+                  {{ formatDetailDate(detailEvent.end_date) }}
+                </span>
+                <span v-else>{{ formatDetailTime(detailEvent.end_date) }}</span>
+              </template>
+            </div>
+          </div>
+
+          <!-- 地点 -->
+          <div v-if="detailEvent.venue" class="detail-row">
+            <MapPin :size="16" class="detail-icon" />
+            <div class="detail-row-content">
+              <span class="detail-venue-name">{{ detailEvent.venue }}</span>
+              <span v-if="detailEvent.venue_address" class="detail-venue-addr">
+                {{ detailEvent.venue_address }}
+              </span>
+            </div>
+          </div>
+
+          <!-- 描述 -->
+          <div v-if="detailEvent.description" class="detail-description">
+            <p>{{ detailEvent.description }}</p>
+          </div>
+
+          <!-- 链接区域 -->
+          <div v-if="hasDetailLinks" class="detail-links">
+            <a
+              v-if="detailEvent.event_url"
+              :href="detailEvent.event_url"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="detail-link-btn glass-button"
+            >
+              <ExternalLink :size="14" />
+              <span>{{ $t('schedule.detail.eventPage') }}</span>
+            </a>
+            <a
+              v-if="detailEvent.ticket_url"
+              :href="detailEvent.ticket_url"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="detail-link-btn detail-link-btn--ticket glass-button"
+            >
+              <Ticket :size="14" />
+              <span>{{ $t('schedule.detail.buyTicket') }}</span>
+            </a>
+            <a
+              v-if="detailEvent.source_url"
+              :href="detailEvent.source_url"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="detail-link-btn detail-link-btn--source glass-button"
+            >
+              <Globe :size="14" />
+              <span>
+                {{ $t('schedule.detail.source') }}
+                <template v-if="detailEvent.source_platform">
+                  ({{ detailEvent.source_platform }})
+                </template>
+              </span>
+            </a>
+          </div>
+        </div>
+      </Dialog>
+
       <!-- 选中日期的事件列表 -->
       <Transition name="slide-fade">
         <section v-if="selectedDay" class="day-events">
@@ -137,7 +239,15 @@
           />
 
           <div v-else class="events-list">
-            <article v-for="evt in selectedDayEvents" :key="evt.id" class="event-card glass-card">
+            <article
+              v-for="evt in selectedDayEvents"
+              :key="evt.id"
+              class="event-card glass-card"
+              role="button"
+              tabindex="0"
+              @click="openDetail(evt.id)"
+              @keydown.enter="openDetail(evt.id)"
+            >
               <div
                 class="event-category-bar"
                 :style="{ background: getCategoryColor(evt.category) }"
@@ -164,16 +274,9 @@
                   <MapPin :size="14" />
                   <span>{{ evt.venue }}</span>
                 </div>
-                <a
-                  v-if="evt.url"
-                  :href="evt.url"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="event-link"
-                >
-                  <ExternalLink :size="14" />
-                  <span>{{ $t('schedule.viewDetail') }}</span>
-                </a>
+                <div class="event-card-hint">
+                  <ChevronRight :size="14" />
+                </div>
               </div>
             </article>
           </div>
@@ -189,7 +292,15 @@
           :description="$t('schedule.noUpcoming')"
         />
         <div v-else class="events-list">
-          <article v-for="evt in upcomingEvents" :key="evt.id" class="event-card glass-card">
+          <article
+            v-for="evt in upcomingEvents"
+            :key="evt.id"
+            class="event-card glass-card"
+            role="button"
+            tabindex="0"
+            @click="openDetail(evt.id)"
+            @keydown.enter="openDetail(evt.id)"
+          >
             <div
               class="event-category-bar"
               :style="{ background: getCategoryColor(evt.category) }"
@@ -211,6 +322,9 @@
               </div>
               <h3 class="event-title">{{ evt.title }}</h3>
               <p v-if="evt.description" class="event-desc">{{ evt.description }}</p>
+              <div class="event-card-hint">
+                <ChevronRight :size="14" />
+              </div>
             </div>
           </article>
         </div>
@@ -236,12 +350,16 @@ import {
   Cake,
   LayoutGrid,
   CalendarCheck,
+  Clock,
+  Ticket,
+  Globe,
 } from 'lucide-vue-next'
 import { scheduleService, type ScheduleCalendarItem } from '@/api/scheduleService'
-import type { ScheduleCategory } from '@/api/scheduleService'
+import type { ScheduleCategory, ScheduleResponse } from '@/api/scheduleService'
 import { useScheduleStore } from '@/stores/schedule'
 import { ApiError } from '@/api'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
+import Dialog from '@/components/ui/Dialog.vue'
 
 const { t, locale } = useI18n()
 const scheduleStore = useScheduleStore()
@@ -256,6 +374,10 @@ const activeCategory = ref<ScheduleCategory | 'all'>('all')
 const selectedDay = ref<CalendarDay | null>(null)
 const calendarRef = ref<HTMLElement | null>(null)
 const monthTransition = ref<'month-slide-left' | 'month-slide-right'>('month-slide-left')
+
+// 详情弹窗
+const detailEvent = ref<ScheduleResponse | null>(null)
+const detailLoading = ref(false)
 
 // 触摸手势
 let touchStartX = 0
@@ -544,6 +666,76 @@ function formatEventTime(dateStr: string): string {
 function formatEventDate(dateStr: string): string {
   const d = new Date(dateStr)
   return d.toLocaleDateString(locale.value, { month: 'short', day: 'numeric' })
+}
+
+// ========== 详情弹窗 ==========
+const hasDetailLinks = computed(() => {
+  if (!detailEvent.value) return false
+  return detailEvent.value.event_url || detailEvent.value.ticket_url || detailEvent.value.source_url
+})
+
+async function openDetail(eventId: number) {
+  detailLoading.value = true
+  detailEvent.value = { id: eventId } as ScheduleResponse // placeholder to open dialog
+  try {
+    detailEvent.value = await scheduleService.getById(eventId)
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 404) {
+      // API not deployed yet — build detail from calendar item
+      const calItem = events.value.find((e) => e.id === eventId)
+      if (calItem) {
+        detailEvent.value = calendarItemToResponse(calItem)
+      } else {
+        detailEvent.value = null
+      }
+    } else {
+      detailEvent.value = null
+    }
+  } finally {
+    detailLoading.value = false
+  }
+}
+
+function calendarItemToResponse(item: ScheduleCalendarItem): ScheduleResponse {
+  return {
+    id: item.id,
+    uuid: '',
+    title: item.title,
+    description: item.description ?? null,
+    category: item.category,
+    start_date: item.start,
+    end_date: item.end ?? null,
+    is_all_day: item.allDay,
+    venue: item.venue ?? null,
+    venue_address: null,
+    event_url: item.url ?? null,
+    ticket_url: null,
+    source_url: null,
+    source_platform: null,
+    color: item.color ?? null,
+    is_published: true,
+    created_at: '',
+  }
+}
+
+function formatDetailTime(dateStr: string): string {
+  const d = new Date(dateStr)
+  return d.toLocaleString(locale.value, {
+    month: 'long',
+    day: 'numeric',
+    weekday: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
+function formatDetailDate(dateStr: string): string {
+  const d = new Date(dateStr)
+  return d.toLocaleDateString(locale.value, {
+    month: 'long',
+    day: 'numeric',
+    weekday: 'short',
+  })
 }
 
 // ========== 数据加载 ==========
@@ -1064,6 +1256,166 @@ onMounted(() => {
   .filter-chip {
     white-space: nowrap;
   }
+}
+
+/* ========== 可点击事件卡片 ========== */
+.event-card[role='button'] {
+  cursor: pointer;
+}
+
+.event-card-hint {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  color: var(--color-text-tertiary);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  margin-top: var(--spacing-1);
+}
+
+.event-card:hover .event-card-hint,
+.event-card:focus-visible .event-card-hint {
+  opacity: 1;
+}
+
+/* ========== 详情弹窗 ========== */
+.detail-loading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+  padding: var(--spacing-2) 0;
+}
+
+.detail-skeleton {
+  height: 16px;
+  border-radius: 4px;
+  background: var(--glass-bg-light);
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+  width: 80%;
+}
+
+.detail-skeleton--short {
+  width: 50%;
+}
+
+.detail-skeleton--long {
+  width: 100%;
+  height: 48px;
+}
+
+.event-detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-4);
+}
+
+.detail-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  flex-wrap: wrap;
+}
+
+.draft-badge {
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+}
+
+.detail-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-3);
+}
+
+.detail-icon {
+  color: var(--color-text-tertiary);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.detail-row-content {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--spacing-1);
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
+.detail-separator {
+  color: var(--color-text-tertiary);
+  margin: 0 var(--spacing-1);
+}
+
+.detail-venue-name {
+  font-weight: var(--font-medium);
+  color: var(--color-text-primary);
+}
+
+.detail-venue-addr {
+  display: block;
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+  margin-top: 2px;
+}
+
+.detail-description {
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  color: var(--color-text-secondary);
+  padding: var(--spacing-3);
+  background: var(--glass-bg-subtle);
+  border-radius: var(--radius-md);
+  white-space: pre-wrap;
+}
+
+.detail-description p {
+  margin: 0;
+}
+
+.detail-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-2);
+  padding-top: var(--spacing-2);
+  border-top: 1px solid var(--glass-border);
+}
+
+.detail-link-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-1);
+  padding: var(--spacing-2) var(--spacing-3);
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
+  border-radius: var(--radius-full);
+  text-decoration: none;
+  color: var(--color-primary);
+  transition: all 0.2s ease;
+}
+
+.detail-link-btn:hover {
+  background: rgba(var(--color-primary-rgb), 0.1);
+}
+
+.detail-link-btn--ticket {
+  color: #f59e0b;
+}
+
+.detail-link-btn--ticket:hover {
+  background: rgba(245, 158, 11, 0.1);
+}
+
+.detail-link-btn--source {
+  color: var(--color-text-secondary);
+}
+
+.detail-link-btn--source:hover {
+  background: var(--glass-bg-light);
 }
 
 /* ========== Reduced Motion ========== */

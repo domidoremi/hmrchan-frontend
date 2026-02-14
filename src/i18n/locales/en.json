@@ -482,6 +482,12 @@
       "media": "Media",
       "birth": "Birthday",
       "other": "Other"
+    },
+    "detail": {
+      "draft": "Draft",
+      "eventPage": "Event Page",
+      "buyTicket": "Buy Ticket",
+      "source": "Source"
     }
   },
   "contact": {
