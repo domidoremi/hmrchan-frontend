@@ -196,21 +196,6 @@
               <Ticket :size="14" />
               <span>{{ $t('schedule.detail.buyTicket') }}</span>
             </a>
-            <a
-              v-if="detailEvent.source_url"
-              :href="detailEvent.source_url"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="detail-link-btn detail-link-btn--source glass-button"
-            >
-              <Globe :size="14" />
-              <span>
-                {{ $t('schedule.detail.source') }}
-                <template v-if="detailEvent.source_platform">
-                  ({{ detailEvent.source_platform }})
-                </template>
-              </span>
-            </a>
           </div>
         </div>
       </Dialog>
@@ -352,7 +337,6 @@ import {
   CalendarCheck,
   Clock,
   Ticket,
-  Globe,
 } from 'lucide-vue-next'
 import { scheduleService, type ScheduleCalendarItem } from '@/api/scheduleService'
 import type { ScheduleCategory, ScheduleResponse } from '@/api/scheduleService'
@@ -1408,14 +1392,6 @@ onMounted(() => {
 
 .detail-link-btn--ticket:hover {
   background: rgba(245, 158, 11, 0.1);
-}
-
-.detail-link-btn--source {
-  color: var(--color-text-secondary);
-}
-
-.detail-link-btn--source:hover {
-  background: var(--glass-bg-light);
 }
 
 /* ========== Reduced Motion ========== */
