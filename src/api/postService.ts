@@ -137,6 +137,22 @@ export interface PostDetailResponse {
   tags?: string[]
 }
 
+export interface PostAuthorResponse {
+  id: string
+  platform: string
+  platform_user_id: string
+  name: string
+  username: string
+  description?: string | null
+  avatar_url?: string | null
+  profile_url?: string | null
+  follower_count?: number | null
+  video_count?: number | null
+  is_verified: boolean
+  created_at?: string | null
+  updated_at?: string | null
+}
+
 export const postService = {
   async listPosts(
     params: ListPostsParams = {},
@@ -205,5 +221,30 @@ export const postService = {
     platforms: Array<{ platform: string; post_count: number; media_count: number }>
   }> {
     return apiClient.get('/posts/stats/summary')
+  },
+
+  /**
+   * 获取热门帖子
+   */
+  async getTrending(
+    params: { page?: number; page_size?: number; days?: number } = {}
+  ): Promise<PaginatedApiResponse<PostListItem>> {
+    const query = buildQuery({
+      page: params.page ?? 1,
+      page_size: params.page_size ?? 20,
+      days: params.days ?? 7,
+    })
+    return apiClient.get<PaginatedApiResponse<PostListItem>>(`/posts/trending${query}`, {
+      skipAuth: true,
+    })
+  },
+
+  /**
+   * 获取帖子作者详情
+   */
+  async getPostAuthor(postId: string): Promise<PostAuthorResponse> {
+    return apiClient.get<PostAuthorResponse>(`/posts/${postId}/author`, {
+      skipAuth: true,
+    })
   },
 }

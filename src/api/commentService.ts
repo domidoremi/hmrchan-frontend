@@ -42,6 +42,12 @@ export interface CommentListResponse {
   total_pages: number
 }
 
+export interface CommentThreadResponse {
+  thread: Comment[]
+  root_comment: Comment
+  depth: number
+}
+
 // 图片上传限制
 export const COMMENT_IMAGE_LIMITS = {
   MAX_IMAGES_PER_COMMENT: 9,
@@ -173,6 +179,13 @@ export const commentService = {
    */
   async updateComment(commentId: string, content: string): Promise<Comment> {
     return apiClient.put<Comment>(`/comments/${commentId}`, { content })
+  },
+
+  /**
+   * 获取评论线索链（从当前评论到根评论的完整链路）
+   */
+  async getCommentThread(commentId: string): Promise<CommentThreadResponse> {
+    return apiClient.get<CommentThreadResponse>(`/comments/${commentId}/thread`)
   },
 
   /**

@@ -35,6 +35,7 @@
     "next": "Next",
     "previous": "Previous",
     "search": "Search",
+    "clear": "Clear",
     "noResults": "No results found",
     "notFound": "Not Found",
     "showing": "Showing {count} of {total}",
@@ -428,6 +429,7 @@
   "community": {
     "title": "Community",
     "subtitle": "Join the conversation",
+    "searchPlaceholder": "Search discussions...",
     "guideTitle": "How discussions work",
     "guideDescription": "Start a thread that lives in Community and reference posts when helpful.",
     "guidePoint1": "Discussions are separate from posts and stay in Community.",
@@ -455,7 +457,8 @@
     "deleteDiscussion": "Delete Discussion",
     "confirmDeleteTitle": "Delete Discussion",
     "confirmDeleteMessage": "Are you sure you want to delete this discussion? This action cannot be undone.",
-    "deleteSuccess": "Discussion deleted"
+    "deleteSuccess": "Discussion deleted",
+    "searchPlaceholder": "Search discussions..."
   },
   "contact": {
     "title": "Contact Us",
@@ -529,12 +532,14 @@
       "comments": "Comment History",
       "likes": "Liked Posts",
       "history": "Browsing History",
+      "commentFavorites": "Saved Comments",
       "notifications": "Notifications",
       "devices": "Devices"
     },
     "noComments": "No comments yet",
     "noLikes": "No liked posts yet",
     "noHistory": "No browsing history",
+    "noCommentFavorites": "No saved comments yet",
     "noNotifications": "No new notifications",
     "commentOn": "Commented on",
     "likedOn": "Liked on",
@@ -557,7 +562,11 @@
     "passwordGood": "Good",
     "passwordStrong": "Strong",
     "avatarTypeError": "Only JPG, PNG, GIF, and WebP formats are supported",
-    "avatarSizeError": "File size must be less than or equal to {max}MB"
+    "avatarSizeError": "File size must be less than or equal to {max}MB",
+    "unfavorite": "Unsave Comment",
+    "unfavoriteSuccess": "Comment unsaved",
+    "confirmUnfavoriteComment": "Unsave Comment",
+    "confirmUnfavoriteCommentMessage": "Are you sure you want to unsave this comment?"
   },
   "user": {
     "username": {

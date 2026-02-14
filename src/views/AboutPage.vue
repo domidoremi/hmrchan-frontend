@@ -710,6 +710,12 @@ const { techStack } = useAboutData()
   box-shadow: 0 6px 16px rgba(var(--color-primary-rgb), 0.25);
 }
 
+[data-theme='dark'] .tech-version-badge {
+  color: var(--color-gray-900);
+  background: linear-gradient(135deg, #e4e4e7 0%, #a1a1aa 100%);
+  box-shadow: 0 6px 16px rgba(244, 244, 245, 0.15);
+}
+
 .tech-description {
   font-size: var(--text-sm);
   color: var(--color-text-secondary);

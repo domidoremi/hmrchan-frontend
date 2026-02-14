@@ -37,6 +37,44 @@ export interface HistoryStats {
   most_viewed_categories?: string[]
 }
 
+export interface MyCommentHistoryItem {
+  id: string | number
+  content: string
+  post_id: string
+  post_uuid?: string
+  post_title?: string
+  post_thumbnail_url?: string | null
+  likes_count: number
+  replies_count?: number
+  parent_id?: string | null
+  created_at: string
+}
+
+export interface MyLikeHistoryItem {
+  id: string | number
+  uuid?: string
+  content: string
+  post_id?: string
+  post_uuid?: string
+  post_title?: string
+  like_count?: number
+  reply_count?: number
+  created_at: string
+}
+
+export interface MyCommentFavoriteItem {
+  id: string | number
+  uuid?: string
+  content: string
+  post_id?: string
+  post_uuid?: string
+  post_title?: string
+  author_username?: string
+  likes_count?: number
+  created_at: string
+  favorited_at?: string
+}
+
 // ========== 历史记录服务 ==========
 
 export const historyService = {
@@ -182,5 +220,40 @@ export const historyService = {
    */
   async getStats(): Promise<HistoryStats> {
     return apiClient.get<HistoryStats>('/history/stats')
+  },
+
+  // ========== 我的互动历史 ==========
+
+  /**
+   * 获取我的评论历史
+   */
+  async getMyComments(
+    page = 1,
+    pageSize = 20
+  ): Promise<PaginatedApiResponse<MyCommentHistoryItem>> {
+    return apiClient.get<PaginatedApiResponse<MyCommentHistoryItem>>(
+      `/history/my-comments?page=${page}&page_size=${pageSize}`
+    )
+  },
+
+  /**
+   * 获取我的点赞历史
+   */
+  async getMyLikes(page = 1, pageSize = 20): Promise<PaginatedApiResponse<MyLikeHistoryItem>> {
+    return apiClient.get<PaginatedApiResponse<MyLikeHistoryItem>>(
+      `/history/my-likes?page=${page}&page_size=${pageSize}`
+    )
+  },
+
+  /**
+   * 获取我收藏的评论
+   */
+  async getMyCommentFavorites(
+    page = 1,
+    pageSize = 20
+  ): Promise<PaginatedApiResponse<MyCommentFavoriteItem>> {
+    return apiClient.get<PaginatedApiResponse<MyCommentFavoriteItem>>(
+      `/history/my-comment-favorites?page=${page}&page_size=${pageSize}`
+    )
   },
 }
