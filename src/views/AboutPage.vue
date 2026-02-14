@@ -110,15 +110,40 @@
           </div>
         </div>
 
-        <!-- 社交媒体 -->
+        <!-- 个人社交媒体 -->
         <div class="links-group">
           <h4 class="subsection-title">
-            <AnimatedIcon name="heart" :fallback-icon="Share2" size="md" />
-            <span>{{ $t('about.links.social') }}</span>
+            <AnimatedIcon name="heart" :fallback-icon="User" size="md" />
+            <span>{{ $t('about.links.personal') }}</span>
           </h4>
           <div class="links-grid links-grid--social">
             <a
-              v-for="link in socialLinks"
+              v-for="link in personalLinks"
+              :key="link.url"
+              :href="link.url"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="link-card link-card--compact glass-card"
+              :style="{ '--link-color': link.color }"
+            >
+              <div class="link-icon-wrap">
+                <component :is="link.icon" :size="20" />
+              </div>
+              <span class="link-name">{{ link.name }}</span>
+              <ExternalLink :size="12" class="link-arrow" />
+            </a>
+          </div>
+        </div>
+
+        <!-- 团体社交媒体 -->
+        <div class="links-group">
+          <h4 class="subsection-title">
+            <AnimatedIcon name="heart" :fallback-icon="Share2" size="md" />
+            <span>{{ $t('about.links.groupSocial') }}</span>
+          </h4>
+          <div class="links-grid links-grid--social">
+            <a
+              v-for="link in groupSocialLinks"
               :key="link.url"
               :href="link.url"
               target="_blank"
@@ -259,6 +284,10 @@ import {
   MessageCircle,
   Radio,
   BookOpen,
+  ShoppingBag,
+  Disc,
+  Gamepad2,
+  Camera,
 } from 'lucide-vue-next'
 import { useAboutData } from '@/composables/useAboutData'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
@@ -280,7 +309,7 @@ const profileItems = computed(() => [
   { icon: Palette, label: t('about.origin.profile.skills') },
 ])
 
-// Official & Social links
+// Official websites (all verified from takanenonadeshiko.jp)
 const officialLinks = computed(() => [
   {
     name: t('about.links.groupSite'),
@@ -303,56 +332,117 @@ const officialLinks = computed(() => [
     icon: BookOpen,
     color: '#6366f1',
   },
+  {
+    name: t('about.links.fanClub'),
+    desc: 'takanekofc.com',
+    url: 'https://takanekofc.com/',
+    icon: Heart,
+    color: '#ec4899',
+  },
+  {
+    name: t('about.links.ecShop'),
+    desc: 'takanenonadeshiko-ec.com',
+    url: 'https://takanenonadeshiko-ec.com/',
+    icon: ShoppingBag,
+    color: '#f59e0b',
+  },
 ])
 
-const socialLinks = computed(() => [
+// Himeri's personal social media (from her profile page)
+const personalLinks = computed(() => [
   {
     name: 'X (Twitter)',
-    url: 'https://x.com/himeri_momi',
+    url: 'https://mobile.twitter.com/himeri_momiyama',
     icon: Twitter,
     color: '#000000',
   },
   {
     name: 'Instagram',
-    url: 'https://www.instagram.com/himeri_momiyama/',
+    url: 'https://www.instagram.com/momichan_hime/',
     icon: Instagram,
     color: '#E4405F',
   },
   {
     name: 'TikTok',
-    url: 'https://www.tiktok.com/@himeri_momiyama',
+    url: 'https://www.tiktok.com/@momichan_hime/',
     icon: Video,
     color: '#000000',
   },
   {
+    name: 'SHOWROOM',
+    url: 'https://www.showroom-live.com/r/himeri_momiyama',
+    icon: Radio,
+    color: '#E6194B',
+  },
+])
+
+// Group social media (from official site footer)
+const groupSocialLinks = computed(() => [
+  {
     name: 'YouTube',
-    url: 'https://www.youtube.com/@takanenonadeshiko',
+    url: 'https://www.youtube.com/channel/UCoR4zZDvWvUIqgEWz4HS-sA',
     icon: Youtube,
     color: '#FF0000',
   },
   {
-    name: 'SHOWROOM',
-    url: 'https://www.showroom-live.com/r/takananohimeri',
-    icon: Radio,
-    color: '#E6194B',
-  },
-  {
-    name: t('about.links.groupTwitter'),
-    url: 'https://x.com/takane_ndsck',
-    icon: Twitter,
+    name: 'TikTok',
+    url: 'https://www.tiktok.com/@takanenofficial',
+    icon: Video,
     color: '#000000',
   },
   {
-    name: t('about.links.groupInstagram'),
-    url: 'https://www.instagram.com/takane_no_nadeshiko/',
+    name: 'Instagram',
+    url: 'https://www.instagram.com/takanenofficial/',
     icon: Instagram,
     color: '#E4405F',
   },
   {
+    name: 'Discord',
+    url: 'https://discord.gg/gao-ling-nonadeshiko-1158648392516378624',
+    icon: Gamepad2,
+    color: '#5865F2',
+  },
+  {
     name: 'LINE',
-    url: 'https://page.line.me/takanenonadeshiko',
+    url: 'https://line.me/R/ti/p/@620abpnj',
     icon: MessageCircle,
     color: '#06C755',
+  },
+  {
+    name: 'Facebook',
+    url: 'https://www.facebook.com/people/高嶺のなでしこ-Takane-No-Nadeshiko/61554973852737/',
+    icon: Globe,
+    color: '#1877F2',
+  },
+  {
+    name: t('about.links.douyin'),
+    url: 'https://www.douyin.com/user/MS4wLjABAAAAQYxY_cUHv7K8JyUWvWB0hOCp4U-oMp81Zr8g52KxBxI',
+    icon: Video,
+    color: '#000000',
+  },
+  {
+    name: t('about.links.redbook'),
+    url: 'https://www.xiaohongshu.com/user/profile/670366fd000000001d033fdf',
+    icon: Camera,
+    color: '#FE2C55',
+  },
+  {
+    name: 'Weibo',
+    url: 'https://weibo.com/u/7953892369',
+    icon: Globe,
+    color: '#E6162D',
+  },
+  {
+    name: 'Bilibili',
+    url: 'https://space.bilibili.com/3493257990375590',
+    icon: Disc,
+    color: '#00A1D6',
+  },
+  {
+    name: 'BeReal',
+    url: 'https://bere.al/takanenofficial',
+    icon: Camera,
+    color: '#000000',
   },
 ])
 
