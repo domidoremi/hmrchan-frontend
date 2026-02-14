@@ -2,6 +2,7 @@
 更新日期：2026-02-14
 
 ## 变更日志（2026-02-14）
+- 新增 Content-Members 接口：成员资料列表、单个成员详情（静态数据）
 - 新增 Content-Schedules 完整接口：日程列表（分页）、日历格式、详情、CRUD（管理员）、外部同步触发和状态查询
 - 补充 Content-Posts 缺失接口：`GET /posts/trending`（热门帖子）、`GET /posts/{post_id}/author`（帖子作者详情）
 - 补充 User-History 缺失接口：`GET /history/my-comments`、`GET /history/my-likes`、`GET /history/my-comment-favorites`
@@ -840,6 +841,40 @@ API使用滑动窗口算法进行速率限制。限流基于以下维度：
                 - `platform` (type:string; required:yes)
                 - `last_sync_at` (type:null|string(datetime); required:no)
                 - `event_count` (type:integer; required:yes)
+
+
+### Content-Members
+
+> 成员资料。静态数据，硬编码在后端，无需数据库。成员信息变更时手动更新代码。
+
+- **GET /api/v1/members/** — 获取全部成员资料
+  - 认证：不需要
+  - 参数：无
+  - 成功响应：
+    - 200 JSON -> data:array[MemberProfile]
+      - 元素结构：
+            - `id` (type:string; required:yes; desc:成员标识符，如 kizuki_nao)
+            - `name_ja` (type:string; required:yes; desc:日文名)
+            - `name_en` (type:string; required:yes; desc:英文名)
+            - `blood_type` (type:null|string; required:no; desc:血型)
+            - `zodiac` (type:string; required:yes; desc:星座)
+            - `height_cm` (type:integer; required:yes; desc:身高(cm))
+            - `birthday` (type:string(date); required:yes; desc:生日 YYYY-MM-DD)
+            - `birthplace` (type:string; required:yes; desc:出身地)
+            - `hobbies` (type:string; required:yes; desc:趣味)
+            - `skills` (type:string; required:yes; desc:特技)
+            - `message` (type:string; required:yes; desc:自我介绍)
+            - `photo_url` (type:string; required:yes; desc:照片URL)
+            - `profile_url` (type:string; required:yes; desc:官网个人页URL)
+
+- **GET /api/v1/members/{member_id}** — 获取单个成员资料
+  - 认证：不需要
+  - 参数：
+    - member_id；in:path；type:string；required:yes；desc:成员ID（如 kizuki_nao）
+  - 成功响应：
+    - 200 JSON -> data:MemberProfile
+  - 错误响应：
+    - 404: Member not found
 
 
 ### System

@@ -134,4 +134,9 @@ export {
   type ScheduleCalendarItem,
   type ScheduleCategory,
   type ListSchedulesParams,
+  type ScheduleCreateRequest,
+  type ScheduleUpdateRequest,
+  type ScheduleSyncResponse,
+  type ScheduleSyncStatusResponse,
 } from './scheduleService'
+export { memberService, type MemberProfile } from './memberService'
