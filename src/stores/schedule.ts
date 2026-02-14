@@ -29,21 +29,28 @@ export const useScheduleStore = defineStore(
     }
 
     /** 检查是否有新日程（轻量级，仅取最近1条） */
+    /** API 是否可用（避免重复请求不存在的接口） */
+    let apiAvailable = true
+
+    /** 检查是否有新日程（轻量级，仅取最近1条） */
     async function checkForNew() {
+      if (!apiAvailable) return
       try {
         const now = new Date()
         const start = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
         const end = new Date(now.getFullYear(), now.getMonth() + 3, 0).toISOString()
         const items: ScheduleCalendarItem[] = await scheduleService.calendar({ start, end })
         if (items.length > 0) {
-          // 取最新的 start 时间作为参考
           const sorted = items
             .map((i) => i.start)
             .sort((a, b) => new Date(b).getTime() - new Date(a).getTime())
           latestEventTime.value = sorted[0]
         }
-      } catch {
-        // 静默失败
+      } catch (err) {
+        // 404 表示后端尚未部署，标记不可用避免重复请求
+        if (err instanceof Error && 'status' in err && (err as { status: number }).status === 404) {
+          apiAvailable = false
+        }
       }
     }
 
