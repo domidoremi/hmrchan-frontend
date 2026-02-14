@@ -482,6 +482,12 @@
       "media": "媒体",
       "birth": "生日",
       "other": "其他"
+    },
+    "detail": {
+      "draft": "草稿",
+      "eventPage": "活动页面",
+      "buyTicket": "购票",
+      "source": "来源"
     }
   },
   "contact": {
