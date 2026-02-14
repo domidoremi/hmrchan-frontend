@@ -615,7 +615,7 @@ onBeforeUnmount(() => {
 }
 
 .bento-grid > :not(:first-child) {
-  grid-column: span 12;
+  grid-column: span 6;
 }
 
 @media (min-width: 640px) {

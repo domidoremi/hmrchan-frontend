@@ -47,7 +47,7 @@ defineOptions({ name: 'ProfilePage' })
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
-import { Heart, MessageSquare, ThumbsUp, Clock, Pencil } from 'lucide-vue-next'
+import { Heart, MessageSquare, ThumbsUp, Clock, Pencil, Bookmark } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores'
 import { getUserAvatarUrl } from '@/composables/useUserAvatar'
@@ -59,6 +59,7 @@ import ProfileFavoritesTab from '@/components/profile/ProfileFavoritesTab.vue'
 import ProfileCommentsTab from '@/components/profile/ProfileCommentsTab.vue'
 import ProfileLikesTab from '@/components/profile/ProfileLikesTab.vue'
 import ProfileHistoryTab from '@/components/profile/ProfileHistoryTab.vue'
+import ProfileCommentFavoritesTab from '@/components/profile/ProfileCommentFavoritesTab.vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 
 const router = useRouter()
@@ -66,12 +67,15 @@ const { t } = useI18n()
 const authStore = useAuthStore()
 const { user, isAuthenticated } = storeToRefs(authStore)
 
-const activeTab = ref<'favorites' | 'comments' | 'likes' | 'history'>('favorites')
+const activeTab = ref<'favorites' | 'comments' | 'likes' | 'history' | 'commentFavorites'>(
+  'favorites'
+)
 
 const tabs = computed(() => [
   { value: 'favorites', label: t('profile.tabs.favorites'), icon: Heart },
   { value: 'comments', label: t('profile.tabs.comments'), icon: MessageSquare },
   { value: 'likes', label: t('profile.tabs.likes'), icon: ThumbsUp },
+  { value: 'commentFavorites', label: t('profile.tabs.commentFavorites'), icon: Bookmark },
   { value: 'history', label: t('profile.tabs.history'), icon: Clock },
 ])
 
@@ -80,6 +84,7 @@ const currentTabComponent = computed(() => {
     favorites: ProfileFavoritesTab,
     comments: ProfileCommentsTab,
     likes: ProfileLikesTab,
+    commentFavorites: ProfileCommentFavoritesTab,
     history: ProfileHistoryTab,
   }
   return components[activeTab.value]

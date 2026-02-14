@@ -1,5 +1,12 @@
 # 前端 API 合约文档 (v1)
-更新日期：2026-02-11
+更新日期：2026-02-14
+
+## 变更日志（2026-02-14）
+- 补充 Content-Posts 缺失接口：`GET /posts/trending`（热门帖子）、`GET /posts/{post_id}/author`（帖子作者详情）
+- 补充 User-History 缺失接口：`GET /history/my-comments`、`GET /history/my-likes`、`GET /history/my-comment-favorites`
+- 补充 Community-Comments 缺失接口：`GET /comments/{comment_id}/thread`（评论线索链）
+- 补充 Community-Discussions 缺失接口：`GET /discussions/search`（搜索讨论）、`GET /discussions/{uuid}/comments/{id}/thread`（讨论评论线索链）
+- 展开 Section 5 Admin API：完整记录 Admin-Management、Admin-Crawler、Admin-Processor、Admin-Roles、Admin-Audit、Admin-Upload 全部接口
 
 ## 变更日志（2026-02-11）
 - 2FA 备份码：仅首次返回（服务端只保存哈希，无法再次取回）；`TwoFactorStatusResponse.backup_codes_remaining` 表示剩余可用备份码数量。
@@ -418,6 +425,22 @@ API使用滑动窗口算法进行速率限制。限流基于以下维度：
             - `recent_posts_7d` (type:integer; required:no)
             - `by_platform` (type:object; required:no)
 
+- **GET /api/v1/posts/trending** — 获取热门帖子
+  - 认证：可选（支持匿名）
+  - 参数：
+    - page；in:query；type:integer；required:no；default:1；min=1
+    - page_size；in:query；type:integer；required:no；default:20；min=1; max=50
+    - days；in:query；type:integer；required:no；default:7；min=1; max=30；desc:热门统计时间窗口（天）
+  - 说明：基于加权分数（view_count + like_count * 5）在指定时间窗口内排序。结果缓存120秒。
+  - 成功响应：
+    - 200 JSON -> data:PaginatedResponse[PostListItem]
+      - data 字段结构：
+            - `items` (type:array; required:yes)
+            - `total` (type:integer; required:yes)
+            - `page` (type:integer; required:yes)
+            - `page_size` (type:integer; required:yes)
+            - `has_more` (type:boolean; required:yes)
+
 - **GET /api/v1/posts/{post_id}** — Get Post
   - 认证：需要
   - 参数：
@@ -434,6 +457,30 @@ API使用滑动窗口算法进行速率限制。限流基于以下维度：
     - sort；in:query；type:string；required:no；default:newest；pattern=^(newest|oldest|popular)$
   - 成功响应：
     - 200 JSON -> data:object
+
+- **GET /api/v1/posts/{post_id}/author** — 获取帖子作者详情
+  - 认证：可选（支持匿名）
+  - 参数：
+    - post_id；in:path；type:string；required:yes
+  - 说明：返回作者完整资料，包括平台信息、头像、简介、粉丝数、认证状态等。与帖子详情中嵌入的 author 字段相比，此接口返回更完整的作者信息。
+  - 成功响应：
+    - 200 JSON -> data:AuthorResponse
+      - data 字段结构：
+            - `id` (type:string; required:yes; desc:作者UUID)
+            - `platform` (type:string; required:yes)
+            - `platform_user_id` (type:string; required:yes)
+            - `name` (type:string; required:yes)
+            - `username` (type:string; required:yes)
+            - `description` (type:null|string; required:no)
+            - `avatar_url` (type:null|string; required:no)
+            - `profile_url` (type:null|string; required:no)
+            - `follower_count` (type:integer|null; required:no)
+            - `video_count` (type:integer|null; required:no)
+            - `is_verified` (type:boolean; required:yes)
+            - `created_at` (type:null|string; required:no)
+            - `updated_at` (type:null|string; required:no)
+  - 错误响应：
+    - 404: 帖子不存在或作者不存在
 
 - **POST /api/v1/posts/{post_id}/increment-view** — Increment Post View
   - 认证：不需要
@@ -1702,6 +1749,73 @@ API使用滑动窗口算法进行速率限制。限流基于以下维度：
   - 成功响应：
     - 200 JSON -> data:object
 
+- **GET /api/v1/history/my-comments** — 我的评论历史
+  - 认证：需要
+  - 参数：
+    - page；in:query；type:integer；required:no；default:1；min=1；desc:页码
+    - page_size；in:query；type:integer；required:no；default:20；min=1; max=50；desc:每页数量
+  - 说明：获取当前用户在所有帖子下发表的评论列表，按时间倒序排列。适用于个人中心「我的评论」页面。
+  - 成功响应：
+    - 200 JSON -> data:MyCommentListResponse
+      - data 字段结构：
+            - `items` (type:array; required:yes)
+                - items 每项字段：
+                    - `id` (type:integer; required:yes; desc:评论ID)
+                    - `post_id` (type:null|string; required:no; desc:所属帖子UUID)
+                    - `post_title` (type:null|string; required:no; desc:所属帖子标题)
+                    - `content` (type:string; required:yes; desc:评论内容)
+                    - `like_count` (type:integer; required:yes; desc:获赞数)
+                    - `reply_count` (type:integer; required:yes; desc:回复数)
+                    - `created_at` (type:string; required:yes; desc:评论时间)
+            - `total` (type:integer; required:yes)
+            - `page` (type:integer; required:yes)
+            - `page_size` (type:integer; required:yes)
+            - `has_more` (type:boolean; required:yes)
+
+- **GET /api/v1/history/my-likes** — 我的点赞历史
+  - 认证：需要
+  - 参数：
+    - page；in:query；type:integer；required:no；default:1；min=1；desc:页码
+    - page_size；in:query；type:integer；required:no；default:20；min=1; max=50；desc:每页数量
+  - 说明：获取当前用户点赞过的所有评论列表，按点赞时间倒序排列。若被赞评论已删除，对应字段可能为 null。
+  - 成功响应：
+    - 200 JSON -> data:MyLikeListResponse
+      - data 字段结构：
+            - `items` (type:array; required:yes)
+                - items 每项字段：
+                    - `comment_id` (type:integer; required:yes; desc:被点赞的评论ID)
+                    - `comment_content` (type:null|string; required:no; desc:评论内容摘要)
+                    - `comment_author` (type:null|string; required:no; desc:评论作者昵称)
+                    - `post_id` (type:null|string; required:no; desc:评论所属帖子UUID)
+                    - `post_title` (type:null|string; required:no; desc:评论所属帖子标题)
+                    - `liked_at` (type:string; required:yes; desc:点赞时间)
+            - `total` (type:integer; required:yes)
+            - `page` (type:integer; required:yes)
+            - `page_size` (type:integer; required:yes)
+            - `has_more` (type:boolean; required:yes)
+
+- **GET /api/v1/history/my-comment-favorites** — 我的评论收藏
+  - 认证：需要
+  - 参数：
+    - page；in:query；type:integer；required:no；default:1；min=1；desc:页码
+    - page_size；in:query；type:integer；required:no；default:20；min=1; max=50；desc:每页数量
+  - 说明：获取当前用户收藏的所有评论列表，按收藏时间倒序排列。若被收藏评论已删除，对应字段可能为 null。
+  - 成功响应：
+    - 200 JSON -> data:MyCommentFavoriteListResponse
+      - data 字段结构：
+            - `items` (type:array; required:yes)
+                - items 每项字段：
+                    - `comment_id` (type:integer; required:yes; desc:被收藏的评论ID)
+                    - `comment_content` (type:null|string; required:no; desc:评论内容摘要)
+                    - `comment_author` (type:null|string; required:no; desc:评论作者昵称)
+                    - `post_id` (type:null|string; required:no; desc:评论所属帖子UUID)
+                    - `post_title` (type:null|string; required:no; desc:评论所属帖子标题)
+                    - `favorited_at` (type:string; required:yes; desc:收藏时间)
+            - `total` (type:integer; required:yes)
+            - `page` (type:integer; required:yes)
+            - `page_size` (type:integer; required:yes)
+            - `has_more` (type:boolean; required:yes)
+
 
 ### User-Notifications
 
@@ -1958,6 +2072,20 @@ API使用滑动窗口算法进行速率限制。限流基于以下维度：
   - 成功响应：
     - 201 JSON -> data:object
 
+- **GET /api/v1/comments/{comment_id}/thread** — 获取评论线索链
+  - 认证：可选（支持匿名）
+  - 参数：
+    - comment_id；in:path；type:integer；required:yes
+  - 说明：获取从根评论到当前评论的完整线索链。用于评论上下文跳转场景。
+  - 成功响应：
+    - 200 JSON -> data:object
+      - data 字段结构：
+            - `post_id` (type:null|string; required:no; desc:评论所属帖子UUID)
+            - `thread` (type:array; required:yes; desc:从顶级评论到目标评论的有序数组，每项为 CommentResponse)
+            - `depth` (type:integer; required:yes; desc:线索链深度，1=顶级评论本身)
+  - 错误响应：
+    - 404: 评论不存在
+
 
 ### Community-Discussions
 
@@ -1968,6 +2096,23 @@ API使用滑动窗口算法进行速率限制。限流基于以下维度：
     - page_size；in:query；type:integer；required:no；default:20；min=1; max=50
     - category；in:query；type:null|string；required:no
     - sort；in:query；type:string；required:no；default:latest；pattern=^(latest|popular|active)$
+  - 成功响应：
+    - 200 JSON -> data:DiscussionListResponse
+      - data 字段结构：
+            - `items` (type:array; required:yes)
+            - `total` (type:integer; required:yes)
+            - `page` (type:integer; required:yes)
+            - `page_size` (type:integer; required:yes)
+            - `has_more` (type:boolean; required:yes)
+
+- **GET /api/v1/discussions/search** — 搜索讨论
+  - 认证：可选（支持匿名）
+  - 参数：
+    - q；in:query；type:string；required:yes；minLen=1; maxLen=100；desc:搜索关键词
+    - category；in:query；type:null|string；required:no；pattern=^(general|question|sharing|feedback)$
+    - page；in:query；type:integer；required:no；default:1；min=1
+    - page_size；in:query；type:integer；required:no；default:20；min=1; max=50
+  - 说明：支持标题和内容模糊匹配。
   - 成功响应：
     - 200 JSON -> data:DiscussionListResponse
       - data 字段结构：
@@ -2302,6 +2447,21 @@ API使用滑动窗口算法进行速率限制。限流基于以下维度：
     - discussion_uuid；in:path；type:string；required:yes
   - 成功响应：
     - 200 JSON -> data:object
+
+- **GET /api/v1/discussions/{discussion_uuid}/comments/{comment_id}/thread** — 获取讨论评论线索链
+  - 认证：可选（支持匿名）
+  - 参数：
+    - discussion_uuid；in:path；type:string；required:yes
+    - comment_id；in:path；type:integer；required:yes
+  - 说明：获取讨论评论从根评论到当前评论的完整线索链。
+  - 成功响应：
+    - 200 JSON -> data:object
+      - data 字段结构：
+            - `discussion_id` (type:string; required:yes; desc:讨论UUID)
+            - `thread` (type:array; required:yes; desc:从顶级评论到目标评论的有序数组，每项为 DiscussionCommentResponse)
+            - `depth` (type:integer; required:yes; desc:线索链深度)
+  - 错误响应：
+    - 404: 讨论或评论不存在
 
 
 ### Community-Feed
@@ -2661,7 +2821,500 @@ API使用滑动窗口算法进行速率限制。限流基于以下维度：
             - `message` (type:null|string; required:no)
 
 ## 5. Admin API
-- 管理端接口可按需提供（包含 /admin, /crawler, /processor, /roles, /audit, /upload）。
+
+> 以下接口均需要管理员权限（`require_admin` 或 `get_current_admin_user`），未登录返回 401，非管理员返回 403。
+
+### Admin-Management
+
+- **GET /api/v1/admin/health/detailed** — 系统详细健康检查
+  - 认证：需要（管理员）
+  - 参数：无
+  - 成功响应：
+    - 200 JSON -> data:object
+      - data 字段结构：
+            - `status` (type:string; required:yes; desc:healthy|unhealthy|warning)
+            - `timestamp` (type:string; required:yes)
+            - `checks` (type:object; required:yes; desc:包含 database、redis、system 子检查)
+
+- **GET /api/v1/admin/db/health** — 数据库健康检查
+  - 认证：需要（管理员）
+  - 参数：无
+  - 成功响应：
+    - 200 JSON -> data:object
+      - data 字段结构：
+            - `timestamp` (type:string; required:yes)
+            - `healthy` (type:boolean; required:yes)
+            - `issues` (type:array; required:yes)
+            - `stats` (type:object; required:yes; desc:connections、blocked_locks、timeout_settings 等)
+
+- **POST /api/v1/admin/db/kill-connection/{pid}** — 终止数据库连接
+  - 认证：需要（管理员）
+  - 参数：
+    - pid；in:path；type:integer；required:yes
+  - 成功响应：
+    - 200 JSON -> data:object
+      - data 字段结构：
+            - `success` (type:boolean; required:yes)
+            - `message` (type:string; required:yes)
+
+- **GET /api/v1/admin/stats/system** — 系统统计
+  - 认证：需要（管理员）
+  - 参数：无
+  - 说明：返回数据库统计、用户统计、内容统计、存储统计。缓存60秒。
+  - 成功响应：
+    - 200 JSON -> data:object
+      - data 字段结构：
+            - `database` (type:object; required:yes; desc:total_users, active_users_7d, total_posts, total_media_files, total_authors, total_favorites)
+            - `content` (type:object; required:yes; desc:recent_posts_24h, platform_distribution)
+            - `storage` (type:object; required:yes; desc:total_size_bytes, total_size_gb)
+            - `timestamp` (type:string; required:yes)
+
+- **GET /api/v1/admin/stats/performance** — 系统性能指标
+  - 认证：需要（管理员）
+  - 参数：无
+  - 成功响应：
+    - 200 JSON -> data:object
+      - data 字段结构：
+            - `cpu` (type:object; required:yes; desc:usage_percent, count)
+            - `memory` (type:object; required:yes; desc:total_mb, available_mb, used_mb, percent)
+            - `disk` (type:object; required:yes; desc:total_gb, used_gb, free_gb, percent)
+            - `network` (type:object; required:yes; desc:bytes_sent, bytes_recv, packets_sent, packets_recv)
+            - `timestamp` (type:string; required:yes)
+
+- **GET /api/v1/admin/cache/stats** — Redis 缓存统计
+  - 认证：需要（管理员）
+  - 参数：无
+  - 成功响应：
+    - 200 JSON -> data:object
+      - data 字段结构：
+            - `status` (type:string; required:yes; desc:active|disabled|error)
+            - `server` (type:object; required:no; desc:redis_version, uptime_days, connected_clients)
+            - `memory` (type:object; required:no; desc:used_memory_mb, maxmemory_mb, memory_fragmentation_ratio)
+            - `stats` (type:object; required:no; desc:total_commands_processed, keyspace_hits, keyspace_misses, hit_rate)
+
+- **POST /api/v1/admin/cache/clear** — 清除缓存
+  - 认证：需要（管理员）
+  - 参数：
+    - pattern；in:query；type:null|string；required:no；desc:匹配模式（如 "api:posts:*"），为空则清除全部
+  - 成功响应：
+    - 200 JSON -> data:object
+      - data 字段结构：
+            - `success` (type:boolean; required:yes)
+            - `message` (type:string; required:yes)
+            - `keys_deleted` (type:integer|string; required:yes)
+
+- **GET /api/v1/admin/logs/recent** — 获取最近日志
+  - 认证：需要（管理员）
+  - 参数：
+    - lines；in:query；type:integer；required:no；default:100；max=1000
+    - level；in:query；type:null|string；required:no；desc:日志级别过滤（DEBUG|INFO|WARNING|ERROR|CRITICAL）
+    - search；in:query；type:null|string；required:no；desc:搜索关键词
+  - 成功响应：
+    - 200 JSON -> data:object
+      - data 字段结构：
+            - `success` (type:boolean; required:yes)
+            - `total_lines` (type:integer; required:yes)
+            - `logs` (type:array; required:yes; desc:每项包含 raw, timestamp, level, message)
+
+- **GET /api/v1/admin/feedbacks** — 反馈列表
+  - 认证：需要（管理员）
+  - 参数：
+    - page；in:query；type:integer；required:no；default:1
+    - page_size；in:query；type:integer；required:no；default:20；max=100
+    - category；in:query；type:null|string；required:no
+    - has_attachment；in:query；type:null|boolean；required:no
+    - is_anonymous；in:query；type:null|boolean；required:no
+  - 成功响应：
+    - 200 JSON -> data:object
+      - data 字段结构：
+            - `items` (type:array; required:yes; desc:每项包含 id, uuid, message, contact, category, attachment_url, is_anonymous, user_id, ip_address, fingerprint, user_agent, attachment_mime, attachment_size, created_at)
+            - `page` (type:integer; required:yes)
+            - `page_size` (type:integer; required:yes)
+            - `total` (type:integer; required:yes)
+
+- **GET /api/v1/admin/feedbacks/{feedback_id}** — 反馈详情
+  - 认证：需要（管理员）
+  - 参数：
+    - feedback_id；in:path；type:integer；required:yes
+  - 成功响应：
+    - 200 JSON -> data:object（字段同反馈列表每项）
+  - 错误响应：
+    - 404: Feedback not found
+
+- **GET /api/v1/admin/metrics** — 系统指标概览
+  - 认证：需要（管理员）
+  - 参数：无
+  - 说明：高层级系统指标，包含用户/帖子计数、今日活跃用户、数据库连接池状态、Redis 健康。缓存30秒。
+  - 成功响应：
+    - 200 JSON -> data:object
+      - data 字段结构：
+            - `total_users` (type:integer; required:yes)
+            - `total_posts` (type:integer; required:yes)
+            - `total_authors` (type:integer; required:yes)
+            - `today_active` (type:integer; required:yes)
+            - `db_pool` (type:object; required:yes; desc:size, checked_in, checked_out, overflow)
+            - `redis` (type:object; required:yes)
+
+
+### Admin-Crawler
+
+- **GET /api/v1/crawler/status** — 爬虫系统状态
+  - 认证：需要（管理员）
+  - 参数：无
+  - 成功响应：
+    - 200 JSON -> data:object
+      - data 字段结构：
+            - `status` (type:string; required:yes; desc:operational|error)
+            - `celery_available` (type:boolean; required:yes)
+            - `workers` (type:object; required:yes; desc:count, active, stats)
+            - `tasks` (type:object; required:yes; desc:active_count, registered)
+
+- **POST /api/v1/crawler/tasks** — 创建爬虫任务
+  - 认证：需要（管理员）
+  - 参数：无
+  - 请求体：
+    - application/json -> CrawlerTaskCreate
+      - 字段结构：
+            - `platform` (type:string; required:yes; desc:tiktok|twitter|instagram|youtube)
+            - `target` (type:string; required:yes; maxLen=500; desc:用户名、频道ID或URL)
+            - `task_type` (type:string; required:no; default:user; desc:user|post|hashtag)
+            - `options` (type:null|object; required:no)
+  - 成功响应：
+    - 200 JSON -> data:CrawlerTaskResponse
+      - data 字段结构：
+            - `task_id` (type:string; required:yes)
+            - `platform` (type:string; required:yes)
+            - `target` (type:string; required:yes)
+            - `status` (type:string; required:yes; desc:pending|running|completed|failed)
+            - `message` (type:null|string; required:no)
+  - 错误响应：
+    - 409: 平台已有任务在运行
+
+- **GET /api/v1/crawler/tasks/{task_id}** — 获取任务状态
+  - 认证：需要（管理员）
+  - 参数：
+    - task_id；in:path；type:string；required:yes
+  - 成功响应：
+    - 200 JSON -> data:object
+      - data 字段结构：
+            - `task_id` (type:string; required:yes)
+            - `status` (type:string; required:yes)
+            - `ready` (type:boolean; required:yes)
+            - `successful` (type:boolean|null; required:no)
+            - `result` (type:object|null; required:no)
+            - `error` (type:string|null; required:no)
+
+- **POST /api/v1/crawler/tasks/{task_id}/cancel** — 取消任务
+  - 认证：需要（管理员）
+  - 参数：
+    - task_id；in:path；type:string；required:yes
+  - 成功响应：
+    - 200 JSON -> data:object
+      - data 字段结构：
+            - `success` (type:boolean; required:yes)
+            - `task_id` (type:string; required:yes)
+            - `message` (type:string; required:yes)
+
+- **GET /api/v1/crawler/tasks** — 任务列表
+  - 认证：需要（管理员）
+  - 参数：
+    - status_filter；in:query；type:null|string；required:no
+    - limit；in:query；type:integer；required:no；default:50；min=1; max=200
+  - 成功响应：
+    - 200 JSON -> data:object
+      - data 字段结构：
+            - `tasks` (type:array; required:yes; desc:每项包含 task_id, name, args, status, worker, time_start)
+            - `total` (type:integer; required:yes)
+            - `limit` (type:integer; required:yes)
+
+- **GET /api/v1/crawler/config** — 获取爬虫配置
+  - 认证：需要（管理员）
+  - 参数：无
+  - 成功响应：
+    - 200 JSON -> data:object
+      - data 字段结构：
+            - `platforms` (type:object; required:yes; desc:各平台 enabled, rate_limit, concurrent_tasks)
+            - `general` (type:object; required:yes; desc:retry_attempts, retry_delay_seconds, timeout_seconds)
+
+- **PUT /api/v1/crawler/config** — 更新爬虫配置
+  - 认证：需要（管理员）
+  - 参数：无
+  - 请求体：
+    - application/json -> object（深度合并到现有配置）
+  - 成功响应：
+    - 200 JSON -> data:object
+      - data 字段结构：
+            - `success` (type:boolean; required:yes)
+            - `message` (type:string; required:yes)
+            - `config` (type:object; required:yes; desc:合并后的完整配置)
+
+- **GET /api/v1/crawler/platforms/status** — 各平台运行状态
+  - 认证：需要（管理员）
+  - 参数：无
+  - 成功响应：
+    - 200 JSON -> data:object
+      - data 字段结构：
+            - `platforms` (type:array; required:yes; desc:每项包含 platform, is_running, current_task_id, last_run_at, last_success_at, last_error_at, last_error_message, total_runs, success_count, error_count, success_rate, last_duration_sec, next_run_at)
+
+
+### Admin-Processor
+
+- **POST /api/v1/processor/scan** — 触发文件扫描
+  - 认证：需要（管理员）
+  - 参数：无
+  - 请求体：
+    - application/json -> ScanRequest
+      - 字段结构：
+            - `platform` (type:null|string; required:no; desc:指定平台，null=全部)
+            - `hours` (type:null|integer; required:no; desc:最近N小时，null=全量)
+  - 成功响应：
+    - 200 JSON -> data:ScanResponse
+      - data 字段结构：
+            - `task_id` (type:string; required:yes)
+            - `status` (type:string; required:yes)
+            - `message` (type:string; required:yes)
+
+- **POST /api/v1/processor/scan/failed** — 重新处理失败文件
+  - 认证：需要（管理员）
+  - 参数：
+    - limit；in:query；type:integer；required:no；default:100；min=1; max=1000
+  - 成功响应：
+    - 200 JSON -> data:ScanResponse
+
+- **GET /api/v1/processor/stats** — 处理统计
+  - 认证：需要（管理员）
+  - 参数：无
+  - 成功响应：
+    - 200 JSON -> data:ProcessStatsResponse
+      - data 字段结构：
+            - `total_files` (type:integer; required:yes)
+            - `processed` (type:integer; required:yes)
+            - `failed` (type:integer; required:yes)
+            - `pending` (type:integer; required:yes)
+
+- **GET /api/v1/processor/tasks/{task_id}** — 处理任务状态
+  - 认证：需要（管理员）
+  - 参数：
+    - task_id；in:path；type:string；required:yes
+  - 成功响应：
+    - 200 JSON -> data:object
+      - data 字段结构：
+            - `task_id` (type:string; required:yes)
+            - `status` (type:string; required:yes)
+            - `ready` (type:boolean; required:yes)
+            - `successful` (type:boolean|null; required:no)
+            - `result` (type:object|null; required:no)
+            - `error` (type:string|null; required:no)
+
+- **GET /api/v1/processor/watcher/status** — 文件监控器状态
+  - 认证：需要（管理员）
+  - 参数：无
+  - 成功响应：
+    - 200 JSON -> data:object
+      - data 字段结构：
+            - `status` (type:string; required:yes; desc:running|stopped|unavailable)
+            - `watching` (type:string; required:no; desc:监控目录路径)
+            - `is_alive` (type:boolean; required:no)
+
+
+### Admin-Roles
+
+- **POST /api/v1/roles** — 创建角色
+  - 认证：需要（管理员）
+  - 参数：无
+  - 请求体：
+    - application/json -> RoleCreate
+      - 字段结构：
+            - `name` (type:string; required:yes; desc:角色名称，唯一)
+            - `display_name` (type:string; required:yes)
+            - `description` (type:null|string; required:no)
+            - `permissions` (type:array; required:no; desc:权限列表)
+  - 成功响应：
+    - 201 JSON -> data:RoleResponse
+      - data 字段结构：
+            - `id` (type:integer; required:yes)
+            - `name` (type:string; required:yes)
+            - `display_name` (type:string; required:yes)
+            - `description` (type:null|string; required:no)
+            - `permissions` (type:array; required:yes)
+            - `is_system` (type:boolean; required:yes)
+            - `created_at` (type:string; required:yes)
+            - `updated_at` (type:null|string; required:no)
+
+- **GET /api/v1/roles** — 角色列表
+  - 认证：需要（管理员）
+  - 参数：
+    - page；in:query；type:integer；required:no；default:1；min=1
+    - page_size；in:query；type:integer；required:no；default:20；min=1; max=100
+    - q；in:query；type:null|string；required:no；desc:搜索关键词
+    - is_system；in:query；type:null|boolean；required:no；desc:系统角色过滤
+    - sort_by；in:query；type:string；required:no；default:name
+    - sort_order；in:query；type:string；required:no；default:asc；pattern=^(asc|desc)$
+  - 成功响应：
+    - 200 JSON -> data:PaginatedResponse[RoleListItem]
+      - data 字段结构：
+            - `items` (type:array; required:yes; desc:每项包含 id, name, display_name, description, permission_count, is_system, user_count)
+            - `total` (type:integer; required:yes)
+            - `page` (type:integer; required:yes)
+            - `page_size` (type:integer; required:yes)
+
+- **GET /api/v1/roles/{role_id}** — 角色详情
+  - 认证：需要（管理员）
+  - 参数：
+    - role_id；in:path；type:integer；required:yes
+  - 成功响应：
+    - 200 JSON -> data:RoleResponse（字段同创建角色响应）
+
+- **PATCH /api/v1/roles/{role_id}** — 更新角色
+  - 认证：需要（管理员）
+  - 参数：
+    - role_id；in:path；type:integer；required:yes
+  - 请求体：
+    - application/json -> RoleUpdate（所有字段可选）
+      - 字段结构：
+            - `display_name` (type:null|string; required:no)
+            - `description` (type:null|string; required:no)
+            - `permissions` (type:array|null; required:no)
+  - 成功响应：
+    - 200 JSON -> data:RoleResponse
+
+- **DELETE /api/v1/roles/{role_id}** — 删除角色
+  - 认证：需要（管理员）
+  - 参数：
+    - role_id；in:path；type:integer；required:yes
+  - 说明：不能删除系统角色或已分配给用户的角色。
+  - 成功响应：
+    - 200 JSON -> data:MessageResponse
+  - 错误响应：
+    - 400: 系统角色不可删除 / 角色已分配给用户
+
+- **PUT /api/v1/roles/{role_id}/permissions** — 更新角色权限
+  - 认证：需要（管理员）
+  - 参数：
+    - role_id；in:path；type:integer；required:yes
+  - 请求体：
+    - application/json -> RolePermissionUpdate
+      - 字段结构：
+            - `permissions` (type:array; required:yes; desc:替换全部现有权限)
+  - 成功响应：
+    - 200 JSON -> data:RoleResponse
+
+- **GET /api/v1/roles/{role_id}/users** — 角色下的用户
+  - 认证：需要（管理员）
+  - 参数：
+    - role_id；in:path；type:integer；required:yes
+  - 成功响应：
+    - 200 JSON -> data:array
+      - 每项字段：
+            - `id` (type:integer; required:yes)
+            - `username` (type:string; required:yes)
+            - `email` (type:string; required:yes)
+            - `full_name` (type:null|string; required:no)
+            - `is_active` (type:boolean; required:yes)
+            - `granted_at` (type:string; required:yes)
+
+- **GET /api/v1/roles/permissions/list** — 可用权限列表
+  - 认证：需要（管理员）
+  - 参数：无
+  - 成功响应：
+    - 200 JSON -> data:PermissionListResponse（按分类返回所有可用权限）
+
+
+### Admin-Audit
+
+- **GET /api/v1/audit/my-activity** — 我的安全活动
+  - 认证：需要
+  - 参数：
+    - event_type；in:query；type:null|string；required:no；desc:事件类型过滤
+    - days；in:query；type:integer；required:no；default:30；min=1; max=365
+    - limit；in:query；type:integer；required:no；default:50；min=1; max=200
+  - 说明：IP 地址会进行脱敏处理。
+  - 成功响应：
+    - 200 JSON -> data:AuditLogListResponse
+      - data 字段结构：
+            - `logs` (type:array; required:yes; desc:每项包含 id, event_type, event_description, severity, success, ip_address, device_type, request_path, created_at)
+            - `total` (type:integer; required:yes)
+
+- **GET /api/v1/audit/my-security-summary** — 我的安全摘要
+  - 认证：需要
+  - 参数：
+    - days；in:query；type:integer；required:no；default:30；min=1; max=365
+  - 成功响应：
+    - 200 JSON -> data:SecuritySummaryResponse
+      - data 字段结构：
+            - `total_logins` (type:integer; required:yes)
+            - `failed_logins` (type:integer; required:yes)
+            - `password_changes` (type:integer; required:yes)
+            - `new_devices` (type:integer; required:yes)
+            - `security_events` (type:integer; required:yes)
+            - `last_login` (type:null|string; required:no)
+            - `last_password_change` (type:null|string; required:no)
+
+- **GET /api/v1/audit/admin/security-events** — [管理员] 系统安全事件
+  - 认证：需要（管理员）
+  - 参数：
+    - hours；in:query；type:integer；required:no；default:24；min=1; max=168
+    - severity；in:query；type:null|string；required:no；desc:info|warning|error|critical
+    - limit；in:query；type:integer；required:no；default:100；min=1; max=500
+  - 说明：管理员可以看到完整 IP 地址。
+  - 成功响应：
+    - 200 JSON -> data:AuditLogListResponse
+
+- **GET /api/v1/audit/admin/failed-logins** — [管理员] 失败登录统计
+  - 认证：需要（管理员）
+  - 参数：
+    - hours；in:query；type:integer；required:no；default:24；min=1; max=168
+    - min_count；in:query；type:integer；required:no；default:3；min=1；desc:最低失败次数
+  - 说明：按 IP 地址统计失败登录次数，用于检测暴力破解。
+  - 成功响应：
+    - 200 JSON -> data:array[FailedLoginStats]
+      - 每项字段：
+            - `ip_address` (type:string; required:yes)
+            - `count` (type:integer; required:yes)
+
+- **GET /api/v1/audit/admin/user/{user_id}** — [管理员] 用户审计日志
+  - 认证：需要（管理员）
+  - 参数：
+    - user_id；in:path；type:integer；required:yes
+    - days；in:query；type:integer；required:no；default:30；min=1; max=365
+    - limit；in:query；type:integer；required:no；default:100；min=1; max=500
+  - 成功响应：
+    - 200 JSON -> data:AuditLogListResponse
+  - 错误响应：
+    - 404: User not found
+
+
+### Admin-Upload
+
+- **POST /api/v1/upload/avatar** — 上传头像
+  - 认证：需要
+  - 参数：无
+  - 请求体：
+    - multipart/form-data
+      - `file` (type:file; required:yes; desc:图片文件 JPG/PNG/WebP，最大5MB)
+  - 说明：自动处理和优化图片（转为JPEG，最大512px，质量85%）。
+  - 成功响应：
+    - 200 JSON -> data:FileUploadResponse
+      - data 字段结构：
+            - `filename` (type:string; required:yes; desc:生成的文件名)
+            - `url` (type:string; required:yes; desc:头像URL)
+            - `size` (type:integer; required:yes; desc:文件大小(bytes))
+            - `content_type` (type:string; required:yes; desc:MIME类型)
+            - `hash` (type:string; required:yes; desc:SHA-256哈希)
+            - `uploaded_at` (type:string; required:yes)
+
+- **POST /api/v1/upload/users/{user_id}/avatar** — 为指定用户上传头像
+  - 认证：需要（管理员或用户本人）
+  - 参数：
+    - user_id；in:path；type:integer；required:yes
+  - 请求体：
+    - multipart/form-data
+      - `file` (type:file; required:yes; desc:图片文件 JPG/PNG/WebP，最大5MB)
+  - 成功响应：
+    - 200 JSON -> data:FileUploadResponse（字段同上）
+  - 错误响应：
+    - 403: 无权限为该用户上传头像
+    - 404: User not found
 
 ## 6. 特殊场景
 - **别名兼容**：

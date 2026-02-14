@@ -35,6 +35,7 @@
     "next": "次へ",
     "previous": "前へ",
     "search": "検索",
+    "clear": "クリア",
     "noResults": "結果が見つかりません",
     "notFound": "見つかりません",
     "showing": "{count} / {total} 件を表示",
@@ -428,6 +429,7 @@
   "community": {
     "title": "コミュニティ",
     "subtitle": "会話に参加",
+    "searchPlaceholder": "ディスカッションを検索...",
     "guideTitle": "ディスカッションガイド",
     "guideDescription": "コミュニティで独立したスレッドを作成し、必要なら投稿を参照できます。",
     "guidePoint1": "ディスカッションは投稿と別で、コミュニティに表示されます。",
@@ -455,7 +457,8 @@
     "deleteDiscussion": "ディスカッションを削除",
     "confirmDeleteTitle": "ディスカッションを削除",
     "confirmDeleteMessage": "このディスカッションを削除しますか？この操作は取り消しできません。",
-    "deleteSuccess": "ディスカッションを削除しました"
+    "deleteSuccess": "ディスカッションを削除しました",
+    "searchPlaceholder": "ディスカッションを検索..."
   },
   "contact": {
     "title": "お問い合わせ",
@@ -529,12 +532,14 @@
       "comments": "コメント履歴",
       "likes": "いいね履歴",
       "history": "閲覧履歴",
+      "commentFavorites": "保存したコメント",
       "notifications": "通知",
       "devices": "デバイス管理"
     },
     "noComments": "コメントがありません",
     "noLikes": "いいねした投稿がありません",
     "noHistory": "閲覧履歴がありません",
+    "noCommentFavorites": "保存したコメントがありません",
     "noNotifications": "新しい通知はありません",
     "commentOn": "コメント",
     "likedOn": "いいね",
@@ -557,7 +562,11 @@
     "passwordGood": "良い",
     "passwordStrong": "強い",
     "avatarTypeError": "JPG/PNG/GIF/WebP のみ対応",
-    "avatarSizeError": "ファイルサイズは {max}MB 以下にしてください"
+    "avatarSizeError": "ファイルサイズは {max}MB 以下にしてください",
+    "unfavorite": "コメントの保存を解除",
+    "unfavoriteSuccess": "コメントの保存を解除しました",
+    "confirmUnfavoriteComment": "コメントの保存を解除",
+    "confirmUnfavoriteCommentMessage": "このコメントの保存を解除しますか？"
   },
   "favorites": {
     "loginRequired": "お気に入りを表示するにはログインしてください",

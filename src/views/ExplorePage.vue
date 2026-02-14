@@ -347,22 +347,32 @@ async function fetchPosts(reset = true) {
     return 'large'
   }
 
-  const { sort_by, sort_order } = getSortParams(currentSort.value)
-  const params = {
-    page: page.value,
-    page_size: pageSize,
-    sort_by,
-    sort_order,
-    thumbnail_quality: getThumbnailQuality(),
-  }
-
   const platform = currentPlatform.value !== 'all' ? currentPlatform.value : undefined
-  const requestParams = { ...params, ...(platform ? { platform } : {}) }
 
   try {
-    // 使用缓存感知加载，避免重复请求
-    const result = await loadCachedPosts(requestParams)
-    const items = result.data as PostListItem[]
+    let items: PostListItem[]
+
+    if (currentSort.value === 'trending' && !platform) {
+      // 使用专用热门接口
+      const trendingResult = await postService.getTrending({
+        page: page.value,
+        page_size: pageSize,
+      })
+      items = trendingResult.items
+      total.value = trendingResult.total
+    } else {
+      const { sort_by, sort_order } = getSortParams(currentSort.value)
+      const requestParams = {
+        page: page.value,
+        page_size: pageSize,
+        sort_by,
+        sort_order,
+        thumbnail_quality: getThumbnailQuality(),
+        ...(platform ? { platform } : {}),
+      }
+      const result = await loadCachedPosts(requestParams)
+      items = result.data as PostListItem[]
+    }
 
     if (reset) {
       posts.value = items

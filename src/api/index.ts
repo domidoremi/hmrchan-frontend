@@ -30,6 +30,7 @@ export {
   postService,
   type PostListItem,
   type PostDetailResponse,
+  type PostAuthorResponse,
   type ThumbnailQuality,
 } from './postService'
 export { postsLightService, type PostsLightParams, type PostLightItem } from './postsLightService'
@@ -49,6 +50,7 @@ export {
   type CommentImageUploadResponse,
   type CreateCommentRequest,
   type CommentListResponse,
+  type CommentThreadResponse,
   COMMENT_IMAGE_LIMITS,
 } from './commentService'
 export {
@@ -92,12 +94,16 @@ export {
   type SearchHistoryType,
   type BrowsingHistoryItem,
   type HistoryStats,
+  type MyCommentHistoryItem,
+  type MyLikeHistoryItem,
+  type MyCommentFavoriteItem,
 } from './historyService'
 export {
   discussionService,
   type Discussion,
   type DiscussionComment,
   type DiscussionAuthor,
+  type DiscussionCommentThreadResponse,
   type PostReference,
   type CreateDiscussionRequest,
   type CreateCommentRequest as CreateDiscussionCommentRequest,
