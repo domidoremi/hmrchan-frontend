@@ -707,6 +707,16 @@
       "platforms": "TikTok、Instagram、X（Twitter）、YouTube など複数のSNSで活動し、日常生活やパフォーマンス活動、クリエイティブなコンテンツをファンと共有しています。",
       "purpose": "MomiChan は、これらのプラットフォームに散らばったコンテンツを一箇所に集約し、ファンが最新情報を追いやすくします。"
     },
+    "links": {
+      "title": "公式サイト & SNS",
+      "official": "公式サイト",
+      "social": "ソーシャルメディア",
+      "groupSite": "高嶺のなでしこ 公式",
+      "memberPage": "籾山ひめり メンバーページ",
+      "schedule": "イベントスケジュール",
+      "groupTwitter": "高嶺のなでしこ X",
+      "groupInstagram": "高嶺のなでしこ IG"
+    },
     "features": {
       "title": "コア機能",
       "aggregation": "コンテンツ集約",

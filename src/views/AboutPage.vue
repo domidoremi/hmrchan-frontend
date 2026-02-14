@@ -75,6 +75,67 @@
         </div>
       </section>
 
+      <!-- 官方网站 & 社交媒体 -->
+      <section class="section links-section">
+        <div class="section-header">
+          <AnimatedIcon name="explore" :fallback-icon="Globe" size="lg" class="section-icon" />
+          <h2 class="section-title">{{ $t('about.links.title') }}</h2>
+        </div>
+
+        <!-- 官方网站 -->
+        <div class="links-group">
+          <h4 class="subsection-title">
+            <AnimatedIcon name="explore" :fallback-icon="Globe" size="md" />
+            <span>{{ $t('about.links.official') }}</span>
+          </h4>
+          <div class="links-grid">
+            <a
+              v-for="link in officialLinks"
+              :key="link.url"
+              :href="link.url"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="link-card glass-card"
+              :style="{ '--link-color': link.color }"
+            >
+              <div class="link-icon-wrap">
+                <component :is="link.icon" :size="22" />
+              </div>
+              <div class="link-info">
+                <span class="link-name">{{ link.name }}</span>
+                <span class="link-desc">{{ link.desc }}</span>
+              </div>
+              <ExternalLink :size="14" class="link-arrow" />
+            </a>
+          </div>
+        </div>
+
+        <!-- 社交媒体 -->
+        <div class="links-group">
+          <h4 class="subsection-title">
+            <AnimatedIcon name="heart" :fallback-icon="Share2" size="md" />
+            <span>{{ $t('about.links.social') }}</span>
+          </h4>
+          <div class="links-grid links-grid--social">
+            <a
+              v-for="link in socialLinks"
+              :key="link.url"
+              :href="link.url"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="link-card link-card--compact glass-card"
+              :style="{ '--link-color': link.color }"
+            >
+              <div class="link-icon-wrap">
+                <component :is="link.icon" :size="20" />
+              </div>
+              <span class="link-name">{{ link.name }}</span>
+              <ExternalLink :size="12" class="link-arrow" />
+            </a>
+          </div>
+        </div>
+      </section>
+
       <!-- 核心功能 -->
       <section class="section">
         <div class="section-header">
@@ -189,6 +250,15 @@ import {
   MapPin,
   Music,
   Palette,
+  ExternalLink,
+  Share2,
+  Twitter,
+  Instagram,
+  Youtube,
+  Video,
+  MessageCircle,
+  Radio,
+  BookOpen,
 } from 'lucide-vue-next'
 import { useAboutData } from '@/composables/useAboutData'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
@@ -208,6 +278,82 @@ const profileItems = computed(() => [
   { icon: Smile, label: t('about.origin.profile.nickname') },
   { icon: Music, label: t('about.origin.profile.hobbies') },
   { icon: Palette, label: t('about.origin.profile.skills') },
+])
+
+// Official & Social links
+const officialLinks = computed(() => [
+  {
+    name: t('about.links.groupSite'),
+    desc: 'takanenonadeshiko.jp',
+    url: 'https://takanenonadeshiko.jp/',
+    icon: Globe,
+    color: '#e22658',
+  },
+  {
+    name: t('about.links.memberPage'),
+    desc: 'himeri_momiyama',
+    url: 'https://takanenonadeshiko.jp/himeri_momiyama/',
+    icon: User,
+    color: '#e22658',
+  },
+  {
+    name: t('about.links.schedule'),
+    desc: 'takanenonadeshiko.jp/schedule',
+    url: 'https://takanenonadeshiko.jp/schedule/',
+    icon: BookOpen,
+    color: '#6366f1',
+  },
+])
+
+const socialLinks = computed(() => [
+  {
+    name: 'X (Twitter)',
+    url: 'https://x.com/himeri_momi',
+    icon: Twitter,
+    color: '#000000',
+  },
+  {
+    name: 'Instagram',
+    url: 'https://www.instagram.com/himeri_momiyama/',
+    icon: Instagram,
+    color: '#E4405F',
+  },
+  {
+    name: 'TikTok',
+    url: 'https://www.tiktok.com/@himeri_momiyama',
+    icon: Video,
+    color: '#000000',
+  },
+  {
+    name: 'YouTube',
+    url: 'https://www.youtube.com/@takanenonadeshiko',
+    icon: Youtube,
+    color: '#FF0000',
+  },
+  {
+    name: 'SHOWROOM',
+    url: 'https://www.showroom-live.com/r/takananohimeri',
+    icon: Radio,
+    color: '#E6194B',
+  },
+  {
+    name: t('about.links.groupTwitter'),
+    url: 'https://x.com/takane_ndsck',
+    icon: Twitter,
+    color: '#000000',
+  },
+  {
+    name: t('about.links.groupInstagram'),
+    url: 'https://www.instagram.com/takane_no_nadeshiko/',
+    icon: Instagram,
+    color: '#E4405F',
+  },
+  {
+    name: 'LINE',
+    url: 'https://page.line.me/takanenonadeshiko',
+    icon: MessageCircle,
+    color: '#06C755',
+  },
 ])
 
 // Build hash - should be injected at build time, fallback to 'dev' for development
@@ -578,6 +724,139 @@ const { techStack } = useAboutData()
   margin: 0;
 }
 
+/* 官方 & 社交链接 */
+.links-section .origin-content {
+  padding: 0;
+}
+
+.links-group {
+  margin-bottom: var(--spacing-6);
+}
+
+.links-group .subsection-title {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  font-size: var(--text-lg);
+  font-weight: var(--font-semibold);
+  color: var(--color-text);
+  margin-bottom: var(--spacing-4);
+  padding-bottom: var(--spacing-2);
+  border-bottom: 2px solid var(--glass-border);
+}
+
+.links-group .subsection-title svg {
+  color: var(--color-primary);
+}
+
+.links-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: var(--spacing-3);
+}
+
+.links-grid--social {
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+}
+
+.link-card {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  padding: var(--spacing-4);
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  border: 1px solid transparent;
+}
+
+.link-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: var(--link-color, var(--color-primary));
+  transform: scaleY(0);
+  transform-origin: bottom;
+  transition: transform 0.3s ease;
+}
+
+.link-card:hover {
+  transform: translateX(4px);
+  border-color: rgba(var(--color-primary-rgb), 0.2);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.link-card:hover::before {
+  transform: scaleY(1);
+  transform-origin: top;
+}
+
+.link-card--compact {
+  padding: var(--spacing-3);
+}
+
+.link-icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--link-color, var(--color-primary)) 12%, transparent);
+  color: var(--link-color, var(--color-primary));
+  flex-shrink: 0;
+  transition: all 0.3s ease;
+}
+
+.link-card--compact .link-icon-wrap {
+  width: 36px;
+  height: 36px;
+}
+
+.link-card:hover .link-icon-wrap {
+  transform: scale(1.1);
+}
+
+.link-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.link-name {
+  display: block;
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  color: var(--color-text-primary);
+}
+
+.link-desc {
+  display: block;
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.link-arrow {
+  color: var(--color-text-tertiary);
+  opacity: 0;
+  transform: translateX(-4px);
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.link-card:hover .link-arrow {
+  opacity: 1;
+  transform: translateX(0);
+}
+
 /* 核心功能 */
 .features-grid {
   display: grid;
@@ -884,6 +1163,14 @@ const { techStack } = useAboutData()
 
   .features-grid {
     grid-template-columns: 1fr;
+  }
+
+  .links-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .links-grid--social {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
   }
 
   .tech-grid {
