@@ -1,11 +1,15 @@
 /**
  * Service Worker - 三层缓存策略
- * 版本: 1.0.0 (2026-02-14) [8236d9d] #877 [5ec746b] #875 [587d155] #874 [587d155] #874 [b39eac3] #867 [b39eac3] #867 [b39eac3] #867 [3367dd4] #854 [d81dc09] #837 [726568f] #822 [425ba033] #746 [425ba033] #746
- * 更新: 强制清除旧缓存以应用新的 CSP 策略
- *       优化帖子详情缓存键标准化，忽略查询参数差异
- *       使用 Stale-While-Revalidate 策略
- *       确保完整帖子数据（含 media_files）可离线访问
- *       优化域名配置，支持多环境部署
+ *
+ * CACHE_VERSION 由 Vite 构建时自动注入（vite-plugin-sw-version）
+ * 格式: v{major}-{minor}-{patch}-{git-hash}-b{build-number}
+ *
+ * 缓存策略:
+ * - 静态资源: Cache First
+ * - 帖子详情: Stale-While-Revalidate（标准化缓存键）
+ * - 帖子列表/API: Network First
+ * - 媒体文件: Cache First + LRU 容量管理
+ * - 视频流: Network Only
  */
 
 // AbortSignal.timeout polyfill for compatibility
@@ -63,7 +67,7 @@ async function getMediaMetaStats() {
   }
 }
 
-const CACHE_VERSION = 'v1-0-0-8236d9d-b877'
+const CACHE_VERSION = '__SW_CACHE_VERSION__'
 const CACHE_NAMES = {
   static: `hmrchan-static-${CACHE_VERSION}`,
   api: `hmrchan-api-${CACHE_VERSION}`,
