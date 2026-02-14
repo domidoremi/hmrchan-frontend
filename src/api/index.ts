@@ -128,3 +128,10 @@ export {
   type ContactMessageRequest,
   type ContactMessageResponse,
 } from './contactService'
+export {
+  scheduleService,
+  type ScheduleResponse,
+  type ScheduleCalendarItem,
+  type ScheduleCategory,
+  type ListSchedulesParams,
+} from './scheduleService'
