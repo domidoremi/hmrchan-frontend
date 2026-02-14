@@ -469,6 +469,13 @@
     "noUpcoming": "No upcoming events",
     "allDay": "All Day",
     "viewDetail": "View Details",
+    "prevMonth": "Previous month",
+    "nextMonth": "Next month",
+    "goToday": "Go to today",
+    "today": "Today",
+    "filterLabel": "Category filter",
+    "calendarLabel": "Calendar",
+    "eventsCount": "events",
     "categories": {
       "all": "All",
       "live": "Live",

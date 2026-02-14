@@ -469,6 +469,13 @@
     "noUpcoming": "今後の予定はありません",
     "allDay": "終日",
     "viewDetail": "詳細を見る",
+    "prevMonth": "前月",
+    "nextMonth": "翌月",
+    "goToday": "今日に戻る",
+    "today": "今日",
+    "filterLabel": "カテゴリフィルター",
+    "calendarLabel": "カレンダー",
+    "eventsCount": "件のイベント",
     "categories": {
       "all": "すべて",
       "live": "ライブ",

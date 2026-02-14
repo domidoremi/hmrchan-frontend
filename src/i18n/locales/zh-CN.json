@@ -469,6 +469,13 @@
     "noUpcoming": "暂无即将到来的活动",
     "allDay": "全天",
     "viewDetail": "查看详情",
+    "prevMonth": "上个月",
+    "nextMonth": "下个月",
+    "goToday": "回到今天",
+    "today": "今天",
+    "filterLabel": "分类筛选",
+    "calendarLabel": "日历",
+    "eventsCount": "个活动",
     "categories": {
       "all": "全部",
       "live": "直播",
