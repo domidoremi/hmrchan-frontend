@@ -706,6 +706,16 @@
       "platforms": "她活躍在 TikTok、Instagram、X（Twitter）、YouTube 等多個社交平台，與粉絲分享日常生活、演出活動和創作內容。",
       "purpose": "MomiChan 將這些分散在各個平台的內容聚合在一起，讓粉絲可以更方便地追蹤她的最新動態。"
     },
+    "links": {
+      "title": "官方網站 & 社群媒體",
+      "official": "官方網站",
+      "social": "社群媒體",
+      "groupSite": "高嶺のなでしこ 官網",
+      "memberPage": "籾山ひめり 個人頁",
+      "schedule": "活動日程",
+      "groupTwitter": "高嶺のなでしこ X",
+      "groupInstagram": "高嶺のなでしこ IG"
+    },
     "features": {
       "title": "核心功能",
       "aggregation": "內容聚合",

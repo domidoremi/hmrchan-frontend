@@ -707,6 +707,16 @@
       "platforms": "She is active on multiple social platforms including TikTok, Instagram, X (Twitter), and YouTube, sharing her daily life, performance activities, and creative content with fans.",
       "purpose": "MomiChan aggregates content scattered across these platforms, making it easier for fans to keep up with her latest updates."
     },
+    "links": {
+      "title": "Official & Social Media",
+      "official": "Official Websites",
+      "social": "Social Media",
+      "groupSite": "Takane no Nadeshiko Official",
+      "memberPage": "Momiyama Himeri Page",
+      "schedule": "Event Schedule",
+      "groupTwitter": "Takane no Nadeshiko X",
+      "groupInstagram": "Takane no Nadeshiko IG"
+    },
     "features": {
       "title": "Core Features",
       "aggregation": "Content Aggregation",
