@@ -481,6 +481,12 @@
       "media": "媒體",
       "birth": "生日",
       "other": "其他"
+    },
+    "detail": {
+      "draft": "草稿",
+      "eventPage": "活動頁面",
+      "buyTicket": "購票",
+      "source": "來源"
     }
   },
   "contact": {
