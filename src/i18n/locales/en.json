@@ -710,12 +710,15 @@
     "links": {
       "title": "Official & Social Media",
       "official": "Official Websites",
-      "social": "Social Media",
+      "personal": "Himeri's Social Media",
+      "groupSocial": "Group Social Media",
       "groupSite": "Takane no Nadeshiko Official",
       "memberPage": "Momiyama Himeri Page",
       "schedule": "Event Schedule",
-      "groupTwitter": "Takane no Nadeshiko X",
-      "groupInstagram": "Takane no Nadeshiko IG"
+      "fanClub": "Fan Club",
+      "ecShop": "Official Shop",
+      "douyin": "Douyin",
+      "redbook": "RED (Xiaohongshu)"
     },
     "features": {
       "title": "Core Features",
