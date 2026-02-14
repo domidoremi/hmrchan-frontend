@@ -108,6 +108,12 @@ export interface ListDiscussionCommentsParams {
   filter?: 'author' | 'admin'
 }
 
+export interface DiscussionCommentThreadResponse {
+  thread: DiscussionComment[]
+  root_comment: DiscussionComment
+  depth: number
+}
+
 const toNumber = (value: unknown, fallback = 0) => {
   const parsed = Number(value)
   return Number.isFinite(parsed) ? parsed : fallback
@@ -452,5 +458,48 @@ export const discussionService = {
       `/posts/?q=${encodeURIComponent(query)}&page_size=${limit}`
     )
     return response.items
+  },
+
+  // ========== 搜索 ==========
+
+  /**
+   * 搜索讨论
+   */
+  async search(
+    q: string,
+    params: { page?: number; page_size?: number; category?: DiscussionCategory } = {}
+  ): Promise<PaginatedApiResponse<Discussion>> {
+    const query = new URLSearchParams({
+      q,
+      page: String(params.page ?? 1),
+      page_size: String(params.page_size ?? 20),
+    })
+    if (params.category) query.set('category', params.category)
+
+    const data = await apiClient.get<PaginatedApiResponse<Discussion>>(
+      `/discussions/search?${query.toString()}`
+    )
+    return normalizePaginated(data, normalizeDiscussion)
+  },
+
+  // ========== 评论线索链 ==========
+
+  /**
+   * 获取讨论评论线索链
+   */
+  async getCommentThread(
+    discussionId: string,
+    commentId: string
+  ): Promise<DiscussionCommentThreadResponse> {
+    const data = await apiClient.get<DiscussionCommentThreadResponse>(
+      `/discussions/${discussionId}/comments/${commentId}/thread`
+    )
+    return {
+      ...data,
+      thread: (data.thread || []).map((item) => normalizeDiscussionComment(item)),
+      root_comment: data.root_comment
+        ? normalizeDiscussionComment(data.root_comment)
+        : data.root_comment,
+    }
   },
 }

@@ -1,13 +1,13 @@
 <template>
-  <div class="likes-tab">
+  <div class="comment-favorites-tab">
     <div class="tab-header">
-      <h2 class="tab-title">{{ $t('profile.tabs.likes') }}</h2>
+      <h2 class="tab-title">{{ $t('profile.tabs.commentFavorites') }}</h2>
       <span v-if="total > 0" class="item-count">{{ total }}</span>
     </div>
 
-    <StateIndicator v-if="error" variant="error" :description="error" @action="fetchLikes" />
+    <StateIndicator v-if="error" variant="error" :description="error" @action="fetchFavorites" />
 
-    <div v-else-if="isLoading && comments.length === 0" class="comments-skeleton">
+    <div v-else-if="isLoading && items.length === 0" class="comments-skeleton">
       <div v-for="i in 5" :key="i" class="comment-skeleton glass-card">
         <div class="skeleton" style="height: 40px; width: 40px; border-radius: 50%" />
         <div style="flex: 1">
@@ -19,44 +19,43 @@
 
     <template v-else>
       <StateIndicator
-        v-if="comments.length === 0"
+        v-if="items.length === 0"
         variant="empty"
-        :description="$t('profile.noLikes')"
+        :description="$t('profile.noCommentFavorites')"
       />
 
       <div v-else class="comments-list">
-        <article v-for="comment in comments" :key="comment.id" class="comment-item glass-card">
+        <article v-for="item in items" :key="item.id" class="comment-item glass-card">
           <div class="comment-header">
-            <span class="comment-date">{{ formatDate(comment.created_at) }}</span>
+            <span v-if="item.author_username" class="comment-author">
+              @{{ item.author_username }}
+            </span>
+            <span class="comment-date">{{ formatDate(item.created_at) }}</span>
           </div>
           <div class="comment-content">
-            <p>{{ comment.content }}</p>
+            <p>{{ item.content }}</p>
           </div>
-          <div v-if="comment.post_title" class="comment-context">
-            <AnimatedIcon name="heart" :fallback-icon="Heart" size="sm" />
-            <span>{{ $t('profile.likedOn') }}: </span>
-            <button class="post-link" @click="goToPost(comment.post_uuid)">
-              {{ comment.post_title }}
+          <div v-if="item.post_title" class="comment-context">
+            <AnimatedIcon name="heart" :fallback-icon="Bookmark" size="sm" />
+            <span>{{ $t('profile.commentOn') }}: </span>
+            <button class="post-link" @click="goToPost(item.post_uuid || item.post_id)">
+              {{ item.post_title }}
             </button>
           </div>
           <div class="comment-footer">
             <div class="comment-stats">
               <span>
                 <AnimatedIcon name="heart" :fallback-icon="Heart" size="sm" />
-                {{ comment.like_count || 0 }}
+                {{ item.likes_count || 0 }}
               </span>
-              <span v-if="comment.reply_count"
-                ><AnimatedIcon name="sparkle" :fallback-icon="MessageCircle" size="sm" />
-                {{ comment.reply_count }}</span
-              >
             </div>
             <button
-              class="unlike-btn"
-              @click.stop="handleUnlike(comment)"
-              :disabled="unlikingId === comment.id"
+              class="unfavorite-btn"
+              :disabled="unfavoritingId === item.id"
+              @click.stop="handleUnfavorite(item)"
             >
-              <AnimatedIcon name="sparkle" :fallback-icon="HeartOff" size="sm" />
-              <span>{{ $t('profile.unlike') }}</span>
+              <AnimatedIcon name="sparkle" :fallback-icon="BookmarkMinus" size="sm" />
+              <span>{{ $t('profile.unfavorite') }}</span>
             </button>
           </div>
         </article>
@@ -64,7 +63,7 @@
 
       <LoadMoreSection
         v-if="hasMore"
-        :count="comments.length"
+        :count="items.length"
         :total="total"
         :has-more="hasMore"
         :loading="isLoadingMore"
@@ -74,50 +73,38 @@
 
     <ConfirmDialog
       v-model:is-open="showConfirmDialog"
-      :title="$t('profile.confirmUnlike')"
-      :message="$t('profile.confirmUnlikeMessage')"
+      :title="$t('profile.confirmUnfavoriteComment')"
+      :message="$t('profile.confirmUnfavoriteCommentMessage')"
       variant="warning"
-      :confirm-text="$t('profile.unlike')"
-      @confirm="confirmUnlike"
+      :confirm-text="$t('profile.unfavorite')"
+      @confirm="confirmUnfavorite"
     />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, defineAsyncComponent } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { Heart, MessageCircle, HeartOff } from 'lucide-vue-next'
+import { Heart, Bookmark, BookmarkMinus } from 'lucide-vue-next'
 import { apiClient, ApiError } from '@/api'
+import type { MyCommentFavoriteItem } from '@/api'
 import { useToastStore } from '@/stores'
 import { formatRelativeTime } from '@/utils/date'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
-import { defineAsyncComponent } from 'vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 
-// 动态导入对话框组件以减少初始包体积
 const ConfirmDialog = defineAsyncComponent(() => import('@/components/ui/ConfirmDialog.vue'))
-
-interface LikedComment {
-  id: number
-  uuid: string
-  content: string
-  post_uuid: string
-  post_title?: string
-  like_count: number
-  reply_count?: number
-  created_at: string
-}
 
 const router = useRouter()
 const { t } = useI18n()
 const toastStore = useToastStore()
 
-const comments = ref<LikedComment[]>([])
-const unlikingId = ref<number | null>(null)
+const items = ref<MyCommentFavoriteItem[]>([])
+const unfavoritingId = ref<string | number | null>(null)
 const showConfirmDialog = ref(false)
-const pendingUnlikeComment = ref<LikedComment | null>(null)
+const pendingUnfavoriteItem = ref<MyCommentFavoriteItem | null>(null)
 const isLoading = ref(false)
 const isLoadingMore = ref(false)
 const error = ref<string | null>(null)
@@ -125,9 +112,9 @@ const page = ref(1)
 const total = ref(0)
 const pageSize = 20
 
-const hasMore = computed(() => comments.value.length < total.value)
+const hasMore = computed(() => items.value.length < total.value)
 
-async function fetchLikes(reset = true) {
+async function fetchFavorites(reset = true) {
   if (reset) {
     if (isLoading.value) return
     isLoading.value = true
@@ -141,26 +128,22 @@ async function fetchLikes(reset = true) {
 
   try {
     const res = await apiClient.get<{
-      items: LikedComment[]
+      items: MyCommentFavoriteItem[]
       total: number
       page: number
       page_size: number
       has_more: boolean
-    }>(`/history/my-likes?page=${page.value}&page_size=${pageSize}`)
+    }>(`/history/my-comment-favorites?page=${page.value}&page_size=${pageSize}`)
 
     if (reset) {
-      comments.value = res.items
+      items.value = res.items
     } else {
-      comments.value.push(...res.items)
+      items.value.push(...res.items)
     }
     total.value = res.total
   } catch (err) {
-    if (comments.value.length === 0) {
-      if (err instanceof ApiError) {
-        error.value = err.message
-      } else {
-        error.value = t('common.error')
-      }
+    if (items.value.length === 0) {
+      error.value = err instanceof ApiError ? err.message : t('common.error')
     }
   } finally {
     isLoading.value = false
@@ -170,54 +153,49 @@ async function fetchLikes(reset = true) {
 
 async function loadMore() {
   if (!hasMore.value || isLoading.value || isLoadingMore.value) return
-
   page.value++
-  await fetchLikes(false)
+  await fetchFavorites(false)
 }
 
 function formatDate(dateStr: string): string {
   return formatRelativeTime(dateStr, t)
 }
 
-function goToPost(postUuid: string) {
-  router.push(`/post/${postUuid}`)
+function goToPost(postId?: string) {
+  if (postId) router.push(`/post/${postId}`)
 }
 
-function handleUnlike(comment: LikedComment) {
-  pendingUnlikeComment.value = comment
+function handleUnfavorite(item: MyCommentFavoriteItem) {
+  pendingUnfavoriteItem.value = item
   showConfirmDialog.value = true
 }
 
-async function confirmUnlike() {
-  if (!pendingUnlikeComment.value) return
+async function confirmUnfavorite() {
+  if (!pendingUnfavoriteItem.value) return
 
-  const comment = pendingUnlikeComment.value
-  unlikingId.value = comment.id
+  const item = pendingUnfavoriteItem.value
+  unfavoritingId.value = item.id
 
   try {
-    await apiClient.delete(`/comments/${comment.id}/like`)
-    comments.value = comments.value.filter((c) => c.id !== comment.id)
+    await apiClient.delete(`/comments/${item.id}/favorite`)
+    items.value = items.value.filter((c) => c.id !== item.id)
     total.value = Math.max(0, total.value - 1)
-    toastStore.success(t('profile.unlikeSuccess'))
+    toastStore.success(t('profile.unfavoriteSuccess'))
   } catch (err) {
-    if (err instanceof ApiError) {
-      toastStore.error(err.message)
-    } else {
-      toastStore.error(t('common.error'))
-    }
+    toastStore.error(err instanceof ApiError ? err.message : t('common.error'))
   } finally {
-    unlikingId.value = null
-    pendingUnlikeComment.value = null
+    unfavoritingId.value = null
+    pendingUnfavoriteItem.value = null
   }
 }
 
 onMounted(() => {
-  fetchLikes()
+  fetchFavorites()
 })
 </script>
 
 <style scoped>
-.likes-tab {
+.comment-favorites-tab {
   min-height: 400px;
 }
 
@@ -242,98 +220,25 @@ onMounted(() => {
   color: var(--color-text-secondary);
 }
 
-.posts-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: var(--spacing-4);
-}
-
-.posts-masonry {
-  --masonry-columns: 4;
-  --masonry-gap: var(--spacing-4);
-
-  column-count: var(--masonry-columns);
-  column-gap: var(--masonry-gap);
-}
-
-.posts-masonry > * {
-  break-inside: avoid;
-  margin-bottom: var(--masonry-gap);
-}
-
-@media (min-width: 1600px) {
-  .posts-masonry {
-    --masonry-columns: 5;
-  }
-}
-
-@media (min-width: 1200px) and (max-width: 1599px) {
-  .posts-masonry {
-    --masonry-columns: 4;
-  }
-}
-
-@media (min-width: 900px) and (max-width: 1199px) {
-  .posts-masonry {
-    --masonry-columns: 3;
-  }
-}
-
-@media (min-width: 600px) and (max-width: 899px) {
-  .posts-masonry {
-    --masonry-columns: 2;
-  }
-}
-
-@media (max-width: 599px) {
-  .posts-masonry {
-    --masonry-columns: 1;
-  }
-}
-
-.post-card {
-  cursor: pointer;
-  transition: all var(--transition-base);
-  overflow: hidden;
-}
-
-.post-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-}
-
-.post-image {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 1;
-  overflow: hidden;
-  background: var(--glass-bg-light);
-}
-
-.post-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.image-placeholder {
+.comments-skeleton {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 100%;
-  color: var(--color-text-tertiary);
+  flex-direction: column;
+  gap: var(--spacing-3);
+}
+
+.comments-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-4);
 }
 
 .comment-item {
   padding: var(--spacing-4);
-  cursor: default;
   transition: all var(--transition-base);
   border: 1px solid transparent;
 }
 
 .comment-item:hover {
-  transform: translateY(-2px);
   border-color: rgba(var(--color-primary-rgb), 0.3);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
 }
@@ -345,10 +250,15 @@ onMounted(() => {
   margin-bottom: var(--spacing-2);
 }
 
+.comment-author {
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  color: var(--color-primary);
+}
+
 .comment-date {
   font-size: var(--text-xs);
   color: var(--color-text-tertiary);
-  font-weight: var(--font-medium);
 }
 
 .comment-content p {
@@ -382,20 +292,11 @@ onMounted(() => {
   padding: 0;
   font-weight: var(--font-medium);
   transition: color 0.2s ease;
-  text-decoration: underline;
-  text-decoration-color: transparent;
 }
 
 .post-link:hover {
   color: var(--color-primary-dark);
-  text-decoration-color: currentColor;
-}
-
-.post-stats {
-  display: flex;
-  gap: var(--spacing-2);
-  font-size: var(--text-xs);
-  color: var(--color-text-tertiary);
+  text-decoration: underline;
 }
 
 .comment-footer {
@@ -421,7 +322,7 @@ onMounted(() => {
   gap: var(--spacing-1);
 }
 
-.unlike-btn {
+.unfavorite-btn {
   display: inline-flex;
   align-items: center;
   gap: var(--spacing-1);
@@ -436,21 +337,14 @@ onMounted(() => {
   transition: all 0.2s ease;
 }
 
-.unlike-btn:hover:not(:disabled) {
-  border-color: var(--color-error);
-  color: var(--color-error);
-  background: rgba(239, 68, 68, 0.1);
-  transform: scale(1.02);
+.unfavorite-btn:hover:not(:disabled) {
+  border-color: var(--color-warning);
+  color: var(--color-warning);
+  background: rgba(245, 158, 11, 0.1);
 }
 
-.unlike-btn:disabled {
+.unfavorite-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-}
-
-.comments-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-4);
 }
 </style>

@@ -169,7 +169,7 @@ async function fetchComments(reset = true) {
       page: number
       page_size: number
       has_more: boolean
-    }>(`/community/my-comments?page=${page.value}&page_size=${pageSize}`)
+    }>(`/history/my-comments?page=${page.value}&page_size=${pageSize}`)
 
     if (reset) {
       comments.value = res.items

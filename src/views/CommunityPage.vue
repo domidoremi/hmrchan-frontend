@@ -14,14 +14,37 @@
             <h1>{{ $t('community.title') }}</h1>
             <p class="page-subtitle">{{ $t('community.subtitle') }}</p>
           </div>
-          <button
-            type="button"
-            class="guide-trigger glass-button"
-            :aria-label="$t('community.guideTitle')"
-            @click="showGuide = true"
-          >
-            <AnimatedIcon name="sparkle" :fallback-icon="HelpCircle" size="sm" />
-          </button>
+          <div class="page-header-actions">
+            <div class="discussion-search">
+              <AnimatedIcon name="search" :fallback-icon="Search" size="sm" />
+              <input
+                v-model="searchQuery"
+                type="search"
+                class="discussion-search-input"
+                :placeholder="$t('community.searchPlaceholder')"
+                :aria-label="$t('community.searchPlaceholder')"
+                @input="onSearchInput"
+                @keydown.escape="clearSearch"
+              />
+              <button
+                v-if="searchQuery"
+                type="button"
+                class="search-clear-btn"
+                :aria-label="$t('common.clear')"
+                @click="clearSearch"
+              >
+                <AnimatedIcon name="explore" :fallback-icon="X" size="sm" />
+              </button>
+            </div>
+            <button
+              type="button"
+              class="guide-trigger glass-button"
+              :aria-label="$t('community.guideTitle')"
+              @click="showGuide = true"
+            >
+              <AnimatedIcon name="sparkle" :fallback-icon="HelpCircle" size="sm" />
+            </button>
+          </div>
         </div>
       </header>
 
@@ -38,7 +61,7 @@
       </Dialog>
 
       <!-- Tabs -->
-      <div class="community-tabs">
+      <div v-if="!searchQuery" class="community-tabs">
         <button
           v-for="tab in tabs"
           :key="tab.id"
@@ -52,64 +75,31 @@
         </button>
       </div>
 
-      <!-- Discussion Composer -->
-      <DiscussionComposer
-        v-if="isAuthenticated"
-        class="composer-section"
-        @created="handleDiscussionCreated"
-      />
-      <div v-else class="login-prompt glass-card">
-        <p>{{ $t('community.loginToPost') }}</p>
-        <Button @click="goToLogin">{{ $t('nav.login') }}</Button>
-      </div>
-
-      <!-- Recent Discussions -->
-      <section v-if="activeTab === 'recent'" class="community-section">
-        <div v-if="isLoading && discussions.length === 0" class="loading-state">
+      <!-- Search Results -->
+      <section v-if="searchQuery" class="community-section">
+        <div v-if="isSearching" class="loading-state">
           <div class="spinner" />
         </div>
         <StateIndicator
-          v-else-if="error"
+          v-else-if="searchError"
           variant="error"
-          :description="error"
-          @action="fetchDiscussions"
+          :description="searchError"
+          @action="() => searchDiscussions(searchQuery.trim())"
         />
         <StateIndicator
-          v-else-if="discussions.length === 0"
+          v-else-if="searchResults.length === 0 && searchQuery.trim()"
           variant="empty"
           :description="$t('common.noResults')"
         />
         <div v-else class="discussions-list">
           <article
-            v-for="discussion in discussions"
+            v-for="discussion in searchResults"
             :key="discussion.id"
             class="discussion-card glass-card content-auto-sm"
             @click="goToDiscussion(discussion.id)"
-            @mouseenter="prefetchDiscussionDetailPage"
           >
-            <div
-              class="discussion-thumbnail"
-              v-if="discussion.referenced_post && discussion.referenced_post.thumbnail_url"
-            >
-              <img
-                :src="
-                  normalizeToThumbnailUrl(discussion.referenced_post.thumbnail_url, 'medium') ||
-                  discussion.referenced_post.thumbnail_url
-                "
-                :srcset="getThumbnailSrcset(discussion.referenced_post.thumbnail_url) || undefined"
-                :sizes="thumbnailSizes"
-                :alt="discussion.referenced_post.title"
-                loading="lazy"
-                decoding="async"
-              />
-            </div>
             <div class="discussion-content">
-              <div class="discussion-title-row">
-                <h3 class="discussion-title">{{ discussion.title }}</h3>
-                <span v-if="discussion.is_pinned" class="discussion-pin">{{
-                  $t('community.pinned')
-                }}</span>
-              </div>
+              <h3 class="discussion-title">{{ discussion.title }}</h3>
               <p class="discussion-excerpt">{{ discussion.content }}</p>
               <div class="discussion-meta">
                 <span class="comment-count">
@@ -120,101 +110,178 @@
                   formatTime(discussion.updated_at || discussion.created_at)
                 }}</span>
               </div>
-              <div v-if="discussion.tags.length > 0" class="discussion-tags">
-                <span v-for="tag in discussion.tags" :key="tag" class="discussion-tag glass-tag">
-                  #{{ tag }}
-                </span>
-              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <template v-if="!searchQuery">
+        <!-- Discussion Composer -->
+        <DiscussionComposer
+          v-if="isAuthenticated"
+          class="composer-section"
+          @created="handleDiscussionCreated"
+        />
+        <div v-else class="login-prompt glass-card">
+          <p>{{ $t('community.loginToPost') }}</p>
+          <Button @click="goToLogin">{{ $t('nav.login') }}</Button>
+        </div>
+
+        <!-- Recent Discussions -->
+        <section v-if="activeTab === 'recent'" class="community-section">
+          <div v-if="isLoading && discussions.length === 0" class="loading-state">
+            <div class="spinner" />
+          </div>
+          <StateIndicator
+            v-else-if="error"
+            variant="error"
+            :description="error"
+            @action="fetchDiscussions"
+          />
+          <StateIndicator
+            v-else-if="discussions.length === 0"
+            variant="empty"
+            :description="$t('common.noResults')"
+          />
+          <div v-else class="discussions-list">
+            <article
+              v-for="discussion in discussions"
+              :key="discussion.id"
+              class="discussion-card glass-card content-auto-sm"
+              @click="goToDiscussion(discussion.id)"
+              @mouseenter="prefetchDiscussionDetailPage"
+            >
               <div
-                v-if="discussion.referenced_post"
-                class="referenced-post"
-                @click.stop="goToReferencedPost(discussion.referenced_post)"
+                class="discussion-thumbnail"
+                v-if="discussion.referenced_post && discussion.referenced_post.thumbnail_url"
               >
                 <img
-                  v-if="discussion.referenced_post.thumbnail_url"
                   :src="
                     normalizeToThumbnailUrl(discussion.referenced_post.thumbnail_url, 'medium') ||
                     discussion.referenced_post.thumbnail_url
                   "
+                  :srcset="
+                    getThumbnailSrcset(discussion.referenced_post.thumbnail_url) || undefined
+                  "
+                  :sizes="thumbnailSizes"
                   :alt="discussion.referenced_post.title"
-                  class="referenced-thumb"
                   loading="lazy"
                   decoding="async"
                 />
-                <div class="referenced-content">
-                  <span class="referenced-label">{{ $t('community.referencedPost') }}</span>
-                  <span class="referenced-title">{{ discussion.referenced_post.title }}</span>
+              </div>
+              <div class="discussion-content">
+                <div class="discussion-title-row">
+                  <h3 class="discussion-title">{{ discussion.title }}</h3>
+                  <span v-if="discussion.is_pinned" class="discussion-pin">{{
+                    $t('community.pinned')
+                  }}</span>
+                </div>
+                <p class="discussion-excerpt">{{ discussion.content }}</p>
+                <div class="discussion-meta">
+                  <span class="comment-count">
+                    <AnimatedIcon name="sparkle" :fallback-icon="MessageSquare" size="sm" />
+                    {{ discussion.comments_count }}
+                  </span>
+                  <span class="discussion-time">{{
+                    formatTime(discussion.updated_at || discussion.created_at)
+                  }}</span>
+                </div>
+                <div v-if="discussion.tags.length > 0" class="discussion-tags">
+                  <span v-for="tag in discussion.tags" :key="tag" class="discussion-tag glass-tag">
+                    #{{ tag }}
+                  </span>
+                </div>
+                <div
+                  v-if="discussion.referenced_post"
+                  class="referenced-post"
+                  @click.stop="goToReferencedPost(discussion.referenced_post)"
+                >
+                  <img
+                    v-if="discussion.referenced_post.thumbnail_url"
+                    :src="
+                      normalizeToThumbnailUrl(discussion.referenced_post.thumbnail_url, 'medium') ||
+                      discussion.referenced_post.thumbnail_url
+                    "
+                    :alt="discussion.referenced_post.title"
+                    class="referenced-thumb"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                  <div class="referenced-content">
+                    <span class="referenced-label">{{ $t('community.referencedPost') }}</span>
+                    <span class="referenced-title">{{ discussion.referenced_post.title }}</span>
+                  </div>
+                </div>
+                <div class="discussion-author">
+                  <img
+                    v-if="discussion.author.avatar_url"
+                    :src="normalizeAvatarUrl(discussion.author.avatar_url) || undefined"
+                    :alt="discussion.author.username"
+                    class="author-avatar"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                  <span class="author-name">{{ discussion.author.username }}</span>
                 </div>
               </div>
-              <div class="discussion-author">
-                <img
-                  v-if="discussion.author.avatar_url"
-                  :src="normalizeAvatarUrl(discussion.author.avatar_url) || undefined"
-                  :alt="discussion.author.username"
-                  class="author-avatar"
-                  loading="lazy"
-                  decoding="async"
-                />
-                <span class="author-name">{{ discussion.author.username }}</span>
-              </div>
-            </div>
-          </article>
+            </article>
 
-          <LoadMoreSection
-            v-if="discussions.length > 0"
-            :count="discussions.length"
-            :total="total"
-            :has-more="hasMore"
-            :loading="isLoadingMore"
-            :sentinel-ref="setSentinelRef"
-            @load-more="loadMore"
+            <LoadMoreSection
+              v-if="discussions.length > 0"
+              :count="discussions.length"
+              :total="total"
+              :has-more="hasMore"
+              :loading="isLoadingMore"
+              :sentinel-ref="setSentinelRef"
+              @load-more="loadMore"
+            />
+          </div>
+        </section>
+
+        <!-- Hot Topics -->
+        <section v-if="activeTab === 'hot'" class="community-section">
+          <div v-if="isLoadingHot && hotTopics.length === 0" class="hot-topics-grid">
+            <article v-for="i in 6" :key="i" class="topic-card glass-card">
+              <div class="topic-rank">#{{ i }}</div>
+              <div class="topic-content">
+                <div class="skeleton" style="height: 20px; width: 80%" />
+                <div class="skeleton" style="height: 14px; width: 50%; margin-top: 8px" />
+              </div>
+            </article>
+          </div>
+          <StateIndicator
+            v-else-if="hotTopicsError"
+            variant="error"
+            :description="hotTopicsError"
+            @action="fetchHotTopics"
           />
-        </div>
-      </section>
-
-      <!-- Hot Topics -->
-      <section v-if="activeTab === 'hot'" class="community-section">
-        <div v-if="isLoadingHot && hotTopics.length === 0" class="hot-topics-grid">
-          <article v-for="i in 6" :key="i" class="topic-card glass-card">
-            <div class="topic-rank">#{{ i }}</div>
-            <div class="topic-content">
-              <div class="skeleton" style="height: 20px; width: 80%" />
-              <div class="skeleton" style="height: 14px; width: 50%; margin-top: 8px" />
-            </div>
-          </article>
-        </div>
-        <StateIndicator
-          v-else-if="hotTopicsError"
-          variant="error"
-          :description="hotTopicsError"
-          @action="fetchHotTopics"
-        />
-        <StateIndicator
-          v-else-if="hotTopics.length === 0"
-          variant="empty"
-          :description="$t('community.noHotTopics')"
-        />
-        <div v-else class="hot-topics-grid">
-          <article
-            v-for="(topic, index) in hotTopics"
-            :key="topic.id"
-            class="topic-card glass-card"
-            @click="goToDiscussion(topic.id)"
-          >
-            <div class="topic-rank">#{{ index + 1 }}</div>
-            <div class="topic-content">
-              <h3 class="topic-title">{{ topic.title }}</h3>
-              <div class="topic-meta">
-                <span class="topic-count">
-                  <AnimatedIcon name="sparkle" :fallback-icon="MessageSquare" size="sm" />
-                  {{ topic.comments_count }}
-                </span>
-                <span class="topic-views">{{ topic.view_count }} {{ $t('post.views') }}</span>
+          <StateIndicator
+            v-else-if="hotTopics.length === 0"
+            variant="empty"
+            :description="$t('community.noHotTopics')"
+          />
+          <div v-else class="hot-topics-grid">
+            <article
+              v-for="(topic, index) in hotTopics"
+              :key="topic.id"
+              class="topic-card glass-card"
+              @click="goToDiscussion(topic.id)"
+            >
+              <div class="topic-rank">#{{ index + 1 }}</div>
+              <div class="topic-content">
+                <h3 class="topic-title">{{ topic.title }}</h3>
+                <div class="topic-meta">
+                  <span class="topic-count">
+                    <AnimatedIcon name="sparkle" :fallback-icon="MessageSquare" size="sm" />
+                    {{ topic.comments_count }}
+                  </span>
+                  <span class="topic-views">{{ topic.view_count }} {{ $t('post.views') }}</span>
+                </div>
               </div>
-            </div>
-          </article>
-        </div>
-      </section>
+            </article>
+          </div>
+        </section>
+      </template>
     </div>
   </div>
 </template>
@@ -225,7 +292,7 @@ defineOptions({ name: 'CommunityPage' })
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
-import { MessageSquare, Flame, HelpCircle } from 'lucide-vue-next'
+import { MessageSquare, Flame, HelpCircle, Search, X } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores'
 import { discussionService, type Discussion, ApiError } from '@/api'
@@ -252,6 +319,12 @@ const isLoadingMore = ref(false)
 const error = ref<string | null>(null)
 const discussions = ref<Discussion[]>([])
 
+// Discussion search
+const searchQuery = ref('')
+const searchResults = ref<Discussion[]>([])
+const isSearching = ref(false)
+const searchError = ref<string | null>(null)
+let searchDebounceTimer: ReturnType<typeof setTimeout> | null = null
 const isLoadingHot = ref(false)
 const hotTopicsError = ref<string | null>(null)
 const hotTopics = ref<Discussion[]>([])
@@ -403,6 +476,41 @@ async function fetchHotTopics() {
   }
 }
 
+function onSearchInput() {
+  if (searchDebounceTimer) clearTimeout(searchDebounceTimer)
+  const q = searchQuery.value.trim()
+  if (!q) {
+    searchResults.value = []
+    isSearching.value = false
+    searchError.value = null
+    return
+  }
+  searchDebounceTimer = setTimeout(() => {
+    searchDiscussions(q)
+  }, 350)
+}
+
+function clearSearch() {
+  searchQuery.value = ''
+  searchResults.value = []
+  isSearching.value = false
+  searchError.value = null
+  if (searchDebounceTimer) clearTimeout(searchDebounceTimer)
+}
+
+async function searchDiscussions(q: string) {
+  isSearching.value = true
+  searchError.value = null
+  try {
+    const res = await discussionService.search(q, { page: 1, page_size: 20 })
+    searchResults.value = res.items
+  } catch (err) {
+    searchError.value = err instanceof ApiError ? err.message : t('common.error')
+  } finally {
+    isSearching.value = false
+  }
+}
+
 useInfiniteScroll(sentinelRef, loadMore, {
   rootMargin: '800px', // 提前 800px 开始加载
   enabled: () =>
@@ -471,6 +579,70 @@ onMounted(() => {
   align-items: flex-start;
   justify-content: space-between;
   gap: var(--spacing-3);
+}
+
+.page-header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+}
+
+.discussion-search {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  padding: 6px 12px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  transition: border-color 0.2s ease;
+}
+
+.discussion-search:focus-within {
+  border-color: var(--color-primary);
+}
+
+.discussion-search-input {
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: var(--text-sm);
+  color: var(--color-text-primary);
+  width: 140px;
+  transition: width 0.2s ease;
+}
+
+.discussion-search-input:focus {
+  width: 200px;
+}
+
+.discussion-search-input::placeholder {
+  color: var(--color-text-tertiary);
+}
+
+.search-clear-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  padding: 2px;
+  cursor: pointer;
+  color: var(--color-text-tertiary);
+  border-radius: var(--radius-sm);
+}
+
+.search-clear-btn:hover {
+  color: var(--color-text-primary);
+}
+
+@media (max-width: 640px) {
+  .discussion-search-input {
+    width: 100px;
+  }
+  .discussion-search-input:focus {
+    width: 140px;
+  }
 }
 
 .page-header h1 {
