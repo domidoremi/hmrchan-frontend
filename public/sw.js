@@ -1,6 +1,6 @@
 /**
  * Service Worker - 三层缓存策略
- * 版本: 1.0.0 (2026-02-13) [b39eac3] #867 [b39eac3] #867 [b39eac3] #867 [3367dd4] #854 [d81dc09] #837 [726568f] #822 [425ba033] #746 [425ba033] #746
+ * 版本: 1.0.0 (2026-02-14) [587d155] #874 [587d155] #874 [b39eac3] #867 [b39eac3] #867 [b39eac3] #867 [3367dd4] #854 [d81dc09] #837 [726568f] #822 [425ba033] #746 [425ba033] #746
  * 更新: 强制清除旧缓存以应用新的 CSP 策略
  *       优化帖子详情缓存键标准化，忽略查询参数差异
  *       使用 Stale-While-Revalidate 策略
@@ -63,7 +63,7 @@ async function getMediaMetaStats() {
   }
 }
 
-const CACHE_VERSION = 'v1-0-0-b39eac3-b867'
+const CACHE_VERSION = 'v1-0-0-587d155-b874'
 const CACHE_NAMES = {
   static: `hmrchan-static-${CACHE_VERSION}`,
   api: `hmrchan-api-${CACHE_VERSION}`,
