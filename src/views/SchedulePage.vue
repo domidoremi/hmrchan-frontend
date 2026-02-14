@@ -1,5 +1,11 @@
 <template>
   <div class="schedule-page">
+    <!-- 背景装饰 -->
+    <div class="schedule-bg" aria-hidden="true">
+      <div class="schedule-bg__blob schedule-bg__blob--blue" />
+      <div class="schedule-bg__blob schedule-bg__blob--amber" />
+    </div>
+
     <div class="container">
       <header class="page-header">
         <div class="page-header-text">
@@ -7,12 +13,14 @@
           <p class="page-subtitle">{{ $t('schedule.subtitle') }}</p>
         </div>
         <div class="page-header-actions">
-          <div class="category-filters">
+          <div class="category-filters" role="radiogroup" :aria-label="$t('schedule.filterLabel')">
             <button
               v-for="cat in categories"
               :key="cat.value"
               class="filter-chip glass-button"
               :class="{ 'filter-chip--active': activeCategory === cat.value }"
+              role="radio"
+              :aria-checked="activeCategory === cat.value"
               @click="setCategory(cat.value)"
             >
               <component :is="cat.icon" :size="14" />
@@ -24,53 +32,83 @@
 
       <!-- 月份导航 -->
       <div class="month-nav">
-        <button class="month-nav-btn glass-button" @click="prevMonth">
+        <button
+          class="month-nav-btn glass-button"
+          :aria-label="$t('schedule.prevMonth')"
+          @click="prevMonth"
+        >
           <ChevronLeft :size="18" />
         </button>
-        <button class="month-nav-title" @click="goToday">
+        <button class="month-nav-title" :aria-label="$t('schedule.goToday')" @click="goToday">
           {{ monthLabel }}
         </button>
-        <button class="month-nav-btn glass-button" @click="nextMonth">
+        <button
+          class="month-nav-btn glass-button"
+          :aria-label="$t('schedule.nextMonth')"
+          @click="nextMonth"
+        >
           <ChevronRight :size="18" />
         </button>
+        <Transition name="today-fade">
+          <button v-if="!isCurrentMonth" class="today-btn glass-button" @click="goToday">
+            <CalendarCheck :size="14" />
+            <span>{{ $t('schedule.today') }}</span>
+          </button>
+        </Transition>
       </div>
 
       <!-- 日历网格 -->
-      <div class="calendar-wrapper glass-card">
-        <div class="calendar-weekdays">
-          <div v-for="d in weekdays" :key="d" class="weekday-cell">{{ d }}</div>
-        </div>
-
-        <div v-if="isLoading && events.length === 0" class="calendar-grid">
-          <div v-for="i in 35" :key="i" class="calendar-cell calendar-cell--skeleton">
-            <div class="skeleton" style="width: 24px; height: 16px; border-radius: 4px" />
+      <div
+        ref="calendarRef"
+        class="calendar-wrapper glass-card"
+        role="grid"
+        :aria-label="$t('schedule.calendarLabel')"
+        @keydown="handleCalendarKeydown"
+        @touchstart.passive="onTouchStart"
+        @touchend.passive="onTouchEnd"
+      >
+        <div class="calendar-weekdays" role="row">
+          <div v-for="d in weekdays" :key="d" class="weekday-cell" role="columnheader">
+            {{ d }}
           </div>
         </div>
 
-        <div v-else class="calendar-grid">
-          <div
-            v-for="day in calendarDays"
-            :key="day.key"
-            class="calendar-cell"
-            :class="{
-              'calendar-cell--other': !day.currentMonth,
-              'calendar-cell--today': day.isToday,
-              'calendar-cell--has-events': day.events.length > 0,
-              'calendar-cell--selected': selectedDay?.key === day.key,
-            }"
-            @click="selectDay(day)"
-          >
-            <span class="day-number">{{ day.date }}</span>
-            <div v-if="day.events.length > 0" class="day-dots">
-              <span
-                v-for="(evt, idx) in day.events.slice(0, 3)"
-                :key="idx"
-                class="day-dot"
-                :style="{ background: getCategoryColor(evt.category) }"
-              />
+        <Transition :name="monthTransition" mode="out-in">
+          <div v-if="isLoading && events.length === 0" key="skeleton" class="calendar-grid">
+            <div v-for="i in 42" :key="i" class="calendar-cell calendar-cell--skeleton">
+              <div class="skeleton-day" />
             </div>
           </div>
-        </div>
+
+          <div v-else :key="monthKey" class="calendar-grid" role="rowgroup">
+            <button
+              v-for="(day, idx) in calendarDays"
+              :key="day.key"
+              class="calendar-cell"
+              :class="{
+                'calendar-cell--other': !day.currentMonth,
+                'calendar-cell--today': day.isToday,
+                'calendar-cell--has-events': day.events.length > 0,
+                'calendar-cell--selected': selectedDay?.key === day.key,
+              }"
+              role="gridcell"
+              :tabindex="day.isToday || (idx === 0 && !selectedDay) ? 0 : -1"
+              :aria-label="getDayAriaLabel(day)"
+              :aria-selected="selectedDay?.key === day.key"
+              @click="selectDay(day)"
+            >
+              <span class="day-number">{{ day.date }}</span>
+              <div v-if="day.events.length > 0" class="day-dots">
+                <span
+                  v-for="(evt, i) in day.events.slice(0, 3)"
+                  :key="i"
+                  class="day-dot"
+                  :style="{ background: getCategoryColor(evt.category) }"
+                />
+              </div>
+            </button>
+          </div>
+        </Transition>
       </div>
 
       <StateIndicator v-if="error" variant="error" :description="error" @action="fetchEvents" />
@@ -83,7 +121,11 @@
             <span v-if="selectedDayEvents.length" class="event-count">
               {{ selectedDayEvents.length }}
             </span>
-            <button class="close-btn glass-button" @click="selectedDay = null">
+            <button
+              class="close-btn glass-button"
+              :aria-label="$t('common.close')"
+              @click="selectedDay = null"
+            >
               <X :size="16" />
             </button>
           </div>
@@ -193,6 +235,7 @@ import {
   Film,
   Cake,
   LayoutGrid,
+  CalendarCheck,
 } from 'lucide-vue-next'
 import { scheduleService, type ScheduleCalendarItem } from '@/api/scheduleService'
 import type { ScheduleCategory } from '@/api/scheduleService'
@@ -211,6 +254,12 @@ const currentYear = ref(new Date().getFullYear())
 const currentMonth = ref(new Date().getMonth())
 const activeCategory = ref<ScheduleCategory | 'all'>('all')
 const selectedDay = ref<CalendarDay | null>(null)
+const calendarRef = ref<HTMLElement | null>(null)
+const monthTransition = ref<'month-slide-left' | 'month-slide-right'>('month-slide-left')
+
+// 触摸手势
+let touchStartX = 0
+let touchStartY = 0
 
 // ========== 分类配置 ==========
 const CATEGORY_COLORS: Record<string, string> = {
@@ -259,10 +308,37 @@ const monthLabel = computed(() => {
   })
 })
 
+const monthKey = computed(() => `${currentYear.value}-${currentMonth.value}`)
+
+const isCurrentMonth = computed(() => {
+  const now = new Date()
+  return currentYear.value === now.getFullYear() && currentMonth.value === now.getMonth()
+})
+
 const filteredEvents = computed(() => {
   if (activeCategory.value === 'all') return events.value
   return events.value.filter((e) => e.category === activeCategory.value)
 })
+
+/** 预构建 date→events 映射，避免 O(n*m) 遍历 */
+const eventsByDate = computed(() => {
+  const map = new Map<string, ScheduleCalendarItem[]>()
+  for (const evt of filteredEvents.value) {
+    const dateStr = evt.start.slice(0, 10)
+    const arr = map.get(dateStr)
+    if (arr) {
+      arr.push(evt)
+    } else {
+      map.set(dateStr, [evt])
+    }
+  }
+  return map
+})
+
+function getEventsForDate(date: Date): ScheduleCalendarItem[] {
+  const dateStr = date.toISOString().slice(0, 10)
+  return eventsByDate.value.get(dateStr) ?? []
+}
 
 const calendarDays = computed<CalendarDay[]>(() => {
   const year = currentYear.value
@@ -322,14 +398,6 @@ const calendarDays = computed<CalendarDay[]>(() => {
   return days
 })
 
-function getEventsForDate(date: Date): ScheduleCalendarItem[] {
-  const dateStr = date.toISOString().slice(0, 10)
-  return filteredEvents.value.filter((evt) => {
-    const evtDate = evt.start.slice(0, 10)
-    return evtDate === dateStr
-  })
-}
-
 const selectedDayEvents = computed(() => {
   if (!selectedDay.value) return []
   return selectedDay.value.events
@@ -351,8 +419,78 @@ const upcomingEvents = computed(() => {
     .slice(0, 10)
 })
 
+// ========== 无障碍 ==========
+function getDayAriaLabel(day: CalendarDay): string {
+  const dateLabel = day.fullDate.toLocaleDateString(
+    locale.value === 'zh-CN' ? 'zh-CN' : locale.value,
+    { month: 'long', day: 'numeric' }
+  )
+  if (day.events.length > 0) {
+    return `${dateLabel}, ${day.events.length} ${t('schedule.eventsCount')}`
+  }
+  return dateLabel
+}
+
+function handleCalendarKeydown(e: KeyboardEvent) {
+  const grid = calendarRef.value
+  if (!grid) return
+
+  const cells = Array.from(
+    grid.querySelectorAll<HTMLButtonElement>('.calendar-cell:not(.calendar-cell--skeleton)')
+  )
+  const focused = document.activeElement as HTMLElement
+  const idx = cells.indexOf(focused as HTMLButtonElement)
+  if (idx === -1) return
+
+  let next = -1
+  switch (e.key) {
+    case 'ArrowRight':
+      next = Math.min(idx + 1, cells.length - 1)
+      break
+    case 'ArrowLeft':
+      next = Math.max(idx - 1, 0)
+      break
+    case 'ArrowDown':
+      next = Math.min(idx + 7, cells.length - 1)
+      break
+    case 'ArrowUp':
+      next = Math.max(idx - 7, 0)
+      break
+    default:
+      return
+  }
+
+  e.preventDefault()
+  cells[next]?.focus()
+}
+
+// ========== 触摸手势 ==========
+function onTouchStart(e: TouchEvent) {
+  const touch = e.touches[0]
+  if (!touch) return
+  touchStartX = touch.clientX
+  touchStartY = touch.clientY
+}
+
+function onTouchEnd(e: TouchEvent) {
+  const touch = e.changedTouches[0]
+  if (!touch) return
+  const dx = touch.clientX - touchStartX
+  const dy = touch.clientY - touchStartY
+
+  // 水平滑动距离 > 60px 且大于垂直距离
+  if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+    if (dx < 0) {
+      nextMonth()
+    } else {
+      prevMonth()
+    }
+  }
+}
+
 // ========== 操作 ==========
 function prevMonth() {
+  monthTransition.value = 'month-slide-right'
   selectedDay.value = null
   if (currentMonth.value === 0) {
     currentMonth.value = 11
@@ -363,6 +501,7 @@ function prevMonth() {
 }
 
 function nextMonth() {
+  monthTransition.value = 'month-slide-left'
   selectedDay.value = null
   if (currentMonth.value === 11) {
     currentMonth.value = 0
@@ -374,6 +513,11 @@ function nextMonth() {
 
 function goToday() {
   const now = new Date()
+  if (now.getMonth() < currentMonth.value || now.getFullYear() < currentYear.value) {
+    monthTransition.value = 'month-slide-right'
+  } else {
+    monthTransition.value = 'month-slide-left'
+  }
   currentYear.value = now.getFullYear()
   currentMonth.value = now.getMonth()
   selectedDay.value = null
@@ -411,7 +555,6 @@ async function fetchEvents() {
     const end = new Date(currentYear.value, currentMonth.value + 2, 0).toISOString()
     events.value = await scheduleService.calendar({ start, end })
   } catch (err) {
-    // 404 表示后端尚未部署该接口，视为空数据
     if (err instanceof ApiError && err.status === 404) {
       events.value = []
     } else {
@@ -434,10 +577,48 @@ onMounted(() => {
 
 <style scoped>
 .schedule-page {
+  position: relative;
   min-height: 100vh;
   padding: var(--spacing-6) 0;
 }
 
+/* ========== 背景装饰 ========== */
+.schedule-bg {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -2;
+  overflow: hidden;
+}
+
+.schedule-bg__blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(100px);
+  opacity: 0.3;
+}
+
+.schedule-bg__blob--blue {
+  width: 420px;
+  height: 420px;
+  top: 8%;
+  right: -6%;
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.4) 0%, transparent 70%);
+}
+
+.schedule-bg__blob--amber {
+  width: 380px;
+  height: 380px;
+  bottom: 12%;
+  left: -5%;
+  background: radial-gradient(circle, rgba(245, 158, 11, 0.35) 0%, transparent 70%);
+}
+
+[data-theme='dark'] .schedule-bg__blob {
+  opacity: 0.15;
+}
+
+/* ========== Header ========== */
 .page-header {
   display: flex;
   justify-content: space-between;
@@ -479,13 +660,14 @@ onMounted(() => {
   border-color: rgba(var(--color-primary-rgb), 0.3);
 }
 
-/* 月份导航 */
+/* ========== 月份导航 ========== */
 .month-nav {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: var(--spacing-4);
+  gap: var(--spacing-3);
   margin-bottom: var(--spacing-4);
+  flex-wrap: wrap;
 }
 
 .month-nav-btn {
@@ -516,11 +698,23 @@ onMounted(() => {
   background: var(--glass-bg-subtle);
 }
 
-/* 日历 */
+.today-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-1);
+  padding: 4px 12px;
+  font-size: var(--text-xs);
+  border-radius: var(--radius-full);
+  color: var(--color-primary);
+  border-color: rgba(var(--color-primary-rgb), 0.3);
+}
+
+/* ========== 日历 ========== */
 .calendar-wrapper {
   padding: var(--spacing-4);
   margin-bottom: var(--spacing-6);
   overflow: hidden;
+  touch-action: pan-y;
 }
 
 .calendar-weekdays {
@@ -556,10 +750,20 @@ onMounted(() => {
   cursor: pointer;
   transition: all 0.15s ease;
   min-height: 48px;
+  background: none;
+  border: 2px solid transparent;
+  color: inherit;
+  font: inherit;
+  padding: 0;
 }
 
 .calendar-cell:hover {
   background: var(--glass-bg-subtle);
+}
+
+.calendar-cell:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
 }
 
 .calendar-cell--other {
@@ -580,8 +784,7 @@ onMounted(() => {
 
 .calendar-cell--selected {
   background: rgba(var(--color-primary-rgb), 0.1);
-  outline: 2px solid var(--color-primary);
-  outline-offset: -2px;
+  border-color: var(--color-primary);
 }
 
 .calendar-cell--has-events {
@@ -609,7 +812,65 @@ onMounted(() => {
   pointer-events: none;
 }
 
-/* 事件列表 */
+.skeleton-day {
+  width: 24px;
+  height: 16px;
+  border-radius: 4px;
+  background: var(--glass-bg-light);
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes skeleton-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+/* ========== 月份切换动画 ========== */
+.month-slide-left-enter-active,
+.month-slide-left-leave-active,
+.month-slide-right-enter-active,
+.month-slide-right-leave-active {
+  transition: all 0.2s ease;
+}
+
+.month-slide-left-enter-from {
+  opacity: 0;
+  transform: translateX(20px);
+}
+
+.month-slide-left-leave-to {
+  opacity: 0;
+  transform: translateX(-20px);
+}
+
+.month-slide-right-enter-from {
+  opacity: 0;
+  transform: translateX(-20px);
+}
+
+.month-slide-right-leave-to {
+  opacity: 0;
+  transform: translateX(20px);
+}
+
+/* ========== Today 按钮过渡 ========== */
+.today-fade-enter-active,
+.today-fade-leave-active {
+  transition: all 0.2s ease;
+}
+
+.today-fade-enter-from,
+.today-fade-leave-to {
+  opacity: 0;
+  transform: scale(0.9);
+}
+
+/* ========== 事件列表 ========== */
 .day-events {
   margin-bottom: var(--spacing-6);
 }
@@ -735,7 +996,7 @@ onMounted(() => {
   text-decoration: underline;
 }
 
-/* 即将到来 */
+/* ========== 即将到来 ========== */
 .upcoming-section {
   margin-bottom: var(--spacing-8);
 }
@@ -746,7 +1007,7 @@ onMounted(() => {
   margin-bottom: var(--spacing-4);
 }
 
-/* 过渡动画 */
+/* ========== 过渡动画 ========== */
 .slide-fade-enter-active {
   transition: all 0.25s ease-out;
 }
@@ -765,7 +1026,7 @@ onMounted(() => {
   transform: translateY(-4px);
 }
 
-/* 响应式 */
+/* ========== 响应式 ========== */
 @media (max-width: 640px) {
   .page-header {
     flex-direction: column;
@@ -802,6 +1063,24 @@ onMounted(() => {
 
   .filter-chip {
     white-space: nowrap;
+  }
+}
+
+/* ========== Reduced Motion ========== */
+@media (prefers-reduced-motion: reduce) {
+  .month-slide-left-enter-active,
+  .month-slide-left-leave-active,
+  .month-slide-right-enter-active,
+  .month-slide-right-leave-active,
+  .today-fade-enter-active,
+  .today-fade-leave-active,
+  .slide-fade-enter-active,
+  .slide-fade-leave-active {
+    transition: none;
+  }
+
+  .skeleton-day {
+    animation: none;
   }
 }
 </style>
