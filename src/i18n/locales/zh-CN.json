@@ -18,7 +18,8 @@
     "postDetail": "帖子详情",
     "authorDetail": "作者详情",
     "profileSettings": "个人资料设置",
-    "search": "搜索"
+    "search": "搜索",
+    "schedule": "日程"
   },
   "common": {
     "skipToContent": "跳转到内容",
@@ -459,6 +460,22 @@
     "confirmDeleteMessage": "确定要删除这个讨论吗？此操作不可撤销。",
     "deleteSuccess": "讨论已删除",
     "searchPlaceholder": "搜索讨论..."
+  },
+  "schedule": {
+    "title": "日程",
+    "subtitle": "活动与日程安排",
+    "upcoming": "即将到来",
+    "noEvents": "当天没有活动",
+    "noUpcoming": "暂无即将到来的活动",
+    "allDay": "全天",
+    "viewDetail": "查看详情",
+    "categories": {
+      "all": "全部",
+      "live": "直播",
+      "media": "媒体",
+      "birth": "生日",
+      "other": "其他"
+    }
   },
   "contact": {
     "title": "联系我们",

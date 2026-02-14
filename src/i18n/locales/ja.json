@@ -18,7 +18,8 @@
     "postDetail": "投稿詳細",
     "authorDetail": "作者詳細",
     "profileSettings": "プロフィール設定",
-    "search": "検索"
+    "search": "検索",
+    "schedule": "スケジュール"
   },
   "common": {
     "skipToContent": "コンテンツへスキップ",
@@ -459,6 +460,22 @@
     "confirmDeleteMessage": "このディスカッションを削除しますか？この操作は取り消しできません。",
     "deleteSuccess": "ディスカッションを削除しました",
     "searchPlaceholder": "ディスカッションを検索..."
+  },
+  "schedule": {
+    "title": "スケジュール",
+    "subtitle": "イベント＆スケジュール",
+    "upcoming": "今後の予定",
+    "noEvents": "この日のイベントはありません",
+    "noUpcoming": "今後の予定はありません",
+    "allDay": "終日",
+    "viewDetail": "詳細を見る",
+    "categories": {
+      "all": "すべて",
+      "live": "ライブ",
+      "media": "メディア",
+      "birth": "誕生日",
+      "other": "その他"
+    }
   },
   "contact": {
     "title": "お問い合わせ",

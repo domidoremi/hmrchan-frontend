@@ -4,7 +4,7 @@
  */
 
 import type { Component } from 'vue'
-import { Home, Compass, Heart, Users, MessageSquare, Info } from 'lucide-vue-next'
+import { Home, Compass, Heart, Users, MessageSquare, CalendarDays, Info } from 'lucide-vue-next'
 
 /** 预加载函数类型 */
 export type PrefetchFunction =
@@ -34,6 +34,8 @@ export interface NavigationItem {
   desktopIconSize?: number
   /** 移动端图标大小 @default 20 */
   mobileIconSize?: number
+  /** 是否显示未读标识 */
+  showBadge?: boolean
   /** 是否在移动端显示 @default true */
   showOnMobile?: boolean
   /** 是否在桌面端显示 @default true */
@@ -74,6 +76,12 @@ export const navigationItems: NavigationItem[] = [
     i18nKey: 'nav.community',
     icon: MessageSquare,
     prefetchFn: 'prefetchCommunityPage',
+  },
+  {
+    path: '/schedule',
+    i18nKey: 'nav.schedule',
+    icon: CalendarDays,
+    showBadge: true,
   },
   {
     path: '/about',

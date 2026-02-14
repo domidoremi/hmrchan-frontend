@@ -18,7 +18,8 @@
     "postDetail": "Post Detail",
     "authorDetail": "Author Detail",
     "profileSettings": "Profile Settings",
-    "search": "Search"
+    "search": "Search",
+    "schedule": "Schedule"
   },
   "common": {
     "skipToContent": "Skip to content",
@@ -459,6 +460,22 @@
     "confirmDeleteMessage": "Are you sure you want to delete this discussion? This action cannot be undone.",
     "deleteSuccess": "Discussion deleted",
     "searchPlaceholder": "Search discussions..."
+  },
+  "schedule": {
+    "title": "Schedule",
+    "subtitle": "Events & Schedule",
+    "upcoming": "Upcoming",
+    "noEvents": "No events on this day",
+    "noUpcoming": "No upcoming events",
+    "allDay": "All Day",
+    "viewDetail": "View Details",
+    "categories": {
+      "all": "All",
+      "live": "Live",
+      "media": "Media",
+      "birth": "Birthday",
+      "other": "Other"
+    }
   },
   "contact": {
     "title": "Contact Us",

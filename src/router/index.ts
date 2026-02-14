@@ -162,6 +162,12 @@ const routes: RouteRecordRaw[] = [
     meta: { title: 'nav.contact', showFooter: true },
   },
   {
+    path: '/schedule',
+    name: 'schedule',
+    component: () => import('@/views/SchedulePage.vue'),
+    meta: { title: 'nav.schedule' },
+  },
+  {
     path: '/about',
     name: 'about',
     component: () => import('@/views/AboutPage.vue'),
