@@ -21,12 +21,15 @@
           @mouseenter="handlePrefetch(item)"
           @focus="handlePrefetch(item)"
         >
-          <AnimatedIcon
-            :name="getNavAnimation(item)"
-            :fallback-icon="item.icon"
-            size="md"
-            :active="activeDesktopIndex === index"
-          />
+          <span class="nav-link-icon-wrap">
+            <AnimatedIcon
+              :name="getNavAnimation(item)"
+              :fallback-icon="item.icon"
+              size="md"
+              :active="activeDesktopIndex === index"
+            />
+            <span v-if="item.showBadge && scheduleHasNew" class="nav-badge-dot" />
+          </span>
           <span>{{ $t(item.i18nKey) }}</span>
         </RouterLink>
       </div>
@@ -215,6 +218,7 @@
           size="lg"
           :active="activeMobileIndex === index"
         />
+        <span v-if="item.showBadge && scheduleHasNew" class="nav-badge-dot nav-badge-dot--mobile" />
       </div>
       <span class="mobile-nav-label">{{ $t(item.i18nKey) }}</span>
     </RouterLink>
@@ -236,6 +240,7 @@ import {
   User,
 } from 'lucide-vue-next'
 import { useAuthStore, useSettingsStore } from '@/stores'
+import { useScheduleStore } from '@/stores/schedule'
 import { getUserDisplayName } from '@/utils/user'
 import { useUserAvatar, preloadUserAvatar } from '@/composables/useUserAvatar'
 import { prefetchExploreData, prefetchAuthorsData } from '@/utils/prefetch'
@@ -261,6 +266,7 @@ const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
 const settingsStore = useSettingsStore()
+const scheduleStore = useScheduleStore()
 const { user, isAuthenticated } = storeToRefs(authStore)
 const { settings } = storeToRefs(settingsStore)
 
@@ -279,6 +285,9 @@ const shouldAnimateMobile = computed(
   () => settings.value.enableAnimations && !prefersReducedMotion()
 )
 
+// 日程未读标识
+const scheduleHasNew = computed(() => scheduleStore.hasNew)
+
 const showSettings = ref(false)
 const showUserMenu = ref(false)
 
@@ -288,6 +297,7 @@ const navAnimationMap: Record<string, string> = {
   '/favorites': 'heart',
   '/authors': 'user',
   '/community': 'sparkle',
+  '/schedule': 'sparkle',
 }
 
 function getNavAnimation(item: NavigationItem) {
@@ -683,6 +693,8 @@ onMounted(() => {
       prefetchAuthorsPage()
     })
   }
+  // 检查日程是否有新事件
+  scheduleStore.checkForNew()
 })
 
 onUnmounted(() => {
@@ -1306,6 +1318,44 @@ onUnmounted(() => {
     right: var(--spacing-4);
     width: min(92vw, 22rem);
     min-width: auto;
+  }
+}
+
+/* ========== Nav Badge Dot ========== */
+.nav-link-icon-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.nav-badge-dot {
+  position: absolute;
+  top: -2px;
+  right: -4px;
+  width: 8px;
+  height: 8px;
+  background: var(--color-error);
+  border-radius: 50%;
+  border: 2px solid var(--glass-bg-strong);
+  animation: badge-pulse 2s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.nav-badge-dot--mobile {
+  top: 2px;
+  right: 2px;
+  width: 7px;
+  height: 7px;
+}
+
+@keyframes badge-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.2);
   }
 }
 </style>

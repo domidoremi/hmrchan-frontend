@@ -2,6 +2,7 @@
 更新日期：2026-02-14
 
 ## 变更日志（2026-02-14）
+- 新增 Content-Schedules 完整接口：日程列表（分页）、日历格式、详情、CRUD（管理员）、外部同步触发和状态查询
 - 补充 Content-Posts 缺失接口：`GET /posts/trending`（热门帖子）、`GET /posts/{post_id}/author`（帖子作者详情）
 - 补充 User-History 缺失接口：`GET /history/my-comments`、`GET /history/my-likes`、`GET /history/my-comment-favorites`
 - 补充 Community-Comments 缺失接口：`GET /comments/{comment_id}/thread`（评论线索链）
@@ -705,6 +706,140 @@ API使用滑动窗口算法进行速率限制。限流基于以下维度：
       - data 字段结构：
             - `query` (type:string; required:yes)
             - `results` (type:array; required:yes)
+
+
+### Content-Schedules
+
+> 日程/活动管理。数据通过 Celery Beat 定时任务从外部来源（如 WordPress Event Organiser）自动同步，存储到本地数据库后提供给前端。同步间隔 6 小时，带 Redis 速率限制（最小 30 分钟）。
+
+- **GET /api/v1/schedules** — 日程列表（分页）
+  - 认证：不需要（未发布日程仅管理员可见）
+  - 参数：
+    - page；in:query；type:integer；required:no；default:1；min=1
+    - page_size；in:query；type:integer；required:no；default:50；min=1；max=200
+    - category；in:query；type:null|string；required:no；desc:分类过滤 (live, media, birth, other)
+    - start；in:query；type:null|string(datetime)；required:no；desc:开始日期过滤
+    - end；in:query；type:null|string(datetime)；required:no；desc:结束日期过滤
+    - published_only；in:query；type:boolean；required:no；default:true
+  - 成功响应：
+    - 200 JSON -> data:PaginatedResponse[ScheduleResponse]
+      - items 元素结构：
+            - `id` (type:integer; required:yes)
+            - `uuid` (type:string; required:yes)
+            - `title` (type:string; required:yes)
+            - `description` (type:null|string; required:no)
+            - `category` (type:string; required:yes; desc:live|media|birth|other)
+            - `start_date` (type:string(datetime); required:yes)
+            - `end_date` (type:null|string(datetime); required:no)
+            - `is_all_day` (type:boolean; required:yes)
+            - `venue` (type:null|string; required:no)
+            - `venue_address` (type:null|string; required:no)
+            - `event_url` (type:null|string; required:no)
+            - `ticket_url` (type:null|string; required:no)
+            - `author_id` (type:null|integer; required:no)
+            - `source_url` (type:null|string; required:no)
+            - `source_platform` (type:null|string; required:no)
+            - `color` (type:null|string; required:no; desc:日历显示颜色)
+            - `is_published` (type:boolean; required:yes)
+            - `created_at` (type:string(datetime); required:yes)
+            - `updated_at` (type:null|string(datetime); required:no)
+
+- **GET /api/v1/schedules/calendar** — 日历格式事件列表（FullCalendar 兼容）
+  - 认证：不需要
+  - 参数：
+    - start；in:query；type:null|string(datetime)；required:no；desc:开始日期
+    - end；in:query；type:null|string(datetime)；required:no；desc:结束日期
+    - category；in:query；type:null|string；required:no；desc:分类过滤
+  - 成功响应：
+    - 200 JSON -> data:array[ScheduleCalendarItem]
+      - 元素结构：
+            - `id` (type:integer; required:yes)
+            - `title` (type:string; required:yes)
+            - `start` (type:string(datetime); required:yes)
+            - `end` (type:null|string(datetime); required:no)
+            - `allDay` (type:boolean; required:yes; default:true)
+            - `category` (type:string; required:yes)
+            - `color` (type:null|string; required:no)
+            - `url` (type:null|string; required:no)
+            - `venue` (type:null|string; required:no)
+            - `description` (type:null|string; required:no)
+
+- **GET /api/v1/schedules/{schedule_id}** — 日程详情
+  - 认证：不需要（未发布日程仅管理员可见）
+  - 参数：
+    - schedule_id；in:path；type:integer；required:yes
+  - 成功响应：
+    - 200 JSON -> data:ScheduleResponse
+  - 错误响应：
+    - 404: Schedule not found
+
+- **POST /api/v1/schedules** — 创建日程（管理员）
+  - 认证：需要（管理员）
+  - 请求体：
+    - application/json -> ScheduleCreate
+      - 字段结构：
+            - `title` (type:string; required:yes; min:1; max:500)
+            - `description` (type:null|string; required:no)
+            - `category` (type:string; required:no; default:live; desc:live|media|birth|other)
+            - `start_date` (type:string(datetime); required:yes)
+            - `end_date` (type:null|string(datetime); required:no)
+            - `is_all_day` (type:boolean; required:no; default:true)
+            - `venue` (type:null|string; required:no; max:500)
+            - `venue_address` (type:null|string; required:no)
+            - `event_url` (type:null|string; required:no)
+            - `ticket_url` (type:null|string; required:no)
+            - `author_id` (type:null|integer; required:no)
+            - `source_url` (type:null|string; required:no)
+            - `source_platform` (type:null|string; required:no; max:100)
+            - `color` (type:null|string; required:no; max:20)
+            - `is_published` (type:boolean; required:no; default:true)
+  - 成功响应：
+    - 201 JSON -> data:ScheduleResponse
+  - 错误响应：
+    - 401: Unauthorized
+    - 403: Admin privileges required
+
+- **PUT /api/v1/schedules/{schedule_id}** — 更新日程（管理员）
+  - 认证：需要（管理员）
+  - 参数：
+    - schedule_id；in:path；type:integer；required:yes
+  - 请求体：
+    - application/json -> ScheduleUpdate（所有字段可选）
+  - 成功响应：
+    - 200 JSON -> data:ScheduleResponse
+  - 错误响应：
+    - 404: Schedule not found
+
+- **DELETE /api/v1/schedules/{schedule_id}** — 删除日程（管理员）
+  - 认证：需要（管理员）
+  - 参数：
+    - schedule_id；in:path；type:integer；required:yes
+  - 成功响应：
+    - 204 No Content
+  - 错误响应：
+    - 404: Schedule not found
+
+- **POST /api/v1/schedules/sync** — 触发外部日程同步（管理员）
+  - 认证：需要（管理员）
+  - 参数：
+    - force；in:query；type:boolean；required:no；default:false；desc:跳过速率限制
+  - 成功响应：
+    - 202 JSON -> data:object
+      - 字段结构：
+            - `task_id` (type:string; required:yes; desc:Celery 任务 ID)
+            - `status` (type:string; required:yes; value:queued)
+
+- **GET /api/v1/schedules/sync/status** — 同步状态（管理员）
+  - 认证：需要（管理员）
+  - 成功响应：
+    - 200 JSON -> data:object
+      - 字段结构：
+            - `sources` (type:array; required:yes)
+              - 元素结构：
+                - `name` (type:string; required:yes)
+                - `platform` (type:string; required:yes)
+                - `last_sync_at` (type:null|string(datetime); required:no)
+                - `event_count` (type:integer; required:yes)
 
 
 ### System

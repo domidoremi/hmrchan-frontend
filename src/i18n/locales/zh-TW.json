@@ -18,7 +18,8 @@
     "postDetail": "貼文詳情",
     "authorDetail": "作者詳情",
     "profileSettings": "個人資料設定",
-    "search": "搜尋"
+    "search": "搜尋",
+    "schedule": "日程"
   },
   "common": {
     "skipToContent": "跳轉到內容",
@@ -458,6 +459,22 @@
     "confirmDeleteMessage": "確定要刪除這個討論嗎？此操作不可撤銷。",
     "deleteSuccess": "討論已刪除",
     "searchPlaceholder": "搜尋討論..."
+  },
+  "schedule": {
+    "title": "日程",
+    "subtitle": "活動與日程安排",
+    "upcoming": "即將到來",
+    "noEvents": "當天沒有活動",
+    "noUpcoming": "暫無即將到來的活動",
+    "allDay": "全天",
+    "viewDetail": "查看詳情",
+    "categories": {
+      "all": "全部",
+      "live": "直播",
+      "media": "媒體",
+      "birth": "生日",
+      "other": "其他"
+    }
   },
   "contact": {
     "title": "聯絡我們",
