@@ -220,6 +220,8 @@ const CATEGORY_COLORS: Record<string, string> = {
   other: '#8b5cf6',
 }
 
+const DEFAULT_COLOR = '#8b5cf6'
+
 const categories = [
   { value: 'all' as const, label: 'schedule.categories.all', icon: LayoutGrid },
   { value: 'live' as const, label: 'schedule.categories.live', icon: Radio },
@@ -229,7 +231,7 @@ const categories = [
 ]
 
 function getCategoryColor(cat: string): string {
-  return CATEGORY_COLORS[cat] || CATEGORY_COLORS.other
+  return CATEGORY_COLORS[cat] ?? DEFAULT_COLOR
 }
 
 // ========== 日历计算 ==========
@@ -409,7 +411,12 @@ async function fetchEvents() {
     const end = new Date(currentYear.value, currentMonth.value + 2, 0).toISOString()
     events.value = await scheduleService.calendar({ start, end })
   } catch (err) {
-    error.value = err instanceof ApiError ? err.message : t('common.error')
+    // 404 表示后端尚未部署该接口，视为空数据
+    if (err instanceof ApiError && err.status === 404) {
+      events.value = []
+    } else {
+      error.value = err instanceof ApiError ? err.message : t('common.error')
+    }
   } finally {
     isLoading.value = false
   }
