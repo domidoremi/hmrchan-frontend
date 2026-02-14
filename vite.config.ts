@@ -22,6 +22,7 @@ import vueJsx from '@vitejs/plugin-vue-jsx'
 import vueDevTools from 'vite-plugin-vue-devtools'
 import { imagetools } from 'vite-imagetools'
 import { criticalCSSPlugin } from './vite-plugin-critical-css'
+import { swVersionPlugin } from './vite-plugin-sw-version'
 
 type DevProxyServer = {
   on(event: 'proxyRes', listener: (proxyRes: IncomingMessage) => void): void
@@ -87,7 +88,7 @@ export default defineConfig(({ mode }: { mode: string }) => {
       }),
 
       /** 生产环境内联关键 CSS */
-      ...(isProd ? [criticalCSSPlugin()] : []),
+      ...(isProd ? [criticalCSSPlugin(), swVersionPlugin()] : []),
     ],
 
     /**
