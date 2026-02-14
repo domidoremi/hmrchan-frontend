@@ -709,12 +709,15 @@
     "links": {
       "title": "官方網站 & 社群媒體",
       "official": "官方網站",
-      "social": "社群媒體",
+      "personal": "ひめり 個人社群",
+      "groupSocial": "團體社群媒體",
       "groupSite": "高嶺のなでしこ 官網",
       "memberPage": "籾山ひめり 個人頁",
       "schedule": "活動日程",
-      "groupTwitter": "高嶺のなでしこ X",
-      "groupInstagram": "高嶺のなでしこ IG"
+      "fanClub": "粉絲俱樂部",
+      "ecShop": "官方商城",
+      "douyin": "抖音",
+      "redbook": "小紅書"
     },
     "features": {
       "title": "核心功能",
