@@ -117,7 +117,7 @@
       <Dialog
         :is-open="!!detailEvent"
         :title="detailEvent?.title ?? ''"
-        size="lg"
+        size="default"
         @close="detailEvent = null"
       >
         <div v-if="detailLoading" class="detail-loading">
@@ -146,14 +146,23 @@
           <div class="detail-row">
             <Clock :size="16" class="detail-icon" />
             <div class="detail-row-content">
-              <span v-if="detailEvent.is_all_day">{{ $t('schedule.allDay') }}</span>
-              <span v-else>{{ formatDetailTime(detailEvent.start_date) }}</span>
-              <template v-if="detailEvent.end_date">
-                <span class="detail-separator">—</span>
-                <span v-if="detailEvent.is_all_day">
-                  {{ formatDetailDate(detailEvent.end_date) }}
-                </span>
-                <span v-else>{{ formatDetailTime(detailEvent.end_date) }}</span>
+              <template v-if="detailEvent.is_all_day">
+                <span>{{ formatDetailDate(detailEvent.start_date) }}</span>
+                <template v-if="detailEvent.end_date && detailEvent.end_date !== detailEvent.start_date">
+                  <span class="detail-separator">—</span>
+                  <span>{{ formatDetailDate(detailEvent.end_date) }}</span>
+                </template>
+                <span class="detail-allday-tag">{{ $t('schedule.allDay') }}</span>
+              </template>
+              <template v-else>
+                <span>{{ formatDetailTime(detailEvent.start_date) }}</span>
+                <template v-if="detailEvent.end_date">
+                  <span class="detail-separator">—</span>
+                  <span v-if="isSameDay(detailEvent.start_date, detailEvent.end_date)">
+                    {{ formatTimeOnly(detailEvent.end_date) }}
+                  </span>
+                  <span v-else>{{ formatDetailTime(detailEvent.end_date) }}</span>
+                </template>
               </template>
             </div>
           </div>
@@ -171,7 +180,21 @@
 
           <!-- 描述 -->
           <div v-if="detailEvent.description" class="detail-description">
-            <p>{{ detailEvent.description }}</p>
+            <template v-if="parsedDescription.length > 0">
+              <div
+                v-for="(section, idx) in parsedDescription"
+                :key="idx"
+                class="desc-section"
+              >
+                <h4 v-if="section.heading" class="desc-heading">{{ section.heading }}</h4>
+                <p
+                  v-for="(line, li) in section.lines"
+                  :key="li"
+                  class="desc-line"
+                  v-html="linkify(line)"
+                />
+              </div>
+            </template>
           </div>
 
           <!-- 链接区域 -->
@@ -195,6 +218,16 @@
             >
               <Ticket :size="14" />
               <span>{{ $t('schedule.detail.buyTicket') }}</span>
+            </a>
+            <a
+              v-if="detailEvent.source_url"
+              :href="detailEvent.source_url"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="detail-link-btn glass-button"
+            >
+              <ExternalLink :size="14" />
+              <span>{{ $t('schedule.detail.source') }}</span>
             </a>
           </div>
         </div>
@@ -722,6 +755,66 @@ function formatDetailDate(dateStr: string): string {
   })
 }
 
+function formatTimeOnly(dateStr: string): string {
+  const d = new Date(dateStr)
+  return d.toLocaleTimeString(locale.value, { hour: '2-digit', minute: '2-digit' })
+}
+
+function isSameDay(a: string, b: string): boolean {
+  return a.slice(0, 10) === b.slice(0, 10)
+}
+
+// ========== 描述解析 ==========
+interface DescSection {
+  heading: string | null
+  lines: string[]
+}
+
+const parsedDescription = computed<DescSection[]>(() => {
+  const desc = detailEvent.value?.description
+  if (!desc) return []
+
+  // 按 ▼ 分段
+  const parts = desc.split(/▼/)
+  const sections: DescSection[] = []
+
+  for (let i = 0; i < parts.length; i++) {
+    const raw = parts[i]?.trim()
+    if (!raw) continue
+
+    if (i === 0) {
+      // ▼ 之前的开头文本，无标题
+      sections.push({ heading: null, lines: splitLines(raw) })
+    } else {
+      // 第一行是标题，其余是内容
+      const lines = raw.split(/\n/)
+      const heading = (lines[0] ?? '').trim()
+      const body = lines.slice(1).join('\n').trim()
+      sections.push({
+        heading: heading || null,
+        lines: body ? splitLines(body) : [],
+      })
+    }
+  }
+
+  return sections
+})
+
+function splitLines(text: string): string[] {
+  return text.split(/\n/).filter((l) => l.trim() !== '')
+}
+
+function linkify(text: string): string {
+  const escaped = text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+  return escaped.replace(
+    /(https?:\/\/[^\s<&]+)/g,
+    '<a href="$1" target="_blank" rel="noopener noreferrer" class="desc-link">$1</a>',
+  )
+}
+
 // ========== 数据加载 ==========
 async function fetchEvents() {
   isLoading.value = true
@@ -891,6 +984,8 @@ onMounted(() => {
   margin-bottom: var(--spacing-6);
   overflow: hidden;
   touch-action: pan-y;
+  max-width: 56rem;
+  margin-inline: auto;
 }
 
 .calendar-weekdays {
@@ -916,7 +1011,6 @@ onMounted(() => {
 
 .calendar-cell {
   position: relative;
-  aspect-ratio: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -926,11 +1020,11 @@ onMounted(() => {
   cursor: pointer;
   transition: all 0.15s ease;
   min-height: 48px;
+  padding: var(--spacing-2) 0;
   background: none;
   border: 2px solid transparent;
   color: inherit;
   font: inherit;
-  padding: 0;
 }
 
 .calendar-cell:hover {
@@ -1335,6 +1429,15 @@ onMounted(() => {
   margin: 0 var(--spacing-1);
 }
 
+.detail-allday-tag {
+  padding: 1px 6px;
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
+  background: var(--glass-bg-light);
+  color: var(--color-text-tertiary);
+  margin-left: var(--spacing-2);
+}
+
 .detail-venue-name {
   font-weight: var(--font-medium);
   color: var(--color-text-primary);
@@ -1354,11 +1457,42 @@ onMounted(() => {
   padding: var(--spacing-3);
   background: var(--glass-bg-subtle);
   border-radius: var(--radius-md);
-  white-space: pre-wrap;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
 }
 
 .detail-description p {
   margin: 0;
+}
+
+.desc-section + .desc-section {
+  padding-top: var(--spacing-3);
+  border-top: 1px solid var(--glass-border);
+}
+
+.desc-heading {
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  color: var(--color-text-primary);
+  margin: 0 0 var(--spacing-1);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.desc-line {
+  margin: 0;
+  word-break: break-word;
+}
+
+.desc-link {
+  color: var(--color-primary);
+  text-decoration: none;
+  word-break: break-all;
+}
+
+.desc-link:hover {
+  text-decoration: underline;
 }
 
 .detail-links {
