@@ -1075,7 +1075,6 @@ function openDetail() {
   }
 }
 
-
 .post-preview-text {
   margin: 0;
   white-space: pre-wrap;
