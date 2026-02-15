@@ -222,6 +222,7 @@ watch(
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: var(--spacing-2);
   padding: var(--spacing-8) var(--spacing-6);
   text-align: center;

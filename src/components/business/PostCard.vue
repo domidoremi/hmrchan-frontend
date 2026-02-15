@@ -5,7 +5,7 @@
     class="post-card glass-card glass-card--interactive"
     :class="{ 'post-card--contain': imageFit === 'contain' }"
     :data-post-id="post.id"
-    :aria-label="displayTitle"
+    :aria-label="displayTitle || undefined"
     @click="handleClick"
     @mouseenter="handleMouseEnter"
     @mouseleave="handleMouseLeave"
@@ -68,7 +68,7 @@
           </div>
           <div class="hover-scroll">
             <!-- Only show title/author in hover overlay when the card hides its content -->
-            <h4 v-if="!showContent" class="hover-title">{{ displayTitle }}</h4>
+            <h4 v-if="!showContent && displayTitle" class="hover-title">{{ displayTitle }}</h4>
             <div v-if="!showContent && displayAuthorName" class="hover-author">
               <Avatar
                 v-if="showAuthorAvatar && post.author_avatar_url"
@@ -89,7 +89,7 @@
     </div>
 
     <div v-if="showContent" class="post-content">
-      <h3 class="post-title">{{ displayTitle }}</h3>
+      <h3 v-if="displayTitle" class="post-title">{{ displayTitle }}</h3>
 
       <p v-if="cardExcerpt" class="post-excerpt">
         {{ cardExcerpt }}
@@ -252,16 +252,21 @@ const displayTitle = computed(() => {
   const content = normalizeText(props.post.description)
 
   if (!titleFromContent.value) {
-    return title || content || t('post.untitled')
+    return title || ''
   }
 
-  // Use the first line / sentence of content as title
-  if (content) {
-    const firstLine = content.split(/\n/)[0] || content
-    return firstLine.length > 120 ? firstLine.slice(0, 120) + '…' : firstLine
-  }
+  // Title comes from content — extract a short snippet (first segment up to a space boundary)
+  const source = content || title
+  if (!source) return ''
 
-  return title || t('post.untitled')
+  // Take the first line, then truncate at a reasonable word boundary
+  const firstLine = source.split(/\n/)[0] || source
+  if (firstLine.length <= 30) return firstLine
+
+  // Find a space boundary within the first ~30 chars
+  const cutoff = firstLine.lastIndexOf(' ', 30)
+  const end = cutoff > 10 ? cutoff : 30
+  return firstLine.slice(0, end) + '…'
 })
 
 const displayExcerpt = computed(() => {
