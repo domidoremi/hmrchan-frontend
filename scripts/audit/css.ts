@@ -1,0 +1,232 @@
+import { readFile } from 'fs/promises'
+import { join } from 'path'
+import { glob } from 'fs/promises'
+import type { AuditModule, AuditIssue, AuditOptions, AuditResult, AuditStatus, Severity } from './types'
+
+interface CSSRule {
+  id: string
+  pattern: RegExp
+  severity: Severity
+  message: string
+  suggestion?: string
+  /** If provided, lines matching any exclude pattern are skipped */
+  excludePatterns?: RegExp[]
+}
+
+/**
+ * Properties where hardcoded px is acceptable (micro-level details).
+ * border, box-shadow, outline, icon sizes, max-width, min-width
+ */
+const PX_EXCLUDE_PATTERNS = [
+  /\bborder\b/i,
+  /\bbox-shadow\b/i,
+  /\boutline\b/i,
+  /\bmax-width\b/i,
+  /\bmin-width\b/i,
+  /\bmax-height\b/i,
+  /\bmin-height\b/i,
+  /\bborder-radius\b/i,
+  /\bborder-width\b/i,
+  /\bscrollbar/i,
+  /\bbackdrop-filter\b/i,
+  /\bfilter\b/i,
+  /\btransform\b/i,
+  /\btranslate\b/i,
+  /\btext-shadow\b/i,
+  /\bstroke-width\b/i,
+  /\bbackground-size\b/i,
+  /\bbackground-position\b/i,
+  /\b-webkit-/i,
+]
+
+/** Layout properties where hardcoded px is problematic */
+const PX_LAYOUT_PATTERN = /\b(?:width|height|padding|margin|gap|top|right|bottom|left|inset|flex-basis)\s*:\s*[^;]*\d+px/i
+
+const CSS_RULES: CSSRule[] = [
+  {
+    id: 'no-hardcoded-px',
+    pattern: PX_LAYOUT_PATTERN,
+    severity: 'error',
+    message: 'Hardcoded px in layout property',
+    suggestion: 'Use %, rem, vw/vh, or fluid functions (clamp, min, max) instead',
+    excludePatterns: PX_EXCLUDE_PATTERNS,
+  },
+  {
+    id: 'no-legacy-vh',
+    pattern: /\b\d+vh\b/,
+    severity: 'warning',
+    message: 'Legacy vh unit detected',
+    suggestion: 'Use dvh/svh/lvh for better mobile support',
+    excludePatterns: [/\b\d+(?:dvh|svh|lvh)\b/],
+  },
+  {
+    id: 'font-size-rem',
+    pattern: /\bfont-size\s*:\s*[^;]*\d+px/i,
+    severity: 'warning',
+    message: 'Font size using px instead of rem',
+    suggestion: 'Use rem or clamp() for font sizes',
+  },
+]
+
+/** Extract <style> block content from a .vue file, with line offsets */
+function extractStyleBlocks(content: string): Array<{ css: string; startLine: number }> {
+  const blocks: Array<{ css: string; startLine: number }> = []
+  const regex = /<style[^>]*>([\s\S]*?)<\/style>/gi
+  let match: RegExpExecArray | null
+
+  while ((match = regex.exec(content)) !== null) {
+    const beforeMatch = content.slice(0, match.index)
+    const startLine = beforeMatch.split('\n').length
+    blocks.push({ css: match[1], startLine })
+  }
+
+  return blocks
+}
+
+/** Check if a line is a CSS comment or inside a comment-like context */
+function isCommentLine(line: string): boolean {
+  const trimmed = line.trim()
+  return trimmed.startsWith('//') || trimmed.startsWith('/*') || trimmed.startsWith('*')
+}
+
+/** Check if a line contains a CSS variable declaration (custom property) */
+function isVarDeclaration(line: string): boolean {
+  return /^\s*--/.test(line)
+}
+
+function analyzeCSS(
+  css: string,
+  filePath: string,
+  lineOffset: number,
+): AuditIssue[] {
+  const issues: AuditIssue[] = []
+  const lines = css.split('\n')
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i]
+    if (isCommentLine(line) || isVarDeclaration(line)) continue
+
+    for (const rule of CSS_RULES) {
+      if (!rule.pattern.test(line)) continue
+
+      // Check exclude patterns
+      if (rule.excludePatterns?.some((ep) => ep.test(line))) continue
+
+      issues.push({
+        severity: rule.severity,
+        message: rule.message,
+        file: filePath,
+        line: lineOffset + i,
+        rule: rule.id,
+        suggestion: rule.suggestion,
+      })
+    }
+  }
+
+  return issues
+}
+
+async function scanVueFiles(projectRoot: string): Promise<AuditIssue[]> {
+  const issues: AuditIssue[] = []
+  const srcDir = join(projectRoot, 'src')
+
+  try {
+    for await (const entry of glob('**/*.vue', { cwd: srcDir })) {
+      const fullPath = join(srcDir, entry)
+      const relPath = `src/${entry}`
+
+      let content: string
+      try {
+        content = await readFile(fullPath, 'utf-8')
+      } catch {
+        continue
+      }
+
+      const styleBlocks = extractStyleBlocks(content)
+      for (const block of styleBlocks) {
+        issues.push(...analyzeCSS(block.css, relPath, block.startLine))
+      }
+    }
+  } catch {
+    issues.push({
+      severity: 'info',
+      message: 'Could not scan src/ directory for Vue files',
+      rule: 'css-scan',
+    })
+  }
+
+  return issues
+}
+
+async function scanCSSFiles(projectRoot: string): Promise<AuditIssue[]> {
+  const issues: AuditIssue[] = []
+  const srcDir = join(projectRoot, 'src')
+
+  try {
+    for await (const entry of glob('**/*.css', { cwd: srcDir })) {
+      const fullPath = join(srcDir, entry)
+      const relPath = `src/${entry}`
+
+      let content: string
+      try {
+        content = await readFile(fullPath, 'utf-8')
+      } catch {
+        continue
+      }
+
+      issues.push(...analyzeCSS(content, relPath, 1))
+    }
+  } catch {
+    // Silently skip if no CSS files found
+  }
+
+  return issues
+}
+
+const cssAudit: AuditModule = {
+  name: 'css',
+
+  async run(options: AuditOptions): Promise<AuditResult> {
+    const start = Date.now()
+    const allIssues: AuditIssue[] = []
+
+    // Scan .vue <style> blocks
+    const vueIssues = await scanVueFiles(options.projectRoot)
+    allIssues.push(...vueIssues)
+
+    // Scan .css files
+    const cssIssues = await scanCSSFiles(options.projectRoot)
+    allIssues.push(...cssIssues)
+
+    // Determine status
+    const errorCount = allIssues.filter((i) => i.severity === 'error').length
+    const warningCount = allIssues.filter((i) => i.severity === 'warning').length
+    const infoCount = allIssues.filter((i) => i.severity === 'info').length
+
+    let status: AuditStatus = 'pass'
+    if (errorCount > 0) status = 'fail'
+    else if (warningCount > 0) status = 'warn'
+
+    const summary =
+      status === 'pass'
+        ? 'CSS conforms to project standards'
+        : `Found ${errorCount} error(s), ${warningCount} warning(s), ${infoCount} info(s)`
+
+    if (options.verbose && allIssues.length > 0) {
+      for (const issue of allIssues) {
+        const loc = issue.file ? ` (${issue.file}${issue.line ? `:${issue.line}` : ''})` : ''
+        console.log(`    [${issue.rule}] ${issue.message}${loc}`)
+      }
+    }
+
+    return {
+      module: 'css',
+      status,
+      issues: allIssues,
+      summary,
+      duration: Date.now() - start,
+    }
+  },
+}
+
+export default cssAudit
