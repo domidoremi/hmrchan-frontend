@@ -569,7 +569,7 @@ const videoPoster = computed(() => {
 const imageSrc = computed(() => {
   const m = primaryMedia.value
   if (!m) return ''
-  return getMediaStreamUrl(m.id)
+  return getMediaThumbnailUrl(m.id, 'large')
 })
 
 function close() {
@@ -979,7 +979,7 @@ function openDetail() {
 .post-preview-content {
   min-width: 0;
   min-height: 0;
-  overflow: hidden;
+  overflow: auto;
   display: flex;
   flex-direction: column;
   padding: var(--spacing-4);
@@ -1062,7 +1062,6 @@ function openDetail() {
     flex: 1;
     min-height: 0;
     padding-bottom: calc(var(--spacing-6) + env(safe-area-inset-bottom, 0px));
-    --preview-lines: 6;
   }
 
   .post-preview-action-bar {
@@ -1076,17 +1075,6 @@ function openDetail() {
   }
 }
 
-@media (min-width: 641px) and (max-width: 1023px) {
-  .post-preview-content {
-    --preview-lines: 8;
-  }
-}
-
-@media (min-width: 1024px) {
-  .post-preview-content {
-    --preview-lines: 10;
-  }
-}
 
 .post-preview-text {
   margin: 0;
@@ -1094,11 +1082,6 @@ function openDetail() {
   line-height: 1.6;
   color: var(--preview-text-primary);
   overflow-wrap: anywhere;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: var(--preview-lines, 10);
-  line-clamp: var(--preview-lines, 10);
-  overflow: hidden;
 }
 
 .post-preview-text--muted {
