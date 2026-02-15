@@ -137,7 +137,7 @@
 
           <aside class="post-panel">
             <header class="post-header">
-              <h1 class="post-title">{{ post?.title || '' }}</h1>
+              <h1 v-if="detailTitle" class="post-title">{{ detailTitle }}</h1>
               <p class="post-meta">
                 {{ $t('post.by') }}
                 <button
@@ -354,9 +354,19 @@ let postNavHintTimer: number | null = null
 const isLightboxOpen = ref(false)
 const lightboxInitialIndex = ref(0)
 
-// Long text → open in overlay modal (avoid nested scrollbars in panel)
+// Long text → open in overlay modal for comfortable reading
 const isTextModalOpen = ref(false)
 const shouldShowReadFullText = computed(() => (post.value?.description?.length ?? 0) > 280)
+
+// Hide title when it duplicates the description (many platforms only have body text)
+const detailTitle = computed(() => {
+  const title = (post.value?.title ?? '').trim()
+  const desc = (post.value?.description ?? '').trim()
+  if (!title) return ''
+  if (title === desc) return ''
+  if (desc && desc.startsWith(title)) return ''
+  return title
+})
 
 const publishedMeta = computed(() => {
   const publishedAt = post.value?.published_at
@@ -1217,7 +1227,7 @@ onUnmounted(() => {
   margin-inline: auto;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: clamp(16px, 2.4vw, 32px);
+  gap: clamp(1rem, 2.4vw, 2rem);
   align-items: start;
   transition: transform 180ms var(--ease-out);
 }
@@ -1233,7 +1243,7 @@ onUnmounted(() => {
 @media (min-width: 768px) {
   .post-shell {
     grid-template-columns: minmax(0, 1fr) clamp(320px, 32vw, 460px);
-    gap: clamp(20px, 3vw, 48px);
+    gap: clamp(1.25rem, 3vw, 3rem);
   }
 
   .post-panel {
@@ -1447,7 +1457,7 @@ onUnmounted(() => {
   background: var(--post-panel-bg);
   border-left: 1px solid var(--post-panel-border);
   backdrop-filter: blur(14px);
-  overflow: auto;
+  overflow: visible;
   display: flex;
   flex-direction: column;
   gap: var(--spacing-3);
@@ -1497,8 +1507,8 @@ onUnmounted(() => {
   }
 
   .post-description--clamped {
-    -webkit-line-clamp: 5;
-    line-clamp: 5;
+    -webkit-line-clamp: 8;
+    line-clamp: 8;
   }
 
   .thumbnail-btn {
@@ -1530,9 +1540,15 @@ onUnmounted(() => {
 }
 
 .post-title {
+  margin: 0;
   font-size: clamp(1.5rem, 2vw + 1rem, 2.4rem);
   font-weight: var(--font-semibold);
   overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
 }
 
 .post-meta {
@@ -1575,8 +1591,8 @@ onUnmounted(() => {
 
 .post-description--clamped {
   display: -webkit-box;
-  -webkit-line-clamp: 7;
-  line-clamp: 7;
+  -webkit-line-clamp: 12;
+  line-clamp: 12;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -1610,8 +1626,7 @@ onUnmounted(() => {
 }
 
 .post-text-panel {
-  width: min(780px, calc(100vw - 2 * var(--spacing-4)));
-  height: min(82svh, calc(100svh - 2 * var(--spacing-4)));
+  width: min(75ch, calc(100vw - 2 * var(--spacing-4)));
   height: min(82svh, calc(100dvh - 2 * var(--spacing-4)));
   border-radius: var(--radius-xl);
   overflow: hidden;
@@ -1659,9 +1674,11 @@ onUnmounted(() => {
 
 .post-text-content {
   margin: 0;
+  max-width: 65ch;
   color: var(--post-text-secondary);
+  font-size: clamp(0.9375rem, 1vw + 0.5rem, 1.0625rem);
   white-space: pre-wrap;
-  line-height: 1.6;
+  line-height: 1.75;
   overflow-wrap: anywhere;
 }
 
