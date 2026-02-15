@@ -148,7 +148,9 @@
             <div class="detail-row-content">
               <template v-if="detailEvent.is_all_day">
                 <span>{{ formatDetailDate(detailEvent.start_date) }}</span>
-                <template v-if="detailEvent.end_date && detailEvent.end_date !== detailEvent.start_date">
+                <template
+                  v-if="detailEvent.end_date && detailEvent.end_date !== detailEvent.start_date"
+                >
                   <span class="detail-separator">—</span>
                   <span>{{ formatDetailDate(detailEvent.end_date) }}</span>
                 </template>
@@ -181,11 +183,7 @@
           <!-- 描述 -->
           <div v-if="detailEvent.description" class="detail-description">
             <template v-if="parsedDescription.length > 0">
-              <div
-                v-for="(section, idx) in parsedDescription"
-                :key="idx"
-                class="desc-section"
-              >
+              <div v-for="(section, idx) in parsedDescription" :key="idx" class="desc-section">
                 <h4 v-if="section.heading" class="desc-heading">{{ section.heading }}</h4>
                 <p
                   v-for="(line, li) in section.lines"
@@ -805,13 +803,10 @@ function splitLines(text: string): string[] {
 }
 
 function linkify(text: string): string {
-  const escaped = text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
+  const escaped = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
   return escaped.replace(
     /(https?:\/\/[^\s<&]+)/g,
-    '<a href="$1" target="_blank" rel="noopener noreferrer" class="desc-link">$1</a>',
+    '<a href="$1" target="_blank" rel="noopener noreferrer" class="desc-link">$1</a>'
   )
 }
 
