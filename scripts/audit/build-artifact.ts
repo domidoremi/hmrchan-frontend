@@ -1,5 +1,5 @@
 import { readFile } from 'fs/promises'
-import { existsSync, readdirSync, statSync } from 'fs'
+import { existsSync, readdirSync } from 'fs'
 import { join } from 'path'
 import type { AuditModule, AuditIssue, AuditOptions, AuditResult, AuditStatus } from './types'
 
