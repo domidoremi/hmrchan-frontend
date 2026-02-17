@@ -46,13 +46,13 @@ let renderQuality = 2
 // ==================== 主题色 ====================
 
 function defaultRainColor(isDark: boolean): string {
-  return isDark ? '#94b8d4' : '#4a6178'
+  return isDark ? '#7cb5e3' : '#5b9bd5'
 }
 function defaultSnowColor(isDark: boolean): string {
-  return isDark ? '#dce5f0' : '#5a6a7a'
+  return isDark ? '#ffffff' : '#f0f4f8'
 }
 function defaultStarColor(isDark: boolean): string {
-  return isDark ? '#fcd87a' : '#a16207'
+  return isDark ? '#fcd87a' : '#d4a017'
 }
 
 function resolveColor(
@@ -428,11 +428,12 @@ const updateStars: Updater = (p, w, h, dt, cfg) => {
   if (p.y < -10) p.y = h + 10
   if (p.y > h + 10) p.y = -10
 
-  const freq = [0.003, 0.006, 0.012][p.depth]!
+  const freq = [0.005, 0.01, 0.018][p.depth]!
   p.phase += freq * cfg.speed * dt
-  const baseAlpha = ([0.18, 0.4, 0.62][p.depth]! + p.size * 0.05) * cfg.opacity
-  const twinkle = p.depth === 0 ? 0.25 : p.depth === 1 ? 0.4 : 0.55
-  p.alpha = baseAlpha * (1 - twinkle + twinkle * Math.sin(p.phase))
+  const baseAlpha = ([0.22, 0.48, 0.72][p.depth]! + p.size * 0.05) * cfg.opacity
+  const twinkle = p.depth === 0 ? 0.45 : p.depth === 1 ? 0.65 : 0.85
+  const flicker = Math.sin(p.phase) * Math.sin(p.phase * 2.3 + p.rot) // 双频闪烁
+  p.alpha = baseAlpha * (1 - twinkle + twinkle * (0.5 + 0.5 * flicker))
 
   // Shooting star: randomly boost a depth-2 star's velocity
   if (p.depth === 2 && p.splash === 0) {
@@ -525,6 +526,19 @@ const renderStars: Renderer = (ctx, p, cfg, isDark) => {
 
   if (renderQuality >= 1 && p.depth >= 1) {
     drawStarSparkle(ctx, p.x, p.y, p.size, color, alpha * 0.6)
+  }
+
+  // 星星辉光效果
+  if (renderQuality >= 1 && p.depth >= 1 && alpha > 0.35) {
+    const glowRadius = p.size * (p.depth === 2 ? 4.5 : 3)
+    const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, glowRadius)
+    grad.addColorStop(0, withAlpha(color, alpha * 0.3))
+    grad.addColorStop(0.5, withAlpha(color, alpha * 0.08))
+    grad.addColorStop(1, withAlpha(color, 0))
+    ctx.fillStyle = grad
+    ctx.beginPath()
+    ctx.arc(p.x, p.y, glowRadius, 0, Math.PI * 2)
+    ctx.fill()
   }
 }
 

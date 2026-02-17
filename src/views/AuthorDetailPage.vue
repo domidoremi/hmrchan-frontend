@@ -6,10 +6,10 @@
       <template v-else>
         <div class="author-header glass-card">
           <template v-if="isLoading">
-            <div class="author-avatar skeleton" />
+            <Skeleton variant="avatar" width="80px" height="80px" />
             <div class="author-info">
-              <div class="skeleton" style="height: 1.75rem; width: 12.5rem" />
-              <div class="skeleton" style="height: 1rem; width: 7.5rem; margin-top: 0.5rem" />
+              <Skeleton width="12.5rem" height="1.75rem" />
+              <Skeleton width="7.5rem" height="1rem" />
             </div>
           </template>
 
@@ -37,7 +37,7 @@
         <div class="posts-grid">
           <template v-if="isLoading">
             <div v-for="i in 6" :key="i" class="post-card glass-card">
-              <div class="post-image skeleton" style="aspect-ratio: 1 / 1" />
+              <Skeleton variant="image" width="100%" />
             </div>
           </template>
 
@@ -70,6 +70,7 @@ import { normalizeAvatarUrl } from '@/api/userService'
 import { authorCache } from '@/utils/cache'
 import { storePostNavigationContext } from '@/utils/postNavigation'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
+import Skeleton from '@/components/ui/Skeleton.vue'
 import PostCard from '@/components/business/PostCard.vue'
 
 const route = useRoute()

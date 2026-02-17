@@ -91,10 +91,10 @@
         <div class="search-results">
           <div v-if="isLoading && results.length === 0" class="results-loading">
             <div v-for="i in 6" :key="i" class="result-skeleton glass-card">
-              <div class="skeleton" style="aspect-ratio: 16/9; border-radius: var(--radius-md)" />
+              <Skeleton variant="image" />
               <div class="skeleton-content">
-                <div class="skeleton" style="height: 18px; width: 80%" />
-                <div class="skeleton" style="height: 14px; width: 50%" />
+                <Skeleton width="80%" height="18px" />
+                <Skeleton width="50%" height="14px" />
               </div>
             </div>
           </div>
@@ -142,10 +142,10 @@
           <template v-else-if="activeTab === 'authors'">
             <div v-if="isLoadingAuthors && authors.length === 0" class="results-loading">
               <div v-for="i in 4" :key="i" class="author-skeleton glass-card">
-                <div class="skeleton" style="width: 56px; height: 56px; border-radius: 50%" />
+                <Skeleton variant="avatar" width="56px" height="56px" />
                 <div class="skeleton-content">
-                  <div class="skeleton" style="height: 18px; width: 60%" />
-                  <div class="skeleton" style="height: 14px; width: 40%" />
+                  <Skeleton width="60%" height="18px" />
+                  <Skeleton width="40%" height="14px" />
                 </div>
               </div>
             </div>
@@ -233,10 +233,10 @@
 
           <div v-if="isDiscoverLoading" class="results-loading">
             <div v-for="i in 6" :key="`discover-skeleton-${i}`" class="result-skeleton glass-card">
-              <div class="skeleton" style="aspect-ratio: 16/9; border-radius: var(--radius-md)" />
+              <Skeleton variant="image" />
               <div class="skeleton-content">
-                <div class="skeleton" style="height: 18px; width: 80%" />
-                <div class="skeleton" style="height: 14px; width: 50%" />
+                <Skeleton width="80%" height="18px" />
+                <Skeleton width="50%" height="14px" />
               </div>
             </div>
           </div>
@@ -289,6 +289,7 @@ import StateIndicator from '@/components/ui/StateIndicator.vue'
 import Select from '@/components/ui/Select.vue'
 import PostCard from '@/components/business/PostCard.vue'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
+import Skeleton from '@/components/ui/Skeleton.vue'
 
 const route = useRoute()
 const router = useRouter()

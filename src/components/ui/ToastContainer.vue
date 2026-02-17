@@ -20,13 +20,14 @@
             zIndex: visibleToasts.length - index,
           }"
           role="alert"
-          @mouseenter="pauseTimer(toast.id)"
-          @mouseleave="resumeTimer(toast.id)"
+          @mouseenter="handlePause(toast.id)"
+          @mouseleave="handleResume(toast.id)"
         >
           <!-- Progress Bar Background (Subtle) -->
           <div
             v-if="toast.duration && toast.duration > 0 && index === 0"
             class="toast-progress-bg"
+            :class="{ 'toast-progress-bg--paused': isPaused(toast.id) }"
             :style="{ animationDuration: `${toast.duration}ms` }"
           />
 
@@ -70,7 +71,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { CheckCircle, XCircle, AlertTriangle, Info, X, Bell } from 'lucide-vue-next'
 import { useToastStore, type Toast } from '@/stores'
@@ -92,7 +93,26 @@ const { position = 'top-right' } = defineProps<Props>()
 
 const toastStore = useToastStore()
 const { toasts } = storeToRefs(toastStore)
-const { removeToast, pauseTimer, resumeTimer } = toastStore
+const { removeToast } = toastStore
+
+/** 记录哪些 toast 的进度条处于暂停状态 */
+const pausedIds = ref(new Set<string>())
+
+function handlePause(id: string) {
+  pausedIds.value = new Set([...pausedIds.value, id])
+  toastStore.pauseTimer(id)
+}
+
+function handleResume(id: string) {
+  const next = new Set(pausedIds.value)
+  next.delete(id)
+  pausedIds.value = next
+  toastStore.resumeTimer(id)
+}
+
+function isPaused(id: string): boolean {
+  return pausedIds.value.has(id)
+}
 
 // Only show top 5 toasts to prevent DOM clutter, but stack visuals handle top 3 best
 const visibleToasts = computed(() => {
@@ -330,6 +350,10 @@ function handleAction(toast: Toast) {
   animation: toast-timer linear forwards;
 }
 
+.toast-progress-bg--paused {
+  animation-play-state: paused;
+}
+
 .toast-card--success .toast-progress-bg {
   background: var(--color-success);
 }
@@ -359,14 +383,22 @@ function handleAction(toast: Toast) {
   transition: all 350ms cubic-bezier(0.32, 0.72, 0, 1);
 }
 
+.toast-stack-leave-active {
+  pointer-events: none;
+}
+
 .toast-stack-enter-from {
-  opacity: 0;
-  transform: translateX(24px) scale(0.96);
+  --opacity: 0;
+  --offset: 0px;
+  --scale: 0.96;
+  translate: 24px 0;
 }
 
 .toast-stack-leave-to {
-  opacity: 0;
-  transform: translateX(24px) scale(0.96);
+  --opacity: 0;
+  --offset: 0px;
+  --scale: 0.96;
+  translate: 24px 0;
 }
 
 /* Mobile */
@@ -404,11 +436,11 @@ function handleAction(toast: Toast) {
 
   /* Mobile enter: slide in from top */
   .toast-stack-enter-from {
-    transform: translateY(-16px) scale(0.96);
+    translate: 0 -16px;
   }
 
   .toast-stack-leave-to {
-    transform: translateY(-16px) scale(0.96);
+    translate: 0 -16px;
   }
 }
 

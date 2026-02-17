@@ -122,7 +122,7 @@
             <div class="user-email">{{ user?.email }}</div>
           </div>
         </div>
-        <div class="dropdown-divider" />
+        <Separator />
         <div class="dropdown-links">
           <RouterLink to="/profile" class="dropdown-link" @click="showUserMenu = false">
             <div class="dropdown-link-icon">
@@ -183,7 +183,7 @@
             />
           </RouterLink>
         </div>
-        <div class="dropdown-divider" />
+        <Separator />
         <div class="dropdown-links">
           <button class="dropdown-link dropdown-link--danger" @click="handleLogout">
             <div class="dropdown-link-icon dropdown-link-icon--danger">
@@ -248,6 +248,7 @@ import { throttleRAF, scheduleDOMUpdate, prefersReducedMotion } from '@/utils/pe
 import { useNavigation, registerPrefetchFunction } from '@/composables/useNavigation'
 import type { NavigationItem } from '@/config/navigation'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
+import Separator from '@/components/ui/Separator.vue'
 
 // 懒加载设置面板，减少首屏 JS
 const SettingsPanel = defineAsyncComponent(() => import('./SettingsPanel.vue'))

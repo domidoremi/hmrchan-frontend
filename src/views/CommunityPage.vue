@@ -244,8 +244,8 @@
             <article v-for="i in 6" :key="i" class="topic-card glass-card">
               <div class="topic-rank">#{{ i }}</div>
               <div class="topic-content">
-                <div class="skeleton" style="height: 20px; width: 80%" />
-                <div class="skeleton" style="height: 14px; width: 50%; margin-top: 8px" />
+                <Skeleton width="80%" height="20px" />
+                <Skeleton width="50%" height="14px" />
               </div>
             </article>
           </div>
@@ -303,6 +303,7 @@ import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import Button from '@/components/ui/Button.vue'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
+import Skeleton from '@/components/ui/Skeleton.vue'
 import DiscussionComposer from '@/components/community/DiscussionComposer.vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import Dialog from '@/components/ui/Dialog.vue'

@@ -22,7 +22,9 @@ export interface Toast {
 export const useToastStore = defineStore('toast', () => {
   const toasts = ref<Toast[]>([])
   const timeoutIds = new Map<string, ReturnType<typeof setTimeout>>()
-  const pausedToasts = new Set<string>()
+  /** 记录每个 toast 的剩余时间和暂停时刻 */
+  const remainingTime = new Map<string, number>()
+  const pauseStartTime = new Map<string, number>()
 
   function addToast(
     type: Toast['type'],
@@ -42,6 +44,7 @@ export const useToastStore = defineStore('toast', () => {
     toasts.value.push(toast)
 
     if (duration > 0) {
+      remainingTime.set(id, duration)
       const timeoutId = setTimeout(() => {
         removeToast(id)
       }, duration)
@@ -59,7 +62,8 @@ export const useToastStore = defineStore('toast', () => {
       timeoutIds.delete(id)
     }
 
-    pausedToasts.delete(id)
+    remainingTime.delete(id)
+    pauseStartTime.delete(id)
 
     const index = toasts.value.findIndex((t) => t.id === id)
     if (index !== -1) {
@@ -71,21 +75,26 @@ export const useToastStore = defineStore('toast', () => {
     const timeoutId = timeoutIds.get(id)
     if (timeoutId) {
       clearTimeout(timeoutId)
-      pausedToasts.add(id)
+      timeoutIds.delete(id)
+      pauseStartTime.set(id, Date.now())
     }
   }
 
   function resumeTimer(id: string) {
-    if (!pausedToasts.has(id)) return
+    if (!pauseStartTime.has(id)) return
 
-    const toast = toasts.value.find((t) => t.id === id)
-    if (toast && toast.duration > 0) {
-      const timeoutId = setTimeout(() => {
-        removeToast(id)
-      }, toast.duration)
-      timeoutIds.set(id, timeoutId)
-      pausedToasts.delete(id)
-    }
+    const pausedAt = pauseStartTime.get(id)!
+    const remaining = remainingTime.get(id) ?? 0
+    const elapsed = Date.now() - pausedAt
+    const left = Math.max(remaining - elapsed, 100)
+
+    pauseStartTime.delete(id)
+    remainingTime.set(id, left)
+
+    const timeoutId = setTimeout(() => {
+      removeToast(id)
+    }, left)
+    timeoutIds.set(id, timeoutId)
   }
 
   function success(message: string, duration?: number, options?: { title?: string }) {
@@ -112,7 +121,8 @@ export const useToastStore = defineStore('toast', () => {
     // 清理所有定时器
     timeoutIds.forEach((timeoutId) => clearTimeout(timeoutId))
     timeoutIds.clear()
-    pausedToasts.clear()
+    remainingTime.clear()
+    pauseStartTime.clear()
     toasts.value = []
   }
 
