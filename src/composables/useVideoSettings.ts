@@ -4,6 +4,7 @@
  */
 
 import { ref, watch } from 'vue'
+import { safeJsonParse } from '@/utils/security'
 
 export interface VideoSettings {
   /** 音量 (0-1) */
@@ -35,9 +36,11 @@ const defaultSettings: VideoSettings = {
 // 从 localStorage 加载设置
 function loadSettings(): VideoSettings {
   try {
+    if (typeof localStorage === 'undefined') return { ...defaultSettings }
     const stored = localStorage.getItem(STORAGE_KEY)
     const parsed = stored ? safeJsonParse<Partial<VideoSettings>>(stored) : null
-    const sessionBrightness = sessionStorage.getItem(BRIGHTNESS_SESSION_KEY)
+    const sessionBrightness =
+      typeof sessionStorage !== 'undefined' ? sessionStorage.getItem(BRIGHTNESS_SESSION_KEY) : null
     const brightness = sessionBrightness !== null ? Number(sessionBrightness) : Number.NaN
 
     return {

@@ -14,9 +14,9 @@
 
     <div v-else-if="isLoading && favorites.length === 0" class="posts-grid">
       <div v-for="i in 6" :key="i" class="post-card glass-card">
-        <div class="post-image skeleton" style="aspect-ratio: 1" />
+        <Skeleton variant="image" width="100%" />
         <div class="post-content">
-          <div class="skeleton" style="height: 18px; width: 80%" />
+          <Skeleton width="80%" height="18px" />
         </div>
       </div>
     </div>
@@ -108,6 +108,7 @@ import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import { useProgressiveRender } from '@/composables/useProgressiveRender'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
+import Skeleton from '@/components/ui/Skeleton.vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 
 const router = useRouter()
