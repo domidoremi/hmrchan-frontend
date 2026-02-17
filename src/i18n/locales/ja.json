@@ -232,16 +232,16 @@
     },
     "quickStart": {
       "title": "クイックスタート",
-      "subtitle": "探索から始めて、キーワード検索で見つけて、クリエイターを発見し、お気に入りを保存。"
+      "subtitle": "コンテンツを探索し、クリエイターを発見し、お気に入りを保存。"
     },
     "bento": {
-      "featureTitle": "数秒で探索を開始",
-      "featureSubtitle": "最新投稿をチェックし、クリエイターを見つけ、自分だけのコレクションに。",
-      "searchMeta": "キーワード・タグ・作者をまとめて検索",
-      "communityMeta": "お知らせとディスカッション",
-      "authorsMeta": "プラットフォーム別に作者を探す",
-      "favoritesMeta": "保存して後で見返す",
-      "favoritesMetaGuest": "ログインしてお気に入りを保存"
+      "featureTitle": "探索を開始",
+      "featureSubtitle": "最新コンテンツとクリエイターを発見",
+      "searchMeta": "キーワード · タグ · 作者",
+      "communityMeta": "お知らせと議論",
+      "authorsMeta": "クリエイターを探す",
+      "favoritesMeta": "保存を見返す",
+      "favoritesMetaGuest": "ログインして保存"
     },
     "latest": "最新",
     "popular": "人気"
