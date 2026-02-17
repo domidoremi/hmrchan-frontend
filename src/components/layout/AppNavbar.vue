@@ -346,14 +346,16 @@ const { avatarUrl: userAvatar } = useUserAvatar()
 // 移动端滑动指示器样式
 const mobileIndicatorStyle = computed(() => {
   const index = activeMobileIndex.value
+  const count = mobileNavItems.value.length || 5
   if (index === -1) {
-    return { opacity: '0', transform: 'translateX(0)' }
+    return { opacity: '0', translate: '0 0' }
   }
-  // 每个导航项占 20% 宽度，指示器居中
-  const position = index * 20 + 10 // 10% 是半个导航项宽度
+  // 每个导航项占 1/count 宽度，指示器居中于该项
+  const pct = ((index + 0.5) / count) * 100
   return {
     opacity: '1',
-    transform: `translateX(calc(${position}vw - 50%))`,
+    left: `${pct}%`,
+    translate: '-50% 0',
   }
 })
 
@@ -908,6 +910,8 @@ onUnmounted(() => {
   font-size: var(--text-sm);
   color: var(--color-on-primary);
   text-decoration: none;
+  gap: var(--spacing-2);
+  white-space: nowrap;
 }
 
 .login-btn:hover,
@@ -917,6 +921,18 @@ onUnmounted(() => {
 .login-btn.router-link-active,
 .login-btn.router-link-exact-active {
   color: var(--color-on-primary);
+}
+
+@media (max-width: 768px) {
+  .login-btn {
+    padding: var(--spacing-2);
+    border-radius: var(--ui-radius-button, var(--radius-lg));
+    min-width: var(--ui-action-size, 40px);
+    min-height: var(--ui-action-size, 40px);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
 }
 
 /* ========== User Button ========== */
@@ -1121,14 +1137,15 @@ onUnmounted(() => {
   position: absolute;
   top: 0;
   left: 0;
-  width: 48px;
+  width: 32px;
   height: 3px;
-  background: var(--gradient-primary);
-  border-radius: 0 0 4px 4px;
+  background: var(--color-primary);
+  border-radius: 0 0 3px 3px;
   transition:
-    transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+    left 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
     opacity 0.2s ease;
-  box-shadow: 0 2px 8px rgba(var(--color-primary-rgb), 0.4);
+  box-shadow: 0 1px 6px rgba(var(--color-primary-rgb), 0.35);
+  pointer-events: none;
 }
 
 .mobile-nav:not(.mobile-nav--animated) .mobile-nav-indicator {

@@ -232,16 +232,16 @@
     },
     "quickStart": {
       "title": "快速开始",
-      "subtitle": "从探索开始，按关键词搜索，发现创作者，并收藏你喜欢的内容。"
+      "subtitle": "探索内容、发现创作者、收藏你喜欢的。"
     },
     "bento": {
-      "featureTitle": "几秒开启探索",
-      "featureSubtitle": "浏览最新内容、发现创作者，打造你的专属收藏。",
-      "searchMeta": "支持关键词、标签、作者",
-      "communityMeta": "查看公告与讨论",
-      "authorsMeta": "按平台与热度发现创作者",
-      "favoritesMeta": "收藏内容，随时回看",
-      "favoritesMetaGuest": "登录后开始收藏"
+      "featureTitle": "开始探索",
+      "featureSubtitle": "发现最新内容与创作者",
+      "searchMeta": "关键词 · 标签 · 作者",
+      "communityMeta": "公告与讨论",
+      "authorsMeta": "发现创作者",
+      "favoritesMeta": "随时回看收藏",
+      "favoritesMetaGuest": "登录后收藏"
     },
     "latest": "最新发布",
     "popular": "热门推荐"

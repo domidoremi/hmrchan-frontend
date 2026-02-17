@@ -232,16 +232,16 @@
     },
     "quickStart": {
       "title": "Quick start",
-      "subtitle": "Jump into Explore, search by keywords, discover creators, and save what you love."
+      "subtitle": "Explore content, discover creators, save your favorites."
     },
     "bento": {
-      "featureTitle": "Start exploring in seconds",
-      "featureSubtitle": "Browse the latest posts, discover creators, and build your personal collection.",
-      "searchMeta": "Keywords, tags, and creators in one place",
-      "communityMeta": "Announcements and discussions",
-      "authorsMeta": "Browse creators by platform and popularity",
-      "favoritesMeta": "Save posts and revisit anytime",
-      "favoritesMetaGuest": "Log in to start saving favorites"
+      "featureTitle": "Start exploring",
+      "featureSubtitle": "Discover latest content & creators",
+      "searchMeta": "Keywords · Tags · Creators",
+      "communityMeta": "News & Discussions",
+      "authorsMeta": "Discover creators",
+      "favoritesMeta": "Revisit saved posts",
+      "favoritesMetaGuest": "Log in to save"
     },
     "latest": "Latest Posts",
     "popular": "Popular"
