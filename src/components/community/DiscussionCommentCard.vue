@@ -8,15 +8,15 @@
       <img :src="avatarUrl" :alt="comment.user.username" class="comment-avatar" />
       <div class="comment-meta">
         <span class="comment-author">{{ comment.user.username }}</span>
-        <span v-if="isThreadOwner" class="comment-badge thread-owner">{{
+        <Badge v-if="isThreadOwner" variant="success" size="sm">{{
           $t('comment.threadOwner')
-        }}</span>
-        <span v-if="comment.is_pinned" class="comment-badge pinned">{{
+        }}</Badge>
+        <Badge v-if="comment.is_pinned" variant="warning" size="sm">{{
           $t('comment.pinned')
-        }}</span>
-        <span v-if="comment.is_featured" class="comment-badge featured">{{
+        }}</Badge>
+        <Badge v-if="comment.is_featured" variant="default" size="sm">{{
           $t('comment.featured')
-        }}</span>
+        }}</Badge>
         <span class="comment-time">{{ formatTime(comment.created_at) }}</span>
       </div>
 
@@ -197,6 +197,7 @@ import Button from '@/components/ui/Button.vue'
 import Textarea from '@/components/ui/Textarea.vue'
 import Select from '@/components/ui/Select.vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
+import Badge from '@/components/ui/Badge.vue'
 
 interface Props {
   comment: DiscussionComment

@@ -17,10 +17,10 @@
       <template v-else>
         <div v-if="isLoading && authors.length === 0" class="authors-grid">
           <div v-for="i in 8" :key="i" class="author-card glass-card">
-            <div class="author-avatar skeleton" />
+            <Skeleton variant="avatar" width="64px" height="64px" />
             <div class="author-info">
-              <div class="skeleton" style="height: 20px; width: 60%" />
-              <div class="skeleton" style="height: 14px; width: 40%; margin-top: 8px" />
+              <Skeleton width="60%" height="20px" />
+              <Skeleton width="40%" height="14px" />
             </div>
           </div>
         </div>
@@ -83,6 +83,7 @@ import { authorCache } from '@/utils/cache'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
+import Skeleton from '@/components/ui/Skeleton.vue'
 
 const router = useRouter()
 

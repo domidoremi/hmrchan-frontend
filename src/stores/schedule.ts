@@ -19,13 +19,16 @@ export const useScheduleStore = defineStore(
 
     /** 是否有新日程（未读标识） */
     const hasNew = computed(() => {
-      if (!lastVisitedAt.value || !latestEventTime.value) return false
+      if (!latestEventTime.value) return false
+      if (!lastVisitedAt.value) return true
       return new Date(latestEventTime.value) > new Date(lastVisitedAt.value)
     })
 
-    /** 标记已访问 */
+    /** 标记已访问，确保 hasNew 变为 false */
     function markVisited() {
-      lastVisitedAt.value = new Date().toISOString()
+      const now = new Date()
+      const latest = latestEventTime.value ? new Date(latestEventTime.value) : now
+      lastVisitedAt.value = new Date(Math.max(now.getTime(), latest.getTime())).toISOString()
     }
 
     /** 检查是否有新日程（轻量级，仅取最近1条） */

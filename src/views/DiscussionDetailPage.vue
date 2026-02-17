@@ -10,9 +10,9 @@
 
       <div v-else>
         <div v-if="isLoading" class="discussion-skeleton glass-card">
-          <div class="skeleton" style="height: 1.75rem; width: 60%; margin-bottom: 0.75rem" />
-          <div class="skeleton" style="height: 1rem; width: 40%; margin-bottom: 1rem" />
-          <div class="skeleton" style="height: 7.5rem; width: 100%" />
+          <Skeleton variant="title" width="60%" />
+          <Skeleton width="40%" height="1rem" />
+          <Skeleton width="100%" height="7.5rem" />
         </div>
 
         <article v-else-if="discussion" class="discussion-card glass-card">
@@ -142,6 +142,7 @@ import { normalizeToThumbnailUrl } from '@/utils/mediaOptimizer'
 import { formatRelativeTime } from '@/utils/date'
 import Button from '@/components/ui/Button.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
+import Skeleton from '@/components/ui/Skeleton.vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import DiscussionCommentList from '@/components/community/DiscussionCommentList.vue'
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'

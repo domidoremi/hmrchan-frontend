@@ -112,14 +112,18 @@
         </div>
 
         <div class="post-stats">
-          <span v-if="post.view_count" class="post-stat" :title="$t('post.views')">
-            <AnimatedIcon name="explore" :fallback-icon="Eye" size="sm" />
-            {{ formatCount(post.view_count) }}
-          </span>
-          <span v-if="post.like_count" class="post-stat" :title="$t('post.likes')">
-            <AnimatedIcon name="heart" :fallback-icon="Heart" size="sm" />
-            {{ formatCount(post.like_count) }}
-          </span>
+          <Tooltip v-if="post.view_count" :content="$t('post.views')">
+            <span class="post-stat">
+              <AnimatedIcon name="explore" :fallback-icon="Eye" size="sm" />
+              {{ formatCount(post.view_count) }}
+            </span>
+          </Tooltip>
+          <Tooltip v-if="post.like_count" :content="$t('post.likes')">
+            <span class="post-stat">
+              <AnimatedIcon name="heart" :fallback-icon="Heart" size="sm" />
+              {{ formatCount(post.like_count) }}
+            </span>
+          </Tooltip>
         </div>
       </div>
     </div>
@@ -153,6 +157,7 @@ import {
 import { thumbnailCache } from '@/utils/thumbnailCache'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import Avatar from '@/components/ui/Avatar.vue'
+import Tooltip from '@/components/ui/Tooltip.vue'
 
 /**
  * 固定宽高比缓存 - 用于保持布局稳定，避免 CLS

@@ -9,10 +9,10 @@
 
     <div v-else-if="isLoading && comments.length === 0" class="comments-skeleton">
       <div v-for="i in 5" :key="i" class="comment-skeleton glass-card">
-        <div class="skeleton" style="height: 40px; width: 40px; border-radius: 50%" />
+        <Skeleton variant="avatar" />
         <div style="flex: 1">
-          <div class="skeleton" style="height: 16px; width: 30%; margin-bottom: 8px" />
-          <div class="skeleton" style="height: 14px; width: 100%" />
+          <Skeleton width="30%" height="16px" />
+          <Skeleton width="100%" height="14px" />
         </div>
       </div>
     </div>
@@ -93,6 +93,7 @@ import { useToastStore } from '@/stores'
 import { formatRelativeTime } from '@/utils/date'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
+import Skeleton from '@/components/ui/Skeleton.vue'
 import { defineAsyncComponent } from 'vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 

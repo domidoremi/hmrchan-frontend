@@ -5,12 +5,16 @@
       <img :src="avatarUrl" :alt="getUserDisplayName(comment.user)" class="comment-avatar" />
       <div class="comment-meta">
         <span class="comment-author">{{ getUserDisplayName(comment.user) }}</span>
-        <span v-if="comment.is_thread_owner" class="floor-badge">{{
+        <Badge v-if="comment.is_thread_owner" variant="success" size="sm">{{
           $t('comment.threadOwner')
-        }}</span>
-        <span v-if="userLevelBadge" class="user-level-badge" :class="comment.user.level">
+        }}</Badge>
+        <Badge
+          v-if="userLevelBadge"
+          :variant="comment.user.level === 'admin' ? 'destructive' : 'secondary'"
+          size="sm"
+        >
           {{ userLevelBadge }}
-        </span>
+        </Badge>
         <span class="comment-time">{{ formatTime(comment.created_at) }}</span>
       </div>
 
@@ -165,6 +169,7 @@ import { formatRelativeTime } from '@/utils/date'
 import CommentForm from './CommentForm.vue'
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
+import Badge from '@/components/ui/Badge.vue'
 
 interface Props {
   comment: Comment

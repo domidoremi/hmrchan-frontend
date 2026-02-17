@@ -11,11 +11,11 @@
       <div v-for="i in 5" :key="i" class="comment-skeleton glass-card">
         <div class="skeleton-content">
           <div class="skeleton-header">
-            <div class="skeleton" style="height: 14px; width: 80px" />
-            <div class="skeleton" style="height: 14px; width: 60px" />
+            <Skeleton width="80px" height="14px" />
+            <Skeleton width="60px" height="14px" />
           </div>
-          <div class="skeleton" style="height: 16px; width: 100%; margin: 12px 0" />
-          <div class="skeleton" style="height: 14px; width: 70%" />
+          <Skeleton width="100%" height="16px" />
+          <Skeleton width="70%" height="14px" />
         </div>
       </div>
     </div>
@@ -116,6 +116,7 @@ import { useToastStore } from '@/stores'
 import { formatRelativeTime } from '@/utils/date'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
+import Skeleton from '@/components/ui/Skeleton.vue'
 import { defineAsyncComponent } from 'vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 

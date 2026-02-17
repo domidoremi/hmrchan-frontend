@@ -20,21 +20,21 @@
         <div class="settings-skeleton">
           <div class="settings-section glass-card">
             <div class="skeleton-header">
-              <div class="skeleton" style="height: 20px; width: 100px" />
+              <Skeleton width="100px" height="20px" />
             </div>
             <div class="skeleton-avatar-section">
-              <div class="skeleton skeleton-avatar" />
-              <div class="skeleton" style="height: 40px; width: 140px; border-radius: 8px" />
+              <Skeleton variant="avatar" width="80px" height="80px" />
+              <Skeleton width="140px" height="40px" />
             </div>
           </div>
           <div class="settings-section glass-card">
             <div class="skeleton-header">
-              <div class="skeleton" style="height: 20px; width: 120px" />
+              <Skeleton width="120px" height="20px" />
             </div>
             <div class="skeleton-form">
-              <div class="skeleton" style="height: 48px; width: 100%; border-radius: 12px" />
-              <div class="skeleton" style="height: 48px; width: 100%; border-radius: 12px" />
-              <div class="skeleton" style="height: 100px; width: 100%; border-radius: 12px" />
+              <Skeleton width="100%" height="48px" />
+              <Skeleton width="100%" height="48px" />
+              <Skeleton width="100%" height="100px" />
             </div>
           </div>
         </div>
@@ -520,6 +520,7 @@ import Button from '@/components/ui/Button.vue'
 import Input from '@/components/ui/Input.vue'
 import Textarea from '@/components/ui/Textarea.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
+import Skeleton from '@/components/ui/Skeleton.vue'
 import { defineAsyncComponent } from 'vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import ProfileSubPageHeader from '@/components/profile/ProfileSubPageHeader.vue'

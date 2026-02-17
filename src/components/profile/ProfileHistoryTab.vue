@@ -13,10 +13,10 @@
 
     <div v-else-if="isLoading && history.length === 0" class="history-skeleton">
       <div v-for="i in 5" :key="i" class="history-item glass-card">
-        <div class="skeleton" style="height: 60px; width: 60px; border-radius: 8px" />
+        <Skeleton width="60px" height="60px" />
         <div style="flex: 1">
-          <div class="skeleton" style="height: 18px; width: 70%; margin-bottom: 8px" />
-          <div class="skeleton" style="height: 14px; width: 40%" />
+          <Skeleton width="70%" height="18px" />
+          <Skeleton width="40%" height="14px" />
         </div>
       </div>
     </div>
@@ -93,6 +93,7 @@ import { formatRelativeTime } from '@/utils/date'
 import Button from '@/components/ui/Button.vue'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
+import Skeleton from '@/components/ui/Skeleton.vue'
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 

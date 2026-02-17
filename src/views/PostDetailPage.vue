@@ -38,9 +38,9 @@
           </div>
         </div>
         <aside class="post-panel">
-          <div class="skeleton" style="height: 32px; width: 70%" />
-          <div class="skeleton" style="height: 20px; width: 40%" />
-          <div class="skeleton" style="height: 100px" />
+          <Skeleton width="70%" height="32px" />
+          <Skeleton width="40%" height="20px" />
+          <Skeleton height="100px" />
         </aside>
       </div>
 
@@ -274,6 +274,7 @@ import {
 } from '@/utils/postNavigation'
 import { prefetchPostDetail } from '@/utils/prefetch'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
+import Skeleton from '@/components/ui/Skeleton.vue'
 import VideoPlayer from '@/components/ui/VideoPlayer.vue'
 import { defineAsyncComponent } from 'vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
