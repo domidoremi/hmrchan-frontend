@@ -47,91 +47,89 @@
       <template v-else-if="post">
         <div class="post-shell" :class="peekDirection ? `is-peeking-${peekDirection}` : undefined">
           <div class="post-media">
-            <div class="media-stage">
-              <div
-                v-if="post.media_files && post.media_files.length > 0"
-                class="media-viewer"
-                :style="activeMediaViewerStyle"
+            <div
+              v-if="post.media_files && post.media_files.length > 0"
+              class="media-viewer"
+              :style="activeMediaViewerStyle"
+            >
+              <button
+                v-if="hasMultipleMedia"
+                type="button"
+                class="media-nav prev"
+                :aria-label="$t('common.previous')"
+                :disabled="!canGoPrevMedia"
+                @click="prevMedia"
               >
-                <button
-                  v-if="hasMultipleMedia"
-                  type="button"
-                  class="media-nav prev"
-                  :aria-label="$t('common.previous')"
-                  :disabled="!canGoPrevMedia"
-                  @click="prevMedia"
-                >
-                  <AnimatedIcon name="explore" :fallback-icon="ChevronLeft" size="md" />
-                </button>
+                <AnimatedIcon name="explore" :fallback-icon="ChevronLeft" size="md" />
+              </button>
 
-                <Transition :name="mediaTransitionName" mode="out-in">
-                  <div
-                    v-if="activeMedia?.file_type === 'image'"
-                    :key="`img-${activeMedia.id}`"
-                    class="media-item-container media-clickable"
-                    @click="openLightbox()"
-                  >
-                    <!-- 模糊占位图 -->
-                    <img
-                      v-if="!isMediaLoaded && placeholderSrc"
-                      class="media-placeholder"
-                      :src="placeholderSrc"
-                      :alt="post?.title || ''"
-                      aria-hidden="true"
-                    />
-                    <!-- 原图 -->
-                    <img
-                      class="media-viewer-item"
-                      :class="{ 'is-loaded': isMediaLoaded }"
-                      :src="getMediaStreamUrl(activeMedia.id)"
-                      :alt="post?.title || ''"
-                      fetchpriority="high"
-                      @load="onMediaLoad"
-                    />
-                    <!-- 点击提示 -->
-                    <div class="media-zoom-hint">
-                      <span class="zoom-icon">🔍</span>
-                      {{ $t('common.clickToEnlarge') }}
-                    </div>
-                  </div>
-                  <VideoPlayer
-                    v-else-if="activeMedia?.file_type === 'video'"
-                    :key="`video-${activeMedia.id}`"
-                    class="media-viewer-item is-loaded"
-                    :src="getMediaStreamUrl(activeMedia.id)"
-                    :poster="getMediaThumbnailUrl(activeMedia.id, 'large')"
-                    :subtitles="activeMedia.subtitles ?? null"
-                    playsinline
-                    @ready="onMediaLoad"
+              <Transition :name="mediaTransitionName" mode="out-in">
+                <div
+                  v-if="activeMedia?.file_type === 'image'"
+                  :key="`img-${activeMedia.id}`"
+                  class="media-item-container media-clickable"
+                  @click="openLightbox()"
+                >
+                  <!-- 模糊占位图 -->
+                  <img
+                    v-if="!isMediaLoaded && placeholderSrc"
+                    class="media-placeholder"
+                    :src="placeholderSrc"
+                    :alt="post?.title || ''"
+                    aria-hidden="true"
                   />
-                </Transition>
-
-                <button
-                  v-if="hasMultipleMedia"
-                  type="button"
-                  class="media-nav next"
-                  :aria-label="$t('common.next')"
-                  :disabled="!canGoNextMedia"
-                  @click="nextMedia"
-                >
-                  <AnimatedIcon name="explore" :fallback-icon="ChevronRight" size="md" />
-                </button>
-              </div>
-
-              <div v-else class="post-media-empty">
-                <img
-                  v-if="post?.thumbnail_url"
-                  class="post-image"
-                  :src="
-                    normalizeToThumbnailUrl(post?.thumbnail_url ?? '', 'large') ||
-                    post?.thumbnail_url ||
-                    ''
-                  "
-                  :alt="post?.title || ''"
-                  loading="lazy"
+                  <!-- 原图 -->
+                  <img
+                    class="media-viewer-item"
+                    :class="{ 'is-loaded': isMediaLoaded }"
+                    :src="getMediaStreamUrl(activeMedia.id)"
+                    :alt="post?.title || ''"
+                    fetchpriority="high"
+                    @load="onMediaLoad"
+                  />
+                  <!-- 点击提示 -->
+                  <div class="media-zoom-hint">
+                    <span class="zoom-icon">🔍</span>
+                    {{ $t('common.clickToEnlarge') }}
+                  </div>
+                </div>
+                <VideoPlayer
+                  v-else-if="activeMedia?.file_type === 'video'"
+                  :key="`video-${activeMedia.id}`"
+                  class="media-viewer-item is-loaded"
+                  :src="getMediaStreamUrl(activeMedia.id)"
+                  :poster="getMediaThumbnailUrl(activeMedia.id, 'large')"
+                  :subtitles="activeMedia.subtitles ?? null"
+                  playsinline
+                  @ready="onMediaLoad"
                 />
-                <div class="post-image skeleton" v-else />
-              </div>
+              </Transition>
+
+              <button
+                v-if="hasMultipleMedia"
+                type="button"
+                class="media-nav next"
+                :aria-label="$t('common.next')"
+                :disabled="!canGoNextMedia"
+                @click="nextMedia"
+              >
+                <AnimatedIcon name="explore" :fallback-icon="ChevronRight" size="md" />
+              </button>
+            </div>
+
+            <div v-else class="post-media-empty">
+              <img
+                v-if="post?.thumbnail_url"
+                class="post-image"
+                :src="
+                  normalizeToThumbnailUrl(post?.thumbnail_url ?? '', 'large') ||
+                  post?.thumbnail_url ||
+                  ''
+                "
+                :alt="post?.title || ''"
+                loading="lazy"
+              />
+              <div class="post-image skeleton" v-else />
             </div>
           </div>
 
@@ -1265,20 +1263,20 @@ onUnmounted(() => {
   position: relative;
   min-width: 0;
   display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.media-stage {
-  width: 100%;
-  display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   padding: clamp(6px, 1.3vw, 16px);
-  background: transparent;
-  border: 0;
-  border-radius: 0;
-  box-shadow: none;
+  overflow: hidden;
+  /* 渐变填充背景 */
+  background:
+    radial-gradient(
+      ellipse 80% 60% at 50% 40%,
+      rgba(var(--color-primary-rgb, 139, 92, 246), 0.04) 0%,
+      transparent 70%
+    ),
+    var(--post-media-bg);
+  contain: layout style;
 }
 
 .media-viewer {
@@ -1468,11 +1466,6 @@ onUnmounted(() => {
 @media (max-width: 899px) {
   .post-stage {
     padding: var(--spacing-2) 0 var(--spacing-4);
-  }
-
-  .media-stage {
-    padding: var(--spacing-2);
-    border-radius: 0;
   }
 
   .media-viewer {

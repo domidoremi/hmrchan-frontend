@@ -903,6 +903,14 @@ function openDetail() {
   flex-direction: column;
   gap: var(--spacing-3);
   overflow: hidden;
+  /* 渐变填充背景 */
+  background:
+    radial-gradient(
+      ellipse 80% 60% at 50% 40%,
+      rgba(var(--color-primary-rgb), 0.04) 0%,
+      transparent 70%
+    ),
+    var(--preview-media-bg);
 }
 
 .post-preview-media-frame {
@@ -917,8 +925,9 @@ function openDetail() {
   background: var(--preview-media-bg);
   border: 1px solid var(--preview-surface-border);
   box-shadow:
-    0 24px 64px rgba(0, 0, 0, 0.28),
-    0 8px 24px rgba(0, 0, 0, 0.18);
+    0 24px 64px rgba(0, 0, 0, 0.18),
+    0 4px 16px rgba(0, 0, 0, 0.1);
+  contain: layout paint;
 }
 
 .post-preview-media-item {
