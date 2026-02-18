@@ -156,6 +156,8 @@
       :initial-thumbnail-src="previewThumbnailSrc"
       @open-detail="openDetailFromPreview"
     />
+
+    <ScrollDownFab />
   </div>
 </template>
 
@@ -191,6 +193,7 @@ import StateIndicator from '@/components/ui/StateIndicator.vue'
 import PostCard from '@/components/business/PostCard.vue'
 import PostCardSkeleton from '@/components/business/PostCardSkeleton.vue'
 import PostPreviewModal from '@/components/business/PostPreviewModal.vue'
+import ScrollDownFab from '@/components/ui/ScrollDownFab.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
