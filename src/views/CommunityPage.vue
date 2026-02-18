@@ -551,16 +551,16 @@ onMounted(() => {
 }
 
 .community-bg__blob--coral {
-  width: 400px;
-  height: 400px;
+  width: 25rem;
+  height: 25rem;
   top: 5%;
   left: -5%;
   background: radial-gradient(circle, rgba(251, 113, 133, 0.4) 0%, transparent 70%);
 }
 
 .community-bg__blob--green {
-  width: 450px;
-  height: 450px;
+  width: 28.125rem;
+  height: 28.125rem;
   bottom: 10%;
   right: -8%;
   background: radial-gradient(circle, rgba(74, 222, 128, 0.45) 0%, transparent 70%);
@@ -592,7 +592,7 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: var(--spacing-2);
-  padding: 6px 12px;
+  padding: 0.375rem 0.75rem;
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
@@ -609,12 +609,12 @@ onMounted(() => {
   outline: none;
   font-size: var(--text-sm);
   color: var(--color-text-primary);
-  width: 140px;
+  width: 8.75rem;
   transition: width 0.2s ease;
 }
 
 .discussion-search-input:focus {
-  width: 200px;
+  width: 12.5rem;
 }
 
 .discussion-search-input::placeholder {
@@ -627,7 +627,7 @@ onMounted(() => {
   justify-content: center;
   background: none;
   border: none;
-  padding: 2px;
+  padding: 0.125rem;
   cursor: pointer;
   color: var(--color-text-tertiary);
   border-radius: var(--radius-sm);
@@ -639,10 +639,10 @@ onMounted(() => {
 
 @media (max-width: 640px) {
   .discussion-search-input {
-    width: 100px;
+    width: 6.25rem;
   }
   .discussion-search-input:focus {
-    width: 140px;
+    width: 8.75rem;
   }
 }
 
@@ -667,8 +667,8 @@ onMounted(() => {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  width: 2.25rem;
+  height: 2.25rem;
   border-radius: var(--radius-lg);
   color: var(--color-text-secondary);
 }
@@ -802,8 +802,8 @@ onMounted(() => {
 }
 
 .discussion-thumbnail {
-  width: 80px;
-  height: 80px;
+  width: 5rem;
+  height: 5rem;
   border-radius: var(--radius-md);
   overflow: hidden;
   flex-shrink: 0;
@@ -839,7 +839,7 @@ onMounted(() => {
 
 .discussion-pin {
   font-size: var(--text-xs);
-  padding: 2px 8px;
+  padding: 0.125rem 0.5rem;
   border-radius: var(--radius-full);
   background: rgba(var(--color-primary-rgb), 0.12);
   color: var(--color-primary);
@@ -906,8 +906,8 @@ onMounted(() => {
 }
 
 .referenced-thumb {
-  width: 36px;
-  height: 36px;
+  width: 2.25rem;
+  height: 2.25rem;
   border-radius: var(--radius-sm);
   object-fit: cover;
   flex-shrink: 0;
@@ -959,8 +959,8 @@ onMounted(() => {
 }
 
 .referenced-thumb {
-  width: 36px;
-  height: 36px;
+  width: 2.25rem;
+  height: 2.25rem;
   border-radius: var(--radius-sm);
   object-fit: cover;
   flex-shrink: 0;
@@ -986,8 +986,8 @@ onMounted(() => {
 }
 
 .author-avatar {
-  width: 20px;
-  height: 20px;
+  width: 1.25rem;
+  height: 1.25rem;
   border-radius: 50%;
   object-fit: cover;
 }
@@ -1007,8 +1007,8 @@ onMounted(() => {
 }
 
 .comment-avatar {
-  width: 24px;
-  height: 24px;
+  width: 1.5rem;
+  height: 1.5rem;
   border-radius: 50%;
   object-fit: cover;
 }
@@ -1119,8 +1119,8 @@ onMounted(() => {
 
 @media (max-width: 640px) {
   .discussion-thumbnail {
-    width: 60px;
-    height: 60px;
+    width: 3.75rem;
+    height: 3.75rem;
   }
 }
 </style>

@@ -637,7 +637,7 @@ onUnmounted(() => {
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   color: #fff;
-  font-size: 10px;
+  font-size: 0.625rem;
   font-weight: var(--font-semibold);
   text-transform: uppercase;
   letter-spacing: 0.03em;
@@ -687,9 +687,9 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: var(--spacing-1);
-  padding: 3px 8px;
+  padding: 0.1875rem 0.5rem;
   border-radius: var(--radius-md);
-  font-size: 11px;
+  font-size: 0.6875rem;
   font-weight: var(--font-semibold);
   font-variant-numeric: tabular-nums;
   color: #fff;
@@ -707,9 +707,9 @@ onUnmounted(() => {
   display: inline-flex;
   align-items: center;
   gap: var(--spacing-1);
-  padding: 3px 8px;
+  padding: 0.1875rem 0.5rem;
   border-radius: var(--radius-md);
-  font-size: 11px;
+  font-size: 0.6875rem;
   font-weight: var(--font-semibold);
   font-variant-numeric: tabular-nums;
   color: #fff;
@@ -805,13 +805,13 @@ onUnmounted(() => {
 .hover-pill {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 4px 8px;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
   background: rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   border-radius: var(--radius-full);
-  font-size: 11px;
+  font-size: 0.6875rem;
   font-weight: var(--font-medium);
   color: rgba(255, 255, 255, 0.9);
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -883,7 +883,7 @@ onUnmounted(() => {
 .hover-stat {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 0.25rem;
   font-size: var(--text-xs);
   color: rgba(255, 255, 255, 0.8);
   font-variant-numeric: tabular-nums;
@@ -910,8 +910,8 @@ onUnmounted(() => {
 }
 
 .hover-action-icon {
-  width: 32px;
-  height: 32px;
+  width: 2rem;
+  height: 2rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1002,8 +1002,8 @@ onUnmounted(() => {
 }
 
 .post-author-avatar {
-  width: 20px;
-  height: 20px;
+  width: 1.25rem;
+  height: 1.25rem;
   border-radius: var(--radius-full);
   flex-shrink: 0;
   object-fit: cover;
@@ -1037,7 +1037,7 @@ onUnmounted(() => {
 .post-stat {
   display: flex;
   align-items: center;
-  gap: 3px;
+  gap: 0.1875rem;
   font-variant-numeric: tabular-nums;
 }
 

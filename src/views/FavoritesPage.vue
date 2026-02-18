@@ -490,8 +490,8 @@ onMounted(() => {
   position: absolute;
   top: var(--spacing-2);
   right: var(--spacing-2);
-  width: 28px;
-  height: 28px;
+  width: 1.75rem;
+  height: 1.75rem;
   border-radius: 50%;
   background: rgba(0, 0, 0, 0.5);
   color: var(--color-white);

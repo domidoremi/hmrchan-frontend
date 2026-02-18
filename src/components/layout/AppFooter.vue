@@ -116,8 +116,8 @@ const currentYear = computed(() => new Date().getFullYear())
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 2rem;
+  height: 2rem;
   border-radius: var(--radius-full);
   background: var(--glass-bg-subtle);
   color: var(--color-text-secondary);

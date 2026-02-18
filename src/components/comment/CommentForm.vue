@@ -177,8 +177,8 @@ defineExpose({ focus, setContent })
   border: 1px solid var(--glass-border);
 }
 .prompt-icon-wrap {
-  width: 52px;
-  height: 52px;
+  width: 3.25rem;
+  height: 3.25rem;
   border-radius: var(--radius-full);
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
@@ -223,8 +223,8 @@ defineExpose({ focus, setContent })
 }
 
 .user-avatar img {
-  width: 40px;
-  height: 40px;
+  width: 2.5rem;
+  height: 2.5rem;
   border-radius: 50%;
   object-fit: cover;
 }

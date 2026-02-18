@@ -152,7 +152,7 @@ onMounted(() => {
 .user-details {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 0.125rem;
 }
 
 .user-name {
@@ -183,8 +183,8 @@ onMounted(() => {
 }
 
 .meta-dot {
-  width: 4px;
-  height: 4px;
+  width: 0.25rem;
+  height: 0.25rem;
   border-radius: var(--radius-full);
   background: var(--color-text-tertiary);
 }
@@ -223,8 +223,8 @@ onMounted(() => {
   }
 
   .user-avatar {
-    width: 52px;
-    height: 52px;
+    width: 3.25rem;
+    height: 3.25rem;
   }
 
   .user-name {
@@ -249,8 +249,8 @@ onMounted(() => {
   }
 
   .user-avatar {
-    width: 72px;
-    height: 72px;
+    width: 4.5rem;
+    height: 4.5rem;
   }
 }
 </style>

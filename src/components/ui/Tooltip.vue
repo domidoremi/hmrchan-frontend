@@ -131,34 +131,34 @@ onUnmounted(() => {
 
 .ui-tooltip__arrow {
   position: absolute;
-  width: 8px;
-  height: 8px;
+  width: 0.5rem;
+  height: 0.5rem;
   background: inherit;
   transform: rotate(45deg);
 }
 
 .ui-tooltip--top .ui-tooltip__arrow {
-  bottom: -4px;
+  bottom: -0.25rem;
   left: 50%;
-  margin-left: -4px;
+  margin-left: -0.25rem;
 }
 
 .ui-tooltip--bottom .ui-tooltip__arrow {
-  top: -4px;
+  top: -0.25rem;
   left: 50%;
-  margin-left: -4px;
+  margin-left: -0.25rem;
 }
 
 .ui-tooltip--left .ui-tooltip__arrow {
-  right: -4px;
+  right: -0.25rem;
   top: 50%;
-  margin-top: -4px;
+  margin-top: -0.25rem;
 }
 
 .ui-tooltip--right .ui-tooltip__arrow {
-  left: -4px;
+  left: -0.25rem;
   top: 50%;
-  margin-top: -4px;
+  margin-top: -0.25rem;
 }
 
 /* Transition */

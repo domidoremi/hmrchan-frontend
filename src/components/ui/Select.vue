@@ -132,7 +132,7 @@ function handleChange(event: Event) {
 
 @media (max-width: 768px) {
   .ui-select {
-    font-size: 16px;
+    font-size: 1rem;
   }
 }
 </style>

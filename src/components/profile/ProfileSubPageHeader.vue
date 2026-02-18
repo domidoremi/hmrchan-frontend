@@ -77,8 +77,8 @@ function goToProfile() {
 }
 
 .back-btn {
-  width: 36px;
-  height: 36px;
+  width: 2.25rem;
+  height: 2.25rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;

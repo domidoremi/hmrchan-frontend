@@ -666,8 +666,8 @@ onUnmounted(() => {
 
 .lightbox-shell {
   position: relative;
-  width: min(96vw, 1400px);
-  height: min(92vh, 900px);
+  width: min(96vw, 87.5rem);
+  height: min(92dvh, 56.25rem);
   display: flex;
   flex-direction: column;
   border-radius: var(--radius-2xl);
@@ -715,8 +715,8 @@ onUnmounted(() => {
 }
 
 .icon-btn {
-  width: 36px;
-  height: 36px;
+  width: 2.25rem;
+  height: 2.25rem;
   border-radius: var(--radius-full);
   border: 1px solid rgba(255, 255, 255, 0.16);
   background: rgba(255, 255, 255, 0.08);
@@ -795,14 +795,14 @@ onUnmounted(() => {
 }
 
 .media-dot {
-  width: 4px;
-  height: 4px;
+  width: 0.25rem;
+  height: 0.25rem;
   border-radius: var(--radius-full);
   background: rgba(255, 255, 255, 0.6);
 }
 .lightbox-media {
   max-width: 90vw;
-  max-height: 78vh;
+  max-height: 78dvh;
   object-fit: contain;
   opacity: 0;
   transition: opacity 0.35s ease;
@@ -844,8 +844,8 @@ onUnmounted(() => {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  width: 48px;
-  height: 48px;
+  width: 3rem;
+  height: 3rem;
   border-radius: var(--radius-full);
   border: 1px solid rgba(255, 255, 255, 0.12);
   background: rgba(0, 0, 0, 0.4);
@@ -915,7 +915,7 @@ onUnmounted(() => {
   pointer-events: none;
 }
 .zoom-slider input[type='range'] {
-  width: 120px;
+  width: 7.5rem;
   accent-color: var(--color-primary);
 }
 
@@ -977,7 +977,7 @@ onUnmounted(() => {
 
   .lightbox-media {
     max-width: 100vw;
-    max-height: 80vh;
+    max-height: 80dvh;
   }
 }
 

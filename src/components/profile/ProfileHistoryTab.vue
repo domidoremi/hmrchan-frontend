@@ -266,7 +266,7 @@ onMounted(() => {
 }
 
 .item-count {
-  padding: 4px 12px;
+  padding: 0.25rem 0.75rem;
   background: var(--glass-bg-light);
   border-radius: var(--radius-full);
   font-size: var(--text-sm);
@@ -298,8 +298,8 @@ onMounted(() => {
 }
 
 .history-thumbnail {
-  width: 80px;
-  height: 80px;
+  width: 5rem;
+  height: 5rem;
   flex-shrink: 0;
   border-radius: var(--radius-md);
   overflow: hidden;
@@ -362,8 +362,8 @@ onMounted(() => {
 
 @media (max-width: 768px) {
   .history-thumbnail {
-    width: 60px;
-    height: 60px;
+    width: 3.75rem;
+    height: 3.75rem;
   }
 
   .history-title {

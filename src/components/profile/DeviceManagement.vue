@@ -299,7 +299,7 @@ function getLocationText(session: Device): string {
 }
 
 .skeleton-card {
-  height: 150px;
+  height: 9.375rem;
   background: var(--glass-bg-light);
   border-radius: 12px;
   animation: pulse 1.5s ease-in-out infinite;
@@ -344,8 +344,8 @@ function getLocationText(session: Device): string {
 
 .device-icon {
   flex-shrink: 0;
-  width: 48px;
-  height: 48px;
+  width: 3rem;
+  height: 3rem;
   display: flex;
   align-items: center;
   justify-content: center;

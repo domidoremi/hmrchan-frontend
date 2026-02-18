@@ -505,15 +505,15 @@ onUnmounted(() => {
 }
 
 .comment-avatar {
-  width: 36px;
-  height: 36px;
+  width: 2.25rem;
+  height: 2.25rem;
   border-radius: 50%;
   object-fit: cover;
 }
 
 .is-reply .comment-avatar {
-  width: 28px;
-  height: 28px;
+  width: 1.75rem;
+  height: 1.75rem;
 }
 
 .comment-meta {
@@ -567,8 +567,8 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 2rem;
+  height: 2rem;
   border-radius: var(--radius-md);
   color: var(--color-text-tertiary);
   transition: all var(--transition-fast);

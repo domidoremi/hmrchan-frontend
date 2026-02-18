@@ -167,8 +167,8 @@ const particleLines = computed(() => {
   position: fixed;
   top: 50%;
   right: 10%;
-  width: 400px;
-  height: 400px;
+  width: 25rem;
+  height: 25rem;
   transform: translate(0, -50%);
   pointer-events: none;
   z-index: 0;
@@ -179,18 +179,18 @@ const particleLines = computed(() => {
 /* 响应式调整 */
 @media (max-width: 1024px) {
   .blue-polymorph-container {
-    width: 300px;
-    height: 300px;
+    width: 18.75rem;
+    height: 18.75rem;
     right: 5%;
   }
 }
 
 @media (max-width: 768px) {
   .blue-polymorph-container {
-    width: 200px;
-    height: 200px;
+    width: 12.5rem;
+    height: 12.5rem;
     top: 20%;
-    right: -50px;
+    right: -3.125rem;
     opacity: 0.6;
   }
 }
@@ -225,8 +225,8 @@ const particleLines = computed(() => {
 }
 
 .sphere-core {
-  width: 200px;
-  height: 200px;
+  width: 12.5rem;
+  height: 12.5rem;
   background: radial-gradient(
     circle at 30% 30%,
     rgba(var(--morph-color, #4169e1), 0.9),
@@ -251,8 +251,8 @@ const particleLines = computed(() => {
 
 .sphere-ripple {
   position: absolute;
-  width: 200px;
-  height: 200px;
+  width: 12.5rem;
+  height: 12.5rem;
   border: 2px solid var(--morph-color, #4169e1);
   border-radius: 50%;
   opacity: 0;
@@ -289,8 +289,8 @@ const particleLines = computed(() => {
 
 .crystal-cube {
   position: absolute;
-  width: 60px;
-  height: 60px;
+  width: 3.75rem;
+  height: 3.75rem;
   background: linear-gradient(
     135deg,
     rgba(var(--morph-color, #4169e1), 0.3),
@@ -326,12 +326,12 @@ const particleLines = computed(() => {
 /* ========== TikTok：律动波流 ========== */
 .morph-wave-shape {
   flex-direction: column;
-  gap: 8px;
+  gap: 0.5rem;
 }
 
 .wave-band {
-  width: 200px;
-  height: 12px;
+  width: 12.5rem;
+  height: 0.75rem;
   background: linear-gradient(90deg, transparent, var(--morph-color, #00d4ff), transparent);
   border-radius: 6px;
   box-shadow: 0 0 20px rgba(var(--morph-color, #00d4ff), 0.6);
@@ -387,16 +387,16 @@ const particleLines = computed(() => {
 }
 
 .prism-ring-1 {
-  width: 280px;
-  height: 160px;
+  width: 17.5rem;
+  height: 10rem;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%) rotateX(75deg);
 }
 
 .prism-ring-2 {
-  width: 320px;
-  height: 180px;
+  width: 20rem;
+  height: 11.25rem;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%) rotateX(75deg);

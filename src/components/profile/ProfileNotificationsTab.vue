@@ -271,7 +271,7 @@ onMounted(() => {
 }
 
 .unread-badge {
-  padding: 4px 12px;
+  padding: 0.25rem 0.75rem;
   background: var(--color-error);
   color: var(--color-white);
   border-radius: var(--radius-full);
@@ -317,7 +317,7 @@ onMounted(() => {
   left: 0;
   top: 50%;
   transform: translateY(-50%);
-  width: 4px;
+  width: 0.25rem;
   height: 60%;
   background: var(--color-primary);
   border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
@@ -331,8 +331,8 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: 2.5rem;
+  height: 2.5rem;
   border-radius: var(--radius-full);
   flex-shrink: 0;
 }
@@ -381,8 +381,8 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 2rem;
+  height: 2rem;
   background: transparent;
   color: var(--color-text-secondary);
   border: 1px solid var(--glass-border);
@@ -399,8 +399,8 @@ onMounted(() => {
 
 @media (max-width: 768px) {
   .notification-icon {
-    width: 36px;
-    height: 36px;
+    width: 2.25rem;
+    height: 2.25rem;
   }
 
   .notification-text {

@@ -297,7 +297,7 @@ watch(discussionId, fetchDiscussion)
 
 .discussion-pin {
   font-size: var(--text-xs);
-  padding: 2px 8px;
+  padding: 0.125rem 0.5rem;
   border-radius: var(--radius-full);
   background: rgba(var(--color-primary-rgb), 0.12);
   color: var(--color-primary);
@@ -324,8 +324,8 @@ watch(discussionId, fetchDiscussion)
 }
 
 .author-avatar {
-  width: 32px;
-  height: 32px;
+  width: 2rem;
+  height: 2rem;
   border-radius: 50%;
   object-fit: cover;
 }
@@ -338,7 +338,7 @@ watch(discussionId, fetchDiscussion)
 .category-pill {
   margin-left: auto;
   font-size: var(--text-xs);
-  padding: 2px 10px;
+  padding: 0.125rem 0.625rem;
   border-radius: var(--radius-full);
   background: var(--glass-bg-light);
   color: var(--color-text-secondary);
@@ -397,8 +397,8 @@ watch(discussionId, fetchDiscussion)
 }
 
 .referenced-thumb {
-  width: 48px;
-  height: 48px;
+  width: 3rem;
+  height: 3rem;
   border-radius: var(--radius-sm);
   object-fit: cover;
   flex-shrink: 0;

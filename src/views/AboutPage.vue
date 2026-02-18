@@ -568,8 +568,8 @@ const { techStack } = useAboutData()
   position: absolute;
   top: -50%;
   right: -10%;
-  width: 300px;
-  height: 300px;
+  width: 18.75rem;
+  height: 18.75rem;
   background: radial-gradient(circle, rgba(var(--color-primary-rgb), 0.15) 0%, transparent 70%);
   border-radius: 50%;
   pointer-events: none;
@@ -609,8 +609,8 @@ const { techStack } = useAboutData()
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 80px;
-  height: 80px;
+  width: 5rem;
+  height: 5rem;
   background: rgba(var(--color-primary-rgb), 0.1);
   border-radius: 50%;
   position: relative;
@@ -619,7 +619,7 @@ const { techStack } = useAboutData()
 .name-decoration::before {
   content: '';
   position: absolute;
-  inset: -4px;
+  inset: -0.25rem;
   border-radius: 50%;
   background: var(--gradient-primary);
   opacity: 0.2;
@@ -701,7 +701,7 @@ const { techStack } = useAboutData()
   position: absolute;
   top: 0;
   left: 0;
-  width: 4px;
+  width: 0.25rem;
   height: 100%;
   background: var(--gradient-primary);
   transform: scaleY(0);
@@ -724,8 +724,8 @@ const { techStack } = useAboutData()
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 44px;
-  height: 44px;
+  width: 2.75rem;
+  height: 2.75rem;
   background: rgba(var(--color-primary-rgb), 0.1);
   border-radius: var(--radius-md);
   color: var(--color-primary);
@@ -790,7 +790,7 @@ const { techStack } = useAboutData()
   position: absolute;
   top: 0;
   right: 0;
-  width: 100px;
+  width: 6.25rem;
   height: 100%;
   background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.05) 100%);
   pointer-events: none;
@@ -800,7 +800,7 @@ const { techStack } = useAboutData()
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  padding-top: 2px;
+  padding-top: 0.125rem;
   color: var(--color-primary);
   flex-shrink: 0;
 }
@@ -867,7 +867,7 @@ const { techStack } = useAboutData()
   position: absolute;
   top: 0;
   left: 0;
-  width: 4px;
+  width: 0.25rem;
   height: 100%;
   background: var(--link-color, var(--color-primary));
   transform: scaleY(0);
@@ -894,8 +894,8 @@ const { techStack } = useAboutData()
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 44px;
-  height: 44px;
+  width: 2.75rem;
+  height: 2.75rem;
   border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--link-color, var(--color-primary)) 12%, transparent);
   color: var(--link-color, var(--color-primary));
@@ -904,8 +904,8 @@ const { techStack } = useAboutData()
 }
 
 .link-card--compact .link-icon-wrap {
-  width: 36px;
-  height: 36px;
+  width: 2.25rem;
+  height: 2.25rem;
 }
 
 .link-card:hover .link-icon-wrap {
@@ -928,7 +928,7 @@ const { techStack } = useAboutData()
   display: block;
   font-size: var(--text-xs);
   color: var(--color-text-tertiary);
-  margin-top: 2px;
+  margin-top: 0.125rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1031,7 +1031,7 @@ const { techStack } = useAboutData()
   top: 0;
   left: 0;
   right: 0;
-  height: 3px;
+  height: 0.1875rem;
   background: var(--gradient-primary);
   transform: scaleX(0);
   transform-origin: left;
@@ -1133,8 +1133,8 @@ const { techStack } = useAboutData()
 }
 
 .status-dot {
-  width: 8px;
-  height: 8px;
+  width: 0.5rem;
+  height: 0.5rem;
   background: var(--color-success);
   border-radius: 50%;
   animation: pulse 2s ease-in-out infinite;
@@ -1232,14 +1232,14 @@ const { techStack } = useAboutData()
   }
 
   .name-decoration {
-    width: 60px;
-    height: 60px;
+    width: 3.75rem;
+    height: 3.75rem;
     align-self: flex-end;
   }
 
   .decoration-icon {
-    width: 24px;
-    height: 24px;
+    width: 1.5rem;
+    height: 1.5rem;
   }
 
   .profile-section,

@@ -141,8 +141,8 @@ const platforms = [
 }
 
 .cta-dot {
-  width: 8px;
-  height: 8px;
+  width: 0.5rem;
+  height: 0.5rem;
   border-radius: 50%;
   background: currentColor;
   box-shadow: 0 0 10px rgba(var(--color-success-rgb), 0.6);
@@ -172,8 +172,8 @@ const platforms = [
 }
 
 .platform-card__icon {
-  width: 36px;
-  height: 36px;
+  width: 2.25rem;
+  height: 2.25rem;
   display: flex;
   align-items: center;
   justify-content: center;

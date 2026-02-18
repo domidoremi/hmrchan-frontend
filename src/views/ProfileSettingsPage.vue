@@ -949,8 +949,8 @@ onMounted(() => {
 }
 
 .skeleton-avatar {
-  width: 100px;
-  height: 100px;
+  width: 6.25rem;
+  height: 6.25rem;
   border-radius: 50%;
 }
 
@@ -982,8 +982,8 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  width: 2.25rem;
+  height: 2.25rem;
   background: rgba(var(--color-primary-rgb), 0.1);
   color: var(--color-primary);
   border-radius: var(--radius-lg);
@@ -1019,8 +1019,8 @@ onMounted(() => {
 }
 
 .avatar-preview {
-  width: 100px;
-  height: 100px;
+  width: 6.25rem;
+  height: 6.25rem;
   border-radius: 50%;
   object-fit: cover;
   border: 3px solid var(--glass-border);
@@ -1046,8 +1046,8 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 1.75rem;
+  height: 1.75rem;
   background: var(--color-primary);
   color: var(--color-on-primary);
   border-radius: 50%;
@@ -1069,8 +1069,8 @@ onMounted(() => {
 }
 
 .avatar-meta .meta-dot {
-  width: 4px;
-  height: 4px;
+  width: 0.25rem;
+  height: 0.25rem;
   border-radius: var(--radius-full);
   background: var(--color-text-tertiary);
 }
@@ -1174,8 +1174,8 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 2rem;
+  height: 2rem;
   background: transparent;
   border: none;
   color: var(--color-text-tertiary);
@@ -1199,7 +1199,7 @@ onMounted(() => {
 
 .strength-bar {
   flex: 1;
-  height: 4px;
+  height: 0.25rem;
   background: var(--glass-bg-light);
   border-radius: var(--radius-full);
   overflow: hidden;
@@ -1316,8 +1316,8 @@ onMounted(() => {
   }
 
   .section-icon {
-    width: 32px;
-    height: 32px;
+    width: 2rem;
+    height: 2rem;
   }
 
   .section-title {
@@ -1331,8 +1331,8 @@ onMounted(() => {
   }
 
   .avatar-preview {
-    width: 100px;
-    height: 100px;
+    width: 6.25rem;
+    height: 6.25rem;
   }
 
   .avatar-info {
@@ -1390,13 +1390,13 @@ onMounted(() => {
   }
 
   .avatar-preview {
-    width: 80px;
-    height: 80px;
+    width: 5rem;
+    height: 5rem;
   }
 
   .avatar-badge {
-    width: 24px;
-    height: 24px;
+    width: 1.5rem;
+    height: 1.5rem;
   }
 }
 </style>

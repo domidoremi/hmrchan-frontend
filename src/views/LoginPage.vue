@@ -294,14 +294,14 @@ function handleTurnstileError() {
 }
 
 .password-input {
-  padding-right: 44px;
+  padding-right: 2.75rem;
 }
 
 .password-toggle {
   position: absolute;
   right: var(--spacing-3);
-  height: 32px;
-  width: 32px;
+  height: 2rem;
+  width: 2rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
