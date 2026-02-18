@@ -255,7 +255,8 @@
     "platformFilter": "按平台筛选",
     "newest": "最新",
     "popular": "最热门",
-    "trending": "趋势"
+    "trending": "趋势",
+    "nextPost": "下一篇"
   },
   "search": {
     "title": "搜索",
