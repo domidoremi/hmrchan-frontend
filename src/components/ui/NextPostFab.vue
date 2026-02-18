@@ -50,25 +50,35 @@ function scrollToNextPost() {
   const cards = document.querySelectorAll(props.cardSelector)
   if (!cards.length) return
 
-  const scrollTop = window.scrollY
-  const offset = 80
+  const viewHeight = window.innerHeight
+  const viewCenter = viewHeight / 2
 
-  for (const card of cards) {
-    const rect = card.getBoundingClientRect()
-    const cardTop = rect.top + scrollTop
-    if (cardTop > scrollTop + offset + 10) {
-      window.scrollTo({
-        top: cardTop - offset,
-        behavior: 'smooth',
-      })
-      return
-    }
+  // Collect all cards with their visual positions, sort by top
+  const cardEntries = Array.from(cards)
+    .map((card) => ({
+      el: card,
+      rect: card.getBoundingClientRect(),
+    }))
+    .sort((a, b) => a.rect.top - b.rect.top)
+
+  // Find the first card whose top is below the viewport center
+  const next = cardEntries.find((c) => c.rect.top > viewCenter + 10)
+
+  if (next) {
+    // Scroll so the card's center aligns with viewport center
+    const cardCenter = next.rect.top + next.rect.height / 2
+    const scrollDelta = cardCenter - viewCenter
+    window.scrollBy({
+      top: scrollDelta,
+      behavior: 'smooth',
+    })
+  } else {
+    // No next card found, scroll down
+    window.scrollBy({
+      top: viewHeight * 0.75,
+      behavior: 'smooth',
+    })
   }
-
-  window.scrollBy({
-    top: window.innerHeight * 0.75,
-    behavior: 'smooth',
-  })
 }
 
 onMounted(() => {
@@ -142,7 +152,18 @@ onUnmounted(() => {
 
 .next-post-fab:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.3);
+  transform: translate3d(0, 0, 0);
+  box-shadow:
+    var(--glass-shadow),
+    0 0 0 3px rgba(var(--color-primary-rgb), 0.3);
+}
+
+.next-post-fab:hover:focus-visible {
+  transform: translate3d(0, -3px, 0);
+  box-shadow:
+    var(--glass-shadow-lg),
+    0 0 16px rgba(var(--color-primary-rgb), 0.2),
+    0 0 0 3px rgba(var(--color-primary-rgb), 0.3);
 }
 
 .next-post-fab__icon {
