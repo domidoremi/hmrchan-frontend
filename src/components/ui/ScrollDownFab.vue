@@ -1,22 +1,3 @@
-<template>
-  <Teleport to="body">
-    <Transition name="scroll-fab">
-      <button
-        v-if="isVisible"
-        type="button"
-        class="scroll-down-fab"
-        :aria-label="$t('common.loadMore')"
-        @click="scrollDown"
-      >
-        <span class="scroll-down-fab__icon">
-          <ChevronDown :size="22" />
-        </span>
-        <span class="scroll-down-fab__pulse" />
-      </button>
-    </Transition>
-  </Teleport>
-</template>
-
 <script setup lang="ts">
 defineOptions({ name: 'ScrollDownFab' })
 
@@ -24,14 +5,24 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import { ChevronDown } from 'lucide-vue-next'
 import { throttleRAF } from '@/utils/performance'
 
+const props = withDefaults(
+  defineProps<{
+    scrollThreshold?: number
+  }>(),
+  {
+    scrollThreshold: 0,
+  }
+)
+
 const isVisible = ref(false)
 
 function updateVisibility() {
   const scrollTop = window.scrollY || document.documentElement.scrollTop
   const docHeight = document.documentElement.scrollHeight
   const viewHeight = window.innerHeight
-  // Show when not at bottom and page is scrollable
-  isVisible.value = scrollTop + viewHeight < docHeight - 200
+  // Use provided threshold, or fallback to half viewport height
+  const threshold = props.scrollThreshold || viewHeight * 0.5
+  isVisible.value = scrollTop > threshold && scrollTop + viewHeight < docHeight - 200
 }
 
 const handleScroll = throttleRAF(updateVisibility)
@@ -53,6 +44,25 @@ onUnmounted(() => {
   handleScroll.cancel?.()
 })
 </script>
+
+<template>
+  <Teleport to="body">
+    <Transition name="scroll-fab">
+      <button
+        v-if="isVisible"
+        type="button"
+        class="scroll-down-fab"
+        :aria-label="$t('common.loadMore')"
+        @click="scrollDown"
+      >
+        <span class="scroll-down-fab__icon">
+          <ChevronDown :size="22" />
+        </span>
+        <span class="scroll-down-fab__pulse" />
+      </button>
+    </Transition>
+  </Teleport>
+</template>
 
 <style scoped>
 .scroll-down-fab {
