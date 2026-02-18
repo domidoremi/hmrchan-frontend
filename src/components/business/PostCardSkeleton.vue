@@ -73,8 +73,8 @@ const imageWrapperStyle = computed(() => ({
   top: var(--spacing-2);
   left: var(--spacing-2);
   z-index: 3;
-  width: 24px;
-  height: 24px;
+  width: 1.5rem;
+  height: 1.5rem;
   border-radius: var(--radius-full);
 }
 
@@ -94,12 +94,12 @@ const imageWrapperStyle = computed(() => ({
 .skeleton-title-wrapper {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 0.375rem;
   margin-bottom: var(--spacing-2);
 }
 
 .skeleton-title {
-  height: 14px;
+  height: 0.875rem;
   width: 100%;
   border-radius: var(--radius-sm);
 }
@@ -125,15 +125,15 @@ const imageWrapperStyle = computed(() => ({
 }
 
 .skeleton-avatar {
-  width: 20px;
-  height: 20px;
+  width: 1.25rem;
+  height: 1.25rem;
   border-radius: var(--radius-full);
   flex-shrink: 0;
 }
 
 .skeleton-author {
-  height: 12px;
-  width: 72px;
+  height: 0.75rem;
+  width: 4.5rem;
   border-radius: var(--radius-sm);
 }
 
@@ -144,8 +144,8 @@ const imageWrapperStyle = computed(() => ({
 }
 
 .skeleton-stat {
-  width: 36px;
-  height: 12px;
+  width: 2.25rem;
+  height: 0.75rem;
   border-radius: var(--radius-sm);
 }
 

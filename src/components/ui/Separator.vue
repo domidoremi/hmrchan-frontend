@@ -30,11 +30,11 @@ const separatorClass = computed(() => ['ui-separator', `ui-separator--${props.or
 
 .ui-separator--horizontal {
   width: 100%;
-  height: 1px;
+  height: 0.0625rem;
 }
 
 .ui-separator--vertical {
-  width: 1px;
+  width: 0.0625rem;
   height: 100%;
 }
 </style>

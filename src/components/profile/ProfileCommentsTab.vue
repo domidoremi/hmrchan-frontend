@@ -259,7 +259,7 @@ onMounted(() => {
 }
 
 .item-count {
-  padding: 4px 12px;
+  padding: 0.25rem 0.75rem;
   background: var(--glass-bg-light);
   border-radius: var(--radius-full);
   font-size: var(--text-sm);
@@ -347,8 +347,8 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 1.75rem;
+  height: 1.75rem;
   background: transparent;
   border: none;
   color: var(--color-text-tertiary);

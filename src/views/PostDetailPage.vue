@@ -1022,8 +1022,8 @@ onUnmounted(() => {
 }
 
 .post-topbar__back {
-  width: var(--ui-control-min-size, 44px);
-  height: var(--ui-control-min-size, 44px);
+  width: var(--ui-control-min-size, 2.75rem);
+  height: var(--ui-control-min-size, 2.75rem);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1065,7 +1065,7 @@ onUnmounted(() => {
   --fab-gap: 12px;
   position: fixed;
   right: var(--edge);
-  bottom: calc(var(--edge) + env(safe-area-inset-bottom, 0px) + var(--fab-size) + var(--fab-gap));
+  bottom: calc(var(--edge) + env(safe-area-inset-bottom, 0) + var(--fab-size) + var(--fab-gap));
   z-index: var(--z-fixed);
   display: flex;
   align-items: center;
@@ -1089,7 +1089,7 @@ onUnmounted(() => {
 .post-back-fab::before {
   content: '';
   position: absolute;
-  inset: -1px;
+  inset: -0.0625rem;
   border-radius: inherit;
   background: var(--gradient-primary);
   opacity: 0;
@@ -1100,7 +1100,7 @@ onUnmounted(() => {
 .post-back-fab::after {
   content: '';
   position: absolute;
-  inset: -10px;
+  inset: -0.625rem;
   border-radius: inherit;
   background: radial-gradient(circle, rgba(var(--color-primary-rgb), 0.35) 0%, transparent 70%);
   opacity: 0.2;
@@ -1266,7 +1266,7 @@ onUnmounted(() => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: clamp(6px, 1.3vw, 16px);
+  padding: clamp(0.375rem, 1.3vw, 1rem);
   overflow: hidden;
   /* 渐变填充背景 */
   background:
@@ -1281,9 +1281,9 @@ onUnmounted(() => {
 
 .media-viewer {
   position: relative;
-  width: min(100%, 960px);
+  width: min(100%, 60rem);
   max-width: 100%;
-  max-height: clamp(320px, 62vh, 720px);
+  max-height: clamp(320px, 62dvh, 720px);
   aspect-ratio: var(--aspect-ratio, 16 / 9);
   display: flex;
   align-items: center;
@@ -1297,7 +1297,7 @@ onUnmounted(() => {
 
 .post-media-empty {
   width: 100%;
-  min-height: clamp(260px, 40vh, 520px);
+  min-height: clamp(260px, 40dvh, 520px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1339,12 +1339,12 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   z-index: 1;
-  padding: clamp(10px, 1.6vw, 24px);
+  padding: clamp(0.625rem, 1.6vw, 1.5rem);
 }
 
 @media (min-width: 900px) {
   .media-item-container {
-    padding: clamp(14px, 2vw, 30px);
+    padding: clamp(0.875rem, 2vw, 1.875rem);
   }
 }
 
@@ -1418,8 +1418,8 @@ onUnmounted(() => {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  width: 40px;
-  height: 40px;
+  width: 2.5rem;
+  height: 2.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1506,8 +1506,8 @@ onUnmounted(() => {
   }
 
   .thumbnail-btn {
-    width: 56px;
-    height: 56px;
+    width: 3.5rem;
+    height: 3.5rem;
   }
 }
 
@@ -1691,8 +1691,8 @@ onUnmounted(() => {
 
 .thumbnail-btn {
   flex: 0 0 auto;
-  width: 72px;
-  height: 72px;
+  width: 4.5rem;
+  height: 4.5rem;
   border-radius: var(--radius-lg);
   overflow: hidden;
   border: 1px solid var(--glass-border);

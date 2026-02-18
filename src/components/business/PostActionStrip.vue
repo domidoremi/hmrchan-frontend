@@ -205,10 +205,10 @@ async function sharePost() {
 .subtitles-pill {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
+  gap: 0.375rem;
+  padding: 0.25rem 0.625rem;
   border-radius: var(--radius-full);
-  font-size: 11px;
+  font-size: 0.6875rem;
   color: var(--action-text);
   background: var(--action-pill-bg);
   border: 1px solid var(--action-pill-border);
@@ -216,7 +216,7 @@ async function sharePost() {
 }
 
 .subtitles-pill__text {
-  font-size: 11px;
+  font-size: 0.6875rem;
 }
 
 .action-btn {
@@ -258,6 +258,6 @@ async function sharePost() {
 }
 
 .post-action-strip--compact .subtitles-pill {
-  padding: 3px 8px;
+  padding: 0.1875rem 0.5rem;
 }
 </style>

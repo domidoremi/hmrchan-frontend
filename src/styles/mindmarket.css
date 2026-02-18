@@ -151,8 +151,8 @@
 }
 
 .mm-feature-tag__icon {
-  width: 24px;
-  height: 24px;
+  width: 1.5rem;
+  height: 1.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -317,37 +317,37 @@
 .mm-bg-blob--top-left {
   top: -10%;
   left: -5%;
-  width: 500px;
-  height: 500px;
+  width: 31.25rem;
+  height: 31.25rem;
 }
 
 .mm-bg-blob--top-right {
   top: 5%;
   right: -10%;
-  width: 400px;
-  height: 400px;
+  width: 25rem;
+  height: 25rem;
 }
 
 .mm-bg-blob--center {
   top: 40%;
   left: 50%;
   transform: translateX(-50%);
-  width: 600px;
-  height: 600px;
+  width: 37.5rem;
+  height: 37.5rem;
 }
 
 .mm-bg-blob--bottom-left {
   bottom: 10%;
   left: -8%;
-  width: 450px;
-  height: 450px;
+  width: 28.125rem;
+  height: 28.125rem;
 }
 
 .mm-bg-blob--bottom-right {
   bottom: -5%;
   right: -5%;
-  width: 350px;
-  height: 350px;
+  width: 21.875rem;
+  height: 21.875rem;
 }
 
 /* ========== 区块过渡分隔线 ========== */
@@ -355,7 +355,7 @@
 /* 波浪分隔线 */
 .mm-section-divider {
   position: relative;
-  height: 80px;
+  height: 5rem;
   margin: 0;
   overflow: hidden;
 }
@@ -378,7 +378,7 @@
 
 /* 渐变过渡 */
 .mm-section-divider--gradient {
-  height: 120px;
+  height: 7.5rem;
   background: linear-gradient(
     180deg,
     transparent 0%,
@@ -389,7 +389,7 @@
 
 /* 点状分隔 */
 .mm-section-divider--dots {
-  height: 60px;
+  height: 3.75rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -399,8 +399,8 @@
 .mm-section-divider--dots::before,
 .mm-section-divider--dots::after,
 .mm-section-divider--dots span {
-  width: 6px;
-  height: 6px;
+  width: 0.375rem;
+  height: 0.375rem;
   border-radius: 50%;
   background: var(--mm-green);
   opacity: 0.4;
@@ -418,7 +418,7 @@
 
 /* 有机曲线分隔 */
 .mm-section-divider--organic {
-  height: 100px;
+  height: 6.25rem;
   position: relative;
 }
 
@@ -444,18 +444,18 @@
 }
 
 .mm-section-blob--sm {
-  width: 200px;
-  height: 200px;
+  width: 12.5rem;
+  height: 12.5rem;
 }
 
 .mm-section-blob--md {
-  width: 300px;
-  height: 300px;
+  width: 18.75rem;
+  height: 18.75rem;
 }
 
 .mm-section-blob--lg {
-  width: 450px;
-  height: 450px;
+  width: 28.125rem;
+  height: 28.125rem;
 }
 
 /* ========== 响应式 ========== */
@@ -475,30 +475,30 @@
   }
 
   .mm-bg-blob--top-left {
-    width: 300px;
-    height: 300px;
+    width: 18.75rem;
+    height: 18.75rem;
   }
 
   .mm-bg-blob--top-right {
-    width: 250px;
-    height: 250px;
+    width: 15.625rem;
+    height: 15.625rem;
   }
 
   .mm-bg-blob--center {
-    width: 350px;
-    height: 350px;
+    width: 21.875rem;
+    height: 21.875rem;
   }
 
   .mm-section-divider {
-    height: 50px;
+    height: 3.125rem;
   }
 
   .mm-section-divider--gradient {
-    height: 80px;
+    height: 5rem;
   }
 
   .mm-section-divider--organic {
-    height: 60px;
+    height: 3.75rem;
   }
 }
 

@@ -119,8 +119,8 @@ withDefaults(defineProps<Props>(), {
 
 .page-loading__visual {
   position: relative;
-  width: 80px;
-  height: 80px;
+  width: 5rem;
+  height: 5rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -168,8 +168,8 @@ withDefaults(defineProps<Props>(), {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 48px;
-  height: 48px;
+  width: 3rem;
+  height: 3rem;
   background: var(--glass-bg);
   border-radius: var(--radius-full);
   border: 1px solid var(--glass-border);
@@ -242,13 +242,13 @@ withDefaults(defineProps<Props>(), {
 
 .page-loading__dots {
   display: inline-flex;
-  gap: 3px;
-  padding-left: 2px;
+  gap: 0.1875rem;
+  padding-left: 0.125rem;
 }
 
 .page-loading__dot {
-  width: 4px;
-  height: 4px;
+  width: 0.25rem;
+  height: 0.25rem;
   background: var(--color-primary);
   border-radius: var(--radius-full);
   animation: dot-bounce 1.4s ease-in-out infinite;
@@ -289,7 +289,7 @@ withDefaults(defineProps<Props>(), {
 
 .page-loading__progress-track {
   width: 100%;
-  height: 4px;
+  height: 0.25rem;
   background: var(--glass-bg-light);
   border-radius: var(--radius-full);
   overflow: hidden;

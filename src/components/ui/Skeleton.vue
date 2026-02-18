@@ -62,8 +62,8 @@ const computedStyle = computed(() => {
 }
 
 .skeleton--avatar {
-  width: 40px;
-  height: 40px;
+  width: 2.5rem;
+  height: 2.5rem;
   border-radius: var(--radius-full);
 }
 
@@ -77,7 +77,7 @@ const computedStyle = computed(() => {
 }
 
 .skeleton--button {
-  height: 40px;
+  height: 2.5rem;
   border-radius: var(--radius-lg);
 }
 

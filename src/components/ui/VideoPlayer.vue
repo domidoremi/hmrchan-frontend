@@ -1200,7 +1200,7 @@ function startHintTimer() {
   position: absolute;
   left: 0;
   right: 0;
-  height: 120px;
+  height: 7.5rem;
   pointer-events: none;
 }
 
@@ -1216,8 +1216,8 @@ function startHintTimer() {
 
 .controls-hint {
   position: absolute;
-  bottom: 80px; /* 提高位置，避免被控制栏遮挡 */
-  left: 16px;
+  bottom: 5rem; /* 提高位置，避免被控制栏遮挡 */
+  left: 1rem;
   padding: 0.5rem 0.875rem;
   border-radius: var(--radius-full);
   background: rgba(0, 0, 0, 0.7);
@@ -1288,7 +1288,7 @@ function startHintTimer() {
 /* 进度条 */
 .progress-container {
   width: 100%;
-  height: 20px;
+  height: 1.25rem;
   display: flex;
   align-items: center;
   cursor: pointer;
@@ -1298,14 +1298,14 @@ function startHintTimer() {
 .progress-bar {
   position: relative;
   width: 100%;
-  height: 4px;
+  height: 0.25rem;
   background: rgba(255, 255, 255, 0.3);
   border-radius: var(--radius-full);
   overflow: visible;
 }
 
 .progress-container:hover .progress-bar {
-  height: 6px;
+  height: 0.375rem;
 }
 
 .progress-buffered {
@@ -1332,8 +1332,8 @@ function startHintTimer() {
   position: absolute;
   top: 50%;
   transform: translate(-50%, -50%);
-  width: 14px;
-  height: 14px;
+  width: 0.875rem;
+  height: 0.875rem;
   background: white;
   border-radius: 50%;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
@@ -1351,15 +1351,15 @@ function startHintTimer() {
 }
 
 .progress-container.is-buffering .progress-bar {
-  height: 6px;
+  height: 0.375rem;
 }
 
 .progress-loading {
   position: absolute;
   top: 50%;
   transform: translate(-50%, -50%);
-  width: 18px;
-  height: 18px;
+  width: 1.125rem;
+  height: 1.125rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1385,8 +1385,8 @@ function startHintTimer() {
 }
 
 .control-btn {
-  width: 40px;
-  height: 40px;
+  width: 2.5rem;
+  height: 2.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1468,13 +1468,13 @@ function startHintTimer() {
 }
 
 .volume-control:hover .volume-slider-container {
-  width: 80px;
+  width: 5rem;
   opacity: 1;
 }
 
 .volume-slider {
   width: 100%;
-  height: 4px;
+  height: 0.25rem;
   -webkit-appearance: none;
   appearance: none;
   background: rgba(255, 255, 255, 0.3);
@@ -1486,16 +1486,16 @@ function startHintTimer() {
 .volume-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 12px;
-  height: 12px;
+  width: 0.75rem;
+  height: 0.75rem;
   background: white;
   border-radius: 50%;
   cursor: pointer;
 }
 
 .volume-slider::-moz-range-thumb {
-  width: 12px;
-  height: 12px;
+  width: 0.75rem;
+  height: 0.75rem;
   background: white;
   border: none;
   border-radius: 50%;
@@ -1578,8 +1578,8 @@ function startHintTimer() {
 }
 
 .center-play-icon {
-  width: 80px;
-  height: 80px;
+  width: 5rem;
+  height: 5rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1616,8 +1616,8 @@ function startHintTimer() {
   }
 
   .control-btn {
-    width: 36px;
-    height: 36px;
+    width: 2.25rem;
+    height: 2.25rem;
   }
 
   .volume-control {
@@ -1625,7 +1625,7 @@ function startHintTimer() {
   }
 
   .volume-slider-container {
-    width: 64px;
+    width: 4rem;
   }
 
   .time-display {
@@ -1633,13 +1633,13 @@ function startHintTimer() {
   }
 
   .center-play-icon {
-    width: 64px;
-    height: 64px;
+    width: 4rem;
+    height: 4rem;
   }
 
   .center-play-icon svg {
-    width: 32px;
-    height: 32px;
+    width: 2rem;
+    height: 2rem;
   }
 
   .settings-panel--teleported {

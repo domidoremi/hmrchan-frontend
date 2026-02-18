@@ -578,7 +578,7 @@ onBeforeUnmount(() => {
 .bento-card h3 {
   font-size: clamp(0.875rem, 1.2vw + 0.4rem, 1.125rem);
   font-weight: var(--font-bold);
-  margin-bottom: 2px;
+  margin-bottom: 0.125rem;
 }
 
 .bento-card p {
@@ -674,7 +674,7 @@ onBeforeUnmount(() => {
   bottom: 0;
   left: 0;
   right: 0;
-  height: 100px;
+  height: 6.25rem;
   background: linear-gradient(to bottom, transparent, var(--color-background));
   pointer-events: none;
   z-index: 0;

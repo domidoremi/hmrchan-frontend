@@ -103,7 +103,7 @@ function handleMouseLeave() {
   top: 0;
   left: 0;
   right: 0;
-  height: 1px;
+  height: 0.0625rem;
   background: linear-gradient(
     90deg,
     transparent 0%,
@@ -118,8 +118,8 @@ function handleMouseLeave() {
 /* 光泽扫过效果 */
 .ui-card__shine {
   position: absolute;
-  width: 200px;
-  height: 200px;
+  width: 12.5rem;
+  height: 12.5rem;
   background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
   border-radius: 50%;
   opacity: 0;

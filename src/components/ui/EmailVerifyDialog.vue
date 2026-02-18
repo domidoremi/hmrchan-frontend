@@ -264,8 +264,8 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 64px;
-  height: 64px;
+  width: 4rem;
+  height: 4rem;
   border-radius: var(--radius-full);
   background: rgba(var(--color-primary-rgb), 0.1);
   color: var(--color-primary);

@@ -190,7 +190,7 @@ function handleAction(toast: Toast) {
 
 .toast-stack {
   position: relative;
-  width: 360px;
+  width: 22.5rem;
   max-width: 90vw;
 }
 
@@ -280,7 +280,7 @@ function handleAction(toast: Toast) {
   font-size: var(--text-sm);
   font-weight: var(--font-semibold);
   color: var(--color-text-primary);
-  margin: 0 0 1px;
+  margin: 0 0 0.0625rem;
   line-height: 1.3;
 }
 
@@ -343,7 +343,7 @@ function handleAction(toast: Toast) {
   position: absolute;
   bottom: 0;
   left: 0;
-  height: 2px;
+  height: 0.125rem;
   width: 100%;
   opacity: 0.35;
   transform-origin: left;
