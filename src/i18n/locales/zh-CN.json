@@ -313,7 +313,8 @@
     "subtitlesAvailable": "字幕可用",
     "untitled": "未命名",
     "swipeAgainNext": "再次滑动以进入下一篇",
-    "swipeAgainPrev": "再次滑动以返回上一篇"
+    "swipeAgainPrev": "再次滑动以返回上一篇",
+    "offlineQueued": "已加入离线队列"
   },
   "author": {
     "postCount": "{count} 个作品"

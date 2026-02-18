@@ -313,7 +313,8 @@
     "subtitlesAvailable": "Subtitles available",
     "untitled": "Untitled",
     "swipeAgainNext": "Swipe again to go to next post",
-    "swipeAgainPrev": "Swipe again to go to previous post"
+    "swipeAgainPrev": "Swipe again to go to previous post",
+    "offlineQueued": "Queued for offline sync"
   },
   "author": {
     "postCount": "{count} posts"
@@ -350,7 +351,7 @@
     "submit": "Submit",
     "reply": "Reply",
     "replies": "replies",
-    "delete": "Delete",
+    "share": "Share",
     "report": "Report",
     "empty": "No comments yet",
     "beFirst": "Be the first to comment!",
