@@ -173,6 +173,7 @@
     "theme": "主題",
     "light": "淺色",
     "dark": "深色",
+    "blue": "藍色",
     "auto": "跟隨系統",
     "language": "語言",
     "uiStyle": "UI 風格",
@@ -312,7 +313,8 @@
     "subtitlesAvailable": "字幕可用",
     "untitled": "未命名",
     "swipeAgainNext": "再次滑動以進入下一篇",
-    "swipeAgainPrev": "再次滑動以返回上一篇"
+    "swipeAgainPrev": "再次滑動以返回上一篇",
+    "offlineQueued": "已加入離線佇列"
   },
   "author": {
     "postCount": "{count} 個作品"

@@ -1,13 +1,6 @@
 {
   "$schema": "https://unpkg.com/knip@5/schema.json",
-  "entry": [
-    "src/main.ts",
-    "src/router/index.ts",
-    "vite.config.ts",
-    "vitest.config.ts",
-    "eslint.config.ts",
-    "src/**/*.vue"
-  ],
+  "entry": ["src/router/index.ts", "vitest.setup.ts", "src/**/*.vue"],
   "project": ["src/**/*.{ts,vue}", "*.config.ts", "vite-plugin-*.ts"],
   "ignore": [
     "src/**/*.d.ts",
@@ -21,22 +14,18 @@
     "dist/**/*",
     "node_modules/**/*",
     ".husky/**/*",
-    "public/**/*"
+    "public/**/*",
+    "src/utils/notifications/pushManager.ts"
   ],
   "ignoreDependencies": [
     "@cloudflare/*",
-    "@rolldown/*",
     "chrome-launcher",
     "lighthouse",
-    "jiti",
     "@types/*",
-    "@tsconfig/*",
-    "husky",
-    "lint-staged",
-    "prettier"
+    "@vue/test-utils"
   ],
   "ignoreExportsUsedInFile": true,
-  "ignoreBinaries": ["bunx", "uvx", "bun", "node"],
+  "ignoreBinaries": [],
   "rules": {
     "exports": "off",
     "types": "off",
@@ -45,16 +34,5 @@
     "unresolved": "warn",
     "nsExports": "warn",
     "nsTypes": "warn"
-  },
-  "workspaces": {
-    ".": {
-      "entry": [
-        "src/main.ts",
-        "src/router/index.ts"
-      ],
-      "project": [
-        "src/**/*.{ts,vue}"
-      ]
-    }
   }
 }
