@@ -901,6 +901,15 @@ API使用滑动窗口算法进行速率限制。限流基于以下维度：
 
 ### User-Auth
 
+- **POST /api/v1/2fa/backup-codes** — Generate Backup Codes
+  - 认证：需要
+  - 参数：无
+  - 成功响应：
+    - 200 JSON -> data:BackupCodesResponse
+      - data 字段结构：
+            - `backup_codes` (type:array; required:yes)
+            - `message` (type:string; required:no)
+
 - **POST /api/v1/2fa/disable** — Disable 2Fa
   - 认证：需要
   - 参数：无
@@ -923,6 +932,18 @@ API使用滑动窗口算法进行速率限制。限流基于以下维度：
     - 200 JSON -> data:RegenerateBackupCodesResponse
       - data 字段结构：
             - `backup_codes` (type:array; required:yes)
+            - `message` (type:string; required:yes)
+
+- **POST /api/v1/2fa/enable** — Enable 2Fa
+  - 认证：需要
+  - 参数：无
+  - 请求体：
+    - application/json -> Enable2FARequest
+      - 字段结构：
+            - `code` (type:string; required:yes; desc:6-digit TOTP code to confirm setup)
+  - 成功响应：
+    - 200 JSON -> data:object
+      - data 字段结构：
             - `message` (type:string; required:yes)
 
 - **POST /api/v1/2fa/setup** — Setup 2Fa
@@ -1085,6 +1106,22 @@ API使用滑动窗口算法进行速率限制。限流基于以下维度：
             - `expires_in` (type:integer; required:yes)
             - `message` (type:string; required:yes)
 
+- **POST /api/v1/account/verify-password** — Verify Password (Legacy Fallback)
+  - 认证：需要
+  - 参数：无
+  - 请求体：
+    - application/json -> VerifyPasswordRequest
+      - 字段结构：
+            - `password` (type:string; required:yes; minLen=1; desc:Current password to verify)
+  - 成功响应：
+    - 200 JSON -> data:VerifyPasswordResponse
+      - data 字段结构：
+            - `verified` (type:boolean; required:yes)
+            - `verification_token` (type:null|string; required:no)
+            - `expires_in` (type:integer|null; required:no)
+            - `message` (type:string; required:yes)
+  - 说明：前端 fallback 路径，优先使用 `/auth/verify-password`
+
 - **POST /api/v1/auth/verify-password** — Verify Password Endpoint
   - 认证：需要
   - 参数：无
@@ -1141,6 +1178,19 @@ API使用滑动窗口算法进行速率限制。限流基于以下维度：
             - `success` (type:boolean; required:yes)
             - `message` (type:string; required:yes)
 
+- **POST /api/v1/email/send-code** — Send Email Verification Code
+  - 认证：需要
+  - 参数：无
+  - 请求体：
+    - application/json -> SendEmailCodeRequest
+      - 字段结构：
+            - `email` (type:string; required:yes; desc:Target email address)
+            - `action` (type:string; required:no; desc:Action context for the code)
+  - 成功响应：
+    - 200 JSON -> data:object
+      - data 字段结构：
+            - `message` (type:string; required:yes)
+
 - **POST /api/v1/email/send-registration-code** — Send Registration Code
   - 认证：不需要
   - 参数：无
@@ -1157,6 +1207,35 @@ API使用滑动窗口算法进行速率限制。限流基于以下维度：
   - 参数：无
   - 成功响应：
     - 200 JSON -> data:object
+
+- **POST /api/v1/email/verify** — Verify Email (Short Alias)
+  - 认证：不需要
+  - 参数：无
+  - 请求体：
+    - application/json -> VerifyEmailRequest
+      - 字段结构：
+            - `token` (type:string; required:yes; desc:Verification token from email)
+  - 成功响应：
+    - 200 JSON -> data:VerifyEmailResponse
+      - data 字段结构：
+            - `success` (type:boolean; required:yes)
+            - `message` (type:string; required:yes)
+            - `email_verified` (type:boolean; required:no)
+  - 说明：`/email/verify-email` 的短别名
+
+- **POST /api/v1/email/verify-code** — Verify Email Code
+  - 认证：需要
+  - 参数：无
+  - 请求体：
+    - application/json -> VerifyEmailCodeRequest
+      - 字段结构：
+            - `email` (type:string; required:yes; desc:Email address)
+            - `code` (type:string; required:yes; desc:6-digit verification code)
+  - 成功响应：
+    - 200 JSON -> data:VerifyEmailCodeResponse
+      - data 字段结构：
+            - `verified` (type:boolean; required:yes)
+            - `message` (type:string; required:no)
 
 - **POST /api/v1/email/verify-email** — Verify Email
   - 认证：不需要
@@ -1237,6 +1316,53 @@ API使用滑动窗口算法进行速率限制。限流基于以下维度：
   - 参数：无
   - 成功响应：
     - 200 JSON -> data:object
+
+- **PUT /api/v1/account/profile** — Update Profile (Legacy Fallback)
+  - 认证：需要
+  - 参数：无
+  - 请求体：
+    - application/json -> ProfileUpdate
+      - 字段结构：
+            - `username` (type:null|string; required:no)
+            - `full_name` (type:null|string; required:no)
+            - `bio` (type:null|string; required:no)
+            - `avatar_url` (type:null|string; required:no)
+  - 成功响应：
+    - 200 JSON -> data:ProfileResponse
+  - 说明：前端 updateProfile() 的 fallback 路径，当 PATCH /users/me/profile 返回 404/405 时使用
+
+- **PUT /api/v1/account/password** — Change Password (Legacy Fallback)
+  - 认证：需要
+  - 参数：无
+  - 请求体：
+    - application/json -> ChangePasswordRequest
+      - 字段结构：
+            - `current_password` (type:string; required:yes)
+            - `new_password` (type:string; required:yes)
+            - `verification_token` (type:string; required:no)
+  - 成功响应：
+    - 200 JSON -> data:object
+  - 说明：前端 changePassword() 的 fallback 路径，当 POST /users/me/change-password 返回 404/405 时使用
+
+- **DELETE /api/v1/users/me** — Delete My Account
+  - 认证：需要
+  - 参数：无
+  - 成功响应：
+    - 200 JSON -> data:MessageResponse
+      - data 字段结构：
+            - `message` (type:string; required:yes)
+            - `success` (type:boolean; required:no)
+  - 说明：前端 deleteAccount() 的主要调用路径
+
+- **DELETE /api/v1/account** — Delete Account (Legacy Fallback)
+  - 认证：需要
+  - 参数：无
+  - 成功响应：
+    - 200 JSON -> data:MessageResponse
+      - data 字段结构：
+            - `message` (type:string; required:yes)
+            - `success` (type:boolean; required:no)
+  - 说明：前端 deleteAccount() 的 fallback 路径，当 DELETE /users/me 返回 404/405 时使用
 
 - **POST /api/v1/account/restore** — Restore Account
   - 认证：需要
@@ -1585,6 +1711,18 @@ API使用滑动窗口算法进行速率限制。限流基于以下维度：
             - `createdAt` (type:string; required:yes; desc:创建时间)
             - `updatedAt` (type:string; required:yes; desc:更新时间)
             - `lastSyncedAt` (type:string; required:yes; desc:最后同步时间)
+
+- **PUT /api/v1/preferences/{key}** — Update Single Preference
+  - 认证：需要
+  - 参数：
+    - key；in:path；type:string；required:yes；desc:偏好设置键名
+  - 请求体：
+    - application/json
+      - 字段结构：
+            - `value` (type:any; required:yes; desc:偏好设置值)
+  - 成功响应：
+    - 200 JSON -> data:object
+  - 说明：前端通过 preferencesService.updateOne() 调用，更新单项偏好设置
 
 - **POST /api/v1/preferences/sync** — Sync Preferences
   - 认证：需要
@@ -2016,6 +2154,21 @@ API使用滑动窗口算法进行速率限制。限流基于以下维度：
             - `page_size` (type:integer; required:yes)
             - `has_more` (type:boolean; required:yes)
 
+- **PUT /api/v1/notifications/read-all** — Mark All As Read (PUT variant)
+  - 认证：需要
+  - 参数：
+    - type；in:query；type:null|string；required:no；desc:只标记某类型
+  - 请求体：
+    - application/json (optional)
+      - 字段结构：
+            - `type` (type:null|string; required:no; desc:通知类型)
+  - 成功响应：
+    - 200 JSON -> data:MessageResponse
+      - data 字段结构：
+            - `message` (type:string; required:yes)
+            - `success` (type:boolean; required:no)
+  - 说明：前端使用 PUT 方法调用，与 POST 等效
+
 - **POST /api/v1/notifications/read-all** — Mark All As Read
   - 认证：需要
   - 参数：
@@ -2043,6 +2196,14 @@ API使用滑动窗口算法进行速率限制。限流基于以下维度：
       - data 字段结构：
             - `message` (type:string; required:yes)
             - `success` (type:boolean; required:no)
+
+- **PUT /api/v1/notifications/{notification_id}/read** — Mark As Read (PUT variant)
+  - 认证：需要
+  - 参数：
+    - notification_id；in:path；type:integer；required:yes
+  - 成功响应：
+    - 200 JSON -> data:NotificationResponse
+  - 说明：前端使用 PUT 方法调用，与 PATCH 等效
 
 - **PATCH /api/v1/notifications/{notification_id}/read** — Mark As Read
   - 认证：需要
