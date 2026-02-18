@@ -313,7 +313,8 @@
     "subtitlesAvailable": "字幕あり",
     "untitled": "無題",
     "swipeAgainNext": "もう一度スワイプして次の投稿へ",
-    "swipeAgainPrev": "もう一度スワイプして前の投稿へ"
+    "swipeAgainPrev": "もう一度スワイプして前の投稿へ",
+    "offlineQueued": "オフラインキューに追加しました"
   },
   "author": {
     "postCount": "{count} 件の投稿"
