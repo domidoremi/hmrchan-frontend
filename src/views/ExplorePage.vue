@@ -1,11 +1,7 @@
 <template>
   <div class="explore-page">
     <!-- Platform-specific animated background -->
-    <BluePolymorph
-      v-if="shouldShowPlatformBg"
-      :morphClassName="morphClassName"
-      :morphCSSVars="morphCSSVars"
-    />
+    <PlatformCanvas v-if="shouldShowPlatformBg" :platform="currentPlatform" />
 
     <!-- MindMarket 风格背景装饰 -->
     <div class="explore-bg" aria-hidden="true">
@@ -132,6 +128,8 @@
         </template>
       </template>
     </div>
+
+    <NextPostFab />
   </div>
 </template>
 
@@ -157,7 +155,6 @@ import { useCachedPostList } from '@/composables/useCachedPosts'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import { useProgressiveRender } from '@/composables/useProgressiveRender'
 import { useMasonryColumns } from '@/composables/useMasonryColumns'
-import { useBluePolymorph } from '@/composables/useBluePolymorph'
 import { useSettingsStore } from '@/stores'
 import { throttleRAF } from '@/utils/performance'
 import { createResizeObserver } from '@/utils/modernAPIs'
@@ -167,7 +164,8 @@ import PostCard from '@/components/business/PostCard.vue'
 import PostCardSkeleton from '@/components/business/PostCardSkeleton.vue'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
-import BluePolymorph from '@/components/ui/BluePolymorph.vue'
+import PlatformCanvas from '@/components/ui/PlatformCanvas.vue'
+import NextPostFab from '@/components/ui/NextPostFab.vue'
 
 const router = useRouter()
 const { t } = useI18n()
@@ -178,12 +176,6 @@ const shouldShowPlatformBg = computed(() => settings.value.enableAnimations)
 const currentSort = ref<'newest' | 'popular' | 'trending'>('newest')
 type ExplorePlatform = 'all' | 'youtube' | 'tiktok' | 'twitter' | 'instagram'
 const currentPlatform = ref<ExplorePlatform>('all')
-
-// Blue Polymorph 背景动画
-const enableAnimations = computed(() => settings.value.enableAnimations)
-const { morphClassName, morphCSSVars } = useBluePolymorph(currentPlatform, {
-  enabled: enableAnimations,
-})
 
 const posts = ref<PostListItem[]>([])
 const isLoading = ref(false)

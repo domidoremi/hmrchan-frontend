@@ -255,7 +255,8 @@
     "platformFilter": "プラットフォームで絞り込む",
     "newest": "新着",
     "popular": "人気順",
-    "trending": "トレンド"
+    "trending": "トレンド",
+    "nextPost": "次の投稿"
   },
   "search": {
     "title": "検索",

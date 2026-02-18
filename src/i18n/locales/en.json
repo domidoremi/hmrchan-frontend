@@ -255,7 +255,8 @@
     "platformFilter": "Filter by platform",
     "newest": "Newest",
     "popular": "Most Popular",
-    "trending": "Trending"
+    "trending": "Trending",
+    "nextPost": "Next Post"
   },
   "search": {
     "title": "Search",
