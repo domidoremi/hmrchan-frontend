@@ -50,23 +50,23 @@ defineExpose({ play: () => {}, pause: () => {}, stop: () => {} })
 }
 
 .animated-icon--sm {
-  width: 16px;
-  height: 16px;
+  width: 1rem;
+  height: 1rem;
 }
 
 .animated-icon--md {
-  width: 20px;
-  height: 20px;
+  width: 1.25rem;
+  height: 1.25rem;
 }
 
 .animated-icon--lg {
-  width: 24px;
-  height: 24px;
+  width: 1.5rem;
+  height: 1.5rem;
 }
 
 .animated-icon--xl {
-  width: 32px;
-  height: 32px;
+  width: 2rem;
+  height: 2rem;
 }
 
 .animated-icon__fallback {

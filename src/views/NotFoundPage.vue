@@ -39,7 +39,7 @@ function goHome() {
 }
 
 .error-code {
-  font-size: 80px;
+  font-size: 5rem;
   font-weight: var(--font-bold);
   line-height: 1;
   margin-bottom: var(--spacing-3);
@@ -47,7 +47,7 @@ function goHome() {
 
 @media (min-width: 640px) {
   .error-code {
-    font-size: 100px;
+    font-size: 6.25rem;
   }
 }
 

@@ -225,16 +225,16 @@ onMounted(() => {
 }
 
 .authors-bg__blob--purple {
-  width: 450px;
-  height: 450px;
+  width: 28.125rem;
+  height: 28.125rem;
   top: 10%;
   right: -10%;
   background: radial-gradient(circle, rgba(167, 139, 250, 0.5) 0%, transparent 70%);
 }
 
 .authors-bg__blob--teal {
-  width: 400px;
-  height: 400px;
+  width: 25rem;
+  height: 25rem;
   bottom: 15%;
   left: -8%;
   background: radial-gradient(circle, rgba(45, 212, 191, 0.4) 0%, transparent 70%);
@@ -316,16 +316,16 @@ onMounted(() => {
 }
 
 .author-avatar {
-  width: 48px;
-  height: 48px;
+  width: 3rem;
+  height: 3rem;
   border-radius: 50%;
   flex-shrink: 0;
 }
 
 @media (min-width: 768px) {
   .author-avatar {
-    width: 56px;
-    height: 56px;
+    width: 3.5rem;
+    height: 3.5rem;
   }
 }
 

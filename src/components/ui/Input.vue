@@ -127,7 +127,7 @@ function handleInput(event: Event) {
 
 @media (max-width: 768px) {
   .ui-input {
-    font-size: 16px;
+    font-size: 1rem;
   }
 }
 </style>

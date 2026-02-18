@@ -654,24 +654,24 @@ onBeforeUnmount(() => {
 }
 
 .explore-bg__blob--green {
-  width: 500px;
-  height: 500px;
+  width: 31.25rem;
+  height: 31.25rem;
   top: -10%;
   left: -8%;
   background: radial-gradient(circle, rgba(var(--color-accent-rgb), 0.25) 0%, transparent 70%);
 }
 
 .explore-bg__blob--purple {
-  width: 400px;
-  height: 400px;
+  width: 25rem;
+  height: 25rem;
   top: 30%;
   right: -10%;
   background: radial-gradient(circle, rgba(var(--color-secondary-rgb), 0.15) 0%, transparent 70%);
 }
 
 .explore-bg__blob--teal {
-  width: 450px;
-  height: 450px;
+  width: 28.125rem;
+  height: 28.125rem;
   bottom: 5%;
   left: 20%;
   background: radial-gradient(circle, rgba(var(--color-accent-rgb), 0.15) 0%, transparent 70%);
@@ -757,7 +757,7 @@ onBeforeUnmount(() => {
 }
 
 .search-kbd {
-  padding: 2px 6px;
+  padding: 0.125rem 0.375rem;
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-sm);

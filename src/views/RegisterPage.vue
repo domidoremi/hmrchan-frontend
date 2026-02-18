@@ -767,14 +767,14 @@ function isTurnstileTokenFresh() {
 }
 
 .password-input {
-  padding-right: 44px;
+  padding-right: 2.75rem;
 }
 
 .password-toggle {
   position: absolute;
   right: var(--spacing-3);
-  height: 32px;
-  width: 32px;
+  height: 2rem;
+  width: 2rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -826,7 +826,7 @@ function isTurnstileTokenFresh() {
 
 .strength-bar {
   flex: 1;
-  height: 4px;
+  height: 0.25rem;
   background: var(--color-border);
   border-radius: var(--radius-full);
   overflow: hidden;
@@ -920,8 +920,8 @@ function isTurnstileTokenFresh() {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 20px;
-  height: 20px;
+  width: 1.25rem;
+  height: 1.25rem;
   border-radius: var(--radius-full);
   border: 1.5px solid currentColor;
   font-size: var(--text-xs);
@@ -935,8 +935,8 @@ function isTurnstileTokenFresh() {
 }
 
 .step-line {
-  width: 32px;
-  height: 1.5px;
+  width: 2rem;
+  height: 0.0938rem;
   background: var(--color-border);
   transition: background 200ms ease;
 }

@@ -159,7 +159,7 @@ const setSentinelRef = (el: Element | ComponentPublicInstance | null) => {
 
 .progress-track {
   width: 100%;
-  height: 6px;
+  height: 0.375rem;
   background: var(--color-muted);
   border-radius: var(--radius-full);
   overflow: hidden;
@@ -235,8 +235,8 @@ const setSentinelRef = (el: Element | ComponentPublicInstance | null) => {
 }
 
 .idle-dot {
-  width: 6px;
-  height: 6px;
+  width: 0.375rem;
+  height: 0.375rem;
   border-radius: 50%;
   background: var(--color-text-tertiary);
   box-shadow: none;
@@ -268,7 +268,7 @@ const setSentinelRef = (el: Element | ComponentPublicInstance | null) => {
 
 .end-line {
   flex: 1;
-  height: 1px;
+  height: 0.0625rem;
   background: linear-gradient(90deg, transparent 0%, var(--color-border) 50%, transparent 100%);
 }
 

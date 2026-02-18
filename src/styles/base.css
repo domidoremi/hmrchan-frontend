@@ -204,10 +204,10 @@ ol {
 /* Screen reader only */
 .sr-only {
   position: absolute;
-  width: 1px;
-  height: 1px;
+  width: 0.0625rem;
+  height: 0.0625rem;
   padding: 0;
-  margin: -1px;
+  margin: -0.0625rem;
   overflow: hidden;
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
@@ -236,8 +236,8 @@ ol {
 
 /* Scrollbar styling */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 0.5rem;
+  height: 0.5rem;
 }
 
 ::-webkit-scrollbar-track {

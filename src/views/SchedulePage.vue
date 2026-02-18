@@ -842,7 +842,7 @@ onMounted(() => {
 <style scoped>
 .schedule-page {
   position: relative;
-  min-height: 100vh;
+  min-height: 100dvh;
   padding: var(--spacing-6) 0;
 }
 
@@ -863,16 +863,16 @@ onMounted(() => {
 }
 
 .schedule-bg__blob--blue {
-  width: 420px;
-  height: 420px;
+  width: 26.25rem;
+  height: 26.25rem;
   top: 8%;
   right: -6%;
   background: radial-gradient(circle, rgba(59, 130, 246, 0.4) 0%, transparent 70%);
 }
 
 .schedule-bg__blob--amber {
-  width: 380px;
-  height: 380px;
+  width: 23.75rem;
+  height: 23.75rem;
   bottom: 12%;
   left: -5%;
   background: radial-gradient(circle, rgba(245, 158, 11, 0.35) 0%, transparent 70%);
@@ -912,7 +912,7 @@ onMounted(() => {
   display: inline-flex;
   align-items: center;
   gap: var(--spacing-1);
-  padding: 4px 12px;
+  padding: 0.25rem 0.75rem;
   font-size: var(--text-xs);
   border-radius: var(--radius-full);
   transition: all 0.2s ease;
@@ -935,8 +935,8 @@ onMounted(() => {
 }
 
 .month-nav-btn {
-  width: 36px;
-  height: 36px;
+  width: 2.25rem;
+  height: 2.25rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -966,7 +966,7 @@ onMounted(() => {
   display: inline-flex;
   align-items: center;
   gap: var(--spacing-1);
-  padding: 4px 12px;
+  padding: 0.25rem 0.75rem;
   font-size: var(--text-xs);
   border-radius: var(--radius-full);
   color: var(--color-primary);
@@ -1001,7 +1001,7 @@ onMounted(() => {
 .calendar-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 2px;
+  gap: 0.125rem;
 }
 
 .calendar-cell {
@@ -1010,7 +1010,7 @@ onMounted(() => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: 0.25rem;
   border-radius: var(--radius-md);
   cursor: pointer;
   transition: all 0.15s ease;
@@ -1039,8 +1039,8 @@ onMounted(() => {
   background: var(--color-primary);
   color: var(--color-on-primary);
   border-radius: var(--radius-full);
-  width: 28px;
-  height: 28px;
+  width: 1.75rem;
+  height: 1.75rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1064,12 +1064,12 @@ onMounted(() => {
 
 .day-dots {
   display: flex;
-  gap: 3px;
+  gap: 0.1875rem;
 }
 
 .day-dot {
-  width: 5px;
-  height: 5px;
+  width: 0.3125rem;
+  height: 0.3125rem;
   border-radius: 50%;
 }
 
@@ -1078,8 +1078,8 @@ onMounted(() => {
 }
 
 .skeleton-day {
-  width: 24px;
-  height: 16px;
+  width: 1.5rem;
+  height: 1rem;
   border-radius: 4px;
   background: var(--glass-bg-light);
   animation: skeleton-pulse 1.5s ease-in-out infinite;
@@ -1154,7 +1154,7 @@ onMounted(() => {
 }
 
 .event-count {
-  padding: 2px 10px;
+  padding: 0.125rem 0.625rem;
   background: var(--glass-bg-light);
   border-radius: var(--radius-full);
   font-size: var(--text-xs);
@@ -1163,8 +1163,8 @@ onMounted(() => {
 
 .close-btn {
   margin-left: auto;
-  width: 32px;
-  height: 32px;
+  width: 2rem;
+  height: 2rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1191,7 +1191,7 @@ onMounted(() => {
 }
 
 .event-category-bar {
-  width: 4px;
+  width: 0.25rem;
   flex-shrink: 0;
 }
 
@@ -1208,7 +1208,7 @@ onMounted(() => {
 }
 
 .event-badge {
-  padding: 2px 8px;
+  padding: 0.125rem 0.5rem;
   border-radius: var(--radius-full);
   font-size: var(--text-xs);
   font-weight: var(--font-medium);
@@ -1306,13 +1306,13 @@ onMounted(() => {
   }
 
   .calendar-cell--today .day-number {
-    width: 24px;
-    height: 24px;
+    width: 1.5rem;
+    height: 1.5rem;
   }
 
   .day-dot {
-    width: 4px;
-    height: 4px;
+    width: 0.25rem;
+    height: 0.25rem;
   }
 
   .category-filters {
@@ -1360,7 +1360,7 @@ onMounted(() => {
 }
 
 .detail-skeleton {
-  height: 16px;
+  height: 1rem;
   border-radius: 4px;
   background: var(--glass-bg-light);
   animation: skeleton-pulse 1.5s ease-in-out infinite;
@@ -1373,7 +1373,7 @@ onMounted(() => {
 
 .detail-skeleton--long {
   width: 100%;
-  height: 48px;
+  height: 3rem;
 }
 
 .event-detail {
@@ -1390,7 +1390,7 @@ onMounted(() => {
 }
 
 .draft-badge {
-  padding: 2px 8px;
+  padding: 0.125rem 0.5rem;
   border-radius: var(--radius-full);
   font-size: var(--text-xs);
   font-weight: var(--font-medium);
@@ -1407,7 +1407,7 @@ onMounted(() => {
 .detail-icon {
   color: var(--color-text-tertiary);
   flex-shrink: 0;
-  margin-top: 2px;
+  margin-top: 0.125rem;
 }
 
 .detail-row-content {
@@ -1425,7 +1425,7 @@ onMounted(() => {
 }
 
 .detail-allday-tag {
-  padding: 1px 6px;
+  padding: 0.0625rem 0.375rem;
   border-radius: var(--radius-full);
   font-size: var(--text-xs);
   background: var(--glass-bg-light);
@@ -1442,7 +1442,7 @@ onMounted(() => {
   display: block;
   font-size: var(--text-xs);
   color: var(--color-text-tertiary);
-  margin-top: 2px;
+  margin-top: 0.125rem;
 }
 
 .detail-description {

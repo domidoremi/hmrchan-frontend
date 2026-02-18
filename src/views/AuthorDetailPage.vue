@@ -149,8 +149,8 @@ watch(authorId, () => {
 }
 
 .author-avatar {
-  width: 72px;
-  height: 72px;
+  width: 4.5rem;
+  height: 4.5rem;
   border-radius: 50%;
   flex-shrink: 0;
 }
@@ -162,8 +162,8 @@ watch(authorId, () => {
   }
 
   .author-avatar {
-    width: 88px;
-    height: 88px;
+    width: 5.5rem;
+    height: 5.5rem;
   }
 }
 

@@ -104,19 +104,19 @@ function toggle() {
 .ui-switch--sm .ui-switch__thumb {
   width: var(--ui-switch-thumb-sm);
   height: var(--ui-switch-thumb-sm);
-  left: 2px;
+  left: 0.125rem;
 }
 
 .ui-switch--default .ui-switch__thumb {
   width: var(--ui-switch-thumb-md);
   height: var(--ui-switch-thumb-md);
-  left: 2px;
+  left: 0.125rem;
 }
 
 .ui-switch--lg .ui-switch__thumb {
   width: var(--ui-switch-thumb-lg);
   height: var(--ui-switch-thumb-lg);
-  left: 2px;
+  left: 0.125rem;
 }
 
 /* Checked state */

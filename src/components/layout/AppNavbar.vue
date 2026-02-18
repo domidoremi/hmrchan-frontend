@@ -782,11 +782,11 @@ onUnmounted(() => {
 .nav-indicator::after {
   content: '';
   position: absolute;
-  bottom: 6px;
+  bottom: 0.375rem;
   left: 50%;
   transform: translateX(-50%);
-  width: 20px;
-  height: 3px;
+  width: 1.25rem;
+  height: 0.1875rem;
   background: var(--gradient-primary);
   border-radius: var(--radius-full);
   box-shadow: 0 0 8px rgba(var(--color-primary-rgb), 0.4);
@@ -859,8 +859,8 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: var(--ui-action-size, 40px);
-  height: var(--ui-action-size, 40px);
+  width: var(--ui-action-size, 2.5rem);
+  height: var(--ui-action-size, 2.5rem);
   border-radius: var(--ui-radius-button, var(--radius-lg));
   color: var(--color-text-secondary);
   transition: all var(--transition-fast);
@@ -938,7 +938,7 @@ onUnmounted(() => {
 /* ========== User Button ========== */
 .user-btn {
   position: relative;
-  padding: 2px;
+  padding: 0.125rem;
   border-radius: 50%;
   transition: all var(--transition-fast);
 }
@@ -946,7 +946,7 @@ onUnmounted(() => {
 .user-btn::before {
   content: '';
   position: absolute;
-  inset: -2px;
+  inset: -0.125rem;
   border-radius: 50%;
   background: transparent;
   transition: background var(--transition-fast);
@@ -959,8 +959,8 @@ onUnmounted(() => {
 }
 
 .user-avatar {
-  width: 36px;
-  height: 36px;
+  width: 2.25rem;
+  height: 2.25rem;
   border-radius: 50%;
   object-fit: cover;
   border: 2px solid var(--glass-border-strong);
@@ -976,8 +976,8 @@ onUnmounted(() => {
   position: absolute;
   bottom: 0;
   right: 0;
-  width: 10px;
-  height: 10px;
+  width: 0.625rem;
+  height: 0.625rem;
   background: var(--color-success);
   border: 2px solid var(--glass-bg-strong);
   border-radius: 50%;
@@ -1005,16 +1005,16 @@ onUnmounted(() => {
 }
 
 .user-avatar-lg {
-  width: 48px;
-  height: 48px;
+  width: 3rem;
+  height: 3rem;
   border-radius: 50%;
   object-fit: cover;
   border: 2px solid var(--glass-border-strong);
 }
 
 .user-status--lg {
-  width: 12px;
-  height: 12px;
+  width: 0.75rem;
+  height: 0.75rem;
   border-width: 2px;
 }
 
@@ -1039,7 +1039,7 @@ onUnmounted(() => {
 }
 
 .dropdown-divider {
-  height: 1px;
+  height: 0.0625rem;
   margin: 0 var(--spacing-3);
   background: var(--glass-border);
 }
@@ -1071,8 +1071,8 @@ onUnmounted(() => {
 }
 
 .dropdown-link-icon {
-  width: 32px;
-  height: 32px;
+  width: 2rem;
+  height: 2rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1119,7 +1119,7 @@ onUnmounted(() => {
   bottom: 0;
   left: 0;
   right: 0;
-  height: 72px;
+  height: 4.5rem;
   background: var(--glass-bg-strong);
   backdrop-filter: var(--glass-blur-strong);
   -webkit-backdrop-filter: var(--glass-blur-strong);
@@ -1137,8 +1137,8 @@ onUnmounted(() => {
   position: absolute;
   top: 0;
   left: 0;
-  width: 32px;
-  height: 3px;
+  width: 2rem;
+  height: 0.1875rem;
   background: var(--color-primary);
   border-radius: 0 0 3px 3px;
   transition:
@@ -1158,11 +1158,11 @@ onUnmounted(() => {
   flex-direction: column;
   align-items: center;
   flex: 1 1 0;
-  gap: 2px;
+  gap: 0.125rem;
   padding: var(--spacing-2) var(--spacing-1);
   color: var(--color-text-tertiary);
   text-decoration: none;
-  font-size: 10px;
+  font-size: 0.625rem;
   font-weight: var(--font-medium);
   transition: color 0.25s ease;
   min-width: 0;
@@ -1171,8 +1171,8 @@ onUnmounted(() => {
 
 .mobile-nav-icon {
   position: relative;
-  width: 40px;
-  height: 40px;
+  width: 2.5rem;
+  height: 2.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1288,8 +1288,8 @@ onUnmounted(() => {
 }
 
 .mobile-nav--animated .mobile-nav-item:active::after {
-  width: 80px;
-  height: 80px;
+  width: 5rem;
+  height: 5rem;
   opacity: 1;
   transition:
     width 0s,
@@ -1347,10 +1347,10 @@ onUnmounted(() => {
 
 .nav-badge-dot {
   position: absolute;
-  top: -2px;
-  right: -4px;
-  width: 8px;
-  height: 8px;
+  top: -0.125rem;
+  right: -0.25rem;
+  width: 0.5rem;
+  height: 0.5rem;
   background: var(--color-error);
   border-radius: 50%;
   border: 2px solid var(--glass-bg-strong);
@@ -1359,10 +1359,10 @@ onUnmounted(() => {
 }
 
 .nav-badge-dot--mobile {
-  top: 2px;
-  right: 2px;
-  width: 7px;
-  height: 7px;
+  top: 0.125rem;
+  right: 0.125rem;
+  width: 0.4375rem;
+  height: 0.4375rem;
 }
 
 @keyframes badge-pulse {

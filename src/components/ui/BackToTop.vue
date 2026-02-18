@@ -115,7 +115,7 @@ onUnmounted(() => {
   --edge: clamp(18px, 3.4vw, 36px);
   position: fixed;
   right: var(--edge);
-  bottom: calc(var(--edge) + env(safe-area-inset-bottom, 0px));
+  bottom: calc(var(--edge) + env(safe-area-inset-bottom, 0));
   z-index: var(--z-fixed);
   display: flex;
   align-items: center;
@@ -139,7 +139,7 @@ onUnmounted(() => {
 .back-to-top::before {
   content: '';
   position: absolute;
-  inset: -1px;
+  inset: -0.0625rem;
   border-radius: inherit;
   background: var(--gradient-primary);
   opacity: 0;
@@ -150,7 +150,7 @@ onUnmounted(() => {
 .back-to-top::after {
   content: '';
   position: absolute;
-  inset: -10px;
+  inset: -0.625rem;
   border-radius: inherit;
   background: radial-gradient(circle, rgba(var(--color-primary-rgb), 0.35) 0%, transparent 70%);
   opacity: 0.18;
@@ -252,7 +252,7 @@ onUnmounted(() => {
 /* Responsive */
 @media (max-width: 768px) {
   .back-to-top {
-    bottom: calc(var(--edge) + 72px + env(safe-area-inset-bottom, 0px));
+    bottom: calc(var(--edge) + 4.5rem + env(safe-area-inset-bottom, 0));
   }
 }
 

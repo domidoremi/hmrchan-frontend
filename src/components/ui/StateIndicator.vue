@@ -120,8 +120,8 @@ const resolvedActionLabel = computed(() => props.actionLabel ?? t('common.retry'
 
 .state-indicator__visual {
   position: relative;
-  width: 80px;
-  height: 80px;
+  width: 5rem;
+  height: 5rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -141,8 +141,8 @@ const resolvedActionLabel = computed(() => props.actionLabel ?? t('common.retry'
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 64px;
-  height: 64px;
+  width: 4rem;
+  height: 4rem;
   border-radius: var(--radius-full);
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);

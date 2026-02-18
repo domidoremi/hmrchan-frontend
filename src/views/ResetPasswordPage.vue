@@ -233,8 +233,8 @@ onUnmounted(() => {
 }
 
 .auth-badge-dot {
-  width: 6px;
-  height: 6px;
+  width: 0.375rem;
+  height: 0.375rem;
   border-radius: var(--radius-full);
   background: var(--color-primary);
   box-shadow: 0 0 8px rgba(var(--color-primary-rgb), 0.6);
@@ -244,8 +244,8 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 72px;
-  height: 72px;
+  width: 4.5rem;
+  height: 4.5rem;
   border-radius: var(--radius-full);
   margin: 0 auto var(--spacing-4);
 }
@@ -304,14 +304,14 @@ onUnmounted(() => {
 }
 
 .password-input {
-  padding-right: 44px;
+  padding-right: 2.75rem;
 }
 
 .password-toggle {
   position: absolute;
   right: var(--spacing-3);
-  height: 32px;
-  width: 32px;
+  height: 2rem;
+  width: 2rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -339,7 +339,7 @@ onUnmounted(() => {
 
 .strength-bar {
   flex: 1;
-  height: 4px;
+  height: 0.25rem;
   background: var(--color-border);
   border-radius: var(--radius-full);
   overflow: hidden;

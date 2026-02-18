@@ -462,8 +462,8 @@ watch(searchResults, () => {
 }
 
 .mention-thumb {
-  width: 40px;
-  height: 40px;
+  width: 2.5rem;
+  height: 2.5rem;
   border-radius: var(--radius-sm);
   object-fit: cover;
 }
@@ -510,10 +510,10 @@ watch(searchResults, () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 16px;
-  height: 16px;
+  width: 1rem;
+  height: 1rem;
   border-radius: 50%;
-  font-size: 12px;
+  font-size: 0.75rem;
   line-height: 1;
   opacity: 0.7;
   transition: opacity var(--transition-fast);

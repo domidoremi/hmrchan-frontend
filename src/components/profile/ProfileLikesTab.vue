@@ -236,7 +236,7 @@ onMounted(() => {
 }
 
 .item-count {
-  padding: 4px 12px;
+  padding: 0.25rem 0.75rem;
   background: var(--glass-bg-light);
   border-radius: var(--radius-full);
   font-size: var(--text-sm);

@@ -135,8 +135,8 @@ async function resend() {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 72px;
-  height: 72px;
+  width: 4.5rem;
+  height: 4.5rem;
   border-radius: var(--radius-full);
   margin: 0 auto var(--spacing-4);
 }

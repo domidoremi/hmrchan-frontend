@@ -574,8 +574,8 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  width: 2.25rem;
+  height: 2.25rem;
   padding: 0;
   border-radius: var(--radius-lg);
   color: var(--color-text-secondary);
@@ -877,8 +877,8 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  width: 2.25rem;
+  height: 2.25rem;
   border-radius: var(--radius-md);
   background: var(--glass-bg-subtle);
   color: var(--color-text-secondary);
@@ -1055,8 +1055,8 @@ onMounted(() => {
 }
 
 .author-avatar {
-  width: 48px;
-  height: 48px;
+  width: 3rem;
+  height: 3rem;
   border-radius: 50%;
   object-fit: cover;
   flex-shrink: 0;
@@ -1105,7 +1105,7 @@ onMounted(() => {
   align-items: center;
   justify-content: flex-start;
   gap: var(--spacing-6);
-  min-height: 50vh;
+  min-height: 50dvh;
   text-align: center;
 }
 

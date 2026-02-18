@@ -167,8 +167,8 @@ defineExpose({ reset, focus })
 }
 
 .code-digit {
-  width: 44px;
-  height: 52px;
+  width: 2.75rem;
+  height: 3.25rem;
   text-align: center;
   font-size: var(--text-xl);
   font-weight: var(--font-bold);
@@ -227,13 +227,13 @@ defineExpose({ reset, focus })
 
 @media (max-width: 380px) {
   .code-digit {
-    width: 38px;
-    height: 46px;
+    width: 2.375rem;
+    height: 2.875rem;
     font-size: var(--text-lg);
   }
 
   .email-code-input {
-    gap: 6px;
+    gap: 0.375rem;
   }
 }
 </style>

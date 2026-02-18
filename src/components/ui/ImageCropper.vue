@@ -376,7 +376,7 @@ onUnmounted(() => {
 .image-cropper {
   width: 100%;
   max-width: 500px;
-  max-height: 90vh;
+  max-height: 90dvh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -396,8 +396,8 @@ onUnmounted(() => {
 }
 
 .close-btn {
-  width: 36px;
-  height: 36px;
+  width: 2.25rem;
+  height: 2.25rem;
   padding: 0;
   display: flex;
   align-items: center;
@@ -413,7 +413,7 @@ onUnmounted(() => {
 .crop-container {
   position: relative;
   width: 100%;
-  height: 300px;
+  height: 18.75rem;
   background: var(--color-surface);
   border-radius: var(--radius-md);
   overflow: hidden;
@@ -458,34 +458,34 @@ onUnmounted(() => {
 
 .resize-handle {
   position: absolute;
-  width: 16px;
-  height: 16px;
+  width: 1rem;
+  height: 1rem;
   background: var(--color-white);
   border: 2px solid var(--color-primary);
   border-radius: 50%;
 }
 
 .resize-handle.nw {
-  top: -8px;
-  left: -8px;
+  top: -0.5rem;
+  left: -0.5rem;
   cursor: nw-resize;
 }
 
 .resize-handle.ne {
-  top: -8px;
-  right: -8px;
+  top: -0.5rem;
+  right: -0.5rem;
   cursor: ne-resize;
 }
 
 .resize-handle.sw {
-  bottom: -8px;
-  left: -8px;
+  bottom: -0.5rem;
+  left: -0.5rem;
   cursor: sw-resize;
 }
 
 .resize-handle.se {
-  bottom: -8px;
-  right: -8px;
+  bottom: -0.5rem;
+  right: -0.5rem;
   cursor: se-resize;
 }
 
@@ -503,13 +503,13 @@ onUnmounted(() => {
 .grid-line.vertical {
   top: 0;
   bottom: 0;
-  width: 1px;
+  width: 0.0625rem;
 }
 
 .grid-line.horizontal {
   left: 0;
   right: 0;
-  height: 1px;
+  height: 0.0625rem;
 }
 
 .grid-line.vertical:nth-child(1) {

@@ -408,8 +408,8 @@ function resetVideoSettings() {
 }
 
 .settings-header-icon {
-  width: 28px;
-  height: 28px;
+  width: 1.75rem;
+  height: 1.75rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -419,16 +419,16 @@ function resetVideoSettings() {
 }
 
 .settings-panel--compact .settings-header-icon {
-  width: 24px;
-  height: 24px;
+  width: 1.5rem;
+  height: 1.5rem;
 }
 
 .settings-close-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 2rem;
+  height: 2rem;
   border-radius: var(--radius-md);
   color: var(--color-text-secondary);
   background: var(--glass-bg-subtle);
@@ -437,8 +437,8 @@ function resetVideoSettings() {
 }
 
 .settings-panel--compact .settings-close-btn {
-  width: 28px;
-  height: 28px;
+  width: 1.75rem;
+  height: 1.75rem;
 }
 
 .settings-close-btn:hover {
@@ -468,8 +468,8 @@ function resetVideoSettings() {
 }
 
 .settings-group-icon {
-  width: 24px;
-  height: 24px;
+  width: 1.5rem;
+  height: 1.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -524,8 +524,8 @@ function resetVideoSettings() {
 }
 
 .theme-btn-icon {
-  width: 36px;
-  height: 36px;
+  width: 2.25rem;
+  height: 2.25rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -536,8 +536,8 @@ function resetVideoSettings() {
 }
 
 .settings-panel--compact .theme-btn-icon {
-  width: 32px;
-  height: 32px;
+  width: 2rem;
+  height: 2rem;
 }
 
 .theme-btn:hover .theme-btn-icon {
@@ -567,8 +567,8 @@ function resetVideoSettings() {
   position: absolute;
   top: var(--spacing-1);
   right: var(--spacing-1);
-  width: 18px;
-  height: 18px;
+  width: 1.125rem;
+  height: 1.125rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -680,8 +680,8 @@ function resetVideoSettings() {
 }
 
 .toggle-btn-icon {
-  width: 32px;
-  height: 32px;
+  width: 2rem;
+  height: 2rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -701,7 +701,7 @@ function resetVideoSettings() {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 2px;
+  gap: 0.125rem;
   min-width: 0;
 }
 
@@ -722,8 +722,8 @@ function resetVideoSettings() {
 /* ========== Toggle Switch ========== */
 .toggle-switch {
   position: relative;
-  width: 44px;
-  height: 24px;
+  width: 2.75rem;
+  height: 1.5rem;
   background: var(--color-gray-300);
   border-radius: var(--radius-full);
   flex-shrink: 0;
@@ -740,10 +740,10 @@ function resetVideoSettings() {
 
 .toggle-knob {
   position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 20px;
-  height: 20px;
+  top: 0.125rem;
+  left: 0.125rem;
+  width: 1.25rem;
+  height: 1.25rem;
   background: var(--color-white);
   border-radius: var(--radius-full);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
@@ -786,8 +786,8 @@ function resetVideoSettings() {
 }
 
 .link-btn-icon {
-  width: 32px;
-  height: 32px;
+  width: 2rem;
+  height: 2rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -894,7 +894,7 @@ function resetVideoSettings() {
 
 .settings-slider {
   width: 100%;
-  height: 4px;
+  height: 0.25rem;
   appearance: none;
   background: var(--color-gray-200);
   border-radius: var(--radius-full);
@@ -904,8 +904,8 @@ function resetVideoSettings() {
 
 .settings-slider::-webkit-slider-thumb {
   appearance: none;
-  width: 16px;
-  height: 16px;
+  width: 1rem;
+  height: 1rem;
   background: var(--color-primary);
   border-radius: var(--radius-full);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
@@ -917,8 +917,8 @@ function resetVideoSettings() {
 }
 
 .settings-slider::-moz-range-thumb {
-  width: 16px;
-  height: 16px;
+  width: 1rem;
+  height: 1rem;
   background: var(--color-primary);
   border-radius: var(--radius-full);
   border: none;
@@ -971,7 +971,7 @@ function resetVideoSettings() {
 .reduced-motion-notice svg {
   flex-shrink: 0;
   color: rgb(var(--color-warning-rgb, 245, 158, 11));
-  margin-top: 1px;
+  margin-top: 0.0625rem;
 }
 
 /* ========== Link List ========== */
@@ -1002,8 +1002,8 @@ function resetVideoSettings() {
 }
 
 .link-btn-icon {
-  width: 32px;
-  height: 32px;
+  width: 2rem;
+  height: 2rem;
   display: flex;
   align-items: center;
   justify-content: center;

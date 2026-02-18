@@ -228,8 +228,8 @@ function handleMouseLeave() {
     opacity: 0.35;
   }
   100% {
-    width: var(--ripple-size, 200px);
-    height: var(--ripple-size, 200px);
+    width: var(--ripple-size, 12.5rem);
+    height: var(--ripple-size, 12.5rem);
     opacity: 0;
   }
 }
@@ -246,12 +246,12 @@ function handleMouseLeave() {
 .btn-loader {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 0.25rem;
 }
 
 .btn-loader-dot {
-  width: 6px;
-  height: 6px;
+  width: 0.375rem;
+  height: 0.375rem;
   border-radius: 50%;
   background: currentColor;
   opacity: 0.6;
