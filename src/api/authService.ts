@@ -4,7 +4,11 @@
  * 提供用户认证相关的 API 调用
  */
 
-import { apiClient, ApiError } from './client'
+import { apiClient, ApiError, API_AUTH_URL } from './client'
+import type { RequestConfig } from './client'
+
+// Auth 路由使用 /api/auth/* 而非 /api/v1/auth/*
+const authConfig: RequestConfig = { baseUrl: API_AUTH_URL }
 
 // ========== 请求/响应类型 ==========
 
@@ -44,6 +48,8 @@ export interface AuthResponse {
   expires_in?: number
   refresh_threshold?: number
   user: UserResponse
+  /** 安全警告级别（从 X-Security-Warning header 读取） */
+  _securityWarning?: 'high' | 'medium' | 'low'
 }
 
 export interface UserResponse {
@@ -51,13 +57,17 @@ export interface UserResponse {
   username: string
   email: string
   avatar_url?: string
-  full_name?: string | null
+  full_name?: string
+  bio?: string
+  is_active?: boolean
   is_admin?: boolean
   is_verified?: boolean
   totp_enabled?: boolean
+  email_verified_at?: string
+  last_login_at?: string
   roles?: string[]
   created_at: string
-  updated_at: string
+  updated_at?: string
 }
 
 // ========== 邮箱验证相关类型 ==========
@@ -105,12 +115,25 @@ export interface VerifyEmailCodeResponse {
 export const authService = {
   /**
    * 用户登录
+   * 读取 X-Security-Warning 响应头并附加到返回值
    */
   async login(credentials: LoginRequest): Promise<AuthResponse> {
-    return apiClient.post<AuthResponse>('/auth/login', credentials, {
+    let securityWarning: AuthResponse['_securityWarning']
+    const response = await apiClient.post<AuthResponse>('/auth/login', credentials, {
+      ...authConfig,
       skipAuth: true,
       skipErrorToast: true,
+      onResponseHeaders: (headers) => {
+        const warning = headers.get('X-Security-Warning')
+        if (warning === 'high' || warning === 'medium' || warning === 'low') {
+          securityWarning = warning
+        }
+      },
     })
+    if (securityWarning) {
+      response._securityWarning = securityWarning
+    }
+    return response
   },
 
   /**
@@ -118,6 +141,7 @@ export const authService = {
    */
   async register(data: RegisterRequest): Promise<AuthResponse> {
     return apiClient.post<AuthResponse>('/auth/register', data, {
+      ...authConfig,
       skipAuth: true,
       skipErrorToast: true,
     })
@@ -132,6 +156,7 @@ export const authService = {
         '/auth/logout',
         { all_devices: allDevices },
         {
+          ...authConfig,
           skipErrorToast: true,
         }
       )
@@ -148,6 +173,7 @@ export const authService = {
   ): Promise<{ access_token: string; refresh_token?: string }> {
     const body = refreshToken ? { refresh_token: refreshToken } : {}
     return apiClient.post<{ access_token: string; refresh_token?: string }>('/auth/refresh', body, {
+      ...authConfig,
       skipAuth: true,
       skipErrorToast: true,
     })
@@ -157,7 +183,7 @@ export const authService = {
    * 获取当前用户信息
    */
   async getCurrentUser(): Promise<UserResponse> {
-    return apiClient.get<UserResponse>('/auth/me')
+    return apiClient.get<UserResponse>('/auth/me', authConfig)
   },
 
   /**
@@ -165,7 +191,7 @@ export const authService = {
    */
   async verifyPassword(password: string): Promise<{ verification_token: string }> {
     try {
-      return await apiClient.post('/auth/verify-password', { password })
+      return await apiClient.post('/auth/verify-password', { password }, authConfig)
     } catch (error) {
       if (error instanceof ApiError && (error.status === 404 || error.status === 405)) {
         return apiClient.post('/account/verify-password', { password })
@@ -181,7 +207,7 @@ export const authService = {
     action: string,
     method?: 'password' | 'email'
   ): Promise<{ verification_token: string }> {
-    return apiClient.post('/auth/verify-identity', { action, method })
+    return apiClient.post('/auth/verify-identity', { action, method }, authConfig)
   },
 
   /**
@@ -189,6 +215,7 @@ export const authService = {
    */
   async getTurnstileConfig(): Promise<{ enabled: boolean; site_key: string | null }> {
     return apiClient.get('/auth/turnstile-config', {
+      ...authConfig,
       skipAuth: true,
       skipErrorToast: true,
     })
