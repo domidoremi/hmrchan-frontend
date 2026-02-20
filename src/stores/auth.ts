@@ -76,7 +76,11 @@ export const useAuthStore = defineStore(
         // 登录成功后获取完整的用户资料（包含 avatar_url 等字段）
         fetchCurrentUser().catch(() => {})
 
-        return { success: true, user: response.user }
+        return {
+          success: true,
+          user: response.user,
+          securityWarning: response._securityWarning,
+        }
       } catch (err) {
         const errorMessage =
           err instanceof ApiError ? getAuthErrorKey(err.status, err.code) : 'auth.error.loginFailed'
@@ -135,13 +139,21 @@ export const useAuthStore = defineStore(
         return { success: true, user: response.user }
       } catch (err) {
         let errorMessage = 'auth.error.registerFailed'
+        let passwordErrors: string[] | undefined
         if (err instanceof ApiError) {
-          const detailMessage =
-            err.status === 400 || err.status === 422 ? extractApiErrorMessage(err.details) : null
-          errorMessage = detailMessage ?? getAuthErrorKey(err.status, err.code)
+          // 提取密码验证错误列表（Go 后端返回 errors 数组）
+          const errorsArray = (err.details as { errors?: string[] } | undefined)?.errors
+          if (Array.isArray(errorsArray) && errorsArray.length > 0) {
+            passwordErrors = errorsArray
+            errorMessage = err.message || errorMessage
+          } else {
+            const detailMessage =
+              err.status === 400 || err.status === 422 ? extractApiErrorMessage(err.details) : null
+            errorMessage = detailMessage ?? getAuthErrorKey(err.status, err.code)
+          }
         }
         error.value = errorMessage
-        return { success: false, error: errorMessage }
+        return { success: false, error: errorMessage, passwordErrors }
       } finally {
         isLoading.value = false
       }
@@ -340,6 +352,7 @@ export const useAuthStore = defineStore(
       }
 
       // 按 HTTP 状态码兜底
+      if (status === 400) return 'auth.error.validationError'
       if (status === 401) return 'auth.invalidCredentials'
       if (status === 403) return 'auth.error.permissionDenied'
       if (status === 409) return 'auth.error.emailExists'

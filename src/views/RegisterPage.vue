@@ -148,6 +148,9 @@
                 {{ suggestion }}
               </li>
             </ul>
+            <ul v-if="serverPasswordErrors.length > 0" class="server-password-errors">
+              <li v-for="err in serverPasswordErrors" :key="err">{{ err }}</li>
+            </ul>
           </div>
 
           <div class="form-group">
@@ -284,10 +287,16 @@ const forceTurnstileForSend = ref(false)
 
 const codeInputRef = ref<InstanceType<typeof EmailCodeInput> | null>(null)
 const emailError = ref('')
+const serverPasswordErrors = ref<string[]>([])
 
 // Clear email error when user types
 watch(email, () => {
   emailError.value = ''
+})
+
+// Clear server password errors when user modifies password
+watch(password, () => {
+  serverPasswordErrors.value = []
 })
 
 // Password strength
@@ -514,6 +523,7 @@ function goBackToEmail() {
   step.value = 'email'
   verificationCode.value = ''
   codeError.value = false
+  serverPasswordErrors.value = []
   registerToken.value = null
   registerTokenExpiresAt.value = null
   if (turnstileEnabled) {
@@ -559,6 +569,8 @@ async function handleRegister() {
     return
   }
 
+  serverPasswordErrors.value = []
+
   const result = await authStore.register(
     trimmedUsername,
     trimmedEmail,
@@ -575,6 +587,10 @@ async function handleRegister() {
   } else {
     codeError.value = true
     codeInputRef.value?.reset()
+    // 显示密码验证错误列表（Go 后端返回）
+    if (result.passwordErrors && result.passwordErrors.length > 0) {
+      serverPasswordErrors.value = result.passwordErrors
+    }
     if (result.error) {
       const message =
         result.error.startsWith('auth.') || result.error.startsWith('error.')
@@ -886,6 +902,17 @@ function isTurnstileTokenFresh() {
 }
 
 .password-suggestions li {
+  margin-bottom: var(--spacing-1);
+}
+
+.server-password-errors {
+  margin-top: var(--spacing-1);
+  padding-left: var(--spacing-4);
+  font-size: var(--text-xs);
+  color: var(--color-error);
+}
+
+.server-password-errors li {
   margin-bottom: var(--spacing-1);
 }
 

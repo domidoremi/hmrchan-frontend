@@ -94,6 +94,8 @@
     "loginButton": "ログイン",
     "registerButton": "アカウント作成",
     "loginSuccess": "ログインしました",
+    "securityWarningHigh": "異常なログインアクティビティが検出されました。アカウントのセキュリティ設定を確認してください",
+    "securityWarningMedium": "新しいデバイスからのログインが検出されました。心当たりがない場合はパスワードを変更してください",
     "registerSuccess": "アカウントを作成しました",
     "logoutSuccess": "ログアウトしました",
     "invalidCredentials": "メールアドレスまたはパスワードが正しくありません",

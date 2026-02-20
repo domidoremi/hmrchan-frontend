@@ -5,6 +5,7 @@
 export {
   apiClient,
   ApiError,
+  API_AUTH_URL,
   type RequestConfig,
   type ApiResponse,
   type PaginatedApiResponse,

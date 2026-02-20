@@ -94,6 +94,8 @@
     "loginButton": "登录",
     "registerButton": "创建账户",
     "loginSuccess": "登录成功",
+    "securityWarningHigh": "检测到异常登录活动，请检查您的账户安全设置",
+    "securityWarningMedium": "检测到新设备登录，如非本人操作请及时修改密码",
     "registerSuccess": "注册成功",
     "logoutSuccess": "已退出登录",
     "invalidCredentials": "邮箱或密码错误",

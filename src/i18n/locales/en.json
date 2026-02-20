@@ -94,6 +94,8 @@
     "loginButton": "Sign In",
     "registerButton": "Create Account",
     "loginSuccess": "Successfully logged in",
+    "securityWarningHigh": "Unusual login activity detected. Please review your account security settings",
+    "securityWarningMedium": "New device login detected. If this wasn't you, change your password immediately",
     "registerSuccess": "Account created successfully",
     "logoutSuccess": "Successfully logged out",
     "invalidCredentials": "Invalid email or password",

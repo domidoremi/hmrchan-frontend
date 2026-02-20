@@ -31,6 +31,10 @@ async function getToastStore() {
 // API 基础配置
 const API_BASE_URL =
   import.meta.env.VITE_API_ENDPOINT || `${import.meta.env.VITE_API_URL || '/api'}/v1`
+// Auth 路由不在 /api/v1/ 前缀下，使用独立的 base URL
+const API_AUTH_URL = import.meta.env.VITE_API_URL || '/api'
+
+export { API_AUTH_URL }
 const REQUEST_TIMEOUT = 30000
 const REFRESH_TIMEOUT = 10000 // Token 刷新超时时间
 
@@ -75,6 +79,10 @@ export interface RequestConfig extends RequestInit {
   timeout?: number
   skipAuth?: boolean
   skipErrorToast?: boolean
+  /** 覆盖默认的 API_BASE_URL（用于 auth 等非 /api/v1 路由） */
+  baseUrl?: string
+  /** 回调函数，用于捕获响应头（如 X-Security-Warning） */
+  onResponseHeaders?: (headers: Headers) => void
 }
 
 // In-flight GET 请求去重 Map
@@ -182,7 +190,7 @@ async function refreshToken(): Promise<string | null> {
 
     const refreshBody = {}
 
-    const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+    const response = await fetch(`${API_AUTH_URL}/auth/refresh`, {
       method: 'POST',
       credentials: 'include', // 发送 refresh_token cookie
       headers: {
@@ -229,6 +237,8 @@ async function refreshToken(): Promise<string | null> {
 
 /**
  * 处理 API 错误响应
+ * 兼容 Go Gin（detail 为字符串）和 FastAPI（detail 为数组）两种格式
+ * 支持密码验证错误的 errors 数组字段
  */
 async function handleErrorResponse(response: Response, skipErrorToast?: boolean): Promise<never> {
   let errorMessage = 'error.unknown'
@@ -237,14 +247,49 @@ async function handleErrorResponse(response: Response, skipErrorToast?: boolean)
 
   try {
     const errorData = await response.json()
-    if (errorData?.detail && typeof errorData.detail === 'object') {
-      errorMessage = errorData.detail.message || errorMessage
-      errorCode = errorData.detail.code || errorData.code
-      errorDetails = errorData.detail.details || errorData.details
-    } else {
-      errorMessage = errorData.detail || errorData.message || errorMessage
+
+    // 提取 errors 数组（密码验证等场景）
+    if (Array.isArray(errorData?.errors)) {
+      errorDetails = { ...errorDetails, errors: errorData.errors }
+    }
+
+    const detail = errorData?.detail
+    // V1 信封错误格式：{ success: false, error: { code, message }, meta }
+    const envelopeError = errorData?.error
+
+    if (typeof detail === 'string') {
+      // Go Gin 格式：detail 为字符串
+      errorMessage = detail
       errorCode = errorData.code
-      errorDetails = errorData.details
+      errorDetails = { ...errorDetails, ...errorData.details }
+    } else if (Array.isArray(detail)) {
+      // FastAPI 格式：detail 为验证错误数组（向后兼容）
+      const messages = detail
+        .map((item: { msg?: string; loc?: string[] }) => {
+          const field = item.loc?.slice(-1)[0]
+          return field ? `${field}: ${item.msg}` : item.msg
+        })
+        .filter(Boolean)
+      errorMessage = messages.join('; ') || errorMessage
+      errorCode = errorData.code
+    } else if (detail && typeof detail === 'object') {
+      // detail 为对象 { message, code, details }
+      errorMessage = detail.message || errorMessage
+      errorCode = detail.code || errorData.code
+      errorDetails = { ...errorDetails, ...(detail.details || errorData.details) }
+    } else if (
+      envelopeError &&
+      typeof envelopeError === 'object' &&
+      !Array.isArray(envelopeError)
+    ) {
+      // V1 信封错误格式：error 对象包含 code 和 message
+      errorMessage = envelopeError.message || errorMessage
+      errorCode = envelopeError.code || errorCode
+    } else {
+      // 其他格式兜底
+      errorMessage = errorData.message || errorMessage
+      errorCode = errorData.code
+      errorDetails = { ...errorDetails, ...errorData.details }
     }
   } catch {
     // 无法解析错误响应
@@ -301,6 +346,8 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
     timeout = REQUEST_TIMEOUT,
     skipAuth = false,
     skipErrorToast = false,
+    baseUrl,
+    onResponseHeaders,
     headers: customHeaders = {},
     body,
     ...fetchConfig
@@ -330,7 +377,8 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
   }
 
   // 构建请求 URL
-  const url = endpoint.startsWith('http') ? endpoint : `${API_BASE_URL}${endpoint}`
+  const effectiveBase = baseUrl ?? API_BASE_URL
+  const url = endpoint.startsWith('http') ? endpoint : `${effectiveBase}${endpoint}`
 
   // 创建 AbortController 用于超时控制
   const controller = new AbortController()
@@ -438,6 +486,9 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
       await handleErrorResponse(response, skipErrorToast)
     }
 
+    // 回调响应头（用于读取 X-Security-Warning 等自定义头）
+    onResponseHeaders?.(response.headers)
+
     // 处理 204 No Content
     if (response.status === 204) {
       return undefined as T
@@ -489,8 +540,9 @@ export const apiClient = {
    * 注意：不再提供内置缓存，缓存由业务层（如 postCache）管理
    */
   get<T>(endpoint: string, config?: RequestConfig): Promise<T> {
-    const { skipAuth = false, ...restConfig } = config || {}
-    const url = endpoint.startsWith('http') ? endpoint : `${API_BASE_URL}${endpoint}`
+    const { skipAuth = false, baseUrl, ...restConfig } = config || {}
+    const effectiveBase = baseUrl ?? API_BASE_URL
+    const url = endpoint.startsWith('http') ? endpoint : `${effectiveBase}${endpoint}`
     const cacheKey = buildCacheKey('GET', url)
 
     // 检查 in-flight 请求（去重）
@@ -500,7 +552,12 @@ export const apiClient = {
     }
 
     // 发起新请求
-    const promise = request<T>(endpoint, { ...restConfig, skipAuth, method: 'GET' }).finally(() => {
+    const promise = request<T>(endpoint, {
+      ...restConfig,
+      skipAuth,
+      baseUrl,
+      method: 'GET',
+    }).finally(() => {
       // 请求完成后移除 in-flight 记录
       inflightRequests.delete(cacheKey)
     })
