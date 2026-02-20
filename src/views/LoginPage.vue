@@ -170,6 +170,12 @@ async function handleLogin() {
 
   if (result.success) {
     toastStore.success(t('auth.loginSuccess'))
+    // 显示安全警告（新设备、异常 IP 等）
+    if (result.securityWarning === 'high') {
+      toastStore.warning(t('auth.securityWarningHigh'))
+    } else if (result.securityWarning === 'medium') {
+      toastStore.warning(t('auth.securityWarningMedium'))
+    }
     router.replace(redirectTo.value)
   } else {
     turnstileToken.value = null

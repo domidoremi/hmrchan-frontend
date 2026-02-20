@@ -56,16 +56,16 @@ export interface PostListItem {
   id: string
   platform: string
   platform_post_id?: string
-  title: string
-  description: string
+  title?: string
+  description?: string
   url?: string
   thumbnail_url?: string | null
   // 兼容后端未来可能提供的缩略图尺寸信息
   thumbnail_width?: number | null
   thumbnail_height?: number | null
-  author_id: string
-  author_name: string
-  author_username: string
+  author_id?: string
+  author_name?: string
+  author_username?: string
   author_avatar_url?: string | null
   original_author_id?: string | null
   original_author_name?: string | null
@@ -75,7 +75,7 @@ export interface PostListItem {
   like_count: number
   comment_count: number
   duration?: number | null
-  published_at: string
+  published_at?: string
   scraped_at?: string
   created_at: string
   media_count: number
@@ -114,20 +114,20 @@ export interface PostDetailResponse {
   id: string
   platform: string
   platform_post_id?: string
-  title: string
-  description: string
+  title?: string
+  description?: string
   url?: string
   thumbnail_url?: string | null
-  author_id: string
-  author_name: string
-  author_username: string
+  author_id?: string
+  author_name?: string
+  author_username?: string
   author_avatar_url?: string | null
   view_count: number
   like_count: number
   comment_count: number
   media_count: number
   duration?: number | null
-  published_at: string
+  published_at?: string
   created_at: string
   original_author_id?: string | null
   original_author_name?: string | null
