@@ -4,11 +4,7 @@
  * 提供用户认证相关的 API 调用
  */
 
-import { apiClient, ApiError, API_AUTH_URL } from './client'
-import type { RequestConfig } from './client'
-
-// Auth 路由使用 /api/auth/* 而非 /api/v1/auth/*
-const authConfig: RequestConfig = { baseUrl: API_AUTH_URL }
+import { apiClient, ApiError } from './client'
 
 // ========== 请求/响应类型 ==========
 
@@ -120,7 +116,6 @@ export const authService = {
   async login(credentials: LoginRequest): Promise<AuthResponse> {
     let securityWarning: AuthResponse['_securityWarning']
     const response = await apiClient.post<AuthResponse>('/auth/login', credentials, {
-      ...authConfig,
       skipAuth: true,
       skipErrorToast: true,
       onResponseHeaders: (headers) => {
@@ -141,7 +136,6 @@ export const authService = {
    */
   async register(data: RegisterRequest): Promise<AuthResponse> {
     return apiClient.post<AuthResponse>('/auth/register', data, {
-      ...authConfig,
       skipAuth: true,
       skipErrorToast: true,
     })
@@ -156,7 +150,6 @@ export const authService = {
         '/auth/logout',
         { all_devices: allDevices },
         {
-          ...authConfig,
           skipErrorToast: true,
         }
       )
@@ -173,7 +166,6 @@ export const authService = {
   ): Promise<{ access_token: string; refresh_token?: string }> {
     const body = refreshToken ? { refresh_token: refreshToken } : {}
     return apiClient.post<{ access_token: string; refresh_token?: string }>('/auth/refresh', body, {
-      ...authConfig,
       skipAuth: true,
       skipErrorToast: true,
     })
@@ -183,7 +175,7 @@ export const authService = {
    * 获取当前用户信息
    */
   async getCurrentUser(): Promise<UserResponse> {
-    return apiClient.get<UserResponse>('/auth/me', authConfig)
+    return apiClient.get<UserResponse>('/auth/me')
   },
 
   /**
@@ -191,7 +183,7 @@ export const authService = {
    */
   async verifyPassword(password: string): Promise<{ verification_token: string }> {
     try {
-      return await apiClient.post('/auth/verify-password', { password }, authConfig)
+      return await apiClient.post('/auth/verify-password', { password })
     } catch (error) {
       if (error instanceof ApiError && (error.status === 404 || error.status === 405)) {
         return apiClient.post('/account/verify-password', { password })
@@ -207,7 +199,7 @@ export const authService = {
     action: string,
     method?: 'password' | 'email'
   ): Promise<{ verification_token: string }> {
-    return apiClient.post('/auth/verify-identity', { action, method }, authConfig)
+    return apiClient.post('/auth/verify-identity', { action, method })
   },
 
   /**
@@ -215,7 +207,6 @@ export const authService = {
    */
   async getTurnstileConfig(): Promise<{ enabled: boolean; site_key: string | null }> {
     return apiClient.get('/auth/turnstile-config', {
-      ...authConfig,
       skipAuth: true,
       skipErrorToast: true,
     })
