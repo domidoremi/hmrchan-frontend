@@ -119,7 +119,7 @@ const setSentinelRef = (el: Element | ComponentPublicInstance | null) => {
 .load-more-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   gap: var(--spacing-3);
 }
 
