@@ -6,7 +6,7 @@
  */
 
 import { idbDelete, idbGet, idbSet, STORES } from '@/utils/cache/idb'
-import { postService, historyService } from '@/api'
+import { historyService } from '@/api'
 
 // 浏览记录在 IndexedDB 中的 TTL（7 天后允许重新计数）
 const VIEW_RECORD_TTL = 7 * 24 * 60 * 60 * 1000
@@ -67,13 +67,11 @@ export async function trackPostView(postId: string, isAuthenticated: boolean): P
 
     // 并行执行，不阻塞
     const tasks: Promise<void>[] = [
-      // 1. 增加浏览量（无需认证）
-      postService.incrementView(postId),
-      // 2. 记录到本地 IndexedDB
+      // 1. 记录到本地 IndexedDB
       markAsViewed(postId),
     ]
 
-    // 3. 如果已登录，记录浏览历史
+    // 2. 如果已登录，记录浏览历史
     if (isAuthenticated) {
       tasks.push(historyService.recordBrowsing(postId))
     }

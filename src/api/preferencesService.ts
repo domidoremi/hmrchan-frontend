@@ -27,13 +27,13 @@ export const preferencesService = {
    * 批量更新偏好设置
    */
   async update(preferences: UserPreferences): Promise<UserPreferences> {
-    return apiClient.put<UserPreferences>('/preferences/', preferences)
+    return apiClient.patch<UserPreferences>('/preferences/', preferences)
   },
 
   /**
    * 更新单项偏好
    */
   async updateOne(key: string, value: unknown): Promise<void> {
-    return apiClient.put(`/preferences/${encodeURIComponent(key)}`, { value })
+    return apiClient.patch(`/preferences/${encodeURIComponent(key)}`, { value })
   },
 }

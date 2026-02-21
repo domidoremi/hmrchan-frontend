@@ -84,26 +84,4 @@ export const authorService = {
     const query = buildQuery({ page, page_size: pageSize })
     return apiClient.get<PaginatedApiResponse<PostListItem>>(`/authors/${authorId}/posts${query}`)
   },
-
-  /**
-   * 按平台获取作者列表
-   */
-  async listAuthorsByPlatform(
-    platform: string,
-    params: Omit<ListAuthorsParams, 'platform'> = {}
-  ): Promise<PaginatedApiResponse<AuthorListItem>> {
-    const query = buildQuery({
-      page: params.page ?? 1,
-      page_size: params.page_size ?? 20,
-      q: params.q,
-      is_verified: params.is_verified ?? null,
-      min_followers: params.min_followers ?? null,
-      sort_by: params.sort_by ?? 'created_at',
-      sort_order: params.sort_order ?? 'desc',
-    })
-
-    return apiClient.get<PaginatedApiResponse<AuthorListItem>>(
-      `/authors/platform/${platform}/list${query}`
-    )
-  },
 }

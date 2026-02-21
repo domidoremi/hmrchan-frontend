@@ -325,13 +325,17 @@ async function fetchPosts(reset = true) {
     let items: PostListItem[]
 
     if (currentSort.value === 'trending' && !platform) {
-      // 使用专用热门接口
-      const trendingResult = await postService.getTrending({
+      // trending 使用 view_count 排序
+      const { sort_by, sort_order } = getSortParams('trending')
+      const requestParams = {
         page: page.value,
         page_size: pageSize,
-      })
-      items = trendingResult.items
-      total.value = trendingResult.total
+        sort_by,
+        sort_order,
+        thumbnail_quality: getThumbnailQuality(),
+      }
+      const result = await loadCachedPosts(requestParams)
+      items = result.data as PostListItem[]
     } else {
       const { sort_by, sort_order } = getSortParams(currentSort.value)
       const requestParams = {

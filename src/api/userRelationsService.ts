@@ -47,39 +47,31 @@ export const userRelationsService = {
    * 关注用户
    */
   async followUser(userId: string): Promise<void> {
-    return apiClient.post(`/users/${userId}/follow`)
+    return apiClient.post(`/relations/follow/${userId}`)
   },
 
   /**
    * 取消关注
    */
   async unfollowUser(userId: string): Promise<void> {
-    return apiClient.delete(`/users/${userId}/follow`)
+    return apiClient.delete(`/relations/follow/${userId}`)
   },
 
   /**
-   * 获取用户粉丝列表
+   * 获取当前用户粉丝列表
    */
-  async getFollowers(
-    userId: string,
-    page = 1,
-    pageSize = 20
-  ): Promise<PaginatedApiResponse<UserListItem>> {
+  async getFollowers(page = 1, pageSize = 20): Promise<PaginatedApiResponse<UserListItem>> {
     return apiClient.get<PaginatedApiResponse<UserListItem>>(
-      `/users/${userId}/followers?page=${page}&page_size=${pageSize}`
+      `/relations/followers?page=${page}&page_size=${pageSize}`
     )
   },
 
   /**
-   * 获取用户关注列表
+   * 获取当前用户关注列表
    */
-  async getFollowing(
-    userId: string,
-    page = 1,
-    pageSize = 20
-  ): Promise<PaginatedApiResponse<UserListItem>> {
+  async getFollowing(page = 1, pageSize = 20): Promise<PaginatedApiResponse<UserListItem>> {
     return apiClient.get<PaginatedApiResponse<UserListItem>>(
-      `/users/${userId}/following?page=${page}&page_size=${pageSize}`
+      `/relations/following?page=${page}&page_size=${pageSize}`
     )
   },
 
@@ -87,14 +79,14 @@ export const userRelationsService = {
    * 拉黑用户
    */
   async blockUser(userId: string): Promise<void> {
-    return apiClient.post(`/users/${userId}/block`)
+    return apiClient.post(`/relations/block/${userId}`)
   },
 
   /**
    * 取消拉黑
    */
   async unblockUser(userId: string): Promise<void> {
-    return apiClient.delete(`/users/${userId}/block`)
+    return apiClient.delete(`/relations/block/${userId}`)
   },
 
   /**
@@ -102,7 +94,7 @@ export const userRelationsService = {
    */
   async getBlockedUsers(page = 1, pageSize = 20): Promise<PaginatedApiResponse<UserListItem>> {
     return apiClient.get<PaginatedApiResponse<UserListItem>>(
-      `/users/me/blocked?page=${page}&page_size=${pageSize}`
+      `/relations/blocked?page=${page}&page_size=${pageSize}`
     )
   },
 
@@ -110,13 +102,13 @@ export const userRelationsService = {
    * 查询与指定用户的关系状态
    */
   async getRelation(userId: string): Promise<UserRelation> {
-    return apiClient.get<UserRelation>(`/users/${userId}/relation`)
+    return apiClient.get<UserRelation>(`/relations/status/${userId}`)
   },
 
   /**
    * 获取用户公开资料
    */
   async getUserProfile(userId: string): Promise<UserPublicProfile> {
-    return apiClient.get<UserPublicProfile>(`/users/${userId}/profile`)
+    return apiClient.get<UserPublicProfile>(`/users/${userId}/public-profile`)
   },
 }

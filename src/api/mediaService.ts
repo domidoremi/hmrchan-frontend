@@ -5,8 +5,7 @@
  * 合约端点: /media/
  */
 
-import { apiClient, type PaginatedApiResponse } from './client'
-import { buildQuery } from '@/utils/queryBuilder'
+import { apiClient } from './client'
 
 // ========== 类型定义 ==========
 
@@ -35,13 +34,6 @@ export interface MediaSubtitle {
   label?: string | null
 }
 
-export interface ListMediaParams {
-  post_id?: string
-  file_type?: 'image' | 'video' | 'subtitle' | 'thumbnail'
-  page?: number
-  page_size?: number
-}
-
 // API 基础 URL（用于构建流式/缩略图 URL）
 const API_BASE_URL =
   import.meta.env.VITE_API_ENDPOINT || `${import.meta.env.VITE_API_URL || '/api'}/v1`
@@ -50,33 +42,10 @@ const API_BASE_URL =
 
 export const mediaService = {
   /**
-   * 获取媒体文件列表
-   */
-  async list(params: ListMediaParams = {}): Promise<PaginatedApiResponse<MediaFileListItem>> {
-    const query = buildQuery({
-      post_id: params.post_id,
-      file_type: params.file_type,
-      page: params.page ?? 1,
-      page_size: params.page_size ?? 20,
-    })
-    return apiClient.get<PaginatedApiResponse<MediaFileListItem>>(`/media/${query}`)
-  },
-
-  /**
    * 获取媒体文件详情
    */
   async get(mediaId: string): Promise<MediaFileResponse> {
     return apiClient.get<MediaFileResponse>(`/media/${mediaId}`)
-  },
-
-  /**
-   * 获取帖子下所有媒体
-   */
-  async listByPost(postId: string): Promise<MediaFileListItem[]> {
-    const response = await apiClient.get<{ items: MediaFileListItem[] }>(
-      `/media/post/${postId}/list`
-    )
-    return response.items ?? []
   },
 
   /**
@@ -91,13 +60,5 @@ export const mediaService = {
    */
   getThumbnailUrl(mediaId: string): string {
     return `${API_BASE_URL}/media/${mediaId}/thumbnail`
-  },
-
-  /**
-   * 构建字幕文件 URL
-   */
-  getSubtitleUrl(mediaId: string, lang?: string): string {
-    const base = `${API_BASE_URL}/media/${mediaId}/subtitle`
-    return lang ? `${base}?lang=${encodeURIComponent(lang)}` : base
   },
 }

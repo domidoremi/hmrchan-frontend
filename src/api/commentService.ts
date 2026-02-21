@@ -66,7 +66,7 @@ export const commentService = {
    */
   async getPostComments(postId: string, page = 1, pageSize = 20): Promise<CommentListResponse> {
     return apiClient.get<CommentListResponse>(
-      `/comments/post/${postId}?page=${page}&page_size=${pageSize}`
+      `/posts/${postId}/comments?page=${page}&page_size=${pageSize}`
     )
   },
 
@@ -74,7 +74,7 @@ export const commentService = {
    * 创建评论（支持带图片）
    */
   async createComment(postId: string, data: CreateCommentRequest): Promise<Comment> {
-    return apiClient.post<Comment>(`/comments/post/${postId}`, data)
+    return apiClient.post<Comment>(`/posts/${postId}/comments`, data)
   },
 
   /**
@@ -91,7 +91,7 @@ export const commentService = {
     const formData = new FormData()
     formData.append('file', file)
 
-    return apiClient.post<CommentImageUploadResponse>('/comments/images/', formData, {
+    return apiClient.post<CommentImageUploadResponse>('/comment-images', formData, {
       headers: {
         // Let browser set Content-Type with boundary for FormData
       },
@@ -114,7 +114,7 @@ export const commentService = {
    * 删除评论图片
    */
   async deleteImage(imageId: string): Promise<void> {
-    return apiClient.delete(`/comments/images/${imageId}`)
+    return apiClient.delete(`/comment-images/${imageId}`)
   },
 
   /**
@@ -178,7 +178,7 @@ export const commentService = {
    * 编辑评论
    */
   async updateComment(commentId: string, content: string): Promise<Comment> {
-    return apiClient.put<Comment>(`/comments/${commentId}`, { content })
+    return apiClient.patch<Comment>(`/comments/${commentId}`, { content })
   },
 
   /**
