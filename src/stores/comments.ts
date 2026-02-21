@@ -60,7 +60,7 @@ export const useCommentsStore = defineStore('comments', () => {
     error.value = null
 
     try {
-      const baseUrl = `/comments/post/${postId}`
+      const baseUrl = `/posts/${postId}/comments`
       let data: PaginatedApiResponse<Comment>
 
       try {
@@ -192,7 +192,7 @@ export const useCommentsStore = defineStore('comments', () => {
 
     try {
       const newComment = await apiClient.post<Comment>(
-        `/comments/post/${postId}`,
+        `/posts/${postId}/comments`,
         {
           content: sanitizedContent,
           parent_id: formData.parent_id || null,

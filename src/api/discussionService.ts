@@ -251,7 +251,7 @@ export const discussionService = {
    * 更新讨论
    */
   async update(discussionId: string, data: UpdateDiscussionRequest): Promise<Discussion> {
-    const response = await apiClient.put<Discussion>(`/discussions/${discussionId}`, data)
+    const response = await apiClient.patch<Discussion>(`/discussions/${discussionId}`, data)
     return normalizeDiscussion(response)
   },
 
@@ -352,9 +352,12 @@ export const discussionService = {
    * 更新评论
    */
   async updateComment(commentId: string, content: string): Promise<DiscussionComment> {
-    const response = await apiClient.put<DiscussionComment>(`/discussions/comments/${commentId}`, {
-      content,
-    })
+    const response = await apiClient.patch<DiscussionComment>(
+      `/discussions/comments/${commentId}`,
+      {
+        content,
+      }
+    )
     return normalizeDiscussionComment(response)
   },
 
@@ -433,7 +436,7 @@ export const discussionService = {
    */
   async getMyDiscussions(page = 1, pageSize = 20): Promise<PaginatedApiResponse<Discussion>> {
     const data = await apiClient.get<PaginatedApiResponse<Discussion>>(
-      `/discussions/user/my-discussions?page=${page}&page_size=${pageSize}`
+      `/discussions/my?page=${page}&page_size=${pageSize}`
     )
     return normalizePaginated(data, normalizeDiscussion)
   },
@@ -443,7 +446,7 @@ export const discussionService = {
    */
   async getMyComments(page = 1, pageSize = 20): Promise<PaginatedApiResponse<DiscussionComment>> {
     const data = await apiClient.get<PaginatedApiResponse<DiscussionComment>>(
-      `/discussions/user/my-comments?page=${page}&page_size=${pageSize}`
+      `/discussions/my-comments?page=${page}&page_size=${pageSize}`
     )
     return normalizePaginated(data, normalizeDiscussionComment)
   },

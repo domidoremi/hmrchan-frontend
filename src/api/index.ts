@@ -111,12 +111,7 @@ export {
   type ListDiscussionsParams,
 } from './discussionService'
 export { deviceService, type Device, type DeviceListResponse } from './deviceService'
-export {
-  mediaService,
-  type MediaFileListItem,
-  type MediaFileResponse,
-  type ListMediaParams,
-} from './mediaService'
+export { mediaService, type MediaFileListItem, type MediaFileResponse } from './mediaService'
 export {
   twoFactorService,
   type TwoFactorSetupResponse,
