@@ -799,7 +799,7 @@ const parsedDescription = computed<DescSection[]>(() => {
 })
 
 function splitLines(text: string): string[] {
-  return text.split(/\n/).filter((l) => l.trim() !== '')
+  return text.split(/\n/)
 }
 
 function linkify(text: string): string {
@@ -1455,6 +1455,7 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-3);
+  overflow-wrap: break-word;
 }
 
 .detail-description p {
@@ -1478,6 +1479,7 @@ onMounted(() => {
 .desc-line {
   margin: 0;
   word-break: break-word;
+  white-space: pre-wrap;
 }
 
 .desc-link {
