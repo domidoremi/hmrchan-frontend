@@ -80,7 +80,7 @@ export interface RequestConfig extends RequestInit {
   skipAuth?: boolean
   skipErrorToast?: boolean
   /** 覆盖默认的 API_BASE_URL（用于 auth 等非 /api/v1 路由） */
-  baseUrl?: string
+  baseUrl?: string | undefined
   /** 回调函数，用于捕获响应头（如 X-Security-Warning） */
   onResponseHeaders?: (headers: Headers) => void
 }
@@ -370,9 +370,11 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
   }
 
   // 添加认证头（使用异步安全存储）
+  let hadToken = false
   if (!skipAuth) {
     const token = await getAccessTokenAsync()
     if (token) {
+      hadToken = true
       ;(headers as Record<string, string>)['Authorization'] = `Bearer ${token}`
     }
   }
@@ -396,8 +398,8 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
 
     clearTimeout(timeoutId)
 
-    // 处理 401 未授权 - 尝试刷新 token
-    if (response.status === 401 && !skipAuth) {
+    // 处理 401 未授权 - 仅在之前有 token 时尝试刷新（避免 guest 用户触发无意义的刷新循环）
+    if (response.status === 401 && !skipAuth && hadToken) {
       if (!isRefreshing) {
         isRefreshing = true
 
