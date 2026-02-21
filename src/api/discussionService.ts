@@ -226,7 +226,7 @@ export const discussionService = {
     if (params.sort_by) query.set('sort_by', params.sort_by)
     if (params.sort_order) query.set('sort_order', params.sort_order)
     const data = await apiClient.get<PaginatedApiResponse<Discussion>>(
-      `/discussions/?${query.toString()}`
+      `/discussions?${query.toString()}`
     )
     return normalizePaginated(data, normalizeDiscussion)
   },
@@ -243,7 +243,7 @@ export const discussionService = {
    * 创建讨论
    */
   async create(data: CreateDiscussionRequest): Promise<Discussion> {
-    const response = await apiClient.post<Discussion>('/discussions/', data)
+    const response = await apiClient.post<Discussion>('/discussions', data)
     return normalizeDiscussion(response)
   },
 
@@ -458,7 +458,7 @@ export const discussionService = {
    */
   async searchPosts(query: string, limit = 10): Promise<PostReference[]> {
     const response = await apiClient.get<{ items: PostReference[] }>(
-      `/posts/?q=${encodeURIComponent(query)}&page_size=${limit}`
+      `/posts?q=${encodeURIComponent(query)}&page_size=${limit}`
     )
     return response.items
   },
