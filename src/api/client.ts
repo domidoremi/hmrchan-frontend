@@ -190,7 +190,7 @@ async function refreshToken(): Promise<string | null> {
 
     const refreshBody = {}
 
-    const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+    const response = await fetch(`${API_AUTH_URL}/auth/refresh`, {
       method: 'POST',
       credentials: 'include', // 发送 refresh_token cookie
       headers: {
