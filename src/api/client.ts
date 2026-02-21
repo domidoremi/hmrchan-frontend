@@ -95,15 +95,15 @@ export interface ApiResponse<T = unknown> {
   status: number
 }
 
-// 分页响应类型
+// 分页响应类型（Go V1 信封返回 page, page_size, total, total_pages）
 export interface PaginatedApiResponse<T> {
   items: T[]
   total: number
   page: number
   page_size: number
   total_pages: number
-  has_next: boolean
-  has_prev: boolean
+  has_next?: boolean
+  has_prev?: boolean
 }
 
 export interface PaginatedApiResponseWithLimit<T> extends PaginatedApiResponse<T> {
@@ -302,6 +302,7 @@ async function handleErrorResponse(response: Response, skipErrorToast?: boolean)
     403: 'error.forbidden',
     404: 'error.notFound',
     409: 'error.conflict',
+    410: 'error.notFound',
     422: 'error.validationError',
     429: 'error.tooManyRequests',
     500: 'error.serverError',
@@ -326,7 +327,7 @@ async function handleErrorResponse(response: Response, skipErrorToast?: boolean)
     localizedMessage = errorMessage
   } else {
     const statusMessage = statusMessages[response.status]
-    localizedMessage = statusMessage ? t(statusMessage) : errorMessage
+    localizedMessage = statusMessage ? t(statusMessage) : t('error.unknown')
   }
 
   // 显示错误提示（除非跳过）

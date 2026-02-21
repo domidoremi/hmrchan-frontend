@@ -73,15 +73,15 @@ export const notificationService = {
    * 标记单条通知为已读
    */
   async markAsRead(notificationId: string): Promise<void> {
-    return apiClient.put(`/notifications/${notificationId}/read`)
+    return apiClient.patch(`/notifications/${notificationId}/read`)
   },
 
   /**
    * 标记全部通知为已读
    */
   async markAllAsRead(type?: NotificationType): Promise<void> {
-    const body = type ? { type } : undefined
-    return apiClient.put('/notifications/read-all', body)
+    const params = type ? `?type=${type}` : ''
+    return apiClient.post(`/notifications/read-all${params}`)
   },
 
   /**
@@ -94,8 +94,8 @@ export const notificationService = {
   /**
    * 清空通知（默认仅清除已读）
    */
-  async clearNotifications(includeUnread = false): Promise<void> {
-    const params = includeUnread ? '?include_unread=true' : ''
+  async clearNotifications(readOnly = true): Promise<void> {
+    const params = readOnly ? '?read_only=true' : ''
     return apiClient.delete(`/notifications${params}`)
   },
 }

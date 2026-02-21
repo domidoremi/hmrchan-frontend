@@ -339,6 +339,7 @@
     "tooManyRequestsWithTime": "請求過於頻繁，請 {seconds} 秒後重試",
     "badGateway": "閘道錯誤",
     "serviceUnavailable": "服務不可用",
+    "unknown": "未知錯誤",
     "componentError": "出了點問題",
     "technicalDetails": "技術詳情",
     "mediaLoadFailed": "媒體載入失敗",
