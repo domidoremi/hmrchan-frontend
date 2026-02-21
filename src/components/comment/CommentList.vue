@@ -31,11 +31,7 @@
       <span>{{ $t('common.loading') }}</span>
     </div>
 
-    <div
-      v-else-if="comments.length === 0"
-      class="empty-state"
-      :class="{ 'empty-state--guest': !isAuthenticated }"
-    >
+    <div v-else-if="comments.length === 0 && isAuthenticated" class="empty-state">
       <AnimatedIcon name="explore" :fallback-icon="MessageSquare" size="xl" class="empty-icon" />
       <h4 class="empty-title">{{ $t('comment.empty') }}</h4>
       <p class="empty-hint">{{ $t('comment.beFirst') }}</p>
@@ -234,12 +230,6 @@ watch(
     rgba(var(--color-secondary-rgb), 0.04)
   );
   min-height: 13.75rem;
-}
-
-.empty-state--guest {
-  border-style: solid;
-  background: var(--glass-bg-light);
-  box-shadow: var(--shadow-sm);
 }
 
 @media (max-width: 768px) {
