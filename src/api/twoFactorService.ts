@@ -30,6 +30,13 @@ export interface BackupCodesResponse {
 
 export const twoFactorService = {
   /**
+   * 获取 2FA 状态
+   */
+  async getStatus(): Promise<{ enabled: boolean; totp_enabled: boolean }> {
+    return apiClient.get('/2fa/status')
+  },
+
+  /**
    * 初始化 TOTP（生成密钥和 QR 码）
    */
   async setup(): Promise<TwoFactorSetupResponse> {
@@ -37,21 +44,7 @@ export const twoFactorService = {
   },
 
   /**
-   * 启用 2FA（需提供 TOTP code 验证）
-   */
-  async enable(code: string): Promise<{ message: string }> {
-    return apiClient.post('/2fa/enable', { code })
-  },
-
-  /**
-   * 禁用 2FA
-   */
-  async disable(code: string): Promise<{ message: string }> {
-    return apiClient.post('/2fa/disable', { code })
-  },
-
-  /**
-   * 验证 TOTP code（登录时使用）
+   * 验证并启用 2FA（需提供 TOTP code）
    */
   async verify(code: string): Promise<{ message: string }> {
     return apiClient.post(
@@ -64,9 +57,29 @@ export const twoFactorService = {
   },
 
   /**
-   * 生成备用码
+   * 禁用 2FA
    */
-  async generateBackupCodes(): Promise<BackupCodesResponse> {
-    return apiClient.post<BackupCodesResponse>('/2fa/backup-codes')
+  async disable(code: string): Promise<{ message: string }> {
+    return apiClient.post('/2fa/disable', { code })
+  },
+
+  /**
+   * 2FA 登录验证（登录时 202 后调用）
+   */
+  async verifyLogin(
+    pendingToken: string,
+    code: string
+  ): Promise<{ access_token: string; user: unknown }> {
+    return apiClient.post('/2fa/verify-login', {
+      pending_token: pendingToken,
+      code,
+    })
+  },
+
+  /**
+   * 重新生成备份码
+   */
+  async regenerateBackupCodes(): Promise<BackupCodesResponse> {
+    return apiClient.post<BackupCodesResponse>('/2fa/regenerate-backup-codes')
   },
 }

@@ -339,6 +339,7 @@
     "tooManyRequestsWithTime": "请求过于频繁，请 {seconds} 秒后重试",
     "badGateway": "网关错误",
     "serviceUnavailable": "服务不可用",
+    "unknown": "未知错误",
     "componentError": "出了点问题",
     "technicalDetails": "技术详情",
     "mediaLoadFailed": "媒体加载失败",

@@ -71,7 +71,7 @@ export const postsLightService = {
       thumbnail_quality: params.thumbnail_quality ?? null,
     })
 
-    return apiClient.get<PaginatedApiResponse<PostLightItem>>(`/posts-light/light${query}`, config)
+    return apiClient.get<PaginatedApiResponse<PostLightItem>>(`/posts/light${query}`, config)
   },
 
   /**
@@ -98,6 +98,6 @@ export const postsLightService = {
       thumbnail_quality: params.thumbnail_quality ?? null,
     })
 
-    return apiClient.get<PaginatedApiResponse<PostLightItem>>(`/posts-light/mixed${query}`, config)
+    return apiClient.get<PaginatedApiResponse<PostLightItem>>(`/posts/mixed${query}`, config)
   },
 }

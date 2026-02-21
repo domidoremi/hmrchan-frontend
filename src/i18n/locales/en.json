@@ -339,6 +339,7 @@
     "tooManyRequestsWithTime": "Too many requests, please try again in {seconds} seconds",
     "badGateway": "Bad gateway",
     "serviceUnavailable": "Service unavailable",
+    "unknown": "Unknown error",
     "componentError": "Something went wrong",
     "technicalDetails": "Technical Details",
     "mediaLoadFailed": "Media failed to load",

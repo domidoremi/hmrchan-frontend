@@ -251,7 +251,7 @@ export const authService = {
    */
   async verifyEmail(token: string): Promise<{ message: string }> {
     return apiClient.post(
-      '/email/verify',
+      '/email/verify-email',
       { token },
       {
         skipAuth: true,
@@ -292,21 +292,71 @@ export const authService = {
   // ========== 邮箱验证码 ==========
 
   /**
-   * 发送邮箱验证码（用于敏感操作二次确认）
+   * 发送邮箱验证码（按 action 路由到对应端点）
    */
   async sendEmailCode(data: SendEmailCodeRequest): Promise<{ message: string }> {
-    return apiClient.post('/email/send-code', data, {
+    const endpointMap: Record<string, string> = {
+      change_password: '/email/send-change-password-code',
+      change_email: '/email/send-change-email-code',
+    }
+    const endpoint = endpointMap[data.action] ?? '/email/send-change-password-code'
+    const body = data.email ? { email: data.email } : null
+    return apiClient.post(endpoint, body, {
       skipErrorToast: true,
     })
   },
 
   /**
-   * 验证邮箱验证码，返回短期验证令牌
+   * 验证邮箱验证码（按 action 路由到对应端点）
    */
   async verifyEmailCode(data: VerifyEmailCodeRequest): Promise<VerifyEmailCodeResponse> {
-    return apiClient.post('/email/verify-code', data, {
+    const endpointMap: Record<string, string> = {
+      change_password: '/email/change-password',
+      change_email: '/email/change-email',
+    }
+    const endpoint = endpointMap[data.action] ?? '/email/change-password'
+    return apiClient.post(
+      endpoint,
+      { code: data.code },
+      {
+        skipErrorToast: true,
+      }
+    )
+  },
+
+  // ========== 心跳 & 会话 ==========
+
+  /**
+   * 心跳（保持会话活跃）
+   */
+  async heartbeat(): Promise<void> {
+    return apiClient.post('/auth/heartbeat', null, {
+      ...authConfig,
       skipErrorToast: true,
     })
+  },
+
+  /**
+   * 获取所有会话
+   */
+  async getSessions(): Promise<
+    Array<{
+      id: string
+      device_name?: string
+      device_type?: string
+      ip_address?: string
+      last_active_at?: string
+      is_current: boolean
+    }>
+  > {
+    return apiClient.get('/auth/sessions', authConfig)
+  },
+
+  /**
+   * 撤销指定会话
+   */
+  async revokeSession(sessionId: string): Promise<void> {
+    return apiClient.delete(`/auth/sessions/${sessionId}`, authConfig)
   },
 }
 
