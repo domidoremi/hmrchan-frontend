@@ -491,11 +491,11 @@ export const discussionService = {
    * 获取讨论评论线索链
    */
   async getCommentThread(
-    discussionId: string,
+    _discussionId: string,
     commentId: string
   ): Promise<DiscussionCommentThreadResponse> {
     const data = await apiClient.get<DiscussionCommentThreadResponse>(
-      `/discussions/${discussionId}/comments/${commentId}/thread`
+      `/discussions/comments/${commentId}/thread`
     )
     return {
       ...data,
