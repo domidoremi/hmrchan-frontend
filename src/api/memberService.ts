@@ -31,7 +31,7 @@ export const memberService = {
    * 获取全部成员资料
    */
   async list(): Promise<MemberProfile[]> {
-    return apiClient.get<MemberProfile[]>('/members/', { skipAuth: true })
+    return apiClient.get<MemberProfile[]>('/members', { skipAuth: true })
   },
 
   /**
