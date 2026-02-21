@@ -130,8 +130,7 @@ export const userService = {
    */
   async exportData(): Promise<Blob> {
     const baseUrl =
-      import.meta.env.VITE_API_ENDPOINT ||
-      `${import.meta.env.VITE_API_URL || '/api'}/v1`
+      import.meta.env.VITE_API_ENDPOINT || `${import.meta.env.VITE_API_URL || '/api'}/v1`
     const response = await fetch(`${baseUrl}/account/export-data`, {
       method: 'POST',
       credentials: 'include',
