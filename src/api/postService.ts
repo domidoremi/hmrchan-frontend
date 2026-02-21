@@ -132,6 +132,100 @@ export interface PostDetailResponse {
   tags?: string[]
 }
 
+/** 后端实际返回的文件结构 */
+interface RawFile {
+  id: string
+  file_name?: string
+  file_type?: string
+  file_size_bytes?: number | null
+  width?: number | null
+  height?: number | null
+  duration_sec?: number | null
+  mime_type?: string | null
+}
+
+/** 后端实际返回的帖子详情结构 */
+interface RawPostDetail {
+  id: string
+  platform: string
+  platform_post_id?: string
+  title?: string
+  content?: string
+  post_url?: string
+  thumbnail_url?: string | null
+  author?: {
+    id?: string
+    display_name?: string
+    username?: string
+    avatar_url?: string | null
+  }
+  view_count: number
+  like_count: number
+  comment_count: number
+  file_count?: number
+  media_type?: string
+  duration?: number | null
+  published_at?: string
+  created_at?: string
+  files?: RawFile[]
+  tags?: string[]
+  // 前端已有字段（兼容旧版后端）
+  media_files?: MediaFile[]
+  author_id?: string
+  author_name?: string
+  author_username?: string
+  author_avatar_url?: string | null
+  url?: string
+  description?: string
+  media_count?: number
+}
+
+/** 将后端原始响应映射为前端 PostDetailResponse */
+function normalizePostDetail(raw: RawPostDetail): PostDetailResponse {
+  // 如果已经有 media_files，说明后端格式已对齐，直接返回
+  if (raw.media_files) {
+    return raw as unknown as PostDetailResponse
+  }
+
+  const mediaFiles: MediaFile[] | undefined = raw.files
+    ?.filter((f) => f.file_type !== 'metadata')
+    .map((f) => ({
+      id: f.id,
+      file_path: f.file_name ?? '',
+      file_type: f.file_type ?? 'image',
+      file_size: f.file_size_bytes ?? null,
+      width: f.width ?? null,
+      height: f.height ?? null,
+      duration: f.duration_sec ?? null,
+      thumbnail_path: null,
+      is_downloaded: true,
+      created_at: raw.published_at ?? raw.created_at ?? '',
+    }))
+
+  return {
+    id: raw.id,
+    platform: raw.platform,
+    platform_post_id: raw.platform_post_id,
+    title: raw.title,
+    description: raw.description ?? raw.content,
+    url: raw.url ?? raw.post_url,
+    thumbnail_url: raw.thumbnail_url ?? null,
+    author_id: raw.author_id ?? raw.author?.id,
+    author_name: raw.author_name ?? raw.author?.display_name,
+    author_username: raw.author_username ?? raw.author?.username,
+    author_avatar_url: raw.author_avatar_url ?? raw.author?.avatar_url ?? null,
+    view_count: raw.view_count,
+    like_count: raw.like_count,
+    comment_count: raw.comment_count,
+    media_count: raw.media_count ?? mediaFiles?.length ?? raw.file_count ?? 0,
+    duration: raw.duration ?? null,
+    published_at: raw.published_at,
+    created_at: raw.created_at ?? raw.published_at ?? '',
+    media_files: mediaFiles,
+    tags: raw.tags,
+  }
+}
+
 export interface PostAuthorResponse {
   id: string
   platform: string
@@ -174,7 +268,8 @@ export const postService = {
   },
 
   async getPost(postId: string): Promise<PostDetailResponse> {
-    return apiClient.get<PostDetailResponse>(`/posts/${postId}`)
+    const raw = await apiClient.get<RawPostDetail>(`/posts/${postId}`)
+    return normalizePostDetail(raw)
   },
 
   /**
