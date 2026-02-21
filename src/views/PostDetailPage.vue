@@ -773,6 +773,7 @@ async function fetchPost() {
 
       void Promise.allSettled([trackPostView(postId.value, isAuthenticated.value)])
 
+      // 后台刷新：缓存来自列表页时不含 media_files，需要网络请求补全
       loadCachedPost(postId.value).catch(() => {})
       return
     }
