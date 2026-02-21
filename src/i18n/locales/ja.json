@@ -339,6 +339,7 @@
     "tooManyRequestsWithTime": "リクエストが多すぎます。{seconds} 秒後に再試行してください",
     "badGateway": "不正なゲートウェイ",
     "serviceUnavailable": "サービスは利用できません",
+    "unknown": "不明なエラー",
     "componentError": "問題が発生しました",
     "technicalDetails": "技術的な詳細",
     "mediaLoadFailed": "メディアの読み込みに失敗しました",

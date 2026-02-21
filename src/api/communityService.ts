@@ -69,8 +69,6 @@ export const communityService = {
       page,
       page_size: pageSize,
       total_pages: 1,
-      has_next: false,
-      has_prev: false,
     }
   },
 
@@ -79,7 +77,7 @@ export const communityService = {
    */
   async getRecentComments(page = 1, pageSize = 20): Promise<PaginatedApiResponse<Comment>> {
     return apiClient.get<PaginatedApiResponse<Comment>>(
-      `/community/recent-comments?page=${page}&page_size=${pageSize}`
+      `/community/latest?page=${page}&page_size=${pageSize}`
     )
   },
 

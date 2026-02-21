@@ -31,9 +31,9 @@ export const preferencesService = {
   },
 
   /**
-   * 更新单项偏好
+   * 更新单项偏好（合并到批量更新）
    */
   async updateOne(key: string, value: unknown): Promise<void> {
-    return apiClient.patch(`/preferences/${encodeURIComponent(key)}`, { value })
+    return apiClient.patch(`/preferences/`, { [key]: value })
   },
 }
