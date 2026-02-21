@@ -91,10 +91,52 @@ export const userService = {
   },
 
   /**
-   * 删除账号
+   * 删除账号（软删除，30 天保留期内可恢复）
    */
-  async deleteAccount(): Promise<void> {
-    await apiClient.delete('/users/me')
+  async deleteAccount(reason?: string): Promise<void> {
+    await apiClient.post('/account/delete', {
+      confirm: true,
+      ...(reason ? { reason } : {}),
+    })
+  },
+
+  /**
+   * 恢复已删除的账号（30 天内）
+   */
+  async restoreAccount(): Promise<void> {
+    await apiClient.post('/account/restore')
+  },
+
+  /**
+   * 获取账号删除状态
+   */
+  async getDeletionStatus(): Promise<{
+    is_deleted: boolean
+    deleted_at?: string
+    days_remaining?: number
+  }> {
+    return apiClient.get('/account/deletion-status')
+  },
+
+  /**
+   * 获取用户数据摘要
+   */
+  async getDataSummary(): Promise<Record<string, unknown>> {
+    return apiClient.get('/account/data-summary')
+  },
+
+  /**
+   * 导出用户数据（JSON 下载）
+   */
+  async exportData(): Promise<Blob> {
+    const baseUrl =
+      import.meta.env.VITE_API_ENDPOINT ||
+      `${import.meta.env.VITE_API_URL || '/api'}/v1`
+    const response = await fetch(`${baseUrl}/account/export-data`, {
+      method: 'POST',
+      credentials: 'include',
+    })
+    return response.blob()
   },
 
   /**

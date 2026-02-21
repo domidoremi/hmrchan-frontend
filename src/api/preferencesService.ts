@@ -20,20 +20,27 @@ export const preferencesService = {
    * 获取偏好设置
    */
   async get(): Promise<UserPreferences> {
-    return apiClient.get<UserPreferences>('/preferences/')
+    return apiClient.get<UserPreferences>('/preferences')
   },
 
   /**
    * 批量更新偏好设置
    */
   async update(preferences: UserPreferences): Promise<UserPreferences> {
-    return apiClient.patch<UserPreferences>('/preferences/', preferences)
+    return apiClient.patch<UserPreferences>('/preferences', preferences)
   },
 
   /**
    * 更新单项偏好（合并到批量更新）
    */
   async updateOne(key: string, value: unknown): Promise<void> {
-    return apiClient.patch(`/preferences/`, { [key]: value })
+    return apiClient.patch('/preferences', { [key]: value })
+  },
+
+  /**
+   * 重置偏好为默认值
+   */
+  async reset(): Promise<void> {
+    return apiClient.delete('/preferences')
   },
 }

@@ -81,7 +81,7 @@ export const favoriteService = {
     postId: string,
     data: Omit<FavoriteCreateRequest, 'post_id'> = {}
   ): Promise<FavoriteResponse> {
-    return apiClient.post<FavoriteResponse>('/favorites/', {
+    return apiClient.post<FavoriteResponse>('/favorites', {
       post_id: postId,
       ...data,
     })
@@ -122,7 +122,7 @@ export const favoriteService = {
     const query = buildQuery()
 
     try {
-      return await apiClient.get<PaginatedApiResponse<FavoriteResponse>>(`/favorites/?${query}`)
+      return await apiClient.get<PaginatedApiResponse<FavoriteResponse>>(`/favorites?${query}`)
     } catch (error) {
       const shouldRetry =
         error instanceof ApiError &&
@@ -134,7 +134,7 @@ export const favoriteService = {
       }
 
       const fallbackQuery = buildQuery({ sort_by: undefined, sort_order: undefined })
-      return apiClient.get<PaginatedApiResponse<FavoriteResponse>>(`/favorites/?${fallbackQuery}`)
+      return apiClient.get<PaginatedApiResponse<FavoriteResponse>>(`/favorites?${fallbackQuery}`)
     }
   },
 
