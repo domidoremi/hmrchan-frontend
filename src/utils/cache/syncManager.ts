@@ -50,20 +50,7 @@ export async function syncOfflineActions(): Promise<{
           await favoriteService.create(action.resourceId)
           break
         case 'unfavorite':
-          if (action.data?.['favoriteId']) {
-            const favoriteId = Number(action.data['favoriteId'])
-            if (!Number.isNaN(favoriteId)) {
-              await favoriteService.remove(favoriteId)
-              break
-            }
-          }
-          // Fallback: resolve favoriteId by post id
-          {
-            const res = await favoriteService.check(action.resourceId)
-            if (res.favorite_id) {
-              await favoriteService.remove(res.favorite_id)
-            }
-          }
+          await favoriteService.removeByPostId(action.resourceId)
           break
         case 'comment':
           if (action.data?.['content']) {

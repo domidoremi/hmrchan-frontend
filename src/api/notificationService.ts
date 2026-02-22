@@ -29,7 +29,7 @@ export interface Notification {
 }
 
 export interface UnreadCountResponse {
-  count: number
+  unread_count: number
   by_type?: Record<NotificationType, number>
 }
 

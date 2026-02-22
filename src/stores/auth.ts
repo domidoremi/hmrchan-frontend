@@ -188,6 +188,13 @@ export const useAuthStore = defineStore(
         error.value = null
         // 清除安全存储的 token
         secureTokenManager.clear()
+        // 清除客户端安全凭证
+        try {
+          const { clientSecurityManager } = await import('@/api/clientSecurityService')
+          clientSecurityManager.clear()
+        } catch {
+          // ignore
+        }
         router.push('/login')
       }
     }
@@ -287,15 +294,20 @@ export const useAuthStore = defineStore(
         }
 
         try {
-          const response = await authService.refreshToken(refreshToken.value ?? undefined)
-          token.value = response.access_token
-          if (response.refresh_token) {
-            refreshToken.value = response.refresh_token
-          }
-          // 更新安全存储（client.ts 已处理，这里确保 Pinia 状态同步）
+          // 使用轻量 heartbeat 端点保活，避免不必要的 refresh token rotation
+          await authService.heartbeat()
         } catch {
-          // 刷新失败，可能 refresh_token 已过期
-          stopHeartbeat()
+          // heartbeat 失败，降级到 refresh 尝试续期
+          try {
+            const response = await authService.refreshToken(refreshToken.value ?? undefined)
+            token.value = response.access_token
+            if (response.refresh_token) {
+              refreshToken.value = response.refresh_token
+            }
+          } catch {
+            // 刷新也失败，可能 refresh_token 已过期
+            stopHeartbeat()
+          }
         }
       }, heartbeatInterval)
     }

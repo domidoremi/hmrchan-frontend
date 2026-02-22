@@ -16,7 +16,14 @@ export interface UserProfile {
   full_name?: string | null
   bio?: string | null
   avatar_url?: string | null
+  gender?: 'male' | 'female' | 'other' | null
+  birth_date?: string | null
+  location?: string | null
+  website?: string | null
+  social_links?: Record<string, string> | null
+  can_change_username?: boolean
   username_changed_at?: string | null
+  username_change_available_at?: string | null
   created_at: string
   updated_at: string
 }
@@ -26,6 +33,11 @@ export interface UpdateProfileRequest {
   full_name?: string | undefined
   bio?: string | undefined
   avatar_url?: string | undefined
+  gender?: 'male' | 'female' | 'other' | null | undefined
+  birth_date?: string | null | undefined
+  location?: string | null | undefined
+  website?: string | null | undefined
+  social_links?: Record<string, string> | null | undefined
 }
 
 export interface ChangePasswordRequest {
@@ -131,10 +143,26 @@ export const userService = {
   async exportData(): Promise<Blob> {
     const baseUrl =
       import.meta.env.VITE_API_ENDPOINT || `${import.meta.env.VITE_API_URL || '/api'}/v1`
+
+    // 从安全存储获取 access token 用于认证
+    const { secureTokenManager } = await import('@/utils/tokenSecurity')
+    const token = await secureTokenManager.retrieve()
+
+    const headers: HeadersInit = {}
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`
+    }
+
     const response = await fetch(`${baseUrl}/account/export-data`, {
       method: 'POST',
       credentials: 'include',
+      headers,
     })
+
+    if (!response.ok) {
+      throw new Error(`Export failed: ${response.status}`)
+    }
+
     return response.blob()
   },
 
@@ -165,28 +193,39 @@ export const userService = {
   },
 
   /**
-   * 检查用户名是否可以更改（30天限制）
+   * 检查用户名是否可以更改（后端返回 can_change_username 或本地 30 天计算）
    */
-  canChangeUsername(usernameChangedAt?: string | null): boolean {
-    if (!usernameChangedAt) return true
-
-    const lastChange = new Date(usernameChangedAt)
+  canChangeUsername(profile?: UserProfile | null): boolean {
+    if (!profile) return true
+    // 优先使用后端返回的字段
+    if (typeof profile.can_change_username === 'boolean') {
+      return profile.can_change_username
+    }
+    // 降级：本地计算
+    if (!profile.username_changed_at) return true
+    const lastChange = new Date(profile.username_changed_at)
     const now = new Date()
     const diffDays = Math.floor((now.getTime() - lastChange.getTime()) / (1000 * 60 * 60 * 24))
-
     return diffDays >= USERNAME_LIMITS.CHANGE_COOLDOWN_DAYS
   },
 
   /**
    * 获取距离下次可更改用户名的天数
    */
-  getDaysUntilUsernameChange(usernameChangedAt?: string | null): number {
-    if (!usernameChangedAt) return 0
-
-    const lastChange = new Date(usernameChangedAt)
+  getDaysUntilUsernameChange(profile?: UserProfile | null): number {
+    if (!profile) return 0
+    // 优先使用后端返回的精确时间
+    if (profile.username_change_available_at) {
+      const availableAt = new Date(profile.username_change_available_at)
+      const now = new Date()
+      const diffDays = Math.ceil((availableAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+      return Math.max(0, diffDays)
+    }
+    // 降级：本地计算
+    if (!profile.username_changed_at) return 0
+    const lastChange = new Date(profile.username_changed_at)
     const now = new Date()
     const diffDays = Math.floor((now.getTime() - lastChange.getTime()) / (1000 * 60 * 60 * 24))
-
     return Math.max(0, USERNAME_LIMITS.CHANGE_COOLDOWN_DAYS - diffDays)
   },
 }
