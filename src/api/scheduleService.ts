@@ -70,40 +70,6 @@ export interface ScheduleCreateRequest {
   is_published?: boolean
 }
 
-export interface ScheduleUpdateRequest {
-  title?: string
-  description?: string | null
-  category?: ScheduleCategory
-  start_date?: string
-  end_date?: string | null
-  is_all_day?: boolean
-  venue?: string | null
-  venue_address?: string | null
-  event_url?: string | null
-  ticket_url?: string | null
-  author_id?: number | null
-  source_url?: string | null
-  source_platform?: string | null
-  color?: string | null
-  is_published?: boolean
-}
-
-export interface ScheduleSyncResponse {
-  task_id: string
-  status: string
-}
-
-export interface ScheduleSyncStatusSource {
-  name: string
-  platform: string
-  last_sync_at?: string | null
-  event_count: number
-}
-
-export interface ScheduleSyncStatusResponse {
-  sources: ScheduleSyncStatusSource[]
-}
-
 // ========== 日程服务 ==========
 
 export const scheduleService = {
@@ -163,31 +129,9 @@ export const scheduleService = {
   },
 
   /**
-   * 更新日程（管理员）
-   */
-  async update(scheduleId: number, data: ScheduleUpdateRequest): Promise<ScheduleResponse> {
-    return apiClient.put<ScheduleResponse>(`/schedules/${scheduleId}`, data)
-  },
-
-  /**
    * 删除日程（管理员）
    */
   async delete(scheduleId: number): Promise<void> {
     return apiClient.delete(`/schedules/${scheduleId}`)
-  },
-
-  /**
-   * 触发外部日程同步（管理员）
-   */
-  async triggerSync(force = false): Promise<ScheduleSyncResponse> {
-    const qs = force ? '?force=true' : ''
-    return apiClient.post<ScheduleSyncResponse>(`/schedules/sync${qs}`)
-  },
-
-  /**
-   * 获取同步状态（管理员）
-   */
-  async getSyncStatus(): Promise<ScheduleSyncStatusResponse> {
-    return apiClient.get<ScheduleSyncStatusResponse>('/schedules/sync/status')
   },
 }

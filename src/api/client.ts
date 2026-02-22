@@ -13,6 +13,7 @@
  */
 
 import { secureTokenManager } from '@/utils/tokenSecurity'
+import { getDeviceFingerprint } from '@/utils/fingerprint'
 
 // i18n 已在 main.ts 同步加载，此处直接静态导入消除 Rolldown 警告
 import i18nInstance from '@/i18n'
@@ -383,6 +384,21 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
   const effectiveBase = baseUrl ?? API_BASE_URL
   const url = endpoint.startsWith('http') ? endpoint : `${effectiveBase}${endpoint}`
 
+  // 注入客户端安全头（X-Client-Token + X-Client-Fingerprint）
+  try {
+    const { clientSecurityManager } = await import('./clientSecurityService')
+    const clientToken = clientSecurityManager.getClientToken()
+    if (clientToken) {
+      ;(headers as Record<string, string>)['X-Client-Token'] = clientToken
+    }
+    const fingerprint = await getDeviceFingerprint()
+    if (fingerprint) {
+      ;(headers as Record<string, string>)['X-Client-Fingerprint'] = fingerprint
+    }
+  } catch {
+    // 客户端安全模块加载失败时静默跳过
+  }
+
   // 创建 AbortController 用于超时控制
   const controller = new AbortController()
   const timeoutId = setTimeout(() => controller.abort(), timeout)
@@ -486,6 +502,25 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
 
     // 处理其他错误响应
     if (!response.ok) {
+      // 处理 403 CHALLENGE_REQUIRED — 触发 Turnstile 验证流程
+      if (response.status === 403) {
+        try {
+          const errorBody = await response.clone().json()
+          const errorCode = errorBody?.error?.code || errorBody?.code || errorBody?.detail?.code
+          if (errorCode === 'CHALLENGE_REQUIRED') {
+            // 派发事件让 UI 层处理 Turnstile 验证
+            window.dispatchEvent(new CustomEvent('client:challenge-required'))
+            throw new ApiError(
+              errorBody?.error?.message || 'Challenge required',
+              403,
+              'CHALLENGE_REQUIRED'
+            )
+          }
+        } catch (e) {
+          if (e instanceof ApiError) throw e
+          // JSON 解析失败，继续走通用错误处理
+        }
+      }
       await handleErrorResponse(response, skipErrorToast)
     }
 

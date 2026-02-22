@@ -49,18 +49,22 @@ export interface PaginatedResponse<T> {
   total: number
   page: number
   page_size: number
-  has_more: boolean
+  total_pages: number
+  has_next?: boolean
+  has_prev?: boolean
 }
 
 /**
- * API 错误响应结构（用于类型标注后端返回的错误 JSON）
+ * API 错误响应结构（V1Envelope 错误格式）
  * 注意：运行时错误类请使用 api/client.ts 导出的 ApiError class
  */
 export interface ApiErrorResponse {
-  status: number
-  error_code: string
-  message: string
-  details?: Record<string, unknown>
+  success: false
+  error: {
+    code: string
+    message: string
+  }
+  meta?: Record<string, unknown>
 }
 
 export interface BreadcrumbItem {

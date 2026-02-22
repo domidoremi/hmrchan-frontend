@@ -8,7 +8,6 @@ import { apiClient, ApiError, type PaginatedApiResponse } from './client'
 
 export interface FavoriteCheckResponse {
   is_favorited: boolean
-  favorite_id: number | null
 }
 
 export interface FavoriteCreateRequest {
@@ -157,6 +156,15 @@ export const favoriteService = {
    */
   async remove(favoriteId: number): Promise<void> {
     await apiClient.delete(`/favorites/${favoriteId}`, {
+      skipErrorToast: true,
+    })
+  },
+
+  /**
+   * 按帖子 ID 取消收藏
+   */
+  async removeByPostId(postId: string): Promise<void> {
+    await apiClient.delete(`/favorites/post/${postId}`, {
       skipErrorToast: true,
     })
   },
