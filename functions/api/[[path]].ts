@@ -48,7 +48,7 @@ function handleCORS(request: Request, isDev: boolean): Response {
       'Access-Control-Allow-Origin': allowedOrigin!,
       'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
       'Access-Control-Allow-Headers':
-        'Content-Type, Authorization, X-Requested-With, Accept, Origin',
+        'Content-Type, Authorization, X-Requested-With, Accept, Origin, X-Client-Token, X-Client-Fingerprint, X-Timestamp, X-Signature',
       'Access-Control-Allow-Credentials': 'true',
       'Access-Control-Max-Age': '86400',
     },

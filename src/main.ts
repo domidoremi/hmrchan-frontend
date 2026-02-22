@@ -88,9 +88,17 @@ initFingerprint().catch(() => {
   // 指纹初始化失败不影响应用运行
 })
 
-// 等待认证初始化完成后再挂载，避免路由守卫竞态
-authStore
-  .initAuth()
+// 初始化客户端安全（获取 client_token/secret），必须在 auth 之前完成
+// 后续所有 API 请求都需要安全头
+import { clientSecurityService } from './api/clientSecurityService'
+
+// 等待客户端安全初始化 → 认证初始化完成后再挂载，避免路由守卫竞态
+clientSecurityService
+  .init()
+  .catch(() => {
+    // 客户端安全初始化失败不阻塞应用
+  })
+  .then(() => authStore.initAuth())
   .catch(() => {})
   .finally(() => {
     app.mount('#app')
