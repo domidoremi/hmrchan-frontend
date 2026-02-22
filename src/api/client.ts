@@ -384,9 +384,9 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
   const effectiveBase = baseUrl ?? API_BASE_URL
   const url = endpoint.startsWith('http') ? endpoint : `${effectiveBase}${endpoint}`
 
-  // 注入客户端安全头（X-Client-Token + X-Client-Fingerprint）
+  // 注入客户端安全头（X-Client-Token, X-Client-Fingerprint, X-Timestamp, X-Signature）
   try {
-    const { clientSecurityManager } = await import('./clientSecurityService')
+    const { clientSecurityManager, signRequest: signReq } = await import('./clientSecurityService')
     const clientToken = clientSecurityManager.getClientToken()
     if (clientToken) {
       ;(headers as Record<string, string>)['X-Client-Token'] = clientToken
@@ -394,6 +394,18 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
     const fingerprint = await getDeviceFingerprint()
     if (fingerprint) {
       ;(headers as Record<string, string>)['X-Client-Fingerprint'] = fingerprint
+    }
+    // 请求签名: HMAC-SHA256(secret, "METHOD|/path?query|timestamp")
+    if (clientSecurityManager.getClientSecret()) {
+      const timestamp = Math.floor(Date.now() / 1000)
+      // 提取 pathname + search 用于签名
+      const parsedUrl = new URL(url, window.location.origin)
+      const pathWithQuery = parsedUrl.pathname + parsedUrl.search
+      const signature = await signReq(method, pathWithQuery, timestamp)
+      ;(headers as Record<string, string>)['X-Timestamp'] = String(timestamp)
+      if (signature) {
+        ;(headers as Record<string, string>)['X-Signature'] = signature
+      }
     }
   } catch {
     // 客户端安全模块加载失败时静默跳过
@@ -502,19 +514,36 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
 
     // 处理其他错误响应
     if (!response.ok) {
-      // 处理 403 CHALLENGE_REQUIRED — 触发 Turnstile 验证流程
+      // 处理 403 — 区分 CHALLENGE_REQUIRED 和封禁
       if (response.status === 403) {
         try {
           const errorBody = await response.clone().json()
           const errorCode = errorBody?.error?.code || errorBody?.code || errorBody?.detail?.code
+          const errorMsg = errorBody?.error?.message || errorBody?.message || ''
+
           if (errorCode === 'CHALLENGE_REQUIRED') {
-            // 派发事件让 UI 层处理 Turnstile 验证
-            window.dispatchEvent(new CustomEvent('client:challenge-required'))
-            throw new ApiError(
-              errorBody?.error?.message || 'Challenge required',
-              403,
-              'CHALLENGE_REQUIRED'
+            // 从响应中提取 turnstile_site_key，派发事件让 UI 弹出验证
+            const siteKey =
+              errorBody?.turnstile_site_key ||
+              errorBody?.error?.turnstile_site_key ||
+              errorBody?.data?.turnstile_site_key
+            window.dispatchEvent(
+              new CustomEvent('client:challenge-required', {
+                detail: { turnstile_site_key: siteKey },
+              })
             )
+            throw new ApiError(errorMsg || 'Challenge required', 403, 'CHALLENGE_REQUIRED', {
+              turnstile_site_key: siteKey,
+            })
+          }
+
+          // 封禁处理：access temporarily restricted
+          if (
+            typeof errorMsg === 'string' &&
+            errorMsg.toLowerCase().includes('access temporarily restricted')
+          ) {
+            window.dispatchEvent(new CustomEvent('client:access-restricted'))
+            throw new ApiError(errorMsg, 403, 'ACCESS_RESTRICTED')
           }
         } catch (e) {
           if (e instanceof ApiError) throw e

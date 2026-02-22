@@ -35,7 +35,7 @@ export const useAuthStore = defineStore(
     const isLoading = ref(false)
     const error = ref<string | null>(null)
 
-    let heartbeatTimer: ReturnType<typeof setInterval> | null = null
+    let heartbeatTimer: ReturnType<typeof setTimeout> | null = null
     let authLogoutHandler: (() => void) | null = null
     let heartbeatInterval = DEFAULT_HEARTBEAT_INTERVAL
 
@@ -219,7 +219,7 @@ export const useAuthStore = defineStore(
 
     /**
      * 初始化认证状态（应用启动时调用）
-     * 验证安全存储的 token 绑定，防止跨设备窃取
+     * 始终向后端验证 token 有效性，防止持久化的过期状态导致 401 风暴
      */
     async function initAuth() {
       // 始终尝试从安全存储恢复 token（避免依赖 localStorage 明文）
@@ -231,12 +231,19 @@ export const useAuthStore = defineStore(
         return
       }
 
-      if (token.value && !user.value) {
-        await fetchCurrentUser()
+      // 始终调用 fetchCurrentUser 验证 token 有效性
+      // 即使 Pinia 持久化恢复了 user，token 可能已过期
+      const currentUser = await fetchCurrentUser()
+      if (!currentUser) {
+        // 两个 token 都已失效，清除所有认证状态
+        user.value = null
+        token.value = null
+        refreshToken.value = null
+        secureTokenManager.clear()
+        return
       }
-      if (token.value) {
-        startHeartbeat()
-      }
+
+      startHeartbeat()
     }
 
     /**
@@ -282,34 +289,41 @@ export const useAuthStore = defineStore(
     }
 
     /**
-     * 启动 Token 刷新定时器
+     * 启动 Token 刷新定时器（带随机抖动，避免固定间隔触发行为检测）
      */
     function startHeartbeat() {
       if (heartbeatTimer) return
 
-      heartbeatTimer = setInterval(async () => {
-        if (!token.value) {
-          stopHeartbeat()
-          return
-        }
+      function scheduleNextHeartbeat() {
+        // ±20% 随机抖动
+        const jitter = heartbeatInterval * 0.2 * (Math.random() * 2 - 1)
+        const interval = Math.max(30000, heartbeatInterval + jitter)
 
-        try {
-          // 使用轻量 heartbeat 端点保活，避免不必要的 refresh token rotation
-          await authService.heartbeat()
-        } catch {
-          // heartbeat 失败，降级到 refresh 尝试续期
+        heartbeatTimer = setTimeout(async () => {
+          heartbeatTimer = null
+          if (!token.value) return
+
           try {
-            const response = await authService.refreshToken(refreshToken.value ?? undefined)
-            token.value = response.access_token
-            if (response.refresh_token) {
-              refreshToken.value = response.refresh_token
-            }
+            await authService.heartbeat()
           } catch {
-            // 刷新也失败，可能 refresh_token 已过期
-            stopHeartbeat()
+            try {
+              const response = await authService.refreshToken(refreshToken.value ?? undefined)
+              token.value = response.access_token
+              if (response.refresh_token) {
+                refreshToken.value = response.refresh_token
+              }
+            } catch {
+              // 刷新也失败，可能 refresh_token 已过期
+              return
+            }
           }
-        }
-      }, heartbeatInterval)
+
+          // 成功后继续调度下一次
+          scheduleNextHeartbeat()
+        }, interval)
+      }
+
+      scheduleNextHeartbeat()
     }
 
     /**
@@ -317,7 +331,7 @@ export const useAuthStore = defineStore(
      */
     function stopHeartbeat() {
       if (heartbeatTimer) {
-        clearInterval(heartbeatTimer)
+        clearTimeout(heartbeatTimer)
         heartbeatTimer = null
       }
     }
