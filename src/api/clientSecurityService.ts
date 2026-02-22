@@ -1,26 +1,35 @@
 /**
  * Client Security Service - 客户端安全服务
  *
- * 实现客户端信任体系：
- * - 客户端初始化（获取 client_token + client_secret）
- * - Turnstile 验证提升信任等级
- * - 请求 HMAC-SHA256 签名
- * - 信任状态查询
+ * 实现后端四层安全机制：
+ * 1. 应用初始化 — POST /api/v1/client/init 获取 client_token + client_secret
+ * 2. 每个请求附带安全头 — X-Client-Token, X-Client-Fingerprint, X-Timestamp, X-Signature
+ * 3. Turnstile 人机验证 — 处理 CHALLENGE_REQUIRED
+ * 4. 封禁处理 — 处理 access temporarily restricted
  *
- * 信任等级: untrusted → basic (Turnstile) → verified (登录)
+ * 签名算法: HMAC-SHA256(client_secret, "METHOD|/path?query|timestamp")
  */
 
-import { apiClient, API_AUTH_URL } from './client'
+import { apiClient } from './client'
 import type { RequestConfig } from './client'
 import { getDeviceFingerprint } from '@/utils/fingerprint'
 import { hmacSha256 } from '@/utils/crypto'
 
 // ========== 类型定义 ==========
 
+export interface ClientInitRequest {
+  client_fingerprint: string
+  timezone: string
+  screen_resolution: string
+  platform: string
+}
+
 export interface ClientInitResponse {
   client_token: string
   client_secret: string
   trust_level: ClientTrustLevel
+  challenge_required?: boolean
+  turnstile_site_key?: string
   expires_at?: string
 }
 
@@ -35,6 +44,7 @@ export interface ClientVerifyResponse {
 
 export interface ClientStatusResponse {
   trust_level: ClientTrustLevel
+  challenge_required?: boolean
   expires_at?: string
 }
 
@@ -81,19 +91,17 @@ function clearCredentials(): void {
 
 /**
  * 生成 HMAC-SHA256 请求签名
- * 签名内容: method + path + timestamp + body_hash
+ * 格式: HMAC-SHA256(client_secret, "METHOD|/path?query|timestamp")
  */
 export async function signRequest(
   method: string,
-  path: string,
-  timestamp: number,
-  body?: string
+  pathWithQuery: string,
+  timestamp: number
 ): Promise<string | null> {
   const creds = getStoredCredentials()
   if (!creds?.client_secret) return null
 
-  const bodyHash = body || ''
-  const payload = `${method.toUpperCase()}:${path}:${timestamp}:${bodyHash}`
+  const payload = `${method.toUpperCase()}|${pathWithQuery}|${timestamp}`
   return hmacSha256(creds.client_secret, payload)
 }
 
@@ -103,6 +111,11 @@ export const clientSecurityManager = {
   /** 获取当前 client_token（用于请求头） */
   getClientToken(): string | null {
     return getStoredCredentials()?.client_token ?? null
+  },
+
+  /** 获取当前 client_secret（用于签名） */
+  getClientSecret(): string | null {
+    return getStoredCredentials()?.client_secret ?? null
   },
 
   /** 获取设备指纹（用于请求头） */
@@ -119,28 +132,51 @@ export const clientSecurityManager = {
 
 // ========== 客户端安全服务 ==========
 
+/** client/init 和 client/verify 不需要 auth，也不应触发错误 toast */
 const clientConfig: RequestConfig = {
-  baseUrl: API_AUTH_URL,
   skipAuth: true,
   skipErrorToast: true,
+}
+
+/**
+ * 收集客户端环境信息用于 init 请求
+ */
+async function collectClientInfo(): Promise<ClientInitRequest> {
+  const fingerprint = await getDeviceFingerprint()
+  return {
+    client_fingerprint: fingerprint,
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    screen_resolution: `${screen.width}x${screen.height}`,
+    platform: navigator.platform || navigator.userAgent,
+  }
 }
 
 export const clientSecurityService = {
   /**
    * 初始化客户端（获取 client_token 和 client_secret）
-   * 首次访问或 token 过期时调用
+   * 每次页面加载都应调用；回访用户后端返回空 token 时保留旧凭证
    */
   async init(): Promise<ClientInitResponse> {
-    const fingerprint = await getDeviceFingerprint()
-    const response = await apiClient.post<ClientInitResponse>(
-      '/client/init',
-      { fingerprint },
-      clientConfig
-    )
-    storeCredentials({
-      client_token: response.client_token,
-      client_secret: response.client_secret,
-    })
+    const payload = await collectClientInfo()
+    const response = await apiClient.post<ClientInitResponse>('/client/init', payload, clientConfig)
+
+    // 回访用户：后端返回空 token 表示继续使用旧凭证
+    if (response.client_token && response.client_secret) {
+      storeCredentials({
+        client_token: response.client_token,
+        client_secret: response.client_secret,
+      })
+    }
+
+    // 如果需要 Turnstile 验证，派发事件通知 UI
+    if (response.challenge_required) {
+      window.dispatchEvent(
+        new CustomEvent('client:challenge-required', {
+          detail: { turnstile_site_key: response.turnstile_site_key },
+        })
+      )
+    }
+
     return response
   },
 
@@ -156,14 +192,14 @@ export const clientSecurityService = {
   },
 
   /**
-   * 查询当前信任状态
+   * 查询当前信任状态（适合敏感操作前预检）
    */
   async getStatus(): Promise<ClientStatusResponse> {
     return apiClient.get<ClientStatusResponse>('/client/status', clientConfig)
   },
 
   /**
-   * 确保客户端已初始化（幂等操作）
+   * 确保客户端已初始化（幂等，仅在无凭证时调用 init）
    */
   async ensureInitialized(): Promise<void> {
     if (clientSecurityManager.isInitialized()) return
