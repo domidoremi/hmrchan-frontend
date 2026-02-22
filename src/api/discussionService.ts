@@ -290,6 +290,20 @@ export const discussionService = {
     await apiClient.delete(`/discussions/${discussionId}/pin`)
   },
 
+  /**
+   * 精选讨论（管理员）
+   */
+  async feature(discussionId: string): Promise<void> {
+    await apiClient.post(`/discussions/${discussionId}/feature`, null)
+  },
+
+  /**
+   * 取消精选讨论（管理员）
+   */
+  async unfeature(discussionId: string): Promise<void> {
+    await apiClient.delete(`/discussions/${discussionId}/feature`)
+  },
+
   // ========== 讨论评论 ==========
 
   /**

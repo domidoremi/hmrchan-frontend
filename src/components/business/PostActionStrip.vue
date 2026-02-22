@@ -75,7 +75,6 @@ const { t } = useI18n()
 const showLabels = computed(() => props.variant === 'default')
 
 const isFavorited = ref(false)
-const favoriteId = ref<number | null>(null)
 const isFavoriteLoading = ref(false)
 
 let checkSeq = 0
@@ -86,7 +85,6 @@ async function fetchFavoriteStatus() {
 
   if (!isAuthenticated.value) {
     isFavorited.value = false
-    favoriteId.value = null
     return
   }
 
@@ -96,11 +94,9 @@ async function fetchFavoriteStatus() {
     const res = await favoriteService.check(postId)
     if (seq !== checkSeq) return
     isFavorited.value = res.is_favorited
-    favoriteId.value = res.favorite_id
   } catch {
     if (seq !== checkSeq) return
     isFavorited.value = false
-    favoriteId.value = null
   }
 }
 
@@ -114,24 +110,14 @@ async function toggleFavorite() {
 
   try {
     if (isFavorited.value) {
-      const id = favoriteId.value
-      if (id) {
-        await favoriteService.remove(id)
-      } else {
-        const res = await favoriteService.check(props.postId)
-        if (res.favorite_id) {
-          await favoriteService.remove(res.favorite_id)
-        }
-      }
+      await favoriteService.removeByPostId(props.postId)
       isFavorited.value = false
-      favoriteId.value = null
       toastStore.success(t('post.unfavorite'))
       return
     }
 
-    const created = await favoriteService.create(props.postId)
+    await favoriteService.create(props.postId)
     isFavorited.value = true
-    favoriteId.value = created.id
     toastStore.success(t('post.favorite'))
   } catch (err) {
     if (err instanceof ApiError) {
@@ -149,9 +135,7 @@ async function toggleFavorite() {
     if (!navigator.onLine) {
       const { addOfflineAction } = await import('@/utils/cache/offlineQueue')
       const actionType = isFavorited.value ? 'unfavorite' : 'favorite'
-      const data =
-        isFavorited.value && favoriteId.value ? { favoriteId: favoriteId.value } : undefined
-      await addOfflineAction(actionType, props.postId, data)
+      await addOfflineAction(actionType, props.postId)
       toastStore.info(t('post.offlineQueued'))
     }
   } finally {

@@ -10,16 +10,28 @@ import { apiClient } from './client'
 // ========== 类型定义 ==========
 
 export interface TwoFactorSetupResponse {
-  /** Base64 编码的 QR 码图片 */
-  qr_code: string
   /** TOTP Secret (手动输入用) */
   secret: string
-  /** TOTP URI (otpauth://...) */
-  uri?: string
+  /** otpauth:// URI（用于生成 QR 码） */
+  otpauth_url: string
+  /** 备份码列表（首次设置时返回） */
+  backup_codes: string[]
+}
+
+export interface TwoFactorStatusResponse {
+  enabled: boolean
+  totp_enabled: boolean
+  /** 剩余可用备份码数量 */
+  backup_codes_remaining: number
 }
 
 export interface TwoFactorVerifyRequest {
   code: string
+}
+
+export interface TwoFactorDisableRequest {
+  code: string
+  password: string
 }
 
 export interface BackupCodesResponse {
@@ -32,7 +44,7 @@ export const twoFactorService = {
   /**
    * 获取 2FA 状态
    */
-  async getStatus(): Promise<{ enabled: boolean; totp_enabled: boolean }> {
+  async getStatus(): Promise<TwoFactorStatusResponse> {
     return apiClient.get('/2fa/status')
   },
 
@@ -57,10 +69,10 @@ export const twoFactorService = {
   },
 
   /**
-   * 禁用 2FA
+   * 禁用 2FA（需提供 TOTP code 和密码）
    */
-  async disable(code: string): Promise<{ message: string }> {
-    return apiClient.post('/2fa/disable', { code })
+  async disable(code: string, password: string): Promise<{ message: string }> {
+    return apiClient.post('/2fa/disable', { code, password })
   },
 
   /**

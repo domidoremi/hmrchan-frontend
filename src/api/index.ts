@@ -115,7 +115,9 @@ export { mediaService, type MediaFileListItem, type MediaFileResponse } from './
 export {
   twoFactorService,
   type TwoFactorSetupResponse,
+  type TwoFactorStatusResponse,
   type TwoFactorVerifyRequest,
+  type TwoFactorDisableRequest,
   type BackupCodesResponse,
 } from './twoFactorService'
 export { preferencesService, type UserPreferences } from './preferencesService'
@@ -131,8 +133,14 @@ export {
   type ScheduleCategory,
   type ListSchedulesParams,
   type ScheduleCreateRequest,
-  type ScheduleUpdateRequest,
-  type ScheduleSyncResponse,
-  type ScheduleSyncStatusResponse,
 } from './scheduleService'
 export { memberService, type MemberProfile } from './memberService'
+export {
+  clientSecurityService,
+  clientSecurityManager,
+  signRequest,
+  type ClientInitResponse,
+  type ClientVerifyResponse,
+  type ClientStatusResponse,
+  type ClientTrustLevel,
+} from './clientSecurityService'
