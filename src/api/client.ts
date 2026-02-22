@@ -398,9 +398,11 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
     // 请求签名: HMAC-SHA256(secret, "METHOD|/path?query|timestamp")
     if (clientSecurityManager.getClientSecret()) {
       const timestamp = Math.floor(Date.now() / 1000)
-      // 提取 pathname + search 用于签名
       const parsedUrl = new URL(url, window.location.origin)
       const pathWithQuery = parsedUrl.pathname + parsedUrl.search
+      if (__DEV__) {
+        console.debug('[HMAC Debug] payload:', `${method}|${pathWithQuery}|${timestamp}`)
+      }
       const signature = await signReq(method, pathWithQuery, timestamp)
       ;(headers as Record<string, string>)['X-Timestamp'] = String(timestamp)
       if (signature) {
