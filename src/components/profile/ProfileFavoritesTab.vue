@@ -279,6 +279,28 @@ onMounted(() => {
   }
 }
 
+@media (max-width: 768px) {
+  .tab-header {
+    margin-bottom: var(--spacing-4);
+  }
+
+  .tab-title {
+    font-size: var(--text-lg);
+  }
+
+  .favorite-content {
+    padding: var(--spacing-2);
+  }
+
+  .favorite-title {
+    font-size: var(--text-xs);
+  }
+
+  .remove-btn {
+    opacity: 1;
+  }
+}
+
 .favorite-card {
   position: relative;
   cursor: pointer;

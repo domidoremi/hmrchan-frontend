@@ -454,4 +454,41 @@ onMounted(() => {
   flex-direction: column;
   gap: var(--spacing-4);
 }
+
+@media (max-width: 768px) {
+  .tab-header {
+    margin-bottom: var(--spacing-4);
+  }
+
+  .tab-title {
+    font-size: var(--text-lg);
+  }
+
+  .comments-list {
+    gap: var(--spacing-3);
+  }
+
+  .comment-item {
+    padding: var(--spacing-3);
+  }
+
+  .comment-content p {
+    font-size: var(--text-sm);
+  }
+
+  .comment-footer {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-2);
+  }
+
+  .comment-context {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .unlike-btn {
+    align-self: flex-end;
+  }
+}
 </style>

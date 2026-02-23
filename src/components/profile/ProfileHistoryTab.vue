@@ -361,6 +361,20 @@ onMounted(() => {
 }
 
 @media (max-width: 768px) {
+  .tab-header {
+    margin-bottom: var(--spacing-4);
+    flex-wrap: wrap;
+  }
+
+  .tab-title {
+    font-size: var(--text-lg);
+  }
+
+  .history-item {
+    gap: var(--spacing-3);
+    padding: var(--spacing-3);
+  }
+
   .history-thumbnail {
     width: 3.75rem;
     height: 3.75rem;
@@ -368,6 +382,10 @@ onMounted(() => {
 
   .history-title {
     font-size: var(--text-sm);
+  }
+
+  .history-author {
+    font-size: var(--text-xs);
   }
 }
 </style>

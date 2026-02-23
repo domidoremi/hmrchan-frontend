@@ -327,13 +327,31 @@ onUnmounted(() => {
 }
 
 @media (max-width: 768px) {
+  .tab-header {
+    margin-bottom: var(--spacing-4);
+    flex-wrap: wrap;
+  }
+
+  .tab-title {
+    font-size: var(--text-lg);
+  }
+
+  .notification-item {
+    padding: var(--spacing-3);
+    gap: var(--spacing-2);
+  }
+
   .notification-icon {
-    width: 2.25rem;
-    height: 2.25rem;
+    width: 2rem;
+    height: 2rem;
   }
 
   .notification-text {
     font-size: var(--text-xs);
+  }
+
+  .notifications-list {
+    gap: var(--spacing-2);
   }
 }
 </style>

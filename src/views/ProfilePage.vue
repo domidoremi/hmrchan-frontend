@@ -216,30 +216,55 @@ onMounted(() => {
 }
 
 @media (max-width: 768px) {
+  .profile-page {
+    padding: var(--spacing-3) 0;
+  }
+
   .profile-header {
     flex-direction: column;
     align-items: flex-start;
     padding: var(--spacing-3);
+    gap: var(--spacing-2);
+  }
+
+  .user-info {
+    gap: var(--spacing-2);
   }
 
   .user-avatar {
-    width: 3.25rem;
-    height: 3.25rem;
+    width: 3rem;
+    height: 3rem;
   }
 
   .user-name {
-    font-size: var(--text-lg);
+    font-size: var(--text-base);
+  }
+
+  .user-username {
+    font-size: var(--text-xs);
   }
 
   .profile-actions {
     width: 100%;
     justify-content: flex-start;
-    flex-wrap: wrap;
   }
 
   .tabs-header {
     flex-direction: column;
     align-items: flex-start;
+    gap: var(--spacing-3);
+  }
+
+  .tabs-title h2 {
+    font-size: var(--text-base);
+  }
+
+  .tabs-title p {
+    font-size: var(--text-xs);
+  }
+
+  .tab-content {
+    min-height: 12rem;
   }
 }
 

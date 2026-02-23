@@ -71,6 +71,14 @@ function selectTab(value: string) {
   background: var(--glass-bg-light);
   border-radius: var(--ui-radius-tabs, var(--radius-lg));
   border: 1px solid var(--glass-border);
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.ui-tabs__list::-webkit-scrollbar {
+  display: none;
 }
 
 .ui-tabs__trigger {
@@ -118,5 +126,19 @@ function selectTab(value: string) {
 
 .ui-tabs__content {
   position: relative;
+}
+
+@media (max-width: 768px) {
+  .ui-tabs__list {
+    display: flex;
+    width: 100%;
+  }
+
+  .ui-tabs__trigger {
+    padding: var(--spacing-2) var(--spacing-3);
+    font-size: var(--text-xs);
+    gap: var(--spacing-1);
+    flex-shrink: 0;
+  }
 }
 </style>
