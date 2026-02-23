@@ -348,4 +348,45 @@ onMounted(() => {
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+@media (max-width: 768px) {
+  .tab-header {
+    margin-bottom: var(--spacing-4);
+  }
+
+  .tab-title {
+    font-size: var(--text-lg);
+  }
+
+  .comments-list {
+    gap: var(--spacing-3);
+  }
+
+  .comment-item {
+    padding: var(--spacing-3);
+  }
+
+  .comment-content p {
+    font-size: var(--text-sm);
+  }
+
+  .comment-context {
+    flex-wrap: wrap;
+    font-size: var(--text-xs);
+    margin-top: var(--spacing-2);
+    padding-top: var(--spacing-2);
+  }
+
+  .comment-footer {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-2);
+    margin-top: var(--spacing-2);
+    padding-top: var(--spacing-2);
+  }
+
+  .unfavorite-btn {
+    align-self: flex-end;
+  }
+}
 </style>

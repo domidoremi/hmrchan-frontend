@@ -31,4 +31,14 @@ import ProfileSubPageHeader from '@/components/profile/ProfileSubPageHeader.vue'
 .profile-page-card {
   padding: var(--spacing-4);
 }
+
+@media (max-width: 768px) {
+  .profile-page {
+    padding: var(--spacing-3) 0;
+  }
+
+  .profile-page-card {
+    padding: var(--spacing-3);
+  }
+}
 </style>
