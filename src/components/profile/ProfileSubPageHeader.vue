@@ -89,10 +89,22 @@ function goToProfile() {
   .profile-page-header {
     flex-direction: column;
     align-items: flex-start;
+    padding: var(--spacing-3);
+    gap: var(--spacing-3);
   }
 
   .header-left {
     width: 100%;
+    gap: var(--spacing-2);
+  }
+
+  .header-left h1 {
+    font-size: var(--text-lg);
+  }
+
+  .back-btn {
+    width: 2rem;
+    height: 2rem;
   }
 }
 </style>

@@ -537,12 +537,39 @@ function getLocationText(session: Device): string {
 
 @media (max-width: 768px) {
   .device-management {
-    padding: 1rem;
+    padding: 0;
+  }
+
+  .device-header h2 {
+    font-size: 1.25rem;
+  }
+
+  .device-description {
+    font-size: 0.85rem;
   }
 
   .device-card {
     flex-direction: column;
-    gap: 1rem;
+    gap: 0.75rem;
+    padding: 1rem;
+  }
+
+  .device-icon {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+
+  .device-name-display h3 {
+    font-size: 0.95rem;
+  }
+
+  .device-details {
+    font-size: 0.8rem;
+  }
+
+  .meta-item {
+    font-size: 0.8rem;
+    word-break: break-all;
   }
 
   .device-actions {
@@ -552,6 +579,22 @@ function getLocationText(session: Device): string {
   .btn-trust,
   .btn-revoke {
     flex: 1;
+    font-size: 0.8rem;
+    padding: 0.5rem 0.75rem;
+  }
+
+  .btn-revoke-all {
+    font-size: 0.8rem;
+    padding: 0.5rem 0.75rem;
+  }
+
+  .device-name-edit {
+    flex-wrap: wrap;
+  }
+
+  .device-name-input {
+    min-width: 0;
+    font-size: 0.85rem;
   }
 }
 </style>
