@@ -227,7 +227,7 @@
       </Transition>
     </section>
 
-    <section class="post-comments">
+    <section v-if="postId && postId !== 'undefined'" class="post-comments">
       <CommentList :post-id="postId" />
     </section>
 
@@ -746,6 +746,7 @@ function openLightbox(index?: number) {
 
 async function fetchPost() {
   if (isLoading.value) return
+  if (!postId.value || postId.value === 'undefined') return
 
   isLoading.value = true
   error.value = null
