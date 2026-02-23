@@ -32,6 +32,7 @@ export {
   type PostListItem,
   type PostDetailResponse,
   type PostAuthorResponse,
+  type AuthorOtherPost,
   type ThumbnailQuality,
 } from './postService'
 export { postsLightService, type PostsLightParams, type PostLightItem } from './postsLightService'
@@ -75,6 +76,7 @@ export {
   notificationService,
   type Notification,
   type NotificationType,
+  type NotificationListResponse,
   type UnreadCountResponse,
 } from './notificationService'
 export {
@@ -146,3 +148,42 @@ export {
   type ClientStatusResponse,
   type ClientTrustLevel,
 } from './clientSecurityService'
+export {
+  reportService,
+  type CreateReportRequest,
+  type ReportItem,
+  type ReportTargetType,
+} from './reportService'
+export { feedbackService, type FeedbackRequest, type FeedbackResponse } from './feedbackService'
+export {
+  auditService,
+  type AuditActivityItem,
+  type SecuritySummary,
+  type SecurityEvent,
+} from './auditService'
+export {
+  adminService,
+  type DetailedHealth,
+  type DbHealth,
+  type SystemStats,
+  type CacheStats,
+  type AdminUserListParams,
+  type AdminUser,
+  type AdminUserStats,
+  type AdminRole,
+  type CreateRoleRequest,
+  type UpdateRoleRequest,
+  type Permission,
+  type CrawlerStatus,
+  type CrawlerPlatformStatus,
+  type CrawlerConfig,
+  type ProcessorStats,
+  type ProcessorTask,
+  type WatcherStatus,
+  type AdminReport,
+  type ReportStatsSummary,
+  type ReviewReportRequest,
+  type SecurityEventItem,
+  type FailedLoginItem,
+  type AdminFeedback,
+} from './adminService'

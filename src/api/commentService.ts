@@ -13,9 +13,12 @@ export interface CommentImage {
   id: string
   url: string
   thumbnail_url?: string
+  filename?: string
+  file_size?: number
+  mime_type?: string
   width?: number
   height?: number
-  file_size?: number
+  sort_order?: number
   created_at: string
 }
 
@@ -23,15 +26,19 @@ export interface CommentImageUploadResponse {
   id: string
   url: string
   thumbnail_url?: string
+  filename?: string
+  file_size?: number
+  mime_type?: string
   width?: number
   height?: number
-  file_size?: number
+  sort_order?: number
+  created_at?: string
 }
 
 export interface CreateCommentRequest {
   content: string
   parent_id?: number | null
-  image_ids?: number[]
+  image_ids?: string[]
 }
 
 export interface CommentListResponse {
@@ -64,10 +71,24 @@ export const commentService = {
   /**
    * 获取帖子评论列表
    */
-  async getPostComments(postId: string, page = 1, pageSize = 20): Promise<CommentListResponse> {
-    return apiClient.get<CommentListResponse>(
-      `/posts/${postId}/comments?page=${page}&page_size=${pageSize}`
-    )
+  async getPostComments(
+    postId: string,
+    page = 1,
+    pageSize = 20,
+    options?: {
+      sort?: 'newest' | 'oldest' | 'popular'
+      preload_replies?: number
+    }
+  ): Promise<CommentListResponse> {
+    const params = new URLSearchParams({
+      page: String(page),
+      page_size: String(pageSize),
+    })
+    if (options?.sort) params.set('sort', options.sort)
+    if (options?.preload_replies != null) {
+      params.set('preload_replies', String(options.preload_replies))
+    }
+    return apiClient.get<CommentListResponse>(`/posts/${postId}/comments?${params.toString()}`)
   },
 
   /**
@@ -102,12 +123,23 @@ export const commentService = {
    * 批量上传评论图片
    */
   async uploadImages(files: File[]): Promise<CommentImageUploadResponse[]> {
-    const results: CommentImageUploadResponse[] = []
+    const formData = new FormData()
     for (const file of files) {
-      const result = await this.uploadImage(file)
-      results.push(result)
+      formData.append('files', file)
     }
-    return results
+    const response = await apiClient.post<{ images: CommentImageUploadResponse[] }>(
+      '/comment-images',
+      formData,
+      { headers: {} }
+    )
+    return response.images
+  },
+
+  /**
+   * 获取评论图片详情
+   */
+  async getImage(imageId: string): Promise<CommentImage> {
+    return apiClient.get<CommentImage>(`/comment-images/${imageId}`)
   },
 
   /**

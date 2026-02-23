@@ -107,8 +107,7 @@ import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 import { Heart, X } from 'lucide-vue-next'
-import { useAuthStore, useToastStore } from '@/stores'
-import { favoriteService, type FavoriteResponse, ApiError, apiClient } from '@/api'
+import { useAuthStore, useToastStore, useFavoritesStore } from '@/stores'
 import { normalizeToThumbnailUrl, getThumbnailSrcset } from '@/utils/mediaOptimizer'
 import { formatDate } from '@/utils/date'
 import { storePostNavigationContext } from '@/utils/postNavigation'
@@ -124,17 +123,15 @@ const router = useRouter()
 const { t } = useI18n()
 const authStore = useAuthStore()
 const toastStore = useToastStore()
+const favStore = useFavoritesStore()
 const { isAuthenticated } = storeToRefs(authStore)
 
-const favorites = ref<FavoriteResponse[]>([])
-const isLoading = ref(false)
-const isLoadingMore = ref(false)
-const error = ref<string | null>(null)
-const page = ref(1)
-const total = ref(0)
-const pageSize = 20
-
-const hasMore = computed(() => favorites.value.length < total.value)
+const favorites = computed(() => favStore.items)
+const isLoading = computed(() => favStore.isLoading)
+const error = computed(() => (favStore.error ? t(favStore.error) : null))
+const total = computed(() => favStore.total)
+const hasMore = computed(() => favStore.hasMore)
+const isLoadingMore = computed(() => favStore.isLoading && favStore.items.length > 0)
 
 const sentinelRef = ref<HTMLElement | null>(null)
 
@@ -155,104 +152,8 @@ const thumbnailSizes =
 
 async function fetchFavorites(reset = true): Promise<boolean> {
   if (!isAuthenticated.value) return false
-
-  const hadData = favorites.value.length > 0
-
-  if (reset) {
-    if (isLoading.value) return false
-    isLoading.value = true
-    page.value = 1
-    if (!hadData) {
-      favorites.value = []
-    }
-  } else {
-    if (isLoadingMore.value) return false
-    isLoadingMore.value = true
-  }
-
-  error.value = null
-
-  try {
-    const res = await favoriteService.list({
-      page: page.value,
-      page_size: pageSize,
-    })
-
-    // 批量获取缺失的 post 数据，避免 N+1 问题
-    const missingPostIds = res.items
-      .filter((fav) => !fav.post || !fav.post.title)
-      .map((fav) => fav.post_id)
-
-    // 使用单次批量请求（如果后端支持）或并行请求但限制并发
-    const postDataMap = new Map<
-      string,
-      { id: string; title: string; thumbnail_url?: string | null; author_name?: string }
-    >()
-
-    if (missingPostIds.length > 0) {
-      // 并行请求但限制并发数为 5
-      const CONCURRENCY = 5
-      for (let i = 0; i < missingPostIds.length; i += CONCURRENCY) {
-        const batch = missingPostIds.slice(i, i + CONCURRENCY)
-        const results = await Promise.allSettled(
-          batch.map((id) =>
-            apiClient.get<{
-              id: string
-              title: string
-              thumbnail_url?: string | null
-              author_name?: string
-            }>(`/posts/${id}`)
-          )
-        )
-        results.forEach((result, idx) => {
-          if (result.status === 'fulfilled') {
-            postDataMap.set(batch[idx]!, result.value)
-          }
-        })
-      }
-    }
-
-    // 合并数据
-    const enrichedItems = res.items.map((fav): FavoriteResponse => {
-      if (!fav.post || !fav.post.title) {
-        const postData = postDataMap.get(fav.post_id)
-        if (postData) {
-          return {
-            ...fav,
-            post: {
-              id: postData.id,
-              title: postData.title,
-              thumbnail_url: postData.thumbnail_url ?? null,
-              author_name: postData.author_name ?? undefined,
-            },
-          } as FavoriteResponse
-        }
-      }
-      return fav
-    })
-
-    if (reset) {
-      favorites.value = enrichedItems
-    } else {
-      favorites.value.push(...enrichedItems)
-    }
-    total.value = res.total
-
-    return true
-  } catch (err) {
-    if (favorites.value.length === 0) {
-      if (err instanceof ApiError) {
-        error.value = err.message
-      } else {
-        error.value = t('common.error')
-      }
-    }
-
-    return false
-  } finally {
-    isLoading.value = false
-    isLoadingMore.value = false
-  }
+  await favStore.fetchFavorites(reset)
+  return !favStore.error
 }
 
 async function loadMore(): Promise<boolean> {
@@ -261,36 +162,22 @@ async function loadMore(): Promise<boolean> {
     return true
   }
 
-  if (!hasMore.value || isLoading.value || isLoadingMore.value) return false
-
-  const nextPage = page.value + 1
-  page.value = nextPage
-  const ok = await fetchFavorites(false)
-  if (!ok) {
-    page.value = nextPage - 1
-    return false
-  }
-
-  return true
+  if (!hasMore.value || isLoading.value) return false
+  await favStore.loadMore()
+  return !favStore.error
 }
 
 useInfiniteScroll(sentinelRef, loadMore, {
-  rootMargin: '800px', // 提前 800px 开始加载
-  enabled: () => hasMoreForUi.value && !isLoading.value && !isLoadingMore.value,
+  rootMargin: '800px',
+  enabled: () => hasMoreForUi.value && !isLoading.value,
 })
 
-async function removeFavorite(favoriteId: number) {
-  try {
-    await favoriteService.remove(favoriteId)
-    favorites.value = favorites.value.filter((f) => f.id !== favoriteId)
-    total.value = Math.max(0, total.value - 1)
+async function removeFavorite(favoriteId: string) {
+  const result = await favStore.removeFavorite(favoriteId)
+  if (result.success) {
     toastStore.success(t('favorites.removed'))
-  } catch (err) {
-    if (err instanceof ApiError) {
-      toastStore.error(err.message)
-    } else {
-      toastStore.error(t('common.error'))
-    }
+  } else {
+    toastStore.error(t('common.error'))
   }
 }
 

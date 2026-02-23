@@ -12,10 +12,17 @@ import type { AuthorListItem } from './authorService'
 // ========== 类型定义 ==========
 
 export interface SearchSuggestion {
-  text: string
-  type: 'post' | 'author' | 'tag' | 'recent'
+  type: 'post' | 'author'
+  id: string
+  label: string
+  subtitle?: string
+  avatar_url?: string | null
+  platform?: string
+  // 兼容旧字段
+  text?: string
   score?: number
 }
+
 export interface SearchSuggestionResponse {
   query: string
   results: SearchSuggestion[]
@@ -78,7 +85,7 @@ export const searchService = {
    * 获取搜索建议
    */
   async getSuggestions(q: string, limit = 10): Promise<SearchSuggestion[]> {
-    if (!q.trim()) {
+    if (!q.trim() || q.trim().length < 2) {
       return []
     }
     const result = await apiClient.get<SearchSuggestion[] | SearchSuggestionResponse>(
@@ -105,7 +112,7 @@ export const searchService = {
       return []
     }
 
-    // Filter out suggestions with empty or whitespace-only text
-    return suggestions.filter((s) => s.text && s.text.trim().length > 0)
+    // Filter out suggestions with empty label
+    return suggestions.filter((s) => s.label && s.label.trim().length > 0)
   },
 }
