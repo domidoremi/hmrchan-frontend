@@ -54,8 +54,10 @@ export const useCommentsStore = defineStore('comments', () => {
     return postComments.reduce((acc, c) => acc + 1 + (c.replies?.length || 0), 0)
   }
 
-  // 获取评论 (模拟 API 调用)
+  // 获取评论
   async function fetchComments(postId: string, sort: 'newest' | 'oldest' | 'popular' = 'newest') {
+    if (!postId || postId === 'undefined') return { success: false, error: 'Invalid postId' }
+
     isLoading.value = true
     error.value = null
 
@@ -267,7 +269,7 @@ export const useCommentsStore = defineStore('comments', () => {
       // 更新本地状态
       updateCommentInAll(commentId, (comment) => {
         comment.is_liked = true
-        comment.likes_count++
+        comment.likes_count = (comment.likes_count ?? 0) + 1
       })
 
       return { success: true }
@@ -284,7 +286,7 @@ export const useCommentsStore = defineStore('comments', () => {
       // 更新本地状态
       updateCommentInAll(commentId, (comment) => {
         comment.is_liked = false
-        comment.likes_count = Math.max(0, comment.likes_count - 1)
+        comment.likes_count = Math.max(0, (comment.likes_count ?? 0) - 1)
       })
 
       return { success: true }
@@ -361,7 +363,7 @@ export const useCommentsStore = defineStore('comments', () => {
     }
     for (const comment of commentList) {
       if (comment.replies && removeComment(comment.replies, commentId)) {
-        comment.replies_count = Math.max(0, comment.replies_count - 1)
+        comment.replies_count = Math.max(0, (comment.replies_count ?? 0) - 1)
         return true
       }
     }
