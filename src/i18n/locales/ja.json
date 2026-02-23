@@ -603,6 +603,16 @@
     "confirmUnfavoriteComment": "コメントの保存を解除",
     "confirmUnfavoriteCommentMessage": "このコメントの保存を解除しますか？"
   },
+  "favorite": {
+    "error": {
+      "fetchFailed": "お気に入りの読み込みに失敗しました。しばらくしてから再試行してください"
+    }
+  },
+  "notification": {
+    "error": {
+      "fetchFailed": "通知の読み込みに失敗しました。しばらくしてから再試行してください"
+    }
+  },
   "favorites": {
     "loginRequired": "お気に入りを表示するにはログインしてください",
     "totalCount": "{count} 件のお気に入り",
