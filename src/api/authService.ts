@@ -202,12 +202,18 @@ export const authService = {
 
   /**
    * 二次验证（按动作类型签发短期验证令牌）
+   * action: delete_account | change_email | change_password | update_security_settings | ...
    */
   async verifyIdentity(
+    password: string,
     action: string,
-    method?: 'password' | 'email'
+    resourceId?: string
   ): Promise<{ verification_token: string }> {
-    return apiClient.post('/auth/verify-identity', { action, method }, authConfig)
+    return apiClient.post(
+      '/auth/verify-identity',
+      { password, action, ...(resourceId ? { resource_id: resourceId } : {}) },
+      authConfig
+    )
   },
 
   /**
@@ -327,9 +333,15 @@ export const authService = {
   // ========== 心跳 & 会话 ==========
 
   /**
-   * 心跳（保持会话活跃）
+   * 心跳（保持会话活跃，返回新的 access_token）
    */
-  async heartbeat(): Promise<void> {
+  async heartbeat(): Promise<{
+    access_token: string
+    token_type: string
+    expires_in: number
+    refresh_threshold: number
+    server_time: string
+  }> {
     return apiClient.post('/auth/heartbeat', null, {
       ...authConfig,
       skipErrorToast: true,

@@ -135,8 +135,8 @@ import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 import { ArrowLeft, Eye, MessageSquare, Trash2, Pin } from 'lucide-vue-next'
-import { useAuthStore, useToastStore } from '@/stores'
-import { discussionService, type Discussion, ApiError } from '@/api'
+import { useAuthStore, useToastStore, useDiscussionsStore } from '@/stores'
+import { discussionService, ApiError } from '@/api'
 import { normalizeAvatarUrl } from '@/api/userService'
 import { normalizeToThumbnailUrl } from '@/utils/mediaOptimizer'
 import { formatRelativeTime } from '@/utils/date'
@@ -152,10 +152,11 @@ const router = useRouter()
 const { t } = useI18n()
 const authStore = useAuthStore()
 const toastStore = useToastStore()
+const discStore = useDiscussionsStore()
 const { user } = storeToRefs(authStore)
 
 const discussionId = computed(() => route.params['id'] as string)
-const discussion = ref<Discussion | null>(null)
+const discussion = computed(() => discStore.currentDiscussion)
 const isLoading = ref(false)
 const error = ref<string | null>(null)
 const showDeleteDialog = ref(false)
@@ -203,7 +204,10 @@ async function fetchDiscussion() {
   error.value = null
 
   try {
-    discussion.value = await discussionService.get(discussionId.value)
+    await discStore.fetchDiscussion(discussionId.value)
+    if (discStore.error) {
+      error.value = t(discStore.error)
+    }
   } catch (err) {
     if (err instanceof ApiError) {
       error.value = err.message
@@ -239,10 +243,10 @@ async function handleTogglePin() {
   try {
     if (discussion.value.is_pinned) {
       await discussionService.unpin(discussion.value.id)
-      discussion.value.is_pinned = false
+      discStore.updateDiscussionLocally(discussion.value.id, { is_pinned: false })
     } else {
       await discussionService.pin(discussion.value.id)
-      discussion.value.is_pinned = true
+      discStore.updateDiscussionLocally(discussion.value.id, { is_pinned: true })
     }
   } catch (err) {
     if (err instanceof ApiError) {

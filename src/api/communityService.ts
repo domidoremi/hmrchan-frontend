@@ -100,6 +100,15 @@ export const communityService = {
   },
 
   /**
+   * 获取我的点赞
+   */
+  async getMyLikes(page = 1, pageSize = 20): Promise<PaginatedApiResponse<Comment>> {
+    return apiClient.get<PaginatedApiResponse<Comment>>(
+      `/community/my-likes?page=${page}&page_size=${pageSize}`
+    )
+  },
+
+  /**
    * 获取社区统计
    */
   async getStats(): Promise<CommunityStats> {

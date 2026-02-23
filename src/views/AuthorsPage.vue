@@ -40,7 +40,7 @@
                 v-if="author.avatar_url"
                 class="author-avatar"
                 :src="normalizeAvatarUrl(author.avatar_url) || author.avatar_url"
-                :alt="author.name"
+                :alt="author.display_name || author.name"
                 loading="lazy"
                 decoding="async"
                 style="object-fit: cover"
@@ -48,7 +48,7 @@
               <div v-else class="author-avatar skeleton" />
 
               <div class="author-info">
-                <h3 class="author-name">{{ author.name }}</h3>
+                <h3 class="author-name">{{ author.display_name || author.name }}</h3>
                 <p class="author-username">@{{ author.username }}</p>
               </div>
             </button>

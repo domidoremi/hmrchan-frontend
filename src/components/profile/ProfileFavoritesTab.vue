@@ -96,16 +96,15 @@ import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 import { Heart, X } from 'lucide-vue-next'
-import { useAuthStore, useToastStore } from '@/stores'
-import { favoriteService, type FavoriteResponse, ApiError, apiClient } from '@/api'
+import { useAuthStore, useToastStore, useFavoritesStore } from '@/stores'
 import {
   normalizeToThumbnailUrl,
   getThumbnailSrcset,
   extractMediaIdFromUrl,
 } from '@/utils/mediaOptimizer'
 import { formatDate } from '@/utils/date'
-import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import { useProgressiveRender } from '@/composables/useProgressiveRender'
+import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import Skeleton from '@/components/ui/Skeleton.vue'
@@ -115,17 +114,15 @@ const router = useRouter()
 const { t } = useI18n()
 const authStore = useAuthStore()
 const toastStore = useToastStore()
+const favStore = useFavoritesStore()
 const { isAuthenticated } = storeToRefs(authStore)
 
-const favorites = ref<FavoriteResponse[]>([])
-const isLoading = ref(false)
-const isLoadingMore = ref(false)
-const error = ref<string | null>(null)
-const page = ref(1)
-const total = ref(0)
-const pageSize = 20
-
-const hasMore = computed(() => favorites.value.length < total.value)
+const favorites = computed(() => favStore.items)
+const isLoading = computed(() => favStore.isLoading)
+const error = computed(() => (favStore.error ? t(favStore.error) : null))
+const total = computed(() => favStore.total)
+const hasMore = computed(() => favStore.hasMore)
+const isLoadingMore = computed(() => favStore.isLoading && favStore.items.length > 0)
 
 const sentinelRef = ref<HTMLElement | null>(null)
 
@@ -146,78 +143,8 @@ const thumbnailSizes =
 
 async function fetchFavorites(reset = true): Promise<boolean> {
   if (!isAuthenticated.value) return false
-
-  const hadData = favorites.value.length > 0
-
-  if (reset) {
-    if (isLoading.value) return false
-    isLoading.value = true
-    page.value = 1
-    if (!hadData) {
-      favorites.value = []
-    }
-  } else {
-    if (isLoadingMore.value) return false
-    isLoadingMore.value = true
-  }
-
-  error.value = null
-
-  try {
-    const res = await favoriteService.list({
-      page: page.value,
-      page_size: pageSize,
-    })
-
-    const enrichedItems = await Promise.all(
-      res.items.map(async (fav): Promise<FavoriteResponse> => {
-        if (!fav.post || !fav.post.title) {
-          try {
-            const postData = await apiClient.get<{
-              id: string
-              title: string
-              thumbnail_url?: string | null
-              author_name?: string
-            }>(`/posts/${fav.post_id}`)
-            return {
-              ...fav,
-              post: {
-                id: postData.id,
-                title: postData.title,
-                thumbnail_url: postData.thumbnail_url ?? null,
-                author_name: postData.author_name ?? undefined,
-              },
-            } as FavoriteResponse
-          } catch {
-            return fav
-          }
-        }
-        return fav
-      })
-    )
-
-    if (reset) {
-      favorites.value = enrichedItems
-    } else {
-      favorites.value.push(...enrichedItems)
-    }
-    total.value = res.total
-
-    return true
-  } catch (err) {
-    if (favorites.value.length === 0) {
-      if (err instanceof ApiError) {
-        error.value = err.message
-      } else {
-        error.value = t('common.error')
-      }
-    }
-
-    return false
-  } finally {
-    isLoading.value = false
-    isLoadingMore.value = false
-  }
+  await favStore.fetchFavorites(reset)
+  return !favStore.error
 }
 
 async function loadMore(): Promise<boolean> {
@@ -226,36 +153,22 @@ async function loadMore(): Promise<boolean> {
     return true
   }
 
-  if (!hasMore.value || isLoading.value || isLoadingMore.value) return false
-
-  const nextPage = page.value + 1
-  page.value = nextPage
-  const ok = await fetchFavorites(false)
-  if (!ok) {
-    page.value = nextPage - 1
-    return false
-  }
-
-  return true
+  if (!hasMore.value || isLoading.value) return false
+  await favStore.loadMore()
+  return !favStore.error
 }
 
 useInfiniteScroll(sentinelRef, loadMore, {
-  rootMargin: '800px', // 提前 800px 开始加载
-  enabled: () => hasMoreForUi.value && !isLoading.value && !isLoadingMore.value,
+  rootMargin: '800px',
+  enabled: () => hasMoreForUi.value && !isLoading.value,
 })
 
-async function removeFavorite(favoriteId: number) {
-  try {
-    await favoriteService.remove(favoriteId)
-    favorites.value = favorites.value.filter((f) => f.id !== favoriteId)
-    total.value = Math.max(0, total.value - 1)
+async function removeFavorite(favoriteId: string) {
+  const result = await favStore.removeFavorite(favoriteId)
+  if (result.success) {
     toastStore.success(t('favorites.removed'))
-  } catch (err) {
-    if (err instanceof ApiError) {
-      toastStore.error(err.message)
-    } else {
-      toastStore.error(t('common.error'))
-    }
+  } else {
+    toastStore.error(t('common.error'))
   }
 }
 
@@ -271,7 +184,9 @@ function goToPost(postId: string, thumbnailUrl?: string | null) {
 }
 
 onMounted(() => {
-  fetchFavorites()
+  if (favStore.items.length === 0) {
+    fetchFavorites()
+  }
 })
 </script>
 

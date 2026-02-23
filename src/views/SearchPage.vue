@@ -173,7 +173,7 @@
                 <img
                   v-if="author.avatar_url"
                   :src="normalizeAvatarUrl(author.avatar_url) || author.avatar_url"
-                  :alt="author.name"
+                  :alt="author.display_name || author.name"
                   class="author-avatar"
                   loading="lazy"
                 />
@@ -181,7 +181,7 @@
                   <AnimatedIcon name="user" :fallback-icon="User" size="lg" />
                 </div>
                 <div class="author-info">
-                  <h3 class="author-name">{{ author.name }}</h3>
+                  <h3 class="author-name">{{ author.display_name || author.name }}</h3>
                   <p class="author-platform">
                     <AnimatedIcon
                       name="explore"

@@ -4,7 +4,7 @@
  * 提供通知相关的 API 调用
  */
 
-import { apiClient, type PaginatedApiResponse } from './client'
+import { apiClient } from './client'
 
 // ========== 类型定义 ==========
 
@@ -18,14 +18,25 @@ export type NotificationType =
 
 export interface Notification {
   id: string
-  user_id: string
+  user_id?: string
   type: NotificationType
   title: string
-  content: string
+  content: string | null
+  related_type?: 'post' | 'comment' | 'discussion' | null
+  related_id?: number | null
   data?: Record<string, unknown>
   is_read: boolean
   created_at: string
   read_at?: string | null
+}
+
+export interface NotificationListResponse {
+  items: Notification[]
+  total: number
+  unread_count: number
+  page: number
+  page_size: number
+  has_more: boolean
 }
 
 export interface UnreadCountResponse {
@@ -46,7 +57,7 @@ export const notificationService = {
       type?: NotificationType
       unreadOnly?: boolean
     }
-  ): Promise<PaginatedApiResponse<Notification>> {
+  ): Promise<NotificationListResponse> {
     const params = new URLSearchParams({
       page: String(page),
       page_size: String(pageSize),
@@ -59,7 +70,7 @@ export const notificationService = {
       params.set('unread_only', 'true')
     }
 
-    return apiClient.get<PaginatedApiResponse<Notification>>(`/notifications?${params.toString()}`)
+    return apiClient.get<NotificationListResponse>(`/notifications?${params.toString()}`)
   },
 
   /**

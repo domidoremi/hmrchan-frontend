@@ -11,35 +11,55 @@ export type SortOrder = 'asc' | 'desc'
 export interface AuthorListItem {
   id: string
   platform: string
-  platform_user_id: string
-  name: string
   username: string
-  description?: string | null
+  display_name?: string | null
   avatar_url?: string | null
   profile_url?: string | null
   profile_banner_url?: string | null
   follower_count?: number | null
-  video_count?: number | null
   post_count?: number | null
   is_verified: boolean
-  created_at: string
-  updated_at: string
+  created_at?: string
+  updated_at?: string
+  // 兼容旧字段
+  platform_user_id?: string
+  name?: string
+  description?: string | null
+  video_count?: number | null
 }
 
 export interface AuthorResponse {
   id: string
   platform: string
-  platform_user_id: string
-  name: string
+  platform_user_id?: string | null
   username: string
-  description?: string | null
+  display_name?: string | null
   avatar_url?: string | null
   profile_url?: string | null
+  profile_banner_url?: string | null
+  bio?: string | null
   follower_count?: number | null
-  video_count?: number | null
+  following_count?: number | null
+  post_count?: number | null
   is_verified: boolean
-  created_at: string
-  updated_at: string
+  created_at?: string
+  updated_at?: string
+  recent_posts?: AuthorRecentPost[]
+  // 兼容旧字段
+  name?: string
+  description?: string | null
+  video_count?: number | null
+}
+
+export interface AuthorRecentPost {
+  id: string
+  platform: string
+  post_type?: string
+  title?: string | null
+  post_url?: string
+  published_at?: string | null
+  view_count?: number
+  like_count?: number
 }
 
 export interface ListAuthorsParams {

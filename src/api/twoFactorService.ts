@@ -84,7 +84,7 @@ export const twoFactorService = {
   ): Promise<{ access_token: string; user: unknown }> {
     return apiClient.post('/2fa/verify-login', {
       pending_token: pendingToken,
-      code,
+      totp_code: code,
     })
   },
 
