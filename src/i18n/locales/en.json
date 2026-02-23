@@ -610,6 +610,16 @@
       "invalidFormat": "Username can only contain letters, numbers, and underscores"
     }
   },
+  "favorite": {
+    "error": {
+      "fetchFailed": "Failed to load favorites, please try again later"
+    }
+  },
+  "notification": {
+    "error": {
+      "fetchFailed": "Failed to load notifications, please try again later"
+    }
+  },
   "favorites": {
     "loginRequired": "Please login to view your favorites",
     "totalCount": "{count} favorites",
