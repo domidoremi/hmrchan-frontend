@@ -2,7 +2,12 @@
  * Posts Service - 帖子相关 API
  */
 
-import { apiClient, type PaginatedApiResponseWithLimit, type RequestConfig } from './client'
+import {
+  apiClient,
+  ApiError,
+  type PaginatedApiResponseWithLimit,
+  type RequestConfig,
+} from './client'
 import { buildQuery } from '@/utils/queryBuilder'
 
 export type SortOrder = 'asc' | 'desc'
@@ -323,6 +328,9 @@ export const postService = {
   },
 
   async getPost(postId: string): Promise<PostDetailResponse> {
+    if (!postId || postId === 'undefined') {
+      throw new ApiError('Invalid post ID', 400)
+    }
     const raw = await apiClient.get<RawPostDetail>(`/posts/${postId}`)
     return normalizePostDetail(raw)
   },
