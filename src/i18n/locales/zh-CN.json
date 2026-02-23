@@ -610,6 +610,16 @@
       "invalidFormat": "用户名只能包含字母、数字和下划线"
     }
   },
+  "favorite": {
+    "error": {
+      "fetchFailed": "加载收藏失败，请稍后重试"
+    }
+  },
+  "notification": {
+    "error": {
+      "fetchFailed": "加载通知失败，请稍后重试"
+    }
+  },
   "favorites": {
     "loginRequired": "请登录以查看您的收藏",
     "totalCount": "共 {count} 个收藏",

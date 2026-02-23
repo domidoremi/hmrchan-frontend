@@ -62,7 +62,12 @@
           v-if="!isAuthenticated"
           :to="{
             path: '/login',
-            query: { redirect: $route.fullPath !== '/' ? $route.fullPath : undefined },
+            query: {
+              redirect:
+                $route.path !== '/' && $route.path !== '/login' && $route.path !== '/register'
+                  ? $route.fullPath
+                  : undefined,
+            },
           }"
           class="login-btn glass-button glass-button--primary"
           :aria-label="$t('nav.login')"
