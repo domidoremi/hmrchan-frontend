@@ -16,6 +16,8 @@ export interface DiscussionAuthor {
   id: string
   username: string
   avatar_url?: string | null
+  is_admin?: boolean
+  is_verified?: boolean
 }
 
 export interface PostReference {
@@ -79,6 +81,7 @@ export interface UpdateDiscussionRequest {
   content?: string
   category?: DiscussionCategory
   tags?: string[]
+  is_closed?: boolean
   referenced_post_id?: string | null
 }
 
@@ -130,6 +133,8 @@ function normalizeDiscussionAuthor(raw: unknown): DiscussionAuthor {
     id: toString(data.id ?? data.user_id ?? ''),
     username: toString(data.username ?? data.name ?? 'Anonymous'),
     avatar_url: (data.avatar_url as string | null | undefined) ?? null,
+    is_admin: Boolean(data.is_admin),
+    is_verified: Boolean(data.is_verified),
   }
 }
 
@@ -265,15 +270,15 @@ export const discussionService = {
   /**
    * 点赞讨论
    */
-  async like(discussionId: string): Promise<void> {
-    await apiClient.post(`/discussions/${discussionId}/like`, null)
+  async like(discussionId: string): Promise<{ message: string; like_count: number }> {
+    return apiClient.post(`/discussions/${discussionId}/like`, null)
   },
 
   /**
    * 取消点赞讨论
    */
-  async unlike(discussionId: string): Promise<void> {
-    await apiClient.delete(`/discussions/${discussionId}/like`)
+  async unlike(discussionId: string): Promise<{ message: string; like_count: number }> {
+    return apiClient.delete(`/discussions/${discussionId}/like`)
   },
 
   /**

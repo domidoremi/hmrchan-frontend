@@ -18,7 +18,7 @@
               v-if="author.avatar_url"
               class="author-avatar"
               :src="normalizeAvatarUrl(author.avatar_url) || author.avatar_url"
-              :alt="author.name"
+              :alt="author.display_name || author.name"
               loading="eager"
               decoding="async"
               fetchpriority="high"
@@ -27,7 +27,7 @@
             <div v-else class="author-avatar skeleton" />
 
             <div class="author-info">
-              <h1 class="author-name">{{ author.name }}</h1>
+              <h1 class="author-name">{{ author.display_name || author.name }}</h1>
               <p class="author-username">@{{ author.username }}</p>
             </div>
           </template>

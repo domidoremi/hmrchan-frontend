@@ -294,7 +294,7 @@ import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { MessageSquare, Flame, HelpCircle, Search, X } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
-import { useAuthStore } from '@/stores'
+import { useAuthStore, useDiscussionsStore } from '@/stores'
 import { discussionService, type Discussion, ApiError } from '@/api'
 import { normalizeToThumbnailUrl, getThumbnailSrcset } from '@/utils/mediaOptimizer'
 import { normalizeAvatarUrl } from '@/api/userService'
@@ -311,31 +311,30 @@ import Dialog from '@/components/ui/Dialog.vue'
 const router = useRouter()
 const { t } = useI18n()
 const authStore = useAuthStore()
+const discStore = useDiscussionsStore()
 const { isAuthenticated } = storeToRefs(authStore)
 
 const showGuide = ref(false)
 const activeTab = ref('recent')
-const isLoading = ref(false)
-const isLoadingMore = ref(false)
-const error = ref<string | null>(null)
-const discussions = ref<Discussion[]>([])
 
-// Discussion search
+const discussions = computed(() => discStore.items)
+const isLoading = computed(() => discStore.isLoading)
+const error = computed(() => (discStore.error ? t(discStore.error) : null))
+const total = computed(() => discStore.total)
+const hasMore = computed(() => discStore.hasMore)
+const isLoadingMore = computed(() => discStore.isLoading && discStore.items.length > 0)
+
+// Discussion search (local state - not in store)
 const searchQuery = ref('')
 const searchResults = ref<Discussion[]>([])
 const isSearching = ref(false)
 const searchError = ref<string | null>(null)
 let searchDebounceTimer: ReturnType<typeof setTimeout> | null = null
+
+// Hot topics (local state)
 const isLoadingHot = ref(false)
 const hotTopicsError = ref<string | null>(null)
 const hotTopics = ref<Discussion[]>([])
-
-const page = ref(1)
-const total = ref(0)
-const totalPages = ref(0)
-const pageSize = 20
-
-const hasMore = computed(() => page.value < totalPages.value)
 
 const sentinelRef = ref<HTMLElement | null>(null)
 
@@ -360,7 +359,7 @@ function switchTab(tabId: string) {
 }
 
 function handleDiscussionCreated() {
-  fetchDiscussions(true)
+  discStore.fetchDiscussions(true)
 }
 
 function prefetchDiscussionDetailPage() {
@@ -391,67 +390,15 @@ function goToLogin() {
   router.push('/login')
 }
 
-async function fetchDiscussions(reset = true): Promise<boolean> {
-  const hadData = discussions.value.length > 0
-
-  if (reset) {
-    if (isLoading.value) return false
-    isLoading.value = true
-    page.value = 1
-    if (!hadData) {
-      discussions.value = []
-    }
-  } else {
-    if (isLoadingMore.value) return false
-    isLoadingMore.value = true
-  }
-
-  error.value = null
-
-  try {
-    const res = await discussionService.list({
-      page: page.value,
-      page_size: pageSize,
-      sort_by: 'created_at',
-      sort_order: 'desc',
-    })
-
-    if (reset) {
-      discussions.value = res.items
-    } else {
-      discussions.value.push(...res.items)
-    }
-
-    total.value = res.total
-    totalPages.value = res.total_pages
-
-    return true
-  } catch (err) {
-    if (discussions.value.length === 0) {
-      if (err instanceof ApiError) {
-        error.value = err.message
-      } else {
-        error.value = t('common.error')
-      }
-    }
-
-    return false
-  } finally {
-    isLoading.value = false
-    isLoadingMore.value = false
-  }
+async function fetchDiscussions(): Promise<boolean> {
+  await discStore.fetchDiscussions(true)
+  return !discStore.error
 }
 
 async function loadMore(): Promise<boolean> {
-  if (!hasMore.value || isLoading.value || isLoadingMore.value) return false
-
-  const nextPage = page.value + 1
-  page.value = nextPage
-  const ok = await fetchDiscussions(false)
-  if (!ok) {
-    page.value = nextPage - 1
-  }
-  return ok
+  if (!hasMore.value || isLoading.value) return false
+  await discStore.loadMore()
+  return !discStore.error
 }
 
 async function fetchHotTopics() {
@@ -513,14 +460,13 @@ async function searchDiscussions(q: string) {
 }
 
 useInfiniteScroll(sentinelRef, loadMore, {
-  rootMargin: '800px', // 提前 800px 开始加载
-  enabled: () =>
-    activeTab.value === 'recent' && hasMore.value && !isLoading.value && !isLoadingMore.value,
+  rootMargin: '800px',
+  enabled: () => activeTab.value === 'recent' && hasMore.value && !isLoading.value,
 })
 
 onMounted(() => {
-  if (discussions.value.length === 0) {
-    fetchDiscussions()
+  if (discStore.items.length === 0) {
+    discStore.fetchDiscussions(true)
   }
 })
 </script>

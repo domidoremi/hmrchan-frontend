@@ -16,6 +16,7 @@ export interface UserProfile {
   full_name?: string | null
   bio?: string | null
   avatar_url?: string | null
+  is_verified?: boolean
   gender?: 'male' | 'female' | 'other' | null
   birth_date?: string | null
   location?: string | null
@@ -47,7 +48,12 @@ export interface ChangePasswordRequest {
 }
 
 export interface AvatarUploadResponse {
+  filename?: string
   url: string
+  size?: number
+  content_type?: string
+  hash?: string
+  uploaded_at?: string
 }
 
 /**

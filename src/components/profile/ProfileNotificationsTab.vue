@@ -49,7 +49,7 @@
             />
           </div>
           <div class="notification-content">
-            <p class="notification-text">{{ notif.message }}</p>
+            <p class="notification-text">{{ notif.title || notif.content }}</p>
             <span class="notification-time">{{ formatDate(notif.created_at) }}</span>
           </div>
           <button
@@ -77,8 +77,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
   Bell,
@@ -89,8 +88,7 @@ import {
   Check,
   CheckCheck,
 } from 'lucide-vue-next'
-import { useToastStore } from '@/stores'
-import { apiClient, ApiError } from '@/api'
+import { useNotificationsStore, useToastStore } from '@/stores'
 import { formatRelativeTime } from '@/utils/date'
 import Button from '@/components/ui/Button.vue'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
@@ -98,147 +96,73 @@ import StateIndicator from '@/components/ui/StateIndicator.vue'
 import Skeleton from '@/components/ui/Skeleton.vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 
-type NotificationType = 'like' | 'comment' | 'reply' | 'follow' | 'system'
-
-interface Notification {
-  id: string
-  type: NotificationType
-  message: string
-  is_read: boolean
-  link?: string | null
-  created_at: string
-}
-
-const router = useRouter()
 const { t } = useI18n()
 const toastStore = useToastStore()
+const notifStore = useNotificationsStore()
 
-const notifications = ref<Notification[]>([])
-const isLoading = ref(false)
-const isLoadingMore = ref(false)
-const error = ref<string | null>(null)
-const page = ref(1)
-const total = ref(0)
-const pageSize = 20
+const notifications = computed(() => notifStore.items)
+const isLoading = computed(() => notifStore.isLoading)
+const error = computed(() => (notifStore.error ? t(notifStore.error) : null))
+const total = computed(() => notifStore.total)
+const hasMore = computed(() => notifStore.hasMore)
+const unreadCount = computed(() => notifStore.unreadCount)
+const isLoadingMore = computed(() => notifStore.isLoading && notifStore.items.length > 0)
 
-const hasMore = computed(() => notifications.value.length < total.value)
-const unreadCount = computed(() => notifications.value.filter((n) => !n.is_read).length)
-
-function getNotificationIcon(type: NotificationType) {
-  const icons = {
+function getNotificationIcon(type: string) {
+  const icons: Record<string, typeof Bell> = {
+    comment_reply: MessageCircle,
+    comment_like: Heart,
+    comment_mention: MessageCircle,
+    follow: UserPlus,
+    system: AlertCircle,
+    report_resolved: AlertCircle,
     like: Heart,
     comment: MessageCircle,
     reply: MessageCircle,
-    follow: UserPlus,
-    system: AlertCircle,
   }
   return icons[type] || Bell
 }
 
-function getNotificationAnimation(type: NotificationType) {
-  const animations = {
+function getNotificationAnimation(type: string) {
+  const animations: Record<string, string> = {
+    comment_reply: 'sparkle',
+    comment_like: 'heart',
+    comment_mention: 'sparkle',
+    follow: 'user',
+    system: 'explore',
+    report_resolved: 'explore',
     like: 'heart',
     comment: 'sparkle',
     reply: 'sparkle',
-    follow: 'user',
-    system: 'explore',
   }
   return animations[type] || 'sparkle'
 }
 
-async function fetchNotifications(reset = true) {
-  if (reset) {
-    if (isLoading.value) return
-    isLoading.value = true
-    page.value = 1
-  } else {
-    if (isLoadingMore.value) return
-    isLoadingMore.value = true
-  }
-
-  error.value = null
-
-  try {
-    // 尝试获取通知，如果 API 不存在则显示空状态
-    const res = await apiClient.get<{ items: Notification[]; total: number }>(
-      `/notifications?page=${page.value}&page_size=${pageSize}`,
-      { skipErrorToast: true }
-    )
-
-    if (reset) {
-      notifications.value = res.items
-    } else {
-      notifications.value.push(...res.items)
-    }
-    total.value = res.total
-  } catch (err) {
-    // 如果是 404，说明 API 尚未实现，显示空状态而不是错误
-    if (err instanceof ApiError && err.status === 404) {
-      if (reset) {
-        notifications.value = []
-        total.value = 0
-      }
-      // 不设置 error，让组件显示空状态
-      return
-    }
-
-    if (notifications.value.length === 0) {
-      if (err instanceof ApiError) {
-        error.value = err.message
-      } else {
-        error.value = t('common.error')
-      }
-    }
-  } finally {
-    isLoading.value = false
-    isLoadingMore.value = false
-  }
+async function fetchNotifications() {
+  await notifStore.fetchNotifications(true)
 }
 
 async function loadMore() {
-  if (!hasMore.value || isLoading.value || isLoadingMore.value) return
-
-  page.value++
-  await fetchNotifications(false)
+  await notifStore.loadMore()
 }
 
 async function markAsRead(notificationId: string) {
-  try {
-    await apiClient.put(`/notifications/${notificationId}/read`)
-    const notif = notifications.value.find((n) => n.id === notificationId)
-    if (notif) {
-      notif.is_read = true
-    }
-  } catch (err) {
-    if (err instanceof ApiError) {
-      toastStore.error(err.message)
-    }
-  }
+  await notifStore.markAsRead(notificationId)
 }
 
 async function markAllAsRead() {
-  try {
-    await apiClient.put('/notifications/read-all')
-    notifications.value.forEach((n) => {
-      n.is_read = true
-    })
-    toastStore.success(t('profile.allMarkedRead'))
-  } catch (err) {
-    if (err instanceof ApiError) {
-      toastStore.error(err.message)
-    } else {
-      toastStore.error(t('common.error'))
-    }
-  }
+  await notifStore.markAllAsRead()
+  toastStore.success(t('profile.allMarkedRead'))
 }
 
-function handleNotificationClick(notif: Notification) {
+function handleNotificationClick(notif: {
+  id: string
+  is_read: boolean
+  related_id?: number | null
+  related_type?: string | null
+}) {
   if (!notif.is_read) {
     markAsRead(notif.id)
-  }
-
-  if (notif.link) {
-    router.push(notif.link)
   }
 }
 
@@ -247,7 +171,12 @@ function formatDate(dateStr: string): string {
 }
 
 onMounted(() => {
-  fetchNotifications()
+  notifStore.fetchNotifications(true)
+  notifStore.startPolling()
+})
+
+onUnmounted(() => {
+  notifStore.stopPolling()
 })
 </script>
 

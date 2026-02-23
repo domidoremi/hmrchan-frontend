@@ -7,7 +7,12 @@ import { buildQuery } from '@/utils/queryBuilder'
 
 export type SortOrder = 'asc' | 'desc'
 
-export type PostSortBy = 'published_at' | 'created_at' | 'view_count' | 'like_count'
+export type PostSortBy =
+  | 'published_at'
+  | 'scraped_at'
+  | 'view_count'
+  | 'like_count'
+  | 'comment_count'
 
 /**
  * Thumbnail quality levels for optimized image loading
@@ -51,29 +56,33 @@ export interface PostListItem {
   id: string
   platform: string
   platform_post_id?: string
-  title?: string
-  description?: string
-  url?: string
+  post_url?: string
+  post_type?: string
+  title?: string | null
+  content?: string | null
   thumbnail_url?: string | null
-  // 兼容后端未来可能提供的缩略图尺寸信息
   thumbnail_width?: number | null
   thumbnail_height?: number | null
-  author_id?: string
-  author_name?: string
+  published_at?: string | null
+  view_count: number
+  like_count: number
+  comment_count: number
+  file_count?: number
+  media_count: number
+  author_name?: string | null
+  author_id?: string | null
+  // 兼容旧字段
+  description?: string
+  url?: string
   author_username?: string
   author_avatar_url?: string | null
   original_author_id?: string | null
   original_author_name?: string | null
   original_author_username?: string | null
   original_author_avatar_url?: string | null
-  view_count: number
-  like_count: number
-  comment_count: number
   duration?: number | null
-  published_at?: string
   scraped_at?: string
-  created_at: string
-  media_count: number
+  created_at?: string
 }
 
 export interface MediaFile {
@@ -120,6 +129,7 @@ export interface PostDetailResponse {
   view_count: number
   like_count: number
   comment_count: number
+  share_count?: number
   media_count: number
   duration?: number | null
   published_at?: string
@@ -130,6 +140,22 @@ export interface PostDetailResponse {
   original_author_avatar_url?: string | null
   media_files?: MediaFile[]
   tags?: string[]
+  // API spec 新增字段
+  post_type?: string
+  media_type?: string | null
+  language?: string | null
+  author_other_posts?: AuthorOtherPost[]
+}
+
+export interface AuthorOtherPost {
+  id: string
+  platform: string
+  post_type?: string
+  title?: string | null
+  post_url?: string
+  published_at?: string | null
+  view_count?: number
+  like_count?: number
 }
 
 /** 后端实际返回的文件结构 */
@@ -152,8 +178,19 @@ interface RawPostDetail {
   title?: string
   content?: string
   post_url?: string
+  post_type?: string
+  media_type?: string | null
+  language?: string | null
   thumbnail_url?: string | null
   author?: {
+    id?: string
+    display_name?: string
+    username?: string
+    avatar_url?: string | null
+    platform?: string
+    is_verified?: boolean
+  }
+  original_author?: {
     id?: string
     display_name?: string
     username?: string
@@ -162,13 +199,14 @@ interface RawPostDetail {
   view_count: number
   like_count: number
   comment_count: number
+  share_count?: number
   file_count?: number
-  media_type?: string
-  duration?: number | null
+  duration_sec?: number | null
   published_at?: string
   created_at?: string
   files?: RawFile[]
   tags?: string[]
+  author_other_posts?: AuthorOtherPost[]
   // 前端已有字段（兼容旧版后端）
   media_files?: MediaFile[]
   author_id?: string
@@ -178,6 +216,8 @@ interface RawPostDetail {
   url?: string
   description?: string
   media_count?: number
+  media_type_legacy?: string
+  duration?: number | null
 }
 
 /** 将后端原始响应映射为前端 PostDetailResponse */
@@ -214,32 +254,47 @@ function normalizePostDetail(raw: RawPostDetail): PostDetailResponse {
     author_name: raw.author_name ?? raw.author?.display_name,
     author_username: raw.author_username ?? raw.author?.username,
     author_avatar_url: raw.author_avatar_url ?? raw.author?.avatar_url ?? null,
+    original_author_id: raw.original_author?.id ?? null,
+    original_author_name: raw.original_author?.display_name ?? null,
+    original_author_username: raw.original_author?.username ?? null,
+    original_author_avatar_url: raw.original_author?.avatar_url ?? null,
     view_count: raw.view_count,
     like_count: raw.like_count,
     comment_count: raw.comment_count,
+    share_count: raw.share_count,
     media_count: raw.media_count ?? mediaFiles?.length ?? raw.file_count ?? 0,
-    duration: raw.duration ?? null,
+    duration: raw.duration ?? (raw.duration_sec != null ? raw.duration_sec : null),
     published_at: raw.published_at,
     created_at: raw.created_at ?? raw.published_at ?? '',
     media_files: mediaFiles,
     tags: raw.tags,
+    post_type: raw.post_type,
+    media_type: raw.media_type ?? raw.media_type_legacy ?? null,
+    language: raw.language ?? null,
+    author_other_posts: raw.author_other_posts,
   }
 }
 
 export interface PostAuthorResponse {
   id: string
   platform: string
-  platform_user_id: string
-  name: string
+  platform_user_id?: string
   username: string
-  description?: string | null
+  display_name?: string | null
   avatar_url?: string | null
   profile_url?: string | null
+  profile_banner_url?: string | null
+  bio?: string | null
   follower_count?: number | null
-  video_count?: number | null
+  following_count?: number | null
+  post_count?: number | null
   is_verified: boolean
   created_at?: string | null
   updated_at?: string | null
+  // 兼容旧字段
+  name?: string
+  description?: string | null
+  video_count?: number | null
 }
 
 export const postService = {

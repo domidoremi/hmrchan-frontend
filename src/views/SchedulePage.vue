@@ -401,6 +401,8 @@ let touchStartY = 0
 // ========== 分类配置 ==========
 const CATEGORY_COLORS: Record<string, string> = {
   live: '#ef4444',
+  event: '#10b981',
+  release: '#06b6d4',
   media: '#3b82f6',
   birth: '#f59e0b',
   other: '#8b5cf6',
@@ -689,7 +691,7 @@ const hasDetailLinks = computed(() => {
   return detailEvent.value.event_url || detailEvent.value.ticket_url || detailEvent.value.source_url
 })
 
-async function openDetail(eventId: number) {
+async function openDetail(eventId: string) {
   detailLoading.value = true
   detailEvent.value = { id: eventId } as ScheduleResponse // placeholder to open dialog
   try {

@@ -6,11 +6,10 @@ import { apiClient, type PaginatedApiResponse } from './client'
 
 // ========== 类型定义 ==========
 
-export type ScheduleCategory = 'live' | 'media' | 'birth' | 'other'
+export type ScheduleCategory = 'live' | 'event' | 'release' | 'media' | 'birth' | 'other'
 
 export interface ScheduleResponse {
-  id: number
-  uuid: string
+  id: string
   title: string
   description?: string | null
   category: ScheduleCategory
@@ -21,17 +20,25 @@ export interface ScheduleResponse {
   venue_address?: string | null
   event_url?: string | null
   ticket_url?: string | null
-  author_id?: number | null
+  author?: {
+    id: string
+    username?: string
+    display_name?: string
+    avatar_url?: string | null
+  } | null
   source_url?: string | null
   source_platform?: string | null
   color?: string | null
   is_published: boolean
   created_at: string
   updated_at?: string | null
+  // 兼容旧字段
+  uuid?: string
+  author_id?: number | null
 }
 
 export interface ScheduleCalendarItem {
-  id: number
+  id: string
   title: string
   start: string
   end?: string | null
@@ -117,7 +124,7 @@ export const scheduleService = {
   /**
    * 获取日程详情
    */
-  async getById(scheduleId: number): Promise<ScheduleResponse> {
+  async getById(scheduleId: string): Promise<ScheduleResponse> {
     return apiClient.get<ScheduleResponse>(`/schedules/${scheduleId}`, { skipAuth: true })
   },
 
@@ -131,7 +138,7 @@ export const scheduleService = {
   /**
    * 删除日程（管理员）
    */
-  async delete(scheduleId: number): Promise<void> {
+  async delete(scheduleId: string): Promise<void> {
     return apiClient.delete(`/schedules/${scheduleId}`)
   },
 }

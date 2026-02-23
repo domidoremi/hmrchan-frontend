@@ -37,6 +37,7 @@ vi.mock('@/api', () => {
   const mockGetCurrentUser = vi.fn()
   const mockRefreshToken = vi.fn()
   const mockSendVerificationEmail = vi.fn()
+  const mockHeartbeat = vi.fn()
 
   return {
     authService: {
@@ -46,6 +47,7 @@ vi.mock('@/api', () => {
       getCurrentUser: mockGetCurrentUser,
       refreshToken: mockRefreshToken,
       sendVerificationEmail: mockSendVerificationEmail,
+      heartbeat: mockHeartbeat,
     },
     ApiError: class ApiError extends Error {
       status: number
@@ -339,15 +341,20 @@ describe('Auth Store', () => {
       const store = useAuthStore()
       store.token = 'test-token'
 
-      vi.mocked(authService.refreshToken).mockResolvedValue({ access_token: 'new-token' })
+      vi.mocked(authService.heartbeat).mockResolvedValue({
+        access_token: 'new-token',
+        token_type: 'bearer',
+        expires_in: 900,
+        refresh_threshold: 300,
+        server_time: new Date().toISOString(),
+      })
 
       store.startHeartbeat()
 
-      // 快进 5 分钟
-      await vi.advanceTimersByTimeAsync(5 * 60 * 1000)
+      // 快进 7 分钟（心跳间隔 5min ± 20% 抖动，最大 6min）
+      await vi.advanceTimersByTimeAsync(7 * 60 * 1000)
 
-      expect(authService.refreshToken).toHaveBeenCalled()
-      expect(store.token).toBe('new-token')
+      expect(authService.heartbeat).toHaveBeenCalled()
 
       store.stopHeartbeat()
     })

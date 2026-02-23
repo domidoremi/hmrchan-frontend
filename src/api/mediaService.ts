@@ -14,7 +14,7 @@ export interface MediaFileListItem {
   post_id: string
   file_path: string
   file_type: 'image' | 'video' | 'subtitle' | 'thumbnail'
-  file_size: number
+  file_size_bytes: number
   width?: number | null
   height?: number | null
   duration?: number | null
@@ -24,6 +24,8 @@ export interface MediaFileListItem {
   has_subtitle?: boolean
   subtitles?: MediaSubtitle[]
   created_at: string
+  // 兼容旧字段
+  file_size?: number
 }
 
 export type MediaFileResponse = MediaFileListItem
@@ -56,9 +58,17 @@ export const mediaService = {
   },
 
   /**
-   * 构建缩略图 URL
+   * 构建缩略图 URL（支持 size 参数）
    */
-  getThumbnailUrl(mediaId: string): string {
-    return `${API_BASE_URL}/media/${mediaId}/thumbnail`
+  getThumbnailUrl(mediaId: string, size?: 'small' | 'medium' | 'large' | 'original'): string {
+    const sizeParam = size ? `?size=${size}` : ''
+    return `${API_BASE_URL}/media/${mediaId}/thumbnail${sizeParam}`
+  },
+
+  /**
+   * 构建下载 URL
+   */
+  getDownloadUrl(mediaId: string): string {
+    return `${API_BASE_URL}/media/${mediaId}/download`
   },
 }

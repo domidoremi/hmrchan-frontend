@@ -24,7 +24,7 @@ export interface FavoriteUpdateRequest {
 }
 
 export interface FavoriteResponse {
-  id: number
+  id: string
   post_id: string
   user_id?: string
   folder_name?: string | null
@@ -41,7 +41,7 @@ export interface FavoriteResponse {
 }
 
 export interface FavoriteFolder {
-  name: string
+  folder_name: string
   count: number
 }
 
@@ -57,8 +57,8 @@ export interface ListFavoritesParams {
   tag?: string
   tags?: string[]
   platform?: string
-  sort_by?: 'created_at' | 'updated_at'
-  sort_order?: 'asc' | 'desc'
+  sort_by?: 'created_at' | 'updated_at' | undefined
+  sort_order?: 'asc' | 'desc' | undefined
 }
 
 // ========== 收藏服务 ==========
@@ -98,7 +98,7 @@ export const favoriteService = {
       })
 
       if (merged.folder_name) {
-        query.set('folder_name', merged.folder_name)
+        query.set('folder', merged.folder_name)
       }
       if (merged.tag) {
         query.set('tag', merged.tag)
@@ -140,21 +140,21 @@ export const favoriteService = {
   /**
    * 获取收藏详情
    */
-  async get(favoriteId: number): Promise<FavoriteResponse> {
+  async get(favoriteId: string): Promise<FavoriteResponse> {
     return apiClient.get<FavoriteResponse>(`/favorites/${favoriteId}`)
   },
 
   /**
    * 更新收藏元信息
    */
-  async update(favoriteId: number, data: FavoriteUpdateRequest): Promise<FavoriteResponse> {
+  async update(favoriteId: string, data: FavoriteUpdateRequest): Promise<FavoriteResponse> {
     return apiClient.patch<FavoriteResponse>(`/favorites/${favoriteId}`, data)
   },
 
   /**
    * 删除收藏
    */
-  async remove(favoriteId: number): Promise<void> {
+  async remove(favoriteId: string): Promise<void> {
     await apiClient.delete(`/favorites/${favoriteId}`, {
       skipErrorToast: true,
     })
@@ -172,8 +172,8 @@ export const favoriteService = {
   /**
    * 获取收藏夹列表
    */
-  async getFolders(): Promise<FavoriteFolder[]> {
-    return apiClient.get<FavoriteFolder[]>('/favorites/folders/list')
+  async getFolders(): Promise<{ folders: FavoriteFolder[] }> {
+    return apiClient.get<{ folders: FavoriteFolder[] }>('/favorites/folders/list')
   },
 
   /**
