@@ -43,7 +43,7 @@ export async function onRequest(context: Context): Promise<Response> {
     return new Response(
       JSON.stringify({
         error: 'WebSocket Proxy Error',
-        message: error instanceof Error ? error.message : 'Unknown error',
+        message: 'Unable to establish WebSocket connection. Please try again later.',
       }),
       {
         status: 502,

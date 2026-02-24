@@ -1,14 +1,5 @@
 <template>
   <div class="notifications-tab">
-    <div class="tab-header">
-      <h2 class="tab-title">{{ $t('profile.tabs.notifications') }}</h2>
-      <span v-if="unreadCount > 0" class="unread-badge">{{ unreadCount }}</span>
-      <Button v-if="notifications.length > 0" variant="ghost" size="sm" @click="markAllAsRead">
-        <AnimatedIcon name="sparkle" :fallback-icon="CheckCheck" size="sm" />
-        {{ $t('profile.markAllRead') }}
-      </Button>
-    </div>
-
     <StateIndicator
       v-if="error"
       variant="error"
@@ -78,26 +69,18 @@
 
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import {
-  Bell,
-  Heart,
-  MessageCircle,
-  UserPlus,
-  AlertCircle,
-  Check,
-  CheckCheck,
-} from 'lucide-vue-next'
-import { useNotificationsStore, useToastStore } from '@/stores'
+import { Bell, Heart, MessageCircle, UserPlus, AlertCircle, Check } from 'lucide-vue-next'
+import { useNotificationsStore } from '@/stores'
 import { formatRelativeTime } from '@/utils/date'
-import Button from '@/components/ui/Button.vue'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import Skeleton from '@/components/ui/Skeleton.vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 
 const { t } = useI18n()
-const toastStore = useToastStore()
+const router = useRouter()
 const notifStore = useNotificationsStore()
 
 const notifications = computed(() => notifStore.items)
@@ -105,7 +88,6 @@ const isLoading = computed(() => notifStore.isLoading)
 const error = computed(() => (notifStore.error ? t(notifStore.error) : null))
 const total = computed(() => notifStore.total)
 const hasMore = computed(() => notifStore.hasMore)
-const unreadCount = computed(() => notifStore.unreadCount)
 const isLoadingMore = computed(() => notifStore.isLoading && notifStore.items.length > 0)
 
 function getNotificationIcon(type: string) {
@@ -150,11 +132,6 @@ async function markAsRead(notificationId: string) {
   await notifStore.markAsRead(notificationId)
 }
 
-async function markAllAsRead() {
-  await notifStore.markAllAsRead()
-  toastStore.success(t('profile.allMarkedRead'))
-}
-
 function handleNotificationClick(notif: {
   id: string
   is_read: boolean
@@ -163,6 +140,24 @@ function handleNotificationClick(notif: {
 }) {
   if (!notif.is_read) {
     markAsRead(notif.id)
+  }
+
+  // 导航到关联内容
+  if (notif.related_id && notif.related_type) {
+    switch (notif.related_type) {
+      case 'post':
+        router.push(`/post/${notif.related_id}`)
+        break
+      case 'comment':
+      case 'discussion':
+        if (notif.related_id) {
+          router.push(`/community/discussions/${notif.related_id}`)
+        }
+        break
+      case 'author':
+        router.push(`/author/${notif.related_id}`)
+        break
+    }
   }
 }
 
@@ -183,42 +178,6 @@ onUnmounted(() => {
 <style scoped>
 .notifications-tab {
   min-height: 20rem;
-}
-
-.tab-header {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-3);
-  margin-bottom: clamp(1.25rem, 3vw, 2rem);
-}
-
-.tab-title {
-  font-size: clamp(var(--text-lg), 2.5vw, var(--text-xl));
-  font-weight: var(--font-bold);
-  margin: 0;
-  flex: 1;
-}
-
-.unread-badge {
-  padding: 0.125rem 0.5rem;
-  background: var(--color-error);
-  color: var(--color-white);
-  border-radius: var(--radius-full);
-  font-size: var(--text-xs);
-  font-weight: var(--font-bold);
-  min-width: 1.25rem;
-  text-align: center;
-  animation: pulse-badge 2s var(--ease-smooth) infinite;
-}
-
-@keyframes pulse-badge {
-  0%,
-  100% {
-    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.3);
-  }
-  50% {
-    box-shadow: 0 0 0 4px rgba(239, 68, 68, 0);
-  }
 }
 
 /* Skeleton */
