@@ -23,6 +23,7 @@ import vueDevTools from 'vite-plugin-vue-devtools'
 import { imagetools } from 'vite-imagetools'
 import { criticalCSSPlugin } from './vite-plugin-critical-css'
 import { swVersionPlugin } from './vite-plugin-sw-version'
+import { sriPlugin } from './vite-plugin-sri'
 
 type DevProxyServer = {
   on(event: 'proxyRes', listener: (proxyRes: IncomingMessage) => void): void
@@ -41,7 +42,6 @@ function getBuildHash(): string {
 }
 
 const BUILD_HASH = getBuildHash()
-
 
 export default defineConfig(({ mode }: { mode: string }) => {
   const isProd = mode === 'production'
@@ -87,8 +87,8 @@ export default defineConfig(({ mode }: { mode: string }) => {
         },
       }),
 
-      /** 生产环境内联关键 CSS */
-      ...(isProd ? [criticalCSSPlugin(), swVersionPlugin()] : []),
+      /** 生产环境内联关键 CSS + SW 版本注入 + SRI 完整性校验 */
+      ...(isProd ? [criticalCSSPlugin(), swVersionPlugin(), sriPlugin()] : []),
 
       /** 生产环境压缩 HTML：移除注释、多余空行和缩进 */
       ...(isProd
@@ -97,15 +97,16 @@ export default defineConfig(({ mode }: { mode: string }) => {
               name: 'vite-plugin-html-minify',
               enforce: 'post' as const,
               transformIndexHtml(html: string) {
-                return html
-                  // 保留 IE 条件注释（<!--[if ...]>），移除其余 HTML 注释
-                  .replace(/<!--(?!\[if\s)[\s\S]*?-->/g, '')
-                  // 压缩连续空行为单个换行
-                  .replace(/\n\s*\n/g, '\n')
-                  // 移除行首多余空格（保留 2 空格缩进结构）
-                  .replace(/^\s{4,}/gm, (m) => '  '.repeat(Math.floor(m.length / 2)))
-                  .trim()
-                  + '\n'
+                return (
+                  html
+                    // 保留 IE 条件注释（<!--[if ...]>），移除其余 HTML 注释
+                    .replace(/<!--(?!\[if\s)[\s\S]*?-->/g, '')
+                    // 压缩连续空行为单个换行
+                    .replace(/\n\s*\n/g, '\n')
+                    // 移除行首多余空格（保留 2 空格缩进结构）
+                    .replace(/^\s{4,}/gm, (m) => '  '.repeat(Math.floor(m.length / 2)))
+                    .trim() + '\n'
+                )
               },
             },
           ]
