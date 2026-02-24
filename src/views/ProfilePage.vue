@@ -47,7 +47,7 @@
             :class="{ 'stat-item--active': activeTab === stat.key }"
             @click="activeTab = stat.key"
           >
-            <span class="stat-value">{{ stat.value }}</span>
+            <span v-if="stat.value" class="stat-value">{{ stat.value }}</span>
             <span class="stat-label">{{ stat.label }}</span>
           </button>
         </div>
@@ -157,12 +157,12 @@ const currentTabComponent = computed(() => {
 const stats = computed(() => [
   {
     key: 'favorites' as const,
-    value: favStore.total || '—',
+    value: favStore.total || undefined,
     label: t('profile.tabs.favorites'),
   },
-  { key: 'comments' as const, value: '—', label: t('profile.tabs.comments') },
-  { key: 'likes' as const, value: '—', label: t('profile.tabs.likes') },
-  { key: 'history' as const, value: '—', label: t('profile.tabs.history') },
+  { key: 'comments' as const, value: undefined, label: t('profile.tabs.comments') },
+  { key: 'likes' as const, value: undefined, label: t('profile.tabs.likes') },
+  { key: 'history' as const, value: undefined, label: t('profile.tabs.history') },
 ])
 
 const quickLinks = computed(() => [
