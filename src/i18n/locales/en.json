@@ -22,6 +22,7 @@
     "schedule": "Schedule"
   },
   "common": {
+    "all": "All",
     "skipToContent": "Skip to content",
     "loading": "Loading...",
     "loadingMore": "Loading more...",

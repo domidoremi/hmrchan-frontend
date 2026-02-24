@@ -168,7 +168,10 @@
                 v-for="author in authors"
                 :key="author.id"
                 class="author-card glass-card"
+                role="button"
+                tabindex="0"
                 @click="goToAuthor(author.id)"
+                @keydown.enter="goToAuthor(author.id)"
               >
                 <img
                   v-if="author.avatar_url"
