@@ -117,6 +117,10 @@
               </button>
             </div>
 
+            <div v-else-if="isMediaPending" class="media-viewer">
+              <div class="media-skeleton skeleton" />
+            </div>
+
             <div v-else class="post-media-empty">
               <img
                 v-if="post?.thumbnail_url"
@@ -400,6 +404,17 @@ const hasMultipleMedia = computed(() => (post.value?.media_files?.length ?? 0) >
 const mediaCount = computed(() => post.value?.media_files?.length ?? 0)
 const canGoPrevMedia = computed(() => activeMediaIndex.value > 0)
 const canGoNextMedia = computed(() => activeMediaIndex.value + 1 < mediaCount.value)
+
+// 缓存来自列表页时可能没有 media_files，但 media_count > 0 表示有媒体
+// 此时应显示加载骨架而非"无媒体"占位
+const isMediaPending = computed(() => {
+  if (!post.value) return false
+  const hasFiles = post.value.media_files && post.value.media_files.length > 0
+  if (hasFiles) return false
+  const expectedCount =
+    post.value.media_count ?? (post.value as unknown as { file_count?: number }).file_count ?? 0
+  return expectedCount > 0
+})
 
 const isImageSequence = computed(() =>
   (post.value?.media_files ?? []).every((media) => media.file_type === 'image')

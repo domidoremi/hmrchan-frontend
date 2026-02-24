@@ -122,34 +122,34 @@ export interface MediaSubtitle {
 export interface PostDetailResponse {
   id: string
   platform: string
-  platform_post_id?: string
-  title?: string
-  description?: string
-  url?: string
+  platform_post_id?: string | undefined
+  title?: string | undefined
+  description?: string | undefined
+  url?: string | undefined
   thumbnail_url?: string | null
-  author_id?: string
-  author_name?: string
-  author_username?: string
+  author_id?: string | undefined
+  author_name?: string | undefined
+  author_username?: string | undefined
   author_avatar_url?: string | null
   view_count: number
   like_count: number
   comment_count: number
-  share_count?: number
+  share_count?: number | undefined
   media_count: number
   duration?: number | null
-  published_at?: string
+  published_at?: string | undefined
   created_at: string
   original_author_id?: string | null
   original_author_name?: string | null
   original_author_username?: string | null
   original_author_avatar_url?: string | null
-  media_files?: MediaFile[]
-  tags?: string[]
+  media_files?: MediaFile[] | undefined
+  tags?: string[] | undefined
   // API spec 新增字段
-  post_type?: string
+  post_type?: string | undefined
   media_type?: string | null
   language?: string | null
-  author_other_posts?: AuthorOtherPost[]
+  author_other_posts?: AuthorOtherPost[] | undefined
 }
 
 export interface AuthorOtherPost {
