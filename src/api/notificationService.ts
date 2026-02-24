@@ -82,30 +82,38 @@ export const notificationService = {
 
   /**
    * 标记单条通知为已读
+   * PATCH /api/v1/notifications/:id/read → 通知对象
    */
-  async markAsRead(notificationId: string): Promise<void> {
-    return apiClient.patch(`/notifications/${notificationId}/read`)
+  async markAsRead(notificationId: string): Promise<Notification> {
+    return apiClient.patch<Notification>(`/notifications/${notificationId}/read`)
   },
 
   /**
    * 标记全部通知为已读
+   * POST /api/v1/notifications/read-all → { message, success, count }
    */
-  async markAllAsRead(type?: NotificationType): Promise<void> {
+  async markAllAsRead(
+    type?: NotificationType
+  ): Promise<{ message: string; success: boolean; count: number }> {
     const params = type ? `?type=${type}` : ''
     return apiClient.post(`/notifications/read-all${params}`)
   },
 
   /**
    * 删除单条通知
+   * DELETE /api/v1/notifications/:id → { message, success }
    */
-  async deleteNotification(notificationId: string): Promise<void> {
+  async deleteNotification(notificationId: string): Promise<{ message: string; success: boolean }> {
     return apiClient.delete(`/notifications/${notificationId}`)
   },
 
   /**
    * 清空通知（默认仅清除已读）
+   * DELETE /api/v1/notifications → { message, success, count }
    */
-  async clearNotifications(readOnly = true): Promise<void> {
+  async clearNotifications(
+    readOnly = true
+  ): Promise<{ message: string; success: boolean; count: number }> {
     const params = readOnly ? '?read_only=true' : ''
     return apiClient.delete(`/notifications${params}`)
   },

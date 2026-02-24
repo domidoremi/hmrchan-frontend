@@ -73,8 +73,13 @@ export const deviceService = {
 
   /**
    * 注销所有设备
+   * DELETE /api/v1/devices → { message, success, revoked_count }
    */
-  async revokeAllDevices(): Promise<void> {
+  async revokeAllDevices(): Promise<{
+    message: string
+    success: boolean
+    revoked_count: number
+  }> {
     return apiClient.delete('/devices')
   },
 

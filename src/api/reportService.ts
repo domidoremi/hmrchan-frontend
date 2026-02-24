@@ -13,7 +13,7 @@ export type ReportTargetType = 'post' | 'comment' | 'discussion' | 'discussion_c
 
 export interface CreateReportRequest {
   target_type: ReportTargetType
-  target_id: string
+  target_id: number | string
   reason: string
   description?: string
 }
@@ -21,10 +21,10 @@ export interface CreateReportRequest {
 export interface ReportItem {
   id: string
   target_type: ReportTargetType
-  target_id: string
+  target_id: number | string
   reason: string
   description?: string | null
-  status?: 'pending' | 'reviewed' | 'resolved' | 'dismissed'
+  status?: 'pending' | 'resolved' | 'rejected' | 'reviewed' | 'dismissed'
   created_at: string
   updated_at?: string | null
 }

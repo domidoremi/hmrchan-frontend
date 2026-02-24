@@ -11,9 +11,11 @@ import { apiClient, type PaginatedApiResponse } from './client'
 export interface UserRelation {
   is_following: boolean
   is_followed_by: boolean
-  is_blocked: boolean
+  is_blocking: boolean
   is_blocked_by: boolean
-  is_mutual: boolean
+  // 兼容旧字段
+  is_blocked?: boolean
+  is_mutual?: boolean
 }
 
 export interface UserListItem {
@@ -34,9 +36,14 @@ export interface UserPublicProfile {
   bio?: string | null
   follower_count: number
   following_count: number
-  post_count?: number
-  is_verified: boolean
+  is_following: boolean
+  is_followed_by: boolean
+  is_blocking: boolean
+  is_blocked_by: boolean
   created_at: string
+  // 兼容旧字段
+  post_count?: number
+  is_verified?: boolean
   relation?: UserRelation
 }
 

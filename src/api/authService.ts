@@ -97,17 +97,24 @@ export interface ChangeEmailRequest {
 }
 
 export interface SendEmailCodeRequest {
-  action: string
-  email?: string
+  action: 'change_password' | 'change_email'
+  /** 修改密码时需要当前密码 */
+  password?: string
+  /** 修改邮箱时需要新邮箱 + 当前密码 */
+  new_email?: string
 }
 
 export interface VerifyEmailCodeRequest {
-  action: string
-  code: string
+  action: 'change_password' | 'change_email'
+  /** 邮箱验证码 */
+  verification_code: string
+  /** 修改密码时需要新密码 */
+  new_password?: string
 }
 
 export interface VerifyEmailCodeResponse {
-  verification_token: string
+  success: boolean
+  message: string
 }
 
 // ========== 认证服务 ==========
@@ -299,6 +306,8 @@ export const authService = {
 
   /**
    * 发送邮箱验证码（按 action 路由到对应端点）
+   * - change_password: 需要 password
+   * - change_email: 需要 password + new_email
    */
   async sendEmailCode(data: SendEmailCodeRequest): Promise<{ message: string }> {
     const endpointMap: Record<string, string> = {
@@ -306,7 +315,14 @@ export const authService = {
       change_email: '/email/send-change-email-code',
     }
     const endpoint = endpointMap[data.action] ?? '/email/send-change-password-code'
-    const body = data.email ? { email: data.email } : null
+
+    let body: Record<string, unknown> | null = null
+    if (data.action === 'change_password' && data.password) {
+      body = { password: data.password }
+    } else if (data.action === 'change_email' && data.password && data.new_email) {
+      body = { password: data.password, new_email: data.new_email }
+    }
+
     return apiClient.post(endpoint, body, {
       skipErrorToast: true,
     })
@@ -314,6 +330,8 @@ export const authService = {
 
   /**
    * 验证邮箱验证码（按 action 路由到对应端点）
+   * - change_password: 需要 verification_code + new_password
+   * - change_email: 需要 verification_code
    */
   async verifyEmailCode(data: VerifyEmailCodeRequest): Promise<VerifyEmailCodeResponse> {
     const endpointMap: Record<string, string> = {
@@ -321,13 +339,20 @@ export const authService = {
       change_email: '/email/change-email',
     }
     const endpoint = endpointMap[data.action] ?? '/email/change-password'
-    return apiClient.post(
-      endpoint,
-      { code: data.code },
-      {
-        skipErrorToast: true,
+
+    let body: Record<string, unknown>
+    if (data.action === 'change_password') {
+      body = {
+        verification_code: data.verification_code,
+        new_password: data.new_password,
       }
-    )
+    } else {
+      body = { verification_code: data.verification_code }
+    }
+
+    return apiClient.post(endpoint, body, {
+      skipErrorToast: true,
+    })
   },
 
   // ========== 心跳 & 会话 ==========
@@ -350,17 +375,20 @@ export const authService = {
 
   /**
    * 获取所有会话
+   * GET /api/auth/sessions → { sessions: [...], total }
    */
-  async getSessions(): Promise<
-    Array<{
-      id: string
+  async getSessions(): Promise<{
+    sessions: Array<{
+      id: number
       device_name?: string
       device_type?: string
       ip_address?: string
-      last_active_at?: string
+      created_at?: string
+      last_used_at?: string
       is_current: boolean
     }>
-  > {
+    total: number
+  }> {
     return apiClient.get('/auth/sessions', authConfig)
   },
 

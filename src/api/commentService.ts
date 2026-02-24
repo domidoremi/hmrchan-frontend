@@ -50,9 +50,11 @@ export interface CommentListResponse {
 }
 
 export interface CommentThreadResponse {
+  post_id: string
   thread: Comment[]
-  root_comment: Comment
   depth: number
+  // 兼容旧字段
+  root_comment?: Comment
 }
 
 // 图片上传限制
