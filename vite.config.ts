@@ -89,6 +89,27 @@ export default defineConfig(({ mode }: { mode: string }) => {
 
       /** 生产环境内联关键 CSS */
       ...(isProd ? [criticalCSSPlugin(), swVersionPlugin()] : []),
+
+      /** 生产环境压缩 HTML：移除注释、多余空行和缩进 */
+      ...(isProd
+        ? [
+            {
+              name: 'vite-plugin-html-minify',
+              enforce: 'post' as const,
+              transformIndexHtml(html: string) {
+                return html
+                  // 保留 IE 条件注释（<!--[if ...]>），移除其余 HTML 注释
+                  .replace(/<!--(?!\[if\s)[\s\S]*?-->/g, '')
+                  // 压缩连续空行为单个换行
+                  .replace(/\n\s*\n/g, '\n')
+                  // 移除行首多余空格（保留 2 空格缩进结构）
+                  .replace(/^\s{4,}/gm, (m) => '  '.repeat(Math.floor(m.length / 2)))
+                  .trim()
+                  + '\n'
+              },
+            },
+          ]
+        : []),
     ],
 
     /**

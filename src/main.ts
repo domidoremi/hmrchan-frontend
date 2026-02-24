@@ -21,6 +21,12 @@ import './styles/index.css'
 import { initConsoleGuard } from './utils/consoleGuard'
 initConsoleGuard()
 
+// 点击劫持防御 — 第二阶段（模块加载后）
+// 第一阶段已在 index.html 内联脚本中完成（CSS 隐藏 + 同步跳出）
+// 此处处理跨域 iframe 降级：清空 DOM、阻断交互
+import { initFrameGuard } from './utils/frameGuard'
+initFrameGuard()
+
 // 过滤 Cloudflare 相关的控制台警告
 import { disposeConsoleFilter, initConsoleFilter } from './utils/consoleFilter'
 initConsoleFilter()
@@ -45,13 +51,13 @@ app.config.errorHandler = (err, instance, info) => {
   // reportError({ error: err, component: instance?.$options.name, info })
 }
 
-// 全局 Promise 未捕获异常处理
-app.config.warnHandler = import.meta.env.DEV
-  ? (msg, instance, trace) => {
-      console.warn('Vue Warning:', msg)
-      if (trace) console.warn('Trace:', trace)
-    }
-  : null
+// 开发环境：打印 Vue 警告详情
+if (import.meta.env.DEV) {
+  app.config.warnHandler = (msg, _instance, trace) => {
+    console.warn('Vue Warning:', msg)
+    if (trace) console.warn('Trace:', trace)
+  }
+}
 
 // Pinia with persistence
 const pinia = createPinia()
