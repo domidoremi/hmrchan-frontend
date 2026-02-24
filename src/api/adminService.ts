@@ -165,8 +165,10 @@ export interface AdminReport {
   target_id: string
   reason: string
   description?: string | null
-  status: 'pending' | 'reviewed' | 'resolved' | 'dismissed'
+  status: 'pending' | 'resolved' | 'rejected'
   reporter?: { id: string; username: string } | null
+  reporter_username?: string | null
+  reviewer_username?: string | null
   created_at: string
   updated_at?: string | null
   reviewed_at?: string | null
@@ -183,30 +185,35 @@ export interface ReportStatsSummary {
 }
 
 export interface ReviewReportRequest {
-  status: 'reviewed' | 'resolved' | 'dismissed'
-  admin_notes?: string
+  status: 'resolved' | 'rejected'
+  resolution_note?: string
 }
 
 // ========== 审计管理类型 ==========
 
 export interface SecurityEventItem {
-  id: string
+  id: number
   event_type: string
+  event_description?: string | null
+  severity?: 'low' | 'medium' | 'high' | 'critical'
+  success?: boolean
   user_id?: string | null
   ip_address?: string | null
+  device_type?: string | null
+  request_path?: string | null
   user_agent?: string | null
   details?: Record<string, unknown> | null
-  severity?: 'low' | 'medium' | 'high' | 'critical'
   created_at: string
 }
 
-export interface FailedLoginItem {
-  id: string
-  username?: string | null
-  ip_address?: string | null
-  user_agent?: string | null
-  reason?: string | null
-  created_at: string
+export interface SecurityEventsResponse {
+  logs: SecurityEventItem[]
+  total: number
+}
+
+export interface FailedLoginIpItem {
+  ip_address: string
+  count: number
 }
 
 // ========== 反馈管理类型 ==========
@@ -373,8 +380,16 @@ export const adminService = {
 
   // ========== 举报管理 (Section 30.6) ==========
 
-  async listReports(page = 1, pageSize = 20): Promise<PaginatedApiResponse<AdminReport>> {
-    return apiClient.get(`/reports?page=${page}&page_size=${pageSize}`)
+  async listReports(
+    params: { page?: number; page_size?: number; status?: string; target_type?: string } = {}
+  ): Promise<PaginatedApiResponse<AdminReport>> {
+    const query = new URLSearchParams()
+    if (params.page) query.set('page', String(params.page))
+    if (params.page_size) query.set('page_size', String(params.page_size))
+    if (params.status) query.set('status', params.status)
+    if (params.target_type) query.set('target_type', params.target_type)
+    const qs = query.toString()
+    return apiClient.get(`/reports${qs ? `?${qs}` : ''}`)
   },
 
   async getReportStats(): Promise<ReportStatsSummary> {
@@ -392,22 +407,35 @@ export const adminService = {
   // ========== 审计管理 (Section 30.8) ==========
 
   async getSecurityEvents(
-    page = 1,
-    pageSize = 20
-  ): Promise<PaginatedApiResponse<SecurityEventItem>> {
-    return apiClient.get(`/audit/admin/security-events?page=${page}&page_size=${pageSize}`)
+    params: { hours?: number; limit?: number; severity?: string } = {}
+  ): Promise<SecurityEventsResponse> {
+    const query = new URLSearchParams()
+    if (params.hours) query.set('hours', String(params.hours))
+    if (params.limit) query.set('limit', String(params.limit))
+    if (params.severity) query.set('severity', params.severity)
+    const qs = query.toString()
+    return apiClient.get(`/audit/admin/security-events${qs ? `?${qs}` : ''}`)
   },
 
-  async getFailedLogins(page = 1, pageSize = 20): Promise<PaginatedApiResponse<FailedLoginItem>> {
-    return apiClient.get(`/audit/admin/failed-logins?page=${page}&page_size=${pageSize}`)
+  async getFailedLogins(
+    params: { hours?: number; min_count?: number } = {}
+  ): Promise<FailedLoginIpItem[]> {
+    const query = new URLSearchParams()
+    if (params.hours) query.set('hours', String(params.hours))
+    if (params.min_count) query.set('min_count', String(params.min_count))
+    const qs = query.toString()
+    return apiClient.get(`/audit/admin/failed-logins${qs ? `?${qs}` : ''}`)
   },
 
   async getUserAuditLog(
     userId: string,
-    page = 1,
-    pageSize = 20
-  ): Promise<PaginatedApiResponse<import('./auditService').AuditActivityItem>> {
-    return apiClient.get(`/audit/admin/user/${userId}?page=${page}&page_size=${pageSize}`)
+    params: { days?: number; limit?: number } = {}
+  ): Promise<{ logs: import('./auditService').AuditActivityItem[]; total: number }> {
+    const query = new URLSearchParams()
+    if (params.days) query.set('days', String(params.days))
+    if (params.limit) query.set('limit', String(params.limit))
+    const qs = query.toString()
+    return apiClient.get(`/audit/admin/user/${userId}${qs ? `?${qs}` : ''}`)
   },
 
   // ========== 反馈管理 (Section 30.9) ==========
