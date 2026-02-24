@@ -33,6 +33,7 @@ export default defineConfigWithVueTs(
       '**/.agent/**',
       '**/.qoder/**',
       '**/.skills/**',
+      '**/.superpowers/**',
       '**/.kiro/**',
       '**/.windsurf/**',
     ],
