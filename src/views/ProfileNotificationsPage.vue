@@ -13,29 +13,24 @@
         </template>
       </ProfileSubPageHeader>
 
-      <!-- Stats Strip -->
+      <!-- Inline Stats -->
       <div class="notif-stats">
-        <div class="stat-pill">
+        <span class="stat-chip">
           <Bell :size="14" />
-          <span class="stat-value">{{ total }}</span>
-          <span class="stat-label">{{ $t('profile.totalNotifications') }}</span>
-        </div>
-        <span class="stat-divider" />
-        <div class="stat-pill stat-pill--unread">
+          {{ total }}
+        </span>
+        <span v-if="unreadCount > 0" class="stat-chip stat-chip--unread">
           <BellDot :size="14" />
-          <span class="stat-value">{{ unreadCount }}</span>
-          <span class="stat-label">{{ $t('profile.unreadNotifications') }}</span>
-        </div>
-        <span class="stat-divider" />
-        <div class="stat-pill">
+          {{ unreadCount }}
+        </span>
+        <span class="stat-chip">
           <MessageCircle :size="14" />
-          <span class="stat-value">{{ commentCount }}</span>
-        </div>
-        <span class="stat-divider" />
-        <div class="stat-pill stat-pill--likes">
+          {{ commentCount }}
+        </span>
+        <span class="stat-chip">
           <Heart :size="14" />
-          <span class="stat-value">{{ likeCount }}</span>
-        </div>
+          {{ likeCount }}
+        </span>
       </div>
 
       <!-- Filter Bar -->
@@ -121,66 +116,33 @@ async function handleMarkAllRead() {
   padding: clamp(1rem, 3vw, 1.5rem) 0;
 }
 
-/* ===== Stats Strip ===== */
+/* ===== Inline Stats ===== */
 .notif-stats {
   display: flex;
   align-items: center;
-  gap: var(--spacing-3);
-  margin-bottom: clamp(1rem, 2.5vw, 1.5rem);
-  padding: clamp(0.625rem, 1.5vw, 0.75rem) clamp(0.75rem, 2vw, 1rem);
+  gap: var(--spacing-2);
+  margin-bottom: clamp(0.75rem, 2vw, 1rem);
+}
+
+.stat-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem clamp(0.5rem, 1.2vw, 0.625rem);
   background: var(--glass-bg-light);
   border: 1px solid var(--glass-border-subtle);
   border-radius: var(--radius-full);
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-
-.notif-stats::-webkit-scrollbar {
-  display: none;
-}
-
-.stat-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--spacing-1);
-  white-space: nowrap;
-  color: var(--color-text-secondary);
   font-size: var(--text-sm);
-  flex-shrink: 0;
-}
-
-.stat-pill--unread {
-  color: var(--color-error);
-}
-
-.stat-pill--likes {
-  color: #f43f5e;
-}
-
-.stat-value {
-  font-weight: var(--font-bold);
+  font-weight: var(--font-semibold);
   font-variant-numeric: tabular-nums;
-  color: var(--color-text-primary);
+  color: var(--color-text-secondary);
+  white-space: nowrap;
 }
 
-.stat-pill--unread .stat-value {
+.stat-chip--unread {
   color: var(--color-error);
-}
-
-.stat-pill--likes .stat-value {
-  color: #f43f5e;
-}
-
-.stat-label {
-  font-size: var(--text-xs);
-  color: var(--color-text-tertiary);
-}
-
-.stat-divider {
-  width: 1px;
-  height: 1rem;
-  background: var(--glass-border-subtle);
-  flex-shrink: 0;
+  background: var(--color-error-alpha);
+  border-color: rgba(var(--color-error-rgb), 0.2);
 }
 
 /* ===== Filter Bar ===== */
@@ -201,13 +163,13 @@ async function handleMarkAllRead() {
   display: inline-flex;
   align-items: center;
   gap: var(--spacing-2);
-  padding: clamp(0.5rem, 1.2vw, 0.625rem) clamp(0.75rem, 2vw, 1rem);
+  padding: clamp(0.5rem, 1.2vw, 0.625rem) clamp(0.875rem, 2.2vw, 1.125rem);
   background: var(--glass-bg-light);
   border: 1px solid var(--glass-border-subtle);
   border-radius: var(--radius-full);
-  font-size: var(--text-sm);
-  font-weight: var(--font-medium);
-  color: var(--color-text-secondary);
+  font-size: var(--text-base);
+  font-weight: var(--font-semibold);
+  color: var(--color-text-primary);
   white-space: nowrap;
   cursor: pointer;
   flex-shrink: 0;
@@ -264,27 +226,17 @@ async function handleMarkAllRead() {
 }
 
 /* ===== Responsive ===== */
-@media (max-width: 768px) {
-  .stat-label {
-    display: none;
-  }
-}
-
 @media (max-width: 480px) {
   .notif-stats {
-    gap: var(--spacing-2);
-  }
-
-  .stat-divider {
-    display: none;
+    flex-wrap: wrap;
   }
 }
 </style>
 
 <style>
 /* ===== Material 3 Overrides ===== */
-#app[data-ui-style='material'] .notifications-page .notif-stats {
-  border-radius: 12px;
+#app[data-ui-style='material'] .notifications-page .stat-chip {
+  border-radius: 8px;
 }
 
 #app[data-ui-style='material'] .notifications-page .filter-chip {
@@ -300,7 +252,7 @@ async function handleMarkAllRead() {
 }
 
 /* ===== Dark Theme ===== */
-[data-theme='dark'] .notifications-page .notif-stats {
+[data-theme='dark'] .notifications-page .stat-chip {
   background: var(--glass-bg-light);
   border-color: var(--glass-border);
 }
@@ -327,8 +279,8 @@ async function handleMarkAllRead() {
 }
 
 /* ===== Material + Dark ===== */
-#app[data-ui-style='material'][data-theme='dark'] .notifications-page .notif-stats {
-  background: var(--md-surface-container, rgba(28, 28, 32, 0.92));
+#app[data-ui-style='material'][data-theme='dark'] .notifications-page .stat-chip {
+  background: var(--md-surface-container-high, rgba(40, 40, 48, 1));
   border-color: rgba(255, 255, 255, 0.06);
 }
 
@@ -343,7 +295,7 @@ async function handleMarkAllRead() {
 }
 
 /* ===== Material + Blue ===== */
-#app[data-ui-style='material'][data-theme='blue'] .notifications-page .notif-stats {
+#app[data-ui-style='material'][data-theme='blue'] .notifications-page .stat-chip {
   background: #ffffff;
   border-color: rgba(59, 130, 246, 0.08);
 }

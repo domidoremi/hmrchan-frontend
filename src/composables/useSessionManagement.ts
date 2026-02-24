@@ -8,6 +8,42 @@ import { deviceService, type Device } from '@/api'
 import { useToastStore } from '@/stores/toast'
 import { useI18n } from 'vue-i18n'
 
+/**
+ * 按设备指纹去重，保留每个物理设备最近活跃的会话
+ * 没有 fingerprint 的会话保持原样
+ */
+function deduplicateByDevice(devices: Device[]): Device[] {
+  const byFingerprint = new Map<string, Device>()
+  const noFingerprint: Device[] = []
+
+  for (const device of devices) {
+    const fp = device.fingerprint
+    if (!fp) {
+      noFingerprint.push(device)
+      continue
+    }
+
+    const existing = byFingerprint.get(fp)
+    if (!existing) {
+      byFingerprint.set(fp, device)
+      continue
+    }
+
+    // 保留 is_current 的会话，否则保留最近活跃的
+    if (device.is_current) {
+      byFingerprint.set(fp, device)
+    } else if (!existing.is_current) {
+      const existingTime = existing.last_active_at ?? existing.last_used_at ?? ''
+      const deviceTime = device.last_active_at ?? device.last_used_at ?? ''
+      if (deviceTime > existingTime) {
+        byFingerprint.set(fp, device)
+      }
+    }
+  }
+
+  return [...byFingerprint.values(), ...noFingerprint]
+}
+
 export function useSessionManagement() {
   const { t } = useI18n()
   const toastStore = useToastStore()
@@ -41,7 +77,7 @@ export function useSessionManagement() {
         }
       }
 
-      sessions.value = devices
+      sessions.value = deduplicateByDevice(devices)
     } catch {
       toastStore.error(t('devices.error.fetchFailed'))
     } finally {
