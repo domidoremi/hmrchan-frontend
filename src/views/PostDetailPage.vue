@@ -283,7 +283,22 @@ import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import { lockBodyScroll, unlockBodyScroll } from '@/utils/bodyScrollLock'
 
 // 动态导入大型组件以减少初始包体积
-const MediaLightbox = defineAsyncComponent(() => import('@/components/ui/MediaLightbox.vue'))
+const MediaLightbox = defineAsyncComponent({
+  loader: () => import('@/components/ui/MediaLightbox.vue'),
+  onError(error, _retry, fail) {
+    // 旧版 chunk 缺失时（部署更新后），尝试重新加载页面
+    if (error.message?.includes('dynamically imported module')) {
+      const reloaded = sessionStorage.getItem('lightbox-reload')
+      if (!reloaded) {
+        sessionStorage.setItem('lightbox-reload', '1')
+        window.location.reload()
+        return
+      }
+      sessionStorage.removeItem('lightbox-reload')
+    }
+    fail()
+  },
+})
 
 const router = useRouter()
 const route = useRoute()
@@ -301,6 +316,7 @@ const postId = computed(() => route.params['id'] as string)
 const post = ref<PostDetailResponse | null>(null)
 const isLoading = ref(false)
 const error = ref<string | null>(null)
+const detailFetched = ref(false)
 
 const { data: cachedPost, load: loadCachedPost } = useCachedPost<PostDetailResponse>(
   postService.getPost,
@@ -407,8 +423,10 @@ const canGoNextMedia = computed(() => activeMediaIndex.value + 1 < mediaCount.va
 
 // 缓存来自列表页时可能没有 media_files，但 media_count > 0 表示有媒体
 // 此时应显示加载骨架而非"无媒体"占位
+// 一旦详情 API 已返回（detailFetched），不再显示骨架
 const isMediaPending = computed(() => {
   if (!post.value) return false
+  if (detailFetched.value) return false
   const hasFiles = post.value.media_files && post.value.media_files.length > 0
   if (hasFiles) return false
   const expectedCount =
@@ -765,6 +783,7 @@ async function fetchPost() {
 
   isLoading.value = true
   error.value = null
+  detailFetched.value = false
 
   // 从 sessionStorage 获取缓存的缩略图
   const cachedThumb = sessionStorage.getItem(`post-thumbnail-${postId.value}`)
@@ -790,12 +809,19 @@ async function fetchPost() {
       void Promise.allSettled([trackPostView(postId.value, isAuthenticated.value)])
 
       // 后台刷新：缓存来自列表页时不含 media_files，需要网络请求补全
-      loadCachedPost(postId.value).catch(() => {})
+      loadCachedPost(postId.value)
+        .then(() => {
+          detailFetched.value = true
+        })
+        .catch(() => {
+          detailFetched.value = true
+        })
       return
     }
 
     const res = await loadCachedPost(postId.value)
     post.value = res.data
+    detailFetched.value = true
     activeMediaIndex.value = 0
     isMediaLoaded.value = false
 

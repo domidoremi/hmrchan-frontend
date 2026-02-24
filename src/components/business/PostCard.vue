@@ -24,7 +24,12 @@
       </div>
 
       <!-- 预设固定尺寸的占位符，防止图片加载时的布局偏移 -->
-      <div v-if="!isImageLoaded" class="post-image-placeholder glass-skeleton" />
+      <div v-if="!isImageLoaded && thumbnailSrc" class="post-image-placeholder glass-skeleton" />
+
+      <!-- 无缩略图时的占位状态 -->
+      <div v-if="!thumbnailSrc" class="post-image-placeholder post-image-placeholder--empty">
+        <component :is="platformIcon" :size="28" />
+      </div>
 
       <img
         v-if="thumbnailSrc && shouldRenderImage"
@@ -757,6 +762,15 @@ onUnmounted(() => {
   inset: 0;
   width: 100%;
   height: 100%;
+}
+
+.post-image-placeholder--empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--glass-bg-light);
+  color: var(--color-text-tertiary);
+  opacity: 0.5;
 }
 
 /* ========== Image Overlay ========== */
