@@ -1,5 +1,5 @@
 <template>
-  <div class="profile-page">
+  <div class="settings-page">
     <div class="container">
       <ProfileSubPageHeader
         :title="$t('profile.settings')"
@@ -851,20 +851,21 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.profile-page {
-  min-height: 100svh;
+.settings-page {
   min-height: 100dvh;
-  padding: var(--spacing-4) 0;
+  min-height: 100svh;
+  padding: clamp(1rem, 3vw, 1.5rem) 0;
 }
 
 .settings-layout {
   display: grid;
-  gap: var(--spacing-6);
+  gap: clamp(1rem, 3vw, 1.5rem);
 }
 
 .settings-main {
   display: flex;
   flex-direction: column;
+  gap: clamp(0.75rem, 2vw, 1rem);
   min-width: 0;
 }
 
@@ -873,13 +874,17 @@ onMounted(() => {
 }
 
 .settings-aside-card {
-  padding: var(--spacing-4);
+  padding: clamp(0.875rem, 2.5vw, 1.25rem);
   border-radius: var(--radius-lg);
+  background: var(--glass-bg-light);
+  backdrop-filter: blur(var(--blur-sm));
+  -webkit-backdrop-filter: blur(var(--blur-sm));
+  border: 1px solid var(--glass-border-subtle);
 }
 
 .aside-title {
   margin: 0 0 var(--spacing-3);
-  font-size: var(--text-base);
+  font-size: var(--text-sm);
   font-weight: var(--font-semibold);
   color: var(--color-text-primary);
 }
@@ -887,7 +892,7 @@ onMounted(() => {
 .aside-nav {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-2);
+  gap: 2px;
 }
 
 .aside-link {
@@ -895,12 +900,18 @@ onMounted(() => {
   color: var(--color-text-secondary);
   padding: var(--spacing-2) var(--spacing-3);
   border-radius: var(--radius-md);
-  transition: all var(--transition-fast);
+  font-size: var(--text-sm);
+  border-left: 2px solid transparent;
+  transition:
+    color var(--duration-fast) var(--ease-smooth),
+    background var(--duration-fast) var(--ease-smooth),
+    border-color var(--duration-fast) var(--ease-smooth);
 }
 
 .aside-link:hover {
-  color: var(--color-text-primary);
-  background: var(--glass-bg-subtle);
+  color: var(--color-primary);
+  background: rgba(var(--color-primary-rgb), 0.04);
+  border-left-color: var(--color-primary);
 }
 
 .aside-meta {
@@ -913,7 +924,7 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   gap: var(--spacing-3);
-  font-size: var(--text-sm);
+  font-size: var(--text-xs);
 }
 
 .meta-label {
@@ -924,7 +935,7 @@ onMounted(() => {
   color: var(--color-text-primary);
   font-weight: var(--font-medium);
   text-align: right;
-  max-width: 11.25rem;
+  max-width: 10rem;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -934,8 +945,8 @@ onMounted(() => {
 .settings-skeleton {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-6);
-  max-width: 60rem;
+  gap: clamp(1rem, 3vw, 1.5rem);
+  max-width: min(90vw, 60rem);
 }
 
 .skeleton-header {
@@ -945,13 +956,13 @@ onMounted(() => {
 .skeleton-avatar-section {
   display: flex;
   align-items: center;
-  gap: var(--spacing-6);
+  gap: clamp(1rem, 3vw, 1.5rem);
 }
 
 .skeleton-avatar {
   width: 6.25rem;
   height: 6.25rem;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
 }
 
 .skeleton-form {
@@ -962,11 +973,16 @@ onMounted(() => {
 
 /* Settings Section */
 .settings-section {
-  padding: var(--spacing-6);
-  margin-bottom: var(--spacing-6);
+  padding: clamp(1rem, 3vw, 1.5rem);
   position: relative;
   z-index: 1;
-  max-width: 60rem;
+  max-width: min(90vw, 55rem);
+  border-left: 3px solid transparent;
+  transition: border-color var(--duration-fast) var(--ease-smooth);
+}
+
+.settings-section:hover {
+  border-left-color: rgba(var(--color-primary-rgb), 0.2);
 }
 
 .section-header {
@@ -974,8 +990,8 @@ onMounted(() => {
   align-items: center;
   gap: var(--spacing-3);
   margin-bottom: var(--spacing-5);
-  padding-bottom: var(--spacing-4);
-  border-bottom: 1px solid var(--glass-border);
+  padding-bottom: var(--spacing-3);
+  border-bottom: 1px solid var(--glass-border-subtle);
 }
 
 .section-icon {
@@ -987,6 +1003,11 @@ onMounted(() => {
   background: rgba(var(--color-primary-rgb), 0.1);
   color: var(--color-primary);
   border-radius: var(--radius-lg);
+  transition: transform var(--duration-fast) var(--ease-bounce-soft);
+}
+
+.section-header:hover .section-icon {
+  transform: scale(1.05);
 }
 
 .section-icon--warning {
@@ -995,7 +1016,7 @@ onMounted(() => {
 }
 
 .section-title {
-  font-size: var(--text-lg);
+  font-size: clamp(var(--text-base), 2vw, var(--text-lg));
   font-weight: var(--font-semibold);
   margin: 0;
 }
@@ -1010,7 +1031,7 @@ onMounted(() => {
 .avatar-section {
   display: flex;
   align-items: center;
-  gap: var(--spacing-6);
+  gap: clamp(1rem, 3vw, 1.5rem);
 }
 
 .avatar-wrapper {
@@ -1021,10 +1042,10 @@ onMounted(() => {
 .avatar-preview {
   width: 6.25rem;
   height: 6.25rem;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   object-fit: cover;
-  border: 3px solid var(--glass-border);
-  transition: border-color var(--transition-fast);
+  border: 3px solid var(--glass-border-medium);
+  transition: border-color var(--duration-fast) var(--ease-smooth);
 }
 
 .avatar-wrapper:hover .avatar-preview {
@@ -1050,8 +1071,13 @@ onMounted(() => {
   height: 1.75rem;
   background: var(--color-primary);
   color: var(--color-on-primary);
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   border: 2px solid var(--color-bg);
+  transition: transform var(--duration-fast) var(--ease-bounce-soft);
+}
+
+.avatar-wrapper:hover .avatar-badge {
+  transform: scale(1.1);
 }
 
 .avatar-info {
@@ -1086,11 +1112,16 @@ onMounted(() => {
   align-items: center;
   gap: var(--spacing-2);
   cursor: pointer;
+  transition: transform var(--duration-fast) var(--ease-bounce-soft);
+}
+
+.avatar-upload-btn:hover {
+  transform: var(--lift-sm);
 }
 
 /* Form Styles */
 .settings-form {
-  max-width: 60rem;
+  max-width: min(90vw, 60rem);
 }
 
 .form-group {
@@ -1119,7 +1150,7 @@ onMounted(() => {
 .input-readonly .input-with-icon {
   opacity: 0.7;
   cursor: not-allowed;
-  background: var(--glass-bg-subtle);
+  background: var(--glass-bg-light);
 }
 
 .input-icon-right {
@@ -1269,14 +1300,14 @@ onMounted(() => {
 /* Wide screens */
 @media (min-width: 1200px) {
   .settings-layout {
-    grid-template-columns: minmax(0, 1fr) 280px;
+    grid-template-columns: minmax(0, 1fr) 16rem;
     align-items: start;
   }
 
   .settings-aside {
     display: flex;
     flex-direction: column;
-    gap: var(--spacing-4);
+    gap: clamp(0.625rem, 1.5vw, 0.875rem);
     position: sticky;
     top: calc(var(--navbar-height) + var(--spacing-4));
     max-height: calc(100dvh - var(--navbar-height) - var(--spacing-8));
@@ -1292,22 +1323,8 @@ onMounted(() => {
 
 /* Mobile */
 @media (max-width: 768px) {
-  .profile-page {
-    padding: var(--spacing-4) 0;
-  }
-  .profile-page-header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .header-left {
-    width: 100%;
-  }
-
   .settings-section {
-    padding: var(--spacing-4);
     margin-bottom: var(--spacing-4);
-    border-radius: var(--radius-lg);
   }
 
   .section-header {
@@ -1320,19 +1337,10 @@ onMounted(() => {
     height: 2rem;
   }
 
-  .section-title {
-    font-size: var(--text-base);
-  }
-
   .avatar-section {
     flex-direction: column;
     text-align: center;
     gap: var(--spacing-4);
-  }
-
-  .avatar-preview {
-    width: 6.25rem;
-    height: 6.25rem;
   }
 
   .avatar-info {
@@ -1348,10 +1356,6 @@ onMounted(() => {
 
   .form-group {
     margin-bottom: var(--spacing-4);
-  }
-
-  .form-group label {
-    font-size: var(--text-sm);
   }
 
   .form-group :deep(.ui-input) {
@@ -1377,18 +1381,6 @@ onMounted(() => {
 
 /* Small Mobile */
 @media (max-width: 480px) {
-  .profile-page {
-    padding: var(--spacing-3) 0;
-  }
-  .header-left h1 {
-    font-size: var(--text-lg);
-  }
-
-  .settings-section {
-    padding: var(--spacing-3);
-    border-radius: var(--radius-md);
-  }
-
   .avatar-preview {
     width: 5rem;
     height: 5rem;
@@ -1398,5 +1390,113 @@ onMounted(() => {
     width: 1.5rem;
     height: 1.5rem;
   }
+}
+</style>
+
+<style>
+/* ===== Material 3 Overrides ===== */
+#app[data-ui-style='material'] .settings-page .settings-section {
+  border-radius: 12px;
+  border-left-width: 3px;
+}
+
+#app[data-ui-style='material'] .settings-page .section-icon {
+  border-radius: 8px;
+}
+
+#app[data-ui-style='material'] .settings-page .settings-aside-card {
+  border-radius: 12px;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  background: var(--color-surface, #fff);
+  box-shadow: var(--shadow-sm);
+}
+
+#app[data-ui-style='material'] .settings-page .aside-link {
+  border-radius: 4px;
+  border-left-width: 2px;
+}
+
+#app[data-ui-style='material'] .settings-page .avatar-upload-btn:hover {
+  transform: translateY(-1px);
+}
+
+#app[data-ui-style='material'] .settings-page .strength-bar {
+  border-radius: 2px;
+}
+
+#app[data-ui-style='material'] .settings-page .strength-fill {
+  border-radius: 2px;
+}
+
+/* ===== Dark Theme ===== */
+[data-theme='dark'] .settings-page .settings-section:hover {
+  border-left-color: rgba(var(--color-primary-rgb), 0.3);
+}
+
+[data-theme='dark'] .settings-page .section-header {
+  border-bottom-color: rgba(255, 255, 255, 0.06);
+}
+
+[data-theme='dark'] .settings-page .form-actions {
+  border-top-color: rgba(255, 255, 255, 0.06);
+}
+
+[data-theme='dark'] .settings-page .avatar-preview {
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme='dark'] .settings-page .input-readonly .input-with-icon {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+/* ===== Blue Theme ===== */
+[data-theme='blue'] .settings-page .settings-section:hover {
+  border-left-color: rgba(59, 130, 246, 0.3);
+}
+
+[data-theme='blue'] .settings-page .section-icon {
+  background: rgba(59, 130, 246, 0.1);
+  color: #3b82f6;
+}
+
+[data-theme='blue'] .settings-page .section-icon--warning {
+  background: rgba(245, 158, 11, 0.1);
+  color: #f59e0b;
+}
+
+[data-theme='blue'] .settings-page .aside-link:hover {
+  color: #3b82f6;
+  border-left-color: #3b82f6;
+  background: rgba(59, 130, 246, 0.04);
+}
+
+[data-theme='blue'] .settings-page .avatar-badge {
+  background: #3b82f6;
+}
+
+[data-theme='blue'] .settings-page .avatar-preview:hover {
+  border-color: #3b82f6;
+}
+
+/* ===== Material + Dark ===== */
+#app[data-ui-style='material'][data-theme='dark'] .settings-page .settings-aside-card {
+  background: var(--md-surface-container, rgba(28, 28, 32, 0.92));
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+/* ===== Material + Blue ===== */
+#app[data-ui-style='material'][data-theme='blue'] .settings-page .settings-aside-card {
+  background: #ffffff;
+  border-color: rgba(59, 130, 246, 0.1);
+  box-shadow: 0 1px 3px rgba(59, 130, 246, 0.06);
+}
+
+#app[data-ui-style='material'][data-theme='blue'] .settings-page .settings-section {
+  border-color: rgba(59, 130, 246, 0.08);
+}
+
+#app[data-ui-style='material'][data-theme='blue'] .settings-page .settings-section:hover {
+  border-left-color: #3b82f6;
 }
 </style>

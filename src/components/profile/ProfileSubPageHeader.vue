@@ -1,21 +1,23 @@
 <template>
-  <header class="profile-page-header glass-card">
-    <div class="header-left">
-      <button type="button" class="back-btn glass-button" @click="goBack">
-        <AnimatedIcon name="explore" :fallback-icon="ArrowLeft" size="sm" />
+  <header class="sub-header">
+    <div class="sub-header__content glass-card-enhanced">
+      <button type="button" class="back-btn" @click="goBack" :aria-label="$t('common.back')">
+        <ArrowLeft :size="16" />
       </button>
-      <div>
+      <div class="header-text">
         <h1>{{ title }}</h1>
         <p v-if="subtitle" class="header-subtitle">{{ subtitle }}</p>
         <p v-if="hint" class="header-hint">{{ hint }}</p>
       </div>
+      <div class="header-actions">
+        <slot name="actions">
+          <Button variant="ghost" size="sm" @click="goToProfile">
+            <User :size="14" />
+            {{ $t('nav.profile') }}
+          </Button>
+        </slot>
+      </div>
     </div>
-    <slot name="actions">
-      <Button variant="ghost" size="sm" @click="goToProfile">
-        <AnimatedIcon name="user" :fallback-icon="User" size="sm" />
-        {{ $t('nav.profile') }}
-      </Button>
-    </slot>
   </header>
 </template>
 
@@ -23,7 +25,6 @@
 import { useRouter } from 'vue-router'
 import { ArrowLeft, User } from 'lucide-vue-next'
 import Button from '@/components/ui/Button.vue'
-import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 
 defineProps<{
   title: string
@@ -43,29 +44,31 @@ function goToProfile() {
 </script>
 
 <style scoped>
-.profile-page-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--spacing-4);
-  margin-bottom: var(--spacing-4);
-  padding: var(--spacing-4);
-  border-radius: var(--radius-lg);
+.sub-header {
+  position: relative;
+  margin-bottom: clamp(1.25rem, 3vw, 2rem);
 }
 
-.header-left {
+.sub-header__content {
   display: flex;
   align-items: center;
-  gap: var(--spacing-3);
+  gap: clamp(0.75rem, 2vw, 1rem);
+  padding: clamp(0.875rem, 2.5vw, 1.25rem);
 }
 
-.header-left h1 {
+.header-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.header-text h1 {
   margin: 0;
-  font-size: var(--text-xl);
+  font-size: clamp(var(--text-lg), 2.5vw, var(--text-xl));
+  line-height: 1.3;
 }
 
 .header-subtitle {
-  margin: 0;
+  margin: 0.125rem 0 0;
   font-size: var(--text-sm);
   color: var(--color-text-secondary);
 }
@@ -77,34 +80,87 @@ function goToProfile() {
 }
 
 .back-btn {
-  width: 2.25rem;
-  height: 2.25rem;
+  flex-shrink: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: var(--radius-lg);
+  background: var(--glass-bg-medium);
+  border: 1px solid var(--glass-border-subtle);
+  color: var(--color-text-secondary);
+  transition:
+    background var(--duration-fast) var(--ease-smooth),
+    color var(--duration-fast) var(--ease-smooth),
+    transform var(--duration-fast) var(--ease-bounce-soft);
+}
+
+.back-btn:hover {
+  background: rgba(var(--color-primary-rgb), 0.1);
+  color: var(--color-primary);
+  transform: translateX(-2px);
+}
+
+.back-btn:active {
+  transform: var(--press-sm);
+}
+
+.header-actions {
+  flex-shrink: 0;
 }
 
 @media (max-width: 768px) {
-  .profile-page-header {
-    flex-direction: column;
-    align-items: flex-start;
-    padding: var(--spacing-3);
-    gap: var(--spacing-3);
-  }
-
-  .header-left {
-    width: 100%;
+  .sub-header__content {
+    flex-wrap: wrap;
     gap: var(--spacing-2);
-  }
-
-  .header-left h1 {
-    font-size: var(--text-lg);
   }
 
   .back-btn {
     width: 2rem;
     height: 2rem;
   }
+
+  .header-actions {
+    width: 100%;
+    display: flex;
+    justify-content: flex-end;
+  }
+}
+</style>
+
+<style>
+/* ===== Material 3 Overrides ===== */
+#app[data-ui-style='material'] .sub-header .sub-header__content {
+  border-radius: 12px;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  background: var(--color-surface, #fff);
+  box-shadow: var(--shadow-sm);
+}
+
+#app[data-ui-style='material'] .sub-header .sub-header__content::before {
+  display: none;
+}
+
+#app[data-ui-style='material'] .sub-header .back-btn {
+  border-radius: 50%;
+}
+
+#app[data-ui-style='material'] .sub-header .back-btn:hover {
+  transform: none;
+  background: rgba(var(--color-primary-rgb), 0.12);
+}
+
+/* ===== Material + Dark ===== */
+#app[data-ui-style='material'][data-theme='dark'] .sub-header .sub-header__content {
+  background: var(--md-surface-container, rgba(28, 28, 32, 0.92));
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+/* ===== Material + Blue ===== */
+#app[data-ui-style='material'][data-theme='blue'] .sub-header .sub-header__content {
+  background: #ffffff;
+  border-color: rgba(59, 130, 246, 0.1);
 }
 </style>

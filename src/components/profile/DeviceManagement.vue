@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, toRef } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
   MapPin,
@@ -21,26 +21,28 @@ import { getDeviceIcon, formatRelativeTime } from '@/utils/deviceHelpers'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import type { Device } from '@/api'
 
+const props = defineProps<{
+  sessions?: Device[]
+  isLoading?: boolean
+}>()
+
 const { t } = useI18n()
 
-// Session management
-const {
-  sessions,
-  isLoading,
-  isRevoking,
-  otherSessionsCount,
-  fetchSessions,
-  revokeSession,
-  revokeAllOthers,
-  toggleTrust,
-  updateDeviceName,
-} = useSessionManagement()
+const ownSession = useSessionManagement()
 
-// Device name editing
+// If sessions are provided externally, use them; otherwise use own fetch
+const sessions = props.sessions !== undefined ? toRef(props, 'sessions') : ownSession.sessions
+const isLoading = props.isLoading !== undefined ? toRef(props, 'isLoading') : ownSession.isLoading
+
+const { revokeSession, toggleTrust, updateDeviceName } = ownSession
+
 const { editingSessionId, editingDeviceName, startEditing, cancelEditing } = useDeviceNameEditor()
 
 onMounted(() => {
-  fetchSessions()
+  // Only fetch if no external sessions provided
+  if (props.sessions === undefined) {
+    ownSession.fetchSessions()
+  }
 })
 
 async function saveDeviceName(sessionId: number) {
@@ -53,10 +55,10 @@ async function saveDeviceName(sessionId: number) {
 function formatDate(dateString?: string | null): string {
   return formatRelativeTime(dateString, t)
 }
+
 function getDeviceDisplayName(session: Device): string {
   if (session.device_name) return session.device_name
   if (session.device_info) return session.device_info
-
   const browser = session.device_browser ?? session.browser ?? ''
   const os = session.device_os ?? session.os ?? ''
   if (browser && os) return `${browser} on ${os}`
@@ -89,7 +91,6 @@ function getLocationText(session: Device): string {
   const location = session.city
     ? `${session.city}${session.country ? `, ${session.country}` : ''}`
     : (session.country ?? '')
-
   if (ip && location) return `${ip} · ${location}`
   return ip || location
 }
@@ -97,27 +98,15 @@ function getLocationText(session: Device): string {
 
 <template>
   <div class="device-management">
-    <div class="device-header">
-      <h2>{{ t('devices.title') }}</h2>
-      <p class="device-description">{{ t('devices.description') }}</p>
-    </div>
-
-    <div v-if="otherSessionsCount > 0" class="revoke-all-section">
-      <button class="btn-revoke-all" :disabled="isRevoking" @click="revokeAllOthers">
-        <AnimatedIcon name="sparkle" :fallback-icon="Trash2" size="md" />
-        {{ t('devices.revokeAll') }}
-      </button>
-    </div>
-
     <div v-if="isLoading" class="device-loading">
-      <div class="skeleton-card" v-for="i in 3" :key="i"></div>
+      <div v-for="i in 3" :key="i" class="skeleton-card" />
     </div>
 
     <div v-else class="device-list">
       <div
         v-for="session in sessions"
         :key="session.id"
-        class="device-card"
+        class="device-card glass-card-enhanced"
         :class="{ 'is-current': session.is_current }"
       >
         <div class="device-icon">
@@ -175,7 +164,6 @@ function getLocationText(session: Device): string {
               <AnimatedIcon name="explore" :fallback-icon="MapPin" size="sm" />
               <span>{{ getLocationText(session) }}</span>
             </div>
-
             <div class="meta-item">
               <AnimatedIcon name="explore" :fallback-icon="Clock" size="sm" />
               <span>{{ t('devices.lastActive') }}: {{ formatDate(getLastActiveAt(session)) }}</span>
@@ -184,12 +172,10 @@ function getLocationText(session: Device): string {
               <AnimatedIcon name="explore" :fallback-icon="Clock" size="sm" />
               <span>{{ t('devices.lastLogin') }}: {{ formatDate(session.last_login_at) }}</span>
             </div>
-
             <div v-if="session.first_seen_at" class="meta-item">
               <AnimatedIcon name="explore" :fallback-icon="Calendar" size="sm" />
               <span>{{ t('devices.firstSeen') }}: {{ formatDate(session.first_seen_at) }}</span>
             </div>
-
             <div
               v-if="session.login_count !== null && session.login_count !== undefined"
               class="meta-item"
@@ -197,12 +183,10 @@ function getLocationText(session: Device): string {
               <AnimatedIcon name="explore" :fallback-icon="Hash" size="sm" />
               <span>{{ t('devices.loginCount') }}: {{ session.login_count }}</span>
             </div>
-
             <div v-if="session.device_info" class="meta-item">
               <AnimatedIcon name="explore" :fallback-icon="Info" size="sm" />
               <span>{{ t('devices.deviceInfo') }}: {{ session.device_info }}</span>
             </div>
-
             <div
               v-if="session.ip_change_count && session.ip_change_count > 5"
               class="meta-item warning"
@@ -241,196 +225,170 @@ function getLocationText(session: Device): string {
 <style scoped>
 .device-management {
   max-width: 100%;
-  margin: 0;
-  padding: 2rem;
 }
 
-.device-header {
-  margin-bottom: 2rem;
-}
-
-.device-header h2 {
-  font-size: 1.75rem;
-  font-weight: 600;
-  margin-bottom: 0.5rem;
-  color: var(--color-text-primary);
-}
-
-.device-description {
-  color: var(--color-text-secondary);
-  font-size: 0.95rem;
-}
-
-.revoke-all-section {
-  margin-bottom: 1.5rem;
-  display: flex;
-  justify-content: flex-end;
-}
-
-.btn-revoke-all {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.625rem 1rem;
-  background: var(--color-error);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-revoke-all:hover:not(:disabled) {
-  background: var(--color-error-hover);
-  transform: translateY(-1px);
-}
-
-.btn-revoke-all:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
+/* Loading Skeleton */
 .device-loading {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
+  display: grid;
+  gap: clamp(0.625rem, 1.5vw, 0.875rem);
 }
 
 .skeleton-card {
-  height: 9.375rem;
+  height: 8rem;
   background: var(--glass-bg-light);
-  border-radius: 12px;
-  animation: pulse 1.5s ease-in-out infinite;
+  border-radius: var(--radius-lg);
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+  background: linear-gradient(
+    90deg,
+    var(--glass-bg-light) 25%,
+    var(--glass-bg-medium) 50%,
+    var(--glass-bg-light) 75%
+  );
+  background-size: 200% 100%;
 }
 
-@keyframes pulse {
-  0%,
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
   100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
+    background-position: 200% 0;
   }
 }
 
+/* Device List */
 .device-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
+  display: grid;
+  gap: clamp(0.625rem, 1.5vw, 0.875rem);
 }
 
 .device-card {
-  display: flex;
-  gap: 1.25rem;
-  padding: 1.5rem;
-  background: var(--glass-bg);
-  backdrop-filter: blur(10px);
-  border: 1px solid var(--glass-border);
-  border-radius: 12px;
-  transition: all 0.2s;
-}
-
-.device-card:hover {
-  border-color: var(--color-primary);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: clamp(0.75rem, 2vw, 1rem);
+  padding: clamp(0.875rem, 2.5vw, 1.25rem);
+  border-left: 3px solid transparent;
+  transition:
+    border-color var(--duration-fast) var(--ease-smooth),
+    transform var(--duration-normal) var(--ease-out-smooth),
+    box-shadow var(--duration-normal) var(--ease-out-smooth);
 }
 
 .device-card.is-current {
-  border-color: var(--color-primary);
-  background: var(--glass-bg-strong);
+  border-left-color: var(--color-primary);
+  background: var(--glass-bg-ultra-light);
 }
 
+.device-card:not(.is-current):hover {
+  border-left-color: var(--glass-border-medium);
+}
+
+/* Device Icon */
 .device-icon {
   flex-shrink: 0;
-  width: 3rem;
-  height: 3rem;
+  width: 2.75rem;
+  height: 2.75rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--color-primary-alpha);
-  border-radius: 10px;
+  background: rgba(var(--color-primary-rgb), 0.06);
+  border-radius: var(--radius-lg);
   color: var(--color-primary);
+  transition: transform var(--duration-fast) var(--ease-bounce-soft);
 }
 
+.device-card:hover .device-icon {
+  transform: scale(1.05);
+}
+
+/* Device Info */
 .device-info {
-  flex: 1;
   min-width: 0;
 }
 
 .device-name-row {
-  margin-bottom: 0.5rem;
+  margin-bottom: var(--spacing-1);
 }
 
 .device-name-display {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--spacing-2);
 }
 
 .device-name-display h3 {
-  font-size: 1.1rem;
-  font-weight: 600;
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
   color: var(--color-text-primary);
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--spacing-2);
   flex-wrap: wrap;
+  margin: 0;
 }
 
 .badge-current {
   display: inline-flex;
   align-items: center;
-  padding: 0.25rem 0.5rem;
+  padding: 0.0625rem 0.375rem;
   background: var(--color-primary);
   color: var(--color-on-primary);
-  font-size: 0.75rem;
-  font-weight: 500;
-  border-radius: 4px;
+  font-size: 0.625rem;
+  font-weight: var(--font-bold);
+  border-radius: var(--radius-sm);
+  letter-spacing: 0.02em;
 }
 
 .badge-trusted {
   display: inline-flex;
   align-items: center;
-  gap: 0.25rem;
-  padding: 0.25rem 0.5rem;
+  gap: 0.125rem;
+  padding: 0.0625rem 0.375rem;
   background: rgba(var(--color-success-rgb), 0.1);
   color: var(--color-success);
-  font-size: 0.75rem;
-  font-weight: 500;
-  border-radius: 4px;
+  font-size: 0.625rem;
+  font-weight: var(--font-medium);
+  border-radius: var(--radius-sm);
 }
 
 .btn-edit {
-  padding: 0.25rem;
+  padding: var(--spacing-1);
   background: transparent;
   border: none;
-  color: var(--color-text-secondary);
+  color: var(--color-text-tertiary);
   cursor: pointer;
-  border-radius: 4px;
-  transition: all 0.2s;
+  border-radius: var(--radius-md);
+  opacity: 0;
+  transition:
+    opacity var(--duration-fast) var(--ease-smooth),
+    color var(--duration-fast) var(--ease-smooth);
+}
+
+.device-card:hover .btn-edit {
+  opacity: 1;
 }
 
 .btn-edit:hover {
-  background: var(--glass-bg-light);
   color: var(--color-primary);
 }
 
+/* Name Edit */
 .device-name-edit {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--spacing-2);
 }
 
 .device-name-input {
   flex: 1;
-  padding: 0.5rem;
-  background: var(--glass-bg-light);
-  border: 1px solid var(--glass-border);
-  border-radius: 6px;
+  min-width: 0;
+  padding: var(--spacing-1) var(--spacing-2);
+  background: var(--glass-bg-medium);
+  border: 1px solid var(--glass-border-medium);
+  border-radius: var(--radius-md);
   color: var(--color-text-primary);
-  font-size: 0.95rem;
+  font-size: var(--text-sm);
+  transition: border-color var(--duration-fast) var(--ease-smooth);
 }
 
 .device-name-input:focus {
@@ -439,26 +397,30 @@ function getLocationText(session: Device): string {
 }
 
 .btn-icon {
-  padding: 0.5rem;
+  padding: var(--spacing-1);
   background: transparent;
-  border: 1px solid var(--color-border);
-  border-radius: 6px;
+  border: 1px solid var(--glass-border-medium);
+  border-radius: var(--radius-md);
   cursor: pointer;
-  transition: all 0.2s;
   display: flex;
   align-items: center;
   justify-content: center;
+  color: var(--color-text-secondary);
+  transition:
+    background var(--duration-fast) var(--ease-smooth),
+    border-color var(--duration-fast) var(--ease-smooth);
 }
 
 .btn-icon:hover {
-  background: var(--color-glass-bg-hover);
+  background: var(--glass-bg-light);
   border-color: var(--color-primary);
 }
 
+/* Device Details & Meta */
 .device-details {
   color: var(--color-text-secondary);
-  font-size: 0.9rem;
-  margin-bottom: 0.75rem;
+  font-size: var(--text-xs);
+  margin: 0 0 var(--spacing-2);
 }
 
 .device-details--empty {
@@ -468,58 +430,65 @@ function getLocationText(session: Device): string {
 
 .device-meta {
   display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
+  flex-wrap: wrap;
+  gap: var(--spacing-1) var(--spacing-3);
 }
 
 .meta-item {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  color: var(--color-text-secondary);
-  font-size: 0.85rem;
+  gap: 0.25rem;
+  color: var(--color-text-tertiary);
+  font-size: var(--text-xs);
 }
 
 .meta-item.warning {
   color: var(--color-warning);
 }
 
+/* Device Actions */
 .device-actions {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: var(--spacing-2);
   flex-shrink: 0;
+  align-self: center;
 }
 
 .btn-trust,
 .btn-revoke {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
-  padding: 0.625rem 1rem;
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  font-size: 0.85rem;
-  font-weight: 500;
+  gap: var(--spacing-1);
+  padding: var(--spacing-1) var(--spacing-3);
+  border: 1px solid var(--glass-border-medium);
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
   cursor: pointer;
-  transition: all 0.2s;
   white-space: nowrap;
+  transition:
+    background var(--duration-fast) var(--ease-smooth),
+    border-color var(--duration-fast) var(--ease-smooth),
+    color var(--duration-fast) var(--ease-smooth),
+    transform var(--duration-fast) var(--ease-bounce-soft);
 }
 
 .btn-trust {
   background: transparent;
-  color: var(--color-text-primary);
+  color: var(--color-text-secondary);
 }
 
 .btn-trust:hover {
-  background: rgba(var(--color-success-rgb), 0.1);
+  background: rgba(var(--color-success-rgb), 0.08);
   border-color: var(--color-success);
   color: var(--color-success);
+  transform: var(--lift-sm);
 }
 
 .btn-trust.trusted {
-  background: rgba(var(--color-success-rgb), 0.1);
+  background: rgba(var(--color-success-rgb), 0.08);
   border-color: var(--color-success);
   color: var(--color-success);
 }
@@ -527,74 +496,150 @@ function getLocationText(session: Device): string {
 .btn-revoke {
   background: transparent;
   color: var(--color-error);
-  border-color: rgba(var(--color-error-rgb), 0.3);
+  border-color: rgba(239, 68, 68, 0.2);
 }
 
 .btn-revoke:hover {
   background: var(--color-error);
-  color: white;
+  color: var(--color-white);
+  border-color: var(--color-error);
+  transform: var(--lift-sm);
 }
 
+/* ===== Responsive ===== */
 @media (max-width: 768px) {
-  .device-management {
-    padding: 0;
-  }
-
-  .device-header h2 {
-    font-size: 1.25rem;
-  }
-
-  .device-description {
-    font-size: 0.85rem;
-  }
-
   .device-card {
-    flex-direction: column;
-    gap: 0.75rem;
-    padding: 1rem;
+    grid-template-columns: auto 1fr;
+    grid-template-rows: auto auto;
   }
 
   .device-icon {
-    width: 2.5rem;
-    height: 2.5rem;
-  }
-
-  .device-name-display h3 {
-    font-size: 0.95rem;
-  }
-
-  .device-details {
-    font-size: 0.8rem;
-  }
-
-  .meta-item {
-    font-size: 0.8rem;
-    word-break: break-all;
+    width: 2.25rem;
+    height: 2.25rem;
   }
 
   .device-actions {
+    grid-column: 1 / -1;
     flex-direction: row;
   }
 
   .btn-trust,
   .btn-revoke {
     flex: 1;
-    font-size: 0.8rem;
-    padding: 0.5rem 0.75rem;
-  }
-
-  .btn-revoke-all {
-    font-size: 0.8rem;
-    padding: 0.5rem 0.75rem;
   }
 
   .device-name-edit {
     flex-wrap: wrap;
   }
 
-  .device-name-input {
-    min-width: 0;
-    font-size: 0.85rem;
+  .btn-edit {
+    opacity: 1;
   }
+
+  .device-meta {
+    gap: var(--spacing-1) var(--spacing-2);
+  }
+
+  .meta-item {
+    word-break: break-all;
+  }
+}
+</style>
+
+<style>
+/* ===== Material 3 Overrides ===== */
+#app[data-ui-style='material'] .device-management .device-card {
+  border-radius: 12px;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  background: var(--color-surface, #fff);
+  box-shadow: var(--shadow-sm);
+  border-left-width: 3px;
+}
+
+#app[data-ui-style='material'] .device-management .device-card::before {
+  display: none;
+}
+
+#app[data-ui-style='material'] .device-management .device-card:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+#app[data-ui-style='material'] .device-management .device-icon {
+  border-radius: 8px;
+}
+
+#app[data-ui-style='material'] .device-management .badge-current {
+  border-radius: 4px;
+}
+
+#app[data-ui-style='material'] .device-management .badge-trusted {
+  border-radius: 4px;
+}
+
+#app[data-ui-style='material'] .device-management .btn-trust,
+#app[data-ui-style='material'] .device-management .btn-revoke {
+  border-radius: 8px;
+}
+
+#app[data-ui-style='material'] .device-management .btn-icon {
+  border-radius: 4px;
+}
+
+#app[data-ui-style='material'] .device-management .device-name-input {
+  border-radius: 4px;
+}
+
+#app[data-ui-style='material'] .device-management .skeleton-card {
+  border-radius: 12px;
+}
+
+/* ===== Dark Theme ===== */
+[data-theme='dark'] .device-management .device-card.is-current {
+  background: rgba(var(--color-primary-rgb), 0.06);
+}
+
+[data-theme='dark'] .device-management .device-icon {
+  background: rgba(var(--color-primary-rgb), 0.1);
+}
+
+/* ===== Blue Theme ===== */
+[data-theme='blue'] .device-management .device-card.is-current {
+  border-left-color: #3b82f6;
+  background: rgba(59, 130, 246, 0.04);
+}
+
+[data-theme='blue'] .device-management .device-icon {
+  background: rgba(59, 130, 246, 0.08);
+  color: #3b82f6;
+}
+
+[data-theme='blue'] .device-management .badge-current {
+  background: #3b82f6;
+}
+
+/* ===== Material + Dark ===== */
+#app[data-ui-style='material'][data-theme='dark'] .device-management .device-card {
+  background: var(--md-surface-container, rgba(28, 28, 32, 0.92));
+  border-color: rgba(255, 255, 255, 0.06);
+  border-left-color: transparent;
+}
+
+#app[data-ui-style='material'][data-theme='dark'] .device-management .device-card.is-current {
+  border-left-color: var(--color-primary);
+  background: var(--md-surface-container-high, rgba(40, 40, 48, 1));
+}
+
+/* ===== Material + Blue ===== */
+#app[data-ui-style='material'][data-theme='blue'] .device-management .device-card {
+  background: #ffffff;
+  border-color: rgba(59, 130, 246, 0.08);
+  box-shadow: 0 1px 3px rgba(59, 130, 246, 0.06);
+}
+
+#app[data-ui-style='material'][data-theme='blue'] .device-management .device-card.is-current {
+  border-left-color: #3b82f6;
+  background: rgba(59, 130, 246, 0.03);
 }
 </style>
