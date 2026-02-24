@@ -4,7 +4,6 @@
  *
  * 优化特性：
  * - 自动压缩 CSS (移除注释、空格、冗余分号)
- * - 支持 CSP nonce 占位符
  * - 优化 FCP (First Contentful Paint)
  * - 缓存 CSS 内容避免重复读取
  * - 详细的构建日志
@@ -19,8 +18,6 @@ interface CriticalCSSOptions {
   path?: string
   /** 是否启用压缩 */
   minify?: boolean
-  /** CSP nonce 占位符 */
-  noncePlaceholder?: string
   /** 是否启用详细日志 */
   verbose?: boolean
   /** 是否在开发环境启用 */
@@ -68,7 +65,6 @@ export function criticalCSSPlugin(options: CriticalCSSOptions = {}): Plugin {
   const {
     path: cssPath = 'src/styles/critical.css',
     minify = true,
-    noncePlaceholder = '__CSP_NONCE__',
     verbose = true,
     enableInDev = false,
   } = options
@@ -123,8 +119,8 @@ export function criticalCSSPlugin(options: CriticalCSSOptions = {}): Plugin {
     transformIndexHtml(html) {
       if (!criticalCSS) return html
 
-      // 生成带 nonce 占位符的 style 标签（用于 CSP）
-      const styleTag = `<style id="critical-css" nonce="${noncePlaceholder}" data-hash="${cssHash}">${criticalCSS}</style>`
+      // 生成 style 标签（style-src 'unsafe-inline' 已覆盖）
+      const styleTag = `<style id="critical-css" data-hash="${cssHash}">${criticalCSS}</style>`
 
       // 插入到 <head> 的最前面，确保最先加载
       return html.replace(

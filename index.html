@@ -7,8 +7,8 @@
     <!-- PWA Manifest -->
     <link rel="manifest" href="/manifest.json" />
 
-    <!-- Apple Touch Icon -->
-    <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
+    <!-- Apple Touch Icon (180x180 per Apple HIG) -->
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon-180x180.png" />
     <!-- PWA - Modern standard -->
     <meta name="mobile-web-app-capable" content="yes" />
     <!-- PWA - Legacy Apple support (deprecated but still needed for older iOS) -->
@@ -37,16 +37,16 @@
     <meta property="og:url" content="https://momichan.xyz/" />
     <meta property="og:title" content="MomiChan - 籾山ひめり Fan Hub" />
     <meta property="og:description" content="籾山ひめりのソーシャルメディアコンテンツを一括管理" />
-    <meta property="og:image" content="https://momichan.xyz/icons/icon-183x183.png" />
+    <meta property="og:image" content="https://momichan.xyz/icons/icon-512x512.png" />
     <meta property="og:locale" content="ja_JP" />
     <meta property="og:locale:alternate" content="zh_CN" />
     <meta property="og:locale:alternate" content="en_US" />
 
     <!-- Twitter Card -->
-    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:card" content="summary" />
     <meta name="twitter:title" content="MomiChan - 籾山ひめり Fan Hub" />
     <meta name="twitter:description" content="籾山ひめりのソーシャルメディアコンテンツを一括管理" />
-    <meta name="twitter:image" content="https://momichan.xyz/icons/icon-183x183.png" />
+    <meta name="twitter:image" content="https://momichan.xyz/icons/icon-512x512.png" />
 
     <!-- Theme Color -->
     <meta name="theme-color" content="#f8fafc" media="(prefers-color-scheme: light)" />
@@ -69,9 +69,28 @@
     <title>MomiChan - 籾山ひめり Fan Hub</title>
 
     <!-- 动态标题将由 Vue Router 管理 -->
+
+    <!--
+      点击劫持防御 — 第一阶段（CSS + 同步 JS）
+      在任何内容渲染前执行：
+      1. CSS 默认隐藏 html，防止 iframe 内闪现内容
+      2. 同步脚本检测 iframe 嵌入 → 跳出或保持隐藏
+      3. 非 iframe → 立即移除隐藏样式，零感知
+      服务端已有 X-Frame-Options + CSP frame-ancestors，此为纵深防御降级方案
+    -->
+    <style id="frame-guard">html{display:none!important}</style>
+    <script>
+      (function(){
+        if(window.self===window.top){
+          document.getElementById('frame-guard').remove();
+          return
+        }
+        try{window.top.location.href=window.self.location.href}catch(e){}
+      })()
+    </script>
   </head>
   <body>
     <div id="app"></div>
-    <script type="module" src="/src/main.ts" data-cfasync="false"></script>
+    <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
