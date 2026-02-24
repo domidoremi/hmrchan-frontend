@@ -124,6 +124,7 @@ export {
   type TwoFactorVerifyRequest,
   type TwoFactorDisableRequest,
   type BackupCodesResponse,
+  type TwoFactorVerifyResponse,
 } from './twoFactorService'
 export { preferencesService, type UserPreferences } from './preferencesService'
 export {
@@ -161,8 +162,10 @@ export { feedbackService, type FeedbackRequest, type FeedbackResponse } from './
 export {
   auditService,
   type AuditActivityItem,
+  type AuditActivityResponse,
   type SecuritySummary,
   type SecurityEvent,
+  type MyActivityParams,
 } from './auditService'
 export {
   adminService,
@@ -187,6 +190,7 @@ export {
   type ReportStatsSummary,
   type ReviewReportRequest,
   type SecurityEventItem,
-  type FailedLoginItem,
+  type SecurityEventsResponse,
+  type FailedLoginIpItem,
   type AdminFeedback,
 } from './adminService'

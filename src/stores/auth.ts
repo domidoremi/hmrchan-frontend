@@ -60,6 +60,19 @@ export const useAuthStore = defineStore(
           ...(turnstileToken ? { turnstile_token: turnstileToken } : {}),
         })
 
+        // 2FA 验证流程：后端返回 pending_token 而非完整登录响应
+        const maybeRequires2fa = response as unknown as {
+          requires_2fa?: boolean
+          pending_token?: string
+        }
+        if (maybeRequires2fa.requires_2fa && maybeRequires2fa.pending_token) {
+          return {
+            success: false,
+            requires2fa: true,
+            pendingToken: maybeRequires2fa.pending_token,
+          }
+        }
+
         user.value = response.user
         token.value = response.access_token
         refreshToken.value = response.refresh_token ?? null
@@ -81,6 +94,49 @@ export const useAuthStore = defineStore(
           user: response.user,
           securityWarning: response._securityWarning,
         }
+      } catch (err) {
+        const errorMessage =
+          err instanceof ApiError ? getAuthErrorKey(err.status, err.code) : 'auth.error.loginFailed'
+        error.value = errorMessage
+        return { success: false, error: errorMessage }
+      } finally {
+        isLoading.value = false
+      }
+    }
+
+    /**
+     * 完成 2FA 登录验证
+     */
+    async function verify2faLogin(pendingToken: string, code: string) {
+      if (isLoading.value) return { success: false, error: 'auth.error.inProgress' }
+
+      isLoading.value = true
+      error.value = null
+
+      try {
+        const { twoFactorService } = await import('@/api/twoFactorService')
+        const deviceInfo = getDeviceInfo()
+        const response = await twoFactorService.verifyLogin(
+          pendingToken,
+          code,
+          deviceInfo.device_name,
+          deviceInfo.device_type
+        )
+
+        user.value = response.user
+        token.value = response.access_token
+        refreshToken.value = response.refresh_token ?? null
+
+        await secureTokenManager.store(response.access_token)
+
+        if (response.refresh_threshold) {
+          heartbeatInterval = response.refresh_threshold * 1000
+        }
+        startHeartbeat()
+
+        fetchCurrentUser().catch(() => {})
+
+        return { success: true, user: response.user }
       } catch (err) {
         const errorMessage =
           err instanceof ApiError ? getAuthErrorKey(err.status, err.code) : 'auth.error.loginFailed'
@@ -418,6 +474,7 @@ export const useAuthStore = defineStore(
       error,
       isAuthenticated,
       login,
+      verify2faLogin,
       register,
       logout,
       fetchCurrentUser,
