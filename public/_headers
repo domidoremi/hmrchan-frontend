@@ -2,8 +2,8 @@
 
 # 通用安全头
 /*
-  # HSTS - 强制 HTTPS
-  Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+  # HSTS - 强制 HTTPS（2 年有效期 + preload 列表）
+  Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
   
   # 防止点击劫持
   X-Frame-Options: SAMEORIGIN
@@ -17,21 +17,24 @@
   # 跨域策略
   Cross-Origin-Opener-Policy: same-origin-allow-popups
   Cross-Origin-Resource-Policy: cross-origin
+  Cross-Origin-Embedder-Policy: credentialless
   
-  # 权限策略
-  Permissions-Policy: camera=(), microphone=(), geolocation=(), fullscreen=(self), payment=()
+  # 阻止 Flash/PDF 跨域策略文件
+  X-Permitted-Cross-Domain-Policies: none
   
-  # 内容安全策略（安全优化版）
-  # 注意：Cloudflare Pages 的 _headers 文件有时会被忽略
-  # 如果此配置未生效，需要在 Cloudflare Dashboard 中手动配置 Transform Rules
-  #
-  # script-src: 用 hash 替代 'unsafe-inline'，仅允许 frame-guard 内联脚本
+  # 权限策略（最小权限原则）
+  # clipboard-write=(self): 分享链接复制功能
+  # picture-in-picture=(self): 视频画中画
+  # autoplay=(self): 帖子图片自动轮播
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), fullscreen=(self), payment=(), accelerometer=(), gyroscope=(), magnetometer=(), midi=(), usb=(), display-capture=(), screen-wake-lock=(), xr-spatial-tracking=(), clipboard-read=(), clipboard-write=(self), picture-in-picture=(self), autoplay=(self)
+  
+  # 内容安全策略
+  # script-src: hash 替代 unsafe-inline，无 unsafe-eval（Vue 3 SFC 预编译无需 eval）
   #   hash: 'sha256-gQxtaB/fHoD0PKLcLhsW2rm03+//Pw/+Zq8q5+UQIFg='
-  #   若修改 index.html 中 frame-guard <script> 内容，需重新计算：
-  #   node scripts/compute-csp-hash.mjs
-  # style-src: 保留 'unsafe-inline'（critical CSS 每次构建内容不同 + Vue 运行时样式注入）
-  # 'unsafe-eval': 部分第三方库可能需要，后续可尝试移除并测试
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'sha256-gQxtaB/fHoD0PKLcLhsW2rm03+//Pw/+Zq8q5+UQIFg=' 'unsafe-eval' https://static.cloudflareinsights.com https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; font-src 'self' data:; connect-src 'self' https://api.momichan.xyz https://api.dicebear.com https://challenges.cloudflare.com https://static.cloudflareinsights.com https://cloudflareinsights.com https://pbs.twimg.com https://i.ytimg.com; media-src 'self' https: blob:; object-src 'none'; worker-src 'self' blob:; frame-src 'self' https://challenges.cloudflare.com; frame-ancestors 'self'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests
+  #   修改 index.html frame-guard <script> 后需重算: node scripts/compute-csp-hash.mjs
+  # style-src: 保留 unsafe-inline（critical CSS 每次构建变化 + Vue 运行时样式）
+  # media-src: 所有媒体通过 /api 代理，无需 https: 通配
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'sha256-gQxtaB/fHoD0PKLcLhsW2rm03+//Pw/+Zq8q5+UQIFg=' https://static.cloudflareinsights.com https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; font-src 'self' data:; connect-src 'self' https://api.momichan.xyz https://api.dicebear.com https://challenges.cloudflare.com https://static.cloudflareinsights.com https://cloudflareinsights.com https://pbs.twimg.com https://i.ytimg.com; media-src 'self' blob:; object-src 'none'; worker-src 'self' blob:; frame-src 'self' https://challenges.cloudflare.com; frame-ancestors 'self'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests
 
 # HTML 页面 - 短缓存，便于快速更新
 /*.html
