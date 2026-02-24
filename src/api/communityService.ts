@@ -20,20 +20,26 @@ export interface DiscussionItem {
 }
 
 export interface HotTopicItem {
-  id: string
-  post_id: string
-  post_title: string
-  post_thumbnail_url?: string | null
   comment_count: number
-  participant_count: number
-  trending_score: number
+  post_id: string
+  title?: string | null
+  platform: string
+  // 兼容旧字段
+  id?: string
+  post_title?: string
+  post_thumbnail_url?: string | null
+  participant_count?: number
+  trending_score?: number
 }
 
 export interface CommunityStats {
   total_comments: number
-  total_participants: number
+  total_users: number
   comments_today: number
-  active_discussions: number
+  hot_topics_count: number
+  // 兼容旧字段
+  total_participants?: number
+  active_discussions?: number
 }
 
 export type TimeRange = '24h' | '7d' | '30d' | 'all'
@@ -52,6 +58,7 @@ export const communityService = {
 
   /**
    * 获取热门内容
+   * GET /api/v1/community/hot → { hot_topics: [...] }
    */
   async getTrending(
     timeRange: TimeRange = '7d',
@@ -59,10 +66,21 @@ export const communityService = {
     pageSize = 20
   ): Promise<PaginatedApiResponse<HotTopicItem>> {
     const days = timeRange === '24h' ? 1 : timeRange === '7d' ? 7 : timeRange === '30d' ? 30 : 30
-    const result = await apiClient.get<{ items: HotTopicItem[] } | HotTopicItem[]>(
-      `/community/hot?limit=${pageSize}&days=${days}`
-    )
-    const items = Array.isArray(result) ? result : (result.items ?? [])
+    const result = await apiClient.get<
+      { hot_topics: HotTopicItem[] } | { items: HotTopicItem[] } | HotTopicItem[]
+    >(`/community/hot?limit=${pageSize}&days=${days}`)
+
+    let items: HotTopicItem[]
+    if (Array.isArray(result)) {
+      items = result
+    } else if ('hot_topics' in result && Array.isArray(result.hot_topics)) {
+      items = result.hot_topics
+    } else if ('items' in result && Array.isArray(result.items)) {
+      items = result.items
+    } else {
+      items = []
+    }
+
     return {
       items,
       total: items.length,
