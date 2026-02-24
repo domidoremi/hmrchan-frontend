@@ -30,12 +30,12 @@
   
   # 内容安全策略
   # script-src: hash 替代 unsafe-inline，无 unsafe-eval（Vue 3 SFC 预编译无需 eval）
-  #   hash1: 'sha256-gQxtaB/fHoD0PKLcLhsW2rm03+//Pw/+Zq8q5+UQIFg=' — frame-guard 内联脚本
-  #   hash2: 'sha256-BK+Jb4ef54IU5YQiZreXmI+xrTouBZIW2vdYB1U8Ywo=' — Cloudflare Web Analytics beacon
-  #   修改 index.html frame-guard <script> 后需重算: node scripts/compute-csp-hash.mjs
+  #   hash1: frame-guard 内联脚本（修改后需重算: node scripts/compute-csp-hash.mjs）
+  #   hash2/hash3: Cloudflare Web Analytics 注入的 beacon 内联脚本
+  #     ⚠️ Cloudflare 更新 beacon 版本时哈希会变，届时需从控制台错误中提取新哈希
   # style-src: 保留 unsafe-inline（critical CSS 每次构建变化 + Vue 运行时样式）
   # media-src: 所有媒体通过 /api 代理，无需 https: 通配
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'sha256-gQxtaB/fHoD0PKLcLhsW2rm03+//Pw/+Zq8q5+UQIFg=' 'sha256-BK+Jb4ef54IU5YQiZreXmI+xrTouBZIW2vdYB1U8Ywo=' https://static.cloudflareinsights.com https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; font-src 'self' data:; connect-src 'self' https://api.momichan.xyz https://api.dicebear.com https://challenges.cloudflare.com https://static.cloudflareinsights.com https://cloudflareinsights.com https://pbs.twimg.com https://i.ytimg.com; media-src 'self' blob:; object-src 'none'; worker-src 'self' blob:; frame-src 'self' https://challenges.cloudflare.com; frame-ancestors 'self'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'sha256-gQxtaB/fHoD0PKLcLhsW2rm03+//Pw/+Zq8q5+UQIFg=' 'sha256-BK+Jb4ef54IU5YQiZreXmI+xrTouBZIW2vdYB1U8Ywo=' 'sha256-hEGI8JDMOa5ER6c5c5XpZXI5ppEAgjKuCyTwccFCc2Y=' https://static.cloudflareinsights.com https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; font-src 'self' data:; connect-src 'self' https://api.momichan.xyz https://api.dicebear.com https://challenges.cloudflare.com https://static.cloudflareinsights.com https://cloudflareinsights.com https://pbs.twimg.com https://i.ytimg.com; media-src 'self' blob:; object-src 'none'; worker-src 'self' blob:; frame-src 'self' https://challenges.cloudflare.com; frame-ancestors 'self'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests
 
 # HTML 页面 - 短缓存，便于快速更新
 /*.html
