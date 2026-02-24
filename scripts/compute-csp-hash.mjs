@@ -1,4 +1,4 @@
-import { createHash, createHmac } from 'node:crypto'
+import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 
 // Read the source index.html to extract exact inline content
@@ -35,6 +35,6 @@ try {
     console.log('Dist frame-guard script hash: sha256-' + hash)
     console.log('Script identical to source:', distScriptContent === (scriptMatch && scriptMatch[1]))
   }
-} catch (e) {
+} catch {
   console.log('dist/index.html not found, skipping')
 }
