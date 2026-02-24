@@ -190,12 +190,13 @@ function executePrefetch(): void {
       { name: 'profile', importFn: ROUTE_CONFIG.profile.importFn, priority: 'low' },
     ])
 
-    // 预加载关键数据（延迟更长，避免影响首屏）
-    prefetchDataTimer = window.setTimeout(() => {
+    // 预加载关键数据（延迟更长，避免与首屏请求竞争）
+    // 串行执行，避免并发请求过多
+    prefetchDataTimer = window.setTimeout(async () => {
       prefetchDataTimer = null
-      prefetchExploreData()
-      prefetchAuthorsData()
-    }, 2000)
+      await prefetchExploreData()
+      await prefetchAuthorsData()
+    }, 4000)
   }, PREFETCH_DELAY_MS)
 }
 
@@ -363,31 +364,25 @@ async function prefetchData(
 
 /**
  * 预加载探索页数据
- * 在用户导航到探索页前预加载热门内容
+ * 在用户导航到探索页前预加载首页数据
  */
 export async function prefetchExploreData(): Promise<void> {
   await prefetchData(async () => {
     const { postService } = await import('@/api/postService')
-    // 预加载前两页数据，提升滚动体验
-    await Promise.all([
-      postService.listPosts({ page: 1, page_size: 20 }, { skipErrorToast: true }),
-      postService.listPosts({ page: 2, page_size: 20 }, { skipErrorToast: true }),
-    ])
+    // 只预加载第一页，避免并发请求过多触发 429
+    await postService.listPosts({ page: 1, page_size: 20 }, { skipErrorToast: true })
   })
 }
 
 /**
  * 预加载作者列表数据
- * 在用户导航到作者页前预加载热门作者
+ * 在用户导航到作者页前预加载首页作者
  */
 export async function prefetchAuthorsData(): Promise<void> {
   await prefetchData(async () => {
     const { authorService } = await import('@/api/authorService')
-    // 预加载前两页数据
-    await Promise.all([
-      authorService.listAuthors({ page: 1, page_size: 20 }, { skipErrorToast: true }),
-      authorService.listAuthors({ page: 2, page_size: 20 }, { skipErrorToast: true }),
-    ])
+    // 只预加载第一页
+    await authorService.listAuthors({ page: 1, page_size: 20 }, { skipErrorToast: true })
   })
 }
 
