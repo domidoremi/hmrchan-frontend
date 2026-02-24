@@ -137,7 +137,7 @@ export const historyService = {
     query: string,
     searchType: string = 'posts',
     resultCount?: number,
-    filters?: Record<string, unknown>,
+    filters?: Record<string, unknown>
   ): Promise<void> {
     return apiClient.post(
       '/history/search',
@@ -147,7 +147,7 @@ export const historyService = {
         ...(resultCount != null ? { result_count: resultCount } : {}),
         ...(filters ? { filters } : {}),
       },
-      { skipErrorToast: true },
+      { skipErrorToast: true }
     )
   },
 
@@ -158,7 +158,7 @@ export const historyService = {
   async getSearchHistory(
     limit = 20,
     offset = 0,
-    searchType?: string,
+    searchType?: string
   ): Promise<SearchHistoryListResponse> {
     const params = new URLSearchParams({
       limit: String(limit),
@@ -198,7 +198,7 @@ export const historyService = {
       content_uuid?: string
       source?: string
       duration_seconds?: number
-    },
+    }
   ): Promise<void> {
     await apiClient.post(
       '/history/browsing',
@@ -211,7 +211,7 @@ export const historyService = {
           ? { duration_seconds: options.duration_seconds }
           : {}),
       },
-      { skipErrorToast: true },
+      { skipErrorToast: true }
     )
   },
 
@@ -225,7 +225,7 @@ export const historyService = {
     options?: {
       content_type?: BrowsingContentType
       include_preview?: boolean
-    },
+    }
   ): Promise<BrowsingHistoryListResponse> {
     const params = new URLSearchParams({
       limit: String(limit),
@@ -279,10 +279,10 @@ export const historyService = {
    */
   async getMyComments(
     page = 1,
-    pageSize = 20,
+    pageSize = 20
   ): Promise<PaginatedApiResponse<MyCommentHistoryItem>> {
     return apiClient.get<PaginatedApiResponse<MyCommentHistoryItem>>(
-      `/history/my-comments?page=${page}&page_size=${pageSize}`,
+      `/history/my-comments?page=${page}&page_size=${pageSize}`
     )
   },
 
@@ -292,7 +292,7 @@ export const historyService = {
    */
   async getMyLikes(page = 1, pageSize = 20): Promise<PaginatedApiResponse<MyLikeHistoryItem>> {
     return apiClient.get<PaginatedApiResponse<MyLikeHistoryItem>>(
-      `/history/my-likes?page=${page}&page_size=${pageSize}`,
+      `/history/my-likes?page=${page}&page_size=${pageSize}`
     )
   },
 
@@ -302,10 +302,10 @@ export const historyService = {
    */
   async getMyCommentFavorites(
     page = 1,
-    pageSize = 20,
+    pageSize = 20
   ): Promise<PaginatedApiResponse<MyCommentFavoriteItem>> {
     return apiClient.get<PaginatedApiResponse<MyCommentFavoriteItem>>(
-      `/history/my-comment-favorites?page=${page}&page_size=${pageSize}`,
+      `/history/my-comment-favorites?page=${page}&page_size=${pageSize}`
     )
   },
 }
