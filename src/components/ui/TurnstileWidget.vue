@@ -114,6 +114,7 @@ function loadTurnstileScript(): Promise<void> {
       'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=onTurnstileLoad'
     script.async = true
     script.defer = true
+    script.crossOrigin = 'anonymous'
 
     previousOnloadHandler = window.onTurnstileLoad ?? null
     turnstileOnloadHandler = () => {
