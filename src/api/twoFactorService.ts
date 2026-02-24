@@ -6,12 +6,15 @@
  */
 
 import { apiClient } from './client'
+import type { AuthResponse } from './authService'
 
 // ========== 类型定义 ==========
 
 export interface TwoFactorSetupResponse {
   /** TOTP Secret (手动输入用) */
   secret: string
+  /** QR 码图片（base64 或 data URI） */
+  qr_code: string
   /** otpauth:// URI（用于生成 QR 码） */
   otpauth_url: string
   /** 备份码列表（首次设置时返回） */
@@ -20,7 +23,6 @@ export interface TwoFactorSetupResponse {
 
 export interface TwoFactorStatusResponse {
   enabled: boolean
-  totp_enabled: boolean
   /** 剩余可用备份码数量 */
   backup_codes_remaining: number
 }
@@ -35,7 +37,14 @@ export interface TwoFactorDisableRequest {
 }
 
 export interface BackupCodesResponse {
-  codes: string[]
+  backup_codes: string[]
+  message: string
+}
+
+export interface TwoFactorVerifyResponse {
+  success: boolean
+  message: string
+  backup_codes_count: number
 }
 
 // ========== 2FA 服务 ==========
@@ -58,7 +67,7 @@ export const twoFactorService = {
   /**
    * 验证并启用 2FA（需提供 TOTP code）
    */
-  async verify(code: string): Promise<{ message: string }> {
+  async verify(code: string): Promise<TwoFactorVerifyResponse> {
     return apiClient.post(
       '/2fa/verify',
       { code },
@@ -71,27 +80,32 @@ export const twoFactorService = {
   /**
    * 禁用 2FA（需提供 TOTP code 和密码）
    */
-  async disable(code: string, password: string): Promise<{ message: string }> {
+  async disable(code: string, password: string): Promise<{ success: boolean; message: string }> {
     return apiClient.post('/2fa/disable', { code, password })
   },
 
   /**
-   * 2FA 登录验证（登录时 202 后调用）
+   * 2FA 登录验证（登录时返回 pending_token 后调用）
+   * 返回完整的 LoginResp（同登录成功）
    */
   async verifyLogin(
     pendingToken: string,
-    code: string
-  ): Promise<{ access_token: string; user: unknown }> {
+    code: string,
+    deviceName?: string,
+    deviceType?: string
+  ): Promise<AuthResponse> {
     return apiClient.post('/2fa/verify-login', {
       pending_token: pendingToken,
-      totp_code: code,
+      code,
+      ...(deviceName ? { device_name: deviceName } : {}),
+      ...(deviceType ? { device_type: deviceType } : {}),
     })
   },
 
   /**
-   * 重新生成备份码
+   * 重新生成备份码（需要 TOTP 码验证）
    */
-  async regenerateBackupCodes(): Promise<BackupCodesResponse> {
-    return apiClient.post<BackupCodesResponse>('/2fa/regenerate-backup-codes')
+  async regenerateBackupCodes(code: string): Promise<BackupCodesResponse> {
+    return apiClient.post<BackupCodesResponse>('/2fa/regenerate-backup-codes', { code })
   },
 }

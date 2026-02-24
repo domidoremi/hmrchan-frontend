@@ -6,7 +6,7 @@ import { apiClient, type PaginatedApiResponse } from './client'
 
 // ========== 类型定义 ==========
 
-export type ScheduleCategory = 'live' | 'event' | 'release' | 'media' | 'birth' | 'other'
+export type ScheduleCategory = 'live' | 'media' | 'birth' | 'other'
 
 export interface ScheduleResponse {
   id: string

@@ -26,19 +26,14 @@ export interface PostsLightParams {
 export interface PostLightItem {
   id: string
   platform: string
-  title: string
-  description?: string
+  title?: string | null
   thumbnail_url?: string | null
-  author_id?: string
-  author_name?: string
-  author_username?: string
-  view_count?: number
-  like_count?: number
-  comment_count?: number
-  media_count?: number
-  duration?: number | null
+  thumbnail_width?: number
+  thumbnail_height?: number
   published_at?: string
-  created_at?: string
+  view_count: number
+  like_count: number
+  media_count: number
 }
 
 const DEFAULT_PARAMS = {
@@ -76,6 +71,7 @@ export const postsLightService = {
 
   /**
    * 获取混合轻量帖子流（多平台混合）
+   * API: per_platform (3-10, default 5)
    */
   async listMixed(
     params: PostsLightParams = {},
@@ -94,7 +90,7 @@ export const postsLightService = {
       min_likes: params.min_likes ?? null,
       sort_by: params.sort_by,
       sort_order: params.sort_order,
-      per_platform_limit: params.per_platform_limit ?? null,
+      per_platform: params.per_platform_limit ?? null,
       thumbnail_quality: params.thumbnail_quality ?? null,
     })
 
