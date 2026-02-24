@@ -845,7 +845,6 @@ watch(postId, (nextId, prevId) => {
   }
   cachedThumbnailUrl.value = null
   preloadedImages.value = new Set()
-  lastPostId = nextId
   syncNavigationContext()
   prefetchAdjacentPosts()
   fetchPost()
