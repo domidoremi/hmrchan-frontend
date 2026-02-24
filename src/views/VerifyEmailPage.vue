@@ -97,12 +97,22 @@ function goToLogin() {
 }
 
 async function resend() {
+  // 从 URL query 中获取 email（未登录用户无法通过认证接口重发）
+  const emailFromQuery = route.query['email']
+  const emailParam =
+    typeof emailFromQuery === 'string' && emailFromQuery ? { email: emailFromQuery } : undefined
+
   try {
-    await authService.sendVerificationEmail()
+    await authService.sendVerificationEmail(emailParam)
     toastStore.success(t('email.resendSuccess'))
   } catch (err) {
     if (err instanceof ApiError) {
-      toastStore.error(err.message)
+      if (err.status === 401 && emailParam) {
+        // 未登录且有 email 参数，提示用户先登录
+        toastStore.warning(t('email.loginToResend'))
+      } else {
+        toastStore.error(err.message)
+      }
     } else {
       toastStore.error(t('email.resendFailed'))
     }

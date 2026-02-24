@@ -257,6 +257,8 @@ export const useAuthStore = defineStore(
 
     /**
      * 获取当前用户信息
+     * 仅在明确的认证失败（401/403）时清除状态
+     * 网络错误、超时、500 等临时故障不清除认证状态
      */
     async function fetchCurrentUser() {
       if (!token.value) return null
@@ -265,10 +267,13 @@ export const useAuthStore = defineStore(
         const currentUser = await authService.getCurrentUser()
         user.value = currentUser
         return currentUser
-      } catch {
-        // Token 可能已过期
-        user.value = null
-        token.value = null
+      } catch (err) {
+        if (err instanceof ApiError && (err.status === 401 || err.status === 403)) {
+          // 明确的认证失败，清除状态
+          user.value = null
+          token.value = null
+        }
+        // 网络错误、500 等不清除认证状态，保留用户会话
         return null
       }
     }
@@ -279,23 +284,40 @@ export const useAuthStore = defineStore(
      */
     async function initAuth() {
       // 始终尝试从安全存储恢复 token（避免依赖 localStorage 明文）
-      const secureToken = await secureTokenManager.retrieve()
-      token.value = secureToken
+      let secureToken = await secureTokenManager.retrieve()
+
+      // 本地 token 不可用时，尝试用 refresh_token cookie 刷新
       if (!secureToken) {
-        user.value = null
-        refreshToken.value = null
-        return
+        try {
+          const response = await authService.refreshToken()
+          secureToken = response.access_token
+          await secureTokenManager.store(secureToken)
+          if (response.refresh_token) {
+            refreshToken.value = response.refresh_token
+          }
+        } catch {
+          // refresh 也失败，真正登出
+          user.value = null
+          token.value = null
+          refreshToken.value = null
+          return
+        }
       }
+
+      token.value = secureToken
 
       // 始终调用 fetchCurrentUser 验证 token 有效性
       // 即使 Pinia 持久化恢复了 user，token 可能已过期
       const currentUser = await fetchCurrentUser()
       if (!currentUser) {
-        // 两个 token 都已失效，清除所有认证状态
-        user.value = null
-        token.value = null
-        refreshToken.value = null
-        secureTokenManager.clear()
+        // 区分：认证失败 vs 临时错误
+        if (!token.value) {
+          // token 被 fetchCurrentUser 清除了（401/403），清理安全存储
+          user.value = null
+          refreshToken.value = null
+          secureTokenManager.clear()
+        }
+        // 否则保留 token 和 user（Pinia 持久化的），下次操作时再验证
         return
       }
 
@@ -303,7 +325,7 @@ export const useAuthStore = defineStore(
     }
 
     /**
-     * 监听登出事件（由 API client 触发）
+     * 监听登出事件和 token 刷新事件（由 API client 触发）
      * 返回清理函数，用于移除事件监听器
      */
     function setupAuthListener(): () => void {
@@ -322,7 +344,16 @@ export const useAuthStore = defineStore(
         router.push('/login')
       }
 
+      // 监听 apiClient 的 token 刷新事件，同步 store 的 token ref
+      const tokenRefreshHandler = (event: Event) => {
+        const detail = (event as CustomEvent<{ token: string }>).detail
+        if (detail?.token) {
+          token.value = detail.token
+        }
+      }
+
       window.addEventListener('auth:logout', authLogoutHandler)
+      window.addEventListener('auth:token-refreshed', tokenRefreshHandler)
 
       // 返回清理函数
       return () => {
@@ -330,6 +361,7 @@ export const useAuthStore = defineStore(
           window.removeEventListener('auth:logout', authLogoutHandler)
           authLogoutHandler = null
         }
+        window.removeEventListener('auth:token-refreshed', tokenRefreshHandler)
       }
     }
 
@@ -360,11 +392,17 @@ export const useAuthStore = defineStore(
           if (!token.value) return
 
           try {
-            await authService.heartbeat()
+            const heartbeatResp = await authService.heartbeat()
+            // 同步心跳返回的新 token 到 store 和安全存储
+            if (heartbeatResp.access_token) {
+              token.value = heartbeatResp.access_token
+              await secureTokenManager.store(heartbeatResp.access_token).catch(() => {})
+            }
           } catch {
             try {
               const response = await authService.refreshToken(refreshToken.value ?? undefined)
               token.value = response.access_token
+              await secureTokenManager.store(response.access_token).catch(() => {})
               if (response.refresh_token) {
                 refreshToken.value = response.refresh_token
               }

@@ -14,7 +14,44 @@
 
       <h1 class="auth-title">{{ $t('auth.loginTitle') }}</h1>
       <p class="auth-subtitle">{{ $t('auth.loginSubtitle') }}</p>
-      <form class="auth-form" @submit.prevent="handleLogin">
+
+      <!-- 2FA 验证步骤 -->
+      <div v-if="show2fa" class="auth-form">
+        <p class="auth-2fa-hint">{{ $t('auth.twoFactorHint') }}</p>
+        <div class="form-group">
+          <label for="twoFactorCode">{{ $t('auth.twoFactorCode') }}</label>
+          <Input
+            id="twoFactorCode"
+            v-model="twoFactorCode"
+            type="text"
+            inputmode="numeric"
+            pattern="[0-9]*"
+            maxlength="6"
+            :placeholder="$t('auth.twoFactorCodePlaceholder')"
+            autocomplete="one-time-code"
+            required
+            @keydown.enter="handle2faVerify"
+          />
+        </div>
+
+        <p v-if="formError" class="field-error">{{ formError }}</p>
+
+        <Button
+          :loading="isLoading"
+          :disabled="twoFactorCode.length < 6"
+          full-width
+          @click="handle2faVerify"
+        >
+          {{ $t('auth.verifyButton') }}
+        </Button>
+
+        <button type="button" class="auth-2fa-back" @click="reset2fa">
+          {{ $t('auth.backToLogin') }}
+        </button>
+      </div>
+
+      <!-- 正常登录表单 -->
+      <form v-else class="auth-form" @submit.prevent="handleLogin">
         <div class="form-group">
           <label for="usernameOrEmail">{{ $t('auth.usernameOrEmail') }}</label>
           <Input
@@ -77,11 +114,11 @@
         </Button>
       </form>
 
-      <p class="auth-forgot">
+      <p v-if="!show2fa" class="auth-forgot">
         <RouterLink to="/forgot-password">{{ $t('auth.forgotPassword') }}</RouterLink>
       </p>
 
-      <p class="auth-footer">
+      <p v-if="!show2fa" class="auth-footer">
         {{ $t('auth.noAccount') }}
         <RouterLink to="/register">{{ $t('nav.register') }}</RouterLink>
       </p>
@@ -116,6 +153,11 @@ const usernameOrEmail = ref('')
 const password = ref('')
 const showPassword = ref(false)
 const formError = ref('')
+
+// 2FA state
+const show2fa = ref(false)
+const twoFactorCode = ref('')
+const pendingToken = ref('')
 
 const turnstileSiteKey = (import.meta.env.VITE_TURNSTILE_SITE_KEY ?? '').trim()
 const turnstileEnabled = turnstileSiteKey.length > 0
@@ -177,11 +219,38 @@ async function handleLogin() {
       toastStore.warning(t('auth.securityWarningMedium'))
     }
     router.replace(redirectTo.value)
+  } else if (result.requires2fa && result.pendingToken) {
+    // 进入 2FA 验证步骤
+    pendingToken.value = result.pendingToken
+    show2fa.value = true
+    formError.value = ''
   } else {
     turnstileToken.value = null
     turnstileRef.value?.reset()
     toastStore.error(t(result.error || 'auth.invalidCredentials'))
   }
+}
+
+async function handle2faVerify() {
+  formError.value = ''
+  if (twoFactorCode.value.length < 6) return
+
+  const result = await authStore.verify2faLogin(pendingToken.value, twoFactorCode.value)
+
+  if (result.success) {
+    toastStore.success(t('auth.loginSuccess'))
+    router.replace(redirectTo.value)
+  } else {
+    twoFactorCode.value = ''
+    formError.value = t(result.error || 'auth.error.twoFactorInvalid')
+  }
+}
+
+function reset2fa() {
+  show2fa.value = false
+  twoFactorCode.value = ''
+  pendingToken.value = ''
+  formError.value = ''
 }
 
 function handleTurnstileVerify(token: string) {
@@ -367,6 +436,25 @@ function handleTurnstileError() {
 .auth-forgot a:hover {
   color: var(--color-primary);
   text-decoration: underline;
+}
+
+.auth-2fa-hint {
+  text-align: center;
+  font-size: var(--text-sm);
+  color: var(--color-text-tertiary);
+  margin-bottom: var(--spacing-2);
+}
+
+.auth-2fa-back {
+  display: block;
+  margin: var(--spacing-2) auto 0;
+  font-size: var(--text-sm);
+  color: var(--color-text-tertiary);
+  transition: color 150ms ease;
+}
+
+.auth-2fa-back:hover {
+  color: var(--color-primary);
 }
 
 .auth-footer {
