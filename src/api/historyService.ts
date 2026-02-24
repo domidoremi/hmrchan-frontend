@@ -204,7 +204,8 @@ export const historyService = {
       '/history/browsing',
       {
         content_type: contentType,
-        content_id: contentId,
+        // content_id 为 0 时省略，后端可能要求正整数
+        ...(contentId > 0 ? { content_id: contentId } : {}),
         ...(options?.content_uuid ? { content_uuid: options.content_uuid } : {}),
         ...(options?.source ? { source: options.source } : {}),
         ...(options?.duration_seconds != null
