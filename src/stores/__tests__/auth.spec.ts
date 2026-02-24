@@ -309,18 +309,33 @@ describe('Auth Store', () => {
       expect(authService.getCurrentUser).not.toHaveBeenCalled()
     })
 
-    it('should clear state when fetch fails', async () => {
+    it('should clear state when fetch fails with 401', async () => {
       const store = useAuthStore()
       store.token = 'expired-token'
       store.user = createMockUser()
 
-      vi.mocked(authService.getCurrentUser).mockRejectedValueOnce(new Error('Unauthorized'))
+      vi.mocked(authService.getCurrentUser).mockRejectedValueOnce(new ApiError('Unauthorized', 401))
 
       const result = await store.fetchCurrentUser()
 
       expect(result).toBeNull()
       expect(store.user).toBeNull()
       expect(store.token).toBeNull()
+    })
+
+    it('should preserve state when fetch fails with network error', async () => {
+      const store = useAuthStore()
+      store.token = 'valid-token'
+      const mockUser = createMockUser()
+      store.user = mockUser
+
+      vi.mocked(authService.getCurrentUser).mockRejectedValueOnce(new Error('Network Error'))
+
+      const result = await store.fetchCurrentUser()
+
+      expect(result).toBeNull()
+      expect(store.user).toEqual(mockUser)
+      expect(store.token).toBe('valid-token')
     })
   })
 
