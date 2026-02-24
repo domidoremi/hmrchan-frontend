@@ -1,21 +1,14 @@
 <template>
   <div class="comments-tab">
-    <div class="tab-header">
-      <h2 class="tab-title">{{ $t('profile.tabs.comments') }}</h2>
-      <span v-if="total > 0" class="item-count">{{ total }}</span>
-    </div>
-
     <StateIndicator v-if="error" variant="error" :description="error" @action="fetchComments" />
 
-    <div v-else-if="isLoading && comments.length === 0" class="loading-skeleton">
-      <div v-for="i in 5" :key="i" class="comment-skeleton glass-card">
-        <div class="skeleton-content">
-          <div class="skeleton-header">
-            <Skeleton width="80px" height="14px" />
-            <Skeleton width="60px" height="14px" />
-          </div>
-          <Skeleton width="100%" height="16px" />
-          <Skeleton width="70%" height="14px" />
+    <div v-else-if="isLoading && comments.length === 0" class="skeleton-timeline">
+      <div v-for="i in 4" :key="i" class="skeleton-item">
+        <div class="skeleton-dot" />
+        <div class="skeleton-card">
+          <Skeleton width="40%" height="0.75rem" />
+          <Skeleton width="100%" height="1rem" />
+          <Skeleton width="60%" height="0.75rem" />
         </div>
       </div>
     </div>
@@ -27,57 +20,52 @@
         :description="$t('profile.noComments')"
       />
 
-      <div v-else class="comments-list">
+      <div v-else class="timeline">
         <article
-          v-for="comment in comments"
+          v-for="(comment, idx) in comments"
           :key="comment.id"
-          class="comment-item glass-card"
-          :class="{ 'comment-item--deleting': deletingId === comment.id }"
+          class="timeline-item"
+          :class="{ 'timeline-item--deleting': deletingId === comment.id }"
+          :style="{ '--i': idx }"
         >
-          <!-- Comment Header -->
-          <div class="comment-header">
-            <div class="comment-meta">
-              <span class="comment-date">
-                <AnimatedIcon name="explore" :fallback-icon="Clock" size="sm" />
-                {{ formatDate(comment.created_at) }}
-              </span>
-              <span v-if="comment.replies_count" class="comment-replies">
-                <AnimatedIcon name="sparkle" :fallback-icon="MessageCircle" size="sm" />
-                {{ comment.replies_count }} {{ $t('comment.replies') }}
-              </span>
+          <div class="timeline-rail">
+            <div class="timeline-dot">
+              <MessageCircle :size="12" />
             </div>
-            <button
-              class="delete-btn"
-              :disabled="deletingId === comment.id"
-              @click.stop="handleDelete(comment.id)"
-              :aria-label="$t('common.delete')"
-            >
-              <AnimatedIcon name="sparkle" :fallback-icon="Trash2" size="sm" />
-            </button>
+            <div class="timeline-line" />
           </div>
 
-          <!-- Comment Content -->
-          <div class="comment-body">
-            <p class="comment-text">{{ comment.content }}</p>
-          </div>
+          <div class="timeline-card">
+            <div class="card-header">
+              <span class="card-time">{{ formatDate(comment.created_at) }}</span>
+              <div class="card-actions">
+                <span v-if="comment.replies_count" class="reply-count">
+                  {{ comment.replies_count }} {{ $t('comment.replies') }}
+                </span>
+                <button
+                  class="delete-btn"
+                  :disabled="deletingId === comment.id"
+                  :aria-label="$t('common.delete')"
+                  @click.stop="handleDelete(comment.id)"
+                >
+                  <Trash2 :size="14" />
+                </button>
+              </div>
+            </div>
 
-          <!-- Comment Footer -->
-          <div class="comment-footer">
-            <div v-if="comment.post_title" class="comment-context">
-              <AnimatedIcon name="explore" :fallback-icon="MessageSquare" size="sm" />
-              <span class="context-label">{{ $t('profile.commentOn') }}</span>
-              <button class="post-link" @click="goToPost(comment.post_id)">
+            <p class="card-body">{{ comment.content }}</p>
+
+            <div class="card-footer">
+              <button
+                v-if="comment.post_title"
+                class="post-link"
+                @click="goToPost(comment.post_id)"
+              >
+                <ExternalLink :size="12" />
                 {{ comment.post_title }}
               </button>
-            </div>
-            <div class="comment-stats">
-              <span class="stat-item">
-                <AnimatedIcon
-                  name="heart"
-                  :fallback-icon="Heart"
-                  size="sm"
-                  :active="comment.likes_count > 0"
-                />
+              <span class="like-count">
+                <Heart :size="12" :class="{ liked: comment.likes_count > 0 }" />
                 {{ comment.likes_count || 0 }}
               </span>
             </div>
@@ -110,7 +98,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { Heart, MessageCircle, MessageSquare, Trash2, Clock } from 'lucide-vue-next'
+import { Heart, MessageCircle, Trash2, ExternalLink } from 'lucide-vue-next'
 import { apiClient, ApiError } from '@/api'
 import { useToastStore } from '@/stores'
 import { formatRelativeTime } from '@/utils/date'
@@ -118,9 +106,7 @@ import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import Skeleton from '@/components/ui/Skeleton.vue'
 import { defineAsyncComponent } from 'vue'
-import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 
-// 动态导入对话框组件以减少初始包体积
 const ConfirmDialog = defineAsyncComponent(() => import('@/components/ui/ConfirmDialog.vue'))
 
 interface UserComment {
@@ -160,7 +146,6 @@ async function fetchComments(reset = true) {
     if (isLoadingMore.value) return
     isLoadingMore.value = true
   }
-
   error.value = null
 
   try {
@@ -180,11 +165,7 @@ async function fetchComments(reset = true) {
     total.value = res.total
   } catch (err) {
     if (comments.value.length === 0) {
-      if (err instanceof ApiError) {
-        error.value = err.message
-      } else {
-        error.value = t('common.error')
-      }
+      error.value = err instanceof ApiError ? err.message : t('common.error')
     }
   } finally {
     isLoading.value = false
@@ -194,7 +175,6 @@ async function fetchComments(reset = true) {
 
 async function loadMore() {
   if (!hasMore.value || isLoading.value || isLoadingMore.value) return
-
   page.value++
   await fetchComments(false)
 }
@@ -214,7 +194,6 @@ function handleDelete(commentId: string) {
 
 async function confirmDelete() {
   if (!pendingDeleteId.value) return
-
   const commentId = pendingDeleteId.value
   deletingId.value = commentId
 
@@ -224,11 +203,7 @@ async function confirmDelete() {
     total.value = Math.max(0, total.value - 1)
     toastStore.success(t('comment.deleteSuccess'))
   } catch (err) {
-    if (err instanceof ApiError) {
-      toastStore.error(err.message)
-    } else {
-      toastStore.error(t('comment.error.deleteFailed'))
-    }
+    toastStore.error(err instanceof ApiError ? err.message : t('comment.error.deleteFailed'))
   } finally {
     pendingDeleteId.value = null
     deletingId.value = null
@@ -242,183 +217,256 @@ onMounted(() => {
 
 <style scoped>
 .comments-tab {
-  min-height: 400px;
+  min-height: 20rem;
 }
 
-.tab-header {
+/* ===== Skeleton ===== */
+.skeleton-timeline {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  gap: var(--spacing-4);
+  padding-left: clamp(1.5rem, 3vw, 2.5rem);
+}
+
+.skeleton-item {
+  display: flex;
   gap: var(--spacing-3);
-  margin-bottom: var(--spacing-6);
+  align-items: flex-start;
 }
 
-.tab-title {
-  font-size: var(--text-xl);
-  font-weight: var(--font-bold);
-  margin: 0;
-}
-
-.item-count {
-  padding: 0.25rem 0.75rem;
-  background: var(--glass-bg-light);
+.skeleton-dot {
+  width: 1.25rem;
+  height: 1.25rem;
   border-radius: var(--radius-full);
-  font-size: var(--text-sm);
-  color: var(--color-text-secondary);
+  background: var(--glass-bg-medium);
+  flex-shrink: 0;
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
 }
 
-/* Loading Skeleton */
-.loading-skeleton {
+@keyframes skeleton-pulse {
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+.skeleton-card {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-4);
-}
-
-.comment-skeleton {
+  gap: var(--spacing-2);
   padding: var(--spacing-4);
-}
-
-.skeleton-content {
-  display: flex;
-  flex-direction: column;
-}
-
-.skeleton-header {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: var(--spacing-2);
-}
-
-/* Comments List */
-.comments-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-4);
-}
-
-/* Comment Item */
-.comment-item {
-  padding: var(--spacing-4);
-  transition: all var(--transition-base);
-  border: 1px solid transparent;
-  position: relative;
   background: var(--glass-bg-light);
   border-radius: var(--radius-lg);
 }
 
-.comment-item:hover {
-  border-color: rgba(var(--color-primary-rgb), 0.2);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+/* ===== Timeline ===== */
+.timeline {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.5rem, 1.5vw, 0.75rem);
 }
 
-.comment-item--deleting {
-  opacity: 0.5;
+.timeline-item {
+  display: flex;
+  gap: clamp(0.75rem, 2vw, 1.25rem);
+  animation: stagger-fade-in var(--duration-slow) var(--ease-out-smooth) forwards;
+  animation-delay: calc(var(--i) * 60ms);
+  opacity: 0;
+}
+
+.timeline-item--deleting {
+  opacity: 0.4;
   pointer-events: none;
+  transform: scale(0.97);
+  transition:
+    opacity var(--duration-normal) var(--ease-smooth),
+    transform var(--duration-normal) var(--ease-smooth);
 }
 
-/* Comment Header */
-.comment-header {
+/* Rail */
+.timeline-rail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+  width: 1.25rem;
+  padding-top: clamp(1rem, 2vw, 1.25rem);
+}
+
+.timeline-dot {
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: var(--radius-full);
+  background: rgba(var(--color-primary-rgb), 0.1);
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  z-index: 1;
+  transition: transform var(--duration-fast) var(--ease-bounce-soft);
+}
+
+.timeline-item:hover .timeline-dot {
+  transform: scale(1.2);
+  background: rgba(var(--color-primary-rgb), 0.2);
+}
+
+.timeline-line {
+  flex: 1;
+  width: 2px;
+  background: linear-gradient(to bottom, rgba(var(--color-primary-rgb), 0.15), transparent);
+  margin-top: var(--spacing-1);
+}
+
+/* Card */
+.timeline-card {
+  flex: 1;
+  min-width: 0;
+  padding: clamp(0.875rem, 2vw, 1.25rem);
+  background: var(--glass-bg-light);
+  backdrop-filter: blur(var(--blur-md));
+  -webkit-backdrop-filter: blur(var(--blur-md));
+  border: 1px solid var(--glass-border-medium);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--glass-shadow-sm);
+  position: relative;
+  overflow: hidden;
+  transition:
+    transform var(--duration-normal) var(--ease-out-smooth),
+    box-shadow var(--duration-normal) var(--ease-out-smooth),
+    border-color var(--duration-fast) var(--ease-smooth);
+}
+
+.timeline-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 0.0625rem;
+  background: var(--highlight-gradient);
+  opacity: 0.6;
+}
+
+.timeline-card:hover {
+  transform: var(--lift-sm);
+  box-shadow: var(--glass-shadow-hover);
+  border-color: var(--glass-border-light);
+}
+
+/* Card Header */
+.card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: var(--spacing-3);
+  margin-bottom: var(--spacing-2);
+  gap: var(--spacing-2);
 }
 
-.comment-meta {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-4);
-}
-
-.comment-date,
-.comment-replies {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-1);
+.card-time {
   font-size: var(--text-xs);
   color: var(--color-text-tertiary);
+  font-weight: var(--font-medium);
 }
 
-.comment-replies {
-  color: var(--color-text-secondary);
+.card-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
 }
 
-/* Delete Button */
+.reply-count {
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+  padding: 0.0625rem 0.375rem;
+  background: var(--glass-bg-medium);
+  border-radius: var(--radius-full);
+}
+
 .delete-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 1.75rem;
-  height: 1.75rem;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: var(--radius-full);
   background: transparent;
-  border: none;
+  border: 1px solid transparent;
   color: var(--color-text-tertiary);
-  border-radius: var(--radius-md);
   cursor: pointer;
   opacity: 0;
-  transition: all var(--transition-fast);
+  transition:
+    opacity var(--duration-fast) var(--ease-smooth),
+    color var(--duration-fast) var(--ease-smooth),
+    background var(--duration-fast) var(--ease-smooth),
+    border-color var(--duration-fast) var(--ease-smooth),
+    transform var(--duration-fast) var(--ease-bounce-soft);
 }
 
-.comment-item:hover .delete-btn {
+.timeline-card:hover .delete-btn {
   opacity: 1;
 }
 
-.delete-btn:hover {
-  background: rgba(239, 68, 68, 0.1);
+.delete-btn:hover:not(:disabled) {
   color: var(--color-error);
+  background: rgba(239, 68, 68, 0.06);
+  border-color: rgba(239, 68, 68, 0.2);
+  transform: scale(1.1);
 }
 
 .delete-btn:disabled {
+  opacity: 0.3;
   cursor: not-allowed;
-  opacity: 0.5;
 }
 
-/* Comment Body */
-.comment-body {
-  margin-bottom: var(--spacing-3);
-}
-
-.comment-text {
+/* Card Body */
+.card-body {
   margin: 0;
   color: var(--color-text-primary);
   line-height: 1.6;
-  font-size: var(--text-base);
-  word-break: break-word;
+  font-size: var(--text-sm);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
 }
 
-/* Comment Footer */
-.comment-footer {
+/* Card Footer */
+.card-footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-top: var(--spacing-3);
   padding-top: var(--spacing-3);
-  border-top: 1px solid var(--glass-border);
-}
-
-.comment-context {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-2);
-  font-size: var(--text-sm);
-  color: var(--color-text-secondary);
-  flex: 1;
-  min-width: 0;
-}
-
-.context-label {
-  flex-shrink: 0;
+  border-top: 1px solid var(--glass-border-subtle);
+  gap: var(--spacing-3);
 }
 
 .post-link {
-  color: var(--color-primary);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-1);
   background: none;
   border: none;
+  color: var(--color-primary);
+  cursor: pointer;
   padding: 0;
   font: inherit;
-  cursor: pointer;
-  transition: color var(--transition-fast);
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+  transition: color var(--duration-fast) var(--ease-smooth);
 }
 
 .post-link:hover {
@@ -426,84 +474,136 @@ onMounted(() => {
   text-decoration: underline;
 }
 
-/* Comment Stats */
-.comment-stats {
-  display: flex;
-  gap: var(--spacing-3);
+.like-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
   flex-shrink: 0;
 }
 
-.stat-item {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-1);
-  font-size: var(--text-sm);
-  color: var(--color-text-tertiary);
-}
-
-.stat-icon--active {
+.liked {
   color: var(--color-error);
 }
 
-/* Mobile Responsive */
+/* ===== Responsive ===== */
 @media (max-width: 768px) {
-  .tab-header {
-    margin-bottom: var(--spacing-4);
+  .timeline-rail {
+    width: 1rem;
   }
 
-  .tab-title {
-    font-size: var(--text-lg);
+  .timeline-dot {
+    width: 1rem;
+    height: 1rem;
   }
 
-  .comments-list {
-    gap: var(--spacing-3);
-  }
-
-  .comment-item {
-    padding: var(--spacing-3);
-  }
-
-  .comment-item .delete-btn {
+  .delete-btn {
     opacity: 1;
   }
 
-  .comment-header {
-    margin-bottom: var(--spacing-2);
-  }
-
-  .comment-meta {
-    gap: var(--spacing-3);
-  }
-
-  .comment-text {
-    font-size: var(--text-sm);
-  }
-
-  .comment-footer {
+  .card-footer {
     flex-direction: column;
     align-items: flex-start;
-    gap: var(--spacing-2);
-    padding-top: var(--spacing-2);
-  }
-
-  .comment-context {
-    width: 100%;
-  }
-
-  .comment-stats {
-    width: 100%;
-    justify-content: flex-start;
   }
 }
+</style>
 
-@media (max-width: 480px) {
-  .comment-item {
-    border-radius: var(--radius-md);
-  }
+<style>
+/* ===== Material 3 Overrides ===== */
+#app[data-ui-style='material'] .comments-tab .timeline-card {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  background: var(--color-surface, var(--glass-bg-light));
+  border-radius: 12px;
+  border: 1px solid var(--md-outline-variant, var(--glass-border-medium));
+  box-shadow: var(--shadow-sm);
+}
 
-  .comment-meta {
-    flex-wrap: wrap;
-    gap: var(--spacing-2);
-  }
+#app[data-ui-style='material'] .comments-tab .timeline-card::before {
+  display: none;
+}
+
+#app[data-ui-style='material'] .comments-tab .timeline-card:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+#app[data-ui-style='material'] .comments-tab .timeline-dot {
+  border-radius: 6px;
+  background: rgba(var(--color-primary-rgb), 0.12);
+}
+
+#app[data-ui-style='material'] .comments-tab .timeline-item:hover .timeline-dot {
+  background: rgba(var(--color-primary-rgb), 0.2);
+}
+
+#app[data-ui-style='material'] .comments-tab .skeleton-card {
+  border-radius: 12px;
+}
+
+#app[data-ui-style='material'] .comments-tab .reply-count {
+  border-radius: 4px;
+}
+
+#app[data-ui-style='material'] .comments-tab .delete-btn {
+  border-radius: 50%;
+}
+
+#app[data-ui-style='material'] .comments-tab .delete-btn:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.12);
+}
+
+/* ===== Dark Theme Overrides ===== */
+[data-theme='dark'] .comments-tab .timeline-dot {
+  background: rgba(var(--color-primary-rgb), 0.2);
+}
+
+[data-theme='dark'] .comments-tab .timeline-line {
+  background: linear-gradient(to bottom, rgba(var(--color-primary-rgb), 0.25), transparent);
+}
+
+[data-theme='dark'] .comments-tab .card-footer {
+  border-top-color: rgba(255, 255, 255, 0.06);
+}
+
+/* ===== Blue Theme Overrides ===== */
+[data-theme='blue'] .comments-tab .timeline-dot {
+  background: rgba(59, 130, 246, 0.12);
+  color: #3b82f6;
+}
+
+[data-theme='blue'] .comments-tab .timeline-item:hover .timeline-dot {
+  background: rgba(59, 130, 246, 0.22);
+}
+
+[data-theme='blue'] .comments-tab .timeline-line {
+  background: linear-gradient(to bottom, rgba(59, 130, 246, 0.18), transparent);
+}
+
+[data-theme='blue'] .comments-tab .like-count .liked {
+  color: #3b82f6;
+}
+
+/* ===== Material + Dark ===== */
+#app[data-ui-style='material'][data-theme='dark'] .comments-tab .timeline-card {
+  background: var(--md-surface-container, rgba(28, 28, 32, 0.92));
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+#app[data-ui-style='material'][data-theme='dark'] .comments-tab .timeline-card:hover {
+  background: var(--md-surface-container-high, rgba(34, 34, 38, 0.95));
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* ===== Material + Blue ===== */
+#app[data-ui-style='material'][data-theme='blue'] .comments-tab .timeline-card {
+  background: #ffffff;
+  border-color: rgba(59, 130, 246, 0.12);
+  box-shadow: 0 1px 3px rgba(59, 130, 246, 0.08);
+}
+
+#app[data-ui-style='material'][data-theme='blue'] .comments-tab .timeline-card:hover {
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.12);
 }
 </style>

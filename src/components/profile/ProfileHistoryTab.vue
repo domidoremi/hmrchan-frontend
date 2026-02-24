@@ -3,8 +3,9 @@
     <div class="tab-header">
       <h2 class="tab-title">{{ $t('profile.tabs.history') }}</h2>
       <span v-if="total > 0" class="item-count">{{ total }}</span>
+      <div class="tab-header-spacer" />
       <Button v-if="history.length > 0" variant="ghost" size="sm" @click="clearHistory">
-        <AnimatedIcon name="sparkle" :fallback-icon="Trash2" size="sm" />
+        <Trash2 :size="14" />
         {{ $t('profile.clearHistory') }}
       </Button>
     </div>
@@ -12,11 +13,11 @@
     <StateIndicator v-if="error" variant="error" :description="error" @action="fetchHistory" />
 
     <div v-else-if="isLoading && history.length === 0" class="history-skeleton">
-      <div v-for="i in 5" :key="i" class="history-item glass-card">
-        <Skeleton width="60px" height="60px" />
-        <div style="flex: 1">
-          <Skeleton width="70%" height="18px" />
-          <Skeleton width="40%" height="14px" />
+      <div v-for="i in 4" :key="i" class="skeleton-row">
+        <div class="skeleton-thumb skeleton-enhanced" />
+        <div class="skeleton-info">
+          <Skeleton width="70%" height="1rem" />
+          <Skeleton width="40%" height="0.75rem" />
         </div>
       </div>
     </div>
@@ -28,35 +29,46 @@
         :description="$t('profile.noHistory')"
       />
 
-      <div v-else class="history-list">
-        <article
-          v-for="item in history"
-          :key="item.id"
-          class="history-item glass-card"
-          @click="goToPost(item.post_uuid, item.post.thumbnail_url)"
-        >
-          <div class="history-thumbnail">
-            <img
-              v-if="item.post.thumbnail_url"
-              :src="item.post.thumbnail_url"
-              :alt="item.post.title"
-              loading="lazy"
-            />
-            <div v-else class="thumbnail-placeholder">
-              <AnimatedIcon name="explore" :fallback-icon="Clock" size="md" />
-            </div>
+      <div v-else class="history-groups">
+        <section v-for="group in groupedHistory" :key="group.label" class="history-group">
+          <div class="group-header">
+            <span class="group-label">{{ group.label }}</span>
+            <span class="group-count">{{ group.items.length }}</span>
+            <span class="group-line" />
           </div>
-          <div class="history-content">
-            <h3 class="history-title">{{ item.post.title }}</h3>
-            <p v-if="item.post.author_name" class="history-author">{{ item.post.author_name }}</p>
-            <div class="history-meta">
-              <span>
-                <AnimatedIcon name="explore" :fallback-icon="Clock" size="sm" />
-                {{ formatDate(item.viewed_at) }}
-              </span>
-            </div>
+
+          <div class="group-grid">
+            <article
+              v-for="(item, idx) in group.items"
+              :key="item.id"
+              class="history-card glass-card-enhanced"
+              :style="{ '--stagger': idx }"
+              @click="goToPost(item.post_uuid, item.post.thumbnail_url)"
+            >
+              <div class="card-thumb">
+                <img
+                  v-if="item.post.thumbnail_url"
+                  :src="item.post.thumbnail_url"
+                  :alt="item.post.title"
+                  loading="lazy"
+                  decoding="async"
+                />
+                <div v-else class="thumb-placeholder">
+                  <Clock :size="20" />
+                </div>
+                <span class="card-time">
+                  {{ formatTime(item.viewed_at) }}
+                </span>
+              </div>
+              <div class="card-info">
+                <h3 class="card-title">{{ item.post.title }}</h3>
+                <p v-if="item.post.author_name" class="card-author">
+                  {{ item.post.author_name }}
+                </p>
+              </div>
+            </article>
           </div>
-        </article>
+        </section>
       </div>
 
       <LoadMoreSection
@@ -69,7 +81,6 @@
       />
     </template>
 
-    <!-- Clear History Confirmation -->
     <ConfirmDialog
       v-model:is-open="showClearDialog"
       :title="$t('profile.confirmClearHistoryTitle')"
@@ -89,15 +100,12 @@ import { Clock, Trash2 } from 'lucide-vue-next'
 import { useToastStore } from '@/stores'
 import { apiClient, ApiError } from '@/api'
 import { extractMediaIdFromUrl } from '@/utils/mediaOptimizer'
-import { formatRelativeTime } from '@/utils/date'
 import Button from '@/components/ui/Button.vue'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import Skeleton from '@/components/ui/Skeleton.vue'
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
-import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 
-// API 返回的原始数据结构
 interface ApiHistoryItem {
   id: number
   content_type: string
@@ -113,7 +121,6 @@ interface ApiHistoryItem {
   } | null
 }
 
-// 前端使用的数据结构
 interface HistoryItem {
   id: number
   post_uuid: string
@@ -126,7 +133,11 @@ interface HistoryItem {
   viewed_at: string
 }
 
-// 转换 API 数据为前端格式
+interface HistoryGroup {
+  label: string
+  items: HistoryItem[]
+}
+
 function transformHistoryItem(item: ApiHistoryItem): HistoryItem {
   const authorName = item.content_preview?.author_name
   return {
@@ -157,6 +168,37 @@ const showClearDialog = ref(false)
 
 const hasMore = computed(() => history.value.length < total.value)
 
+const groupedHistory = computed<HistoryGroup[]>(() => {
+  const now = new Date()
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const yesterday = new Date(today.getTime() - 86400000)
+  const weekAgo = new Date(today.getTime() - 7 * 86400000)
+
+  const groups: Record<string, HistoryItem[]> = {}
+  const order: string[] = []
+
+  for (const item of history.value) {
+    const d = new Date(item.viewed_at)
+    let label: string
+    if (d >= today) {
+      label = t('common.today')
+    } else if (d >= yesterday) {
+      label = t('common.yesterday')
+    } else if (d >= weekAgo) {
+      label = t('common.thisWeek')
+    } else {
+      label = t('common.earlier')
+    }
+    if (!groups[label]) {
+      groups[label] = []
+      order.push(label)
+    }
+    groups[label]!.push(item)
+  }
+
+  return order.map((label) => ({ label, items: groups[label]! }))
+})
+
 async function fetchHistory(reset = true) {
   if (reset) {
     if (isLoading.value) return
@@ -166,7 +208,6 @@ async function fetchHistory(reset = true) {
     if (isLoadingMore.value) return
     isLoadingMore.value = true
   }
-
   error.value = null
 
   try {
@@ -179,7 +220,6 @@ async function fetchHistory(reset = true) {
     }>(`/history/browsing?page=${page.value}&page_size=${pageSize}`)
 
     const transformedItems = res.items.map(transformHistoryItem)
-
     if (reset) {
       history.value = transformedItems
     } else {
@@ -188,11 +228,7 @@ async function fetchHistory(reset = true) {
     total.value = res.total
   } catch (err) {
     if (history.value.length === 0) {
-      if (err instanceof ApiError) {
-        error.value = err.message
-      } else {
-        error.value = t('common.error')
-      }
+      error.value = err instanceof ApiError ? err.message : t('common.error')
     }
   } finally {
     isLoading.value = false
@@ -202,7 +238,6 @@ async function fetchHistory(reset = true) {
 
 async function loadMore() {
   if (!hasMore.value || isLoading.value || isLoadingMore.value) return
-
   page.value++
   await fetchHistory(false)
 }
@@ -218,16 +253,13 @@ async function confirmClearHistory() {
     total.value = 0
     toastStore.success(t('profile.historyCleared'))
   } catch (err) {
-    if (err instanceof ApiError) {
-      toastStore.error(err.message)
-    } else {
-      toastStore.error(t('common.error'))
-    }
+    toastStore.error(err instanceof ApiError ? err.message : t('common.error'))
   }
 }
 
-function formatDate(dateStr: string): string {
-  return formatRelativeTime(dateStr, t)
+function formatTime(dateStr: string): string {
+  const d = new Date(dateStr)
+  return d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
 }
 
 function goToPost(postId: string, thumbnailUrl?: string | null) {
@@ -248,71 +280,152 @@ onMounted(() => {
 
 <style scoped>
 .history-tab {
-  min-height: 400px;
+  min-height: 20rem;
 }
 
 .tab-header {
   display: flex;
   align-items: center;
   gap: var(--spacing-3);
-  margin-bottom: var(--spacing-6);
+  margin-bottom: clamp(1.25rem, 3vw, 2rem);
 }
 
 .tab-title {
-  font-size: var(--text-xl);
+  font-size: clamp(var(--text-lg), 2.5vw, var(--text-xl));
   font-weight: var(--font-bold);
   margin: 0;
+}
+
+.tab-header-spacer {
   flex: 1;
 }
 
 .item-count {
-  padding: 0.25rem 0.75rem;
-  background: var(--glass-bg-light);
+  padding: 0.125rem 0.625rem;
+  background: rgba(var(--color-primary-rgb), 0.08);
   border-radius: var(--radius-full);
-  font-size: var(--text-sm);
-  color: var(--color-text-secondary);
+  font-size: var(--text-xs);
+  color: var(--color-primary);
+  font-weight: var(--font-medium);
 }
 
+/* ===== Skeleton ===== */
 .history-skeleton {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 10rem), 1fr));
   gap: var(--spacing-3);
 }
 
-.history-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-3);
-}
-
-.history-item {
-  display: flex;
-  gap: var(--spacing-4);
-  padding: var(--spacing-4);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-}
-
-.history-item:hover {
-  transform: translateX(4px);
-}
-
-.history-thumbnail {
-  width: 5rem;
-  height: 5rem;
-  flex-shrink: 0;
-  border-radius: var(--radius-md);
+.skeleton-row {
+  border-radius: var(--radius-lg);
   overflow: hidden;
   background: var(--glass-bg-light);
 }
 
-.history-thumbnail img {
+.skeleton-thumb {
+  width: 100%;
+  aspect-ratio: 1;
+  background: var(--glass-bg-medium);
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes skeleton-pulse {
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+.skeleton-info {
+  padding: var(--spacing-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+}
+
+/* ===== Grouped History ===== */
+.history-groups {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(1.5rem, 4vw, 2.5rem);
+}
+
+.group-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  margin-bottom: clamp(0.75rem, 2vw, 1rem);
+}
+
+.group-label {
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  color: var(--color-text-primary);
+  white-space: nowrap;
+}
+
+.group-count {
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+  padding: 0.0625rem 0.375rem;
+  background: var(--glass-bg-medium);
+  border-radius: var(--radius-full);
+}
+
+.group-line {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(to right, var(--glass-border-medium), transparent);
+}
+
+/* ===== Grid ===== */
+.group-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 10rem), 1fr));
+  gap: clamp(0.625rem, 1.5vw, 1rem);
+}
+
+/* ===== History Card ===== */
+.history-card {
+  cursor: pointer;
+  overflow: hidden;
+  animation: stagger-fade-in var(--duration-slow) var(--ease-out-smooth) forwards;
+  animation-delay: calc(var(--stagger) * 50ms);
+  opacity: 0;
+  transition:
+    transform var(--duration-fast) var(--ease-out-smooth),
+    box-shadow var(--duration-fast) var(--ease-smooth);
+}
+
+.history-card:hover {
+  transform: var(--lift-sm);
+  box-shadow: var(--glass-shadow-hover);
+}
+
+/* Thumbnail */
+.card-thumb {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  overflow: hidden;
+  background: var(--glass-bg-light);
+}
+
+.card-thumb img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: transform var(--duration-slow) var(--ease-smooth);
 }
 
-.thumbnail-placeholder {
+.history-card:hover .card-thumb img {
+  transform: scale(1.05);
+}
+
+.thumb-placeholder {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -321,15 +434,27 @@ onMounted(() => {
   color: var(--color-text-tertiary);
 }
 
-.history-content {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-1);
+.card-time {
+  position: absolute;
+  bottom: var(--spacing-1);
+  right: var(--spacing-1);
+  padding: 0.0625rem 0.375rem;
+  background: rgba(0, 0, 0, 0.6);
+  color: var(--color-white);
+  font-size: 0.625rem;
+  font-weight: var(--font-medium);
+  border-radius: var(--radius-sm);
+  backdrop-filter: blur(4px);
+  font-variant-numeric: tabular-nums;
 }
 
-.history-title {
-  font-size: var(--text-base);
+/* Info */
+.card-info {
+  padding: var(--spacing-2);
+}
+
+.card-title {
+  font-size: var(--text-xs);
   font-weight: var(--font-semibold);
   margin: 0;
   overflow: hidden;
@@ -341,51 +466,103 @@ onMounted(() => {
   line-height: 1.4;
 }
 
-.history-author {
-  font-size: var(--text-sm);
-  color: var(--color-text-secondary);
-  margin: 0;
-}
-
-.history-meta {
-  display: flex;
-  gap: var(--spacing-2);
+.card-author {
   font-size: var(--text-xs);
-  color: var(--color-text-tertiary);
+  color: var(--color-text-secondary);
+  margin: var(--spacing-1) 0 0;
 }
 
-.history-meta span {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-1);
-}
-
+/* ===== Responsive ===== */
 @media (max-width: 768px) {
   .tab-header {
-    margin-bottom: var(--spacing-4);
     flex-wrap: wrap;
   }
 
-  .tab-title {
-    font-size: var(--text-lg);
+  .group-grid {
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 8rem), 1fr));
+    gap: var(--spacing-2);
   }
+}
 
-  .history-item {
-    gap: var(--spacing-3);
-    padding: var(--spacing-3);
+@media (max-width: 480px) {
+  .group-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
+}
+</style>
 
-  .history-thumbnail {
-    width: 3.75rem;
-    height: 3.75rem;
-  }
+<style>
+/* ===== Material 3 Overrides ===== */
+#app[data-ui-style='material'] .history-tab .history-card {
+  border-radius: 12px;
+}
 
-  .history-title {
-    font-size: var(--text-sm);
-  }
+#app[data-ui-style='material'] .history-tab .history-card:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
 
-  .history-author {
-    font-size: var(--text-xs);
-  }
+#app[data-ui-style='material'] .history-tab .card-time {
+  border-radius: 4px;
+}
+
+#app[data-ui-style='material'] .history-tab .group-count {
+  border-radius: 4px;
+}
+
+#app[data-ui-style='material'] .history-tab .item-count {
+  border-radius: 4px;
+}
+
+#app[data-ui-style='material'] .history-tab .group-line {
+  background: var(--md-outline-variant, var(--glass-border-medium));
+}
+
+/* ===== Dark Theme Overrides ===== */
+[data-theme='dark'] .history-tab .card-time {
+  background: rgba(0, 0, 0, 0.75);
+}
+
+[data-theme='dark'] .history-tab .group-line {
+  background: linear-gradient(to right, rgba(255, 255, 255, 0.08), transparent);
+}
+
+[data-theme='dark'] .history-tab .thumb-placeholder {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+/* ===== Blue Theme Overrides ===== */
+[data-theme='blue'] .history-tab .item-count {
+  background: rgba(59, 130, 246, 0.08);
+  color: #3b82f6;
+}
+
+[data-theme='blue'] .history-tab .group-line {
+  background: linear-gradient(to right, rgba(59, 130, 246, 0.15), transparent);
+}
+
+[data-theme='blue'] .history-tab .group-count {
+  background: rgba(59, 130, 246, 0.08);
+  color: #3b82f6;
+}
+
+/* ===== Material + Dark ===== */
+#app[data-ui-style='material'][data-theme='dark'] .history-tab .history-card {
+  background: var(--md-surface-container, rgba(28, 28, 32, 0.92));
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+#app[data-ui-style='material'][data-theme='dark'] .history-tab .history-card:hover {
+  background: var(--md-surface-container-high, rgba(34, 34, 38, 0.95));
+}
+
+/* ===== Material + Blue ===== */
+#app[data-ui-style='material'][data-theme='blue'] .history-tab .history-card {
+  border-color: rgba(59, 130, 246, 0.1);
+  box-shadow: 0 1px 3px rgba(59, 130, 246, 0.06);
+}
+
+#app[data-ui-style='material'][data-theme='blue'] .history-tab .history-card:hover {
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
 }
 </style>

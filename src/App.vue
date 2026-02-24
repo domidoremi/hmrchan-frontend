@@ -231,6 +231,12 @@ main {
   padding-top: var(--navbar-height);
 }
 
+@media (max-width: 768px) {
+  main {
+    padding-bottom: var(--mobile-nav-height);
+  }
+}
+
 .route-view {
   position: relative;
   min-height: calc(100svh - var(--navbar-height));
