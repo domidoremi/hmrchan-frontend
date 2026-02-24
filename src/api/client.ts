@@ -39,6 +39,42 @@ export { API_AUTH_URL }
 const REQUEST_TIMEOUT = 30000
 const REFRESH_TIMEOUT = 10000 // Token 刷新超时时间
 
+// ── 全局请求节流器 ──────────────────────────────────────────────
+// 限制并发请求数，防止短时间内打出过多请求触发后端 429
+const MAX_CONCURRENT = 4
+let activeCount = 0
+const waitQueue: Array<() => void> = []
+
+function acquireSlot(): Promise<void> {
+  if (activeCount < MAX_CONCURRENT) {
+    activeCount++
+    return Promise.resolve()
+  }
+  return new Promise<void>((resolve) => {
+    waitQueue.push(() => {
+      activeCount++
+      resolve()
+    })
+  })
+}
+
+function releaseSlot(): void {
+  activeCount--
+  const next = waitQueue.shift()
+  if (next) next()
+}
+
+// 429 退避：全局冷却时间戳，在此之前所有请求排队等待
+let rateLimitedUntil = 0
+
+async function waitForRateLimit(): Promise<void> {
+  const now = Date.now()
+  if (rateLimitedUntil > now) {
+    await new Promise<void>((r) => setTimeout(r, rateLimitedUntil - now))
+  }
+}
+// ── 节流器结束 ──────────────────────────────────────────────────
+
 // 请求队列（用于 token 刷新时暂存请求）
 let isRefreshing = false
 let refreshSubscribers: Array<{
@@ -421,15 +457,60 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
   const timeoutId = setTimeout(() => controller.abort(), timeout)
 
   try {
-    const response = await fetch(url, {
-      ...fetchConfig,
-      body: body ?? null,
-      headers,
-      credentials: 'include', // 始终发送 cookies
-      signal: controller.signal,
-    })
+    // 等待全局 429 冷却 + 获取并发槽位
+    await waitForRateLimit()
+    await acquireSlot()
+
+    let response: Response
+    try {
+      response = await fetch(url, {
+        ...fetchConfig,
+        body: body ?? null,
+        headers,
+        credentials: 'include', // 始终发送 cookies
+        signal: controller.signal,
+      })
+    } finally {
+      releaseSlot()
+    }
 
     clearTimeout(timeoutId)
+
+    // 429 自动退避：读取 Retry-After 并重试一次
+    if (response.status === 429) {
+      const retryAfter = response.headers.get('Retry-After')
+      const waitSec = retryAfter ? Math.min(parseInt(retryAfter, 10) || 5, 60) : 5
+      const waitMs = waitSec * 1000
+      rateLimitedUntil = Date.now() + waitMs
+
+      // 对于预加载等静默请求，直接抛出不重试
+      if (skipErrorToast) {
+        await handleErrorResponse(response, skipErrorToast)
+      }
+
+      // 等待冷却后重试一次
+      await new Promise<void>((r) => setTimeout(r, waitMs))
+      await acquireSlot()
+      const retryCtrl = new AbortController()
+      const retryTid = setTimeout(() => retryCtrl.abort(), timeout)
+      try {
+        response = await fetch(url, {
+          ...fetchConfig,
+          body: body ?? null,
+          headers,
+          credentials: 'include',
+          signal: retryCtrl.signal,
+        })
+      } finally {
+        clearTimeout(retryTid)
+        releaseSlot()
+      }
+
+      // 重试后仍然 429，走正常错误处理
+      if (!response.ok) {
+        await handleErrorResponse(response, skipErrorToast)
+      }
+    }
 
     // 处理 401 未授权 - 仅在之前有 token 时尝试刷新（避免 guest 用户触发无意义的刷新循环）
     if (response.status === 401 && !skipAuth && hadToken) {
