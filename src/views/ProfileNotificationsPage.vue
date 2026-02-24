@@ -52,7 +52,7 @@
 
       <!-- Content -->
       <div class="page-body glass-card-enhanced">
-        <ProfileNotificationsTab ref="notifTabRef" />
+        <ProfileNotificationsTab />
       </div>
     </div>
   </div>
@@ -61,7 +61,7 @@
 <script setup lang="ts">
 defineOptions({ name: 'ProfileNotificationsPage' })
 
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
   Bell,
@@ -73,6 +73,7 @@ import {
   AlertCircle,
 } from 'lucide-vue-next'
 import { useNotificationsStore, useToastStore } from '@/stores'
+import type { NotificationType } from '@/api'
 import ProfileNotificationsTab from '@/components/profile/ProfileNotificationsTab.vue'
 import ProfileSubPageHeader from '@/components/profile/ProfileSubPageHeader.vue'
 import Button from '@/components/ui/Button.vue'
@@ -85,15 +86,14 @@ const activeFilter = ref('all')
 
 const total = computed(() => notifStore.total)
 const unreadCount = computed(() => notifStore.unreadCount)
+
+const COMMENT_TYPES = ['comment_reply', 'comment_mention', 'reply']
+const LIKE_TYPES = ['comment_like', 'like']
+
 const commentCount = computed(
-  () =>
-    notifStore.items.filter((n) =>
-      ['comment', 'comment_reply', 'comment_mention', 'reply'].includes(n.type)
-    ).length
+  () => notifStore.items.filter((n) => COMMENT_TYPES.includes(n.type)).length
 )
-const likeCount = computed(
-  () => notifStore.items.filter((n) => ['like', 'comment_like'].includes(n.type)).length
-)
+const likeCount = computed(() => notifStore.items.filter((n) => LIKE_TYPES.includes(n.type)).length)
 
 const filters = computed(() => [
   { value: 'all', label: t('common.all'), icon: Inbox },
@@ -102,6 +102,21 @@ const filters = computed(() => [
   { value: 'likes', label: t('profile.tabs.likes'), icon: Heart },
   { value: 'system', label: t('profile.system'), icon: AlertCircle },
 ])
+
+// 筛选器 → store.setFilter 映射
+const FILTER_TYPE_MAP: Record<string, NotificationType | undefined> = {
+  all: undefined,
+  unread: undefined,
+  comments: 'comment_reply',
+  likes: 'comment_like',
+  system: 'system',
+}
+
+watch(activeFilter, (value) => {
+  const type = FILTER_TYPE_MAP[value]
+  const unreadOnly = value === 'unread'
+  notifStore.setFilter(type, unreadOnly)
+})
 
 async function handleMarkAllRead() {
   await notifStore.markAllAsRead()
