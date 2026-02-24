@@ -484,6 +484,8 @@
       :action="emailVerifyAction"
       :email="profile?.email ?? ''"
       :target-email="emailVerifyTarget"
+      :password="emailVerifyPassword"
+      :new-password="emailVerifyNewPassword"
       @close="showEmailVerify = false"
       @verified="handleEmailVerified"
     />
@@ -512,7 +514,7 @@ import {
   RefreshCw,
   Mail,
 } from 'lucide-vue-next'
-import { userService, normalizeAvatarUrl, type UserProfile, ApiError, authService } from '@/api'
+import { userService, normalizeAvatarUrl, type UserProfile, ApiError } from '@/api'
 import { useAuthStore, useToastStore } from '@/stores'
 import { refreshAvatarCache } from '@/composables/useUserAvatar'
 import { checkPasswordStrength } from '@/utils/crypto'
@@ -576,6 +578,23 @@ const pendingAction = ref<PendingAction | null>(null)
 const emailVerifyTarget = computed(() => {
   if (pendingAction.value === 'change_email') {
     return emailForm.value.new_email
+  }
+  return undefined
+})
+
+const emailVerifyPassword = computed(() => {
+  if (pendingAction.value === 'change_password') {
+    return passwordForm.value.current_password
+  }
+  if (pendingAction.value === 'change_email') {
+    return emailForm.value.password
+  }
+  return undefined
+})
+
+const emailVerifyNewPassword = computed(() => {
+  if (pendingAction.value === 'change_password') {
+    return passwordForm.value.new_password
   }
   return undefined
 })
@@ -706,32 +725,6 @@ function changePassword() {
   showEmailVerify.value = true
 }
 
-async function executeChangePassword(verificationToken: string) {
-  isChangingPassword.value = true
-
-  try {
-    await userService.changePassword({
-      current_password: passwordForm.value.current_password,
-      new_password: passwordForm.value.new_password,
-      verification_token: verificationToken,
-    })
-    toastStore.success(t('profile.passwordChanged'))
-    passwordForm.value = {
-      current_password: '',
-      new_password: '',
-      confirm_password: '',
-    }
-  } catch (err) {
-    if (err instanceof ApiError) {
-      toastStore.error(err.message)
-    } else {
-      toastStore.error(t('common.error'))
-    }
-  } finally {
-    isChangingPassword.value = false
-  }
-}
-
 function handleChangeEmail() {
   if (!canChangeEmail.value) return
   // Open email verification dialog
@@ -740,37 +733,23 @@ function handleChangeEmail() {
   showEmailVerify.value = true
 }
 
-async function executeChangeEmail(verificationToken: string) {
-  isChangingEmail.value = true
-
-  try {
-    await authService.changeEmail({
-      new_email: emailForm.value.new_email,
-      verification_token: verificationToken,
-    })
-
-    toastStore.success(t('email.changeEmailSuccess'))
-    emailForm.value = { new_email: '', password: '' }
-    await fetchProfile()
-  } catch (err) {
-    if (err instanceof ApiError) {
-      toastStore.error(err.message)
-    } else {
-      toastStore.error(t('common.error'))
-    }
-  } finally {
-    isChangingEmail.value = false
-  }
-}
-
 /** Called when email OTP verification succeeds */
-async function handleEmailVerified(verificationToken: string) {
+async function handleEmailVerified() {
   showEmailVerify.value = false
 
   if (pendingAction.value === 'change_email') {
-    await executeChangeEmail(verificationToken)
+    // 邮箱已在 verifyEmailCode 中完成更换
+    toastStore.success(t('email.changeEmailSuccess'))
+    emailForm.value = { new_email: '', password: '' }
+    await fetchProfile()
   } else if (pendingAction.value === 'change_password') {
-    await executeChangePassword(verificationToken)
+    // 密码已在 verifyEmailCode 中完成修改
+    toastStore.success(t('profile.passwordChanged'))
+    passwordForm.value = {
+      current_password: '',
+      new_password: '',
+      confirm_password: '',
+    }
   }
   pendingAction.value = null
 }

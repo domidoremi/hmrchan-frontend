@@ -75,7 +75,7 @@ import EmailCodeInput from '@/components/ui/EmailCodeInput.vue'
 interface Props {
   isOpen: boolean
   /** The action name for the verification (e.g. 'change_email', 'change_password') */
-  action: string
+  action: 'change_password' | 'change_email'
   /** User's current email (will be masked in display) */
   email: string
   /**
@@ -83,6 +83,10 @@ interface Props {
    * If provided, code is sent here instead of current email.
    */
   targetEmail?: string | undefined
+  /** Current password (required for sending code) */
+  password?: string | undefined
+  /** New password (required for change_password verification) */
+  newPassword?: string | undefined
   /** Auto-send code when dialog opens */
   autoSend?: boolean
 }
@@ -157,8 +161,11 @@ async function sendCode() {
 
   try {
     const payload: SendEmailCodeRequest = { action: props.action }
-    if (props.targetEmail) {
-      payload.email = props.targetEmail
+    if (props.action === 'change_password' && props.password) {
+      payload.password = props.password
+    } else if (props.action === 'change_email' && props.password && props.targetEmail) {
+      payload.password = props.password
+      payload.new_email = props.targetEmail
     }
     await authService.sendEmailCode(payload)
     step.value = 'code'
@@ -193,11 +200,14 @@ async function verifyCode() {
   codeError.value = false
 
   try {
-    const { verification_token } = await authService.verifyEmailCode({
+    const result = await authService.verifyEmailCode({
       action: props.action,
-      code: currentCode.value,
+      verification_code: currentCode.value,
+      ...(props.action === 'change_password' && props.newPassword
+        ? { new_password: props.newPassword }
+        : {}),
     })
-    emit('verified', verification_token)
+    emit('verified', result.message || '')
   } catch (err) {
     codeError.value = true
     if (err instanceof ApiError) {

@@ -112,9 +112,11 @@ export interface ListDiscussionCommentsParams {
 }
 
 export interface DiscussionCommentThreadResponse {
+  discussion_id: string
   thread: DiscussionComment[]
-  root_comment: DiscussionComment
   depth: number
+  // 兼容旧字段
+  root_comment?: DiscussionComment
 }
 
 const toNumber = (value: unknown, fallback = 0) => {
@@ -508,6 +510,7 @@ export const discussionService = {
 
   /**
    * 获取讨论评论线索链
+   * GET /api/v1/discussions/comments/:id/thread → { discussion_id, thread, depth }
    */
   async getCommentThread(
     _discussionId: string,
@@ -519,9 +522,6 @@ export const discussionService = {
     return {
       ...data,
       thread: (data.thread || []).map((item) => normalizeDiscussionComment(item)),
-      root_comment: data.root_comment
-        ? normalizeDiscussionComment(data.root_comment)
-        : data.root_comment,
     }
   },
 }
