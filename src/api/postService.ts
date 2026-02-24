@@ -227,8 +227,9 @@ interface RawPostDetail {
 
 /** 将后端原始响应映射为前端 PostDetailResponse */
 function normalizePostDetail(raw: RawPostDetail): PostDetailResponse {
-  // 如果已经有 media_files，说明后端格式已对齐，直接返回
-  if (raw.media_files) {
+  // 如果已经有非空 media_files，说明后端格式已对齐，直接返回
+  // 注意：空数组 [] 不算有效，需要继续尝试从 files 字段映射
+  if (raw.media_files && raw.media_files.length > 0) {
     return raw as unknown as PostDetailResponse
   }
 
