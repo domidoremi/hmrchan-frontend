@@ -218,7 +218,10 @@ async function refreshToken(): Promise<string | null> {
       console.warn('Secure token storage failed, using plain storage')
     }
 
-    // 不再写入 localStorage（避免明文 token 暴露）
+    // 通知 auth store 同步新 token（避免 store ref 与 secureTokenManager 不一致）
+    window.dispatchEvent(
+      new CustomEvent('auth:token-refreshed', { detail: { token: newAccessToken } })
+    )
 
     return newAccessToken
   } catch (error) {
