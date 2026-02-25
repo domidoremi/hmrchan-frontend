@@ -67,9 +67,12 @@ export {
   // 形状（图片裁剪）
   Circle,
   Square,
-  // 社交平台
-  Youtube,
-  Twitter,
+  // 社交平台（通用）
   Globe,
-  Music2,
 } from 'lucide-vue-next'
+
+// 品牌图标（Lucide 无官方品牌图标，使用自定义 SVG）
+export { default as IconYoutube } from './IconYoutube.vue'
+export { default as IconX } from './IconX.vue'
+export { default as IconTiktok } from './IconTiktok.vue'
+export { default as IconInstagram } from './IconInstagram.vue'
