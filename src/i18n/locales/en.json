@@ -77,7 +77,10 @@
     "refresh": "Refresh",
     "confirmDelete": "Confirm delete",
     "warning": "Warning",
-    "success": "Success"
+    "success": "Success",
+    "footerNav": "Footer navigation",
+    "zoomSlider": "Zoom level",
+    "cropPreview": "Crop preview"
   },
   "auth": {
     "email": "Email",
@@ -329,7 +332,8 @@
     "offlineQueued": "Queued for offline sync"
   },
   "author": {
-    "postCount": "{count} posts"
+    "postCount": "{count} posts",
+    "posts": "Posts"
   },
   "error": {
     "notFound": "Page Not Found",
@@ -745,7 +749,9 @@
       "career": "Momiyama Himeri is the captain of the Japanese idol group \"Takane no Nadeshiko\". She began her idol career in 2014 as an early member of the local Tochigi idol group \"Watarase Bridge 43\", later joined the roller skating idol group \"Spindle\", and became a member of \"Last Idol\" Someday Somewhere unit in 2017. She joined \"Takane no Nadeshiko\" in 2022 and has been serving as captain since then.",
       "personality": "She is beloved by fans for her signature twin-tail hairstyle, cheerful personality, and excellent choreography skills. As a choreographer, she not only creates dances for her own group but also showcases her unique talent in roller skating performances.",
       "platforms": "She is active on multiple social platforms including TikTok, Instagram, X (Twitter), and YouTube, sharing her daily life, performance activities, and creative content with fans.",
-      "purpose": "MomiChan aggregates content scattered across these platforms, making it easier for fans to keep up with her latest updates."
+      "purpose": "MomiChan aggregates content scattered across these platforms, making it easier for fans to keep up with her latest updates.",
+      "profileTitle": "Profile",
+      "aboutTitle": "About"
     },
     "links": {
       "title": "Official & Social Media",

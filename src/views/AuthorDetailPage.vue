@@ -33,7 +33,7 @@
           </template>
         </div>
 
-        <h2 class="section-title">Posts</h2>
+        <h2 class="section-title">{{ $t('author.posts') }}</h2>
         <div class="posts-grid">
           <template v-if="isLoading">
             <div v-for="i in 6" :key="i" class="post-card glass-card">

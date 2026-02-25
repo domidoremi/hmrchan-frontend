@@ -77,7 +77,10 @@
     "refresh": "刷新",
     "confirmDelete": "确认删除",
     "warning": "警告",
-    "success": "成功"
+    "success": "成功",
+    "footerNav": "页脚导航",
+    "zoomSlider": "缩放级别",
+    "cropPreview": "裁剪预览"
   },
   "auth": {
     "email": "邮箱",
@@ -329,7 +332,8 @@
     "offlineQueued": "已加入离线队列"
   },
   "author": {
-    "postCount": "{count} 个作品"
+    "postCount": "{count} 个作品",
+    "posts": "作品"
   },
   "error": {
     "notFound": "页面未找到",
@@ -745,7 +749,9 @@
       "career": "籾山 ひめり 是日本偶像组合「高嶺のなでしこ」的队长。她从 2014 年开始偶像活动，曾是栃木县足利市本地偶像组合「渡良瀬橋43」的初期成员，后加入轮滑偶像组合「Spindle」，2017 年成为「Last Idol」Someday Somewhere 小队成员。2022 年加入「高嶺のなでしこ」并担任队长至今。",
       "personality": "她以标志性的双马尾发型、活泼开朗的性格和出色的舞蹈编排能力深受粉丝喜爱。作为编舞师，她不仅为自己的组合编舞，还展现了在轮滑表演方面的独特才能。",
       "platforms": "她活跃在 TikTok、Instagram、X（Twitter）、YouTube 等多个社交平台，与粉丝分享日常生活、演出活动和创作内容。",
-      "purpose": "MomiChan 将这些分散在各个平台的内容聚合在一起，让粉丝可以更方便地追踪她的最新动态。"
+      "purpose": "MomiChan 将这些分散在各个平台的内容聚合在一起，让粉丝可以更方便地追踪她的最新动态。",
+      "profileTitle": "个人资料",
+      "aboutTitle": "简介"
     },
     "links": {
       "title": "官方网站 & 社交媒体",
