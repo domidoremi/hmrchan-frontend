@@ -1,91 +1,95 @@
 <template>
   <div class="home-page">
-    <!-- Hero Section -->
-    <section
-      v-if="settings.showHeroSection"
-      class="hero"
-      :class="{ 'hero--animated': shouldAnimate }"
-    >
-      <div class="hero-content container">
-        <h1 class="hero-title gradient-text">{{ $t('home.hero.title') }}</h1>
-        <p class="hero-subtitle">{{ $t('home.hero.subtitle') }}</p>
+    <!-- Hero + Bento 占满首屏视口 -->
+    <div class="home-fold">
+      <!-- Hero Section -->
+      <section
+        v-if="settings.showHeroSection"
+        class="hero"
+        :class="{ 'hero--animated': shouldAnimate }"
+      >
+        <div class="hero-content container">
+          <h1 class="hero-title gradient-text">{{ $t('home.hero.title') }}</h1>
+          <p class="hero-subtitle">{{ $t('home.hero.subtitle') }}</p>
 
-        <div class="hero-actions">
-          <Button size="lg" variant="primary" class="hero-btn" @click="goToExplore">
-            <AnimatedIcon name="explore" :fallback-icon="Compass" size="md" />
-            {{ $t('nav.explore') }}
-          </Button>
+          <div class="hero-actions">
+            <Button size="lg" variant="primary" class="hero-btn" @click="goToExplore">
+              <AnimatedIcon name="explore" :fallback-icon="Compass" size="md" />
+              {{ $t('nav.explore') }}
+            </Button>
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
 
-    <!-- Bento Grid -->
-    <section ref="bentoRef" class="bento">
-      <div class="bento-bg" aria-hidden="true" />
-      <div class="container">
-        <header class="bento-header">
-          <h2>{{ $t('home.quickStart.title') }}</h2>
-          <p>{{ $t('home.quickStart.subtitle') }}</p>
-        </header>
+      <!-- Bento Grid -->
+      <section ref="bentoRef" class="bento">
+        <div class="bento-bg" aria-hidden="true" />
+        <div class="container">
+          <header class="bento-header">
+            <h2>{{ $t('home.quickStart.title') }}</h2>
+            <p>{{ $t('home.quickStart.subtitle') }}</p>
+          </header>
 
-        <div class="bento-grid">
-          <RouterLink to="/explore" class="bento-card bento-card--feature glass-card">
-            <div class="bento-card__icon bento-card__icon--primary">
-              <AnimatedIcon name="explore" :fallback-icon="Layers" size="lg" />
-            </div>
-            <h3>{{ $t('home.bento.featureTitle') }}</h3>
-            <p>{{ $t('home.bento.featureSubtitle') }}</p>
-            <AnimatedIcon
-              name="explore"
-              :fallback-icon="ArrowUpRight"
-              size="sm"
-              class="bento-card__arrow"
-            />
-          </RouterLink>
+          <div class="bento-grid">
+            <RouterLink to="/explore" class="bento-card bento-card--feature glass-card">
+              <div class="bento-card__icon bento-card__icon--primary">
+                <AnimatedIcon name="explore" :fallback-icon="Layers" size="lg" />
+              </div>
+              <h3>{{ $t('home.bento.featureTitle') }}</h3>
+              <p>{{ $t('home.bento.featureSubtitle') }}</p>
+              <AnimatedIcon
+                name="explore"
+                :fallback-icon="ArrowUpRight"
+                size="sm"
+                class="bento-card__arrow"
+              />
+            </RouterLink>
 
-          <RouterLink to="/search" class="bento-card glass-card">
-            <div class="bento-card__icon bento-card__icon--search">
-              <AnimatedIcon name="search" :fallback-icon="Search" size="lg" />
-            </div>
-            <h3>{{ $t('nav.search') }}</h3>
-            <p>{{ $t('home.bento.searchMeta') }}</p>
-          </RouterLink>
+            <RouterLink to="/search" class="bento-card glass-card">
+              <div class="bento-card__icon bento-card__icon--search">
+                <AnimatedIcon name="search" :fallback-icon="Search" size="lg" />
+              </div>
+              <h3>{{ $t('nav.search') }}</h3>
+              <p>{{ $t('home.bento.searchMeta') }}</p>
+            </RouterLink>
 
-          <RouterLink to="/community" class="bento-card glass-card">
-            <div class="bento-card__icon bento-card__icon--community">
-              <AnimatedIcon name="sparkle" :fallback-icon="MessageSquare" size="lg" />
-            </div>
-            <h3>{{ $t('nav.community') }}</h3>
-            <p>{{ $t('home.bento.communityMeta') }}</p>
-          </RouterLink>
+            <RouterLink to="/community" class="bento-card glass-card">
+              <div class="bento-card__icon bento-card__icon--community">
+                <AnimatedIcon name="sparkle" :fallback-icon="MessageSquare" size="lg" />
+              </div>
+              <h3>{{ $t('nav.community') }}</h3>
+              <p>{{ $t('home.bento.communityMeta') }}</p>
+            </RouterLink>
 
-          <RouterLink to="/authors" class="bento-card glass-card">
-            <div class="bento-card__icon bento-card__icon--authors">
-              <AnimatedIcon name="user" :fallback-icon="Users" size="lg" />
-            </div>
-            <h3>{{ $t('nav.authors') }}</h3>
-            <p>{{ $t('home.bento.authorsMeta') }}</p>
-          </RouterLink>
+            <RouterLink to="/authors" class="bento-card glass-card">
+              <div class="bento-card__icon bento-card__icon--authors">
+                <AnimatedIcon name="user" :fallback-icon="Users" size="lg" />
+              </div>
+              <h3>{{ $t('nav.authors') }}</h3>
+              <p>{{ $t('home.bento.authorsMeta') }}</p>
+            </RouterLink>
 
-          <RouterLink :to="favoritesLink" class="bento-card glass-card">
-            <div class="bento-card__icon bento-card__icon--favorites">
-              <AnimatedIcon name="heart" :fallback-icon="Heart" size="lg" />
-            </div>
-            <h3>{{ $t('nav.favorites') }}</h3>
-            <p>
-              {{
-                isAuthenticated
-                  ? $t('home.bento.favoritesMeta')
-                  : $t('home.bento.favoritesMetaGuest')
-              }}
-            </p>
-          </RouterLink>
+            <RouterLink :to="favoritesLink" class="bento-card glass-card">
+              <div class="bento-card__icon bento-card__icon--favorites">
+                <AnimatedIcon name="heart" :fallback-icon="Heart" size="lg" />
+              </div>
+              <h3>{{ $t('nav.favorites') }}</h3>
+              <p>
+                {{
+                  isAuthenticated
+                    ? $t('home.bento.favoritesMeta')
+                    : $t('home.bento.favoritesMetaGuest')
+                }}
+              </p>
+            </RouterLink>
+          </div>
         </div>
-      </div>
 
-      <!-- Bento → Posts 过渡 -->
-      <div class="bento-transition" />
-    </section>
+        <!-- Bento → Posts 过渡 -->
+        <div class="bento-transition" />
+      </section>
+    </div>
+    <!-- /.home-fold -->
 
     <!-- Latest Posts -->
     <section class="posts">
@@ -476,10 +480,24 @@ onBeforeUnmount(() => {
   z-index: 0;
 }
 
+/* ========== First-fold wrapper: hero + bento fill viewport ========== */
+.home-fold {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100svh - var(--navbar-height));
+  min-height: calc(100dvh - var(--navbar-height));
+}
+
+@media (max-width: 768px) {
+  .home-fold {
+    min-height: calc(100svh - var(--navbar-height) - var(--mobile-nav-height));
+    min-height: calc(100dvh - var(--navbar-height) - var(--mobile-nav-height));
+  }
+}
+
 /* ========== Hero Section ========== */
 .hero {
   position: relative;
-  min-height: min(52dvh, 24rem);
   display: grid;
   place-items: center;
   text-align: center;
@@ -517,6 +535,10 @@ onBeforeUnmount(() => {
 /* ========== Bento Section ========== */
 .bento {
   position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   padding: clamp(1.5rem, 4dvh, 3rem) 0;
   z-index: 1;
 }
