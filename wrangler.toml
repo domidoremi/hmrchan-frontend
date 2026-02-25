@@ -21,10 +21,19 @@ pages_build_output_dir = "./dist"
 # ============================================================================
 # Production 环境配置
 # ============================================================================
+
+# Workers VPC Service 绑定（通过 Cloudflare Tunnel 私有访问后端 API）
+[[env.production.vpc_services]]
+binding = "VPC_SERVICE"
+service_id = "019c954f-b5bf-7e81-aea7-fa4eb3e05cb9"
+remote = true
+
 [env.production.vars]
 # Pages Functions 运行时变量（代理目标地址）
 # 前端 API 路径 (/api/v1, /api) 已在 client.ts 中硬编码默认值，无需重复定义
 API_BASE_URL = "https://api.momichan.xyz"
+# VPC 模式下后端的内网地址（cloudflared tunnel 可达的 nginx 网关）
+VPC_API_ORIGIN = "http://nginx"
 VITE_APP_NAME = "MomiChan"
 VITE_APP_DESCRIPTION = "Image and video content community"
 VITE_ENABLE_DEBUG = "false"
