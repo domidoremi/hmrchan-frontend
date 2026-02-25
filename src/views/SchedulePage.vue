@@ -779,12 +779,12 @@ const parsedDescription = computed<DescSection[]>(() => {
   const sections: DescSection[] = []
 
   for (let i = 0; i < parts.length; i++) {
-    const raw = parts[i]?.trim()
+    const raw = normalizeHtml(parts[i] ?? '').trim()
     if (!raw) continue
 
     if (i === 0) {
       // ▼ 之前的开头文本，无标题
-      sections.push({ heading: null, lines: splitLines(raw) })
+      sections.push({ heading: null, lines: raw.split(/\n/) })
     } else {
       // 第一行是标题，其余是内容
       const lines = raw.split(/\n/)
@@ -792,7 +792,7 @@ const parsedDescription = computed<DescSection[]>(() => {
       const body = lines.slice(1).join('\n').trim()
       sections.push({
         heading: heading || null,
-        lines: body ? splitLines(body) : [],
+        lines: body ? body.split(/\n/) : [],
       })
     }
   }
@@ -804,13 +804,8 @@ function normalizeHtml(text: string): string {
   return text.replace(/<\/?br\s*\/?>/gi, '\n').replace(/&nbsp;/gi, ' ')
 }
 
-function splitLines(text: string): string[] {
-  return normalizeHtml(text).split(/\n/)
-}
-
 function linkify(text: string): string {
-  const clean = normalizeHtml(text)
-  const escaped = clean.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  const escaped = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
   return escaped.replace(
     /(https?:\/\/[^\s<&]+)/g,
     '<a href="$1" target="_blank" rel="noopener noreferrer" class="desc-link">$1</a>'
