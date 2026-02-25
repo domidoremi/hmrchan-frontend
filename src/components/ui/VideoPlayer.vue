@@ -404,6 +404,7 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 interface SubtitleTrack {
+  id?: string | null
   language: string
   format?: string | null
   label?: string | null

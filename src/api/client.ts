@@ -96,6 +96,27 @@ function onTokenRefreshFailed(error: Error) {
   refreshSubscribers = []
 }
 
+// 客户端安全凭证刷新队列（类似 token refresh 的 singleton 模式）
+let isRefreshingCredentials = false
+let credentialSubscribers: Array<{
+  resolve: () => void
+  reject: (error: Error) => void
+}> = []
+
+function subscribeCredentialRefresh(resolve: () => void, reject: (error: Error) => void) {
+  credentialSubscribers.push({ resolve, reject })
+}
+
+function onCredentialsRefreshed() {
+  credentialSubscribers.forEach(({ resolve }) => resolve())
+  credentialSubscribers = []
+}
+
+function onCredentialsRefreshFailed(error: Error) {
+  credentialSubscribers.forEach(({ reject }) => reject(error))
+  credentialSubscribers = []
+}
+
 // API 错误类型
 export class ApiError extends Error {
   status: number
@@ -116,6 +137,8 @@ export interface RequestConfig extends RequestInit {
   timeout?: number
   skipAuth?: boolean
   skipErrorToast?: boolean
+  /** 跳过客户端安全头注入（用于 /client/init 避免循环依赖） */
+  skipSecurity?: boolean
   /** 覆盖默认的 API_BASE_URL（用于 auth 等非 /api/v1 路由） */
   baseUrl?: string | undefined
   /** 回调函数，用于捕获响应头（如 X-Security-Warning） */
@@ -426,6 +449,7 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
     timeout = REQUEST_TIMEOUT,
     skipAuth = false,
     skipErrorToast = false,
+    skipSecurity = false,
     baseUrl,
     onResponseHeaders,
     headers: customHeaders = {},
@@ -463,32 +487,35 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
   const url = endpoint.startsWith('http') ? endpoint : `${effectiveBase}${endpoint}`
 
   // 注入客户端安全头（X-Client-Token, X-Client-Fingerprint, X-Timestamp, X-Signature）
-  try {
-    const { clientSecurityManager, signRequest: signReq } = await import('./clientSecurityService')
-    const clientToken = clientSecurityManager.getClientToken()
-    if (clientToken) {
-      ;(headers as Record<string, string>)['X-Client-Token'] = clientToken
-    }
-    const fingerprint = await getDeviceFingerprint()
-    if (fingerprint) {
-      ;(headers as Record<string, string>)['X-Client-Fingerprint'] = fingerprint
-    }
-    // 请求签名: HMAC-SHA256(secret, "METHOD|/path?query|timestamp")
-    if (clientSecurityManager.getClientSecret()) {
-      const timestamp = Math.floor(Date.now() / 1000)
-      const parsedUrl = new URL(url, window.location.origin)
-      const pathWithQuery = parsedUrl.pathname + parsedUrl.search
-      if (__DEV__) {
-        console.debug('[HMAC Debug] payload:', `${method}|${pathWithQuery}|${timestamp}`)
+  if (!skipSecurity) {
+    try {
+      const { clientSecurityManager, signRequest: signReq } =
+        await import('./clientSecurityService')
+      const clientToken = clientSecurityManager.getClientToken()
+      if (clientToken) {
+        ;(headers as Record<string, string>)['X-Client-Token'] = clientToken
       }
-      const signature = await signReq(method, pathWithQuery, timestamp)
-      ;(headers as Record<string, string>)['X-Timestamp'] = String(timestamp)
-      if (signature) {
-        ;(headers as Record<string, string>)['X-Signature'] = signature
+      const fingerprint = await getDeviceFingerprint()
+      if (fingerprint) {
+        ;(headers as Record<string, string>)['X-Client-Fingerprint'] = fingerprint
       }
+      // 请求签名: HMAC-SHA256(secret, "METHOD|/path?query|timestamp")
+      if (clientSecurityManager.getClientSecret()) {
+        const timestamp = Math.floor(Date.now() / 1000)
+        const parsedUrl = new URL(url, window.location.origin)
+        const pathWithQuery = parsedUrl.pathname + parsedUrl.search
+        if (__DEV__) {
+          console.debug('[HMAC Debug] payload:', `${method}|${pathWithQuery}|${timestamp}`)
+        }
+        const signature = await signReq(method, pathWithQuery, timestamp)
+        ;(headers as Record<string, string>)['X-Timestamp'] = String(timestamp)
+        if (signature) {
+          ;(headers as Record<string, string>)['X-Signature'] = signature
+        }
+      }
+    } catch {
+      // 客户端安全模块加载失败时静默跳过
     }
-  } catch {
-    // 客户端安全模块加载失败时静默跳过
   }
 
   // 创建 AbortController 用于超时控制
@@ -639,12 +666,13 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
 
     // 处理其他错误响应
     if (!response.ok) {
-      // 处理 403 — 区分 CHALLENGE_REQUIRED 和封禁
+      // 处理 403 — 区分 CHALLENGE_REQUIRED、签名失效和封禁
       if (response.status === 403) {
         try {
           const errorBody = await response.clone().json()
           const errorCode = errorBody?.error?.code || errorBody?.code || errorBody?.detail?.code
-          const errorMsg = errorBody?.error?.message || errorBody?.message || ''
+          const errorMsg =
+            errorBody?.error?.message || errorBody?.message || errorBody?.detail || ''
 
           if (errorCode === 'CHALLENGE_REQUIRED') {
             // 从响应中提取 turnstile_site_key，派发事件让 UI 弹出验证
@@ -660,6 +688,104 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
             throw new ApiError(errorMsg || 'Challenge required', 403, 'CHALLENGE_REQUIRED', {
               turnstile_site_key: siteKey,
             })
+          }
+
+          // 签名/凭证失效处理：重新初始化客户端安全凭证并重试一次
+          const lowerMsg = typeof errorMsg === 'string' ? errorMsg.toLowerCase() : ''
+          const isSignatureError =
+            errorCode === 'INVALID_SIGNATURE' ||
+            errorCode === 'INVALID_CLIENT_TOKEN' ||
+            errorCode === 'CLIENT_TOKEN_EXPIRED' ||
+            lowerMsg.includes('invalid request signature') ||
+            lowerMsg.includes('invalid client token') ||
+            lowerMsg.includes('client token expired')
+
+          if (isSignatureError) {
+            // 使用 singleton 模式：只有第一个请求触发 init，其余排队等待
+            const retryWithNewCredentials = async (): Promise<T> => {
+              const { clientSecurityManager: secMgr, signRequest: signReq } =
+                await import('./clientSecurityService')
+
+              // 用新凭证重建安全头
+              const newClientToken = secMgr.getClientToken()
+              if (newClientToken) {
+                ;(headers as Record<string, string>)['X-Client-Token'] = newClientToken
+              }
+              const newFingerprint = await getDeviceFingerprint()
+              if (newFingerprint) {
+                ;(headers as Record<string, string>)['X-Client-Fingerprint'] = newFingerprint
+              }
+              if (secMgr.getClientSecret()) {
+                const newTimestamp = Math.floor(Date.now() / 1000)
+                const parsedUrl = new URL(url, window.location.origin)
+                const newPathWithQuery = parsedUrl.pathname + parsedUrl.search
+                const newSignature = await signReq(method, newPathWithQuery, newTimestamp)
+                ;(headers as Record<string, string>)['X-Timestamp'] = String(newTimestamp)
+                if (newSignature) {
+                  ;(headers as Record<string, string>)['X-Signature'] = newSignature
+                }
+              }
+
+              // 重试请求
+              const retryCtrl = new AbortController()
+              const retryTid = setTimeout(() => retryCtrl.abort(), timeout)
+              await acquireSlot()
+              let retryResponse: Response
+              try {
+                retryResponse = await fetch(url, {
+                  ...fetchConfig,
+                  body: body ?? null,
+                  headers,
+                  credentials: 'include',
+                  signal: retryCtrl.signal,
+                })
+              } finally {
+                clearTimeout(retryTid)
+                releaseSlot()
+              }
+
+              if (!retryResponse.ok) {
+                await handleErrorResponse(retryResponse, skipErrorToast)
+              }
+
+              onResponseHeaders?.(retryResponse.headers)
+
+              if (retryResponse.status === 204) {
+                return undefined as T
+              }
+
+              const retryData = await retryResponse.json()
+              return normalizeResponse<T>(retryData)
+            }
+
+            if (!isRefreshingCredentials) {
+              isRefreshingCredentials = true
+              try {
+                const { clientSecurityService: secService } =
+                  await import('./clientSecurityService')
+                await secService.init(true)
+                isRefreshingCredentials = false
+                onCredentialsRefreshed()
+                return await retryWithNewCredentials()
+              } catch (initErr) {
+                isRefreshingCredentials = false
+                const error =
+                  initErr instanceof Error ? initErr : new Error('Credential refresh failed')
+                onCredentialsRefreshFailed(error)
+                // init 失败，走通用错误处理
+              }
+            } else {
+              // 其他请求排队等待凭证刷新完成后重试
+              try {
+                await new Promise<void>((resolve, reject) => {
+                  subscribeCredentialRefresh(resolve, reject)
+                })
+                return await retryWithNewCredentials()
+              } catch (queueErr) {
+                if (queueErr instanceof ApiError) throw queueErr
+                // 凭证刷新失败，走通用错误处理
+              }
+            }
           }
 
           // 封禁处理：access temporarily restricted

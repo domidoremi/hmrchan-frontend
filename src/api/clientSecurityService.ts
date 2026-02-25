@@ -132,10 +132,11 @@ export const clientSecurityManager = {
 
 // ========== 客户端安全服务 ==========
 
-/** client/init 和 client/verify 不需要 auth，也不应触发错误 toast */
+/** client/init 和 client/verify 不需要 auth，也不应触发错误 toast，且跳过安全头避免循环 */
 const clientConfig: RequestConfig = {
   skipAuth: true,
   skipErrorToast: true,
+  skipSecurity: true,
 }
 
 /**
@@ -152,8 +153,12 @@ export const clientSecurityService = {
   /**
    * 初始化客户端（获取 client_token 和 client_secret）
    * 每次页面加载都应调用；回访用户后端返回空 token 时保留旧凭证
+   * @param force 强制刷新：清除旧凭证后重新获取（用于签名失效重试）
    */
-  async init(): Promise<ClientInitResponse> {
+  async init(force?: boolean): Promise<ClientInitResponse> {
+    if (force) {
+      clearCredentials()
+    }
     const payload = await collectClientInfo()
     const response = await apiClient.post<ClientInitResponse>('/client/init', payload, clientConfig)
 
