@@ -286,8 +286,13 @@ export const useAuthStore = defineStore(
       // 始终尝试从安全存储恢复 token（避免依赖 localStorage 明文）
       let secureToken = await secureTokenManager.retrieve()
 
-      // 本地 token 不可用时，尝试用 refresh_token cookie 刷新
+      // 本地 token 不可用时，仅在有持久化 user（曾经登录过）时尝试 refresh
+      // 游客用户（从未登录）没有 refresh_token cookie，跳过无意义的 401 请求
       if (!secureToken) {
+        if (!user.value) {
+          // 从未登录过，直接返回
+          return
+        }
         try {
           const response = await authService.refreshToken()
           secureToken = response.access_token
