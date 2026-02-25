@@ -115,6 +115,9 @@
                     >
                       <span class="spinner" />
                     </div>
+                    <template v-else-if="hasDisplayContent && !displayMediaCount">
+                      <p class="post-preview-inline-text">{{ displayContent }}</p>
+                    </template>
                     <p v-else class="post-preview-empty-text">
                       {{ $t('post.noMedia') }}
                     </p>
@@ -952,11 +955,28 @@ function openDetail() {
   justify-content: center;
   border-radius: var(--radius-xl);
   border: 1px dashed var(--preview-divider);
+  overflow: hidden;
 }
 
 .post-preview-empty-text {
   margin: 0;
   color: var(--preview-text-secondary);
+}
+
+.post-preview-inline-text {
+  margin: 0;
+  padding: var(--spacing-4);
+  font-size: var(--text-sm);
+  line-height: 1.7;
+  color: var(--preview-text-primary);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  text-align: left;
+  display: -webkit-box;
+  -webkit-line-clamp: 12;
+  line-clamp: 12;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .post-preview-thumbs {
