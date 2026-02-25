@@ -43,13 +43,13 @@
 </template>
 
 <script setup lang="ts">
-import { Music2, Youtube, Instagram, Twitter } from 'lucide-vue-next'
+import { IconYoutube, IconX, IconTiktok, IconInstagram } from '@/components/icons'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 
 const platforms = [
   {
     key: 'tiktok',
-    icon: Music2,
+    icon: IconTiktok,
     animation: 'explore',
     labelKey: 'stats.tiktok',
     value: '128k',
@@ -58,7 +58,7 @@ const platforms = [
   },
   {
     key: 'youtube',
-    icon: Youtube,
+    icon: IconYoutube,
     animation: 'sparkle',
     labelKey: 'stats.youtube',
     value: '64k',
@@ -67,7 +67,7 @@ const platforms = [
   },
   {
     key: 'instagram',
-    icon: Instagram,
+    icon: IconInstagram,
     animation: 'heart',
     labelKey: 'stats.instagram',
     value: '92k',
@@ -76,7 +76,7 @@ const platforms = [
   },
   {
     key: 'twitter',
-    icon: Twitter,
+    icon: IconX,
     animation: 'search',
     labelKey: 'stats.twitter',
     value: '45k',

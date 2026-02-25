@@ -269,19 +269,8 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
-import {
-  FileText,
-  User,
-  Globe,
-  Youtube,
-  Music2,
-  Twitter,
-  Instagram,
-  LogIn,
-  ArrowUpDown,
-  ArrowLeft,
-  RotateCcw,
-} from 'lucide-vue-next'
+import { FileText, User, Globe, LogIn, ArrowUpDown, ArrowLeft, RotateCcw } from 'lucide-vue-next'
+import { IconYoutube, IconX, IconTiktok, IconInstagram } from '@/components/icons'
 import { searchService, postService, type PostListItem, type AuthorListItem } from '@/api'
 import { normalizeAvatarUrl } from '@/api/userService'
 import { useAuthStore } from '@/stores'
@@ -339,10 +328,10 @@ const tabs = computed(() => [
 
 const platformOptions = computed(() => [
   { value: 'all' as const, label: t('explore.allPlatforms'), icon: Globe },
-  { value: 'youtube' as const, label: 'YouTube', icon: Youtube },
-  { value: 'tiktok' as const, label: 'TikTok', icon: Music2 },
-  { value: 'twitter' as const, label: 'X', icon: Twitter },
-  { value: 'instagram' as const, label: 'Instagram', icon: Instagram },
+  { value: 'youtube' as const, label: 'YouTube', icon: IconYoutube },
+  { value: 'tiktok' as const, label: 'TikTok', icon: IconTiktok },
+  { value: 'twitter' as const, label: 'X', icon: IconX },
+  { value: 'instagram' as const, label: 'Instagram', icon: IconInstagram },
 ])
 
 const sortOptions = computed(() => [
@@ -361,13 +350,13 @@ const getThumbnailQuality = (): 'medium' | 'large' => {
 function getPlatformIcon(platform: string) {
   switch (platform.toLowerCase()) {
     case 'youtube':
-      return Youtube
+      return IconYoutube
     case 'tiktok':
-      return Music2
+      return IconTiktok
     case 'twitter':
-      return Twitter
+      return IconX
     case 'instagram':
-      return Instagram
+      return IconInstagram
     default:
       return Globe
   }

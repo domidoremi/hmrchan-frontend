@@ -105,7 +105,7 @@
                 v-for="post in column"
                 :key="post.id"
                 :post="post"
-                image-fit="contain"
+                image-fit="cover"
                 :priority="colIndex === 0 && column.indexOf(post) < 2"
                 @click="goToPost"
                 @height-change="handleCardHeightChange"
@@ -149,7 +149,8 @@ import {
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
-import { Search, Globe, Music2, Video, Instagram } from 'lucide-vue-next'
+import { Search, Globe } from 'lucide-vue-next'
+import { IconYoutube, IconX, IconTiktok, IconInstagram } from '@/components/icons'
 import { postService, type PostListItem, ApiError } from '@/api'
 import { useCachedPostList } from '@/composables/useCachedPosts'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
@@ -261,13 +262,13 @@ const sortOptions = [
   { value: 'trending' as const },
 ]
 
-// 使用非废弃图标：Globe 替代 Twitter，Video 替代 Youtube
+// 品牌 SVG 图标
 const platformOptions = [
   { value: 'all' as const, label: t('explore.allPlatforms'), icon: Globe },
-  { value: 'youtube' as const, label: 'YouTube', icon: Video },
-  { value: 'tiktok' as const, label: 'TikTok', icon: Music2 },
-  { value: 'twitter' as const, label: 'X', icon: Globe },
-  { value: 'instagram' as const, label: 'Instagram', icon: Instagram },
+  { value: 'youtube' as const, label: 'YouTube', icon: IconYoutube },
+  { value: 'tiktok' as const, label: 'TikTok', icon: IconTiktok },
+  { value: 'twitter' as const, label: 'X', icon: IconX },
+  { value: 'instagram' as const, label: 'Instagram', icon: IconInstagram },
 ]
 
 function goToPost(postId: string, thumbnailSrc: string | null) {
