@@ -38,8 +38,40 @@ export const useAuthStore = defineStore(
     let heartbeatTimer: ReturnType<typeof setTimeout> | null = null
     let authLogoutHandler: (() => void) | null = null
     let heartbeatInterval = DEFAULT_HEARTBEAT_INTERVAL
+    let deferredProfileTimer: ReturnType<typeof setTimeout> | null = null
 
     const isAuthenticated = computed(() => !!user.value && !!token.value)
+
+    /**
+     * 登录/注册后延迟拉取完整用户资料
+     * 使用直接 fetch 绕过 apiClient 的 401→refresh→logout 链
+     * 失败时静默忽略，不影响已建立的认证状态
+     */
+    function deferProfileRefresh() {
+      if (deferredProfileTimer) clearTimeout(deferredProfileTimer)
+      deferredProfileTimer = setTimeout(async () => {
+        deferredProfileTimer = null
+        const currentToken = await secureTokenManager.retrieve()
+        if (!currentToken) return
+        try {
+          const API_AUTH_URL = import.meta.env.VITE_API_URL || '/api'
+          const res = await fetch(`${API_AUTH_URL}/auth/me`, {
+            headers: { Authorization: `Bearer ${currentToken}` },
+            credentials: 'include',
+          })
+          if (res.ok) {
+            const data = await res.json()
+            // 兼容信封格式和直接返回
+            const profile = data?.data ?? data
+            if (profile && typeof profile === 'object' && 'id' in profile) {
+              user.value = profile as AuthUser
+            }
+          }
+        } catch {
+          // 静默失败，不影响认证状态
+        }
+      }, 2000)
+    }
 
     /**
      * 用户登录
@@ -87,7 +119,7 @@ export const useAuthStore = defineStore(
         startHeartbeat()
 
         // 登录成功后获取完整的用户资料（包含 avatar_url 等字段）
-        fetchCurrentUser(false).catch(() => {})
+        deferProfileRefresh()
 
         return {
           success: true,
@@ -134,7 +166,7 @@ export const useAuthStore = defineStore(
         }
         startHeartbeat()
 
-        fetchCurrentUser(false).catch(() => {})
+        deferProfileRefresh()
 
         return { success: true, user: response.user }
       } catch (err) {
@@ -190,7 +222,7 @@ export const useAuthStore = defineStore(
         startHeartbeat()
 
         // 获取完整的用户资料（包含 avatar_url 等字段）
-        fetchCurrentUser(false).catch(() => {})
+        deferProfileRefresh()
 
         return { success: true, user: response.user }
       } catch (err) {
@@ -233,6 +265,10 @@ export const useAuthStore = defineStore(
      */
     async function logout() {
       stopHeartbeat()
+      if (deferredProfileTimer) {
+        clearTimeout(deferredProfileTimer)
+        deferredProfileTimer = null
+      }
       try {
         await authService.logout()
       } catch {
@@ -385,6 +421,10 @@ export const useAuthStore = defineStore(
      */
     function cleanup() {
       stopHeartbeat()
+      if (deferredProfileTimer) {
+        clearTimeout(deferredProfileTimer)
+        deferredProfileTimer = null
+      }
       if (authLogoutHandler) {
         window.removeEventListener('auth:logout', authLogoutHandler)
         authLogoutHandler = null
