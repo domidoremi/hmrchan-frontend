@@ -351,23 +351,62 @@ async function handleErrorResponse(response: Response, skipErrorToast?: boolean)
     530: 'error.serviceUnavailable', // Cloudflare error
   }
 
+  // 后端英文消息 → i18n key 映射（key 统一小写匹配）
+  const serverMessageMap: Record<string, string> = {
+    'invalid request signature': 'error.server.invalidSignature',
+    'invalid client token': 'error.server.invalidClientToken',
+    'client token expired': 'error.server.clientTokenExpired',
+    'invalid timestamp': 'error.server.invalidTimestamp',
+    'request expired': 'error.server.requestExpired',
+    'access temporarily restricted': 'error.server.accessRestricted',
+    'challenge required': 'error.server.challengeRequired',
+    'invalid fingerprint': 'error.server.invalidFingerprint',
+    'permission denied': 'error.server.permissionDenied',
+    'resource not found': 'error.server.resourceNotFound',
+    'duplicate entry': 'error.server.duplicateEntry',
+    'content too large': 'error.server.contentTooLarge',
+    'unsupported media type': 'error.server.unsupportedMediaType',
+    'account suspended': 'error.server.accountSuspended',
+    'email not verified': 'error.server.emailNotVerified',
+    'invalid credentials': 'error.server.invalidCredentials',
+    'token expired': 'error.server.tokenExpired',
+    'token invalid': 'error.server.tokenInvalid',
+    'internal server error': 'error.server.internalError',
+  }
+
+  /**
+   * 将后端英文消息映射为 i18n key
+   * 优先精确匹配，其次模糊包含匹配
+   */
+  function resolveServerMessage(msg: string): string | undefined {
+    const lower = msg.toLowerCase().trim()
+    // 精确匹配
+    if (serverMessageMap[lower]) return serverMessageMap[lower]
+    // 模糊包含匹配
+    for (const [pattern, key] of Object.entries(serverMessageMap)) {
+      if (lower.includes(pattern)) return key
+    }
+    return undefined
+  }
+
   const { t } = i18nInstance.global
   let localizedMessage: string
-
-  // 服务端提供了具体的错误码或消息时，优先保留而非覆盖为泛化状态码消息
-  const hasSpecificServerError = errorCode || (errorMessage && errorMessage !== 'error.unknown')
 
   // 429 特殊处理：读取 Retry-After 响应头
   if (response.status === 429) {
     const retryAfter = response.headers.get('Retry-After')
     const seconds = retryAfter ? parseInt(retryAfter, 10) : 60
     localizedMessage = t('error.tooManyRequestsWithTime', { seconds })
-  } else if (hasSpecificServerError) {
-    // 保留服务端提供的具体错误消息
-    localizedMessage = errorMessage
   } else {
-    const statusMessage = statusMessages[response.status]
-    localizedMessage = statusMessage ? t(statusMessage) : t('error.unknown')
+    // 尝试将后端消息映射为本地化文案
+    const mappedKey =
+      errorMessage !== 'error.unknown' ? resolveServerMessage(errorMessage) : undefined
+    if (mappedKey) {
+      localizedMessage = t(mappedKey)
+    } else {
+      const statusMessage = statusMessages[response.status]
+      localizedMessage = statusMessage ? t(statusMessage) : t('error.unknown')
+    }
   }
 
   // 显示错误提示（除非跳过）

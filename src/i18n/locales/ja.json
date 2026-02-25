@@ -358,7 +358,28 @@
     "mediaLoadFailed": "メディアの読み込みに失敗しました",
     "copyReport": "レポートをコピー",
     "copySuccess": "コピーしました",
-    "copyFailed": "コピーに失敗しました"
+    "copyFailed": "コピーに失敗しました",
+    "server": {
+      "invalidSignature": "リクエスト署名が無効です。ページを更新してください",
+      "invalidClientToken": "クライアントトークンが無効です。ページを更新してください",
+      "clientTokenExpired": "クライアントトークンの有効期限が切れました。ページを更新してください",
+      "invalidTimestamp": "リクエストのタイムスタンプが異常です。システム時刻を確認してください",
+      "requestExpired": "リクエストの有効期限が切れました。もう一度お試しください",
+      "accessRestricted": "アクセスが一時的に制限されています。しばらくしてからお試しください",
+      "challengeRequired": "認証が必要です",
+      "invalidFingerprint": "デバイス認証に失敗しました。ページを更新してください",
+      "permissionDenied": "この操作を実行する権限がありません",
+      "resourceNotFound": "リクエストされたリソースが見つかりません",
+      "duplicateEntry": "データが既に存在します",
+      "contentTooLarge": "コンテンツがサイズ制限を超えています",
+      "unsupportedMediaType": "サポートされていないファイル形式です",
+      "accountSuspended": "アカウントが停止されています",
+      "emailNotVerified": "メールアドレスが未認証です",
+      "invalidCredentials": "ユーザー名またはパスワードが正しくありません",
+      "tokenExpired": "セッションの有効期限が切れました。再度ログインしてください",
+      "tokenInvalid": "セッションが無効です。再度ログインしてください",
+      "internalError": "サーバー内部エラーが発生しました。しばらくしてからお試しください"
+    }
   },
   "comment": {
     "title": "コメント",

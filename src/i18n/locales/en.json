@@ -358,7 +358,28 @@
     "mediaLoadFailed": "Media failed to load",
     "copyReport": "Copy report",
     "copySuccess": "Copied",
-    "copyFailed": "Copy failed"
+    "copyFailed": "Copy failed",
+    "server": {
+      "invalidSignature": "Invalid request signature. Please refresh and try again",
+      "invalidClientToken": "Invalid client token. Please refresh the page",
+      "clientTokenExpired": "Client token expired. Please refresh the page",
+      "invalidTimestamp": "Invalid request timestamp. Please check your system clock",
+      "requestExpired": "Request expired. Please try again",
+      "accessRestricted": "Access temporarily restricted. Please try again later",
+      "challengeRequired": "Verification required",
+      "invalidFingerprint": "Device verification failed. Please refresh the page",
+      "permissionDenied": "You don't have permission to perform this action",
+      "resourceNotFound": "The requested resource was not found",
+      "duplicateEntry": "This entry already exists",
+      "contentTooLarge": "Content exceeds size limit",
+      "unsupportedMediaType": "Unsupported file type",
+      "accountSuspended": "Your account has been suspended",
+      "emailNotVerified": "Email address not verified",
+      "invalidCredentials": "Invalid username or password",
+      "tokenExpired": "Session expired. Please sign in again",
+      "tokenInvalid": "Invalid session. Please sign in again",
+      "internalError": "Internal server error. Please try again later"
+    }
   },
   "comment": {
     "title": "Comments",
