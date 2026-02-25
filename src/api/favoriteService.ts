@@ -65,6 +65,8 @@ export interface ListFavoritesParams {
   platform?: string
   sort_by?: 'created_at' | 'updated_at' | undefined
   sort_order?: 'asc' | 'desc' | undefined
+  include_post?: boolean
+  thumbnail_quality?: string
 }
 
 // ========== 收藏服务 ==========
@@ -101,6 +103,8 @@ export const favoriteService = {
       const query = new URLSearchParams({
         page: String(merged.page ?? 1),
         page_size: String(merged.page_size ?? 20),
+        include_post: 'true',
+        thumbnail_quality: merged.thumbnail_quality ?? 'medium',
       })
 
       if (merged.folder_name) {
