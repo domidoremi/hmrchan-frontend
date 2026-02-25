@@ -4,6 +4,9 @@
     :data-theme="resolvedTheme"
     :data-animation-intensity="animationIntensity"
     :data-ui-style="uiStyle"
+    :data-locale="currentLocale"
+    :data-locale-density="localeDensity"
+    :data-locale-animation="localeAnimation"
   >
     <!-- Skip to main content -->
     <a href="#main-content" class="skip-link">
@@ -59,6 +62,7 @@ import { ref, watch, computed, defineAsyncComponent } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useThemeStore, useSettingsStore } from '@/stores'
+import { useLocaleConfig } from '@/composables/useLocaleConfig'
 import AppNavbar from '@/components/layout/AppNavbar.vue'
 import AppFooter from '@/components/layout/AppFooter.vue'
 import PageLoading from '@/components/ui/PageLoading.vue'
@@ -78,6 +82,11 @@ const settingsStore = useSettingsStore()
 
 const { resolvedTheme } = storeToRefs(themeStore)
 const { settings } = storeToRefs(settingsStore)
+
+// 地区配置
+const { currentLocale, layout: localeLayout, interaction: localeInteraction } = useLocaleConfig()
+const localeDensity = computed(() => localeLayout.value.density)
+const localeAnimation = computed(() => localeInteraction.value.animationStyle)
 
 // 动效强度
 const animationIntensity = computed(() =>

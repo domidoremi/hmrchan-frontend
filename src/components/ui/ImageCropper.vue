@@ -18,7 +18,7 @@
           <img
             ref="imageRef"
             :src="imageSrc"
-            alt="Crop preview"
+            :alt="$t('common.cropPreview')"
             class="crop-image"
             :style="{ '--image-transform': imageTransform }"
             @load="onImageLoad"

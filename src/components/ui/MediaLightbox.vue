@@ -144,7 +144,7 @@
                 max="4"
                 step="0.25"
                 :value="scale"
-                aria-label="Zoom"
+                :aria-label="$t('common.zoomSlider')"
                 @input="onZoomInput"
               />
             </div>

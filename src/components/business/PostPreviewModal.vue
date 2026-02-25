@@ -108,7 +108,11 @@
                     />
                   </div>
                   <div v-else class="post-preview-media-empty">
-                    <div v-if="isLoading" class="post-preview-loading" aria-label="loading">
+                    <div
+                      v-if="isLoading"
+                      class="post-preview-loading"
+                      :aria-label="$t('common.loading')"
+                    >
                       <span class="spinner" />
                     </div>
                     <p v-else class="post-preview-empty-text">

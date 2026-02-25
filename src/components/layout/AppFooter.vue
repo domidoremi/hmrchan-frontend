@@ -11,7 +11,7 @@
       </div>
 
       <!-- Links -->
-      <nav class="footer-nav" aria-label="Footer navigation">
+      <nav class="footer-nav" :aria-label="$t('common.footerNav')">
         <RouterLink to="/explore">{{ $t('nav.explore') }}</RouterLink>
         <RouterLink to="/authors">{{ $t('nav.authors') }}</RouterLink>
         <RouterLink to="/community">{{ $t('nav.community') }}</RouterLink>
