@@ -2,11 +2,14 @@
  * Cloudflare Pages Function - API 代理
  *
  * 将 /api/* 请求代理到后端 API 服务器
- * 支持所有 HTTP 方法和请求头转发
+ * 优先通过 Workers VPC（Cloudflare Tunnel）私有访问后端
+ * 如果 VPC 绑定不可用，回退到公网访问
  */
 
 interface Env {
   API_BASE_URL: string
+  VPC_API_ORIGIN?: string
+  VPC_SERVICE?: Fetcher
 }
 
 type CFPagesContext = {
@@ -55,6 +58,61 @@ function handleCORS(request: Request, isDev: boolean): Response {
   })
 }
 
+/**
+ * 通过 Workers VPC 发送请求（私有网络，不经过公网）
+ */
+async function fetchViaVPC(
+  vpcBinding: Fetcher,
+  vpcOrigin: string,
+  path: string,
+  search: string,
+  request: Request,
+  headers: Headers
+): Promise<Response> {
+  const targetUrl = `${vpcOrigin}/api/${path}${search}`
+
+  const fetchOptions: RequestInit = {
+    method: request.method,
+    headers,
+    redirect: 'follow',
+  }
+
+  if (request.method !== 'GET' && request.method !== 'HEAD') {
+    fetchOptions.body = request.body
+    // @ts-expect-error - Cloudflare Workers 支持 duplex
+    fetchOptions.duplex = 'half'
+  }
+
+  return vpcBinding.fetch(new Request(targetUrl, fetchOptions))
+}
+
+/**
+ * 通过公网发送请求（fallback）
+ */
+async function fetchViaPublic(
+  apiBaseUrl: string,
+  path: string,
+  search: string,
+  request: Request,
+  headers: Headers
+): Promise<Response> {
+  const targetUrl = `${apiBaseUrl}/api/${path}${search}`
+
+  const fetchOptions: RequestInit = {
+    method: request.method,
+    headers,
+    redirect: 'follow',
+  }
+
+  if (request.method !== 'GET' && request.method !== 'HEAD') {
+    fetchOptions.body = request.body
+    // @ts-expect-error - Cloudflare Workers 支持 duplex
+    fetchOptions.duplex = 'half'
+  }
+
+  return fetch(targetUrl, fetchOptions)
+}
+
 export async function onRequest(context: CFPagesContext): Promise<Response> {
   const { request, env, params } = context
 
@@ -69,14 +127,12 @@ export async function onRequest(context: CFPagesContext): Promise<Response> {
   // 获取后端 API 地址
   const apiBaseUrl = env.API_BASE_URL || 'https://api.momichan.xyz'
 
-  // 构建目标 URL
-  // 保留原始请求的尾部斜杠
+  // 构建路径
   const path = Array.isArray(params.path) ? params.path.join('/') : params.path || ''
   const url = new URL(request.url)
   const originalPath = url.pathname
   const hasTrailingSlash = originalPath.endsWith('/')
   const normalizedPath = path + (hasTrailingSlash && !path.endsWith('/') ? '/' : '')
-  const targetUrl = `${apiBaseUrl}/api/${normalizedPath}${url.search}`
 
   // 复制请求头，移除不应转发的头
   const headers = new Headers()
@@ -93,29 +149,30 @@ export async function onRequest(context: CFPagesContext): Promise<Response> {
   headers.set('X-Forwarded-Proto', 'https')
   headers.set('X-Forwarded-Host', url.host)
 
-  // 安全增强：添加共享密钥验证（可选）
-  // 后端可以验证此密钥，确保请求来自 Cloudflare Functions
-  // const SECRET_KEY = env.API_SECRET_KEY
-  // if (SECRET_KEY) {
-  //   headers.set('X-Proxy-Secret', SECRET_KEY)
-  // }
-
   try {
-    // 转发请求
-    const fetchOptions: RequestInit = {
-      method: request.method,
-      headers,
-      redirect: 'follow',
-    }
+    let response: Response
 
-    // 只有非 GET/HEAD 请求才传递 body
-    if (request.method !== 'GET' && request.method !== 'HEAD') {
-      fetchOptions.body = request.body
-      // @ts-expect-error - Cloudflare Workers 支持 duplex
-      fetchOptions.duplex = 'half'
+    // 优先使用 Workers VPC（通过 Cloudflare Tunnel 私有访问）
+    if (env.VPC_SERVICE) {
+      const vpcOrigin = env.VPC_API_ORIGIN || 'http://localhost:8000'
+      try {
+        response = await fetchViaVPC(
+          env.VPC_SERVICE,
+          vpcOrigin,
+          normalizedPath,
+          url.search,
+          request,
+          headers
+        )
+      } catch (vpcError) {
+        // VPC 失败，回退到公网
+        console.error('[API Proxy] VPC fetch failed, falling back to public:', vpcError)
+        response = await fetchViaPublic(apiBaseUrl, normalizedPath, url.search, request, headers)
+      }
+    } else {
+      // 没有 VPC 绑定，直接走公网
+      response = await fetchViaPublic(apiBaseUrl, normalizedPath, url.search, request, headers)
     }
-
-    const response = await fetch(targetUrl, fetchOptions)
 
     // 复制响应头
     const responseHeaders = new Headers(response.headers)
@@ -131,7 +188,6 @@ export async function onRequest(context: CFPagesContext): Promise<Response> {
     responseHeaders.delete('transfer-encoding')
 
     // 为媒体资源设置更长的缓存时间（7天）
-    // 针对 /api/v1/media/*/thumbnail 等图片资源
     if (path.includes('/media/') && (path.includes('/thumbnail') || path.includes('/image'))) {
       responseHeaders.set('Cache-Control', 'public, max-age=604800, stale-while-revalidate=86400')
     }
@@ -142,11 +198,8 @@ export async function onRequest(context: CFPagesContext): Promise<Response> {
       headers: responseHeaders,
     })
   } catch (error) {
-    // 仅在服务端日志记录详细错误，不暴露给客户端
     console.error('[API Proxy] Error:', error)
-    console.error('[API Proxy] Target URL:', targetUrl)
 
-    // 生产环境返回通用错误信息，不泄露内部细节
     const origin = request.headers.get('Origin')
     const allowedOrigin = isAllowedOrigin(origin, isDev) ? origin : ALLOWED_ORIGINS[0]
 
