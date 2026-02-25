@@ -7,6 +7,20 @@ import type { ComposerTranslation } from 'vue-i18n'
 
 type TranslateFunction = ComposerTranslation
 
+/** locale → BCP 47 映射 */
+const localeBcp47Map: Record<string, string> = {
+  'zh-CN': 'zh-CN',
+  'zh-TW': 'zh-TW',
+  en: 'en-US',
+  ja: 'ja-JP',
+}
+
+/** 从 document.documentElement.lang 获取当前 BCP 47 locale */
+function currentBcp47(): string {
+  const lang = document.documentElement.lang || 'en'
+  return localeBcp47Map[lang] ?? lang
+}
+
 /**
  * 将服务端时间字符串解析为 Date 对象。
  * 服务端可能返回不带时区标识的 ISO 字符串（如 "2024-01-15T10:30:00"），
@@ -42,7 +56,7 @@ export function formatRelativeTime(dateStr: string, t: TranslateFunction): strin
   if (diffHours < 24) return t('common.hoursAgo', { n: diffHours })
   if (diffDays < 7) return t('common.daysAgo', { n: diffDays })
 
-  return date.toLocaleDateString()
+  return date.toLocaleDateString(currentBcp47())
 }
 
 /**
@@ -51,7 +65,7 @@ export function formatRelativeTime(dateStr: string, t: TranslateFunction): strin
  * @returns 本地化日期字符串
  */
 export function formatDate(dateStr: string): string {
-  return parseServerDate(dateStr).toLocaleDateString()
+  return parseServerDate(dateStr).toLocaleDateString(currentBcp47())
 }
 
 /**
@@ -60,5 +74,5 @@ export function formatDate(dateStr: string): string {
  * @returns 本地化日期时间字符串
  */
 export function formatDateTime(dateStr: string): string {
-  return parseServerDate(dateStr).toLocaleString()
+  return parseServerDate(dateStr).toLocaleString(currentBcp47())
 }
