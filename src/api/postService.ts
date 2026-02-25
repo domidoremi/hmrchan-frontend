@@ -224,6 +224,7 @@ interface RawPostDetail {
   media_count?: number
   media_type_legacy?: string
   duration?: number | null
+  subtitles?: MediaSubtitle[]
 }
 
 /** 将顶层字幕数组挂载到视频类型的 MediaFile 上 */
@@ -264,6 +265,7 @@ function normalizePostDetail(raw: RawPostDetail): PostDetailResponse {
     }))
 
   // 把顶层字幕挂到视频文件上
+  const topLevelSubtitles = raw.subtitles
   if (mediaFiles && topLevelSubtitles?.length) {
     attachSubtitlesToVideos(mediaFiles, topLevelSubtitles)
   }

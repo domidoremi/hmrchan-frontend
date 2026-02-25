@@ -1344,6 +1344,19 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
+  border-radius: var(--radius-2xl);
+  overflow: hidden;
+  position: relative;
+}
+
+.post-media-empty .post-image {
+  width: 100%;
+  height: 100%;
+  max-height: clamp(320px, 62dvh, 720px);
+  object-fit: contain;
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--post-shadow-sm);
+  background: var(--post-media-bg);
 }
 
 .post-media-text-only {
