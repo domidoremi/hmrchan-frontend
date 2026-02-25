@@ -1526,6 +1526,7 @@ onUnmounted(() => {
   height: auto;
   align-self: start;
   min-width: 0;
+  max-width: 100%;
   padding: var(--spacing-4);
   background: var(--post-panel-bg);
   border-left: 1px solid var(--post-panel-border);
@@ -1755,8 +1756,11 @@ onUnmounted(() => {
   gap: var(--spacing-2);
   padding: var(--spacing-2) 0 0;
   overflow-x: auto;
+  overflow-y: hidden;
+  max-width: 100%;
   scrollbar-width: none;
   -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
 }
 
 .media-thumbnails::-webkit-scrollbar {
