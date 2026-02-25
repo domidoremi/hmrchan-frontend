@@ -29,14 +29,11 @@
   Permissions-Policy: camera=(), microphone=(), geolocation=(), fullscreen=(self), payment=(), accelerometer=(), gyroscope=(), magnetometer=(), midi=(), usb=(), display-capture=(), screen-wake-lock=(), xr-spatial-tracking=(), clipboard-read=(), clipboard-write=(self), picture-in-picture=(self), autoplay=(self)
   
   # 内容安全策略
-  # script-src: hash 替代 unsafe-inline，无 unsafe-eval（Vue 3 SFC 预编译无需 eval）
-  #   hash1: frame-guard 内联脚本（修改后需重算: node scripts/compute-csp-hash.mjs）
-  #   Cloudflare beacon: 通过 index.html 手动引入外部脚本，由域名白名单覆盖
-  #     如仍有 Cloudflare 注入的内联脚本被阻止，在 Dashboard 关闭:
-  #     Speed > Optimization > Auto Minify (JS) / Rocket Loader
+  # script-src 由 functions/_middleware.ts 动态注入 nonce 覆盖（支持 Cloudflare 注入的内联脚本）
+  # 此处保留静态 CSP 作为 fallback（middleware 未执行时，如直接访问静态资源）
   # style-src: 保留 unsafe-inline（critical CSS 每次构建变化 + Vue 运行时样式）
   # media-src: 所有媒体通过 /api 代理，无需 https: 通配
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'sha256-gQxtaB/fHoD0PKLcLhsW2rm03+//Pw/+Zq8q5+UQIFg=' 'sha256-3k1Ko7n0RlNGvG5xV9GnGB+MAQOob7mOU6V1w5s86Lw=' 'sha256-ph3AkIn7ozIhXCPVYLJG0nnQQlsL8NUjOzn7gFpSrGU=' https://static.cloudflareinsights.com https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; font-src 'self' data:; connect-src 'self' https://api.momichan.xyz https://api.dicebear.com https://challenges.cloudflare.com https://static.cloudflareinsights.com https://cloudflareinsights.com https://pbs.twimg.com https://i.ytimg.com; media-src 'self' blob:; object-src 'none'; worker-src 'self' blob:; frame-src 'self' https://challenges.cloudflare.com; frame-ancestors 'self'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; font-src 'self' data:; connect-src 'self' https://api.momichan.xyz https://api.dicebear.com https://challenges.cloudflare.com https://static.cloudflareinsights.com https://cloudflareinsights.com https://pbs.twimg.com https://i.ytimg.com; media-src 'self' blob:; object-src 'none'; worker-src 'self' blob:; frame-src 'self' https://challenges.cloudflare.com; frame-ancestors 'self'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests
 
 # HTML 页面 - 短缓存，便于快速更新
 /*.html
