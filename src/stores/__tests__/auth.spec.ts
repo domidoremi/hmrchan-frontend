@@ -85,6 +85,13 @@ describe('Auth Store', () => {
   })
 
   afterEach(() => {
+    // 清理 store 的定时器（heartbeat、deferredProfile 等），防止跨测试泄漏
+    try {
+      const store = useAuthStore()
+      store.cleanup()
+    } catch {
+      // ignore if store not initialized
+    }
     vi.useRealTimers()
   })
 
@@ -141,7 +148,6 @@ describe('Auth Store', () => {
       }
 
       vi.mocked(authService.login).mockResolvedValueOnce(mockResponse)
-      vi.mocked(authService.getCurrentUser).mockResolvedValueOnce(mockUser)
 
       const result = await store.login('test@test.com', 'password')
 
@@ -149,6 +155,7 @@ describe('Auth Store', () => {
       expect(result.user).toEqual(mockUser)
       expect(store.token).toBe('test-token')
       expect(store.isAuthenticated).toBe(true)
+      store.cleanup()
       vi.useFakeTimers() // 恢复假定时器
     })
 
@@ -200,6 +207,7 @@ describe('Auth Store', () => {
 
       expect(loadingDuringRequest).toBe(true)
       expect(store.isLoading).toBe(false)
+      store.cleanup()
       vi.useFakeTimers()
     })
   })
@@ -216,13 +224,13 @@ describe('Auth Store', () => {
       }
 
       vi.mocked(authService.register).mockResolvedValueOnce(mockResponse)
-      vi.mocked(authService.getCurrentUser).mockResolvedValueOnce(mockUser)
 
       const result = await store.register('newuser', 'new@test.com', 'password', '123456')
 
       expect(result.success).toBe(true)
       expect(result.user).toEqual(mockUser)
       expect(store.token).toBe('new-token')
+      store.cleanup()
       vi.useFakeTimers()
     })
 
