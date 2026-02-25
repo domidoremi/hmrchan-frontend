@@ -170,8 +170,7 @@ main {
 }
 
 .hero {
-  min-height: calc(100svh - var(--navbar-height));
-  min-height: calc(100dvh - var(--navbar-height));
+  min-height: 0;
 }
 
 .page-loading {
@@ -209,8 +208,7 @@ main {
   }
 
   .hero {
-    min-height: calc(100svh - var(--navbar-height) - var(--mobile-nav-height));
-    min-height: calc(100dvh - var(--navbar-height) - var(--mobile-nav-height));
+    min-height: 0;
   }
 
   .mobile-nav-item {

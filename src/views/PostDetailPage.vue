@@ -986,7 +986,9 @@ onUnmounted(() => {
   --post-overlay: rgba(15, 23, 42, 0.52);
   --post-overlay-soft: rgba(15, 23, 42, 0.28);
   --post-overlay-text: #f8fafc;
-  --post-media-bg: rgba(15, 23, 42, 0.08);
+  --post-media-bg: transparent;
+  --post-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06), 0 4px 12px rgba(0, 0, 0, 0.04);
+  --post-shadow-md: 0 1px 3px rgba(0, 0, 0, 0.06), 0 6px 16px rgba(0, 0, 0, 0.04);
   --post-modal-bg: var(--glass-bg-strong);
   --post-modal-border: var(--glass-border);
   --post-gutter: clamp(14px, 2vw, 28px);
@@ -1012,7 +1014,9 @@ onUnmounted(() => {
   --post-overlay: rgba(0, 0, 0, 0.6);
   --post-overlay-soft: rgba(0, 0, 0, 0.35);
   --post-overlay-text: #f8fafc;
-  --post-media-bg: #0b0b0f;
+  --post-media-bg: transparent;
+  --post-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.2), 0 4px 14px rgba(0, 0, 0, 0.15);
+  --post-shadow-md: 0 2px 4px rgba(0, 0, 0, 0.2), 0 8px 20px rgba(0, 0, 0, 0.15);
   --post-modal-bg: rgba(10, 10, 14, 0.92);
   --post-modal-border: rgba(255, 255, 255, 0.12);
 }
@@ -1316,14 +1320,6 @@ onUnmounted(() => {
   justify-content: center;
   padding: clamp(0.375rem, 1.3vw, 1rem);
   overflow: hidden;
-  /* 渐变填充背景 */
-  background:
-    radial-gradient(
-      ellipse 80% 60% at 50% 40%,
-      rgba(var(--color-primary-rgb, 139, 92, 246), 0.04) 0%,
-      transparent 70%
-    ),
-    var(--post-media-bg);
   contain: layout style;
 }
 
@@ -1339,8 +1335,7 @@ onUnmounted(() => {
   overflow: hidden;
   background: var(--post-media-bg);
   border-radius: var(--radius-2xl);
-  border: 1px solid var(--post-panel-border);
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--post-shadow-sm);
 }
 
 .post-media-empty {
@@ -1399,8 +1394,8 @@ onUnmounted(() => {
   background: linear-gradient(
     180deg,
     transparent 0%,
-    rgba(0, 0, 0, 0.08) 50%,
-    var(--post-overlay-soft) 100%
+    rgba(0, 0, 0, 0.04) 50%,
+    rgba(0, 0, 0, 0.1) 100%
   );
   pointer-events: none;
 }
@@ -1536,6 +1531,7 @@ onUnmounted(() => {
   flex-direction: column;
   gap: var(--spacing-3);
   align-items: stretch;
+  box-shadow: var(--post-shadow-md);
 }
 
 @media (max-width: 899px) {
