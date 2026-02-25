@@ -1,0 +1,79 @@
+/**
+ * Locale-Specific Styles
+ *
+ * 基于 html[lang] 属性为不同语言/地区提供差异化的：
+ * - 字体栈（CJK vs Latin）
+ * - 行高 / 字间距
+ * - 地区特色强调色
+ */
+
+/* ========== 字体栈 ========== */
+
+/* 中文简体 — 思源黑体 / 苹方 / 微软雅黑 */
+[lang='zh-CN'] {
+  --font-family: 'Inter', 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --leading-normal: 1.625;
+  --leading-relaxed: 1.75;
+  --locale-accent: #e53e3e;
+  --locale-accent-rgb: 229, 62, 62;
+  --locale-accent-light: #fc8181;
+  --locale-accent-dark: #c53030;
+}
+
+/* 中文繁体 — 思源黑体 / 苹方 / 微软正黑 */
+[lang='zh-TW'] {
+  --font-family: 'Inter', 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+  --leading-normal: 1.625;
+  --leading-relaxed: 1.75;
+  --locale-accent: #d69e2e;
+  --locale-accent-rgb: 214, 158, 46;
+  --locale-accent-light: #ecc94b;
+  --locale-accent-dark: #b7791f;
+}
+
+/* 日本語 — 思源黑体 / ヒラギノ / メイリオ */
+[lang='ja'] {
+  --font-family:
+    'Inter', 'Noto Sans JP', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif;
+  --leading-normal: 1.7;
+  --leading-relaxed: 1.85;
+  --locale-accent: #e891b2;
+  --locale-accent-rgb: 232, 145, 178;
+  --locale-accent-light: #f9a8d4;
+  --locale-accent-dark: #db2777;
+}
+
+/* English — Inter / system sans-serif */
+[lang='en'] {
+  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.625;
+  --locale-accent: #3b82f6;
+  --locale-accent-rgb: 59, 130, 246;
+  --locale-accent-light: #60a5fa;
+  --locale-accent-dark: #2563eb;
+}
+
+/* ========== CJK 排版微调 ========== */
+
+/* CJK 语言共享：更宽松的段落间距 */
+[lang='zh-CN'] p,
+[lang='zh-TW'] p,
+[lang='ja'] p {
+  line-height: var(--leading-relaxed);
+  word-break: break-all;
+}
+
+/* 日语额外字间距（假名 + 汉字混排需要更多呼吸感） */
+[lang='ja'] h1,
+[lang='ja'] h2,
+[lang='ja'] h3 {
+  letter-spacing: 0.02em;
+}
+
+/* 英文标题紧凑字间距 */
+[lang='en'] h1,
+[lang='en'] h2,
+[lang='en'] h3 {
+  letter-spacing: -0.02em;
+}
