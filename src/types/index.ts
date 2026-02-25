@@ -187,6 +187,7 @@ export interface CommentReport {
 // ========== Media & Subtitles ==========
 
 export interface SubtitleTrack {
+  id?: string | null
   language: string
   format?: string | null
   label?: string | null

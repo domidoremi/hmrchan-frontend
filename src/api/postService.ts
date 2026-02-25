@@ -109,6 +109,7 @@ export interface MediaFile {
 }
 
 export interface MediaSubtitle {
+  id?: string | null
   language: string
   format?: string | null
   label?: string | null
@@ -225,6 +226,20 @@ interface RawPostDetail {
   duration?: number | null
 }
 
+/** 将顶层字幕数组挂载到视频类型的 MediaFile 上 */
+function attachSubtitlesToVideos(files: MediaFile[] | undefined, subtitles: MediaSubtitle[]): void {
+  if (!files?.length || !subtitles.length) return
+  for (const file of files) {
+    if (file.file_type === 'video') {
+      // 合并：保留已有字幕，追加顶层字幕（去重）
+      const existing = file.subtitles ?? []
+      const existingLangs = new Set(existing.map((s) => s.language))
+      const newSubs = subtitles.filter((s) => !existingLangs.has(s.language))
+      file.subtitles = [...existing, ...newSubs]
+    }
+  }
+}
+
 /** 将后端原始响应映射为前端 PostDetailResponse */
 function normalizePostDetail(raw: RawPostDetail): PostDetailResponse {
   // 如果已经有非空 media_files，说明后端格式已对齐，直接返回
@@ -247,6 +262,11 @@ function normalizePostDetail(raw: RawPostDetail): PostDetailResponse {
       is_downloaded: true,
       created_at: raw.published_at ?? raw.created_at ?? '',
     }))
+
+  // 把顶层字幕挂到视频文件上
+  if (mediaFiles && topLevelSubtitles?.length) {
+    attachSubtitlesToVideos(mediaFiles, topLevelSubtitles)
+  }
 
   return {
     id: raw.id,
