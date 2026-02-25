@@ -1,6 +1,5 @@
 <template>
   <button
-    ref="cardRef"
     type="button"
     class="post-card glass-card glass-card--interactive"
     :class="{ 'post-card--contain': imageFit === 'contain' }"
@@ -102,7 +101,7 @@
             <div v-if="!showContent && displayAuthorName" class="hover-author">
               <Avatar
                 v-if="showAuthorAvatar && post.author_avatar_url"
-                :src="normalizeAvatarUrl(post.author_avatar_url) || undefined"
+                :src="normalizeAvatarUrl(post.author_avatar_url) ?? ''"
                 :alt="displayAuthorName"
                 size="xs"
                 class="hover-author-avatar"
@@ -337,7 +336,6 @@ const hoverContent = computed(() => {
   return content
 })
 
-const cardRef = ref<HTMLElement | null>(null)
 const isImageLoaded = ref(false)
 const shouldRenderImage = ref(true)
 const imageWidth = ref(640)

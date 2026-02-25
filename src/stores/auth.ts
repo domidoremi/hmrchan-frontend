@@ -295,6 +295,10 @@ export const useAuthStore = defineStore(
           if (response.refresh_token) {
             refreshToken.value = response.refresh_token
           }
+          // refreshToken 现在返回完整 LoginResp，同步 user 信息
+          if (response.user) {
+            user.value = response.user
+          }
         } catch {
           // refresh 也失败，真正登出
           user.value = null
@@ -405,6 +409,9 @@ export const useAuthStore = defineStore(
               await secureTokenManager.store(response.access_token).catch(() => {})
               if (response.refresh_token) {
                 refreshToken.value = response.refresh_token
+              }
+              if (response.user) {
+                user.value = response.user
               }
             } catch {
               // 刷新也失败，可能 refresh_token 已过期

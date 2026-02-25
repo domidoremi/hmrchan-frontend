@@ -19,9 +19,6 @@ import { hmacSha256 } from '@/utils/crypto'
 
 export interface ClientInitRequest {
   client_fingerprint: string
-  timezone: string
-  screen_resolution: string
-  platform: string
 }
 
 export interface ClientInitResponse {
@@ -38,13 +35,16 @@ export interface ClientVerifyRequest {
 }
 
 export interface ClientVerifyResponse {
+  success: boolean
   trust_level: ClientTrustLevel
+  message?: string
   expires_at?: string
 }
 
 export interface ClientStatusResponse {
   trust_level: ClientTrustLevel
   challenge_required?: boolean
+  turnstile_site_key?: string
   expires_at?: string
 }
 
@@ -145,9 +145,6 @@ async function collectClientInfo(): Promise<ClientInitRequest> {
   const fingerprint = await getDeviceFingerprint()
   return {
     client_fingerprint: fingerprint,
-    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-    screen_resolution: `${screen.width}x${screen.height}`,
-    platform: navigator.platform || navigator.userAgent,
   }
 }
 
