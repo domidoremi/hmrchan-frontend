@@ -800,12 +800,17 @@ const parsedDescription = computed<DescSection[]>(() => {
   return sections
 })
 
+function normalizeHtml(text: string): string {
+  return text.replace(/<\/?br\s*\/?>/gi, '\n').replace(/&nbsp;/gi, ' ')
+}
+
 function splitLines(text: string): string[] {
-  return text.split(/\n/)
+  return normalizeHtml(text).split(/\n/)
 }
 
 function linkify(text: string): string {
-  const escaped = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  const clean = normalizeHtml(text)
+  const escaped = clean.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
   return escaped.replace(
     /(https?:\/\/[^\s<&]+)/g,
     '<a href="$1" target="_blank" rel="noopener noreferrer" class="desc-link">$1</a>'
