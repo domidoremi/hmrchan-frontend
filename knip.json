@@ -1,20 +1,12 @@
 {
   "$schema": "https://unpkg.com/knip@5/schema.json",
-  "entry": ["src/router/index.ts", "vitest.setup.ts", "src/**/*.vue"],
+  "entry": ["src/router/index.ts", "src/**/*.vue"],
   "project": ["src/**/*.{ts,vue}", "*.config.ts", "vite-plugin-*.ts"],
   "ignore": [
     "src/**/*.d.ts",
-    "env.d.ts",
-    "functions/**/*",
     "src/**/index.ts",
     "**/__tests__/**",
     "**/*.spec.ts",
-    "**/*.test.ts",
-    "scripts/**/*",
-    "dist/**/*",
-    "node_modules/**/*",
-    ".husky/**/*",
-    "public/**/*",
     "src/utils/notifications/pushManager.ts"
   ],
   "ignoreDependencies": [
@@ -24,6 +16,7 @@
     "@types/*",
     "@vue/test-utils"
   ],
+  "ignoreUnresolved": ["vitest.setup.ts"],
   "ignoreExportsUsedInFile": true,
   "ignoreBinaries": [],
   "rules": {
