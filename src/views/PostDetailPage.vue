@@ -133,6 +133,12 @@
                 :alt="post?.title || ''"
                 loading="lazy"
               />
+              <div
+                v-else-if="post?.description && post.media_count === 0"
+                class="post-media-text-only"
+              >
+                <p class="post-media-text-only__content">{{ post.description }}</p>
+              </div>
               <div class="post-image skeleton" v-else />
             </div>
           </div>
@@ -1343,6 +1349,32 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.post-media-text-only {
+  width: 100%;
+  min-height: clamp(200px, 30dvh, 400px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-6) var(--spacing-8);
+  background: var(--glass-bg-light);
+  border-radius: var(--radius-xl);
+}
+
+.post-media-text-only__content {
+  margin: 0;
+  font-size: var(--text-base);
+  line-height: 1.8;
+  color: var(--post-text-primary);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-width: 72ch;
+  display: -webkit-box;
+  -webkit-line-clamp: 12;
+  line-clamp: 12;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .media-viewer::before {
