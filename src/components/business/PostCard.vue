@@ -26,8 +26,33 @@
       <!-- 预设固定尺寸的占位符，防止图片加载时的布局偏移 -->
       <div v-if="!isImageLoaded && thumbnailSrc" class="post-image-placeholder glass-skeleton" />
 
-      <!-- 无缩略图时的占位状态 -->
-      <div v-if="!thumbnailSrc" class="post-image-placeholder post-image-placeholder--empty">
+      <!-- 无缩略图：纯文本帖子 → 显示文本内容 -->
+      <div
+        v-if="!thumbnailSrc && isTextOnlyPost"
+        class="post-image-placeholder post-image-placeholder--text"
+      >
+        <div class="post-text-preview">
+          <component :is="platformIcon" :size="16" class="post-text-preview__icon" />
+          <p class="post-text-preview__content">{{ textPreview }}</p>
+        </div>
+      </div>
+
+      <!-- 无缩略图：有媒体但缩略图缺失 → 显示媒体类型指示 -->
+      <div
+        v-else-if="!thumbnailSrc && hasMediaNoThumbnail"
+        class="post-image-placeholder post-image-placeholder--media"
+      >
+        <component :is="mediaTypeIcon" :size="32" />
+        <span v-if="post.duration" class="post-media-hint__duration">
+          {{ formatDuration(post.duration) }}
+        </span>
+        <span v-else class="post-media-hint__label">
+          {{ post.media_count }} {{ post.media_count > 1 ? 'files' : 'file' }}
+        </span>
+      </div>
+
+      <!-- 无缩略图：无媒体也无文本 → 平台图标占位 -->
+      <div v-else-if="!thumbnailSrc" class="post-image-placeholder post-image-placeholder--empty">
         <component :is="platformIcon" :size="28" />
       </div>
 
@@ -142,6 +167,7 @@ import {
   ArrowUpRight,
   Calendar,
   Eye,
+  Film,
   Globe,
   Heart,
   Instagram,
@@ -400,11 +426,51 @@ const thumbnailSrc = computed(() => {
   return optimized
 })
 
+/** 纯文本帖子：无缩略图且无媒体 */
+const isTextOnlyPost = computed(() => {
+  if (thumbnailSrc.value) return false
+  const count = props.post.media_count ?? 0
+  if (count > 0) return false
+  const text = normalizeText(props.post.description) || normalizeText(props.post.content)
+  return text.length > 0
+})
+
+/** 有媒体但缩略图缺失 */
+const hasMediaNoThumbnail = computed(() => {
+  if (thumbnailSrc.value) return false
+  return (props.post.media_count ?? 0) > 0
+})
+
+/** 纯文本帖子的预览文本 */
+const textPreview = computed(() => {
+  const content =
+    normalizeText(props.post.description) ||
+    normalizeText(props.post.content) ||
+    normalizeText(props.post.title)
+  if (!content) return ''
+  // 截取前 200 字符
+  if (content.length <= 200) return content
+  return content.slice(0, 200) + '…'
+})
+
+/** 媒体类型图标 */
+const mediaTypeIcon = computed(() => {
+  const postType = props.post.post_type?.toLowerCase()
+  if (postType === 'video' || postType === 'short' || postType === 'live_replay') return Play
+  if (props.post.duration && props.post.duration > 0) return Play
+  return Film
+})
+
 const preloadedAspectRatio = ref<string | null>(null)
 
 const wrapperAspectRatio = computed(() => {
   if (props.aspectRatio !== undefined && props.aspectRatio !== null && props.aspectRatio !== '') {
     return String(props.aspectRatio)
+  }
+
+  // 纯文本帖子使用较矮的比例
+  if (isTextOnlyPost.value) {
+    return '16 / 10'
   }
 
   if (props.post.thumbnail_width && props.post.thumbnail_height) {
@@ -771,6 +837,66 @@ onUnmounted(() => {
   background: var(--glass-bg-light);
   color: var(--color-text-tertiary);
   opacity: 0.5;
+}
+
+/* ========== Text-Only Post Placeholder ========== */
+.post-image-placeholder--text {
+  display: flex;
+  align-items: flex-start;
+  padding: var(--spacing-4);
+  background: var(--glass-bg-light);
+  overflow: hidden;
+}
+
+.post-text-preview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+  width: 100%;
+  min-height: 0;
+}
+
+.post-text-preview__icon {
+  color: var(--color-text-tertiary);
+  opacity: 0.6;
+  flex-shrink: 0;
+}
+
+.post-text-preview__content {
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: 1.6;
+  color: var(--color-text-secondary);
+  display: -webkit-box;
+  -webkit-line-clamp: 6;
+  line-clamp: 6;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+/* ========== Media-No-Thumbnail Placeholder ========== */
+.post-image-placeholder--media {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-2);
+  background: var(--glass-bg-light);
+  color: var(--color-text-tertiary);
+}
+
+.post-media-hint__duration {
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-secondary);
+}
+
+.post-media-hint__label {
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
 }
 
 /* ========== Image Overlay ========== */
