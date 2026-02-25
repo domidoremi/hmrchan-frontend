@@ -130,7 +130,9 @@ export const userService = {
    */
   async getDeletionStatus(): Promise<{
     is_deleted: boolean
+    can_restore: boolean
     deleted_at?: string
+    permanent_delete_at?: string
     days_remaining?: number
   }> {
     return apiClient.get('/account/deletion-status')

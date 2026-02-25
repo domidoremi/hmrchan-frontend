@@ -29,7 +29,7 @@ export interface Post {
   platform_post_id?: string
   post_url?: string
   post_type?: 'video' | 'image' | 'text' | 'short' | 'live_replay'
-  media_type?: 'video' | 'image' | null
+  media_type?: 'video' | 'image' | 'text' | null
   title?: string | null
   content?: string | null
   language?: string | null

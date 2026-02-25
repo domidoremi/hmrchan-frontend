@@ -35,8 +35,14 @@ export interface FavoriteResponse {
   post?: {
     id: string
     title: string
+    platform?: string
+    post_url?: string
     thumbnail_url?: string | null
     author_name?: string
+  }
+  author?: {
+    id: string
+    username: string
   }
 }
 

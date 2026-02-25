@@ -174,12 +174,11 @@ export const authService = {
 
   /**
    * 刷新 Token
+   * POST /api/auth/refresh → LoginResp (full response with user)
    */
-  async refreshToken(
-    refreshToken?: string
-  ): Promise<{ access_token: string; refresh_token?: string }> {
+  async refreshToken(refreshToken?: string): Promise<AuthResponse> {
     const body = refreshToken ? { refresh_token: refreshToken } : {}
-    return apiClient.post<{ access_token: string; refresh_token?: string }>('/auth/refresh', body, {
+    return apiClient.post<AuthResponse>('/auth/refresh', body, {
       ...authConfig,
       skipAuth: true,
       skipErrorToast: true,
