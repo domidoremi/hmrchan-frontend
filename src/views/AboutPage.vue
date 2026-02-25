@@ -35,7 +35,7 @@
           <div class="profile-section">
             <h4 class="subsection-title">
               <AnimatedIcon name="user" :fallback-icon="User" size="md" />
-              <span>Profile</span>
+              <span>{{ $t('about.origin.profileTitle') }}</span>
             </h4>
             <div class="profile-grid-enhanced">
               <div
@@ -58,7 +58,7 @@
           <div class="bio-section">
             <h4 class="subsection-title">
               <AnimatedIcon name="sparkle" :fallback-icon="Sparkles" size="md" />
-              <span>About</span>
+              <span>{{ $t('about.origin.aboutTitle') }}</span>
             </h4>
             <div class="bio-content">
               <p class="bio-text">{{ $t('about.origin.career') }}</p>
