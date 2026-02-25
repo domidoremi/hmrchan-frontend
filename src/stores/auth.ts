@@ -87,7 +87,7 @@ export const useAuthStore = defineStore(
         startHeartbeat()
 
         // 登录成功后获取完整的用户资料（包含 avatar_url 等字段）
-        fetchCurrentUser().catch(() => {})
+        fetchCurrentUser(false).catch(() => {})
 
         return {
           success: true,
@@ -134,7 +134,7 @@ export const useAuthStore = defineStore(
         }
         startHeartbeat()
 
-        fetchCurrentUser().catch(() => {})
+        fetchCurrentUser(false).catch(() => {})
 
         return { success: true, user: response.user }
       } catch (err) {
@@ -190,7 +190,7 @@ export const useAuthStore = defineStore(
         startHeartbeat()
 
         // 获取完整的用户资料（包含 avatar_url 等字段）
-        fetchCurrentUser().catch(() => {})
+        fetchCurrentUser(false).catch(() => {})
 
         return { success: true, user: response.user }
       } catch (err) {
@@ -259,8 +259,10 @@ export const useAuthStore = defineStore(
      * 获取当前用户信息
      * 仅在明确的认证失败（401/403）时清除状态
      * 网络错误、超时、500 等临时故障不清除认证状态
+     *
+     * @param clearOnAuthError 认证失败时是否清除状态（登录/注册后的资料拉取应传 false）
      */
-    async function fetchCurrentUser() {
+    async function fetchCurrentUser(clearOnAuthError = true) {
       if (!token.value) return null
 
       try {
@@ -268,7 +270,11 @@ export const useAuthStore = defineStore(
         user.value = currentUser
         return currentUser
       } catch (err) {
-        if (err instanceof ApiError && (err.status === 401 || err.status === 403)) {
+        if (
+          clearOnAuthError &&
+          err instanceof ApiError &&
+          (err.status === 401 || err.status === 403)
+        ) {
           // 明确的认证失败，清除状态
           user.value = null
           token.value = null
