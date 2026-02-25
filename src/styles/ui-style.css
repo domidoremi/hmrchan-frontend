@@ -307,6 +307,17 @@
   --glass-border: rgba(255, 255, 255, 0.12);
 }
 
+/* iOS Blue Theme - Frosted Blue Glass */
+#app[data-ui-style='ios'][data-theme='blue'] {
+  --ui-surface-border: rgba(59, 130, 246, 0.12);
+  --ui-surface-bg: rgba(255, 255, 255, 0.82);
+  --glass-bg: rgba(240, 249, 255, 0.7);
+  --glass-bg-light: rgba(224, 242, 254, 0.5);
+  --glass-bg-strong: rgba(255, 255, 255, 0.92);
+  --glass-border: rgba(59, 130, 246, 0.15);
+  --glass-border-strong: rgba(59, 130, 246, 0.3);
+}
+
 /* ========== Material Style ========== */
 #app[data-ui-style='material'] .glass-card {
   border-radius: var(--ui-radius-card);
@@ -358,6 +369,33 @@
     linear-gradient(0deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05)),
     var(--color-surface);
   /* M3 Surface Tint */
+}
+
+/* Material Blue Mode - Enhanced */
+#app[data-ui-style='material'][data-theme='blue'] .glass-card {
+  background: #ffffff;
+  border: 1px solid rgba(59, 130, 246, 0.12);
+}
+
+#app[data-ui-style='material'][data-theme='blue'] .glass-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+  border-color: rgba(59, 130, 246, 0.2);
+}
+
+/* iOS Blue Mode - Enhanced */
+#app[data-ui-style='ios'][data-theme='blue'] .glass-card:hover {
+  box-shadow:
+    0 18px 50px rgba(59, 130, 246, 0.1),
+    0 6px 16px rgba(59, 130, 246, 0.06);
+}
+
+#app[data-ui-style='ios'][data-theme='blue'] .glass-button {
+  border-color: rgba(59, 130, 246, 0.12);
+}
+
+#app[data-ui-style='ios'][data-theme='blue'] .glass-button:hover {
+  border-color: rgba(59, 130, 246, 0.25);
 }
 
 /* ========== iOS Motion & Interaction ========== */
@@ -804,6 +842,30 @@
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
 }
 
+/* ========== Blue Theme Specific Enhancements ========== */
+
+/* Material Blue: toggle switch */
+#app[data-ui-style='material'][data-theme='blue'] .toggle-switch {
+  background: #bae6fd;
+}
+
+#app[data-ui-style='material'][data-theme='blue'] .toggle-switch.active {
+  background: rgba(59, 130, 246, 0.4);
+}
+
+#app[data-ui-style='material'][data-theme='blue'] .toggle-switch.active .toggle-knob {
+  background: #3b82f6;
+}
+
+/* Blue theme scrollbar */
+#app[data-theme='blue'] ::-webkit-scrollbar-thumb {
+  background: rgba(59, 130, 246, 0.2);
+}
+
+#app[data-theme='blue'] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(59, 130, 246, 0.35);
+}
+
 /* ================================================================
  *  Material Design 3 - Extended System
  * ================================================================ */
@@ -833,6 +895,19 @@
   --md-on-surface-variant: #c4c4cc;
   --md-outline: rgba(255, 255, 255, 0.16);
   --md-outline-variant: rgba(255, 255, 255, 0.08);
+}
+
+#app[data-ui-style='material'][data-theme='blue'] {
+  --md-surface: #ffffff;
+  --md-surface-container-lowest: #ffffff;
+  --md-surface-container-low: #f0f9ff;
+  --md-surface-container: #e0f2fe;
+  --md-surface-container-high: #bae6fd;
+  --md-surface-container-highest: #7dd3fc;
+  --md-on-surface: #0f172a;
+  --md-on-surface-variant: #334155;
+  --md-outline: rgba(59, 130, 246, 0.2);
+  --md-outline-variant: rgba(59, 130, 246, 0.1);
 }
 
 /* ========== M3 Filled Button ========== */

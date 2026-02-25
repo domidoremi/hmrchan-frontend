@@ -77,6 +77,14 @@ body::before {
     var(--color-background);
 }
 
+/* Blue theme: soft blue ambient glow */
+[data-theme='blue'] body::before {
+  background:
+    radial-gradient(ellipse 80% 60% at 25% 15%, rgba(59, 130, 246, 0.06) 0%, transparent 55%),
+    radial-gradient(ellipse 60% 50% at 80% 70%, rgba(99, 102, 241, 0.04) 0%, transparent 50%),
+    var(--color-background);
+}
+
 /* Dark mode: subtle noise overlay for depth */
 [data-theme='dark'] body::after {
   content: '';
