@@ -37,7 +37,7 @@ type Renderer = (
   ctx: CanvasRenderingContext2D,
   p: Particle,
   cfg: ParticleEffectConfig,
-  isDark: boolean
+  theme: string
 ) => void
 
 // 0=low, 1=mid, 2=high
@@ -45,29 +45,32 @@ let renderQuality = 2
 
 // ==================== 主题色 ====================
 
-function defaultRainColor(isDark: boolean): string {
-  return isDark ? '#7cb5e3' : '#5b9bd5'
+function defaultRainColor(theme: string): string {
+  if (theme === 'blue') return '#60a5fa'
+  return theme === 'dark' ? '#7cb5e3' : '#5b9bd5'
 }
-function defaultSnowColor(isDark: boolean): string {
-  return isDark ? '#ffffff' : '#f0f4f8'
+function defaultSnowColor(theme: string): string {
+  if (theme === 'blue') return '#dbeafe'
+  return theme === 'dark' ? '#ffffff' : '#f0f4f8'
 }
-function defaultStarColor(isDark: boolean): string {
-  return isDark ? '#fcd87a' : '#d4a017'
+function defaultStarColor(theme: string): string {
+  if (theme === 'blue') return '#93c5fd'
+  return theme === 'dark' ? '#fcd87a' : '#d4a017'
 }
 
 function resolveColor(
   cfg: ParticleEffectConfig,
   type: 'rain' | 'snow' | 'stars',
-  isDark: boolean
+  theme: string
 ): string {
   if (cfg.color) return cfg.color
   switch (type) {
     case 'rain':
-      return defaultRainColor(isDark)
+      return defaultRainColor(theme)
     case 'snow':
-      return defaultSnowColor(isDark)
+      return defaultSnowColor(theme)
     case 'stars':
-      return defaultStarColor(isDark)
+      return defaultStarColor(theme)
   }
 }
 
@@ -265,8 +268,9 @@ const updateRain: Updater = (p, w, h, dt, cfg) => {
   }
 }
 
-const renderRain: Renderer = (ctx, p, cfg, isDark) => {
-  const color = resolveColor(cfg, 'rain', isDark)
+const renderRain: Renderer = (ctx, p, cfg, theme) => {
+  const color = resolveColor(cfg, 'rain', theme)
+  const isDark = theme === 'dark'
   const alpha = clampAlpha(p.alpha * (isDark ? 1 : 1.35))
   const len = p.size * (p.depth === 2 ? 12 : p.depth === 1 ? 9 : 6)
   const x1 = p.x
@@ -369,8 +373,9 @@ const updateSnow: Updater = (p, w, h, dt, cfg) => {
   if (p.x > w + 20) p.x = -10
 }
 
-const renderSnow: Renderer = (ctx, p, cfg, isDark) => {
-  const color = resolveColor(cfg, 'snow', isDark)
+const renderSnow: Renderer = (ctx, p, cfg, theme) => {
+  const color = resolveColor(cfg, 'snow', theme)
+  const isDark = theme === 'dark'
   const alpha = clampAlpha(p.alpha * (isDark ? 1 : 1.35))
   if (p.depth === 0 || renderQuality === 0) {
     drawSnowflakeLite(ctx, p.x, p.y, Math.max(0.8, p.size * 0.9), color, alpha)
@@ -462,8 +467,9 @@ const updateStars: Updater = (p, w, h, dt, cfg) => {
   }
 }
 
-const renderStars: Renderer = (ctx, p, cfg, isDark) => {
-  const color = resolveColor(cfg, 'stars', isDark)
+const renderStars: Renderer = (ctx, p, cfg, theme) => {
+  const color = resolveColor(cfg, 'stars', theme)
+  const isDark = theme === 'dark'
   const alpha = clampAlpha(p.alpha * (isDark ? 1 : 1.35))
 
   // Shooting star: extended trail
@@ -639,10 +645,6 @@ export function useParticleEngine(options: UseParticleEngineOptions) {
     if (impulses.length > 6) impulses.shift()
   }
 
-  function isDark(): boolean {
-    return resolvedTheme.value === 'dark'
-  }
-
   function shouldRun(): boolean {
     if (config.value.type === 'none') return false
     if (animationIntensity.value === 'none') return false
@@ -788,7 +790,7 @@ export function useParticleEngine(options: UseParticleEngineOptions) {
     ctx.clearRect(0, 0, canvasW, canvasH)
 
     const count = getParticleCount()
-    const dark = isDark()
+    const theme = resolvedTheme.value
 
     for (let i = 0; i < count && i < pool.length; i++) {
       const p = pool[i]!
@@ -796,7 +798,7 @@ export function useParticleEngine(options: UseParticleEngineOptions) {
       currentEffect.update(p, canvasW, canvasH, dt, config.value)
 
       applyDisturbance(p, dt)
-      currentEffect.render(ctx, p, config.value, dark)
+      currentEffect.render(ctx, p, config.value, theme)
     }
 
     rafId = requestAnimationFrame(tick)

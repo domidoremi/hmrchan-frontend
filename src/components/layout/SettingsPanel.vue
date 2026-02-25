@@ -954,6 +954,49 @@ function resetVideoSettings() {
   background: rgba(255, 255, 255, 0.06);
 }
 
+/* ========== Blue Theme ========== */
+[data-theme='blue'] .theme-btn.active {
+  background: rgba(59, 130, 246, 0.1);
+  border-color: #3b82f6;
+}
+
+[data-theme='blue'] .theme-btn.active .theme-btn-icon {
+  background: #3b82f6;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+[data-theme='blue'] .theme-btn.active .theme-btn-label {
+  color: #2563eb;
+}
+
+[data-theme='blue'] .bg-effect-btn.active {
+  background: rgba(59, 130, 246, 0.1);
+  border-color: #3b82f6;
+}
+
+[data-theme='blue'] .bg-effect-btn.active .bg-effect-label {
+  color: #2563eb;
+}
+
+[data-theme='blue'] .lang-btn.active {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  border-color: transparent;
+  color: #ffffff;
+}
+
+[data-theme='blue'] .settings-slider::-webkit-slider-thumb {
+  background: #3b82f6;
+}
+
+[data-theme='blue'] .settings-slider::-moz-range-thumb {
+  background: #3b82f6;
+}
+
+[data-theme='blue'] .toggle-switch.active {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+}
+
 /* ========== Reduced Motion Notice ========== */
 .reduced-motion-notice {
   display: flex;

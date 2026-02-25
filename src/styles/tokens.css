@@ -342,43 +342,107 @@
   /* Secondary - Slate */
   --color-secondary: #64748b;
   --color-secondary-rgb: 100, 116, 139;
+  --color-secondary-light: #94a3b8;
+  --color-secondary-dark: #475569;
 
-  /* Backgrounds - Very light/clean (or distinct from Light mode?) */
-  /* User asked for "Minimal Blue". Usually implies light mode with blue accents. 
-     But since we have Light/Dark, maybe this is a colored theme?
-     Let's make it a "Blue Light" theme or "Blue Dark" theme?
-     "Minimalist Blue" often implies a clean white/blue look.
-     Let's keep it based on Light mode but with Blue primary instead of Zinc, 
-     BUT maybe with a slight tint.
-     Actually, let's treat it as a variation of Light mode for now, or maybe a soft blue background?
-     Let's go with a Soft Blue Tint background. */
+  /* Semantic Colors - 蓝色主题优化，避免黄色调 */
+  --color-success: #10b981;
+  --color-success-rgb: 16, 185, 129;
+  --color-success-alpha: rgba(16, 185, 129, 0.1);
+  --color-success-hover: #059669;
+  --color-warning: #f97316;
+  --color-warning-rgb: 249, 115, 22;
+  --color-warning-alpha: rgba(249, 115, 22, 0.1);
+  --color-warning-hover: #ea580c;
+  --color-error: #ef4444;
+  --color-error-rgb: 239, 68, 68;
+  --color-error-alpha: rgba(239, 68, 68, 0.1);
+  --color-error-hover: #dc2626;
+  --color-info: #3b82f6;
+  --color-info-rgb: 59, 130, 246;
+  --color-info-alpha: rgba(59, 130, 246, 0.1);
+  --color-info-hover: #2563eb;
+
+  /* Backgrounds */
   --color-background: #f0f9ff;
-  /* sky-50 */
   --color-surface: #ffffff;
   --color-surface-variant: #e0f2fe;
-  /* sky-100 */
   --color-border: #bae6fd;
-  /* sky-200 */
+
+  /* Background aliases */
+  --color-bg-secondary: #e0f2fe;
+  --color-bg-tertiary: #f0f9ff;
+
+  /* Surface Elevation */
+  --color-surface-1: rgba(59, 130, 246, 0.02);
+  --color-surface-2: rgba(59, 130, 246, 0.04);
+  --color-surface-3: rgba(59, 130, 246, 0.06);
+  --color-surface-4: rgba(59, 130, 246, 0.08);
+  --color-surface-5: rgba(59, 130, 246, 0.1);
+
+  /* Overlay / Scrim */
+  --color-overlay: rgba(15, 23, 42, 0.4);
+  --color-overlay-heavy: rgba(15, 23, 42, 0.6);
+  --color-scrim: rgba(15, 23, 42, 0.32);
+
+  /* Divider & Outline */
+  --color-divider: rgba(59, 130, 246, 0.12);
+  --color-divider-strong: rgba(59, 130, 246, 0.2);
+  --color-outline: rgba(59, 130, 246, 0.2);
+  --color-outline-variant: rgba(59, 130, 246, 0.1);
 
   /* Text - Slate */
   --color-text-primary: #0f172a;
-  /* slate-900 */
   --color-text-secondary: #334155;
-  /* slate-700 */
   --color-text-tertiary: #64748b;
-  /* slate-500 */
+  --color-text-muted: #94a3b8;
   --color-text-inverse: #ffffff;
   --color-on-primary: #ffffff;
 
+  /* shadcn/ui style colors */
+  --color-foreground: #0f172a;
+  --color-muted: #e0f2fe;
+  --color-muted-foreground: #64748b;
+  --color-destructive: var(--color-error);
+  --color-destructive-foreground: var(--color-white);
+  --color-ring: var(--color-primary);
+  --color-input: var(--color-border);
+
   /* Glass Overrides */
   --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-bg-light: rgba(255, 255, 255, 0.55);
   --glass-bg-strong: rgba(255, 255, 255, 0.9);
-  --glass-border: rgba(59, 130, 246, 0.2);
+  --glass-bg-subtle: rgba(59, 130, 246, 0.04);
+  --glass-border: rgba(59, 130, 246, 0.15);
+  --glass-border-strong: rgba(59, 130, 246, 0.3);
+  --glass-border-subtle: rgba(59, 130, 246, 0.06);
+  --glass-blur: blur(16px);
+  --glass-blur-strong: blur(24px);
+  --glass-blur-light: blur(8px);
   --glass-glow: 0 0 20px rgba(59, 130, 246, 0.15);
+  --glass-glow-accent: 0 0 20px rgba(99, 102, 241, 0.15);
+  --glass-shadow: 0 8px 32px rgba(59, 130, 246, 0.06), 0 2px 8px rgba(0, 0, 0, 0.03);
+  --glass-shadow-lg: 0 16px 48px rgba(59, 130, 246, 0.1), 0 4px 16px rgba(0, 0, 0, 0.04);
+
+  /* Shadows - 蓝色调阴影 */
+  --shadow-sm: 0 1px 2px rgba(59, 130, 246, 0.06);
+  --shadow-md: 0 4px 6px -1px rgba(59, 130, 246, 0.08), 0 2px 4px -2px rgba(59, 130, 246, 0.04);
+  --shadow-lg: 0 10px 15px -3px rgba(59, 130, 246, 0.08), 0 4px 6px -4px rgba(59, 130, 246, 0.04);
+  --shadow-xl: 0 20px 25px -5px rgba(59, 130, 246, 0.1), 0 8px 10px -6px rgba(59, 130, 246, 0.06);
 
   /* Gradients */
   --gradient-primary: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  --gradient-accent: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
   --gradient-hero: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, transparent 100%);
+  --gradient-card-hover: linear-gradient(180deg, transparent 0%, rgba(59, 130, 246, 0.04) 100%);
+  --gradient-shine: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.5) 50%,
+    transparent 100%
+  );
+  --gradient-text: #2563eb;
+  --gradient-text-shadow: none;
 }
 
 [data-theme='dark'] {
