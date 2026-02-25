@@ -96,7 +96,7 @@ export interface ListDiscussionsParams {
   category?: DiscussionCategory
   tag?: string
   sort?: 'latest' | 'popular' | 'active'
-  sort_by?: 'created_at' | 'updated_at' | 'likes_count' | 'comments_count' | 'view_count'
+  sort_by?: 'created_at' | 'updated_at' | 'like_count' | 'comments_count' | 'view_count'
   sort_order?: 'asc' | 'desc'
 }
 

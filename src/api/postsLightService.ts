@@ -27,6 +27,8 @@ export interface PostLightItem {
   id: string
   platform: string
   title?: string | null
+  content?: string | null
+  media_type?: 'video' | 'image' | 'text' | null
   thumbnail_url?: string | null
   thumbnail_width?: number
   thumbnail_height?: number
