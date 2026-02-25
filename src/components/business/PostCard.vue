@@ -7,9 +7,7 @@
     :aria-label="displayTitle || undefined"
     @click="handleClick"
     @mouseenter="handleMouseEnter"
-    @mouseleave="handleMouseLeave"
     @focus="handleMouseEnter"
-    @blur="handleMouseLeave"
   >
     <div class="post-image-wrapper" :style="imageWrapperStyle">
       <!-- Platform Icon Badge -->
@@ -25,16 +23,7 @@
       <!-- 预设固定尺寸的占位符，防止图片加载时的布局偏移 -->
       <div v-if="!isImageLoaded && thumbnailSrc" class="post-image-placeholder glass-skeleton" />
 
-      <!-- 无缩略图：纯文本帖子 → 显示文本内容 -->
-      <div
-        v-if="!thumbnailSrc && isTextOnlyPost"
-        class="post-image-placeholder post-image-placeholder--text"
-      >
-        <div class="post-text-preview">
-          <component :is="platformIcon" :size="16" class="post-text-preview__icon" />
-          <p class="post-text-preview__content">{{ textPreview }}</p>
-        </div>
-      </div>
+      <!-- 无缩略图：纯文本帖子 → 不显示图片占位区域 -->
 
       <!-- 无缩略图：有媒体但缩略图缺失 → 显示媒体类型指示 -->
       <div
@@ -84,37 +73,6 @@
 
       <!-- Image Overlay Gradient -->
       <div class="image-overlay" />
-
-      <!-- Hover Details Overlay -->
-      <Transition name="hover-details">
-        <div v-if="showHoverDetails" class="hover-overlay">
-          <div class="hover-header">
-            <div class="hover-action">
-              <div class="hover-action-icon">
-                <AnimatedIcon name="sparkle" :fallback-icon="ArrowUpRight" size="md" />
-              </div>
-            </div>
-          </div>
-          <div class="hover-scroll">
-            <!-- Only show title/author in hover overlay when the card hides its content -->
-            <h4 v-if="!showContent && displayTitle" class="hover-title">{{ displayTitle }}</h4>
-            <div v-if="!showContent && displayAuthorName" class="hover-author">
-              <Avatar
-                v-if="showAuthorAvatar && post.author_avatar_url"
-                :src="normalizeAvatarUrl(post.author_avatar_url) ?? ''"
-                :alt="displayAuthorName"
-                size="xs"
-                class="hover-author-avatar"
-              />
-              <AnimatedIcon v-else name="user" :fallback-icon="User" size="sm" />
-              <span>{{ displayAuthorName }}</span>
-            </div>
-            <p v-if="hoverContent" class="hover-text">
-              {{ hoverContent }}
-            </p>
-          </div>
-        </div>
-      </Transition>
     </div>
 
     <div v-if="showContent" class="post-content">
@@ -160,21 +118,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onUnmounted, type Component } from 'vue'
+import { ref, computed, watch, type Component } from 'vue'
 import { useI18n } from 'vue-i18n'
-import {
-  ArrowUpRight,
-  Calendar,
-  Eye,
-  Film,
-  Globe,
-  Heart,
-  Instagram,
-  Music2,
-  Play,
-  User,
-  Video,
-} from 'lucide-vue-next'
+import { Calendar, Eye, Film, Globe, Heart, Play, User } from 'lucide-vue-next'
+import { IconYoutube, IconX, IconTiktok, IconInstagram } from '@/components/icons'
 import type { PostListItem } from '@/api'
 import { normalizeAvatarUrl } from '@/api/userService'
 import { prefetchPostDetail } from '@/utils/prefetch'
@@ -186,7 +133,6 @@ import {
 } from '@/utils/mediaOptimizer'
 import { thumbnailCache } from '@/utils/thumbnailCache'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
-import Avatar from '@/components/ui/Avatar.vue'
 import Tooltip from '@/components/ui/Tooltip.vue'
 
 /**
@@ -227,8 +173,6 @@ export interface PostCardProps {
   post: PostListItem
   showContent?: boolean
   showAuthor?: boolean
-  /** 是否在悬浮overlay中显示作者头像 */
-  showAuthorAvatar?: boolean
   /** 是否显示文本摘要（在content区域） */
   showExcerpt?: boolean
   thumbnailSize?: 'small' | 'medium' | 'large' | 'responsive'
@@ -242,7 +186,6 @@ export interface PostCardProps {
 const props = withDefaults(defineProps<PostCardProps>(), {
   showContent: true,
   showAuthor: true,
-  showAuthorAvatar: false,
   // on touch devices we default to showing excerpt in the card (no hover)
   showExcerpt: isMobileDevice(),
   thumbnailSize: 'responsive',
@@ -320,38 +263,20 @@ const cardExcerpt = computed(() => {
   return displayExcerpt.value
 })
 
-const hoverContent = computed(() => {
-  const content = normalizeText(props.post.description)
-  if (!content) return ''
-
-  // When card hides its content, hover overlay becomes the primary reading surface.
-  // If we already show the first line as title, avoid duplicating it in the body.
-  if (!props.showContent && titleFromContent.value) {
-    const firstLine = content.split(/\n/)[0] || content
-    const rest = content.slice(firstLine.length).trim()
-    return rest
-  }
-
-  // Requirement: hover overlay should include full content for reading (no line-clamp).
-  return content
-})
-
 const isImageLoaded = ref(false)
 const shouldRenderImage = ref(true)
 const imageWidth = ref(640)
 const imageHeight = ref(360)
-const showHoverDetails = ref(false)
 
 let hasPrefetchedPostDetailPage = false
 let hasPreloadedLargeImage = false
-let hoverTimeout: ReturnType<typeof setTimeout> | null = null
 
-// Platform icon mapping - 使用非废弃图标
+// Platform icon mapping - 品牌 SVG 图标
 const platformIconMap: Record<string, Component> = {
-  youtube: Video,
-  twitter: Globe,
-  tiktok: Music2,
-  instagram: Instagram,
+  youtube: IconYoutube,
+  twitter: IconX,
+  tiktok: IconTiktok,
+  instagram: IconInstagram,
   bilibili: Globe,
   pixiv: Globe,
   weibo: Globe,
@@ -439,18 +364,6 @@ const hasMediaNoThumbnail = computed(() => {
   return (props.post.media_count ?? 0) > 0
 })
 
-/** 纯文本帖子的预览文本 */
-const textPreview = computed(() => {
-  const content =
-    normalizeText(props.post.description) ||
-    normalizeText(props.post.content) ||
-    normalizeText(props.post.title)
-  if (!content) return ''
-  // 截取前 200 字符
-  if (content.length <= 200) return content
-  return content.slice(0, 200) + '…'
-})
-
 /** 媒体类型图标 */
 const mediaTypeIcon = computed(() => {
   const postType = props.post.post_type?.toLowerCase()
@@ -490,9 +403,10 @@ const wrapperAspectRatio = computed(() => {
   return DEFAULT_ASPECT_RATIO
 })
 
-const imageWrapperStyle = computed<Record<string, string>>(() => ({
-  aspectRatio: wrapperAspectRatio.value,
-}))
+const imageWrapperStyle = computed<Record<string, string>>(() => {
+  if (isTextOnlyPost.value) return {}
+  return { aspectRatio: wrapperAspectRatio.value }
+})
 
 // 图片加载策略：首屏图片 eager，其他 lazy
 const imageLoadingStrategy = computed(() => (props.priority ? 'eager' : 'lazy'))
@@ -628,31 +542,11 @@ function prefetchPostDetailPage() {
 function handleMouseEnter() {
   prefetchPostDetailPage()
   preloadLargeImage()
-  if (hoverTimeout) clearTimeout(hoverTimeout)
-  hoverTimeout = setTimeout(() => {
-    showHoverDetails.value = true
-  }, 200)
-}
-
-function handleMouseLeave() {
-  if (hoverTimeout) {
-    clearTimeout(hoverTimeout)
-    hoverTimeout = null
-  }
-  showHoverDetails.value = false
 }
 
 function handleClick() {
   emit('click', props.post.id, thumbnailSrc.value)
 }
-
-// 组件卸载时清理定时器，防止内存泄漏
-onUnmounted(() => {
-  if (hoverTimeout) {
-    clearTimeout(hoverTimeout)
-    hoverTimeout = null
-  }
-})
 </script>
 
 <style scoped>
@@ -737,6 +631,7 @@ onUnmounted(() => {
 
 .platform-badge--tiktok {
   background: linear-gradient(135deg, #25f4ee 0%, #fe2c55 100%);
+  border-color: transparent;
 }
 
 .platform-badge--bilibili {
@@ -745,6 +640,7 @@ onUnmounted(() => {
 
 .platform-badge--instagram {
   background: linear-gradient(135deg, #f9ce34 0%, #ee2a7b 45%, #6228d7 100%);
+  border-color: transparent;
 }
 
 /* ========== Duration Badge ========== */
@@ -805,7 +701,6 @@ onUnmounted(() => {
 
 .post-card--contain .post-image {
   object-fit: contain;
-  background: #000;
 }
 
 .post-image.is-loaded {
@@ -911,183 +806,6 @@ onUnmounted(() => {
   opacity: 0;
 }
 
-/* ========== Hover Overlay - 增强版 ========== */
-.hover-overlay {
-  position: absolute;
-  inset: 0;
-  z-index: 10;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  gap: var(--spacing-3);
-  padding: var(--spacing-3);
-  background: linear-gradient(
-    180deg,
-    rgba(0, 0, 0, 0.4) 0%,
-    rgba(0, 0, 0, 0.2) 40%,
-    rgba(0, 0, 0, 0.6) 70%,
-    rgba(0, 0, 0, 0.9) 100%
-  );
-  backdrop-filter: blur(2px);
-  -webkit-backdrop-filter: blur(2px);
-  will-change: opacity, transform;
-  transform: translate3d(0, 0, 0);
-}
-
-.hover-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: flex-end;
-}
-
-.hover-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  padding: 0.25rem 0.5rem;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border-radius: var(--radius-full);
-  font-size: 0.6875rem;
-  font-weight: var(--font-medium);
-  color: rgba(255, 255, 255, 0.9);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  width: fit-content;
-}
-
-.hover-pill :deep(svg) {
-  opacity: 0.85;
-}
-
-.hover-scroll {
-  flex: 1;
-  min-height: 0;
-  overflow: hidden;
-  color: #fff;
-}
-
-@media (hover: none) and (pointer: coarse) {
-  .hover-scroll {
-    overscroll-behavior: contain;
-    -webkit-overflow-scrolling: touch;
-  }
-}
-
-.hover-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--spacing-2);
-  margin: 0 0 var(--spacing-2);
-}
-
-.hover-title {
-  font-size: var(--text-sm);
-  font-weight: var(--font-semibold);
-  line-height: 1.4;
-  margin: 0 0 var(--spacing-2);
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-}
-
-.hover-author {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-1);
-  font-size: var(--text-xs);
-  color: rgba(255, 255, 255, 0.85);
-  margin: 0 0 var(--spacing-2);
-}
-
-.hover-author-avatar {
-  flex-shrink: 0;
-}
-
-.hover-author svg {
-  opacity: 0.7;
-}
-
-/* Legacy hover-stats kept for compatibility (older markup) */
-.hover-stats {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--spacing-3);
-}
-
-.hover-stat {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  font-size: var(--text-xs);
-  color: rgba(255, 255, 255, 0.8);
-  font-variant-numeric: tabular-nums;
-}
-
-.hover-text {
-  margin: 0;
-  font-size: var(--text-xs);
-  color: rgba(255, 255, 255, 0.9);
-  line-height: 1.5;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.hover-stat svg {
-  opacity: 0.7;
-}
-
-.hover-action {
-  flex-shrink: 0;
-}
-
-.hover-action-icon {
-  width: 2rem;
-  height: 2rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border-radius: var(--radius-full);
-  color: #fff;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  transition: all var(--transition-fast);
-}
-
-.post-card:hover .hover-action-icon {
-  background: var(--color-primary);
-  border-color: var(--color-primary);
-  color: var(--color-on-primary);
-  transform: translate(2px, -2px);
-  box-shadow: 0 4px 12px rgba(var(--color-primary-rgb), 0.4);
-}
-
-/* ========== Hover Transition ========== */
-.hover-details-enter-active,
-.hover-details-leave-active {
-  transition:
-    opacity var(--duration-fast) var(--ease-out),
-    transform var(--duration-fast) var(--ease-out);
-}
-
-.hover-details-enter-from {
-  opacity: 0;
-  transform: translate3d(0, 8px, 0);
-}
-
-.hover-details-leave-to {
-  opacity: 0;
-  transform: translate3d(0, 4px, 0);
-}
-
 /* ========== Content Section ========== */
 .post-content {
   padding: var(--spacing-3);
@@ -1185,10 +903,6 @@ onUnmounted(() => {
 
 /* ========== Mobile - Disable Hover ========== */
 @media (hover: none) {
-  .hover-overlay {
-    display: none !important;
-  }
-
   .post-card:hover .post-image.is-loaded {
     transform: scale(1);
   }
@@ -1196,16 +910,6 @@ onUnmounted(() => {
 
 /* ========== Reduced Motion ========== */
 @media (prefers-reduced-motion: reduce) {
-  .hover-details-enter-active,
-  .hover-details-leave-active {
-    transition: opacity 0.1s;
-  }
-
-  .hover-details-enter-from,
-  .hover-details-leave-to {
-    transform: none;
-  }
-
   .post-image {
     transition: opacity 0.1s;
   }

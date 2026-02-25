@@ -81,6 +81,14 @@
                 <div class="post-preview-media">
                   <div v-if="primaryMedia" class="post-preview-media-frame">
                     <img
+                      class="post-preview-media-backdrop"
+                      :src="mediaBackdropSrc"
+                      alt=""
+                      aria-hidden="true"
+                      loading="eager"
+                      decoding="async"
+                    />
+                    <img
                       v-if="primaryMedia.file_type === 'image'"
                       class="post-preview-media-item"
                       :src="imageSrc"
@@ -91,7 +99,7 @@
 
                     <VideoPlayer
                       v-else-if="primaryMedia.file_type === 'video'"
-                      class="post-preview-media-item"
+                      class="post-preview-media-video"
                       :src="videoSrc"
                       :poster="videoPoster"
                       :subtitles="primaryMedia.subtitles ?? null"
@@ -99,6 +107,14 @@
                     />
                   </div>
                   <div v-else-if="initialMediaSrc" class="post-preview-media-frame">
+                    <img
+                      class="post-preview-media-backdrop"
+                      :src="initialMediaSrc"
+                      alt=""
+                      aria-hidden="true"
+                      loading="eager"
+                      decoding="async"
+                    />
                     <img
                       class="post-preview-media-item"
                       :src="initialMediaSrc"
@@ -579,6 +595,12 @@ const imageSrc = computed(() => {
   return getMediaThumbnailUrl(m.id, 'large')
 })
 
+const mediaBackdropSrc = computed(() => {
+  const m = primaryMedia.value
+  if (!m) return initialMediaSrc.value
+  return getMediaThumbnailUrl(m.id, 'medium')
+})
+
 function close() {
   requestClose()
 }
@@ -617,7 +639,7 @@ function openDetail() {
   --preview-text-primary: var(--color-text-primary);
   --preview-text-secondary: var(--color-text-secondary);
   --preview-text-muted: var(--color-text-secondary);
-  --preview-media-bg: rgba(15, 23, 42, 0.04);
+  --preview-media-bg: rgba(15, 23, 42, 0.02);
   background: var(--preview-overlay-bg);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
@@ -631,7 +653,7 @@ function openDetail() {
   --preview-pill-border: rgba(255, 255, 255, 0.16);
   --preview-text-secondary: var(--color-text-secondary);
   --preview-text-muted: var(--color-text-secondary);
-  --preview-media-bg: rgba(255, 255, 255, 0.04);
+  --preview-media-bg: rgba(255, 255, 255, 0.02);
 }
 
 .post-preview-panel {
@@ -905,47 +927,65 @@ function openDetail() {
   position: relative;
   min-width: 0;
   min-height: 0;
-  padding: var(--spacing-4);
+  padding: var(--spacing-3);
   display: flex;
   flex-direction: column;
   gap: var(--spacing-3);
   overflow: hidden;
-  /* 渐变填充背景 */
-  background:
-    radial-gradient(
-      ellipse 80% 60% at 50% 40%,
-      rgba(var(--color-primary-rgb), 0.04) 0%,
-      transparent 70%
-    ),
-    var(--preview-media-bg);
+  background: var(--preview-media-bg);
 }
 
 .post-preview-media-frame {
+  position: relative;
   flex: 1;
   min-height: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  max-height: min(58dvh, 560px);
-  border-radius: var(--radius-2xl);
-  background: var(--preview-media-bg);
-  border: 1px solid var(--preview-surface-border);
-  box-shadow:
-    0 24px 64px rgba(0, 0, 0, 0.18),
-    0 4px 16px rgba(0, 0, 0, 0.1);
-  contain: layout paint;
+  max-height: min(62dvh, 600px);
+  border-radius: var(--radius-lg);
+}
+
+.post-preview-media-backdrop {
+  position: absolute;
+  inset: -24px;
+  width: calc(100% + 48px);
+  height: calc(100% + 48px);
+  object-fit: cover;
+  filter: blur(60px) saturate(1.8) brightness(0.92);
+  opacity: 0.75;
+  pointer-events: none;
+  z-index: 0;
+}
+
+:global([data-theme='dark']) .post-preview-media-backdrop {
+  opacity: 0.65;
+  filter: blur(60px) saturate(1.6) brightness(0.8);
 }
 
 .post-preview-media-item {
-  width: 100%;
-  height: 100%;
+  position: relative;
+  z-index: 1;
+  display: block;
   max-width: 100%;
   max-height: 100%;
+  width: auto;
+  height: auto;
   object-fit: contain;
-  border-radius: inherit;
   background: transparent;
-  box-shadow: none;
+  filter: drop-shadow(0 0 12px rgba(0, 0, 0, 0.15));
+}
+
+:global([data-theme='dark']) .post-preview-media-item {
+  filter: drop-shadow(0 0 16px rgba(255, 255, 255, 0.08));
+}
+
+.post-preview-media-video {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
 }
 
 .post-preview-media-empty {
@@ -953,7 +993,7 @@ function openDetail() {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-lg);
   border: 1px dashed var(--preview-divider);
   overflow: hidden;
 }
@@ -1082,12 +1122,13 @@ function openDetail() {
   }
 
   .post-preview-media {
-    padding: var(--spacing-3);
+    padding: var(--spacing-2);
     flex: 0 0 auto;
   }
 
   .post-preview-media-frame {
     height: min(44svh, 26.25rem);
+    max-height: min(44svh, 26.25rem);
     flex: 0 0 auto;
   }
 
