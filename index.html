@@ -92,5 +92,7 @@
   <body>
     <div id="app"></div>
     <script type="module" src="/src/main.ts"></script>
+    <!-- Cloudflare Web Analytics — 手动引入外部脚本，避免自动注入内联脚本导致 CSP 哈希频繁变化 -->
+    <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "2aead0e284cb41faa7612e264ecbb1ac"}'></script>
   </body>
 </html>
