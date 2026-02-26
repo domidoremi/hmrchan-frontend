@@ -229,12 +229,15 @@ describe('VideoPlayer', () => {
 
   describe('User Interactions', () => {
     it('toggles play/pause when clicking video', async () => {
+      vi.useFakeTimers()
       const wrapper = createWrapper({
         src: 'https://example.com/video.mp4',
       })
       const video = wrapper.find('video')
       await video.trigger('click')
+      vi.advanceTimersByTime(300)
       expect(mockPlay).toHaveBeenCalledTimes(1)
+      vi.useRealTimers()
     })
 
     it('toggles play/pause when clicking center button', async () => {
