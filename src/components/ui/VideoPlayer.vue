@@ -204,6 +204,19 @@
       </button>
     </Transition>
 
+    <!-- Custom subtitle overlay (cross-browser) -->
+    <Transition name="vp-fade">
+      <div
+        v-if="activeCueHtml && selectedSubtitleLanguage"
+        class="vp__subtitle-overlay"
+        :style="subtitleOverlayStyle"
+        aria-live="polite"
+        role="status"
+      >
+        <span class="vp__subtitle-text" v-html="activeCueHtml" />
+      </div>
+    </Transition>
+
     <!-- Loading spinner -->
     <Transition name="vp-fade">
       <div v-if="isBuffering" class="vp__loader">
@@ -211,9 +224,29 @@
       </div>
     </Transition>
 
+    <!-- Panel backdrop (mobile) -->
+    <Transition name="vp-fade">
+      <div
+        v-if="showSettings || showSubtitlePicker"
+        class="vp__panel-backdrop"
+        @click="closeAllPanels"
+      />
+    </Transition>
+
     <!-- Settings panel -->
     <Transition name="vp-panel">
       <div v-if="showSettings" class="vp__panel vp__panel--settings" @click.stop>
+        <div class="vp__panel-head">
+          <span class="vp__panel-title">{{ $t('video.settings') }}</span>
+          <button
+            type="button"
+            class="vp__btn vp__btn--close"
+            :aria-label="$t('common.close')"
+            @click="showSettings = false"
+          >
+            <X :size="18" />
+          </button>
+        </div>
         <div class="vp__panel-section">
           <div class="vp__panel-label">{{ $t('video.playbackSpeed') }}</div>
           <div class="vp__panel-chips">
@@ -415,6 +448,24 @@
                 <span>{{ $t('video.subtitlePositionUp') }}</span>
               </div>
             </div>
+
+            <!-- Preview -->
+            <div class="vp__panel-sub">
+              <div class="vp__panel-label">{{ $t('video.subtitlePreview') }}</div>
+              <div class="vp__subtitle-preview-wrap">
+                <span class="vp__subtitle-preview" :style="subtitlePreviewStyle">
+                  {{ $t('video.subtitlePreviewText') }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Reset -->
+            <div class="vp__panel-sub">
+              <button type="button" class="vp__chip vp__chip--reset" @click="resetSubtitleStyles">
+                <RotateCcw :size="12" />
+                {{ $t('video.subtitleReset') }}
+              </button>
+            </div>
           </template>
         </div>
 
@@ -439,7 +490,17 @@
     <!-- Subtitle picker -->
     <Transition name="vp-panel">
       <div v-if="showSubtitlePicker" class="vp__panel vp__panel--subs" @click.stop>
-        <div class="vp__panel-header">{{ $t('video.subtitles') }}</div>
+        <div class="vp__panel-head">
+          <span class="vp__panel-title">{{ $t('video.subtitles') }}</span>
+          <button
+            type="button"
+            class="vp__btn vp__btn--close"
+            :aria-label="$t('common.close')"
+            @click="showSubtitlePicker = false"
+          >
+            <X :size="18" />
+          </button>
+        </div>
         <button
           type="button"
           class="vp__sub-item"
@@ -501,7 +562,7 @@
   </div>
 </template>
 <script setup lang="ts">
-import { ref, computed, nextTick, onMounted, onBeforeUnmount, watch } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
   Play,
@@ -520,6 +581,8 @@ import {
   AlignCenter,
   AlignRight,
   Type,
+  X,
+  RotateCcw,
 } from 'lucide-vue-next'
 import { useVideoSettings } from '@/composables/useVideoSettings'
 import type { SubtitleShadowPreset, SubtitleAlign } from '@/composables/useVideoSettings'
@@ -595,10 +658,12 @@ const seekPreviewPercent = ref<number | null>(null)
 const subtitleOverrides = ref<Record<string, string>>({})
 const selectedSubtitleLanguage = ref<string | null>(null)
 const qualities = ref<string[]>(['auto'])
+const activeCueHtml = ref('')
 
 let controlsTimeout: ReturnType<typeof setTimeout> | null = null
 let seekPendingTimeout: ReturnType<typeof setTimeout> | null = null
 let hintTimeout: ReturnType<typeof setTimeout> | null = null
+let activeCueTrack: TextTrack | null = null
 
 const { locale } = useI18n()
 
@@ -794,12 +859,46 @@ function applySubtitleMode() {
   const textTracks = videoRef.value?.textTracks
   if (!textTracks) return
   const target = selectedSubtitleLanguage.value
+
+  // Detach previous cuechange listener
+  if (activeCueTrack) {
+    activeCueTrack.removeEventListener('cuechange', onCueChange)
+    activeCueTrack = null
+  }
+  activeCueHtml.value = ''
+
   for (let i = 0; i < textTracks.length; i += 1) {
     const track = textTracks[i]
     if (!track) continue
-    track.mode = target && track.language === target ? 'showing' : 'disabled'
+    if (target && track.language === target) {
+      // 'hidden' loads cues without native rendering — we render our own overlay
+      track.mode = 'hidden'
+      activeCueTrack = track
+      track.addEventListener('cuechange', onCueChange)
+    } else {
+      track.mode = 'disabled'
+    }
   }
-  nextTick(() => applySubtitleStyles())
+}
+
+function onCueChange() {
+  if (!activeCueTrack?.activeCues?.length) {
+    activeCueHtml.value = ''
+    return
+  }
+  const parts: string[] = []
+  for (let i = 0; i < activeCueTrack.activeCues.length; i += 1) {
+    const cue = activeCueTrack.activeCues[i] as VTTCue | undefined
+    if (!cue || !('text' in cue)) continue
+    // Strip VTT tags but keep line breaks
+    const clean = cue.text
+      .replace(/<[^>]+>/g, '')
+      .split('\n')
+      .filter((l) => l.trim())
+      .join('<br>')
+    if (clean) parts.push(clean)
+  }
+  activeCueHtml.value = parts.join('<br>')
 }
 
 function getSubtitleShadowCss(preset: SubtitleShadowPreset): string {
@@ -822,69 +921,38 @@ function hexToRgba(hex: string, alpha: number): string {
   return `rgba(${r},${g},${b},${alpha})`
 }
 
-let subtitleStyleEl: HTMLStyleElement | null = null
-
-function applySubtitleStyles() {
-  const textTracks = videoRef.value?.textTracks
-  if (!textTracks) return
-
-  // Apply VTTCue properties (line, position, align)
+/** Reactive style object for the custom subtitle overlay */
+const subtitleOverlayStyle = computed(() => {
   const offset = subtitleOffset.value
-  const lineValue = offset === 0 ? -1 : -(1 + offset)
-  const align = subtitleAlign.value
-
-  for (let i = 0; i < textTracks.length; i += 1) {
-    const track = textTracks[i]
-    if (!track || track.mode !== 'showing') continue
-    const cues = track.cues
-    if (!cues) continue
-    for (let j = 0; j < cues.length; j += 1) {
-      const cue = cues[j] as VTTCue | undefined
-      if (!cue || !('line' in cue)) continue
-      cue.line = lineValue
-      cue.align = align
-      if (align === 'left') {
-        cue.position = 10
-        cue.positionAlign = 'line-left'
-      } else if (align === 'right') {
-        cue.position = 90
-        cue.positionAlign = 'line-right'
-      } else {
-        cue.position = 50
-        cue.positionAlign = 'center'
-      }
-    }
-  }
-
-  // Inject ::cue styles via a <style> element (scoped CSS can't target ::cue)
-  injectCueStyles()
-}
-
-function injectCueStyles() {
-  if (!playerElement.value) return
-
-  if (!subtitleStyleEl) {
-    subtitleStyleEl = document.createElement('style')
-    subtitleStyleEl.setAttribute('data-vp-cue', '')
-    playerElement.value.appendChild(subtitleStyleEl)
-  }
-
+  // Default bottom ~8%, each step adds ~4%
+  const bottom = 8 + offset * 4
   const fontSize = subtitleFontSize.value
   const color = subtitleColor.value
   const bgColor = hexToRgba(subtitleBgColor.value, subtitleBgOpacity.value)
   const shadow = getSubtitleShadowCss(subtitleShadow.value)
+  const align = subtitleAlign.value
 
-  subtitleStyleEl.textContent = `
-    video::cue {
-      color: ${color};
-      background-color: ${bgColor};
-      font-size: ${fontSize}em;
-      text-shadow: ${shadow};
-      outline: none;
-      font-family: inherit;
-    }
-  `
-}
+  return {
+    bottom: `${bottom}%`,
+    color,
+    backgroundColor: bgColor,
+    fontSize: `${fontSize}em`,
+    textShadow: shadow === 'none' ? undefined : shadow,
+    textAlign: align,
+  } as Record<string, string | undefined>
+})
+
+/** Preview style for the settings panel */
+const subtitlePreviewStyle = computed(() => {
+  const color = subtitleColor.value
+  const bgColor = hexToRgba(subtitleBgColor.value, subtitleBgOpacity.value)
+  const shadow = getSubtitleShadowCss(subtitleShadow.value)
+  return {
+    color,
+    backgroundColor: bgColor,
+    textShadow: shadow === 'none' ? undefined : shadow,
+  } as Record<string, string | undefined>
+})
 
 // --- Core playback ---
 
@@ -1102,39 +1170,42 @@ function setSubtitleLanguage(language: string | null) {
 function handleSubtitleOffsetInput(e: Event) {
   const val = Number((e.target as HTMLInputElement).value)
   updateSubtitleOffset(val)
-  applySubtitleStyles()
 }
 
 function handleSubtitleFontSizeInput(e: Event) {
   const val = Number((e.target as HTMLInputElement).value)
   updateSubtitleFontSize(val / 100)
-  applySubtitleStyles()
 }
 
 function handleSubtitleBgOpacityInput(e: Event) {
   const val = Number((e.target as HTMLInputElement).value)
   updateSubtitleBgOpacity(val / 100)
-  applySubtitleStyles()
 }
 
 function setSubtitleColorChoice(color: string) {
   updateSubtitleColor(color)
-  applySubtitleStyles()
 }
 
 function setSubtitleBgColorChoice(color: string) {
   updateSubtitleBgColor(color)
-  applySubtitleStyles()
 }
 
 function setSubtitleShadowChoice(shadow: SubtitleShadowPreset) {
   updateSubtitleShadow(shadow)
-  applySubtitleStyles()
 }
 
 function setSubtitleAlignChoice(align: SubtitleAlign) {
   updateSubtitleAlign(align)
-  applySubtitleStyles()
+}
+
+function resetSubtitleStyles() {
+  updateSubtitleFontSize(1)
+  updateSubtitleColor('#ffffff')
+  updateSubtitleBgColor('#000000')
+  updateSubtitleBgOpacity(0.75)
+  updateSubtitleShadow('none')
+  updateSubtitleAlign('center')
+  updateSubtitleOffset(0)
 }
 
 function toggleSettingsPanel() {
@@ -1145,6 +1216,11 @@ function toggleSettingsPanel() {
 function toggleSubtitlePicker() {
   showSettings.value = false
   showSubtitlePicker.value = !showSubtitlePicker.value
+}
+
+function closeAllPanels() {
+  showSettings.value = false
+  showSubtitlePicker.value = false
 }
 
 async function togglePiP() {
@@ -1299,18 +1375,6 @@ watch([selectedSubtitleLanguage, () => videoSettings.value.subtitleLanguage], ([
   applySubtitleMode()
 })
 
-watch(subtitleOffset, () => applySubtitleStyles())
-watch(
-  [
-    subtitleFontSize,
-    subtitleColor,
-    subtitleBgColor,
-    subtitleBgOpacity,
-    subtitleShadow,
-    subtitleAlign,
-  ],
-  () => applySubtitleStyles()
-)
 watch(
   () => locale.value,
   () => syncSubtitleSelection(normalizedSubtitles.value)
@@ -1318,9 +1382,9 @@ watch(
 
 onBeforeUnmount(() => {
   Object.values(subtitleOverrides.value).forEach((url) => URL.revokeObjectURL(url))
-  if (subtitleStyleEl) {
-    subtitleStyleEl.remove()
-    subtitleStyleEl = null
+  if (activeCueTrack) {
+    activeCueTrack.removeEventListener('cuechange', onCueChange)
+    activeCueTrack = null
   }
   document.removeEventListener('keydown', handleKeydown)
   document.removeEventListener('fullscreenchange', handleFullscreenChange)
@@ -1643,6 +1707,8 @@ onBeforeUnmount(() => {
   width: 0;
   opacity: 0;
   overflow: hidden;
+  display: flex;
+  align-items: center;
   transition:
     width 0.2s var(--ease-out, ease),
     opacity 0.15s ease;
@@ -1799,6 +1865,35 @@ onBeforeUnmount(() => {
   transform: translateY(0);
 }
 
+/* --- Panel backdrop (mobile tap-to-close) --- */
+.vp__panel-backdrop {
+  display: none;
+}
+
+/* --- Panel header with close button --- */
+.vp__panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-2);
+  padding-bottom: var(--spacing-2);
+  border-bottom: 1px solid var(--vp-ctrl-border);
+}
+
+.vp__panel-title {
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
+  color: var(--vp-ctrl-text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.vp__btn--close {
+  width: 1.75rem;
+  height: 1.75rem;
+  flex-shrink: 0;
+}
+
 /* --- Panels (settings / subtitle picker) --- */
 .vp__panel {
   position: absolute;
@@ -1822,17 +1917,6 @@ onBeforeUnmount(() => {
   right: auto;
   left: var(--spacing-3);
   min-width: 11rem;
-}
-
-.vp__panel-header {
-  padding-bottom: var(--spacing-2);
-  margin-bottom: var(--spacing-1);
-  border-bottom: 1px solid var(--vp-ctrl-border);
-  font-size: var(--text-xs);
-  font-weight: var(--font-medium);
-  color: var(--vp-ctrl-text-dim);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
 }
 
 .vp__panel-section {
@@ -1990,6 +2074,69 @@ onBeforeUnmount(() => {
   color: var(--vp-accent);
 }
 
+/* --- Custom subtitle overlay --- */
+.vp__subtitle-overlay {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 4;
+  max-width: 85%;
+  padding: 0.25em 0.5em;
+  border-radius: var(--radius-sm);
+  font-size: 1em;
+  line-height: 1.5;
+  font-family: inherit;
+  pointer-events: none;
+  text-align: center;
+  word-break: break-word;
+  transition:
+    bottom 0.2s ease,
+    color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.vp__subtitle-text {
+  display: inline;
+}
+
+/* --- Subtitle preview in settings --- */
+.vp__subtitle-preview-wrap {
+  margin-top: var(--spacing-1);
+  padding: var(--spacing-3);
+  background: #111;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 3rem;
+}
+
+.vp__subtitle-preview {
+  padding: 0.2em 0.5em;
+  border-radius: var(--radius-xs, 2px);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  transition:
+    color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+/* --- Reset chip --- */
+.vp__chip--reset {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  color: var(--vp-ctrl-text-dim);
+  border-color: transparent;
+  font-size: var(--text-xs);
+  padding: 0.25rem var(--spacing-2);
+}
+
+.vp__chip--reset:hover {
+  color: var(--vp-ctrl-text);
+  border-color: var(--vp-ctrl-border);
+}
+
 /* --- Transitions --- */
 .vp-fade-enter-active,
 .vp-fade-leave-active {
@@ -2053,6 +2200,17 @@ onBeforeUnmount(() => {
     padding: 0 var(--spacing-2) var(--spacing-2);
   }
 
+  /* Issue 2: More opaque controls background on mobile non-fullscreen */
+  .vp__gradient--bottom {
+    height: 10rem;
+    background: linear-gradient(
+      0deg,
+      rgba(0, 0, 0, 0.85) 0%,
+      rgba(0, 0, 0, 0.5) 40%,
+      transparent 100%
+    );
+  }
+
   .vp__btn {
     width: 2.5rem;
     height: 2.5rem;
@@ -2077,13 +2235,27 @@ onBeforeUnmount(() => {
     height: 3.5rem;
   }
 
+  .vp__subtitle-overlay {
+    max-width: 92%;
+    font-size: 0.875em;
+  }
+
   .vp__progress {
     --vp-progress-h: 3px;
     --vp-progress-h-active: 6px;
     height: 1.75rem;
   }
 
-  /* Panels: bottom sheet on mobile */
+  /* Panel backdrop: tap outside to close */
+  .vp__panel-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: calc(var(--z-modal, 1000) - 1);
+  }
+
+  /* Issue 1 & 4: Bottom sheet panels — account for navbar, more opaque */
   .vp__panel {
     position: fixed;
     bottom: 0;
@@ -2091,19 +2263,20 @@ onBeforeUnmount(() => {
     right: 0;
     top: auto;
     min-width: unset;
-    max-height: min(70svh, calc(100dvh - 2rem));
+    max-height: min(65svh, calc(100dvh - 4rem));
     overflow-y: auto;
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
     border-radius: var(--ui-radius-sheet, 18px) var(--ui-radius-sheet, 18px) 0 0;
     padding: var(--spacing-4);
-    padding-top: calc(var(--spacing-4) + 0.5rem);
+    padding-top: calc(var(--spacing-3) + 0.5rem);
     padding-bottom: calc(var(--spacing-4) + env(safe-area-inset-bottom));
-    background: var(--glass-bg-strong, rgba(20, 20, 22, 0.95));
-    backdrop-filter: var(--glass-blur, blur(24px));
-    -webkit-backdrop-filter: var(--glass-blur, blur(24px));
+    background: rgba(20, 20, 22, 0.97);
+    backdrop-filter: blur(24px) saturate(1.2);
+    -webkit-backdrop-filter: blur(24px) saturate(1.2);
     border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.08));
-    box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.25);
+    border-bottom: none;
+    box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.35);
     color: var(--color-text-primary, #fff);
     z-index: var(--z-modal, 1000);
   }
@@ -2120,14 +2293,28 @@ onBeforeUnmount(() => {
     flex-shrink: 0;
   }
 
+  .vp__panel-head {
+    border-bottom-color: rgba(255, 255, 255, 0.1);
+  }
+
+  .vp__panel-title {
+    color: var(--color-text-secondary, rgba(255, 255, 255, 0.6));
+    font-size: var(--text-sm);
+  }
+
+  .vp__btn--close {
+    width: 2rem;
+    height: 2rem;
+    color: var(--color-text-secondary, rgba(255, 255, 255, 0.6));
+  }
+
   .vp__panel--subs {
     left: 0;
     right: 0;
   }
 
   /* Theme-aware panel text on mobile */
-  .vp__panel-label,
-  .vp__panel-header {
+  .vp__panel-label {
     color: var(--color-text-secondary, rgba(255, 255, 255, 0.55));
   }
 
@@ -2223,13 +2410,21 @@ onBeforeUnmount(() => {
   z-index: 10;
 }
 
+.vp.is-fullscreen .vp__panel::before {
+  display: none;
+}
+
+.vp.is-fullscreen .vp__panel-backdrop {
+  display: none;
+}
+
 .vp.is-fullscreen .vp__panel--subs {
   right: auto;
   left: var(--spacing-3);
 }
 
 .vp.is-fullscreen .vp__panel-label,
-.vp.is-fullscreen .vp__panel-header {
+.vp.is-fullscreen .vp__panel-title {
   color: var(--vp-ctrl-text-dim);
 }
 
@@ -2240,6 +2435,10 @@ onBeforeUnmount(() => {
 
 .vp.is-fullscreen .vp__sub-item {
   color: var(--vp-ctrl-text);
+}
+
+.vp.is-fullscreen .vp__btn--close {
+  color: var(--vp-ctrl-text-dim);
 }
 
 .vp.is-fullscreen .vp__panel-slider-row {
