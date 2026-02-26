@@ -1318,7 +1318,6 @@ onUnmounted(() => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: clamp(0.375rem, 1.3vw, 1rem);
   overflow: hidden;
   contain: layout style;
 }
@@ -1327,7 +1326,7 @@ onUnmounted(() => {
   position: relative;
   width: min(100%, 60rem);
   max-width: 100%;
-  max-height: clamp(20rem, 62dvh, 45rem);
+  max-height: clamp(20rem, 65dvh, 48rem);
   aspect-ratio: var(--aspect-ratio, 16 / 9);
   display: flex;
   align-items: center;
@@ -1335,7 +1334,6 @@ onUnmounted(() => {
   overflow: hidden;
   background: var(--post-media-bg);
   border-radius: var(--radius-2xl);
-  box-shadow: var(--post-shadow-sm);
 }
 
 .post-media-empty {
@@ -1392,24 +1390,17 @@ onUnmounted(() => {
   background-image: var(--media-bg);
   background-position: center;
   background-size: cover;
-  filter: blur(40px) saturate(1.2);
-  transform: scale(1.3);
-  opacity: 0.5;
-  transition:
-    opacity 0.5s ease,
-    background-image 0.3s ease;
+  filter: blur(48px) saturate(1.3);
+  transform: scale(1.4);
+  opacity: 0.45;
+  transition: opacity 0.6s ease;
 }
 
 .media-viewer::after {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    180deg,
-    transparent 0%,
-    rgba(0, 0, 0, 0.04) 50%,
-    rgba(0, 0, 0, 0.1) 100%
-  );
+  background: radial-gradient(ellipse at center, transparent 40%, rgba(0, 0, 0, 0.12) 100%);
   pointer-events: none;
 }
 
@@ -1421,12 +1412,12 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   z-index: 1;
-  padding: clamp(0.625rem, 1.6vw, 1.5rem);
+  padding: clamp(0.5rem, 1.4vw, 1.25rem);
 }
 
 @media (min-width: 900px) {
   .media-item-container {
-    padding: clamp(0.875rem, 2vw, 1.875rem);
+    padding: clamp(0.75rem, 1.8vw, 1.5rem);
   }
 }
 
@@ -1481,14 +1472,12 @@ onUnmounted(() => {
   object-fit: contain;
   border-radius: 0;
   opacity: 0;
-  transition: opacity 0.4s ease;
+  transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 @media (min-width: 900px) {
   .media-viewer-item {
     border-radius: 0;
-    box-shadow: none;
-    background: transparent;
   }
 }
 
@@ -1500,34 +1489,45 @@ onUnmounted(() => {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  width: 2.5rem;
-  height: 2.5rem;
+  width: 2.25rem;
+  height: 2.25rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: var(--radius-lg);
-  background: var(--glass-bg-strong);
-  border: 1px solid var(--glass-border);
-  color: var(--color-text-primary);
-  transition: all var(--transition-fast);
+  border-radius: var(--radius-full);
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.9);
+  transition:
+    transform 0.15s ease,
+    background 0.15s ease,
+    opacity 0.15s ease;
   z-index: 2;
+  opacity: 0;
+}
+
+.media-viewer:hover .media-nav {
+  opacity: 1;
 }
 
 .media-nav:hover:not(:disabled) {
-  transform: translateY(-50%) scale(1.02);
+  transform: translateY(-50%) scale(1.06);
+  background: rgba(0, 0, 0, 0.5);
 }
 
 .media-nav:disabled {
-  opacity: 0.35;
+  opacity: 0;
   cursor: not-allowed;
 }
 
 .media-nav.prev {
-  left: var(--spacing-2);
+  left: var(--spacing-3);
 }
 
 .media-nav.next {
-  right: var(--spacing-2);
+  right: var(--spacing-3);
 }
 
 .post-panel {
@@ -1554,8 +1554,8 @@ onUnmounted(() => {
 
   .media-viewer {
     width: 100%;
-    max-height: min(56svh, 32.5rem);
-    border-radius: 0;
+    max-height: min(60svh, 36rem);
+    border-radius: var(--radius-lg);
   }
 
   .post-shell {
@@ -1782,16 +1782,22 @@ onUnmounted(() => {
   height: 4.5rem;
   border-radius: var(--radius-lg);
   overflow: hidden;
-  border: 1px solid var(--glass-border);
+  border: 2px solid transparent;
   background: var(--glass-bg);
-  transition: all var(--transition-fast);
+  transition:
+    border-color 0.15s ease,
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+  cursor: pointer;
 }
 
 .thumbnail-btn.active {
   border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(var(--color-primary-rgb), 0.2);
 }
 
-.thumbnail-btn:hover {
+.thumbnail-btn:hover:not(.active) {
+  border-color: rgba(var(--color-primary-rgb), 0.4);
   transform: translateY(-1px);
 }
 
