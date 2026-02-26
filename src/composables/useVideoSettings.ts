@@ -6,6 +6,9 @@
 import { ref, watch } from 'vue'
 import { safeJsonParse } from '@/utils/security'
 
+export type SubtitleShadowPreset = 'none' | 'outline' | 'drop-shadow' | 'raised'
+export type SubtitleAlign = 'left' | 'center' | 'right'
+
 export interface VideoSettings {
   /** 音量 (0-1) */
   volume: number
@@ -21,6 +24,18 @@ export interface VideoSettings {
   subtitleLanguage: string | null
   /** 字幕垂直偏移 (0-5, 0=底部默认, 5=最高) */
   subtitleOffset: number
+  /** 字幕字体大小倍率 (0.75-2, 默认 1) */
+  subtitleFontSize: number
+  /** 字幕字体颜色 */
+  subtitleColor: string
+  /** 字幕背景颜色 (不含透明度) */
+  subtitleBgColor: string
+  /** 字幕背景透明度 (0-1) */
+  subtitleBgOpacity: number
+  /** 字幕阴影预设 */
+  subtitleShadow: SubtitleShadowPreset
+  /** 字幕水平对齐 */
+  subtitleAlign: SubtitleAlign
 }
 
 const STORAGE_KEY = 'video-player-settings'
@@ -34,6 +49,12 @@ const defaultSettings: VideoSettings = {
   brightness: 1,
   subtitleLanguage: null,
   subtitleOffset: 0,
+  subtitleFontSize: 1,
+  subtitleColor: '#ffffff',
+  subtitleBgColor: '#000000',
+  subtitleBgOpacity: 0.75,
+  subtitleShadow: 'none',
+  subtitleAlign: 'center',
 }
 
 // 从 localStorage 加载设置
@@ -140,6 +161,48 @@ export function useVideoSettings() {
   }
 
   /**
+   * 更新字幕字体大小
+   */
+  function setSubtitleFontSize(size: number) {
+    settings.value.subtitleFontSize = Math.max(0.75, Math.min(2, size))
+  }
+
+  /**
+   * 更新字幕字体颜色
+   */
+  function setSubtitleColor(color: string) {
+    settings.value.subtitleColor = color
+  }
+
+  /**
+   * 更新字幕背景颜色
+   */
+  function setSubtitleBgColor(color: string) {
+    settings.value.subtitleBgColor = color
+  }
+
+  /**
+   * 更新字幕背景透明度
+   */
+  function setSubtitleBgOpacity(opacity: number) {
+    settings.value.subtitleBgOpacity = Math.max(0, Math.min(1, opacity))
+  }
+
+  /**
+   * 更新字幕阴影预设
+   */
+  function setSubtitleShadow(shadow: SubtitleShadowPreset) {
+    settings.value.subtitleShadow = shadow
+  }
+
+  /**
+   * 更新字幕水平对齐
+   */
+  function setSubtitleAlign(align: SubtitleAlign) {
+    settings.value.subtitleAlign = align
+  }
+
+  /**
    * 重置所有设置为默认值
    */
   function resetSettings() {
@@ -160,6 +223,12 @@ export function useVideoSettings() {
     setBrightness,
     setSubtitleLanguage,
     setSubtitleOffset,
+    setSubtitleFontSize,
+    setSubtitleColor,
+    setSubtitleBgColor,
+    setSubtitleBgOpacity,
+    setSubtitleShadow,
+    setSubtitleAlign,
     resetSettings,
   }
 }

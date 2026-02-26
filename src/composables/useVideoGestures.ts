@@ -107,10 +107,23 @@ export function useVideoGestures(options: GestureOptions) {
   }
 
   /**
+   * 判断事件是否来自交互式表单控件（应跳过手势处理）
+   */
+  function isInteractiveTarget(event: Event): boolean {
+    const target = event.target as HTMLElement | null
+    if (!target) return false
+    const tag = target.tagName
+    if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA' || tag === 'BUTTON') return true
+    if (target.closest?.('.vp__panel, .vp__bar, .vp__controls')) return true
+    return false
+  }
+
+  /**
    * 处理触摸/鼠标/手写笔开始
    */
   function handleStart(event: TouchEvent | MouseEvent | PointerEvent) {
     if (!containerRef.value) return
+    if (isInteractiveTarget(event)) return
 
     if ('buttons' in event && event.buttons === 0) return
 
@@ -152,6 +165,7 @@ export function useVideoGestures(options: GestureOptions) {
   function handleMove(event: TouchEvent | MouseEvent | PointerEvent) {
     if (!containerRef.value || !videoRef.value) return
     if (!touchState.value.isPointerDown) return
+    if (isInteractiveTarget(event)) return
     if ('buttons' in event && event.buttons === 0) return
 
     const clientX = 'touches' in event ? event.touches[0]?.clientX : event.clientX
