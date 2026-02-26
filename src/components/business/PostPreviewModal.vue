@@ -173,10 +173,10 @@
                   </p>
 
                   <div v-else-if="isLoading" class="post-preview-skeleton" aria-hidden="true">
-                    <div class="skeleton" style="height: 18px; width: 75%" />
-                    <div class="skeleton" style="height: 18px; width: 92%" />
-                    <div class="skeleton" style="height: 18px; width: 88%" />
-                    <div class="skeleton" style="height: 18px; width: 80%" />
+                    <div class="skeleton" style="height: 1.125rem; width: 75%" />
+                    <div class="skeleton" style="height: 1.125rem; width: 92%" />
+                    <div class="skeleton" style="height: 1.125rem; width: 88%" />
+                    <div class="skeleton" style="height: 1.125rem; width: 80%" />
                   </div>
 
                   <p v-else class="post-preview-text post-preview-text--muted">
@@ -887,7 +887,7 @@ function openDetail() {
 
 @media (min-width: 900px) {
   .post-preview-scroll {
-    grid-template-columns: minmax(0, 1fr) 420px;
+    grid-template-columns: minmax(0, 1fr) 26.25rem;
   }
 }
 
@@ -949,9 +949,9 @@ function openDetail() {
 
 .post-preview-media-backdrop {
   position: absolute;
-  inset: -24px;
-  width: calc(100% + 48px);
-  height: calc(100% + 48px);
+  inset: -1.5rem;
+  width: calc(100% + 3rem);
+  height: calc(100% + 3rem);
   object-fit: cover;
   filter: blur(60px) saturate(1.8) brightness(0.92);
   opacity: 0.75;
@@ -959,7 +959,7 @@ function openDetail() {
   z-index: 0;
 }
 
-:global([data-theme='dark']) .post-preview-media-backdrop {
+:global([data-theme='dark'] .post-preview-media-backdrop) {
   opacity: 0.65;
   filter: blur(60px) saturate(1.6) brightness(0.8);
 }
@@ -977,7 +977,7 @@ function openDetail() {
   filter: drop-shadow(0 0 12px rgba(0, 0, 0, 0.15));
 }
 
-:global([data-theme='dark']) .post-preview-media-item {
+:global([data-theme='dark'] .post-preview-media-item) {
   filter: drop-shadow(0 0 16px rgba(255, 255, 255, 0.08));
 }
 
@@ -1025,7 +1025,7 @@ function openDetail() {
   flex-wrap: wrap;
   overflow: hidden;
   padding-bottom: var(--spacing-1);
-  max-height: 120px;
+  max-height: 7.5rem;
 }
 
 .thumb {

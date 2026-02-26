@@ -1143,7 +1143,7 @@ function startHintTimer() {
   position: relative;
   width: 100%;
   height: 100%;
-  min-height: 200px;
+  min-height: 12.5rem;
   background: #000;
   border-radius: var(--radius-lg);
   overflow: hidden;

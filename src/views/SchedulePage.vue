@@ -1016,7 +1016,7 @@ onMounted(() => {
   border-radius: var(--radius-md);
   cursor: pointer;
   transition: all 0.15s ease;
-  min-height: 48px;
+  min-height: 3rem;
   padding: var(--spacing-2) 0;
   background: none;
   border: 2px solid transparent;
@@ -1300,7 +1300,7 @@ onMounted(() => {
   }
 
   .calendar-cell {
-    min-height: 40px;
+    min-height: 2.5rem;
   }
 
   .day-number {
