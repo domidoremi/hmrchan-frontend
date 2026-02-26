@@ -24,6 +24,8 @@ export interface GestureOptions {
   onSeek?: (time: number) => void
   /** 播放/暂停回调 */
   onTogglePlay?: () => void
+  /** 双击回调（默认同 onTogglePlay） */
+  onDoubleTap?: () => void
 }
 
 interface TouchState {
@@ -46,7 +48,7 @@ const VOLUME_STEP = 0.006 // 音量调节步长
 const SEEK_STEP = 0.12 // 快进/快退步长（秒/像素）
 
 export function useVideoGestures(options: GestureOptions) {
-  const { videoRef, containerRef, onVolumeChange, onBrightnessChange, onSeek, onTogglePlay } =
+  const { videoRef, containerRef, onVolumeChange, onBrightnessChange, onSeek, onDoubleTap } =
     options
 
   const touchState = ref<TouchState>({
@@ -152,7 +154,7 @@ export function useVideoGestures(options: GestureOptions) {
     // 检测双击
     const now = Date.now()
     if (now - touchState.value.lastTapTime < DOUBLE_TAP_DELAY) {
-      onTogglePlay?.()
+      onDoubleTap?.()
       touchState.value.lastTapTime = 0
     } else {
       touchState.value.lastTapTime = now

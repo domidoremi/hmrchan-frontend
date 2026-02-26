@@ -32,7 +32,7 @@
       @progress="onProgress"
       @seeking="onSeeking"
       @seeked="onSeeked"
-      @click="togglePlay"
+      @click="handleVideoClick"
     >
       <track
         v-for="track in normalizedSubtitles"
@@ -664,6 +664,8 @@ let controlsTimeout: ReturnType<typeof setTimeout> | null = null
 let seekPendingTimeout: ReturnType<typeof setTimeout> | null = null
 let hintTimeout: ReturnType<typeof setTimeout> | null = null
 let activeCueTrack: TextTrack | null = null
+let videoClickTimer: ReturnType<typeof setTimeout> | null = null
+let lastVideoClickTime = 0
 
 const { locale } = useI18n()
 
@@ -737,6 +739,7 @@ const {
     if (videoRef.value) videoRef.value.currentTime = time
   },
   onTogglePlay: () => togglePlay(),
+  onDoubleTap: () => toggleFullscreen(),
 })
 
 const apiBaseUrl = computed(
@@ -982,6 +985,29 @@ function togglePlay() {
   if (!videoRef.value) return
   if (isPlaying.value) videoRef.value.pause()
   else videoRef.value.play()
+}
+
+function handleVideoClick() {
+  const now = Date.now()
+  const DOUBLE_TAP_WINDOW = 300
+
+  if (now - lastVideoClickTime < DOUBLE_TAP_WINDOW) {
+    // Double-click detected — cancel pending single-click, toggle fullscreen
+    if (videoClickTimer) {
+      clearTimeout(videoClickTimer)
+      videoClickTimer = null
+    }
+    lastVideoClickTime = 0
+    toggleFullscreen()
+    return
+  }
+
+  lastVideoClickTime = now
+  // Delay single-click to distinguish from double-click
+  videoClickTimer = setTimeout(() => {
+    videoClickTimer = null
+    togglePlay()
+  }, DOUBLE_TAP_WINDOW)
 }
 
 function onPlay() {
@@ -1385,6 +1411,10 @@ onBeforeUnmount(() => {
   if (activeCueTrack) {
     activeCueTrack.removeEventListener('cuechange', onCueChange)
     activeCueTrack = null
+  }
+  if (videoClickTimer) {
+    clearTimeout(videoClickTimer)
+    videoClickTimer = null
   }
   document.removeEventListener('keydown', handleKeydown)
   document.removeEventListener('fullscreenchange', handleFullscreenChange)
@@ -2253,6 +2283,7 @@ onBeforeUnmount(() => {
     inset: 0;
     background: rgba(0, 0, 0, 0.4);
     z-index: calc(var(--z-modal, 1000) - 1);
+    -webkit-tap-highlight-color: transparent;
   }
 
   /* Issue 1 & 4: Bottom sheet panels — account for navbar, more opaque */
@@ -2263,7 +2294,7 @@ onBeforeUnmount(() => {
     right: 0;
     top: auto;
     min-width: unset;
-    max-height: min(65svh, calc(100dvh - 4rem));
+    max-height: min(65svh, calc(100dvh - var(--navbar-height, 3.5rem) - 0.5rem));
     overflow-y: auto;
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
@@ -2391,6 +2422,107 @@ onBeforeUnmount(() => {
   .vp__hint {
     bottom: 4.5rem;
     font-size: 0.625rem;
+  }
+}
+
+/* Mobile panel theme overrides — light theme */
+@media (max-width: 768px) {
+  :root .vp__panel,
+  [data-theme='blue'] .vp__panel {
+    background: rgba(255, 255, 255, 0.97);
+    border-color: rgba(0, 0, 0, 0.06);
+    box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.1);
+    color: var(--color-text-primary, #0f172a);
+  }
+
+  :root .vp__panel::before,
+  [data-theme='blue'] .vp__panel::before {
+    background: rgba(0, 0, 0, 0.15);
+  }
+
+  :root .vp__panel-head,
+  [data-theme='blue'] .vp__panel-head {
+    border-bottom-color: rgba(0, 0, 0, 0.08);
+  }
+
+  :root .vp__panel-title,
+  [data-theme='blue'] .vp__panel-title {
+    color: var(--color-text-secondary, #475569);
+  }
+
+  :root .vp__btn--close,
+  [data-theme='blue'] .vp__btn--close {
+    color: var(--color-text-secondary, #475569);
+  }
+
+  :root .vp__panel-label,
+  [data-theme='blue'] .vp__panel-label {
+    color: var(--color-text-tertiary, #64748b);
+  }
+
+  :root .vp__chip,
+  [data-theme='blue'] .vp__chip {
+    border-color: rgba(0, 0, 0, 0.1);
+    color: var(--color-text-primary, #0f172a);
+  }
+
+  :root .vp__chip:hover,
+  [data-theme='blue'] .vp__chip:hover {
+    background: rgba(0, 0, 0, 0.04);
+    border-color: rgba(0, 0, 0, 0.15);
+  }
+
+  :root .vp__sub-item,
+  [data-theme='blue'] .vp__sub-item {
+    color: var(--color-text-primary, #0f172a);
+  }
+
+  :root .vp__sub-item:hover,
+  [data-theme='blue'] .vp__sub-item:hover {
+    background: rgba(0, 0, 0, 0.04);
+  }
+
+  :root .vp__panel-slider-row,
+  [data-theme='blue'] .vp__panel-slider-row {
+    color: var(--color-text-tertiary, #64748b);
+  }
+
+  :root .vp__panel-slider-row .vp__slider--panel,
+  [data-theme='blue'] .vp__panel-slider-row .vp__slider--panel {
+    background: rgba(0, 0, 0, 0.1);
+  }
+
+  :root .vp__panel-slider-row .vp__slider--panel::-webkit-slider-thumb,
+  [data-theme='blue'] .vp__panel-slider-row .vp__slider--panel::-webkit-slider-thumb {
+    background: var(--color-primary, #18181b);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  }
+
+  :root .vp__panel-slider-row .vp__slider--panel::-moz-range-thumb,
+  [data-theme='blue'] .vp__panel-slider-row .vp__slider--panel::-moz-range-thumb {
+    background: var(--color-primary, #18181b);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  }
+
+  :root .vp__panel-backdrop,
+  [data-theme='blue'] .vp__panel-backdrop {
+    background: rgba(0, 0, 0, 0.2);
+  }
+
+  :root .vp__subtitle-preview-wrap,
+  [data-theme='blue'] .vp__subtitle-preview-wrap {
+    background: #1e293b;
+  }
+
+  /* Blue theme accent tint on panel */
+  [data-theme='blue'] .vp__panel {
+    border-color: rgba(59, 130, 246, 0.1);
+  }
+
+  [data-theme='blue'] .vp__chip.is-active {
+    background: rgba(59, 130, 246, 0.1);
+    border-color: rgba(59, 130, 246, 0.3);
+    color: #2563eb;
   }
 }
 
