@@ -793,8 +793,15 @@ function pickDefaultSubtitle(tracks: NormalizedSubtitleTrack[]) {
   return tracks[0]?.language ?? null
 }
 
+function needsFetchFallback(track: NormalizedSubtitleTrack): boolean {
+  // Always fetch API-served subtitles via JS to avoid <track> cross-origin / content-type issues
+  if (track.src.includes('/subtitle?language=')) return true
+  if (isSrtTrack(track)) return true
+  return false
+}
+
 async function ensureVttFallback(track: NormalizedSubtitleTrack) {
-  if (!isSrtTrack(track)) return
+  if (!needsFetchFallback(track)) return
   if (subtitleOverrides.value[track.src]) return
 
   try {
@@ -802,8 +809,9 @@ async function ensureVttFallback(track: NormalizedSubtitleTrack) {
     if (!response.ok) return
     const rawText = await response.text()
     const normalized = rawText.replace(/\r+/g, '')
+    // Convert SRT timestamps (comma separator) to VTT (dot separator)
     const body = normalized.replace(/(\d{2}:\d{2}:\d{2}),(\d{3})/g, '$1.$2')
-    const vttText = body.startsWith('WEBVTT') ? body : `WEBVTT\n\n${body.trim()}\n`
+    const vttText = body.trimStart().startsWith('WEBVTT') ? body : `WEBVTT\n\n${body.trim()}\n`
     const blobUrl = URL.createObjectURL(new Blob([vttText], { type: 'text/vtt' }))
     subtitleOverrides.value = {
       ...subtitleOverrides.value,
