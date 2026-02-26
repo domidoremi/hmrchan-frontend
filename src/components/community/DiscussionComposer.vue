@@ -433,7 +433,7 @@ watch(searchResults, () => {
   top: 100%;
   left: 0;
   right: 0;
-  max-height: 200px;
+  max-height: 12.5rem;
   overflow-y: auto;
   z-index: 100;
   margin-top: var(--spacing-1);

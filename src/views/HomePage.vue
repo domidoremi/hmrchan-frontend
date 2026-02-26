@@ -456,7 +456,7 @@ onBeforeUnmount(() => {
   );
 }
 
-:global([data-theme='dark']) .home-page {
+:global([data-theme='dark'] .home-page) {
   --home-section-bg: linear-gradient(
     180deg,
     rgba(var(--mm-teal-rgb), 0.015) 0%,

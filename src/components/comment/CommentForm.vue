@@ -238,8 +238,8 @@ defineExpose({ focus, setContent })
 
 .comment-textarea {
   resize: none;
-  min-height: 80px;
-  max-height: 300px;
+  min-height: 5rem;
+  max-height: 18.75rem;
 }
 
 .form-footer {

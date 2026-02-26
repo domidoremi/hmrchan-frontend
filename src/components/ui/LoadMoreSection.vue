@@ -213,7 +213,7 @@ const setSentinelRef = (el: Element | ComponentPublicInstance | null) => {
 
 .scroll-sentinel {
   width: 100%;
-  min-height: 56px;
+  min-height: 3.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -248,7 +248,7 @@ const setSentinelRef = (el: Element | ComponentPublicInstance | null) => {
 }
 
 .load-more-btn {
-  min-width: 160px;
+  min-width: 10rem;
 }
 
 .load-more-icon {

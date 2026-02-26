@@ -481,7 +481,7 @@ defineExpose({
   top: calc(100% + var(--spacing-2));
   left: 0;
   right: 0;
-  max-height: 400px;
+  max-height: 25rem;
   overflow-y: auto;
   z-index: var(--z-dropdown);
 }

@@ -111,8 +111,8 @@ onUnmounted(() => {
 
 <style scoped>
 .back-to-top {
-  --btn-size: clamp(44px, 5vw, 62px);
-  --edge: clamp(18px, 3.4vw, 36px);
+  --btn-size: clamp(2.75rem, 5vw, 3.875rem);
+  --edge: clamp(1.125rem, 3.4vw, 2.25rem);
   position: fixed;
   right: var(--edge);
   bottom: calc(var(--edge) + env(safe-area-inset-bottom, 0));
