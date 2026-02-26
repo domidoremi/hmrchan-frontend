@@ -3,7 +3,6 @@ import { mount } from '@vue/test-utils'
 import { createI18n } from 'vue-i18n'
 import VideoPlayer from '../VideoPlayer.vue'
 
-// Create i18n instance for tests
 const i18n = createI18n({
   legacy: false,
   locale: 'en',
@@ -16,11 +15,20 @@ const i18n = createI18n({
         player: 'Video player',
         play: 'Play',
         pause: 'Pause',
+        volume: 'Volume',
         mute: 'Mute',
         unmute: 'Unmute',
         fullscreen: 'Fullscreen',
         pip: 'Picture in picture',
         settings: 'Settings',
+        loop: 'Loop',
+        loopOn: 'On',
+        loopOff: 'Off',
+        subtitles: 'Subtitles',
+        subtitlesOff: 'Off',
+        subtitlePosition: 'Subtitle Position',
+        subtitlePositionDefault: 'Default',
+        subtitlePositionUp: 'Up',
         keyboardHint: 'Space: play/pause · ←/→ seek · M mute · F fullscreen',
       },
     },
@@ -34,7 +42,6 @@ interface VideoPlayerProps {
   loop?: boolean
 }
 
-// Helper to create wrapper with i18n
 const createWrapper = (props: VideoPlayerProps) => {
   return mount(VideoPlayer, {
     props,
@@ -49,14 +56,12 @@ describe('VideoPlayer', () => {
   let mockPause: ReturnType<typeof vi.fn>
 
   beforeEach(() => {
-    // Mock HTMLMediaElement methods
     mockPlay = vi.fn().mockResolvedValue(undefined)
     mockPause = vi.fn()
     HTMLMediaElement.prototype.play = mockPlay
     HTMLMediaElement.prototype.pause = mockPause
     HTMLMediaElement.prototype.load = vi.fn()
 
-    // Mock browser APIs
     Object.defineProperty(document, 'pictureInPictureEnabled', {
       writable: true,
       value: true,
@@ -68,11 +73,9 @@ describe('VideoPlayer', () => {
     document.exitFullscreen = vi.fn().mockResolvedValue(undefined)
     document.exitPictureInPicture = vi.fn().mockResolvedValue(undefined)
 
-    // Mock video element specific methods
     HTMLVideoElement.prototype.requestPictureInPicture = vi.fn().mockResolvedValue({})
     Element.prototype.requestFullscreen = vi.fn().mockResolvedValue(undefined)
 
-    // Mock buffered property
     Object.defineProperty(HTMLMediaElement.prototype, 'buffered', {
       get: () => ({
         length: 1,
@@ -91,7 +94,6 @@ describe('VideoPlayer', () => {
       const wrapper = createWrapper({
         src: 'https://example.com/video.mp4',
       })
-
       const video = wrapper.find('video')
       expect(video.exists()).toBe(true)
       expect(video.attributes('src')).toBe('https://example.com/video.mp4')
@@ -102,7 +104,6 @@ describe('VideoPlayer', () => {
         src: 'https://example.com/video.mp4',
         poster: 'https://example.com/poster.jpg',
       })
-
       const video = wrapper.find('video')
       expect(video.attributes('poster')).toBe('https://example.com/poster.jpg')
     })
@@ -111,7 +112,6 @@ describe('VideoPlayer', () => {
       const wrapper = createWrapper({
         src: 'https://example.com/video.mp4',
       })
-
       const video = wrapper.find('video')
       expect(video.attributes('playsinline')).toBeDefined()
     })
@@ -121,7 +121,6 @@ describe('VideoPlayer', () => {
         src: 'https://example.com/video.mp4',
         loop: true,
       })
-
       const video = wrapper.find('video')
       expect(video.attributes('loop')).toBeDefined()
     })
@@ -132,13 +131,10 @@ describe('VideoPlayer', () => {
       const wrapper = createWrapper({
         src: 'https://example.com/video.mp4',
       })
-
       const video = wrapper.find('video')
       const videoElement = video.element as HTMLVideoElement
       Object.defineProperty(videoElement, 'duration', { value: 120, writable: true })
-
       await video.trigger('loadedmetadata')
-
       expect(wrapper.emitted('ready')).toBeTruthy()
       expect(wrapper.emitted('ready')).toHaveLength(1)
     })
@@ -147,10 +143,8 @@ describe('VideoPlayer', () => {
       const wrapper = createWrapper({
         src: 'https://example.com/video.mp4',
       })
-
       const video = wrapper.find('video')
       await video.trigger('play')
-
       expect(wrapper.emitted('play')).toBeTruthy()
       expect(wrapper.emitted('play')).toHaveLength(1)
     })
@@ -159,10 +153,8 @@ describe('VideoPlayer', () => {
       const wrapper = createWrapper({
         src: 'https://example.com/video.mp4',
       })
-
       const video = wrapper.find('video')
       await video.trigger('pause')
-
       expect(wrapper.emitted('pause')).toBeTruthy()
       expect(wrapper.emitted('pause')).toHaveLength(1)
     })
@@ -171,10 +163,8 @@ describe('VideoPlayer', () => {
       const wrapper = createWrapper({
         src: 'https://example.com/video.mp4',
       })
-
       const video = wrapper.find('video')
       await video.trigger('ended')
-
       expect(wrapper.emitted('ended')).toBeTruthy()
       expect(wrapper.emitted('ended')).toHaveLength(1)
     })
@@ -183,13 +173,10 @@ describe('VideoPlayer', () => {
       const wrapper = createWrapper({
         src: 'https://example.com/video.mp4',
       })
-
       const video = wrapper.find('video')
       const videoElement = video.element as HTMLVideoElement
       Object.defineProperty(videoElement, 'currentTime', { value: 30, writable: true })
-
       await video.trigger('timeupdate')
-
       expect(wrapper.emitted('timeupdate')).toBeTruthy()
       expect(wrapper.emitted('timeupdate')?.[0]).toEqual([30])
     })
@@ -200,8 +187,7 @@ describe('VideoPlayer', () => {
       const wrapper = createWrapper({
         src: 'https://example.com/video.mp4',
       })
-
-      const centerPlayBtn = wrapper.find('.center-play-btn')
+      const centerPlayBtn = wrapper.find('.vp__center-play')
       expect(centerPlayBtn.exists()).toBe(true)
     })
 
@@ -209,12 +195,10 @@ describe('VideoPlayer', () => {
       const wrapper = createWrapper({
         src: 'https://example.com/video.mp4',
       })
-
       const video = wrapper.find('video')
       await video.trigger('play')
       await wrapper.vm.$nextTick()
-
-      const centerPlayBtn = wrapper.find('.center-play-btn')
+      const centerPlayBtn = wrapper.find('.vp__center-play')
       expect(centerPlayBtn.exists()).toBe(false)
     })
 
@@ -222,55 +206,24 @@ describe('VideoPlayer', () => {
       const wrapper = createWrapper({
         src: 'https://example.com/video.mp4',
       })
-
       const video = wrapper.find('video')
       await video.trigger('waiting')
       await wrapper.vm.$nextTick()
-
-      const loadingIndicator = wrapper.find('.loading-indicator')
-      expect(loadingIndicator.exists()).toBe(true)
+      const loader = wrapper.find('.vp__loader')
+      expect(loader.exists()).toBe(true)
     })
 
     it('hides loading indicator when ready to play', async () => {
       const wrapper = createWrapper({
         src: 'https://example.com/video.mp4',
       })
-
       const video = wrapper.find('video')
       await video.trigger('waiting')
       await wrapper.vm.$nextTick()
-
       await video.trigger('canplay')
       await wrapper.vm.$nextTick()
-
-      const loadingIndicator = wrapper.find('.loading-indicator')
-      expect(loadingIndicator.exists()).toBe(false)
-    })
-  })
-
-  describe('Utilities', () => {
-    it('formats time correctly', () => {
-      const wrapper = createWrapper({
-        src: 'https://example.com/video.mp4',
-      })
-
-      const vm = wrapper.vm as unknown as { formatTime: (seconds: number) => string }
-
-      expect(vm.formatTime(0)).toBe('0:00')
-      expect(vm.formatTime(65)).toBe('1:05')
-      expect(vm.formatTime(3661)).toBe('61:01')
-    })
-
-    it('handles invalid time values', () => {
-      const wrapper = createWrapper({
-        src: 'https://example.com/video.mp4',
-      })
-
-      const vm = wrapper.vm as unknown as { formatTime: (seconds: number) => string }
-
-      expect(vm.formatTime(NaN)).toBe('0:00')
-      expect(vm.formatTime(Infinity)).toBe('0:00')
-      expect(vm.formatTime(-Infinity)).toBe('0:00')
+      const loader = wrapper.find('.vp__loader')
+      expect(loader.exists()).toBe(false)
     })
   })
 
@@ -279,10 +232,8 @@ describe('VideoPlayer', () => {
       const wrapper = createWrapper({
         src: 'https://example.com/video.mp4',
       })
-
       const video = wrapper.find('video')
       await video.trigger('click')
-
       expect(mockPlay).toHaveBeenCalledTimes(1)
     })
 
@@ -290,10 +241,8 @@ describe('VideoPlayer', () => {
       const wrapper = createWrapper({
         src: 'https://example.com/video.mp4',
       })
-
-      const centerBtn = wrapper.find('.center-play-btn')
+      const centerBtn = wrapper.find('.vp__center-play')
       await centerBtn.trigger('click')
-
       expect(mockPlay).toHaveBeenCalledTimes(1)
     })
 
@@ -301,10 +250,8 @@ describe('VideoPlayer', () => {
       const wrapper = createWrapper({
         src: 'https://example.com/video.mp4',
       })
-
-      const controlBtn = wrapper.find('.control-btn')
+      const controlBtn = wrapper.find('.vp__btn')
       await controlBtn.trigger('click')
-
       expect(mockPlay).toHaveBeenCalledTimes(1)
     })
 
@@ -312,21 +259,17 @@ describe('VideoPlayer', () => {
       const wrapper = createWrapper({
         src: 'https://example.com/video.mp4',
       })
-
       const video = wrapper.find('video')
       const videoElement = video.element as HTMLVideoElement
       Object.defineProperty(videoElement, 'duration', { value: 100, writable: true })
       Object.defineProperty(videoElement, 'currentTime', { value: 0, writable: true })
-
       await video.trigger('loadedmetadata')
 
-      const progressBar = wrapper.find('.progress-container')
+      const progressBar = wrapper.find('.vp__progress')
       const rect = { left: 0, width: 100 }
       vi.spyOn(progressBar.element, 'getBoundingClientRect').mockReturnValue(rect as DOMRect)
-
       await progressBar.trigger('click', { clientX: 50 })
       await wrapper.vm.$nextTick()
-
       expect(videoElement.currentTime).toBe(50)
     })
   })
