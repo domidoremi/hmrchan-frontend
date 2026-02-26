@@ -482,25 +482,7 @@
   user-select: text;
 }
 
-/* ========== Spinner ========== */
-.spinner {
-  width: 1.25rem;
-  height: 1.25rem;
-  border: 2px solid transparent;
-  border-top-color: currentColor;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-.spinner-sm {
-  width: 1rem;
-  height: 1rem;
-}
-
-.spinner-lg {
-  width: 2rem;
-  height: 2rem;
-}
+/* Spinner — canonical definition in animations.css */
 
 .scroll-sentinel {
   width: 100%;
