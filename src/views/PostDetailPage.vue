@@ -1554,7 +1554,7 @@ onUnmounted(() => {
 
   .media-viewer {
     width: 100%;
-    max-height: min(56svh, 520px);
+    max-height: min(56svh, 32.5rem);
     border-radius: 0;
   }
 
