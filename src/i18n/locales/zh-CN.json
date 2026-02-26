@@ -172,6 +172,7 @@
     "player": "视频播放器",
     "play": "播放",
     "pause": "暂停",
+    "volume": "音量",
     "mute": "静音",
     "unmute": "取消静音",
     "fullscreen": "全屏",

@@ -172,6 +172,7 @@
     "player": "Video player",
     "play": "Play",
     "pause": "Pause",
+    "volume": "Volume",
     "mute": "Mute",
     "unmute": "Unmute",
     "fullscreen": "Fullscreen",
