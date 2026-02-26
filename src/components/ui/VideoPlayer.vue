@@ -1315,14 +1315,15 @@ function startHintTimer() {
   height: 100%;
   min-height: 12.5rem;
   background: #000;
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-xl);
   overflow: hidden;
   cursor: default;
+  isolation: isolate;
 }
 
 .video-player:focus-visible {
   outline: 2px solid var(--color-ring);
-  outline-offset: 4px;
+  outline-offset: 2px;
 }
 
 .video-player.is-fullscreen {
@@ -1330,13 +1331,13 @@ function startHintTimer() {
 }
 
 .video-player.is-buffering .video-element {
-  filter: brightness(0.75);
+  filter: brightness(0.7);
+  transition: filter 0.4s ease;
 }
 
 .video-element {
   position: absolute;
-  top: 0;
-  left: 0;
+  inset: 0;
   width: 100%;
   height: 100%;
   display: block;
@@ -1352,8 +1353,9 @@ function startHintTimer() {
   flex-direction: column;
   justify-content: flex-end;
   opacity: 0;
-  transition: opacity 0.3s ease;
+  transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   pointer-events: none;
+  z-index: 2;
 }
 
 .controls.is-visible {
@@ -1371,38 +1373,45 @@ function startHintTimer() {
   position: absolute;
   left: 0;
   right: 0;
-  height: 7.5rem;
   pointer-events: none;
+  transition: opacity 0.25s ease;
 }
 
 .controls-gradient--top {
   top: 0;
-  background: linear-gradient(180deg, rgba(0, 0, 0, 0.6) 0%, transparent 100%);
+  height: 6rem;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.45) 0%, transparent 100%);
 }
 
 .controls-gradient--bottom {
   bottom: 0;
-  background: linear-gradient(0deg, rgba(0, 0, 0, 0.8) 0%, transparent 100%);
+  height: 10rem;
+  background: linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.75) 0%,
+    rgba(0, 0, 0, 0.35) 50%,
+    transparent 100%
+  );
 }
 
 .controls-hint {
   position: absolute;
-  bottom: 5rem; /* 提高位置，避免被控制栏遮挡 */
+  bottom: 5.5rem;
   left: 1rem;
-  padding: 0.5rem 0.875rem;
+  padding: 0.375rem 0.75rem;
   border-radius: var(--radius-full);
-  background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(8px);
-  color: rgba(255, 255, 255, 0.9);
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(10px);
+  color: rgba(255, 255, 255, 0.85);
   font-size: var(--text-xs);
+  letter-spacing: 0.01em;
   opacity: 0;
-  transform: translateY(6px);
+  transform: translateY(4px);
   transition:
-    opacity var(--transition-fast),
-    transform var(--transition-fast);
+    opacity 0.2s ease,
+    transform 0.2s ease;
   pointer-events: none;
   z-index: 10;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .controls-hint.is-visible {
@@ -1420,20 +1429,20 @@ function startHintTimer() {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--spacing-2);
-  padding: var(--spacing-4);
-  background: rgba(0, 0, 0, 0.8);
-  backdrop-filter: blur(12px);
-  border-radius: var(--radius-xl);
+  gap: var(--spacing-1);
+  padding: var(--spacing-3) var(--spacing-5);
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(16px);
+  border-radius: var(--radius-2xl);
   color: white;
   pointer-events: none;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
 }
 
 .indicator-value {
-  font-size: var(--text-xl);
+  font-size: var(--text-lg);
   font-weight: var(--font-semibold);
   font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
 }
 
 .fade-enter-active,
@@ -1450,33 +1459,39 @@ function startHintTimer() {
 .controls-bottom {
   position: relative;
   z-index: 2;
-  padding: var(--spacing-3);
+  padding: 0 var(--spacing-3) var(--spacing-3);
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-2);
+  gap: var(--spacing-1);
 }
 
-/* 进度条 */
+/* ========== 进度条 (YouTube-style) ========== */
 .progress-container {
+  --progress-height: 3px;
+  --progress-hover-height: 5px;
   width: 100%;
-  height: 1.25rem;
+  height: 1.5rem;
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   cursor: pointer;
-  padding: var(--spacing-1) 0;
+  padding: 0;
+  position: relative;
+  touch-action: none;
 }
 
 .progress-bar {
   position: relative;
   width: 100%;
-  height: 0.25rem;
-  background: rgba(255, 255, 255, 0.3);
-  border-radius: var(--radius-full);
+  height: var(--progress-height);
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 1.5px;
   overflow: visible;
+  transition: height 0.12s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.progress-container:hover .progress-bar {
-  height: 0.375rem;
+.progress-container:hover .progress-bar,
+.progress-container.is-seeking .progress-bar {
+  height: var(--progress-hover-height);
 }
 
 .progress-buffered {
@@ -1484,9 +1499,9 @@ function startHintTimer() {
   left: 0;
   top: 0;
   height: 100%;
-  background: rgba(255, 255, 255, 0.5);
-  border-radius: var(--radius-full);
-  transition: width 0.2s ease;
+  background: rgba(255, 255, 255, 0.4);
+  border-radius: inherit;
+  transition: width 0.3s ease;
 }
 
 .progress-played {
@@ -1495,48 +1510,65 @@ function startHintTimer() {
   top: 0;
   height: 100%;
   background: var(--color-primary);
-  border-radius: var(--radius-full);
-  transition: width 0.1s linear;
+  border-radius: inherit;
+  transition: width 0.08s linear;
+  box-shadow: 0 0 8px rgba(var(--color-primary-rgb), 0.4);
 }
 
 .progress-thumb {
   position: absolute;
   top: 50%;
-  transform: translate(-50%, -50%);
-  width: 0.875rem;
-  height: 0.875rem;
-  background: white;
+  width: 0.8125rem;
+  height: 0.8125rem;
+  background: var(--color-primary);
   border-radius: 50%;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-  opacity: 0;
-  transition: opacity 0.2s ease;
+  box-shadow:
+    0 0 0 2px rgba(255, 255, 255, 0.9),
+    0 2px 6px rgba(0, 0, 0, 0.35);
+  transform: translate(-50%, -50%) scale(0);
+  transition: transform 0.12s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
 }
 
 .progress-container:hover .progress-thumb,
 .progress-container.is-seeking .progress-thumb {
-  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
 }
 
 .progress-container.is-buffering .progress-thumb {
-  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+  animation: thumb-pulse 1.2s ease-in-out infinite;
 }
 
 .progress-container.is-buffering .progress-bar {
-  height: 0.375rem;
+  height: var(--progress-hover-height);
+}
+
+@keyframes thumb-pulse {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 2px rgba(255, 255, 255, 0.9),
+      0 2px 6px rgba(0, 0, 0, 0.35);
+  }
+  50% {
+    box-shadow:
+      0 0 0 3px rgba(var(--color-primary-rgb), 0.5),
+      0 2px 8px rgba(0, 0, 0, 0.4);
+  }
 }
 
 .progress-loading {
   position: absolute;
   top: 50%;
   transform: translate(-50%, -50%);
-  width: 1.125rem;
-  height: 1.125rem;
+  width: 1rem;
+  height: 1rem;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: rgba(0, 0, 0, 0.55);
-  border: 1px solid rgba(255, 255, 255, 0.4);
+  background: rgba(0, 0, 0, 0.5);
   pointer-events: none;
   color: white;
 }
@@ -1546,110 +1578,128 @@ function startHintTimer() {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--spacing-2);
+  gap: var(--spacing-1);
 }
 
 .controls-group {
   display: flex;
   align-items: center;
-  gap: var(--spacing-2);
+  gap: var(--spacing-1);
 }
 
 .control-btn {
-  width: 2.5rem;
-  height: 2.5rem;
-  display: flex;
+  width: 2.25rem;
+  height: 2.25rem;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   background: transparent;
   border: none;
-  border-radius: var(--radius-md);
-  color: white;
+  border-radius: var(--radius-lg);
+  color: rgba(255, 255, 255, 0.92);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    transform 0.1s ease;
+  flex-shrink: 0;
 }
 
 .control-btn--text {
   width: auto;
-  min-width: 2.5rem;
+  min-width: 2.25rem;
+  height: 1.75rem;
   padding: 0 var(--spacing-2);
-  font-size: var(--text-sm);
-  font-weight: var(--font-semibold);
-  letter-spacing: 0.04em;
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  background: rgba(0, 0, 0, 0.25);
+  font-size: 0.6875rem;
+  font-weight: var(--font-bold);
+  letter-spacing: 0.06em;
+  border: 1.5px solid rgba(255, 255, 255, 0.3);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.06);
   gap: var(--spacing-1);
 }
 
 .control-btn--text.is-active {
-  border-color: rgba(var(--color-primary-rgb), 0.7);
+  border-color: var(--color-primary);
   color: var(--color-primary);
-  box-shadow: 0 0 0 1px rgba(var(--color-primary-rgb), 0.3);
+  background: rgba(var(--color-primary-rgb), 0.12);
 }
 
 .control-btn__badge {
   display: inline-flex;
   align-items: center;
-  padding: 0 var(--spacing-1);
-  margin-left: var(--spacing-1);
-  font-size: var(--text-xs);
+  padding: 0 0.25rem;
+  margin-left: 0.125rem;
+  font-size: 0.5625rem;
   font-weight: var(--font-medium);
-  letter-spacing: 0.01em;
-  border-radius: var(--radius-full);
-  background: rgba(255, 255, 255, 0.15);
-  color: rgba(255, 255, 255, 0.85);
+  letter-spacing: 0;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .control-btn:hover {
-  background: rgba(255, 255, 255, 0.15);
-  transform: scale(1.05);
+  background: rgba(255, 255, 255, 0.12);
+  color: white;
 }
 
 .control-btn:active {
-  transform: scale(0.95);
+  transform: scale(0.92);
 }
 
 /* 时间显示 */
 .time-display {
   display: flex;
   align-items: center;
-  gap: var(--spacing-1);
-  font-size: var(--text-sm);
-  color: white;
+  gap: 0.1875rem;
+  font-size: 0.8125rem;
+  color: rgba(255, 255, 255, 0.88);
   font-variant-numeric: tabular-nums;
   user-select: none;
+  letter-spacing: 0.01em;
+  padding-left: var(--spacing-1);
+}
+
+.time-current {
+  color: white;
 }
 
 .time-separator {
-  opacity: 0.6;
+  opacity: 0.45;
+  padding: 0 1px;
+}
+
+.time-duration {
+  opacity: 0.7;
 }
 
 /* 音量控制 */
 .volume-control {
   display: flex;
   align-items: center;
-  gap: var(--spacing-2);
 }
 
 .volume-slider-container {
   width: 0;
   opacity: 0;
   overflow: hidden;
-  transition: all 0.2s ease;
+  transition:
+    width 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.15s ease;
 }
 
 .volume-control:hover .volume-slider-container {
-  width: 5rem;
+  width: 4.5rem;
   opacity: 1;
 }
 
 .volume-slider {
   width: 100%;
-  height: 0.25rem;
+  height: 3px;
   -webkit-appearance: none;
   appearance: none;
-  background: rgba(255, 255, 255, 0.3);
-  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 1.5px;
   outline: none;
   cursor: pointer;
 }
@@ -1662,6 +1712,7 @@ function startHintTimer() {
   background: white;
   border-radius: 50%;
   cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
 .volume-slider::-moz-range-thumb {
@@ -1679,16 +1730,15 @@ function startHintTimer() {
 }
 
 .settings-panel {
-  min-width: 200px;
+  min-width: 13rem;
   padding: var(--spacing-3);
-  background: rgba(28, 28, 30, 0.95);
-  backdrop-filter: blur(20px);
-  border: 1px solid var(--glass-border);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  background: rgba(20, 20, 22, 0.92);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
   border-radius: var(--radius-xl);
 }
-
-/* Teleport 到 body 和全屏模式均由 JS 内联样式控制 position/z-index */
 
 .settings-section {
   display: flex;
@@ -1699,40 +1749,45 @@ function startHintTimer() {
 .settings-section + .settings-section {
   margin-top: var(--spacing-3);
   padding-top: var(--spacing-3);
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .settings-label {
-  font-size: var(--text-sm);
+  font-size: var(--text-xs);
   font-weight: var(--font-medium);
-  color: rgba(255, 255, 255, 0.8);
+  color: rgba(255, 255, 255, 0.55);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .settings-options {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--spacing-1);
+  gap: 0.375rem;
 }
 
 .settings-option {
-  padding: var(--spacing-1) var(--spacing-3);
+  padding: 0.3125rem var(--spacing-3);
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: var(--radius-md);
-  color: white;
+  color: rgba(255, 255, 255, 0.85);
   font-size: var(--text-sm);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
 }
 
 .settings-option:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 .settings-option.active {
-  background: rgba(var(--color-primary-rgb), 0.3);
-  border-color: var(--color-primary);
+  background: rgba(var(--color-primary-rgb), 0.2);
+  border-color: rgba(var(--color-primary-rgb), 0.5);
   color: var(--color-primary);
 }
 
@@ -1746,28 +1801,35 @@ function startHintTimer() {
   background: transparent;
   border: none;
   cursor: pointer;
+  padding: 0;
 }
 
 .center-play-icon {
-  width: 5rem;
-  height: 5rem;
+  width: 4.25rem;
+  height: 4.25rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(var(--color-primary-rgb), 0.9);
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
   border-radius: 50%;
   color: white;
-  transition: all 0.2s ease;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  transition:
+    transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+    background 0.2s ease,
+    border-color 0.2s ease;
 }
 
 .center-play-icon:hover {
-  transform: scale(1.1);
-  background: var(--color-primary);
+  transform: scale(1.08);
+  background: rgba(var(--color-primary-rgb), 0.65);
+  border-color: rgba(var(--color-primary-rgb), 0.4);
 }
 
 .center-play-icon:active {
-  transform: scale(0.95);
+  transform: scale(0.94);
 }
 
 /* 加载指示器 */
@@ -1778,30 +1840,34 @@ function startHintTimer() {
   transform: translate(-50%, -50%);
   z-index: 3;
   color: white;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.4));
 }
 
 /* ========== Subtitle Picker ========== */
 
 .subtitle-picker {
-  min-width: 180px;
+  min-width: 11rem;
   padding: var(--spacing-3);
-  background: rgba(28, 28, 30, 0.95);
-  backdrop-filter: blur(20px);
-  border: 1px solid var(--glass-border);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  background: rgba(20, 20, 22, 0.92);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
   border-radius: var(--radius-xl);
 }
 
 .subtitle-picker__header {
   padding-bottom: var(--spacing-2);
-  margin-bottom: var(--spacing-2);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: var(--spacing-1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .subtitle-picker__title {
-  font-size: var(--text-sm);
+  font-size: var(--text-xs);
   font-weight: var(--font-medium);
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(255, 255, 255, 0.55);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .subtitle-picker__list {
@@ -1926,7 +1992,7 @@ function startHintTimer() {
 /* 移动端适配 */
 @media (max-width: 768px) {
   .controls-bottom {
-    padding: var(--spacing-2);
+    padding: 0 var(--spacing-2) var(--spacing-2);
   }
 
   .control-btn {
@@ -1939,7 +2005,7 @@ function startHintTimer() {
   }
 
   .volume-slider-container {
-    width: 4rem;
+    width: 3.5rem;
   }
 
   .time-display {
@@ -1947,17 +2013,22 @@ function startHintTimer() {
   }
 
   .center-play-icon {
-    width: 4rem;
-    height: 4rem;
+    width: 3.5rem;
+    height: 3.5rem;
   }
 
   .center-play-icon svg {
-    width: 2rem;
-    height: 2rem;
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+
+  .progress-container {
+    --progress-height: 3px;
+    --progress-hover-height: 6px;
+    height: 1.75rem;
   }
 
   .settings-panel--teleported {
-    /* JS 已设置 position:fixed; bottom:0; left:0; right:0 */
     min-width: unset;
     width: auto;
     border-radius: var(--radius-xl) var(--radius-xl) 0 0;
