@@ -174,7 +174,7 @@
                   ? `${$t('video.subtitles')}: ${activeSubtitleLabel}`
                   : $t('video.subtitlesOff')
               "
-              @click="toggleSubtitles"
+              @click="toggleSubtitlePicker"
             >
               CC
               <span v-if="activeSubtitleLabel" class="control-btn__badge">
@@ -269,6 +269,31 @@
                       {{ track.label }}
                     </button>
                   </div>
+                  <!-- 字幕位置 -->
+                  <div v-if="selectedSubtitleLanguage" class="settings-sub">
+                    <div class="settings-label">{{ $t('video.subtitlePosition') }}</div>
+                    <div class="settings-slider-row">
+                      <span class="settings-slider-label">{{
+                        $t('video.subtitlePositionDefault')
+                      }}</span>
+                      <input
+                        type="range"
+                        class="subtitle-offset-slider"
+                        min="0"
+                        max="5"
+                        step="1"
+                        :value="subtitleOffset"
+                        :aria-label="$t('video.subtitlePosition')"
+                        @input="
+                          (e: Event) =>
+                            setSubtitleOffsetValue(Number((e.target as HTMLInputElement).value))
+                        "
+                      />
+                      <span class="settings-slider-label">{{
+                        $t('video.subtitlePositionUp')
+                      }}</span>
+                    </div>
+                  </div>
                 </div>
 
                 <!-- 画质（如果支持） -->
@@ -285,6 +310,81 @@
                     >
                       {{ quality }}
                     </button>
+                  </div>
+                </div>
+              </div>
+            </Teleport>
+
+            <!-- 字幕快捷选择器 -->
+            <Teleport to="body" :disabled="isFullscreen">
+              <div
+                v-if="showSubtitlePicker"
+                class="subtitle-picker glass-card"
+                :class="{
+                  'subtitle-picker--fullscreen': isFullscreen,
+                  'subtitle-picker--teleported': !isFullscreen,
+                }"
+                :style="subtitlePickerPosition"
+                @click.stop
+              >
+                <div class="subtitle-picker__header">
+                  <span class="subtitle-picker__title">{{ $t('video.subtitles') }}</span>
+                </div>
+                <div class="subtitle-picker__list">
+                  <button
+                    type="button"
+                    class="subtitle-picker__item"
+                    :class="{ 'is-active': !selectedSubtitleLanguage }"
+                    @click="setSubtitleLanguage(null)"
+                  >
+                    <span
+                      class="subtitle-picker__check"
+                      :class="{ visible: !selectedSubtitleLanguage }"
+                      >✓</span
+                    >
+                    {{ $t('video.subtitlesOff') }}
+                  </button>
+                  <button
+                    v-for="track in normalizedSubtitles"
+                    :key="`picker-${track.language}`"
+                    type="button"
+                    class="subtitle-picker__item"
+                    :class="{ 'is-active': selectedSubtitleLanguage === track.language }"
+                    @click="setSubtitleLanguage(track.language)"
+                  >
+                    <span
+                      class="subtitle-picker__check"
+                      :class="{ visible: selectedSubtitleLanguage === track.language }"
+                      >✓</span
+                    >
+                    {{ track.label }}
+                  </button>
+                </div>
+                <!-- 字幕位置调整 -->
+                <div v-if="selectedSubtitleLanguage" class="subtitle-picker__position">
+                  <div class="subtitle-picker__position-label">
+                    {{ $t('video.subtitlePosition') }}
+                  </div>
+                  <div class="subtitle-picker__position-control">
+                    <span class="subtitle-picker__position-text">{{
+                      $t('video.subtitlePositionDefault')
+                    }}</span>
+                    <input
+                      type="range"
+                      class="subtitle-offset-slider"
+                      min="0"
+                      max="5"
+                      step="1"
+                      :value="subtitleOffset"
+                      :aria-label="$t('video.subtitlePosition')"
+                      @input="
+                        (e: Event) =>
+                          setSubtitleOffsetValue(Number((e.target as HTMLInputElement).value))
+                      "
+                    />
+                    <span class="subtitle-picker__position-text">{{
+                      $t('video.subtitlePositionUp')
+                    }}</span>
                   </div>
                 </div>
               </div>
@@ -460,6 +560,7 @@ const {
   setLoop: updateLoop,
   setBrightness: updateBrightness,
   setSubtitleLanguage: updateSubtitleLanguage,
+  setSubtitleOffset: updateSubtitleOffset,
 } = useVideoSettings()
 
 // 从设置中获取音量和静音状态
@@ -542,6 +643,9 @@ function toggleSettingsPanel() {
 
 const subtitleOverrides = ref<Record<string, string>>({})
 const selectedSubtitleLanguage = ref<string | null>(null)
+const showSubtitlePicker = ref(false)
+const subtitleOffset = computed(() => videoSettings.value.subtitleOffset)
+const subtitlePickerPosition = ref<Record<string, string>>({})
 
 const normalizedSubtitles = computed<NormalizedSubtitleTrack[]>(() => {
   const tracks = props.subtitles ?? []
@@ -730,6 +834,8 @@ function applySubtitleMode() {
     if (!track) continue
     track.mode = target && track.language === target ? 'showing' : 'disabled'
   }
+  // Apply offset after mode change
+  nextTick(() => applySubtitleOffset())
 }
 
 // Constants
@@ -1040,9 +1146,15 @@ const handleFullscreenChange = () => {
 }
 
 const handleClickOutside = (event: MouseEvent) => {
-  if (!showSettings.value) return
   const target = event.target as Node
-  // 检查点击是否在设置按钮或 Teleport 出去的设置面板内
+  // Close subtitle picker
+  if (showSubtitlePicker.value) {
+    if (!(target as Element).closest?.('.subtitle-picker')) {
+      showSubtitlePicker.value = false
+    }
+  }
+  // Close settings panel
+  if (!showSettings.value) return
   if (settingsMenuRef.value?.contains(target)) return
   if ((target as Element).closest?.('.settings-panel')) return
   showSettings.value = false
@@ -1091,6 +1203,10 @@ watch(
   }
 )
 
+watch(subtitleOffset, () => {
+  applySubtitleOffset()
+})
+
 watch(
   () => locale.value,
   () => {
@@ -1114,17 +1230,71 @@ onBeforeUnmount(() => {
 
 function setSubtitleLanguage(language: string | null) {
   selectedSubtitleLanguage.value = language
+  showSubtitlePicker.value = false
   showSettings.value = false
 }
 
-function toggleSubtitles() {
-  if (selectedSubtitleLanguage.value) {
-    setSubtitleLanguage(null)
+function toggleSubtitlePicker() {
+  if (showSubtitlePicker.value) {
+    showSubtitlePicker.value = false
     return
   }
+  showSettings.value = false
+  showSubtitlePicker.value = true
+  nextTick(() => updateSubtitlePickerPosition())
+}
 
-  const fallback = pickDefaultSubtitle(normalizedSubtitles.value)
-  setSubtitleLanguage(fallback)
+function updateSubtitlePickerPosition() {
+  const ccBtn = playerElement.value?.querySelector('.control-btn--text') as HTMLElement | null
+  if (!ccBtn) return
+  const rect = ccBtn.getBoundingClientRect()
+  const isMobile = window.innerWidth <= 768
+
+  if (!isFullscreen.value && isMobile) {
+    subtitlePickerPosition.value = {
+      position: 'fixed',
+      bottom: '0',
+      left: '0',
+      right: '0',
+      zIndex: 'var(--z-modal)',
+    }
+  } else {
+    subtitlePickerPosition.value = {
+      position: 'fixed',
+      bottom: `${window.innerHeight - rect.top + 8}px`,
+      left: `${rect.left}px`,
+      zIndex: 'var(--z-modal)',
+    }
+  }
+}
+
+/**
+ * 应用字幕垂直偏移到所有活跃 cue
+ */
+function applySubtitleOffset() {
+  const textTracks = videoRef.value?.textTracks
+  if (!textTracks) return
+  const offset = subtitleOffset.value
+  // line: -1 = bottom (default), -2 = one line up, etc.
+  const lineValue = offset === 0 ? -1 : -(1 + offset)
+
+  for (let i = 0; i < textTracks.length; i += 1) {
+    const track = textTracks[i]
+    if (!track || track.mode !== 'showing') continue
+    const cues = track.cues
+    if (!cues) continue
+    for (let j = 0; j < cues.length; j += 1) {
+      const cue = cues[j] as VTTCue | undefined
+      if (cue && 'line' in cue) {
+        cue.line = lineValue
+      }
+    }
+  }
+}
+
+function setSubtitleOffsetValue(offset: number) {
+  updateSubtitleOffset(offset)
+  applySubtitleOffset()
 }
 
 function startHintTimer() {
@@ -1132,9 +1302,9 @@ function startHintTimer() {
   if (hintTimeout) {
     clearTimeout(hintTimeout)
   }
-  hintTimeout = window.setTimeout(() => {
+  hintTimeout = setTimeout(() => {
     showControlHints.value = false
-  }, 2600) as unknown as number
+  }, 2600)
 }
 </script>
 
@@ -1401,7 +1571,7 @@ function startHintTimer() {
 
 .control-btn--text {
   width: auto;
-  min-width: 40px;
+  min-width: 2.5rem;
   padding: 0 var(--spacing-2);
   font-size: var(--text-sm);
   font-weight: var(--font-semibold);
@@ -1610,6 +1780,149 @@ function startHintTimer() {
   color: white;
 }
 
+/* ========== Subtitle Picker ========== */
+
+.subtitle-picker {
+  min-width: 180px;
+  padding: var(--spacing-3);
+  background: rgba(28, 28, 30, 0.95);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  border-radius: var(--radius-xl);
+}
+
+.subtitle-picker__header {
+  padding-bottom: var(--spacing-2);
+  margin-bottom: var(--spacing-2);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.subtitle-picker__title {
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.subtitle-picker__list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.subtitle-picker__item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  width: 100%;
+  padding: var(--spacing-2) var(--spacing-3);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-md);
+  color: rgba(255, 255, 255, 0.9);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition: background 0.15s ease;
+  text-align: left;
+}
+
+.subtitle-picker__item:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.subtitle-picker__item.is-active {
+  background: rgba(var(--color-primary-rgb), 0.2);
+  color: var(--color-primary);
+}
+
+.subtitle-picker__check {
+  width: 1rem;
+  font-size: var(--text-xs);
+  opacity: 0;
+  flex-shrink: 0;
+}
+
+.subtitle-picker__check.visible {
+  opacity: 1;
+}
+
+.subtitle-picker__position {
+  margin-top: var(--spacing-2);
+  padding-top: var(--spacing-2);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.subtitle-picker__position-label {
+  font-size: var(--text-xs);
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: var(--spacing-2);
+}
+
+.subtitle-picker__position-control {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+}
+
+.subtitle-picker__position-text {
+  font-size: var(--text-xs);
+  color: rgba(255, 255, 255, 0.5);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Shared subtitle offset slider */
+.subtitle-offset-slider {
+  flex: 1;
+  min-width: 0;
+  height: 0.25rem;
+  -webkit-appearance: none;
+  appearance: none;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius-full);
+  outline: none;
+  cursor: pointer;
+}
+
+.subtitle-offset-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 0.875rem;
+  height: 0.875rem;
+  background: white;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+.subtitle-offset-slider::-moz-range-thumb {
+  width: 0.875rem;
+  height: 0.875rem;
+  background: white;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+/* Settings panel sub-section & slider row */
+.settings-sub {
+  margin-top: var(--spacing-2);
+}
+
+.settings-slider-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  margin-top: var(--spacing-1);
+}
+
+.settings-slider-label {
+  font-size: var(--text-xs);
+  color: rgba(255, 255, 255, 0.5);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
 /* 移动端适配 */
 @media (max-width: 768px) {
   .controls-bottom {
@@ -1659,6 +1972,42 @@ function startHintTimer() {
     box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.2);
   }
 
+  /* 字幕选择器移动端底部弹出 */
+  .subtitle-picker--teleported {
+    min-width: unset;
+    width: auto;
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    padding: var(--spacing-4);
+    padding-bottom: calc(var(--spacing-4) + env(safe-area-inset-bottom));
+    max-height: 60svh;
+    overflow-y: auto;
+    background: var(--glass-bg-strong);
+    backdrop-filter: var(--glass-blur-strong);
+    -webkit-backdrop-filter: var(--glass-blur-strong);
+    border: 1px solid var(--glass-border);
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.2);
+  }
+
+  .subtitle-picker--teleported .subtitle-picker__item {
+    padding: var(--spacing-3) var(--spacing-4);
+    min-height: 2.75rem;
+    font-size: var(--text-base);
+  }
+
+  .subtitle-picker--teleported .subtitle-offset-slider {
+    height: 0.375rem;
+  }
+
+  .subtitle-picker--teleported .subtitle-offset-slider::-webkit-slider-thumb {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+
+  .subtitle-picker--teleported .subtitle-offset-slider::-moz-range-thumb {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+
   /* 全屏模式下移动端：从按钮上方弹出（JS 定位），仅补充视觉样式 */
   .settings-panel--fullscreen {
     max-height: 60svh;
@@ -1678,6 +2027,24 @@ function startHintTimer() {
   .settings-option:hover {
     background: var(--glass-bg-hover);
     border-color: var(--glass-border-strong);
+  }
+
+  /* Subtitle picker theme adaptation */
+  .subtitle-picker--teleported .subtitle-picker__title {
+    color: var(--color-text-secondary);
+  }
+
+  .subtitle-picker--teleported .subtitle-picker__item {
+    color: var(--color-text-primary);
+  }
+
+  .subtitle-picker--teleported .subtitle-picker__position-label,
+  .subtitle-picker--teleported .subtitle-picker__position-text {
+    color: var(--color-text-tertiary);
+  }
+
+  .subtitle-picker--teleported .subtitle-offset-slider {
+    background: var(--glass-border);
   }
 }
 
