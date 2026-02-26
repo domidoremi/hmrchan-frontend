@@ -225,6 +225,28 @@
   --glass-glow: 0 0 24px rgba(var(--color-primary-rgb), 0.3);
   --glass-glow-accent: 0 0 24px rgba(var(--color-accent-rgb), 0.25);
 
+  /* 玻璃阴影层级 */
+  --glass-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04), 0 4px 16px rgba(0, 0, 0, 0.02);
+  --glass-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.06), 0 8px 32px rgba(0, 0, 0, 0.04);
+  --glass-shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.1), 0 32px 96px rgba(0, 0, 0, 0.06);
+  --glass-shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.1), 0 16px 48px rgba(0, 0, 0, 0.06);
+
+  /* 玻璃背景层级 */
+  --glass-bg-ultra-light: rgba(255, 255, 255, 0.6);
+  --glass-bg-medium: rgba(255, 255, 255, 0.3);
+  --glass-bg-dark: rgba(255, 255, 255, 0.15);
+
+  /* 玻璃边框层级 */
+  --glass-border-light: rgba(255, 255, 255, 0.4);
+  --glass-border-medium: rgba(255, 255, 255, 0.25);
+
+  /* 模糊值 (raw px) */
+  --blur-xs: 4px;
+  --blur-sm: 8px;
+  --blur-md: 12px;
+  --blur-lg: 20px;
+  --blur-xl: 40px;
+
   /* 渐变背景 - 简约单色微妙渐变 */
   --gradient-primary: linear-gradient(
     135deg,
@@ -257,7 +279,8 @@
   --duration-normal: 350ms;
   --duration-slow: 500ms;
   --duration-slower: 700ms;
-  --duration-immersive: 900ms;
+  --duration-slowest: 900ms;
+  --duration-immersive: 1200ms;
 
   --ease-linear: linear;
   --ease-in: cubic-bezier(0.4, 0, 1, 1);
@@ -266,9 +289,49 @@
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
   --ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
 
+  /* 柔和缓动 */
+  --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-out-smooth: cubic-bezier(0, 0, 0.2, 1);
+  --ease-in-smooth: cubic-bezier(0.4, 0, 1, 1);
+  --ease-bounce-soft: cubic-bezier(0.22, 1.2, 0.36, 1);
+  --ease-fluid: cubic-bezier(0.4, 0, 0, 1);
+
   --transition-fast: var(--duration-fast) var(--ease-out);
   --transition-base: var(--duration-normal) var(--ease-out);
   --transition-slow: var(--duration-slow) var(--ease-out);
+
+  /* 悬停抬升 / 按压效果 */
+  --lift-sm: translateY(-2px);
+  --lift-md: translateY(-4px);
+  --lift-lg: translateY(-8px);
+  --press-sm: scale(0.98);
+  --press-md: scale(0.96);
+
+  /* 高光渐变 & 光晕 */
+  --highlight-gradient: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.4) 0%,
+    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  --glow-primary: 0 0 20px rgba(var(--color-primary-rgb), 0.3);
+  --glow-accent: 0 0 20px rgba(var(--color-accent-rgb), 0.3);
+
+  /* GSAP / 微交互令牌 */
+  --micro-duration-xs: 100ms;
+  --micro-duration-sm: 150ms;
+  --micro-duration-md: 250ms;
+  --micro-duration-lg: 400ms;
+  --perspective-near: 800px;
+  --perspective-normal: 1000px;
+  --perspective-far: 1500px;
+  --tilt-max: 8deg;
+  --tilt-scale: 1.02;
+  --ripple-duration: 600ms;
+  --ripple-opacity: 0.3;
+  --enter-distance: 30px;
+  --enter-scale: 0.95;
+  --stagger-delay: 80ms;
 
   /* ========== Z-Index Scale ========== */
   --z-negative: -1;
@@ -561,6 +624,35 @@
   --glass-glow-accent:
     0 0 40px rgba(var(--color-accent-rgb), 0.2), 0 0 80px rgba(var(--color-accent-rgb), 0.08);
 
+  /* 暗色玻璃阴影层级 */
+  --glass-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.25), 0 4px 16px rgba(0, 0, 0, 0.12);
+  --glass-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.3), 0 8px 32px rgba(0, 0, 0, 0.18);
+  --glass-shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.4), 0 32px 96px rgba(0, 0, 0, 0.28);
+  --glass-shadow-hover:
+    0 8px 24px rgba(0, 0, 0, 0.35), 0 16px 48px rgba(0, 0, 0, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+
+  /* 暗色玻璃背景层级 */
+  --glass-bg-ultra-light: rgba(20, 24, 32, 0.75);
+  --glass-bg-medium: rgba(20, 24, 32, 0.5);
+  --glass-bg-dark: rgba(20, 24, 32, 0.35);
+
+  /* 暗色玻璃边框层级 */
+  --glass-border-light: rgba(255, 255, 255, 0.14);
+  --glass-border-medium: rgba(255, 255, 255, 0.09);
+
+  /* 暗色高光 */
+  --highlight-gradient: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.08) 0%,
+    rgba(255, 255, 255, 0.02) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  --glow-primary:
+    0 0 24px rgba(var(--color-primary-rgb), 0.2), 0 0 48px rgba(var(--color-primary-rgb), 0.08);
+  --glow-accent:
+    0 0 24px rgba(var(--color-accent-rgb), 0.2), 0 0 48px rgba(var(--color-accent-rgb), 0.08);
+
   /* 暗色渐变 - 简约单色 */
   --gradient-primary: linear-gradient(
     135deg,
@@ -598,6 +690,23 @@
   /* 暗色模式高亮效果 */
   --highlight-glow: 0 0 1px rgba(255, 255, 255, 0.15);
   --highlight-ring: 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+/* ========== Mobile Backdrop-Filter Degradation ========== */
+@media (max-width: 768px) {
+  :root {
+    --glass-blur: blur(8px);
+    --glass-blur-strong: blur(12px);
+    --glass-blur-light: blur(4px);
+  }
+}
+
+@media (max-width: 768px) and (prefers-reduced-motion: reduce) {
+  :root {
+    --glass-blur: none;
+    --glass-blur-strong: none;
+    --glass-blur-light: none;
+  }
 }
 
 /* ========== Reduced Motion ========== */

@@ -5,7 +5,6 @@
  */
 
 @import './tokens.css';
-@import './design-tokens.css';
 @import './locale.css';
 @import './ui-style.css';
 @import './base.css';
