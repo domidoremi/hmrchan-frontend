@@ -951,6 +951,7 @@ function seek(event: MouseEvent) {
 function startSeekDrag(event: MouseEvent | TouchEvent) {
   if (!videoRef.value) return
   isSeeking.value = true
+  showControls.value = true
   updateSeek(event)
   document.addEventListener('mousemove', updateSeek)
   document.addEventListener('mouseup', stopSeekDrag)
@@ -1376,6 +1377,13 @@ function startHintTimer() {
   pointer-events: auto;
 }
 
+/* Keep controls visible while seeking / dragging progress bar */
+.video-player:has(.progress-container.is-seeking) .controls,
+.video-player:has(.progress-container.is-buffering) .controls {
+  opacity: 1;
+  pointer-events: auto;
+}
+
 /* 渐变遮罩 */
 .controls-gradient {
   position: absolute;
@@ -1523,6 +1531,11 @@ function startHintTimer() {
   box-shadow: 0 0 8px rgba(var(--color-primary-rgb), 0.4);
 }
 
+/* Remove transition during seek to prevent visual lag / jumping */
+.progress-container.is-seeking .progress-played {
+  transition: none;
+}
+
 .progress-thumb {
   position: absolute;
   top: 50%;
@@ -1541,6 +1554,14 @@ function startHintTimer() {
 .progress-container:hover .progress-thumb,
 .progress-container.is-seeking .progress-thumb {
   transform: translate(-50%, -50%) scale(1);
+}
+
+/* Larger thumb while actively dragging for better touch feedback */
+.progress-container.is-seeking .progress-thumb {
+  transform: translate(-50%, -50%) scale(1.25);
+  box-shadow:
+    0 0 0 3px rgba(var(--color-primary-rgb), 0.3),
+    0 2px 8px rgba(0, 0, 0, 0.4);
 }
 
 .progress-container.is-buffering .progress-thumb {
@@ -1587,12 +1608,20 @@ function startHintTimer() {
   align-items: center;
   justify-content: space-between;
   gap: var(--spacing-1);
+  min-width: 0;
 }
 
 .controls-group {
   display: flex;
   align-items: center;
   gap: var(--spacing-1);
+  min-width: 0;
+  flex-shrink: 0;
+}
+
+/* Right-side group can shrink to fit */
+.controls-group:last-child {
+  flex-shrink: 1;
 }
 
 .control-btn {
@@ -1616,6 +1645,7 @@ function startHintTimer() {
 .control-btn--text {
   width: auto;
   min-width: 2.25rem;
+  max-width: 4.5rem;
   height: 1.75rem;
   padding: 0 var(--spacing-2);
   font-size: 0.6875rem;
@@ -1625,6 +1655,8 @@ function startHintTimer() {
   border-radius: var(--radius-md);
   background: rgba(255, 255, 255, 0.06);
   gap: var(--spacing-1);
+  overflow: hidden;
+  white-space: nowrap;
 }
 
 .control-btn--text.is-active {
@@ -2014,6 +2046,16 @@ function startHintTimer() {
 
   .volume-slider-container {
     width: 3.5rem;
+  }
+
+  /* CC button: hide badge on mobile to prevent overflow */
+  .control-btn--text {
+    max-width: 2.5rem;
+    padding: 0 var(--spacing-1);
+  }
+
+  .control-btn__badge {
+    display: none;
   }
 
   .time-display {
