@@ -66,6 +66,13 @@ export const mediaService = {
   },
 
   /**
+   * 构建字幕 URL
+   */
+  getSubtitleUrl(mediaId: string, language: string): string {
+    return `${API_BASE_URL}/media/${mediaId}/subtitle?language=${encodeURIComponent(language)}`
+  },
+
+  /**
    * 构建下载 URL
    */
   getDownloadUrl(mediaId: string): string {
