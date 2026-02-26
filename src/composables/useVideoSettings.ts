@@ -19,6 +19,8 @@ export interface VideoSettings {
   brightness: number
   /** 字幕语言偏好 */
   subtitleLanguage: string | null
+  /** 字幕垂直偏移 (0-5, 0=底部默认, 5=最高) */
+  subtitleOffset: number
 }
 
 const STORAGE_KEY = 'video-player-settings'
@@ -31,6 +33,7 @@ const defaultSettings: VideoSettings = {
   loop: false,
   brightness: 1,
   subtitleLanguage: null,
+  subtitleOffset: 0,
 }
 
 // 从 localStorage 加载设置
@@ -130,6 +133,13 @@ export function useVideoSettings() {
   }
 
   /**
+   * 更新字幕垂直偏移
+   */
+  function setSubtitleOffset(offset: number) {
+    settings.value.subtitleOffset = Math.max(0, Math.min(5, Math.round(offset)))
+  }
+
+  /**
    * 重置所有设置为默认值
    */
   function resetSettings() {
@@ -149,6 +159,7 @@ export function useVideoSettings() {
     setLoop,
     setBrightness,
     setSubtitleLanguage,
+    setSubtitleOffset,
     resetSettings,
   }
 }
