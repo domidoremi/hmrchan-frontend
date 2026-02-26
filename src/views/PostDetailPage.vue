@@ -1555,13 +1555,13 @@ onUnmounted(() => {
   .media-viewer {
     width: 100%;
     max-height: min(60svh, 36rem);
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
   }
 
   .post-shell {
     grid-template-columns: 1fr;
     grid-template-rows: minmax(0, auto) auto;
-    gap: var(--spacing-3);
+    gap: 0;
   }
 
   .post-panel {
