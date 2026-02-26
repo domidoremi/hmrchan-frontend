@@ -101,6 +101,22 @@ function argsToString(args: unknown[]): string {
 }
 
 /**
+ * 浏览器原生网络错误的过滤模式
+ * 这些错误不经过 console.*，而是通过 window error / unhandledrejection 事件触发
+ */
+const NETWORK_ERROR_PATTERNS = [/cloudflareinsights\.com/i, /cdn-cgi\/rum/i, /beacon\.min\.js/i]
+
+function shouldFilterNetworkError(event: Event | PromiseRejectionEvent): boolean {
+  const message =
+    event instanceof ErrorEvent
+      ? (event.message ?? '')
+      : 'reason' in event
+        ? String((event as PromiseRejectionEvent).reason)
+        : ''
+  return NETWORK_ERROR_PATTERNS.some((p) => p.test(message))
+}
+
+/**
  * 初始化控制台过滤器
  */
 export function initConsoleFilter(): void {
@@ -137,6 +153,20 @@ export function initConsoleFilter(): void {
   methods.forEach((method) => {
     console[method] = createFilteredMethod(method)
   })
+
+  // 拦截浏览器原生网络错误（CORS / net::ERR_FAILED 等）
+  // 这些不经过 console.*，需要通过事件监听器捕获
+  window.addEventListener('error', (e) => {
+    if (shouldFilterNetworkError(e)) {
+      e.preventDefault()
+    }
+  })
+  window.addEventListener('unhandledrejection', (e) => {
+    if (shouldFilterNetworkError(e)) {
+      e.preventDefault()
+    }
+  })
+
   window.__consoleFilterApplied = true
 
   // 开发环境下提供恢复方法
