@@ -172,6 +172,7 @@
     "player": "動画プレイヤー",
     "play": "再生",
     "pause": "一時停止",
+    "volume": "音量",
     "mute": "ミュート",
     "unmute": "ミュート解除",
     "fullscreen": "全画面",

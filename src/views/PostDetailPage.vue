@@ -686,7 +686,7 @@ function isInIgnoredInteractionArea(target: EventTarget | null): boolean {
   if (!el) return false
   return Boolean(
     el.closest(
-      '.post-panel, .post-actions, .media-thumbnails, .thumbnail-btn, .video-player, .controls, a, button, input, textarea'
+      '.post-panel, .post-actions, .media-thumbnails, .thumbnail-btn, .vp, .vp__controls, a, button, input, textarea'
     )
   )
 }

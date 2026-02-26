@@ -1,16 +1,21 @@
 <template>
   <div
     ref="playerElement"
-    class="video-player"
-    :class="{ 'is-fullscreen': isFullscreen, 'is-buffering': isBuffering || isSeekPending }"
+    class="vp"
+    :class="{
+      'is-fullscreen': isFullscreen,
+      'is-buffering': isBuffering || isSeekPending,
+      'is-idle': !showControls && isPlaying,
+    }"
     tabindex="0"
     role="group"
     :aria-label="$t('video.player')"
     @mousemove="handleMouseMove"
+    @mouseleave="handleMouseLeave"
   >
     <video
       ref="videoRef"
-      class="video-element"
+      class="vp__video"
       :src="src"
       :poster="poster"
       :playsinline="playsinline"
@@ -40,417 +45,322 @@
       />
     </video>
 
-    <!-- 手势指示器 -->
-    <Transition name="fade">
-      <div v-if="showVolumeIndicator" class="gesture-indicator">
-        <AnimatedIcon name="explore" :fallback-icon="Volume2" size="xl" />
-        <div class="indicator-value">{{ indicatorValue }}%</div>
+    <!-- Gesture indicators -->
+    <Transition name="vp-fade">
+      <div v-if="showVolumeIndicator" class="vp__indicator">
+        <Volume2 :size="28" />
+        <span class="vp__indicator-val">{{ indicatorValue }}%</span>
+      </div>
+    </Transition>
+    <Transition name="vp-fade">
+      <div v-if="showBrightnessIndicator" class="vp__indicator">
+        <Sun :size="28" />
+        <span class="vp__indicator-val">{{ indicatorValue }}%</span>
+      </div>
+    </Transition>
+    <Transition name="vp-fade">
+      <div v-if="showSeekIndicator" class="vp__indicator">
+        <FastForward v-if="seekDirection === 'forward'" :size="28" />
+        <Rewind v-else :size="28" />
+        <span class="vp__indicator-val">{{ indicatorValue }}s</span>
       </div>
     </Transition>
 
-    <Transition name="fade">
-      <div v-if="showBrightnessIndicator" class="gesture-indicator">
-        <AnimatedIcon name="sparkle" :fallback-icon="Sun" size="xl" />
-        <div class="indicator-value">{{ indicatorValue }}%</div>
-      </div>
-    </Transition>
+    <!-- Controls overlay -->
+    <div class="vp__controls" :class="{ 'is-visible': showControls || !isPlaying }">
+      <div class="vp__gradient vp__gradient--top" />
+      <div class="vp__gradient vp__gradient--bottom" />
 
-    <Transition name="fade">
-      <div v-if="showSeekIndicator" class="gesture-indicator">
-        <AnimatedIcon
-          v-if="seekDirection === 'forward'"
-          name="explore"
-          :fallback-icon="FastForward"
-          size="xl"
-        />
-        <AnimatedIcon v-else name="explore" :fallback-icon="Rewind" size="xl" />
-        <div class="indicator-value">{{ indicatorValue }}s</div>
-      </div>
-    </Transition>
-
-    <!-- 控制栏 -->
-    <div
-      class="controls"
-      :class="{ 'is-visible': showControls || !isPlaying }"
-      @mouseenter="showControls = true"
-      @mouseleave="showControls = false"
-    >
-      <!-- 顶部渐变 -->
-      <div class="controls-gradient controls-gradient--top" />
-
-      <!-- 底部控制区 -->
-      <div class="controls-bottom">
-        <!-- 进度条 -->
+      <div class="vp__bar">
+        <!-- Progress -->
         <div
-          class="progress-container"
-          :class="{
-            'is-seeking': isSeeking || isSeekPending,
-            'is-buffering': isBuffering || isSeekPending,
-          }"
-          @click="seek"
+          class="vp__progress"
+          :class="{ 'is-active': isSeeking || isSeekPending }"
+          @click="seekFromClick"
           @mousedown.prevent="startSeekDrag"
           @touchstart.prevent="startSeekDrag"
         >
-          <div class="progress-bar">
-            <div class="progress-buffered" :style="{ width: `${bufferedPercent}%` }" />
-            <div class="progress-played" :style="{ width: `${displayPercent}%` }" />
-            <div class="progress-thumb" :style="{ left: `${displayPercent}%` }" />
-            <div
-              v-if="isBuffering || isSeekPending"
-              class="progress-loading"
-              :style="{ left: `${displayPercent}%` }"
-            >
-              <span class="spinner spinner-sm" />
-            </div>
+          <div class="vp__progress-track">
+            <div class="vp__progress-buffered" :style="{ width: `${bufferedPercent}%` }" />
+            <div class="vp__progress-fill" :style="{ width: `${displayPercent}%` }" />
+            <div class="vp__progress-thumb" :style="{ left: `${displayPercent}%` }" />
           </div>
         </div>
 
-        <!-- 控制按钮 -->
-        <div class="controls-row">
-          <!-- 左侧 -->
-          <div class="controls-group">
+        <!-- Button row -->
+        <div class="vp__row">
+          <div class="vp__group vp__group--left">
             <button
               type="button"
-              class="control-btn"
+              class="vp__btn"
               :aria-label="isPlaying ? $t('video.pause') : $t('video.play')"
               @click="togglePlay"
             >
-              <AnimatedIcon v-if="!isPlaying" name="explore" :fallback-icon="Play" size="md" />
-              <AnimatedIcon v-else name="explore" :fallback-icon="Pause" size="md" />
+              <Pause v-if="isPlaying" :size="20" />
+              <Play v-else :size="20" />
             </button>
 
-            <div class="time-display">
-              <span class="time-current">{{ formatTime(currentTime) }}</span>
-              <span class="time-separator">/</span>
-              <span class="time-duration">{{ formatTime(duration) }}</span>
-            </div>
-          </div>
-
-          <!-- 右侧 -->
-          <div class="controls-group">
-            <!-- 音量 -->
-            <div class="volume-control">
+            <!-- Volume (desktop only) -->
+            <div class="vp__volume">
               <button
                 type="button"
-                class="control-btn"
+                class="vp__btn"
                 :aria-label="isMuted ? $t('video.unmute') : $t('video.mute')"
                 @click="toggleMute"
               >
-                <AnimatedIcon
-                  v-if="!isMuted && volume > 0.5"
-                  name="explore"
-                  :fallback-icon="Volume2"
-                  size="md"
-                />
-                <AnimatedIcon
-                  v-else-if="!isMuted && volume > 0"
-                  name="explore"
-                  :fallback-icon="Volume1"
-                  size="md"
-                />
-                <AnimatedIcon v-else name="explore" :fallback-icon="VolumeX" size="md" />
+                <Volume2 v-if="!isMuted && volume > 0.5" :size="20" />
+                <Volume1 v-else-if="!isMuted && volume > 0" :size="20" />
+                <VolumeX v-else :size="20" />
               </button>
-              <div class="volume-slider-container">
+              <div class="vp__volume-track">
                 <input
                   type="range"
-                  class="volume-slider"
+                  class="vp__slider"
                   min="0"
                   max="100"
-                  :value="volume * 100"
-                  @input="setVolume"
+                  :value="Math.round(volume * 100)"
+                  :aria-label="$t('video.volume')"
+                  @input="handleVolumeInput"
                 />
               </div>
             </div>
 
-            <!-- 字幕快捷开关 -->
+            <div class="vp__time">
+              <span class="vp__time-current">{{ formatTime(currentTime) }}</span>
+              <span class="vp__time-sep">/</span>
+              <span class="vp__time-total">{{ formatTime(duration) }}</span>
+            </div>
+          </div>
+
+          <div class="vp__group vp__group--right">
+            <!-- CC button -->
             <button
               v-if="normalizedSubtitles.length"
               type="button"
-              class="control-btn control-btn--text"
+              class="vp__btn vp__btn--cc"
               :class="{ 'is-active': !!selectedSubtitleLanguage }"
               :aria-label="$t('video.subtitles')"
-              :title="
-                activeSubtitleLabel
-                  ? `${$t('video.subtitles')}: ${activeSubtitleLabel}`
-                  : $t('video.subtitlesOff')
-              "
               @click="toggleSubtitlePicker"
             >
               CC
-              <span v-if="activeSubtitleLabel" class="control-btn__badge">
-                {{ activeSubtitleLabel }}
-              </span>
             </button>
 
-            <!-- 设置菜单 -->
-            <div ref="settingsMenuRef" class="settings-menu" @click.stop>
-              <button
-                ref="settingsBtnRef"
-                type="button"
-                class="control-btn"
-                :aria-label="$t('video.settings')"
-                @click="toggleSettingsPanel"
-              >
-                <AnimatedIcon name="sparkle" :fallback-icon="Settings" size="md" />
-              </button>
-            </div>
+            <!-- Settings -->
+            <button
+              ref="settingsBtnRef"
+              type="button"
+              class="vp__btn"
+              :aria-label="$t('video.settings')"
+              @click="toggleSettingsPanel"
+            >
+              <Settings :size="20" />
+            </button>
 
-            <Teleport to="body" :disabled="isFullscreen">
-              <div
-                v-if="showSettings"
-                class="settings-panel glass-card"
-                :class="{
-                  'settings-panel--fullscreen': isFullscreen,
-                  'settings-panel--teleported': !isFullscreen,
-                }"
-                :style="settingsPanelPosition"
-                @click.stop
-              >
-                <!-- 播放速度 -->
-                <div class="settings-section">
-                  <div class="settings-label">{{ $t('video.playbackSpeed') }}</div>
-                  <div class="settings-options">
-                    <button
-                      v-for="speed in playbackSpeeds"
-                      :key="speed"
-                      type="button"
-                      class="settings-option"
-                      :class="{ active: playbackRate === speed }"
-                      @click="setPlaybackRate(speed)"
-                    >
-                      {{ speed }}x
-                    </button>
-                  </div>
-                </div>
-
-                <!-- 循环播放 -->
-                <div class="settings-section">
-                  <div class="settings-label">{{ $t('video.loop') }}</div>
-                  <div class="settings-options">
-                    <button
-                      type="button"
-                      class="settings-option"
-                      :class="{ active: loopEnabled }"
-                      @click="setLoopEnabled(true)"
-                    >
-                      {{ $t('video.loopOn') }}
-                    </button>
-                    <button
-                      type="button"
-                      class="settings-option"
-                      :class="{ active: !loopEnabled }"
-                      @click="setLoopEnabled(false)"
-                    >
-                      {{ $t('video.loopOff') }}
-                    </button>
-                  </div>
-                </div>
-
-                <!-- 字幕 -->
-                <div v-if="normalizedSubtitles.length" class="settings-section">
-                  <div class="settings-label">{{ $t('video.subtitles') }}</div>
-                  <div class="settings-options">
-                    <button
-                      type="button"
-                      class="settings-option"
-                      :class="{ active: !selectedSubtitleLanguage }"
-                      @click="setSubtitleLanguage(null)"
-                    >
-                      {{ $t('video.subtitlesOff') }}
-                    </button>
-                    <button
-                      v-for="track in normalizedSubtitles"
-                      :key="`subtitle-${track.language}`"
-                      type="button"
-                      class="settings-option"
-                      :class="{ active: selectedSubtitleLanguage === track.language }"
-                      @click="setSubtitleLanguage(track.language)"
-                    >
-                      {{ track.label }}
-                    </button>
-                  </div>
-                  <!-- 字幕位置 -->
-                  <div v-if="selectedSubtitleLanguage" class="settings-sub">
-                    <div class="settings-label">{{ $t('video.subtitlePosition') }}</div>
-                    <div class="settings-slider-row">
-                      <span class="settings-slider-label">{{
-                        $t('video.subtitlePositionDefault')
-                      }}</span>
-                      <input
-                        type="range"
-                        class="subtitle-offset-slider"
-                        min="0"
-                        max="5"
-                        step="1"
-                        :value="subtitleOffset"
-                        :aria-label="$t('video.subtitlePosition')"
-                        @input="
-                          (e: Event) =>
-                            setSubtitleOffsetValue(Number((e.target as HTMLInputElement).value))
-                        "
-                      />
-                      <span class="settings-slider-label">{{
-                        $t('video.subtitlePositionUp')
-                      }}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- 画质（如果支持） -->
-                <div v-if="qualities.length > 1" class="settings-section">
-                  <div class="settings-label">{{ $t('video.quality') }}</div>
-                  <div class="settings-options">
-                    <button
-                      v-for="quality in qualities"
-                      :key="quality"
-                      type="button"
-                      class="settings-option"
-                      :class="{ active: currentQuality === quality }"
-                      @click="setQuality(quality)"
-                    >
-                      {{ quality }}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </Teleport>
-
-            <!-- 字幕快捷选择器 -->
-            <Teleport to="body" :disabled="isFullscreen">
-              <div
-                v-if="showSubtitlePicker"
-                class="subtitle-picker glass-card"
-                :class="{
-                  'subtitle-picker--fullscreen': isFullscreen,
-                  'subtitle-picker--teleported': !isFullscreen,
-                }"
-                :style="subtitlePickerPosition"
-                @click.stop
-              >
-                <div class="subtitle-picker__header">
-                  <span class="subtitle-picker__title">{{ $t('video.subtitles') }}</span>
-                </div>
-                <div class="subtitle-picker__list">
-                  <button
-                    type="button"
-                    class="subtitle-picker__item"
-                    :class="{ 'is-active': !selectedSubtitleLanguage }"
-                    @click="setSubtitleLanguage(null)"
-                  >
-                    <span
-                      class="subtitle-picker__check"
-                      :class="{ visible: !selectedSubtitleLanguage }"
-                      >✓</span
-                    >
-                    {{ $t('video.subtitlesOff') }}
-                  </button>
-                  <button
-                    v-for="track in normalizedSubtitles"
-                    :key="`picker-${track.language}`"
-                    type="button"
-                    class="subtitle-picker__item"
-                    :class="{ 'is-active': selectedSubtitleLanguage === track.language }"
-                    @click="setSubtitleLanguage(track.language)"
-                  >
-                    <span
-                      class="subtitle-picker__check"
-                      :class="{ visible: selectedSubtitleLanguage === track.language }"
-                      >✓</span
-                    >
-                    {{ track.label }}
-                  </button>
-                </div>
-                <!-- 字幕位置调整 -->
-                <div v-if="selectedSubtitleLanguage" class="subtitle-picker__position">
-                  <div class="subtitle-picker__position-label">
-                    {{ $t('video.subtitlePosition') }}
-                  </div>
-                  <div class="subtitle-picker__position-control">
-                    <span class="subtitle-picker__position-text">{{
-                      $t('video.subtitlePositionDefault')
-                    }}</span>
-                    <input
-                      type="range"
-                      class="subtitle-offset-slider"
-                      min="0"
-                      max="5"
-                      step="1"
-                      :value="subtitleOffset"
-                      :aria-label="$t('video.subtitlePosition')"
-                      @input="
-                        (e: Event) =>
-                          setSubtitleOffsetValue(Number((e.target as HTMLInputElement).value))
-                      "
-                    />
-                    <span class="subtitle-picker__position-text">{{
-                      $t('video.subtitlePositionUp')
-                    }}</span>
-                  </div>
-                </div>
-              </div>
-            </Teleport>
-
-            <!-- 画中画 -->
+            <!-- PiP -->
             <button
               v-if="supportsPiP"
               type="button"
-              class="control-btn"
+              class="vp__btn vp__btn--hide-mobile"
               :aria-label="$t('video.pip')"
               @click="togglePiP"
             >
-              <AnimatedIcon name="explore" :fallback-icon="PictureInPicture" size="md" />
+              <PictureInPicture :size="20" />
             </button>
 
-            <!-- 全屏 -->
+            <!-- Fullscreen -->
             <button
               type="button"
-              class="control-btn"
+              class="vp__btn"
               :aria-label="$t('video.fullscreen')"
               @click="toggleFullscreen"
             >
-              <AnimatedIcon
-                v-if="!isFullscreen"
-                name="explore"
-                :fallback-icon="Maximize"
-                size="md"
-              />
-              <AnimatedIcon v-else name="explore" :fallback-icon="Minimize" size="md" />
+              <Maximize v-if="!isFullscreen" :size="20" />
+              <Minimize v-else :size="20" />
             </button>
           </div>
         </div>
       </div>
-
-      <!-- 底部渐变 -->
-      <div class="controls-gradient controls-gradient--bottom" />
     </div>
+
+    <!-- Keyboard hint -->
     <div
-      class="controls-hint"
+      class="vp__hint"
       :class="{ 'is-visible': showControls && !isPlaying && showControlHints }"
       aria-hidden="true"
     >
       {{ $t('video.keyboardHint') }}
     </div>
 
-    <!-- 中央播放按钮 -->
-    <button
-      v-if="!isPlaying && !isBuffering"
-      type="button"
-      class="center-play-btn"
-      :aria-label="$t('video.play')"
-      @click="togglePlay"
-    >
-      <div class="center-play-icon">
-        <AnimatedIcon name="explore" :fallback-icon="Play" size="xl" />
-      </div>
-    </button>
+    <!-- Center play button -->
+    <Transition name="vp-scale">
+      <button
+        v-if="!isPlaying && !isBuffering"
+        type="button"
+        class="vp__center-play"
+        :aria-label="$t('video.play')"
+        @click="togglePlay"
+      >
+        <Play :size="32" />
+      </button>
+    </Transition>
 
-    <!-- 加载指示器 -->
-    <div v-if="isBuffering" class="loading-indicator">
-      <span class="spinner spinner-lg" />
-    </div>
+    <!-- Loading spinner -->
+    <Transition name="vp-fade">
+      <div v-if="isBuffering" class="vp__loader">
+        <span class="spinner spinner-lg" />
+      </div>
+    </Transition>
+
+    <!-- Settings panel -->
+    <Transition name="vp-panel">
+      <div v-if="showSettings" class="vp__panel vp__panel--settings" @click.stop>
+        <div class="vp__panel-section">
+          <div class="vp__panel-label">{{ $t('video.playbackSpeed') }}</div>
+          <div class="vp__panel-chips">
+            <button
+              v-for="speed in PLAYBACK_SPEEDS"
+              :key="speed"
+              type="button"
+              class="vp__chip"
+              :class="{ 'is-active': playbackRate === speed }"
+              @click="setPlaybackRate(speed)"
+            >
+              {{ speed }}x
+            </button>
+          </div>
+        </div>
+
+        <div class="vp__panel-section">
+          <div class="vp__panel-label">{{ $t('video.loop') }}</div>
+          <div class="vp__panel-chips">
+            <button
+              type="button"
+              class="vp__chip"
+              :class="{ 'is-active': loopEnabled }"
+              @click="setLoopEnabled(true)"
+            >
+              {{ $t('video.loopOn') }}
+            </button>
+            <button
+              type="button"
+              class="vp__chip"
+              :class="{ 'is-active': !loopEnabled }"
+              @click="setLoopEnabled(false)"
+            >
+              {{ $t('video.loopOff') }}
+            </button>
+          </div>
+        </div>
+
+        <div v-if="normalizedSubtitles.length" class="vp__panel-section">
+          <div class="vp__panel-label">{{ $t('video.subtitles') }}</div>
+          <div class="vp__panel-chips">
+            <button
+              type="button"
+              class="vp__chip"
+              :class="{ 'is-active': !selectedSubtitleLanguage }"
+              @click="setSubtitleLanguage(null)"
+            >
+              {{ $t('video.subtitlesOff') }}
+            </button>
+            <button
+              v-for="track in normalizedSubtitles"
+              :key="`sub-${track.language}`"
+              type="button"
+              class="vp__chip"
+              :class="{ 'is-active': selectedSubtitleLanguage === track.language }"
+              @click="setSubtitleLanguage(track.language)"
+            >
+              {{ track.label }}
+            </button>
+          </div>
+          <div v-if="selectedSubtitleLanguage" class="vp__panel-sub">
+            <div class="vp__panel-label">{{ $t('video.subtitlePosition') }}</div>
+            <div class="vp__panel-slider-row">
+              <span>{{ $t('video.subtitlePositionDefault') }}</span>
+              <input
+                type="range"
+                class="vp__slider vp__slider--panel"
+                min="0"
+                max="5"
+                step="1"
+                :value="subtitleOffset"
+                :aria-label="$t('video.subtitlePosition')"
+                @input="handleSubtitleOffsetInput"
+              />
+              <span>{{ $t('video.subtitlePositionUp') }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="qualities.length > 1" class="vp__panel-section">
+          <div class="vp__panel-label">{{ $t('video.quality') }}</div>
+          <div class="vp__panel-chips">
+            <button
+              v-for="q in qualities"
+              :key="q"
+              type="button"
+              class="vp__chip"
+              :class="{ 'is-active': currentQuality === q }"
+              @click="setQuality(q)"
+            >
+              {{ q }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Transition>
+
+    <!-- Subtitle picker -->
+    <Transition name="vp-panel">
+      <div v-if="showSubtitlePicker" class="vp__panel vp__panel--subs" @click.stop>
+        <div class="vp__panel-header">{{ $t('video.subtitles') }}</div>
+        <button
+          type="button"
+          class="vp__sub-item"
+          :class="{ 'is-active': !selectedSubtitleLanguage }"
+          @click="setSubtitleLanguage(null)"
+        >
+          <span class="vp__sub-check" :class="{ visible: !selectedSubtitleLanguage }">✓</span>
+          {{ $t('video.subtitlesOff') }}
+        </button>
+        <button
+          v-for="track in normalizedSubtitles"
+          :key="`pick-${track.language}`"
+          type="button"
+          class="vp__sub-item"
+          :class="{ 'is-active': selectedSubtitleLanguage === track.language }"
+          @click="setSubtitleLanguage(track.language)"
+        >
+          <span
+            class="vp__sub-check"
+            :class="{ visible: selectedSubtitleLanguage === track.language }"
+          >
+            ✓
+          </span>
+          {{ track.label }}
+        </button>
+        <div v-if="selectedSubtitleLanguage" class="vp__panel-sub">
+          <div class="vp__panel-label">{{ $t('video.subtitlePosition') }}</div>
+          <div class="vp__panel-slider-row">
+            <span>{{ $t('video.subtitlePositionDefault') }}</span>
+            <input
+              type="range"
+              class="vp__slider vp__slider--panel"
+              min="0"
+              max="5"
+              step="1"
+              :value="subtitleOffset"
+              :aria-label="$t('video.subtitlePosition')"
+              @input="handleSubtitleOffsetInput"
+            />
+            <span>{{ $t('video.subtitlePositionUp') }}</span>
+          </div>
+        </div>
+      </div>
+    </Transition>
   </div>
 </template>
-
 <script setup lang="ts">
 import { ref, computed, nextTick, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -470,38 +380,7 @@ import {
 } from 'lucide-vue-next'
 import { useVideoSettings } from '@/composables/useVideoSettings'
 import { useVideoGestures } from '@/composables/useVideoGestures'
-import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import { normalizeToProxyPath } from '@/utils/url'
-
-interface Props {
-  src: string
-  poster?: string
-  playsinline?: boolean
-  loop?: boolean
-  preload?: 'auto' | 'metadata' | 'none'
-  subtitles?: SubtitleTrack[] | null | undefined
-}
-function updateBufferedPercent() {
-  if (!videoRef.value) return
-  const dur = duration.value
-  if (!isFinite(dur) || dur <= 0) {
-    bufferedPercent.value = 0
-    return
-  }
-  if (videoRef.value.buffered.length > 0) {
-    const buffered = videoRef.value.buffered.end(videoRef.value.buffered.length - 1)
-    bufferedPercent.value = Math.min(100, Math.max(0, (buffered / dur) * 100))
-  } else {
-    bufferedPercent.value = 0
-  }
-}
-
-const props = withDefaults(defineProps<Props>(), {
-  playsinline: true,
-  loop: false,
-  preload: 'metadata',
-  subtitles: null,
-})
 
 interface SubtitleTrack {
   id?: string | null
@@ -522,6 +401,22 @@ interface NormalizedSubtitleTrack {
   format?: string | null | undefined
 }
 
+interface Props {
+  src: string
+  poster?: string
+  playsinline?: boolean
+  loop?: boolean
+  preload?: 'auto' | 'metadata' | 'none'
+  subtitles?: SubtitleTrack[] | null | undefined
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  playsinline: true,
+  loop: false,
+  preload: 'metadata',
+  subtitles: null,
+})
+
 const emit = defineEmits<{
   ready: []
   play: []
@@ -530,9 +425,13 @@ const emit = defineEmits<{
   timeupdate: [time: number]
 }>()
 
+const PLAYBACK_SPEEDS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2]
+const CONTROLS_HIDE_DELAY = 3000
+const SEEK_STEP = 5
+const VOLUME_STEP = 0.1
+
 const videoRef = ref<HTMLVideoElement | null>(null)
 const playerElement = ref<HTMLElement | null>(null)
-const settingsMenuRef = ref<HTMLElement | null>(null)
 const settingsBtnRef = ref<HTMLElement | null>(null)
 const isPlaying = ref(false)
 const isBuffering = ref(false)
@@ -541,15 +440,22 @@ const duration = ref(0)
 const playbackRate = ref(1)
 const currentQuality = ref('auto')
 const isFullscreen = ref(false)
-const showControls = ref(false)
+const showControls = ref(true)
 const showControlHints = ref(true)
 const showSettings = ref(false)
+const showSubtitlePicker = ref(false)
 const bufferedPercent = ref(0)
 const isSeeking = ref(false)
 const isSeekPending = ref(false)
 const seekPreviewPercent = ref<number | null>(null)
+const subtitleOverrides = ref<Record<string, string>>({})
+const selectedSubtitleLanguage = ref<string | null>(null)
+const qualities = ref<string[]>(['auto'])
 
-// 使用视频设置 composable
+let controlsTimeout: ReturnType<typeof setTimeout> | null = null
+let seekPendingTimeout: ReturnType<typeof setTimeout> | null = null
+let hintTimeout: ReturnType<typeof setTimeout> | null = null
+
 const { locale } = useI18n()
 
 const {
@@ -563,17 +469,12 @@ const {
   setSubtitleOffset: updateSubtitleOffset,
 } = useVideoSettings()
 
-// 从设置中获取音量和静音状态
 const volume = computed(() => videoSettings.value.volume)
 const isMuted = computed(() => videoSettings.value.muted)
 const brightness = computed(() => videoSettings.value.brightness)
 const loopEnabled = computed(() => props.loop || videoSettings.value.loop)
+const subtitleOffset = computed(() => videoSettings.value.subtitleOffset)
 
-function setLoopEnabled(enabled: boolean) {
-  updateLoop(enabled)
-}
-
-// 使用手势控制 composable
 const {
   showVolumeIndicator,
   showBrightnessIndicator,
@@ -587,118 +488,22 @@ const {
 } = useVideoGestures({
   videoRef,
   containerRef: playerElement,
-  onVolumeChange: (vol) => {
-    updateVolume(vol)
-  },
-  onBrightnessChange: (bright) => {
-    updateBrightness(bright)
-  },
+  onVolumeChange: (vol) => updateVolume(vol),
+  onBrightnessChange: (bright) => updateBrightness(bright),
   onSeek: (time) => {
-    if (videoRef.value) {
-      videoRef.value.currentTime = time
-    }
+    if (videoRef.value) videoRef.value.currentTime = time
   },
-  onTogglePlay: () => {
-    togglePlay()
-  },
+  onTogglePlay: () => togglePlay(),
 })
 
-const playbackSpeeds = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2]
-const qualities = ref<string[]>(['auto']) // 可扩展支持多画质
-
-// 设置面板定位（Teleport 到 body 时使用 fixed 定位，全屏时也用 fixed）
-const settingsPanelPosition = ref<Record<string, string>>({})
-
-function updateSettingsPanelPosition() {
-  if (!settingsBtnRef.value) return
-  const rect = settingsBtnRef.value.getBoundingClientRect()
-  const isMobile = window.innerWidth <= 768
-
-  if (!isFullscreen.value && isMobile) {
-    // 非全屏移动端：底部弹出式
-    settingsPanelPosition.value = {
-      position: 'fixed',
-      bottom: '0',
-      left: '0',
-      right: '0',
-      zIndex: 'var(--z-modal)',
-    }
-  } else {
-    // 桌面端 & 全屏模式：从按钮上方弹出
-    settingsPanelPosition.value = {
-      position: 'fixed',
-      bottom: `${window.innerHeight - rect.top + 8}px`,
-      right: `${window.innerWidth - rect.right}px`,
-      zIndex: 'var(--z-modal)',
-    }
-  }
-}
-
-function toggleSettingsPanel() {
-  showSettings.value = !showSettings.value
-  if (showSettings.value) {
-    nextTick(() => updateSettingsPanelPosition())
-  }
-}
-
-const subtitleOverrides = ref<Record<string, string>>({})
-const selectedSubtitleLanguage = ref<string | null>(null)
-const showSubtitlePicker = ref(false)
-const subtitleOffset = computed(() => videoSettings.value.subtitleOffset)
-const subtitlePickerPosition = ref<Record<string, string>>({})
-
-const normalizedSubtitles = computed<NormalizedSubtitleTrack[]>(() => {
-  const tracks = props.subtitles ?? []
-  if (!tracks.length) {
-    if (import.meta.env['VITE_ENABLE_DEBUG'] === 'true') {
-      console.log('[VideoPlayer] 没有字幕数据')
-    }
-    return []
-  }
-
-  if (import.meta.env['VITE_ENABLE_DEBUG'] === 'true') {
-    console.group('[VideoPlayer] 字幕数据处理')
-    console.log('原始字幕数据:', tracks)
-  }
-
-  const result = tracks.reduce<NormalizedSubtitleTrack[]>((acc, track) => {
-    const src = normalizeSubtitleSrc(track)
-    if (!src || !track.language) {
-      if (import.meta.env['VITE_ENABLE_DEBUG'] === 'true') {
-        console.warn('跳过无效字幕轨道:', track, '原因:', !src ? '无 URL' : '无语言')
-      }
-      return acc
-    }
-    const label = track.label || track.language.toUpperCase()
-    const override = subtitleOverrides.value[src]
-    const finalSrc = override || src
-
-    if (import.meta.env['VITE_ENABLE_DEBUG'] === 'true') {
-      console.log(`✅ 字幕轨道 [${track.language}]:`, {
-        label,
-        src: finalSrc,
-        format: track.format,
-        override: !!override,
-      })
-    }
-
-    acc.push({ language: track.language, label, src: finalSrc, format: track.format })
-    return acc
-  }, [])
-
-  if (import.meta.env['VITE_ENABLE_DEBUG'] === 'true') {
-    console.log('处理后的字幕轨道:', result)
-    console.groupEnd()
-  }
-
-  return result
-})
+const apiBaseUrl = computed(
+  () => import.meta.env.VITE_API_ENDPOINT || `${import.meta.env.VITE_API_URL || '/api'}/v1`
+)
 
 const playedPercent = computed(() => {
   const dur = duration.value
   if (!isFinite(dur) || dur <= 0) return 0
-  const percent = (currentTime.value / dur) * 100
-  return Math.min(100, Math.max(0, percent))
+  return Math.min(100, Math.max(0, (currentTime.value / dur) * 100))
 })
 
 const displayPercent = computed(() => {
@@ -707,63 +512,45 @@ const displayPercent = computed(() => {
   return Math.min(100, Math.max(0, raw))
 })
 
-const supportsPiP = computed(() => {
-  return document.pictureInPictureEnabled
+const supportsPiP = computed(() => document.pictureInPictureEnabled)
+
+const normalizedSubtitles = computed<NormalizedSubtitleTrack[]>(() => {
+  const tracks = props.subtitles ?? []
+  if (!tracks.length) return []
+  return tracks.reduce<NormalizedSubtitleTrack[]>((acc, track) => {
+    const src = normalizeSubtitleSrc(track)
+    if (!src || !track.language) return acc
+    const label = track.label || track.language.toUpperCase()
+    const override = subtitleOverrides.value[src]
+    acc.push({ language: track.language, label, src: override || src, format: track.format })
+    return acc
+  }, [])
 })
 
-const activeSubtitleLabel = computed(() => {
-  if (!selectedSubtitleLanguage.value) return null
-  return (
-    normalizedSubtitles.value.find((track) => track.language === selectedSubtitleLanguage.value)
-      ?.label || selectedSubtitleLanguage.value.toUpperCase()
-  )
-})
-
-// Helper to get API base URL consistently
-const apiBaseUrl = computed(
-  () => import.meta.env.VITE_API_ENDPOINT || `${import.meta.env.VITE_API_URL || '/api'}/v1`
-)
+// --- Subtitle helpers ---
 
 function extractMediaIdFromSrc(src: string): string | null {
   if (!src?.trim()) return null
-
-  // 从视频 src 中提取 media_id
-  // 格式: /api/v1/media/{media_id}/stream
   const match = src.match(/\/media\/([0-9a-f-]+)\/stream/i)
   return match?.[1] ?? null
 }
 
 function normalizeSubtitleSrc(track: SubtitleTrack): string | null {
-  // 优先使用已构建的 URL
   const raw =
     track.url || track.subtitle_url || track.file_path || track.subtitle_path || track.path
-
   if (raw) {
     const normalized = normalizeToProxyPath(raw)
     if (normalized) {
-      // 已经是完整 URL（第三方）或可直接使用的代理路径
-      if (normalized.startsWith('http://') || normalized.startsWith('https://')) {
-        return normalized
-      }
-      if (normalized.startsWith('/')) {
-        return normalized
-      }
+      if (normalized.startsWith('http://') || normalized.startsWith('https://')) return normalized
+      if (normalized.startsWith('/')) return normalized
     }
-
-    // 构建相对路径的完整 URL
     const base = apiBaseUrl.value
     return raw.startsWith('/') ? `${base}${raw}` : `${base}/${raw}`
   }
-
-  // 如果没有 URL，但有 language，则构建标准字幕 API URL
-  // 根据后端 API: /api/v1/media/{media_id}/subtitle?language={language}
   if (track.language && props.src?.trim()) {
     const mediaId = extractMediaIdFromSrc(props.src)
-    if (mediaId) {
-      return `${apiBaseUrl.value}/media/${mediaId}/subtitle?language=${track.language}`
-    }
+    if (mediaId) return `${apiBaseUrl.value}/media/${mediaId}/subtitle?language=${track.language}`
   }
-
   return null
 }
 
@@ -772,29 +559,27 @@ function isSrtTrack(track: NormalizedSubtitleTrack): boolean {
   return track.src.toLowerCase().endsWith('.srt')
 }
 
-function toLocaleMatches(trackLanguage: string, target: string): boolean {
-  const normalized = trackLanguage.toLowerCase()
-  const localeValue = target.toLowerCase()
-  if (normalized === localeValue) return true
-  const base = localeValue.split('-')[0]
-  return normalized === base || normalized.startsWith(`${base}-`)
+function toLocaleMatches(trackLang: string, target: string): boolean {
+  const n = trackLang.toLowerCase()
+  const t = target.toLowerCase()
+  if (n === t) return true
+  const base = t.split('-')[0]
+  return n === base || n.startsWith(`${base}-`)
 }
 
 function pickDefaultSubtitle(tracks: NormalizedSubtitleTrack[]) {
   if (!tracks.length) return null
   const preferred = videoSettings.value.subtitleLanguage
   if (preferred) {
-    const match = tracks.find((track) => toLocaleMatches(track.language, preferred))
+    const match = tracks.find((t) => toLocaleMatches(t.language, preferred))
     if (match) return match.language
   }
-
-  const localeMatch = tracks.find((track) => toLocaleMatches(track.language, locale.value))
+  const localeMatch = tracks.find((t) => toLocaleMatches(t.language, locale.value))
   if (localeMatch) return localeMatch.language
   return tracks[0]?.language ?? null
 }
 
 function needsFetchFallback(track: NormalizedSubtitleTrack): boolean {
-  // Always fetch API-served subtitles via JS to avoid <track> cross-origin / content-type issues
   if (track.src.includes('/subtitle?language=')) return true
   if (isSrtTrack(track)) return true
   return false
@@ -803,22 +588,17 @@ function needsFetchFallback(track: NormalizedSubtitleTrack): boolean {
 async function ensureVttFallback(track: NormalizedSubtitleTrack) {
   if (!needsFetchFallback(track)) return
   if (subtitleOverrides.value[track.src]) return
-
   try {
     const response = await fetch(track.src)
     if (!response.ok) return
     const rawText = await response.text()
     const normalized = rawText.replace(/\r+/g, '')
-    // Convert SRT timestamps (comma separator) to VTT (dot separator)
     const body = normalized.replace(/(\d{2}:\d{2}:\d{2}),(\d{3})/g, '$1.$2')
     const vttText = body.trimStart().startsWith('WEBVTT') ? body : `WEBVTT\n\n${body.trim()}\n`
     const blobUrl = URL.createObjectURL(new Blob([vttText], { type: 'text/vtt' }))
-    subtitleOverrides.value = {
-      ...subtitleOverrides.value,
-      [track.src]: blobUrl,
-    }
-  } catch (error) {
-    console.warn('Subtitle fallback failed:', error)
+    subtitleOverrides.value = { ...subtitleOverrides.value, [track.src]: blobUrl }
+  } catch {
+    // silently fail
   }
 }
 
@@ -827,9 +607,8 @@ function syncSubtitleSelection(tracks: NormalizedSubtitleTrack[]) {
     selectedSubtitleLanguage.value = null
     return
   }
-
   const current = selectedSubtitleLanguage.value
-  if (current && tracks.some((track) => track.language === current)) return
+  if (current && tracks.some((t) => t.language === current)) return
   selectedSubtitleLanguage.value = pickDefaultSubtitle(tracks)
 }
 
@@ -842,18 +621,27 @@ function applySubtitleMode() {
     if (!track) continue
     track.mode = target && track.language === target ? 'showing' : 'disabled'
   }
-  // Apply offset after mode change
   nextTick(() => applySubtitleOffset())
 }
 
-// Constants
-const CONTROLS_HIDE_DELAY = 3000
-const SEEK_STEP = 5
-const VOLUME_STEP = 0.1
+function applySubtitleOffset() {
+  const textTracks = videoRef.value?.textTracks
+  if (!textTracks) return
+  const offset = subtitleOffset.value
+  const lineValue = offset === 0 ? -1 : -(1 + offset)
+  for (let i = 0; i < textTracks.length; i += 1) {
+    const track = textTracks[i]
+    if (!track || track.mode !== 'showing') continue
+    const cues = track.cues
+    if (!cues) continue
+    for (let j = 0; j < cues.length; j += 1) {
+      const cue = cues[j] as VTTCue | undefined
+      if (cue && 'line' in cue) cue.line = lineValue
+    }
+  }
+}
 
-let controlsTimeout: ReturnType<typeof setTimeout> | null = null
-let seekPendingTimeout: ReturnType<typeof setTimeout> | null = null
-let hintTimeout: ReturnType<typeof setTimeout> | null = null
+// --- Core playback ---
 
 function formatTime(seconds: number): string {
   if (!isFinite(seconds)) return '0:00'
@@ -862,13 +650,25 @@ function formatTime(seconds: number): string {
   return `${mins}:${secs.toString().padStart(2, '0')}`
 }
 
+function updateBufferedPercent() {
+  if (!videoRef.value) return
+  const dur = duration.value
+  if (!isFinite(dur) || dur <= 0) {
+    bufferedPercent.value = 0
+    return
+  }
+  if (videoRef.value.buffered.length > 0) {
+    const buffered = videoRef.value.buffered.end(videoRef.value.buffered.length - 1)
+    bufferedPercent.value = Math.min(100, Math.max(0, (buffered / dur) * 100))
+  } else {
+    bufferedPercent.value = 0
+  }
+}
+
 function togglePlay() {
   if (!videoRef.value) return
-  if (isPlaying.value) {
-    videoRef.value.pause()
-  } else {
-    videoRef.value.play()
-  }
+  if (isPlaying.value) videoRef.value.pause()
+  else videoRef.value.play()
 }
 
 function onPlay() {
@@ -909,14 +709,37 @@ function onVolumeChange() {
   updateVolume(videoRef.value.volume)
   updateMuted(videoRef.value.muted)
 }
+
+function onWaiting() {
+  isBuffering.value = true
+}
+function onCanPlay() {
+  isBuffering.value = false
+  clearSeekPending()
+}
+function onProgress() {
+  updateBufferedPercent()
+}
+
+function onSeeking() {
+  const dur = duration.value
+  if (!isFinite(dur) || dur <= 0) {
+    isSeekPending.value = true
+    return
+  }
+  markSeekPending(((videoRef.value?.currentTime ?? 0) / dur) * 100)
+}
+
+function onSeeked() {
+  if (!isBuffering.value) clearSeekPending()
+}
+
+// --- Seek ---
+
 function markSeekPending(percent?: number) {
-  if (typeof percent === 'number') {
-    seekPreviewPercent.value = Math.min(100, Math.max(0, percent))
-  }
+  if (typeof percent === 'number') seekPreviewPercent.value = Math.min(100, Math.max(0, percent))
   isSeekPending.value = true
-  if (seekPendingTimeout) {
-    clearTimeout(seekPendingTimeout)
-  }
+  if (seekPendingTimeout) clearTimeout(seekPendingTimeout)
   seekPendingTimeout = setTimeout(() => {
     isSeekPending.value = false
     seekPreviewPercent.value = null
@@ -932,10 +755,9 @@ function clearSeekPending() {
   }
 }
 
-function seek(event: MouseEvent) {
+function seekFromClick(event: MouseEvent) {
   if (!videoRef.value || !event.currentTarget) return
-  const target = event.currentTarget as HTMLElement
-  const rect = target.getBoundingClientRect()
+  const rect = (event.currentTarget as HTMLElement).getBoundingClientRect()
   const percent = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width))
   if (duration.value <= 0) return
   const newTime = percent * duration.value
@@ -961,7 +783,7 @@ function startSeekDrag(event: MouseEvent | TouchEvent) {
 
 function updateSeek(event: MouseEvent | TouchEvent) {
   if (!videoRef.value) return
-  const progress = playerElement.value?.querySelector('.progress-container') as HTMLElement | null
+  const progress = playerElement.value?.querySelector('.vp__progress') as HTMLElement | null
   const rect = progress?.getBoundingClientRect()
   if (!rect) return
   const clientX = 'touches' in event ? event.touches[0]?.clientX : (event as MouseEvent).clientX
@@ -987,35 +809,7 @@ function stopSeekDrag() {
   document.removeEventListener('touchend', stopSeekDrag)
 }
 
-function onWaiting() {
-  isBuffering.value = true
-}
-
-function onCanPlay() {
-  isBuffering.value = false
-  clearSeekPending()
-}
-
-function onProgress() {
-  updateBufferedPercent()
-}
-
-function onSeeking() {
-  const dur = duration.value
-  if (!isFinite(dur) || dur <= 0) {
-    isSeekPending.value = true
-    return
-  }
-  const percent = (videoRef.value?.currentTime ?? 0) / dur
-  markSeekPending(percent * 100)
-}
-
-function onSeeked() {
-  // keep seek preview until canplay unless no buffering occurs
-  if (!isBuffering.value) {
-    clearSeekPending()
-  }
-}
+// --- Controls ---
 
 function toggleMute() {
   if (!videoRef.value) return
@@ -1023,16 +817,14 @@ function toggleMute() {
   triggerVolumeIndicator(videoRef.value.muted ? 0 : Math.round(volume.value * 100))
 }
 
-function setVolume(event: Event) {
+function handleVolumeInput(event: Event) {
   if (!videoRef.value || !event.target) return
-  const target = event.target as HTMLInputElement
-  const value = parseInt(target.value, 10)
+  const value = parseInt((event.target as HTMLInputElement).value, 10)
   if (isNaN(value)) return
-
-  const newVolume = Math.max(0, Math.min(1, value / 100))
-  videoRef.value.volume = newVolume
-  updateVolume(newVolume)
-  triggerVolumeIndicator(Math.round(newVolume * 100))
+  const newVol = Math.max(0, Math.min(1, value / 100))
+  videoRef.value.volume = newVol
+  updateVolume(newVol)
+  triggerVolumeIndicator(Math.round(newVol * 100))
   if (value > 0) {
     videoRef.value.muted = false
     updateMuted(false)
@@ -1047,48 +839,68 @@ function setPlaybackRate(rate: number) {
   showSettings.value = false
 }
 
+function setLoopEnabled(enabled: boolean) {
+  updateLoop(enabled)
+}
+
 function setQuality(quality: string) {
   currentQuality.value = quality
   showSettings.value = false
-  // 实际画质切换需要根据视频源实现
+}
+
+function setSubtitleLanguage(language: string | null) {
+  selectedSubtitleLanguage.value = language
+  showSubtitlePicker.value = false
+  showSettings.value = false
+}
+
+function handleSubtitleOffsetInput(e: Event) {
+  const val = Number((e.target as HTMLInputElement).value)
+  updateSubtitleOffset(val)
+  applySubtitleOffset()
+}
+
+function toggleSettingsPanel() {
+  showSubtitlePicker.value = false
+  showSettings.value = !showSettings.value
+}
+
+function toggleSubtitlePicker() {
+  showSettings.value = false
+  showSubtitlePicker.value = !showSubtitlePicker.value
 }
 
 async function togglePiP() {
   if (!videoRef.value || !document.pictureInPictureEnabled) return
-
   try {
-    if (document.pictureInPictureElement) {
-      await document.exitPictureInPicture()
-    } else {
-      await videoRef.value.requestPictureInPicture()
-    }
-  } catch (error) {
-    console.error('PiP error:', error)
+    if (document.pictureInPictureElement) await document.exitPictureInPicture()
+    else await videoRef.value.requestPictureInPicture()
+  } catch {
+    /* ignore */
   }
 }
 
 async function toggleFullscreen() {
-  if (!videoRef.value) return
-
+  if (!playerElement.value) return
   try {
     if (!document.fullscreenElement) {
-      await videoRef.value.parentElement?.requestFullscreen()
+      await playerElement.value.requestFullscreen()
       isFullscreen.value = true
     } else {
       await document.exitFullscreen()
       isFullscreen.value = false
     }
-  } catch (error) {
-    console.error('Fullscreen error:', error)
+  } catch {
+    /* ignore */
   }
 }
+
+// --- Timer / visibility ---
 
 function startControlsTimer() {
   stopControlsTimer()
   controlsTimeout = setTimeout(() => {
-    if (isPlaying.value) {
-      showControls.value = false
-    }
+    if (isPlaying.value) showControls.value = false
   }, CONTROLS_HIDE_DELAY)
 }
 
@@ -1101,15 +913,25 @@ function stopControlsTimer() {
 
 function handleMouseMove() {
   showControls.value = true
-  if (isPlaying.value) {
-    startControlsTimer()
-  }
+  if (isPlaying.value) startControlsTimer()
 }
+
+function handleMouseLeave() {
+  if (isPlaying.value) startControlsTimer()
+}
+
+function startHintTimer() {
+  showControlHints.value = true
+  if (hintTimeout) clearTimeout(hintTimeout)
+  hintTimeout = setTimeout(() => {
+    showControlHints.value = false
+  }, 2600)
+}
+
+// --- Keyboard ---
 
 function handleKeydown(event: KeyboardEvent) {
   if (!videoRef.value) return
-
-  // Only handle keyboard events when video player is focused or contains active element
   const isPlayerFocused = playerElement.value?.contains(document.activeElement)
   if (!isPlayerFocused && document.activeElement?.tagName !== 'BODY') return
 
@@ -1155,19 +977,20 @@ const handleFullscreenChange = () => {
 }
 
 const handleClickOutside = (event: MouseEvent) => {
-  const target = event.target as Node
-  // Close subtitle picker
-  if (showSubtitlePicker.value) {
-    if (!(target as Element).closest?.('.subtitle-picker')) {
-      showSubtitlePicker.value = false
-    }
+  const target = event.target as Element
+  if (showSubtitlePicker.value && !target.closest?.('.vp__panel--subs')) {
+    showSubtitlePicker.value = false
   }
-  // Close settings panel
-  if (!showSettings.value) return
-  if (settingsMenuRef.value?.contains(target)) return
-  if ((target as Element).closest?.('.settings-panel')) return
-  showSettings.value = false
+  if (
+    showSettings.value &&
+    !target.closest?.('.vp__panel--settings') &&
+    !settingsBtnRef.value?.contains(target as Node)
+  ) {
+    showSettings.value = false
+  }
 }
+
+// --- Lifecycle ---
 
 onMounted(() => {
   startHintTimer()
@@ -1175,52 +998,34 @@ onMounted(() => {
   document.addEventListener('fullscreenchange', handleFullscreenChange)
   document.addEventListener('click', handleClickOutside)
 
-  // 应用保存的设置
   if (videoRef.value) {
     videoRef.value.volume = videoSettings.value.volume
     videoRef.value.muted = videoSettings.value.muted
     videoRef.value.playbackRate = videoSettings.value.playbackRate
     playbackRate.value = videoSettings.value.playbackRate
   }
-
-  // 初始化手势控制的当前值
   currentVolume.value = videoSettings.value.volume
   currentBrightness.value = videoSettings.value.brightness
 })
 
-// 监听亮度变化并应用滤镜
-watch(brightness, (newBrightness) => {
-  if (videoRef.value) {
-    videoRef.value.style.filter = `brightness(${newBrightness})`
-  }
+watch(brightness, (val) => {
+  if (videoRef.value) videoRef.value.style.filter = `brightness(${val})`
 })
 
 watch(normalizedSubtitles, (tracks) => {
   syncSubtitleSelection(tracks)
-  tracks.forEach((track) => {
-    void ensureVttFallback(track)
-  })
+  tracks.forEach((t) => void ensureVttFallback(t))
 })
 
-watch(
-  [selectedSubtitleLanguage, () => videoSettings.value.subtitleLanguage],
-  ([currentSelection, storedSelection]) => {
-    if (currentSelection !== storedSelection) {
-      updateSubtitleLanguage(currentSelection)
-    }
-    applySubtitleMode()
-  }
-)
-
-watch(subtitleOffset, () => {
-  applySubtitleOffset()
+watch([selectedSubtitleLanguage, () => videoSettings.value.subtitleLanguage], ([cur, stored]) => {
+  if (cur !== stored) updateSubtitleLanguage(cur)
+  applySubtitleMode()
 })
 
+watch(subtitleOffset, () => applySubtitleOffset())
 watch(
   () => locale.value,
-  () => {
-    syncSubtitleSelection(normalizedSubtitles.value)
-  }
+  () => syncSubtitleSelection(normalizedSubtitles.value)
 )
 
 onBeforeUnmount(() => {
@@ -1236,115 +1041,59 @@ onBeforeUnmount(() => {
     hintTimeout = null
   }
 })
-
-function setSubtitleLanguage(language: string | null) {
-  selectedSubtitleLanguage.value = language
-  showSubtitlePicker.value = false
-  showSettings.value = false
-}
-
-function toggleSubtitlePicker() {
-  if (showSubtitlePicker.value) {
-    showSubtitlePicker.value = false
-    return
-  }
-  showSettings.value = false
-  showSubtitlePicker.value = true
-  nextTick(() => updateSubtitlePickerPosition())
-}
-
-function updateSubtitlePickerPosition() {
-  const ccBtn = playerElement.value?.querySelector('.control-btn--text') as HTMLElement | null
-  if (!ccBtn) return
-  const rect = ccBtn.getBoundingClientRect()
-  const isMobile = window.innerWidth <= 768
-
-  if (!isFullscreen.value && isMobile) {
-    subtitlePickerPosition.value = {
-      position: 'fixed',
-      bottom: '0',
-      left: '0',
-      right: '0',
-      zIndex: 'var(--z-modal)',
-    }
-  } else {
-    subtitlePickerPosition.value = {
-      position: 'fixed',
-      bottom: `${window.innerHeight - rect.top + 8}px`,
-      left: `${rect.left}px`,
-      zIndex: 'var(--z-modal)',
-    }
-  }
-}
-
-/**
- * 应用字幕垂直偏移到所有活跃 cue
- */
-function applySubtitleOffset() {
-  const textTracks = videoRef.value?.textTracks
-  if (!textTracks) return
-  const offset = subtitleOffset.value
-  // line: -1 = bottom (default), -2 = one line up, etc.
-  const lineValue = offset === 0 ? -1 : -(1 + offset)
-
-  for (let i = 0; i < textTracks.length; i += 1) {
-    const track = textTracks[i]
-    if (!track || track.mode !== 'showing') continue
-    const cues = track.cues
-    if (!cues) continue
-    for (let j = 0; j < cues.length; j += 1) {
-      const cue = cues[j] as VTTCue | undefined
-      if (cue && 'line' in cue) {
-        cue.line = lineValue
-      }
-    }
-  }
-}
-
-function setSubtitleOffsetValue(offset: number) {
-  updateSubtitleOffset(offset)
-  applySubtitleOffset()
-}
-
-function startHintTimer() {
-  showControlHints.value = true
-  if (hintTimeout) {
-    clearTimeout(hintTimeout)
-  }
-  hintTimeout = setTimeout(() => {
-    showControlHints.value = false
-  }, 2600)
-}
 </script>
 
 <style scoped>
-.video-player {
+/* ============================================================
+   Video Player — Theme-aware, responsive controls
+   Uses CSS custom properties from design tokens & ui-style.
+   ============================================================ */
+
+/* --- Player shell --- */
+.vp {
+  --vp-radius: var(--radius-xl);
+  --vp-ctrl-bg: rgba(0, 0, 0, 0.6);
+  --vp-ctrl-text: rgba(255, 255, 255, 0.92);
+  --vp-ctrl-text-dim: rgba(255, 255, 255, 0.55);
+  --vp-ctrl-hover: rgba(255, 255, 255, 0.12);
+  --vp-ctrl-border: rgba(255, 255, 255, 0.1);
+  --vp-accent: var(--color-primary);
+  --vp-accent-rgb: var(--color-primary-rgb);
+  --vp-btn-size: 2.25rem;
+  --vp-progress-h: 3px;
+  --vp-progress-h-active: 5px;
+
   position: relative;
   width: 100%;
   height: 100%;
   min-height: 12.5rem;
   background: #000;
-  border-radius: var(--radius-xl);
+  border-radius: var(--vp-radius);
   overflow: hidden;
   cursor: default;
   isolation: isolate;
+  user-select: none;
 }
 
-.video-player:focus-visible {
+.vp:focus-visible {
   outline: 2px solid var(--color-ring);
   outline-offset: 2px;
 }
 
-.video-player.is-fullscreen {
+.vp.is-fullscreen {
   border-radius: 0;
 }
 
-.video-player.is-buffering .video-element {
+.vp.is-idle {
+  cursor: none;
+}
+
+.vp.is-buffering .vp__video {
   filter: brightness(0.7);
   transition: filter 0.4s ease;
 }
 
-.video-element {
+.vp__video {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -1354,8 +1103,39 @@ function startHintTimer() {
   background: #000;
 }
 
-/* 控制栏 */
-.controls {
+/* --- Gradient overlays --- */
+.vp__gradient {
+  position: absolute;
+  left: 0;
+  right: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.vp__gradient--top {
+  top: 0;
+  height: 5rem;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.4) 0%, transparent 100%);
+}
+
+.vp__gradient--bottom {
+  bottom: 0;
+  height: 8rem;
+  background: linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.7) 0%,
+    rgba(0, 0, 0, 0.3) 50%,
+    transparent 100%
+  );
+}
+
+.vp__controls.is-visible .vp__gradient {
+  opacity: 1;
+}
+
+/* --- Controls wrapper --- */
+.vp__controls {
   position: absolute;
   inset: 0;
   display: flex;
@@ -1367,76 +1147,270 @@ function startHintTimer() {
   z-index: 2;
 }
 
-.controls.is-visible {
+.vp__controls.is-visible {
   opacity: 1;
   pointer-events: auto;
 }
 
-.video-player:hover .controls {
+.vp:hover .vp__controls {
   opacity: 1;
   pointer-events: auto;
 }
 
-/* Keep controls visible while seeking / dragging progress bar */
-.video-player:has(.progress-container.is-seeking) .controls,
-.video-player:has(.progress-container.is-buffering) .controls {
+.vp:has(.vp__progress.is-active) .vp__controls {
   opacity: 1;
   pointer-events: auto;
 }
 
-/* 渐变遮罩 */
-.controls-gradient {
+/* --- Bottom bar --- */
+.vp__bar {
+  position: relative;
+  z-index: 2;
+  padding: 0 var(--spacing-3) var(--spacing-2);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-1);
+}
+
+/* --- Progress bar --- */
+.vp__progress {
+  width: 100%;
+  height: 1.5rem;
+  display: flex;
+  align-items: flex-end;
+  cursor: pointer;
+  position: relative;
+  touch-action: none;
+}
+
+.vp__progress-track {
+  position: relative;
+  width: 100%;
+  height: var(--vp-progress-h);
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius-full);
+  overflow: visible;
+  transition: height 0.15s var(--ease-out, ease);
+}
+
+.vp__progress:hover .vp__progress-track,
+.vp__progress.is-active .vp__progress-track {
+  height: var(--vp-progress-h-active);
+}
+
+.vp__progress-buffered {
   position: absolute;
   left: 0;
-  right: 0;
-  pointer-events: none;
-  transition: opacity 0.25s ease;
-}
-
-.controls-gradient--top {
   top: 0;
-  height: 6rem;
-  background: linear-gradient(180deg, rgba(0, 0, 0, 0.45) 0%, transparent 100%);
+  height: 100%;
+  background: rgba(255, 255, 255, 0.35);
+  border-radius: inherit;
+  transition: width 0.3s ease;
 }
 
-.controls-gradient--bottom {
-  bottom: 0;
-  height: 10rem;
-  background: linear-gradient(
-    0deg,
-    rgba(0, 0, 0, 0.75) 0%,
-    rgba(0, 0, 0, 0.35) 50%,
-    transparent 100%
-  );
-}
-
-.controls-hint {
+.vp__progress-fill {
   position: absolute;
-  bottom: 5.5rem;
-  left: 1rem;
-  padding: 0.375rem 0.75rem;
-  border-radius: var(--radius-full);
-  background: rgba(0, 0, 0, 0.65);
-  backdrop-filter: blur(10px);
-  color: rgba(255, 255, 255, 0.85);
-  font-size: var(--text-xs);
-  letter-spacing: 0.01em;
-  opacity: 0;
-  transform: translateY(4px);
-  transition:
-    opacity 0.2s ease,
-    transform 0.2s ease;
+  left: 0;
+  top: 0;
+  height: 100%;
+  background: var(--vp-accent);
+  border-radius: inherit;
+  transition: width 0.08s linear;
+  box-shadow: 0 0 6px rgba(var(--vp-accent-rgb), 0.35);
+}
+
+.vp__progress.is-active .vp__progress-fill {
+  transition: none;
+}
+
+.vp__progress-thumb {
+  position: absolute;
+  top: 50%;
+  width: 0.875rem;
+  height: 0.875rem;
+  background: var(--vp-accent);
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 2px rgba(255, 255, 255, 0.85),
+    0 2px 6px rgba(0, 0, 0, 0.3);
+  transform: translate(-50%, -50%) scale(0);
+  transition: transform 0.15s var(--ease-out, ease);
   pointer-events: none;
-  z-index: 10;
 }
 
-.controls-hint.is-visible {
+.vp__progress:hover .vp__progress-thumb,
+.vp__progress.is-active .vp__progress-thumb {
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.vp__progress.is-active .vp__progress-thumb {
+  transform: translate(-50%, -50%) scale(1.2);
+  box-shadow:
+    0 0 0 3px rgba(var(--vp-accent-rgb), 0.3),
+    0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
+/* --- Button row --- */
+.vp__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-1);
+  min-width: 0;
+}
+
+.vp__group {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+}
+
+.vp__group--right {
+  flex-shrink: 1;
+}
+
+/* --- Buttons --- */
+.vp__btn {
+  width: var(--vp-btn-size);
+  height: var(--vp-btn-size);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: var(--ui-radius-button, var(--radius-lg));
+  color: var(--vp-ctrl-text);
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    transform 0.1s ease;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.vp__btn:hover {
+  background: var(--vp-ctrl-hover);
+  color: #fff;
+}
+
+.vp__btn:active {
+  transform: scale(0.9);
+}
+
+.vp__btn--cc {
+  width: auto;
+  min-width: 2rem;
+  height: 1.625rem;
+  padding: 0 var(--spacing-2);
+  font-size: 0.6875rem;
+  font-weight: var(--font-bold);
+  letter-spacing: 0.06em;
+  border: 1.5px solid var(--vp-ctrl-border);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.vp__btn--cc.is-active {
+  border-color: var(--vp-accent);
+  color: var(--vp-accent);
+  background: rgba(var(--vp-accent-rgb), 0.15);
+}
+
+/* --- Time display --- */
+.vp__time {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 0.8125rem;
+  color: var(--vp-ctrl-text);
+  font-variant-numeric: tabular-nums;
+  padding-left: var(--spacing-1);
+  white-space: nowrap;
+}
+
+.vp__time-current {
+  color: #fff;
+}
+.vp__time-sep {
+  opacity: 0.4;
+  padding: 0 1px;
+}
+.vp__time-total {
+  opacity: 0.65;
+}
+
+/* --- Volume (desktop) --- */
+.vp__volume {
+  display: flex;
+  align-items: center;
+}
+
+.vp__volume-track {
+  width: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition:
+    width 0.2s var(--ease-out, ease),
+    opacity 0.15s ease;
+}
+
+.vp__volume:hover .vp__volume-track {
+  width: 4.5rem;
   opacity: 1;
-  transform: translateY(0);
 }
 
-/* 手势指示器 */
-.gesture-indicator {
+/* --- Shared slider --- */
+.vp__slider {
+  width: 100%;
+  height: 3px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius-full);
+  outline: none;
+  cursor: pointer;
+}
+
+.vp__slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 0.75rem;
+  height: 0.75rem;
+  background: #fff;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.vp__slider::-moz-range-thumb {
+  width: 0.75rem;
+  height: 0.75rem;
+  background: #fff;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.vp__slider--panel {
+  flex: 1;
+  min-width: 0;
+  height: 0.25rem;
+}
+
+.vp__slider--panel::-webkit-slider-thumb {
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+.vp__slider--panel::-moz-range-thumb {
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+/* --- Gesture indicator --- */
+.vp__indicator {
   position: absolute;
   top: 50%;
   left: 50%;
@@ -1447,371 +1421,160 @@ function startHintTimer() {
   align-items: center;
   gap: var(--spacing-1);
   padding: var(--spacing-3) var(--spacing-5);
-  background: rgba(0, 0, 0, 0.7);
+  background: var(--vp-ctrl-bg);
   backdrop-filter: blur(16px);
-  border-radius: var(--radius-2xl);
-  color: white;
+  -webkit-backdrop-filter: blur(16px);
+  border-radius: var(--ui-radius-dialog, var(--radius-2xl));
+  color: #fff;
   pointer-events: none;
 }
 
-.indicator-value {
+.vp__indicator-val {
   font-size: var(--text-lg);
   font-weight: var(--font-semibold);
   font-variant-numeric: tabular-nums;
-  letter-spacing: -0.01em;
 }
 
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.2s ease;
-}
-
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-}
-
-/* 底部控制区 */
-.controls-bottom {
-  position: relative;
-  z-index: 2;
-  padding: 0 var(--spacing-3) var(--spacing-3);
+/* --- Center play --- */
+.vp__center-play {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 3;
+  width: 4rem;
+  height: 4rem;
   display: flex;
-  flex-direction: column;
-  gap: var(--spacing-1);
-}
-
-/* ========== 进度条 (YouTube-style) ========== */
-.progress-container {
-  --progress-height: 3px;
-  --progress-hover-height: 5px;
-  width: 100%;
-  height: 1.5rem;
-  display: flex;
-  align-items: flex-end;
+  align-items: center;
+  justify-content: center;
+  background: var(--vp-ctrl-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1.5px solid var(--vp-ctrl-border);
+  border-radius: 50%;
+  color: #fff;
   cursor: pointer;
   padding: 0;
-  position: relative;
-  touch-action: none;
+  transition:
+    transform 0.2s var(--ease-out, ease),
+    background 0.2s ease;
 }
 
-.progress-bar {
-  position: relative;
-  width: 100%;
-  height: var(--progress-height);
-  background: rgba(255, 255, 255, 0.25);
-  border-radius: 1.5px;
-  overflow: visible;
-  transition: height 0.12s cubic-bezier(0.4, 0, 0.2, 1);
+.vp__center-play:hover {
+  transform: translate(-50%, -50%) scale(1.08);
+  background: rgba(var(--vp-accent-rgb), 0.6);
+  border-color: rgba(var(--vp-accent-rgb), 0.4);
 }
 
-.progress-container:hover .progress-bar,
-.progress-container.is-seeking .progress-bar {
-  height: var(--progress-hover-height);
+.vp__center-play:active {
+  transform: translate(-50%, -50%) scale(0.94);
 }
 
-.progress-buffered {
-  position: absolute;
-  left: 0;
-  top: 0;
-  height: 100%;
-  background: rgba(255, 255, 255, 0.4);
-  border-radius: inherit;
-  transition: width 0.3s ease;
-}
-
-.progress-played {
-  position: absolute;
-  left: 0;
-  top: 0;
-  height: 100%;
-  background: var(--color-primary);
-  border-radius: inherit;
-  transition: width 0.08s linear;
-  box-shadow: 0 0 8px rgba(var(--color-primary-rgb), 0.4);
-}
-
-/* Remove transition during seek to prevent visual lag / jumping */
-.progress-container.is-seeking .progress-played {
-  transition: none;
-}
-
-.progress-thumb {
+/* --- Loader --- */
+.vp__loader {
   position: absolute;
   top: 50%;
-  width: 0.8125rem;
-  height: 0.8125rem;
-  background: var(--color-primary);
-  border-radius: 50%;
-  box-shadow:
-    0 0 0 2px rgba(255, 255, 255, 0.9),
-    0 2px 6px rgba(0, 0, 0, 0.35);
-  transform: translate(-50%, -50%) scale(0);
-  transition: transform 0.12s cubic-bezier(0.4, 0, 0.2, 1);
-  pointer-events: none;
-}
-
-.progress-container:hover .progress-thumb,
-.progress-container.is-seeking .progress-thumb {
-  transform: translate(-50%, -50%) scale(1);
-}
-
-/* Larger thumb while actively dragging for better touch feedback */
-.progress-container.is-seeking .progress-thumb {
-  transform: translate(-50%, -50%) scale(1.25);
-  box-shadow:
-    0 0 0 3px rgba(var(--color-primary-rgb), 0.3),
-    0 2px 8px rgba(0, 0, 0, 0.4);
-}
-
-.progress-container.is-buffering .progress-thumb {
-  transform: translate(-50%, -50%) scale(1);
-  animation: thumb-pulse 1.2s ease-in-out infinite;
-}
-
-.progress-container.is-buffering .progress-bar {
-  height: var(--progress-hover-height);
-}
-
-@keyframes thumb-pulse {
-  0%,
-  100% {
-    box-shadow:
-      0 0 0 2px rgba(255, 255, 255, 0.9),
-      0 2px 6px rgba(0, 0, 0, 0.35);
-  }
-  50% {
-    box-shadow:
-      0 0 0 3px rgba(var(--color-primary-rgb), 0.5),
-      0 2px 8px rgba(0, 0, 0, 0.4);
-  }
-}
-
-.progress-loading {
-  position: absolute;
-  top: 50%;
+  left: 50%;
   transform: translate(-50%, -50%);
-  width: 1rem;
-  height: 1rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  background: rgba(0, 0, 0, 0.5);
-  pointer-events: none;
-  color: white;
+  z-index: 3;
+  color: #fff;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.4));
 }
 
-/* 控制按钮行 */
-.controls-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--spacing-1);
-  min-width: 0;
-}
-
-.controls-group {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-1);
-  min-width: 0;
-  flex-shrink: 0;
-}
-
-/* Right-side group can shrink to fit */
-.controls-group:last-child {
-  flex-shrink: 1;
-}
-
-.control-btn {
-  width: 2.25rem;
-  height: 2.25rem;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-  border: none;
-  border-radius: var(--radius-lg);
-  color: rgba(255, 255, 255, 0.92);
-  cursor: pointer;
-  transition:
-    background 0.15s ease,
-    color 0.15s ease,
-    transform 0.1s ease;
-  flex-shrink: 0;
-}
-
-.control-btn--text {
-  width: auto;
-  min-width: 2.25rem;
-  max-width: 4.5rem;
-  height: 1.75rem;
-  padding: 0 var(--spacing-2);
-  font-size: 0.6875rem;
-  font-weight: var(--font-bold);
-  letter-spacing: 0.06em;
-  border: 1.5px solid rgba(255, 255, 255, 0.3);
-  border-radius: var(--radius-md);
-  background: rgba(255, 255, 255, 0.06);
-  gap: var(--spacing-1);
-  overflow: hidden;
-  white-space: nowrap;
-}
-
-.control-btn--text.is-active {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
-  background: rgba(var(--color-primary-rgb), 0.12);
-}
-
-.control-btn__badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 0 0.25rem;
-  margin-left: 0.125rem;
-  font-size: 0.5625rem;
-  font-weight: var(--font-medium);
-  letter-spacing: 0;
-  border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.12);
+/* --- Keyboard hint --- */
+.vp__hint {
+  position: absolute;
+  bottom: 5rem;
+  left: var(--spacing-3);
+  padding: 0.375rem 0.75rem;
+  border-radius: var(--radius-full);
+  background: var(--vp-ctrl-bg);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   color: rgba(255, 255, 255, 0.8);
-}
-
-.control-btn:hover {
-  background: rgba(255, 255, 255, 0.12);
-  color: white;
-}
-
-.control-btn:active {
-  transform: scale(0.92);
-}
-
-/* 时间显示 */
-.time-display {
-  display: flex;
-  align-items: center;
-  gap: 0.1875rem;
-  font-size: 0.8125rem;
-  color: rgba(255, 255, 255, 0.88);
-  font-variant-numeric: tabular-nums;
-  user-select: none;
-  letter-spacing: 0.01em;
-  padding-left: var(--spacing-1);
-}
-
-.time-current {
-  color: white;
-}
-
-.time-separator {
-  opacity: 0.45;
-  padding: 0 1px;
-}
-
-.time-duration {
-  opacity: 0.7;
-}
-
-/* 音量控制 */
-.volume-control {
-  display: flex;
-  align-items: center;
-}
-
-.volume-slider-container {
-  width: 0;
+  font-size: var(--text-xs);
   opacity: 0;
-  overflow: hidden;
+  transform: translateY(4px);
   transition:
-    width 0.2s cubic-bezier(0.4, 0, 0.2, 1),
-    opacity 0.15s ease;
+    opacity 0.2s ease,
+    transform 0.2s ease;
+  pointer-events: none;
+  z-index: 10;
 }
 
-.volume-control:hover .volume-slider-container {
-  width: 4.5rem;
+.vp__hint.is-visible {
   opacity: 1;
+  transform: translateY(0);
 }
 
-.volume-slider {
-  width: 100%;
-  height: 3px;
-  -webkit-appearance: none;
-  appearance: none;
-  background: rgba(255, 255, 255, 0.25);
-  border-radius: 1.5px;
-  outline: none;
-  cursor: pointer;
-}
-
-.volume-slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 0.75rem;
-  height: 0.75rem;
-  background: white;
-  border-radius: 50%;
-  cursor: pointer;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-}
-
-.volume-slider::-moz-range-thumb {
-  width: 0.75rem;
-  height: 0.75rem;
-  background: white;
-  border: none;
-  border-radius: 50%;
-  cursor: pointer;
-}
-
-/* 设置菜单 */
-.settings-menu {
-  position: relative;
-}
-
-.settings-panel {
+/* --- Panels (settings / subtitle picker) --- */
+.vp__panel {
+  position: absolute;
+  bottom: 4.5rem;
+  right: var(--spacing-3);
+  z-index: 10;
   min-width: 13rem;
+  max-height: 60vh;
+  overflow-y: auto;
   padding: var(--spacing-3);
-  background: rgba(20, 20, 22, 0.92);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
-  border-radius: var(--radius-xl);
+  background: var(--vp-ctrl-bg);
+  backdrop-filter: blur(24px) saturate(1.2);
+  -webkit-backdrop-filter: blur(24px) saturate(1.2);
+  border: 1px solid var(--vp-ctrl-border);
+  border-radius: var(--ui-radius-dialog, var(--radius-xl));
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+  color: var(--vp-ctrl-text);
 }
 
-.settings-section {
+.vp__panel--subs {
+  right: auto;
+  left: var(--spacing-3);
+  min-width: 11rem;
+}
+
+.vp__panel-header {
+  padding-bottom: var(--spacing-2);
+  margin-bottom: var(--spacing-1);
+  border-bottom: 1px solid var(--vp-ctrl-border);
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
+  color: var(--vp-ctrl-text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.vp__panel-section {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-2);
 }
 
-.settings-section + .settings-section {
+.vp__panel-section + .vp__panel-section {
   margin-top: var(--spacing-3);
   padding-top: var(--spacing-3);
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid var(--vp-ctrl-border);
 }
 
-.settings-label {
+.vp__panel-label {
   font-size: var(--text-xs);
   font-weight: var(--font-medium);
-  color: rgba(255, 255, 255, 0.55);
+  color: var(--vp-ctrl-text-dim);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 
-.settings-options {
+.vp__panel-chips {
   display: flex;
   flex-wrap: wrap;
   gap: 0.375rem;
 }
 
-.settings-option {
+.vp__chip {
   padding: 0.3125rem var(--spacing-3);
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: var(--radius-md);
-  color: rgba(255, 255, 255, 0.85);
+  border: 1px solid var(--vp-ctrl-border);
+  border-radius: var(--ui-radius-button, var(--radius-md));
+  color: var(--vp-ctrl-text);
   font-size: var(--text-sm);
   cursor: pointer;
   transition:
@@ -1820,103 +1583,33 @@ function startHintTimer() {
     color 0.15s ease;
 }
 
-.settings-option:hover {
-  background: rgba(255, 255, 255, 0.08);
+.vp__chip:hover {
+  background: var(--vp-ctrl-hover);
   border-color: rgba(255, 255, 255, 0.2);
 }
 
-.settings-option.active {
-  background: rgba(var(--color-primary-rgb), 0.2);
-  border-color: rgba(var(--color-primary-rgb), 0.5);
-  color: var(--color-primary);
+.vp__chip.is-active {
+  background: rgba(var(--vp-accent-rgb), 0.2);
+  border-color: rgba(var(--vp-accent-rgb), 0.5);
+  color: var(--vp-accent);
 }
 
-/* 中央播放按钮 */
-.center-play-btn {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 3;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  padding: 0;
+.vp__panel-sub {
+  margin-top: var(--spacing-2);
 }
 
-.center-play-icon {
-  width: 4.25rem;
-  height: 4.25rem;
+.vp__panel-slider-row {
   display: flex;
   align-items: center;
-  justify-content: center;
-  background: rgba(0, 0, 0, 0.45);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1.5px solid rgba(255, 255, 255, 0.2);
-  border-radius: 50%;
-  color: white;
-  transition:
-    transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
-    background 0.2s ease,
-    border-color 0.2s ease;
-}
-
-.center-play-icon:hover {
-  transform: scale(1.08);
-  background: rgba(var(--color-primary-rgb), 0.65);
-  border-color: rgba(var(--color-primary-rgb), 0.4);
-}
-
-.center-play-icon:active {
-  transform: scale(0.94);
-}
-
-/* 加载指示器 */
-.loading-indicator {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 3;
-  color: white;
-  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.4));
-}
-
-/* ========== Subtitle Picker ========== */
-
-.subtitle-picker {
-  min-width: 11rem;
-  padding: var(--spacing-3);
-  background: rgba(20, 20, 22, 0.92);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
-  border-radius: var(--radius-xl);
-}
-
-.subtitle-picker__header {
-  padding-bottom: var(--spacing-2);
-  margin-bottom: var(--spacing-1);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.subtitle-picker__title {
+  gap: var(--spacing-2);
+  margin-top: var(--spacing-1);
   font-size: var(--text-xs);
-  font-weight: var(--font-medium);
-  color: rgba(255, 255, 255, 0.55);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  color: var(--vp-ctrl-text-dim);
+  white-space: nowrap;
 }
 
-.subtitle-picker__list {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.subtitle-picker__item {
+/* --- Subtitle picker items --- */
+.vp__sub-item {
   display: flex;
   align-items: center;
   gap: var(--spacing-2);
@@ -1925,256 +1618,281 @@ function startHintTimer() {
   background: transparent;
   border: none;
   border-radius: var(--radius-md);
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--vp-ctrl-text);
   font-size: var(--text-sm);
   cursor: pointer;
   transition: background 0.15s ease;
   text-align: left;
 }
 
-.subtitle-picker__item:hover {
-  background: rgba(255, 255, 255, 0.1);
+.vp__sub-item:hover {
+  background: var(--vp-ctrl-hover);
 }
 
-.subtitle-picker__item.is-active {
-  background: rgba(var(--color-primary-rgb), 0.2);
-  color: var(--color-primary);
+.vp__sub-item.is-active {
+  background: rgba(var(--vp-accent-rgb), 0.2);
+  color: var(--vp-accent);
 }
 
-.subtitle-picker__check {
+.vp__sub-check {
   width: 1rem;
   font-size: var(--text-xs);
   opacity: 0;
   flex-shrink: 0;
 }
 
-.subtitle-picker__check.visible {
+.vp__sub-check.visible {
   opacity: 1;
 }
 
-.subtitle-picker__position {
-  margin-top: var(--spacing-2);
-  padding-top: var(--spacing-2);
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+/* --- Transitions --- */
+.vp-fade-enter-active,
+.vp-fade-leave-active {
+  transition: opacity 0.2s ease;
 }
 
-.subtitle-picker__position-label {
-  font-size: var(--text-xs);
-  color: rgba(255, 255, 255, 0.6);
-  margin-bottom: var(--spacing-2);
+.vp-fade-enter-from,
+.vp-fade-leave-to {
+  opacity: 0;
 }
 
-.subtitle-picker__position-control {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-2);
+.vp-scale-enter-active {
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s var(--ease-out, ease);
 }
 
-.subtitle-picker__position-text {
-  font-size: var(--text-xs);
-  color: rgba(255, 255, 255, 0.5);
-  white-space: nowrap;
-  flex-shrink: 0;
+.vp-scale-leave-active {
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease;
 }
 
-/* Shared subtitle offset slider */
-.subtitle-offset-slider {
-  flex: 1;
-  min-width: 0;
-  height: 0.25rem;
-  -webkit-appearance: none;
-  appearance: none;
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: var(--radius-full);
-  outline: none;
-  cursor: pointer;
+.vp-scale-enter-from {
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.8);
 }
 
-.subtitle-offset-slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 0.875rem;
-  height: 0.875rem;
-  background: white;
-  border-radius: 50%;
-  cursor: pointer;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+.vp-scale-leave-to {
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(1.1);
 }
 
-.subtitle-offset-slider::-moz-range-thumb {
-  width: 0.875rem;
-  height: 0.875rem;
-  background: white;
-  border: none;
-  border-radius: 50%;
-  cursor: pointer;
+.vp-panel-enter-active {
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s var(--ease-out, ease);
 }
 
-/* Settings panel sub-section & slider row */
-.settings-sub {
-  margin-top: var(--spacing-2);
+.vp-panel-leave-active {
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease;
 }
 
-.settings-slider-row {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-2);
-  margin-top: var(--spacing-1);
+.vp-panel-enter-from {
+  opacity: 0;
+  transform: translateY(8px);
 }
 
-.settings-slider-label {
-  font-size: var(--text-xs);
-  color: rgba(255, 255, 255, 0.5);
-  white-space: nowrap;
-  flex-shrink: 0;
+.vp-panel-leave-to {
+  opacity: 0;
+  transform: translateY(4px);
 }
 
-/* 移动端适配 */
+/* ============================================================
+   Mobile responsive
+   ============================================================ */
 @media (max-width: 768px) {
-  .controls-bottom {
+  .vp__bar {
     padding: 0 var(--spacing-2) var(--spacing-2);
   }
 
-  .control-btn {
-    width: 2.25rem;
-    height: 2.25rem;
+  .vp__btn {
+    width: 2.5rem;
+    height: 2.5rem;
   }
 
-  .volume-control {
-    flex-shrink: 0;
-  }
-
-  .volume-slider-container {
-    width: 3.5rem;
-  }
-
-  /* CC button: hide badge on mobile to prevent overflow */
-  .control-btn--text {
-    max-width: 2.5rem;
-    padding: 0 var(--spacing-1);
-  }
-
-  .control-btn__badge {
+  .vp__btn--hide-mobile {
     display: none;
   }
 
-  .time-display {
+  .vp__time {
     font-size: var(--text-xs);
   }
 
-  .center-play-icon {
+  /* Volume: always show slider on mobile (no hover) */
+  .vp__volume-track {
+    width: 3rem;
+    opacity: 1;
+  }
+
+  .vp__center-play {
     width: 3.5rem;
     height: 3.5rem;
   }
 
-  .center-play-icon svg {
-    width: 1.5rem;
-    height: 1.5rem;
-  }
-
-  .progress-container {
-    --progress-height: 3px;
-    --progress-hover-height: 6px;
+  .vp__progress {
+    --vp-progress-h: 3px;
+    --vp-progress-h-active: 6px;
     height: 1.75rem;
   }
 
-  .settings-panel--teleported {
+  /* Panels: bottom sheet on mobile */
+  .vp__panel {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    top: auto;
     min-width: unset;
-    width: auto;
-    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
-    padding: var(--spacing-4);
-    padding-bottom: calc(var(--spacing-4) + env(safe-area-inset-bottom));
     max-height: 70svh;
-    overflow-y: auto;
-    background: var(--glass-bg-strong);
-    backdrop-filter: var(--glass-blur-strong);
-    -webkit-backdrop-filter: var(--glass-blur-strong);
-    border: 1px solid var(--glass-border);
-    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.2);
-  }
-
-  /* 字幕选择器移动端底部弹出 */
-  .subtitle-picker--teleported {
-    min-width: unset;
-    width: auto;
-    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    border-radius: var(--ui-radius-sheet, 18px) var(--ui-radius-sheet, 18px) 0 0;
     padding: var(--spacing-4);
     padding-bottom: calc(var(--spacing-4) + env(safe-area-inset-bottom));
-    max-height: 60svh;
-    overflow-y: auto;
-    background: var(--glass-bg-strong);
-    backdrop-filter: var(--glass-blur-strong);
-    -webkit-backdrop-filter: var(--glass-blur-strong);
-    border: 1px solid var(--glass-border);
-    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.2);
+    background: var(--glass-bg-strong, rgba(20, 20, 22, 0.95));
+    backdrop-filter: var(--glass-blur, blur(24px));
+    -webkit-backdrop-filter: var(--glass-blur, blur(24px));
+    border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.08));
+    box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.25);
+    color: var(--color-text-primary, #fff);
+    z-index: var(--z-modal, 1000);
   }
 
-  .subtitle-picker--teleported .subtitle-picker__item {
+  .vp__panel--subs {
+    left: 0;
+    right: 0;
+  }
+
+  /* Theme-aware panel text on mobile */
+  .vp__panel-label,
+  .vp__panel-header {
+    color: var(--color-text-secondary, rgba(255, 255, 255, 0.55));
+  }
+
+  .vp__chip {
+    border-color: var(--glass-border, rgba(255, 255, 255, 0.12));
+    color: var(--color-text-primary, rgba(255, 255, 255, 0.85));
+  }
+
+  .vp__chip:hover {
+    background: rgba(var(--vp-accent-rgb), 0.06);
+    border-color: var(--glass-border-strong, rgba(255, 255, 255, 0.2));
+  }
+
+  .vp__sub-item {
     padding: var(--spacing-3) var(--spacing-4);
     min-height: 2.75rem;
     font-size: var(--text-base);
+    color: var(--color-text-primary, rgba(255, 255, 255, 0.9));
   }
 
-  .subtitle-picker--teleported .subtitle-offset-slider {
+  .vp__panel-slider-row {
+    color: var(--color-text-tertiary, rgba(255, 255, 255, 0.5));
+  }
+
+  .vp__panel-slider-row .vp__slider--panel {
     height: 0.375rem;
+    background: var(--glass-border, rgba(255, 255, 255, 0.2));
   }
 
-  .subtitle-picker--teleported .subtitle-offset-slider::-webkit-slider-thumb {
+  .vp__panel-slider-row .vp__slider--panel::-webkit-slider-thumb {
     width: 1.25rem;
     height: 1.25rem;
   }
 
-  .subtitle-picker--teleported .subtitle-offset-slider::-moz-range-thumb {
+  .vp__panel-slider-row .vp__slider--panel::-moz-range-thumb {
     width: 1.25rem;
     height: 1.25rem;
   }
 
-  /* 全屏模式下移动端：从按钮上方弹出（JS 定位），仅补充视觉样式 */
-  .settings-panel--fullscreen {
-    max-height: 60svh;
-    overflow-y: auto;
+  /* Panel transition: slide up on mobile */
+  .vp-panel-enter-from {
+    opacity: 0;
+    transform: translateY(100%);
   }
 
-  /* Adjust settings panel text for theme adaptation */
-  .settings-label {
-    color: var(--color-text-secondary);
+  .vp-panel-leave-to {
+    opacity: 0;
+    transform: translateY(100%);
   }
 
-  .settings-option {
-    border-color: var(--glass-border);
-    color: var(--color-text-primary);
+  .vp-panel-enter-active {
+    transition:
+      opacity 0.25s ease,
+      transform 0.3s var(--ease-out, ease);
   }
 
-  .settings-option:hover {
-    background: var(--glass-bg-hover);
-    border-color: var(--glass-border-strong);
+  .vp-panel-leave-active {
+    transition:
+      opacity 0.2s ease,
+      transform 0.25s ease;
   }
 
-  /* Subtitle picker theme adaptation */
-  .subtitle-picker--teleported .subtitle-picker__title {
-    color: var(--color-text-secondary);
-  }
-
-  .subtitle-picker--teleported .subtitle-picker__item {
-    color: var(--color-text-primary);
-  }
-
-  .subtitle-picker--teleported .subtitle-picker__position-label,
-  .subtitle-picker--teleported .subtitle-picker__position-text {
-    color: var(--color-text-tertiary);
-  }
-
-  .subtitle-picker--teleported .subtitle-offset-slider {
-    background: var(--glass-border);
+  .vp__hint {
+    bottom: 4.5rem;
+    font-size: 0.625rem;
   }
 }
 
-/* 减少动画 */
+/* Fullscreen: panels stay inside player */
+.vp.is-fullscreen .vp__panel {
+  position: absolute;
+  bottom: 4.5rem;
+  left: auto;
+  right: var(--spacing-3);
+  max-height: 60vh;
+  border-radius: var(--ui-radius-dialog, var(--radius-xl));
+  background: var(--vp-ctrl-bg);
+  backdrop-filter: blur(24px) saturate(1.2);
+  -webkit-backdrop-filter: blur(24px) saturate(1.2);
+  border: 1px solid var(--vp-ctrl-border);
+  color: var(--vp-ctrl-text);
+  z-index: 10;
+}
+
+.vp.is-fullscreen .vp__panel--subs {
+  right: auto;
+  left: var(--spacing-3);
+}
+
+.vp.is-fullscreen .vp__panel-label,
+.vp.is-fullscreen .vp__panel-header {
+  color: var(--vp-ctrl-text-dim);
+}
+
+.vp.is-fullscreen .vp__chip {
+  border-color: var(--vp-ctrl-border);
+  color: var(--vp-ctrl-text);
+}
+
+.vp.is-fullscreen .vp__sub-item {
+  color: var(--vp-ctrl-text);
+}
+
+.vp.is-fullscreen .vp__panel-slider-row {
+  color: var(--vp-ctrl-text-dim);
+}
+
+/* ============================================================
+   Reduced motion
+   ============================================================ */
 @media (prefers-reduced-motion: reduce) {
-  .controls,
-  .progress-thumb,
-  .volume-slider-container,
-  .control-btn {
+  .vp__controls,
+  .vp__progress-thumb,
+  .vp__volume-track,
+  .vp__btn,
+  .vp__center-play,
+  .vp__gradient {
+    transition: none;
+  }
+
+  .vp-fade-enter-active,
+  .vp-fade-leave-active,
+  .vp-scale-enter-active,
+  .vp-scale-leave-active,
+  .vp-panel-enter-active,
+  .vp-panel-leave-active {
     transition: none;
   }
 }
