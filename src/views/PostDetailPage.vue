@@ -991,8 +991,8 @@ onUnmounted(() => {
   --post-shadow-md: 0 1px 3px rgba(0, 0, 0, 0.06), 0 6px 16px rgba(0, 0, 0, 0.04);
   --post-modal-bg: var(--glass-bg-strong);
   --post-modal-border: var(--glass-border);
-  --post-gutter: clamp(14px, 2vw, 28px);
-  --post-vert-pad: clamp(12px, 1.6vw, 24px);
+  --post-gutter: clamp(0.875rem, 2vw, 1.75rem);
+  --post-vert-pad: clamp(0.75rem, 1.6vw, 1.5rem);
   min-height: 100svh;
   min-height: 100dvh;
   overflow-x: hidden;
@@ -1112,9 +1112,9 @@ onUnmounted(() => {
 }
 
 .post-back-fab {
-  --fab-size: clamp(46px, 5vw, 64px);
-  --edge: clamp(18px, 3.4vw, 36px);
-  --fab-gap: 12px;
+  --fab-size: clamp(2.875rem, 5vw, 4rem);
+  --edge: clamp(1.125rem, 3.4vw, 2.25rem);
+  --fab-gap: 0.75rem;
   position: fixed;
   right: var(--edge);
   bottom: calc(var(--edge) + env(safe-area-inset-bottom, 0) + var(--fab-size) + var(--fab-gap));
@@ -1293,7 +1293,7 @@ onUnmounted(() => {
 
 @media (min-width: 768px) {
   .post-shell {
-    grid-template-columns: minmax(0, 1fr) clamp(320px, 32vw, 460px);
+    grid-template-columns: minmax(0, 1fr) clamp(20rem, 32vw, 28.75rem);
     gap: clamp(1.25rem, 3vw, 3rem);
   }
 
@@ -1307,7 +1307,7 @@ onUnmounted(() => {
 
 @media (min-width: 1100px) {
   .post-shell {
-    grid-template-columns: minmax(0, 1.05fr) clamp(360px, 28vw, 480px);
+    grid-template-columns: minmax(0, 1.05fr) clamp(22.5rem, 28vw, 30rem);
   }
 }
 
@@ -1327,7 +1327,7 @@ onUnmounted(() => {
   position: relative;
   width: min(100%, 60rem);
   max-width: 100%;
-  max-height: clamp(320px, 62dvh, 720px);
+  max-height: clamp(20rem, 62dvh, 45rem);
   aspect-ratio: var(--aspect-ratio, 16 / 9);
   display: flex;
   align-items: center;
@@ -1340,7 +1340,7 @@ onUnmounted(() => {
 
 .post-media-empty {
   width: 100%;
-  min-height: clamp(260px, 40dvh, 520px);
+  min-height: clamp(16.25rem, 40dvh, 32.5rem);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1352,7 +1352,7 @@ onUnmounted(() => {
 .post-media-empty .post-image {
   width: 100%;
   height: 100%;
-  max-height: clamp(320px, 62dvh, 720px);
+  max-height: clamp(20rem, 62dvh, 45rem);
   object-fit: contain;
   border-radius: var(--radius-2xl);
   box-shadow: var(--post-shadow-sm);
@@ -1361,7 +1361,7 @@ onUnmounted(() => {
 
 .post-media-text-only {
   width: 100%;
-  min-height: clamp(200px, 30dvh, 400px);
+  min-height: clamp(12.5rem, 30dvh, 25rem);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1598,7 +1598,7 @@ onUnmounted(() => {
 /* Mid-size screens (landscape phones / tablets): avoid the "mobile-only" stacked layout */
 @media (min-width: 768px) and (max-width: 899px) {
   .post-shell {
-    grid-template-columns: minmax(0, 1fr) clamp(280px, 36vw, 380px);
+    grid-template-columns: minmax(0, 1fr) clamp(17.5rem, 36vw, 23.75rem);
     grid-template-rows: 1fr;
   }
 

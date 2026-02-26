@@ -296,6 +296,6 @@ defineExpose({
 .turnstile-container {
   display: flex;
   justify-content: center;
-  min-height: 65px;
+  min-height: 4.0625rem;
 }
 </style>

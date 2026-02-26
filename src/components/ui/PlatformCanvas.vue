@@ -63,7 +63,7 @@ usePlatformAnimation(
     width: 120vw;
     top: 0;
     right: -30vw;
-    height: 50vh;
+    height: 50dvh;
     opacity: 0.5;
   }
 }

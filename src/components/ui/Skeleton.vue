@@ -82,7 +82,7 @@ const computedStyle = computed(() => {
 }
 
 .skeleton--card {
-  min-height: 200px;
+  min-height: 12.5rem;
   border-radius: var(--radius-xl);
 }
 
