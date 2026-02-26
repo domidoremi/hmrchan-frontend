@@ -274,23 +274,148 @@
               {{ track.label }}
             </button>
           </div>
-          <div v-if="selectedSubtitleLanguage" class="vp__panel-sub">
-            <div class="vp__panel-label">{{ $t('video.subtitlePosition') }}</div>
-            <div class="vp__panel-slider-row">
-              <span>{{ $t('video.subtitlePositionDefault') }}</span>
-              <input
-                type="range"
-                class="vp__slider vp__slider--panel"
-                min="0"
-                max="5"
-                step="1"
-                :value="subtitleOffset"
-                :aria-label="$t('video.subtitlePosition')"
-                @input="handleSubtitleOffsetInput"
-              />
-              <span>{{ $t('video.subtitlePositionUp') }}</span>
+
+          <!-- Subtitle style controls (visible when a subtitle is selected) -->
+          <template v-if="selectedSubtitleLanguage">
+            <!-- Font size -->
+            <div class="vp__panel-sub">
+              <div class="vp__panel-label">
+                <Type :size="12" style="vertical-align: -1px" />
+                {{ $t('video.subtitleFontSize') }}
+              </div>
+              <div class="vp__panel-slider-row">
+                <span>A</span>
+                <input
+                  type="range"
+                  class="vp__slider vp__slider--panel"
+                  min="75"
+                  max="200"
+                  step="5"
+                  :value="Math.round(subtitleFontSize * 100)"
+                  :aria-label="$t('video.subtitleFontSize')"
+                  @input="handleSubtitleFontSizeInput"
+                />
+                <span style="font-size: 1.15em; font-weight: 600">A</span>
+              </div>
             </div>
-          </div>
+
+            <!-- Font color -->
+            <div class="vp__panel-sub">
+              <div class="vp__panel-label">{{ $t('video.subtitleColor') }}</div>
+              <div class="vp__color-swatches">
+                <button
+                  v-for="c in SUBTITLE_COLORS"
+                  :key="`fc-${c.value}`"
+                  type="button"
+                  class="vp__swatch"
+                  :class="{ 'is-active': subtitleColor === c.value }"
+                  :style="{ '--swatch-color': c.value }"
+                  :aria-label="c.label"
+                  @click="setSubtitleColorChoice(c.value)"
+                />
+              </div>
+            </div>
+
+            <!-- Background color + opacity -->
+            <div class="vp__panel-sub">
+              <div class="vp__panel-label">{{ $t('video.subtitleBgColor') }}</div>
+              <div class="vp__color-swatches">
+                <button
+                  v-for="c in SUBTITLE_BG_COLORS"
+                  :key="`bg-${c.value}`"
+                  type="button"
+                  class="vp__swatch"
+                  :class="{ 'is-active': subtitleBgColor === c.value }"
+                  :style="{ '--swatch-color': c.value }"
+                  :aria-label="c.label"
+                  @click="setSubtitleBgColorChoice(c.value)"
+                />
+              </div>
+              <div class="vp__panel-slider-row">
+                <span>{{ $t('video.subtitleBgOpacity') }}</span>
+                <input
+                  type="range"
+                  class="vp__slider vp__slider--panel"
+                  min="0"
+                  max="100"
+                  step="5"
+                  :value="Math.round(subtitleBgOpacity * 100)"
+                  :aria-label="$t('video.subtitleBgOpacity')"
+                  @input="handleSubtitleBgOpacityInput"
+                />
+              </div>
+            </div>
+
+            <!-- Text shadow -->
+            <div class="vp__panel-sub">
+              <div class="vp__panel-label">{{ $t('video.subtitleShadow') }}</div>
+              <div class="vp__panel-chips">
+                <button
+                  v-for="s in SUBTITLE_SHADOWS"
+                  :key="`sh-${s.value}`"
+                  type="button"
+                  class="vp__chip"
+                  :class="{ 'is-active': subtitleShadow === s.value }"
+                  @click="setSubtitleShadowChoice(s.value)"
+                >
+                  {{ $t(s.labelKey) }}
+                </button>
+              </div>
+            </div>
+
+            <!-- Alignment -->
+            <div class="vp__panel-sub">
+              <div class="vp__panel-label">{{ $t('video.subtitleAlign') }}</div>
+              <div class="vp__align-group">
+                <button
+                  type="button"
+                  class="vp__btn vp__btn--align"
+                  :class="{ 'is-active': subtitleAlign === 'left' }"
+                  :aria-label="$t('video.subtitleAlignLeft')"
+                  @click="setSubtitleAlignChoice('left')"
+                >
+                  <AlignLeft :size="16" />
+                </button>
+                <button
+                  type="button"
+                  class="vp__btn vp__btn--align"
+                  :class="{ 'is-active': subtitleAlign === 'center' }"
+                  :aria-label="$t('video.subtitleAlignCenter')"
+                  @click="setSubtitleAlignChoice('center')"
+                >
+                  <AlignCenter :size="16" />
+                </button>
+                <button
+                  type="button"
+                  class="vp__btn vp__btn--align"
+                  :class="{ 'is-active': subtitleAlign === 'right' }"
+                  :aria-label="$t('video.subtitleAlignRight')"
+                  @click="setSubtitleAlignChoice('right')"
+                >
+                  <AlignRight :size="16" />
+                </button>
+              </div>
+            </div>
+
+            <!-- Vertical position -->
+            <div class="vp__panel-sub">
+              <div class="vp__panel-label">{{ $t('video.subtitlePosition') }}</div>
+              <div class="vp__panel-slider-row">
+                <span>{{ $t('video.subtitlePositionDefault') }}</span>
+                <input
+                  type="range"
+                  class="vp__slider vp__slider--panel"
+                  min="0"
+                  max="5"
+                  step="1"
+                  :value="subtitleOffset"
+                  :aria-label="$t('video.subtitlePosition')"
+                  @input="handleSubtitleOffsetInput"
+                />
+                <span>{{ $t('video.subtitlePositionUp') }}</span>
+              </div>
+            </div>
+          </template>
         </div>
 
         <div v-if="qualities.length > 1" class="vp__panel-section">
@@ -356,6 +481,20 @@
             />
             <span>{{ $t('video.subtitlePositionUp') }}</span>
           </div>
+          <div class="vp__panel-slider-row" style="margin-top: 0.5rem">
+            <span>A</span>
+            <input
+              type="range"
+              class="vp__slider vp__slider--panel"
+              min="75"
+              max="200"
+              step="5"
+              :value="Math.round(subtitleFontSize * 100)"
+              :aria-label="$t('video.subtitleFontSize')"
+              @input="handleSubtitleFontSizeInput"
+            />
+            <span style="font-size: 1.15em; font-weight: 600">A</span>
+          </div>
         </div>
       </div>
     </Transition>
@@ -377,8 +516,13 @@ import {
   Sun,
   FastForward,
   Rewind,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
+  Type,
 } from 'lucide-vue-next'
 import { useVideoSettings } from '@/composables/useVideoSettings'
+import type { SubtitleShadowPreset, SubtitleAlign } from '@/composables/useVideoSettings'
 import { useVideoGestures } from '@/composables/useVideoGestures'
 import { normalizeToProxyPath } from '@/utils/url'
 
@@ -467,6 +611,12 @@ const {
   setBrightness: updateBrightness,
   setSubtitleLanguage: updateSubtitleLanguage,
   setSubtitleOffset: updateSubtitleOffset,
+  setSubtitleFontSize: updateSubtitleFontSize,
+  setSubtitleColor: updateSubtitleColor,
+  setSubtitleBgColor: updateSubtitleBgColor,
+  setSubtitleBgOpacity: updateSubtitleBgOpacity,
+  setSubtitleShadow: updateSubtitleShadow,
+  setSubtitleAlign: updateSubtitleAlign,
 } = useVideoSettings()
 
 const volume = computed(() => videoSettings.value.volume)
@@ -474,6 +624,34 @@ const isMuted = computed(() => videoSettings.value.muted)
 const brightness = computed(() => videoSettings.value.brightness)
 const loopEnabled = computed(() => props.loop || videoSettings.value.loop)
 const subtitleOffset = computed(() => videoSettings.value.subtitleOffset)
+const subtitleFontSize = computed(() => videoSettings.value.subtitleFontSize)
+const subtitleColor = computed(() => videoSettings.value.subtitleColor)
+const subtitleBgColor = computed(() => videoSettings.value.subtitleBgColor)
+const subtitleBgOpacity = computed(() => videoSettings.value.subtitleBgOpacity)
+const subtitleShadow = computed(() => videoSettings.value.subtitleShadow)
+const subtitleAlign = computed(() => videoSettings.value.subtitleAlign)
+
+const SUBTITLE_COLORS = [
+  { value: '#ffffff', label: 'white' },
+  { value: '#ffff00', label: 'yellow' },
+  { value: '#00ff00', label: 'green' },
+  { value: '#00ffff', label: 'cyan' },
+  { value: '#ff00ff', label: 'magenta' },
+  { value: '#ff6b6b', label: 'red' },
+]
+
+const SUBTITLE_BG_COLORS = [
+  { value: '#000000', label: 'black' },
+  { value: '#1a1a2e', label: 'navy' },
+  { value: '#333333', label: 'gray' },
+]
+
+const SUBTITLE_SHADOWS: { value: SubtitleShadowPreset; labelKey: string }[] = [
+  { value: 'none', labelKey: 'video.subtitleShadowNone' },
+  { value: 'outline', labelKey: 'video.subtitleShadowOutline' },
+  { value: 'drop-shadow', labelKey: 'video.subtitleShadowDropShadow' },
+  { value: 'raised', labelKey: 'video.subtitleShadowRaised' },
+]
 
 const {
   showVolumeIndicator,
@@ -621,14 +799,40 @@ function applySubtitleMode() {
     if (!track) continue
     track.mode = target && track.language === target ? 'showing' : 'disabled'
   }
-  nextTick(() => applySubtitleOffset())
+  nextTick(() => applySubtitleStyles())
 }
 
-function applySubtitleOffset() {
+function getSubtitleShadowCss(preset: SubtitleShadowPreset): string {
+  switch (preset) {
+    case 'outline':
+      return '-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000'
+    case 'drop-shadow':
+      return '2px 2px 4px rgba(0,0,0,0.9)'
+    case 'raised':
+      return '1px 1px 0 rgba(0,0,0,0.5), 2px 2px 2px rgba(0,0,0,0.3)'
+    default:
+      return 'none'
+  }
+}
+
+function hexToRgba(hex: string, alpha: number): string {
+  const r = parseInt(hex.slice(1, 3), 16)
+  const g = parseInt(hex.slice(3, 5), 16)
+  const b = parseInt(hex.slice(5, 7), 16)
+  return `rgba(${r},${g},${b},${alpha})`
+}
+
+let subtitleStyleEl: HTMLStyleElement | null = null
+
+function applySubtitleStyles() {
   const textTracks = videoRef.value?.textTracks
   if (!textTracks) return
+
+  // Apply VTTCue properties (line, position, align)
   const offset = subtitleOffset.value
   const lineValue = offset === 0 ? -1 : -(1 + offset)
+  const align = subtitleAlign.value
+
   for (let i = 0; i < textTracks.length; i += 1) {
     const track = textTracks[i]
     if (!track || track.mode !== 'showing') continue
@@ -636,9 +840,50 @@ function applySubtitleOffset() {
     if (!cues) continue
     for (let j = 0; j < cues.length; j += 1) {
       const cue = cues[j] as VTTCue | undefined
-      if (cue && 'line' in cue) cue.line = lineValue
+      if (!cue || !('line' in cue)) continue
+      cue.line = lineValue
+      cue.align = align
+      if (align === 'left') {
+        cue.position = 10
+        cue.positionAlign = 'line-left'
+      } else if (align === 'right') {
+        cue.position = 90
+        cue.positionAlign = 'line-right'
+      } else {
+        cue.position = 50
+        cue.positionAlign = 'center'
+      }
     }
   }
+
+  // Inject ::cue styles via a <style> element (scoped CSS can't target ::cue)
+  injectCueStyles()
+}
+
+function injectCueStyles() {
+  if (!playerElement.value) return
+
+  if (!subtitleStyleEl) {
+    subtitleStyleEl = document.createElement('style')
+    subtitleStyleEl.setAttribute('data-vp-cue', '')
+    playerElement.value.appendChild(subtitleStyleEl)
+  }
+
+  const fontSize = subtitleFontSize.value
+  const color = subtitleColor.value
+  const bgColor = hexToRgba(subtitleBgColor.value, subtitleBgOpacity.value)
+  const shadow = getSubtitleShadowCss(subtitleShadow.value)
+
+  subtitleStyleEl.textContent = `
+    video::cue {
+      color: ${color};
+      background-color: ${bgColor};
+      font-size: ${fontSize}em;
+      text-shadow: ${shadow};
+      outline: none;
+      font-family: inherit;
+    }
+  `
 }
 
 // --- Core playback ---
@@ -857,7 +1102,39 @@ function setSubtitleLanguage(language: string | null) {
 function handleSubtitleOffsetInput(e: Event) {
   const val = Number((e.target as HTMLInputElement).value)
   updateSubtitleOffset(val)
-  applySubtitleOffset()
+  applySubtitleStyles()
+}
+
+function handleSubtitleFontSizeInput(e: Event) {
+  const val = Number((e.target as HTMLInputElement).value)
+  updateSubtitleFontSize(val / 100)
+  applySubtitleStyles()
+}
+
+function handleSubtitleBgOpacityInput(e: Event) {
+  const val = Number((e.target as HTMLInputElement).value)
+  updateSubtitleBgOpacity(val / 100)
+  applySubtitleStyles()
+}
+
+function setSubtitleColorChoice(color: string) {
+  updateSubtitleColor(color)
+  applySubtitleStyles()
+}
+
+function setSubtitleBgColorChoice(color: string) {
+  updateSubtitleBgColor(color)
+  applySubtitleStyles()
+}
+
+function setSubtitleShadowChoice(shadow: SubtitleShadowPreset) {
+  updateSubtitleShadow(shadow)
+  applySubtitleStyles()
+}
+
+function setSubtitleAlignChoice(align: SubtitleAlign) {
+  updateSubtitleAlign(align)
+  applySubtitleStyles()
 }
 
 function toggleSettingsPanel() {
@@ -1022,7 +1299,18 @@ watch([selectedSubtitleLanguage, () => videoSettings.value.subtitleLanguage], ([
   applySubtitleMode()
 })
 
-watch(subtitleOffset, () => applySubtitleOffset())
+watch(subtitleOffset, () => applySubtitleStyles())
+watch(
+  [
+    subtitleFontSize,
+    subtitleColor,
+    subtitleBgColor,
+    subtitleBgOpacity,
+    subtitleShadow,
+    subtitleAlign,
+  ],
+  () => applySubtitleStyles()
+)
 watch(
   () => locale.value,
   () => syncSubtitleSelection(normalizedSubtitles.value)
@@ -1030,6 +1318,10 @@ watch(
 
 onBeforeUnmount(() => {
   Object.values(subtitleOverrides.value).forEach((url) => URL.revokeObjectURL(url))
+  if (subtitleStyleEl) {
+    subtitleStyleEl.remove()
+    subtitleStyleEl = null
+  }
   document.removeEventListener('keydown', handleKeydown)
   document.removeEventListener('fullscreenchange', handleFullscreenChange)
   document.removeEventListener('click', handleClickOutside)
@@ -1645,6 +1937,59 @@ onBeforeUnmount(() => {
   opacity: 1;
 }
 
+/* --- Subtitle style controls --- */
+.vp__color-swatches {
+  display: flex;
+  gap: 0.375rem;
+  flex-wrap: wrap;
+  margin-top: var(--spacing-1);
+}
+
+.vp__swatch {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: var(--radius-full);
+  background: var(--swatch-color);
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    transform 0.1s ease;
+  padding: 0;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.15);
+}
+
+.vp__swatch:hover {
+  transform: scale(1.15);
+}
+
+.vp__swatch.is-active {
+  border-color: var(--vp-accent);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.15),
+    0 0 0 2px rgba(var(--vp-accent-rgb), 0.3);
+}
+
+.vp__align-group {
+  display: flex;
+  gap: 2px;
+  margin-top: var(--spacing-1);
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: var(--ui-radius-button, var(--radius-lg));
+  padding: 2px;
+}
+
+.vp__btn--align {
+  width: 2rem;
+  height: 1.75rem;
+  border-radius: calc(var(--ui-radius-button, var(--radius-lg)) - 2px);
+}
+
+.vp__btn--align.is-active {
+  background: rgba(var(--vp-accent-rgb), 0.2);
+  color: var(--vp-accent);
+}
+
 /* --- Transitions --- */
 .vp-fade-enter-active,
 .vp-fade-leave-active {
@@ -1746,9 +2091,13 @@ onBeforeUnmount(() => {
     right: 0;
     top: auto;
     min-width: unset;
-    max-height: 70svh;
+    max-height: min(70svh, calc(100dvh - 2rem));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
     border-radius: var(--ui-radius-sheet, 18px) var(--ui-radius-sheet, 18px) 0 0;
     padding: var(--spacing-4);
+    padding-top: calc(var(--spacing-4) + 0.5rem);
     padding-bottom: calc(var(--spacing-4) + env(safe-area-inset-bottom));
     background: var(--glass-bg-strong, rgba(20, 20, 22, 0.95));
     backdrop-filter: var(--glass-blur, blur(24px));
@@ -1757,6 +2106,18 @@ onBeforeUnmount(() => {
     box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.25);
     color: var(--color-text-primary, #fff);
     z-index: var(--z-modal, 1000);
+  }
+
+  /* Drag handle indicator for mobile bottom sheet */
+  .vp__panel::before {
+    content: '';
+    display: block;
+    width: 2rem;
+    height: 0.25rem;
+    background: rgba(255, 255, 255, 0.25);
+    border-radius: var(--radius-full);
+    margin: 0 auto var(--spacing-3);
+    flex-shrink: 0;
   }
 
   .vp__panel--subs {
@@ -1804,6 +2165,17 @@ onBeforeUnmount(() => {
   .vp__panel-slider-row .vp__slider--panel::-moz-range-thumb {
     width: 1.25rem;
     height: 1.25rem;
+  }
+
+  /* Subtitle swatches: larger touch targets on mobile */
+  .vp__swatch {
+    width: 2rem;
+    height: 2rem;
+  }
+
+  .vp__btn--align {
+    width: 2.5rem;
+    height: 2.25rem;
   }
 
   /* Panel transition: slide up on mobile */
