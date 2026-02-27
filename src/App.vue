@@ -54,6 +54,9 @@
 
     <!-- Global Particle Background -->
     <ParticleBackground />
+
+    <!-- Desk Pet -->
+    <DeskPet />
   </div>
 </template>
 
@@ -74,6 +77,8 @@ const ParticleBackground = defineAsyncComponent(
 )
 
 const ToastContainer = defineAsyncComponent(() => import('@/components/ui/ToastContainer.vue'))
+
+const DeskPet = defineAsyncComponent(() => import('@/components/ui/DeskPet.vue'))
 
 const route = useRoute()
 const router = useRouter()

@@ -39,6 +39,8 @@ export interface Settings {
   uiStyle: UiStyle
   /** 全局背景粒子效果 */
   backgroundEffect: ParticleEffectConfig
+  /** 是否显示桌宠 */
+  showDeskPet: boolean
 }
 
 const defaultSettings: Settings = {
@@ -57,6 +59,7 @@ const defaultSettings: Settings = {
     color: '',
     opacity: 0.6,
   },
+  showDeskPet: true,
 }
 
 export const useSettingsStore = defineStore(
@@ -71,6 +74,9 @@ export const useSettingsStore = defineStore(
       if (!settings.value.uiStyle) settings.value.uiStyle = 'ios'
       if (!settings.value.backgroundEffect) {
         settings.value.backgroundEffect = { ...defaultSettings.backgroundEffect }
+      }
+      if (settings.value.showDeskPet === undefined) {
+        settings.value.showDeskPet = defaultSettings.showDeskPet
       }
     })
 
