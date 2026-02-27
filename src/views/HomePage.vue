@@ -510,6 +510,7 @@ onBeforeUnmount(() => {
   flex-direction: column;
   align-items: center;
   gap: clamp(0.75rem, 2dvh, 1.25rem);
+  transform: translateY(clamp(2rem, 7.2dvh, 5rem));
 }
 
 .hero-title {
