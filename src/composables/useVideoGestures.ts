@@ -48,8 +48,17 @@ const VOLUME_STEP = 0.006 // 音量调节步长
 const SEEK_STEP = 0.12 // 快进/快退步长（秒/像素）
 
 export function useVideoGestures(options: GestureOptions) {
-  const { videoRef, containerRef, onVolumeChange, onBrightnessChange, onSeek, onDoubleTap } =
-    options
+  const {
+    videoRef,
+    containerRef,
+    onVolumeChange,
+    onBrightnessChange,
+    onSeek,
+    onTogglePlay,
+    onDoubleTap,
+  } = options
+
+  let singleTapTimer: ReturnType<typeof setTimeout> | null = null
 
   const touchState = ref<TouchState>({
     startX: 0,
@@ -110,13 +119,14 @@ export function useVideoGestures(options: GestureOptions) {
 
   /**
    * 判断事件是否来自交互式表单控件（应跳过手势处理）
+   * 注意：不拦截 .vp__controls 整体，否则会阻止视频区域的手势（双击全屏等）
    */
   function isInteractiveTarget(event: Event): boolean {
     const target = event.target as HTMLElement | null
     if (!target) return false
     const tag = target.tagName
     if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA' || tag === 'BUTTON') return true
-    if (target.closest?.('.vp__panel, .vp__bar, .vp__controls')) return true
+    if (target.closest?.('.vp__panel, .vp__bar, .vp__center-play')) return true
     return false
   }
 
@@ -154,10 +164,34 @@ export function useVideoGestures(options: GestureOptions) {
     // 检测双击
     const now = Date.now()
     if (now - touchState.value.lastTapTime < DOUBLE_TAP_DELAY) {
+      // 取消待执行的单击
+      if (singleTapTimer) {
+        clearTimeout(singleTapTimer)
+        singleTapTimer = null
+      }
       onDoubleTap?.()
       touchState.value.lastTapTime = 0
     } else {
       touchState.value.lastTapTime = now
+    }
+  }
+
+  /**
+   * 处理触摸/鼠标/手写笔结束 — 单击延迟触发播放/暂停
+   */
+  function handleEnd() {
+    const wasDragging = touchState.value.isDragging
+    touchState.value.isDragging = false
+    touchState.value.isPointerDown = false
+    touchState.value.gestureAxis = null
+
+    // 非拖动且有 lastTapTime → 延迟触发单击（等待可能的双击）
+    if (!wasDragging && touchState.value.lastTapTime > 0) {
+      if (singleTapTimer) clearTimeout(singleTapTimer)
+      singleTapTimer = setTimeout(() => {
+        singleTapTimer = null
+        onTogglePlay?.()
+      }, DOUBLE_TAP_DELAY)
     }
   }
 
@@ -236,15 +270,6 @@ export function useVideoGestures(options: GestureOptions) {
   }
 
   /**
-   * 处理触摸/鼠标/手写笔结束
-   */
-  function handleEnd() {
-    touchState.value.isDragging = false
-    touchState.value.isPointerDown = false
-    touchState.value.gestureAxis = null
-  }
-
-  /**
    * 初始化事件监听
    */
   function initListeners() {
@@ -304,6 +329,10 @@ export function useVideoGestures(options: GestureOptions) {
     if (indicatorTimeout) {
       clearTimeout(indicatorTimeout)
       indicatorTimeout = null
+    }
+    if (singleTapTimer) {
+      clearTimeout(singleTapTimer)
+      singleTapTimer = null
     }
   }
 

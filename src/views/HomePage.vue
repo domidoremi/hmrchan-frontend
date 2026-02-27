@@ -657,6 +657,126 @@ onBeforeUnmount(() => {
   color: var(--color-error);
 }
 
+/* Bento card background decorations */
+.bento-card--feature::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(
+      ellipse 60% 50% at 90% 10%,
+      rgba(var(--color-primary-rgb), 0.08) 0%,
+      transparent 70%
+    ),
+    radial-gradient(ellipse 40% 60% at 10% 90%, rgba(var(--mm-teal-rgb), 0.06) 0%, transparent 70%);
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.bento-grid > :nth-child(2)::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse 80% 80% at 80% 20%,
+    rgba(var(--color-info-rgb), 0.07) 0%,
+    transparent 70%
+  );
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.bento-grid > :nth-child(3)::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse 80% 80% at 20% 80%,
+    rgba(168, 85, 247, 0.07) 0%,
+    transparent 70%
+  );
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.bento-grid > :nth-child(4)::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse 80% 80% at 80% 80%,
+    rgba(var(--color-warning-rgb), 0.07) 0%,
+    transparent 70%
+  );
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.bento-grid > :nth-child(5)::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse 80% 80% at 20% 20%,
+    rgba(var(--color-error-rgb), 0.07) 0%,
+    transparent 70%
+  );
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 0;
+}
+
+[data-theme='dark'] .bento-card--feature::before {
+  background:
+    radial-gradient(
+      ellipse 60% 50% at 90% 10%,
+      rgba(var(--color-primary-rgb), 0.12) 0%,
+      transparent 70%
+    ),
+    radial-gradient(ellipse 40% 60% at 10% 90%, rgba(var(--mm-teal-rgb), 0.08) 0%, transparent 70%);
+}
+
+[data-theme='dark'] .bento-grid > :nth-child(2)::before {
+  background: radial-gradient(
+    ellipse 80% 80% at 80% 20%,
+    rgba(var(--color-info-rgb), 0.1) 0%,
+    transparent 70%
+  );
+}
+
+[data-theme='dark'] .bento-grid > :nth-child(3)::before {
+  background: radial-gradient(
+    ellipse 80% 80% at 20% 80%,
+    rgba(168, 85, 247, 0.1) 0%,
+    transparent 70%
+  );
+}
+
+[data-theme='dark'] .bento-grid > :nth-child(4)::before {
+  background: radial-gradient(
+    ellipse 80% 80% at 80% 80%,
+    rgba(var(--color-warning-rgb), 0.1) 0%,
+    transparent 70%
+  );
+}
+
+[data-theme='dark'] .bento-grid > :nth-child(5)::before {
+  background: radial-gradient(
+    ellipse 80% 80% at 20% 20%,
+    rgba(var(--color-error-rgb), 0.1) 0%,
+    transparent 70%
+  );
+}
+
+.bento-card > * {
+  position: relative;
+  z-index: 1;
+}
+
 /* Responsive Grid */
 .bento-card--feature {
   grid-column: span 2;
