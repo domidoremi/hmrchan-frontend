@@ -228,14 +228,24 @@ describe('VideoPlayer', () => {
   })
 
   describe('User Interactions', () => {
-    it('toggles play/pause when clicking video', async () => {
+    it('toggles play/pause via gesture system (single tap)', async () => {
       vi.useFakeTimers()
       const wrapper = createWrapper({
         src: 'https://example.com/video.mp4',
       })
-      const video = wrapper.find('video')
-      await video.trigger('click')
-      vi.advanceTimersByTime(300)
+      // Gesture-based tap is handled by pointerdown/pointerup on the container.
+      // In jsdom, PointerEvent properties are read-only, so we dispatch a native event.
+      const container = wrapper.find('.vp').element
+      const down = new PointerEvent('pointerdown', {
+        clientX: 200,
+        clientY: 200,
+        buttons: 1,
+        bubbles: true,
+      })
+      container.dispatchEvent(down)
+      const up = new PointerEvent('pointerup', { bubbles: true })
+      container.dispatchEvent(up)
+      vi.advanceTimersByTime(350)
       expect(mockPlay).toHaveBeenCalledTimes(1)
       vi.useRealTimers()
     })

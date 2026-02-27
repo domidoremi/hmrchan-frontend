@@ -363,6 +363,9 @@ function resetVideoSettings() {
   width: min(90vw, 20rem);
   max-height: min(70svh, calc(100svh - 9rem));
   max-height: min(70dvh, calc(100dvh - 9rem));
+  background: var(--color-background);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--ui-radius-dialog, var(--radius-xl));
 }
 
 /* 移动端优化：确保面板可以滚动 */
@@ -392,9 +395,8 @@ function resetVideoSettings() {
   position: sticky;
   top: 0;
   z-index: 2;
-  background: var(--glass-bg-strong);
-  backdrop-filter: var(--glass-blur-strong);
-  -webkit-backdrop-filter: var(--glass-blur-strong);
+  background: var(--color-background);
+  border-bottom: 1px solid var(--glass-border);
 }
 
 .settings-header-main {
