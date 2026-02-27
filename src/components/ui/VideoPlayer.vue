@@ -32,7 +32,6 @@
       @progress="onProgress"
       @seeking="onSeeking"
       @seeked="onSeeked"
-      @click="handleVideoClick"
     >
       <track
         v-for="track in normalizedSubtitles"
@@ -664,8 +663,6 @@ let controlsTimeout: ReturnType<typeof setTimeout> | null = null
 let seekPendingTimeout: ReturnType<typeof setTimeout> | null = null
 let hintTimeout: ReturnType<typeof setTimeout> | null = null
 let activeCueTrack: TextTrack | null = null
-let videoClickTimer: ReturnType<typeof setTimeout> | null = null
-let lastVideoClickTime = 0
 
 const { locale } = useI18n()
 
@@ -985,29 +982,6 @@ function togglePlay() {
   if (!videoRef.value) return
   if (isPlaying.value) videoRef.value.pause()
   else videoRef.value.play()
-}
-
-function handleVideoClick() {
-  const now = Date.now()
-  const DOUBLE_TAP_WINDOW = 300
-
-  if (now - lastVideoClickTime < DOUBLE_TAP_WINDOW) {
-    // Double-click detected — cancel pending single-click, toggle fullscreen
-    if (videoClickTimer) {
-      clearTimeout(videoClickTimer)
-      videoClickTimer = null
-    }
-    lastVideoClickTime = 0
-    toggleFullscreen()
-    return
-  }
-
-  lastVideoClickTime = now
-  // Delay single-click to distinguish from double-click
-  videoClickTimer = setTimeout(() => {
-    videoClickTimer = null
-    togglePlay()
-  }, DOUBLE_TAP_WINDOW)
 }
 
 function onPlay() {
@@ -1411,10 +1385,6 @@ onBeforeUnmount(() => {
   if (activeCueTrack) {
     activeCueTrack.removeEventListener('cuechange', onCueChange)
     activeCueTrack = null
-  }
-  if (videoClickTimer) {
-    clearTimeout(videoClickTimer)
-    videoClickTimer = null
   }
   document.removeEventListener('keydown', handleKeydown)
   document.removeEventListener('fullscreenchange', handleFullscreenChange)
@@ -1931,8 +1901,9 @@ onBeforeUnmount(() => {
   right: var(--spacing-3);
   z-index: 10;
   min-width: 13rem;
-  max-height: 60vh;
+  max-height: calc(100% - 5.5rem);
   overflow-y: auto;
+  overscroll-behavior: contain;
   padding: var(--spacing-3);
   background: var(--vp-ctrl-bg);
   backdrop-filter: blur(24px) saturate(1.2);
@@ -2294,7 +2265,7 @@ onBeforeUnmount(() => {
     right: 0;
     top: auto;
     min-width: unset;
-    max-height: min(65svh, calc(100dvh - var(--navbar-height, 3.5rem) - 0.5rem));
+    max-height: min(60svh, calc(100dvh - var(--navbar-height, 3.5rem) - 1rem));
     overflow-y: auto;
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
@@ -2532,7 +2503,7 @@ onBeforeUnmount(() => {
   bottom: 4.5rem;
   left: auto;
   right: var(--spacing-3);
-  max-height: 60vh;
+  max-height: calc(100% - 5.5rem);
   border-radius: var(--ui-radius-dialog, var(--radius-xl));
   background: var(--vp-ctrl-bg);
   backdrop-filter: blur(24px) saturate(1.2);
