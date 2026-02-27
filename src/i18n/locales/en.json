@@ -905,5 +905,32 @@
     "codeExpired": "Verification code has expired, please resend",
     "tooManyAttempts": "Too many attempts, please try again later",
     "verifyFailed": "Verification failed, please try again"
+  },
+  "deskPet": {
+    "ariaLabel": "Desk pet state: {state}",
+    "menu": {
+      "pat": "🤚 Pat head",
+      "feed": "🐟 Feed",
+      "hide": "👋 Hide pet"
+    },
+    "greeting": {
+      "lateNight": "Still up this late?",
+      "morning": "Good morning meow~",
+      "afternoon": "Good afternoon~",
+      "evening": "Good evening meow~"
+    },
+    "speech": {
+      "idle": ["Meow~", "...", "(｡◕‿◕｡)"],
+      "hover": ["Hmm?", "Looking at me?", "(・・？"],
+      "click": ["Wow!", "Stop poking~", "(°△°)"],
+      "angry": ["Enough!!", "I'll bite!", "(╬▔皿▔)"],
+      "sleep": ["zzZ...", "Snore...", "(˘ᵕ˘)"],
+      "wake": ["Huh..? Awake", "Who called?", "(⊙_⊙)"],
+      "happy": ["Hehe~", "Happy!", "(≧▽≦)"],
+      "thinking": ["Thinking...", "Hmm...", "(._.)"],
+      "pat": ["Purr~", "So comfy~", "More more!", "(´▽`ʃ♡ƪ)"],
+      "eat": ["Yummy!", "Want more~", "Full meow~", "(ↀᴥↀ)"],
+      "dizzy": ["So dizzy...", "Slow down~", "(≧﹏≦)"]
+    }
   }
 }
