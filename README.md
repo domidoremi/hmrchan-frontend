@@ -82,6 +82,8 @@ VITE_LOG_LEVEL=warn
 # Anti-tamper（运行时软防护）
 # off | warn | balanced | strict
 VITE_ANTI_TAMPER_MODE=balanced
+# 是否允许在开发环境启用 anti-tamper
+VITE_ANTI_TAMPER_ALLOW_DEV=false
 # 仅 strict 模式生效
 VITE_DISABLE_CONTEXT_MENU=false
 
@@ -89,7 +91,20 @@ VITE_DISABLE_CONTEXT_MENU=false
 VITE_ENABLE_OBFUSCATION=false
 # safe | aggressive
 VITE_OBFUSCATION_PROFILE=safe
+# String Array
+VITE_OBFUSCATION_STRING_ARRAY=true
+# none | base64 | rc4
+VITE_OBFUSCATION_STRING_ARRAY_ENCODING=base64
+# Anti-formatting（self-defending）
+VITE_OBFUSCATION_ANTI_FORMATTING=false
+# Infinite Debugger（debugProtection）
+VITE_OBFUSCATION_INFINITE_DEBUGGER=false
+VITE_OBFUSCATION_INFINITE_DEBUGGER_INTERVAL=0
+# 前端代码伪加密（不能替代后端校验）
+VITE_OBFUSCATION_CODE_ENCRYPTION=false
+# Control Flow Flattening
 VITE_OBFUSCATION_CONTROL_FLOW=false
+# Dead Code Injection
 VITE_OBFUSCATION_DEAD_CODE=false
 
 # Cloudflare Turnstile (可选)
@@ -115,9 +130,16 @@ VITE_TURNSTILE_SITE_KEY=your_site_key_here
 | `VITE_ENABLE_DEVTOOLS`    | 启用开发者工具          | ❌   |
 | `VITE_LOG_LEVEL`          | 前端日志级别            | ❌   |
 | `VITE_ANTI_TAMPER_MODE`   | anti-tamper 模式        | ❌   |
+| `VITE_ANTI_TAMPER_ALLOW_DEV` | 开发环境强制启用 anti-tamper | ❌ |
 | `VITE_DISABLE_CONTEXT_MENU` | strict 模式禁用右键   | ❌   |
 | `VITE_ENABLE_OBFUSCATION` | 是否启用构建混淆        | ❌   |
 | `VITE_OBFUSCATION_PROFILE` | 混淆强度（safe/aggressive） | ❌ |
+| `VITE_OBFUSCATION_STRING_ARRAY` | 字符串阵列化开关  | ❌   |
+| `VITE_OBFUSCATION_STRING_ARRAY_ENCODING` | 字符串编码（none/base64/rc4） | ❌ |
+| `VITE_OBFUSCATION_ANTI_FORMATTING` | anti-formatting 开关 | ❌ |
+| `VITE_OBFUSCATION_INFINITE_DEBUGGER` | infinite debugger 开关 | ❌ |
+| `VITE_OBFUSCATION_INFINITE_DEBUGGER_INTERVAL` | debugger 触发间隔（ms） | ❌ |
+| `VITE_OBFUSCATION_CODE_ENCRYPTION` | 前端代码伪加密开关 | ❌ |
 | `VITE_OBFUSCATION_CONTROL_FLOW` | 控制流平坦化开关 | ❌   |
 | `VITE_OBFUSCATION_DEAD_CODE` | 废代码注入开关       | ❌   |
 | `VITE_TURNSTILE_SITE_KEY` | Cloudflare 人机验证密钥 | ❌   |

@@ -1,11 +1,18 @@
 import type { Plugin } from 'vite'
 
 type ObfuscationProfile = 'safe' | 'aggressive'
+type StringArrayEncoding = 'none' | 'base64' | 'rc4'
 
 interface ObfuscationPluginOptions {
   enabled: boolean
   profile?: ObfuscationProfile
   include?: RegExp
+  stringArray?: boolean
+  stringArrayEncoding?: StringArrayEncoding
+  antiFormatting?: boolean
+  infiniteDebugger?: boolean
+  infiniteDebuggerInterval?: number
+  codeEncryption?: boolean
   controlFlowFlattening?: boolean
   deadCodeInjection?: boolean
 }
@@ -24,6 +31,12 @@ export function obfuscationPlugin(options: ObfuscationPluginOptions): Plugin {
     enabled,
     profile = 'safe',
     include = /assets\/js\/.*\.js$/,
+    stringArray = true,
+    stringArrayEncoding = 'base64',
+    antiFormatting = false,
+    infiniteDebugger = false,
+    infiniteDebuggerInterval = 0,
+    codeEncryption = false,
     controlFlowFlattening = false,
     deadCodeInjection = false,
   } = options
@@ -51,6 +64,24 @@ export function obfuscationPlugin(options: ObfuscationPluginOptions): Plugin {
           ].join('\n')
         )
       }
+
+      if (infiniteDebugger) {
+        this.warn(
+          '[Obfuscation] VITE_OBFUSCATION_INFINITE_DEBUGGER=true 可能显著影响用户体验，请仅在高对抗场景短期灰度。'
+        )
+      }
+
+      if (antiFormatting) {
+        this.warn(
+          '[Obfuscation] VITE_OBFUSCATION_ANTI_FORMATTING=true 可能影响可维护性与兼容性，请仅用于关键 chunk。'
+        )
+      }
+
+      if (codeEncryption) {
+        this.warn(
+          '[Obfuscation] VITE_OBFUSCATION_CODE_ENCRYPTION=true 为提高逆向门槛的“伪加密”方案，不能替代后端签名校验。'
+        )
+      }
     },
 
     renderChunk(code, chunk) {
@@ -59,17 +90,32 @@ export function obfuscationPlugin(options: ObfuscationPluginOptions): Plugin {
       if (!include.test(chunk.fileName)) return null
 
       const isAggressive = profile === 'aggressive'
+      const effectiveStringArray = stringArray || codeEncryption
+      const effectiveEncoding =
+        codeEncryption || stringArrayEncoding === 'rc4'
+          ? (['rc4'] as const)
+          : stringArrayEncoding === 'base64'
+            ? (['base64'] as const)
+            : ([] as const)
+      const effectiveStringArrayThreshold = codeEncryption ? 1 : isAggressive ? 0.9 : 0.65
+      const effectiveSplitStrings = codeEncryption || isAggressive
+      const effectiveAntiFormatting = antiFormatting || isAggressive
+      const effectiveDebugProtection = infiniteDebugger
+      const effectiveDebugProtectionInterval = effectiveDebugProtection
+        ? Math.max(infiniteDebuggerInterval, 1000)
+        : 0
+
       const obfuscated = obfuscator.obfuscate(code, {
         compact: true,
         simplify: true,
         sourceMap: false,
         renameGlobals: false,
         identifierNamesGenerator: 'hexadecimal',
-        splitStrings: isAggressive,
-        splitStringsChunkLength: isAggressive ? 8 : 0,
-        stringArray: true,
-        stringArrayEncoding: ['base64'],
-        stringArrayThreshold: isAggressive ? 0.9 : 0.65,
+        splitStrings: effectiveSplitStrings,
+        splitStringsChunkLength: effectiveSplitStrings ? 8 : 0,
+        stringArray: effectiveStringArray,
+        stringArrayEncoding: effectiveEncoding,
+        stringArrayThreshold: effectiveStringArrayThreshold,
         rotateStringArray: true,
         shuffleStringArray: true,
         stringArrayWrappersCount: isAggressive ? 2 : 1,
@@ -77,9 +123,9 @@ export function obfuscationPlugin(options: ObfuscationPluginOptions): Plugin {
         stringArrayIndexShift: true,
         unicodeEscapeSequence: false,
         disableConsoleOutput: true,
-        selfDefending: isAggressive,
-        debugProtection: false,
-        debugProtectionInterval: 0,
+        selfDefending: effectiveAntiFormatting,
+        debugProtection: effectiveDebugProtection,
+        debugProtectionInterval: effectiveDebugProtectionInterval,
         controlFlowFlattening,
         controlFlowFlatteningThreshold: isAggressive ? 0.75 : 0.35,
         deadCodeInjection,
