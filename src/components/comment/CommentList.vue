@@ -15,7 +15,7 @@
           :class="{ active: currentSort === option.value }"
           @click="changeSort(option.value)"
         >
-          {{ $t(`comment.sort.${option.value}`) }}
+          {{ option.label }}
         </button>
       </div>
     </header>
@@ -59,6 +59,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { MessageSquare } from 'lucide-vue-next'
 import { storeToRefs } from 'pinia'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore, useCommentsStore } from '@/stores'
 import type { Comment } from '@/types'
 import CommentCard from './CommentCard.vue'
@@ -73,16 +74,17 @@ const props = defineProps<Props>()
 
 const commentsStore = useCommentsStore()
 const authStore = useAuthStore()
+const { t } = useI18n()
 const { isAuthenticated } = storeToRefs(authStore)
 
 const currentSort = ref<'newest' | 'oldest' | 'popular'>('popular')
 const hasMore = ref(false)
 
-const sortOptions = [
-  { value: 'newest' as const },
-  { value: 'popular' as const },
-  { value: 'oldest' as const },
-]
+const sortOptions = computed(() => [
+  { value: 'newest' as const, label: t('comment.sort.newest') },
+  { value: 'popular' as const, label: t('comment.sort.popular') },
+  { value: 'oldest' as const, label: t('comment.sort.oldest') },
+])
 
 const comments = computed<Comment[]>(() => {
   return commentsStore.getCommentsByPostId(props.postId)
