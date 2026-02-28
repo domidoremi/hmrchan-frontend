@@ -37,7 +37,7 @@
           <div class="theme-btn-icon">
             <AnimatedIcon name="explore" :fallback-icon="opt.icon" size="md" />
           </div>
-          <span class="theme-btn-label">{{ $t(`settings.${opt.value}`) }}</span>
+          <span class="theme-btn-label">{{ opt.label }}</span>
           <Transition name="check">
             <div v-if="theme === opt.value" class="theme-btn-check">
               <AnimatedIcon name="sparkle" :fallback-icon="Check" size="sm" />
@@ -251,6 +251,7 @@ import {
   Smartphone,
   Sparkles,
 } from 'lucide-vue-next'
+import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
@@ -281,17 +282,17 @@ const { resetSettings } = useVideoSettings()
 const { theme } = storeToRefs(themeStore)
 const { settings } = storeToRefs(settingsStore)
 
-const themeOptions = [
-  { value: 'light' as Theme, icon: Sun },
-  { value: 'dark' as Theme, icon: Moon },
-  { value: 'blue' as Theme, icon: Palette },
-  { value: 'auto' as Theme, icon: Monitor },
-]
+const themeOptions = computed(() => [
+  { value: 'light' as Theme, icon: Sun, label: t('settings.light') },
+  { value: 'dark' as Theme, icon: Moon, label: t('settings.dark') },
+  { value: 'blue' as Theme, icon: Palette, label: t('settings.blue') },
+  { value: 'auto' as Theme, icon: Monitor, label: t('settings.auto') },
+])
 
-const uiStyleOptions = [
+const uiStyleOptions = computed(() => [
   { value: 'ios' as UiStyle, icon: Smartphone, label: t('settings.uiStyleIos') },
   { value: 'material' as UiStyle, icon: Layers, label: t('settings.uiStyleMaterial') },
-]
+])
 
 const localeOptions: { code: SupportedLocale; name: string; flag: string }[] = [
   { code: 'en', name: 'English', flag: '🇺🇸' },
@@ -312,12 +313,14 @@ function changeLocale(code: SupportedLocale) {
   setLocale(code)
 }
 
-const bgEffectOptions: { value: ParticleEffectType; emoji: string; label: string }[] = [
-  { value: 'none', emoji: '✕', label: t('settings.bgNone') },
-  { value: 'rain', emoji: '🌧', label: t('settings.bgRain') },
-  { value: 'snow', emoji: '❄', label: t('settings.bgSnow') },
-  { value: 'stars', emoji: '✨', label: t('settings.bgStars') },
-]
+const bgEffectOptions = computed<{ value: ParticleEffectType; emoji: string; label: string }[]>(
+  () => [
+    { value: 'none', emoji: '✕', label: t('settings.bgNone') },
+    { value: 'rain', emoji: '🌧', label: t('settings.bgRain') },
+    { value: 'snow', emoji: '❄', label: t('settings.bgSnow') },
+    { value: 'stars', emoji: '✨', label: t('settings.bgStars') },
+  ]
+)
 
 function setBackgroundEffect(type: ParticleEffectType) {
   settingsStore.setBackgroundEffect({ type })
