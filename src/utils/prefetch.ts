@@ -16,6 +16,7 @@ let prefetchLoadHandler: (() => void) | null = null
 let prefetchLoadListenerAttached = false
 let prefetchStartTimer: number | null = null
 let prefetchDataTimer: number | null = null
+const DATA_PREFETCH_ENABLED = import.meta.env.VITE_ENABLE_DATA_PREFETCH !== 'false'
 
 export function disposeHoverPrefetch(): void {
   if (!hoverPrefetchAttached) return
@@ -367,6 +368,10 @@ async function prefetchData(
  * 在用户导航到探索页前预加载首页数据
  */
 export async function prefetchExploreData(): Promise<void> {
+  if (!DATA_PREFETCH_ENABLED) {
+    return
+  }
+
   await prefetchData(async () => {
     const { postService } = await import('@/api/postService')
     // 只预加载第一页，避免并发请求过多触发 429
@@ -379,6 +384,10 @@ export async function prefetchExploreData(): Promise<void> {
  * 在用户导航到作者页前预加载首页作者
  */
 export async function prefetchAuthorsData(): Promise<void> {
+  if (!DATA_PREFETCH_ENABLED) {
+    return
+  }
+
   await prefetchData(async () => {
     const { authorService } = await import('@/api/authorService')
     // 只预加载第一页

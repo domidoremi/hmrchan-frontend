@@ -24,11 +24,8 @@
             <Transition :name="transitionName" mode="out-in">
               <Suspense>
                 <template #default>
-                  <KeepAlive :include="cachedPages" :max="10">
-                    <component
-                      :is="Component"
-                      :key="route.matched[0]?.name ?? route.name ?? route.path"
-                    />
+                  <KeepAlive :max="10">
+                    <component :is="Component" :key="route.matched[0]?.path ?? route.path" />
                   </KeepAlive>
                 </template>
                 <template #fallback>
@@ -101,58 +98,11 @@ const animationIntensity = computed(() =>
 // UI 风格（默认 iOS/SwiftUI）
 const uiStyle = computed(() => settings.value.uiStyle)
 
-// 智能缓存策略：根据页面访问频率动态调整
-const cachedPages = ref<string[]>(['HomePage', 'ExplorePage'])
-const pageVisitCount = new Map<string, number>()
-const MAX_CACHED_PAGES = 10
-/** 限制 pageVisitCount 不超过路由数量（避免无限增长） */
-const MAX_VISIT_ENTRIES = 50
-
-// 记录页面访问
-watch(
-  () => route.name,
-  (newName) => {
-    if (!newName) return
-
-    const pageName = String(newName)
-    const count = pageVisitCount.get(pageName) || 0
-
-    // 删除再插入，确保 Map 迭代顺序反映最近访问时间
-    pageVisitCount.delete(pageName)
-    pageVisitCount.set(pageName, count + 1)
-
-    // 淘汰最久未访问的记录（Map 迭代顺序 = 插入顺序 = LRU 顺序）
-    if (pageVisitCount.size > MAX_VISIT_ENTRIES) {
-      const oldest = pageVisitCount.keys().next().value
-      if (oldest !== undefined) pageVisitCount.delete(oldest)
-    }
-
-    // 访问超过 2 次的页面加入缓存
-    if (count >= 1 && !cachedPages.value.includes(pageName)) {
-      if (cachedPages.value.length >= MAX_CACHED_PAGES) {
-        // 移除访问次数最少的页面
-        const leastVisited = Array.from(pageVisitCount.entries())
-          .filter(([name]) => cachedPages.value.includes(name))
-          .sort((a, b) => a[1] - b[1])[0]
-
-        if (leastVisited) {
-          const index = cachedPages.value.indexOf(leastVisited[0])
-          if (index > -1) {
-            cachedPages.value.splice(index, 1)
-          }
-        }
-      }
-      cachedPages.value.push(pageName)
-    }
-  },
-  { immediate: true }
-)
-
 // Footer only appears on key pages (configured via route meta)
 const showFooter = computed(() => Boolean(route.meta.showFooter))
 
 // Page transition name
-const transitionName = ref('page-fade')
+const transitionName = ref('')
 
 // Update transition based on route depth and navigation type
 const routeDepth = (path: string) => path.split('/').filter(Boolean).length

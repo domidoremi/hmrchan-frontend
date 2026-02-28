@@ -4,6 +4,8 @@
 
 import { apiClient, type PaginatedApiResponse } from './client'
 
+const SCHEDULE_API_ENABLED = import.meta.env.VITE_ENABLE_SCHEDULE_API !== 'false'
+
 // ========== 类型定义 ==========
 
 export type ScheduleCategory = 'live' | 'media' | 'birth' | 'other'
@@ -110,6 +112,10 @@ export const scheduleService = {
       category?: ScheduleCategory
     } = {}
   ): Promise<ScheduleCalendarItem[]> {
+    if (!SCHEDULE_API_ENABLED) {
+      return []
+    }
+
     const query = new URLSearchParams()
     if (params.start) query.set('start', params.start)
     if (params.end) query.set('end', params.end)
@@ -118,6 +124,7 @@ export const scheduleService = {
     const qs = query.toString()
     return apiClient.get<ScheduleCalendarItem[]>(`/schedules/calendar${qs ? `?${qs}` : ''}`, {
       skipAuth: true,
+      skipErrorToast: true,
     })
   },
 

@@ -146,8 +146,8 @@ const jaConfig: LocaleConfig = {
     accentRgb: '232, 145, 178',
     accentLight: '#f9a8d4',
     accentDark: '#db2777',
-    secondary: '#8b5cf6',
-    secondaryRgb: '139, 92, 246',
+    secondary: '#22c55e',
+    secondaryRgb: '34, 197, 94',
   },
   layout: {
     density: 'compact',
@@ -178,8 +178,8 @@ const enConfig: LocaleConfig = {
     accentRgb: '59, 130, 246',
     accentLight: '#60a5fa',
     accentDark: '#2563eb',
-    secondary: '#8b5cf6',
-    secondaryRgb: '139, 92, 246',
+    secondary: '#0ea5e9',
+    secondaryRgb: '14, 165, 233',
   },
   layout: {
     density: 'spacious',

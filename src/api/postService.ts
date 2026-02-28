@@ -354,7 +354,8 @@ export const postService = {
     if (!postId || postId === 'undefined') {
       throw new ApiError('Invalid post ID', 400)
     }
-    const raw = await apiClient.get<RawPostDetail>(`/posts/${postId}`)
+    // 详情页由组件自身渲染错误状态，避免重复全局 toast
+    const raw = await apiClient.get<RawPostDetail>(`/posts/${postId}`, { skipErrorToast: true })
     return normalizePostDetail(raw)
   },
 

@@ -29,6 +29,22 @@ function getAuthStore() {
   return useAuthStore()
 }
 
+const UUID_LIKE_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+const ULID_RE = /^[0-9A-HJKMNP-TV-Z]{26}$/
+
+function isValidPostRouteId(value: unknown): value is string {
+  if (typeof value !== 'string') return false
+  const id = value.trim()
+  if (!id) return false
+  const lower = id.toLowerCase()
+  if (lower === 'undefined' || lower === 'null' || lower === 'nan') return false
+  return UUID_LIKE_RE.test(id) || ULID_RE.test(id)
+}
+
+function toNotFoundParams(path: string): { pathMatch: string[] } {
+  return { pathMatch: path.replace(/^\/+/, '').split('/').filter(Boolean) }
+}
+
 const routes: RouteRecordRaw[] = [
   {
     path: '/',
@@ -218,26 +234,37 @@ const router = createRouter({
 })
 
 // 路由守卫
-router.beforeEach((to, _from, next) => {
+router.beforeEach((to) => {
   const authStore = getAuthStore()
   const isAuthenticated = authStore.isAuthenticated
 
+  // 帖子详情仅接受 UUID/ULID，非法参数直接转 404，避免无效请求噪音
+  if (to.name === 'post-detail') {
+    const postId = Array.isArray(to.params.id) ? to.params.id[0] : to.params.id
+    if (!isValidPostRouteId(postId)) {
+      return {
+        name: 'not-found',
+        params: toNotFoundParams(to.path),
+        query: to.query,
+        hash: to.hash,
+      }
+    }
+  }
+
   // 需要认证的页面
   if (to.meta.requiresAuth && !isAuthenticated) {
-    next({
+    return {
       path: '/login',
       query: { redirect: to.fullPath },
-    })
-    return
+    }
   }
 
   // 仅游客可访问的页面（登录、注册）
   if (to.meta.guestOnly && isAuthenticated) {
-    next('/')
-    return
+    return '/'
   }
 
-  next()
+  return true
 })
 
 const SITE_NAME = 'MomiChan'
