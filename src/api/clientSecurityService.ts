@@ -13,12 +13,18 @@
 import { apiClient } from './client'
 import type { RequestConfig } from './client'
 import { getDeviceFingerprint } from '@/utils/fingerprint'
-import { hmacSha256 } from '@/utils/crypto'
+import { getScreenResolution, getTimezone } from '@/utils/device'
+import { getRandomHex, hmacSha256 } from '@/utils/crypto'
 
 // ========== 类型定义 ==========
 
 export interface ClientInitRequest {
   client_fingerprint: string
+  timezone?: string
+  screen_resolution?: string
+  platform?: string
+  timestamp?: number
+  nonce?: string
 }
 
 export interface ClientInitResponse {
@@ -144,9 +150,21 @@ const clientConfig: RequestConfig = {
  */
 async function collectClientInfo(): Promise<ClientInitRequest> {
   const fingerprint = await getDeviceFingerprint()
-  return {
+  const platform = navigator.platform || undefined
+
+  const payload: ClientInitRequest = {
     client_fingerprint: fingerprint,
+    timezone: getTimezone(),
+    screen_resolution: getScreenResolution(),
+    timestamp: Math.floor(Date.now() / 1000),
+    nonce: getRandomHex(16),
   }
+
+  if (platform) {
+    payload.platform = platform
+  }
+
+  return payload
 }
 
 export const clientSecurityService = {

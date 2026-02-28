@@ -19,7 +19,12 @@ import './styles/index.css'
 
 // 生产环境控制台保护（防止 Self-XSS 攻击）
 import { initConsoleGuard } from './utils/consoleGuard'
-initConsoleGuard()
+const disposeConsoleGuard = initConsoleGuard()
+if (import.meta.hot) {
+  import.meta.hot.dispose(() => {
+    disposeConsoleGuard()
+  })
+}
 
 // 点击劫持防御 — 第二阶段（模块加载后）
 // 第一阶段已在 index.html 内联脚本中完成（CSS 隐藏 + 同步跳出）
