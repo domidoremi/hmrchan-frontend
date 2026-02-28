@@ -102,13 +102,17 @@ initFingerprint().catch(() => {
 // 初始化客户端安全（获取 client_token/secret），必须在 auth 之前完成
 // 后续所有 API 请求都需要安全头
 import { clientSecurityService } from './api/clientSecurityService'
+const enableClientSecurityInit = import.meta.env.VITE_ENABLE_CLIENT_INIT !== 'false'
+const enableDataPrefetch = import.meta.env.VITE_ENABLE_DATA_PREFETCH !== 'false'
 
 // 等待客户端安全初始化 → 认证初始化完成后再挂载，避免路由守卫竞态
-clientSecurityService
-  .init()
-  .catch(() => {
-    // 客户端安全初始化失败不阻塞应用
-  })
+const clientSecurityReady = enableClientSecurityInit
+  ? clientSecurityService.init().catch(() => {
+      // 客户端安全初始化失败不阻塞应用
+    })
+  : Promise.resolve()
+
+clientSecurityReady
   .then(() => authStore.initAuth())
   .catch(() => {})
   .finally(() => {
@@ -132,6 +136,30 @@ if (import.meta.hot) {
     scheduledTasksDisposed = true
   })
 }
+
+// Cloudflare Web Analytics（仅生产环境 + 配置 token 时启用）
+const CF_BEACON_TOKEN = (import.meta.env.VITE_CF_BEACON_TOKEN ?? '').trim()
+
+function initCloudflareAnalytics(): void {
+  if (!import.meta.env.PROD) return
+  if (!CF_BEACON_TOKEN) return
+  if (typeof document === 'undefined') return
+  if (document.querySelector('script[data-cf-beacon]')) return
+
+  const script = document.createElement('script')
+  script.defer = true
+  script.src = 'https://static.cloudflareinsights.com/beacon.min.js'
+  script.setAttribute('data-cf-beacon', JSON.stringify({ token: CF_BEACON_TOKEN }))
+  document.body.appendChild(script)
+}
+
+scheduleTask(
+  () => {
+    if (scheduledTasksDisposed) return
+    initCloudflareAnalytics()
+  },
+  { priority: 'background', delay: 1200 }
+)
 
 // Service Worker 注册：页面加载完成后尽快注册（user-visible 优先级）
 // 这样可以更早地启用离线缓存和资源预缓存
@@ -203,6 +231,7 @@ scheduleTask(
 scheduleTask(
   () => {
     if (scheduledTasksDisposed) return
+    if (!enableDataPrefetch) return
     import('./utils/cache/smartPrefetch').then(({ prefetchPopularContent }) => {
       prefetchPopularContent().then((result) => {
         if (import.meta.env.DEV || import.meta.env['VITE_ENABLE_DEBUG'] === 'true') {

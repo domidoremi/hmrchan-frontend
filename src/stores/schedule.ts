@@ -7,6 +7,7 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import { scheduleService, type ScheduleCalendarItem } from '@/api/scheduleService'
+import { ApiError } from '@/api'
 
 export const useScheduleStore = defineStore(
   'schedule',
@@ -33,7 +34,8 @@ export const useScheduleStore = defineStore(
 
     /** 检查是否有新日程（轻量级，仅取最近1条） */
     /** API 是否可用（避免重复请求不存在的接口） */
-    let apiAvailable = true
+    const scheduleApiEnabled = import.meta.env.VITE_ENABLE_SCHEDULE_API !== 'false'
+    let apiAvailable = scheduleApiEnabled
 
     /** 检查是否有新日程（轻量级，仅取最近1条） */
     async function checkForNew() {
@@ -50,8 +52,8 @@ export const useScheduleStore = defineStore(
           latestEventTime.value = sorted[0]
         }
       } catch (err) {
-        // 404 表示后端尚未部署，标记不可用避免重复请求
-        if (err instanceof Error && 'status' in err && (err as { status: number }).status === 404) {
+        // 接口未部署或后端暂不可用时，标记不可用避免重复噪音请求
+        if (err instanceof ApiError && [404, 500, 502, 503].includes(err.status)) {
           apiAvailable = false
         }
       }
