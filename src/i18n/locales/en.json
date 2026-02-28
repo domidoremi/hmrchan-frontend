@@ -186,6 +186,7 @@
     "loopOn": "On",
     "loopOff": "Off",
     "player": "Video player",
+    "seek": "Seek bar",
     "play": "Play",
     "pause": "Pause",
     "volume": "Volume",
@@ -194,7 +195,7 @@
     "fullscreen": "Fullscreen",
     "pip": "Picture in picture",
     "settings": "Settings",
-    "keyboardHint": "Space: play/pause · ←/→ seek · M mute · F fullscreen"
+    "keyboardHint": "Space: play/pause · ←/→ seek · Shift+←/→ fast seek · Home/End start/end · M mute · F fullscreen"
   },
   "media": {
     "zoomHint": "Double click to zoom",
