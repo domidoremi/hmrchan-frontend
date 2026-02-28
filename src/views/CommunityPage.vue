@@ -71,7 +71,7 @@
           @click="switchTab(tab.id)"
         >
           <AnimatedIcon name="explore" :fallback-icon="tab.icon" size="sm" />
-          <span>{{ $t(tab.label) }}</span>
+          <span>{{ tab.label }}</span>
         </button>
       </div>
 
@@ -346,10 +346,10 @@ const thumbnailSizes = '(max-width: 640px) 60px, 80px'
 
 let hasPrefetchedDiscussionDetailPage = false
 
-const tabs = [
-  { id: 'recent', label: 'community.recentDiscussions', icon: MessageSquare },
-  { id: 'hot', label: 'community.hotTopics', icon: Flame },
-]
+const tabs = computed(() => [
+  { id: 'recent' as const, label: t('community.recentDiscussions'), icon: MessageSquare },
+  { id: 'hot' as const, label: t('community.hotTopics'), icon: Flame },
+])
 
 function switchTab(tabId: string) {
   activeTab.value = tabId

@@ -77,6 +77,20 @@ VITE_APP_DESCRIPTION=Social Media Content Aggregation System
 # 功能开关（本地开发）
 VITE_ENABLE_DEBUG=false
 VITE_ENABLE_DEVTOOLS=false
+VITE_LOG_LEVEL=warn
+
+# Anti-tamper（运行时软防护）
+# off | warn | balanced | strict
+VITE_ANTI_TAMPER_MODE=balanced
+# 仅 strict 模式生效
+VITE_DISABLE_CONTEXT_MENU=false
+
+# Obfuscation（构建期混淆）
+VITE_ENABLE_OBFUSCATION=false
+# safe | aggressive
+VITE_OBFUSCATION_PROFILE=safe
+VITE_OBFUSCATION_CONTROL_FLOW=false
+VITE_OBFUSCATION_DEAD_CODE=false
 
 # Cloudflare Turnstile (可选)
 VITE_TURNSTILE_SITE_KEY=your_site_key_here
@@ -85,6 +99,8 @@ VITE_TURNSTILE_SITE_KEY=your_site_key_here
 > 生产环境推荐使用同源 `/api` 代理（Cloudflare Pages Functions）以避免 CORS。若直连后端域名，请确保后端允许 `Content-Type`/`Authorization` 等跨域请求头并开启凭据。
 > 前端会将指向后端的 `/api/*` 与 `/uploads/*` 绝对链接归一化为同源路径，避免泄露后端地址；建议后端返回相对路径或上述标准路径。
 > 如遇 CSP inline script 报错，建议在 Cloudflare 关闭 Rocket Loader，或保留入口脚本的 `data-cfasync="false"`。
+> 若需要启用构建混淆，请先安装：`bun add -d javascript-obfuscator`。
+> 详细策略见：`docs/security/anti-tamper-feasibility.md`。
 
 ### 环境变量说明
 
@@ -97,6 +113,13 @@ VITE_TURNSTILE_SITE_KEY=your_site_key_here
 | `VITE_APP_DESCRIPTION`    | 应用描述                | ✅   |
 | `VITE_ENABLE_DEBUG`       | 启用调试模式            | ❌   |
 | `VITE_ENABLE_DEVTOOLS`    | 启用开发者工具          | ❌   |
+| `VITE_LOG_LEVEL`          | 前端日志级别            | ❌   |
+| `VITE_ANTI_TAMPER_MODE`   | anti-tamper 模式        | ❌   |
+| `VITE_DISABLE_CONTEXT_MENU` | strict 模式禁用右键   | ❌   |
+| `VITE_ENABLE_OBFUSCATION` | 是否启用构建混淆        | ❌   |
+| `VITE_OBFUSCATION_PROFILE` | 混淆强度（safe/aggressive） | ❌ |
+| `VITE_OBFUSCATION_CONTROL_FLOW` | 控制流平坦化开关 | ❌   |
+| `VITE_OBFUSCATION_DEAD_CODE` | 废代码注入开关       | ❌   |
 | `VITE_TURNSTILE_SITE_KEY` | Cloudflare 人机验证密钥 | ❌   |
 
 ## 📜 可用脚本
