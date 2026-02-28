@@ -186,6 +186,7 @@
     "loopOn": "開啟",
     "loopOff": "關閉",
     "player": "影片播放器",
+    "seek": "進度條",
     "play": "播放",
     "pause": "暫停",
     "volume": "音量",
@@ -194,7 +195,7 @@
     "fullscreen": "全螢幕",
     "pip": "子母畫面",
     "settings": "設定",
-    "keyboardHint": "空白鍵播放/暫停 · ←/→ 快進/倒帶 · M 靜音 · F 全螢幕"
+    "keyboardHint": "空白鍵播放/暫停 · ←/→ 快進/倒帶 · Shift+←/→ 快速跳轉 · Home/End 開頭/結尾 · M 靜音 · F 全螢幕"
   },
   "media": {
     "zoomHint": "雙擊放大",

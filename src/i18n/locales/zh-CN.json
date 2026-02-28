@@ -186,6 +186,7 @@
     "loopOn": "开启",
     "loopOff": "关闭",
     "player": "视频播放器",
+    "seek": "进度条",
     "play": "播放",
     "pause": "暂停",
     "volume": "音量",
@@ -194,7 +195,7 @@
     "fullscreen": "全屏",
     "pip": "画中画",
     "settings": "设置",
-    "keyboardHint": "空格播放/暂停 · ←/→ 快进/后退 · M 静音 · F 全屏"
+    "keyboardHint": "空格播放/暂停 · ←/→ 快进/后退 · Shift+←/→ 快速跳转 · Home/End 开头/结尾 · M 静音 · F 全屏"
   },
   "media": {
     "zoomHint": "双击放大",

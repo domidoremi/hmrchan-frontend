@@ -186,6 +186,7 @@
     "loopOn": "オン",
     "loopOff": "オフ",
     "player": "動画プレイヤー",
+    "seek": "シークバー",
     "play": "再生",
     "pause": "一時停止",
     "volume": "音量",
@@ -194,7 +195,7 @@
     "fullscreen": "全画面",
     "pip": "ピクチャーインピクチャー",
     "settings": "設定",
-    "keyboardHint": "Space: 再生/停止 · ←/→ 早送り/巻き戻し · M ミュート · F 全画面"
+    "keyboardHint": "Space: 再生/停止 · ←/→ シーク · Shift+←/→ 高速シーク · Home/End 先頭/末尾 · M ミュート · F 全画面"
   },
   "media": {
     "zoomHint": "ダブルクリックで拡大",
