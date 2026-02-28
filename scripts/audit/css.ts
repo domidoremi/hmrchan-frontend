@@ -1,7 +1,14 @@
 import { readFile } from 'fs/promises'
 import { join } from 'path'
 import { glob } from 'fs/promises'
-import type { AuditModule, AuditIssue, AuditOptions, AuditResult, AuditStatus, Severity } from './types'
+import type {
+  AuditModule,
+  AuditIssue,
+  AuditOptions,
+  AuditResult,
+  AuditStatus,
+  Severity,
+} from './types'
 
 interface CSSRule {
   id: string
@@ -40,7 +47,11 @@ const PX_EXCLUDE_PATTERNS = [
 ]
 
 /** Layout properties where hardcoded px is problematic */
-const PX_LAYOUT_PATTERN = /\b(?:width|height|padding|margin|gap|top|right|bottom|left|inset|flex-basis)\s*:\s*[^;]*\d+px/i
+const PX_LAYOUT_PATTERN =
+  /\b(?:width|height|padding|margin|gap|top|right|bottom|left|inset|flex-basis)\s*:\s*[^;]*\d+px/i
+const ABSOLUTE_POSITION_TWEAK_PATTERN =
+  /\b(?:top|right|bottom|left|inset)\s*:\s*-?\d+(?:\.\d+)?px\b/i
+const MICRO_PX_THRESHOLD = 4
 
 const CSS_RULES: CSSRule[] = [
   {
@@ -89,25 +100,78 @@ function isCommentLine(line: string): boolean {
   return trimmed.startsWith('//') || trimmed.startsWith('/*') || trimmed.startsWith('*')
 }
 
+/** Skip at-rules such as @media (max-width: 768px) */
+function isAtRuleLine(line: string): boolean {
+  return line.trimStart().startsWith('@')
+}
+
 /** Check if a line contains a CSS variable declaration (custom property) */
 function isVarDeclaration(line: string): boolean {
   return /^\s*--/.test(line)
 }
 
-function analyzeCSS(
-  css: string,
-  filePath: string,
-  lineOffset: number,
-): AuditIssue[] {
+/** Extract all px numeric values from a CSS line */
+function extractPxValues(line: string): number[] {
+  const matches = line.match(/-?\d+(?:\.\d+)?px\b/g) ?? []
+  return matches.map((m) => Number.parseFloat(m.replace('px', '')))
+}
+
+/** Check whether current vh usage is followed by a modern dvh/svh/lvh fallback */
+function hasModernViewportFallback(
+  lines: string[],
+  currentIndex: number,
+  property: string
+): boolean {
+  const maxLookahead = Math.min(lines.length, currentIndex + 4)
+
+  for (let i = currentIndex + 1; i < maxLookahead; i++) {
+    const candidate = lines[i]
+    if (!candidate || isCommentLine(candidate) || candidate.trim() === '') continue
+
+    const propMatch = candidate.match(/^\s*([a-z-]+)\s*:/i)
+    if (!propMatch) break
+    if (propMatch[1].toLowerCase() !== property.toLowerCase()) break
+
+    if (/\b\d+(?:dvh|svh|lvh)\b/.test(candidate)) {
+      return true
+    }
+
+    break
+  }
+
+  return false
+}
+
+function analyzeCSS(css: string, filePath: string, lineOffset: number): AuditIssue[] {
   const issues: AuditIssue[] = []
   const lines = css.split('\n')
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i]
-    if (isCommentLine(line) || isVarDeclaration(line)) continue
+    if (isCommentLine(line) || isVarDeclaration(line) || isAtRuleLine(line)) continue
 
     for (const rule of CSS_RULES) {
       if (!rule.pattern.test(line)) continue
+
+      if (rule.id === 'no-hardcoded-px') {
+        // 允许微调级像素值（<= 4px）
+        const pxValues = extractPxValues(line)
+        if (pxValues.length > 0 && pxValues.every((v) => Math.abs(v) <= MICRO_PX_THRESHOLD)) {
+          continue
+        }
+
+        // 允许绝对定位类微调（如 top: -6px）
+        if (ABSOLUTE_POSITION_TWEAK_PATTERN.test(line)) {
+          continue
+        }
+      }
+
+      if (rule.id === 'no-legacy-vh') {
+        const propMatch = line.match(/^\s*([a-z-]+)\s*:/i)
+        if (propMatch && hasModernViewportFallback(lines, i, propMatch[1])) {
+          continue
+        }
+      }
 
       // Check exclude patterns
       if (rule.excludePatterns?.some((ep) => ep.test(line))) continue

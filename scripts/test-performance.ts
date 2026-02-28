@@ -5,32 +5,43 @@
  */
 
 import { spawn } from 'child_process'
-import { existsSync, mkdirSync } from 'fs'
+import { existsSync, mkdirSync, writeFileSync } from 'fs'
 import { join } from 'path'
+import lighthouse from 'lighthouse'
+import * as chromeLauncher from 'chrome-launcher'
 
 const LIGHTHOUSE_REPORTS_DIR = join(process.cwd(), '.lighthouse')
-const DEV_SERVER_PORT = 5173
+const LIGHTHOUSE_TEMP_DIR = join(LIGHTHOUSE_REPORTS_DIR, 'tmp')
 
 interface TestConfig {
   url: string
   name: string
 }
 
-const TEST_URLS: TestConfig[] = [
-  { url: `http://localhost:${DEV_SERVER_PORT}/`, name: 'home' },
-  { url: `http://localhost:${DEV_SERVER_PORT}/explore`, name: 'explore' },
-  { url: `http://localhost:${DEV_SERVER_PORT}/search`, name: 'search' },
-]
+function getTestUrls(port: number): TestConfig[] {
+  return [
+    { url: `http://localhost:${port}/`, name: 'home' },
+    { url: `http://localhost:${port}/explore`, name: 'explore' },
+    { url: `http://localhost:${port}/search`, name: 'search' },
+  ]
+}
+
+function getExecutable(name: 'bun' | 'npx'): string {
+  if (name === 'bun') {
+    return 'bun'
+  }
+  return process.platform === 'win32' ? 'npx.cmd' : 'npx'
+}
 
 /**
  * 启动开发服务器
  */
-function startDevServer(): Promise<{ kill: () => void }> {
+function startDevServer(): Promise<{ kill: () => void; port: number }> {
   return new Promise((resolve, reject) => {
     console.log('🚀 Starting dev server...')
-    const server = spawn('bun', ['run', 'dev'], {
+    const server = spawn(getExecutable('bun'), ['run', 'dev'], {
       stdio: 'pipe',
-      shell: true,
+      shell: false,
     })
 
     let resolved = false
@@ -40,11 +51,20 @@ function startDevServer(): Promise<{ kill: () => void }> {
       console.log(output)
 
       // 检测服务器是否已启动
-      if (!resolved && output.includes(`localhost:${DEV_SERVER_PORT}`)) {
+      const match = output.match(/Local:\s+http:\/\/localhost:(\d+)\//)
+      if (!resolved && match?.[1]) {
+        const actualPort = Number(match[1])
         resolved = true
-        console.log('✅ Dev server is ready\n')
+        console.log(`✅ Dev server is ready on ${actualPort}\n`)
         // 等待额外 2 秒确保完全启动
-        setTimeout(() => resolve({ kill: () => server.kill() }), 2000)
+        setTimeout(
+          () =>
+            resolve({
+              kill: () => server.kill(),
+              port: actualPort,
+            }),
+          2000
+        )
       }
     })
 
@@ -63,47 +83,45 @@ function startDevServer(): Promise<{ kill: () => void }> {
       if (!resolved) {
         reject(new Error('Dev server startup timeout'))
       }
-    }, 30000)
+    }, 45000)
   })
 }
 
 /**
  * 运行 Lighthouse 测试
  */
-function runLighthouse(url: string, name: string): Promise<void> {
-  return new Promise((resolve, reject) => {
-    console.log(`📊 Running Lighthouse for ${name}...`)
+interface LighthouseRunnerResult {
+  report: string | string[]
+  lhr: {
+    categories: Record<string, { score: number | null }>
+  }
+}
 
-    const outputPath = join(LIGHTHOUSE_REPORTS_DIR, `${name}.html`)
+async function runLighthouseWithApi(url: string, name: string, chromePort: number): Promise<void> {
+  console.log(`📊 Running Lighthouse for ${name}...`)
 
-    const lighthouse = spawn(
-      'npx',
-      [
-        'lighthouse',
-        url,
-        '--preset=desktop',
-        '--output=html,json',
-        `--output-path=${join(LIGHTHOUSE_REPORTS_DIR, name)}`,
-        '--chrome-flags="--headless --no-sandbox"',
-        '--quiet',
-      ],
-      {
-        stdio: 'inherit',
-        shell: true,
-      }
-    )
+  const runnerResult = (await lighthouse(url, {
+    port: chromePort,
+    logLevel: 'error',
+    output: ['html', 'json'],
+    onlyCategories: ['performance', 'accessibility', 'best-practices', 'seo'],
+    preset: 'desktop',
+  })) as LighthouseRunnerResult | undefined
 
-    lighthouse.on('close', (code: number | null) => {
-      if (code === 0) {
-        console.log(`✅ Lighthouse report saved: ${outputPath}\n`)
-        resolve()
-      } else {
-        reject(new Error(`Lighthouse exited with code ${code}`))
-      }
-    })
+  if (!runnerResult) {
+    throw new Error(`Lighthouse returned empty result for ${name}`)
+  }
 
-    lighthouse.on('error', reject)
-  })
+  const reports = Array.isArray(runnerResult.report) ? runnerResult.report : [runnerResult.report]
+  const htmlReport = reports[0]
+  const jsonReport = reports[1]
+
+  writeFileSync(join(LIGHTHOUSE_REPORTS_DIR, `${name}.html`), htmlReport ?? '')
+  writeFileSync(join(LIGHTHOUSE_REPORTS_DIR, `${name}.json`), jsonReport ?? '{}')
+
+  const perfScore = Math.round((runnerResult.lhr.categories.performance?.score ?? 0) * 100)
+  console.log(`✅ Lighthouse report saved: ${join(LIGHTHOUSE_REPORTS_DIR, `${name}.html`)}`)
+  console.log(`   Performance: ${perfScore}/100\n`)
 }
 
 /**
@@ -116,16 +134,40 @@ async function main(): Promise<void> {
   if (!existsSync(LIGHTHOUSE_REPORTS_DIR)) {
     mkdirSync(LIGHTHOUSE_REPORTS_DIR, { recursive: true })
   }
+  if (!existsSync(LIGHTHOUSE_TEMP_DIR)) {
+    mkdirSync(LIGHTHOUSE_TEMP_DIR, { recursive: true })
+  }
+  const chromeProfileDir = join(LIGHTHOUSE_TEMP_DIR, 'chrome-profile')
+  const launcherProfileDir = join(LIGHTHOUSE_TEMP_DIR, 'launcher-profile')
+  if (!existsSync(chromeProfileDir)) {
+    mkdirSync(chromeProfileDir, { recursive: true })
+  }
+  if (!existsSync(launcherProfileDir)) {
+    mkdirSync(launcherProfileDir, { recursive: true })
+  }
 
-  let devServer: { kill: () => void } | null = null
+  let devServer: { kill: () => void; port: number } | null = null
+  let chrome: chromeLauncher.LaunchedChrome | null = null
 
   try {
     // 启动开发服务器
     devServer = await startDevServer()
+    const tests = getTestUrls(devServer.port)
+
+    chrome = await chromeLauncher.launch({
+      chromeFlags: [
+        '--headless',
+        '--disable-gpu',
+        '--no-sandbox',
+        '--disable-dev-shm-usage',
+        `--user-data-dir=${chromeProfileDir}`,
+      ],
+      userDataDir: launcherProfileDir,
+    })
 
     // 运行 Lighthouse 测试
-    for (const { url, name } of TEST_URLS) {
-      await runLighthouse(url, name)
+    for (const { url, name } of tests) {
+      await runLighthouseWithApi(url, name, chrome.port)
     }
 
     console.log('✅ All performance tests completed!')
@@ -134,6 +176,15 @@ async function main(): Promise<void> {
     console.error('❌ Performance testing failed:', error)
     process.exit(1)
   } finally {
+    if (chrome) {
+      try {
+        await chrome.kill()
+      } catch (error) {
+        // Windows 下 chrome-launcher 偶发 EPERM 清理失败，不影响报告输出
+        console.warn('⚠️ Failed to fully clean Lighthouse temp directory:', error)
+      }
+    }
+
     // 关闭开发服务器
     if (devServer) {
       console.log('\n🛑 Stopping dev server...')
