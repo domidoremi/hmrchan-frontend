@@ -80,7 +80,7 @@ export function initSwUpdateChecker(options: SwUpdateOptions = {}): void {
           console.log('[SW Update] New service worker activated')
         }
         if (autoRefresh) {
-          window.location.reload()
+          window.dispatchEvent(new CustomEvent('sw:refresh-suggested'))
         }
       }
       navigator.serviceWorker.addEventListener('controllerchange', controllerChangeHandler)
@@ -176,10 +176,8 @@ function showUpdateToast(): void {
           if (registration?.waiting) {
             lastNotifiedScriptUrl = registration.waiting.scriptURL || null
             registration.waiting.postMessage({ type: 'SKIP_WAITING' })
-            // 等待新 SW 激活后刷新页面
-            setTimeout(() => {
-              window.location.reload()
-            }, 500)
+            // bfcache 友好：避免强制 reload，交由后续导航自然应用新版本
+            toastStore.success('新版本已激活，将在下次导航自动生效')
           }
         })
       },
