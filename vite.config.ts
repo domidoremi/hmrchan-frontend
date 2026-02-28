@@ -44,14 +44,44 @@ function getBuildHash(): string {
 
 const BUILD_HASH = getBuildHash()
 
+function parseBoolEnv(name: string, defaultValue = false): boolean {
+  const raw = process.env[name]
+  if (raw === undefined) return defaultValue
+  return raw.trim().toLowerCase() === 'true'
+}
+
+function parseIntEnv(name: string, defaultValue = 0): number {
+  const raw = process.env[name]
+  if (!raw) return defaultValue
+  const parsed = Number.parseInt(raw, 10)
+  return Number.isFinite(parsed) ? parsed : defaultValue
+}
+
+function parseStringArrayEncoding(raw: string | undefined): 'none' | 'base64' | 'rc4' {
+  const value = raw?.trim().toLowerCase()
+  if (value === 'none' || value === 'base64' || value === 'rc4') return value
+  return 'base64'
+}
+
 export default defineConfig(({ mode }: { mode: string }) => {
   const isProd = mode === 'production'
   const isDev = mode === 'development'
-  const obfuscationEnabled = process.env.VITE_ENABLE_OBFUSCATION === 'true'
+  const obfuscationEnabled = parseBoolEnv('VITE_ENABLE_OBFUSCATION', false)
   const obfuscationProfile =
     process.env.VITE_OBFUSCATION_PROFILE === 'aggressive' ? 'aggressive' : 'safe'
-  const obfuscationControlFlow = process.env.VITE_OBFUSCATION_CONTROL_FLOW === 'true'
-  const obfuscationDeadCode = process.env.VITE_OBFUSCATION_DEAD_CODE === 'true'
+  const obfuscationControlFlow = parseBoolEnv('VITE_OBFUSCATION_CONTROL_FLOW', false)
+  const obfuscationDeadCode = parseBoolEnv('VITE_OBFUSCATION_DEAD_CODE', false)
+  const obfuscationStringArray = parseBoolEnv('VITE_OBFUSCATION_STRING_ARRAY', true)
+  const obfuscationStringArrayEncoding = parseStringArrayEncoding(
+    process.env.VITE_OBFUSCATION_STRING_ARRAY_ENCODING
+  )
+  const obfuscationAntiFormatting = parseBoolEnv('VITE_OBFUSCATION_ANTI_FORMATTING', false)
+  const obfuscationInfiniteDebugger = parseBoolEnv('VITE_OBFUSCATION_INFINITE_DEBUGGER', false)
+  const obfuscationInfiniteDebuggerInterval = parseIntEnv(
+    'VITE_OBFUSCATION_INFINITE_DEBUGGER_INTERVAL',
+    0
+  )
+  const obfuscationCodeEncryption = parseBoolEnv('VITE_OBFUSCATION_CODE_ENCRYPTION', false)
 
   return {
     /**
@@ -102,6 +132,12 @@ export default defineConfig(({ mode }: { mode: string }) => {
             obfuscationPlugin({
               enabled: obfuscationEnabled,
               profile: obfuscationProfile,
+              stringArray: obfuscationStringArray,
+              stringArrayEncoding: obfuscationStringArrayEncoding,
+              antiFormatting: obfuscationAntiFormatting,
+              infiniteDebugger: obfuscationInfiniteDebugger,
+              infiniteDebuggerInterval: obfuscationInfiniteDebuggerInterval,
+              codeEncryption: obfuscationCodeEncryption,
               controlFlowFlattening: obfuscationControlFlow,
               deadCodeInjection: obfuscationDeadCode,
             }),
