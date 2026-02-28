@@ -36,12 +36,11 @@ const props = withDefaults(
 )
 
 const isVisible = ref(false)
+let initVisibilityRaf: number | null = null
 
 function updateVisibility() {
-  const scrollTop = window.scrollY || document.documentElement.scrollTop
-  const docHeight = document.documentElement.scrollHeight
-  const viewHeight = window.innerHeight
-  isVisible.value = scrollTop > 100 && scrollTop + viewHeight < docHeight - 200
+  const scrollTop = window.pageYOffset || document.documentElement.scrollTop
+  isVisible.value = scrollTop > 100
 }
 
 const handleScroll = throttleRAF(updateVisibility)
@@ -50,26 +49,38 @@ function scrollToNextPost() {
   const cards = document.querySelectorAll(props.cardSelector)
   if (!cards.length) return
 
+  const container = document.querySelector(props.containerSelector) as HTMLElement | null
+  if (!container) return
+
+  const containerTop = container.offsetTop
+  const scrollTop = window.scrollY || document.documentElement.scrollTop
   const viewHeight = window.innerHeight
   const viewCenter = viewHeight / 2
+  const viewportCenterDocY = scrollTop + viewCenter
 
-  // Collect all cards with their visual positions, sort by top
+  // 收集所有卡片的文档流位置并按 top 排序
   const cardEntries = Array.from(cards)
-    .map((card) => ({
-      el: card,
-      rect: card.getBoundingClientRect(),
-    }))
-    .sort((a, b) => a.rect.top - b.rect.top)
+    .map((card) => {
+      const el = card as HTMLElement
+      const top = containerTop + el.offsetTop
+      const height = el.offsetHeight
+      return {
+        el,
+        top,
+        height,
+      }
+    })
+    .sort((a, b) => a.top - b.top)
 
-  // Find the first card whose top is below the viewport center
-  const next = cardEntries.find((c) => c.rect.top > viewCenter + 10)
+  // 找到第一个位于当前视窗中心下方的卡片
+  const next = cardEntries.find((c) => c.top > viewportCenterDocY + 10)
 
   if (next) {
-    // Scroll so the card's center aligns with viewport center
-    const cardCenter = next.rect.top + next.rect.height / 2
-    const scrollDelta = cardCenter - viewCenter
+    // 滚动到卡片中心对齐视口中心
+    const cardCenterDocY = next.top + next.height / 2
+    const targetScrollTop = Math.max(0, cardCenterDocY - viewCenter)
     window.scrollBy({
-      top: scrollDelta,
+      top: targetScrollTop - scrollTop,
       behavior: 'smooth',
     })
   } else {
@@ -82,11 +93,20 @@ function scrollToNextPost() {
 }
 
 onMounted(() => {
-  updateVisibility()
+  initVisibilityRaf = requestAnimationFrame(() => {
+    initVisibilityRaf = requestAnimationFrame(() => {
+      initVisibilityRaf = null
+      updateVisibility()
+    })
+  })
   window.addEventListener('scroll', handleScroll, { passive: true })
 })
 
 onUnmounted(() => {
+  if (initVisibilityRaf !== null) {
+    cancelAnimationFrame(initVisibilityRaf)
+    initVisibilityRaf = null
+  }
   window.removeEventListener('scroll', handleScroll)
   handleScroll.cancel?.()
 })
