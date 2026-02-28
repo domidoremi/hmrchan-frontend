@@ -33,6 +33,14 @@
   --color-accent-light: #4ade80;
   --color-accent-dark: #16a34a;
 
+  /* Legacy MindMarket RGB aliases（用于渐变背景兼容，避免全局样式依赖） */
+  --mm-green-rgb: 74, 222, 128;
+  --mm-teal-rgb: 45, 212, 191;
+  --mm-purple-rgb: 167, 139, 250;
+  --mm-coral-rgb: 251, 113, 133;
+  --mm-orange-rgb: 251, 146, 60;
+  --mm-yellow-rgb: 251, 191, 36;
+
   /* Secondary - 中性灰 (zinc) */
   --color-secondary: #a1a1aa;
   --color-secondary-rgb: 161, 161, 170;
