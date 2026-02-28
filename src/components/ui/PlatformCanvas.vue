@@ -44,7 +44,7 @@ usePlatformAnimation(
   top: 0;
   right: 0;
   width: 50vw;
-  height: 100vh;
+  height: 100svh;
   height: 100dvh;
   pointer-events: none;
   z-index: -1;

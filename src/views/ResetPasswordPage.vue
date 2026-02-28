@@ -47,7 +47,13 @@
                 autocomplete="new-password"
                 required
               />
-              <button type="button" class="password-toggle" @click="showPassword = !showPassword">
+              <button
+                type="button"
+                class="password-toggle"
+                :aria-label="showPassword ? $t('common.hide') : $t('common.show')"
+                :aria-pressed="showPassword"
+                @click="showPassword = !showPassword"
+              >
                 <EyeOff v-if="showPassword" :size="18" />
                 <Eye v-else :size="18" />
               </button>
@@ -78,7 +84,13 @@
                 autocomplete="new-password"
                 required
               />
-              <button type="button" class="password-toggle" @click="showConfirm = !showConfirm">
+              <button
+                type="button"
+                class="password-toggle"
+                :aria-label="showConfirm ? $t('common.hide') : $t('common.show')"
+                :aria-pressed="showConfirm"
+                @click="showConfirm = !showConfirm"
+              >
                 <EyeOff v-if="showConfirm" :size="18" />
                 <Eye v-else :size="18" />
               </button>

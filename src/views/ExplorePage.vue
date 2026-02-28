@@ -7,7 +7,6 @@
     <div class="explore-bg" aria-hidden="true">
       <div class="explore-bg__blob explore-bg__blob--green" />
       <div class="explore-bg__blob explore-bg__blob--purple" />
-      <div class="explore-bg__blob explore-bg__blob--teal" />
     </div>
 
     <div class="container">
@@ -620,6 +619,7 @@ onBeforeUnmount(() => {
   /* Keep page blobs behind the global contextual 3D background */
   z-index: -2;
   overflow: hidden;
+  contain: paint;
 }
 
 .explore-bg__blob {
@@ -627,30 +627,24 @@ onBeforeUnmount(() => {
   border-radius: 50%;
   filter: blur(100px);
   opacity: 0.35;
+  transform: translate3d(0, 0, 0);
+  will-change: transform;
 }
 
 .explore-bg__blob--green {
   width: 31.25rem;
   height: 31.25rem;
-  top: -10%;
-  left: -8%;
+  top: -6.25rem;
+  left: -5rem;
   background: radial-gradient(circle, rgba(var(--color-accent-rgb), 0.25) 0%, transparent 70%);
 }
 
 .explore-bg__blob--purple {
   width: 25rem;
   height: 25rem;
-  top: 30%;
-  right: -10%;
+  top: 14rem;
+  right: -6.25rem;
   background: radial-gradient(circle, rgba(var(--color-secondary-rgb), 0.15) 0%, transparent 70%);
-}
-
-.explore-bg__blob--teal {
-  width: 28.125rem;
-  height: 28.125rem;
-  bottom: 5%;
-  left: 20%;
-  background: radial-gradient(circle, rgba(var(--color-accent-rgb), 0.15) 0%, transparent 70%);
 }
 
 /* 暗色模式调整 */

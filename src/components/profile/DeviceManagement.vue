@@ -125,13 +125,24 @@ function getLocationText(session: Device): string {
                 type="text"
                 class="device-name-input"
                 :placeholder="t('devices.namePlaceholder')"
+                :aria-label="t('devices.namePlaceholder')"
                 @keyup.enter="saveDeviceName(session.id)"
                 @keyup.esc="cancelEditing"
               />
-              <button class="btn-icon" @click="saveDeviceName(session.id)">
+              <button
+                type="button"
+                class="btn-icon"
+                :aria-label="t('common.save')"
+                @click="saveDeviceName(session.id)"
+              >
                 <AnimatedIcon name="sparkle" :fallback-icon="Check" size="sm" />
               </button>
-              <button class="btn-icon" @click="cancelEditing">
+              <button
+                type="button"
+                class="btn-icon"
+                :aria-label="t('common.cancel')"
+                @click="cancelEditing"
+              >
                 <AnimatedIcon name="sparkle" :fallback-icon="X" size="sm" />
               </button>
             </div>
@@ -146,7 +157,12 @@ function getLocationText(session: Device): string {
                   {{ t('devices.trusted') }}
                 </span>
               </h3>
-              <button class="btn-edit" @click="startEditing(session)">
+              <button
+                type="button"
+                class="btn-edit"
+                :aria-label="t('common.edit')"
+                @click="startEditing(session)"
+              >
                 <AnimatedIcon name="explore" :fallback-icon="Edit2" size="sm" />
               </button>
             </div>
@@ -201,6 +217,7 @@ function getLocationText(session: Device): string {
 
         <div v-if="!session.is_current" class="device-actions">
           <button
+            type="button"
             class="btn-trust"
             :class="{ trusted: session.is_trusted }"
             @click="toggleTrust(session)"
@@ -212,7 +229,7 @@ function getLocationText(session: Device): string {
             />
             {{ session.is_trusted ? t('devices.untrust') : t('devices.trust') }}
           </button>
-          <button class="btn-revoke" @click="revokeSession(session.id)">
+          <button type="button" class="btn-revoke" @click="revokeSession(session.id)">
             <AnimatedIcon name="sparkle" :fallback-icon="Trash2" size="md" />
             {{ t('devices.revoke') }}
           </button>

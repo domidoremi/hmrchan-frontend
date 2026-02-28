@@ -2,15 +2,17 @@
   <div class="ui-tabs">
     <div class="ui-tabs__list" role="tablist">
       <button
-        v-for="tab in tabs"
+        v-for="(tab, index) in tabs"
         :key="tab.value"
         type="button"
         role="tab"
         :aria-selected="modelValue === tab.value"
         :aria-controls="`panel-${tab.value}`"
+        :tabindex="modelValue === tab.value ? 0 : -1"
         :class="['ui-tabs__trigger', { 'ui-tabs__trigger--active': modelValue === tab.value }]"
         :disabled="tab.disabled"
         @click="selectTab(tab.value)"
+        @keydown="handleKeydown($event, index)"
       >
         <AnimatedIcon
           v-if="tab.icon"
@@ -46,7 +48,7 @@ interface Props {
   tabs: Tab[]
 }
 
-defineProps<Props>()
+const props = defineProps<Props>()
 
 const emit = defineEmits<{
   'update:modelValue': [value: string]
@@ -54,6 +56,43 @@ const emit = defineEmits<{
 
 function selectTab(value: string) {
   emit('update:modelValue', value)
+}
+
+function handleKeydown(event: KeyboardEvent, currentIndex: number) {
+  const enabledTabs = props.tabs.filter((tab) => !tab.disabled)
+  if (enabledTabs.length === 0) return
+
+  const activeEnabledIndex = enabledTabs.findIndex((tab) => tab.value === props.modelValue)
+  const currentEnabledIndex = enabledTabs.findIndex(
+    (tab) => tab.value === props.tabs[currentIndex]?.value
+  )
+  const baseIndex = currentEnabledIndex >= 0 ? currentEnabledIndex : Math.max(activeEnabledIndex, 0)
+
+  let nextIndex = -1
+  switch (event.key) {
+    case 'ArrowRight':
+    case 'ArrowDown':
+      nextIndex = (baseIndex + 1) % enabledTabs.length
+      break
+    case 'ArrowLeft':
+    case 'ArrowUp':
+      nextIndex = (baseIndex - 1 + enabledTabs.length) % enabledTabs.length
+      break
+    case 'Home':
+      nextIndex = 0
+      break
+    case 'End':
+      nextIndex = enabledTabs.length - 1
+      break
+    default:
+      return
+  }
+
+  event.preventDefault()
+  const target = enabledTabs[nextIndex]
+  if (target) {
+    selectTab(target.value)
+  }
 }
 </script>
 

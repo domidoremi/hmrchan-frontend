@@ -75,7 +75,15 @@
         <div
           class="vp__progress"
           :class="{ 'is-active': isSeeking || isSeekPending }"
+          role="slider"
+          tabindex="0"
+          :aria-label="$t('video.seek')"
+          :aria-valuemin="0"
+          :aria-valuemax="Math.max(duration, 0)"
+          :aria-valuenow="Math.max(currentTime, 0)"
+          :aria-valuetext="`${formatTime(currentTime)} / ${formatTime(duration)}`"
           @click="seekFromClick"
+          @keydown="handleProgressKeydown"
           @mousedown.prevent="startSeekDrag"
           @touchstart.prevent="startSeekDrag"
         >
@@ -139,6 +147,9 @@
               class="vp__btn vp__btn--cc"
               :class="{ 'is-active': !!selectedSubtitleLanguage }"
               :aria-label="$t('video.subtitles')"
+              :aria-pressed="!!selectedSubtitleLanguage"
+              :aria-expanded="showSubtitlePicker"
+              :aria-controls="subtitlePanelId"
               @click="toggleSubtitlePicker"
             >
               CC
@@ -150,6 +161,8 @@
               type="button"
               class="vp__btn"
               :aria-label="$t('video.settings')"
+              :aria-expanded="showSettings"
+              :aria-controls="settingsPanelId"
               @click="toggleSettingsPanel"
             >
               <Settings :size="20" />
@@ -228,13 +241,23 @@
       <div
         v-if="showSettings || showSubtitlePicker"
         class="vp__panel-backdrop"
+        role="button"
+        tabindex="0"
+        :aria-label="$t('common.close')"
         @click="closeAllPanels"
+        @keydown.enter.prevent="closeAllPanels"
+        @keydown.space.prevent="closeAllPanels"
       />
     </Transition>
 
     <!-- Settings panel -->
     <Transition name="vp-panel">
-      <div v-if="showSettings" class="vp__panel vp__panel--settings" @click.stop>
+      <div
+        v-if="showSettings"
+        :id="settingsPanelId"
+        class="vp__panel vp__panel--settings"
+        @click.stop
+      >
         <div class="vp__panel-head">
           <span class="vp__panel-title">{{ $t('video.settings') }}</span>
           <button
@@ -255,6 +278,7 @@
               type="button"
               class="vp__chip"
               :class="{ 'is-active': playbackRate === speed }"
+              :aria-pressed="playbackRate === speed"
               @click="setPlaybackRate(speed)"
             >
               {{ speed }}x
@@ -269,6 +293,7 @@
               type="button"
               class="vp__chip"
               :class="{ 'is-active': loopEnabled }"
+              :aria-pressed="loopEnabled"
               @click="setLoopEnabled(true)"
             >
               {{ $t('video.loopOn') }}
@@ -277,6 +302,7 @@
               type="button"
               class="vp__chip"
               :class="{ 'is-active': !loopEnabled }"
+              :aria-pressed="!loopEnabled"
               @click="setLoopEnabled(false)"
             >
               {{ $t('video.loopOff') }}
@@ -291,6 +317,7 @@
               type="button"
               class="vp__chip"
               :class="{ 'is-active': !selectedSubtitleLanguage }"
+              :aria-pressed="!selectedSubtitleLanguage"
               @click="setSubtitleLanguage(null)"
             >
               {{ $t('video.subtitlesOff') }}
@@ -301,6 +328,7 @@
               type="button"
               class="vp__chip"
               :class="{ 'is-active': selectedSubtitleLanguage === track.language }"
+              :aria-pressed="selectedSubtitleLanguage === track.language"
               @click="setSubtitleLanguage(track.language)"
             >
               {{ track.label }}
@@ -343,6 +371,7 @@
                   :class="{ 'is-active': subtitleColor === c.value }"
                   :style="{ '--swatch-color': c.value }"
                   :aria-label="c.label"
+                  :aria-pressed="subtitleColor === c.value"
                   @click="setSubtitleColorChoice(c.value)"
                 />
               </div>
@@ -360,6 +389,7 @@
                   :class="{ 'is-active': subtitleBgColor === c.value }"
                   :style="{ '--swatch-color': c.value }"
                   :aria-label="c.label"
+                  :aria-pressed="subtitleBgColor === c.value"
                   @click="setSubtitleBgColorChoice(c.value)"
                 />
               </div>
@@ -388,6 +418,7 @@
                   type="button"
                   class="vp__chip"
                   :class="{ 'is-active': subtitleShadow === s.value }"
+                  :aria-pressed="subtitleShadow === s.value"
                   @click="setSubtitleShadowChoice(s.value)"
                 >
                   {{ $t(s.labelKey) }}
@@ -404,6 +435,7 @@
                   class="vp__btn vp__btn--align"
                   :class="{ 'is-active': subtitleAlign === 'left' }"
                   :aria-label="$t('video.subtitleAlignLeft')"
+                  :aria-pressed="subtitleAlign === 'left'"
                   @click="setSubtitleAlignChoice('left')"
                 >
                   <AlignLeft :size="16" />
@@ -413,6 +445,7 @@
                   class="vp__btn vp__btn--align"
                   :class="{ 'is-active': subtitleAlign === 'center' }"
                   :aria-label="$t('video.subtitleAlignCenter')"
+                  :aria-pressed="subtitleAlign === 'center'"
                   @click="setSubtitleAlignChoice('center')"
                 >
                   <AlignCenter :size="16" />
@@ -422,6 +455,7 @@
                   class="vp__btn vp__btn--align"
                   :class="{ 'is-active': subtitleAlign === 'right' }"
                   :aria-label="$t('video.subtitleAlignRight')"
+                  :aria-pressed="subtitleAlign === 'right'"
                   @click="setSubtitleAlignChoice('right')"
                 >
                   <AlignRight :size="16" />
@@ -477,6 +511,7 @@
               type="button"
               class="vp__chip"
               :class="{ 'is-active': currentQuality === q }"
+              :aria-pressed="currentQuality === q"
               @click="setQuality(q)"
             >
               {{ q }}
@@ -488,7 +523,12 @@
 
     <!-- Subtitle picker -->
     <Transition name="vp-panel">
-      <div v-if="showSubtitlePicker" class="vp__panel vp__panel--subs" @click.stop>
+      <div
+        v-if="showSubtitlePicker"
+        :id="subtitlePanelId"
+        class="vp__panel vp__panel--subs"
+        @click.stop
+      >
         <div class="vp__panel-head">
           <span class="vp__panel-title">{{ $t('video.subtitles') }}</span>
           <button
@@ -504,6 +544,7 @@
           type="button"
           class="vp__sub-item"
           :class="{ 'is-active': !selectedSubtitleLanguage }"
+          :aria-pressed="!selectedSubtitleLanguage"
           @click="setSubtitleLanguage(null)"
         >
           <span class="vp__sub-check" :class="{ visible: !selectedSubtitleLanguage }">✓</span>
@@ -515,6 +556,7 @@
           type="button"
           class="vp__sub-item"
           :class="{ 'is-active': selectedSubtitleLanguage === track.language }"
+          :aria-pressed="selectedSubtitleLanguage === track.language"
           @click="setSubtitleLanguage(track.language)"
         >
           <span
@@ -561,7 +603,7 @@
   </div>
 </template>
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch, getCurrentInstance } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
   Play,
@@ -658,6 +700,10 @@ const subtitleOverrides = ref<Record<string, string>>({})
 const selectedSubtitleLanguage = ref<string | null>(null)
 const qualities = ref<string[]>(['auto'])
 const activeCueHtml = ref('')
+
+const playerUid = getCurrentInstance()?.uid ?? 0
+const settingsPanelId = `vp-settings-panel-${playerUid}`
+const subtitlePanelId = `vp-subtitle-panel-${playerUid}`
 
 let controlsTimeout: ReturnType<typeof setTimeout> | null = null
 let seekPendingTimeout: ReturnType<typeof setTimeout> | null = null
@@ -1083,6 +1129,43 @@ function seekFromClick(event: MouseEvent) {
   }
 }
 
+function handleProgressKeydown(event: KeyboardEvent) {
+  if (!videoRef.value || duration.value <= 0) return
+
+  const step = event.shiftKey ? SEEK_STEP * 3 : SEEK_STEP
+  let nextTime: number | null = null
+
+  switch (event.key) {
+    case 'ArrowLeft':
+      nextTime = currentTime.value - step
+      break
+    case 'ArrowRight':
+      nextTime = currentTime.value + step
+      break
+    case 'Home':
+      nextTime = 0
+      break
+    case 'End':
+      nextTime = duration.value
+      break
+    default:
+      return
+  }
+
+  event.preventDefault()
+  event.stopPropagation()
+
+  const clampedTime = Math.max(0, Math.min(duration.value, nextTime))
+  const delta = clampedTime - currentTime.value
+  currentTime.value = clampedTime
+  markSeekPending((clampedTime / duration.value) * 100)
+  videoRef.value.currentTime = clampedTime
+
+  if (Math.abs(delta) > 0.2) {
+    triggerSeekIndicator(delta > 0 ? 'forward' : 'backward', Math.round(Math.abs(delta)))
+  }
+}
+
 function startSeekDrag(event: MouseEvent | TouchEvent) {
   if (!videoRef.value) return
   isSeeking.value = true
@@ -1289,6 +1372,12 @@ function handleKeydown(event: KeyboardEvent) {
   if (!isPlayerFocused && document.activeElement?.tagName !== 'BODY') return
 
   switch (event.key) {
+    case 'Escape':
+      if (showSettings.value || showSubtitlePicker.value) {
+        event.preventDefault()
+        closeAllPanels()
+      }
+      break
     case ' ':
     case 'k':
       event.preventDefault()
@@ -1550,8 +1639,13 @@ onBeforeUnmount(() => {
 }
 
 .vp__progress:hover .vp__progress-track,
+.vp__progress:focus-visible .vp__progress-track,
 .vp__progress.is-active .vp__progress-track {
   height: var(--vp-progress-h-active);
+}
+
+.vp__progress:focus-visible .vp__progress-track {
+  box-shadow: 0 0 0 2px rgba(var(--color-primary-rgb), 0.35);
 }
 
 .vp__progress-buffered {
@@ -1595,6 +1689,7 @@ onBeforeUnmount(() => {
 }
 
 .vp__progress:hover .vp__progress-thumb,
+.vp__progress:focus-visible .vp__progress-thumb,
 .vp__progress.is-active .vp__progress-thumb {
   transform: translate(-50%, -50%) scale(1);
 }
@@ -1868,6 +1963,11 @@ onBeforeUnmount(() => {
 /* --- Panel backdrop (mobile tap-to-close) --- */
 .vp__panel-backdrop {
   display: none;
+}
+
+.vp__panel-backdrop:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px rgba(var(--color-primary-rgb), 0.35);
 }
 
 /* --- Panel header with close button --- */

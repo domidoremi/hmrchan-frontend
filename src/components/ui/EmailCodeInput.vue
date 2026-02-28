@@ -12,6 +12,8 @@
       class="code-digit"
       :class="{ 'code-digit--filled': digits[i] }"
       :disabled="disabled"
+      :aria-label="`${$t('auth.twoFactorCode')} ${i + 1}`"
+      :aria-invalid="error"
       @input="handleInput(i)"
       @keydown="handleKeydown($event, i)"
       @paste="handlePaste($event)"

@@ -68,6 +68,7 @@
           type="button"
           class="tab-btn"
           :class="{ active: activeTab === tab.id }"
+          :aria-pressed="activeTab === tab.id"
           @click="switchTab(tab.id)"
         >
           <AnimatedIcon name="explore" :fallback-icon="tab.icon" size="sm" />
@@ -96,7 +97,11 @@
             v-for="discussion in searchResults"
             :key="discussion.id"
             class="discussion-card glass-card content-auto-sm"
+            role="button"
+            tabindex="0"
             @click="goToDiscussion(discussion.id)"
+            @keydown.enter.prevent="goToDiscussion(discussion.id)"
+            @keydown.space.prevent="goToDiscussion(discussion.id)"
           >
             <div class="discussion-content">
               <h3 class="discussion-title">{{ discussion.title }}</h3>
@@ -148,7 +153,11 @@
               v-for="discussion in discussions"
               :key="discussion.id"
               class="discussion-card glass-card content-auto-sm"
+              role="button"
+              tabindex="0"
               @click="goToDiscussion(discussion.id)"
+              @keydown.enter.prevent="goToDiscussion(discussion.id)"
+              @keydown.space.prevent="goToDiscussion(discussion.id)"
               @mouseenter="prefetchDiscussionDetailPage"
             >
               <div
@@ -194,7 +203,11 @@
                 <div
                   v-if="discussion.referenced_post"
                   class="referenced-post"
+                  role="button"
+                  tabindex="0"
                   @click.stop="goToReferencedPost(discussion.referenced_post)"
+                  @keydown.enter.prevent.stop="goToReferencedPost(discussion.referenced_post)"
+                  @keydown.space.prevent.stop="goToReferencedPost(discussion.referenced_post)"
                 >
                   <img
                     v-if="discussion.referenced_post.thumbnail_url"
@@ -265,7 +278,11 @@
               v-for="(topic, index) in hotTopics"
               :key="topic.id"
               class="topic-card glass-card"
+              role="button"
+              tabindex="0"
               @click="goToDiscussion(topic.id)"
+              @keydown.enter.prevent="goToDiscussion(topic.id)"
+              @keydown.space.prevent="goToDiscussion(topic.id)"
             >
               <div class="topic-rank">#{{ index + 1 }}</div>
               <div class="topic-content">
@@ -740,11 +757,19 @@ onMounted(() => {
   gap: var(--spacing-3);
   padding: var(--spacing-3);
   cursor: pointer;
-  transition: transform var(--transition-fast);
+  transition:
+    transform var(--transition-fast),
+    box-shadow var(--transition-fast);
 }
 
 .discussion-card:hover {
   transform: translateY(-2px);
+}
+
+.discussion-card:focus-visible {
+  outline: none;
+  transform: translateY(-2px);
+  box-shadow: 0 0 0 2px rgba(var(--color-primary-rgb), 0.35);
 }
 
 .discussion-thumbnail {
@@ -851,57 +876,10 @@ onMounted(() => {
   background: var(--glass-bg);
 }
 
-.referenced-thumb {
-  width: 2.25rem;
-  height: 2.25rem;
-  border-radius: var(--radius-sm);
-  object-fit: cover;
-  flex-shrink: 0;
-}
-
-.referenced-content {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.referenced-label {
-  font-size: var(--text-xs);
-  color: var(--color-text-tertiary);
-}
-
-.referenced-title {
-  font-size: var(--text-xs);
-  color: var(--color-text-secondary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.discussion-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--spacing-1);
-  margin-bottom: var(--spacing-2);
-}
-
-.discussion-tag {
-  font-size: var(--text-xs);
-}
-
-.referenced-post {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-2);
-  padding: var(--spacing-2);
-  border-radius: var(--radius-md);
-  background: var(--glass-bg-light);
-  margin-top: var(--spacing-2);
-  cursor: pointer;
-}
-
-.referenced-post:hover {
+.referenced-post:focus-visible {
+  outline: none;
   background: var(--glass-bg);
+  box-shadow: 0 0 0 2px rgba(var(--color-primary-rgb), 0.35);
 }
 
 .referenced-thumb {
@@ -1004,6 +982,10 @@ onMounted(() => {
   align-items: center;
   gap: var(--spacing-3);
   padding: var(--spacing-3);
+  cursor: pointer;
+  transition:
+    transform var(--transition-fast),
+    box-shadow var(--transition-fast);
 }
 
 .topic-rank {
@@ -1049,7 +1031,12 @@ onMounted(() => {
 
 .topic-card:hover {
   transform: translateY(-2px);
-  cursor: pointer;
+}
+
+.topic-card:focus-visible {
+  outline: none;
+  transform: translateY(-2px);
+  box-shadow: 0 0 0 2px rgba(var(--color-primary-rgb), 0.35);
 }
 
 .my-comments-list,

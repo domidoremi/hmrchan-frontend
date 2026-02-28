@@ -68,7 +68,12 @@
                   v-if="activeMedia?.file_type === 'image'"
                   :key="`img-${activeMedia.id}`"
                   class="media-item-container media-clickable"
+                  role="button"
+                  tabindex="0"
+                  :aria-label="$t('common.clickToEnlarge')"
                   @click="openLightbox()"
+                  @keydown.enter.prevent="openLightbox()"
+                  @keydown.space.prevent="openLightbox()"
                 >
                   <!-- 模糊占位图 -->
                   <img
@@ -189,6 +194,7 @@
                 class="thumbnail-btn"
                 :class="{ active: idx === activeMediaIndex }"
                 :aria-label="`${idx + 1}`"
+                :aria-pressed="idx === activeMediaIndex"
                 @click="selectMedia(idx)"
               >
                 <img
@@ -237,7 +243,7 @@
       </Transition>
     </section>
 
-    <section v-if="postId && postId !== 'undefined'" class="post-comments">
+    <section v-if="post && postId && postId !== 'undefined'" class="post-comments">
       <CommentList :post-id="postId" />
     </section>
 
@@ -1446,6 +1452,12 @@ onUnmounted(() => {
   cursor: zoom-in;
 }
 
+.media-clickable:focus-visible {
+  outline: none;
+  border-radius: var(--radius-lg);
+  box-shadow: inset 0 0 0 2px rgba(var(--color-primary-rgb), 0.4);
+}
+
 .media-zoom-hint {
   position: absolute;
   bottom: var(--spacing-3);
@@ -1466,6 +1478,10 @@ onUnmounted(() => {
 }
 
 .media-clickable:hover .media-zoom-hint {
+  opacity: 1;
+}
+
+.media-clickable:focus-visible .media-zoom-hint {
   opacity: 1;
 }
 

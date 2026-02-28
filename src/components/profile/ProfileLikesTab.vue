@@ -60,11 +60,12 @@
               <div v-if="comment.post_title" class="comment-source">
                 <Heart :size="12" class="source-icon" />
                 <span>{{ $t('profile.likedOn') }}</span>
-                <button class="post-link" @click="goToPost(comment.post_uuid)">
+                <button type="button" class="post-link" @click="goToPost(comment.post_uuid)">
                   {{ comment.post_title }}
                 </button>
               </div>
               <button
+                type="button"
                 class="unlike-btn"
                 :disabled="unlikingId === comment.id"
                 @click.stop="handleUnlike(comment)"

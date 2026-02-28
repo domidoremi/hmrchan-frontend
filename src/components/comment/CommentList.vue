@@ -11,8 +11,10 @@
         <button
           v-for="option in sortOptions"
           :key="option.value"
+          type="button"
           class="sort-btn"
           :class="{ active: currentSort === option.value }"
+          :aria-pressed="currentSort === option.value"
           @click="changeSort(option.value)"
         >
           {{ option.label }}
@@ -49,7 +51,12 @@
     </TransitionGroup>
 
     <!-- Load More -->
-    <button v-if="hasMore && !isLoading" class="load-more-btn glass-button" @click="loadMore">
+    <button
+      v-if="hasMore && !isLoading"
+      type="button"
+      class="load-more-btn glass-button"
+      @click="loadMore"
+    >
       {{ $t('common.viewMore') }}
     </button>
   </section>
