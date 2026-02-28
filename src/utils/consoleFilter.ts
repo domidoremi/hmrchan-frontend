@@ -19,6 +19,10 @@ declare global {
 
 type ConsoleMethod = 'log' | 'warn' | 'error' | 'info'
 type OriginalConsole = Record<ConsoleMethod, (...args: unknown[]) => void>
+const CONSOLE_METHODS: ConsoleMethod[] = ['log', 'warn', 'error', 'info']
+
+let errorListener: ((event: ErrorEvent) => void) | null = null
+let rejectionListener: ((event: PromiseRejectionEvent) => void) | null = null
 
 const CLOUDFLARE_PATTERNS = [
   // Private Access Token
@@ -43,17 +47,12 @@ const CLOUDFLARE_PATTERNS = [
   // Cloudflare Challenge Platform
   /challenge-platform/i,
   /cf-chl-/i,
-  /turnstile/i,
-  /rocket-loader/i,
+  /rocket loader/i,
 
   // Cloudflare 域名相关
   /challenges\.cloudflare\.com/i,
   /cloudflareinsights\.com/i,
   /cdn-cgi\/rum/i,
-
-  // Token 安全检查（正常的警告日志）
-  /Token integrity check failed/i,
-  /Token binding validation failed/i,
 
   // fetch/headers polyfill noise
   /setupReplaceUnsafeHeader\(\) should be called only once/i,
@@ -61,16 +60,6 @@ const CLOUDFLARE_PATTERNS = [
   // ResizeObserver loop warnings (layout thrash benign noise)
   /ResizeObserver loop limit exceeded/i,
   /ResizeObserver loop completed with undelivered notifications/i,
-
-  // Prefetch failures (expected when backend is down)
-  /Prefetch failed.*ApiError/i,
-  /Failed to prefetch/i,
-
-  // Service worker / prefetch noise
-  /\[SW\]/i,
-  /\[SW Update\]/i,
-  /Service Worker was updated because/i,
-  /\[Prefetch\]/i,
 
   // Non-passive touch listener warnings (often from third-party loaders)
   /Added non-passive event listener to a scroll-blocking 'touchstart' event/i,
@@ -149,32 +138,41 @@ export function initConsoleFilter(): void {
   }
 
   // 替换控制台方法
-  const methods: ConsoleMethod[] = ['log', 'warn', 'error', 'info']
-  methods.forEach((method) => {
+  CONSOLE_METHODS.forEach((method) => {
     console[method] = createFilteredMethod(method)
   })
 
   // 拦截浏览器原生网络错误（CORS / net::ERR_FAILED 等）
   // 这些不经过 console.*，需要通过事件监听器捕获
-  window.addEventListener('error', (e) => {
+  errorListener = (e) => {
     if (shouldFilterNetworkError(e)) {
       e.preventDefault()
     }
-  })
-  window.addEventListener('unhandledrejection', (e) => {
+  }
+  rejectionListener = (e) => {
     if (shouldFilterNetworkError(e)) {
       e.preventDefault()
     }
-  })
+  }
+  window.addEventListener('error', errorListener)
+  window.addEventListener('unhandledrejection', rejectionListener)
 
   window.__consoleFilterApplied = true
 
   // 开发环境下提供恢复方法
   if (import.meta.env.DEV) {
     window.__restoreConsole = () => {
-      methods.forEach((method) => {
+      CONSOLE_METHODS.forEach((method) => {
         console[method] = originalConsole[method]
       })
+      if (errorListener) {
+        window.removeEventListener('error', errorListener)
+        errorListener = null
+      }
+      if (rejectionListener) {
+        window.removeEventListener('unhandledrejection', rejectionListener)
+        rejectionListener = null
+      }
       window.__consoleFilterApplied = false
       console.log('✅ Console filter removed. Original console methods restored.')
     }
@@ -190,9 +188,19 @@ export function disposeConsoleFilter(): void {
   const originalConsole = window.__originalConsole
   if (!originalConsole) return
 
-  const methods: ConsoleMethod[] = ['log', 'warn', 'error', 'info']
-  methods.forEach((method) => {
+  CONSOLE_METHODS.forEach((method) => {
     console[method] = originalConsole[method]
   })
+
+  if (errorListener) {
+    window.removeEventListener('error', errorListener)
+    errorListener = null
+  }
+
+  if (rejectionListener) {
+    window.removeEventListener('unhandledrejection', rejectionListener)
+    rejectionListener = null
+  }
+
   window.__consoleFilterApplied = false
 }
