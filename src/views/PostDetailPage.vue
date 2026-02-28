@@ -291,17 +291,19 @@ import { lockBodyScroll, unlockBodyScroll } from '@/utils/bodyScrollLock'
 // 动态导入大型组件以减少初始包体积
 const MediaLightbox = defineAsyncComponent({
   loader: () => import('@/components/ui/MediaLightbox.vue'),
-  onError(error, _retry, fail) {
-    // 旧版 chunk 缺失时（部署更新后），尝试重新加载页面
-    if (error.message?.includes('dynamically imported module')) {
-      const reloaded = sessionStorage.getItem('lightbox-reload')
-      if (!reloaded) {
-        sessionStorage.setItem('lightbox-reload', '1')
-        window.location.reload()
-        return
-      }
-      sessionStorage.removeItem('lightbox-reload')
+  onError(error, retry, fail, attempts) {
+    const message = error instanceof Error ? error.message : String(error ?? '')
+    const isChunkLoadError =
+      /dynamically imported module|chunkloaderror|failed to fetch dynamically imported module/i.test(
+        message
+      )
+
+    // 网络抖动时先重试一次，避免直接失败
+    if (isChunkLoadError && attempts <= 1) {
+      retry()
+      return
     }
+
     fail()
   },
 })
