@@ -42,10 +42,10 @@
             class="filter-btn"
             :class="{ active: currentSort === sort.value }"
             :aria-pressed="currentSort === sort.value"
-            :aria-label="$t(`explore.${sort.value}`)"
+            :aria-label="sort.label"
             @click="currentSort = sort.value"
           >
-            {{ $t(`explore.${sort.value}`) }}
+            {{ sort.label }}
           </button>
         </div>
 
@@ -91,16 +91,7 @@
             class="posts-masonry-js"
             :style="{ '--masonry-columns': columnCount }"
           >
-            <div
-              v-for="(column, colIndex) in columns"
-              :key="colIndex"
-              :ref="
-                (el) => {
-                  if (el) columnRefs[colIndex] = el as HTMLElement
-                }
-              "
-              class="masonry-column"
-            >
+            <div v-for="(column, colIndex) in columns" :key="colIndex" class="masonry-column">
               <PostCard
                 v-for="post in column"
                 :key="post.id"
@@ -201,12 +192,12 @@ const pageSize = isMobile ? 8 : 24 // 移动端首屏 8 张，桌面端 24 张
 
 // JS Masonry 布局 - 避免 CSS column-count 的 CLS 问题
 const masonryContainerRef = ref<HTMLElement | null>(null)
-const columnRefs = ref<HTMLElement[]>([])
 const cachedColumnHeights = ref<number[]>([])
 
 const {
   columns,
   columnCount,
+  columnHeights,
   distributePosts,
   distributePostsRoundRobin,
   redistribute,
@@ -256,20 +247,20 @@ const onGlobalKeydown = (event: KeyboardEvent) => {
   goToSearch()
 }
 
-const sortOptions = [
-  { value: 'newest' as const },
-  { value: 'popular' as const },
-  { value: 'trending' as const },
-]
+const sortOptions = computed(() => [
+  { value: 'newest' as const, label: t('explore.newest') },
+  { value: 'popular' as const, label: t('explore.popular') },
+  { value: 'trending' as const, label: t('explore.trending') },
+])
 
 // 品牌 SVG 图标
-const platformOptions = [
+const platformOptions = computed(() => [
   { value: 'all' as const, label: t('explore.allPlatforms'), icon: Globe },
   { value: 'youtube' as const, label: 'YouTube', icon: IconYoutube },
   { value: 'tiktok' as const, label: 'TikTok', icon: IconTiktok },
   { value: 'twitter' as const, label: 'X', icon: IconX },
   { value: 'instagram' as const, label: 'Instagram', icon: IconInstagram },
-]
+])
 
 function goToPost(postId: string, thumbnailSrc: string | null) {
   storePostNavigationContext(posts.value, postId, 'explore')
@@ -447,9 +438,11 @@ function updateMasonryLayout(items: PostListItem[], reset = false) {
       redistribute(items, colWidth)
     }
   } else {
-    // 追加模式：使用缓存高度避免同步读取导致强制重排
+    // 追加模式：优先使用缓存高度，回退到虚拟高度，避免同步读取 offsetHeight
     const realHeights =
-      cachedColumnHeights.value.length === columnCount.value ? cachedColumnHeights.value : undefined
+      cachedColumnHeights.value.length === columnCount.value
+        ? cachedColumnHeights.value
+        : columnHeights.value
     if (isMobile) {
       // 移动端追加也用轮询
       const startIndex = columns.value.reduce((sum, col) => sum + col.length, 0)
@@ -465,7 +458,6 @@ function updateMasonryLayout(items: PostListItem[], reset = false) {
 // 响应式调整列数 - 使用 ResizeObserver 监听容器而非 window
 let resizeObserver: ResizeObserver | null = null
 let lastContainerWidth = 0
-let cachedHeightsRaf: number | null = null
 
 /**
  * 处理容器 resize - 使用 ResizeObserver 替代 window resize
@@ -497,17 +489,10 @@ function detachGlobalListeners() {
   window.removeEventListener('keydown', onGlobalKeydown)
 }
 
-function cancelCachedHeightsRaf() {
-  if (cachedHeightsRaf !== null) {
-    cancelAnimationFrame(cachedHeightsRaf)
-    cachedHeightsRaf = null
-  }
-}
-
 function attachResizeObserver(el: HTMLElement) {
   detachResizeObserver()
 
-  lastContainerWidth = el.clientWidth
+  lastContainerWidth = 0
   resizeObserver = createResizeObserver((entries) => {
     const entry = entries[0]
     if (entry) {
@@ -540,11 +525,7 @@ function applyVisiblePosts(reset = false) {
 }
 
 function updateCachedColumnHeights() {
-  cancelCachedHeightsRaf()
-  cachedHeightsRaf = requestAnimationFrame(() => {
-    cachedHeightsRaf = null
-    cachedColumnHeights.value = columnRefs.value.map((el) => el?.offsetHeight || 0)
-  })
+  cachedColumnHeights.value = columnHeights.value.slice(0, columnCount.value)
 }
 
 /**
@@ -612,7 +593,6 @@ onDeactivated(() => {
   detachResizeObserver()
   handleContainerResize.cancel?.()
   handleCardHeightChange.cancel?.()
-  cancelCachedHeightsRaf()
 })
 
 onBeforeUnmount(() => {
@@ -621,7 +601,6 @@ onBeforeUnmount(() => {
   detachResizeObserver()
   handleContainerResize.cancel?.()
   handleCardHeightChange.cancel?.()
-  cancelCachedHeightsRaf()
 })
 </script>
 

@@ -1,6 +1,7 @@
 import { ref, watch, onMounted, onBeforeUnmount, onActivated, onDeactivated, type Ref } from 'vue'
 import gsap from 'gsap'
 import { prefersReducedMotion } from '@/utils/performance'
+import { createResizeObserver } from '@/utils/modernAPIs'
 
 export type PlatformMorphState = 'all' | 'instagram' | 'tiktok' | 'youtube' | 'twitter'
 
@@ -557,6 +558,8 @@ export function usePlatformAnimation(
   let startTime = 0
   let particleCount = PARTICLE_COUNT
   let connectionDist = CONNECTION_DIST
+  let resizeObserver: ResizeObserver | null = null
+  let startRafId: number | null = null
 
   function getTheme(): PlatformTheme {
     const mode = isDark.value ? 'dark' : 'light'
@@ -722,24 +725,32 @@ export function usePlatformAnimation(
     rafId = requestAnimationFrame(draw)
   }
 
-  function resizeCanvas() {
+  function resizeCanvas(nextWidth?: number, nextHeight?: number) {
     const canvas = canvasRef.value
     if (!canvas) return
+
     dpr = Math.min(window.devicePixelRatio || 1, 2)
-    const rect = canvas.getBoundingClientRect()
-    canvasW = rect.width
-    canvasH = rect.height
+
+    const measuredWidth =
+      typeof nextWidth === 'number' && nextWidth > 0 ? nextWidth : canvas.clientWidth
+    const measuredHeight =
+      typeof nextHeight === 'number' && nextHeight > 0 ? nextHeight : canvas.clientHeight
+    if (measuredWidth <= 0 || measuredHeight <= 0) return
+
+    canvasW = Math.round(measuredWidth)
+    canvasH = Math.round(measuredHeight)
     canvas.width = canvasW * dpr
     canvas.height = canvasH * dpr
     ctx = canvas.getContext('2d')
     if (ctx) ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
-    const isMobile = rect.width < 500
+
+    const isMobile = canvasW < 500
     particleCount = isMobile ? MOBILE_PARTICLE_COUNT : PARTICLE_COUNT
     connectionDist = isMobile ? MOBILE_CONNECTION_DIST : CONNECTION_DIST
   }
 
-  function handleResize() {
-    resizeCanvas()
+  function handleResize(nextWidth?: number, nextHeight?: number) {
+    resizeCanvas(nextWidth, nextHeight)
     const cx = canvasW / 2,
       cy = canvasH / 2
     const th = getTheme()
@@ -760,12 +771,35 @@ export function usePlatformAnimation(
       y: (_i: number, p: Particle) => p.targetY,
       ease: 'power1.out',
     })
+
+    if (rafId === null && isActive && enabled.value && !prefersReducedMotion()) {
+      rafId = requestAnimationFrame(draw)
+    }
   }
 
   let resizeTimer: ReturnType<typeof setTimeout> | null = null
   function debouncedResize() {
     if (resizeTimer) clearTimeout(resizeTimer)
     resizeTimer = setTimeout(handleResize, 150)
+  }
+
+  function detachResizeObserver() {
+    resizeObserver?.disconnect()
+    resizeObserver = null
+  }
+
+  function attachResizeObserver() {
+    const canvas = canvasRef.value
+    if (!canvas) return
+
+    detachResizeObserver()
+    resizeObserver = createResizeObserver((entries) => {
+      const entry = entries[0]
+      if (!entry) return
+      handleResize(entry.contentRect.width, entry.contentRect.height)
+    })
+
+    resizeObserver?.observe(canvas)
   }
 
   function handleVisibility() {
@@ -812,6 +846,11 @@ export function usePlatformAnimation(
     pause()
     gsap.killTweensOf(particles.value)
     if (resizeTimer) clearTimeout(resizeTimer)
+    if (startRafId !== null) {
+      cancelAnimationFrame(startRafId)
+      startRafId = null
+    }
+    detachResizeObserver()
     window.removeEventListener('resize', debouncedResize)
     document.removeEventListener('visibilitychange', handleVisibility)
   }
@@ -829,9 +868,13 @@ export function usePlatformAnimation(
   })
 
   onMounted(() => {
+    attachResizeObserver()
     window.addEventListener('resize', debouncedResize)
     document.addEventListener('visibilitychange', handleVisibility)
-    start()
+    startRafId = requestAnimationFrame(() => {
+      startRafId = null
+      start()
+    })
   })
   onActivated(() => {
     isActive = true
