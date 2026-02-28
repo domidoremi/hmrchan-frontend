@@ -249,16 +249,21 @@ function disableDevToolsShortcuts(onBlocked: () => void): Teardown {
 }
 
 /**
- * 初始化控制台保护（仅生产环境）
+ * 初始化控制台保护（默认仅生产环境）
  *
  * 模式：
  * - off: 关闭
  * - warn: 仅输出警告文案
  * - balanced: 警告 + DevTools 打开探测（默认）
  * - strict: balanced + 快捷键阻断 + console 方法降级
+ *
+ * 开发环境调试：
+ * - 默认 DEV 关闭
+ * - 设置 VITE_ANTI_TAMPER_ALLOW_DEV=true 可在 DEV 启用
  */
 export function initConsoleGuard(): Teardown {
-  if (import.meta.env.DEV) {
+  const allowDev = import.meta.env['VITE_ANTI_TAMPER_ALLOW_DEV'] === 'true'
+  if (import.meta.env.DEV && !allowDev) {
     return () => {}
   }
 
