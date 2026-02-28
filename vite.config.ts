@@ -24,6 +24,7 @@ import { imagetools } from 'vite-imagetools'
 import { criticalCSSPlugin } from './vite-plugin-critical-css'
 import { swVersionPlugin } from './vite-plugin-sw-version'
 import { sriPlugin } from './vite-plugin-sri'
+import { obfuscationPlugin } from './vite-plugin-obfuscation'
 
 type DevProxyServer = {
   on(event: 'proxyRes', listener: (proxyRes: IncomingMessage) => void): void
@@ -46,6 +47,11 @@ const BUILD_HASH = getBuildHash()
 export default defineConfig(({ mode }: { mode: string }) => {
   const isProd = mode === 'production'
   const isDev = mode === 'development'
+  const obfuscationEnabled = process.env.VITE_ENABLE_OBFUSCATION === 'true'
+  const obfuscationProfile =
+    process.env.VITE_OBFUSCATION_PROFILE === 'aggressive' ? 'aggressive' : 'safe'
+  const obfuscationControlFlow = process.env.VITE_OBFUSCATION_CONTROL_FLOW === 'true'
+  const obfuscationDeadCode = process.env.VITE_OBFUSCATION_DEAD_CODE === 'true'
 
   return {
     /**
@@ -87,8 +93,20 @@ export default defineConfig(({ mode }: { mode: string }) => {
         },
       }),
 
-      /** 生产环境内联关键 CSS + SW 版本注入 + SRI 完整性校验 */
-      ...(isProd ? [criticalCSSPlugin(), swVersionPlugin(), sriPlugin()] : []),
+      /** 生产环境内联关键 CSS + SW 版本注入 + SRI 完整性校验 + 可选混淆 */
+      ...(isProd
+        ? [
+            criticalCSSPlugin(),
+            swVersionPlugin(),
+            sriPlugin(),
+            obfuscationPlugin({
+              enabled: obfuscationEnabled,
+              profile: obfuscationProfile,
+              controlFlowFlattening: obfuscationControlFlow,
+              deadCodeInjection: obfuscationDeadCode,
+            }),
+          ]
+        : []),
 
       /** 生产环境压缩 HTML：移除注释、多余空行和缩进 */
       ...(isProd

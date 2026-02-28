@@ -187,9 +187,16 @@ export async function onRequest(context: CFPagesContext): Promise<Response> {
     responseHeaders.delete('content-encoding')
     responseHeaders.delete('transfer-encoding')
 
-    // 为媒体资源设置更长的缓存时间（7天）
-    if (path.includes('/media/') && (path.includes('/thumbnail') || path.includes('/image'))) {
-      responseHeaders.set('Cache-Control', 'public, max-age=604800, stale-while-revalidate=86400')
+    // 为媒体资源设置更长的缓存时间（30 天）
+    if (
+      request.method === 'GET' &&
+      path.includes('/media/') &&
+      (path.includes('/thumbnail') || path.includes('/image'))
+    ) {
+      responseHeaders.set(
+        'Cache-Control',
+        'public, max-age=2592000, s-maxage=2592000, stale-while-revalidate=604800, immutable'
+      )
     }
 
     return new Response(response.body, {
