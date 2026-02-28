@@ -1,14 +1,17 @@
 /**
- * 控制台保护模块
+ * 控制台保护模块（anti-tamper 软防护）
  *
- * 生产环境下禁用控制台，防止：
- * 1. 用户被诱导在控制台执行恶意代码（Self-XSS 攻击）
- * 2. 敏感信息通过控制台泄露
- * 3. 用户意外操作导致的问题
+ * 目标：
+ * 1. 生产环境提示 Self-XSS 风险
+ * 2. 提供温和的 DevTools/快捷键探测信号
+ * 3. 严格模式下增强阻断（可配置）
  *
- * 注意：这不是绝对的安全措施，有经验的用户可以绕过
- * 主要目的是保护普通用户免受社会工程攻击
+ * 注意：前端防护不是绝对安全，核心校验必须依赖后端。
  */
+
+type ConsoleGuardMode = 'off' | 'warn' | 'balanced' | 'strict'
+type Teardown = () => void
+type GuardSignal = 'devtools-open' | 'shortcut-blocked' | 'contextmenu-blocked'
 
 const WARNING_MESSAGE = `
 %c⚠️ 警告 / Warning / 警告
@@ -52,6 +55,27 @@ const HIMERI_TEXT_STYLE = 'color: #666; font-size: 13px; line-height: 1.8; font-
 // 标记是否已显示过警告，避免重复
 let hasShownWarning = false
 
+function normalizeGuardMode(raw: string | undefined): ConsoleGuardMode {
+  const mode = raw?.trim().toLowerCase()
+  if (mode === 'off' || mode === 'warn' || mode === 'balanced' || mode === 'strict') {
+    return mode
+  }
+  return 'balanced'
+}
+
+function emitGuardSignal(signal: GuardSignal): void {
+  if (typeof window === 'undefined') return
+
+  window.dispatchEvent(
+    new CustomEvent('security:tamper-suspected', {
+      detail: {
+        signal,
+        timestamp: Date.now(),
+      },
+    })
+  )
+}
+
 /**
  * 显示籾山ひめり的祝福信息
  */
@@ -75,7 +99,6 @@ function showWarning(): void {
 /**
  * 禁用控制台方法
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function disableConsoleMethods(): void {
   const noop = () => {}
 
@@ -111,16 +134,27 @@ function disableConsoleMethods(): void {
  * 检测开发者工具是否打开（基于窗口尺寸变化）
  * 注意：这不是 100% 可靠的检测方法
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function detectDevTools(): void {
+function detectDevTools(onDetected: () => void): Teardown {
   const threshold = 160
+  let lastDetectedAt = 0
 
   const checkDevTools = () => {
     const widthThreshold = window.outerWidth - window.innerWidth > threshold
     const heightThreshold = window.outerHeight - window.innerHeight > threshold
+    const isOpen = widthThreshold || heightThreshold
 
-    if (widthThreshold || heightThreshold) {
-      showWarning()
+    if (!isOpen) return
+
+    const now = Date.now()
+    if (now - lastDetectedAt < 8000) return
+    lastDetectedAt = now
+
+    onDetected()
+  }
+
+  const handleVisibility = () => {
+    if (document.visibilityState === 'visible') {
+      checkDevTools()
     }
   }
 
@@ -128,98 +162,144 @@ function detectDevTools(): void {
   checkDevTools()
 
   // 监听窗口变化
-  window.addEventListener('resize', checkDevTools)
+  window.addEventListener('resize', checkDevTools, { passive: true })
+  document.addEventListener('visibilitychange', handleVisibility)
+
+  return () => {
+    window.removeEventListener('resize', checkDevTools)
+    document.removeEventListener('visibilitychange', handleVisibility)
+  }
 }
 
 /**
  * 禁用右键菜单（可选，根据需求启用）
  */
-export function disableContextMenu(): void {
-  document.addEventListener(
-    'contextmenu',
-    (e) => {
-      // 允许在输入框中使用右键
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
-        return
-      }
-      e.preventDefault()
-    },
-    { capture: true }
-  )
+export function disableContextMenu(onBlocked?: () => void): Teardown {
+  const handler = (e: Event) => {
+    if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+      return
+    }
+    if (e.target instanceof HTMLElement && e.target.isContentEditable) {
+      return
+    }
+
+    e.preventDefault()
+    onBlocked?.()
+  }
+
+  document.addEventListener('contextmenu', handler, true)
+
+  return () => {
+    document.removeEventListener('contextmenu', handler, true)
+  }
 }
 
 /**
  * 禁用常用开发者工具快捷键
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function disableDevToolsShortcuts(): void {
-  document.addEventListener(
-    'keydown',
-    (e) => {
-      // F12
-      if (e.key === 'F12') {
-        e.preventDefault()
-        showWarning()
-        return
-      }
+function disableDevToolsShortcuts(onBlocked: () => void): Teardown {
+  const handler = (e: KeyboardEvent) => {
+    const target = e.target as HTMLElement | null
+    const isEditable =
+      target instanceof HTMLInputElement ||
+      target instanceof HTMLTextAreaElement ||
+      (target instanceof HTMLElement && target.isContentEditable)
+    if (isEditable) return
 
-      // Ctrl+Shift+I / Cmd+Option+I (开发者工具)
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'I') {
-        e.preventDefault()
-        showWarning()
-        return
-      }
+    // F12
+    if (e.key === 'F12') {
+      e.preventDefault()
+      onBlocked()
+      return
+    }
 
-      // Ctrl+Shift+J / Cmd+Option+J (控制台)
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'J') {
-        e.preventDefault()
-        showWarning()
-        return
-      }
+    // Ctrl+Shift+I / Cmd+Option+I (开发者工具)
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'I') {
+      e.preventDefault()
+      onBlocked()
+      return
+    }
 
-      // Ctrl+Shift+C / Cmd+Option+C (元素检查)
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'C') {
-        e.preventDefault()
-        showWarning()
-        return
-      }
+    // Ctrl+Shift+J / Cmd+Option+J (控制台)
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'J') {
+      e.preventDefault()
+      onBlocked()
+      return
+    }
 
-      // Ctrl+U / Cmd+U (查看源代码)
-      if ((e.ctrlKey || e.metaKey) && e.key === 'u') {
-        e.preventDefault()
-        return
-      }
-    },
-    { capture: true }
-  )
+    // Ctrl+Shift+C / Cmd+Option+C (元素检查)
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'C') {
+      e.preventDefault()
+      onBlocked()
+      return
+    }
+
+    // Ctrl+U / Cmd+U (查看源代码)
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'u') {
+      e.preventDefault()
+      onBlocked()
+    }
+  }
+
+  document.addEventListener('keydown', handler, true)
+
+  return () => {
+    document.removeEventListener('keydown', handler, true)
+  }
 }
 
 /**
- * 初始化控制台保护
- * 仅在生产环境启用
+ * 初始化控制台保护（仅生产环境）
+ *
+ * 模式：
+ * - off: 关闭
+ * - warn: 仅输出警告文案
+ * - balanced: 警告 + DevTools 打开探测（默认）
+ * - strict: balanced + 快捷键阻断 + console 方法降级
  */
-export function initConsoleGuard(): void {
-  // 控制台保护已禁用
-  // 如需启用，请取消下面代码的注释
-  /*
-  // 仅在生产环境启用
+export function initConsoleGuard(): Teardown {
   if (import.meta.env.DEV) {
-    return
+    return () => {}
   }
 
-  // 显示警告信息
+  const mode = normalizeGuardMode(import.meta.env['VITE_ANTI_TAMPER_MODE'])
+  if (mode === 'off') {
+    return () => {}
+  }
+
   showWarning()
 
-  // 禁用控制台方法
-  disableConsoleMethods()
+  const disposers: Teardown[] = []
 
-  // 检测开发者工具
-  detectDevTools()
+  if (mode === 'balanced' || mode === 'strict') {
+    disposers.push(
+      detectDevTools(() => {
+        showWarning()
+        emitGuardSignal('devtools-open')
+      })
+    )
+  }
 
-  // 禁用快捷键
-  disableDevToolsShortcuts()
+  if (mode === 'strict') {
+    disableConsoleMethods()
 
-  // 可选：禁用右键菜单（取消注释以启用）
-  // disableContextMenu()
-  */
+    disposers.push(
+      disableDevToolsShortcuts(() => {
+        showWarning()
+        emitGuardSignal('shortcut-blocked')
+      })
+    )
+
+    if (import.meta.env['VITE_DISABLE_CONTEXT_MENU'] === 'true') {
+      disposers.push(
+        disableContextMenu(() => {
+          emitGuardSignal('contextmenu-blocked')
+        })
+      )
+    }
+  }
+
+  return () => {
+    disposers.forEach((dispose) => dispose())
+  }
 }
