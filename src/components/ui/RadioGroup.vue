@@ -1,5 +1,11 @@
 <template>
-  <div class="ui-radio-group" role="radiogroup" :aria-label="label">
+  <div
+    class="ui-radio-group"
+    role="radiogroup"
+    :aria-label="label"
+    :aria-orientation="orientation"
+    :data-orientation="orientation"
+  >
     <label
       v-for="option in options"
       :key="option.value"
@@ -14,6 +20,7 @@
       <button
         type="button"
         role="radio"
+        :aria-label="option.label"
         :aria-checked="modelValue === option.value"
         :disabled="option.disabled || disabled"
         class="ui-radio-button"

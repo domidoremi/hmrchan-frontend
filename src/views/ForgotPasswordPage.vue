@@ -25,7 +25,12 @@
       <!-- Form state -->
       <template v-else>
         <div class="auth-header">
-          <button type="button" class="back-btn glass-button" @click="$router.back()">
+          <button
+            type="button"
+            class="back-btn glass-button"
+            :aria-label="$t('common.back')"
+            @click="$router.back()"
+          >
             <ArrowLeft :size="18" />
           </button>
         </div>

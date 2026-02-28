@@ -37,6 +37,7 @@
       <!-- Actions -->
       <div class="navbar-actions">
         <button
+          type="button"
           class="action-btn"
           @click="goToSearch"
           @mouseenter="prefetchExplorePage"
@@ -47,6 +48,7 @@
         </button>
 
         <button
+          type="button"
           ref="settingsBtnRef"
           class="action-btn"
           :class="{ 'action-btn--active': showSettings }"
@@ -54,6 +56,9 @@
           @mouseenter="prefetchSettingsPanel"
           @focus="prefetchSettingsPanel"
           :aria-label="$t('nav.settings')"
+          :aria-expanded="showSettings"
+          aria-haspopup="dialog"
+          :aria-controls="showSettings ? 'navbar-settings-panel' : undefined"
         >
           <AnimatedIcon name="sparkle" :fallback-icon="Settings" size="md" :active="showSettings" />
         </button>
@@ -79,10 +84,15 @@
         </RouterLink>
 
         <button
+          type="button"
           v-else
           ref="userBtnRef"
           class="user-btn"
           :class="{ 'user-btn--active': showUserMenu }"
+          :aria-label="$t('nav.profile')"
+          :aria-expanded="showUserMenu"
+          aria-haspopup="menu"
+          :aria-controls="showUserMenu ? 'navbar-user-menu' : undefined"
           @click="toggleUserMenu"
         >
           <img :src="userAvatar" :alt="user?.username" class="user-avatar" />
@@ -95,9 +105,12 @@
     <Transition name="dropdown">
       <div
         v-if="showSettings"
+        id="navbar-settings-panel"
         ref="settingsDropdownRef"
         class="settings-dropdown glass-dropdown"
         :style="settingsDropdownStyle"
+        role="dialog"
+        :aria-label="$t('nav.settings')"
         @click.stop
       >
         <SettingsPanel @close="showSettings = false" />
@@ -108,6 +121,7 @@
     <Transition name="dropdown">
       <div
         v-if="showUserMenu && isAuthenticated"
+        id="navbar-user-menu"
         ref="userDropdownRef"
         class="user-dropdown glass-dropdown"
         :style="userDropdownStyle"
@@ -190,7 +204,7 @@
         </div>
         <Separator />
         <div class="dropdown-links">
-          <button class="dropdown-link dropdown-link--danger" @click="handleLogout">
+          <button type="button" class="dropdown-link dropdown-link--danger" @click="handleLogout">
             <div class="dropdown-link-icon dropdown-link-icon--danger">
               <AnimatedIcon name="sparkle" :fallback-icon="LogOut" size="sm" />
             </div>

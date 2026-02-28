@@ -53,7 +53,11 @@
               <div v-if="item.post_title" class="card-source">
                 <Bookmark :size="12" class="source-icon" />
                 <span>{{ $t('profile.commentOn') }}</span>
-                <button class="post-link" @click="goToPost(item.post_uuid || item.post_id)">
+                <button
+                  type="button"
+                  class="post-link"
+                  @click="goToPost(item.post_uuid || item.post_id)"
+                >
                   {{ item.post_title }}
                 </button>
               </div>
@@ -63,6 +67,7 @@
                   {{ item.likes_count || 0 }}
                 </span>
                 <button
+                  type="button"
                   class="unfav-btn"
                   :disabled="unfavoritingId === item.id"
                   @click.stop="handleUnfavorite(item)"

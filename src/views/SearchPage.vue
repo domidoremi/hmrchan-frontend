@@ -31,6 +31,7 @@
               type="button"
               class="filter-tab"
               :class="{ active: activeTab === tab.id }"
+              :aria-pressed="activeTab === tab.id"
               @click="activeTab = tab.id"
             >
               <AnimatedIcon
@@ -55,6 +56,7 @@
                 type="button"
                 class="platform-btn"
                 :class="{ active: currentPlatform === platform.value }"
+                :aria-pressed="currentPlatform === platform.value"
                 @click="currentPlatform = platform.value"
               >
                 <AnimatedIcon
@@ -77,6 +79,10 @@
                 type="button"
                 class="sort-order-btn"
                 :class="{ 'sort-order-btn--asc': sortOrder === 'asc' }"
+                :aria-pressed="sortOrder === 'asc'"
+                :aria-label="
+                  sortOrder === 'desc' ? $t('search.sort.descending') : $t('search.sort.ascending')
+                "
                 :title="
                   sortOrder === 'desc' ? $t('search.sort.descending') : $t('search.sort.ascending')
                 "
@@ -171,7 +177,8 @@
                 role="button"
                 tabindex="0"
                 @click="goToAuthor(author.id)"
-                @keydown.enter="goToAuthor(author.id)"
+                @keydown.enter.prevent="goToAuthor(author.id)"
+                @keydown.space.prevent="goToAuthor(author.id)"
               >
                 <img
                   v-if="author.avatar_url"
@@ -1044,6 +1051,14 @@ onMounted(() => {
 
 .author-card:hover {
   transform: translateY(-2px);
+}
+
+.author-card:focus-visible {
+  outline: none;
+  transform: translateY(-2px);
+  box-shadow:
+    var(--shadow-md),
+    0 0 0 2px rgba(var(--color-primary-rgb), 0.35);
 }
 
 .author-avatar {

@@ -149,6 +149,8 @@
                       type="button"
                       class="thumb"
                       :class="{ active: idx === activeMediaIndex }"
+                      :aria-pressed="idx === activeMediaIndex"
+                      :aria-label="`${$t('post.preview')} ${idx + 1}`"
                       @click="activeMediaIndex = idx"
                     >
                       <img

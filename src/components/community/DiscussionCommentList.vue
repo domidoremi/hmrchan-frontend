@@ -77,7 +77,12 @@
       />
     </TransitionGroup>
 
-    <button v-if="hasMore && !isLoadingMore" class="load-more-btn glass-button" @click="loadMore">
+    <button
+      v-if="hasMore && !isLoadingMore"
+      type="button"
+      class="load-more-btn glass-button"
+      @click="loadMore"
+    >
       {{ $t('common.viewMore') }}
     </button>
   </section>

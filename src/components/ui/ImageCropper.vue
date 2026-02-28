@@ -48,7 +48,15 @@
         <div class="cropper-controls">
           <label class="control-label">
             {{ $t('profile.zoom') }}
-            <input type="range" min="1" max="3" step="0.05" :value="zoom" @input="updateZoom" />
+            <input
+              type="range"
+              min="1"
+              max="3"
+              step="0.05"
+              :aria-label="$t('profile.zoom')"
+              :value="zoom"
+              @input="updateZoom"
+            />
           </label>
           <label class="control-label">
             {{ $t('profile.rotate') }}
@@ -57,6 +65,7 @@
               min="-180"
               max="180"
               step="1"
+              :aria-label="$t('profile.rotate')"
               :value="rotation"
               @input="updateRotation"
             />
@@ -73,6 +82,7 @@
             type="button"
             class="shape-btn"
             :class="{ active: shape === 'circle' }"
+            :aria-pressed="shape === 'circle'"
             @click="shape = 'circle'"
           >
             <AnimatedIcon name="explore" :fallback-icon="Circle" size="md" />
@@ -82,6 +92,7 @@
             type="button"
             class="shape-btn"
             :class="{ active: shape === 'square' }"
+            :aria-pressed="shape === 'square'"
             @click="shape = 'square'"
           >
             <AnimatedIcon name="explore" :fallback-icon="Square" size="md" />

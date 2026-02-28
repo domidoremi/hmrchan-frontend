@@ -7,6 +7,7 @@
         v-model="query"
         type="text"
         class="search-input"
+        :aria-label="$t('common.search')"
         :placeholder="$t('search.placeholder')"
         @focus="handleFocus"
         @blur="handleBlur"
@@ -16,7 +17,13 @@
         @keydown.down.prevent="selectNext"
         @keydown.up.prevent="selectPrev"
       />
-      <button v-if="query" type="button" class="clear-btn" @click="clearQuery">
+      <button
+        v-if="query"
+        type="button"
+        class="clear-btn"
+        :aria-label="$t('common.clear')"
+        @click="clearQuery"
+      >
         <AnimatedIcon name="sparkle" :fallback-icon="X" size="sm" />
       </button>
       <button

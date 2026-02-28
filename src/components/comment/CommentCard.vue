@@ -20,20 +20,20 @@
 
       <!-- More Actions Menu -->
       <div class="comment-menu" v-if="showActions">
-        <button class="menu-btn" @click="toggleMenu" :aria-label="$t('common.more')">
+        <button type="button" class="menu-btn" @click="toggleMenu" :aria-label="$t('common.more')">
           <AnimatedIcon name="sparkle" :fallback-icon="MoreHorizontal" size="md" />
         </button>
         <Transition name="dropdown">
           <div v-if="showMenu" class="menu-dropdown glass-dropdown" @click.stop>
-            <button v-if="canDelete" class="menu-item danger" @click="handleDelete">
+            <button v-if="canDelete" type="button" class="menu-item danger" @click="handleDelete">
               <AnimatedIcon name="loading" :fallback-icon="Trash2" size="sm" />
               <span>{{ $t('common.delete') }}</span>
             </button>
-            <button class="menu-item" @click="handleShare">
+            <button type="button" class="menu-item" @click="handleShare">
               <AnimatedIcon name="explore" :fallback-icon="Share2" size="sm" />
               <span>{{ $t('comment.share') }}</span>
             </button>
-            <button class="menu-item" @click="handleReport">
+            <button type="button" class="menu-item" @click="handleReport">
               <AnimatedIcon name="sparkle" :fallback-icon="Flag" size="sm" />
               <span>{{ $t('comment.report') }}</span>
             </button>
@@ -56,8 +56,11 @@
     <!-- Comment Actions -->
     <div class="comment-actions" v-if="showActions">
       <button
+        type="button"
         class="action-btn"
         :class="{ active: comment.is_liked }"
+        :aria-label="comment.is_liked ? $t('profile.unlike') : $t('post.likes')"
+        :aria-pressed="comment.is_liked"
         @click="handleLike"
         :disabled="!isAuthenticated"
       >
@@ -65,14 +68,22 @@
         <span v-if="comment.likes_count > 0">{{ comment.likes_count }}</span>
       </button>
 
-      <button class="action-btn" @click="handleReply" :disabled="!isAuthenticated || !canReply">
+      <button
+        type="button"
+        class="action-btn"
+        @click="handleReply"
+        :disabled="!isAuthenticated || !canReply"
+      >
         <AnimatedIcon name="sparkle" :fallback-icon="MessageCircle" size="sm" />
         <span>{{ $t('comment.reply') }}</span>
       </button>
 
       <button
+        type="button"
         class="action-btn"
         :class="{ active: comment.is_favorited }"
+        :aria-label="comment.is_favorited ? $t('post.unfavorite') : $t('post.favorite')"
+        :aria-pressed="comment.is_favorited"
         @click="handleFavorite"
         :disabled="!isAuthenticated"
       >
@@ -109,6 +120,7 @@
     >
       <button
         v-if="!showReplies"
+        type="button"
         class="show-replies-btn"
         @click="handleShowReplies"
         :disabled="isLoadingReplies"
