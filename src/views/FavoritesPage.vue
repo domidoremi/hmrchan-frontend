@@ -43,7 +43,11 @@
               v-for="fav in visibleFavorites"
               :key="fav.id"
               class="favorite-card glass-card content-auto"
+              role="button"
+              tabindex="0"
               @click="goToPost(fav.post_id, fav.post?.thumbnail_url)"
+              @keydown.enter.prevent="goToPost(fav.post_id, fav.post?.thumbnail_url)"
+              @keydown.space.prevent="goToPost(fav.post_id, fav.post?.thumbnail_url)"
             >
               <div class="favorite-image">
                 <img
@@ -77,6 +81,7 @@
                 type="button"
                 class="remove-btn"
                 :title="$t('favorites.remove')"
+                :aria-label="$t('favorites.remove')"
                 @click.stop="removeFavorite(fav.id)"
               >
                 <AnimatedIcon name="sparkle" :fallback-icon="X" size="sm" />
@@ -318,6 +323,14 @@ onMounted(() => {
   box-shadow: var(--shadow-lg);
 }
 
+.favorite-card:focus-visible {
+  outline: none;
+  transform: translateY(-2px);
+  box-shadow:
+    var(--shadow-lg),
+    0 0 0 2px rgba(var(--color-primary-rgb), 0.35);
+}
+
 .favorite-image {
   width: 100%;
   overflow: hidden;
@@ -392,6 +405,10 @@ onMounted(() => {
 }
 
 .favorite-card:hover .remove-btn {
+  opacity: 1;
+}
+
+.favorite-card:focus-visible .remove-btn {
   opacity: 1;
 }
 

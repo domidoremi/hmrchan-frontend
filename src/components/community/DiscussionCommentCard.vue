@@ -21,30 +21,35 @@
       </div>
 
       <div class="comment-menu">
-        <button class="menu-btn" @click.stop="toggleMenu" :aria-label="$t('common.more')">
+        <button
+          type="button"
+          class="menu-btn"
+          @click.stop="toggleMenu"
+          :aria-label="$t('common.more')"
+        >
           <AnimatedIcon name="sparkle" :fallback-icon="MoreHorizontal" size="md" />
         </button>
         <Transition name="dropdown">
           <div v-if="showMenu" class="menu-dropdown glass-dropdown" @click.stop>
-            <button v-if="canDelete" class="menu-item danger" @click="handleDelete">
+            <button v-if="canDelete" type="button" class="menu-item danger" @click="handleDelete">
               <AnimatedIcon name="loading" :fallback-icon="Trash2" size="sm" />
               <span>{{ $t('common.delete') }}</span>
             </button>
-            <button v-if="isAdmin" class="menu-item" @click="togglePin">
+            <button v-if="isAdmin" type="button" class="menu-item" @click="togglePin">
               <AnimatedIcon name="sparkle" :fallback-icon="Pin" size="sm" />
               <span>{{ comment.is_pinned ? $t('comment.unpin') : $t('comment.pin') }}</span>
             </button>
-            <button v-if="isAdmin" class="menu-item" @click="toggleFeature">
+            <button v-if="isAdmin" type="button" class="menu-item" @click="toggleFeature">
               <AnimatedIcon name="sparkle" :fallback-icon="Star" size="sm" />
               <span>{{
                 comment.is_featured ? $t('comment.unfeature') : $t('comment.feature')
               }}</span>
             </button>
-            <button class="menu-item" @click="handleShare">
+            <button type="button" class="menu-item" @click="handleShare">
               <AnimatedIcon name="explore" :fallback-icon="Share2" size="sm" />
               <span>{{ $t('comment.share') }}</span>
             </button>
-            <button class="menu-item" @click="openReportDialog">
+            <button type="button" class="menu-item" @click="openReportDialog">
               <AnimatedIcon name="sparkle" :fallback-icon="Flag" size="sm" />
               <span>{{ $t('comment.report') }}</span>
             </button>
@@ -59,8 +64,11 @@
 
     <div class="comment-actions">
       <button
+        type="button"
         class="action-btn"
         :class="{ active: comment.is_liked }"
+        :aria-label="comment.is_liked ? $t('profile.unlike') : $t('post.likes')"
+        :aria-pressed="comment.is_liked"
         @click="handleLike"
         :disabled="!isAuthenticated"
       >
@@ -73,7 +81,12 @@
         <span v-if="likeCount > 0">{{ likeCount }}</span>
       </button>
 
-      <button class="action-btn" @click="handleReply" :disabled="!isAuthenticated || !canReply">
+      <button
+        type="button"
+        class="action-btn"
+        @click="handleReply"
+        :disabled="!isAuthenticated || !canReply"
+      >
         <AnimatedIcon name="sparkle" :fallback-icon="MessageCircle" size="sm" />
         <span>{{ $t('comment.reply') }}</span>
       </button>
@@ -100,6 +113,7 @@
     >
       <button
         v-if="!showReplies"
+        type="button"
         class="show-replies-btn"
         @click="handleShowReplies"
         :disabled="isLoadingReplies"
@@ -127,6 +141,7 @@
 
           <button
             v-if="hasMoreReplies && !isLoadingReplies"
+            type="button"
             class="load-more-replies"
             @click="loadMoreReplies"
           >

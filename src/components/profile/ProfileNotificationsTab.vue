@@ -30,7 +30,11 @@
           :key="notif.id"
           class="notification-item glass-card"
           :class="{ unread: !notif.is_read }"
+          role="button"
+          tabindex="0"
           @click="handleNotificationClick(notif)"
+          @keydown.enter.prevent="handleNotificationClick(notif)"
+          @keydown.space.prevent="handleNotificationClick(notif)"
         >
           <div class="notification-icon" :class="`type-${notif.type}`">
             <AnimatedIcon
@@ -48,6 +52,7 @@
             type="button"
             class="mark-read-btn"
             :title="$t('profile.markAsRead')"
+            :aria-label="$t('profile.markAsRead')"
             @click.stop="markAsRead(notif.id)"
           >
             <AnimatedIcon name="sparkle" :fallback-icon="Check" size="sm" />
@@ -225,6 +230,16 @@ onUnmounted(() => {
   box-shadow: var(--glass-shadow-sm);
 }
 
+.notification-item:focus-visible {
+  outline: none;
+  transform: translateX(0.25rem);
+  background: var(--glass-bg-light);
+  border-color: var(--glass-border-subtle);
+  box-shadow:
+    var(--glass-shadow-sm),
+    0 0 0 2px rgba(var(--color-primary-rgb), 0.35);
+}
+
 .notification-item.unread {
   background: var(--glass-bg-light);
   border-color: rgba(var(--color-primary-rgb), 0.12);
@@ -255,6 +270,10 @@ onUnmounted(() => {
 }
 
 .notification-item:hover .notification-icon {
+  transform: scale(1.08);
+}
+
+.notification-item:focus-visible .notification-icon {
   transform: scale(1.08);
 }
 
@@ -334,6 +353,10 @@ onUnmounted(() => {
   opacity: 1;
 }
 
+.notification-item:focus-visible .mark-read-btn {
+  opacity: 1;
+}
+
 .mark-read-btn:hover {
   background: var(--color-primary);
   color: var(--color-on-primary);
@@ -372,7 +395,8 @@ onUnmounted(() => {
   border-radius: 8px;
 }
 
-#app[data-ui-style='material'] .notifications-tab .notification-item:hover {
+#app[data-ui-style='material'] .notifications-tab .notification-item:hover,
+#app[data-ui-style='material'] .notifications-tab .notification-item:focus-visible {
   transform: none;
   background: rgba(var(--color-primary-rgb), 0.06);
 }
@@ -404,7 +428,8 @@ onUnmounted(() => {
   border-color: rgba(var(--color-primary-rgb), 0.15);
 }
 
-[data-theme='dark'] .notifications-tab .notification-item:hover {
+[data-theme='dark'] .notifications-tab .notification-item:hover,
+[data-theme='dark'] .notifications-tab .notification-item:focus-visible {
   background: rgba(255, 255, 255, 0.04);
   border-color: rgba(255, 255, 255, 0.06);
 }

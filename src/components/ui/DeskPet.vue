@@ -526,14 +526,15 @@ onUnmounted(() => {
           :style="{ left: `${contextMenuPos.x}px`, top: `${contextMenuPos.y}px` }"
           @click.stop
         >
-          <button class="desk-pet__menu-item" @click="menuActions.pat()">
+          <button type="button" class="desk-pet__menu-item" @click="menuActions.pat()">
             {{ t('deskPet.menu.pat') }}
           </button>
-          <button class="desk-pet__menu-item" @click="menuActions.feed()">
+          <button type="button" class="desk-pet__menu-item" @click="menuActions.feed()">
             {{ t('deskPet.menu.feed') }}
           </button>
           <div class="desk-pet__menu-divider" />
           <button
+            type="button"
             class="desk-pet__menu-item desk-pet__menu-item--danger"
             @click="menuActions.hide()"
           >

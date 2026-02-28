@@ -86,7 +86,11 @@
           <div
             v-if="discussion.referenced_post"
             class="referenced-post"
+            role="button"
+            tabindex="0"
             @click="goToReferencedPost(discussion.referenced_post)"
+            @keydown.enter.prevent="goToReferencedPost(discussion.referenced_post)"
+            @keydown.space.prevent="goToReferencedPost(discussion.referenced_post)"
           >
             <img
               v-if="discussion.referenced_post.thumbnail_url"
@@ -398,6 +402,12 @@ watch(discussionId, fetchDiscussion)
 
 .referenced-post:hover {
   background: var(--glass-bg);
+}
+
+.referenced-post:focus-visible {
+  outline: none;
+  background: var(--glass-bg);
+  box-shadow: 0 0 0 2px rgba(var(--color-primary-rgb), 0.35);
 }
 
 .referenced-thumb {

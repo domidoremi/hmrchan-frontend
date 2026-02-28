@@ -38,8 +38,10 @@
         <button
           v-for="filter in filters"
           :key="filter.value"
+          type="button"
           class="filter-chip"
           :class="{ 'filter-chip--active': activeFilter === filter.value }"
+          :aria-pressed="activeFilter === filter.value"
           @click="activeFilter = filter.value"
         >
           <component :is="filter.icon" :size="16" />

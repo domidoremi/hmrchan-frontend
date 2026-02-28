@@ -43,7 +43,11 @@
               :key="item.id"
               class="history-card glass-card-enhanced"
               :style="{ '--stagger': idx }"
+              role="button"
+              tabindex="0"
               @click="goToPost(item.post_uuid, item.post.thumbnail_url)"
+              @keydown.enter.prevent="goToPost(item.post_uuid, item.post.thumbnail_url)"
+              @keydown.space.prevent="goToPost(item.post_uuid, item.post.thumbnail_url)"
             >
               <div class="card-thumb">
                 <img
@@ -405,6 +409,14 @@ onMounted(() => {
   box-shadow: var(--glass-shadow-hover);
 }
 
+.history-card:focus-visible {
+  outline: none;
+  transform: var(--lift-sm);
+  box-shadow:
+    var(--glass-shadow-hover),
+    0 0 0 2px rgba(var(--color-primary-rgb), 0.35);
+}
+
 /* Thumbnail */
 .card-thumb {
   position: relative;
@@ -422,6 +434,10 @@ onMounted(() => {
 }
 
 .history-card:hover .card-thumb img {
+  transform: scale(1.05);
+}
+
+.history-card:focus-visible .card-thumb img {
   transform: scale(1.05);
 }
 

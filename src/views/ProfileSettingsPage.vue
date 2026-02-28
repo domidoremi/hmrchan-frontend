@@ -81,6 +81,7 @@
                         type="file"
                         accept="image/*"
                         class="sr-only"
+                        :aria-label="$t('profile.uploadAvatar')"
                         @change="handleAvatarSelect"
                       />
                     </label>
@@ -263,6 +264,8 @@
                     <button
                       type="button"
                       class="password-toggle"
+                      :aria-label="passwordToggleLabel(showEmailPassword)"
+                      :aria-pressed="showEmailPassword"
                       @click="showEmailPassword = !showEmailPassword"
                     >
                       <AnimatedIcon
@@ -331,6 +334,8 @@
                     <button
                       type="button"
                       class="password-toggle"
+                      :aria-label="passwordToggleLabel(showCurrentPassword)"
+                      :aria-pressed="showCurrentPassword"
                       @click="showCurrentPassword = !showCurrentPassword"
                     >
                       <AnimatedIcon
@@ -362,6 +367,8 @@
                     <button
                       type="button"
                       class="password-toggle"
+                      :aria-label="passwordToggleLabel(showNewPassword)"
+                      :aria-pressed="showNewPassword"
                       @click="showNewPassword = !showNewPassword"
                     >
                       <AnimatedIcon
@@ -406,6 +413,8 @@
                     <button
                       type="button"
                       class="password-toggle"
+                      :aria-label="passwordToggleLabel(showConfirmPassword)"
+                      :aria-pressed="showConfirmPassword"
                       @click="showConfirmPassword = !showConfirmPassword"
                     >
                       <AnimatedIcon
@@ -552,6 +561,12 @@ const showCurrentPassword = ref(false)
 const showNewPassword = ref(false)
 const showConfirmPassword = ref(false)
 const showEmailPassword = ref(false)
+
+function passwordToggleLabel(visible: boolean): string {
+  return visible
+    ? `${t('common.hide')} ${t('auth.password')}`
+    : `${t('common.show')} ${t('auth.password')}`
+}
 
 // Change email
 const isChangingEmail = ref(false)

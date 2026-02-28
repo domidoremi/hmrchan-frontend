@@ -17,6 +17,7 @@
       :class="{ active: isFavorited }"
       :disabled="!isAuthenticated || isFavoriteLoading"
       :aria-label="isFavorited ? t('post.unfavorite') : t('post.favorite')"
+      :aria-pressed="isFavorited"
       @click="toggleFavorite"
     >
       <AnimatedIcon name="heart" :fallback-icon="Bookmark" size="md" :active="isFavorited" />

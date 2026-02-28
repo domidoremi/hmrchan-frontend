@@ -32,6 +32,7 @@
           type="button"
           class="theme-btn"
           :class="{ active: theme === opt.value }"
+          :aria-pressed="theme === opt.value"
           @click="setTheme(opt.value)"
         >
           <div class="theme-btn-icon">
@@ -62,6 +63,7 @@
           type="button"
           class="theme-btn"
           :class="{ active: settings.uiStyle === opt.value }"
+          :aria-pressed="settings.uiStyle === opt.value"
           @click="setUiStyle(opt.value)"
         >
           <div class="theme-btn-icon">
@@ -92,6 +94,7 @@
           type="button"
           class="lang-btn"
           :class="{ active: locale === opt.code }"
+          :aria-pressed="locale === opt.code"
           @click="changeLocale(opt.code)"
         >
           <span class="lang-flag">{{ opt.flag }}</span>
@@ -115,6 +118,7 @@
           type="button"
           class="bg-effect-btn"
           :class="{ active: settings.backgroundEffect.type === opt.value }"
+          :aria-pressed="settings.backgroundEffect.type === opt.value"
           @click="setBackgroundEffect(opt.value)"
         >
           <span class="bg-effect-emoji">{{ opt.emoji }}</span>
@@ -137,6 +141,7 @@
             min="0.1"
             max="1"
             step="0.1"
+            :aria-label="$t('settings.bgDensity')"
             :value="settings.backgroundEffect.density"
             @input="onDensityChange"
           />
@@ -152,6 +157,7 @@
             min="0.2"
             max="2"
             step="0.2"
+            :aria-label="$t('settings.bgSpeed')"
             :value="settings.backgroundEffect.speed"
             @input="onSpeedChange"
           />
@@ -169,6 +175,7 @@
             min="0.1"
             max="1"
             step="0.1"
+            :aria-label="$t('settings.bgOpacity')"
             :value="settings.backgroundEffect.opacity"
             @input="onOpacityChange"
           />

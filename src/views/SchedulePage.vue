@@ -17,6 +17,7 @@
             <button
               v-for="cat in categories"
               :key="cat.value"
+              type="button"
               class="filter-chip glass-button"
               :class="{ 'filter-chip--active': activeCategory === cat.value }"
               role="radio"
@@ -33,16 +34,23 @@
       <!-- 月份导航 -->
       <div class="month-nav">
         <button
+          type="button"
           class="month-nav-btn glass-button"
           :aria-label="$t('schedule.prevMonth')"
           @click="prevMonth"
         >
           <ChevronLeft :size="18" />
         </button>
-        <button class="month-nav-title" :aria-label="$t('schedule.goToday')" @click="goToday">
+        <button
+          type="button"
+          class="month-nav-title"
+          :aria-label="$t('schedule.goToday')"
+          @click="goToday"
+        >
           {{ monthLabel }}
         </button>
         <button
+          type="button"
           class="month-nav-btn glass-button"
           :aria-label="$t('schedule.nextMonth')"
           @click="nextMonth"
@@ -50,7 +58,12 @@
           <ChevronRight :size="18" />
         </button>
         <Transition name="today-fade">
-          <button v-if="!isCurrentMonth" class="today-btn glass-button" @click="goToday">
+          <button
+            v-if="!isCurrentMonth"
+            type="button"
+            class="today-btn glass-button"
+            @click="goToday"
+          >
             <CalendarCheck :size="14" />
             <span>{{ $t('schedule.today') }}</span>
           </button>
@@ -84,6 +97,7 @@
             <button
               v-for="(day, idx) in calendarDays"
               :key="day.key"
+              type="button"
               class="calendar-cell"
               :class="{
                 'calendar-cell--other': !day.currentMonth,
@@ -240,6 +254,7 @@
               {{ selectedDayEvents.length }}
             </span>
             <button
+              type="button"
               class="close-btn glass-button"
               :aria-label="$t('common.close')"
               @click="selectedDay = null"
@@ -262,7 +277,8 @@
               role="button"
               tabindex="0"
               @click="openDetail(evt.id)"
-              @keydown.enter="openDetail(evt.id)"
+              @keydown.enter.prevent="openDetail(evt.id)"
+              @keydown.space.prevent="openDetail(evt.id)"
             >
               <div
                 class="event-category-bar"
@@ -315,7 +331,8 @@
             role="button"
             tabindex="0"
             @click="openDetail(evt.id)"
-            @keydown.enter="openDetail(evt.id)"
+            @keydown.enter.prevent="openDetail(evt.id)"
+            @keydown.space.prevent="openDetail(evt.id)"
           >
             <div
               class="event-category-bar"
@@ -405,10 +422,10 @@ const CATEGORY_COLORS: Record<string, string> = {
   release: '#06b6d4',
   media: '#3b82f6',
   birth: '#f59e0b',
-  other: '#8b5cf6',
+  other: '#22c55e',
 }
 
-const DEFAULT_COLOR = '#8b5cf6'
+const DEFAULT_COLOR = '#22c55e'
 
 const categories = [
   { value: 'all' as const, label: 'schedule.categories.all', icon: LayoutGrid },
@@ -855,6 +872,7 @@ onMounted(() => {
   pointer-events: none;
   z-index: -2;
   overflow: hidden;
+  contain: paint;
 }
 
 .schedule-bg__blob {
@@ -862,21 +880,23 @@ onMounted(() => {
   border-radius: 50%;
   filter: blur(100px);
   opacity: 0.3;
+  transform: translate3d(0, 0, 0);
+  will-change: transform;
 }
 
 .schedule-bg__blob--blue {
   width: 26.25rem;
   height: 26.25rem;
-  top: 8%;
-  right: -6%;
+  top: 4.5rem;
+  right: -3.75rem;
   background: radial-gradient(circle, rgba(59, 130, 246, 0.4) 0%, transparent 70%);
 }
 
 .schedule-bg__blob--amber {
   width: 23.75rem;
   height: 23.75rem;
-  bottom: 12%;
-  left: -5%;
+  bottom: 6.5rem;
+  left: -3rem;
   background: radial-gradient(circle, rgba(245, 158, 11, 0.35) 0%, transparent 70%);
 }
 
@@ -1190,6 +1210,14 @@ onMounted(() => {
 .event-card:hover {
   border-color: rgba(var(--color-primary-rgb), 0.2);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+.event-card:focus-visible {
+  outline: none;
+  border-color: rgba(var(--color-primary-rgb), 0.2);
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.08),
+    0 0 0 2px rgba(var(--color-primary-rgb), 0.35);
 }
 
 .event-category-bar {

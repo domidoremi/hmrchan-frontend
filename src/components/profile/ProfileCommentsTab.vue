@@ -43,6 +43,7 @@
                   {{ comment.replies_count }} {{ $t('comment.replies') }}
                 </span>
                 <button
+                  type="button"
                   class="delete-btn"
                   :disabled="deletingId === comment.id"
                   :aria-label="$t('common.delete')"
@@ -58,6 +59,7 @@
             <div class="card-footer">
               <button
                 v-if="comment.post_title"
+                type="button"
                 class="post-link"
                 @click="goToPost(comment.post_id)"
               >

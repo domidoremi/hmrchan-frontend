@@ -21,6 +21,7 @@
           type="button"
           class="category-btn"
           :class="{ active: category === cat.value }"
+          :aria-pressed="category === cat.value"
           @click="category = cat.value"
         >
           {{ cat.label }}
@@ -48,7 +49,11 @@
           :key="post.id"
           class="mention-item"
           :class="{ active: index === selectedIndex }"
+          role="button"
+          tabindex="0"
           @click="selectMention(post)"
+          @keydown.enter.prevent="selectMention(post)"
+          @keydown.space.prevent="selectMention(post)"
         >
           <img
             v-if="post.thumbnail_url"
@@ -459,6 +464,12 @@ watch(searchResults, () => {
 .mention-item:hover,
 .mention-item.active {
   background: var(--glass-bg-light);
+}
+
+.mention-item:focus-visible {
+  outline: none;
+  background: var(--glass-bg-light);
+  box-shadow: inset 0 0 0 2px rgba(var(--color-primary-rgb), 0.3);
 }
 
 .mention-thumb {

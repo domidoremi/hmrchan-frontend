@@ -1,19 +1,23 @@
 <template>
   <div class="ui-slider" :class="{ 'ui-slider--disabled': disabled }">
-    <div class="ui-slider__track" ref="trackRef" @click="handleTrackClick">
+    <div
+      class="ui-slider__track"
+      ref="trackRef"
+      role="slider"
+      tabindex="0"
+      :aria-valuemin="min"
+      :aria-valuemax="max"
+      :aria-valuenow="modelValue"
+      :aria-disabled="disabled"
+      @click="handleTrackClick"
+      @keydown="handleKeydown"
+    >
       <div class="ui-slider__range" :style="rangeStyle" />
       <div
         class="ui-slider__thumb"
         :style="thumbStyle"
-        role="slider"
-        tabindex="0"
-        :aria-valuemin="min"
-        :aria-valuemax="max"
-        :aria-valuenow="modelValue"
-        :aria-disabled="disabled"
         @mousedown="startDrag"
         @touchstart.passive="startDrag"
-        @keydown="handleKeydown"
       />
     </div>
     <div v-if="showValue" class="ui-slider__value">{{ displayValue }}</div>
@@ -226,8 +230,11 @@ onUnmounted(() => {
   transform: scale(1.1);
 }
 
-.ui-slider__thumb:focus-visible {
+.ui-slider__track:focus-visible {
   outline: none;
+}
+
+.ui-slider__track:focus-visible .ui-slider__thumb {
   box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.2);
 }
 

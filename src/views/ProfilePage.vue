@@ -15,7 +15,12 @@
           <div class="profile-info">
             <div class="profile-name-row">
               <h1 class="profile-name">{{ displayName }}</h1>
-              <button class="edit-btn" @click="editProfile" :aria-label="$t('profile.editProfile')">
+              <button
+                type="button"
+                class="edit-btn"
+                @click="editProfile"
+                :aria-label="$t('profile.editProfile')"
+              >
                 <Pencil :size="14" />
               </button>
             </div>
@@ -43,8 +48,10 @@
           <button
             v-for="stat in stats"
             :key="stat.key"
+            type="button"
             class="stat-item"
             :class="{ 'stat-item--active': activeTab === stat.key }"
+            :aria-pressed="activeTab === stat.key"
             @click="activeTab = stat.key"
           >
             <span v-if="stat.value" class="stat-value">{{ stat.value }}</span>
@@ -74,8 +81,10 @@
           <button
             v-for="tab in tabs"
             :key="tab.value"
+            type="button"
             class="tab-btn"
             :class="{ 'tab-btn--active': activeTab === tab.value }"
+            :aria-pressed="activeTab === tab.value"
             @click="activeTab = tab.value"
           >
             <component :is="tab.icon" :size="16" />
