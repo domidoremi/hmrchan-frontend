@@ -12,11 +12,13 @@ const SECRET_PATTERNS: Array<{ pattern: RegExp; label: string }> = [
   { pattern: /['"]glpat-[a-zA-Z0-9_-]{20,}['"]/, label: 'GitLab token' },
   { pattern: /['"]xox[bpors]-[a-zA-Z0-9-]{10,}['"]/, label: 'Slack token' },
   {
-    pattern: /(?:api[_-]?key|api[_-]?secret|auth[_-]?token|access[_-]?token|secret[_-]?key)\s*[:=]\s*['"][a-zA-Z0-9_\-/.]{16,}['"]/i,
+    pattern:
+      /(?:api[_-]?key|api[_-]?secret|auth[_-]?token|access[_-]?token|secret[_-]?key)\s*[:=]\s*['"][a-zA-Z0-9_\-/.]{16,}['"]/i,
     label: 'Generic API key/token',
   },
   {
-    pattern: /(?:password|passwd|pwd)\s*[:=]\s*['"][^'"]{8,}['"]/i,
+    pattern:
+      /\b(?:password|passwd|pwd)\b\s*[:=]\s*['"](?=[^'"]*[A-Za-z])(?=[^'"]*\d)[^'"]{8,}['"]/i,
     label: 'Hardcoded password',
   },
 ]
@@ -54,7 +56,7 @@ async function auditDependencies(options: AuditOptions): Promise<AuditIssue[]> {
               (Array.isArray(info.via) && info.via[0]
                 ? (info.via[0] as Record<string, unknown>).title
                 : undefined) ??
-              'unknown',
+              'unknown'
           )
           if (sev === 'high' || sev === 'critical') {
             issues.push({
