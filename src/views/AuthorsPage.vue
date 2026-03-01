@@ -12,6 +12,8 @@
         <span v-if="isLoading && authors.length > 0" class="spinner spinner-sm" />
       </div>
 
+      <h2 class="sr-only">{{ $t('nav.authors') }}</h2>
+
       <StateIndicator v-if="error" variant="error" :description="error" @action="fetchAuthors" />
 
       <template v-else>

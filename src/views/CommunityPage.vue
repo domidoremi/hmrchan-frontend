@@ -78,6 +78,8 @@
 
       <!-- Search Results -->
       <section v-if="searchQuery" class="community-section">
+        <h2 class="sr-only">{{ $t('community.searchPlaceholder') }}</h2>
+
         <div v-if="isSearching" class="loading-state">
           <div class="spinner" />
         </div>
@@ -134,6 +136,8 @@
 
         <!-- Recent Discussions -->
         <section v-if="activeTab === 'recent'" class="community-section">
+          <h2 class="sr-only">{{ $t('community.recentDiscussions') }}</h2>
+
           <div v-if="isLoading && discussions.length === 0" class="loading-state">
             <div class="spinner" />
           </div>
@@ -253,6 +257,8 @@
 
         <!-- Hot Topics -->
         <section v-if="activeTab === 'hot'" class="community-section">
+          <h2 class="sr-only">{{ $t('community.hotTopics') }}</h2>
+
           <div v-if="isLoadingHot && hotTopics.length === 0" class="hot-topics-grid">
             <article v-for="i in 6" :key="i" class="topic-card glass-card">
               <div class="topic-rank">#{{ i }}</div>
