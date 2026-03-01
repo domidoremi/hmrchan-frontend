@@ -44,7 +44,8 @@
         <button
           type="button"
           class="month-nav-title"
-          :aria-label="$t('schedule.goToday')"
+          :aria-label="`${monthLabel} ${$t('schedule.goToday')}`"
+          :title="$t('schedule.goToday')"
           @click="goToday"
         >
           {{ monthLabel }}
@@ -74,14 +75,13 @@
       <div
         ref="calendarRef"
         class="calendar-wrapper glass-card"
-        role="grid"
         :aria-label="$t('schedule.calendarLabel')"
         @keydown="handleCalendarKeydown"
         @touchstart.passive="onTouchStart"
         @touchend.passive="onTouchEnd"
       >
-        <div class="calendar-weekdays" role="row">
-          <div v-for="d in weekdays" :key="d" class="weekday-cell" role="columnheader">
+        <div class="calendar-weekdays">
+          <div v-for="d in weekdays" :key="d" class="weekday-cell">
             {{ d }}
           </div>
         </div>
@@ -93,7 +93,7 @@
             </div>
           </div>
 
-          <div v-else :key="monthKey" class="calendar-grid" role="rowgroup">
+          <div v-else :key="monthKey" class="calendar-grid">
             <button
               v-for="(day, idx) in calendarDays"
               :key="day.key"
@@ -105,10 +105,8 @@
                 'calendar-cell--has-events': day.events.length > 0,
                 'calendar-cell--selected': selectedDay?.key === day.key,
               }"
-              role="gridcell"
               :tabindex="day.isToday || (idx === 0 && !selectedDay) ? 0 : -1"
               :aria-label="getDayAriaLabel(day)"
-              :aria-selected="selectedDay?.key === day.key"
               @click="selectDay(day)"
             >
               <span class="day-number">{{ day.date }}</span>
