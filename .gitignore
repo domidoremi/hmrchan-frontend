@@ -174,5 +174,13 @@ HMRChan 前端 API 合约文档 v1.md
 FRONTEND_API_CONTRACT.md
 *.png
 .lighthouse-a11y
-.vscode
+.vscode/
 
+# allow specific expression PNG assets
+!public/images/expressions/22.png
+!public/images/expressions/55.png
+!public/images/expressions/图层 0.png
+
+# allow docs directory and all documents under it
+!docs/
+!docs/**
