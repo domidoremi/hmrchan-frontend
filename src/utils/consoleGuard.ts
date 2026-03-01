@@ -12,6 +12,7 @@
 type ConsoleGuardMode = 'off' | 'warn' | 'balanced' | 'strict'
 type Teardown = () => void
 type GuardSignal = 'devtools-open' | 'shortcut-blocked' | 'contextmenu-blocked'
+const SHOW_CONSOLE_GUARD_BANNER = import.meta.env['VITE_SHOW_CONSOLE_GUARD_BANNER'] === 'true'
 
 const WARNING_MESSAGE = `
 %c⚠️ 警告 / Warning / 警告
@@ -80,6 +81,7 @@ function emitGuardSignal(signal: GuardSignal): void {
  * 显示籾山ひめり的祝福信息
  */
 function showHimeriMessage(): void {
+  if (!SHOW_CONSOLE_GUARD_BANNER) return
   console.log(HIMERI_MESSAGE, HIMERI_TITLE_STYLE, HIMERI_LINK_STYLE, HIMERI_TEXT_STYLE)
 }
 
@@ -89,6 +91,8 @@ function showHimeriMessage(): void {
 function showWarning(): void {
   if (hasShownWarning) return
   hasShownWarning = true
+
+  if (!SHOW_CONSOLE_GUARD_BANNER) return
 
   // 先显示籾山ひめり的信息
   showHimeriMessage()
