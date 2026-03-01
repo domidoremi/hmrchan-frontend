@@ -30,18 +30,18 @@ enum PetState {
 }
 
 const stateImageMap: Record<PetState, string> = {
-  [PetState.IDLE]: '/images/expressions/sitting.webp',
-  [PetState.HOVER]: '/images/expressions/confused.webp',
-  [PetState.CLICK]: '/images/expressions/surprised.webp',
-  [PetState.ANGRY]: '/images/expressions/angry.webp',
-  [PetState.SLEEP]: '/images/expressions/sleeping.webp',
-  [PetState.WAKE]: '/images/expressions/surprised.webp',
-  [PetState.DRAG]: '/images/expressions/running.webp',
-  [PetState.HAPPY]: '/images/expressions/happy.webp',
-  [PetState.THINKING]: '/images/expressions/thinking.webp',
-  [PetState.PAT]: '/images/expressions/kawaii.webp',
-  [PetState.EAT]: '/images/expressions/laughing.webp',
-  [PetState.DIZZY]: '/images/expressions/confused.webp',
+  [PetState.IDLE]: '/images/expressions/sitting-sm.webp',
+  [PetState.HOVER]: '/images/expressions/confused-sm.webp',
+  [PetState.CLICK]: '/images/expressions/surprised-sm.webp',
+  [PetState.ANGRY]: '/images/expressions/angry-sm.webp',
+  [PetState.SLEEP]: '/images/expressions/sleeping-sm.webp',
+  [PetState.WAKE]: '/images/expressions/surprised-sm.webp',
+  [PetState.DRAG]: '/images/expressions/running-sm.webp',
+  [PetState.HAPPY]: '/images/expressions/happy-sm.webp',
+  [PetState.THINKING]: '/images/expressions/thinking-sm.webp',
+  [PetState.PAT]: '/images/expressions/kawaii-sm.webp',
+  [PetState.EAT]: '/images/expressions/laughing-sm.webp',
+  [PetState.DIZZY]: '/images/expressions/confused-sm.webp',
 }
 
 // 时间问候
@@ -140,12 +140,32 @@ let randomIdleBehaviorTimer: ReturnType<typeof setTimeout> | null = null
 
 // ─── 工具函数 ───
 const preloadImages = () => {
-  const urls = new Set(Object.values(stateImageMap))
+  const urls = new Set([
+    stateImageMap[PetState.HOVER],
+    stateImageMap[PetState.CLICK],
+    stateImageMap[PetState.SLEEP],
+    stateImageMap[PetState.HAPPY],
+  ])
   for (const url of urls) {
     const img = new Image()
     img.src = url
   }
 }
+let hasPreloadedAuxImages = false
+let delayedPreloadTimer: ReturnType<typeof setTimeout> | null = null
+
+function scheduleAuxImagePreload() {
+  if (hasPreloadedAuxImages || !visible.value) return
+  hasPreloadedAuxImages = true
+  delayedPreloadTimer = setTimeout(() => {
+    preloadImages()
+    delayedPreloadTimer = null
+  }, 1500)
+}
+
+watch(visible, (isVisible) => {
+  if (isVisible) scheduleAuxImagePreload()
+})
 
 const PET_SIZE = 80
 const EDGE_SNAP = 20
@@ -436,7 +456,7 @@ const handleGlobalClick = () => {
 
 // ─── 生命周期 ───
 onMounted(() => {
-  preloadImages()
+  scheduleAuxImagePreload()
   initPosition()
   resetIdleTimer()
   scheduleRandomIdleBehavior()
@@ -454,6 +474,7 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  if (delayedPreloadTimer) clearTimeout(delayedPreloadTimer)
   if (idleTimer) clearTimeout(idleTimer)
   if (stateResetTimer) clearTimeout(stateResetTimer)
   if (clickResetTimer) clearTimeout(clickResetTimer)
@@ -495,6 +516,11 @@ onUnmounted(() => {
         :alt="`Pet ${currentState}`"
         class="desk-pet__image"
         :class="{ 'desk-pet__image--ready': imageReady }"
+        loading="lazy"
+        decoding="async"
+        fetchpriority="low"
+        width="80"
+        height="80"
         draggable="false"
       />
 
@@ -516,7 +542,9 @@ onUnmounted(() => {
       </Transition>
 
       <!-- 睡眠 Zzz -->
-      <span v-if="currentState === PetState.SLEEP" class="desk-pet__zzz">Zzz</span>
+      <span v-if="currentState === PetState.SLEEP" class="desk-pet__zzz" aria-hidden="true"
+        >Zzz</span
+      >
 
       <!-- 右键菜单 -->
       <Transition name="menu">
