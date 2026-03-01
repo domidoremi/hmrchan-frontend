@@ -80,7 +80,10 @@
 
 以下端点不经过 V1Envelope，直接返回原始内容：
 
+- `GET /api/v1/media/:id` — 媒体元数据（历史兼容，返回原始 JSON）
+- `GET /api/v1/media/:id/subtitle` — 字幕文件
 - `GET /api/v1/media/:id/stream` — 视频/音频流（支持 Range）
+- `GET /api/v1/media/:id/thumbnail` — 缩略图（二进制图片/SVG）
 - `GET /api/v1/media/:id/download` — 文件下载
 - `GET /health` — 健康检查
 - `GET /metrics` — Prometheus 指标

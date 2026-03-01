@@ -85,7 +85,7 @@
 
 社区统计数据。
 
-- 权限: public
+- 权限: optional（可匿名）
 - 响应:
 
 ```json
@@ -101,7 +101,7 @@
 
 最新评论列表。
 
-- 权限: public
+- 权限: optional（可匿名）
 - Query: `page` (default 1), `page_size` (default 20, max 50)
 - 响应: 分页，每项:
 
@@ -120,11 +120,13 @@
 
 `/api/v1/community/latest` 的别名，返回相同数据。
 
+- 权限: optional（可匿名）
+
 ### GET /api/v1/community/hot
 
 热门话题（按评论数排序）。
 
-- 权限: public
+- 权限: optional（可匿名）
 - Query: `days` (1-90, default 7), `limit` (1-50, default 10)
 - 响应:
 
