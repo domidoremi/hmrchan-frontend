@@ -1,7 +1,8 @@
 #!/usr/bin/env bun
 /**
- * 性能测试脚本
- * 使用 Lighthouse 测试应用性能并生成报告
+ * 可访问性专项测试脚本（Lighthouse）
+ * - 先 build，再用 preview 服务测试核心路由
+ * - 输出每页 accessibility 分数与失败审计项
  */
 
 import { spawn } from 'child_process'
@@ -11,13 +12,42 @@ import { join } from 'path'
 import lighthouse from 'lighthouse'
 import * as chromeLauncher from 'chrome-launcher'
 
-const LIGHTHOUSE_REPORTS_DIR = join(process.cwd(), '.lighthouse')
-const LIGHTHOUSE_TEMP_DIR = join(LIGHTHOUSE_REPORTS_DIR, 'tmp')
-const PREVIEW_SERVER_PORT = 0
+const REPORT_DIR = join(process.cwd(), '.lighthouse-a11y')
+const TEMP_DIR = join(REPORT_DIR, 'tmp')
+const DEFAULT_PREVIEW_PORT = 0
 
-interface TestConfig {
-  url: string
-  name: string
+const ROUTES = [
+  '/',
+  '/explore',
+  '/search',
+  '/authors',
+  '/community',
+  '/community/discussions/00000000-0000-4000-8000-000000000000',
+  '/post/00000000-0000-4000-8000-000000000000',
+  '/author/sample-author',
+  '/schedule',
+  '/about',
+  '/contact',
+  '/favorites',
+  '/profile',
+  '/profile/settings',
+  '/profile/notifications',
+  '/profile/devices',
+  '/login',
+  '/register',
+  '/forgot-password',
+  '/reset-password',
+  '/verify-email',
+  '/this-route-does-not-exist',
+]
+
+interface LighthouseRunnerResult {
+  report: string | string[]
+  lhr: {
+    finalDisplayedUrl?: string
+    categories: Record<string, { score: number | null }>
+    audits: Record<string, { score: number | null; title: string; scoreDisplayMode: string }>
+  }
 }
 
 const AUDIT_ENV = {
@@ -26,14 +56,6 @@ const AUDIT_ENV = {
   VITE_ENABLE_SCHEDULE_API: process.env['VITE_ENABLE_SCHEDULE_API'] ?? 'false',
   VITE_ENABLE_DATA_PREFETCH: process.env['VITE_ENABLE_DATA_PREFETCH'] ?? 'false',
   VITE_DISABLE_PREVIEW_PROXY: process.env['VITE_DISABLE_PREVIEW_PROXY'] ?? 'true',
-}
-
-function getTestUrls(port: number): TestConfig[] {
-  return [
-    { url: `http://localhost:${port}/`, name: 'home' },
-    { url: `http://localhost:${port}/explore`, name: 'explore' },
-    { url: `http://localhost:${port}/search`, name: 'search' },
-  ]
 }
 
 function getBunExecutable(): string {
@@ -66,22 +88,14 @@ async function runBunTask(task: string): Promise<void> {
       shell: false,
       env: AUDIT_ENV,
     })
-
     child.on('close', (code) => {
-      if (code === 0) {
-        resolve()
-      } else {
-        reject(new Error(`bun run ${task} exited with code ${code}`))
-      }
+      if (code === 0) resolve()
+      else reject(new Error(`bun run ${task} exited with code ${code}`))
     })
-
     child.on('error', reject)
   })
 }
 
-/**
- * 启动开发服务器
- */
 async function terminateProcessTree(pid: number | undefined): Promise<void> {
   if (!pid) return
 
@@ -100,7 +114,7 @@ async function terminateProcessTree(pid: number | undefined): Promise<void> {
   try {
     process.kill(pid, 'SIGTERM')
   } catch {
-    // Ignore if already closed
+    // ignore
   }
 }
 
@@ -117,15 +131,11 @@ function startPreviewServer(port: number): Promise<{ kill: () => Promise<void>; 
 
     server.stdout?.on('data', (data: Buffer) => {
       const output = data.toString()
-      console.log(output)
-
-      // 检测服务器是否已启动
+      process.stdout.write(output)
       const match = output.match(/Local:\s+http:\/\/localhost:(\d+)\//)
       if (!resolved && match?.[1]) {
         const actualPort = Number(match[1])
         resolved = true
-        console.log(`✅ Preview server is ready on ${actualPort}\n`)
-        // 等待额外 1 秒确保完全启动
         setTimeout(
           () =>
             resolve({
@@ -138,98 +148,89 @@ function startPreviewServer(port: number): Promise<{ kill: () => Promise<void>; 
     })
 
     server.stderr?.on('data', (data: Buffer) => {
-      console.error(data.toString())
+      process.stderr.write(data.toString())
     })
 
     server.on('error', (error: Error) => {
-      if (!resolved) {
-        reject(error)
-      }
+      if (!resolved) reject(error)
     })
 
-    // 超时保护
     setTimeout(() => {
       if (!resolved) {
         void terminateProcessTree(server.pid)
         reject(new Error(`Preview server startup timeout on port ${port}`))
       }
-    }, 45000)
+    }, 45_000)
   })
 }
 
-/**
- * 运行 Lighthouse 测试
- */
-interface LighthouseRunnerResult {
-  report: string | string[]
-  lhr: {
-    categories: Record<string, { score: number | null }>
-  }
+function getFailingAudits(
+  audits: LighthouseRunnerResult['lhr']['audits']
+): Array<{ id: string; title: string }> {
+  return Object.entries(audits)
+    .filter(([, audit]) => {
+      if (audit.scoreDisplayMode === 'notApplicable') return false
+      return audit.score !== null && audit.score < 1
+    })
+    .map(([id, audit]) => ({ id, title: audit.title }))
 }
 
-async function runLighthouseWithApi(url: string, name: string, chromePort: number): Promise<void> {
-  console.log(`📊 Running Lighthouse for ${name}...`)
-
-  const runnerResult = (await lighthouse(url, {
+async function runAccessibilityAudit(
+  url: string,
+  name: string,
+  chromePort: number
+): Promise<number> {
+  const result = (await lighthouse(url, {
     port: chromePort,
     logLevel: 'error',
-    output: ['html', 'json'],
-    onlyCategories: ['performance', 'accessibility', 'best-practices', 'seo'],
+    output: ['json'],
+    onlyCategories: ['accessibility'],
     preset: 'desktop',
   })) as LighthouseRunnerResult | undefined
 
-  if (!runnerResult) {
+  if (!result) {
     throw new Error(`Lighthouse returned empty result for ${name}`)
   }
 
-  const reports = Array.isArray(runnerResult.report) ? runnerResult.report : [runnerResult.report]
-  const htmlReport = reports[0]
-  const jsonReport = reports[1]
+  const reportJson = Array.isArray(result.report) ? result.report[0] : result.report
+  writeFileSync(join(REPORT_DIR, `${name}.json`), reportJson ?? '{}')
 
-  writeFileSync(join(LIGHTHOUSE_REPORTS_DIR, `${name}.html`), htmlReport ?? '')
-  writeFileSync(join(LIGHTHOUSE_REPORTS_DIR, `${name}.json`), jsonReport ?? '{}')
+  const score = Math.round((result.lhr.categories.accessibility?.score ?? 0) * 100)
+  const failing = getFailingAudits(result.lhr.audits)
 
-  const perfScore = Math.round((runnerResult.lhr.categories.performance?.score ?? 0) * 100)
-  console.log(`✅ Lighthouse report saved: ${join(LIGHTHOUSE_REPORTS_DIR, `${name}.html`)}`)
-  console.log(`   Performance: ${perfScore}/100\n`)
+  console.log(`\n[${name}] accessibility: ${score}/100`)
+  if (failing.length > 0) {
+    for (const item of failing.slice(0, 8)) {
+      console.log(`- ${item.id}: ${item.title}`)
+    }
+  } else {
+    console.log('- no failing audits')
+  }
+
+  return score
 }
 
-/**
- * 主函数
- */
-async function main(): Promise<void> {
-  console.log('🔍 MomiChan Performance Testing\n')
+async function main() {
+  console.log('🔎 Running accessibility audit...\n')
 
-  // 创建报告目录
-  if (!existsSync(LIGHTHOUSE_REPORTS_DIR)) {
-    mkdirSync(LIGHTHOUSE_REPORTS_DIR, { recursive: true })
-  }
-  if (!existsSync(LIGHTHOUSE_TEMP_DIR)) {
-    mkdirSync(LIGHTHOUSE_TEMP_DIR, { recursive: true })
-  }
-  const chromeProfileDir = join(LIGHTHOUSE_TEMP_DIR, 'chrome-profile')
-  const launcherProfileDir = join(LIGHTHOUSE_TEMP_DIR, 'launcher-profile')
-  if (!existsSync(chromeProfileDir)) {
-    mkdirSync(chromeProfileDir, { recursive: true })
-  }
-  if (!existsSync(launcherProfileDir)) {
-    mkdirSync(launcherProfileDir, { recursive: true })
-  }
+  if (!existsSync(REPORT_DIR)) mkdirSync(REPORT_DIR, { recursive: true })
+  if (!existsSync(TEMP_DIR)) mkdirSync(TEMP_DIR, { recursive: true })
+
+  const chromeProfileDir = join(TEMP_DIR, 'chrome-profile')
+  const launcherProfileDir = join(TEMP_DIR, 'launcher-profile')
+  if (!existsSync(chromeProfileDir)) mkdirSync(chromeProfileDir, { recursive: true })
+  if (!existsSync(launcherProfileDir)) mkdirSync(launcherProfileDir, { recursive: true })
 
   let previewServer: { kill: () => Promise<void>; port: number } | null = null
   let chrome: chromeLauncher.LaunchedChrome | null = null
 
   try {
-    // 先构建生产产物，再用 preview 跑 Lighthouse（更接近真实生产表现）
     console.log('🏗️ Building production bundle...')
     await runBunTask('build')
-    console.log('✅ Build completed\n')
+    console.log('✅ Build completed')
 
-    // 启动预览服务器
-    const previewPort = await findAvailablePort(PREVIEW_SERVER_PORT)
+    const previewPort = await findAvailablePort(DEFAULT_PREVIEW_PORT)
     previewServer = await startPreviewServer(previewPort)
-    const tests = getTestUrls(previewServer.port)
-
     chrome = await chromeLauncher.launch({
       chromeFlags: [
         '--headless',
@@ -241,27 +242,35 @@ async function main(): Promise<void> {
       userDataDir: launcherProfileDir,
     })
 
-    // 运行 Lighthouse 测试
-    for (const { url, name } of tests) {
-      await runLighthouseWithApi(url, name, chrome.port)
+    let pass = 0
+    let fail = 0
+
+    for (const route of ROUTES) {
+      const routeLabel = route === '/' ? 'home' : route.replace(/\//g, '-').replace(/^-/, '')
+      const score = await runAccessibilityAudit(
+        `http://localhost:${previewServer.port}${route}`,
+        routeLabel,
+        chrome.port
+      )
+      if (score >= 100) pass++
+      else fail++
     }
 
-    console.log('✅ All performance tests completed!')
-    console.log(`📁 Reports saved in: ${LIGHTHOUSE_REPORTS_DIR}`)
+    console.log('\n=== Accessibility Summary ===')
+    console.log(`Reports: ${REPORT_DIR}`)
+    console.log(`Pass(100): ${pass}`)
+    console.log(`Need Improve(<100): ${fail}`)
   } catch (error) {
-    console.error('❌ Performance testing failed:', error)
+    console.error('❌ Accessibility audit failed:', error)
     process.exit(1)
   } finally {
     if (chrome) {
       try {
         await chrome.kill()
-      } catch (error) {
-        // Windows 下 chrome-launcher 偶发 EPERM 清理失败，不影响报告输出
-        console.warn('⚠️ Failed to fully clean Lighthouse temp directory:', error)
+      } catch {
+        // ignore
       }
     }
-
-    // 关闭开发服务器
     if (previewServer) {
       console.log('\n🛑 Stopping preview server...')
       await previewServer.kill()
