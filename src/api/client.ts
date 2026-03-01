@@ -34,6 +34,10 @@ const API_BASE_URL =
   import.meta.env.VITE_API_ENDPOINT || `${import.meta.env.VITE_API_URL || '/api'}/v1`
 // Auth 路由不在 /api/v1/ 前缀下，使用独立的 base URL
 const API_AUTH_URL = import.meta.env.VITE_API_URL || '/api'
+const ENABLE_CLIENT_SECURITY_INIT =
+  import.meta.env.VITE_ENABLE_CLIENT_INIT !== 'false' &&
+  import.meta.env.MODE !== 'test' &&
+  import.meta.env.VITEST !== 'true'
 
 export { API_AUTH_URL }
 const REQUEST_TIMEOUT = 30000
@@ -596,8 +600,17 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
   // 注入客户端安全头（X-Client-Token, X-Client-Fingerprint, X-Timestamp, X-Signature）
   if (!skipSecurity) {
     try {
-      const { clientSecurityManager, signRequest: signReq } =
-        await import('./clientSecurityService')
+      const {
+        clientSecurityService,
+        clientSecurityManager,
+        signRequest: signReq,
+      } = await import('./clientSecurityService')
+
+      // 在并发首屏请求场景下，先确保客户端凭证已初始化，避免无签名请求触发 403。
+      if (ENABLE_CLIENT_SECURITY_INIT && !clientSecurityManager.isInitialized()) {
+        await clientSecurityService.ensureInitialized()
+      }
+
       const clientToken = clientSecurityManager.getClientToken()
       if (clientToken) {
         ;(headers as Record<string, string>)['X-Client-Token'] = clientToken
@@ -620,8 +633,12 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
           ;(headers as Record<string, string>)['X-Signature'] = signature
         }
       }
-    } catch {
-      // 客户端安全模块加载失败时静默跳过
+    } catch (error) {
+      // CHALLENGE_REQUIRED 需要上抛给上层统一处理，避免继续发送必定失败的业务请求
+      if (error instanceof ApiError && error.code === 'CHALLENGE_REQUIRED') {
+        throw error
+      }
+      // 客户端安全模块加载失败或初始化异常时降级为无安全头请求
     }
   }
 
