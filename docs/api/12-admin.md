@@ -161,6 +161,8 @@ Redis 缓存统计（原始 INFO 输出）。
 
 同 `/crawler/status`（别名）。
 
+- 权限: admin
+
 ### GET /api/v1/crawler/config
 
 爬虫配置列表（5 分钟 Redis 缓存）。
@@ -268,7 +270,7 @@ Redis 缓存统计（原始 INFO 输出）。
 
 用户统计。
 
-- 权限: required（本人或管理员）
+- 权限: admin
 - 响应: `{ "favorites_count": 0, "comments_count": 0, "posts_count": 0, "views_count": 0 }`
 
 ### POST /api/v1/users/:id/roles
@@ -283,7 +285,7 @@ Redis 缓存统计（原始 INFO 输出）。
 
 获取用户角色。
 
-- 权限: required（本人或管理员）
+- 权限: admin
 - 响应: 角色对象数组
 
 ---

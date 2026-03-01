@@ -173,6 +173,7 @@
 
 - 权限: optional
 - Path: `id` — 媒体文件 UUID
+- 响应: 原始 JSON（不经过 V1Envelope）
 - 响应:
 
 ```json
@@ -183,6 +184,22 @@
   "duration_sec"?: 0.0, "created_at": "datetime"
 }
 ```
+
+### GET /api/v1/media/:id/subtitle
+
+获取与该媒体同帖子的字幕文件。
+
+- 权限: optional
+- Path: `id` — 媒体文件 UUID（父媒体）
+- Query: `language` — 字幕语言代码（必填）
+- 响应: 字幕文件原始内容（不经过 V1Envelope）
+- Content-Type:
+  - `text/vtt`（默认或 `vtt`）
+  - `application/x-subrip`（`srt`）
+  - `text/x-ssa`（`ass`/`ssa`）
+- 典型错误:
+  - `400`：`id` 非法或缺少 `language`
+  - `404`：媒体不存在 / 无该语言字幕 / 磁盘文件不存在
 
 ### GET /api/v1/media/:id/stream
 
