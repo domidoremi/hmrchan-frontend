@@ -518,16 +518,26 @@ function requestIdle(fn: () => void) {
     requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number
     cancelIdleCallback?: (id: number) => void
   }
+  const scheduleInIdle = () => {
+    if (idleApi.requestIdleCallback) {
+      idlePrefetchHandle = idleApi.requestIdleCallback(run, { timeout: 1500 })
+    } else {
+      idlePrefetchTimer = window.setTimeout(run, IDLE_PREFETCH_FALLBACK_MS)
+    }
+  }
   const run = () => {
     idlePrefetchTimer = null
     idlePrefetchHandle = null
     fn()
   }
-  if (idleApi.requestIdleCallback) {
-    idlePrefetchHandle = idleApi.requestIdleCallback(run, { timeout: 2000 })
-  } else {
-    idlePrefetchTimer = window.setTimeout(run, 800)
+  if (idlePrefetchStartTimer !== null) {
+    clearTimeout(idlePrefetchStartTimer)
   }
+  // 在可交互后的较晚时机再进行闲时预取，避免占用首屏关键路径。
+  idlePrefetchStartTimer = window.setTimeout(() => {
+    idlePrefetchStartTimer = null
+    scheduleInIdle()
+  }, IDLE_PREFETCH_START_DELAY_MS)
 }
 
 function goToSearch() {
@@ -674,6 +684,9 @@ const handleResize = throttleRAF(() => {
 
 let idlePrefetchHandle: number | null = null
 let idlePrefetchTimer: number | null = null
+let idlePrefetchStartTimer: number | null = null
+const IDLE_PREFETCH_START_DELAY_MS = 8000
+const IDLE_PREFETCH_FALLBACK_MS = 1200
 
 function cancelIdlePrefetch() {
   const idleApi = window as unknown as { cancelIdleCallback?: (id: number) => void }
@@ -684,6 +697,10 @@ function cancelIdlePrefetch() {
   if (idlePrefetchTimer !== null) {
     clearTimeout(idlePrefetchTimer)
     idlePrefetchTimer = null
+  }
+  if (idlePrefetchStartTimer !== null) {
+    clearTimeout(idlePrefetchStartTimer)
+    idlePrefetchStartTimer = null
   }
 }
 onMounted(() => {

@@ -10,6 +10,7 @@ type FpAgent = { get: () => Promise<{ visitorId: string }> }
 let fpPromise: Promise<FpAgent> | null = null
 const FP_STORAGE_KEY = 'momi_device_fingerprint_v1'
 const FP_CACHE_TTL_MS = 24 * 60 * 60 * 1000
+const ENABLE_ADVANCED_FINGERPRINT = import.meta.env.VITE_ENABLE_ADVANCED_FINGERPRINT === 'true'
 
 interface PersistedFingerprint {
   value: string
@@ -87,6 +88,10 @@ export function initFingerprint(): Promise<FpAgent | null> {
   if (cachedFingerprint) {
     return Promise.resolve(null)
   }
+  // 默认走轻量本地指纹，避免第三方库抢占首屏主线程
+  if (!ENABLE_ADVANCED_FINGERPRINT) {
+    return Promise.resolve(null)
+  }
 
   if (!fpPromise) {
     fpPromise = loadFingerprintJS()
@@ -118,6 +123,13 @@ export function clearFingerprintCache() {
 export async function getDeviceFingerprint(): Promise<string> {
   // 返回缓存的指纹（如果存在）
   if (cachedFingerprint) {
+    return cachedFingerprint
+  }
+
+  // 默认：直接使用轻量降级指纹，避免加载第三方指纹库造成长任务。
+  if (!ENABLE_ADVANCED_FINGERPRINT) {
+    cachedFingerprint = await getFallbackFingerprint()
+    persistFingerprint(cachedFingerprint)
     return cachedFingerprint
   }
 

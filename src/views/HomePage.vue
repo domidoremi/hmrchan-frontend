@@ -92,7 +92,7 @@
     <!-- /.home-fold -->
 
     <!-- Latest Posts -->
-    <section class="posts">
+    <section ref="postsSectionRef" class="posts">
       <div class="posts-bg" aria-hidden="true" />
       <div class="container">
         <header class="posts-header">
@@ -244,6 +244,7 @@ const { total, load: loadCachedPosts } = useCachedPostList<PostListItem>(
 )
 
 // DOM refs
+const postsSectionRef = ref<HTMLElement | null>(null)
 const containerRef = ref<HTMLElement | null>(null)
 const columnRefs = ref<(HTMLElement | null)[]>([])
 const sentinelRef = ref<HTMLElement | null>(null)
@@ -279,10 +280,12 @@ const { columns, columnCount, distributePosts, redistribute, getColumnWidth } = 
 
 onActivated(() => {
   attachResizeObserver()
+  setupInitialPostsFetchTriggers()
 })
 
 onDeactivated(() => {
   detachResizeObserver()
+  clearInitialPostsFetchTriggers()
   handleContainerResize.cancel?.()
 })
 
@@ -290,6 +293,10 @@ const getContainerWidth = () => containerRef.value?.offsetWidth || 1200
 
 let resizeObserver: ResizeObserver | null = null
 let lastContainerWidth = 0
+let postsFetchObserver: IntersectionObserver | null = null
+let initialPostsFetchTimer: number | null = null
+let hasTriggeredInitialFetch = false
+const INITIAL_POSTS_FETCH_DELAY_MS = 2200
 
 const handleContainerResize = throttleRAF((width: number) => {
   if (Math.abs(width - lastContainerWidth) < 50) return
@@ -304,6 +311,47 @@ const handleContainerResize = throttleRAF((width: number) => {
 function detachResizeObserver() {
   resizeObserver?.disconnect()
   resizeObserver = null
+}
+
+function clearInitialPostsFetchTriggers() {
+  if (postsFetchObserver) {
+    postsFetchObserver.disconnect()
+    postsFetchObserver = null
+  }
+  if (initialPostsFetchTimer !== null) {
+    clearTimeout(initialPostsFetchTimer)
+    initialPostsFetchTimer = null
+  }
+}
+
+function triggerInitialPostsFetch() {
+  if (hasTriggeredInitialFetch || posts.value.length > 0 || isLoading.value) return
+  hasTriggeredInitialFetch = true
+  clearInitialPostsFetchTriggers()
+  void fetchLatestPosts()
+}
+
+function setupInitialPostsFetchTriggers() {
+  if (hasTriggeredInitialFetch || posts.value.length > 0 || isLoading.value) return
+  if (typeof window === 'undefined') {
+    triggerInitialPostsFetch()
+    return
+  }
+  const el = postsSectionRef.value
+  if (el && 'IntersectionObserver' in window) {
+    postsFetchObserver = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          triggerInitialPostsFetch()
+        }
+      },
+      { rootMargin: '600px 0px' }
+    )
+    postsFetchObserver.observe(el)
+  }
+  initialPostsFetchTimer = window.setTimeout(() => {
+    triggerInitialPostsFetch()
+  }, INITIAL_POSTS_FETCH_DELAY_MS)
 }
 
 function attachResizeObserver() {
@@ -427,12 +475,13 @@ function openDetailFromPreview(postId: string) {
 }
 
 onMounted(() => {
-  if (posts.value.length === 0 && !isLoading.value) fetchLatestPosts()
+  setupInitialPostsFetchTriggers()
   attachResizeObserver()
 })
 
 onBeforeUnmount(() => {
   detachResizeObserver()
+  clearInitialPostsFetchTriggers()
   masonryTaskId += 1
   handleContainerResize.cancel?.()
 })
@@ -832,6 +881,8 @@ onBeforeUnmount(() => {
   position: relative;
   padding: var(--spacing-6) 0 var(--spacing-8);
   z-index: 1;
+  content-visibility: auto;
+  contain-intrinsic-size: 120rem;
 }
 
 @media (min-width: 768px) {
