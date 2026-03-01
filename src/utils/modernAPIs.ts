@@ -82,36 +82,42 @@ export function scheduleTask<T>(
 ): Promise<T> {
   const { priority = 'user-visible', delay = 0 } = options
 
-  // 优先使用 Scheduler API (Chrome 94+)
-  const scheduler = (globalThis as unknown as { scheduler?: Scheduler }).scheduler
-  if (scheduler?.postTask) {
-    return scheduler.postTask(callback, { priority, delay })
-  }
-
-  // 降级：使用 requestIdleCallback
-  if (priority === 'background' && 'requestIdleCallback' in window) {
-    return new Promise((resolve) => {
-      const ric = window as unknown as {
-        requestIdleCallback: (cb: () => void, opts?: { timeout: number }) => number
-      }
-      const timeoutMs = delay || 5000
+  const runWithDelay = (runner: () => Promise<T>): Promise<T> => {
+    if (delay <= 0) return runner()
+    return new Promise((resolve, reject) => {
       setTimeout(() => {
-        ric.requestIdleCallback(
-          () => {
-            resolve(callback() as T)
-          },
-          { timeout: timeoutMs }
-        )
+        runner().then(resolve).catch(reject)
       }, delay)
     })
   }
 
+  // 优先使用 Scheduler API (Chrome 94+)
+  const scheduler = (globalThis as unknown as { scheduler?: Scheduler }).scheduler
+  if (scheduler?.postTask) {
+    return runWithDelay(() => scheduler.postTask(callback, { priority }))
+  }
+
+  // 降级：使用 requestIdleCallback
+  if (priority === 'background' && 'requestIdleCallback' in window) {
+    return runWithDelay(
+      () =>
+        new Promise((resolve) => {
+          const ric = window as unknown as {
+            requestIdleCallback: (cb: () => void, opts?: { timeout: number }) => number
+          }
+          const timeoutMs = 5000
+          ric.requestIdleCallback(
+            () => {
+              resolve(callback() as T)
+            },
+            { timeout: timeoutMs }
+          )
+        })
+    )
+  }
+
   // 最终降级：setTimeout
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve(callback() as T)
-    }, delay)
-  })
+  return runWithDelay(() => Promise.resolve(callback() as T))
 }
 
 /**

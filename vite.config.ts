@@ -25,6 +25,7 @@ import { criticalCSSPlugin } from './vite-plugin-critical-css'
 import { swVersionPlugin } from './vite-plugin-sw-version'
 import { sriPlugin } from './vite-plugin-sri'
 import { obfuscationPlugin } from './vite-plugin-obfuscation'
+import { asyncCssPlugin } from './vite-plugin-async-css'
 
 type DevProxyServer = {
   on(event: 'proxyRes', listener: (proxyRes: IncomingMessage) => void): void
@@ -67,6 +68,8 @@ export default defineConfig(({ mode }: { mode: string }) => {
   const isProd = mode === 'production'
   const isDev = mode === 'development'
   const obfuscationEnabled = parseBoolEnv('VITE_ENABLE_OBFUSCATION', false)
+  const asyncMainCss = parseBoolEnv('VITE_ASYNC_MAIN_CSS', true)
+  const disablePreviewProxy = parseBoolEnv('VITE_DISABLE_PREVIEW_PROXY', false)
   const obfuscationProfile =
     process.env.VITE_OBFUSCATION_PROFILE === 'aggressive' ? 'aggressive' : 'safe'
   const obfuscationControlFlow = parseBoolEnv('VITE_OBFUSCATION_CONTROL_FLOW', false)
@@ -129,6 +132,7 @@ export default defineConfig(({ mode }: { mode: string }) => {
             criticalCSSPlugin(),
             swVersionPlugin(),
             sriPlugin(),
+            ...(asyncMainCss ? [asyncCssPlugin()] : []),
             obfuscationPlugin({
               enabled: obfuscationEnabled,
               profile: obfuscationProfile,
@@ -482,6 +486,7 @@ export default defineConfig(({ mode }: { mode: string }) => {
     preview: {
       port: 4173,
       strictPort: true,
+      ...(disablePreviewProxy ? { proxy: {} } : {}),
     },
 
     /**
