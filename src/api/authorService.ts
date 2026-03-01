@@ -89,7 +89,8 @@ export const authorService = {
       sort_order: params.sort_order ?? 'desc',
     })
 
-    return apiClient.get<PaginatedApiResponse<AuthorListItem>>(`/authors/${query}`, config)
+    // 列表端点使用无尾斜杠路径，避免与后端签名路径规范不一致
+    return apiClient.get<PaginatedApiResponse<AuthorListItem>>(`/authors${query}`, config)
   },
 
   async getAuthor(authorId: string): Promise<AuthorResponse> {

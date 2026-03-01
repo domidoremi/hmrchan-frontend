@@ -347,7 +347,8 @@ export const postService = {
       thumbnail_quality: params.thumbnail_quality ?? null,
     })
 
-    return apiClient.get<PaginatedApiResponseWithLimit<PostListItem>>(`/posts/${query}`, config)
+    // 列表端点使用无尾斜杠路径，避免与后端签名路径规范不一致
+    return apiClient.get<PaginatedApiResponseWithLimit<PostListItem>>(`/posts${query}`, config)
   },
 
   async getPost(postId: string): Promise<PostDetailResponse> {
