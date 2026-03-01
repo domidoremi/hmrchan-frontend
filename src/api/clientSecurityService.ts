@@ -59,6 +59,7 @@ export type ClientTrustLevel = 'untrusted' | 'basic' | 'verified'
 // ========== 安全存储 ==========
 
 const STORAGE_KEY = 'momi_client_security'
+let ensureInitPromise: Promise<void> | null = null
 
 interface StoredClientCredentials {
   client_token: string
@@ -223,6 +224,14 @@ export const clientSecurityService = {
    */
   async ensureInitialized(): Promise<void> {
     if (clientSecurityManager.isInitialized()) return
-    await this.init()
+    if (!ensureInitPromise) {
+      ensureInitPromise = this.init()
+        .then(() => undefined)
+        .finally(() => {
+          ensureInitPromise = null
+        })
+    }
+
+    await ensureInitPromise
   },
 }
