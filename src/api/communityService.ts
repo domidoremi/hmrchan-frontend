@@ -52,7 +52,7 @@ export const communityService = {
    */
   async getFeed(page = 1, pageSize = 20): Promise<PaginatedApiResponse<DiscussionItem>> {
     return apiClient.get<PaginatedApiResponse<DiscussionItem>>(
-      `/community/latest?page=${page}&page_size=${pageSize}`
+      `/community/feed?page=${page}&page_size=${pageSize}`
     )
   },
 
