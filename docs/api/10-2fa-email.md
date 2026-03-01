@@ -56,7 +56,7 @@
 
 完成 2FA 登录验证。登录时若用户启用了 2FA，先返回 `pending_token`，再用此端点完成验证。
 
-- 权限: public
+- 权限: optional（可匿名）
 - Body:
 
 ```json
@@ -80,7 +80,7 @@
 
 发送注册验证码。
 
-- 权限: public（敏感操作频率限制）
+- 权限: optional（可匿名，敏感操作频率限制）
 - Body: `{ "email": "string", "turnstile_token"?: "string" }`
 - 即使邮箱已注册也返回成功（防枚举）
 - 响应: `{ "success": true, "message": "Verification code sent to your email", "expires_in": 600 }`
@@ -89,7 +89,7 @@
 
 验证邮箱。
 
-- 权限: public
+- 权限: optional（可匿名）
 - Body: `{ "token": "string" }`
 - 支持 `registration` 和 `email_verification` 两种 token 类型
 - 响应: `{ "success": true, "message": "Email verified successfully", "email_verified": true }`
@@ -98,7 +98,7 @@
 
 请求密码重置。
 
-- 权限: public（敏感操作频率限制）
+- 权限: optional（可匿名，敏感操作频率限制）
 - Body: `{ "email": "string", "turnstile_token"?: "string" }`
 - 始终返回相同消息（防枚举）
 - 响应: `{ "message": "If the email exists, a password reset link has been sent" }`
@@ -107,7 +107,7 @@
 
 重置密码。重置后所有会话失效。
 
-- 权限: public（敏感操作频率限制）
+- 权限: optional（可匿名，敏感操作频率限制）
 - Body: `{ "token": "string", "new_password": "string" }`
 - 响应: `{ "success": true, "message": "Password reset successfully. Please login with your new password." }`
 

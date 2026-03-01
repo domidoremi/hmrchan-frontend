@@ -28,7 +28,7 @@
 
 为指定用户上传头像。
 
-- 权限: admin（或本人）
+- 权限: admin
 - 其余同 `/upload/avatar`
 
 ---
@@ -63,7 +63,7 @@
 
 发送联系表单。内部存储为 Feedback 记录。
 
-- 权限: public
+- 权限: optional（可匿名）
 - Body:
 
 ```json
@@ -87,7 +87,7 @@
 
 成员列表。
 
-- 权限: public
+- 权限: optional（可匿名）
 - 响应: MemberProfile 数组
 
 ```json
@@ -105,6 +105,6 @@
 
 成员详情。
 
-- 权限: public
+- 权限: optional（可匿名）
 - Path: `id` — 成员 ID（如 `kizuki_nao`）
 - 响应: MemberProfile 对象
