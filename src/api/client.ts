@@ -181,6 +181,91 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null
 }
 
+function pickNonEmptyString(...values: unknown[]): string | undefined {
+  for (const value of values) {
+    if (typeof value === 'string' && value.trim().length > 0) {
+      return value
+    }
+  }
+  return undefined
+}
+
+function extractApiErrorMeta(errorBody: unknown): { code?: string; message: string } {
+  if (!isRecord(errorBody)) return { message: '' }
+
+  const body = errorBody as Record<string, unknown>
+  const detail = body['detail']
+  const envelopeError = isRecord(body['error']) ? (body['error'] as Record<string, unknown>) : null
+  const detailObject = isRecord(detail) ? (detail as Record<string, unknown>) : null
+
+  let message =
+    pickNonEmptyString(
+      envelopeError?.['message'],
+      body['message'],
+      detailObject?.['message'],
+      detailObject?.['detail'],
+      detail
+    ) ?? ''
+
+  if (!message && Array.isArray(detail)) {
+    const detailMessages = detail
+      .map((item) => {
+        if (typeof item === 'string') return item
+        if (isRecord(item) && typeof item['msg'] === 'string') return item['msg']
+        return ''
+      })
+      .filter(Boolean)
+    message = detailMessages.join('; ')
+  }
+
+  const code = pickNonEmptyString(envelopeError?.['code'], body['code'], detailObject?.['code'])
+
+  return { code, message }
+}
+
+const SIGNATURE_ERROR_CODES = new Set([
+  'INVALID_SIGNATURE',
+  'INVALID_CLIENT_TOKEN',
+  'CLIENT_TOKEN_EXPIRED',
+])
+
+const SIGNATURE_ERROR_HINTS = [
+  'invalid request signature',
+  'invalid signature',
+  'invalid client token',
+  'client token expired',
+  'invalid timestamp',
+  'request expired',
+  '请求签名无效',
+  '签名无效',
+  '签名错误',
+  '客户端凭证无效',
+  '客户端令牌无效',
+  '客户端凭证已过期',
+  '客户端令牌已过期',
+  '请求时间戳异常',
+  '请求已过期',
+  '請求簽名無效',
+  '客戶端憑證無效',
+  '客戶端憑證已過期',
+  '請求時間戳異常',
+  'リクエスト署名が無効',
+  '署名が無効',
+  'クライアントトークンが無効',
+  'クライアントトークンの有効期限が切れ',
+]
+
+function isSignatureErrorResponse(errorCode?: string, errorMessage?: string): boolean {
+  const normalizedCode = errorCode?.toUpperCase()
+  if (normalizedCode && SIGNATURE_ERROR_CODES.has(normalizedCode)) {
+    return true
+  }
+
+  if (!errorMessage) return false
+  const lowerMsg = errorMessage.toLowerCase()
+  return SIGNATURE_ERROR_HINTS.some((hint) => lowerMsg.includes(hint))
+}
+
 function normalizeResponse<T>(payload: unknown): T {
   if (isRecord(payload)) {
     const maybeEnvelope = payload as ApiEnvelope
@@ -381,6 +466,28 @@ async function handleErrorResponse(response: Response, skipErrorToast?: boolean)
     'client token expired': 'error.server.clientTokenExpired',
     'invalid timestamp': 'error.server.invalidTimestamp',
     'request expired': 'error.server.requestExpired',
+    '请求签名无效，请刷新页面重试': 'error.server.invalidSignature',
+    请求签名无效: 'error.server.invalidSignature',
+    '客户端凭证无效，请刷新页面': 'error.server.invalidClientToken',
+    客户端凭证无效: 'error.server.invalidClientToken',
+    '客户端凭证已过期，请刷新页面': 'error.server.clientTokenExpired',
+    客户端凭证已过期: 'error.server.clientTokenExpired',
+    '请求时间戳异常，请检查系统时间': 'error.server.invalidTimestamp',
+    请求时间戳异常: 'error.server.invalidTimestamp',
+    '请求已过期，请重试': 'error.server.requestExpired',
+    请求已过期: 'error.server.requestExpired',
+    '請求簽名無效，請重新整理頁面重試': 'error.server.invalidSignature',
+    '客戶端憑證無效，請重新整理頁面': 'error.server.invalidClientToken',
+    '客戶端憑證已過期，請重新整理頁面': 'error.server.clientTokenExpired',
+    '請求時間戳異常，請檢查系統時間': 'error.server.invalidTimestamp',
+    '請求已過期，請重試': 'error.server.requestExpired',
+    'リクエスト署名が無効です。ページを更新してください': 'error.server.invalidSignature',
+    'クライアントトークンが無効です。ページを更新してください': 'error.server.invalidClientToken',
+    'クライアントトークンの有効期限が切れました。ページを更新してください':
+      'error.server.clientTokenExpired',
+    'リクエストのタイムスタンプが異常です。システム時刻を確認してください':
+      'error.server.invalidTimestamp',
+    'リクエストの有効期限が切れました。もう一度お試しください': 'error.server.requestExpired',
     'access temporarily restricted': 'error.server.accessRestricted',
     'challenge required': 'error.server.challengeRequired',
     'invalid fingerprint': 'error.server.invalidFingerprint',
@@ -670,11 +777,9 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
       if (response.status === 403) {
         try {
           const errorBody = await response.clone().json()
-          const errorCode = errorBody?.error?.code || errorBody?.code || errorBody?.detail?.code
-          const errorMsg =
-            errorBody?.error?.message || errorBody?.message || errorBody?.detail || ''
+          const { code: errorCode, message: errorMsg } = extractApiErrorMeta(errorBody)
 
-          if (errorCode === 'CHALLENGE_REQUIRED') {
+          if (errorCode?.toUpperCase() === 'CHALLENGE_REQUIRED') {
             // 从响应中提取 turnstile_site_key，派发事件让 UI 弹出验证
             const siteKey =
               errorBody?.turnstile_site_key ||
@@ -691,14 +796,7 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
           }
 
           // 签名/凭证失效处理：重新初始化客户端安全凭证并重试一次
-          const lowerMsg = typeof errorMsg === 'string' ? errorMsg.toLowerCase() : ''
-          const isSignatureError =
-            errorCode === 'INVALID_SIGNATURE' ||
-            errorCode === 'INVALID_CLIENT_TOKEN' ||
-            errorCode === 'CLIENT_TOKEN_EXPIRED' ||
-            lowerMsg.includes('invalid request signature') ||
-            lowerMsg.includes('invalid client token') ||
-            lowerMsg.includes('client token expired')
+          const isSignatureError = isSignatureErrorResponse(errorCode, errorMsg)
 
           if (isSignatureError) {
             // 使用 singleton 模式：只有第一个请求触发 init，其余排队等待
