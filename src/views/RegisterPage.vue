@@ -19,9 +19,11 @@
       <div
         class="step-indicator"
         role="progressbar"
+        :aria-label="$t('auth.registerTitle')"
         :aria-valuenow="step === 'email' ? 1 : 2"
         aria-valuemin="1"
         aria-valuemax="2"
+        :aria-valuetext="step === 'email' ? $t('auth.stepEmail') : $t('auth.stepRegister')"
       >
         <div class="step" :class="{ active: true, done: step === 'register' }">
           <span class="step-num">1</span>

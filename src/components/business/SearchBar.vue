@@ -29,6 +29,7 @@
       <button
         type="button"
         class="search-submit-btn"
+        :aria-label="$t('common.search')"
         :disabled="!query.trim()"
         @click="handleSearch"
       >

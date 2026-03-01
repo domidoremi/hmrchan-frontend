@@ -33,10 +33,10 @@
 
           <!-- 个人资料 -->
           <div class="profile-section">
-            <h4 class="subsection-title">
+            <h3 class="subsection-title">
               <AnimatedIcon name="user" :fallback-icon="User" size="md" />
               <span>{{ $t('about.origin.profileTitle') }}</span>
-            </h4>
+            </h3>
             <div class="profile-grid-enhanced">
               <div
                 v-for="(item, index) in profileItems"
@@ -56,10 +56,10 @@
 
           <!-- 简介 -->
           <div class="bio-section">
-            <h4 class="subsection-title">
+            <h3 class="subsection-title">
               <AnimatedIcon name="sparkle" :fallback-icon="Sparkles" size="md" />
               <span>{{ $t('about.origin.aboutTitle') }}</span>
-            </h4>
+            </h3>
             <div class="bio-content">
               <p class="bio-text">{{ $t('about.origin.career') }}</p>
               <p class="bio-text">{{ $t('about.origin.personality') }}</p>
@@ -84,10 +84,10 @@
 
         <!-- 官方网站 -->
         <div class="links-group">
-          <h4 class="subsection-title">
+          <h3 class="subsection-title">
             <AnimatedIcon name="explore" :fallback-icon="Globe" size="md" />
             <span>{{ $t('about.links.official') }}</span>
-          </h4>
+          </h3>
           <div class="links-grid">
             <a
               v-for="link in officialLinks"
@@ -112,10 +112,10 @@
 
         <!-- 个人社交媒体 -->
         <div class="links-group">
-          <h4 class="subsection-title">
+          <h3 class="subsection-title">
             <AnimatedIcon name="heart" :fallback-icon="User" size="md" />
             <span>{{ $t('about.links.personal') }}</span>
-          </h4>
+          </h3>
           <div class="links-grid links-grid--social">
             <a
               v-for="link in personalLinks"
@@ -137,10 +137,10 @@
 
         <!-- 团体社交媒体 -->
         <div class="links-group">
-          <h4 class="subsection-title">
+          <h3 class="subsection-title">
             <AnimatedIcon name="heart" :fallback-icon="Share2" size="md" />
             <span>{{ $t('about.links.groupSocial') }}</span>
-          </h4>
+          </h3>
           <div class="links-grid links-grid--social">
             <a
               v-for="link in groupSocialLinks"
