@@ -1,12 +1,12 @@
 /**
- * Glass Morphism - 玻璃态设计组件
+ * Glass Morphism - 最小必要全局玻璃态类
  *
- * 高性能玻璃态效果，仅使用 GPU 加速属性
- * UI Overhaul v2.0 - 增强版玻璃态系统
+ * 说明：
+ * - 保留当前页面中实际使用的 glass-* 通用类
+ * - 其余未使用变体已移除，降低首屏全局 CSS 体积
  */
 
 /* ========== Glass Card ========== */
-
 .glass-card {
   position: relative;
   background: var(--glass-bg);
@@ -22,13 +22,10 @@
     border-color var(--transition-fast);
 }
 
-/* 卡片内部光泽层 */
 .glass-card::before {
   content: '';
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
+  inset: 0 0 auto 0;
   height: 0.0625rem;
   background: linear-gradient(
     90deg,
@@ -41,10 +38,10 @@
 }
 
 .glass-card:hover {
-  transform: translateY(-4px);
+  transform: translateY(-0.25rem);
   box-shadow:
     var(--glass-shadow-lg),
-    0 12px 28px -8px rgba(var(--color-primary-rgb), 0.15);
+    0 0.75rem 1.75rem -0.5rem rgba(var(--color-primary-rgb), 0.15);
   border-color: var(--glass-border-strong);
 }
 
@@ -53,27 +50,45 @@
 }
 
 .glass-card--interactive:active {
-  transform: translateY(-2px) scale(0.99);
+  transform: translateY(-0.125rem) scale(0.99);
   transition-duration: var(--duration-instant);
 }
 
-.glass-card--flat {
-  box-shadow: none;
-  border-color: var(--glass-border-subtle);
+.glass-card-enhanced {
+  position: relative;
+  background: var(--glass-bg-light);
+  backdrop-filter: var(--glass-blur-strong);
+  -webkit-backdrop-filter: var(--glass-blur-strong);
+  border: 1px solid var(--glass-border-medium);
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--glass-shadow-md);
+  overflow: hidden;
+  transition:
+    transform var(--transition-fast),
+    box-shadow var(--transition-fast),
+    border-color var(--transition-fast);
 }
 
-.glass-card--flat:hover {
-  transform: none;
-  box-shadow: none;
-  border-color: var(--glass-border);
+.glass-card-enhanced::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.18) 0%,
+    rgba(255, 255, 255, 0) 50%,
+    rgba(255, 255, 255, 0.08) 100%
+  );
+  pointer-events: none;
 }
 
-.glass-card--glow:hover {
-  box-shadow: var(--glass-shadow-lg), var(--glass-glow);
+.glass-card-enhanced:hover {
+  transform: translateY(-0.25rem);
+  box-shadow: var(--glass-shadow-hover);
+  border-color: var(--glass-border-light);
 }
 
 /* ========== Glass Button ========== */
-
 .glass-button {
   position: relative;
   display: inline-flex;
@@ -97,13 +112,10 @@
     box-shadow var(--transition-fast);
 }
 
-/* 按钮顶部光泽 */
 .glass-button::before {
   content: '';
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
+  inset: 0 0 auto 0;
   height: 50%;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.15) 0%, transparent 100%);
   pointer-events: none;
@@ -112,7 +124,7 @@
 .glass-button:hover {
   background: var(--glass-bg-strong);
   border-color: var(--glass-border-strong);
-  transform: translateY(-2px);
+  transform: translateY(-0.125rem);
   box-shadow: var(--glass-shadow);
 }
 
@@ -127,7 +139,6 @@
   transform: none;
 }
 
-/* Primary variant */
 .glass-button--primary {
   background: var(--color-primary);
   color: var(--color-on-primary);
@@ -137,118 +148,11 @@
 
 .glass-button--primary:hover {
   background: var(--color-primary-light);
+  border-color: transparent;
   box-shadow: var(--shadow-md);
-  border-color: transparent;
-}
-
-/* Accent variant */
-.glass-button--accent {
-  background: var(--color-accent);
-  color: var(--color-white);
-  border-color: transparent;
-  font-weight: var(--font-semibold);
-}
-
-.glass-button--accent:hover {
-  background: var(--color-accent-dark);
-  box-shadow: var(--shadow-md);
-  border-color: transparent;
-}
-
-/* Ghost variant */
-.glass-button--ghost {
-  background: transparent;
-  border-color: transparent;
-  backdrop-filter: none;
-}
-
-.glass-button--ghost::before {
-  display: none;
-}
-
-.glass-button--ghost:hover {
-  background: var(--glass-bg-light);
-  border-color: var(--glass-border);
-  box-shadow: none;
-}
-
-/* Danger variant */
-.glass-button--danger {
-  background: var(--color-error);
-  color: var(--color-white);
-  border-color: transparent;
-}
-
-.glass-button--danger:hover {
-  box-shadow: 0 0 24px rgba(var(--color-error-rgb), 0.4);
-}
-
-/* ========== Glass Input ========== */
-
-.glass-input {
-  width: 100%;
-  padding: var(--spacing-3) var(--spacing-4);
-  background: var(--glass-bg-light);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-lg);
-  color: var(--color-text-primary);
-  font-size: var(--text-base);
-  transition:
-    border-color var(--transition-fast),
-    box-shadow var(--transition-fast),
-    background var(--transition-fast);
-}
-
-.glass-input::placeholder {
-  color: var(--color-text-tertiary);
-}
-
-.glass-input:hover {
-  border-color: var(--glass-border-strong);
-  background: var(--glass-bg);
-}
-
-.glass-input:focus {
-  outline: none;
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 2px rgba(var(--color-primary-rgb), 0.12);
-  background: var(--glass-bg);
-}
-
-.glass-input:focus-visible {
-  outline: none;
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 4px rgba(var(--color-primary-rgb), 0.12);
-  background: var(--glass-bg);
-}
-
-.glass-input:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  background: var(--glass-bg-subtle);
-}
-
-.glass-input--error {
-  border-color: var(--color-error);
-}
-
-.glass-input[aria-invalid='true'] {
-  border-color: var(--color-error);
-}
-
-.glass-input--error:focus {
-  box-shadow: 0 0 0 4px rgba(var(--color-error-rgb), 0.12);
-}
-
-.glass-input--error:focus-visible,
-.glass-input[aria-invalid='true']:focus-visible {
-  box-shadow: 0 0 0 4px rgba(var(--color-error-rgb), 0.12);
 }
 
 /* ========== Glass Navbar ========== */
-
 .glass-navbar {
   position: fixed;
   top: 0;
@@ -260,129 +164,35 @@
   -webkit-backdrop-filter: var(--glass-blur-strong);
   border-bottom: 1px solid var(--glass-border);
   z-index: var(--z-sticky);
-  /* GPU 加速：固定定位元素提升到合成层 */
-  will-change: transform;
-  transform: translate3d(0, 0, 0);
 }
 
-/* Navbar 底部渐变阴影 */
 .glass-navbar::after {
   content: '';
   position: absolute;
-  bottom: -1.25rem;
-  left: 0;
-  right: 0;
-  height: 1.25rem;
-  background: linear-gradient(180deg, rgba(0, 0, 0, 0.04) 0%, transparent 100%);
+  inset: auto 0 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.6) 50%,
+    transparent 100%
+  );
   pointer-events: none;
 }
 
 [data-theme='dark'] .glass-navbar::after {
-  background: linear-gradient(180deg, rgba(0, 0, 0, 0.15) 0%, transparent 100%);
+  opacity: 0.5;
 }
 
-/* ========== Glass Modal ========== */
-
-.glass-modal-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  z-index: var(--z-modal-backdrop);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--spacing-4);
-  /* GPU 加速：模态框背景提升到合成层 */
-  will-change: opacity;
-  transform: translate3d(0, 0, 0);
-}
-
-[data-theme='dark'] .glass-modal-backdrop {
-  background: rgba(0, 0, 0, 0.6);
-}
-
-.glass-modal {
-  position: relative;
-  width: 100%;
-  max-width: 500px;
-  max-height: calc(100svh - var(--spacing-8));
-  max-height: calc(100dvh - var(--spacing-8));
-  background: var(--glass-bg-strong);
-  backdrop-filter: var(--glass-blur-strong);
-  -webkit-backdrop-filter: var(--glass-blur-strong);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-2xl);
-  box-shadow: var(--shadow-2xl);
-  overflow: hidden;
-}
-
-/* Modal 顶部光泽 */
-.glass-modal::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 0.0625rem;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(255, 255, 255, 0.5) 50%,
-    transparent 100%
-  );
-  opacity: 0.8;
-}
-
-/* ========== Glass Dropdown ========== */
-
+/* ========== Dropdown / Tag / Panel ========== */
 .glass-dropdown {
-  position: absolute;
-  top: 100%;
-  right: 0;
-  margin-top: var(--spacing-2);
-  min-width: 200px;
   background: var(--glass-bg-strong);
   backdrop-filter: var(--glass-blur-strong);
   -webkit-backdrop-filter: var(--glass-blur-strong);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-xl);
   box-shadow: var(--glass-shadow-lg);
-  z-index: var(--z-dropdown);
-  overflow: hidden;
 }
-
-.glass-dropdown-item {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-3);
-  padding: var(--spacing-3) var(--spacing-4);
-  color: var(--color-text-primary);
-  font-size: var(--text-sm);
-  transition:
-    background var(--transition-fast),
-    color var(--transition-fast);
-  cursor: pointer;
-}
-
-.glass-dropdown-item:hover {
-  background: var(--glass-bg-subtle);
-  color: var(--color-primary);
-}
-
-.glass-dropdown-item--active {
-  background: rgba(var(--color-primary-rgb), 0.1);
-  color: var(--color-primary);
-}
-
-.glass-dropdown-divider {
-  height: 0.0625rem;
-  margin: var(--spacing-2) 0;
-  background: var(--glass-border);
-}
-
-/* ========== Glass Tag/Chip ========== */
 
 .glass-tag {
   display: inline-flex;
@@ -390,108 +200,31 @@
   gap: var(--spacing-1);
   padding: var(--spacing-1) var(--spacing-3);
   background: var(--glass-bg);
-  backdrop-filter: blur(8px);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-full);
   font-size: var(--text-sm);
-  color: var(--color-text-secondary);
-  transition:
-    background var(--transition-fast),
-    border-color var(--transition-fast);
+  color: var(--color-text-primary);
 }
-
-.glass-tag:hover {
-  background: var(--glass-bg-strong);
-  border-color: var(--glass-border-strong);
-}
-
-.glass-tag--primary {
-  background: rgba(var(--color-primary-rgb), 0.12);
-  color: var(--color-primary);
-  border-color: rgba(var(--color-primary-rgb), 0.2);
-}
-
-.glass-tag--primary:hover {
-  background: rgba(var(--color-primary-rgb), 0.18);
-  border-color: rgba(var(--color-primary-rgb), 0.3);
-}
-
-.glass-tag--accent {
-  background: rgba(var(--color-accent-rgb), 0.12);
-  color: var(--color-accent);
-  border-color: rgba(var(--color-accent-rgb), 0.2);
-}
-
-/* ========== Glass Panel ========== */
 
 .glass-panel {
   background: var(--glass-bg);
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
   border: 1px solid var(--glass-border);
-  border-radius: var(--radius-2xl);
+  border-radius: var(--radius-xl);
   box-shadow: var(--glass-shadow);
-  padding: var(--spacing-6);
 }
 
-.glass-panel--large {
-  padding: var(--spacing-8);
-  border-radius: var(--radius-2xl);
-}
-
-/* ========== Glass Skeleton ========== */
-/* 使用伪元素 + transform 实现 shimmer，避免 background-position 导致的 CLS */
-
+/* ========== Skeleton ========== */
 .glass-skeleton {
   position: relative;
   overflow: hidden;
-  background: var(--glass-bg-light);
   border-radius: var(--radius-md);
+  background: var(--glass-bg-light);
 }
 
-.glass-skeleton::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(90deg, transparent 0%, var(--glass-bg) 50%, transparent 100%);
-  transform: translateX(-100%);
-  animation: glass-shimmer 1.5s ease-in-out infinite;
-  will-change: transform;
-}
-
-/* Skeleton variants */
-.glass-skeleton--text {
-  height: 1em;
-  border-radius: var(--radius-sm);
-}
-
-.glass-skeleton--title {
-  height: 1.5em;
-  border-radius: var(--radius-sm);
-}
-
-.glass-skeleton--avatar {
-  border-radius: var(--radius-full);
-}
-
-.glass-skeleton--button {
-  height: 2.5rem;
-  border-radius: var(--radius-lg);
-}
-
-.glass-skeleton--image {
-  aspect-ratio: 16 / 9;
-  border-radius: var(--radius-lg);
-}
-
-.glass-skeleton--card {
-  border-radius: var(--radius-xl);
-}
-
-/* Wave effect skeleton */
 .glass-skeleton--wave {
   position: relative;
-  overflow: hidden;
   background: var(--glass-bg-light);
 }
 
@@ -502,7 +235,9 @@
   background: linear-gradient(
     90deg,
     transparent 0%,
+    rgba(255, 255, 255, 0.2) 45%,
     rgba(255, 255, 255, 0.4) 50%,
+    rgba(255, 255, 255, 0.2) 55%,
     transparent 100%
   );
   transform: translateX(-100%);
@@ -513,7 +248,9 @@
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgba(255, 255, 255, 0.08) 50%,
+    rgba(255, 255, 255, 0.08) 45%,
+    rgba(255, 255, 255, 0.14) 50%,
+    rgba(255, 255, 255, 0.08) 55%,
     transparent 100%
   );
 }
@@ -522,164 +259,7 @@
   0% {
     transform: translateX(-100%);
   }
-
   100% {
     transform: translateX(100%);
-  }
-}
-
-/* Pulse effect skeleton */
-.glass-skeleton--pulse {
-  background: var(--glass-bg-light);
-  animation: glass-pulse 2s ease-in-out infinite;
-}
-
-@keyframes glass-pulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-
-  50% {
-    opacity: 0.5;
-  }
-}
-
-@keyframes glass-shimmer {
-  0% {
-    transform: translateX(-100%);
-  }
-
-  100% {
-    transform: translateX(100%);
-  }
-}
-
-/* Skeleton group - for staggered animations */
-.glass-skeleton-group .glass-skeleton:nth-child(1) {
-  animation-delay: 0ms;
-}
-
-.glass-skeleton-group .glass-skeleton:nth-child(2) {
-  animation-delay: 100ms;
-}
-
-.glass-skeleton-group .glass-skeleton:nth-child(3) {
-  animation-delay: 200ms;
-}
-
-.glass-skeleton-group .glass-skeleton:nth-child(4) {
-  animation-delay: 300ms;
-}
-
-.glass-skeleton-group .glass-skeleton:nth-child(5) {
-  animation-delay: 400ms;
-}
-
-/* Reduced motion */
-@media (prefers-reduced-motion: reduce) {
-  .glass-skeleton,
-  .glass-skeleton--wave::after,
-  .glass-skeleton--pulse {
-    animation: none;
-  }
-}
-
-/* ========== Glass Divider ========== */
-
-.glass-divider {
-  height: 0.0625rem;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    var(--glass-border-strong) 50%,
-    transparent 100%
-  );
-  margin: var(--spacing-4) 0;
-}
-
-/* ========== 深色模式增强 ========== */
-
-[data-theme='dark'] .glass-card::before,
-[data-theme='dark'] .glass-button::before,
-[data-theme='dark'] .glass-modal::before {
-  opacity: 0.3;
-}
-
-[data-theme='dark'] .glass-tag--primary {
-  background: rgba(var(--color-primary-rgb), 0.15);
-  border-color: rgba(var(--color-primary-rgb), 0.25);
-}
-
-[data-theme='dark'] .glass-dropdown-item:hover {
-  background: rgba(255, 255, 255, 0.05);
-}
-
-[data-theme='dark'] .glass-dropdown-item--active {
-  background: rgba(var(--color-primary-rgb), 0.15);
-}
-
-/* ========== Enhanced Glass Card (from design-tokens) ========== */
-
-.glass-card-enhanced {
-  background: var(--glass-bg-light);
-  backdrop-filter: blur(var(--blur-md));
-  -webkit-backdrop-filter: blur(var(--blur-md));
-  border: 1px solid var(--glass-border-medium);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--glass-shadow-md);
-  transition:
-    transform var(--duration-normal) var(--ease-out-smooth),
-    box-shadow var(--duration-normal) var(--ease-out-smooth),
-    border-color var(--duration-fast) var(--ease-smooth);
-  position: relative;
-  overflow: hidden;
-}
-
-.glass-card-enhanced::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 0.0625rem;
-  background: var(--highlight-gradient);
-  opacity: 0.6;
-}
-
-.glass-card-enhanced:hover {
-  transform: var(--lift-sm);
-  box-shadow: var(--glass-shadow-hover);
-  border-color: var(--glass-border-light);
-}
-
-/* ========== Theme Transition Smoothing ========== */
-
-.theme-transition,
-.theme-transition * {
-  transition:
-    background-color var(--duration-normal) var(--ease-smooth),
-    border-color var(--duration-normal) var(--ease-smooth),
-    box-shadow var(--duration-normal) var(--ease-smooth),
-    color var(--duration-fast) var(--ease-smooth) !important;
-}
-
-/* ========== Reduced Motion + UI Style ========== */
-@media (prefers-reduced-motion: reduce) {
-  #app[data-ui-style='ios'] .glass-card:hover,
-  #app[data-ui-style='material'] .glass-card:hover {
-    transform: none;
-  }
-
-  .glass-card-enhanced:hover {
-    transform: none;
-  }
-}
-
-/* 低性能设备降低模糊 */
-@media (max-width: 768px) {
-  .glass-card-enhanced {
-    backdrop-filter: blur(var(--blur-sm));
-    -webkit-backdrop-filter: blur(var(--blur-sm));
   }
 }
