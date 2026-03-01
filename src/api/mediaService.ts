@@ -51,6 +51,70 @@ export const mediaService = {
   },
 
   /**
+   * 获取字幕内容（原始文本）
+   */
+  async getSubtitle(mediaId: string, language: string): Promise<string> {
+    const response = await fetch(this.getSubtitleUrl(mediaId, language), {
+      method: 'GET',
+      credentials: 'include',
+    })
+    if (!response.ok) {
+      throw new Error(`Subtitle request failed: ${response.status}`)
+    }
+    return response.text()
+  },
+
+  /**
+   * 获取媒体流响应（支持可选 Range）
+   */
+  async getStream(mediaId: string, range?: string): Promise<Response> {
+    const headers: HeadersInit = {}
+    if (range) {
+      headers['Range'] = range
+    }
+    const response = await fetch(this.getStreamUrl(mediaId), {
+      method: 'GET',
+      credentials: 'include',
+      headers,
+    })
+    if (!response.ok) {
+      throw new Error(`Stream request failed: ${response.status}`)
+    }
+    return response
+  },
+
+  /**
+   * 获取缩略图二进制数据
+   */
+  async getThumbnail(
+    mediaId: string,
+    size: 'small' | 'medium' | 'large' | 'original' = 'medium'
+  ): Promise<Blob> {
+    const response = await fetch(this.getThumbnailUrl(mediaId, size), {
+      method: 'GET',
+      credentials: 'include',
+    })
+    if (!response.ok) {
+      throw new Error(`Thumbnail request failed: ${response.status}`)
+    }
+    return response.blob()
+  },
+
+  /**
+   * 下载媒体文件（二进制）
+   */
+  async download(mediaId: string): Promise<Blob> {
+    const response = await fetch(this.getDownloadUrl(mediaId), {
+      method: 'GET',
+      credentials: 'include',
+    })
+    if (!response.ok) {
+      throw new Error(`Download request failed: ${response.status}`)
+    }
+    return response.blob()
+  },
+
+  /**
    * 构建流式播放 URL（支持 HTTP Range 请求）
    */
   getStreamUrl(mediaId: string): string {
