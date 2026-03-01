@@ -141,6 +141,7 @@ export {
   type ScheduleCreateRequest,
 } from './scheduleService'
 export { memberService, type MemberProfile } from './memberService'
+export { systemService, type HealthResponse } from './systemService'
 export {
   clientSecurityService,
   clientSecurityManager,
