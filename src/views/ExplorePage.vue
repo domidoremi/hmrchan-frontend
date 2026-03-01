@@ -1,7 +1,7 @@
 <template>
   <div class="explore-page">
     <!-- Platform-specific animated background -->
-    <PlatformCanvas v-if="shouldShowPlatformBg" :platform="currentPlatform" />
+    <AsyncPlatformCanvas v-if="shouldRenderPlatformBg" :platform="currentPlatform" />
 
     <!-- MindMarket 风格背景装饰 -->
     <div class="explore-bg" aria-hidden="true">
@@ -64,6 +64,8 @@
           </button>
         </div>
       </div>
+
+      <h2 class="sr-only">{{ $t('search.tab.posts') }}</h2>
 
       <StateIndicator v-if="error" variant="error" :description="error" @action="fetchPosts" />
 
@@ -135,6 +137,7 @@ import {
   onDeactivated,
   watch,
   nextTick,
+  defineAsyncComponent,
 } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
@@ -155,14 +158,19 @@ import PostCard from '@/components/business/PostCard.vue'
 import PostCardSkeleton from '@/components/business/PostCardSkeleton.vue'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
-import PlatformCanvas from '@/components/ui/PlatformCanvas.vue'
 import NextPostFab from '@/components/ui/NextPostFab.vue'
+
+const AsyncPlatformCanvas = defineAsyncComponent(() => import('@/components/ui/PlatformCanvas.vue'))
 
 const router = useRouter()
 const { t } = useI18n()
 const { settings } = storeToRefs(useSettingsStore())
 
 const shouldShowPlatformBg = computed(() => settings.value.enableAnimations)
+const platformBgReady = ref(false)
+const PLATFORM_BG_DELAY_MS = 1800
+let platformBgTimer: number | null = null
+const shouldRenderPlatformBg = computed(() => shouldShowPlatformBg.value && platformBgReady.value)
 
 const currentSort = ref<'newest' | 'popular' | 'trending'>('newest')
 type ExplorePlatform = 'all' | 'youtube' | 'tiktok' | 'twitter' | 'instagram'
@@ -230,6 +238,27 @@ const lastVisibleCount = ref(0)
 let isActive = true
 
 const hasMoreForUi = computed(() => hasMore.value || hasMoreToRender.value)
+
+function schedulePlatformBackgroundMount() {
+  if (typeof window === 'undefined') {
+    platformBgReady.value = true
+    return
+  }
+  if (platformBgReady.value || platformBgTimer !== null) return
+  // 动画背景属于增强效果，延后加载以优先保障首屏内容渲染。
+  platformBgTimer = window.setTimeout(() => {
+    platformBgTimer = null
+    if (isActive) {
+      platformBgReady.value = true
+    }
+  }, PLATFORM_BG_DELAY_MS)
+}
+
+function clearPlatformBackgroundTimer() {
+  if (platformBgTimer === null) return
+  clearTimeout(platformBgTimer)
+  platformBgTimer = null
+}
 
 const onGlobalKeydown = (event: KeyboardEvent) => {
   if (event.key !== '/' || event.ctrlKey || event.metaKey || event.altKey) return
@@ -561,6 +590,7 @@ onMounted(() => {
   if (masonryContainerRef.value) {
     attachResizeObserver(masonryContainerRef.value)
   }
+  schedulePlatformBackgroundMount()
 })
 
 watch(
@@ -584,10 +614,12 @@ onActivated(() => {
   if (masonryContainerRef.value) {
     attachResizeObserver(masonryContainerRef.value)
   }
+  schedulePlatformBackgroundMount()
 })
 
 onDeactivated(() => {
   isActive = false
+  clearPlatformBackgroundTimer()
   detachGlobalListeners()
   detachResizeObserver()
   handleContainerResize.cancel?.()
@@ -596,6 +628,7 @@ onDeactivated(() => {
 
 onBeforeUnmount(() => {
   isActive = false
+  clearPlatformBackgroundTimer()
   detachGlobalListeners()
   detachResizeObserver()
   handleContainerResize.cancel?.()

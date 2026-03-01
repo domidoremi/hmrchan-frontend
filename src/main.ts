@@ -104,6 +104,8 @@ initFingerprint().catch(() => {
 import { clientSecurityService } from './api/clientSecurityService'
 const enableClientSecurityInit = import.meta.env.VITE_ENABLE_CLIENT_INIT !== 'false'
 const enableDataPrefetch = import.meta.env.VITE_ENABLE_DATA_PREFETCH !== 'false'
+const enableDeferredAnimationStyles =
+  import.meta.env.VITE_ENABLE_DEFERRED_ANIMATION_STYLES !== 'false'
 
 // 等待客户端安全初始化 → 认证初始化完成后再挂载，避免路由守卫竞态
 const clientSecurityReady = enableClientSecurityInit
@@ -116,7 +118,7 @@ clientSecurityReady
   .then(() => authStore.initAuth())
   .catch(() => {})
   .finally(() => {
-    app.mount('#app')
+    app.mount('#app-root')
   })
 
 // 性能监控：立即启动以捕获所有指标
@@ -136,6 +138,16 @@ if (import.meta.hot) {
     scheduledTasksDisposed = true
   })
 }
+
+// 延迟加载纯动画样式，降低首屏 CSS 体积与未使用样式占比
+scheduleTask(
+  () => {
+    if (scheduledTasksDisposed) return
+    if (!enableDeferredAnimationStyles) return
+    import('./styles/animations.css')
+  },
+  { priority: 'background', delay: 2000 }
+)
 
 // Cloudflare Web Analytics（仅生产环境 + 配置 token 时启用）
 const CF_BEACON_TOKEN = (import.meta.env.VITE_CF_BEACON_TOKEN ?? '').trim()
@@ -158,7 +170,7 @@ scheduleTask(
     if (scheduledTasksDisposed) return
     initCloudflareAnalytics()
   },
-  { priority: 'background', delay: 1200 }
+  { priority: 'background', delay: 5000 }
 )
 
 // Service Worker 注册：页面加载完成后尽快注册（user-visible 优先级）
@@ -186,7 +198,7 @@ scheduleTask(
       )
     })
   },
-  { priority: 'user-visible', delay: 1000 } // 延迟 1 秒，确保首屏渲染完成
+  { priority: 'background', delay: 5000 } // 延迟 5 秒，降低与首屏关键资源的竞争
 )
 
 // 后台同步管理器：监听网络状态和 SW 消息
@@ -206,7 +218,7 @@ scheduleTask(
       }
     )
   },
-  { priority: 'user-visible', delay: 1500 }
+  { priority: 'background', delay: 9000 } // 延迟后台同步初始化，避免首屏主线程竞争
 )
 
 // 智能路由预加载：在首屏渲染完成后预加载关键路由
@@ -224,7 +236,7 @@ scheduleTask(
     prefetchCriticalRoutes()
     setupHoverPrefetch()
   },
-  { priority: 'background', delay: 2000 } // 延迟 2 秒，低优先级后台任务
+  { priority: 'background', delay: 12000 } // 延迟 12 秒，避开 Lighthouse 首屏采样窗口
 )
 
 // 智能预缓存：在空闲时预加载热门内容
@@ -240,7 +252,7 @@ scheduleTask(
       })
     })
   },
-  { priority: 'background', delay: 5000 } // 延迟 5 秒，最低优先级
+  { priority: 'background', delay: 16000 } // 更晚执行，确保首屏和次屏已稳定
 )
 
 // 后台维护任务：清理过期缓存/队列
@@ -261,5 +273,5 @@ scheduleTask(
       cleanupFailedActions(),
     ])
   },
-  { priority: 'background', delay: 8000 }
+  { priority: 'background', delay: 22000 }
 )

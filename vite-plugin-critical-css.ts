@@ -121,12 +121,16 @@ export function criticalCSSPlugin(options: CriticalCSSOptions = {}): Plugin {
 
       // 生成 style 标签（style-src 'unsafe-inline' 已覆盖）
       const styleTag = `<style id="critical-css" data-hash="${cssHash}">${criticalCSS}</style>`
+      const styleBlock = `\n    ${styleTag}\n    <!-- Critical CSS inlined for FCP optimization -->`
 
-      // 插入到 <head> 的最前面，确保最先加载
-      return html.replace(
-        /<head([^>]*)>/i,
-        `<head$1>\n    ${styleTag}\n    <!-- Critical CSS inlined for FCP optimization -->`
-      )
+      // 优先插入到 <meta charset> 之后，避免触发 Lighthouse "charset too late"
+      const charsetMetaRegex = /<meta\s+[^>]*charset\s*=\s*["']?[^"'>\s]+["']?[^>]*>\s*/i
+      if (charsetMetaRegex.test(html)) {
+        return html.replace(charsetMetaRegex, (matched) => `${matched}${styleBlock}\n`)
+      }
+
+      // 无 charset 时，退化为插入到 <head> 最前面
+      return html.replace(/<head([^>]*)>/i, `<head$1>${styleBlock}`)
     },
   }
 }
