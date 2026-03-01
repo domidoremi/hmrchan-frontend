@@ -196,14 +196,7 @@ export const authService = {
    * 验证当前密码（敏感操作前置）
    */
   async verifyPassword(password: string): Promise<{ verification_token: string }> {
-    try {
-      return await apiClient.post('/auth/verify-password', { password }, authConfig)
-    } catch (error) {
-      if (error instanceof ApiError && (error.status === 404 || error.status === 405)) {
-        return apiClient.post('/account/verify-password', { password })
-      }
-      throw error
-    }
+    return apiClient.post('/auth/verify-password', { password }, authConfig)
   },
 
   /**
@@ -304,54 +297,91 @@ export const authService = {
   // ========== 邮箱验证码 ==========
 
   /**
-   * 发送邮箱验证码（按 action 路由到对应端点）
-   * - change_password: 需要 password
-   * - change_email: 需要 password + new_email
+   * 发送修改密码验证码
+   * POST /api/v1/email/send-change-password-code
    */
-  async sendEmailCode(data: SendEmailCodeRequest): Promise<{ message: string }> {
-    const endpointMap: Record<string, string> = {
-      change_password: '/email/send-change-password-code',
-      change_email: '/email/send-change-email-code',
-    }
-    const endpoint = endpointMap[data.action] ?? '/email/send-change-password-code'
-
-    let body: Record<string, unknown> | null = null
-    if (data.action === 'change_password' && data.password) {
-      body = { password: data.password }
-    } else if (data.action === 'change_email' && data.password && data.new_email) {
-      body = { password: data.password, new_email: data.new_email }
-    }
-
-    return apiClient.post(endpoint, body, {
-      skipErrorToast: true,
-    })
+  async sendChangePasswordCode(password: string): Promise<{ message: string }> {
+    return apiClient.post(
+      '/email/send-change-password-code',
+      { password },
+      {
+        skipErrorToast: true,
+      }
+    )
   },
 
   /**
-   * 验证邮箱验证码（按 action 路由到对应端点）
-   * - change_password: 需要 verification_code + new_password
-   * - change_email: 需要 verification_code
+   * 发送修改邮箱验证码
+   * POST /api/v1/email/send-change-email-code
+   */
+  async sendChangeEmailCode(password: string, newEmail: string): Promise<{ message: string }> {
+    return apiClient.post(
+      '/email/send-change-email-code',
+      {
+        password,
+        new_email: newEmail,
+      },
+      {
+        skipErrorToast: true,
+      }
+    )
+  },
+
+  /**
+   * 提交验证码并修改密码
+   * POST /api/v1/email/change-password
+   */
+  async changePasswordByEmailCode(
+    verificationCode: string,
+    newPassword: string
+  ): Promise<VerifyEmailCodeResponse> {
+    return apiClient.post(
+      '/email/change-password',
+      {
+        verification_code: verificationCode,
+        new_password: newPassword,
+      },
+      {
+        skipErrorToast: true,
+      }
+    )
+  },
+
+  /**
+   * 发送邮箱验证码（兼容旧调用）
+   */
+  async sendEmailCode(data: SendEmailCodeRequest): Promise<{ message: string }> {
+    if (data.action === 'change_email') {
+      if (!data.password || !data.new_email) {
+        throw new ApiError('Missing password or new email', 400, 'BAD_REQUEST')
+      }
+      return this.sendChangeEmailCode(data.password, data.new_email)
+    }
+
+    if (!data.password) {
+      throw new ApiError('Missing password', 400, 'BAD_REQUEST')
+    }
+    return this.sendChangePasswordCode(data.password)
+  },
+
+  /**
+   * 验证邮箱验证码（兼容旧调用）
    */
   async verifyEmailCode(data: VerifyEmailCodeRequest): Promise<VerifyEmailCodeResponse> {
-    const endpointMap: Record<string, string> = {
-      change_password: '/email/change-password',
-      change_email: '/email/change-email',
-    }
-    const endpoint = endpointMap[data.action] ?? '/email/change-password'
-
-    let body: Record<string, unknown>
     if (data.action === 'change_password') {
-      body = {
-        verification_code: data.verification_code,
-        new_password: data.new_password,
+      if (!data.new_password) {
+        throw new ApiError('Missing new password', 400, 'BAD_REQUEST')
       }
-    } else {
-      body = { verification_code: data.verification_code }
+      return this.changePasswordByEmailCode(data.verification_code, data.new_password)
     }
 
-    return apiClient.post(endpoint, body, {
-      skipErrorToast: true,
-    })
+    return apiClient.post(
+      '/email/change-email',
+      { verification_code: data.verification_code },
+      {
+        skipErrorToast: true,
+      }
+    )
   },
 
   // ========== 心跳 & 会话 ==========
