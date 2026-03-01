@@ -172,25 +172,29 @@ export const favoriteService = {
 
   /**
    * 按帖子 ID 取消收藏
-   * API 不直接支持按 post_id 删除，先尝试 DELETE /favorites/post/:postId，
-   * 若 404 则降级为查询收藏列表找到 ID 后删除
+   * 文档未定义 /favorites/post/:postId，统一通过收藏列表定位后删除
    */
   async removeByPostId(postId: string): Promise<void> {
-    try {
-      await apiClient.delete(`/favorites/post/${postId}`, {
-        skipErrorToast: true,
-      })
-    } catch (error) {
-      if (error instanceof ApiError && error.status === 404) {
-        // 降级：查询收藏列表找到对应记录再删除
-        const list = await this.list({ page: 1, page_size: 1 })
-        const fav = list.items.find((f) => f.post_id === postId || f.post?.id === postId)
-        if (fav) {
-          await this.remove(fav.id)
-        }
-      } else {
-        throw error
+    let page = 1
+    const pageSize = 100
+
+    while (true) {
+      const list = await this.list({ page, page_size: pageSize })
+      const favorite = list.items.find(
+        (item) => item.post_id === postId || item.post?.id === postId
+      )
+
+      if (favorite) {
+        await this.remove(favorite.id)
+        return
       }
+
+      const totalPages =
+        list.total_pages ||
+        (typeof list.total === 'number' && list.total > 0 ? Math.ceil(list.total / pageSize) : 1)
+
+      if (page >= totalPages || !list.items.length) return
+      page += 1
     }
   },
 
