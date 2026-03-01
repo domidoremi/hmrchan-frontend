@@ -173,3 +173,6 @@ warp_configs.json
 HMRChan 前端 API 合约文档 v1.md
 FRONTEND_API_CONTRACT.md
 *.png
+.lighthouse-a11y
+.vscode
+

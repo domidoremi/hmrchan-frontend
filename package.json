@@ -20,6 +20,8 @@
     "test:unit": "vitest run --passWithNoTests",
     "test:unit:watch": "vitest",
     "test:perf": "bun run scripts/test-performance.ts",
+    "test:a11y": "bun run scripts/test-accessibility.ts",
+    "check:frontend": "bun run scripts/frontend-health-check.ts",
     "type-check": "vue-tsc --noEmit --pretty",
     "type-check:watch": "vue-tsc --noEmit --watch --pretty",
     "prepare": "husky",
