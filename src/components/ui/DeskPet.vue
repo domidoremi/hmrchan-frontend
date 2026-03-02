@@ -8,7 +8,15 @@ const { t, tm } = useI18n()
 const settingsStore = useSettingsStore()
 const { settings } = storeToRefs(settingsStore)
 
-const visible = computed(() => settings.value.showDeskPet)
+const defaultDeskPetSettings = {
+  enabled: true,
+  scale: 1,
+  speechEnabled: true,
+  autoHeroInteraction: true,
+  followSensitivity: 1,
+}
+const deskPetSettings = computed(() => settings.value.deskPet ?? defaultDeskPetSettings)
+const visible = computed(() => deskPetSettings.value.enabled)
 const shouldAnimate = computed(
   () => settings.value.enableAnimations && settings.value.animationIntensity !== 'none'
 )
@@ -27,6 +35,11 @@ enum PetState {
   PAT = 'pat',
   EAT = 'eat',
   DIZZY = 'dizzy',
+  ENTER = 'enter',
+  PERCH = 'perch',
+  TRACK = 'track',
+  LEAP = 'leap',
+  PEEK = 'peek',
 }
 
 const stateImageMap: Record<PetState, string> = {
@@ -42,6 +55,11 @@ const stateImageMap: Record<PetState, string> = {
   [PetState.PAT]: '/images/expressions/kawaii-sm.webp',
   [PetState.EAT]: '/images/expressions/laughing-sm.webp',
   [PetState.DIZZY]: '/images/expressions/confused-sm.webp',
+  [PetState.ENTER]: '/images/expressions/running-sm.webp',
+  [PetState.PERCH]: '/images/expressions/standing-sm.webp',
+  [PetState.TRACK]: '/images/expressions/surprised-sm.webp',
+  [PetState.LEAP]: '/images/expressions/55.png',
+  [PetState.PEEK]: '/images/expressions/22.png',
 }
 
 // 时间问候
@@ -63,6 +81,7 @@ const pickSpeech = (state: PetState): string => {
 const currentState = ref<PetState>(PetState.IDLE)
 const clickCount = ref(0)
 const isAnimating = ref(false)
+const lookOffset = ref({ x: 0, y: 0 })
 
 // 气泡
 const speechText = ref('')
@@ -70,6 +89,7 @@ const showSpeech = ref(false)
 let speechTimer: ReturnType<typeof setTimeout> | null = null
 
 const showBubble = (text: string, duration = 2000) => {
+  if (!deskPetSettings.value.speechEnabled) return
   if (!text) return
   speechText.value = text
   showSpeech.value = true
@@ -82,6 +102,18 @@ const showBubble = (text: string, duration = 2000) => {
 const showStateBubble = (state: PetState, duration = 2000) => {
   showBubble(pickSpeech(state), duration)
 }
+
+watch(
+  () => deskPetSettings.value.speechEnabled,
+  (enabled) => {
+    if (enabled) return
+    showSpeech.value = false
+    if (speechTimer) {
+      clearTimeout(speechTimer)
+      speechTimer = null
+    }
+  }
+)
 
 // 情绪粒子
 const particles = ref<{ id: number; emoji: string; x: number; y: number }[]>([])
@@ -131,12 +163,33 @@ const position = ref({ x: 0, y: 0 })
 const dragOffset = ref({ x: 0, y: 0 })
 const dragStartPos = ref({ x: 0, y: 0 })
 const DRAG_THRESHOLD = 5
+const PET_SIZE = 80
+const EDGE_SNAP = 20
+const HERO_BUTTON_SELECTOR = '.hero-btn'
+const LOOK_MAX_OFFSET = 10
+const LOOK_MIN_DISTANCE = 220
 
 // 计时器
 const IDLE_TIMEOUT = 10000
 let idleTimer: ReturnType<typeof setTimeout> | null = null
 let stateResetTimer: ReturnType<typeof setTimeout> | null = null
 let randomIdleBehaviorTimer: ReturnType<typeof setTimeout> | null = null
+let peekReturnTimer: ReturnType<typeof setTimeout> | null = null
+let heroIntroTimer: ReturnType<typeof setTimeout> | null = null
+let heroReactionUnlockTimer: ReturnType<typeof setTimeout> | null = null
+let pointerTrackRaf: number | null = null
+let movementRaf: number | null = null
+let movementToken = 0
+let hasPlayedHeroIntro = false
+let heroReactionLocked = false
+
+const petStyle = computed<Record<string, string>>(() => ({
+  left: `${position.value.x}px`,
+  top: `${position.value.y}px`,
+  '--desk-pet-scale': `${deskPetSettings.value.scale}`,
+  '--pet-look-x': `${lookOffset.value.x}px`,
+  '--pet-look-y': `${lookOffset.value.y}px`,
+}))
 
 // ─── 工具函数 ───
 const preloadImages = () => {
@@ -145,6 +198,9 @@ const preloadImages = () => {
     stateImageMap[PetState.CLICK],
     stateImageMap[PetState.SLEEP],
     stateImageMap[PetState.HAPPY],
+    stateImageMap[PetState.PERCH],
+    stateImageMap[PetState.LEAP],
+    stateImageMap[PetState.PEEK],
   ])
   for (const url of urls) {
     const img = new Image()
@@ -164,15 +220,26 @@ function scheduleAuxImagePreload() {
 }
 
 watch(visible, (isVisible) => {
-  if (isVisible) scheduleAuxImagePreload()
+  if (isVisible) {
+    scheduleAuxImagePreload()
+    if (heroIntroTimer) clearTimeout(heroIntroTimer)
+    heroIntroTimer = setTimeout(() => {
+      playHeroIntroIfNeeded()
+    }, 500)
+    return
+  }
+  stopMovement()
+  lookOffset.value = { x: 0, y: 0 }
 })
-
-const PET_SIZE = 80
-const EDGE_SNAP = 20
 
 const clampPosition = (pos: { x: number; y: number }) => ({
   x: Math.max(-PET_SIZE / 2, Math.min(pos.x, window.innerWidth - PET_SIZE / 2)),
   y: Math.max(0, Math.min(pos.y, window.innerHeight - PET_SIZE / 2)),
+})
+
+const clampPeekPosition = (pos: { x: number; y: number }) => ({
+  x: Math.max(-PET_SIZE * 0.45, Math.min(pos.x, window.innerWidth - PET_SIZE * 0.55)),
+  y: Math.max(0, Math.min(pos.y, window.innerHeight - PET_SIZE * 0.8)),
 })
 
 // 边缘吸附
@@ -189,17 +256,206 @@ const snapToEdge = (pos: { x: number; y: number }) => {
   return { x, y }
 }
 
+const preventDefaultIfCancelable = (e: Event) => {
+  if (e.cancelable) e.preventDefault()
+}
+
+const isHeroTarget = (target: EventTarget | null) =>
+  target instanceof Element && target.closest(HERO_BUTTON_SELECTOR)
+
+const getHeroButton = () => document.querySelector<HTMLElement>(HERO_BUTTON_SELECTOR)
+
+const lockHeroReaction = () => {
+  heroReactionLocked = true
+  if (heroReactionUnlockTimer) clearTimeout(heroReactionUnlockTimer)
+  heroReactionUnlockTimer = setTimeout(() => {
+    heroReactionLocked = false
+    heroReactionUnlockTimer = null
+  }, 900)
+}
+
+const stopMovement = () => {
+  movementToken += 1
+  if (movementRaf !== null) {
+    cancelAnimationFrame(movementRaf)
+    movementRaf = null
+  }
+}
+
+const animateToPosition = (
+  targetPos: { x: number; y: number },
+  options: { duration?: number; allowPeekOverflow?: boolean } = {}
+) => {
+  const { duration = 700, allowPeekOverflow = false } = options
+  stopMovement()
+
+  const token = movementToken
+  const startPos = { ...position.value }
+  const target = allowPeekOverflow ? clampPeekPosition(targetPos) : clampPosition(targetPos)
+  const startAt = performance.now()
+
+  return new Promise<void>((resolve) => {
+    const step = (now: number) => {
+      if (token !== movementToken) {
+        resolve()
+        return
+      }
+      const progress = Math.min((now - startAt) / duration, 1)
+      const eased = 1 - (1 - progress) ** 3
+      const x = startPos.x + (target.x - startPos.x) * eased
+      const baseY = startPos.y + (target.y - startPos.y) * eased
+      position.value = allowPeekOverflow
+        ? clampPeekPosition({ x, y: baseY })
+        : clampPosition({ x, y: baseY })
+
+      if (progress < 1) {
+        movementRaf = requestAnimationFrame(step)
+      } else {
+        movementRaf = null
+        resolve()
+      }
+    }
+    movementRaf = requestAnimationFrame(step)
+  })
+}
+
+const getHeroPerchPosition = (heroBtn: HTMLElement) => {
+  const rect = heroBtn.getBoundingClientRect()
+  return clampPosition({
+    x: rect.left + rect.width * 0.5 - PET_SIZE / 2,
+    y: rect.top - PET_SIZE * 0.56,
+  })
+}
+
+const getPeekPositionFromHero = (heroBtn: HTMLElement) => {
+  const rect = heroBtn.getBoundingClientRect()
+  const towardRight = rect.left + rect.width * 0.5 < window.innerWidth * 0.5
+  const x = towardRight ? window.innerWidth - PET_SIZE * 0.55 : -PET_SIZE * 0.45
+  const y = rect.top + rect.height * 0.2
+  return clampPeekPosition({ x, y })
+}
+
+const isPetTarget = (target: EventTarget | null) =>
+  target instanceof Element && target.closest('.desk-pet')
+
+const getClickFollowPosition = (clientX: number, clientY: number) =>
+  clampPosition({
+    x: clientX - PET_SIZE * 0.5,
+    y: clientY - PET_SIZE * 0.72,
+  })
+
+const setLookOffsetByPointer = (clientX: number, clientY: number) => {
+  const sensitivity = deskPetSettings.value.followSensitivity
+  const lookDistance = LOOK_MIN_DISTANCE * (1 + (sensitivity - 1) * 0.6)
+  const lookFactor = 0.8 + sensitivity * 0.4
+  const centerX = position.value.x + PET_SIZE * 0.5
+  const centerY = position.value.y + PET_SIZE * 0.5
+  const dx = clientX - centerX
+  const dy = clientY - centerY
+  const distance = Math.hypot(dx, dy)
+  if (distance > lookDistance || isDragging.value || showContextMenu.value) {
+    lookOffset.value = { x: 0, y: 0 }
+    return
+  }
+  const ratio = (lookDistance - distance) / lookDistance
+  lookOffset.value = {
+    x: Math.max(-LOOK_MAX_OFFSET, Math.min(LOOK_MAX_OFFSET, dx * 0.06 * ratio * lookFactor)),
+    y: Math.max(-LOOK_MAX_OFFSET, Math.min(LOOK_MAX_OFFSET, dy * 0.05 * ratio * lookFactor)),
+  }
+}
+
+const perchOnHeroButton = async (heroBtn: HTMLElement, fromIntro = false) => {
+  if (!visible.value || isDragging.value || heroReactionLocked) return
+  const fromState = currentState.value
+  const startState = fromIntro ? PetState.ENTER : PetState.TRACK
+  currentState.value = startState
+  isAnimating.value = true
+  await animateToPosition(getHeroPerchPosition(heroBtn), {
+    duration: fromIntro ? 860 : 520,
+  })
+  if (!visible.value || isDragging.value) return
+  currentState.value = PetState.PERCH
+  isAnimating.value = false
+  if (fromIntro || fromState === PetState.PEEK) {
+    showStateBubble(PetState.PERCH, 2200)
+  }
+}
+
+const schedulePeekIdle = () => {
+  if (peekReturnTimer) clearTimeout(peekReturnTimer)
+  peekReturnTimer = setTimeout(
+    () => {
+      if (currentState.value !== PetState.PEEK || isDragging.value) return
+      currentState.value = PetState.IDLE
+      scheduleRandomIdleBehavior()
+    },
+    3600 + Math.random() * 1800
+  )
+}
+
+const reactToHeroButtonClick = async (heroBtn: HTMLElement) => {
+  if (!deskPetSettings.value.autoHeroInteraction) return
+  if (!visible.value || isDragging.value || heroReactionLocked) return
+  lockHeroReaction()
+  if (peekReturnTimer) clearTimeout(peekReturnTimer)
+  currentState.value = PetState.LEAP
+  isAnimating.value = true
+  showStateBubble(PetState.LEAP, 1800)
+  spawnParticles('✨', 3)
+  await animateToPosition(getPeekPositionFromHero(heroBtn), {
+    duration: 760,
+    allowPeekOverflow: true,
+  })
+  if (!visible.value || isDragging.value) return
+  currentState.value = PetState.PEEK
+  isAnimating.value = false
+  showStateBubble(PetState.PEEK, 2200)
+  schedulePeekIdle()
+}
+
+const reactToPageClick = async (clientX: number, clientY: number) => {
+  if (!visible.value || isDragging.value) return
+  if (heroReactionLocked) return
+  if (peekReturnTimer) clearTimeout(peekReturnTimer)
+  const target = getClickFollowPosition(clientX, clientY)
+  currentState.value = PetState.LEAP
+  isAnimating.value = true
+  await animateToPosition(target, {
+    duration: 560,
+  })
+  if (!visible.value || isDragging.value) return
+  transitionTo(PetState.CLICK, 560, PetState.IDLE)
+  showStateBubble(PetState.CLICK, 1200)
+  spawnParticles('✨', 2)
+  resetIdleTimer()
+}
+
+const playHeroIntroIfNeeded = () => {
+  if (!deskPetSettings.value.autoHeroInteraction) return
+  if (hasPlayedHeroIntro || !visible.value) return
+  const heroBtn = getHeroButton()
+  if (!heroBtn) return
+  hasPlayedHeroIntro = true
+  void perchOnHeroButton(heroBtn, true)
+}
+
 const initPosition = () => {
   if (typeof window !== 'undefined') {
     position.value = clampPosition({
-      x: window.innerWidth - 100,
-      y: window.innerHeight - 100,
+      x: window.innerWidth - PET_SIZE * 1.25,
+      y: window.innerHeight - PET_SIZE * 1.25,
     })
   }
 }
 
 const handleResize = () => {
   position.value = clampPosition(position.value)
+  if (currentState.value === PetState.PERCH) {
+    const heroBtn = getHeroButton()
+    if (heroBtn) {
+      position.value = getHeroPerchPosition(heroBtn)
+    }
+  }
 }
 
 // ─── 状态切换辅助 ───
@@ -210,7 +466,7 @@ const transitionTo = (state: PetState, duration: number, afterState = PetState.I
   stateResetTimer = setTimeout(() => {
     currentState.value = afterState
     isAnimating.value = false
-    if (afterState === PetState.IDLE) scheduleRandomIdleBehavior()
+    if (afterState === PetState.IDLE || afterState === PetState.PERCH) scheduleRandomIdleBehavior()
   }, duration)
 }
 
@@ -219,14 +475,15 @@ const scheduleRandomIdleBehavior = () => {
   if (randomIdleBehaviorTimer) clearTimeout(randomIdleBehaviorTimer)
   const delay = 5000 + Math.random() * 7000
   randomIdleBehaviorTimer = setTimeout(() => {
-    if (currentState.value !== PetState.IDLE) return
+    if (currentState.value !== PetState.IDLE && currentState.value !== PetState.PERCH) return
+    const restState = currentState.value === PetState.PERCH ? PetState.PERCH : PetState.IDLE
     const behaviors = [PetState.THINKING, PetState.HAPPY] as const
     const picked = behaviors[Math.floor(Math.random() * behaviors.length)]
     currentState.value = picked
     showStateBubble(picked, 2500)
     if (picked === PetState.HAPPY) spawnParticles('✨', 2)
     stateResetTimer = setTimeout(() => {
-      currentState.value = PetState.IDLE
+      currentState.value = restState
       scheduleRandomIdleBehavior()
     }, 3000)
   }, delay)
@@ -234,7 +491,14 @@ const scheduleRandomIdleBehavior = () => {
 
 // ─── 全局 mousemove 节流 ───
 let lastIdleReset = 0
-const handleGlobalMouseMove = () => {
+const handleGlobalMouseMove = (e: MouseEvent) => {
+  if (pointerTrackRaf !== null) cancelAnimationFrame(pointerTrackRaf)
+  const { clientX, clientY } = e
+  pointerTrackRaf = requestAnimationFrame(() => {
+    pointerTrackRaf = null
+    setLookOffsetByPointer(clientX, clientY)
+  })
+
   const now = Date.now()
   if (now - lastIdleReset < 200) return
   lastIdleReset = now
@@ -278,7 +542,11 @@ const resetIdleTimer = () => {
   }
 
   idleTimer = setTimeout(() => {
-    if (currentState.value === PetState.IDLE || currentState.value === PetState.HOVER) {
+    if (
+      currentState.value === PetState.IDLE ||
+      currentState.value === PetState.HOVER ||
+      currentState.value === PetState.PERCH
+    ) {
       currentState.value = PetState.SLEEP
       showStateBubble(PetState.SLEEP, 3000)
       if (randomIdleBehaviorTimer) clearTimeout(randomIdleBehaviorTimer)
@@ -286,10 +554,22 @@ const resetIdleTimer = () => {
   }, IDLE_TIMEOUT)
 }
 
+const getRestState = () =>
+  currentState.value === PetState.PERCH || currentState.value === PetState.TRACK
+    ? PetState.PERCH
+    : PetState.IDLE
+
+const hidePet = () => {
+  showContextMenu.value = false
+  settings.value.deskPet.enabled = false
+}
+let hoverFallbackState: PetState = PetState.IDLE
+
 // ─── 交互事件 ───
 const handleMouseEnter = () => {
   if (currentState.value === PetState.SLEEP || isDragging.value) return
-  if (currentState.value !== PetState.IDLE) return
+  if (currentState.value !== PetState.IDLE && currentState.value !== PetState.PERCH) return
+  hoverFallbackState = currentState.value === PetState.PERCH ? PetState.PERCH : PetState.IDLE
   currentState.value = PetState.HOVER
   showStateBubble(PetState.HOVER, 1500)
   resetIdleTimer()
@@ -297,7 +577,7 @@ const handleMouseEnter = () => {
 
 const handleMouseLeave = () => {
   if (currentState.value === PetState.SLEEP || isDragging.value) return
-  if (currentState.value === PetState.HOVER) currentState.value = PetState.IDLE
+  if (currentState.value === PetState.HOVER) currentState.value = hoverFallbackState
   showContextMenu.value = false
   resetIdleTimer()
 }
@@ -322,14 +602,15 @@ const handleClick = () => {
   }
 
   clickCount.value++
+  const restState = getRestState()
 
   if (clickCount.value >= 3) {
-    transitionTo(PetState.ANGRY, 1500)
+    transitionTo(PetState.ANGRY, 1500, restState)
     showStateBubble(PetState.ANGRY, 2000)
     spawnParticles('💢', 3)
     clickCount.value = 0
   } else {
-    transitionTo(PetState.CLICK, 600)
+    transitionTo(PetState.CLICK, 600, restState)
     showStateBubble(PetState.CLICK, 1200)
   }
   resetIdleTimer()
@@ -341,7 +622,7 @@ const handleDblClick = () => {
   // 取消单击的状态重置
   if (stateResetTimer) clearTimeout(stateResetTimer)
   clickCount.value = 0
-  transitionTo(PetState.PAT, 2000)
+  transitionTo(PetState.PAT, 2000, getRestState())
   showStateBubble(PetState.PAT, 2000)
   spawnParticles('❤️', 4)
   resetIdleTimer()
@@ -358,30 +639,36 @@ const handleContextMenu = (e: MouseEvent) => {
 const menuActions = {
   pat() {
     showContextMenu.value = false
-    transitionTo(PetState.PAT, 2000)
+    transitionTo(PetState.PAT, 2000, getRestState())
     showStateBubble(PetState.PAT, 2000)
     spawnParticles('❤️', 4)
     resetIdleTimer()
   },
   feed() {
     showContextMenu.value = false
-    transitionTo(PetState.EAT, 2000)
+    transitionTo(PetState.EAT, 2000, getRestState())
     showStateBubble(PetState.EAT, 2000)
     spawnParticles('🐟', 3)
     resetIdleTimer()
   },
   hide() {
-    showContextMenu.value = false
-    settings.value.showDeskPet = false
+    hidePet()
   },
 }
 
 // ─── 拖拽 ───
 const handlePointerDown = (e: MouseEvent | TouchEvent) => {
+  if (
+    e.target instanceof Element &&
+    e.target.closest('.desk-pet__close, .desk-pet__menu, .desk-pet__menu-item')
+  ) {
+    return
+  }
   if (showContextMenu.value) {
     showContextMenu.value = false
     return
   }
+  stopMovement()
   const pos = getEventPos(e)
   isDragging.value = true
   hasMoved.value = false
@@ -394,7 +681,7 @@ const handlePointerDown = (e: MouseEvent | TouchEvent) => {
   document.addEventListener('mouseup', handleDragEnd)
   document.addEventListener('touchmove', handleDragMove, { passive: false })
   document.addEventListener('touchend', handleDragEnd)
-  e.preventDefault()
+  preventDefaultIfCancelable(e)
 }
 
 const handleDragMove = (e: MouseEvent | TouchEvent) => {
@@ -421,7 +708,7 @@ const handleDragMove = (e: MouseEvent | TouchEvent) => {
       y: pos.y - dragOffset.value.y,
     })
   }
-  if ('touches' in e) e.preventDefault()
+  if ('touches' in e) preventDefaultIfCancelable(e)
 }
 
 const handleDragEnd = () => {
@@ -450,8 +737,15 @@ watch(clickCount, () => {
 })
 
 // 全局点击关闭菜单
-const handleGlobalClick = () => {
+const handleGlobalClick = (e: MouseEvent) => {
   if (showContextMenu.value) showContextMenu.value = false
+  if (isPetTarget(e.target)) return
+  const heroBtn = isHeroTarget(e.target)
+  if (heroBtn instanceof HTMLElement && deskPetSettings.value.autoHeroInteraction) {
+    void reactToHeroButtonClick(heroBtn)
+    return
+  }
+  void reactToPageClick(e.clientX, e.clientY)
 }
 
 // ─── 生命周期 ───
@@ -460,6 +754,9 @@ onMounted(() => {
   initPosition()
   resetIdleTimer()
   scheduleRandomIdleBehavior()
+  heroIntroTimer = setTimeout(() => {
+    playHeroIntroIfNeeded()
+  }, 520)
   document.addEventListener('mousemove', handleGlobalMouseMove)
   document.addEventListener('click', handleGlobalClick)
   window.addEventListener('resize', handleResize)
@@ -474,12 +771,17 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  stopMovement()
+  if (pointerTrackRaf !== null) cancelAnimationFrame(pointerTrackRaf)
   if (delayedPreloadTimer) clearTimeout(delayedPreloadTimer)
   if (idleTimer) clearTimeout(idleTimer)
   if (stateResetTimer) clearTimeout(stateResetTimer)
   if (clickResetTimer) clearTimeout(clickResetTimer)
   if (randomIdleBehaviorTimer) clearTimeout(randomIdleBehaviorTimer)
   if (speechTimer) clearTimeout(speechTimer)
+  if (peekReturnTimer) clearTimeout(peekReturnTimer)
+  if (heroIntroTimer) clearTimeout(heroIntroTimer)
+  if (heroReactionUnlockTimer) clearTimeout(heroReactionUnlockTimer)
   document.removeEventListener('mousemove', handleGlobalMouseMove)
   document.removeEventListener('click', handleGlobalClick)
   window.removeEventListener('resize', handleResize)
@@ -500,7 +802,7 @@ onUnmounted(() => {
           'desk-pet--no-anim': !shouldAnimate,
         },
       ]"
-      :style="{ left: `${position.x}px`, top: `${position.y}px` }"
+      :style="petStyle"
       role="img"
       :aria-label="t('deskPet.ariaLabel', { state: currentState })"
       @mouseenter="handleMouseEnter"
@@ -523,6 +825,16 @@ onUnmounted(() => {
         height="80"
         draggable="false"
       />
+      <button
+        type="button"
+        class="desk-pet__close"
+        :aria-label="t('deskPet.close')"
+        @mousedown.stop
+        @touchstart.stop
+        @click.stop="hidePet"
+      >
+        ×
+      </button>
 
       <!-- 情绪粒子 -->
       <TransitionGroup name="particle" tag="div" class="desk-pet__particles">
@@ -578,13 +890,16 @@ onUnmounted(() => {
 /* ═══ 容器 ═══ */
 .desk-pet {
   position: fixed;
-  width: clamp(3rem, 8vw, 5rem);
+  width: calc(clamp(3rem, 8vw, 5rem) * var(--desk-pet-scale, 1));
   aspect-ratio: 1;
+  --desk-pet-scale: 1;
+  --pet-look-x: 0px;
+  --pet-look-y: 0px;
   z-index: 9999;
   cursor: grab;
   user-select: none;
   touch-action: none;
-  will-change: transform;
+  will-change: transform, left, top;
   transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
@@ -608,12 +923,57 @@ onUnmounted(() => {
   display: block;
   object-fit: contain;
   pointer-events: none;
+  transform: translate3d(var(--pet-look-x), var(--pet-look-y), 0);
   opacity: 0;
-  transition: opacity 0.15s ease;
+  transition:
+    opacity 0.15s ease,
+    transform 0.12s linear;
 }
 
 .desk-pet__image--ready {
   opacity: 1;
+}
+
+.desk-pet__close {
+  position: absolute;
+  top: -0.35rem;
+  right: -0.35rem;
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 999rem;
+  border: 1px solid var(--color-divider, rgba(255, 255, 255, 0.6));
+  background: var(--color-surface, rgba(255, 255, 255, 0.92));
+  color: var(--color-text-secondary, #475569);
+  font-size: 0.78rem;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.92);
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease,
+    color 0.2s ease;
+}
+
+.desk-pet:hover .desk-pet__close,
+.desk-pet:focus-within .desk-pet__close {
+  opacity: 1;
+  pointer-events: auto;
+  transform: scale(1);
+}
+
+.desk-pet__close:hover {
+  color: var(--color-error, #ef4444);
+}
+
+@media (hover: none) {
+  .desk-pet__close {
+    opacity: 1;
+    pointer-events: auto;
+  }
 }
 
 /* ═══ 气泡 ═══ */
@@ -766,7 +1126,7 @@ onUnmounted(() => {
 .pet-fade-enter-from,
 .pet-fade-leave-to {
   opacity: 0;
-  transform: translateY(1rem);
+  transform: scale(0.94);
 }
 
 /* ═══ 状态动画 ═══ */
@@ -776,10 +1136,10 @@ onUnmounted(() => {
 @keyframes breathe {
   0%,
   100% {
-    transform: translateY(0);
+    transform: scale(1);
   }
   50% {
-    transform: translateY(-0.15rem);
+    transform: scale(1.02);
   }
 }
 
@@ -799,27 +1159,107 @@ onUnmounted(() => {
   }
 }
 
+.desk-pet--enter {
+  animation: intro-hop 0.85s cubic-bezier(0.2, 0.9, 0.25, 1.1);
+}
+@keyframes intro-hop {
+  0% {
+    transform: scale(0.98) rotate(-5deg);
+  }
+  35% {
+    transform: scale(1.06) rotate(2deg);
+  }
+  70% {
+    transform: scale(0.97) rotate(-2deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+.desk-pet--perch {
+  animation: perch-sway 2.2s ease-in-out infinite;
+}
+@keyframes perch-sway {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-1.5deg) scale(1.01);
+  }
+  75% {
+    transform: rotate(1.5deg) scale(1.01);
+  }
+}
+
+.desk-pet--track {
+  animation: curious-pop 0.5s ease-in-out;
+}
+@keyframes curious-pop {
+  0% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(1.08);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.desk-pet--leap {
+  animation: leap-away 0.75s cubic-bezier(0.2, 0.85, 0.2, 1);
+}
+@keyframes leap-away {
+  0% {
+    transform: scale(1) rotate(0deg);
+  }
+  25% {
+    transform: scale(0.95) rotate(-5deg);
+  }
+  65% {
+    transform: scale(1.05) rotate(6deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+.desk-pet--peek {
+  animation: peek-bob 1.8s ease-in-out infinite;
+}
+@keyframes peek-bob {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(2deg);
+  }
+}
+
 .desk-pet--click {
   animation: bounce 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 }
 @keyframes bounce {
   0% {
-    transform: translateY(0);
+    transform: scale(1) rotate(0deg);
   }
   30% {
-    transform: translateY(0.1rem);
+    transform: scale(0.96) rotate(-2deg);
   }
   50% {
-    transform: translateY(-1.5rem);
+    transform: scale(1.04) rotate(2deg);
   }
   70% {
-    transform: translateY(0);
+    transform: scale(0.98) rotate(-1deg);
   }
   85% {
-    transform: translateY(-0.4rem);
+    transform: scale(1.02) rotate(1deg);
   }
   100% {
-    transform: translateY(0);
+    transform: scale(1) rotate(0deg);
   }
 }
 
@@ -852,10 +1292,10 @@ onUnmounted(() => {
 @keyframes sleep-breathe {
   0%,
   100% {
-    transform: translateY(0);
+    transform: scale(1);
   }
   50% {
-    transform: translateY(-0.1rem);
+    transform: scale(0.98);
   }
 }
 
@@ -864,15 +1304,15 @@ onUnmounted(() => {
 }
 @keyframes wake {
   0% {
-    transform: translateY(0) rotate(0deg);
+    transform: rotate(0deg) scale(0.98);
     filter: brightness(0.85);
   }
   50% {
-    transform: translateY(-0.5rem) rotate(-5deg);
+    transform: rotate(-5deg) scale(1.03);
     filter: brightness(1);
   }
   100% {
-    transform: translateY(0) rotate(0deg);
+    transform: rotate(0deg) scale(1);
     filter: brightness(1);
   }
 }
@@ -883,13 +1323,13 @@ onUnmounted(() => {
 @keyframes happy-bounce {
   0%,
   100% {
-    transform: translateY(0) rotate(0deg);
+    transform: rotate(0deg) scale(1);
   }
   25% {
-    transform: translateY(-0.3rem) rotate(3deg);
+    transform: rotate(3deg) scale(1.04);
   }
   75% {
-    transform: translateY(-0.3rem) rotate(-3deg);
+    transform: rotate(-3deg) scale(1.04);
   }
 }
 
@@ -915,10 +1355,10 @@ onUnmounted(() => {
     transform: rotate(0deg);
   }
   25% {
-    transform: rotate(-4deg) translateY(-0.1rem);
+    transform: rotate(-4deg) scale(1.02);
   }
   75% {
-    transform: rotate(4deg) translateY(-0.1rem);
+    transform: rotate(4deg) scale(1.02);
   }
 }
 
@@ -928,10 +1368,10 @@ onUnmounted(() => {
 @keyframes eat-chomp {
   0%,
   100% {
-    transform: translateY(0);
+    transform: scaleY(1);
   }
   50% {
-    transform: translateY(0.15rem);
+    transform: scaleY(0.94);
   }
 }
 
@@ -979,6 +1419,11 @@ onUnmounted(() => {
   .desk-pet,
   .desk-pet--idle,
   .desk-pet--hover,
+  .desk-pet--enter,
+  .desk-pet--perch,
+  .desk-pet--track,
+  .desk-pet--leap,
+  .desk-pet--peek,
   .desk-pet--click,
   .desk-pet--angry,
   .desk-pet--sleep,
