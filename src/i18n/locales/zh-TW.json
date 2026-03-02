@@ -236,6 +236,21 @@
     "bgDensity": "密度",
     "bgSpeed": "速度",
     "bgOpacity": "透明度",
+    "mascotBackground": "吉祥物飛行背景",
+    "mascotEnabled": "啟用飛行背景",
+    "mascotEnabledDesc": "顯示吉祥物由左下到右上的飛行動畫",
+    "mascotDensity": "飛行密度",
+    "mascotSpeed": "飛行速度",
+    "mascotOpacity": "飛行透明度",
+    "deskPet": "桌寵",
+    "deskPetEnabled": "啟用桌寵",
+    "deskPetEnabledDesc": "顯示可互動桌寵",
+    "deskPetSpeech": "桌寵氣泡",
+    "deskPetSpeechDesc": "顯示桌寵台詞氣泡",
+    "deskPetAutoHero": "自動互動",
+    "deskPetAutoHeroDesc": "自動與首頁按鈕互動",
+    "deskPetScale": "桌寵大小",
+    "deskPetFollowSensitivity": "跟隨靈敏度",
     "videoSettings": "影片設定",
     "resetVideoSettings": "重置影片設定",
     "videoSettingsReset": "影片設定已重置為預設值",
@@ -909,6 +924,7 @@
   },
   "deskPet": {
     "ariaLabel": "桌寵狀態: {state}",
+    "close": "關閉桌寵",
     "menu": {
       "pat": "🤚 摸摸頭",
       "feed": "🐟 餵食",
@@ -931,7 +947,12 @@
       "thinking": ["在想事情...", "嗯...", "(._.)"],
       "pat": ["咕嚕嚕~", "好舒服喵~", "還要還要！", "(´▽`ʃ♡ƪ)"],
       "eat": ["好吃！", "還想吃~", "飽了喵~", "(ↀᴥↀ)"],
-      "dizzy": ["好暈...", "慢點啦~", "(≧﹏≦)"]
+      "dizzy": ["好暈...", "慢點啦~", "(≧﹏≦)"],
+      "enter": ["我來啦！", "跳一下~", "( •̀ ω •́ )✧"],
+      "perch": ["這裡視野真好~", "我先趴一下", "守著你呀"],
+      "track": ["欸？你在動！", "我看到你啦~", "(⊙o⊙)"],
+      "leap": ["起跳！", "看我閃現~", "咻——"],
+      "peek": ["我在這邊偷看~", "嘿嘿，躲好了", "( •̀ .̫ •́ )✧"]
     }
   }
 }

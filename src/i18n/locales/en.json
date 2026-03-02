@@ -236,6 +236,21 @@
     "bgDensity": "Density",
     "bgSpeed": "Speed",
     "bgOpacity": "Opacity",
+    "mascotBackground": "Mascot Flight Background",
+    "mascotEnabled": "Enable Flight Background",
+    "mascotEnabledDesc": "Show mascot flying diagonally across pages",
+    "mascotDensity": "Flight Density",
+    "mascotSpeed": "Flight Speed",
+    "mascotOpacity": "Flight Opacity",
+    "deskPet": "Desk Pet",
+    "deskPetEnabled": "Enable Desk Pet",
+    "deskPetEnabledDesc": "Show an interactive desk pet",
+    "deskPetSpeech": "Pet Speech Bubble",
+    "deskPetSpeechDesc": "Show desk pet speech bubbles",
+    "deskPetAutoHero": "Auto Hero Interaction",
+    "deskPetAutoHeroDesc": "Auto interact with homepage hero button",
+    "deskPetScale": "Pet Size",
+    "deskPetFollowSensitivity": "Follow Sensitivity",
     "videoSettings": "Video Settings",
     "resetVideoSettings": "Reset Video Settings",
     "videoSettingsReset": "Video settings have been reset to defaults",
@@ -909,6 +924,7 @@
   },
   "deskPet": {
     "ariaLabel": "Desk pet state: {state}",
+    "close": "Close desk pet",
     "menu": {
       "pat": "🤚 Pat head",
       "feed": "🐟 Feed",
@@ -931,7 +947,12 @@
       "thinking": ["Thinking...", "Hmm...", "(._.)"],
       "pat": ["Purr~", "So comfy~", "More more!", "(´▽`ʃ♡ƪ)"],
       "eat": ["Yummy!", "Want more~", "Full meow~", "(ↀᴥↀ)"],
-      "dizzy": ["So dizzy...", "Slow down~", "(≧﹏≦)"]
+      "dizzy": ["So dizzy...", "Slow down~", "(≧﹏≦)"],
+      "enter": ["Here I come!", "Boing~", "( •̀ ω •́ )✧"],
+      "perch": ["Nice view from here~", "I'll perch for a bit", "Guarding this button!"],
+      "track": ["Oh? You're moving!", "I see you~", "(⊙o⊙)"],
+      "leap": ["Jump!", "Watch this dash~", "Whoosh!"],
+      "peek": ["Peeking from here~", "Hehe, I'm hiding", "( •̀ .̫ •́ )✧"]
     }
   }
 }
