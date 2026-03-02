@@ -179,7 +179,7 @@ FRONTEND_API_CONTRACT.md
 # allow specific expression PNG assets
 !public/images/expressions/22.png
 !public/images/expressions/55.png
-!public/images/expressions/图层 0.png
+!public/images/expressions/fly.png
 
 # allow docs directory and all documents under it
 !docs/

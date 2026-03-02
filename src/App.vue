@@ -49,6 +49,9 @@
     <!-- Back to Top Button -->
     <BackToTop :show-progress="true" />
 
+    <!-- Global Mascot Flight Background -->
+    <MascotFlightBackground />
+
     <!-- Global Particle Background -->
     <ParticleBackground />
 
@@ -71,6 +74,9 @@ import ErrorBoundary from '@/components/ui/ErrorBoundary.vue'
 
 const ParticleBackground = defineAsyncComponent(
   () => import('@/components/ui/ParticleBackground.vue')
+)
+const MascotFlightBackground = defineAsyncComponent(
+  () => import('@/components/ui/MascotFlightBackground.vue')
 )
 
 const ToastContainer = defineAsyncComponent(() => import('@/components/ui/ToastContainer.vue'))
