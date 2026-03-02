@@ -25,6 +25,32 @@ export interface ParticleEffectConfig {
   opacity: number
 }
 
+/** 吉祥物飞行背景配置 */
+export interface MascotBackgroundConfig {
+  /** 开关 */
+  enabled: boolean
+  /** 密度倍率 0.4-1.6 */
+  density: number
+  /** 速度倍率 0.6-1.8 */
+  speed: number
+  /** 透明度倍率 0.3-1 */
+  opacity: number
+}
+
+/** 桌宠配置 */
+export interface DeskPetConfig {
+  /** 开关 */
+  enabled: boolean
+  /** 尺寸倍率 0.8-1.5 */
+  scale: number
+  /** 允许气泡台词 */
+  speechEnabled: boolean
+  /** 自动与 Hero 按钮互动 */
+  autoHeroInteraction: boolean
+  /** 跟随灵敏度 0.5-1.8 */
+  followSensitivity: number
+}
+
 export interface Settings {
   showHeroSection: boolean
   enableAnimations: boolean
@@ -39,8 +65,10 @@ export interface Settings {
   uiStyle: UiStyle
   /** 全局背景粒子效果 */
   backgroundEffect: ParticleEffectConfig
-  /** 是否显示桌宠 */
-  showDeskPet: boolean
+  /** 吉祥物飞行背景 */
+  mascotBackground: MascotBackgroundConfig
+  /** 桌宠配置 */
+  deskPet: DeskPetConfig
 }
 
 const defaultSettings: Settings = {
@@ -59,7 +87,19 @@ const defaultSettings: Settings = {
     color: '',
     opacity: 0.6,
   },
-  showDeskPet: true,
+  mascotBackground: {
+    enabled: true,
+    density: 1,
+    speed: 1,
+    opacity: 0.85,
+  },
+  deskPet: {
+    enabled: true,
+    scale: 1,
+    speechEnabled: true,
+    autoHeroInteraction: true,
+    followSensitivity: 1,
+  },
 }
 
 export const useSettingsStore = defineStore(
@@ -75,9 +115,46 @@ export const useSettingsStore = defineStore(
       if (!settings.value.backgroundEffect) {
         settings.value.backgroundEffect = { ...defaultSettings.backgroundEffect }
       }
-      if (settings.value.showDeskPet === undefined) {
-        settings.value.showDeskPet = defaultSettings.showDeskPet
+      if (!settings.value.mascotBackground) {
+        settings.value.mascotBackground = { ...defaultSettings.mascotBackground }
       }
+      if (!settings.value.deskPet) {
+        const legacyShowDeskPet = (settings.value as Settings & { showDeskPet?: boolean })
+          .showDeskPet
+        settings.value.deskPet = {
+          ...defaultSettings.deskPet,
+          enabled:
+            legacyShowDeskPet === undefined ? defaultSettings.deskPet.enabled : legacyShowDeskPet,
+        }
+      }
+
+      settings.value.mascotBackground = {
+        ...defaultSettings.mascotBackground,
+        ...settings.value.mascotBackground,
+      }
+      settings.value.deskPet = {
+        ...defaultSettings.deskPet,
+        ...settings.value.deskPet,
+      }
+
+      settings.value.mascotBackground.density = Math.min(
+        1.6,
+        Math.max(0.4, settings.value.mascotBackground.density)
+      )
+      settings.value.mascotBackground.speed = Math.min(
+        1.8,
+        Math.max(0.6, settings.value.mascotBackground.speed)
+      )
+      settings.value.mascotBackground.opacity = Math.min(
+        1,
+        Math.max(0.3, settings.value.mascotBackground.opacity)
+      )
+
+      settings.value.deskPet.scale = Math.min(1.5, Math.max(0.8, settings.value.deskPet.scale))
+      settings.value.deskPet.followSensitivity = Math.min(
+        1.8,
+        Math.max(0.5, settings.value.deskPet.followSensitivity)
+      )
     })
 
     /**
@@ -145,10 +222,33 @@ export const useSettingsStore = defineStore(
       }
     }
 
+    function setMascotBackground(config: Partial<MascotBackgroundConfig>) {
+      const next = {
+        ...settings.value.mascotBackground,
+        ...config,
+      }
+      next.density = Math.min(1.6, Math.max(0.4, next.density))
+      next.speed = Math.min(1.8, Math.max(0.6, next.speed))
+      next.opacity = Math.min(1, Math.max(0.3, next.opacity))
+      settings.value.mascotBackground = next
+    }
+
+    function setDeskPet(config: Partial<DeskPetConfig>) {
+      const next = {
+        ...settings.value.deskPet,
+        ...config,
+      }
+      next.scale = Math.min(1.5, Math.max(0.8, next.scale))
+      next.followSensitivity = Math.min(1.8, Math.max(0.5, next.followSensitivity))
+      settings.value.deskPet = next
+    }
+
     function resetSettings() {
       settings.value = {
         ...defaultSettings,
         backgroundEffect: { ...defaultSettings.backgroundEffect },
+        mascotBackground: { ...defaultSettings.mascotBackground },
+        deskPet: { ...defaultSettings.deskPet },
       }
     }
 
@@ -162,6 +262,8 @@ export const useSettingsStore = defineStore(
       setAnimationIntensity,
       setUiStyle,
       setBackgroundEffect,
+      setMascotBackground,
+      setDeskPet,
       resetSettings,
     }
   },

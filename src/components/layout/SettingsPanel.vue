@@ -183,6 +183,178 @@
       </template>
     </div>
 
+    <!-- Mascot Flight Background -->
+    <div class="settings-group">
+      <div class="settings-group-header">
+        <div class="settings-group-icon">
+          <AnimatedIcon name="sparkle" :fallback-icon="Sparkles" size="sm" />
+        </div>
+        <span class="settings-label">{{ $t('settings.mascotBackground') }}</span>
+      </div>
+
+      <div class="toggle-list">
+        <button type="button" class="toggle-btn" @click="toggleMascotBackground">
+          <div class="toggle-btn-content">
+            <div class="toggle-btn-icon">
+              <AnimatedIcon name="sparkle" :fallback-icon="Sparkles" size="sm" />
+            </div>
+            <div class="toggle-btn-text">
+              <span class="toggle-btn-title">{{ $t('settings.mascotEnabled') }}</span>
+              <span class="toggle-btn-desc">{{ $t('settings.mascotEnabledDesc') }}</span>
+            </div>
+          </div>
+          <div class="toggle-switch" :class="{ active: mascotBackground.enabled }">
+            <span class="toggle-knob" />
+          </div>
+        </button>
+      </div>
+
+      <template v-if="mascotBackground.enabled">
+        <div class="slider-group">
+          <label class="slider-label">
+            {{ $t('settings.mascotDensity') }}
+            <span class="slider-value">{{ mascotBackground.density.toFixed(1) }}x</span>
+          </label>
+          <input
+            type="range"
+            class="settings-slider"
+            min="0.4"
+            max="1.6"
+            step="0.1"
+            :aria-label="$t('settings.mascotDensity')"
+            :value="mascotBackground.density"
+            @input="onMascotDensityChange"
+          />
+        </div>
+        <div class="slider-group">
+          <label class="slider-label">
+            {{ $t('settings.mascotSpeed') }}
+            <span class="slider-value">{{ mascotBackground.speed.toFixed(1) }}x</span>
+          </label>
+          <input
+            type="range"
+            class="settings-slider"
+            min="0.6"
+            max="1.8"
+            step="0.1"
+            :aria-label="$t('settings.mascotSpeed')"
+            :value="mascotBackground.speed"
+            @input="onMascotSpeedChange"
+          />
+        </div>
+        <div class="slider-group">
+          <label class="slider-label">
+            {{ $t('settings.mascotOpacity') }}
+            <span class="slider-value">{{ Math.round(mascotBackground.opacity * 100) }}%</span>
+          </label>
+          <input
+            type="range"
+            class="settings-slider"
+            min="0.3"
+            max="1"
+            step="0.05"
+            :aria-label="$t('settings.mascotOpacity')"
+            :value="mascotBackground.opacity"
+            @input="onMascotOpacityChange"
+          />
+        </div>
+      </template>
+    </div>
+
+    <!-- Desk Pet -->
+    <div class="settings-group">
+      <div class="settings-group-header">
+        <div class="settings-group-icon">
+          <AnimatedIcon name="sparkle" :fallback-icon="Settings" size="sm" />
+        </div>
+        <span class="settings-label">{{ $t('settings.deskPet') }}</span>
+      </div>
+
+      <div class="toggle-list">
+        <button type="button" class="toggle-btn" @click="toggleDeskPetEnabled">
+          <div class="toggle-btn-content">
+            <div class="toggle-btn-icon">
+              <AnimatedIcon name="sparkle" :fallback-icon="Settings" size="sm" />
+            </div>
+            <div class="toggle-btn-text">
+              <span class="toggle-btn-title">{{ $t('settings.deskPetEnabled') }}</span>
+              <span class="toggle-btn-desc">{{ $t('settings.deskPetEnabledDesc') }}</span>
+            </div>
+          </div>
+          <div class="toggle-switch" :class="{ active: deskPetConfig.enabled }">
+            <span class="toggle-knob" />
+          </div>
+        </button>
+      </div>
+
+      <template v-if="deskPetConfig.enabled">
+        <div class="toggle-list">
+          <button type="button" class="toggle-btn" @click="toggleDeskPetSpeech">
+            <div class="toggle-btn-content">
+              <div class="toggle-btn-icon">
+                <AnimatedIcon name="sparkle" :fallback-icon="Info" size="sm" />
+              </div>
+              <div class="toggle-btn-text">
+                <span class="toggle-btn-title">{{ $t('settings.deskPetSpeech') }}</span>
+                <span class="toggle-btn-desc">{{ $t('settings.deskPetSpeechDesc') }}</span>
+              </div>
+            </div>
+            <div class="toggle-switch" :class="{ active: deskPetConfig.speechEnabled }">
+              <span class="toggle-knob" />
+            </div>
+          </button>
+
+          <button type="button" class="toggle-btn" @click="toggleDeskPetAutoHero">
+            <div class="toggle-btn-content">
+              <div class="toggle-btn-icon">
+                <AnimatedIcon name="sparkle" :fallback-icon="Sparkles" size="sm" />
+              </div>
+              <div class="toggle-btn-text">
+                <span class="toggle-btn-title">{{ $t('settings.deskPetAutoHero') }}</span>
+                <span class="toggle-btn-desc">{{ $t('settings.deskPetAutoHeroDesc') }}</span>
+              </div>
+            </div>
+            <div class="toggle-switch" :class="{ active: deskPetConfig.autoHeroInteraction }">
+              <span class="toggle-knob" />
+            </div>
+          </button>
+        </div>
+
+        <div class="slider-group">
+          <label class="slider-label">
+            {{ $t('settings.deskPetScale') }}
+            <span class="slider-value">{{ deskPetConfig.scale.toFixed(1) }}x</span>
+          </label>
+          <input
+            type="range"
+            class="settings-slider"
+            min="0.8"
+            max="1.5"
+            step="0.1"
+            :aria-label="$t('settings.deskPetScale')"
+            :value="deskPetConfig.scale"
+            @input="onDeskPetScaleChange"
+          />
+        </div>
+        <div class="slider-group">
+          <label class="slider-label">
+            {{ $t('settings.deskPetFollowSensitivity') }}
+            <span class="slider-value">{{ deskPetConfig.followSensitivity.toFixed(1) }}x</span>
+          </label>
+          <input
+            type="range"
+            class="settings-slider"
+            min="0.5"
+            max="1.8"
+            step="0.1"
+            :aria-label="$t('settings.deskPetFollowSensitivity')"
+            :value="deskPetConfig.followSensitivity"
+            @input="onDeskPetFollowSensitivityChange"
+          />
+        </div>
+      </template>
+    </div>
+
     <!-- Video Settings -->
     <div class="settings-group">
       <div class="settings-group-header">
@@ -288,6 +460,27 @@ const { resetSettings } = useVideoSettings()
 
 const { theme } = storeToRefs(themeStore)
 const { settings } = storeToRefs(settingsStore)
+const mascotBackground = computed(() => {
+  return (
+    settings.value.mascotBackground ?? {
+      enabled: true,
+      density: 1,
+      speed: 1,
+      opacity: 0.85,
+    }
+  )
+})
+const deskPetConfig = computed(() => {
+  return (
+    settings.value.deskPet ?? {
+      enabled: true,
+      scale: 1,
+      speechEnabled: true,
+      autoHeroInteraction: true,
+      followSensitivity: 1,
+    }
+  )
+})
 
 const themeOptions = computed(() => [
   { value: 'light' as Theme, icon: Sun, label: t('settings.light') },
@@ -348,6 +541,47 @@ function onOpacityChange(e: Event) {
   settingsStore.setBackgroundEffect({ opacity: value })
 }
 
+function toggleMascotBackground() {
+  settingsStore.setMascotBackground({ enabled: !mascotBackground.value.enabled })
+}
+
+function onMascotDensityChange(e: Event) {
+  const value = parseFloat((e.target as HTMLInputElement).value)
+  settingsStore.setMascotBackground({ density: value })
+}
+
+function onMascotSpeedChange(e: Event) {
+  const value = parseFloat((e.target as HTMLInputElement).value)
+  settingsStore.setMascotBackground({ speed: value })
+}
+
+function onMascotOpacityChange(e: Event) {
+  const value = parseFloat((e.target as HTMLInputElement).value)
+  settingsStore.setMascotBackground({ opacity: value })
+}
+
+function toggleDeskPetEnabled() {
+  settingsStore.setDeskPet({ enabled: !deskPetConfig.value.enabled })
+}
+
+function toggleDeskPetSpeech() {
+  settingsStore.setDeskPet({ speechEnabled: !deskPetConfig.value.speechEnabled })
+}
+
+function toggleDeskPetAutoHero() {
+  settingsStore.setDeskPet({ autoHeroInteraction: !deskPetConfig.value.autoHeroInteraction })
+}
+
+function onDeskPetScaleChange(e: Event) {
+  const value = parseFloat((e.target as HTMLInputElement).value)
+  settingsStore.setDeskPet({ scale: value })
+}
+
+function onDeskPetFollowSensitivityChange(e: Event) {
+  const value = parseFloat((e.target as HTMLInputElement).value)
+  settingsStore.setDeskPet({ followSensitivity: value })
+}
+
 function resetVideoSettings() {
   resetSettings()
   toastStore.success(t('settings.videoSettingsReset'))
@@ -370,7 +604,7 @@ function resetVideoSettings() {
   padding: var(--spacing-2);
   gap: var(--spacing-2);
   min-width: 13.5rem;
-  width: min(90vw, 20rem);
+  width: min(94vw, 22rem);
   max-height: min(70svh, calc(100svh - 9rem));
   max-height: min(70dvh, calc(100dvh - 9rem));
   background: var(--color-background);
@@ -386,7 +620,7 @@ function resetVideoSettings() {
   }
 
   .settings-panel--compact {
-    width: min(92vw, 20rem);
+    width: min(96vw, 22rem);
     max-height: min(65svh, calc(100svh - 8rem));
     max-height: min(65dvh, calc(100dvh - 8rem));
   }
@@ -668,7 +902,7 @@ function resetVideoSettings() {
 
 .toggle-btn {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: var(--spacing-3);
   width: 100%;
@@ -688,6 +922,7 @@ function resetVideoSettings() {
   display: flex;
   align-items: center;
   gap: var(--spacing-3);
+  flex: 1;
   min-width: 0;
 }
 
@@ -721,14 +956,17 @@ function resetVideoSettings() {
   font-size: var(--text-sm);
   font-weight: var(--font-medium);
   color: var(--color-text-primary);
+  line-height: 1.3;
+  white-space: normal;
 }
 
 .toggle-btn-desc {
   font-size: var(--text-xs);
   color: var(--color-text-tertiary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  line-height: 1.35;
 }
 
 /* ========== Toggle Switch ========== */
@@ -739,6 +977,7 @@ function resetVideoSettings() {
   background: var(--color-gray-300);
   border-radius: var(--radius-full);
   flex-shrink: 0;
+  margin-top: 0.125rem;
   transition: background var(--transition-fast);
 }
 
@@ -835,13 +1074,12 @@ function resetVideoSettings() {
 
 /* ========== Background Effect Options ========== */
 .bg-effect-options {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--spacing-2);
 }
 
 .bg-effect-btn {
-  flex: 1;
   min-width: 0;
   display: flex;
   flex-direction: column;
@@ -894,6 +1132,8 @@ function resetVideoSettings() {
 .slider-label {
   display: flex;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--spacing-1) var(--spacing-2);
   font-size: var(--text-xs);
   color: var(--color-text-tertiary);
   margin-bottom: var(--spacing-1);
@@ -902,6 +1142,8 @@ function resetVideoSettings() {
 .slider-value {
   font-weight: var(--font-semibold);
   color: var(--color-text-secondary);
+  margin-inline-start: auto;
+  flex-shrink: 0;
 }
 
 .settings-slider {
@@ -1099,5 +1341,21 @@ function resetVideoSettings() {
 
 [data-theme='dark'] .link-btn:hover {
   background: rgba(255, 255, 255, 0.06);
+}
+
+@media (max-width: 28rem) {
+  .toggle-btn {
+    gap: var(--spacing-2);
+    padding: var(--spacing-2);
+  }
+
+  .toggle-btn-content {
+    gap: var(--spacing-2);
+  }
+
+  .toggle-btn-icon {
+    width: 1.75rem;
+    height: 1.75rem;
+  }
 }
 </style>
