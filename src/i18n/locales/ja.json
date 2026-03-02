@@ -236,6 +236,21 @@
     "bgDensity": "密度",
     "bgSpeed": "速度",
     "bgOpacity": "不透明度",
+    "mascotBackground": "マスコット飛行背景",
+    "mascotEnabled": "飛行背景を有効化",
+    "mascotEnabledDesc": "マスコットが左下から右上へ飛行します",
+    "mascotDensity": "飛行密度",
+    "mascotSpeed": "飛行速度",
+    "mascotOpacity": "飛行不透明度",
+    "deskPet": "デスクペット",
+    "deskPetEnabled": "デスクペットを有効化",
+    "deskPetEnabledDesc": "操作できるデスクペットを表示",
+    "deskPetSpeech": "ペット吹き出し",
+    "deskPetSpeechDesc": "デスクペットの吹き出しを表示",
+    "deskPetAutoHero": "自動インタラクション",
+    "deskPetAutoHeroDesc": "ホームのヒーローボタンと自動で連動",
+    "deskPetScale": "ペットサイズ",
+    "deskPetFollowSensitivity": "追従感度",
     "videoSettings": "動画設定",
     "resetVideoSettings": "動画設定をリセット",
     "videoSettingsReset": "動画設定をデフォルトにリセットしました",
@@ -909,6 +924,7 @@
   },
   "deskPet": {
     "ariaLabel": "デスクペットの状態: {state}",
+    "close": "デスクペットを閉じる",
     "menu": {
       "pat": "🤚 なでなで",
       "feed": "🐟 ごはん",
@@ -931,7 +947,12 @@
       "thinking": ["考え中...", "うーん...", "(._.)"],
       "pat": ["ゴロゴロ~", "気持ちいいにゃ~", "もっともっと！", "(´▽`ʃ♡ƪ)"],
       "eat": ["おいしい！", "もっと食べたい~", "お腹いっぱいにゃ~", "(ↀᴥↀ)"],
-      "dizzy": ["目が回る...", "ゆっくりして~", "(≧﹏≦)"]
+      "dizzy": ["目が回る...", "ゆっくりして~", "(≧﹏≦)"],
+      "enter": ["きたよー！", "ぴょんっ~", "( •̀ ω •́ )✧"],
+      "perch": ["ここ、見晴らしがいい~", "ちょっとここで待つね", "このボタンを見守るよ"],
+      "track": ["あっ、動いた！", "見えてるよ~", "(⊙o⊙)"],
+      "leap": ["ジャンプ！", "ダッシュするよ~", "しゅっ！"],
+      "peek": ["ここからこっそり見てる~", "えへへ、隠れたよ", "( •̀ .̫ •́ )✧"]
     }
   }
 }
