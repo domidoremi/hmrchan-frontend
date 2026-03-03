@@ -281,36 +281,92 @@ scheduleTask(
 
 // 智能路由预加载：在首屏渲染完成后预加载关键路由
 import { disposePrefetch, prefetchCriticalRoutes, setupHoverPrefetch } from './utils/prefetch'
+const PREFETCH_SETUP_DELAY_MS = 10000
+const PREFETCH_FALLBACK_DELAY_MS = 30000
+const POPULAR_PREFETCH_DELAY_AFTER_INTENT_MS = 8000
 let prefetchTaskDisposed = false
+let prefetchStarted = false
+let prefetchFallbackTimer: number | null = null
+let prefetchIntentCleanup: (() => void) | null = null
+
+function cleanupPrefetchIntentListeners(): void {
+  prefetchIntentCleanup?.()
+  prefetchIntentCleanup = null
+  if (prefetchFallbackTimer !== null) {
+    clearTimeout(prefetchFallbackTimer)
+    prefetchFallbackTimer = null
+  }
+}
+
+function triggerPrefetchPipeline(reason: 'intent' | 'fallback'): void {
+  if (scheduledTasksDisposed || prefetchTaskDisposed || prefetchStarted) return
+  prefetchStarted = true
+  cleanupPrefetchIntentListeners()
+
+  if (import.meta.env.DEV || import.meta.env['VITE_ENABLE_DEBUG'] === 'true') {
+    console.log(`[Prefetch] Triggered by ${reason}`)
+  }
+
+  prefetchCriticalRoutes()
+  setupHoverPrefetch()
+
+  if (!enableDataPrefetch) return
+  scheduleTask(
+    () => {
+      if (scheduledTasksDisposed || prefetchTaskDisposed) return
+      import('./utils/cache/smartPrefetch').then(({ prefetchPopularContent }) => {
+        prefetchPopularContent().then((result) => {
+          if (import.meta.env.DEV || import.meta.env['VITE_ENABLE_DEBUG'] === 'true') {
+            console.log('[Prefetch] Popular content prefetched:', result)
+          }
+        })
+      })
+    },
+    { priority: 'background', delay: POPULAR_PREFETCH_DELAY_AFTER_INTENT_MS }
+  )
+}
+
+function setupIntentDrivenPrefetch(): void {
+  if (typeof window === 'undefined') return
+  if (scheduledTasksDisposed || prefetchTaskDisposed || prefetchStarted) return
+
+  cleanupPrefetchIntentListeners()
+
+  const onIntent = () => {
+    triggerPrefetchPipeline('intent')
+  }
+
+  window.addEventListener('pointerdown', onIntent, { once: true, passive: true })
+  window.addEventListener('touchstart', onIntent, { once: true, passive: true })
+  window.addEventListener('scroll', onIntent, { once: true, passive: true })
+  window.addEventListener('keydown', onIntent, { once: true })
+
+  prefetchIntentCleanup = () => {
+    window.removeEventListener('pointerdown', onIntent)
+    window.removeEventListener('touchstart', onIntent)
+    window.removeEventListener('scroll', onIntent)
+    window.removeEventListener('keydown', onIntent)
+  }
+
+  // 长停留且无交互时仍执行预加载，兼顾二跳体验
+  prefetchFallbackTimer = window.setTimeout(() => {
+    triggerPrefetchPipeline('fallback')
+  }, PREFETCH_FALLBACK_DELAY_MS)
+}
+
 if (import.meta.hot) {
   import.meta.hot.dispose(() => {
     prefetchTaskDisposed = true
+    cleanupPrefetchIntentListeners()
     disposePrefetch()
   })
 }
 scheduleTask(
   () => {
     if (scheduledTasksDisposed || prefetchTaskDisposed) return
-    prefetchCriticalRoutes()
-    setupHoverPrefetch()
+    setupIntentDrivenPrefetch()
   },
-  { priority: 'background', delay: 12000 } // 延迟 12 秒，避开 Lighthouse 首屏采样窗口
-)
-
-// 智能预缓存：在空闲时预加载热门内容
-scheduleTask(
-  () => {
-    if (scheduledTasksDisposed) return
-    if (!enableDataPrefetch) return
-    import('./utils/cache/smartPrefetch').then(({ prefetchPopularContent }) => {
-      prefetchPopularContent().then((result) => {
-        if (import.meta.env.DEV || import.meta.env['VITE_ENABLE_DEBUG'] === 'true') {
-          console.log('[Prefetch] Popular content prefetched:', result)
-        }
-      })
-    })
-  },
-  { priority: 'background', delay: 16000 } // 更晚执行，确保首屏和次屏已稳定
+  { priority: 'background', delay: PREFETCH_SETUP_DELAY_MS }
 )
 
 // 后台维护任务：清理过期缓存/队列
