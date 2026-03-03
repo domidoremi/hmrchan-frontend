@@ -141,8 +141,8 @@ export async function showLocalNotification(
 
   const registration = await navigator.serviceWorker.ready
   await registration.showNotification(title, {
-    icon: '/icons/icon-192x192.png',
-    badge: '/icons/icon-96x96.png',
+    icon: '/icons/sitting-192.webp',
+    badge: '/icons/sitting-96.webp',
     ...options,
   })
 }
