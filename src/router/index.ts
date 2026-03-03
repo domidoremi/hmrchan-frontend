@@ -6,12 +6,10 @@ import {
   createRouter,
   createWebHistory,
   type RouteRecordRaw,
+  type RouteLocationNormalized,
   type RouteLocationNormalizedLoadedGeneric,
 } from 'vue-router'
 import i18n from '@/i18n'
-import LoginPage from '@/views/LoginPage.vue'
-import RegisterPage from '@/views/RegisterPage.vue'
-import ForgotPasswordPage from '@/views/ForgotPasswordPage.vue'
 
 // 扩展 RouteMeta 类型，提供类型安全的路由元信息访问
 declare module 'vue-router' {
@@ -34,6 +32,14 @@ function getAuthStore() {
 
 const UUID_LIKE_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 const ULID_RE = /^[0-9A-HJKMNP-TV-Z]{26}$/
+const AUTH_COMPAT_STYLE_ROUTES = new Set([
+  'login',
+  'register',
+  'forgot-password',
+  'reset-password',
+  'verify-email',
+])
+let authCompatStylesLoaded = false
 
 function isValidPostRouteId(value: unknown): value is string {
   if (typeof value !== 'string') return false
@@ -46,6 +52,20 @@ function isValidPostRouteId(value: unknown): value is string {
 
 function toNotFoundParams(path: string): { pathMatch: string[] } {
   return { pathMatch: path.replace(/^\/+/, '').split('/').filter(Boolean) }
+}
+
+async function ensureAuthCompatStyles(to: RouteLocationNormalized): Promise<void> {
+  if (authCompatStylesLoaded) return
+  if (typeof to.name !== 'string' || !AUTH_COMPAT_STYLE_ROUTES.has(to.name)) return
+
+  try {
+    await import('@/styles/auth-compat.css')
+    authCompatStylesLoaded = true
+  } catch (error) {
+    if (import.meta.env.DEV) {
+      console.warn('[Router] Failed to load auth compat styles:', error)
+    }
+  }
 }
 
 const routes: RouteRecordRaw[] = [
@@ -147,19 +167,19 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/login',
     name: 'login',
-    component: LoginPage,
+    component: () => import('@/views/LoginPage.vue'),
     meta: { title: 'nav.login', guestOnly: true },
   },
   {
     path: '/register',
     name: 'register',
-    component: RegisterPage,
+    component: () => import('@/views/RegisterPage.vue'),
     meta: { title: 'nav.register', guestOnly: true },
   },
   {
     path: '/forgot-password',
     name: 'forgot-password',
-    component: ForgotPasswordPage,
+    component: () => import('@/views/ForgotPasswordPage.vue'),
     meta: { title: 'email.forgotPasswordTitle', guestOnly: true },
   },
   {
@@ -237,7 +257,9 @@ const router = createRouter({
 })
 
 // 路由守卫
-router.beforeEach((to) => {
+router.beforeEach(async (to) => {
+  await ensureAuthCompatStyles(to)
+
   const authStore = getAuthStore()
   const isAuthenticated = authStore.isAuthenticated
 
