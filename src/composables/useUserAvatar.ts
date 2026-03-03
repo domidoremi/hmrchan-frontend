@@ -22,10 +22,7 @@ function getDefaultAvatar(): string {
 /**
  * 获取用户头像 URL（带缓存破坏）
  */
-export function getUserAvatarUrl(
-  avatarUrl: string | null | undefined,
-  _username?: string | undefined
-): string {
+export function getUserAvatarUrl(avatarUrl: string | null | undefined): string {
   const normalized = normalizeAvatarUrl(avatarUrl)
 
   if (normalized) {
@@ -53,7 +50,7 @@ export function useUserAvatar() {
   const { user } = storeToRefs(authStore)
 
   const avatarUrl = computed(() => {
-    return getUserAvatarUrl(user.value?.avatar_url, user.value?.username)
+    return getUserAvatarUrl(user.value?.avatar_url)
   })
 
   // 监听用户变化，自动刷新缓存
@@ -100,11 +97,13 @@ export function preloadUserAvatar(url: string): void {
     // 清理旧的 preload 标签（保留最近 5 个）
     if (preloadCache.size > MAX_PRELOADED_AVATARS) {
       const oldestUrl = preloadCache.keys().next().value
-      const oldLink = preloadCache.get(oldestUrl)
-      if (oldLink) {
-        oldLink.remove()
+      if (oldestUrl) {
+        const oldLink = preloadCache.get(oldestUrl)
+        if (oldLink) {
+          oldLink.remove()
+        }
+        preloadCache.delete(oldestUrl)
       }
-      preloadCache.delete(oldestUrl)
     }
   } catch (error) {
     // 静默失败，预加载失败不应影响应用功能

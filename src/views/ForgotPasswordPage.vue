@@ -19,9 +19,16 @@
               <Mail :size="40" />
             </div>
             <h1 class="auth-title">{{ $t('email.resetEmailSent') }}</h1>
-            <p class="auth-subtitle">{{ $t('email.resetEmailSentHint', { email: maskedEmail }) }}</p>
+            <p class="auth-subtitle">
+              {{ $t('email.resetEmailSentHint', { email: maskedEmail }) }}
+            </p>
             <div class="action-group">
-              <Button variant="ghost" full-width :disabled="resendCooldown > 0" @click="handleSubmit">
+              <Button
+                variant="ghost"
+                full-width
+                :disabled="resendCooldown > 0"
+                @click="handleSubmit"
+              >
                 {{
                   resendCooldown > 0
                     ? $t('email.resendCooldown', { seconds: resendCooldown })
@@ -95,7 +102,9 @@
 
             <p class="auth-footer">
               {{ $t('email.rememberPassword') }}
-              <RouterLink to="/login" @click="handleNavigateToLogin">{{ $t('nav.login') }}</RouterLink>
+              <RouterLink to="/login" @click="handleNavigateToLogin">{{
+                $t('nav.login')
+              }}</RouterLink>
             </p>
           </template>
         </div>
@@ -297,7 +306,12 @@ function handleTurnstileError() {
   background:
     radial-gradient(circle at 10% 12%, rgba(133, 122, 255, 0.42), transparent 42%),
     radial-gradient(circle at 88% 84%, rgba(255, 112, 176, 0.24), transparent 46%),
-    linear-gradient(160deg, var(--auth-stage-top), var(--auth-stage-mid) 52%, var(--auth-stage-bottom));
+    linear-gradient(
+      160deg,
+      var(--auth-stage-top),
+      var(--auth-stage-mid) 52%,
+      var(--auth-stage-bottom)
+    );
 }
 
 .auth-book {
