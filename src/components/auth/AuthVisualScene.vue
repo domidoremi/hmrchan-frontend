@@ -219,7 +219,9 @@ function syncCanvasSize() {
   const nextHeight = rect.height
   const nextDpr = clamp(window.devicePixelRatio || 1, 1, 2)
   const sizeChanged =
-    Math.abs(nextWidth - width) > 0.5 || Math.abs(nextHeight - height) > 0.5 || Math.abs(nextDpr - dpr) > 0.01
+    Math.abs(nextWidth - width) > 0.5 ||
+    Math.abs(nextHeight - height) > 0.5 ||
+    Math.abs(nextDpr - dpr) > 0.01
 
   if (!sizeChanged && ctx) return false
 
@@ -315,8 +317,7 @@ function resolveFocusLookTarget() {
   const cy = focusRect.top + focusRect.height * 0.5
   const x = clamp(((cx - bookRect.left) / bookRect.width) * 2 - 1, -1, 1)
   const y = clamp(-(((cy - bookRect.top) / bookRect.height) * 2 - 1), -1, 1)
-  const inputType =
-    active instanceof HTMLInputElement ? (active.type || '').toLowerCase() : ''
+  const inputType = active instanceof HTMLInputElement ? (active.type || '').toLowerCase() : ''
 
   return {
     x,
@@ -346,20 +347,39 @@ function drawBackground(context: CanvasRenderingContext2D) {
   const dust = getStageVar('--scene-dust', 'rgba(95, 107, 255, 0.22)')
 
   const drift = Math.sin(t * 0.08) * 0.03
-  const grad = context.createLinearGradient(width * (0.12 + drift), 0, width * (0.9 - drift), height)
+  const grad = context.createLinearGradient(
+    width * (0.12 + drift),
+    0,
+    width * (0.9 - drift),
+    height
+  )
   grad.addColorStop(0, bgA)
   grad.addColorStop(0.52, bgB)
   grad.addColorStop(1, bgC)
   context.fillStyle = grad
   context.fillRect(0, 0, width, height)
 
-  const orbA = context.createRadialGradient(width * 0.18, height * 0.2, 0, width * 0.18, height * 0.2, width * 0.46)
+  const orbA = context.createRadialGradient(
+    width * 0.18,
+    height * 0.2,
+    0,
+    width * 0.18,
+    height * 0.2,
+    width * 0.46
+  )
   orbA.addColorStop(0, haze)
   orbA.addColorStop(1, 'rgba(0,0,0,0)')
   context.fillStyle = orbA
   context.fillRect(0, 0, width, height)
 
-  const orbB = context.createRadialGradient(width * 0.78, height * 0.32, 0, width * 0.78, height * 0.32, width * 0.4)
+  const orbB = context.createRadialGradient(
+    width * 0.78,
+    height * 0.32,
+    0,
+    width * 0.78,
+    height * 0.32,
+    width * 0.4
+  )
   orbB.addColorStop(0, glow)
   orbB.addColorStop(1, 'rgba(0,0,0,0)')
   context.fillStyle = orbB
@@ -386,7 +406,7 @@ function drawBackground(context: CanvasRenderingContext2D) {
 
 function computeBlink(mood: VisualMood, leaveFace: number, nowMs: number) {
   let blink = 0
-  const cycle = ((nowMs * 0.00026) % 1 + 1) % 1
+  const cycle = (((nowMs * 0.00026) % 1) + 1) % 1
   if (cycle > 0.93) {
     const peak = 1 - Math.abs((cycle - 0.965) / 0.035)
     blink = Math.max(blink, clamp(peak, 0, 1) * 0.76)
@@ -621,8 +641,20 @@ function drawOrangeCharacter(
   } else {
     const live = 1 - leaveFace
     context.beginPath()
-    context.arc(leftEyeX + pupil.x * 0.07 * live, eyeY + pupil.y * 0.07 * live, eyeR, 0, Math.PI * 2)
-    context.arc(rightEyeX + pupil.x * 0.07 * live, eyeY + pupil.y * 0.07 * live, eyeR, 0, Math.PI * 2)
+    context.arc(
+      leftEyeX + pupil.x * 0.07 * live,
+      eyeY + pupil.y * 0.07 * live,
+      eyeR,
+      0,
+      Math.PI * 2
+    )
+    context.arc(
+      rightEyeX + pupil.x * 0.07 * live,
+      eyeY + pupil.y * 0.07 * live,
+      eyeR,
+      0,
+      Math.PI * 2
+    )
     context.fillStyle = '#1d1d26'
     context.fill()
   }
@@ -681,8 +713,10 @@ function drawScene() {
 
   pointer.x += (pointer.tx - pointer.x) * (state.reduceMotion ? 0.08 : 0.11)
   pointer.y += (pointer.ty - pointer.y) * (state.reduceMotion ? 0.08 : 0.11)
-  interaction.hover += (interaction.hoverTarget - interaction.hover) * (state.reduceMotion ? 0.1 : 0.16)
-  interaction.press += (interaction.pressTarget - interaction.press) * (state.reduceMotion ? 0.14 : 0.22)
+  interaction.hover +=
+    (interaction.hoverTarget - interaction.hover) * (state.reduceMotion ? 0.1 : 0.16)
+  interaction.press +=
+    (interaction.pressTarget - interaction.press) * (state.reduceMotion ? 0.14 : 0.22)
   interaction.leaveFace +=
     (interaction.leaveFaceTarget - interaction.leaveFace) * (state.reduceMotion ? 0.12 : 0.095)
 
@@ -755,7 +789,11 @@ function drawScene() {
   const orangeW = sceneW * 0.49
 
   const purpleTilt = clamp(
-    idleSway * 0.018 + hoverLean * 0.06 + typingNod + dodgeForce * state.dodgeDirection * 0.095 + submitForce * -0.02,
+    idleSway * 0.018 +
+      hoverLean * 0.06 +
+      typingNod +
+      dodgeForce * state.dodgeDirection * 0.095 +
+      submitForce * -0.02,
     -0.17,
     0.17
   )
@@ -1250,8 +1288,8 @@ onUnmounted(() => {
 
 @keyframes scene-blob-breathe {
   0% {
-    transform: translate3d(var(--blob-x-start), var(--blob-y-start), 0)
-      rotate(var(--blob-rot)) scale(var(--blob-scale-min));
+    transform: translate3d(var(--blob-x-start), var(--blob-y-start), 0) rotate(var(--blob-rot))
+      scale(var(--blob-scale-min));
     opacity: calc(var(--scene-blob-opacity) * 0.88);
   }
 

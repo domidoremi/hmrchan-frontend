@@ -148,7 +148,9 @@
 
           <p v-if="!show2fa" class="auth-footer">
             {{ $t('auth.noAccount') }}
-            <RouterLink to="/register" @click="handleNavigateLink">{{ $t('nav.register') }}</RouterLink>
+            <RouterLink to="/register" @click="handleNavigateLink">{{
+              $t('nav.register')
+            }}</RouterLink>
           </p>
         </div>
       </section>
@@ -391,7 +393,12 @@ function handleTurnstileError() {
   background:
     radial-gradient(circle at 12% 10%, rgba(133, 122, 255, 0.42), transparent 42%),
     radial-gradient(circle at 88% 85%, rgba(255, 112, 176, 0.24), transparent 46%),
-    linear-gradient(160deg, var(--auth-stage-top), var(--auth-stage-mid) 52%, var(--auth-stage-bottom));
+    linear-gradient(
+      160deg,
+      var(--auth-stage-top),
+      var(--auth-stage-mid) 52%,
+      var(--auth-stage-bottom)
+    );
   perspective: 96rem;
 }
 
@@ -748,5 +755,4 @@ function handleTurnstileError() {
     transform: translateY(0) scale3d(1, 1, 1);
   }
 }
-
 </style>

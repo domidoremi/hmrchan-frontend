@@ -255,7 +255,9 @@
 
           <p class="auth-footer">
             {{ $t('auth.hasAccount') }}
-            <RouterLink to="/login" @click="handleNavigateToLogin">{{ $t('nav.login') }}</RouterLink>
+            <RouterLink to="/login" @click="handleNavigateToLogin">{{
+              $t('nav.login')
+            }}</RouterLink>
           </p>
         </div>
       </section>
@@ -770,7 +772,12 @@ function isTurnstileTokenFresh() {
   background:
     radial-gradient(circle at 10% 12%, rgba(133, 122, 255, 0.42), transparent 42%),
     radial-gradient(circle at 88% 84%, rgba(255, 112, 176, 0.24), transparent 46%),
-    linear-gradient(160deg, var(--auth-stage-top), var(--auth-stage-mid) 52%, var(--auth-stage-bottom));
+    linear-gradient(
+      160deg,
+      var(--auth-stage-top),
+      var(--auth-stage-mid) 52%,
+      var(--auth-stage-bottom)
+    );
   perspective: 96rem;
 }
 
