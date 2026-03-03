@@ -24,7 +24,7 @@ function getDefaultAvatar(): string {
  */
 export function getUserAvatarUrl(
   avatarUrl: string | null | undefined,
-  _username: string | undefined
+  _username?: string | undefined
 ): string {
   const normalized = normalizeAvatarUrl(avatarUrl)
 
