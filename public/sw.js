@@ -89,7 +89,14 @@ const RUNTIME_CONFIG = {
 
 // 静态资源列表（预缓存）
 const OFFLINE_FALLBACK = '/offline.html'
-const STATIC_ASSETS = ['/', '/index.html', '/manifest.json', '/favicon.ico', OFFLINE_FALLBACK]
+const STATIC_ASSETS = [
+  '/',
+  '/index.html',
+  '/manifest.json',
+  '/icons/sitting-32.webp',
+  '/icons/sitting-192.webp',
+  OFFLINE_FALLBACK,
+]
 
 // 媒体缓存配置
 const MEDIA_CACHE_CONFIG = {
@@ -239,8 +246,8 @@ self.addEventListener('push', (event) => {
 
   const options = {
     body: data.body,
-    icon: '/icons/icon-192x192.png',
-    badge: '/icons/icon-96x96.png',
+    icon: '/icons/sitting-192.webp',
+    badge: '/icons/sitting-96.webp',
     data: data.url || '/',
     actions: [
       { action: 'open', title: '查看' },

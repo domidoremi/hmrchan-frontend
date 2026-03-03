@@ -12,10 +12,11 @@ import { normalizeAvatarUrl } from '@/api/userService'
 
 // 全局头像缓存（带版本号防止浏览器缓存）
 const avatarVersion = ref(Date.now())
+const DEFAULT_AVATAR = '/images/expressions/sitting-sm.webp'
 
 // 默认头像生成器
-function getDefaultAvatar(seed: string): string {
-  return `https://api.dicebear.com/7.x/avataaars/svg?seed=${seed}`
+function getDefaultAvatar(): string {
+  return DEFAULT_AVATAR
 }
 
 /**
@@ -23,7 +24,7 @@ function getDefaultAvatar(seed: string): string {
  */
 export function getUserAvatarUrl(
   avatarUrl: string | null | undefined,
-  username: string | undefined
+  _username: string | undefined
 ): string {
   const normalized = normalizeAvatarUrl(avatarUrl)
 
@@ -33,7 +34,7 @@ export function getUserAvatarUrl(
     return `${normalized}${separator}v=${avatarVersion.value}`
   }
 
-  return getDefaultAvatar(username || 'default')
+  return getDefaultAvatar()
 }
 
 /**
@@ -79,7 +80,7 @@ const MAX_PRELOADED_AVATARS = 5
 const preloadCache = new Map<string, HTMLLinkElement>()
 
 export function preloadUserAvatar(url: string): void {
-  if (!url || url.includes('dicebear.com')) return
+  if (!url || url === DEFAULT_AVATAR) return
 
   // 如果已经预加载过，跳过
   if (preloadCache.has(url)) return
