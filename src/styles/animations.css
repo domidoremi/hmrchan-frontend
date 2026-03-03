@@ -788,6 +788,49 @@
   transform: translate3d(48px, 0, 0);
 }
 
+/* Auth Flip - login/register/forgot-password */
+.auth-flip-forward-enter-active,
+.auth-flip-back-enter-active {
+  transition:
+    opacity var(--duration-normal) var(--ease-out),
+    transform var(--duration-normal) cubic-bezier(0.22, 0.61, 0.36, 1);
+  transform-origin: 50% 50%;
+}
+
+.auth-flip-forward-leave-active,
+.auth-flip-back-leave-active {
+  transition:
+    opacity var(--duration-fast) var(--ease-in),
+    transform var(--duration-fast) cubic-bezier(0.4, 0, 1, 1);
+  position: absolute;
+  width: 100%;
+  top: 0;
+  left: 0;
+  transform-origin: 50% 50%;
+}
+
+.auth-flip-forward-enter-from {
+  opacity: 0;
+  transform: perspective(72rem) rotateY(17deg) translate3d(2.4rem, 0, 0) scale3d(0.96, 0.96, 1);
+}
+
+.auth-flip-forward-leave-to {
+  opacity: 0;
+  transform: perspective(72rem) rotateY(-10deg) translate3d(-1.8rem, 0, 0)
+    scale3d(0.985, 0.985, 1);
+}
+
+.auth-flip-back-enter-from {
+  opacity: 0;
+  transform: perspective(72rem) rotateY(-17deg) translate3d(-2.4rem, 0, 0)
+    scale3d(0.96, 0.96, 1);
+}
+
+.auth-flip-back-leave-to {
+  opacity: 0;
+  transform: perspective(72rem) rotateY(10deg) translate3d(1.8rem, 0, 0) scale3d(0.985, 0.985, 1);
+}
+
 /* ========== Loading Indicators ========== */
 
 /* Spinner */
