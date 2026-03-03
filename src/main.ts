@@ -43,6 +43,64 @@ if (import.meta.hot) {
 
 const app = createApp(App)
 
+/**
+ * 动态模块加载失败兜底：
+ * 发布后旧缓存可能命中失效 chunk，导致路由白屏。
+ * 检测到典型 chunk load 错误时，仅在当前 Tab 自动刷新一次。
+ */
+const CHUNK_ERROR_RE =
+  /chunkloaderror|loading chunk [\w-]+ failed|failed to fetch dynamically imported module|importing a module script failed|dynamically imported module/i
+const CHUNK_RELOAD_ONCE_KEY = '__chunk_reload_once__'
+
+function toErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message
+  return String(error ?? '')
+}
+
+function isChunkLoadError(error: unknown): boolean {
+  return CHUNK_ERROR_RE.test(toErrorMessage(error))
+}
+
+function reloadOnceForChunkError(reason: string): void {
+  if (typeof window === 'undefined') return
+
+  try {
+    if (sessionStorage.getItem(CHUNK_RELOAD_ONCE_KEY) === '1') {
+      if (import.meta.env.DEV) {
+        console.warn('[Chunk Recovery] Skip repeated reload:', reason)
+      }
+      return
+    }
+    sessionStorage.setItem(CHUNK_RELOAD_ONCE_KEY, '1')
+  } catch {
+    // ignore storage errors and still try to reload
+  }
+
+  if (import.meta.env.DEV) {
+    console.warn('[Chunk Recovery] Reloading due to chunk error:', reason)
+  }
+  window.location.reload()
+}
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('vite:preloadError', (event: Event) => {
+    const preloadEvent = event as Event & { payload?: unknown }
+    if (!isChunkLoadError(preloadEvent.payload)) return
+    event.preventDefault()
+    reloadOnceForChunkError(`vite:preloadError: ${toErrorMessage(preloadEvent.payload)}`)
+  })
+
+  window.addEventListener('unhandledrejection', (event: PromiseRejectionEvent) => {
+    if (!isChunkLoadError(event.reason)) return
+    reloadOnceForChunkError(`unhandledrejection: ${toErrorMessage(event.reason)}`)
+  })
+}
+
+router.onError((error) => {
+  if (!isChunkLoadError(error)) return
+  reloadOnceForChunkError(`router.onError: ${toErrorMessage(error)}`)
+})
+
 // 全局错误处理
 app.config.errorHandler = (err, instance, info) => {
   // 生产环境静默处理，开发环境打印详细信息

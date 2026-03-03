@@ -9,6 +9,9 @@ import {
   type RouteLocationNormalizedLoadedGeneric,
 } from 'vue-router'
 import i18n from '@/i18n'
+import LoginPage from '@/views/LoginPage.vue'
+import RegisterPage from '@/views/RegisterPage.vue'
+import ForgotPasswordPage from '@/views/ForgotPasswordPage.vue'
 
 // 扩展 RouteMeta 类型，提供类型安全的路由元信息访问
 declare module 'vue-router' {
@@ -144,19 +147,19 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/login',
     name: 'login',
-    component: () => import('@/views/LoginPage.vue'),
+    component: LoginPage,
     meta: { title: 'nav.login', guestOnly: true },
   },
   {
     path: '/register',
     name: 'register',
-    component: () => import('@/views/RegisterPage.vue'),
+    component: RegisterPage,
     meta: { title: 'nav.register', guestOnly: true },
   },
   {
     path: '/forgot-password',
     name: 'forgot-password',
-    component: () => import('@/views/ForgotPasswordPage.vue'),
+    component: ForgotPasswordPage,
     meta: { title: 'email.forgotPasswordTitle', guestOnly: true },
   },
   {

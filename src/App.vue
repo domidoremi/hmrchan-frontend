@@ -21,11 +21,11 @@
       <div class="route-view">
         <ErrorBoundary @retry="handleRetry">
           <RouterView v-slot="{ Component, route }">
-            <Transition :name="transitionName" mode="out-in">
+            <Transition :name="transitionName" :mode="transitionMode">
               <Suspense>
                 <template #default>
-                  <KeepAlive :max="10">
-                    <component :is="Component" :key="route.matched[0]?.path ?? route.path" />
+                  <KeepAlive :max="10" :exclude="authKeepAliveExclude">
+                    <component :is="Component" :key="resolveRouteKey(route)" />
                   </KeepAlive>
                 </template>
                 <template #fallback>
@@ -62,7 +62,7 @@
 
 <script setup lang="ts">
 import { ref, watch, computed, defineAsyncComponent } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute, useRouter, type RouteLocationNormalizedLoaded } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useThemeStore, useSettingsStore } from '@/stores'
 import { useLocaleConfig } from '@/composables/useLocaleConfig'
@@ -109,13 +109,45 @@ const showFooter = computed(() => Boolean(route.meta.showFooter))
 
 // Page transition name
 const transitionName = ref('')
+const AUTH_TRANSITION_NAME = 'auth-safe'
+const authKeepAliveExclude = ['LoginPage', 'RegisterPage', 'ForgotPasswordPage']
+const transitionMode = computed<'out-in' | undefined>(() =>
+  transitionName.value === AUTH_TRANSITION_NAME ? undefined : 'out-in'
+)
+const authRouteOrder: Record<string, number> = {
+  login: 0,
+  'forgot-password': 1,
+  register: 2,
+}
+
+function resolveAuthTransition(
+  toName: string | undefined,
+  fromName: string | undefined
+): typeof AUTH_TRANSITION_NAME | null {
+  if (!toName || !fromName) return null
+  const toOrder = authRouteOrder[toName]
+  const fromOrder = authRouteOrder[fromName]
+  if (toOrder === undefined || fromOrder === undefined) return null
+  return AUTH_TRANSITION_NAME
+}
+
+function toRouteName(routeName: unknown): string | undefined {
+  return typeof routeName === 'string' ? routeName : undefined
+}
+
+function resolveRouteKey(routeRecord: RouteLocationNormalizedLoaded): string {
+  return routeRecord.matched[0]?.path ?? routeRecord.path
+}
 
 // Update transition based on route depth and navigation type
 const routeDepth = (path: string) => path.split('/').filter(Boolean).length
 
 watch(
-  () => [route.name as string | undefined, route.path] as const,
-  ([toName, toPath], [fromName, fromPath]) => {
+  () => [route.name, route.path] as const,
+  ([toRouteNameValue, toPath], [fromRouteNameValue, fromPath]) => {
+    const toName = toRouteName(toRouteNameValue)
+    const fromName = toRouteName(fromRouteNameValue)
+
     if (!settings.value.enableAnimations) {
       transitionName.value = ''
       return
@@ -144,6 +176,12 @@ watch(
       } catch {
         // ignore
       }
+    }
+
+    const authTransition = resolveAuthTransition(toName, fromName)
+    if (authTransition) {
+      transitionName.value = authTransition
+      return
     }
 
     // Post -> Post: use horizontal slide transition
@@ -211,8 +249,37 @@ main {
   position: relative;
   min-height: calc(100svh - var(--navbar-height));
   min-height: calc(100dvh - var(--navbar-height));
+  background: var(--color-background);
   overflow-x: hidden;
   overflow-y: visible;
+}
+
+/* 认证页安全过渡：同帧交叠，避免 out-in 空窗白屏 */
+.auth-safe-enter-active,
+.auth-safe-leave-active {
+  transition: transform var(--duration-fast) var(--ease-out);
+  will-change: transform;
+}
+
+.auth-safe-enter-active {
+  position: relative;
+  z-index: 2;
+}
+
+.auth-safe-leave-active {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.auth-safe-enter-from {
+  transform: translate3d(1.2rem, 0, 0);
+}
+
+.auth-safe-leave-to {
+  transform: translate3d(-0.9rem, 0, 0);
 }
 
 /* 动效强度控制 */
