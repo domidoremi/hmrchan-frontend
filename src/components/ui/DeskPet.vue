@@ -338,12 +338,6 @@ const getPeekPositionFromHero = (heroBtn: HTMLElement) => {
 const isPetTarget = (target: EventTarget | null) =>
   target instanceof Element && target.closest('.desk-pet')
 
-const getClickFollowPosition = (clientX: number, clientY: number) =>
-  clampPosition({
-    x: clientX - PET_SIZE * 0.5,
-    y: clientY - PET_SIZE * 0.72,
-  })
-
 const setLookOffsetByPointer = (clientX: number, clientY: number) => {
   const sensitivity = deskPetSettings.value.followSensitivity
   const lookDistance = LOOK_MIN_DISTANCE * (1 + (sensitivity - 1) * 0.6)
@@ -411,23 +405,6 @@ const reactToHeroButtonClick = async (heroBtn: HTMLElement) => {
   isAnimating.value = false
   showStateBubble(PetState.PEEK, 2200)
   schedulePeekIdle()
-}
-
-const reactToPageClick = async (clientX: number, clientY: number) => {
-  if (!visible.value || isDragging.value) return
-  if (heroReactionLocked) return
-  if (peekReturnTimer) clearTimeout(peekReturnTimer)
-  const target = getClickFollowPosition(clientX, clientY)
-  currentState.value = PetState.LEAP
-  isAnimating.value = true
-  await animateToPosition(target, {
-    duration: 560,
-  })
-  if (!visible.value || isDragging.value) return
-  transitionTo(PetState.CLICK, 560, PetState.IDLE)
-  showStateBubble(PetState.CLICK, 1200)
-  spawnParticles('✨', 2)
-  resetIdleTimer()
 }
 
 const playHeroIntroIfNeeded = () => {
@@ -745,7 +722,8 @@ const handleGlobalClick = (e: MouseEvent) => {
     void reactToHeroButtonClick(heroBtn)
     return
   }
-  void reactToPageClick(e.clientX, e.clientY)
+  // Temporarily disable page-click follow behavior.
+  resetIdleTimer()
 }
 
 // ─── 生命周期 ───
