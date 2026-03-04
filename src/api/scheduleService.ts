@@ -2,7 +2,7 @@
  * Schedule Service - 日程/活动 API
  */
 
-import { apiClient, type PaginatedApiResponse } from './client'
+import { apiClient, type PaginatedApiResponse, type RequestConfig } from './client'
 
 const SCHEDULE_API_ENABLED = import.meta.env.VITE_ENABLE_SCHEDULE_API !== 'false'
 
@@ -110,7 +110,8 @@ export const scheduleService = {
       start?: string
       end?: string
       category?: ScheduleCategory
-    } = {}
+    } = {},
+    config?: RequestConfig
   ): Promise<ScheduleCalendarItem[]> {
     if (!SCHEDULE_API_ENABLED) {
       return []
@@ -123,6 +124,7 @@ export const scheduleService = {
 
     const qs = query.toString()
     return apiClient.get<ScheduleCalendarItem[]>(`/schedules/calendar${qs ? `?${qs}` : ''}`, {
+      ...config,
       skipAuth: true,
       skipErrorToast: true,
     })
