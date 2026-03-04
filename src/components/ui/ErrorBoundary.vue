@@ -57,6 +57,9 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   logError: true,
 })
+defineSlots<{
+  default?: () => unknown
+}>()
 
 const emit = defineEmits<{
   error: [error: Error, info: string]

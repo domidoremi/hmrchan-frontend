@@ -48,6 +48,9 @@ const props = withDefaults(defineProps<Props>(), {
   size: 'default',
   shape: 'circle',
 })
+defineSlots<{
+  fallback?: () => unknown
+}>()
 
 const hasError = ref(false)
 

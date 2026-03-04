@@ -31,6 +31,9 @@ defineProps<{
   subtitle?: string
   hint?: string
 }>()
+defineSlots<{
+  actions?: () => unknown
+}>()
 
 const router = useRouter()
 
