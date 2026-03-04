@@ -83,6 +83,7 @@ import { authorService, type AuthorListItem, ApiError } from '@/api'
 import { normalizeAvatarUrl } from '@/api/userService'
 import { authorCache } from '@/utils/cache'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
+import { useForwardedElementRef } from '@/composables/useForwardedElementRef'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import Skeleton from '@/components/ui/Skeleton.vue'
@@ -102,11 +103,8 @@ const pageSize = 24
 
 const hasMore = computed(() => authors.value.length < total.value)
 
-const sentinelRef = ref<HTMLElement | null>(null)
-
-const setSentinelRef = (el: Element | null) => {
-  sentinelRef.value = el as HTMLElement | null
-}
+const { elementRef: sentinelRef, setElementRef: setSentinelRef } =
+  useForwardedElementRef<HTMLElement>()
 
 let hasPrefetchedAuthorDetailPage = false
 

@@ -23,7 +23,6 @@
                 class="discussion-search-input"
                 :placeholder="$t('community.searchPlaceholder')"
                 :aria-label="$t('community.searchPlaceholder')"
-                @input="onSearchInput"
                 @keydown.escape="clearSearch"
               />
               <button
@@ -312,7 +311,7 @@
 <script setup lang="ts">
 defineOptions({ name: 'CommunityPage' })
 
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch, onWatcherCleanup } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { MessageSquare, Flame, HelpCircle, Search, X } from 'lucide-vue-next'
@@ -323,6 +322,7 @@ import { normalizeToThumbnailUrl, getThumbnailSrcset } from '@/utils/mediaOptimi
 import { normalizeAvatarUrl } from '@/api/userService'
 import { formatRelativeTime } from '@/utils/date'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
+import { useForwardedElementRef } from '@/composables/useForwardedElementRef'
 import Button from '@/components/ui/Button.vue'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
@@ -353,17 +353,15 @@ const searchResults = ref<Discussion[]>([])
 const isSearching = ref(false)
 const searchError = ref<string | null>(null)
 let searchDebounceTimer: ReturnType<typeof setTimeout> | null = null
+let searchRequestToken = 0
 
 // Hot topics (local state)
 const isLoadingHot = ref(false)
 const hotTopicsError = ref<string | null>(null)
 const hotTopics = ref<Discussion[]>([])
 
-const sentinelRef = ref<HTMLElement | null>(null)
-
-const setSentinelRef = (el: Element | null) => {
-  sentinelRef.value = el as HTMLElement | null
-}
+const { elementRef: sentinelRef, setElementRef: setSentinelRef } =
+  useForwardedElementRef<HTMLElement>()
 
 const thumbnailSizes = '(max-width: 640px) 60px, 80px'
 
@@ -447,20 +445,6 @@ async function fetchHotTopics() {
   }
 }
 
-function onSearchInput() {
-  if (searchDebounceTimer) clearTimeout(searchDebounceTimer)
-  const q = searchQuery.value.trim()
-  if (!q) {
-    searchResults.value = []
-    isSearching.value = false
-    searchError.value = null
-    return
-  }
-  searchDebounceTimer = setTimeout(() => {
-    searchDiscussions(q)
-  }, 350)
-}
-
 function clearSearch() {
   searchQuery.value = ''
   searchResults.value = []
@@ -469,18 +453,66 @@ function clearSearch() {
   if (searchDebounceTimer) clearTimeout(searchDebounceTimer)
 }
 
-async function searchDiscussions(q: string) {
+async function searchDiscussions(q: string, signal?: AbortSignal, requestToken?: number) {
+  const token = requestToken ?? ++searchRequestToken
   isSearching.value = true
   searchError.value = null
   try {
-    const res = await discussionService.search(q, { page: 1, page_size: 20 })
+    const res = await discussionService.search(
+      q,
+      { page: 1, page_size: 20 },
+      signal ? { signal } : undefined
+    )
+    if (signal?.aborted || token !== searchRequestToken) return
     searchResults.value = res.items
-  } catch (err) {
+  } catch (err: unknown) {
+    if (
+      signal?.aborted ||
+      (err instanceof DOMException && err.name === 'AbortError') ||
+      token !== searchRequestToken
+    ) {
+      return
+    }
     searchError.value = err instanceof ApiError ? err.message : t('common.error')
   } finally {
-    isSearching.value = false
+    if (token === searchRequestToken) {
+      isSearching.value = false
+    }
   }
 }
+
+watch(
+  () => searchQuery.value.trim(),
+  (query) => {
+    if (searchDebounceTimer) {
+      clearTimeout(searchDebounceTimer)
+      searchDebounceTimer = null
+    }
+
+    if (!query) {
+      searchRequestToken += 1
+      searchResults.value = []
+      isSearching.value = false
+      searchError.value = null
+      return
+    }
+
+    const controller = new AbortController()
+    const requestToken = ++searchRequestToken
+
+    searchDebounceTimer = setTimeout(() => {
+      void searchDiscussions(query, controller.signal, requestToken)
+    }, 350)
+
+    onWatcherCleanup(() => {
+      if (searchDebounceTimer) {
+        clearTimeout(searchDebounceTimer)
+        searchDebounceTimer = null
+      }
+      controller.abort()
+    })
+  }
+)
 
 useInfiniteScroll(sentinelRef, loadMore, {
   rootMargin: '800px',

@@ -188,13 +188,16 @@ const debouncedSearchPosts = debounce(async (query: string) => {
 
   isSearching.value = true
   try {
-    const result = await searchService.searchPosts({
-      q: query,
-      page: 1,
-      page_size: 5,
-      sort_by: 'relevance',
-      thumbnail_quality: 'small',
-    }, { signal: controller.signal })
+    const result = await searchService.searchPosts(
+      {
+        q: query,
+        page: 1,
+        page_size: 5,
+        sort_by: 'relevance',
+        thumbnail_quality: 'small',
+      },
+      { signal: controller.signal }
+    )
     if (controller.signal.aborted || requestToken !== mentionSearchToken) return
     searchResults.value = result.items.map((post) => ({
       id: post.id,
