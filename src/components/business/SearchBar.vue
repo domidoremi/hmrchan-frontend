@@ -99,7 +99,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted, useTemplateRef } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { Search, X, History, FileText, User, Tag } from 'lucide-vue-next'
@@ -119,7 +119,7 @@ const router = useRouter()
 const route = useRoute()
 const { t } = useI18n()
 
-const inputRef = ref<HTMLInputElement>()
+const inputRef = useTemplateRef<HTMLInputElement>('inputRef')
 const query = ref('')
 const isFocused = ref(false)
 const isExpanded = ref(false)

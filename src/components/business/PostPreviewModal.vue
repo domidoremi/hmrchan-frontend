@@ -207,7 +207,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, ref, watch, useTemplateRef } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { X } from 'lucide-vue-next'
 import { postService, type PostDetailResponse, type PostListItem } from '@/api'
@@ -243,8 +243,8 @@ const emit = defineEmits<{
   openDetail: [id: string]
 }>()
 
-const panelRef = ref<HTMLElement | null>(null)
-const sheetRef = ref<HTMLElement | null>(null)
+const panelRef = useTemplateRef<HTMLElement>('panelRef')
+const sheetRef = useTemplateRef<HTMLElement>('sheetRef')
 
 const sheetDragY = ref(0)
 const isSheetDragging = ref(false)
