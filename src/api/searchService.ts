@@ -4,7 +4,12 @@
  * 提供全站搜索相关的 API 调用
  */
 
-import { apiClient, type PaginatedApiResponse, type PaginatedApiResponseWithLimit } from './client'
+import {
+  apiClient,
+  type PaginatedApiResponse,
+  type PaginatedApiResponseWithLimit,
+  type RequestConfig,
+} from './client'
 import { buildQuery } from '@/utils/queryBuilder'
 import type { PostListItem, ThumbnailQuality } from './postService'
 import type { AuthorListItem } from './authorService'
@@ -52,7 +57,8 @@ export const searchService = {
    * 搜索帖子
    */
   async searchPosts(
-    params: SearchPostsParams
+    params: SearchPostsParams,
+    config?: RequestConfig
   ): Promise<PaginatedApiResponseWithLimit<PostListItem>> {
     const query = buildQuery({
       q: params.q,
@@ -64,13 +70,19 @@ export const searchService = {
       thumbnail_quality: params.thumbnail_quality,
     })
 
-    return apiClient.get<PaginatedApiResponseWithLimit<PostListItem>>(`/search/posts${query}`)
+    return apiClient.get<PaginatedApiResponseWithLimit<PostListItem>>(
+      `/search/posts${query}`,
+      config
+    )
   },
 
   /**
    * 搜索作者
    */
-  async searchAuthors(params: SearchAuthorsParams): Promise<PaginatedApiResponse<AuthorListItem>> {
+  async searchAuthors(
+    params: SearchAuthorsParams,
+    config?: RequestConfig
+  ): Promise<PaginatedApiResponse<AuthorListItem>> {
     const query = buildQuery({
       q: params.q,
       page: params.page ?? 1,
@@ -78,7 +90,7 @@ export const searchService = {
       platform: params.platform,
     })
 
-    return apiClient.get<PaginatedApiResponse<AuthorListItem>>(`/search/authors${query}`)
+    return apiClient.get<PaginatedApiResponse<AuthorListItem>>(`/search/authors${query}`, config)
   },
 
   /**

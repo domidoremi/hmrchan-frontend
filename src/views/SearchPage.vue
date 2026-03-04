@@ -272,7 +272,7 @@
 <script setup lang="ts">
 defineOptions({ name: 'SearchPage' })
 
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, onWatcherCleanup } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
@@ -354,6 +354,12 @@ const getThumbnailQuality = (): 'medium' | 'large' => {
   return 'large'
 }
 
+function isAbortError(err: unknown): boolean {
+  return err instanceof DOMException
+    ? err.name === 'AbortError'
+    : err instanceof Error && err.name === 'AbortError'
+}
+
 function getPlatformIcon(platform: string) {
   switch (platform.toLowerCase()) {
     case 'youtube':
@@ -385,21 +391,25 @@ function shufflePosts(items: PostListItem[]) {
   return copy
 }
 
-async function fetchDiscoverPosts() {
+async function fetchDiscoverPosts(signal?: AbortSignal) {
   if (isDiscoverLoading.value) return
   isDiscoverLoading.value = true
   discoverError.value = null
 
   try {
-    const res = await postService.listPosts({
-      page: 1,
-      page_size: discoverPageSize,
-      sort_by: 'published_at',
-      sort_order: 'desc',
-      thumbnail_quality: getThumbnailQuality(),
-    })
+    const res = await postService.listPosts(
+      {
+        page: 1,
+        page_size: discoverPageSize,
+        sort_by: 'published_at',
+        sort_order: 'desc',
+        thumbnail_quality: getThumbnailQuality(),
+      },
+      signal ? { signal } : undefined
+    )
     discoverPosts.value = shufflePosts(res.items)
-  } catch {
+  } catch (err) {
+    if (signal?.aborted || isAbortError(err)) return
     discoverError.value = t('common.error')
     discoverPosts.value = []
   } finally {
@@ -407,7 +417,7 @@ async function fetchDiscoverPosts() {
   }
 }
 
-async function search() {
+async function search(signal?: AbortSignal) {
   if (!query.value) return
 
   isLoading.value = true
@@ -416,18 +426,22 @@ async function search() {
 
   try {
     const platform = currentPlatform.value !== 'all' ? currentPlatform.value : undefined
-    const res = await searchService.searchPosts({
-      q: query.value,
-      page: 1,
-      page_size: pageSize,
-      sort_by: sortBy.value,
-      sort_order: sortOrder.value,
-      thumbnail_quality: getThumbnailQuality(),
-      ...(platform && { platform }),
-    })
+    const res = await searchService.searchPosts(
+      {
+        q: query.value,
+        page: 1,
+        page_size: pageSize,
+        sort_by: sortBy.value,
+        sort_order: sortOrder.value,
+        thumbnail_quality: getThumbnailQuality(),
+        ...(platform && { platform }),
+      },
+      signal ? { signal } : undefined
+    )
     results.value = res.items
     total.value = res.total
-  } catch {
+  } catch (err) {
+    if (signal?.aborted || isAbortError(err)) return
     error.value = t('common.error')
     results.value = []
     total.value = 0
@@ -463,21 +477,25 @@ async function loadMore() {
   }
 }
 
-async function searchAuthors() {
+async function searchAuthors(signal?: AbortSignal) {
   if (!query.value) return
 
   isLoadingAuthors.value = true
   authorError.value = null
 
   try {
-    const res = await searchService.searchAuthors({
-      q: query.value,
-      page: 1,
-      page_size: 20,
-    })
+    const res = await searchService.searchAuthors(
+      {
+        q: query.value,
+        page: 1,
+        page_size: 20,
+      },
+      signal ? { signal } : undefined
+    )
     authors.value = res.items
     authorTotal.value = res.total
-  } catch {
+  } catch (err) {
+    if (signal?.aborted || isAbortError(err)) return
     authorError.value = t('common.error')
     authors.value = []
     authorTotal.value = 0
@@ -503,35 +521,44 @@ function goToLogin() {
   router.push({ path: '/login', query: { redirect: route.fullPath } })
 }
 
-watch(query, () => {
-  if (query.value) {
-    search()
-    searchAuthors()
+watch(query, (nextQuery) => {
+  const controller = new AbortController()
+  onWatcherCleanup(() => controller.abort())
+
+  if (nextQuery) {
+    void search(controller.signal)
+    void searchAuthors(controller.signal)
   } else {
     results.value = []
     authors.value = []
     total.value = 0
     authorTotal.value = 0
     activeTab.value = 'posts'
-    fetchDiscoverPosts()
+    void fetchDiscoverPosts(controller.signal)
   }
 })
 
 watch([sortBy, sortOrder], () => {
+  const controller = new AbortController()
+  onWatcherCleanup(() => controller.abort())
   if (query.value) {
-    search()
+    void search(controller.signal)
   }
 })
 
 watch(currentPlatform, () => {
+  const controller = new AbortController()
+  onWatcherCleanup(() => controller.abort())
   if (query.value) {
-    search()
+    void search(controller.signal)
   }
 })
 
 watch(activeTab, (tab) => {
+  const controller = new AbortController()
+  onWatcherCleanup(() => controller.abort())
   if (tab === 'authors' && authors.value.length === 0 && query.value) {
-    searchAuthors()
+    void searchAuthors(controller.signal)
   }
 })
 

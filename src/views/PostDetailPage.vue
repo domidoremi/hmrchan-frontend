@@ -261,7 +261,16 @@
 <script setup lang="ts">
 defineOptions({ name: 'PostDetailPage' })
 
-import { ref, computed, onMounted, watch, onUnmounted, onActivated, onDeactivated } from 'vue'
+import {
+  ref,
+  computed,
+  onMounted,
+  watch,
+  onUnmounted,
+  onActivated,
+  onDeactivated,
+  onWatcherCleanup,
+} from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { throttleRAF } from '@/utils/performance'
@@ -331,6 +340,7 @@ const post = ref<PostDetailResponse | null>(null)
 const isLoading = ref(false)
 const error = ref<string | null>(null)
 const detailFetched = ref(false)
+let fetchPostToken = 0
 
 const { data: cachedPost, load: loadCachedPost } = useCachedPost<PostDetailResponse>(
   postService.getPost,
@@ -791,22 +801,32 @@ function openLightbox(index?: number) {
   isLightboxOpen.value = true
 }
 
-async function fetchPost() {
-  if (isLoading.value) return
+function isAbortError(err: unknown): boolean {
+  return err instanceof DOMException
+    ? err.name === 'AbortError'
+    : err instanceof Error && err.name === 'AbortError'
+}
+
+async function fetchPost(signal?: AbortSignal) {
   if (!postId.value || postId.value === 'undefined') return
+
+  const requestToken = ++fetchPostToken
+  const currentPostId = postId.value
 
   isLoading.value = true
   error.value = null
   detailFetched.value = false
 
   // 从 sessionStorage 获取缓存的缩略图
-  const cachedThumb = sessionStorage.getItem(`post-thumbnail-${postId.value}`)
+  const cachedThumb = sessionStorage.getItem(`post-thumbnail-${currentPostId}`)
   if (cachedThumb) {
     cachedThumbnailUrl.value = cachedThumb
   }
 
   try {
-    const cached = await postCache.getPostEntity(postId.value)
+    const cached = await postCache.getPostEntity(currentPostId)
+    if (signal?.aborted || requestToken !== fetchPostToken) return
+
     if (cached) {
       post.value = cached as PostDetailResponse
       activeMediaIndex.value = 0
@@ -820,20 +840,24 @@ async function fetchPost() {
 
       isLoading.value = false
 
-      void Promise.allSettled([trackPostView(postId.value, isAuthenticated.value)])
+      void Promise.allSettled([trackPostView(currentPostId, isAuthenticated.value)])
 
       // 后台刷新：缓存来自列表页时不含 media_files，需要网络请求补全
-      loadCachedPost(postId.value)
+      void loadCachedPost(currentPostId, signal ? { signal } : undefined)
         .then(() => {
+          if (signal?.aborted || requestToken !== fetchPostToken) return
           detailFetched.value = true
         })
-        .catch(() => {
+        .catch((err) => {
+          if (signal?.aborted || isAbortError(err) || requestToken !== fetchPostToken) return
           detailFetched.value = true
         })
       return
     }
 
-    const res = await loadCachedPost(postId.value)
+    const res = await loadCachedPost(currentPostId, signal ? { signal } : undefined)
+    if (signal?.aborted || requestToken !== fetchPostToken) return
+
     post.value = res.data
     detailFetched.value = true
     activeMediaIndex.value = 0
@@ -845,15 +869,18 @@ async function fetchPost() {
     // 更新页面标题
     updateTitle(post.value.title)
 
-    void Promise.allSettled([trackPostView(postId.value, isAuthenticated.value)])
+    void Promise.allSettled([trackPostView(currentPostId, isAuthenticated.value)])
   } catch (err) {
+    if (signal?.aborted || isAbortError(err) || requestToken !== fetchPostToken) return
     if (err instanceof ApiError) {
       error.value = err.message
     } else {
       error.value = t('common.error')
     }
   } finally {
-    isLoading.value = false
+    if (requestToken === fetchPostToken) {
+      isLoading.value = false
+    }
   }
 }
 
@@ -878,6 +905,9 @@ onUnmounted(() => {
 })
 
 watch(postId, (nextId, prevId) => {
+  const controller = new AbortController()
+  onWatcherCleanup(() => controller.abort())
+
   isSwitchingPost.value = false
   // 清理上一条内容的缓存，避免长时间浏览造成内存堆积
   if (prevId && prevId !== nextId) {
@@ -887,7 +917,7 @@ watch(postId, (nextId, prevId) => {
   preloadedImages.value = new Set()
   syncNavigationContext()
   prefetchAdjacentPosts()
-  fetchPost()
+  void fetchPost(controller.signal)
 })
 
 watch([hasMultipleMedia, isImageSequence, isLightboxOpen], () => {

@@ -138,6 +138,7 @@ import {
   watch,
   nextTick,
   defineAsyncComponent,
+  onWatcherCleanup,
 } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
@@ -314,7 +315,13 @@ function getSortParams(sort: 'newest' | 'popular' | 'trending') {
   }
 }
 
-async function fetchPosts(reset = true) {
+function isAbortError(err: unknown): boolean {
+  return err instanceof DOMException
+    ? err.name === 'AbortError'
+    : err instanceof Error && err.name === 'AbortError'
+}
+
+async function fetchPosts(reset = true, signal?: AbortSignal) {
   const hadData = posts.value.length > 0
 
   if (reset) {
@@ -354,7 +361,7 @@ async function fetchPosts(reset = true) {
         sort_order,
         thumbnail_quality: getThumbnailQuality(),
       }
-      const result = await loadCachedPosts(requestParams)
+      const result = await loadCachedPosts(requestParams, signal ? { signal } : undefined)
       items = result.data as PostListItem[]
     } else {
       const { sort_by, sort_order } = getSortParams(currentSort.value)
@@ -366,7 +373,7 @@ async function fetchPosts(reset = true) {
         thumbnail_quality: getThumbnailQuality(),
         ...(platform ? { platform } : {}),
       }
-      const result = await loadCachedPosts(requestParams)
+      const result = await loadCachedPosts(requestParams, signal ? { signal } : undefined)
       items = result.data as PostListItem[]
     }
 
@@ -382,6 +389,9 @@ async function fetchPosts(reset = true) {
 
     return true
   } catch (err) {
+    if (signal?.aborted || isAbortError(err)) {
+      return false
+    }
     // 筛选时，即使有旧数据也要显示错误
     if (posts.value.length === 0 || platform) {
       if (reset && platform) {
@@ -565,11 +575,15 @@ const handleCardHeightChange = throttleRAF(() => {
 })
 
 watch(currentSort, () => {
-  fetchPosts()
+  const controller = new AbortController()
+  onWatcherCleanup(() => controller.abort())
+  void fetchPosts(true, controller.signal)
 })
 
 watch(currentPlatform, () => {
-  fetchPosts()
+  const controller = new AbortController()
+  onWatcherCleanup(() => controller.abort())
+  void fetchPosts(true, controller.signal)
 })
 
 onMounted(() => {
