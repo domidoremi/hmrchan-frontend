@@ -9,7 +9,14 @@
  * - 鼠标/页面切换扰动
  */
 
-import { toValue, watch, type MaybeRefOrGetter } from 'vue'
+import {
+  effectScope,
+  getCurrentScope,
+  onScopeDispose,
+  toValue,
+  watch,
+  type MaybeRefOrGetter,
+} from 'vue'
 import type { ParticleEffectConfig, ParticleEffectType } from '@/stores/settings'
 
 // ==================== 粒子结构 ====================
@@ -630,6 +637,8 @@ export function useParticleEngine(options: UseParticleEngineOptions) {
   let resizeTimer: ReturnType<typeof setTimeout> | null = null
   let currentEffect: EffectDescriptor | null = null
   let needsInit = false
+  let isMounted = false
+  let disposed = false
 
   const reducedMotionQuery =
     typeof window !== 'undefined' ? window.matchMedia('(prefers-reduced-motion: reduce)') : null
@@ -813,12 +822,15 @@ export function useParticleEngine(options: UseParticleEngineOptions) {
   }
 
   function start(forceInit = false) {
+    if (disposed) return
     if (running) {
       if (paused) resume()
       return
     }
     if (!shouldRun()) return
+    if (!getCanvas()) return
     resize()
+    if (!ctx) return
     if (forceInit || needsInit || !pool.length || !currentEffect) {
       initParticles()
       needsInit = false
@@ -921,6 +933,9 @@ export function useParticleEngine(options: UseParticleEngineOptions) {
   // ---- 生命周期 ----
 
   function mount() {
+    if (disposed || isMounted) return
+    isMounted = true
+
     document.addEventListener('visibilitychange', onVisibilityChange)
     window.addEventListener('resize', onResize, { passive: true })
     reducedMotionQuery?.addEventListener('change', onReducedMotionChange)
@@ -934,6 +949,9 @@ export function useParticleEngine(options: UseParticleEngineOptions) {
   }
 
   function dispose() {
+    if (disposed) return
+    disposed = true
+
     stop()
     document.removeEventListener('visibilitychange', onVisibilityChange)
     window.removeEventListener('resize', onResize)
@@ -943,44 +961,56 @@ export function useParticleEngine(options: UseParticleEngineOptions) {
     window.removeEventListener('pointerleave', onPointerLeave)
     window.removeEventListener('blur', onPointerLeave)
     window.removeEventListener('particle-burst', onParticleBurst)
-    if (resizeTimer) clearTimeout(resizeTimer)
+    if (resizeTimer) {
+      clearTimeout(resizeTimer)
+      resizeTimer = null
+    }
+    isMounted = false
     pool = []
     ctx = null
     currentEffect = null
+    watcherScope.stop()
   }
 
   // ---- 响应变化 ----
 
-  watch(
-    () => getConfig(),
-    (newCfg, oldCfg) => {
-      if (newCfg.type === 'none') {
-        needsInit = true
-        stop()
-        return
-      }
-      if (newCfg.type !== oldCfg?.type) {
-        needsInit = true
-        stop()
-        if (shouldRun()) start(true)
-        return
-      }
-      if (newCfg.density !== oldCfg?.density) initParticles()
-    },
-    { deep: true }
-  )
+  const watcherScope = effectScope()
+  watcherScope.run(() => {
+    watch(
+      () => getConfig(),
+      (newCfg, oldCfg) => {
+        if (newCfg.type === 'none') {
+          needsInit = true
+          stop()
+          return
+        }
+        if (newCfg.type !== oldCfg?.type) {
+          needsInit = true
+          stop()
+          if (shouldRun()) start(true)
+          return
+        }
+        if (newCfg.density !== oldCfg?.density) initParticles()
+      },
+      { deep: true }
+    )
 
-  watch(
-    () => getAnimationIntensity(),
-    () => {
-      if (!shouldRun()) stop()
-      else if (!running) start()
-      else {
-        resize()
-        initParticles()
+    watch(
+      () => getAnimationIntensity(),
+      () => {
+        if (!shouldRun()) stop()
+        else if (!running) start()
+        else {
+          resize()
+          initParticles()
+        }
       }
-    }
-  )
+    )
+  })
+
+  if (getCurrentScope()) {
+    onScopeDispose(dispose)
+  }
 
   return { mount, dispose, start, stop }
 }
