@@ -143,17 +143,6 @@ export {
 export { memberService, type MemberProfile } from './memberService'
 export { systemService, type HealthResponse } from './systemService'
 export {
-  clientSecurityService,
-  clientSecurityManager,
-  signRequest,
-  type ClientInitRequest,
-  type ClientInitResponse,
-  type ClientVerifyRequest,
-  type ClientVerifyResponse,
-  type ClientStatusResponse,
-  type ClientTrustLevel,
-} from './clientSecurityService'
-export {
   reportService,
   type CreateReportRequest,
   type ReportItem,
