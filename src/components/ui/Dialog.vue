@@ -8,7 +8,6 @@
         @click.self="handleOverlayClick"
       >
         <div
-          ref="dialogEl"
           :class="dialogClass"
           :style="dialogDragStyle"
           role="dialog"
@@ -62,7 +61,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, watch, onMounted, onUnmounted, ref } from 'vue'
+import { computed, watch, onMounted, onUnmounted, ref, useId } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { X } from 'lucide-vue-next'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
@@ -87,6 +86,12 @@ const props = withDefaults(defineProps<Props>(), {
   closeOnOverlay: true,
   closeOnEscape: true,
 })
+defineSlots<{
+  title?: () => unknown
+  description?: () => unknown
+  default?: () => unknown
+  footer?: () => unknown
+}>()
 
 const emit = defineEmits<{
   close: []
@@ -94,9 +99,9 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
-
-const titleId = `dialog-title-${Math.random().toString(36).slice(2, 9)}`
-const descriptionId = `dialog-desc-${Math.random().toString(36).slice(2, 9)}`
+const baseId = useId()
+const titleId = `${baseId}-title`
+const descriptionId = `${baseId}-description`
 
 const closeLabel = computed(() => t('common.close'))
 
@@ -107,7 +112,6 @@ const showHeader = computed(() => {
 const dialogClass = computed(() => ['ui-dialog', `ui-dialog--${props.size}`])
 
 /* ── touch drag-to-dismiss ── */
-const dialogEl = ref<HTMLElement | null>(null)
 const dragY = ref(0)
 const isDragging = ref(false)
 let touchStartY = 0

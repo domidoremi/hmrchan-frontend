@@ -3,7 +3,6 @@
     <Transition name="dialog">
       <div v-if="isOpen" class="ui-alert-dialog-overlay" @click.self="handleOverlayClick">
         <div
-          ref="dialogRef"
           class="ui-alert-dialog"
           role="alertdialog"
           aria-modal="true"
@@ -44,7 +43,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { computed, watch, onMounted, onUnmounted, useId } from 'vue'
 import { useI18n } from 'vue-i18n'
 import Button from './Button.vue'
 import { lockBodyScroll, unlockBodyScroll } from '@/utils/bodyScrollLock'
@@ -66,6 +65,12 @@ const props = withDefaults(defineProps<Props>(), {
   variant: 'default',
   closeOnOverlay: false,
 })
+defineSlots<{
+  title?: () => unknown
+  description?: () => unknown
+  default?: () => unknown
+  footer?: () => unknown
+}>()
 
 const emit = defineEmits<{
   confirm: []
@@ -74,10 +79,9 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
-
-const dialogRef = ref<HTMLElement | null>(null)
-const titleId = `alert-dialog-title-${Math.random().toString(36).slice(2, 9)}`
-const descriptionId = `alert-dialog-desc-${Math.random().toString(36).slice(2, 9)}`
+const baseId = useId()
+const titleId = `${baseId}-title`
+const descriptionId = `${baseId}-description`
 
 const confirmText = computed(() => props.confirmText || t('common.confirm'))
 const cancelText = computed(() => props.cancelText || t('common.cancel'))
