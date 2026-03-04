@@ -1,4 +1,17 @@
-import { ref, watch, onMounted, onBeforeUnmount, onActivated, onDeactivated, type Ref } from 'vue'
+import {
+  ref,
+  watch,
+  onMounted,
+  onBeforeUnmount,
+  onActivated,
+  onDeactivated,
+  effectScope,
+  getCurrentScope,
+  onScopeDispose,
+  toValue,
+  type MaybeRefOrGetter,
+  type Ref,
+} from 'vue'
 import gsap from 'gsap'
 import { prefersReducedMotion } from '@/utils/performance'
 import { createResizeObserver } from '@/utils/modernAPIs'
@@ -533,9 +546,9 @@ const IDLE_MAP: Record<PlatformMorphState, (p: Particle, t: number) => void> = {
 /* ── Main composable ── */
 
 export interface UsePlatformAnimationOptions {
-  isDark?: Ref<boolean>
-  enabled?: Ref<boolean>
-  intensity?: Ref<number>
+  isDark?: MaybeRefOrGetter<boolean>
+  enabled?: MaybeRefOrGetter<boolean>
+  intensity?: MaybeRefOrGetter<number>
 }
 
 export function usePlatformAnimation(
@@ -543,7 +556,9 @@ export function usePlatformAnimation(
   platform: Ref<PlatformMorphState>,
   options: UsePlatformAnimationOptions = {}
 ) {
-  const { isDark = ref(false), enabled = ref(true), intensity = ref(1) } = options
+  const isDark = options.isDark ?? false
+  const enabled = options.enabled ?? true
+  const intensity = options.intensity ?? 1
 
   const particles = ref<Particle[]>([])
   const currentPlatform = ref<PlatformMorphState>(platform.value)
@@ -562,7 +577,7 @@ export function usePlatformAnimation(
   let startRafId: number | null = null
 
   function getTheme(): PlatformTheme {
-    const mode = isDark.value ? 'dark' : 'light'
+    const mode = toValue(isDark) ? 'dark' : 'light'
     return THEMES[currentPlatform.value][mode]
   }
 
@@ -665,7 +680,7 @@ export function usePlatformAnimation(
     if (!ctx || !isActive) return
     const t = (performance.now() - startTime) / 1000
     const arr = particles.value
-    const int = intensity.value
+    const int = toValue(intensity)
     ctx.clearRect(0, 0, canvasW, canvasH)
 
     // Connections
@@ -772,7 +787,7 @@ export function usePlatformAnimation(
       ease: 'power1.out',
     })
 
-    if (rafId === null && isActive && enabled.value && !prefersReducedMotion()) {
+    if (rafId === null && isActive && toValue(enabled) && !prefersReducedMotion()) {
       rafId = requestAnimationFrame(draw)
     }
   }
@@ -815,7 +830,7 @@ export function usePlatformAnimation(
   }
 
   function resume() {
-    if (isActive && enabled.value && rafId === null) rafId = requestAnimationFrame(draw)
+    if (isActive && toValue(enabled) && rafId === null) rafId = requestAnimationFrame(draw)
   }
 
   function start() {
@@ -825,7 +840,7 @@ export function usePlatformAnimation(
     if (!ctx) return
     startTime = performance.now()
     resizeCanvas()
-    if (prefersReducedMotion() || !enabled.value) {
+    if (prefersReducedMotion() || !toValue(enabled)) {
       initParticles()
       for (const p of particles.value) {
         p.x = p.targetX
@@ -855,17 +870,38 @@ export function usePlatformAnimation(
     document.removeEventListener('visibilitychange', handleVisibility)
   }
 
-  watch(platform, (val) => {
-    if (val !== currentPlatform.value) morphTo(val)
+  const watchScope = effectScope()
+  watchScope.run(() => {
+    watch(platform, (val) => {
+      if (val !== currentPlatform.value) morphTo(val)
+    })
+    watch(
+      () => toValue(isDark),
+      () => {
+        updateThemeColors()
+      }
+    )
+    watch(
+      () => toValue(enabled),
+      (isEnabled) => {
+        if (isEnabled) {
+          if (isActive && rafId === null) resume()
+        } else pause()
+      }
+    )
   })
-  watch(isDark, () => {
-    updateThemeColors()
-  })
-  watch(enabled, (val) => {
-    if (val) {
-      if (isActive && rafId === null) resume()
-    } else pause()
-  })
+
+  let disposed = false
+  function dispose() {
+    if (disposed) return
+    disposed = true
+    watchScope.stop()
+    destroy()
+  }
+
+  if (getCurrentScope()) {
+    onScopeDispose(dispose)
+  }
 
   onMounted(() => {
     attachResizeObserver()
@@ -885,7 +921,7 @@ export function usePlatformAnimation(
     pause()
   })
   onBeforeUnmount(() => {
-    destroy()
+    dispose()
   })
 
   return { isTransitioning, currentPlatform, morphTo, pause, resume }

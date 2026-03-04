@@ -72,7 +72,7 @@
       </div>
 
       <!-- Image Overlay Gradient -->
-      <div class="image-overlay" />
+      <div v-once class="image-overlay" />
     </div>
 
     <div v-if="showContent" class="post-content">

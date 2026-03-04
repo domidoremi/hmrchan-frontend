@@ -65,7 +65,7 @@
   </section>
 </template>
 
-<script setup lang="ts">
+<script setup lang="ts" vapor>
 import { computed, type ComponentPublicInstance } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ChevronDown } from 'lucide-vue-next'
