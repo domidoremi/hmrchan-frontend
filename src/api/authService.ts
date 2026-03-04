@@ -363,7 +363,10 @@ export const authService = {
   /**
    * 发送邮箱验证码（兼容旧调用）
    */
-  async sendEmailCode(data: SendEmailCodeRequest, config?: RequestConfig): Promise<{ message: string }> {
+  async sendEmailCode(
+    data: SendEmailCodeRequest,
+    config?: RequestConfig
+  ): Promise<{ message: string }> {
     if (data.action === 'change_email') {
       if (!data.password || !data.new_email) {
         throw new ApiError('Missing password or new email', 400, 'BAD_REQUEST')

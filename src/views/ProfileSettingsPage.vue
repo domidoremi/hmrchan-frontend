@@ -504,7 +504,7 @@
 <script setup lang="ts">
 defineOptions({ name: 'ProfileSettingsPage' })
 
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 // ... icons imports ...
 import {
@@ -561,6 +561,8 @@ const showCurrentPassword = ref(false)
 const showNewPassword = ref(false)
 const showConfirmPassword = ref(false)
 const showEmailPassword = ref(false)
+let profileFetchController: AbortController | null = null
+let profileFetchToken = 0
 
 function passwordToggleLabel(visible: boolean): string {
   return visible
@@ -669,11 +671,20 @@ const canChangePassword = computed(() => {
 })
 
 async function fetchProfile() {
+  profileFetchController?.abort()
+  const controller = new AbortController()
+  profileFetchController = controller
+  const requestToken = ++profileFetchToken
+
   isLoading.value = true
   error.value = null
 
   try {
-    const data = await userService.getProfile()
+    const data = await userService.getProfile({
+      signal: controller.signal,
+      skipErrorToast: true,
+    })
+    if (controller.signal.aborted || requestToken !== profileFetchToken) return
     profile.value = data
     form.value = {
       username: data.username,
@@ -681,13 +692,19 @@ async function fetchProfile() {
       bio: data.bio || '',
     }
   } catch (err) {
+    if (controller.signal.aborted || requestToken !== profileFetchToken) return
     if (err instanceof ApiError) {
       error.value = err.message
     } else {
       error.value = t('common.error')
     }
   } finally {
-    isLoading.value = false
+    if (requestToken === profileFetchToken) {
+      isLoading.value = false
+      if (profileFetchController === controller) {
+        profileFetchController = null
+      }
+    }
   }
 }
 
@@ -840,7 +857,12 @@ async function handleCroppedImage(blob: Blob) {
 }
 
 onMounted(() => {
-  fetchProfile()
+  void fetchProfile()
+})
+
+onUnmounted(() => {
+  profileFetchController?.abort()
+  profileFetchController = null
 })
 </script>
 

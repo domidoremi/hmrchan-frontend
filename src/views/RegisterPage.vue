@@ -387,6 +387,8 @@ const turnstileRef = useTemplateRef<{ reset: () => void; getResponse: () => stri
 // Resend cooldown
 const resendCooldown = ref(0)
 let cooldownTimer: ReturnType<typeof setInterval> | null = null
+let registrationCodeController: AbortController | null = null
+let registrationCodeRequestToken = 0
 
 const maskedEmail = computed(() => {
   if (!email.value) return ''
@@ -457,8 +459,14 @@ function startCooldown() {
   }, 1000)
 }
 
+function abortRegistrationCodeRequest() {
+  registrationCodeController?.abort()
+  registrationCodeController = null
+}
+
 // Cleanup cooldown timer on unmount
 onUnmounted(() => {
+  abortRegistrationCodeRequest()
   if (cooldownTimer) {
     clearInterval(cooldownTimer)
     cooldownTimer = null
@@ -512,12 +520,21 @@ async function handleSendCode() {
     return
   }
 
+  abortRegistrationCodeRequest()
+  const controller = new AbortController()
+  registrationCodeController = controller
+  const requestToken = ++registrationCodeRequestToken
+
   isSendingCode.value = true
   try {
-    const response = await authService.sendRegistrationCode({
-      email: trimmedEmail,
-      ...(turnstileToken.value ? { turnstile_token: turnstileToken.value } : {}),
-    })
+    const response = await authService.sendRegistrationCode(
+      {
+        email: trimmedEmail,
+        ...(turnstileToken.value ? { turnstile_token: turnstileToken.value } : {}),
+      },
+      { signal: controller.signal }
+    )
+    if (controller.signal.aborted || requestToken !== registrationCodeRequestToken) return
     setRegisterToken(response.register_token, response.expires_in)
     toastStore.success(t('emailCode.codeSent'))
     step.value = 'register'
@@ -530,6 +547,7 @@ async function handleSendCode() {
       turnstileRef.value?.reset()
     }
   } catch (err) {
+    if (controller.signal.aborted || requestToken !== registrationCodeRequestToken) return
     turnstileToken.value = null
     turnstileIssuedAt.value = null
     turnstileRef.value?.reset()
@@ -554,7 +572,12 @@ async function handleSendCode() {
     }
     setVisualMood('typing', 1200)
   } finally {
-    isSendingCode.value = false
+    if (requestToken === registrationCodeRequestToken) {
+      isSendingCode.value = false
+      if (registrationCodeController === controller) {
+        registrationCodeController = null
+      }
+    }
   }
 }
 
@@ -579,12 +602,21 @@ async function handleResendCode() {
     return
   }
 
+  abortRegistrationCodeRequest()
+  const controller = new AbortController()
+  registrationCodeController = controller
+  const requestToken = ++registrationCodeRequestToken
+
   isSendingCode.value = true
   try {
-    const response = await authService.sendRegistrationCode({
-      email: trimmedEmail,
-      ...(turnstileToken.value ? { turnstile_token: turnstileToken.value } : {}),
-    })
+    const response = await authService.sendRegistrationCode(
+      {
+        email: trimmedEmail,
+        ...(turnstileToken.value ? { turnstile_token: turnstileToken.value } : {}),
+      },
+      { signal: controller.signal }
+    )
+    if (controller.signal.aborted || requestToken !== registrationCodeRequestToken) return
     setRegisterToken(response.register_token, response.expires_in)
     toastStore.success(t('emailCode.codeSent'))
     setVisualMood('success', 1000)
@@ -599,6 +631,7 @@ async function handleResendCode() {
       turnstileRef.value?.reset()
     }
   } catch (err) {
+    if (controller.signal.aborted || requestToken !== registrationCodeRequestToken) return
     // 重置 Turnstile token
     if (turnstileEnabled) {
       turnstileToken.value = null
@@ -622,7 +655,12 @@ async function handleResendCode() {
     }
     setVisualMood('typing', 1200)
   } finally {
-    isSendingCode.value = false
+    if (requestToken === registrationCodeRequestToken) {
+      isSendingCode.value = false
+      if (registrationCodeController === controller) {
+        registrationCodeController = null
+      }
+    }
   }
 }
 
@@ -632,6 +670,8 @@ function handleCodeComplete(code: string) {
 }
 
 function goBackToEmail() {
+  abortRegistrationCodeRequest()
+  isSendingCode.value = false
   step.value = 'email'
   verificationCode.value = ''
   codeError.value = false

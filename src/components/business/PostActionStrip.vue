@@ -42,7 +42,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, ref, watch, onWatcherCleanup } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
@@ -78,8 +78,6 @@ const showLabels = computed(() => props.variant === 'default')
 const isFavorited = ref(false)
 const isFavoriteLoading = ref(false)
 
-let checkSeq = 0
-
 async function fetchFavoriteStatus() {
   const postId = props.postId
   if (!postId) return
@@ -89,14 +87,15 @@ async function fetchFavoriteStatus() {
     return
   }
 
-  const seq = ++checkSeq
+  const controller = new AbortController()
+  onWatcherCleanup(() => controller.abort())
 
   try {
-    const res = await favoriteService.check(postId)
-    if (seq !== checkSeq) return
+    const res = await favoriteService.check(postId, { signal: controller.signal })
+    if (controller.signal.aborted) return
     isFavorited.value = res.is_favorited
   } catch {
-    if (seq !== checkSeq) return
+    if (controller.signal.aborted) return
     isFavorited.value = false
   }
 }
