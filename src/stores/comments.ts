@@ -6,7 +6,7 @@ import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import type { Comment, CommentFormData } from '@/types'
 import { sanitizeComment, validateComment, commentRateLimiter } from '@/utils/security'
-import { apiClient, ApiError, type PaginatedApiResponse } from '@/api'
+import { apiClient, ApiError, type PaginatedApiResponse, type RequestConfig } from '@/api'
 
 /** 最多缓存多少个帖子的评论，超限时 FIFO 淘汰最早的 */
 const MAX_CACHED_POSTS = 20
@@ -15,6 +15,13 @@ export const useCommentsStore = defineStore('comments', () => {
   const comments = ref<Map<string, Comment[]>>(new Map())
   const isLoading = ref(false)
   const error = ref<string | null>(null)
+  let latestFetchRequestId = 0
+
+  function isAbortError(err: unknown): boolean {
+    return err instanceof DOMException
+      ? err.name === 'AbortError'
+      : err instanceof Error && err.name === 'AbortError'
+  }
 
   // 获取某个帖子的评论
   function getCommentsByPostId(postId: string): Comment[] {
@@ -55,8 +62,13 @@ export const useCommentsStore = defineStore('comments', () => {
   }
 
   // 获取评论
-  async function fetchComments(postId: string, sort: 'newest' | 'oldest' | 'popular' = 'newest') {
+  async function fetchComments(
+    postId: string,
+    sort: 'newest' | 'oldest' | 'popular' = 'newest',
+    config?: RequestConfig
+  ) {
     if (!postId || postId === 'undefined') return { success: false, error: 'Invalid postId' }
+    const requestId = ++latestFetchRequestId
 
     isLoading.value = true
     error.value = null
@@ -66,15 +78,23 @@ export const useCommentsStore = defineStore('comments', () => {
       let data: PaginatedApiResponse<Comment>
 
       try {
-        data = await apiClient.get<PaginatedApiResponse<Comment>>(baseUrl, { skipErrorToast: true })
+        data = await apiClient.get<PaginatedApiResponse<Comment>>(baseUrl, {
+          ...config,
+          skipErrorToast: true,
+        })
       } catch (err) {
         if (err instanceof ApiError && (err.status === 400 || err.status === 422)) {
           data = await apiClient.get<PaginatedApiResponse<Comment>>(`${baseUrl}?sort=${sort}`, {
+            ...config,
             skipErrorToast: true,
           })
         } else {
           throw err
         }
+      }
+
+      if (requestId !== latestFetchRequestId || config?.signal?.aborted) {
+        return { success: false, error: 'aborted' as const }
       }
 
       const items = sortComments(data.items || [], sort)
@@ -88,10 +108,15 @@ export const useCommentsStore = defineStore('comments', () => {
 
       return { success: true, data: items }
     } catch (err) {
+      if (isAbortError(err) || config?.signal?.aborted || requestId !== latestFetchRequestId) {
+        return { success: false, error: 'aborted' as const }
+      }
       error.value = 'comment.error.fetchFailed'
       return { success: false, error: err }
     } finally {
-      isLoading.value = false
+      if (requestId === latestFetchRequestId) {
+        isLoading.value = false
+      }
     }
   }
 
