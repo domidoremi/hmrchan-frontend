@@ -367,7 +367,7 @@
 <script setup lang="ts">
 defineOptions({ name: 'SchedulePage' })
 
-import { ref, computed, onMounted, watch, useTemplateRef } from 'vue'
+import { ref, computed, onMounted, watch, onWatcherCleanup, useTemplateRef } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
   ChevronLeft,
@@ -408,6 +408,7 @@ const monthTransition = ref<'month-slide-left' | 'month-slide-right'>('month-sli
 // 详情弹窗
 const detailEvent = ref<ScheduleResponse | null>(null)
 const detailLoading = ref(false)
+let latestFetchId = 0
 
 // 触摸手势
 let touchStartX = 0
@@ -828,31 +829,47 @@ function linkify(text: string): string {
 }
 
 // ========== 数据加载 ==========
-async function fetchEvents() {
+function isAbortError(err: unknown): boolean {
+  return err instanceof DOMException && err.name === 'AbortError'
+}
+
+async function fetchEvents(signal?: AbortSignal) {
+  const fetchId = ++latestFetchId
   isLoading.value = true
   error.value = null
   try {
     const start = new Date(currentYear.value, currentMonth.value - 1, 1).toISOString()
     const end = new Date(currentYear.value, currentMonth.value + 2, 0).toISOString()
-    events.value = await scheduleService.calendar({ start, end })
+    const result = await scheduleService.calendar({ start, end }, { signal })
+    if (signal?.aborted || fetchId !== latestFetchId) return
+    events.value = result
   } catch (err) {
+    if (signal?.aborted || isAbortError(err) || fetchId !== latestFetchId) return
+
     if (err instanceof ApiError && err.status === 404) {
       events.value = []
     } else {
       error.value = err instanceof ApiError ? err.message : t('common.error')
     }
   } finally {
-    isLoading.value = false
+    if (!signal?.aborted && fetchId === latestFetchId) {
+      isLoading.value = false
+    }
   }
 }
 
-watch([currentYear, currentMonth], () => {
-  fetchEvents()
-})
+watch(
+  [currentYear, currentMonth],
+  () => {
+    const controller = new AbortController()
+    void fetchEvents(controller.signal)
+    onWatcherCleanup(() => controller.abort())
+  },
+  { immediate: true }
+)
 
 onMounted(() => {
   scheduleStore.markVisited()
-  fetchEvents()
 })
 </script>
 
