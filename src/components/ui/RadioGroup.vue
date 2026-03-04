@@ -45,7 +45,6 @@ interface Option {
 }
 
 interface Props {
-  modelValue?: string | number
   options: Option[]
   label?: string
   disabled?: boolean
@@ -57,13 +56,11 @@ const props = withDefaults(defineProps<Props>(), {
   orientation: 'vertical',
 })
 
-const emit = defineEmits<{
-  'update:modelValue': [value: string | number]
-}>()
+const modelValue = defineModel<string | number>()
 
 function selectOption(value: string | number) {
   if (!props.disabled) {
-    emit('update:modelValue', value)
+    modelValue.value = value
   }
 }
 </script>

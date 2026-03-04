@@ -39,10 +39,16 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<{
   complete: [code: string]
-  'update:modelValue': [code: string]
 }>()
 
-const digits = ref<string[]>(Array.from({ length: props.length }, () => ''))
+const modelValue = defineModel<string>({ default: '' })
+
+function createDigitsFromCode(code: string): string[] {
+  const normalized = code.replace(/\D/g, '').slice(0, props.length)
+  return Array.from({ length: props.length }, (_, i) => normalized[i] || '')
+}
+
+const digits = ref<string[]>(createDigitsFromCode(modelValue.value))
 const inputRefs: (HTMLInputElement | null)[] = []
 
 function setRef(el: HTMLInputElement | null, i: number) {
@@ -66,7 +72,7 @@ function handleInput(index: number) {
     return
   }
 
-  emit('update:modelValue', getCode())
+  modelValue.value = getCode()
 
   // Auto-advance to next input
   if (digits.value[index] && index < props.length - 1) {
@@ -87,7 +93,7 @@ function handleKeydown(event: KeyboardEvent, index: number) {
       event.preventDefault()
       digits.value[index - 1] = ''
       inputRefs[index - 1]?.focus()
-      emit('update:modelValue', getCode())
+      modelValue.value = getCode()
     }
   } else if (event.key === 'ArrowLeft' && index > 0) {
     event.preventDefault()
@@ -107,7 +113,7 @@ function handlePaste(event: ClipboardEvent) {
     digits.value[i] = pasted[i] || ''
   }
 
-  emit('update:modelValue', getCode())
+  modelValue.value = getCode()
 
   // Focus the next empty or last filled
   const nextEmpty = digits.value.findIndex((d) => !d)
@@ -127,8 +133,8 @@ function handleFocus(index: number) {
 
 /** Reset all digits */
 function reset() {
-  digits.value = Array.from({ length: props.length }, () => '')
-  emit('update:modelValue', '')
+  digits.value = createDigitsFromCode('')
+  modelValue.value = ''
   nextTick(() => inputRefs[0]?.focus())
 }
 
@@ -138,6 +144,16 @@ function focus() {
 }
 
 let resetTimer: ReturnType<typeof setTimeout> | null = null
+
+watch(
+  () => modelValue.value,
+  (code) => {
+    const nextDigits = createDigitsFromCode(code)
+    if (nextDigits.join('') !== digits.value.join('')) {
+      digits.value = nextDigits
+    }
+  }
+)
 
 // Watch for external error to shake
 watch(
