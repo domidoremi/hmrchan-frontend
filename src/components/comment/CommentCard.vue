@@ -135,6 +135,7 @@
           <CommentCard
             v-for="reply in comment.replies"
             :key="reply.id"
+            v-memo="getReplyMemo(reply)"
             :comment="reply"
             :post-id="postId"
             :is-reply="true"
@@ -159,8 +160,8 @@
   </article>
 </template>
 
-<script setup lang="ts">
-import { ref, computed, nextTick, onMounted, onUnmounted } from 'vue'
+<script setup lang="ts" vapor>
+import { ref, computed, nextTick, onMounted, onUnmounted, useTemplateRef } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 import {
@@ -226,7 +227,7 @@ const showReplyForm = ref(false)
 const showReplies = ref(false)
 const isLoadingReplies = ref(false)
 const showDeleteDialog = ref(false)
-const replyFormRef = ref<InstanceType<typeof CommentForm>>()
+const replyFormRef = useTemplateRef<InstanceType<typeof CommentForm>>('replyFormRef')
 
 async function handleShowReplies() {
   if (!props.comment.replies || props.comment.replies.length === 0) {
@@ -265,6 +266,17 @@ const actualRepliesCount = computed(() => {
   const serverCount = props.comment.replies_count || 0
   return Math.max(localCount, serverCount)
 })
+
+function getReplyMemo(comment: Comment) {
+  return [
+    comment.id,
+    comment.updated_at ?? comment.created_at,
+    comment.likes_count ?? comment.like_count ?? 0,
+    comment.replies_count ?? comment.reply_count ?? 0,
+    Boolean(comment.is_liked),
+    Boolean(comment.is_favorited),
+  ]
+}
 
 function formatTime(dateStr: string): string {
   return formatRelativeTime(dateStr, t)
