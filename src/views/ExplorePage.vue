@@ -4,7 +4,7 @@
     <AsyncPlatformCanvas v-if="shouldRenderPlatformBg" :platform="currentPlatform" />
 
     <!-- MindMarket 风格背景装饰 -->
-    <div class="explore-bg" aria-hidden="true">
+    <div v-once class="explore-bg" aria-hidden="true">
       <div class="explore-bg__blob explore-bg__blob--green" />
       <div class="explore-bg__blob explore-bg__blob--purple" />
     </div>

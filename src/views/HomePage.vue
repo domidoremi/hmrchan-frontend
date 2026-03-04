@@ -23,7 +23,7 @@
 
       <!-- Bento Grid -->
       <section ref="bentoRef" class="bento">
-        <div class="bento-bg" aria-hidden="true" />
+        <div v-once class="bento-bg" aria-hidden="true" />
         <div class="container">
           <header class="bento-header">
             <h2>{{ $t('home.quickStart.title') }}</h2>
@@ -86,14 +86,14 @@
         </div>
 
         <!-- Bento → Posts 过渡 -->
-        <div class="bento-transition" />
+        <div v-once class="bento-transition" />
       </section>
     </div>
     <!-- /.home-fold -->
 
     <!-- Latest Posts -->
     <section ref="postsSectionRef" class="posts">
-      <div class="posts-bg" aria-hidden="true" />
+      <div v-once class="posts-bg" aria-hidden="true" />
       <div class="container">
         <header class="posts-header">
           <h2>{{ $t('home.latest') }}</h2>
