@@ -7,7 +7,7 @@
       tabindex="0"
       :aria-valuemin="min"
       :aria-valuemax="max"
-      :aria-valuenow="modelValue"
+      :aria-valuenow="model"
       :aria-disabled="disabled"
       @click="handleTrackClick"
       @keydown="handleKeydown"
@@ -30,7 +30,6 @@ import { ref, computed, onUnmounted } from 'vue'
 defineOptions({ name: 'UiSlider' })
 
 interface Props {
-  modelValue?: number
   min?: number
   max?: number
   step?: number
@@ -51,7 +50,6 @@ function cleanupDragListeners() {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  modelValue: 0,
   min: 0,
   max: 100,
   step: 1,
@@ -59,9 +57,7 @@ const props = withDefaults(defineProps<Props>(), {
   showValue: false,
 })
 
-const emit = defineEmits<{
-  'update:modelValue': [value: number]
-}>()
+const model = defineModel<number>({ default: 0 })
 
 const trackRef = ref<HTMLElement | null>(null)
 const isDragging = ref(false)
@@ -69,7 +65,7 @@ let dragMoveHandler: ((e: MouseEvent | TouchEvent) => void) | null = null
 let dragEndHandler: (() => void) | null = null
 
 const percentage = computed(() => {
-  return ((props.modelValue - props.min) / (props.max - props.min)) * 100
+  return ((model.value - props.min) / (props.max - props.min)) * 100
 })
 
 const rangeStyle = computed(() => ({
@@ -81,9 +77,7 @@ const thumbStyle = computed(() => ({
 }))
 
 const displayValue = computed(() => {
-  return props.modelValue.toFixed(
-    props.step < 1 ? String(props.step).split('.')[1]?.length || 0 : 0
-  )
+  return model.value.toFixed(props.step < 1 ? String(props.step).split('.')[1]?.length || 0 : 0)
 })
 
 function clamp(value: number, min: number, max: number): number {
@@ -95,7 +89,7 @@ function roundToStep(value: number): number {
 }
 
 function getValueFromPosition(clientX: number): number {
-  if (!trackRef.value) return props.modelValue
+  if (!trackRef.value) return model.value
   const rect = trackRef.value.getBoundingClientRect()
   const percentage = (clientX - rect.left) / rect.width
   const value = props.min + percentage * (props.max - props.min)
@@ -105,7 +99,7 @@ function getValueFromPosition(clientX: number): number {
 function handleTrackClick(event: MouseEvent) {
   if (props.disabled) return
   const value = getValueFromPosition(event.clientX)
-  emit('update:modelValue', value)
+  model.value = value
 }
 
 function startDrag(event: MouseEvent | TouchEvent) {
@@ -116,7 +110,7 @@ function startDrag(event: MouseEvent | TouchEvent) {
   const handleMove = (e: MouseEvent | TouchEvent) => {
     const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX
     const value = getValueFromPosition(clientX)
-    emit('update:modelValue', value)
+    model.value = value
   }
 
   const handleEnd = () => {
@@ -136,23 +130,23 @@ function startDrag(event: MouseEvent | TouchEvent) {
 function handleKeydown(event: KeyboardEvent) {
   if (props.disabled) return
 
-  let newValue = props.modelValue
+  let newValue = model.value
   const bigStep = (props.max - props.min) / 10
 
   switch (event.key) {
     case 'ArrowLeft':
     case 'ArrowDown':
-      newValue = props.modelValue - props.step
+      newValue = model.value - props.step
       break
     case 'ArrowRight':
     case 'ArrowUp':
-      newValue = props.modelValue + props.step
+      newValue = model.value + props.step
       break
     case 'PageDown':
-      newValue = props.modelValue - bigStep
+      newValue = model.value - bigStep
       break
     case 'PageUp':
-      newValue = props.modelValue + bigStep
+      newValue = model.value + bigStep
       break
     case 'Home':
       newValue = props.min
@@ -165,7 +159,7 @@ function handleKeydown(event: KeyboardEvent) {
   }
 
   event.preventDefault()
-  emit('update:modelValue', roundToStep(clamp(newValue, props.min, props.max)))
+  model.value = roundToStep(clamp(newValue, props.min, props.max))
 }
 
 onUnmounted(() => {

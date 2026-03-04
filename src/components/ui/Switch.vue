@@ -2,7 +2,7 @@
   <button
     type="button"
     role="switch"
-    :aria-checked="modelValue"
+    :aria-checked="model"
     :aria-label="label"
     :disabled="disabled"
     :class="switchClass"
@@ -18,34 +18,30 @@ import { computed } from 'vue'
 defineOptions({ name: 'UiSwitch' })
 
 interface Props {
-  modelValue?: boolean
   disabled?: boolean
   label?: string
   size?: 'sm' | 'default' | 'lg'
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  modelValue: false,
   disabled: false,
   size: 'default',
 })
 
-const emit = defineEmits<{
-  'update:modelValue': [value: boolean]
-}>()
+const model = defineModel<boolean>({ default: false })
 
 const switchClass = computed(() => [
   'ui-switch',
   `ui-switch--${props.size}`,
   {
-    'ui-switch--checked': props.modelValue,
+    'ui-switch--checked': model.value,
     'ui-switch--disabled': props.disabled,
   },
 ])
 
 function toggle() {
   if (!props.disabled) {
-    emit('update:modelValue', !props.modelValue)
+    model.value = !model.value
   }
 }
 </script>

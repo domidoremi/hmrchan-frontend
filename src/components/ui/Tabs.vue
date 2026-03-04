@@ -49,6 +49,9 @@ interface Props {
 }
 
 const props = defineProps<Props>()
+defineSlots<{
+  default?: () => unknown
+}>()
 
 const emit = defineEmits<{
   'update:modelValue': [value: string]
