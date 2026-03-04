@@ -270,6 +270,7 @@ import {
   onActivated,
   onDeactivated,
   onWatcherCleanup,
+  useTemplateRef,
 } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
@@ -362,7 +363,7 @@ const autoPlayTimer = ref<number | null>(null)
 const autoPlayResumeTimer = ref<number | null>(null)
 const isAutoPlayPaused = ref(false)
 
-const stageRef = ref<HTMLElement | null>(null)
+const stageRef = useTemplateRef<HTMLElement>('stageRef')
 const navigationContext = ref<PostNavigationContext | null>(null)
 
 // Back FAB progress (matches BackToTop visual language)
