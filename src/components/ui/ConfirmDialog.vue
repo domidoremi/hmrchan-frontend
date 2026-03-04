@@ -52,7 +52,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted, type Component, useId } from 'vue'
+import { computed, watch, onMounted, onUnmounted, type Component, useId, useTemplateRef } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { AlertTriangle, Trash2, Info, HelpCircle, CheckCircle } from 'lucide-vue-next'
 import Button from './Button.vue'
@@ -86,7 +86,7 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
-const contentRef = ref<HTMLElement | null>(null)
+const contentRef = useTemplateRef<HTMLElement>('contentRef')
 const baseId = useId()
 const titleId = `${baseId}-title`
 const descriptionId = `${baseId}-description`
