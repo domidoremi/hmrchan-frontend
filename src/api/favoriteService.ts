@@ -135,7 +135,10 @@ export const favoriteService = {
     const query = buildQuery()
 
     try {
-      return await apiClient.get<PaginatedApiResponse<FavoriteResponse>>(`/favorites?${query}`, config)
+      return await apiClient.get<PaginatedApiResponse<FavoriteResponse>>(
+        `/favorites?${query}`,
+        config
+      )
     } catch (error) {
       const shouldRetry =
         error instanceof ApiError &&
