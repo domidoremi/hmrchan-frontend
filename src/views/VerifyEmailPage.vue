@@ -57,7 +57,7 @@
 <script setup lang="ts">
 defineOptions({ name: 'VerifyEmailPage' })
 
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { CheckCircle, XCircle, AlertTriangle } from 'lucide-vue-next'
@@ -73,6 +73,7 @@ const toastStore = useToastStore()
 type Status = 'loading' | 'success' | 'error' | 'invalid'
 const status = ref<Status>('loading')
 const errorMessage = ref('')
+let verifyController: AbortController | null = null
 
 onMounted(async () => {
   const token = route.query['token']
@@ -81,15 +82,28 @@ onMounted(async () => {
     return
   }
 
+  const controller = new AbortController()
+  verifyController = controller
   try {
-    await authService.verifyEmail(token)
+    await authService.verifyEmail(token, { signal: controller.signal })
+    if (controller.signal.aborted) return
     status.value = 'success'
   } catch (err) {
+    if (controller.signal.aborted) return
     status.value = 'error'
     if (err instanceof ApiError) {
       errorMessage.value = err.message
     }
+  } finally {
+    if (verifyController === controller) {
+      verifyController = null
+    }
   }
+})
+
+onUnmounted(() => {
+  verifyController?.abort()
+  verifyController = null
 })
 
 function goToLogin() {
