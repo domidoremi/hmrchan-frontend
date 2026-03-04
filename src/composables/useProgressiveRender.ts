@@ -10,7 +10,7 @@
  * - 支持自定义初始数量和批次大小
  */
 
-import { computed, ref, watch, type Ref } from 'vue'
+import { computed, ref, toValue, watch, type MaybeRefOrGetter } from 'vue'
 
 export interface UseProgressiveRenderOptions {
   initialCount?: number
@@ -18,30 +18,32 @@ export interface UseProgressiveRenderOptions {
 }
 
 export function useProgressiveRender<T>(
-  items: Ref<T[]>,
+  items: MaybeRefOrGetter<T[]>,
   options: UseProgressiveRenderOptions = {}
 ) {
   const { initialCount = 20, batchSize = 20 } = options
 
   const visibleCount = ref(0)
+  const getItems = () => toValue(items)
 
   const visibleItems = computed(() => {
-    const count = Math.max(0, Math.min(visibleCount.value, items.value.length))
-    return items.value.slice(0, count)
+    const source = getItems()
+    const count = Math.max(0, Math.min(visibleCount.value, source.length))
+    return source.slice(0, count)
   })
 
-  const hasMoreToRender = computed(() => visibleCount.value < items.value.length)
+  const hasMoreToRender = computed(() => visibleCount.value < getItems().length)
 
   function reset() {
-    visibleCount.value = Math.min(initialCount, items.value.length)
+    visibleCount.value = Math.min(initialCount, getItems().length)
   }
 
   function revealNextBatch() {
-    visibleCount.value = Math.min(items.value.length, visibleCount.value + batchSize)
+    visibleCount.value = Math.min(getItems().length, visibleCount.value + batchSize)
   }
 
   watch(
-    () => items.value.length,
+    () => getItems().length,
     (len) => {
       if (len === 0) {
         visibleCount.value = 0
