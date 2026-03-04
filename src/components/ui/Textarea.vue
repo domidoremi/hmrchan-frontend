@@ -13,7 +13,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, useAttrs, useId } from 'vue'
+import { computed, useAttrs, useId, useTemplateRef } from 'vue'
 
 defineOptions({ inheritAttrs: false, name: 'UiTextarea' })
 
@@ -33,7 +33,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 const model = defineModel<string>()
 
-const textareaRef = ref<HTMLTextAreaElement | null>(null)
+const textareaRef = useTemplateRef<HTMLTextAreaElement>('textareaRef')
 
 const attrs = useAttrs()
 const generatedId = useId()
