@@ -34,11 +34,27 @@ export const useFavoritesStore = defineStore('favorites', () => {
   const currentTag = ref<string | undefined>(undefined)
   const currentSort = ref<ListFavoritesParams['sort_by']>(undefined)
   const currentSortOrder = ref<ListFavoritesParams['sort_order']>(undefined)
+  let fetchFavoritesController: AbortController | null = null
+  let fetchFavoritesToken = 0
 
   const hasMore = computed(() => page.value < totalPages.value)
 
+  function abortFetchFavorites() {
+    fetchFavoritesController?.abort()
+    fetchFavoritesController = null
+  }
+
   async function fetchFavorites(reset = false) {
-    if (isLoading.value) return
+    if (reset) {
+      abortFetchFavorites()
+    } else if (isLoading.value) {
+      return
+    }
+
+    const controller = new AbortController()
+    fetchFavoritesController = controller
+    const requestToken = ++fetchFavoritesToken
+
     isLoading.value = true
     error.value = null
 
@@ -54,7 +70,11 @@ export const useFavoritesStore = defineStore('favorites', () => {
         sort_order: currentSortOrder.value,
       }
 
-      const res: PaginatedApiResponse<FavoriteResponse> = await favoriteService.list(params)
+      const res: PaginatedApiResponse<FavoriteResponse> = await favoriteService.list(params, {
+        signal: controller.signal,
+        skipErrorToast: true,
+      })
+      if (controller.signal.aborted || requestToken !== fetchFavoritesToken) return
 
       if (reset) {
         items.value = res.items
@@ -67,9 +87,15 @@ export const useFavoritesStore = defineStore('favorites', () => {
       total.value = res.total
       totalPages.value = res.total_pages
     } catch {
+      if (controller.signal.aborted || requestToken !== fetchFavoritesToken) return
       error.value = 'favorite.error.fetchFailed'
     } finally {
-      isLoading.value = false
+      if (requestToken === fetchFavoritesToken) {
+        isLoading.value = false
+        if (fetchFavoritesController === controller) {
+          fetchFavoritesController = null
+        }
+      }
     }
   }
 
@@ -172,16 +198,18 @@ export const useFavoritesStore = defineStore('favorites', () => {
     currentTag.value = options.tag
     currentSort.value = options.sort_by
     currentSortOrder.value = options.sort_order
-    fetchFavorites(true)
+    void fetchFavorites(true)
   }
 
   function $reset() {
+    abortFetchFavorites()
     items.value = []
     folders.value = []
     tags.value = []
     total.value = 0
     page.value = 1
     totalPages.value = 0
+    isLoading.value = false
     error.value = null
     checkedPosts.value.clear()
     currentFolder.value = undefined
