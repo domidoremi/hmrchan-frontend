@@ -4,7 +4,7 @@
  * 提供用户资料相关的 API 调用
  */
 
-import { apiClient } from './client'
+import { apiClient, type RequestConfig } from './client'
 import { normalizeToProxyPath } from '@/utils/url'
 import { secureTokenManager } from '@/utils/tokenSecurity'
 
@@ -91,8 +91,8 @@ export const userService = {
   /**
    * 获取当前用户资料
    */
-  async getProfile(): Promise<UserProfile> {
-    return apiClient.get<UserProfile>('/users/me/profile')
+  async getProfile(config?: RequestConfig): Promise<UserProfile> {
+    return apiClient.get<UserProfile>('/users/me/profile', config)
   },
 
   /**
