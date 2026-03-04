@@ -1,7 +1,7 @@
 <script setup lang="ts">
 defineOptions({ name: 'PlatformCanvas' })
 
-import { ref, computed, toRef } from 'vue'
+import { computed, toRef, useTemplateRef } from 'vue'
 import { storeToRefs } from 'pinia'
 import { usePlatformAnimation, type PlatformMorphState } from '@/composables/usePlatformAnimation'
 import { useThemeStore, useSettingsStore } from '@/stores'
@@ -10,7 +10,7 @@ const { platform = 'all' } = defineProps<{
   platform?: PlatformMorphState
 }>()
 
-const canvasEl = ref<HTMLCanvasElement | null>(null)
+const canvasEl = useTemplateRef<HTMLCanvasElement>('canvasEl')
 const { isDark } = storeToRefs(useThemeStore())
 const { settings } = storeToRefs(useSettingsStore())
 

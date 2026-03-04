@@ -10,7 +10,7 @@
  * 自动响应用户设置和系统偏好。
  */
 
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { computed, onMounted, onBeforeUnmount, useTemplateRef } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useSettingsStore, useThemeStore } from '@/stores'
 import { useParticleEngine } from '@/composables/useParticleEngine'
@@ -20,7 +20,7 @@ const themeStore = useThemeStore()
 const { settings } = storeToRefs(settingsStore)
 const { resolvedTheme } = storeToRefs(themeStore)
 
-const canvasRef = ref<HTMLCanvasElement | null>(null)
+const canvasRef = useTemplateRef<HTMLCanvasElement>('canvasRef')
 
 const effectConfig = computed(() => settings.value.backgroundEffect)
 const animationIntensity = computed(() =>
