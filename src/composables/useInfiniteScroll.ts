@@ -23,7 +23,6 @@ import {
   onScopeDispose,
   toValue,
   type MaybeRefOrGetter,
-  type Ref,
 } from 'vue'
 
 export interface UseInfiniteScrollOptions {
@@ -33,16 +32,21 @@ export interface UseInfiniteScrollOptions {
 }
 
 export function useInfiniteScroll(
-  sentinelRef: Ref<HTMLElement | null>,
+  sentinelRef: MaybeRefOrGetter<HTMLElement | null>,
   loadMore: () => void | boolean | Promise<void | boolean>,
   options: UseInfiniteScrollOptions = {}
 ) {
   const { threshold = 0, rootMargin = '200px', enabled } = options
 
   let observer: IntersectionObserver | null = null
+  let observedElement: HTMLElement | null = null
   const isObserving = ref(false)
   let lastIsIntersecting = false
   let isTriggering = false
+
+  function getSentinel() {
+    return toValue(sentinelRef)
+  }
 
   function getEnabled(): boolean {
     if (enabled === undefined) return true
@@ -58,9 +62,10 @@ export function useInfiniteScroll(
       const result = await loadMore()
       if (result === false) return
 
-      if (lastIsIntersecting && getEnabled() && observer && sentinelRef.value) {
-        observer.unobserve(sentinelRef.value)
-        observer.observe(sentinelRef.value)
+      const sentinel = getSentinel()
+      if (lastIsIntersecting && getEnabled() && observer && sentinel) {
+        observer.unobserve(sentinel)
+        observer.observe(sentinel)
       }
     } catch {
       return
@@ -79,7 +84,8 @@ export function useInfiniteScroll(
   }
 
   function startObserving() {
-    if (isObserving.value || !sentinelRef.value) return
+    const sentinel = getSentinel()
+    if (isObserving.value || !sentinel || !getEnabled()) return
 
     observer = new IntersectionObserver(handleIntersect, {
       root: null,
@@ -87,7 +93,8 @@ export function useInfiniteScroll(
       threshold,
     })
 
-    observer.observe(sentinelRef.value)
+    observer.observe(sentinel)
+    observedElement = sentinel
     isObserving.value = true
   }
 
@@ -96,17 +103,22 @@ export function useInfiniteScroll(
 
     observer.disconnect()
     observer = null
+    observedElement = null
     isObserving.value = false
   }
 
   const reactiveScope = effectScope()
   reactiveScope.run(() => {
-    watch(sentinelRef, (el) => {
-      stopObserving()
-      if (el) {
-        startObserving()
+    watch(
+      () => getSentinel(),
+      (el) => {
+        if (el && isObserving.value && observedElement === el) return
+        stopObserving()
+        if (el) {
+          startObserving()
+        }
       }
-    })
+    )
 
     watch(
       () => getEnabled(),
@@ -116,14 +128,16 @@ export function useInfiniteScroll(
           return
         }
 
-        if (sentinelRef.value) {
+        const sentinel = getSentinel()
+        if (sentinel) {
           startObserving()
           if (observer) {
-            observer.unobserve(sentinelRef.value)
-            observer.observe(sentinelRef.value)
+            observer.unobserve(sentinel)
+            observer.observe(sentinel)
           }
         }
-      }
+      },
+      { immediate: true }
     )
   })
 
@@ -140,13 +154,13 @@ export function useInfiniteScroll(
   }
 
   onMounted(() => {
-    if (sentinelRef.value) {
+    if (getEnabled() && getSentinel()) {
       startObserving()
     }
   })
 
   onActivated(() => {
-    if (sentinelRef.value && !isObserving.value) {
+    if (getEnabled() && getSentinel() && !isObserving.value) {
       startObserving()
     }
   })
