@@ -9,7 +9,7 @@
  * - 鼠标/页面切换扰动
  */
 
-import { watch, type Ref } from 'vue'
+import { toValue, watch, type MaybeRefOrGetter } from 'vue'
 import type { ParticleEffectConfig, ParticleEffectType } from '@/stores/settings'
 
 // ==================== 粒子结构 ====================
@@ -602,14 +602,18 @@ interface Disturbance {
 // ==================== 主引擎 ====================
 
 export interface UseParticleEngineOptions {
-  canvas: Ref<HTMLCanvasElement | null>
-  config: Ref<ParticleEffectConfig>
-  animationIntensity: Ref<string>
-  resolvedTheme: Ref<string>
+  canvas: MaybeRefOrGetter<HTMLCanvasElement | null>
+  config: MaybeRefOrGetter<ParticleEffectConfig>
+  animationIntensity: MaybeRefOrGetter<string>
+  resolvedTheme: MaybeRefOrGetter<string>
 }
 
 export function useParticleEngine(options: UseParticleEngineOptions) {
   const { canvas, config, animationIntensity, resolvedTheme } = options
+  const getCanvas = () => toValue(canvas)
+  const getConfig = () => toValue(config)
+  const getAnimationIntensity = () => toValue(animationIntensity)
+  const getResolvedTheme = () => toValue(resolvedTheme)
 
   let ctx: CanvasRenderingContext2D | null = null
   let pool: Particle[] = []
@@ -646,35 +650,37 @@ export function useParticleEngine(options: UseParticleEngineOptions) {
   }
 
   function shouldRun(): boolean {
-    if (config.value.type === 'none') return false
-    if (animationIntensity.value === 'none') return false
+    if (getConfig().type === 'none') return false
+    if (getAnimationIntensity() === 'none') return false
     if (reducedMotionQuery?.matches) return false
     return true
   }
 
   function getDensityMultiplier(): number {
-    const i = animationIntensity.value
+    const i = getAnimationIntensity()
     if (i === 'reduced') return 0.4
     if (i === 'full') return 1.2
     return 1
   }
 
   function getParticleCount(): number {
-    const type = config.value.type
+    const cfg = getConfig()
+    const type = cfg.type
     if (type === 'none') return 0
     const qualityFactor = quality === 2 ? 1 : quality === 1 ? 0.8 : 0.6
     return Math.round(
-      EFFECTS[type].baseCount * config.value.density * getDensityMultiplier() * qualityFactor
+      EFFECTS[type].baseCount * cfg.density * getDensityMultiplier() * qualityFactor
     )
   }
 
   function resize() {
-    const el = canvas.value
+    const el = getCanvas()
     if (!el) return
 
     const prevW = canvasW
     const prevH = canvasH
-    const scale = getRenderScale(config.value.type, animationIntensity.value, quality)
+    const cfg = getConfig()
+    const scale = getRenderScale(cfg.type, getAnimationIntensity(), quality)
     dpr = Math.min(window.devicePixelRatio || 1, 2) * scale
     canvasW = window.innerWidth
     canvasH = window.innerHeight
@@ -702,7 +708,8 @@ export function useParticleEngine(options: UseParticleEngineOptions) {
   }
 
   function initParticles() {
-    const type = config.value.type
+    const cfg = getConfig()
+    const type = cfg.type
     if (type === 'none') return
 
     currentEffect = EFFECTS[type]
@@ -714,7 +721,7 @@ export function useParticleEngine(options: UseParticleEngineOptions) {
     }
 
     for (let i = 0; i < pool.length; i++) {
-      if (i < count) currentEffect.init(pool[i]!, canvasW, canvasH, config.value)
+      if (i < count) currentEffect.init(pool[i]!, canvasW, canvasH, cfg)
       else pool[i]!.active = false
     }
   }
@@ -790,15 +797,16 @@ export function useParticleEngine(options: UseParticleEngineOptions) {
     ctx.clearRect(0, 0, canvasW, canvasH)
 
     const count = getParticleCount()
-    const theme = resolvedTheme.value
+    const cfg = getConfig()
+    const theme = getResolvedTheme()
 
     for (let i = 0; i < count && i < pool.length; i++) {
       const p = pool[i]!
       if (!p.active) continue
-      currentEffect.update(p, canvasW, canvasH, dt, config.value)
+      currentEffect.update(p, canvasW, canvasH, dt, cfg)
 
       applyDisturbance(p, dt)
-      currentEffect.render(ctx, p, config.value, theme)
+      currentEffect.render(ctx, p, cfg, theme)
     }
 
     rafId = requestAnimationFrame(tick)
@@ -944,7 +952,7 @@ export function useParticleEngine(options: UseParticleEngineOptions) {
   // ---- 响应变化 ----
 
   watch(
-    config,
+    () => getConfig(),
     (newCfg, oldCfg) => {
       if (newCfg.type === 'none') {
         needsInit = true
@@ -962,14 +970,17 @@ export function useParticleEngine(options: UseParticleEngineOptions) {
     { deep: true }
   )
 
-  watch(animationIntensity, () => {
-    if (!shouldRun()) stop()
-    else if (!running) start()
-    else {
-      resize()
-      initParticles()
+  watch(
+    () => getAnimationIntensity(),
+    () => {
+      if (!shouldRun()) stop()
+      else if (!running) start()
+      else {
+        resize()
+        initParticles()
+      }
     }
-  })
+  )
 
   return { mount, dispose, start, stop }
 }
