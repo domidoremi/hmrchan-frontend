@@ -130,7 +130,6 @@
                 <PostCard
                   v-for="(post, postIndex) in column"
                   :key="post.id"
-                  v-memo="getPostMemo(post, postIndex < 2)"
                   :post="post"
                   :priority="postIndex < 2"
                   @click="(_id, thumb) => openPostPreview(post, thumb)"
@@ -458,17 +457,6 @@ useInfiniteScroll(sentinelRef, loadMore, {
 
 function goToExplore() {
   router.push('/explore')
-}
-
-function getPostMemo(post: PostListItem, isPriority: boolean) {
-  return [
-    post.id,
-    post.updated_at ?? post.published_at ?? '',
-    post.like_count ?? 0,
-    post.comment_count ?? 0,
-    post.view_count ?? 0,
-    isPriority,
-  ]
 }
 
 function openPostPreview(post: PostListItem, thumbnailSrc: string | null) {

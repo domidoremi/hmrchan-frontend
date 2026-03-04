@@ -96,7 +96,6 @@
               <PostCard
                 v-for="(post, postIndex) in column"
                 :key="post.id"
-                v-memo="getPostMemo(post, colIndex === 0 && postIndex < 2)"
                 :post="post"
                 image-fit="cover"
                 :priority="colIndex === 0 && postIndex < 2"
@@ -304,17 +303,6 @@ function goToPost(postId: string, thumbnailSrc: string | null) {
 
 function goToSearch() {
   router.push({ name: 'search' })
-}
-
-function getPostMemo(post: PostListItem, isPriority: boolean) {
-  return [
-    post.id,
-    post.updated_at ?? post.published_at ?? '',
-    post.like_count ?? 0,
-    post.comment_count ?? 0,
-    post.view_count ?? 0,
-    isPriority,
-  ]
 }
 
 function getSortParams(sort: 'newest' | 'popular' | 'trending') {
