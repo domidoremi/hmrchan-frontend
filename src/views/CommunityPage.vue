@@ -311,7 +311,7 @@
 <script setup lang="ts">
 defineOptions({ name: 'CommunityPage' })
 
-import { ref, computed, onMounted, watch, onWatcherCleanup } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, onWatcherCleanup } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { MessageSquare, Flame, HelpCircle, Search, X } from 'lucide-vue-next'
@@ -359,6 +359,8 @@ let searchRequestToken = 0
 const isLoadingHot = ref(false)
 const hotTopicsError = ref<string | null>(null)
 const hotTopics = ref<Discussion[]>([])
+let hotTopicsController: AbortController | null = null
+let hotTopicsRequestToken = 0
 
 const { elementRef: sentinelRef, setElementRef: setSentinelRef } =
   useForwardedElementRef<HTMLElement>()
@@ -375,12 +377,12 @@ const tabs = computed(() => [
 function switchTab(tabId: string) {
   activeTab.value = tabId
   if (tabId === 'hot' && hotTopics.value.length === 0) {
-    fetchHotTopics()
+    void fetchHotTopics()
   }
 }
 
 function handleDiscussionCreated() {
-  discStore.fetchDiscussions(true)
+  void discStore.fetchDiscussions(true)
 }
 
 function prefetchDiscussionDetailPage() {
@@ -412,36 +414,57 @@ function goToLogin() {
 }
 
 async function fetchDiscussions(): Promise<boolean> {
-  await discStore.fetchDiscussions(true)
-  return !discStore.error
+  return discStore.fetchDiscussions(true)
 }
 
 async function loadMore(): Promise<boolean> {
   if (!hasMore.value || isLoading.value) return false
-  await discStore.loadMore()
-  return !discStore.error
+  return discStore.loadMore()
 }
 
 async function fetchHotTopics() {
+  hotTopicsController?.abort()
+  const controller = new AbortController()
+  hotTopicsController = controller
+  const requestToken = ++hotTopicsRequestToken
   isLoadingHot.value = true
   hotTopicsError.value = null
 
   try {
-    const res = await discussionService.list({
-      page: 1,
-      page_size: 6,
-      sort_by: 'comments_count',
-      sort_order: 'desc',
-    })
+    const res = await discussionService.list(
+      {
+        page: 1,
+        page_size: 6,
+        sort_by: 'comments_count',
+        sort_order: 'desc',
+      },
+      {
+        signal: controller.signal,
+        skipErrorToast: true,
+      }
+    )
+    if (controller.signal.aborted || requestToken !== hotTopicsRequestToken) return
     hotTopics.value = res.items.slice(0, 6)
   } catch (err) {
+    if (
+      controller.signal.aborted ||
+      (err instanceof DOMException && err.name === 'AbortError') ||
+      requestToken !== hotTopicsRequestToken
+    ) {
+      return
+    }
     if (err instanceof ApiError) {
       hotTopicsError.value = err.message
     } else {
       hotTopicsError.value = t('common.error')
     }
   } finally {
-    isLoadingHot.value = false
+    if (requestToken === hotTopicsRequestToken) {
+      isLoadingHot.value = false
+      if (hotTopicsController === controller) {
+        hotTopicsController = null
+      }
+    }
   }
 }
 
@@ -521,8 +544,13 @@ useInfiniteScroll(sentinelRef, loadMore, {
 
 onMounted(() => {
   if (discStore.items.length === 0) {
-    discStore.fetchDiscussions(true)
+    void discStore.fetchDiscussions(true)
   }
+})
+
+onUnmounted(() => {
+  hotTopicsController?.abort()
+  hotTopicsController = null
 })
 </script>
 
