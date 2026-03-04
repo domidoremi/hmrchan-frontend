@@ -89,7 +89,7 @@
   </section>
 </template>
 
-<script setup lang="ts">
+<script setup lang="ts" vapor>
 import { ref, computed, watch, onWatcherCleanup } from 'vue'
 import { MessageSquare } from 'lucide-vue-next'
 import { storeToRefs } from 'pinia'
