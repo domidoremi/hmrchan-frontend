@@ -1,8 +1,9 @@
 <template>
   <textarea
     ref="textareaRef"
+    :id="textareaId"
     :class="textareaClass"
-    :value="modelValue"
+    :value="model"
     :disabled="disabled"
     :readonly="readonly"
     :aria-invalid="error || ariaInvalid ? 'true' : undefined"
@@ -12,12 +13,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, useAttrs } from 'vue'
+import { computed, ref, useAttrs, useId } from 'vue'
 
 defineOptions({ inheritAttrs: false, name: 'UiTextarea' })
 
 interface Props {
-  modelValue?: string
   size?: 'sm' | 'default' | 'lg'
   disabled?: boolean
   readonly?: boolean
@@ -31,13 +31,13 @@ const props = withDefaults(defineProps<Props>(), {
   error: false,
 })
 
-const emit = defineEmits<{
-  'update:modelValue': [value: string]
-}>()
+const model = defineModel<string>()
 
 const textareaRef = ref<HTMLTextAreaElement | null>(null)
 
 const attrs = useAttrs()
+const generatedId = useId()
+const textareaId = computed(() => (attrs.id as string | undefined) ?? generatedId)
 
 const ariaInvalid = computed(() => attrs['aria-invalid'] === 'true')
 
@@ -52,7 +52,7 @@ const textareaClass = computed(() => [
 ])
 
 function handleInput(event: Event) {
-  emit('update:modelValue', (event.target as HTMLTextAreaElement).value)
+  model.value = (event.target as HTMLTextAreaElement).value
 }
 
 defineExpose({ el: textareaRef })

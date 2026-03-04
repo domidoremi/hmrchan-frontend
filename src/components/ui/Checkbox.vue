@@ -2,14 +2,14 @@
   <button
     type="button"
     role="checkbox"
-    :aria-checked="indeterminate ? 'mixed' : modelValue"
+    :aria-checked="indeterminate ? 'mixed' : model"
     :aria-label="label"
     :disabled="disabled"
     :class="checkboxClass"
     @click="toggle"
   >
     <svg
-      v-if="modelValue && !indeterminate"
+      v-if="model && !indeterminate"
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 24 24"
       fill="none"
@@ -42,7 +42,6 @@ import { computed } from 'vue'
 defineOptions({ name: 'UiCheckbox' })
 
 interface Props {
-  modelValue?: boolean
   disabled?: boolean
   indeterminate?: boolean
   label?: string
@@ -50,28 +49,25 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  modelValue: false,
   disabled: false,
   indeterminate: false,
   size: 'default',
 })
 
-const emit = defineEmits<{
-  'update:modelValue': [value: boolean]
-}>()
+const model = defineModel<boolean>({ default: false })
 
 const checkboxClass = computed(() => [
   'ui-checkbox',
   `ui-checkbox--${props.size}`,
   {
-    'ui-checkbox--checked': props.modelValue || props.indeterminate,
+    'ui-checkbox--checked': model.value || props.indeterminate,
     'ui-checkbox--disabled': props.disabled,
   },
 ])
 
 function toggle() {
   if (!props.disabled) {
-    emit('update:modelValue', !props.modelValue)
+    model.value = !model.value
   }
 }
 </script>

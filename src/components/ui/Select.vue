@@ -1,7 +1,8 @@
 <template>
   <select
+    :id="selectId"
     :class="selectClass"
-    :value="modelValue"
+    :value="model"
     :disabled="disabled"
     :aria-invalid="error || ariaInvalid ? 'true' : undefined"
     v-bind="attrs"
@@ -12,12 +13,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, useAttrs } from 'vue'
+import { computed, useAttrs, useId } from 'vue'
 
 defineOptions({ inheritAttrs: false, name: 'UiSelect' })
 
 interface Props {
-  modelValue?: string | number
   size?: 'sm' | 'default' | 'lg'
   disabled?: boolean
   error?: boolean
@@ -29,11 +29,14 @@ const props = withDefaults(defineProps<Props>(), {
   error: false,
 })
 
-const emit = defineEmits<{
-  'update:modelValue': [value: string]
+const model = defineModel<string | number>()
+defineSlots<{
+  default?: () => unknown
 }>()
 
 const attrs = useAttrs()
+const generatedId = useId()
+const selectId = computed(() => (attrs.id as string | undefined) ?? generatedId)
 
 const ariaInvalid = computed(() => attrs['aria-invalid'] === 'true')
 
@@ -47,7 +50,7 @@ const selectClass = computed(() => [
 ])
 
 function handleChange(event: Event) {
-  emit('update:modelValue', (event.target as HTMLSelectElement).value)
+  model.value = (event.target as HTMLSelectElement).value
 }
 </script>
 

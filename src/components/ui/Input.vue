@@ -1,8 +1,9 @@
 <template>
   <input
+    :id="inputId"
     :class="inputClass"
     :type="type"
-    :value="modelValue"
+    :value="model"
     :disabled="disabled"
     :readonly="readonly"
     :aria-invalid="error || ariaInvalid ? 'true' : undefined"
@@ -12,12 +13,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, useAttrs } from 'vue'
+import { computed, useAttrs, useId } from 'vue'
 
 defineOptions({ inheritAttrs: false, name: 'UiInput' })
 
 interface Props {
-  modelValue?: string | number
   type?: string
   size?: 'sm' | 'default' | 'lg'
   disabled?: boolean
@@ -33,11 +33,11 @@ const props = withDefaults(defineProps<Props>(), {
   error: false,
 })
 
-const emit = defineEmits<{
-  'update:modelValue': [value: string]
-}>()
+const model = defineModel<string | number>()
 
 const attrs = useAttrs()
+const generatedId = useId()
+const inputId = computed(() => (attrs.id as string | undefined) ?? generatedId)
 
 const ariaInvalid = computed(() => attrs['aria-invalid'] === 'true')
 
@@ -52,7 +52,7 @@ const inputClass = computed(() => [
 ])
 
 function handleInput(event: Event) {
-  emit('update:modelValue', (event.target as HTMLInputElement).value)
+  model.value = (event.target as HTMLInputElement).value
 }
 </script>
 

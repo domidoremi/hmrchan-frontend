@@ -114,7 +114,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, useTemplateRef } from 'vue'
 import { X, Circle, Square } from 'lucide-vue-next'
 import Button from './Button.vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
@@ -133,8 +133,8 @@ const emit = defineEmits<{
   cancel: []
 }>()
 
-const containerRef = ref<HTMLDivElement>()
-const imageRef = ref<HTMLImageElement>()
+const containerRef = useTemplateRef<HTMLDivElement>('containerRef')
+const imageRef = useTemplateRef<HTMLImageElement>('imageRef')
 const shape = ref<'circle' | 'square'>('circle')
 
 const imageSize = ref({ width: 0, height: 0 })
