@@ -35,12 +35,34 @@ export const useDiscussionsStore = defineStore('discussions', () => {
   const commentsTotal = ref(0)
   const commentsTotalPages = ref(0)
   const commentsLoading = ref(false)
+  let fetchDiscussionsController: AbortController | null = null
+  let fetchDiscussionsToken = 0
+  let fetchCommentsController: AbortController | null = null
+  let fetchCommentsToken = 0
 
   const hasMore = computed(() => page.value < totalPages.value)
   const hasMoreComments = computed(() => commentsPage.value < commentsTotalPages.value)
 
-  async function fetchDiscussions(reset = false) {
-    if (isLoading.value) return
+  function abortFetchDiscussions() {
+    fetchDiscussionsController?.abort()
+    fetchDiscussionsController = null
+  }
+
+  function abortFetchComments() {
+    fetchCommentsController?.abort()
+    fetchCommentsController = null
+  }
+
+  async function fetchDiscussions(reset = false): Promise<boolean> {
+    if (reset) {
+      abortFetchDiscussions()
+    } else if (isLoading.value) {
+      return false
+    }
+
+    const controller = new AbortController()
+    fetchDiscussionsController = controller
+    const requestToken = ++fetchDiscussionsToken
     isLoading.value = true
     error.value = null
 
@@ -54,7 +76,11 @@ export const useDiscussionsStore = defineStore('discussions', () => {
         sort: currentSort.value,
       }
 
-      const res: PaginatedApiResponse<Discussion> = await discussionService.list(params)
+      const res: PaginatedApiResponse<Discussion> = await discussionService.list(params, {
+        signal: controller.signal,
+        skipErrorToast: true,
+      })
+      if (controller.signal.aborted || requestToken !== fetchDiscussionsToken) return false
 
       if (reset) {
         items.value = res.items
@@ -66,17 +92,29 @@ export const useDiscussionsStore = defineStore('discussions', () => {
 
       total.value = res.total
       totalPages.value = res.total_pages
+      return true
     } catch {
+      if (controller.signal.aborted || requestToken !== fetchDiscussionsToken) return false
       error.value = 'discussion.error.fetchFailed'
+      return false
     } finally {
-      isLoading.value = false
+      if (requestToken === fetchDiscussionsToken) {
+        isLoading.value = false
+        if (fetchDiscussionsController === controller) {
+          fetchDiscussionsController = null
+        }
+      }
     }
   }
 
   async function loadMore() {
     if (!hasMore.value || isLoading.value) return
-    page.value++
-    await fetchDiscussions()
+    const nextPage = page.value + 1
+    page.value = nextPage
+    const ok = await fetchDiscussions()
+    if (!ok) {
+      page.value = nextPage - 1
+    }
   }
 
   async function fetchDiscussion(id: string, config?: RequestConfig) {
@@ -89,8 +127,16 @@ export const useDiscussionsStore = defineStore('discussions', () => {
     }
   }
 
-  async function fetchComments(discussionId: string, reset = false) {
-    if (commentsLoading.value) return
+  async function fetchComments(discussionId: string, reset = false): Promise<boolean> {
+    if (reset) {
+      abortFetchComments()
+    } else if (commentsLoading.value) {
+      return false
+    }
+
+    const controller = new AbortController()
+    fetchCommentsController = controller
+    const requestToken = ++fetchCommentsToken
     commentsLoading.value = true
 
     try {
@@ -101,7 +147,11 @@ export const useDiscussionsStore = defineStore('discussions', () => {
         page_size: 20,
         sort: 'newest',
         preload_replies: 3,
+      }, {
+        signal: controller.signal,
+        skipErrorToast: true,
       })
+      if (controller.signal.aborted || requestToken !== fetchCommentsToken) return false
 
       if (reset) {
         currentComments.value = res.items
@@ -113,17 +163,29 @@ export const useDiscussionsStore = defineStore('discussions', () => {
 
       commentsTotal.value = res.total
       commentsTotalPages.value = res.total_pages
+      return true
     } catch {
+      if (controller.signal.aborted || requestToken !== fetchCommentsToken) return false
       // silent
+      return false
     } finally {
-      commentsLoading.value = false
+      if (requestToken === fetchCommentsToken) {
+        commentsLoading.value = false
+        if (fetchCommentsController === controller) {
+          fetchCommentsController = null
+        }
+      }
     }
   }
 
   async function loadMoreComments(discussionId: string) {
     if (!hasMoreComments.value || commentsLoading.value) return
-    commentsPage.value++
-    await fetchComments(discussionId)
+    const nextPage = commentsPage.value + 1
+    commentsPage.value = nextPage
+    const ok = await fetchComments(discussionId)
+    if (!ok) {
+      commentsPage.value = nextPage - 1
+    }
   }
 
   async function likeDiscussion(discussionId: string) {
@@ -187,7 +249,7 @@ export const useDiscussionsStore = defineStore('discussions', () => {
   function setFilter(category?: DiscussionCategory, sort?: ListDiscussionsParams['sort']) {
     currentCategory.value = category
     if (sort) currentSort.value = sort
-    fetchDiscussions(true)
+    void fetchDiscussions(true)
   }
 
   function updateDiscussionLocally(id: string, patch: Partial<Discussion>) {
@@ -218,10 +280,13 @@ export const useDiscussionsStore = defineStore('discussions', () => {
   }
 
   function $reset() {
+    abortFetchDiscussions()
+    abortFetchComments()
     items.value = []
     total.value = 0
     page.value = 1
     totalPages.value = 0
+    isLoading.value = false
     error.value = null
     currentCategory.value = undefined
     currentSort.value = 'latest'
@@ -230,6 +295,7 @@ export const useDiscussionsStore = defineStore('discussions', () => {
     commentsPage.value = 1
     commentsTotal.value = 0
     commentsTotalPages.value = 0
+    commentsLoading.value = false
   }
 
   return {

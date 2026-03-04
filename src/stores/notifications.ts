@@ -26,11 +26,26 @@ export const useNotificationsStore = defineStore('notifications', () => {
   const unreadOnly = ref(false)
 
   let pollTimer: ReturnType<typeof setInterval> | null = null
+  let fetchNotificationsController: AbortController | null = null
+  let fetchNotificationsToken = 0
 
   const hasUnread = computed(() => unreadCount.value > 0)
 
-  async function fetchNotifications(reset = false) {
-    if (isLoading.value) return
+  function abortFetchNotifications() {
+    fetchNotificationsController?.abort()
+    fetchNotificationsController = null
+  }
+
+  async function fetchNotifications(reset = false): Promise<boolean> {
+    if (reset) {
+      abortFetchNotifications()
+    } else if (isLoading.value) {
+      return false
+    }
+
+    const controller = new AbortController()
+    fetchNotificationsController = controller
+    const requestToken = ++fetchNotificationsToken
     isLoading.value = true
     error.value = null
 
@@ -40,7 +55,11 @@ export const useNotificationsStore = defineStore('notifications', () => {
       const res = await notificationService.getNotifications(page.value, 20, {
         type: filterType.value,
         unreadOnly: unreadOnly.value,
+      }, {
+        signal: controller.signal,
+        skipErrorToast: true,
       })
+      if (controller.signal.aborted || requestToken !== fetchNotificationsToken) return false
 
       if (reset) {
         items.value = res.items
@@ -53,22 +72,34 @@ export const useNotificationsStore = defineStore('notifications', () => {
       total.value = res.total
       unreadCount.value = res.unread_count
       hasMore.value = res.has_more
+      return true
     } catch {
+      if (controller.signal.aborted || requestToken !== fetchNotificationsToken) return false
       error.value = 'notification.error.fetchFailed'
+      return false
     } finally {
-      isLoading.value = false
+      if (requestToken === fetchNotificationsToken) {
+        isLoading.value = false
+        if (fetchNotificationsController === controller) {
+          fetchNotificationsController = null
+        }
+      }
     }
   }
 
   async function loadMore() {
     if (!hasMore.value || isLoading.value) return
-    page.value++
-    await fetchNotifications()
+    const nextPage = page.value + 1
+    page.value = nextPage
+    const ok = await fetchNotifications()
+    if (!ok) {
+      page.value = nextPage - 1
+    }
   }
 
   async function refreshUnreadCount() {
     try {
-      const res = await notificationService.getUnreadCount()
+      const res = await notificationService.getUnreadCount({ skipErrorToast: true })
       unreadCount.value = res.unread_count
     } catch {
       // silent
@@ -77,7 +108,7 @@ export const useNotificationsStore = defineStore('notifications', () => {
 
   async function markAsRead(notificationId: string) {
     try {
-      await notificationService.markAsRead(notificationId)
+      await notificationService.markAsRead(notificationId, { skipErrorToast: true })
       const item = items.value.find((n) => n.id === notificationId)
       if (item && !item.is_read) {
         item.is_read = true
@@ -91,7 +122,7 @@ export const useNotificationsStore = defineStore('notifications', () => {
 
   async function markAllAsRead(type?: NotificationType) {
     try {
-      await notificationService.markAllAsRead(type)
+      await notificationService.markAllAsRead(type, { skipErrorToast: true })
       items.value.forEach((n) => {
         if (!type || n.type === type) {
           n.is_read = true
@@ -110,7 +141,7 @@ export const useNotificationsStore = defineStore('notifications', () => {
 
   async function deleteNotification(notificationId: string) {
     try {
-      await notificationService.deleteNotification(notificationId)
+      await notificationService.deleteNotification(notificationId, { skipErrorToast: true })
       const idx = items.value.findIndex((n) => n.id === notificationId)
       if (idx !== -1) {
         const removed = items.value[idx]
@@ -127,7 +158,7 @@ export const useNotificationsStore = defineStore('notifications', () => {
 
   async function clearNotifications(readOnly = true) {
     try {
-      await notificationService.clearNotifications(readOnly)
+      await notificationService.clearNotifications(readOnly, { skipErrorToast: true })
       if (readOnly) {
         items.value = items.value.filter((n) => !n.is_read)
         total.value = items.value.length
@@ -144,7 +175,7 @@ export const useNotificationsStore = defineStore('notifications', () => {
   function setFilter(type?: NotificationType, onlyUnread = false) {
     filterType.value = type
     unreadOnly.value = onlyUnread
-    fetchNotifications(true)
+    void fetchNotifications(true)
   }
 
   function startPolling() {
@@ -160,12 +191,14 @@ export const useNotificationsStore = defineStore('notifications', () => {
   }
 
   function $reset() {
+    abortFetchNotifications()
     stopPolling()
     items.value = []
     total.value = 0
     unreadCount.value = 0
     page.value = 1
     hasMore.value = false
+    isLoading.value = false
     error.value = null
     filterType.value = undefined
     unreadOnly.value = false
