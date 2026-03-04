@@ -193,6 +193,7 @@ const { total, load: loadCachedPosts } = useCachedPostList<PostListItem>(
   { revalidate: false } // 不自动后台更新，减少重复请求
 )
 const page = ref(1)
+let fetchPostsToken = 0
 
 // 移动端优化：减少首屏加载数量
 const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
@@ -322,17 +323,18 @@ function isAbortError(err: unknown): boolean {
 }
 
 async function fetchPosts(reset = true, signal?: AbortSignal) {
+  const requestToken = ++fetchPostsToken
   const hadData = posts.value.length > 0
 
   if (reset) {
-    if (isLoading.value) return false
     isLoading.value = true
+    isLoadingMore.value = false
     page.value = 1
     if (!hadData) {
       posts.value = []
     }
   } else {
-    if (isLoadingMore.value) return false
+    if (isLoadingMore.value || isLoading.value) return false
     isLoadingMore.value = true
   }
 
@@ -377,6 +379,10 @@ async function fetchPosts(reset = true, signal?: AbortSignal) {
       items = result.data as PostListItem[]
     }
 
+    if (signal?.aborted || requestToken !== fetchPostsToken) {
+      return false
+    }
+
     if (reset) {
       posts.value = items
     } else {
@@ -385,11 +391,14 @@ async function fetchPosts(reset = true, signal?: AbortSignal) {
 
     // 更新 masonry 布局（仅渲染可见部分）
     await nextTick()
+    if (signal?.aborted || requestToken !== fetchPostsToken) {
+      return false
+    }
     applyVisiblePosts(reset)
 
     return true
   } catch (err) {
-    if (signal?.aborted || isAbortError(err)) {
+    if (signal?.aborted || isAbortError(err) || requestToken !== fetchPostsToken) {
       return false
     }
     // 筛选时，即使有旧数据也要显示错误
@@ -408,8 +417,10 @@ async function fetchPosts(reset = true, signal?: AbortSignal) {
 
     return false
   } finally {
-    isLoading.value = false
-    isLoadingMore.value = false
+    if (requestToken === fetchPostsToken) {
+      isLoading.value = false
+      isLoadingMore.value = false
+    }
   }
 }
 
