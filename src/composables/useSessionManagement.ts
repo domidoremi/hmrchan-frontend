@@ -3,7 +3,7 @@
  * Handles device session operations with loading states and error handling
  */
 
-import { ref, computed } from 'vue'
+import { ref, computed, getCurrentScope, onScopeDispose } from 'vue'
 import { deviceService, type Device } from '@/api'
 import { useToastStore } from '@/stores/toast'
 import { useI18n } from 'vue-i18n'
@@ -51,19 +51,38 @@ export function useSessionManagement() {
   const sessions = ref<Device[]>([])
   const isLoading = ref(true)
   const isRevoking = ref(false)
+  let sessionsController: AbortController | null = null
+  let sessionsRequestToken = 0
 
   const otherSessionsCount = computed(() => sessions.value.filter((s) => !s.is_current).length)
 
+  function abortFetchSessions() {
+    sessionsController?.abort()
+    sessionsController = null
+  }
+
   async function fetchSessions() {
+    abortFetchSessions()
+    const controller = new AbortController()
+    sessionsController = controller
+    const requestToken = ++sessionsRequestToken
     isLoading.value = true
     try {
-      const response = await deviceService.getDevices()
+      const response = await deviceService.getDevices({
+        signal: controller.signal,
+        skipErrorToast: true,
+      })
+      if (controller.signal.aborted || requestToken !== sessionsRequestToken) return
       let devices = response.devices ?? []
       const hasCurrentDevice = devices.some((device) => device.is_current)
 
       if (!hasCurrentDevice) {
         try {
-          const currentDevice = await deviceService.getCurrentDevice({ skipErrorToast: true })
+          const currentDevice = await deviceService.getCurrentDevice({
+            signal: controller.signal,
+            skipErrorToast: true,
+          })
+          if (controller.signal.aborted || requestToken !== sessionsRequestToken) return
           const currentIndex = devices.findIndex((device) => device.id === currentDevice.id)
           if (currentIndex >= 0) {
             devices[currentIndex] = { ...devices[currentIndex], ...currentDevice, is_current: true }
@@ -79,9 +98,15 @@ export function useSessionManagement() {
 
       sessions.value = deduplicateByDevice(devices)
     } catch {
+      if (controller.signal.aborted || requestToken !== sessionsRequestToken) return
       toastStore.error(t('devices.error.fetchFailed'))
     } finally {
-      isLoading.value = false
+      if (requestToken === sessionsRequestToken) {
+        isLoading.value = false
+        if (sessionsController === controller) {
+          sessionsController = null
+        }
+      }
     }
   }
 
@@ -143,6 +168,12 @@ export function useSessionManagement() {
       toastStore.error(t('devices.error.updateNameFailed'))
       return false
     }
+  }
+
+  if (getCurrentScope()) {
+    onScopeDispose(() => {
+      abortFetchSessions()
+    })
   }
 
   return {
