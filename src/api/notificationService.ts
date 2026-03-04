@@ -4,7 +4,7 @@
  * 提供通知相关的 API 调用
  */
 
-import { apiClient } from './client'
+import { apiClient, type RequestConfig } from './client'
 
 // ========== 类型定义 ==========
 
@@ -56,7 +56,8 @@ export const notificationService = {
     options?: {
       type?: NotificationType
       unreadOnly?: boolean
-    }
+    },
+    config?: RequestConfig
   ): Promise<NotificationListResponse> {
     const params = new URLSearchParams({
       page: String(page),
@@ -70,22 +71,22 @@ export const notificationService = {
       params.set('unread_only', 'true')
     }
 
-    return apiClient.get<NotificationListResponse>(`/notifications?${params.toString()}`)
+    return apiClient.get<NotificationListResponse>(`/notifications?${params.toString()}`, config)
   },
 
   /**
    * 获取未读通知数量
    */
-  async getUnreadCount(): Promise<UnreadCountResponse> {
-    return apiClient.get<UnreadCountResponse>('/notifications/unread-count')
+  async getUnreadCount(config?: RequestConfig): Promise<UnreadCountResponse> {
+    return apiClient.get<UnreadCountResponse>('/notifications/unread-count', config)
   },
 
   /**
    * 标记单条通知为已读
    * PATCH /api/v1/notifications/:id/read → 通知对象
    */
-  async markAsRead(notificationId: string): Promise<Notification> {
-    return apiClient.patch<Notification>(`/notifications/${notificationId}/read`)
+  async markAsRead(notificationId: string, config?: RequestConfig): Promise<Notification> {
+    return apiClient.patch<Notification>(`/notifications/${notificationId}/read`, undefined, config)
   },
 
   /**
@@ -93,18 +94,22 @@ export const notificationService = {
    * POST /api/v1/notifications/read-all → { message, success, count }
    */
   async markAllAsRead(
-    type?: NotificationType
+    type?: NotificationType,
+    config?: RequestConfig
   ): Promise<{ message: string; success: boolean; count: number }> {
     const params = type ? `?type=${type}` : ''
-    return apiClient.post(`/notifications/read-all${params}`)
+    return apiClient.post(`/notifications/read-all${params}`, undefined, config)
   },
 
   /**
    * 删除单条通知
    * DELETE /api/v1/notifications/:id → { message, success }
    */
-  async deleteNotification(notificationId: string): Promise<{ message: string; success: boolean }> {
-    return apiClient.delete(`/notifications/${notificationId}`)
+  async deleteNotification(
+    notificationId: string,
+    config?: RequestConfig
+  ): Promise<{ message: string; success: boolean }> {
+    return apiClient.delete(`/notifications/${notificationId}`, config)
   },
 
   /**
@@ -112,9 +117,10 @@ export const notificationService = {
    * DELETE /api/v1/notifications → { message, success, count }
    */
   async clearNotifications(
-    readOnly = true
+    readOnly = true,
+    config?: RequestConfig
   ): Promise<{ message: string; success: boolean; count: number }> {
     const params = readOnly ? '?read_only=true' : ''
-    return apiClient.delete(`/notifications${params}`)
+    return apiClient.delete(`/notifications${params}`, config)
   },
 }
