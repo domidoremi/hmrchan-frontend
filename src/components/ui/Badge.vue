@@ -18,6 +18,9 @@ const props = withDefaults(defineProps<Props>(), {
   variant: 'default',
   size: 'default',
 })
+defineSlots<{
+  default?: () => unknown
+}>()
 
 const badgeClass = computed(() => [
   'ui-badge',

@@ -40,6 +40,10 @@ const props = withDefaults(defineProps<Props>(), {
   side: 'top',
   delay: 200,
 })
+defineSlots<{
+  default?: () => unknown
+  content?: () => unknown
+}>()
 
 const isVisible = ref(false)
 const tooltipRef = useTemplateRef<HTMLElement>('tooltipRef')
