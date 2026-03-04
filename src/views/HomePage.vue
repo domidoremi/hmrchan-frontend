@@ -175,6 +175,7 @@ import {
   onBeforeUnmount,
   onActivated,
   onDeactivated,
+  useTemplateRef,
   type ComponentPublicInstance,
 } from 'vue'
 import { useRouter } from 'vue-router'
@@ -244,8 +245,8 @@ const { total, load: loadCachedPosts } = useCachedPostList<PostListItem>(
 )
 
 // DOM refs
-const postsSectionRef = ref<HTMLElement | null>(null)
-const containerRef = ref<HTMLElement | null>(null)
+const postsSectionRef = useTemplateRef<HTMLElement>('postsSectionRef')
+const containerRef = useTemplateRef<HTMLElement>('containerRef')
 const columnRefs = ref<(HTMLElement | null)[]>([])
 const sentinelRef = ref<HTMLElement | null>(null)
 

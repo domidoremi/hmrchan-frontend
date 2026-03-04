@@ -367,7 +367,7 @@
 <script setup lang="ts">
 defineOptions({ name: 'SchedulePage' })
 
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch, useTemplateRef } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
   ChevronLeft,
@@ -402,7 +402,7 @@ const currentYear = ref(new Date().getFullYear())
 const currentMonth = ref(new Date().getMonth())
 const activeCategory = ref<ScheduleCategory | 'all'>('all')
 const selectedDay = ref<CalendarDay | null>(null)
-const calendarRef = ref<HTMLElement | null>(null)
+const calendarRef = useTemplateRef<HTMLElement>('calendarRef')
 const monthTransition = ref<'month-slide-left' | 'month-slide-right'>('month-slide-left')
 
 // 详情弹窗
