@@ -351,12 +351,15 @@ export const postService = {
     return apiClient.get<PaginatedApiResponseWithLimit<PostListItem>>(`/posts${query}`, config)
   },
 
-  async getPost(postId: string): Promise<PostDetailResponse> {
+  async getPost(postId: string, config?: RequestConfig): Promise<PostDetailResponse> {
     if (!postId || postId === 'undefined') {
       throw new ApiError('Invalid post ID', 400)
     }
     // 详情页由组件自身渲染错误状态，避免重复全局 toast
-    const raw = await apiClient.get<RawPostDetail>(`/posts/${postId}`, { skipErrorToast: true })
+    const raw = await apiClient.get<RawPostDetail>(`/posts/${postId}`, {
+      skipErrorToast: true,
+      ...config,
+    })
     return normalizePostDetail(raw)
   },
 
