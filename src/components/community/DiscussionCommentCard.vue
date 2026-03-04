@@ -128,6 +128,7 @@
           <DiscussionCommentCard
             v-for="reply in comment.replies"
             :key="reply.id"
+            v-memo="getReplyMemo(reply)"
             :comment="reply"
             :discussion-id="discussionId"
             v-bind="discussionAuthorId ? { discussionAuthorId } : {}"
@@ -186,8 +187,8 @@
   </article>
 </template>
 
-<script setup lang="ts">
-import { ref, computed, nextTick, onMounted, onUnmounted } from 'vue'
+<script setup lang="ts" vapor>
+import { ref, computed, nextTick, onMounted, onUnmounted, useTemplateRef } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 import {
@@ -255,7 +256,7 @@ const showReportDialog = ref(false)
 const isSubmittingReport = ref(false)
 const reportReason = ref('spam')
 const reportDescription = ref('')
-const replyFormRef = ref<InstanceType<typeof DiscussionCommentForm> | null>(null)
+const replyFormRef = useTemplateRef<InstanceType<typeof DiscussionCommentForm>>('replyFormRef')
 const repliesPageSize = 20
 
 const currentDepth = computed(() => props.depth || 0)
@@ -287,6 +288,17 @@ const canDelete = computed(() => {
   if (!user.value) return false
   return isAdmin.value || String(user.value.id) === String(props.comment.user.id)
 })
+
+function getReplyMemo(comment: DiscussionComment) {
+  return [
+    comment.id,
+    comment.updated_at ?? comment.created_at,
+    comment.like_count ?? comment.likes_count ?? 0,
+    comment.reply_count ?? comment.replies_count ?? 0,
+    Boolean(comment.is_pinned),
+    Boolean(comment.is_liked),
+  ]
+}
 
 function formatTime(dateStr: string): string {
   return formatRelativeTime(dateStr, t)
