@@ -11,12 +11,25 @@
  * - 防止重复触发
  */
 
-import { ref, onMounted, onUnmounted, onActivated, onDeactivated, watch, type Ref } from 'vue'
+import {
+  ref,
+  onMounted,
+  onUnmounted,
+  onActivated,
+  onDeactivated,
+  watch,
+  effectScope,
+  getCurrentScope,
+  onScopeDispose,
+  toValue,
+  type MaybeRefOrGetter,
+  type Ref,
+} from 'vue'
 
 export interface UseInfiniteScrollOptions {
   threshold?: number
   rootMargin?: string
-  enabled?: Ref<boolean> | (() => boolean)
+  enabled?: MaybeRefOrGetter<boolean>
 }
 
 export function useInfiniteScroll(
@@ -33,8 +46,7 @@ export function useInfiniteScroll(
 
   function getEnabled(): boolean {
     if (enabled === undefined) return true
-    if (typeof enabled === 'function') return enabled()
-    return enabled.value
+    return toValue(enabled)
   }
 
   async function triggerLoadMore() {
@@ -87,30 +99,45 @@ export function useInfiniteScroll(
     isObserving.value = false
   }
 
-  watch(sentinelRef, (el) => {
-    stopObserving()
-    if (el) {
-      startObserving()
-    }
-  })
-
-  watch(
-    () => getEnabled(),
-    (isEnabled) => {
-      if (!isEnabled) {
-        stopObserving()
-        return
-      }
-
-      if (sentinelRef.value) {
+  const reactiveScope = effectScope()
+  reactiveScope.run(() => {
+    watch(sentinelRef, (el) => {
+      stopObserving()
+      if (el) {
         startObserving()
-        if (observer) {
-          observer.unobserve(sentinelRef.value)
-          observer.observe(sentinelRef.value)
+      }
+    })
+
+    watch(
+      () => getEnabled(),
+      (isEnabled) => {
+        if (!isEnabled) {
+          stopObserving()
+          return
+        }
+
+        if (sentinelRef.value) {
+          startObserving()
+          if (observer) {
+            observer.unobserve(sentinelRef.value)
+            observer.observe(sentinelRef.value)
+          }
         }
       }
-    }
-  )
+    )
+  })
+
+  let disposed = false
+  function dispose() {
+    if (disposed) return
+    disposed = true
+    stopObserving()
+    reactiveScope.stop()
+  }
+
+  if (getCurrentScope()) {
+    onScopeDispose(dispose)
+  }
 
   onMounted(() => {
     if (sentinelRef.value) {
@@ -129,7 +156,7 @@ export function useInfiniteScroll(
   })
 
   onUnmounted(() => {
-    stopObserving()
+    dispose()
   })
 
   return {
