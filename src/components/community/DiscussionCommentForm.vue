@@ -52,7 +52,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, nextTick } from 'vue'
+import { ref, computed, nextTick, useTemplateRef } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { LogIn } from 'lucide-vue-next'
@@ -87,7 +87,7 @@ const { user, isAuthenticated } = storeToRefs(authStore)
 
 const content = ref('')
 const isSubmitting = ref(false)
-const textareaRef = ref<{ el: HTMLTextAreaElement | null } | null>(null)
+const textareaRef = useTemplateRef<{ el: HTMLTextAreaElement | null }>('textareaRef')
 const maxLength = 2000
 
 const { avatarUrl: userAvatar } = useUserAvatar()

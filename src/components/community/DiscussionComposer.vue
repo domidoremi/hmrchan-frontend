@@ -125,7 +125,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onUnmounted } from 'vue'
+import { ref, computed, watch, onUnmounted, useTemplateRef } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
   discussionService,
@@ -147,7 +147,7 @@ const emit = defineEmits<{
 const { t } = useI18n()
 const toastStore = useToastStore()
 
-const textareaRef = ref<{ el: HTMLTextAreaElement | null } | null>(null)
+const textareaRef = useTemplateRef<{ el: HTMLTextAreaElement | null }>('textareaRef')
 const content = ref('')
 const tagInput = ref('')
 const tags = ref<string[]>([])
