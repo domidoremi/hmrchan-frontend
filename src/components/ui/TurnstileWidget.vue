@@ -3,7 +3,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { ref, onMounted, onUnmounted, watch, useTemplateRef } from 'vue'
 
 export interface TurnstileWidgetProps {
   siteKey: string
@@ -25,7 +25,7 @@ const emit = defineEmits<{
   error: [error: Error]
 }>()
 
-const containerRef = ref<HTMLDivElement | null>(null)
+const containerRef = useTemplateRef<HTMLDivElement>('containerRef')
 const widgetId = ref<string | null>(null)
 let isUnmounted = false
 let previousOnloadHandler: (() => void) | null = null

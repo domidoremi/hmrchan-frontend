@@ -25,7 +25,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onUnmounted } from 'vue'
+import { ref, computed, onUnmounted, useTemplateRef } from 'vue'
 
 defineOptions({ name: 'UiSlider' })
 
@@ -59,7 +59,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 const model = defineModel<number>({ default: 0 })
 
-const trackRef = ref<HTMLElement | null>(null)
+const trackRef = useTemplateRef<HTMLElement>('trackRef')
 const isDragging = ref(false)
 let dragMoveHandler: ((e: MouseEvent | TouchEvent) => void) | null = null
 let dragEndHandler: (() => void) | null = null

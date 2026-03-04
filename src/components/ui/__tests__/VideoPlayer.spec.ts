@@ -13,6 +13,7 @@ const i18n = createI18n({
         quality: 'Quality',
         auto: 'Auto',
         player: 'Video player',
+        seek: 'Seek bar',
         play: 'Play',
         pause: 'Pause',
         volume: 'Volume',
