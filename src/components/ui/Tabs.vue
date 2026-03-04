@@ -44,7 +44,6 @@ interface Tab {
 }
 
 interface Props {
-  modelValue: string
   tabs: Tab[]
 }
 
@@ -53,19 +52,17 @@ defineSlots<{
   default?: () => unknown
 }>()
 
-const emit = defineEmits<{
-  'update:modelValue': [value: string]
-}>()
+const modelValue = defineModel<string>({ required: true })
 
 function selectTab(value: string) {
-  emit('update:modelValue', value)
+  modelValue.value = value
 }
 
 function handleKeydown(event: KeyboardEvent, currentIndex: number) {
   const enabledTabs = props.tabs.filter((tab) => !tab.disabled)
   if (enabledTabs.length === 0) return
 
-  const activeEnabledIndex = enabledTabs.findIndex((tab) => tab.value === props.modelValue)
+  const activeEnabledIndex = enabledTabs.findIndex((tab) => tab.value === modelValue.value)
   const currentEnabledIndex = enabledTabs.findIndex(
     (tab) => tab.value === props.tabs[currentIndex]?.value
   )
