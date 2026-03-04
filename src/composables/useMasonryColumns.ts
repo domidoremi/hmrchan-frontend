@@ -1,4 +1,4 @@
-import { ref, watch } from 'vue'
+import { ref } from 'vue'
 import type { PostListItem } from '@/api/postService'
 
 /**
@@ -190,11 +190,6 @@ export function useMasonryColumns(options: MasonryOptions = {}) {
     const totalGap = gap * (columnCount.value - 1)
     return (containerWidth - totalGap) / columnCount.value
   }
-
-  // 监听列数变化，需要外部调用 redistribute
-  watch(columnCount, () => {
-    // 列数变化时，外部需要调用 redistribute 重新分配
-  })
 
   // 初始化
   initColumns()
