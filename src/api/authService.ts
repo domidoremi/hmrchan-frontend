@@ -232,9 +232,11 @@ export const authService = {
    * 发送注册验证码（6位，限流3次/小时，需Turnstile）
    */
   async sendRegistrationCode(
-    data: SendRegistrationCodeRequest
+    data: SendRegistrationCodeRequest,
+    config?: RequestConfig
   ): Promise<SendRegistrationCodeResponse> {
     return apiClient.post('/email/send-registration-code', data, {
+      ...config,
       skipAuth: true,
       skipErrorToast: true,
     })
@@ -300,11 +302,15 @@ export const authService = {
    * 发送修改密码验证码
    * POST /api/v1/email/send-change-password-code
    */
-  async sendChangePasswordCode(password: string): Promise<{ message: string }> {
+  async sendChangePasswordCode(
+    password: string,
+    config?: RequestConfig
+  ): Promise<{ message: string }> {
     return apiClient.post(
       '/email/send-change-password-code',
       { password },
       {
+        ...config,
         skipErrorToast: true,
       }
     )
@@ -314,7 +320,11 @@ export const authService = {
    * 发送修改邮箱验证码
    * POST /api/v1/email/send-change-email-code
    */
-  async sendChangeEmailCode(password: string, newEmail: string): Promise<{ message: string }> {
+  async sendChangeEmailCode(
+    password: string,
+    newEmail: string,
+    config?: RequestConfig
+  ): Promise<{ message: string }> {
     return apiClient.post(
       '/email/send-change-email-code',
       {
@@ -322,6 +332,7 @@ export const authService = {
         new_email: newEmail,
       },
       {
+        ...config,
         skipErrorToast: true,
       }
     )
@@ -333,7 +344,8 @@ export const authService = {
    */
   async changePasswordByEmailCode(
     verificationCode: string,
-    newPassword: string
+    newPassword: string,
+    config?: RequestConfig
   ): Promise<VerifyEmailCodeResponse> {
     return apiClient.post(
       '/email/change-password',
@@ -342,6 +354,7 @@ export const authService = {
         new_password: newPassword,
       },
       {
+        ...config,
         skipErrorToast: true,
       }
     )
@@ -350,35 +363,39 @@ export const authService = {
   /**
    * 发送邮箱验证码（兼容旧调用）
    */
-  async sendEmailCode(data: SendEmailCodeRequest): Promise<{ message: string }> {
+  async sendEmailCode(data: SendEmailCodeRequest, config?: RequestConfig): Promise<{ message: string }> {
     if (data.action === 'change_email') {
       if (!data.password || !data.new_email) {
         throw new ApiError('Missing password or new email', 400, 'BAD_REQUEST')
       }
-      return this.sendChangeEmailCode(data.password, data.new_email)
+      return this.sendChangeEmailCode(data.password, data.new_email, config)
     }
 
     if (!data.password) {
       throw new ApiError('Missing password', 400, 'BAD_REQUEST')
     }
-    return this.sendChangePasswordCode(data.password)
+    return this.sendChangePasswordCode(data.password, config)
   },
 
   /**
    * 验证邮箱验证码（兼容旧调用）
    */
-  async verifyEmailCode(data: VerifyEmailCodeRequest): Promise<VerifyEmailCodeResponse> {
+  async verifyEmailCode(
+    data: VerifyEmailCodeRequest,
+    config?: RequestConfig
+  ): Promise<VerifyEmailCodeResponse> {
     if (data.action === 'change_password') {
       if (!data.new_password) {
         throw new ApiError('Missing new password', 400, 'BAD_REQUEST')
       }
-      return this.changePasswordByEmailCode(data.verification_code, data.new_password)
+      return this.changePasswordByEmailCode(data.verification_code, data.new_password, config)
     }
 
     return apiClient.post(
       '/email/change-email',
       { verification_code: data.verification_code },
       {
+        ...config,
         skipErrorToast: true,
       }
     )

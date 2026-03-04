@@ -2,7 +2,7 @@
  * Favorites Service - 收藏相关 API
  */
 
-import { apiClient, ApiError, type PaginatedApiResponse } from './client'
+import { apiClient, ApiError, type PaginatedApiResponse, type RequestConfig } from './client'
 
 // ========== 类型定义 ==========
 
@@ -75,8 +75,9 @@ export const favoriteService = {
   /**
    * 检查帖子是否已收藏
    */
-  async check(postId: string): Promise<FavoriteCheckResponse> {
+  async check(postId: string, config?: RequestConfig): Promise<FavoriteCheckResponse> {
     return apiClient.get<FavoriteCheckResponse>(`/favorites/check/${postId}`, {
+      ...config,
       skipErrorToast: true,
     })
   },
