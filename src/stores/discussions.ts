@@ -142,15 +142,19 @@ export const useDiscussionsStore = defineStore('discussions', () => {
     try {
       if (reset) commentsPage.value = 1
 
-      const res = await discussionService.getComments(discussionId, {
-        page: commentsPage.value,
-        page_size: 20,
-        sort: 'newest',
-        preload_replies: 3,
-      }, {
-        signal: controller.signal,
-        skipErrorToast: true,
-      })
+      const res = await discussionService.getComments(
+        discussionId,
+        {
+          page: commentsPage.value,
+          page_size: 20,
+          sort: 'newest',
+          preload_replies: 3,
+        },
+        {
+          signal: controller.signal,
+          skipErrorToast: true,
+        }
+      )
       if (controller.signal.aborted || requestToken !== fetchCommentsToken) return false
 
       if (reset) {

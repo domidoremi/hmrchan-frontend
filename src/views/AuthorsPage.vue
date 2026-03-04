@@ -76,7 +76,7 @@
 <script setup lang="ts">
 defineOptions({ name: 'AuthorsPage' })
 
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { authorService, type AuthorListItem, ApiError } from '@/api'
@@ -107,6 +107,13 @@ const { elementRef: sentinelRef, setElementRef: setSentinelRef } =
   useForwardedElementRef<HTMLElement>()
 
 let hasPrefetchedAuthorDetailPage = false
+let fetchAuthorsController: AbortController | null = null
+let fetchAuthorsToken = 0
+
+function abortFetchAuthors() {
+  fetchAuthorsController?.abort()
+  fetchAuthorsController = null
+}
 
 function prefetchAuthorDetailPage() {
   if (hasPrefetchedAuthorDetailPage) return
@@ -118,7 +125,7 @@ async function fetchAuthors(reset = true): Promise<boolean> {
   const hadData = authors.value.length > 0
 
   if (reset) {
-    if (isLoading.value) return false
+    abortFetchAuthors()
     isLoading.value = true
     page.value = 1
     if (!hadData) {
@@ -132,18 +139,26 @@ async function fetchAuthors(reset = true): Promise<boolean> {
   error.value = null
 
   const params = { page: page.value, page_size: pageSize }
-
-  // 从缓存快速加载（仅首次加载时）
-  if (reset && !hadData) {
-    const cached = await authorCache.getList(params)
-    if (cached) {
-      authors.value = cached.data as AuthorListItem[]
-      total.value = cached.total
-    }
-  }
+  const controller = new AbortController()
+  fetchAuthorsController = controller
+  const requestToken = ++fetchAuthorsToken
 
   try {
-    const res = await authorService.listAuthors(params)
+    // 从缓存快速加载（仅首次加载时）
+    if (reset && !hadData) {
+      const cached = await authorCache.getList(params)
+      if (controller.signal.aborted || requestToken !== fetchAuthorsToken) return false
+      if (cached) {
+        authors.value = cached.data as AuthorListItem[]
+        total.value = cached.total
+      }
+    }
+
+    const res = await authorService.listAuthors(params, {
+      signal: controller.signal,
+      skipErrorToast: true,
+    })
+    if (controller.signal.aborted || requestToken !== fetchAuthorsToken) return false
 
     if (reset) {
       authors.value = res.items
@@ -156,6 +171,7 @@ async function fetchAuthors(reset = true): Promise<boolean> {
 
     return true
   } catch (err) {
+    if (controller.signal.aborted || requestToken !== fetchAuthorsToken) return false
     if (authors.value.length === 0) {
       if (err instanceof ApiError) {
         error.value = err.message
@@ -166,8 +182,13 @@ async function fetchAuthors(reset = true): Promise<boolean> {
 
     return false
   } finally {
-    isLoading.value = false
-    isLoadingMore.value = false
+    if (requestToken === fetchAuthorsToken) {
+      isLoading.value = false
+      isLoadingMore.value = false
+      if (fetchAuthorsController === controller) {
+        fetchAuthorsController = null
+      }
+    }
   }
 }
 
@@ -194,8 +215,12 @@ function goToAuthor(authorId: string) {
 
 onMounted(() => {
   if (authors.value.length === 0) {
-    fetchAuthors()
+    void fetchAuthors()
   }
+})
+
+onUnmounted(() => {
+  abortFetchAuthors()
 })
 </script>
 
