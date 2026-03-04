@@ -1,14 +1,17 @@
 <template>
-  <div class="ui-slider" :class="{ 'ui-slider--disabled': disabled }">
+  <div :class="sliderContainerClass" :style="sliderContainerStyle">
     <div
       class="ui-slider__track"
       ref="trackRef"
+      :id="sliderId"
       role="slider"
       tabindex="0"
       :aria-valuemin="min"
       :aria-valuemax="max"
       :aria-valuenow="model"
+      :aria-label="label || ariaLabel"
       :aria-disabled="disabled"
+      v-bind="sliderTrackAttrs"
       @click="handleTrackClick"
       @keydown="handleKeydown"
     >
@@ -25,9 +28,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onUnmounted, useTemplateRef } from 'vue'
+import { ref, computed, onUnmounted, useAttrs, useId, useTemplateRef } from 'vue'
 
-defineOptions({ name: 'UiSlider' })
+defineOptions({ inheritAttrs: false, name: 'UiSlider' })
 
 interface Props {
   min?: number
@@ -35,6 +38,7 @@ interface Props {
   step?: number
   disabled?: boolean
   showValue?: boolean
+  label?: string
 }
 function cleanupDragListeners() {
   if (dragMoveHandler) {
@@ -58,6 +62,28 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const model = defineModel<number>({ default: 0 })
+
+const attrs = useAttrs()
+const generatedId = useId()
+const sliderId = computed(() => (attrs.id as string | undefined) ?? generatedId)
+const ariaLabel = computed(() => attrs['aria-label'] as string | undefined)
+const sliderContainerClass = computed(() => [
+  'ui-slider',
+  attrs.class,
+  {
+    'ui-slider--disabled': props.disabled,
+  },
+])
+const sliderContainerStyle = computed(
+  () => (attrs.style as string | Record<string, unknown> | undefined) ?? undefined
+)
+const sliderTrackAttrs = computed(() => {
+  const rest = { ...(attrs as Record<string, unknown>) }
+  delete rest.class
+  delete rest.style
+  delete rest.id
+  return rest
+})
 
 const trackRef = useTemplateRef<HTMLElement>('trackRef')
 const isDragging = ref(false)

@@ -1,11 +1,13 @@
 <template>
   <button
+    :id="switchId"
     type="button"
     role="switch"
     :aria-checked="model"
-    :aria-label="label"
+    :aria-label="label || ariaLabel"
     :disabled="disabled"
     :class="switchClass"
+    v-bind="attrs"
     @click="toggle"
   >
     <span class="ui-switch__thumb" />
@@ -13,9 +15,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, useAttrs, useId } from 'vue'
 
-defineOptions({ name: 'UiSwitch' })
+defineOptions({ inheritAttrs: false, name: 'UiSwitch' })
 
 interface Props {
   disabled?: boolean
@@ -29,6 +31,10 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const model = defineModel<boolean>({ default: false })
+const attrs = useAttrs()
+const generatedId = useId()
+const switchId = computed(() => (attrs.id as string | undefined) ?? generatedId)
+const ariaLabel = computed(() => attrs['aria-label'] as string | undefined)
 
 const switchClass = computed(() => [
   'ui-switch',
