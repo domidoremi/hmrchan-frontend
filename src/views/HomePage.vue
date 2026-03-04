@@ -236,9 +236,13 @@ const initialMasonryCount = typeof window !== 'undefined' && window.innerWidth <
 
 // 使用缓存感知的帖子列表加载
 const { total, load: loadCachedPosts } = useCachedPostList<PostListItem>(
-  async (params) => {
+  async (params, config) => {
     const result = await postService.listPosts(
-      params as Parameters<typeof postService.listPosts>[0]
+      params as Parameters<typeof postService.listPosts>[0],
+      {
+        ...config,
+        skipErrorToast: true,
+      }
     )
     return { data: result.items, total: result.total }
   },
@@ -283,6 +287,7 @@ onActivated(() => {
 })
 
 onDeactivated(() => {
+  abortLatestPostsRequest()
   detachResizeObserver()
   clearInitialPostsFetchTriggers()
   handleContainerResize.cancel?.()
@@ -296,6 +301,13 @@ let postsFetchObserver: IntersectionObserver | null = null
 let initialPostsFetchTimer: number | null = null
 let hasTriggeredInitialFetch = false
 const INITIAL_POSTS_FETCH_DELAY_MS = 2200
+let latestPostsController: AbortController | null = null
+let latestPostsRequestToken = 0
+
+function abortLatestPostsRequest() {
+  latestPostsController?.abort()
+  latestPostsController = null
+}
 
 const handleContainerResize = throttleRAF((width: number) => {
   if (Math.abs(width - lastContainerWidth) < 50) return
@@ -377,7 +389,7 @@ async function fetchLatestPosts(reset = true): Promise<boolean> {
   const hadData = posts.value.length > 0
 
   if (reset) {
-    if (isLoading.value) return false
+    abortLatestPostsRequest()
     isLoading.value = true
     page.value = 1
     if (!hadData) {
@@ -390,6 +402,9 @@ async function fetchLatestPosts(reset = true): Promise<boolean> {
   }
 
   error.value = null
+  const controller = new AbortController()
+  latestPostsController = controller
+  const requestToken = ++latestPostsRequestToken
 
   const params = {
     page: page.value,
@@ -401,7 +416,8 @@ async function fetchLatestPosts(reset = true): Promise<boolean> {
 
   try {
     // 使用缓存感知加载，避免重复请求
-    const result = await loadCachedPosts(params)
+    const result = await loadCachedPosts(params, { signal: controller.signal })
+    if (controller.signal.aborted || requestToken !== latestPostsRequestToken) return false
     const filtered = result.data.filter((p: PostListItem) => !isFilteredAuthor(p.author_name))
 
     if (reset) {
@@ -429,13 +445,19 @@ async function fetchLatestPosts(reset = true): Promise<boolean> {
     }
     return true
   } catch (err) {
+    if (controller.signal.aborted || requestToken !== latestPostsRequestToken) return false
     if (posts.value.length === 0) {
       error.value = err instanceof ApiError ? err.message : t('common.error')
     }
     return false
   } finally {
-    isLoading.value = false
-    isLoadingMore.value = false
+    if (requestToken === latestPostsRequestToken) {
+      isLoading.value = false
+      isLoadingMore.value = false
+      if (latestPostsController === controller) {
+        latestPostsController = null
+      }
+    }
   }
 }
 
@@ -479,6 +501,7 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  abortLatestPostsRequest()
   detachResizeObserver()
   clearInitialPostsFetchTriggers()
   masonryTaskId += 1

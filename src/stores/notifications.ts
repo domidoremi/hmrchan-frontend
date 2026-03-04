@@ -52,13 +52,18 @@ export const useNotificationsStore = defineStore('notifications', () => {
     try {
       if (reset) page.value = 1
 
-      const res = await notificationService.getNotifications(page.value, 20, {
-        type: filterType.value,
-        unreadOnly: unreadOnly.value,
-      }, {
-        signal: controller.signal,
-        skipErrorToast: true,
-      })
+      const res = await notificationService.getNotifications(
+        page.value,
+        20,
+        {
+          type: filterType.value,
+          unreadOnly: unreadOnly.value,
+        },
+        {
+          signal: controller.signal,
+          skipErrorToast: true,
+        }
+      )
       if (controller.signal.aborted || requestToken !== fetchNotificationsToken) return false
 
       if (reset) {

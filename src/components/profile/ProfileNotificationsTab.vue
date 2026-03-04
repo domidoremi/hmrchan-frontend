@@ -144,7 +144,7 @@ function handleNotificationClick(notif: {
   related_type?: string | null
 }) {
   if (!notif.is_read) {
-    markAsRead(notif.id)
+    void markAsRead(notif.id)
   }
 
   // 导航到关联内容
@@ -171,7 +171,7 @@ function formatDate(dateStr: string): string {
 }
 
 onMounted(() => {
-  notifStore.fetchNotifications(true)
+  void notifStore.fetchNotifications(true)
   notifStore.startPolling()
 })
 
