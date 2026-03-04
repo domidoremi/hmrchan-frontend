@@ -9,13 +9,13 @@
  * - 双击：播放/暂停
  */
 
-import { ref, onMounted, onBeforeUnmount, type Ref } from 'vue'
+import { ref, toValue, onMounted, onBeforeUnmount, type MaybeRefOrGetter } from 'vue'
 
 export interface GestureOptions {
   /** 视频元素引用 */
-  videoRef: Ref<HTMLVideoElement | null>
+  videoRef: MaybeRefOrGetter<HTMLVideoElement | null>
   /** 容器元素引用 */
-  containerRef: Ref<HTMLElement | null>
+  containerRef: MaybeRefOrGetter<HTMLElement | null>
   /** 音量变化回调 */
   onVolumeChange?: (volume: number) => void
   /** 亮度变化回调 */
@@ -57,6 +57,8 @@ export function useVideoGestures(options: GestureOptions) {
     onTogglePlay,
     onDoubleTap,
   } = options
+  const getVideoElement = () => toValue(videoRef)
+  const getContainerElement = () => toValue(containerRef)
 
   let singleTapTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -134,7 +136,8 @@ export function useVideoGestures(options: GestureOptions) {
    * 处理触摸/鼠标/手写笔开始
    */
   function handleStart(event: TouchEvent | MouseEvent | PointerEvent) {
-    if (!containerRef.value) return
+    const container = getContainerElement()
+    if (!container) return
     if (isInteractiveTarget(event)) return
 
     if ('buttons' in event && event.buttons === 0) return
@@ -144,7 +147,7 @@ export function useVideoGestures(options: GestureOptions) {
 
     if (clientX === undefined || clientY === undefined) return
 
-    const rect = containerRef.value.getBoundingClientRect()
+    const rect = container.getBoundingClientRect()
     const x = clientX - rect.left
     const y = clientY - rect.top
 
@@ -199,7 +202,9 @@ export function useVideoGestures(options: GestureOptions) {
    * 处理触摸/鼠标/手写笔移动
    */
   function handleMove(event: TouchEvent | MouseEvent | PointerEvent) {
-    if (!containerRef.value || !videoRef.value) return
+    const container = getContainerElement()
+    const videoElement = getVideoElement()
+    if (!container || !videoElement) return
     if (!touchState.value.isPointerDown) return
     if (isInteractiveTarget(event)) return
     if ('buttons' in event && event.buttons === 0) return
@@ -209,7 +214,7 @@ export function useVideoGestures(options: GestureOptions) {
 
     if (clientX === undefined || clientY === undefined) return
 
-    const rect = containerRef.value.getBoundingClientRect()
+    const rect = container.getBoundingClientRect()
     const x = clientX - rect.left
     const y = clientY - rect.top
 
@@ -249,7 +254,7 @@ export function useVideoGestures(options: GestureOptions) {
         const volumeChange = -deltaY * VOLUME_STEP
         const newVolume = Math.max(0, Math.min(1, currentVolume.value + volumeChange))
         currentVolume.value = newVolume
-        videoRef.value.volume = newVolume
+        videoElement.volume = newVolume
         onVolumeChange?.(newVolume)
         showIndicator('volume', Math.round(newVolume * 100))
       }
@@ -257,8 +262,8 @@ export function useVideoGestures(options: GestureOptions) {
     // 水平滑动：快进/快退
     else if (touchState.value.gestureAxis === 'horizontal') {
       const seekChange = deltaX * SEEK_STEP
-      const currentTime = videoRef.value.currentTime
-      const newTime = Math.max(0, Math.min(videoRef.value.duration, currentTime + seekChange))
+      const currentTime = videoElement.currentTime
+      const newTime = Math.max(0, Math.min(videoElement.duration, currentTime + seekChange))
       seekDirection.value = seekChange > 0 ? 'forward' : 'backward'
       onSeek?.(newTime)
       const indicatorValue = Math.max(1, Math.round(Math.abs(seekChange)))
@@ -273,9 +278,9 @@ export function useVideoGestures(options: GestureOptions) {
    * 初始化事件监听
    */
   function initListeners() {
-    if (!containerRef.value) return
+    const container = getContainerElement()
+    if (!container) return
 
-    const container = containerRef.value
     boundContainer = container
 
     // 手写笔事件（Pointer Events）
@@ -305,7 +310,7 @@ export function useVideoGestures(options: GestureOptions) {
   function cleanupListeners() {
     // Use the saved container reference to ensure cleanup works even if
     // the ref has already been nulled during component unmount.
-    const container = boundContainer ?? containerRef.value
+    const container = boundContainer ?? getContainerElement()
     if (!container) return
 
     container.removeEventListener('touchstart', handleStart as EventListener)

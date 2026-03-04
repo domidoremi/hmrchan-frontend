@@ -5,7 +5,7 @@
  * 符合 WCAG 2.1 无障碍标准
  */
 
-import { ref, watch, onUnmounted, type Ref } from 'vue'
+import { ref, toValue, watch, onUnmounted, type MaybeRefOrGetter } from 'vue'
 
 // 可聚焦元素选择器
 const FOCUSABLE_SELECTORS = [
@@ -32,8 +32,8 @@ export interface UseFocusTrapOptions {
 }
 
 export function useFocusTrap(
-  containerRef: Ref<HTMLElement | null>,
-  isActive: Ref<boolean>,
+  containerRef: MaybeRefOrGetter<HTMLElement | null>,
+  isActive: MaybeRefOrGetter<boolean>,
   options: UseFocusTrapOptions = {}
 ) {
   const {
@@ -53,6 +53,8 @@ export function useFocusTrap(
   let autoFocusRaf: number | null = null
   let restoreFocusRaf: number | null = null
   let activationRaf: number | null = null
+  const getContainer = () => toValue(containerRef)
+  const getActive = () => toValue(isActive)
 
   function clearRaf(id: number | null) {
     if (id !== null) {
@@ -75,26 +77,26 @@ export function useFocusTrap(
    * 获取容器内所有可聚焦元素
    */
   function getFocusableElements(): HTMLElement[] {
-    if (!containerRef.value) return []
-    return Array.from(containerRef.value.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTORS)).filter(
-      (el) => {
-        // 过滤不可见元素
-        return el.offsetParent !== null && getComputedStyle(el).visibility !== 'hidden'
-      }
-    )
+    const container = getContainer()
+    if (!container) return []
+    return Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTORS)).filter((el) => {
+      // 过滤不可见元素
+      return el.offsetParent !== null && getComputedStyle(el).visibility !== 'hidden'
+    })
   }
 
   /**
    * 聚焦第一个可聚焦元素
    */
   function focusFirst() {
-    if (!containerRef.value || !isCurrentlyActive.value) return
+    const container = getContainer()
+    if (!container || !isCurrentlyActive.value) return
 
     const elements = getFocusableElements()
 
     // 优先聚焦指定元素
-    if (initialFocus && containerRef.value) {
-      const initial = containerRef.value.querySelector<HTMLElement>(initialFocus)
+    if (initialFocus) {
+      const initial = container.querySelector<HTMLElement>(initialFocus)
       if (initial) {
         initial.focus()
         return
@@ -107,7 +109,7 @@ export function useFocusTrap(
       first.focus()
     } else {
       // 如果没有可聚焦元素，聚焦容器本身
-      containerRef.value?.focus()
+      container.focus()
     }
   }
 
@@ -127,7 +129,8 @@ export function useFocusTrap(
    */
   function handleKeyDown(event: KeyboardEvent) {
     // 严格检查：必须是激活状态且容器存在
-    if (!isCurrentlyActive.value || !containerRef.value) return
+    const container = getContainer()
+    if (!isCurrentlyActive.value || !container) return
 
     // 处理 Escape 键
     if (event.key === 'Escape' && escapeDeactivates) {
@@ -167,7 +170,7 @@ export function useFocusTrap(
     }
 
     // 如果焦点不在容器内，强制聚焦到第一个元素
-    if (!containerRef.value.contains(activeElement)) {
+    if (!container.contains(activeElement)) {
       event.preventDefault()
       firstElement.focus()
     }
@@ -178,12 +181,13 @@ export function useFocusTrap(
    */
   function handleFocusOut(event: FocusEvent) {
     // 严格检查：必须是激活状态且容器存在
-    if (!isCurrentlyActive.value || !containerRef.value) return
+    const container = getContainer()
+    if (!isCurrentlyActive.value || !container) return
 
     const relatedTarget = event.relatedTarget as HTMLElement | null
 
     // 如果焦点移出容器，强制拉回
-    if (relatedTarget && !containerRef.value.contains(relatedTarget)) {
+    if (relatedTarget && !container.contains(relatedTarget)) {
       // 使用 requestAnimationFrame 避免焦点闪烁
       if (focusOutRaf !== null) {
         cancelAnimationFrame(focusOutRaf)
@@ -191,7 +195,7 @@ export function useFocusTrap(
       focusOutRaf = requestAnimationFrame(() => {
         focusOutRaf = null
         // 再次检查状态，因为可能在 RAF 期间状态已改变
-        if (isCurrentlyActive.value && containerRef.value) {
+        if (isCurrentlyActive.value && getContainer()) {
           focusFirst()
         }
       })
@@ -203,10 +207,11 @@ export function useFocusTrap(
    */
   function activate() {
     // 如果已经激活或容器不存在，直接返回
-    if (isCurrentlyActive.value || !containerRef.value) return
+    const container = getContainer()
+    if (isCurrentlyActive.value || !container) return
 
     isCurrentlyActive.value = true
-    boundContainer = containerRef.value
+    boundContainer = container
 
     // 保存当前焦点
     previousActiveElement.value = document.activeElement as HTMLElement
@@ -262,26 +267,29 @@ export function useFocusTrap(
   }
 
   // 监听激活状态 - 移除 immediate: true，避免初始化时的问题
-  watch(isActive, (active) => {
-    if (active) {
-      // 延迟激活，确保 DOM 已渲染
-      if (activationRaf !== null) {
-        cancelAnimationFrame(activationRaf)
-      }
-      activationRaf = requestAnimationFrame(() => {
-        activationRaf = null
-        if (isActive.value && containerRef.value) {
-          activate()
+  watch(
+    () => getActive(),
+    (active) => {
+      if (active) {
+        // 延迟激活，确保 DOM 已渲染
+        if (activationRaf !== null) {
+          cancelAnimationFrame(activationRaf)
         }
-      })
-    } else {
-      if (activationRaf !== null) {
-        cancelAnimationFrame(activationRaf)
-        activationRaf = null
+        activationRaf = requestAnimationFrame(() => {
+          activationRaf = null
+          if (getActive() && getContainer()) {
+            activate()
+          }
+        })
+      } else {
+        if (activationRaf !== null) {
+          cancelAnimationFrame(activationRaf)
+          activationRaf = null
+        }
+        deactivate()
       }
-      deactivate()
     }
-  })
+  )
 
   // 组件卸载时清理
   onUnmounted(() => {
