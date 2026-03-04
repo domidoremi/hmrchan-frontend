@@ -139,6 +139,7 @@ import {
   nextTick,
   defineAsyncComponent,
   onWatcherCleanup,
+  useTemplateRef,
 } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
@@ -200,7 +201,7 @@ const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
 const pageSize = isMobile ? 8 : 24 // 移动端首屏 8 张，桌面端 24 张
 
 // JS Masonry 布局 - 避免 CSS column-count 的 CLS 问题
-const masonryContainerRef = ref<HTMLElement | null>(null)
+const masonryContainerRef = useTemplateRef<HTMLElement>('masonryContainerRef')
 const cachedColumnHeights = ref<number[]>([])
 
 const {
