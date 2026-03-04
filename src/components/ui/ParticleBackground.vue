@@ -10,7 +10,7 @@
  * 自动响应用户设置和系统偏好。
  */
 
-import { computed, onMounted, onBeforeUnmount, useTemplateRef } from 'vue'
+import { computed, onMounted, useTemplateRef } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useSettingsStore, useThemeStore } from '@/stores'
 import { useParticleEngine } from '@/composables/useParticleEngine'
@@ -40,10 +40,6 @@ const engine = useParticleEngine({
 
 onMounted(() => {
   engine.mount()
-})
-
-onBeforeUnmount(() => {
-  engine.dispose()
 })
 </script>
 
