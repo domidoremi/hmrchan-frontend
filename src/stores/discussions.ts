@@ -107,14 +107,15 @@ export const useDiscussionsStore = defineStore('discussions', () => {
     }
   }
 
-  async function loadMore() {
-    if (!hasMore.value || isLoading.value) return
+  async function loadMore(): Promise<boolean> {
+    if (!hasMore.value || isLoading.value) return false
     const nextPage = page.value + 1
     page.value = nextPage
     const ok = await fetchDiscussions()
     if (!ok) {
       page.value = nextPage - 1
     }
+    return ok
   }
 
   async function fetchDiscussion(id: string, config?: RequestConfig) {
@@ -182,14 +183,15 @@ export const useDiscussionsStore = defineStore('discussions', () => {
     }
   }
 
-  async function loadMoreComments(discussionId: string) {
-    if (!hasMoreComments.value || commentsLoading.value) return
+  async function loadMoreComments(discussionId: string): Promise<boolean> {
+    if (!hasMoreComments.value || commentsLoading.value) return false
     const nextPage = commentsPage.value + 1
     commentsPage.value = nextPage
     const ok = await fetchComments(discussionId)
     if (!ok) {
       commentsPage.value = nextPage - 1
     }
+    return ok
   }
 
   async function likeDiscussion(discussionId: string) {
