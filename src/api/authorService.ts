@@ -93,16 +93,20 @@ export const authorService = {
     return apiClient.get<PaginatedApiResponse<AuthorListItem>>(`/authors${query}`, config)
   },
 
-  async getAuthor(authorId: string): Promise<AuthorResponse> {
-    return apiClient.get<AuthorResponse>(`/authors/${authorId}`)
+  async getAuthor(authorId: string, config?: RequestConfig): Promise<AuthorResponse> {
+    return apiClient.get<AuthorResponse>(`/authors/${authorId}`, config)
   },
 
   async listAuthorPosts(
     authorId: string,
     page = 1,
-    pageSize = 20
+    pageSize = 20,
+    config?: RequestConfig
   ): Promise<PaginatedApiResponse<PostListItem>> {
     const query = buildQuery({ page, page_size: pageSize })
-    return apiClient.get<PaginatedApiResponse<PostListItem>>(`/authors/${authorId}/posts${query}`)
+    return apiClient.get<PaginatedApiResponse<PostListItem>>(
+      `/authors/${authorId}/posts${query}`,
+      config
+    )
   },
 }
