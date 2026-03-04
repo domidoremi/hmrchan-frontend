@@ -107,7 +107,7 @@
 <script setup lang="ts">
 defineOptions({ name: 'FavoritesPage' })
 
-import { ref, computed, onMounted, watch } from 'vue'
+import { computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
@@ -118,6 +118,7 @@ import { formatDate } from '@/utils/date'
 import { storePostNavigationContext } from '@/utils/postNavigation'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import { useProgressiveRender } from '@/composables/useProgressiveRender'
+import { useForwardedElementRef } from '@/composables/useForwardedElementRef'
 import Button from '@/components/ui/Button.vue'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
@@ -138,11 +139,8 @@ const total = computed(() => favStore.total)
 const hasMore = computed(() => favStore.hasMore)
 const isLoadingMore = computed(() => favStore.isLoading && favStore.items.length > 0)
 
-const sentinelRef = ref<HTMLElement | null>(null)
-
-const setSentinelRef = (el: Element | null) => {
-  sentinelRef.value = el as HTMLElement | null
-}
+const { elementRef: sentinelRef, setElementRef: setSentinelRef } =
+  useForwardedElementRef<HTMLElement>()
 
 const {
   visibleItems: visibleFavorites,
@@ -202,17 +200,15 @@ function goToLogin() {
   router.push('/login')
 }
 
-watch(isAuthenticated, (authenticated) => {
-  if (authenticated) {
-    fetchFavorites(true)
-  }
-})
-
-onMounted(() => {
-  if (isAuthenticated.value && favorites.value.length === 0) {
-    fetchFavorites(true)
-  }
-})
+watch(
+  isAuthenticated,
+  (authenticated) => {
+    if (authenticated) {
+      void fetchFavorites(true)
+    }
+  },
+  { immediate: true }
+)
 </script>
 
 <style scoped>

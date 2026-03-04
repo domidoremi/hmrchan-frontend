@@ -22,7 +22,7 @@
       </section>
 
       <!-- Bento Grid -->
-      <section ref="bentoRef" class="bento">
+      <section class="bento">
         <div v-once class="bento-bg" aria-hidden="true" />
         <div class="container">
           <header class="bento-header">
@@ -187,6 +187,7 @@ import { postService, type PostListItem, ApiError, type ThumbnailQuality } from 
 import { useCachedPostList } from '@/composables/useCachedPosts'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import { useMasonryColumns } from '@/composables/useMasonryColumns'
+import { useForwardedElementRef } from '@/composables/useForwardedElementRef'
 import { prefersReducedMotion, throttleRAF } from '@/utils/performance'
 import { createResizeObserver, scheduleTask } from '@/utils/modernAPIs'
 import { isFilteredAuthor } from '@/config/filters'
@@ -248,16 +249,13 @@ const { total, load: loadCachedPosts } = useCachedPostList<PostListItem>(
 const postsSectionRef = useTemplateRef<HTMLElement>('postsSectionRef')
 const containerRef = useTemplateRef<HTMLElement>('containerRef')
 const columnRefs = ref<(HTMLElement | null)[]>([])
-const sentinelRef = ref<HTMLElement | null>(null)
+const { elementRef: sentinelRef, setElementRef: setSentinelRef } =
+  useForwardedElementRef<HTMLElement>()
 
 const hasMore = computed(() => posts.value.length < total.value)
 
 const setColumnRef = (el: Element | ComponentPublicInstance | null, index: number) => {
   if (el) columnRefs.value[index] = el as HTMLElement
-}
-
-const setSentinelRef = (el: Element | null) => {
-  sentinelRef.value = el as HTMLElement | null
 }
 
 const getResponsiveColumnCount = () => {
