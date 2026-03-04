@@ -7,7 +7,7 @@
  * 3. Service Worker 在空闲时注册
  */
 
-import { createApp } from 'vue'
+import { createApp, vaporInteropPlugin } from 'vue'
 import { createPinia } from 'pinia'
 import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
 
@@ -129,6 +129,7 @@ pinia.use(piniaPluginPersistedstate)
 app.use(pinia)
 app.use(router)
 app.use(i18n)
+app.use(vaporInteropPlugin)
 
 // Track last pointer position for click-origin animations (e.g. opening preview modal)
 import { disposeLastPointerTracker, initLastPointerTracker } from './utils/lastPointer'
