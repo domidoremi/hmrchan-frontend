@@ -161,6 +161,8 @@ const isSearching = ref(false)
 const selectedIndex = ref(0)
 const mentionStart = ref(-1)
 const isSubmitting = ref(false)
+let mentionSearchController: AbortController | null = null
+let mentionSearchToken = 0
 const TITLE_MIN = 2
 const TITLE_MAX = 200
 const CONTENT_MIN = 10
@@ -179,6 +181,11 @@ const categories = [
 
 // 使用 debounce 优化帖子搜索
 const debouncedSearchPosts = debounce(async (query: string) => {
+  mentionSearchController?.abort()
+  const controller = new AbortController()
+  mentionSearchController = controller
+  const requestToken = ++mentionSearchToken
+
   isSearching.value = true
   try {
     const result = await searchService.searchPosts({
@@ -187,7 +194,8 @@ const debouncedSearchPosts = debounce(async (query: string) => {
       page_size: 5,
       sort_by: 'relevance',
       thumbnail_quality: 'small',
-    })
+    }, { signal: controller.signal })
+    if (controller.signal.aborted || requestToken !== mentionSearchToken) return
     searchResults.value = result.items.map((post) => ({
       id: post.id,
       title: post.title,
@@ -195,13 +203,18 @@ const debouncedSearchPosts = debounce(async (query: string) => {
       author_name: post.author_name,
     }))
   } catch {
+    if (controller.signal.aborted || requestToken !== mentionSearchToken) return
     searchResults.value = []
   } finally {
-    isSearching.value = false
+    if (requestToken === mentionSearchToken) {
+      isSearching.value = false
+    }
   }
 }, 300)
 
 onUnmounted(() => {
+  mentionSearchController?.abort()
+  mentionSearchController = null
   debouncedSearchPosts.cancel?.()
 })
 
@@ -222,10 +235,12 @@ function handleInput() {
       showMentions.value = true
       debouncedSearchPosts(query)
     } else {
+      mentionSearchController?.abort()
       showMentions.value = true
       searchResults.value = []
     }
   } else {
+    mentionSearchController?.abort()
     showMentions.value = false
   }
 }
