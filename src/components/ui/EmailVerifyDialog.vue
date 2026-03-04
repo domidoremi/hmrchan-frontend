@@ -113,6 +113,10 @@ const errorMessage = ref('')
 const currentCode = ref('')
 const resendCooldown = ref(0)
 let cooldownTimer: ReturnType<typeof setInterval> | null = null
+let sendCodeController: AbortController | null = null
+let verifyCodeController: AbortController | null = null
+let sendCodeRequestToken = 0
+let verifyCodeRequestToken = 0
 
 const codeInputRef = useTemplateRef<InstanceType<typeof EmailCodeInput>>('codeInputRef')
 
@@ -141,7 +145,23 @@ function startCooldown() {
   }, 1000)
 }
 
+function abortSendCodeRequest() {
+  sendCodeController?.abort()
+  sendCodeController = null
+}
+
+function abortVerifyCodeRequest() {
+  verifyCodeController?.abort()
+  verifyCodeController = null
+}
+
+function abortAllRequests() {
+  abortSendCodeRequest()
+  abortVerifyCodeRequest()
+}
+
 function resetState() {
+  abortAllRequests()
   step.value = 'send'
   isSending.value = false
   isVerifying.value = false
@@ -156,6 +176,11 @@ function resetState() {
 }
 
 async function sendCode() {
+  abortSendCodeRequest()
+  const controller = new AbortController()
+  sendCodeController = controller
+  const requestToken = ++sendCodeRequestToken
+
   isSending.value = true
   errorMessage.value = ''
 
@@ -167,12 +192,14 @@ async function sendCode() {
       payload.password = props.password
       payload.new_email = props.targetEmail
     }
-    await authService.sendEmailCode(payload)
+    await authService.sendEmailCode(payload, { signal: controller.signal })
+    if (controller.signal.aborted || requestToken !== sendCodeRequestToken) return
     step.value = 'code'
     startCooldown()
     toastStore.success(t('emailCode.codeSent'))
     nextTick(() => codeInputRef.value?.focus())
   } catch (err) {
+    if (controller.signal.aborted || requestToken !== sendCodeRequestToken) return
     if (err instanceof ApiError) {
       if (err.status === 429) {
         toastStore.error(t('emailCode.tooManyRequests'))
@@ -183,7 +210,12 @@ async function sendCode() {
       toastStore.error(t('emailCode.sendFailed'))
     }
   } finally {
-    isSending.value = false
+    if (requestToken === sendCodeRequestToken) {
+      isSending.value = false
+      if (sendCodeController === controller) {
+        sendCodeController = null
+      }
+    }
   }
 }
 
@@ -195,20 +227,30 @@ function handleCodeComplete(code: string) {
 async function verifyCode() {
   if (!codeReady.value || isVerifying.value) return
 
+  abortVerifyCodeRequest()
+  const controller = new AbortController()
+  verifyCodeController = controller
+  const requestToken = ++verifyCodeRequestToken
+
   isVerifying.value = true
   errorMessage.value = ''
   codeError.value = false
 
   try {
-    const result = await authService.verifyEmailCode({
-      action: props.action,
-      verification_code: currentCode.value,
-      ...(props.action === 'change_password' && props.newPassword
-        ? { new_password: props.newPassword }
-        : {}),
-    })
+    const result = await authService.verifyEmailCode(
+      {
+        action: props.action,
+        verification_code: currentCode.value,
+        ...(props.action === 'change_password' && props.newPassword
+          ? { new_password: props.newPassword }
+          : {}),
+      },
+      { signal: controller.signal }
+    )
+    if (controller.signal.aborted || requestToken !== verifyCodeRequestToken) return
     emit('verified', result.message || '')
   } catch (err) {
+    if (controller.signal.aborted || requestToken !== verifyCodeRequestToken) return
     codeError.value = true
     if (err instanceof ApiError) {
       if (err.status === 400 || err.code === 'INVALID_CODE') {
@@ -224,12 +266,18 @@ async function verifyCode() {
       errorMessage.value = t('emailCode.verifyFailed')
     }
   } finally {
-    isVerifying.value = false
+    if (requestToken === verifyCodeRequestToken) {
+      isVerifying.value = false
+      if (verifyCodeController === controller) {
+        verifyCodeController = null
+      }
+    }
   }
 }
 
 function handleClose() {
   if (!isVerifying.value) {
+    abortAllRequests()
     emit('close')
   }
 }
@@ -241,10 +289,13 @@ watch(
     if (open) {
       resetState()
       if (props.autoSend) {
-        sendCode()
+        void sendCode()
       }
       return
     }
+    abortAllRequests()
+    isSending.value = false
+    isVerifying.value = false
     // 关闭时清理计时器，避免后台计时占用
     if (cooldownTimer) {
       clearInterval(cooldownTimer)
@@ -254,6 +305,7 @@ watch(
 )
 
 onUnmounted(() => {
+  abortAllRequests()
   if (cooldownTimer) {
     clearInterval(cooldownTimer)
     cooldownTimer = null
