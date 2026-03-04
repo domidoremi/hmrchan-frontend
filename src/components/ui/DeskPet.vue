@@ -168,6 +168,8 @@ const EDGE_SNAP = 20
 const HERO_BUTTON_SELECTOR = '.hero-btn'
 const LOOK_MAX_OFFSET = 10
 const LOOK_MIN_DISTANCE = 220
+const DESK_PET_POSITION_STORAGE_KEY = 'desk-pet:last-position'
+const ENABLE_HOME_AUTO_PERCH = false
 
 // 计时器
 const IDLE_TIMEOUT = 10000
@@ -258,6 +260,42 @@ const snapToEdge = (pos: { x: number; y: number }) => {
 
 const preventDefaultIfCancelable = (e: Event) => {
   if (e.cancelable) e.preventDefault()
+}
+
+const readSavedPosition = (): { x: number; y: number } | null => {
+  if (typeof window === 'undefined') return null
+  try {
+    const raw = window.localStorage.getItem(DESK_PET_POSITION_STORAGE_KEY)
+    if (!raw) return null
+    const parsed: unknown = JSON.parse(raw)
+    if (
+      typeof parsed === 'object' &&
+      parsed !== null &&
+      'x' in parsed &&
+      'y' in parsed &&
+      typeof parsed.x === 'number' &&
+      Number.isFinite(parsed.x) &&
+      typeof parsed.y === 'number' &&
+      Number.isFinite(parsed.y)
+    ) {
+      return {
+        x: parsed.x,
+        y: parsed.y,
+      }
+    }
+  } catch {
+    // ignore invalid storage payload
+  }
+  return null
+}
+
+const savePosition = (pos: { x: number; y: number }) => {
+  if (typeof window === 'undefined') return
+  try {
+    window.localStorage.setItem(DESK_PET_POSITION_STORAGE_KEY, JSON.stringify(pos))
+  } catch {
+    // ignore storage write errors
+  }
 }
 
 const isHeroTarget = (target: EventTarget | null) =>
@@ -408,6 +446,7 @@ const reactToHeroButtonClick = async (heroBtn: HTMLElement) => {
 }
 
 const playHeroIntroIfNeeded = () => {
+  if (!ENABLE_HOME_AUTO_PERCH) return
   if (!deskPetSettings.value.autoHeroInteraction) return
   if (hasPlayedHeroIntro || !visible.value) return
   const heroBtn = getHeroButton()
@@ -417,12 +456,16 @@ const playHeroIntroIfNeeded = () => {
 }
 
 const initPosition = () => {
-  if (typeof window !== 'undefined') {
-    position.value = clampPosition({
-      x: window.innerWidth - PET_SIZE * 1.25,
-      y: window.innerHeight - PET_SIZE * 1.25,
-    })
+  if (typeof window === 'undefined') return
+  const saved = readSavedPosition()
+  if (saved) {
+    position.value = clampPosition(saved)
+    return
   }
+  position.value = clampPosition({
+    x: window.innerWidth - PET_SIZE * 1.25,
+    y: window.innerHeight - PET_SIZE * 1.25,
+  })
 }
 
 const handleResize = () => {
@@ -698,6 +741,7 @@ const handleDragEnd = () => {
   if (wasDragging) {
     // 边缘吸附
     position.value = snapToEdge(position.value)
+    savePosition(position.value)
     currentState.value = PetState.IDLE
     scheduleRandomIdleBehavior()
   }
