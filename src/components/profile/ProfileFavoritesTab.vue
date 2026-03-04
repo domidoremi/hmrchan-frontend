@@ -96,7 +96,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { Heart, X } from 'lucide-vue-next'
@@ -185,11 +185,17 @@ function goToPost(postId: string, thumbnailUrl?: string | null) {
   router.push(`/post/${postId}`)
 }
 
-onMounted(() => {
-  if (favStore.items.length === 0) {
-    fetchFavorites()
-  }
-})
+watch(
+  isAuthenticated,
+  (authenticated) => {
+    if (!authenticated) {
+      favStore.$reset()
+      return
+    }
+    void fetchFavorites(favStore.items.length === 0)
+  },
+  { immediate: true }
+)
 </script>
 
 <style scoped>

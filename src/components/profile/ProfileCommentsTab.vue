@@ -97,7 +97,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { Heart, MessageCircle, Trash2, ExternalLink } from 'lucide-vue-next'
@@ -136,19 +136,29 @@ const error = ref<string | null>(null)
 const page = ref(1)
 const total = ref(0)
 const pageSize = 20
+let commentsController: AbortController | null = null
+let commentsRequestToken = 0
 
 const hasMore = computed(() => comments.value.length < total.value)
 
+function abortCommentsRequest() {
+  commentsController?.abort()
+  commentsController = null
+}
+
 async function fetchComments(reset = true) {
   if (reset) {
-    if (isLoading.value) return
+    abortCommentsRequest()
     isLoading.value = true
     page.value = 1
   } else {
-    if (isLoadingMore.value) return
+    if (isLoadingMore.value || isLoading.value) return
     isLoadingMore.value = true
   }
   error.value = null
+  const controller = new AbortController()
+  commentsController = controller
+  const requestToken = ++commentsRequestToken
 
   try {
     const res = await apiClient.get<{
@@ -157,7 +167,11 @@ async function fetchComments(reset = true) {
       page: number
       page_size: number
       has_more: boolean
-    }>(`/history/my-comments?page=${page.value}&page_size=${pageSize}`)
+    }>(`/history/my-comments?page=${page.value}&page_size=${pageSize}`, {
+      signal: controller.signal,
+      skipErrorToast: true,
+    })
+    if (controller.signal.aborted || requestToken !== commentsRequestToken) return
 
     if (reset) {
       comments.value = res.items
@@ -166,12 +180,18 @@ async function fetchComments(reset = true) {
     }
     total.value = res.total
   } catch (err) {
+    if (controller.signal.aborted || requestToken !== commentsRequestToken) return
     if (comments.value.length === 0) {
       error.value = err instanceof ApiError ? err.message : t('common.error')
     }
   } finally {
-    isLoading.value = false
-    isLoadingMore.value = false
+    if (requestToken === commentsRequestToken) {
+      isLoading.value = false
+      isLoadingMore.value = false
+      if (commentsController === controller) {
+        commentsController = null
+      }
+    }
   }
 }
 
@@ -213,7 +233,11 @@ async function confirmDelete() {
 }
 
 onMounted(() => {
-  fetchComments()
+  void fetchComments()
+})
+
+onUnmounted(() => {
+  abortCommentsRequest()
 })
 </script>
 

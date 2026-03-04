@@ -97,7 +97,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { Clock, Trash2 } from 'lucide-vue-next'
@@ -169,6 +169,8 @@ const page = ref(1)
 const total = ref(0)
 const pageSize = 20
 const showClearDialog = ref(false)
+let historyController: AbortController | null = null
+let historyRequestToken = 0
 
 const hasMore = computed(() => history.value.length < total.value)
 
@@ -205,14 +207,18 @@ const groupedHistory = computed<HistoryGroup[]>(() => {
 
 async function fetchHistory(reset = true) {
   if (reset) {
-    if (isLoading.value) return
+    historyController?.abort()
+    historyController = null
     isLoading.value = true
     page.value = 1
   } else {
-    if (isLoadingMore.value) return
+    if (isLoadingMore.value || isLoading.value) return
     isLoadingMore.value = true
   }
   error.value = null
+  const controller = new AbortController()
+  historyController = controller
+  const requestToken = ++historyRequestToken
 
   try {
     const res = await apiClient.get<{
@@ -221,7 +227,11 @@ async function fetchHistory(reset = true) {
       page: number
       page_size: number
       has_more: boolean
-    }>(`/history/browsing?page=${page.value}&page_size=${pageSize}`)
+    }>(`/history/browsing?page=${page.value}&page_size=${pageSize}`, {
+      signal: controller.signal,
+      skipErrorToast: true,
+    })
+    if (controller.signal.aborted || requestToken !== historyRequestToken) return
 
     const transformedItems = res.items.map(transformHistoryItem)
     if (reset) {
@@ -231,12 +241,18 @@ async function fetchHistory(reset = true) {
     }
     total.value = res.total
   } catch (err) {
+    if (controller.signal.aborted || requestToken !== historyRequestToken) return
     if (history.value.length === 0) {
       error.value = err instanceof ApiError ? err.message : t('common.error')
     }
   } finally {
-    isLoading.value = false
-    isLoadingMore.value = false
+    if (requestToken === historyRequestToken) {
+      isLoading.value = false
+      isLoadingMore.value = false
+      if (historyController === controller) {
+        historyController = null
+      }
+    }
   }
 }
 
@@ -278,7 +294,12 @@ function goToPost(postId: string, thumbnailUrl?: string | null) {
 }
 
 onMounted(() => {
-  fetchHistory()
+  void fetchHistory()
+})
+
+onUnmounted(() => {
+  historyController?.abort()
+  historyController = null
 })
 </script>
 

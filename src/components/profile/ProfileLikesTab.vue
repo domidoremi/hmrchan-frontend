@@ -100,7 +100,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { Heart, MessageCircle, HeartOff } from 'lucide-vue-next'
@@ -139,19 +139,29 @@ const error = ref<string | null>(null)
 const page = ref(1)
 const total = ref(0)
 const pageSize = 20
+let likesController: AbortController | null = null
+let likesRequestToken = 0
 
 const hasMore = computed(() => comments.value.length < total.value)
 
+function abortLikesRequest() {
+  likesController?.abort()
+  likesController = null
+}
+
 async function fetchLikes(reset = true) {
   if (reset) {
-    if (isLoading.value) return
+    abortLikesRequest()
     isLoading.value = true
     page.value = 1
   } else {
-    if (isLoadingMore.value) return
+    if (isLoadingMore.value || isLoading.value) return
     isLoadingMore.value = true
   }
   error.value = null
+  const controller = new AbortController()
+  likesController = controller
+  const requestToken = ++likesRequestToken
 
   try {
     const res = await apiClient.get<{
@@ -160,7 +170,11 @@ async function fetchLikes(reset = true) {
       page: number
       page_size: number
       has_more: boolean
-    }>(`/history/my-likes?page=${page.value}&page_size=${pageSize}`)
+    }>(`/history/my-likes?page=${page.value}&page_size=${pageSize}`, {
+      signal: controller.signal,
+      skipErrorToast: true,
+    })
+    if (controller.signal.aborted || requestToken !== likesRequestToken) return
 
     if (reset) {
       comments.value = res.items
@@ -169,12 +183,18 @@ async function fetchLikes(reset = true) {
     }
     total.value = res.total
   } catch (err) {
+    if (controller.signal.aborted || requestToken !== likesRequestToken) return
     if (comments.value.length === 0) {
       error.value = err instanceof ApiError ? err.message : t('common.error')
     }
   } finally {
-    isLoading.value = false
-    isLoadingMore.value = false
+    if (requestToken === likesRequestToken) {
+      isLoading.value = false
+      isLoadingMore.value = false
+      if (likesController === controller) {
+        likesController = null
+      }
+    }
   }
 }
 
@@ -216,7 +236,11 @@ async function confirmUnlike() {
 }
 
 onMounted(() => {
-  fetchLikes()
+  void fetchLikes()
+})
+
+onUnmounted(() => {
+  abortLikesRequest()
 })
 </script>
 
