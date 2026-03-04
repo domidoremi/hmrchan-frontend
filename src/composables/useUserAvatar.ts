@@ -5,7 +5,7 @@
  * 解决导航栏、评论区等多处头像不同步的问题
  */
 
-import { computed, ref, watch } from 'vue'
+import { computed, getCurrentScope, onScopeDispose, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useAuthStore } from '@/stores'
 import { normalizeAvatarUrl } from '@/api/userService'
@@ -54,7 +54,7 @@ export function useUserAvatar() {
   })
 
   // 监听用户变化，自动刷新缓存
-  watch(
+  const stopUserAvatarWatch = watch(
     () => user.value?.avatar_url,
     (newUrl, oldUrl) => {
       if (newUrl && newUrl !== oldUrl) {
@@ -62,6 +62,10 @@ export function useUserAvatar() {
       }
     }
   )
+
+  if (getCurrentScope()) {
+    onScopeDispose(stopUserAvatarWatch)
+  }
 
   return {
     avatarUrl,
@@ -77,6 +81,7 @@ const MAX_PRELOADED_AVATARS = 5
 const preloadCache = new Map<string, HTMLLinkElement>()
 
 export function preloadUserAvatar(url: string): void {
+  if (typeof document === 'undefined') return
   if (!url || url === DEFAULT_AVATAR) return
 
   // 如果已经预加载过，跳过
