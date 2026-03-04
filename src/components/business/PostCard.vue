@@ -99,13 +99,13 @@
         </div>
 
         <div class="post-stats">
-          <Tooltip v-if="post.view_count" :content="$t('post.views')">
+          <Tooltip v-if="post.view_count" :content="t('post.views')">
             <span class="post-stat">
               <AnimatedIcon name="explore" :fallback-icon="Eye" size="sm" />
               {{ formatCount(post.view_count) }}
             </span>
           </Tooltip>
-          <Tooltip v-if="post.like_count" :content="$t('post.likes')">
+          <Tooltip v-if="post.like_count" :content="t('post.likes')">
             <span class="post-stat">
               <AnimatedIcon name="heart" :fallback-icon="Heart" size="sm" />
               {{ formatCount(post.like_count) }}
@@ -117,7 +117,7 @@
   </button>
 </template>
 
-<script setup lang="ts">
+<script setup lang="ts" vapor>
 import { ref, computed, watch, type Component } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Calendar, Eye, Film, Globe, Heart, Play, User } from 'lucide-vue-next'
