@@ -245,7 +245,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, onUnmounted, defineAsyncComponent, nextTick, computed } from 'vue'
+import {
+  ref,
+  watch,
+  onMounted,
+  onUnmounted,
+  defineAsyncComponent,
+  nextTick,
+  computed,
+  useTemplateRef,
+} from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import {
@@ -324,11 +333,11 @@ function getNavAnimation(item: NavigationItem) {
   return navAnimationMap[item.path] || 'sparkle'
 }
 
-const settingsBtnRef = ref<HTMLButtonElement | null>(null)
-const userBtnRef = ref<HTMLButtonElement | null>(null)
-const settingsDropdownRef = ref<HTMLDivElement | null>(null)
-const userDropdownRef = ref<HTMLDivElement | null>(null)
-const navLinksRef = ref<HTMLDivElement | null>(null)
+const settingsBtnRef = useTemplateRef<HTMLButtonElement>('settingsBtnRef')
+const userBtnRef = useTemplateRef<HTMLButtonElement>('userBtnRef')
+const settingsDropdownRef = useTemplateRef<HTMLDivElement>('settingsDropdownRef')
+const userDropdownRef = useTemplateRef<HTMLDivElement>('userDropdownRef')
+const navLinksRef = useTemplateRef<HTMLDivElement>('navLinksRef')
 
 const settingsDropdownStyle = ref<Record<string, string>>({})
 const userDropdownStyle = ref<Record<string, string>>({})
