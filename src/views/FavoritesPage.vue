@@ -203,9 +203,11 @@ function goToLogin() {
 watch(
   isAuthenticated,
   (authenticated) => {
-    if (authenticated) {
-      void fetchFavorites(true)
+    if (!authenticated) {
+      favStore.$reset()
+      return
     }
+    void fetchFavorites(true)
   },
   { immediate: true }
 )
