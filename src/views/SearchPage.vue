@@ -318,6 +318,9 @@ const isDiscoverLoading = ref(false)
 const error = ref<string | null>(null)
 const authorError = ref<string | null>(null)
 const discoverError = ref<string | null>(null)
+let discoverRequestToken = 0
+let postsRequestToken = 0
+let authorRequestToken = 0
 
 const hasMore = computed(() => results.value.length < total.value)
 
@@ -392,6 +395,8 @@ function shufflePosts(items: PostListItem[]) {
 }
 
 async function fetchDiscoverPosts(signal?: AbortSignal) {
+  const requestToken = ++discoverRequestToken
+
   if (isDiscoverLoading.value) return
   isDiscoverLoading.value = true
   discoverError.value = null
@@ -407,20 +412,25 @@ async function fetchDiscoverPosts(signal?: AbortSignal) {
       },
       signal ? { signal } : undefined
     )
+    if (signal?.aborted || requestToken !== discoverRequestToken) return
     discoverPosts.value = shufflePosts(res.items)
   } catch (err) {
-    if (signal?.aborted || isAbortError(err)) return
+    if (signal?.aborted || isAbortError(err) || requestToken !== discoverRequestToken) return
     discoverError.value = t('common.error')
     discoverPosts.value = []
   } finally {
-    isDiscoverLoading.value = false
+    if (requestToken === discoverRequestToken) {
+      isDiscoverLoading.value = false
+    }
   }
 }
 
 async function search(signal?: AbortSignal) {
   if (!query.value) return
 
+  const requestToken = ++postsRequestToken
   isLoading.value = true
+  isLoadingMore.value = false
   error.value = null
   page.value = 1
 
@@ -438,21 +448,25 @@ async function search(signal?: AbortSignal) {
       },
       signal ? { signal } : undefined
     )
+    if (signal?.aborted || requestToken !== postsRequestToken) return
     results.value = res.items
     total.value = res.total
   } catch (err) {
-    if (signal?.aborted || isAbortError(err)) return
+    if (signal?.aborted || isAbortError(err) || requestToken !== postsRequestToken) return
     error.value = t('common.error')
     results.value = []
     total.value = 0
   } finally {
-    isLoading.value = false
+    if (requestToken === postsRequestToken) {
+      isLoading.value = false
+    }
   }
 }
 
 async function loadMore() {
   if (isLoadingMore.value || !hasMore.value) return
 
+  const requestToken = postsRequestToken
   isLoadingMore.value = true
 
   try {
@@ -467,19 +481,23 @@ async function loadMore() {
       thumbnail_quality: getThumbnailQuality(),
       ...(platform && { platform }),
     })
+    if (requestToken !== postsRequestToken) return
     results.value.push(...res.items)
     page.value = nextPage
     total.value = res.total
   } catch {
     // Silent fail for load more
   } finally {
-    isLoadingMore.value = false
+    if (requestToken === postsRequestToken) {
+      isLoadingMore.value = false
+    }
   }
 }
 
 async function searchAuthors(signal?: AbortSignal) {
   if (!query.value) return
 
+  const requestToken = ++authorRequestToken
   isLoadingAuthors.value = true
   authorError.value = null
 
@@ -492,15 +510,18 @@ async function searchAuthors(signal?: AbortSignal) {
       },
       signal ? { signal } : undefined
     )
+    if (signal?.aborted || requestToken !== authorRequestToken) return
     authors.value = res.items
     authorTotal.value = res.total
   } catch (err) {
-    if (signal?.aborted || isAbortError(err)) return
+    if (signal?.aborted || isAbortError(err) || requestToken !== authorRequestToken) return
     authorError.value = t('common.error')
     authors.value = []
     authorTotal.value = 0
   } finally {
-    isLoadingAuthors.value = false
+    if (requestToken === authorRequestToken) {
+      isLoadingAuthors.value = false
+    }
   }
 }
 
@@ -526,9 +547,17 @@ watch(query, (nextQuery) => {
   onWatcherCleanup(() => controller.abort())
 
   if (nextQuery) {
+    discoverRequestToken += 1
+    isDiscoverLoading.value = false
+    discoverError.value = null
     void search(controller.signal)
     void searchAuthors(controller.signal)
   } else {
+    postsRequestToken += 1
+    authorRequestToken += 1
+    isLoading.value = false
+    isLoadingMore.value = false
+    isLoadingAuthors.value = false
     results.value = []
     authors.value = []
     total.value = 0
