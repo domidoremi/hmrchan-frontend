@@ -19,7 +19,6 @@ import type { IncomingMessage } from 'node:http'
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import vueJsx from '@vitejs/plugin-vue-jsx'
-import vueDevTools from 'vite-plugin-vue-devtools'
 import { imagetools } from 'vite-imagetools'
 import { criticalCSSPlugin } from './vite-plugin-critical-css'
 import { swVersionPlugin } from './vite-plugin-sw-version'
@@ -64,7 +63,7 @@ function parseStringArrayEncoding(raw: string | undefined): 'none' | 'base64' | 
   return 'base64'
 }
 
-export default defineConfig(({ mode }: { mode: string }) => {
+export default defineConfig(async ({ mode }: { mode: string }) => {
   const isProd = mode === 'production'
   const isDev = mode === 'development'
   const obfuscationEnabled = parseBoolEnv('VITE_ENABLE_OBFUSCATION', false)
@@ -85,6 +84,7 @@ export default defineConfig(({ mode }: { mode: string }) => {
     0
   )
   const obfuscationCodeEncryption = parseBoolEnv('VITE_OBFUSCATION_CODE_ENCRYPTION', false)
+  const devtoolsPlugins = isDev ? [(await import('vite-plugin-vue-devtools')).default()] : []
 
   return {
     /**
@@ -111,7 +111,7 @@ export default defineConfig(({ mode }: { mode: string }) => {
       vueJsx(),
 
       /** 开发环境启用 Vue DevTools */
-      ...(isDev ? [vueDevTools()] : []),
+      ...devtoolsPlugins,
 
       /** 图片优化：自动转 WebP，质量 85% */
       imagetools({
