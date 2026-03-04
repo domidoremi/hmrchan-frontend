@@ -176,7 +176,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted, nextTick, useTemplateRef } from 'vue'
 import {
   X,
   ZoomIn,
@@ -236,8 +236,8 @@ const emit = defineEmits<{
   'update:isOpen': [value: boolean]
 }>()
 
-const containerRef = ref<HTMLElement | null>(null)
-const contentRef = ref<HTMLElement | null>(null)
+const containerRef = useTemplateRef<HTMLElement>('containerRef')
+const contentRef = useTemplateRef<HTMLElement>('contentRef')
 
 const isLightboxOpen = computed(() => props.isOpen)
 useFocusTrap(containerRef, isLightboxOpen, {

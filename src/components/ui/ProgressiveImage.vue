@@ -37,7 +37,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, useTemplateRef } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { AlertTriangle, RefreshCw } from 'lucide-vue-next'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
@@ -74,7 +74,7 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 
-const fullImageRef = ref<HTMLImageElement | null>(null)
+const fullImageRef = useTemplateRef<HTMLImageElement>('fullImageRef')
 const isFullLoaded = ref(false)
 const hasError = ref(false)
 const reloadToken = ref(0)

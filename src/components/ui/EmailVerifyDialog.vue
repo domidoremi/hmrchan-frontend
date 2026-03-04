@@ -63,7 +63,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, nextTick, onUnmounted } from 'vue'
+import { ref, computed, watch, nextTick, onUnmounted, useTemplateRef } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Mail } from 'lucide-vue-next'
 import { authService, ApiError, type SendEmailCodeRequest } from '@/api'
@@ -114,7 +114,7 @@ const currentCode = ref('')
 const resendCooldown = ref(0)
 let cooldownTimer: ReturnType<typeof setInterval> | null = null
 
-const codeInputRef = ref<InstanceType<typeof EmailCodeInput> | null>(null)
+const codeInputRef = useTemplateRef<InstanceType<typeof EmailCodeInput>>('codeInputRef')
 
 const maskedEmail = computed(() => {
   const emailToMask = props.targetEmail || props.email
