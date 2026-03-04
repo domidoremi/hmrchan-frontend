@@ -33,7 +33,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, watch, useTemplateRef } from 'vue'
 
 defineOptions({ name: 'AuthVisualScene' })
 
@@ -76,8 +76,8 @@ const props = withDefaults(defineProps<Props>(), {
 const sceneKindClass = computed(() => `scene-stage--${props.sceneKind}`)
 const canvasEnabled = computed(() => props.useCanvas)
 
-const stageRef = ref<HTMLDivElement | null>(null)
-const canvasRef = ref<HTMLCanvasElement | null>(null)
+const stageRef = useTemplateRef<HTMLDivElement>('stageRef')
+const canvasRef = useTemplateRef<HTMLCanvasElement>('canvasRef')
 
 let ctx: CanvasRenderingContext2D | null = null
 let observer: ResizeObserver | null = null
