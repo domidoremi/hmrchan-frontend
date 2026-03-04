@@ -48,8 +48,8 @@ export const deviceService = {
   /**
    * 获取设备列表
    */
-  async getDevices(): Promise<DeviceListResponse> {
-    return apiClient.get<DeviceListResponse>('/devices')
+  async getDevices(config?: RequestConfig): Promise<DeviceListResponse> {
+    return apiClient.get<DeviceListResponse>('/devices', config)
   },
 
   /** 取消信任设备 */

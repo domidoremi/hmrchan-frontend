@@ -98,7 +98,10 @@ export const favoriteService = {
   /**
    * 获取收藏列表
    */
-  async list(params: ListFavoritesParams = {}): Promise<PaginatedApiResponse<FavoriteResponse>> {
+  async list(
+    params: ListFavoritesParams = {},
+    config?: RequestConfig
+  ): Promise<PaginatedApiResponse<FavoriteResponse>> {
     const buildQuery = (override?: Partial<ListFavoritesParams>) => {
       const merged = { ...params, ...override }
       const query = new URLSearchParams({
@@ -132,7 +135,7 @@ export const favoriteService = {
     const query = buildQuery()
 
     try {
-      return await apiClient.get<PaginatedApiResponse<FavoriteResponse>>(`/favorites?${query}`)
+      return await apiClient.get<PaginatedApiResponse<FavoriteResponse>>(`/favorites?${query}`, config)
     } catch (error) {
       const shouldRetry =
         error instanceof ApiError &&
@@ -144,7 +147,10 @@ export const favoriteService = {
       }
 
       const fallbackQuery = buildQuery({ sort_by: undefined, sort_order: undefined })
-      return apiClient.get<PaginatedApiResponse<FavoriteResponse>>(`/favorites?${fallbackQuery}`)
+      return apiClient.get<PaginatedApiResponse<FavoriteResponse>>(
+        `/favorites?${fallbackQuery}`,
+        config
+      )
     }
   },
 

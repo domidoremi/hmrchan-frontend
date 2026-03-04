@@ -256,11 +256,12 @@ export const authService = {
   /**
    * 验证邮箱（通过邮件中的 token）
    */
-  async verifyEmail(token: string): Promise<{ message: string }> {
+  async verifyEmail(token: string, config?: RequestConfig): Promise<{ message: string }> {
     return apiClient.post(
       '/email/verify-email',
       { token },
       {
+        ...config,
         skipAuth: true,
         skipErrorToast: true,
       }
