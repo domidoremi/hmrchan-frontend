@@ -44,11 +44,11 @@ export const useFavoritesStore = defineStore('favorites', () => {
     fetchFavoritesController = null
   }
 
-  async function fetchFavorites(reset = false) {
+  async function fetchFavorites(reset = false): Promise<boolean> {
     if (reset) {
       abortFetchFavorites()
     } else if (isLoading.value) {
-      return
+      return false
     }
 
     const controller = new AbortController()
@@ -74,7 +74,7 @@ export const useFavoritesStore = defineStore('favorites', () => {
         signal: controller.signal,
         skipErrorToast: true,
       })
-      if (controller.signal.aborted || requestToken !== fetchFavoritesToken) return
+      if (controller.signal.aborted || requestToken !== fetchFavoritesToken) return false
 
       if (reset) {
         items.value = res.items
@@ -86,9 +86,11 @@ export const useFavoritesStore = defineStore('favorites', () => {
 
       total.value = res.total
       totalPages.value = res.total_pages
+      return true
     } catch {
-      if (controller.signal.aborted || requestToken !== fetchFavoritesToken) return
+      if (controller.signal.aborted || requestToken !== fetchFavoritesToken) return false
       error.value = 'favorite.error.fetchFailed'
+      return false
     } finally {
       if (requestToken === fetchFavoritesToken) {
         isLoading.value = false
@@ -99,10 +101,15 @@ export const useFavoritesStore = defineStore('favorites', () => {
     }
   }
 
-  async function loadMore() {
-    if (!hasMore.value || isLoading.value) return
-    page.value++
-    await fetchFavorites()
+  async function loadMore(): Promise<boolean> {
+    if (!hasMore.value || isLoading.value) return false
+    const nextPage = page.value + 1
+    page.value = nextPage
+    const ok = await fetchFavorites()
+    if (!ok) {
+      page.value = nextPage - 1
+    }
+    return ok
   }
 
   async function fetchFolders() {
