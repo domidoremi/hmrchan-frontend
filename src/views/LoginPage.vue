@@ -161,7 +161,7 @@
 <script setup lang="ts">
 defineOptions({ name: 'LoginPage' })
 
-import { ref, computed, onUnmounted } from 'vue'
+import { ref, computed, onUnmounted, useTemplateRef } from 'vue'
 import { useRouter, useRoute, RouterLink } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useAuthStore, useToastStore } from '@/stores'
@@ -198,7 +198,9 @@ const pendingToken = ref('')
 const turnstileSiteKey = (import.meta.env.VITE_TURNSTILE_SITE_KEY ?? '').trim()
 const turnstileEnabled = turnstileSiteKey.length > 0
 const turnstileToken = ref<string | null>(null)
-const turnstileRef = ref<{ reset: () => void; getResponse: () => string | undefined } | null>(null)
+const turnstileRef = useTemplateRef<{ reset: () => void; getResponse: () => string | undefined }>(
+  'turnstileRef'
+)
 
 function setVisualMood(next: VisualMood, holdMs = 0) {
   if (moodTimer) {

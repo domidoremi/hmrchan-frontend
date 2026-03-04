@@ -278,7 +278,7 @@
 <script setup lang="ts">
 defineOptions({ name: 'RegisterPage' })
 
-import { ref, computed, watch, onUnmounted } from 'vue'
+import { ref, computed, watch, onUnmounted, useTemplateRef } from 'vue'
 import { useRouter, RouterLink } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useAuthStore, useToastStore } from '@/stores'
@@ -318,7 +318,7 @@ const registerToken = ref<string | null>(null)
 const registerTokenExpiresAt = ref<number | null>(null)
 const forceTurnstileForSend = ref(false)
 
-const codeInputRef = ref<InstanceType<typeof EmailCodeInput> | null>(null)
+const codeInputRef = useTemplateRef<InstanceType<typeof EmailCodeInput>>('codeInputRef')
 const emailError = ref('')
 const serverPasswordErrors = ref<string[]>([])
 
@@ -380,7 +380,9 @@ const turnstileSiteKey = (import.meta.env.VITE_TURNSTILE_SITE_KEY ?? '').trim()
 const turnstileEnabled = turnstileSiteKey.length > 0
 const turnstileToken = ref<string | null>(null)
 const turnstileIssuedAt = ref<number | null>(null)
-const turnstileRef = ref<{ reset: () => void; getResponse: () => string | undefined } | null>(null)
+const turnstileRef = useTemplateRef<{ reset: () => void; getResponse: () => string | undefined }>(
+  'turnstileRef'
+)
 
 // Resend cooldown
 const resendCooldown = ref(0)

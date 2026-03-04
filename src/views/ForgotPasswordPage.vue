@@ -116,7 +116,7 @@
 <script setup lang="ts">
 defineOptions({ name: 'ForgotPasswordPage' })
 
-import { ref, onUnmounted } from 'vue'
+import { ref, onUnmounted, useTemplateRef } from 'vue'
 import { useRouter, RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { ArrowLeft, Mail } from 'lucide-vue-next'
@@ -143,7 +143,9 @@ let cooldownTimer: ReturnType<typeof setInterval> | null = null
 const turnstileSiteKey = (import.meta.env.VITE_TURNSTILE_SITE_KEY ?? '').trim()
 const turnstileEnabled = turnstileSiteKey.length > 0
 const turnstileToken = ref<string | null>(null)
-const turnstileRef = ref<{ reset: () => void; getResponse: () => string | undefined } | null>(null)
+const turnstileRef = useTemplateRef<{ reset: () => void; getResponse: () => string | undefined }>(
+  'turnstileRef'
+)
 
 const maskedEmail = ref('')
 
