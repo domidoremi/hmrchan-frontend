@@ -151,6 +151,7 @@ import { useCachedPostList } from '@/composables/useCachedPosts'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import { useProgressiveRender } from '@/composables/useProgressiveRender'
 import { useMasonryColumns } from '@/composables/useMasonryColumns'
+import { useForwardedElementRef } from '@/composables/useForwardedElementRef'
 import { useSettingsStore } from '@/stores'
 import { throttleRAF } from '@/utils/performance'
 import { createResizeObserver } from '@/utils/modernAPIs'
@@ -223,11 +224,8 @@ const hasMore = computed(() => posts.value.length < total.value)
 const skeletonColumnCount = computed(() => columnCount.value)
 const skeletonPerColumn = computed(() => Math.ceil(12 / skeletonColumnCount.value))
 
-const sentinelRef = ref<HTMLElement | null>(null)
-
-const setSentinelRef = (el: Element | null) => {
-  sentinelRef.value = el as HTMLElement | null
-}
+const { elementRef: sentinelRef, setElementRef: setSentinelRef } =
+  useForwardedElementRef<HTMLElement>()
 
 // 移动端优化：减少初始渲染数量（首屏渲染 6 张，平衡性能和 CLS）
 const initialRenderCount = isMobile ? 6 : 24

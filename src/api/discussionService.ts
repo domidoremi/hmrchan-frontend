@@ -489,7 +489,10 @@ export const discussionService = {
     })
     if (params.category) query.set('category', params.category)
 
-    const data = await apiClient.get<PaginatedApiResponse<Discussion>>(`/discussions/search?${query.toString()}`, config)
+    const data = await apiClient.get<PaginatedApiResponse<Discussion>>(
+      `/discussions/search?${query.toString()}`,
+      config
+    )
     return normalizePaginated(data, normalizeDiscussion)
   },
 

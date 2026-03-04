@@ -134,7 +134,7 @@
 <script setup lang="ts">
 defineOptions({ name: 'DiscussionDetailPage' })
 
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, watch, onWatcherCleanup } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
@@ -166,6 +166,7 @@ const error = ref<string | null>(null)
 const showDeleteDialog = ref(false)
 const isDeleting = ref(false)
 const isPinning = ref(false)
+let fetchDiscussionToken = 0
 
 const isAdmin = computed(() => {
   return Boolean(user.value?.is_admin || user.value?.roles?.includes('admin'))
@@ -202,24 +203,34 @@ function goToReferencedPost(post: { id: string; thumbnail_url?: string | null })
   router.push(`/post/${post.id}`)
 }
 
-async function fetchDiscussion() {
-  if (!discussionId.value || isLoading.value) return
+function isAbortError(err: unknown): boolean {
+  return err instanceof DOMException && err.name === 'AbortError'
+}
+
+async function fetchDiscussion(targetDiscussionId = discussionId.value, signal?: AbortSignal) {
+  if (!targetDiscussionId) return
+  const requestToken = ++fetchDiscussionToken
+
   isLoading.value = true
   error.value = null
 
   try {
-    await discStore.fetchDiscussion(discussionId.value)
+    await discStore.fetchDiscussion(targetDiscussionId, signal ? { signal } : undefined)
+    if (signal?.aborted || requestToken !== fetchDiscussionToken) return
     if (discStore.error) {
       error.value = t(discStore.error)
     }
   } catch (err) {
+    if (signal?.aborted || isAbortError(err) || requestToken !== fetchDiscussionToken) return
     if (err instanceof ApiError) {
       error.value = err.message
     } else {
       error.value = t('common.error')
     }
   } finally {
-    isLoading.value = false
+    if (!signal?.aborted && requestToken === fetchDiscussionToken) {
+      isLoading.value = false
+    }
   }
 }
 
@@ -263,8 +274,15 @@ async function handleTogglePin() {
   }
 }
 
-onMounted(fetchDiscussion)
-watch(discussionId, fetchDiscussion)
+watch(
+  discussionId,
+  (nextDiscussionId) => {
+    const controller = new AbortController()
+    void fetchDiscussion(nextDiscussionId, controller.signal)
+    onWatcherCleanup(() => controller.abort())
+  },
+  { immediate: true }
+)
 </script>
 
 <style scoped>
