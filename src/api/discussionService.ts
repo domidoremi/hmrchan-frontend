@@ -241,8 +241,8 @@ export const discussionService = {
   /**
    * 获取单个讨论详情
    */
-  async get(discussionId: string): Promise<Discussion> {
-    const data = await apiClient.get<Discussion>(`/discussions/${discussionId}`)
+  async get(discussionId: string, config?: RequestConfig): Promise<Discussion> {
+    const data = await apiClient.get<Discussion>(`/discussions/${discussionId}`, config)
     return normalizeDiscussion(data)
   },
 
@@ -479,7 +479,8 @@ export const discussionService = {
    */
   async search(
     q: string,
-    params: { page?: number; page_size?: number; category?: DiscussionCategory } = {}
+    params: { page?: number; page_size?: number; category?: DiscussionCategory } = {},
+    config?: RequestConfig
   ): Promise<PaginatedApiResponse<Discussion>> {
     const query = new URLSearchParams({
       q,
@@ -488,9 +489,7 @@ export const discussionService = {
     })
     if (params.category) query.set('category', params.category)
 
-    const data = await apiClient.get<PaginatedApiResponse<Discussion>>(
-      `/discussions/search?${query.toString()}`
-    )
+    const data = await apiClient.get<PaginatedApiResponse<Discussion>>(`/discussions/search?${query.toString()}`, config)
     return normalizePaginated(data, normalizeDiscussion)
   },
 

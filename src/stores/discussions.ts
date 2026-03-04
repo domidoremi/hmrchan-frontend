@@ -13,7 +13,7 @@ import {
   type ListDiscussionsParams,
   type DiscussionCategory,
 } from '@/api/discussionService'
-import type { PaginatedApiResponse } from '@/api/client'
+import type { PaginatedApiResponse, RequestConfig } from '@/api/client'
 
 export const useDiscussionsStore = defineStore('discussions', () => {
   const items = ref<Discussion[]>([])
@@ -79,9 +79,9 @@ export const useDiscussionsStore = defineStore('discussions', () => {
     await fetchDiscussions()
   }
 
-  async function fetchDiscussion(id: string) {
+  async function fetchDiscussion(id: string, config?: RequestConfig) {
     try {
-      currentDiscussion.value = await discussionService.get(id)
+      currentDiscussion.value = await discussionService.get(id, config)
       return currentDiscussion.value
     } catch {
       error.value = 'discussion.error.fetchFailed'
