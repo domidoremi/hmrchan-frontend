@@ -5,7 +5,7 @@
  * 符合 WCAG 2.1 无障碍标准
  */
 
-import { ref, toValue, watch, onUnmounted, type MaybeRefOrGetter } from 'vue'
+import { ref, toValue, watch, getCurrentScope, onScopeDispose, type MaybeRefOrGetter } from 'vue'
 
 // 可聚焦元素选择器
 const FOCUSABLE_SELECTORS = [
@@ -291,15 +291,20 @@ export function useFocusTrap(
     }
   )
 
-  // 组件卸载时清理
-  onUnmounted(() => {
+  const dispose = () => {
     deactivate()
     clearAllRafs()
-  })
+  }
+
+  // 在组件 setup 或 effectScope 中自动清理
+  if (getCurrentScope()) {
+    onScopeDispose(dispose)
+  }
 
   return {
     focusFirst,
     focusLast,
     getFocusableElements,
+    dispose,
   }
 }
