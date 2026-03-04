@@ -603,7 +603,15 @@
   </div>
 </template>
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount, watch, getCurrentInstance } from 'vue'
+import {
+  ref,
+  computed,
+  onMounted,
+  onBeforeUnmount,
+  watch,
+  getCurrentInstance,
+  useTemplateRef,
+} from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
   Play,
@@ -678,9 +686,9 @@ const CONTROLS_HIDE_DELAY = 3000
 const SEEK_STEP = 5
 const VOLUME_STEP = 0.1
 
-const videoRef = ref<HTMLVideoElement | null>(null)
-const playerElement = ref<HTMLElement | null>(null)
-const settingsBtnRef = ref<HTMLElement | null>(null)
+const videoRef = useTemplateRef<HTMLVideoElement>('videoRef')
+const playerElement = useTemplateRef<HTMLElement>('playerElement')
+const settingsBtnRef = useTemplateRef<HTMLElement>('settingsBtnRef')
 const isPlaying = ref(false)
 const isBuffering = ref(false)
 const currentTime = ref(0)
