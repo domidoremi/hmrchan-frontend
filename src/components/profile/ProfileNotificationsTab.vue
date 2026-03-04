@@ -125,16 +125,16 @@ function getNotificationAnimation(type: string) {
   return animations[type] || 'sparkle'
 }
 
-async function fetchNotifications() {
-  await notifStore.fetchNotifications(true)
+function fetchNotifications() {
+  return notifStore.fetchNotifications(true)
 }
 
-async function loadMore() {
-  await notifStore.loadMore()
+function loadMore() {
+  return notifStore.loadMore()
 }
 
-async function markAsRead(notificationId: string) {
-  await notifStore.markAsRead(notificationId)
+function markAsRead(notificationId: string) {
+  return notifStore.markAsRead(notificationId)
 }
 
 function handleNotificationClick(notif: {
