@@ -9,7 +9,15 @@
  * - 双击：播放/暂停
  */
 
-import { ref, toValue, onMounted, onBeforeUnmount, type MaybeRefOrGetter } from 'vue'
+import {
+  ref,
+  toValue,
+  onMounted,
+  watch,
+  getCurrentScope,
+  onScopeDispose,
+  type MaybeRefOrGetter,
+} from 'vue'
 
 export interface GestureOptions {
   /** 视频元素引用 */
@@ -275,12 +283,9 @@ export function useVideoGestures(options: GestureOptions) {
   }
 
   /**
-   * 初始化事件监听
+   * 初始化当前容器的手势监听
    */
-  function initListeners() {
-    const container = getContainerElement()
-    if (!container) return
-
+  function initListeners(container: HTMLElement) {
     boundContainer = container
 
     // 手写笔事件（Pointer Events）
@@ -304,6 +309,17 @@ export function useVideoGestures(options: GestureOptions) {
     container.addEventListener('mouseup', handleEnd)
   }
 
+  function clearTransientState() {
+    if (indicatorTimeout) {
+      clearTimeout(indicatorTimeout)
+      indicatorTimeout = null
+    }
+    if (singleTapTimer) {
+      clearTimeout(singleTapTimer)
+      singleTapTimer = null
+    }
+  }
+
   /**
    * 清理事件监听
    */
@@ -311,7 +327,10 @@ export function useVideoGestures(options: GestureOptions) {
     // Use the saved container reference to ensure cleanup works even if
     // the ref has already been nulled during component unmount.
     const container = boundContainer ?? getContainerElement()
-    if (!container) return
+    if (!container) {
+      clearTransientState()
+      return
+    }
 
     container.removeEventListener('touchstart', handleStart as EventListener)
     container.removeEventListener('touchmove', handleMove as EventListener)
@@ -331,23 +350,38 @@ export function useVideoGestures(options: GestureOptions) {
 
     boundContainer = null
 
-    if (indicatorTimeout) {
-      clearTimeout(indicatorTimeout)
-      indicatorTimeout = null
+    clearTransientState()
+  }
+
+  function bindCurrentContainer() {
+    const container = getContainerElement()
+    if (!container) {
+      cleanupListeners()
+      return
     }
-    if (singleTapTimer) {
-      clearTimeout(singleTapTimer)
-      singleTapTimer = null
-    }
+
+    if (boundContainer === container) return
+
+    cleanupListeners()
+    initListeners(container)
   }
 
   onMounted(() => {
-    initListeners()
+    bindCurrentContainer()
   })
 
-  onBeforeUnmount(() => {
-    cleanupListeners()
+  const stopContainerWatch = watch(getContainerElement, () => {
+    bindCurrentContainer()
   })
+
+  const dispose = () => {
+    stopContainerWatch()
+    cleanupListeners()
+  }
+
+  if (getCurrentScope()) {
+    onScopeDispose(dispose)
+  }
 
   return {
     showVolumeIndicator,
@@ -363,5 +397,6 @@ export function useVideoGestures(options: GestureOptions) {
       seekDirection.value = direction
       showIndicator('seek', value)
     },
+    dispose,
   }
 }
