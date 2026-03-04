@@ -92,14 +92,15 @@ export const useNotificationsStore = defineStore('notifications', () => {
     }
   }
 
-  async function loadMore() {
-    if (!hasMore.value || isLoading.value) return
+  async function loadMore(): Promise<boolean> {
+    if (!hasMore.value || isLoading.value) return false
     const nextPage = page.value + 1
     page.value = nextPage
     const ok = await fetchNotifications()
     if (!ok) {
       page.value = nextPage - 1
     }
+    return ok
   }
 
   async function refreshUnreadCount() {

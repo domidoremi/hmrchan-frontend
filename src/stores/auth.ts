@@ -39,6 +39,8 @@ export const useAuthStore = defineStore(
     let authLogoutHandler: (() => void) | null = null
     let heartbeatInterval = DEFAULT_HEARTBEAT_INTERVAL
     let deferredProfileTimer: ReturnType<typeof setTimeout> | null = null
+    let deferredProfileController: AbortController | null = null
+    let deferredProfileRequestToken = 0
 
     const isAuthenticated = computed(() => !!user.value && !!token.value)
 
@@ -49,18 +51,31 @@ export const useAuthStore = defineStore(
      */
     function deferProfileRefresh() {
       if (deferredProfileTimer) clearTimeout(deferredProfileTimer)
+      deferredProfileController?.abort()
+      const requestToken = ++deferredProfileRequestToken
       deferredProfileTimer = setTimeout(async () => {
         deferredProfileTimer = null
+        const controller = new AbortController()
+        deferredProfileController = controller
         const currentToken = await secureTokenManager.retrieve()
-        if (!currentToken) return
+        if (
+          !currentToken ||
+          controller.signal.aborted ||
+          requestToken !== deferredProfileRequestToken
+        ) {
+          return
+        }
         try {
           const API_AUTH_URL = import.meta.env.VITE_API_URL || '/api'
           const res = await fetch(`${API_AUTH_URL}/auth/me`, {
             headers: { Authorization: `Bearer ${currentToken}` },
             credentials: 'include',
+            signal: controller.signal,
           })
+          if (controller.signal.aborted || requestToken !== deferredProfileRequestToken) return
           if (res.ok) {
             const data = await res.json()
+            if (controller.signal.aborted || requestToken !== deferredProfileRequestToken) return
             // 兼容信封格式和直接返回
             const profile = data?.data ?? data
             if (profile && typeof profile === 'object' && 'id' in profile) {
@@ -69,6 +84,13 @@ export const useAuthStore = defineStore(
           }
         } catch {
           // 静默失败，不影响认证状态
+        } finally {
+          if (
+            requestToken === deferredProfileRequestToken &&
+            deferredProfileController === controller
+          ) {
+            deferredProfileController = null
+          }
         }
       }, 2000)
     }
@@ -269,6 +291,9 @@ export const useAuthStore = defineStore(
         clearTimeout(deferredProfileTimer)
         deferredProfileTimer = null
       }
+      deferredProfileController?.abort()
+      deferredProfileController = null
+      deferredProfileRequestToken += 1
       try {
         await authService.logout()
       } catch {
@@ -386,6 +411,13 @@ export const useAuthStore = defineStore(
       }
 
       authLogoutHandler = () => {
+        if (deferredProfileTimer) {
+          clearTimeout(deferredProfileTimer)
+          deferredProfileTimer = null
+        }
+        deferredProfileController?.abort()
+        deferredProfileController = null
+        deferredProfileRequestToken += 1
         user.value = null
         token.value = null
         refreshToken.value = null
@@ -425,6 +457,9 @@ export const useAuthStore = defineStore(
         clearTimeout(deferredProfileTimer)
         deferredProfileTimer = null
       }
+      deferredProfileController?.abort()
+      deferredProfileController = null
+      deferredProfileRequestToken += 1
       if (authLogoutHandler) {
         window.removeEventListener('auth:logout', authLogoutHandler)
         authLogoutHandler = null
