@@ -62,7 +62,7 @@
 <script setup lang="ts">
 defineOptions({ name: 'AuthorDetailPage' })
 
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, watch, onWatcherCleanup } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { authorService, type AuthorResponse, type PostListItem, ApiError } from '@/api'
@@ -84,37 +84,51 @@ const author = ref<AuthorResponse | null>(null)
 const posts = ref<PostListItem[]>([])
 const isLoading = ref(false)
 const error = ref<string | null>(null)
+let latestRequestId = 0
 
-async function fetchAuthor() {
-  if (isLoading.value) return
+function isAbortError(err: unknown): boolean {
+  return err instanceof DOMException && err.name === 'AbortError'
+}
+
+async function fetchAuthor(targetAuthorId = authorId.value, signal?: AbortSignal) {
+  const requestId = ++latestRequestId
 
   isLoading.value = true
   error.value = null
 
   // 先从缓存加载（快速显示）
-  const cached = await authorCache.getAuthor(authorId.value)
+  const cached = await authorCache.getAuthor(targetAuthorId)
+  if (signal?.aborted || requestId !== latestRequestId) return
+
   if (cached) {
     author.value = cached.data as AuthorResponse
   }
 
   try {
     const [authorRes, postsRes] = await Promise.all([
-      authorService.getAuthor(authorId.value),
-      authorService.listAuthorPosts(authorId.value, 1, 24),
+      authorService.getAuthor(targetAuthorId, { signal }),
+      authorService.listAuthorPosts(targetAuthorId, 1, 24, { signal }),
     ])
+
+    if (signal?.aborted || requestId !== latestRequestId) return
+
     author.value = authorRes
     posts.value = postsRes.items
 
     // 写入缓存
-    await authorCache.setAuthor(authorId.value, authorRes)
+    await authorCache.setAuthor(targetAuthorId, authorRes)
   } catch (err) {
+    if (signal?.aborted || isAbortError(err) || requestId !== latestRequestId) return
+
     if (err instanceof ApiError) {
       error.value = err.message
     } else {
       error.value = t('common.error')
     }
   } finally {
-    isLoading.value = false
+    if (!signal?.aborted && requestId === latestRequestId) {
+      isLoading.value = false
+    }
   }
 }
 
@@ -126,13 +140,15 @@ function goToPost(postId: string, thumbnailSrc: string | null) {
   router.push(`/post/${postId}`)
 }
 
-onMounted(() => {
-  fetchAuthor()
-})
-
-watch(authorId, () => {
-  fetchAuthor()
-})
+watch(
+  authorId,
+  (nextAuthorId) => {
+    const controller = new AbortController()
+    void fetchAuthor(nextAuthorId, controller.signal)
+    onWatcherCleanup(() => controller.abort())
+  },
+  { immediate: true }
+)
 </script>
 
 <style scoped>

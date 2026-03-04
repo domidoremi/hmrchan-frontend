@@ -89,7 +89,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, watch, onWatcherCleanup } from 'vue'
 import { MessageSquare } from 'lucide-vue-next'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
@@ -121,6 +121,7 @@ const isLoading = ref(false)
 const isLoadingMore = ref(false)
 const error = ref<string | null>(null)
 const hasNext = ref(false)
+let latestFetchId = 0
 
 const currentSort = ref<'newest' | 'oldest' | 'popular'>('newest')
 const currentFilter = ref<'all' | 'author' | 'admin'>('all')
@@ -149,26 +150,37 @@ function resolveFilterParam() {
   return undefined
 }
 
-async function fetchComments(reset = true): Promise<boolean> {
+function isAbortError(err: unknown): boolean {
+  return err instanceof DOMException && err.name === 'AbortError'
+}
+
+async function fetchComments(reset = true, signal?: AbortSignal): Promise<boolean> {
+  const fetchId = ++latestFetchId
+
   if (reset) {
-    if (isLoading.value) return
     isLoading.value = true
     page.value = 1
   } else {
-    if (isLoadingMore.value) return
+    if (isLoadingMore.value || isLoading.value) return false
     isLoadingMore.value = true
   }
 
   error.value = null
 
   try {
-    const res = await discussionService.getComments(props.discussionId, {
-      page: page.value,
-      page_size: pageSize,
-      sort: currentSort.value,
-      filter: resolveFilterParam(),
-      preload_replies: Number(preloadReplies.value),
-    })
+    const res = await discussionService.getComments(
+      props.discussionId,
+      {
+        page: page.value,
+        page_size: pageSize,
+        sort: currentSort.value,
+        filter: resolveFilterParam(),
+        preload_replies: Number(preloadReplies.value),
+      },
+      { signal }
+    )
+
+    if (signal?.aborted || fetchId !== latestFetchId) return false
 
     const items = sortPinnedFirst(res.items || [])
     if (reset) {
@@ -189,6 +201,8 @@ async function fetchComments(reset = true): Promise<boolean> {
       Boolean((res as unknown as { has_more?: boolean }).has_more)
     return true
   } catch (err) {
+    if (signal?.aborted || isAbortError(err) || fetchId !== latestFetchId) return false
+
     if (comments.value.length === 0) {
       if (err instanceof ApiError) {
         error.value = err.message
@@ -198,8 +212,10 @@ async function fetchComments(reset = true): Promise<boolean> {
     }
     return false
   } finally {
-    isLoading.value = false
-    isLoadingMore.value = false
+    if (!signal?.aborted && fetchId === latestFetchId) {
+      isLoading.value = false
+      isLoadingMore.value = false
+    }
   }
 }
 
@@ -265,19 +281,20 @@ function handleDeleted(commentId: string) {
   }
 }
 
-onMounted(() => {
-  fetchComments()
-})
-
 watch(
   () => props.discussionId,
   () => {
-    fetchComments()
-  }
+    const controller = new AbortController()
+    void fetchComments(true, controller.signal)
+    onWatcherCleanup(() => controller.abort())
+  },
+  { immediate: true }
 )
 
 watch([currentSort, currentFilter, preloadReplies], () => {
-  fetchComments()
+  const controller = new AbortController()
+  void fetchComments(true, controller.signal)
+  onWatcherCleanup(() => controller.abort())
 })
 </script>
 
