@@ -155,8 +155,7 @@ const thumbnailSizes =
 
 async function fetchFavorites(reset = true): Promise<boolean> {
   if (!isAuthenticated.value) return false
-  await favStore.fetchFavorites(reset)
-  return !favStore.error
+  return favStore.fetchFavorites(reset)
 }
 
 async function loadMore(): Promise<boolean> {
@@ -166,8 +165,7 @@ async function loadMore(): Promise<boolean> {
   }
 
   if (!hasMore.value || isLoading.value) return false
-  await favStore.loadMore()
-  return !favStore.error
+  return favStore.loadMore()
 }
 
 useInfiniteScroll(sentinelRef, loadMore, {
