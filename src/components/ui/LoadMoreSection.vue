@@ -66,7 +66,7 @@
 </template>
 
 <script setup lang="ts" vapor>
-import { computed, type ComponentPublicInstance } from 'vue'
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ChevronDown } from 'lucide-vue-next'
 import Button from '@/components/ui/Button.vue'
@@ -77,7 +77,7 @@ interface Props {
   total: number
   hasMore: boolean
   loading?: boolean
-  sentinelRef?: (el: Element | null) => void
+  sentinelRef?: (el: HTMLElement | null) => void
   allowManual?: boolean
 }
 
@@ -97,8 +97,8 @@ const progressPercent = computed(() => {
   return Math.min((props.count / props.total) * 100, 100)
 })
 
-const setSentinelRef = (el: Element | ComponentPublicInstance | null) => {
-  const resolved = el instanceof Element ? el : null
+const setSentinelRef = (el: Element | null) => {
+  const resolved = el instanceof HTMLElement ? el : null
   props.sentinelRef?.(resolved)
 }
 </script>

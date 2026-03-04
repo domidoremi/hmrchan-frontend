@@ -96,7 +96,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { Heart, X } from 'lucide-vue-next'
@@ -110,6 +110,7 @@ import {
 import { formatDate } from '@/utils/date'
 import { useProgressiveRender } from '@/composables/useProgressiveRender'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
+import { useForwardedElementRef } from '@/composables/useForwardedElementRef'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import Skeleton from '@/components/ui/Skeleton.vue'
@@ -129,11 +130,8 @@ const total = computed(() => favStore.total)
 const hasMore = computed(() => favStore.hasMore)
 const isLoadingMore = computed(() => favStore.isLoading && favStore.items.length > 0)
 
-const sentinelRef = ref<HTMLElement | null>(null)
-
-const setSentinelRef = (el: Element | null) => {
-  sentinelRef.value = el as HTMLElement | null
-}
+const { elementRef: sentinelRef, setElementRef: setSentinelRef } =
+  useForwardedElementRef<HTMLElement>()
 
 const {
   visibleItems: visibleFavorites,
