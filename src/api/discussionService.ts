@@ -8,7 +8,7 @@
  * - 讨论评论（支持嵌套回复）
  */
 
-import { apiClient, type PaginatedApiResponse } from './client'
+import { apiClient, type PaginatedApiResponse, type RequestConfig } from './client'
 
 // ========== 类型定义 ==========
 
@@ -304,7 +304,8 @@ export const discussionService = {
    */
   async getComments(
     discussionId: string,
-    params: ListDiscussionCommentsParams = {}
+    params: ListDiscussionCommentsParams = {},
+    config?: RequestConfig
   ): Promise<PaginatedApiResponse<DiscussionComment>> {
     const query = new URLSearchParams({
       page: String(params.page ?? 1),
@@ -325,7 +326,8 @@ export const discussionService = {
     }
 
     const data = await apiClient.get<PaginatedApiResponse<DiscussionComment>>(
-      `/discussions/${discussionId}/comments?${query.toString()}`
+      `/discussions/${discussionId}/comments?${query.toString()}`,
+      config
     )
     return normalizePaginated(data, normalizeDiscussionComment)
   },
