@@ -10,7 +10,6 @@ import {
   onScopeDispose,
   toValue,
   type MaybeRefOrGetter,
-  type Ref,
 } from 'vue'
 import gsap from 'gsap'
 import { prefersReducedMotion } from '@/utils/performance'
@@ -552,8 +551,8 @@ export interface UsePlatformAnimationOptions {
 }
 
 export function usePlatformAnimation(
-  canvasRef: Ref<HTMLCanvasElement | null>,
-  platform: Ref<PlatformMorphState>,
+  canvasRef: MaybeRefOrGetter<HTMLCanvasElement | null>,
+  platform: MaybeRefOrGetter<PlatformMorphState>,
   options: UsePlatformAnimationOptions = {}
 ) {
   const isDark = options.isDark ?? false
@@ -561,8 +560,9 @@ export function usePlatformAnimation(
   const intensity = options.intensity ?? 1
 
   const particles = ref<Particle[]>([])
-  const currentPlatform = ref<PlatformMorphState>(platform.value)
+  const currentPlatform = ref<PlatformMorphState>(toValue(platform))
   const isTransitioning = ref(false)
+  const getCanvas = () => toValue(canvasRef)
 
   let ctx: CanvasRenderingContext2D | null = null
   let rafId: number | null = null
@@ -741,7 +741,7 @@ export function usePlatformAnimation(
   }
 
   function resizeCanvas(nextWidth?: number, nextHeight?: number) {
-    const canvas = canvasRef.value
+    const canvas = getCanvas()
     if (!canvas) return
 
     dpr = Math.min(window.devicePixelRatio || 1, 2)
@@ -804,7 +804,7 @@ export function usePlatformAnimation(
   }
 
   function attachResizeObserver() {
-    const canvas = canvasRef.value
+    const canvas = getCanvas()
     if (!canvas) return
 
     detachResizeObserver()
@@ -834,7 +834,7 @@ export function usePlatformAnimation(
   }
 
   function start() {
-    const canvas = canvasRef.value
+    const canvas = getCanvas()
     if (!canvas) return
     ctx = canvas.getContext('2d')
     if (!ctx) return
@@ -872,9 +872,12 @@ export function usePlatformAnimation(
 
   const watchScope = effectScope()
   watchScope.run(() => {
-    watch(platform, (val) => {
-      if (val !== currentPlatform.value) morphTo(val)
-    })
+    watch(
+      () => toValue(platform),
+      (val) => {
+        if (val !== currentPlatform.value) morphTo(val)
+      }
+    )
     watch(
       () => toValue(isDark),
       () => {
