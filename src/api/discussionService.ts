@@ -221,7 +221,10 @@ export const discussionService = {
   /**
    * 获取讨论列表
    */
-  async list(params: ListDiscussionsParams = {}): Promise<PaginatedApiResponse<Discussion>> {
+  async list(
+    params: ListDiscussionsParams = {},
+    config?: RequestConfig
+  ): Promise<PaginatedApiResponse<Discussion>> {
     const query = new URLSearchParams({
       page: String(params.page ?? 1),
       page_size: String(params.page_size ?? 20),
@@ -233,7 +236,8 @@ export const discussionService = {
     if (params.sort_by) query.set('sort_by', params.sort_by)
     if (params.sort_order) query.set('sort_order', params.sort_order)
     const data = await apiClient.get<PaginatedApiResponse<Discussion>>(
-      `/discussions?${query.toString()}`
+      `/discussions?${query.toString()}`,
+      config
     )
     return normalizePaginated(data, normalizeDiscussion)
   },
