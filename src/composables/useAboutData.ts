@@ -18,15 +18,24 @@ export interface TechItem {
 export function extractVersion(version: string | undefined): string {
   if (!version?.trim()) return 'N/A'
 
-  // 处理 npm: 前缀的特殊情况 (如 vite)
-  const cleanVersion = version.includes('@') ? version.split('@')[1] : version
-  if (!cleanVersion) return 'N/A'
+  let normalized = version.trim()
+
+  // 处理 npm: 前缀的别名依赖（兼容 scoped 包名，如 npm:@scope/pkg@^1.2.3）
+  if (normalized.startsWith('npm:')) {
+    const aliasSeparator = normalized.lastIndexOf('@')
+    if (aliasSeparator <= 4 || aliasSeparator >= normalized.length - 1) return 'N/A'
+    normalized = normalized.slice(aliasSeparator + 1)
+  }
 
   // 移除 ^, ~, >= 等前缀
-  const versionNumber = cleanVersion.replace(/^[^\d]+/, '')
+  const versionNumber = normalized.replace(/^[^\d]+/, '')
+  const matched = versionNumber.match(/^(\d+)(?:\.(\d+))?/)
+  if (!matched) return 'N/A'
+
   // 提取主版本号和次版本号
-  const parts = versionNumber.split('.')
-  return parts.length >= 2 ? `${parts[0]}.${parts[1]}` : parts[0] || 'N/A'
+  const major = matched[1]
+  const minor = matched[2]
+  return minor ? `${major}.${minor}` : major
 }
 
 export function useAboutData() {

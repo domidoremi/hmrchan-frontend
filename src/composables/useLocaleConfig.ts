@@ -150,6 +150,25 @@ export function useLocaleConfig() {
 
   /** Intl 格式化配置 */
   const intlConfig = computed(() => intlConfigs[currentLocale.value] ?? intlConfigs.en)
+  const dateFormatter = computed(
+    () => new Intl.DateTimeFormat(intlConfig.value.bcp47, intlConfig.value.dateShort)
+  )
+  const dateTimeFormatter = computed(
+    () => new Intl.DateTimeFormat(intlConfig.value.bcp47, intlConfig.value.dateFormat)
+  )
+  const numberFormatter = computed(
+    () => new Intl.NumberFormat(intlConfig.value.bcp47, intlConfig.value.numberFormat)
+  )
+  const compactNumberFormatter = computed(
+    () =>
+      new Intl.NumberFormat(intlConfig.value.bcp47, {
+        notation: 'compact',
+        maximumFractionDigits: 1,
+      })
+  )
+  const relativeTimeFormatter = computed(
+    () => new Intl.RelativeTimeFormat(intlConfig.value.bcp47, { numeric: 'auto' })
+  )
 
   /** 配色方案 */
   const colors = computed<LocaleColorScheme>(() => localeConfig.value.colors)
@@ -180,26 +199,23 @@ export function useLocaleConfig() {
 
   function formatDate(dateStr: string): string {
     const date = parseDate(dateStr)
-    return date.toLocaleDateString(intlConfig.value.bcp47, intlConfig.value.dateShort)
+    return dateFormatter.value.format(date)
   }
 
   function formatDateTime(dateStr: string): string {
     const date = parseDate(dateStr)
-    return date.toLocaleString(intlConfig.value.bcp47, intlConfig.value.dateFormat)
+    return dateTimeFormatter.value.format(date)
   }
 
   function formatNumber(n: number): string {
-    return n.toLocaleString(intlConfig.value.bcp47, intlConfig.value.numberFormat)
+    return numberFormatter.value.format(n)
   }
 
   function formatCompactNumber(n: number): string {
     if (n < localeConfig.value.content.compactNumberThreshold) {
       return formatNumber(n)
     }
-    return new Intl.NumberFormat(intlConfig.value.bcp47, {
-      notation: 'compact',
-      maximumFractionDigits: 1,
-    }).format(n)
+    return compactNumberFormatter.value.format(n)
   }
 
   /** 相对时间格式化 (e.g. "3 分钟前", "2 hours ago") */
@@ -209,15 +225,13 @@ export function useLocaleConfig() {
     const diff = now - date.getTime()
     const seconds = Math.floor(diff / 1000)
 
-    const rtf = new Intl.RelativeTimeFormat(intlConfig.value.bcp47, { numeric: 'auto' })
-
-    if (seconds < 60) return rtf.format(-seconds, 'second')
+    if (seconds < 60) return relativeTimeFormatter.value.format(-seconds, 'second')
     const minutes = Math.floor(seconds / 60)
-    if (minutes < 60) return rtf.format(-minutes, 'minute')
+    if (minutes < 60) return relativeTimeFormatter.value.format(-minutes, 'minute')
     const hours = Math.floor(minutes / 60)
-    if (hours < 24) return rtf.format(-hours, 'hour')
+    if (hours < 24) return relativeTimeFormatter.value.format(-hours, 'hour')
     const days = Math.floor(hours / 24)
-    if (days < 30) return rtf.format(-days, 'day')
+    if (days < 30) return relativeTimeFormatter.value.format(-days, 'day')
 
     // 超过 30 天回退到绝对日期
     return formatDate(dateStr)
