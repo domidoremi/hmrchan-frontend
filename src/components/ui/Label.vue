@@ -20,6 +20,9 @@ const props = withDefaults(defineProps<Props>(), {
   error: false,
   required: false,
 })
+defineSlots<{
+  default?: () => unknown
+}>()
 
 const attrs = useAttrs()
 

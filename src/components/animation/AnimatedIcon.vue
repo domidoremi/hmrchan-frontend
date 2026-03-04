@@ -32,6 +32,9 @@ const props = withDefaults(defineProps<Props>(), {
   loop: false,
   size: 'md',
 })
+defineSlots<{
+  default?: () => unknown
+}>()
 
 const iconSizeMap: Record<string, number> = { sm: 16, md: 20, lg: 24, xl: 32 }
 const iconSize = computed(() => iconSizeMap[props.size])

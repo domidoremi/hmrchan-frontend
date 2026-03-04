@@ -46,6 +46,9 @@ const props = withDefaults(defineProps<Props>(), {
   required: false,
   disabled: false,
 })
+defineSlots<{
+  default?: () => unknown
+}>()
 
 const fieldClass = computed(() => [
   'ui-form-field',
