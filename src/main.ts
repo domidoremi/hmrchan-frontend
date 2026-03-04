@@ -158,9 +158,6 @@ initFingerprint().catch(() => {
   // 指纹初始化失败不影响应用运行
 })
 
-// 初始化客户端安全（获取 client_token/secret），必须在 auth 之前完成
-// 后续所有 API 请求都需要安全头
-import { clientSecurityService } from './api/clientSecurityService'
 const enableClientSecurityInit = import.meta.env.VITE_ENABLE_CLIENT_INIT !== 'false'
 const enableDataPrefetch = import.meta.env.VITE_ENABLE_DATA_PREFETCH !== 'false'
 const enableDeferredAnimationStyles =
@@ -168,9 +165,11 @@ const enableDeferredAnimationStyles =
 
 // 等待客户端安全初始化 → 认证初始化完成后再挂载，避免路由守卫竞态
 const clientSecurityReady = enableClientSecurityInit
-  ? clientSecurityService.init().catch(() => {
-      // 客户端安全初始化失败不阻塞应用
-    })
+  ? import('./api/clientSecurityService')
+      .then(({ clientSecurityService }) => clientSecurityService.init())
+      .catch(() => {
+        // 客户端安全初始化失败不阻塞应用
+      })
   : Promise.resolve()
 
 clientSecurityReady

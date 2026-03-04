@@ -6,6 +6,7 @@
 
 import { apiClient } from './client'
 import { normalizeToProxyPath } from '@/utils/url'
+import { secureTokenManager } from '@/utils/tokenSecurity'
 
 // ========== 类型定义 ==========
 
@@ -153,7 +154,6 @@ export const userService = {
       import.meta.env.VITE_API_ENDPOINT || `${import.meta.env.VITE_API_URL || '/api'}/v1`
 
     // 从安全存储获取 access token 用于认证
-    const { secureTokenManager } = await import('@/utils/tokenSecurity')
     const token = await secureTokenManager.retrieve()
 
     const headers: HeadersInit = {}
