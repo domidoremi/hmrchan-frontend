@@ -68,6 +68,7 @@
       <DiscussionCommentCard
         v-for="comment in comments"
         :key="comment.id"
+        v-memo="getCommentMemo(comment)"
         :comment="comment"
         :discussion-id="discussionId"
         :discussion-author-id="discussionAuthorId"
@@ -142,6 +143,17 @@ function sortPinnedFirst(items: DiscussionComment[]) {
   const pinned = items.filter((item) => item.is_pinned)
   const rest = items.filter((item) => !item.is_pinned)
   return [...pinned, ...rest]
+}
+
+function getCommentMemo(comment: DiscussionComment) {
+  return [
+    comment.id,
+    comment.updated_at ?? comment.created_at,
+    comment.like_count ?? 0,
+    comment.reply_count ?? 0,
+    Boolean(comment.is_pinned),
+    Boolean(comment.is_liked),
+  ]
 }
 
 function resolveFilterParam() {

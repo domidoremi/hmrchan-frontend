@@ -43,6 +43,7 @@
       <CommentCard
         v-for="comment in comments"
         :key="comment.id"
+        v-memo="getCommentMemo(comment)"
         :comment="comment"
         :post-id="props.postId"
         @reply="handleReply"
@@ -63,7 +64,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, watch, onWatcherCleanup } from 'vue'
 import { MessageSquare } from 'lucide-vue-next'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
@@ -103,13 +104,26 @@ const commentsCount = computed(() => {
 
 const isLoading = computed(() => commentsStore.isLoading)
 
-async function fetchComments() {
-  await commentsStore.fetchComments(props.postId, currentSort.value)
+async function fetchComments(signal?: AbortSignal) {
+  await commentsStore.fetchComments(
+    props.postId,
+    currentSort.value,
+    signal ? { signal } : undefined
+  )
 }
 
 function changeSort(sort: 'newest' | 'oldest' | 'popular') {
   currentSort.value = sort
-  fetchComments()
+}
+
+function getCommentMemo(comment: Comment) {
+  return [
+    comment.id,
+    comment.updated_at ?? comment.created_at,
+    comment.like_count ?? comment.likes_count ?? 0,
+    comment.reply_count ?? comment.replies_count ?? 0,
+    Boolean(comment.is_liked),
+  ]
 }
 
 function handleCommentAdded() {
@@ -129,15 +143,14 @@ async function loadMore() {
   // 当前版本一次性加载所有评论，分页加载将在评论量较大时启用
 }
 
-onMounted(() => {
-  fetchComments()
-})
-
 watch(
-  () => props.postId,
+  [() => props.postId, currentSort],
   () => {
-    fetchComments()
-  }
+    const controller = new AbortController()
+    void fetchComments(controller.signal)
+    onWatcherCleanup(() => controller.abort())
+  },
+  { immediate: true }
 )
 </script>
 
