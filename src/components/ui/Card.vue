@@ -1,14 +1,13 @@
 <template>
   <component
     :is="as"
-    ref="cardRef"
     :class="cardClass"
     @mouseenter="handleMouseEnter"
     @mouseleave="handleMouseLeave"
     @mousemove="handleMouseMove"
   >
     <!-- 光泽扫过效果 -->
-    <span v-if="shine" ref="shineRef" class="ui-card__shine" />
+    <span v-if="shine" class="ui-card__shine" />
 
     <!-- 顶部光泽线 -->
     <span class="ui-card__highlight" />
@@ -50,9 +49,12 @@ const props = withDefaults(defineProps<Props>(), {
   shine: false,
   animate: false,
 })
+defineSlots<{
+  header?: () => unknown
+  default?: () => unknown
+  footer?: () => unknown
+}>()
 
-const cardRef = ref<HTMLElement | null>(null)
-const shineRef = ref<HTMLElement | null>(null)
 const isHovered = ref(false)
 
 const cardClass = computed(() => [

@@ -31,7 +31,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, useSlots, type Component, ref } from 'vue'
+import { computed, useSlots, type Component, ref, useTemplateRef } from 'vue'
 
 interface Props {
   variant?:
@@ -68,6 +68,9 @@ const props = withDefaults(defineProps<Props>(), {
   ripple: true,
   springAnimation: true,
 })
+defineSlots<{
+  default?: () => unknown
+}>()
 
 const emit = defineEmits<{
   click: [event: MouseEvent]
@@ -75,8 +78,8 @@ const emit = defineEmits<{
 
 const slots = useSlots()
 
-const buttonRef = ref<HTMLButtonElement | null>(null)
-const rippleContainer = ref<HTMLSpanElement | null>(null)
+const buttonRef = useTemplateRef<HTMLButtonElement>('buttonRef')
+const rippleContainer = useTemplateRef<HTMLSpanElement>('rippleContainer')
 const isPressed = ref(false)
 
 const VARIANT_MAP: Record<string, string> = {

@@ -32,13 +32,7 @@
           </div>
 
           <div class="confirm-dialog__actions">
-            <Button
-              ref="cancelBtnRef"
-              variant="outline"
-              size="sm"
-              class="confirm-dialog__btn"
-              @click="handleCancel"
-            >
+            <Button variant="outline" size="sm" class="confirm-dialog__btn" @click="handleCancel">
               {{ cancelText }}
             </Button>
             <Button
@@ -58,7 +52,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted, type Component } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted, type Component, useId } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { AlertTriangle, Trash2, Info, HelpCircle, CheckCircle } from 'lucide-vue-next'
 import Button from './Button.vue'
@@ -93,8 +87,9 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 const contentRef = ref<HTMLElement | null>(null)
-const titleId = `confirm-title-${Math.random().toString(36).slice(2, 9)}`
-const descriptionId = `confirm-desc-${Math.random().toString(36).slice(2, 9)}`
+const baseId = useId()
+const titleId = `${baseId}-title`
+const descriptionId = `${baseId}-description`
 
 const isDialogOpen = computed(() => props.isOpen)
 
