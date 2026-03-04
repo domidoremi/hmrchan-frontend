@@ -35,6 +35,10 @@ interface LoadResult<T> {
   fromCache: boolean
 }
 
+interface CachedLoadConfig {
+  signal?: AbortSignal
+}
+
 /**
  * 将未知错误转换为 Error 实例
  */
@@ -50,12 +54,13 @@ function toError(err: unknown): Error {
 async function loadWithCache<T, P>(
   params: P,
   getCached: (params: P) => Promise<{ data: T; total?: number } | null>,
-  fetchFn: (params: P) => Promise<{ data: T; total?: number }>,
+  fetchFn: (params: P, config?: CachedLoadConfig) => Promise<{ data: T; total?: number }>,
   setCache: (params: P, data: T, total?: number) => Promise<void>,
   state: { value: FetchState },
   dataRef: { value: T },
   totalRef: { value: number } | null,
-  options: UseCachedPostsOptions
+  options: UseCachedPostsOptions,
+  requestConfig?: CachedLoadConfig
 ): Promise<LoadResult<T>> {
   const { revalidate = true, onUpdate } = options
 
@@ -89,7 +94,7 @@ async function loadWithCache<T, P>(
 
   // 通道 B：网络请求（只有在需要时才执行）
   try {
-    const result = await fetchFn(params)
+    const result = requestConfig ? await fetchFn(params, requestConfig) : await fetchFn(params)
 
     // 更新数据
     dataRef.value = result.data
@@ -124,7 +129,10 @@ async function loadWithCache<T, P>(
  * 帖子列表的缓存加载
  */
 export function useCachedPostList<T>(
-  fetchFn: (params: Record<string, unknown>) => Promise<{ data: T[]; total: number }>,
+  fetchFn: (
+    params: Record<string, unknown>,
+    config?: CachedLoadConfig
+  ) => Promise<{ data: T[]; total: number }>,
   options: UseCachedPostsOptions = {}
 ) {
   const data = shallowRef<T[]>([])
@@ -136,7 +144,7 @@ export function useCachedPostList<T>(
     source: null,
   })
 
-  async function load(params: Record<string, unknown> = {}) {
+  async function load(params: Record<string, unknown> = {}, requestConfig?: CachedLoadConfig) {
     const result = await loadWithCache(
       params,
       async (p) => {
@@ -158,7 +166,8 @@ export function useCachedPostList<T>(
       state,
       data,
       total,
-      options
+      options,
+      requestConfig
     )
     return result
   }
@@ -180,7 +189,7 @@ export function useCachedPostList<T>(
  * 帖子详情的缓存加载
  */
 export function useCachedPost<T>(
-  fetchFn: (uuid: string) => Promise<T>,
+  fetchFn: (uuid: string, config?: CachedLoadConfig) => Promise<T>,
   options: UseCachedPostsOptions = {}
 ) {
   const data = shallowRef<T | null>(null)
@@ -191,19 +200,22 @@ export function useCachedPost<T>(
     source: null,
   })
 
-  async function load(uuid: string) {
+  async function load(uuid: string, requestConfig?: CachedLoadConfig) {
     return loadWithCache(
       uuid,
       async (id) => {
         const cached = await postCache.getPostEntity(id)
         return cached ? { data: cached as T } : null
       },
-      async (id) => ({ data: await fetchFn(id) }),
+      async (id, config) => ({
+        data: config ? await fetchFn(id, config) : await fetchFn(id),
+      }),
       (id, d) => postCache.setPostEntity(id, d),
       state,
       data as { value: T },
       null,
-      options
+      options,
+      requestConfig
     )
   }
 
