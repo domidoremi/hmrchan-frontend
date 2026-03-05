@@ -24,6 +24,7 @@
         <article
           v-for="(comment, idx) in comments"
           :key="comment.id"
+          v-memo="getUserCommentMemo(comment)"
           class="timeline-item"
           :class="{ 'timeline-item--deleting': deletingId === comment.id }"
           :style="{ '--i': idx }"
@@ -146,13 +147,13 @@ function abortCommentsRequest() {
   commentsController = null
 }
 
-async function fetchComments(reset = true) {
+async function fetchComments(reset = true): Promise<boolean> {
   if (reset) {
     abortCommentsRequest()
     isLoading.value = true
     page.value = 1
   } else {
-    if (isLoadingMore.value || isLoading.value) return
+    if (isLoadingMore.value || isLoading.value) return false
     isLoadingMore.value = true
   }
   error.value = null
@@ -171,7 +172,7 @@ async function fetchComments(reset = true) {
       signal: controller.signal,
       skipErrorToast: true,
     })
-    if (controller.signal.aborted || requestToken !== commentsRequestToken) return
+    if (controller.signal.aborted || requestToken !== commentsRequestToken) return false
 
     if (reset) {
       comments.value = res.items
@@ -179,11 +180,13 @@ async function fetchComments(reset = true) {
       comments.value.push(...res.items)
     }
     total.value = res.total
+    return true
   } catch (err) {
-    if (controller.signal.aborted || requestToken !== commentsRequestToken) return
+    if (controller.signal.aborted || requestToken !== commentsRequestToken) return false
     if (comments.value.length === 0) {
       error.value = err instanceof ApiError ? err.message : t('common.error')
     }
+    return false
   } finally {
     if (requestToken === commentsRequestToken) {
       isLoading.value = false
@@ -197,8 +200,23 @@ async function fetchComments(reset = true) {
 
 async function loadMore() {
   if (!hasMore.value || isLoading.value || isLoadingMore.value) return
-  page.value++
-  await fetchComments(false)
+  const nextPage = page.value + 1
+  page.value = nextPage
+  const ok = await fetchComments(false)
+  if (!ok) {
+    page.value = nextPage - 1
+  }
+}
+
+function getUserCommentMemo(comment: UserComment) {
+  return [
+    comment.id,
+    comment.created_at,
+    comment.likes_count ?? 0,
+    comment.replies_count ?? 0,
+    comment.post_id,
+    comment.post_title ?? '',
+  ]
 }
 
 function formatDate(dateStr: string): string {

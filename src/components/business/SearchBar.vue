@@ -108,6 +108,26 @@ import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 
 // 简单的 debounce 实现，避免引入整个 VueUse
 let suggestionTimer: ReturnType<typeof setTimeout> | null = null
+let suggestionController: AbortController | null = null
+let suggestionRequestToken = 0
+
+function isAbortError(error: unknown): boolean {
+  if (error instanceof DOMException) return error.name === 'AbortError'
+  return error instanceof Error && /abort/i.test(error.message)
+}
+
+function abortSuggestionRequest() {
+  if (suggestionTimer) {
+    clearTimeout(suggestionTimer)
+    suggestionTimer = null
+  }
+  if (suggestionController) {
+    suggestionController.abort()
+    suggestionController = null
+  }
+  suggestionRequestToken += 1
+}
+
 function debounce<T extends (...args: Parameters<T>) => void>(fn: T, delay: number): T {
   return ((...args: Parameters<T>) => {
     if (suggestionTimer) clearTimeout(suggestionTimer)
@@ -241,36 +261,65 @@ function handleBlur() {
 }
 
 function handleClose() {
+  abortSuggestionRequest()
   query.value = ''
+  suggestions.value = []
+  selectedIndex.value = -1
+  isLoading.value = false
   isFocused.value = false
   isExpanded.value = false
   inputRef.value?.blur()
 }
 
 function clearQuery() {
+  abortSuggestionRequest()
   query.value = ''
   suggestions.value = []
+  isLoading.value = false
   inputRef.value?.focus()
 }
 
 const fetchSuggestions = debounce(async (q: string) => {
-  if (!q.trim()) {
+  const normalizedQuery = q.trim()
+  if (!normalizedQuery) {
+    abortSuggestionRequest()
     suggestions.value = []
+    isLoading.value = false
     return
   }
 
+  if (suggestionController) suggestionController.abort()
+  const controller = new AbortController()
+  suggestionController = controller
+  const requestToken = ++suggestionRequestToken
   isLoading.value = true
   try {
-    suggestions.value = await searchService.getSuggestions(q)
-  } catch {
+    const result = await searchService.getSuggestions(normalizedQuery, 10, {
+      signal: controller.signal,
+      skipErrorToast: true,
+    })
+    if (controller.signal.aborted || requestToken !== suggestionRequestToken) return
+    suggestions.value = result.map((item) => ({ ...item, text: item.text ?? item.label }))
+  } catch (error) {
+    if (controller.signal.aborted || isAbortError(error) || requestToken !== suggestionRequestToken)
+      return
     suggestions.value = []
   } finally {
-    isLoading.value = false
+    if (requestToken === suggestionRequestToken && suggestionController === controller) {
+      suggestionController = null
+      isLoading.value = false
+    }
   }
 }, 300)
 
 function handleInput() {
   selectedIndex.value = -1
+  if (!query.value.trim()) {
+    abortSuggestionRequest()
+    suggestions.value = []
+    isLoading.value = false
+    return
+  }
   fetchSuggestions(query.value)
 }
 
@@ -361,6 +410,7 @@ watch(selectedIndex, (index) => {
 })
 
 onUnmounted(() => {
+  abortSuggestionRequest()
   if (suggestionTimer) {
     clearTimeout(suggestionTimer)
     suggestionTimer = null

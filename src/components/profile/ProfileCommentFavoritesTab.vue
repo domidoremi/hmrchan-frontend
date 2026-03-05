@@ -29,6 +29,7 @@
         <article
           v-for="(item, idx) in items"
           :key="item.id"
+          v-memo="getCommentFavoriteMemo(item)"
           class="timeline-item"
           :style="{ '--stagger': idx }"
         >
@@ -141,13 +142,13 @@ function abortCommentFavoritesRequest() {
   commentFavoritesController = null
 }
 
-async function fetchFavorites(reset = true) {
+async function fetchFavorites(reset = true): Promise<boolean> {
   if (reset) {
     abortCommentFavoritesRequest()
     isLoading.value = true
     page.value = 1
   } else {
-    if (isLoadingMore.value || isLoading.value) return
+    if (isLoadingMore.value || isLoading.value) return false
     isLoadingMore.value = true
   }
   error.value = null
@@ -166,7 +167,7 @@ async function fetchFavorites(reset = true) {
       signal: controller.signal,
       skipErrorToast: true,
     })
-    if (controller.signal.aborted || requestToken !== commentFavoritesRequestToken) return
+    if (controller.signal.aborted || requestToken !== commentFavoritesRequestToken) return false
 
     if (reset) {
       items.value = res.items
@@ -174,11 +175,13 @@ async function fetchFavorites(reset = true) {
       items.value.push(...res.items)
     }
     total.value = res.total
+    return true
   } catch (err) {
-    if (controller.signal.aborted || requestToken !== commentFavoritesRequestToken) return
+    if (controller.signal.aborted || requestToken !== commentFavoritesRequestToken) return false
     if (items.value.length === 0) {
       error.value = err instanceof ApiError ? err.message : t('common.error')
     }
+    return false
   } finally {
     if (requestToken === commentFavoritesRequestToken) {
       isLoading.value = false
@@ -192,8 +195,23 @@ async function fetchFavorites(reset = true) {
 
 async function loadMore() {
   if (!hasMore.value || isLoading.value || isLoadingMore.value) return
-  page.value++
-  await fetchFavorites(false)
+  const nextPage = page.value + 1
+  page.value = nextPage
+  const ok = await fetchFavorites(false)
+  if (!ok) {
+    page.value = nextPage - 1
+  }
+}
+
+function getCommentFavoriteMemo(item: MyCommentFavoriteItem) {
+  return [
+    item.id,
+    item.created_at,
+    item.likes_count ?? 0,
+    item.author_username ?? '',
+    item.post_id ?? item.post_uuid ?? '',
+    item.post_title ?? '',
+  ]
 }
 
 function formatDate(dateStr: string): string {

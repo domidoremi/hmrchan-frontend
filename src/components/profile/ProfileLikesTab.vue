@@ -29,6 +29,7 @@
         <article
           v-for="(comment, idx) in comments"
           :key="comment.id"
+          v-memo="getLikedCommentMemo(comment)"
           class="timeline-item"
           :style="{ '--stagger': idx }"
         >
@@ -149,13 +150,13 @@ function abortLikesRequest() {
   likesController = null
 }
 
-async function fetchLikes(reset = true) {
+async function fetchLikes(reset = true): Promise<boolean> {
   if (reset) {
     abortLikesRequest()
     isLoading.value = true
     page.value = 1
   } else {
-    if (isLoadingMore.value || isLoading.value) return
+    if (isLoadingMore.value || isLoading.value) return false
     isLoadingMore.value = true
   }
   error.value = null
@@ -174,7 +175,7 @@ async function fetchLikes(reset = true) {
       signal: controller.signal,
       skipErrorToast: true,
     })
-    if (controller.signal.aborted || requestToken !== likesRequestToken) return
+    if (controller.signal.aborted || requestToken !== likesRequestToken) return false
 
     if (reset) {
       comments.value = res.items
@@ -182,11 +183,13 @@ async function fetchLikes(reset = true) {
       comments.value.push(...res.items)
     }
     total.value = res.total
+    return true
   } catch (err) {
-    if (controller.signal.aborted || requestToken !== likesRequestToken) return
+    if (controller.signal.aborted || requestToken !== likesRequestToken) return false
     if (comments.value.length === 0) {
       error.value = err instanceof ApiError ? err.message : t('common.error')
     }
+    return false
   } finally {
     if (requestToken === likesRequestToken) {
       isLoading.value = false
@@ -200,8 +203,23 @@ async function fetchLikes(reset = true) {
 
 async function loadMore() {
   if (!hasMore.value || isLoading.value || isLoadingMore.value) return
-  page.value++
-  await fetchLikes(false)
+  const nextPage = page.value + 1
+  page.value = nextPage
+  const ok = await fetchLikes(false)
+  if (!ok) {
+    page.value = nextPage - 1
+  }
+}
+
+function getLikedCommentMemo(comment: LikedComment) {
+  return [
+    comment.id,
+    comment.created_at,
+    comment.like_count ?? 0,
+    comment.reply_count ?? 0,
+    comment.post_uuid,
+    comment.post_title ?? '',
+  ]
 }
 
 function formatDate(dateStr: string): string {

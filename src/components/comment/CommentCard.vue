@@ -228,14 +228,33 @@ const showReplies = ref(false)
 const isLoadingReplies = ref(false)
 const showDeleteDialog = ref(false)
 const replyFormRef = useTemplateRef<InstanceType<typeof CommentForm>>('replyFormRef')
+let fetchRepliesController: AbortController | null = null
+let fetchRepliesToken = 0
+
+function abortFetchReplies() {
+  fetchRepliesController?.abort()
+  fetchRepliesController = null
+}
 
 async function handleShowReplies() {
   if (!props.comment.replies || props.comment.replies.length === 0) {
+    abortFetchReplies()
+    const controller = new AbortController()
+    fetchRepliesController = controller
+    const requestToken = ++fetchRepliesToken
     isLoadingReplies.value = true
     try {
-      await commentsStore.fetchReplies(props.comment.id, 1, props.postId)
+      await commentsStore.fetchReplies(props.comment.id, 1, props.postId, {
+        signal: controller.signal,
+      })
+      if (controller.signal.aborted || requestToken !== fetchRepliesToken) return
     } finally {
-      isLoadingReplies.value = false
+      if (requestToken === fetchRepliesToken) {
+        isLoadingReplies.value = false
+        if (fetchRepliesController === controller) {
+          fetchRepliesController = null
+        }
+      }
     }
   }
   showReplies.value = true
@@ -381,6 +400,7 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  abortFetchReplies()
   document.removeEventListener('click', handleClickOutside)
 })
 </script>
