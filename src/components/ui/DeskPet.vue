@@ -58,8 +58,8 @@ const stateImageMap: Record<PetState, string> = {
   [PetState.ENTER]: '/images/expressions/running-sm.webp',
   [PetState.PERCH]: '/images/expressions/standing-sm.webp',
   [PetState.TRACK]: '/images/expressions/surprised-sm.webp',
-  [PetState.LEAP]: '/images/expressions/55.png',
-  [PetState.PEEK]: '/images/expressions/22.png',
+  [PetState.LEAP]: '/images/expressions/55-sm.webp',
+  [PetState.PEEK]: '/images/expressions/22-sm.webp',
 }
 
 // 时间问候
