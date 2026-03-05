@@ -135,9 +135,6 @@
             :is-reply="true"
             :depth="currentDepth + 1"
             :root-id="rootId || String(comment.id)"
-            @reply-submitted="$emit('reply-submitted', $event)"
-            @deleted="$emit('deleted', $event)"
-            @pinned-updated="$emit('pinned-updated')"
           />
 
           <button
@@ -188,7 +185,17 @@
 </template>
 
 <script setup lang="ts" vapor>
-import { ref, computed, nextTick, onMounted, onUnmounted, useTemplateRef } from 'vue'
+import {
+  ref,
+  computed,
+  inject,
+  nextTick,
+  onMounted,
+  onUnmounted,
+  onRenderTracked,
+  onRenderTriggered,
+  useTemplateRef,
+} from 'vue'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 import {
@@ -207,6 +214,7 @@ import { discussionService, type DiscussionComment, ApiError } from '@/api'
 import { getUserAvatarUrl } from '@/composables/useUserAvatar'
 import { formatRelativeTime } from '@/utils/date'
 import DiscussionCommentForm from './DiscussionCommentForm.vue'
+import { discussionCommentTreeContextKey } from './discussionCommentTreeContext'
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
 import Dialog from '@/components/ui/Dialog.vue'
 import Button from '@/components/ui/Button.vue'
@@ -232,20 +240,25 @@ const props = withDefaults(defineProps<Props>(), {
   depth: 0,
 })
 
-const emit = defineEmits<{
-  deleted: [commentId: string]
-  'reply-submitted': [payload: { parentId: string; comment: DiscussionComment }]
-  'pinned-updated': []
-  'like-updated': [payload: { commentId: string; isLiked: boolean; likeCount: number }]
-  'replies-loaded': [payload: { commentId: string; replies: DiscussionComment[]; append: boolean }]
-  'pin-updated': [payload: { commentId: string; isPinned: boolean }]
-  'feature-updated': [payload: { commentId: string; isFeatured: boolean }]
-}>()
-
 const { t } = useI18n()
 const authStore = useAuthStore()
 const toastStore = useToastStore()
 const { user, isAuthenticated } = storeToRefs(authStore)
+const discussionCommentTreeContext = inject(discussionCommentTreeContextKey, null)
+const renderDebugEnabled =
+  import.meta.env.DEV &&
+  typeof window !== 'undefined' &&
+  (window as Window & { __MOMI_RENDER_DEBUG__?: boolean }).__MOMI_RENDER_DEBUG__ === true
+
+if (renderDebugEnabled) {
+  onRenderTracked((event) => {
+    console.debug('[render:tracked][DiscussionCommentCard]', event.type, String(event.key))
+  })
+
+  onRenderTriggered((event) => {
+    console.debug('[render:triggered][DiscussionCommentCard]', event.type, String(event.key))
+  })
+}
 
 const showMenu = ref(false)
 const showReplyForm = ref(false)
@@ -331,14 +344,14 @@ async function handleLike() {
   try {
     if (props.comment.is_liked) {
       await discussionService.unlikeComment(String(props.comment.id))
-      emit('like-updated', {
+      discussionCommentTreeContext?.onLikeUpdated({
         commentId: String(props.comment.id),
         isLiked: false,
         likeCount: Math.max(0, likeCount.value - 1),
       })
     } else {
       await discussionService.likeComment(String(props.comment.id))
-      emit('like-updated', {
+      discussionCommentTreeContext?.onLikeUpdated({
         commentId: String(props.comment.id),
         isLiked: true,
         likeCount: likeCount.value + 1,
@@ -371,7 +384,10 @@ function handleReply() {
 function handleReplySubmitted(newComment: DiscussionComment) {
   showReplyForm.value = false
   showReplies.value = true
-  emit('reply-submitted', { parentId: replyParentId.value, comment: newComment })
+  discussionCommentTreeContext?.onReplySubmitted({
+    parentId: replyParentId.value,
+    comment: newComment,
+  })
 }
 
 async function handleShowReplies() {
@@ -398,7 +414,7 @@ async function loadReplies(page: number) {
       }
     )
     if (controller.signal.aborted || requestToken !== fetchRepliesToken) return
-    emit('replies-loaded', {
+    discussionCommentTreeContext?.onRepliesLoaded({
       commentId: String(props.comment.id),
       replies: res.items,
       append: page > 1,
@@ -435,7 +451,7 @@ async function confirmDelete() {
   try {
     await discussionService.deleteComment(String(props.comment.id))
     toastStore.success(t('comment.deleteSuccess'))
-    emit('deleted', String(props.comment.id))
+    discussionCommentTreeContext?.onDeleted(String(props.comment.id))
   } catch (err) {
     if (err instanceof ApiError) {
       toastStore.error(err.message)
@@ -485,11 +501,18 @@ async function togglePin() {
   try {
     if (props.comment.is_pinned) {
       await discussionService.unpinComment(String(props.comment.id))
-      emit('pin-updated', { commentId: String(props.comment.id), isPinned: false })
+      discussionCommentTreeContext?.onPinUpdated({
+        commentId: String(props.comment.id),
+        isPinned: false,
+      })
     } else {
       await discussionService.pinComment(String(props.comment.id))
-      emit('pin-updated', { commentId: String(props.comment.id), isPinned: true })
+      discussionCommentTreeContext?.onPinUpdated({
+        commentId: String(props.comment.id),
+        isPinned: true,
+      })
     }
+    discussionCommentTreeContext?.onPinnedUpdated()
   } catch (err) {
     if (err instanceof ApiError) {
       toastStore.error(err.message)
@@ -504,10 +527,16 @@ async function toggleFeature() {
   try {
     if (props.comment.is_featured) {
       await discussionService.unfeatureComment(String(props.comment.id))
-      emit('feature-updated', { commentId: String(props.comment.id), isFeatured: false })
+      discussionCommentTreeContext?.onFeatureUpdated({
+        commentId: String(props.comment.id),
+        isFeatured: false,
+      })
     } else {
       await discussionService.featureComment(String(props.comment.id))
-      emit('feature-updated', { commentId: String(props.comment.id), isFeatured: true })
+      discussionCommentTreeContext?.onFeatureUpdated({
+        commentId: String(props.comment.id),
+        isFeatured: true,
+      })
     }
   } catch (err) {
     if (err instanceof ApiError) {

@@ -46,8 +46,6 @@
         v-memo="getCommentMemo(comment)"
         :comment="comment"
         :post-id="props.postId"
-        @reply="handleReply"
-        @deleted="handleDeleted"
       />
     </TransitionGroup>
 
@@ -64,7 +62,7 @@
 </template>
 
 <script setup lang="ts" vapor>
-import { ref, computed, watch, onWatcherCleanup } from 'vue'
+import { ref, computed, provide, watch, onWatcherCleanup } from 'vue'
 import { MessageSquare } from 'lucide-vue-next'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
@@ -72,6 +70,7 @@ import { useAuthStore, useCommentsStore } from '@/stores'
 import type { Comment } from '@/types'
 import CommentCard from './CommentCard.vue'
 import CommentForm from './CommentForm.vue'
+import { commentTreeContextKey } from './commentTreeContext'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 
 interface Props {
@@ -130,13 +129,18 @@ function handleCommentAdded() {
   // 评论已由 store 添加到本地状态
 }
 
-function handleReply() {
+function handleReplySubmitted() {
   // 回复已由子组件处理
 }
 
 function handleDeleted() {
   // 评论已由 store 从本地状态移除
 }
+
+provide(commentTreeContextKey, {
+  onDeleted: handleDeleted,
+  onReplySubmitted: handleReplySubmitted,
+})
 
 async function loadMore() {
   // NOTE: 评论分页由 useCommentsStore 通过 fetchComments(postId, page) 支持

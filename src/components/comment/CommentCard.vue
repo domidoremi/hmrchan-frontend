@@ -140,8 +140,6 @@
             :is-reply="true"
             :depth="currentDepth + 1"
             :root-id="depth === 0 ? String(comment.id) : rootId || ''"
-            @reply="$emit('reply', $event)"
-            @deleted="$emit('deleted', $event)"
           />
         </div>
       </Transition>
@@ -160,7 +158,7 @@
 </template>
 
 <script setup lang="ts" vapor>
-import { ref, computed, nextTick, onMounted, onUnmounted, useTemplateRef } from 'vue'
+import { ref, computed, inject, nextTick, onMounted, onUnmounted, useTemplateRef } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 import {
@@ -179,6 +177,7 @@ import { getUserDisplayName } from '@/utils/user'
 import { getUserAvatarUrl } from '@/composables/useUserAvatar'
 import { formatRelativeTime } from '@/utils/date'
 import CommentForm from './CommentForm.vue'
+import { commentTreeContextKey } from './commentTreeContext'
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import Badge from '@/components/ui/Badge.vue'
@@ -209,15 +208,11 @@ const canReply = computed(() => currentDepth.value < MAX_REPLY_DEPTH)
 // 显示嵌套回复：只有深度小于最大嵌套深度时才渲染子组件
 const canShowNestedReplies = computed(() => currentDepth.value < MAX_NESTING_DEPTH)
 
-const emit = defineEmits<{
-  reply: [commentId: string]
-  deleted: [commentId: string]
-}>()
-
 const { t } = useI18n()
 const authStore = useAuthStore()
 const commentsStore = useCommentsStore()
 const toastStore = useToastStore()
+const commentTreeContext = inject(commentTreeContextKey, null)
 
 const { user, isAuthenticated } = storeToRefs(authStore)
 
@@ -364,7 +359,7 @@ function handleReplySubmitted() {
   // 自动展开回复列表以显示新回复
   showReplies.value = true
   // 如果是扁平化回复，实际上是回复了 Root，所以 Root 的列表应该更新
-  emit('reply', props.rootId || props.comment.id)
+  commentTreeContext?.onReplySubmitted(props.rootId || String(props.comment.id))
 }
 
 function handleDelete() {
@@ -376,7 +371,7 @@ async function confirmDelete() {
   const result = await commentsStore.deleteComment(props.postId, String(props.comment.id))
   if (result.success) {
     toastStore.success(t('comment.deleteSuccess'))
-    emit('deleted', props.comment.id)
+    commentTreeContext?.onDeleted(String(props.comment.id))
   } else {
     toastStore.error(t('comment.error.deleteFailed'))
   }
