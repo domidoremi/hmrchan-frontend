@@ -353,10 +353,12 @@ export const discussionService = {
   async getCommentReplies(
     commentId: string,
     page = 1,
-    pageSize = 20
+    pageSize = 20,
+    config?: RequestConfig
   ): Promise<PaginatedApiResponse<DiscussionComment>> {
     const data = await apiClient.get<PaginatedApiResponse<DiscussionComment>>(
-      `/discussions/comments/${commentId}/replies?page=${page}&page_size=${pageSize}`
+      `/discussions/comments/${commentId}/replies?page=${page}&page_size=${pageSize}`,
+      config
     )
     return normalizePaginated(data, normalizeDiscussionComment)
   },

@@ -96,7 +96,7 @@ export const searchService = {
   /**
    * 获取搜索建议
    */
-  async getSuggestions(q: string, limit = 10): Promise<SearchSuggestion[]> {
+  async getSuggestions(q: string, limit = 10, config?: RequestConfig): Promise<SearchSuggestion[]> {
     if (!q.trim() || q.trim().length < 2) {
       return []
     }
@@ -104,6 +104,7 @@ export const searchService = {
       `/search/suggestions?q=${encodeURIComponent(q)}&limit=${limit}`,
       {
         skipErrorToast: true,
+        ...config,
       }
     )
 

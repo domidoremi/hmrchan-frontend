@@ -16,11 +16,45 @@ export const useCommentsStore = defineStore('comments', () => {
   const isLoading = ref(false)
   const error = ref<string | null>(null)
   let latestFetchRequestId = 0
+  let fetchCommentsController: AbortController | null = null
+  const fetchRepliesControllers = new Map<string, AbortController>()
+  const fetchRepliesTokens = new Map<string, number>()
+  let currentFetchingPostId: string | null = null
 
   function isAbortError(err: unknown): boolean {
     return err instanceof DOMException
       ? err.name === 'AbortError'
       : err instanceof Error && err.name === 'AbortError'
+  }
+
+  function abortFetchCommentsRequest() {
+    fetchCommentsController?.abort()
+    fetchCommentsController = null
+  }
+
+  function buildRepliesRequestKey(postId: string, commentId: string): string {
+    return `${postId}:${commentId}`
+  }
+
+  function abortFetchRepliesRequest(requestKey: string) {
+    const controller = fetchRepliesControllers.get(requestKey)
+    controller?.abort()
+    fetchRepliesControllers.delete(requestKey)
+  }
+
+  function abortFetchRepliesRequestsByPost(postId: string) {
+    for (const requestKey of fetchRepliesControllers.keys()) {
+      if (!requestKey.startsWith(`${postId}:`)) continue
+      abortFetchRepliesRequest(requestKey)
+      fetchRepliesTokens.delete(requestKey)
+    }
+  }
+
+  function abortAllFetchRepliesRequests() {
+    for (const requestKey of fetchRepliesControllers.keys()) {
+      abortFetchRepliesRequest(requestKey)
+    }
+    fetchRepliesTokens.clear()
   }
 
   // 获取某个帖子的评论
@@ -68,7 +102,15 @@ export const useCommentsStore = defineStore('comments', () => {
     config?: RequestConfig
   ) {
     if (!postId || postId === 'undefined') return { success: false, error: 'Invalid postId' }
+    const externalSignal = config?.signal
+    abortFetchCommentsRequest()
+    const controller = externalSignal ? null : new AbortController()
+    if (controller) {
+      fetchCommentsController = controller
+    }
+    const signal = externalSignal ?? controller?.signal
     const requestId = ++latestFetchRequestId
+    currentFetchingPostId = postId
 
     isLoading.value = true
     error.value = null
@@ -80,12 +122,14 @@ export const useCommentsStore = defineStore('comments', () => {
       try {
         data = await apiClient.get<PaginatedApiResponse<Comment>>(baseUrl, {
           ...config,
+          ...(signal ? { signal } : {}),
           skipErrorToast: true,
         })
       } catch (err) {
         if (err instanceof ApiError && (err.status === 400 || err.status === 422)) {
           data = await apiClient.get<PaginatedApiResponse<Comment>>(`${baseUrl}?sort=${sort}`, {
             ...config,
+            ...(signal ? { signal } : {}),
             skipErrorToast: true,
           })
         } else {
@@ -93,7 +137,7 @@ export const useCommentsStore = defineStore('comments', () => {
         }
       }
 
-      if (requestId !== latestFetchRequestId || config?.signal?.aborted) {
+      if (requestId !== latestFetchRequestId || signal?.aborted) {
         return { success: false, error: 'aborted' as const }
       }
 
@@ -108,7 +152,7 @@ export const useCommentsStore = defineStore('comments', () => {
 
       return { success: true, data: items }
     } catch (err) {
-      if (isAbortError(err) || config?.signal?.aborted || requestId !== latestFetchRequestId) {
+      if (isAbortError(err) || signal?.aborted || requestId !== latestFetchRequestId) {
         return { success: false, error: 'aborted' as const }
       }
       error.value = 'comment.error.fetchFailed'
@@ -116,17 +160,26 @@ export const useCommentsStore = defineStore('comments', () => {
     } finally {
       if (requestId === latestFetchRequestId) {
         isLoading.value = false
+        currentFetchingPostId = null
+        if (controller && fetchCommentsController === controller) {
+          fetchCommentsController = null
+        }
       }
     }
   }
 
   // 获取评论回复
-  async function fetchReplies(commentId: string, page = 1, postId?: string) {
+  async function fetchReplies(
+    commentId: string,
+    page = 1,
+    postId?: string,
+    config?: RequestConfig
+  ) {
     // 如果调用方提供了 postId，直接使用，避免遍历查找
     if (postId) {
       const postComments = comments.value.get(postId)
       if (postComments && findComment(postComments, commentId)) {
-        return fetchRepliesForPost(postId, commentId, page)
+        return fetchRepliesForPost(postId, commentId, page, config)
       }
     }
 
@@ -134,7 +187,7 @@ export const useCommentsStore = defineStore('comments', () => {
     for (const [pId, pComments] of comments.value.entries()) {
       const found = findComment(pComments, commentId)
       if (found) {
-        return fetchRepliesForPost(pId, commentId, page)
+        return fetchRepliesForPost(pId, commentId, page, config)
       }
     }
 
@@ -142,10 +195,37 @@ export const useCommentsStore = defineStore('comments', () => {
   }
 
   // 内部专用：已知 postId 的回复获取
-  async function fetchRepliesForPost(postId: string, commentId: string, page = 1) {
+  async function fetchRepliesForPost(
+    postId: string,
+    commentId: string,
+    page = 1,
+    config?: RequestConfig
+  ) {
+    const requestKey = buildRepliesRequestKey(postId, String(commentId))
+    const externalSignal = config?.signal
+
+    if (!externalSignal) {
+      abortFetchRepliesRequest(requestKey)
+    }
+
+    const controller = externalSignal ? null : new AbortController()
+    if (controller) {
+      fetchRepliesControllers.set(requestKey, controller)
+    }
+    const signal = externalSignal ?? controller?.signal
+    const requestToken = (fetchRepliesTokens.get(requestKey) ?? 0) + 1
+    fetchRepliesTokens.set(requestKey, requestToken)
+
     try {
       const { commentService } = await import('@/api/commentService')
-      const data = await commentService.getCommentReplies(commentId, page)
+      const data = await commentService.getCommentReplies(commentId, page, 20, {
+        ...config,
+        ...(signal ? { signal } : {}),
+      })
+
+      if (signal?.aborted || requestToken !== fetchRepliesTokens.get(requestKey)) {
+        return { success: false, error: 'aborted' as const }
+      }
 
       // 更新本地状态
       if (data.items && data.items.length > 0) {
@@ -188,8 +268,22 @@ export const useCommentsStore = defineStore('comments', () => {
       }
 
       return { success: true, data: data.items }
-    } catch {
+    } catch (err) {
+      if (
+        isAbortError(err) ||
+        signal?.aborted ||
+        requestToken !== fetchRepliesTokens.get(requestKey)
+      ) {
+        return { success: false, error: 'aborted' as const }
+      }
       return { success: false, error: 'comment.error.fetchRepliesFailed' }
+    } finally {
+      if (requestToken === fetchRepliesTokens.get(requestKey)) {
+        fetchRepliesTokens.delete(requestKey)
+        if (controller && fetchRepliesControllers.get(requestKey) === controller) {
+          fetchRepliesControllers.delete(requestKey)
+        }
+      }
     }
   }
 
@@ -408,12 +502,25 @@ export const useCommentsStore = defineStore('comments', () => {
 
   // 清空某个帖子的评论缓存
   function clearPostComments(postId: string) {
+    if (currentFetchingPostId === postId) {
+      abortFetchCommentsRequest()
+      currentFetchingPostId = null
+      isLoading.value = false
+      latestFetchRequestId += 1
+    }
+    abortFetchRepliesRequestsByPost(postId)
     comments.value.delete(postId)
   }
 
   // 清空所有评论缓存
   function clearAllComments() {
+    abortFetchCommentsRequest()
+    abortAllFetchRepliesRequests()
     comments.value.clear()
+    isLoading.value = false
+    error.value = null
+    currentFetchingPostId = null
+    latestFetchRequestId += 1
   }
 
   return {
