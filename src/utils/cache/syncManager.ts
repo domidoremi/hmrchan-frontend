@@ -39,13 +39,17 @@ export async function syncOfflineActions(): Promise<{
       // 根据操作类型执行相应的 API 调用
       switch (action.type) {
         case 'like':
-          // TODO: 实现点赞 API（当前后端未提供）
-          console.warn('[Sync] Like API not implemented yet')
-          break
-        case 'unlike':
-          // TODO: 实现取消点赞 API（当前后端未提供）
-          console.warn('[Sync] Unlike API not implemented yet')
-          break
+        case 'unlike': {
+          // 后端尚未提供点赞相关 API：避免把离线操作当作同步成功
+          await updateActionStatus(action.id, 'failed', true)
+          results.failed++
+          results.errors.push({
+            id: action.id,
+            error: `[${action.type}] API not implemented yet`,
+          })
+          await removeAction(action.id)
+          continue
+        }
         case 'favorite':
           await favoriteService.create(action.resourceId)
           break
@@ -53,10 +57,20 @@ export async function syncOfflineActions(): Promise<{
           await favoriteService.removeByPostId(action.resourceId)
           break
         case 'comment':
-          if (action.data?.['content']) {
-            await commentService.createComment(action.resourceId, {
-              content: action.data['content'] as string,
-            })
+          {
+            const rawContent = action.data?.['content']
+            const content = typeof rawContent === 'string' ? rawContent.trim() : ''
+            if (!content) {
+              await updateActionStatus(action.id, 'failed', true)
+              results.failed++
+              results.errors.push({
+                id: action.id,
+                error: '[comment] Missing content',
+              })
+              await removeAction(action.id)
+              continue
+            }
+            await commentService.createComment(action.resourceId, { content })
           }
           break
       }
