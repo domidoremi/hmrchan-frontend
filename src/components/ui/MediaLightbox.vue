@@ -176,7 +176,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onUnmounted, nextTick, useTemplateRef } from 'vue'
+import {
+  ref,
+  computed,
+  watch,
+  watchPostEffect,
+  watchSyncEffect,
+  onUnmounted,
+  useTemplateRef,
+} from 'vue'
 import {
   X,
   ZoomIn,
@@ -255,6 +263,7 @@ const imageReloadToken = ref(0)
 const controlsVisible = ref(true)
 const showHints = ref(true)
 const transitionName = ref('lightbox-slide-left')
+const shouldFocusShell = ref(false)
 
 const scale = ref(1)
 const translateX = ref(0)
@@ -312,11 +321,7 @@ watch(
       hasError.value = false
       imageReloadToken.value += 1
       lockBodyScroll()
-      nextTick(() => {
-        containerRef.value?.focus()
-        showControlsTemporarily()
-        startHintsTimer()
-      })
+      shouldFocusShell.value = true
       prefetchAround(currentIndex.value)
     } else {
       unbindGlobalEvents()
@@ -328,6 +333,14 @@ watch(
   },
   { immediate: true }
 )
+
+watchPostEffect(() => {
+  if (!props.isOpen || !shouldFocusShell.value) return
+  containerRef.value?.focus()
+  showControlsTemporarily()
+  startHintsTimer()
+  shouldFocusShell.value = false
+})
 
 watch(
   () => props.initialIndex,
@@ -349,6 +362,12 @@ watch(currentIndex, (idx) => {
   isSwiping.value = false
   prefetchAround(idx)
   startHintsTimer()
+})
+
+watchSyncEffect(() => {
+  if (scale.value > 1) return
+  if (translateX.value !== 0) translateX.value = 0
+  if (translateY.value !== 0) translateY.value = 0
 })
 
 function close() {
