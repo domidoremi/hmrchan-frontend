@@ -258,6 +258,8 @@ const reportReason = ref('spam')
 const reportDescription = ref('')
 const replyFormRef = useTemplateRef<InstanceType<typeof DiscussionCommentForm>>('replyFormRef')
 const repliesPageSize = 20
+let fetchRepliesController: AbortController | null = null
+let fetchRepliesToken = 0
 
 const currentDepth = computed(() => props.depth || 0)
 const canReply = computed(() => currentDepth.value < MAX_REPLY_DEPTH)
@@ -302,6 +304,17 @@ function getReplyMemo(comment: DiscussionComment) {
 
 function formatTime(dateStr: string): string {
   return formatRelativeTime(dateStr, t)
+}
+
+function isAbortError(err: unknown): boolean {
+  return err instanceof DOMException
+    ? err.name === 'AbortError'
+    : err instanceof Error && err.name === 'AbortError'
+}
+
+function abortFetchReplies() {
+  fetchRepliesController?.abort()
+  fetchRepliesController = null
 }
 
 function toggleMenu() {
@@ -368,26 +381,41 @@ async function handleShowReplies() {
 }
 
 async function loadReplies(page: number) {
+  abortFetchReplies()
+  const controller = new AbortController()
+  fetchRepliesController = controller
+  const requestToken = ++fetchRepliesToken
   isLoadingReplies.value = true
   try {
     const res = await discussionService.getCommentReplies(
       String(props.comment.id),
       page,
-      repliesPageSize
+      repliesPageSize,
+      {
+        signal: controller.signal,
+        skipErrorToast: true,
+      }
     )
+    if (controller.signal.aborted || requestToken !== fetchRepliesToken) return
     emit('replies-loaded', {
       commentId: String(props.comment.id),
       replies: res.items,
       append: page > 1,
     })
   } catch (err) {
+    if (controller.signal.aborted || isAbortError(err) || requestToken !== fetchRepliesToken) return
     if (err instanceof ApiError) {
       toastStore.error(err.message)
     } else {
       toastStore.error(t('comment.error.fetchRepliesFailed'))
     }
   } finally {
-    isLoadingReplies.value = false
+    if (requestToken === fetchRepliesToken) {
+      isLoadingReplies.value = false
+      if (fetchRepliesController === controller) {
+        fetchRepliesController = null
+      }
+    }
   }
 }
 
@@ -501,6 +529,7 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  abortFetchReplies()
   document.removeEventListener('click', handleClickOutside)
 })
 </script>

@@ -90,7 +90,7 @@
 </template>
 
 <script setup lang="ts" vapor>
-import { ref, computed, watch, onWatcherCleanup } from 'vue'
+import { ref, computed, watch, onUnmounted, onWatcherCleanup } from 'vue'
 import { MessageSquare } from 'lucide-vue-next'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
@@ -123,6 +123,7 @@ const isLoadingMore = ref(false)
 const error = ref<string | null>(null)
 const hasNext = ref(false)
 let latestFetchId = 0
+let fetchCommentsController: AbortController | null = null
 
 const currentSort = ref<'newest' | 'oldest' | 'popular'>('newest')
 const currentFilter = ref<'all' | 'author' | 'admin'>('all')
@@ -166,7 +167,21 @@ function isAbortError(err: unknown): boolean {
   return err instanceof DOMException && err.name === 'AbortError'
 }
 
+function abortFetchCommentsRequest() {
+  fetchCommentsController?.abort()
+  fetchCommentsController = null
+}
+
 async function fetchComments(reset = true, signal?: AbortSignal): Promise<boolean> {
+  const externalSignal = signal
+  if (!externalSignal) {
+    abortFetchCommentsRequest()
+  }
+  const controller = externalSignal ? null : new AbortController()
+  if (controller) {
+    fetchCommentsController = controller
+  }
+  const requestSignal = externalSignal ?? controller?.signal
   const fetchId = ++latestFetchId
 
   if (reset) {
@@ -189,10 +204,13 @@ async function fetchComments(reset = true, signal?: AbortSignal): Promise<boolea
         filter: resolveFilterParam(),
         preload_replies: Number(preloadReplies.value),
       },
-      { signal }
+      {
+        skipErrorToast: true,
+        ...(requestSignal ? { signal: requestSignal } : {}),
+      }
     )
 
-    if (signal?.aborted || fetchId !== latestFetchId) return false
+    if (requestSignal?.aborted || fetchId !== latestFetchId) return false
 
     const items = sortPinnedFirst(res.items || [])
     if (reset) {
@@ -213,7 +231,7 @@ async function fetchComments(reset = true, signal?: AbortSignal): Promise<boolea
       Boolean((res as unknown as { has_more?: boolean }).has_more)
     return true
   } catch (err) {
-    if (signal?.aborted || isAbortError(err) || fetchId !== latestFetchId) return false
+    if (requestSignal?.aborted || isAbortError(err) || fetchId !== latestFetchId) return false
 
     if (comments.value.length === 0) {
       if (err instanceof ApiError) {
@@ -224,9 +242,12 @@ async function fetchComments(reset = true, signal?: AbortSignal): Promise<boolea
     }
     return false
   } finally {
-    if (!signal?.aborted && fetchId === latestFetchId) {
+    if (!requestSignal?.aborted && fetchId === latestFetchId) {
       isLoading.value = false
       isLoadingMore.value = false
+    }
+    if (controller && fetchCommentsController === controller && fetchId === latestFetchId) {
+      fetchCommentsController = null
     }
   }
 }
@@ -307,6 +328,13 @@ watch([currentSort, currentFilter, preloadReplies], () => {
   const controller = new AbortController()
   void fetchComments(true, controller.signal)
   onWatcherCleanup(() => controller.abort())
+})
+
+onUnmounted(() => {
+  latestFetchId += 1
+  abortFetchCommentsRequest()
+  isLoading.value = false
+  isLoadingMore.value = false
 })
 </script>
 
