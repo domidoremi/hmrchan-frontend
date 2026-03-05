@@ -134,6 +134,7 @@ pnpm-lock.yaml
 # =====================
 .agent/
 .claude/
+.codex/
 .kiro/
 .qoder/
 .qoderignore

@@ -10,6 +10,7 @@
 - [快速开始](#快速开始)
 - [环境变量](#环境变量)
 - [可用脚本](#可用脚本)
+- [提交规范](#提交规范)
 - [项目结构](#项目结构)
 - [功能特性](#功能特性)
 - [部署指南](#部署指南)
@@ -173,6 +174,10 @@ bun run screenshots:generate  # 生成应用截图（需要开发服务器运行
 bun run sitemap:generate # 生成 sitemap.xml
 bun run sitemap:preview  # 预览 sitemap（不写入文件）
 ```
+
+## 🧾 提交规范
+
+本仓库使用 Conventional Commits（Husky 在提交时校验提交信息格式），提交信息编写指引见：`docs/Git提交规范.md`。
 
 ## 📁 项目结构
 
