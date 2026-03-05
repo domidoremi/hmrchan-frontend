@@ -42,7 +42,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch, onWatcherCleanup } from 'vue'
+import { computed, ref, watch, onWatcherCleanup, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
@@ -77,34 +77,77 @@ const showLabels = computed(() => props.variant === 'default')
 
 const isFavorited = ref(false)
 const isFavoriteLoading = ref(false)
+let favoriteStatusController: AbortController | null = null
+let favoriteStatusToken = 0
 
-async function fetchFavoriteStatus() {
+function isAbortError(error: unknown): boolean {
+  if (error instanceof DOMException) return error.name === 'AbortError'
+  return error instanceof Error && /abort/i.test(error.message)
+}
+
+function abortFavoriteStatusRequest() {
+  if (favoriteStatusController) {
+    favoriteStatusController.abort()
+    favoriteStatusController = null
+  }
+  favoriteStatusToken += 1
+}
+
+async function fetchFavoriteStatus(signal?: AbortSignal) {
   const postId = props.postId
   if (!postId) return
 
   if (!isAuthenticated.value) {
+    abortFavoriteStatusRequest()
     isFavorited.value = false
     return
   }
 
-  const controller = new AbortController()
-  onWatcherCleanup(() => controller.abort())
+  const controller = signal ? null : new AbortController()
+  if (controller) {
+    if (favoriteStatusController) {
+      favoriteStatusController.abort()
+    }
+    favoriteStatusController = controller
+  }
+  const activeSignal = signal ?? controller?.signal
+  const requestToken = ++favoriteStatusToken
 
   try {
-    const res = await favoriteService.check(postId, { signal: controller.signal })
-    if (controller.signal.aborted) return
+    const res = await favoriteService.check(
+      postId,
+      activeSignal ? { signal: activeSignal } : undefined
+    )
+    if (activeSignal?.aborted || requestToken !== favoriteStatusToken) return
     isFavorited.value = res.is_favorited
-  } catch {
-    if (controller.signal.aborted) return
+  } catch (error) {
+    if (activeSignal?.aborted || isAbortError(error) || requestToken !== favoriteStatusToken) return
     isFavorited.value = false
+  } finally {
+    if (
+      controller &&
+      favoriteStatusController === controller &&
+      requestToken === favoriteStatusToken
+    ) {
+      favoriteStatusController = null
+    }
   }
 }
 
-watch([() => props.postId, isAuthenticated], fetchFavoriteStatus, { immediate: true })
+watch(
+  [() => props.postId, isAuthenticated],
+  () => {
+    const controller = new AbortController()
+    void fetchFavoriteStatus(controller.signal)
+    onWatcherCleanup(() => controller.abort())
+  },
+  { immediate: true }
+)
 
 async function toggleFavorite() {
   if (!isAuthenticated.value) return
   if (isFavoriteLoading.value) return
+  abortFavoriteStatusRequest()
 
   isFavoriteLoading.value = true
 
@@ -142,6 +185,10 @@ async function toggleFavorite() {
     isFavoriteLoading.value = false
   }
 }
+
+onBeforeUnmount(() => {
+  abortFavoriteStatusRequest()
+})
 
 async function sharePost() {
   if (typeof window === 'undefined' || !props.postId) return

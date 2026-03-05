@@ -205,14 +205,14 @@ const groupedHistory = computed<HistoryGroup[]>(() => {
   return order.map((label) => ({ label, items: groups[label]! }))
 })
 
-async function fetchHistory(reset = true) {
+async function fetchHistory(reset = true): Promise<boolean> {
   if (reset) {
     historyController?.abort()
     historyController = null
     isLoading.value = true
     page.value = 1
   } else {
-    if (isLoadingMore.value || isLoading.value) return
+    if (isLoadingMore.value || isLoading.value) return false
     isLoadingMore.value = true
   }
   error.value = null
@@ -231,7 +231,7 @@ async function fetchHistory(reset = true) {
       signal: controller.signal,
       skipErrorToast: true,
     })
-    if (controller.signal.aborted || requestToken !== historyRequestToken) return
+    if (controller.signal.aborted || requestToken !== historyRequestToken) return false
 
     const transformedItems = res.items.map(transformHistoryItem)
     if (reset) {
@@ -240,11 +240,13 @@ async function fetchHistory(reset = true) {
       history.value.push(...transformedItems)
     }
     total.value = res.total
+    return true
   } catch (err) {
-    if (controller.signal.aborted || requestToken !== historyRequestToken) return
+    if (controller.signal.aborted || requestToken !== historyRequestToken) return false
     if (history.value.length === 0) {
       error.value = err instanceof ApiError ? err.message : t('common.error')
     }
+    return false
   } finally {
     if (requestToken === historyRequestToken) {
       isLoading.value = false
@@ -258,8 +260,12 @@ async function fetchHistory(reset = true) {
 
 async function loadMore() {
   if (!hasMore.value || isLoading.value || isLoadingMore.value) return
-  page.value++
-  await fetchHistory(false)
+  const nextPage = page.value + 1
+  page.value = nextPage
+  const ok = await fetchHistory(false)
+  if (!ok) {
+    page.value = nextPage - 1
+  }
 }
 
 function clearHistory() {

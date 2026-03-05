@@ -207,7 +207,15 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, ref, watch, useTemplateRef } from 'vue'
+import {
+  computed,
+  nextTick,
+  onBeforeUnmount,
+  onWatcherCleanup,
+  ref,
+  watch,
+  useTemplateRef,
+} from 'vue'
 import { useI18n } from 'vue-i18n'
 import { X } from 'lucide-vue-next'
 import { postService, type PostDetailResponse, type PostListItem } from '@/api'
@@ -377,21 +385,47 @@ const isLoading = ref(false)
 const loadError = ref<string | null>(null)
 
 let loadingTimer: ReturnType<typeof setTimeout> | null = null
+let loadingTimerSeq = 0
 let reloadSeq = 0
+let reloadController: AbortController | null = null
+
+function isAbortError(error: unknown): boolean {
+  if (error instanceof DOMException) return error.name === 'AbortError'
+  return error instanceof Error && /abort/i.test(error.message)
+}
+
+function clearLoadingTimer(seq?: number) {
+  if (!loadingTimer) return
+  if (typeof seq === 'number' && loadingTimerSeq !== seq) return
+  clearTimeout(loadingTimer)
+  loadingTimer = null
+  loadingTimerSeq = 0
+}
+
+function abortReloadRequest() {
+  if (reloadController) {
+    reloadController.abort()
+    reloadController = null
+  }
+  reloadSeq += 1
+}
 
 async function reload() {
   const id = props.postId
   if (!props.isOpen || !id) return
 
+  if (reloadController) {
+    reloadController.abort()
+  }
+  const controller = new AbortController()
+  reloadController = controller
   const seq = ++reloadSeq
 
   // Avoid flashing loading UI on cache hits.
-  if (loadingTimer) {
-    clearTimeout(loadingTimer)
-    loadingTimer = null
-  }
+  clearLoadingTimer()
   isLoading.value = false
 
+  loadingTimerSeq = seq
   loadingTimer = setTimeout(() => {
     if (seq !== reloadSeq) return
     isLoading.value = true
@@ -400,34 +434,41 @@ async function reload() {
   loadError.value = null
 
   try {
-    const res = await load(id)
+    const res = await load(id, { signal: controller.signal })
+    if (controller.signal.aborted || seq !== reloadSeq) return
     post.value = res.data
   } catch (e) {
+    if (controller.signal.aborted || isAbortError(e) || seq !== reloadSeq) return
     post.value = null
     loadError.value = e instanceof Error ? e.message : t('common.error')
   } finally {
-    if (loadingTimer) {
-      clearTimeout(loadingTimer)
-      loadingTimer = null
+    clearLoadingTimer(seq)
+    if (seq === reloadSeq && reloadController === controller) {
+      isLoading.value = false
+      reloadController = null
     }
-    isLoading.value = false
   }
 }
 
 watch(
   () => ({ open: props.isOpen, id: props.postId }),
-  async ({ open, id }) => {
+  ({ open, id }) => {
     if (!open) return
+    onWatcherCleanup(() => {
+      abortReloadRequest()
+      clearLoadingTimer()
+      isLoading.value = false
+    })
 
     // avoid showing stale detail content from previous open
     post.value = null
 
     activeMediaIndex.value = 0
 
-    await nextTick()
-    panelRef.value?.focus()
+    void nextTick(() => panelRef.value?.focus())
 
     if (!id) {
+      abortReloadRequest()
       post.value = null
       loadError.value = null
       isLoading.value = false
@@ -465,11 +506,8 @@ watch(
       window.addEventListener('popstate', onPopState)
     } else {
       // Cancel any delayed loading UI.
-      if (loadingTimer) {
-        clearTimeout(loadingTimer)
-        loadingTimer = null
-      }
-      reloadSeq += 1
+      abortReloadRequest()
+      clearLoadingTimer()
       isLoading.value = false
 
       // NOTE: drag state is cleaned up in <Transition @after-leave> to preserve the dismiss animation.
@@ -488,11 +526,9 @@ watch(
 )
 
 onBeforeUnmount(() => {
+  abortReloadRequest()
   unlockBodyScroll()
-  if (loadingTimer) {
-    clearTimeout(loadingTimer)
-    loadingTimer = null
-  }
+  clearLoadingTimer()
   if (typeof window !== 'undefined') {
     window.removeEventListener('keydown', onKeydown)
     window.removeEventListener('popstate', onPopState)
