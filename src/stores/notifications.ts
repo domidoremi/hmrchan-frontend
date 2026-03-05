@@ -110,8 +110,13 @@ export const useNotificationsStore = defineStore('notifications', () => {
     return ok
   }
 
-  async function refreshUnreadCount() {
-    abortRefreshUnreadCount()
+  async function refreshUnreadCount(force = false): Promise<boolean> {
+    if (refreshUnreadController && !force) {
+      return false
+    }
+    if (force) {
+      abortRefreshUnreadCount()
+    }
     const controller = new AbortController()
     refreshUnreadController = controller
     const requestToken = ++refreshUnreadToken
@@ -121,10 +126,12 @@ export const useNotificationsStore = defineStore('notifications', () => {
         signal: controller.signal,
         skipErrorToast: true,
       })
-      if (controller.signal.aborted || requestToken !== refreshUnreadToken) return
+      if (controller.signal.aborted || requestToken !== refreshUnreadToken) return false
       unreadCount.value = res.unread_count
+      return true
     } catch {
-      // silent
+      if (controller.signal.aborted || requestToken !== refreshUnreadToken) return false
+      return false
     } finally {
       if (requestToken === refreshUnreadToken && refreshUnreadController === controller) {
         refreshUnreadController = null
@@ -158,7 +165,7 @@ export const useNotificationsStore = defineStore('notifications', () => {
       if (!type) {
         unreadCount.value = 0
       } else {
-        await refreshUnreadCount()
+        await refreshUnreadCount(true)
       }
     } catch {
       // silent
@@ -188,6 +195,7 @@ export const useNotificationsStore = defineStore('notifications', () => {
       if (readOnly) {
         items.value = items.value.filter((n) => !n.is_read)
         total.value = items.value.length
+        await refreshUnreadCount(true)
       } else {
         items.value = []
         total.value = 0
@@ -206,7 +214,10 @@ export const useNotificationsStore = defineStore('notifications', () => {
 
   function startPolling() {
     stopPolling()
-    pollTimer = setInterval(refreshUnreadCount, POLL_INTERVAL)
+    void refreshUnreadCount()
+    pollTimer = setInterval(() => {
+      void refreshUnreadCount()
+    }, POLL_INTERVAL)
   }
 
   function stopPolling() {
