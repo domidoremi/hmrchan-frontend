@@ -35,6 +35,9 @@ export const useAuthStore = defineStore(
     const isLoading = ref(false)
     const error = ref<string | null>(null)
 
+    const isInitialized = ref(false)
+    let initPromise: Promise<void> | null = null
+
     let heartbeatTimer: ReturnType<typeof setTimeout> | null = null
     let authLogoutHandler: (() => void) | null = null
     let heartbeatInterval = DEFAULT_HEARTBEAT_INTERVAL
@@ -435,6 +438,25 @@ export const useAuthStore = defineStore(
     }
 
     /**
+     * 确保 initAuth 只执行一次（用于路由守卫等需要稳定认证状态的场景）
+     */
+    function ensureAuthInitialized(): Promise<void> {
+      if (isInitialized.value) return Promise.resolve()
+      if (initPromise) return initPromise
+
+      initPromise = initAuth()
+        .catch(() => {
+          // 初始化失败时保持现有状态（游客/持久化 user），避免阻塞首屏或导航
+        })
+        .finally(() => {
+          isInitialized.value = true
+          initPromise = null
+        })
+
+      return initPromise
+    }
+
+    /**
      * 监听登出事件和 token 刷新事件（由 API client 触发）
      * 返回清理函数，用于移除事件监听器
      */
@@ -648,6 +670,7 @@ export const useAuthStore = defineStore(
       logout,
       fetchCurrentUser,
       initAuth,
+      ensureAuthInitialized,
       setupAuthListener,
       startHeartbeat,
       stopHeartbeat,

@@ -261,6 +261,11 @@ router.beforeEach(async (to) => {
   await ensureAuthCompatStyles(to)
 
   const authStore = getAuthStore()
+
+  // 仅在需要认证判断的路由等待初始化，避免阻塞公开页面首屏渲染
+  if (to.meta.requiresAuth || to.meta.guestOnly) {
+    await authStore.ensureAuthInitialized()
+  }
   const isAuthenticated = authStore.isAuthenticated
 
   // 帖子详情仅接受 UUID/ULID，非法参数直接转 404，避免无效请求噪音
