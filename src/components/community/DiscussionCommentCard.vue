@@ -298,6 +298,7 @@ function getReplyMemo(comment: DiscussionComment) {
     comment.like_count ?? comment.likes_count ?? 0,
     comment.reply_count ?? comment.replies_count ?? 0,
     Boolean(comment.is_pinned),
+    Boolean(comment.is_featured),
     Boolean(comment.is_liked),
   ]
 }
