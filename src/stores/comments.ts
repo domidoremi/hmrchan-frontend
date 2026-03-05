@@ -2,7 +2,7 @@
  * Comments Store - 评论状态管理
  */
 
-import { ref } from 'vue'
+import { ref, shallowRef, triggerRef } from 'vue'
 import { defineStore } from 'pinia'
 import type { Comment, CommentFormData } from '@/types'
 import { sanitizeComment, validateComment, commentRateLimiter } from '@/utils/security'
@@ -12,7 +12,7 @@ import { apiClient, ApiError, type PaginatedApiResponse, type RequestConfig } fr
 const MAX_CACHED_POSTS = 20
 
 export const useCommentsStore = defineStore('comments', () => {
-  const comments = ref<Map<string, Comment[]>>(new Map())
+  const comments = shallowRef<Map<string, Comment[]>>(new Map())
   const isLoading = ref(false)
   const error = ref<string | null>(null)
   let latestFetchRequestId = 0
@@ -20,6 +20,10 @@ export const useCommentsStore = defineStore('comments', () => {
   const fetchRepliesControllers = new Map<string, AbortController>()
   const fetchRepliesTokens = new Map<string, number>()
   let currentFetchingPostId: string | null = null
+
+  function touchComments() {
+    triggerRef(comments)
+  }
 
   function isAbortError(err: unknown): boolean {
     return err instanceof DOMException
@@ -176,6 +180,7 @@ export const useCommentsStore = defineStore('comments', () => {
         const oldestKey = comments.value.keys().next().value
         if (oldestKey !== undefined) comments.value.delete(oldestKey)
       }
+      touchComments()
 
       return { success: true, data: items }
     } catch (err) {
@@ -292,6 +297,7 @@ export const useCommentsStore = defineStore('comments', () => {
         }
 
         comments.value.set(postId, updateCommentReplies(postComments))
+        touchComments()
       }
 
       return { success: true, data: data.items }
@@ -383,6 +389,7 @@ export const useCommentsStore = defineStore('comments', () => {
         // 顶级评论 - 后端返回的数据已包含 is_thread_owner: true
         comments.value.set(postId, [normalizedNewComment, ...postComments])
       }
+      touchComments()
 
       return { success: true, data: normalizedNewComment }
     } catch {
@@ -402,6 +409,7 @@ export const useCommentsStore = defineStore('comments', () => {
       const postComments = comments.value.get(postId) || []
       removeComment(postComments, commentId)
       comments.value.set(postId, [...postComments])
+      touchComments()
 
       return { success: true }
     } catch {
@@ -526,13 +534,18 @@ export const useCommentsStore = defineStore('comments', () => {
 
   // 辅助函数：更新所有帖子中的某个评论
   function updateCommentInAll(commentId: string, updater: (comment: Comment) => void) {
+    let hasUpdated = false
     comments.value.forEach((postComments, postId) => {
       const comment = findComment(postComments, commentId)
       if (comment) {
         updater(comment)
         comments.value.set(postId, [...postComments])
+        hasUpdated = true
       }
     })
+    if (hasUpdated) {
+      touchComments()
+    }
   }
 
   // 清空某个帖子的评论缓存
@@ -544,7 +557,9 @@ export const useCommentsStore = defineStore('comments', () => {
       latestFetchRequestId += 1
     }
     abortFetchRepliesRequestsByPost(postId)
-    comments.value.delete(postId)
+    if (comments.value.delete(postId)) {
+      touchComments()
+    }
   }
 
   // 清空所有评论缓存
@@ -552,6 +567,7 @@ export const useCommentsStore = defineStore('comments', () => {
     abortFetchCommentsRequest()
     abortAllFetchRepliesRequests()
     comments.value.clear()
+    touchComments()
     isLoading.value = false
     error.value = null
     currentFetchingPostId = null
