@@ -41,8 +41,21 @@ export const useAuthStore = defineStore(
     let deferredProfileTimer: ReturnType<typeof setTimeout> | null = null
     let deferredProfileController: AbortController | null = null
     let deferredProfileRequestToken = 0
+    let fetchCurrentUserController: AbortController | null = null
+    let fetchCurrentUserToken = 0
 
     const isAuthenticated = computed(() => !!user.value && !!token.value)
+
+    function isAbortError(err: unknown): boolean {
+      return err instanceof DOMException
+        ? err.name === 'AbortError'
+        : err instanceof Error && err.name === 'AbortError'
+    }
+
+    function abortFetchCurrentUserRequest() {
+      fetchCurrentUserController?.abort()
+      fetchCurrentUserController = null
+    }
 
     /**
      * 登录/注册后延迟拉取完整用户资料
@@ -294,6 +307,8 @@ export const useAuthStore = defineStore(
       deferredProfileController?.abort()
       deferredProfileController = null
       deferredProfileRequestToken += 1
+      abortFetchCurrentUserRequest()
+      fetchCurrentUserToken += 1
       try {
         await authService.logout()
       } catch {
@@ -325,12 +340,27 @@ export const useAuthStore = defineStore(
      */
     async function fetchCurrentUser(clearOnAuthError = true) {
       if (!token.value) return null
+      abortFetchCurrentUserRequest()
+      const controller = new AbortController()
+      fetchCurrentUserController = controller
+      const requestToken = ++fetchCurrentUserToken
 
       try {
-        const currentUser = await authService.getCurrentUser()
+        const currentUser = await authService.getCurrentUser({
+          signal: controller.signal,
+          skipErrorToast: true,
+        })
+        if (controller.signal.aborted || requestToken !== fetchCurrentUserToken) return null
         user.value = currentUser
         return currentUser
       } catch (err) {
+        if (
+          controller.signal.aborted ||
+          isAbortError(err) ||
+          requestToken !== fetchCurrentUserToken
+        ) {
+          return null
+        }
         if (
           clearOnAuthError &&
           err instanceof ApiError &&
@@ -342,6 +372,10 @@ export const useAuthStore = defineStore(
         }
         // 网络错误、500 等不清除认证状态，保留用户会话
         return null
+      } finally {
+        if (requestToken === fetchCurrentUserToken && fetchCurrentUserController === controller) {
+          fetchCurrentUserController = null
+        }
       }
     }
 
@@ -418,6 +452,8 @@ export const useAuthStore = defineStore(
         deferredProfileController?.abort()
         deferredProfileController = null
         deferredProfileRequestToken += 1
+        abortFetchCurrentUserRequest()
+        fetchCurrentUserToken += 1
         user.value = null
         token.value = null
         refreshToken.value = null
@@ -460,6 +496,8 @@ export const useAuthStore = defineStore(
       deferredProfileController?.abort()
       deferredProfileController = null
       deferredProfileRequestToken += 1
+      abortFetchCurrentUserRequest()
+      fetchCurrentUserToken += 1
       if (authLogoutHandler) {
         window.removeEventListener('auth:logout', authLogoutHandler)
         authLogoutHandler = null

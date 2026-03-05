@@ -188,8 +188,11 @@ export const authService = {
   /**
    * 获取当前用户信息
    */
-  async getCurrentUser(): Promise<UserResponse> {
-    return apiClient.get<UserResponse>('/auth/me', authConfig)
+  async getCurrentUser(config?: RequestConfig): Promise<UserResponse> {
+    return apiClient.get<UserResponse>('/auth/me', {
+      ...authConfig,
+      ...config,
+    })
   },
 
   /**
