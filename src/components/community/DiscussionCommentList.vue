@@ -72,9 +72,6 @@
         :comment="comment"
         :discussion-id="discussionId"
         :discussion-author-id="discussionAuthorId"
-        @deleted="handleDeleted"
-        @reply-submitted="handleReplySubmitted"
-        @pinned-updated="handlePinnedUpdated"
       />
     </TransitionGroup>
 
@@ -90,7 +87,7 @@
 </template>
 
 <script setup lang="ts" vapor>
-import { ref, computed, watch, onUnmounted, onWatcherCleanup } from 'vue'
+import { ref, computed, provide, watch, onUnmounted, onWatcherCleanup } from 'vue'
 import { MessageSquare } from 'lucide-vue-next'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
@@ -98,6 +95,7 @@ import { useAuthStore } from '@/stores'
 import { discussionService, type DiscussionComment, ApiError } from '@/api'
 import DiscussionCommentForm from './DiscussionCommentForm.vue'
 import DiscussionCommentCard from './DiscussionCommentCard.vue'
+import { discussionCommentTreeContextKey } from './discussionCommentTreeContext'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import Select from '@/components/ui/Select.vue'
@@ -144,6 +142,64 @@ function sortPinnedFirst(items: DiscussionComment[]) {
   const pinned = items.filter((item) => item.is_pinned)
   const rest = items.filter((item) => !item.is_pinned)
   return [...pinned, ...rest]
+}
+
+function patchCommentById(
+  list: DiscussionComment[],
+  commentId: string,
+  patcher: (comment: DiscussionComment) => DiscussionComment
+): { items: DiscussionComment[]; updated: boolean } {
+  let updated = false
+  const items = list.map((item) => {
+    if (String(item.id) === commentId) {
+      updated = true
+      return patcher(item)
+    }
+    if (item.replies && item.replies.length > 0) {
+      const child = patchCommentById(item.replies, commentId, patcher)
+      if (child.updated) {
+        updated = true
+        return { ...item, replies: child.items }
+      }
+    }
+    return item
+  })
+  return { items: updated ? items : list, updated }
+}
+
+function removeNestedComment(
+  list: DiscussionComment[],
+  commentId: string
+): { items: DiscussionComment[]; removedCount: number } {
+  let removedCount = 0
+  const items: DiscussionComment[] = []
+
+  for (const item of list) {
+    if (String(item.id) === commentId) {
+      removedCount += 1
+      continue
+    }
+
+    let nextItem = item
+    if (item.replies && item.replies.length > 0) {
+      const nested = removeNestedComment(item.replies, commentId)
+      if (nested.removedCount > 0) {
+        const baseReplyCount = item.reply_count ?? item.replies_count ?? item.replies.length
+        const nextReplyCount = Math.max(0, baseReplyCount - nested.removedCount)
+        nextItem = {
+          ...item,
+          replies: nested.items,
+          reply_count: nextReplyCount,
+          replies_count: nextReplyCount,
+        }
+        removedCount += nested.removedCount
+      }
+    }
+
+    items.push(nextItem)
+  }
+
+  return { items, removedCount }
 }
 
 function getCommentMemo(comment: DiscussionComment) {
@@ -276,12 +332,14 @@ function handlePinnedUpdated() {
 
 function handleReplySubmitted(payload: { parentId: string; comment: DiscussionComment }) {
   const { parentId, comment } = payload
-  comments.value = comments.value.map((item) => {
-    if (String(item.id) !== String(parentId)) return item
+  const patched = patchCommentById(comments.value, String(parentId), (item) => {
     const existingReplies = item.replies || []
-    const updatedReplies = [...existingReplies, comment]
+    const dedupedReplies = existingReplies.filter(
+      (reply) => String(reply.id) !== String(comment.id)
+    )
+    const updatedReplies = [...dedupedReplies, comment]
     const existingCount = item.reply_count ?? item.replies_count ?? existingReplies.length
-    const updatedCount = existingCount + 1
+    const updatedCount = Math.max(existingCount + 1, updatedReplies.length)
     return {
       ...item,
       replies: updatedReplies,
@@ -289,33 +347,90 @@ function handleReplySubmitted(payload: { parentId: string; comment: DiscussionCo
       replies_count: updatedCount,
     }
   })
+  if (patched.updated) {
+    comments.value = patched.items
+  }
 }
 
 function handleDeleted(commentId: string) {
-  let removedTopLevel = false
-
-  const updated = comments.value.filter((item) => {
-    if (String(item.id) === String(commentId)) {
-      removedTopLevel = true
-      return false
-    }
-    if (item.replies && item.replies.length > 0) {
-      const index = item.replies.findIndex((reply) => String(reply.id) === String(commentId))
-      if (index !== -1) {
-        item.replies.splice(index, 1)
-        const updatedCount = Math.max(0, (item.reply_count ?? item.replies_count ?? 0) - 1)
-        item.reply_count = updatedCount
-        item.replies_count = updatedCount
-      }
-    }
-    return true
-  })
-
-  comments.value = updated
+  const removedTopLevel = comments.value.some((item) => String(item.id) === String(commentId))
+  const updated = removeNestedComment(comments.value, String(commentId))
+  if (updated.removedCount === 0) return
+  comments.value = sortPinnedFirst(updated.items)
   if (removedTopLevel) {
     total.value = Math.max(0, total.value - 1)
   }
 }
+
+function handleLikeUpdated(payload: { commentId: string; isLiked: boolean; likeCount: number }) {
+  const patched = patchCommentById(comments.value, payload.commentId, (item) => ({
+    ...item,
+    is_liked: payload.isLiked,
+    like_count: payload.likeCount,
+    likes_count: payload.likeCount,
+  }))
+  if (patched.updated) {
+    comments.value = patched.items
+  }
+}
+
+function handleRepliesLoaded(payload: {
+  commentId: string
+  replies: DiscussionComment[]
+  append: boolean
+}) {
+  const patched = patchCommentById(comments.value, payload.commentId, (item) => {
+    const currentReplies = item.replies || []
+    const mergedReplies = payload.append
+      ? [...currentReplies, ...payload.replies]
+      : [...payload.replies]
+    const dedupedReplies = Array.from(
+      new Map(mergedReplies.map((reply) => [String(reply.id), reply])).values()
+    )
+    const existingCount = item.reply_count ?? item.replies_count ?? currentReplies.length
+    const updatedCount = Math.max(existingCount, dedupedReplies.length)
+
+    return {
+      ...item,
+      replies: dedupedReplies,
+      reply_count: updatedCount,
+      replies_count: updatedCount,
+    }
+  })
+  if (patched.updated) {
+    comments.value = patched.items
+  }
+}
+
+function handlePinUpdated(payload: { commentId: string; isPinned: boolean }) {
+  const patched = patchCommentById(comments.value, payload.commentId, (item) => ({
+    ...item,
+    is_pinned: payload.isPinned,
+  }))
+  if (patched.updated) {
+    comments.value = sortPinnedFirst(patched.items)
+  }
+}
+
+function handleFeatureUpdated(payload: { commentId: string; isFeatured: boolean }) {
+  const patched = patchCommentById(comments.value, payload.commentId, (item) => ({
+    ...item,
+    is_featured: payload.isFeatured,
+  }))
+  if (patched.updated) {
+    comments.value = patched.items
+  }
+}
+
+provide(discussionCommentTreeContextKey, {
+  onDeleted: handleDeleted,
+  onReplySubmitted: handleReplySubmitted,
+  onPinnedUpdated: handlePinnedUpdated,
+  onLikeUpdated: handleLikeUpdated,
+  onRepliesLoaded: handleRepliesLoaded,
+  onPinUpdated: handlePinUpdated,
+  onFeatureUpdated: handleFeatureUpdated,
+})
 
 watch(
   () => props.discussionId,
