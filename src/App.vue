@@ -50,22 +50,23 @@
     <BackToTop :show-progress="true" />
 
     <!-- Global Mascot Flight Background -->
-    <MascotFlightBackground />
+    <MascotFlightBackground v-if="decorationsReady" />
 
     <!-- Global Particle Background -->
-    <ParticleBackground />
+    <ParticleBackground v-if="decorationsReady" />
 
     <!-- Desk Pet -->
-    <DeskPet />
+    <DeskPet v-if="decorationsReady" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed, defineAsyncComponent } from 'vue'
+import { ref, watch, computed, defineAsyncComponent, onMounted } from 'vue'
 import { useRoute, useRouter, type RouteLocationNormalizedLoaded } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useThemeStore, useSettingsStore } from '@/stores'
 import { useLocaleConfig } from '@/composables/useLocaleConfig'
+import { scheduleTask } from '@/utils/modernAPIs'
 import AppNavbar from '@/components/layout/AppNavbar.vue'
 import AppFooter from '@/components/layout/AppFooter.vue'
 import PageLoading from '@/components/ui/PageLoading.vue'
@@ -103,6 +104,18 @@ const animationIntensity = computed(() =>
 
 // UI 风格（默认 iOS/SwiftUI）
 const uiStyle = computed(() => settings.value.uiStyle)
+
+// 延迟挂载装饰性组件，避免首屏抢占主线程与网络资源
+const decorationsReady = ref(false)
+const DECORATIONS_DELAY_MS = 2500
+onMounted(() => {
+  scheduleTask(
+    () => {
+      decorationsReady.value = true
+    },
+    { priority: 'background', delay: DECORATIONS_DELAY_MS }
+  )
+})
 
 // Footer only appears on key pages (configured via route meta)
 const showFooter = computed(() => Boolean(route.meta.showFooter))
