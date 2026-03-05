@@ -1,5 +1,6 @@
 import {
   ref,
+  shallowReadonly,
   watch,
   onMounted,
   onBeforeUnmount,
@@ -555,9 +556,14 @@ export function usePlatformAnimation(
   platform: MaybeRefOrGetter<PlatformMorphState>,
   options: UsePlatformAnimationOptions = {}
 ) {
-  const isDark = options.isDark ?? false
-  const enabled = options.enabled ?? true
-  const intensity = options.intensity ?? 1
+  const animationOptions = shallowReadonly({
+    isDark: options.isDark ?? false,
+    enabled: options.enabled ?? true,
+    intensity: options.intensity ?? 1,
+  })
+  const isDark = animationOptions.isDark
+  const enabled = animationOptions.enabled
+  const intensity = animationOptions.intensity
 
   const particles = ref<Particle[]>([])
   const currentPlatform = ref<PlatformMorphState>(toValue(platform))

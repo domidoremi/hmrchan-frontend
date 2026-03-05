@@ -5,7 +5,15 @@
  * 符合 WCAG 2.1 无障碍标准
  */
 
-import { ref, toValue, watch, getCurrentScope, onScopeDispose, type MaybeRefOrGetter } from 'vue'
+import {
+  ref,
+  shallowReadonly,
+  toValue,
+  watch,
+  getCurrentScope,
+  onScopeDispose,
+  type MaybeRefOrGetter,
+} from 'vue'
 
 // 可聚焦元素选择器
 const FOCUSABLE_SELECTORS = [
@@ -36,13 +44,13 @@ export function useFocusTrap(
   isActive: MaybeRefOrGetter<boolean>,
   options: UseFocusTrapOptions = {}
 ) {
-  const {
-    autoFocus = true,
-    restoreFocus = true,
-    initialFocus,
-    escapeDeactivates = true,
-    onEscape,
-  } = options
+  const trapOptions = shallowReadonly({
+    autoFocus: options.autoFocus ?? true,
+    restoreFocus: options.restoreFocus ?? true,
+    initialFocus: options.initialFocus,
+    escapeDeactivates: options.escapeDeactivates ?? true,
+    onEscape: options.onEscape,
+  })
 
   const previousActiveElement = ref<HTMLElement | null>(null)
   // 追踪当前是否已激活，避免重复添加/移除事件监听器
@@ -95,8 +103,8 @@ export function useFocusTrap(
     const elements = getFocusableElements()
 
     // 优先聚焦指定元素
-    if (initialFocus) {
-      const initial = container.querySelector<HTMLElement>(initialFocus)
+    if (trapOptions.initialFocus) {
+      const initial = container.querySelector<HTMLElement>(trapOptions.initialFocus)
       if (initial) {
         initial.focus()
         return
@@ -133,10 +141,10 @@ export function useFocusTrap(
     if (!isCurrentlyActive.value || !container) return
 
     // 处理 Escape 键
-    if (event.key === 'Escape' && escapeDeactivates) {
+    if (event.key === 'Escape' && trapOptions.escapeDeactivates) {
       event.preventDefault()
       event.stopPropagation()
-      onEscape?.()
+      trapOptions.onEscape?.()
       return
     }
 
@@ -221,7 +229,7 @@ export function useFocusTrap(
     boundContainer.addEventListener('focusout', handleFocusOut)
 
     // 自动聚焦
-    if (autoFocus) {
+    if (trapOptions.autoFocus) {
       // 使用 requestAnimationFrame 确保 DOM 已更新
       if (autoFocusRaf !== null) {
         cancelAnimationFrame(autoFocusRaf)
@@ -252,7 +260,7 @@ export function useFocusTrap(
     }
 
     // 恢复之前的焦点
-    if (restoreFocus && previousActiveElement.value) {
+    if (trapOptions.restoreFocus && previousActiveElement.value) {
       const elementToFocus = previousActiveElement.value
       previousActiveElement.value = null
       // 使用 requestAnimationFrame 避免焦点闪烁
