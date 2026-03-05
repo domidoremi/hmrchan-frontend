@@ -45,6 +45,7 @@
             <PostCard
               v-for="post in posts"
               :key="post.id"
+              v-memo="getPostMemo(post)"
               :post="post"
               aspect-ratio="1"
               :show-content="false"
@@ -62,7 +63,7 @@
 <script setup lang="ts">
 defineOptions({ name: 'AuthorDetailPage' })
 
-import { ref, computed, watch, onWatcherCleanup } from 'vue'
+import { ref, computed, watch, onWatcherCleanup, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { authorService, type AuthorResponse, type PostListItem, ApiError } from '@/api'
@@ -85,20 +86,51 @@ const posts = ref<PostListItem[]>([])
 const isLoading = ref(false)
 const error = ref<string | null>(null)
 let latestRequestId = 0
+let authorController: AbortController | null = null
 
 function isAbortError(err: unknown): boolean {
-  return err instanceof DOMException && err.name === 'AbortError'
+  return err instanceof DOMException
+    ? err.name === 'AbortError'
+    : err instanceof Error && err.name === 'AbortError'
+}
+
+function abortAuthorRequest() {
+  authorController?.abort()
+  authorController = null
+}
+
+function getPostMemo(post: PostListItem) {
+  return [
+    post.id,
+    post.platform,
+    post.thumbnail_url ?? '',
+    post.title ?? '',
+    post.author_name ?? '',
+    post.like_count,
+    post.comment_count,
+    post.view_count,
+    post.published_at ?? '',
+  ] as const
 }
 
 async function fetchAuthor(targetAuthorId = authorId.value, signal?: AbortSignal) {
   const requestId = ++latestRequestId
+  const controller = signal ? null : new AbortController()
+  const requestSignal = signal ?? controller?.signal
+
+  if (signal) {
+    abortAuthorRequest()
+  } else if (controller) {
+    abortAuthorRequest()
+    authorController = controller
+  }
 
   isLoading.value = true
   error.value = null
 
   // 先从缓存加载（快速显示）
   const cached = await authorCache.getAuthor(targetAuthorId)
-  if (signal?.aborted || requestId !== latestRequestId) return
+  if (requestSignal?.aborted || requestId !== latestRequestId) return
 
   if (cached) {
     author.value = cached.data as AuthorResponse
@@ -106,11 +138,19 @@ async function fetchAuthor(targetAuthorId = authorId.value, signal?: AbortSignal
 
   try {
     const [authorRes, postsRes] = await Promise.all([
-      authorService.getAuthor(targetAuthorId, { signal }),
-      authorService.listAuthorPosts(targetAuthorId, 1, 24, { signal }),
+      authorService.getAuthor(
+        targetAuthorId,
+        requestSignal ? { signal: requestSignal } : undefined
+      ),
+      authorService.listAuthorPosts(
+        targetAuthorId,
+        1,
+        24,
+        requestSignal ? { signal: requestSignal } : undefined
+      ),
     ])
 
-    if (signal?.aborted || requestId !== latestRequestId) return
+    if (requestSignal?.aborted || requestId !== latestRequestId) return
 
     author.value = authorRes
     posts.value = postsRes.items
@@ -118,7 +158,7 @@ async function fetchAuthor(targetAuthorId = authorId.value, signal?: AbortSignal
     // 写入缓存
     await authorCache.setAuthor(targetAuthorId, authorRes)
   } catch (err) {
-    if (signal?.aborted || isAbortError(err) || requestId !== latestRequestId) return
+    if (requestSignal?.aborted || isAbortError(err) || requestId !== latestRequestId) return
 
     if (err instanceof ApiError) {
       error.value = err.message
@@ -126,8 +166,11 @@ async function fetchAuthor(targetAuthorId = authorId.value, signal?: AbortSignal
       error.value = t('common.error')
     }
   } finally {
-    if (!signal?.aborted && requestId === latestRequestId) {
+    if (!requestSignal?.aborted && requestId === latestRequestId) {
       isLoading.value = false
+    }
+    if (authorController === controller) {
+      authorController = null
     }
   }
 }
@@ -149,6 +192,12 @@ watch(
   },
   { immediate: true }
 )
+
+onBeforeUnmount(() => {
+  latestRequestId += 1
+  abortAuthorRequest()
+  isLoading.value = false
+})
 </script>
 
 <style scoped>
