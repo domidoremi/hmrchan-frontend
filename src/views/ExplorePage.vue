@@ -196,6 +196,7 @@ const { total, load: loadCachedPosts } = useCachedPostList<PostListItem>(
 )
 const page = ref(1)
 let fetchPostsToken = 0
+let fetchPostsController: AbortController | null = null
 
 // 移动端优化：减少首屏加载数量
 const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
@@ -321,9 +322,23 @@ function isAbortError(err: unknown): boolean {
     : err instanceof Error && err.name === 'AbortError'
 }
 
+function abortFetchPostsRequest() {
+  fetchPostsController?.abort()
+  fetchPostsController = null
+}
+
 async function fetchPosts(reset = true, signal?: AbortSignal) {
   const requestToken = ++fetchPostsToken
   const hadData = posts.value.length > 0
+  const controller = signal ? null : new AbortController()
+  const requestSignal = signal ?? controller?.signal
+
+  if (controller) {
+    if (reset) {
+      abortFetchPostsRequest()
+    }
+    fetchPostsController = controller
+  }
 
   if (reset) {
     isLoading.value = true
@@ -362,7 +377,10 @@ async function fetchPosts(reset = true, signal?: AbortSignal) {
         sort_order,
         thumbnail_quality: getThumbnailQuality(),
       }
-      const result = await loadCachedPosts(requestParams, signal ? { signal } : undefined)
+      const result = await loadCachedPosts(
+        requestParams,
+        requestSignal ? { signal: requestSignal } : undefined
+      )
       items = result.data as PostListItem[]
     } else {
       const { sort_by, sort_order } = getSortParams(currentSort.value)
@@ -374,11 +392,14 @@ async function fetchPosts(reset = true, signal?: AbortSignal) {
         thumbnail_quality: getThumbnailQuality(),
         ...(platform ? { platform } : {}),
       }
-      const result = await loadCachedPosts(requestParams, signal ? { signal } : undefined)
+      const result = await loadCachedPosts(
+        requestParams,
+        requestSignal ? { signal: requestSignal } : undefined
+      )
       items = result.data as PostListItem[]
     }
 
-    if (signal?.aborted || requestToken !== fetchPostsToken) {
+    if (requestSignal?.aborted || requestToken !== fetchPostsToken) {
       return false
     }
 
@@ -390,14 +411,14 @@ async function fetchPosts(reset = true, signal?: AbortSignal) {
 
     // 更新 masonry 布局（仅渲染可见部分）
     await nextTick()
-    if (signal?.aborted || requestToken !== fetchPostsToken) {
+    if (requestSignal?.aborted || requestToken !== fetchPostsToken) {
       return false
     }
     applyVisiblePosts(reset)
 
     return true
   } catch (err) {
-    if (signal?.aborted || isAbortError(err) || requestToken !== fetchPostsToken) {
+    if (requestSignal?.aborted || isAbortError(err) || requestToken !== fetchPostsToken) {
       return false
     }
     // 筛选时，即使有旧数据也要显示错误
@@ -419,6 +440,9 @@ async function fetchPosts(reset = true, signal?: AbortSignal) {
     if (requestToken === fetchPostsToken) {
       isLoading.value = false
       isLoadingMore.value = false
+      if (fetchPostsController === controller) {
+        fetchPostsController = null
+      }
     }
   }
 }
@@ -643,6 +667,7 @@ onActivated(() => {
 
 onDeactivated(() => {
   isActive = false
+  abortFetchPostsRequest()
   fetchPostsToken += 1
   isLoading.value = false
   isLoadingMore.value = false
@@ -655,6 +680,7 @@ onDeactivated(() => {
 
 onBeforeUnmount(() => {
   isActive = false
+  abortFetchPostsRequest()
   fetchPostsToken += 1
   isLoading.value = false
   isLoadingMore.value = false
