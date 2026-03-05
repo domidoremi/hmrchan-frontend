@@ -118,7 +118,7 @@
 </template>
 
 <script setup lang="ts" vapor>
-import { ref, computed, watch, type Component } from 'vue'
+import { ref, computed, watch, onRenderTracked, onRenderTriggered, type Component } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Calendar, Eye, Film, Globe, Heart, Play, User } from 'lucide-vue-next'
 import { IconYoutube, IconX, IconTiktok, IconInstagram } from '@/components/icons'
@@ -201,6 +201,20 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
+const renderDebugEnabled =
+  import.meta.env.DEV &&
+  typeof window !== 'undefined' &&
+  (window as Window & { __MOMI_RENDER_DEBUG__?: boolean }).__MOMI_RENDER_DEBUG__ === true
+
+if (renderDebugEnabled) {
+  onRenderTracked((event) => {
+    console.debug('[render:tracked][PostCard]', event.type, String(event.key))
+  })
+
+  onRenderTriggered((event) => {
+    console.debug('[render:triggered][PostCard]', event.type, String(event.key))
+  })
+}
 
 function normalizeText(input: string | null | undefined): string {
   return String(input ?? '')
