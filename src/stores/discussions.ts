@@ -35,6 +35,8 @@ export const useDiscussionsStore = defineStore('discussions', () => {
   const commentsTotal = ref(0)
   const commentsTotalPages = ref(0)
   const commentsLoading = ref(false)
+  let fetchDiscussionController: AbortController | null = null
+  let fetchDiscussionToken = 0
   let fetchDiscussionsController: AbortController | null = null
   let fetchDiscussionsToken = 0
   let fetchCommentsController: AbortController | null = null
@@ -51,6 +53,17 @@ export const useDiscussionsStore = defineStore('discussions', () => {
   function abortFetchComments() {
     fetchCommentsController?.abort()
     fetchCommentsController = null
+  }
+
+  function abortFetchDiscussion() {
+    fetchDiscussionController?.abort()
+    fetchDiscussionController = null
+  }
+
+  function isAbortError(err: unknown): boolean {
+    return err instanceof DOMException
+      ? err.name === 'AbortError'
+      : err instanceof Error && err.name === 'AbortError'
   }
 
   async function fetchDiscussions(reset = false): Promise<boolean> {
@@ -119,12 +132,38 @@ export const useDiscussionsStore = defineStore('discussions', () => {
   }
 
   async function fetchDiscussion(id: string, config?: RequestConfig) {
+    const externalSignal = config?.signal
+    if (!externalSignal) {
+      abortFetchDiscussion()
+    }
+    const controller = externalSignal ? null : new AbortController()
+    if (controller) {
+      fetchDiscussionController = controller
+    }
+    const signal = externalSignal ?? controller?.signal
+    const requestToken = ++fetchDiscussionToken
+
     try {
-      currentDiscussion.value = await discussionService.get(id, config)
+      const discussion = await discussionService.get(id, {
+        ...config,
+        ...(signal ? { signal } : {}),
+        skipErrorToast: true,
+      })
+      if (signal?.aborted || requestToken !== fetchDiscussionToken) return null
+      currentDiscussion.value = discussion
       return currentDiscussion.value
-    } catch {
+    } catch (err) {
+      if (signal?.aborted || isAbortError(err) || requestToken !== fetchDiscussionToken) return null
       error.value = 'discussion.error.fetchFailed'
       return null
+    } finally {
+      if (
+        controller &&
+        fetchDiscussionController === controller &&
+        requestToken === fetchDiscussionToken
+      ) {
+        fetchDiscussionController = null
+      }
     }
   }
 
@@ -286,6 +325,7 @@ export const useDiscussionsStore = defineStore('discussions', () => {
   }
 
   function $reset() {
+    abortFetchDiscussion()
     abortFetchDiscussions()
     abortFetchComments()
     items.value = []

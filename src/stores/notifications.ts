@@ -28,12 +28,19 @@ export const useNotificationsStore = defineStore('notifications', () => {
   let pollTimer: ReturnType<typeof setInterval> | null = null
   let fetchNotificationsController: AbortController | null = null
   let fetchNotificationsToken = 0
+  let refreshUnreadController: AbortController | null = null
+  let refreshUnreadToken = 0
 
   const hasUnread = computed(() => unreadCount.value > 0)
 
   function abortFetchNotifications() {
     fetchNotificationsController?.abort()
     fetchNotificationsController = null
+  }
+
+  function abortRefreshUnreadCount() {
+    refreshUnreadController?.abort()
+    refreshUnreadController = null
   }
 
   async function fetchNotifications(reset = false): Promise<boolean> {
@@ -104,11 +111,24 @@ export const useNotificationsStore = defineStore('notifications', () => {
   }
 
   async function refreshUnreadCount() {
+    abortRefreshUnreadCount()
+    const controller = new AbortController()
+    refreshUnreadController = controller
+    const requestToken = ++refreshUnreadToken
+
     try {
-      const res = await notificationService.getUnreadCount({ skipErrorToast: true })
+      const res = await notificationService.getUnreadCount({
+        signal: controller.signal,
+        skipErrorToast: true,
+      })
+      if (controller.signal.aborted || requestToken !== refreshUnreadToken) return
       unreadCount.value = res.unread_count
     } catch {
       // silent
+    } finally {
+      if (requestToken === refreshUnreadToken && refreshUnreadController === controller) {
+        refreshUnreadController = null
+      }
     }
   }
 
@@ -198,6 +218,7 @@ export const useNotificationsStore = defineStore('notifications', () => {
 
   function $reset() {
     abortFetchNotifications()
+    abortRefreshUnreadCount()
     stopPolling()
     items.value = []
     total.value = 0

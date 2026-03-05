@@ -4,7 +4,7 @@
  * 提供评论相关的 API 调用，包括评论图片上传
  */
 
-import { apiClient } from './client'
+import { apiClient, type RequestConfig } from './client'
 import type { Comment } from '@/types'
 
 // ========== 类型定义 ==========
@@ -201,10 +201,12 @@ export const commentService = {
   async getCommentReplies(
     commentId: string,
     page = 1,
-    pageSize = 20
+    pageSize = 20,
+    config?: RequestConfig
   ): Promise<CommentListResponse> {
     return apiClient.get<CommentListResponse>(
-      `/comments/${commentId}/replies?page=${page}&page_size=${pageSize}`
+      `/comments/${commentId}/replies?page=${page}&page_size=${pageSize}`,
+      config
     )
   },
 
