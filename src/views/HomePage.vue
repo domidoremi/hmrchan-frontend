@@ -175,6 +175,8 @@ import {
   onBeforeUnmount,
   onActivated,
   onDeactivated,
+  watchPostEffect,
+  watchSyncEffect,
   useTemplateRef,
   type ComponentPublicInstance,
 } from 'vue'
@@ -281,6 +283,13 @@ const { columns, columnCount, distributePosts, redistribute, getColumnWidth } = 
   initialColumnCount: getResponsiveColumnCount(),
 })
 
+watchSyncEffect(() => {
+  // 确保全量加载和分页加载状态不会并存，减少 UI 状态抖动。
+  if (isLoading.value && isLoadingMore.value) {
+    isLoadingMore.value = false
+  }
+})
+
 onActivated(() => {
   attachResizeObserver()
   setupInitialPostsFetchTriggers()
@@ -376,6 +385,15 @@ function attachResizeObserver() {
   })
   resizeObserver?.observe(el)
 }
+
+watchPostEffect(() => {
+  const el = containerRef.value
+  if (!el) {
+    detachResizeObserver()
+    return
+  }
+  attachResizeObserver()
+})
 
 const visiblePostsCount = computed(() => columns.value.reduce((sum, col) => sum + col.length, 0))
 

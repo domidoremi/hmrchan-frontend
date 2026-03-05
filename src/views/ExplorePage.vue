@@ -131,11 +131,16 @@ defineOptions({ name: 'ExplorePage' })
 import {
   ref,
   computed,
+  markRaw,
   onMounted,
   onBeforeUnmount,
   onActivated,
   onDeactivated,
+  onRenderTracked,
+  onRenderTriggered,
   watch,
+  watchPostEffect,
+  watchSyncEffect,
   nextTick,
   defineAsyncComponent,
   onWatcherCleanup,
@@ -168,6 +173,20 @@ const AsyncPlatformCanvas = defineAsyncComponent(() => import('@/components/ui/P
 const router = useRouter()
 const { t } = useI18n()
 const { settings } = storeToRefs(useSettingsStore())
+const renderDebugEnabled =
+  import.meta.env.DEV &&
+  typeof window !== 'undefined' &&
+  (window as Window & { __MOMI_RENDER_DEBUG__?: boolean }).__MOMI_RENDER_DEBUG__ === true
+
+if (renderDebugEnabled) {
+  onRenderTracked((event) => {
+    console.debug('[render:tracked][ExplorePage]', event.type, String(event.key))
+  })
+
+  onRenderTriggered((event) => {
+    console.debug('[render:triggered][ExplorePage]', event.type, String(event.key))
+  })
+}
 
 const shouldShowPlatformBg = computed(() => settings.value.enableAnimations)
 const platformBgReady = ref(false)
@@ -282,14 +301,21 @@ const sortOptions = computed(() => [
   { value: 'popular' as const, label: t('explore.popular') },
   { value: 'trending' as const, label: t('explore.trending') },
 ])
+const platformIcons = {
+  all: markRaw(Globe),
+  youtube: markRaw(IconYoutube),
+  tiktok: markRaw(IconTiktok),
+  twitter: markRaw(IconX),
+  instagram: markRaw(IconInstagram),
+} as const
 
 // 品牌 SVG 图标
 const platformOptions = computed(() => [
-  { value: 'all' as const, label: t('explore.allPlatforms'), icon: Globe },
-  { value: 'youtube' as const, label: 'YouTube', icon: IconYoutube },
-  { value: 'tiktok' as const, label: 'TikTok', icon: IconTiktok },
-  { value: 'twitter' as const, label: 'X', icon: IconX },
-  { value: 'instagram' as const, label: 'Instagram', icon: IconInstagram },
+  { value: 'all' as const, label: t('explore.allPlatforms'), icon: platformIcons.all },
+  { value: 'youtube' as const, label: 'YouTube', icon: platformIcons.youtube },
+  { value: 'tiktok' as const, label: 'TikTok', icon: platformIcons.tiktok },
+  { value: 'twitter' as const, label: 'X', icon: platformIcons.twitter },
+  { value: 'instagram' as const, label: 'Instagram', icon: platformIcons.instagram },
 ])
 
 function goToPost(postId: string, thumbnailSrc: string | null) {
@@ -620,6 +646,13 @@ watch(currentPlatform, () => {
   void fetchPosts(true, controller.signal)
 })
 
+watchSyncEffect(() => {
+  // 切换筛选时同步清理错误态，避免旧错误闪烁到新请求周期。
+  void currentSort.value
+  void currentPlatform.value
+  error.value = null
+})
+
 onMounted(() => {
   // 初始化列数（composable 已经用 calculateColumnCount() 初始化了）
   // 确保 columns 数组与当前列数匹配
@@ -641,21 +674,14 @@ onMounted(() => {
   schedulePlatformBackgroundMount()
 })
 
-watch(
-  masonryContainerRef,
-  (el) => {
-    if (!el) {
-      detachResizeObserver()
-      return
-    }
-    if (!isActive) {
-      detachResizeObserver()
-      return
-    }
-    attachResizeObserver(el)
-  },
-  { immediate: true }
-)
+watchPostEffect(() => {
+  const el = masonryContainerRef.value
+  if (!el || !isActive) {
+    detachResizeObserver()
+    return
+  }
+  attachResizeObserver(el)
+})
 onActivated(() => {
   isActive = true
   attachGlobalListeners()
