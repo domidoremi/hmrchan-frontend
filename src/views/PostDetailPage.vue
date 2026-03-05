@@ -980,6 +980,8 @@ onActivated(() => {
 })
 
 onDeactivated(() => {
+  fetchPostToken += 1
+  isLoading.value = false
   isTextModalOpen.value = false
   detachStageListeners()
   unlockBodyScroll()
@@ -988,6 +990,8 @@ onDeactivated(() => {
 
 // 清理 sessionStorage
 onUnmounted(() => {
+  fetchPostToken += 1
+  isLoading.value = false
   detachStageListeners()
   stopAutoPlay()
   unlockBodyScroll()

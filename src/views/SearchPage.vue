@@ -116,7 +116,13 @@
 
             <template v-else>
               <div class="posts-masonry">
-                <PostCard v-for="post in results" :key="post.id" :post="post" @click="goToPost" />
+                <PostCard
+                  v-for="post in results"
+                  :key="post.id"
+                  v-memo="getPostMemo(post)"
+                  :post="post"
+                  @click="goToPost"
+                />
               </div>
             </template>
 
@@ -173,6 +179,7 @@
               <article
                 v-for="author in authors"
                 :key="author.id"
+                v-memo="getAuthorMemo(author)"
                 class="author-card glass-card"
                 role="button"
                 tabindex="0"
@@ -261,7 +268,13 @@
           <StateIndicator v-else-if="discoverPosts.length === 0" variant="empty" />
 
           <div v-else class="posts-masonry discover-masonry">
-            <PostCard v-for="post in discoverPosts" :key="post.id" :post="post" @click="goToPost" />
+            <PostCard
+              v-for="post in discoverPosts"
+              :key="post.id"
+              v-memo="getPostMemo(post)"
+              :post="post"
+              @click="goToPost"
+            />
           </div>
         </section>
       </div>
@@ -272,7 +285,7 @@
 <script setup lang="ts">
 defineOptions({ name: 'SearchPage' })
 
-import { ref, computed, watch, onMounted, onWatcherCleanup } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount, onWatcherCleanup } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
@@ -321,6 +334,10 @@ const discoverError = ref<string | null>(null)
 let discoverRequestToken = 0
 let postsRequestToken = 0
 let authorRequestToken = 0
+let discoverController: AbortController | null = null
+let postsSearchController: AbortController | null = null
+let postsLoadMoreController: AbortController | null = null
+let authorsSearchController: AbortController | null = null
 
 const hasMore = computed(() => results.value.length < total.value)
 
@@ -394,10 +411,36 @@ function shufflePosts(items: PostListItem[]) {
   return copy
 }
 
+function abortDiscoverRequest() {
+  discoverController?.abort()
+  discoverController = null
+}
+
+function abortPostsSearchRequest() {
+  postsSearchController?.abort()
+  postsSearchController = null
+}
+
+function abortPostsLoadMoreRequest() {
+  postsLoadMoreController?.abort()
+  postsLoadMoreController = null
+}
+
+function abortAuthorsSearchRequest() {
+  authorsSearchController?.abort()
+  authorsSearchController = null
+}
+
 async function fetchDiscoverPosts(signal?: AbortSignal) {
   const requestToken = ++discoverRequestToken
 
   if (isDiscoverLoading.value) return
+  abortDiscoverRequest()
+  const controller = signal ? null : new AbortController()
+  if (controller) {
+    discoverController = controller
+  }
+  const requestSignal = signal ?? controller?.signal
   isDiscoverLoading.value = true
   discoverError.value = null
 
@@ -410,17 +453,20 @@ async function fetchDiscoverPosts(signal?: AbortSignal) {
         sort_order: 'desc',
         thumbnail_quality: getThumbnailQuality(),
       },
-      signal ? { signal } : undefined
+      requestSignal ? { signal: requestSignal } : undefined
     )
-    if (signal?.aborted || requestToken !== discoverRequestToken) return
+    if (requestSignal?.aborted || requestToken !== discoverRequestToken) return
     discoverPosts.value = shufflePosts(res.items)
   } catch (err) {
-    if (signal?.aborted || isAbortError(err) || requestToken !== discoverRequestToken) return
+    if (requestSignal?.aborted || isAbortError(err) || requestToken !== discoverRequestToken) return
     discoverError.value = t('common.error')
     discoverPosts.value = []
   } finally {
     if (requestToken === discoverRequestToken) {
       isDiscoverLoading.value = false
+      if (controller && discoverController === controller) {
+        discoverController = null
+      }
     }
   }
 }
@@ -428,6 +474,13 @@ async function fetchDiscoverPosts(signal?: AbortSignal) {
 async function search(signal?: AbortSignal) {
   if (!query.value) return
 
+  abortPostsSearchRequest()
+  abortPostsLoadMoreRequest()
+  const controller = signal ? null : new AbortController()
+  if (controller) {
+    postsSearchController = controller
+  }
+  const requestSignal = signal ?? controller?.signal
   const requestToken = ++postsRequestToken
   isLoading.value = true
   isLoadingMore.value = false
@@ -446,19 +499,22 @@ async function search(signal?: AbortSignal) {
         thumbnail_quality: getThumbnailQuality(),
         ...(platform && { platform }),
       },
-      signal ? { signal } : undefined
+      requestSignal ? { signal: requestSignal } : undefined
     )
-    if (signal?.aborted || requestToken !== postsRequestToken) return
+    if (requestSignal?.aborted || requestToken !== postsRequestToken) return
     results.value = res.items
     total.value = res.total
   } catch (err) {
-    if (signal?.aborted || isAbortError(err) || requestToken !== postsRequestToken) return
+    if (requestSignal?.aborted || isAbortError(err) || requestToken !== postsRequestToken) return
     error.value = t('common.error')
     results.value = []
     total.value = 0
   } finally {
     if (requestToken === postsRequestToken) {
       isLoading.value = false
+      if (controller && postsSearchController === controller) {
+        postsSearchController = null
+      }
     }
   }
 }
@@ -466,30 +522,40 @@ async function search(signal?: AbortSignal) {
 async function loadMore() {
   if (isLoadingMore.value || !hasMore.value) return
 
+  abortPostsLoadMoreRequest()
+  const controller = new AbortController()
+  postsLoadMoreController = controller
   const requestToken = postsRequestToken
   isLoadingMore.value = true
 
   try {
     const nextPage = page.value + 1
     const platform = currentPlatform.value !== 'all' ? currentPlatform.value : undefined
-    const res = await searchService.searchPosts({
-      q: query.value,
-      page: nextPage,
-      page_size: pageSize,
-      sort_by: sortBy.value,
-      sort_order: sortOrder.value,
-      thumbnail_quality: getThumbnailQuality(),
-      ...(platform && { platform }),
-    })
-    if (requestToken !== postsRequestToken) return
+    const res = await searchService.searchPosts(
+      {
+        q: query.value,
+        page: nextPage,
+        page_size: pageSize,
+        sort_by: sortBy.value,
+        sort_order: sortOrder.value,
+        thumbnail_quality: getThumbnailQuality(),
+        ...(platform && { platform }),
+      },
+      { signal: controller.signal }
+    )
+    if (controller.signal.aborted || requestToken !== postsRequestToken) return
     results.value.push(...res.items)
     page.value = nextPage
     total.value = res.total
-  } catch {
+  } catch (err) {
+    if (controller.signal.aborted || isAbortError(err) || requestToken !== postsRequestToken) return
     // Silent fail for load more
   } finally {
     if (requestToken === postsRequestToken) {
       isLoadingMore.value = false
+    }
+    if (postsLoadMoreController === controller) {
+      postsLoadMoreController = null
     }
   }
 }
@@ -497,6 +563,12 @@ async function loadMore() {
 async function searchAuthors(signal?: AbortSignal) {
   if (!query.value) return
 
+  abortAuthorsSearchRequest()
+  const controller = signal ? null : new AbortController()
+  if (controller) {
+    authorsSearchController = controller
+  }
+  const requestSignal = signal ?? controller?.signal
   const requestToken = ++authorRequestToken
   isLoadingAuthors.value = true
   authorError.value = null
@@ -508,19 +580,22 @@ async function searchAuthors(signal?: AbortSignal) {
         page: 1,
         page_size: 20,
       },
-      signal ? { signal } : undefined
+      requestSignal ? { signal: requestSignal } : undefined
     )
-    if (signal?.aborted || requestToken !== authorRequestToken) return
+    if (requestSignal?.aborted || requestToken !== authorRequestToken) return
     authors.value = res.items
     authorTotal.value = res.total
   } catch (err) {
-    if (signal?.aborted || isAbortError(err) || requestToken !== authorRequestToken) return
+    if (requestSignal?.aborted || isAbortError(err) || requestToken !== authorRequestToken) return
     authorError.value = t('common.error')
     authors.value = []
     authorTotal.value = 0
   } finally {
     if (requestToken === authorRequestToken) {
       isLoadingAuthors.value = false
+      if (controller && authorsSearchController === controller) {
+        authorsSearchController = null
+      }
     }
   }
 }
@@ -542,12 +617,36 @@ function goToLogin() {
   router.push({ path: '/login', query: { redirect: route.fullPath } })
 }
 
+function getPostMemo(post: PostListItem) {
+  return [
+    post.id,
+    post.updated_at ?? post.created_at ?? post.published_at ?? '',
+    post.view_count ?? 0,
+    post.like_count ?? 0,
+    post.comment_count ?? 0,
+    post.thumbnail_url ?? '',
+  ]
+}
+
+function getAuthorMemo(author: AuthorListItem) {
+  return [
+    author.id,
+    author.updated_at ?? author.created_at ?? '',
+    author.post_count ?? 0,
+    author.follower_count ?? 0,
+    author.avatar_url ?? '',
+    author.display_name ?? author.name ?? author.username,
+  ]
+}
+
 watch(query, (nextQuery) => {
   const controller = new AbortController()
   onWatcherCleanup(() => controller.abort())
+  abortPostsLoadMoreRequest()
 
   if (nextQuery) {
     discoverRequestToken += 1
+    abortDiscoverRequest()
     isDiscoverLoading.value = false
     discoverError.value = null
     void search(controller.signal)
@@ -555,6 +654,8 @@ watch(query, (nextQuery) => {
   } else {
     postsRequestToken += 1
     authorRequestToken += 1
+    abortPostsSearchRequest()
+    abortAuthorsSearchRequest()
     isLoading.value = false
     isLoadingMore.value = false
     isLoadingAuthors.value = false
@@ -598,6 +699,20 @@ onMounted(() => {
   } else {
     fetchDiscoverPosts()
   }
+})
+
+onBeforeUnmount(() => {
+  postsRequestToken += 1
+  authorRequestToken += 1
+  discoverRequestToken += 1
+  abortPostsSearchRequest()
+  abortPostsLoadMoreRequest()
+  abortAuthorsSearchRequest()
+  abortDiscoverRequest()
+  isLoading.value = false
+  isLoadingMore.value = false
+  isLoadingAuthors.value = false
+  isDiscoverLoading.value = false
 })
 </script>
 

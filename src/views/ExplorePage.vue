@@ -643,6 +643,9 @@ onActivated(() => {
 
 onDeactivated(() => {
   isActive = false
+  fetchPostsToken += 1
+  isLoading.value = false
+  isLoadingMore.value = false
   clearPlatformBackgroundTimer()
   detachGlobalListeners()
   detachResizeObserver()
@@ -652,6 +655,9 @@ onDeactivated(() => {
 
 onBeforeUnmount(() => {
   isActive = false
+  fetchPostsToken += 1
+  isLoading.value = false
+  isLoadingMore.value = false
   clearPlatformBackgroundTimer()
   detachGlobalListeners()
   detachResizeObserver()

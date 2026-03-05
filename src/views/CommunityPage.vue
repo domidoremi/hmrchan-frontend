@@ -549,8 +549,16 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  if (searchDebounceTimer) {
+    clearTimeout(searchDebounceTimer)
+    searchDebounceTimer = null
+  }
+  searchRequestToken += 1
+  isSearching.value = false
+  hotTopicsRequestToken += 1
   hotTopicsController?.abort()
   hotTopicsController = null
+  isLoadingHot.value = false
 })
 </script>
 
