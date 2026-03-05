@@ -104,10 +104,9 @@ import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { Search, X, History, FileText, User, Tag } from 'lucide-vue-next'
 import { searchService, type SearchSuggestion } from '@/api/searchService'
+import { useDebouncedRef } from '@/composables/useDebouncedRef'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 
-// 简单的 debounce 实现，避免引入整个 VueUse
-let suggestionTimer: ReturnType<typeof setTimeout> | null = null
 let suggestionController: AbortController | null = null
 let suggestionRequestToken = 0
 
@@ -117,22 +116,12 @@ function isAbortError(error: unknown): boolean {
 }
 
 function abortSuggestionRequest() {
-  if (suggestionTimer) {
-    clearTimeout(suggestionTimer)
-    suggestionTimer = null
-  }
+  cancelSuggestionDebounce()
   if (suggestionController) {
     suggestionController.abort()
     suggestionController = null
   }
   suggestionRequestToken += 1
-}
-
-function debounce<T extends (...args: Parameters<T>) => void>(fn: T, delay: number): T {
-  return ((...args: Parameters<T>) => {
-    if (suggestionTimer) clearTimeout(suggestionTimer)
-    suggestionTimer = setTimeout(() => fn(...args), delay)
-  }) as T
 }
 
 const router = useRouter()
@@ -141,11 +130,16 @@ const { t } = useI18n()
 
 const inputRef = useTemplateRef<HTMLInputElement>('inputRef')
 const query = ref('')
+const suggestionKeyword = ref('')
 const isFocused = ref(false)
 const isExpanded = ref(false)
 const isLoading = ref(false)
 const suggestions = ref<SearchSuggestion[]>([])
 const selectedIndex = ref(-1)
+const { debounced: debouncedSuggestionKeyword, cancel: cancelSuggestionDebounce } = useDebouncedRef(
+  suggestionKeyword,
+  300
+)
 
 const HISTORY_KEY = 'search_history'
 const MAX_HISTORY = 10
@@ -279,10 +273,13 @@ function clearQuery() {
   inputRef.value?.focus()
 }
 
-const fetchSuggestions = debounce(async (q: string) => {
+async function fetchSuggestions(q: string) {
   const normalizedQuery = q.trim()
   if (!normalizedQuery) {
-    abortSuggestionRequest()
+    if (suggestionController) {
+      suggestionController.abort()
+      suggestionController = null
+    }
     suggestions.value = []
     isLoading.value = false
     return
@@ -310,10 +307,11 @@ const fetchSuggestions = debounce(async (q: string) => {
       isLoading.value = false
     }
   }
-}, 300)
+}
 
 function handleInput() {
   selectedIndex.value = -1
+  suggestionKeyword.value = query.value
   if (!query.value.trim()) {
     abortSuggestionRequest()
     suggestions.value = []
@@ -327,6 +325,7 @@ async function handleSearch() {
   const term = query.value.trim()
   if (!term) return
 
+  abortSuggestionRequest()
   saveHistory(term)
 
   // Create a navigable history entry when user confirms (Enter)
@@ -409,12 +408,13 @@ watch(selectedIndex, (index) => {
   }
 })
 
+watch(debouncedSuggestionKeyword, (keyword) => {
+  if (!isFocused.value) return
+  void fetchSuggestions(keyword)
+})
+
 onUnmounted(() => {
   abortSuggestionRequest()
-  if (suggestionTimer) {
-    clearTimeout(suggestionTimer)
-    suggestionTimer = null
-  }
   if (blurTimer) {
     clearTimeout(blurTimer)
     blurTimer = null
