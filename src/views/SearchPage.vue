@@ -285,7 +285,7 @@
 <script setup lang="ts">
 defineOptions({ name: 'SearchPage' })
 
-import { ref, computed, watch, onMounted, onBeforeUnmount, onWatcherCleanup } from 'vue'
+import { ref, computed, markRaw, watch, onMounted, onBeforeUnmount, onWatcherCleanup } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
@@ -293,6 +293,7 @@ import { FileText, User, Globe, LogIn, ArrowUpDown, ArrowLeft, RotateCcw } from 
 import { IconYoutube, IconX, IconTiktok, IconInstagram } from '@/components/icons'
 import { searchService, postService, type PostListItem, type AuthorListItem } from '@/api'
 import { normalizeAvatarUrl } from '@/api/userService'
+import { useDebouncedRef } from '@/composables/useDebouncedRef'
 import { useAuthStore } from '@/stores'
 import { storePostNavigationContext } from '@/utils/postNavigation'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
@@ -314,6 +315,12 @@ const activeTab = ref<'posts' | 'authors'>('posts')
 const sortBy = ref<'relevance' | 'published_at' | 'view_count'>('relevance')
 const sortOrder = ref<'asc' | 'desc'>('desc')
 const currentPlatform = ref<'all' | 'youtube' | 'tiktok' | 'twitter' | 'instagram'>('all')
+const searchControlKey = computed(
+  () => `${sortBy.value}|${sortOrder.value}|${currentPlatform.value}`
+)
+const { debounced: debouncedSearchControlKey, cancel: cancelSearchControlDebounce } =
+  useDebouncedRef(searchControlKey, 120)
+let hasInitializedSearchControlWatcher = false
 
 const results = ref<PostListItem[]>([])
 const discoverPosts = ref<PostListItem[]>([])
@@ -348,17 +355,30 @@ const mayHaveMoreResults = computed(() => {
   return results.value.length >= 15 || total.value > results.value.length
 })
 
+const tabIcons = {
+  posts: markRaw(FileText),
+  authors: markRaw(User),
+} as const
+
 const tabs = computed(() => [
-  { id: 'posts' as const, label: t('search.tab.posts'), icon: FileText },
-  { id: 'authors' as const, label: t('search.tab.authors'), icon: User },
+  { id: 'posts' as const, label: t('search.tab.posts'), icon: tabIcons.posts },
+  { id: 'authors' as const, label: t('search.tab.authors'), icon: tabIcons.authors },
 ])
 
+const platformIcons = {
+  all: markRaw(Globe),
+  youtube: markRaw(IconYoutube),
+  tiktok: markRaw(IconTiktok),
+  twitter: markRaw(IconX),
+  instagram: markRaw(IconInstagram),
+} as const
+
 const platformOptions = computed(() => [
-  { value: 'all' as const, label: t('explore.allPlatforms'), icon: Globe },
-  { value: 'youtube' as const, label: 'YouTube', icon: IconYoutube },
-  { value: 'tiktok' as const, label: 'TikTok', icon: IconTiktok },
-  { value: 'twitter' as const, label: 'X', icon: IconX },
-  { value: 'instagram' as const, label: 'Instagram', icon: IconInstagram },
+  { value: 'all' as const, label: t('explore.allPlatforms'), icon: platformIcons.all },
+  { value: 'youtube' as const, label: 'YouTube', icon: platformIcons.youtube },
+  { value: 'tiktok' as const, label: 'TikTok', icon: platformIcons.tiktok },
+  { value: 'twitter' as const, label: 'X', icon: platformIcons.twitter },
+  { value: 'instagram' as const, label: 'Instagram', icon: platformIcons.instagram },
 ])
 
 const sortOptions = computed(() => [
@@ -668,15 +688,11 @@ watch(query, (nextQuery) => {
   }
 })
 
-watch([sortBy, sortOrder], () => {
-  const controller = new AbortController()
-  onWatcherCleanup(() => controller.abort())
-  if (query.value) {
-    void search(controller.signal)
+watch(debouncedSearchControlKey, () => {
+  if (!hasInitializedSearchControlWatcher) {
+    hasInitializedSearchControlWatcher = true
+    return
   }
-})
-
-watch(currentPlatform, () => {
   const controller = new AbortController()
   onWatcherCleanup(() => controller.abort())
   if (query.value) {
@@ -702,6 +718,7 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  cancelSearchControlDebounce()
   postsRequestToken += 1
   authorRequestToken += 1
   discoverRequestToken += 1
