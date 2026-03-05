@@ -13,6 +13,8 @@
 
 import {
   ref,
+  shallowReactive,
+  shallowReadonly,
   onMounted,
   onUnmounted,
   onActivated,
@@ -36,47 +38,53 @@ export function useInfiniteScroll(
   loadMore: () => void | boolean | Promise<void | boolean>,
   options: UseInfiniteScrollOptions = {}
 ) {
-  const { threshold = 0, rootMargin = '200px', enabled } = options
+  const resolvedOptions = shallowReadonly({
+    threshold: options.threshold ?? 0,
+    rootMargin: options.rootMargin ?? '200px',
+    enabled: options.enabled,
+  })
 
-  let observer: IntersectionObserver | null = null
-  let observedElement: HTMLElement | null = null
+  const observerState = shallowReactive({
+    observer: null as IntersectionObserver | null,
+    observedElement: null as HTMLElement | null,
+    lastIsIntersecting: false,
+    isTriggering: false,
+  })
   const isObserving = ref(false)
-  let lastIsIntersecting = false
-  let isTriggering = false
 
   function getSentinel() {
     return toValue(sentinelRef)
   }
 
   function getEnabled(): boolean {
-    if (enabled === undefined) return true
-    return toValue(enabled)
+    if (resolvedOptions.enabled === undefined) return true
+    return toValue(resolvedOptions.enabled)
   }
 
   async function triggerLoadMore() {
-    if (isTriggering) return
+    if (observerState.isTriggering) return
     if (!getEnabled()) return
 
-    isTriggering = true
+    observerState.isTriggering = true
     try {
       const result = await loadMore()
       if (result === false) return
 
       const sentinel = getSentinel()
-      if (lastIsIntersecting && getEnabled() && observer && sentinel) {
-        observer.unobserve(sentinel)
-        observer.observe(sentinel)
+      if (observerState.lastIsIntersecting && getEnabled() && observerState.observer && sentinel) {
+        observerState.observer.unobserve(sentinel)
+        observerState.observer.observe(sentinel)
       }
     } catch {
       return
     } finally {
-      isTriggering = false
+      observerState.isTriggering = false
     }
   }
 
   function handleIntersect(entries: IntersectionObserverEntry[]) {
     const entry = entries[0]
-    lastIsIntersecting = Boolean(entry?.isIntersecting)
+    observerState.lastIsIntersecting = Boolean(entry?.isIntersecting)
 
     if (entry?.isIntersecting) {
       void triggerLoadMore()
@@ -87,23 +95,23 @@ export function useInfiniteScroll(
     const sentinel = getSentinel()
     if (isObserving.value || !sentinel || !getEnabled()) return
 
-    observer = new IntersectionObserver(handleIntersect, {
+    observerState.observer = new IntersectionObserver(handleIntersect, {
       root: null,
-      rootMargin,
-      threshold,
+      rootMargin: resolvedOptions.rootMargin,
+      threshold: resolvedOptions.threshold,
     })
 
-    observer.observe(sentinel)
-    observedElement = sentinel
+    observerState.observer.observe(sentinel)
+    observerState.observedElement = sentinel
     isObserving.value = true
   }
 
   function stopObserving() {
-    if (!isObserving.value || !observer) return
+    if (!isObserving.value || !observerState.observer) return
 
-    observer.disconnect()
-    observer = null
-    observedElement = null
+    observerState.observer.disconnect()
+    observerState.observer = null
+    observerState.observedElement = null
     isObserving.value = false
   }
 
@@ -112,7 +120,7 @@ export function useInfiniteScroll(
     watch(
       () => getSentinel(),
       (el) => {
-        if (el && isObserving.value && observedElement === el) return
+        if (el && isObserving.value && observerState.observedElement === el) return
         stopObserving()
         if (el) {
           startObserving()
@@ -131,9 +139,9 @@ export function useInfiniteScroll(
         const sentinel = getSentinel()
         if (sentinel) {
           startObserving()
-          if (observer) {
-            observer.unobserve(sentinel)
-            observer.observe(sentinel)
+          if (observerState.observer) {
+            observerState.observer.unobserve(sentinel)
+            observerState.observer.observe(sentinel)
           }
         }
       },

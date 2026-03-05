@@ -4,7 +4,7 @@
  * 集中管理通知列表、未读计数、轮询刷新
  */
 
-import { ref, computed } from 'vue'
+import { ref, computed, shallowRef, triggerRef } from 'vue'
 import { defineStore } from 'pinia'
 import {
   notificationService,
@@ -15,7 +15,7 @@ import {
 const POLL_INTERVAL = 60_000 // 60s
 
 export const useNotificationsStore = defineStore('notifications', () => {
-  const items = ref<Notification[]>([])
+  const items = shallowRef<Notification[]>([])
   const total = ref(0)
   const unreadCount = ref(0)
   const page = ref(1)
@@ -30,6 +30,10 @@ export const useNotificationsStore = defineStore('notifications', () => {
   let fetchNotificationsToken = 0
   let refreshUnreadController: AbortController | null = null
   let refreshUnreadToken = 0
+
+  function touchItems() {
+    triggerRef(items)
+  }
 
   const hasUnread = computed(() => unreadCount.value > 0)
 
@@ -147,6 +151,7 @@ export const useNotificationsStore = defineStore('notifications', () => {
         item.is_read = true
         item.read_at = new Date().toISOString()
         unreadCount.value = Math.max(0, unreadCount.value - 1)
+        touchItems()
       }
     } catch {
       // silent
@@ -162,6 +167,7 @@ export const useNotificationsStore = defineStore('notifications', () => {
           n.read_at = n.read_at || new Date().toISOString()
         }
       })
+      touchItems()
       if (!type) {
         unreadCount.value = 0
       } else {
@@ -179,6 +185,7 @@ export const useNotificationsStore = defineStore('notifications', () => {
       if (idx !== -1) {
         const removed = items.value[idx]
         items.value.splice(idx, 1)
+        touchItems()
         total.value = Math.max(0, total.value - 1)
         if (removed && !removed.is_read) {
           unreadCount.value = Math.max(0, unreadCount.value - 1)
