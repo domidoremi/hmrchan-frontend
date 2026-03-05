@@ -65,7 +65,7 @@
         :disabled="!isAuthenticated"
       >
         <AnimatedIcon name="heart" :fallback-icon="Heart" size="sm" :active="comment.is_liked" />
-        <span v-if="comment.likes_count > 0">{{ comment.likes_count }}</span>
+        <span v-if="likeCount > 0">{{ likeCount }}</span>
       </button>
 
       <button
@@ -113,8 +113,7 @@
     <!-- Replies -->
     <div
       v-if="
-        canShowNestedReplies &&
-        (comment.replies_count > 0 || (comment.replies && comment.replies.length > 0))
+        canShowNestedReplies && (replyCount > 0 || (comment.replies && comment.replies.length > 0))
       "
       class="replies-section"
     >
@@ -244,10 +243,14 @@ async function handleShowReplies() {
     const requestToken = ++fetchRepliesToken
     isLoadingReplies.value = true
     try {
-      await commentsStore.fetchReplies(props.comment.id, 1, props.postId, {
+      const result = await commentsStore.fetchReplies(props.comment.id, 1, props.postId, {
         signal: controller.signal,
       })
       if (controller.signal.aborted || requestToken !== fetchRepliesToken) return
+      if (!result.success && result.error !== 'aborted') {
+        toastStore.error(t('comment.error.fetchRepliesFailed'))
+        return
+      }
     } finally {
       if (requestToken === fetchRepliesToken) {
         isLoadingReplies.value = false
@@ -273,16 +276,23 @@ const userLevelBadge = computed(() => {
   return badges[props.comment.user.level] || null
 })
 
+const likeCount = computed(() => props.comment.like_count ?? props.comment.likes_count ?? 0)
+const replyCount = computed(() => props.comment.reply_count ?? props.comment.replies_count ?? 0)
+const isAdmin = computed(() => {
+  const roles = (user.value as { roles?: string[] } | null)?.roles
+  return Boolean(user.value?.is_admin || roles?.includes('admin') || roles?.includes('moderator'))
+})
+
 const canDelete = computed(() => {
   if (!user.value) return false
   // 用户可以删除自己的评论，管理员/版主可以删除任何评论
-  return user.value.id === props.comment.user.id
+  return isAdmin.value || user.value.id === props.comment.user.id
 })
 
 const actualRepliesCount = computed(() => {
   // 优先使用本地已加载的回复数量，其次使用后端返回的计数
   const localCount = props.comment.replies?.length || 0
-  const serverCount = props.comment.replies_count || 0
+  const serverCount = replyCount.value
   return Math.max(localCount, serverCount)
 })
 

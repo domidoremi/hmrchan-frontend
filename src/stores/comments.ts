@@ -72,7 +72,7 @@ export const useCommentsStore = defineStore('comments', () => {
 
     if (sort === 'popular') {
       items.sort((a, b) => {
-        const likeDiff = (b.likes_count || 0) - (a.likes_count || 0)
+        const likeDiff = getCommentLikeCount(b) - getCommentLikeCount(a)
         if (likeDiff !== 0) return likeDiff
         return toTime(b.created_at) - toTime(a.created_at)
       })
@@ -86,6 +86,33 @@ export const useCommentsStore = defineStore('comments', () => {
 
     items.sort((a, b) => toTime(b.created_at) - toTime(a.created_at))
     return items
+  }
+
+  function getCommentLikeCount(comment: Comment): number {
+    return comment.like_count ?? comment.likes_count ?? 0
+  }
+
+  function getCommentReplyCount(comment: Comment): number {
+    return comment.reply_count ?? comment.replies_count ?? comment.replies?.length ?? 0
+  }
+
+  function normalizeCommentTree(comment: Comment): Comment {
+    const replies = comment.replies?.map(normalizeCommentTree)
+    const likeCount = getCommentLikeCount(comment)
+    const replyCount = comment.reply_count ?? comment.replies_count ?? replies?.length ?? 0
+
+    return {
+      ...comment,
+      like_count: likeCount,
+      likes_count: likeCount,
+      reply_count: replyCount,
+      replies_count: replyCount,
+      replies,
+    }
+  }
+
+  function normalizeCommentList(list: Comment[]): Comment[] {
+    return list.map(normalizeCommentTree)
   }
 
   // 获取评论数量
@@ -141,7 +168,7 @@ export const useCommentsStore = defineStore('comments', () => {
         return { success: false, error: 'aborted' as const }
       }
 
-      const items = sortComments(data.items || [], sort)
+      const items = sortComments(normalizeCommentList(data.items || []), sort)
       comments.value.set(postId, items)
 
       // 淘汰超限的帖子评论缓存（FIFO：Map 迭代顺序即插入顺序）
@@ -232,23 +259,23 @@ export const useCommentsStore = defineStore('comments', () => {
         // 递归查找并更新 replies
         const postComments = comments.value.get(postId) || []
 
-        const fetchedReplies = (data.items ?? []) as unknown as Comment[]
+        const fetchedReplies = normalizeCommentList((data.items ?? []) as unknown as Comment[])
 
         const updateCommentReplies = (list: Comment[]): Comment[] => {
           return list.map((c) => {
             if (String(c.id) === String(commentId)) {
               // 合并现有的回复和新获取的回复，去重
-              const existingReplies: Comment[] = c.replies || []
+              const existingReplies: Comment[] = normalizeCommentList(c.replies || [])
               const existingIds = new Set(existingReplies.map((r) => String(r.id)))
               const newReplies = fetchedReplies.filter((r) => !existingIds.has(String(r.id)))
+              const mergedReplies = [...existingReplies, ...newReplies]
+              const updatedReplyCount = Math.max(getCommentReplyCount(c), mergedReplies.length)
 
               const updated: Comment = {
                 ...c,
-                replies: [...existingReplies, ...newReplies],
-                replies_count: Math.max(
-                  c.replies_count || 0,
-                  existingReplies.length + newReplies.length
-                ),
+                replies: mergedReplies,
+                reply_count: updatedReplyCount,
+                replies_count: updatedReplyCount,
               }
               return updated
             }
@@ -320,6 +347,7 @@ export const useCommentsStore = defineStore('comments', () => {
         },
         { skipErrorToast: true }
       )
+      const normalizedNewComment = normalizeCommentTree(newComment)
 
       // 记录速率限制
       commentRateLimiter.record()
@@ -336,8 +364,9 @@ export const useCommentsStore = defineStore('comments', () => {
             if (String(comment.id) === parentIdStr) {
               return {
                 ...comment,
-                replies: [...(comment.replies || []), newComment],
-                replies_count: (comment.replies_count || 0) + 1,
+                replies: [...(comment.replies || []), normalizedNewComment],
+                reply_count: getCommentReplyCount(comment) + 1,
+                replies_count: getCommentReplyCount(comment) + 1,
               }
             }
             if (comment.replies && comment.replies.length > 0) {
@@ -352,10 +381,10 @@ export const useCommentsStore = defineStore('comments', () => {
         comments.value.set(postId, updateReplies(postComments))
       } else {
         // 顶级评论 - 后端返回的数据已包含 is_thread_owner: true
-        comments.value.set(postId, [newComment, ...postComments])
+        comments.value.set(postId, [normalizedNewComment, ...postComments])
       }
 
-      return { success: true, data: newComment }
+      return { success: true, data: normalizedNewComment }
     } catch {
       error.value = 'comment.error.addFailed'
       return { success: false, error: 'comment.error.addFailed' }
@@ -388,7 +417,9 @@ export const useCommentsStore = defineStore('comments', () => {
       // 更新本地状态
       updateCommentInAll(commentId, (comment) => {
         comment.is_liked = true
-        comment.likes_count = (comment.likes_count ?? 0) + 1
+        const nextLikeCount = getCommentLikeCount(comment) + 1
+        comment.like_count = nextLikeCount
+        comment.likes_count = nextLikeCount
       })
 
       return { success: true }
@@ -405,7 +436,9 @@ export const useCommentsStore = defineStore('comments', () => {
       // 更新本地状态
       updateCommentInAll(commentId, (comment) => {
         comment.is_liked = false
-        comment.likes_count = Math.max(0, (comment.likes_count ?? 0) - 1)
+        const nextLikeCount = Math.max(0, getCommentLikeCount(comment) - 1)
+        comment.like_count = nextLikeCount
+        comment.likes_count = nextLikeCount
       })
 
       return { success: true }
@@ -482,7 +515,9 @@ export const useCommentsStore = defineStore('comments', () => {
     }
     for (const comment of commentList) {
       if (comment.replies && removeComment(comment.replies, commentId)) {
-        comment.replies_count = Math.max(0, (comment.replies_count ?? 0) - 1)
+        const nextReplyCount = Math.max(0, getCommentReplyCount(comment) - 1)
+        comment.reply_count = nextReplyCount
+        comment.replies_count = nextReplyCount
         return true
       }
     }
