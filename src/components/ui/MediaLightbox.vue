@@ -176,7 +176,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted, nextTick, useTemplateRef } from 'vue'
+import { ref, computed, watch, onUnmounted, nextTick, useTemplateRef } from 'vue'
 import {
   X,
   ZoomIn,
@@ -301,6 +301,7 @@ watch(
   () => props.isOpen,
   (open) => {
     if (open) {
+      bindGlobalEvents()
       currentIndex.value = props.initialIndex
       resetZoom()
       swipeOffsetX.value = 0
@@ -318,10 +319,14 @@ watch(
       })
       prefetchAround(currentIndex.value)
     } else {
+      unbindGlobalEvents()
       unlockBodyScroll()
       clearControlsTimer()
+      clearHintsTimer()
+      showHints.value = false
     }
-  }
+  },
+  { immediate: true }
 )
 
 watch(
@@ -587,6 +592,13 @@ function clearControlsTimer() {
   }
 }
 
+function clearHintsTimer() {
+  if (hintsTimer) {
+    window.clearTimeout(hintsTimer)
+    hintsTimer = null
+  }
+}
+
 function handleMouseMove() {
   if (!props.isOpen) return
   showControlsTemporarily()
@@ -599,12 +611,20 @@ function handleTouchStart() {
 
 function startHintsTimer() {
   showHints.value = true
-  if (hintsTimer) {
-    window.clearTimeout(hintsTimer)
-  }
+  clearHintsTimer()
   hintsTimer = window.setTimeout(() => {
     showHints.value = false
   }, 2200)
+}
+
+function bindGlobalEvents() {
+  document.addEventListener('keydown', handleKeydown)
+}
+
+function unbindGlobalEvents() {
+  document.removeEventListener('keydown', handleKeydown)
+  // 弹窗关闭时确保拖拽监听解除，避免遗留全局监听。
+  stopDrag()
 }
 
 function downloadCurrent() {
@@ -635,20 +655,11 @@ function prefetchAround(index: number) {
   }
 }
 
-onMounted(() => {
-  document.addEventListener('keydown', handleKeydown)
-})
-
 onUnmounted(() => {
-  document.removeEventListener('keydown', handleKeydown)
-  // 确保拖拽中的事件监听器被移除，防止内存泄漏
-  stopDrag()
+  unbindGlobalEvents()
   unlockBodyScroll()
   clearControlsTimer()
-  if (hintsTimer) {
-    window.clearTimeout(hintsTimer)
-    hintsTimer = null
-  }
+  clearHintsTimer()
 })
 </script>
 
