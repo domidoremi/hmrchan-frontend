@@ -163,7 +163,7 @@ const enableDataPrefetch = import.meta.env.VITE_ENABLE_DATA_PREFETCH !== 'false'
 const enableDeferredAnimationStyles =
   import.meta.env.VITE_ENABLE_DEFERRED_ANIMATION_STYLES !== 'false'
 
-// 等待客户端安全初始化 → 认证初始化完成后再挂载，避免路由守卫竞态
+// 客户端安全初始化 → 认证初始化（不阻塞首屏挂载，路由守卫按需等待）
 const clientSecurityReady = enableClientSecurityInit
   ? import('./api/clientSecurityService')
       .then(({ clientSecurityService }) => clientSecurityService.init())
@@ -172,12 +172,9 @@ const clientSecurityReady = enableClientSecurityInit
       })
   : Promise.resolve()
 
-clientSecurityReady
-  .then(() => authStore.initAuth())
-  .catch(() => {})
-  .finally(() => {
-    app.mount('#app-root')
-  })
+void clientSecurityReady.then(() => authStore.ensureAuthInitialized()).catch(() => {})
+
+app.mount('#app-root')
 
 // 性能监控：立即启动以捕获所有指标
 import { disposePerformanceMonitoring, initPerformanceMonitoring } from './utils/performanceMonitor'
