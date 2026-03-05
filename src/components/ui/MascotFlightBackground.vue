@@ -13,6 +13,7 @@
           alt=""
           loading="lazy"
           decoding="async"
+          fetchpriority="low"
           draggable="false"
         />
       </span>
@@ -53,7 +54,7 @@ const defaultMascotSettings = {
 }
 const mascotSettings = computed(() => settings.value.mascotBackground ?? defaultMascotSettings)
 
-const mascotSrc = '/images/expressions/fly.png'
+const mascotSrc = '/images/expressions/fly-sm.webp'
 const MAX_LANES = 12
 const sizePresets = [
   'clamp(2.5rem, 4.6vw, 3.9rem)',
