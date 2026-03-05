@@ -93,7 +93,6 @@ async function checkCloudflareConfigs(options: AuditOptions): Promise<AuditIssue
 
   const requiredFiles = [
     { path: 'public/_headers', label: 'HTTP headers config' },
-    { path: 'public/_redirects', label: 'Redirects config' },
     { path: 'public/_routes.json', label: 'Routes config' },
   ]
 
@@ -110,8 +109,22 @@ async function checkCloudflareConfigs(options: AuditOptions): Promise<AuditIssue
     }
   }
 
-  // Validate _routes.json structure if it exists
+  const redirectsPath = join(options.projectRoot, 'public/_redirects')
   const routesPath = join(options.projectRoot, 'public/_routes.json')
+  const hasRedirects = await fileExists(redirectsPath)
+  const hasRoutes = await fileExists(routesPath)
+
+  if (!hasRedirects && !hasRoutes) {
+    issues.push({
+      severity: 'error',
+      message: 'Missing SPA routing config: need either public/_redirects or public/_routes.json',
+      file: 'public',
+      rule: 'cloudflare-config',
+      suggestion: 'Prefer _routes.json on Cloudflare Pages, or add _redirects as fallback',
+    })
+  }
+
+  // Validate _routes.json structure if it exists
   if (await fileExists(routesPath)) {
     try {
       const content = await readFile(routesPath, 'utf-8')
@@ -135,8 +148,7 @@ async function checkCloudflareConfigs(options: AuditOptions): Promise<AuditIssue
   }
 
   // Validate _redirects has SPA fallback
-  const redirectsPath = join(options.projectRoot, 'public/_redirects')
-  if (await fileExists(redirectsPath)) {
+  if (hasRedirects) {
     try {
       const content = await readFile(redirectsPath, 'utf-8')
       if (!content.includes('/* /index.html 200')) {
