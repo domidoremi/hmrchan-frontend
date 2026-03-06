@@ -110,7 +110,9 @@
         class="settings-dropdown glass-dropdown"
         :style="settingsDropdownStyle"
         role="dialog"
+        aria-modal="true"
         :aria-label="$t('nav.settings')"
+        tabindex="-1"
         @click.stop
       >
         <SettingsPanel @close="showSettings = false" />
@@ -125,6 +127,9 @@
         ref="userDropdownRef"
         class="user-dropdown glass-dropdown"
         :style="userDropdownStyle"
+        role="menu"
+        :aria-label="$t('nav.profile')"
+        tabindex="-1"
         @click.stop
       >
         <div class="user-info">
@@ -143,7 +148,12 @@
         </div>
         <Separator />
         <div class="dropdown-links">
-          <RouterLink to="/profile" class="dropdown-link" @click="showUserMenu = false">
+          <RouterLink
+            to="/profile"
+            class="dropdown-link"
+            role="menuitem"
+            @click="showUserMenu = false"
+          >
             <div class="dropdown-link-icon">
               <AnimatedIcon name="user" :fallback-icon="User" size="sm" />
             </div>
@@ -158,6 +168,7 @@
           <RouterLink
             to="/profile/settings"
             class="dropdown-link"
+            role="menuitem"
             @click="showUserMenu = false"
             @mouseenter="prefetchProfileSettingsPage"
             @focus="prefetchProfileSettingsPage"
@@ -176,6 +187,7 @@
           <RouterLink
             to="/profile/notifications"
             class="dropdown-link"
+            role="menuitem"
             @click="showUserMenu = false"
           >
             <div class="dropdown-link-icon">
@@ -189,7 +201,12 @@
               class="dropdown-link-arrow"
             />
           </RouterLink>
-          <RouterLink to="/profile/devices" class="dropdown-link" @click="showUserMenu = false">
+          <RouterLink
+            to="/profile/devices"
+            class="dropdown-link"
+            role="menuitem"
+            @click="showUserMenu = false"
+          >
             <div class="dropdown-link-icon">
               <AnimatedIcon name="explore" :fallback-icon="Smartphone" size="sm" />
             </div>
@@ -204,7 +221,12 @@
         </div>
         <Separator />
         <div class="dropdown-links">
-          <button type="button" class="dropdown-link dropdown-link--danger" @click="handleLogout">
+          <button
+            type="button"
+            class="dropdown-link dropdown-link--danger"
+            role="menuitem"
+            @click="handleLogout"
+          >
             <div class="dropdown-link-icon dropdown-link-icon--danger">
               <AnimatedIcon name="sparkle" :fallback-icon="LogOut" size="sm" />
             </div>
@@ -270,6 +292,7 @@ import {
 import { useAuthStore, useSettingsStore } from '@/stores'
 import { useScheduleStore } from '@/stores/schedule'
 import { getUserDisplayName } from '@/utils/user'
+import { useFocusTrap } from '@/composables/useFocusTrap'
 import { useUserAvatar, preloadUserAvatar } from '@/composables/useUserAvatar'
 import { prefetchExploreData, prefetchAuthorsData } from '@/utils/prefetch'
 import { throttleRAF, scheduleDOMUpdate, prefersReducedMotion } from '@/utils/performance'
@@ -339,6 +362,19 @@ const settingsDropdownRef = useTemplateRef<HTMLDivElement>('settingsDropdownRef'
 const userDropdownRef = useTemplateRef<HTMLDivElement>('userDropdownRef')
 const navLinksRef = useTemplateRef<HTMLDivElement>('navLinksRef')
 
+useFocusTrap(settingsDropdownRef, showSettings, {
+  autoFocus: true,
+  restoreFocus: false,
+  onEscape: () => closeSettings({ restoreFocus: true }),
+})
+
+useFocusTrap(userDropdownRef, showUserMenu, {
+  autoFocus: true,
+  restoreFocus: false,
+  initialFocus: '.dropdown-link',
+  onEscape: () => closeUserMenu({ restoreFocus: true }),
+})
+
 const settingsDropdownStyle = ref<Record<string, string>>({})
 const userDropdownStyle = ref<Record<string, string>>({})
 
@@ -387,50 +423,50 @@ const mobileIndicatorStyle = computed(() => {
   }
 })
 
-// 预加载函数标志
-let hasPrefetchedExplorePage = false
-let hasPrefetchedAuthorsPage = false
-let hasPrefetchedCommunityPage = false
-let hasPrefetchedFavoritesPage = false
-let hasPrefetchedLoginPage = false
-let hasPrefetchedProfileSettingsPage = false
+const prefetchedPageKeys = new Set<string>()
+
+function runOncePrefetch(key: string, loader: () => void) {
+  if (prefetchedPageKeys.has(key)) return
+  prefetchedPageKeys.add(key)
+  loader()
+}
 
 function prefetchExplorePage() {
-  if (hasPrefetchedExplorePage) return
-  hasPrefetchedExplorePage = true
-  import('@/views/ExplorePage.vue').catch(() => {})
-  prefetchExploreData()
+  runOncePrefetch('explore', () => {
+    import('@/views/ExplorePage.vue').catch(() => {})
+    prefetchExploreData()
+  })
 }
 
 function prefetchAuthorsPage() {
-  if (hasPrefetchedAuthorsPage) return
-  hasPrefetchedAuthorsPage = true
-  import('@/views/AuthorsPage.vue').catch(() => {})
-  prefetchAuthorsData()
+  runOncePrefetch('authors', () => {
+    import('@/views/AuthorsPage.vue').catch(() => {})
+    prefetchAuthorsData()
+  })
 }
 
 function prefetchCommunityPage() {
-  if (hasPrefetchedCommunityPage) return
-  hasPrefetchedCommunityPage = true
-  import('@/views/CommunityPage.vue').catch(() => {})
+  runOncePrefetch('community', () => {
+    import('@/views/CommunityPage.vue').catch(() => {})
+  })
 }
 
 function prefetchFavoritesPage() {
-  if (hasPrefetchedFavoritesPage) return
-  hasPrefetchedFavoritesPage = true
-  import('@/views/FavoritesPage.vue').catch(() => {})
+  runOncePrefetch('favorites', () => {
+    import('@/views/FavoritesPage.vue').catch(() => {})
+  })
 }
 
 function prefetchLoginPage() {
-  if (hasPrefetchedLoginPage) return
-  hasPrefetchedLoginPage = true
-  import('@/views/LoginPage.vue').catch(() => {})
+  runOncePrefetch('login', () => {
+    import('@/views/LoginPage.vue').catch(() => {})
+  })
 }
 
 function prefetchProfileSettingsPage() {
-  if (hasPrefetchedProfileSettingsPage) return
-  hasPrefetchedProfileSettingsPage = true
-  import('@/views/ProfileSettingsPage.vue').catch(() => {})
+  runOncePrefetch('profile-settings', () => {
+    import('@/views/ProfileSettingsPage.vue').catch(() => {})
+  })
 }
 
 // 注册预加载函数到 composable
@@ -492,8 +528,8 @@ watch(
 watch(
   () => route.fullPath,
   () => {
-    showSettings.value = false
-    showUserMenu.value = false
+    closeSettings()
+    closeUserMenu()
   }
 )
 
@@ -553,8 +589,32 @@ function goToSearch() {
   router.push('/search')
 }
 
-function toggleSettings() {
+function restoreTriggerFocus(kind: 'settings' | 'user') {
+  if (kind === 'settings') {
+    settingsBtnRef.value?.focus()
+    return
+  }
+  userBtnRef.value?.focus()
+}
+
+function closeSettings(options: { restoreFocus?: boolean } = {}) {
+  if (!showSettings.value) return
+  showSettings.value = false
+  if (options.restoreFocus) {
+    nextTick(() => restoreTriggerFocus('settings'))
+  }
+}
+
+function closeUserMenu(options: { restoreFocus?: boolean } = {}) {
+  if (!showUserMenu.value) return
   showUserMenu.value = false
+  if (options.restoreFocus) {
+    nextTick(() => restoreTriggerFocus('user'))
+  }
+}
+
+function toggleSettings() {
+  closeUserMenu()
   showSettings.value = !showSettings.value
 
   if (showSettings.value) {
@@ -563,7 +623,7 @@ function toggleSettings() {
 }
 
 function toggleUserMenu() {
-  showSettings.value = false
+  closeSettings()
   showUserMenu.value = !showUserMenu.value
 
   if (showUserMenu.value) {
@@ -573,18 +633,41 @@ function toggleUserMenu() {
 
 function handleLogout() {
   authStore.logout()
-  showUserMenu.value = false
+  closeUserMenu()
   router.push('/')
 }
 
-function handleClickOutside(e: MouseEvent) {
-  const target = e.target as HTMLElement
+function isTargetWithin(
+  target: Node | null,
+  ...elements: Array<HTMLElement | null | undefined>
+): boolean {
+  if (!target) return false
+  return elements.some((element) => element?.contains(target))
+}
 
-  if (!target.closest('.settings-dropdown') && !target.closest('.action-btn')) {
-    showSettings.value = false
+function handleClickOutside(e: MouseEvent) {
+  const target = e.target as Node | null
+
+  if (!isTargetWithin(target, settingsDropdownRef.value, settingsBtnRef.value)) {
+    closeSettings()
   }
-  if (!target.closest('.user-dropdown') && !target.closest('.user-btn')) {
-    showUserMenu.value = false
+  if (!isTargetWithin(target, userDropdownRef.value, userBtnRef.value)) {
+    closeUserMenu()
+  }
+}
+
+function handleKeydown(event: KeyboardEvent) {
+  if (event.key !== 'Escape') return
+
+  if (showUserMenu.value) {
+    event.preventDefault()
+    closeUserMenu({ restoreFocus: true })
+    return
+  }
+
+  if (showSettings.value) {
+    event.preventDefault()
+    closeSettings({ restoreFocus: true })
   }
 }
 
@@ -733,6 +816,7 @@ onMounted(() => {
     requestAnimationFrame(updateNavIndicator)
   })
   document.addEventListener('click', handleClickOutside)
+  document.addEventListener('keydown', handleKeydown)
   window.addEventListener('resize', handleResize)
   window.addEventListener('scroll', handleScroll, { passive: true })
   if (shouldPrefetchOnIdle()) {
@@ -747,6 +831,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
+  document.removeEventListener('keydown', handleKeydown)
   window.removeEventListener('resize', handleResize)
   window.removeEventListener('scroll', handleScroll)
   handleResize.cancel?.()
