@@ -8,12 +8,14 @@
         @click.self="handleOverlayClick"
       >
         <div
+          ref="dialogRef"
           :class="dialogClass"
           :style="dialogDragStyle"
           role="dialog"
           aria-modal="true"
-          :aria-labelledby="titleId"
-          :aria-describedby="descriptionId"
+          :aria-labelledby="labelledBy"
+          :aria-describedby="describedBy"
+          tabindex="-1"
           @touchstart.passive="onTouchStart"
           @touchmove.passive="onTouchMove"
           @touchend="onTouchEnd"
@@ -61,10 +63,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, watch, onMounted, onUnmounted, ref, useId } from 'vue'
+import { computed, watch, onUnmounted, ref, useId, useSlots, useTemplateRef } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { X } from 'lucide-vue-next'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
+import { useFocusTrap } from '@/composables/useFocusTrap'
 import { lockBodyScroll, unlockBodyScroll } from '@/utils/bodyScrollLock'
 
 defineOptions({ name: 'UiDialog' })
@@ -99,17 +102,32 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
+const slots = useSlots()
+const dialogRef = useTemplateRef<HTMLElement>('dialogRef')
 const baseId = useId()
 const titleId = `${baseId}-title`
 const descriptionId = `${baseId}-description`
 
 const closeLabel = computed(() => t('common.close'))
+const hasTitle = computed(() => Boolean(props.title || slots.title))
+const hasDescription = computed(() => Boolean(props.description || slots.description))
+const labelledBy = computed(() => (hasTitle.value ? titleId : undefined))
+const describedBy = computed(() => (hasDescription.value ? descriptionId : undefined))
+const isDialogOpen = computed(() => props.isOpen)
 
 const showHeader = computed(() => {
-  return props.title || props.showClose
+  return hasTitle.value || hasDescription.value || props.showClose
 })
 
 const dialogClass = computed(() => ['ui-dialog', `ui-dialog--${props.size}`])
+
+useFocusTrap(dialogRef, isDialogOpen, {
+  autoFocus: true,
+  restoreFocus: true,
+  initialFocus: props.showClose ? '.ui-dialog__close' : undefined,
+  escapeDeactivates: props.closeOnEscape,
+  onEscape: close,
+})
 
 /* ── touch drag-to-dismiss ── */
 const dragY = ref(0)
@@ -188,27 +206,25 @@ function handleOverlayClick() {
   }
 }
 
-function handleKeydown(event: KeyboardEvent) {
-  if (event.key === 'Escape' && props.isOpen && props.closeOnEscape) {
-    close()
-  }
-}
-
 watch(
   () => props.isOpen,
   (isOpen, wasOpen) => {
     if (isOpen && !wasOpen) lockBodyScroll()
     if (!isOpen && wasOpen) unlockBodyScroll()
+  },
+  { immediate: true }
+)
+watch(
+  () => props.isOpen,
+  (isOpen) => {
+    if (!isOpen) return
+    if (!isDragging.value) {
+      dragY.value = 0
+    }
   }
 )
 
-onMounted(() => {
-  document.addEventListener('keydown', handleKeydown)
-  if (props.isOpen) lockBodyScroll()
-})
-
 onUnmounted(() => {
-  document.removeEventListener('keydown', handleKeydown)
   if (props.isOpen) unlockBodyScroll()
 })
 </script>

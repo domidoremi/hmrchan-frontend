@@ -52,7 +52,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, watch, onMounted, onUnmounted, type Component, useId, useTemplateRef } from 'vue'
+import { computed, watch, onUnmounted, type Component, useId, useTemplateRef } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { AlertTriangle, Trash2, Info, HelpCircle, CheckCircle } from 'lucide-vue-next'
 import Button from './Button.vue'
@@ -175,27 +175,16 @@ function handleBackdropClick() {
   }
 }
 
-function handleKeydown(event: KeyboardEvent) {
-  if (event.key === 'Escape' && props.isOpen && !props.loading) {
-    handleCancel()
-  }
-}
-
 watch(
   () => props.isOpen,
   (isOpen, wasOpen) => {
     if (isOpen && !wasOpen) lockBodyScroll()
     if (!isOpen && wasOpen) unlockBodyScroll()
-  }
+  },
+  { immediate: true }
 )
 
-onMounted(() => {
-  document.addEventListener('keydown', handleKeydown)
-  if (props.isOpen) lockBodyScroll()
-})
-
 onUnmounted(() => {
-  document.removeEventListener('keydown', handleKeydown)
   if (props.isOpen) unlockBodyScroll()
 })
 </script>
