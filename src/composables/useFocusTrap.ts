@@ -10,6 +10,7 @@ import {
   shallowReadonly,
   toValue,
   watch,
+  onMounted,
   getCurrentScope,
   onScopeDispose,
   type MaybeRefOrGetter,
@@ -274,21 +275,25 @@ export function useFocusTrap(
     }
   }
 
+  function scheduleActivate() {
+    if (activationRaf !== null) {
+      cancelAnimationFrame(activationRaf)
+    }
+    activationRaf = requestAnimationFrame(() => {
+      activationRaf = null
+      if (getActive() && getContainer()) {
+        activate()
+      }
+    })
+  }
+
   // 监听激活状态 - 移除 immediate: true，避免初始化时的问题
   watch(
     () => getActive(),
     (active) => {
       if (active) {
         // 延迟激活，确保 DOM 已渲染
-        if (activationRaf !== null) {
-          cancelAnimationFrame(activationRaf)
-        }
-        activationRaf = requestAnimationFrame(() => {
-          activationRaf = null
-          if (getActive() && getContainer()) {
-            activate()
-          }
-        })
+        scheduleActivate()
       } else {
         if (activationRaf !== null) {
           cancelAnimationFrame(activationRaf)
@@ -298,6 +303,12 @@ export function useFocusTrap(
       }
     }
   )
+
+  onMounted(() => {
+    if (getActive() && getContainer()) {
+      scheduleActivate()
+    }
+  })
 
   const dispose = () => {
     deactivate()
