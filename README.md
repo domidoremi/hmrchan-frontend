@@ -113,6 +113,7 @@ VITE_TURNSTILE_SITE_KEY=your_site_key_here
 ```
 
 > 生产环境推荐使用同源 `/api` 代理（Cloudflare Pages Functions）以避免 CORS。若直连后端域名，请确保后端允许 `Content-Type`/`Authorization` 等跨域请求头并开启凭据。
+> 本地 `vite dev` / `vite preview` 也会使用 `VITE_API_BASE_URL` 作为 `/api` 与 `/uploads` 的代理目标；若联调本机后端，可改为 `http://127.0.0.1:8000` 等本地地址。
 > 前端会将指向后端的 `/api/*` 与 `/uploads/*` 绝对链接归一化为同源路径，避免泄露后端地址；建议后端返回相对路径或上述标准路径。
 > 如遇 CSP inline script 报错，建议在 Cloudflare 关闭 Rocket Loader，或保留入口脚本的 `data-cfasync="false"`。
 > 若需要启用构建混淆，请先安装：`bun add -d javascript-obfuscator`。

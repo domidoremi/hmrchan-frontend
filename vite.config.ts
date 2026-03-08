@@ -16,7 +16,7 @@ import { fileURLToPath, URL } from 'node:url'
 import { execSync } from 'node:child_process'
 import type { IncomingMessage } from 'node:http'
 
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import vueJsx from '@vitejs/plugin-vue-jsx'
 import { imagetools } from 'vite-imagetools'
@@ -44,14 +44,16 @@ function getBuildHash(): string {
 
 const BUILD_HASH = getBuildHash()
 
-function parseBoolEnv(name: string, defaultValue = false): boolean {
-  const raw = process.env[name]
+type EnvMap = Record<string, string | undefined>
+
+function parseBoolEnv(env: EnvMap, name: string, defaultValue = false): boolean {
+  const raw = env[name]
   if (raw === undefined) return defaultValue
   return raw.trim().toLowerCase() === 'true'
 }
 
-function parseIntEnv(name: string, defaultValue = 0): number {
-  const raw = process.env[name]
+function parseIntEnv(env: EnvMap, name: string, defaultValue = 0): number {
+  const raw = env[name]
   if (!raw) return defaultValue
   const parsed = Number.parseInt(raw, 10)
   return Number.isFinite(parsed) ? parsed : defaultValue
@@ -63,28 +65,73 @@ function parseStringArrayEncoding(raw: string | undefined): 'none' | 'base64' | 
   return 'base64'
 }
 
+function normalizeProxyTarget(rawTarget: string | undefined, fallbackTarget: string): string {
+  const target = rawTarget?.trim() || fallbackTarget
+  return target.replace(/\/+$/, '')
+}
+
+function createProxyConfig(apiTarget: string) {
+  return {
+    '/api': {
+      target: apiTarget,
+      changeOrigin: true,
+      secure: true,
+      followRedirects: true,
+      configure: (proxy: DevProxyServer) => {
+        proxy.on('proxyRes', (proxyRes) => {
+          const setCookie = proxyRes.headers['set-cookie']
+          if (setCookie && Array.isArray(setCookie)) {
+            proxyRes.headers['set-cookie'] = setCookie.map((cookie) =>
+              cookie.replace(/;\s*Secure/gi, '')
+            )
+          }
+        })
+      },
+      rewrite: (path: string) => {
+        const url = new URL(path, 'http://localhost')
+        return url.pathname + url.search
+      },
+    },
+    '/uploads': {
+      target: apiTarget,
+      changeOrigin: true,
+      secure: true,
+      followRedirects: true,
+    },
+  }
+}
+
 export default defineConfig(async ({ mode }: { mode: string }) => {
+  const env = {
+    ...process.env,
+    ...loadEnv(mode, process.cwd(), ''),
+  }
   const isProd = mode === 'production'
   const isDev = mode === 'development'
-  const obfuscationEnabled = parseBoolEnv('VITE_ENABLE_OBFUSCATION', false)
-  const asyncMainCss = parseBoolEnv('VITE_ASYNC_MAIN_CSS', true)
-  const disablePreviewProxy = parseBoolEnv('VITE_DISABLE_PREVIEW_PROXY', false)
-  const obfuscationProfile =
-    process.env.VITE_OBFUSCATION_PROFILE === 'aggressive' ? 'aggressive' : 'safe'
-  const obfuscationControlFlow = parseBoolEnv('VITE_OBFUSCATION_CONTROL_FLOW', false)
-  const obfuscationDeadCode = parseBoolEnv('VITE_OBFUSCATION_DEAD_CODE', false)
-  const obfuscationStringArray = parseBoolEnv('VITE_OBFUSCATION_STRING_ARRAY', true)
+  const obfuscationEnabled = parseBoolEnv(env, 'VITE_ENABLE_OBFUSCATION', false)
+  const asyncMainCss = parseBoolEnv(env, 'VITE_ASYNC_MAIN_CSS', true)
+  const disablePreviewProxy = parseBoolEnv(env, 'VITE_DISABLE_PREVIEW_PROXY', false)
+  const devtoolsEnabled = isDev && parseBoolEnv(env, 'VITE_ENABLE_DEVTOOLS', false)
+  const apiProxyTarget = normalizeProxyTarget(env.VITE_API_BASE_URL, 'https://api.momichan.xyz')
+  const sharedProxyConfig = createProxyConfig(apiProxyTarget)
+  const obfuscationProfile = env.VITE_OBFUSCATION_PROFILE === 'aggressive' ? 'aggressive' : 'safe'
+  const obfuscationControlFlow = parseBoolEnv(env, 'VITE_OBFUSCATION_CONTROL_FLOW', false)
+  const obfuscationDeadCode = parseBoolEnv(env, 'VITE_OBFUSCATION_DEAD_CODE', false)
+  const obfuscationStringArray = parseBoolEnv(env, 'VITE_OBFUSCATION_STRING_ARRAY', true)
   const obfuscationStringArrayEncoding = parseStringArrayEncoding(
-    process.env.VITE_OBFUSCATION_STRING_ARRAY_ENCODING
+    env.VITE_OBFUSCATION_STRING_ARRAY_ENCODING
   )
-  const obfuscationAntiFormatting = parseBoolEnv('VITE_OBFUSCATION_ANTI_FORMATTING', false)
-  const obfuscationInfiniteDebugger = parseBoolEnv('VITE_OBFUSCATION_INFINITE_DEBUGGER', false)
+  const obfuscationAntiFormatting = parseBoolEnv(env, 'VITE_OBFUSCATION_ANTI_FORMATTING', false)
+  const obfuscationInfiniteDebugger = parseBoolEnv(env, 'VITE_OBFUSCATION_INFINITE_DEBUGGER', false)
   const obfuscationInfiniteDebuggerInterval = parseIntEnv(
+    env,
     'VITE_OBFUSCATION_INFINITE_DEBUGGER_INTERVAL',
     0
   )
-  const obfuscationCodeEncryption = parseBoolEnv('VITE_OBFUSCATION_CODE_ENCRYPTION', false)
-  const devtoolsPlugins = isDev ? [(await import('vite-plugin-vue-devtools')).default()] : []
+  const obfuscationCodeEncryption = parseBoolEnv(env, 'VITE_OBFUSCATION_CODE_ENCRYPTION', false)
+  const devtoolsPlugins = devtoolsEnabled
+    ? [(await import('vite-plugin-vue-devtools')).default()]
+    : []
 
   return {
     /**
@@ -450,34 +497,7 @@ export default defineConfig(async ({ mode }: { mode: string }) => {
       preTransformRequests: true,
 
       /** API 代理 */
-      proxy: {
-        '/api': {
-          target: 'https://api.momichan.xyz',
-          changeOrigin: true,
-          secure: true,
-          followRedirects: true,
-          configure: (proxy: DevProxyServer) => {
-            proxy.on('proxyRes', (proxyRes) => {
-              const setCookie = proxyRes.headers['set-cookie']
-              if (setCookie && Array.isArray(setCookie)) {
-                proxyRes.headers['set-cookie'] = setCookie.map((cookie) =>
-                  cookie.replace(/;\s*Secure/gi, '')
-                )
-              }
-            })
-          },
-          rewrite: (path: string) => {
-            const url = new URL(path, 'http://localhost')
-            return url.pathname + url.search
-          },
-        },
-        '/uploads': {
-          target: 'https://api.momichan.xyz',
-          changeOrigin: true,
-          secure: true,
-          followRedirects: true,
-        },
-      },
+      proxy: sharedProxyConfig,
     },
 
     /**
@@ -486,7 +506,7 @@ export default defineConfig(async ({ mode }: { mode: string }) => {
     preview: {
       port: 4173,
       strictPort: true,
-      ...(disablePreviewProxy ? { proxy: {} } : {}),
+      proxy: disablePreviewProxy ? {} : sharedProxyConfig,
     },
 
     /**
