@@ -108,7 +108,7 @@ export const useDiscussionsStore = defineStore('discussions', () => {
       return true
     } catch {
       if (controller.signal.aborted || requestToken !== fetchDiscussionsToken) return false
-      error.value = 'discussion.error.fetchFailed'
+      error.value = 'community.error.fetchFailed'
       return false
     } finally {
       if (requestToken === fetchDiscussionsToken) {
@@ -154,7 +154,7 @@ export const useDiscussionsStore = defineStore('discussions', () => {
       return currentDiscussion.value
     } catch (err) {
       if (signal?.aborted || isAbortError(err) || requestToken !== fetchDiscussionToken) return null
-      error.value = 'discussion.error.fetchFailed'
+      error.value = 'community.error.fetchFailed'
       return null
     } finally {
       if (

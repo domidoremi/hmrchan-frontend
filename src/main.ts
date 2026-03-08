@@ -13,7 +13,7 @@ import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
 
 import App from './App.vue'
 import router from './router'
-import i18n from './i18n'
+import i18n, { preloadActiveLocale } from './i18n'
 
 import './styles/index.css'
 
@@ -174,7 +174,15 @@ const clientSecurityReady = enableClientSecurityInit
 
 void clientSecurityReady.then(() => authStore.ensureAuthInitialized()).catch(() => {})
 
-app.mount('#app-root')
+void preloadActiveLocale()
+  .catch((error) => {
+    if (import.meta.env.DEV) {
+      console.warn('[i18n] Failed to preload active locale:', error)
+    }
+  })
+  .finally(() => {
+    app.mount('#app-root')
+  })
 
 // 性能监控：立即启动以捕获所有指标
 import { disposePerformanceMonitoring, initPerformanceMonitoring } from './utils/performanceMonitor'

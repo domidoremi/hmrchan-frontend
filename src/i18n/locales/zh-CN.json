@@ -533,7 +533,10 @@
     "deleteDiscussion": "删除讨论",
     "confirmDeleteTitle": "删除讨论",
     "confirmDeleteMessage": "确定要删除这个讨论吗？此操作不可撤销。",
-    "deleteSuccess": "讨论已删除"
+    "deleteSuccess": "讨论已删除",
+    "error": {
+      "fetchFailed": "加载讨论失败，请稍后重试"
+    }
   },
   "schedule": {
     "title": "日程",
