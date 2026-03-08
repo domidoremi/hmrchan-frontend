@@ -15,11 +15,13 @@ import {
 const POLL_INTERVAL = 60_000 // 60s
 
 export const useNotificationsStore = defineStore('notifications', () => {
+  const pageSize = 20
   const items = shallowRef<Notification[]>([])
   const total = ref(0)
+  const totalPages = ref(0)
   const unreadCount = ref(0)
   const page = ref(1)
-  const hasMore = ref(false)
+  const hasMoreFallback = ref(false)
   const isLoading = ref(false)
   const error = ref<string | null>(null)
   const filterType = ref<NotificationType | undefined>(undefined)
@@ -36,6 +38,15 @@ export const useNotificationsStore = defineStore('notifications', () => {
   }
 
   const hasUnread = computed(() => unreadCount.value > 0)
+  const hasMore = computed(() => {
+    if (totalPages.value > 0) {
+      return page.value < totalPages.value
+    }
+    if (typeof total.value === 'number' && total.value > 0) {
+      return items.value.length < total.value
+    }
+    return hasMoreFallback.value
+  })
 
   function abortFetchNotifications() {
     fetchNotificationsController?.abort()
@@ -65,7 +76,7 @@ export const useNotificationsStore = defineStore('notifications', () => {
 
       const res = await notificationService.getNotifications(
         page.value,
-        20,
+        pageSize,
         {
           type: filterType.value,
           unreadOnly: unreadOnly.value,
@@ -86,8 +97,9 @@ export const useNotificationsStore = defineStore('notifications', () => {
       }
 
       total.value = res.total
+      totalPages.value = res.total_pages ?? 0
       unreadCount.value = res.unread_count
-      hasMore.value = res.has_more
+      hasMoreFallback.value = Boolean(res.has_more)
       return true
     } catch {
       if (controller.signal.aborted || requestToken !== fetchNotificationsToken) return false
@@ -187,6 +199,7 @@ export const useNotificationsStore = defineStore('notifications', () => {
         items.value.splice(idx, 1)
         touchItems()
         total.value = Math.max(0, total.value - 1)
+        totalPages.value = 0
         if (removed && !removed.is_read) {
           unreadCount.value = Math.max(0, unreadCount.value - 1)
         }
@@ -202,10 +215,12 @@ export const useNotificationsStore = defineStore('notifications', () => {
       if (readOnly) {
         items.value = items.value.filter((n) => !n.is_read)
         total.value = items.value.length
+        totalPages.value = 0
         await refreshUnreadCount(true)
       } else {
         items.value = []
         total.value = 0
+        totalPages.value = 0
         unreadCount.value = 0
       }
     } catch {
@@ -240,9 +255,10 @@ export const useNotificationsStore = defineStore('notifications', () => {
     stopPolling()
     items.value = []
     total.value = 0
+    totalPages.value = 0
     unreadCount.value = 0
     page.value = 1
-    hasMore.value = false
+    hasMoreFallback.value = false
     isLoading.value = false
     error.value = null
     filterType.value = undefined
@@ -252,6 +268,7 @@ export const useNotificationsStore = defineStore('notifications', () => {
   return {
     items,
     total,
+    totalPages,
     unreadCount,
     hasMore,
     isLoading,
