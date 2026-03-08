@@ -473,7 +473,7 @@ export const discussionService = {
    */
   async searchPosts(query: string, limit = 10): Promise<PostReference[]> {
     const response = await apiClient.get<{ items: PostReference[] }>(
-      `/posts?q=${encodeURIComponent(query)}&page_size=${limit}`
+      `/search/posts?q=${encodeURIComponent(query)}&page_size=${limit}`
     )
     return response.items
   },
