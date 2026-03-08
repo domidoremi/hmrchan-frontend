@@ -510,7 +510,7 @@ function setUiStyle(value: UiStyle) {
 }
 
 function changeLocale(code: SupportedLocale) {
-  setLocale(code)
+  void setLocale(code)
 }
 
 const bgEffectOptions = computed<{ value: ParticleEffectType; emoji: string; label: string }[]>(

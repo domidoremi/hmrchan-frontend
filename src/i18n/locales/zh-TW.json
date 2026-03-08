@@ -534,7 +534,9 @@
     "confirmDeleteTitle": "刪除討論",
     "confirmDeleteMessage": "確定要刪除這個討論嗎？此操作不可撤銷。",
     "deleteSuccess": "討論已刪除",
-    "searchPlaceholder": "搜尋討論..."
+    "error": {
+      "fetchFailed": "載入討論失敗，請稍後再試"
+    }
   },
   "schedule": {
     "title": "日程",

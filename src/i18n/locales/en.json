@@ -534,7 +534,9 @@
     "confirmDeleteTitle": "Delete Discussion",
     "confirmDeleteMessage": "Are you sure you want to delete this discussion? This action cannot be undone.",
     "deleteSuccess": "Discussion deleted",
-    "searchPlaceholder": "Search discussions..."
+    "error": {
+      "fetchFailed": "Failed to load discussions, please try again later"
+    }
   },
   "schedule": {
     "title": "Schedule",

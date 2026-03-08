@@ -534,7 +534,9 @@
     "confirmDeleteTitle": "ディスカッションを削除",
     "confirmDeleteMessage": "このディスカッションを削除しますか？この操作は取り消しできません。",
     "deleteSuccess": "ディスカッションを削除しました",
-    "searchPlaceholder": "ディスカッションを検索..."
+    "error": {
+      "fetchFailed": "ディスカッションの読み込みに失敗しました。しばらくしてから再試行してください"
+    }
   },
   "schedule": {
     "title": "スケジュール",
