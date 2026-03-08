@@ -165,11 +165,20 @@ const dragStartPos = ref({ x: 0, y: 0 })
 const DRAG_THRESHOLD = 5
 const PET_SIZE = 80
 const EDGE_SNAP = 20
+const DEFAULT_PET_EDGE_GAP = 16
 const HERO_BUTTON_SELECTOR = '.hero-btn'
 const LOOK_MAX_OFFSET = 10
 const LOOK_MIN_DISTANCE = 220
 const DESK_PET_POSITION_STORAGE_KEY = 'desk-pet:last-position'
 const ENABLE_HOME_AUTO_PERCH = false
+const DEFAULT_POSITION_OBSTACLE_SELECTORS = [
+  '.back-to-top',
+  '.scroll-down-fab',
+  '.next-post-fab',
+  '.toast-stack',
+  '.settings-dropdown',
+  '.user-dropdown',
+] as const
 
 // 计时器
 const IDLE_TIMEOUT = 10000
@@ -296,6 +305,95 @@ const savePosition = (pos: { x: number; y: number }) => {
   } catch {
     // ignore storage write errors
   }
+}
+
+const getVisibleRect = (selector: string): DOMRect | null => {
+  if (typeof window === 'undefined') return null
+  const element = document.querySelector<HTMLElement>(selector)
+  if (!element) return null
+
+  const styles = window.getComputedStyle(element)
+  if (styles.display === 'none' || styles.visibility === 'hidden') return null
+
+  const rect = element.getBoundingClientRect()
+  if (rect.width <= 0 || rect.height <= 0) return null
+
+  return rect
+}
+
+const rectsIntersect = (
+  a: { left: number; right: number; top: number; bottom: number },
+  b: { left: number; right: number; top: number; bottom: number }
+) => a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top
+
+const getDefaultPlacementInsets = () => {
+  const navbarRect = getVisibleRect('.navbar')
+  const mobileNavRect = getVisibleRect('.mobile-nav')
+
+  return {
+    top: (navbarRect?.bottom ?? 0) + DEFAULT_PET_EDGE_GAP,
+    right: DEFAULT_PET_EDGE_GAP,
+    bottom:
+      (mobileNavRect ? Math.max(0, window.innerHeight - mobileNavRect.top) : 0) +
+      DEFAULT_PET_EDGE_GAP,
+    left: DEFAULT_PET_EDGE_GAP,
+  }
+}
+
+const clampDefaultPlacement = (
+  pos: { x: number; y: number },
+  petSize: number,
+  insets: { top: number; right: number; bottom: number; left: number }
+) => ({
+  x: Math.max(insets.left, Math.min(pos.x, window.innerWidth - petSize - insets.right)),
+  y: Math.max(insets.top, Math.min(pos.y, window.innerHeight - petSize - insets.bottom)),
+})
+
+const getDefaultPosition = () => {
+  const petSize = PET_SIZE * deskPetSettings.value.scale
+  const insets = getDefaultPlacementInsets()
+  const obstacleRects = DEFAULT_POSITION_OBSTACLE_SELECTORS.map(getVisibleRect).filter(
+    (rect): rect is DOMRect => rect !== null
+  )
+
+  const candidates = [
+    {
+      x: window.innerWidth - petSize - insets.right,
+      y: window.innerHeight - petSize - insets.bottom,
+    },
+    {
+      x: insets.left,
+      y: window.innerHeight - petSize - insets.bottom,
+    },
+    {
+      x: window.innerWidth - petSize - insets.right,
+      y: insets.top,
+    },
+    {
+      x: insets.left,
+      y: insets.top,
+    },
+  ].map((candidate) => clampDefaultPlacement(candidate, petSize, insets))
+
+  const [bestCandidate] = candidates
+    .map((candidate, index) => {
+      const petRect = {
+        left: candidate.x,
+        right: candidate.x + petSize,
+        top: candidate.y,
+        bottom: candidate.y + petSize,
+      }
+
+      const overlapCount = obstacleRects.reduce(
+        (count, rect) => count + Number(rectsIntersect(petRect, rect)),
+        0
+      )
+
+      return { candidate, overlapCount, index }
+    })
+    .sort((a, b) => a.overlapCount - b.overlapCount || a.index - b.index)
+
+  return clampPosition(bestCandidate?.candidate ?? { x: insets.left, y: insets.top })
 }
 
 const isHeroTarget = (target: EventTarget | null) =>
@@ -462,10 +560,7 @@ const initPosition = () => {
     position.value = clampPosition(saved)
     return
   }
-  position.value = clampPosition({
-    x: window.innerWidth - PET_SIZE * 1.25,
-    y: window.innerHeight - PET_SIZE * 1.25,
-  })
+  position.value = getDefaultPosition()
 }
 
 const handleResize = () => {
