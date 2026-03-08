@@ -151,6 +151,49 @@ export interface ProcessorTask {
   error?: string | null
 }
 
+export interface ProcessorFailureListParams {
+  page?: number
+  page_size?: number
+  status?: string
+  processor_name?: string
+  platform?: string
+  retry_eligible?: boolean
+}
+
+export interface ProcessorFailureItem {
+  id: number | string
+  post_id?: number | string | null
+  processor_name: string
+  processor_version?: string | null
+  status: string
+  input_path?: string | null
+  error_message?: string | null
+  started_at?: string | null
+  completed_at?: string | null
+  duration_sec?: number | null
+  platform?: string | null
+  platform_post_id?: string | null
+  retry_eligible?: boolean
+  [key: string]: unknown
+}
+
+export interface RetryProcessorFailuresRequest {
+  ids?: Array<number | string>
+  failure_ids?: Array<number | string>
+  [key: string]: unknown
+}
+
+export interface RetryProcessorFailuresResponse {
+  task_id: string
+  status: string
+  accepted_count?: number
+  accepted_ids?: Array<number | string>
+  invalid_ids?: Array<number | string>
+  missing_ids?: Array<number | string>
+  skipped_ids?: Array<number | string>
+  [key: string]: unknown
+}
+
 export interface WatcherStatus {
   is_running: boolean
   watched_paths?: string[]
@@ -364,6 +407,30 @@ export const adminService = {
 
   async reprocessFailed(): Promise<ProcessorTask> {
     return apiClient.post('/processor/scan/failed')
+  },
+
+  async listProcessorFailures(
+    params: ProcessorFailureListParams = {}
+  ): Promise<PaginatedApiResponse<ProcessorFailureItem>> {
+    const query = new URLSearchParams()
+    if (params.page) query.set('page', String(params.page))
+    if (params.page_size) query.set('page_size', String(params.page_size))
+    if (params.status) query.set('status', params.status)
+    if (params.processor_name) query.set('processor_name', params.processor_name)
+    if (params.platform) query.set('platform', params.platform)
+    if (typeof params.retry_eligible === 'boolean') {
+      query.set('retry_eligible', String(params.retry_eligible))
+    }
+    const qs = query.toString()
+    return apiClient.get<PaginatedApiResponse<ProcessorFailureItem>>(
+      `/processor/failures${qs ? `?${qs}` : ''}`
+    )
+  },
+
+  async retryProcessorFailures(
+    data: RetryProcessorFailuresRequest
+  ): Promise<RetryProcessorFailuresResponse> {
+    return apiClient.post<RetryProcessorFailuresResponse>('/processor/failures/retry', data)
   },
 
   async getProcessorStats(): Promise<ProcessorStats> {

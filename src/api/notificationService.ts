@@ -4,7 +4,7 @@
  * 提供通知相关的 API 调用
  */
 
-import { apiClient, type RequestConfig } from './client'
+import { apiClient, type PaginatedApiResponse, type RequestConfig } from './client'
 
 // ========== 类型定义 ==========
 
@@ -30,13 +30,9 @@ export interface Notification {
   read_at?: string | null
 }
 
-export interface NotificationListResponse {
-  items: Notification[]
-  total: number
+export interface NotificationListResponse extends PaginatedApiResponse<Notification> {
   unread_count: number
-  page: number
-  page_size: number
-  has_more: boolean
+  has_more?: boolean
 }
 
 export interface UnreadCountResponse {
