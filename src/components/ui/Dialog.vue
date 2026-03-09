@@ -77,6 +77,7 @@ interface Props {
   title?: string
   description?: string
   size?: 'sm' | 'default' | 'lg' | 'xl' | 'full'
+  allowOverflow?: boolean
   showClose?: boolean
   closeOnOverlay?: boolean
   closeOnEscape?: boolean
@@ -85,6 +86,7 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   isOpen: false,
   size: 'default',
+  allowOverflow: false,
   showClose: true,
   closeOnOverlay: true,
   closeOnEscape: true,
@@ -119,7 +121,11 @@ const showHeader = computed(() => {
   return hasTitle.value || hasDescription.value || props.showClose
 })
 
-const dialogClass = computed(() => ['ui-dialog', `ui-dialog--${props.size}`])
+const dialogClass = computed(() => [
+  'ui-dialog',
+  `ui-dialog--${props.size}`,
+  { 'ui-dialog--allow-overflow': props.allowOverflow },
+])
 
 useFocusTrap(dialogRef, isDialogOpen, {
   autoFocus: true,
@@ -261,6 +267,10 @@ onUnmounted(() => {
   color: var(--color-text-primary);
 }
 
+.ui-dialog--allow-overflow {
+  overflow: visible;
+}
+
 .ui-dialog::before {
   content: '';
   position: absolute;
@@ -364,6 +374,10 @@ onUnmounted(() => {
   flex: 1;
   overflow-y: auto;
   padding: 0 var(--spacing-5) var(--spacing-5);
+}
+
+.ui-dialog--allow-overflow .ui-dialog__content {
+  overflow: visible;
 }
 
 /* Footer */

@@ -144,6 +144,7 @@
       "inProgress": "Please wait...",
       "turnstileRequired": "Please complete the verification",
       "turnstileFailed": "Verification failed, please try again",
+      "turnstileHostnameMismatch": "This hostname is not authorized for the current Cloudflare Turnstile site key. Please ask an administrator to review the Hostname settings.",
       "unknown": "An unknown error occurred",
       "twoFactorInvalid": "Invalid verification code, please try again",
       "riskVerificationInvalid": "Invalid email verification code, please try again",

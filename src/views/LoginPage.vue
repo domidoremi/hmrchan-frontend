@@ -221,6 +221,7 @@ import TurnstileWidget from '@/components/ui/TurnstileWidget.vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import AuthVisualScene from '@/components/auth/AuthVisualScene.vue'
 import { useTurnstileConfig } from '@/composables/useTurnstileConfig'
+import { getTurnstileErrorMessageKey } from '@/utils/turnstile'
 
 const router = useRouter()
 const route = useRoute()
@@ -466,17 +467,21 @@ function resetRiskVerification() {
 
 function handleTurnstileVerify(token: string) {
   turnstileToken.value = token
+  formError.value = ''
   setVisualMood('typing', 500)
 }
 
 function handleTurnstileExpire() {
   turnstileToken.value = null
+  formError.value = t('auth.error.turnstileRequired')
   setVisualMood('typing', 500)
 }
 
-function handleTurnstileError() {
+function handleTurnstileError(error?: Error) {
   turnstileToken.value = null
-  toastStore.error(t('auth.error.turnstileFailed'))
+  const message = t(getTurnstileErrorMessageKey(error))
+  formError.value = message
+  toastStore.error(message)
   setVisualMood('dodge', 900)
 }
 </script>
@@ -494,6 +499,7 @@ function handleTurnstileError() {
   --auth-form-ring: #5f6bff;
   --auth-form-border: rgba(75, 86, 137, 0.24);
   --auth-form-surface: #f5f0e8;
+  --auth-book-radius: clamp(1.4rem, 2.7vw, 2.5rem);
   min-height: calc(100svh - var(--navbar-height));
   min-height: calc(100dvh - var(--navbar-height));
   display: flex;
@@ -521,9 +527,9 @@ function handleTurnstileError() {
   grid-template-columns: minmax(24rem, 1.08fr) minmax(22rem, 0.92fr);
   grid-template-areas: 'visual panel';
   align-items: stretch;
-  border-radius: clamp(1.4rem, 2.7vw, 2.5rem);
+  border-radius: var(--auth-book-radius);
   border: 1px solid rgba(255, 255, 255, 0.22);
-  overflow: hidden;
+  overflow: visible;
   background: linear-gradient(145deg, var(--auth-card-shell), var(--auth-card-shell-strong));
   box-shadow:
     0 2.6rem 4.2rem -2.2rem rgba(11, 15, 34, 0.72),
@@ -535,6 +541,7 @@ function handleTurnstileError() {
   content: '';
   position: absolute;
   inset: 0;
+  border-radius: inherit;
   background:
     radial-gradient(circle at 14% 14%, rgba(255, 255, 255, 0.34), transparent 34%),
     linear-gradient(120deg, rgba(255, 255, 255, 0.08), transparent 45%);
@@ -557,6 +564,8 @@ function handleTurnstileError() {
   padding: 0;
   background: #d7d7dc;
   border-inline-end: 1px solid rgba(99, 111, 161, 0.2);
+  border-start-start-radius: var(--auth-book-radius);
+  border-end-start-radius: var(--auth-book-radius);
   overflow: hidden;
 }
 
@@ -576,25 +585,32 @@ function handleTurnstileError() {
   padding: clamp(0.85rem, 2.2vw, 1.5rem);
   background: var(--auth-panel-bg);
   border-inline-start: 1px solid rgba(99, 111, 161, 0.2);
+  border-start-end-radius: var(--auth-book-radius);
+  border-end-end-radius: var(--auth-book-radius);
   max-height: 100%;
-  overflow-y: auto;
-}
-
-.auth-panel::-webkit-scrollbar {
-  width: 0.34rem;
-}
-
-.auth-panel::-webkit-scrollbar-thumb {
-  border-radius: var(--radius-full);
-  background: rgba(76, 86, 134, 0.42);
+  overflow: visible;
 }
 
 .auth-panel-inner {
   width: min(100%, 29rem);
+  max-block-size: 100%;
   display: flex;
   flex-direction: column;
   justify-content: center;
   gap: var(--spacing-2);
+  overflow-y: auto;
+  overflow-x: visible;
+  padding-inline-end: 0.375rem;
+  margin-inline-end: -0.375rem;
+}
+
+.auth-panel-inner::-webkit-scrollbar {
+  width: 0.34rem;
+}
+
+.auth-panel-inner::-webkit-scrollbar-thumb {
+  border-radius: var(--radius-full);
+  background: rgba(76, 86, 134, 0.42);
 }
 
 .auth-panel :deep(.ui-input) {
@@ -729,10 +745,12 @@ function handleTurnstileError() {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-2);
+  position: relative;
   padding: var(--spacing-3);
   border-radius: 0.95rem;
   background: rgba(110, 120, 182, 0.08);
   border: 1px solid rgba(82, 95, 150, 0.2);
+  overflow: visible;
 }
 
 .turnstile-header {
@@ -832,6 +850,8 @@ function handleTurnstileError() {
     min-height: 14rem;
     padding: 0;
     border-inline-end: none;
+    border-start-end-radius: var(--auth-book-radius);
+    border-end-start-radius: 0;
     border-bottom: 1px solid rgba(99, 111, 161, 0.2);
   }
 
@@ -840,6 +860,8 @@ function handleTurnstileError() {
     padding: clamp(0.8rem, 3.2vw, 1.25rem);
     overflow: visible;
     border-inline-start: none;
+    border-start-end-radius: 0;
+    border-end-start-radius: var(--auth-book-radius);
   }
 
   .auth-title,

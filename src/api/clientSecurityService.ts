@@ -140,10 +140,15 @@ export const clientSecurityManager = {
 
 // ========== 客户端安全服务 ==========
 
-/** client/init 和 client/verify 不需要 auth，也不应触发错误 toast，且跳过安全头避免循环 */
-const clientConfig: RequestConfig = {
+/** 客户端安全相关接口均为 public，不应附带业务登录态，也不应弹默认错误 toast */
+const publicClientConfig: RequestConfig = {
   skipAuth: true,
   skipErrorToast: true,
+}
+
+/** 仅 client/init 需要跳过安全头，避免在尚未持有 client_token 时触发循环初始化 */
+const clientInitConfig: RequestConfig = {
+  ...publicClientConfig,
   skipSecurity: true,
 }
 
@@ -180,7 +185,11 @@ export const clientSecurityService = {
       clearCredentials()
     }
     const payload = await collectClientInfo()
-    const response = await apiClient.post<ClientInitResponse>('/client/init', payload, clientConfig)
+    const response = await apiClient.post<ClientInitResponse>(
+      '/client/init',
+      payload,
+      clientInitConfig
+    )
 
     // 回访用户：后端返回空 token 表示继续使用旧凭证
     if (response.client_token && response.client_secret) {
@@ -210,7 +219,7 @@ export const clientSecurityService = {
     return apiClient.post<ClientVerifyResponse>(
       '/client/verify',
       { turnstile_token: turnstileToken },
-      clientConfig
+      publicClientConfig
     )
   },
 
@@ -218,7 +227,7 @@ export const clientSecurityService = {
    * 查询当前信任状态（适合敏感操作前预检）
    */
   async getStatus(): Promise<ClientStatusResponse> {
-    return apiClient.get<ClientStatusResponse>('/client/status', clientConfig)
+    return apiClient.get<ClientStatusResponse>('/client/status', publicClientConfig)
   },
 
   /**

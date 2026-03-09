@@ -144,6 +144,7 @@
       "inProgress": "请稍候...",
       "turnstileRequired": "请完成人机验证",
       "turnstileFailed": "人机验证失败，请重试",
+      "turnstileHostnameMismatch": "当前站点域名未被 Cloudflare Turnstile 授权，请联系管理员检查站点密钥的 Hostname 配置",
       "unknown": "发生未知错误",
       "twoFactorInvalid": "验证码错误，请重新输入",
       "riskVerificationInvalid": "邮箱验证码错误，请重新输入",
