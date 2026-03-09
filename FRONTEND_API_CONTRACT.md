@@ -1,6 +1,6 @@
 # 前后端交付文档（以后端当前实现为准）
 
-- 更新时间：2026-03-09
+- 更新时间：2026-03-10
 - 后端仓库：`G:\Project\hmrchan\hmrchan-backend`
 - 前端仓库：`G:\Project\hmrchan\hmrchan-frontend`
 - 前端技术栈：Vue 3、TypeScript、Vite、Pinia、Vue Router、Vue I18n
@@ -8,10 +8,10 @@
 
 ## 1. 当前交付状态
 
-- 当前后端已交付 203 个 HTTP API 路由，另包含 1 个静态资源目录入口 `/uploads/*`
+- 当前后端已交付 204 个 HTTP API 路由，另包含 1 个静态资源目录入口 `/uploads/*`
 - 路由权限分层如下：
   - system：2
-  - public：14
+  - public（client + auth）：15
   - optional：42
   - required：96
   - admin：49
@@ -19,6 +19,10 @@
   - API 路由已按 `system / auth / public v1 / authenticated v1 / admin v1` 分拆，路由层结构稳定
   - `/api/v1/*` 已统一接入 V1 响应信封
   - `/api/auth/*` 保持原始 JSON 响应，不走 V1 信封
+  - 登录链路已支持 `登录 -> 2FA -> 高风险邮箱确认 -> 建立 session` 的完整闭环
+  - 请求签名已进入 fail-closed 模式：认证请求、带认证上下文请求、业务写请求、敏感管理路径请求缺失或错误签名会直接被拒绝
+  - 敏感操作 step-up 已形成完整后端闭环：未信任设备会被要求先获取 `verification_token`
+  - 管理后台高影响写操作（角色、权限、角色分配、爬虫配置、处理器调度/重试、举报审核、日程创建、讨论置顶/精选、管理员代传头像等）已统一纳入 `admin_operation`
   - Celery 任务状态读取已修正为 result backend Redis DB1，避免任务始终停留在 `PENDING`
   - 管理后台新增处理失败列表与批量重试接口，支持追踪失败日志并重新入队
   - worker 侧数据库事务收口已补齐，降低失败任务遗留脏事务的风险
@@ -102,11 +106,14 @@
 - `X-Client-Fingerprint`
 - `X-Signature`
 - `X-Timestamp`
+- `X-Verification-Token`
 
 后端当前暴露给浏览器的响应头包括：
 
 - `X-Request-ID`
 - `X-Security-Warning`
+- `X-Security-Review-Required`
+- `X-Verification-Required`
 - `Content-Length`
 
 ## 3. 鉴权与客户端安全约定
@@ -117,6 +124,7 @@
 | -------------- | --------------------------------------------------------- |
 | Access Token   | 通过 `Authorization: Bearer <token>` 传递                 |
 | Refresh Token  | 通过 HttpOnly Cookie 传递                                 |
+| 高风险登录确认 | `POST /api/auth/verify-risk-login`                        |
 | Refresh 接口   | `POST /api/auth/refresh`                                  |
 | Heartbeat 接口 | `POST /api/auth/heartbeat`                                |
 | 设备指纹       | refresh 与部分安全校验会结合设备指纹/客户端指纹判断       |
@@ -127,7 +135,8 @@
 - 登录、注册、刷新、登出、心跳这些带 refresh cookie 的流程，在跨域部署时必须开启 `withCredentials`
 - `GET /api/auth/me`、`POST /api/auth/verify-password`、`POST /api/auth/verify-identity`、会话管理接口需要 Bearer Token
 - 登录接口在开启 2FA 时，不一定直接返回完整 token 集合，可能先返回 `requires_2fa` 与 `pending_token`
-- 登录接口可能通过 `X-Security-Warning` 头提示异常登录风险，前端应保留展示或埋点能力
+- 登录或 2FA 验证完成后，如被判定为高风险，不一定立即发 session，可能先返回 `requires_risk_verification` 与 `pending_token`
+- 登录相关接口可能通过 `X-Security-Warning` 头提示风险等级，并在高风险时附带 `X-Security-Review-Required: true`
 
 ### 3.2 客户端安全链路
 
@@ -140,21 +149,102 @@
 当前行为约定：
 
 - `client/init` 首次初始化会返回 `client_token`，并可能返回一次性的 `client_secret`
-- `client/init` 返回的关键字段为：`client_token`、`client_secret`、`challenge_required`、`trust_level`、`turnstile_site_key`、`expires_in`
+- `client/init` 在服务端签名密钥失效时会自动轮换并重新下发新凭证；若当前仅能返回 trust/challenge 信息，则可能不返回 `client_secret`
+- `client/init` 返回的关键字段为：`client_token`、`challenge_required`、`trust_level`、`turnstile_site_key`、`expires_in`，其中 `client_secret` 为条件返回字段
 - `client/verify` 要求 body 中提供 `turnstile_token`，并依赖 `X-Client-Token`
 - `client/status` 返回当前 `trust_level` 与是否需要 challenge
 - 若未启用 Turnstile，`client/status` 会直接给出无需 challenge 的结果
+- 当请求签名密钥失效时，服务端会返回 `CLIENT_TOKEN_EXPIRED`，并可能附带 `X-Client-Reinit-Required: true`；前端应以错误码为准重新调用 `client/init`
 
 ### 3.3 指纹与签名头
 
-| 请求头                 | 是否建议携带                      | 说明                                               |
-| ---------------------- | --------------------------------- | -------------------------------------------------- |
-| `X-Client-Fingerprint` | 建议始终携带                      | 用于 client guard、设备一致性与访客识别            |
-| `X-Client-Token`       | 完成 `client/init` 后建议持续携带 | 用于访客状态、风控升级与签名校验                   |
-| `X-Signature`          | 可选                              | 当前后端支持渐进式启用，请求签名缺失时会优雅降级   |
-| `X-Timestamp`          | 可选                              | 与 `X-Signature` 配合使用，请求超时窗口约为 ±30 秒 |
+| 请求头                 | 当前要求                          | 说明                                             |
+| ---------------------- | --------------------------------- | ------------------------------------------------ |
+| `X-Client-Fingerprint` | 建议始终携带                      | 用于 client guard、设备一致性与访客识别          |
+| `X-Client-Token`       | 完成 `client/init` 后应持续携带   | 用于访客状态、风控升级与签名校验                 |
+| `X-Signature`          | 对强制签名请求为必填              | HMAC 签名；缺失或错误会直接返回 `403`            |
+| `X-Timestamp`          | 对强制签名请求为必填              | 与 `X-Signature` 配合使用，允许时间窗约为 ±30 秒 |
+| `X-Verification-Token` | 对无 body 的 step-up 请求强烈推荐 | 供 `DELETE` / 查询参数风格接口提交二次验证 token |
 
-### 3.4 当前风控放行规则
+### 3.4 请求签名强制规则
+
+以下路径不要求请求签名：
+
+- `/health`
+- `/metrics`
+- `POST /api/v1/client/init`
+- `POST /api/v1/client/verify`
+- `GET /api/auth/turnstile-config`
+
+以下请求当前会被强制签名校验：
+
+- 除 `turnstile-config` 外的所有 `/api/auth/*`
+- 所有带认证上下文的请求（Bearer 或 refresh cookie）
+- 所有非 `GET` / `HEAD` 的业务写请求
+- 所有敏感路径请求：`/api/v1/users*`、`/api/v1/admin*`、`/api/v1/roles*`、`/api/v1/crawler*`
+
+失败时前端应按以下口径处理：
+
+- `403 INVALID_SIGNATURE`：签名缺失、签名错误或请求头不完整，前端应重建签名并重试
+- `403 CLIENT_TOKEN_EXPIRED`：客户端签名密钥失效，前端应重新执行 `client/init`
+- `503 SIGNATURE_VERIFIER_UNAVAILABLE`：服务端无法验证签名，前端不应盲目重试写请求
+- `403 REQUEST_EXPIRED` / `403 INVALID_TIMESTAMP`：时间戳异常，前端应重建当前请求
+
+### 3.5 登录、2FA 与高风险登录链路
+
+- `POST /api/auth/login` 成功时直接返回 `LoginResp`
+- 若账户启用了 2FA，则返回 `{ "requires_2fa": true, "pending_token": "..." }`
+- 前端随后调用 `POST /api/v1/2fa/verify-login`
+- 若 2FA 完成后仍被判定为高风险，则不会立即建立 session，而是返回：
+  - `requires_risk_verification: true`
+  - `pending_token`
+  - `challenge_type: "email_code"`
+  - `expires_in: 300`
+- 前端随后调用 `POST /api/auth/verify-risk-login`
+- `verify-risk-login` 成功后才会返回完整 `LoginResp` 并写入 refresh cookie
+
+### 3.6 敏感操作二次验证（Step-up）链路
+
+前端应统一采用以下获取策略：
+
+- 通用方案：`POST /api/auth/verify-password`
+- 动作化方案：`POST /api/auth/verify-identity`
+
+两者都会返回 `verification_token`，有效期当前为 300 秒。  
+当前代码允许 `verify-password` 生成的 `sensitive_operation` token 通过多数敏感校验，但前端仍推荐优先使用 `verify-identity(action=...)` 获取动作级 token，便于后续策略继续收紧而不破坏链路。
+
+`verify-identity.action` 当前支持：
+
+- `delete_account`
+- `change_email`
+- `change_password`
+- `update_security_settings`
+- `export_data`
+- `revoke_sessions`
+- `delete_content`
+- `manage_api_keys`
+- `admin_operation`
+
+前端应按以下矩阵接入：
+
+| 动作                 | 获取 token 的推荐 action   | 典型接口                                                                                                                                        |
+| -------------------- | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| 改密码               | `change_password`          | `POST /api/v1/users/me/change-password`、`POST /api/v1/email/change-password`                                                                   |
+| 改邮箱               | `change_email`             | `POST /api/v1/email/send-change-email-code`、`POST /api/v1/email/change-email`                                                                  |
+| 导出数据             | `export_data`              | `POST /api/v1/account/export-data`                                                                                                              |
+| 删除账号             | `delete_account`           | `POST /api/v1/account/delete`                                                                                                                   |
+| 撤销会话/设备        | `revoke_sessions`          | `DELETE /api/auth/sessions/:id`、`DELETE /api/v1/devices/:id`、`DELETE /api/v1/devices`                                                         |
+| 删除内容             | `delete_content`           | `DELETE /api/v1/comments/:id`、`DELETE /api/v1/comment-images/:id`、`DELETE /api/v1/discussions/:id`、`DELETE /api/v1/discussions/comments/:id` |
+| 安全设置             | `update_security_settings` | `POST /api/v1/2fa/setup`、`POST /api/v1/2fa/disable`、`POST /api/v1/2fa/regenerate-backup-codes`                                                |
+| 管理后台高影响写操作 | `admin_operation`          | 用户/角色/爬虫/处理器/举报/日程/讨论运营/管理员上传头像等接口                                                                                   |
+
+提交规则：
+
+- JSON body 接口：可在 body 中传 `verification_token`
+- `DELETE` 或无 body 接口：优先使用 `X-Verification-Token`，也兼容 `verification_token` 查询参数
+- 未信任设备缺少 token 时，服务端会返回 `403`，并带 `X-Verification-Required: true`
+
+### 3.7 当前风控放行规则
 
 - 未信任访客在 `GET` / `HEAD` 公共读取请求下不会被强制拦截，因此首页、列表页、详情页可以先读后补初始化
 - 未信任访客对写操作更容易触发 challenge
@@ -165,7 +255,7 @@
 
 ### 4.1 登录响应
 
-`POST /api/auth/register`、`POST /api/auth/login`、`POST /api/auth/refresh` 的成功返回核心字段如下：
+`POST /api/auth/register`、`POST /api/auth/login`、`POST /api/auth/refresh`、`POST /api/auth/verify-risk-login` 的成功返回核心字段如下：
 
 | 字段                | 说明                      |
 | ------------------- | ------------------------- |
@@ -191,21 +281,36 @@
 - `created_at`
 - `last_login_at`
 
-### 4.2 心跳与会话响应
+登录链路的分支返回也需要前端直接支持：
 
-| 接口                            | 关键字段                                                                       |
-| ------------------------------- | ------------------------------------------------------------------------------ |
-| `POST /api/auth/heartbeat`      | `access_token`、`token_type`、`expires_in`、`refresh_threshold`、`server_time` |
-| `GET /api/auth/sessions`        | `sessions`、`total`                                                            |
-| `DELETE /api/auth/sessions/:id` | `204 No Content`                                                               |
+| 接口                                                      | 分支返回                                                                                                            | 前端动作                 |
+| --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | ------------------------ |
+| `POST /api/auth/login`                                    | `{ "requires_2fa": true, "pending_token": "..." }`                                                                  | 跳 2FA 校验页            |
+| `POST /api/auth/login` 或 `POST /api/v1/2fa/verify-login` | `{ "requires_risk_verification": true, "pending_token": "...", "challenge_type": "email_code", "expires_in": 300 }` | 跳高风险邮箱验证码确认页 |
+
+### 4.2 心跳、验证与会话响应
+
+| 接口                             | 关键字段                                                                                                              |
+| -------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `POST /api/auth/heartbeat`       | `access_token`、`token_type`、`expires_in`、`refresh_threshold`、`server_time`                                        |
+| `POST /api/auth/verify-password` | `verified`、`verification_token`、`expires_in`、`current_device_trusted`、`step_up_required`                          |
+| `POST /api/auth/verify-identity` | `verified`、`verification_token`、`action`、`resource_id`、`expires_in`、`current_device_trusted`、`step_up_required` |
+| `GET /api/auth/sessions`         | `sessions`、`total`                                                                                                   |
+| `DELETE /api/auth/sessions/:id`  | `204 No Content`                                                                                                      |
+
+补充约定：
+
+- `verify-password` 在密码错误时返回 `200`，其中 `verified=false`
+- `verify-identity` 在密码错误时返回 `401`
+- 对需要二次验证的接口，若当前设备已被信任，`verification_token` 仍会返回，但 `step_up_required=false`
 
 ### 4.3 客户端安全响应
 
-| 接口                         | 关键字段                                                                                                 |
-| ---------------------------- | -------------------------------------------------------------------------------------------------------- |
-| `POST /api/v1/client/init`   | `client_token`、`client_secret`、`challenge_required`、`trust_level`、`turnstile_site_key`、`expires_in` |
-| `POST /api/v1/client/verify` | `success`、`trust_level`、`message`                                                                      |
-| `GET /api/v1/client/status`  | `trust_level`、`challenge_required`、`turnstile_site_key`                                                |
+| 接口                         | 关键字段                                                                                                            |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `POST /api/v1/client/init`   | `client_token`、`challenge_required`、`trust_level`、`turnstile_site_key`、`expires_in`，`client_secret` 为条件字段 |
+| `POST /api/v1/client/verify` | `success`、`trust_level`、`message`                                                                                 |
+| `GET /api/v1/client/status`  | `trust_level`、`challenge_required`、`turnstile_site_key`                                                           |
 
 ### 4.4 异步任务响应
 
@@ -268,6 +373,7 @@
 - `GET /api/auth/turnstile-config`
 - `POST /api/auth/register`
 - `POST /api/auth/login`
+- `POST /api/auth/verify-risk-login`
 - `POST /api/auth/refresh`
 - `POST /api/auth/logout`
 - `POST /api/auth/heartbeat`
@@ -575,6 +681,9 @@
 - 旧版自动生成文档中的 `/api/v1/auth/*` 口径是错误的，真实认证路径全部在 `/api/auth/*`
 - 前端若仍以通用 JSON 解包器处理全部 `/api/v1/media/*`，会在下载、流媒体、字幕、缩略图场景出现解析错误
 - 分页页面不应再把顶层 `has_more` 当成稳定字段，当前应优先依赖 `pagination.page`、`pagination.total_pages`、`pagination.total`
+- 请求签名已不是“可选增强项”，而是实际联调前提；只要命中认证、带凭证请求、业务写请求、敏感管理路径，就必须先完成 `client/init` 并正确生成签名
+- 前端必须补上 `POST /api/auth/verify-risk-login` 页面与状态机；否则高风险登录链路无法闭环
+- 前端必须补上统一 step-up 流程：`verify-password / verify-identity -> 保存 verification_token -> 在敏感接口透传`
 - 管理后台已新增：
   - `GET /api/v1/processor/failures`
   - `POST /api/v1/processor/failures/retry`
@@ -587,11 +696,13 @@
 ### 6.3 前端 UI 处理建议
 
 - `401`：先静默 refresh，再决定是否回登录页
-- `403`：区分“权限不足”和“需要 challenge / 账号受限”
+- `403`：区分“权限不足”、“需要 Turnstile challenge”、“需要 verification token”、“签名失败/客户端需重初始化”
 - `409`：保留冲突态提示，不要直接吞掉
 - `422`：优先映射到字段级错误
 - `429`：增加节流提示和重试倒计时
 - 所有异常日志建议记录 `X-Request-ID` 或 `meta.request_id`
+- 若响应头含 `X-Verification-Required: true`，前端应直接进入 step-up 流程，而不是把它当成普通权限错误
+- 若响应头含 `X-Security-Review-Required: true`，前端应保留异常登录提示或安全确认 UI
 
 ## 7. 后端运行依赖（与前端联调直接相关）
 
