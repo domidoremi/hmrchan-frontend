@@ -6,7 +6,7 @@
       <div class="comment-meta">
         <span class="comment-author">{{ getUserDisplayName(comment.user) }}</span>
         <Badge v-if="comment.is_thread_owner" variant="success" size="sm">{{
-          $t('comment.threadOwner')
+          t('comment.threadOwner')
         }}</Badge>
         <Badge
           v-if="userLevelBadge"
@@ -20,22 +20,22 @@
 
       <!-- More Actions Menu -->
       <div class="comment-menu" v-if="showActions">
-        <button type="button" class="menu-btn" @click="toggleMenu" :aria-label="$t('common.more')">
+        <button type="button" class="menu-btn" @click="toggleMenu" :aria-label="t('common.more')">
           <AnimatedIcon name="sparkle" :fallback-icon="MoreHorizontal" size="md" />
         </button>
         <Transition name="dropdown">
           <div v-if="showMenu" class="menu-dropdown glass-dropdown" @click.stop>
             <button v-if="canDelete" type="button" class="menu-item danger" @click="handleDelete">
               <AnimatedIcon name="loading" :fallback-icon="Trash2" size="sm" />
-              <span>{{ $t('common.delete') }}</span>
+              <span>{{ t('common.delete') }}</span>
             </button>
             <button type="button" class="menu-item" @click="handleShare">
               <AnimatedIcon name="explore" :fallback-icon="Share2" size="sm" />
-              <span>{{ $t('comment.share') }}</span>
+              <span>{{ t('comment.share') }}</span>
             </button>
             <button type="button" class="menu-item" @click="openReportDialog">
               <AnimatedIcon name="sparkle" :fallback-icon="Flag" size="sm" />
-              <span>{{ $t('comment.report') }}</span>
+              <span>{{ t('comment.report') }}</span>
             </button>
           </div>
         </Transition>
@@ -47,7 +47,7 @@
       <!-- 回复对象标识 -->
       <div v-if="comment.replied_to_user" class="reply-indicator">
         <span class="reply-icon">↩</span>
-        <span class="reply-label">{{ $t('comment.replyingTo') }}</span>
+        <span class="reply-label">{{ t('comment.replyingTo') }}</span>
         <span class="reply-to-user">{{ getUserDisplayName(comment.replied_to_user) }}</span>
       </div>
       <p>{{ comment.content }}</p>
@@ -59,7 +59,7 @@
         type="button"
         class="action-btn"
         :class="{ active: comment.is_liked }"
-        :aria-label="comment.is_liked ? $t('profile.unlike') : $t('post.likes')"
+        :aria-label="comment.is_liked ? t('profile.unlike') : t('post.likes')"
         :aria-pressed="comment.is_liked"
         @click="handleLike"
         :disabled="!isAuthenticated"
@@ -75,14 +75,14 @@
         :disabled="!isAuthenticated || !canReply"
       >
         <AnimatedIcon name="sparkle" :fallback-icon="MessageCircle" size="sm" />
-        <span>{{ $t('comment.reply') }}</span>
+        <span>{{ t('comment.reply') }}</span>
       </button>
 
       <button
         type="button"
         class="action-btn"
         :class="{ active: comment.is_favorited }"
-        :aria-label="comment.is_favorited ? $t('post.unfavorite') : $t('post.favorite')"
+        :aria-label="comment.is_favorited ? t('post.unfavorite') : t('post.favorite')"
         :aria-pressed="comment.is_favorited"
         @click="handleFavorite"
         :disabled="!isAuthenticated"
@@ -125,8 +125,8 @@
         :disabled="isLoadingReplies"
       >
         <AnimatedIcon name="explore" :fallback-icon="ChevronDown" size="sm" />
-        <span v-if="isLoadingReplies">{{ $t('common.loading') }}</span>
-        <span v-else>{{ $t('comment.showReplies', { count: actualRepliesCount }) }}</span>
+        <span v-if="isLoadingReplies">{{ t('common.loading') }}</span>
+        <span v-else>{{ t('comment.showReplies', { count: actualRepliesCount }) }}</span>
       </button>
 
       <Transition name="slide-down">
@@ -148,33 +148,33 @@
     <!-- Delete Confirmation Dialog -->
     <ConfirmDialog
       v-model:is-open="showDeleteDialog"
-      :title="$t('comment.confirmDeleteTitle')"
-      :message="$t('comment.confirmDeleteMessage')"
-      :confirm-text="$t('common.delete')"
+      :title="t('comment.confirmDeleteTitle')"
+      :message="t('comment.confirmDeleteMessage')"
+      :confirm-text="t('common.delete')"
       variant="danger"
       @confirm="confirmDelete"
     />
 
-    <Dialog v-model:isOpen="showReportDialog" :title="$t('comment.reportTitle')" size="sm">
+    <Dialog v-model:isOpen="showReportDialog" :title="t('comment.reportTitle')" size="sm">
       <div class="report-form">
-        <label class="report-label">{{ $t('comment.reportReasonLabel') }}</label>
+        <label class="report-label">{{ t('comment.reportReasonLabel') }}</label>
         <Select v-model="reportReason" size="sm">
-          <option value="spam">{{ $t('comment.reportReason.spam') }}</option>
-          <option value="harassment">{{ $t('comment.reportReason.harassment') }}</option>
-          <option value="inappropriate">{{ $t('comment.reportReason.inappropriate') }}</option>
-          <option value="other">{{ $t('comment.reportReason.other') }}</option>
+          <option value="spam">{{ t('comment.reportReason.spam') }}</option>
+          <option value="harassment">{{ t('comment.reportReason.harassment') }}</option>
+          <option value="inappropriate">{{ t('comment.reportReason.inappropriate') }}</option>
+          <option value="other">{{ t('comment.reportReason.other') }}</option>
         </Select>
 
-        <label class="report-label">{{ $t('comment.reportDescriptionLabel') }}</label>
+        <label class="report-label">{{ t('comment.reportDescriptionLabel') }}</label>
         <Textarea v-model="reportDescription" size="sm" :maxlength="200" />
       </div>
 
       <template #footer>
         <Button variant="ghost" size="sm" @click="showReportDialog = false">
-          {{ $t('common.cancel') }}
+          {{ t('common.cancel') }}
         </Button>
         <Button size="sm" :loading="isSubmittingReport" @click="submitReport">
-          {{ $t('comment.reportSubmit') }}
+          {{ t('comment.reportSubmit') }}
         </Button>
       </template>
     </Dialog>
