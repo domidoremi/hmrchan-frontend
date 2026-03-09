@@ -10,7 +10,7 @@
  * 签名算法: HMAC-SHA256(client_secret, "METHOD|/path?query|timestamp")
  */
 
-import { apiClient } from './client'
+import { ApiError, apiClient } from './client'
 import { requestClientChallenge } from './clientChallengeBridge'
 import type { RequestConfig } from './client'
 import { getDeviceFingerprint } from '@/utils/fingerprint'
@@ -26,14 +26,16 @@ export interface ClientInitRequest {
   platform?: string
   timestamp?: number
   nonce?: string
+  force_reissue?: boolean
 }
 
 export interface ClientInitResponse {
-  client_token: string
-  client_secret: string
+  client_token?: string
+  client_secret?: string
   trust_level: ClientTrustLevel
   challenge_required?: boolean
   turnstile_site_key?: string
+  expires_in?: number
   expires_at?: string
 }
 
@@ -64,7 +66,7 @@ let ensureInitPromise: Promise<void> | null = null
 
 interface StoredClientCredentials {
   client_token: string
-  client_secret: string
+  client_secret?: string
 }
 
 function getStoredCredentials(): StoredClientCredentials | null {
@@ -72,7 +74,15 @@ function getStoredCredentials(): StoredClientCredentials | null {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return null
     const parsed = JSON.parse(raw) as StoredClientCredentials
-    if (parsed.client_token && parsed.client_secret) return parsed
+    if (typeof parsed.client_token === 'string' && parsed.client_token.trim()) {
+      return {
+        client_token: parsed.client_token,
+        client_secret:
+          typeof parsed.client_secret === 'string' && parsed.client_secret.trim()
+            ? parsed.client_secret
+            : undefined,
+      }
+    }
     return null
   } catch {
     return null
@@ -93,6 +103,38 @@ function clearCredentials(): void {
   } catch {
     // ignore
   }
+}
+
+function persistInitCredentials(response: ClientInitResponse): void {
+  const existing = getStoredCredentials()
+  const nextClientToken = response.client_token?.trim()
+  const nextClientSecret = response.client_secret?.trim()
+
+  if (nextClientToken) {
+    const shouldReuseExistingSecret =
+      existing?.client_token === nextClientToken && existing.client_secret && !nextClientSecret
+    storeCredentials({
+      client_token: nextClientToken,
+      client_secret:
+        nextClientSecret || (shouldReuseExistingSecret ? existing.client_secret : undefined),
+    })
+    return
+  }
+
+  if (existing?.client_token) {
+    storeCredentials(existing)
+  }
+}
+
+function isRecoverableVerifyError(error: unknown): error is ApiError {
+  if (!(error instanceof ApiError) || error.status !== 400) {
+    return false
+  }
+
+  const rawMessage =
+    typeof error.details?.rawMessage === 'string' ? error.details.rawMessage.toLowerCase() : ''
+
+  return rawMessage.includes('missing client token') || rawMessage.includes('invalid client token')
 }
 
 // ========== 签名工具 ==========
@@ -134,7 +176,7 @@ export const clientSecurityManager = {
 
   /** 是否已初始化 */
   isInitialized(): boolean {
-    return getStoredCredentials() !== null
+    return this.getClientToken() !== null
   },
 }
 
@@ -155,7 +197,7 @@ const clientInitConfig: RequestConfig = {
 /**
  * 收集客户端环境信息用于 init 请求
  */
-async function collectClientInfo(): Promise<ClientInitRequest> {
+async function collectClientInfo(forceReissue?: boolean): Promise<ClientInitRequest> {
   const fingerprint = await getDeviceFingerprint()
   const platform = navigator.platform || undefined
 
@@ -171,6 +213,10 @@ async function collectClientInfo(): Promise<ClientInitRequest> {
     payload.platform = platform
   }
 
+  if (forceReissue) {
+    payload.force_reissue = true
+  }
+
   return payload
 }
 
@@ -180,27 +226,25 @@ export const clientSecurityService = {
    * 每次页面加载都应调用；回访用户后端返回空 token 时保留旧凭证
    * @param force 强制刷新：清除旧凭证后重新获取（用于签名失效重试）
    */
-  async init(force?: boolean): Promise<ClientInitResponse> {
+  async init(
+    force?: boolean,
+    options?: { promptChallenge?: boolean }
+  ): Promise<ClientInitResponse> {
     if (force) {
       clearCredentials()
     }
-    const payload = await collectClientInfo()
+    const payload = await collectClientInfo(force)
     const response = await apiClient.post<ClientInitResponse>(
       '/client/init',
       payload,
       clientInitConfig
     )
 
-    // 回访用户：后端返回空 token 表示继续使用旧凭证
-    if (response.client_token && response.client_secret) {
-      storeCredentials({
-        client_token: response.client_token,
-        client_secret: response.client_secret,
-      })
-    }
+    // 回访用户：后端返回空 token 表示继续使用旧凭证；若只返回 client_token 也要保留
+    persistInitCredentials(response)
 
     // 如果需要 Turnstile 验证，派发事件通知 UI
-    if (response.challenge_required) {
+    if (response.challenge_required && options?.promptChallenge !== false) {
       window.dispatchEvent(
         new CustomEvent('client:challenge-required', {
           detail: { turnstile_site_key: response.turnstile_site_key },
@@ -216,11 +260,25 @@ export const clientSecurityService = {
    * Turnstile 验证（提升信任等级到 basic）
    */
   async verify(turnstileToken: string): Promise<ClientVerifyResponse> {
-    return apiClient.post<ClientVerifyResponse>(
-      '/client/verify',
-      { turnstile_token: turnstileToken },
-      publicClientConfig
-    )
+    try {
+      return await apiClient.post<ClientVerifyResponse>(
+        '/client/verify',
+        { turnstile_token: turnstileToken },
+        publicClientConfig
+      )
+    } catch (error) {
+      if (isRecoverableVerifyError(error)) {
+        await this.init(true, { promptChallenge: false })
+        if (clientSecurityManager.getClientToken()) {
+          return apiClient.post<ClientVerifyResponse>(
+            '/client/verify',
+            { turnstile_token: turnstileToken },
+            publicClientConfig
+          )
+        }
+      }
+      throw error
+    }
   },
 
   /**

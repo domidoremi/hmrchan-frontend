@@ -438,6 +438,7 @@ async function handleErrorResponse(response: Response, skipErrorToast?: boolean)
   let errorMessage = 'error.unknown'
   let errorCode: string | undefined
   let errorDetails: Record<string, unknown> | undefined
+  let rawErrorMessage: string | undefined
 
   try {
     const errorData = await response.json()
@@ -454,6 +455,7 @@ async function handleErrorResponse(response: Response, skipErrorToast?: boolean)
     if (typeof detail === 'string') {
       // Go Gin 格式：detail 为字符串
       errorMessage = detail
+      rawErrorMessage = detail
       errorCode = errorData.code
       errorDetails = { ...errorDetails, ...errorData.details }
     } else if (Array.isArray(detail)) {
@@ -469,6 +471,7 @@ async function handleErrorResponse(response: Response, skipErrorToast?: boolean)
     } else if (detail && typeof detail === 'object') {
       // detail 为对象 { message, code, details }
       errorMessage = detail.message || errorMessage
+      rawErrorMessage = detail.message || rawErrorMessage
       errorCode = detail.code || errorData.code
       errorDetails = { ...errorDetails, ...(detail.details || errorData.details) }
     } else if (
@@ -478,10 +481,12 @@ async function handleErrorResponse(response: Response, skipErrorToast?: boolean)
     ) {
       // V1 信封错误格式：error 对象包含 code 和 message
       errorMessage = envelopeError.message || errorMessage
+      rawErrorMessage = envelopeError.message || rawErrorMessage
       errorCode = envelopeError.code || errorCode
     } else {
       // 其他格式兜底
       errorMessage = errorData.message || errorMessage
+      rawErrorMessage = errorData.message || rawErrorMessage
       errorCode = errorData.code
       errorDetails = { ...errorDetails, ...errorData.details }
     }
@@ -509,9 +514,14 @@ async function handleErrorResponse(response: Response, skipErrorToast?: boolean)
   const serverMessageMap: Record<string, string> = {
     'invalid request signature': 'error.server.invalidSignature',
     'invalid client token': 'error.server.invalidClientToken',
+    'missing client token': 'error.server.invalidClientToken',
     'client token expired': 'error.server.clientTokenExpired',
     'invalid timestamp': 'error.server.invalidTimestamp',
     'request expired': 'error.server.requestExpired',
+    'human verification failed': 'error.server.turnstileFailed',
+    '人机验证失败，请重试': 'error.server.turnstileFailed',
+    '人機驗證失敗，請重試': 'error.server.turnstileFailed',
+    '認証に失敗しました。もう一度お試しください': 'error.server.turnstileFailed',
     '请求签名无效，请刷新页面重试': 'error.server.invalidSignature',
     请求签名无效: 'error.server.invalidSignature',
     '客户端凭证无效，请刷新页面': 'error.server.invalidClientToken',
@@ -548,6 +558,10 @@ async function handleErrorResponse(response: Response, skipErrorToast?: boolean)
     'token expired': 'error.server.tokenExpired',
     'token invalid': 'error.server.tokenInvalid',
     'internal server error': 'error.server.internalError',
+  }
+
+  if (rawErrorMessage) {
+    errorDetails = { ...errorDetails, rawMessage: rawErrorMessage }
   }
 
   /**

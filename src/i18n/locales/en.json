@@ -447,6 +447,7 @@
       "invalidTimestamp": "Invalid request timestamp. Please check your system clock",
       "requestExpired": "Request expired. Please try again",
       "accessRestricted": "Access temporarily restricted. Please try again later",
+      "turnstileFailed": "Verification failed. Please try again",
       "challengeRequired": "Verification required",
       "invalidFingerprint": "Device verification failed. Please refresh the page",
       "permissionDenied": "You don't have permission to perform this action",
