@@ -5,15 +5,15 @@
         <AnimatedIcon name="user" :fallback-icon="LogIn" size="lg" class="prompt-icon" />
       </div>
       <div class="prompt-text">
-        <h4 class="prompt-title">{{ $t('comment.loginRequiredTitle') }}</h4>
-        <p class="prompt-desc">{{ $t('comment.loginRequired') }}</p>
+        <h4 class="prompt-title">{{ t('comment.loginRequiredTitle') }}</h4>
+        <p class="prompt-desc">{{ t('comment.loginRequired') }}</p>
       </div>
       <div class="prompt-actions">
         <Button type="button" size="sm" class="prompt-btn" @click="goToLogin">{{
-          $t('nav.login')
+          t('nav.login')
         }}</Button>
         <Button type="button" variant="ghost" size="sm" class="prompt-btn" @click="goToRegister">
-          {{ $t('nav.register') }}
+          {{ t('nav.register') }}
         </Button>
       </div>
     </div>
@@ -39,10 +39,10 @@
           </span>
           <div class="form-actions">
             <Button v-if="replyTo" variant="ghost" size="sm" @click="$emit('cancel')">
-              {{ $t('common.cancel') }}
+              {{ t('common.cancel') }}
             </Button>
             <Button type="submit" size="sm" :disabled="!canSubmit" :loading="isSubmitting">
-              {{ replyTo ? $t('comment.reply') : $t('comment.submit') }}
+              {{ replyTo ? t('comment.reply') : t('comment.submit') }}
             </Button>
           </div>
         </div>
