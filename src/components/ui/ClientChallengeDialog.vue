@@ -4,6 +4,7 @@
     :title="$t('auth.verifyTitle')"
     :description="$t('auth.clientChallengeHint')"
     size="sm"
+    allow-overflow
     @update:isOpen="handleDialogToggle"
   >
     <div class="client-challenge-dialog">
@@ -46,6 +47,7 @@ import Dialog from '@/components/ui/Dialog.vue'
 import TurnstileWidget from '@/components/ui/TurnstileWidget.vue'
 import { ApiError } from '@/api'
 import { clientSecurityService } from '@/api/clientSecurityService'
+import { getTurnstileErrorMessageKey } from '@/utils/turnstile'
 import {
   clientChallengeState,
   dismissClientChallenge,
@@ -122,8 +124,8 @@ function handleTurnstileExpire() {
   errorMessage.value = t('auth.error.turnstileRequired')
 }
 
-function handleTurnstileError() {
-  errorMessage.value = t('auth.error.turnstileFailed')
+function handleTurnstileError(error?: Error) {
+  errorMessage.value = t(getTurnstileErrorMessageKey(error))
 }
 
 function handleCancel() {

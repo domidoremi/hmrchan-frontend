@@ -137,6 +137,7 @@
       "inProgress": "請稍候...",
       "turnstileRequired": "請完成人機驗證",
       "turnstileFailed": "人機驗證失敗，請重試",
+      "turnstileHostnameMismatch": "當前站點網域未被 Cloudflare Turnstile 授權，請聯絡管理員檢查站點金鑰的 Hostname 設定",
       "unknown": "發生未知錯誤",
       "twoFactorInvalid": "驗證碼錯誤，請重新輸入",
       "codeRequired": "請輸入6位數驗證碼"

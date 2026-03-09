@@ -4,6 +4,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch, useTemplateRef } from 'vue'
+import { extractTurnstileErrorCode, TURNSTILE_HOSTNAME_MISMATCH_CODE } from '@/utils/turnstile'
 
 export interface TurnstileWidgetProps {
   siteKey: string
@@ -184,9 +185,16 @@ function createTurnstileConfig() {
     },
     'error-callback': (errorCode: unknown) => {
       console.error(`${LOG_PREFIX} Error:`, errorCode)
-      const message =
-        typeof errorCode === 'string' ? `Turnstile error: ${errorCode}` : 'Turnstile error occurred'
-      emit('error', new Error(message))
+      const code = extractTurnstileErrorCode(errorCode)
+      if (code === TURNSTILE_HOSTNAME_MISMATCH_CODE) {
+        console.error(`${LOG_PREFIX} Hostname is not authorized for this site key:`, {
+          hostname: window.location.hostname,
+          siteKey: maskSiteKey(props.siteKey),
+        })
+      }
+      const error = new Error(code ? `Turnstile error: ${code}` : 'Turnstile error occurred')
+      error.name = 'TurnstileError'
+      emit('error', error)
     },
   }
 }

@@ -144,6 +144,7 @@
       "inProgress": "お待ちください...",
       "turnstileRequired": "認証を完了してください",
       "turnstileFailed": "認証に失敗しました。もう一度お試しください",
+      "turnstileHostnameMismatch": "現在のホスト名は Cloudflare Turnstile のサイトキーで許可されていません。管理者に Hostname 設定の確認を依頼してください。",
       "unknown": "不明なエラーが発生しました",
       "twoFactorInvalid": "認証コードが正しくありません。もう一度入力してください",
       "riskVerificationInvalid": "メール確認コードが正しくありません。もう一度入力してください",
