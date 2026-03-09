@@ -149,6 +149,7 @@
 当前行为约定：
 
 - `client/init` 首次初始化会返回 `client_token`，并可能返回一次性的 `client_secret`
+- `client/init` 在前端本地凭证丢失或确认失效时，可在 body 中额外传 `force_reissue=true`，主动要求服务端补发新的 `client_token` / `client_secret`
 - `client/init` 在服务端签名密钥失效时会自动轮换并重新下发新凭证；若当前仅能返回 trust/challenge 信息，则可能不返回 `client_secret`
 - `client/init` 返回的关键字段为：`client_token`、`challenge_required`、`trust_level`、`turnstile_site_key`、`expires_in`，其中 `client_secret` 为条件返回字段
 - `client/verify` 要求 body 中提供 `turnstile_token`，并依赖 `X-Client-Token`
