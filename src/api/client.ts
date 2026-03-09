@@ -147,6 +147,14 @@ export interface RequestConfig extends RequestInit {
   baseUrl?: string | undefined
   /** 回调函数，用于捕获响应头（如 X-Security-Warning） */
   onResponseHeaders?: (headers: Headers) => void
+  /** 内部使用：challenge 验证后重试时避免重复进入挑战流程 */
+  skipChallengeRetry?: boolean
+  /** 需要 step-up 时用于拉起密码验证的动作标识 */
+  verificationAction?: string
+  /** 可选的资源 ID，参与动作级验证 */
+  verificationResourceId?: string
+  /** 内部使用：避免 verification 自动重试递归 */
+  skipVerificationRetry?: boolean
 }
 
 // In-flight GET 请求去重 Map
@@ -299,6 +307,40 @@ function normalizeResponse<T>(payload: unknown): T {
   }
 
   return payload as T
+}
+
+function withVerificationToken(
+  requestMethod: string,
+  requestBody: BodyInit | null | undefined,
+  requestHeaders: HeadersInit,
+  verificationToken: string
+): { body: BodyInit | null | undefined; headers: HeadersInit } {
+  const nextHeaders = { ...(requestHeaders as Record<string, string>) }
+  const normalizedMethod = requestMethod.toUpperCase()
+
+  if (normalizedMethod === 'DELETE' || !requestBody || requestBody instanceof FormData) {
+    nextHeaders['X-Verification-Token'] = verificationToken
+    return { body: requestBody, headers: nextHeaders }
+  }
+
+  if (typeof requestBody === 'string') {
+    try {
+      const parsed = JSON.parse(requestBody) as Record<string, unknown>
+      return {
+        body: JSON.stringify({
+          ...parsed,
+          verification_token: verificationToken,
+        }),
+        headers: nextHeaders,
+      }
+    } catch {
+      nextHeaders['X-Verification-Token'] = verificationToken
+      return { body: requestBody, headers: nextHeaders }
+    }
+  }
+
+  nextHeaders['X-Verification-Token'] = verificationToken
+  return { body: requestBody, headers: nextHeaders }
 }
 
 /**
@@ -563,6 +605,10 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
     skipSecurity = false,
     baseUrl,
     onResponseHeaders,
+    skipChallengeRetry = false,
+    verificationAction,
+    verificationResourceId,
+    skipVerificationRetry = false,
     headers: customHeaders = {},
     body,
     ...fetchConfig
@@ -795,6 +841,8 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
         try {
           const errorBody = await response.clone().json()
           const { code: errorCode, message: errorMsg } = extractApiErrorMeta(errorBody)
+          const verificationRequired =
+            response.headers.get('X-Verification-Required')?.toLowerCase() === 'true'
 
           if (errorCode?.toUpperCase() === 'CHALLENGE_REQUIRED') {
             // 从响应中提取 turnstile_site_key，派发事件让 UI 弹出验证
@@ -807,8 +855,38 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
                 detail: { turnstile_site_key: siteKey },
               })
             )
+            if (!skipChallengeRetry) {
+              const { requestClientChallenge } = await import('./clientChallengeBridge')
+              const verified = await requestClientChallenge(siteKey)
+              if (verified) {
+                return request<T>(endpoint, {
+                  ...config,
+                  skipChallengeRetry: true,
+                })
+              }
+            }
             throw new ApiError(errorMsg || 'Challenge required', 403, 'CHALLENGE_REQUIRED', {
               turnstile_site_key: siteKey,
+            })
+          }
+
+          if (verificationRequired && verificationAction && !skipVerificationRetry) {
+            const { ensureVerificationToken } = await import('./verificationBridge')
+            const verificationToken = await ensureVerificationToken(verificationAction, {
+              resourceId: verificationResourceId,
+            })
+            const { body: retryBody, headers: retryHeaders } = withVerificationToken(
+              method,
+              body,
+              headers,
+              verificationToken
+            )
+
+            return request<T>(endpoint, {
+              ...config,
+              body: retryBody,
+              headers: retryHeaders,
+              skipVerificationRetry: true,
             })
           }
 

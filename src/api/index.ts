@@ -15,6 +15,9 @@ export {
   type LoginRequest,
   type RegisterRequest,
   type AuthResponse,
+  type AuthLoginFlowResponse,
+  type TwoFactorRequiredResponse,
+  type RiskVerificationChallengeResponse,
   type UserResponse,
   type SendVerificationEmailRequest,
   type VerifyEmailRequest,
@@ -26,6 +29,7 @@ export {
   type VerifyEmailCodeResponse,
   type SendRegistrationCodeRequest,
   type SendRegistrationCodeResponse,
+  type VerificationTokenResponse,
 } from './authService'
 export {
   postService,

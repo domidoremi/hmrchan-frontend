@@ -103,6 +103,130 @@
       </div>
     </div>
 
+    <!-- Display -->
+    <div class="settings-group">
+      <div class="settings-group-header">
+        <div class="settings-group-icon">
+          <AnimatedIcon name="sparkle" :fallback-icon="Settings" size="sm" />
+        </div>
+        <span class="settings-label">{{ $t('settings.display') }}</span>
+      </div>
+
+      <div class="toggle-list">
+        <button type="button" class="toggle-btn" @click="toggleHeroSection">
+          <div class="toggle-btn-content">
+            <div class="toggle-btn-icon">
+              <AnimatedIcon name="explore" :fallback-icon="Layers" size="sm" />
+            </div>
+            <div class="toggle-btn-text">
+              <span class="toggle-btn-title">{{ $t('settings.toggleHeroSection') }}</span>
+              <span class="toggle-btn-desc">{{ $t('settings.heroSectionDesc') }}</span>
+            </div>
+          </div>
+          <div class="toggle-switch" :class="{ active: settings.showHeroSection }">
+            <span class="toggle-knob" />
+          </div>
+        </button>
+
+        <button type="button" class="toggle-btn" @click="toggleAnimations">
+          <div class="toggle-btn-content">
+            <div class="toggle-btn-icon">
+              <AnimatedIcon name="sparkle" :fallback-icon="Sparkles" size="sm" />
+            </div>
+            <div class="toggle-btn-text">
+              <span class="toggle-btn-title">{{ $t('settings.toggleAnimations') }}</span>
+              <span class="toggle-btn-desc">{{ $t('settings.animationsDesc') }}</span>
+            </div>
+          </div>
+          <div class="toggle-switch" :class="{ active: settings.enableAnimations }">
+            <span class="toggle-knob" />
+          </div>
+        </button>
+
+        <button type="button" class="toggle-btn" @click="toggleSwipeNavigation">
+          <div class="toggle-btn-content">
+            <div class="toggle-btn-icon">
+              <AnimatedIcon name="explore" :fallback-icon="Smartphone" size="sm" />
+            </div>
+            <div class="toggle-btn-text">
+              <span class="toggle-btn-title">{{ $t('settings.toggleSwipeNavigation') }}</span>
+              <span class="toggle-btn-desc">{{ $t('settings.swipeNavigationDesc') }}</span>
+            </div>
+          </div>
+          <div class="toggle-switch" :class="{ active: settings.enableSwipeNavigation }">
+            <span class="toggle-knob" />
+          </div>
+        </button>
+      </div>
+
+      <template v-if="settings.enableAnimations">
+        <div class="slider-group">
+          <label class="slider-label">
+            {{ $t('settings.animationIntensity') }}
+            <span class="slider-value">{{ selectedAnimationIntensityLabel }}</span>
+          </label>
+          <div class="settings-options bg-effect-options">
+            <button
+              v-for="opt in animationIntensityOptions"
+              :key="opt.value"
+              type="button"
+              class="bg-effect-btn"
+              :class="{ active: settings.animationIntensity === opt.value }"
+              :aria-pressed="settings.animationIntensity === opt.value"
+              @click="setAnimationIntensity(opt.value)"
+            >
+              <span class="bg-effect-label">{{ opt.label }}</span>
+            </button>
+          </div>
+        </div>
+      </template>
+
+      <div class="slider-group">
+        <label class="slider-label">
+          {{ $t('settings.postsPerPage') }}
+          <span class="slider-value">{{ settings.postsPerPage }}</span>
+        </label>
+        <div class="settings-options bg-effect-options">
+          <button
+            v-for="pageSize in postsPerPageOptions"
+            :key="pageSize"
+            type="button"
+            class="bg-effect-btn"
+            :class="{ active: settings.postsPerPage === pageSize }"
+            :aria-pressed="settings.postsPerPage === pageSize"
+            @click="setPostsPerPage(pageSize)"
+          >
+            <span class="bg-effect-label">{{ pageSize }}</span>
+          </button>
+        </div>
+      </div>
+
+      <div v-if="isAuthenticated" class="link-list preferences-actions">
+        <button
+          type="button"
+          class="link-btn"
+          :disabled="isSavingPreferences"
+          @click="handleReplacePreferences"
+        >
+          <div class="link-btn-icon">
+            <AnimatedIcon name="sparkle" :fallback-icon="Save" size="sm" />
+          </div>
+          <span class="link-btn-text">{{ $t('settings.replacePreferences') }}</span>
+        </button>
+        <button
+          type="button"
+          class="link-btn"
+          :disabled="isSavingPreferences"
+          @click="handleResetPreferences"
+        >
+          <div class="link-btn-icon">
+            <AnimatedIcon name="loading" :fallback-icon="RotateCcw" size="sm" />
+          </div>
+          <span class="link-btn-text">{{ $t('settings.resetPreferences') }}</span>
+        </button>
+      </div>
+    </div>
+
     <!-- Background Effect -->
     <div class="settings-group">
       <div class="settings-group-header">
@@ -424,6 +548,7 @@ import {
   Sun,
   Moon,
   Monitor,
+  Save,
   Video,
   RotateCcw,
   Layers,
@@ -434,11 +559,12 @@ import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
-import { useThemeStore, useSettingsStore, useToastStore } from '@/stores'
+import { useAuthStore, useThemeStore, useSettingsStore, useToastStore } from '@/stores'
 import { setLocale, type SupportedLocale } from '@/i18n'
+import { usePreferencesSync } from '@/composables/usePreferencesSync'
 import { useVideoSettings } from '@/composables/useVideoSettings'
 import type { Theme } from '@/types'
-import type { UiStyle, ParticleEffectType } from '@/stores/settings'
+import type { AnimationIntensity, UiStyle, ParticleEffectType } from '@/stores/settings'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 
 withDefaults(
@@ -453,11 +579,14 @@ withDefaults(
 defineEmits<{ close: [] }>()
 
 const { locale, t } = useI18n()
+const authStore = useAuthStore()
 const themeStore = useThemeStore()
 const settingsStore = useSettingsStore()
 const toastStore = useToastStore()
-const { resetSettings } = useVideoSettings()
+const { resetSettings: resetVideoPlayerSettings } = useVideoSettings()
+const { isSavingPreferences, resetPreferences, replacePreferences } = usePreferencesSync()
 
+const { isAuthenticated } = storeToRefs(authStore)
 const { theme } = storeToRefs(themeStore)
 const { settings } = storeToRefs(settingsStore)
 const mascotBackground = computed(() => {
@@ -493,6 +622,19 @@ const uiStyleOptions = computed(() => [
   { value: 'ios' as UiStyle, icon: Smartphone, label: t('settings.uiStyleIos') },
   { value: 'material' as UiStyle, icon: Layers, label: t('settings.uiStyleMaterial') },
 ])
+const animationIntensityOptions = computed<{ value: AnimationIntensity; label: string }[]>(() => [
+  { value: 'none', label: t('settings.animationNone') },
+  { value: 'reduced', label: t('settings.animationReduced') },
+  { value: 'normal', label: t('settings.animationNormal') },
+  { value: 'full', label: t('settings.animationFull') },
+])
+const selectedAnimationIntensityLabel = computed(() => {
+  return (
+    animationIntensityOptions.value.find((opt) => opt.value === settings.value.animationIntensity)
+      ?.label ?? ''
+  )
+})
+const postsPerPageOptions = [10, 20, 30, 50] as const
 
 const localeOptions: { code: SupportedLocale; name: string; flag: string }[] = [
   { code: 'en', name: 'English', flag: '🇺🇸' },
@@ -511,6 +653,26 @@ function setUiStyle(value: UiStyle) {
 
 function changeLocale(code: SupportedLocale) {
   void setLocale(code)
+}
+
+function toggleHeroSection() {
+  settingsStore.toggleSetting('showHeroSection')
+}
+
+function toggleAnimations() {
+  settingsStore.toggleSetting('enableAnimations')
+}
+
+function toggleSwipeNavigation() {
+  settingsStore.toggleSetting('enableSwipeNavigation')
+}
+
+function setAnimationIntensity(value: AnimationIntensity) {
+  settingsStore.setAnimationIntensity(value)
+}
+
+function setPostsPerPage(value: number) {
+  settingsStore.updateSetting('postsPerPage', value)
 }
 
 const bgEffectOptions = computed<{ value: ParticleEffectType; emoji: string; label: string }[]>(
@@ -582,8 +744,26 @@ function onDeskPetFollowSensitivityChange(e: Event) {
   settingsStore.setDeskPet({ followSensitivity: value })
 }
 
+async function handleResetPreferences() {
+  try {
+    await resetPreferences()
+    toastStore.success(t('settings.preferencesReset'))
+  } catch {
+    // 错误提示由同步层统一处理
+  }
+}
+
+async function handleReplacePreferences() {
+  try {
+    await replacePreferences()
+    toastStore.success(t('settings.preferencesReplaced'))
+  } catch {
+    // 错误提示由同步层统一处理
+  }
+}
+
 function resetVideoSettings() {
-  resetSettings()
+  resetVideoPlayerSettings()
   toastStore.success(t('settings.videoSettingsReset'))
 }
 </script>
@@ -1070,6 +1250,21 @@ function resetVideoSettings() {
 .link-btn:hover .link-btn-arrow {
   opacity: 1;
   transform: translateX(0);
+}
+
+.link-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.link-btn:disabled:hover {
+  background: var(--glass-bg-light);
+  border-color: var(--glass-border);
+  transform: none;
+}
+
+.preferences-actions {
+  padding-top: var(--spacing-2);
 }
 
 /* ========== Background Effect Options ========== */

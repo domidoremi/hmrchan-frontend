@@ -52,6 +52,23 @@ export interface AuthResponse {
   _securityWarning?: 'high' | 'medium' | 'low'
 }
 
+export interface TwoFactorRequiredResponse {
+  requires_2fa: true
+  pending_token: string
+}
+
+export interface RiskVerificationChallengeResponse {
+  requires_risk_verification: true
+  pending_token: string
+  challenge_type?: string
+  expires_in?: number
+}
+
+export type AuthLoginFlowResponse =
+  | AuthResponse
+  | TwoFactorRequiredResponse
+  | RiskVerificationChallengeResponse
+
 export interface UserResponse {
   id: string
   username: string
@@ -102,6 +119,8 @@ export interface SendEmailCodeRequest {
   password?: string
   /** 修改邮箱时需要新邮箱 + 当前密码 */
   new_email?: string
+  /** 敏感操作二次验证 token */
+  verification_token?: string
 }
 
 export interface VerifyEmailCodeRequest {
@@ -110,11 +129,23 @@ export interface VerifyEmailCodeRequest {
   verification_code: string
   /** 修改密码时需要新密码 */
   new_password?: string
+  /** 敏感操作二次验证 token */
+  verification_token?: string
 }
 
 export interface VerifyEmailCodeResponse {
   success: boolean
   message: string
+}
+
+export interface VerificationTokenResponse {
+  verified?: boolean
+  verification_token?: string
+  expires_in?: number
+  current_device_trusted?: boolean
+  step_up_required?: boolean
+  action?: string
+  resource_id?: string
 }
 
 // ========== 认证服务 ==========
@@ -124,9 +155,9 @@ export const authService = {
    * 用户登录
    * 读取 X-Security-Warning 响应头并附加到返回值
    */
-  async login(credentials: LoginRequest): Promise<AuthResponse> {
+  async login(credentials: LoginRequest): Promise<AuthLoginFlowResponse> {
     let securityWarning: AuthResponse['_securityWarning']
-    const response = await apiClient.post<AuthResponse>('/auth/login', credentials, {
+    const response = await apiClient.post<AuthLoginFlowResponse>('/auth/login', credentials, {
       ...authConfig,
       skipAuth: true,
       skipErrorToast: true,
@@ -137,7 +168,7 @@ export const authService = {
         }
       },
     })
-    if (securityWarning) {
+    if (securityWarning && 'access_token' in response) {
       response._securityWarning = securityWarning
     }
     return response
@@ -198,8 +229,19 @@ export const authService = {
   /**
    * 验证当前密码（敏感操作前置）
    */
-  async verifyPassword(password: string): Promise<{ verification_token: string }> {
-    return apiClient.post('/auth/verify-password', { password }, authConfig)
+  async verifyPassword(
+    password: string,
+    config?: RequestConfig
+  ): Promise<VerificationTokenResponse> {
+    return apiClient.post(
+      '/auth/verify-password',
+      { password },
+      {
+        ...authConfig,
+        ...config,
+        skipErrorToast: config?.skipErrorToast ?? true,
+      }
+    )
   },
 
   /**
@@ -209,12 +251,44 @@ export const authService = {
   async verifyIdentity(
     password: string,
     action: string,
-    resourceId?: string
-  ): Promise<{ verification_token: string }> {
+    resourceId?: string,
+    config?: RequestConfig
+  ): Promise<VerificationTokenResponse> {
     return apiClient.post(
       '/auth/verify-identity',
       { password, action, ...(resourceId ? { resource_id: resourceId } : {}) },
-      authConfig
+      {
+        ...authConfig,
+        ...config,
+        skipErrorToast: config?.skipErrorToast ?? true,
+      }
+    )
+  },
+
+  /**
+   * 高风险登录确认
+   * 成功后返回完整 LoginResp 并写入 refresh cookie
+   */
+  async verifyRiskLogin(
+    pendingToken: string,
+    code: string,
+    deviceName?: string,
+    deviceType?: string
+  ): Promise<AuthResponse> {
+    return apiClient.post(
+      '/auth/verify-risk-login',
+      {
+        pending_token: pendingToken,
+        code,
+        verification_code: code,
+        ...(deviceName ? { device_name: deviceName } : {}),
+        ...(deviceType ? { device_type: deviceType } : {}),
+      },
+      {
+        ...authConfig,
+        skipAuth: true,
+        skipErrorToast: true,
+      }
     )
   },
 
@@ -297,6 +371,7 @@ export const authService = {
   async changeEmail(data: ChangeEmailRequest): Promise<{ message: string }> {
     return apiClient.post('/email/change-email', data, {
       skipErrorToast: true,
+      verificationAction: 'change_email',
     })
   },
 
@@ -307,15 +382,20 @@ export const authService = {
    * POST /api/v1/email/send-change-password-code
    */
   async sendChangePasswordCode(
-    password: string,
-    config?: RequestConfig
+    password?: string,
+    config?: RequestConfig,
+    verificationToken?: string
   ): Promise<{ message: string }> {
     return apiClient.post(
       '/email/send-change-password-code',
-      { password },
+      {
+        ...(password ? { password } : {}),
+        ...(verificationToken ? { verification_token: verificationToken } : {}),
+      },
       {
         ...config,
         skipErrorToast: true,
+        verificationAction: 'change_password',
       }
     )
   },
@@ -325,19 +405,22 @@ export const authService = {
    * POST /api/v1/email/send-change-email-code
    */
   async sendChangeEmailCode(
-    password: string,
+    password: string | undefined,
     newEmail: string,
-    config?: RequestConfig
+    config?: RequestConfig,
+    verificationToken?: string
   ): Promise<{ message: string }> {
     return apiClient.post(
       '/email/send-change-email-code',
       {
-        password,
         new_email: newEmail,
+        ...(password ? { password } : {}),
+        ...(verificationToken ? { verification_token: verificationToken } : {}),
       },
       {
         ...config,
         skipErrorToast: true,
+        verificationAction: 'change_email',
       }
     )
   },
@@ -349,17 +432,20 @@ export const authService = {
   async changePasswordByEmailCode(
     verificationCode: string,
     newPassword: string,
-    config?: RequestConfig
+    config?: RequestConfig,
+    verificationToken?: string
   ): Promise<VerifyEmailCodeResponse> {
     return apiClient.post(
       '/email/change-password',
       {
         verification_code: verificationCode,
         new_password: newPassword,
+        ...(verificationToken ? { verification_token: verificationToken } : {}),
       },
       {
         ...config,
         skipErrorToast: true,
+        verificationAction: 'change_password',
       }
     )
   },
@@ -372,16 +458,21 @@ export const authService = {
     config?: RequestConfig
   ): Promise<{ message: string }> {
     if (data.action === 'change_email') {
-      if (!data.password || !data.new_email) {
+      if (!data.new_email || (!data.password && !data.verification_token)) {
         throw new ApiError('Missing password or new email', 400, 'BAD_REQUEST')
       }
-      return this.sendChangeEmailCode(data.password, data.new_email, config)
+      return this.sendChangeEmailCode(
+        data.password,
+        data.new_email,
+        config,
+        data.verification_token
+      )
     }
 
-    if (!data.password) {
+    if (!data.password && !data.verification_token) {
       throw new ApiError('Missing password', 400, 'BAD_REQUEST')
     }
-    return this.sendChangePasswordCode(data.password, config)
+    return this.sendChangePasswordCode(data.password, config, data.verification_token)
   },
 
   /**
@@ -395,15 +486,24 @@ export const authService = {
       if (!data.new_password) {
         throw new ApiError('Missing new password', 400, 'BAD_REQUEST')
       }
-      return this.changePasswordByEmailCode(data.verification_code, data.new_password, config)
+      return this.changePasswordByEmailCode(
+        data.verification_code,
+        data.new_password,
+        config,
+        data.verification_token
+      )
     }
 
     return apiClient.post(
       '/email/change-email',
-      { verification_code: data.verification_code },
+      {
+        verification_code: data.verification_code,
+        ...(data.verification_token ? { verification_token: data.verification_token } : {}),
+      },
       {
         ...config,
         skipErrorToast: true,
+        verificationAction: 'change_email',
       }
     )
   },

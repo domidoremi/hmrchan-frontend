@@ -63,6 +63,11 @@ vi.mock('@/utils/cache', () => ({
   },
 }))
 
+const mockEnsureVerificationToken = vi.fn()
+vi.mock('../verificationBridge', () => ({
+  ensureVerificationToken: mockEnsureVerificationToken,
+}))
+
 describe('ApiError', () => {
   it('should create error with correct properties', () => {
     const error = new ApiError('Test error', 404, 'NOT_FOUND', { id: 1 })
@@ -319,6 +324,82 @@ describe('apiClient', () => {
       })
 
       await expect(apiClient.get('/error')).rejects.toThrow(ApiError)
+    })
+
+    it('should retry JSON request after verification is required', async () => {
+      mockEnsureVerificationToken.mockResolvedValueOnce('verification-token-1')
+
+      mockFetch
+        .mockResolvedValueOnce({
+          ok: false,
+          status: 403,
+          headers: new Headers({ 'X-Verification-Required': 'true' }),
+          json: () => Promise.resolve({ detail: 'verification required' }),
+          clone() {
+            return this
+          },
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          headers: new Headers(),
+          json: () =>
+            Promise.resolve({ success: true, data: { ok: true }, meta: { api_version: '1' } }),
+        })
+
+      const result = await apiClient.post(
+        '/sensitive',
+        { foo: 'bar' },
+        { verificationAction: 'change_password' }
+      )
+
+      expect(result).toEqual({ ok: true })
+      expect(mockEnsureVerificationToken).toHaveBeenCalledWith('change_password', {
+        resourceId: undefined,
+      })
+      expect(mockFetch).toHaveBeenCalledTimes(2)
+      expect(mockFetch.mock.calls[1]?.[1]).toEqual(
+        expect.objectContaining({
+          body: JSON.stringify({ foo: 'bar', verification_token: 'verification-token-1' }),
+        })
+      )
+    })
+
+    it('should retry DELETE request with verification header', async () => {
+      mockEnsureVerificationToken.mockResolvedValueOnce('verification-token-2')
+
+      mockFetch
+        .mockResolvedValueOnce({
+          ok: false,
+          status: 403,
+          headers: new Headers({ 'X-Verification-Required': 'true' }),
+          json: () => Promise.resolve({ detail: 'verification required' }),
+          clone() {
+            return this
+          },
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 204,
+          headers: new Headers(),
+        })
+
+      const result = await apiClient.delete('/devices/1', {
+        verificationAction: 'revoke_sessions',
+      })
+
+      expect(result).toBeUndefined()
+      expect(mockEnsureVerificationToken).toHaveBeenCalledWith('revoke_sessions', {
+        resourceId: undefined,
+      })
+      expect(mockFetch).toHaveBeenCalledTimes(2)
+      expect(mockFetch.mock.calls[1]?.[1]).toEqual(
+        expect.objectContaining({
+          headers: expect.objectContaining({
+            'X-Verification-Token': 'verification-token-2',
+          }),
+        })
+      )
     })
   })
 

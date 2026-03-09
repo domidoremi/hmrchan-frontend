@@ -157,6 +157,7 @@ import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import { useProgressiveRender } from '@/composables/useProgressiveRender'
 import { useMasonryColumns } from '@/composables/useMasonryColumns'
 import { useForwardedElementRef } from '@/composables/useForwardedElementRef'
+import { usePreferredPageSize } from '@/composables/usePreferredPageSize'
 import { useSettingsStore } from '@/stores'
 import { throttleRAF } from '@/utils/performance'
 import { createResizeObserver } from '@/utils/modernAPIs'
@@ -219,7 +220,12 @@ let fetchPostsController: AbortController | null = null
 
 // 移动端优化：减少首屏加载数量
 const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
-const pageSize = isMobile ? 8 : 24 // 移动端首屏 8 张，桌面端 24 张
+const pageSize = usePreferredPageSize({
+  fallback: isMobile ? 8 : 24,
+  min: 8,
+  max: 50,
+  mobileCap: 12,
+})
 
 // JS Masonry 布局 - 避免 CSS column-count 的 CLS 问题
 const masonryContainerRef = useTemplateRef<HTMLElement>('masonryContainerRef')
@@ -248,12 +254,18 @@ const { elementRef: sentinelRef, setElementRef: setSentinelRef } =
   useForwardedElementRef<HTMLElement>()
 
 // 移动端优化：减少初始渲染数量（首屏渲染 6 张，平衡性能和 CLS）
-const initialRenderCount = isMobile ? 6 : 24
+const initialRenderCount = computed(() =>
+  isMobile ? Math.min(pageSize.value, 6) : Math.min(pageSize.value, 24)
+)
+const progressiveBatchSize = computed(() => Math.min(pageSize.value, 12))
 const {
   visibleItems: visiblePosts,
   hasMoreToRender,
   revealNextBatch,
-} = useProgressiveRender(posts, { initialCount: initialRenderCount, batchSize: 12 })
+} = useProgressiveRender(posts, {
+  initialCount: initialRenderCount,
+  batchSize: progressiveBatchSize,
+})
 
 const lastVisibleCount = ref(0)
 let isActive = true
@@ -398,7 +410,7 @@ async function fetchPosts(reset = true, signal?: AbortSignal) {
       const { sort_by, sort_order } = getSortParams('trending')
       const requestParams = {
         page: page.value,
-        page_size: pageSize,
+        page_size: pageSize.value,
         sort_by,
         sort_order,
         thumbnail_quality: getThumbnailQuality(),
@@ -412,7 +424,7 @@ async function fetchPosts(reset = true, signal?: AbortSignal) {
       const { sort_by, sort_order } = getSortParams(currentSort.value)
       const requestParams = {
         page: page.value,
-        page_size: pageSize,
+        page_size: pageSize.value,
         sort_by,
         sort_order,
         thumbnail_quality: getThumbnailQuality(),
@@ -643,6 +655,13 @@ watch(currentSort, () => {
 watch(currentPlatform, () => {
   const controller = new AbortController()
   onWatcherCleanup(() => controller.abort())
+  void fetchPosts(true, controller.signal)
+})
+
+watch(pageSize, () => {
+  const controller = new AbortController()
+  onWatcherCleanup(() => controller.abort())
+  if (posts.value.length === 0 && !isLoading.value) return
   void fetchPosts(true, controller.signal)
 })
 

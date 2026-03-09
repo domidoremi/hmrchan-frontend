@@ -38,6 +38,7 @@ vi.mock('@/api', () => {
   const mockRefreshToken = vi.fn()
   const mockSendVerificationEmail = vi.fn()
   const mockHeartbeat = vi.fn()
+  const mockVerifyRiskLogin = vi.fn()
 
   return {
     authService: {
@@ -48,6 +49,7 @@ vi.mock('@/api', () => {
       refreshToken: mockRefreshToken,
       sendVerificationEmail: mockSendVerificationEmail,
       heartbeat: mockHeartbeat,
+      verifyRiskLogin: mockVerifyRiskLogin,
     },
     ApiError: class ApiError extends Error {
       status: number
@@ -176,6 +178,26 @@ describe('Auth Store', () => {
       vi.useFakeTimers()
     })
 
+    it('should enter risk verification when backend requires it', async () => {
+      vi.useRealTimers()
+      const store = useAuthStore()
+
+      vi.mocked(authService.login).mockResolvedValueOnce({
+        requires_risk_verification: true,
+        pending_token: 'risk-pending-token',
+        challenge_type: 'email_code',
+        expires_in: 300,
+      })
+
+      const result = await store.login('test@test.com', 'password')
+
+      expect(result.success).toBe(false)
+      expect(result.requiresRiskVerification).toBe(true)
+      expect(result.pendingToken).toBe('risk-pending-token')
+      expect(store.token).toBeNull()
+      vi.useFakeTimers()
+    })
+
     it('should prevent concurrent login attempts', async () => {
       const store = useAuthStore()
       store.isLoading = true
@@ -207,6 +229,29 @@ describe('Auth Store', () => {
 
       expect(loadingDuringRequest).toBe(true)
       expect(store.isLoading).toBe(false)
+      store.cleanup()
+      vi.useFakeTimers()
+    })
+  })
+
+  describe('verifyRiskLogin', () => {
+    it('should establish session after risk verification succeeds', async () => {
+      vi.useRealTimers()
+      const store = useAuthStore()
+      const mockUser = createMockUser()
+
+      vi.mocked(authService.verifyRiskLogin).mockResolvedValueOnce({
+        user: mockUser,
+        access_token: 'risk-token',
+        refresh_token: 'risk-refresh',
+        token_type: 'Bearer',
+      })
+
+      const result = await store.verifyRiskLogin('risk-pending-token', '123456')
+
+      expect(result.success).toBe(true)
+      expect(store.user).toEqual(mockUser)
+      expect(store.token).toBe('risk-token')
       store.cleanup()
       vi.useFakeTimers()
     })

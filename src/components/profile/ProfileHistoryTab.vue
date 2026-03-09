@@ -97,12 +97,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { Clock, Trash2 } from 'lucide-vue-next'
 import { useToastStore } from '@/stores'
 import { apiClient, ApiError } from '@/api'
+import { usePreferredPageSize } from '@/composables/usePreferredPageSize'
 import { extractMediaIdFromUrl } from '@/utils/mediaOptimizer'
 import Button from '@/components/ui/Button.vue'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
@@ -167,7 +168,7 @@ const isLoadingMore = ref(false)
 const error = ref<string | null>(null)
 const page = ref(1)
 const total = ref(0)
-const pageSize = 20
+const pageSize = usePreferredPageSize({ fallback: 20, min: 10, max: 50 })
 const showClearDialog = ref(false)
 let historyController: AbortController | null = null
 let historyRequestToken = 0
@@ -227,7 +228,7 @@ async function fetchHistory(reset = true): Promise<boolean> {
       page: number
       page_size: number
       has_more: boolean
-    }>(`/history/browsing?page=${page.value}&page_size=${pageSize}`, {
+    }>(`/history/browsing?page=${page.value}&page_size=${pageSize.value}`, {
       signal: controller.signal,
       skipErrorToast: true,
     })
@@ -301,6 +302,11 @@ function goToPost(postId: string, thumbnailUrl?: string | null) {
 
 onMounted(() => {
   void fetchHistory()
+})
+
+watch(pageSize, () => {
+  if (history.value.length === 0 && !isLoading.value) return
+  void fetchHistory(true)
 })
 
 onUnmounted(() => {

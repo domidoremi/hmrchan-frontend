@@ -5,6 +5,7 @@
  */
 
 import { apiClient, type RequestConfig } from './client'
+import { ensureVerificationToken } from './verificationBridge'
 import { normalizeToProxyPath } from '@/utils/url'
 import { secureTokenManager } from '@/utils/tokenSecurity'
 
@@ -106,15 +107,19 @@ export const userService = {
    * 修改密码
    */
   async changePassword(data: ChangePasswordRequest): Promise<void> {
-    await apiClient.post('/users/me/change-password', data)
+    await apiClient.post('/users/me/change-password', data, {
+      verificationAction: 'change_password',
+    })
   },
 
   /**
    * 删除账号（软删除，30 天保留期内可恢复）
    */
   async deleteAccount(reason?: string): Promise<void> {
+    const verificationToken = await ensureVerificationToken('delete_account')
     await apiClient.post('/account/delete', {
       confirm: true,
+      verification_token: verificationToken,
       ...(reason ? { reason } : {}),
     })
   },
@@ -152,6 +157,7 @@ export const userService = {
   async exportData(): Promise<Blob> {
     const baseUrl =
       import.meta.env.VITE_API_ENDPOINT || `${import.meta.env.VITE_API_URL || '/api'}/v1`
+    const verificationToken = await ensureVerificationToken('export_data')
 
     // 从安全存储获取 access token 用于认证
     const token = await secureTokenManager.retrieve()
@@ -160,6 +166,7 @@ export const userService = {
     if (token) {
       headers['Authorization'] = `Bearer ${token}`
     }
+    headers['X-Verification-Token'] = verificationToken
 
     const response = await fetch(`${baseUrl}/account/export-data`, {
       method: 'POST',

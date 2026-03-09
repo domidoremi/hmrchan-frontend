@@ -11,6 +11,7 @@
  */
 
 import { apiClient } from './client'
+import { requestClientChallenge } from './clientChallengeBridge'
 import type { RequestConfig } from './client'
 import { getDeviceFingerprint } from '@/utils/fingerprint'
 import { getScreenResolution, getTimezone } from '@/utils/device'
@@ -196,6 +197,7 @@ export const clientSecurityService = {
           detail: { turnstile_site_key: response.turnstile_site_key },
         })
       )
+      void requestClientChallenge(response.turnstile_site_key)
     }
 
     return response

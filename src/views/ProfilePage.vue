@@ -94,7 +94,7 @@
 
         <div class="tab-panel">
           <Transition name="tab-slide" mode="out-in">
-            <component :is="currentTabComponent" :key="activeTab" />
+            <component :is="currentTabComponent" :key="activeTab" v-bind="currentTabProps" />
           </Transition>
         </div>
       </div>
@@ -113,6 +113,11 @@ import {
   MessageSquare,
   ThumbsUp,
   Clock,
+  Flag,
+  Shield,
+  Users,
+  UserPlus,
+  UserX,
   Pencil,
   Bookmark,
   Settings,
@@ -128,6 +133,9 @@ import ProfileCommentsTab from '@/components/profile/ProfileCommentsTab.vue'
 import ProfileLikesTab from '@/components/profile/ProfileLikesTab.vue'
 import ProfileHistoryTab from '@/components/profile/ProfileHistoryTab.vue'
 import ProfileCommentFavoritesTab from '@/components/profile/ProfileCommentFavoritesTab.vue'
+import ProfileReportsTab from '@/components/profile/ProfileReportsTab.vue'
+import ProfileSecurityTab from '@/components/profile/ProfileSecurityTab.vue'
+import ProfileRelationsTab from '@/components/profile/ProfileRelationsTab.vue'
 
 const router = useRouter()
 const { t } = useI18n()
@@ -136,9 +144,18 @@ const favStore = useFavoritesStore()
 const notifStore = useNotificationsStore()
 const { user, isAuthenticated } = storeToRefs(authStore)
 
-const activeTab = ref<'favorites' | 'comments' | 'likes' | 'history' | 'commentFavorites'>(
-  'favorites'
-)
+const activeTab = ref<
+  | 'favorites'
+  | 'comments'
+  | 'likes'
+  | 'history'
+  | 'commentFavorites'
+  | 'reports'
+  | 'security'
+  | 'followers'
+  | 'following'
+  | 'blocked'
+>('favorites')
 
 const tabs = computed(() => [
   { value: 'favorites' as const, label: t('profile.tabs.favorites'), icon: Heart },
@@ -150,6 +167,11 @@ const tabs = computed(() => [
     icon: Bookmark,
   },
   { value: 'history' as const, label: t('profile.tabs.history'), icon: Clock },
+  { value: 'reports' as const, label: t('profile.tabs.reports'), icon: Flag },
+  { value: 'security' as const, label: t('profile.tabs.security'), icon: Shield },
+  { value: 'followers' as const, label: t('profile.tabs.followers'), icon: Users },
+  { value: 'following' as const, label: t('profile.tabs.following'), icon: UserPlus },
+  { value: 'blocked' as const, label: t('profile.tabs.blocked'), icon: UserX },
 ])
 
 const currentTabComponent = computed(() => {
@@ -159,8 +181,20 @@ const currentTabComponent = computed(() => {
     likes: ProfileLikesTab,
     commentFavorites: ProfileCommentFavoritesTab,
     history: ProfileHistoryTab,
+    reports: ProfileReportsTab,
+    security: ProfileSecurityTab,
+    followers: ProfileRelationsTab,
+    following: ProfileRelationsTab,
+    blocked: ProfileRelationsTab,
   }
   return components[activeTab.value]
+})
+
+const currentTabProps = computed(() => {
+  if (activeTab.value === 'followers') return { mode: 'followers' as const }
+  if (activeTab.value === 'following') return { mode: 'following' as const }
+  if (activeTab.value === 'blocked') return { mode: 'blocked' as const }
+  return {}
 })
 
 const stats = computed(() => [

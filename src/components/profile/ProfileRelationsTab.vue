@@ -1,0 +1,375 @@
+<template>
+  <div class="relations-tab">
+    <div class="tab-header">
+      <h2 class="tab-title">{{ tabTitle }}</h2>
+      <span v-if="total > 0" class="item-count">{{ total }}</span>
+    </div>
+
+    <StateIndicator
+      v-if="error"
+      variant="error"
+      :description="error"
+      @action="() => fetchRelations(true)"
+    />
+
+    <div v-else-if="isLoading && users.length === 0" class="relations-skeleton">
+      <div v-for="i in 4" :key="i" class="skeleton-card">
+        <Skeleton variant="avatar" width="3rem" height="3rem" />
+        <div class="skeleton-copy">
+          <Skeleton width="45%" height="1rem" />
+          <Skeleton width="70%" height="0.875rem" />
+          <Skeleton width="55%" height="0.875rem" />
+        </div>
+      </div>
+    </div>
+
+    <template v-else>
+      <StateIndicator v-if="users.length === 0" variant="empty" :description="emptyDescription" />
+
+      <div v-else class="relations-list">
+        <article v-for="item in users" :key="item.id" class="relation-card glass-card-enhanced">
+          <div class="relation-main">
+            <Avatar
+              :src="
+                normalizeAvatarUrl(item.avatar_url || undefined) || item.avatar_url || undefined
+              "
+              :alt="item.username"
+              size="lg"
+            />
+
+            <div class="relation-copy">
+              <div class="relation-name-row">
+                <h3 class="relation-name">{{ item.username }}</h3>
+                <span v-if="item.id === currentUserId" class="self-badge">
+                  {{ $t('profile.you') }}
+                </span>
+              </div>
+
+              <p class="relation-bio">
+                {{ item.bio || $t('common.noDescription') }}
+              </p>
+
+              <div class="relation-meta">
+                <span>{{ $t('profile.followerCount', { count: item.follower_count ?? 0 }) }}</span>
+                <span>{{
+                  $t('profile.followingCount', { count: item.following_count ?? 0 })
+                }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="relation-actions">
+            <Button type="button" variant="ghost" size="sm" @click="openUserProfile(item.id)">
+              {{ $t('profile.viewPublicProfile') }}
+            </Button>
+            <Button
+              v-if="actionLabel && item.id !== currentUserId"
+              type="button"
+              :variant="props.mode === 'blocked' ? 'secondary' : 'ghost'"
+              size="sm"
+              :loading="actionUserId === item.id"
+              @click="handleRelationAction(item)"
+            >
+              {{ actionLabel }}
+            </Button>
+          </div>
+        </article>
+      </div>
+
+      <LoadMoreSection
+        v-if="hasMore"
+        :count="users.length"
+        :total="total"
+        :has-more="hasMore"
+        :loading="isLoadingMore"
+        @load-more="loadMore"
+      />
+    </template>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { computed, onMounted, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
+import { storeToRefs } from 'pinia'
+import { ApiError, normalizeAvatarUrl, userRelationsService, type UserListItem } from '@/api'
+import { usePreferredPageSize } from '@/composables/usePreferredPageSize'
+import { useAuthStore, useToastStore } from '@/stores'
+import Avatar from '@/components/ui/Avatar.vue'
+import Button from '@/components/ui/Button.vue'
+import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
+import Skeleton from '@/components/ui/Skeleton.vue'
+import StateIndicator from '@/components/ui/StateIndicator.vue'
+
+type RelationMode = 'followers' | 'following' | 'blocked'
+
+const props = defineProps<{
+  mode: RelationMode
+}>()
+
+const router = useRouter()
+const { t } = useI18n()
+const authStore = useAuthStore()
+const toastStore = useToastStore()
+const { user } = storeToRefs(authStore)
+
+const users = ref<UserListItem[]>([])
+const page = ref(1)
+const total = ref(0)
+const isLoading = ref(false)
+const isLoadingMore = ref(false)
+const error = ref<string | null>(null)
+const actionUserId = ref<string | null>(null)
+
+const pageSize = usePreferredPageSize({ fallback: 20, min: 10, max: 50 })
+const currentUserId = computed(() => user.value?.id ?? '')
+const hasMore = computed(() => users.value.length < total.value)
+
+const tabTitle = computed(() => {
+  switch (props.mode) {
+    case 'followers':
+      return t('profile.tabs.followers')
+    case 'following':
+      return t('profile.tabs.following')
+    case 'blocked':
+      return t('profile.tabs.blocked')
+    default:
+      return ''
+  }
+})
+
+const emptyDescription = computed(() => {
+  switch (props.mode) {
+    case 'followers':
+      return t('profile.noFollowers')
+    case 'following':
+      return t('profile.noFollowing')
+    case 'blocked':
+      return t('profile.noBlockedUsers')
+    default:
+      return ''
+  }
+})
+
+const actionLabel = computed(() => {
+  switch (props.mode) {
+    case 'following':
+      return t('profile.unfollowAction')
+    case 'blocked':
+      return t('profile.unblockAction')
+    default:
+      return ''
+  }
+})
+
+async function fetchRelations(reset = true): Promise<boolean> {
+  if (reset) {
+    isLoading.value = true
+    page.value = 1
+  } else {
+    if (isLoading.value || isLoadingMore.value) return false
+    isLoadingMore.value = true
+  }
+
+  error.value = null
+
+  try {
+    const response =
+      props.mode === 'followers'
+        ? await userRelationsService.getFollowers(page.value, pageSize.value)
+        : props.mode === 'following'
+          ? await userRelationsService.getFollowing(page.value, pageSize.value)
+          : await userRelationsService.getBlockedUsers(page.value, pageSize.value)
+
+    if (reset) {
+      users.value = response.items
+    } else {
+      users.value.push(...response.items)
+    }
+    total.value = response.total
+    return true
+  } catch (err) {
+    if (users.value.length === 0) {
+      error.value = err instanceof ApiError ? err.message : t('common.error')
+    }
+    return false
+  } finally {
+    isLoading.value = false
+    isLoadingMore.value = false
+  }
+}
+
+async function loadMore() {
+  if (!hasMore.value || isLoading.value || isLoadingMore.value) return
+  const nextPage = page.value + 1
+  page.value = nextPage
+  const ok = await fetchRelations(false)
+  if (!ok) {
+    page.value = nextPage - 1
+  }
+}
+
+function openUserProfile(userId: string) {
+  if (userId === currentUserId.value) {
+    void router.push('/profile')
+    return
+  }
+  void router.push({ name: 'user-public-profile', params: { id: userId } })
+}
+
+async function handleRelationAction(target: UserListItem) {
+  if (actionUserId.value || target.id === currentUserId.value) return
+
+  actionUserId.value = target.id
+  try {
+    if (props.mode === 'following') {
+      await userRelationsService.unfollowUser(target.id)
+      users.value = users.value.filter((item) => item.id !== target.id)
+      total.value = Math.max(0, total.value - 1)
+      toastStore.success(t('profile.unfollowSuccess'))
+    } else if (props.mode === 'blocked') {
+      await userRelationsService.unblockUser(target.id)
+      users.value = users.value.filter((item) => item.id !== target.id)
+      total.value = Math.max(0, total.value - 1)
+      toastStore.success(t('profile.unblockSuccess'))
+    }
+  } catch (err) {
+    toastStore.error(err instanceof ApiError ? err.message : t('common.error'))
+  } finally {
+    actionUserId.value = null
+  }
+}
+
+onMounted(() => {
+  void fetchRelations(true)
+})
+
+watch(pageSize, () => {
+  if (users.value.length === 0 && !isLoading.value) return
+  void fetchRelations(true)
+})
+</script>
+
+<style scoped>
+.relations-tab {
+  min-height: 20rem;
+}
+
+.tab-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  margin-block-end: clamp(1.25rem, 3vw, 2rem);
+}
+
+.tab-title {
+  margin: 0;
+  font-size: clamp(var(--text-lg), 2.5vw, var(--text-xl));
+  font-weight: var(--font-bold);
+}
+
+.item-count {
+  padding: 0.125rem 0.625rem;
+  border-radius: var(--radius-full);
+  background: rgba(var(--color-primary-rgb), 0.08);
+  color: var(--color-primary);
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
+}
+
+.relations-skeleton,
+.relations-list {
+  display: grid;
+  gap: clamp(0.75rem, 2vw, 1rem);
+}
+
+.skeleton-card,
+.relation-card {
+  display: grid;
+  gap: var(--spacing-3);
+  padding: clamp(0.875rem, 2.5vw, 1.125rem);
+}
+
+.skeleton-card {
+  grid-template-columns: auto 1fr;
+  align-items: center;
+}
+
+.skeleton-copy {
+  display: grid;
+  gap: var(--spacing-2);
+}
+
+.relation-card {
+  align-items: center;
+}
+
+.relation-main {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--spacing-3);
+  align-items: start;
+}
+
+.relation-copy {
+  display: grid;
+  gap: var(--spacing-2);
+  min-width: 0;
+}
+
+.relation-name-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  flex-wrap: wrap;
+}
+
+.relation-name {
+  margin: 0;
+  font-size: var(--text-base);
+  font-weight: var(--font-semibold);
+  color: var(--color-text-primary);
+}
+
+.self-badge {
+  padding: 0.125rem 0.5rem;
+  border-radius: var(--radius-full);
+  background: rgba(var(--color-primary-rgb), 0.08);
+  color: var(--color-primary);
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
+}
+
+.relation-bio {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+}
+
+.relation-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem 0.75rem;
+  color: var(--color-text-tertiary);
+  font-size: var(--text-xs);
+}
+
+.relation-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-2);
+  justify-content: flex-end;
+}
+
+@media (max-width: 640px) {
+  .relation-card {
+    justify-items: start;
+  }
+
+  .relation-actions {
+    justify-content: flex-start;
+  }
+}
+</style>

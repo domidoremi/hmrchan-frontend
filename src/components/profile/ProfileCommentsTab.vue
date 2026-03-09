@@ -98,11 +98,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { Heart, MessageCircle, Trash2, ExternalLink } from 'lucide-vue-next'
 import { apiClient, ApiError } from '@/api'
+import { usePreferredPageSize } from '@/composables/usePreferredPageSize'
 import { useToastStore } from '@/stores'
 import { formatRelativeTime } from '@/utils/date'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
@@ -136,7 +137,7 @@ const isLoadingMore = ref(false)
 const error = ref<string | null>(null)
 const page = ref(1)
 const total = ref(0)
-const pageSize = 20
+const pageSize = usePreferredPageSize({ fallback: 20, min: 10, max: 50 })
 let commentsController: AbortController | null = null
 let commentsRequestToken = 0
 
@@ -168,7 +169,7 @@ async function fetchComments(reset = true): Promise<boolean> {
       page: number
       page_size: number
       has_more: boolean
-    }>(`/history/my-comments?page=${page.value}&page_size=${pageSize}`, {
+    }>(`/history/my-comments?page=${page.value}&page_size=${pageSize.value}`, {
       signal: controller.signal,
       skipErrorToast: true,
     })
@@ -218,6 +219,11 @@ function getUserCommentMemo(comment: UserComment) {
     comment.post_title ?? '',
   ]
 }
+
+watch(pageSize, () => {
+  if (comments.value.length === 0 && !isLoading.value) return
+  void fetchComments(true)
+})
 
 function formatDate(dateStr: string): string {
   return formatRelativeTime(dateStr, t)

@@ -4,6 +4,7 @@
 
 import { ref, computed, nextTick } from 'vue'
 import { defineStore } from 'pinia'
+import type { UserPreferences } from '@/api/preferencesService'
 
 export type AnimationIntensity = 'none' | 'reduced' | 'normal' | 'full'
 export type UiStyle = 'ios' | 'material'
@@ -102,10 +103,19 @@ const defaultSettings: Settings = {
   },
 }
 
+function createDefaultSettings(): Settings {
+  return {
+    ...defaultSettings,
+    backgroundEffect: { ...defaultSettings.backgroundEffect },
+    mascotBackground: { ...defaultSettings.mascotBackground },
+    deskPet: { ...defaultSettings.deskPet },
+  }
+}
+
 export const useSettingsStore = defineStore(
   'settings',
   () => {
-    const settings = ref<Settings>({ ...defaultSettings })
+    const settings = ref<Settings>(createDefaultSettings())
 
     // 一次性兼容迁移：补全旧版本持久化数据中缺失的新字段
     // pinia-plugin-persistedstate 在 store 创建后恢复数据，
@@ -243,13 +253,39 @@ export const useSettingsStore = defineStore(
       settings.value.deskPet = next
     }
 
-    function resetSettings() {
-      settings.value = {
-        ...defaultSettings,
-        backgroundEffect: { ...defaultSettings.backgroundEffect },
-        mascotBackground: { ...defaultSettings.mascotBackground },
-        deskPet: { ...defaultSettings.deskPet },
+    function applyPreferences(preferences: UserPreferences) {
+      const nextSettings = {
+        ...settings.value,
       }
+
+      if (typeof preferences.show_hero_section === 'boolean') {
+        nextSettings.showHeroSection = preferences.show_hero_section
+      }
+
+      if (typeof preferences.enable_animations === 'boolean') {
+        nextSettings.enableAnimations = preferences.enable_animations
+      }
+
+      if (
+        typeof preferences.posts_per_page === 'number' &&
+        Number.isFinite(preferences.posts_per_page)
+      ) {
+        nextSettings.postsPerPage = Math.max(1, Math.round(preferences.posts_per_page))
+      }
+
+      settings.value = nextSettings
+    }
+
+    function exportPreferences(): UserPreferences {
+      return {
+        show_hero_section: settings.value.showHeroSection,
+        enable_animations: settings.value.enableAnimations,
+        posts_per_page: settings.value.postsPerPage,
+      }
+    }
+
+    function resetSettings() {
+      settings.value = createDefaultSettings()
     }
 
     return {
@@ -264,6 +300,8 @@ export const useSettingsStore = defineStore(
       setBackgroundEffect,
       setMascotBackground,
       setDeskPet,
+      applyPreferences,
+      exportPreferences,
       resetSettings,
     }
   },

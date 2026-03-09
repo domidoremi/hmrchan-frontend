@@ -124,6 +124,12 @@ const routes: RouteRecordRaw[] = [
     meta: { title: 'nav.authorDetail' },
   },
   {
+    path: '/users/:id',
+    name: 'user-public-profile',
+    component: () => import('@/views/UserPublicProfilePage.vue'),
+    meta: { title: 'nav.userProfile', requiresAuth: true },
+  },
+  {
     path: '/profile',
     component: () => import('@/layouts/ProfileLayout.vue'),
     meta: { requiresAuth: true },
