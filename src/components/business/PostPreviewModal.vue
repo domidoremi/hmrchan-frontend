@@ -78,7 +78,7 @@
 
             <div class="post-preview-body">
               <div class="post-preview-scroll">
-                <div class="post-preview-media">
+                <div v-if="shouldShowMediaSection" class="post-preview-media">
                   <div v-if="primaryMedia" class="post-preview-media-frame">
                     <img
                       class="post-preview-media-backdrop"
@@ -580,6 +580,12 @@ const displayLikes = computed(() => {
 
 const initialMediaSrc = computed(() => {
   return props.initialThumbnailSrc || props.initialPost?.thumbnail_url || ''
+})
+
+const shouldShowMediaSection = computed(() => {
+  if (primaryMedia.value) return true
+  if (initialMediaSrc.value) return true
+  return (displayMediaCount.value ?? 0) > 0
 })
 
 const platformLabel = computed(() => {
