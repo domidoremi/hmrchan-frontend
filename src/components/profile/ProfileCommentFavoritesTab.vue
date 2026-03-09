@@ -104,12 +104,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, defineAsyncComponent } from 'vue'
+import { ref, computed, onMounted, onUnmounted, defineAsyncComponent, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { Heart, Bookmark, BookmarkMinus } from 'lucide-vue-next'
 import { apiClient, ApiError } from '@/api'
 import type { MyCommentFavoriteItem } from '@/api'
+import { usePreferredPageSize } from '@/composables/usePreferredPageSize'
 import { useToastStore } from '@/stores'
 import { formatRelativeTime } from '@/utils/date'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
@@ -131,7 +132,7 @@ const isLoadingMore = ref(false)
 const error = ref<string | null>(null)
 const page = ref(1)
 const total = ref(0)
-const pageSize = 20
+const pageSize = usePreferredPageSize({ fallback: 20, min: 10, max: 50 })
 let commentFavoritesController: AbortController | null = null
 let commentFavoritesRequestToken = 0
 
@@ -163,7 +164,7 @@ async function fetchFavorites(reset = true): Promise<boolean> {
       page: number
       page_size: number
       has_more: boolean
-    }>(`/history/my-comment-favorites?page=${page.value}&page_size=${pageSize}`, {
+    }>(`/history/my-comment-favorites?page=${page.value}&page_size=${pageSize.value}`, {
       signal: controller.signal,
       skipErrorToast: true,
     })
@@ -213,6 +214,11 @@ function getCommentFavoriteMemo(item: MyCommentFavoriteItem) {
     item.post_title ?? '',
   ]
 }
+
+watch(pageSize, () => {
+  if (items.value.length === 0 && !isLoading.value) return
+  void fetchFavorites(true)
+})
 
 function formatDate(dateStr: string): string {
   return formatRelativeTime(dateStr, t)

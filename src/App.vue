@@ -46,6 +46,9 @@
       <ToastContainer />
     </Teleport>
 
+    <ClientChallengeDialog />
+    <VerificationDialog />
+
     <!-- Back to Top Button -->
     <BackToTop :show-progress="true" />
 
@@ -66,6 +69,7 @@ import { useRoute, useRouter, type RouteLocationNormalizedLoaded } from 'vue-rou
 import { storeToRefs } from 'pinia'
 import { useThemeStore, useSettingsStore } from '@/stores'
 import { useLocaleConfig } from '@/composables/useLocaleConfig'
+import { usePreferencesSync } from '@/composables/usePreferencesSync'
 import { scheduleTask } from '@/utils/modernAPIs'
 import AppNavbar from '@/components/layout/AppNavbar.vue'
 import AppFooter from '@/components/layout/AppFooter.vue'
@@ -81,6 +85,12 @@ const MascotFlightBackground = defineAsyncComponent(
 )
 
 const ToastContainer = defineAsyncComponent(() => import('@/components/ui/ToastContainer.vue'))
+const ClientChallengeDialog = defineAsyncComponent(
+  () => import('@/components/ui/ClientChallengeDialog.vue')
+)
+const VerificationDialog = defineAsyncComponent(
+  () => import('@/components/ui/VerificationDialog.vue')
+)
 
 const DeskPet = defineAsyncComponent(() => import('@/components/ui/DeskPet.vue'))
 
@@ -88,6 +98,7 @@ const route = useRoute()
 const router = useRouter()
 const themeStore = useThemeStore()
 const settingsStore = useSettingsStore()
+usePreferencesSync()
 
 const { resolvedTheme } = storeToRefs(themeStore)
 const { settings } = storeToRefs(settingsStore)

@@ -1,6 +1,6 @@
 <template>
   <div class="auth-page auth-page--login">
-    <div class="auth-book" :class="{ 'auth-book--two-factor': show2fa }">
+    <div class="auth-book" :class="{ 'auth-book--two-factor': show2fa || showRiskVerification }">
       <section class="auth-visual" aria-hidden="true">
         <AuthVisualScene
           :title="$t('auth.loginTitle')"
@@ -63,6 +63,53 @@
             </Button>
 
             <button type="button" class="auth-2fa-back" @click="reset2fa">
+              {{ $t('auth.backToLogin') }}
+            </button>
+          </div>
+
+          <!-- 高风险登录验证步骤 -->
+          <div v-else-if="showRiskVerification" class="auth-form">
+            <p class="auth-2fa-hint">
+              {{
+                riskChallengeType === 'email_code'
+                  ? $t('auth.riskVerificationHint')
+                  : $t('auth.riskVerificationFallbackHint')
+              }}
+            </p>
+            <div class="form-group">
+              <label for="riskVerificationCode">{{ $t('auth.riskVerificationCode') }}</label>
+              <Input
+                id="riskVerificationCode"
+                v-model="riskVerificationCode"
+                type="text"
+                inputmode="numeric"
+                pattern="[0-9]*"
+                maxlength="6"
+                :placeholder="$t('auth.riskVerificationCodePlaceholder')"
+                autocomplete="one-time-code"
+                required
+                @focus="handleTypingFocus"
+                @blur="handleFieldBlur"
+                @keydown.enter="handleRiskVerify"
+              />
+            </div>
+
+            <p v-if="riskExpiresInLabel" class="auth-2fa-hint auth-2fa-hint--subtle">
+              {{ riskExpiresInLabel }}
+            </p>
+
+            <p v-if="formError" class="field-error">{{ formError }}</p>
+
+            <Button
+              :loading="isLoading"
+              :disabled="riskVerificationCode.length < 6"
+              full-width
+              @click="handleRiskVerify"
+            >
+              {{ $t('auth.verifyButton') }}
+            </Button>
+
+            <button type="button" class="auth-2fa-back" @click="resetRiskVerification">
               {{ $t('auth.backToLogin') }}
             </button>
           </div>
@@ -173,6 +220,7 @@ import Input from '@/components/ui/Input.vue'
 import TurnstileWidget from '@/components/ui/TurnstileWidget.vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import AuthVisualScene from '@/components/auth/AuthVisualScene.vue'
+import { useTurnstileConfig } from '@/composables/useTurnstileConfig'
 
 const router = useRouter()
 const route = useRoute()
@@ -194,13 +242,22 @@ let moodTimer: ReturnType<typeof setTimeout> | null = null
 const show2fa = ref(false)
 const twoFactorCode = ref('')
 const pendingToken = ref('')
+const showRiskVerification = ref(false)
+const riskVerificationCode = ref('')
+const riskPendingToken = ref('')
+const riskChallengeType = ref('email_code')
+const riskExpiresIn = ref<number | null>(null)
 
-const turnstileSiteKey = (import.meta.env.VITE_TURNSTILE_SITE_KEY ?? '').trim()
-const turnstileEnabled = turnstileSiteKey.length > 0
+const { turnstileSiteKey, turnstileEnabled } = useTurnstileConfig()
 const turnstileToken = ref<string | null>(null)
 const turnstileRef = useTemplateRef<{ reset: () => void; getResponse: () => string | undefined }>(
   'turnstileRef'
 )
+
+const riskExpiresInLabel = computed(() => {
+  if (!riskExpiresIn.value || riskExpiresIn.value <= 0) return ''
+  return t('auth.riskVerificationExpiresIn', { seconds: riskExpiresIn.value })
+})
 
 function setVisualMood(next: VisualMood, holdMs = 0) {
   if (moodTimer) {
@@ -291,7 +348,7 @@ async function handleLogin() {
     return
   }
 
-  if (turnstileEnabled && !turnstileToken.value) {
+  if (turnstileEnabled.value && !turnstileToken.value) {
     toastStore.warning(t('auth.error.turnstileRequired'))
     setVisualMood('typing', 900)
     return
@@ -317,6 +374,15 @@ async function handleLogin() {
     // 进入 2FA 验证步骤
     pendingToken.value = result.pendingToken
     show2fa.value = true
+    showRiskVerification.value = false
+    formError.value = ''
+    setVisualMood('typing')
+  } else if (result.requiresRiskVerification && result.pendingToken) {
+    riskPendingToken.value = result.pendingToken
+    riskChallengeType.value = result.challengeType || 'email_code'
+    riskExpiresIn.value = result.expiresIn ?? null
+    show2fa.value = false
+    showRiskVerification.value = true
     formError.value = ''
     setVisualMood('typing')
   } else {
@@ -341,6 +407,16 @@ async function handle2faVerify() {
     setVisualMood('success', 900)
     toastStore.success(t('auth.loginSuccess'))
     router.replace(redirectTo.value)
+  } else if (result.requiresRiskVerification && result.pendingToken) {
+    twoFactorCode.value = ''
+    pendingToken.value = ''
+    riskPendingToken.value = result.pendingToken
+    riskChallengeType.value = result.challengeType || 'email_code'
+    riskExpiresIn.value = result.expiresIn ?? null
+    show2fa.value = false
+    showRiskVerification.value = true
+    formError.value = ''
+    setVisualMood('typing')
   } else {
     twoFactorCode.value = ''
     formError.value = t(result.error || 'auth.error.twoFactorInvalid')
@@ -352,6 +428,38 @@ function reset2fa() {
   show2fa.value = false
   twoFactorCode.value = ''
   pendingToken.value = ''
+  formError.value = ''
+  setVisualMood('idle')
+}
+
+async function handleRiskVerify() {
+  setVisualMood('submitting')
+  formError.value = ''
+  if (riskVerificationCode.value.length < 6) {
+    formError.value = t('auth.error.codeRequired')
+    setVisualMood('typing', 800)
+    return
+  }
+
+  const result = await authStore.verifyRiskLogin(riskPendingToken.value, riskVerificationCode.value)
+
+  if (result.success) {
+    setVisualMood('success', 900)
+    toastStore.success(t('auth.loginSuccess'))
+    router.replace(redirectTo.value)
+  } else {
+    riskVerificationCode.value = ''
+    formError.value = t(result.error || 'auth.error.riskVerificationInvalid')
+    setVisualMood('typing', 1200)
+  }
+}
+
+function resetRiskVerification() {
+  showRiskVerification.value = false
+  riskVerificationCode.value = ''
+  riskPendingToken.value = ''
+  riskChallengeType.value = 'email_code'
+  riskExpiresIn.value = null
   formError.value = ''
   setVisualMood('idle')
 }

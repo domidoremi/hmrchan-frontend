@@ -31,34 +31,42 @@ export const preferencesService = {
    * 获取偏好设置
    */
   async get(): Promise<UserPreferences> {
-    return apiClient.get<UserPreferences>('/preferences')
+    return apiClient.get<UserPreferences>('/preferences', {
+      skipErrorToast: true,
+    })
   },
 
   /**
    * 完整替换偏好设置（PUT）
    */
   async replace(preferences: UserPreferences): Promise<UserPreferences> {
-    return apiClient.put<UserPreferences>('/preferences', preferences)
+    return apiClient.put<UserPreferences>('/preferences', preferences, {
+      skipErrorToast: true,
+    })
   },
 
   /**
    * 部分更新偏好设置（PATCH）
    */
   async update(preferences: UserPreferences): Promise<UserPreferences> {
-    return apiClient.patch<UserPreferences>('/preferences', preferences)
+    return apiClient.patch<UserPreferences>('/preferences', preferences, {
+      skipErrorToast: true,
+    })
   },
 
   /**
    * 更新单项偏好（合并到批量更新）
    */
   async updateOne(key: string, value: unknown): Promise<void> {
-    return apiClient.patch('/preferences', { [key]: value })
+    return apiClient.patch('/preferences', { [key]: value }, { skipErrorToast: true })
   },
 
   /**
    * 重置偏好为默认值
    */
   async reset(): Promise<void> {
-    return apiClient.delete('/preferences')
+    return apiClient.delete('/preferences', {
+      skipErrorToast: true,
+    })
   },
 }

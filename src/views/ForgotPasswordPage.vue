@@ -126,6 +126,7 @@ import Button from '@/components/ui/Button.vue'
 import Input from '@/components/ui/Input.vue'
 import TurnstileWidget from '@/components/ui/TurnstileWidget.vue'
 import AuthVisualScene from '@/components/auth/AuthVisualScene.vue'
+import { useTurnstileConfig } from '@/composables/useTurnstileConfig'
 
 const { t } = useI18n()
 const toastStore = useToastStore()
@@ -140,8 +141,7 @@ const visualMood = ref<VisualMood>('idle')
 let moodTimer: ReturnType<typeof setTimeout> | null = null
 let cooldownTimer: ReturnType<typeof setInterval> | null = null
 
-const turnstileSiteKey = (import.meta.env.VITE_TURNSTILE_SITE_KEY ?? '').trim()
-const turnstileEnabled = turnstileSiteKey.length > 0
+const { turnstileSiteKey, turnstileEnabled } = useTurnstileConfig()
 const turnstileToken = ref<string | null>(null)
 const turnstileRef = useTemplateRef<{ reset: () => void; getResponse: () => string | undefined }>(
   'turnstileRef'
@@ -228,7 +228,7 @@ async function handleSubmit() {
     return
   }
 
-  if (turnstileEnabled && !turnstileToken.value) {
+  if (turnstileEnabled.value && !turnstileToken.value) {
     toastStore.warning(t('auth.error.turnstileRequired'))
     setVisualMood('typing', 900)
     return

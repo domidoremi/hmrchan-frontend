@@ -7,6 +7,7 @@ import { ref, computed, getCurrentScope, onScopeDispose } from 'vue'
 import { deviceService, type Device } from '@/api'
 import { useToastStore } from '@/stores/toast'
 import { useI18n } from 'vue-i18n'
+import { isVerificationCancelledError } from '@/api/verificationBridge'
 
 /**
  * 按设备指纹去重，保留每个物理设备最近活跃的会话
@@ -117,7 +118,8 @@ export function useSessionManagement() {
       await deviceService.revokeDevice(sessionId)
       toastStore.success(t('devices.success.revoked'))
       await fetchSessions()
-    } catch {
+    } catch (error) {
+      if (isVerificationCancelledError(error)) return
       toastStore.error(t('devices.error.revokeFailed'))
     }
   }
@@ -130,7 +132,8 @@ export function useSessionManagement() {
       await deviceService.revokeAllDevices()
       toastStore.success(t('devices.success.revokedAll'))
       await fetchSessions()
-    } catch {
+    } catch (error) {
+      if (isVerificationCancelledError(error)) return
       toastStore.error(t('devices.error.revokeAllFailed'))
     } finally {
       isRevoking.value = false

@@ -37,6 +37,54 @@
           </Button>
         </form>
       </div>
+
+      <div class="contact-card glass-card">
+        <h2 class="section-title">{{ $t('contact.feedbackTitle') }}</h2>
+        <p class="page-subtitle">{{ $t('contact.feedbackSubtitle') }}</p>
+
+        <form class="contact-form" @submit.prevent="handleFeedbackSubmit">
+          <div class="form-group">
+            <label>{{ $t('contact.feedbackCategory') }}</label>
+            <div
+              class="category-list"
+              role="radiogroup"
+              :aria-label="$t('contact.feedbackCategory')"
+            >
+              <button
+                v-for="option in feedbackCategoryOptions"
+                :key="option.value"
+                type="button"
+                class="category-btn"
+                :class="{ active: feedback.category === option.value }"
+                :aria-pressed="feedback.category === option.value"
+                @click="feedback.category = option.value"
+              >
+                {{ option.label }}
+              </button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="feedback-contact">{{ $t('contact.feedbackContact') }}</label>
+            <Input id="feedback-contact" v-model="feedback.contact" type="email" />
+          </div>
+
+          <div class="form-group">
+            <label for="feedback-message">{{ $t('contact.feedbackMessage') }}</label>
+            <Textarea
+              id="feedback-message"
+              v-model="feedback.message"
+              class="contact-textarea"
+              rows="5"
+              required
+            />
+          </div>
+
+          <Button type="submit" :loading="isFeedbackSubmitting" full-width>
+            {{ isFeedbackSubmitting ? $t('contact.feedbackSending') : $t('contact.feedbackSend') }}
+          </Button>
+        </form>
+      </div>
     </div>
   </div>
 </template>
@@ -44,10 +92,11 @@
 <script setup lang="ts">
 defineOptions({ name: 'ContactPage' })
 
-import { ref, reactive } from 'vue'
+import { computed, ref, reactive } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useToastStore } from '@/stores'
 import { contactService } from '@/api/contactService'
+import { feedbackService } from '@/api/feedbackService'
 import Button from '@/components/ui/Button.vue'
 import Input from '@/components/ui/Input.vue'
 import Textarea from '@/components/ui/Textarea.vue'
@@ -61,8 +110,21 @@ const form = reactive({
   subject: '',
   message: '',
 })
+const feedback = reactive({
+  category: 'general' as 'general' | 'bug' | 'feature' | 'other',
+  contact: '',
+  message: '',
+})
 
 const isSubmitting = ref(false)
+const isFeedbackSubmitting = ref(false)
+
+const feedbackCategoryOptions = computed(() => [
+  { value: 'general' as const, label: t('contact.feedbackCategoryGeneral') },
+  { value: 'bug' as const, label: t('contact.feedbackCategoryBug') },
+  { value: 'feature' as const, label: t('contact.feedbackCategoryFeature') },
+  { value: 'other' as const, label: t('contact.feedbackCategoryOther') },
+])
 
 async function handleSubmit() {
   isSubmitting.value = true
@@ -88,6 +150,28 @@ async function handleSubmit() {
     isSubmitting.value = false
   }
 }
+
+async function handleFeedbackSubmit() {
+  isFeedbackSubmitting.value = true
+
+  try {
+    await feedbackService.submit({
+      message: feedback.message,
+      contact: feedback.contact || undefined,
+      category: feedback.category,
+    })
+
+    toastStore.success(t('contact.feedbackSuccess'))
+
+    feedback.category = 'general'
+    feedback.contact = ''
+    feedback.message = ''
+  } catch {
+    toastStore.error(t('contact.feedbackError'))
+  } finally {
+    isFeedbackSubmitting.value = false
+  }
+}
 </script>
 
 <style scoped>
@@ -97,7 +181,10 @@ async function handleSubmit() {
 
 .container {
   display: flex;
+  flex-direction: column;
+  align-items: center;
   justify-content: center;
+  gap: var(--spacing-4);
 }
 
 .contact-card {
@@ -118,6 +205,12 @@ async function handleSubmit() {
 
 .page-title {
   font-size: var(--text-xl);
+  text-align: center;
+  margin-bottom: var(--spacing-1);
+}
+
+.section-title {
+  font-size: var(--text-lg);
   text-align: center;
   margin-bottom: var(--spacing-1);
 }
@@ -151,6 +244,34 @@ async function handleSubmit() {
   font-size: var(--text-sm);
   font-weight: var(--font-medium);
   color: var(--color-text-secondary);
+}
+
+.category-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-2);
+}
+
+.category-btn {
+  padding: var(--spacing-2) var(--spacing-3);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-full);
+  background: var(--glass-bg-light);
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  transition: all var(--transition-fast);
+}
+
+.category-btn:hover {
+  background: var(--glass-bg);
+  border-color: var(--glass-border-strong);
+}
+
+.category-btn.active {
+  background: var(--gradient-primary);
+  border-color: transparent;
+  color: var(--color-on-primary);
+  box-shadow: 0 4px 12px rgba(var(--color-primary-rgb), 0.22);
 }
 
 .contact-textarea {

@@ -111,6 +111,7 @@ import { formatDate } from '@/utils/date'
 import { useProgressiveRender } from '@/composables/useProgressiveRender'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import { useForwardedElementRef } from '@/composables/useForwardedElementRef'
+import { usePreferredPageSize } from '@/composables/usePreferredPageSize'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import Skeleton from '@/components/ui/Skeleton.vue'
@@ -129,6 +130,7 @@ const error = computed(() => (favStore.error ? t(favStore.error) : null))
 const total = computed(() => favStore.total)
 const hasMore = computed(() => favStore.hasMore)
 const isLoadingMore = computed(() => favStore.isLoading && favStore.items.length > 0)
+const preferredPageSize = usePreferredPageSize({ fallback: 20, min: 10, max: 50 })
 
 const { elementRef: sentinelRef, setElementRef: setSentinelRef } =
   useForwardedElementRef<HTMLElement>()
@@ -137,7 +139,10 @@ const {
   visibleItems: visibleFavorites,
   hasMoreToRender,
   revealNextBatch,
-} = useProgressiveRender(favorites, { initialCount: 20, batchSize: 20 })
+} = useProgressiveRender(favorites, {
+  initialCount: preferredPageSize,
+  batchSize: preferredPageSize,
+})
 
 const hasMoreForUi = computed(() => hasMore.value || hasMoreToRender.value)
 

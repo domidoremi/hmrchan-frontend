@@ -4,7 +4,7 @@
  * 集中管理收藏列表、收藏夹、标签、收藏状态检查
  */
 
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { defineStore } from 'pinia'
 import {
   favoriteService,
@@ -14,14 +14,23 @@ import {
   type ListFavoritesParams,
 } from '@/api/favoriteService'
 import type { PaginatedApiResponse } from '@/api/client'
+import { useSettingsStore } from '@/stores/settings'
+import { resolvePreferredPageSize } from '@/composables/usePreferredPageSize'
 
 export const useFavoritesStore = defineStore('favorites', () => {
+  const settingsStore = useSettingsStore()
   const items = ref<FavoriteResponse[]>([])
   const folders = ref<FavoriteFolder[]>([])
   const tags = ref<FavoriteTagStats[]>([])
   const total = ref(0)
   const page = ref(1)
-  const pageSize = ref(20)
+  const pageSize = computed(() =>
+    resolvePreferredPageSize(settingsStore.settings.postsPerPage, {
+      fallback: 20,
+      min: 10,
+      max: 100,
+    })
+  )
   const totalPages = ref(0)
   const isLoading = ref(false)
   const error = ref<string | null>(null)
@@ -224,6 +233,12 @@ export const useFavoritesStore = defineStore('favorites', () => {
     currentSort.value = undefined
     currentSortOrder.value = undefined
   }
+
+  watch(pageSize, (nextPageSize, previousPageSize) => {
+    if (nextPageSize === previousPageSize) return
+    if (items.value.length === 0) return
+    void fetchFavorites(true)
+  })
 
   return {
     items,

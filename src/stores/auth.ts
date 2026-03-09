@@ -14,7 +14,12 @@ import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import { useRouter } from 'vue-router'
 import { authService, ApiError } from '@/api'
-import type { UserResponse } from '@/api'
+import type {
+  AuthResponse,
+  RiskVerificationChallengeResponse,
+  TwoFactorRequiredResponse,
+  UserResponse,
+} from '@/api'
 import { getDeviceInfo } from '@/utils/device'
 import { secureTokenManager } from '@/utils/tokenSecurity'
 
@@ -58,6 +63,43 @@ export const useAuthStore = defineStore(
     function abortFetchCurrentUserRequest() {
       fetchCurrentUserController?.abort()
       fetchCurrentUserController = null
+    }
+
+    function isTwoFactorPendingResponse(response: unknown): response is TwoFactorRequiredResponse {
+      return (
+        !!response &&
+        typeof response === 'object' &&
+        'requires_2fa' in response &&
+        (response as { requires_2fa?: unknown }).requires_2fa === true &&
+        typeof (response as { pending_token?: unknown }).pending_token === 'string'
+      )
+    }
+
+    function isRiskVerificationPendingResponse(
+      response: unknown
+    ): response is RiskVerificationChallengeResponse {
+      return (
+        !!response &&
+        typeof response === 'object' &&
+        'requires_risk_verification' in response &&
+        (response as { requires_risk_verification?: unknown }).requires_risk_verification ===
+          true &&
+        typeof (response as { pending_token?: unknown }).pending_token === 'string'
+      )
+    }
+
+    async function establishSession(response: AuthResponse) {
+      user.value = response.user
+      token.value = response.access_token
+      refreshToken.value = response.refresh_token ?? null
+
+      await secureTokenManager.store(response.access_token)
+
+      if (response.refresh_threshold) {
+        heartbeatInterval = response.refresh_threshold * 1000
+      }
+      startHeartbeat()
+      deferProfileRefresh()
     }
 
     /**
@@ -130,34 +172,25 @@ export const useAuthStore = defineStore(
           ...(turnstileToken ? { turnstile_token: turnstileToken } : {}),
         })
 
-        // 2FA 验证流程：后端返回 pending_token 而非完整登录响应
-        const maybeRequires2fa = response as unknown as {
-          requires_2fa?: boolean
-          pending_token?: string
-        }
-        if (maybeRequires2fa.requires_2fa && maybeRequires2fa.pending_token) {
+        if (isTwoFactorPendingResponse(response)) {
           return {
             success: false,
             requires2fa: true,
-            pendingToken: maybeRequires2fa.pending_token,
+            pendingToken: response.pending_token,
           }
         }
 
-        user.value = response.user
-        token.value = response.access_token
-        refreshToken.value = response.refresh_token ?? null
-
-        // 安全存储 token（加密 + 设备绑定）
-        await secureTokenManager.store(response.access_token)
-
-        // 使用后端返回的刷新阈值，或使用默认值
-        if (response.refresh_threshold) {
-          heartbeatInterval = response.refresh_threshold * 1000
+        if (isRiskVerificationPendingResponse(response)) {
+          return {
+            success: false,
+            requiresRiskVerification: true,
+            pendingToken: response.pending_token,
+            challengeType: response.challenge_type ?? 'email_code',
+            expiresIn: response.expires_in,
+          }
         }
-        startHeartbeat()
 
-        // 登录成功后获取完整的用户资料（包含 avatar_url 等字段）
-        deferProfileRefresh()
+        await establishSession(response)
 
         return {
           success: true,
@@ -193,23 +226,59 @@ export const useAuthStore = defineStore(
           deviceInfo.device_type
         )
 
-        user.value = response.user
-        token.value = response.access_token
-        refreshToken.value = response.refresh_token ?? null
-
-        await secureTokenManager.store(response.access_token)
-
-        if (response.refresh_threshold) {
-          heartbeatInterval = response.refresh_threshold * 1000
+        if (isRiskVerificationPendingResponse(response)) {
+          return {
+            success: false,
+            requiresRiskVerification: true,
+            pendingToken: response.pending_token,
+            challengeType: response.challenge_type ?? 'email_code',
+            expiresIn: response.expires_in,
+          }
         }
-        startHeartbeat()
 
-        deferProfileRefresh()
+        await establishSession(response)
 
         return { success: true, user: response.user }
       } catch (err) {
         const errorMessage =
           err instanceof ApiError ? getAuthErrorKey(err.status, err.code) : 'auth.error.loginFailed'
+        error.value = errorMessage
+        return { success: false, error: errorMessage }
+      } finally {
+        isLoading.value = false
+      }
+    }
+
+    /**
+     * 完成高风险登录确认
+     */
+    async function verifyRiskLogin(pendingToken: string, code: string) {
+      if (isLoading.value) return { success: false, error: 'auth.error.inProgress' }
+
+      isLoading.value = true
+      error.value = null
+
+      try {
+        const deviceInfo = getDeviceInfo()
+        const response = await authService.verifyRiskLogin(
+          pendingToken,
+          code,
+          deviceInfo.device_name,
+          deviceInfo.device_type
+        )
+
+        await establishSession(response)
+
+        return { success: true, user: response.user }
+      } catch (err) {
+        let errorMessage = 'auth.error.loginFailed'
+        if (err instanceof ApiError) {
+          if (err.status === 400 || err.status === 401 || err.status === 422) {
+            errorMessage = 'auth.error.riskVerificationInvalid'
+          } else {
+            errorMessage = getAuthErrorKey(err.status, err.code)
+          }
+        }
         error.value = errorMessage
         return { success: false, error: errorMessage }
       } finally {
@@ -666,6 +735,7 @@ export const useAuthStore = defineStore(
       isAuthenticated,
       login,
       verify2faLogin,
+      verifyRiskLogin,
       register,
       logout,
       fetchCurrentUser,

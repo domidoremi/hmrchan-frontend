@@ -6,7 +6,8 @@
  */
 
 import { apiClient } from './client'
-import type { AuthResponse } from './authService'
+import type { AuthResponse, RiskVerificationChallengeResponse } from './authService'
+import { ensureVerificationToken } from './verificationBridge'
 
 // ========== 类型定义 ==========
 
@@ -61,7 +62,13 @@ export const twoFactorService = {
    * 初始化 TOTP（生成密钥和 QR 码）
    */
   async setup(): Promise<TwoFactorSetupResponse> {
-    return apiClient.post<TwoFactorSetupResponse>('/2fa/setup')
+    const verificationToken = await ensureVerificationToken('update_security_settings')
+    return apiClient.post<TwoFactorSetupResponse>('/2fa/setup', null, {
+      headers: {
+        'X-Verification-Token': verificationToken,
+      },
+      skipErrorToast: true,
+    })
   },
 
   /**
@@ -81,7 +88,16 @@ export const twoFactorService = {
    * 禁用 2FA（需提供 TOTP code 和密码）
    */
   async disable(code: string, password: string): Promise<{ success: boolean; message: string }> {
-    return apiClient.post('/2fa/disable', { code, password })
+    const verificationToken = await ensureVerificationToken('update_security_settings', {
+      password,
+    })
+    return apiClient.post(
+      '/2fa/disable',
+      { code, password, verification_token: verificationToken },
+      {
+        skipErrorToast: true,
+      }
+    )
   },
 
   /**
@@ -93,7 +109,7 @@ export const twoFactorService = {
     code: string,
     deviceName?: string,
     deviceType?: string
-  ): Promise<AuthResponse> {
+  ): Promise<AuthResponse | RiskVerificationChallengeResponse> {
     return apiClient.post('/2fa/verify-login', {
       pending_token: pendingToken,
       code,
@@ -106,6 +122,13 @@ export const twoFactorService = {
    * 重新生成备份码（需要 TOTP 码验证）
    */
   async regenerateBackupCodes(code: string): Promise<BackupCodesResponse> {
-    return apiClient.post<BackupCodesResponse>('/2fa/regenerate-backup-codes', { code })
+    const verificationToken = await ensureVerificationToken('update_security_settings')
+    return apiClient.post<BackupCodesResponse>(
+      '/2fa/regenerate-backup-codes',
+      { code, verification_token: verificationToken },
+      {
+        skipErrorToast: true,
+      }
+    )
   },
 }

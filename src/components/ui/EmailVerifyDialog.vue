@@ -85,6 +85,8 @@ interface Props {
   targetEmail?: string | undefined
   /** Current password (required for sending code) */
   password?: string | undefined
+  /** Sensitive action verification token */
+  verificationToken?: string | undefined
   /** New password (required for change_password verification) */
   newPassword?: string | undefined
   /** Auto-send code when dialog opens */
@@ -186,6 +188,9 @@ async function sendCode() {
 
   try {
     const payload: SendEmailCodeRequest = { action: props.action }
+    if (props.verificationToken) {
+      payload.verification_token = props.verificationToken
+    }
     if (props.action === 'change_password' && props.password) {
       payload.password = props.password
     } else if (props.action === 'change_email' && props.password && props.targetEmail) {
@@ -241,6 +246,7 @@ async function verifyCode() {
       {
         action: props.action,
         verification_code: currentCode.value,
+        ...(props.verificationToken ? { verification_token: props.verificationToken } : {}),
         ...(props.action === 'change_password' && props.newPassword
           ? { new_password: props.newPassword }
           : {}),
