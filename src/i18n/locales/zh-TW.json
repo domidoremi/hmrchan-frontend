@@ -423,6 +423,7 @@
       "invalidTimestamp": "請求時間戳異常，請檢查系統時間",
       "requestExpired": "請求已過期，請重試",
       "accessRestricted": "存取受限，請稍後再試",
+      "turnstileFailed": "人機驗證失敗，請重試",
       "challengeRequired": "需要完成人機驗證",
       "invalidFingerprint": "裝置指紋驗證失敗，請重新整理頁面",
       "permissionDenied": "沒有權限執行此操作",

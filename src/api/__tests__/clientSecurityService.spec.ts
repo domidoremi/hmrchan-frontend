@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { RequestConfig } from '../client'
 
 const {
+  MockApiError,
   mockApiClient,
   mockRequestClientChallenge,
   mockGetDeviceFingerprint,
@@ -10,6 +11,19 @@ const {
   mockGetRandomHex,
   mockHmacSha256,
 } = vi.hoisted(() => ({
+  MockApiError: class ApiError extends Error {
+    status: number
+    code: string | undefined
+    details: Record<string, unknown> | undefined
+
+    constructor(message: string, status: number, code?: string, details?: Record<string, unknown>) {
+      super(message)
+      this.name = 'ApiError'
+      this.status = status
+      this.code = code
+      this.details = details
+    }
+  },
   mockApiClient: {
     post: vi.fn(),
     get: vi.fn(),
@@ -23,6 +37,7 @@ const {
 }))
 
 vi.mock('../client', () => ({
+  ApiError: MockApiError,
   apiClient: mockApiClient,
 }))
 
@@ -44,7 +59,7 @@ vi.mock('@/utils/crypto', () => ({
   hmacSha256: mockHmacSha256,
 }))
 
-import { clientSecurityService } from '../clientSecurityService'
+import { clientSecurityManager, clientSecurityService } from '../clientSecurityService'
 
 describe('clientSecurityService', () => {
   beforeEach(() => {
@@ -117,5 +132,63 @@ describe('clientSecurityService', () => {
 
     const config = mockApiClient.get.mock.calls[0]?.[1] as RequestConfig | undefined
     expect(config?.skipSecurity).not.toBe(true)
+  })
+
+  it('stores client token even when init response omits client secret', async () => {
+    mockApiClient.post.mockResolvedValueOnce({
+      client_token: 'token-only',
+      trust_level: 'untrusted',
+      challenge_required: true,
+    })
+
+    await clientSecurityService.init()
+
+    expect(clientSecurityManager.getClientToken()).toBe('token-only')
+    expect(clientSecurityManager.isInitialized()).toBe(true)
+  })
+
+  it('re-initializes once when verify fails due to missing client token', async () => {
+    mockApiClient.post
+      .mockRejectedValueOnce(
+        new MockApiError('客户端凭证无效，请刷新页面', 400, undefined, {
+          rawMessage: 'missing client token',
+        })
+      )
+      .mockResolvedValueOnce({
+        client_token: 'reissued-token',
+        client_secret: 'reissued-secret',
+        trust_level: 'untrusted',
+        challenge_required: true,
+      })
+      .mockResolvedValueOnce({
+        success: true,
+        trust_level: 'basic',
+      })
+
+    const result = await clientSecurityService.verify('turnstile-token')
+
+    expect(result).toEqual({
+      success: true,
+      trust_level: 'basic',
+    })
+    expect(mockApiClient.post).toHaveBeenNthCalledWith(
+      2,
+      '/client/init',
+      expect.objectContaining({
+        force_reissue: true,
+      }),
+      expect.objectContaining({
+        skipSecurity: true,
+      })
+    )
+    expect(mockApiClient.post).toHaveBeenNthCalledWith(
+      3,
+      '/client/verify',
+      { turnstile_token: 'turnstile-token' },
+      expect.objectContaining({
+        skipAuth: true,
+        skipErrorToast: true,
+      })
+    )
   })
 })

@@ -447,6 +447,7 @@
       "invalidTimestamp": "リクエストのタイムスタンプが異常です。システム時刻を確認してください",
       "requestExpired": "リクエストの有効期限が切れました。もう一度お試しください",
       "accessRestricted": "アクセスが一時的に制限されています。しばらくしてからお試しください",
+      "turnstileFailed": "認証に失敗しました。もう一度お試しください",
       "challengeRequired": "認証が必要です",
       "invalidFingerprint": "デバイス認証に失敗しました。ページを更新してください",
       "permissionDenied": "この操作を実行する権限がありません",

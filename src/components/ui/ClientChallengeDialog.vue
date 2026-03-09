@@ -30,6 +30,15 @@
     </div>
 
     <template #footer>
+      <Button
+        v-if="errorMessage"
+        variant="secondary"
+        size="sm"
+        :disabled="isSubmitting"
+        @click="handleRetry"
+      >
+        {{ $t('common.retry') }}
+      </Button>
       <Button variant="ghost" size="sm" :disabled="isSubmitting" @click="handleCancel">
         {{ $t('common.cancel') }}
       </Button>
@@ -114,7 +123,6 @@ async function handleTurnstileVerify(token: string) {
     resolveClientChallenge()
   } catch (error) {
     errorMessage.value = error instanceof ApiError ? error.message : t('auth.error.turnstileFailed')
-    turnstileRef.value?.reset()
   } finally {
     isSubmitting.value = false
   }
@@ -126,6 +134,12 @@ function handleTurnstileExpire() {
 
 function handleTurnstileError(error?: Error) {
   errorMessage.value = t(getTurnstileErrorMessageKey(error))
+}
+
+function handleRetry() {
+  if (isSubmitting.value) return
+  errorMessage.value = ''
+  turnstileRef.value?.reset()
 }
 
 function handleCancel() {
