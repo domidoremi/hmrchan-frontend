@@ -33,7 +33,7 @@
               <AnimatedIcon name="explore" :fallback-icon="Share2" size="sm" />
               <span>{{ $t('comment.share') }}</span>
             </button>
-            <button type="button" class="menu-item" @click="handleReport">
+            <button type="button" class="menu-item" @click="openReportDialog">
               <AnimatedIcon name="sparkle" :fallback-icon="Flag" size="sm" />
               <span>{{ $t('comment.report') }}</span>
             </button>
@@ -154,6 +154,30 @@
       variant="danger"
       @confirm="confirmDelete"
     />
+
+    <Dialog v-model:isOpen="showReportDialog" :title="$t('comment.reportTitle')" size="sm">
+      <div class="report-form">
+        <label class="report-label">{{ $t('comment.reportReasonLabel') }}</label>
+        <Select v-model="reportReason" size="sm">
+          <option value="spam">{{ $t('comment.reportReason.spam') }}</option>
+          <option value="harassment">{{ $t('comment.reportReason.harassment') }}</option>
+          <option value="inappropriate">{{ $t('comment.reportReason.inappropriate') }}</option>
+          <option value="other">{{ $t('comment.reportReason.other') }}</option>
+        </Select>
+
+        <label class="report-label">{{ $t('comment.reportDescriptionLabel') }}</label>
+        <Textarea v-model="reportDescription" size="sm" :maxlength="200" />
+      </div>
+
+      <template #footer>
+        <Button variant="ghost" size="sm" @click="showReportDialog = false">
+          {{ $t('common.cancel') }}
+        </Button>
+        <Button size="sm" :loading="isSubmittingReport" @click="submitReport">
+          {{ $t('comment.reportSubmit') }}
+        </Button>
+      </template>
+    </Dialog>
   </article>
 </template>
 
@@ -179,6 +203,10 @@ import { formatRelativeTime } from '@/utils/date'
 import CommentForm from './CommentForm.vue'
 import { commentTreeContextKey } from './commentTreeContext'
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
+import Dialog from '@/components/ui/Dialog.vue'
+import Button from '@/components/ui/Button.vue'
+import Textarea from '@/components/ui/Textarea.vue'
+import Select from '@/components/ui/Select.vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import Badge from '@/components/ui/Badge.vue'
 
@@ -221,6 +249,10 @@ const showReplyForm = ref(false)
 const showReplies = ref(false)
 const isLoadingReplies = ref(false)
 const showDeleteDialog = ref(false)
+const showReportDialog = ref(false)
+const isSubmittingReport = ref(false)
+const reportReason = ref('spam')
+const reportDescription = ref('')
 const replyFormRef = useTemplateRef<InstanceType<typeof CommentForm>>('replyFormRef')
 let fetchRepliesController: AbortController | null = null
 let fetchRepliesToken = 0
@@ -385,11 +417,34 @@ function handleShare() {
   toastStore.success(t('comment.shareSuccess'))
 }
 
-function handleReport() {
+function openReportDialog() {
   showMenu.value = false
-  // NOTE: 举报功能待后端 API 支持 (POST /api/v1/reports)
-  // 当前显示反馈提示，后续接入真实举报流程
-  toastStore.info(t('comment.reportSubmitted'))
+  showReportDialog.value = true
+}
+
+async function submitReport() {
+  if (!reportReason.value) return
+
+  isSubmittingReport.value = true
+  try {
+    const result = await commentsStore.reportComment(
+      String(props.comment.id),
+      reportReason.value,
+      reportDescription.value || undefined
+    )
+
+    if (!result.success) {
+      toastStore.error(t(result.error || 'comment.error.reportFailed'))
+      return
+    }
+
+    toastStore.success(t('comment.reportSubmitted'))
+    showReportDialog.value = false
+    reportReason.value = 'spam'
+    reportDescription.value = ''
+  } finally {
+    isSubmittingReport.value = false
+  }
 }
 
 // 点击外部关闭菜单
@@ -649,6 +704,17 @@ onUnmounted(() => {
   flex-direction: column;
   gap: var(--spacing-2);
   margin-top: var(--spacing-2);
+}
+
+.report-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+}
+
+.report-label {
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
 }
 
 /* ========== 响应式 ========== */

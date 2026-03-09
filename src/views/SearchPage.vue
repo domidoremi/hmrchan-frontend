@@ -231,6 +231,141 @@
           </div>
         </div>
 
+        <section v-if="isAuthenticated" class="search-history-section glass-card">
+          <div class="search-history-header">
+            <div>
+              <h2 class="search-history-title">{{ $t('search.history') }}</h2>
+              <p class="search-history-hint">{{ $t('search.historyHint') }}</p>
+            </div>
+
+            <div class="search-history-actions">
+              <button
+                type="button"
+                class="glass-button search-history-action"
+                :disabled="isHistoryLoading || isHistoryMutating"
+                @click="fetchSearchInsights"
+              >
+                <AnimatedIcon name="loading" :fallback-icon="RotateCcw" size="sm" />
+                {{ $t('common.refresh') }}
+              </button>
+              <button
+                v-if="searchHistory.length > 0"
+                type="button"
+                class="glass-button search-history-action"
+                :disabled="isHistoryMutating"
+                @click="clearSearchHistory"
+              >
+                <AnimatedIcon name="sparkle" :fallback-icon="Trash2" size="sm" />
+                {{ $t('search.clearHistory') }}
+              </button>
+            </div>
+          </div>
+
+          <StateIndicator
+            v-if="historyError"
+            variant="error"
+            :description="historyError"
+            @action="fetchSearchInsights"
+          />
+
+          <div v-else class="search-history-layout">
+            <section class="search-history-panel">
+              <div class="search-history-panel__header">
+                <AnimatedIcon name="explore" :fallback-icon="History" size="sm" />
+                <h3>{{ $t('search.recentSearches') }}</h3>
+              </div>
+
+              <div v-if="isHistoryLoading" class="search-history-list search-history-list--loading">
+                <div
+                  v-for="item in 4"
+                  :key="`history-skeleton-${item}`"
+                  class="search-history-item search-history-item--skeleton"
+                >
+                  <Skeleton width="50%" height="14px" />
+                  <Skeleton width="25%" height="12px" />
+                </div>
+              </div>
+
+              <StateIndicator
+                v-else-if="searchHistory.length === 0"
+                variant="empty"
+                :description="$t('search.historyEmpty')"
+              />
+
+              <div v-else class="search-history-list">
+                <article v-for="item in searchHistory" :key="item.id" class="search-history-item">
+                  <button
+                    type="button"
+                    class="search-history-item__main"
+                    @click="runSearch(item.query)"
+                  >
+                    <span class="search-history-item__query">{{ item.query }}</span>
+                    <span class="search-history-item__meta">
+                      {{ formatHistoryTime(item.created_at) }}
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    class="search-history-item__delete"
+                    :aria-label="$t('search.deleteHistoryItem')"
+                    :title="$t('search.deleteHistoryItem')"
+                    @click="deleteSearchHistoryItem(item.id)"
+                  >
+                    <AnimatedIcon name="sparkle" :fallback-icon="Trash2" size="sm" />
+                  </button>
+                </article>
+              </div>
+            </section>
+
+            <section class="search-history-panel">
+              <div class="search-history-panel__header">
+                <AnimatedIcon name="sparkle" :fallback-icon="BarChart3" size="sm" />
+                <h3>{{ $t('search.searchStats') }}</h3>
+              </div>
+
+              <div class="search-history-stats">
+                <article class="search-history-stat glass-card">
+                  <span class="search-history-stat__value">
+                    {{ searchStats?.search_history_count ?? 0 }}
+                  </span>
+                  <span class="search-history-stat__label">
+                    {{ $t('search.searchHistoryCount') }}
+                  </span>
+                </article>
+                <article class="search-history-stat glass-card">
+                  <span class="search-history-stat__value">
+                    {{ searchStats?.browsing_history_count ?? 0 }}
+                  </span>
+                  <span class="search-history-stat__label">
+                    {{ $t('search.browsingHistoryCount') }}
+                  </span>
+                </article>
+              </div>
+
+              <div class="search-history-trending">
+                <h4>{{ $t('search.topSearches') }}</h4>
+                <div v-if="topSearchQueries.length" class="search-history-tags">
+                  <button
+                    v-for="item in topSearchQueries"
+                    :key="item.query"
+                    type="button"
+                    class="search-history-tag"
+                    @click="runSearch(item.query)"
+                  >
+                    <span>#{{ item.query }}</span>
+                    <span v-if="item.count" class="search-history-tag__count">{{
+                      item.count
+                    }}</span>
+                  </button>
+                </div>
+                <p v-else class="search-history-empty-copy">
+                  {{ $t('search.topSearchesEmpty') }}
+                </p>
+              </div>
+            </section>
+          </div>
+        </section>
+
         <section class="discover-section">
           <div class="discover-header">
             <div>
@@ -289,12 +424,26 @@ import { ref, computed, markRaw, watch, onMounted, onBeforeUnmount, onWatcherCle
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
-import { FileText, User, Globe, LogIn, ArrowUpDown, ArrowLeft, RotateCcw } from 'lucide-vue-next'
+import {
+  FileText,
+  User,
+  Globe,
+  LogIn,
+  ArrowUpDown,
+  ArrowLeft,
+  RotateCcw,
+  History,
+  BarChart3,
+  Trash2,
+} from 'lucide-vue-next'
 import { IconYoutube, IconX, IconTiktok, IconInstagram } from '@/components/icons'
 import { searchService, postService, type PostListItem, type AuthorListItem } from '@/api'
+import { historyService, type HistoryStats, type SearchHistoryItem } from '@/api/historyService'
 import { normalizeAvatarUrl } from '@/api/userService'
 import { useDebouncedRef } from '@/composables/useDebouncedRef'
-import { useAuthStore } from '@/stores'
+import { usePreferredPageSize } from '@/composables/usePreferredPageSize'
+import { useAuthStore, useToastStore } from '@/stores'
+import { formatRelativeTime } from '@/utils/date'
 import { storePostNavigationContext } from '@/utils/postNavigation'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import SearchBar from '@/components/business/SearchBar.vue'
@@ -308,6 +457,7 @@ const route = useRoute()
 const router = useRouter()
 const { t } = useI18n()
 const authStore = useAuthStore()
+const toastStore = useToastStore()
 const { isAuthenticated } = storeToRefs(authStore)
 
 const query = computed(() => (route.query['q'] as string) || '')
@@ -325,28 +475,53 @@ let hasInitializedSearchControlWatcher = false
 const results = ref<PostListItem[]>([])
 const discoverPosts = ref<PostListItem[]>([])
 const authors = ref<AuthorListItem[]>([])
+const searchHistory = ref<SearchHistoryItem[]>([])
+const searchStats = ref<HistoryStats | null>(null)
 const total = ref(0)
 const authorTotal = ref(0)
 const page = ref(1)
-const pageSize = 20
-const discoverPageSize = 12
+const pageSize = usePreferredPageSize({ fallback: 20, min: 10, max: 50, mobileCap: 20 })
+const discoverPageSize = computed(() => Math.min(12, Math.max(6, pageSize.value)))
+const authorPageSize = computed(() => Math.min(pageSize.value, 20))
 
 const isLoading = ref(false)
 const isLoadingMore = ref(false)
 const isLoadingAuthors = ref(false)
 const isDiscoverLoading = ref(false)
+const isHistoryLoading = ref(false)
+const isHistoryMutating = ref(false)
 const error = ref<string | null>(null)
 const authorError = ref<string | null>(null)
 const discoverError = ref<string | null>(null)
+const historyError = ref<string | null>(null)
 let discoverRequestToken = 0
 let postsRequestToken = 0
 let authorRequestToken = 0
+let historyRequestToken = 0
 let discoverController: AbortController | null = null
 let postsSearchController: AbortController | null = null
 let postsLoadMoreController: AbortController | null = null
 let authorsSearchController: AbortController | null = null
+let lastRecordedSearchKey = ''
 
 const hasMore = computed(() => results.value.length < total.value)
+const topSearchQueries = computed(() => {
+  const combined = new Map<string, number>()
+
+  for (const item of searchStats.value?.top_searches ?? []) {
+    combined.set(item.query, item.count)
+  }
+
+  for (const item of searchHistory.value) {
+    if (!combined.has(item.query)) {
+      combined.set(item.query, 0)
+    }
+  }
+
+  return Array.from(combined.entries())
+    .map(([queryText, count]) => ({ query: queryText, count }))
+    .slice(0, 5)
+})
 
 // 检查是否可能有更多结果（未登录用户每平台限制15条）
 const mayHaveMoreResults = computed(() => {
@@ -468,7 +643,7 @@ async function fetchDiscoverPosts(signal?: AbortSignal) {
     const res = await postService.listPosts(
       {
         page: 1,
-        page_size: discoverPageSize,
+        page_size: discoverPageSize.value,
         sort_by: 'published_at',
         sort_order: 'desc',
         thumbnail_quality: getThumbnailQuality(),
@@ -513,7 +688,7 @@ async function search(signal?: AbortSignal) {
       {
         q: query.value,
         page: 1,
-        page_size: pageSize,
+        page_size: pageSize.value,
         sort_by: sortBy.value,
         sort_order: sortOrder.value,
         thumbnail_quality: getThumbnailQuality(),
@@ -524,6 +699,7 @@ async function search(signal?: AbortSignal) {
     if (requestSignal?.aborted || requestToken !== postsRequestToken) return
     results.value = res.items
     total.value = res.total
+    recordSearchHistory(res.total)
   } catch (err) {
     if (requestSignal?.aborted || isAbortError(err) || requestToken !== postsRequestToken) return
     error.value = t('common.error')
@@ -555,7 +731,7 @@ async function loadMore() {
       {
         q: query.value,
         page: nextPage,
-        page_size: pageSize,
+        page_size: pageSize.value,
         sort_by: sortBy.value,
         sort_order: sortOrder.value,
         thumbnail_quality: getThumbnailQuality(),
@@ -598,7 +774,7 @@ async function searchAuthors(signal?: AbortSignal) {
       {
         q: query.value,
         page: 1,
-        page_size: 20,
+        page_size: authorPageSize.value,
       },
       requestSignal ? { signal: requestSignal } : undefined
     )
@@ -637,6 +813,104 @@ function goToLogin() {
   router.push({ path: '/login', query: { redirect: route.fullPath } })
 }
 
+function formatHistoryTime(value: string) {
+  return formatRelativeTime(value, t)
+}
+
+function runSearch(queryText: string) {
+  void router.push({ name: 'search', query: { q: queryText } })
+}
+
+function buildSearchRecordKey() {
+  return query.value.trim().toLowerCase()
+}
+
+function recordSearchHistory(resultCount: number) {
+  if (!isAuthenticated.value) return
+
+  const normalizedQuery = buildSearchRecordKey()
+  if (!normalizedQuery || normalizedQuery === lastRecordedSearchKey) {
+    return
+  }
+
+  const filters: Record<string, unknown> = {
+    tab: activeTab.value,
+    sort_by: sortBy.value,
+    sort_order: sortOrder.value,
+  }
+
+  if (currentPlatform.value !== 'all') {
+    filters['platform'] = currentPlatform.value
+  }
+
+  lastRecordedSearchKey = normalizedQuery
+  void historyService
+    .recordSearch(query.value.trim(), activeTab.value, resultCount, filters)
+    .catch(() => {
+      if (lastRecordedSearchKey === normalizedQuery) {
+        lastRecordedSearchKey = ''
+      }
+    })
+}
+
+async function fetchSearchInsights() {
+  if (!isAuthenticated.value || query.value) return
+
+  const requestToken = ++historyRequestToken
+  isHistoryLoading.value = true
+  historyError.value = null
+
+  try {
+    const [historyResponse, statsResponse] = await Promise.all([
+      historyService.getSearchHistory(pageSize.value, 0),
+      historyService.getStats(),
+    ])
+
+    if (requestToken !== historyRequestToken) return
+    searchHistory.value = historyResponse.items
+    searchStats.value = statsResponse
+  } catch {
+    if (requestToken !== historyRequestToken) return
+    searchHistory.value = []
+    searchStats.value = null
+    historyError.value = t('search.historyLoadFailed')
+  } finally {
+    if (requestToken === historyRequestToken) {
+      isHistoryLoading.value = false
+    }
+  }
+}
+
+async function deleteSearchHistoryItem(historyId: string) {
+  if (isHistoryMutating.value) return
+
+  isHistoryMutating.value = true
+  try {
+    await historyService.deleteSearchHistory(historyId)
+    await fetchSearchInsights()
+  } catch {
+    toastStore.error(t('common.error'))
+  } finally {
+    isHistoryMutating.value = false
+  }
+}
+
+async function clearSearchHistory() {
+  if (isHistoryMutating.value) return
+
+  isHistoryMutating.value = true
+  try {
+    await historyService.clearSearchHistory()
+    searchHistory.value = []
+    await fetchSearchInsights()
+    toastStore.success(t('search.historyCleared'))
+  } catch {
+    toastStore.error(t('common.error'))
+  } finally {
+    isHistoryMutating.value = false
+  }
+}
+
 function getPostMemo(post: PostListItem) {
   return [
     post.id,
@@ -660,6 +934,7 @@ function getAuthorMemo(author: AuthorListItem) {
 }
 
 watch(query, (nextQuery) => {
+  lastRecordedSearchKey = ''
   const controller = new AbortController()
   onWatcherCleanup(() => controller.abort())
   abortPostsLoadMoreRequest()
@@ -685,6 +960,7 @@ watch(query, (nextQuery) => {
     authorTotal.value = 0
     activeTab.value = 'posts'
     void fetchDiscoverPosts(controller.signal)
+    void fetchSearchInsights()
   }
 })
 
@@ -708,12 +984,44 @@ watch(activeTab, (tab) => {
   }
 })
 
+watch(pageSize, () => {
+  const controller = new AbortController()
+  onWatcherCleanup(() => controller.abort())
+
+  if (query.value) {
+    void search(controller.signal)
+    if (activeTab.value === 'authors') {
+      void searchAuthors(controller.signal)
+    }
+    return
+  }
+
+  void fetchDiscoverPosts(controller.signal)
+  void fetchSearchInsights()
+})
+
+watch(isAuthenticated, (authenticated) => {
+  if (!authenticated) {
+    searchHistory.value = []
+    searchStats.value = null
+    historyError.value = null
+    return
+  }
+
+  if (!query.value) {
+    void fetchSearchInsights()
+  }
+})
+
 onMounted(() => {
   if (query.value) {
     search()
     searchAuthors()
   } else {
     fetchDiscoverPosts()
+    if (isAuthenticated.value) {
+      void fetchSearchInsights()
+    }
   }
 })
 
@@ -730,6 +1038,7 @@ onBeforeUnmount(() => {
   isLoadingMore.value = false
   isLoadingAuthors.value = false
   isDiscoverLoading.value = false
+  isHistoryLoading.value = false
 })
 </script>
 
@@ -1354,6 +1663,185 @@ onBeforeUnmount(() => {
   margin-bottom: 0;
 }
 
+.search-history-section {
+  width: min(100%, var(--container-max-fluid));
+  display: grid;
+  gap: var(--spacing-4);
+  padding: clamp(1rem, 2vw, 1.5rem);
+  text-align: left;
+}
+
+.search-history-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--spacing-3);
+  flex-wrap: wrap;
+}
+
+.search-history-title {
+  margin: 0;
+  font-size: var(--text-lg);
+}
+
+.search-history-hint {
+  margin: var(--spacing-1) 0 0;
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
+.search-history-actions {
+  display: flex;
+  gap: var(--spacing-2);
+  flex-wrap: wrap;
+}
+
+.search-history-action {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-2);
+}
+
+.search-history-layout {
+  display: grid;
+  gap: var(--spacing-3);
+}
+
+.search-history-panel {
+  display: grid;
+  gap: var(--spacing-3);
+  padding: clamp(0.875rem, 2vw, 1rem);
+  border-radius: var(--radius-xl);
+  background: var(--glass-bg-subtle);
+  border: 1px solid var(--glass-border);
+}
+
+.search-history-panel__header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+}
+
+.search-history-panel__header h3,
+.search-history-trending h4 {
+  margin: 0;
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+}
+
+.search-history-list {
+  display: grid;
+  gap: var(--spacing-2);
+}
+
+.search-history-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  padding: var(--spacing-2) var(--spacing-3);
+  border-radius: var(--radius-lg);
+  background: var(--glass-bg-light);
+  border: 1px solid var(--glass-border);
+}
+
+.search-history-item--skeleton {
+  justify-content: space-between;
+}
+
+.search-history-item__main {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 0.125rem;
+  text-align: left;
+}
+
+.search-history-item__query {
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  color: var(--color-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.search-history-item__meta {
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+}
+
+.search-history-item__delete {
+  width: 1.75rem;
+  height: 1.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  color: var(--color-text-tertiary);
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast);
+}
+
+.search-history-item__delete:hover {
+  background: rgba(var(--color-error-rgb, 239, 68, 68), 0.1);
+  color: var(--color-error);
+}
+
+.search-history-stats {
+  display: grid;
+  gap: var(--spacing-2);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.search-history-stat {
+  display: grid;
+  gap: 0.25rem;
+  padding: var(--spacing-3);
+}
+
+.search-history-stat__value {
+  font-size: clamp(1.125rem, 3vw, 1.5rem);
+  font-weight: var(--font-bold);
+}
+
+.search-history-stat__label {
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+}
+
+.search-history-trending {
+  display: grid;
+  gap: var(--spacing-2);
+}
+
+.search-history-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-2);
+}
+
+.search-history-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  padding: 0.375rem 0.75rem;
+  border-radius: var(--radius-full);
+  background: rgba(var(--color-primary-rgb), 0.08);
+  color: var(--color-primary);
+  font-size: var(--text-xs);
+}
+
+.search-history-tag__count {
+  color: var(--color-text-secondary);
+}
+
+.search-history-empty-copy {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
 .discover-section {
   width: 100%;
 }
@@ -1413,6 +1901,16 @@ onBeforeUnmount(() => {
 
   .sort-select {
     flex: 1;
+  }
+
+  .search-history-stats {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (min-width: 960px) {
+  .search-history-layout {
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
   }
 }
 </style>

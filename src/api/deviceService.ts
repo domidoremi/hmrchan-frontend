@@ -6,6 +6,7 @@
  */
 
 import { apiClient, type RequestConfig } from './client'
+import { ensureVerificationToken } from './verificationBridge'
 
 // ========== 请求/响应类型 ==========
 
@@ -68,7 +69,12 @@ export const deviceService = {
    * 注销指定设备
    */
   async revokeDevice(deviceId: number): Promise<void> {
-    return apiClient.delete(`/devices/${deviceId}`)
+    const verificationToken = await ensureVerificationToken('revoke_sessions')
+    return apiClient.delete(`/devices/${deviceId}`, {
+      headers: {
+        'X-Verification-Token': verificationToken,
+      },
+    })
   },
 
   /**
@@ -80,7 +86,12 @@ export const deviceService = {
     success: boolean
     revoked_count: number
   }> {
-    return apiClient.delete('/devices')
+    const verificationToken = await ensureVerificationToken('revoke_sessions')
+    return apiClient.delete('/devices', {
+      headers: {
+        'X-Verification-Token': verificationToken,
+      },
+    })
   },
 
   /**

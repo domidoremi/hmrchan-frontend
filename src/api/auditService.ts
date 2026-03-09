@@ -62,7 +62,9 @@ export const auditService = {
     if (params.limit) query.set('limit', String(params.limit))
     if (params.event_type) query.set('event_type', params.event_type)
     const qs = query.toString()
-    return apiClient.get<AuditActivityResponse>(`/audit/my-activity${qs ? `?${qs}` : ''}`)
+    return apiClient.get<AuditActivityResponse>(`/audit/my-activity${qs ? `?${qs}` : ''}`, {
+      skipErrorToast: true,
+    })
   },
 
   /**
@@ -70,6 +72,8 @@ export const auditService = {
    * API: GET /audit/my-security-summary?days=30
    */
   async getMySecuritySummary(days = 30): Promise<SecuritySummary> {
-    return apiClient.get<SecuritySummary>(`/audit/my-security-summary?days=${days}`)
+    return apiClient.get<SecuritySummary>(`/audit/my-security-summary?days=${days}`, {
+      skipErrorToast: true,
+    })
   },
 }

@@ -5,7 +5,7 @@
  * 合约端点: /reports
  */
 
-import { apiClient, type PaginatedApiResponse } from './client'
+import { apiClient, type PaginatedApiResponse, type RequestConfig } from './client'
 
 // ========== 类型定义 ==========
 
@@ -44,9 +44,14 @@ export const reportService = {
   /**
    * 获取我的举报记录（需认证）
    */
-  async getMyReports(page = 1, pageSize = 20): Promise<PaginatedApiResponse<ReportItem>> {
+  async getMyReports(
+    page = 1,
+    pageSize = 20,
+    config?: RequestConfig
+  ): Promise<PaginatedApiResponse<ReportItem>> {
     return apiClient.get<PaginatedApiResponse<ReportItem>>(
-      `/reports/my?page=${page}&page_size=${pageSize}`
+      `/reports/my?page=${page}&page_size=${pageSize}`,
+      config
     )
   },
 }

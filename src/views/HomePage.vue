@@ -175,6 +175,7 @@ import {
   onBeforeUnmount,
   onActivated,
   onDeactivated,
+  watch,
   watchPostEffect,
   watchSyncEffect,
   useTemplateRef,
@@ -190,6 +191,7 @@ import { useCachedPostList } from '@/composables/useCachedPosts'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import { useMasonryColumns } from '@/composables/useMasonryColumns'
 import { useForwardedElementRef } from '@/composables/useForwardedElementRef'
+import { usePreferredPageSize } from '@/composables/usePreferredPageSize'
 import { prefersReducedMotion, throttleRAF } from '@/utils/performance'
 import { createResizeObserver, scheduleTask } from '@/utils/modernAPIs'
 import { isFilteredAuthor } from '@/config/filters'
@@ -233,7 +235,7 @@ const error = ref<string | null>(null)
 
 // Pagination state
 const page = ref(1)
-const pageSize = 20
+const pageSize = usePreferredPageSize({ fallback: 20, min: 10, max: 50, mobileCap: 16 })
 const initialMasonryCount = typeof window !== 'undefined' && window.innerWidth < 640 ? 6 : 12
 
 // 使用缓存感知的帖子列表加载
@@ -426,7 +428,7 @@ async function fetchLatestPosts(reset = true): Promise<boolean> {
 
   const params = {
     page: page.value,
-    page_size: pageSize,
+    page_size: pageSize.value,
     sort_by: 'published_at' as const,
     sort_order: 'desc' as const,
     thumbnail_quality: getResponsiveThumbnailQuality(),
@@ -512,6 +514,11 @@ function openDetailFromPreview(postId: string) {
   isPreviewOpen.value = false
   router.push(`/post/${postId}`)
 }
+
+watch(pageSize, () => {
+  if (posts.value.length === 0 && !isLoading.value) return
+  void fetchLatestPosts(true)
+})
 
 onMounted(() => {
   setupInitialPostsFetchTriggers()

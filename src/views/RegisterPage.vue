@@ -291,6 +291,7 @@ import Input from '@/components/ui/Input.vue'
 import TurnstileWidget from '@/components/ui/TurnstileWidget.vue'
 import EmailCodeInput from '@/components/ui/EmailCodeInput.vue'
 import AuthVisualScene from '@/components/auth/AuthVisualScene.vue'
+import { useTurnstileConfig } from '@/composables/useTurnstileConfig'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -376,8 +377,7 @@ const passwordStrengthText = computed(() => {
 })
 
 // Turnstile
-const turnstileSiteKey = (import.meta.env.VITE_TURNSTILE_SITE_KEY ?? '').trim()
-const turnstileEnabled = turnstileSiteKey.length > 0
+const { turnstileSiteKey, turnstileEnabled } = useTurnstileConfig()
 const turnstileToken = ref<string | null>(null)
 const turnstileIssuedAt = ref<number | null>(null)
 const turnstileRef = useTemplateRef<{ reset: () => void; getResponse: () => string | undefined }>(
@@ -514,7 +514,7 @@ async function handleSendCode() {
     setVisualMood('typing', 900)
     return
   }
-  if (turnstileEnabled && forceTurnstileForSend.value && !isTurnstileTokenFresh()) {
+  if (turnstileEnabled.value && forceTurnstileForSend.value && !isTurnstileTokenFresh()) {
     toastStore.warning(t('auth.error.turnstileRequired'))
     setVisualMood('typing', 900)
     return
@@ -541,7 +541,7 @@ async function handleSendCode() {
     setVisualMood('success', 1100)
     startCooldown()
     forceTurnstileForSend.value = false
-    if (turnstileEnabled) {
+    if (turnstileEnabled.value) {
       turnstileToken.value = null
       turnstileIssuedAt.value = null
       turnstileRef.value?.reset()
@@ -596,7 +596,7 @@ async function handleResendCode() {
     setVisualMood('typing', 900)
     return
   }
-  if (turnstileEnabled && forceTurnstileForSend.value && !isTurnstileTokenFresh()) {
+  if (turnstileEnabled.value && forceTurnstileForSend.value && !isTurnstileTokenFresh()) {
     toastStore.warning(t('auth.error.turnstileRequired'))
     setVisualMood('typing', 900)
     return
@@ -625,7 +625,7 @@ async function handleResendCode() {
     codeInputRef.value?.reset()
     forceTurnstileForSend.value = false
     // 重置 Turnstile token，要求用户重新验证
-    if (turnstileEnabled) {
+    if (turnstileEnabled.value) {
       turnstileToken.value = null
       turnstileIssuedAt.value = null
       turnstileRef.value?.reset()
@@ -633,7 +633,7 @@ async function handleResendCode() {
   } catch (err) {
     if (controller.signal.aborted || requestToken !== registrationCodeRequestToken) return
     // 重置 Turnstile token
-    if (turnstileEnabled) {
+    if (turnstileEnabled.value) {
       turnstileToken.value = null
       turnstileIssuedAt.value = null
       turnstileRef.value?.reset()
@@ -678,7 +678,7 @@ function goBackToEmail() {
   serverPasswordErrors.value = []
   registerToken.value = null
   registerTokenExpiresAt.value = null
-  if (turnstileEnabled) {
+  if (turnstileEnabled.value) {
     turnstileToken.value = null
     turnstileIssuedAt.value = null
     turnstileRef.value?.reset()
@@ -724,7 +724,7 @@ async function handleRegister() {
     return
   }
   const needsTurnstile = !hasValidRegisterToken()
-  if (turnstileEnabled && needsTurnstile && !isTurnstileTokenFresh()) {
+  if (turnstileEnabled.value && needsTurnstile && !isTurnstileTokenFresh()) {
     toastStore.warning(t('auth.error.turnstileRequired'))
     setVisualMood('typing', 1000)
     return
@@ -786,7 +786,7 @@ function handleTurnstileError() {
 }
 
 function isTurnstileTokenFresh() {
-  if (!turnstileEnabled) return true
+  if (!turnstileEnabled.value) return true
   if (!turnstileToken.value || !turnstileIssuedAt.value) return false
   return Date.now() - turnstileIssuedAt.value < 4 * 60 * 1000
 }

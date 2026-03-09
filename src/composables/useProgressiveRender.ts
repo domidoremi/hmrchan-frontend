@@ -13,18 +13,18 @@
 import { computed, ref, toValue, watch, type MaybeRefOrGetter } from 'vue'
 
 export interface UseProgressiveRenderOptions {
-  initialCount?: number
-  batchSize?: number
+  initialCount?: MaybeRefOrGetter<number>
+  batchSize?: MaybeRefOrGetter<number>
 }
 
 export function useProgressiveRender<T>(
   items: MaybeRefOrGetter<T[]>,
   options: UseProgressiveRenderOptions = {}
 ) {
-  const { initialCount = 20, batchSize = 20 } = options
-
   const visibleCount = ref(0)
   const getItems = () => toValue(items)
+  const getInitialCount = () => Math.max(1, Math.round(toValue(options.initialCount ?? 20)))
+  const getBatchSize = () => Math.max(1, Math.round(toValue(options.batchSize ?? 20)))
 
   const visibleItems = computed(() => {
     const source = getItems()
@@ -35,23 +35,28 @@ export function useProgressiveRender<T>(
   const hasMoreToRender = computed(() => visibleCount.value < getItems().length)
 
   function reset() {
-    visibleCount.value = Math.min(initialCount, getItems().length)
+    visibleCount.value = Math.min(getInitialCount(), getItems().length)
   }
 
   function revealNextBatch() {
-    visibleCount.value = Math.min(getItems().length, visibleCount.value + batchSize)
+    visibleCount.value = Math.min(getItems().length, visibleCount.value + getBatchSize())
   }
 
   watch(
-    () => getItems().length,
-    (len) => {
+    [() => getItems().length, getInitialCount],
+    ([len]) => {
       if (len === 0) {
         visibleCount.value = 0
         return
       }
 
       if (visibleCount.value === 0) {
-        visibleCount.value = Math.min(initialCount, len)
+        visibleCount.value = Math.min(getInitialCount(), len)
+        return
+      }
+
+      if (visibleCount.value < Math.min(getInitialCount(), len)) {
+        visibleCount.value = Math.min(getInitialCount(), len)
         return
       }
 
