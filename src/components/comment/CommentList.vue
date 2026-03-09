@@ -3,7 +3,7 @@
     <header class="comment-header">
       <h3 class="comment-title">
         <AnimatedIcon name="sparkle" :fallback-icon="MessageSquare" size="md" />
-        {{ $t('comment.title') }}
+        {{ t('comment.title') }}
         <span v-if="commentsCount > 0" class="comment-count">{{ commentsCount }}</span>
       </h3>
 
@@ -30,13 +30,13 @@
     <!-- Comments List -->
     <div v-if="isLoading" class="loading-state">
       <div class="spinner" />
-      <span>{{ $t('common.loading') }}</span>
+      <span>{{ t('common.loading') }}</span>
     </div>
 
     <div v-else-if="comments.length === 0 && isAuthenticated" class="empty-state">
       <AnimatedIcon name="explore" :fallback-icon="MessageSquare" size="xl" class="empty-icon" />
-      <h4 class="empty-title">{{ $t('comment.empty') }}</h4>
-      <p class="empty-hint">{{ $t('comment.beFirst') }}</p>
+      <h4 class="empty-title">{{ t('comment.empty') }}</h4>
+      <p class="empty-hint">{{ t('comment.beFirst') }}</p>
     </div>
 
     <TransitionGroup v-else name="list" tag="div" class="comments-list">
@@ -56,7 +56,7 @@
       class="load-more-btn glass-button"
       @click="loadMore"
     >
-      {{ $t('common.viewMore') }}
+      {{ t('common.viewMore') }}
     </button>
   </section>
 </template>
