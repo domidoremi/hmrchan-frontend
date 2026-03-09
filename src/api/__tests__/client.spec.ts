@@ -5,6 +5,16 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { ApiError, apiClient } from '../client'
 
+const mockGetDeviceFingerprint = vi.hoisted(() => vi.fn(async () => 'fingerprint-123'))
+const mockClientSecurity = vi.hoisted(() => ({
+  ensureInitialized: vi.fn(() => Promise.resolve()),
+  init: vi.fn(() => Promise.resolve({ trust_level: 'untrusted' })),
+  isInitialized: vi.fn(() => false),
+  getClientToken: vi.fn(() => null),
+  getClientSecret: vi.fn(() => null),
+  signRequest: vi.fn(() => Promise.resolve('mock-signature')),
+}))
+
 // Mock fetch
 const mockFetch = vi.fn()
 global.fetch = mockFetch
@@ -55,6 +65,10 @@ vi.mock('@/utils/tokenSecurity', () => ({
   secureTokenManager: mockSecureTokenManager,
 }))
 
+vi.mock('@/utils/fingerprint', () => ({
+  getDeviceFingerprint: mockGetDeviceFingerprint,
+}))
+
 // Mock memory cache
 vi.mock('@/utils/cache', () => ({
   memoryCache: {
@@ -66,6 +80,19 @@ vi.mock('@/utils/cache', () => ({
 const mockEnsureVerificationToken = vi.fn()
 vi.mock('../verificationBridge', () => ({
   ensureVerificationToken: mockEnsureVerificationToken,
+}))
+
+vi.mock('../clientSecurityService', () => ({
+  clientSecurityService: {
+    ensureInitialized: mockClientSecurity.ensureInitialized,
+    init: mockClientSecurity.init,
+  },
+  clientSecurityManager: {
+    isInitialized: mockClientSecurity.isInitialized,
+    getClientToken: mockClientSecurity.getClientToken,
+    getClientSecret: mockClientSecurity.getClientSecret,
+  },
+  signRequest: mockClientSecurity.signRequest,
 }))
 
 describe('ApiError', () => {
@@ -94,6 +121,13 @@ describe('apiClient', () => {
     vi.clearAllMocks()
     localStorageMock.clear()
     mockSecureTokenManager.retrieve.mockResolvedValue(null)
+    mockGetDeviceFingerprint.mockResolvedValue('fingerprint-123')
+    mockClientSecurity.ensureInitialized.mockResolvedValue(undefined)
+    mockClientSecurity.init.mockResolvedValue({ trust_level: 'untrusted' })
+    mockClientSecurity.isInitialized.mockReturnValue(false)
+    mockClientSecurity.getClientToken.mockReturnValue(null)
+    mockClientSecurity.getClientSecret.mockReturnValue(null)
+    mockClientSecurity.signRequest.mockResolvedValue('mock-signature')
   })
 
   afterEach(() => {
@@ -194,6 +228,26 @@ describe('apiClient', () => {
         | { headers: Record<string, string> }
         | undefined
       expect(callArgs?.headers['Authorization']).toBeUndefined()
+    })
+
+    it('should attach client fingerprint for public GET requests', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: () =>
+          Promise.resolve({ success: true, data: { ok: true }, meta: { api_version: '1' } }),
+      })
+
+      await apiClient.get('/posts')
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        '/api/v1/posts',
+        expect.objectContaining({
+          headers: expect.objectContaining({
+            'X-Client-Fingerprint': 'fingerprint-123',
+          }),
+        })
+      )
     })
   })
 

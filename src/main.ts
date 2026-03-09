@@ -158,21 +158,13 @@ initFingerprint().catch(() => {
   // 指纹初始化失败不影响应用运行
 })
 
-const enableClientSecurityInit = import.meta.env.VITE_ENABLE_CLIENT_INIT !== 'false'
 const enableDataPrefetch = import.meta.env.VITE_ENABLE_DATA_PREFETCH !== 'false'
 const enableDeferredAnimationStyles =
   import.meta.env.VITE_ENABLE_DEFERRED_ANIMATION_STYLES !== 'false'
 
-// 客户端安全初始化 → 认证初始化（不阻塞首屏挂载，路由守卫按需等待）
-const clientSecurityReady = enableClientSecurityInit
-  ? import('./api/clientSecurityService')
-      .then(({ clientSecurityService }) => clientSecurityService.init())
-      .catch(() => {
-        // 客户端安全初始化失败不阻塞应用
-      })
-  : Promise.resolve()
-
-void clientSecurityReady.then(() => authStore.ensureAuthInitialized()).catch(() => {})
+// 客户端安全改为按需初始化，避免公共页面首屏自动弹出 challenge；
+// 认证恢复阶段若真的需要签名，请求层会自行完成初始化。
+void authStore.ensureAuthInitialized().catch(() => {})
 
 void preloadActiveLocale()
   .catch((error) => {
