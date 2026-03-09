@@ -63,6 +63,8 @@ export type ClientTrustLevel = 'untrusted' | 'basic' | 'verified'
 
 const STORAGE_KEY = 'momi_client_security'
 let ensureInitPromise: Promise<void> | null = null
+let initPromise: Promise<ClientInitResponse> | null = null
+let initPromiseMode: 'normal' | 'force' | null = null
 
 interface StoredClientCredentials {
   client_token: string
@@ -230,30 +232,50 @@ export const clientSecurityService = {
     force?: boolean,
     options?: { promptChallenge?: boolean }
   ): Promise<ClientInitResponse> {
-    if (force) {
-      clearCredentials()
+    const requestedMode: 'normal' | 'force' = force ? 'force' : 'normal'
+
+    if (initPromise && (initPromiseMode === 'force' || requestedMode === 'normal')) {
+      return initPromise
     }
-    const payload = await collectClientInfo(force)
-    const response = await apiClient.post<ClientInitResponse>(
-      '/client/init',
-      payload,
-      clientInitConfig
-    )
 
-    // 回访用户：后端返回空 token 表示继续使用旧凭证；若只返回 client_token 也要保留
-    persistInitCredentials(response)
-
-    // 如果需要 Turnstile 验证，派发事件通知 UI
-    if (response.challenge_required && options?.promptChallenge !== false) {
-      window.dispatchEvent(
-        new CustomEvent('client:challenge-required', {
-          detail: { turnstile_site_key: response.turnstile_site_key },
-        })
+    const currentInitPromise = (async () => {
+      if (force) {
+        clearCredentials()
+      }
+      const payload = await collectClientInfo(force)
+      const response = await apiClient.post<ClientInitResponse>(
+        '/client/init',
+        payload,
+        clientInitConfig
       )
-      void requestClientChallenge(response.turnstile_site_key)
-    }
 
-    return response
+      // 回访用户：后端返回空 token 表示继续使用旧凭证；若只返回 client_token 也要保留
+      persistInitCredentials(response)
+
+      // 如果需要 Turnstile 验证，派发事件通知 UI
+      if (response.challenge_required && options?.promptChallenge !== false) {
+        window.dispatchEvent(
+          new CustomEvent('client:challenge-required', {
+            detail: { turnstile_site_key: response.turnstile_site_key },
+          })
+        )
+        void requestClientChallenge(response.turnstile_site_key)
+      }
+
+      return response
+    })()
+
+    initPromise = currentInitPromise
+    initPromiseMode = requestedMode
+
+    try {
+      return await currentInitPromise
+    } finally {
+      if (initPromise === currentInitPromise) {
+        initPromise = null
+        initPromiseMode = null
+      }
+    }
   },
 
   /**
