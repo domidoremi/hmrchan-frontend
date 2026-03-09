@@ -278,6 +278,35 @@ function isSignatureErrorResponse(errorCode?: string, errorMessage?: string): bo
   return SIGNATURE_ERROR_HINTS.some((hint) => lowerMsg.includes(hint))
 }
 
+function shouldEnsureClientSecurity(method: string, url: string, hasAuthContext: boolean): boolean {
+  if (!ENABLE_CLIENT_SECURITY_INIT) {
+    return false
+  }
+
+  const normalizedMethod = method.toUpperCase()
+
+  try {
+    const requestUrl = new URL(url, window.location.origin)
+    const pathname = requestUrl.pathname
+    const isAuthPath = pathname.startsWith('/api/auth/')
+
+    if (isAuthPath) {
+      return pathname !== '/api/auth/turnstile-config'
+    }
+
+    if (hasAuthContext) {
+      return true
+    }
+
+    return normalizedMethod !== 'GET' && normalizedMethod !== 'HEAD'
+  } catch {
+    if (hasAuthContext) {
+      return true
+    }
+    return normalizedMethod !== 'GET' && normalizedMethod !== 'HEAD'
+  }
+}
+
 function normalizeResponse<T>(payload: unknown): T {
   if (isRecord(payload)) {
     const maybeEnvelope = payload as ApiEnvelope
@@ -666,8 +695,12 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
         signRequest: signReq,
       } = await import('./clientSecurityService')
 
-      // 在并发首屏请求场景下，先确保客户端凭证已初始化，避免无签名请求触发 403。
-      if (ENABLE_CLIENT_SECURITY_INIT && !clientSecurityManager.isInitialized()) {
+      // 公共 GET/HEAD 首屏读取不强制初始化，避免首页自动弹出人机验证；
+      // 仅在认证请求、带认证上下文请求或业务写请求时按需初始化客户端凭证。
+      if (
+        shouldEnsureClientSecurity(method, url, hadToken) &&
+        !clientSecurityManager.isInitialized()
+      ) {
         await clientSecurityService.ensureInitialized()
       }
 

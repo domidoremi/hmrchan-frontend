@@ -147,6 +147,59 @@ describe('clientSecurityService', () => {
     expect(clientSecurityManager.isInitialized()).toBe(true)
   })
 
+  it('deduplicates concurrent init requests', async () => {
+    let resolveInit:
+      | ((value: { client_token: string; client_secret: string; trust_level: 'untrusted' }) => void)
+      | null = null
+
+    mockApiClient.post.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveInit = resolve
+        })
+    )
+
+    const first = clientSecurityService.init()
+    const second = clientSecurityService.init()
+
+    await vi.waitFor(() => {
+      expect(mockApiClient.post).toHaveBeenCalledTimes(1)
+    })
+
+    resolveInit?.({
+      client_token: 'shared-token',
+      client_secret: 'shared-secret',
+      trust_level: 'untrusted',
+    })
+
+    await expect(Promise.all([first, second])).resolves.toEqual([
+      {
+        client_token: 'shared-token',
+        client_secret: 'shared-secret',
+        trust_level: 'untrusted',
+      },
+      {
+        client_token: 'shared-token',
+        client_secret: 'shared-secret',
+        trust_level: 'untrusted',
+      },
+    ])
+  })
+
+  it('supports silent init without opening challenge dialog', async () => {
+    mockApiClient.post.mockResolvedValueOnce({
+      client_token: 'silent-token',
+      client_secret: 'silent-secret',
+      trust_level: 'untrusted',
+      challenge_required: true,
+      turnstile_site_key: 'site-key',
+    })
+
+    await clientSecurityService.init(false, { promptChallenge: false })
+
+    expect(mockRequestClientChallenge).not.toHaveBeenCalled()
+  })
+
   it('re-initializes once when verify fails due to missing client token', async () => {
     mockApiClient.post
       .mockRejectedValueOnce(
