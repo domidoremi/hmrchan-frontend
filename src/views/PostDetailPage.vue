@@ -1,6 +1,6 @@
 <template>
   <div class="post-detail-page">
-    <button type="button" class="post-back-fab" :aria-label="$t('common.back')" @click="goBack">
+    <button type="button" class="post-back-fab" :aria-label="t('common.back')" @click="goBack">
       <svg class="post-back-fab__ring" viewBox="0 0 36 36" aria-hidden="true">
         <circle
           class="post-back-fab__ring-bg"
@@ -56,7 +56,7 @@
                 v-if="hasMultipleMedia"
                 type="button"
                 class="media-nav prev"
-                :aria-label="$t('common.previous')"
+                :aria-label="t('common.previous')"
                 :disabled="!canGoPrevMedia"
                 @click="prevMedia"
               >
@@ -70,7 +70,7 @@
                   class="media-item-container media-clickable"
                   role="button"
                   tabindex="0"
-                  :aria-label="$t('common.clickToEnlarge')"
+                  :aria-label="t('common.clickToEnlarge')"
                   @click="openLightbox()"
                   @keydown.enter.prevent="openLightbox()"
                   @keydown.space.prevent="openLightbox()"
@@ -95,7 +95,7 @@
                   <!-- 点击提示 -->
                   <div class="media-zoom-hint">
                     <span class="zoom-icon">🔍</span>
-                    {{ $t('common.clickToEnlarge') }}
+                    {{ t('common.clickToEnlarge') }}
                   </div>
                 </div>
                 <VideoPlayer
@@ -108,13 +108,20 @@
                   playsinline
                   @ready="onMediaLoad"
                 />
+                <div
+                  v-else
+                  :key="`fallback-${activeMedia?.id ?? activeMediaIndex}`"
+                  class="media-item-container"
+                >
+                  <div class="media-skeleton skeleton" />
+                </div>
               </Transition>
 
               <button
                 v-if="hasMultipleMedia"
                 type="button"
                 class="media-nav next"
-                :aria-label="$t('common.next')"
+                :aria-label="t('common.next')"
                 :disabled="!canGoNextMedia"
                 @click="nextMedia"
               >
@@ -152,7 +159,7 @@
             <header class="post-header">
               <h1 v-if="detailTitle" class="post-title">{{ detailTitle }}</h1>
               <p class="post-meta">
-                {{ $t('post.by') }}
+                {{ t('post.by') }}
                 <button
                   type="button"
                   class="author-link"
@@ -165,11 +172,11 @@
               <div class="post-stats">
                 <span class="post-stat">
                   <AnimatedIcon name="explore" :fallback-icon="Eye" size="sm" />
-                  {{ post?.view_count ?? 0 }} {{ $t('post.views') }}
+                  {{ post?.view_count ?? 0 }} {{ t('post.views') }}
                 </span>
                 <span class="post-stat">
                   <AnimatedIcon name="heart" :fallback-icon="Heart" size="sm" />
-                  {{ post?.like_count ?? 0 }} {{ $t('post.likes') }}
+                  {{ post?.like_count ?? 0 }} {{ t('post.likes') }}
                 </span>
               </div>
             </header>
@@ -182,7 +189,7 @@
                 class="post-description-more"
                 @click="openTextModal"
               >
-                {{ $t('post.readFullText') }}
+                {{ t('post.readFullText') }}
               </button>
             </div>
 
@@ -215,7 +222,7 @@
 
       <Transition name="fade">
         <div v-if="postNavHint" class="post-nav-hint" :data-direction="postNavHint">
-          {{ postNavHint === 'left' ? $t('post.swipeAgainNext') : $t('post.swipeAgainPrev') }}
+          {{ postNavHint === 'left' ? t('post.swipeAgainNext') : t('post.swipeAgainPrev') }}
         </div>
       </Transition>
 
@@ -225,14 +232,14 @@
           class="post-text-overlay"
           role="dialog"
           aria-modal="true"
-          :aria-label="$t('post.content')"
+          :aria-label="t('post.content')"
           @click.self="closeTextModal"
         >
           <div class="post-text-panel" tabindex="-1">
             <header class="post-text-header">
-              <h3 class="post-text-title">{{ $t('post.content') }}</h3>
+              <h3 class="post-text-title">{{ t('post.content') }}</h3>
               <button type="button" class="post-text-close" @click="closeTextModal">
-                {{ $t('common.close') }}
+                {{ t('common.close') }}
               </button>
             </header>
             <div class="post-text-body">
