@@ -6,7 +6,7 @@
         class="post-preview-overlay"
         role="dialog"
         aria-modal="true"
-        :aria-label="$t('post.preview')"
+        :aria-label="t('post.preview')"
         @click.self="close"
       >
         <div ref="panelRef" class="post-preview-panel" tabindex="-1">
@@ -23,7 +23,7 @@
             <button
               type="button"
               class="post-preview-handle"
-              :aria-label="$t('common.close')"
+              :aria-label="t('common.close')"
               @click="onHandleClick"
               @pointerdown="onHandlePointerDown"
             >
@@ -34,7 +34,7 @@
               <button
                 type="button"
                 class="post-preview-close-icon"
-                :aria-label="$t('common.close')"
+                :aria-label="t('common.close')"
                 @click="close"
               >
                 <X :size="18" />
@@ -64,13 +64,13 @@
                     {{ displayMediaCount }}
                   </span>
                   <span v-if="displayViews !== null" class="meta-pill">
-                    {{ displayViews }} {{ $t('post.views') }}
+                    {{ displayViews }} {{ t('post.views') }}
                   </span>
                   <span v-if="displayLikes !== null" class="meta-pill">
-                    {{ displayLikes }} {{ $t('post.likes') }}
+                    {{ displayLikes }} {{ t('post.likes') }}
                   </span>
                   <span v-if="subtitlesAvailable" class="meta-pill">
-                    {{ $t('post.subtitlesAvailable') }}
+                    {{ t('post.subtitlesAvailable') }}
                   </span>
                 </div>
               </div>
@@ -127,7 +127,7 @@
                     <div
                       v-if="isLoading"
                       class="post-preview-loading"
-                      :aria-label="$t('common.loading')"
+                      :aria-label="t('common.loading')"
                     >
                       <span class="spinner" />
                     </div>
@@ -135,7 +135,7 @@
                       <p class="post-preview-inline-text">{{ displayContent }}</p>
                     </template>
                     <p v-else class="post-preview-empty-text">
-                      {{ $t('post.noMedia') }}
+                      {{ t('post.noMedia') }}
                     </p>
                   </div>
 
@@ -150,7 +150,7 @@
                       class="thumb"
                       :class="{ active: idx === activeMediaIndex }"
                       :aria-pressed="idx === activeMediaIndex"
-                      :aria-label="`${$t('post.preview')} ${idx + 1}`"
+                      :aria-label="`${t('post.preview')} ${idx + 1}`"
                       @click="activeMediaIndex = idx"
                     >
                       <img
@@ -166,7 +166,7 @@
                   <div v-if="loadError" class="post-preview-error">
                     <p class="post-preview-error-text">{{ loadError }}</p>
                     <button type="button" class="glass-button" @click="reload">
-                      {{ $t('common.retry') }}
+                      {{ t('common.retry') }}
                     </button>
                   </div>
 
@@ -195,7 +195,7 @@
                   :disabled="!postId"
                   @click="openDetail"
                 >
-                  {{ $t('post.viewDetail') }}
+                  {{ t('post.viewDetail') }}
                 </button>
               </div>
             </div>
@@ -583,9 +583,11 @@ const initialMediaSrc = computed(() => {
 })
 
 const shouldShowMediaSection = computed(() => {
+  const mediaCount = displayMediaCount.value ?? 0
   if (primaryMedia.value) return true
+  if (mediaCount <= 0) return false
   if (initialMediaSrc.value) return true
-  return (displayMediaCount.value ?? 0) > 0
+  return mediaCount > 0
 })
 
 const platformLabel = computed(() => {
