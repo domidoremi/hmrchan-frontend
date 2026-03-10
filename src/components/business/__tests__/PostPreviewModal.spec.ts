@@ -75,7 +75,7 @@ function createWrapper(initialPost: PostListItem) {
 }
 
 describe('PostPreviewModal', () => {
-  it('does not render media section when post has no media but has thumbnail', () => {
+  it('renders media section when thumbnail is available (even if media_count is 0)', () => {
     const wrapper = createWrapper(
       createInitialPost({
         media_count: 0,
@@ -83,8 +83,8 @@ describe('PostPreviewModal', () => {
       })
     )
 
-    expect(wrapper.find('.post-preview-media').exists()).toBe(false)
-    expect(wrapper.find('.post-preview-media-item').exists()).toBe(false)
+    expect(wrapper.find('.post-preview-media').exists()).toBe(true)
+    expect(wrapper.find('.post-preview-media-item').exists()).toBe(true)
     expect(wrapper.find('.post-preview-content').text()).toContain('Test post')
 
     wrapper.unmount()
