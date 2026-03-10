@@ -564,9 +564,7 @@ const displayPublishedAt = computed(
 
 const displayDuration = computed(() => post.value?.duration || props.initialPost?.duration || null)
 
-const displayMediaCount = computed(
-  () => post.value?.media_count || props.initialPost?.media_count || null
-)
+const displayMediaCount = computed(() => post.value?.media_count ?? props.initialPost?.media_count)
 
 const displayViews = computed(() => {
   const v = post.value?.view_count ?? props.initialPost?.view_count
@@ -583,10 +581,9 @@ const initialMediaSrc = computed(() => {
 })
 
 const shouldShowMediaSection = computed(() => {
-  const mediaCount = displayMediaCount.value ?? 0
   if (primaryMedia.value) return true
-  if (mediaCount <= 0) return false
   if (initialMediaSrc.value) return true
+  const mediaCount = displayMediaCount.value ?? 0
   return mediaCount > 0
 })
 
@@ -674,7 +671,7 @@ function openDetail() {
   align-items: center;
   justify-content: center;
   padding: var(--spacing-4);
-  --preview-overlay-bg: var(--color-background);
+  --preview-overlay-bg: var(--ui-backdrop-dim);
   --preview-surface-bg: var(--glass-bg-strong);
   --preview-surface-border: var(--glass-border);
   --preview-divider: var(--glass-border);
@@ -687,12 +684,11 @@ function openDetail() {
   --preview-text-muted: var(--color-text-secondary);
   --preview-media-bg: rgba(15, 23, 42, 0.02);
   background: var(--preview-overlay-bg);
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
+  backdrop-filter: var(--ui-backdrop-blur);
+  -webkit-backdrop-filter: var(--ui-backdrop-blur);
   will-change: opacity;
 }
 :global(#app[data-theme='dark'] .post-preview-overlay) {
-  --preview-overlay-bg: #0b0d14;
   --preview-control-bg: rgba(255, 255, 255, 0.08);
   --preview-control-border: rgba(255, 255, 255, 0.12);
   --preview-pill-bg: rgba(255, 255, 255, 0.1);
