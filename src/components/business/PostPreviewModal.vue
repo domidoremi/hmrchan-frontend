@@ -672,7 +672,7 @@ function openDetail() {
   justify-content: center;
   padding: var(--spacing-4);
   --preview-overlay-bg: var(--ui-backdrop-dim);
-  --preview-surface-bg: var(--glass-bg-strong);
+  --preview-surface-bg: var(--color-surface);
   --preview-surface-border: var(--glass-border);
   --preview-divider: var(--glass-border);
   --preview-control-bg: rgba(15, 23, 42, 0.04);
@@ -762,7 +762,7 @@ function openDetail() {
   overflow: hidden;
   border: 1px solid var(--preview-surface-border);
   background: var(--preview-surface-bg);
-  backdrop-filter: blur(14px);
+  backdrop-filter: none;
   display: flex;
   flex-direction: column;
   outline: none;
