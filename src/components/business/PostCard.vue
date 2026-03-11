@@ -82,6 +82,10 @@
         {{ cardExcerpt }}
       </p>
 
+      <div v-if="cardTags.length > 0" class="post-tags">
+        <span v-for="tag in cardTags" :key="`post-tag-${tag}`" class="post-tag">#{{ tag }}</span>
+      </div>
+
       <div class="post-meta">
         <div class="post-author-wrapper" v-if="showAuthor && displayAuthorName">
           <img
@@ -222,6 +226,13 @@ function normalizeText(input: string | null | undefined): string {
     .trim()
 }
 
+function normalizeTag(input: string | null | undefined): string {
+  return String(input ?? '')
+    .replace(/^#/, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
 const displayAuthorName = computed(() => {
   const name = normalizeText(props.post.author_name)
   if (name) return name
@@ -276,6 +287,13 @@ const cardExcerpt = computed(() => {
   if (!props.showExcerpt) return ''
   return displayExcerpt.value
 })
+
+const cardTags = computed(() =>
+  (props.post.tags ?? [])
+    .map((tag) => normalizeTag(tag))
+    .filter(Boolean)
+    .slice(0, 2)
+)
 
 const cardAriaLabel = computed(() => {
   // 卡片已渲染可见文本时，避免 aria-label 覆盖可见名称（修复 label-content-name-mismatch）
@@ -591,10 +609,10 @@ function handleClick() {
 }
 
 .post-card:hover {
-  transform: translateY(-4px);
+  transform: translateY(-0.25rem);
   box-shadow:
-    0 12px 24px -8px rgba(0, 0, 0, 0.15),
-    0 4px 8px -4px rgba(0, 0, 0, 0.1);
+    0 1rem 2rem -1rem rgba(31, 41, 55, 0.22),
+    0 0.375rem 0.875rem -0.625rem rgba(31, 41, 55, 0.18);
 }
 
 .post-card:focus-visible {
@@ -616,32 +634,29 @@ function handleClick() {
   top: var(--spacing-2);
   left: var(--spacing-2);
   z-index: 12;
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: var(--spacing-1);
-  padding: var(--spacing-1) var(--spacing-2);
+  gap: 0.375rem;
+  padding: 0.3125rem 0.625rem;
   border-radius: var(--radius-full);
-  background: rgba(0, 0, 0, 0.65);
+  background: rgba(15, 23, 42, 0.68);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   color: #fff;
-  font-size: 0.625rem;
+  font-size: 0.6875rem;
   font-weight: var(--font-semibold);
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  transition: all var(--transition-fast);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  letter-spacing: 0.02em;
+  transition:
+    transform var(--transition-fast),
+    background var(--transition-fast);
+  border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .post-card:hover .platform-badge {
-  transform: scale(1.05);
+  transform: translateY(-0.0625rem);
 }
 
 .platform-label {
-  display: none;
-}
-
-.post-card:hover .platform-label {
   display: inline;
 }
 
@@ -676,16 +691,16 @@ function handleClick() {
   z-index: 3;
   display: flex;
   align-items: center;
-  gap: var(--spacing-1);
+  gap: 0.1875rem;
   padding: 0.1875rem 0.5rem;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-full);
   font-size: 0.6875rem;
   font-weight: var(--font-semibold);
   font-variant-numeric: tabular-nums;
   color: #fff;
-  background: rgba(0, 0, 0, 0.75);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  background: rgba(15, 23, 42, 0.72);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
 }
 
 /* ========== Time Badge ========== */
@@ -696,16 +711,16 @@ function handleClick() {
   z-index: 3;
   display: inline-flex;
   align-items: center;
-  gap: var(--spacing-1);
+  gap: 0.1875rem;
   padding: 0.1875rem 0.5rem;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-full);
   font-size: 0.6875rem;
-  font-weight: var(--font-semibold);
+  font-weight: var(--font-medium);
   font-variant-numeric: tabular-nums;
-  color: #fff;
-  background: rgba(0, 0, 0, 0.75);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  color: rgba(255, 255, 255, 0.92);
+  background: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
 }
 
 /* ========== Image ========== */
@@ -833,11 +848,15 @@ function handleClick() {
 
 /* ========== Content Section ========== */
 .post-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
   padding: var(--spacing-3);
+  border-top: 1px solid rgba(148, 163, 184, 0.08);
 }
 
 .post-title {
-  font-size: var(--text-sm);
+  font-size: var(--text-base);
   font-weight: var(--font-semibold);
   color: var(--color-text-primary);
   margin: 0;
@@ -846,20 +865,37 @@ function handleClick() {
   line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  line-height: 1.4;
+  line-height: 1.45;
   transition: color var(--transition-fast);
 }
 
 .post-excerpt {
   font-size: var(--text-xs);
   color: var(--color-text-secondary);
-  margin: var(--spacing-2) 0 0;
+  margin: 0;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  line-height: 1.5;
+  line-height: 1.55;
+}
+
+.post-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.post-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.1875rem 0.5rem;
+  border-radius: var(--radius-full);
+  font-size: 0.6875rem;
+  color: var(--color-text-secondary);
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(148, 163, 184, 0.14);
 }
 
 .post-card:hover .post-title {
@@ -871,7 +907,7 @@ function handleClick() {
   align-items: center;
   justify-content: space-between;
   gap: var(--spacing-2);
-  margin-top: var(--spacing-2);
+  margin-top: 0.125rem;
 }
 
 .post-author-wrapper {
@@ -883,13 +919,13 @@ function handleClick() {
 }
 
 .post-author-avatar {
-  width: 1.25rem;
-  height: 1.25rem;
+  width: 1.5rem;
+  height: 1.5rem;
   border-radius: var(--radius-full);
   flex-shrink: 0;
   object-fit: cover;
   background: var(--glass-bg-subtle);
-  border: 1px solid var(--glass-border);
+  border: 1px solid rgba(148, 163, 184, 0.16);
 }
 
 .post-author-avatar--fallback {
@@ -901,7 +937,8 @@ function handleClick() {
 
 .post-author {
   font-size: var(--text-xs);
-  color: var(--color-text-secondary);
+  font-weight: var(--font-medium);
+  color: var(--color-text-primary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -909,7 +946,7 @@ function handleClick() {
 
 .post-stats {
   display: flex;
-  gap: var(--spacing-3);
+  gap: var(--spacing-2);
   font-size: var(--text-xs);
   color: var(--color-text-tertiary);
   flex-shrink: 0;
@@ -920,10 +957,11 @@ function handleClick() {
   align-items: center;
   gap: 0.1875rem;
   font-variant-numeric: tabular-nums;
+  opacity: 0.82;
 }
 
 .post-stat svg {
-  opacity: 0.7;
+  opacity: 0.62;
 }
 
 /* ========== Mobile - Disable Hover ========== */
