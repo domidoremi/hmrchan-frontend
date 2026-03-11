@@ -1,6 +1,7 @@
 {
   "app": {
-    "name": "MomiChan"
+    "name": "MomiChan",
+    "tagline": "好きが続く、クリエイター発見ノート"
   },
   "nav": {
     "home": "ホーム",
@@ -296,8 +297,8 @@
   },
   "home": {
     "hero": {
-      "title": "素晴らしいコンテンツを発見",
-      "subtitle": "才能あるクリエイターの厳選コレクション",
+      "title": "今日保存したくなるクリエイターの瞬間を見つけよう",
+      "subtitle": "好きな作品・作者・予定をひとつに集めて、追いかけやすく。",
       "badge": "素晴らしいコンテンツを発見",
       "highlights": {
         "multilingual": {
@@ -312,6 +313,27 @@
           "title": "高速＆キャッシュ",
           "desc": "キャッシュと最適化で快適に閲覧。"
         }
+      },
+      "kicker": "MomiChan · クリエイター発見コミュニティ",
+      "primaryAction": "見てみる",
+      "secondaryAction": "今日のおすすめ",
+      "trendingLabel": "今日のトレンド",
+      "tagsEmpty": "トレンドタグはまだありません",
+      "fallbackTitle": "注目コンテンツ",
+      "fallbackAuthor": "注目クリエイター",
+      "editorialLabel": "今日のメモ",
+      "editorialFallbackTitle": "今日のやさしいピック",
+      "editorialText": "{author} から見始めて、気になった瞬間をゆっくり辿ろう。",
+      "editorialTextWithTag": "{author} から見始めて、{tag} に流れていく今日の保存候補を見つけよう。",
+      "spotlightLabel": "いまの注目",
+      "stats": {
+        "ariaLabel": "ホームハイライト",
+        "updates": "更新",
+        "updatesHint": "表示中の新着",
+        "authors": "作者",
+        "authorsHint": "今週動いている人",
+        "tags": "タグ",
+        "tagsHint": "追いたい話題"
       }
     },
     "quickStart": {
@@ -328,7 +350,61 @@
       "favoritesMetaGuest": "ログインして保存"
     },
     "latest": "最新",
-    "popular": "人気"
+    "popular": "人気",
+    "portal": {
+      "kicker": "今日の入口",
+      "title": "今日見るべき場所から始めよう",
+      "subtitle": "おすすめ、作者、予定、コミュニティへ一気に。",
+      "action": "探索へ",
+      "items": {
+        "recommend": {
+          "title": "今日のおすすめ",
+          "desc": "編集部セレクト4件"
+        },
+        "authors": {
+          "title": "人気クリエイター",
+          "desc": "今週注目を集める作者"
+        },
+        "schedule": {
+          "title": "今週の予定",
+          "desc": "近日開催のイベントや配信"
+        },
+        "community": {
+          "title": "コミュニティ話題",
+          "desc": "今日の人気トピック"
+        }
+      }
+    },
+    "featured": {
+      "kicker": "編集部ピックアップ",
+      "title": "今日のおすすめ",
+      "subtitle": "今日いちばん見てほしい作品",
+      "action": "もっと見る"
+    },
+    "trends": {
+      "kicker": "今週のトレンド",
+      "title": "今週のトレンド",
+      "subtitle": "作者・タグ・予定の注目度まとめ",
+      "authorsTitle": "人気クリエイター",
+      "tagsTitle": "人気タグ",
+      "scheduleTitle": "今週の予定",
+      "authorsAction": "作者を見る",
+      "tagsAction": "タグ検索",
+      "scheduleAction": "予定を見る",
+      "authorsEmpty": "注目の作者はまだありません",
+      "tagsEmpty": "人気タグはまだありません",
+      "scheduleHint": "最新のイベントと配信予定を見る",
+      "authorCount": "{n} 件の更新"
+    },
+    "tags": {
+      "label": "人気タグ",
+      "empty": "タグはまだありません"
+    },
+    "filters": {
+      "label": "クイックフィルター"
+    },
+    "latestSubtitle": "最新コンテンツを継続更新",
+    "latestAction": "すべて見る"
   },
   "explore": {
     "title": "探索",
@@ -924,6 +1000,11 @@
     "nav": {
       "explore": "探索",
       "support": "サポート"
+    },
+    "note": "今日は少しだけ寄り道して、また明日戻ってきて。",
+    "columns": {
+      "discover": "見つける",
+      "community": "つながる"
     }
   },
   "stats": {
