@@ -1,6 +1,7 @@
 {
   "app": {
-    "name": "MomiChan"
+    "name": "MomiChan",
+    "tagline": "A soft editorial home for creator moments"
   },
   "nav": {
     "home": "Home",
@@ -296,8 +297,8 @@
   },
   "home": {
     "hero": {
-      "title": "Discover Amazing Content",
-      "subtitle": "Explore curated collections from talented creators",
+      "title": "Discover creator moments worth saving today",
+      "subtitle": "Collect the posts, creators, and schedules you love in one place.",
       "badge": "Discover Amazing Content",
       "highlights": {
         "multilingual": {
@@ -312,6 +313,27 @@
           "title": "Fast & cached",
           "desc": "Built-in caching and optimizations for a smoother browse."
         }
+      },
+      "kicker": "MomiChan · Creator Discovery",
+      "primaryAction": "Start Browsing",
+      "secondaryAction": "Today's Picks",
+      "trendingLabel": "Trending Today",
+      "tagsEmpty": "No trending tags yet",
+      "fallbackTitle": "Featured",
+      "fallbackAuthor": "Featured Creator",
+      "editorialLabel": "Editor's note",
+      "editorialFallbackTitle": "Today's gentle pick",
+      "editorialText": "Start with {author}, then follow the next piece that makes you stay a little longer.",
+      "editorialTextWithTag": "Start with {author}, then drift into {tag} for the next save-worthy moment.",
+      "spotlightLabel": "Spotlight now",
+      "stats": {
+        "ariaLabel": "Homepage highlights",
+        "updates": "Updates",
+        "updatesHint": "fresh posts in view",
+        "authors": "Authors",
+        "authorsHint": "active voices this week",
+        "tags": "Tags",
+        "tagsHint": "rising topics to follow"
       }
     },
     "quickStart": {
@@ -328,7 +350,61 @@
       "favoritesMetaGuest": "Log in to save"
     },
     "latest": "Latest Posts",
-    "popular": "Popular"
+    "popular": "Popular",
+    "portal": {
+      "kicker": "Today’s Entry Points",
+      "title": "Start with what’s worth seeing today",
+      "subtitle": "From picks and creators to schedules and community.",
+      "action": "Go Explore",
+      "items": {
+        "recommend": {
+          "title": "Today’s Picks",
+          "desc": "Editor’s selection of 4 items"
+        },
+        "authors": {
+          "title": "Hot Creators",
+          "desc": "Creators getting the most attention this week"
+        },
+        "schedule": {
+          "title": "This Week",
+          "desc": "Upcoming events and live moments"
+        },
+        "community": {
+          "title": "Community Hot",
+          "desc": "Today’s most talked-about threads"
+        }
+      }
+    },
+    "featured": {
+      "kicker": "Editor’s Picks",
+      "title": "Today’s Picks",
+      "subtitle": "Handpicked selections for today",
+      "action": "Explore More"
+    },
+    "trends": {
+      "kicker": "This Week",
+      "title": "This Week",
+      "subtitle": "Quick snapshot of creators, tags, and schedules",
+      "authorsTitle": "Hot Creators",
+      "tagsTitle": "Popular Tags",
+      "scheduleTitle": "This Week’s Schedule",
+      "authorsAction": "Browse Creators",
+      "tagsAction": "Search Tags",
+      "scheduleAction": "View Schedule",
+      "authorsEmpty": "No trending creators yet",
+      "tagsEmpty": "No popular tags yet",
+      "scheduleHint": "See the latest events and live sessions",
+      "authorCount": "{n} updates"
+    },
+    "tags": {
+      "label": "Popular Tags",
+      "empty": "No tags yet"
+    },
+    "filters": {
+      "label": "Quick Filters"
+    },
+    "latestSubtitle": "Fresh drops updated continuously",
+    "latestAction": "View All"
   },
   "explore": {
     "title": "Explore",
@@ -924,6 +1000,11 @@
     "nav": {
       "explore": "Explore",
       "support": "Support"
+    },
+    "note": "Made for quiet browsing, collecting, and coming back tomorrow.",
+    "columns": {
+      "discover": "Discover",
+      "community": "Community"
     }
   },
   "stats": {
