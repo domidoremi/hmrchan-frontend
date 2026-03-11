@@ -2,8 +2,12 @@
   <nav class="navbar glass-navbar" :class="{ 'navbar-hidden': isNavbarHidden }">
     <div class="container navbar-content">
       <!-- Logo -->
-      <RouterLink to="/" class="navbar-brand">
-        <span class="brand-name gradient-text">mmc</span>
+      <RouterLink to="/" class="navbar-brand" :aria-label="$t('app.name')">
+        <span class="brand-mark">M</span>
+        <span class="brand-copy">
+          <span class="brand-name gradient-text">{{ $t('app.name') }}</span>
+          <span class="brand-tagline desktop-only">{{ $t('app.tagline') }}</span>
+        </span>
       </RouterLink>
 
       <!-- Desktop Navigation -->
@@ -38,13 +42,14 @@
       <div class="navbar-actions">
         <button
           type="button"
-          class="action-btn"
+          class="action-btn action-btn--search"
           @click="goToSearch"
           @mouseenter="prefetchExplorePage"
           @focus="prefetchExplorePage"
           :aria-label="$t('common.search')"
         >
           <AnimatedIcon name="search" :fallback-icon="Search" size="md" />
+          <span class="action-btn__label desktop-only">{{ $t('common.search') }}</span>
         </button>
 
         <button
@@ -870,19 +875,48 @@ onUnmounted(() => {
 
 .glass-navbar {
   box-shadow:
-    0 16px 30px -24px rgba(15, 23, 42, 0.4),
-    0 6px 16px -12px rgba(15, 23, 42, 0.25);
+    0 1rem 2rem -1.5rem rgba(15, 23, 42, 0.38),
+    0 0.375rem 0.875rem -0.75rem rgba(15, 23, 42, 0.22);
 }
 
 /* ========== Brand ========== */
 .navbar-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-3);
   text-decoration: none;
 }
 
-.brand-name {
-  font-size: var(--text-xl);
+.brand-mark {
+  display: inline-grid;
+  place-items: center;
+  inline-size: 2.25rem;
+  block-size: 2.25rem;
+  border-radius: 0.875rem;
+  background: linear-gradient(135deg, rgba(124, 148, 194, 0.22) 0%, rgba(223, 165, 186, 0.3) 100%);
+  color: var(--color-text-primary);
+  font-size: 1rem;
   font-weight: var(--font-bold);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
+}
+
+.brand-copy {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.brand-name {
+  font-size: var(--text-lg);
+  font-weight: var(--font-bold);
+  letter-spacing: 0.04em;
+}
+
+.brand-tagline {
+  font-size: 0.6875rem;
+  color: var(--color-text-tertiary);
   letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 /* ========== Navigation Links ========== */
@@ -986,11 +1020,12 @@ onUnmounted(() => {
 
 .action-btn {
   position: relative;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: var(--ui-action-size, 2.5rem);
+  min-width: var(--ui-action-size, 2.5rem);
   height: var(--ui-action-size, 2.5rem);
+  padding-inline: var(--spacing-3);
   border-radius: var(--ui-radius-button, var(--radius-lg));
   color: var(--color-text-secondary);
   transition: all var(--transition-fast);
@@ -1011,6 +1046,18 @@ onUnmounted(() => {
 
 .action-btn:hover::before {
   background: var(--glass-bg-subtle);
+}
+
+.action-btn--search {
+  gap: var(--spacing-2);
+}
+
+.action-btn__label {
+  position: relative;
+  z-index: 1;
+  white-space: nowrap;
+  font-size: var(--text-sm);
+  color: inherit;
 }
 
 .action-btn--active {
@@ -1042,6 +1089,7 @@ onUnmounted(() => {
   text-decoration: none;
   gap: var(--spacing-2);
   white-space: nowrap;
+  box-shadow: 0 0.75rem 1.5rem -1rem rgba(var(--color-primary-rgb), 0.45);
 }
 
 .login-btn:hover,
@@ -1448,6 +1496,11 @@ onUnmounted(() => {
 
   .mobile-only {
     display: flex;
+  }
+
+  .action-btn {
+    width: var(--ui-action-size, 2.5rem);
+    padding-inline: 0;
   }
 
   .brand-name {

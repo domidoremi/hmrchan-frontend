@@ -1,6 +1,7 @@
 {
   "app": {
-    "name": "MomiChan"
+    "name": "MomiChan",
+    "tagline": "把想持续关注的创作者瞬间收进来"
   },
   "nav": {
     "home": "首页",
@@ -296,8 +297,8 @@
   },
   "home": {
     "hero": {
-      "title": "发现精彩内容",
-      "subtitle": "探索来自优秀创作者的精选作品",
+      "title": "发现今天值得收藏的创作者瞬间",
+      "subtitle": "把喜欢的内容、作者与日程聚在一个地方，轻松追更与发现。",
       "badge": "发现精彩内容",
       "highlights": {
         "multilingual": {
@@ -312,6 +313,27 @@
           "title": "极速与缓存",
           "desc": "内置缓存与性能优化，浏览更顺滑。"
         }
+      },
+      "kicker": "MomiChan · 内容发现社区",
+      "primaryAction": "开始逛逛",
+      "secondaryAction": "看今日推荐",
+      "trendingLabel": "今日趋势",
+      "tagsEmpty": "暂无趋势标签",
+      "fallbackTitle": "精选内容",
+      "fallbackAuthor": "精选作者",
+      "editorialLabel": "今日手记",
+      "editorialFallbackTitle": "今天的温柔推荐",
+      "editorialText": "先从 {author} 开始，再顺着喜欢的内容慢慢逛下去。",
+      "editorialTextWithTag": "先从 {author} 开始，再沿着 {tag} 找到今天想收藏的瞬间。",
+      "spotlightLabel": "正在聚光",
+      "stats": {
+        "ariaLabel": "首页亮点",
+        "updates": "更新",
+        "updatesHint": "当前可看的新内容",
+        "authors": "作者",
+        "authorsHint": "本周活跃创作者",
+        "tags": "标签",
+        "tagsHint": "正在升温的话题"
       }
     },
     "quickStart": {
@@ -328,7 +350,61 @@
       "favoritesMetaGuest": "登录后收藏"
     },
     "latest": "最新发布",
-    "popular": "热门推荐"
+    "popular": "热门推荐",
+    "portal": {
+      "kicker": "今日入口",
+      "title": "今天最值得看的都在这里",
+      "subtitle": "从推荐、作者、日程到社区，一键进入内容氛围。",
+      "action": "进入探索",
+      "items": {
+        "recommend": {
+          "title": "今日推荐",
+          "desc": "编辑精选 4 张内容卡"
+        },
+        "authors": {
+          "title": "热门作者",
+          "desc": "关注本周讨论最多的创作者"
+        },
+        "schedule": {
+          "title": "本周日程",
+          "desc": "即将开始的活动与直播"
+        },
+        "community": {
+          "title": "社区热帖",
+          "desc": "今天最热的讨论与分享"
+        }
+      }
+    },
+    "featured": {
+      "kicker": "编辑精选",
+      "title": "今日推荐",
+      "subtitle": "编辑部今天最想让你看到的内容",
+      "action": "去探索"
+    },
+    "trends": {
+      "kicker": "本周趋势",
+      "title": "本周趋势",
+      "subtitle": "作者、标签与日程的热度速览",
+      "authorsTitle": "热门作者",
+      "tagsTitle": "热门标签",
+      "scheduleTitle": "本周日程",
+      "authorsAction": "浏览作者",
+      "tagsAction": "去搜索",
+      "scheduleAction": "查看日程",
+      "authorsEmpty": "暂无热门作者",
+      "tagsEmpty": "暂无热门标签",
+      "scheduleHint": "查看本周最新活动与直播安排",
+      "authorCount": "共 {n} 条更新"
+    },
+    "tags": {
+      "label": "热门标签",
+      "empty": "暂无标签"
+    },
+    "filters": {
+      "label": "分类筛选"
+    },
+    "latestSubtitle": "持续更新的最新内容流",
+    "latestAction": "查看更多"
   },
   "explore": {
     "title": "探索",
@@ -924,6 +1000,11 @@
     "nav": {
       "explore": "探索",
       "support": "支持"
+    },
+    "note": "适合慢慢逛、慢慢收藏，也适合明天再回来。",
+    "columns": {
+      "discover": "发现",
+      "community": "社区"
     }
   },
   "stats": {
