@@ -88,6 +88,7 @@ export interface PostListItem {
   duration?: number | null
   scraped_at?: string
   created_at?: string
+  tags?: string[]
 }
 
 export interface MediaFile {
