@@ -144,6 +144,34 @@ export {
   type ListSchedulesParams,
   type ScheduleCreateRequest,
 } from './scheduleService'
+export {
+  homeService,
+  type HomeAggregateResponse,
+  type HomeFeaturedResponse,
+  type HomeStoryDeckResponse,
+  type HomeLatestTextPostsResponse,
+  type TrendsSummaryResponse,
+  type HomeScheduleHighlightsResponse,
+  type HomeCommunityHighlightsResponse,
+  type HomeFeaturedItem,
+  type HomeLatestTextPostItem,
+  type HomeStoryDeckItem,
+  type HomeScheduleHighlight,
+  type HomeCommunityHighlight,
+  type HomePortalItem,
+  type HomeHeroSpotlight,
+  type HomeEditorialCard,
+  type HomeTagBrief,
+  type HomeAuthorBrief,
+  type HomeApiResult,
+  type HomeBootstrapResult,
+} from './homeService'
+export {
+  DEFAULT_PUBLIC_VISIBILITY_SCOPE,
+  readPublicVisibilityHeaders,
+  type PublicContentTier,
+  type PublicVisibilityScope,
+} from './publicVisibility'
 export { memberService, type MemberProfile } from './memberService'
 export { systemService, type HealthResponse } from './systemService'
 export {
