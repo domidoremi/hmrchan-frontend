@@ -1,89 +1,139 @@
 <template>
   <div class="contact-page">
     <div class="container">
-      <div class="contact-card glass-card">
-        <h1 class="page-title">{{ $t('contact.title') }}</h1>
-        <p class="page-subtitle">{{ $t('contact.subtitle') }}</p>
+      <section class="page-hero contact-hero">
+        <div class="page-hero__content">
+          <span class="page-hero__eyebrow">{{ $t('contact.title') }}</span>
+          <h1 class="page-title">{{ $t('contact.title') }}</h1>
+          <p class="page-subtitle">{{ $t('contact.subtitle') }}</p>
+          <div class="page-hero__meta">
+            <span class="page-hero__note">{{ $t('contact.feedbackTitle') }}</span>
+            <span class="page-hero__note">{{ $t('contact.feedbackSubtitle') }}</span>
+          </div>
+        </div>
+      </section>
 
-        <form class="contact-form" @submit.prevent="handleSubmit">
-          <div class="form-group">
-            <label for="name">{{ $t('contact.name') }}</label>
-            <Input id="name" v-model="form.name" type="text" required />
+      <div class="contact-layout page-grid page-grid--sidebar">
+        <div class="page-card-stack">
+          <section class="contact-card glass-card">
+            <h2 class="section-title">{{ $t('contact.title') }}</h2>
+            <p class="page-subtitle">{{ $t('contact.subtitle') }}</p>
+
+            <form class="contact-form" @submit.prevent="handleSubmit">
+              <div class="form-group">
+                <label for="name">{{ $t('contact.name') }}</label>
+                <Input id="name" v-model="form.name" type="text" required />
+              </div>
+
+              <div class="form-group">
+                <label for="email">{{ $t('contact.email') }}</label>
+                <Input id="email" v-model="form.email" type="email" required />
+              </div>
+
+              <div class="form-group">
+                <label for="subject">{{ $t('contact.subject') }}</label>
+                <Input id="subject" v-model="form.subject" type="text" required />
+              </div>
+
+              <div class="form-group">
+                <label for="message">{{ $t('contact.message') }}</label>
+                <Textarea
+                  id="message"
+                  v-model="form.message"
+                  class="contact-textarea"
+                  rows="5"
+                  required
+                />
+              </div>
+
+              <Button type="submit" :loading="isSubmitting" full-width>
+                {{ isSubmitting ? $t('contact.sending') : $t('contact.send') }}
+              </Button>
+            </form>
+          </section>
+
+          <section class="contact-card glass-card">
+            <h2 class="section-title">{{ $t('contact.feedbackTitle') }}</h2>
+            <p class="page-subtitle">{{ $t('contact.feedbackSubtitle') }}</p>
+
+            <form class="contact-form" @submit.prevent="handleFeedbackSubmit">
+              <div class="form-group">
+                <label>{{ $t('contact.feedbackCategory') }}</label>
+                <div
+                  class="category-list"
+                  role="radiogroup"
+                  :aria-label="$t('contact.feedbackCategory')"
+                >
+                  <button
+                    v-for="option in feedbackCategoryOptions"
+                    :key="option.value"
+                    type="button"
+                    class="category-btn"
+                    :class="{ active: feedback.category === option.value }"
+                    :aria-pressed="feedback.category === option.value"
+                    @click="feedback.category = option.value"
+                  >
+                    {{ option.label }}
+                  </button>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="feedback-contact">{{ $t('contact.feedbackContact') }}</label>
+                <Input id="feedback-contact" v-model="feedback.contact" type="email" />
+              </div>
+
+              <div class="form-group">
+                <label for="feedback-message">{{ $t('contact.feedbackMessage') }}</label>
+                <Textarea
+                  id="feedback-message"
+                  v-model="feedback.message"
+                  class="contact-textarea"
+                  rows="5"
+                  required
+                />
+              </div>
+
+              <Button type="submit" :loading="isFeedbackSubmitting" full-width>
+                {{
+                  isFeedbackSubmitting ? $t('contact.feedbackSending') : $t('contact.feedbackSend')
+                }}
+              </Button>
+            </form>
+          </section>
+        </div>
+
+        <aside class="contact-side glass-card">
+          <div class="contact-side__section">
+            <h2 class="contact-side__title">{{ $t('contact.feedbackTitle') }}</h2>
+            <p class="contact-side__copy">{{ $t('contact.feedbackSubtitle') }}</p>
           </div>
 
-          <div class="form-group">
-            <label for="email">{{ $t('contact.email') }}</label>
-            <Input id="email" v-model="form.email" type="email" required />
-          </div>
-
-          <div class="form-group">
-            <label for="subject">{{ $t('contact.subject') }}</label>
-            <Input id="subject" v-model="form.subject" type="text" required />
-          </div>
-
-          <div class="form-group">
-            <label for="message">{{ $t('contact.message') }}</label>
-            <Textarea
-              id="message"
-              v-model="form.message"
-              class="contact-textarea"
-              rows="5"
-              required
-            />
-          </div>
-
-          <Button type="submit" :loading="isSubmitting" full-width>
-            {{ isSubmitting ? $t('contact.sending') : $t('contact.send') }}
-          </Button>
-        </form>
-      </div>
-
-      <div class="contact-card glass-card">
-        <h2 class="section-title">{{ $t('contact.feedbackTitle') }}</h2>
-        <p class="page-subtitle">{{ $t('contact.feedbackSubtitle') }}</p>
-
-        <form class="contact-form" @submit.prevent="handleFeedbackSubmit">
-          <div class="form-group">
-            <label>{{ $t('contact.feedbackCategory') }}</label>
-            <div
-              class="category-list"
-              role="radiogroup"
-              :aria-label="$t('contact.feedbackCategory')"
-            >
-              <button
+          <div class="contact-side__section">
+            <span class="contact-side__label">{{ $t('contact.feedbackCategory') }}</span>
+            <div class="contact-side__chips">
+              <span
                 v-for="option in feedbackCategoryOptions"
-                :key="option.value"
-                type="button"
-                class="category-btn"
-                :class="{ active: feedback.category === option.value }"
-                :aria-pressed="feedback.category === option.value"
-                @click="feedback.category = option.value"
+                :key="`contact-chip-${option.value}`"
+                class="summary-chip"
               >
                 {{ option.label }}
-              </button>
+              </span>
             </div>
           </div>
 
-          <div class="form-group">
-            <label for="feedback-contact">{{ $t('contact.feedbackContact') }}</label>
-            <Input id="feedback-contact" v-model="feedback.contact" type="email" />
+          <div class="contact-side__section">
+            <span class="contact-side__label">{{ $t('nav.community') }}</span>
+            <div class="contact-side__links">
+              <RouterLink to="/community" class="glass-button contact-side__link">
+                {{ $t('nav.community') }}
+              </RouterLink>
+              <RouterLink to="/about" class="glass-button contact-side__link">
+                {{ $t('nav.about') }}
+              </RouterLink>
+            </div>
           </div>
-
-          <div class="form-group">
-            <label for="feedback-message">{{ $t('contact.feedbackMessage') }}</label>
-            <Textarea
-              id="feedback-message"
-              v-model="feedback.message"
-              class="contact-textarea"
-              rows="5"
-              required
-            />
-          </div>
-
-          <Button type="submit" :loading="isFeedbackSubmitting" full-width>
-            {{ isFeedbackSubmitting ? $t('contact.feedbackSending') : $t('contact.feedbackSend') }}
-          </Button>
-        </form>
+        </aside>
       </div>
     </div>
   </div>
@@ -93,6 +143,7 @@
 defineOptions({ name: 'ContactPage' })
 
 import { computed, ref, reactive } from 'vue'
+import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useToastStore } from '@/stores'
 import { contactService } from '@/api/contactService'
@@ -176,21 +227,62 @@ async function handleFeedbackSubmit() {
 
 <style scoped>
 .contact-page {
-  padding: var(--spacing-4) 0;
+  padding: var(--spacing-4) 0 var(--spacing-8);
 }
 
 .container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  display: grid;
   gap: var(--spacing-4);
 }
 
 .contact-card {
   width: 100%;
-  max-width: min(90vw, 32.5rem);
   padding: var(--spacing-5);
+}
+
+.contact-layout {
+  align-items: start;
+}
+
+.contact-side {
+  display: grid;
+  gap: var(--spacing-5);
+  padding: clamp(1.25rem, 2vw, 1.75rem);
+}
+
+.contact-side__section {
+  display: grid;
+  gap: var(--spacing-3);
+}
+
+.contact-side__title {
+  margin: 0;
+  font-size: var(--text-lg);
+}
+
+.contact-side__copy {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
+.contact-side__label {
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+}
+
+.contact-side__chips,
+.contact-side__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-2);
+}
+
+.contact-side__link {
+  min-width: 8rem;
 }
 
 @media (min-width: 768px) {

@@ -7,10 +7,29 @@
     </div>
 
     <div class="container">
-      <div class="page-title-row">
-        <h1 class="page-title">{{ $t('nav.authors') }}</h1>
-        <span v-if="isLoading && authors.length > 0" class="spinner spinner-sm" />
-      </div>
+      <header class="page-hero authors-hero">
+        <div class="page-hero__content">
+          <div class="page-title-row">
+            <div>
+              <span class="page-hero__eyebrow">{{ $t('nav.authors') }}</span>
+              <h1 class="page-title">{{ $t('nav.authors') }}</h1>
+            </div>
+            <div class="page-hero__actions">
+              <button type="button" class="glass-button" @click="goToExplore">
+                {{ $t('nav.explore') }}
+              </button>
+              <span v-if="isLoading && authors.length > 0" class="spinner spinner-sm" />
+            </div>
+          </div>
+
+          <div class="page-hero__meta">
+            <span class="page-hero__stat">
+              <strong>{{ total }}</strong>
+              <span>{{ $t('nav.authors') }}</span>
+            </span>
+          </div>
+        </div>
+      </header>
 
       <h2 class="sr-only">{{ $t('nav.authors') }}</h2>
 
@@ -38,21 +57,44 @@
               @mouseenter="prefetchAuthorDetailPage"
               @focus="prefetchAuthorDetailPage"
             >
-              <img
-                v-if="author.avatar_url"
-                class="author-avatar"
-                :src="normalizeAvatarUrl(author.avatar_url) || author.avatar_url"
-                :alt="author.display_name || author.name"
-                loading="lazy"
-                decoding="async"
-                style="object-fit: cover"
-              />
-              <div v-else class="author-avatar skeleton" />
+              <div class="author-card__head">
+                <img
+                  v-if="author.avatar_url"
+                  class="author-avatar"
+                  :src="normalizeAvatarUrl(author.avatar_url) || author.avatar_url"
+                  :alt="author.display_name || author.name"
+                  loading="lazy"
+                  decoding="async"
+                  style="object-fit: cover"
+                />
+                <div v-else class="author-avatar skeleton" />
+                <span v-if="author.is_verified" class="author-verified">
+                  <BadgeCheck :size="14" />
+                </span>
+              </div>
 
               <div class="author-info">
-                <h3 class="author-name">{{ author.display_name || author.name }}</h3>
+                <div class="author-topline">
+                  <h3 class="author-name">{{ author.display_name || author.name }}</h3>
+                  <span class="author-platform">{{ author.platform }}</span>
+                </div>
                 <p class="author-username">@{{ author.username }}</p>
+                <p v-if="author.description" class="author-description">{{ author.description }}</p>
+                <div class="author-meta">
+                  <span v-if="author.follower_count" class="author-metric">
+                    <Users :size="14" />
+                    {{ formatCompactCount(author.follower_count) }}
+                  </span>
+                  <span v-if="author.post_count" class="author-metric">
+                    <FileText :size="14" />
+                    {{ formatCompactCount(author.post_count) }}
+                  </span>
+                </div>
               </div>
+
+              <span class="author-card__cta">
+                <ArrowRight :size="16" />
+              </span>
             </button>
           </div>
 
@@ -79,6 +121,7 @@ defineOptions({ name: 'AuthorsPage' })
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
+import { ArrowRight, BadgeCheck, FileText, Users } from 'lucide-vue-next'
 import { authorService, type AuthorListItem, ApiError } from '@/api'
 import { normalizeAvatarUrl } from '@/api/userService'
 import { authorCache } from '@/utils/cache'
@@ -213,6 +256,16 @@ function goToAuthor(authorId: string) {
   router.push(`/author/${authorId}`)
 }
 
+function goToExplore() {
+  router.push('/explore')
+}
+
+function formatCompactCount(value: number): string {
+  if (value >= 1000000) return `${(value / 1000000).toFixed(value >= 10000000 ? 0 : 1)}M`
+  if (value >= 1000) return `${(value / 1000).toFixed(value >= 10000 ? 0 : 1)}K`
+  return String(value)
+}
+
 onMounted(() => {
   if (authors.value.length === 0) {
     void fetchAuthors()
@@ -275,7 +328,7 @@ onUnmounted(() => {
   align-items: center;
   justify-content: space-between;
   gap: var(--spacing-3);
-  margin-bottom: var(--spacing-4);
+  margin-bottom: 0;
 }
 
 .page-title {
@@ -327,9 +380,10 @@ onUnmounted(() => {
 
 .author-card {
   display: flex;
-  align-items: center;
-  gap: var(--spacing-3);
-  padding: var(--spacing-3);
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--spacing-4);
+  padding: var(--spacing-4);
 }
 
 .author-card-btn {
@@ -340,27 +394,56 @@ onUnmounted(() => {
   cursor: pointer;
 }
 
+.author-card__head {
+  position: relative;
+}
+
 .author-avatar {
-  width: 3rem;
-  height: 3rem;
-  border-radius: 50%;
+  width: 4rem;
+  height: 4rem;
+  border-radius: 1.4rem;
   flex-shrink: 0;
+  box-shadow: 0 1rem 1.8rem -1.3rem rgba(15, 23, 42, 0.45);
 }
 
 @media (min-width: 768px) {
   .author-avatar {
-    width: 3.5rem;
-    height: 3.5rem;
+    width: 4.5rem;
+    height: 4.5rem;
   }
+}
+
+.author-verified {
+  position: absolute;
+  inset-inline-end: -0.25rem;
+  inset-block-end: -0.25rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: var(--radius-full);
+  background: rgba(var(--color-accent-rgb), 0.18);
+  color: var(--color-accent-dark);
+  border: 1px solid rgba(var(--color-accent-rgb), 0.22);
 }
 
 .author-info {
   flex: 1;
+  display: grid;
+  gap: var(--spacing-2);
   min-width: 0;
 }
 
+.author-topline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-2);
+}
+
 .author-name {
-  font-size: var(--text-sm);
+  font-size: var(--text-base);
   font-weight: var(--font-semibold);
   margin: 0;
   overflow: hidden;
@@ -368,12 +451,71 @@ onUnmounted(() => {
   white-space: nowrap;
 }
 
+.author-platform {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.75rem;
+  padding-inline: 0.75rem;
+  border-radius: var(--radius-full);
+  background: rgba(var(--color-primary-rgb), 0.08);
+  color: var(--color-text-secondary);
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
+  text-transform: capitalize;
+}
+
 .author-username {
   font-size: var(--text-xs);
   color: var(--color-text-tertiary);
-  margin: var(--spacing-1) 0 0;
+  margin: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.author-description {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.author-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-2);
+}
+
+.author-metric {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 2rem;
+  padding-inline: 0.8rem;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  color: var(--color-text-secondary);
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
+}
+
+.author-card__cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: auto;
+  color: var(--color-text-tertiary);
+  transition:
+    transform var(--transition-fast),
+    color var(--transition-fast);
+}
+
+.author-card-btn:hover .author-card__cta {
+  color: var(--color-text-primary);
+  transform: translateX(0.2rem);
 }
 </style>
