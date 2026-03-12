@@ -403,6 +403,15 @@
     "filters": {
       "label": "Quick Filters"
     },
+    "preview": {
+      "label": "Preview Mode",
+      "desc": "Live content is temporarily unavailable, so curated sample posts keep the homepage layout and pacing intact."
+    },
+    "storyMerge": {
+      "kicker": "Keep Scrolling",
+      "title": "Let the last card ease into the footer",
+      "subtitle": "Before the brand footer fully arrives, offer one bridge layer back to explore, creators, schedules, and community."
+    },
     "latestSubtitle": "Fresh drops updated continuously",
     "latestAction": "View All"
   },

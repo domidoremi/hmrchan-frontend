@@ -1,108 +1,115 @@
 <template>
   <div class="search-page">
     <div class="container">
-      <header class="search-header">
-        <div class="search-header-top">
-          <button
-            type="button"
-            class="back-btn glass-btn"
-            @click="goBack"
-            :aria-label="$t('common.back')"
-          >
-            <AnimatedIcon name="explore" :fallback-icon="ArrowLeft" size="md" />
-          </button>
-          <h1 class="search-title">{{ $t('search.title') }}</h1>
+      <header class="search-header page-hero search-hero">
+        <div class="page-hero__content">
+          <div class="search-header-top">
+            <button
+              type="button"
+              class="back-btn glass-btn"
+              @click="goBack"
+              :aria-label="$t('common.back')"
+            >
+              <AnimatedIcon name="explore" :fallback-icon="ArrowLeft" size="md" />
+            </button>
+            <h1 class="search-title">{{ $t('search.title') }}</h1>
+          </div>
+          <SearchBar class="search-bar-main" />
+          <div v-if="!query" class="page-hero__meta">
+            <span class="page-hero__note">{{ $t('search.tips.keyword') }}</span>
+            <span class="page-hero__note">{{ $t('search.tips.author') }}</span>
+            <span class="page-hero__note">{{ $t('search.tips.platform') }}</span>
+          </div>
         </div>
-        <SearchBar class="search-bar-main" />
       </header>
 
       <div v-if="query" class="search-content">
-        <div class="search-meta">
-          <p class="search-query-info">
-            {{ $t('search.resultsFor') }} <strong>"{{ query }}"</strong>
-          </p>
-        </div>
-
-        <div class="search-filters">
-          <div class="filter-tabs">
-            <button
-              v-for="tab in tabs"
-              :key="tab.id"
-              type="button"
-              class="filter-tab"
-              :class="{ active: activeTab === tab.id }"
-              :aria-pressed="activeTab === tab.id"
-              @click="activeTab = tab.id"
-            >
-              <AnimatedIcon
-                :name="tab.id === 'posts' ? 'search' : 'user'"
-                :fallback-icon="tab.icon"
-                size="sm"
-                :active="activeTab === tab.id"
-              />
-              {{ tab.label }}
-              <span v-if="tab.id === 'posts' && total > 0" class="tab-count">{{ total }}</span>
-              <span v-if="tab.id === 'authors' && authorTotal > 0" class="tab-count">{{
-                authorTotal
-              }}</span>
-            </button>
+        <section class="search-overview page-toolbar">
+          <div class="search-meta">
+            <p class="search-query-info">
+              {{ $t('search.resultsFor') }} <strong>"{{ query }}"</strong>
+            </p>
           </div>
 
-          <div class="filter-options">
-            <div v-if="activeTab === 'posts'" class="platform-filters">
+          <div class="search-filters">
+            <div class="filter-tabs">
               <button
-                v-for="platform in platformOptions"
-                :key="platform.value"
+                v-for="tab in tabs"
+                :key="tab.id"
                 type="button"
-                class="platform-btn"
-                :class="{ active: currentPlatform === platform.value }"
-                :aria-pressed="currentPlatform === platform.value"
-                @click="currentPlatform = platform.value"
+                class="filter-tab"
+                :class="{ active: activeTab === tab.id }"
+                :aria-pressed="activeTab === tab.id"
+                @click="activeTab = tab.id"
               >
                 <AnimatedIcon
-                  :name="platform.value === 'all' ? 'explore' : 'sparkle'"
-                  :fallback-icon="platform.icon"
+                  :name="tab.id === 'posts' ? 'search' : 'user'"
+                  :fallback-icon="tab.icon"
                   size="sm"
-                  :active="currentPlatform === platform.value"
+                  :active="activeTab === tab.id"
                 />
-                <span class="platform-label">{{ platform.label }}</span>
+                {{ tab.label }}
+                <span v-if="tab.id === 'posts' && total > 0" class="tab-count">{{ total }}</span>
+                <span v-if="tab.id === 'authors' && authorTotal > 0" class="tab-count">{{
+                  authorTotal
+                }}</span>
               </button>
             </div>
 
-            <div v-if="activeTab === 'posts'" class="sort-controls">
-              <Select v-model="sortBy" class="sort-select">
-                <option v-for="opt in sortOptions" :key="opt.value" :value="opt.value">
-                  {{ opt.label }}
-                </option>
-              </Select>
-              <button
-                type="button"
-                class="sort-order-btn"
-                :class="{ 'sort-order-btn--asc': sortOrder === 'asc' }"
-                :aria-pressed="sortOrder === 'asc'"
-                :aria-label="
-                  sortOrder === 'desc' ? $t('search.sort.descending') : $t('search.sort.ascending')
-                "
-                :title="
-                  sortOrder === 'desc' ? $t('search.sort.descending') : $t('search.sort.ascending')
-                "
-                @click="toggleSortOrder"
-              >
-                <AnimatedIcon name="explore" :fallback-icon="ArrowUpDown" size="sm" />
-              </button>
+            <div class="filter-options">
+              <div v-if="activeTab === 'posts'" class="platform-filters">
+                <button
+                  v-for="platform in platformOptions"
+                  :key="platform.value"
+                  type="button"
+                  class="platform-btn"
+                  :class="{ active: currentPlatform === platform.value }"
+                  :aria-pressed="currentPlatform === platform.value"
+                  @click="currentPlatform = platform.value"
+                >
+                  <AnimatedIcon
+                    :name="platform.value === 'all' ? 'explore' : 'sparkle'"
+                    :fallback-icon="platform.icon"
+                    size="sm"
+                    :active="currentPlatform === platform.value"
+                  />
+                  <span class="platform-label">{{ platform.label }}</span>
+                </button>
+              </div>
+
+              <div v-if="activeTab === 'posts'" class="sort-controls">
+                <Select v-model="sortBy" class="sort-select">
+                  <option v-for="opt in sortOptions" :key="opt.value" :value="opt.value">
+                    {{ opt.label }}
+                  </option>
+                </Select>
+                <button
+                  type="button"
+                  class="sort-order-btn"
+                  :class="{ 'sort-order-btn--asc': sortOrder === 'asc' }"
+                  :aria-pressed="sortOrder === 'asc'"
+                  :aria-label="
+                    sortOrder === 'desc'
+                      ? $t('search.sort.descending')
+                      : $t('search.sort.ascending')
+                  "
+                  :title="
+                    sortOrder === 'desc'
+                      ? $t('search.sort.descending')
+                      : $t('search.sort.ascending')
+                  "
+                  @click="toggleSortOrder"
+                >
+                  <AnimatedIcon name="explore" :fallback-icon="ArrowUpDown" size="sm" />
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        </section>
 
         <div class="search-results">
           <div v-if="isLoading && results.length === 0" class="results-loading">
-            <div v-for="i in 6" :key="i" class="result-skeleton glass-card">
-              <Skeleton variant="image" />
-              <div class="skeleton-content">
-                <Skeleton width="80%" height="18px" />
-                <Skeleton width="50%" height="14px" />
-              </div>
-            </div>
+            <PostCardSkeleton v-for="i in 6" :key="i" />
           </div>
 
           <template v-else-if="activeTab === 'posts'">
@@ -218,7 +225,7 @@
       </div>
 
       <div v-else class="search-empty">
-        <div class="empty-content">
+        <div class="empty-content empty-surface search-empty-surface">
           <h2>{{ $t('search.emptyTitle') }}</h2>
           <p>{{ $t('search.emptyHint') }}</p>
           <div class="search-tips">
@@ -384,13 +391,7 @@
           </div>
 
           <div v-if="isDiscoverLoading" class="results-loading">
-            <div v-for="i in 6" :key="`discover-skeleton-${i}`" class="result-skeleton glass-card">
-              <Skeleton variant="image" />
-              <div class="skeleton-content">
-                <Skeleton width="80%" height="18px" />
-                <Skeleton width="50%" height="14px" />
-              </div>
-            </div>
+            <PostCardSkeleton v-for="i in 6" :key="`discover-skeleton-${i}`" />
           </div>
 
           <StateIndicator
@@ -437,7 +438,14 @@ import {
   Trash2,
 } from 'lucide-vue-next'
 import { IconYoutube, IconX, IconTiktok, IconInstagram } from '@/components/icons'
-import { searchService, postService, type PostListItem, type AuthorListItem } from '@/api'
+import {
+  DEFAULT_PUBLIC_VISIBILITY_SCOPE,
+  readPublicVisibilityHeaders,
+  searchService,
+  postService,
+  type PostListItem,
+  type AuthorListItem,
+} from '@/api'
 import { historyService, type HistoryStats, type SearchHistoryItem } from '@/api/historyService'
 import { normalizeAvatarUrl } from '@/api/userService'
 import { useDebouncedRef } from '@/composables/useDebouncedRef'
@@ -450,6 +458,7 @@ import SearchBar from '@/components/business/SearchBar.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import Select from '@/components/ui/Select.vue'
 import PostCard from '@/components/business/PostCard.vue'
+import PostCardSkeleton from '@/components/business/PostCardSkeleton.vue'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
 import Skeleton from '@/components/ui/Skeleton.vue'
 
@@ -494,6 +503,7 @@ const error = ref<string | null>(null)
 const authorError = ref<string | null>(null)
 const discoverError = ref<string | null>(null)
 const historyError = ref<string | null>(null)
+const searchVisibility = ref({ ...DEFAULT_PUBLIC_VISIBILITY_SCOPE })
 let discoverRequestToken = 0
 let postsRequestToken = 0
 let authorRequestToken = 0
@@ -523,11 +533,16 @@ const topSearchQueries = computed(() => {
     .slice(0, 5)
 })
 
-// 检查是否可能有更多结果（未登录用户每平台限制15条）
+// 游客搜索仍受统一公开可见域限制，避免再依赖旧的“15条”前端硬编码。
 const mayHaveMoreResults = computed(() => {
-  if (isAuthenticated.value) return false
-  // 如果结果数量接近限制，可能有更多
-  return results.value.length >= 15 || total.value > results.value.length
+  if (isAuthenticated.value || results.value.length === 0) return false
+
+  const visibleLimit = searchVisibility.value.limit
+  if (searchVisibility.value.tier === 'guest' && visibleLimit !== null) {
+    return total.value >= visibleLimit || results.value.length >= visibleLimit
+  }
+
+  return total.value > results.value.length
 })
 
 const tabIcons = {
@@ -694,7 +709,12 @@ async function search(signal?: AbortSignal) {
         thumbnail_quality: getThumbnailQuality(),
         ...(platform && { platform }),
       },
-      requestSignal ? { signal: requestSignal } : undefined
+      {
+        ...(requestSignal ? { signal: requestSignal } : undefined),
+        onResponseHeaders: (headers) => {
+          searchVisibility.value = readPublicVisibilityHeaders(headers)
+        },
+      }
     )
     if (requestSignal?.aborted || requestToken !== postsRequestToken) return
     results.value = res.items
@@ -737,7 +757,12 @@ async function loadMore() {
         thumbnail_quality: getThumbnailQuality(),
         ...(platform && { platform }),
       },
-      { signal: controller.signal }
+      {
+        signal: controller.signal,
+        onResponseHeaders: (headers) => {
+          searchVisibility.value = readPublicVisibilityHeaders(headers)
+        },
+      }
     )
     if (controller.signal.aborted || requestToken !== postsRequestToken) return
     results.value.push(...res.items)
@@ -935,6 +960,7 @@ function getAuthorMemo(author: AuthorListItem) {
 
 watch(query, (nextQuery) => {
   lastRecordedSearchKey = ''
+  searchVisibility.value = { ...DEFAULT_PUBLIC_VISIBILITY_SCOPE }
   const controller = new AbortController()
   onWatcherCleanup(() => controller.abort())
   abortPostsLoadMoreRequest()
@@ -1050,8 +1076,8 @@ onBeforeUnmount(() => {
 }
 
 .search-header {
-  max-width: min(90vw, 35rem);
-  margin: 0 auto var(--spacing-3);
+  max-width: min(100%, 52rem);
+  margin: 0 auto var(--spacing-4);
   text-align: center;
 }
 
@@ -1103,10 +1129,12 @@ onBeforeUnmount(() => {
 .search-content {
   max-width: var(--container-max-fluid);
   margin: 0 auto;
+  display: grid;
+  gap: var(--spacing-4);
 }
 
 .search-meta {
-  margin-bottom: var(--spacing-4);
+  margin-bottom: 0;
 }
 
 .search-query-info {
@@ -1118,13 +1146,18 @@ onBeforeUnmount(() => {
   color: var(--color-text);
 }
 
+.search-overview {
+  align-items: center;
+}
+
 .search-filters {
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: var(--spacing-3);
-  margin-bottom: var(--spacing-4);
+  margin-bottom: 0;
   flex-wrap: wrap;
+  flex: 1;
 }
 
 .filter-tabs {
@@ -1614,7 +1647,12 @@ onBeforeUnmount(() => {
 }
 
 .empty-content {
-  max-width: min(90vw, 25rem);
+  max-width: min(100%, 42rem);
+  margin: 0 auto;
+}
+
+.search-empty-surface {
+  text-align: center;
 }
 
 .empty-icon {
@@ -1653,6 +1691,8 @@ onBeforeUnmount(() => {
   padding-left: var(--spacing-4);
   font-size: var(--text-sm);
   color: var(--color-text-secondary);
+  display: grid;
+  gap: var(--spacing-2);
 }
 
 .search-tips li {

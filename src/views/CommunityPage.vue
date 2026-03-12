@@ -8,40 +8,57 @@
 
     <div class="container">
       <!-- Header -->
-      <header class="page-header">
-        <div class="page-header-row">
-          <div>
-            <h1>{{ $t('community.title') }}</h1>
-            <p class="page-subtitle">{{ $t('community.subtitle') }}</p>
-          </div>
-          <div class="page-header-actions">
-            <div class="discussion-search">
-              <AnimatedIcon name="search" :fallback-icon="Search" size="sm" />
-              <input
-                v-model="searchQuery"
-                type="search"
-                class="discussion-search-input"
-                :placeholder="$t('community.searchPlaceholder')"
-                :aria-label="$t('community.searchPlaceholder')"
-                @keydown.escape="clearSearch"
-              />
+      <header class="page-header page-hero community-hero">
+        <div class="page-hero__content">
+          <div class="page-header-row">
+            <div>
+              <h1>{{ $t('community.title') }}</h1>
+              <p class="page-subtitle">{{ $t('community.subtitle') }}</p>
+            </div>
+            <div class="page-header-actions">
+              <div class="discussion-search">
+                <AnimatedIcon name="search" :fallback-icon="Search" size="sm" />
+                <input
+                  v-model="searchQuery"
+                  type="search"
+                  class="discussion-search-input"
+                  :placeholder="$t('community.searchPlaceholder')"
+                  :aria-label="$t('community.searchPlaceholder')"
+                  @keydown.escape="clearSearch"
+                />
+                <button
+                  v-if="searchQuery"
+                  type="button"
+                  class="search-clear-btn"
+                  :aria-label="$t('common.clear')"
+                  @click="clearSearch"
+                >
+                  <AnimatedIcon name="explore" :fallback-icon="X" size="sm" />
+                </button>
+              </div>
               <button
-                v-if="searchQuery"
                 type="button"
-                class="search-clear-btn"
-                :aria-label="$t('common.clear')"
-                @click="clearSearch"
+                class="guide-trigger glass-button"
+                :aria-label="$t('community.guideTitle')"
+                @click="showGuide = true"
               >
-                <AnimatedIcon name="explore" :fallback-icon="X" size="sm" />
+                <AnimatedIcon name="sparkle" :fallback-icon="HelpCircle" size="sm" />
               </button>
             </div>
+          </div>
+
+          <div v-if="!searchQuery" class="community-tabs page-toolbar">
             <button
+              v-for="tab in tabs"
+              :key="tab.id"
               type="button"
-              class="guide-trigger glass-button"
-              :aria-label="$t('community.guideTitle')"
-              @click="showGuide = true"
+              class="tab-btn"
+              :class="{ active: activeTab === tab.id }"
+              :aria-pressed="activeTab === tab.id"
+              @click="switchTab(tab.id)"
             >
-              <AnimatedIcon name="sparkle" :fallback-icon="HelpCircle" size="sm" />
+              <AnimatedIcon name="explore" :fallback-icon="tab.icon" size="sm" />
+              <span>{{ tab.label }}</span>
             </button>
           </div>
         </div>
@@ -58,22 +75,6 @@
           </ul>
         </div>
       </Dialog>
-
-      <!-- Tabs -->
-      <div v-if="!searchQuery" class="community-tabs">
-        <button
-          v-for="tab in tabs"
-          :key="tab.id"
-          type="button"
-          class="tab-btn"
-          :class="{ active: activeTab === tab.id }"
-          :aria-pressed="activeTab === tab.id"
-          @click="switchTab(tab.id)"
-        >
-          <AnimatedIcon name="explore" :fallback-icon="tab.icon" size="sm" />
-          <span>{{ tab.label }}</span>
-        </button>
-      </div>
 
       <!-- Search Results -->
       <section v-if="searchQuery" class="community-section">
@@ -128,9 +129,21 @@
           class="composer-section"
           @created="handleDiscussionCreated"
         />
-        <div v-else class="login-prompt glass-card">
-          <p>{{ $t('community.loginToPost') }}</p>
-          <Button @click="goToLogin">{{ $t('nav.login') }}</Button>
+        <div v-else class="login-prompt glass-card empty-surface">
+          <div class="login-prompt__content">
+            <p class="login-prompt__title">{{ $t('community.loginToPost') }}</p>
+            <ul class="login-prompt__list">
+              <li>{{ $t('community.guidePoint1') }}</li>
+              <li>{{ $t('community.guidePoint2') }}</li>
+              <li>{{ $t('community.guidePoint3') }}</li>
+            </ul>
+          </div>
+          <div class="login-prompt__actions">
+            <Button @click="goToLogin">{{ $t('nav.login') }}</Button>
+            <button type="button" class="glass-button" @click="goToExplore">
+              {{ $t('nav.explore') }}
+            </button>
+          </div>
         </div>
 
         <!-- Recent Discussions -->
@@ -413,6 +426,10 @@ function goToLogin() {
   router.push('/login')
 }
 
+function goToExplore() {
+  router.push('/explore')
+}
+
 async function fetchDiscussions(): Promise<boolean> {
   return discStore.fetchDiscussions(true)
 }
@@ -623,6 +640,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: var(--spacing-2);
+  flex-wrap: wrap;
 }
 
 .discussion-search {
@@ -741,21 +759,44 @@ onUnmounted(() => {
 }
 
 .login-prompt {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--spacing-3);
-  padding: var(--spacing-4);
-  text-align: center;
+  display: grid;
+  gap: var(--spacing-4);
+  padding: clamp(1.25rem, 2vw, 1.75rem);
   margin-bottom: var(--spacing-4);
+  text-align: left;
+}
+
+.login-prompt__content {
+  display: grid;
+  gap: var(--spacing-3);
+}
+
+.login-prompt__title {
+  margin: 0;
+  color: var(--color-text-primary);
+  font-size: var(--text-lg);
+  font-weight: var(--font-semibold);
+}
+
+.login-prompt__list {
+  display: grid;
+  gap: var(--spacing-2);
+  padding-inline-start: 1.1rem;
+  list-style: disc;
   color: var(--color-text-secondary);
   font-size: var(--text-sm);
+}
+
+.login-prompt__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-3);
 }
 
 .community-tabs {
   display: flex;
   width: 100%;
-  margin-bottom: var(--spacing-4);
+  margin-bottom: 0;
   gap: var(--spacing-2);
 }
 

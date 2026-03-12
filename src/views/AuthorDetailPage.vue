@@ -140,13 +140,13 @@ async function fetchAuthor(targetAuthorId = authorId.value, signal?: AbortSignal
     const [authorRes, postsRes] = await Promise.all([
       authorService.getAuthor(
         targetAuthorId,
-        requestSignal ? { signal: requestSignal } : undefined
+        requestSignal ? { signal: requestSignal, skipErrorToast: true } : { skipErrorToast: true }
       ),
       authorService.listAuthorPosts(
         targetAuthorId,
         1,
         24,
-        requestSignal ? { signal: requestSignal } : undefined
+        requestSignal ? { signal: requestSignal, skipErrorToast: true } : { skipErrorToast: true }
       ),
     ])
 
