@@ -114,7 +114,17 @@ const resolvedActionLabel = computed(() => props.actionLabel ?? t('common.retry'
   flex-direction: column;
   align-items: center;
   gap: var(--spacing-5);
+  max-width: min(100%, 32rem);
+  margin-inline: auto;
   padding: var(--spacing-10) var(--spacing-6);
+  border: 1px solid rgba(255, 255, 255, 0.56);
+  border-radius: var(--radius-2xl);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0.7)),
+    radial-gradient(circle at top right, rgba(var(--color-primary-rgb), 0.08), transparent 40%);
+  box-shadow: 0 1.5rem 3rem -2.2rem rgba(15, 23, 42, 0.38);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
   text-align: center;
 }
 
@@ -236,6 +246,14 @@ const resolvedActionLabel = computed(() => props.actionLabel ?? t('common.retry'
 
 .state-indicator__actions {
   margin-top: var(--spacing-1);
+}
+
+[data-theme='dark'] .state-indicator {
+  border-color: rgba(148, 163, 184, 0.18);
+  background:
+    linear-gradient(145deg, rgba(21, 27, 44, 0.84), rgba(17, 22, 36, 0.7)),
+    radial-gradient(circle at top right, rgba(var(--color-primary-rgb), 0.12), transparent 40%);
+  box-shadow: 0 1.5rem 3rem -2.2rem rgba(0, 0, 0, 0.7);
 }
 
 @media (prefers-reduced-motion: reduce) {

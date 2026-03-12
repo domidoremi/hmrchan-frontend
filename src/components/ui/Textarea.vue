@@ -63,13 +63,16 @@ defineExpose({ el: textareaRef })
   width: 100%;
   border-radius: var(--ui-radius-input, var(--radius));
   border: 1px solid var(--glass-border);
-  background: var(--glass-bg-light);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.72)),
+    var(--glass-bg-light);
   color: var(--color-foreground);
   font-size: var(--text-sm);
   line-height: 1.6;
   padding: 0.75rem var(--ui-control-padding-x-md);
   min-height: 7.5rem;
   resize: vertical;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
   transition-property: border-color, box-shadow, background-color;
   transition-duration: 150ms;
   transition-timing-function: var(--ease-out);
@@ -79,16 +82,12 @@ defineExpose({ el: textareaRef })
   color: var(--color-muted-foreground);
 }
 
-.ui-textarea:hover:not(:disabled):not(.ui-textarea--readonly) {
-  border-color: var(--glass-border-strong);
-  background: var(--glass-bg);
-}
-
 .ui-textarea:focus {
   outline: none;
   border-color: var(--color-ring);
   box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.12);
-  background: var(--glass-bg);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.78)), var(--glass-bg);
 }
 
 .ui-textarea--sm {
@@ -129,6 +128,14 @@ defineExpose({ el: textareaRef })
 @media (max-width: 768px) {
   .ui-textarea {
     font-size: 1rem;
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .ui-textarea:hover:not(:disabled):not(.ui-textarea--readonly) {
+    border-color: var(--glass-border-strong);
+    background:
+      linear-gradient(145deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.74)), var(--glass-bg);
   }
 }
 </style>

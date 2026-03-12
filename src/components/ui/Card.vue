@@ -84,9 +84,12 @@ function handleMouseLeave() {
 <style scoped>
 .ui-card {
   position: relative;
+  display: flex;
+  flex-direction: column;
   border-radius: var(--ui-radius-card, var(--radius-xl));
   border: 1px solid var(--glass-border);
-  background: var(--glass-bg);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0.72)), var(--glass-bg);
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
   box-shadow: var(--glass-shadow);
@@ -151,6 +154,7 @@ function handleMouseLeave() {
 
 /* 悬停状态 */
 .ui-card--hovered {
+  transform: translateY(-0.3rem);
   border-color: var(--glass-border-strong);
   box-shadow:
     var(--glass-shadow-lg),
@@ -175,11 +179,22 @@ function handleMouseLeave() {
 }
 
 .ui-card__content {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--spacing-4);
   padding: var(--spacing-5);
 }
 
 .ui-card__footer {
   padding: 0 var(--spacing-5) var(--spacing-5);
+}
+
+.ui-card:focus-within {
+  border-color: var(--glass-border-strong);
+  box-shadow:
+    var(--glass-shadow-lg),
+    0 0 0 0.1875rem rgba(var(--color-primary-rgb), 0.12);
 }
 
 /* Reduced motion */

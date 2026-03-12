@@ -42,12 +42,13 @@ const computedStyle = computed(() => {
 .skeleton {
   background: linear-gradient(
     90deg,
-    var(--glass-bg-light) 0%,
-    var(--glass-bg) 50%,
-    var(--glass-bg-light) 100%
+    rgba(226, 232, 240, 0.82) 0%,
+    rgba(255, 255, 255, 0.96) 50%,
+    rgba(226, 232, 240, 0.82) 100%
   );
   background-size: 200% 100%;
   border-radius: var(--radius-md);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.3);
 }
 
 /* ========== Variants ========== */
@@ -98,7 +99,7 @@ const computedStyle = computed(() => {
 .skeleton--wave {
   position: relative;
   overflow: hidden;
-  background: var(--glass-bg-light);
+  background: linear-gradient(135deg, rgba(226, 232, 240, 0.78), rgba(255, 255, 255, 0.92));
 }
 
 .skeleton--wave::after {
@@ -125,8 +126,15 @@ const computedStyle = computed(() => {
 }
 
 .skeleton--pulse {
-  background: var(--glass-bg-light);
+  background: linear-gradient(135deg, rgba(226, 232, 240, 0.78), rgba(255, 255, 255, 0.92));
   animation: skeleton-pulse 2s ease-in-out infinite;
+}
+
+[data-theme='dark'] .skeleton,
+[data-theme='dark'] .skeleton--wave,
+[data-theme='dark'] .skeleton--pulse {
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.72), rgba(51, 65, 85, 0.92));
+  box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.06);
 }
 
 @keyframes skeleton-shimmer {
