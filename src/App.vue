@@ -17,8 +17,8 @@
     <AppNavbar />
 
     <!-- Main Content with Error Boundary -->
-    <main id="main-content">
-      <div class="route-view">
+    <main id="main-content" :class="{ 'main--home': isHomeRoute }">
+      <div class="route-view" :class="{ 'route-view--home': isHomeRoute }">
         <ErrorBoundary @retry="handleRetry">
           <RouterView v-slot="{ Component, route }">
             <Transition :name="transitionName" :mode="transitionMode">
@@ -130,6 +130,7 @@ onMounted(() => {
 
 // Footer only appears on key pages (configured via route meta)
 const showFooter = computed(() => Boolean(route.meta.showFooter))
+const isHomeRoute = computed(() => route.name === 'home' || route.path === '/')
 
 // Page transition name
 const transitionName = ref('')
@@ -260,7 +261,11 @@ function handleRetry() {
 
 main {
   flex: 1;
-  padding-top: var(--navbar-height);
+  padding-top: var(--navbar-visible-height);
+}
+
+main.main--home {
+  padding-top: 0;
 }
 
 @media (max-width: 768px) {
@@ -271,11 +276,17 @@ main {
 
 .route-view {
   position: relative;
-  min-height: calc(100svh - var(--navbar-height));
-  min-height: calc(100dvh - var(--navbar-height));
+  min-height: calc(100svh - var(--navbar-visible-height));
+  min-height: calc(100dvh - var(--navbar-visible-height));
   background: var(--color-background);
   overflow-x: hidden;
   overflow-y: visible;
+}
+
+.route-view.route-view--home {
+  min-height: 100svh;
+  min-height: 100dvh;
+  overflow: visible;
 }
 
 /* 认证页安全过渡：同帧交叠，避免 out-in 空窗白屏 */
