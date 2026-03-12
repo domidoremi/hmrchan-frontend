@@ -7,32 +7,40 @@
     </div>
 
     <div class="container">
-      <header class="page-header">
-        <div class="page-header-text">
-          <h1>{{ $t('schedule.title') }}</h1>
-          <p class="page-subtitle">{{ $t('schedule.subtitle') }}</p>
-        </div>
-        <div class="page-header-actions">
-          <div class="category-filters" role="radiogroup" :aria-label="$t('schedule.filterLabel')">
-            <button
-              v-for="cat in categories"
-              :key="cat.value"
-              type="button"
-              class="filter-chip glass-button"
-              :class="{ 'filter-chip--active': activeCategory === cat.value }"
-              role="radio"
-              :aria-checked="activeCategory === cat.value"
-              @click="setCategory(cat.value)"
-            >
-              <component :is="cat.icon" :size="14" />
-              <span>{{ $t(cat.label) }}</span>
-            </button>
+      <header class="page-hero schedule-hero">
+        <div class="page-hero__content">
+          <div class="page-header">
+            <div class="page-header-text">
+              <h1>{{ $t('schedule.title') }}</h1>
+              <p class="page-subtitle">{{ $t('schedule.subtitle') }}</p>
+            </div>
+            <div class="page-header-actions">
+              <div
+                class="category-filters"
+                role="radiogroup"
+                :aria-label="$t('schedule.filterLabel')"
+              >
+                <button
+                  v-for="cat in categories"
+                  :key="cat.value"
+                  type="button"
+                  class="filter-chip glass-button"
+                  :class="{ 'filter-chip--active': activeCategory === cat.value }"
+                  role="radio"
+                  :aria-checked="activeCategory === cat.value"
+                  @click="setCategory(cat.value)"
+                >
+                  <component :is="cat.icon" :size="14" />
+                  <span>{{ $t(cat.label) }}</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </header>
 
       <!-- 月份导航 -->
-      <div class="month-nav">
+      <div class="month-nav page-toolbar">
         <button
           type="button"
           class="month-nav-btn glass-button"
@@ -130,7 +138,7 @@
         :is-open="!!detailEvent"
         :title="detailEvent?.title ?? ''"
         size="default"
-        @close="detailEvent = null"
+        @close="closeDetail"
       >
         <div v-if="detailLoading" class="detail-loading">
           <div class="detail-skeleton" />
@@ -368,6 +376,7 @@
 defineOptions({ name: 'SchedulePage' })
 
 import { ref, computed, onMounted, watch, onWatcherCleanup, useTemplateRef } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import {
   ChevronLeft,
@@ -392,6 +401,8 @@ import StateIndicator from '@/components/ui/StateIndicator.vue'
 import Dialog from '@/components/ui/Dialog.vue'
 
 const { t, locale } = useI18n()
+const route = useRoute()
+const router = useRouter()
 const scheduleStore = useScheduleStore()
 
 // ========== 状态 ==========
@@ -409,6 +420,10 @@ const monthTransition = ref<'month-slide-left' | 'month-slide-right'>('month-sli
 const detailEvent = ref<ScheduleResponse | null>(null)
 const detailLoading = ref(false)
 let latestFetchId = 0
+const routeScheduleId = computed(() => {
+  const value = route.params['id']
+  return typeof value === 'string' && value.trim().length > 0 ? value : null
+})
 
 // 触摸手势
 let touchStartX = 0
@@ -707,47 +722,34 @@ const hasDetailLinks = computed(() => {
   return detailEvent.value.event_url || detailEvent.value.ticket_url || detailEvent.value.source_url
 })
 
-async function openDetail(eventId: string) {
+async function loadDetail(eventId: string) {
   detailLoading.value = true
   detailEvent.value = { id: eventId } as ScheduleResponse // placeholder to open dialog
   try {
-    detailEvent.value = await scheduleService.getById(eventId)
-  } catch (err) {
-    if (err instanceof ApiError && err.status === 404) {
-      // API not deployed yet — build detail from calendar item
-      const calItem = events.value.find((e) => e.id === eventId)
-      if (calItem) {
-        detailEvent.value = calendarItemToResponse(calItem)
-      } else {
-        detailEvent.value = null
-      }
-    } else {
-      detailEvent.value = null
+    detailEvent.value = await scheduleService.getById(eventId, { skipErrorToast: true })
+  } catch {
+    detailEvent.value = null
+    if (routeScheduleId.value === eventId) {
+      void router.replace({ name: 'schedule' })
     }
   } finally {
     detailLoading.value = false
   }
 }
 
-function calendarItemToResponse(item: ScheduleCalendarItem): ScheduleResponse {
-  return {
-    id: item.id,
-    uuid: '',
-    title: item.title,
-    description: item.description ?? null,
-    category: item.category,
-    start_date: item.start,
-    end_date: item.end ?? null,
-    is_all_day: item.allDay,
-    venue: item.venue ?? null,
-    venue_address: null,
-    event_url: item.url ?? null,
-    ticket_url: null,
-    source_url: null,
-    source_platform: null,
-    color: item.color ?? null,
-    is_published: true,
-    created_at: '',
+async function openDetail(eventId: string) {
+  if (routeScheduleId.value !== eventId) {
+    await router.push({ name: 'schedule-detail', params: { id: eventId } })
+    return
+  }
+
+  await loadDetail(eventId)
+}
+
+function closeDetail() {
+  detailEvent.value = null
+  if (routeScheduleId.value) {
+    void router.replace({ name: 'schedule' })
   }
 }
 
@@ -864,6 +866,20 @@ watch(
     const controller = new AbortController()
     void fetchEvents(controller.signal)
     onWatcherCleanup(() => controller.abort())
+  },
+  { immediate: true }
+)
+
+watch(
+  routeScheduleId,
+  (nextId) => {
+    if (!nextId) {
+      detailEvent.value = null
+      detailLoading.value = false
+      return
+    }
+
+    void loadDetail(nextId)
   },
   { immediate: true }
 )

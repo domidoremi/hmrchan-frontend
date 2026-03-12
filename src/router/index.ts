@@ -118,6 +118,14 @@ const routes: RouteRecordRaw[] = [
     ],
   },
   {
+    path: '/discussion/:id',
+    redirect: (to) => ({
+      name: 'discussion-detail',
+      params: { id: to.params['id'] },
+      query: to.query,
+    }),
+  },
+  {
     path: '/author/:id',
     name: 'author-detail',
     component: () => import('@/views/AuthorDetailPage.vue'),
@@ -209,6 +217,12 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/schedule',
     name: 'schedule',
+    component: () => import('@/views/SchedulePage.vue'),
+    meta: { title: 'nav.schedule' },
+  },
+  {
+    path: '/schedule/:id',
+    name: 'schedule-detail',
     component: () => import('@/views/SchedulePage.vue'),
     meta: { title: 'nav.schedule' },
   },

@@ -10,60 +10,71 @@
     </div>
 
     <div class="container">
-      <header class="page-header">
-        <div class="page-title-row">
-          <div class="page-title-group">
-            <h1>{{ $t('explore.title') }}</h1>
-            <span class="page-title-badge">{{ total }} {{ $t('search.tab.posts') }}</span>
+      <header class="page-header page-hero explore-hero">
+        <div class="page-hero__content">
+          <div class="page-title-row">
+            <div class="page-title-group">
+              <h1>{{ $t('explore.title') }}</h1>
+              <span class="page-title-badge">{{ total }} {{ $t('search.tab.posts') }}</span>
+            </div>
+            <div class="page-actions page-hero__actions">
+              <button
+                type="button"
+                class="search-trigger glass-btn"
+                @click="goToSearch"
+                :aria-label="$t('search.title')"
+              >
+                <AnimatedIcon name="search" :fallback-icon="Search" size="sm" />
+                <span class="search-trigger-text">{{ $t('search.title') }}</span>
+                <kbd class="search-kbd">/</kbd>
+              </button>
+              <span v-if="isLoading && posts.length > 0" class="spinner spinner-sm" />
+            </div>
           </div>
-          <div class="page-actions">
-            <button
-              type="button"
-              class="search-trigger glass-btn"
-              @click="goToSearch"
-              :aria-label="$t('search.title')"
-            >
-              <AnimatedIcon name="search" :fallback-icon="Search" size="sm" />
-              <span class="search-trigger-text">{{ $t('search.title') }}</span>
-              <kbd class="search-kbd">/</kbd>
-            </button>
-            <span v-if="isLoading && posts.length > 0" class="spinner spinner-sm" />
+
+          <div class="page-hero__meta">
+            <span class="page-hero__stat">
+              <strong>{{ total }}</strong>
+              <span>{{ $t('search.tab.posts') }}</span>
+            </span>
+            <span class="page-hero__note">{{ $t('explore.sortBy') }}</span>
+            <span class="page-hero__note">{{ $t('explore.platformFilter') }}</span>
+          </div>
+
+          <div class="filters-row page-toolbar" role="group" :aria-label="$t('explore.filters')">
+            <div class="filters" role="group" :aria-label="$t('explore.sortBy')">
+              <button
+                v-for="sort in sortOptions"
+                :key="sort.value"
+                type="button"
+                class="filter-btn"
+                :class="{ active: currentSort === sort.value }"
+                :aria-pressed="currentSort === sort.value"
+                :aria-label="sort.label"
+                @click="currentSort = sort.value"
+              >
+                {{ sort.label }}
+              </button>
+            </div>
+
+            <div class="platform-filters" role="group" :aria-label="$t('explore.platformFilter')">
+              <button
+                v-for="platform in platformOptions"
+                :key="platform.value"
+                type="button"
+                class="platform-btn"
+                :class="{ active: currentPlatform === platform.value }"
+                :aria-pressed="currentPlatform === platform.value"
+                :aria-label="platform.label"
+                @click="currentPlatform = platform.value"
+              >
+                <AnimatedIcon name="explore" :fallback-icon="platform.icon" size="sm" />
+                <span class="platform-label">{{ platform.label }}</span>
+              </button>
+            </div>
           </div>
         </div>
       </header>
-
-      <div class="filters-row" role="group" :aria-label="$t('explore.filters')">
-        <div class="filters" role="group" :aria-label="$t('explore.sortBy')">
-          <button
-            v-for="sort in sortOptions"
-            :key="sort.value"
-            type="button"
-            class="filter-btn"
-            :class="{ active: currentSort === sort.value }"
-            :aria-pressed="currentSort === sort.value"
-            :aria-label="sort.label"
-            @click="currentSort = sort.value"
-          >
-            {{ sort.label }}
-          </button>
-        </div>
-
-        <div class="platform-filters" role="group" :aria-label="$t('explore.platformFilter')">
-          <button
-            v-for="platform in platformOptions"
-            :key="platform.value"
-            type="button"
-            class="platform-btn"
-            :class="{ active: currentPlatform === platform.value }"
-            :aria-pressed="currentPlatform === platform.value"
-            :aria-label="platform.label"
-            @click="currentPlatform = platform.value"
-          >
-            <AnimatedIcon name="explore" :fallback-icon="platform.icon" size="sm" />
-            <span class="platform-label">{{ platform.label }}</span>
-          </button>
-        </div>
-      </div>
 
       <h2 class="sr-only">{{ $t('search.tab.posts') }}</h2>
 
@@ -787,7 +798,7 @@ onBeforeUnmount(() => {
 }
 
 .page-header {
-  margin-bottom: var(--spacing-3);
+  margin-bottom: 0;
 }
 
 .page-title-row {
@@ -923,7 +934,19 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: space-between;
   gap: var(--spacing-3);
-  margin-bottom: var(--spacing-4);
+  margin-bottom: 0;
+}
+
+.explore-hero .page-title-row {
+  margin-bottom: 0;
+}
+
+.explore-hero .page-title-group {
+  flex-wrap: wrap;
+}
+
+.explore-hero .page-actions {
+  flex-wrap: wrap;
 }
 
 .platform-filters {

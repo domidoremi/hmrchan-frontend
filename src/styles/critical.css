@@ -159,14 +159,14 @@ body {
 
 main {
   flex: 1;
-  padding-top: var(--navbar-height);
+  padding-top: var(--navbar-visible-height);
   min-height: 100svh;
   min-height: 100dvh;
 }
 
 .route-view {
-  min-height: calc(100svh - var(--navbar-height));
-  min-height: calc(100dvh - var(--navbar-height));
+  min-height: calc(100svh - var(--navbar-visible-height));
+  min-height: calc(100dvh - var(--navbar-visible-height));
 }
 
 .hero {
@@ -174,8 +174,8 @@ main {
 }
 
 .page-loading {
-  min-height: calc(100svh - var(--navbar-height));
-  min-height: calc(100dvh - var(--navbar-height));
+  min-height: calc(100svh - var(--navbar-visible-height));
+  min-height: calc(100dvh - var(--navbar-visible-height));
 }
 .desktop-only {
   display: flex;
