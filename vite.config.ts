@@ -14,7 +14,7 @@
 
 import { fileURLToPath, URL } from 'node:url'
 import { execSync } from 'node:child_process'
-import type { IncomingMessage } from 'node:http'
+import type { ClientRequest, IncomingMessage } from 'node:http'
 
 import { defineConfig, loadEnv } from 'vite'
 import vue from '@vitejs/plugin-vue'
@@ -28,6 +28,31 @@ import { asyncCssPlugin } from './vite-plugin-async-css'
 
 type DevProxyServer = {
   on(event: 'proxyRes', listener: (proxyRes: IncomingMessage) => void): void
+  on(event: 'proxyReq', listener: (proxyReq: ClientRequest, req: IncomingMessage) => void): void
+}
+
+const DEV_PROXY_BROWSER_UA =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 ' +
+  '(KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36'
+
+function normalizeProxyRequestHeaders(proxyReq: ClientRequest, req: IncomingMessage): void {
+  proxyReq.removeHeader('origin')
+  proxyReq.removeHeader('referer')
+  proxyReq.removeHeader('sec-fetch-site')
+  proxyReq.removeHeader('sec-fetch-mode')
+  proxyReq.removeHeader('sec-fetch-dest')
+  proxyReq.removeHeader('sec-fetch-user')
+  proxyReq.removeHeader('sec-ch-ua')
+  proxyReq.removeHeader('sec-ch-ua-mobile')
+  proxyReq.removeHeader('sec-ch-ua-platform')
+
+  const incomingUserAgent = req.headers['user-agent']
+  const normalizedUserAgent =
+    typeof incomingUserAgent === 'string' && !incomingUserAgent.includes('HeadlessChrome')
+      ? incomingUserAgent
+      : DEV_PROXY_BROWSER_UA
+
+  proxyReq.setHeader('user-agent', normalizedUserAgent)
 }
 
 /** 构建时间戳，用于缓存破坏 */
@@ -78,6 +103,9 @@ function createProxyConfig(apiTarget: string) {
       secure: true,
       followRedirects: true,
       configure: (proxy: DevProxyServer) => {
+        proxy.on('proxyReq', (proxyReq, req) => {
+          normalizeProxyRequestHeaders(proxyReq, req)
+        })
         proxy.on('proxyRes', (proxyRes) => {
           const setCookie = proxyRes.headers['set-cookie']
           if (setCookie && Array.isArray(setCookie)) {
