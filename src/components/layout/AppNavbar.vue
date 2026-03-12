@@ -409,6 +409,21 @@ function syncNavbarVisibleHeight() {
   )
 }
 
+function isHomeRailNavLockEnabled(): boolean {
+  if (typeof document === 'undefined' || typeof window === 'undefined') return false
+  if (document.documentElement.dataset.homeRailNavLock === 'true') return true
+  if (document.documentElement.dataset.homeStoryFooter === 'true') return true
+
+  const lockedSections = Array.from(
+    document.querySelectorAll<HTMLElement>('.home-page .home-screen')
+  )
+
+  return lockedSections.some((section) => {
+    const rect = section.getBoundingClientRect()
+    return rect.top <= window.innerHeight * 0.92 && rect.bottom >= window.innerHeight * 0.12
+  })
+}
+
 // 使用统一的用户头像 composable，确保与其他组件同步
 const { avatarUrl: userAvatar } = useUserAvatar()
 
@@ -535,6 +550,13 @@ watch(
   () => {
     closeSettings()
     closeUserMenu()
+    nextTick(() => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          handleScroll()
+        })
+      })
+    })
   }
 )
 
@@ -732,20 +754,33 @@ function updateDropdownPosition(kind: 'settings' | 'user') {
 const handleScroll = throttleRAF(() => {
   const currentScrollY = window.scrollY
   const delta = currentScrollY - lastScrollY
+  const railNavLocked = isHomeRailNavLockEnabled()
+  const showAt = Math.max(0, scrollThreshold - showHysteresis)
+  const hideAt = scrollThreshold + hideHysteresis
+
+  if (railNavLocked) {
+    const nextHidden = true
+    if (nextHidden !== isNavbarHidden.value) {
+      isNavbarHidden.value = nextHidden
+      syncNavbarVisibleHeight()
+      lastToggleTime = performance.now()
+    }
+    lastScrollY = currentScrollY
+    return
+  }
 
   if (Math.abs(delta) < minScrollDelta) {
     lastScrollY = currentScrollY
     return
   }
 
-  const hideAt = scrollThreshold + hideHysteresis
-  const showAt = Math.max(0, scrollThreshold - showHysteresis)
-
   let nextHidden = isNavbarHidden.value
 
-  if (delta > 0 && currentScrollY > hideAt) {
+  if (railNavLocked && currentScrollY > hideAt) {
     nextHidden = true
-  } else if (delta < 0) {
+  } else if (delta > 0 && currentScrollY > hideAt) {
+    nextHidden = true
+  } else if (delta < 0 && !railNavLocked) {
     nextHidden = false
   } else if (currentScrollY <= showAt) {
     nextHidden = false
@@ -824,6 +859,9 @@ onMounted(() => {
   document.addEventListener('keydown', handleKeydown)
   window.addEventListener('resize', handleResize)
   window.addEventListener('scroll', handleScroll, { passive: true })
+  requestAnimationFrame(() => {
+    handleScroll()
+  })
   if (shouldPrefetchOnIdle()) {
     requestIdle(() => {
       prefetchExplorePage()

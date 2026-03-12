@@ -16,6 +16,11 @@
         <div class="skeleton-title skeleton-title--short glass-skeleton glass-skeleton--wave" />
       </div>
 
+      <div class="skeleton-excerpt">
+        <div class="skeleton-line glass-skeleton glass-skeleton--wave" />
+        <div class="skeleton-line skeleton-line--short glass-skeleton glass-skeleton--wave" />
+      </div>
+
       <!-- Meta 区域 -->
       <div class="skeleton-meta">
         <div class="skeleton-author-wrapper">
@@ -55,8 +60,8 @@ const imageWrapperStyle = computed(() => ({
 .post-card-skeleton {
   display: block;
   overflow: hidden;
-  /* 与 PostCard 相同的背景 */
-  background: var(--glass-bg);
+  background:
+    linear-gradient(160deg, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.78)), var(--glass-bg);
 }
 
 /* ========== 图片区域 ========== */
@@ -64,7 +69,9 @@ const imageWrapperStyle = computed(() => ({
   position: relative;
   width: 100%;
   overflow: hidden;
-  background: var(--glass-bg-light);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(241, 245, 249, 0.82)),
+    var(--glass-bg-light);
   border-radius: var(--radius-lg) var(--radius-lg) 0 0;
 }
 
@@ -88,14 +95,15 @@ const imageWrapperStyle = computed(() => ({
 
 /* ========== 内容区域 ========== */
 .skeleton-content {
-  padding: var(--spacing-3);
+  display: grid;
+  gap: var(--spacing-3);
+  padding: var(--spacing-4);
 }
 
 .skeleton-title-wrapper {
   display: flex;
   flex-direction: column;
   gap: 0.375rem;
-  margin-bottom: var(--spacing-2);
 }
 
 .skeleton-title {
@@ -106,6 +114,21 @@ const imageWrapperStyle = computed(() => ({
 
 .skeleton-title--short {
   width: 65%;
+}
+
+.skeleton-excerpt {
+  display: grid;
+  gap: 0.375rem;
+}
+
+.skeleton-line {
+  height: 0.75rem;
+  width: 100%;
+  border-radius: var(--radius-sm);
+}
+
+.skeleton-line--short {
+  width: 72%;
 }
 
 /* ========== Meta 区域 ========== */

@@ -77,6 +77,10 @@ const i18n = createI18n({
   locale: 'en',
   messages: {
     en: {
+      app: {
+        name: 'MomiChan',
+        tagline: 'A soft editorial home for creator moments',
+      },
       common: {
         search: 'Search',
       },

@@ -201,6 +201,7 @@ function handleMouseLeave() {
   overflow: hidden;
   transform-origin: center;
   will-change: transform;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22);
 }
 
 /* Ripple 容器 */
@@ -327,20 +328,21 @@ function handleMouseLeave() {
 
 /* Variants */
 .btn-default {
-  background: var(--color-primary);
+  background: linear-gradient(145deg, var(--color-primary), var(--color-primary-light));
   color: var(--color-on-primary);
   box-shadow: var(--shadow-sm);
 }
 
 .btn-default:hover:not(:disabled) {
-  background: var(--color-primary-dark);
+  background: linear-gradient(145deg, var(--color-primary-dark), var(--color-primary));
   box-shadow:
     var(--shadow-md),
     0 0 20px rgba(var(--color-primary-rgb), 0.3);
 }
 
 .btn-secondary {
-  background: var(--glass-bg);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0.7)), var(--glass-bg);
   backdrop-filter: var(--glass-blur);
   border-color: var(--glass-border);
   color: var(--color-foreground);
@@ -353,7 +355,7 @@ function handleMouseLeave() {
 }
 
 .btn-outline {
-  background: transparent;
+  background: rgba(255, 255, 255, 0.45);
   border-color: var(--color-input);
   color: var(--color-foreground);
 }
@@ -385,7 +387,7 @@ function handleMouseLeave() {
 }
 
 .btn-destructive {
-  background: var(--color-destructive);
+  background: linear-gradient(145deg, var(--color-destructive), var(--color-error-hover));
   color: var(--color-destructive-foreground);
   box-shadow: var(--shadow-sm);
 }
@@ -398,7 +400,7 @@ function handleMouseLeave() {
 }
 
 .btn-success {
-  background: var(--color-success);
+  background: linear-gradient(145deg, var(--color-success), var(--color-success-hover));
   color: var(--color-white);
   box-shadow: var(--shadow-sm);
 }

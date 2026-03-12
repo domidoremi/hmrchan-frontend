@@ -64,16 +64,59 @@ const currentYear = computed(() => new Date().getFullYear())
 
 <style scoped>
 .footer {
+  position: relative;
   padding: var(--spacing-8) 0;
+  background:
+    radial-gradient(circle at top left, rgba(199, 220, 244, 0.18) 0%, transparent 34%),
+    radial-gradient(circle at top right, rgba(246, 218, 229, 0.16) 0%, transparent 30%),
+    linear-gradient(
+      180deg,
+      rgba(248, 247, 244, 0.82) 0%,
+      rgba(248, 247, 244, 0.96) 32%,
+      #f8f7f4 100%
+    );
+  opacity: var(--home-footer-opacity, 1);
+  transform: translate3d(0, var(--home-footer-y, 0rem), 0);
+  filter: blur(var(--home-footer-blur, 0rem));
+  transition:
+    opacity 360ms cubic-bezier(0.2, 0.84, 0.24, 1),
+    transform 420ms cubic-bezier(0.2, 0.9, 0.25, 1),
+    filter 360ms cubic-bezier(0.2, 0.84, 0.24, 1);
+}
+
+.footer::before {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  inset-block-start: 0;
+  block-size: clamp(5rem, 10vw, 8rem);
+  background:
+    linear-gradient(180deg, rgba(248, 247, 244, 0), rgba(248, 247, 244, 0.72)),
+    radial-gradient(circle at top center, rgba(255, 255, 255, 0.24), transparent 68%);
+  pointer-events: none;
 }
 
 .footer-shell {
   padding: clamp(1.5rem, 3vw, 2rem);
   border-color: rgba(255, 255, 255, 0.6);
+  background:
+    linear-gradient(155deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.84)),
+    rgba(255, 255, 255, 0.76);
+  box-shadow:
+    0 2rem 4.4rem -2.8rem rgba(35, 53, 85, 0.18),
+    inset 0 0.0625rem 0 rgba(255, 255, 255, 0.62);
+  backdrop-filter: blur(1rem);
+  will-change: transform, box-shadow;
+  transform: translate3d(0, var(--home-footer-shell-y, 0rem), 0);
+  transition:
+    transform 420ms cubic-bezier(0.2, 0.9, 0.25, 1),
+    box-shadow 360ms cubic-bezier(0.2, 0.84, 0.24, 1),
+    border-color 360ms cubic-bezier(0.2, 0.84, 0.24, 1),
+    background 360ms cubic-bezier(0.2, 0.84, 0.24, 1);
 }
 
 .footer-shell:hover {
-  transform: none;
+  transform: translate3d(0, var(--home-footer-shell-y, 0rem), 0);
   border-color: rgba(255, 255, 255, 0.6);
   box-shadow: var(--glass-shadow);
 }
