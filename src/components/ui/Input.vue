@@ -61,9 +61,12 @@ function handleInput(event: Event) {
   width: 100%;
   border-radius: var(--ui-radius-input, var(--radius));
   border: 1px solid var(--glass-border);
-  background: var(--glass-bg-light);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.72)),
+    var(--glass-bg-light);
   color: var(--color-foreground);
   font-size: var(--text-sm);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
   transition-property: border-color, box-shadow, background-color;
   transition-duration: 150ms;
   transition-timing-function: var(--ease-out);
@@ -73,16 +76,12 @@ function handleInput(event: Event) {
   color: var(--color-muted-foreground);
 }
 
-.ui-input:hover:not(:disabled):not(.ui-input--readonly) {
-  border-color: var(--glass-border-strong);
-  background: var(--glass-bg);
-}
-
 .ui-input:focus {
   outline: none;
   border-color: var(--color-ring);
   box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.12);
-  background: var(--glass-bg);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.78)), var(--glass-bg);
 }
 
 .ui-input--sm {
@@ -128,6 +127,14 @@ function handleInput(event: Event) {
 @media (max-width: 768px) {
   .ui-input {
     font-size: 1rem;
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .ui-input:hover:not(:disabled):not(.ui-input--readonly) {
+    border-color: var(--glass-border-strong);
+    background:
+      linear-gradient(145deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.74)), var(--glass-bg);
   }
 }
 </style>
