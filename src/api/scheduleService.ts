@@ -85,7 +85,10 @@ export const scheduleService = {
   /**
    * 获取日程列表（分页）
    */
-  async list(params: ListSchedulesParams = {}): Promise<PaginatedApiResponse<ScheduleResponse>> {
+  async list(
+    params: ListSchedulesParams = {},
+    config?: RequestConfig
+  ): Promise<PaginatedApiResponse<ScheduleResponse>> {
     const query = new URLSearchParams()
     if (params.page) query.set('page', String(params.page))
     if (params.page_size) query.set('page_size', String(params.page_size))
@@ -98,7 +101,7 @@ export const scheduleService = {
     const qs = query.toString()
     return apiClient.get<PaginatedApiResponse<ScheduleResponse>>(
       `/schedules${qs ? `?${qs}` : ''}`,
-      { skipAuth: true }
+      config
     )
   },
 
@@ -125,16 +128,18 @@ export const scheduleService = {
     const qs = query.toString()
     return apiClient.get<ScheduleCalendarItem[]>(`/schedules/calendar${qs ? `?${qs}` : ''}`, {
       ...config,
-      skipAuth: true,
-      skipErrorToast: true,
+      skipErrorToast: config?.skipErrorToast ?? true,
     })
   },
 
   /**
    * 获取日程详情
    */
-  async getById(scheduleId: string): Promise<ScheduleResponse> {
-    return apiClient.get<ScheduleResponse>(`/schedules/${scheduleId}`, { skipAuth: true })
+  async getById(scheduleId: string, config?: RequestConfig): Promise<ScheduleResponse> {
+    return apiClient.get<ScheduleResponse>(`/schedules/${scheduleId}`, {
+      ...config,
+      skipErrorToast: config?.skipErrorToast ?? true,
+    })
   },
 
   /**

@@ -65,8 +65,9 @@ export const searchService = {
       page: params.page ?? 1,
       page_size: params.page_size ?? 20,
       platform: params.platform,
-      sort_by: params.sort_by,
-      sort_order: params.sort_order ?? (params.sort_by ? 'desc' : undefined),
+      sort_by: params.sort_by === 'relevance' ? null : params.sort_by,
+      sort_order:
+        params.sort_by && params.sort_by !== 'relevance' ? (params.sort_order ?? 'desc') : null,
       thumbnail_quality: params.thumbnail_quality,
     })
 
