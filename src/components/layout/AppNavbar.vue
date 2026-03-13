@@ -410,18 +410,8 @@ function syncNavbarVisibleHeight() {
 }
 
 function isHomeRailNavLockEnabled(): boolean {
-  if (typeof document === 'undefined' || typeof window === 'undefined') return false
-  if (document.documentElement.dataset.homeRailNavLock === 'true') return true
-  if (document.documentElement.dataset.homeStoryFooter === 'true') return true
-
-  const lockedSections = Array.from(
-    document.querySelectorAll<HTMLElement>('.home-page .home-screen')
-  )
-
-  return lockedSections.some((section) => {
-    const rect = section.getBoundingClientRect()
-    return rect.top <= window.innerHeight * 0.92 && rect.bottom >= window.innerHeight * 0.12
-  })
+  if (typeof document === 'undefined') return false
+  return document.documentElement.dataset.homeRailNavLock === 'true'
 }
 
 // 使用统一的用户头像 composable，确保与其他组件同步
@@ -759,7 +749,7 @@ const handleScroll = throttleRAF(() => {
   const hideAt = scrollThreshold + hideHysteresis
 
   if (railNavLocked) {
-    const nextHidden = true
+    const nextHidden = false
     if (nextHidden !== isNavbarHidden.value) {
       isNavbarHidden.value = nextHidden
       syncNavbarVisibleHeight()

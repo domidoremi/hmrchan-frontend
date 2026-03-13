@@ -104,7 +104,9 @@ export const commentService = {
    * 删除评论
    */
   async deleteComment(commentId: string): Promise<void> {
-    return apiClient.delete(`/comments/${commentId}`)
+    return apiClient.delete(`/comments/${commentId}`, {
+      verificationAction: 'delete_content',
+    })
   },
 
   /**
@@ -112,7 +114,7 @@ export const commentService = {
    */
   async uploadImage(file: File): Promise<CommentImageUploadResponse> {
     const formData = new FormData()
-    formData.append('file', file)
+    formData.append('files', file)
 
     return apiClient.post<CommentImageUploadResponse>('/comment-images', formData, {
       headers: {
@@ -148,7 +150,9 @@ export const commentService = {
    * 删除评论图片
    */
   async deleteImage(imageId: string): Promise<void> {
-    return apiClient.delete(`/comment-images/${imageId}`)
+    return apiClient.delete(`/comment-images/${imageId}`, {
+      verificationAction: 'delete_content',
+    })
   },
 
   /**

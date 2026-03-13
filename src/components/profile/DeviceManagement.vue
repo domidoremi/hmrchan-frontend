@@ -45,7 +45,7 @@ onMounted(() => {
   }
 })
 
-async function saveDeviceName(sessionId: number) {
+async function saveDeviceName(sessionId: string | number) {
   const success = await updateDeviceName(sessionId, editingDeviceName.value)
   if (success) {
     cancelEditing()
@@ -215,8 +215,9 @@ function getLocationText(session: Device): string {
           </div>
         </div>
 
-        <div v-if="!session.is_current" class="device-actions">
+        <div class="device-actions">
           <button
+            v-if="session.is_current"
             type="button"
             class="btn-trust"
             :class="{ trusted: session.is_trusted }"
@@ -229,7 +230,12 @@ function getLocationText(session: Device): string {
             />
             {{ session.is_trusted ? t('devices.untrust') : t('devices.trust') }}
           </button>
-          <button type="button" class="btn-revoke" @click="revokeSession(session.id)">
+          <button
+            v-if="!session.is_current"
+            type="button"
+            class="btn-revoke"
+            @click="revokeSession(session.id)"
+          >
             <AnimatedIcon name="sparkle" :fallback-icon="Trash2" size="md" />
             {{ t('devices.revoke') }}
           </button>

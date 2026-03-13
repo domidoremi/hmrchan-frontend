@@ -270,7 +270,9 @@ export const discussionService = {
    * 删除讨论
    */
   async delete(discussionId: string): Promise<void> {
-    await apiClient.delete(`/discussions/${discussionId}`)
+    await apiClient.delete(`/discussions/${discussionId}`, {
+      verificationAction: 'delete_content',
+    })
   },
 
   /**
@@ -291,14 +293,18 @@ export const discussionService = {
    * 置顶讨论（管理员）
    */
   async pin(discussionId: string): Promise<void> {
-    await apiClient.post(`/discussions/${discussionId}/pin`, null)
+    await apiClient.post(`/discussions/${discussionId}/pin`, null, {
+      verificationAction: 'admin_operation',
+    })
   },
 
   /**
    * 取消置顶讨论（管理员）
    */
   async unpin(discussionId: string): Promise<void> {
-    await apiClient.delete(`/discussions/${discussionId}/pin`)
+    await apiClient.delete(`/discussions/${discussionId}/pin`, {
+      verificationAction: 'admin_operation',
+    })
   },
 
   // ========== 讨论评论 ==========
@@ -380,7 +386,9 @@ export const discussionService = {
    * 删除评论
    */
   async deleteComment(commentId: string): Promise<void> {
-    await apiClient.delete(`/discussions/comments/${commentId}`)
+    await apiClient.delete(`/discussions/comments/${commentId}`, {
+      verificationAction: 'delete_content',
+    })
   },
 
   /**
@@ -420,28 +428,36 @@ export const discussionService = {
    * 置顶评论（管理员）
    */
   async pinComment(commentId: string): Promise<void> {
-    await apiClient.post(`/discussions/comments/${commentId}/pin`, null)
+    await apiClient.post(`/discussions/comments/${commentId}/pin`, null, {
+      verificationAction: 'admin_operation',
+    })
   },
 
   /**
    * 取消置顶评论（管理员）
    */
   async unpinComment(commentId: string): Promise<void> {
-    await apiClient.delete(`/discussions/comments/${commentId}/pin`)
+    await apiClient.delete(`/discussions/comments/${commentId}/pin`, {
+      verificationAction: 'admin_operation',
+    })
   },
 
   /**
    * 精选评论（管理员）
    */
   async featureComment(commentId: string): Promise<void> {
-    await apiClient.post(`/discussions/comments/${commentId}/feature`, null)
+    await apiClient.post(`/discussions/comments/${commentId}/feature`, null, {
+      verificationAction: 'admin_operation',
+    })
   },
 
   /**
    * 取消精选评论（管理员）
    */
   async unfeatureComment(commentId: string): Promise<void> {
-    await apiClient.delete(`/discussions/comments/${commentId}/feature`)
+    await apiClient.delete(`/discussions/comments/${commentId}/feature`, {
+      verificationAction: 'admin_operation',
+    })
   },
 
   // ========== 用户中心 ==========

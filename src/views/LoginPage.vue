@@ -185,15 +185,39 @@
             >
               {{ $t('auth.loginButton') }}
             </Button>
+
+            <div v-if="showRestorePanel" class="auth-restore">
+              <p class="auth-restore__title">{{ $t('auth.restoreTitle') }}</p>
+              <p class="auth-restore__hint">{{ restoreNotice }}</p>
+              <Button
+                type="button"
+                variant="ghost"
+                :loading="isRestoringAccount"
+                :disabled="!canRestoreAccount"
+                full-width
+                @click="handleRestoreAccount"
+              >
+                {{ $t('auth.restoreButton') }}
+              </Button>
+            </div>
           </form>
 
-          <p v-if="!show2fa" class="auth-forgot">
+          <p v-if="!show2fa && !showRiskVerification" class="auth-forgot">
             <RouterLink to="/forgot-password" @click="handleNavigateLink">{{
               $t('auth.forgotPassword')
             }}</RouterLink>
           </p>
 
-          <p v-if="!show2fa" class="auth-footer">
+          <p
+            v-if="!show2fa && !showRiskVerification && !showRestorePanel"
+            class="auth-restore-link"
+          >
+            <button type="button" class="auth-link-button" @click="openRestorePanel">
+              {{ $t('auth.restoreLink') }}
+            </button>
+          </p>
+
+          <p v-if="!show2fa && !showRiskVerification" class="auth-footer">
             {{ $t('auth.noAccount') }}
             <RouterLink to="/register" @click="handleNavigateLink">{{
               $t('nav.register')
@@ -208,13 +232,14 @@
 <script setup lang="ts">
 defineOptions({ name: 'LoginPage' })
 
-import { ref, computed, onUnmounted, useTemplateRef } from 'vue'
+import { ref, computed, onUnmounted, useTemplateRef, watch } from 'vue'
 import { useRouter, useRoute, RouterLink } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useAuthStore, useToastStore } from '@/stores'
 import { useI18n } from 'vue-i18n'
 import { ArrowLeft, Eye, EyeOff } from 'lucide-vue-next'
 import { isSafeRedirect } from '@/utils/security'
+import { userService, ApiError } from '@/api'
 import Button from '@/components/ui/Button.vue'
 import Input from '@/components/ui/Input.vue'
 import TurnstileWidget from '@/components/ui/TurnstileWidget.vue'
@@ -235,6 +260,8 @@ const usernameOrEmail = ref('')
 const password = ref('')
 const showPassword = ref(false)
 const formError = ref('')
+const showRestorePanel = ref(false)
+const isRestoringAccount = ref(false)
 type VisualMood = 'idle' | 'typing' | 'dodge' | 'submitting' | 'success'
 const visualMood = ref<VisualMood>('idle')
 let moodTimer: ReturnType<typeof setTimeout> | null = null
@@ -258,6 +285,16 @@ const turnstileRef = useTemplateRef<{ reset: () => void; getResponse: () => stri
 const riskExpiresInLabel = computed(() => {
   if (!riskExpiresIn.value || riskExpiresIn.value <= 0) return ''
   return t('auth.riskVerificationExpiresIn', { seconds: riskExpiresIn.value })
+})
+
+const canRestoreAccount = computed(() => {
+  return !!usernameOrEmail.value.trim() && !!password.value
+})
+
+const restoreNotice = computed(() => {
+  return route.query['restore_notice'] === 'deleted'
+    ? t('auth.restoreAfterDeleteNotice')
+    : t('auth.restoreHint')
 })
 
 function setVisualMood(next: VisualMood, holdMs = 0) {
@@ -340,6 +377,40 @@ if (isAuthenticated.value) {
   router.replace(redirectTo.value)
 }
 
+watch(
+  () => route.query['mode'],
+  (mode) => {
+    if (mode === 'restore') {
+      showRestorePanel.value = true
+    }
+  },
+  { immediate: true }
+)
+
+watch(
+  () => route.query['identifier'],
+  (identifier) => {
+    if (typeof identifier === 'string' && identifier.trim()) {
+      usernameOrEmail.value = identifier.trim()
+    }
+  },
+  { immediate: true }
+)
+
+function openRestorePanel() {
+  showRestorePanel.value = true
+  formError.value = ''
+  setVisualMood('typing', 600)
+}
+
+function buildLoginQueryWithoutRestore() {
+  const nextQuery = { ...route.query }
+  delete nextQuery['mode']
+  delete nextQuery['identifier']
+  delete nextQuery['restore_notice']
+  return nextQuery
+}
+
 async function handleLogin() {
   setVisualMood('submitting')
   formError.value = ''
@@ -391,6 +462,40 @@ async function handleLogin() {
     turnstileRef.value?.reset()
     toastStore.error(t(result.error || 'auth.invalidCredentials'))
     setVisualMood('dodge', 1200)
+  }
+}
+
+async function handleRestoreAccount() {
+  if (isRestoringAccount.value) return
+
+  setVisualMood('submitting')
+  formError.value = ''
+
+  if (!canRestoreAccount.value) {
+    formError.value = t('auth.error.fieldsRequired')
+    setVisualMood('typing', 900)
+    return
+  }
+
+  isRestoringAccount.value = true
+  try {
+    await userService.restoreAccount({
+      identifier: usernameOrEmail.value.trim(),
+      password: password.value,
+    })
+    password.value = ''
+    showRestorePanel.value = false
+    toastStore.success(t('profile.restoreAccountSuccess'))
+    await router.replace({
+      name: 'login',
+      query: buildLoginQueryWithoutRestore(),
+    })
+    setVisualMood('success', 900)
+  } catch (error) {
+    formError.value = error instanceof ApiError ? error.message : t('common.error')
+    setVisualMood('dodge', 1200)
+  } finally {
+    isRestoringAccount.value = false
   }
 }
 
@@ -771,6 +876,30 @@ function handleTurnstileError(error?: Error) {
   font-variant-numeric: tabular-nums;
 }
 
+.auth-restore {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+  padding: var(--spacing-3);
+  border-radius: 1rem;
+  border: 1px solid rgba(82, 95, 150, 0.2);
+  background:
+    linear-gradient(180deg, rgba(108, 119, 193, 0.1), rgba(255, 255, 255, 0.9)),
+    rgba(255, 255, 255, 0.92);
+}
+
+.auth-restore__title {
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  color: #27304f;
+}
+
+.auth-restore__hint {
+  font-size: var(--text-xs);
+  line-height: 1.6;
+  color: rgba(49, 58, 91, 0.78);
+}
+
 .auth-forgot {
   text-align: right;
   margin-top: var(--spacing-2);
@@ -782,6 +911,27 @@ function handleTurnstileError(error?: Error) {
 }
 
 .auth-forgot a:hover {
+  color: #4957dd;
+  text-decoration: underline;
+}
+
+.auth-restore-link {
+  text-align: right;
+  margin-top: calc(var(--spacing-2) * -1);
+}
+
+.auth-link-button {
+  padding: 0;
+  border: none;
+  background: transparent;
+  font: inherit;
+  font-size: var(--text-sm);
+  color: rgba(52, 62, 97, 0.76);
+  cursor: pointer;
+  transition: color 150ms ease;
+}
+
+.auth-link-button:hover {
   color: #4957dd;
   text-decoration: underline;
 }

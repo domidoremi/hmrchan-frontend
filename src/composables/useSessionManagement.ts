@@ -111,7 +111,7 @@ export function useSessionManagement() {
     }
   }
 
-  async function revokeSession(sessionId: number) {
+  async function revokeSession(sessionId: string | number) {
     if (!confirm(t('devices.confirm.revoke'))) return
 
     try {
@@ -142,21 +142,27 @@ export function useSessionManagement() {
 
   async function toggleTrust(session: Device) {
     try {
+      if (!session.is_current) {
+        toastStore.error(t('devices.error.trustCurrentOnly'))
+        return
+      }
+
       if (session.is_trusted) {
-        await deviceService.untrustDevice(session.id)
+        await deviceService.untrustDevice()
       } else {
-        await deviceService.trustDevice(session.id)
+        await deviceService.trustDevice()
       }
       toastStore.success(
         session.is_trusted ? t('devices.success.untrusted') : t('devices.success.trusted')
       )
       await fetchSessions()
-    } catch {
+    } catch (error) {
+      if (isVerificationCancelledError(error)) return
       toastStore.error(t('devices.error.trustFailed'))
     }
   }
 
-  async function updateDeviceName(sessionId: number, deviceName: string) {
+  async function updateDeviceName(sessionId: string | number, deviceName: string) {
     if (!deviceName.trim()) {
       toastStore.error(t('devices.error.emptyName'))
       return false

@@ -11,21 +11,17 @@ import { apiClient } from './client'
 
 export interface MediaFileListItem {
   id: string
-  post_id: string
-  file_path: string
   file_type: 'image' | 'video' | 'subtitle' | 'thumbnail'
+  file_name: string
   file_size_bytes: number
+  mime_type?: string | null
   width?: number | null
   height?: number | null
-  duration?: number | null
-  mime_type?: string | null
-  thumbnail_path?: string | null
-  is_downloaded: boolean
-  has_subtitle?: boolean
-  subtitles?: MediaSubtitle[]
+  duration_sec?: number | null
   created_at: string
-  // 兼容旧字段
-  file_size?: number
+  stream_url?: string | null
+  thumbnail_url?: string | null
+  download_url?: string | null
 }
 
 export type MediaFileResponse = MediaFileListItem
@@ -54,14 +50,7 @@ export const mediaService = {
    * 获取字幕内容（原始文本）
    */
   async getSubtitle(mediaId: string, language: string): Promise<string> {
-    const response = await fetch(this.getSubtitleUrl(mediaId, language), {
-      method: 'GET',
-      credentials: 'include',
-    })
-    if (!response.ok) {
-      throw new Error(`Subtitle request failed: ${response.status}`)
-    }
-    return response.text()
+    return apiClient.text(`/media/${mediaId}/subtitle?language=${encodeURIComponent(language)}`)
   },
 
   /**
@@ -72,15 +61,9 @@ export const mediaService = {
     if (range) {
       headers['Range'] = range
     }
-    const response = await fetch(this.getStreamUrl(mediaId), {
-      method: 'GET',
-      credentials: 'include',
+    return apiClient.response(`/media/${mediaId}/stream`, {
       headers,
     })
-    if (!response.ok) {
-      throw new Error(`Stream request failed: ${response.status}`)
-    }
-    return response
   },
 
   /**
@@ -90,28 +73,14 @@ export const mediaService = {
     mediaId: string,
     size: 'small' | 'medium' | 'large' | 'original' = 'medium'
   ): Promise<Blob> {
-    const response = await fetch(this.getThumbnailUrl(mediaId, size), {
-      method: 'GET',
-      credentials: 'include',
-    })
-    if (!response.ok) {
-      throw new Error(`Thumbnail request failed: ${response.status}`)
-    }
-    return response.blob()
+    return apiClient.blob(`/media/${mediaId}/thumbnail${size ? `?size=${size}` : ''}`)
   },
 
   /**
    * 下载媒体文件（二进制）
    */
   async download(mediaId: string): Promise<Blob> {
-    const response = await fetch(this.getDownloadUrl(mediaId), {
-      method: 'GET',
-      credentials: 'include',
-    })
-    if (!response.ok) {
-      throw new Error(`Download request failed: ${response.status}`)
-    }
-    return response.blob()
+    return apiClient.blob(`/media/${mediaId}/download`)
   },
 
   /**
