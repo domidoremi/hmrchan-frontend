@@ -1,7 +1,7 @@
 <template>
   <footer class="footer">
     <div class="container">
-      <div class="footer-shell glass-card">
+      <div class="footer-shell glass-card" :style="[footerShellStyle, noGlassBackdropStyle]">
         <div class="footer-main">
           <div class="footer-brand">
             <RouterLink to="/" class="brand-logo" :aria-label="$t('app.name')">
@@ -55,57 +55,106 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { storeToRefs } from 'pinia'
 import { RouterLink } from 'vue-router'
 import { Github, Sparkles } from 'lucide-vue-next'
+import { useSettingsStore, useThemeStore } from '@/stores'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 
 const currentYear = computed(() => new Date().getFullYear())
+const themeStore = useThemeStore()
+const settingsStore = useSettingsStore()
+const { resolvedTheme } = storeToRefs(themeStore)
+const { settings } = storeToRefs(settingsStore)
+const noGlassBackdropStyle = Object.freeze({
+  backdropFilter: 'blur(0rem)',
+  WebkitBackdropFilter: 'blur(0rem)',
+}) as Readonly<Record<string, string>>
+const footerShellStyle = computed<Record<string, string>>(() => {
+  const style: Record<string, string> = {}
+
+  if (resolvedTheme.value === 'dark') {
+    style['--footer-shell-bg'] =
+      'linear-gradient(155deg, rgba(12, 16, 23, 0.98), rgba(18, 24, 36, 0.94))'
+    style['--footer-shell-border'] = 'rgba(255, 255, 255, 0.12)'
+    style['--footer-shell-shadow'] = '0 1.8rem 4rem -2.4rem rgba(0, 0, 0, 0.52)'
+    style['--footer-chip-bg'] = 'rgba(18, 24, 36, 0.88)'
+    style['--footer-chip-border'] = 'rgba(255, 255, 255, 0.08)'
+  } else if (resolvedTheme.value === 'blue') {
+    style['--footer-shell-bg'] =
+      'linear-gradient(155deg, rgba(255, 255, 255, 0.98), rgba(239, 246, 255, 0.92))'
+    style['--footer-shell-border'] = 'rgba(59, 130, 246, 0.18)'
+    style['--footer-shell-shadow'] = '0 1.7rem 4rem -2.4rem rgba(37, 99, 235, 0.2)'
+    style['--footer-chip-bg'] = 'rgba(255, 255, 255, 0.88)'
+    style['--footer-chip-border'] = 'rgba(59, 130, 246, 0.14)'
+  } else {
+    style['--footer-shell-bg'] =
+      'linear-gradient(155deg, rgba(255, 255, 255, 0.94), rgba(255, 255, 255, 0.82))'
+    style['--footer-shell-border'] = 'rgba(255, 255, 255, 0.58)'
+    style['--footer-shell-shadow'] = '0 1.5rem 3.6rem -2.2rem rgba(35, 53, 85, 0.28)'
+    style['--footer-chip-bg'] = 'rgba(255, 255, 255, 0.78)'
+    style['--footer-chip-border'] = 'rgba(148, 163, 184, 0.14)'
+  }
+
+  if (settings.value.uiStyle === 'material') {
+    style['--footer-shell-shadow'] = 'var(--shadow-lg)'
+  }
+
+  return style
+})
 </script>
 
 <style scoped>
 .footer {
   position: relative;
   padding: var(--spacing-8) 0;
+  --footer-shell-bg: linear-gradient(155deg, rgba(255, 255, 255, 0.94), rgba(255, 255, 255, 0.82));
+  --footer-shell-border: rgba(255, 255, 255, 0.58);
+  --footer-shell-shadow: 0 1.5rem 3.6rem -2.2rem rgba(35, 53, 85, 0.28);
+  --footer-chip-bg: rgba(255, 255, 255, 0.78);
+  --footer-chip-border: rgba(148, 163, 184, 0.14);
   background:
-    radial-gradient(circle at top left, rgba(199, 220, 244, 0.18) 0%, transparent 34%),
-    radial-gradient(circle at top right, rgba(246, 218, 229, 0.16) 0%, transparent 30%),
-    linear-gradient(
-      180deg,
-      rgba(248, 247, 244, 0.82) 0%,
-      rgba(248, 247, 244, 0.96) 32%,
-      #f8f7f4 100%
-    );
+    radial-gradient(circle at top left, rgba(var(--color-primary-rgb), 0.08) 0%, transparent 36%),
+    radial-gradient(circle at top right, rgba(var(--color-accent-rgb), 0.08) 0%, transparent 32%),
+    linear-gradient(180deg, var(--color-bg-tertiary) 0%, var(--color-background) 100%);
   opacity: var(--home-footer-opacity, 1);
   transform: translate3d(0, var(--home-footer-y, 0rem), 0);
-  filter: blur(var(--home-footer-blur, 0rem));
   transition:
     opacity 360ms cubic-bezier(0.2, 0.84, 0.24, 1),
-    transform 420ms cubic-bezier(0.2, 0.9, 0.25, 1),
-    filter 360ms cubic-bezier(0.2, 0.84, 0.24, 1);
+    transform 420ms cubic-bezier(0.2, 0.9, 0.25, 1);
 }
 
-.footer::before {
-  content: '';
-  position: absolute;
-  inset-inline: 0;
-  inset-block-start: 0;
-  block-size: clamp(5rem, 10vw, 8rem);
-  background:
-    linear-gradient(180deg, rgba(248, 247, 244, 0), rgba(248, 247, 244, 0.72)),
-    radial-gradient(circle at top center, rgba(255, 255, 255, 0.24), transparent 68%);
-  pointer-events: none;
+:global(#app[data-theme='dark'] .footer),
+:global([data-theme='dark'] .footer) {
+  --footer-shell-bg: linear-gradient(155deg, rgba(12, 16, 23, 0.98), rgba(18, 24, 36, 0.94));
+  --footer-shell-border: rgba(255, 255, 255, 0.12);
+  --footer-shell-shadow: 0 1.8rem 4rem -2.4rem rgba(0, 0, 0, 0.52);
+  --footer-chip-bg: rgba(18, 24, 36, 0.88);
+  --footer-chip-border: rgba(255, 255, 255, 0.08);
 }
 
-.footer-shell {
+:global(#app[data-theme='blue'] .footer),
+:global([data-theme='blue'] .footer) {
+  --footer-shell-bg: linear-gradient(155deg, rgba(255, 255, 255, 0.98), rgba(239, 246, 255, 0.92));
+  --footer-shell-border: rgba(59, 130, 246, 0.18);
+  --footer-shell-shadow: 0 1.7rem 4rem -2.4rem rgba(37, 99, 235, 0.2);
+  --footer-chip-bg: rgba(255, 255, 255, 0.88);
+  --footer-chip-border: rgba(59, 130, 246, 0.14);
+}
+
+:global(#app[data-ui-style='material'] .footer),
+:global([data-ui-style='material'] .footer) {
+  --footer-shell-shadow: var(--shadow-lg);
+}
+
+.footer-shell.glass-card {
   padding: clamp(1.5rem, 3vw, 2rem);
-  border-color: rgba(255, 255, 255, 0.6);
-  background:
-    linear-gradient(155deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.84)),
-    rgba(255, 255, 255, 0.76);
-  box-shadow:
-    0 2rem 4.4rem -2.8rem rgba(35, 53, 85, 0.18),
-    inset 0 0.0625rem 0 rgba(255, 255, 255, 0.62);
-  backdrop-filter: blur(1rem);
+  border-radius: var(--ui-radius-card, var(--radius-2xl));
+  border-color: var(--footer-shell-border) !important;
+  background: var(--footer-shell-bg), var(--color-surface) !important;
+  box-shadow: var(--footer-shell-shadow) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
   will-change: transform, box-shadow;
   transform: translate3d(0, var(--home-footer-shell-y, 0rem), 0);
   transition:
@@ -115,10 +164,10 @@ const currentYear = computed(() => new Date().getFullYear())
     background 360ms cubic-bezier(0.2, 0.84, 0.24, 1);
 }
 
-.footer-shell:hover {
+.footer-shell.glass-card:hover {
   transform: translate3d(0, var(--home-footer-shell-y, 0rem), 0);
-  border-color: rgba(255, 255, 255, 0.6);
-  box-shadow: var(--glass-shadow);
+  border-color: var(--footer-shell-border);
+  box-shadow: var(--footer-shell-shadow);
 }
 
 .footer-main {
@@ -147,9 +196,13 @@ const currentYear = computed(() => new Date().getFullYear())
   place-items: center;
   inline-size: 2.5rem;
   block-size: 2.5rem;
-  border-radius: 1rem;
-  background: linear-gradient(135deg, rgba(122, 146, 190, 0.22) 0%, rgba(220, 166, 187, 0.28) 100%);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  border-radius: var(--ui-radius-input, 1rem);
+  background: linear-gradient(
+    135deg,
+    rgba(var(--color-primary-rgb), 0.2) 0%,
+    rgba(var(--color-accent-rgb), 0.24) 100%
+  );
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.24);
   font-size: 1rem;
   font-weight: var(--font-bold);
 }
@@ -184,9 +237,9 @@ const currentYear = computed(() => new Date().getFullYear())
   gap: var(--spacing-2);
   align-self: flex-start;
   padding: var(--spacing-2) var(--spacing-3);
-  border-radius: var(--radius-full);
-  background: rgba(255, 255, 255, 0.7);
-  border: 1px solid rgba(148, 163, 184, 0.12);
+  border-radius: var(--ui-radius-button, var(--radius-full));
+  background: var(--footer-chip-bg);
+  border: 1px solid var(--footer-chip-border);
   font-size: var(--text-xs);
   color: var(--color-text-secondary);
 }
@@ -247,8 +300,9 @@ const currentYear = computed(() => new Date().getFullYear())
   justify-content: center;
   inline-size: 2.25rem;
   block-size: 2.25rem;
-  border-radius: var(--radius-full);
-  background: rgba(255, 255, 255, 0.76);
+  border-radius: var(--ui-radius-button, var(--radius-full));
+  background: var(--footer-chip-bg);
+  border: 1px solid var(--footer-chip-border);
   color: var(--color-text-secondary);
   transition:
     background var(--transition-fast),
