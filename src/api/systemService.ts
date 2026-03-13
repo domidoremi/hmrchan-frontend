@@ -1,7 +1,7 @@
 /**
  * System Service - 系统公开端点
  *
- * 对齐 docs/api/00-overview.md 中不包裹的系统端点：
+ * 对齐 docs/frontend-integration.md 中不包裹的系统端点：
  * - GET /health
  * - GET /metrics
  */

@@ -135,6 +135,7 @@ pnpm-lock.yaml
 .agent/
 .claude/
 .codex/
+.codex-temp/
 .kiro/
 .qoder/
 .qoderignore
