@@ -141,6 +141,7 @@ export interface RequestConfig extends RequestInit {
   timeout?: number
   skipAuth?: boolean
   skipErrorToast?: boolean
+  responseType?: 'json' | 'text' | 'blob' | 'response'
   /** 跳过客户端安全头注入（用于 /client/init 避免循环依赖） */
   skipSecurity?: boolean
   /** 覆盖默认的 API_BASE_URL（用于 auth 等非 /api/v1 路由） */
@@ -372,6 +373,29 @@ function withVerificationToken(
   return { body: requestBody, headers: nextHeaders }
 }
 
+async function parseSuccessfulResponse<T>(
+  response: Response,
+  responseType: RequestConfig['responseType'] = 'json'
+): Promise<T> {
+  if (response.status === 204 || response.status === 304) {
+    return undefined as T
+  }
+
+  switch (responseType) {
+    case 'response':
+      return response as T
+    case 'blob':
+      return (await response.blob()) as T
+    case 'text':
+      return (await response.text()) as T
+    case 'json':
+    default: {
+      const data = await response.json()
+      return normalizeResponse<T>(data)
+    }
+  }
+}
+
 /**
  * 异步获取 access token（从安全存储中解密读取）
  * 优先使用安全存储
@@ -404,30 +428,21 @@ function buildCacheKey(method: string, url: string): string {
  */
 async function refreshToken(): Promise<string | null> {
   try {
-    // 添加超时机制，防止请求永久挂起
-    const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), REFRESH_TIMEOUT)
-
-    const refreshBody = {}
-
-    const response = await fetch(`${API_AUTH_URL}/auth/refresh`, {
+    const data = await request<{
+      access_token?: string
+    }>('/auth/refresh', {
       method: 'POST',
-      credentials: 'include', // 发送 refresh_token cookie
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(refreshBody),
-      signal: controller.signal,
+      body: JSON.stringify({}),
+      baseUrl: API_AUTH_URL,
+      skipAuth: true,
+      skipErrorToast: true,
+      timeout: REFRESH_TIMEOUT,
     })
+    const newAccessToken = data.access_token
 
-    clearTimeout(timeoutId)
-
-    if (!response.ok) {
+    if (!newAccessToken) {
       throw new Error('Token refresh failed')
     }
-
-    const data = await response.json()
-    const newAccessToken = data.access_token
 
     // 安全存储新的 access_token（加密 + 设备绑定）
     try {
@@ -645,6 +660,7 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
     timeout = REQUEST_TIMEOUT,
     skipAuth = false,
     skipErrorToast = false,
+    responseType = 'json',
     skipSecurity = false,
     baseUrl,
     onResponseHeaders,
@@ -795,6 +811,11 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
       }
     }
 
+    if (response.status === 304) {
+      onResponseHeaders?.(response.headers)
+      return parseSuccessfulResponse<T>(response, responseType)
+    }
+
     // 处理 401 未授权 - 仅在之前有 token 时尝试刷新（避免 guest 用户触发无意义的刷新循环）
     if (response.status === 401 && !skipAuth && hadToken) {
       if (!isRefreshing) {
@@ -826,16 +847,12 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
           clearTimeout(retryTimeoutId)
 
           if (!retryResponse.ok) {
+            if (retryResponse.status === 304) {
+              return parseSuccessfulResponse<T>(retryResponse, responseType)
+            }
             await handleErrorResponse(retryResponse, skipErrorToast)
           }
-
-          // 处理 204 No Content
-          if (retryResponse.status === 204) {
-            return undefined as T
-          }
-
-          const retryData = await retryResponse.json()
-          return normalizeResponse<T>(retryData)
+          return parseSuccessfulResponse<T>(retryResponse, responseType)
         } else {
           // Token 刷新失败，通知所有等待的请求
           const error = refreshError || new Error('Token refresh failed')
@@ -862,16 +879,13 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
               clearTimeout(subRetryTimeoutId)
 
               if (!retryResponse.ok) {
+                if (retryResponse.status === 304) {
+                  resolve(await parseSuccessfulResponse<T>(retryResponse, responseType))
+                  return
+                }
                 await handleErrorResponse(retryResponse, skipErrorToast)
               }
-
-              if (retryResponse.status === 204) {
-                resolve(undefined as T)
-                return
-              }
-
-              const retryData = await retryResponse.json()
-              resolve(normalizeResponse<T>(retryData))
+              resolve(await parseSuccessfulResponse<T>(retryResponse, responseType))
             } catch (error) {
               clearTimeout(subRetryTimeoutId)
               reject(error)
@@ -985,17 +999,14 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
               }
 
               if (!retryResponse.ok) {
+                if (retryResponse.status === 304) {
+                  return parseSuccessfulResponse<T>(retryResponse, responseType)
+                }
                 await handleErrorResponse(retryResponse, skipErrorToast)
               }
 
               onResponseHeaders?.(retryResponse.headers)
-
-              if (retryResponse.status === 204) {
-                return undefined as T
-              }
-
-              const retryData = await retryResponse.json()
-              return normalizeResponse<T>(retryData)
+              return parseSuccessfulResponse<T>(retryResponse, responseType)
             }
 
             if (!isRefreshingCredentials) {
@@ -1046,14 +1057,7 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
 
     // 回调响应头（用于读取 X-Security-Warning 等自定义头）
     onResponseHeaders?.(response.headers)
-
-    // 处理 204 No Content
-    if (response.status === 204) {
-      return undefined as T
-    }
-
-    const data = await response.json()
-    return normalizeResponse<T>(data)
+    return parseSuccessfulResponse<T>(response, responseType)
   } catch (error) {
     clearTimeout(timeoutId)
 
@@ -1093,6 +1097,10 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
  * API 客户端
  */
 export const apiClient = {
+  request<T>(endpoint: string, config?: RequestConfig): Promise<T> {
+    return request<T>(endpoint, config)
+  },
+
   /**
    * GET 请求（支持 in-flight 去重，避免重复请求）
    * 注意：不再提供内置缓存，缓存由业务层（如 postCache）管理
@@ -1153,5 +1161,29 @@ export const apiClient = {
 
   delete<T>(endpoint: string, config?: RequestConfig): Promise<T> {
     return request<T>(endpoint, { ...config, method: 'DELETE' })
+  },
+
+  text(endpoint: string, config?: RequestConfig): Promise<string> {
+    return request<string>(endpoint, {
+      ...config,
+      method: config?.method ?? 'GET',
+      responseType: 'text',
+    })
+  },
+
+  blob(endpoint: string, config?: RequestConfig): Promise<Blob> {
+    return request<Blob>(endpoint, {
+      ...config,
+      method: config?.method ?? 'GET',
+      responseType: 'blob',
+    })
+  },
+
+  response(endpoint: string, config?: RequestConfig): Promise<Response> {
+    return request<Response>(endpoint, {
+      ...config,
+      method: config?.method ?? 'GET',
+      responseType: 'response',
+    })
   },
 }

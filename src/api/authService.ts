@@ -532,7 +532,7 @@ export const authService = {
    */
   async getSessions(): Promise<{
     sessions: Array<{
-      id: number
+      id: string | number
       device_name?: string
       device_type?: string
       ip_address?: string
@@ -548,8 +548,11 @@ export const authService = {
   /**
    * 撤销指定会话
    */
-  async revokeSession(sessionId: string): Promise<void> {
-    return apiClient.delete(`/auth/sessions/${sessionId}`, authConfig)
+  async revokeSession(sessionId: string | number): Promise<void> {
+    return apiClient.delete(`/auth/sessions/${sessionId}`, {
+      ...authConfig,
+      verificationAction: 'revoke_sessions',
+    })
   },
 }
 

@@ -14,6 +14,7 @@ import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import { useRouter } from 'vue-router'
 import { authService, ApiError } from '@/api'
+import { apiClient, API_AUTH_URL } from '@/api/client'
 import type {
   AuthResponse,
   RiskVerificationChallengeResponse,
@@ -124,21 +125,19 @@ export const useAuthStore = defineStore(
           return
         }
         try {
-          const API_AUTH_URL = import.meta.env.VITE_API_URL || '/api'
-          const res = await fetch(`${API_AUTH_URL}/auth/me`, {
-            headers: { Authorization: `Bearer ${currentToken}` },
-            credentials: 'include',
+          const data = await apiClient.request<UserResponse>('/auth/me', {
+            baseUrl: API_AUTH_URL,
             signal: controller.signal,
+            skipAuth: true,
+            skipErrorToast: true,
+            headers: {
+              Authorization: `Bearer ${currentToken}`,
+            },
+            responseType: 'json',
           })
           if (controller.signal.aborted || requestToken !== deferredProfileRequestToken) return
-          if (res.ok) {
-            const data = await res.json()
-            if (controller.signal.aborted || requestToken !== deferredProfileRequestToken) return
-            // 兼容信封格式和直接返回
-            const profile = data?.data ?? data
-            if (profile && typeof profile === 'object' && 'id' in profile) {
-              user.value = profile as AuthUser
-            }
+          if (data && typeof data === 'object' && 'id' in data) {
+            user.value = data as AuthUser
           }
         } catch {
           // 静默失败，不影响认证状态

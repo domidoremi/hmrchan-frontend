@@ -636,6 +636,7 @@ import {
 import { useVideoSettings } from '@/composables/useVideoSettings'
 import type { SubtitleShadowPreset, SubtitleAlign } from '@/composables/useVideoSettings'
 import { useVideoGestures } from '@/composables/useVideoGestures'
+import { apiClient } from '@/api/client'
 import { normalizeToProxyPath } from '@/utils/url'
 
 interface SubtitleTrack {
@@ -882,13 +883,27 @@ function needsFetchFallback(track: NormalizedSubtitleTrack): boolean {
   return false
 }
 
+function isLocalApiTrackSource(src: string): boolean {
+  try {
+    const resolved = new URL(src, window.location.origin)
+    return resolved.origin === window.location.origin && resolved.pathname.startsWith('/api/')
+  } catch {
+    return false
+  }
+}
+
 async function ensureVttFallback(track: NormalizedSubtitleTrack) {
   if (!needsFetchFallback(track)) return
   if (subtitleOverrides.value[track.src]) return
   try {
-    const response = await fetch(track.src)
-    if (!response.ok) return
-    const rawText = await response.text()
+    const rawText = isLocalApiTrackSource(track.src)
+      ? await apiClient.text(new URL(track.src, window.location.origin).toString())
+      : await (async () => {
+          const response = await fetch(track.src)
+          if (!response.ok) return ''
+          return response.text()
+        })()
+    if (!rawText) return
     const normalized = rawText.replace(/\r+/g, '')
     const body = normalized.replace(/(\d{2}:\d{2}:\d{2}),(\d{3})/g, '$1.$2')
     const vttText = body.trimStart().startsWith('WEBVTT') ? body : `WEBVTT\n\n${body.trim()}\n`
