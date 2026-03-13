@@ -20,7 +20,7 @@ export interface HomeAuthorBrief {
   avatar_url: string | null
   profile_url: string | null
   deep_link: string
-  is_verified: boolean
+  is_verified?: boolean | null
 }
 
 export interface HomeTagBrief {
@@ -60,6 +60,17 @@ export interface HomeHeroSpotlight {
   deep_link: string
 }
 
+export type HomePortalPreviewAuthor = HomeAuthorBrief | string | null
+
+export interface HomePortalPreview {
+  title: string
+  summary: string
+  meta: string
+  deep_link: string
+  author?: HomePortalPreviewAuthor
+  image?: HomeImageAsset | null
+}
+
 export interface HomePortalItem {
   key: string
   title: string
@@ -69,6 +80,7 @@ export interface HomePortalItem {
   icon: string
   accent: string
   deep_link: string
+  preview?: HomePortalPreview | null
 }
 
 export interface HomeFeaturedAction {
@@ -86,7 +98,9 @@ export interface HomeFeaturedRelatedPost {
   excerpt?: string | null
   image?: HomeImageAsset | null
   cover?: HomeImageAsset | null
+  thumbnail?: HomeImageAsset | null
   author?: HomeAuthorBrief | null
+  content_type?: string | null
   platform?: string | null
   tags?: HomeTagBrief[]
   metrics?: {
@@ -182,6 +196,7 @@ export interface HomeCommunityHighlight {
   participant_count: number
   updated_at: string
   deep_link: string
+  author?: HomeAuthorBrief | null
 }
 
 export interface HomeAggregateResponse {
@@ -204,6 +219,7 @@ export interface HomeAggregateResponse {
     authors: TrendsSummaryAuthor[]
     tags: HomeTagBrief[]
     schedules: HomeScheduleHighlight[]
+    community: HomeCommunityHighlight[]
   }
   latest_text_posts: HomeLatestTextPostItem[]
   story_deck: {
@@ -303,6 +319,29 @@ function normalizeImageAsset(image: HomeImageAsset | null | undefined): HomeImag
   return { ...image }
 }
 
+function normalizePortalPreviewAuthor(
+  author: HomePortalPreviewAuthor | undefined
+): HomePortalPreviewAuthor {
+  if (!author) return null
+  if (typeof author === 'string') {
+    const value = author.trim()
+    return value || null
+  }
+  return normalizeAuthorBrief(author)
+}
+
+function normalizePortalPreview(
+  preview: HomePortalPreview | null | undefined
+): HomePortalPreview | null {
+  if (!preview) return null
+  return {
+    ...preview,
+    author: normalizePortalPreviewAuthor(preview.author),
+    image: normalizeImageAsset(preview.image),
+    deep_link: normalizeHomeLink(preview.deep_link),
+  }
+}
+
 function normalizeFeaturedItem(item: HomeFeaturedItem): HomeFeaturedItem {
   return {
     ...item,
@@ -321,8 +360,9 @@ function normalizeFeaturedItem(item: HomeFeaturedItem): HomeFeaturedItem {
       : null,
     related_posts: (item.related_posts ?? []).map((post) => ({
       ...post,
-      image: normalizeImageAsset(post.image),
-      cover: normalizeImageAsset(post.cover),
+      image: normalizeImageAsset(post.image ?? post.thumbnail),
+      cover: normalizeImageAsset(post.cover ?? post.thumbnail),
+      thumbnail: normalizeImageAsset(post.thumbnail ?? post.image ?? post.cover),
       author: normalizeAuthorBrief(post.author),
       deep_link: normalizeHomeLink(post.deep_link),
     })),
@@ -359,6 +399,7 @@ function normalizeScheduleHighlight(item: HomeScheduleHighlight): HomeScheduleHi
 function normalizeCommunityHighlight(item: HomeCommunityHighlight): HomeCommunityHighlight {
   return {
     ...item,
+    author: normalizeAuthorBrief(item.author),
     deep_link: normalizeHomeLink(item.deep_link),
   }
 }
@@ -393,6 +434,7 @@ function normalizeAggregate(payload: HomeAggregateResponse): HomeAggregateRespon
       items: (payload.portal?.items ?? []).map((item) => ({
         ...item,
         deep_link: normalizeHomeLink(item.deep_link),
+        preview: normalizePortalPreview(item.preview),
       })),
     },
     featured: {
@@ -405,6 +447,7 @@ function normalizeAggregate(payload: HomeAggregateResponse): HomeAggregateRespon
       })),
       tags: (payload.trends?.tags ?? []).map(normalizeTagBrief),
       schedules: (payload.trends?.schedules ?? []).map(normalizeScheduleHighlight),
+      community: (payload.trends?.community ?? []).map(normalizeCommunityHighlight),
     },
     latest_text_posts: (payload.latest_text_posts ?? []).map(normalizeLatestTextItem),
     story_deck: {
@@ -562,6 +605,7 @@ function buildAggregateFromSupport(data: {
       authors: data.trends.authors,
       tags: data.trends.tags,
       schedules: data.schedules.items,
+      community: data.community.items,
     },
     latest_text_posts: data.latestTextPosts.items,
     story_deck: data.storyDeck,
