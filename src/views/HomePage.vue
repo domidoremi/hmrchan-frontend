@@ -28,6 +28,7 @@
               <div
                 class="hero-editorial glass-card"
                 :class="{ 'hero-editorial--loaded': heroEditorialVisible }"
+                :style="noGlassBackdropStyle"
               >
                 <div
                   class="hero-editorial__state hero-editorial__state--loading"
@@ -67,7 +68,11 @@
                 </div>
               </div>
 
-              <div v-if="showPreviewNotice" class="hero-preview glass-card">
+              <div
+                v-if="showPreviewNotice"
+                class="hero-preview glass-card"
+                :style="noGlassBackdropStyle"
+              >
                 <span class="hero-preview__label">{{ $t('home.preview.label') }}</span>
                 <p>{{ $t('home.preview.desc') }}</p>
                 <span v-if="error" class="hero-preview__detail">{{ error }}</span>
@@ -105,7 +110,12 @@
               </div>
 
               <div class="hero-stats" :aria-label="$t('home.hero.stats.ariaLabel')">
-                <div v-for="item in heroStats" :key="item.key" class="hero-stat glass-card">
+                <div
+                  v-for="item in heroStats"
+                  :key="item.key"
+                  class="hero-stat glass-card"
+                  :style="noGlassBackdropStyle"
+                >
                   <span class="hero-stat__label">{{ item.label }}</span>
                   <strong class="hero-stat__value">{{ item.value }}</strong>
                   <span class="hero-stat__note">{{ item.note }}</span>
@@ -144,7 +154,6 @@
               <div class="rail-panel__content">
                 <header class="section-header section-header--stage">
                   <div class="section-title">
-                    <p class="section-kicker">{{ $t('home.portal.kicker') }}</p>
                     <h2>{{ $t('home.portal.title') }}</h2>
                     <p>{{ $t('home.portal.subtitle') }}</p>
                   </div>
@@ -155,7 +164,11 @@
                 </header>
 
                 <div class="portal-grid">
-                  <RouterLink to="/explore" class="portal-card portal-card--primary glass-card">
+                  <RouterLink
+                    :to="portalRecommendLink"
+                    class="portal-card portal-card--primary glass-card"
+                    :style="noGlassBackdropStyle"
+                  >
                     <div
                       v-if="portalLeadCard"
                       class="portal-card__preview portal-card__preview--lead"
@@ -164,18 +177,26 @@
                       "
                     >
                       <img
-                        v-if="portalLeadCard.thumbnail"
+                        v-if="
+                          portalLeadCard.thumbnail && !isHomeMediaFailed(portalLeadCard.thumbnail)
+                        "
                         :src="portalLeadCard.thumbnail"
                         :alt="portalLeadCard.title"
                         class="portal-card__preview-image"
-                        loading="lazy"
+                        loading="eager"
                         decoding="async"
+                        @error="markHomeMediaFailed(portalLeadCard.thumbnail)"
                       />
+                      <div v-else class="portal-card__preview-empty">
+                        <AnimatedIcon name="sparkle" :fallback-icon="Sparkles" size="lg" />
+                        <strong>{{ $t('home.portal.items.recommend.title') }}</strong>
+                        <span>{{ $t('home.portal.subtitle') }}</span>
+                      </div>
                       <div class="portal-card__preview-overlay">
-                        <span class="portal-card__preview-kicker">{{ portalLeadCard.author }}</span>
-                        <strong class="portal-card__preview-title">{{
-                          portalLeadCard.title
-                        }}</strong>
+                        <span class="portal-card__preview-kicker">{{ portalLeadEyebrow }}</span>
+                        <strong class="portal-card__preview-title">
+                          {{ portalLeadPreviewTitle }}
+                        </strong>
                       </div>
                     </div>
                     <div
@@ -196,11 +217,11 @@
                       </div>
                       <div class="portal-card__body">
                         <h3>{{ $t('home.portal.items.recommend.title') }}</h3>
-                        <p>{{ $t('home.portal.items.recommend.desc') }}</p>
+                        <p>{{ portalRecommendDescription }}</p>
                       </div>
                       <div class="portal-card__stats">
                         <span
-                          v-for="stat in heroStats"
+                          v-for="stat in portalOverviewStats"
                           :key="`portal-stat-${stat.key}`"
                           class="portal-card__stat"
                         >
@@ -216,6 +237,7 @@
                       v-if="portalPanels[0]"
                       :to="portalPanels[0].to"
                       class="portal-card portal-card--secondary portal-card--secondary-lead glass-card"
+                      :style="noGlassBackdropStyle"
                     >
                       <div class="portal-card__header">
                         <div
@@ -257,6 +279,7 @@
                         :key="panel.key"
                         :to="panel.to"
                         class="portal-card portal-card--secondary portal-card--secondary-compact glass-card"
+                        :style="noGlassBackdropStyle"
                       >
                         <div class="portal-card__header">
                           <div class="portal-card__icon" :class="`portal-card__icon--${panel.key}`">
@@ -294,7 +317,6 @@
               <div class="rail-panel__content rail-panel__content--highlight">
                 <header class="section-header section-header--stage">
                   <div class="section-title">
-                    <p class="section-kicker">{{ $t('home.hero.spotlightLabel') }}</p>
                     <h2>{{ heroEditorialTitle }}</h2>
                     <p>{{ heroEditorialText }}</p>
                   </div>
@@ -316,16 +338,21 @@
                           :key="`hero-highlight-${card.post.id}`"
                           type="button"
                           class="hero-collage-card glass-card"
-                          :class="{ 'hero-collage-card--primary': index === 0 }"
+                          :style="noGlassBackdropStyle"
+                          :class="{
+                            'hero-collage-card--primary': index === 0,
+                            'hero-collage-card--textual': !card.thumbnail,
+                          }"
                           @click="openPostPreview(card.post, card.thumbnail)"
                         >
                           <img
-                            v-if="card.thumbnail"
+                            v-if="card.thumbnail && !isHomeMediaFailed(card.thumbnail)"
                             class="hero-collage-image"
                             :src="card.thumbnail"
                             :alt="card.title"
-                            loading="lazy"
+                            loading="eager"
                             decoding="async"
+                            @error="markHomeMediaFailed(card.thumbnail)"
                           />
                           <div v-else class="hero-collage-placeholder">
                             <AnimatedIcon name="image" :fallback-icon="Image" size="lg" />
@@ -352,6 +379,7 @@
                       :key="`spotlight-text-${card.post.id}`"
                       type="button"
                       class="hero-spotlight-card glass-card"
+                      :style="noGlassBackdropStyle"
                       :class="{
                         'hero-spotlight-card--lead': index === 0,
                         'hero-spotlight-card--dense': !card.supportText,
@@ -383,7 +411,6 @@
               <div class="rail-panel__content">
                 <header class="section-header section-header--stage">
                   <div class="section-title">
-                    <p class="section-kicker">{{ $t('home.featured.kicker') }}</p>
                     <h2>{{ $t('home.featured.title') }}</h2>
                     <p>{{ $t('home.featured.subtitle') }}</p>
                   </div>
@@ -400,10 +427,12 @@
                       :key="`featured-rail-${card.id}`"
                       type="button"
                       class="featured-rail-card glass-card"
+                      :style="noGlassBackdropStyle"
                       :class="[
                         index === 0 ? 'featured-rail-card--lead' : 'featured-rail-card--support',
                         index > 1 ? 'featured-rail-card--compact' : null,
                         !card.summary ? 'featured-rail-card--dense' : null,
+                        !card.thumbnail ? 'featured-rail-card--textual' : null,
                       ]"
                       @click="openPostPreview(card.post, card.thumbnail)"
                     >
@@ -412,12 +441,13 @@
                         :class="{ 'featured-rail-card__media--empty': !card.thumbnail }"
                       >
                         <img
-                          v-if="card.thumbnail"
+                          v-if="card.thumbnail && !isHomeMediaFailed(card.thumbnail)"
                           :src="card.thumbnail"
                           :alt="card.title"
                           class="featured-rail-card__image"
-                          loading="lazy"
+                          loading="eager"
                           decoding="async"
+                          @error="markHomeMediaFailed(card.thumbnail)"
                         />
                         <div v-else class="featured-rail-card__placeholder">
                           <AnimatedIcon name="image" :fallback-icon="Image" size="lg" />
@@ -484,14 +514,16 @@
               <div class="rail-panel__content">
                 <header class="section-header section-header--stage">
                   <div class="section-title">
-                    <p class="section-kicker">{{ $t('home.trends.tagsTitle') }}</p>
                     <h2>{{ $t('home.trends.authorsTitle') }}</h2>
                     <p>{{ $t('home.trends.scheduleHint') }}</p>
                   </div>
                 </header>
 
                 <div class="trends-grid">
-                  <div class="trends-card trends-card--authors glass-card">
+                  <div
+                    class="trends-card trends-card--authors glass-card"
+                    :style="noGlassBackdropStyle"
+                  >
                     <div class="trends-card__header">
                       <h3>{{ $t('home.trends.authorsTitle') }}</h3>
                       <RouterLink to="/authors" class="trends-link">
@@ -568,7 +600,10 @@
                     <div v-else class="trends-empty">{{ $t('home.trends.authorsEmpty') }}</div>
                   </div>
 
-                  <div class="trends-card trends-card--tags glass-card">
+                  <div
+                    class="trends-card trends-card--tags glass-card"
+                    :style="noGlassBackdropStyle"
+                  >
                     <div class="trends-card__header">
                       <h3>{{ $t('home.trends.tagsTitle') }}</h3>
                       <RouterLink to="/search" class="trends-link">
@@ -598,7 +633,10 @@
                     </div>
                   </div>
 
-                  <div class="trends-card trends-card--editorial glass-card">
+                  <div
+                    class="trends-card trends-card--editorial glass-card"
+                    :style="noGlassBackdropStyle"
+                  >
                     <div class="trends-card__header">
                       <h3>{{ $t('home.hero.editorialLabel') }}</h3>
                       <span v-if="heroEditorialCard?.time" class="trends-card__hint">
@@ -627,7 +665,10 @@
                     </div>
                   </div>
 
-                  <div class="trends-card trends-card--schedule glass-card">
+                  <div
+                    class="trends-card trends-card--schedule glass-card"
+                    :style="noGlassBackdropStyle"
+                  >
                     <div class="trends-card__header">
                       <h3>{{ $t('home.trends.scheduleTitle') }}</h3>
                       <RouterLink to="/schedule" class="trends-link">
@@ -679,19 +720,16 @@
                         </span>
                       </RouterLink>
                     </div>
-                    <div
-                      v-else-if="homeCommunityHighlights.length > 0"
-                      class="trends-community-note"
-                    >
+                    <div v-else-if="communityHighlightPreview" class="trends-community-note">
                       <span class="trends-community-note__eyebrow">{{ $t('nav.community') }}</span>
                       <strong class="trends-community-note__title">
-                        {{ homeCommunityHighlights[0].title }}
+                        {{ communityHighlightPreview.title }}
                       </strong>
                       <p class="trends-community-note__text">
-                        {{ homeCommunityHighlights[0].excerpt }}
+                        {{ communityHighlightPreview.excerpt }}
                       </p>
                       <span class="trends-community-note__meta">
-                        {{ formatCommunityHighlightMeta(homeCommunityHighlights[0]) }}
+                        {{ formatCommunityHighlightMeta(communityHighlightPreview) }}
                       </span>
                     </div>
                     <div v-else class="schedule-cta">
@@ -756,9 +794,9 @@
         <div class="posts-toolbar">
           <div class="posts-toolbar__panel posts-toolbar__panel--tags">
             <span class="tags-label">{{ $t('home.tags.label') }}</span>
-            <div v-if="trendingTags.length > 0" class="tags-list">
+            <div v-if="postsToolbarTags.length > 0" class="tags-list">
               <RouterLink
-                v-for="tag in trendingTags"
+                v-for="tag in postsToolbarTags"
                 :key="`latest-tag-${tag}`"
                 :to="{ name: 'search', query: { q: tag } }"
                 class="glass-tag"
@@ -768,7 +806,7 @@
             </div>
             <div
               class="posts-toolbar__stats"
-              :class="{ 'posts-toolbar__stats--with-tags': trendingTags.length > 0 }"
+              :class="{ 'posts-toolbar__stats--with-tags': postsToolbarTags.length > 0 }"
             >
               <span
                 v-for="stat in heroStats"
@@ -805,10 +843,11 @@
 
         <template v-else>
           <div class="bubble-stage">
-            <div class="bubble-stage__origin" aria-hidden="true">
-              <span class="bubble-stage__pulse" />
-            </div>
-            <div v-if="isLoading && bubbleItems.length === 0" class="bubble-empty glass-card">
+            <div
+              v-if="isLoading && bubbleItems.length === 0"
+              class="bubble-empty glass-card"
+              :style="noGlassBackdropStyle"
+            >
               <span class="spinner spinner-sm" />
               <span>{{ $t('common.loading') }}</span>
             </div>
@@ -818,7 +857,7 @@
                 :key="`bubble-${bubble.post.id}-${index}`"
                 type="button"
                 class="latest-bubble glass-card"
-                :style="bubble.style"
+                :style="[noGlassBackdropStyle, bubble.style]"
                 @click="openPostPreview(bubble.post, bubble.thumbnail)"
               >
                 <span class="latest-bubble__inner">
@@ -830,7 +869,7 @@
                 </span>
               </button>
             </template>
-            <div v-else class="bubble-empty glass-card">
+            <div v-else class="bubble-empty glass-card" :style="noGlassBackdropStyle">
               <span>{{ $t('common.noResults') }}</span>
             </div>
           </div>
@@ -838,12 +877,7 @@
       </div>
     </section>
 
-    <section
-      ref="storyDeckRef"
-      class="media-slices home-screen"
-      :class="{ 'media-slices--merge': storyMergeProgress > 0.01 }"
-      :style="storySceneStyle"
-    >
+    <section ref="storyDeckRef" class="media-slices home-screen" :style="storySceneStyle">
       <div class="container story-stage">
         <header class="section-header section-header--stage">
           <div class="section-title">
@@ -867,11 +901,13 @@
               :class="{ 'is-active': activeStoryIndex === index }"
               :style="getStoryCardStyle(index)"
             >
-              <div class="media-slice__sticky glass-card">
+              <div class="media-slice__sticky glass-card" :style="noGlassBackdropStyle">
                 <div class="media-slice__visual">
                   <PostCard
                     :post="card.post"
+                    :show-content="false"
                     :priority="index === 0"
+                    :style="noGlassBackdropStyle"
                     @click="(_id, thumb) => openPostPreview(card.post, thumb)"
                   />
                 </div>
@@ -906,48 +942,17 @@
             <span>{{ $t('common.noResults') }}</span>
           </div>
         </div>
-
-        <div v-if="storyMergeCard" class="story-merge-panel" :style="storyMergePanelStyle">
-          <div class="story-merge-panel__copy">
-            <span class="story-merge-panel__kicker">{{ $t('home.storyMerge.kicker') }}</span>
-            <h3>{{ $t('home.storyMerge.title') }}</h3>
-            <p>{{ $t('home.storyMerge.subtitle') }}</p>
-          </div>
-
-          <div class="story-merge-panel__spotlight">
-            <span class="story-merge-panel__eyebrow">{{ storyMergeCard.eyebrow }}</span>
-            <strong>{{ storyMergeCard.title }}</strong>
-            <span class="story-merge-panel__spotlight-meta">
-              <span>{{ storyMergeCard.author }}</span>
-              <span v-if="storyMergeCard.time">{{ storyMergeCard.time }}</span>
-            </span>
-          </div>
-
-          <div class="story-merge-panel__links">
-            <RouterLink
-              v-for="link in storyMergeLinks"
-              :key="`story-merge-${link.key}`"
-              :to="link.to"
-              class="story-merge-panel__link"
-            >
-              <AnimatedIcon :name="link.animation" :fallback-icon="link.icon" size="sm" />
-              <span>{{ link.label }}</span>
-            </RouterLink>
-          </div>
-        </div>
       </div>
     </section>
 
     <section ref="footerBridgeRef" class="home-footer-bridge home-screen">
       <div class="container home-footer-bridge__stage">
-        <div class="home-footer-bridge__intro">
-          <span class="home-footer-bridge__kicker">{{ $t('home.storyMerge.kicker') }}</span>
-          <h2>{{ $t('home.storyMerge.title') }}</h2>
-          <p>{{ $t('home.storyMerge.subtitle') }}</p>
-        </div>
-
         <div class="home-footer-bridge__grid">
-          <article v-if="storyMergeCard" class="home-footer-bridge__feature glass-card">
+          <article
+            v-if="storyMergeCard"
+            class="home-footer-bridge__feature glass-card"
+            :style="noGlassBackdropStyle"
+          >
             <div class="home-footer-bridge__feature-shell">
               <button
                 v-if="storyMergeCard.thumbnail"
@@ -956,12 +961,17 @@
                 @click="openPostPreview(storyMergeCard.post, storyMergeCard.thumbnail)"
               >
                 <img
+                  v-if="storyMergeCard.thumbnail && !isHomeMediaFailed(storyMergeCard.thumbnail)"
                   :src="storyMergeCard.thumbnail"
                   :alt="storyMergeCard.title"
                   class="home-footer-bridge__feature-media-image"
                   loading="lazy"
                   decoding="async"
+                  @error="markHomeMediaFailed(storyMergeCard.thumbnail)"
                 />
+                <span v-else class="home-footer-bridge__feature-media-empty">
+                  <AnimatedIcon name="image" :fallback-icon="Image" size="lg" />
+                </span>
                 <span class="home-footer-bridge__feature-media-overlay">
                   <span class="home-footer-bridge__eyebrow">{{ storyMergeCard.eyebrow }}</span>
                   <strong>{{ storyMergeCard.title }}</strong>
@@ -988,8 +998,7 @@
             </div>
           </article>
 
-          <div class="home-footer-bridge__links glass-card">
-            <span class="home-footer-bridge__links-label">{{ $t('home.portal.kicker') }}</span>
+          <div class="home-footer-bridge__links glass-card" :style="noGlassBackdropStyle">
             <RouterLink
               v-for="link in storyMergeLinks"
               :key="`bridge-${link.key}`"
@@ -1059,6 +1068,8 @@ import {
   type HomeCommunityHighlight,
   type HomeFeaturedItem,
   type HomeLatestTextPostItem,
+  type HomePortalItem,
+  type HomePortalPreview,
   type HomeScheduleHighlight,
   type HomeStoryDeckItem,
   type HomeTagBrief,
@@ -1088,6 +1099,10 @@ const { settings } = storeToRefs(settingsStore)
 const { t } = useI18n()
 
 const shouldAnimate = computed(() => settings.value.enableAnimations && !prefersReducedMotion())
+const noGlassBackdropStyle = Object.freeze({
+  backdropFilter: 'blur(0rem)',
+  WebkitBackdropFilter: 'blur(0rem)',
+}) as Readonly<Record<string, string>>
 
 // Posts state
 const posts = ref<PostListItem[]>([])
@@ -1109,6 +1124,7 @@ const homeScheduleHighlights = ref<HomeScheduleHighlight[]>([])
 const homeCommunityHighlights = ref<HomeCommunityHighlight[]>([])
 const homeDataSource = ref<'idle' | 'aggregate' | 'support' | 'fallback'>('idle')
 const failedTrendAuthorAvatarKeys = ref<Set<string>>(new Set())
+const failedHomeMediaUrls = ref<Set<string>>(new Set())
 
 // DOM refs
 const postsSectionRef = useTemplateRef<HTMLElement>('postsSectionRef')
@@ -1135,6 +1151,7 @@ const viewportSceneBlend = ref({
 const activeScreenTransition = ref<HomeScreenTransitionName | null>(null)
 
 let bubbleBurstTrigger: ScrollTrigger | null = null
+let storyDeckTrigger: ScrollTrigger | null = null
 let sceneSetupFrame: number | null = null
 let sceneSetupQueued = false
 let scenesEnabled = false
@@ -1205,6 +1222,7 @@ const trendingTags = computed(() => {
 })
 
 const heroTags = computed(() => trendingTags.value.slice(0, 6))
+const postsToolbarTags = computed(() => trendingTags.value.slice(0, 5))
 
 const uniqueAuthorCount = computed(() => {
   const keys = new Set<string>()
@@ -1275,6 +1293,20 @@ const fallbackFeaturedRailPosts = computed(() => {
       return true
     })
     .slice(0, 4)
+})
+
+const portalItemMap = computed(
+  () => new Map((homeAggregate.value?.portal.items ?? []).map((item) => [item.key, item] as const))
+)
+const portalRecommendItem = computed(() => portalItemMap.value.get('recommend') ?? null)
+const portalSchedulePreview = computed(() => portalItemMap.value.get('schedule')?.preview ?? null)
+const portalCommunityPreview = computed(() => portalItemMap.value.get('community')?.preview ?? null)
+const portalRecommendLink = computed(() => portalRecommendItem.value?.deep_link || '/explore')
+const portalRecommendDescription = computed(() => {
+  if (!portalRecommendItem.value) return t('home.portal.items.recommend.desc')
+  return t('home.portal.items.recommend.dynamicDesc', {
+    count: getPortalItemCountText(portalRecommendItem.value),
+  })
 })
 
 type FeaturedRailCard = {
@@ -1376,6 +1408,32 @@ const spotlightMediaCards = computed(() => {
 })
 
 const portalLeadCard = computed(() => spotlightMediaCards.value[0] ?? null)
+const portalLeadEyebrow = computed(() => {
+  if (heroSpotlightTag.value) return `#${heroSpotlightTag.value}`
+  return portalLeadCard.value?.author || t('home.hero.fallbackAuthor')
+})
+const portalLeadPreviewTitle = computed(() => {
+  const title = normalizeText(portalLeadCard.value?.title)
+  if (!title) return t('home.portal.items.recommend.title')
+  return title.length > 56 ? `${title.slice(0, 56)}…` : title
+})
+const portalOverviewStats = computed(() => {
+  const keys = ['authors', 'schedule', 'community'] as const
+  const liveStats = keys
+    .map((key) => {
+      const item = portalItemMap.value.get(key)
+      if (!item) return null
+      return {
+        key,
+        label: getPortalItemLabel(key),
+        value: getPortalItemCountText(item),
+      }
+    })
+    .filter((item): item is { key: string; label: string; value: string } => Boolean(item))
+
+  if (liveStats.length > 0) return liveStats
+  return heroStats.value
+})
 
 const heroEditorialCard = computed(() => {
   const editorial = homeAggregate.value?.hero.editorial_card
@@ -1492,145 +1550,186 @@ const spotlightTextCards = computed(() => {
 })
 
 const portalPanels = computed(() => {
-  const portalItemMap = new Map(
-    (homeAggregate.value?.portal.items ?? []).map((item) => [item.key, item] as const)
-  )
-  const notes = spotlightTextCards.value
   const firstAuthor = trendingAuthors.value[0]
-  const firstSchedule = homeScheduleHighlights.value[0]
-  const firstCommunity = homeCommunityHighlights.value[0]
+  const authorItem = portalItemMap.value.get('authors')
+  const scheduleItem = portalItemMap.value.get('schedule')
+  const communityItem = portalItemMap.value.get('community')
+  const schedulePreview = portalSchedulePreview.value
+  const communityPreview = portalCommunityPreview.value
+  const firstSchedule = resolvedScheduleHighlights.value[0]
+  const firstCommunity = communityHighlightPreview.value
 
   return [
     {
       key: 'authors',
       title: t('home.portal.items.authors.title'),
       desc: t('home.portal.items.authors.desc'),
-      to: portalItemMap.get('authors')?.deep_link || '/authors',
+      to: authorItem?.deep_link || '/authors',
       icon: Users,
       animation: 'user',
-      noteLabel: t('home.trends.authorsTitle'),
-      noteTitle: firstAuthor?.name ?? notes[0]?.title ?? t('home.hero.editorialFallbackTitle'),
+      noteLabel: firstAuthor
+        ? t('home.trends.authorsTitle')
+        : getPortalCardAvailabilityLabel(authorItem),
+      noteTitle: firstAuthor?.name ?? t('home.portal.items.authors.title'),
       noteText: firstAuthor
         ? t('home.trends.authorCount', { n: firstAuthor.count })
-        : notes[0]?.text || t('home.portal.items.authors.desc'),
-      noteMeta: firstAuthor?.link
-        ? t('home.trends.authorsAction')
-        : notes[0]?.time || t('home.trends.authorsAction'),
+        : t('home.portal.items.authors.desc'),
+      noteMeta: firstAuthor
+        ? getPortalItemCountSummary(authorItem)
+        : t('home.trends.authorsAction'),
     },
     {
       key: 'schedule',
       title: t('home.portal.items.schedule.title'),
       desc: t('home.portal.items.schedule.desc'),
-      to: portalItemMap.get('schedule')?.deep_link || '/schedule',
+      to: schedulePreview?.deep_link || scheduleItem?.deep_link || '/schedule',
       icon: Calendar,
       animation: 'calendar',
       noteLabel:
+        getPortalPreviewAuthorLabel(schedulePreview) ||
         firstSchedule?.badge ||
-        (firstSchedule ? getScheduleCategoryLabel(firstSchedule.category) : notes[1]?.author) ||
-        t('home.hero.fallbackAuthor'),
-      noteTitle: firstSchedule?.title ?? notes[1]?.title ?? t('home.hero.editorialFallbackTitle'),
+        (firstSchedule ? getScheduleCategoryLabel(firstSchedule.category) : null) ||
+        getPortalCardAvailabilityLabel(scheduleItem),
+      noteTitle:
+        normalizeText(schedulePreview?.title) ||
+        firstSchedule?.title ||
+        t('home.portal.items.schedule.title'),
       noteText:
-        formatScheduleHighlightText(firstSchedule) ||
-        notes[1]?.text ||
-        t('home.portal.items.schedule.desc'),
+        normalizeText(schedulePreview?.summary) ||
+        (firstSchedule
+          ? [formatScheduleHighlightText(firstSchedule), formatHomeAuthorName(firstSchedule.author)]
+              .filter(Boolean)
+              .join(' · ')
+          : t('home.portal.items.schedule.desc')),
       noteMeta:
+        normalizeText(schedulePreview?.meta) ||
         formatScheduleHighlightMeta(firstSchedule) ||
-        notes[1]?.time ||
+        getPortalItemCountSummary(scheduleItem) ||
         t('home.trends.scheduleAction'),
     },
     {
       key: 'community',
       title: t('home.portal.items.community.title'),
       desc: t('home.portal.items.community.desc'),
-      to: portalItemMap.get('community')?.deep_link || '/community',
+      to:
+        communityPreview?.deep_link ||
+        firstCommunity?.deep_link ||
+        communityItem?.deep_link ||
+        '/community',
       icon: MessageSquare,
       animation: 'sparkle',
-      noteLabel: firstCommunity
-        ? t('community.recentDiscussions')
-        : notes[2]?.author || t('home.hero.fallbackAuthor'),
-      noteTitle: firstCommunity?.title ?? notes[2]?.title ?? t('home.hero.editorialFallbackTitle'),
+      noteLabel:
+        getPortalPreviewAuthorLabel(communityPreview) ||
+        (firstCommunity
+          ? t('community.recentDiscussions')
+          : getPortalCardAvailabilityLabel(communityItem)),
+      noteTitle:
+        normalizeText(communityPreview?.title) ||
+        firstCommunity?.title ||
+        t('home.portal.items.community.title'),
       noteText:
+        normalizeText(communityPreview?.summary) ||
         normalizeText(firstCommunity?.excerpt) ||
-        notes[2]?.text ||
         t('home.portal.items.community.desc'),
       noteMeta:
-        formatCommunityHighlightMeta(firstCommunity) || notes[2]?.time || t('nav.community'),
+        normalizeText(communityPreview?.meta) ||
+        formatCommunityHighlightMeta(firstCommunity) ||
+        getPortalItemCountSummary(communityItem) ||
+        t('nav.community'),
     },
   ]
 })
 
 const bubbleBursts = [
   {
-    x: 'clamp(-24rem, -26vw, -15rem)',
-    y: 'clamp(-15rem, -16vh, -9rem)',
-    introX: 'clamp(-8rem, -9vw, -5rem)',
-    introY: 'clamp(-5rem, -5.5vh, -3.25rem)',
+    x: 'clamp(-30rem, -31vw, -17rem)',
+    y: 'clamp(-13.2rem, -14vh, -7.8rem)',
+    introX: 'clamp(-7.2rem, -8vw, -4.6rem)',
+    introY: 'clamp(-4.4rem, -5vh, -2.7rem)',
     delay: '0s',
-    scale: '0.94',
+    scale: '1.02',
     tailAngle: '-148deg',
   },
   {
-    x: 'clamp(24rem, 26vw, 15rem)',
-    y: 'clamp(-14rem, -15vh, -8.5rem)',
-    introX: 'clamp(8rem, 9vw, 5rem)',
-    introY: 'clamp(-4.75rem, -5.2vh, -3rem)',
-    delay: '0.08s',
+    x: 'clamp(-11rem, -12vw, -6rem)',
+    y: 'clamp(-16.8rem, -18vh, -9.4rem)',
+    introX: 'clamp(-2.8rem, -3.6vw, -1.8rem)',
+    introY: 'clamp(-5.6rem, -6vh, -3.2rem)',
+    delay: '0.06s',
+    scale: '0.94',
+    tailAngle: '-108deg',
+  },
+  {
+    x: 'clamp(11.5rem, 13vw, 6.6rem)',
+    y: 'clamp(-14.6rem, -15.8vh, -8.2rem)',
+    introX: 'clamp(3rem, 3.8vw, 2rem)',
+    introY: 'clamp(-4.8rem, -5.4vh, -3rem)',
+    delay: '0.12s',
     scale: '0.9',
+    tailAngle: '-28deg',
+  },
+  {
+    x: 'clamp(29rem, 31vw, 17.8rem)',
+    y: 'clamp(-7rem, -8vh, -4rem)',
+    introX: 'clamp(7.8rem, 8.4vw, 4.8rem)',
+    introY: 'clamp(-2.4rem, -3vh, -1.5rem)',
+    delay: '0.24s',
+    scale: '0.92',
     tailAngle: '18deg',
   },
   {
-    x: 'clamp(-29rem, -31vw, -18rem)',
-    y: 'clamp(3rem, 5vh, 5.5rem)',
-    introX: 'clamp(-9rem, -10vw, -5.75rem)',
-    introY: 'clamp(1.4rem, 1.9vh, 1.9rem)',
-    delay: '0.16s',
+    x: 'clamp(-31.5rem, -32vw, -18.5rem)',
+    y: 'clamp(-1.6rem, -0.4vh, 0.8rem)',
+    introX: 'clamp(-8rem, -8.8vw, -4.8rem)',
+    introY: 'clamp(-0.2rem, 0.4vh, 0.8rem)',
+    delay: '0.3s',
     scale: '0.88',
-    tailAngle: '148deg',
+    tailAngle: '164deg',
   },
   {
-    x: 'clamp(28rem, 29vw, 17rem)',
-    y: 'clamp(5rem, 7vh, 6.5rem)',
-    introX: 'clamp(8.6rem, 9vw, 5.25rem)',
-    introY: 'clamp(1.6rem, 2vh, 2rem)',
-    delay: '0.24s',
-    scale: '0.86',
-    tailAngle: '42deg',
+    x: 'clamp(31rem, 31vw, 18.5rem)',
+    y: 'clamp(0.2rem, 1vh, 1.8rem)',
+    introX: 'clamp(8.2rem, 8.8vw, 5rem)',
+    introY: 'clamp(0.4rem, 0.8vh, 1rem)',
+    delay: '0.36s',
+    scale: '0.9',
+    tailAngle: '32deg',
+  },
+  {
+    x: 'clamp(-22rem, -23vw, -12rem)',
+    y: 'clamp(4.8rem, 5.5vh, 3rem)',
+    introX: 'clamp(-5.6rem, -6vw, -3.3rem)',
+    introY: 'clamp(2rem, 2.4vh, 1.2rem)',
+    delay: '0.42s',
+    scale: '0.92',
+    tailAngle: '120deg',
   },
   {
     x: '0rem',
-    y: 'clamp(18rem, 20vh, 12.5rem)',
+    y: 'clamp(5.8rem, 6.4vh, 3.6rem)',
     introX: '0rem',
-    introY: 'clamp(6rem, 6.4vh, 4.4rem)',
-    delay: '0.32s',
-    scale: '0.9',
+    introY: 'clamp(2.4rem, 2.8vh, 1.4rem)',
+    delay: '0.48s',
+    scale: '0.92',
     tailAngle: '92deg',
   },
   {
-    x: 'clamp(-1rem, -2vw, -0.5rem)',
-    y: 'clamp(-19rem, -21vh, -12rem)',
-    introX: 'clamp(-0.5rem, -1vw, -0.25rem)',
-    introY: 'clamp(-6.4rem, -7vh, -4.2rem)',
-    delay: '0.4s',
-    scale: '0.96',
-    tailAngle: '-88deg',
+    x: 'clamp(21rem, 22vw, 12rem)',
+    y: 'clamp(4.9rem, 5.6vh, 3rem)',
+    introX: 'clamp(5.2rem, 5.8vw, 3.2rem)',
+    introY: 'clamp(1.8rem, 2.2vh, 1.1rem)',
+    delay: '0.54s',
+    scale: '0.88',
+    tailAngle: '64deg',
   },
   {
-    x: 'clamp(16rem, 18vw, 10rem)',
-    y: 'clamp(15rem, 16vh, 10rem)',
-    introX: 'clamp(5rem, 6vw, 3rem)',
-    introY: 'clamp(4.6rem, 5vh, 3rem)',
-    delay: '0.48s',
-    scale: '0.84',
-    tailAngle: '56deg',
-  },
-  {
-    x: 'clamp(-17rem, -19vw, -10.5rem)',
-    y: 'clamp(12rem, 14vh, 8.5rem)',
-    introX: 'clamp(-5.4rem, -6.6vw, -3.2rem)',
-    introY: 'clamp(3.8rem, 4.6vh, 2.6rem)',
-    delay: '0.56s',
-    scale: '0.84',
-    tailAngle: '132deg',
+    x: 'clamp(-8rem, -8.8vw, -4.6rem)',
+    y: 'clamp(6.3rem, 7vh, 3.9rem)',
+    introX: 'clamp(-1.8rem, -2.2vw, -1rem)',
+    introY: 'clamp(2.8rem, 3vh, 1.6rem)',
+    delay: '0.6s',
+    scale: '0.86',
+    tailAngle: '104deg',
   },
 ]
 
@@ -1724,7 +1823,8 @@ const storyCardCount = computed(() => storyCards.value.length)
 const storyMergeCard = computed(() => storyCards.value[storyCards.value.length - 1] ?? null)
 const storyTravel = computed(() => Math.max(storyCardCount.value - 1, 0))
 const storyProgressIndex = computed(() => storyProgress.value * storyTravel.value)
-const storyMergeProgress = computed(() => clamp((storyProgress.value - 0.94) / 0.06))
+const storyMergeProgress = computed(() => clamp((storyProgress.value - 0.86) / 0.14))
+const storyFooterFade = computed(() => clamp((storyProgress.value - 0.9) / 0.1))
 const activeStoryIndex = computed(() =>
   storyCardCount.value > 1 ? Math.round(storyProgressIndex.value) : 0
 )
@@ -1759,12 +1859,7 @@ const railTrackStyle = computed(() => ({
 const storySceneStyle = computed(() => ({
   '--story-card-count': String(Math.max(storyCardCount.value, 1)),
   '--story-progress': String(storyProgress.value),
-  '--story-footer-fade': String(clamp((storyProgress.value - 0.95) / 0.05)),
-}))
-
-const storyMergePanelStyle = computed<Record<string, string>>(() => ({
-  '--story-merge-opacity': String(storyMergeProgress.value),
-  '--story-merge-y': `${((1 - storyMergeProgress.value) * 2.2).toFixed(4)}rem`,
+  '--story-footer-fade': String(storyFooterFade.value),
 }))
 
 const homePageTransitionClass = computed(() =>
@@ -1911,26 +2006,36 @@ const storyMergeLinks = computed(() => [
   },
 ])
 
+const resolvedScheduleHighlights = computed(() => {
+  if (homeScheduleHighlights.value.length > 0) {
+    return homeScheduleHighlights.value
+  }
+  return homeAggregate.value?.trends.schedules ?? []
+})
+const resolvedCommunityHighlights = computed(() => {
+  if (homeCommunityHighlights.value.length > 0) {
+    return homeCommunityHighlights.value
+  }
+  return homeAggregate.value?.trends.community ?? []
+})
+const communityHighlightPreview = computed(() => resolvedCommunityHighlights.value[0] ?? null)
+
 const scheduleFallbackCard = computed(() => {
-  const schedulePanel = portalPanels.value.find((panel) => panel.key === 'schedule')
+  const scheduleItem = portalItemMap.value.get('schedule')
   return {
-    label:
-      schedulePanel?.noteLabel || heroEditorialCard.value?.author || t('home.hero.editorialLabel'),
-    title:
-      schedulePanel?.noteTitle || heroEditorialCard.value?.title || t('home.trends.scheduleTitle'),
-    text:
-      schedulePanel?.noteText || heroEditorialSupportText.value || t('home.trends.scheduleHint'),
-    meta:
-      schedulePanel?.noteMeta || heroEditorialCard.value?.time || t('home.trends.scheduleAction'),
+    label: t('home.trends.scheduleTitle'),
+    title: getPortalCardAvailabilityLabel(scheduleItem),
+    text: t('home.portal.items.schedule.desc'),
+    meta: getPortalItemCountSummary(scheduleItem) || t('home.trends.scheduleAction'),
   }
 })
 
-const primaryScheduleHighlights = computed(() => homeScheduleHighlights.value.slice(0, 2))
+const primaryScheduleHighlights = computed(() => resolvedScheduleHighlights.value.slice(0, 2))
 
 const trendsScheduleCompanion = computed(() => {
   if (primaryScheduleHighlights.value.length !== 1) return null
 
-  const community = homeCommunityHighlights.value[0]
+  const community = communityHighlightPreview.value
   if (community) {
     return {
       kind: 'community',
@@ -1942,14 +2047,7 @@ const trendsScheduleCompanion = computed(() => {
     }
   }
 
-  return {
-    kind: 'fallback',
-    label: scheduleFallbackCard.value.label,
-    title: scheduleFallbackCard.value.title,
-    text: scheduleFallbackCard.value.text,
-    meta: scheduleFallbackCard.value.meta,
-    to: '/schedule',
-  }
+  return null
 })
 
 const quickFilters = computed(() => [
@@ -1992,7 +2090,7 @@ watch(
     heroEditorialRevealTimer = window.setTimeout(() => {
       heroEditorialVisible.value = true
       heroEditorialRevealTimer = null
-    }, 140)
+    }, 220)
   },
   { immediate: true }
 )
@@ -2041,6 +2139,8 @@ function abortHomeRequest() {
 function applyHomeAggregate(payload: HomeAggregateResponse, source: 'aggregate' | 'support') {
   homeAggregate.value = payload
   homeDataSource.value = source
+  homeScheduleHighlights.value = payload.trends.schedules ?? []
+  homeCommunityHighlights.value = payload.trends.community ?? []
 
   const normalizedPosts = buildHomePostsFromAggregate(payload).filter(
     (post) => !isFilteredAuthor(post.author_name)
@@ -2049,6 +2149,20 @@ function applyHomeAggregate(payload: HomeAggregateResponse, source: 'aggregate' 
   posts.value = normalizedPosts
   allPosts.value = normalizedPosts
   total.value = normalizedPosts.length
+}
+
+function shouldRefreshHomeSupportBlocks(
+  payload: HomeAggregateResponse,
+  source: 'aggregate' | 'support'
+) {
+  if (source === 'support') return false
+
+  const scheduleCount = payload.portal.items.find((item) => item.key === 'schedule')?.count ?? 0
+  const communityCount = payload.portal.items.find((item) => item.key === 'community')?.count ?? 0
+  const hasScheduleDetails = (payload.trends.schedules ?? []).length > 0
+  const hasCommunityDetails = (payload.trends.community ?? []).length > 0
+
+  return (scheduleCount > 0 && !hasScheduleDetails) || (communityCount > 0 && !hasCommunityDetails)
 }
 
 async function refreshHomeSupportBlocks(signal: AbortSignal) {
@@ -2074,6 +2188,7 @@ async function fetchHomeData(): Promise<boolean> {
   isLoadingMore.value = false
   error.value = null
   failedTrendAuthorAvatarKeys.value = new Set()
+  failedHomeMediaUrls.value = new Set()
   homeScheduleHighlights.value = []
   homeCommunityHighlights.value = []
 
@@ -2090,7 +2205,9 @@ async function fetchHomeData(): Promise<boolean> {
     applyHomeAggregate(result.payload, result.source)
     total.value = Math.max(total.value, result.payload.story_deck.total ?? 0)
 
-    void refreshHomeSupportBlocks(controller.signal)
+    if (shouldRefreshHomeSupportBlocks(result.payload, result.source)) {
+      void refreshHomeSupportBlocks(controller.signal)
+    }
     return true
   } catch (err) {
     if (controller.signal.aborted) return false
@@ -2361,6 +2478,38 @@ function formatCommunityHighlightMeta(item: HomeCommunityHighlight | null | unde
   return `${item.comment_count} · ${formatRelativeTime(item.updated_at, t)}`
 }
 
+function getPortalPreviewAuthorLabel(preview: HomePortalPreview | null | undefined): string {
+  if (!preview?.author) return ''
+  if (typeof preview.author === 'string') return normalizeText(preview.author)
+  return formatHomeAuthorName(preview.author)
+}
+
+function getPortalItemLabel(key: 'authors' | 'schedule' | 'community'): string {
+  switch (key) {
+    case 'authors':
+      return t('home.portal.items.authors.title')
+    case 'schedule':
+      return t('home.portal.items.schedule.title')
+    case 'community':
+      return t('home.portal.items.community.title')
+  }
+}
+
+function getPortalItemCountText(item: HomePortalItem | null | undefined): string {
+  const displayCount = normalizeText(item?.display_count)
+  if (displayCount) return displayCount
+  return formatMetricValue(item?.count ?? 0)
+}
+
+function getPortalItemCountSummary(item: HomePortalItem | null | undefined): string {
+  if (!item) return ''
+  return t('home.portal.publicCount', { count: getPortalItemCountText(item) })
+}
+
+function getPortalCardAvailabilityLabel(item: HomePortalItem | null | undefined): string {
+  return (item?.count ?? 0) > 0 ? getPortalItemCountSummary(item) : t('home.portal.emptyState')
+}
+
 function getHeroStatLabel(key: string, fallback: string): string {
   switch (key) {
     case 'updates':
@@ -2545,7 +2694,7 @@ function setHomeFooterBlend(enabled: boolean) {
 function setHomeFooterBlendProgress(progress: number) {
   if (typeof document === 'undefined') return
   const safeProgress = clamp(progress)
-  if (safeProgress <= 0.04) {
+  if (safeProgress <= 0.12) {
     delete document.documentElement.dataset.homeStoryFooter
     document.documentElement.style.removeProperty('--home-footer-progress')
     document.documentElement.style.removeProperty('--home-footer-opacity')
@@ -2558,10 +2707,10 @@ function setHomeFooterBlendProgress(progress: number) {
     document.documentElement.style.removeProperty('--home-story-footer-blur')
     return
   }
-  const footerOpacity = 0.8 + safeProgress * 0.2
-  const footerY = Math.max(-3, 1.5 - safeProgress * 8.5)
-  const footerBlur = Math.max(0, (1 - safeProgress) * 0.14)
-  const footerShellY = Math.max(-7.5, 1.5 - safeProgress * 16.5)
+  const footerOpacity = 0.74 + safeProgress * 0.26
+  const footerY = Math.max(-0.75, 1.1 - safeProgress * 2.1)
+  const footerBlur = Math.max(0, (1 - safeProgress) * 0.08)
+  const footerShellY = Math.max(-1.4, 1.05 - safeProgress * 2.45)
 
   document.documentElement.dataset.homeStoryFooter = 'true'
   document.documentElement.style.setProperty('--home-footer-progress', safeProgress.toFixed(4))
@@ -2617,14 +2766,11 @@ function updateViewportSceneBlend() {
     ),
   }
 
-  const footerBlendProgress =
-    nextBlend.storyBridge > 0.1 || nextBlend.bridgeFooter > 0.16 ? nextBlend.bridgeFooter : 0
-  const railLockActive =
-    window.scrollY <
-    Math.max(
-      (footerBridgeRef.value?.offsetTop ?? Number.MAX_SAFE_INTEGER) - window.innerHeight * 0.18,
-      0
-    )
+  const footerBlendProgress = nextBlend.bridgeFooter > 0.08 ? nextBlend.bridgeFooter : 0
+  const railLockBoundary =
+    postsSectionRef.value?.offsetTop ??
+    (featuredSectionRef.value?.offsetTop ?? 0) + (featuredSectionRef.value?.offsetHeight ?? 0)
+  const railLockActive = window.scrollY < Math.max(railLockBoundary - window.innerHeight * 0.08, 0)
 
   viewportSceneBlend.value = {
     ...nextBlend,
@@ -2870,6 +3016,13 @@ function getFooterEntryY(revealRatio = 0.32): number | null {
   return Math.max(absoluteTop - window.innerHeight * revealRatio, 0)
 }
 
+function isPageNearBottom(buffer = 28): boolean {
+  if (typeof window === 'undefined') return false
+  const root = document.documentElement
+  const remaining = root.scrollHeight - (window.scrollY + window.innerHeight)
+  return remaining <= Math.max(buffer, window.innerHeight * 0.02)
+}
+
 function getSceneState(scene: SceneStepKey) {
   if (scene === 'featured') {
     return {
@@ -2912,6 +3065,7 @@ function releaseScene(scene: SceneStepKey, direction: -1 | 1): boolean {
     return jumpToScenePosition(targetY, () => {
       setSceneProgress(scene, edgeIndex, count)
       if (direction > 0) {
+        scheduleViewportSceneBlendUpdate()
         runAfterNextPaint(restartBubbleBurst)
       }
     })
@@ -2961,10 +3115,12 @@ function handleStandaloneSceneJump(direction: -1 | 1): boolean {
 
   if (bridgeActive) {
     if (direction > 0) {
+      if (isPageNearBottom()) return false
       const targetY =
-        getFooterEntryY(0.4) ??
+        getFooterEntryY(0.24) ??
         footerBridgeRef.value?.offsetTop ??
         window.scrollY + window.innerHeight * 0.82
+      if (targetY <= window.scrollY + 2) return false
       triggerScreenTransition('bridge', 'footer')
       return jumpToScenePosition(targetY, scheduleViewportSceneBlendUpdate)
     }
@@ -3027,6 +3183,12 @@ function handleSceneWheel(event: WheelEvent) {
 
   const direction = event.deltaY > 0 ? 1 : -1
 
+  if (direction > 0 && isPageNearBottom(64)) {
+    clearSceneScrollTween()
+    event.preventDefault()
+    return
+  }
+
   const scene = getActiveSceneKey()
   if (!scene) {
     if (sceneScrollLocked) {
@@ -3084,6 +3246,12 @@ function handleSceneKeydown(event: KeyboardEvent) {
   }
 
   if (!direction) return
+
+  if (direction > 0 && isPageNearBottom(64)) {
+    clearSceneScrollTween()
+    event.preventDefault()
+    return
+  }
 
   const scene = getActiveSceneKey()
   if (!scene) {
@@ -3143,7 +3311,9 @@ function cleanupSceneTriggers() {
   clearSceneScrollTween()
   clearBubbleBurstReplayFrame()
   cleanupScrollTrigger(bubbleBurstTrigger)
+  cleanupScrollTrigger(storyDeckTrigger)
   bubbleBurstTrigger = null
+  storyDeckTrigger = null
 }
 
 function disconnectSceneLayoutObserver() {
@@ -3230,6 +3400,21 @@ function setupSceneTriggers() {
     })
   }
 
+  const storyElement = storyDeckRef.value
+  if (storyElement && storyCardCount.value > 1) {
+    storyDeckTrigger = ScrollTrigger.create({
+      trigger: storyElement,
+      start: 'top top',
+      end: () => `+=${Math.max(storyCardCount.value - 1, 0) * window.innerHeight}`,
+      invalidateOnRefresh: true,
+      scrub: false,
+      snap: false,
+      onUpdate: (self) => {
+        storyProgress.value = self.progress
+      },
+    })
+  }
+
   scheduleViewportSceneBlendUpdate()
 }
 
@@ -3254,55 +3439,21 @@ function getStoryCardStyle(index: number): Record<string, string> {
   const offset = index - storyProgressIndex.value
   const distance = Math.abs(offset)
   const isLastCard = index === storyCardCount.value - 1
-  const deckOutro = clamp((storyProgress.value - 0.82) / 0.18)
-  const outro = isLastCard ? clamp((storyProgress.value - 0.94) / 0.06) : deckOutro
-  const lastCardReveal = isLastCard ? clamp((storyProgress.value - 0.92) / 0.08) : 1
   const mergeDeparture = isLastCard ? storyMergeProgress.value : 0
-  const clampedOffset = Math.max(-1.3, Math.min(1.3, offset))
-  const hidden = distance > (isLastCard ? 1.08 : 1.2)
-  const baseTranslateY = clampedOffset * (isLastCard ? 3.8 : 5.8)
-  const translateX = `${(-clampedOffset * (isLastCard ? 0.72 : 1.1)).toFixed(2)}rem`
-  const translateY = `${(
-    baseTranslateY +
-    distance * deckOutro * (isLastCard ? 1 : 2.4) +
-    (isLastCard ? outro * 0.18 - mergeDeparture * 2.6 : 0)
-  ).toFixed(2)}rem`
-  const translateZ = `${(
-    -distance * (isLastCard ? 5.2 : 12.5) -
-    distance * deckOutro * (isLastCard ? 5.5 : 10.5) -
-    (isLastCard ? (1 - lastCardReveal) * 4.2 + outro * 0.3 + mergeDeparture * 5.4 : 0)
-  ).toFixed(2)}rem`
-  const rotateX = `${(
-    (offset > 0 ? -3.8 : 4.8) * Math.min(distance, 1) +
-    deckOutro * distance * 1.2 +
-    (isLastCard ? outro * 0.12 + mergeDeparture * 0.8 : 0)
-  ).toFixed(2)}deg`
-  const rotateY = `${(-clampedOffset * (isLastCard ? 1.8 : 5.2)).toFixed(2)}deg`
-  const scale = isLastCard
-    ? Math.max(
-        0.9,
-        0.92 + lastCardReveal * 0.08 - distance * 0.02 - outro * 0.004 - mergeDeparture * 0.025
-      )
-    : Math.max(0.86, 1 - distance * 0.06 - deckOutro * distance * 0.08)
-  const opacity = isLastCard
-    ? hidden
-      ? 0
-      : Math.max(0.44, (1 - distance * 0.24) * (1 - mergeDeparture * 0.34) - outro * 0.02)
-    : hidden
-      ? 0
-      : Math.max(0.04, 1 - distance * 0.54 - deckOutro * distance * 0.4)
-  const blur = hidden
-    ? '0.55rem'
-    : `${Math.max(0, distance - 0.4) * (isLastCard ? 0.03 : 0.2) + deckOutro * distance * 0.1 + (isLastCard ? (1 - lastCardReveal) * 0.03 + mergeDeparture * 0.02 : 0)}rem`
+  const footerDeparture = isLastCard ? storyFooterFade.value : 0
+  const clampedOffset = Math.max(-1.58, Math.min(1.58, offset))
+  const hidden = distance > 2.1
+  const reelCurve = Math.sin((Math.min(distance, 1.3) / 1.3) * Math.PI * 0.5)
+  const liftCurve = 1 - Math.cos((Math.min(distance, 1.2) / 1.2) * Math.PI * 0.5)
+  const translateX = `${(-clampedOffset * 0.7).toFixed(2)}rem`
+  const translateY = `calc(${clampedOffset.toFixed(4)} * min(28dvh, 17rem) - ${(liftCurve * 0.95 + mergeDeparture * 1.6).toFixed(2)}rem)`
+  const translateZ = `${(8.5 - distance * 11.5 - reelCurve * 4.2 - mergeDeparture * 4.8 - footerDeparture * 3.4).toFixed(2)}rem`
+  const rotateX = `${(-clampedOffset * 56 - Math.sign(clampedOffset || 1) * reelCurve * 10 - mergeDeparture * 10).toFixed(2)}deg`
+  const rotateY = `${(clampedOffset * 3.4).toFixed(2)}deg`
+  const scale = hidden ? 0.72 : Math.max(0.84, 1 - distance * 0.06 - mergeDeparture * 0.05)
+  const opacity = hidden ? 0 : Math.max(0.16, 1 - distance * 0.34 - footerDeparture * 0.18)
   const zIndex = String(
-    Math.max(
-      1,
-      storyCardCount.value -
-        Math.round(distance * 5) -
-        (hidden ? 6 : 0) -
-        Math.round(deckOutro * distance * 3) -
-        (isLastCard ? Math.round(1 - lastCardReveal + mergeDeparture * 2) : 0)
-    )
+    Math.max(1, storyCardCount.value - Math.round(distance * 6) - Math.round(mergeDeparture * 4))
   )
 
   return {
@@ -3313,7 +3464,7 @@ function getStoryCardStyle(index: number): Record<string, string> {
     '--story-rotate-y': rotateY,
     '--story-scale': String(scale),
     '--story-opacity': String(opacity),
-    '--story-blur': blur,
+    '--story-blur': '0rem',
     'z-index': zIndex,
   }
 }
@@ -3339,6 +3490,19 @@ function markTrendAuthorAvatarFailed(key: string) {
   const next = new Set(failedTrendAuthorAvatarKeys.value)
   next.add(key)
   failedTrendAuthorAvatarKeys.value = next
+}
+
+function isHomeMediaFailed(source: string | null | undefined): boolean {
+  const key = normalizeText(source)
+  return key ? failedHomeMediaUrls.value.has(key) : false
+}
+
+function markHomeMediaFailed(source: string | null | undefined) {
+  const key = normalizeText(source)
+  if (!key || failedHomeMediaUrls.value.has(key)) return
+  const next = new Set(failedHomeMediaUrls.value)
+  next.add(key)
+  failedHomeMediaUrls.value = next
 }
 
 function openPostPreview(post: PostListItem, thumbnailSrc: string | null) {
@@ -3413,12 +3577,16 @@ onBeforeUnmount(() => {
   position: relative;
   min-height: 100svh;
   min-height: 100dvh;
-  --home-stage-safe-top: clamp(1.25rem, 2.8vw, 2.25rem);
+  --home-stage-safe-top: calc(var(--navbar-height, 4rem) + clamp(0.35rem, 1.2vw, 0.9rem));
+  --home-stage-safe-bottom: clamp(1.5rem, 4vw, 2.75rem);
   --home-stage-chrome-height: clamp(2.25rem, 3.2vw, 2.85rem);
   --home-blush-rgb: 246, 218, 229;
   --home-mist-rgb: 199, 220, 244;
   --home-lilac-rgb: 219, 211, 245;
   --home-ink: #1f2b44;
+  --home-shell-radius: var(--ui-radius-card, var(--radius-2xl));
+  --home-card-radius: var(--ui-radius-input, var(--radius-xl));
+  --home-chip-radius: var(--ui-radius-button, var(--radius-full));
   --home-section-bg:
     radial-gradient(circle at top left, rgba(var(--home-mist-rgb), 0.42) 0%, transparent 34%),
     radial-gradient(circle at top right, rgba(var(--home-blush-rgb), 0.34) 0%, transparent 28%),
@@ -3436,9 +3604,79 @@ onBeforeUnmount(() => {
   --home-tag-hover: rgba(255, 255, 255, 0.9);
   --home-accent: #6a88b8;
   --home-accent-soft: #d792aa;
+  --home-panel-bg: linear-gradient(160deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.84));
+  --home-panel-bg-soft: linear-gradient(
+    160deg,
+    rgba(255, 255, 255, 0.9),
+    rgba(255, 255, 255, 0.74)
+  );
+  --home-panel-bg-strong: linear-gradient(
+    160deg,
+    rgba(255, 255, 255, 0.98),
+    rgba(247, 248, 251, 0.94)
+  );
+  --home-panel-muted: rgba(255, 255, 255, 0.74);
+  --home-panel-muted-strong: rgba(255, 255, 255, 0.86);
+  --home-panel-border: rgba(193, 216, 239, 0.56);
+  --home-panel-border-strong: rgba(193, 216, 239, 0.82);
+  --home-panel-highlight: inset 0 0.0625rem 0 rgba(255, 255, 255, 0.44);
+  --home-panel-shadow: 0 1.5rem 3.8rem -2.4rem rgba(35, 53, 85, 0.26);
+  --home-panel-shadow-strong: 0 2.5rem 5rem -2.8rem rgba(35, 53, 85, 0.34);
+  --home-preview-bg:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.04)),
+    rgba(255, 255, 255, 0.42);
+  --home-preview-empty-bg: linear-gradient(
+    155deg,
+    rgba(255, 255, 255, 0.92),
+    rgba(245, 248, 252, 0.8)
+  );
+  --home-preview-border: rgba(255, 255, 255, 0.56);
+  --home-preview-overlay: linear-gradient(180deg, transparent 0%, rgba(15, 23, 42, 0.72) 100%);
+  --home-preview-overlay-ink: rgba(255, 255, 255, 0.94);
+  --home-preview-shadow: 0 1rem 2.5rem -1.8rem rgba(15, 23, 42, 0.26);
+  --home-community-rgb: 14, 165, 164;
+  --home-stage-chip-bg: rgba(255, 255, 255, 0.58);
+  --home-stage-chip-border: rgba(255, 255, 255, 0.42);
+  --home-stage-backdrop: blur(0rem);
+  --home-story-card-bg: linear-gradient(
+    150deg,
+    rgba(255, 255, 255, 0.99),
+    rgba(245, 249, 255, 0.98)
+  );
+  --home-story-card-border: rgba(193, 216, 239, 0.86);
+  --home-story-card-shadow: 0 3.2rem 5.6rem -3rem rgba(59, 78, 112, 0.34);
+  --home-story-visual-bg: linear-gradient(
+    160deg,
+    rgba(248, 251, 255, 0.98),
+    rgba(243, 247, 254, 0.92)
+  );
+  --home-story-stage-bg:
+    radial-gradient(circle at 18% 18%, rgba(var(--home-mist-rgb), 0.18) 0%, transparent 42%),
+    radial-gradient(circle at 84% 22%, rgba(var(--home-blush-rgb), 0.16) 0%, transparent 38%),
+    linear-gradient(180deg, rgba(248, 247, 244, 0.64) 0%, rgba(248, 247, 244, 0.88) 100%);
+  --home-story-stage-footer-bg:
+    radial-gradient(circle at 18% 18%, rgba(var(--home-mist-rgb), 0.12) 0%, transparent 42%),
+    radial-gradient(circle at 84% 22%, rgba(var(--home-blush-rgb), 0.12) 0%, transparent 38%),
+    linear-gradient(180deg, rgba(246, 244, 241, 0) 0%, rgba(248, 247, 244, 0.66) 100%);
+  --home-footer-bridge-bg:
+    radial-gradient(circle at 14% 16%, rgba(var(--home-mist-rgb), 0.22) 0%, transparent 42%),
+    radial-gradient(circle at 82% 20%, rgba(var(--home-blush-rgb), 0.2) 0%, transparent 36%),
+    linear-gradient(
+      180deg,
+      rgba(246, 245, 242, 0.32) 0%,
+      rgba(248, 247, 244, 0.92) 56%,
+      #f8f7f4 100%
+    );
+  --home-footer-bridge-top:
+    radial-gradient(circle at 22% 16%, rgba(var(--home-mist-rgb), 0.22) 0%, transparent 54%),
+    radial-gradient(circle at 82% 10%, rgba(var(--home-blush-rgb), 0.2) 0%, transparent 48%);
+  --home-footer-bridge-bottom:
+    linear-gradient(180deg, rgba(248, 247, 244, 0) 0%, rgba(248, 247, 244, 0.92) 56%),
+    radial-gradient(circle at 50% 100%, rgba(255, 255, 255, 0.72) 0%, transparent 64%);
   --home-screen-transition-ms: 760ms;
 }
 
+:global(#app[data-theme='dark'] .home-page),
 :global([data-theme='dark'] .home-page) {
   --home-section-bg:
     radial-gradient(circle at top left, rgba(var(--home-mist-rgb), 0.08) 0%, transparent 30%),
@@ -3450,6 +3688,151 @@ onBeforeUnmount(() => {
   --home-pill-border: rgba(255, 255, 255, 0.08);
   --home-tag-hover: rgba(18, 24, 38, 0.92);
   --home-ink: #f8fafc;
+  --home-panel-bg: linear-gradient(160deg, rgba(12, 16, 23, 0.96), rgba(18, 24, 36, 0.88));
+  --home-panel-bg-soft: linear-gradient(160deg, rgba(12, 16, 23, 0.88), rgba(18, 24, 36, 0.78));
+  --home-panel-bg-strong: linear-gradient(150deg, rgba(13, 19, 28, 0.98), rgba(16, 24, 36, 0.94));
+  --home-panel-muted: rgba(18, 24, 36, 0.84);
+  --home-panel-muted-strong: rgba(18, 24, 36, 0.92);
+  --home-panel-border: rgba(148, 163, 184, 0.14);
+  --home-panel-border-strong: rgba(148, 163, 184, 0.24);
+  --home-panel-highlight: inset 0 0.0625rem 0 rgba(255, 255, 255, 0.04);
+  --home-panel-shadow: 0 1.9rem 4.4rem -2.6rem rgba(0, 0, 0, 0.52);
+  --home-panel-shadow-strong: 0 2.8rem 6rem -3rem rgba(0, 0, 0, 0.62);
+  --home-preview-bg:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02)),
+    rgba(15, 20, 31, 0.76);
+  --home-preview-empty-bg: linear-gradient(155deg, rgba(14, 20, 31, 0.96), rgba(18, 24, 36, 0.84));
+  --home-preview-border: rgba(148, 163, 184, 0.2);
+  --home-preview-overlay: linear-gradient(180deg, transparent 0%, rgba(2, 6, 23, 0.84) 100%);
+  --home-preview-overlay-ink: rgba(248, 250, 252, 0.94);
+  --home-preview-shadow: 0 1.4rem 3rem -2rem rgba(0, 0, 0, 0.52);
+  --home-community-rgb: 45, 212, 191;
+  --home-stage-chip-bg: rgba(15, 21, 32, 0.82);
+  --home-stage-chip-border: rgba(255, 255, 255, 0.08);
+  --home-stage-backdrop: blur(0rem);
+  --home-story-card-bg: linear-gradient(148deg, rgba(12, 18, 28, 0.98), rgba(18, 24, 36, 0.94));
+  --home-story-card-border: rgba(148, 163, 184, 0.26);
+  --home-story-card-shadow: 0 3.3rem 5.9rem -3rem rgba(0, 0, 0, 0.72);
+  --home-story-visual-bg: linear-gradient(160deg, rgba(16, 22, 34, 0.94), rgba(18, 24, 36, 0.86));
+  --home-story-stage-bg:
+    radial-gradient(circle at 18% 18%, rgba(var(--home-mist-rgb), 0.08) 0%, transparent 42%),
+    radial-gradient(circle at 84% 22%, rgba(var(--home-blush-rgb), 0.08) 0%, transparent 38%),
+    linear-gradient(180deg, rgba(8, 12, 18, 0.72) 0%, rgba(8, 12, 18, 0.94) 100%);
+  --home-story-stage-footer-bg:
+    radial-gradient(circle at 18% 18%, rgba(var(--home-mist-rgb), 0.06) 0%, transparent 42%),
+    radial-gradient(circle at 84% 22%, rgba(var(--home-blush-rgb), 0.06) 0%, transparent 38%),
+    linear-gradient(180deg, rgba(7, 10, 16, 0) 0%, rgba(8, 12, 18, 0.82) 100%);
+  --home-footer-bridge-bg:
+    radial-gradient(circle at 14% 16%, rgba(var(--home-mist-rgb), 0.08) 0%, transparent 42%),
+    radial-gradient(circle at 82% 20%, rgba(var(--home-blush-rgb), 0.08) 0%, transparent 36%),
+    linear-gradient(180deg, rgba(7, 10, 16, 0.48) 0%, rgba(8, 12, 18, 0.92) 56%, #060810 100%);
+  --home-footer-bridge-top:
+    radial-gradient(circle at 22% 16%, rgba(var(--home-mist-rgb), 0.08) 0%, transparent 54%),
+    radial-gradient(circle at 82% 10%, rgba(var(--home-blush-rgb), 0.08) 0%, transparent 48%);
+  --home-footer-bridge-bottom:
+    linear-gradient(180deg, rgba(6, 8, 16, 0) 0%, rgba(6, 8, 16, 0.94) 56%),
+    radial-gradient(circle at 50% 100%, rgba(255, 255, 255, 0.04) 0%, transparent 64%);
+}
+
+:global(#app[data-theme='blue'] .home-page),
+:global([data-theme='blue'] .home-page) {
+  --home-section-bg:
+    radial-gradient(circle at top left, rgba(147, 197, 253, 0.34) 0%, transparent 34%),
+    radial-gradient(circle at top right, rgba(129, 140, 248, 0.24) 0%, transparent 28%),
+    radial-gradient(circle at 50% 18%, rgba(186, 230, 253, 0.32) 0%, transparent 26%),
+    linear-gradient(
+      180deg,
+      rgba(240, 249, 255, 0.98) 0%,
+      rgba(239, 246, 255, 0.96) 52%,
+      #eff6ff 100%
+    );
+  --home-ink: #0f172a;
+  --home-accent: #2563eb;
+  --home-accent-soft: #6366f1;
+  --home-pill-bg: rgba(255, 255, 255, 0.82);
+  --home-pill-border: rgba(59, 130, 246, 0.12);
+  --home-tag-hover: rgba(255, 255, 255, 0.96);
+  --home-panel-bg: linear-gradient(160deg, rgba(255, 255, 255, 0.98), rgba(240, 249, 255, 0.92));
+  --home-panel-bg-soft: linear-gradient(
+    160deg,
+    rgba(255, 255, 255, 0.94),
+    rgba(224, 242, 254, 0.84)
+  );
+  --home-panel-bg-strong: linear-gradient(
+    148deg,
+    rgba(255, 255, 255, 0.99),
+    rgba(224, 242, 254, 0.92)
+  );
+  --home-panel-muted: rgba(255, 255, 255, 0.82);
+  --home-panel-muted-strong: rgba(255, 255, 255, 0.92);
+  --home-panel-border: rgba(96, 165, 250, 0.18);
+  --home-panel-border-strong: rgba(59, 130, 246, 0.3);
+  --home-panel-highlight: inset 0 0.0625rem 0 rgba(255, 255, 255, 0.6);
+  --home-panel-shadow: 0 1.7rem 4rem -2.6rem rgba(37, 99, 235, 0.2);
+  --home-panel-shadow-strong: 0 2.7rem 5.6rem -3rem rgba(37, 99, 235, 0.24);
+  --home-preview-bg:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.05)),
+    rgba(255, 255, 255, 0.54);
+  --home-preview-empty-bg: linear-gradient(
+    155deg,
+    rgba(255, 255, 255, 0.96),
+    rgba(224, 242, 254, 0.82)
+  );
+  --home-preview-border: rgba(96, 165, 250, 0.24);
+  --home-preview-overlay: linear-gradient(180deg, transparent 0%, rgba(30, 64, 175, 0.7) 100%);
+  --home-preview-overlay-ink: rgba(255, 255, 255, 0.96);
+  --home-preview-shadow: 0 1rem 2.5rem -1.6rem rgba(37, 99, 235, 0.24);
+  --home-community-rgb: 14, 165, 233;
+  --home-stage-chip-bg: rgba(255, 255, 255, 0.74);
+  --home-stage-chip-border: rgba(59, 130, 246, 0.14);
+  --home-stage-backdrop: blur(0rem);
+  --home-story-card-bg: linear-gradient(
+    148deg,
+    rgba(255, 255, 255, 0.99),
+    rgba(239, 246, 255, 0.96)
+  );
+  --home-story-card-border: rgba(96, 165, 250, 0.3);
+  --home-story-card-shadow: 0 3.1rem 5.6rem -3rem rgba(37, 99, 235, 0.26);
+  --home-story-visual-bg: linear-gradient(
+    160deg,
+    rgba(255, 255, 255, 0.94),
+    rgba(224, 242, 254, 0.84)
+  );
+  --home-story-stage-bg:
+    radial-gradient(circle at 18% 18%, rgba(147, 197, 253, 0.18) 0%, transparent 42%),
+    radial-gradient(circle at 84% 22%, rgba(129, 140, 248, 0.12) 0%, transparent 38%),
+    linear-gradient(180deg, rgba(239, 246, 255, 0.72) 0%, rgba(240, 249, 255, 0.92) 100%);
+  --home-story-stage-footer-bg:
+    radial-gradient(circle at 18% 18%, rgba(147, 197, 253, 0.12) 0%, transparent 42%),
+    radial-gradient(circle at 84% 22%, rgba(129, 140, 248, 0.1) 0%, transparent 38%),
+    linear-gradient(180deg, rgba(240, 249, 255, 0) 0%, rgba(239, 246, 255, 0.74) 100%);
+  --home-footer-bridge-bg:
+    radial-gradient(circle at 14% 16%, rgba(147, 197, 253, 0.22) 0%, transparent 42%),
+    radial-gradient(circle at 82% 20%, rgba(129, 140, 248, 0.16) 0%, transparent 36%),
+    linear-gradient(
+      180deg,
+      rgba(239, 246, 255, 0.38) 0%,
+      rgba(240, 249, 255, 0.94) 56%,
+      #eff6ff 100%
+    );
+  --home-footer-bridge-top:
+    radial-gradient(circle at 22% 16%, rgba(147, 197, 253, 0.18) 0%, transparent 54%),
+    radial-gradient(circle at 82% 10%, rgba(129, 140, 248, 0.14) 0%, transparent 48%);
+  --home-footer-bridge-bottom:
+    linear-gradient(180deg, rgba(239, 246, 255, 0) 0%, rgba(239, 246, 255, 0.94) 56%),
+    radial-gradient(circle at 50% 100%, rgba(255, 255, 255, 0.68) 0%, transparent 64%);
+}
+
+:global(#app[data-ui-style='material'] .home-page),
+:global([data-ui-style='material'] .home-page) {
+  --home-shell-radius: var(--ui-radius-card, var(--radius-xl));
+  --home-card-radius: var(--ui-radius-input, var(--radius-md));
+  --home-chip-radius: var(--ui-radius-button, var(--radius-full));
+  --home-stage-backdrop: blur(0rem);
+  --home-panel-shadow: var(--shadow-md);
+  --home-panel-shadow-strong: var(--shadow-lg);
+  --home-panel-highlight: none;
+  --home-story-card-shadow: var(--shadow-xl);
 }
 
 .home-page::before {
@@ -3472,7 +3855,7 @@ onBeforeUnmount(() => {
   );
   pointer-events: none;
   z-index: 0;
-  opacity: 0.6;
+  opacity: 0.28;
 }
 
 .home-screen {
@@ -3488,41 +3871,35 @@ onBeforeUnmount(() => {
 .home-footer-bridge__stage {
   transform-origin: center center;
   backface-visibility: hidden;
-  will-change: transform, opacity, filter;
+  will-change: transform, opacity;
   transition:
     transform 520ms cubic-bezier(0.2, 0.9, 0.25, 1),
-    opacity 440ms cubic-bezier(0.2, 0.84, 0.24, 1),
-    filter 440ms cubic-bezier(0.2, 0.84, 0.24, 1);
+    opacity 440ms cubic-bezier(0.2, 0.84, 0.24, 1);
 }
 
 .hero {
   opacity: var(--home-hero-opacity, 1);
   transform: translate3d(0, var(--home-hero-y, 0rem), 0) scale(var(--home-hero-scale, 1));
-  filter: blur(var(--home-hero-blur, 0rem));
 }
 
 .rail-stage {
   opacity: var(--home-rail-opacity, 1);
   transform: translate3d(0, var(--home-rail-y, 0rem), 0) scale(var(--home-rail-scale, 1));
-  filter: blur(var(--home-rail-blur, 0rem));
 }
 
 .posts--bubble > .container {
   opacity: var(--home-posts-opacity, 1);
   transform: translate3d(0, var(--home-posts-y, 0rem), 0) scale(var(--home-posts-scale, 1));
-  filter: blur(var(--home-posts-blur, 0rem));
 }
 
 .story-stage {
   opacity: var(--home-story-opacity, 1);
   transform: translate3d(0, var(--home-story-y, 0rem), 0) scale(var(--home-story-scale, 1));
-  filter: blur(var(--home-story-blur, 0rem));
 }
 
 .home-footer-bridge__stage {
   opacity: var(--home-bridge-opacity, 1);
   transform: translate3d(0, var(--home-bridge-y, 0rem), 0) scale(var(--home-bridge-scale, 1));
-  filter: blur(var(--home-bridge-blur, 0rem));
 }
 
 .home-page--transition-featured-hero .hero,
@@ -3537,14 +3914,12 @@ onBeforeUnmount(() => {
 .home-page--transition-bridge-footer .home-footer-bridge__stage {
   opacity: 1;
   transform: translate3d(0, 0rem, 0) scale(1);
-  filter: blur(0rem);
 }
 
 .home-page--transition-story-footer .story-stage,
 .home-page--transition-story-bridge .story-stage {
   opacity: 0.88;
-  transform: translate3d(0, -1.5rem, 0) scale(0.985);
-  filter: blur(0.2rem);
+  transform: translate3d(0, -1rem, 0) scale(0.99);
 }
 
 .home-page--transition-hero-featured .hero {
@@ -3634,6 +4009,22 @@ onBeforeUnmount(() => {
     both;
 }
 
+.portal-card.glass-card::before,
+.portal-card.glass-card::after,
+.hero-spotlight-card.glass-card::before,
+.hero-spotlight-card.glass-card::after,
+.featured-rail-card.glass-card::before,
+.featured-rail-card.glass-card::after,
+.trends-card.glass-card::before,
+.trends-card.glass-card::after,
+.bubble-empty.glass-card::before,
+.bubble-empty.glass-card::after,
+.media-slice__sticky.glass-card::after,
+.home-footer-bridge__feature.glass-card::before,
+.home-footer-bridge__links.glass-card::before {
+  display: none;
+}
+
 .home-fold {
   display: flex;
   flex-direction: column;
@@ -3705,7 +4096,7 @@ onBeforeUnmount(() => {
   position: relative;
   z-index: 1;
   min-height: 100dvh;
-  padding-block: clamp(2rem, 6vh, 4rem);
+  padding-block: clamp(2rem, 6vh, 4rem) calc(2rem + var(--home-stage-safe-bottom));
   display: flex;
   align-items: center;
 }
@@ -3724,24 +4115,38 @@ onBeforeUnmount(() => {
 
 .hero-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
-  gap: clamp(1.5rem, 4vw, 3rem);
-  align-items: center;
+  justify-items: center;
+  align-content: center;
+  min-block-size: calc(100dvh - clamp(4rem, 12vh, 8rem) - var(--home-stage-safe-bottom));
+  padding-block: clamp(0.5rem, 1.6vw, 1.25rem);
 }
 
 .hero-copy {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-  gap: var(--spacing-4);
-  align-items: start;
-  max-width: min(52rem, 100%);
+  gap: clamp(1rem, 2.4vw, 1.5rem);
+  align-items: center;
+  inline-size: min(100%, 66rem);
+  min-block-size: clamp(23rem, 48dvh, 29rem);
 }
 
 .hero-copy__left,
 .hero-copy__right {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-3);
+  gap: clamp(0.75rem, 1.6vw, 1rem);
+  min-inline-size: 0;
+}
+
+.hero-copy__left {
+  align-items: flex-end;
+  justify-content: center;
+  text-align: end;
+  padding-inline-end: clamp(0.35rem, 1vw, 0.75rem);
+}
+
+.hero-copy__right {
+  justify-content: center;
 }
 
 .hero-copy__divider {
@@ -3779,23 +4184,36 @@ onBeforeUnmount(() => {
   color: var(--color-text-secondary);
   max-width: 44ch;
   line-height: 1.6;
+  margin-inline-start: auto;
 }
 
 .hero-editorial {
   position: relative;
-  max-width: 32rem;
-  min-block-size: 12.5rem;
-  padding: var(--spacing-4);
+  display: grid;
+  align-content: start;
+  inline-size: min(100%, 28rem);
+  min-block-size: clamp(8.75rem, 18dvh, 10.5rem);
+  padding: clamp(1rem, 1.8vw, 1.25rem);
   opacity: 0.72;
-  transform: translate3d(0, 0.75rem, 0);
+  transform: translate3d(0, 0.5rem, 0);
   border-color: var(--home-soft-border);
-  background:
-    linear-gradient(160deg, rgba(255, 255, 255, 0.84), rgba(255, 255, 255, 0.66)),
-    var(--home-pill-bg);
+  background: var(--home-panel-bg-strong), var(--home-pill-bg);
   box-shadow: var(--home-card-shadow);
+  overflow: clip;
   transition:
     opacity 260ms ease,
     transform 260ms ease;
+}
+
+.hero-editorial::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(125deg, transparent 0%, rgba(255, 255, 255, 0.24) 46%, transparent 68%),
+    radial-gradient(circle at top right, rgba(var(--home-mist-rgb), 0.12), transparent 42%);
+  pointer-events: none;
+  opacity: 0.72;
 }
 
 .hero-editorial--loaded {
@@ -3805,8 +4223,10 @@ onBeforeUnmount(() => {
 
 .hero-editorial__state {
   display: grid;
-  align-content: center;
-  gap: var(--spacing-2);
+  grid-area: 1 / 1;
+  align-content: start;
+  gap: clamp(0.5rem, 1vw, 0.75rem);
+  min-block-size: 100%;
   transition:
     opacity 320ms cubic-bezier(0.2, 0.84, 0.24, 1),
     transform 420ms cubic-bezier(0.2, 0.9, 0.25, 1);
@@ -3818,10 +4238,11 @@ onBeforeUnmount(() => {
 }
 
 .hero-editorial__state--content {
-  position: absolute;
-  inset: var(--spacing-4);
+  position: relative;
+  inset: auto;
   opacity: 0;
-  transform: translate3d(0, 0.75rem, 0);
+  transform: translate3d(0, 0.5rem, 0);
+  filter: blur(0.25rem);
 }
 
 .hero-editorial--loaded .hero-editorial__state--loading {
@@ -3833,6 +4254,7 @@ onBeforeUnmount(() => {
 .hero-editorial--loaded .hero-editorial__state--content {
   opacity: 1;
   transform: translate3d(0, 0, 0);
+  filter: blur(0rem);
 }
 
 .hero-editorial__kicker {
@@ -3855,7 +4277,7 @@ onBeforeUnmount(() => {
 
 .hero-editorial__title {
   font-size: var(--text-lg);
-  line-height: 1.4;
+  line-height: 1.32;
   color: var(--color-text-primary);
 }
 
@@ -3905,11 +4327,9 @@ onBeforeUnmount(() => {
   gap: 0.35rem;
   max-inline-size: min(28rem, 100%);
   padding: clamp(0.75rem, 1.6vw, 1rem);
-  border-color: rgba(255, 255, 255, 0.56);
-  background:
-    linear-gradient(150deg, rgba(255, 255, 255, 0.82), rgba(255, 255, 255, 0.66)),
-    var(--home-pill-bg);
-  box-shadow: 0 1.4rem 3rem -2rem rgba(60, 78, 110, 0.42);
+  border-color: var(--home-preview-border);
+  background: var(--home-preview-empty-bg), var(--home-pill-bg);
+  box-shadow: var(--home-preview-shadow);
 }
 
 .hero-preview__label {
@@ -4076,8 +4496,9 @@ onBeforeUnmount(() => {
   height: 100%;
   cursor: pointer;
   overflow: hidden;
-  border-color: var(--home-soft-border);
-  box-shadow: var(--home-card-shadow);
+  border-color: var(--home-panel-border);
+  box-shadow: var(--home-panel-shadow);
+  background: var(--home-panel-bg), var(--home-pill-bg);
 }
 
 .hero-collage-card:focus-visible {
@@ -4110,7 +4531,7 @@ onBeforeUnmount(() => {
 }
 
 .hero-collage-card--placeholder {
-  border-radius: var(--radius-xl);
+  border-radius: var(--home-card-radius);
 }
 
 .hero-collage-image {
@@ -4126,12 +4547,44 @@ onBeforeUnmount(() => {
 }
 
 .hero-collage-placeholder {
-  height: 100%;
-  width: 100%;
+  inline-size: 100%;
+  block-size: 100%;
   display: grid;
   place-items: center;
   color: var(--color-text-tertiary);
-  background: var(--glass-bg-light);
+  background: var(--home-preview-empty-bg);
+}
+
+.hero-collage-card--textual {
+  display: grid;
+  align-content: end;
+  padding: clamp(1rem, 1.8vw, 1.25rem);
+  border: 0.0625rem solid var(--home-preview-border);
+  box-shadow: var(--home-preview-shadow);
+}
+
+.hero-collage-card--textual .hero-collage-placeholder {
+  display: none;
+}
+
+.hero-collage-card--textual .hero-collage-overlay {
+  position: static;
+  inset: auto;
+  padding: 0;
+  gap: 0.45rem;
+  background: none;
+  color: var(--home-ink);
+}
+
+.hero-collage-card--textual .hero-collage-title {
+  font-size: clamp(1rem, 1.45vw, 1.2rem);
+  line-height: 1.35;
+}
+
+.hero-collage-card--textual .hero-collage-meta {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  opacity: 1;
 }
 
 .hero-collage-overlay {
@@ -4156,13 +4609,15 @@ onBeforeUnmount(() => {
 }
 
 .portal-card {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: var(--spacing-3);
   padding: var(--spacing-4);
-  min-height: 100%;
+  min-block-size: 0;
   border-color: var(--home-soft-border);
   box-shadow: var(--home-card-shadow);
+  overflow: clip;
 }
 
 .portal-card__header {
@@ -4209,12 +4664,14 @@ onBeforeUnmount(() => {
 }
 
 .portal-card__icon {
-  width: 2.75rem;
-  height: 2.75rem;
-  border-radius: var(--radius-lg);
+  inline-size: 2.75rem;
+  block-size: 2.75rem;
+  border-radius: var(--home-card-radius);
   display: grid;
   place-items: center;
-  background: var(--glass-bg-light);
+  background: var(--home-panel-muted);
+  border: 0.0625rem solid var(--home-panel-border);
+  box-shadow: var(--home-panel-highlight);
   color: var(--color-text-primary);
 }
 
@@ -4234,8 +4691,8 @@ onBeforeUnmount(() => {
 }
 
 .portal-card__icon--community {
-  background: rgba(168, 85, 247, 0.12);
-  color: #a855f7;
+  background: rgba(var(--home-community-rgb), 0.14);
+  color: rgb(var(--home-community-rgb));
 }
 
 .portal-card__body {
@@ -4275,10 +4732,9 @@ onBeforeUnmount(() => {
   flex: 1;
   min-block-size: clamp(12rem, 20vw, 16rem);
   overflow: clip;
-  border-radius: calc(var(--radius-xl) - 0.25rem);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.04)),
-    rgba(255, 255, 255, 0.42);
+  border-radius: calc(var(--home-card-radius) - 0.25rem);
+  border: 0.0625rem solid var(--home-preview-border);
+  background: var(--home-preview-bg);
 }
 
 .portal-card__preview--empty {
@@ -4286,7 +4742,8 @@ onBeforeUnmount(() => {
 }
 
 .portal-card__preview--lead {
-  min-block-size: clamp(18rem, 38vw, 24rem);
+  min-block-size: auto;
+  aspect-ratio: 16 / 10;
 }
 
 .portal-card__preview-image {
@@ -4296,6 +4753,28 @@ onBeforeUnmount(() => {
   object-fit: cover;
 }
 
+.portal-card__preview-empty {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  align-content: end;
+  gap: 0.4rem;
+  padding: clamp(0.875rem, 1.8vw, 1.125rem);
+  background: var(--home-preview-empty-bg);
+  color: var(--color-text-secondary);
+}
+
+.portal-card__preview-empty strong {
+  font-size: clamp(1rem, 1.4vw, 1.2rem);
+  line-height: 1.25;
+  color: var(--home-ink);
+}
+
+.portal-card__preview-empty span {
+  font-size: var(--text-sm);
+  line-height: 1.55;
+}
+
 .portal-card__preview-overlay {
   position: absolute;
   inset-inline: 0;
@@ -4303,8 +4782,8 @@ onBeforeUnmount(() => {
   display: grid;
   gap: 0.375rem;
   padding: clamp(0.875rem, 1.6vw, 1.125rem);
-  background: linear-gradient(180deg, transparent 0%, rgba(15, 23, 42, 0.72) 100%);
-  color: var(--color-text-inverse);
+  background: var(--home-preview-overlay);
+  color: var(--home-preview-overlay-ink);
 }
 
 .portal-card__preview-kicker {
@@ -4529,8 +5008,16 @@ onBeforeUnmount(() => {
 /* ========== Posts Section ========== */
 .posts {
   position: relative;
-  padding: var(--spacing-8) 0 var(--spacing-12);
+  min-block-size: 100dvh;
+  padding-block: calc(var(--home-stage-safe-top) + clamp(0.35rem, 1vw, 0.75rem))
+    calc(var(--home-stage-safe-bottom) + clamp(0.6rem, 1.8vw, 1.15rem));
   z-index: 1;
+  display: flex;
+  align-items: stretch;
+}
+
+.posts > .container {
+  flex: 1;
 }
 
 .posts-header {
@@ -4626,7 +5113,10 @@ onBeforeUnmount(() => {
   display: grid;
   grid-template-rows: auto auto minmax(0, 1fr);
   gap: clamp(0.875rem, 1.8vw, 1.25rem);
-  min-block-size: calc(100dvh - clamp(2.25rem, 4.4vw, 3.5rem));
+  min-block-size: calc(
+    100dvh - var(--home-stage-safe-top) - var(--home-stage-safe-bottom) -
+      clamp(0.95rem, 2.4vw, 1.9rem)
+  );
 }
 
 .latest-bubble__meta {
@@ -4668,26 +5158,34 @@ onBeforeUnmount(() => {
 }
 
 .hero-layout {
-  display: flex;
+  display: grid;
   align-items: center;
+  align-content: center;
   justify-content: center;
+  justify-items: center;
   min-block-size: calc(100dvh - var(--home-stage-safe-top) - clamp(1.25rem, 3vw, 2.25rem));
 }
 
 .hero-copy {
-  max-inline-size: min(100%, 96rem);
-  min-block-size: clamp(30rem, 56dvh, 38rem);
+  inline-size: min(100%, 66rem);
+  max-inline-size: min(100%, 66rem);
+  min-block-size: clamp(23rem, 48dvh, 29rem);
   margin-inline: auto;
-  align-items: start;
-  gap: clamp(1rem, 2.4vw, 1.75rem);
+  align-items: center;
+  gap: clamp(1rem, 2.4vw, 1.5rem);
 }
 
 .hero-copy__left {
   max-inline-size: 38rem;
+  align-items: flex-end;
+  justify-content: center;
+  text-align: end;
+  padding-inline-end: clamp(0.35rem, 1vw, 0.75rem);
 }
 
 .hero-copy__right {
-  inline-size: min(100%, 32rem);
+  inline-size: min(100%, 28rem);
+  justify-content: center;
 }
 
 .hero-copy__line {
@@ -4779,10 +5277,10 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 0.75rem;
   padding: 0.75rem 1rem;
-  border-radius: var(--radius-full);
-  background: rgba(255, 255, 255, 0.54);
-  border: 0.0625rem solid rgba(255, 255, 255, 0.4);
-  backdrop-filter: blur(1rem);
+  border-radius: var(--home-chip-radius);
+  background: var(--home-stage-chip-bg);
+  border: 0.0625rem solid var(--home-stage-chip-border);
+  backdrop-filter: var(--home-stage-backdrop);
 }
 
 .rail-stage__index {
@@ -4902,14 +5400,10 @@ onBeforeUnmount(() => {
   align-self: stretch;
   inline-size: min(100%, 18rem);
   padding: clamp(0.9rem, 1.8vw, 1.1rem);
-  border: 0.0625rem solid rgba(255, 255, 255, 0.5);
-  border-radius: clamp(1rem, 1.8vw, 1.25rem);
-  background:
-    linear-gradient(160deg, rgba(255, 255, 255, 0.86), rgba(255, 255, 255, 0.7)),
-    var(--home-pill-bg);
-  box-shadow:
-    inset 0 0.0625rem 0 rgba(255, 255, 255, 0.6),
-    0 1.4rem 3rem -2rem rgba(35, 53, 85, 0.34);
+  border: 0.0625rem solid var(--home-panel-border);
+  border-radius: var(--home-card-radius);
+  background: var(--home-panel-bg-soft), var(--home-pill-bg);
+  box-shadow: var(--home-panel-highlight), var(--home-panel-shadow);
 }
 
 .rail-panel__meta-label {
@@ -4929,9 +5423,9 @@ onBeforeUnmount(() => {
   display: inline-flex;
   align-items: center;
   padding: 0.375rem 0.625rem;
-  border-radius: var(--radius-full);
-  background: rgba(255, 255, 255, 0.72);
-  border: 0.0625rem solid rgba(255, 255, 255, 0.48);
+  border-radius: var(--home-chip-radius);
+  background: var(--home-panel-muted-strong);
+  border: 0.0625rem solid var(--home-panel-border);
   font-size: var(--text-xs);
   color: var(--color-text-secondary);
 }
@@ -4950,29 +5444,33 @@ onBeforeUnmount(() => {
 }
 
 .rail-panel--portal .portal-grid {
+  inline-size: 100%;
   block-size: auto;
-  align-self: center;
-  grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
-  grid-template-rows: minmax(0, 1fr);
-  max-block-size: min(68dvh, 38rem);
+  min-block-size: 0;
+  align-self: stretch;
+  grid-template-columns: minmax(0, 1.12fr) minmax(0, 0.88fr);
+  grid-template-rows: auto;
+  max-block-size: none;
+  align-items: stretch;
 }
 
 .rail-panel--portal .portal-grid > .portal-card--primary {
   min-block-size: 0;
-  block-size: 100%;
+  block-size: auto;
   position: relative;
   display: grid;
-  grid-template-rows: minmax(0, 1fr);
-  gap: 0;
+  grid-template-rows: auto auto;
+  gap: clamp(0.75rem, 1.4vw, 1rem);
   align-content: stretch;
   padding: clamp(0.875rem, 1.6vw, 1rem);
 }
 
 .portal-sidebar {
   display: grid;
-  grid-template-rows: minmax(0, 0.92fr) minmax(0, 1fr);
+  grid-template-rows: auto auto;
   gap: clamp(0.75rem, 1.4vw, 1rem);
   min-block-size: 0;
+  align-content: start;
 }
 
 .portal-sidebar__row {
@@ -4980,6 +5478,7 @@ onBeforeUnmount(() => {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: clamp(0.75rem, 1.4vw, 1rem);
   min-block-size: 0;
+  align-items: start;
 }
 
 .rail-panel--portal .rail-panel__content,
@@ -4994,26 +5493,34 @@ onBeforeUnmount(() => {
 
 .rail-panel--portal .portal-card--secondary {
   display: grid;
-  grid-template-rows: auto auto auto;
+  grid-template-rows: auto minmax(0, 1fr) auto;
   align-content: start;
   gap: clamp(0.75rem, 1.4vw, 1rem);
   min-block-size: 0;
-  block-size: 100%;
-  background:
-    linear-gradient(170deg, rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0.72)),
-    var(--home-pill-bg);
+  block-size: auto;
+  background: var(--home-panel-bg-soft), var(--home-pill-bg);
 }
 
 .portal-card--secondary-lead {
-  min-block-size: clamp(11rem, 18dvh, 13rem);
+  min-block-size: clamp(10rem, 16dvh, 12rem);
 }
 
 .portal-card--secondary-compact {
-  min-block-size: clamp(9rem, 15dvh, 10.5rem);
+  min-block-size: clamp(8.5rem, 12dvh, 9.75rem);
+}
+
+.portal-card--secondary-compact .portal-card__micro {
+  gap: 0.25rem;
+  padding: 0.6875rem 0.8125rem;
+}
+
+.portal-card--secondary-compact .portal-card__micro-text {
+  display: none;
 }
 
 .rail-panel--portal .portal-card--secondary .portal-card__body {
-  flex: 0;
+  flex: 1;
+  justify-content: center;
 }
 
 .rail-panel--portal .portal-card--secondary .portal-card__body p {
@@ -5029,16 +5536,12 @@ onBeforeUnmount(() => {
   gap: 0.35rem;
   min-block-size: 0;
   margin-top: 0;
-  align-self: end;
-  padding: 0.875rem 1rem;
-  border-radius: clamp(1rem, 1.8vw, 1.25rem);
-  background:
-    linear-gradient(155deg, rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0.72)),
-    var(--home-pill-bg);
-  border: 0.0625rem solid rgba(255, 255, 255, 0.48);
-  box-shadow:
-    inset 0 0.0625rem 0 rgba(255, 255, 255, 0.58),
-    0 1.1rem 2.4rem -2rem rgba(35, 53, 85, 0.24);
+  align-self: stretch;
+  padding: 0.75rem 0.875rem;
+  border-radius: var(--home-card-radius);
+  background: var(--home-panel-bg-soft), var(--home-pill-bg);
+  border: 0.0625rem solid var(--home-panel-border);
+  box-shadow: var(--home-panel-highlight), var(--home-panel-shadow);
 }
 
 .portal-card__micro-label,
@@ -5064,27 +5567,27 @@ onBeforeUnmount(() => {
   color: var(--color-text-secondary);
   line-height: 1.6;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
+  -webkit-line-clamp: 2;
 }
 
 .rail-panel--portal .portal-card--primary .portal-card__preview {
-  min-block-size: 100%;
+  min-block-size: auto;
+  aspect-ratio: 16 / 10;
   box-shadow: inset 0 -5rem 6rem -4rem rgba(15, 23, 42, 0.48);
 }
 
 .rail-panel--portal .portal-card--primary .portal-card__copy {
-  position: absolute;
-  inset-inline: clamp(1rem, 1.8vw, 1.25rem);
-  inset-block-end: clamp(1rem, 2.2vw, 1.5rem);
-  max-inline-size: min(22rem, 72%);
+  position: relative;
+  inset: auto;
+  inline-size: min(100%, 24rem);
+  max-inline-size: none;
+  margin-block-start: calc(clamp(2rem, 5vw, 3rem) * -1);
+  margin-inline: clamp(0.5rem, 1vw, 0.75rem);
   padding: clamp(0.875rem, 1.6vw, 1rem);
-  border-radius: clamp(1rem, 1.8vw, 1.25rem);
-  background:
-    linear-gradient(155deg, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.78)),
-    var(--home-pill-bg);
-  border: 0.0625rem solid rgba(255, 255, 255, 0.56);
-  box-shadow: 0 1.8rem 4rem -2.2rem rgba(15, 23, 42, 0.52);
-  backdrop-filter: blur(1rem);
+  border-radius: var(--home-card-radius);
+  background: var(--home-panel-bg-strong), var(--home-pill-bg);
+  border: 0.0625rem solid var(--home-panel-border);
+  box-shadow: var(--home-preview-shadow);
   z-index: 2;
 }
 
@@ -5123,7 +5626,7 @@ onBeforeUnmount(() => {
 
 .hero-spotlight-stack {
   display: grid;
-  grid-template-rows: minmax(11rem, 0.96fr) repeat(2, minmax(8.5rem, 0.62fr));
+  grid-template-rows: auto auto auto;
   gap: clamp(0.75rem, 1.5vw, 1rem);
   min-block-size: 0;
   align-content: stretch;
@@ -5141,15 +5644,14 @@ onBeforeUnmount(() => {
   color: inherit;
   padding: clamp(0.875rem, 1.8vw, 1.15rem);
   min-block-size: 0;
-  border: 0.0625rem solid rgba(255, 255, 255, 0.54);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(255, 255, 255, 0.68)),
-    var(--home-pill-bg);
-  box-shadow: var(--home-card-shadow);
+  border: 0.0625rem solid var(--home-panel-border);
+  border-radius: var(--home-card-radius);
+  background: var(--home-panel-bg-soft), var(--home-pill-bg);
+  box-shadow: var(--home-panel-shadow);
 }
 
 .hero-spotlight-card--lead {
-  min-block-size: clamp(11rem, 15dvh, 12.5rem);
+  min-block-size: clamp(9.75rem, 14dvh, 11rem);
 }
 
 .hero-spotlight-card--dense {
@@ -5158,7 +5660,7 @@ onBeforeUnmount(() => {
 }
 
 .hero-spotlight-card--lead.hero-spotlight-card--dense {
-  min-block-size: clamp(8.75rem, 11.5dvh, 10rem);
+  min-block-size: clamp(8.25rem, 11dvh, 9.5rem);
 }
 
 .hero-spotlight-card--empty {
@@ -5208,9 +5710,10 @@ onBeforeUnmount(() => {
 .rail-panel--featured .rail-featured-grid {
   align-self: start;
   inline-size: 100%;
-  block-size: auto;
+  block-size: 100%;
+  min-block-size: 0;
   grid-template-columns: repeat(12, minmax(0, 1fr));
-  grid-template-rows: minmax(11.25rem, auto) minmax(9rem, auto);
+  grid-template-rows: minmax(0, 1.06fr) minmax(0, 0.78fr);
   align-items: stretch;
   align-content: start;
   gap: clamp(0.875rem, 1.8vw, 1.15rem);
@@ -5240,7 +5743,7 @@ onBeforeUnmount(() => {
   position: relative;
   display: grid;
   min-block-size: 0;
-  block-size: auto;
+  block-size: 100%;
   align-self: start;
   padding: clamp(0.625rem, 1.4vw, 0.875rem);
   gap: clamp(0.75rem, 1.4vw, 1rem);
@@ -5249,11 +5752,10 @@ onBeforeUnmount(() => {
   color: inherit;
   cursor: pointer;
   overflow: clip;
-  border: 0.0625rem solid rgba(255, 255, 255, 0.58);
-  background:
-    linear-gradient(160deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.84)),
-    var(--home-pill-bg);
-  box-shadow: var(--home-card-shadow);
+  border: 0.0625rem solid var(--home-panel-border);
+  border-radius: var(--home-shell-radius);
+  background: var(--home-panel-bg), var(--home-pill-bg);
+  box-shadow: var(--home-panel-shadow);
   transition:
     transform var(--transition-fast),
     box-shadow var(--transition-fast),
@@ -5262,23 +5764,30 @@ onBeforeUnmount(() => {
 
 .featured-rail-card:hover {
   transform: translate3d(0, -0.2rem, 0);
-  border-color: rgba(255, 255, 255, 0.74);
-  box-shadow: 0 1.8rem 4rem -2.2rem rgba(35, 53, 85, 0.34);
+  border-color: var(--home-panel-border-strong);
+  box-shadow: var(--home-panel-shadow-strong);
 }
 
 .featured-rail-card--lead {
   grid-template-columns: minmax(0, 1.08fr) minmax(13rem, 0.92fr);
-  min-block-size: clamp(15.75rem, 21vw, 18rem);
+  min-block-size: clamp(16rem, 42dvh, 24rem);
 }
 
 .featured-rail-card--support {
   grid-template-columns: minmax(9.5rem, 0.9fr) minmax(0, 1.1fr);
-  min-block-size: clamp(10.25rem, 13.2vw, 12rem);
+  min-block-size: clamp(11rem, 18dvh, 14rem);
+}
+
+.featured-rail-card--textual {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+  min-block-size: clamp(8.75rem, 15dvh, 10.5rem);
 }
 
 .featured-rail-card--compact {
   grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: minmax(0, 0.84fr) auto;
+  grid-template-rows: auto minmax(0, 1fr);
+  align-content: start;
 }
 
 .featured-rail-card__media {
@@ -5303,7 +5812,8 @@ onBeforeUnmount(() => {
 }
 
 .featured-rail-card--compact .featured-rail-card__media {
-  aspect-ratio: 1.48 / 1;
+  aspect-ratio: 16 / 9;
+  min-block-size: clamp(7rem, 10dvh, 8.5rem);
 }
 
 .featured-rail-card__media::after {
@@ -5319,6 +5829,15 @@ onBeforeUnmount(() => {
 .featured-rail-card__media--empty {
   display: grid;
   place-items: center;
+}
+
+.featured-rail-card--textual .featured-rail-card__media {
+  display: none;
+}
+
+.featured-rail-card--textual .featured-rail-card__body {
+  padding: 0;
+  justify-content: space-between;
 }
 
 .featured-rail-card__image {
@@ -5371,7 +5890,7 @@ onBeforeUnmount(() => {
   flex-direction: column;
   align-items: flex-start;
   justify-content: flex-start;
-  gap: 0.625rem;
+  gap: clamp(0.5rem, 1vw, 0.75rem);
   min-block-size: 0;
   padding: clamp(0.25rem, 0.8vw, 0.5rem) clamp(0.125rem, 0.4vw, 0.25rem)
     clamp(0.375rem, 0.8vw, 0.5rem);
@@ -5417,7 +5936,7 @@ onBeforeUnmount(() => {
   margin: 0;
   display: -webkit-box;
   overflow: hidden;
-  max-inline-size: 31ch;
+  max-inline-size: 34ch;
   color: var(--color-text-secondary);
   line-height: 1.62;
   -webkit-box-orient: vertical;
@@ -5458,10 +5977,10 @@ onBeforeUnmount(() => {
   display: grid;
   gap: 0.2rem;
   padding: 0.625rem 0.75rem;
-  border-radius: 1rem;
-  background: rgba(255, 255, 255, 0.74);
-  border: 0.0625rem solid rgba(255, 255, 255, 0.5);
-  box-shadow: 0 1rem 2.2rem -1.8rem rgba(35, 53, 85, 0.28);
+  border-radius: var(--home-card-radius);
+  background: var(--home-panel-muted-strong);
+  border: 0.0625rem solid var(--home-panel-border);
+  box-shadow: var(--home-panel-shadow);
 }
 
 .featured-rail-card__stat strong {
@@ -5556,25 +6075,22 @@ onBeforeUnmount(() => {
   aspect-ratio: 1.18 / 1;
 }
 
-.trends-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
+.trends-grid,
 .rail-panel--trends .trends-grid {
-  align-self: start;
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  align-items: stretch;
   inline-size: 100%;
-  block-size: min(66dvh, 41rem);
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  grid-template-rows: minmax(0, 1.06fr) minmax(0, 0.94fr);
-  align-items: start;
-  align-content: start;
   gap: clamp(0.75rem, 1.6vw, 1rem);
+  block-size: auto;
   max-block-size: none;
 }
 
 .rail-panel--trends .trends-card {
-  block-size: 100%;
+  flex: 1 1 clamp(18rem, 24vw, 22rem);
+  min-inline-size: min(100%, clamp(18rem, 24vw, 22rem));
+  block-size: auto;
   align-self: stretch;
 }
 
@@ -5588,16 +6104,15 @@ onBeforeUnmount(() => {
 }
 
 .trends-card--authors {
-  grid-column: 1;
-  grid-row: 1;
-  min-block-size: clamp(11rem, 15dvh, 13rem);
+  flex-basis: clamp(24rem, 34vw, 31rem);
+  min-block-size: clamp(12rem, 22dvh, 16rem);
   grid-template-rows: auto minmax(0, 1fr);
   align-content: stretch;
 }
 
 .trends-card--authors .trends-list {
-  grid-template-columns: minmax(0, 1fr);
-  grid-auto-rows: minmax(3.35rem, auto);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+  grid-auto-rows: minmax(0, auto);
 }
 
 .trends-authors-shell {
@@ -5606,40 +6121,34 @@ onBeforeUnmount(() => {
   gap: 0.625rem;
   min-block-size: 0;
   align-items: start;
+  align-content: start;
 }
 
 .trends-card--tags {
-  grid-column: 2;
-  grid-row: 1;
-  min-block-size: clamp(7rem, 10dvh, 8.25rem);
+  flex-basis: clamp(15rem, 20vw, 18rem);
+  min-block-size: clamp(10rem, 18dvh, 13rem);
   grid-template-rows: auto minmax(0, 1fr) auto;
   align-content: stretch;
 }
 
 .trends-card--editorial {
-  grid-column: 1;
-  grid-row: 2;
-  min-block-size: clamp(6.5rem, 8dvh, 7.5rem);
+  flex-basis: clamp(18rem, 24vw, 22rem);
+  min-block-size: clamp(10rem, 18dvh, 13rem);
   grid-template-rows: auto minmax(0, 1fr);
-  background:
-    linear-gradient(165deg, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.76)),
-    var(--home-pill-bg);
+  background: var(--home-panel-bg-soft), var(--home-pill-bg);
 }
 
 .trends-card--schedule {
-  grid-column: 2;
-  grid-row: 2;
-  min-block-size: clamp(7rem, 8.6dvh, 8rem);
+  flex-basis: clamp(22rem, 30vw, 28rem);
+  min-block-size: clamp(12rem, 20dvh, 15rem);
   grid-template-rows: auto minmax(0, 1fr);
   align-content: stretch;
-  background:
-    linear-gradient(160deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.76)),
-    var(--home-pill-bg);
+  background: var(--home-panel-bg-soft), var(--home-pill-bg);
 }
 
 .trends-list {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
   align-content: start;
   gap: 0.625rem;
 }
@@ -5668,16 +6177,12 @@ onBeforeUnmount(() => {
   padding: 0.75rem 0.875rem;
   min-block-size: auto;
   align-self: start;
-  border-radius: clamp(1rem, 1.8vw, 1.25rem);
+  border-radius: var(--home-card-radius);
   color: var(--color-text-primary);
   text-decoration: none;
-  background:
-    linear-gradient(160deg, rgba(255, 255, 255, 0.84), rgba(255, 255, 255, 0.7)),
-    var(--home-pill-bg);
-  border: 0.0625rem solid rgba(255, 255, 255, 0.5);
-  box-shadow:
-    inset 0 0.0625rem 0 rgba(255, 255, 255, 0.52),
-    0 1.25rem 2.6rem -2rem rgba(35, 53, 85, 0.28);
+  background: var(--home-panel-bg-soft), var(--home-pill-bg);
+  border: 0.0625rem solid var(--home-panel-border);
+  box-shadow: var(--home-panel-highlight), var(--home-panel-shadow);
   transition:
     transform var(--transition-fast),
     border-color var(--transition-fast),
@@ -5686,19 +6191,17 @@ onBeforeUnmount(() => {
 
 .trends-authors-highlight:hover {
   transform: translate3d(0, -0.125rem, 0);
-  border-color: rgba(255, 255, 255, 0.72);
-  box-shadow:
-    inset 0 0.0625rem 0 rgba(255, 255, 255, 0.58),
-    0 1.6rem 3rem -2rem rgba(35, 53, 85, 0.34);
+  border-color: var(--home-panel-border-strong);
+  box-shadow: var(--home-panel-highlight), var(--home-panel-shadow-strong);
 }
 
 .trends-authors-highlight__avatar {
   inline-size: 2.75rem;
   block-size: 2.75rem;
-  border-radius: 1rem;
+  border-radius: var(--home-card-radius);
   object-fit: cover;
-  background: rgba(255, 255, 255, 0.76);
-  border: 0.0625rem solid rgba(255, 255, 255, 0.54);
+  background: var(--home-panel-muted-strong);
+  border: 0.0625rem solid var(--home-panel-border);
 }
 
 .trends-authors-highlight__avatar--fallback {
@@ -5736,9 +6239,9 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: center;
   padding: 0.55rem 0.85rem;
-  border-radius: var(--radius-full);
-  background: rgba(255, 255, 255, 0.76);
-  border: 0.0625rem solid rgba(255, 255, 255, 0.56);
+  border-radius: var(--home-chip-radius);
+  background: var(--home-panel-muted-strong);
+  border: 0.0625rem solid var(--home-panel-border);
   font-size: var(--text-xs);
   color: var(--color-text-primary);
   white-space: nowrap;
@@ -5755,10 +6258,10 @@ onBeforeUnmount(() => {
   min-block-size: 0;
   align-content: start;
   padding: 0.75rem 0.875rem;
-  border-radius: 1.25rem;
-  background: rgba(255, 255, 255, 0.72);
-  border: 0.0625rem solid rgba(255, 255, 255, 0.48);
-  box-shadow: 0 1.2rem 2.4rem -2rem rgba(35, 53, 85, 0.32);
+  border-radius: var(--home-card-radius);
+  background: var(--home-panel-muted);
+  border: 0.0625rem solid var(--home-panel-border);
+  box-shadow: var(--home-panel-shadow);
 }
 
 .trends-editorial--compact {
@@ -5807,12 +6310,12 @@ onBeforeUnmount(() => {
   display: grid;
   gap: 0.35rem;
   padding: 0.75rem 0.875rem;
-  border-radius: 1.1rem;
+  border-radius: var(--home-card-radius);
   text-decoration: none;
   color: var(--color-text-primary);
-  background: rgba(255, 255, 255, 0.74);
-  border: 0.0625rem solid rgba(255, 255, 255, 0.48);
-  box-shadow: 0 1.2rem 2.6rem -2rem rgba(35, 53, 85, 0.22);
+  background: var(--home-panel-muted);
+  border: 0.0625rem solid var(--home-panel-border);
+  box-shadow: var(--home-panel-shadow);
   transition:
     transform var(--transition-fast),
     border-color var(--transition-fast),
@@ -5821,17 +6324,13 @@ onBeforeUnmount(() => {
 
 .schedule-highlight:hover {
   transform: translate3d(0, -0.125rem, 0);
-  border-color: rgba(255, 255, 255, 0.66);
-  background: rgba(255, 255, 255, 0.88);
+  border-color: var(--home-panel-border-strong);
+  background: var(--home-panel-muted-strong);
 }
 
 .schedule-highlight--companion {
-  background:
-    linear-gradient(160deg, rgba(255, 255, 255, 0.82), rgba(255, 255, 255, 0.72)),
-    var(--home-pill-bg);
-  box-shadow:
-    inset 0 0.0625rem 0 rgba(255, 255, 255, 0.54),
-    0 1.4rem 3rem -2.1rem rgba(35, 53, 85, 0.28);
+  background: var(--home-panel-bg-soft), var(--home-pill-bg);
+  box-shadow: var(--home-panel-highlight), var(--home-panel-shadow);
 }
 
 .schedule-highlight__copy {
@@ -5860,9 +6359,10 @@ onBeforeUnmount(() => {
   display: grid;
   gap: 0.45rem;
   padding: 1rem 1.125rem;
-  border-radius: 1.15rem;
-  background: rgba(255, 255, 255, 0.72);
-  border: 0.0625rem solid rgba(255, 255, 255, 0.48);
+  border-radius: var(--home-card-radius);
+  background: var(--home-panel-muted);
+  border: 0.0625rem solid var(--home-panel-border);
+  box-shadow: var(--home-panel-shadow);
 }
 
 .trends-community-note__text {
@@ -5882,9 +6382,19 @@ onBeforeUnmount(() => {
 .posts--bubble {
   display: grid;
   align-items: stretch;
+  block-size: 100dvh;
   min-block-size: 100dvh;
-  padding-block: calc(var(--home-stage-safe-top) + clamp(0.625rem, 1.2vw, 1rem))
-    clamp(1.125rem, 2.4vw, 1.75rem);
+  padding-block: calc(var(--home-stage-safe-top) + clamp(0.3rem, 0.8vw, 0.55rem))
+    calc(clamp(0.7rem, 1.4vw, 1rem) + var(--home-stage-safe-bottom));
+  overflow: clip;
+}
+
+.posts--bubble > .container {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  align-content: stretch;
+  gap: clamp(0.7rem, 1.2vw, 0.95rem);
+  min-block-size: 100%;
 }
 
 .posts-header {
@@ -5894,16 +6404,14 @@ onBeforeUnmount(() => {
 .posts-toolbar {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 1.28fr) minmax(16rem, 0.72fr);
-  gap: clamp(0.75rem, 1.4vw, 1rem);
+  grid-template-columns: minmax(0, 1.22fr) minmax(12rem, 0.78fr);
+  gap: clamp(0.5rem, 1vw, 0.8rem);
   margin-bottom: 0;
-  padding: clamp(0.75rem, 1.3vw, 0.95rem);
-  border-radius: clamp(1.25rem, 2vw, 1.75rem);
-  background:
-    linear-gradient(160deg, rgba(255, 255, 255, 0.82), rgba(255, 255, 255, 0.62)),
-    var(--home-pill-bg);
-  border: 1px solid rgba(255, 255, 255, 0.48);
-  box-shadow: var(--home-card-shadow);
+  padding: clamp(0.625rem, 1vw, 0.8125rem);
+  border-radius: var(--home-shell-radius);
+  background: var(--home-panel-bg-soft), var(--home-pill-bg);
+  border: 0.0625rem solid var(--home-panel-border);
+  box-shadow: var(--home-panel-shadow);
   overflow: clip;
 }
 
@@ -5923,10 +6431,11 @@ onBeforeUnmount(() => {
   display: grid;
   gap: 0.5rem;
   align-content: start;
-  padding: 0.75rem 0.875rem;
-  border-radius: 1.25rem;
-  background: rgba(255, 255, 255, 0.4);
-  border: 0.0625rem solid rgba(255, 255, 255, 0.34);
+  padding: 0.6875rem 0.75rem;
+  border-radius: var(--home-card-radius);
+  background: var(--home-panel-muted);
+  border: 0.0625rem solid var(--home-panel-border);
+  box-shadow: var(--home-panel-highlight);
 }
 
 .posts-toolbar__panel--tags {
@@ -5939,28 +6448,30 @@ onBeforeUnmount(() => {
   min-inline-size: 0;
   inline-size: 100%;
   max-inline-size: none;
+  align-content: center;
 }
 
 .posts-toolbar__stats {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.625rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
 .posts-toolbar__stats--with-tags {
   margin-block-start: 0.125rem;
-  padding-block-start: 0.625rem;
+  padding-block-start: 0.4375rem;
   border-block-start: 0.0625rem solid rgba(255, 255, 255, 0.34);
 }
 
 .posts-toolbar__stat {
   display: inline-grid;
   gap: 0.2rem;
-  padding: 0.625rem 0.75rem;
-  border-radius: 1rem;
-  background: rgba(255, 255, 255, 0.7);
-  border: 0.0625rem solid rgba(255, 255, 255, 0.48);
-  box-shadow: 0 1rem 2.2rem -1.8rem rgba(35, 53, 85, 0.48);
+  min-inline-size: clamp(4.25rem, 6vw, 5rem);
+  padding: 0.5rem 0.625rem;
+  border-radius: var(--home-card-radius);
+  background: var(--home-panel-muted-strong);
+  border: 0.0625rem solid var(--home-panel-border);
+  box-shadow: var(--home-panel-shadow);
 }
 
 .posts-toolbar__stat strong {
@@ -5977,12 +6488,17 @@ onBeforeUnmount(() => {
   position: relative;
   margin-top: 0;
   block-size: 100%;
-  min-block-size: clamp(24rem, 58dvh, 38rem);
-  border-radius: var(--radius-2xl);
+  min-block-size: 0;
+  max-block-size: 100%;
+  align-self: stretch;
+  border-radius: var(--home-shell-radius);
   background:
-    radial-gradient(circle at center, rgba(255, 255, 255, 0.34) 0%, transparent 22rem),
-    radial-gradient(circle at center, rgba(var(--home-mist-rgb), 0.2) 0%, transparent 30rem),
-    linear-gradient(160deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.04));
+    radial-gradient(circle at 50% 52%, rgba(255, 255, 255, 0.12) 0%, transparent 17rem),
+    radial-gradient(circle at 18% 18%, rgba(var(--home-mist-rgb), 0.14) 0%, transparent 34%),
+    radial-gradient(circle at 82% 80%, rgba(var(--home-blush-rgb), 0.1) 0%, transparent 32%),
+    var(--home-panel-bg);
+  border: 0.0625rem solid var(--home-panel-border);
+  box-shadow: var(--home-panel-shadow);
   isolation: isolate;
   overflow: clip;
 }
@@ -5998,16 +6514,22 @@ onBeforeUnmount(() => {
 }
 
 .bubble-stage::before {
-  inline-size: clamp(8rem, 18vw, 14rem);
-  block-size: clamp(8rem, 18vw, 14rem);
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.48), transparent 72%);
+  inline-size: clamp(12rem, 24vw, 18rem);
+  block-size: clamp(7rem, 14vw, 10rem);
+  background: radial-gradient(
+    ellipse,
+    rgba(var(--home-mist-rgb), 0.18) 0%,
+    rgba(var(--home-blush-rgb), 0.08) 42%,
+    transparent 76%
+  );
   transform: translate3d(-50%, -50%, 0);
-  opacity: 0.9;
+  filter: blur(0.3rem);
+  opacity: 0.44;
 }
 
 .bubble-stage::after {
-  inline-size: clamp(20rem, 48vw, 34rem);
-  block-size: clamp(20rem, 48vw, 34rem);
+  inline-size: clamp(22rem, 50vw, 36rem);
+  block-size: clamp(22rem, 50vw, 36rem);
   background: conic-gradient(
     from 0deg,
     rgba(var(--home-mist-rgb), 0.08),
@@ -6016,58 +6538,32 @@ onBeforeUnmount(() => {
     rgba(var(--home-mist-rgb), 0.08)
   );
   transform: translate3d(-50%, -50%, 0) rotate(12deg);
-  filter: blur(2rem);
-  opacity: 0.64;
-}
-
-.bubble-stage__origin {
-  position: absolute;
-  inset-inline-start: 50%;
-  inset-block-start: 50%;
-  inline-size: clamp(4rem, 8vw, 6rem);
-  block-size: clamp(4rem, 8vw, 6rem);
-  transform: translate3d(-50%, -50%, 0);
-  border-radius: 50%;
-  background: radial-gradient(
-    circle,
-    rgba(255, 255, 255, 0.72) 0%,
-    rgba(255, 255, 255, 0.16) 62%,
-    transparent 100%
-  );
-  filter: blur(0.1rem);
-}
-
-.bubble-stage__pulse {
-  display: block;
-  inline-size: 100%;
-  block-size: 100%;
-  border-radius: inherit;
-  animation: bubbleOriginBreath 3.6s ease-in-out infinite;
+  filter: blur(0.35rem);
+  opacity: 0.14;
 }
 
 .latest-bubble {
   position: absolute;
   inset-inline-start: 50%;
   inset-block-start: 50%;
-  background: transparent;
-  border: 0;
-  box-shadow: none;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
   padding: 0;
+  max-inline-size: min(17rem, calc(100% - 3rem));
   max-width: none;
   opacity: 0;
-  filter: blur(0.3rem);
+  filter: blur(0.12rem);
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
   pointer-events: none;
   transform: translate3d(
-      calc(-50% + var(--bubble-x-intro, 0%)),
-      calc(-50% + var(--bubble-y-intro, 0%)),
+      calc(-50% + var(--bubble-x-intro, 0rem)),
+      calc(-50% + var(--bubble-y-intro, 0rem)),
       0
     )
-    scale(0.28);
-  transition:
-    opacity 420ms cubic-bezier(0.18, 0.88, 0.22, 1) var(--bubble-delay, 0s),
-    transform 980ms cubic-bezier(0.16, 0.88, 0.22, 1) var(--bubble-delay, 0s),
-    filter 780ms cubic-bezier(0.18, 0.88, 0.22, 1) var(--bubble-delay, 0s);
-  animation: none;
+    scale(0.14);
+  transition: none;
   will-change: transform, opacity, filter;
 }
 
@@ -6076,10 +6572,10 @@ onBeforeUnmount(() => {
   position: absolute;
   inset-inline-start: 50%;
   inset-block-start: 50%;
-  inline-size: clamp(0.95rem, 1.8vw, 1.2rem);
-  block-size: clamp(0.95rem, 1.8vw, 1.2rem);
-  border-radius: 0 0 0.25rem 0;
-  background: rgba(255, 255, 255, 0.86);
+  inline-size: clamp(0.9rem, 1.6vw, 1.1rem);
+  block-size: clamp(0.9rem, 1.6vw, 1.1rem);
+  border-radius: 0 0 0.35rem 0;
+  background: var(--home-panel-bg-strong);
   box-shadow: 0 0.65rem 1.8rem rgba(15, 23, 42, 0.12);
   transform: translate3d(-50%, -50%, 0) rotate(var(--bubble-tail-angle, 45deg)) translateX(1rem)
     rotate(45deg);
@@ -6087,22 +6583,25 @@ onBeforeUnmount(() => {
 
 .latest-bubble__inner {
   display: grid;
-  gap: 0.625rem;
-  max-inline-size: min(22ch, 17rem);
-  padding: 0.875rem 1rem;
-  border-radius: clamp(1rem, 2vw, 1.4rem);
-  border: 0.0625rem solid rgba(255, 255, 255, 0.54);
-  background: rgba(255, 255, 255, 0.84);
-  box-shadow: 0 1.5rem 3rem -1.8rem rgba(40, 58, 89, 0.42);
+  gap: 0.5625rem;
+  max-inline-size: min(18ch, 14rem);
+  padding: 0.8125rem 0.9375rem;
+  border-radius: var(--home-card-radius) var(--home-shell-radius) var(--home-shell-radius)
+    calc(var(--home-card-radius) * 0.9);
+  border: 0.0625rem solid var(--home-panel-border-strong);
+  background: var(--home-panel-bg-strong), var(--home-panel-muted-strong);
+  box-shadow: var(--home-panel-shadow-strong);
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
   text-shadow: 0 0.5rem 1.5rem rgba(15, 23, 42, 0.12);
-  transform: translate3d(0, 0.75rem, 0);
-  transition: transform 820ms cubic-bezier(0.16, 0.88, 0.22, 1) var(--bubble-delay, 0s);
+  transform: translate3d(0, 0.85rem, 0) scale(0.98);
+  transition: none;
 }
 
 .latest-bubble__text {
-  font-size: clamp(1rem, 1.55vw, 1.35rem);
+  font-size: clamp(0.92rem, 1.35vw, 1.18rem);
   font-weight: var(--font-semibold);
-  line-height: 1.5;
+  line-height: 1.44;
   text-wrap: pretty;
 }
 
@@ -6110,20 +6609,26 @@ onBeforeUnmount(() => {
   opacity: 1;
   filter: blur(0rem);
   pointer-events: auto;
-  transform: translate3d(calc(-50% + var(--bubble-x)), calc(-50% + var(--bubble-y)), 0)
-    scale(var(--bubble-scale, 1));
+  animation: bubbleBurstFromCenter 960ms cubic-bezier(0.16, 0.88, 0.22, 1) both;
+  animation-delay: var(--bubble-delay, 0s);
 }
 
 .posts--revealed .latest-bubble__inner {
   transform: translate3d(0, 0, 0);
-  animation: bubbleTextDrift 6s ease-in-out infinite;
-  animation-delay: calc(1s + var(--bubble-delay, 0s));
+  animation: bubbleTextDrift 7s ease-in-out infinite;
+  animation-delay: calc(1.05s + var(--bubble-delay, 0s));
 }
 
 .media-slices {
   position: relative;
   min-block-size: calc(var(--story-card-count, 1) * 100dvh);
   padding: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(248, 247, 244, 0) 0%,
+    rgba(248, 247, 244, 0.16) 24%,
+    rgba(248, 247, 244, 0.44) 100%
+  );
 }
 
 .story-stage {
@@ -6132,9 +6637,9 @@ onBeforeUnmount(() => {
   block-size: 100dvh;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
-  gap: clamp(0.75rem, 1.4vw, 1rem);
-  padding-block: calc(var(--home-stage-safe-top) + clamp(1rem, 1.8vw, 1.35rem))
-    clamp(1.125rem, 2.2vw, 1.75rem);
+  gap: clamp(0.75rem, 1.5vw, 1rem);
+  padding-block: calc(var(--home-stage-safe-top) + clamp(0.55rem, 1.3vw, 0.9rem))
+    calc(clamp(0.85rem, 1.7vw, 1.2rem) + var(--home-stage-safe-bottom));
   overflow: clip;
 }
 
@@ -6142,11 +6647,8 @@ onBeforeUnmount(() => {
   content: '';
   position: absolute;
   inset: 0;
-  background:
-    radial-gradient(circle at 18% 18%, rgba(199, 220, 244, 0.16) 0%, transparent 42%),
-    radial-gradient(circle at 84% 22%, rgba(246, 218, 229, 0.14) 0%, transparent 38%),
-    linear-gradient(180deg, rgba(248, 247, 244, 0.72) 0%, rgba(248, 247, 244, 0.84) 100%);
-  opacity: calc(1 - (var(--story-footer-fade, 0) * 0.12));
+  background: var(--home-story-stage-bg);
+  opacity: calc(1 - (var(--story-footer-fade, 0) * 0.36));
   pointer-events: none;
 }
 
@@ -6161,11 +6663,8 @@ onBeforeUnmount(() => {
   inset-inline: 0;
   inset-block-end: 0;
   block-size: min(42dvh, 24rem);
-  background:
-    radial-gradient(circle at 18% 18%, rgba(199, 220, 244, 0.12) 0%, transparent 42%),
-    radial-gradient(circle at 84% 22%, rgba(246, 218, 229, 0.12) 0%, transparent 38%),
-    linear-gradient(180deg, rgba(246, 244, 241, 0) 0%, rgba(248, 247, 244, 0.66) 100%);
-  opacity: calc(var(--story-footer-fade, 0) * 0.18);
+  background: var(--home-story-stage-footer-bg);
+  opacity: calc(var(--story-footer-fade, 0) * 0.3);
   pointer-events: none;
 }
 
@@ -6174,8 +6673,10 @@ onBeforeUnmount(() => {
   block-size: 100%;
   min-block-size: 0;
   gap: 0;
-  perspective: 112rem;
+  perspective: 120rem;
+  perspective-origin: 50% 54%;
   transform-style: preserve-3d;
+  overflow: clip;
 }
 
 .story-merge-panel {
@@ -6286,14 +6787,17 @@ onBeforeUnmount(() => {
 
 .media-slice {
   position: absolute;
-  inset: 0;
+  inset-block: 0;
+  inset-inline: clamp(0.5rem, 1vw, 0.75rem);
   block-size: 100%;
   min-height: 0;
   display: grid;
   place-items: center;
   overflow: clip;
-  transform-origin: 50% 62%;
+  transform-origin: 50% 100%;
   transform-style: preserve-3d;
+  backface-visibility: hidden;
+  will-change: transform, opacity;
   opacity: var(--story-opacity, 1);
   transform: translate3d(
       var(--story-translate-x, 0rem),
@@ -6302,11 +6806,8 @@ onBeforeUnmount(() => {
     )
     rotateX(var(--story-rotate-x, 0deg)) rotateY(var(--story-rotate-y, 0deg))
     scale(var(--story-scale, 1));
-  filter: blur(var(--story-blur, 0rem));
-  transition:
-    transform 260ms linear,
-    opacity 260ms linear,
-    filter 260ms linear;
+  filter: none;
+  transition: none;
   pointer-events: none;
 }
 
@@ -6317,30 +6818,45 @@ onBeforeUnmount(() => {
 .media-slice__sticky {
   position: relative;
   top: auto;
-  inline-size: min(100%, 84rem);
-  min-height: min(70dvh, 44rem);
+  inline-size: min(calc(100% - 2rem), 69rem);
+  min-height: min(52dvh, 32rem);
   margin-inline: auto;
   display: grid;
-  grid-template-columns: minmax(0, 1.25fr) minmax(18rem, 0.8fr);
-  gap: clamp(1rem, 2vw, 1.5rem);
-  padding: clamp(1.25rem, 2vw, 1.5rem);
+  grid-template-columns: minmax(0, 0.94fr) minmax(17rem, 0.86fr);
+  gap: clamp(1rem, 2vw, 1.45rem);
+  padding: clamp(1.1rem, 2.1vw, 1.5rem);
+  justify-items: stretch;
+  align-items: center;
   overflow: clip;
-  border: 0.0625rem solid rgba(255, 255, 255, 0.54);
-  border-radius: clamp(1.5rem, 2.6vw, 2rem);
+  border: 0.0625rem solid var(--home-story-card-border) !important;
+  border-radius: var(--home-shell-radius);
   background:
-    radial-gradient(circle at top right, rgba(199, 220, 244, 0.12), transparent 40%),
-    linear-gradient(152deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.84)),
-    var(--home-pill-bg);
-  box-shadow:
-    0 3.25rem 6.4rem -2rem rgba(35, 53, 85, 0.58),
-    inset 0 0.0625rem 0 rgba(255, 255, 255, 0.58);
-  backdrop-filter: blur(1.25rem);
+    radial-gradient(circle at top right, rgba(var(--home-mist-rgb), 0.14), transparent 40%),
+    radial-gradient(circle at bottom left, rgba(var(--home-blush-rgb), 0.12), transparent 34%),
+    var(--home-story-card-bg) !important;
+  box-shadow: var(--home-story-card-shadow) !important;
+  backdrop-filter: none !important;
+  isolation: isolate;
+}
+
+.media-slice__sticky::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.16), transparent 32%),
+    radial-gradient(circle at 14% 82%, rgba(var(--home-blush-rgb), 0.08), transparent 38%);
+  pointer-events: none;
+}
+
+.media-slice__sticky > * {
+  position: relative;
+  z-index: 1;
 }
 
 .media-slice.is-active .media-slice__sticky {
-  box-shadow:
-    0 3.75rem 6.8rem -2rem rgba(35, 53, 85, 0.64),
-    inset 0 0.0625rem 0 rgba(255, 255, 255, 0.68);
+  box-shadow: var(--home-story-card-shadow);
 }
 
 .media-slice__visual,
@@ -6348,10 +6864,26 @@ onBeforeUnmount(() => {
   min-height: 0;
 }
 
+.media-slice__visual {
+  inline-size: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(0.75rem, 1.8vw, 1rem);
+  border-radius: var(--home-card-radius);
+  background: var(--home-story-visual-bg);
+  border: 0.0625rem solid var(--home-story-card-border);
+  box-shadow: inset 0 0.0625rem 0 rgba(255, 255, 255, 0.12);
+}
+
 .media-slice__copy {
+  inline-size: min(100%, 28rem);
   display: grid;
   align-content: center;
-  gap: 1rem;
+  justify-items: start;
+  gap: clamp(0.7rem, 1.4vw, 0.95rem);
+  margin-inline: auto;
+  align-self: center;
 }
 
 .media-slice__eyebrow {
@@ -6397,6 +6929,38 @@ onBeforeUnmount(() => {
   min-height: min(62dvh, 30rem);
 }
 
+:deep(.post-card.glass-card),
+:deep(.post-card.glass-card::before),
+:deep(.post-card.glass-card::after) {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+:deep(.media-slice__visual .post-card.glass-card) {
+  inline-size: min(100%, 31rem);
+  block-size: auto;
+  margin-inline: auto;
+  border-color: var(--home-story-card-border) !important;
+  background: var(--home-panel-bg-strong) !important;
+  box-shadow: 0 1.75rem 3.2rem -2rem rgba(35, 53, 85, 0.22) !important;
+}
+
+:deep(.media-slice__visual .post-card.glass-card::before),
+:deep(.media-slice__visual .post-card.glass-card::after) {
+  display: none !important;
+}
+
+:deep(.media-slice__visual .post-image-wrapper) {
+  background: var(--home-story-visual-bg);
+}
+
+:deep(.media-slice__visual .platform-badge),
+:deep(.media-slice__visual .duration-badge),
+:deep(.media-slice__visual .time-badge) {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
 .media-sentinel {
   min-height: 1.5rem;
   display: grid;
@@ -6407,16 +6971,9 @@ onBeforeUnmount(() => {
 .home-footer-bridge {
   position: relative;
   min-block-size: 100dvh;
-  background:
-    radial-gradient(circle at 14% 16%, rgba(199, 220, 244, 0.18) 0%, transparent 42%),
-    radial-gradient(circle at 82% 20%, rgba(246, 218, 229, 0.18) 0%, transparent 36%),
-    linear-gradient(
-      180deg,
-      rgba(245, 245, 244, 0.16) 0%,
-      rgba(248, 247, 244, 0.9) 72%,
-      #f8f7f4 100%
-    );
+  background: var(--home-footer-bridge-bg);
   overflow: clip;
+  z-index: 1;
 }
 
 .home-footer-bridge::before,
@@ -6430,29 +6987,26 @@ onBeforeUnmount(() => {
 .home-footer-bridge::before {
   inset-block-start: 0;
   block-size: min(34dvh, 18rem);
-  background:
-    radial-gradient(circle at 22% 16%, rgba(199, 220, 244, 0.22) 0%, transparent 54%),
-    radial-gradient(circle at 82% 10%, rgba(246, 218, 229, 0.2) 0%, transparent 48%);
+  background: var(--home-footer-bridge-top);
   opacity: 0.9;
 }
 
 .home-footer-bridge::after {
   inset-block-end: 0;
   block-size: min(42dvh, 24rem);
-  background:
-    linear-gradient(180deg, rgba(248, 247, 244, 0) 0%, rgba(248, 247, 244, 0.92) 56%),
-    radial-gradient(circle at 50% 100%, rgba(255, 255, 255, 0.72) 0%, transparent 64%);
+  background: var(--home-footer-bridge-bottom);
 }
 
 .home-footer-bridge__stage {
   position: relative;
-  min-block-size: clamp(30rem, 74dvh, 40rem);
+  block-size: 100dvh;
+  min-block-size: 100dvh;
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
-  align-content: space-between;
+  grid-template-rows: minmax(0, 1fr);
+  align-items: center;
   gap: clamp(0.8rem, 1.6vw, 1.15rem);
-  padding-block: calc(var(--home-stage-safe-top) + clamp(0.35rem, 1vw, 0.65rem))
-    clamp(0.2rem, 0.75vw, 0.45rem);
+  padding-block: calc(var(--home-stage-safe-top) + clamp(0.4rem, 1vw, 0.75rem))
+    calc(clamp(1rem, 2vw, 1.5rem) + var(--home-stage-safe-bottom));
   z-index: 1;
 }
 
@@ -6460,6 +7014,7 @@ onBeforeUnmount(() => {
   display: grid;
   gap: 0.75rem;
   max-inline-size: 42rem;
+  align-self: start;
 }
 
 .home-footer-bridge__kicker,
@@ -6492,7 +7047,9 @@ onBeforeUnmount(() => {
   grid-template-columns: minmax(0, 1.24fr) minmax(16rem, 0.76fr);
   gap: clamp(1rem, 2.2vw, 1.6rem);
   align-items: start;
-  align-self: end;
+  align-self: stretch;
+  inline-size: min(100%, 82rem);
+  margin-inline: auto;
 }
 
 .home-footer-bridge__feature,
@@ -6501,14 +7058,11 @@ onBeforeUnmount(() => {
   display: grid;
   gap: clamp(0.75rem, 1.6vw, 1rem);
   padding: clamp(1.15rem, 2.1vw, 1.5rem);
-  border: 0.0625rem solid rgba(255, 255, 255, 0.58);
-  background:
-    linear-gradient(160deg, rgba(255, 255, 255, 0.97), rgba(255, 255, 255, 0.84)),
-    var(--home-pill-bg);
-  box-shadow:
-    0 2.75rem 5rem -2.6rem rgba(35, 53, 85, 0.34),
-    inset 0 0.0625rem 0 rgba(255, 255, 255, 0.58);
-  backdrop-filter: blur(1.25rem);
+  border-radius: var(--home-shell-radius);
+  border: 0.0625rem solid var(--home-panel-border-strong) !important;
+  background: var(--home-panel-bg), var(--home-pill-bg) !important;
+  box-shadow: var(--home-panel-highlight), var(--home-panel-shadow-strong) !important;
+  backdrop-filter: none !important;
 }
 
 .home-footer-bridge__feature::after,
@@ -6551,12 +7105,12 @@ onBeforeUnmount(() => {
   min-block-size: clamp(14rem, 24vw, 18rem);
   padding: 0;
   appearance: none;
-  border: 0.0625rem solid rgba(255, 255, 255, 0.54);
-  border-radius: clamp(1.2rem, 2vw, 1.6rem);
+  border: 0.0625rem solid var(--home-panel-border);
+  border-radius: var(--home-card-radius);
   overflow: clip;
   cursor: pointer;
-  background: rgba(255, 255, 255, 0.12);
-  box-shadow: 0 1.8rem 4rem -2rem rgba(35, 53, 85, 0.36);
+  background: var(--home-story-visual-bg);
+  box-shadow: var(--home-panel-shadow);
 }
 
 .home-footer-bridge__feature-media::after {
@@ -6574,6 +7128,15 @@ onBeforeUnmount(() => {
   block-size: 100%;
   display: block;
   object-fit: cover;
+}
+
+.home-footer-bridge__feature-media-empty {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: var(--home-preview-empty-bg);
+  color: var(--color-text-tertiary);
 }
 
 .home-footer-bridge__feature-media-overlay {
@@ -6605,13 +7168,13 @@ onBeforeUnmount(() => {
   align-self: flex-start;
   padding: 0.75rem 1rem;
   appearance: none;
-  border: 0.0625rem solid rgba(255, 255, 255, 0.58);
-  border-radius: var(--radius-full);
-  background: rgba(255, 255, 255, 0.82);
+  border: 0.0625rem solid var(--home-panel-border);
+  border-radius: var(--home-chip-radius);
+  background: var(--home-panel-muted-strong);
   color: var(--color-text-primary);
   font: inherit;
   cursor: pointer;
-  box-shadow: 0 1.2rem 2.6rem -2rem rgba(35, 53, 85, 0.36);
+  box-shadow: var(--home-panel-shadow);
   transition:
     transform var(--transition-fast),
     border-color var(--transition-fast),
@@ -6620,8 +7183,8 @@ onBeforeUnmount(() => {
 
 .home-footer-bridge__feature-action:hover {
   transform: translate3d(0, -0.125rem, 0);
-  border-color: rgba(255, 255, 255, 0.76);
-  background: rgba(255, 255, 255, 0.92);
+  border-color: var(--home-panel-border-strong);
+  background: var(--home-panel-bg-strong);
 }
 
 .home-footer-bridge__meta {
@@ -6634,7 +7197,7 @@ onBeforeUnmount(() => {
 
 .home-footer-bridge__links {
   align-self: start;
-  align-content: start;
+  align-content: center;
   grid-template-columns: minmax(0, 1fr);
   grid-template-rows: auto;
   grid-auto-rows: minmax(0, auto);
@@ -6656,13 +7219,14 @@ onBeforeUnmount(() => {
   align-items: start;
   gap: 0.75rem;
   min-block-size: 0;
+  min-height: clamp(5rem, 10dvh, 6.4rem);
   padding: 0.9rem 1rem;
-  border-radius: clamp(1rem, 1.8vw, 1.25rem);
-  background: rgba(255, 255, 255, 0.72);
-  border: 0.0625rem solid rgba(255, 255, 255, 0.54);
+  border-radius: var(--home-card-radius);
+  background: var(--home-panel-muted);
+  border: 0.0625rem solid var(--home-panel-border);
   color: var(--color-text-primary);
   text-decoration: none;
-  box-shadow: 0 1.5rem 3rem -2.4rem rgba(35, 53, 85, 0.36);
+  box-shadow: var(--home-panel-shadow);
   transition:
     transform var(--transition-fast),
     border-color var(--transition-fast),
@@ -6675,9 +7239,9 @@ onBeforeUnmount(() => {
   place-items: center;
   inline-size: 2.25rem;
   block-size: 2.25rem;
-  border-radius: 0.875rem;
-  background: rgba(255, 255, 255, 0.84);
-  border: 0.0625rem solid rgba(255, 255, 255, 0.5);
+  border-radius: var(--home-card-radius);
+  background: var(--home-panel-muted-strong);
+  border: 0.0625rem solid var(--home-panel-border);
 }
 
 .home-footer-bridge__link-copy {
@@ -6699,21 +7263,69 @@ onBeforeUnmount(() => {
 
 .home-footer-bridge__link:hover {
   transform: translate3d(0, -0.2rem, 0);
-  background: rgba(255, 255, 255, 0.88);
-  border-color: rgba(255, 255, 255, 0.72);
-  box-shadow: 0 2rem 3.2rem -2.2rem rgba(35, 53, 85, 0.42);
+  background: var(--home-panel-bg-soft);
+  border-color: var(--home-panel-border-strong);
+  box-shadow: var(--home-panel-shadow-strong);
+}
+
+.hero-editorial.glass-card,
+.hero-preview.glass-card,
+.hero-stat.glass-card,
+.portal-card.glass-card,
+.hero-collage-card.glass-card,
+.hero-spotlight-card.glass-card,
+.featured-rail-card.glass-card,
+.trends-card.glass-card,
+.bubble-empty.glass-card {
+  border-color: var(--home-panel-border-strong) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.latest-bubble.glass-card,
+.media-slice__sticky.glass-card,
+.home-footer-bridge__feature.glass-card,
+.home-footer-bridge__links.glass-card {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.hero-editorial.glass-card::before,
+.hero-editorial.glass-card::after,
+.hero-preview.glass-card::before,
+.hero-preview.glass-card::after,
+.hero-stat.glass-card::before,
+.hero-stat.glass-card::after,
+.portal-card.glass-card::before,
+.portal-card.glass-card::after,
+.hero-collage-card.glass-card::before,
+.hero-collage-card.glass-card::after,
+.hero-spotlight-card.glass-card::before,
+.hero-spotlight-card.glass-card::after,
+.featured-rail-card.glass-card::before,
+.featured-rail-card.glass-card::after,
+.trends-card.glass-card::before,
+.trends-card.glass-card::after,
+.bubble-empty.glass-card::before,
+.bubble-empty.glass-card::after,
+.media-slice__sticky.glass-card::before,
+.media-slice__sticky.glass-card::after,
+.home-footer-bridge__feature.glass-card::before,
+.home-footer-bridge__feature.glass-card::after,
+.home-footer-bridge__links.glass-card::before,
+.home-footer-bridge__links.glass-card::after {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
 }
 
 @keyframes heroLineStageIn {
   from {
     opacity: 0;
-    filter: blur(0.75rem);
     transform: translate3d(var(--hero-entry-x), var(--hero-entry-y), 0);
   }
 
   to {
     opacity: 1;
-    filter: blur(0rem);
     transform: translate3d(0, 0, 0);
   }
 }
@@ -6733,13 +7345,11 @@ onBeforeUnmount(() => {
 @keyframes homeScreenExitNorth {
   from {
     opacity: 1;
-    filter: blur(0rem);
     transform: translate3d(0, 0rem, 0) scale(1);
   }
 
   to {
     opacity: 0.22;
-    filter: blur(0.45rem);
     transform: translate3d(0, -5rem, 0) scale(0.92);
   }
 }
@@ -6747,13 +7357,11 @@ onBeforeUnmount(() => {
 @keyframes homeScreenEnterRise {
   from {
     opacity: 0.3;
-    filter: blur(0.65rem);
     transform: translate3d(0, 5rem, 0) scale(0.94);
   }
 
   to {
     opacity: 1;
-    filter: blur(0rem);
     transform: translate3d(0, 0rem, 0) scale(1);
   }
 }
@@ -6761,13 +7369,11 @@ onBeforeUnmount(() => {
 @keyframes homeScreenEnterBloom {
   from {
     opacity: 0.24;
-    filter: blur(0.75rem);
     transform: translate3d(0, 2.75rem, 0) scale(0.9);
   }
 
   to {
     opacity: 1;
-    filter: blur(0rem);
     transform: translate3d(0, 0rem, 0) scale(1);
   }
 }
@@ -6775,13 +7381,11 @@ onBeforeUnmount(() => {
 @keyframes homeScreenExitCompress {
   from {
     opacity: 1;
-    filter: blur(0rem);
     transform: translate3d(0, 0rem, 0) scale(1);
   }
 
   to {
     opacity: 0.18;
-    filter: blur(0.55rem);
     transform: translate3d(0, -2rem, 0) scale(0.88);
   }
 }
@@ -6789,13 +7393,11 @@ onBeforeUnmount(() => {
 @keyframes homeScreenExitSettle {
   from {
     opacity: 1;
-    filter: blur(0rem);
     transform: translate3d(0, 0rem, 0) scale(1);
   }
 
   to {
     opacity: 0.78;
-    filter: blur(0.18rem);
     transform: translate3d(0, -1rem, 0) scale(0.985);
   }
 }
@@ -6826,24 +7428,11 @@ onBeforeUnmount(() => {
 @keyframes bubbleTextDrift {
   0%,
   100% {
-    transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0) rotate(0deg);
   }
 
   50% {
-    transform: translate3d(0, -0.85rem, 0);
-  }
-}
-
-@keyframes bubbleOriginBreath {
-  0%,
-  100% {
-    transform: scale(0.86);
-    opacity: 0.6;
-  }
-
-  50% {
-    transform: scale(1.08);
-    opacity: 1;
+    transform: translate3d(0.35rem, -0.9rem, 0) rotate(0.35deg);
   }
 }
 
@@ -6871,6 +7460,17 @@ onBeforeUnmount(() => {
   .hero-copy {
     grid-template-columns: 1fr;
     min-block-size: auto;
+  }
+
+  .hero-copy__left,
+  .hero-copy__right {
+    align-items: flex-start;
+    text-align: start;
+    padding-inline-end: 0;
+  }
+
+  .hero-subtitle {
+    margin-inline-start: 0;
   }
 
   .hero-copy__divider {
@@ -6972,6 +7572,12 @@ onBeforeUnmount(() => {
 }
 
 @media (max-width: 768px) {
+  .home-page {
+    --home-stage-safe-bottom: calc(
+      var(--mobile-nav-height) + env(safe-area-inset-bottom, 0rem) + clamp(0.9rem, 2vw, 1.25rem)
+    );
+  }
+
   .rail-stage__chrome,
   .section-header,
   .posts-header {
@@ -7006,7 +7612,7 @@ onBeforeUnmount(() => {
   }
 
   .bubble-stage {
-    min-block-size: clamp(22rem, 44dvh, 30rem);
+    min-block-size: 0;
   }
 
   .story-merge-panel {
@@ -7015,7 +7621,7 @@ onBeforeUnmount(() => {
 
   .home-footer-bridge__stage {
     padding-block: calc(var(--home-stage-safe-top) + 0.75rem)
-      calc(6.25rem + env(safe-area-inset-bottom, 0rem));
+      calc(1rem + var(--home-stage-safe-bottom));
   }
 
   .home-footer-bridge__links {
@@ -7046,37 +7652,36 @@ onBeforeUnmount(() => {
   }
 
   .posts--bubble {
-    padding-block-end: calc(6rem + env(safe-area-inset-bottom, 0rem));
+    padding-block-end: calc(1rem + var(--home-stage-safe-bottom));
   }
 
   .story-stage {
-    padding-block-end: calc(6.25rem + env(safe-area-inset-bottom, 0rem));
+    padding-block-end: calc(1rem + var(--home-stage-safe-bottom));
   }
 
   .rail-panel--portal .portal-grid > .portal-card--primary {
     min-block-size: clamp(12rem, 29vh, 14rem);
-    grid-template-rows: minmax(0, 1fr);
+    grid-template-rows: auto auto;
     align-content: stretch;
-    gap: 0;
+    gap: 0.75rem;
   }
 
   .rail-panel--portal .portal-card--primary .portal-card__preview {
-    min-block-size: 100%;
+    min-block-size: clamp(11rem, 26vh, 13rem);
   }
 
   .rail-panel--portal .portal-card--primary .portal-card__copy {
-    position: absolute;
-    inset-inline: 0.875rem;
-    inset-block-end: 0.875rem;
-    max-inline-size: min(100%, 11.5rem);
+    position: relative;
+    inset: auto;
+    inline-size: min(100%, 12.5rem);
+    max-inline-size: none;
+    margin-block-start: calc(clamp(1.75rem, 7vw, 2.5rem) * -1);
+    margin-inline: 0.5rem;
     padding: 0.6875rem 0.75rem;
-    border-radius: 1rem;
-    background:
-      linear-gradient(155deg, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.8)),
-      var(--home-pill-bg);
-    border: 0.0625rem solid rgba(255, 255, 255, 0.56);
-    box-shadow: 0 1rem 2.5rem -1.8rem rgba(15, 23, 42, 0.42);
-    backdrop-filter: blur(0.9rem);
+    border-radius: var(--home-card-radius);
+    background: var(--home-panel-bg-strong), var(--home-pill-bg);
+    border: 0.0625rem solid var(--home-panel-border);
+    box-shadow: var(--home-preview-shadow);
   }
 
   .rail-panel--portal .portal-card--primary .portal-card__body p {
@@ -7314,7 +7919,7 @@ onBeforeUnmount(() => {
   }
 
   .bubble-stage {
-    min-block-size: clamp(20rem, 42dvh, 26rem);
+    min-block-size: 0;
   }
 }
 
@@ -7334,8 +7939,7 @@ onBeforeUnmount(() => {
   .hero--animated .hero-copy__line,
   .hero--animated .hero-copy__right > *,
   .posts--revealed .latest-bubble,
-  .posts--revealed .latest-bubble__inner,
-  .bubble-stage__pulse {
+  .posts--revealed .latest-bubble__inner {
     animation: none;
   }
 
