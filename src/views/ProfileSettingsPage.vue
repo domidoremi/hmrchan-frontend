@@ -698,8 +698,7 @@
                     type="button"
                     variant="secondary"
                     size="sm"
-                    :loading="isRestoringAccount"
-                    @click="restoreAccountAccess"
+                    @click="openRestoreAccountFlow"
                   >
                     <AnimatedIcon name="loading" :fallback-icon="RotateCcw" size="sm" />
                     {{ $t('profile.restoreAccountAction') }}
@@ -1076,6 +1075,7 @@ defineOptions({ name: 'ProfileSettingsPage' })
 
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
 // ... icons imports ...
 import {
   User,
@@ -1125,6 +1125,7 @@ const EmailVerifyDialog = defineAsyncComponent(
   () => import('@/components/ui/EmailVerifyDialog.vue')
 )
 
+const router = useRouter()
 const { t } = useI18n()
 const authStore = useAuthStore()
 const toastStore = useToastStore()
@@ -1143,7 +1144,6 @@ const isDisablingTwoFactor = ref(false)
 const isDeletionStatusLoading = ref(false)
 const isExportingData = ref(false)
 const isDeletingAccount = ref(false)
-const isRestoringAccount = ref(false)
 
 const showCropper = ref(false)
 const cropImageSrc = ref('')
@@ -1601,16 +1601,35 @@ function openDeleteAccountDialog() {
   showDeleteAccountDialog.value = true
 }
 
+function buildRestoreAccountQuery(includeDeletedNotice = false) {
+  const identifier = profile.value?.email?.trim() || profile.value?.username?.trim() || ''
+
+  return {
+    mode: 'restore',
+    ...(includeDeletedNotice ? { restore_notice: 'deleted' } : {}),
+    ...(identifier ? { identifier } : {}),
+  }
+}
+
+async function openRestoreAccountFlow() {
+  await authStore.logout()
+  await router.replace({
+    name: 'login',
+    query: buildRestoreAccountQuery(),
+  })
+}
+
 async function exportAccountData() {
   if (isExportingData.value) return
 
   isExportingData.value = true
   try {
-    const blob = await userService.exportData()
+    const { blob, filename } = await userService.exportData()
     const url = URL.createObjectURL(blob)
     const anchor = document.createElement('a')
     anchor.href = url
-    anchor.download = `hmrchan-account-export-${new Date().toISOString().slice(0, 10)}.json`
+    anchor.download =
+      filename || `hmrchan-account-export-${new Date().toISOString().slice(0, 10)}.json`
     document.body.appendChild(anchor)
     anchor.click()
     anchor.remove()
@@ -1636,8 +1655,12 @@ async function confirmDeleteAccount() {
     await userService.deleteAccount(deleteAccountReason.value.trim() || undefined)
     showDeleteAccountDialog.value = false
     deleteAccountReason.value = ''
-    await fetchDeletionStatus()
     toastStore.success(t('profile.deleteAccountSuccess'))
+    await authStore.logout()
+    await router.replace({
+      name: 'login',
+      query: buildRestoreAccountQuery(true),
+    })
   } catch (err) {
     if (isVerificationCancelledError(err)) return
     if (err instanceof ApiError) {
@@ -1647,25 +1670,6 @@ async function confirmDeleteAccount() {
     }
   } finally {
     isDeletingAccount.value = false
-  }
-}
-
-async function restoreAccountAccess() {
-  if (isRestoringAccount.value) return
-
-  isRestoringAccount.value = true
-  try {
-    await userService.restoreAccount()
-    await Promise.allSettled([fetchDeletionStatus(), fetchProfile(), authStore.fetchCurrentUser()])
-    toastStore.success(t('profile.restoreAccountSuccess'))
-  } catch (err) {
-    if (err instanceof ApiError) {
-      toastStore.error(err.message)
-    } else {
-      toastStore.error(t('common.error'))
-    }
-  } finally {
-    isRestoringAccount.value = false
   }
 }
 

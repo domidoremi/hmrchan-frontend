@@ -293,7 +293,9 @@ export const adminService = {
   },
 
   async clearCache(): Promise<{ message: string }> {
-    return apiClient.post('/admin/cache/clear')
+    return apiClient.post('/admin/cache/clear', null, {
+      verificationAction: 'admin_operation',
+    })
   },
 
   async getMetrics(): Promise<Record<string, unknown>> {
@@ -322,7 +324,9 @@ export const adminService = {
   },
 
   async deleteUser(userId: string): Promise<void> {
-    return apiClient.delete(`/users/${userId}`)
+    return apiClient.delete(`/users/${userId}`, {
+      verificationAction: 'admin_operation',
+    })
   },
 
   async getUserStats(userId: string): Promise<AdminUserStats> {
@@ -330,7 +334,13 @@ export const adminService = {
   },
 
   async assignRoles(userId: string, roleIds: number[]): Promise<{ message: string }> {
-    return apiClient.post(`/users/${userId}/roles`, { role_ids: roleIds })
+    return apiClient.post(
+      `/users/${userId}/roles`,
+      { role_ids: roleIds },
+      {
+        verificationAction: 'admin_operation',
+      }
+    )
   },
 
   async getUserRoles(userId: string): Promise<AdminRole[]> {
@@ -340,13 +350,17 @@ export const adminService = {
   async uploadUserAvatar(userId: string, file: File): Promise<{ url: string }> {
     const formData = new FormData()
     formData.append('file', file)
-    return apiClient.post(`/upload/users/${userId}/avatar`, formData)
+    return apiClient.post(`/upload/users/${userId}/avatar`, formData, {
+      verificationAction: 'admin_operation',
+    })
   },
 
   // ========== 角色管理 (Section 30.3) ==========
 
   async createRole(data: CreateRoleRequest): Promise<AdminRole> {
-    return apiClient.post('/roles', data)
+    return apiClient.post('/roles', data, {
+      verificationAction: 'admin_operation',
+    })
   },
 
   async listRoles(): Promise<AdminRole[]> {
@@ -362,15 +376,25 @@ export const adminService = {
   },
 
   async updateRole(roleId: number, data: UpdateRoleRequest): Promise<AdminRole> {
-    return apiClient.patch(`/roles/${roleId}`, data)
+    return apiClient.patch(`/roles/${roleId}`, data, {
+      verificationAction: 'admin_operation',
+    })
   },
 
   async deleteRole(roleId: number): Promise<void> {
-    return apiClient.delete(`/roles/${roleId}`)
+    return apiClient.delete(`/roles/${roleId}`, {
+      verificationAction: 'admin_operation',
+    })
   },
 
   async updateRolePermissions(roleId: number, permissions: string[]): Promise<{ message: string }> {
-    return apiClient.put(`/roles/${roleId}/permissions`, { permissions })
+    return apiClient.put(
+      `/roles/${roleId}/permissions`,
+      { permissions },
+      {
+        verificationAction: 'admin_operation',
+      }
+    )
   },
 
   async getRoleUsers(
@@ -396,17 +420,23 @@ export const adminService = {
   },
 
   async updateCrawlerConfig(config: CrawlerConfig): Promise<CrawlerConfig> {
-    return apiClient.put('/crawler/config', config)
+    return apiClient.put('/crawler/config', config, {
+      verificationAction: 'admin_operation',
+    })
   },
 
   // ========== 处理器管理 (Section 30.5) ==========
 
   async triggerScan(): Promise<ProcessorTask> {
-    return apiClient.post('/processor/scan')
+    return apiClient.post('/processor/scan', null, {
+      verificationAction: 'admin_operation',
+    })
   },
 
   async reprocessFailed(): Promise<ProcessorTask> {
-    return apiClient.post('/processor/scan/failed')
+    return apiClient.post('/processor/scan/failed', null, {
+      verificationAction: 'admin_operation',
+    })
   },
 
   async listProcessorFailures(
@@ -430,7 +460,9 @@ export const adminService = {
   async retryProcessorFailures(
     data: RetryProcessorFailuresRequest
   ): Promise<RetryProcessorFailuresResponse> {
-    return apiClient.post<RetryProcessorFailuresResponse>('/processor/failures/retry', data)
+    return apiClient.post<RetryProcessorFailuresResponse>('/processor/failures/retry', data, {
+      verificationAction: 'admin_operation',
+    })
   },
 
   async getProcessorStats(): Promise<ProcessorStats> {
@@ -468,7 +500,9 @@ export const adminService = {
   },
 
   async reviewReport(reportId: string, data: ReviewReportRequest): Promise<AdminReport> {
-    return apiClient.patch(`/reports/${reportId}`, data)
+    return apiClient.patch(`/reports/${reportId}`, data, {
+      verificationAction: 'admin_operation',
+    })
   },
 
   // ========== 审计管理 (Section 30.8) ==========
@@ -514,6 +548,8 @@ export const adminService = {
   // ========== 账户清理 (Section 30.10) ==========
 
   async cleanupExpiredAccounts(): Promise<{ message: string; count?: number }> {
-    return apiClient.post('/account/admin/cleanup-expired')
+    return apiClient.post('/account/admin/cleanup-expired', null, {
+      verificationAction: 'admin_operation',
+    })
   },
 }

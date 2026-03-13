@@ -146,13 +146,17 @@ export const scheduleService = {
    * 创建日程（管理员）
    */
   async create(data: ScheduleCreateRequest): Promise<ScheduleResponse> {
-    return apiClient.post<ScheduleResponse>('/schedules', data)
+    return apiClient.post<ScheduleResponse>('/schedules', data, {
+      verificationAction: 'admin_operation',
+    })
   },
 
   /**
    * 删除日程（管理员）
    */
   async delete(scheduleId: string): Promise<void> {
-    return apiClient.delete(`/schedules/${scheduleId}`)
+    return apiClient.delete(`/schedules/${scheduleId}`, {
+      verificationAction: 'admin_operation',
+    })
   },
 }

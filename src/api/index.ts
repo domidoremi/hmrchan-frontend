@@ -65,7 +65,9 @@ export {
   type UserProfile,
   type UpdateProfileRequest,
   type ChangePasswordRequest,
+  type RestoreAccountRequest,
   type AvatarUploadResponse,
+  type ExportAccountDataResult,
   USERNAME_LIMITS,
   PROFILE_LIMITS,
 } from './userService'

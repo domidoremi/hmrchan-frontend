@@ -7,7 +7,6 @@
 import { apiClient, type RequestConfig } from './client'
 import { ensureVerificationToken } from './verificationBridge'
 import { normalizeToProxyPath } from '@/utils/url'
-import { secureTokenManager } from '@/utils/tokenSecurity'
 
 // ========== 类型定义 ==========
 
@@ -49,6 +48,11 @@ export interface ChangePasswordRequest {
   verification_token?: string
 }
 
+export interface RestoreAccountRequest {
+  identifier: string
+  password: string
+}
+
 export interface AvatarUploadResponse {
   filename?: string
   url: string
@@ -56,6 +60,11 @@ export interface AvatarUploadResponse {
   content_type?: string
   hash?: string
   uploaded_at?: string
+}
+
+export interface ExportAccountDataResult {
+  blob: Blob
+  filename?: string | null
 }
 
 /**
@@ -127,8 +136,8 @@ export const userService = {
   /**
    * 恢复已删除的账号（30 天内）
    */
-  async restoreAccount(): Promise<void> {
-    await apiClient.post('/account/restore')
+  async restoreAccount(data: RestoreAccountRequest): Promise<void> {
+    await apiClient.post('/account/restore', data)
   },
 
   /**
@@ -154,31 +163,34 @@ export const userService = {
   /**
    * 导出用户数据（JSON 下载）
    */
-  async exportData(): Promise<Blob> {
-    const baseUrl =
-      import.meta.env.VITE_API_ENDPOINT || `${import.meta.env.VITE_API_URL || '/api'}/v1`
+  async exportData(): Promise<ExportAccountDataResult> {
     const verificationToken = await ensureVerificationToken('export_data')
-
-    // 从安全存储获取 access token 用于认证
-    const token = await secureTokenManager.retrieve()
-
-    const headers: HeadersInit = {}
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`
-    }
-    headers['X-Verification-Token'] = verificationToken
-
-    const response = await fetch(`${baseUrl}/account/export-data`, {
+    const response = await apiClient.response('/account/export-data', {
       method: 'POST',
-      credentials: 'include',
-      headers,
+      headers: {
+        'X-Verification-Token': verificationToken,
+      },
+      verificationAction: 'export_data',
     })
+    const blob = await response.blob()
+    const contentDisposition = response.headers.get('Content-Disposition')
+    const filenameMatch =
+      contentDisposition?.match(/filename\*=UTF-8''([^;]+)|filename="?([^";]+)"?/i) ?? null
+    const rawFilename = (filenameMatch?.[1] || filenameMatch?.[2] || '').trim()
+    let filename: string | null = null
 
-    if (!response.ok) {
-      throw new Error(`Export failed: ${response.status}`)
+    if (rawFilename) {
+      try {
+        filename = decodeURIComponent(rawFilename)
+      } catch {
+        filename = rawFilename
+      }
     }
 
-    return response.blob()
+    return {
+      blob,
+      filename,
+    }
   },
 
   /**

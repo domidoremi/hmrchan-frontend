@@ -7,7 +7,7 @@ import { ref } from 'vue'
 import type { Device } from '@/api'
 
 export function useDeviceNameEditor() {
-  const editingSessionId = ref<number | null>(null)
+  const editingSessionId = ref<string | number | null>(null)
   const editingDeviceName = ref('')
 
   function startEditing(session: Device) {
@@ -20,7 +20,7 @@ export function useDeviceNameEditor() {
     editingDeviceName.value = ''
   }
 
-  function isEditing(sessionId: number): boolean {
+  function isEditing(sessionId: string | number): boolean {
     return editingSessionId.value === sessionId
   }
 

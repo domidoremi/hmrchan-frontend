@@ -102,6 +102,11 @@
     "loginButton": "登录",
     "registerButton": "创建账户",
     "loginSuccess": "登录成功",
+    "restoreTitle": "恢复已删除账号",
+    "restoreHint": "请输入原账号的用户名或邮箱，以及当前密码。如果仍在恢复期内，我们会撤销删除申请。",
+    "restoreAfterDeleteNotice": "删除申请已提交，当前登录态也已经失效。请在这里恢复账号后再继续使用。",
+    "restoreButton": "恢复账号",
+    "restoreLink": "需要恢复已删除账号？",
     "securityWarningHigh": "检测到异常登录活动，请检查您的账户安全设置",
     "securityWarningMedium": "检测到新设备登录，如非本人操作请及时修改密码",
     "twoFactorHint": "您的账户已启用两步验证，请输入验证器应用中的验证码",
@@ -356,10 +361,13 @@
       "title": "今天最值得看的都在这里",
       "subtitle": "从推荐、作者、日程到社区，一键进入内容氛围。",
       "action": "进入探索",
+      "publicCount": "公开 {count} 项",
+      "emptyState": "暂无公开内容",
       "items": {
         "recommend": {
           "title": "今日推荐",
-          "desc": "编辑精选 4 张内容卡"
+          "desc": "编辑精选内容卡",
+          "dynamicDesc": "编辑精选 {count} 张内容卡"
         },
         "authors": {
           "title": "热门作者",
@@ -1072,6 +1080,7 @@
       "revokeFailed": "退出设备登录失败",
       "revokeAllFailed": "退出所有设备登录失败",
       "trustFailed": "更新设备信任状态失败",
+      "trustCurrentOnly": "只有当前设备可以被标记为受信任设备",
       "updateNameFailed": "更新设备名称失败",
       "emptyName": "设备名称不能为空"
     }

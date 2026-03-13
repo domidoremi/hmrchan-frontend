@@ -102,6 +102,11 @@
     "loginButton": "ログイン",
     "registerButton": "アカウント作成",
     "loginSuccess": "ログインしました",
+    "restoreTitle": "削除済みアカウントを復元",
+    "restoreHint": "削除前に使っていたユーザー名またはメールアドレスと現在のパスワードを入力してください。復元期間内であれば削除申請を取り消せます。",
+    "restoreAfterDeleteNotice": "削除申請は送信済みで、現在のログイン状態も無効になっています。ここでアカウントを復元してから再度利用してください。",
+    "restoreButton": "アカウントを復元",
+    "restoreLink": "削除済みアカウントを復元しますか？",
     "securityWarningHigh": "異常なログインアクティビティが検出されました。アカウントのセキュリティ設定を確認してください",
     "securityWarningMedium": "新しいデバイスからのログインが検出されました。心当たりがない場合はパスワードを変更してください",
     "twoFactorHint": "アカウントで二段階認証が有効になっています。認証アプリのコードを入力してください",
@@ -356,10 +361,13 @@
       "title": "今日見るべき場所から始めよう",
       "subtitle": "おすすめ、作者、予定、コミュニティへ一気に。",
       "action": "探索へ",
+      "publicCount": "公開 {count} 件",
+      "emptyState": "公開中の項目はまだありません",
       "items": {
         "recommend": {
           "title": "今日のおすすめ",
-          "desc": "編集部セレクト4件"
+          "desc": "編集部セレクト",
+          "dynamicDesc": "編集部セレクト {count} 件"
         },
         "authors": {
           "title": "人気クリエイター",
@@ -1072,6 +1080,7 @@
       "revokeFailed": "デバイスのログアウトに失敗",
       "revokeAllFailed": "すべてのデバイスのログアウトに失敗",
       "trustFailed": "デバイスの信頼状態の更新に失敗",
+      "trustCurrentOnly": "信頼済みにできるのは現在のデバイスのみです",
       "updateNameFailed": "デバイス名の更新に失敗",
       "emptyName": "デバイス名を入力してください"
     }

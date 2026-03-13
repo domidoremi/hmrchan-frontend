@@ -102,6 +102,11 @@
     "loginButton": "Sign In",
     "registerButton": "Create Account",
     "loginSuccess": "Successfully logged in",
+    "restoreTitle": "Restore a deleted account",
+    "restoreHint": "Use the same username or email and current password. If the recovery window is still open, we'll cancel the deletion request.",
+    "restoreAfterDeleteNotice": "Your deletion request was submitted and your active session has been closed. Restore the account here to use it again.",
+    "restoreButton": "Restore account",
+    "restoreLink": "Need to restore a deleted account?",
     "securityWarningHigh": "Unusual login activity detected. Please review your account security settings",
     "securityWarningMedium": "New device login detected. If this wasn't you, change your password immediately",
     "twoFactorHint": "Your account has two-factor authentication enabled. Enter the code from your authenticator app",
@@ -356,10 +361,13 @@
       "title": "Start with what’s worth seeing today",
       "subtitle": "From picks and creators to schedules and community.",
       "action": "Go Explore",
+      "publicCount": "{count} public items",
+      "emptyState": "No public items yet",
       "items": {
         "recommend": {
           "title": "Today’s Picks",
-          "desc": "Editor’s selection of 4 items"
+          "desc": "Editor’s selection",
+          "dynamicDesc": "Editor’s selection of {count} items"
         },
         "authors": {
           "title": "Hot Creators",
@@ -1072,6 +1080,7 @@
       "revokeFailed": "Failed to sign out device",
       "revokeAllFailed": "Failed to sign out all devices",
       "trustFailed": "Failed to update device trust status",
+      "trustCurrentOnly": "Only the current device can be marked as trusted",
       "updateNameFailed": "Failed to update device name",
       "emptyName": "Device name cannot be empty"
     }
