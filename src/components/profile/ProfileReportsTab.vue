@@ -124,12 +124,13 @@ async function fetchReports(reset = true): Promise<boolean> {
       signal: controller.signal,
       skipErrorToast: true,
     })
+    const nextItems = Array.isArray(response.items) ? response.items : []
     if (controller.signal.aborted || requestToken !== reportsRequestToken) return false
 
     if (reset) {
-      reports.value = response.items
+      reports.value = nextItems
     } else {
-      reports.value.push(...response.items)
+      reports.value.push(...nextItems)
     }
     total.value = response.total
     return true

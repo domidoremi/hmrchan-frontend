@@ -22,11 +22,20 @@ export function resolvePublicFallbackReason(error: unknown): string | null {
 
 export function isServiceUnavailableError(error: unknown): boolean {
   if (error instanceof ApiError) {
-    return [502, 503, 504, 530].includes(error.status)
+    return [403, 408, 429, 500, 502, 503, 504, 520, 521, 522, 523, 524, 525, 526, 530].includes(
+      error.status
+    )
   }
 
   const message = error instanceof Error ? error.message.toLowerCase() : ''
-  return message.includes('service unavailable') || message.includes('error code: 1033')
+  return (
+    message.includes('service unavailable') ||
+    message.includes('temporarily unavailable') ||
+    message.includes('upstream connect error') ||
+    message.includes('forbidden') ||
+    message.includes('error code: 1016') ||
+    message.includes('error code: 1033')
+  )
 }
 
 export function paginateFallbackItems<T>(

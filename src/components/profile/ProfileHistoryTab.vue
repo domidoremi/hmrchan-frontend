@@ -234,7 +234,7 @@ async function fetchHistory(reset = true): Promise<boolean> {
     })
     if (controller.signal.aborted || requestToken !== historyRequestToken) return false
 
-    const transformedItems = res.items.map(transformHistoryItem)
+    const transformedItems = (Array.isArray(res.items) ? res.items : []).map(transformHistoryItem)
     if (reset) {
       history.value = transformedItems
     } else {
