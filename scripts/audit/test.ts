@@ -1,5 +1,5 @@
 import type { AuditModule, AuditIssue, AuditOptions, AuditResult } from './types'
-import { runCommand } from './utils'
+import { runLocalNodeTool } from './utils'
 
 interface VitestResult {
   numTotalTests: number
@@ -37,11 +37,7 @@ const testAudit: AuditModule = {
     const start = Date.now()
     const issues: AuditIssue[] = []
 
-    const result = await runCommand(
-      'npx',
-      ['vitest', 'run', '--reporter=json'],
-      options.projectRoot,
-    )
+    const result = await runLocalNodeTool('vitest', ['run', '--reporter=json'], options.projectRoot)
 
     const parsed = parseVitestJSON(result.stdout)
 
@@ -81,7 +77,9 @@ const testAudit: AuditModule = {
     }
 
     if (options.verbose) {
-      console.log(`    Total: ${numTotalTests}  Passed: ${numPassedTests}  Failed: ${numFailedTests}`)
+      console.log(
+        `    Total: ${numTotalTests}  Passed: ${numPassedTests}  Failed: ${numFailedTests}`
+      )
     }
 
     const status = numFailedTests > 0 ? 'fail' : 'pass'

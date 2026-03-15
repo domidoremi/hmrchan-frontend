@@ -1,7 +1,7 @@
 import { readdirSync, statSync, existsSync } from 'fs'
 import { join, relative } from 'path'
 import type { AuditModule, AuditIssue, AuditOptions, AuditResult, AuditStatus } from './types'
-import { runCommand } from './utils'
+import { runLocalNodeTool } from './utils'
 
 const CHUNK_SIZE_WARN_KB = 500
 
@@ -39,7 +39,7 @@ const buildAudit: AuditModule = {
     const distDir = join(options.projectRoot, 'dist')
 
     // 1. Run vite build
-    const result = await runCommand('npx', ['vite', 'build'], options.projectRoot)
+    const result = await runLocalNodeTool('vite', ['build'], options.projectRoot)
 
     if (result.exitCode !== 0) {
       const errorOutput = (result.stderr || result.stdout).slice(0, 500)
