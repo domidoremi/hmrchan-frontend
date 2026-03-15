@@ -19,6 +19,100 @@ export const STORES = {
 type StoreName = (typeof STORES)[keyof typeof STORES]
 
 let dbPromise: Promise<IDBDatabase> | null = null
+let dbResetPromise: Promise<void> | null = null
+
+type StoreFallback<T> = T | (() => T)
+
+function resolveFallback<T>(fallback: StoreFallback<T>): T {
+  return typeof fallback === 'function' ? (fallback as () => T)() : fallback
+}
+
+function createMissingStoreError(store: StoreName): DOMException {
+  return new DOMException(`IndexedDB store "${store}" is missing`, 'NotFoundError')
+}
+
+function isMissingStoreError(error: unknown): boolean {
+  if (error instanceof DOMException) {
+    return error.name === 'NotFoundError'
+  }
+
+  if (!(error instanceof Error)) return false
+
+  const message = error.message.toLowerCase()
+  return (
+    error.name === 'NotFoundError' ||
+    message.includes('object stores was not found') ||
+    message.includes('object store was not found') ||
+    message.includes('is not a known object store') ||
+    message.includes('missing')
+  )
+}
+
+async function resetDatabase(reason: string): Promise<void> {
+  if (dbResetPromise) {
+    await dbResetPromise
+    return
+  }
+
+  dbResetPromise = (async () => {
+    const currentDb = dbPromise ? await dbPromise.catch(() => null) : null
+    try {
+      currentDb?.close()
+    } catch {
+      // ignore close failures
+    }
+    dbPromise = null
+
+    await new Promise<void>((resolve, reject) => {
+      const request = indexedDB.deleteDatabase(DB_NAME)
+
+      request.onsuccess = () => resolve()
+      request.onerror = () => reject(request.error)
+      request.onblocked = () => {
+        console.warn(`[IDB] Reset blocked while recovering database: ${reason}`)
+      }
+    })
+  })()
+
+  try {
+    await dbResetPromise
+  } finally {
+    dbResetPromise = null
+  }
+}
+
+async function withStoreRecovery<T>(
+  store: StoreName,
+  action: string,
+  fallback: StoreFallback<T>,
+  operation: (db: IDBDatabase) => Promise<T>,
+  allowReset = true
+): Promise<T> {
+  try {
+    const db = await getDB()
+
+    if (!db.objectStoreNames.contains(store)) {
+      throw createMissingStoreError(store)
+    }
+
+    return await operation(db)
+  } catch (error) {
+    if (allowReset && isMissingStoreError(error)) {
+      console.warn(`[IDB] Missing store "${store}" during ${action}, recreating database.`, error)
+      try {
+        await resetDatabase(`${action}:${store}`)
+      } catch (resetError) {
+        console.warn(`[IDB] Failed to reset database after ${action}:`, resetError)
+        return resolveFallback(fallback)
+      }
+
+      return withStoreRecovery(store, action, fallback, operation, false)
+    }
+
+    console.warn(`[IDB] ${action}:`, error)
+    return resolveFallback(fallback)
+  }
+}
 
 /**
  * 获取数据库连接（单例）
@@ -109,36 +203,33 @@ function getDB(): Promise<IDBDatabase> {
  * 获取记录数量
  */
 export async function idbCount(store: StoreName): Promise<number> {
-  try {
-    const db = await getDB()
+  return withStoreRecovery(store, `Failed to count ${store}`, 0, async (db) => {
     return new Promise((resolve, reject) => {
       const tx = db.transaction(store, 'readonly')
       const request = tx.objectStore(store).count()
       request.onsuccess = () => resolve(request.result)
       request.onerror = () => reject(request.error)
     })
-  } catch (error) {
-    console.warn(`[IDB] Failed to count ${store}:`, error)
-    return 0
-  }
+  })
 }
 
 /**
  * 获取所有键
  */
 export async function idbGetAllKeys(store: StoreName): Promise<IDBValidKey[]> {
-  try {
-    const db = await getDB()
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction(store, 'readonly')
-      const request = tx.objectStore(store).getAllKeys()
-      request.onsuccess = () => resolve(request.result)
-      request.onerror = () => reject(request.error)
-    })
-  } catch (error) {
-    console.warn(`[IDB] Failed to get keys from ${store}:`, error)
-    return []
-  }
+  return withStoreRecovery(
+    store,
+    `Failed to get keys from ${store}`,
+    () => [],
+    async (db) => {
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(store, 'readonly')
+        const request = tx.objectStore(store).getAllKeys()
+        request.onsuccess = () => resolve(request.result)
+        request.onerror = () => reject(request.error)
+      })
+    }
+  )
 }
 
 /**
@@ -146,8 +237,7 @@ export async function idbGetAllKeys(store: StoreName): Promise<IDBValidKey[]> {
  */
 export async function idbPutMany<T>(store: StoreName, values: T[]): Promise<void> {
   if (values.length === 0) return
-  try {
-    const db = await getDB()
+  return withStoreRecovery(store, `Failed to putMany in ${store}`, undefined, async (db) => {
     return new Promise((resolve, reject) => {
       const tx = db.transaction(store, 'readwrite')
       const objectStore = tx.objectStore(store)
@@ -157,9 +247,7 @@ export async function idbPutMany<T>(store: StoreName, values: T[]): Promise<void
       tx.oncomplete = () => resolve()
       tx.onerror = () => reject(tx.error)
     })
-  } catch (error) {
-    console.warn(`[IDB] Failed to putMany in ${store}:`, error)
-  }
+  })
 }
 
 /**
@@ -167,8 +255,7 @@ export async function idbPutMany<T>(store: StoreName, values: T[]): Promise<void
  */
 export async function idbDeleteMany(store: StoreName, keys: IDBValidKey[]): Promise<void> {
   if (keys.length === 0) return
-  try {
-    const db = await getDB()
+  return withStoreRecovery(store, `Failed to deleteMany from ${store}`, undefined, async (db) => {
     return new Promise((resolve, reject) => {
       const tx = db.transaction(store, 'readwrite')
       const objectStore = tx.objectStore(store)
@@ -178,9 +265,7 @@ export async function idbDeleteMany(store: StoreName, keys: IDBValidKey[]): Prom
       tx.oncomplete = () => resolve()
       tx.onerror = () => reject(tx.error)
     })
-  } catch (error) {
-    console.warn(`[IDB] Failed to deleteMany from ${store}:`, error)
-  }
+  })
 }
 
 /**
@@ -191,11 +276,10 @@ export async function idbPruneByIndex(
   indexName: string,
   maxEntries: number
 ): Promise<number> {
-  try {
-    const db = await getDB()
-    const total = await idbCount(store)
-    if (total <= maxEntries) return 0
+  const total = await idbCount(store)
+  if (total <= maxEntries) return 0
 
+  return withStoreRecovery(store, `Failed to prune ${store}`, 0, async (db) => {
     return new Promise((resolve, reject) => {
       const tx = db.transaction(store, 'readwrite')
       const objectStore = tx.objectStore(store)
@@ -224,82 +308,68 @@ export async function idbPruneByIndex(
       tx.oncomplete = () => resolve(deleted)
       tx.onerror = () => reject(tx.error)
     })
-  } catch (error) {
-    console.warn(`[IDB] Failed to prune ${store}:`, error)
-    return 0
-  }
+  })
 }
 
 /**
  * 通用读取操作
  */
 export async function idbGet<T>(store: StoreName, key: IDBValidKey): Promise<T | undefined> {
-  try {
-    const db = await getDB()
+  return withStoreRecovery(store, `Failed to get from ${store}`, undefined, async (db) => {
     return new Promise((resolve, reject) => {
       const tx = db.transaction(store, 'readonly')
       const request = tx.objectStore(store).get(key)
       request.onsuccess = () => resolve(request.result as T | undefined)
       request.onerror = () => reject(request.error)
     })
-  } catch (error) {
-    console.warn(`[IDB] Failed to get from ${store}:`, error)
-    return undefined
-  }
+  })
 }
 
 /**
  * 通用写入操作
  */
 export async function idbSet<T>(store: StoreName, value: T): Promise<void> {
-  try {
-    const db = await getDB()
+  return withStoreRecovery(store, `Failed to set in ${store}`, undefined, async (db) => {
     return new Promise((resolve, reject) => {
       const tx = db.transaction(store, 'readwrite')
       const request = tx.objectStore(store).put(value)
       request.onsuccess = () => resolve()
       request.onerror = () => reject(request.error)
     })
-  } catch (error) {
-    console.warn(`[IDB] Failed to set in ${store}:`, error)
-    // 静默失败，缓存不是关键路径
-  }
+  })
 }
 
 /**
  * 通用删除操作
  */
 export async function idbDelete(store: StoreName, key: IDBValidKey): Promise<void> {
-  try {
-    const db = await getDB()
+  return withStoreRecovery(store, `Failed to delete from ${store}`, undefined, async (db) => {
     return new Promise((resolve, reject) => {
       const tx = db.transaction(store, 'readwrite')
       const request = tx.objectStore(store).delete(key)
       request.onsuccess = () => resolve()
       request.onerror = () => reject(request.error)
     })
-  } catch (error) {
-    console.warn(`[IDB] Failed to delete from ${store}:`, error)
-    // 静默失败
-  }
+  })
 }
 
 /**
  * 获取所有记录
  */
 export async function idbGetAll<T>(store: StoreName): Promise<T[]> {
-  try {
-    const db = await getDB()
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction(store, 'readonly')
-      const request = tx.objectStore(store).getAll()
-      request.onsuccess = () => resolve(request.result as T[])
-      request.onerror = () => reject(request.error)
-    })
-  } catch (error) {
-    console.warn(`[IDB] Failed to get all from ${store}:`, error)
-    return []
-  }
+  return withStoreRecovery(
+    store,
+    `Failed to get all from ${store}`,
+    () => [],
+    async (db) => {
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(store, 'readonly')
+        const request = tx.objectStore(store).getAll()
+        request.onsuccess = () => resolve(request.result as T[])
+        request.onerror = () => reject(request.error)
+      })
+    }
+  )
 }
 
 /**
@@ -336,18 +406,14 @@ export async function openDB(): Promise<IDBPDatabase> {
  * 清空指定 store
  */
 export async function idbClear(store: StoreName): Promise<void> {
-  try {
-    const db = await getDB()
+  return withStoreRecovery(store, `Failed to clear ${store}`, undefined, async (db) => {
     return new Promise((resolve, reject) => {
       const tx = db.transaction(store, 'readwrite')
       const request = tx.objectStore(store).clear()
       request.onsuccess = () => resolve()
       request.onerror = () => reject(request.error)
     })
-  } catch (error) {
-    console.warn(`[IDB] Failed to clear ${store}:`, error)
-    // 静默失败
-  }
+  })
 }
 
 /**
@@ -358,10 +424,9 @@ export async function idbDeleteExpired(
   indexName: string,
   maxAge: number
 ): Promise<number> {
-  try {
-    const db = await getDB()
-    const expireTime = Date.now() - maxAge
+  const expireTime = Date.now() - maxAge
 
+  return withStoreRecovery(store, `Failed to delete expired from ${store}`, 0, async (db) => {
     return new Promise((resolve, reject) => {
       const tx = db.transaction(store, 'readwrite')
       const objectStore = tx.objectStore(store)
@@ -405,8 +470,5 @@ export async function idbDeleteExpired(
       }
       request.onerror = () => reject(request.error)
     })
-  } catch (error) {
-    console.warn(`[IDB] Failed to delete expired from ${store}:`, error)
-    return 0
-  }
+  })
 }

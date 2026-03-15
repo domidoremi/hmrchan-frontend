@@ -174,11 +174,12 @@ async function fetchComments(reset = true): Promise<boolean> {
       skipErrorToast: true,
     })
     if (controller.signal.aborted || requestToken !== commentsRequestToken) return false
+    const nextItems = Array.isArray(res.items) ? res.items : []
 
     if (reset) {
-      comments.value = res.items
+      comments.value = nextItems
     } else {
-      comments.value.push(...res.items)
+      comments.value.push(...nextItems)
     }
     total.value = res.total
     return true

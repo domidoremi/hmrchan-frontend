@@ -169,11 +169,12 @@ async function fetchFavorites(reset = true): Promise<boolean> {
       skipErrorToast: true,
     })
     if (controller.signal.aborted || requestToken !== commentFavoritesRequestToken) return false
+    const nextItems = Array.isArray(res.items) ? res.items : []
 
     if (reset) {
-      items.value = res.items
+      items.value = nextItems
     } else {
-      items.value.push(...res.items)
+      items.value.push(...nextItems)
     }
     total.value = res.total
     return true

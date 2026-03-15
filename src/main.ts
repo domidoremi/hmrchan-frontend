@@ -312,11 +312,17 @@ function triggerPrefetchPipeline(reason: 'intent' | 'fallback'): void {
     () => {
       if (scheduledTasksDisposed || prefetchTaskDisposed) return
       import('./utils/cache/smartPrefetch').then(({ prefetchPopularContent }) => {
-        prefetchPopularContent().then((result) => {
-          if (import.meta.env.DEV || import.meta.env['VITE_ENABLE_DEBUG'] === 'true') {
-            console.log('[Prefetch] Popular content prefetched:', result)
-          }
-        })
+        prefetchPopularContent()
+          .then((result) => {
+            if (import.meta.env.DEV || import.meta.env['VITE_ENABLE_DEBUG'] === 'true') {
+              console.log('[Prefetch] Popular content prefetched:', result)
+            }
+          })
+          .catch((error) => {
+            if (import.meta.env.DEV || import.meta.env['VITE_ENABLE_DEBUG'] === 'true') {
+              console.warn('[Prefetch] Popular content prefetch skipped:', error)
+            }
+          })
       })
     },
     { priority: 'background', delay: POPULAR_PREFETCH_DELAY_AFTER_INTENT_MS }
