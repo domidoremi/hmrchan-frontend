@@ -5,6 +5,7 @@ import {
   type PublicVisibilityScope,
 } from './publicVisibility'
 import { buildHomepageBootstrapFallback } from '@/mocks/homepageBootstrapFallback'
+import { isServiceUnavailableError } from '@/mocks/publicPageFallback'
 
 export interface HomeImageAsset {
   url: string
@@ -632,15 +633,6 @@ function resolveBootstrapFallbackReason(error: unknown): string | null {
   if (error instanceof ApiError) return error.message
   if (error instanceof Error) return error.message
   return null
-}
-
-function isServiceUnavailableError(error: unknown): boolean {
-  if (error instanceof ApiError) {
-    return [502, 503, 504, 530].includes(error.status)
-  }
-
-  const message = error instanceof Error ? error.message.toLowerCase() : ''
-  return message.includes('service unavailable') || message.includes('error code: 1033')
 }
 
 export const homeService = {

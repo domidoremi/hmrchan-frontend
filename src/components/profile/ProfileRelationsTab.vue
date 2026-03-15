@@ -181,11 +181,12 @@ async function fetchRelations(reset = true): Promise<boolean> {
         : props.mode === 'following'
           ? await userRelationsService.getFollowing(page.value, pageSize.value)
           : await userRelationsService.getBlockedUsers(page.value, pageSize.value)
+    const nextItems = Array.isArray(response.items) ? response.items : []
 
     if (reset) {
-      users.value = response.items
+      users.value = nextItems
     } else {
-      users.value.push(...response.items)
+      users.value.push(...nextItems)
     }
     total.value = response.total
     return true

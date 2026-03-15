@@ -958,7 +958,9 @@ onUnmounted(() => {
   const timeSpent = Date.now() - accessStartTime
   if (postId.value) {
     import('@/utils/cache/smartPrefetch').then(({ recordAccess }) => {
-      recordAccess('post', postId.value, timeSpent)
+      recordAccess('post', postId.value, timeSpent).catch(() => {
+        // ignore non-critical cache telemetry failures
+      })
     })
   }
 })

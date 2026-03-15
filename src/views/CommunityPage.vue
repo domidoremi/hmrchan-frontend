@@ -681,6 +681,11 @@ onUnmounted(() => {
   margin-bottom: var(--spacing-4);
 }
 
+.community-hero::after {
+  content: none;
+  display: none;
+}
+
 .fallback-preview {
   display: grid;
   gap: var(--spacing-2);

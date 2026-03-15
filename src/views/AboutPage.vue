@@ -513,6 +513,11 @@ const { techStack } = useAboutData()
   margin-bottom: var(--spacing-6);
 }
 
+.page-header::after {
+  content: none;
+  display: none;
+}
+
 .page-title {
   font-size: var(--text-3xl);
   font-weight: var(--font-bold);
