@@ -152,13 +152,13 @@ onUnmounted(() => {
   border-radius: inherit;
   background: radial-gradient(circle, rgba(var(--color-primary-rgb), 0.3) 0%, transparent 70%);
   opacity: 0.15;
-  filter: blur(10px);
+  filter: blur(0.625rem);
   z-index: -1;
   pointer-events: none;
 }
 
 .next-post-fab:hover {
-  transform: translate3d(0, -3px, 0);
+  transform: translate3d(0, -0.1875rem, 0);
   border-color: var(--color-primary);
   box-shadow:
     var(--glass-shadow-lg),
@@ -166,7 +166,7 @@ onUnmounted(() => {
 }
 
 .next-post-fab:active {
-  transform: translate3d(0, -1px, 0) scale(0.95);
+  transform: translate3d(0, -0.0625rem, 0) scale(0.95);
   transition-duration: 100ms;
 }
 
@@ -179,7 +179,7 @@ onUnmounted(() => {
 }
 
 .next-post-fab:hover:focus-visible {
-  transform: translate3d(0, -3px, 0);
+  transform: translate3d(0, -0.1875rem, 0);
   box-shadow:
     var(--glass-shadow-lg),
     0 0 16px rgba(var(--color-primary-rgb), 0.2),
@@ -214,7 +214,7 @@ onUnmounted(() => {
     transform: translateY(0);
   }
   50% {
-    transform: translateY(3px);
+    transform: translateY(0.1875rem);
   }
 }
 
@@ -238,12 +238,12 @@ onUnmounted(() => {
 
 .next-fab-enter-from {
   opacity: 0;
-  transform: translate3d(0, 24px, 0) scale(0.8);
+  transform: translate3d(0, 1.5rem, 0) scale(0.8);
 }
 
 .next-fab-leave-to {
   opacity: 0;
-  transform: translate3d(0, 16px, 0) scale(0.85);
+  transform: translate3d(0, 1rem, 0) scale(0.85);
 }
 
 @media (prefers-reduced-motion: reduce) {

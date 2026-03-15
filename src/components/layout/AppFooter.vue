@@ -75,29 +75,30 @@ const footerShellStyle = computed<Record<string, string>>(() => {
 
   if (resolvedTheme.value === 'dark') {
     style['--footer-shell-bg'] =
-      'linear-gradient(155deg, rgba(12, 16, 23, 0.98), rgba(18, 24, 36, 0.94))'
-    style['--footer-shell-border'] = 'rgba(255, 255, 255, 0.12)'
-    style['--footer-shell-shadow'] = '0 1.8rem 4rem -2.4rem rgba(0, 0, 0, 0.52)'
-    style['--footer-chip-bg'] = 'rgba(18, 24, 36, 0.88)'
+      'linear-gradient(160deg, rgba(9, 13, 21, 0.92), rgba(14, 19, 29, 0.84))'
+    style['--footer-shell-border'] = 'rgba(255, 255, 255, 0.08)'
+    style['--footer-shell-shadow'] = '0 1.25rem 3rem -2rem rgba(0, 0, 0, 0.46)'
+    style['--footer-chip-bg'] = 'rgba(18, 24, 36, 0.72)'
     style['--footer-chip-border'] = 'rgba(255, 255, 255, 0.08)'
   } else if (resolvedTheme.value === 'blue') {
     style['--footer-shell-bg'] =
-      'linear-gradient(155deg, rgba(255, 255, 255, 0.98), rgba(239, 246, 255, 0.92))'
-    style['--footer-shell-border'] = 'rgba(59, 130, 246, 0.18)'
-    style['--footer-shell-shadow'] = '0 1.7rem 4rem -2.4rem rgba(37, 99, 235, 0.2)'
-    style['--footer-chip-bg'] = 'rgba(255, 255, 255, 0.88)'
-    style['--footer-chip-border'] = 'rgba(59, 130, 246, 0.14)'
+      'linear-gradient(160deg, rgba(255, 255, 255, 0.92), rgba(239, 246, 255, 0.84))'
+    style['--footer-shell-border'] = 'rgba(59, 130, 246, 0.14)'
+    style['--footer-shell-shadow'] = '0 1.2rem 3rem -2rem rgba(37, 99, 235, 0.18)'
+    style['--footer-chip-bg'] = 'rgba(255, 255, 255, 0.76)'
+    style['--footer-chip-border'] = 'rgba(59, 130, 246, 0.12)'
   } else {
     style['--footer-shell-bg'] =
-      'linear-gradient(155deg, rgba(255, 255, 255, 0.94), rgba(255, 255, 255, 0.82))'
-    style['--footer-shell-border'] = 'rgba(255, 255, 255, 0.58)'
-    style['--footer-shell-shadow'] = '0 1.5rem 3.6rem -2.2rem rgba(35, 53, 85, 0.28)'
-    style['--footer-chip-bg'] = 'rgba(255, 255, 255, 0.78)'
-    style['--footer-chip-border'] = 'rgba(148, 163, 184, 0.14)'
+      'linear-gradient(160deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.78))'
+    style['--footer-shell-border'] = 'rgba(255, 255, 255, 0.46)'
+    style['--footer-shell-shadow'] = '0 1.15rem 2.8rem -1.9rem rgba(35, 53, 85, 0.22)'
+    style['--footer-chip-bg'] = 'rgba(255, 255, 255, 0.72)'
+    style['--footer-chip-border'] = 'rgba(148, 163, 184, 0.12)'
   }
 
   if (settings.value.uiStyle === 'material') {
-    style['--footer-shell-shadow'] = 'var(--shadow-lg)'
+    style['--footer-shell-shadow'] = 'var(--shadow-md)'
+    style['--footer-shell-border'] = 'var(--ui-surface-border)'
   }
 
   return style
@@ -107,65 +108,173 @@ const footerShellStyle = computed<Record<string, string>>(() => {
 <style scoped>
 .footer {
   position: relative;
-  padding: var(--spacing-8) 0;
+  isolation: isolate;
+  overflow: clip;
+  padding: clamp(1.25rem, 3vw, 2rem) 0 clamp(2rem, 4vw, 2.75rem);
+  --footer-bg: linear-gradient(
+    180deg,
+    rgba(248, 247, 244, 0) 0%,
+    rgba(248, 247, 244, 0.54) 18%,
+    rgba(248, 247, 244, 0.92) 50%,
+    #f8f7f4 100%
+  );
+  --footer-overlay:
+    radial-gradient(circle at 18% 0%, rgba(var(--color-primary-rgb), 0.08) 0%, transparent 34%),
+    radial-gradient(circle at 82% 6%, rgba(var(--color-accent-rgb), 0.07) 0%, transparent 30%);
+  --footer-top-fade: linear-gradient(180deg, rgba(255, 255, 255, 0.34) 0%, transparent 100%);
   --footer-shell-bg: linear-gradient(155deg, rgba(255, 255, 255, 0.94), rgba(255, 255, 255, 0.82));
   --footer-shell-border: rgba(255, 255, 255, 0.58);
   --footer-shell-shadow: 0 1.5rem 3.6rem -2.2rem rgba(35, 53, 85, 0.28);
   --footer-chip-bg: rgba(255, 255, 255, 0.78);
   --footer-chip-border: rgba(148, 163, 184, 0.14);
-  background:
-    radial-gradient(circle at top left, rgba(var(--color-primary-rgb), 0.08) 0%, transparent 36%),
-    radial-gradient(circle at top right, rgba(var(--color-accent-rgb), 0.08) 0%, transparent 32%),
-    linear-gradient(180deg, var(--color-bg-tertiary) 0%, var(--color-background) 100%);
+  --footer-divider: rgba(148, 163, 184, 0.14);
+  --footer-link-hover-bg: rgba(255, 255, 255, 0.58);
+  background: var(--footer-bg);
   opacity: var(--home-footer-opacity, 1);
   transform: translate3d(0, var(--home-footer-y, 0rem), 0);
-  transition:
-    opacity 360ms cubic-bezier(0.2, 0.84, 0.24, 1),
-    transform 420ms cubic-bezier(0.2, 0.9, 0.25, 1);
+  will-change: transform, opacity;
+}
+
+.footer::before,
+.footer::after {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.footer::before {
+  inset: 0;
+  background: var(--footer-overlay);
+  opacity: 0.96;
+}
+
+.footer::after {
+  inset-block-start: 0;
+  block-size: min(18rem, 34dvh);
+  background: var(--footer-top-fade);
+}
+
+.footer > .container {
+  position: relative;
+  z-index: 1;
 }
 
 :global(#app[data-theme='dark'] .footer),
 :global([data-theme='dark'] .footer) {
+  --footer-bg: linear-gradient(
+    180deg,
+    rgba(7, 10, 16, 0) 0%,
+    rgba(8, 12, 18, 0.7) 18%,
+    rgba(7, 10, 16, 0.94) 48%,
+    #070910 100%
+  );
+  --footer-overlay:
+    radial-gradient(circle at 18% 0%, rgba(var(--color-primary-rgb), 0.12) 0%, transparent 34%),
+    radial-gradient(circle at 82% 6%, rgba(var(--color-accent-rgb), 0.08) 0%, transparent 30%);
+  --footer-top-fade: linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, transparent 100%);
   --footer-shell-bg: linear-gradient(155deg, rgba(12, 16, 23, 0.98), rgba(18, 24, 36, 0.94));
   --footer-shell-border: rgba(255, 255, 255, 0.12);
   --footer-shell-shadow: 0 1.8rem 4rem -2.4rem rgba(0, 0, 0, 0.52);
   --footer-chip-bg: rgba(18, 24, 36, 0.88);
   --footer-chip-border: rgba(255, 255, 255, 0.08);
+  --footer-divider: rgba(255, 255, 255, 0.08);
+  --footer-link-hover-bg: rgba(255, 255, 255, 0.03);
 }
 
 :global(#app[data-theme='blue'] .footer),
 :global([data-theme='blue'] .footer) {
+  --footer-bg: linear-gradient(
+    180deg,
+    rgba(239, 246, 255, 0) 0%,
+    rgba(239, 246, 255, 0.66) 18%,
+    rgba(239, 246, 255, 0.96) 50%,
+    #eff6ff 100%
+  );
+  --footer-overlay:
+    radial-gradient(circle at 18% 0%, rgba(59, 130, 246, 0.12) 0%, transparent 34%),
+    radial-gradient(circle at 82% 6%, rgba(99, 102, 241, 0.1) 0%, transparent 30%);
+  --footer-top-fade: linear-gradient(180deg, rgba(255, 255, 255, 0.28) 0%, transparent 100%);
   --footer-shell-bg: linear-gradient(155deg, rgba(255, 255, 255, 0.98), rgba(239, 246, 255, 0.92));
   --footer-shell-border: rgba(59, 130, 246, 0.18);
   --footer-shell-shadow: 0 1.7rem 4rem -2.4rem rgba(37, 99, 235, 0.2);
   --footer-chip-bg: rgba(255, 255, 255, 0.88);
   --footer-chip-border: rgba(59, 130, 246, 0.14);
+  --footer-divider: rgba(59, 130, 246, 0.14);
+  --footer-link-hover-bg: rgba(255, 255, 255, 0.64);
+}
+
+:global(main.main--home + .footer) {
+  --footer-bg: linear-gradient(
+    180deg,
+    rgba(248, 247, 244, 0.58) 0%,
+    rgba(248, 247, 244, 0.72) 22%,
+    rgba(248, 247, 244, 0.92) 58%,
+    #f8f7f4 100%
+  );
+  --footer-overlay:
+    radial-gradient(circle at 18% 0%, rgba(var(--color-primary-rgb), 0.05) 0%, transparent 34%),
+    radial-gradient(circle at 82% 6%, rgba(var(--color-accent-rgb), 0.04) 0%, transparent 30%);
+  --footer-top-fade: linear-gradient(180deg, rgba(248, 247, 244, 0.18) 0%, transparent 100%);
+}
+
+:global(#app[data-theme='dark'] main.main--home + .footer),
+:global([data-theme='dark'] main.main--home + .footer) {
+  --footer-bg: linear-gradient(
+    180deg,
+    rgba(8, 12, 18, 0.74) 0%,
+    rgba(8, 12, 18, 0.82) 22%,
+    rgba(7, 10, 16, 0.94) 58%,
+    #070910 100%
+  );
+  --footer-overlay:
+    radial-gradient(circle at 18% 0%, rgba(var(--color-primary-rgb), 0.08) 0%, transparent 34%),
+    radial-gradient(circle at 82% 6%, rgba(var(--color-accent-rgb), 0.06) 0%, transparent 30%);
+  --footer-top-fade: linear-gradient(180deg, rgba(8, 12, 18, 0.12) 0%, transparent 100%);
+}
+
+:global(#app[data-theme='blue'] main.main--home + .footer),
+:global([data-theme='blue'] main.main--home + .footer) {
+  --footer-bg: linear-gradient(
+    180deg,
+    rgba(239, 246, 255, 0.72) 0%,
+    rgba(239, 246, 255, 0.82) 22%,
+    rgba(239, 246, 255, 0.96) 58%,
+    #eff6ff 100%
+  );
+  --footer-overlay:
+    radial-gradient(circle at 18% 0%, rgba(59, 130, 246, 0.08) 0%, transparent 34%),
+    radial-gradient(circle at 82% 6%, rgba(99, 102, 241, 0.06) 0%, transparent 30%);
+  --footer-top-fade: linear-gradient(180deg, rgba(239, 246, 255, 0.18) 0%, transparent 100%);
 }
 
 :global(#app[data-ui-style='material'] .footer),
 :global([data-ui-style='material'] .footer) {
-  --footer-shell-shadow: var(--shadow-lg);
+  --footer-shell-shadow: var(--shadow-md);
 }
 
 .footer-shell.glass-card {
   padding: clamp(1.5rem, 3vw, 2rem);
   border-radius: var(--ui-radius-card, var(--radius-2xl));
   border-color: var(--footer-shell-border) !important;
-  background: var(--footer-shell-bg), var(--color-surface) !important;
+  background: var(--footer-shell-bg) !important;
   box-shadow: var(--footer-shell-shadow) !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
-  will-change: transform, box-shadow;
-  transform: translate3d(0, var(--home-footer-shell-y, 0rem), 0);
+  will-change: box-shadow;
   transition:
-    transform 420ms cubic-bezier(0.2, 0.9, 0.25, 1),
-    box-shadow 360ms cubic-bezier(0.2, 0.84, 0.24, 1),
-    border-color 360ms cubic-bezier(0.2, 0.84, 0.24, 1),
-    background 360ms cubic-bezier(0.2, 0.84, 0.24, 1);
+    box-shadow 240ms cubic-bezier(0.2, 0.84, 0.24, 1),
+    border-color 240ms cubic-bezier(0.2, 0.84, 0.24, 1),
+    background 240ms cubic-bezier(0.2, 0.84, 0.24, 1);
+}
+
+.footer-shell.glass-card::before,
+.footer-shell.glass-card::after {
+  display: none;
 }
 
 .footer-shell.glass-card:hover {
-  transform: translate3d(0, var(--home-footer-shell-y, 0rem), 0);
   border-color: var(--footer-shell-border);
   box-shadow: var(--footer-shell-shadow);
 }
@@ -265,16 +374,23 @@ const footerShellStyle = computed<Record<string, string>>(() => {
 }
 
 .footer-column a {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 2rem;
+  padding-inline: 0.125rem;
+  border-radius: 0.5rem;
   font-size: var(--text-sm);
   color: var(--color-text-secondary);
   text-decoration: none;
   transition:
     color var(--transition-fast),
+    background var(--transition-fast),
     transform var(--transition-fast);
 }
 
 .footer-column a:hover {
   color: var(--color-text-primary);
+  background: var(--footer-link-hover-bg);
   transform: translateX(0.125rem);
 }
 
@@ -285,7 +401,7 @@ const footerShellStyle = computed<Record<string, string>>(() => {
   gap: var(--spacing-4);
   padding-top: var(--spacing-5);
   margin-top: var(--spacing-6);
-  border-top: 1px solid rgba(148, 163, 184, 0.12);
+  border-top: 1px solid var(--footer-divider);
   font-size: var(--text-sm);
   color: var(--color-text-tertiary);
 }
@@ -313,7 +429,7 @@ const footerShellStyle = computed<Record<string, string>>(() => {
 .social-link:hover {
   background: var(--color-primary);
   color: var(--color-on-primary);
-  transform: translateY(-0.125rem);
+  transform: translateY(-0.0625rem);
 }
 
 @media (max-width: 768px) {

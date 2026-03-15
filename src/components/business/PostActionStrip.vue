@@ -254,7 +254,7 @@ async function sharePost() {
   display: flex;
   align-items: center;
   gap: var(--spacing-2);
-  min-height: var(--ui-control-min-size, 44px);
+  min-height: var(--ui-control-min-size, 2.75rem);
   padding: var(--spacing-2) var(--spacing-4);
   border-radius: var(--radius-lg);
   font-size: var(--text-sm);

@@ -634,6 +634,6 @@ defineExpose({
 .dropdown-enter-from,
 .dropdown-leave-to {
   opacity: 0;
-  transform: translateY(-8px);
+  transform: translateY(-0.5rem);
 }
 </style>

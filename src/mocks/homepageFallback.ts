@@ -1,11 +1,11 @@
 import type { PostListItem } from '@/api'
 
-const FALLBACK_PREFIX = '__home_fallback__'
+export const HOME_FALLBACK_PREFIX = '__home_fallback__'
 
 const FALLBACK_DATE_BASE = '2026-03-12T'
 
-function fallbackId(key: string): string {
-  return `${FALLBACK_PREFIX}${key}`
+export function createHomeFallbackId(key: string): string {
+  return `${HOME_FALLBACK_PREFIX}${key}`
 }
 
 function fallbackDate(time: string): string {
@@ -13,12 +13,12 @@ function fallbackDate(time: string): string {
 }
 
 export function isHomeFallbackPost(post: Pick<PostListItem, 'id'> | null | undefined): boolean {
-  return Boolean(post?.id?.startsWith(FALLBACK_PREFIX))
+  return Boolean(post?.id?.startsWith(HOME_FALLBACK_PREFIX))
 }
 
 export const HOME_FALLBACK_POSTS: PostListItem[] = [
   {
-    id: fallbackId('media-youtube-01'),
+    id: createHomeFallbackId('media-youtube-01'),
     platform: 'youtube',
     title: '晨间书桌与暖光，把一天的节奏慢慢拧开',
     content: '把布景、灯光和一句话留白组合成轻柔的首屏氛围。',
@@ -35,7 +35,7 @@ export const HOME_FALLBACK_POSTS: PostListItem[] = [
     tags: ['editorial', 'morning', 'visual'],
   },
   {
-    id: fallbackId('media-instagram-02'),
+    id: createHomeFallbackId('media-instagram-02'),
     platform: 'instagram',
     title: '玻璃卡与柔雾渐层，适合放进今日推荐的封面',
     content: '把高饱和内容压进柔和的空间里，让卡片层次更清晰。',
@@ -52,7 +52,7 @@ export const HOME_FALLBACK_POSTS: PostListItem[] = [
     tags: ['spotlight', 'layout', 'glass'],
   },
   {
-    id: fallbackId('media-bilibili-03'),
+    id: createHomeFallbackId('media-bilibili-03'),
     platform: 'bilibili',
     title: '把桌宠、边栏与内容卡叠成更有呼吸感的浏览节奏',
     content: '让桌宠成为首页角落的情绪锚点，而不是孤立的小装饰。',
@@ -69,7 +69,7 @@ export const HOME_FALLBACK_POSTS: PostListItem[] = [
     tags: ['mascot', 'motion', 'brand'],
   },
   {
-    id: fallbackId('media-twitter-04'),
+    id: createHomeFallbackId('media-twitter-04'),
     platform: 'twitter',
     title: '用留白和错位排版，让内容区过渡更像一场展览',
     content: '减少大而空的容器，让图文和纯文本各自回到最合适的舞台。',
@@ -86,7 +86,7 @@ export const HOME_FALLBACK_POSTS: PostListItem[] = [
     tags: ['spacing', 'editorial', 'ux'],
   },
   {
-    id: fallbackId('text-note-01'),
+    id: createHomeFallbackId('text-note-01'),
     platform: 'twitter',
     title: '首页不该在接口失败时坍成空白，这比动效问题更伤体验。',
     content:
@@ -105,7 +105,7 @@ export const HOME_FALLBACK_POSTS: PostListItem[] = [
     tags: ['fallback', 'ux', 'homepage'],
   },
   {
-    id: fallbackId('text-note-02'),
+    id: createHomeFallbackId('text-note-02'),
     platform: 'twitter',
     title: '第二屏更像翻阅一本编辑册，而不是传统轮播图。',
     content:
@@ -124,7 +124,7 @@ export const HOME_FALLBACK_POSTS: PostListItem[] = [
     tags: ['rail', 'ui', 'motion'],
   },
   {
-    id: fallbackId('text-note-03'),
+    id: createHomeFallbackId('text-note-03'),
     platform: 'twitter',
     title: '第三屏的纯文本推文，应该像一束从中心盛开的气泡花。',
     content:
@@ -143,7 +143,7 @@ export const HOME_FALLBACK_POSTS: PostListItem[] = [
     tags: ['bubble', 'copy', 'motion'],
   },
   {
-    id: fallbackId('text-note-04'),
+    id: createHomeFallbackId('text-note-04'),
     platform: 'twitter',
     title: '第四屏的最后一张，不该突然让位给一片空白。',
     content:
@@ -162,7 +162,7 @@ export const HOME_FALLBACK_POSTS: PostListItem[] = [
     tags: ['footer', 'story', 'transition'],
   },
   {
-    id: fallbackId('media-tiktok-05'),
+    id: createHomeFallbackId('media-tiktok-05'),
     platform: 'tiktok',
     title: '柔和动作与轻量景深，适合做最后一屏的收束画面',
     content: '让最后一张卡片依然有存在感，再把视线慢慢送进页脚。',
@@ -179,7 +179,7 @@ export const HOME_FALLBACK_POSTS: PostListItem[] = [
     tags: ['deck', '3d', 'finish'],
   },
   {
-    id: fallbackId('text-note-05'),
+    id: createHomeFallbackId('text-note-05'),
     platform: 'twitter',
     title: '当实时接口恢复后，首页应无感接管，不产生明显布局跳动。',
     content:

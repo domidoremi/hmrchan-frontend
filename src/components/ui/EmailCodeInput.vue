@@ -235,11 +235,11 @@ defineExpose({ reset, focus })
   }
   20%,
   60% {
-    transform: translateX(-6px);
+    transform: translateX(-0.375rem);
   }
   40%,
   80% {
-    transform: translateX(6px);
+    transform: translateX(0.375rem);
   }
 }
 

@@ -424,7 +424,7 @@ watch(
   border-radius: var(--radius-full);
   cursor: pointer;
   opacity: 0;
-  backdrop-filter: blur(4px);
+  backdrop-filter: blur(0.25rem);
   transition:
     opacity var(--duration-fast) var(--ease-smooth),
     background var(--duration-fast) var(--ease-smooth),

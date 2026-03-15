@@ -602,17 +602,16 @@ function handleClick() {
   background: var(--glass-bg);
   overflow: hidden;
   cursor: pointer;
-  will-change: transform;
   transition:
-    transform var(--transition-base),
-    box-shadow var(--transition-base);
+    transform 220ms var(--ease-out),
+    box-shadow 220ms var(--ease-out);
 }
 
 .post-card:hover {
-  transform: translateY(-0.25rem);
+  transform: translateY(-0.125rem);
   box-shadow:
-    0 1rem 2rem -1rem rgba(31, 41, 55, 0.22),
-    0 0.375rem 0.875rem -0.625rem rgba(31, 41, 55, 0.18);
+    0 1.1rem 2rem -1.4rem rgba(15, 23, 42, 0.26),
+    0 0.375rem 0.75rem -0.625rem rgba(15, 23, 42, 0.14);
 }
 
 .post-card:focus-visible {
@@ -640,8 +639,8 @@ function handleClick() {
   padding: 0.3125rem 0.625rem;
   border-radius: var(--radius-full);
   background: rgba(15, 23, 42, 0.68);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(0.75rem);
+  -webkit-backdrop-filter: blur(0.75rem);
   color: #fff;
   font-size: 0.6875rem;
   font-weight: var(--font-semibold);
@@ -653,7 +652,7 @@ function handleClick() {
 }
 
 .post-card:hover .platform-badge {
-  transform: translateY(-0.0625rem);
+  transform: translateY(-0.03125rem);
 }
 
 .platform-label {
@@ -699,8 +698,8 @@ function handleClick() {
   font-variant-numeric: tabular-nums;
   color: #fff;
   background: rgba(15, 23, 42, 0.72);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(0.375rem);
+  -webkit-backdrop-filter: blur(0.375rem);
 }
 
 /* ========== Time Badge ========== */
@@ -719,8 +718,8 @@ function handleClick() {
   font-variant-numeric: tabular-nums;
   color: rgba(255, 255, 255, 0.92);
   background: rgba(15, 23, 42, 0.5);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(0.375rem);
+  -webkit-backdrop-filter: blur(0.375rem);
 }
 
 /* ========== Image ========== */
@@ -749,7 +748,7 @@ function handleClick() {
 }
 
 .post-card:hover .post-image.is-loaded {
-  transform: scale(1.05);
+  transform: scale(1.02);
 }
 
 .post-card--contain:hover .post-image.is-loaded {
@@ -850,13 +849,13 @@ function handleClick() {
 .post-content {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-2);
-  padding: var(--spacing-3);
+  gap: clamp(0.45rem, 0.8vw, 0.65rem);
+  padding: clamp(0.8rem, 1vw, 1rem);
   border-top: 1px solid rgba(148, 163, 184, 0.08);
 }
 
 .post-title {
-  font-size: var(--text-base);
+  font-size: clamp(1rem, 1.1vw, 1.08rem);
   font-weight: var(--font-semibold);
   color: var(--color-text-primary);
   margin: 0;
@@ -865,8 +864,9 @@ function handleClick() {
   line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  line-height: 1.45;
+  line-height: 1.35;
   transition: color var(--transition-fast);
+  text-wrap: balance;
 }
 
 .post-excerpt {
@@ -878,7 +878,7 @@ function handleClick() {
   line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  line-height: 1.55;
+  line-height: 1.6;
 }
 
 .post-tags {
@@ -906,7 +906,7 @@ function handleClick() {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--spacing-2);
+  gap: 0.75rem;
   margin-top: 0.125rem;
 }
 
@@ -949,6 +949,7 @@ function handleClick() {
   gap: var(--spacing-2);
   font-size: var(--text-xs);
   color: var(--color-text-tertiary);
+  margin-inline-start: auto;
   flex-shrink: 0;
 }
 

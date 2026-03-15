@@ -521,7 +521,7 @@ watch(
 
 .posts-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 15.625rem), 1fr));
   gap: var(--spacing-4);
 }
 

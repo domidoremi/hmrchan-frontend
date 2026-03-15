@@ -1133,8 +1133,8 @@ onUnmounted(() => {
   .login-btn {
     padding: var(--spacing-2);
     border-radius: var(--ui-radius-button, var(--radius-lg));
-    min-width: var(--ui-action-size, 40px);
-    min-height: var(--ui-action-size, 40px);
+    min-width: var(--ui-action-size, 2.5rem);
+    min-height: var(--ui-action-size, 2.5rem);
     display: inline-flex;
     align-items: center;
     justify-content: center;

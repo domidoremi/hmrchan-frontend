@@ -1898,8 +1898,8 @@ onBeforeUnmount(() => {
   gap: var(--spacing-1);
   padding: var(--spacing-3) var(--spacing-5);
   background: var(--vp-ctrl-bg);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(1rem);
+  -webkit-backdrop-filter: blur(1rem);
   border-radius: var(--ui-radius-dialog, var(--radius-2xl));
   color: #fff;
   pointer-events: none;
@@ -1924,8 +1924,8 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: center;
   background: var(--vp-ctrl-bg);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(0.75rem);
+  -webkit-backdrop-filter: blur(0.75rem);
   border: 1.5px solid var(--vp-ctrl-border);
   border-radius: 50%;
   color: #fff;
@@ -1954,7 +1954,7 @@ onBeforeUnmount(() => {
   transform: translate(-50%, -50%);
   z-index: 3;
   color: #fff;
-  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.4));
+  filter: drop-shadow(0 0.125rem 0.5rem rgba(0, 0, 0, 0.4));
 }
 
 /* --- Keyboard hint --- */
@@ -1965,12 +1965,12 @@ onBeforeUnmount(() => {
   padding: 0.375rem 0.75rem;
   border-radius: var(--radius-full);
   background: var(--vp-ctrl-bg);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(0.625rem);
+  -webkit-backdrop-filter: blur(0.625rem);
   color: rgba(255, 255, 255, 0.8);
   font-size: var(--text-xs);
   opacity: 0;
-  transform: translateY(4px);
+  transform: translateY(0.25rem);
   transition:
     opacity 0.2s ease,
     transform 0.2s ease;
@@ -2029,8 +2029,8 @@ onBeforeUnmount(() => {
   overscroll-behavior: contain;
   padding: var(--spacing-3);
   background: var(--vp-ctrl-bg);
-  backdrop-filter: blur(24px) saturate(1.2);
-  -webkit-backdrop-filter: blur(24px) saturate(1.2);
+  backdrop-filter: blur(1.5rem) saturate(1.2);
+  -webkit-backdrop-filter: blur(1.5rem) saturate(1.2);
   border: 1px solid var(--vp-ctrl-border);
   border-radius: var(--ui-radius-dialog, var(--radius-xl));
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
@@ -2308,12 +2308,12 @@ onBeforeUnmount(() => {
 
 .vp-panel-enter-from {
   opacity: 0;
-  transform: translateY(8px);
+  transform: translateY(0.5rem);
 }
 
 .vp-panel-leave-to {
   opacity: 0;
-  transform: translateY(4px);
+  transform: translateY(0.25rem);
 }
 
 /* ============================================================
@@ -2392,13 +2392,13 @@ onBeforeUnmount(() => {
     overflow-y: auto;
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
-    border-radius: var(--ui-radius-sheet, 18px) var(--ui-radius-sheet, 18px) 0 0;
+    border-radius: var(--ui-radius-sheet, 1.125rem) var(--ui-radius-sheet, 1.125rem) 0 0;
     padding: var(--spacing-4);
     padding-top: calc(var(--spacing-3) + 0.5rem);
     padding-bottom: calc(var(--spacing-4) + env(safe-area-inset-bottom));
     background: rgba(20, 20, 22, 0.97);
-    backdrop-filter: blur(24px) saturate(1.2);
-    -webkit-backdrop-filter: blur(24px) saturate(1.2);
+    backdrop-filter: blur(1.5rem) saturate(1.2);
+    -webkit-backdrop-filter: blur(1.5rem) saturate(1.2);
     border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.08));
     border-bottom: none;
     box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.35);
@@ -2629,8 +2629,8 @@ onBeforeUnmount(() => {
   max-height: calc(100% - 5.5rem);
   border-radius: var(--ui-radius-dialog, var(--radius-xl));
   background: var(--vp-ctrl-bg);
-  backdrop-filter: blur(24px) saturate(1.2);
-  -webkit-backdrop-filter: blur(24px) saturate(1.2);
+  backdrop-filter: blur(1.5rem) saturate(1.2);
+  -webkit-backdrop-filter: blur(1.5rem) saturate(1.2);
   border: 1px solid var(--vp-ctrl-border);
   color: var(--vp-ctrl-text);
   z-index: 10;

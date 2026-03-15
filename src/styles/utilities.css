@@ -54,7 +54,7 @@
 /* ========== Scroll / Render ========== */
 .scroll-sentinel {
   width: 100%;
-  min-height: 1px;
+  min-height: 0.0625rem;
   display: flex;
   align-items: center;
   justify-content: center;

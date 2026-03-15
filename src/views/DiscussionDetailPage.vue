@@ -6,7 +6,18 @@
         {{ $t('common.back') }}
       </Button>
 
-      <StateIndicator v-if="error" variant="error" :description="error" @action="fetchDiscussion" />
+      <div v-if="showPreviewNotice" class="fallback-preview glass-card">
+        <span class="fallback-preview__label">{{ $t('home.preview.label') }}</span>
+        <p>{{ $t('home.preview.desc') }}</p>
+        <span v-if="fallbackReason" class="fallback-preview__detail">{{ fallbackReason }}</span>
+      </div>
+
+      <StateIndicator
+        v-if="error && !isUsingFallback"
+        variant="error"
+        :description="error"
+        @action="fetchDiscussion"
+      />
 
       <div v-else>
         <div v-if="isLoading" class="discussion-skeleton glass-card">
@@ -167,6 +178,9 @@ const showDeleteDialog = ref(false)
 const isDeleting = ref(false)
 const isPinning = ref(false)
 let fetchDiscussionToken = 0
+const isUsingFallback = computed(() => discStore.source === 'fallback')
+const fallbackReason = computed(() => discStore.fallbackReason)
+const showPreviewNotice = computed(() => Boolean(fallbackReason.value) && isUsingFallback.value)
 
 const isAdmin = computed(() => {
   return Boolean(user.value?.is_admin || user.value?.roles?.includes('admin'))
@@ -288,6 +302,33 @@ watch(
 <style scoped>
 .discussion-detail-page {
   padding: var(--spacing-4) 0 var(--spacing-8);
+}
+
+.fallback-preview {
+  display: grid;
+  gap: var(--spacing-2);
+  padding: clamp(1rem, 1.8vw, 1.25rem);
+  margin-block-end: var(--spacing-4);
+}
+
+.fallback-preview__label {
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+}
+
+.fallback-preview p {
+  margin: 0;
+  max-width: 52ch;
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
+.fallback-preview__detail {
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
 }
 
 .back-btn {

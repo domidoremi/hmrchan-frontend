@@ -1,7 +1,18 @@
 <template>
   <div class="author-detail-page">
     <div class="container">
-      <StateIndicator v-if="error" variant="error" :description="error" @action="fetchAuthor" />
+      <div v-if="showPreviewNotice" class="fallback-preview glass-card">
+        <span class="fallback-preview__label">{{ $t('home.preview.label') }}</span>
+        <p>{{ $t('home.preview.desc') }}</p>
+        <span v-if="fallbackReason" class="fallback-preview__detail">{{ fallbackReason }}</span>
+      </div>
+
+      <StateIndicator
+        v-if="error && !isUsingFallback"
+        variant="error"
+        :description="error"
+        @action="fetchAuthor"
+      />
 
       <template v-else>
         <div class="author-header glass-card">
@@ -70,6 +81,12 @@ import { authorService, type AuthorResponse, type PostListItem, ApiError } from 
 import { normalizeAvatarUrl } from '@/api/userService'
 import { authorCache } from '@/utils/cache'
 import { storePostNavigationContext } from '@/utils/postNavigation'
+import { getFallbackAuthorById, getFallbackAuthorPosts } from '@/mocks/authorsFallback'
+import {
+  isServiceUnavailableError,
+  resolvePublicFallbackReason,
+  type PublicPageDataSource,
+} from '@/mocks/publicPageFallback'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import Skeleton from '@/components/ui/Skeleton.vue'
 import PostCard from '@/components/business/PostCard.vue'
@@ -85,6 +102,10 @@ const author = ref<AuthorResponse | null>(null)
 const posts = ref<PostListItem[]>([])
 const isLoading = ref(false)
 const error = ref<string | null>(null)
+const dataSource = ref<PublicPageDataSource>('live')
+const fallbackReason = ref<string | null>(null)
+const isUsingFallback = computed(() => dataSource.value === 'fallback')
+const showPreviewNotice = computed(() => Boolean(fallbackReason.value) && isUsingFallback.value)
 let latestRequestId = 0
 let authorController: AbortController | null = null
 
@@ -154,11 +175,26 @@ async function fetchAuthor(targetAuthorId = authorId.value, signal?: AbortSignal
 
     author.value = authorRes
     posts.value = postsRes.items
+    dataSource.value = 'live'
+    fallbackReason.value = null
 
     // 写入缓存
     await authorCache.setAuthor(targetAuthorId, authorRes)
   } catch (err) {
     if (requestSignal?.aborted || isAbortError(err) || requestId !== latestRequestId) return
+
+    if (isServiceUnavailableError(err)) {
+      const fallbackAuthor = getFallbackAuthorById(targetAuthorId)
+      if (fallbackAuthor) {
+        const fallbackPosts = getFallbackAuthorPosts(targetAuthorId, 1, 24)
+        author.value = fallbackAuthor
+        posts.value = fallbackPosts.items
+        dataSource.value = 'fallback'
+        fallbackReason.value = resolvePublicFallbackReason(err) ?? t('error.serviceUnavailable')
+        error.value = null
+        return
+      }
+    }
 
     if (err instanceof ApiError) {
       error.value = err.message
@@ -203,6 +239,33 @@ onBeforeUnmount(() => {
 <style scoped>
 .author-detail-page {
   padding: var(--spacing-4) 0;
+}
+
+.fallback-preview {
+  display: grid;
+  gap: var(--spacing-2);
+  padding: clamp(1rem, 1.8vw, 1.25rem);
+  margin-block-end: var(--spacing-4);
+}
+
+.fallback-preview__label {
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+}
+
+.fallback-preview p {
+  margin: 0;
+  max-width: 52ch;
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
+.fallback-preview__detail {
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
 }
 
 .author-header {
