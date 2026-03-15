@@ -6,9 +6,14 @@ const { mockApiClient } = vi.hoisted(() => ({
   },
 }))
 
-vi.mock('../client', () => ({
-  apiClient: mockApiClient,
-}))
+vi.mock('../client', async () => {
+  const actual = await vi.importActual<typeof import('../client')>('../client')
+
+  return {
+    ...actual,
+    apiClient: mockApiClient,
+  }
+})
 
 import { homeService } from '../homeService'
 
