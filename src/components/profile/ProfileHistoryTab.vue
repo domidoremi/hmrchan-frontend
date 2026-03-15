@@ -493,7 +493,7 @@ onUnmounted(() => {
   font-size: 0.625rem;
   font-weight: var(--font-medium);
   border-radius: var(--radius-sm);
-  backdrop-filter: blur(4px);
+  backdrop-filter: blur(0.25rem);
   font-variant-numeric: tabular-nums;
 }
 

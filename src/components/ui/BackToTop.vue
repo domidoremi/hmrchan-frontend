@@ -154,14 +154,14 @@ onUnmounted(() => {
   border-radius: inherit;
   background: radial-gradient(circle, rgba(var(--color-primary-rgb), 0.35) 0%, transparent 70%);
   opacity: 0.18;
-  filter: blur(12px);
+  filter: blur(0.75rem);
   z-index: -2;
   pointer-events: none;
   animation: back-to-top-glow 6s ease-in-out infinite;
 }
 
 .back-to-top:hover {
-  transform: translate3d(0, -4px, 0);
+  transform: translate3d(0, -0.25rem, 0);
   border-color: var(--color-primary);
   box-shadow:
     var(--glass-shadow-lg),
@@ -173,7 +173,7 @@ onUnmounted(() => {
 }
 
 .back-to-top:active {
-  transform: translate3d(0, -2px, 0) scale(0.95);
+  transform: translate3d(0, -0.125rem, 0) scale(0.95);
   transition-duration: 100ms;
 }
 
@@ -199,7 +199,7 @@ onUnmounted(() => {
   stroke: var(--color-primary);
   stroke-linecap: round;
   transition: stroke-dashoffset 80ms linear;
-  filter: drop-shadow(0 0 4px rgba(var(--color-primary-rgb), 0.4));
+  filter: drop-shadow(0 0 0.25rem rgba(var(--color-primary-rgb), 0.4));
 }
 
 .back-to-top__icon {
@@ -212,7 +212,7 @@ onUnmounted(() => {
 }
 
 .back-to-top:hover .back-to-top__icon {
-  transform: translateY(-2px);
+  transform: translateY(-0.125rem);
 }
 
 .back-to-top__pulse {
@@ -266,12 +266,12 @@ onUnmounted(() => {
 
 .back-to-top-enter-from {
   opacity: 0;
-  transform: translate3d(0, 24px, 0) scale(0.8);
+  transform: translate3d(0, 1.5rem, 0) scale(0.8);
 }
 
 .back-to-top-leave-to {
   opacity: 0;
-  transform: translate3d(0, 16px, 0) scale(0.85);
+  transform: translate3d(0, 1rem, 0) scale(0.85);
 }
 
 @media (prefers-reduced-motion: reduce) {

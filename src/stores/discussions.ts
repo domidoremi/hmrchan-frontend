@@ -14,6 +14,16 @@ import {
   type DiscussionCategory,
 } from '@/api/discussionService'
 import type { PaginatedApiResponse, RequestConfig } from '@/api/client'
+import {
+  getFallbackDiscussionById,
+  getFallbackDiscussionComments,
+  getFallbackDiscussions,
+} from '@/mocks/communityFallback'
+import {
+  isServiceUnavailableError,
+  resolvePublicFallbackReason,
+  type PublicPageDataSource,
+} from '@/mocks/publicPageFallback'
 
 export const useDiscussionsStore = defineStore('discussions', () => {
   const items = ref<Discussion[]>([])
@@ -23,6 +33,8 @@ export const useDiscussionsStore = defineStore('discussions', () => {
   const totalPages = ref(0)
   const isLoading = ref(false)
   const error = ref<string | null>(null)
+  const source = ref<PublicPageDataSource>('live')
+  const fallbackReason = ref<string | null>(null)
 
   // 当前筛选/排序
   const currentCategory = ref<DiscussionCategory | undefined>(undefined)
@@ -105,9 +117,31 @@ export const useDiscussionsStore = defineStore('discussions', () => {
 
       total.value = res.total
       totalPages.value = res.total_pages
+      source.value = 'live'
+      fallbackReason.value = null
       return true
-    } catch {
+    } catch (err) {
       if (controller.signal.aborted || requestToken !== fetchDiscussionsToken) return false
+
+      if (isServiceUnavailableError(err)) {
+        const fallbackRes = getFallbackDiscussions(params)
+
+        if (reset) {
+          items.value = fallbackRes.items
+        } else {
+          const existingIds = new Set(items.value.map((d) => d.id))
+          const newItems = fallbackRes.items.filter((d) => !existingIds.has(d.id))
+          items.value = [...items.value, ...newItems]
+        }
+
+        total.value = fallbackRes.total
+        totalPages.value = fallbackRes.total_pages
+        source.value = 'fallback'
+        fallbackReason.value = resolvePublicFallbackReason(err)
+        error.value = null
+        return true
+      }
+
       error.value = 'community.error.fetchFailed'
       return false
     } finally {
@@ -151,9 +185,23 @@ export const useDiscussionsStore = defineStore('discussions', () => {
       })
       if (signal?.aborted || requestToken !== fetchDiscussionToken) return null
       currentDiscussion.value = discussion
+      source.value = 'live'
+      fallbackReason.value = null
       return currentDiscussion.value
     } catch (err) {
       if (signal?.aborted || isAbortError(err) || requestToken !== fetchDiscussionToken) return null
+
+      if (isServiceUnavailableError(err)) {
+        const fallbackDiscussion = getFallbackDiscussionById(id)
+        if (fallbackDiscussion) {
+          currentDiscussion.value = fallbackDiscussion
+          source.value = 'fallback'
+          fallbackReason.value = resolvePublicFallbackReason(err)
+          error.value = null
+          return currentDiscussion.value
+        }
+      }
+
       error.value = 'community.error.fetchFailed'
       return null
     } finally {
@@ -207,10 +255,33 @@ export const useDiscussionsStore = defineStore('discussions', () => {
 
       commentsTotal.value = res.total
       commentsTotalPages.value = res.total_pages
+      source.value = 'live'
+      fallbackReason.value = null
       return true
-    } catch {
+    } catch (err) {
       if (controller.signal.aborted || requestToken !== fetchCommentsToken) return false
-      // silent
+
+      if (isServiceUnavailableError(err)) {
+        const fallbackRes = getFallbackDiscussionComments(discussionId, {
+          page: commentsPage.value,
+          page_size: 20,
+        })
+
+        if (reset) {
+          currentComments.value = fallbackRes.items
+        } else {
+          const existingIds = new Set(currentComments.value.map((c) => c.id))
+          const newItems = fallbackRes.items.filter((c) => !existingIds.has(c.id))
+          currentComments.value = [...currentComments.value, ...newItems]
+        }
+
+        commentsTotal.value = fallbackRes.total
+        commentsTotalPages.value = fallbackRes.total_pages
+        source.value = 'fallback'
+        fallbackReason.value = resolvePublicFallbackReason(err)
+        return true
+      }
+
       return false
     } finally {
       if (requestToken === fetchCommentsToken) {
@@ -334,6 +405,8 @@ export const useDiscussionsStore = defineStore('discussions', () => {
     totalPages.value = 0
     isLoading.value = false
     error.value = null
+    source.value = 'live'
+    fallbackReason.value = null
     currentCategory.value = undefined
     currentSort.value = 'latest'
     currentDiscussion.value = null
@@ -351,6 +424,8 @@ export const useDiscussionsStore = defineStore('discussions', () => {
     totalPages,
     isLoading,
     error,
+    source,
+    fallbackReason,
     hasMore,
     currentCategory,
     currentSort,

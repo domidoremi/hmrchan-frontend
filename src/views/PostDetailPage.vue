@@ -29,7 +29,18 @@
     </button>
 
     <section ref="stageRef" class="post-stage">
-      <StateIndicator v-if="error" variant="error" :description="error" @action="fetchPost" />
+      <div v-if="showPreviewNotice" class="fallback-preview glass-card">
+        <span class="fallback-preview__label">{{ $t('home.preview.label') }}</span>
+        <p>{{ $t('home.preview.desc') }}</p>
+        <span v-if="fallbackReason" class="fallback-preview__detail">{{ fallbackReason }}</span>
+      </div>
+
+      <StateIndicator
+        v-if="error && !isUsingFallback"
+        variant="error"
+        :description="error"
+        @action="fetchPost"
+      />
 
       <div v-else-if="isLoading" class="post-shell post-shell--skeleton">
         <div class="post-media">
@@ -304,6 +315,12 @@ import {
   type PostNavigationContext,
 } from '@/utils/postNavigation'
 import { prefetchPostDetail } from '@/utils/prefetch'
+import { getFallbackPostDetailById } from '@/mocks/postFallback'
+import {
+  isServiceUnavailableError,
+  resolvePublicFallbackReason,
+  type PublicPageDataSource,
+} from '@/mocks/publicPageFallback'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import Skeleton from '@/components/ui/Skeleton.vue'
 import VideoPlayer from '@/components/ui/VideoPlayer.vue'
@@ -349,6 +366,10 @@ const isLoading = ref(false)
 const error = ref<string | null>(null)
 const detailFetched = ref(false)
 let fetchPostToken = 0
+const dataSource = ref<PublicPageDataSource>('live')
+const fallbackReason = ref<string | null>(null)
+const isUsingFallback = computed(() => dataSource.value === 'fallback')
+const showPreviewNotice = computed(() => Boolean(fallbackReason.value) && isUsingFallback.value)
 
 const { data: cachedPost, load: loadCachedPost } = useCachedPost<PostDetailResponse>(
   postService.getPost,
@@ -855,9 +876,21 @@ async function fetchPost(signal?: AbortSignal) {
         .then(() => {
           if (signal?.aborted || requestToken !== fetchPostToken) return
           detailFetched.value = true
+          dataSource.value = 'live'
+          fallbackReason.value = null
         })
         .catch((err) => {
           if (signal?.aborted || isAbortError(err) || requestToken !== fetchPostToken) return
+          if (isServiceUnavailableError(err)) {
+            const fallbackPost = getFallbackPostDetailById(currentPostId)
+            if (fallbackPost) {
+              post.value = fallbackPost
+              dataSource.value = 'fallback'
+              fallbackReason.value =
+                resolvePublicFallbackReason(err) ?? t('error.serviceUnavailable')
+              updateTitle(fallbackPost.title)
+            }
+          }
           detailFetched.value = true
         })
       return
@@ -876,10 +909,28 @@ async function fetchPost(signal?: AbortSignal) {
 
     // 更新页面标题
     updateTitle(post.value.title)
+    dataSource.value = 'live'
+    fallbackReason.value = null
 
     void Promise.allSettled([trackPostView(currentPostId, isAuthenticated.value)])
   } catch (err) {
     if (signal?.aborted || isAbortError(err) || requestToken !== fetchPostToken) return
+    if (isServiceUnavailableError(err)) {
+      const fallbackPost = getFallbackPostDetailById(currentPostId)
+      if (fallbackPost) {
+        post.value = fallbackPost
+        detailFetched.value = true
+        activeMediaIndex.value = 0
+        isMediaLoaded.value = true
+        dataSource.value = 'fallback'
+        fallbackReason.value = resolvePublicFallbackReason(err) ?? t('error.serviceUnavailable')
+        error.value = null
+        syncNavigationContext()
+        prefetchAdjacentPosts()
+        updateTitle(fallbackPost.title)
+        return
+      }
+    }
     if (err instanceof ApiError) {
       error.value = err.message
     } else {
@@ -1052,6 +1103,33 @@ onUnmounted(() => {
   color: var(--post-text-primary);
 }
 
+.fallback-preview {
+  display: grid;
+  gap: var(--spacing-2);
+  padding: clamp(1rem, 1.8vw, 1.25rem);
+  margin-block-end: var(--spacing-4);
+}
+
+.fallback-preview__label {
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--post-text-tertiary);
+}
+
+.fallback-preview p {
+  margin: 0;
+  max-width: 52ch;
+  font-size: var(--text-sm);
+  color: var(--post-text-secondary);
+}
+
+.fallback-preview__detail {
+  font-size: var(--text-xs);
+  color: var(--post-text-tertiary);
+}
+
 [data-theme='dark'] .post-detail-page {
   --post-bg-base: #050507;
   --post-bg-spot-1: rgba(var(--color-primary-rgb, 139, 92, 246), 0.16);
@@ -1158,7 +1236,7 @@ onUnmounted(() => {
 }
 
 .post-topbar__back:hover {
-  transform: translateY(-1px);
+  transform: translateY(-0.0625rem);
   background: var(--post-overlay);
 }
 
@@ -1225,14 +1303,14 @@ onUnmounted(() => {
   border-radius: inherit;
   background: radial-gradient(circle, rgba(var(--color-primary-rgb), 0.35) 0%, transparent 70%);
   opacity: 0.2;
-  filter: blur(12px);
+  filter: blur(0.75rem);
   z-index: -2;
   pointer-events: none;
   animation: post-back-glow 6s ease-in-out infinite;
 }
 
 .post-back-fab:hover {
-  transform: translate3d(0, -4px, 0);
+  transform: translate3d(0, -0.25rem, 0);
   border-color: var(--color-primary);
   box-shadow:
     var(--glass-shadow-lg),
@@ -1244,7 +1322,7 @@ onUnmounted(() => {
 }
 
 .post-back-fab:active {
-  transform: translate3d(0, -2px, 0) scale(0.95);
+  transform: translate3d(0, -0.125rem, 0) scale(0.95);
   transition-duration: 100ms;
 }
 
@@ -1270,7 +1348,7 @@ onUnmounted(() => {
   stroke: var(--color-primary);
   stroke-linecap: round;
   transition: stroke-dashoffset 80ms linear;
-  filter: drop-shadow(0 0 4px rgba(var(--color-primary-rgb), 0.4));
+  filter: drop-shadow(0 0 0.25rem rgba(var(--color-primary-rgb), 0.4));
 }
 
 .post-back-fab__icon {
@@ -1283,7 +1361,7 @@ onUnmounted(() => {
 }
 
 .post-back-fab:hover .post-back-fab__icon {
-  transform: translateY(-2px);
+  transform: translateY(-0.125rem);
 }
 
 .post-back-fab__pulse {
@@ -1353,11 +1431,11 @@ onUnmounted(() => {
 }
 
 .post-shell.is-peeking-left {
-  transform: translateX(-16px);
+  transform: translateX(-1rem);
 }
 
 .post-shell.is-peeking-right {
-  transform: translateX(16px);
+  transform: translateX(1rem);
 }
 
 @media (min-width: 768px) {
@@ -1459,7 +1537,7 @@ onUnmounted(() => {
   background-image: var(--media-bg);
   background-position: center;
   background-size: cover;
-  filter: blur(48px) saturate(1.3);
+  filter: blur(3rem) saturate(1.3);
   transform: scale(1.4);
   opacity: 0.45;
   transition: opacity 0.6s ease;
@@ -1510,7 +1588,7 @@ onUnmounted(() => {
   gap: var(--spacing-2);
   padding: var(--spacing-2) var(--spacing-4);
   background: var(--post-overlay);
-  backdrop-filter: blur(8px);
+  backdrop-filter: blur(0.5rem);
   border-radius: var(--radius-full);
   color: var(--post-overlay-text);
   font-size: var(--text-sm);
@@ -1537,7 +1615,7 @@ onUnmounted(() => {
   width: 100%;
   height: 100%;
   object-fit: contain;
-  filter: blur(15px);
+  filter: blur(0.9375rem);
   transform: scale(1.05);
   opacity: 0.8;
 }
@@ -1575,8 +1653,8 @@ onUnmounted(() => {
   justify-content: center;
   border-radius: var(--radius-full);
   background: var(--post-overlay-soft);
-  backdrop-filter: blur(12px) saturate(1.2);
-  -webkit-backdrop-filter: blur(12px) saturate(1.2);
+  backdrop-filter: blur(0.75rem) saturate(1.2);
+  -webkit-backdrop-filter: blur(0.75rem) saturate(1.2);
   border: 1px solid rgba(255, 255, 255, 0.15);
   color: var(--post-overlay-text);
   cursor: pointer;
@@ -1656,7 +1734,7 @@ onUnmounted(() => {
   padding: var(--spacing-4);
   background: var(--post-panel-bg);
   border-left: 1px solid var(--post-panel-border);
-  backdrop-filter: blur(14px);
+  backdrop-filter: blur(0.875rem);
   overflow: visible;
   display: flex;
   flex-direction: column;
@@ -1828,8 +1906,8 @@ onUnmounted(() => {
   justify-content: center;
   padding: var(--spacing-4);
   background: var(--post-overlay);
-  backdrop-filter: blur(14px) saturate(1.1);
-  -webkit-backdrop-filter: blur(14px) saturate(1.1);
+  backdrop-filter: blur(0.875rem) saturate(1.1);
+  -webkit-backdrop-filter: blur(0.875rem) saturate(1.1);
 }
 
 .post-text-panel {
@@ -1927,7 +2005,7 @@ onUnmounted(() => {
 
 .thumbnail-btn:hover:not(.active) {
   border-color: rgba(var(--color-primary-rgb), 0.4);
-  transform: translateY(-1px);
+  transform: translateY(-0.0625rem);
 }
 
 .thumbnail-img {
@@ -1958,7 +2036,7 @@ onUnmounted(() => {
   border: 1px solid var(--post-panel-border);
   color: var(--post-overlay-text);
   font-size: var(--text-sm);
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(0.625rem);
   pointer-events: none;
 }
 
@@ -1973,7 +2051,7 @@ onUnmounted(() => {
 @keyframes hint-left {
   0% {
     opacity: 0;
-    transform: translateX(calc(-50% + 18px));
+    transform: translateX(calc(-50% + 1.125rem));
   }
   15% {
     opacity: 1;
@@ -1988,7 +2066,7 @@ onUnmounted(() => {
 @keyframes hint-right {
   0% {
     opacity: 0;
-    transform: translateX(calc(-50% - 18px));
+    transform: translateX(calc(-50% - 1.125rem));
   }
   15% {
     opacity: 1;
@@ -2020,21 +2098,21 @@ onUnmounted(() => {
 
 .media-slide-left-enter-from {
   opacity: 0;
-  transform: translateX(30px);
+  transform: translateX(1.875rem);
 }
 
 .media-slide-left-leave-to {
   opacity: 0;
-  transform: translateX(-30px);
+  transform: translateX(-1.875rem);
 }
 
 .media-slide-right-enter-from {
   opacity: 0;
-  transform: translateX(-30px);
+  transform: translateX(-1.875rem);
 }
 
 .media-slide-right-leave-to {
   opacity: 0;
-  transform: translateX(30px);
+  transform: translateX(1.875rem);
 }
 </style>

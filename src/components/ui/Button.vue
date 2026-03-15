@@ -378,7 +378,7 @@ function handleMouseLeave() {
   background: transparent;
   color: var(--color-primary);
   text-decoration: underline;
-  text-underline-offset: 4px;
+  text-underline-offset: 0.25rem;
   box-shadow: none;
 }
 
@@ -410,6 +410,47 @@ function handleMouseLeave() {
   box-shadow:
     var(--shadow-md),
     0 0 20px rgba(var(--color-success-rgb), 0.3);
+}
+
+:global(#app[data-theme='dark'] .btn),
+:global([data-theme='dark'] .btn) {
+  box-shadow: inset 0 0.0625rem 0 rgba(255, 255, 255, 0.08);
+}
+
+:global(#app[data-theme='dark'] .btn-secondary),
+:global([data-theme='dark'] .btn-secondary) {
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02)),
+    rgba(12, 16, 23, 0.88);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: var(--color-text-primary);
+}
+
+:global(#app[data-theme='dark'] .btn-secondary:hover:not(:disabled)),
+:global([data-theme='dark'] .btn-secondary:hover:not(:disabled)) {
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.04)),
+    rgba(18, 24, 36, 0.94);
+  border-color: rgba(var(--color-primary-rgb), 0.28);
+  box-shadow: 0 0 0 1px rgba(var(--color-primary-rgb), 0.14);
+}
+
+:global(#app[data-theme='dark'] .btn-outline),
+:global([data-theme='dark'] .btn-outline) {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: var(--color-text-primary);
+}
+
+:global(#app[data-theme='dark'] .btn-outline:hover:not(:disabled)),
+:global([data-theme='dark'] .btn-outline:hover:not(:disabled)) {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(var(--color-primary-rgb), 0.28);
+}
+
+:global(#app[data-theme='dark'] .btn-ghost:hover:not(:disabled)),
+:global([data-theme='dark'] .btn-ghost:hover:not(:disabled)) {
+  background: rgba(255, 255, 255, 0.05);
 }
 
 /* States */

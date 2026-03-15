@@ -163,7 +163,7 @@ function retry() {
   width: 100%;
   height: 100%;
   object-fit: var(--object-fit, cover);
-  filter: blur(10px);
+  filter: blur(0.625rem);
   transform: scale(1.05);
   opacity: 1;
   transition: opacity 0.3s ease;
@@ -193,7 +193,7 @@ function retry() {
   align-items: center;
   justify-content: center;
   background: rgba(15, 23, 42, 0.2);
-  backdrop-filter: blur(6px);
+  backdrop-filter: blur(0.375rem);
 }
 
 .progressive-image__error {
@@ -207,7 +207,7 @@ function retry() {
   font-size: var(--text-sm);
   color: var(--color-text-secondary);
   background: rgba(var(--color-surface-rgb), 0.6);
-  backdrop-filter: blur(6px);
+  backdrop-filter: blur(0.375rem);
   border-radius: inherit;
 }
 

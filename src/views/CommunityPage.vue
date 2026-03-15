@@ -64,6 +64,12 @@
         </div>
       </header>
 
+      <div v-if="showPreviewNotice" class="fallback-preview glass-card">
+        <span class="fallback-preview__label">{{ $t('home.preview.label') }}</span>
+        <p>{{ $t('home.preview.desc') }}</p>
+        <span v-if="fallbackReason" class="fallback-preview__detail">{{ fallbackReason }}</span>
+      </div>
+
       <!-- Community Guide Dialog -->
       <Dialog v-model:isOpen="showGuide" :title="$t('community.guideTitle')" size="sm">
         <div class="guide-dialog-body">
@@ -84,7 +90,7 @@
           <div class="spinner" />
         </div>
         <StateIndicator
-          v-else-if="searchError"
+          v-else-if="searchError && !isUsingSearchFallback"
           variant="error"
           :description="searchError"
           @action="() => searchDiscussions(searchQuery.trim())"
@@ -154,7 +160,7 @@
             <div class="spinner" />
           </div>
           <StateIndicator
-            v-else-if="error"
+            v-else-if="error && !isUsingRecentFallback"
             variant="error"
             :description="error"
             @action="fetchDiscussions"
@@ -281,7 +287,7 @@
             </article>
           </div>
           <StateIndicator
-            v-else-if="hotTopicsError"
+            v-else-if="hotTopicsError && !isUsingHotFallback"
             variant="error"
             :description="hotTopicsError"
             @action="fetchHotTopics"
@@ -336,6 +342,12 @@ import { normalizeAvatarUrl } from '@/api/userService'
 import { formatRelativeTime } from '@/utils/date'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import { useForwardedElementRef } from '@/composables/useForwardedElementRef'
+import { getFallbackHotTopics, searchFallbackDiscussions } from '@/mocks/communityFallback'
+import {
+  isServiceUnavailableError,
+  resolvePublicFallbackReason,
+  type PublicPageDataSource,
+} from '@/mocks/publicPageFallback'
 import Button from '@/components/ui/Button.vue'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
@@ -359,12 +371,15 @@ const error = computed(() => (discStore.error ? t(discStore.error) : null))
 const total = computed(() => discStore.total)
 const hasMore = computed(() => discStore.hasMore)
 const isLoadingMore = computed(() => discStore.isLoading && discStore.items.length > 0)
+const isUsingRecentFallback = computed(() => discStore.source === 'fallback')
 
 // Discussion search (local state - not in store)
 const searchQuery = ref('')
 const searchResults = ref<Discussion[]>([])
 const isSearching = ref(false)
 const searchError = ref<string | null>(null)
+const searchSource = ref<PublicPageDataSource>('live')
+const searchFallbackReason = ref<string | null>(null)
 let searchDebounceTimer: ReturnType<typeof setTimeout> | null = null
 let searchRequestToken = 0
 
@@ -372,6 +387,8 @@ let searchRequestToken = 0
 const isLoadingHot = ref(false)
 const hotTopicsError = ref<string | null>(null)
 const hotTopics = ref<Discussion[]>([])
+const hotTopicsSource = ref<PublicPageDataSource>('live')
+const hotTopicsFallbackReason = ref<string | null>(null)
 let hotTopicsController: AbortController | null = null
 let hotTopicsRequestToken = 0
 
@@ -386,6 +403,17 @@ const tabs = computed(() => [
   { id: 'recent' as const, label: t('community.recentDiscussions'), icon: MessageSquare },
   { id: 'hot' as const, label: t('community.hotTopics'), icon: Flame },
 ])
+const isUsingSearchFallback = computed(() => searchSource.value === 'fallback')
+const isUsingHotFallback = computed(() => hotTopicsSource.value === 'fallback')
+const fallbackReason = computed(
+  () =>
+    searchFallbackReason.value || hotTopicsFallbackReason.value || discStore.fallbackReason || null
+)
+const showPreviewNotice = computed(
+  () =>
+    Boolean(fallbackReason.value) &&
+    (isUsingRecentFallback.value || isUsingSearchFallback.value || isUsingHotFallback.value)
+)
 
 function switchTab(tabId: string) {
   activeTab.value = tabId
@@ -462,12 +490,22 @@ async function fetchHotTopics() {
     )
     if (controller.signal.aborted || requestToken !== hotTopicsRequestToken) return
     hotTopics.value = res.items.slice(0, 6)
+    hotTopicsSource.value = 'live'
+    hotTopicsFallbackReason.value = null
   } catch (err) {
     if (
       controller.signal.aborted ||
       (err instanceof DOMException && err.name === 'AbortError') ||
       requestToken !== hotTopicsRequestToken
     ) {
+      return
+    }
+    if (isServiceUnavailableError(err)) {
+      hotTopics.value = getFallbackHotTopics(6)
+      hotTopicsSource.value = 'fallback'
+      hotTopicsFallbackReason.value =
+        resolvePublicFallbackReason(err) ?? t('error.serviceUnavailable')
+      hotTopicsError.value = null
       return
     }
     if (err instanceof ApiError) {
@@ -490,6 +528,8 @@ function clearSearch() {
   searchResults.value = []
   isSearching.value = false
   searchError.value = null
+  searchSource.value = 'live'
+  searchFallbackReason.value = null
   if (searchDebounceTimer) clearTimeout(searchDebounceTimer)
 }
 
@@ -505,12 +545,22 @@ async function searchDiscussions(q: string, signal?: AbortSignal, requestToken?:
     )
     if (signal?.aborted || token !== searchRequestToken) return
     searchResults.value = res.items
+    searchSource.value = 'live'
+    searchFallbackReason.value = null
   } catch (err: unknown) {
     if (
       signal?.aborted ||
       (err instanceof DOMException && err.name === 'AbortError') ||
       token !== searchRequestToken
     ) {
+      return
+    }
+    if (isServiceUnavailableError(err)) {
+      const fallbackRes = searchFallbackDiscussions(q, { page: 1, page_size: 20 })
+      searchResults.value = fallbackRes.items
+      searchSource.value = 'fallback'
+      searchFallbackReason.value = resolvePublicFallbackReason(err) ?? t('error.serviceUnavailable')
+      searchError.value = null
       return
     }
     searchError.value = err instanceof ApiError ? err.message : t('common.error')
@@ -534,6 +584,8 @@ watch(
       searchResults.value = []
       isSearching.value = false
       searchError.value = null
+      searchSource.value = 'live'
+      searchFallbackReason.value = null
       return
     }
 
@@ -600,7 +652,7 @@ onUnmounted(() => {
 .community-bg__blob {
   position: absolute;
   border-radius: 50%;
-  filter: blur(100px);
+  filter: blur(6.25rem);
   opacity: 0.3;
 }
 
@@ -627,6 +679,33 @@ onUnmounted(() => {
 
 .page-header {
   margin-bottom: var(--spacing-4);
+}
+
+.fallback-preview {
+  display: grid;
+  gap: var(--spacing-2);
+  padding: clamp(1rem, 1.8vw, 1.25rem);
+  margin-block-end: var(--spacing-4);
+}
+
+.fallback-preview__label {
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+}
+
+.fallback-preview p {
+  margin: 0;
+  max-width: 52ch;
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
+.fallback-preview__detail {
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
 }
 
 .page-header-row {

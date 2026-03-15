@@ -199,7 +199,7 @@ onUnmounted(() => {
   justify-content: center;
   padding: var(--spacing-4);
   background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(4px);
+  backdrop-filter: blur(0.25rem);
 }
 
 .confirm-dialog {
@@ -333,7 +333,7 @@ onUnmounted(() => {
 .confirm-dialog-enter-from .confirm-dialog,
 .confirm-dialog-leave-to .confirm-dialog {
   opacity: 0;
-  transform: scale(0.9) translateY(10px);
+  transform: scale(0.9) translateY(0.625rem);
 }
 
 @media (max-width: 640px) {
