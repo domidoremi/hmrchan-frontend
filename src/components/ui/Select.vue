@@ -75,7 +75,7 @@ function handleChange(event: Event) {
   background-position:
     calc(100% - 18px) 50%,
     calc(100% - 13px) 50%;
-  background-size: 6px 6px;
+  background-size: 0.375rem 0.375rem;
   background-repeat: no-repeat;
 }
 

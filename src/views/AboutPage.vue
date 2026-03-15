@@ -667,7 +667,7 @@ const { techStack } = useAboutData()
 
 .profile-grid-enhanced {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 17.5rem), 1fr));
   gap: var(--spacing-3);
 }
 
@@ -688,7 +688,7 @@ const { techStack } = useAboutData()
 @keyframes fadeInUp {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(1.25rem);
   }
   to {
     opacity: 1;
@@ -710,7 +710,7 @@ const { techStack } = useAboutData()
 }
 
 .profile-card:hover {
-  transform: translateX(8px);
+  transform: translateX(0.5rem);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
   border-color: rgba(var(--color-primary-rgb), 0.3);
 }
@@ -841,12 +841,12 @@ const { techStack } = useAboutData()
 
 .links-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 18.75rem), 1fr));
   gap: var(--spacing-3);
 }
 
 .links-grid--social {
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 12.5rem), 1fr));
 }
 
 .link-card {
@@ -876,7 +876,7 @@ const { techStack } = useAboutData()
 }
 
 .link-card:hover {
-  transform: translateX(4px);
+  transform: translateX(0.25rem);
   border-color: rgba(var(--color-primary-rgb), 0.2);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
 }
@@ -950,7 +950,7 @@ const { techStack } = useAboutData()
 /* 核心功能 */
 .features-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15.625rem), 1fr));
   gap: var(--spacing-4);
 }
 
@@ -1010,7 +1010,7 @@ const { techStack } = useAboutData()
 
 .tech-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
   gap: var(--spacing-4);
 }
 
@@ -1094,7 +1094,7 @@ const { techStack } = useAboutData()
 /* 项目信息 */
 .info-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
   gap: var(--spacing-4);
 }
 
@@ -1260,7 +1260,7 @@ const { techStack } = useAboutData()
   }
 
   .links-grid--social {
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 10rem), 1fr));
   }
 
   .tech-grid {

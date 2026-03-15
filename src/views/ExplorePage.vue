@@ -76,9 +76,20 @@
         </div>
       </header>
 
+      <div v-if="showPreviewNotice" class="fallback-preview glass-card">
+        <span class="fallback-preview__label">{{ $t('home.preview.label') }}</span>
+        <p>{{ $t('home.preview.desc') }}</p>
+        <span v-if="fallbackReason" class="fallback-preview__detail">{{ fallbackReason }}</span>
+      </div>
+
       <h2 class="sr-only">{{ $t('search.tab.posts') }}</h2>
 
-      <StateIndicator v-if="error" variant="error" :description="error" @action="fetchPosts" />
+      <StateIndicator
+        v-if="error && !isUsingFallback"
+        variant="error"
+        :description="error"
+        @action="fetchPosts"
+      />
 
       <template v-else>
         <!-- 骨架屏：使用与真实内容相同的 masonry 布局结构，避免 CLS -->
@@ -173,6 +184,12 @@ import { useSettingsStore } from '@/stores'
 import { throttleRAF } from '@/utils/performance'
 import { createResizeObserver } from '@/utils/modernAPIs'
 import { storePostNavigationContext } from '@/utils/postNavigation'
+import { getFallbackExplorePosts } from '@/mocks/exploreFallback'
+import {
+  isServiceUnavailableError,
+  resolvePublicFallbackReason,
+  type PublicPageDataSource,
+} from '@/mocks/publicPageFallback'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import PostCard from '@/components/business/PostCard.vue'
 import PostCardSkeleton from '@/components/business/PostCardSkeleton.vue'
@@ -214,6 +231,10 @@ const posts = ref<PostListItem[]>([])
 const isLoading = ref(false)
 const isLoadingMore = ref(false)
 const error = ref<string | null>(null)
+const dataSource = ref<PublicPageDataSource>('live')
+const fallbackReason = ref<string | null>(null)
+const isUsingFallback = computed(() => dataSource.value === 'fallback')
+const showPreviewNotice = computed(() => Boolean(fallbackReason.value) && isUsingFallback.value)
 
 // 使用缓存感知的帖子列表加载
 const { total, load: loadCachedPosts } = useCachedPostList<PostListItem>(
@@ -414,43 +435,27 @@ async function fetchPosts(reset = true, signal?: AbortSignal) {
   const platform = currentPlatform.value !== 'all' ? currentPlatform.value : undefined
 
   try {
-    let items: PostListItem[]
-
-    if (currentSort.value === 'trending' && !platform) {
-      // trending 使用 view_count 排序
-      const { sort_by, sort_order } = getSortParams('trending')
-      const requestParams = {
-        page: page.value,
-        page_size: pageSize.value,
-        sort_by,
-        sort_order,
-        thumbnail_quality: getThumbnailQuality(),
-      }
-      const result = await loadCachedPosts(
-        requestParams,
-        requestSignal ? { signal: requestSignal } : undefined
-      )
-      items = result.data as PostListItem[]
-    } else {
-      const { sort_by, sort_order } = getSortParams(currentSort.value)
-      const requestParams = {
-        page: page.value,
-        page_size: pageSize.value,
-        sort_by,
-        sort_order,
-        thumbnail_quality: getThumbnailQuality(),
-        ...(platform ? { platform } : {}),
-      }
-      const result = await loadCachedPosts(
-        requestParams,
-        requestSignal ? { signal: requestSignal } : undefined
-      )
-      items = result.data as PostListItem[]
+    const { sort_by, sort_order } = getSortParams(currentSort.value)
+    const requestParams = {
+      page: page.value,
+      page_size: pageSize.value,
+      sort_by,
+      sort_order,
+      thumbnail_quality: getThumbnailQuality(),
+      ...(platform ? { platform } : {}),
     }
+    const result = await loadCachedPosts(
+      requestParams,
+      requestSignal ? { signal: requestSignal } : undefined
+    )
+    const items = result.data as PostListItem[]
 
     if (requestSignal?.aborted || requestToken !== fetchPostsToken) {
       return false
     }
+
+    dataSource.value = 'live'
+    fallbackReason.value = null
 
     if (reset) {
       posts.value = items
@@ -470,6 +475,36 @@ async function fetchPosts(reset = true, signal?: AbortSignal) {
     if (requestSignal?.aborted || isAbortError(err) || requestToken !== fetchPostsToken) {
       return false
     }
+
+    if (isServiceUnavailableError(err)) {
+      const { sort_by, sort_order } = getSortParams(currentSort.value)
+      const fallbackResult = getFallbackExplorePosts({
+        page: page.value,
+        page_size: pageSize.value,
+        sort_by,
+        sort_order,
+        ...(platform ? { platform } : {}),
+      })
+
+      dataSource.value = 'fallback'
+      fallbackReason.value = resolvePublicFallbackReason(err) ?? t('error.serviceUnavailable')
+      error.value = null
+      total.value = fallbackResult.total
+
+      if (reset) {
+        posts.value = fallbackResult.items
+      } else {
+        posts.value.push(...fallbackResult.items)
+      }
+
+      await nextTick()
+      if (requestSignal?.aborted || requestToken !== fetchPostsToken) {
+        return false
+      }
+      applyVisiblePosts(reset)
+      return true
+    }
+
     // 筛选时，即使有旧数据也要显示错误
     if (posts.value.length === 0 || platform) {
       if (reset && platform) {
@@ -754,6 +789,63 @@ onBeforeUnmount(() => {
   padding: var(--spacing-4) 0 var(--spacing-8);
   min-height: 100svh;
   min-height: 100dvh;
+  --explore-control-bg: rgba(255, 255, 255, 0.72);
+  --explore-control-bg-hover: rgba(255, 255, 255, 0.88);
+  --explore-control-border: rgba(148, 163, 184, 0.14);
+  --explore-control-border-strong: rgba(148, 163, 184, 0.24);
+  --explore-control-ink: var(--color-text-secondary);
+  --explore-control-ink-strong: var(--color-text-primary);
+  --explore-control-active-bg: rgba(15, 23, 42, 0.92);
+  --explore-control-active-border: transparent;
+  --explore-control-active-ink: rgba(255, 255, 255, 0.96);
+  --explore-control-shadow: 0 1rem 1.8rem -1.6rem rgba(15, 23, 42, 0.28);
+}
+
+.fallback-preview {
+  display: grid;
+  gap: var(--spacing-2);
+  padding: clamp(1rem, 1.8vw, 1.25rem);
+  margin-block-end: var(--spacing-4);
+}
+
+.fallback-preview__label {
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+}
+
+.fallback-preview p {
+  margin: 0;
+  max-width: 52ch;
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
+.fallback-preview__detail {
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+}
+
+:global(#app[data-theme='dark'] .explore-page),
+:global([data-theme='dark'] .explore-page) {
+  --explore-control-bg: rgba(12, 16, 23, 0.72);
+  --explore-control-bg-hover: rgba(18, 24, 36, 0.9);
+  --explore-control-border: rgba(255, 255, 255, 0.08);
+  --explore-control-border-strong: rgba(255, 255, 255, 0.14);
+  --explore-control-ink: var(--color-text-secondary);
+  --explore-control-ink-strong: var(--color-text-primary);
+  --explore-control-active-bg:
+    linear-gradient(
+      145deg,
+      rgba(var(--color-primary-rgb), 0.18),
+      rgba(var(--color-primary-rgb), 0.08)
+    ),
+    rgba(12, 16, 23, 0.96);
+  --explore-control-active-border: rgba(var(--color-primary-rgb), 0.34);
+  --explore-control-active-ink: var(--color-text-primary);
+  --explore-control-shadow: 0 1rem 1.6rem -1.4rem rgba(0, 0, 0, 0.48);
 }
 
 /* ========== MindMarket 风格背景 ========== */
@@ -770,7 +862,7 @@ onBeforeUnmount(() => {
 .explore-bg__blob {
   position: absolute;
   border-radius: 50%;
-  filter: blur(100px);
+  filter: blur(6.25rem);
   opacity: 0.35;
   transform: translate3d(0, 0, 0);
   will-change: transform;
@@ -811,28 +903,32 @@ onBeforeUnmount(() => {
 
 .page-title-row h1 {
   margin-bottom: 0;
-  font-size: var(--text-xl);
+  font-size: clamp(1.55rem, 2vw, 1.9rem);
+  line-height: 1.04;
+  text-wrap: balance;
 }
 
 @media (min-width: 768px) {
   .page-title-row h1 {
-    font-size: var(--text-2xl);
+    font-size: clamp(1.8rem, 2.4vw, 2.2rem);
   }
 }
 
 .page-title-group {
   display: flex;
-  align-items: center;
-  gap: var(--spacing-3);
+  align-items: flex-start;
+  gap: var(--spacing-2);
 }
 
 .page-title-badge {
-  padding: var(--spacing-1) var(--spacing-3);
-  background: rgba(var(--color-primary-rgb), 0.1);
+  align-self: center;
+  padding: 0.5rem 0.85rem;
+  background: var(--explore-control-bg);
+  border: 0.0625rem solid var(--explore-control-border);
   border-radius: var(--radius-full);
   font-size: var(--text-xs);
   font-weight: var(--font-medium);
-  color: var(--color-primary);
+  color: var(--explore-control-ink);
 }
 
 .page-actions {
@@ -845,20 +941,26 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   gap: var(--spacing-2);
-  padding: var(--spacing-2) var(--spacing-3);
-  font-size: var(--text-sm);
-  color: var(--color-text-secondary);
-  background: var(--glass-bg-subtle);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-lg);
-  transition: all var(--transition-fast);
+  padding: 0.625rem 0.9rem;
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
+  color: var(--explore-control-ink);
+  background: var(--explore-control-bg);
+  border: 0.0625rem solid var(--explore-control-border);
+  border-radius: var(--radius-full);
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast),
+    box-shadow var(--transition-fast);
   cursor: pointer;
 }
 
 .search-trigger:hover {
-  background: var(--glass-bg-light);
-  color: var(--color-text-primary);
-  border-color: rgba(var(--color-primary-rgb), 0.3);
+  background: var(--explore-control-bg-hover);
+  color: var(--explore-control-ink-strong);
+  border-color: var(--explore-control-border-strong);
+  box-shadow: var(--explore-control-shadow);
 }
 
 .search-trigger-text {
@@ -873,8 +975,8 @@ onBeforeUnmount(() => {
 
 .search-kbd {
   padding: 0.125rem 0.375rem;
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
+  background: var(--explore-control-bg);
+  border: 1px solid var(--explore-control-border);
   border-radius: var(--radius-sm);
   font-size: var(--text-xs);
   font-family: var(--font-mono);
@@ -888,40 +990,37 @@ onBeforeUnmount(() => {
 
 .filter-btn {
   position: relative;
-  padding: var(--spacing-2) var(--spacing-4);
+  padding: 0.625rem 1rem;
   border-radius: var(--radius-full);
-  font-size: var(--text-sm);
+  font-size: var(--text-xs);
   font-weight: var(--font-medium);
-  color: var(--color-text-secondary);
-  border: 1px solid var(--glass-border);
-  background: transparent;
-  transition: all var(--transition-fast);
+  color: var(--explore-control-ink);
+  border: 0.0625rem solid var(--explore-control-border);
+  background: var(--explore-control-bg);
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast),
+    box-shadow var(--transition-fast);
   overflow: hidden;
 }
 
 .filter-btn::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: var(--glass-bg-subtle);
-  opacity: 0;
-  transition: opacity var(--transition-fast);
+  display: none;
 }
 
 .filter-btn:hover {
-  color: var(--color-text-primary);
-  border-color: rgba(var(--color-primary-rgb), 0.3);
-}
-
-.filter-btn:hover::before {
-  opacity: 1;
+  color: var(--explore-control-ink-strong);
+  border-color: var(--explore-control-border-strong);
+  background: var(--explore-control-bg-hover);
+  box-shadow: var(--explore-control-shadow);
 }
 
 .filter-btn.active {
-  background: var(--color-primary);
-  color: var(--color-on-primary);
-  border-color: transparent;
-  box-shadow: var(--shadow-md);
+  background: var(--explore-control-active-bg);
+  color: var(--explore-control-active-ink);
+  border-color: var(--explore-control-active-border);
+  box-shadow: var(--explore-control-shadow);
 }
 
 .filter-btn.active::before {
@@ -949,6 +1048,11 @@ onBeforeUnmount(() => {
   flex-wrap: wrap;
 }
 
+.explore-hero::after {
+  content: none;
+  display: none;
+}
+
 .platform-filters {
   display: flex;
   gap: var(--spacing-1);
@@ -959,14 +1063,18 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   gap: var(--spacing-1);
-  padding: var(--spacing-1) var(--spacing-2);
-  border-radius: var(--radius-lg);
+  padding: 0.625rem 0.9rem;
+  border-radius: var(--radius-full);
   font-size: var(--text-xs);
   font-weight: var(--font-medium);
-  color: var(--color-text-secondary);
-  background: var(--glass-bg-subtle);
-  border: 1px solid transparent;
-  transition: all var(--transition-fast);
+  color: var(--explore-control-ink);
+  background: var(--explore-control-bg);
+  border: 0.0625rem solid var(--explore-control-border);
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast),
+    box-shadow var(--transition-fast);
 }
 
 @media (min-width: 768px) {
@@ -977,19 +1085,21 @@ onBeforeUnmount(() => {
 }
 
 .platform-btn:hover {
-  background: var(--glass-bg-light);
-  color: var(--color-text-primary);
-  transform: translateY(-1px);
+  background: var(--explore-control-bg-hover);
+  color: var(--explore-control-ink-strong);
+  border-color: var(--explore-control-border-strong);
+  box-shadow: var(--explore-control-shadow);
 }
 
 .platform-btn.active {
-  background: rgba(var(--color-primary-rgb), 0.15);
-  color: var(--color-primary);
-  border-color: rgba(var(--color-primary-rgb), 0.3);
+  background: var(--explore-control-active-bg);
+  color: var(--explore-control-active-ink);
+  border-color: var(--explore-control-active-border);
+  box-shadow: var(--explore-control-shadow);
 }
 
 .platform-btn.active svg {
-  color: var(--color-primary);
+  color: currentColor;
 }
 
 .platform-label {

@@ -1,9 +1,10 @@
-import { apiClient, type RequestConfig } from './client'
+import { ApiError, apiClient, type RequestConfig } from './client'
 import {
   DEFAULT_PUBLIC_VISIBILITY_SCOPE,
   readPublicVisibilityHeaders,
   type PublicVisibilityScope,
 } from './publicVisibility'
+import { buildHomepageBootstrapFallback } from '@/mocks/homepageBootstrapFallback'
 
 export interface HomeImageAsset {
   url: string
@@ -259,7 +260,8 @@ export interface HomeApiResult<T> {
 }
 
 export interface HomeBootstrapResult extends HomeApiResult<HomeAggregateResponse> {
-  source: 'aggregate' | 'support'
+  source: 'aggregate' | 'support' | 'fallback'
+  reason?: string | null
 }
 
 function collectHomeHeaders(config?: RequestConfig) {
@@ -626,6 +628,21 @@ async function getWithMeta<T>(endpoint: string, config?: RequestConfig): Promise
   }
 }
 
+function resolveBootstrapFallbackReason(error: unknown): string | null {
+  if (error instanceof ApiError) return error.message
+  if (error instanceof Error) return error.message
+  return null
+}
+
+function isServiceUnavailableError(error: unknown): boolean {
+  if (error instanceof ApiError) {
+    return [502, 503, 504, 530].includes(error.status)
+  }
+
+  const message = error instanceof Error ? error.message.toLowerCase() : ''
+  return message.includes('service unavailable') || message.includes('error code: 1033')
+}
+
 export const homeService = {
   async getHome(config?: RequestConfig): Promise<HomeApiResult<HomeAggregateResponse>> {
     const result = await getWithMeta<HomeAggregateResponse>('/home', config)
@@ -746,8 +763,19 @@ export const homeService = {
       return {
         ...result,
         source: 'aggregate',
+        reason: null,
       }
     } catch (aggregateError) {
+      if (isServiceUnavailableError(aggregateError)) {
+        return {
+          payload: buildHomepageBootstrapFallback(),
+          visibility: DEFAULT_PUBLIC_VISIBILITY_SCOPE,
+          etag: null,
+          source: 'fallback',
+          reason: resolveBootstrapFallbackReason(aggregateError),
+        }
+      }
+
       const [
         featuredResult,
         storyDeckResult,
@@ -772,7 +800,13 @@ export const homeService = {
         scheduleHighlightsResult.status !== 'fulfilled' ||
         communityHighlightsResult.status !== 'fulfilled'
       ) {
-        throw aggregateError
+        return {
+          payload: buildHomepageBootstrapFallback(),
+          visibility: DEFAULT_PUBLIC_VISIBILITY_SCOPE,
+          etag: null,
+          source: 'fallback',
+          reason: resolveBootstrapFallbackReason(aggregateError),
+        }
       }
 
       return {
@@ -790,6 +824,7 @@ export const homeService = {
           latestTextPostsResult.value.visibility,
         etag: null,
         source: 'support',
+        reason: null,
       }
     }
   },

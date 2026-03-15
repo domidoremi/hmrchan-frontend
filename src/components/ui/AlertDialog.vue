@@ -138,7 +138,7 @@ onUnmounted(() => {
   justify-content: center;
   padding: var(--spacing-4);
   background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(4px);
+  backdrop-filter: blur(0.25rem);
 }
 
 .ui-alert-dialog {

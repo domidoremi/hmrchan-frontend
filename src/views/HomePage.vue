@@ -945,79 +945,6 @@
       </div>
     </section>
 
-    <section ref="footerBridgeRef" class="home-footer-bridge home-screen">
-      <div class="container home-footer-bridge__stage">
-        <div class="home-footer-bridge__grid">
-          <article
-            v-if="storyMergeCard"
-            class="home-footer-bridge__feature glass-card"
-            :style="noGlassBackdropStyle"
-          >
-            <div class="home-footer-bridge__feature-shell">
-              <button
-                v-if="storyMergeCard.thumbnail"
-                type="button"
-                class="home-footer-bridge__feature-media"
-                @click="openPostPreview(storyMergeCard.post, storyMergeCard.thumbnail)"
-              >
-                <img
-                  v-if="storyMergeCard.thumbnail && !isHomeMediaFailed(storyMergeCard.thumbnail)"
-                  :src="storyMergeCard.thumbnail"
-                  :alt="storyMergeCard.title"
-                  class="home-footer-bridge__feature-media-image"
-                  loading="lazy"
-                  decoding="async"
-                  @error="markHomeMediaFailed(storyMergeCard.thumbnail)"
-                />
-                <span v-else class="home-footer-bridge__feature-media-empty">
-                  <AnimatedIcon name="image" :fallback-icon="Image" size="lg" />
-                </span>
-                <span class="home-footer-bridge__feature-media-overlay">
-                  <span class="home-footer-bridge__eyebrow">{{ storyMergeCard.eyebrow }}</span>
-                  <strong>{{ storyMergeCard.title }}</strong>
-                </span>
-              </button>
-
-              <div class="home-footer-bridge__feature-copy">
-                <span class="home-footer-bridge__eyebrow">{{ storyMergeCard.eyebrow }}</span>
-                <strong>{{ storyMergeCard.title }}</strong>
-                <p>{{ storyMergeCard.excerpt }}</p>
-                <div class="home-footer-bridge__meta">
-                  <span>{{ storyMergeCard.author }}</span>
-                  <span v-if="storyMergeCard.time">{{ storyMergeCard.time }}</span>
-                </div>
-                <button
-                  type="button"
-                  class="home-footer-bridge__feature-action"
-                  @click="openPostPreview(storyMergeCard.post, storyMergeCard.thumbnail)"
-                >
-                  <AnimatedIcon name="sparkle" :fallback-icon="Sparkles" size="sm" />
-                  {{ $t('home.featured.action') }}
-                </button>
-              </div>
-            </div>
-          </article>
-
-          <div class="home-footer-bridge__links glass-card" :style="noGlassBackdropStyle">
-            <RouterLink
-              v-for="link in storyMergeLinks"
-              :key="`bridge-${link.key}`"
-              :to="link.to"
-              class="home-footer-bridge__link"
-            >
-              <span class="home-footer-bridge__link-icon">
-                <AnimatedIcon :name="link.animation" :fallback-icon="link.icon" size="sm" />
-              </span>
-              <span class="home-footer-bridge__link-copy">
-                <strong>{{ link.label }}</strong>
-                <small>{{ link.description }}</small>
-              </span>
-            </RouterLink>
-          </div>
-        </div>
-      </div>
-    </section>
-
     <PostPreviewModal
       v-model:isOpen="isPreviewOpen"
       :post-id="previewPostId"
@@ -1081,6 +1008,7 @@ import { storePostNavigationContext } from '@/utils/postNavigation'
 import { normalizeToThumbnailUrl } from '@/utils/mediaOptimizer'
 import { formatRelativeTime } from '@/utils/date'
 import { HOME_FALLBACK_POSTS, isHomeFallbackPost } from '@/mocks/homepageFallback'
+import { buildHomepageBootstrapFallback } from '@/mocks/homepageBootstrapFallback'
 import Button from '@/components/ui/Button.vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
@@ -1096,7 +1024,7 @@ if (typeof window !== 'undefined') {
 const router = useRouter()
 const settingsStore = useSettingsStore()
 const { settings } = storeToRefs(settingsStore)
-const { t } = useI18n()
+const { t, locale } = useI18n()
 
 const shouldAnimate = computed(() => settings.value.enableAnimations && !prefersReducedMotion())
 const noGlassBackdropStyle = Object.freeze({
@@ -1130,14 +1058,14 @@ const failedHomeMediaUrls = ref<Set<string>>(new Set())
 const postsSectionRef = useTemplateRef<HTMLElement>('postsSectionRef')
 const featuredSectionRef = useTemplateRef<HTMLElement>('featuredSectionRef')
 const storyDeckRef = useTemplateRef<HTMLElement>('storyDeckRef')
-const footerBridgeRef = useTemplateRef<HTMLElement>('footerBridgeRef')
 
 const railProgress = ref(0)
 const storyProgress = ref(0)
 const hasTriggeredBubbleBurst = ref(false)
-const homeSourcePosts = computed(() =>
-  homeDataSource.value === 'fallback' ? HOME_FALLBACK_POSTS : allPosts.value
-)
+const homeSourcePosts = computed(() => {
+  if (homeDataSource.value !== 'fallback') return allPosts.value
+  return allPosts.value.length > 0 ? allPosts.value : HOME_FALLBACK_POSTS
+})
 const isUsingFallbackPosts = computed(() => homeDataSource.value === 'fallback')
 const showPreviewNotice = computed(() => Boolean(error.value) && isUsingFallbackPosts.value)
 const heroEditorialVisible = ref(false)
@@ -1145,8 +1073,7 @@ const viewportSceneBlend = ref({
   heroRail: 0,
   railPosts: 0,
   postsStory: 0,
-  storyBridge: 0,
-  bridgeFooter: 0,
+  storyFooter: 0,
 })
 const activeScreenTransition = ref<HomeScreenTransitionName | null>(null)
 
@@ -1169,7 +1096,7 @@ let viewportSceneTrackingBound = false
 let heroEditorialRevealTimer: number | null = null
 
 type SceneStepKey = 'featured' | 'story'
-type HomeScreenKey = 'hero' | 'featured' | 'posts' | 'story' | 'bridge' | 'footer'
+type HomeScreenKey = 'hero' | 'featured' | 'posts' | 'story' | 'footer'
 type HomeScreenTransitionName = `${HomeScreenKey}-${HomeScreenKey}`
 
 const SCENE_INPUT_TOLERANCE = 18
@@ -1820,7 +1747,6 @@ const storyCards = computed(() => {
 })
 
 const storyCardCount = computed(() => storyCards.value.length)
-const storyMergeCard = computed(() => storyCards.value[storyCards.value.length - 1] ?? null)
 const storyTravel = computed(() => Math.max(storyCardCount.value - 1, 0))
 const storyProgressIndex = computed(() => storyProgress.value * storyTravel.value)
 const storyMergeProgress = computed(() => clamp((storyProgress.value - 0.86) / 0.14))
@@ -1873,9 +1799,7 @@ const homePageMotionStyle = computed<Record<string, string>>(() => {
   const postsEnter = viewportSceneBlend.value.railPosts
   const postsExit = viewportSceneBlend.value.postsStory
   const storyEnter = viewportSceneBlend.value.postsStory
-  const storyOutro = viewportSceneBlend.value.storyBridge
-  const bridgeEnter = viewportSceneBlend.value.storyBridge
-  const bridgeOutro = viewportSceneBlend.value.bridgeFooter
+  const storyOutro = viewportSceneBlend.value.storyFooter
 
   return {
     '--home-hero-opacity': String(clamp(1 - heroExit * 0.18, 0.78, 1)),
@@ -1890,14 +1814,10 @@ const homePageMotionStyle = computed<Record<string, string>>(() => {
     '--home-posts-scale': String(clamp(0.92 + postsEnter * 0.08 - postsExit * 0.06, 0.88, 1)),
     '--home-posts-y': `${((1 - postsEnter) * 5 - postsExit * 2.2).toFixed(4)}rem`,
     '--home-posts-blur': `${((1 - postsEnter) * 0.72 + postsExit * 0.28).toFixed(4)}rem`,
-    '--home-story-opacity': String(clamp(storyEnter * 1.08 - storyOutro * 0.58, 0, 1)),
-    '--home-story-scale': String(clamp(0.92 + storyEnter * 0.08 - storyOutro * 0.08, 0.86, 1)),
-    '--home-story-y': `${((1 - storyEnter) * 5.2 - storyOutro * 3.4).toFixed(4)}rem`,
-    '--home-story-blur': `${((1 - storyEnter) * 0.76 + storyOutro * 0.3).toFixed(4)}rem`,
-    '--home-bridge-opacity': String(clamp(bridgeEnter * 1.08 - bridgeOutro * 0.42, 0, 1)),
-    '--home-bridge-scale': String(clamp(0.97 + bridgeEnter * 0.03 - bridgeOutro * 0.04, 0.9, 1)),
-    '--home-bridge-y': `${((1 - bridgeEnter) * 2.4 + bridgeOutro * 5.2).toFixed(4)}rem`,
-    '--home-bridge-blur': `${((1 - bridgeEnter) * 0.34 + bridgeOutro * 0.18).toFixed(4)}rem`,
+    '--home-story-opacity': String(clamp(storyEnter * 1.06 - storyOutro * 0.42, 0, 1)),
+    '--home-story-scale': String(clamp(0.94 + storyEnter * 0.06 - storyOutro * 0.04, 0.9, 1)),
+    '--home-story-y': `${((1 - storyEnter) * 4.4 - storyOutro * 1.8).toFixed(4)}rem`,
+    '--home-story-blur': `${((1 - storyEnter) * 0.66 + storyOutro * 0.16).toFixed(4)}rem`,
   }
 })
 
@@ -1970,41 +1890,6 @@ const heroStats = computed(() => {
     },
   ]
 })
-
-const storyMergeLinks = computed(() => [
-  {
-    key: 'explore',
-    label: t('nav.explore'),
-    description: t('home.portal.items.recommend.desc'),
-    to: { name: 'explore' as const },
-    icon: Compass,
-    animation: 'explore',
-  },
-  {
-    key: 'authors',
-    label: t('nav.authors'),
-    description: t('home.portal.items.authors.desc'),
-    to: { name: 'authors' as const },
-    icon: Users,
-    animation: 'user',
-  },
-  {
-    key: 'schedule',
-    label: t('nav.schedule'),
-    description: t('home.trends.scheduleHint'),
-    to: { name: 'schedule' as const },
-    icon: Calendar,
-    animation: 'calendar',
-  },
-  {
-    key: 'community',
-    label: t('nav.community'),
-    description: t('home.portal.items.community.desc'),
-    to: { name: 'community' as const },
-    icon: MessageSquare,
-    animation: 'sparkle',
-  },
-])
 
 const resolvedScheduleHighlights = computed(() => {
   if (homeScheduleHighlights.value.length > 0) {
@@ -2136,7 +2021,10 @@ function abortHomeRequest() {
   homeRequestController = null
 }
 
-function applyHomeAggregate(payload: HomeAggregateResponse, source: 'aggregate' | 'support') {
+function applyHomeAggregate(
+  payload: HomeAggregateResponse,
+  source: 'aggregate' | 'support' | 'fallback'
+) {
   homeAggregate.value = payload
   homeDataSource.value = source
   homeScheduleHighlights.value = payload.trends.schedules ?? []
@@ -2153,9 +2041,9 @@ function applyHomeAggregate(payload: HomeAggregateResponse, source: 'aggregate' 
 
 function shouldRefreshHomeSupportBlocks(
   payload: HomeAggregateResponse,
-  source: 'aggregate' | 'support'
+  source: 'aggregate' | 'support' | 'fallback'
 ) {
-  if (source === 'support') return false
+  if (source === 'support' || source === 'fallback') return false
 
   const scheduleCount = payload.portal.items.find((item) => item.key === 'schedule')?.count ?? 0
   const communityCount = payload.portal.items.find((item) => item.key === 'community')?.count ?? 0
@@ -2204,6 +2092,8 @@ async function fetchHomeData(): Promise<boolean> {
 
     applyHomeAggregate(result.payload, result.source)
     total.value = Math.max(total.value, result.payload.story_deck.total ?? 0)
+    error.value =
+      result.source === 'fallback' ? (result.reason ?? t('error.serviceUnavailable')) : null
 
     if (shouldRefreshHomeSupportBlocks(result.payload, result.source)) {
       void refreshHomeSupportBlocks(controller.signal)
@@ -2212,11 +2102,12 @@ async function fetchHomeData(): Promise<boolean> {
   } catch (err) {
     if (controller.signal.aborted) return false
 
-    homeAggregate.value = null
-    homeDataSource.value = 'fallback'
-    posts.value = HOME_FALLBACK_POSTS
-    allPosts.value = HOME_FALLBACK_POSTS
-    total.value = HOME_FALLBACK_POSTS.length
+    const fallbackPayload = buildHomepageBootstrapFallback()
+    applyHomeAggregate(fallbackPayload, 'fallback')
+    total.value = Math.max(
+      total.value,
+      fallbackPayload.story_deck.total ?? HOME_FALLBACK_POSTS.length
+    )
     error.value = err instanceof Error ? err.message : t('common.error')
     return false
   } finally {
@@ -2676,64 +2567,26 @@ function setRailNavbarLock(locked: boolean) {
 function setHomeFooterBlend(enabled: boolean) {
   if (typeof document === 'undefined') return
   if (enabled) {
-    setHomeFooterBlendProgress(viewportSceneBlend.value.bridgeFooter)
+    setHomeFooterBlendProgress(viewportSceneBlend.value.storyFooter)
     return
   }
-  delete document.documentElement.dataset.homeStoryFooter
-  document.documentElement.style.removeProperty('--home-footer-progress')
   document.documentElement.style.removeProperty('--home-footer-opacity')
   document.documentElement.style.removeProperty('--home-footer-y')
-  document.documentElement.style.removeProperty('--home-footer-blur')
-  document.documentElement.style.removeProperty('--home-footer-shell-y')
-  document.documentElement.style.removeProperty('--home-story-footer-progress')
-  document.documentElement.style.removeProperty('--home-story-footer-opacity')
-  document.documentElement.style.removeProperty('--home-story-footer-y')
-  document.documentElement.style.removeProperty('--home-story-footer-blur')
 }
 
 function setHomeFooterBlendProgress(progress: number) {
   if (typeof document === 'undefined') return
   const safeProgress = clamp(progress)
-  if (safeProgress <= 0.12) {
-    delete document.documentElement.dataset.homeStoryFooter
-    document.documentElement.style.removeProperty('--home-footer-progress')
+  if (safeProgress <= 0.06) {
     document.documentElement.style.removeProperty('--home-footer-opacity')
     document.documentElement.style.removeProperty('--home-footer-y')
-    document.documentElement.style.removeProperty('--home-footer-blur')
-    document.documentElement.style.removeProperty('--home-footer-shell-y')
-    document.documentElement.style.removeProperty('--home-story-footer-progress')
-    document.documentElement.style.removeProperty('--home-story-footer-opacity')
-    document.documentElement.style.removeProperty('--home-story-footer-y')
-    document.documentElement.style.removeProperty('--home-story-footer-blur')
     return
   }
-  const footerOpacity = 0.74 + safeProgress * 0.26
-  const footerY = Math.max(-0.75, 1.1 - safeProgress * 2.1)
-  const footerBlur = Math.max(0, (1 - safeProgress) * 0.08)
-  const footerShellY = Math.max(-1.4, 1.05 - safeProgress * 2.45)
+  const footerOpacity = 0.88 + safeProgress * 0.12
+  const footerY = Math.max(0, 0.48 - safeProgress * 0.48)
 
-  document.documentElement.dataset.homeStoryFooter = 'true'
-  document.documentElement.style.setProperty('--home-footer-progress', safeProgress.toFixed(4))
   document.documentElement.style.setProperty('--home-footer-opacity', footerOpacity.toFixed(4))
   document.documentElement.style.setProperty('--home-footer-y', `${footerY.toFixed(4)}rem`)
-  document.documentElement.style.setProperty('--home-footer-blur', `${footerBlur.toFixed(4)}rem`)
-  document.documentElement.style.setProperty(
-    '--home-footer-shell-y',
-    `${footerShellY.toFixed(4)}rem`
-  )
-  document.documentElement.style.setProperty(
-    '--home-story-footer-progress',
-    safeProgress.toFixed(4)
-  )
-  document.documentElement.style.setProperty(
-    '--home-story-footer-opacity',
-    footerOpacity.toFixed(4)
-  )
-  document.documentElement.style.setProperty('--home-story-footer-y', `${footerY.toFixed(4)}rem`)
-  document.documentElement.style.setProperty(
-    '--home-story-footer-blur',
-    `${footerBlur.toFixed(4)}rem`
-  )
 }
 
 function measureViewportBlend(
@@ -2758,15 +2611,14 @@ function updateViewportSceneBlend() {
     heroRail: measureViewportBlend(featuredSectionRef.value, 1.04, 0.16),
     railPosts: measureViewportBlend(postsSectionRef.value, 1.04, 0.18),
     postsStory: measureViewportBlend(storyDeckRef.value, 1.04, 0.18),
-    storyBridge: measureViewportBlend(footerBridgeRef.value, 1.04, 0.18),
-    bridgeFooter: measureViewportBlend(
+    storyFooter: measureViewportBlend(
       document.querySelector<HTMLElement>('footer.footer'),
-      1.08,
-      0.32
+      1.04,
+      0.24
     ),
   }
 
-  const footerBlendProgress = nextBlend.bridgeFooter > 0.08 ? nextBlend.bridgeFooter : 0
+  const footerBlendProgress = nextBlend.storyFooter > 0.04 ? nextBlend.storyFooter : 0
   const railLockBoundary =
     postsSectionRef.value?.offsetTop ??
     (featuredSectionRef.value?.offsetTop ?? 0) + (featuredSectionRef.value?.offsetHeight ?? 0)
@@ -2774,7 +2626,7 @@ function updateViewportSceneBlend() {
 
   viewportSceneBlend.value = {
     ...nextBlend,
-    bridgeFooter: footerBlendProgress,
+    storyFooter: footerBlendProgress,
   }
   setRailNavbarLock(railLockActive)
   setHomeFooterBlendProgress(footerBlendProgress)
@@ -3074,9 +2926,9 @@ function releaseScene(scene: SceneStepKey, direction: -1 | 1): boolean {
   const sceneTravel = Math.max(element.offsetHeight - window.innerHeight, 0)
 
   if (direction > 0) {
-    const targetY =
-      footerBridgeRef.value?.offsetTop ?? getFooterEntryY(0.24) ?? element.offsetTop + sceneTravel
-    triggerScreenTransition('story', 'bridge')
+    const footerTop = document.querySelector<HTMLElement>('footer.footer')?.offsetTop
+    const targetY = getFooterEntryY(0.12) ?? footerTop ?? element.offsetTop + sceneTravel
+    triggerScreenTransition('story', 'footer')
     return jumpToScenePosition(targetY, () => {
       setSceneProgress(scene, edgeIndex, count)
       scheduleViewportSceneBlendUpdate()
@@ -3107,34 +2959,6 @@ function handleStandaloneSceneJump(direction: -1 | 1): boolean {
         railProgress.value = 0
       })
     }
-  }
-
-  const bridgeActive =
-    isViewportSectionVisible(footerBridgeRef.value, 0.84, 0.12) ||
-    isSectionFocused(footerBridgeRef.value, 0.18, 0.7)
-
-  if (bridgeActive) {
-    if (direction > 0) {
-      if (isPageNearBottom()) return false
-      const targetY =
-        getFooterEntryY(0.24) ??
-        footerBridgeRef.value?.offsetTop ??
-        window.scrollY + window.innerHeight * 0.82
-      if (targetY <= window.scrollY + 2) return false
-      triggerScreenTransition('bridge', 'footer')
-      return jumpToScenePosition(targetY, scheduleViewportSceneBlendUpdate)
-    }
-
-    const storyElement = storyDeckRef.value
-    if (!storyElement) return false
-
-    const storyEnd =
-      storyElement.offsetTop + Math.max(storyElement.offsetHeight - window.innerHeight, 0)
-    triggerScreenTransition('bridge', 'story')
-    return jumpToScenePosition(storyEnd, () => {
-      storyProgress.value = storyCardCount.value > 1 ? 1 : 0
-      scheduleViewportSceneBlendUpdate()
-    })
   }
 
   const postsActive =
@@ -3331,7 +3155,6 @@ function observeSceneLayout() {
     featuredSectionRef.value,
     postsSectionRef.value,
     storyDeckRef.value,
-    footerBridgeRef.value,
   ].filter((element): element is HTMLElement => Boolean(element))
 
   if (trackedElements.length === 0) return
@@ -3437,23 +3260,61 @@ function scheduleSceneSetup() {
 
 function getStoryCardStyle(index: number): Record<string, string> {
   const offset = index - storyProgressIndex.value
-  const distance = Math.abs(offset)
   const isLastCard = index === storyCardCount.value - 1
   const mergeDeparture = isLastCard ? storyMergeProgress.value : 0
   const footerDeparture = isLastCard ? storyFooterFade.value : 0
-  const clampedOffset = Math.max(-1.58, Math.min(1.58, offset))
-  const hidden = distance > 2.1
-  const reelCurve = Math.sin((Math.min(distance, 1.3) / 1.3) * Math.PI * 0.5)
-  const liftCurve = 1 - Math.cos((Math.min(distance, 1.2) / 1.2) * Math.PI * 0.5)
-  const translateX = `${(-clampedOffset * 0.7).toFixed(2)}rem`
-  const translateY = `calc(${clampedOffset.toFixed(4)} * min(28dvh, 17rem) - ${(liftCurve * 0.95 + mergeDeparture * 1.6).toFixed(2)}rem)`
-  const translateZ = `${(8.5 - distance * 11.5 - reelCurve * 4.2 - mergeDeparture * 4.8 - footerDeparture * 3.4).toFixed(2)}rem`
-  const rotateX = `${(-clampedOffset * 56 - Math.sign(clampedOffset || 1) * reelCurve * 10 - mergeDeparture * 10).toFixed(2)}deg`
-  const rotateY = `${(clampedOffset * 3.4).toFixed(2)}deg`
-  const scale = hidden ? 0.72 : Math.max(0.84, 1 - distance * 0.06 - mergeDeparture * 0.05)
-  const opacity = hidden ? 0 : Math.max(0.16, 1 - distance * 0.34 - footerDeparture * 0.18)
+  const stackBias = index % 2 === 0 ? -1 : 1
+  const stackDepth = clamp(offset, 0, 3.2)
+  const exitProgress = clamp(-offset, 0, 1.08)
+  const exitTail = clamp(-offset - 1, 0, 1.2)
+  const hidden = offset > 3.35 || offset < -1.2
+  const translateX = offset < 0 ? `${(stackBias * exitProgress * 0.14).toFixed(2)}rem` : '0rem'
+  const translateY =
+    offset < 0
+      ? `calc(-${exitProgress.toFixed(4)} * 100dvh - ${(exitTail * 1.5 + mergeDeparture * 0.8 + footerDeparture * 0.5).toFixed(2)}rem)`
+      : `calc(${(stackDepth * 10).toFixed(4)}% - ${(mergeDeparture * 0.75).toFixed(2)}rem)`
+  const translateZ =
+    offset < 0
+      ? `${(exitProgress * 1.6 - exitTail * 1.8 - mergeDeparture * 2.4 - footerDeparture * 1.4).toFixed(2)}rem`
+      : `${(-stackDepth * 3.6 - mergeDeparture * 2.1 - footerDeparture * 0.8).toFixed(2)}rem`
+  const rotateX =
+    offset < 0
+      ? `${(exitProgress * 15 + mergeDeparture * 4.2).toFixed(2)}deg`
+      : `${(stackDepth * 1.8).toFixed(2)}deg`
+  const rotateZ =
+    offset < 0
+      ? `${(stackBias * (0.55 + exitProgress * 0.35)).toFixed(2)}deg`
+      : `${(stackBias * Math.min(stackDepth, 2.2) * 0.55).toFixed(2)}deg`
+  const scale = hidden
+    ? 0.86
+    : offset < 0
+      ? Math.max(0.94, 1 - exitProgress * 0.03 - exitTail * 0.03)
+      : Math.max(0.88, 1 - stackDepth * 0.035 - mergeDeparture * 0.03)
+  const opacity = hidden
+    ? 0
+    : offset < 0
+      ? Math.max(0, 1 - exitProgress * 0.88 - exitTail * 0.2 - footerDeparture * 0.16)
+      : Math.max(0.24, 1 - stackDepth * 0.14 - footerDeparture * 0.12)
+  const visualY = offset < 0 ? `${(-exitProgress * 1.1 - exitTail * 0.35).toFixed(2)}rem` : '0rem'
+  const visualScale =
+    offset < 0
+      ? String(Math.max(0.94, 1 - exitProgress * 0.04))
+      : String(Math.max(0.94, 1 - stackDepth * 0.015))
+  const copyY = offset < 0 ? `${(-exitProgress * 1.5 - exitTail * 0.55).toFixed(2)}rem` : '0rem'
+  const titleY = offset < 0 ? `${(-exitProgress * 2.2 - exitTail * 0.7).toFixed(2)}rem` : '0rem'
+  const copyTilt =
+    offset < 0 ? `${(exitProgress * 16).toFixed(2)}deg` : `${(stackDepth * 0.35).toFixed(2)}deg`
+  const copyOpacity =
+    offset < 0
+      ? Math.max(0.48, 1 - exitProgress * 0.34 - exitTail * 0.1)
+      : Math.max(0.7, 1 - stackDepth * 0.07)
   const zIndex = String(
-    Math.max(1, storyCardCount.value - Math.round(distance * 6) - Math.round(mergeDeparture * 4))
+    offset < 0
+      ? Math.max(
+          1,
+          storyCardCount.value + 2 - Math.round(exitProgress * 3) - Math.round(exitTail * 5)
+        )
+      : Math.max(1, storyCardCount.value - Math.round(stackDepth))
   )
 
   return {
@@ -3461,9 +3322,15 @@ function getStoryCardStyle(index: number): Record<string, string> {
     '--story-translate-y': translateY,
     '--story-translate-z': translateZ,
     '--story-rotate-x': rotateX,
-    '--story-rotate-y': rotateY,
+    '--story-rotate-z': rotateZ,
     '--story-scale': String(scale),
     '--story-opacity': String(opacity),
+    '--story-visual-y': visualY,
+    '--story-visual-scale': visualScale,
+    '--story-copy-y': copyY,
+    '--story-copy-title-y': titleY,
+    '--story-copy-tilt': copyTilt,
+    '--story-copy-opacity': String(copyOpacity),
     '--story-blur': '0rem',
     'z-index': zIndex,
   }
@@ -3658,22 +3525,7 @@ onBeforeUnmount(() => {
     radial-gradient(circle at 18% 18%, rgba(var(--home-mist-rgb), 0.12) 0%, transparent 42%),
     radial-gradient(circle at 84% 22%, rgba(var(--home-blush-rgb), 0.12) 0%, transparent 38%),
     linear-gradient(180deg, rgba(246, 244, 241, 0) 0%, rgba(248, 247, 244, 0.66) 100%);
-  --home-footer-bridge-bg:
-    radial-gradient(circle at 14% 16%, rgba(var(--home-mist-rgb), 0.22) 0%, transparent 42%),
-    radial-gradient(circle at 82% 20%, rgba(var(--home-blush-rgb), 0.2) 0%, transparent 36%),
-    linear-gradient(
-      180deg,
-      rgba(246, 245, 242, 0.32) 0%,
-      rgba(248, 247, 244, 0.92) 56%,
-      #f8f7f4 100%
-    );
-  --home-footer-bridge-top:
-    radial-gradient(circle at 22% 16%, rgba(var(--home-mist-rgb), 0.22) 0%, transparent 54%),
-    radial-gradient(circle at 82% 10%, rgba(var(--home-blush-rgb), 0.2) 0%, transparent 48%);
-  --home-footer-bridge-bottom:
-    linear-gradient(180deg, rgba(248, 247, 244, 0) 0%, rgba(248, 247, 244, 0.92) 56%),
-    radial-gradient(circle at 50% 100%, rgba(255, 255, 255, 0.72) 0%, transparent 64%);
-  --home-screen-transition-ms: 760ms;
+  --home-screen-transition-ms: 640ms;
 }
 
 :global(#app[data-theme='dark'] .home-page),
@@ -3722,16 +3574,6 @@ onBeforeUnmount(() => {
     radial-gradient(circle at 18% 18%, rgba(var(--home-mist-rgb), 0.06) 0%, transparent 42%),
     radial-gradient(circle at 84% 22%, rgba(var(--home-blush-rgb), 0.06) 0%, transparent 38%),
     linear-gradient(180deg, rgba(7, 10, 16, 0) 0%, rgba(8, 12, 18, 0.82) 100%);
-  --home-footer-bridge-bg:
-    radial-gradient(circle at 14% 16%, rgba(var(--home-mist-rgb), 0.08) 0%, transparent 42%),
-    radial-gradient(circle at 82% 20%, rgba(var(--home-blush-rgb), 0.08) 0%, transparent 36%),
-    linear-gradient(180deg, rgba(7, 10, 16, 0.48) 0%, rgba(8, 12, 18, 0.92) 56%, #060810 100%);
-  --home-footer-bridge-top:
-    radial-gradient(circle at 22% 16%, rgba(var(--home-mist-rgb), 0.08) 0%, transparent 54%),
-    radial-gradient(circle at 82% 10%, rgba(var(--home-blush-rgb), 0.08) 0%, transparent 48%);
-  --home-footer-bridge-bottom:
-    linear-gradient(180deg, rgba(6, 8, 16, 0) 0%, rgba(6, 8, 16, 0.94) 56%),
-    radial-gradient(circle at 50% 100%, rgba(255, 255, 255, 0.04) 0%, transparent 64%);
 }
 
 :global(#app[data-theme='blue'] .home-page),
@@ -3806,21 +3648,6 @@ onBeforeUnmount(() => {
     radial-gradient(circle at 18% 18%, rgba(147, 197, 253, 0.12) 0%, transparent 42%),
     radial-gradient(circle at 84% 22%, rgba(129, 140, 248, 0.1) 0%, transparent 38%),
     linear-gradient(180deg, rgba(240, 249, 255, 0) 0%, rgba(239, 246, 255, 0.74) 100%);
-  --home-footer-bridge-bg:
-    radial-gradient(circle at 14% 16%, rgba(147, 197, 253, 0.22) 0%, transparent 42%),
-    radial-gradient(circle at 82% 20%, rgba(129, 140, 248, 0.16) 0%, transparent 36%),
-    linear-gradient(
-      180deg,
-      rgba(239, 246, 255, 0.38) 0%,
-      rgba(240, 249, 255, 0.94) 56%,
-      #eff6ff 100%
-    );
-  --home-footer-bridge-top:
-    radial-gradient(circle at 22% 16%, rgba(147, 197, 253, 0.18) 0%, transparent 54%),
-    radial-gradient(circle at 82% 10%, rgba(129, 140, 248, 0.14) 0%, transparent 48%);
-  --home-footer-bridge-bottom:
-    linear-gradient(180deg, rgba(239, 246, 255, 0) 0%, rgba(239, 246, 255, 0.94) 56%),
-    radial-gradient(circle at 50% 100%, rgba(255, 255, 255, 0.68) 0%, transparent 64%);
 }
 
 :global(#app[data-ui-style='material'] .home-page),
@@ -3867,14 +3694,11 @@ onBeforeUnmount(() => {
 .hero,
 .rail-stage,
 .posts--bubble > .container,
-.story-stage,
-.home-footer-bridge__stage {
+.story-stage {
   transform-origin: center center;
   backface-visibility: hidden;
   will-change: transform, opacity;
-  transition:
-    transform 520ms cubic-bezier(0.2, 0.9, 0.25, 1),
-    opacity 440ms cubic-bezier(0.2, 0.84, 0.24, 1);
+  transition: none;
 }
 
 .hero {
@@ -3897,29 +3721,19 @@ onBeforeUnmount(() => {
   transform: translate3d(0, var(--home-story-y, 0rem), 0) scale(var(--home-story-scale, 1));
 }
 
-.home-footer-bridge__stage {
-  opacity: var(--home-bridge-opacity, 1);
-  transform: translate3d(0, var(--home-bridge-y, 0rem), 0) scale(var(--home-bridge-scale, 1));
-}
-
 .home-page--transition-featured-hero .hero,
 .home-page--transition-hero-featured .rail-stage,
 .home-page--transition-posts-featured .rail-stage,
 .home-page--transition-featured-posts .posts--bubble > .container,
 .home-page--transition-story-posts .posts--bubble > .container,
-.home-page--transition-posts-story .story-stage,
-.home-page--transition-bridge-story .story-stage,
-.home-page--transition-story-bridge .home-footer-bridge__stage,
-.home-page--transition-footer-bridge .home-footer-bridge__stage,
-.home-page--transition-bridge-footer .home-footer-bridge__stage {
+.home-page--transition-posts-story .story-stage {
   opacity: 1;
   transform: translate3d(0, 0rem, 0) scale(1);
 }
 
-.home-page--transition-story-footer .story-stage,
-.home-page--transition-story-bridge .story-stage {
-  opacity: 0.88;
-  transform: translate3d(0, -1rem, 0) scale(0.99);
+.home-page--transition-story-footer .story-stage {
+  opacity: 0.94;
+  transform: translate3d(0, -0.35rem, 0) scale(0.995);
 }
 
 .home-page--transition-hero-featured .hero {
@@ -3982,30 +3796,8 @@ onBeforeUnmount(() => {
     both;
 }
 
-.home-page--transition-story-footer .story-stage,
-.home-page--transition-story-bridge .story-stage {
+.home-page--transition-story-footer .story-stage {
   animation: homeScreenExitSettle var(--home-screen-transition-ms) cubic-bezier(0.18, 0.82, 0.24, 1)
-    both;
-}
-
-.home-page--transition-story-bridge .home-footer-bridge__stage,
-.home-page--transition-footer-bridge .home-footer-bridge__stage {
-  animation: homeScreenEnterBloom var(--home-screen-transition-ms) cubic-bezier(0.18, 0.9, 0.24, 1)
-    both;
-}
-
-.home-page--transition-bridge-story .home-footer-bridge__stage {
-  animation: homeScreenExitCompress var(--home-screen-transition-ms)
-    cubic-bezier(0.2, 0.84, 0.24, 1) both;
-}
-
-.home-page--transition-bridge-story .story-stage {
-  animation: homeScreenEnterRise var(--home-screen-transition-ms) cubic-bezier(0.2, 0.9, 0.25, 1)
-    both;
-}
-
-.home-page--transition-bridge-footer .home-footer-bridge__stage {
-  animation: homeScreenExitNorth var(--home-screen-transition-ms) cubic-bezier(0.2, 0.84, 0.24, 1)
     both;
 }
 
@@ -4019,9 +3811,7 @@ onBeforeUnmount(() => {
 .trends-card.glass-card::after,
 .bubble-empty.glass-card::before,
 .bubble-empty.glass-card::after,
-.media-slice__sticky.glass-card::after,
-.home-footer-bridge__feature.glass-card::before,
-.home-footer-bridge__links.glass-card::before {
+.media-slice__sticky.glass-card::after {
   display: none;
 }
 
@@ -4036,59 +3826,74 @@ onBeforeUnmount(() => {
 
 .section-header {
   display: flex;
-  align-items: flex-end;
+  align-items: flex-start;
   justify-content: space-between;
-  gap: var(--spacing-4);
-  margin-bottom: var(--spacing-5);
+  gap: clamp(0.75rem, 1.6vw, 1.15rem);
+  margin-bottom: clamp(0.85rem, 1.8vw, 1.35rem);
 }
 
 .section-title {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-2);
+  gap: clamp(0.25rem, 0.8vw, 0.5rem);
+  max-inline-size: min(100%, 38rem);
 }
 
 .section-kicker {
+  margin: 0;
   font-size: var(--text-xs);
-  letter-spacing: 0.08em;
+  font-weight: var(--font-semibold);
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--color-text-tertiary);
 }
 
-.section-header h2 {
-  font-size: var(--text-2xl);
+.section-title h2 {
+  max-inline-size: 15ch;
+  font-size: clamp(1.6rem, 2.3vw, 2.2rem);
   font-weight: var(--font-bold);
+  line-height: 1.04;
   margin: 0;
+  text-wrap: balance;
 }
 
-.section-header p {
-  font-size: var(--text-sm);
+.section-title p {
+  display: -webkit-box;
+  overflow: hidden;
+  max-inline-size: 34ch;
+  font-size: clamp(0.9rem, 1vw, 1rem);
   color: var(--color-text-secondary);
+  line-height: 1.58;
   margin: 0;
-  max-width: 46ch;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .section-link {
   display: inline-flex;
   align-items: center;
-  gap: var(--spacing-1);
-  font-size: var(--text-sm);
+  align-self: flex-start;
+  gap: 0.375rem;
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
   color: var(--color-text-secondary);
   text-decoration: none;
-  padding: var(--spacing-2) var(--spacing-3);
+  padding: 0.625rem 0.9rem;
   border-radius: var(--radius-full);
   background: var(--home-pill-bg);
-  border: 1px solid var(--home-pill-border);
+  border: 0.0625rem solid var(--home-pill-border);
   transition:
     color var(--transition-fast),
     border-color var(--transition-fast),
-    background var(--transition-fast);
+    background var(--transition-fast),
+    box-shadow var(--transition-fast);
 }
 
 .section-link:hover {
   color: var(--color-text-primary);
   border-color: var(--home-soft-border);
   background: var(--home-tag-hover);
+  box-shadow: 0 1rem 1.8rem -1.6rem rgba(15, 23, 42, 0.28);
 }
 
 /* ========== Hero ========== */
@@ -4647,8 +4452,8 @@ onBeforeUnmount(() => {
   gap: 0.2rem;
   padding: 0.625rem 0.75rem;
   border-radius: 0.95rem;
-  background: rgba(255, 255, 255, 0.74);
-  border: 0.0625rem solid rgba(255, 255, 255, 0.48);
+  background: var(--home-pill-bg);
+  border: 0.0625rem solid var(--home-pill-border);
 }
 
 .portal-card__stat strong {
@@ -4905,8 +4710,8 @@ onBeforeUnmount(() => {
   gap: 0.2rem;
   padding: 0.75rem 0.875rem;
   border-radius: 1rem;
-  background: rgba(255, 255, 255, 0.68);
-  border: 0.0625rem solid rgba(255, 255, 255, 0.46);
+  background: var(--home-pill-bg);
+  border: 0.0625rem solid var(--home-pill-border);
 }
 
 .trend-tags__stat strong {
@@ -4986,8 +4791,8 @@ onBeforeUnmount(() => {
   gap: 0.25rem;
   padding: 0.75rem 0.875rem;
   border-radius: 1rem;
-  background: rgba(255, 255, 255, 0.72);
-  border: 0.0625rem solid rgba(255, 255, 255, 0.48);
+  background: var(--home-pill-bg);
+  border: 0.0625rem solid var(--home-pill-border);
 }
 
 .schedule-cta__stat strong {
@@ -5099,7 +4904,7 @@ onBeforeUnmount(() => {
   text-decoration: none;
   color: var(--color-text-secondary);
   border: 1px solid var(--home-pill-border);
-  background: rgba(255, 255, 255, 0.66);
+  background: var(--home-pill-bg);
   transition: all var(--transition-fast);
 }
 
@@ -5324,7 +5129,7 @@ onBeforeUnmount(() => {
   margin: 0;
   scroll-snap-type: none;
   will-change: transform;
-  transition: transform 360ms cubic-bezier(0.2, 0.9, 0.25, 1);
+  transition: none;
 }
 
 .rail-track::-webkit-scrollbar {
@@ -5336,7 +5141,7 @@ onBeforeUnmount(() => {
   block-size: 100%;
   display: grid;
   padding: calc(
-      var(--home-stage-safe-top) + var(--home-stage-chrome-height) - clamp(0.15rem, 0.45vw, 0.3rem)
+      var(--home-stage-safe-top) + var(--home-stage-chrome-height) + clamp(0.12rem, 0.4vw, 0.28rem)
     )
     clamp(1rem, 3vw, 2.5rem) clamp(1rem, 2.4vw, 1.6rem);
   overflow: clip;
@@ -5713,7 +5518,7 @@ onBeforeUnmount(() => {
   block-size: 100%;
   min-block-size: 0;
   grid-template-columns: repeat(12, minmax(0, 1fr));
-  grid-template-rows: minmax(0, 1.06fr) minmax(0, 0.78fr);
+  grid-template-rows: minmax(0, 1fr) minmax(0, 0.9fr);
   align-items: stretch;
   align-content: start;
   gap: clamp(0.875rem, 1.8vw, 1.15rem);
@@ -5763,7 +5568,7 @@ onBeforeUnmount(() => {
 }
 
 .featured-rail-card:hover {
-  transform: translate3d(0, -0.2rem, 0);
+  transform: translate3d(0, -0.125rem, 0);
   border-color: var(--home-panel-border-strong);
   box-shadow: var(--home-panel-shadow-strong);
 }
@@ -5890,7 +5695,10 @@ onBeforeUnmount(() => {
   flex-direction: column;
   align-items: flex-start;
   justify-content: flex-start;
+  inline-size: 100%;
+  block-size: 100%;
   gap: clamp(0.5rem, 1vw, 0.75rem);
+  min-inline-size: 0;
   min-block-size: 0;
   padding: clamp(0.25rem, 0.8vw, 0.5rem) clamp(0.125rem, 0.4vw, 0.25rem)
     clamp(0.375rem, 0.8vw, 0.5rem);
@@ -5903,6 +5711,10 @@ onBeforeUnmount(() => {
 
 .featured-rail-card--dense .featured-rail-card__body {
   gap: 0.45rem;
+}
+
+.featured-rail-card--compact .featured-rail-card__body {
+  gap: clamp(0.35rem, 0.8vw, 0.5rem);
 }
 
 .featured-rail-card__eyebrow {
@@ -5936,11 +5748,11 @@ onBeforeUnmount(() => {
   margin: 0;
   display: -webkit-box;
   overflow: hidden;
-  max-inline-size: 34ch;
+  max-inline-size: 30ch;
   color: var(--color-text-secondary);
-  line-height: 1.62;
+  line-height: 1.58;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
+  -webkit-line-clamp: 2;
 }
 
 .featured-rail-card--lead .featured-rail-card__summary {
@@ -5960,6 +5772,7 @@ onBeforeUnmount(() => {
 .featured-rail-card__meta {
   display: flex;
   flex-wrap: wrap;
+  max-inline-size: 100%;
   gap: 0.35rem 0.65rem;
   font-size: var(--text-xs);
   color: var(--color-text-tertiary);
@@ -5997,10 +5810,17 @@ onBeforeUnmount(() => {
 .featured-rail-card__action {
   display: inline-flex;
   align-items: center;
+  align-self: flex-start;
+  flex-wrap: wrap;
+  max-inline-size: 100%;
   gap: 0.45rem;
+  margin-top: auto;
+  padding-top: 0.65rem;
+  border-top: 0.0625rem solid rgba(148, 163, 184, 0.16);
   font-size: var(--text-xs);
   font-weight: var(--font-medium);
-  color: var(--home-ink);
+  line-height: 1.4;
+  color: var(--color-text-secondary);
 }
 
 .featured-rail-card__meta + .featured-rail-card__action {
@@ -6008,7 +5828,7 @@ onBeforeUnmount(() => {
 }
 
 .featured-rail-card__stats + .featured-rail-card__action {
-  margin-top: 0.125rem;
+  margin-top: auto;
 }
 
 .rail-feature-card {
@@ -6553,7 +6373,7 @@ onBeforeUnmount(() => {
   max-inline-size: min(17rem, calc(100% - 3rem));
   max-width: none;
   opacity: 0;
-  filter: blur(0.12rem);
+  filter: none;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
   pointer-events: none;
@@ -6562,9 +6382,9 @@ onBeforeUnmount(() => {
       calc(-50% + var(--bubble-y-intro, 0rem)),
       0
     )
-    scale(0.14);
+    scale(0.72);
   transition: none;
-  will-change: transform, opacity, filter;
+  will-change: transform, opacity;
 }
 
 .latest-bubble::after {
@@ -6593,8 +6413,8 @@ onBeforeUnmount(() => {
   box-shadow: var(--home-panel-shadow-strong);
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
-  text-shadow: 0 0.5rem 1.5rem rgba(15, 23, 42, 0.12);
-  transform: translate3d(0, 0.85rem, 0) scale(0.98);
+  text-shadow: 0 0.5rem 1.5rem rgba(15, 23, 42, 0.08);
+  transform: translate3d(0, 0.35rem, 0) scale(0.99);
   transition: none;
 }
 
@@ -6607,16 +6427,14 @@ onBeforeUnmount(() => {
 
 .posts--revealed .latest-bubble {
   opacity: 1;
-  filter: blur(0rem);
   pointer-events: auto;
-  animation: bubbleBurstFromCenter 960ms cubic-bezier(0.16, 0.88, 0.22, 1) both;
+  animation: bubbleBurstFromCenter 540ms cubic-bezier(0.2, 0.82, 0.24, 1) both;
   animation-delay: var(--bubble-delay, 0s);
 }
 
 .posts--revealed .latest-bubble__inner {
   transform: translate3d(0, 0, 0);
-  animation: bubbleTextDrift 7s ease-in-out infinite;
-  animation-delay: calc(1.05s + var(--bubble-delay, 0s));
+  animation: none;
 }
 
 .media-slices {
@@ -6626,8 +6444,8 @@ onBeforeUnmount(() => {
   background: linear-gradient(
     180deg,
     rgba(248, 247, 244, 0) 0%,
-    rgba(248, 247, 244, 0.16) 24%,
-    rgba(248, 247, 244, 0.44) 100%
+    rgba(248, 247, 244, 0.14) 20%,
+    rgba(248, 247, 244, 0.6) 100%
   );
 }
 
@@ -6637,9 +6455,9 @@ onBeforeUnmount(() => {
   block-size: 100dvh;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
-  gap: clamp(0.75rem, 1.5vw, 1rem);
-  padding-block: calc(var(--home-stage-safe-top) + clamp(0.55rem, 1.3vw, 0.9rem))
-    calc(clamp(0.85rem, 1.7vw, 1.2rem) + var(--home-stage-safe-bottom));
+  gap: clamp(0.95rem, 1.8vw, 1.25rem);
+  padding-block: calc(var(--home-stage-safe-top) + clamp(0.75rem, 1.6vw, 1rem))
+    calc(clamp(1rem, 2vw, 1.35rem) + var(--home-stage-safe-bottom));
   overflow: clip;
 }
 
@@ -6648,7 +6466,7 @@ onBeforeUnmount(() => {
   position: absolute;
   inset: 0;
   background: var(--home-story-stage-bg);
-  opacity: calc(1 - (var(--story-footer-fade, 0) * 0.36));
+  opacity: calc(1 - (var(--story-footer-fade, 0) * 0.24));
   pointer-events: none;
 }
 
@@ -6662,20 +6480,43 @@ onBeforeUnmount(() => {
   position: absolute;
   inset-inline: 0;
   inset-block-end: 0;
-  block-size: min(42dvh, 24rem);
+  block-size: min(48dvh, 28rem);
   background: var(--home-story-stage-footer-bg);
-  opacity: calc(var(--story-footer-fade, 0) * 0.3);
+  opacity: calc(0.08 + (var(--story-footer-fade, 0) * 0.46));
   pointer-events: none;
+}
+
+:global(#app[data-theme='dark'] .media-slices),
+:global([data-theme='dark'] .media-slices) {
+  background: linear-gradient(
+    180deg,
+    rgba(7, 10, 16, 0) 0%,
+    rgba(8, 12, 18, 0.18) 20%,
+    rgba(8, 12, 18, 0.74) 100%
+  );
+}
+
+:global(#app[data-theme='blue'] .media-slices),
+:global([data-theme='blue'] .media-slices) {
+  background: linear-gradient(
+    180deg,
+    rgba(239, 246, 255, 0) 0%,
+    rgba(239, 246, 255, 0.16) 20%,
+    rgba(239, 246, 255, 0.72) 100%
+  );
 }
 
 .media-slice-list {
   position: relative;
   block-size: 100%;
   min-block-size: 0;
+  display: grid;
+  place-items: center;
   gap: 0;
-  perspective: 120rem;
-  perspective-origin: 50% 54%;
+  perspective: clamp(26rem, 34vw, 40rem);
+  perspective-origin: 50% 34%;
   transform-style: preserve-3d;
+  isolation: isolate;
   overflow: clip;
 }
 
@@ -6744,8 +6585,8 @@ onBeforeUnmount(() => {
   gap: 0.35rem;
   padding: clamp(0.75rem, 1.2vw, 0.9rem) clamp(0.8rem, 1.5vw, 1rem);
   border-radius: clamp(1rem, 1.8vw, 1.25rem);
-  background: rgba(255, 255, 255, 0.76);
-  border: 0.0625rem solid rgba(255, 255, 255, 0.48);
+  background: var(--home-panel-bg-soft);
+  border: 0.0625rem solid var(--home-panel-border);
 }
 
 .story-merge-panel__spotlight-meta {
@@ -6769,8 +6610,8 @@ onBeforeUnmount(() => {
   gap: 0.5rem;
   padding: 0.75rem 1rem;
   border-radius: var(--radius-full);
-  background: rgba(255, 255, 255, 0.72);
-  border: 0.0625rem solid rgba(255, 255, 255, 0.5);
+  background: var(--home-pill-bg);
+  border: 0.0625rem solid var(--home-pill-border);
   color: var(--color-text-primary);
   text-decoration: none;
   transition:
@@ -6781,8 +6622,8 @@ onBeforeUnmount(() => {
 
 .story-merge-panel__link:hover {
   transform: translate3d(0, -0.125rem, 0);
-  background: rgba(255, 255, 255, 0.88);
-  border-color: rgba(255, 255, 255, 0.72);
+  background: var(--home-tag-hover);
+  border-color: var(--home-soft-border);
 }
 
 .media-slice {
@@ -6794,7 +6635,7 @@ onBeforeUnmount(() => {
   display: grid;
   place-items: center;
   overflow: clip;
-  transform-origin: 50% 100%;
+  transform-origin: 50% 88%;
   transform-style: preserve-3d;
   backface-visibility: hidden;
   will-change: transform, opacity;
@@ -6804,7 +6645,7 @@ onBeforeUnmount(() => {
       var(--story-translate-y, 0rem),
       var(--story-translate-z, 0rem)
     )
-    rotateX(var(--story-rotate-x, 0deg)) rotateY(var(--story-rotate-y, 0deg))
+    rotateX(var(--story-rotate-x, 0deg)) rotateZ(var(--story-rotate-z, 0deg))
     scale(var(--story-scale, 1));
   filter: none;
   transition: none;
@@ -6818,13 +6659,13 @@ onBeforeUnmount(() => {
 .media-slice__sticky {
   position: relative;
   top: auto;
-  inline-size: min(calc(100% - 2rem), 69rem);
-  min-height: min(52dvh, 32rem);
+  inline-size: min(calc(100% - 1rem), 74rem);
+  min-height: min(56dvh, 35rem);
   margin-inline: auto;
   display: grid;
-  grid-template-columns: minmax(0, 0.94fr) minmax(17rem, 0.86fr);
-  gap: clamp(1rem, 2vw, 1.45rem);
-  padding: clamp(1.1rem, 2.1vw, 1.5rem);
+  grid-template-columns: minmax(0, 1.02fr) minmax(18rem, 0.78fr);
+  gap: clamp(1.15rem, 2.4vw, 1.8rem);
+  padding: clamp(1.3rem, 2.5vw, 1.95rem);
   justify-items: stretch;
   align-items: center;
   overflow: clip;
@@ -6837,6 +6678,7 @@ onBeforeUnmount(() => {
   box-shadow: var(--home-story-card-shadow) !important;
   backdrop-filter: none !important;
   isolation: isolate;
+  transform-style: preserve-3d;
 }
 
 .media-slice__sticky::before {
@@ -6874,16 +6716,23 @@ onBeforeUnmount(() => {
   background: var(--home-story-visual-bg);
   border: 0.0625rem solid var(--home-story-card-border);
   box-shadow: inset 0 0.0625rem 0 rgba(255, 255, 255, 0.12);
+  transform: translate3d(0, var(--story-visual-y, 0rem), 0) scale(var(--story-visual-scale, 1));
+  transform-origin: 50% 100%;
+  will-change: transform;
 }
 
 .media-slice__copy {
-  inline-size: min(100%, 28rem);
+  inline-size: min(100%, 30rem);
   display: grid;
   align-content: center;
   justify-items: start;
-  gap: clamp(0.7rem, 1.4vw, 0.95rem);
+  gap: clamp(0.65rem, 1.2vw, 0.85rem);
   margin-inline: auto;
   align-self: center;
+  transform: translate3d(0, var(--story-copy-y, 0rem), 0) rotateX(var(--story-copy-tilt, 0deg));
+  transform-origin: 50% 100%;
+  opacity: var(--story-copy-opacity, 1);
+  will-change: transform, opacity;
 }
 
 .media-slice__eyebrow {
@@ -6896,30 +6745,57 @@ onBeforeUnmount(() => {
 
 .media-slice__copy h3 {
   margin: 0;
-  font-size: clamp(1.5rem, 2.2vw, 2rem);
-  line-height: 1.1;
+  max-inline-size: 16ch;
+  font-size: clamp(1.55rem, 2.2vw, 2.05rem);
+  line-height: 1.05;
+  text-wrap: balance;
+  transform: translate3d(0, var(--story-copy-title-y, 0rem), 0);
+  transform-origin: 50% 100%;
+  will-change: transform;
 }
 
 .media-slice__copy > p {
   margin: 0;
+  display: -webkit-box;
+  overflow: hidden;
+  max-inline-size: 30ch;
   color: var(--color-text-secondary);
-  line-height: 1.65;
+  line-height: 1.62;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
 }
 
 .media-slice__meta {
   justify-content: flex-start;
-  gap: 1rem;
+  gap: 0.75rem 1rem;
   flex-wrap: wrap;
 }
 
 .media-slice__actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 1rem;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.25rem;
+}
+
+.media-slice__button.btn {
+  min-block-size: 2.5rem;
+  padding-inline: 1rem;
+  border-radius: var(--radius-full);
+  border-color: var(--home-pill-border);
+  background: var(--home-pill-bg);
+  color: var(--color-text-primary);
+  box-shadow: none;
+}
+
+.media-slice__button.btn:hover {
+  border-color: var(--home-soft-border);
+  background: var(--home-tag-hover);
 }
 
 .media-slice__link {
-  color: var(--color-text-primary);
+  color: var(--color-text-secondary);
 }
 
 .media-empty {
@@ -6968,306 +6844,6 @@ onBeforeUnmount(() => {
   color: var(--color-text-secondary);
 }
 
-.home-footer-bridge {
-  position: relative;
-  min-block-size: 100dvh;
-  background: var(--home-footer-bridge-bg);
-  overflow: clip;
-  z-index: 1;
-}
-
-.home-footer-bridge::before,
-.home-footer-bridge::after {
-  content: '';
-  position: absolute;
-  inset-inline: 0;
-  pointer-events: none;
-}
-
-.home-footer-bridge::before {
-  inset-block-start: 0;
-  block-size: min(34dvh, 18rem);
-  background: var(--home-footer-bridge-top);
-  opacity: 0.9;
-}
-
-.home-footer-bridge::after {
-  inset-block-end: 0;
-  block-size: min(42dvh, 24rem);
-  background: var(--home-footer-bridge-bottom);
-}
-
-.home-footer-bridge__stage {
-  position: relative;
-  block-size: 100dvh;
-  min-block-size: 100dvh;
-  display: grid;
-  grid-template-rows: minmax(0, 1fr);
-  align-items: center;
-  gap: clamp(0.8rem, 1.6vw, 1.15rem);
-  padding-block: calc(var(--home-stage-safe-top) + clamp(0.4rem, 1vw, 0.75rem))
-    calc(clamp(1rem, 2vw, 1.5rem) + var(--home-stage-safe-bottom));
-  z-index: 1;
-}
-
-.home-footer-bridge__intro {
-  display: grid;
-  gap: 0.75rem;
-  max-inline-size: 42rem;
-  align-self: start;
-}
-
-.home-footer-bridge__kicker,
-.home-footer-bridge__eyebrow {
-  font-size: var(--text-xs);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--color-text-tertiary);
-}
-
-.home-footer-bridge__intro h2,
-.home-footer-bridge__feature-copy > strong {
-  margin: 0;
-  font-size: clamp(1.6rem, 3.2vw, 2.5rem);
-  line-height: 1.04;
-  color: var(--home-ink);
-}
-
-.home-footer-bridge__intro p,
-.home-footer-bridge__feature-copy p {
-  margin: 0;
-  max-inline-size: 60ch;
-  font-size: clamp(0.98rem, 1.35vw, 1.08rem);
-  line-height: 1.72;
-  color: var(--color-text-secondary);
-}
-
-.home-footer-bridge__grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1.24fr) minmax(16rem, 0.76fr);
-  gap: clamp(1rem, 2.2vw, 1.6rem);
-  align-items: start;
-  align-self: stretch;
-  inline-size: min(100%, 82rem);
-  margin-inline: auto;
-}
-
-.home-footer-bridge__feature,
-.home-footer-bridge__links {
-  position: relative;
-  display: grid;
-  gap: clamp(0.75rem, 1.6vw, 1rem);
-  padding: clamp(1.15rem, 2.1vw, 1.5rem);
-  border-radius: var(--home-shell-radius);
-  border: 0.0625rem solid var(--home-panel-border-strong) !important;
-  background: var(--home-panel-bg), var(--home-pill-bg) !important;
-  box-shadow: var(--home-panel-highlight), var(--home-panel-shadow-strong) !important;
-  backdrop-filter: none !important;
-}
-
-.home-footer-bridge__feature::after,
-.home-footer-bridge__links::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background:
-    radial-gradient(circle at top right, rgba(199, 220, 244, 0.16) 0%, transparent 38%),
-    radial-gradient(circle at bottom left, rgba(246, 218, 229, 0.14) 0%, transparent 34%);
-  pointer-events: none;
-}
-
-.home-footer-bridge__feature > *,
-.home-footer-bridge__links > * {
-  position: relative;
-  z-index: 1;
-}
-
-.home-footer-bridge__feature {
-  align-content: stretch;
-}
-
-.home-footer-bridge__feature-shell {
-  display: grid;
-  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
-  gap: clamp(1rem, 2vw, 1.4rem);
-  align-items: stretch;
-}
-
-.home-footer-bridge__feature-copy {
-  display: grid;
-  align-content: center;
-  gap: 0.75rem;
-}
-
-.home-footer-bridge__feature-media {
-  position: relative;
-  min-block-size: clamp(14rem, 24vw, 18rem);
-  padding: 0;
-  appearance: none;
-  border: 0.0625rem solid var(--home-panel-border);
-  border-radius: var(--home-card-radius);
-  overflow: clip;
-  cursor: pointer;
-  background: var(--home-story-visual-bg);
-  box-shadow: var(--home-panel-shadow);
-}
-
-.home-footer-bridge__feature-media::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background:
-    linear-gradient(180deg, rgba(15, 23, 42, 0.02) 0%, rgba(15, 23, 42, 0.68) 100%),
-    radial-gradient(circle at top right, rgba(255, 255, 255, 0.26) 0%, transparent 42%);
-  pointer-events: none;
-}
-
-.home-footer-bridge__feature-media-image {
-  inline-size: 100%;
-  block-size: 100%;
-  display: block;
-  object-fit: cover;
-}
-
-.home-footer-bridge__feature-media-empty {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  background: var(--home-preview-empty-bg);
-  color: var(--color-text-tertiary);
-}
-
-.home-footer-bridge__feature-media-overlay {
-  position: absolute;
-  inset-inline: 0;
-  inset-block-end: 0;
-  z-index: 1;
-  display: grid;
-  gap: 0.35rem;
-  padding: clamp(0.875rem, 1.8vw, 1.125rem);
-  color: var(--color-text-inverse);
-}
-
-.home-footer-bridge__feature-media-overlay .home-footer-bridge__eyebrow {
-  color: rgba(255, 255, 255, 0.76);
-}
-
-.home-footer-bridge__feature-media-overlay strong {
-  margin: 0;
-  font-size: clamp(1rem, 1.4vw, 1.2rem);
-  line-height: 1.3;
-  color: var(--color-text-inverse);
-}
-
-.home-footer-bridge__feature-action {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  align-self: flex-start;
-  padding: 0.75rem 1rem;
-  appearance: none;
-  border: 0.0625rem solid var(--home-panel-border);
-  border-radius: var(--home-chip-radius);
-  background: var(--home-panel-muted-strong);
-  color: var(--color-text-primary);
-  font: inherit;
-  cursor: pointer;
-  box-shadow: var(--home-panel-shadow);
-  transition:
-    transform var(--transition-fast),
-    border-color var(--transition-fast),
-    background var(--transition-fast);
-}
-
-.home-footer-bridge__feature-action:hover {
-  transform: translate3d(0, -0.125rem, 0);
-  border-color: var(--home-panel-border-strong);
-  background: var(--home-panel-bg-strong);
-}
-
-.home-footer-bridge__meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.875rem;
-  font-size: var(--text-sm);
-  color: var(--color-text-tertiary);
-}
-
-.home-footer-bridge__links {
-  align-self: start;
-  align-content: center;
-  grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: auto;
-  grid-auto-rows: minmax(0, auto);
-  min-block-size: 0;
-}
-
-.home-footer-bridge__links-label {
-  grid-column: 1 / -1;
-  font-size: var(--text-xs);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--color-text-tertiary);
-}
-
-.home-footer-bridge__link {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-content: center;
-  align-items: start;
-  gap: 0.75rem;
-  min-block-size: 0;
-  min-height: clamp(5rem, 10dvh, 6.4rem);
-  padding: 0.9rem 1rem;
-  border-radius: var(--home-card-radius);
-  background: var(--home-panel-muted);
-  border: 0.0625rem solid var(--home-panel-border);
-  color: var(--color-text-primary);
-  text-decoration: none;
-  box-shadow: var(--home-panel-shadow);
-  transition:
-    transform var(--transition-fast),
-    border-color var(--transition-fast),
-    background var(--transition-fast),
-    box-shadow var(--transition-fast);
-}
-
-.home-footer-bridge__link-icon {
-  display: inline-grid;
-  place-items: center;
-  inline-size: 2.25rem;
-  block-size: 2.25rem;
-  border-radius: var(--home-card-radius);
-  background: var(--home-panel-muted-strong);
-  border: 0.0625rem solid var(--home-panel-border);
-}
-
-.home-footer-bridge__link-copy {
-  display: grid;
-  gap: 0.3rem;
-}
-
-.home-footer-bridge__link-copy strong {
-  font-size: var(--text-base);
-  line-height: 1.2;
-  color: var(--home-ink);
-}
-
-.home-footer-bridge__link-copy small {
-  font-size: var(--text-xs);
-  line-height: 1.55;
-  color: var(--color-text-secondary);
-}
-
-.home-footer-bridge__link:hover {
-  transform: translate3d(0, -0.2rem, 0);
-  background: var(--home-panel-bg-soft);
-  border-color: var(--home-panel-border-strong);
-  box-shadow: var(--home-panel-shadow-strong);
-}
-
 .hero-editorial.glass-card,
 .hero-preview.glass-card,
 .hero-stat.glass-card,
@@ -7283,9 +6859,7 @@ onBeforeUnmount(() => {
 }
 
 .latest-bubble.glass-card,
-.media-slice__sticky.glass-card,
-.home-footer-bridge__feature.glass-card,
-.home-footer-bridge__links.glass-card {
+.media-slice__sticky.glass-card {
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
 }
@@ -7309,11 +6883,7 @@ onBeforeUnmount(() => {
 .bubble-empty.glass-card::before,
 .bubble-empty.glass-card::after,
 .media-slice__sticky.glass-card::before,
-.media-slice__sticky.glass-card::after,
-.home-footer-bridge__feature.glass-card::before,
-.home-footer-bridge__feature.glass-card::after,
-.home-footer-bridge__links.glass-card::before,
-.home-footer-bridge__links.glass-card::after {
+.media-slice__sticky.glass-card::after {
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
 }
@@ -7405,34 +6975,23 @@ onBeforeUnmount(() => {
 @keyframes bubbleBurstFromCenter {
   0% {
     opacity: 0;
-    transform: translate3d(-50%, -50%, 0) scale(0.16);
+    transform: translate3d(-50%, -50%, 0) scale(0.72);
   }
 
   58% {
     opacity: 1;
     transform: translate3d(
-        calc(-50% + (var(--bubble-x) * 0.76)),
-        calc(-50% + (var(--bubble-y) * 0.76)),
+        calc(-50% + (var(--bubble-x) * 0.9)),
+        calc(-50% + (var(--bubble-y) * 0.9)),
         0
       )
-      scale(calc(var(--bubble-scale, 1) * 1.06));
+      scale(calc(var(--bubble-scale, 1) * 1.01));
   }
 
   100% {
     opacity: 1;
     transform: translate3d(calc(-50% + var(--bubble-x)), calc(-50% + var(--bubble-y)), 0)
       scale(var(--bubble-scale, 1));
-  }
-}
-
-@keyframes bubbleTextDrift {
-  0%,
-  100% {
-    transform: translate3d(0, 0, 0) rotate(0deg);
-  }
-
-  50% {
-    transform: translate3d(0.35rem, -0.9rem, 0) rotate(0.35deg);
   }
 }
 
@@ -7481,8 +7040,7 @@ onBeforeUnmount(() => {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .story-merge-panel,
-  .home-footer-bridge__grid {
+  .story-merge-panel {
     grid-template-columns: minmax(0, 1fr);
   }
 
@@ -7521,10 +7079,6 @@ onBeforeUnmount(() => {
   .trends-authors-shell {
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: none;
-  }
-
-  .home-footer-bridge__feature-shell {
-    grid-template-columns: minmax(0, 1fr);
   }
 
   .trends-card {
@@ -7617,17 +7171,6 @@ onBeforeUnmount(() => {
 
   .story-merge-panel {
     inset-inline: 0;
-  }
-
-  .home-footer-bridge__stage {
-    padding-block: calc(var(--home-stage-safe-top) + 0.75rem)
-      calc(1rem + var(--home-stage-safe-bottom));
-  }
-
-  .home-footer-bridge__links {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto;
-    min-block-size: 0;
   }
 
   .hero-spotlight-stack {
@@ -7928,8 +7471,7 @@ onBeforeUnmount(() => {
   .rail-stage,
   .posts--bubble > .container,
   .story-stage,
-  .story-merge-panel,
-  .home-footer-bridge__stage {
+  .story-merge-panel {
     opacity: 1;
     transform: none;
     filter: none;

@@ -691,7 +691,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(0.625rem);
 }
 
 .lightbox-shell {
@@ -762,7 +762,7 @@ onUnmounted(() => {
 
 .icon-btn:hover {
   background: rgba(255, 255, 255, 0.16);
-  transform: translateY(-1px);
+  transform: translateY(-0.0625rem);
 }
 
 .lightbox-content {
@@ -821,7 +821,7 @@ onUnmounted(() => {
 
 .media-hint.is-visible {
   opacity: 1;
-  transform: translateX(-50%) translateY(-4px);
+  transform: translateX(-50%) translateY(-0.25rem);
 }
 
 .media-dot {
@@ -914,7 +914,7 @@ onUnmounted(() => {
   border-radius: var(--radius-full);
   border: 1px solid rgba(255, 255, 255, 0.15);
   background: rgba(0, 0, 0, 0.55);
-  backdrop-filter: blur(12px);
+  backdrop-filter: blur(0.75rem);
   color: white;
   transition:
     opacity var(--transition-fast),
@@ -923,7 +923,7 @@ onUnmounted(() => {
 
 .lightbox-toolbar.hidden {
   opacity: 0;
-  transform: translateX(-50%) translateY(10px);
+  transform: translateX(-50%) translateY(0.625rem);
   pointer-events: none;
 }
 
@@ -941,7 +941,7 @@ onUnmounted(() => {
 
 .lightbox-footer.hidden {
   opacity: 0;
-  transform: translateY(6px);
+  transform: translateY(0.375rem);
   pointer-events: none;
 }
 .zoom-slider input[type='range'] {
@@ -976,22 +976,22 @@ onUnmounted(() => {
 
 .lightbox-slide-left-enter-from {
   opacity: 0;
-  transform: translateX(24px) scale(0.98);
+  transform: translateX(1.5rem) scale(0.98);
 }
 
 .lightbox-slide-left-leave-to {
   opacity: 0;
-  transform: translateX(-24px) scale(0.98);
+  transform: translateX(-1.5rem) scale(0.98);
 }
 
 .lightbox-slide-right-enter-from {
   opacity: 0;
-  transform: translateX(-24px) scale(0.98);
+  transform: translateX(-1.5rem) scale(0.98);
 }
 
 .lightbox-slide-right-leave-to {
   opacity: 0;
-  transform: translateX(24px) scale(0.98);
+  transform: translateX(1.5rem) scale(0.98);
 }
 
 @media (max-width: 768px) {

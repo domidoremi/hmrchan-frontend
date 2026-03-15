@@ -182,7 +182,7 @@ const resolvedActionLabel = computed(() => props.actionLabel ?? t('common.retry'
     transform: translateY(0);
   }
   50% {
-    transform: translateY(-6px);
+    transform: translateY(-0.375rem);
   }
 }
 

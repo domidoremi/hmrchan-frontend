@@ -79,6 +79,12 @@
         </Transition>
       </div>
 
+      <div v-if="showPreviewNotice" class="fallback-preview glass-card">
+        <span class="fallback-preview__label">{{ $t('home.preview.label') }}</span>
+        <p>{{ $t('home.preview.desc') }}</p>
+        <span v-if="fallbackReason" class="fallback-preview__detail">{{ fallbackReason }}</span>
+      </div>
+
       <!-- 日历网格 -->
       <div
         ref="calendarRef"
@@ -131,7 +137,12 @@
         </Transition>
       </div>
 
-      <StateIndicator v-if="error" variant="error" :description="error" @action="fetchEvents" />
+      <StateIndicator
+        v-if="error && !isUsingFallback"
+        variant="error"
+        :description="error"
+        @action="fetchEvents"
+      />
 
       <!-- 日程详情弹窗 -->
       <Dialog
@@ -397,6 +408,12 @@ import { scheduleService, type ScheduleCalendarItem } from '@/api/scheduleServic
 import type { ScheduleCategory, ScheduleResponse } from '@/api/scheduleService'
 import { useScheduleStore } from '@/stores/schedule'
 import { ApiError } from '@/api'
+import { getFallbackScheduleById, getFallbackScheduleCalendar } from '@/mocks/scheduleFallback'
+import {
+  isServiceUnavailableError,
+  resolvePublicFallbackReason,
+  type PublicPageDataSource,
+} from '@/mocks/publicPageFallback'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import Dialog from '@/components/ui/Dialog.vue'
 
@@ -409,6 +426,10 @@ const scheduleStore = useScheduleStore()
 const events = ref<ScheduleCalendarItem[]>([])
 const isLoading = ref(false)
 const error = ref<string | null>(null)
+const eventsSource = ref<PublicPageDataSource>('live')
+const fallbackReason = ref<string | null>(null)
+const isUsingFallback = computed(() => eventsSource.value === 'fallback')
+const showPreviewNotice = computed(() => Boolean(fallbackReason.value) && isUsingFallback.value)
 const currentYear = ref(new Date().getFullYear())
 const currentMonth = ref(new Date().getMonth())
 const activeCategory = ref<ScheduleCategory | 'all'>('all')
@@ -727,7 +748,16 @@ async function loadDetail(eventId: string) {
   detailEvent.value = { id: eventId } as ScheduleResponse // placeholder to open dialog
   try {
     detailEvent.value = await scheduleService.getById(eventId, { skipErrorToast: true })
-  } catch {
+  } catch (err) {
+    if (isServiceUnavailableError(err)) {
+      const fallbackDetail = getFallbackScheduleById(eventId)
+      if (fallbackDetail) {
+        detailEvent.value = fallbackDetail
+        eventsSource.value = 'fallback'
+        fallbackReason.value = resolvePublicFallbackReason(err) ?? t('error.serviceUnavailable')
+        return
+      }
+    }
     detailEvent.value = null
     if (routeScheduleId.value === eventId) {
       void router.replace({ name: 'schedule' })
@@ -845,11 +875,22 @@ async function fetchEvents(signal?: AbortSignal) {
     const result = await scheduleService.calendar({ start, end }, { signal })
     if (signal?.aborted || fetchId !== latestFetchId) return
     events.value = result
+    eventsSource.value = 'live'
+    fallbackReason.value = null
   } catch (err) {
     if (signal?.aborted || isAbortError(err) || fetchId !== latestFetchId) return
 
     if (err instanceof ApiError && err.status === 404) {
       events.value = []
+      eventsSource.value = 'live'
+      fallbackReason.value = null
+    } else if (isServiceUnavailableError(err)) {
+      const start = new Date(currentYear.value, currentMonth.value - 1, 1).toISOString()
+      const end = new Date(currentYear.value, currentMonth.value + 2, 0).toISOString()
+      events.value = getFallbackScheduleCalendar({ start, end })
+      eventsSource.value = 'fallback'
+      fallbackReason.value = resolvePublicFallbackReason(err) ?? t('error.serviceUnavailable')
+      error.value = null
     } else {
       error.value = err instanceof ApiError ? err.message : t('common.error')
     }
@@ -896,6 +937,33 @@ onMounted(() => {
   padding: var(--spacing-6) 0;
 }
 
+.fallback-preview {
+  display: grid;
+  gap: var(--spacing-2);
+  padding: clamp(1rem, 1.8vw, 1.25rem);
+  margin-block-end: var(--spacing-4);
+}
+
+.fallback-preview__label {
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+}
+
+.fallback-preview p {
+  margin: 0;
+  max-width: 52ch;
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
+.fallback-preview__detail {
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+}
+
 /* ========== 背景装饰 ========== */
 .schedule-bg {
   position: fixed;
@@ -909,7 +977,7 @@ onMounted(() => {
 .schedule-bg__blob {
   position: absolute;
   border-radius: 50%;
-  filter: blur(100px);
+  filter: blur(6.25rem);
   opacity: 0.3;
   transform: translate3d(0, 0, 0);
   will-change: transform;
@@ -1158,22 +1226,22 @@ onMounted(() => {
 
 .month-slide-left-enter-from {
   opacity: 0;
-  transform: translateX(20px);
+  transform: translateX(1.25rem);
 }
 
 .month-slide-left-leave-to {
   opacity: 0;
-  transform: translateX(-20px);
+  transform: translateX(-1.25rem);
 }
 
 .month-slide-right-enter-from {
   opacity: 0;
-  transform: translateX(-20px);
+  transform: translateX(-1.25rem);
 }
 
 .month-slide-right-leave-to {
   opacity: 0;
-  transform: translateX(20px);
+  transform: translateX(1.25rem);
 }
 
 /* ========== Today 按钮过渡 ========== */
@@ -1344,12 +1412,12 @@ onMounted(() => {
 
 .slide-fade-enter-from {
   opacity: 0;
-  transform: translateY(-8px);
+  transform: translateY(-0.5rem);
 }
 
 .slide-fade-leave-to {
   opacity: 0;
-  transform: translateY(-4px);
+  transform: translateY(-0.25rem);
 }
 
 /* ========== 响应式 ========== */

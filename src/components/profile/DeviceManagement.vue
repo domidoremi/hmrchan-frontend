@@ -572,7 +572,7 @@ function getLocationText(session: Device): string {
 <style>
 /* ===== Material 3 Overrides ===== */
 #app[data-ui-style='material'] .device-management .device-card {
-  border-radius: 12px;
+  border-radius: 0.75rem;
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
   background: var(--color-surface, #fff);
@@ -590,32 +590,32 @@ function getLocationText(session: Device): string {
 }
 
 #app[data-ui-style='material'] .device-management .device-icon {
-  border-radius: 8px;
+  border-radius: 0.5rem;
 }
 
 #app[data-ui-style='material'] .device-management .badge-current {
-  border-radius: 4px;
+  border-radius: 0.25rem;
 }
 
 #app[data-ui-style='material'] .device-management .badge-trusted {
-  border-radius: 4px;
+  border-radius: 0.25rem;
 }
 
 #app[data-ui-style='material'] .device-management .btn-trust,
 #app[data-ui-style='material'] .device-management .btn-revoke {
-  border-radius: 8px;
+  border-radius: 0.5rem;
 }
 
 #app[data-ui-style='material'] .device-management .btn-icon {
-  border-radius: 4px;
+  border-radius: 0.25rem;
 }
 
 #app[data-ui-style='material'] .device-management .device-name-input {
-  border-radius: 4px;
+  border-radius: 0.25rem;
 }
 
 #app[data-ui-style='material'] .device-management .skeleton-card {
-  border-radius: 12px;
+  border-radius: 0.75rem;
 }
 
 /* ===== Dark Theme ===== */

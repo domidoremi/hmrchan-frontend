@@ -159,7 +159,7 @@ withDefaults(defineProps<Props>(), {
   stroke: var(--color-primary);
   stroke-linecap: round;
   animation: ring-dash 1.5s ease-in-out infinite;
-  filter: drop-shadow(0 0 6px rgba(var(--color-primary-rgb), 0.5));
+  filter: drop-shadow(0 0 0.375rem rgba(var(--color-primary-rgb), 0.5));
 }
 
 .page-loading__logo {

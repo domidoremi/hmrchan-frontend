@@ -15,7 +15,7 @@
   --ui-style: ios;
 
   /* Touch targets */
-  --ui-control-min-size: 44px;
+  --ui-control-min-size: 2.75rem;
   --ui-control-height-sm: 2.25rem;
   --ui-control-height-md: 2.5rem;
   --ui-control-height-lg: 2.75rem;
@@ -24,8 +24,8 @@
   --ui-control-padding-x-lg: 2rem;
 
   /* Corner radii */
-  --ui-radius-sheet: 18px;
-  --ui-radius-dialog: 16px;
+  --ui-radius-sheet: 1.125rem;
+  --ui-radius-dialog: var(--radius-xl);
   --ui-radius-button: var(--radius);
   --ui-radius-input: var(--radius);
   --ui-radius-card: var(--radius-xl);
@@ -42,7 +42,7 @@
 
   /* Backdrop / scrim */
   --ui-backdrop-dim: rgba(0, 0, 0, 0.45);
-  --ui-backdrop-blur: blur(18px) saturate(1.05);
+  --ui-backdrop-blur: blur(1.125rem) saturate(1.05);
 
   /* Surfaces */
   --ui-surface-border: rgba(255, 255, 255, 0.12);
@@ -108,7 +108,7 @@
   --ui-control-padding-x-md: 1.25rem;
   --ui-control-padding-x-lg: 2.25rem;
 
-  --ui-radius-button: 999px;
+  --ui-radius-button: var(--radius-full);
   --ui-radius-input: var(--radius-lg);
   --ui-radius-card: var(--radius-2xl);
   --ui-radius-tabs: var(--radius-full);
@@ -151,12 +151,12 @@
   --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.16);
 
   /* Material tends to use smaller radii + clearer elevation */
-  --ui-radius-sheet: 16px;
-  --ui-radius-dialog: 28px;
+  --ui-radius-sheet: var(--radius-xl);
+  --ui-radius-dialog: 1.75rem;
   /* M3 Dialog radius */
 
   --ui-backdrop-dim: rgba(0, 0, 0, 0.52);
-  --ui-backdrop-blur: blur(0px);
+  --ui-backdrop-blur: blur(0);
   /* Material typically uses dimming, minimal blur */
 
   /* Make the switch obvious: tune the global radii for descendants */
@@ -176,7 +176,7 @@
 
   --transition-fast: 150ms;
 
-  --ui-control-min-size: 40px;
+  --ui-control-min-size: 2.5rem;
   --ui-control-height-sm: 2.125rem;
   --ui-control-height-md: 2.5rem;
   /* M3 Filled Button height is 40px */
@@ -185,21 +185,21 @@
   --ui-control-padding-x-md: 1.5rem;
   --ui-control-padding-x-lg: 2rem;
 
-  --ui-radius-button: 9999px;
+  --ui-radius-button: var(--radius-full);
   /* M3 Buttons are pill-shaped (full) */
-  --ui-radius-input: 4px;
+  --ui-radius-input: var(--radius-sm);
   /* Text fields usually small radius or 0 for filled */
-  --ui-radius-card: 12px;
+  --ui-radius-card: var(--radius-lg);
   /* M3 Card */
-  --ui-radius-tabs: 9999px;
+  --ui-radius-tabs: var(--radius-full);
   /* Navigation bar/rail items */
-  --ui-radius-toast: 4px;
+  --ui-radius-toast: var(--radius-sm);
   /* Snackbar */
   --ui-radius-nav: 0;
-  --ui-radius-nav-icon: 16px;
+  --ui-radius-nav-icon: var(--radius-xl);
   /* Active indicator */
-  --ui-radius-checkbox: 2px;
-  --ui-radius-badge: 9999px;
+  --ui-radius-checkbox: 0.125rem;
+  --ui-radius-badge: var(--radius-full);
 
   --ui-dialog-close-size: 2rem;
 
@@ -285,7 +285,7 @@
 
 #app[data-ui-style='ios'] .btn,
 #app[data-ui-style='ios'] .glass-button {
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   letter-spacing: -0.01em;
 }
 
@@ -441,8 +441,8 @@
 
 /* ========== iOS Blur Effects ========== */
 #app[data-ui-style='ios'] .glass-card {
-  backdrop-filter: blur(24px) saturate(1.4);
-  -webkit-backdrop-filter: blur(24px) saturate(1.4);
+  backdrop-filter: blur(1.5rem) saturate(1.4);
+  -webkit-backdrop-filter: blur(1.5rem) saturate(1.4);
 }
 
 /* ========== Material Ripple Indicator ========== */
@@ -487,15 +487,15 @@
 /* ========== Navbar ========== */
 #app[data-ui-style='ios'] .glass-navbar {
   border-bottom: 0.5px solid var(--glass-border);
-  backdrop-filter: blur(20px) saturate(1.4);
-  -webkit-backdrop-filter: blur(20px) saturate(1.4);
+  backdrop-filter: blur(1.25rem) saturate(1.4);
+  -webkit-backdrop-filter: blur(1.25rem) saturate(1.4);
 }
 
 #app[data-ui-style='material'] .glass-navbar {
   border-bottom: none;
   box-shadow: var(--shadow-md);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(0.5rem);
+  -webkit-backdrop-filter: blur(0.5rem);
 }
 
 /* ========== Nav Links ========== */
@@ -537,8 +537,8 @@
 #app[data-ui-style='ios'] .glass-dropdown {
   border-radius: var(--ui-radius-dialog);
   border: 0.5px solid var(--glass-border);
-  backdrop-filter: blur(20px) saturate(1.3);
-  -webkit-backdrop-filter: blur(20px) saturate(1.3);
+  backdrop-filter: blur(1.25rem) saturate(1.3);
+  -webkit-backdrop-filter: blur(1.25rem) saturate(1.3);
   box-shadow: 0 18px 60px rgba(0, 0, 0, 0.2);
 }
 
@@ -546,15 +546,15 @@
   border-radius: var(--radius);
   border: none;
   box-shadow: var(--glass-shadow-lg);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(0.375rem);
+  -webkit-backdrop-filter: blur(0.375rem);
 }
 
 /* ========== Toggle Switch ========== */
 #app[data-ui-style='ios'] .toggle-switch {
   width: 3rem;
   height: 1.75rem;
-  border-radius: 14px;
+  border-radius: 0.875rem;
   background: var(--color-gray-300);
   transition: background var(--duration-fast) var(--ease-spring);
 }
@@ -562,7 +562,7 @@
 #app[data-ui-style='ios'] .toggle-switch .toggle-knob {
   width: 1.5rem;
   height: 1.5rem;
-  border-radius: 12px;
+  border-radius: 0.75rem;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.16);
   transition: transform var(--duration-fast) var(--ease-spring);
 }
@@ -574,7 +574,7 @@
 #app[data-ui-style='material'] .toggle-switch {
   width: 2.625rem;
   height: 1.5rem;
-  border-radius: 12px;
+  border-radius: 0.75rem;
   background: var(--color-gray-300);
   transition: background var(--duration-fast) var(--ease-out);
 }
@@ -582,7 +582,7 @@
 #app[data-ui-style='material'] .toggle-switch .toggle-knob {
   width: 1.25rem;
   height: 1.25rem;
-  border-radius: 10px;
+  border-radius: 0.625rem;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
   transition: transform var(--duration-fast) var(--ease-out);
 }
@@ -606,13 +606,13 @@
 #app[data-ui-style='ios'] .dialog-content {
   border-radius: var(--ui-radius-dialog);
   border: 0.5px solid var(--glass-border);
-  backdrop-filter: blur(24px) saturate(1.3);
-  -webkit-backdrop-filter: blur(24px) saturate(1.3);
+  backdrop-filter: blur(1.5rem) saturate(1.3);
+  -webkit-backdrop-filter: blur(1.5rem) saturate(1.3);
 }
 
 #app[data-ui-style='material'] .modal-overlay {
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(0.25rem);
+  -webkit-backdrop-filter: blur(0.25rem);
   background: var(--ui-backdrop-dim);
 }
 
@@ -627,7 +627,7 @@
 #app[data-ui-style='ios'] .badge,
 #app[data-ui-style='ios'] .chip,
 #app[data-ui-style='ios'] .tag {
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   padding: var(--spacing-1) var(--spacing-3);
   font-weight: var(--font-medium);
   border: none;
@@ -689,24 +689,24 @@
 /* ========== Mobile Bottom Nav ========== */
 #app[data-ui-style='ios'] .mobile-nav {
   border-top: 0.5px solid var(--glass-border);
-  backdrop-filter: blur(20px) saturate(1.4);
-  -webkit-backdrop-filter: blur(20px) saturate(1.4);
+  backdrop-filter: blur(1.25rem) saturate(1.4);
+  -webkit-backdrop-filter: blur(1.25rem) saturate(1.4);
   background: var(--glass-bg-strong);
 }
 
 #app[data-ui-style='material'] .mobile-nav {
   border-top: none;
   box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.12);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(0.375rem);
+  -webkit-backdrop-filter: blur(0.375rem);
   background: var(--glass-bg-strong);
 }
 
 /* ========== Toast Notifications ========== */
 #app[data-ui-style='ios'] .toast {
   border-radius: var(--radius-xl);
-  backdrop-filter: blur(16px) saturate(1.2);
-  -webkit-backdrop-filter: blur(16px) saturate(1.2);
+  backdrop-filter: blur(1rem) saturate(1.2);
+  -webkit-backdrop-filter: blur(1rem) saturate(1.2);
   border: 0.5px solid var(--glass-border);
 }
 
@@ -724,7 +724,7 @@
 
 #app[data-ui-style='ios'] ::-webkit-scrollbar-thumb {
   background: rgba(var(--color-primary-rgb), 0.2);
-  border-radius: 3px;
+  border-radius: 0.1875rem;
 }
 
 #app[data-ui-style='ios'] ::-webkit-scrollbar-thumb:hover {
@@ -779,8 +779,8 @@
 
 #app[data-ui-style='ios'] .vp__panel {
   border-radius: var(--ui-radius-dialog);
-  backdrop-filter: blur(20px) saturate(1.3);
-  -webkit-backdrop-filter: blur(20px) saturate(1.3);
+  backdrop-filter: blur(1.25rem) saturate(1.3);
+  -webkit-backdrop-filter: blur(1.25rem) saturate(1.3);
 }
 
 #app[data-ui-style='ios'] .vp__chip {
@@ -797,13 +797,13 @@
 
 #app[data-ui-style='ios'] .vp__indicator {
   border-radius: var(--radius-2xl);
-  backdrop-filter: blur(20px) saturate(1.3);
-  -webkit-backdrop-filter: blur(20px) saturate(1.3);
+  backdrop-filter: blur(1.25rem) saturate(1.3);
+  -webkit-backdrop-filter: blur(1.25rem) saturate(1.3);
 }
 
 #app[data-ui-style='ios'] .vp__center-play {
-  backdrop-filter: blur(16px) saturate(1.3);
-  -webkit-backdrop-filter: blur(16px) saturate(1.3);
+  backdrop-filter: blur(1rem) saturate(1.3);
+  -webkit-backdrop-filter: blur(1rem) saturate(1.3);
 }
 
 #app[data-ui-style='ios'] .vp__progress-thumb {
@@ -817,8 +817,8 @@
 
 #app[data-ui-style='material'] .vp__panel {
   border-radius: var(--radius-lg);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(0.5rem);
+  -webkit-backdrop-filter: blur(0.5rem);
   box-shadow: var(--shadow-lg);
 }
 
@@ -837,14 +837,14 @@
 
 #app[data-ui-style='material'] .vp__indicator {
   border-radius: var(--radius-lg);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(0.5rem);
+  -webkit-backdrop-filter: blur(0.5rem);
 }
 
 #app[data-ui-style='material'] .vp__center-play {
   border-radius: var(--radius-xl);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(0.5rem);
+  -webkit-backdrop-filter: blur(0.5rem);
 }
 
 #app[data-ui-style='material'] .vp__progress-thumb {
@@ -855,14 +855,14 @@
 @media (max-width: 768px) {
   #app[data-ui-style='ios'] .vp__panel {
     border-radius: var(--ui-radius-sheet) var(--ui-radius-sheet) 0 0;
-    backdrop-filter: blur(24px) saturate(1.3);
-    -webkit-backdrop-filter: blur(24px) saturate(1.3);
+    backdrop-filter: blur(1.5rem) saturate(1.3);
+    -webkit-backdrop-filter: blur(1.5rem) saturate(1.3);
   }
 
   #app[data-ui-style='material'] .vp__panel {
     border-radius: var(--radius-xl) var(--radius-xl) 0 0;
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(0.5rem);
+    -webkit-backdrop-filter: blur(0.5rem);
     box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.2);
   }
 }
@@ -875,9 +875,9 @@
 
 /* ========== Back to Top Button ========== */
 #app[data-ui-style='ios'] .back-to-top {
-  border-radius: 999px;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  border-radius: var(--radius-full);
+  backdrop-filter: blur(0.75rem);
+  -webkit-backdrop-filter: blur(0.75rem);
 }
 
 #app[data-ui-style='material'] .back-to-top {
@@ -1002,7 +1002,7 @@
   background: var(--color-primary);
   color: var(--color-on-primary);
   border: none;
-  border-radius: 20px;
+  border-radius: 1.25rem;
   padding: 0.625rem 1.5rem;
   font-weight: var(--font-medium);
   letter-spacing: 0.02em;
@@ -1032,7 +1032,7 @@
   background: rgba(var(--color-primary-rgb), 0.12);
   color: var(--color-primary);
   border: none;
-  border-radius: 20px;
+  border-radius: 1.25rem;
   padding: 0.625rem 1.5rem;
   font-weight: var(--font-medium);
   letter-spacing: 0.02em;
@@ -1052,7 +1052,7 @@
   background: transparent;
   color: var(--color-primary);
   border: 1px solid var(--md-outline);
-  border-radius: 20px;
+  border-radius: 1.25rem;
   padding: 0.625rem 1.5rem;
   font-weight: var(--font-medium);
   letter-spacing: 0.02em;
@@ -1070,7 +1070,7 @@
 #app[data-ui-style='material'] .fab {
   width: 3.5rem;
   height: 3.5rem;
-  border-radius: 16px;
+  border-radius: 1rem;
   background: var(--md-surface-container-high);
   color: var(--color-primary);
   border: none;
@@ -1101,13 +1101,13 @@
 #app[data-ui-style='material'] .fab--small {
   width: 2.5rem;
   height: 2.5rem;
-  border-radius: 12px;
+  border-radius: 0.75rem;
 }
 
 #app[data-ui-style='material'] .fab--large {
   width: 6rem;
   height: 6rem;
-  border-radius: 28px;
+  border-radius: 1.75rem;
 }
 
 #app[data-ui-style='material'] .fab--primary {
@@ -1169,7 +1169,7 @@
   gap: var(--spacing-2);
   height: 2rem;
   padding: 0 var(--spacing-4);
-  border-radius: 8px;
+  border-radius: 0.5rem;
   font-size: var(--text-sm);
   font-weight: var(--font-medium);
   letter-spacing: 0.02em;
@@ -1197,7 +1197,7 @@
 #app[data-ui-style='material'] .progress-bar {
   height: 0.25rem;
   background: rgba(var(--color-primary-rgb), 0.12);
-  border-radius: 2px;
+  border-radius: 0.125rem;
   overflow: hidden;
 }
 
@@ -1245,7 +1245,7 @@
 /* ========== M3 Slider ========== */
 #app[data-ui-style='material'] .slider-track {
   height: 0.25rem;
-  border-radius: 2px;
+  border-radius: 0.125rem;
   background: rgba(var(--color-primary-rgb), 0.24);
 }
 
@@ -1307,7 +1307,7 @@
 
 /* ========== M3 Bottom Sheet ========== */
 #app[data-ui-style='material'] .bottom-sheet {
-  border-radius: 28px 28px 0 0;
+  border-radius: 1.75rem 1.75rem 0 0;
   background: var(--md-surface-container-low);
   box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.12);
 }
@@ -1315,7 +1315,7 @@
 #app[data-ui-style='material'] .bottom-sheet-handle {
   width: 2rem;
   height: 0.25rem;
-  border-radius: 2px;
+  border-radius: 0.125rem;
   background: var(--md-outline-variant);
   margin: 1rem auto 0.5rem;
 }
@@ -1325,7 +1325,7 @@
   width: 1.125rem;
   height: 1.125rem;
   border: 2px solid var(--md-on-surface-variant);
-  border-radius: 2px;
+  border-radius: 0.125rem;
   transition:
     background var(--duration-fast) var(--ease-out),
     border-color var(--duration-fast) var(--ease-out);
@@ -1359,8 +1359,8 @@
 /* ========== iOS Inset Grouped List ========== */
 #app[data-ui-style='ios'] .grouped-list {
   background: var(--glass-bg);
-  backdrop-filter: blur(20px) saturate(1.2);
-  -webkit-backdrop-filter: blur(20px) saturate(1.2);
+  backdrop-filter: blur(1.25rem) saturate(1.2);
+  -webkit-backdrop-filter: blur(1.25rem) saturate(1.2);
   border-radius: var(--radius-xl);
   overflow: hidden;
   border: 0.5px solid var(--glass-border);
@@ -1371,7 +1371,7 @@
   display: flex;
   align-items: center;
   gap: var(--spacing-3);
-  min-height: 44px;
+  min-height: var(--ui-control-min-size);
   transition: background var(--duration-fast) var(--ease-out);
 }
 
@@ -1407,7 +1407,7 @@
 #app[data-ui-style='ios'] .segmented-control {
   display: inline-flex;
   background: rgba(var(--color-primary-rgb), 0.08);
-  border-radius: 8px;
+  border-radius: 0.5rem;
   padding: 0.125rem;
   position: relative;
 }
@@ -1419,7 +1419,7 @@
   font-size: 0.8125rem;
   font-weight: var(--font-medium);
   color: var(--color-text-primary);
-  border-radius: 7px;
+  border-radius: 0.4375rem;
   transition: color var(--duration-fast) var(--ease-out);
   cursor: pointer;
   background: transparent;
@@ -1446,35 +1446,35 @@
 /* ========== iOS Vibrancy Effect ========== */
 #app[data-ui-style='ios'] .vibrancy {
   background: rgba(var(--color-primary-rgb), 0.04);
-  backdrop-filter: blur(20px) saturate(1.6) brightness(1.02);
-  -webkit-backdrop-filter: blur(20px) saturate(1.6) brightness(1.02);
+  backdrop-filter: blur(1.25rem) saturate(1.6) brightness(1.02);
+  -webkit-backdrop-filter: blur(1.25rem) saturate(1.6) brightness(1.02);
 }
 
 #app[data-ui-style='ios'][data-theme='dark'] .vibrancy {
   background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(20px) saturate(1.4) brightness(0.95);
-  -webkit-backdrop-filter: blur(20px) saturate(1.4) brightness(0.95);
+  backdrop-filter: blur(1.25rem) saturate(1.4) brightness(0.95);
+  -webkit-backdrop-filter: blur(1.25rem) saturate(1.4) brightness(0.95);
 }
 
 /* 较浅的 vibrancy 层次 */
 #app[data-ui-style='ios'] .vibrancy--thin {
-  backdrop-filter: blur(40px) saturate(1.8);
-  -webkit-backdrop-filter: blur(40px) saturate(1.8);
+  backdrop-filter: blur(2.5rem) saturate(1.8);
+  -webkit-backdrop-filter: blur(2.5rem) saturate(1.8);
 }
 
 /* ========== iOS Sheet / Action Sheet ========== */
 #app[data-ui-style='ios'] .sheet {
-  border-radius: 18px 18px 0 0;
+  border-radius: 1.125rem 1.125rem 0 0;
   background: var(--glass-bg-strong);
-  backdrop-filter: blur(24px) saturate(1.3);
-  -webkit-backdrop-filter: blur(24px) saturate(1.3);
+  backdrop-filter: blur(1.5rem) saturate(1.3);
+  -webkit-backdrop-filter: blur(1.5rem) saturate(1.3);
   border-top: 0.5px solid var(--glass-border);
 }
 
 #app[data-ui-style='ios'] .sheet-handle {
   width: 2.25rem;
   height: 0.3125rem;
-  border-radius: 2.5px;
+  border-radius: 0.15625rem;
   background: rgba(var(--color-primary-rgb), 0.2);
   margin: 0.5rem auto 0.25rem;
 }
@@ -1486,9 +1486,9 @@
 /* iOS Action Sheet Button Group */
 #app[data-ui-style='ios'] .action-sheet-group {
   background: var(--glass-bg-strong);
-  backdrop-filter: blur(24px) saturate(1.3);
-  -webkit-backdrop-filter: blur(24px) saturate(1.3);
-  border-radius: 14px;
+  backdrop-filter: blur(1.5rem) saturate(1.3);
+  -webkit-backdrop-filter: blur(1.5rem) saturate(1.3);
+  border-radius: 0.875rem;
   overflow: hidden;
   margin-bottom: var(--spacing-2);
 }
@@ -1587,7 +1587,7 @@
 /* ========== iOS Slider ========== */
 #app[data-ui-style='ios'] .slider-track {
   height: 0.25rem;
-  border-radius: 2px;
+  border-radius: 0.125rem;
   background: var(--color-gray-200);
 }
 
@@ -1616,7 +1616,7 @@
 #app[data-ui-style='ios'] .progress-bar {
   height: 0.25rem;
   background: rgba(var(--color-primary-rgb), 0.12);
-  border-radius: 2px;
+  border-radius: 0.125rem;
   overflow: hidden;
 }
 
@@ -1628,7 +1628,7 @@
 
 /* ========== iOS Search Bar ========== */
 #app[data-ui-style='ios'] .search-input {
-  border-radius: 10px;
+  border-radius: 0.625rem;
   background: rgba(var(--color-primary-rgb), 0.06);
   border: none;
   padding: 0.5rem 0.75rem 0.5rem 2rem;
@@ -1647,7 +1647,7 @@
 
 /* ========== Material Search Bar ========== */
 #app[data-ui-style='material'] .search-input {
-  border-radius: 28px;
+  border-radius: 1.75rem;
   background: var(--md-surface-container-highest);
   border: none;
   padding: 0.75rem 1rem 0.75rem 3rem;
@@ -1665,7 +1665,7 @@
 #app[data-ui-style='material'] .segmented-control {
   display: inline-flex;
   border: 1px solid var(--md-outline);
-  border-radius: 20px;
+  border-radius: 1.25rem;
   overflow: hidden;
 }
 
@@ -1703,7 +1703,7 @@
   gap: 0.25rem;
   padding: 0.75rem 0;
   min-width: 56px;
-  border-radius: 16px;
+  border-radius: 1rem;
   font-size: 0.75rem;
   font-weight: var(--font-medium);
   letter-spacing: 0.04em;
@@ -1722,7 +1722,7 @@
 
 #app[data-ui-style='material'] .nav-rail-item.active .nav-rail-icon {
   background: rgba(var(--color-primary-rgb), 0.12);
-  border-radius: 16px;
+  border-radius: 1rem;
   padding: 0.25rem 1.25rem;
 }
 
@@ -1739,7 +1739,7 @@
 
 /* ========== iOS Pill Button (common in iOS nav) ========== */
 #app[data-ui-style='ios'] .btn--pill {
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   padding: 0.5rem 1rem;
   font-size: 0.9375rem;
   font-weight: var(--font-semibold);
@@ -1768,20 +1768,20 @@
 @media (max-width: 768px) {
   /* Material: reduce elevation blur on mobile for perf */
   #app[data-ui-style='material'] .glass-card {
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(0.25rem);
+    -webkit-backdrop-filter: blur(0.25rem);
   }
 
   /* iOS: simpler vibrancy on mobile */
   #app[data-ui-style='ios'] .vibrancy {
-    backdrop-filter: blur(16px) saturate(1.3);
-    -webkit-backdrop-filter: blur(16px) saturate(1.3);
+    backdrop-filter: blur(1rem) saturate(1.3);
+    -webkit-backdrop-filter: blur(1rem) saturate(1.3);
   }
 
   /* Both: ensure touch targets */
   #app[data-ui-style='material'] .grouped-list-item,
   #app[data-ui-style='ios'] .grouped-list-item {
-    min-height: 48px;
+    min-height: 3rem;
   }
 
   #app[data-ui-style='ios'] .segmented-control-item {

@@ -941,7 +941,7 @@ function resetVideoSettings() {
 .theme-btn:hover {
   background: var(--glass-bg);
   border-color: var(--glass-border-strong);
-  transform: translateY(-2px);
+  transform: translateY(-0.125rem);
 }
 
 .theme-btn.active {
@@ -1054,7 +1054,7 @@ function resetVideoSettings() {
 .lang-btn:hover {
   background: var(--glass-bg);
   border-color: var(--glass-border-strong);
-  transform: translateY(-1px);
+  transform: translateY(-0.0625rem);
 }
 
 .lang-btn.active {
@@ -1182,7 +1182,7 @@ function resetVideoSettings() {
 }
 
 .toggle-switch.active .toggle-knob {
-  transform: translateX(20px);
+  transform: translateX(1.25rem);
 }
 
 /* ========== Link List ========== */
@@ -1213,7 +1213,7 @@ function resetVideoSettings() {
 .link-btn:hover {
   background: var(--glass-bg);
   border-color: var(--glass-border-strong);
-  transform: translateX(2px);
+  transform: translateX(0.125rem);
 }
 
 .link-btn-icon {
@@ -1243,7 +1243,7 @@ function resetVideoSettings() {
 .link-btn-arrow {
   color: var(--color-text-tertiary);
   opacity: 0;
-  transform: translateX(-4px);
+  transform: translateX(-0.25rem);
   transition: all var(--transition-fast);
 }
 
@@ -1294,7 +1294,7 @@ function resetVideoSettings() {
 .bg-effect-btn:hover {
   background: var(--glass-bg);
   border-color: var(--glass-border-strong);
-  transform: translateY(-2px);
+  transform: translateY(-0.125rem);
 }
 
 .bg-effect-btn.active {
@@ -1490,7 +1490,7 @@ function resetVideoSettings() {
 .link-btn:hover {
   background: var(--glass-bg);
   border-color: var(--glass-border-strong);
-  transform: translateX(4px);
+  transform: translateX(0.25rem);
 }
 
 .link-btn-icon {
@@ -1525,7 +1525,7 @@ function resetVideoSettings() {
 }
 
 .link-btn:hover .link-btn-arrow {
-  transform: translateX(4px);
+  transform: translateX(0.25rem);
   color: var(--color-primary);
 }
 

@@ -31,9 +31,20 @@
         </div>
       </header>
 
+      <div v-if="showPreviewNotice" class="fallback-preview glass-card">
+        <span class="fallback-preview__label">{{ $t('home.preview.label') }}</span>
+        <p>{{ $t('home.preview.desc') }}</p>
+        <span v-if="fallbackReason" class="fallback-preview__detail">{{ fallbackReason }}</span>
+      </div>
+
       <h2 class="sr-only">{{ $t('nav.authors') }}</h2>
 
-      <StateIndicator v-if="error" variant="error" :description="error" @action="fetchAuthors" />
+      <StateIndicator
+        v-if="error && !isUsingFallback"
+        variant="error"
+        :description="error"
+        @action="fetchAuthors"
+      />
 
       <template v-else>
         <div v-if="isLoading && authors.length === 0" class="authors-grid">
@@ -127,6 +138,12 @@ import { normalizeAvatarUrl } from '@/api/userService'
 import { authorCache } from '@/utils/cache'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import { useForwardedElementRef } from '@/composables/useForwardedElementRef'
+import { getFallbackAuthors } from '@/mocks/authorsFallback'
+import {
+  isServiceUnavailableError,
+  resolvePublicFallbackReason,
+  type PublicPageDataSource,
+} from '@/mocks/publicPageFallback'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import Skeleton from '@/components/ui/Skeleton.vue'
@@ -139,6 +156,10 @@ const authors = ref<AuthorListItem[]>([])
 const isLoading = ref(false)
 const isLoadingMore = ref(false)
 const error = ref<string | null>(null)
+const dataSource = ref<PublicPageDataSource>('live')
+const fallbackReason = ref<string | null>(null)
+const isUsingFallback = computed(() => dataSource.value === 'fallback')
+const showPreviewNotice = computed(() => Boolean(fallbackReason.value) && isUsingFallback.value)
 
 const page = ref(1)
 const total = ref(0)
@@ -211,10 +232,23 @@ async function fetchAuthors(reset = true): Promise<boolean> {
       authors.value.push(...res.items)
     }
     total.value = res.total
+    dataSource.value = 'live'
+    fallbackReason.value = null
 
     return true
   } catch (err) {
     if (controller.signal.aborted || requestToken !== fetchAuthorsToken) return false
+
+    if (isServiceUnavailableError(err) && authors.value.length === 0) {
+      const fallbackResult = getFallbackAuthors(params)
+      authors.value = reset ? fallbackResult.items : [...authors.value, ...fallbackResult.items]
+      total.value = fallbackResult.total
+      dataSource.value = 'fallback'
+      fallbackReason.value = resolvePublicFallbackReason(err) ?? t('error.serviceUnavailable')
+      error.value = null
+      return true
+    }
+
     if (authors.value.length === 0) {
       if (err instanceof ApiError) {
         error.value = err.message
@@ -298,7 +332,7 @@ onUnmounted(() => {
 .authors-bg__blob {
   position: absolute;
   border-radius: 50%;
-  filter: blur(100px);
+  filter: blur(6.25rem);
   opacity: 0.3;
 }
 
@@ -334,6 +368,33 @@ onUnmounted(() => {
 .page-title {
   margin-bottom: 0;
   font-size: var(--text-xl);
+}
+
+.fallback-preview {
+  display: grid;
+  gap: var(--spacing-2);
+  padding: clamp(1rem, 1.8vw, 1.25rem);
+  margin-block-end: var(--spacing-4);
+}
+
+.fallback-preview__label {
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+}
+
+.fallback-preview p {
+  margin: 0;
+  max-width: 52ch;
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
+.fallback-preview__detail {
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
 }
 
 @media (min-width: 768px) {
