@@ -1,5 +1,5 @@
 import type { AuditModule, AuditIssue, AuditOptions, AuditResult, AuditStatus } from './types'
-import { runCommand } from './utils'
+import { runLocalNodeTool } from './utils'
 
 interface KnipIssues {
   files?: string[]
@@ -66,7 +66,8 @@ function collectIssues(knip: KnipIssues): AuditIssue[] {
     for (const [file, exportInfo] of Object.entries(knip.exports)) {
       if (Array.isArray(exportInfo)) {
         for (const exp of exportInfo) {
-          const name = typeof exp === 'string' ? exp : (exp as Record<string, unknown>).name ?? exp
+          const name =
+            typeof exp === 'string' ? exp : ((exp as Record<string, unknown>).name ?? exp)
           issues.push({
             severity: 'info',
             message: `Unused export "${name}"`,
@@ -124,11 +125,11 @@ const deadCodeAudit: AuditModule = {
 
     // In fix mode, run knip --fix first
     if (options.fix) {
-      await runCommand('npx', ['knip', '--fix'], options.projectRoot)
+      await runLocalNodeTool('knip', ['--fix'], options.projectRoot)
     }
 
     // Run knip with JSON reporter
-    const result = await runCommand('npx', ['knip', '--reporter', 'json'], options.projectRoot)
+    const result = await runLocalNodeTool('knip', ['--reporter', 'json'], options.projectRoot)
 
     const knip = parseKnipOutput(result.stdout)
     const issues = collectIssues(knip)

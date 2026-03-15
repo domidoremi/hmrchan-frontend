@@ -1,5 +1,5 @@
 import type { AuditModule, AuditIssue, AuditOptions, AuditResult } from './types'
-import { runCommand } from './utils'
+import { runLocalNodeTool } from './utils'
 
 function parseTypeErrors(output: string): AuditIssue[] {
   const issues: AuditIssue[] = []
@@ -25,7 +25,7 @@ const typeCheckAudit: AuditModule = {
   async run(options: AuditOptions): Promise<AuditResult> {
     const start = Date.now()
 
-    const result = await runCommand('npx', ['vue-tsc', '--noEmit'], options.projectRoot)
+    const result = await runLocalNodeTool('vue-tsc', ['--noEmit'], options.projectRoot)
 
     // vue-tsc outputs errors to stdout (not stderr) in most setups
     const combined = result.stdout + '\n' + result.stderr
@@ -33,9 +33,7 @@ const typeCheckAudit: AuditModule = {
 
     const status = issues.length === 0 && result.exitCode === 0 ? 'pass' : 'fail'
     const summary =
-      status === 'pass'
-        ? 'All type checks passed'
-        : `Found ${issues.length} type error(s)`
+      status === 'pass' ? 'All type checks passed' : `Found ${issues.length} type error(s)`
 
     if (options.verbose && issues.length > 0) {
       for (const issue of issues) {

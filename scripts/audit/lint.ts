@@ -1,5 +1,5 @@
 import type { AuditModule, AuditIssue, AuditOptions, AuditResult, AuditStatus } from './types'
-import { runCommand } from './utils'
+import { runLocalNodeTool } from './utils'
 
 interface ESLintMessage {
   ruleId: string | null
@@ -58,14 +58,14 @@ const lintAudit: AuditModule = {
 
     // In fix mode, run auto-fix first
     if (options.fix) {
-      await runCommand('npx', ['eslint', '.', '--fix'], options.projectRoot)
+      await runLocalNodeTool('eslint', ['.', '--fix'], options.projectRoot)
     }
 
     // Run lint check with JSON output
-    const result = await runCommand(
-      'npx',
-      ['eslint', '.', '--max-warnings=0', '--format', 'json'],
-      options.projectRoot,
+    const result = await runLocalNodeTool(
+      'eslint',
+      ['.', '--max-warnings=0', '--format', 'json'],
+      options.projectRoot
     )
 
     const files = parseESLintJSON(result.stdout)
