@@ -1558,4 +1558,10 @@ onUnmounted(() => {
     transition: none;
   }
 }
+
+@media (max-width: 768px) {
+  .desk-pet {
+    display: none !important;
+  }
+}
 </style>

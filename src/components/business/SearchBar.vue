@@ -20,7 +20,7 @@
       <button
         v-if="query"
         type="button"
-        class="clear-btn"
+        class="clear-btn page-control-btn page-control-btn--square"
         :aria-label="$t('common.clear')"
         @click="clearQuery"
       >
@@ -39,16 +39,20 @@
     </div>
 
     <Transition name="dropdown">
-      <div v-if="showDropdown" class="search-dropdown glass-card">
+      <div v-if="showDropdown" class="search-dropdown empty-surface">
         <div v-if="isLoading" class="dropdown-loading">
           <span class="spinner spinner-sm" />
         </div>
 
         <template v-else>
           <div v-if="searchHistory.length > 0 && !query" class="dropdown-section">
-            <div class="section-header">
+            <div class="search-dropdown__header">
               <span>{{ $t('search.history') }}</span>
-              <button type="button" class="clear-history-btn" @click="clearHistory">
+              <button
+                type="button"
+                class="clear-history-btn page-control-btn page-control-btn--compact"
+                @click="clearHistory"
+              >
                 {{ $t('search.clearHistory') }}
               </button>
             </div>
@@ -66,7 +70,7 @@
           </div>
 
           <div v-if="suggestions.length > 0" class="dropdown-section">
-            <div class="section-header">
+            <div class="search-dropdown__header">
               <span>{{ $t('search.suggestions') }}</span>
             </div>
             <button
@@ -447,8 +451,20 @@ defineExpose({
 
 <style scoped>
 .search-bar {
+  --search-surface-bg: var(--chrome-surface-bg-soft);
+  --search-surface-bg-strong: var(--chrome-surface-bg);
+  --search-surface-border: var(--chrome-surface-border);
+  --search-surface-border-strong: var(--chrome-surface-border-strong);
+  --search-chip-bg: var(--chrome-chip-bg);
+  --search-chip-border: var(--chrome-chip-border);
+  --search-chip-text: var(--chrome-chip-text);
+  --search-action-bg: var(--chrome-action-bg);
+  --search-action-bg-hover: var(--chrome-action-bg-hover);
+  --search-action-border: var(--chrome-action-border);
+  --search-action-border-strong: var(--chrome-action-border-strong);
   position: relative;
   width: 100%;
+  min-inline-size: 0;
   max-width: min(90vw, 25rem);
 }
 
@@ -457,15 +473,24 @@ defineExpose({
   align-items: center;
   gap: var(--spacing-2);
   padding: var(--spacing-2) var(--spacing-3);
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-lg);
-  transition: all var(--transition-fast);
+  background: var(--search-surface-bg);
+  border: 1px solid var(--search-surface-border);
+  border-radius: var(--ui-radius-input, var(--radius-lg));
+  box-shadow: var(--chrome-surface-shadow);
+  backdrop-filter: blur(var(--blur-sm));
+  -webkit-backdrop-filter: blur(var(--blur-sm));
+  transition:
+    background var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out);
 }
 
 .search-bar.focused .search-input-wrapper {
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.12);
+  background: var(--search-surface-bg-strong);
+  border-color: var(--search-surface-border-strong);
+  box-shadow:
+    0 0 0 3px rgba(var(--color-primary-rgb), 0.12),
+    var(--chrome-surface-shadow);
 }
 
 .search-icon {
@@ -475,6 +500,7 @@ defineExpose({
 
 .search-input {
   flex: 1;
+  min-inline-size: 0;
   border: none;
   background: transparent;
   font-size: var(--text-sm);
@@ -490,15 +516,26 @@ defineExpose({
   display: flex;
   align-items: center;
   justify-content: center;
+  min-inline-size: 1.875rem;
+  min-block-size: 1.875rem;
   padding: var(--spacing-1);
+  border: 1px solid transparent;
   color: var(--color-text-secondary);
   border-radius: var(--radius-sm);
-  transition: all var(--transition-fast);
+  box-shadow: none;
+  transition:
+    background var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out);
 }
 
 .clear-btn:hover {
-  background: var(--glass-bg-light);
-  color: var(--color-text);
+  background: var(--search-action-bg-hover);
+  border-color: var(--search-action-border);
+  color: var(--color-primary);
+  transform: none;
+  box-shadow: none;
 }
 
 .search-submit-btn {
@@ -507,14 +544,19 @@ defineExpose({
   gap: var(--spacing-1);
   padding: var(--spacing-1) var(--spacing-2);
   border-radius: var(--radius-md);
-  background: var(--glass-bg-subtle);
+  border: 1px solid var(--search-action-border);
+  background: var(--search-action-bg);
   color: var(--color-text-secondary);
-  transition: all var(--transition-fast);
+  transition:
+    background var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out);
 }
 
 .search-submit-btn:hover:not(:disabled) {
-  background: var(--glass-bg-light);
-  color: var(--color-text);
+  background: var(--search-action-bg-hover);
+  border-color: var(--search-action-border-strong);
+  color: var(--color-primary);
 }
 
 .search-submit-btn:disabled {
@@ -534,14 +576,36 @@ defineExpose({
   }
 }
 
+@media (max-width: 640px) {
+  .search-input-wrapper {
+    gap: var(--spacing-1);
+    padding-inline: var(--spacing-2);
+  }
+
+  .search-submit-btn {
+    padding-inline: var(--spacing-1);
+  }
+}
+
 .search-dropdown {
   position: absolute;
   top: calc(100% + var(--spacing-2));
   left: 0;
   right: 0;
+  padding: 0;
   max-height: 25rem;
   overflow-y: auto;
   z-index: var(--z-dropdown);
+  border: 1px solid var(--search-surface-border);
+  border-radius: var(--ui-radius-dropdown, var(--radius-xl));
+  background: var(--search-surface-bg-strong);
+  box-shadow: var(--chrome-surface-shadow);
+  backdrop-filter: blur(var(--blur-sm));
+  -webkit-backdrop-filter: blur(var(--blur-sm));
+}
+
+.search-dropdown.empty-surface {
+  animation: none;
 }
 
 .dropdown-loading {
@@ -555,28 +619,41 @@ defineExpose({
 }
 
 .dropdown-section + .dropdown-section {
-  border-top: 1px solid var(--glass-border);
+  border-top: 1px solid var(--chrome-muted-border);
 }
 
-.section-header {
+.search-dropdown__header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: var(--spacing-2);
   font-size: var(--text-xs);
-  color: var(--color-text-secondary);
+  color: var(--color-text-tertiary);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 
 .clear-history-btn {
+  min-height: 1.875rem;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-full);
   font-size: var(--text-xs);
   color: var(--color-text-muted);
-  transition: color var(--transition-fast);
+  box-shadow: none;
+  transition:
+    color var(--duration-fast) var(--ease-out),
+    background var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out);
 }
 
 .clear-history-btn:hover {
   color: var(--color-primary);
+  background: var(--search-action-bg-hover);
+  border-color: var(--search-action-border);
+  transform: none;
+  box-shadow: none;
 }
 
 .dropdown-item {
@@ -586,13 +663,18 @@ defineExpose({
   width: 100%;
   padding: var(--spacing-2) var(--spacing-3);
   border-radius: var(--radius-md);
+  border: 1px solid transparent;
   text-align: left;
-  transition: background var(--transition-fast);
+  transition:
+    background var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out);
 }
 
 .dropdown-item:hover,
 .dropdown-item.selected {
-  background: var(--glass-bg-light);
+  background: var(--chrome-muted-bg);
+  border-color: var(--chrome-muted-border-strong);
 }
 
 .item-icon {
@@ -611,6 +693,10 @@ defineExpose({
 .item-type {
   font-size: var(--text-xs);
   color: var(--color-text-muted);
+  padding: 0.125rem 0.5rem;
+  border: 1px solid var(--search-chip-border);
+  border-radius: var(--radius-full);
+  background: var(--search-chip-bg);
 }
 
 .dropdown-empty {
@@ -620,6 +706,8 @@ defineExpose({
   gap: var(--spacing-2);
   padding: var(--spacing-6);
   color: var(--color-text-secondary);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(180deg, transparent, rgba(var(--color-primary-rgb), 0.03));
 }
 
 .empty-icon {
@@ -628,7 +716,9 @@ defineExpose({
 
 .dropdown-enter-active,
 .dropdown-leave-active {
-  transition: all var(--transition-fast);
+  transition:
+    opacity var(--transition-fast),
+    transform var(--transition-fast);
 }
 
 .dropdown-enter-from,

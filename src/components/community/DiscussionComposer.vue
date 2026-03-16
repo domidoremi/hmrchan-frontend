@@ -1,5 +1,5 @@
 <template>
-  <div class="discussion-composer glass-card">
+  <div class="discussion-composer empty-surface">
     <h3 class="composer-title">{{ $t('community.newDiscussion') }}</h3>
 
     <div class="composer-body">
@@ -40,7 +40,7 @@
         @keydown="handleKeydown"
       />
 
-      <div v-if="showMentions" class="mentions-dropdown glass-card">
+      <div v-if="showMentions" class="mentions-dropdown empty-surface">
         <div v-if="isSearching" class="mentions-loading">
           <span class="spinner spinner-sm" />
         </div>
@@ -397,6 +397,11 @@ watch(searchResults, () => {
   padding: var(--spacing-4);
 }
 
+.discussion-composer.empty-surface,
+.mentions-dropdown.empty-surface {
+  animation: none;
+}
+
 .composer-title {
   font-size: var(--text-lg);
   font-weight: var(--font-semibold);
@@ -430,7 +435,10 @@ watch(searchResults, () => {
   border: 1px solid var(--glass-border);
   color: var(--color-text-secondary);
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast);
 }
 
 .category-btn:hover {

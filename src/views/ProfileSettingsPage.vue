@@ -46,13 +46,13 @@
             <form class="settings-form" @submit.prevent="saveProfile">
               <!-- Avatar Section -->
               <section id="avatar-section" class="settings-section glass-card">
-                <div class="section-header">
-                  <div class="section-icon">
+                <div class="settings-section-head">
+                  <div class="settings-section-icon">
                     <AnimatedIcon name="user" :fallback-icon="User" size="sm" />
                   </div>
                   <div>
-                    <h2 class="section-title">{{ $t('profile.avatar') }}</h2>
-                    <p class="section-desc">{{ $t('profile.avatarSectionHint') }}</p>
+                    <h2 class="settings-section-title">{{ $t('profile.avatar') }}</h2>
+                    <p class="settings-section-desc">{{ $t('profile.avatarSectionHint') }}</p>
                   </div>
                 </div>
                 <div class="avatar-section">
@@ -96,13 +96,13 @@
 
               <!-- Basic Info Section -->
               <section id="basic-info" class="settings-section glass-card">
-                <div class="section-header">
-                  <div class="section-icon">
+                <div class="settings-section-head">
+                  <div class="settings-section-icon">
                     <AnimatedIcon name="explore" :fallback-icon="FileText" size="sm" />
                   </div>
                   <div>
-                    <h2 class="section-title">{{ $t('profile.basicInfo') }}</h2>
-                    <p class="section-desc">{{ $t('profile.basicInfoHint') }}</p>
+                    <h2 class="settings-section-title">{{ $t('profile.basicInfo') }}</h2>
+                    <p class="settings-section-desc">{{ $t('profile.basicInfoHint') }}</p>
                   </div>
                 </div>
 
@@ -195,13 +195,13 @@
 
             <!-- Change Email Section -->
             <section id="email-section" class="settings-section glass-card email-section">
-              <div class="section-header">
-                <div class="section-icon">
+              <div class="settings-section-head">
+                <div class="settings-section-icon">
                   <AnimatedIcon name="explore" :fallback-icon="Mail" size="sm" />
                 </div>
                 <div>
-                  <h2 class="section-title">{{ $t('email.changeEmailTitle') }}</h2>
-                  <p class="section-desc">{{ $t('email.changeEmailHint') }}</p>
+                  <h2 class="settings-section-title">{{ $t('email.changeEmailTitle') }}</h2>
+                  <p class="settings-section-desc">{{ $t('email.changeEmailHint') }}</p>
                 </div>
               </div>
 
@@ -296,13 +296,13 @@
 
             <!-- Password Section -->
             <section id="password-section" class="settings-section glass-card password-section">
-              <div class="section-header">
-                <div class="section-icon section-icon--warning">
+              <div class="settings-section-head">
+                <div class="settings-section-icon settings-section-icon--warning">
                   <AnimatedIcon name="sparkle" :fallback-icon="Shield" size="sm" />
                 </div>
                 <div>
-                  <h2 class="section-title">{{ $t('profile.changePassword') }}</h2>
-                  <p class="section-desc">{{ $t('profile.passwordHint') }}</p>
+                  <h2 class="settings-section-title">{{ $t('profile.changePassword') }}</h2>
+                  <p class="settings-section-desc">{{ $t('profile.passwordHint') }}</p>
                 </div>
               </div>
               <form @submit.prevent="changePassword">
@@ -447,13 +447,13 @@
 
             <!-- 2FA Section -->
             <section id="two-factor-section" class="settings-section glass-card two-factor-section">
-              <div class="section-header">
-                <div class="section-icon section-icon--success">
+              <div class="settings-section-head">
+                <div class="settings-section-icon settings-section-icon--success">
                   <AnimatedIcon name="sparkle" :fallback-icon="Shield" size="sm" />
                 </div>
                 <div>
-                  <h2 class="section-title">{{ $t('profile.twoFactorTitle') }}</h2>
-                  <p class="section-desc">{{ $t('profile.twoFactorHint') }}</p>
+                  <h2 class="settings-section-title">{{ $t('profile.twoFactorTitle') }}</h2>
+                  <p class="settings-section-desc">{{ $t('profile.twoFactorHint') }}</p>
                 </div>
               </div>
 
@@ -647,13 +647,13 @@
             </section>
 
             <section id="account-section" class="settings-section glass-card account-section">
-              <div class="section-header">
-                <div class="section-icon section-icon--warning">
+              <div class="settings-section-head">
+                <div class="settings-section-icon settings-section-icon--warning">
                   <AnimatedIcon name="sparkle" :fallback-icon="Trash2" size="sm" />
                 </div>
                 <div>
-                  <h2 class="section-title">{{ $t('profile.accountToolsTitle') }}</h2>
-                  <p class="section-desc">{{ $t('profile.accountToolsHint') }}</p>
+                  <h2 class="settings-section-title">{{ $t('profile.accountToolsTitle') }}</h2>
+                  <p class="settings-section-desc">{{ $t('profile.accountToolsHint') }}</p>
                 </div>
               </div>
 
@@ -1859,7 +1859,7 @@ onUnmounted(() => {
 .settings-main {
   display: flex;
   flex-direction: column;
-  gap: clamp(0.75rem, 2vw, 1rem);
+  gap: clamp(1rem, 2vw, 1.25rem);
   min-width: 0;
 }
 
@@ -1869,11 +1869,12 @@ onUnmounted(() => {
 
 .settings-aside-card {
   padding: clamp(0.875rem, 2.5vw, 1.25rem);
-  border-radius: var(--radius-lg);
-  background: var(--glass-bg-light);
+  border-radius: var(--profile-section-radius);
+  background: var(--profile-surface-bg-soft);
   backdrop-filter: blur(var(--blur-sm));
   -webkit-backdrop-filter: blur(var(--blur-sm));
-  border: 1px solid var(--glass-border-subtle);
+  border: 1px solid var(--profile-surface-border);
+  box-shadow: var(--profile-surface-shadow);
 }
 
 .aside-title {
@@ -1886,7 +1887,7 @@ onUnmounted(() => {
 .aside-nav {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 0.25rem;
 }
 
 .aside-link {
@@ -1895,7 +1896,9 @@ onUnmounted(() => {
   padding: var(--spacing-2) var(--spacing-3);
   border-radius: var(--radius-md);
   font-size: var(--text-sm);
-  border-left: 2px solid transparent;
+  background: transparent;
+  border: 1px solid transparent;
+  border-inline-start-width: 0.125rem;
   transition:
     color var(--duration-fast) var(--ease-smooth),
     background var(--duration-fast) var(--ease-smooth),
@@ -1904,8 +1907,9 @@ onUnmounted(() => {
 
 .aside-link:hover {
   color: var(--color-primary);
-  background: rgba(var(--color-primary-rgb), 0.04);
-  border-left-color: var(--color-primary);
+  background: var(--profile-muted-bg);
+  border-color: var(--profile-muted-border-strong);
+  border-inline-start-color: var(--color-primary);
 }
 
 .aside-meta {
@@ -1971,56 +1975,67 @@ onUnmounted(() => {
   position: relative;
   z-index: 1;
   max-width: min(90vw, 55rem);
-  border-left: 3px solid transparent;
-  transition: border-color var(--duration-fast) var(--ease-smooth);
+  border-radius: var(--profile-section-radius);
+  border: 1px solid var(--profile-surface-border);
+  border-inline-start-width: 0.1875rem;
+  background: var(--profile-surface-bg);
+  backdrop-filter: blur(var(--blur-sm));
+  -webkit-backdrop-filter: blur(var(--blur-sm));
+  box-shadow: var(--profile-surface-shadow);
+  transition:
+    border-color var(--duration-fast) var(--ease-smooth),
+    box-shadow var(--duration-fast) var(--ease-smooth);
 }
 
 .settings-section:hover {
-  border-left-color: rgba(var(--color-primary-rgb), 0.2);
+  border-color: var(--profile-surface-border-strong);
+  border-inline-start-color: rgba(var(--color-primary-rgb), 0.22);
+  box-shadow: var(--profile-surface-shadow-hover);
 }
 
-.section-header {
+.settings-section-head {
   display: flex;
   align-items: center;
   gap: var(--spacing-3);
   margin-bottom: var(--spacing-5);
   padding-bottom: var(--spacing-3);
-  border-bottom: 1px solid var(--glass-border-subtle);
+  border-bottom: 1px solid var(--profile-muted-border);
 }
 
-.section-icon {
+.settings-section-icon {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 2.25rem;
   height: 2.25rem;
-  background: rgba(var(--color-primary-rgb), 0.1);
+  background: var(--profile-muted-bg-strong);
+  border: 1px solid var(--profile-muted-border-strong);
   color: var(--color-primary);
   border-radius: var(--radius-lg);
   transition: transform var(--duration-fast) var(--ease-bounce-soft);
 }
 
-.section-header:hover .section-icon {
-  transform: scale(1.05);
+.settings-section-head:hover .settings-section-icon {
+  transform: none;
 }
 
-.section-icon--warning {
+.settings-section-icon--warning {
   background: rgba(var(--color-warning-rgb, 245, 158, 11), 0.1);
   color: var(--color-warning, #f59e0b);
 }
 
-.section-icon--success {
+.settings-section-icon--success {
   background: rgba(var(--color-success-rgb, 16, 185, 129), 0.12);
   color: var(--color-success);
 }
 
-.section-title {
+.settings-section-title {
   font-size: clamp(var(--text-base), 2vw, var(--text-lg));
   font-weight: var(--font-semibold);
   margin: 0;
 }
 
-.section-desc {
+.settings-section-desc {
   margin: 0;
   color: var(--color-text-tertiary);
   font-size: var(--text-sm);
@@ -2043,7 +2058,8 @@ onUnmounted(() => {
   height: 6.25rem;
   border-radius: var(--radius-full);
   object-fit: cover;
-  border: 3px solid var(--glass-border-medium);
+  border: 3px solid var(--profile-muted-border-strong);
+  box-shadow: var(--profile-surface-shadow);
   transition: border-color var(--duration-fast) var(--ease-smooth);
 }
 
@@ -2055,7 +2071,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--color-surface);
+  background: var(--profile-muted-bg);
   color: var(--color-text-secondary);
 }
 
@@ -2076,7 +2092,7 @@ onUnmounted(() => {
 }
 
 .avatar-wrapper:hover .avatar-badge {
-  transform: scale(1.1);
+  transform: scale(1.01);
 }
 
 .avatar-info {
@@ -2110,12 +2126,24 @@ onUnmounted(() => {
   display: inline-flex;
   align-items: center;
   gap: var(--spacing-2);
+  padding: 0.625rem 0.875rem;
+  border-radius: var(--radius-full);
+  background: var(--profile-action-bg);
+  border: 1px solid var(--profile-action-border);
+  color: var(--color-text-secondary);
   cursor: pointer;
-  transition: transform var(--duration-fast) var(--ease-bounce-soft);
+  transition:
+    transform var(--duration-fast) var(--ease-bounce-soft),
+    background var(--duration-fast) var(--ease-smooth),
+    border-color var(--duration-fast) var(--ease-smooth),
+    color var(--duration-fast) var(--ease-smooth);
 }
 
 .avatar-upload-btn:hover {
-  transform: var(--lift-sm);
+  background: var(--profile-action-bg-hover);
+  border-color: var(--profile-action-border-strong);
+  color: var(--color-primary);
+  transform: none;
 }
 
 /* Form Styles */
@@ -2149,7 +2177,7 @@ onUnmounted(() => {
 .input-readonly .input-with-icon {
   opacity: 0.7;
   cursor: not-allowed;
-  background: var(--glass-bg-light);
+  background: var(--profile-muted-bg);
 }
 
 .input-icon-right {
@@ -2206,17 +2234,22 @@ onUnmounted(() => {
   justify-content: center;
   width: 2rem;
   height: 2rem;
-  background: transparent;
-  border: none;
+  background: var(--profile-action-bg);
+  border: 1px solid var(--profile-action-border);
   color: var(--color-text-tertiary);
   cursor: pointer;
   border-radius: var(--radius-md);
-  transition: all var(--transition-fast);
+  transition:
+    background var(--duration-fast) var(--ease-smooth),
+    border-color var(--duration-fast) var(--ease-smooth),
+    color var(--duration-fast) var(--ease-smooth),
+    transform var(--duration-fast) var(--ease-bounce-soft);
 }
 
 .password-toggle:hover {
-  color: var(--color-text-primary);
-  background: var(--glass-bg-light);
+  color: var(--color-primary);
+  background: var(--profile-action-bg-hover);
+  border-color: var(--profile-action-border-strong);
 }
 
 /* Password Strength */
@@ -2238,7 +2271,9 @@ onUnmounted(() => {
 .strength-fill {
   height: 100%;
   border-radius: var(--radius-full);
-  transition: all var(--transition-base);
+  transition:
+    width var(--transition-base),
+    background-color var(--transition-base);
 }
 
 .strength-fill.strength-weak {
@@ -2285,7 +2320,7 @@ onUnmounted(() => {
   gap: var(--spacing-3);
   margin-top: var(--spacing-6);
   padding-top: var(--spacing-4);
-  border-top: 1px solid var(--glass-border);
+  border-top: 1px solid var(--profile-muted-border);
 }
 
 /* Two-Factor Authentication */
@@ -2299,11 +2334,11 @@ onUnmounted(() => {
   justify-content: space-between;
   gap: clamp(0.875rem, 2vw, 1.25rem);
   padding: clamp(0.875rem, 2vw, 1.125rem);
-  border: 1px solid var(--glass-border-subtle);
+  border: 1px solid var(--profile-muted-border);
   border-radius: var(--radius-lg);
   background:
     linear-gradient(135deg, rgba(var(--color-primary-rgb), 0.04), transparent 55%),
-    var(--glass-bg-light);
+    var(--profile-muted-bg);
 }
 
 .two-factor-status-copy {
@@ -2349,8 +2384,8 @@ onUnmounted(() => {
   justify-content: center;
   padding: clamp(0.875rem, 2vw, 1.125rem);
   border-radius: var(--radius-lg);
-  border: 1px solid var(--glass-border-subtle);
-  background: var(--glass-bg-light);
+  border: 1px solid var(--profile-muted-border);
+  background: var(--profile-muted-bg);
 }
 
 .two-factor-qr-image {
@@ -2375,8 +2410,8 @@ onUnmounted(() => {
   gap: 0.75rem;
   padding: clamp(0.875rem, 2vw, 1rem);
   border-radius: var(--radius-lg);
-  border: 1px solid var(--glass-border-subtle);
-  background: rgba(var(--color-primary-rgb), 0.03);
+  border: 1px solid var(--profile-muted-border);
+  background: var(--profile-muted-bg);
 }
 
 .two-factor-secret-label {
@@ -2390,7 +2425,8 @@ onUnmounted(() => {
   display: block;
   padding: 0.75rem 0.875rem;
   border-radius: var(--radius-md);
-  background: rgba(var(--color-primary-rgb), 0.08);
+  background: var(--profile-action-bg);
+  border: 1px solid var(--profile-action-border);
   color: var(--color-text-primary);
   font-size: var(--text-sm);
   overflow-wrap: anywhere;
@@ -2402,7 +2438,7 @@ onUnmounted(() => {
   padding: clamp(0.875rem, 2vw, 1rem);
   border-radius: var(--radius-lg);
   border: 1px dashed rgba(var(--color-primary-rgb), 0.22);
-  background: rgba(var(--color-primary-rgb), 0.03);
+  background: var(--profile-muted-bg);
 }
 
 .two-factor-backup-box--saved {
@@ -2444,8 +2480,8 @@ onUnmounted(() => {
   min-height: 2.75rem;
   padding: 0.625rem 0.75rem;
   border-radius: var(--radius-md);
-  border: 1px solid var(--glass-border-subtle);
-  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid var(--profile-action-border);
+  background: var(--profile-action-bg);
   color: var(--color-text-primary);
   font-size: var(--text-sm);
   font-weight: var(--font-medium);
@@ -2474,11 +2510,11 @@ onUnmounted(() => {
   justify-content: space-between;
   gap: clamp(0.875rem, 2vw, 1.25rem);
   padding: clamp(0.875rem, 2vw, 1.125rem);
-  border: 1px solid var(--glass-border-subtle);
+  border: 1px solid var(--profile-muted-border);
   border-radius: var(--radius-lg);
   background:
     linear-gradient(135deg, rgba(var(--color-warning-rgb, 245, 158, 11), 0.06), transparent 58%),
-    var(--glass-bg-light);
+    var(--profile-muted-bg);
 }
 
 .account-status-copy {
@@ -2491,9 +2527,9 @@ onUnmounted(() => {
   display: grid;
   gap: 1rem;
   padding: clamp(0.875rem, 2vw, 1.125rem);
-  border: 1px solid var(--glass-border-subtle);
+  border: 1px solid var(--profile-muted-border);
   border-radius: var(--radius-lg);
-  background: var(--glass-bg-light);
+  background: var(--profile-muted-bg);
 }
 
 .account-summary-card__header {
@@ -2521,6 +2557,9 @@ onUnmounted(() => {
   display: grid;
   gap: 0.25rem;
   padding: 0.875rem;
+  border: 1px solid var(--profile-action-border);
+  border-radius: var(--radius-lg);
+  background: var(--profile-action-bg);
 }
 
 .account-count-value {
@@ -2540,7 +2579,7 @@ onUnmounted(() => {
   padding: clamp(0.875rem, 2vw, 1rem);
   border-radius: var(--radius-lg);
   border: 1px dashed rgba(var(--color-warning-rgb, 245, 158, 11), 0.28);
-  background: rgba(var(--color-warning-rgb, 245, 158, 11), 0.05);
+  background: var(--profile-muted-bg);
 }
 
 .account-meta-grid {
@@ -2604,12 +2643,12 @@ onUnmounted(() => {
     margin-bottom: var(--spacing-4);
   }
 
-  .section-header {
+  .settings-section-head {
     margin-bottom: var(--spacing-4);
     padding-bottom: var(--spacing-3);
   }
 
-  .section-icon {
+  .settings-section-icon {
     width: 2rem;
     height: 2rem;
   }
@@ -2708,45 +2747,45 @@ onUnmounted(() => {
 <style>
 /* ===== Material 3 Overrides ===== */
 #app[data-ui-style='material'] .settings-page .settings-section {
-  border-radius: 12px;
-  border-left-width: 3px;
+  border-radius: var(--radius-lg);
+  border-inline-start-width: 0.1875rem;
 }
 
-#app[data-ui-style='material'] .settings-page .section-icon {
-  border-radius: 8px;
+#app[data-ui-style='material'] .settings-page .settings-section-icon {
+  border-radius: var(--radius-md);
 }
 
 #app[data-ui-style='material'] .settings-page .settings-aside-card {
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
-  background: var(--color-surface, #fff);
+  background: var(--profile-surface-bg);
   box-shadow: var(--shadow-sm);
 }
 
 #app[data-ui-style='material'] .settings-page .aside-link {
-  border-radius: 4px;
-  border-left-width: 2px;
+  border-radius: var(--radius-sm);
+  border-inline-start-width: 0.125rem;
 }
 
 #app[data-ui-style='material'] .settings-page .avatar-upload-btn:hover {
-  transform: translateY(-1px);
+  transform: none;
 }
 
 #app[data-ui-style='material'] .settings-page .strength-bar {
-  border-radius: 2px;
+  border-radius: calc(var(--radius-sm) / 2);
 }
 
 #app[data-ui-style='material'] .settings-page .strength-fill {
-  border-radius: 2px;
+  border-radius: calc(var(--radius-sm) / 2);
 }
 
 /* ===== Dark Theme ===== */
 [data-theme='dark'] .settings-page .settings-section:hover {
-  border-left-color: rgba(var(--color-primary-rgb), 0.3);
+  border-inline-start-color: rgba(var(--color-primary-rgb), 0.3);
 }
 
-[data-theme='dark'] .settings-page .section-header {
+[data-theme='dark'] .settings-page .settings-section-head {
   border-bottom-color: rgba(255, 255, 255, 0.06);
 }
 
@@ -2764,27 +2803,27 @@ onUnmounted(() => {
 
 /* ===== Blue Theme ===== */
 [data-theme='blue'] .settings-page .settings-section:hover {
-  border-left-color: rgba(59, 130, 246, 0.3);
+  border-inline-start-color: rgba(59, 130, 246, 0.3);
 }
 
-[data-theme='blue'] .settings-page .section-icon {
+[data-theme='blue'] .settings-page .settings-section-icon {
   background: rgba(59, 130, 246, 0.1);
   color: #3b82f6;
 }
 
-[data-theme='blue'] .settings-page .section-icon--warning {
+[data-theme='blue'] .settings-page .settings-section-icon--warning {
   background: rgba(245, 158, 11, 0.1);
   color: #f59e0b;
 }
 
-[data-theme='blue'] .settings-page .section-icon--success {
+[data-theme='blue'] .settings-page .settings-section-icon--success {
   background: rgba(var(--color-success-rgb, 16, 185, 129), 0.12);
   color: var(--color-success);
 }
 
 [data-theme='blue'] .settings-page .aside-link:hover {
   color: #3b82f6;
-  border-left-color: #3b82f6;
+  border-inline-start-color: #3b82f6;
   background: rgba(59, 130, 246, 0.04);
 }
 
@@ -2804,7 +2843,7 @@ onUnmounted(() => {
 
 /* ===== Material + Blue ===== */
 #app[data-ui-style='material'][data-theme='blue'] .settings-page .settings-aside-card {
-  background: #ffffff;
+  background: var(--profile-surface-bg);
   border-color: rgba(59, 130, 246, 0.1);
   box-shadow: 0 1px 3px rgba(59, 130, 246, 0.06);
 }
@@ -2814,6 +2853,6 @@ onUnmounted(() => {
 }
 
 #app[data-ui-style='material'][data-theme='blue'] .settings-page .settings-section:hover {
-  border-left-color: #3b82f6;
+  border-inline-start-color: #3b82f6;
 }
 </style>

@@ -321,7 +321,7 @@ function getLocationText(session: Device): string {
 }
 
 .device-card:hover .device-icon {
-  transform: scale(1.05);
+  transform: scale(1.01);
 }
 
 /* Device Info */
@@ -575,7 +575,7 @@ function getLocationText(session: Device): string {
   border-radius: 0.75rem;
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
-  background: var(--color-surface, #fff);
+  background: var(--color-surface, var(--profile-surface-bg));
   box-shadow: var(--shadow-sm);
   border-left-width: 3px;
 }
@@ -585,7 +585,7 @@ function getLocationText(session: Device): string {
 }
 
 #app[data-ui-style='material'] .device-management .device-card:hover {
-  transform: translateY(-1px);
+  transform: none;
   box-shadow: var(--shadow-md);
 }
 
@@ -656,7 +656,7 @@ function getLocationText(session: Device): string {
 
 /* ===== Material + Blue ===== */
 #app[data-ui-style='material'][data-theme='blue'] .device-management .device-card {
-  background: #ffffff;
+  background: var(--profile-surface-bg);
   border-color: rgba(59, 130, 246, 0.08);
   box-shadow: 0 1px 3px rgba(59, 130, 246, 0.06);
 }

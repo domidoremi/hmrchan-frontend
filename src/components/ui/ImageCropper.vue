@@ -1,11 +1,11 @@
 <template>
   <div class="image-cropper-overlay" @click.self="cancel">
-    <div class="image-cropper glass-card" role="dialog" aria-modal="true">
+    <div class="image-cropper empty-surface" role="dialog" aria-modal="true">
       <header class="cropper-header">
         <h3>{{ $t('profile.cropAvatar') }}</h3>
         <button
           type="button"
-          class="close-btn glass-button"
+          class="close-btn page-control-btn page-control-btn--square"
           :aria-label="$t('common.close')"
           @click="cancel"
         >
@@ -393,6 +393,10 @@ onUnmounted(() => {
   overflow: hidden;
 }
 
+.image-cropper.empty-surface {
+  animation: none;
+}
+
 .cropper-header {
   display: flex;
   align-items: center;
@@ -575,7 +579,10 @@ onUnmounted(() => {
   font-size: var(--text-xs);
   color: var(--color-text-secondary);
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast);
 }
 
 .ghost-btn:hover {
@@ -598,7 +605,10 @@ onUnmounted(() => {
   border-radius: var(--radius-md);
   font-size: var(--text-sm);
   color: var(--color-text-secondary);
-  transition: all var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast);
 }
 
 .shape-btn:hover {

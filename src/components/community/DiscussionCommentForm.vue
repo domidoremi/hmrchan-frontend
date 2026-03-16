@@ -1,6 +1,6 @@
 <template>
   <form class="discussion-comment-form" @submit.prevent="handleSubmit">
-    <div v-if="!isAuthenticated" class="login-prompt glass-card">
+    <div v-if="!isAuthenticated" class="login-prompt empty-surface">
       <div class="prompt-icon-wrap">
         <AnimatedIcon name="user" :fallback-icon="LogIn" size="lg" class="prompt-icon" />
       </div>

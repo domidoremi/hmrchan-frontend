@@ -9,13 +9,13 @@
     <div class="container">
       <header class="page-hero authors-hero">
         <div class="page-hero__content">
-          <div class="page-title-row">
-            <div>
+          <div class="page-hero__header">
+            <div class="page-hero__heading">
               <span class="page-hero__eyebrow">{{ $t('nav.authors') }}</span>
-              <h1 class="page-title">{{ $t('nav.authors') }}</h1>
+              <h1 class="page-hero__title">{{ $t('nav.authors') }}</h1>
             </div>
             <div class="page-hero__actions">
-              <button type="button" class="glass-button" @click="goToExplore">
+              <button type="button" class="page-control-btn" @click="goToExplore">
                 {{ $t('nav.explore') }}
               </button>
               <span v-if="isLoading && authors.length > 0" class="spinner spinner-sm" />
@@ -31,7 +31,7 @@
         </div>
       </header>
 
-      <div v-if="showPreviewNotice" class="fallback-preview glass-card">
+      <div v-if="showPreviewNotice" class="fallback-preview empty-surface">
         <span class="fallback-preview__label">{{ $t('home.preview.label') }}</span>
         <p>{{ $t('home.preview.desc') }}</p>
         <span v-if="fallbackReason" class="fallback-preview__detail">{{ fallbackReason }}</span>
@@ -48,7 +48,7 @@
 
       <template v-else>
         <div v-if="isLoading && authors.length === 0" class="authors-grid">
-          <div v-for="i in 8" :key="i" class="author-card glass-card">
+          <div v-for="i in 8" :key="i" class="author-card author-card--skeleton page-list-card">
             <Skeleton variant="avatar" width="64px" height="64px" />
             <div class="author-info">
               <Skeleton width="60%" height="20px" />
@@ -63,7 +63,7 @@
               v-for="author in authors"
               :key="author.id"
               type="button"
-              class="author-card glass-card author-card-btn content-auto-sm"
+              class="author-card page-list-card author-card-btn content-auto-sm"
               @click="goToAuthor(author.id)"
               @mouseenter="prefetchAuthorDetailPage"
               @focus="prefetchAuthorDetailPage"
@@ -357,85 +357,39 @@ onUnmounted(() => {
   opacity: 0.15;
 }
 
-.page-title-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--spacing-3);
-  margin-bottom: 0;
-}
-
-.page-title {
-  margin-bottom: 0;
-  font-size: var(--text-xl);
-}
-
-.fallback-preview {
-  display: grid;
-  gap: var(--spacing-2);
-  padding: clamp(1rem, 1.8vw, 1.25rem);
-  margin-block-end: var(--spacing-4);
-}
-
-.fallback-preview__label {
-  font-size: var(--text-xs);
-  font-weight: var(--font-semibold);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--color-text-tertiary);
-}
-
-.fallback-preview p {
-  margin: 0;
-  max-width: 52ch;
-  font-size: var(--text-sm);
-  color: var(--color-text-secondary);
-}
-
-.fallback-preview__detail {
-  font-size: var(--text-xs);
-  color: var(--color-text-tertiary);
-}
-
-@media (min-width: 768px) {
-  .page-title {
-    font-size: var(--text-2xl);
-  }
-}
-
 .authors-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--spacing-3);
 }
 
 @media (min-width: 640px) {
   .authors-grid {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
 @media (min-width: 1024px) {
   .authors-grid {
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 
 @media (min-width: 1280px) {
   .authors-grid {
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(5, minmax(0, 1fr));
   }
 }
 
 @media (min-width: 1600px) {
   .authors-grid {
-    grid-template-columns: repeat(6, 1fr);
+    grid-template-columns: repeat(6, minmax(0, 1fr));
   }
 }
 
 @media (min-width: 1920px) {
   .authors-grid {
-    grid-template-columns: repeat(7, 1fr);
+    grid-template-columns: repeat(7, minmax(0, 1fr));
   }
 }
 
@@ -445,23 +399,29 @@ onUnmounted(() => {
   align-items: flex-start;
   gap: var(--spacing-4);
   padding: var(--spacing-4);
+  min-inline-size: 0;
 }
 
 .author-card-btn {
-  width: 100%;
+  inline-size: 100%;
+  min-inline-size: 0;
   text-align: left;
-  border: 0;
-  background: transparent;
   cursor: pointer;
+  appearance: none;
+}
+
+.author-card--skeleton {
+  pointer-events: none;
 }
 
 .author-card__head {
   position: relative;
+  isolation: isolate;
 }
 
 .author-avatar {
-  width: 4rem;
-  height: 4rem;
+  inline-size: 4rem;
+  block-size: 4rem;
   border-radius: 1.4rem;
   flex-shrink: 0;
   box-shadow: 0 1rem 1.8rem -1.3rem rgba(15, 23, 42, 0.45);
@@ -469,8 +429,8 @@ onUnmounted(() => {
 
 @media (min-width: 768px) {
   .author-avatar {
-    width: 4.5rem;
-    height: 4.5rem;
+    inline-size: 4.5rem;
+    block-size: 4.5rem;
   }
 }
 
@@ -518,8 +478,9 @@ onUnmounted(() => {
   min-height: 1.75rem;
   padding-inline: 0.75rem;
   border-radius: var(--radius-full);
-  background: rgba(var(--color-primary-rgb), 0.08);
-  color: var(--color-text-secondary);
+  border: 1px solid var(--page-control-border);
+  background: var(--page-control-bg);
+  color: var(--page-control-ink);
   font-size: var(--text-xs);
   font-weight: var(--font-medium);
   text-transform: capitalize;
@@ -557,9 +518,10 @@ onUnmounted(() => {
   min-height: 2rem;
   padding-inline: 0.8rem;
   border-radius: var(--radius-full);
-  background: rgba(255, 255, 255, 0.7);
-  border: 1px solid rgba(148, 163, 184, 0.12);
-  color: var(--color-text-secondary);
+  border: 1px solid var(--page-control-border);
+  background: var(--page-control-bg);
+  color: var(--page-control-ink);
+  box-shadow: 0 0.8rem 1.5rem -1.45rem rgba(15, 23, 42, 0.22);
   font-size: var(--text-xs);
   font-weight: var(--font-medium);
 }
@@ -569,14 +531,26 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   margin-top: auto;
-  color: var(--color-text-tertiary);
+  align-self: flex-end;
+  inline-size: 2rem;
+  block-size: 2rem;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--page-control-border);
+  background: var(--page-control-bg);
+  color: var(--page-control-ink);
+  box-shadow: 0 0.8rem 1.5rem -1.45rem rgba(15, 23, 42, 0.22);
   transition:
-    transform var(--transition-fast),
-    color var(--transition-fast);
+    background var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast),
+    box-shadow var(--transition-fast);
 }
 
-.author-card-btn:hover .author-card__cta {
-  color: var(--color-text-primary);
-  transform: translateX(0.2rem);
+.author-card-btn:hover .author-card__cta,
+.author-card-btn:focus-visible .author-card__cta {
+  background: var(--page-control-bg-hover);
+  border-color: var(--page-control-border-strong);
+  color: var(--page-control-ink-strong);
+  box-shadow: 0 1rem 1.85rem -1.45rem rgba(15, 23, 42, 0.28);
 }
 </style>

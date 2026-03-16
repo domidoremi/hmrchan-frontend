@@ -15,19 +15,22 @@
 
       <!-- Inline Stats -->
       <div class="notif-stats">
-        <span class="stat-chip">
+        <span class="notifications-stat-pill ui-pill ui-pill--stat">
           <Bell :size="14" />
           {{ total }}
         </span>
-        <span v-if="unreadCount > 0" class="stat-chip stat-chip--unread">
+        <span
+          v-if="unreadCount > 0"
+          class="notifications-stat-pill notifications-stat-pill--unread ui-pill ui-pill--stat"
+        >
           <BellDot :size="14" />
           {{ unreadCount }}
         </span>
-        <span class="stat-chip">
+        <span class="notifications-stat-pill ui-pill ui-pill--stat">
           <MessageCircle :size="14" />
           {{ commentCount }}
         </span>
-        <span class="stat-chip">
+        <span class="notifications-stat-pill ui-pill ui-pill--stat">
           <Heart :size="14" />
           {{ likeCount }}
         </span>
@@ -39,14 +42,17 @@
           v-for="filter in filters"
           :key="filter.value"
           type="button"
-          class="filter-chip"
-          :class="{ 'filter-chip--active': activeFilter === filter.value }"
+          class="notifications-filter-pill page-control-btn page-control-btn--compact"
+          :class="{ 'notifications-filter-pill--active': activeFilter === filter.value }"
           :aria-pressed="activeFilter === filter.value"
           @click="activeFilter = filter.value"
         >
           <component :is="filter.icon" :size="16" />
           <span>{{ filter.label }}</span>
-          <span v-if="filter.value === 'unread' && unreadCount > 0" class="filter-badge">
+          <span
+            v-if="filter.value === 'unread' && unreadCount > 0"
+            class="notifications-filter-badge"
+          >
             {{ unreadCount }}
           </span>
         </button>
@@ -137,26 +143,27 @@ async function handleMarkAllRead() {
 .notif-stats {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: var(--spacing-2);
   margin-bottom: clamp(0.75rem, 2vw, 1rem);
 }
 
-.stat-chip {
+.notifications-stat-pill {
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
   padding: 0.25rem clamp(0.5rem, 1.2vw, 0.625rem);
-  background: var(--glass-bg-light);
-  border: 1px solid var(--glass-border-subtle);
+  background: var(--profile-chip-bg);
+  border: 1px solid var(--profile-chip-border);
   border-radius: var(--radius-full);
   font-size: var(--text-sm);
   font-weight: var(--font-semibold);
   font-variant-numeric: tabular-nums;
-  color: var(--color-text-secondary);
+  color: var(--profile-chip-text);
   white-space: nowrap;
 }
 
-.stat-chip--unread {
+.notifications-stat-pill--unread {
   color: var(--color-error);
   background: var(--color-error-alpha);
   border-color: rgba(var(--color-error-rgb), 0.2);
@@ -176,17 +183,17 @@ async function handleMarkAllRead() {
   display: none;
 }
 
-.filter-chip {
+.notifications-filter-pill {
   display: inline-flex;
   align-items: center;
   gap: var(--spacing-2);
   padding: clamp(0.5rem, 1.2vw, 0.625rem) clamp(0.875rem, 2.2vw, 1.125rem);
-  background: var(--glass-bg-light);
-  border: 1px solid var(--glass-border-subtle);
+  background: var(--profile-action-bg);
+  border: 1px solid var(--profile-action-border);
   border-radius: var(--radius-full);
-  font-size: var(--text-base);
+  font-size: var(--text-sm);
   font-weight: var(--font-semibold);
-  color: var(--color-text-primary);
+  color: var(--color-text-secondary);
   white-space: nowrap;
   cursor: pointer;
   flex-shrink: 0;
@@ -194,30 +201,29 @@ async function handleMarkAllRead() {
     color var(--duration-fast) var(--ease-smooth),
     background var(--duration-fast) var(--ease-smooth),
     border-color var(--duration-fast) var(--ease-smooth),
-    transform var(--duration-fast) var(--ease-bounce-soft);
+    box-shadow var(--duration-fast) var(--ease-smooth);
 }
 
-.filter-chip:hover {
+.notifications-filter-pill:hover {
   color: var(--color-primary);
-  border-color: rgba(var(--color-primary-rgb), 0.25);
-  background: rgba(var(--color-primary-rgb), 0.06);
+  border-color: var(--profile-action-border-strong);
+  background: var(--profile-action-bg-hover);
 }
 
-.filter-chip--active {
-  color: var(--color-on-primary);
-  background: var(--color-primary);
-  border-color: var(--color-primary);
-  box-shadow: 0 2px 8px rgba(var(--color-primary-rgb), 0.2);
+.notifications-filter-pill--active {
+  color: var(--color-primary);
+  background: var(--profile-surface-bg-soft);
+  border-color: var(--profile-action-border-strong);
+  box-shadow: var(--profile-surface-shadow);
 }
 
-.filter-chip--active:hover {
-  color: var(--color-on-primary);
-  background: var(--color-primary);
-  border-color: var(--color-primary);
-  transform: scale(1.03);
+.notifications-filter-pill--active:hover {
+  color: var(--color-primary);
+  background: var(--profile-surface-bg-soft);
+  border-color: var(--profile-action-border-strong);
 }
 
-.filter-badge {
+.notifications-filter-badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -232,14 +238,18 @@ async function handleMarkAllRead() {
   line-height: 1;
 }
 
-.filter-chip--active .filter-badge {
-  background: rgba(255, 255, 255, 0.3);
-  color: var(--color-on-primary);
+.notifications-filter-pill--active .notifications-filter-badge {
+  background: rgba(var(--color-primary-rgb), 0.12);
+  color: currentColor;
 }
 
 /* ===== Page Body ===== */
 .page-body {
   padding: clamp(1rem, 3vw, 1.5rem);
+  border-radius: var(--profile-shell-radius);
+  border: 1px solid var(--profile-surface-border);
+  background: var(--profile-surface-bg);
+  box-shadow: var(--profile-surface-shadow);
 }
 
 /* ===== Responsive ===== */
@@ -252,51 +262,53 @@ async function handleMarkAllRead() {
 
 <style>
 /* ===== Material 3 Overrides ===== */
-#app[data-ui-style='material'] .notifications-page .stat-chip {
-  border-radius: 8px;
+#app[data-ui-style='material'] .notifications-page .notifications-stat-pill {
+  border-radius: var(--radius-md);
 }
 
-#app[data-ui-style='material'] .notifications-page .filter-chip {
-  border-radius: 8px;
+#app[data-ui-style='material'] .notifications-page .notifications-filter-pill {
+  border-radius: var(--radius-md);
 }
 
-#app[data-ui-style='material'] .notifications-page .filter-chip--active {
+#app[data-ui-style='material'] .notifications-page .notifications-filter-pill--active {
   box-shadow: var(--shadow-sm);
 }
 
 #app[data-ui-style='material'] .notifications-page .page-body {
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
 }
 
 /* ===== Dark Theme ===== */
-[data-theme='dark'] .notifications-page .stat-chip {
-  background: var(--glass-bg-light);
-  border-color: var(--glass-border);
+[data-theme='dark'] .notifications-page .notifications-stat-pill {
+  background: var(--profile-chip-bg);
+  border-color: var(--profile-chip-border);
 }
 
-[data-theme='dark'] .notifications-page .filter-chip--active {
+[data-theme='dark'] .notifications-page .notifications-filter-pill--active {
   box-shadow: 0 0 12px rgba(var(--color-primary-rgb), 0.2);
 }
 
 /* ===== Blue Theme ===== */
-[data-theme='blue'] .notifications-page .stat-pill--unread {
+[data-theme='blue'] .notifications-page .notifications-stat-pill--unread {
   color: #ef4444;
 }
 
-[data-theme='blue'] .notifications-page .filter-chip--active {
-  background: #3b82f6;
-  border-color: #3b82f6;
-  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.25);
+[data-theme='blue'] .notifications-page .notifications-filter-pill--active {
+  background: rgba(59, 130, 246, 0.08);
+  border-color: rgba(59, 130, 246, 0.22);
+  box-shadow: var(--profile-surface-shadow);
 }
 
-[data-theme='blue'] .notifications-page .filter-chip:hover:not(.filter-chip--active) {
+[data-theme='blue']
+  .notifications-page
+  .notifications-filter-pill:hover:not(.notifications-filter-pill--active) {
   color: #3b82f6;
   border-color: rgba(59, 130, 246, 0.2);
   background: rgba(59, 130, 246, 0.04);
 }
 
 /* ===== Material + Dark ===== */
-#app[data-ui-style='material'][data-theme='dark'] .notifications-page .stat-chip {
+#app[data-ui-style='material'][data-theme='dark'] .notifications-page .notifications-stat-pill {
   background: var(--md-surface-container-high, rgba(40, 40, 48, 1));
   border-color: rgba(255, 255, 255, 0.06);
 }
@@ -306,19 +318,19 @@ async function handleMarkAllRead() {
   border-color: rgba(255, 255, 255, 0.06);
 }
 
-#app[data-ui-style='material'][data-theme='dark'] .notifications-page .filter-chip {
-  background: var(--md-surface-container-high, rgba(40, 40, 48, 1));
+#app[data-ui-style='material'][data-theme='dark'] .notifications-page .notifications-filter-pill {
+  background: var(--profile-action-bg);
   border-color: rgba(255, 255, 255, 0.06);
 }
 
 /* ===== Material + Blue ===== */
-#app[data-ui-style='material'][data-theme='blue'] .notifications-page .stat-chip {
-  background: #ffffff;
+#app[data-ui-style='material'][data-theme='blue'] .notifications-page .notifications-stat-pill {
+  background: var(--profile-surface-bg);
   border-color: rgba(59, 130, 246, 0.08);
 }
 
 #app[data-ui-style='material'][data-theme='blue'] .notifications-page .page-body {
-  background: #ffffff;
+  background: var(--profile-surface-bg);
   border-color: rgba(59, 130, 246, 0.08);
   box-shadow: 0 1px 3px rgba(59, 130, 246, 0.06);
 }

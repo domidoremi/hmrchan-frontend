@@ -9,14 +9,17 @@
     <div class="container">
       <header class="page-hero schedule-hero">
         <div class="page-hero__content">
-          <div class="page-header">
-            <div class="page-header-text">
-              <h1>{{ $t('schedule.title') }}</h1>
-              <p class="page-subtitle">{{ $t('schedule.subtitle') }}</p>
+          <div class="page-hero__header">
+            <div class="page-hero__heading">
+              <span class="page-hero__eyebrow">{{ $t('nav.schedule') }}</span>
+              <div class="schedule-hero__copy">
+                <h1 class="page-hero__title">{{ $t('schedule.title') }}</h1>
+                <p class="page-hero__subtitle">{{ $t('schedule.subtitle') }}</p>
+              </div>
             </div>
-            <div class="page-header-actions">
+            <div class="page-hero__actions schedule-hero__actions">
               <div
-                class="category-filters"
+                class="category-filters page-control-group"
                 role="radiogroup"
                 :aria-label="$t('schedule.filterLabel')"
               >
@@ -24,8 +27,8 @@
                   v-for="cat in categories"
                   :key="cat.value"
                   type="button"
-                  class="filter-chip glass-button"
-                  :class="{ 'filter-chip--active': activeCategory === cat.value }"
+                  class="schedule-filter-pill page-control-btn page-control-btn--compact"
+                  :class="{ active: activeCategory === cat.value }"
                   role="radio"
                   :aria-checked="activeCategory === cat.value"
                   @click="setCategory(cat.value)"
@@ -43,7 +46,7 @@
       <div class="month-nav page-toolbar">
         <button
           type="button"
-          class="month-nav-btn glass-button"
+          class="month-nav-btn page-control-btn page-control-btn--square"
           :aria-label="$t('schedule.prevMonth')"
           @click="prevMonth"
         >
@@ -51,7 +54,7 @@
         </button>
         <button
           type="button"
-          class="month-nav-title"
+          class="month-nav-title page-control-btn"
           :aria-label="`${monthLabel} ${$t('schedule.goToday')}`"
           :title="$t('schedule.goToday')"
           @click="goToday"
@@ -60,7 +63,7 @@
         </button>
         <button
           type="button"
-          class="month-nav-btn glass-button"
+          class="month-nav-btn page-control-btn page-control-btn--square"
           :aria-label="$t('schedule.nextMonth')"
           @click="nextMonth"
         >
@@ -70,7 +73,7 @@
           <button
             v-if="!isCurrentMonth"
             type="button"
-            class="today-btn glass-button"
+            class="today-btn page-control-btn page-control-btn--compact"
             @click="goToday"
           >
             <CalendarCheck :size="14" />
@@ -79,7 +82,7 @@
         </Transition>
       </div>
 
-      <div v-if="showPreviewNotice" class="fallback-preview glass-card">
+      <div v-if="showPreviewNotice" class="fallback-preview empty-surface">
         <span class="fallback-preview__label">{{ $t('home.preview.label') }}</span>
         <p>{{ $t('home.preview.desc') }}</p>
         <span v-if="fallbackReason" class="fallback-preview__detail">{{ fallbackReason }}</span>
@@ -88,7 +91,7 @@
       <!-- 日历网格 -->
       <div
         ref="calendarRef"
-        class="calendar-wrapper glass-card"
+        class="calendar-wrapper empty-surface"
         :aria-label="$t('schedule.calendarLabel')"
         @keydown="handleCalendarKeydown"
         @touchstart.passive="onTouchStart"
@@ -233,7 +236,7 @@
               :href="detailEvent.event_url"
               target="_blank"
               rel="noopener noreferrer"
-              class="detail-link-btn glass-button"
+              class="detail-link-btn page-control-btn page-control-btn--compact"
             >
               <ExternalLink :size="14" />
               <span>{{ $t('schedule.detail.eventPage') }}</span>
@@ -243,7 +246,7 @@
               :href="detailEvent.ticket_url"
               target="_blank"
               rel="noopener noreferrer"
-              class="detail-link-btn detail-link-btn--ticket glass-button"
+              class="detail-link-btn detail-link-btn--ticket page-control-btn page-control-btn--compact"
             >
               <Ticket :size="14" />
               <span>{{ $t('schedule.detail.buyTicket') }}</span>
@@ -253,7 +256,7 @@
               :href="detailEvent.source_url"
               target="_blank"
               rel="noopener noreferrer"
-              class="detail-link-btn glass-button"
+              class="detail-link-btn page-control-btn page-control-btn--compact"
             >
               <ExternalLink :size="14" />
               <span>{{ $t('schedule.detail.source') }}</span>
@@ -272,7 +275,7 @@
             </span>
             <button
               type="button"
-              class="close-btn glass-button"
+              class="close-btn page-control-btn page-control-btn--square"
               :aria-label="$t('common.close')"
               @click="selectedDay = null"
             >
@@ -290,7 +293,7 @@
             <article
               v-for="evt in selectedDayEvents"
               :key="evt.id"
-              class="event-card glass-card"
+              class="event-card page-list-card"
               role="button"
               tabindex="0"
               @click="openDetail(evt.id)"
@@ -334,7 +337,7 @@
 
       <!-- 即将到来的事件 -->
       <section v-if="!selectedDay" class="upcoming-section">
-        <h2 class="section-title">{{ $t('schedule.upcoming') }}</h2>
+        <h2 class="schedule-section-title">{{ $t('schedule.upcoming') }}</h2>
         <StateIndicator
           v-if="upcomingEvents.length === 0 && !isLoading"
           variant="empty"
@@ -344,7 +347,7 @@
           <article
             v-for="evt in upcomingEvents"
             :key="evt.id"
-            class="event-card glass-card"
+            class="event-card page-list-card"
             role="button"
             tabindex="0"
             @click="openDetail(evt.id)"
@@ -937,33 +940,6 @@ onMounted(() => {
   padding: var(--spacing-6) 0;
 }
 
-.fallback-preview {
-  display: grid;
-  gap: var(--spacing-2);
-  padding: clamp(1rem, 1.8vw, 1.25rem);
-  margin-block-end: var(--spacing-4);
-}
-
-.fallback-preview__label {
-  font-size: var(--text-xs);
-  font-weight: var(--font-semibold);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--color-text-tertiary);
-}
-
-.fallback-preview p {
-  margin: 0;
-  max-width: 52ch;
-  font-size: var(--text-sm);
-  color: var(--color-text-secondary);
-}
-
-.fallback-preview__detail {
-  font-size: var(--text-xs);
-  color: var(--color-text-tertiary);
-}
-
 /* ========== 背景装饰 ========== */
 .schedule-bg {
   position: fixed;
@@ -1004,45 +980,19 @@ onMounted(() => {
 }
 
 /* ========== Header ========== */
-.page-header {
+.schedule-hero__actions {
   display: flex;
-  justify-content: space-between;
   align-items: flex-start;
-  flex-wrap: wrap;
-  gap: var(--spacing-4);
-  margin-bottom: var(--spacing-6);
-}
-
-.page-header h1 {
-  margin-bottom: var(--spacing-1);
-  font-size: var(--text-xl);
-}
-
-.page-subtitle {
-  color: var(--color-text-secondary);
-  font-size: var(--text-sm);
+  justify-content: flex-end;
+  min-inline-size: 0;
 }
 
 .category-filters {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--spacing-2);
+  justify-content: flex-end;
 }
 
-.filter-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--spacing-1);
-  padding: 0.25rem 0.75rem;
-  font-size: var(--text-xs);
-  border-radius: var(--radius-full);
-  transition: all 0.2s ease;
-}
-
-.filter-chip--active {
-  background: rgba(var(--color-primary-rgb), 0.15);
-  color: var(--color-primary);
-  border-color: rgba(var(--color-primary-rgb), 0.3);
+.schedule-filter-pill {
+  white-space: nowrap;
 }
 
 /* ========== 月份导航 ========== */
@@ -1056,42 +1006,19 @@ onMounted(() => {
 }
 
 .month-nav-btn {
-  width: 2.25rem;
-  height: 2.25rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--radius-full);
-  padding: 0;
+  flex-shrink: 0;
 }
 
 .month-nav-title {
-  font-size: var(--text-lg);
+  min-inline-size: 11.25rem;
+  padding-inline: clamp(1rem, 3vw, 1.5rem);
+  font-size: var(--text-base);
   font-weight: var(--font-semibold);
-  color: var(--color-text-primary);
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: var(--spacing-1) var(--spacing-3);
-  border-radius: var(--radius-md);
-  transition: background 0.2s ease;
-  min-width: 180px;
   text-align: center;
 }
 
-.month-nav-title:hover {
-  background: var(--glass-bg-subtle);
-}
-
 .today-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--spacing-1);
-  padding: 0.25rem 0.75rem;
-  font-size: var(--text-xs);
-  border-radius: var(--radius-full);
-  color: var(--color-primary);
-  border-color: rgba(var(--color-primary-rgb), 0.3);
+  flex-shrink: 0;
 }
 
 /* ========== 日历 ========== */
@@ -1100,13 +1027,13 @@ onMounted(() => {
   margin-bottom: var(--spacing-6);
   overflow: hidden;
   touch-action: pan-y;
-  max-width: 56rem;
+  max-inline-size: 56rem;
   margin-inline: auto;
 }
 
 .calendar-weekdays {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   margin-bottom: var(--spacing-2);
 }
 
@@ -1121,11 +1048,12 @@ onMounted(() => {
 
 .calendar-grid {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 0.125rem;
 }
 
 .calendar-cell {
+  appearance: none;
   position: relative;
   display: flex;
   flex-direction: column;
@@ -1134,7 +1062,10 @@ onMounted(() => {
   gap: 0.25rem;
   border-radius: var(--radius-md);
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    transform 150ms ease;
   min-height: 3rem;
   padding: var(--spacing-2) 0;
   background: none;
@@ -1201,7 +1132,7 @@ onMounted(() => {
 .skeleton-day {
   width: 1.5rem;
   height: 1rem;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   background: var(--glass-bg-light);
   animation: skeleton-pulse 1.5s ease-in-out infinite;
 }
@@ -1221,33 +1152,37 @@ onMounted(() => {
 .month-slide-left-leave-active,
 .month-slide-right-enter-active,
 .month-slide-right-leave-active {
-  transition: all 0.2s ease;
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
 }
 
 .month-slide-left-enter-from {
   opacity: 0;
-  transform: translateX(1.25rem);
+  transform: translateX(0.875rem);
 }
 
 .month-slide-left-leave-to {
   opacity: 0;
-  transform: translateX(-1.25rem);
+  transform: translateX(-0.875rem);
 }
 
 .month-slide-right-enter-from {
   opacity: 0;
-  transform: translateX(-1.25rem);
+  transform: translateX(-0.875rem);
 }
 
 .month-slide-right-leave-to {
   opacity: 0;
-  transform: translateX(1.25rem);
+  transform: translateX(0.875rem);
 }
 
 /* ========== Today 按钮过渡 ========== */
 .today-fade-enter-active,
 .today-fade-leave-active {
-  transition: all 0.2s ease;
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
 }
 
 .today-fade-enter-from,
@@ -1283,14 +1218,8 @@ onMounted(() => {
 }
 
 .close-btn {
-  margin-left: auto;
-  width: 2rem;
-  height: 2rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--radius-full);
-  padding: 0;
+  margin-inline-start: auto;
+  flex-shrink: 0;
 }
 
 .events-list {
@@ -1302,21 +1231,7 @@ onMounted(() => {
 .event-card {
   display: flex;
   overflow: hidden;
-  transition: all 0.2s ease;
-  border: 1px solid transparent;
-}
-
-.event-card:hover {
-  border-color: rgba(var(--color-primary-rgb), 0.2);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-}
-
-.event-card:focus-visible {
-  outline: none;
-  border-color: rgba(var(--color-primary-rgb), 0.2);
-  box-shadow:
-    0 4px 16px rgba(0, 0, 0, 0.08),
-    0 0 0 2px rgba(var(--color-primary-rgb), 0.35);
+  min-inline-size: 0;
 }
 
 .event-category-bar {
@@ -1327,13 +1242,17 @@ onMounted(() => {
 .event-body {
   flex: 1;
   padding: var(--spacing-4);
+  min-inline-size: 0;
+  display: grid;
+  gap: var(--spacing-2);
 }
 
 .event-header {
   display: flex;
   align-items: center;
   gap: var(--spacing-2);
-  margin-bottom: var(--spacing-2);
+  margin: 0;
+  flex-wrap: wrap;
 }
 
 .event-badge {
@@ -1346,20 +1265,20 @@ onMounted(() => {
 .event-time {
   font-size: var(--text-xs);
   color: var(--color-text-tertiary);
-  margin-left: auto;
+  margin-inline-start: auto;
 }
 
 .event-title {
   font-size: var(--text-base);
   font-weight: var(--font-semibold);
-  margin: 0 0 var(--spacing-1);
+  margin: 0;
   color: var(--color-text-primary);
 }
 
 .event-desc {
   font-size: var(--text-sm);
   color: var(--color-text-secondary);
-  margin: 0 0 var(--spacing-2);
+  margin: 0;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   line-clamp: 2;
@@ -1373,7 +1292,7 @@ onMounted(() => {
   gap: var(--spacing-1);
   font-size: var(--text-xs);
   color: var(--color-text-tertiary);
-  margin-bottom: var(--spacing-2);
+  margin: 0;
 }
 
 .event-link {
@@ -1395,7 +1314,7 @@ onMounted(() => {
   margin-bottom: var(--spacing-8);
 }
 
-.section-title {
+.schedule-section-title {
   font-size: var(--text-lg);
   font-weight: var(--font-semibold);
   margin-bottom: var(--spacing-4);
@@ -1403,26 +1322,30 @@ onMounted(() => {
 
 /* ========== 过渡动画 ========== */
 .slide-fade-enter-active {
-  transition: all 0.25s ease-out;
+  transition:
+    opacity 0.25s ease-out,
+    transform 0.25s ease-out;
 }
 
 .slide-fade-leave-active {
-  transition: all 0.15s ease-in;
+  transition:
+    opacity 0.15s ease-in,
+    transform 0.15s ease-in;
 }
 
 .slide-fade-enter-from {
   opacity: 0;
-  transform: translateY(-0.5rem);
+  transform: translateY(-0.375rem);
 }
 
 .slide-fade-leave-to {
   opacity: 0;
-  transform: translateY(-0.25rem);
+  transform: translateY(-0.1875rem);
 }
 
 /* ========== 响应式 ========== */
 @media (max-width: 640px) {
-  .page-header {
+  .schedule-hero .page-hero__header {
     flex-direction: column;
   }
 
@@ -1455,7 +1378,7 @@ onMounted(() => {
     display: none;
   }
 
-  .filter-chip {
+  .schedule-filter-pill {
     white-space: nowrap;
   }
 }
@@ -1472,7 +1395,7 @@ onMounted(() => {
   color: var(--color-text-tertiary);
   opacity: 0;
   transition: opacity 0.15s ease;
-  margin-top: var(--spacing-1);
+  margin-top: auto;
 }
 
 .event-card:hover .event-card-hint,
@@ -1490,7 +1413,7 @@ onMounted(() => {
 
 .detail-skeleton {
   height: 1rem;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   background: var(--glass-bg-light);
   animation: skeleton-pulse 1.5s ease-in-out infinite;
   width: 80%;
@@ -1630,20 +1553,8 @@ onMounted(() => {
 }
 
 .detail-link-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--spacing-1);
-  padding: var(--spacing-2) var(--spacing-3);
-  font-size: var(--text-xs);
-  font-weight: var(--font-medium);
-  border-radius: var(--radius-full);
   text-decoration: none;
-  color: var(--color-primary);
-  transition: all 0.2s ease;
-}
-
-.detail-link-btn:hover {
-  background: rgba(var(--color-primary-rgb), 0.1);
+  white-space: nowrap;
 }
 
 .detail-link-btn--ticket {
@@ -1651,7 +1562,8 @@ onMounted(() => {
 }
 
 .detail-link-btn--ticket:hover {
-  background: rgba(245, 158, 11, 0.1);
+  border-color: rgba(245, 158, 11, 0.26);
+  color: #f59e0b;
 }
 
 /* ========== Reduced Motion ========== */

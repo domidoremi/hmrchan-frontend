@@ -358,13 +358,11 @@
 /* Material Light Mode - Enhanced */
 #app[data-ui-style='material'][data-theme='light'] .glass-card:hover {
   box-shadow: var(--shadow-md);
-  transform: translateY(-1px);
 }
 
 /* Material Dark Mode - Enhanced */
 #app[data-ui-style='material'][data-theme='dark'] .glass-card:hover {
   box-shadow: var(--shadow-md);
-  transform: translateY(-1px);
   background:
     linear-gradient(0deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05)),
     var(--color-surface);
@@ -379,7 +377,6 @@
 
 #app[data-ui-style='material'][data-theme='blue'] .glass-card:hover {
   box-shadow: var(--shadow-md);
-  transform: translateY(-1px);
   border-color: rgba(59, 130, 246, 0.2);
 }
 
@@ -401,28 +398,23 @@
 /* ========== iOS Motion & Interaction ========== */
 #app[data-ui-style='ios'] .glass-card {
   transition:
-    transform var(--duration-normal) var(--ease-spring),
     box-shadow var(--duration-normal) var(--ease-out),
     border-color var(--duration-fast) var(--ease-out);
 }
 
 #app[data-ui-style='ios'] .glass-button {
   transition:
-    transform var(--duration-fast) var(--ease-spring),
     box-shadow var(--duration-fast) var(--ease-out),
-    background var(--duration-fast) var(--ease-out);
-}
-
-#app[data-ui-style='ios'] .glass-button:active {
-  transform: scale(0.96);
+    background-color var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out);
 }
 
 /* ========== Material Motion & Interaction ========== */
 #app[data-ui-style='material'] .glass-card {
   transition:
-    transform var(--duration-fast) var(--ease-out),
     box-shadow var(--duration-fast) var(--ease-out),
-    background-color var(--duration-fast) var(--ease-out);
+    background-color var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out);
 }
 
 #app[data-ui-style='material'] .glass-button {
@@ -524,7 +516,7 @@
   width: 0;
   height: 0.125rem;
   background: var(--color-primary);
-  transition: all var(--duration-fast) var(--ease-out);
+  transition: width var(--duration-fast) var(--ease-out);
   transform: translateX(-50%);
 }
 
@@ -653,7 +645,11 @@
 #app[data-ui-style='ios'] .tab-btn {
   border-radius: var(--radius-lg);
   padding: var(--spacing-2) var(--spacing-4);
-  transition: all var(--duration-fast) var(--ease-spring);
+  transition:
+    background-color var(--duration-fast) var(--ease-spring),
+    color var(--duration-fast) var(--ease-spring),
+    border-color var(--duration-fast) var(--ease-spring),
+    box-shadow var(--duration-fast) var(--ease-spring);
 }
 
 #app[data-ui-style='ios'] .tab-btn.active,
@@ -1708,7 +1704,10 @@
   font-weight: var(--font-medium);
   letter-spacing: 0.04em;
   color: var(--md-on-surface-variant);
-  transition: all var(--duration-fast) var(--ease-out);
+  transition:
+    background-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out);
   cursor: pointer;
 }
 
@@ -1746,17 +1745,17 @@
   background: rgba(var(--color-primary-rgb), 0.1);
   color: var(--color-primary);
   border: none;
-  transition: all var(--duration-fast) var(--ease-spring);
+  transition:
+    background-color var(--duration-fast) var(--ease-spring),
+    color var(--duration-fast) var(--ease-spring),
+    border-color var(--duration-fast) var(--ease-spring),
+    box-shadow var(--duration-fast) var(--ease-spring);
 }
 
 #app[data-ui-style='ios'] .btn--pill:hover {
   background: rgba(var(--color-primary-rgb), 0.16);
   transform: none;
   box-shadow: none;
-}
-
-#app[data-ui-style='ios'] .btn--pill:active {
-  transform: scale(0.97);
 }
 
 #app[data-ui-style='ios'] .btn--pill-primary {

@@ -6,7 +6,7 @@
         {{ $t('common.back') }}
       </Button>
 
-      <div v-if="showPreviewNotice" class="fallback-preview glass-card">
+      <div v-if="showPreviewNotice" class="fallback-preview empty-surface">
         <span class="fallback-preview__label">{{ $t('home.preview.label') }}</span>
         <p>{{ $t('home.preview.desc') }}</p>
         <span v-if="fallbackReason" class="fallback-preview__detail">{{ fallbackReason }}</span>
@@ -20,13 +20,13 @@
       />
 
       <div v-else>
-        <div v-if="isLoading" class="discussion-skeleton glass-card">
+        <div v-if="isLoading" class="discussion-skeleton empty-surface">
           <Skeleton variant="title" width="60%" />
           <Skeleton width="40%" height="1rem" />
           <Skeleton width="100%" height="7.5rem" />
         </div>
 
-        <article v-else-if="discussion" class="discussion-card glass-card">
+        <article v-else-if="discussion" class="discussion-card empty-surface">
           <header class="discussion-header">
             <div class="title-row">
               <h1 class="discussion-title">{{ discussion.title }}</h1>
@@ -96,7 +96,7 @@
 
           <div
             v-if="discussion.referenced_post"
-            class="referenced-post"
+            class="referenced-post page-list-card"
             role="button"
             tabindex="0"
             @click="goToReferencedPost(discussion.referenced_post)"
@@ -304,11 +304,14 @@ watch(
   padding: var(--spacing-4) 0 var(--spacing-8);
 }
 
+.container {
+  display: grid;
+  gap: var(--spacing-4);
+}
+
 .fallback-preview {
   display: grid;
   gap: var(--spacing-2);
-  padding: clamp(1rem, 1.8vw, 1.25rem);
-  margin-block-end: var(--spacing-4);
 }
 
 .fallback-preview__label {
@@ -335,11 +338,7 @@ watch(
   display: inline-flex;
   align-items: center;
   gap: var(--spacing-2);
-  margin-bottom: var(--spacing-4);
-}
-
-.discussion-card {
-  padding: var(--spacing-5);
+  justify-self: start;
 }
 
 .discussion-header {
@@ -388,11 +387,12 @@ watch(
   display: flex;
   align-items: center;
   gap: var(--spacing-2);
+  flex-wrap: wrap;
 }
 
 .author-avatar {
-  width: 2rem;
-  height: 2rem;
+  inline-size: 2rem;
+  block-size: 2rem;
   border-radius: 50%;
   object-fit: cover;
 }
@@ -424,9 +424,10 @@ watch(
 .discussion-actions {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: var(--spacing-2);
   padding-top: var(--spacing-3);
-  border-top: 1px solid var(--glass-border);
+  border-top: 1px solid var(--page-control-border);
 }
 
 .action-danger {
@@ -454,24 +455,12 @@ watch(
   align-items: center;
   gap: var(--spacing-2);
   padding: var(--spacing-3);
-  border-radius: var(--radius-md);
-  background: var(--glass-bg-light);
   cursor: pointer;
 }
 
-.referenced-post:hover {
-  background: var(--glass-bg);
-}
-
-.referenced-post:focus-visible {
-  outline: none;
-  background: var(--glass-bg);
-  box-shadow: 0 0 0 2px rgba(var(--color-primary-rgb), 0.35);
-}
-
 .referenced-thumb {
-  width: 3rem;
-  height: 3rem;
+  inline-size: 3rem;
+  block-size: 3rem;
   border-radius: var(--radius-sm);
   object-fit: cover;
   flex-shrink: 0;
@@ -480,7 +469,7 @@ watch(
 .referenced-content {
   display: flex;
   flex-direction: column;
-  min-width: 0;
+  min-inline-size: 0;
 }
 
 .referenced-label {
@@ -496,15 +485,7 @@ watch(
   text-overflow: ellipsis;
 }
 
-.discussion-skeleton {
-  padding: var(--spacing-5);
-}
-
 @media (max-width: 640px) {
-  .discussion-card {
-    padding: var(--spacing-4);
-  }
-
   .discussion-title {
     font-size: var(--text-lg);
   }

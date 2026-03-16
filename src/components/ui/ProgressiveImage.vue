@@ -25,7 +25,7 @@
       <span class="spinner spinner-sm" />
     </div>
 
-    <div v-if="hasError" class="progressive-image__error glass-card">
+    <div v-if="hasError" class="progressive-image__error empty-surface">
       <AnimatedIcon name="sparkle" :fallback-icon="AlertTriangle" size="sm" />
       <span>{{ errorLabel }}</span>
       <button type="button" class="retry-btn" @click="retry">
@@ -211,6 +211,10 @@ function retry() {
   border-radius: inherit;
 }
 
+.progressive-image__error.empty-surface {
+  animation: none;
+}
+
 .retry-btn {
   display: inline-flex;
   align-items: center;
@@ -221,7 +225,10 @@ function retry() {
   background: transparent;
   color: var(--color-text-secondary);
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast);
 }
 
 .retry-btn:hover {

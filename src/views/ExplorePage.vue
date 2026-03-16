@@ -10,17 +10,20 @@
     </div>
 
     <div class="container">
-      <header class="page-header page-hero explore-hero">
+      <header class="page-hero explore-hero">
         <div class="page-hero__content">
-          <div class="page-title-row">
-            <div class="page-title-group">
-              <h1>{{ $t('explore.title') }}</h1>
-              <span class="page-title-badge">{{ total }} {{ $t('search.tab.posts') }}</span>
+          <div class="page-hero__header">
+            <div class="page-hero__heading">
+              <span class="page-hero__eyebrow">{{ $t('nav.explore') }}</span>
+              <div class="page-hero__title-row">
+                <h1 class="page-hero__title">{{ $t('explore.title') }}</h1>
+                <span class="page-hero__badge">{{ total }} {{ $t('search.tab.posts') }}</span>
+              </div>
             </div>
             <div class="page-actions page-hero__actions">
               <button
                 type="button"
-                class="search-trigger glass-btn"
+                class="search-trigger page-control-btn"
                 @click="goToSearch"
                 :aria-label="$t('search.title')"
               >
@@ -42,12 +45,12 @@
           </div>
 
           <div class="filters-row page-toolbar" role="group" :aria-label="$t('explore.filters')">
-            <div class="filters" role="group" :aria-label="$t('explore.sortBy')">
+            <div class="filters page-control-group" role="group" :aria-label="$t('explore.sortBy')">
               <button
                 v-for="sort in sortOptions"
                 :key="sort.value"
                 type="button"
-                class="filter-btn"
+                class="filter-btn page-control-btn"
                 :class="{ active: currentSort === sort.value }"
                 :aria-pressed="currentSort === sort.value"
                 :aria-label="sort.label"
@@ -57,12 +60,16 @@
               </button>
             </div>
 
-            <div class="platform-filters" role="group" :aria-label="$t('explore.platformFilter')">
+            <div
+              class="platform-filters page-control-group"
+              role="group"
+              :aria-label="$t('explore.platformFilter')"
+            >
               <button
                 v-for="platform in platformOptions"
                 :key="platform.value"
                 type="button"
-                class="platform-btn"
+                class="platform-btn page-control-btn page-control-btn--compact"
                 :class="{ active: currentPlatform === platform.value }"
                 :aria-pressed="currentPlatform === platform.value"
                 :aria-label="platform.label"
@@ -76,7 +83,7 @@
         </div>
       </header>
 
-      <div v-if="showPreviewNotice" class="fallback-preview glass-card">
+      <div v-if="showPreviewNotice" class="fallback-preview empty-surface">
         <span class="fallback-preview__label">{{ $t('home.preview.label') }}</span>
         <p>{{ $t('home.preview.desc') }}</p>
         <span v-if="fallbackReason" class="fallback-preview__detail">{{ fallbackReason }}</span>
@@ -789,16 +796,6 @@ onBeforeUnmount(() => {
   padding: var(--spacing-4) 0 var(--spacing-8);
   min-height: 100svh;
   min-height: 100dvh;
-  --explore-control-bg: rgba(255, 255, 255, 0.72);
-  --explore-control-bg-hover: rgba(255, 255, 255, 0.88);
-  --explore-control-border: rgba(148, 163, 184, 0.14);
-  --explore-control-border-strong: rgba(148, 163, 184, 0.24);
-  --explore-control-ink: var(--color-text-secondary);
-  --explore-control-ink-strong: var(--color-text-primary);
-  --explore-control-active-bg: rgba(15, 23, 42, 0.92);
-  --explore-control-active-border: transparent;
-  --explore-control-active-ink: rgba(255, 255, 255, 0.96);
-  --explore-control-shadow: 0 1rem 1.8rem -1.6rem rgba(15, 23, 42, 0.28);
 }
 
 .fallback-preview {
@@ -826,26 +823,6 @@ onBeforeUnmount(() => {
 .fallback-preview__detail {
   font-size: var(--text-xs);
   color: var(--color-text-tertiary);
-}
-
-:global(#app[data-theme='dark'] .explore-page),
-:global([data-theme='dark'] .explore-page) {
-  --explore-control-bg: rgba(12, 16, 23, 0.72);
-  --explore-control-bg-hover: rgba(18, 24, 36, 0.9);
-  --explore-control-border: rgba(255, 255, 255, 0.08);
-  --explore-control-border-strong: rgba(255, 255, 255, 0.14);
-  --explore-control-ink: var(--color-text-secondary);
-  --explore-control-ink-strong: var(--color-text-primary);
-  --explore-control-active-bg:
-    linear-gradient(
-      145deg,
-      rgba(var(--color-primary-rgb), 0.18),
-      rgba(var(--color-primary-rgb), 0.08)
-    ),
-    rgba(12, 16, 23, 0.96);
-  --explore-control-active-border: rgba(var(--color-primary-rgb), 0.34);
-  --explore-control-active-ink: var(--color-text-primary);
-  --explore-control-shadow: 0 1rem 1.6rem -1.4rem rgba(0, 0, 0, 0.48);
 }
 
 /* ========== MindMarket 风格背景 ========== */
@@ -889,46 +866,12 @@ onBeforeUnmount(() => {
   opacity: 0.2;
 }
 
-.page-header {
-  margin-bottom: clamp(1rem, 2vw, 1.5rem);
-}
-
-.page-title-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--spacing-3);
-  margin-bottom: var(--spacing-3);
-}
-
-.page-title-row h1 {
-  margin-bottom: 0;
-  font-size: clamp(1.55rem, 2vw, 1.9rem);
-  line-height: 1.04;
-  text-wrap: balance;
-}
-
-@media (min-width: 768px) {
-  .page-title-row h1 {
-    font-size: clamp(1.8rem, 2.4vw, 2.2rem);
-  }
-}
-
-.page-title-group {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--spacing-2);
-}
-
-.page-title-badge {
-  align-self: center;
+.page-hero__badge {
   padding: 0.5rem 0.85rem;
-  background: var(--explore-control-bg);
-  border: 0.0625rem solid var(--explore-control-border);
-  border-radius: var(--radius-full);
-  font-size: var(--text-xs);
-  font-weight: var(--font-medium);
-  color: var(--explore-control-ink);
+  background: var(--page-control-bg);
+  border: 0.0625rem solid var(--page-control-border);
+  color: var(--page-control-ink);
+  box-shadow: none;
 }
 
 .page-actions {
@@ -938,29 +881,7 @@ onBeforeUnmount(() => {
 }
 
 .search-trigger {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-2);
-  padding: 0.625rem 0.9rem;
-  font-size: var(--text-xs);
-  font-weight: var(--font-medium);
-  color: var(--explore-control-ink);
-  background: var(--explore-control-bg);
-  border: 0.0625rem solid var(--explore-control-border);
-  border-radius: var(--radius-full);
-  transition:
-    background var(--transition-fast),
-    border-color var(--transition-fast),
-    color var(--transition-fast),
-    box-shadow var(--transition-fast);
-  cursor: pointer;
-}
-
-.search-trigger:hover {
-  background: var(--explore-control-bg-hover);
-  color: var(--explore-control-ink-strong);
-  border-color: var(--explore-control-border-strong);
-  box-shadow: var(--explore-control-shadow);
+  flex-shrink: 0;
 }
 
 .search-trigger-text {
@@ -975,8 +896,8 @@ onBeforeUnmount(() => {
 
 .search-kbd {
   padding: 0.125rem 0.375rem;
-  background: var(--explore-control-bg);
-  border: 1px solid var(--explore-control-border);
+  background: var(--page-control-bg);
+  border: 1px solid var(--page-control-border);
   border-radius: var(--radius-sm);
   font-size: var(--text-xs);
   font-family: var(--font-mono);
@@ -984,47 +905,11 @@ onBeforeUnmount(() => {
 }
 
 .filters {
-  display: flex;
-  gap: var(--spacing-2);
+  flex: 1 1 auto;
 }
 
 .filter-btn {
-  position: relative;
-  padding: 0.625rem 1rem;
-  border-radius: var(--radius-full);
-  font-size: var(--text-xs);
-  font-weight: var(--font-medium);
-  color: var(--explore-control-ink);
-  border: 0.0625rem solid var(--explore-control-border);
-  background: var(--explore-control-bg);
-  transition:
-    background var(--transition-fast),
-    border-color var(--transition-fast),
-    color var(--transition-fast),
-    box-shadow var(--transition-fast);
-  overflow: hidden;
-}
-
-.filter-btn::before {
-  display: none;
-}
-
-.filter-btn:hover {
-  color: var(--explore-control-ink-strong);
-  border-color: var(--explore-control-border-strong);
-  background: var(--explore-control-bg-hover);
-  box-shadow: var(--explore-control-shadow);
-}
-
-.filter-btn.active {
-  background: var(--explore-control-active-bg);
-  color: var(--explore-control-active-ink);
-  border-color: var(--explore-control-active-border);
-  box-shadow: var(--explore-control-shadow);
-}
-
-.filter-btn.active::before {
-  display: none;
+  white-space: nowrap;
 }
 
 .filters-row {
@@ -1034,14 +919,6 @@ onBeforeUnmount(() => {
   justify-content: space-between;
   gap: var(--spacing-3);
   margin-bottom: 0;
-}
-
-.explore-hero .page-title-row {
-  margin-bottom: 0;
-}
-
-.explore-hero .page-title-group {
-  flex-wrap: wrap;
 }
 
 .explore-hero .page-actions {
@@ -1054,52 +931,12 @@ onBeforeUnmount(() => {
 }
 
 .platform-filters {
-  display: flex;
-  gap: var(--spacing-1);
-  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .platform-btn {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-1);
-  padding: 0.625rem 0.9rem;
-  border-radius: var(--radius-full);
-  font-size: var(--text-xs);
-  font-weight: var(--font-medium);
-  color: var(--explore-control-ink);
-  background: var(--explore-control-bg);
-  border: 0.0625rem solid var(--explore-control-border);
-  transition:
-    background var(--transition-fast),
-    border-color var(--transition-fast),
-    color var(--transition-fast),
-    box-shadow var(--transition-fast);
-}
-
-@media (min-width: 768px) {
-  .platform-btn {
-    padding: var(--spacing-2) var(--spacing-3);
-    font-size: var(--text-sm);
-  }
-}
-
-.platform-btn:hover {
-  background: var(--explore-control-bg-hover);
-  color: var(--explore-control-ink-strong);
-  border-color: var(--explore-control-border-strong);
-  box-shadow: var(--explore-control-shadow);
-}
-
-.platform-btn.active {
-  background: var(--explore-control-active-bg);
-  color: var(--explore-control-active-ink);
-  border-color: var(--explore-control-active-border);
-  box-shadow: var(--explore-control-shadow);
-}
-
-.platform-btn.active svg {
-  color: currentColor;
+  justify-content: flex-start;
+  min-inline-size: max-content;
 }
 
 .platform-label {
@@ -1118,7 +955,7 @@ onBeforeUnmount(() => {
 
   display: flex;
   gap: var(--masonry-gap);
-  width: 100%;
+  inline-size: 100%;
 }
 
 .masonry-column {
@@ -1142,7 +979,7 @@ onBeforeUnmount(() => {
 
 .post-card-btn {
   display: block;
-  width: 100%;
+  inline-size: 100%;
   text-align: left;
   border: 0;
   padding: 0;

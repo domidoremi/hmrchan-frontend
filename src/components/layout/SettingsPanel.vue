@@ -9,7 +9,7 @@
       </div>
       <button
         type="button"
-        class="settings-close-btn"
+        class="settings-close-btn page-control-btn page-control-btn--square"
         :aria-label="$t('common.close')"
         @click="$emit('close')"
       >
@@ -859,7 +859,12 @@ function resetVideoSettings() {
   color: var(--color-text-secondary);
   background: var(--glass-bg-subtle);
   border: 1px solid var(--glass-border);
-  transition: all var(--transition-fast);
+  box-shadow: none;
+  transition:
+    color var(--transition-fast),
+    background var(--transition-fast),
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast);
 }
 
 .settings-panel--compact .settings-close-btn {
@@ -871,6 +876,8 @@ function resetVideoSettings() {
   color: var(--color-text-primary);
   background: var(--glass-bg-light);
   border-color: var(--glass-border-strong);
+  transform: none;
+  box-shadow: none;
 }
 
 /* ========== Group ========== */
@@ -930,7 +937,11 @@ function resetVideoSettings() {
   background: var(--glass-bg-light);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
-  transition: all var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast),
+    color var(--transition-fast);
 }
 
 .settings-panel--compact .theme-btn {
@@ -941,7 +952,6 @@ function resetVideoSettings() {
 .theme-btn:hover {
   background: var(--glass-bg);
   border-color: var(--glass-border-strong);
-  transform: translateY(-0.125rem);
 }
 
 .theme-btn.active {
@@ -958,7 +968,10 @@ function resetVideoSettings() {
   background: var(--glass-bg-subtle);
   border-radius: var(--radius-md);
   color: var(--color-text-secondary);
-  transition: all var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast),
+    box-shadow var(--transition-fast);
 }
 
 .settings-panel--compact .theme-btn-icon {
@@ -1018,7 +1031,7 @@ function resetVideoSettings() {
     opacity: 0;
   }
   50% {
-    transform: scale(1.2);
+    transform: scale(1.03);
   }
   100% {
     transform: scale(1);
@@ -1043,7 +1056,11 @@ function resetVideoSettings() {
   border-radius: var(--radius-full);
   font-size: var(--text-sm);
   color: var(--color-text-secondary);
-  transition: all var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast),
+    box-shadow var(--transition-fast);
 }
 
 .settings-panel--compact .lang-btn {
@@ -1054,7 +1071,6 @@ function resetVideoSettings() {
 .lang-btn:hover {
   background: var(--glass-bg);
   border-color: var(--glass-border-strong);
-  transform: translateY(-0.0625rem);
 }
 
 .lang-btn.active {
@@ -1090,7 +1106,10 @@ function resetVideoSettings() {
   background: var(--glass-bg-light);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
-  transition: all var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast);
 }
 
 .toggle-btn:hover {
@@ -1116,7 +1135,10 @@ function resetVideoSettings() {
   border-radius: var(--radius-md);
   color: var(--color-text-tertiary);
   flex-shrink: 0;
-  transition: all var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast),
+    box-shadow var(--transition-fast);
 }
 
 .toggle-btn:hover .toggle-btn-icon {
@@ -1154,7 +1176,7 @@ function resetVideoSettings() {
   position: relative;
   width: 2.75rem;
   height: 1.5rem;
-  background: var(--color-gray-300);
+  background: rgba(148, 163, 184, 0.28);
   border-radius: var(--radius-full);
   flex-shrink: 0;
   margin-top: 0.125rem;
@@ -1162,7 +1184,7 @@ function resetVideoSettings() {
 }
 
 [data-theme='dark'] .toggle-switch {
-  background: var(--color-gray-600);
+  background: rgba(148, 163, 184, 0.22);
 }
 
 .toggle-switch.active {
@@ -1203,7 +1225,11 @@ function resetVideoSettings() {
   border-radius: var(--radius-lg);
   color: var(--color-text-primary);
   text-decoration: none;
-  transition: all var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast),
+    box-shadow var(--transition-fast);
 }
 
 .settings-panel--compact .link-btn {
@@ -1213,7 +1239,6 @@ function resetVideoSettings() {
 .link-btn:hover {
   background: var(--glass-bg);
   border-color: var(--glass-border-strong);
-  transform: translateX(0.125rem);
 }
 
 .link-btn-icon {
@@ -1226,7 +1251,10 @@ function resetVideoSettings() {
   border-radius: var(--radius-md);
   color: var(--color-text-tertiary);
   flex-shrink: 0;
-  transition: all var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast),
+    box-shadow var(--transition-fast);
 }
 
 .link-btn:hover .link-btn-icon {
@@ -1238,13 +1266,17 @@ function resetVideoSettings() {
   flex: 1;
   font-size: var(--text-sm);
   font-weight: var(--font-medium);
+  text-align: left;
 }
 
 .link-btn-arrow {
   color: var(--color-text-tertiary);
   opacity: 0;
   transform: translateX(-0.25rem);
-  transition: all var(--transition-fast);
+  transition:
+    opacity var(--transition-fast),
+    transform var(--transition-fast),
+    color var(--transition-fast);
 }
 
 .link-btn:hover .link-btn-arrow {
@@ -1284,7 +1316,11 @@ function resetVideoSettings() {
   background: var(--glass-bg-light);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
-  transition: all var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast),
+    color var(--transition-fast);
 }
 
 .settings-panel--compact .bg-effect-btn {
@@ -1294,7 +1330,6 @@ function resetVideoSettings() {
 .bg-effect-btn:hover {
   background: var(--glass-bg);
   border-color: var(--glass-border-strong);
-  transform: translateY(-0.125rem);
 }
 
 .bg-effect-btn.active {
@@ -1345,7 +1380,7 @@ function resetVideoSettings() {
   width: 100%;
   height: 0.25rem;
   appearance: none;
-  background: var(--color-gray-200);
+  background: rgba(148, 163, 184, 0.22);
   border-radius: var(--radius-full);
   outline: none;
   cursor: pointer;
@@ -1362,7 +1397,7 @@ function resetVideoSettings() {
 }
 
 .settings-slider::-webkit-slider-thumb:hover {
-  transform: scale(1.2);
+  transform: scale(1.03);
 }
 
 .settings-slider::-moz-range-thumb {
@@ -1375,7 +1410,7 @@ function resetVideoSettings() {
 }
 
 [data-theme='dark'] .settings-slider {
-  background: var(--color-gray-700);
+  background: rgba(255, 255, 255, 0.14);
 }
 
 /* ========== Dark Mode ========== */
@@ -1384,7 +1419,8 @@ function resetVideoSettings() {
 }
 
 [data-theme='dark'] .bg-effect-btn:not(.active) {
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(18, 24, 36, 0.78);
+  border-color: rgba(255, 255, 255, 0.08);
 }
 
 [data-theme='dark'] .bg-effect-btn.active {
@@ -1392,15 +1428,28 @@ function resetVideoSettings() {
 }
 
 [data-theme='dark'] .lang-btn:not(.active) {
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(18, 24, 36, 0.78);
+  border-color: rgba(255, 255, 255, 0.08);
 }
 
 [data-theme='dark'] .toggle-btn {
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(18, 24, 36, 0.78);
+  border-color: rgba(255, 255, 255, 0.08);
 }
 
 [data-theme='dark'] .toggle-btn:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(28, 36, 52, 0.96);
+  border-color: rgba(var(--color-primary-rgb), 0.18);
+}
+
+[data-theme='dark'] .link-btn {
+  background: rgba(18, 24, 36, 0.78);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme='dark'] .link-btn:hover {
+  background: rgba(28, 36, 52, 0.96);
+  border-color: rgba(var(--color-primary-rgb), 0.18);
 }
 
 /* ========== Blue Theme ========== */
@@ -1411,7 +1460,7 @@ function resetVideoSettings() {
 
 [data-theme='blue'] .theme-btn.active .theme-btn-icon {
   background: #3b82f6;
-  color: #ffffff;
+  color: var(--color-on-primary);
   box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
 
@@ -1431,7 +1480,7 @@ function resetVideoSettings() {
 [data-theme='blue'] .lang-btn.active {
   background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
   border-color: transparent;
-  color: #ffffff;
+  color: var(--color-on-primary);
 }
 
 [data-theme='blue'] .settings-slider::-webkit-slider-thumb {
@@ -1464,78 +1513,6 @@ function resetVideoSettings() {
   flex-shrink: 0;
   color: rgb(var(--color-warning-rgb, 245, 158, 11));
   margin-top: 0.0625rem;
-}
-
-/* ========== Link List ========== */
-.link-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-2);
-}
-
-.link-btn {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-3);
-  width: 100%;
-  padding: var(--spacing-3);
-  background: var(--glass-bg-light);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-lg);
-  text-decoration: none;
-  color: var(--color-text-primary);
-  transition: all var(--transition-fast);
-}
-
-.link-btn:hover {
-  background: var(--glass-bg);
-  border-color: var(--glass-border-strong);
-  transform: translateX(0.25rem);
-}
-
-.link-btn-icon {
-  width: 2rem;
-  height: 2rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--glass-bg-subtle);
-  border-radius: var(--radius-md);
-  color: var(--color-text-tertiary);
-  flex-shrink: 0;
-  transition: all var(--transition-fast);
-}
-
-.link-btn:hover .link-btn-icon {
-  background: rgba(var(--color-primary-rgb), 0.1);
-  color: var(--color-primary);
-}
-
-.link-btn-text {
-  flex: 1;
-  font-size: var(--text-sm);
-  font-weight: var(--font-medium);
-  text-align: left;
-}
-
-.link-btn-arrow {
-  color: var(--color-text-tertiary);
-  flex-shrink: 0;
-  transition: transform var(--transition-fast);
-}
-
-.link-btn:hover .link-btn-arrow {
-  transform: translateX(0.25rem);
-  color: var(--color-primary);
-}
-
-/* Dark mode adjustments */
-[data-theme='dark'] .link-btn {
-  background: rgba(255, 255, 255, 0.03);
-}
-
-[data-theme='dark'] .link-btn:hover {
-  background: rgba(255, 255, 255, 0.06);
 }
 
 @media (max-width: 28rem) {

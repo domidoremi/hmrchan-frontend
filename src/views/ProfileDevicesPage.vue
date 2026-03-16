@@ -99,6 +99,19 @@ function handleRevokeAll() {
   align-items: center;
   gap: clamp(0.5rem, 1.5vw, 0.75rem);
   padding: clamp(0.75rem, 2vw, 1rem);
+  border-radius: var(--profile-section-radius);
+  border: 1px solid var(--profile-surface-border);
+  background: var(--profile-surface-bg-soft);
+  box-shadow: var(--profile-surface-shadow);
+  transition:
+    border-color var(--duration-fast) var(--ease-smooth),
+    box-shadow var(--duration-fast) var(--ease-smooth),
+    transform var(--duration-fast) var(--ease-bounce-soft);
+}
+
+.security-card:hover {
+  border-color: var(--profile-surface-border-strong);
+  box-shadow: var(--profile-surface-shadow-hover);
 }
 
 .security-icon {
@@ -108,6 +121,7 @@ function handleRevokeAll() {
   width: 2.25rem;
   height: 2.25rem;
   border-radius: var(--radius-lg);
+  border: 1px solid var(--profile-muted-border);
   flex-shrink: 0;
   transition: transform var(--duration-fast) var(--ease-bounce-soft);
 }
@@ -162,6 +176,10 @@ function handleRevokeAll() {
 /* ===== Page Body ===== */
 .page-body {
   padding: clamp(1rem, 3vw, 1.5rem);
+  border-radius: var(--profile-shell-radius);
+  border: 1px solid var(--profile-surface-border);
+  background: var(--profile-surface-bg);
+  box-shadow: var(--profile-surface-shadow);
 }
 
 /* ===== Responsive ===== */
@@ -190,15 +208,15 @@ function handleRevokeAll() {
 <style>
 /* ===== Material 3 Overrides ===== */
 #app[data-ui-style='material'] .devices-page .security-card {
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
 }
 
 #app[data-ui-style='material'] .devices-page .security-icon {
-  border-radius: 8px;
+  border-radius: var(--radius-md);
 }
 
 #app[data-ui-style='material'] .devices-page .page-body {
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
 }
 
 /* ===== Dark Theme ===== */
@@ -238,13 +256,13 @@ function handleRevokeAll() {
 
 /* ===== Material + Blue ===== */
 #app[data-ui-style='material'][data-theme='blue'] .devices-page .security-card {
-  background: #ffffff;
+  background: var(--profile-surface-bg);
   border-color: rgba(59, 130, 246, 0.08);
   box-shadow: 0 1px 3px rgba(59, 130, 246, 0.06);
 }
 
 #app[data-ui-style='material'][data-theme='blue'] .devices-page .page-body {
-  background: #ffffff;
+  background: var(--profile-surface-bg);
   border-color: rgba(59, 130, 246, 0.08);
   box-shadow: 0 1px 3px rgba(59, 130, 246, 0.06);
 }

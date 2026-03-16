@@ -91,7 +91,7 @@ onUnmounted(() => {
   will-change: transform;
 }
 
-@media (max-width: 768px) {
+@media (min-width: 769px) {
   .scroll-down-fab {
     display: flex;
   }

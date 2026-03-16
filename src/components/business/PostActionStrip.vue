@@ -262,7 +262,12 @@ async function sharePost() {
   background: var(--action-bg);
   border: 1px solid var(--action-border);
   white-space: nowrap;
-  transition: all var(--transition-fast);
+  transition:
+    background-color var(--transition-fast),
+    color var(--transition-fast),
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast),
+    opacity var(--transition-fast);
 }
 
 .action-btn:hover:not(:disabled) {

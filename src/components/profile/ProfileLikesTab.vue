@@ -2,7 +2,7 @@
   <div class="likes-tab">
     <div class="tab-header">
       <h2 class="tab-title">{{ $t('profile.tabs.likes') }}</h2>
-      <span v-if="total > 0" class="item-count">{{ total }}</span>
+      <span v-if="total > 0" class="item-count profile-item-count">{{ total }}</span>
     </div>
 
     <StateIndicator v-if="error" variant="error" :description="error" @action="fetchLikes" />
@@ -44,11 +44,11 @@
             <div class="card-top">
               <span class="comment-date">{{ formatDate(comment.created_at) }}</span>
               <div class="card-stats">
-                <span v-if="comment.reply_count" class="stat-chip">
+                <span v-if="comment.reply_count" class="profile-stat-pill">
                   <MessageCircle :size="11" />
                   {{ comment.reply_count }}
                 </span>
-                <span class="stat-chip">
+                <span class="profile-stat-pill">
                   <Heart :size="11" />
                   {{ comment.like_count || 0 }}
                 </span>
@@ -289,7 +289,8 @@ onUnmounted(() => {
 
 .item-count {
   padding: 0.125rem 0.625rem;
-  background: rgba(244, 63, 94, 0.08);
+  background: var(--profile-chip-bg);
+  border: 1px solid var(--profile-chip-border);
   border-radius: var(--radius-full);
   font-size: var(--text-xs);
   color: var(--color-error);
@@ -311,7 +312,7 @@ onUnmounted(() => {
 
 .skeleton-accent {
   width: 3px;
-  border-radius: 2px;
+  border-radius: calc(var(--radius-sm) / 2);
   background: rgba(244, 63, 94, 0.15);
   flex-shrink: 0;
 }
@@ -322,8 +323,9 @@ onUnmounted(() => {
   flex-direction: column;
   gap: var(--spacing-2);
   padding: var(--spacing-4);
-  background: var(--glass-bg-light);
-  border-radius: var(--radius-lg);
+  background: var(--profile-surface-bg-soft);
+  border: 1px solid var(--profile-surface-border);
+  border-radius: var(--profile-section-radius);
 }
 
 /* ===== Timeline ===== */
@@ -366,7 +368,7 @@ onUnmounted(() => {
 }
 
 .timeline-item:hover .timeline-dot {
-  transform: scale(1.2);
+  transform: scale(1.01);
   background: rgba(244, 63, 94, 0.2);
 }
 
@@ -382,10 +384,22 @@ onUnmounted(() => {
   flex: 1;
   min-width: 0;
   padding: clamp(0.875rem, 2vw, 1.25rem);
+  border-radius: var(--profile-section-radius);
+  border: 1px solid var(--profile-surface-border);
+  background: var(--profile-surface-bg-soft);
+  box-shadow: var(--profile-surface-shadow);
+  backdrop-filter: blur(var(--blur-sm));
+  -webkit-backdrop-filter: blur(var(--blur-sm));
+  transition:
+    transform var(--duration-fast) var(--ease-out-smooth),
+    border-color var(--duration-fast) var(--ease-smooth),
+    box-shadow var(--duration-fast) var(--ease-smooth);
 }
 
 .timeline-card:hover {
-  transform: var(--lift-sm);
+  transform: none;
+  border-color: var(--profile-surface-border-strong);
+  box-shadow: var(--profile-surface-shadow-hover);
 }
 
 .card-top {
@@ -407,14 +421,15 @@ onUnmounted(() => {
   gap: var(--spacing-2);
 }
 
-.stat-chip {
+.profile-stat-pill {
   display: inline-flex;
   align-items: center;
   gap: 0.1875rem;
   font-size: var(--text-xs);
-  color: var(--color-text-tertiary);
+  color: var(--profile-chip-text);
   padding: 0.0625rem 0.375rem;
-  background: var(--glass-bg-medium);
+  background: var(--profile-chip-bg);
+  border: 1px solid var(--profile-chip-border);
   border-radius: var(--radius-full);
 }
 
@@ -438,7 +453,7 @@ onUnmounted(() => {
   align-items: center;
   margin-top: var(--spacing-3);
   padding-top: var(--spacing-3);
-  border-top: 1px solid var(--glass-border-subtle);
+  border-top: 1px solid var(--profile-muted-border);
   gap: var(--spacing-3);
 }
 
@@ -485,8 +500,8 @@ onUnmounted(() => {
   border-radius: var(--radius-full);
   font-size: var(--text-xs);
   font-weight: var(--font-medium);
-  background: transparent;
-  border: 1px solid var(--glass-border-medium);
+  background: var(--profile-action-bg);
+  border: 1px solid var(--profile-action-border);
   color: var(--color-text-secondary);
   cursor: pointer;
   flex-shrink: 0;
@@ -506,8 +521,8 @@ onUnmounted(() => {
 .unlike-btn:hover:not(:disabled) {
   border-color: var(--color-error);
   color: var(--color-error);
-  background: rgba(239, 68, 68, 0.06);
-  transform: scale(1.03);
+  background: rgba(239, 68, 68, 0.08);
+  transform: none;
 }
 
 .unlike-btn:disabled {
@@ -547,7 +562,7 @@ onUnmounted(() => {
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
   background: var(--color-surface, var(--glass-bg-light));
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   border: 1px solid var(--md-outline-variant, var(--glass-border-medium));
   box-shadow: var(--shadow-sm);
 }
@@ -557,20 +572,20 @@ onUnmounted(() => {
 }
 
 #app[data-ui-style='material'] .likes-tab .timeline-card:hover {
-  transform: translateY(-1px);
+  transform: none;
   box-shadow: var(--shadow-md);
 }
 
 #app[data-ui-style='material'] .likes-tab .timeline-dot {
-  border-radius: 6px;
+  border-radius: calc(var(--radius-lg) / 2);
 }
 
-#app[data-ui-style='material'] .likes-tab .stat-chip {
-  border-radius: 4px;
+#app[data-ui-style='material'] .likes-tab .profile-stat-pill {
+  border-radius: var(--radius-sm);
 }
 
 #app[data-ui-style='material'] .likes-tab .unlike-btn {
-  border-radius: 8px;
+  border-radius: var(--radius-md);
 }
 
 #app[data-ui-style='material'] .likes-tab .unlike-btn:hover:not(:disabled) {
@@ -578,11 +593,11 @@ onUnmounted(() => {
 }
 
 #app[data-ui-style='material'] .likes-tab .skeleton-body {
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
 }
 
 #app[data-ui-style='material'] .likes-tab .item-count {
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
 }
 
 /* ===== Dark Theme Overrides ===== */
@@ -598,7 +613,7 @@ onUnmounted(() => {
   border-top-color: rgba(255, 255, 255, 0.06);
 }
 
-[data-theme='dark'] .likes-tab .stat-chip {
+[data-theme='dark'] .likes-tab .profile-stat-pill {
   background: rgba(255, 255, 255, 0.08);
 }
 
@@ -638,7 +653,7 @@ onUnmounted(() => {
 
 /* ===== Material + Blue ===== */
 #app[data-ui-style='material'][data-theme='blue'] .likes-tab .timeline-card {
-  background: #ffffff;
+  background: var(--profile-surface-bg);
   border-color: rgba(59, 130, 246, 0.12);
   box-shadow: 0 1px 3px rgba(59, 130, 246, 0.08);
 }

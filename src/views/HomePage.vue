@@ -152,12 +152,12 @@
           <div class="rail-track" :style="railTrackStyle" role="list">
             <article class="rail-panel rail-panel--portal">
               <div class="rail-panel__content">
-                <header class="section-header section-header--stage">
-                  <div class="section-title">
+                <header class="page-section-head page-section-head--stage">
+                  <div class="page-section-copy">
                     <h2>{{ $t('home.portal.title') }}</h2>
                     <p>{{ $t('home.portal.subtitle') }}</p>
                   </div>
-                  <RouterLink to="/explore" class="section-link">
+                  <RouterLink to="/explore" class="page-inline-cta">
                     <AnimatedIcon name="explore" :fallback-icon="ArrowUpRight" size="sm" />
                     {{ $t('home.portal.action') }}
                   </RouterLink>
@@ -315,8 +315,8 @@
 
             <article class="rail-panel rail-panel--spotlight">
               <div class="rail-panel__content rail-panel__content--highlight">
-                <header class="section-header section-header--stage">
-                  <div class="section-title">
+                <header class="page-section-head page-section-head--stage">
+                  <div class="page-section-copy">
                     <h2>{{ heroEditorialTitle }}</h2>
                     <p>{{ heroEditorialText }}</p>
                   </div>
@@ -409,12 +409,12 @@
 
             <article class="rail-panel rail-panel--featured">
               <div class="rail-panel__content">
-                <header class="section-header section-header--stage">
-                  <div class="section-title">
+                <header class="page-section-head page-section-head--stage">
+                  <div class="page-section-copy">
                     <h2>{{ $t('home.featured.title') }}</h2>
                     <p>{{ $t('home.featured.subtitle') }}</p>
                   </div>
-                  <RouterLink to="/explore" class="section-link">
+                  <RouterLink to="/explore" class="page-inline-cta">
                     <AnimatedIcon name="explore" :fallback-icon="ArrowUpRight" size="sm" />
                     {{ $t('home.featured.action') }}
                   </RouterLink>
@@ -512,8 +512,8 @@
 
             <article class="rail-panel rail-panel--trends">
               <div class="rail-panel__content">
-                <header class="section-header section-header--stage">
-                  <div class="section-title">
+                <header class="page-section-head page-section-head--stage">
+                  <div class="page-section-copy">
                     <h2>{{ $t('home.trends.authorsTitle') }}</h2>
                     <p>{{ $t('home.trends.scheduleHint') }}</p>
                   </div>
@@ -783,7 +783,7 @@
             <p class="posts-subtitle">{{ $t('home.latestSubtitle') }}</p>
           </div>
           <div class="posts-header__actions">
-            <RouterLink to="/explore" class="section-link">
+            <RouterLink to="/explore" class="page-inline-cta">
               <AnimatedIcon name="explore" :fallback-icon="ArrowUpRight" size="sm" />
               {{ $t('home.latestAction') }}
             </RouterLink>
@@ -879,9 +879,9 @@
 
     <section ref="storyDeckRef" class="media-slices home-screen" :style="storySceneStyle">
       <div class="container story-stage">
-        <header class="section-header section-header--stage">
-          <div class="section-title">
-            <p class="section-kicker">{{ $t('home.featured.kicker') }}</p>
+        <header class="page-section-head page-section-head--stage">
+          <div class="page-section-copy">
+            <p class="page-section-kicker">{{ $t('home.featured.kicker') }}</p>
             <h2>{{ $t('home.featured.title') }}</h2>
             <p>{{ $t('home.featured.subtitle') }}</p>
           </div>
@@ -929,7 +929,7 @@
                       <AnimatedIcon name="sparkle" :fallback-icon="Sparkles" size="sm" />
                       {{ $t('home.featured.action') }}
                     </Button>
-                    <RouterLink :to="card.detailLink" class="section-link media-slice__link">
+                    <RouterLink :to="card.detailLink" class="page-inline-cta media-slice__link">
                       <AnimatedIcon name="explore" :fallback-icon="ArrowUpRight" size="sm" />
                       {{ $t('home.latestAction') }}
                     </RouterLink>
@@ -1253,6 +1253,69 @@ type FeaturedRailCard = {
   }>
 }
 
+type MediaHighlightCard = {
+  post: PostListItem
+  thumbnail: string | null
+  title: string
+  author: string
+}
+
+type SpotlightTextCard = {
+  post: PostListItem
+  title: string
+  text: string
+  supportText: string
+  author: string
+  time: string
+}
+
+type StoryDeckCard = {
+  post: PostListItem
+  thumbnail: string | null
+  eyebrow: string
+  title: string
+  excerpt: string
+  author: string
+  time: string
+  detailLink: string
+}
+
+function collectUniqueItems<T>(
+  sources: readonly T[][],
+  limit: number,
+  getId: (item: T) => string | null | undefined,
+  excludedIds: Iterable<string> = []
+): T[] {
+  const seen = new Set(Array.from(excludedIds).filter(Boolean))
+  const result: T[] = []
+
+  for (const source of sources) {
+    for (const item of source) {
+      const id = getId(item)
+      if (!id || seen.has(id)) continue
+      seen.add(id)
+      result.push(item)
+      if (result.length >= limit) return result
+    }
+  }
+
+  return result
+}
+
+function buildMediaHighlightCard(
+  post: PostListItem,
+  overrides: Partial<Omit<MediaHighlightCard, 'post'>> = {}
+): MediaHighlightCard {
+  return {
+    post,
+    thumbnail:
+      overrides.thumbnail ??
+      (post.thumbnail_url ? normalizeToThumbnailUrl(post.thumbnail_url, 'large') : null),
+    title: overrides.title ?? formatStoryTitle(post),
+    author: overrides.author ?? (formatAuthorName(post) || t('home.hero.fallbackAuthor')),
+  }
+}
+
 const liveFeaturedRailItems = computed(() =>
   (homeAggregate.value?.featured.items ?? []).slice(0, 4)
 )
@@ -1312,29 +1375,109 @@ const featuredRailCards = computed<FeaturedRailCard[]>(() =>
   })
 )
 
+const featuredRailPostIds = computed(
+  () => new Set(featuredRailCards.value.map((card) => card.post.id))
+)
+
 const featuredRailPosts = computed(() => {
   return fallbackFeaturedRailPosts.value
 })
 
 const latestTextPost = computed(() => textPosts.value[0] ?? null)
-const spotlightMediaCards = computed(() => {
-  const liveItems = homeAggregate.value?.featured.items ?? []
-  if (liveItems.length > 0) {
-    return liveItems.slice(0, 4).map((item) => {
-      const post = mapFeaturedItemToPost(item)
-      return {
-        post,
-        thumbnail: mapHomeImageUrl(item.cover),
-        title: normalizeText(item.title) || formatHeroTitle(post),
-        author: formatHomeAuthorName(getPrimaryFeaturedAuthor(item)) || formatHeroAuthor(post),
-      }
-    })
-  }
+const heroSpotlightPost = computed<PostListItem | null>(() => {
+  const spotlight = homeAggregate.value?.hero.spotlight
+  if (!spotlight?.post_id) return null
 
-  return heroHighlightCards.value.slice(0, 4)
+  return {
+    id: spotlight.post_id,
+    platform: 'story',
+    title: normalizeText(spotlight.title) || t('home.hero.fallbackTitle'),
+    content: normalizeText(spotlight.summary) || undefined,
+    description: normalizeText(spotlight.summary) || undefined,
+    thumbnail_url: mapHomeImageUrl(spotlight.image, 'large'),
+    published_at: undefined,
+    view_count: 0,
+    like_count: 0,
+    comment_count: 0,
+    media_count: spotlight.image ? 1 : 0,
+    media_type: spotlight.image ? 'image' : undefined,
+    author_name: formatHomeAuthorName(spotlight.author) || undefined,
+    author_id: spotlight.author?.id ?? undefined,
+    author_username: spotlight.author?.username ?? undefined,
+    author_avatar_url: spotlight.author?.avatar_url ?? undefined,
+    post_url: resolvePostLink(spotlight.deep_link, spotlight.post_id),
+    tags: spotlight.primary_tag ? [normalizeHomeTag(spotlight.primary_tag)] : undefined,
+  }
 })
 
-const portalLeadCard = computed(() => spotlightMediaCards.value[0] ?? null)
+const heroSpotlightMediaCard = computed<MediaHighlightCard | null>(() => {
+  const post = heroSpotlightPost.value
+  if (!post) return null
+  return buildMediaHighlightCard(post, {
+    thumbnail: post.thumbnail_url ?? null,
+    title: normalizeText(homeAggregate.value?.hero.spotlight?.title) || formatHeroTitle(post),
+    author:
+      formatHomeAuthorName(homeAggregate.value?.hero.spotlight?.author) || formatHeroAuthor(post),
+  })
+})
+const curatedMediaHighlights = computed<MediaHighlightCard[]>(() => {
+  const featuredCards = liveFeaturedRailItems.value.map((item) => {
+    const post = mapFeaturedItemToPost(item)
+    return buildMediaHighlightCard(post, {
+      thumbnail: mapHomeImageUrl(item.cover),
+      title: normalizeText(item.title) || formatHeroTitle(post),
+      author: formatHomeAuthorName(getPrimaryFeaturedAuthor(item)) || formatHeroAuthor(post),
+    })
+  })
+
+  const storyCardsAsHighlights = rawStoryCards.value.map((card) =>
+    buildMediaHighlightCard(card.post, {
+      thumbnail: card.thumbnail,
+      title: card.title,
+      author: card.author,
+    })
+  )
+
+  const fallbackCards = mediaPosts.value.map((post) => buildMediaHighlightCard(post))
+
+  return collectUniqueItems(
+    [
+      heroSpotlightMediaCard.value ? [heroSpotlightMediaCard.value] : [],
+      storyCardsAsHighlights,
+      featuredCards,
+      heroHighlightCards.value,
+      fallbackCards,
+    ],
+    12,
+    (card) => card.post.id
+  )
+})
+
+const portalLeadCard = computed<MediaHighlightCard | null>(() => {
+  const excludedIds = new Set([...featuredRailPostIds.value, ...storyCardIds.value])
+  const preferred = collectUniqueItems(
+    [curatedMediaHighlights.value],
+    1,
+    (card) => card.post.id,
+    excludedIds
+  )
+
+  return preferred[0] ?? curatedMediaHighlights.value[0] ?? null
+})
+
+const spotlightMediaCards = computed(() => {
+  const excludedIds = new Set([...featuredRailPostIds.value, ...storyCardIds.value])
+  if (portalLeadCard.value) excludedIds.add(portalLeadCard.value.post.id)
+
+  const preferred = collectUniqueItems(
+    [curatedMediaHighlights.value],
+    4,
+    (card) => card.post.id,
+    excludedIds
+  )
+
+  return preferred.length > 0 ? preferred : curatedMediaHighlights.value.slice(0, 4)
+})
 const portalLeadEyebrow = computed(() => {
   if (heroSpotlightTag.value) return `#${heroSpotlightTag.value}`
   return portalLeadCard.value?.author || t('home.hero.fallbackAuthor')
@@ -1423,7 +1566,7 @@ function getSpotlightTextScore(item: HomeLatestTextPostItem) {
   return normalizeText(item.excerpt).length + (item.tags?.length ?? 0) * 16
 }
 
-const spotlightTextCards = computed(() => {
+const rawSpotlightTextCards = computed<SpotlightTextCard[]>(() => {
   const liveItems = homeAggregate.value?.latest_text_posts ?? []
   if (liveItems.length > 0) {
     const editorialPostId = homeAggregate.value?.hero.editorial_card?.post_id ?? null
@@ -1475,6 +1618,13 @@ const spotlightTextCards = computed(() => {
     }
   })
 })
+
+const spotlightTextCards = computed(() =>
+  collectUniqueItems([rawSpotlightTextCards.value], 3, (card) => card.post.id)
+)
+const spotlightTextPostIds = computed(
+  () => new Set(spotlightTextCards.value.map((card) => card.post.id))
+)
 
 const portalPanels = computed(() => {
   const firstAuthor = trendingAuthors.value[0]
@@ -1570,90 +1720,90 @@ const portalPanels = computed(() => {
 const bubbleBursts = [
   {
     x: 'clamp(-30rem, -31vw, -17rem)',
-    y: 'clamp(-13.2rem, -14vh, -7.8rem)',
+    y: 'clamp(-13.2rem, -14dvh, -7.8rem)',
     introX: 'clamp(-7.2rem, -8vw, -4.6rem)',
-    introY: 'clamp(-4.4rem, -5vh, -2.7rem)',
+    introY: 'clamp(-4.4rem, -5dvh, -2.7rem)',
     delay: '0s',
     scale: '1.02',
     tailAngle: '-148deg',
   },
   {
     x: 'clamp(-11rem, -12vw, -6rem)',
-    y: 'clamp(-16.8rem, -18vh, -9.4rem)',
+    y: 'clamp(-16.8rem, -18dvh, -9.4rem)',
     introX: 'clamp(-2.8rem, -3.6vw, -1.8rem)',
-    introY: 'clamp(-5.6rem, -6vh, -3.2rem)',
+    introY: 'clamp(-5.6rem, -6dvh, -3.2rem)',
     delay: '0.06s',
     scale: '0.94',
     tailAngle: '-108deg',
   },
   {
     x: 'clamp(11.5rem, 13vw, 6.6rem)',
-    y: 'clamp(-14.6rem, -15.8vh, -8.2rem)',
+    y: 'clamp(-14.6rem, -15.8dvh, -8.2rem)',
     introX: 'clamp(3rem, 3.8vw, 2rem)',
-    introY: 'clamp(-4.8rem, -5.4vh, -3rem)',
+    introY: 'clamp(-4.8rem, -5.4dvh, -3rem)',
     delay: '0.12s',
     scale: '0.9',
     tailAngle: '-28deg',
   },
   {
     x: 'clamp(29rem, 31vw, 17.8rem)',
-    y: 'clamp(-7rem, -8vh, -4rem)',
+    y: 'clamp(-7rem, -8dvh, -4rem)',
     introX: 'clamp(7.8rem, 8.4vw, 4.8rem)',
-    introY: 'clamp(-2.4rem, -3vh, -1.5rem)',
+    introY: 'clamp(-2.4rem, -3dvh, -1.5rem)',
     delay: '0.24s',
     scale: '0.92',
     tailAngle: '18deg',
   },
   {
     x: 'clamp(-31.5rem, -32vw, -18.5rem)',
-    y: 'clamp(-1.6rem, -0.4vh, 0.8rem)',
+    y: 'clamp(-1.6rem, -0.4dvh, 0.8rem)',
     introX: 'clamp(-8rem, -8.8vw, -4.8rem)',
-    introY: 'clamp(-0.2rem, 0.4vh, 0.8rem)',
+    introY: 'clamp(-0.2rem, 0.4dvh, 0.8rem)',
     delay: '0.3s',
     scale: '0.88',
     tailAngle: '164deg',
   },
   {
     x: 'clamp(31rem, 31vw, 18.5rem)',
-    y: 'clamp(0.2rem, 1vh, 1.8rem)',
+    y: 'clamp(0.2rem, 1dvh, 1.8rem)',
     introX: 'clamp(8.2rem, 8.8vw, 5rem)',
-    introY: 'clamp(0.4rem, 0.8vh, 1rem)',
+    introY: 'clamp(0.4rem, 0.8dvh, 1rem)',
     delay: '0.36s',
     scale: '0.9',
     tailAngle: '32deg',
   },
   {
     x: 'clamp(-22rem, -23vw, -12rem)',
-    y: 'clamp(4.8rem, 5.5vh, 3rem)',
+    y: 'clamp(4.8rem, 5.5dvh, 3rem)',
     introX: 'clamp(-5.6rem, -6vw, -3.3rem)',
-    introY: 'clamp(2rem, 2.4vh, 1.2rem)',
+    introY: 'clamp(2rem, 2.4dvh, 1.2rem)',
     delay: '0.42s',
     scale: '0.92',
     tailAngle: '120deg',
   },
   {
     x: '0rem',
-    y: 'clamp(5.8rem, 6.4vh, 3.6rem)',
+    y: 'clamp(5.8rem, 6.4dvh, 3.6rem)',
     introX: '0rem',
-    introY: 'clamp(2.4rem, 2.8vh, 1.4rem)',
+    introY: 'clamp(2.4rem, 2.8dvh, 1.4rem)',
     delay: '0.48s',
     scale: '0.92',
     tailAngle: '92deg',
   },
   {
     x: 'clamp(21rem, 22vw, 12rem)',
-    y: 'clamp(4.9rem, 5.6vh, 3rem)',
+    y: 'clamp(4.9rem, 5.6dvh, 3rem)',
     introX: 'clamp(5.2rem, 5.8vw, 3.2rem)',
-    introY: 'clamp(1.8rem, 2.2vh, 1.1rem)',
+    introY: 'clamp(1.8rem, 2.2dvh, 1.1rem)',
     delay: '0.54s',
     scale: '0.88',
     tailAngle: '64deg',
   },
   {
     x: 'clamp(-8rem, -8.8vw, -4.6rem)',
-    y: 'clamp(6.3rem, 7vh, 3.9rem)',
+    y: 'clamp(6.3rem, 7dvh, 3.9rem)',
     introX: 'clamp(-1.8rem, -2.2vw, -1rem)',
-    introY: 'clamp(2.8rem, 3vh, 1.6rem)',
+    introY: 'clamp(2.8rem, 3dvh, 1.6rem)',
     delay: '0.6s',
     scale: '0.86',
     tailAngle: '104deg',
@@ -1663,7 +1813,20 @@ const bubbleBursts = [
 const bubbleItems = computed(() => {
   const liveItems = homeAggregate.value?.latest_text_posts ?? []
   if (liveItems.length > 0) {
-    return liveItems.slice(0, bubbleBursts.length).map((item, index) => {
+    const editorialPostId = homeAggregate.value?.hero.editorial_card?.post_id ?? null
+    const preferredItems = collectUniqueItems(
+      [
+        liveItems.filter(
+          (item) =>
+            !spotlightTextPostIds.value.has(item.post_id) && item.post_id !== editorialPostId
+        ),
+        liveItems,
+      ],
+      bubbleBursts.length,
+      (item) => item.post_id
+    )
+
+    return preferredItems.map((item, index) => {
       const orbit = bubbleBursts[index]
       const post = mapLatestTextItemToPost(item)
 
@@ -1688,7 +1851,17 @@ const bubbleItems = computed(() => {
     })
   }
 
-  const items = textPosts.value.slice(0, bubbleBursts.length)
+  const items = collectUniqueItems(
+    [
+      textPosts.value.filter(
+        (post) =>
+          !spotlightTextPostIds.value.has(post.id) && post.id !== (latestTextPost.value?.id ?? '')
+      ),
+      textPosts.value,
+    ],
+    bubbleBursts.length,
+    (post) => post.id
+  )
   return items.map((post, index) => {
     const orbit = bubbleBursts[index]
     return {
@@ -1710,7 +1883,7 @@ const bubbleItems = computed(() => {
   })
 })
 
-const storyCards = computed(() => {
+const rawStoryCards = computed<StoryDeckCard[]>(() => {
   const liveItems = homeAggregate.value?.story_deck.items ?? []
   if (liveItems.length > 0) {
     return liveItems.slice(0, 5).map((item) => {
@@ -1745,6 +1918,18 @@ const storyCards = computed(() => {
     }
   })
 })
+
+const storyCards = computed(() =>
+  collectUniqueItems(
+    [
+      rawStoryCards.value.filter((card) => !featuredRailPostIds.value.has(card.post.id)),
+      rawStoryCards.value,
+    ],
+    5,
+    (card) => card.post.id
+  )
+)
+const storyCardIds = computed(() => new Set(storyCards.value.map((card) => card.post.id)))
 
 const storyCardCount = computed(() => storyCards.value.length)
 const storyTravel = computed(() => Math.max(storyCardCount.value - 1, 0))
@@ -1792,7 +1977,32 @@ const homePageTransitionClass = computed(() =>
   activeScreenTransition.value ? `home-page--transition-${activeScreenTransition.value}` : null
 )
 
+function isCompactHomeViewport(): boolean {
+  return typeof window !== 'undefined' && window.innerWidth <= 768
+}
+
 const homePageMotionStyle = computed<Record<string, string>>(() => {
+  if (isCompactHomeViewport()) {
+    return {
+      '--home-hero-opacity': '1',
+      '--home-hero-scale': '1',
+      '--home-hero-y': '0rem',
+      '--home-hero-blur': '0rem',
+      '--home-rail-opacity': '1',
+      '--home-rail-scale': '1',
+      '--home-rail-y': '0rem',
+      '--home-rail-blur': '0rem',
+      '--home-posts-opacity': '1',
+      '--home-posts-scale': '1',
+      '--home-posts-y': '0rem',
+      '--home-posts-blur': '0rem',
+      '--home-story-opacity': '1',
+      '--home-story-scale': '1',
+      '--home-story-y': '0rem',
+      '--home-story-blur': '0rem',
+    }
+  }
+
   const heroExit = viewportSceneBlend.value.heroRail
   const railEnter = viewportSceneBlend.value.heroRail
   const railExit = viewportSceneBlend.value.railPosts
@@ -2605,6 +2815,19 @@ function measureViewportBlend(
 function updateViewportSceneBlend() {
   if (typeof window === 'undefined') return
 
+  if (isCompactHomeViewport()) {
+    viewportSceneBlend.value = {
+      heroRail: 0,
+      railPosts: 0,
+      postsStory: 0,
+      storyFooter: 0,
+    }
+    activeScreenTransition.value = null
+    setRailNavbarLock(false)
+    setHomeFooterBlend(false)
+    return
+  }
+
   syncSceneProgressFromViewport()
 
   const nextBlend = {
@@ -2657,7 +2880,7 @@ function unbindViewportSceneBlendTracking() {
 }
 
 function triggerScreenTransition(from: HomeScreenKey, to: HomeScreenKey) {
-  if (typeof window === 'undefined' || !shouldAnimate.value) {
+  if (typeof window === 'undefined' || !shouldAnimate.value || isCompactHomeViewport()) {
     activeScreenTransition.value = null
     return
   }
@@ -2822,6 +3045,7 @@ function isSceneActiveRange(element: HTMLElement | null): boolean {
 }
 
 function getActiveSceneKey(): SceneStepKey | null {
+  if (isCompactHomeViewport()) return null
   if (railSlideCount.value > 1 && isSceneActiveRange(featuredSectionRef.value)) return 'featured'
   if (storyCardCount.value > 1 && isSceneActiveRange(storyDeckRef.value)) return 'story'
   return null
@@ -2948,7 +3172,7 @@ function releaseScene(scene: SceneStepKey, direction: -1 | 1): boolean {
 }
 
 function handleStandaloneSceneJump(direction: -1 | 1): boolean {
-  if (typeof window === 'undefined') return false
+  if (typeof window === 'undefined' || isCompactHomeViewport()) return false
 
   const featuredTop = featuredSectionRef.value?.offsetTop
   if (direction > 0 && typeof featuredTop === 'number' && window.scrollY < featuredTop) {
@@ -3264,55 +3488,58 @@ function getStoryCardStyle(index: number): Record<string, string> {
   const mergeDeparture = isLastCard ? storyMergeProgress.value : 0
   const footerDeparture = isLastCard ? storyFooterFade.value : 0
   const stackBias = index % 2 === 0 ? -1 : 1
-  const stackDepth = clamp(offset, 0, 3.2)
-  const exitProgress = clamp(-offset, 0, 1.08)
-  const exitTail = clamp(-offset - 1, 0, 1.2)
-  const hidden = offset > 3.35 || offset < -1.2
-  const translateX = offset < 0 ? `${(stackBias * exitProgress * 0.14).toFixed(2)}rem` : '0rem'
+  const stackDepth = clamp(offset, 0, 2.2)
+  const exitProgress = clamp(-offset, 0, 1.02)
+  const exitTail = clamp(-offset - 0.94, 0, 1.02)
+  const hidden = offset > 2.35 || offset < -0.98
+  const translateX =
+    offset < 0
+      ? `${(stackBias * exitProgress * 0.08).toFixed(2)}rem`
+      : `${(stackBias * Math.min(stackDepth, 1.8) * 0.08).toFixed(2)}rem`
   const translateY =
     offset < 0
-      ? `calc(-${exitProgress.toFixed(4)} * 100dvh - ${(exitTail * 1.5 + mergeDeparture * 0.8 + footerDeparture * 0.5).toFixed(2)}rem)`
-      : `calc(${(stackDepth * 10).toFixed(4)}% - ${(mergeDeparture * 0.75).toFixed(2)}rem)`
+      ? `calc(-${(exitProgress * 88).toFixed(4)}% - ${(exitTail * 1.1 + mergeDeparture * 0.5 + footerDeparture * 0.35).toFixed(2)}rem)`
+      : `calc(${(stackDepth * 8.5).toFixed(4)}% + 0.5rem - ${(mergeDeparture * 0.5).toFixed(2)}rem)`
   const translateZ =
     offset < 0
-      ? `${(exitProgress * 1.6 - exitTail * 1.8 - mergeDeparture * 2.4 - footerDeparture * 1.4).toFixed(2)}rem`
-      : `${(-stackDepth * 3.6 - mergeDeparture * 2.1 - footerDeparture * 0.8).toFixed(2)}rem`
+      ? `${(exitProgress * 0.6 - exitTail * 0.9 - mergeDeparture * 1.2 - footerDeparture * 0.7).toFixed(2)}rem`
+      : `${(-stackDepth * 1.8 - mergeDeparture * 1.1 - footerDeparture * 0.4).toFixed(2)}rem`
   const rotateX =
     offset < 0
-      ? `${(exitProgress * 15 + mergeDeparture * 4.2).toFixed(2)}deg`
-      : `${(stackDepth * 1.8).toFixed(2)}deg`
+      ? `${(exitProgress * 6 + mergeDeparture * 2.2).toFixed(2)}deg`
+      : `${(stackDepth * 0.9).toFixed(2)}deg`
   const rotateZ =
     offset < 0
-      ? `${(stackBias * (0.55 + exitProgress * 0.35)).toFixed(2)}deg`
-      : `${(stackBias * Math.min(stackDepth, 2.2) * 0.55).toFixed(2)}deg`
+      ? `${(stackBias * (0.22 + exitProgress * 0.18)).toFixed(2)}deg`
+      : `${(stackBias * Math.min(stackDepth, 1.8) * 0.18).toFixed(2)}deg`
   const scale = hidden
-    ? 0.86
+    ? 0.92
     : offset < 0
-      ? Math.max(0.94, 1 - exitProgress * 0.03 - exitTail * 0.03)
-      : Math.max(0.88, 1 - stackDepth * 0.035 - mergeDeparture * 0.03)
+      ? Math.max(0.97, 1 - exitProgress * 0.015 - exitTail * 0.02)
+      : Math.max(0.94, 1 - stackDepth * 0.025 - mergeDeparture * 0.02)
   const opacity = hidden
     ? 0
     : offset < 0
-      ? Math.max(0, 1 - exitProgress * 0.88 - exitTail * 0.2 - footerDeparture * 0.16)
-      : Math.max(0.24, 1 - stackDepth * 0.14 - footerDeparture * 0.12)
-  const visualY = offset < 0 ? `${(-exitProgress * 1.1 - exitTail * 0.35).toFixed(2)}rem` : '0rem'
+      ? Math.max(0, 1 - exitProgress * 0.82 - exitTail * 0.14 - footerDeparture * 0.12)
+      : Math.max(0.18, 1 - stackDepth * 0.22 - footerDeparture * 0.08)
+  const visualY = offset < 0 ? `${(-exitProgress * 0.55 - exitTail * 0.18).toFixed(2)}rem` : '0rem'
   const visualScale =
     offset < 0
-      ? String(Math.max(0.94, 1 - exitProgress * 0.04))
-      : String(Math.max(0.94, 1 - stackDepth * 0.015))
-  const copyY = offset < 0 ? `${(-exitProgress * 1.5 - exitTail * 0.55).toFixed(2)}rem` : '0rem'
-  const titleY = offset < 0 ? `${(-exitProgress * 2.2 - exitTail * 0.7).toFixed(2)}rem` : '0rem'
+      ? String(Math.max(0.97, 1 - exitProgress * 0.02))
+      : String(Math.max(0.96, 1 - stackDepth * 0.015))
+  const copyY = offset < 0 ? `${(-exitProgress * 0.8 - exitTail * 0.25).toFixed(2)}rem` : '0rem'
+  const titleY = offset < 0 ? `${(-exitProgress * 1 - exitTail * 0.3).toFixed(2)}rem` : '0rem'
   const copyTilt =
-    offset < 0 ? `${(exitProgress * 16).toFixed(2)}deg` : `${(stackDepth * 0.35).toFixed(2)}deg`
+    offset < 0 ? `${(exitProgress * 5.5).toFixed(2)}deg` : `${(stackDepth * 0.12).toFixed(2)}deg`
   const copyOpacity =
     offset < 0
-      ? Math.max(0.48, 1 - exitProgress * 0.34 - exitTail * 0.1)
-      : Math.max(0.7, 1 - stackDepth * 0.07)
+      ? Math.max(0.56, 1 - exitProgress * 0.24 - exitTail * 0.08)
+      : Math.max(0.68, 1 - stackDepth * 0.12)
   const zIndex = String(
     offset < 0
       ? Math.max(
           1,
-          storyCardCount.value + 2 - Math.round(exitProgress * 3) - Math.round(exitTail * 5)
+          storyCardCount.value + 2 - Math.round(exitProgress * 2) - Math.round(exitTail * 4)
         )
       : Math.max(1, storyCardCount.value - Math.round(stackDepth))
   )
@@ -3824,64 +4051,68 @@ onBeforeUnmount(() => {
   z-index: 1;
 }
 
-.section-header {
+.page-section-head {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: clamp(0.75rem, 1.6vw, 1.15rem);
-  margin-bottom: clamp(0.85rem, 1.8vw, 1.35rem);
+  gap: clamp(0.875rem, 1.8vw, 1.25rem);
+  margin-bottom: clamp(0.9rem, 1.8vw, 1.2rem);
 }
 
-.section-title {
+.page-section-copy {
   display: flex;
   flex-direction: column;
-  gap: clamp(0.25rem, 0.8vw, 0.5rem);
-  max-inline-size: min(100%, 38rem);
+  gap: clamp(0.3rem, 0.8vw, 0.5rem);
+  max-inline-size: min(100%, 36rem);
 }
 
-.section-kicker {
+.page-section-kicker {
   margin: 0;
   font-size: var(--text-xs);
   font-weight: var(--font-semibold);
-  letter-spacing: 0.14em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--color-text-tertiary);
 }
 
-.section-title h2 {
-  max-inline-size: 15ch;
-  font-size: clamp(1.6rem, 2.3vw, 2.2rem);
+.page-section-copy h2 {
+  max-inline-size: 17ch;
+  font-size: clamp(1.7rem, 2.25vw, 2.15rem);
   font-weight: var(--font-bold);
-  line-height: 1.04;
+  line-height: 1.05;
   margin: 0;
   text-wrap: balance;
 }
 
-.section-title p {
+.page-section-copy p {
   display: -webkit-box;
   overflow: hidden;
-  max-inline-size: 34ch;
-  font-size: clamp(0.9rem, 1vw, 1rem);
+  max-inline-size: 30ch;
+  font-size: clamp(0.875rem, 0.96vw, 0.98rem);
   color: var(--color-text-secondary);
-  line-height: 1.58;
+  line-height: 1.54;
   margin: 0;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
 }
 
-.section-link {
+.page-inline-cta {
   display: inline-flex;
   align-items: center;
   align-self: flex-start;
-  gap: 0.375rem;
+  gap: 0.4rem;
+  min-block-size: 2.125rem;
+  max-inline-size: 100%;
+  padding: 0.5rem 0.8rem;
+  border-radius: var(--radius-full);
+  background: color-mix(in srgb, var(--home-panel-muted) 88%, transparent);
+  border: 0.0625rem solid color-mix(in srgb, var(--home-panel-border) 88%, transparent);
+  box-shadow: none;
   font-size: var(--text-xs);
   font-weight: var(--font-medium);
+  line-height: 1.25;
   color: var(--color-text-secondary);
   text-decoration: none;
-  padding: 0.625rem 0.9rem;
-  border-radius: var(--radius-full);
-  background: var(--home-pill-bg);
-  border: 0.0625rem solid var(--home-pill-border);
   transition:
     color var(--transition-fast),
     border-color var(--transition-fast),
@@ -3889,11 +4120,11 @@ onBeforeUnmount(() => {
     box-shadow var(--transition-fast);
 }
 
-.section-link:hover {
+.page-inline-cta:hover {
   color: var(--color-text-primary);
-  border-color: var(--home-soft-border);
-  background: var(--home-tag-hover);
-  box-shadow: 0 1rem 1.8rem -1.6rem rgba(15, 23, 42, 0.28);
+  border-color: var(--home-panel-border-strong);
+  background: var(--home-panel-muted-strong);
+  box-shadow: none;
 }
 
 /* ========== Hero ========== */
@@ -3901,7 +4132,7 @@ onBeforeUnmount(() => {
   position: relative;
   z-index: 1;
   min-height: 100dvh;
-  padding-block: clamp(2rem, 6vh, 4rem) calc(2rem + var(--home-stage-safe-bottom));
+  padding-block: clamp(2rem, 6dvh, 4rem) calc(2rem + var(--home-stage-safe-bottom));
   display: flex;
   align-items: center;
 }
@@ -3922,7 +4153,7 @@ onBeforeUnmount(() => {
   display: grid;
   justify-items: center;
   align-content: center;
-  min-block-size: calc(100dvh - clamp(4rem, 12vh, 8rem) - var(--home-stage-safe-bottom));
+  min-block-size: calc(100dvh - clamp(4rem, 12dvh, 8rem) - var(--home-stage-safe-bottom));
   padding-block: clamp(0.5rem, 1.6vw, 1.25rem);
 }
 
@@ -4193,7 +4424,6 @@ onBeforeUnmount(() => {
 }
 
 .hero-tag:hover {
-  transform: translateY(-0.125rem);
   background: var(--home-tag-hover);
   border-color: var(--home-soft-border);
 }
@@ -4291,7 +4521,7 @@ onBeforeUnmount(() => {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   grid-template-rows: minmax(0, 1.18fr) minmax(0, 1.18fr) minmax(0, 0.9fr);
   gap: var(--spacing-3);
-  min-height: clamp(20rem, 46vh, 30rem);
+  min-height: clamp(20rem, 46dvh, 30rem);
 }
 
 .hero-collage-card {
@@ -4348,7 +4578,7 @@ onBeforeUnmount(() => {
 }
 
 .hero-collage-card:hover .hero-collage-image {
-  transform: scale(1.04);
+  transform: scale(1.015);
 }
 
 .hero-collage-placeholder {
@@ -4417,9 +4647,11 @@ onBeforeUnmount(() => {
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-3);
-  padding: var(--spacing-4);
+  gap: clamp(0.75rem, 1.4vw, 0.95rem);
+  padding: clamp(0.875rem, 1.6vw, 1rem);
   min-block-size: 0;
+  border-radius: var(--home-card-radius);
+  background: var(--home-panel-bg-soft), var(--home-pill-bg);
   border-color: var(--home-soft-border);
   box-shadow: var(--home-card-shadow);
   overflow: clip;
@@ -4450,10 +4682,11 @@ onBeforeUnmount(() => {
 .portal-card__stat {
   display: grid;
   gap: 0.2rem;
-  padding: 0.625rem 0.75rem;
-  border-radius: 0.95rem;
-  background: var(--home-pill-bg);
+  padding: 0.6875rem 0.8125rem;
+  border-radius: var(--home-card-radius);
+  background: var(--home-panel-muted-strong);
   border: 0.0625rem solid var(--home-pill-border);
+  box-shadow: var(--home-panel-highlight);
 }
 
 .portal-card__stat strong {
@@ -4508,28 +4741,35 @@ onBeforeUnmount(() => {
 }
 
 .portal-card__body h3 {
-  font-size: var(--text-lg);
+  font-size: clamp(1rem, 1.35vw, 1.14rem);
   font-weight: var(--font-semibold);
+  line-height: 1.3;
+  letter-spacing: -0.01em;
   margin: 0;
 }
 
 .portal-card__body p {
+  display: -webkit-box;
+  overflow: hidden;
   font-size: var(--text-sm);
   color: var(--color-text-secondary);
+  line-height: 1.55;
   margin: 0;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .portal-card__arrow {
   align-self: flex-end;
   color: var(--color-text-tertiary);
-  opacity: 0;
-  transform: translate(-0.25rem, 0.25rem);
-  transition: all var(--transition-fast);
+  opacity: 0.58;
+  transition:
+    color var(--transition-fast),
+    opacity var(--transition-fast);
 }
 
 .portal-card:hover .portal-card__arrow {
-  opacity: 1;
-  transform: translate(0, 0);
+  opacity: 0.84;
 }
 
 .portal-card__preview {
@@ -4602,10 +4842,12 @@ onBeforeUnmount(() => {
 }
 
 .trends-card {
-  padding: var(--spacing-4);
+  padding: clamp(0.875rem, 1.6vw, 1rem);
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-3);
+  gap: clamp(0.75rem, 1.3vw, 0.9rem);
+  border-radius: var(--home-card-radius);
+  background: var(--home-panel-bg-soft), var(--home-pill-bg);
   border-color: var(--home-soft-border);
   box-shadow: var(--home-card-shadow);
 }
@@ -4618,19 +4860,32 @@ onBeforeUnmount(() => {
 }
 
 .trends-card__header h3 {
-  font-size: var(--text-base);
+  font-size: clamp(0.98rem, 1.15vw, 1.08rem);
   font-weight: var(--font-semibold);
+  line-height: 1.3;
+  letter-spacing: -0.01em;
   margin: 0;
 }
 
 .trends-link {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 2rem;
+  padding-inline: 0.75rem;
+  border-radius: var(--radius-full);
+  border: 0.0625rem solid color-mix(in srgb, var(--home-panel-border) 88%, transparent);
+  background: color-mix(in srgb, var(--home-panel-muted) 86%, transparent);
+  box-shadow: none;
   font-size: var(--text-xs);
-  color: var(--color-text-tertiary);
+  font-weight: var(--font-medium);
+  color: var(--color-text-secondary);
   text-decoration: none;
 }
 
 .trends-link:hover {
   color: var(--color-text-primary);
+  border-color: var(--home-panel-border-strong);
+  background: var(--home-panel-muted-strong);
 }
 
 .trends-list {
@@ -4708,10 +4963,11 @@ onBeforeUnmount(() => {
 .trend-tags__stat {
   display: grid;
   gap: 0.2rem;
-  padding: 0.75rem 0.875rem;
-  border-radius: 1rem;
-  background: var(--home-pill-bg);
+  padding: 0.6875rem 0.8125rem;
+  border-radius: var(--home-card-radius);
+  background: var(--home-panel-muted-strong);
   border: 0.0625rem solid var(--home-pill-border);
+  box-shadow: var(--home-panel-highlight);
 }
 
 .trend-tags__stat strong {
@@ -4742,15 +4998,11 @@ onBeforeUnmount(() => {
 .schedule-cta__intro {
   display: grid;
   gap: 0.4rem;
-  padding: 1rem 1.125rem;
-  border-radius: 1.15rem;
-  background:
-    linear-gradient(160deg, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.68)),
-    var(--home-pill-bg);
-  border: 0.0625rem solid rgba(255, 255, 255, 0.46);
-  box-shadow:
-    inset 0 0.0625rem 0 rgba(255, 255, 255, 0.54),
-    0 1.2rem 2.4rem -2rem rgba(35, 53, 85, 0.24);
+  padding: 0.875rem 1rem;
+  border-radius: var(--home-card-radius);
+  background: var(--home-panel-muted), var(--home-pill-bg);
+  border: 0.0625rem solid var(--home-panel-border);
+  box-shadow: var(--home-panel-highlight), var(--home-panel-shadow);
 }
 
 .schedule-cta__eyebrow,
@@ -4762,6 +5014,7 @@ onBeforeUnmount(() => {
 .schedule-cta__title {
   font-size: clamp(1rem, 1.24vw, 1.08rem);
   line-height: 1.35;
+  letter-spacing: -0.01em;
   color: var(--home-ink);
 }
 
@@ -4789,10 +5042,11 @@ onBeforeUnmount(() => {
 .schedule-cta__stat {
   display: grid;
   gap: 0.25rem;
-  padding: 0.75rem 0.875rem;
-  border-radius: 1rem;
-  background: var(--home-pill-bg);
+  padding: 0.6875rem 0.8125rem;
+  border-radius: var(--home-card-radius);
+  background: var(--home-panel-muted-strong);
   border: 0.0625rem solid var(--home-pill-border);
+  box-shadow: var(--home-panel-highlight);
 }
 
 .schedule-cta__stat strong {
@@ -4905,7 +5159,10 @@ onBeforeUnmount(() => {
   color: var(--color-text-secondary);
   border: 1px solid var(--home-pill-border);
   background: var(--home-pill-bg);
-  transition: all var(--transition-fast);
+  transition:
+    color var(--transition-fast),
+    border-color var(--transition-fast),
+    background var(--transition-fast);
 }
 
 .filter-pill:hover {
@@ -5159,7 +5416,7 @@ onBeforeUnmount(() => {
   overflow: clip;
 }
 
-.section-header--stage {
+.page-section-head--stage {
   margin-block-end: clamp(0.35rem, 0.8vw, 0.6rem);
 }
 
@@ -5168,19 +5425,19 @@ onBeforeUnmount(() => {
   font-size: var(--text-sm);
 }
 
-.rail-panel__content--highlight .section-header {
+.rail-panel__content--highlight .page-section-head {
   display: grid;
   grid-template-columns: minmax(0, 1.04fr) minmax(14rem, 0.84fr);
   align-items: start;
   gap: clamp(0.875rem, 1.8vw, 1.2rem);
 }
 
-.rail-panel__content--highlight .section-title {
+.rail-panel__content--highlight .page-section-copy {
   gap: clamp(0.375rem, 0.9vw, 0.6rem);
   max-inline-size: min(100%, 52rem);
 }
 
-.rail-panel__content--highlight .section-title h2 {
+.rail-panel__content--highlight .page-section-copy h2 {
   display: -webkit-box;
   overflow: hidden;
   font-size: clamp(1.65rem, 2.2vw, 2.3rem);
@@ -5189,7 +5446,7 @@ onBeforeUnmount(() => {
   -webkit-line-clamp: 2;
 }
 
-.rail-panel__content--highlight .section-title p {
+.rail-panel__content--highlight .page-section-copy p {
   display: -webkit-box;
   overflow: hidden;
   max-inline-size: 54ch;
@@ -5480,8 +5737,9 @@ onBeforeUnmount(() => {
 }
 
 .hero-spotlight-card__title {
-  font-size: clamp(1rem, 1.6vw, 1.3rem);
-  line-height: 1.32;
+  font-size: clamp(1rem, 1.45vw, 1.18rem);
+  line-height: 1.28;
+  letter-spacing: -0.01em;
 }
 
 .hero-spotlight-card__summary {
@@ -5550,27 +5808,26 @@ onBeforeUnmount(() => {
   min-block-size: 0;
   block-size: 100%;
   align-self: start;
-  padding: clamp(0.625rem, 1.4vw, 0.875rem);
-  gap: clamp(0.75rem, 1.4vw, 1rem);
+  padding: clamp(0.875rem, 1.5vw, 1rem);
+  gap: clamp(0.75rem, 1.4vw, 0.95rem);
   text-align: start;
   font: inherit;
   color: inherit;
   cursor: pointer;
   overflow: clip;
   border: 0.0625rem solid var(--home-panel-border);
-  border-radius: var(--home-shell-radius);
-  background: var(--home-panel-bg), var(--home-pill-bg);
+  border-radius: var(--home-card-radius);
+  background: var(--home-panel-bg-soft), var(--home-pill-bg);
   box-shadow: var(--home-panel-shadow);
   transition:
-    transform var(--transition-fast),
     box-shadow var(--transition-fast),
-    border-color var(--transition-fast);
+    border-color var(--transition-fast),
+    background var(--transition-fast);
 }
 
 .featured-rail-card:hover {
-  transform: translate3d(0, -0.125rem, 0);
   border-color: var(--home-panel-border-strong);
-  box-shadow: var(--home-panel-shadow-strong);
+  box-shadow: var(--home-panel-shadow);
 }
 
 .featured-rail-card--lead {
@@ -5599,7 +5856,7 @@ onBeforeUnmount(() => {
   position: relative;
   min-block-size: 0;
   block-size: auto;
-  border-radius: clamp(1.05rem, 2vw, 1.4rem);
+  border-radius: calc(var(--home-card-radius) - 0.125rem);
   overflow: clip;
   background:
     radial-gradient(circle at top left, rgba(var(--home-mist-rgb), 0.34) 0%, transparent 42%),
@@ -5697,11 +5954,10 @@ onBeforeUnmount(() => {
   justify-content: flex-start;
   inline-size: 100%;
   block-size: 100%;
-  gap: clamp(0.5rem, 1vw, 0.75rem);
+  gap: clamp(0.45rem, 0.9vw, 0.65rem);
   min-inline-size: 0;
   min-block-size: 0;
-  padding: clamp(0.25rem, 0.8vw, 0.5rem) clamp(0.125rem, 0.4vw, 0.25rem)
-    clamp(0.375rem, 0.8vw, 0.5rem);
+  padding: clamp(0.2rem, 0.6vw, 0.35rem) 0 clamp(0.2rem, 0.6vw, 0.35rem);
 }
 
 .featured-rail-card--lead .featured-rail-card__body {
@@ -5728,15 +5984,16 @@ onBeforeUnmount(() => {
   margin: 0;
   display: -webkit-box;
   overflow: hidden;
-  font-size: clamp(1rem, 1.45vw, 1.3rem);
-  line-height: 1.18;
+  font-size: clamp(1.02rem, 1.35vw, 1.22rem);
+  line-height: 1.22;
+  letter-spacing: -0.01em;
   color: var(--home-ink);
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 3;
 }
 
 .featured-rail-card--lead .featured-rail-card__title {
-  font-size: clamp(1.4rem, 2.2vw, 2rem);
+  font-size: clamp(1.32rem, 2.1vw, 1.8rem);
   -webkit-line-clamp: 4;
 }
 
@@ -5748,9 +6005,10 @@ onBeforeUnmount(() => {
   margin: 0;
   display: -webkit-box;
   overflow: hidden;
-  max-inline-size: 30ch;
+  max-inline-size: 32ch;
+  font-size: var(--text-sm);
   color: var(--color-text-secondary);
-  line-height: 1.58;
+  line-height: 1.55;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
 }
@@ -5789,11 +6047,11 @@ onBeforeUnmount(() => {
 .featured-rail-card__stat {
   display: grid;
   gap: 0.2rem;
-  padding: 0.625rem 0.75rem;
+  padding: 0.6875rem 0.8125rem;
   border-radius: var(--home-card-radius);
   background: var(--home-panel-muted-strong);
   border: 0.0625rem solid var(--home-panel-border);
-  box-shadow: var(--home-panel-shadow);
+  box-shadow: var(--home-panel-highlight);
 }
 
 .featured-rail-card__stat strong {
@@ -5811,16 +6069,21 @@ onBeforeUnmount(() => {
   display: inline-flex;
   align-items: center;
   align-self: flex-start;
-  flex-wrap: wrap;
+  gap: 0.4rem;
+  inline-size: fit-content;
   max-inline-size: 100%;
-  gap: 0.45rem;
+  min-block-size: 2rem;
   margin-top: auto;
-  padding-top: 0.65rem;
-  border-top: 0.0625rem solid rgba(148, 163, 184, 0.16);
+  padding: 0.45rem 0.72rem;
+  border-radius: var(--radius-full);
+  border: 0.0625rem solid color-mix(in srgb, var(--home-panel-border) 88%, transparent);
+  background: color-mix(in srgb, var(--home-panel-muted) 86%, transparent);
+  box-shadow: none;
   font-size: var(--text-xs);
   font-weight: var(--font-medium);
-  line-height: 1.4;
+  line-height: 1.3;
   color: var(--color-text-secondary);
+  white-space: normal;
 }
 
 .featured-rail-card__meta + .featured-rail-card__action {
@@ -6046,6 +6309,7 @@ onBeforeUnmount(() => {
 .trends-authors-highlight__title {
   font-size: clamp(1rem, 1.3vw, 1.12rem);
   line-height: 1.3;
+  letter-spacing: -0.01em;
   color: var(--home-ink);
 }
 
@@ -6058,13 +6322,16 @@ onBeforeUnmount(() => {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.55rem 0.85rem;
+  min-block-size: 2rem;
+  padding-inline: 0.75rem;
   border-radius: var(--home-chip-radius);
-  background: var(--home-panel-muted-strong);
+  background: var(--home-panel-muted);
   border: 0.0625rem solid var(--home-panel-border);
   font-size: var(--text-xs);
-  color: var(--color-text-primary);
+  font-weight: var(--font-medium);
+  color: var(--color-text-secondary);
   white-space: nowrap;
+  box-shadow: var(--home-panel-highlight);
 }
 
 .trends-card__hint {
@@ -6074,14 +6341,14 @@ onBeforeUnmount(() => {
 
 .trends-editorial {
   display: grid;
-  gap: 0.35rem;
+  gap: 0.45rem;
   min-block-size: 0;
   align-content: start;
-  padding: 0.75rem 0.875rem;
+  padding: 0.8125rem 0.9375rem;
   border-radius: var(--home-card-radius);
   background: var(--home-panel-muted);
   border: 0.0625rem solid var(--home-panel-border);
-  box-shadow: var(--home-panel-shadow);
+  box-shadow: var(--home-panel-highlight), var(--home-panel-shadow);
 }
 
 .trends-editorial--compact {
@@ -6091,6 +6358,7 @@ onBeforeUnmount(() => {
 .trends-editorial__title {
   font-size: clamp(1rem, 1.32vw, 1.12rem);
   line-height: 1.34;
+  letter-spacing: -0.01em;
   color: var(--home-ink);
 }
 
@@ -6513,11 +6781,26 @@ onBeforeUnmount(() => {
   display: grid;
   place-items: center;
   gap: 0;
-  perspective: clamp(26rem, 34vw, 40rem);
+  padding-block: clamp(1.25rem, 2.6vw, 1.75rem) clamp(2rem, 3.5vw, 2.9rem);
+  perspective: clamp(18rem, 28vw, 28rem);
   perspective-origin: 50% 34%;
   transform-style: preserve-3d;
   isolation: isolate;
   overflow: clip;
+  -webkit-mask-image: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgb(0 0 0 / 100%) 14%,
+    rgb(0 0 0 / 100%) 86%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgb(0 0 0 / 100%) 14%,
+    rgb(0 0 0 / 100%) 86%,
+    transparent 100%
+  );
 }
 
 .story-merge-panel {
@@ -6629,13 +6912,13 @@ onBeforeUnmount(() => {
 .media-slice {
   position: absolute;
   inset-block: 0;
-  inset-inline: clamp(0.5rem, 1vw, 0.75rem);
+  inset-inline: clamp(0.75rem, 1.4vw, 1rem);
   block-size: 100%;
   min-height: 0;
   display: grid;
   place-items: center;
   overflow: clip;
-  transform-origin: 50% 88%;
+  transform-origin: 50% 92%;
   transform-style: preserve-3d;
   backface-visibility: hidden;
   will-change: transform, opacity;
@@ -6659,13 +6942,13 @@ onBeforeUnmount(() => {
 .media-slice__sticky {
   position: relative;
   top: auto;
-  inline-size: min(calc(100% - 1rem), 74rem);
-  min-height: min(56dvh, 35rem);
+  inline-size: min(calc(100% - 1rem), 72rem);
+  min-height: min(54dvh, 34rem);
   margin-inline: auto;
   display: grid;
-  grid-template-columns: minmax(0, 1.02fr) minmax(18rem, 0.78fr);
-  gap: clamp(1.15rem, 2.4vw, 1.8rem);
-  padding: clamp(1.3rem, 2.5vw, 1.95rem);
+  grid-template-columns: minmax(0, 1fr) minmax(18rem, 0.74fr);
+  gap: clamp(1.35rem, 2.8vw, 2.15rem);
+  padding: clamp(1.5rem, 2.8vw, 2.2rem);
   justify-items: stretch;
   align-items: center;
   overflow: clip;
@@ -6722,11 +7005,11 @@ onBeforeUnmount(() => {
 }
 
 .media-slice__copy {
-  inline-size: min(100%, 30rem);
+  inline-size: min(100%, 29rem);
   display: grid;
   align-content: center;
   justify-items: start;
-  gap: clamp(0.65rem, 1.2vw, 0.85rem);
+  gap: clamp(0.8rem, 1.4vw, 1rem);
   margin-inline: auto;
   align-self: center;
   transform: translate3d(0, var(--story-copy-y, 0rem), 0) rotateX(var(--story-copy-tilt, 0deg));
@@ -6745,10 +7028,14 @@ onBeforeUnmount(() => {
 
 .media-slice__copy h3 {
   margin: 0;
-  max-inline-size: 16ch;
-  font-size: clamp(1.55rem, 2.2vw, 2.05rem);
-  line-height: 1.05;
+  display: -webkit-box;
+  overflow: hidden;
+  max-inline-size: 15ch;
+  font-size: clamp(1.4rem, 2vw, 1.85rem);
+  line-height: 1.08;
   text-wrap: balance;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
   transform: translate3d(0, var(--story-copy-title-y, 0rem), 0);
   transform-origin: 50% 100%;
   will-change: transform;
@@ -6758,11 +7045,11 @@ onBeforeUnmount(() => {
   margin: 0;
   display: -webkit-box;
   overflow: hidden;
-  max-inline-size: 30ch;
+  max-inline-size: 27ch;
   color: var(--color-text-secondary);
-  line-height: 1.62;
+  line-height: 1.66;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
+  -webkit-line-clamp: 2;
 }
 
 .media-slice__meta {
@@ -7117,7 +7404,7 @@ onBeforeUnmount(() => {
   .hero-collage-card {
     grid-column: auto;
     grid-row: auto;
-    min-height: clamp(7rem, 22vh, 10rem);
+    min-height: clamp(7rem, 22dvh, 10rem);
   }
 
   .hero-collage-card--primary {
@@ -7130,39 +7417,262 @@ onBeforeUnmount(() => {
     --home-stage-safe-bottom: calc(
       var(--mobile-nav-height) + env(safe-area-inset-bottom, 0rem) + clamp(0.9rem, 2vw, 1.25rem)
     );
+    --home-screen-transition-ms: 0ms;
   }
 
-  .rail-stage__chrome,
-  .section-header,
+  .hero,
+  .rail-stage,
+  .posts--bubble > .container,
+  .story-stage {
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
+    will-change: auto;
+  }
+
+  .home-page[class*='home-page--transition-'] .hero,
+  .home-page[class*='home-page--transition-'] .rail-stage,
+  .home-page[class*='home-page--transition-'] .posts--bubble > .container,
+  .home-page[class*='home-page--transition-'] .story-stage {
+    animation: none !important;
+  }
+
+  .hero {
+    min-block-size: calc(100dvh - var(--mobile-nav-height) - env(safe-area-inset-bottom, 0rem));
+    padding-block: max(var(--home-stage-safe-top), clamp(0.75rem, 3vw, 1.1rem))
+      calc(env(safe-area-inset-bottom, 0rem) + clamp(1rem, 4vw, 1.35rem));
+  }
+
+  .hero-layout {
+    grid-template-columns: minmax(0, 1fr);
+    min-block-size: calc(
+      100dvh - var(--home-stage-safe-top) - var(--mobile-nav-height) -
+        env(safe-area-inset-bottom, 0rem) - clamp(1rem, 4vw, 1.35rem)
+    );
+    align-items: center;
+    align-content: center;
+    justify-items: stretch;
+    padding-block: 0;
+  }
+
+  .hero-copy {
+    inline-size: 100%;
+    max-inline-size: none;
+    min-block-size: 0;
+    gap: 0.875rem;
+    align-self: center;
+    justify-self: stretch;
+    margin-block: auto;
+  }
+
+  .hero-copy__left,
+  .hero-copy__right {
+    gap: 0.75rem;
+  }
+
+  .hero-copy__right {
+    inline-size: 100%;
+    max-inline-size: 25rem;
+    align-items: stretch;
+  }
+
+  .rail {
+    min-block-size: auto;
+    padding-block: clamp(0.625rem, 3vw, 0.875rem) calc(0.875rem + var(--home-stage-safe-bottom));
+    overflow: hidden;
+  }
+
+  .rail-sticky,
+  .rail-stage {
+    position: relative;
+    block-size: auto;
+    min-block-size: 0;
+    overflow: visible;
+  }
+
+  .hero-title {
+    max-inline-size: 10ch;
+    font-size: clamp(1.95rem, 8vw, 2.7rem);
+    line-height: 1.02;
+  }
+
+  .hero-subtitle {
+    max-inline-size: 28ch;
+    font-size: var(--text-sm);
+    line-height: 1.55;
+  }
+
+  .hero-editorial,
+  .hero-preview {
+    min-block-size: auto;
+    padding: 0.875rem;
+  }
+
+  .hero-editorial__state {
+    gap: 0.45rem;
+  }
+
+  .hero-editorial__title {
+    display: -webkit-box;
+    overflow: hidden;
+    font-size: var(--text-base);
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .hero-editorial__text,
+  .hero-preview p {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .hero--animated .hero-copy__line,
+  .hero--animated .hero-copy__right > * {
+    opacity: 1;
+    animation: none;
+  }
+
+  .page-section-head,
   .posts-header {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .rail-stage__chrome {
+    display: none;
   }
 
   .rail-stage__dot {
     inline-size: 1.75rem;
   }
 
+  .rail-stage__eyebrow,
+  .story-progress {
+    gap: 0.5rem;
+    padding: 0.625rem 0.875rem;
+  }
+
+  .page-section-head--stage {
+    margin-block-end: 0.35rem;
+  }
+
+  .page-section-copy {
+    gap: 0.25rem;
+  }
+
+  .page-section-copy h2 {
+    max-inline-size: 11ch;
+    font-size: clamp(1.35rem, 6vw, 1.85rem);
+    line-height: 1.06;
+  }
+
+  .page-section-copy p {
+    max-inline-size: 26ch;
+    font-size: var(--text-sm);
+    line-height: 1.48;
+  }
+
+  .rail-track {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: clamp(18.5rem, calc(100vw - 1.75rem), 22.625rem);
+    inline-size: auto;
+    block-size: auto;
+    gap: 0.75rem;
+    transform: none !important;
+    will-change: auto;
+    overflow-x: auto;
+    overflow-y: visible;
+    padding-inline: 0.875rem;
+    padding-block-end: 0.375rem;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: 0.875rem;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+  }
+
   .rail-panel {
-    padding: calc(var(--home-stage-safe-top) + var(--home-stage-chrome-height) + 0.5rem) 0.875rem
-      calc(5.75rem + env(safe-area-inset-bottom, 0rem));
+    flex: none;
+    block-size: auto;
+    min-inline-size: 0;
+    padding: 0;
+    overflow: visible;
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
   }
 
   .rail-panel__content {
+    inline-size: 100%;
+    max-inline-size: none;
+    block-size: auto;
+    align-content: start;
     gap: 0.75rem;
+    overflow: visible;
   }
 
   .hero-stats {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.625rem;
+  }
+
+  .hero-stats > :last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+
+  .hero-stats > :nth-child(n + 3) {
+    display: none;
+  }
+
+  .hero-stat {
+    min-inline-size: 0;
+    padding: 0.75rem;
   }
 
   .hero-actions {
-    flex-direction: column;
-    align-items: stretch;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    inline-size: min(100%, 24rem);
+    gap: 0.625rem;
+    margin-top: 0;
   }
 
-  .rail-panel__content--highlight .section-header {
+  .hero-btn {
+    inline-size: 100%;
+    min-inline-size: 0;
+  }
+
+  .hero-tags {
+    display: grid;
+    justify-items: start;
+    gap: 0.4rem;
+    margin-top: 0;
+  }
+
+  .hero-tag-list {
+    gap: 0.4rem;
+  }
+
+  .hero-tag-list .hero-tag:nth-child(n + 5) {
+    display: none;
+  }
+
+  .rail-panel__content--highlight .page-section-head {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .rail-panel__meta--spotlight {
+    display: none;
+  }
+
+  .rail-highlight {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.625rem;
+  }
+
+  .rail-panel__content--highlight .page-section-copy p {
+    -webkit-line-clamp: 1;
   }
 
   .bubble-stage {
@@ -7171,27 +7681,39 @@ onBeforeUnmount(() => {
 
   .story-merge-panel {
     inset-inline: 0;
+    gap: 0.625rem;
+    padding: 0.75rem;
   }
 
   .hero-spotlight-stack {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
   }
 
   .latest-bubble__inner {
     max-inline-size: min(18ch, 12rem);
   }
 
+  .portal-card {
+    gap: 0.75rem;
+    padding: 0.875rem;
+  }
+
   .portal-card__stats {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .posts-toolbar__panel {
-    padding: 0.75rem 0.875rem;
+  .portal-card__icon {
+    inline-size: 2.5rem;
+    block-size: 2.5rem;
   }
 
-  .hero-editorial,
-  .hero-preview {
-    min-block-size: 10.5rem;
+  .portal-card__body h3 {
+    font-size: var(--text-base);
+  }
+
+  .posts-toolbar__panel {
+    padding: 0.75rem 0.875rem;
   }
 
   .posts--bubble {
@@ -7199,35 +7721,45 @@ onBeforeUnmount(() => {
   }
 
   .story-stage {
-    padding-block-end: calc(1rem + var(--home-stage-safe-bottom));
+    gap: 0.75rem;
+    padding-block: calc(var(--home-stage-safe-top) + 0.625rem)
+      calc(0.75rem + var(--home-stage-safe-bottom));
+  }
+
+  .media-slice-list {
+    padding-block: 0.5rem 1.25rem;
+    perspective: 16rem;
+    perspective-origin: 50% 22%;
   }
 
   .rail-panel--portal .portal-grid > .portal-card--primary {
-    min-block-size: clamp(12rem, 29vh, 14rem);
+    min-block-size: clamp(9.5rem, 28dvh, 11rem);
     grid-template-rows: auto auto;
     align-content: stretch;
-    gap: 0.75rem;
+    gap: 0.625rem;
+    padding: 0.75rem;
   }
 
   .rail-panel--portal .portal-card--primary .portal-card__preview {
-    min-block-size: clamp(11rem, 26vh, 13rem);
+    min-block-size: clamp(7.75rem, 20dvh, 9rem);
   }
 
   .rail-panel--portal .portal-card--primary .portal-card__copy {
     position: relative;
     inset: auto;
-    inline-size: min(100%, 12.5rem);
+    inline-size: calc(100% - 0.75rem);
     max-inline-size: none;
-    margin-block-start: calc(clamp(1.75rem, 7vw, 2.5rem) * -1);
-    margin-inline: 0.5rem;
-    padding: 0.6875rem 0.75rem;
+    margin-block-start: -1rem;
+    margin-inline: 0.375rem;
+    padding: 0.625rem 0.75rem;
     border-radius: var(--home-card-radius);
     background: var(--home-panel-bg-strong), var(--home-pill-bg);
     border: 0.0625rem solid var(--home-panel-border);
     box-shadow: var(--home-preview-shadow);
   }
 
-  .rail-panel--portal .portal-card--primary .portal-card__body p {
+  .rail-panel--portal .portal-card--primary .portal-card__body p,
+  .rail-panel--portal .portal-card__micro-text {
     display: none;
   }
 
@@ -7246,14 +7778,15 @@ onBeforeUnmount(() => {
   .rail-panel--portal .portal-grid {
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: none;
+    gap: 0.625rem;
   }
 
   .portal-sidebar__row {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .rail-panel--portal .portal-grid > .portal-card--primary {
-    min-block-size: clamp(12rem, 34vh, 14rem);
+  .portal-sidebar__row > :nth-child(n + 2) {
+    display: none;
   }
 
   .rail-panel--portal .portal-card--secondary {
@@ -7262,7 +7795,12 @@ onBeforeUnmount(() => {
   }
 
   .rail-panel--portal .portal-card__micro {
-    padding: 0.6875rem 0.75rem;
+    gap: 0.25rem;
+    padding: 0.625rem 0.75rem;
+  }
+
+  .portal-card__micro-title {
+    font-size: var(--text-sm);
   }
 
   .rail-highlight {
@@ -7272,8 +7810,8 @@ onBeforeUnmount(() => {
   .rail-highlight .hero-collage-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     grid-template-rows: minmax(0, 1fr) minmax(0, 0.66fr);
-    min-height: clamp(9.5rem, 22vh, 11rem);
-    gap: 0.5rem;
+    min-height: clamp(8rem, 18dvh, 9.75rem);
+    gap: 0.375rem;
   }
 
   .rail-highlight .hero-collage-grid .hero-collage-card:nth-child(1) {
@@ -7295,18 +7833,13 @@ onBeforeUnmount(() => {
     display: none;
   }
 
-  .hero-spotlight-stack {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: none;
-  }
-
   .hero-spotlight-card {
-    padding: 0.875rem;
-    gap: 0.5rem;
+    padding: 0.75rem;
+    gap: 0.4rem;
   }
 
   .hero-spotlight-card--lead {
-    min-block-size: clamp(6rem, 14vh, 7.5rem);
+    min-block-size: clamp(6rem, 14dvh, 7.5rem);
   }
 
   .hero-spotlight-card:nth-child(n + 2) {
@@ -7320,9 +7853,30 @@ onBeforeUnmount(() => {
     -webkit-line-clamp: 2;
   }
 
+  .hero-spotlight-card__title {
+    display: -webkit-box;
+    overflow: hidden;
+    font-size: var(--text-base);
+    line-height: 1.3;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .hero-collage-overlay {
+    padding: 0.625rem;
+  }
+
+  .hero-collage-title {
+    font-size: var(--text-xs);
+  }
+
+  .hero-collage-meta {
+    font-size: 0.6875rem;
+  }
+
   .rail-panel--featured .rail-featured-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    grid-template-rows: auto auto auto;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto;
     align-content: start;
   }
 
@@ -7344,23 +7898,49 @@ onBeforeUnmount(() => {
   .featured-rail-card--support,
   .featured-rail-card--compact {
     min-block-size: 0;
+    padding: 0.75rem;
+    gap: 0.625rem;
+  }
+
+  .featured-rail-card__media {
+    min-block-size: clamp(8.5rem, 20dvh, 10rem);
+  }
+
+  .featured-rail-card--lead .featured-rail-card__media {
+    min-block-size: clamp(9.5rem, 22dvh, 11.5rem);
+    aspect-ratio: 1.06 / 1;
+  }
+
+  .featured-rail-card__overlay {
+    inset-inline: 0.625rem;
+    inset-block-start: 0.625rem;
+  }
+
+  .featured-rail-card__kicker,
+  .featured-rail-card__time {
+    padding: 0.3125rem 0.5rem;
   }
 
   .featured-rail-card__body {
-    gap: 0.5rem;
+    gap: 0.375rem;
+    padding: 0;
   }
 
   .featured-rail-card__title {
-    font-size: var(--text-base);
+    font-size: clamp(0.98rem, 4.4vw, 1.12rem);
+    line-height: 1.2;
     -webkit-line-clamp: 2;
   }
 
   .featured-rail-card--lead .featured-rail-card__title {
-    font-size: clamp(1.08rem, 4.6vw, 1.32rem);
+    font-size: clamp(1.14rem, 5vw, 1.34rem);
+    -webkit-line-clamp: 3;
   }
 
   .featured-rail-card__summary,
   .featured-rail-card--lead .featured-rail-card__summary {
+    max-inline-size: 100%;
+    line-height: 1.5;
     -webkit-line-clamp: 2;
   }
 
@@ -7368,24 +7948,29 @@ onBeforeUnmount(() => {
     display: none;
   }
 
+  .featured-rail-card__action {
+    inline-size: 100%;
+    gap: 0.35rem;
+    padding: 0.5rem 0.75rem;
+    overflow-wrap: anywhere;
+  }
+
   .rail-panel--featured .rail-featured-grid > :nth-child(2) {
-    grid-column: 1;
+    grid-column: 1 / -1;
     grid-row: 2;
   }
 
   .rail-panel--featured .rail-featured-grid > :nth-child(3) {
-    grid-column: 2;
-    grid-row: 2;
+    display: none;
   }
 
   .rail-panel--featured .rail-featured-grid > :nth-child(4) {
-    grid-column: 1 / -1;
-    grid-row: 3;
+    display: none;
   }
 
   .rail-panel--trends .trends-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    grid-template-rows: minmax(0, 1fr) minmax(0, 0.88fr) minmax(0, 0.92fr);
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto;
   }
 
   .rail-panel--trends .trends-card--authors {
@@ -7394,23 +7979,27 @@ onBeforeUnmount(() => {
   }
 
   .rail-panel--trends .trends-card--tags {
-    grid-column: 1;
-    grid-row: 2;
+    display: none;
   }
 
   .rail-panel--trends .trends-card--editorial {
-    grid-column: 2;
-    grid-row: 2;
+    display: none;
   }
 
   .rail-panel--trends .trends-card--schedule {
     grid-column: 1 / -1;
-    grid-row: 3;
+    grid-row: 2;
+    padding-inline-end: clamp(1.25rem, 16vw, 3.5rem);
+    padding-block-end: clamp(1.25rem, 14vw, 2rem);
   }
 
   .trends-card {
     gap: 0.75rem;
-    padding: 1rem;
+    padding: 0.875rem;
+  }
+
+  .trends-card__header {
+    align-items: flex-start;
   }
 
   .trends-list > :nth-child(n + 3) {
@@ -7422,17 +8011,276 @@ onBeforeUnmount(() => {
     display: none;
   }
 
-  .rail-panel--trends .trends-card--schedule {
-    padding-inline-end: clamp(1.25rem, 16vw, 3.5rem);
-    padding-block-end: clamp(1.25rem, 14vw, 2rem);
-  }
-
   .trends-editorial__text,
   .trends-community-note__text {
     display: -webkit-box;
     overflow: hidden;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 3;
+  }
+
+  .trends-authors-highlight {
+    grid-template-columns: auto minmax(0, 1fr);
+    padding: 0.625rem 0.75rem;
+  }
+
+  .trends-authors-highlight__action {
+    display: none;
+  }
+
+  .trend-tags {
+    gap: 0.375rem;
+  }
+
+  .trend-tags > :nth-child(n + 6) {
+    display: none;
+  }
+
+  .schedule-highlight-list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .schedule-highlight-list > :nth-child(n + 3) {
+    display: none;
+  }
+
+  .trends-editorial {
+    padding: 0.6875rem 0.75rem;
+  }
+
+  .trends-editorial__title {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .posts,
+  .posts--bubble {
+    block-size: auto;
+    min-block-size: auto;
+    padding-block: calc(var(--home-stage-safe-top) + 0.5rem)
+      calc(0.875rem + var(--home-stage-safe-bottom));
+    overflow: visible;
+  }
+
+  .posts--bubble > .container {
+    min-block-size: auto;
+    gap: 0.625rem;
+  }
+
+  .posts-header {
+    gap: 0.5rem;
+  }
+
+  .posts-header h2 {
+    font-size: clamp(1.35rem, 6vw, 1.85rem);
+  }
+
+  .posts-subtitle {
+    max-inline-size: 24ch;
+    line-height: 1.45;
+  }
+
+  .posts-header__actions {
+    inline-size: 100%;
+    justify-content: flex-start;
+  }
+
+  .posts-toolbar {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.5rem;
+    padding: 0.625rem;
+  }
+
+  .posts-toolbar__panel {
+    gap: 0.375rem;
+    padding: 0.625rem 0.6875rem;
+  }
+
+  .posts-toolbar__panel--filters {
+    align-content: start;
+  }
+
+  .posts-toolbar__stats {
+    gap: 0.375rem;
+  }
+
+  .posts-toolbar__stat:nth-child(n + 3),
+  .tags-list .glass-tag:nth-child(n + 5),
+  .filters-list .filter-pill:nth-child(n + 4) {
+    display: none;
+  }
+
+  .bubble-stage {
+    display: grid;
+    gap: 0.625rem;
+    align-content: start;
+    padding: 0.625rem;
+    block-size: auto;
+    max-block-size: none;
+  }
+
+  .bubble-stage::before,
+  .bubble-stage::after {
+    display: none;
+  }
+
+  .latest-bubble {
+    position: relative;
+    inset: auto;
+    inline-size: 100%;
+    max-inline-size: none;
+    opacity: 1;
+    pointer-events: auto;
+    transform: none !important;
+    display: block;
+  }
+
+  .posts--revealed .latest-bubble {
+    animation: none;
+  }
+
+  .latest-bubble:nth-child(n + 5) {
+    display: none;
+  }
+
+  .latest-bubble::after {
+    display: none;
+  }
+
+  .latest-bubble__inner {
+    max-inline-size: none;
+    padding: 0.75rem 0.8125rem;
+    border-radius: 1.125rem;
+    transform: none;
+    gap: 0.375rem;
+  }
+
+  .latest-bubble__text {
+    display: -webkit-box;
+    overflow: hidden;
+    font-size: var(--text-base);
+    line-height: 1.45;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+  }
+
+  .latest-bubble__meta {
+    gap: 0.35rem 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .media-slice-list {
+    inline-size: 100%;
+    padding-block: 0.375rem 1rem;
+    perspective: 14rem;
+    perspective-origin: 50% 18%;
+  }
+
+  .media-slice {
+    inset-inline: 0;
+    transform: translate3d(0, calc(var(--story-translate-y, 0rem) * 0.68), 0)
+      scale(var(--story-scale, 1));
+  }
+
+  .media-slice:not(.is-active) {
+    opacity: 0.14 !important;
+  }
+
+  .media-slice:not(.is-active) .media-slice__copy {
+    opacity: 0 !important;
+  }
+
+  .media-slice__sticky {
+    inline-size: 100%;
+    min-height: min(46dvh, 27rem);
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.75rem;
+    padding: 0.75rem;
+  }
+
+  .media-slice__visual {
+    inline-size: 100%;
+    max-inline-size: none;
+    margin-inline: auto;
+    padding: 0.5rem;
+    transform: none;
+    will-change: auto;
+  }
+
+  .media-slice__copy {
+    inline-size: 100%;
+    max-inline-size: none;
+    align-content: start;
+    gap: 0.5rem;
+    transform: none;
+    opacity: 1;
+    will-change: auto;
+  }
+
+  .media-slice__copy h3 {
+    display: -webkit-box;
+    overflow: hidden;
+    max-inline-size: 15ch;
+    font-size: clamp(1.18rem, 5.4vw, 1.42rem);
+    line-height: 1.12;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    transform: none;
+    will-change: auto;
+  }
+
+  .media-slice__copy > p {
+    max-inline-size: 28ch;
+    font-size: var(--text-sm);
+    line-height: 1.55;
+    -webkit-line-clamp: 2;
+  }
+
+  .media-slice__meta {
+    gap: 0.5rem 0.75rem;
+  }
+
+  .media-slice__actions {
+    gap: 0.625rem;
+  }
+
+  .media-slice__button.btn {
+    min-block-size: 2.375rem;
+    padding-inline: 0.875rem;
+  }
+
+  :deep(.media-slice__visual .post-card.glass-card) {
+    inline-size: 100%;
+    max-inline-size: none;
+  }
+
+  :deep(.media-slice__visual .post-image-wrapper) {
+    aspect-ratio: 16 / 10;
+  }
+
+  :deep(.media-slice__visual .post-content) {
+    gap: 0.35rem;
+    padding: 0.625rem 0.75rem;
+  }
+
+  :deep(.media-slice__visual .post-title) {
+    display: -webkit-box;
+    overflow: hidden;
+    font-size: clamp(1rem, 4.8vw, 1.15rem);
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    line-height: 1.28;
+  }
+
+  :deep(.media-slice__visual .post-excerpt) {
+    display: none;
+  }
+
+  :deep(.media-slice__visual .post-tags),
+  :deep(.media-slice__visual .post-stats) {
+    display: none;
   }
 }
 
@@ -7466,6 +8314,13 @@ onBeforeUnmount(() => {
   }
 }
 
+@media (max-width: 420px) {
+  .hero-actions,
+  .hero-stats {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .hero,
   .rail-stage,
@@ -7492,7 +8347,7 @@ onBeforeUnmount(() => {
   .hero-collage-image,
   .portal-card,
   .filter-pill,
-  .section-link {
+  .page-inline-cta {
     transition: none;
   }
 

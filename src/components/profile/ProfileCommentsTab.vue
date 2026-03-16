@@ -310,8 +310,9 @@ onUnmounted(() => {
   flex-direction: column;
   gap: var(--spacing-2);
   padding: var(--spacing-4);
-  background: var(--glass-bg-light);
-  border-radius: var(--radius-lg);
+  background: var(--profile-surface-bg-soft);
+  border: 1px solid var(--profile-surface-border);
+  border-radius: var(--profile-section-radius);
 }
 
 /* ===== Timeline ===== */
@@ -363,7 +364,7 @@ onUnmounted(() => {
 }
 
 .timeline-item:hover .timeline-dot {
-  transform: scale(1.2);
+  transform: scale(1.01);
   background: rgba(var(--color-primary-rgb), 0.2);
 }
 
@@ -379,12 +380,12 @@ onUnmounted(() => {
   flex: 1;
   min-width: 0;
   padding: clamp(0.875rem, 2vw, 1.25rem);
-  background: var(--glass-bg-light);
+  background: var(--profile-surface-bg-soft);
   backdrop-filter: blur(var(--blur-md));
   -webkit-backdrop-filter: blur(var(--blur-md));
-  border: 1px solid var(--glass-border-medium);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--glass-shadow-sm);
+  border: 1px solid var(--profile-surface-border);
+  border-radius: var(--profile-section-radius);
+  box-shadow: var(--profile-surface-shadow);
   position: relative;
   overflow: hidden;
   transition:
@@ -406,8 +407,8 @@ onUnmounted(() => {
 
 .timeline-card:hover {
   transform: var(--lift-sm);
-  box-shadow: var(--glass-shadow-hover);
-  border-color: var(--glass-border-light);
+  box-shadow: var(--profile-surface-shadow-hover);
+  border-color: var(--profile-surface-border-strong);
 }
 
 /* Card Header */
@@ -433,9 +434,10 @@ onUnmounted(() => {
 
 .reply-count {
   font-size: var(--text-xs);
-  color: var(--color-text-tertiary);
+  color: var(--profile-chip-text);
   padding: 0.0625rem 0.375rem;
-  background: var(--glass-bg-medium);
+  background: var(--profile-chip-bg);
+  border: 1px solid var(--profile-chip-border);
   border-radius: var(--radius-full);
 }
 
@@ -446,9 +448,9 @@ onUnmounted(() => {
   width: 1.5rem;
   height: 1.5rem;
   border-radius: var(--radius-full);
-  background: transparent;
-  border: 1px solid transparent;
-  color: var(--color-text-tertiary);
+  background: var(--profile-action-bg);
+  border: 1px solid var(--profile-action-border);
+  color: var(--color-text-secondary);
   cursor: pointer;
   opacity: 0;
   transition:
@@ -465,9 +467,9 @@ onUnmounted(() => {
 
 .delete-btn:hover:not(:disabled) {
   color: var(--color-error);
-  background: rgba(239, 68, 68, 0.06);
+  background: rgba(239, 68, 68, 0.08);
   border-color: rgba(239, 68, 68, 0.2);
-  transform: scale(1.1);
+  transform: none;
 }
 
 .delete-btn:disabled {
@@ -496,7 +498,7 @@ onUnmounted(() => {
   align-items: center;
   margin-top: var(--spacing-3);
   padding-top: var(--spacing-3);
-  border-top: 1px solid var(--glass-border-subtle);
+  border-top: 1px solid var(--profile-muted-border);
   gap: var(--spacing-3);
 }
 
@@ -566,7 +568,7 @@ onUnmounted(() => {
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
   background: var(--color-surface, var(--glass-bg-light));
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   border: 1px solid var(--md-outline-variant, var(--glass-border-medium));
   box-shadow: var(--shadow-sm);
 }
@@ -576,12 +578,12 @@ onUnmounted(() => {
 }
 
 #app[data-ui-style='material'] .comments-tab .timeline-card:hover {
-  transform: translateY(-1px);
+  transform: none;
   box-shadow: var(--shadow-md);
 }
 
 #app[data-ui-style='material'] .comments-tab .timeline-dot {
-  border-radius: 6px;
+  border-radius: calc(var(--radius-lg) / 2);
   background: rgba(var(--color-primary-rgb), 0.12);
 }
 
@@ -590,11 +592,11 @@ onUnmounted(() => {
 }
 
 #app[data-ui-style='material'] .comments-tab .skeleton-card {
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
 }
 
 #app[data-ui-style='material'] .comments-tab .reply-count {
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
 }
 
 #app[data-ui-style='material'] .comments-tab .delete-btn {
@@ -649,7 +651,7 @@ onUnmounted(() => {
 
 /* ===== Material + Blue ===== */
 #app[data-ui-style='material'][data-theme='blue'] .comments-tab .timeline-card {
-  background: #ffffff;
+  background: var(--profile-surface-bg);
   border-color: rgba(59, 130, 246, 0.12);
   box-shadow: 0 1px 3px rgba(59, 130, 246, 0.08);
 }

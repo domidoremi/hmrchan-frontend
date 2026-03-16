@@ -10,7 +10,7 @@
       <StateIndicator v-if="error" variant="error" :description="error" @action="loadProfile" />
 
       <template v-else>
-        <section class="profile-card glass-card-enhanced">
+        <section class="profile-card empty-surface">
           <template v-if="isLoading">
             <div class="profile-skeleton">
               <Skeleton variant="avatar" width="5rem" height="5rem" />
@@ -76,7 +76,10 @@
           </template>
         </section>
 
-        <section v-if="profile && !isLoading" class="profile-card glass-card">
+        <section
+          v-if="profile && !isLoading"
+          class="profile-card profile-card--actions empty-surface"
+        >
           <div class="action-header">
             <div>
               <h2 class="action-title">{{ $t('profile.publicProfileTitle') }}</h2>
@@ -277,13 +280,14 @@ watch(
 }
 
 .profile-card {
-  padding: clamp(1rem, 3vw, 1.5rem);
+  display: grid;
+  gap: var(--spacing-4);
 }
 
 .profile-skeleton,
 .profile-hero {
   display: grid;
-  grid-template-columns: auto 1fr;
+  grid-template-columns: minmax(5rem, auto) minmax(0, 1fr);
   gap: clamp(1rem, 3vw, 1.5rem);
   align-items: start;
 }
@@ -292,6 +296,7 @@ watch(
 .profile-copy {
   display: grid;
   gap: var(--spacing-3);
+  min-inline-size: 0;
 }
 
 .profile-name-row {
@@ -312,6 +317,7 @@ watch(
   padding: 0.125rem 0.625rem;
   border-radius: var(--radius-full);
   background: rgba(var(--color-primary-rgb), 0.08);
+  border: 1px solid rgba(var(--color-primary-rgb), 0.14);
   color: var(--color-primary);
   font-size: var(--text-xs);
   font-weight: var(--font-medium);
@@ -319,6 +325,7 @@ watch(
 
 .relation-badge--warning {
   background: rgba(var(--color-warning-rgb), 0.12);
+  border-color: rgba(var(--color-warning-rgb), 0.18);
   color: var(--color-warning);
 }
 
@@ -336,7 +343,7 @@ watch(
 
 .profile-stats {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 8rem), 1fr));
   gap: var(--spacing-3);
 }
 
@@ -344,9 +351,9 @@ watch(
   display: grid;
   gap: var(--spacing-1);
   padding: var(--spacing-3);
-  border: 1px solid var(--glass-border);
+  border: 1px solid var(--page-control-border);
   border-radius: var(--radius-lg);
-  background: var(--glass-bg-light);
+  background: color-mix(in srgb, var(--page-card-bg) 90%, rgba(var(--color-primary-rgb), 0.04));
 }
 
 .stat-label {
@@ -367,7 +374,8 @@ watch(
 }
 
 .action-header {
-  margin-block-end: var(--spacing-3);
+  display: grid;
+  gap: var(--spacing-1);
 }
 
 .action-title {
@@ -377,7 +385,7 @@ watch(
 }
 
 .action-desc {
-  margin: var(--spacing-1) 0 0;
+  margin: 0;
   color: var(--color-text-secondary);
   font-size: var(--text-sm);
 }
@@ -386,6 +394,10 @@ watch(
   .profile-skeleton,
   .profile-hero {
     grid-template-columns: 1fr;
+  }
+
+  .action-list > * {
+    flex: 1 1 100%;
   }
 }
 </style>

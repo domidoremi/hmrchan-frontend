@@ -433,7 +433,9 @@ function handleAction(toast: Toast) {
 .toast-stack-enter-active,
 .toast-stack-leave-active,
 .toast-stack-move {
-  transition: all 350ms cubic-bezier(0.32, 0.72, 0, 1);
+  transition:
+    opacity 350ms cubic-bezier(0.32, 0.72, 0, 1),
+    transform 350ms cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 .toast-stack-leave-active {

@@ -17,7 +17,7 @@
             <div class="auth-header">
               <button
                 type="button"
-                class="back-btn glass-button"
+                class="back-btn page-control-btn page-control-btn--square"
                 :aria-label="$t('common.back')"
                 @click="handleBackWithMood"
               >
@@ -62,7 +62,11 @@
               {{ $t('auth.verifyButton') }}
             </Button>
 
-            <button type="button" class="auth-2fa-back" @click="reset2fa">
+            <button
+              type="button"
+              class="auth-2fa-back page-control-btn page-control-btn--compact"
+              @click="reset2fa"
+            >
               {{ $t('auth.backToLogin') }}
             </button>
           </div>
@@ -109,7 +113,11 @@
               {{ $t('auth.verifyButton') }}
             </Button>
 
-            <button type="button" class="auth-2fa-back" @click="resetRiskVerification">
+            <button
+              type="button"
+              class="auth-2fa-back page-control-btn page-control-btn--compact"
+              @click="resetRiskVerification"
+            >
               {{ $t('auth.backToLogin') }}
             </button>
           </div>
@@ -212,7 +220,11 @@
             v-if="!show2fa && !showRiskVerification && !showRestorePanel"
             class="auth-restore-link"
           >
-            <button type="button" class="auth-link-button" @click="openRestorePanel">
+            <button
+              type="button"
+              class="auth-link-button page-control-btn page-control-btn--compact"
+              @click="openRestorePanel"
+            >
               {{ $t('auth.restoreLink') }}
             </button>
           </p>
@@ -766,33 +778,44 @@ function handleTurnstileError(error?: Error) {
   background: #ede6da;
 }
 
+.auth-topline,
+.auth-headings {
+  display: grid;
+}
+
+.auth-topline {
+  gap: var(--spacing-3);
+}
+
+.auth-headings {
+  gap: var(--spacing-1);
+}
+
 .auth-header {
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  margin-bottom: var(--spacing-2);
+  margin-bottom: 0;
 }
 
 .back-btn {
-  padding: var(--spacing-2);
-  border-radius: var(--radius-full);
-  border: 1px solid rgba(74, 85, 135, 0.2);
-  background: rgba(95, 108, 174, 0.08);
-  color: #3a4266;
+  padding: 0;
+  align-self: flex-start;
 }
 
 .auth-title {
   font-size: clamp(1.45rem, 1.2rem + 1.1vw, 2.1rem);
   color: #212840;
   text-align: left;
-  margin-bottom: var(--spacing-1);
+  margin: 0;
   letter-spacing: 0.012em;
 }
 
 .auth-subtitle {
   text-align: left;
   color: rgba(50, 58, 90, 0.72);
-  margin-bottom: var(--spacing-5);
+  margin: 0;
+  max-inline-size: 34ch;
   font-size: var(--text-xs);
 }
 
@@ -838,11 +861,13 @@ function handleTurnstileError(error?: Error) {
   align-items: center;
   justify-content: center;
   border-radius: 0.75rem;
+  border: 1px solid rgba(82, 95, 150, 0.16);
+  background: rgba(110, 120, 182, 0.08);
   color: rgba(49, 58, 91, 0.72);
 }
 
 .password-toggle:hover {
-  background: rgba(109, 120, 176, 0.14);
+  background: rgba(109, 120, 176, 0.16);
   color: #2e3554;
 }
 
@@ -921,19 +946,7 @@ function handleTurnstileError(error?: Error) {
 }
 
 .auth-link-button {
-  padding: 0;
-  border: none;
-  background: transparent;
   font: inherit;
-  font-size: var(--text-sm);
-  color: rgba(52, 62, 97, 0.76);
-  cursor: pointer;
-  transition: color 150ms ease;
-}
-
-.auth-link-button:hover {
-  color: #4957dd;
-  text-decoration: underline;
 }
 
 .auth-2fa-hint {
@@ -944,15 +957,8 @@ function handleTurnstileError(error?: Error) {
 }
 
 .auth-2fa-back {
-  display: block;
-  margin: var(--spacing-2) auto 0;
-  font-size: var(--text-sm);
-  color: rgba(52, 62, 97, 0.76);
-  transition: color 150ms ease;
-}
-
-.auth-2fa-back:hover {
-  color: #4957dd;
+  align-self: center;
+  margin-top: var(--spacing-2);
 }
 
 .auth-footer {
@@ -1029,12 +1035,12 @@ function handleTurnstileError(error?: Error) {
 @keyframes auth-card-enter-left {
   0% {
     opacity: 0;
-    transform: translateY(1rem) scale3d(0.985, 0.985, 1);
+    transform: translateY(0.75rem) scale(0.985);
   }
 
   100% {
     opacity: 1;
-    transform: translateY(0) scale3d(1, 1, 1);
+    transform: translateY(0) scale(1);
   }
 }
 </style>

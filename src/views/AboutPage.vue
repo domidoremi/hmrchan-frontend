@@ -2,17 +2,22 @@
   <div class="about-page">
     <div class="container">
       <!-- 页面标题 -->
-      <header class="page-header">
-        <h1 class="page-title gradient-text">{{ $t('about.title') }}</h1>
+      <header class="page-hero about-hero">
+        <div class="page-hero__content">
+          <div class="page-hero__heading">
+            <span class="page-hero__eyebrow">{{ $t('nav.about') }}</span>
+            <h1 class="page-hero__title gradient-text">{{ $t('about.title') }}</h1>
+          </div>
+        </div>
       </header>
 
       <!-- 关于 Himeri -->
       <section class="section himeri-section">
-        <div class="section-header">
-          <AnimatedIcon name="heart" :fallback-icon="Heart" size="lg" class="section-icon" />
-          <h2 class="section-title">{{ $t('about.origin.title') }}</h2>
+        <div class="page-section-head about-section-head">
+          <AnimatedIcon name="heart" :fallback-icon="Heart" size="lg" class="about-section-icon" />
+          <h2 class="page-section-title about-section-title">{{ $t('about.origin.title') }}</h2>
         </div>
-        <div class="origin-content glass-card">
+        <div class="origin-content empty-surface">
           <!-- 名字展示 -->
           <div class="himeri-header">
             <div class="himeri-name-card">
@@ -41,7 +46,7 @@
               <div
                 v-for="(item, index) in profileItems"
                 :key="item.label"
-                class="profile-card"
+                class="profile-card page-list-card"
                 :style="{ animationDelay: `${index * 0.05}s` }"
               >
                 <div class="profile-card-icon">
@@ -77,9 +82,14 @@
 
       <!-- 官方网站 & 社交媒体 -->
       <section class="section links-section">
-        <div class="section-header">
-          <AnimatedIcon name="explore" :fallback-icon="Globe" size="lg" class="section-icon" />
-          <h2 class="section-title">{{ $t('about.links.title') }}</h2>
+        <div class="page-section-head about-section-head">
+          <AnimatedIcon
+            name="explore"
+            :fallback-icon="Globe"
+            size="lg"
+            class="about-section-icon"
+          />
+          <h2 class="page-section-title about-section-title">{{ $t('about.links.title') }}</h2>
         </div>
 
         <!-- 官方网站 -->
@@ -95,7 +105,7 @@
               :href="link.url"
               target="_blank"
               rel="noopener noreferrer"
-              class="link-card glass-card"
+              class="link-card page-list-card"
               :style="{ '--link-color': link.color }"
             >
               <div class="link-icon-wrap">
@@ -123,7 +133,7 @@
               :href="link.url"
               target="_blank"
               rel="noopener noreferrer"
-              class="link-card link-card--compact glass-card"
+              class="link-card link-card--compact page-list-card"
               :style="{ '--link-color': link.color }"
             >
               <div class="link-icon-wrap">
@@ -148,7 +158,7 @@
               :href="link.url"
               target="_blank"
               rel="noopener noreferrer"
-              class="link-card link-card--compact glass-card"
+              class="link-card link-card--compact page-list-card"
               :style="{ '--link-color': link.color }"
             >
               <div class="link-icon-wrap">
@@ -163,12 +173,17 @@
 
       <!-- 核心功能 -->
       <section class="section">
-        <div class="section-header">
-          <AnimatedIcon name="sparkle" :fallback-icon="Sparkles" size="lg" class="section-icon" />
-          <h2 class="section-title">{{ $t('about.features.title') }}</h2>
+        <div class="page-section-head about-section-head">
+          <AnimatedIcon
+            name="sparkle"
+            :fallback-icon="Sparkles"
+            size="lg"
+            class="about-section-icon"
+          />
+          <h2 class="page-section-title about-section-title">{{ $t('about.features.title') }}</h2>
         </div>
         <div class="features-grid">
-          <div v-for="feature in features" :key="feature.title" class="feature-card glass-card">
+          <div v-for="feature in features" :key="feature.title" class="feature-card page-list-card">
             <AnimatedIcon
               name="explore"
               :fallback-icon="feature.icon"
@@ -183,9 +198,9 @@
 
       <!-- 技术实现 -->
       <section class="section tech-section">
-        <div class="section-header">
-          <AnimatedIcon name="explore" :fallback-icon="Code" size="lg" class="section-icon" />
-          <h2 class="section-title">{{ $t('about.tech.title') }}</h2>
+        <div class="page-section-head about-section-head">
+          <AnimatedIcon name="explore" :fallback-icon="Code" size="lg" class="about-section-icon" />
+          <h2 class="page-section-title about-section-title">{{ $t('about.tech.title') }}</h2>
         </div>
         <div class="tech-grid">
           <a
@@ -194,7 +209,7 @@
             :href="tech.url"
             target="_blank"
             rel="noopener noreferrer"
-            class="tech-card glass-card"
+            class="tech-card page-list-card"
           >
             <div class="tech-header">
               <div class="tech-name">{{ tech.name }}</div>
@@ -207,20 +222,22 @@
 
       <!-- 项目信息 -->
       <section class="section info-section">
-        <div class="section-header">
-          <AnimatedIcon name="sparkle" :fallback-icon="Info" size="lg" class="section-icon" />
-          <h2 class="section-title">{{ $t('about.projectInfo.title') }}</h2>
+        <div class="page-section-head about-section-head">
+          <AnimatedIcon name="sparkle" :fallback-icon="Info" size="lg" class="about-section-icon" />
+          <h2 class="page-section-title about-section-title">
+            {{ $t('about.projectInfo.title') }}
+          </h2>
         </div>
         <div class="info-grid">
-          <div class="info-card glass-card">
+          <div class="info-card page-list-card">
             <div class="info-label">{{ $t('about.projectInfo.buildHash') }}</div>
             <div class="info-value commit-hash">{{ buildHash }}</div>
           </div>
-          <div class="info-card glass-card">
+          <div class="info-card page-list-card">
             <div class="info-label">{{ $t('about.projectInfo.buildTime') }}</div>
             <div class="info-value">{{ buildTime }}</div>
           </div>
-          <div class="info-card glass-card">
+          <div class="info-card page-list-card">
             <div class="info-label">{{ $t('about.projectInfo.status') }}</div>
             <div class="info-value status-active">
               <span class="status-dot"></span>
@@ -508,20 +525,17 @@ const { techStack } = useAboutData()
 }
 
 /* 页面标题 */
-.page-header {
+.about-hero .page-hero__content {
+  align-items: center;
   text-align: center;
-  margin-bottom: var(--spacing-6);
 }
 
-.page-header::after {
-  content: none;
-  display: none;
+.about-hero .page-hero__heading {
+  justify-items: center;
 }
 
-.page-title {
-  font-size: var(--text-3xl);
-  font-weight: var(--font-bold);
-  margin-bottom: var(--spacing-2);
+.about-hero .page-hero__eyebrow {
+  align-self: center;
 }
 
 /* 章节 */
@@ -529,20 +543,21 @@ const { techStack } = useAboutData()
   margin-bottom: var(--spacing-8);
 }
 
-.section-header {
+.about-section-head {
   display: flex;
   align-items: center;
   gap: var(--spacing-3);
   margin-bottom: var(--spacing-4);
 }
 
-.section-icon {
+.about-section-icon {
   color: var(--color-primary);
 }
 
-.section-title {
+.about-section-title {
   font-size: var(--text-2xl);
   font-weight: var(--font-semibold);
+  margin: 0;
 }
 
 /* 关于 Himeri - 优化版 */
@@ -591,6 +606,7 @@ const { techStack } = useAboutData()
 
 .name-wrapper {
   flex: 1;
+  min-inline-size: 0;
 }
 
 .himeri-jp {
@@ -627,24 +643,13 @@ const { techStack } = useAboutData()
   inset: -0.25rem;
   border-radius: 50%;
   background: var(--gradient-primary);
-  opacity: 0.2;
-  animation: rotate 8s linear infinite;
-}
-
-@keyframes rotate {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+  opacity: 0.16;
 }
 
 .decoration-icon {
   color: var(--color-primary);
   position: relative;
   z-index: 1;
-  animation: heartbeat 2s ease-in-out infinite;
 }
 
 /* 子标题 */
@@ -655,9 +660,9 @@ const { techStack } = useAboutData()
   font-size: var(--text-lg);
   font-weight: var(--font-semibold);
   color: var(--color-text);
-  margin-bottom: var(--spacing-4);
+  margin: 0 0 var(--spacing-4);
   padding-bottom: var(--spacing-2);
-  border-bottom: 2px solid var(--glass-border);
+  border-bottom: 1px solid var(--page-control-border);
 }
 
 .subsection-title svg {
@@ -667,7 +672,9 @@ const { techStack } = useAboutData()
 /* 个人资料区域 */
 .profile-section {
   padding: var(--spacing-6);
-  background: rgba(var(--color-background-rgb), 0.3);
+  display: grid;
+  gap: var(--spacing-4);
+  border-top: 1px solid rgba(var(--color-primary-rgb), 0.08);
 }
 
 .profile-grid-enhanced {
@@ -681,48 +688,6 @@ const { techStack } = useAboutData()
   align-items: center;
   gap: var(--spacing-3);
   padding: var(--spacing-4);
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-lg);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  animation: fadeInUp 0.5s ease-out backwards;
-  position: relative;
-  overflow: hidden;
-}
-
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(1.25rem);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.profile-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 0.25rem;
-  height: 100%;
-  background: var(--gradient-primary);
-  transform: scaleY(0);
-  transform-origin: bottom;
-  transition: transform 0.3s ease;
-}
-
-.profile-card:hover {
-  transform: translateX(0.5rem);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-  border-color: rgba(var(--color-primary-rgb), 0.3);
-}
-
-.profile-card:hover::before {
-  transform: scaleY(1);
-  transform-origin: top;
 }
 
 .profile-card-icon {
@@ -735,17 +700,11 @@ const { techStack } = useAboutData()
   border-radius: var(--radius-md);
   color: var(--color-primary);
   flex-shrink: 0;
-  transition: all 0.3s ease;
-}
-
-.profile-card:hover .profile-card-icon {
-  background: rgba(var(--color-primary-rgb), 0.2);
-  transform: scale(1.1) rotate(5deg);
 }
 
 .profile-card-content {
   flex: 1;
-  min-width: 0;
+  min-inline-size: 0;
 }
 
 .profile-card-text {
@@ -784,7 +743,7 @@ const { techStack } = useAboutData()
     rgba(var(--color-primary-rgb), 0.08) 0%,
     rgba(var(--color-primary-rgb), 0.03) 100%
   );
-  border-left: 4px solid var(--color-primary);
+  border-inline-start: 4px solid var(--color-primary);
   border-radius: var(--radius-lg);
   position: relative;
   overflow: hidden;
@@ -835,9 +794,9 @@ const { techStack } = useAboutData()
   font-size: var(--text-lg);
   font-weight: var(--font-semibold);
   color: var(--color-text);
-  margin-bottom: var(--spacing-4);
+  margin: 0 0 var(--spacing-4);
   padding-bottom: var(--spacing-2);
-  border-bottom: 2px solid var(--glass-border);
+  border-bottom: 1px solid var(--page-control-border);
 }
 
 .links-group .subsection-title svg {
@@ -859,36 +818,9 @@ const { techStack } = useAboutData()
   align-items: center;
   gap: var(--spacing-3);
   padding: var(--spacing-4);
+  min-inline-size: 0;
   text-decoration: none;
   color: inherit;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
-  overflow: hidden;
-  border: 1px solid transparent;
-}
-
-.link-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 0.25rem;
-  height: 100%;
-  background: var(--link-color, var(--color-primary));
-  transform: scaleY(0);
-  transform-origin: bottom;
-  transition: transform 0.3s ease;
-}
-
-.link-card:hover {
-  transform: translateX(0.25rem);
-  border-color: rgba(var(--color-primary-rgb), 0.2);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
-}
-
-.link-card:hover::before {
-  transform: scaleY(1);
-  transform-origin: top;
 }
 
 .link-card--compact {
@@ -905,7 +837,6 @@ const { techStack } = useAboutData()
   background: color-mix(in srgb, var(--link-color, var(--color-primary)) 12%, transparent);
   color: var(--link-color, var(--color-primary));
   flex-shrink: 0;
-  transition: all 0.3s ease;
 }
 
 .link-card--compact .link-icon-wrap {
@@ -913,13 +844,9 @@ const { techStack } = useAboutData()
   height: 2.25rem;
 }
 
-.link-card:hover .link-icon-wrap {
-  transform: scale(1.1);
-}
-
 .link-info {
   flex: 1;
-  min-width: 0;
+  min-inline-size: 0;
 }
 
 .link-name {
@@ -940,16 +867,13 @@ const { techStack } = useAboutData()
 }
 
 .link-arrow {
-  color: var(--color-text-tertiary);
-  opacity: 0;
-  transform: translateX(-4px);
-  transition: all 0.2s ease;
+  color: color-mix(
+    in srgb,
+    var(--link-color, var(--color-primary)) 58%,
+    var(--color-text-tertiary)
+  );
+  opacity: 0.72;
   flex-shrink: 0;
-}
-
-.link-card:hover .link-arrow {
-  opacity: 1;
-  transform: translateX(0);
 }
 
 /* 核心功能 */
@@ -960,25 +884,22 @@ const { techStack } = useAboutData()
 }
 
 .feature-card {
+  display: grid;
+  justify-items: center;
+  gap: var(--spacing-3);
   padding: var(--spacing-5);
   text-align: center;
-  transition: all 0.3s ease;
-}
-
-.feature-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
 }
 
 .feature-icon {
   color: var(--color-primary);
-  margin: 0 auto var(--spacing-3);
+  margin: 0;
 }
 
 .feature-title {
   font-size: var(--text-lg);
   font-weight: var(--font-semibold);
-  margin-bottom: var(--spacing-2);
+  margin: 0;
   color: var(--color-text);
 }
 
@@ -986,31 +907,7 @@ const { techStack } = useAboutData()
   font-size: var(--text-sm);
   color: var(--color-text-secondary);
   line-height: var(--leading-relaxed);
-}
-.section-surface {
-  position: relative;
-  width: min(100%, 65rem);
-  margin-inline: auto;
-  padding: var(--spacing-4);
-  border-radius: var(--radius-2xl);
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
-  box-shadow: var(--glass-shadow);
-  overflow: hidden;
-}
-
-.section-surface::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: var(--gradient-surface, var(--gradient-card-hover));
-  opacity: 0.7;
-  pointer-events: none;
-}
-
-.section-surface > * {
-  position: relative;
-  z-index: 1;
+  margin: 0;
 }
 
 .tech-grid {
@@ -1020,41 +917,13 @@ const { techStack } = useAboutData()
 }
 
 .tech-card {
+  display: grid;
+  align-content: start;
+  gap: var(--spacing-3);
   padding: var(--spacing-5);
-  transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
-  display: block;
   text-decoration: none;
   color: inherit;
-  min-height: 10rem;
-}
-
-.tech-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 0.1875rem;
-  background: var(--gradient-primary);
-  transform: scaleX(0);
-  transform-origin: left;
-  transition: transform 0.3s ease;
-}
-
-.tech-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
-  cursor: pointer;
-}
-
-.tech-card:hover::before {
-  transform: scaleX(1);
-}
-
-.tech-card:active {
-  transform: translateY(-2px);
+  min-block-size: 10rem;
 }
 
 .tech-header {
@@ -1067,7 +936,7 @@ const { techStack } = useAboutData()
 
 .tech-name {
   font-size: var(--text-lg);
-  font-weight: var(--font-bold);
+  font-weight: var(--font-semibold);
   color: var(--color-text);
 }
 
@@ -1077,23 +946,18 @@ const { techStack } = useAboutData()
   padding: var(--spacing-1) var(--spacing-2);
   font-size: var(--text-xs);
   font-weight: var(--font-semibold);
-  color: var(--color-white);
-  background: var(--gradient-primary);
+  color: var(--color-primary);
+  background: rgba(var(--color-primary-rgb), 0.1);
+  border: 1px solid rgba(var(--color-primary-rgb), 0.16);
   border-radius: var(--radius-full);
   white-space: nowrap;
-  box-shadow: 0 6px 16px rgba(var(--color-primary-rgb), 0.25);
-}
-
-[data-theme='dark'] .tech-version-badge {
-  color: var(--color-gray-900);
-  background: linear-gradient(135deg, #e4e4e7 0%, #a1a1aa 100%);
-  box-shadow: 0 6px 16px rgba(244, 244, 245, 0.15);
 }
 
 .tech-description {
   font-size: var(--text-sm);
   color: var(--color-text-secondary);
   line-height: var(--leading-relaxed);
+  margin: 0;
 }
 
 /* 项目信息 */
@@ -1142,18 +1006,7 @@ const { techStack } = useAboutData()
   height: 0.5rem;
   background: var(--color-success);
   border-radius: 50%;
-  animation: pulse 2s ease-in-out infinite;
   box-shadow: 0 0 0 6px rgba(var(--color-success-rgb), 0.15);
-}
-
-@keyframes pulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
 }
 
 /* 页脚 */
@@ -1176,17 +1029,6 @@ const { techStack } = useAboutData()
 
 .heart-icon {
   color: #ef4444;
-  animation: heartbeat 1.5s ease-in-out infinite;
-}
-
-@keyframes heartbeat {
-  0%,
-  100% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.1);
-  }
 }
 
 .footer-link {
@@ -1215,10 +1057,6 @@ const { techStack } = useAboutData()
 
 /* 响应式 */
 @media (max-width: 768px) {
-  .page-title {
-    font-size: var(--text-2xl);
-  }
-
   .himeri-header {
     padding: var(--spacing-6) var(--spacing-4);
   }
@@ -1274,11 +1112,6 @@ const { techStack } = useAboutData()
 
   .info-grid {
     grid-template-columns: 1fr;
-  }
-
-  .section-surface {
-    width: calc(100% - var(--spacing-5));
-    padding: var(--spacing-3);
   }
 }
 </style>
