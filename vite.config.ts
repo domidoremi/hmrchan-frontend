@@ -20,11 +20,13 @@ import { defineConfig, loadEnv } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import vueJsx from '@vitejs/plugin-vue-jsx'
 import { imagetools } from 'vite-imagetools'
-import { criticalCSSPlugin } from './vite-plugin-critical-css'
-import { swVersionPlugin } from './vite-plugin-sw-version'
-import { sriPlugin } from './vite-plugin-sri'
-import { obfuscationPlugin } from './vite-plugin-obfuscation'
-import { asyncCssPlugin } from './vite-plugin-async-css'
+import {
+  asyncCssPlugin,
+  criticalCSSPlugin,
+  obfuscationPlugin,
+  sriPlugin,
+  swVersionPlugin,
+} from './build/vite/plugins'
 
 type DevProxyServer = {
   on(event: 'proxyRes', listener: (proxyRes: IncomingMessage) => void): void
