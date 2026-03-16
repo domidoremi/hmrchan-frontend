@@ -165,7 +165,7 @@
                 <div class="post-preview-content">
                   <div v-if="loadError" class="post-preview-error">
                     <p class="post-preview-error-text">{{ loadError }}</p>
-                    <button type="button" class="glass-button" @click="reload">
+                    <button type="button" class="post-preview-btn" @click="reload">
                       {{ t('common.retry') }}
                     </button>
                   </div>
@@ -191,7 +191,7 @@
                 <PostActionStrip v-if="postId" :post-id="postId" variant="compact" />
                 <button
                   type="button"
-                  class="glass-button glass-button--primary post-preview-cta"
+                  class="post-preview-btn post-preview-btn--primary post-preview-cta"
                   :disabled="!postId"
                   @click="openDetail"
                 >
@@ -809,17 +809,19 @@ function openDetail() {
   color: var(--preview-text-primary);
   transition:
     background var(--transition-fast),
-    transform var(--transition-fast);
+    border-color var(--transition-fast),
+    color var(--transition-fast),
+    box-shadow var(--transition-fast);
   flex: 0 0 auto;
 }
 
 .post-preview-close-icon:hover {
-  transform: translateY(-1px);
   background: var(--glass-bg-strong);
+  border-color: var(--preview-pill-border);
 }
 
 .post-preview-close-icon:active {
-  transform: scale(0.98);
+  box-shadow: none;
 }
 
 .post-preview-handle {
@@ -889,14 +891,15 @@ function openDetail() {
   color: var(--preview-text-primary);
   white-space: nowrap;
   transition:
-    transform var(--transition-fast),
     background var(--transition-fast),
-    border-color var(--transition-fast);
+    border-color var(--transition-fast),
+    color var(--transition-fast),
+    box-shadow var(--transition-fast);
 }
 
 .post-preview-btn:hover {
-  transform: translateY(-1px);
   background: var(--glass-bg-strong);
+  border-color: var(--preview-pill-border);
 }
 
 .post-preview-btn:disabled {
@@ -952,7 +955,7 @@ function openDetail() {
   backdrop-filter: blur(0.875rem);
 }
 
-.post-preview-action-bar .glass-button {
+.post-preview-action-bar .post-preview-btn {
   min-height: var(--ui-control-min-size, 2.75rem);
 }
 

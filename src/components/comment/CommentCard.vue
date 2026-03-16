@@ -565,7 +565,9 @@ onUnmounted(() => {
   height: 2rem;
   border-radius: var(--radius-md);
   color: var(--color-text-tertiary);
-  transition: all var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast);
 }
 
 .menu-btn:hover {
@@ -658,7 +660,10 @@ onUnmounted(() => {
   border-radius: var(--radius-md);
   font-size: var(--text-xs);
   color: var(--color-text-tertiary);
-  transition: all var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast),
+    opacity var(--transition-fast);
 }
 
 .action-btn:hover:not(:disabled) {

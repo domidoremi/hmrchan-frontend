@@ -2,7 +2,7 @@
   <div class="favorites-tab">
     <div class="tab-header">
       <h2 class="tab-title">{{ $t('profile.tabs.favorites') }}</h2>
-      <span v-if="total > 0" class="item-count">{{ total }}</span>
+      <span v-if="total > 0" class="item-count profile-item-count">{{ total }}</span>
     </div>
 
     <StateIndicator
@@ -221,7 +221,8 @@ watch(
 
 .item-count {
   padding: 0.125rem 0.625rem;
-  background: rgba(var(--color-primary-rgb), 0.08);
+  background: var(--profile-chip-bg);
+  border: 1px solid var(--profile-chip-border);
   border-radius: var(--radius-full);
   font-size: var(--text-xs);
   color: var(--color-primary);
@@ -299,15 +300,20 @@ watch(
   position: relative;
   cursor: pointer;
   overflow: hidden;
-  border-radius: var(--radius-lg);
+  border-radius: var(--profile-section-radius);
+  border: 1px solid var(--profile-surface-border);
+  background: var(--profile-surface-bg-soft);
+  box-shadow: var(--profile-surface-shadow);
   transition:
     transform var(--duration-normal) var(--ease-out-smooth),
-    box-shadow var(--duration-normal) var(--ease-smooth);
+    box-shadow var(--duration-normal) var(--ease-smooth),
+    border-color var(--duration-fast) var(--ease-smooth);
 }
 
 .favorite-card:hover {
   transform: var(--lift-md);
-  box-shadow: var(--glass-shadow-lg);
+  box-shadow: var(--profile-surface-shadow-hover);
+  border-color: var(--profile-surface-border-strong);
 }
 
 .favorite-card:focus-visible {
@@ -323,7 +329,7 @@ watch(
   width: 100%;
   aspect-ratio: 1;
   overflow: hidden;
-  background: var(--glass-bg-medium);
+  background: var(--profile-muted-bg);
 }
 
 .favorite-image img {
@@ -334,11 +340,11 @@ watch(
 }
 
 .favorite-card:hover .favorite-image img {
-  transform: scale(1.06);
+  transform: scale(1.01);
 }
 
 .favorite-card:focus-visible .favorite-image img {
-  transform: scale(1.06);
+  transform: scale(1.01);
 }
 
 .image-placeholder {
@@ -418,9 +424,9 @@ watch(
   justify-content: center;
   width: 1.75rem;
   height: 1.75rem;
-  background: rgba(0, 0, 0, 0.5);
-  color: var(--color-white);
-  border: none;
+  background: var(--profile-action-bg);
+  color: var(--color-text-primary);
+  border: 1px solid var(--profile-action-border);
   border-radius: var(--radius-full);
   cursor: pointer;
   opacity: 0;
@@ -441,7 +447,9 @@ watch(
 
 .remove-btn:hover {
   background: var(--color-error);
-  transform: scale(1.15);
+  border-color: var(--color-error);
+  color: var(--color-white);
+  transform: scale(1.01);
 }
 
 /* ===== Responsive ===== */
@@ -480,11 +488,11 @@ watch(
 <style>
 /* ===== Material 3 Overrides ===== */
 #app[data-ui-style='material'] .favorites-tab .favorite-card {
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
 }
 
 #app[data-ui-style='material'] .favorites-tab .favorite-card:hover {
-  transform: translateY(-1px);
+  transform: none;
   box-shadow: var(--shadow-md);
 }
 
@@ -493,7 +501,7 @@ watch(
 }
 
 #app[data-ui-style='material'] .favorites-tab .item-count {
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
 }
 
 /* ===== Dark Theme Overrides ===== */

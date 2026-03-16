@@ -2,7 +2,7 @@
   <div class="comment-favorites-tab">
     <div class="tab-header">
       <h2 class="tab-title">{{ $t('profile.tabs.commentFavorites') }}</h2>
-      <span v-if="total > 0" class="item-count">{{ total }}</span>
+      <span v-if="total > 0" class="item-count profile-item-count">{{ total }}</span>
     </div>
 
     <StateIndicator v-if="error" variant="error" :description="error" @action="fetchFavorites" />
@@ -281,7 +281,8 @@ onUnmounted(() => {
 
 .item-count {
   padding: 0.125rem 0.625rem;
-  background: rgba(245, 158, 11, 0.08);
+  background: var(--profile-chip-bg);
+  border: 1px solid var(--profile-chip-border);
   border-radius: var(--radius-full);
   font-size: var(--text-xs);
   color: #f59e0b;
@@ -303,7 +304,7 @@ onUnmounted(() => {
 
 .skeleton-accent {
   width: 3px;
-  border-radius: 2px;
+  border-radius: calc(var(--radius-sm) / 2);
   background: rgba(245, 158, 11, 0.15);
   flex-shrink: 0;
 }
@@ -314,8 +315,9 @@ onUnmounted(() => {
   flex-direction: column;
   gap: var(--spacing-2);
   padding: var(--spacing-4);
-  background: var(--glass-bg-light);
-  border-radius: var(--radius-lg);
+  background: var(--profile-surface-bg-soft);
+  border: 1px solid var(--profile-surface-border);
+  border-radius: var(--profile-section-radius);
 }
 
 /* ===== Timeline ===== */
@@ -358,7 +360,7 @@ onUnmounted(() => {
 }
 
 .timeline-item:hover .timeline-dot {
-  transform: scale(1.2);
+  transform: scale(1.01);
   background: rgba(245, 158, 11, 0.2);
 }
 
@@ -374,10 +376,22 @@ onUnmounted(() => {
   flex: 1;
   min-width: 0;
   padding: clamp(0.875rem, 2vw, 1.25rem);
+  border-radius: var(--profile-section-radius);
+  border: 1px solid var(--profile-surface-border);
+  background: var(--profile-surface-bg-soft);
+  box-shadow: var(--profile-surface-shadow);
+  backdrop-filter: blur(var(--blur-sm));
+  -webkit-backdrop-filter: blur(var(--blur-sm));
+  transition:
+    transform var(--duration-fast) var(--ease-out-smooth),
+    border-color var(--duration-fast) var(--ease-smooth),
+    box-shadow var(--duration-fast) var(--ease-smooth);
 }
 
 .timeline-card:hover {
-  transform: var(--lift-sm);
+  transform: none;
+  border-color: var(--profile-surface-border-strong);
+  box-shadow: var(--profile-surface-shadow-hover);
 }
 
 .card-top {
@@ -419,7 +433,7 @@ onUnmounted(() => {
   align-items: center;
   margin-top: var(--spacing-3);
   padding-top: var(--spacing-3);
-  border-top: 1px solid var(--glass-border-subtle);
+  border-top: 1px solid var(--profile-muted-border);
   gap: var(--spacing-3);
 }
 
@@ -469,7 +483,11 @@ onUnmounted(() => {
   align-items: center;
   gap: 0.25rem;
   font-size: var(--text-xs);
-  color: var(--color-text-tertiary);
+  color: var(--profile-chip-text);
+  padding: 0.0625rem 0.375rem;
+  background: var(--profile-chip-bg);
+  border: 1px solid var(--profile-chip-border);
+  border-radius: var(--radius-full);
 }
 
 /* Unfavorite */
@@ -481,8 +499,8 @@ onUnmounted(() => {
   border-radius: var(--radius-full);
   font-size: var(--text-xs);
   font-weight: var(--font-medium);
-  background: transparent;
-  border: 1px solid var(--glass-border-medium);
+  background: var(--profile-action-bg);
+  border: 1px solid var(--profile-action-border);
   color: var(--color-text-secondary);
   cursor: pointer;
   opacity: 0;
@@ -500,7 +518,7 @@ onUnmounted(() => {
 .unfav-btn:hover:not(:disabled) {
   border-color: #f59e0b;
   color: #f59e0b;
-  background: rgba(245, 158, 11, 0.06);
+  background: rgba(245, 158, 11, 0.08);
 }
 
 .unfav-btn:disabled {
@@ -541,7 +559,7 @@ onUnmounted(() => {
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
   background: var(--color-surface, var(--glass-bg-light));
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   border: 1px solid var(--md-outline-variant, var(--glass-border-medium));
   box-shadow: var(--shadow-sm);
 }
@@ -551,16 +569,16 @@ onUnmounted(() => {
 }
 
 #app[data-ui-style='material'] .comment-favorites-tab .timeline-card:hover {
-  transform: translateY(-1px);
+  transform: none;
   box-shadow: var(--shadow-md);
 }
 
 #app[data-ui-style='material'] .comment-favorites-tab .timeline-dot {
-  border-radius: 6px;
+  border-radius: calc(var(--radius-lg) / 2);
 }
 
 #app[data-ui-style='material'] .comment-favorites-tab .unfav-btn {
-  border-radius: 8px;
+  border-radius: var(--radius-md);
 }
 
 #app[data-ui-style='material'] .comment-favorites-tab .unfav-btn:hover:not(:disabled) {
@@ -568,11 +586,11 @@ onUnmounted(() => {
 }
 
 #app[data-ui-style='material'] .comment-favorites-tab .skeleton-body {
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
 }
 
 #app[data-ui-style='material'] .comment-favorites-tab .item-count {
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
 }
 
 /* ===== Dark Theme Overrides ===== */
@@ -628,7 +646,7 @@ onUnmounted(() => {
 
 /* ===== Material + Blue ===== */
 #app[data-ui-style='material'][data-theme='blue'] .comment-favorites-tab .timeline-card {
-  background: #ffffff;
+  background: var(--profile-surface-bg);
   border-color: rgba(59, 130, 246, 0.12);
   box-shadow: 0 1px 3px rgba(59, 130, 246, 0.08);
 }

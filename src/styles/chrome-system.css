@@ -1,0 +1,70 @@
+/**
+ * Shared site chrome tokens
+ *
+ * Navbar / footer / search surfaces and action language.
+ */
+
+:root {
+  --chrome-surface-bg: linear-gradient(155deg, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.8));
+  --chrome-surface-bg-soft: linear-gradient(
+    155deg,
+    rgba(255, 255, 255, 0.84),
+    rgba(255, 255, 255, 0.7)
+  );
+  --chrome-surface-border: rgba(255, 255, 255, 0.52);
+  --chrome-surface-border-strong: rgba(148, 163, 184, 0.2);
+  --chrome-surface-shadow: 0 1.2rem 2.8rem -1.9rem rgba(15, 23, 42, 0.22);
+  --chrome-muted-bg: rgba(255, 255, 255, 0.64);
+  --chrome-muted-bg-strong: rgba(255, 255, 255, 0.82);
+  --chrome-muted-border: rgba(148, 163, 184, 0.14);
+  --chrome-muted-border-strong: rgba(var(--color-primary-rgb), 0.22);
+  --chrome-chip-bg: rgba(255, 255, 255, 0.76);
+  --chrome-chip-border: rgba(148, 163, 184, 0.14);
+  --chrome-chip-text: var(--color-text-secondary);
+  --chrome-action-bg: rgba(255, 255, 255, 0.58);
+  --chrome-action-bg-hover: rgba(255, 255, 255, 0.84);
+  --chrome-action-border: rgba(148, 163, 184, 0.14);
+  --chrome-action-border-strong: rgba(var(--color-primary-rgb), 0.22);
+}
+
+[data-theme='dark'] {
+  --chrome-surface-bg: linear-gradient(155deg, rgba(12, 16, 23, 0.96), rgba(19, 25, 37, 0.92));
+  --chrome-surface-bg-soft: linear-gradient(155deg, rgba(15, 20, 31, 0.92), rgba(22, 29, 43, 0.88));
+  --chrome-surface-border: rgba(255, 255, 255, 0.1);
+  --chrome-surface-border-strong: rgba(255, 255, 255, 0.14);
+  --chrome-surface-shadow: 0 1.4rem 3rem -2rem rgba(0, 0, 0, 0.46);
+  --chrome-muted-bg: rgba(20, 26, 38, 0.78);
+  --chrome-muted-bg-strong: rgba(26, 34, 48, 0.92);
+  --chrome-muted-border: rgba(255, 255, 255, 0.08);
+  --chrome-muted-border-strong: rgba(var(--color-primary-rgb), 0.24);
+  --chrome-chip-bg: rgba(21, 28, 40, 0.9);
+  --chrome-chip-border: rgba(255, 255, 255, 0.08);
+  --chrome-chip-text: var(--color-gray-200);
+  --chrome-action-bg: rgba(22, 29, 43, 0.82);
+  --chrome-action-bg-hover: rgba(28, 36, 52, 0.96);
+  --chrome-action-border: rgba(255, 255, 255, 0.08);
+  --chrome-action-border-strong: rgba(var(--color-primary-rgb), 0.24);
+}
+
+[data-theme='blue'] {
+  --chrome-surface-bg: linear-gradient(155deg, rgba(255, 255, 255, 0.96), rgba(239, 246, 255, 0.9));
+  --chrome-surface-bg-soft: linear-gradient(
+    155deg,
+    rgba(255, 255, 255, 0.9),
+    rgba(240, 249, 255, 0.82)
+  );
+  --chrome-surface-border: rgba(59, 130, 246, 0.16);
+  --chrome-surface-border-strong: rgba(59, 130, 246, 0.22);
+  --chrome-surface-shadow: 0 1.2rem 2.8rem -1.9rem rgba(37, 99, 235, 0.16);
+  --chrome-muted-bg: rgba(255, 255, 255, 0.82);
+  --chrome-muted-bg-strong: rgba(239, 246, 255, 0.96);
+  --chrome-muted-border: rgba(59, 130, 246, 0.14);
+  --chrome-muted-border-strong: rgba(59, 130, 246, 0.22);
+  --chrome-chip-bg: rgba(255, 255, 255, 0.88);
+  --chrome-chip-border: rgba(59, 130, 246, 0.14);
+  --chrome-chip-text: var(--color-text-secondary);
+  --chrome-action-bg: rgba(255, 255, 255, 0.8);
+  --chrome-action-bg-hover: rgba(239, 246, 255, 0.94);
+  --chrome-action-border: rgba(59, 130, 246, 0.14);
+  --chrome-action-border-strong: rgba(59, 130, 246, 0.22);
+}

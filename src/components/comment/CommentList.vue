@@ -53,7 +53,7 @@
     <button
       v-if="hasMore && !isLoading"
       type="button"
-      class="load-more-btn glass-button"
+      class="load-more-btn page-control-btn"
       @click="loadMore"
     >
       {{ t('common.viewMore') }}
@@ -218,7 +218,10 @@ watch(
   border-radius: var(--radius-full);
   font-size: var(--text-sm);
   color: var(--color-text-tertiary);
-  transition: all var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast),
+    border-color var(--transition-fast);
 }
 
 .sort-btn:hover {
@@ -291,5 +294,6 @@ watch(
 .load-more-btn {
   width: 100%;
   margin-top: var(--spacing-4);
+  justify-content: center;
 }
 </style>

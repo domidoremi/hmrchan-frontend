@@ -196,8 +196,9 @@ onUnmounted(() => {
   display: flex;
   gap: var(--spacing-3);
   padding: var(--spacing-4);
-  border-radius: var(--radius-lg);
-  background: var(--glass-bg-light);
+  border-radius: var(--profile-section-radius);
+  border: 1px solid var(--profile-surface-border);
+  background: var(--profile-surface-bg-soft);
 }
 
 /* List */
@@ -214,8 +215,10 @@ onUnmounted(() => {
   padding: clamp(0.75rem, 2vw, 1rem);
   cursor: pointer;
   position: relative;
-  border-radius: var(--radius-lg);
-  border: 1px solid transparent;
+  border-radius: var(--profile-section-radius);
+  border: 1px solid var(--profile-surface-border);
+  background: var(--profile-surface-bg-soft);
+  box-shadow: var(--profile-surface-shadow);
   transition:
     transform var(--duration-fast) var(--ease-out-smooth),
     background var(--duration-fast) var(--ease-smooth),
@@ -224,25 +227,25 @@ onUnmounted(() => {
 }
 
 .notification-item:hover {
-  transform: translateX(0.25rem);
-  background: var(--glass-bg-light);
-  border-color: var(--glass-border-subtle);
-  box-shadow: var(--glass-shadow-sm);
+  transform: none;
+  background: var(--profile-surface-bg-soft);
+  border-color: var(--profile-surface-border-strong);
+  box-shadow: var(--profile-surface-shadow-hover);
 }
 
 .notification-item:focus-visible {
   outline: none;
-  transform: translateX(0.25rem);
-  background: var(--glass-bg-light);
-  border-color: var(--glass-border-subtle);
+  transform: none;
+  background: var(--profile-surface-bg-soft);
+  border-color: var(--profile-surface-border-strong);
   box-shadow:
-    var(--glass-shadow-sm),
+    var(--profile-surface-shadow-hover),
     0 0 0 2px rgba(var(--color-primary-rgb), 0.35);
 }
 
 .notification-item.unread {
-  background: var(--glass-bg-light);
-  border-color: rgba(var(--color-primary-rgb), 0.12);
+  background: var(--profile-muted-bg-strong);
+  border-color: var(--profile-muted-border-strong);
 }
 
 .notification-item.unread::after {
@@ -254,7 +257,7 @@ onUnmounted(() => {
   width: 3px;
   height: 50%;
   background: var(--color-primary);
-  border-radius: 0 2px 2px 0;
+  border-radius: 0 calc(var(--radius-sm) / 2) calc(var(--radius-sm) / 2) 0;
 }
 
 /* Icon */
@@ -265,16 +268,17 @@ onUnmounted(() => {
   width: 2.25rem;
   height: 2.25rem;
   border-radius: var(--radius-lg);
+  border: 1px solid var(--profile-muted-border);
   flex-shrink: 0;
   transition: transform var(--duration-fast) var(--ease-bounce-soft);
 }
 
 .notification-item:hover .notification-icon {
-  transform: scale(1.08);
+  transform: scale(1.01);
 }
 
 .notification-item:focus-visible .notification-icon {
-  transform: scale(1.08);
+  transform: scale(1.01);
 }
 
 .notification-icon.type-like,
@@ -334,9 +338,9 @@ onUnmounted(() => {
   justify-content: center;
   width: 1.75rem;
   height: 1.75rem;
-  background: transparent;
+  background: var(--profile-action-bg);
   color: var(--color-text-tertiary);
-  border: 1px solid var(--glass-border-medium);
+  border: 1px solid var(--profile-action-border);
   border-radius: var(--radius-full);
   cursor: pointer;
   flex-shrink: 0;
@@ -358,10 +362,10 @@ onUnmounted(() => {
 }
 
 .mark-read-btn:hover {
-  background: var(--color-primary);
-  color: var(--color-on-primary);
-  border-color: var(--color-primary);
-  transform: scale(1.1);
+  background: var(--profile-action-bg-hover);
+  color: var(--color-primary);
+  border-color: var(--profile-action-border-strong);
+  transform: scale(1.01);
 }
 
 /* ===== Responsive ===== */
@@ -392,7 +396,7 @@ onUnmounted(() => {
 <style>
 /* ===== Material 3 Overrides ===== */
 #app[data-ui-style='material'] .notifications-tab .notification-item {
-  border-radius: 8px;
+  border-radius: var(--radius-md);
 }
 
 #app[data-ui-style='material'] .notifications-tab .notification-item:hover,
@@ -407,7 +411,7 @@ onUnmounted(() => {
 }
 
 #app[data-ui-style='material'] .notifications-tab .notification-icon {
-  border-radius: 8px;
+  border-radius: var(--radius-md);
 }
 
 #app[data-ui-style='material'] .notifications-tab .mark-read-btn {
@@ -415,11 +419,11 @@ onUnmounted(() => {
 }
 
 #app[data-ui-style='material'] .notifications-tab .unread-badge {
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
 }
 
 #app[data-ui-style='material'] .notifications-tab .notification-skeleton {
-  border-radius: 8px;
+  border-radius: var(--radius-md);
 }
 
 /* ===== Dark Theme ===== */

@@ -78,7 +78,7 @@
     <button
       v-if="hasMore && !isLoadingMore"
       type="button"
-      class="load-more-btn glass-button"
+      class="load-more-btn page-control-btn"
       @click="loadMore"
     >
       {{ $t('common.viewMore') }}

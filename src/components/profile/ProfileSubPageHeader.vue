@@ -57,6 +57,12 @@ function goToProfile() {
   align-items: center;
   gap: clamp(0.75rem, 2vw, 1rem);
   padding: clamp(0.875rem, 2.5vw, 1.25rem);
+  border-radius: var(--profile-shell-radius);
+  border: 1px solid var(--profile-surface-border);
+  background: var(--profile-surface-bg-soft);
+  box-shadow: var(--profile-surface-shadow);
+  backdrop-filter: blur(var(--blur-sm));
+  -webkit-backdrop-filter: blur(var(--blur-sm));
 }
 
 .header-text {
@@ -68,18 +74,21 @@ function goToProfile() {
   margin: 0;
   font-size: clamp(var(--text-lg), 2.5vw, var(--text-xl));
   line-height: 1.3;
+  color: var(--color-text-primary);
 }
 
 .header-subtitle {
-  margin: 0.125rem 0 0;
+  margin: 0.25rem 0 0;
   font-size: var(--text-sm);
   color: var(--color-text-secondary);
+  max-width: 42ch;
 }
 
 .header-hint {
-  margin: 0;
+  margin: 0.25rem 0 0;
   font-size: var(--text-xs);
   color: var(--color-text-tertiary);
+  max-width: 52ch;
 }
 
 .back-btn {
@@ -90,19 +99,22 @@ function goToProfile() {
   width: 2.25rem;
   height: 2.25rem;
   border-radius: var(--radius-lg);
-  background: var(--glass-bg-medium);
-  border: 1px solid var(--glass-border-subtle);
+  background: var(--profile-action-bg);
+  border: 1px solid var(--profile-action-border);
   color: var(--color-text-secondary);
+  box-shadow: inset 0 0.0625rem 0 rgba(255, 255, 255, 0.16);
   transition:
     background var(--duration-fast) var(--ease-smooth),
+    border-color var(--duration-fast) var(--ease-smooth),
     color var(--duration-fast) var(--ease-smooth),
     transform var(--duration-fast) var(--ease-bounce-soft);
 }
 
 .back-btn:hover {
-  background: rgba(var(--color-primary-rgb), 0.1);
+  background: var(--profile-action-bg-hover);
+  border-color: var(--profile-action-border-strong);
   color: var(--color-primary);
-  transform: translateX(-2px);
+  transform: none;
 }
 
 .back-btn:active {
@@ -111,6 +123,21 @@ function goToProfile() {
 
 .header-actions {
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+.header-actions :deep(.btn-ghost) {
+  background: var(--profile-action-bg);
+  border: 1px solid var(--profile-action-border);
+  color: var(--color-text-secondary);
+  box-shadow: none;
+}
+
+.header-actions :deep(.btn-ghost:hover:not(:disabled)) {
+  background: var(--profile-action-bg-hover);
+  border-color: var(--profile-action-border-strong);
+  color: var(--color-primary);
 }
 
 @media (max-width: 768px) {
@@ -135,10 +162,10 @@ function goToProfile() {
 <style>
 /* ===== Material 3 Overrides ===== */
 #app[data-ui-style='material'] .sub-header .sub-header__content {
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
-  background: var(--color-surface, #fff);
+  background: var(--color-surface, var(--profile-surface-bg));
   box-shadow: var(--shadow-sm);
 }
 
@@ -163,7 +190,7 @@ function goToProfile() {
 
 /* ===== Material + Blue ===== */
 #app[data-ui-style='material'][data-theme='blue'] .sub-header .sub-header__content {
-  background: #ffffff;
+  background: var(--profile-surface-bg);
   border-color: rgba(59, 130, 246, 0.1);
 }
 </style>

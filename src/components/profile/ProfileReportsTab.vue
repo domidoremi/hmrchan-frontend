@@ -2,7 +2,7 @@
   <div class="reports-tab">
     <div class="tab-header">
       <h2 class="tab-title">{{ $t('profile.tabs.reports') }}</h2>
-      <span v-if="total > 0" class="item-count">{{ total }}</span>
+      <span v-if="total > 0" class="item-count profile-item-count">{{ total }}</span>
     </div>
 
     <StateIndicator v-if="error" variant="error" :description="error" @action="fetchReports" />
@@ -248,7 +248,7 @@ onUnmounted(() => {
 
 .report-card:hover {
   border-left-color: rgba(var(--color-primary-rgb), 0.2);
-  transform: translateY(-1px);
+  transform: none;
 }
 
 .report-card__header,

@@ -7,7 +7,7 @@
             <div class="auth-header">
               <button
                 type="button"
-                class="back-btn glass-button"
+                class="back-btn page-control-btn page-control-btn--square"
                 :aria-label="$t('common.back')"
                 @click="handleBackWithMood"
               >
@@ -206,7 +206,7 @@
                 <div class="resend-row">
                   <button
                     type="button"
-                    class="resend-btn"
+                    class="resend-btn page-control-btn page-control-btn--compact"
                     :disabled="resendCooldown > 0 || isSendingCode"
                     @click="handleResendCodeClick"
                   >
@@ -217,7 +217,11 @@
                         : $t('emailCode.resend')
                     }}
                   </button>
-                  <button type="button" class="change-email-btn" @click="handleChangeEmailClick">
+                  <button
+                    type="button"
+                    class="change-email-btn page-control-btn page-control-btn--compact"
+                    @click="handleChangeEmailClick"
+                  >
                     {{ $t('auth.changeEmail') }}
                   </button>
                 </div>
@@ -964,10 +968,23 @@ function isTurnstileTokenFresh() {
   background: #ede6da;
 }
 
+.auth-topline,
+.auth-headings {
+  display: grid;
+}
+
+.auth-topline {
+  gap: var(--spacing-3);
+}
+
+.auth-headings {
+  gap: var(--spacing-1);
+}
+
 .auth-title {
   font-size: clamp(1.45rem, 1.2rem + 1.1vw, 2.1rem);
   text-align: left;
-  margin-bottom: var(--spacing-1);
+  margin: 0;
   letter-spacing: 0.012em;
   color: #212840;
 }
@@ -975,7 +992,8 @@ function isTurnstileTokenFresh() {
 .auth-subtitle {
   text-align: left;
   color: rgba(50, 58, 90, 0.72);
-  margin-bottom: var(--spacing-4);
+  margin: 0;
+  max-inline-size: 34ch;
   font-size: var(--text-xs);
 }
 
@@ -1055,15 +1073,12 @@ function isTurnstileTokenFresh() {
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  margin-bottom: var(--spacing-2);
+  margin-bottom: 0;
 }
 
 .back-btn {
-  padding: var(--spacing-2);
-  border-radius: var(--radius-full);
-  border: 1px solid rgba(74, 85, 135, 0.2);
-  background: rgba(95, 108, 174, 0.08);
-  color: #3a4266;
+  padding: 0;
+  align-self: flex-start;
 }
 
 .password-field {
@@ -1085,11 +1100,13 @@ function isTurnstileTokenFresh() {
   align-items: center;
   justify-content: center;
   border-radius: 0.75rem;
+  border: 1px solid rgba(82, 95, 150, 0.16);
+  background: rgba(110, 120, 182, 0.08);
   color: rgba(49, 58, 91, 0.72);
 }
 
 .password-toggle:hover {
-  background: rgba(109, 120, 176, 0.14);
+  background: rgba(109, 120, 176, 0.16);
   color: #2e3554;
 }
 
@@ -1274,25 +1291,18 @@ function isTurnstileTokenFresh() {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--spacing-2);
   margin-top: var(--spacing-1);
 }
 
 .resend-btn,
 .change-email-btn {
   font-size: var(--text-xs);
-  color: rgba(52, 62, 97, 0.76);
-  padding: var(--spacing-1) 0;
-  transition: color 150ms ease;
-}
-
-.resend-btn:not(:disabled):hover,
-.change-email-btn:hover {
-  color: #4957dd;
 }
 
 .resend-btn:disabled {
   cursor: not-allowed;
-  opacity: 0.6;
 }
 
 @media (max-width: 68rem) {
@@ -1341,6 +1351,10 @@ function isTurnstileTokenFresh() {
     justify-content: center;
   }
 
+  .resend-row > * {
+    flex: 1 1 100%;
+  }
+
   .auth-title,
   .auth-subtitle,
   .auth-helper {
@@ -1357,12 +1371,12 @@ function isTurnstileTokenFresh() {
 @keyframes auth-card-enter-right {
   0% {
     opacity: 0;
-    transform: rotateY(14deg) translateX(1.2rem) scale(0.98);
+    transform: translateY(0.75rem) scale(0.985);
   }
 
   100% {
     opacity: 1;
-    transform: rotateY(0) translateX(0) scale(1);
+    transform: translateY(0) scale(1);
   }
 }
 </style>

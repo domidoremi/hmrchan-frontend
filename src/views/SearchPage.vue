@@ -6,7 +6,7 @@
           <div class="search-header-top">
             <button
               type="button"
-              class="back-btn glass-btn"
+              class="back-btn page-control-btn page-control-btn--square"
               @click="goBack"
               :aria-label="$t('common.back')"
             >
@@ -32,12 +32,12 @@
           </div>
 
           <div class="search-filters">
-            <div class="filter-tabs">
+            <div class="filter-tabs page-control-group">
               <button
                 v-for="tab in tabs"
                 :key="tab.id"
                 type="button"
-                class="filter-tab"
+                class="filter-tab page-control-btn"
                 :class="{ active: activeTab === tab.id }"
                 :aria-pressed="activeTab === tab.id"
                 @click="activeTab = tab.id"
@@ -49,20 +49,24 @@
                   :active="activeTab === tab.id"
                 />
                 {{ tab.label }}
-                <span v-if="tab.id === 'posts' && total > 0" class="tab-count">{{ total }}</span>
-                <span v-if="tab.id === 'authors' && authorTotal > 0" class="tab-count">{{
-                  authorTotal
+                <span v-if="tab.id === 'posts' && total > 0" class="tab-count page-control-count">{{
+                  total
                 }}</span>
+                <span
+                  v-if="tab.id === 'authors' && authorTotal > 0"
+                  class="tab-count page-control-count"
+                  >{{ authorTotal }}</span
+                >
               </button>
             </div>
 
             <div class="filter-options">
-              <div v-if="activeTab === 'posts'" class="platform-filters">
+              <div v-if="activeTab === 'posts'" class="platform-filters page-control-group">
                 <button
                   v-for="platform in platformOptions"
                   :key="platform.value"
                   type="button"
-                  class="platform-btn"
+                  class="platform-btn page-control-btn page-control-btn--compact"
                   :class="{ active: currentPlatform === platform.value }"
                   :aria-pressed="currentPlatform === platform.value"
                   @click="currentPlatform = platform.value"
@@ -85,7 +89,7 @@
                 </Select>
                 <button
                   type="button"
-                  class="sort-order-btn"
+                  class="sort-order-btn page-control-btn page-control-btn--square"
                   :class="{ 'sort-order-btn--asc': sortOrder === 'asc' }"
                   :aria-pressed="sortOrder === 'asc'"
                   :aria-label="
@@ -143,15 +147,11 @@
             />
 
             <!-- 未登录用户提示 -->
-            <div v-if="mayHaveMoreResults && results.length > 0" class="login-hint glass-card">
+            <div v-if="mayHaveMoreResults && results.length > 0" class="login-hint empty-surface">
               <AnimatedIcon name="user" :fallback-icon="LogIn" size="md" class="login-hint-icon" />
               <div class="login-hint-content">
                 <p class="login-hint-text">{{ $t('search.loginForMore') }}</p>
-                <button
-                  type="button"
-                  class="login-hint-btn glass-button glass-button--primary"
-                  @click="goToLogin"
-                >
+                <button type="button" class="login-hint-btn page-control-btn" @click="goToLogin">
                   {{ $t('nav.login') }}
                 </button>
               </div>
@@ -160,7 +160,7 @@
 
           <template v-else-if="activeTab === 'authors'">
             <div v-if="isLoadingAuthors && authors.length === 0" class="results-loading">
-              <div v-for="i in 4" :key="i" class="author-skeleton glass-card">
+              <div v-for="i in 4" :key="i" class="author-skeleton empty-surface">
                 <Skeleton variant="avatar" width="56px" height="56px" />
                 <div class="skeleton-content">
                   <Skeleton width="60%" height="18px" />
@@ -187,7 +187,7 @@
                 v-for="author in authors"
                 :key="author.id"
                 v-memo="getAuthorMemo(author)"
-                class="author-card glass-card"
+                class="author-card page-list-card"
                 role="button"
                 tabindex="0"
                 @click="goToAuthor(author.id)"
@@ -238,7 +238,7 @@
           </div>
         </div>
 
-        <section v-if="isAuthenticated" class="search-history-section glass-card">
+        <section v-if="isAuthenticated" class="search-history-section empty-surface">
           <div class="search-history-header">
             <div>
               <h2 class="search-history-title">{{ $t('search.history') }}</h2>
@@ -248,7 +248,7 @@
             <div class="search-history-actions">
               <button
                 type="button"
-                class="glass-button search-history-action"
+                class="search-history-action page-control-btn page-control-btn--compact"
                 :disabled="isHistoryLoading || isHistoryMutating"
                 @click="fetchSearchInsights"
               >
@@ -258,7 +258,7 @@
               <button
                 v-if="searchHistory.length > 0"
                 type="button"
-                class="glass-button search-history-action"
+                class="search-history-action page-control-btn page-control-btn--compact"
                 :disabled="isHistoryMutating"
                 @click="clearSearchHistory"
               >
@@ -276,7 +276,7 @@
           />
 
           <div v-else class="search-history-layout">
-            <section class="search-history-panel">
+            <section class="search-history-panel page-list-card">
               <div class="search-history-panel__header">
                 <AnimatedIcon name="explore" :fallback-icon="History" size="sm" />
                 <h3>{{ $t('search.recentSearches') }}</h3>
@@ -324,14 +324,14 @@
               </div>
             </section>
 
-            <section class="search-history-panel">
+            <section class="search-history-panel page-list-card">
               <div class="search-history-panel__header">
                 <AnimatedIcon name="sparkle" :fallback-icon="BarChart3" size="sm" />
                 <h3>{{ $t('search.searchStats') }}</h3>
               </div>
 
               <div class="search-history-stats">
-                <article class="search-history-stat glass-card">
+                <article class="search-history-stat page-list-card">
                   <span class="search-history-stat__value">
                     {{ searchStats?.search_history_count ?? 0 }}
                   </span>
@@ -339,7 +339,7 @@
                     {{ $t('search.searchHistoryCount') }}
                   </span>
                 </article>
-                <article class="search-history-stat glass-card">
+                <article class="search-history-stat page-list-card">
                   <span class="search-history-stat__value">
                     {{ searchStats?.browsing_history_count ?? 0 }}
                   </span>
@@ -356,7 +356,7 @@
                     v-for="item in topSearchQueries"
                     :key="item.query"
                     type="button"
-                    class="search-history-tag"
+                    class="search-history-tag page-control-btn page-control-btn--compact"
                     @click="runSearch(item.query)"
                   >
                     <span>#{{ item.query }}</span>
@@ -381,7 +381,7 @@
             </div>
             <button
               type="button"
-              class="discover-refresh glass-button"
+              class="discover-refresh page-control-btn"
               :disabled="isDiscoverLoading"
               @click="fetchDiscoverPosts"
             >
@@ -1092,23 +1092,8 @@ onBeforeUnmount(() => {
 
 .search-header .back-btn {
   position: absolute;
-  left: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.25rem;
-  height: 2.25rem;
-  padding: 0;
-  border-radius: var(--radius-lg);
-  color: var(--color-text-secondary);
-  background: var(--glass-bg-subtle);
-  border: 1px solid var(--glass-border);
-  transition: all var(--transition-fast);
-}
-
-.search-header .back-btn:hover {
-  background: var(--glass-bg-light);
-  color: var(--color-text-primary);
+  inset-inline-start: 0;
+  z-index: 1;
 }
 
 .search-title {
@@ -1161,37 +1146,15 @@ onBeforeUnmount(() => {
 }
 
 .filter-tabs {
-  display: flex;
-  gap: var(--spacing-1);
+  flex: 1 1 auto;
 }
 
 .filter-tab {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-1);
-  padding: var(--spacing-2) var(--spacing-3);
-  border-radius: var(--radius-lg);
-  font-size: var(--text-sm);
-  font-weight: var(--font-medium);
-  color: var(--color-text-secondary);
-  transition: all var(--transition-fast);
-}
-
-.filter-tab:hover {
-  background: var(--glass-bg-light);
-  color: var(--color-text);
-}
-
-.filter-tab.active {
-  background: var(--color-primary);
-  color: var(--color-on-primary);
+  white-space: nowrap;
 }
 
 .tab-count {
-  padding: 0 var(--spacing-2);
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: var(--radius-full);
-  font-size: var(--text-xs);
+  flex-shrink: 0;
 }
 
 .filter-options {
@@ -1202,184 +1165,12 @@ onBeforeUnmount(() => {
 }
 
 .platform-filters {
-  display: flex;
-  gap: var(--spacing-1);
+  justify-content: flex-end;
 }
 
 .platform-btn {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-1);
-  padding: var(--spacing-1) var(--spacing-2);
-  border-radius: var(--radius-md);
-  font-size: var(--text-xs);
-  color: var(--color-text-secondary);
-  background: var(--glass-bg-subtle);
-  border: 1px solid transparent;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
-  overflow: hidden;
-}
-
-.platform-btn::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.platform-btn:hover {
-  background: var(--glass-bg-light);
-  color: var(--color-text-primary);
-  transform: translateY(-2px);
-}
-
-.platform-btn.active {
-  transform: translateY(-1px) scale(1.02);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-/* All Platforms - 简约主色 */
-.platform-btn:nth-child(1).active {
-  background: rgba(var(--color-accent-rgb), 0.15);
-  color: var(--color-accent);
-  border-color: rgba(var(--color-accent-rgb), 0.4);
-}
-
-.platform-btn:nth-child(1).active::before {
-  background: radial-gradient(
-    circle at 50% 50%,
-    rgba(var(--color-accent-rgb), 0.3),
-    transparent 70%
-  );
-  opacity: 1;
-  animation: platform-pulse 2s ease-in-out infinite;
-}
-
-/* YouTube - 红色 */
-.platform-btn:nth-child(2).active {
-  background: linear-gradient(135deg, rgba(255, 0, 51, 0.15), rgba(255, 68, 68, 0.1));
-  color: #ff0033;
-  border-color: rgba(255, 0, 51, 0.4);
-}
-
-.platform-btn:nth-child(2).active::before {
-  background: radial-gradient(circle at 50% 50%, rgba(255, 0, 51, 0.3), transparent 70%);
-  opacity: 1;
-  animation: platform-pulse-youtube 1.5s ease-in-out infinite;
-}
-
-/* TikTok - 青色渐变 */
-.platform-btn:nth-child(3).active {
-  background: linear-gradient(135deg, rgba(0, 242, 234, 0.15), rgba(255, 0, 80, 0.1));
-  color: #00f2ea;
-  border-color: rgba(0, 242, 234, 0.4);
-}
-
-.platform-btn:nth-child(3).active::before {
-  background: linear-gradient(45deg, rgba(0, 242, 234, 0.3), rgba(255, 0, 80, 0.2));
-  opacity: 1;
-  animation: platform-pulse-tiktok 1.2s ease-in-out infinite;
-}
-
-/* X/Twitter - 蓝色 */
-.platform-btn:nth-child(4).active {
-  background: linear-gradient(135deg, rgba(29, 155, 240, 0.2), rgba(29, 155, 240, 0.1));
-  color: #1d9bf0;
-  border-color: rgba(29, 155, 240, 0.4);
-}
-
-.platform-btn:nth-child(4).active::before {
-  background: radial-gradient(circle at 30% 30%, rgba(29, 155, 240, 0.4), transparent 60%);
-  opacity: 1;
-  animation: platform-pulse-twitter 2.5s ease-in-out infinite;
-}
-
-/* Instagram - 渐变紫红 */
-.platform-btn:nth-child(5).active {
-  background: linear-gradient(135deg, rgba(225, 48, 108, 0.15), rgba(131, 58, 180, 0.1));
-  color: #e1306c;
-  border-color: rgba(225, 48, 108, 0.4);
-}
-
-.platform-btn:nth-child(5).active::before {
-  background: linear-gradient(
-    45deg,
-    rgba(252, 175, 69, 0.25),
-    rgba(225, 48, 108, 0.3),
-    rgba(131, 58, 180, 0.25)
-  );
-  opacity: 1;
-  animation: platform-pulse-instagram 3s ease-in-out infinite;
-}
-
-@keyframes platform-pulse {
-  0%,
-  100% {
-    opacity: 0.6;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 1;
-    transform: scale(1.05);
-  }
-}
-
-@keyframes platform-pulse-youtube {
-  0%,
-  100% {
-    opacity: 0.5;
-  }
-  50% {
-    opacity: 0.9;
-  }
-}
-
-@keyframes platform-pulse-tiktok {
-  0%,
-  100% {
-    opacity: 0.5;
-    background-position: 0% 50%;
-  }
-  50% {
-    opacity: 0.9;
-    background-position: 100% 50%;
-  }
-}
-
-@keyframes platform-pulse-twitter {
-  0%,
-  100% {
-    opacity: 0.4;
-    transform: translateX(-10%) translateY(-10%);
-  }
-  50% {
-    opacity: 0.8;
-    transform: translateX(10%) translateY(10%);
-  }
-}
-
-@keyframes platform-pulse-instagram {
-  0%,
-  100% {
-    opacity: 0.5;
-    filter: hue-rotate(0deg);
-  }
-  50% {
-    opacity: 0.9;
-    filter: hue-rotate(15deg);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .platform-btn::before {
-    animation: none !important;
-  }
-  .platform-btn:hover,
-  .platform-btn.active {
-    transform: none;
-  }
+  justify-content: flex-start;
+  min-inline-size: max-content;
 }
 
 .platform-label {
@@ -1393,7 +1184,7 @@ onBeforeUnmount(() => {
 }
 
 .sort-select {
-  min-width: 11.25rem;
+  min-inline-size: 11.25rem;
 }
 
 .sort-controls {
@@ -1403,27 +1194,14 @@ onBeforeUnmount(() => {
 }
 
 .sort-order-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.25rem;
-  height: 2.25rem;
-  border-radius: var(--radius-md);
-  background: var(--glass-bg-subtle);
-  color: var(--color-text-secondary);
-  transition: all var(--transition-fast);
+  flex-shrink: 0;
 }
 
-.sort-order-btn:hover {
-  background: var(--glass-bg-light);
-  color: var(--color-text-primary);
-}
-
-.sort-order-btn svg {
+.sort-order-btn :deep(svg) {
   transition: transform var(--transition-fast);
 }
 
-.sort-order-btn--asc svg {
+.sort-order-btn--asc :deep(svg) {
   transform: rotate(180deg);
 }
 
@@ -1459,8 +1237,33 @@ onBeforeUnmount(() => {
 
 .login-hint-btn {
   flex-shrink: 0;
-  padding: var(--spacing-2) var(--spacing-4);
-  font-size: var(--text-sm);
+  white-space: nowrap;
+}
+
+.login-hint-btn.page-control-btn {
+  background:
+    linear-gradient(
+      135deg,
+      rgba(var(--color-primary-rgb), 0.96),
+      rgba(var(--color-accent-rgb), 0.88)
+    ),
+    rgba(var(--color-primary-rgb), 0.92);
+  border-color: rgba(var(--color-primary-rgb), 0.16);
+  color: var(--color-on-primary);
+  box-shadow: 0 0.9rem 1.7rem -1.25rem rgba(var(--color-primary-rgb), 0.34);
+}
+
+.login-hint-btn.page-control-btn:hover {
+  background:
+    linear-gradient(
+      135deg,
+      rgba(var(--color-primary-rgb), 0.98),
+      rgba(var(--color-accent-rgb), 0.92)
+    ),
+    rgba(var(--color-primary-rgb), 0.94);
+  border-color: rgba(var(--color-primary-rgb), 0.22);
+  color: var(--color-on-primary);
+  transform: none;
 }
 
 .results-loading {
@@ -1492,7 +1295,7 @@ onBeforeUnmount(() => {
 }
 
 .posts-masonry {
-  --masonry-columns: 2;
+  --masonry-columns: 1;
   --masonry-gap: var(--spacing-3);
 
   column-count: var(--masonry-columns);
@@ -1542,31 +1345,31 @@ onBeforeUnmount(() => {
 
 .authors-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--spacing-3);
 }
 
 @media (min-width: 640px) {
   .authors-grid {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
 @media (min-width: 1024px) {
   .authors-grid {
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 
 @media (min-width: 1400px) {
   .authors-grid {
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(5, minmax(0, 1fr));
   }
 }
 
 @media (min-width: 1800px) {
   .authors-grid {
-    grid-template-columns: repeat(6, 1fr);
+    grid-template-columns: repeat(6, minmax(0, 1fr));
   }
 }
 
@@ -1576,24 +1379,13 @@ onBeforeUnmount(() => {
   gap: var(--spacing-3);
   padding: var(--spacing-3);
   cursor: pointer;
-  transition: transform var(--transition-fast);
-}
-
-.author-card:hover {
-  transform: translateY(-2px);
-}
-
-.author-card:focus-visible {
-  outline: none;
-  transform: translateY(-2px);
-  box-shadow:
-    var(--shadow-md),
-    0 0 0 2px rgba(var(--color-primary-rgb), 0.35);
+  min-inline-size: 0;
+  text-align: left;
 }
 
 .author-avatar {
-  width: 3rem;
-  height: 3rem;
+  inline-size: 3rem;
+  block-size: 3rem;
   border-radius: 50%;
   object-fit: cover;
   flex-shrink: 0;
@@ -1609,7 +1401,9 @@ onBeforeUnmount(() => {
 
 .author-info {
   flex: 1;
-  min-width: 0;
+  min-inline-size: 0;
+  display: grid;
+  gap: var(--spacing-1);
 }
 
 .author-name {
@@ -1737,9 +1531,7 @@ onBeforeUnmount(() => {
 }
 
 .search-history-action {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--spacing-2);
+  white-space: nowrap;
 }
 
 .search-history-layout {
@@ -1751,9 +1543,7 @@ onBeforeUnmount(() => {
   display: grid;
   gap: var(--spacing-3);
   padding: clamp(0.875rem, 2vw, 1rem);
-  border-radius: var(--radius-xl);
-  background: var(--glass-bg-subtle);
-  border: 1px solid var(--glass-border);
+  min-inline-size: 0;
 }
 
 .search-history-panel__header {
@@ -1780,8 +1570,20 @@ onBeforeUnmount(() => {
   gap: var(--spacing-2);
   padding: var(--spacing-2) var(--spacing-3);
   border-radius: var(--radius-lg);
-  background: var(--glass-bg-light);
-  border: 1px solid var(--glass-border);
+  border: 1px solid var(--page-control-border);
+  background: var(--page-control-bg);
+  box-shadow: 0 0.85rem 1.65rem -1.45rem rgba(15, 23, 42, 0.22);
+  transition:
+    background 220ms var(--ease-out),
+    border-color 220ms var(--ease-out),
+    box-shadow 220ms var(--ease-out);
+}
+
+.search-history-item:hover,
+.search-history-item:focus-within {
+  background: var(--page-control-bg-hover);
+  border-color: var(--page-control-border-strong);
+  box-shadow: 0 1rem 1.85rem -1.55rem rgba(15, 23, 42, 0.28);
 }
 
 .search-history-item--skeleton {
@@ -1790,10 +1592,15 @@ onBeforeUnmount(() => {
 
 .search-history-item__main {
   flex: 1;
-  min-width: 0;
+  min-inline-size: 0;
   display: grid;
   gap: 0.125rem;
   text-align: left;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
 }
 
 .search-history-item__query {
@@ -1811,20 +1618,26 @@ onBeforeUnmount(() => {
 }
 
 .search-history-item__delete {
-  width: 1.75rem;
-  height: 1.75rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 9999px;
+  inline-size: 1.75rem;
+  block-size: 1.75rem;
+  border-radius: var(--radius-full);
+  border: 1px solid transparent;
+  padding: 0;
+  background: transparent;
   color: var(--color-text-tertiary);
+  cursor: pointer;
   transition:
     background var(--transition-fast),
+    border-color var(--transition-fast),
     color var(--transition-fast);
 }
 
 .search-history-item__delete:hover {
   background: rgba(var(--color-error-rgb, 239, 68, 68), 0.1);
+  border-color: rgba(var(--color-error-rgb, 239, 68, 68), 0.14);
   color: var(--color-error);
 }
 
@@ -1838,6 +1651,7 @@ onBeforeUnmount(() => {
   display: grid;
   gap: 0.25rem;
   padding: var(--spacing-3);
+  min-inline-size: 0;
 }
 
 .search-history-stat__value {
@@ -1862,14 +1676,7 @@ onBeforeUnmount(() => {
 }
 
 .search-history-tag {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--spacing-2);
-  padding: 0.375rem 0.75rem;
-  border-radius: var(--radius-full);
-  background: rgba(var(--color-primary-rgb), 0.08);
-  color: var(--color-primary);
-  font-size: var(--text-xs);
+  justify-content: flex-start;
 }
 
 .search-history-tag__count {
@@ -1909,11 +1716,7 @@ onBeforeUnmount(() => {
 }
 
 .discover-refresh {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--spacing-1);
-  padding: var(--spacing-2) var(--spacing-3);
-  font-size: var(--text-xs);
+  flex-shrink: 0;
 }
 
 .discover-refresh:disabled {
@@ -1926,25 +1729,85 @@ onBeforeUnmount(() => {
 }
 
 @media (max-width: 768px) {
+  .search-header {
+    text-align: left;
+  }
+
+  .search-overview {
+    align-items: stretch;
+  }
+
+  .search-meta,
+  .search-filters {
+    inline-size: 100%;
+  }
+
+  .search-header-top {
+    justify-content: flex-start;
+  }
+
+  .search-header .back-btn {
+    position: static;
+    flex-shrink: 0;
+  }
+
+  .search-title {
+    min-inline-size: 0;
+  }
+
   .search-filters {
     flex-direction: column;
     align-items: stretch;
   }
 
   .filter-tabs {
+    inline-size: 100%;
+    flex-wrap: wrap;
+  }
+
+  .filter-tab {
+    flex: 1 1 0;
     justify-content: center;
+    min-inline-size: 0;
   }
 
   .filter-options {
-    justify-content: space-between;
+    inline-size: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .platform-filters {
+    display: grid;
+    inline-size: 100%;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .platform-btn {
+    justify-content: center;
+  }
+
+  .platform-label {
+    display: inline;
+  }
+
+  .sort-controls {
+    inline-size: 100%;
   }
 
   .sort-select {
     flex: 1;
+    min-inline-size: 0;
   }
 
   .search-history-stats {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .filter-tab {
+    flex-basis: calc(50% - (var(--spacing-1) / 2));
   }
 }
 

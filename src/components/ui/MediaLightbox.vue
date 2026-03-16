@@ -971,7 +971,9 @@ onUnmounted(() => {
 .lightbox-slide-left-leave-active,
 .lightbox-slide-right-enter-active,
 .lightbox-slide-right-leave-active {
-  transition: all 0.3s var(--ease-out);
+  transition:
+    opacity 0.3s var(--ease-out),
+    transform 0.3s var(--ease-out);
 }
 
 .lightbox-slide-left-enter-from {

@@ -1,7 +1,7 @@
 <template>
   <div class="author-detail-page">
     <div class="container">
-      <div v-if="showPreviewNotice" class="fallback-preview glass-card">
+      <div v-if="showPreviewNotice" class="fallback-preview empty-surface">
         <span class="fallback-preview__label">{{ $t('home.preview.label') }}</span>
         <p>{{ $t('home.preview.desc') }}</p>
         <span v-if="fallbackReason" class="fallback-preview__detail">{{ fallbackReason }}</span>
@@ -15,7 +15,7 @@
       />
 
       <template v-else>
-        <div class="author-header glass-card">
+        <div class="author-header empty-surface">
           <template v-if="isLoading">
             <Skeleton variant="avatar" width="80px" height="80px" />
             <div class="author-info">
@@ -44,10 +44,10 @@
           </template>
         </div>
 
-        <h2 class="section-title">{{ $t('author.posts') }}</h2>
+        <h2 class="author-section-title">{{ $t('author.posts') }}</h2>
         <div class="posts-grid">
           <template v-if="isLoading">
-            <div v-for="i in 6" :key="i" class="post-card glass-card">
+            <div v-for="i in 6" :key="i" class="post-card page-list-card">
               <Skeleton variant="image" width="100%" />
             </div>
           </template>
@@ -241,11 +241,14 @@ onBeforeUnmount(() => {
   padding: var(--spacing-4) 0;
 }
 
+.container {
+  display: grid;
+  gap: var(--spacing-4);
+}
+
 .fallback-preview {
   display: grid;
   gap: var(--spacing-2);
-  padding: clamp(1rem, 1.8vw, 1.25rem);
-  margin-block-end: var(--spacing-4);
 }
 
 .fallback-preview__label {
@@ -272,68 +275,35 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   gap: var(--spacing-4);
-  padding: var(--spacing-4);
-  margin-bottom: var(--spacing-4);
 }
 
 .author-avatar {
-  width: 4.5rem;
-  height: 4.5rem;
+  inline-size: 4.5rem;
+  block-size: 4.5rem;
   border-radius: 50%;
   flex-shrink: 0;
 }
 
 @media (min-width: 768px) {
   .author-header {
-    padding: var(--spacing-5);
     gap: var(--spacing-5);
   }
 
   .author-avatar {
-    width: 5.5rem;
-    height: 5.5rem;
+    inline-size: 5.5rem;
+    block-size: 5.5rem;
   }
 }
 
-.section-title {
+.author-section-title {
   font-size: var(--text-lg);
-  margin-bottom: var(--spacing-3);
+  margin: 0;
 }
 
 .posts-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 11rem), 1fr));
   gap: var(--spacing-3);
-}
-
-@media (min-width: 480px) {
-  .posts-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
-@media (min-width: 768px) {
-  .posts-grid {
-    grid-template-columns: repeat(4, 1fr);
-  }
-}
-
-@media (min-width: 1024px) {
-  .posts-grid {
-    grid-template-columns: repeat(5, 1fr);
-  }
-}
-
-@media (min-width: 1400px) {
-  .posts-grid {
-    grid-template-columns: repeat(6, 1fr);
-  }
-}
-
-@media (min-width: 1800px) {
-  .posts-grid {
-    grid-template-columns: repeat(7, 1fr);
-  }
 }
 
 .post-card {

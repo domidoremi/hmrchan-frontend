@@ -603,12 +603,11 @@ function handleClick() {
   overflow: hidden;
   cursor: pointer;
   transition:
-    transform 220ms var(--ease-out),
-    box-shadow 220ms var(--ease-out);
+    box-shadow 220ms var(--ease-out),
+    border-color 220ms var(--ease-out);
 }
 
 .post-card:hover {
-  transform: translateY(-0.125rem);
   box-shadow:
     0 1.1rem 2rem -1.4rem rgba(15, 23, 42, 0.26),
     0 0.375rem 0.75rem -0.625rem rgba(15, 23, 42, 0.14);
@@ -649,10 +648,6 @@ function handleClick() {
     transform var(--transition-fast),
     background var(--transition-fast);
   border: 1px solid rgba(255, 255, 255, 0.12);
-}
-
-.post-card:hover .platform-badge {
-  transform: translateY(-0.03125rem);
 }
 
 .platform-label {
@@ -731,7 +726,7 @@ function handleClick() {
   display: block;
   object-fit: cover;
   opacity: 0;
-  transform: scale(1.02);
+  transform: scale(1.01);
   transition:
     opacity var(--duration-normal) var(--ease-out),
     transform var(--duration-normal) var(--ease-out);
@@ -748,7 +743,7 @@ function handleClick() {
 }
 
 .post-card:hover .post-image.is-loaded {
-  transform: scale(1.02);
+  transform: scale(1.01);
 }
 
 .post-card--contain:hover .post-image.is-loaded {
@@ -902,7 +897,13 @@ function handleClick() {
   color: var(--color-primary);
 }
 
-.post-meta {
+[data-theme='dark'] .post-tag {
+  background: rgba(15, 23, 42, 0.78);
+  border-color: rgba(255, 255, 255, 0.08);
+  color: var(--color-gray-200);
+}
+
+post-meta {
   display: flex;
   align-items: center;
   justify-content: space-between;

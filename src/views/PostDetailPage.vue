@@ -1707,25 +1707,25 @@ onUnmounted(() => {
 /* Light theme: darker nav buttons for contrast */
 :root .media-nav,
 [data-theme='blue'] .media-nav {
-  background: rgba(0, 0, 0, 0.25);
-  border-color: rgba(0, 0, 0, 0.06);
-  color: #fff;
+  background: rgba(15, 23, 42, 0.56);
+  border-color: rgba(255, 255, 255, 0.14);
+  color: rgba(255, 255, 255, 0.96);
 }
 
 :root .media-nav:hover:not(:disabled),
 [data-theme='blue'] .media-nav:hover:not(:disabled) {
-  background: rgba(0, 0, 0, 0.45);
+  background: rgba(15, 23, 42, 0.72);
 }
 
-/* Dark theme: lighter glass nav */
+/* Dark theme: stable high-contrast nav */
 [data-theme='dark'] .media-nav {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(8, 12, 18, 0.76);
   border-color: rgba(255, 255, 255, 0.12);
-  color: rgba(255, 255, 255, 0.92);
+  color: rgba(255, 255, 255, 0.96);
 }
 
 [data-theme='dark'] .media-nav:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.18);
+  background: rgba(17, 24, 39, 0.92);
 }
 
 .post-panel {
@@ -2095,7 +2095,9 @@ onUnmounted(() => {
 .media-slide-left-leave-active,
 .media-slide-right-enter-active,
 .media-slide-right-leave-active {
-  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  transition:
+    opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .media-slide-left-enter-from {
