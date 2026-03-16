@@ -168,7 +168,7 @@
               </div>
             </div>
 
-            <div v-if="turnstileEnabled" class="turnstile-block">
+            <div v-if="showTurnstileChallenge" class="turnstile-block">
               <div class="turnstile-header">
                 <span class="turnstile-title">{{ $t('auth.verifyTitle') }}</span>
                 <span class="turnstile-hint">{{ $t('auth.verifyHint') }}</span>
@@ -185,12 +185,7 @@
 
             <p v-if="formError" class="field-error">{{ formError }}</p>
 
-            <Button
-              type="submit"
-              :loading="isLoading"
-              :disabled="turnstileEnabled && !turnstileToken"
-              full-width
-            >
+            <Button type="submit" :loading="isLoading" full-width>
               {{ $t('auth.loginButton') }}
             </Button>
 
@@ -290,8 +285,12 @@ const riskExpiresIn = ref<number | null>(null)
 
 const { turnstileSiteKey, turnstileEnabled } = useTurnstileConfig()
 const turnstileToken = ref<string | null>(null)
+const requiresTurnstileChallenge = ref(false)
 const turnstileRef = useTemplateRef<{ reset: () => void; getResponse: () => string | undefined }>(
   'turnstileRef'
+)
+const showTurnstileChallenge = computed(
+  () => turnstileEnabled.value && requiresTurnstileChallenge.value
 )
 
 const riskExpiresInLabel = computed(() => {
@@ -432,8 +431,9 @@ async function handleLogin() {
     return
   }
 
-  if (turnstileEnabled.value && !turnstileToken.value) {
-    toastStore.warning(t('auth.error.turnstileRequired'))
+  if (showTurnstileChallenge.value && !turnstileToken.value) {
+    formError.value = t('auth.error.turnstileRequired')
+    toastStore.warning(formError.value)
     setVisualMood('typing', 900)
     return
   }
@@ -445,6 +445,8 @@ async function handleLogin() {
   )
 
   if (result.success) {
+    requiresTurnstileChallenge.value = false
+    turnstileToken.value = null
     setVisualMood('success', 900)
     toastStore.success(t('auth.loginSuccess'))
     // 显示安全警告（新设备、异常 IP 等）
@@ -455,6 +457,8 @@ async function handleLogin() {
     }
     router.replace(redirectTo.value)
   } else if (result.requires2fa && result.pendingToken) {
+    requiresTurnstileChallenge.value = false
+    turnstileToken.value = null
     // 进入 2FA 验证步骤
     pendingToken.value = result.pendingToken
     show2fa.value = true
@@ -462,6 +466,8 @@ async function handleLogin() {
     formError.value = ''
     setVisualMood('typing')
   } else if (result.requiresRiskVerification && result.pendingToken) {
+    requiresTurnstileChallenge.value = false
+    turnstileToken.value = null
     riskPendingToken.value = result.pendingToken
     riskChallengeType.value = result.challengeType || 'email_code'
     riskExpiresIn.value = result.expiresIn ?? null
@@ -470,7 +476,17 @@ async function handleLogin() {
     formError.value = ''
     setVisualMood('typing')
   } else {
+    const turnstileRequired = result.error === 'auth.error.turnstileRequired'
     turnstileToken.value = null
+    if (turnstileRequired && turnstileEnabled.value) {
+      requiresTurnstileChallenge.value = true
+      turnstileRef.value?.reset()
+      formError.value = t('auth.error.turnstileRequired')
+      toastStore.warning(formError.value)
+      setVisualMood('typing', 900)
+      return
+    }
+
     turnstileRef.value?.reset()
     toastStore.error(t(result.error || 'auth.invalidCredentials'))
     setVisualMood('dodge', 1200)
@@ -583,18 +599,21 @@ function resetRiskVerification() {
 }
 
 function handleTurnstileVerify(token: string) {
+  requiresTurnstileChallenge.value = true
   turnstileToken.value = token
   formError.value = ''
   setVisualMood('typing', 500)
 }
 
 function handleTurnstileExpire() {
+  requiresTurnstileChallenge.value = true
   turnstileToken.value = null
   formError.value = t('auth.error.turnstileRequired')
   setVisualMood('typing', 500)
 }
 
 function handleTurnstileError(error?: Error) {
+  requiresTurnstileChallenge.value = true
   turnstileToken.value = null
   const message = t(getTurnstileErrorMessageKey(error))
   formError.value = message

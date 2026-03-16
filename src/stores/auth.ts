@@ -676,6 +676,11 @@ export const useAuthStore = defineStore(
         case 'AUTH_1006':
         case 'TWO_FACTOR_REQUIRED':
           return 'auth.error.twoFactorRequired'
+        case 'CHALLENGE_REQUIRED':
+        case 'TURNSTILE_REQUIRED':
+          return 'auth.error.turnstileRequired'
+        case 'TURNSTILE_FAILED':
+          return 'auth.error.turnstileFailed'
         // USER 类
         case 'USER_1101':
         case 'USER_EXISTS':

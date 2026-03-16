@@ -4,6 +4,8 @@ import {
   TURNSTILE_HOSTNAME_MISMATCH_CODE,
   extractTurnstileErrorCode,
   getTurnstileErrorMessageKey,
+  isRetryableTurnstileError,
+  isTurnstileRequiredError,
 } from '../turnstile'
 
 describe('turnstile utils', () => {
@@ -25,5 +27,28 @@ describe('turnstile utils', () => {
     expect(getTurnstileErrorMessageKey(new Error('Turnstile error'))).toBe(
       'auth.error.turnstileFailed'
     )
+  })
+
+  it('detects retryable widget errors', () => {
+    expect(isRetryableTurnstileError('600010')).toBe(true)
+    expect(isRetryableTurnstileError(new Error('Turnstile error: 600010'))).toBe(true)
+    expect(isRetryableTurnstileError('110200')).toBe(false)
+  })
+
+  it('detects challenge-required api errors', () => {
+    expect(
+      isTurnstileRequiredError({
+        status: 403,
+        code: 'CHALLENGE_REQUIRED',
+        message: 'Challenge required',
+      })
+    ).toBe(true)
+    expect(
+      isTurnstileRequiredError({
+        status: 403,
+        message: 'Human verification failed, please retry turnstile',
+      })
+    ).toBe(true)
+    expect(isTurnstileRequiredError(new Error('plain error'))).toBe(false)
   })
 })

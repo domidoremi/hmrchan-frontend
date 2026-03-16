@@ -4,7 +4,7 @@
  * 对 HTML 响应：
  * 1. 生成随机 nonce
  * 2. 用 HTMLRewriter 给所有 <script> 标签注入 nonce 属性
- * 3. 用 nonce 替换 CSP 中的静态 hash，兼容 Cloudflare 注入的内联脚本
+ * 3. 只为 HTML 文档注入安全头，避免与 /api 响应头重复叠加
  *
  * 非 HTML 响应直接透传，零开销。
  */
@@ -26,7 +26,7 @@ function generateNonce(): string {
 function buildCSP(nonce: string): string {
   return [
     "default-src 'self'",
-    `script-src 'nonce-${nonce}' 'strict-dynamic' https://static.cloudflareinsights.com https://challenges.cloudflare.com`,
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' https://static.cloudflareinsights.com https://challenges.cloudflare.com`,
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: https: blob:",
     "font-src 'self' data:",
@@ -41,6 +41,17 @@ function buildCSP(nonce: string): string {
     'upgrade-insecure-requests',
   ].join('; ')
 }
+
+const HTML_SECURITY_HEADERS = {
+  'Strict-Transport-Security': 'max-age=63072000; includeSubDomains; preload',
+  'X-Frame-Options': 'SAMEORIGIN',
+  'X-Content-Type-Options': 'nosniff',
+  'Referrer-Policy': 'strict-origin-when-cross-origin',
+  'Cross-Origin-Opener-Policy': 'same-origin-allow-popups',
+  'X-Permitted-Cross-Domain-Policies': 'none',
+  'Permissions-Policy':
+    'camera=(), microphone=(), geolocation=(), fullscreen=(self), payment=(), accelerometer=(), gyroscope=(), magnetometer=(), midi=(), usb=(), display-capture=(), screen-wake-lock=(), xr-spatial-tracking=(), clipboard-read=(), clipboard-write=(self), autoplay=(self)',
+} as const
 
 export async function onRequest(
   context: EventContext<unknown, string, unknown>
@@ -70,6 +81,9 @@ export async function onRequest(
   // 替换 CSP header
   const headers = new Headers(rewritten.headers)
   headers.set('Content-Security-Policy', buildCSP(nonce))
+  Object.entries(HTML_SECURITY_HEADERS).forEach(([key, value]) => {
+    headers.set(key, value)
+  })
 
   return new Response(rewritten.body, {
     status: rewritten.status,

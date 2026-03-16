@@ -4,7 +4,11 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch, useTemplateRef } from 'vue'
-import { extractTurnstileErrorCode, TURNSTILE_HOSTNAME_MISMATCH_CODE } from '@/utils/turnstile'
+import {
+  extractTurnstileErrorCode,
+  isRetryableTurnstileError,
+  TURNSTILE_HOSTNAME_MISMATCH_CODE,
+} from '@/utils/turnstile'
 
 export interface TurnstileWidgetProps {
   siteKey: string
@@ -35,6 +39,8 @@ let mountDelayTimer: ReturnType<typeof setTimeout> | null = null
 let mountDelayResolve: (() => void) | null = null
 let turnstilePollRaf: number | null = null
 let turnstilePollReject: ((reason?: Error) => void) | null = null
+let retryTimer: ReturnType<typeof setTimeout> | null = null
+let retryCount = 0
 
 declare global {
   interface Window {
@@ -132,6 +138,9 @@ function loadTurnstileScript(): Promise<void> {
 // Constants
 const LOG_PREFIX = '[Turnstile]'
 const SITE_KEY_PREVIEW_LENGTH = 10
+const MAX_AUTO_RETRIES = 2
+const RETRY_DELAY_MS = 900
+const IS_DEV = import.meta.env.DEV
 
 // Helper functions
 function maskSiteKey(key: string): string {
@@ -140,14 +149,48 @@ function maskSiteKey(key: string): string {
     : key
 }
 
+function logDebug(method: 'log' | 'warn' | 'error', ...args: unknown[]) {
+  if (!IS_DEV) return
+  console[method](LOG_PREFIX, ...args)
+}
+
+function clearRetryTimer() {
+  if (!retryTimer) return
+  clearTimeout(retryTimer)
+  retryTimer = null
+}
+
+function resetRetryState() {
+  retryCount = 0
+  clearRetryTimer()
+}
+
+function scheduleRetry(errorCode: string | null): boolean {
+  if (!isRetryableTurnstileError(errorCode) || isUnmounted || retryCount >= MAX_AUTO_RETRIES) {
+    return false
+  }
+
+  retryCount += 1
+  clearRetryTimer()
+  retryTimer = window.setTimeout(() => {
+    retryTimer = null
+    if (isUnmounted) return
+    renderWidget()
+  }, RETRY_DELAY_MS * retryCount)
+  logDebug('warn', `Retrying widget render after transient error ${errorCode}.`, {
+    retryCount,
+  })
+  return true
+}
+
 function validateRenderConditions(): boolean {
   if (!containerRef.value || !window.turnstile) {
-    console.warn(`${LOG_PREFIX} Cannot render: missing container or API`)
+    logDebug('warn', 'Cannot render: missing container or API')
     return false
   }
 
   if (!props.siteKey) {
-    console.error(`${LOG_PREFIX} Cannot render: missing siteKey`)
+    logDebug('error', 'Cannot render: missing siteKey')
     emit('error', new Error('Turnstile siteKey is required'))
     return false
   }
@@ -160,9 +203,8 @@ function cleanupWidget(): void {
 
   try {
     window.turnstile.remove(widgetId.value)
-    console.log(`${LOG_PREFIX} Widget removed:`, widgetId.value)
   } catch (e) {
-    console.warn(`${LOG_PREFIX} Failed to remove old widget:`, e)
+    logDebug('warn', 'Failed to remove old widget:', e)
   } finally {
     widgetId.value = null
   }
@@ -175,26 +217,35 @@ function createTurnstileConfig() {
     size: props.size,
     action: props.action,
     appearance: props.appearance,
+    retry: 'never',
     callback: (token: string) => {
-      console.log(`${LOG_PREFIX} Verification successful`)
+      resetRetryState()
+      logDebug('log', 'Verification successful')
       emit('verify', token)
     },
     'expired-callback': () => {
-      console.log(`${LOG_PREFIX} Token expired`)
+      resetRetryState()
+      logDebug('log', 'Token expired')
       emit('expire')
     },
     'error-callback': (errorCode: unknown) => {
-      console.error(`${LOG_PREFIX} Error:`, errorCode)
       const code = extractTurnstileErrorCode(errorCode)
+
+      if (scheduleRetry(code)) {
+        return true
+      }
+
       if (code === TURNSTILE_HOSTNAME_MISMATCH_CODE) {
-        console.error(`${LOG_PREFIX} Hostname is not authorized for this site key:`, {
+        logDebug('error', 'Hostname is not authorized for this site key:', {
           hostname: window.location.hostname,
           siteKey: maskSiteKey(props.siteKey),
         })
       }
+
       const error = new Error(code ? `Turnstile error: ${code}` : 'Turnstile error occurred')
       error.name = 'TurnstileError'
       emit('error', error)
+      return true
     },
   }
 }
@@ -210,13 +261,11 @@ function renderWidget() {
   }
 
   try {
-    console.log(`${LOG_PREFIX} Rendering widget with siteKey:`, maskSiteKey(props.siteKey))
-
+    logDebug('log', 'Rendering widget with siteKey:', maskSiteKey(props.siteKey))
     widgetId.value = window.turnstile!.render(containerRef.value!, createTurnstileConfig())
-
-    console.log(`${LOG_PREFIX} Widget rendered with ID:`, widgetId.value)
+    logDebug('log', 'Widget rendered with ID:', widgetId.value)
   } catch (error) {
-    console.error(`${LOG_PREFIX} Render failed:`, error)
+    logDebug('error', 'Render failed:', error)
     widgetId.value = null // Ensure clean state on error
     emit('error', error as Error)
   }
@@ -234,8 +283,9 @@ function waitForMountDelay(ms: number): Promise<void> {
 }
 function reset() {
   if (widgetId.value && window.turnstile) {
+    resetRetryState()
     window.turnstile.reset(widgetId.value)
-    console.log(`${LOG_PREFIX} Widget reset`)
+    logDebug('log', 'Widget reset')
   }
 }
 
@@ -248,9 +298,9 @@ function getResponse(): string | undefined {
 
 onMounted(async () => {
   try {
-    console.log(`${LOG_PREFIX} Component mounted, loading script...`)
+    logDebug('log', 'Component mounted, loading script...')
     await loadTurnstileScript()
-    console.log(`${LOG_PREFIX} Script loaded, rendering widget...`)
+    logDebug('log', 'Script loaded, rendering widget...')
 
     // 等待下一个 tick 确保 DOM 完全准备好
     await waitForMountDelay(100)
@@ -258,7 +308,7 @@ onMounted(async () => {
 
     renderWidget()
   } catch (error) {
-    console.error(`${LOG_PREFIX} Mount failed:`, error)
+    logDebug('error', 'Mount failed:', error)
     emit('error', error as Error)
   }
 })
@@ -281,6 +331,7 @@ onUnmounted(() => {
     mountDelayResolve()
     mountDelayResolve = null
   }
+  resetRetryState()
   cleanupWidget()
   if (turnstileOnloadHandler && window.onTurnstileLoad === turnstileOnloadHandler) {
     window.onTurnstileLoad = previousOnloadHandler ?? undefined

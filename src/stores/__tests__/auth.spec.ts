@@ -178,6 +178,21 @@ describe('Auth Store', () => {
       vi.useFakeTimers()
     })
 
+    it('should map challenge-required login failure to turnstileRequired', async () => {
+      vi.useRealTimers()
+      const store = useAuthStore()
+
+      vi.mocked(authService.login).mockRejectedValueOnce(
+        new ApiError('Challenge required', 403, 'CHALLENGE_REQUIRED')
+      )
+
+      const result = await store.login('test@test.com', 'password')
+
+      expect(result.success).toBe(false)
+      expect(result.error).toBe('auth.error.turnstileRequired')
+      vi.useFakeTimers()
+    })
+
     it('should enter risk verification when backend requires it', async () => {
       vi.useRealTimers()
       const store = useAuthStore()
