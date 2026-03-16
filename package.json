@@ -38,7 +38,8 @@
     "icons:generate": "node scripts/generate-icons.js",
     "screenshots:generate": "bun run scripts/generate-screenshots.ts",
     "audit": "bun run scripts/audit/index.ts",
-    "audit:fix": "bun run scripts/audit/index.ts --fix"
+    "audit:fix": "bun run scripts/audit/index.ts --fix",
+    "commit:cn": "node scripts/git-commit.mjs"
   },
   "dependencies": {
     "@fingerprintjs/fingerprintjs": "^5.1.0",
