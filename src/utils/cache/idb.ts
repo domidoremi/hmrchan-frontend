@@ -4,7 +4,7 @@
  */
 
 const DB_NAME = 'hmrchan-cache'
-const DB_VERSION = 3 // 增加版本以添加新的 stores
+const DB_VERSION = 4 // 增加版本以校正历史缺失 store 的缓存库
 
 // Store 名称
 export const STORES = {
@@ -17,9 +17,12 @@ export const STORES = {
 } as const
 
 type StoreName = (typeof STORES)[keyof typeof STORES]
+const REQUIRED_STORES = Object.values(STORES) as StoreName[]
 
 let dbPromise: Promise<IDBDatabase> | null = null
 let dbResetPromise: Promise<void> | null = null
+let activeDb: IDBDatabase | null = null
+const warnedMessages = new Set<string>()
 
 type StoreFallback<T> = T | (() => T)
 
@@ -29,6 +32,18 @@ function resolveFallback<T>(fallback: StoreFallback<T>): T {
 
 function createMissingStoreError(store: StoreName): DOMException {
   return new DOMException(`IndexedDB store "${store}" is missing`, 'NotFoundError')
+}
+
+function warnIdbOnce(key: string, message: string, error?: unknown): void {
+  if (warnedMessages.has(key)) return
+  warnedMessages.add(key)
+
+  if (error !== undefined) {
+    console.warn(message, error)
+    return
+  }
+
+  console.warn(message)
 }
 
 function isMissingStoreError(error: unknown): boolean {
@@ -55,12 +70,12 @@ async function resetDatabase(reason: string): Promise<void> {
   }
 
   dbResetPromise = (async () => {
-    const currentDb = dbPromise ? await dbPromise.catch(() => null) : null
     try {
-      currentDb?.close()
+      activeDb?.close()
     } catch {
       // ignore close failures
     }
+    activeDb = null
     dbPromise = null
 
     await new Promise<void>((resolve, reject) => {
@@ -69,7 +84,10 @@ async function resetDatabase(reason: string): Promise<void> {
       request.onsuccess = () => resolve()
       request.onerror = () => reject(request.error)
       request.onblocked = () => {
-        console.warn(`[IDB] Reset blocked while recovering database: ${reason}`)
+        warnIdbOnce(
+          `reset-blocked:${reason}`,
+          `[IDB] Reset blocked while recovering database: ${reason}`
+        )
       }
     })
   })()
@@ -79,6 +97,10 @@ async function resetDatabase(reason: string): Promise<void> {
   } finally {
     dbResetPromise = null
   }
+}
+
+function getMissingStores(db: IDBDatabase): StoreName[] {
+  return REQUIRED_STORES.filter((store) => !db.objectStoreNames.contains(store))
 }
 
 async function withStoreRecovery<T>(
@@ -98,18 +120,26 @@ async function withStoreRecovery<T>(
     return await operation(db)
   } catch (error) {
     if (allowReset && isMissingStoreError(error)) {
-      console.warn(`[IDB] Missing store "${store}" during ${action}, recreating database.`, error)
+      warnIdbOnce(
+        `missing-store:${store}`,
+        `[IDB] Missing store "${store}" during ${action}, recreating database.`,
+        error
+      )
       try {
         await resetDatabase(`${action}:${store}`)
       } catch (resetError) {
-        console.warn(`[IDB] Failed to reset database after ${action}:`, resetError)
+        warnIdbOnce(
+          `reset-failed:${action}`,
+          `[IDB] Failed to reset database after ${action}:`,
+          resetError
+        )
         return resolveFallback(fallback)
       }
 
       return withStoreRecovery(store, action, fallback, operation, false)
     }
 
-    console.warn(`[IDB] ${action}:`, error)
+    warnIdbOnce(`action:${action}`, `[IDB] ${action}:`, error)
     return resolveFallback(fallback)
   }
 }
@@ -118,6 +148,10 @@ async function withStoreRecovery<T>(
  * 获取数据库连接（单例）
  */
 function getDB(): Promise<IDBDatabase> {
+  if (dbResetPromise) {
+    return dbResetPromise.then(() => getDB())
+  }
+
   if (dbPromise) return dbPromise
 
   dbPromise = new Promise((resolve, reject) => {
@@ -137,13 +171,40 @@ function getDB(): Promise<IDBDatabase> {
         } catch {
           // ignore
         }
+        if (activeDb === db) {
+          activeDb = null
+        }
         dbPromise = null
       }
+      const missingStores = getMissingStores(db)
+
+      if (missingStores.length > 0) {
+        warnIdbOnce(
+          `schema-mismatch:${missingStores.join(',')}`,
+          `[IDB] Missing stores detected on open (${missingStores.join(', ')}), rebuilding cache database.`
+        )
+        try {
+          db.close()
+        } catch {
+          // ignore
+        }
+        if (activeDb === db) {
+          activeDb = null
+        }
+        dbPromise = null
+        void resetDatabase(`schema-mismatch:${missingStores.join(',')}`)
+          .then(() => getDB())
+          .then(resolve)
+          .catch(reject)
+        return
+      }
+
+      activeDb = db
       resolve(db)
     }
 
     request.onblocked = () => {
-      console.warn('[IDB] Upgrade blocked - close other tabs to continue')
+      warnIdbOnce('upgrade-blocked', '[IDB] Upgrade blocked - close other tabs to continue')
     }
 
     request.onupgradeneeded = (event) => {

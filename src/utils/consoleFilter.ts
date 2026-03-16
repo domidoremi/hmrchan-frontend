@@ -48,11 +48,14 @@ const CLOUDFLARE_PATTERNS = [
   /challenge-platform/i,
   /cf-chl-/i,
   /rocket loader/i,
+  /No available adapters/i,
 
   // Cloudflare 域名相关
   /challenges\.cloudflare\.com/i,
   /cloudflareinsights\.com/i,
   /cdn-cgi\/rum/i,
+  /font-size:0;color:transparent/i,
+  /picture-in-picture is not allowed in this document/i,
 
   // fetch/headers polyfill noise
   /setupReplaceUnsafeHeader\(\) should be called only once/i,
