@@ -57,9 +57,7 @@ export function swVersionPlugin(): Plugin {
       }
 
       // Read version from package.json
-      const pkg = JSON.parse(
-        readFileSync(resolve(process.cwd(), 'package.json'), 'utf-8'),
-      )
+      const pkg = JSON.parse(readFileSync(resolve(process.cwd(), 'package.json'), 'utf-8'))
       const version = (pkg.version || '0.0.0').replace(/\./g, '-')
       const hash = getGitHash()
       const buildNum = getGitCommitCount()
