@@ -890,7 +890,7 @@ onBeforeUnmount(() => {
 }
 
 .page-header {
-  margin-bottom: 0;
+  margin-bottom: clamp(1rem, 2vw, 1.5rem);
 }
 
 .page-title-row {
