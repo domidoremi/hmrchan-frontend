@@ -35,7 +35,11 @@
                     : $t('email.resend')
                 }}
               </Button>
-              <RouterLink to="/login" class="auth-link" @click="handleNavigateToLogin">
+              <RouterLink
+                to="/login"
+                class="auth-link page-control-btn page-control-btn--compact"
+                @click="handleNavigateToLogin"
+              >
                 {{ $t('email.backToLogin') }}
               </RouterLink>
             </div>
@@ -47,7 +51,7 @@
               <div class="auth-header">
                 <button
                   type="button"
-                  class="back-btn glass-button"
+                  class="back-btn page-control-btn page-control-btn--square"
                   :aria-label="$t('common.back')"
                   @click="handleBackWithMood"
                 >
@@ -457,28 +461,38 @@ function handleTurnstileError(error?: Error) {
   background: #ede6da;
 }
 
+.auth-topline,
+.auth-headings {
+  display: grid;
+}
+
+.auth-topline {
+  gap: var(--spacing-3);
+}
+
+.auth-headings {
+  gap: var(--spacing-1);
+}
+
 .auth-header {
   display: flex;
   align-items: center;
-  margin-bottom: var(--spacing-2);
+  margin-bottom: 0;
 }
 
 .back-btn {
-  padding: var(--spacing-2);
-  border-radius: var(--radius-full);
-  border: 1px solid rgba(74, 85, 135, 0.2);
-  background: rgba(95, 108, 174, 0.08);
-  color: #3a4266;
+  padding: 0;
+  align-self: flex-start;
 }
 
 .status-icon {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 4.5rem;
-  height: 4.5rem;
+  inline-size: 4.5rem;
+  block-size: 4.5rem;
   border-radius: var(--radius-full);
-  margin: 0 auto var(--spacing-4);
+  margin-inline: auto;
 }
 
 .status-icon--success {
@@ -489,14 +503,16 @@ function handleTurnstileError(error?: Error) {
 .auth-title {
   font-size: clamp(1.45rem, 1.2rem + 1.1vw, 2rem);
   text-align: center;
-  margin-bottom: var(--spacing-1);
+  margin: 0;
   color: #212840;
 }
 
 .auth-subtitle {
   text-align: center;
   color: rgba(50, 58, 90, 0.72);
-  margin-bottom: var(--spacing-4);
+  margin: 0;
+  max-inline-size: 34ch;
+  justify-self: center;
   font-size: var(--text-xs);
 }
 
@@ -565,20 +581,14 @@ function handleTurnstileError(error?: Error) {
 }
 
 .action-group {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  inline-size: 100%;
+  display: grid;
   gap: var(--spacing-3);
 }
 
 .auth-link {
-  font-size: var(--text-sm);
-  color: #4957dd;
-  font-weight: var(--font-medium);
-}
-
-.auth-link:hover {
-  text-decoration: underline;
+  inline-size: 100%;
+  text-decoration: none;
 }
 
 @media (max-width: 68rem) {
@@ -633,12 +643,12 @@ function handleTurnstileError(error?: Error) {
 @keyframes auth-card-enter-left {
   0% {
     opacity: 0;
-    transform: rotateY(-14deg) translateX(-1.2rem) scale(0.98);
+    transform: translateY(0.75rem) scale(0.985);
   }
 
   100% {
     opacity: 1;
-    transform: rotateY(0) translateX(0) scale(1);
+    transform: translateY(0) scale(1);
   }
 }
 </style>

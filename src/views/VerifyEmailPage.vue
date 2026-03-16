@@ -1,6 +1,6 @@
 <template>
   <div class="auth-page">
-    <div class="auth-card glass-card">
+    <div class="auth-card empty-surface">
       <!-- Verifying -->
       <template v-if="status === 'loading'">
         <div class="status-icon status-icon--loading">
@@ -145,24 +145,21 @@ async function resend() {
 }
 
 .auth-card {
-  width: 100%;
-  max-width: min(90vw, 23.75rem);
-  padding: var(--spacing-6);
+  inline-size: 100%;
+  max-inline-size: min(90vw, 23.75rem);
+  display: grid;
+  justify-items: center;
+  gap: var(--spacing-4);
   text-align: center;
-  border: 1px solid rgba(var(--color-border-rgb), 0.6);
-  box-shadow:
-    0 16px 40px -24px rgba(15, 23, 42, 0.4),
-    0 6px 20px -12px rgba(15, 23, 42, 0.35);
 }
 
 .status-icon {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 4.5rem;
-  height: 4.5rem;
+  inline-size: 4.5rem;
+  block-size: 4.5rem;
   border-radius: var(--radius-full);
-  margin: 0 auto var(--spacing-4);
 }
 
 .status-icon--loading {
@@ -182,7 +179,7 @@ async function resend() {
 
 .auth-title {
   font-size: var(--text-xl);
-  margin-bottom: var(--spacing-1);
+  margin: 0;
 }
 
 @media (min-width: 640px) {
@@ -193,13 +190,14 @@ async function resend() {
 
 .auth-subtitle {
   color: var(--color-text-tertiary);
-  margin-bottom: var(--spacing-5);
+  margin: 0;
+  max-inline-size: 32ch;
   font-size: var(--text-sm);
 }
 
 .action-group {
-  display: flex;
-  flex-direction: column;
+  inline-size: 100%;
+  display: grid;
   gap: var(--spacing-2);
 }
 </style>

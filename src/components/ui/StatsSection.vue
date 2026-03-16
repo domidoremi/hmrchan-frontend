@@ -162,12 +162,13 @@ const platforms = [
   padding: var(--spacing-4) var(--spacing-5);
   border-radius: var(--radius-xl);
   transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease;
+    box-shadow 0.2s ease,
+    border-color 0.2s ease,
+    background 0.2s ease;
 }
 
 .platform-card:hover {
-  transform: translateY(-2px);
+  border-color: rgba(var(--color-primary-rgb), 0.18);
   box-shadow: var(--glass-shadow-lg);
 }
 
@@ -253,21 +254,21 @@ const platforms = [
 
 /* 暗色模式 */
 [data-theme='dark'] .platform-card--tiktok .platform-card__icon {
-  background: rgba(255, 255, 255, 0.1);
-  color: #fff;
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--color-gray-100);
 }
 
 [data-theme='dark'] .platform-card--tiktok:hover {
-  border-color: #fff;
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 [data-theme='dark'] .platform-card--twitter .platform-card__icon {
-  background: rgba(255, 255, 255, 0.1);
-  color: #fff;
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--color-gray-100);
 }
 
 [data-theme='dark'] .platform-card--twitter:hover {
-  border-color: #fff;
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 /* 响应式 */

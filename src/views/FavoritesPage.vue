@@ -1,9 +1,19 @@
 <template>
   <div class="favorites-page">
     <div class="container">
-      <h1 class="page-title">{{ $t('nav.favorites') }}</h1>
+      <header class="page-hero favorites-hero">
+        <div class="page-hero__content">
+          <span class="page-hero__eyebrow">{{ $t('nav.favorites') }}</span>
+          <h1 class="page-hero__title">{{ $t('nav.favorites') }}</h1>
+          <p class="page-hero__subtitle">{{ $t('favorites.organizeHint') }}</p>
+          <div v-if="isAuthenticated" class="page-hero__meta">
+            <span v-if="isLoading" class="spinner spinner-sm" />
+            <span class="page-hero__note">{{ $t('favorites.totalCount', { count: total }) }}</span>
+          </div>
+        </div>
+      </header>
 
-      <div v-if="!isAuthenticated" class="empty-state glass-card">
+      <div v-if="!isAuthenticated" class="empty-state empty-surface">
         <AnimatedIcon name="heart" :fallback-icon="Heart" size="xl" class="empty-icon" />
         <p>{{ $t('favorites.loginRequired') }}</p>
         <Button @click="goToLogin">{{ $t('nav.login') }}</Button>
@@ -18,7 +28,7 @@
         />
 
         <div v-else-if="isLoading && favorites.length === 0" class="posts-grid">
-          <div v-for="i in 6" :key="i" class="post-card glass-card">
+          <div v-for="i in 6" :key="i" class="post-card page-list-card">
             <Skeleton variant="image" width="100%" />
             <div class="post-content">
               <Skeleton width="80%" height="18px" />
@@ -27,12 +37,7 @@
         </div>
 
         <template v-else>
-          <div class="favorites-header">
-            <span v-if="isLoading" class="spinner spinner-sm" />
-            <span class="favorites-count">{{ $t('favorites.totalCount', { count: total }) }}</span>
-          </div>
-
-          <section class="favorites-toolbar glass-card">
+          <section class="favorites-toolbar empty-surface">
             <div class="favorites-toolbar__copy">
               <h2 class="favorites-toolbar__title">{{ $t('favorites.organizeTitle') }}</h2>
               <p class="favorites-toolbar__hint">{{ $t('favorites.organizeHint') }}</p>
@@ -75,7 +80,7 @@
             <article
               v-for="fav in visibleFavorites"
               :key="fav.id"
-              class="favorite-card glass-card content-auto"
+              class="favorite-card page-list-card content-auto"
               role="button"
               tabindex="0"
               @click="goToPost(fav.post_id, fav.post?.thumbnail_url)"
@@ -119,7 +124,7 @@
               <div class="favorite-card-actions">
                 <button
                   type="button"
-                  class="card-action-btn"
+                  class="card-action-btn page-control-btn page-control-btn--square"
                   :title="$t('common.edit')"
                   :aria-label="$t('common.edit')"
                   @click.stop="openFavoriteEditor(fav)"
@@ -128,7 +133,7 @@
                 </button>
                 <button
                   type="button"
-                  class="card-action-btn card-action-btn--danger"
+                  class="card-action-btn card-action-btn--danger page-control-btn page-control-btn--square"
                   :title="$t('favorites.remove')"
                   :aria-label="$t('favorites.remove')"
                   @click.stop="removeFavorite(fav.id)"
@@ -444,34 +449,18 @@ watch(
   min-height: 100dvh;
 }
 
-.page-title {
-  margin-bottom: var(--spacing-4);
-  font-size: var(--text-xl);
+.container {
+  display: grid;
+  gap: var(--spacing-4);
 }
 
-@media (min-width: 768px) {
-  .page-title {
-    font-size: var(--text-2xl);
-  }
-}
-
-.favorites-header {
-  display: flex;
+.favorites-hero .page-hero__meta {
   align-items: center;
-  gap: var(--spacing-3);
-  margin-bottom: var(--spacing-3);
-}
-
-.favorites-count {
-  font-size: var(--text-sm);
-  color: var(--color-text-secondary);
 }
 
 .favorites-toolbar {
   display: grid;
   gap: var(--spacing-3);
-  padding: var(--spacing-4);
-  margin-bottom: var(--spacing-4);
 }
 
 .favorites-toolbar__copy {
@@ -497,7 +486,8 @@ watch(
 }
 
 .favorites-filter {
-  width: 100%;
+  inline-size: 100%;
+  min-inline-size: 0;
 }
 
 @media (min-width: 768px) {
@@ -511,7 +501,8 @@ watch(
   flex-direction: column;
   align-items: center;
   gap: var(--spacing-4);
-  padding: var(--spacing-12);
+  justify-self: stretch;
+  padding-block: var(--spacing-8);
   text-align: center;
 }
 
@@ -574,39 +565,23 @@ watch(
   position: relative;
   overflow: hidden;
   cursor: pointer;
-  transition:
-    transform var(--transition-fast),
-    box-shadow var(--transition-fast);
-}
-
-.favorite-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
-}
-
-.favorite-card:focus-visible {
-  outline: none;
-  transform: translateY(-2px);
-  box-shadow:
-    var(--shadow-lg),
-    0 0 0 2px rgba(var(--color-primary-rgb), 0.35);
 }
 
 .favorite-image {
-  width: 100%;
+  inline-size: 100%;
   overflow: hidden;
-  background: var(--glass-bg-light);
+  background: var(--page-control-bg);
 }
 
 .favorite-image img {
-  width: 100%;
+  inline-size: 100%;
   height: auto;
   display: block;
   object-fit: cover;
 }
 
 .image-placeholder {
-  width: 100%;
+  inline-size: 100%;
   aspect-ratio: 4/3;
   display: flex;
   align-items: center;
@@ -615,7 +590,10 @@ watch(
 }
 
 .favorite-content {
+  display: grid;
+  gap: var(--spacing-2);
   padding: var(--spacing-3);
+  min-inline-size: 0;
 }
 
 .favorite-title {
@@ -632,14 +610,14 @@ watch(
 .favorite-author {
   font-size: var(--text-xs);
   color: var(--color-text-secondary);
-  margin: var(--spacing-1) 0 0;
+  margin: 0;
 }
 
 .favorite-chips {
   display: flex;
   flex-wrap: wrap;
   gap: var(--spacing-2);
-  margin-top: var(--spacing-2);
+  margin-top: 0;
 }
 
 .favorite-chips--wrap {
@@ -658,7 +636,7 @@ watch(
 }
 
 .favorite-note {
-  margin: var(--spacing-2) 0 0;
+  margin: 0;
   font-size: var(--text-xs);
   color: var(--color-text-secondary);
   display: -webkit-box;
@@ -672,7 +650,7 @@ watch(
   display: flex;
   align-items: center;
   gap: var(--spacing-2);
-  margin-top: var(--spacing-2);
+  margin-top: 0;
 }
 
 .favorite-date {
@@ -682,8 +660,8 @@ watch(
 
 .favorite-card-actions {
   position: absolute;
-  top: var(--spacing-2);
-  right: var(--spacing-2);
+  inset-block-start: var(--spacing-2);
+  inset-inline-end: var(--spacing-2);
   display: flex;
   align-items: center;
   gap: var(--spacing-2);
@@ -692,23 +670,15 @@ watch(
 }
 
 .card-action-btn {
-  width: 1.75rem;
-  height: 1.75rem;
-  border-radius: 50%;
-  background: rgba(0, 0, 0, 0.5);
-  color: var(--color-white);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background var(--transition-fast);
+  min-inline-size: 2rem;
+  min-block-size: 2rem;
+  padding: 0;
 }
 
-.card-action-btn:hover {
-  background: rgba(0, 0, 0, 0.75);
-}
-
-.card-action-btn--danger:hover {
-  background: var(--color-error);
+.card-action-btn--danger {
+  color: var(--color-error);
+  border-color: rgba(var(--color-error-rgb), 0.18);
+  background: rgba(var(--color-error-rgb), 0.08);
 }
 
 .favorite-card:hover .favorite-card-actions {

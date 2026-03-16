@@ -1,14 +1,16 @@
 <template>
   <section class="load-more-section">
     <header class="load-more-header">
-      <div class="progress-pill glass-card">
-        <span class="progress-label">{{ t('common.showing', { count, total }) }}</span>
+      <div class="progress-pill ui-pill ui-pill--stat empty-surface">
+        <span class="progress-label">{{
+          t('common.showing', { count: displayCount, total: displayTotal })
+        }}</span>
         <span class="progress-value">{{ Math.round(progressPercent) }}%</span>
       </div>
       <button
         v-if="hasMore && allowManual"
         type="button"
-        class="ghost-action"
+        class="ghost-action page-control-btn page-control-btn--compact"
         @click="emit('load-more')"
       >
         {{ t('common.loadMore') }}
@@ -25,7 +27,7 @@
       <div v-if="hasMore" class="load-more-state">
         <div :ref="setSentinelRef" class="scroll-sentinel">
           <Transition name="fade" mode="out-in">
-            <div v-if="loading" class="sentinel-loading glass-card">
+            <div v-if="loading" class="sentinel-loading empty-surface">
               <span class="spinner spinner-sm" />
               <span>{{ t('common.loadingMore') || t('common.loading') }}</span>
             </div>
@@ -71,6 +73,7 @@ import { useI18n } from 'vue-i18n'
 import { ChevronDown } from 'lucide-vue-next'
 import Button from '@/components/ui/Button.vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
+import { resolveLoadMoreMetrics } from '@/components/ui/loadMoreMetrics'
 
 interface Props {
   count: number
@@ -92,9 +95,12 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 
+const metrics = computed(() => resolveLoadMoreMetrics(props.count, props.total))
+const displayCount = computed(() => metrics.value.count)
+const displayTotal = computed(() => metrics.value.total)
+
 const progressPercent = computed(() => {
-  if (props.total === 0) return 0
-  return Math.min((props.count / props.total) * 100, 100)
+  return metrics.value.progressPercent
 })
 
 const setSentinelRef = (el: Element | null) => {
@@ -132,6 +138,11 @@ const setSentinelRef = (el: Element | null) => {
   font-size: var(--text-sm);
 }
 
+.progress-pill.empty-surface,
+.sentinel-loading.empty-surface {
+  animation: none;
+}
+
 .progress-label {
   color: var(--color-text-secondary);
 }
@@ -141,20 +152,8 @@ const setSentinelRef = (el: Element | null) => {
   color: var(--color-text-primary);
 }
 
-.ghost-action {
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-full);
-  padding: 0.35rem 0.9rem;
-  background: transparent;
-  font-size: var(--text-xs);
-  color: var(--color-text-secondary);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-}
-
-.ghost-action:hover {
-  background: var(--color-muted);
-  color: var(--color-text-primary);
+.ghost-action.page-control-btn {
+  box-shadow: none;
 }
 
 .progress-track {
@@ -252,11 +251,7 @@ const setSentinelRef = (el: Element | null) => {
 }
 
 .load-more-icon {
-  transition: transform var(--transition-fast);
-}
-
-.load-more-btn:hover .load-more-icon {
-  transform: translateY(2px);
+  transition: color var(--transition-fast);
 }
 
 .end-indicator {

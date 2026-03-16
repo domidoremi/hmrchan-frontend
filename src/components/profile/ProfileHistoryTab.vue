@@ -2,7 +2,7 @@
   <div class="history-tab">
     <div class="tab-header">
       <h2 class="tab-title">{{ $t('profile.tabs.history') }}</h2>
-      <span v-if="total > 0" class="item-count">{{ total }}</span>
+      <span v-if="total > 0" class="item-count profile-item-count">{{ total }}</span>
       <div class="tab-header-spacer" />
       <Button v-if="history.length > 0" variant="ghost" size="sm" @click="clearHistory">
         <Trash2 :size="14" />
@@ -339,7 +339,8 @@ onUnmounted(() => {
 
 .item-count {
   padding: 0.125rem 0.625rem;
-  background: rgba(var(--color-primary-rgb), 0.08);
+  background: var(--profile-chip-bg);
+  border: 1px solid var(--profile-chip-border);
   border-radius: var(--radius-full);
   font-size: var(--text-xs);
   color: var(--color-primary);
@@ -354,9 +355,11 @@ onUnmounted(() => {
 }
 
 .skeleton-row {
-  border-radius: var(--radius-lg);
+  border-radius: var(--profile-section-radius);
   overflow: hidden;
-  background: var(--glass-bg-light);
+  background: var(--profile-surface-bg-soft);
+  border: 1px solid var(--profile-surface-border);
+  box-shadow: var(--profile-surface-shadow);
 }
 
 .skeleton-thumb {
@@ -406,16 +409,17 @@ onUnmounted(() => {
 
 .group-count {
   font-size: var(--text-xs);
-  color: var(--color-text-tertiary);
+  color: var(--profile-chip-text);
   padding: 0.0625rem 0.375rem;
-  background: var(--glass-bg-medium);
+  background: var(--profile-chip-bg);
+  border: 1px solid var(--profile-chip-border);
   border-radius: var(--radius-full);
 }
 
 .group-line {
   flex: 1;
   height: 1px;
-  background: linear-gradient(to right, var(--glass-border-medium), transparent);
+  background: linear-gradient(to right, var(--profile-muted-border), transparent);
 }
 
 /* ===== Grid ===== */
@@ -429,17 +433,23 @@ onUnmounted(() => {
 .history-card {
   cursor: pointer;
   overflow: hidden;
+  border-radius: var(--profile-section-radius);
+  border: 1px solid var(--profile-surface-border);
+  background: var(--profile-surface-bg-soft);
+  box-shadow: var(--profile-surface-shadow);
   animation: stagger-fade-in var(--duration-slow) var(--ease-out-smooth) forwards;
   animation-delay: calc(var(--stagger) * 50ms);
   opacity: 0;
   transition:
     transform var(--duration-fast) var(--ease-out-smooth),
-    box-shadow var(--duration-fast) var(--ease-smooth);
+    box-shadow var(--duration-fast) var(--ease-smooth),
+    border-color var(--duration-fast) var(--ease-smooth);
 }
 
 .history-card:hover {
   transform: var(--lift-sm);
-  box-shadow: var(--glass-shadow-hover);
+  box-shadow: var(--profile-surface-shadow-hover);
+  border-color: var(--profile-surface-border-strong);
 }
 
 .history-card:focus-visible {
@@ -456,7 +466,7 @@ onUnmounted(() => {
   width: 100%;
   aspect-ratio: 1;
   overflow: hidden;
-  background: var(--glass-bg-light);
+  background: var(--profile-muted-bg);
 }
 
 .card-thumb img {
@@ -467,11 +477,11 @@ onUnmounted(() => {
 }
 
 .history-card:hover .card-thumb img {
-  transform: scale(1.05);
+  transform: scale(1.01);
 }
 
 .history-card:focus-visible .card-thumb img {
-  transform: scale(1.05);
+  transform: scale(1.01);
 }
 
 .thumb-placeholder {
@@ -480,6 +490,7 @@ onUnmounted(() => {
   justify-content: center;
   width: 100%;
   height: 100%;
+  background: var(--profile-muted-bg);
   color: var(--color-text-tertiary);
 }
 
@@ -543,24 +554,24 @@ onUnmounted(() => {
 <style>
 /* ===== Material 3 Overrides ===== */
 #app[data-ui-style='material'] .history-tab .history-card {
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
 }
 
 #app[data-ui-style='material'] .history-tab .history-card:hover {
-  transform: translateY(-1px);
+  transform: none;
   box-shadow: var(--shadow-md);
 }
 
 #app[data-ui-style='material'] .history-tab .card-time {
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
 }
 
 #app[data-ui-style='material'] .history-tab .group-count {
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
 }
 
 #app[data-ui-style='material'] .history-tab .item-count {
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
 }
 
 #app[data-ui-style='material'] .history-tab .group-line {

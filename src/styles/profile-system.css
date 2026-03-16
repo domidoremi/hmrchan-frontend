@@ -1,0 +1,107 @@
+/**
+ * Profile system tokens
+ *
+ * Shared surface / chip / action language for profile pages and tabs.
+ */
+
+:root {
+  --profile-shell-radius: clamp(1.15rem, 2vw, 1.5rem);
+  --profile-section-radius: clamp(1rem, 1.6vw, 1.25rem);
+  --profile-surface-bg: linear-gradient(
+    155deg,
+    rgba(255, 255, 255, 0.94),
+    rgba(255, 255, 255, 0.82)
+  );
+  --profile-surface-bg-soft: linear-gradient(
+    155deg,
+    rgba(255, 255, 255, 0.88),
+    rgba(255, 255, 255, 0.74)
+  );
+  --profile-surface-border: rgba(255, 255, 255, 0.58);
+  --profile-surface-border-strong: rgba(148, 163, 184, 0.22);
+  --profile-surface-shadow: 0 1.4rem 3rem -2rem rgba(15, 23, 42, 0.26);
+  --profile-surface-shadow-hover: 0 1.8rem 3.4rem -2rem rgba(15, 23, 42, 0.32);
+  --profile-muted-bg: rgba(255, 255, 255, 0.68);
+  --profile-muted-bg-strong: rgba(255, 255, 255, 0.84);
+  --profile-muted-border: rgba(148, 163, 184, 0.16);
+  --profile-muted-border-strong: rgba(var(--color-primary-rgb), 0.22);
+  --profile-chip-bg: rgba(255, 255, 255, 0.78);
+  --profile-chip-border: rgba(148, 163, 184, 0.16);
+  --profile-chip-text: var(--color-text-secondary);
+  --profile-action-bg: rgba(255, 255, 255, 0.62);
+  --profile-action-bg-hover: rgba(255, 255, 255, 0.86);
+  --profile-action-border: rgba(148, 163, 184, 0.16);
+  --profile-action-border-strong: rgba(var(--color-primary-rgb), 0.22);
+}
+
+[data-theme='dark'] {
+  --profile-surface-bg: linear-gradient(155deg, rgba(12, 16, 23, 0.96), rgba(19, 25, 37, 0.9));
+  --profile-surface-bg-soft: linear-gradient(
+    155deg,
+    rgba(15, 20, 31, 0.92),
+    rgba(22, 29, 43, 0.84)
+  );
+  --profile-surface-border: rgba(255, 255, 255, 0.09);
+  --profile-surface-border-strong: rgba(255, 255, 255, 0.14);
+  --profile-surface-shadow: 0 1.6rem 3.4rem -2rem rgba(0, 0, 0, 0.46);
+  --profile-surface-shadow-hover: 0 2rem 3.8rem -2rem rgba(0, 0, 0, 0.56);
+  --profile-muted-bg: rgba(20, 26, 38, 0.82);
+  --profile-muted-bg-strong: rgba(25, 32, 46, 0.94);
+  --profile-muted-border: rgba(255, 255, 255, 0.08);
+  --profile-muted-border-strong: rgba(var(--color-primary-rgb), 0.24);
+  --profile-chip-bg: rgba(21, 28, 40, 0.9);
+  --profile-chip-border: rgba(255, 255, 255, 0.08);
+  --profile-chip-text: var(--color-gray-200);
+  --profile-action-bg: rgba(22, 29, 43, 0.82);
+  --profile-action-bg-hover: rgba(28, 36, 52, 0.96);
+  --profile-action-border: rgba(255, 255, 255, 0.08);
+  --profile-action-border-strong: rgba(var(--color-primary-rgb), 0.24);
+}
+
+[data-theme='blue'] {
+  --profile-surface-bg: linear-gradient(
+    155deg,
+    rgba(255, 255, 255, 0.96),
+    rgba(239, 246, 255, 0.9)
+  );
+  --profile-surface-bg-soft: linear-gradient(
+    155deg,
+    rgba(255, 255, 255, 0.92),
+    rgba(240, 249, 255, 0.82)
+  );
+  --profile-surface-border: rgba(59, 130, 246, 0.16);
+  --profile-surface-border-strong: rgba(59, 130, 246, 0.22);
+  --profile-surface-shadow: 0 1.4rem 3rem -2rem rgba(37, 99, 235, 0.14);
+  --profile-surface-shadow-hover: 0 1.8rem 3.4rem -2rem rgba(37, 99, 235, 0.2);
+  --profile-muted-bg: rgba(255, 255, 255, 0.84);
+  --profile-muted-bg-strong: rgba(239, 246, 255, 0.96);
+  --profile-muted-border: rgba(59, 130, 246, 0.14);
+  --profile-muted-border-strong: rgba(59, 130, 246, 0.22);
+  --profile-chip-bg: rgba(255, 255, 255, 0.88);
+  --profile-chip-border: rgba(59, 130, 246, 0.14);
+  --profile-chip-text: var(--color-text-secondary);
+  --profile-action-bg: rgba(255, 255, 255, 0.8);
+  --profile-action-bg-hover: rgba(239, 246, 255, 0.94);
+  --profile-action-border: rgba(59, 130, 246, 0.14);
+  --profile-action-border-strong: rgba(59, 130, 246, 0.22);
+}
+
+:where(.profile-item-count, .profile-stat-pill, .profile-filter-pill) {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-block-size: 1.875rem;
+  padding-inline: 0.75rem;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--profile-chip-border);
+  background: var(--profile-chip-bg);
+  color: var(--profile-chip-text);
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  line-height: 1.2;
+}
+
+:where(.profile-filter-pill) {
+  background: var(--profile-action-bg);
+  border-color: var(--profile-action-border);
+}

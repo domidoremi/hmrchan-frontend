@@ -8,15 +8,18 @@
 
     <div class="container">
       <!-- Header -->
-      <header class="page-header page-hero community-hero">
+      <header class="page-hero community-hero">
         <div class="page-hero__content">
-          <div class="page-header-row">
-            <div>
-              <h1>{{ $t('community.title') }}</h1>
-              <p class="page-subtitle">{{ $t('community.subtitle') }}</p>
+          <div class="page-hero__header">
+            <div class="page-hero__heading">
+              <span class="page-hero__eyebrow">{{ $t('nav.community') }}</span>
+              <div>
+                <h1 class="page-hero__title">{{ $t('community.title') }}</h1>
+                <p class="page-hero__subtitle">{{ $t('community.subtitle') }}</p>
+              </div>
             </div>
-            <div class="page-header-actions">
-              <div class="discussion-search">
+            <div class="community-hero__actions page-hero__actions">
+              <div class="discussion-search page-input-shell">
                 <AnimatedIcon name="search" :fallback-icon="Search" size="sm" />
                 <input
                   v-model="searchQuery"
@@ -29,7 +32,7 @@
                 <button
                   v-if="searchQuery"
                   type="button"
-                  class="search-clear-btn"
+                  class="search-clear-btn page-input-shell__action"
                   :aria-label="$t('common.clear')"
                   @click="clearSearch"
                 >
@@ -38,7 +41,7 @@
               </div>
               <button
                 type="button"
-                class="guide-trigger glass-button"
+                class="guide-trigger page-control-btn page-control-btn--square"
                 :aria-label="$t('community.guideTitle')"
                 @click="showGuide = true"
               >
@@ -52,7 +55,7 @@
               v-for="tab in tabs"
               :key="tab.id"
               type="button"
-              class="tab-btn"
+              class="tab-btn page-control-btn"
               :class="{ active: activeTab === tab.id }"
               :aria-pressed="activeTab === tab.id"
               @click="switchTab(tab.id)"
@@ -64,7 +67,7 @@
         </div>
       </header>
 
-      <div v-if="showPreviewNotice" class="fallback-preview glass-card">
+      <div v-if="showPreviewNotice" class="fallback-preview empty-surface">
         <span class="fallback-preview__label">{{ $t('home.preview.label') }}</span>
         <p>{{ $t('home.preview.desc') }}</p>
         <span v-if="fallbackReason" class="fallback-preview__detail">{{ fallbackReason }}</span>
@@ -104,7 +107,7 @@
           <article
             v-for="discussion in searchResults"
             :key="discussion.id"
-            class="discussion-card glass-card content-auto-sm"
+            class="discussion-card page-list-card content-auto-sm"
             role="button"
             tabindex="0"
             @click="goToDiscussion(discussion.id)"
@@ -135,7 +138,7 @@
           class="composer-section"
           @created="handleDiscussionCreated"
         />
-        <div v-else class="login-prompt glass-card empty-surface">
+        <div v-else class="login-prompt empty-surface">
           <div class="login-prompt__content">
             <p class="login-prompt__title">{{ $t('community.loginToPost') }}</p>
             <ul class="login-prompt__list">
@@ -146,7 +149,11 @@
           </div>
           <div class="login-prompt__actions">
             <Button @click="goToLogin">{{ $t('nav.login') }}</Button>
-            <button type="button" class="glass-button" @click="goToExplore">
+            <button
+              type="button"
+              class="login-prompt__secondary page-control-btn page-control-btn--compact"
+              @click="goToExplore"
+            >
               {{ $t('nav.explore') }}
             </button>
           </div>
@@ -174,7 +181,7 @@
             <article
               v-for="discussion in discussions"
               :key="discussion.id"
-              class="discussion-card glass-card content-auto-sm"
+              class="discussion-card page-list-card content-auto-sm"
               role="button"
               tabindex="0"
               @click="goToDiscussion(discussion.id)"
@@ -278,7 +285,7 @@
           <h2 class="sr-only">{{ $t('community.hotTopics') }}</h2>
 
           <div v-if="isLoadingHot && hotTopics.length === 0" class="hot-topics-grid">
-            <article v-for="i in 6" :key="i" class="topic-card glass-card">
+            <article v-for="i in 6" :key="i" class="topic-card page-list-card">
               <div class="topic-rank">#{{ i }}</div>
               <div class="topic-content">
                 <Skeleton width="80%" height="20px" />
@@ -301,7 +308,7 @@
             <article
               v-for="(topic, index) in hotTopics"
               :key="topic.id"
-              class="topic-card glass-card"
+              class="topic-card page-list-card"
               role="button"
               tabindex="0"
               @click="goToDiscussion(topic.id)"
@@ -677,83 +684,36 @@ onUnmounted(() => {
   opacity: 0.15;
 }
 
-.page-header {
-  margin-bottom: var(--spacing-4);
-}
-
 .community-hero::after {
   content: none;
   display: none;
 }
 
-.fallback-preview {
-  display: grid;
-  gap: var(--spacing-2);
-  padding: clamp(1rem, 1.8vw, 1.25rem);
-  margin-block-end: var(--spacing-4);
-}
-
-.fallback-preview__label {
-  font-size: var(--text-xs);
-  font-weight: var(--font-semibold);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--color-text-tertiary);
-}
-
-.fallback-preview p {
-  margin: 0;
-  max-width: 52ch;
-  font-size: var(--text-sm);
-  color: var(--color-text-secondary);
-}
-
-.fallback-preview__detail {
-  font-size: var(--text-xs);
-  color: var(--color-text-tertiary);
-}
-
-.page-header-row {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--spacing-3);
-}
-
-.page-header-actions {
+.community-hero__actions {
   display: flex;
   align-items: center;
   gap: var(--spacing-2);
   flex-wrap: wrap;
+  min-inline-size: 0;
 }
 
 .discussion-search {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-2);
-  padding: 0.375rem 0.75rem;
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-lg);
-  transition: border-color 0.2s ease;
-}
-
-.discussion-search:focus-within {
-  border-color: var(--color-primary);
+  flex: 1 1 14rem;
+  max-inline-size: min(100%, 20rem);
+  min-inline-size: 0;
 }
 
 .discussion-search-input {
+  flex: 1 1 auto;
+  appearance: none;
   border: none;
   background: transparent;
   outline: none;
+  min-inline-size: 0;
+  inline-size: 100%;
+  max-inline-size: 100%;
   font-size: var(--text-sm);
   color: var(--color-text-primary);
-  width: 8.75rem;
-  transition: width 0.2s ease;
-}
-
-.discussion-search-input:focus {
-  width: 12.5rem;
 }
 
 .discussion-search-input::placeholder {
@@ -761,59 +721,33 @@ onUnmounted(() => {
 }
 
 .search-clear-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: none;
-  border: none;
-  padding: 0.125rem;
-  cursor: pointer;
-  color: var(--color-text-tertiary);
-  border-radius: var(--radius-sm);
-}
-
-.search-clear-btn:hover {
-  color: var(--color-text-primary);
+  flex-shrink: 0;
 }
 
 @media (max-width: 640px) {
-  .discussion-search-input {
-    width: 6.25rem;
+  .community-hero__actions {
+    inline-size: 100%;
+    justify-content: space-between;
+    flex-wrap: nowrap;
   }
-  .discussion-search-input:focus {
-    width: 8.75rem;
+
+  .discussion-search {
+    inline-size: 100%;
+    max-inline-size: none;
   }
-}
 
-.page-header h1 {
-  margin-bottom: var(--spacing-1);
-  font-size: var(--text-xl);
-}
-
-@media (min-width: 768px) {
-  .page-header h1 {
-    font-size: var(--text-2xl);
+  .community-tabs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-}
 
-.page-subtitle {
-  color: var(--color-text-tertiary);
-  font-size: var(--text-sm);
+  .tab-btn {
+    min-inline-size: 0;
+  }
 }
 
 .guide-trigger {
   flex-shrink: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.25rem;
-  height: 2.25rem;
-  border-radius: var(--radius-lg);
-  color: var(--color-text-secondary);
-}
-
-.guide-trigger:hover {
-  color: var(--color-text-primary);
 }
 
 .guide-dialog-body {
@@ -877,6 +811,10 @@ onUnmounted(() => {
   gap: var(--spacing-3);
 }
 
+.login-prompt__secondary {
+  white-space: nowrap;
+}
+
 .community-tabs {
   display: flex;
   width: 100%;
@@ -885,28 +823,9 @@ onUnmounted(() => {
 }
 
 .tab-btn {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--spacing-2);
-  padding: var(--spacing-2) var(--spacing-3);
-  border-radius: var(--radius-lg);
-  font-size: var(--text-sm);
-  font-weight: var(--font-medium);
-  color: var(--color-text-secondary);
-  transition: all var(--transition-fast);
+  flex: 1 1 0;
   text-align: center;
-}
-
-.tab-btn:hover {
-  background: var(--glass-bg-light);
-  color: var(--color-text-primary);
-}
-
-.tab-btn.active {
-  background: var(--color-primary);
-  color: var(--color-on-primary);
+  min-inline-size: 0;
 }
 
 .community-section {
@@ -941,13 +860,13 @@ onUnmounted(() => {
 
 @media (min-width: 768px) {
   .discussions-list {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 @media (min-width: 1280px) {
   .discussions-list {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
@@ -956,24 +875,12 @@ onUnmounted(() => {
   gap: var(--spacing-3);
   padding: var(--spacing-3);
   cursor: pointer;
-  transition:
-    transform var(--transition-fast),
-    box-shadow var(--transition-fast);
-}
-
-.discussion-card:hover {
-  transform: translateY(-2px);
-}
-
-.discussion-card:focus-visible {
-  outline: none;
-  transform: translateY(-2px);
-  box-shadow: 0 0 0 2px rgba(var(--color-primary-rgb), 0.35);
+  min-inline-size: 0;
 }
 
 .discussion-thumbnail {
-  width: 5rem;
-  height: 5rem;
+  inline-size: 5rem;
+  block-size: 5rem;
   border-radius: var(--radius-md);
   overflow: hidden;
   flex-shrink: 0;
@@ -987,13 +894,15 @@ onUnmounted(() => {
 
 .discussion-content {
   flex: 1;
-  min-width: 0;
+  min-inline-size: 0;
+  display: grid;
+  gap: var(--spacing-2);
 }
 
 .discussion-title {
   font-size: var(--text-base);
   font-weight: var(--font-semibold);
-  margin-bottom: var(--spacing-2);
+  margin: 0;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   line-clamp: 2;
@@ -1018,7 +927,7 @@ onUnmounted(() => {
 .discussion-excerpt {
   font-size: var(--text-sm);
   color: var(--color-text-secondary);
-  margin-bottom: var(--spacing-2);
+  margin: 0;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   line-clamp: 2;
@@ -1033,7 +942,7 @@ onUnmounted(() => {
   flex-wrap: wrap;
   font-size: var(--text-xs);
   color: var(--color-text-tertiary);
-  margin-bottom: var(--spacing-3);
+  margin: 0;
 }
 
 .comment-count {
@@ -1046,14 +955,14 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: var(--spacing-2);
-  margin-top: var(--spacing-2);
+  margin-top: 0;
 }
 
 .discussion-tags {
   display: flex;
   flex-wrap: wrap;
   gap: var(--spacing-1);
-  margin-bottom: var(--spacing-2);
+  margin: 0;
 }
 
 .discussion-tag {
@@ -1067,7 +976,6 @@ onUnmounted(() => {
   padding: var(--spacing-2);
   border-radius: var(--radius-md);
   background: var(--glass-bg-light);
-  margin-top: var(--spacing-2);
   cursor: pointer;
 }
 
@@ -1166,13 +1074,13 @@ onUnmounted(() => {
 
 @media (min-width: 640px) {
   .hot-topics-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 @media (min-width: 1024px) {
   .hot-topics-grid {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
@@ -1182,27 +1090,28 @@ onUnmounted(() => {
   gap: var(--spacing-3);
   padding: var(--spacing-3);
   cursor: pointer;
-  transition:
-    transform var(--transition-fast),
-    box-shadow var(--transition-fast);
+  min-inline-size: 0;
 }
 
 .topic-rank {
   font-size: var(--text-2xl);
   font-weight: var(--font-bold);
   color: var(--color-primary);
-  min-width: 40px;
+  min-inline-size: 2.5rem;
 }
 
 .topic-content {
+  min-inline-size: 0;
   flex: 1;
+  display: grid;
+  gap: var(--spacing-2);
 }
 
 .topic-title {
   font-size: var(--text-base);
   font-weight: var(--font-semibold);
   color: var(--color-text-primary);
-  margin-bottom: var(--spacing-2);
+  margin: 0;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   line-clamp: 2;
@@ -1213,7 +1122,8 @@ onUnmounted(() => {
 .topic-meta {
   display: flex;
   align-items: center;
-  gap: var(--spacing-3);
+  gap: var(--spacing-2);
+  flex-wrap: wrap;
   font-size: var(--text-xs);
   color: var(--color-text-tertiary);
 }
@@ -1226,16 +1136,6 @@ onUnmounted(() => {
 
 .topic-views {
   color: var(--color-text-tertiary);
-}
-
-.topic-card:hover {
-  transform: translateY(-2px);
-}
-
-.topic-card:focus-visible {
-  outline: none;
-  transform: translateY(-2px);
-  box-shadow: 0 0 0 2px rgba(var(--color-primary-rgb), 0.35);
 }
 
 .my-comments-list,
@@ -1251,8 +1151,8 @@ onUnmounted(() => {
 
 @media (max-width: 640px) {
   .discussion-thumbnail {
-    width: 3.75rem;
-    height: 3.75rem;
+    inline-size: 3.75rem;
+    block-size: 3.75rem;
   }
 }
 </style>

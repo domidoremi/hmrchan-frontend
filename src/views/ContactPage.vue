@@ -4,8 +4,8 @@
       <section class="page-hero contact-hero">
         <div class="page-hero__content">
           <span class="page-hero__eyebrow">{{ $t('contact.title') }}</span>
-          <h1 class="page-title">{{ $t('contact.title') }}</h1>
-          <p class="page-subtitle">{{ $t('contact.subtitle') }}</p>
+          <h1 class="page-hero__title">{{ $t('contact.title') }}</h1>
+          <p class="page-hero__subtitle">{{ $t('contact.subtitle') }}</p>
           <div class="page-hero__meta">
             <span class="page-hero__note">{{ $t('contact.feedbackTitle') }}</span>
             <span class="page-hero__note">{{ $t('contact.feedbackSubtitle') }}</span>
@@ -15,9 +15,9 @@
 
       <div class="contact-layout page-grid page-grid--sidebar">
         <div class="page-card-stack">
-          <section class="contact-card glass-card">
-            <h2 class="section-title">{{ $t('contact.title') }}</h2>
-            <p class="page-subtitle">{{ $t('contact.subtitle') }}</p>
+          <section class="contact-card empty-surface">
+            <h2 class="contact-section-title contact-card__title">{{ $t('contact.title') }}</h2>
+            <p class="card-subtitle">{{ $t('contact.subtitle') }}</p>
 
             <form class="contact-form" @submit.prevent="handleSubmit">
               <div class="form-group">
@@ -52,15 +52,17 @@
             </form>
           </section>
 
-          <section class="contact-card glass-card">
-            <h2 class="section-title">{{ $t('contact.feedbackTitle') }}</h2>
-            <p class="page-subtitle">{{ $t('contact.feedbackSubtitle') }}</p>
+          <section class="contact-card empty-surface">
+            <h2 class="contact-section-title contact-card__title">
+              {{ $t('contact.feedbackTitle') }}
+            </h2>
+            <p class="card-subtitle">{{ $t('contact.feedbackSubtitle') }}</p>
 
             <form class="contact-form" @submit.prevent="handleFeedbackSubmit">
               <div class="form-group">
                 <label>{{ $t('contact.feedbackCategory') }}</label>
                 <div
-                  class="category-list"
+                  class="category-list page-control-group"
                   role="radiogroup"
                   :aria-label="$t('contact.feedbackCategory')"
                 >
@@ -68,7 +70,7 @@
                     v-for="option in feedbackCategoryOptions"
                     :key="option.value"
                     type="button"
-                    class="category-btn"
+                    class="category-btn page-control-btn page-control-btn--compact"
                     :class="{ active: feedback.category === option.value }"
                     :aria-pressed="feedback.category === option.value"
                     @click="feedback.category = option.value"
@@ -103,7 +105,7 @@
           </section>
         </div>
 
-        <aside class="contact-side glass-card">
+        <aside class="contact-side empty-surface">
           <div class="contact-side__section">
             <h2 class="contact-side__title">{{ $t('contact.feedbackTitle') }}</h2>
             <p class="contact-side__copy">{{ $t('contact.feedbackSubtitle') }}</p>
@@ -125,10 +127,10 @@
           <div class="contact-side__section">
             <span class="contact-side__label">{{ $t('nav.community') }}</span>
             <div class="contact-side__links">
-              <RouterLink to="/community" class="glass-button contact-side__link">
+              <RouterLink to="/community" class="page-control-btn contact-side__link">
                 {{ $t('nav.community') }}
               </RouterLink>
-              <RouterLink to="/about" class="glass-button contact-side__link">
+              <RouterLink to="/about" class="page-control-btn contact-side__link">
                 {{ $t('nav.about') }}
               </RouterLink>
             </div>
@@ -235,9 +237,23 @@ async function handleFeedbackSubmit() {
   gap: var(--spacing-4);
 }
 
+.contact-hero .page-hero__content {
+  align-items: center;
+  text-align: center;
+}
+
+.contact-hero .page-hero__eyebrow {
+  align-self: center;
+}
+
+.contact-hero .page-hero__meta {
+  justify-content: center;
+}
+
 .contact-card {
-  width: 100%;
-  padding: var(--spacing-5);
+  inline-size: 100%;
+  display: grid;
+  gap: var(--spacing-4);
 }
 
 .contact-layout {
@@ -247,7 +263,6 @@ async function handleFeedbackSubmit() {
 .contact-side {
   display: grid;
   gap: var(--spacing-5);
-  padding: clamp(1.25rem, 2vw, 1.75rem);
 }
 
 .contact-side__section {
@@ -279,44 +294,34 @@ async function handleFeedbackSubmit() {
   display: flex;
   flex-wrap: wrap;
   gap: var(--spacing-2);
+  min-inline-size: 0;
 }
 
 .contact-side__link {
-  min-width: 8rem;
+  flex: 1 1 8rem;
+  min-inline-size: min(100%, 8rem);
+  text-decoration: none;
 }
 
 @media (min-width: 768px) {
   .contact-page {
     padding: var(--spacing-6) 0;
   }
-
-  .contact-card {
-    padding: var(--spacing-6);
-  }
 }
 
-.page-title {
-  font-size: var(--text-xl);
-  text-align: center;
-  margin-bottom: var(--spacing-1);
-}
-
-.section-title {
+.contact-section-title {
   font-size: var(--text-lg);
-  text-align: center;
-  margin-bottom: var(--spacing-1);
+  margin: 0;
 }
 
-@media (min-width: 640px) {
-  .page-title {
-    font-size: var(--text-2xl);
-  }
+.contact-card__title {
+  text-align: start;
 }
 
-.page-subtitle {
-  text-align: center;
+.card-subtitle {
+  margin: 0;
+  text-align: start;
   color: var(--color-text-tertiary);
-  margin-bottom: var(--spacing-4);
   font-size: var(--text-sm);
 }
 
@@ -345,29 +350,21 @@ async function handleFeedbackSubmit() {
 }
 
 .category-btn {
-  padding: var(--spacing-2) var(--spacing-3);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-full);
-  background: var(--glass-bg-light);
-  color: var(--color-text-secondary);
-  font-size: var(--text-sm);
-  transition: all var(--transition-fast);
-}
-
-.category-btn:hover {
-  background: var(--glass-bg);
-  border-color: var(--glass-border-strong);
-}
-
-.category-btn.active {
-  background: var(--gradient-primary);
-  border-color: transparent;
-  color: var(--color-on-primary);
-  box-shadow: 0 4px 12px rgba(var(--color-primary-rgb), 0.22);
+  white-space: nowrap;
 }
 
 .contact-textarea {
   resize: vertical;
   min-height: 7.5rem;
+}
+
+@media (max-width: 48rem) {
+  .contact-side__links {
+    flex-direction: column;
+  }
+
+  .contact-side__link {
+    inline-size: 100%;
+  }
 }
 </style>

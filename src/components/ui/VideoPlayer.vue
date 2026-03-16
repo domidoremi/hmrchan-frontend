@@ -2190,7 +2190,7 @@ onBeforeUnmount(() => {
 .vp__btn--align {
   width: 2rem;
   height: 1.75rem;
-  border-radius: calc(var(--ui-radius-button, var(--radius-lg)) - 2px);
+  border-radius: calc(var(--ui-radius-button, var(--radius-lg)) - 0.125rem);
 }
 
 .vp__btn--align.is-active {
@@ -2237,7 +2237,7 @@ onBeforeUnmount(() => {
 
 .vp__subtitle-preview {
   padding: 0.2em 0.5em;
-  border-radius: var(--radius-xs, 2px);
+  border-radius: calc(var(--radius-sm) / 2);
   font-size: var(--text-sm);
   line-height: 1.5;
   transition:

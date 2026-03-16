@@ -1,7 +1,7 @@
 <template>
   <footer class="footer">
     <div class="container">
-      <div class="footer-shell glass-card" :style="[footerShellStyle, noGlassBackdropStyle]">
+      <div class="footer-shell empty-surface" :style="[footerShellStyle, noGlassBackdropStyle]">
         <div class="footer-main">
           <div class="footer-brand">
             <RouterLink to="/" class="brand-logo" :aria-label="$t('app.name')">
@@ -71,29 +71,19 @@ const noGlassBackdropStyle = Object.freeze({
   WebkitBackdropFilter: 'blur(0rem)',
 }) as Readonly<Record<string, string>>
 const footerShellStyle = computed<Record<string, string>>(() => {
-  const style: Record<string, string> = {}
+  const style: Record<string, string> = {
+    '--footer-shell-bg': 'var(--chrome-surface-bg)',
+    '--footer-shell-border': 'var(--chrome-surface-border)',
+    '--footer-shell-shadow': 'var(--chrome-surface-shadow)',
+    '--footer-chip-bg': 'var(--chrome-chip-bg)',
+    '--footer-chip-border': 'var(--chrome-chip-border)',
+    '--footer-divider': 'var(--chrome-muted-border)',
+    '--footer-link-hover-bg': 'var(--chrome-muted-bg)',
+  }
 
   if (resolvedTheme.value === 'dark') {
-    style['--footer-shell-bg'] =
-      'linear-gradient(160deg, rgba(9, 13, 21, 0.92), rgba(14, 19, 29, 0.84))'
-    style['--footer-shell-border'] = 'rgba(255, 255, 255, 0.08)'
-    style['--footer-shell-shadow'] = '0 1.25rem 3rem -2rem rgba(0, 0, 0, 0.46)'
-    style['--footer-chip-bg'] = 'rgba(18, 24, 36, 0.72)'
-    style['--footer-chip-border'] = 'rgba(255, 255, 255, 0.08)'
-  } else if (resolvedTheme.value === 'blue') {
-    style['--footer-shell-bg'] =
-      'linear-gradient(160deg, rgba(255, 255, 255, 0.92), rgba(239, 246, 255, 0.84))'
-    style['--footer-shell-border'] = 'rgba(59, 130, 246, 0.14)'
-    style['--footer-shell-shadow'] = '0 1.2rem 3rem -2rem rgba(37, 99, 235, 0.18)'
-    style['--footer-chip-bg'] = 'rgba(255, 255, 255, 0.76)'
-    style['--footer-chip-border'] = 'rgba(59, 130, 246, 0.12)'
-  } else {
-    style['--footer-shell-bg'] =
-      'linear-gradient(160deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.78))'
-    style['--footer-shell-border'] = 'rgba(255, 255, 255, 0.46)'
-    style['--footer-shell-shadow'] = '0 1.15rem 2.8rem -1.9rem rgba(35, 53, 85, 0.22)'
-    style['--footer-chip-bg'] = 'rgba(255, 255, 255, 0.72)'
-    style['--footer-chip-border'] = 'rgba(148, 163, 184, 0.12)'
+    style['--footer-top-fade'] =
+      'linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, transparent 100%)'
   }
 
   if (settings.value.uiStyle === 'material') {
@@ -122,13 +112,13 @@ const footerShellStyle = computed<Record<string, string>>(() => {
     radial-gradient(circle at 18% 0%, rgba(var(--color-primary-rgb), 0.08) 0%, transparent 34%),
     radial-gradient(circle at 82% 6%, rgba(var(--color-accent-rgb), 0.07) 0%, transparent 30%);
   --footer-top-fade: linear-gradient(180deg, rgba(255, 255, 255, 0.34) 0%, transparent 100%);
-  --footer-shell-bg: linear-gradient(155deg, rgba(255, 255, 255, 0.94), rgba(255, 255, 255, 0.82));
-  --footer-shell-border: rgba(255, 255, 255, 0.58);
-  --footer-shell-shadow: 0 1.5rem 3.6rem -2.2rem rgba(35, 53, 85, 0.28);
-  --footer-chip-bg: rgba(255, 255, 255, 0.78);
-  --footer-chip-border: rgba(148, 163, 184, 0.14);
-  --footer-divider: rgba(148, 163, 184, 0.14);
-  --footer-link-hover-bg: rgba(255, 255, 255, 0.58);
+  --footer-shell-bg: var(--chrome-surface-bg);
+  --footer-shell-border: var(--chrome-surface-border);
+  --footer-shell-shadow: var(--chrome-surface-shadow);
+  --footer-chip-bg: var(--chrome-chip-bg);
+  --footer-chip-border: var(--chrome-chip-border);
+  --footer-divider: var(--chrome-muted-border);
+  --footer-link-hover-bg: var(--chrome-muted-bg);
   background: var(--footer-bg);
   opacity: var(--home-footer-opacity, 1);
   transform: translate3d(0, var(--home-footer-y, 0rem), 0);
@@ -174,13 +164,13 @@ const footerShellStyle = computed<Record<string, string>>(() => {
     radial-gradient(circle at 18% 0%, rgba(var(--color-primary-rgb), 0.12) 0%, transparent 34%),
     radial-gradient(circle at 82% 6%, rgba(var(--color-accent-rgb), 0.08) 0%, transparent 30%);
   --footer-top-fade: linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, transparent 100%);
-  --footer-shell-bg: linear-gradient(155deg, rgba(12, 16, 23, 0.98), rgba(18, 24, 36, 0.94));
-  --footer-shell-border: rgba(255, 255, 255, 0.12);
-  --footer-shell-shadow: 0 1.8rem 4rem -2.4rem rgba(0, 0, 0, 0.52);
-  --footer-chip-bg: rgba(18, 24, 36, 0.88);
-  --footer-chip-border: rgba(255, 255, 255, 0.08);
-  --footer-divider: rgba(255, 255, 255, 0.08);
-  --footer-link-hover-bg: rgba(255, 255, 255, 0.03);
+  --footer-shell-bg: var(--chrome-surface-bg);
+  --footer-shell-border: var(--chrome-surface-border);
+  --footer-shell-shadow: var(--chrome-surface-shadow);
+  --footer-chip-bg: var(--chrome-chip-bg);
+  --footer-chip-border: var(--chrome-chip-border);
+  --footer-divider: var(--chrome-muted-border);
+  --footer-link-hover-bg: var(--chrome-muted-bg);
 }
 
 :global(#app[data-theme='blue'] .footer),
@@ -196,13 +186,13 @@ const footerShellStyle = computed<Record<string, string>>(() => {
     radial-gradient(circle at 18% 0%, rgba(59, 130, 246, 0.12) 0%, transparent 34%),
     radial-gradient(circle at 82% 6%, rgba(99, 102, 241, 0.1) 0%, transparent 30%);
   --footer-top-fade: linear-gradient(180deg, rgba(255, 255, 255, 0.28) 0%, transparent 100%);
-  --footer-shell-bg: linear-gradient(155deg, rgba(255, 255, 255, 0.98), rgba(239, 246, 255, 0.92));
-  --footer-shell-border: rgba(59, 130, 246, 0.18);
-  --footer-shell-shadow: 0 1.7rem 4rem -2.4rem rgba(37, 99, 235, 0.2);
-  --footer-chip-bg: rgba(255, 255, 255, 0.88);
-  --footer-chip-border: rgba(59, 130, 246, 0.14);
-  --footer-divider: rgba(59, 130, 246, 0.14);
-  --footer-link-hover-bg: rgba(255, 255, 255, 0.64);
+  --footer-shell-bg: var(--chrome-surface-bg);
+  --footer-shell-border: var(--chrome-surface-border);
+  --footer-shell-shadow: var(--chrome-surface-shadow);
+  --footer-chip-bg: var(--chrome-chip-bg);
+  --footer-chip-border: var(--chrome-chip-border);
+  --footer-divider: var(--chrome-muted-border);
+  --footer-link-hover-bg: var(--chrome-muted-bg);
 }
 
 :global(main.main--home + .footer) {
@@ -254,7 +244,7 @@ const footerShellStyle = computed<Record<string, string>>(() => {
   --footer-shell-shadow: var(--shadow-md);
 }
 
-.footer-shell.glass-card {
+.footer-shell.empty-surface {
   padding: clamp(1.5rem, 3vw, 2rem);
   border-radius: var(--ui-radius-card, var(--radius-2xl));
   border-color: var(--footer-shell-border) !important;
@@ -262,6 +252,7 @@ const footerShellStyle = computed<Record<string, string>>(() => {
   box-shadow: var(--footer-shell-shadow) !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
+  animation: none;
   will-change: box-shadow;
   transition:
     box-shadow 240ms cubic-bezier(0.2, 0.84, 0.24, 1),
@@ -269,12 +260,12 @@ const footerShellStyle = computed<Record<string, string>>(() => {
     background 240ms cubic-bezier(0.2, 0.84, 0.24, 1);
 }
 
-.footer-shell.glass-card::before,
-.footer-shell.glass-card::after {
+.footer-shell.empty-surface::before,
+.footer-shell.empty-surface::after {
   display: none;
 }
 
-.footer-shell.glass-card:hover {
+.footer-shell.empty-surface:hover {
   border-color: var(--footer-shell-border);
   box-shadow: var(--footer-shell-shadow);
 }
@@ -306,12 +297,13 @@ const footerShellStyle = computed<Record<string, string>>(() => {
   inline-size: 2.5rem;
   block-size: 2.5rem;
   border-radius: var(--ui-radius-input, 1rem);
-  background: linear-gradient(
-    135deg,
-    rgba(var(--color-primary-rgb), 0.2) 0%,
-    rgba(var(--color-accent-rgb), 0.24) 100%
-  );
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.24);
+  background:
+    linear-gradient(135deg, rgba(var(--color-primary-rgb), 0.14) 0%, transparent 100%),
+    var(--footer-chip-bg);
+  border: 1px solid var(--footer-chip-border);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.24),
+    0 1rem 2rem -1.5rem rgba(15, 23, 42, 0.18);
   font-size: 1rem;
   font-weight: var(--font-bold);
 }
@@ -376,28 +368,37 @@ const footerShellStyle = computed<Record<string, string>>(() => {
 .footer-column a {
   display: inline-flex;
   align-items: center;
-  min-block-size: 2rem;
-  padding-inline: 0.125rem;
+  min-block-size: 2.125rem;
+  padding-inline: 0.5rem;
   border-radius: 0.5rem;
+  border: 1px solid transparent;
   font-size: var(--text-sm);
   color: var(--color-text-secondary);
   text-decoration: none;
   transition:
     color var(--transition-fast),
     background var(--transition-fast),
-    transform var(--transition-fast);
+    border-color var(--transition-fast);
 }
 
 .footer-column a:hover {
   color: var(--color-text-primary);
   background: var(--footer-link-hover-bg);
-  transform: translateX(0.125rem);
+  border-color: var(--footer-chip-border);
+}
+
+.footer-column a:focus-visible {
+  outline: none;
+  color: var(--color-text-primary);
+  background: var(--footer-link-hover-bg);
+  border-color: var(--footer-chip-border);
 }
 
 .footer-bottom {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
   gap: var(--spacing-4);
   padding-top: var(--spacing-5);
   margin-top: var(--spacing-6);
@@ -423,13 +424,14 @@ const footerShellStyle = computed<Record<string, string>>(() => {
   transition:
     background var(--transition-fast),
     color var(--transition-fast),
-    transform var(--transition-fast);
+    border-color var(--transition-fast);
 }
 
-.social-link:hover {
-  background: var(--color-primary);
-  color: var(--color-on-primary);
-  transform: translateY(-0.0625rem);
+.social-link:hover,
+.social-link:focus-visible {
+  background: var(--footer-link-hover-bg);
+  border-color: var(--footer-chip-border);
+  color: var(--color-primary);
 }
 
 @media (max-width: 768px) {

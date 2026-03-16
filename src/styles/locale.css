@@ -285,17 +285,6 @@
   border-radius: calc(var(--radius-xl) * 1.2);
 }
 
-/* 中文: 微妙的红/金色装饰线 */
-[data-locale='zh-CN'] .page-header::after,
-[data-locale='zh-TW'] .page-header::after {
-  content: '';
-  display: block;
-  height: 2px;
-  margin-top: var(--spacing-3);
-  background: linear-gradient(90deg, transparent, var(--locale-accent), transparent);
-  opacity: 0.4;
-}
-
 /* 英文: 更大的标题尺寸 (西文排版传统) */
 [data-locale='en'] h1 {
   font-size: calc(var(--text-4xl) * 1.1);
@@ -328,12 +317,6 @@
 [data-theme='dark'][data-locale='en'] {
   --locale-accent: #60a5fa;
   --locale-accent-rgb: 96, 165, 250;
-}
-
-/* 暗色模式下地区装饰线更柔和 */
-[data-theme='dark'][data-locale='zh-CN'] .page-header::after,
-[data-theme='dark'][data-locale='zh-TW'] .page-header::after {
-  opacity: 0.25;
 }
 
 /* ================================================================

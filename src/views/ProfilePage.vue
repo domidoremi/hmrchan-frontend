@@ -255,6 +255,12 @@ onMounted(() => {
   z-index: 2;
   padding: 0;
   overflow: visible;
+  border-radius: var(--profile-shell-radius);
+  border: 1px solid var(--profile-surface-border);
+  background: var(--profile-surface-bg);
+  box-shadow: var(--profile-surface-shadow);
+  backdrop-filter: blur(var(--blur-sm));
+  -webkit-backdrop-filter: blur(var(--blur-sm));
 }
 
 .profile-card__top {
@@ -321,18 +327,20 @@ onMounted(() => {
   height: 1.75rem;
   border-radius: var(--radius-full);
   color: var(--color-text-tertiary);
-  background: var(--glass-bg-light);
-  border: 1px solid var(--glass-border-subtle);
+  background: var(--profile-action-bg);
+  border: 1px solid var(--profile-action-border);
   transition:
     color var(--duration-fast) var(--ease-smooth),
     background var(--duration-fast) var(--ease-smooth),
+    border-color var(--duration-fast) var(--ease-smooth),
     transform var(--duration-fast) var(--ease-bounce-soft);
 }
 
 .edit-btn:hover {
   color: var(--color-primary);
-  background: rgba(var(--color-primary-rgb), 0.1);
-  transform: rotate(15deg);
+  background: var(--profile-action-bg-hover);
+  border-color: var(--profile-action-border-strong);
+  transform: rotate(12deg);
 }
 
 .profile-handle {
@@ -366,17 +374,21 @@ onMounted(() => {
   gap: var(--spacing-2);
   padding: var(--spacing-2) var(--spacing-3);
   border-radius: var(--radius-lg);
+  border: 1px solid transparent;
+  background: var(--profile-muted-bg);
   font-size: var(--text-sm);
   color: var(--color-text-secondary);
   text-decoration: none;
   transition:
     color var(--duration-fast) var(--ease-smooth),
-    background var(--duration-fast) var(--ease-smooth);
+    background var(--duration-fast) var(--ease-smooth),
+    border-color var(--duration-fast) var(--ease-smooth);
 }
 
 .quick-nav-item:hover {
   color: var(--color-primary);
-  background: rgba(var(--color-primary-rgb), 0.06);
+  background: var(--profile-muted-bg-strong);
+  border-color: var(--profile-muted-border-strong);
 }
 
 .quick-nav-badge {
@@ -398,7 +410,8 @@ onMounted(() => {
 .profile-stats {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  border-top: 1px solid var(--glass-border-subtle);
+  border-top: 1px solid var(--profile-muted-border);
+  background: linear-gradient(180deg, transparent, rgba(var(--color-primary-rgb), 0.03));
 }
 
 .stat-item {
@@ -423,12 +436,16 @@ onMounted(() => {
   width: 2rem;
   height: 2px;
   background: var(--color-primary);
-  border-radius: 1px;
+  border-radius: 0.0625rem;
   transition: transform var(--duration-normal) var(--ease-bounce-soft);
 }
 
 .stat-item:hover {
-  background: rgba(var(--color-primary-rgb), 0.03);
+  background: var(--profile-muted-bg);
+}
+
+.stat-item--active {
+  background: rgba(var(--color-primary-rgb), 0.04);
 }
 
 .stat-item--active::after {
@@ -460,18 +477,21 @@ onMounted(() => {
 /* ===== Tab Bar ===== */
 .profile-content {
   margin-top: clamp(1rem, 2vw, 1.5rem);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.875rem, 2vw, 1.25rem);
 }
 
 .tab-bar {
   display: flex;
-  gap: 2px;
-  padding: 3px;
-  background: var(--glass-bg-light);
-  border: 1px solid var(--glass-border-subtle);
+  gap: 0.125rem;
+  padding: 0.1875rem;
+  background: var(--profile-muted-bg);
+  border: 1px solid var(--profile-muted-border);
   border-radius: var(--radius-xl);
-  margin-bottom: clamp(1rem, 2vw, 1.5rem);
   overflow-x: auto;
   scrollbar-width: none;
+  box-shadow: var(--profile-surface-shadow);
 }
 
 .tab-bar::-webkit-scrollbar {
@@ -485,26 +505,29 @@ onMounted(() => {
   justify-content: center;
   gap: var(--spacing-2);
   padding: var(--spacing-2) var(--spacing-3);
-  border-radius: calc(var(--radius-xl) - 3px);
+  border-radius: calc(var(--radius-xl) - 0.1875rem);
+  border: 1px solid transparent;
   font-size: var(--text-sm);
   font-weight: var(--font-medium);
-  color: var(--color-text-tertiary);
+  color: var(--profile-chip-text);
   white-space: nowrap;
   transition:
     color var(--duration-fast) var(--ease-smooth),
     background var(--duration-fast) var(--ease-smooth),
+    border-color var(--duration-fast) var(--ease-smooth),
     box-shadow var(--duration-fast) var(--ease-smooth);
 }
 
 .tab-btn:hover:not(.tab-btn--active) {
   color: var(--color-text-secondary);
-  background: var(--glass-bg-medium);
+  background: var(--profile-action-bg);
 }
 
 .tab-btn--active {
   color: var(--color-text-primary);
-  background: var(--glass-bg-ultra-light);
-  box-shadow: var(--glass-shadow-sm);
+  background: var(--profile-surface-bg-soft);
+  border-color: var(--profile-surface-border);
+  box-shadow: 0 0.875rem 1.75rem -1.5rem rgba(15, 23, 42, 0.35);
 }
 
 .tab-label {
@@ -563,22 +586,24 @@ onMounted(() => {
     align-items: center;
     gap: var(--spacing-1);
     padding: var(--spacing-2) var(--spacing-3);
-    background: var(--glass-bg-light);
-    border: 1px solid var(--glass-border-subtle);
+    background: var(--profile-chip-bg);
+    border: 1px solid var(--profile-chip-border);
     border-radius: var(--radius-full);
     font-size: var(--text-xs);
-    color: var(--color-text-secondary);
+    color: var(--profile-chip-text);
     text-decoration: none;
     white-space: nowrap;
     flex-shrink: 0;
     transition:
       color var(--duration-fast) var(--ease-smooth),
+      background var(--duration-fast) var(--ease-smooth),
       border-color var(--duration-fast) var(--ease-smooth);
   }
 
   .quick-nav-chip:hover {
     color: var(--color-primary);
-    border-color: rgba(var(--color-primary-rgb), 0.3);
+    background: var(--profile-muted-bg-strong);
+    border-color: var(--profile-muted-border-strong);
   }
 
   .quick-nav-badge--sm {
@@ -629,10 +654,10 @@ onMounted(() => {
 <style>
 /* ===== Material 3 Overrides ===== */
 #app[data-ui-style='material'] .profile-page .profile-card {
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
-  background: var(--color-surface, #fff);
+  background: var(--profile-surface-bg);
   box-shadow: var(--shadow-sm);
 }
 
@@ -659,13 +684,13 @@ onMounted(() => {
 }
 
 #app[data-ui-style='material'] .profile-page .tab-bar {
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: var(--md-surface-container, var(--glass-bg-light));
   border-color: var(--md-outline-variant, var(--glass-border-subtle));
 }
 
 #app[data-ui-style='material'] .profile-page .tab-btn {
-  border-radius: 6px;
+  border-radius: calc(var(--radius-lg) / 2);
 }
 
 #app[data-ui-style='material'] .profile-page .tab-btn--active {
@@ -673,11 +698,11 @@ onMounted(() => {
 }
 
 #app[data-ui-style='material'] .profile-page .quick-nav-item {
-  border-radius: 8px;
+  border-radius: var(--radius-md);
 }
 
 #app[data-ui-style='material'] .profile-page .quick-nav-badge {
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
 }
 
 /* ===== Dark Theme ===== */
@@ -727,7 +752,7 @@ onMounted(() => {
 
 /* ===== Material + Blue ===== */
 #app[data-ui-style='material'][data-theme='blue'] .profile-page .profile-card {
-  background: #ffffff;
+  background: var(--profile-surface-bg);
   border-color: rgba(59, 130, 246, 0.1);
   box-shadow: 0 1px 3px rgba(59, 130, 246, 0.08);
 }

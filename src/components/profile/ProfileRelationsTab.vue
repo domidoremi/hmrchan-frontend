@@ -2,7 +2,7 @@
   <div class="relations-tab">
     <div class="tab-header">
       <h2 class="tab-title">{{ tabTitle }}</h2>
-      <span v-if="total > 0" class="item-count">{{ total }}</span>
+      <span v-if="total > 0" class="item-count profile-item-count">{{ total }}</span>
     </div>
 
     <StateIndicator

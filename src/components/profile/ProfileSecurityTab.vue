@@ -2,7 +2,9 @@
   <div class="security-tab">
     <div class="tab-header">
       <h2 class="tab-title">{{ $t('profile.tabs.security') }}</h2>
-      <span v-if="summary" class="item-count">{{ summary.security_events }}</span>
+      <span v-if="summary" class="item-count profile-item-count">{{
+        summary.security_events
+      }}</span>
     </div>
 
     <StateIndicator v-if="error" variant="error" :description="error" @action="loadSecurityData" />
@@ -17,10 +19,10 @@
 
     <template v-else>
       <section class="security-card glass-card-enhanced">
-        <div class="section-header">
+        <div class="security-section-head">
           <div>
-            <h3 class="section-title">{{ $t('profile.securitySummaryTitle') }}</h3>
-            <p class="section-desc">{{ $t('profile.securitySummaryHint') }}</p>
+            <h3 class="security-section-title">{{ $t('profile.securitySummaryTitle') }}</h3>
+            <p class="security-section-desc">{{ $t('profile.securitySummaryHint') }}</p>
           </div>
         </div>
 
@@ -60,10 +62,10 @@
       </section>
 
       <section class="security-card glass-card-enhanced">
-        <div class="section-header">
+        <div class="security-section-head">
           <div>
-            <h3 class="section-title">{{ $t('profile.securityActivityTitle') }}</h3>
-            <p class="section-desc">{{ $t('profile.securityActivityHint') }}</p>
+            <h3 class="security-section-title">{{ $t('profile.securityActivityTitle') }}</h3>
+            <p class="security-section-desc">{{ $t('profile.securityActivityHint') }}</p>
           </div>
         </div>
 
@@ -193,20 +195,20 @@ onMounted(() => {
   padding: clamp(0.875rem, 2.5vw, 1.125rem);
 }
 
-.section-header {
+.security-section-head {
   display: flex;
   justify-content: space-between;
   gap: var(--spacing-3);
   align-items: start;
 }
 
-.section-title {
+.security-section-title {
   margin: 0;
   font-size: var(--text-base);
   font-weight: var(--font-semibold);
 }
 
-.section-desc {
+.security-section-desc {
   margin: var(--spacing-1) 0 0;
   color: var(--color-text-tertiary);
   font-size: var(--text-sm);
