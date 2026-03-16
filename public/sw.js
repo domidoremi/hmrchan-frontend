@@ -274,20 +274,18 @@ self.addEventListener('notificationclick', (event) => {
   const urlToOpen = event.notification.data || '/'
 
   event.waitUntil(
-    clients
-      .matchAll({ type: 'window', includeUncontrolled: true })
-      .then((clientList) => {
-        // 查找已打开的窗口
-        for (const client of clientList) {
-          if (client.url === urlToOpen && 'focus' in client) {
-            return client.focus()
-          }
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      // 查找已打开的窗口
+      for (const client of clientList) {
+        if (client.url === urlToOpen && 'focus' in client) {
+          return client.focus()
         }
-        // 打开新窗口
-        if (clients.openWindow) {
-          return clients.openWindow(urlToOpen)
-        }
-      })
+      }
+      // 打开新窗口
+      if (clients.openWindow) {
+        return clients.openWindow(urlToOpen)
+      }
+    })
   )
 })
 
@@ -645,9 +643,7 @@ function shouldHandleRequest(url) {
   if (url.origin === self.location.origin) return true
 
   // API 域名（使用运行时配置，便于多环境扩展）
-  const apiHosts = RUNTIME_CONFIG.apiHostnames.length
-    ? RUNTIME_CONFIG.apiHostnames
-    : API_HOSTNAMES
+  const apiHosts = RUNTIME_CONFIG.apiHostnames.length ? RUNTIME_CONFIG.apiHostnames : API_HOSTNAMES
   if (apiHosts.includes(url.hostname)) return true
 
   // 允许的外部CDN
@@ -739,18 +735,50 @@ function isAvatarRequest(url) {
 }
 // IndexedDB store for media metadata (LRU + size tracking)
 const MEDIA_META_STORE = 'media-meta'
+const POSTS_STORE = 'posts'
+const POST_LISTS_STORE = 'post-lists'
+const META_STORE = 'meta'
+const OFFLINE_QUEUE_STORE = 'offline-queue'
+const ACCESS_HISTORY_STORE = 'access-history'
 
 function openDatabase() {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open('hmrchan-cache', 3)
+    const request = indexedDB.open('hmrchan-cache', 4)
 
     request.onupgradeneeded = () => {
       const db = request.result
 
-      if (!db.objectStoreNames.contains('offline-queue')) {
-        const queueStore = db.createObjectStore('offline-queue', { keyPath: 'id' })
+      if (!db.objectStoreNames.contains(POSTS_STORE)) {
+        const postsStore = db.createObjectStore(POSTS_STORE, { keyPath: 'uuid' })
+        postsStore.createIndex('cached_at', 'cached_at', { unique: false })
+      }
+
+      if (!db.objectStoreNames.contains(POST_LISTS_STORE)) {
+        const listsStore = db.createObjectStore(POST_LISTS_STORE, { keyPath: 'cache_key' })
+        listsStore.createIndex('cached_at', 'cached_at', { unique: false })
+      }
+
+      if (!db.objectStoreNames.contains(META_STORE)) {
+        const metaStore = db.createObjectStore(META_STORE, { keyPath: 'key' })
+        metaStore.createIndex('cached_at', 'cached_at', { unique: false })
+      } else {
+        const metaStore = request.transaction?.objectStore(META_STORE)
+        if (metaStore && !metaStore.indexNames.contains('cached_at')) {
+          metaStore.createIndex('cached_at', 'cached_at', { unique: false })
+        }
+      }
+
+      if (!db.objectStoreNames.contains(OFFLINE_QUEUE_STORE)) {
+        const queueStore = db.createObjectStore(OFFLINE_QUEUE_STORE, { keyPath: 'id' })
         queueStore.createIndex('status', 'status', { unique: false })
         queueStore.createIndex('timestamp', 'timestamp', { unique: false })
+      }
+
+      if (!db.objectStoreNames.contains(ACCESS_HISTORY_STORE)) {
+        const historyStore = db.createObjectStore(ACCESS_HISTORY_STORE, { keyPath: 'id' })
+        historyStore.createIndex('type', 'type', { unique: false })
+        historyStore.createIndex('lastAccess', 'lastAccess', { unique: false })
+        historyStore.createIndex('accessCount', 'accessCount', { unique: false })
       }
 
       if (!db.objectStoreNames.contains(MEDIA_META_STORE)) {
@@ -872,10 +900,7 @@ async function enforceMediaLimits(cache) {
   let currentCount = stats.count
   const maxEvictions = 50
   let evicted = 0
-  if (
-    currentCount <= MEDIA_CACHE_CONFIG.maxItems &&
-    currentSize <= MEDIA_CACHE_CONFIG.maxSize
-  ) {
+  if (currentCount <= MEDIA_CACHE_CONFIG.maxItems && currentSize <= MEDIA_CACHE_CONFIG.maxSize) {
     return
   }
 

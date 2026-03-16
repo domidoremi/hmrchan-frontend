@@ -43,6 +43,20 @@
                 {{ $t('email.backToLogin') }}
               </RouterLink>
             </div>
+            <div v-if="showTurnstileChallenge" class="turnstile-block">
+              <div class="turnstile-header">
+                <span class="turnstile-title">{{ $t('auth.verifyTitle') }}</span>
+                <span class="turnstile-hint">{{ $t('auth.verifyHint') }}</span>
+              </div>
+              <TurnstileWidget
+                ref="turnstileRef"
+                :site-key="turnstileSiteKey"
+                action="forgot-password"
+                @verify="handleTurnstileVerify"
+                @expire="handleTurnstileExpire"
+                @error="handleTurnstileError"
+              />
+            </div>
           </template>
 
           <!-- Form state -->
@@ -79,7 +93,7 @@
                 />
               </div>
 
-              <div v-if="turnstileEnabled" class="turnstile-block">
+              <div v-if="showTurnstileChallenge" class="turnstile-block">
                 <div class="turnstile-header">
                   <span class="turnstile-title">{{ $t('auth.verifyTitle') }}</span>
                   <span class="turnstile-hint">{{ $t('auth.verifyHint') }}</span>
@@ -94,12 +108,7 @@
                 />
               </div>
 
-              <Button
-                type="submit"
-                :loading="isLoading"
-                :disabled="turnstileEnabled && !turnstileToken"
-                full-width
-              >
+              <Button type="submit" :loading="isLoading" full-width>
                 {{ $t('email.sendResetLink') }}
               </Button>
             </form>
@@ -120,7 +129,7 @@
 <script setup lang="ts">
 defineOptions({ name: 'ForgotPasswordPage' })
 
-import { ref, onUnmounted, useTemplateRef } from 'vue'
+import { computed, ref, onUnmounted, useTemplateRef } from 'vue'
 import { useRouter, RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { ArrowLeft, Mail } from 'lucide-vue-next'
@@ -131,7 +140,7 @@ import Input from '@/components/ui/Input.vue'
 import TurnstileWidget from '@/components/ui/TurnstileWidget.vue'
 import AuthVisualScene from '@/components/auth/AuthVisualScene.vue'
 import { useTurnstileConfig } from '@/composables/useTurnstileConfig'
-import { getTurnstileErrorMessageKey } from '@/utils/turnstile'
+import { getTurnstileErrorMessageKey, isTurnstileRequiredError } from '@/utils/turnstile'
 
 const { t } = useI18n()
 const toastStore = useToastStore()
@@ -148,8 +157,12 @@ let cooldownTimer: ReturnType<typeof setInterval> | null = null
 
 const { turnstileSiteKey, turnstileEnabled } = useTurnstileConfig()
 const turnstileToken = ref<string | null>(null)
+const requiresTurnstileChallenge = ref(false)
 const turnstileRef = useTemplateRef<{ reset: () => void; getResponse: () => string | undefined }>(
   'turnstileRef'
+)
+const showTurnstileChallenge = computed(
+  () => turnstileEnabled.value && requiresTurnstileChallenge.value
 )
 
 const maskedEmail = ref('')
@@ -233,7 +246,7 @@ async function handleSubmit() {
     return
   }
 
-  if (turnstileEnabled.value && !turnstileToken.value) {
+  if (showTurnstileChallenge.value && !turnstileToken.value) {
     toastStore.warning(t('auth.error.turnstileRequired'))
     setVisualMood('typing', 900)
     return
@@ -248,14 +261,26 @@ async function handleSubmit() {
     })
     maskedEmail.value = maskEmail(email.value)
     emailSent.value = true
+    requiresTurnstileChallenge.value = false
+    turnstileToken.value = null
     setVisualMood('success', 1200)
     startCooldown()
   } catch (err) {
     if (err instanceof ApiError) {
+      if (isTurnstileRequiredError(err) && turnstileEnabled.value) {
+        requiresTurnstileChallenge.value = true
+        turnstileToken.value = null
+        turnstileRef.value?.reset()
+        toastStore.warning(t('auth.error.turnstileRequired'))
+        setVisualMood('typing', 900)
+        return
+      }
       // For security, still show success to avoid email enumeration
       if (err.status === 404 || err.status === 422) {
         maskedEmail.value = maskEmail(email.value)
         emailSent.value = true
+        requiresTurnstileChallenge.value = false
+        turnstileToken.value = null
         setVisualMood('success', 1200)
         startCooldown()
       } else {
@@ -274,16 +299,19 @@ async function handleSubmit() {
 }
 
 function handleTurnstileVerify(token: string) {
+  requiresTurnstileChallenge.value = true
   turnstileToken.value = token
   setVisualMood('typing', 500)
 }
 
 function handleTurnstileExpire() {
+  requiresTurnstileChallenge.value = true
   turnstileToken.value = null
   setVisualMood('typing', 500)
 }
 
 function handleTurnstileError(error?: Error) {
+  requiresTurnstileChallenge.value = true
   turnstileToken.value = null
   toastStore.error(t(getTurnstileErrorMessageKey(error)))
   setVisualMood('dodge', 900)

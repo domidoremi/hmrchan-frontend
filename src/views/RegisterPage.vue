@@ -296,7 +296,7 @@ import TurnstileWidget from '@/components/ui/TurnstileWidget.vue'
 import EmailCodeInput from '@/components/ui/EmailCodeInput.vue'
 import AuthVisualScene from '@/components/auth/AuthVisualScene.vue'
 import { useTurnstileConfig } from '@/composables/useTurnstileConfig'
-import { getTurnstileErrorMessageKey } from '@/utils/turnstile'
+import { getTurnstileErrorMessageKey, isTurnstileRequiredError } from '@/utils/turnstile'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -496,13 +496,6 @@ function setRegisterToken(token?: string, expiresIn?: number) {
 function hasValidRegisterToken() {
   if (!registerToken.value || !registerTokenExpiresAt.value) return false
   return Date.now() < registerTokenExpiresAt.value
-}
-
-function isTurnstileRequiredError(error: unknown): boolean {
-  if (!(error instanceof ApiError)) return false
-  const code = error.code?.toString().toLowerCase() || ''
-  const message = error.message?.toLowerCase() || ''
-  return code.includes('turnstile') || message.includes('turnstile')
 }
 
 async function handleSendCode() {
