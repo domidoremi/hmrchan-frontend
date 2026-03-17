@@ -57,6 +57,12 @@ export interface Settings {
   enableAnimations: boolean
   enableSwipeNavigation: boolean
   postsPerPage: number
+  cookieConsent: boolean | null
+  analyticsEnabled: boolean
+  functionalCookiesEnabled: boolean
+  performanceCookiesEnabled: boolean
+  dataCollection: boolean
+  personalizedContent: boolean
   defaultSort: 'newest' | 'popular' | 'trending'
   /** 动效强度：none=无动效, reduced=减弱, normal=正常, full=完整 */
   animationIntensity: AnimationIntensity
@@ -77,6 +83,12 @@ const defaultSettings: Settings = {
   enableAnimations: true,
   enableSwipeNavigation: true,
   postsPerPage: 20,
+  cookieConsent: null,
+  analyticsEnabled: false,
+  functionalCookiesEnabled: true,
+  performanceCookiesEnabled: false,
+  dataCollection: false,
+  personalizedContent: false,
   defaultSort: 'newest',
   animationIntensity: 'normal',
   postDetailViewMode: 'stream',
@@ -122,6 +134,18 @@ export const useSettingsStore = defineStore(
     // 使用 nextTick 确保持久化数据已写入 ref
     nextTick(() => {
       if (!settings.value.uiStyle) settings.value.uiStyle = 'ios'
+      if (settings.value.cookieConsent === undefined) settings.value.cookieConsent = null
+      if (settings.value.analyticsEnabled === undefined) settings.value.analyticsEnabled = false
+      if (settings.value.functionalCookiesEnabled === undefined) {
+        settings.value.functionalCookiesEnabled = true
+      }
+      if (settings.value.performanceCookiesEnabled === undefined) {
+        settings.value.performanceCookiesEnabled = false
+      }
+      if (settings.value.dataCollection === undefined) settings.value.dataCollection = false
+      if (settings.value.personalizedContent === undefined) {
+        settings.value.personalizedContent = false
+      }
       if (!settings.value.backgroundEffect) {
         settings.value.backgroundEffect = { ...defaultSettings.backgroundEffect }
       }
@@ -225,6 +249,35 @@ export const useSettingsStore = defineStore(
       settings.value.uiStyle = style
     }
 
+    function setCookieConsent(value: boolean | null) {
+      settings.value.cookieConsent = value
+
+      if (value !== true) {
+        settings.value.analyticsEnabled = false
+        settings.value.performanceCookiesEnabled = false
+      }
+    }
+
+    function setAnalyticsEnabled(enabled: boolean) {
+      settings.value.analyticsEnabled = enabled
+
+      if (enabled) {
+        settings.value.cookieConsent = true
+        settings.value.performanceCookiesEnabled = true
+      } else {
+        settings.value.performanceCookiesEnabled = false
+      }
+    }
+
+    function setPerformanceCookiesEnabled(enabled: boolean) {
+      settings.value.performanceCookiesEnabled = enabled
+
+      if (enabled) {
+        settings.value.cookieConsent = true
+        settings.value.analyticsEnabled = true
+      }
+    }
+
     function setBackgroundEffect(config: Partial<ParticleEffectConfig>) {
       settings.value.backgroundEffect = {
         ...settings.value.backgroundEffect,
@@ -273,6 +326,30 @@ export const useSettingsStore = defineStore(
         nextSettings.postsPerPage = Math.max(1, Math.round(preferences.posts_per_page))
       }
 
+      if (preferences.cookie_consent === null || typeof preferences.cookie_consent === 'boolean') {
+        nextSettings.cookieConsent = preferences.cookie_consent ?? null
+      }
+
+      if (typeof preferences.analytics_enabled === 'boolean') {
+        nextSettings.analyticsEnabled = preferences.analytics_enabled
+      }
+
+      if (typeof preferences.functional_cookies_enabled === 'boolean') {
+        nextSettings.functionalCookiesEnabled = preferences.functional_cookies_enabled
+      }
+
+      if (typeof preferences.performance_cookies_enabled === 'boolean') {
+        nextSettings.performanceCookiesEnabled = preferences.performance_cookies_enabled
+      }
+
+      if (typeof preferences.data_collection === 'boolean') {
+        nextSettings.dataCollection = preferences.data_collection
+      }
+
+      if (typeof preferences.personalized_content === 'boolean') {
+        nextSettings.personalizedContent = preferences.personalized_content
+      }
+
       settings.value = nextSettings
     }
 
@@ -281,6 +358,12 @@ export const useSettingsStore = defineStore(
         show_hero_section: settings.value.showHeroSection,
         enable_animations: settings.value.enableAnimations,
         posts_per_page: settings.value.postsPerPage,
+        cookie_consent: settings.value.cookieConsent,
+        analytics_enabled: settings.value.analyticsEnabled,
+        functional_cookies_enabled: settings.value.functionalCookiesEnabled,
+        performance_cookies_enabled: settings.value.performanceCookiesEnabled,
+        data_collection: settings.value.dataCollection,
+        personalized_content: settings.value.personalizedContent,
       }
     }
 
@@ -297,6 +380,9 @@ export const useSettingsStore = defineStore(
       toggleSetting,
       setAnimationIntensity,
       setUiStyle,
+      setCookieConsent,
+      setAnalyticsEnabled,
+      setPerformanceCookiesEnabled,
       setBackgroundEffect,
       setMascotBackground,
       setDeskPet,

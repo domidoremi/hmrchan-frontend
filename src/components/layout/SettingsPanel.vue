@@ -227,6 +227,63 @@
       </div>
     </div>
 
+    <!-- Privacy & Analytics -->
+    <div class="settings-group">
+      <div class="settings-group-header">
+        <div class="settings-group-icon">
+          <AnimatedIcon name="sparkle" :fallback-icon="ShieldCheck" size="sm" />
+        </div>
+        <span class="settings-label">{{ $t('settings.privacy') }}</span>
+      </div>
+
+      <div class="toggle-list">
+        <button type="button" class="toggle-btn" @click="toggleCookieConsent">
+          <div class="toggle-btn-content">
+            <div class="toggle-btn-icon">
+              <AnimatedIcon name="sparkle" :fallback-icon="ShieldCheck" size="sm" />
+            </div>
+            <div class="toggle-btn-text">
+              <span class="toggle-btn-title">{{ $t('settings.cookieConsent') }}</span>
+              <span class="toggle-btn-desc">{{ $t('settings.cookieConsentDesc') }}</span>
+            </div>
+          </div>
+          <div class="toggle-switch" :class="{ active: settings.cookieConsent === true }">
+            <span class="toggle-knob" />
+          </div>
+        </button>
+
+        <button type="button" class="toggle-btn" @click="toggleAnalyticsEnabled">
+          <div class="toggle-btn-content">
+            <div class="toggle-btn-icon">
+              <AnimatedIcon name="explore" :fallback-icon="BarChart3" size="sm" />
+            </div>
+            <div class="toggle-btn-text">
+              <span class="toggle-btn-title">{{ $t('settings.analyticsEnabled') }}</span>
+              <span class="toggle-btn-desc">{{ $t('settings.analyticsEnabledDesc') }}</span>
+            </div>
+          </div>
+          <div class="toggle-switch" :class="{ active: settings.analyticsEnabled }">
+            <span class="toggle-knob" />
+          </div>
+        </button>
+
+        <button type="button" class="toggle-btn" @click="togglePerformanceCookies">
+          <div class="toggle-btn-content">
+            <div class="toggle-btn-icon">
+              <AnimatedIcon name="explore" :fallback-icon="Gauge" size="sm" />
+            </div>
+            <div class="toggle-btn-text">
+              <span class="toggle-btn-title">{{ $t('settings.performanceCookies') }}</span>
+              <span class="toggle-btn-desc">{{ $t('settings.performanceCookiesDesc') }}</span>
+            </div>
+          </div>
+          <div class="toggle-switch" :class="{ active: settings.performanceCookiesEnabled }">
+            <span class="toggle-knob" />
+          </div>
+        </button>
+      </div>
+    </div>
+
     <!-- Background Effect -->
     <div class="settings-group">
       <div class="settings-group-header">
@@ -554,6 +611,9 @@ import {
   Layers,
   Smartphone,
   Sparkles,
+  ShieldCheck,
+  BarChart3,
+  Gauge,
 } from 'lucide-vue-next'
 import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
@@ -673,6 +733,18 @@ function setAnimationIntensity(value: AnimationIntensity) {
 
 function setPostsPerPage(value: number) {
   settingsStore.updateSetting('postsPerPage', value)
+}
+
+function toggleCookieConsent() {
+  settingsStore.setCookieConsent(settings.value.cookieConsent === true ? false : true)
+}
+
+function toggleAnalyticsEnabled() {
+  settingsStore.setAnalyticsEnabled(!settings.value.analyticsEnabled)
+}
+
+function togglePerformanceCookies() {
+  settingsStore.setPerformanceCookiesEnabled(!settings.value.performanceCookiesEnabled)
 }
 
 const bgEffectOptions = computed<{ value: ParticleEffectType; emoji: string; label: string }[]>(
