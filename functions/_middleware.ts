@@ -63,10 +63,10 @@ class ScriptNonceHandler {
 }
 
 class TitleHandler {
-  constructor(private readonly text: string) {}
+  constructor(private readonly titleText: string) {}
 
   element(el: Element) {
-    el.setInnerContent(this.text)
+    el.setInnerContent(this.titleText)
   }
 }
 
