@@ -1,6 +1,7 @@
 import { readonly, ref } from 'vue'
 import i18nInstance from '@/i18n'
 import { authService, ApiError, type VerificationTokenResponse } from './authService'
+import { reportClientError, reportClientEvent } from '@/utils/clientReporter'
 
 export type VerificationAction =
   | 'delete_account'
@@ -112,11 +113,27 @@ async function verifyWithPassword(
     })
     const result = normalizeVerificationResponse(response, { action, resourceId })
     cacheVerificationToken(result)
+    reportClientEvent('verification.password_verified', {
+      action,
+      hasResourceId: Boolean(resourceId),
+    })
     return result
   } catch (error) {
     if (error instanceof ApiError && error.status === 401) {
+      reportClientError(
+        'verification.password_rejected',
+        error,
+        { action, hasResourceId: Boolean(resourceId) },
+        { severity: 'warn' }
+      )
       throw createVerificationFailedError(action, resourceId)
     }
+    reportClientError(
+      'verification.password_failed',
+      error,
+      { action, hasResourceId: Boolean(resourceId) },
+      { severity: 'warn' }
+    )
     throw error
   }
 }
@@ -177,6 +194,14 @@ export async function ensureVerificationToken(
 export function requestVerification(
   request: VerificationRequest
 ): Promise<VerificationResolution | null> {
+  reportClientEvent(
+    'verification.requested',
+    {
+      action: request.action,
+      hasResourceId: Boolean(request.resourceId),
+    },
+    { severity: 'warn' }
+  )
   if (!currentPromise) {
     currentRequest.value = request
     isOpen.value = true
@@ -190,12 +215,17 @@ export function requestVerification(
 }
 
 export function resolveVerification(result: VerificationResolution) {
+  reportClientEvent('verification.resolved', {
+    action: result.action,
+    hasResourceId: Boolean(result.resourceId),
+  })
   cacheVerificationToken(result)
   settleCurrent?.(result)
   cleanupVerificationState()
 }
 
 export function dismissVerification() {
+  reportClientEvent('verification.dismissed', undefined, { severity: 'warn' })
   settleCurrent?.(null)
   cleanupVerificationState()
 }
