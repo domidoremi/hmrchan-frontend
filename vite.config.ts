@@ -25,6 +25,7 @@ import {
   criticalCSSPlugin,
   obfuscationPlugin,
   sriPlugin,
+  staticPrerenderPlugin,
   swVersionPlugin,
 } from './build/vite/plugins'
 
@@ -92,6 +93,14 @@ function parseStringArrayEncoding(raw: string | undefined): 'none' | 'base64' | 
   return 'base64'
 }
 
+function parseSourcemapEnv(raw: string | undefined, isProd: boolean): boolean | 'hidden' {
+  const value = raw?.trim().toLowerCase()
+  if (value === 'true') return true
+  if (value === 'false') return false
+  if (value === 'hidden') return 'hidden'
+  return isProd ? 'hidden' : false
+}
+
 function normalizeProxyTarget(rawTarget: string | undefined, fallbackTarget: string): string {
   const target = rawTarget?.trim() || fallbackTarget
   return target.replace(/\/+$/, '')
@@ -142,6 +151,7 @@ export default defineConfig(async ({ mode }: { mode: string }) => {
   const asyncMainCss = parseBoolEnv(env, 'VITE_ASYNC_MAIN_CSS', true)
   const disablePreviewProxy = parseBoolEnv(env, 'VITE_DISABLE_PREVIEW_PROXY', false)
   const devtoolsEnabled = isDev && parseBoolEnv(env, 'VITE_ENABLE_DEVTOOLS', false)
+  const sourcemapMode = parseSourcemapEnv(env.VITE_SOURCEMAP, isProd)
   const apiProxyTarget = normalizeProxyTarget(env.VITE_API_BASE_URL, 'https://api.momichan.xyz')
   const sharedProxyConfig = createProxyConfig(apiProxyTarget)
   const obfuscationProfile = env.VITE_OBFUSCATION_PROFILE === 'aggressive' ? 'aggressive' : 'safe'
@@ -209,6 +219,7 @@ export default defineConfig(async ({ mode }: { mode: string }) => {
             criticalCSSPlugin(),
             swVersionPlugin(),
             sriPlugin(),
+            staticPrerenderPlugin(),
             ...(asyncMainCss ? [asyncCssPlugin()] : []),
             obfuscationPlugin({
               enabled: obfuscationEnabled,
@@ -359,8 +370,8 @@ export default defineConfig(async ({ mode }: { mode: string }) => {
       /** 构建目标，使用最新的 ES 特性 */
       target: 'esnext',
 
-      /** 禁用 sourcemap 以加快构建速度和减小体积 */
-      sourcemap: false,
+      /** 生产环境默认输出 hidden sourcemap，便于私有排障又不暴露映射地址 */
+      sourcemap: sourcemapMode,
 
       /**
        * 生产环境代码压缩配置
