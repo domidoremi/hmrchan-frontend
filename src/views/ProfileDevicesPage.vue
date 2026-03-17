@@ -1,5 +1,5 @@
 <template>
-  <div class="devices-page">
+  <div class="devices-page profile-sub-page">
     <div class="container">
       <ProfileSubPageHeader
         :title="$t('profile.tabs.devices')"
@@ -14,8 +14,8 @@
       </ProfileSubPageHeader>
 
       <!-- Security Overview -->
-      <div class="security-strip">
-        <div class="security-card glass-card-enhanced">
+      <div class="security-strip profile-sub-page__stats">
+        <div class="security-card glass-surface--elevated">
           <div class="security-icon security-icon--devices">
             <Monitor :size="16" />
           </div>
@@ -24,7 +24,7 @@
             <span class="security-label">{{ $t('devices.activeSessions') }}</span>
           </div>
         </div>
-        <div class="security-card glass-card-enhanced">
+        <div class="security-card glass-surface--elevated">
           <div class="security-icon security-icon--trusted">
             <ShieldCheck :size="16" />
           </div>
@@ -33,7 +33,7 @@
             <span class="security-label">{{ $t('devices.trustedDevices') }}</span>
           </div>
         </div>
-        <div class="security-card glass-card-enhanced">
+        <div class="security-card glass-surface--elevated">
           <div class="security-icon security-icon--current">
             <Fingerprint :size="16" />
           </div>
@@ -47,7 +47,7 @@
       </div>
 
       <!-- Device List -->
-      <div class="page-body glass-card-enhanced">
+      <div class="page-body profile-sub-page__body glass-surface--editorial">
         <DeviceManagement :sessions="sessions" :is-loading="isLoading" />
       </div>
     </div>

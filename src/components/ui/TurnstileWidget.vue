@@ -5,8 +5,9 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch, useTemplateRef } from 'vue'
 import {
+  classifyTurnstileError,
+  describeTurnstileError,
   extractTurnstileErrorCode,
-  isRetryableTurnstileError,
   TURNSTILE_HOSTNAME_MISMATCH_CODE,
 } from '@/utils/turnstile'
 
@@ -39,8 +40,7 @@ let mountDelayTimer: ReturnType<typeof setTimeout> | null = null
 let mountDelayResolve: (() => void) | null = null
 let turnstilePollRaf: number | null = null
 let turnstilePollReject: ((reason?: Error) => void) | null = null
-let retryTimer: ReturnType<typeof setTimeout> | null = null
-let retryCount = 0
+let isReady = false
 
 declare global {
   interface Window {
@@ -138,8 +138,6 @@ function loadTurnstileScript(): Promise<void> {
 // Constants
 const LOG_PREFIX = '[Turnstile]'
 const SITE_KEY_PREVIEW_LENGTH = 10
-const MAX_AUTO_RETRIES = 2
-const RETRY_DELAY_MS = 900
 const IS_DEV = import.meta.env.DEV
 
 // Helper functions
@@ -154,33 +152,8 @@ function logDebug(method: 'log' | 'warn' | 'error', ...args: unknown[]) {
   console[method](LOG_PREFIX, ...args)
 }
 
-function clearRetryTimer() {
-  if (!retryTimer) return
-  clearTimeout(retryTimer)
-  retryTimer = null
-}
-
 function resetRetryState() {
-  retryCount = 0
-  clearRetryTimer()
-}
-
-function scheduleRetry(errorCode: string | null): boolean {
-  if (!isRetryableTurnstileError(errorCode) || isUnmounted || retryCount >= MAX_AUTO_RETRIES) {
-    return false
-  }
-
-  retryCount += 1
-  clearRetryTimer()
-  retryTimer = window.setTimeout(() => {
-    retryTimer = null
-    if (isUnmounted) return
-    renderWidget()
-  }, RETRY_DELAY_MS * retryCount)
-  logDebug('warn', `Retrying widget render after transient error ${errorCode}.`, {
-    retryCount,
-  })
-  return true
+  // 保持接口稳定，但不再自动重试，避免 challenge 反复重建导致抖动和噪音。
 }
 
 function validateRenderConditions(): boolean {
@@ -230,20 +203,23 @@ function createTurnstileConfig() {
     },
     'error-callback': (errorCode: unknown) => {
       const code = extractTurnstileErrorCode(errorCode)
-
-      if (scheduleRetry(code)) {
-        return true
-      }
+      const kind = classifyTurnstileError(errorCode)
 
       if (code === TURNSTILE_HOSTNAME_MISMATCH_CODE) {
         logDebug('error', 'Hostname is not authorized for this site key:', {
           hostname: window.location.hostname,
           siteKey: maskSiteKey(props.siteKey),
         })
+      } else {
+        logDebug('warn', 'Challenge widget reported an error:', {
+          kind,
+          code: code ?? 'unknown',
+        })
       }
 
-      const error = new Error(code ? `Turnstile error: ${code}` : 'Turnstile error occurred')
+      const error = new Error(describeTurnstileError(errorCode))
       error.name = 'TurnstileError'
+      Object.assign(error, { code, kind })
       emit('error', error)
       return true
     },
@@ -251,6 +227,7 @@ function createTurnstileConfig() {
 }
 
 function renderWidget() {
+  if (!isReady) return
   if (!validateRenderConditions()) return
 
   cleanupWidget()
@@ -267,6 +244,17 @@ function renderWidget() {
   } catch (error) {
     logDebug('error', 'Render failed:', error)
     widgetId.value = null // Ensure clean state on error
+    emit('error', error as Error)
+  }
+}
+
+async function rerender() {
+  try {
+    await loadTurnstileScript()
+    if (isUnmounted) return
+    renderWidget()
+  } catch (error) {
+    logDebug('error', 'Rerender failed:', error)
     emit('error', error as Error)
   }
 }
@@ -306,6 +294,7 @@ onMounted(async () => {
     await waitForMountDelay(100)
     if (isUnmounted) return
 
+    isReady = true
     renderWidget()
   } catch (error) {
     logDebug('error', 'Mount failed:', error)
@@ -315,6 +304,7 @@ onMounted(async () => {
 
 onUnmounted(() => {
   isUnmounted = true
+  isReady = false
   if (turnstilePollRaf !== null) {
     cancelAnimationFrame(turnstilePollRaf)
     turnstilePollRaf = null
@@ -340,7 +330,8 @@ onUnmounted(() => {
 
 watch(
   () => props.siteKey,
-  () => {
+  (nextSiteKey, previousSiteKey) => {
+    if (!isReady || nextSiteKey === previousSiteKey) return
     renderWidget()
   }
 )
@@ -348,6 +339,7 @@ watch(
 defineExpose({
   reset,
   getResponse,
+  rerender,
 })
 </script>
 

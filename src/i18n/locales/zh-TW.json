@@ -330,7 +330,7 @@
     "portal": {
       "kicker": "今日入口",
       "title": "今天最值得看的都在這裡",
-      "subtitle": "從推薦、作者、日程到社群，一鍵進入內容氛圍。",
+      "subtitle": "推薦、作者、日程、社群，一屏進入。",
       "action": "進入探索",
       "items": {
         "recommend": {
@@ -354,13 +354,13 @@
     "featured": {
       "kicker": "編輯精選",
       "title": "今日推薦",
-      "subtitle": "編輯部今天最想讓你看到的內容",
+      "subtitle": "編輯部今天最想遞給你的內容。",
       "action": "去探索"
     },
     "trends": {
       "kicker": "本週趨勢",
       "title": "本週趨勢",
-      "subtitle": "作者、標籤與日程的熱度速覽",
+      "subtitle": "作者、標籤、日程，一眼看熱度。",
       "authorsTitle": "熱門作者",
       "tagsTitle": "熱門標籤",
       "scheduleTitle": "本週日程",
@@ -388,11 +388,12 @@
       "title": "讓最後一張卡片順滑接入頁腳",
       "subtitle": "在品牌資訊真正出現前，先提供一層回到探索、作者、日程與社群的過橋區。"
     },
-    "latestSubtitle": "持續更新的最新內容流",
+    "latestSubtitle": "持續更新的內容流",
     "latestAction": "查看更多"
   },
   "explore": {
     "title": "探索",
+    "subtitle": "依平台、熱度與時間線瀏覽最新內容。",
     "allPlatforms": "全部",
     "searchPlaceholder": "搜尋貼文、作者、標籤...",
     "filters": "篩選",
@@ -405,6 +406,7 @@
   },
   "search": {
     "title": "搜尋",
+    "subtitle": "搜尋貼文、作者與標籤，快速回到正在關注的內容。",
     "placeholder": "搜尋貼文、作者、標籤...",
     "emptyTitle": "搜尋內容",
     "emptyHint": "尋找貼文、作者等內容",
@@ -451,6 +453,9 @@
       "author": "作者",
       "tag": "標籤"
     }
+  },
+  "authors": {
+    "subtitle": "依平台整理創作者檔案與近期活躍度。"
   },
   "post": {
     "by": "作者",

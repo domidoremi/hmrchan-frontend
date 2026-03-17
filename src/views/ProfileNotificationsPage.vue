@@ -1,5 +1,5 @@
 <template>
-  <div class="notifications-page">
+  <div class="notifications-page profile-sub-page">
     <div class="container">
       <ProfileSubPageHeader
         :title="$t('profile.tabs.notifications')"
@@ -14,7 +14,7 @@
       </ProfileSubPageHeader>
 
       <!-- Inline Stats -->
-      <div class="notif-stats">
+      <div class="notif-stats profile-sub-page__stats">
         <span class="notifications-stat-pill ui-pill ui-pill--stat">
           <Bell :size="14" />
           {{ total }}
@@ -37,12 +37,12 @@
       </div>
 
       <!-- Filter Bar -->
-      <div class="filter-bar">
+      <div class="filter-bar profile-sub-page__filters">
         <button
           v-for="filter in filters"
           :key="filter.value"
           type="button"
-          class="notifications-filter-pill page-control-btn page-control-btn--compact"
+          class="notifications-filter-pill profile-filter-pill page-control-btn page-control-btn--compact"
           :class="{ 'notifications-filter-pill--active': activeFilter === filter.value }"
           :aria-pressed="activeFilter === filter.value"
           @click="activeFilter = filter.value"
@@ -59,7 +59,7 @@
       </div>
 
       <!-- Content -->
-      <div class="page-body glass-card-enhanced">
+      <div class="page-body profile-sub-page__body glass-surface--editorial">
         <ProfileNotificationsTab />
       </div>
     </div>

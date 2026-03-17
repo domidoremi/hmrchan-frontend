@@ -26,7 +26,7 @@
         <article
           v-for="(report, index) in reports"
           :key="report.id"
-          class="report-card glass-card-enhanced"
+          class="report-card glass-surface--elevated"
           :style="{ '--stagger': index }"
         >
           <div class="report-card__header">

@@ -42,21 +42,21 @@
       <div class="navbar-actions">
         <button
           type="button"
-          class="action-btn action-btn--search"
+          class="nav-action-btn nav-action-btn--pill nav-action-btn--search"
           @click="goToSearch"
           @mouseenter="prefetchExplorePage"
           @focus="prefetchExplorePage"
           :aria-label="$t('common.search')"
         >
           <AnimatedIcon name="search" :fallback-icon="Search" size="md" />
-          <span class="action-btn__label desktop-only">{{ $t('common.search') }}</span>
+          <span class="nav-action-btn__label desktop-only">{{ $t('common.search') }}</span>
         </button>
 
         <button
           type="button"
           ref="settingsBtnRef"
-          class="action-btn"
-          :class="{ 'action-btn--active': showSettings }"
+          class="nav-action-btn nav-action-btn--square"
+          :class="{ 'nav-action-btn--active': showSettings }"
           @click="toggleSettings"
           @mouseenter="prefetchSettingsPanel"
           @focus="prefetchSettingsPanel"
@@ -79,7 +79,7 @@
                   : undefined,
             },
           }"
-          class="login-btn action-btn action-btn--primary"
+          class="login-btn nav-action-btn nav-action-btn--pill nav-action-btn--primary"
           :aria-label="$t('nav.login')"
           @mouseenter="prefetchLoginPage"
           @focus="prefetchLoginPage"
@@ -92,16 +92,16 @@
           type="button"
           v-else
           ref="userBtnRef"
-          class="user-btn"
-          :class="{ 'user-btn--active': showUserMenu }"
+          class="nav-user-btn"
+          :class="{ 'nav-user-btn--active': showUserMenu }"
           :aria-label="$t('nav.profile')"
           :aria-expanded="showUserMenu"
           aria-haspopup="menu"
           :aria-controls="showUserMenu ? 'navbar-user-menu' : undefined"
           @click="toggleUserMenu"
         >
-          <img :src="userAvatar" :alt="user?.username" class="user-avatar" />
-          <div class="user-status" />
+          <img :src="userAvatar" :alt="user?.username" class="nav-user-avatar" />
+          <div class="nav-user-status" />
         </button>
       </div>
     </div>
@@ -144,7 +144,7 @@
               :alt="user ? getUserDisplayName(user) : ''"
               class="user-avatar-lg"
             />
-            <div class="user-status user-status--lg" />
+            <div class="nav-user-status nav-user-status--lg" />
           </div>
           <div class="user-details">
             <div class="user-name">{{ user ? getUserDisplayName(user) : '' }}</div>
@@ -1053,13 +1053,13 @@ onUnmounted(() => {
   gap: var(--spacing-2);
 }
 
-.action-btn {
+.nav-action-btn {
   position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: var(--ui-action-size, 2.5rem);
-  height: var(--ui-action-size, 2.5rem);
+  min-inline-size: var(--ui-action-size, 2.5rem);
+  block-size: var(--ui-action-size, 2.5rem);
   padding-inline: var(--spacing-3);
   border-radius: var(--ui-radius-button, var(--radius-lg));
   border: 1px solid var(--nav-action-border);
@@ -1073,7 +1073,7 @@ onUnmounted(() => {
     box-shadow var(--duration-fast) var(--ease-out);
 }
 
-.action-btn::before {
+.nav-action-btn::before {
   content: '';
   position: absolute;
   inset: 0;
@@ -1082,20 +1082,28 @@ onUnmounted(() => {
   transition: background var(--transition-fast);
 }
 
-.action-btn:hover {
+.nav-action-btn:hover {
   color: var(--color-primary);
   border-color: var(--nav-action-border-strong);
 }
 
-.action-btn:hover::before {
+.nav-action-btn:hover::before {
   background: var(--nav-action-bg-hover);
 }
 
-.action-btn--search {
+.nav-action-btn--pill {
+  border-radius: var(--radius-full);
+}
+
+.nav-action-btn--square {
+  padding-inline: 0;
+}
+
+.nav-action-btn--search {
   gap: var(--spacing-2);
 }
 
-.action-btn__label {
+.nav-action-btn__label {
   position: relative;
   z-index: 1;
   white-space: nowrap;
@@ -1103,16 +1111,16 @@ onUnmounted(() => {
   color: inherit;
 }
 
-.action-btn--active {
+.nav-action-btn--active {
   color: var(--color-primary);
   border-color: var(--nav-action-border-strong);
 }
 
-.action-btn--active::before {
+.nav-action-btn--active::before {
   background: var(--nav-action-bg-hover);
 }
 
-.action-btn--primary {
+.nav-action-btn--primary {
   border-color: rgba(var(--color-primary-rgb), 0.16);
   background:
     linear-gradient(
@@ -1125,15 +1133,15 @@ onUnmounted(() => {
   box-shadow: 0 0.75rem 1.5rem -1rem rgba(var(--color-primary-rgb), 0.34);
 }
 
-.action-btn--primary:hover,
-.action-btn--primary.action-btn--active {
+.nav-action-btn--primary:hover,
+.nav-action-btn--primary.nav-action-btn--active {
   color: var(--color-on-primary);
   border-color: rgba(var(--color-primary-rgb), 0.22);
   box-shadow: 0 0.95rem 1.75rem -1rem rgba(var(--color-primary-rgb), 0.4);
 }
 
-.action-btn--primary:hover::before,
-.action-btn--primary.action-btn--active::before {
+.nav-action-btn--primary:hover::before,
+.nav-action-btn--primary.nav-action-btn--active::before {
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.02));
 }
 
@@ -1181,7 +1189,7 @@ onUnmounted(() => {
 }
 
 /* ========== User Button ========== */
-.user-btn {
+.nav-user-btn {
   position: relative;
   padding: 0.125rem;
   border: 1px solid var(--nav-action-border);
@@ -1194,7 +1202,7 @@ onUnmounted(() => {
     box-shadow var(--duration-fast) var(--ease-out);
 }
 
-.user-btn::before {
+.nav-user-btn::before {
   content: '';
   position: absolute;
   inset: -0.125rem;
@@ -1203,13 +1211,13 @@ onUnmounted(() => {
   transition: background var(--transition-fast);
 }
 
-.user-btn:hover::before,
-.user-btn--active::before {
+.nav-user-btn:hover::before,
+.nav-user-btn--active::before {
   background: var(--nav-action-bg-hover);
   opacity: 1;
 }
 
-.user-avatar {
+.nav-user-avatar {
   width: 2.25rem;
   height: 2.25rem;
   border-radius: 50%;
@@ -1218,12 +1226,12 @@ onUnmounted(() => {
   transition: border-color var(--transition-fast);
 }
 
-.user-btn:hover .user-avatar,
-.user-btn--active .user-avatar {
+.nav-user-btn:hover .nav-user-avatar,
+.nav-user-btn--active .nav-user-avatar {
   border-color: var(--color-primary);
 }
 
-.user-status {
+.nav-user-status {
   position: absolute;
   bottom: 0;
   right: 0;
@@ -1273,7 +1281,7 @@ onUnmounted(() => {
   border: 2px solid var(--nav-chip-border);
 }
 
-.user-status--lg {
+.nav-user-status--lg {
   width: 0.75rem;
   height: 0.75rem;
   border-width: 2px;
@@ -1515,8 +1523,8 @@ onUnmounted(() => {
     display: flex;
   }
 
-  .action-btn {
-    width: var(--ui-action-size, 2.5rem);
+  .nav-action-btn {
+    inline-size: var(--ui-action-size, 2.5rem);
     padding-inline: 0;
   }
 

@@ -106,7 +106,7 @@ function getLocationText(session: Device): string {
       <div
         v-for="session in sessions"
         :key="session.id"
-        class="device-card glass-card-enhanced"
+        class="device-card glass-surface--elevated"
         :class="{ 'is-current': session.is_current }"
       >
         <div class="device-icon">

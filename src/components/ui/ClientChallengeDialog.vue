@@ -27,6 +27,7 @@
       </p>
 
       <p v-if="errorMessage" class="field-error">{{ errorMessage }}</p>
+      <p v-if="errorDetail" class="client-challenge-dialog__detail">{{ errorDetail }}</p>
     </div>
 
     <template #footer>
@@ -56,7 +57,7 @@ import Dialog from '@/components/ui/Dialog.vue'
 import TurnstileWidget from '@/components/ui/TurnstileWidget.vue'
 import { ApiError } from '@/api'
 import { clientSecurityService } from '@/api/clientSecurityService'
-import { getTurnstileErrorMessageKey } from '@/utils/turnstile'
+import { describeTurnstileError, getTurnstileErrorMessageKey } from '@/utils/turnstile'
 import {
   clientChallengeState,
   dismissClientChallenge,
@@ -69,8 +70,9 @@ const { t } = useI18n()
 const isSubmitting = ref(false)
 const isPreparing = ref(false)
 const errorMessage = ref('')
+const errorDetail = ref('')
 
-const turnstileRef = useTemplateRef<{ reset: () => void }>('turnstileRef')
+const turnstileRef = useTemplateRef<{ reset: () => void; rerender?: () => void }>('turnstileRef')
 
 const isOpen = computed(() => clientChallengeState.isOpen.value)
 const resolvedSiteKey = computed(() => clientChallengeState.turnstileSiteKey.value)
@@ -80,6 +82,7 @@ watch(
   (open) => {
     if (open) {
       errorMessage.value = ''
+      errorDetail.value = ''
       void ensureSiteKey()
       return
     }
@@ -87,15 +90,17 @@ watch(
     isPreparing.value = false
     isSubmitting.value = false
     errorMessage.value = ''
+    errorDetail.value = ''
   },
   { immediate: true }
 )
 
 async function ensureSiteKey() {
-  if (resolvedSiteKey.value) return
+  if (resolvedSiteKey.value || isPreparing.value) return
 
   isPreparing.value = true
   errorMessage.value = ''
+  errorDetail.value = ''
 
   try {
     const status = await clientSecurityService.getStatus()
@@ -107,6 +112,7 @@ async function ensureSiteKey() {
     }
   } catch (error) {
     errorMessage.value = error instanceof ApiError ? error.message : t('auth.error.turnstileFailed')
+    errorDetail.value = error instanceof Error ? error.message : ''
   } finally {
     isPreparing.value = false
   }
@@ -117,12 +123,14 @@ async function handleTurnstileVerify(token: string) {
 
   isSubmitting.value = true
   errorMessage.value = ''
+  errorDetail.value = ''
 
   try {
     await clientSecurityService.verify(token)
     resolveClientChallenge()
   } catch (error) {
     errorMessage.value = error instanceof ApiError ? error.message : t('auth.error.turnstileFailed')
+    errorDetail.value = error instanceof Error ? error.message : ''
   } finally {
     isSubmitting.value = false
   }
@@ -130,15 +138,29 @@ async function handleTurnstileVerify(token: string) {
 
 function handleTurnstileExpire() {
   errorMessage.value = t('auth.error.turnstileRequired')
+  errorDetail.value = ''
 }
 
 function handleTurnstileError(error?: Error) {
   errorMessage.value = t(getTurnstileErrorMessageKey(error))
+  errorDetail.value = error ? describeTurnstileError(error) : ''
 }
 
-function handleRetry() {
+async function handleRetry() {
   if (isSubmitting.value) return
   errorMessage.value = ''
+  errorDetail.value = ''
+
+  if (!resolvedSiteKey.value) {
+    await ensureSiteKey()
+    return
+  }
+
+  if (turnstileRef.value?.rerender) {
+    turnstileRef.value.rerender()
+    return
+  }
+
   turnstileRef.value?.reset()
 }
 
@@ -165,5 +187,12 @@ function handleDialogToggle(nextOpen: boolean) {
   color: var(--color-text-secondary);
   font-size: 0.95rem;
   line-height: 1.55;
+}
+
+.client-challenge-dialog__detail {
+  margin: -0.5rem 0 0;
+  color: var(--color-text-tertiary);
+  font-size: var(--text-xs);
+  line-height: 1.5;
 }
 </style>

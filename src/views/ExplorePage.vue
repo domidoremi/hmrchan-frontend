@@ -19,6 +19,7 @@
                 <h1 class="page-hero__title">{{ $t('explore.title') }}</h1>
                 <span class="page-hero__badge">{{ total }} {{ $t('search.tab.posts') }}</span>
               </div>
+              <p class="page-hero__subtitle">{{ $t('explore.subtitle') }}</p>
             </div>
             <div class="page-actions page-hero__actions">
               <button
@@ -925,11 +926,6 @@ onBeforeUnmount(() => {
   flex-wrap: wrap;
 }
 
-.explore-hero::after {
-  content: none;
-  display: none;
-}
-
 .platform-filters {
   justify-content: flex-end;
 }
@@ -956,6 +952,7 @@ onBeforeUnmount(() => {
   display: flex;
   gap: var(--masonry-gap);
   inline-size: 100%;
+  margin-block-start: clamp(0.25rem, 0.8vw, 0.6rem);
 }
 
 .masonry-column {

@@ -1,5 +1,5 @@
 <template>
-  <div class="settings-page">
+  <div class="settings-page profile-sub-page">
     <div class="container">
       <ProfileSubPageHeader
         :title="$t('profile.settings')"
@@ -18,7 +18,7 @@
 
       <template v-else-if="isLoading">
         <div class="settings-skeleton">
-          <div class="settings-section glass-card">
+          <div class="settings-section glass-surface--base">
             <div class="skeleton-header">
               <Skeleton width="100px" height="20px" />
             </div>
@@ -27,7 +27,7 @@
               <Skeleton width="140px" height="40px" />
             </div>
           </div>
-          <div class="settings-section glass-card">
+          <div class="settings-section glass-surface--base">
             <div class="skeleton-header">
               <Skeleton width="120px" height="20px" />
             </div>
@@ -45,7 +45,7 @@
           <div class="settings-main">
             <form class="settings-form" @submit.prevent="saveProfile">
               <!-- Avatar Section -->
-              <section id="avatar-section" class="settings-section glass-card">
+              <section id="avatar-section" class="settings-section glass-surface--editorial">
                 <div class="settings-section-head">
                   <div class="settings-section-icon">
                     <AnimatedIcon name="user" :fallback-icon="User" size="sm" />
@@ -95,7 +95,7 @@
               </section>
 
               <!-- Basic Info Section -->
-              <section id="basic-info" class="settings-section glass-card">
+              <section id="basic-info" class="settings-section glass-surface--editorial">
                 <div class="settings-section-head">
                   <div class="settings-section-icon">
                     <AnimatedIcon name="explore" :fallback-icon="FileText" size="sm" />
@@ -194,7 +194,10 @@
             </form>
 
             <!-- Change Email Section -->
-            <section id="email-section" class="settings-section glass-card email-section">
+            <section
+              id="email-section"
+              class="settings-section glass-surface--editorial email-section"
+            >
               <div class="settings-section-head">
                 <div class="settings-section-icon">
                   <AnimatedIcon name="explore" :fallback-icon="Mail" size="sm" />
@@ -295,7 +298,10 @@
             </section>
 
             <!-- Password Section -->
-            <section id="password-section" class="settings-section glass-card password-section">
+            <section
+              id="password-section"
+              class="settings-section glass-surface--editorial password-section"
+            >
               <div class="settings-section-head">
                 <div class="settings-section-icon settings-section-icon--warning">
                   <AnimatedIcon name="sparkle" :fallback-icon="Shield" size="sm" />
@@ -446,7 +452,10 @@
             </section>
 
             <!-- 2FA Section -->
-            <section id="two-factor-section" class="settings-section glass-card two-factor-section">
+            <section
+              id="two-factor-section"
+              class="settings-section glass-surface--editorial two-factor-section"
+            >
               <div class="settings-section-head">
                 <div class="settings-section-icon settings-section-icon--success">
                   <AnimatedIcon name="sparkle" :fallback-icon="Shield" size="sm" />
@@ -646,7 +655,10 @@
               </div>
             </section>
 
-            <section id="account-section" class="settings-section glass-card account-section">
+            <section
+              id="account-section"
+              class="settings-section glass-surface--editorial account-section"
+            >
               <div class="settings-section-head">
                 <div class="settings-section-icon settings-section-icon--warning">
                   <AnimatedIcon name="sparkle" :fallback-icon="Trash2" size="sm" />
@@ -767,7 +779,7 @@
                   <div
                     v-for="item in dataSummaryItems"
                     :key="item.key"
-                    class="account-count-item glass-card"
+                    class="account-count-item glass-surface--base"
                   >
                     <span class="account-count-value">{{ item.value }}</span>
                     <span class="account-count-label">{{ item.label }}</span>
@@ -804,7 +816,7 @@
 
           <!-- Right Aside (Wide Screens) -->
           <aside class="settings-aside">
-            <div class="settings-aside-card glass-card">
+            <div class="settings-aside-card glass-surface--base">
               <h3 class="aside-title">{{ $t('profile.settings') }}</h3>
               <nav class="aside-nav">
                 <a class="aside-link" href="#avatar-section">{{ $t('profile.avatar') }}</a>
@@ -822,7 +834,7 @@
               </nav>
             </div>
 
-            <div class="settings-aside-card glass-card">
+            <div class="settings-aside-card glass-surface--base">
               <h3 class="aside-title">{{ $t('profile.summary') }}</h3>
               <div class="aside-meta">
                 <div class="meta-row">
