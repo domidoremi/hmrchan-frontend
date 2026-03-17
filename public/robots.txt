@@ -10,8 +10,13 @@ Crawl-delay: 1
 # 禁止访问的路径
 Disallow: /api/
 Disallow: /admin/
-Disallow: /settings/
 Disallow: /profile/
+Disallow: /favorites
+Disallow: /login
+Disallow: /register
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /verify-email
 Disallow: /_next/
 Disallow: /dist/
 Disallow: /node_modules/
