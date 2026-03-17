@@ -3,6 +3,8 @@
  * 基于用户行为和网络状况预加载关键路由
  */
 
+import { reportClientError } from './clientReporter'
+
 interface PrefetchOptions {
   priority?: 'high' | 'low'
   timeout?: number
@@ -132,6 +134,14 @@ export async function prefetchRoute(
     }
   } catch (error) {
     console.warn(`Failed to prefetch route: ${routeName}`, error)
+    reportClientError(
+      'prefetch.route_failed',
+      error,
+      {
+        routeName,
+      },
+      { severity: 'warn' }
+    )
   }
 }
 
@@ -376,6 +386,8 @@ export async function prefetchExploreData(): Promise<void> {
     const { postService } = await import('@/api/postService')
     // 只预加载第一页，避免并发请求过多触发 429
     await postService.listPosts({ page: 1, page_size: 20 }, { skipErrorToast: true })
+  }).catch((error) => {
+    reportClientError('prefetch.explore_data_failed', error, undefined, { severity: 'warn' })
   })
 }
 
@@ -392,6 +404,8 @@ export async function prefetchAuthorsData(): Promise<void> {
     const { authorService } = await import('@/api/authorService')
     // 只预加载第一页
     await authorService.listAuthors({ page: 1, page_size: 20 }, { skipErrorToast: true })
+  }).catch((error) => {
+    reportClientError('prefetch.authors_data_failed', error, undefined, { severity: 'warn' })
   })
 }
 
@@ -431,5 +445,15 @@ export async function prefetchPostDetail(
     } else {
       await postPromise
     }
+  }).catch((error) => {
+    reportClientError(
+      'prefetch.post_detail_failed',
+      error,
+      {
+        postId,
+        includeComments: options.includeComments === true,
+      },
+      { severity: 'warn' }
+    )
   })
 }

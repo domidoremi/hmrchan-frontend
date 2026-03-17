@@ -4,6 +4,7 @@
  */
 
 import { useToastStore } from '@/stores/toast'
+import { reportClientError, reportClientEvent } from './clientReporter'
 
 let isInitialized = false
 let isChecking = false
@@ -67,6 +68,7 @@ export function initSwUpdateChecker(options: SwUpdateOptions = {}): void {
     if (SW_UPDATE_DEBUG) {
       console.warn('[SW Update] Service Worker not supported')
     }
+    reportClientEvent('sw.update.unsupported')
     return
   }
 
@@ -79,6 +81,7 @@ export function initSwUpdateChecker(options: SwUpdateOptions = {}): void {
         if (SW_UPDATE_DEBUG) {
           console.log('[SW Update] New service worker activated')
         }
+        reportClientEvent('sw.update.activated')
         if (autoRefresh) {
           window.dispatchEvent(new CustomEvent('sw:refresh-suggested'))
         }
@@ -102,7 +105,7 @@ export function initSwUpdateChecker(options: SwUpdateOptions = {}): void {
       checkForUpdates(showToast)
     })
     .catch(() => {
-      // ignore
+      reportClientEvent('sw.update.ready_failed', undefined, { severity: 'warn' })
     })
 }
 
@@ -142,6 +145,9 @@ async function checkForUpdates(showToast: boolean): Promise<void> {
         if (SW_UPDATE_DEBUG) {
           console.log('[SW Update] Update available')
         }
+        reportClientEvent('sw.update.available', {
+          scriptUrl,
+        })
         showUpdateToast()
       }
     }
@@ -149,6 +155,7 @@ async function checkForUpdates(showToast: boolean): Promise<void> {
     if (SW_UPDATE_DEBUG) {
       console.error('[SW Update] Check failed:', error)
     }
+    reportClientError('sw.update.check_failed', error)
   } finally {
     isChecking = false
   }
