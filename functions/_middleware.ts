@@ -12,8 +12,8 @@ import {
   resolveCanonicalUrl,
   renderPrerenderShell,
   resolveStructuredDataPayload,
-} from '@/edge/htmlDocument'
-import { resolveHtmlDocumentWithEdgeData } from '@/edge/detailDocumentResolver'
+} from '../src/edge/htmlDocument'
+import { resolveHtmlDocumentWithEdgeData } from '../src/edge/detailDocumentResolver'
 
 /** 生成 16 字节随机 nonce（Base64 编码） */
 function generateNonce(): string {
