@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  normalizeDocumentPath,
   resolveCanonicalUrl,
   resolveHtmlDocument,
   renderPrerenderShell,
@@ -114,5 +115,28 @@ describe('resolveHtmlDocument', () => {
     expect(structuredDataScript).toContain('application/ld+json')
     expect(structuredDataScript).toContain('"@type":"WebSite"')
     expect(structuredDataScript).toContain('"SearchAction"')
+  })
+})
+
+describe('htmlDocument path normalization', () => {
+  it('trims trailing slashes for public collection routes', () => {
+    expect(normalizeDocumentPath('/explore/')).toBe('/explore')
+    expect(normalizeDocumentPath('/authors///')).toBe('/authors')
+    expect(normalizeDocumentPath('/')).toBe('/')
+  })
+
+  it('resolves prerendered public routes even when Pages appends a trailing slash', () => {
+    const explore = resolveHtmlDocument(new URL('https://momichan.xyz/explore/'))
+    const authors = resolveHtmlDocument(new URL('https://momichan.xyz/authors/'))
+    const community = resolveHtmlDocument(new URL('https://momichan.xyz/community/'))
+
+    expect(explore.status).toBe(200)
+    expect(explore.canonicalPath).toBe('/explore')
+
+    expect(authors.status).toBe(200)
+    expect(authors.canonicalPath).toBe('/authors')
+
+    expect(community.status).toBe(200)
+    expect(community.canonicalPath).toBe('/community')
   })
 })
