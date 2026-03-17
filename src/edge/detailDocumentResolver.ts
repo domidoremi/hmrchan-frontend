@@ -2,6 +2,7 @@ import {
   DEFAULT_OG_IMAGE,
   SITE_ORIGIN,
   createNotFoundDocument,
+  normalizeDocumentPath,
   resolveHtmlDocument,
   type HtmlDocumentConfig,
   type HtmlDocumentShellLink,
@@ -1160,8 +1161,9 @@ export async function resolveHtmlDocumentWithEdgeData(
   url: URL,
   env?: EdgeRuntimeEnv
 ): Promise<HtmlDocumentConfig> {
-  const fallback = resolveHtmlDocument(url)
-  const path = url.pathname
+  const normalizedPath = normalizeDocumentPath(url.pathname)
+  const fallback = resolveHtmlDocument(new URL(`https://momichan.xyz${normalizedPath}`))
+  const path = normalizedPath
 
   const postMatch = path.match(/^\/post\/([^/]+)$/)
   if (postMatch?.[1]) {

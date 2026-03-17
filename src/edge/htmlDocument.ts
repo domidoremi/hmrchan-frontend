@@ -152,6 +152,12 @@ function createPrimaryPublicLinks(): HtmlDocumentShellLink[] {
   ]
 }
 
+export function normalizeDocumentPath(path: string): string {
+  if (!path) return '/'
+  if (path === '/') return path
+  return path.replace(/\/+$/, '') || '/'
+}
+
 export function isValidPostRouteId(value: string): boolean {
   const id = value.trim()
   if (!id) return false
@@ -162,7 +168,7 @@ export function isValidPostRouteId(value: string): boolean {
 
 export function createNotFoundDocument(canonicalPath: string): HtmlDocumentConfig {
   return createDocumentConfig(
-    canonicalPath,
+    normalizeDocumentPath(canonicalPath),
     'Page not found',
     '请求的页面不存在或已移动。请返回首页继续浏览公开内容。',
     '404',
@@ -189,7 +195,7 @@ export function createNotFoundDocument(canonicalPath: string): HtmlDocumentConfi
 }
 
 export function resolveHtmlDocument(url: URL): HtmlDocumentConfig {
-  const path = url.pathname
+  const path = normalizeDocumentPath(url.pathname)
 
   if (path === '/') {
     const description =
