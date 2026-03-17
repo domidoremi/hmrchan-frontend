@@ -2,10 +2,10 @@ import { describe, expect, it } from 'vitest'
 import { resolveLoadMoreMetrics } from '../loadMoreMetrics'
 
 describe('resolveLoadMoreMetrics', () => {
-  it('normalizes stale totals when loaded count exceeds reported total', () => {
+  it('clamps stale counts when loaded count exceeds reported total', () => {
     expect(resolveLoadMoreMetrics(60, 48)).toEqual({
-      count: 60,
-      total: 60,
+      count: 48,
+      total: 48,
       progressPercent: 100,
     })
   })

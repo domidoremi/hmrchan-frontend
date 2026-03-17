@@ -12,7 +12,11 @@
           <div class="page-hero__header">
             <div class="page-hero__heading">
               <span class="page-hero__eyebrow">{{ $t('nav.authors') }}</span>
-              <h1 class="page-hero__title">{{ $t('nav.authors') }}</h1>
+              <div class="page-hero__title-row">
+                <h1 class="page-hero__title">{{ $t('nav.authors') }}</h1>
+                <span class="page-hero__badge">{{ total }}</span>
+              </div>
+              <p class="page-hero__subtitle">{{ $t('authors.subtitle') }}</p>
             </div>
             <div class="page-hero__actions">
               <button type="button" class="page-control-btn" @click="goToExplore">

@@ -105,3 +105,239 @@
   background: var(--profile-action-bg);
   border-color: var(--profile-action-border);
 }
+
+#app :is(.profile-page, .settings-page, .notifications-page, .devices-page, .profile-sub-page) {
+  position: relative;
+  isolation: isolate;
+}
+
+#app
+  :is(.profile-page, .settings-page, .notifications-page, .devices-page, .profile-sub-page)
+  .page-control-btn {
+  background: var(--profile-action-bg);
+  border-color: var(--profile-action-border);
+  color: var(--profile-chip-text);
+  box-shadow: none;
+}
+
+#app
+  :is(.profile-page, .settings-page, .notifications-page, .devices-page, .profile-sub-page)
+  .page-control-btn:hover,
+#app
+  :is(.profile-page, .settings-page, .notifications-page, .devices-page, .profile-sub-page)
+  .page-control-btn:focus-visible {
+  background: var(--profile-action-bg-hover);
+  border-color: var(--profile-action-border-strong);
+  color: var(--color-text-primary);
+}
+
+#app
+  :is(.profile-page, .settings-page, .notifications-page, .devices-page, .profile-sub-page)
+  .page-control-btn[aria-pressed='true'],
+#app
+  :is(.profile-page, .settings-page, .notifications-page, .devices-page, .profile-sub-page)
+  .page-control-btn.active {
+  color: var(--color-primary);
+}
+
+#app
+  :is(.settings-page, .notifications-page, .devices-page, .profile-sub-page)
+  :is(.profile-sub-page__stats, .profile-sub-page__filters) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: clamp(0.75rem, 1.8vw, 1rem);
+  margin-block-end: clamp(1rem, 2.4vw, 1.4rem);
+}
+
+#app
+  :is(.settings-page, .notifications-page, .devices-page, .profile-sub-page)
+  .profile-sub-page__body {
+  border-radius: var(--profile-shell-radius);
+  background: var(--profile-surface-bg);
+}
+
+#app
+  :is(
+    .favorites-tab,
+    .likes-tab,
+    .comment-favorites-tab,
+    .history-tab,
+    .relations-tab,
+    .reports-tab,
+    .security-tab,
+    .notifications-tab
+  )
+  .tab-header {
+  display: flex;
+  align-items: flex-end;
+  gap: clamp(0.75rem, 1.8vw, 1rem);
+  margin-bottom: clamp(1rem, 2.6vw, 1.6rem);
+  padding-bottom: clamp(0.75rem, 1.8vw, 1rem);
+  border-bottom: 1px solid var(--profile-muted-border);
+}
+
+#app
+  :is(
+    .favorites-tab,
+    .likes-tab,
+    .comment-favorites-tab,
+    .history-tab,
+    .relations-tab,
+    .reports-tab,
+    .security-tab,
+    .notifications-tab
+  )
+  .tab-title {
+  margin: 0;
+  font-size: clamp(1.15rem, 2vw, 1.45rem);
+  font-weight: var(--font-bold);
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  color: var(--color-text-primary);
+}
+
+#app
+  :is(
+    .profile-page .profile-card,
+    .sub-header .sub-header__content,
+    .settings-page .settings-section,
+    .settings-page .settings-aside-card,
+    .settings-page .account-count-item,
+    .notifications-page .page-body,
+    .devices-page .page-body,
+    .devices-page .security-card,
+    .device-card,
+    .favorites-tab .post-card,
+    .favorites-tab .favorite-card,
+    .likes-tab .timeline-card,
+    .comment-favorites-tab .timeline-card,
+    .history-tab .history-card,
+    .relations-tab .relation-card,
+    .reports-tab .report-card,
+    .security-tab .security-card,
+    .notifications-tab .notification-skeleton,
+    .notifications-tab .notification-item
+  ) {
+  border-radius: var(--profile-section-radius);
+  border: 1px solid var(--profile-surface-border);
+  background: var(--profile-surface-bg-soft);
+  box-shadow: var(--profile-surface-shadow);
+  backdrop-filter: blur(var(--blur-sm));
+  -webkit-backdrop-filter: blur(var(--blur-sm));
+  transition:
+    border-color var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out),
+    background var(--duration-fast) var(--ease-out);
+}
+
+#app
+  :is(
+    .profile-page .profile-card:hover,
+    .sub-header .sub-header__content:hover,
+    .settings-page .settings-section:hover,
+    .settings-page .settings-aside-card:hover,
+    .settings-page .account-count-item:hover,
+    .notifications-page .page-body:hover,
+    .devices-page .page-body:hover,
+    .devices-page .security-card:hover,
+    .device-card:hover,
+    .favorites-tab .favorite-card:hover,
+    .likes-tab .timeline-card:hover,
+    .comment-favorites-tab .timeline-card:hover,
+    .history-tab .history-card:hover,
+    .relations-tab .relation-card:hover,
+    .reports-tab .report-card:hover,
+    .security-tab .security-card:hover,
+    .notifications-tab .notification-item:hover
+  ) {
+  border-color: var(--profile-surface-border-strong);
+  box-shadow: var(--profile-surface-shadow-hover);
+}
+
+#app
+  :is(
+    .profile-page .profile-card,
+    .settings-page .settings-section,
+    .notifications-page .page-body,
+    .devices-page .page-body,
+    .sub-header .sub-header__content
+  ) {
+  background: var(--profile-surface-bg);
+}
+
+#app
+  :is(
+    .favorites-tab,
+    .likes-tab,
+    .comment-favorites-tab,
+    .history-tab,
+    .relations-tab,
+    .reports-tab,
+    .security-tab,
+    .notifications-tab
+  )
+  :is(.item-count, .group-count, .event-count) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-block-size: 1.875rem;
+  padding-inline: 0.75rem;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--profile-chip-border);
+  background: var(--profile-chip-bg);
+  color: var(--profile-chip-text);
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  line-height: 1.2;
+}
+
+#app
+  :is(
+    .favorites-tab,
+    .likes-tab,
+    .comment-favorites-tab,
+    .history-tab,
+    .relations-tab,
+    .reports-tab,
+    .security-tab,
+    .notifications-tab
+  )
+  :is(.group-line, .timeline-line) {
+  opacity: 0.9;
+}
+
+[data-theme='dark']
+  #app
+  :is(
+    .profile-page,
+    .settings-page,
+    .notifications-page,
+    .devices-page,
+    .profile-sub-page,
+    .favorites-tab,
+    .likes-tab,
+    .comment-favorites-tab,
+    .history-tab,
+    .relations-tab,
+    .reports-tab,
+    .security-tab,
+    .notifications-tab
+  )
+  :is(.field-hint, .settings-section-desc, .header-hint, .report-description--muted, .group-line) {
+  color: rgba(226, 232, 240, 0.72);
+}
+
+@media (max-width: 48rem) {
+  #app
+    :is(.settings-page, .notifications-page, .devices-page, .profile-sub-page)
+    :is(.profile-sub-page__stats, .profile-sub-page__filters) {
+    align-items: stretch;
+  }
+
+  #app
+    :is(.settings-page, .notifications-page, .devices-page, .profile-sub-page)
+    .page-control-btn {
+    justify-content: center;
+  }
+}

@@ -7,6 +7,12 @@
           <div class="page-hero__heading">
             <span class="page-hero__eyebrow">{{ $t('nav.about') }}</span>
             <h1 class="page-hero__title gradient-text">{{ $t('about.title') }}</h1>
+            <p class="page-hero__subtitle">{{ $t('about.subtitle') }}</p>
+          </div>
+          <div class="page-hero__meta">
+            <span class="page-hero__note">{{ $t('about.links.title') }}</span>
+            <span class="page-hero__note">{{ $t('about.features.title') }}</span>
+            <span class="page-hero__note">{{ $t('about.tech.title') }}</span>
           </div>
         </div>
       </header>
@@ -536,6 +542,10 @@ const { techStack } = useAboutData()
 
 .about-hero .page-hero__eyebrow {
   align-self: center;
+}
+
+.about-hero .page-hero__meta {
+  justify-content: center;
 }
 
 /* 章节 */

@@ -39,6 +39,20 @@
               </div>
             </div>
           </div>
+          <div class="page-hero__meta schedule-hero__meta">
+            <span class="page-hero__note">
+              <strong>{{ monthLabel }}</strong>
+              {{ $t('schedule.goToday') }}
+            </span>
+            <span class="page-hero__note">
+              <strong>{{ upcomingEvents.length }}</strong>
+              {{ $t('schedule.upcoming') }}
+            </span>
+            <span class="page-hero__note">
+              <strong>{{ activeCategoryLabel }}</strong>
+              {{ $t('schedule.filterLabel') }}
+            </span>
+          </div>
         </div>
       </header>
 
@@ -268,8 +282,16 @@
       <!-- 选中日期的事件列表 -->
       <Transition name="slide-fade">
         <section v-if="selectedDay" class="day-events">
-          <div class="day-events-header">
-            <h2>{{ selectedDayLabel }}</h2>
+          <div class="page-section-head page-section-head--stage day-events-header">
+            <div class="page-section-copy">
+              <p class="page-section-kicker">{{ $t('schedule.title') }}</p>
+              <h2 class="page-section-title">{{ selectedDayLabel }}</h2>
+              <p class="page-section-subtitle">
+                {{
+                  selectedDayEvents.length > 0 ? $t('schedule.upcoming') : $t('schedule.noEvents')
+                }}
+              </p>
+            </div>
             <span v-if="selectedDayEvents.length" class="event-count">
               {{ selectedDayEvents.length }}
             </span>
@@ -337,7 +359,13 @@
 
       <!-- 即将到来的事件 -->
       <section v-if="!selectedDay" class="upcoming-section">
-        <h2 class="schedule-section-title">{{ $t('schedule.upcoming') }}</h2>
+        <div class="page-section-head">
+          <div class="page-section-copy">
+            <p class="page-section-kicker">{{ monthLabel }}</p>
+            <h2 class="page-section-title">{{ $t('schedule.upcoming') }}</h2>
+            <p class="page-section-subtitle">{{ $t('schedule.subtitle') }}</p>
+          </div>
+        </div>
         <StateIndicator
           v-if="upcomingEvents.length === 0 && !isLoading"
           variant="empty"
@@ -472,6 +500,11 @@ const categories = [
   { value: 'birth' as const, label: 'schedule.categories.birth', icon: Cake },
   { value: 'other' as const, label: 'schedule.categories.other', icon: Calendar },
 ]
+
+const activeCategoryLabel = computed(() => {
+  const matched = categories.find((category) => category.value === activeCategory.value)
+  return matched ? t(matched.label) : t('schedule.categories.all')
+})
 
 function getCategoryColor(cat: string): string {
   return CATEGORY_COLORS[cat] ?? DEFAULT_COLOR
@@ -985,6 +1018,10 @@ onMounted(() => {
   align-items: flex-start;
   justify-content: flex-end;
   min-inline-size: 0;
+}
+
+.schedule-hero__meta {
+  margin-top: 0.25rem;
 }
 
 .category-filters {

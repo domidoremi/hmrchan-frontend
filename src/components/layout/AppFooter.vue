@@ -12,7 +12,7 @@
               </span>
             </RouterLink>
             <p>{{ $t('footer.desc') }}</p>
-            <div class="footer-note">
+            <div class="footer-note ui-pill ui-pill--info">
               <AnimatedIcon name="sparkle" :fallback-icon="Sparkles" size="sm" />
               <span>{{ $t('footer.note') }}</span>
             </div>
@@ -21,16 +21,28 @@
           <div class="footer-columns">
             <nav class="footer-column" :aria-label="$t('common.footerNav')">
               <span class="footer-column__title">{{ $t('footer.columns.discover') }}</span>
-              <RouterLink to="/explore">{{ $t('nav.explore') }}</RouterLink>
-              <RouterLink to="/authors">{{ $t('nav.authors') }}</RouterLink>
-              <RouterLink to="/schedule">{{ $t('nav.schedule') }}</RouterLink>
+              <RouterLink to="/explore" class="footer-link cta-secondary">
+                {{ $t('nav.explore') }}
+              </RouterLink>
+              <RouterLink to="/authors" class="footer-link cta-secondary">
+                {{ $t('nav.authors') }}
+              </RouterLink>
+              <RouterLink to="/schedule" class="footer-link cta-secondary">
+                {{ $t('nav.schedule') }}
+              </RouterLink>
             </nav>
 
             <nav class="footer-column" :aria-label="$t('common.footerNav')">
               <span class="footer-column__title">{{ $t('footer.columns.community') }}</span>
-              <RouterLink to="/community">{{ $t('nav.community') }}</RouterLink>
-              <RouterLink to="/contact">{{ $t('nav.contact') }}</RouterLink>
-              <RouterLink to="/about">{{ $t('nav.about') }}</RouterLink>
+              <RouterLink to="/community" class="footer-link cta-secondary">
+                {{ $t('nav.community') }}
+              </RouterLink>
+              <RouterLink to="/contact" class="footer-link cta-secondary">
+                {{ $t('nav.contact') }}
+              </RouterLink>
+              <RouterLink to="/about" class="footer-link cta-secondary">
+                {{ $t('nav.about') }}
+              </RouterLink>
             </nav>
           </div>
         </div>
@@ -43,7 +55,7 @@
             target="_blank"
             rel="noopener noreferrer"
             aria-label="GitHub"
-            class="social-link"
+            class="footer-social-link cta-secondary"
           >
             <AnimatedIcon name="explore" :fallback-icon="Github" size="sm" />
           </a>
@@ -104,14 +116,14 @@ const footerShellStyle = computed<Record<string, string>>(() => {
   --footer-bg: linear-gradient(
     180deg,
     rgba(248, 247, 244, 0) 0%,
-    rgba(248, 247, 244, 0.54) 18%,
-    rgba(248, 247, 244, 0.92) 50%,
+    rgba(248, 247, 244, 0.42) 20%,
+    rgba(248, 247, 244, 0.82) 54%,
     #f8f7f4 100%
   );
   --footer-overlay:
-    radial-gradient(circle at 18% 0%, rgba(var(--color-primary-rgb), 0.08) 0%, transparent 34%),
-    radial-gradient(circle at 82% 6%, rgba(var(--color-accent-rgb), 0.07) 0%, transparent 30%);
-  --footer-top-fade: linear-gradient(180deg, rgba(255, 255, 255, 0.34) 0%, transparent 100%);
+    radial-gradient(circle at 18% 0%, rgba(var(--color-primary-rgb), 0.04) 0%, transparent 34%),
+    radial-gradient(circle at 82% 6%, rgba(var(--color-accent-rgb), 0.03) 0%, transparent 30%);
+  --footer-top-fade: linear-gradient(180deg, rgba(255, 255, 255, 0.12) 0%, transparent 100%);
   --footer-shell-bg: var(--chrome-surface-bg);
   --footer-shell-border: var(--chrome-surface-border);
   --footer-shell-shadow: var(--chrome-surface-shadow);
@@ -120,9 +132,6 @@ const footerShellStyle = computed<Record<string, string>>(() => {
   --footer-divider: var(--chrome-muted-border);
   --footer-link-hover-bg: var(--chrome-muted-bg);
   background: var(--footer-bg);
-  opacity: var(--home-footer-opacity, 1);
-  transform: translate3d(0, var(--home-footer-y, 0rem), 0);
-  will-change: transform, opacity;
 }
 
 .footer::before,
@@ -155,15 +164,15 @@ const footerShellStyle = computed<Record<string, string>>(() => {
 :global([data-theme='dark'] .footer) {
   --footer-bg: linear-gradient(
     180deg,
-    rgba(7, 10, 16, 0) 0%,
-    rgba(8, 12, 18, 0.7) 18%,
-    rgba(7, 10, 16, 0.94) 48%,
+    rgba(8, 12, 18, 0) 0%,
+    rgba(8, 12, 18, 0.54) 20%,
+    rgba(7, 10, 16, 0.88) 54%,
     #070910 100%
   );
   --footer-overlay:
-    radial-gradient(circle at 18% 0%, rgba(var(--color-primary-rgb), 0.12) 0%, transparent 34%),
-    radial-gradient(circle at 82% 6%, rgba(var(--color-accent-rgb), 0.08) 0%, transparent 30%);
-  --footer-top-fade: linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, transparent 100%);
+    radial-gradient(circle at 18% 0%, rgba(var(--color-primary-rgb), 0.06) 0%, transparent 34%),
+    radial-gradient(circle at 82% 6%, rgba(var(--color-accent-rgb), 0.04) 0%, transparent 30%);
+  --footer-top-fade: linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, transparent 100%);
   --footer-shell-bg: var(--chrome-surface-bg);
   --footer-shell-border: var(--chrome-surface-border);
   --footer-shell-shadow: var(--chrome-surface-shadow);
@@ -177,15 +186,15 @@ const footerShellStyle = computed<Record<string, string>>(() => {
 :global([data-theme='blue'] .footer) {
   --footer-bg: linear-gradient(
     180deg,
-    rgba(239, 246, 255, 0) 0%,
-    rgba(239, 246, 255, 0.66) 18%,
-    rgba(239, 246, 255, 0.96) 50%,
+    rgba(239, 246, 255, 0.24) 0%,
+    rgba(239, 246, 255, 0.72) 28%,
+    rgba(239, 246, 255, 0.96) 62%,
     #eff6ff 100%
   );
   --footer-overlay:
-    radial-gradient(circle at 18% 0%, rgba(59, 130, 246, 0.12) 0%, transparent 34%),
-    radial-gradient(circle at 82% 6%, rgba(99, 102, 241, 0.1) 0%, transparent 30%);
-  --footer-top-fade: linear-gradient(180deg, rgba(255, 255, 255, 0.28) 0%, transparent 100%);
+    radial-gradient(circle at 18% 0%, rgba(59, 130, 246, 0.08) 0%, transparent 36%),
+    radial-gradient(circle at 82% 6%, rgba(99, 102, 241, 0.06) 0%, transparent 32%);
+  --footer-top-fade: linear-gradient(180deg, rgba(255, 255, 255, 0.16) 0%, transparent 100%);
   --footer-shell-bg: var(--chrome-surface-bg);
   --footer-shell-border: var(--chrome-surface-border);
   --footer-shell-shadow: var(--chrome-surface-shadow);
@@ -198,45 +207,45 @@ const footerShellStyle = computed<Record<string, string>>(() => {
 :global(main.main--home + .footer) {
   --footer-bg: linear-gradient(
     180deg,
-    rgba(248, 247, 244, 0.58) 0%,
-    rgba(248, 247, 244, 0.72) 22%,
-    rgba(248, 247, 244, 0.92) 58%,
+    rgba(248, 247, 244, 0.18) 0%,
+    rgba(248, 247, 244, 0.62) 34%,
+    rgba(248, 247, 244, 0.92) 70%,
     #f8f7f4 100%
   );
   --footer-overlay:
-    radial-gradient(circle at 18% 0%, rgba(var(--color-primary-rgb), 0.05) 0%, transparent 34%),
-    radial-gradient(circle at 82% 6%, rgba(var(--color-accent-rgb), 0.04) 0%, transparent 30%);
-  --footer-top-fade: linear-gradient(180deg, rgba(248, 247, 244, 0.18) 0%, transparent 100%);
+    radial-gradient(circle at 18% 0%, rgba(var(--color-primary-rgb), 0.04) 0%, transparent 36%),
+    radial-gradient(circle at 82% 6%, rgba(var(--color-accent-rgb), 0.03) 0%, transparent 32%);
+  --footer-top-fade: linear-gradient(180deg, rgba(248, 247, 244, 0.12) 0%, transparent 100%);
 }
 
 :global(#app[data-theme='dark'] main.main--home + .footer),
 :global([data-theme='dark'] main.main--home + .footer) {
   --footer-bg: linear-gradient(
     180deg,
-    rgba(8, 12, 18, 0.74) 0%,
-    rgba(8, 12, 18, 0.82) 22%,
-    rgba(7, 10, 16, 0.94) 58%,
+    rgba(8, 12, 18, 0.18) 0%,
+    rgba(8, 12, 18, 0.72) 34%,
+    rgba(7, 10, 16, 0.94) 70%,
     #070910 100%
   );
   --footer-overlay:
-    radial-gradient(circle at 18% 0%, rgba(var(--color-primary-rgb), 0.08) 0%, transparent 34%),
-    radial-gradient(circle at 82% 6%, rgba(var(--color-accent-rgb), 0.06) 0%, transparent 30%);
-  --footer-top-fade: linear-gradient(180deg, rgba(8, 12, 18, 0.12) 0%, transparent 100%);
+    radial-gradient(circle at 18% 0%, rgba(var(--color-primary-rgb), 0.06) 0%, transparent 36%),
+    radial-gradient(circle at 82% 6%, rgba(var(--color-accent-rgb), 0.04) 0%, transparent 32%);
+  --footer-top-fade: linear-gradient(180deg, rgba(8, 12, 18, 0.08) 0%, transparent 100%);
 }
 
 :global(#app[data-theme='blue'] main.main--home + .footer),
 :global([data-theme='blue'] main.main--home + .footer) {
   --footer-bg: linear-gradient(
     180deg,
-    rgba(239, 246, 255, 0.72) 0%,
-    rgba(239, 246, 255, 0.82) 22%,
-    rgba(239, 246, 255, 0.96) 58%,
+    rgba(239, 246, 255, 0.2) 0%,
+    rgba(239, 246, 255, 0.72) 34%,
+    rgba(239, 246, 255, 0.96) 70%,
     #eff6ff 100%
   );
   --footer-overlay:
-    radial-gradient(circle at 18% 0%, rgba(59, 130, 246, 0.08) 0%, transparent 34%),
-    radial-gradient(circle at 82% 6%, rgba(99, 102, 241, 0.06) 0%, transparent 30%);
-  --footer-top-fade: linear-gradient(180deg, rgba(239, 246, 255, 0.18) 0%, transparent 100%);
+    radial-gradient(circle at 18% 0%, rgba(59, 130, 246, 0.06) 0%, transparent 36%),
+    radial-gradient(circle at 82% 6%, rgba(99, 102, 241, 0.05) 0%, transparent 32%);
+  --footer-top-fade: linear-gradient(180deg, rgba(239, 246, 255, 0.12) 0%, transparent 100%);
 }
 
 :global(#app[data-ui-style='material'] .footer),
@@ -337,10 +346,6 @@ const footerShellStyle = computed<Record<string, string>>(() => {
   align-items: center;
   gap: var(--spacing-2);
   align-self: flex-start;
-  padding: var(--spacing-2) var(--spacing-3);
-  border-radius: var(--ui-radius-button, var(--radius-full));
-  background: var(--footer-chip-bg);
-  border: 1px solid var(--footer-chip-border);
   font-size: var(--text-xs);
   color: var(--color-text-secondary);
 }
@@ -365,13 +370,11 @@ const footerShellStyle = computed<Record<string, string>>(() => {
   text-transform: uppercase;
 }
 
-.footer-column a {
+.footer-link {
   display: inline-flex;
   align-items: center;
-  min-block-size: 2.125rem;
-  padding-inline: 0.5rem;
-  border-radius: 0.5rem;
-  border: 1px solid transparent;
+  justify-content: flex-start;
+  min-block-size: 2.25rem;
   font-size: var(--text-sm);
   color: var(--color-text-secondary);
   text-decoration: none;
@@ -381,13 +384,13 @@ const footerShellStyle = computed<Record<string, string>>(() => {
     border-color var(--transition-fast);
 }
 
-.footer-column a:hover {
+.footer-link:hover {
   color: var(--color-text-primary);
   background: var(--footer-link-hover-bg);
   border-color: var(--footer-chip-border);
 }
 
-.footer-column a:focus-visible {
+.footer-link:focus-visible {
   outline: none;
   color: var(--color-text-primary);
   background: var(--footer-link-hover-bg);
@@ -411,15 +414,12 @@ const footerShellStyle = computed<Record<string, string>>(() => {
   margin-inline-start: auto;
 }
 
-.social-link {
+.footer-social-link {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   inline-size: 2.25rem;
   block-size: 2.25rem;
-  border-radius: var(--ui-radius-button, var(--radius-full));
-  background: var(--footer-chip-bg);
-  border: 1px solid var(--footer-chip-border);
   color: var(--color-text-secondary);
   transition:
     background var(--transition-fast),
@@ -427,8 +427,8 @@ const footerShellStyle = computed<Record<string, string>>(() => {
     border-color var(--transition-fast);
 }
 
-.social-link:hover,
-.social-link:focus-visible {
+.footer-social-link:hover,
+.footer-social-link:focus-visible {
   background: var(--footer-link-hover-bg);
   border-color: var(--footer-chip-border);
   color: var(--color-primary);

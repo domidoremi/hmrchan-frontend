@@ -64,6 +64,21 @@
               <span>{{ tab.label }}</span>
             </button>
           </div>
+
+          <div v-if="!searchQuery" class="page-hero__meta community-hero__meta">
+            <span class="page-hero__note">
+              <strong>{{ $t('community.recentDiscussions') }}</strong>
+              {{ $t('community.guidePoint1') }}
+            </span>
+            <span class="page-hero__note">
+              <strong>{{ $t('community.hotTopics') }}</strong>
+              {{ $t('community.guidePoint2') }}
+            </span>
+            <span class="page-hero__note">
+              <strong>{{ $t('community.guideTitle') }}</strong>
+              {{ $t('community.guidePoint3') }}
+            </span>
+          </div>
         </div>
       </header>
 
@@ -138,7 +153,7 @@
           class="composer-section"
           @created="handleDiscussionCreated"
         />
-        <div v-else class="login-prompt empty-surface">
+        <div v-else class="login-prompt empty-surface surface-editorial">
           <div class="login-prompt__content">
             <p class="login-prompt__title">{{ $t('community.loginToPost') }}</p>
             <ul class="login-prompt__list">
@@ -161,7 +176,13 @@
 
         <!-- Recent Discussions -->
         <section v-if="activeTab === 'recent'" class="community-section">
-          <h2 class="sr-only">{{ $t('community.recentDiscussions') }}</h2>
+          <div class="page-section-head">
+            <div class="page-section-copy">
+              <p class="page-section-kicker">{{ $t('nav.community') }}</p>
+              <h2 class="page-section-title">{{ $t('community.recentDiscussions') }}</h2>
+              <p class="page-section-subtitle">{{ $t('community.guidePoint1') }}</p>
+            </div>
+          </div>
 
           <div v-if="isLoading && discussions.length === 0" class="loading-state">
             <div class="spinner" />
@@ -282,7 +303,13 @@
 
         <!-- Hot Topics -->
         <section v-if="activeTab === 'hot'" class="community-section">
-          <h2 class="sr-only">{{ $t('community.hotTopics') }}</h2>
+          <div class="page-section-head">
+            <div class="page-section-copy">
+              <p class="page-section-kicker">{{ $t('community.guideTitle') }}</p>
+              <h2 class="page-section-title">{{ $t('community.hotTopics') }}</h2>
+              <p class="page-section-subtitle">{{ $t('community.guidePoint2') }}</p>
+            </div>
+          </div>
 
           <div v-if="isLoadingHot && hotTopics.length === 0" class="hot-topics-grid">
             <article v-for="i in 6" :key="i" class="topic-card page-list-card">
@@ -684,11 +711,6 @@ onUnmounted(() => {
   opacity: 0.15;
 }
 
-.community-hero::after {
-  content: none;
-  display: none;
-}
-
 .community-hero__actions {
   display: flex;
   align-items: center;
@@ -820,6 +842,10 @@ onUnmounted(() => {
   width: 100%;
   margin-bottom: 0;
   gap: var(--spacing-2);
+}
+
+.community-hero__meta {
+  margin-top: 0.25rem;
 }
 
 .tab-btn {

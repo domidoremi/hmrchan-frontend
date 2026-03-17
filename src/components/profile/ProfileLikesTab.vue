@@ -40,7 +40,7 @@
             <span class="timeline-line" />
           </div>
 
-          <div class="timeline-card glass-card-enhanced">
+          <div class="timeline-card glass-surface--elevated">
             <div class="card-top">
               <span class="comment-date">{{ formatDate(comment.created_at) }}</span>
               <div class="card-stats">

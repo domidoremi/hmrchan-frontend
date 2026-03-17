@@ -5,7 +5,7 @@
 
     <div class="container">
       <!-- Profile Card overlapping banner -->
-      <div class="profile-card glass-card-enhanced">
+      <div class="profile-card glass-card--editorial">
         <div class="profile-card__top">
           <div class="avatar-area">
             <Avatar :src="userAvatar" :alt="username" size="xl" class="profile-avatar" />
@@ -13,6 +13,7 @@
           </div>
 
           <div class="profile-info">
+            <p class="profile-kicker">{{ $t('nav.profile') }}</p>
             <div class="profile-name-row">
               <h1 class="profile-name">{{ displayName }}</h1>
               <button
@@ -34,7 +35,7 @@
               v-for="link in quickLinks"
               :key="link.to"
               :to="link.to"
-              class="quick-nav-item"
+              class="quick-nav-item page-control-btn"
             >
               <component :is="link.icon" :size="18" />
               <span>{{ link.label }}</span>
@@ -68,7 +69,7 @@
             v-for="link in quickLinks"
             :key="link.to"
             :to="link.to"
-            class="quick-nav-chip"
+            class="quick-nav-chip page-control-btn page-control-btn--compact"
           >
             <component :is="link.icon" :size="14" />
             <span>{{ link.label }}</span>
@@ -77,7 +78,7 @@
         </nav>
 
         <!-- Tab Selector -->
-        <div class="tab-bar">
+        <div class="tab-bar page-toolbar">
           <button
             v-for="tab in tabs"
             :key="tab.value"
@@ -300,6 +301,15 @@ onMounted(() => {
 .profile-info {
   min-width: 0;
   padding-top: var(--spacing-1);
+}
+
+.profile-kicker {
+  margin: 0 0 0.25rem;
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
 }
 
 .profile-name-row {
