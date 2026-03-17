@@ -1,4 +1,5 @@
 import { readonly, ref } from 'vue'
+import { reportClientEvent } from '@/utils/clientReporter'
 
 const isOpen = ref(false)
 const turnstileSiteKey = ref('')
@@ -27,6 +28,11 @@ export function setClientChallengeSiteKey(siteKey?: string | null) {
 export function requestClientChallenge(siteKey?: string | null): Promise<boolean> {
   setClientChallengeSiteKey(siteKey)
   isOpen.value = true
+  reportClientEvent(
+    'client.challenge.requested',
+    { hasSiteKey: Boolean(siteKey?.trim()) },
+    { severity: 'warn' }
+  )
 
   if (!currentPromise) {
     currentPromise = new Promise<boolean>((resolve) => {
@@ -38,11 +44,13 @@ export function requestClientChallenge(siteKey?: string | null): Promise<boolean
 }
 
 export function resolveClientChallenge() {
+  reportClientEvent('client.challenge.resolved')
   settleCurrent?.(true)
   cleanupChallengeState()
 }
 
 export function dismissClientChallenge() {
+  reportClientEvent('client.challenge.dismissed', undefined, { severity: 'warn' })
   settleCurrent?.(false)
   cleanupChallengeState()
 }
