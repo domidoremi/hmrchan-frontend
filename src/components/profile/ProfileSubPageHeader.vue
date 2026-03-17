@@ -1,10 +1,16 @@
 <template>
   <header class="sub-header">
-    <div class="sub-header__content glass-card-enhanced">
-      <button type="button" class="back-btn" @click="goBack" :aria-label="$t('common.back')">
+    <div class="sub-header__content empty-surface surface-editorial">
+      <button
+        type="button"
+        class="back-btn page-control-btn page-control-btn--square"
+        @click="goBack"
+        :aria-label="$t('common.back')"
+      >
         <ArrowLeft :size="16" />
       </button>
       <div class="header-text">
+        <span class="header-eyebrow">{{ $t('nav.profile') }}</span>
         <h1>{{ title }}</h1>
         <p v-if="subtitle" class="header-subtitle">{{ subtitle }}</p>
         <p v-if="hint" class="header-hint">{{ hint }}</p>
@@ -54,20 +60,27 @@ function goToProfile() {
 
 .sub-header__content {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: clamp(0.75rem, 2vw, 1rem);
   padding: clamp(0.875rem, 2.5vw, 1.25rem);
-  border-radius: var(--profile-shell-radius);
-  border: 1px solid var(--profile-surface-border);
-  background: var(--profile-surface-bg-soft);
-  box-shadow: var(--profile-surface-shadow);
-  backdrop-filter: blur(var(--blur-sm));
-  -webkit-backdrop-filter: blur(var(--blur-sm));
 }
 
 .header-text {
   flex: 1;
   min-width: 0;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.header-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
 }
 
 .header-text h1 {
@@ -93,32 +106,7 @@ function goToProfile() {
 
 .back-btn {
   flex-shrink: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.25rem;
-  height: 2.25rem;
-  border-radius: var(--radius-lg);
-  background: var(--profile-action-bg);
-  border: 1px solid var(--profile-action-border);
-  color: var(--color-text-secondary);
-  box-shadow: inset 0 0.0625rem 0 rgba(255, 255, 255, 0.16);
-  transition:
-    background var(--duration-fast) var(--ease-smooth),
-    border-color var(--duration-fast) var(--ease-smooth),
-    color var(--duration-fast) var(--ease-smooth),
-    transform var(--duration-fast) var(--ease-bounce-soft);
-}
-
-.back-btn:hover {
-  background: var(--profile-action-bg-hover);
-  border-color: var(--profile-action-border-strong);
-  color: var(--color-primary);
-  transform: none;
-}
-
-.back-btn:active {
-  transform: var(--press-sm);
+  margin-top: 0.1rem;
 }
 
 .header-actions {

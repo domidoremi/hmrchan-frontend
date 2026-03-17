@@ -359,7 +359,7 @@
     "portal": {
       "kicker": "Today’s Entry Points",
       "title": "Start with what’s worth seeing today",
-      "subtitle": "From picks and creators to schedules and community.",
+      "subtitle": "Picks, creators, schedule, community.",
       "action": "Go Explore",
       "publicCount": "{count} public items",
       "emptyState": "No public items yet",
@@ -386,13 +386,13 @@
     "featured": {
       "kicker": "Editor’s Picks",
       "title": "Today’s Picks",
-      "subtitle": "Handpicked selections for today",
+      "subtitle": "The editor’s shortlist for today.",
       "action": "Explore More"
     },
     "trends": {
       "kicker": "This Week",
       "title": "This Week",
-      "subtitle": "Quick snapshot of creators, tags, and schedules",
+      "subtitle": "Creators, tags, and schedule at a glance.",
       "authorsTitle": "Hot Creators",
       "tagsTitle": "Popular Tags",
       "scheduleTitle": "This Week’s Schedule",
@@ -420,11 +420,12 @@
       "title": "Let the last card ease into the footer",
       "subtitle": "Before the brand footer fully arrives, offer one bridge layer back to explore, creators, schedules, and community."
     },
-    "latestSubtitle": "Fresh drops updated continuously",
+    "latestSubtitle": "A feed that keeps moving",
     "latestAction": "View All"
   },
   "explore": {
     "title": "Explore",
+    "subtitle": "Browse the latest posts by platform, momentum, and recency.",
     "allPlatforms": "All",
     "searchPlaceholder": "Search posts, authors, tags...",
     "filters": "Filters",
@@ -437,6 +438,7 @@
   },
   "search": {
     "title": "Search",
+    "subtitle": "Search posts, creators, and tags in one place.",
     "placeholder": "Search posts, authors, tags...",
     "emptyTitle": "Search Content",
     "emptyHint": "Find posts, authors, and more",
@@ -483,6 +485,9 @@
       "author": "Author",
       "tag": "Tag"
     }
+  },
+  "authors": {
+    "subtitle": "Browse creator profiles, platforms, and recent activity."
   },
   "post": {
     "by": "by",

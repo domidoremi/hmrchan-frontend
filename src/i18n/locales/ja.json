@@ -359,7 +359,7 @@
     "portal": {
       "kicker": "今日の入口",
       "title": "今日見るべき場所から始めよう",
-      "subtitle": "おすすめ、作者、予定、コミュニティへ一気に。",
+      "subtitle": "おすすめ、作者、予定、コミュニティへ一画面で。",
       "action": "探索へ",
       "publicCount": "公開 {count} 件",
       "emptyState": "公開中の項目はまだありません",
@@ -386,13 +386,13 @@
     "featured": {
       "kicker": "編集部ピックアップ",
       "title": "今日のおすすめ",
-      "subtitle": "今日いちばん見てほしい作品",
+      "subtitle": "今日まず見てほしい編集部の一束。",
       "action": "もっと見る"
     },
     "trends": {
       "kicker": "今週のトレンド",
       "title": "今週のトレンド",
-      "subtitle": "作者・タグ・予定の注目度まとめ",
+      "subtitle": "作者・タグ・予定の温度感をひと目で。",
       "authorsTitle": "人気クリエイター",
       "tagsTitle": "人気タグ",
       "scheduleTitle": "今週の予定",
@@ -420,11 +420,12 @@
       "title": "最後のカードをフッターへなめらかにつなぐ",
       "subtitle": "ブランド情報が全面に出る前に、探索・作者・予定・コミュニティへ戻れる橋渡しレイヤーを置きます。"
     },
-    "latestSubtitle": "最新コンテンツを継続更新",
+    "latestSubtitle": "更新が続くコンテンツフロー",
     "latestAction": "すべて見る"
   },
   "explore": {
     "title": "探索",
+    "subtitle": "プラットフォーム、勢い、更新順で最新コンテンツを追えます。",
     "allPlatforms": "すべて",
     "searchPlaceholder": "投稿、作者、タグを検索...",
     "filters": "フィルター",
@@ -437,6 +438,7 @@
   },
   "search": {
     "title": "検索",
+    "subtitle": "投稿・作者・タグをまとめて検索できます。",
     "placeholder": "投稿、作者、タグを検索...",
     "emptyTitle": "コンテンツを検索",
     "emptyHint": "投稿、作者などを検索",
@@ -483,6 +485,9 @@
       "author": "作者",
       "tag": "タグ"
     }
+  },
+  "authors": {
+    "subtitle": "作者プロフィールと最近の動きをプラットフォーム横断で確認。"
   },
   "post": {
     "by": "作者",

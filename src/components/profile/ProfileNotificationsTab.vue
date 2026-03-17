@@ -8,7 +8,7 @@
     />
 
     <div v-else-if="isLoading && notifications.length === 0" class="notifications-skeleton">
-      <div v-for="i in 5" :key="i" class="notification-skeleton glass-card">
+      <div v-for="i in 5" :key="i" class="notification-skeleton glass-surface--base">
         <Skeleton variant="avatar" />
         <div style="flex: 1">
           <Skeleton width="70%" height="1rem" />
@@ -28,7 +28,7 @@
         <article
           v-for="notif in notifications"
           :key="notif.id"
-          class="notification-item glass-card"
+          class="notification-item glass-surface--base"
           :class="{ unread: !notif.is_read }"
           role="button"
           tabindex="0"

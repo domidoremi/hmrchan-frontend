@@ -1031,10 +1031,14 @@ const noGlassBackdropStyle = Object.freeze({
   backdropFilter: 'blur(0rem)',
   WebkitBackdropFilter: 'blur(0rem)',
 }) as Readonly<Record<string, string>>
+const initialHomeAggregate = buildHomepageBootstrapFallback()
+const initialHomePosts = buildHomePostsFromAggregate(initialHomeAggregate).filter(
+  (post) => !isFilteredAuthor(post.author_name)
+)
 
 // Posts state
-const posts = ref<PostListItem[]>([])
-const allPosts = ref<PostListItem[]>([])
+const posts = ref<PostListItem[]>(initialHomePosts)
+const allPosts = ref<PostListItem[]>(initialHomePosts)
 
 // Home click → preview modal
 const isPreviewOpen = ref(false)
@@ -1046,10 +1050,14 @@ const previewPost = ref<PostListItem | null>(null)
 const isLoading = ref(false)
 const isLoadingMore = ref(false)
 const error = ref<string | null>(null)
-const total = ref(0)
-const homeAggregate = ref<HomeAggregateResponse | null>(null)
-const homeScheduleHighlights = ref<HomeScheduleHighlight[]>([])
-const homeCommunityHighlights = ref<HomeCommunityHighlight[]>([])
+const total = ref(Math.max(initialHomePosts.length, initialHomeAggregate.story_deck.total ?? 0))
+const homeAggregate = ref<HomeAggregateResponse | null>(initialHomeAggregate)
+const homeScheduleHighlights = ref<HomeScheduleHighlight[]>(
+  initialHomeAggregate.trends.schedules ?? []
+)
+const homeCommunityHighlights = ref<HomeCommunityHighlight[]>(
+  initialHomeAggregate.trends.community ?? []
+)
 const homeDataSource = ref<'idle' | 'aggregate' | 'support' | 'fallback'>('idle')
 const failedTrendAuthorAvatarKeys = ref<Set<string>>(new Set())
 const failedHomeMediaUrls = ref<Set<string>>(new Set())
@@ -1082,25 +1090,16 @@ let storyDeckTrigger: ScrollTrigger | null = null
 let sceneSetupFrame: number | null = null
 let sceneSetupQueued = false
 let scenesEnabled = false
-let sceneInteractionBound = false
-let sceneScrollLockTimer: number | null = null
-let sceneScrollLocked = false
 let sceneResizeObserver: ResizeObserver | null = null
 let sceneObservedSizes = new WeakMap<HTMLElement, { width: number; height: number }>()
 let bubbleBurstReplayFrame: number | null = null
 let viewportSceneFrame: number | null = null
 let screenTransitionTimer: number | null = null
-let sceneScrollTweenFrame: number | null = null
-let sceneScrollBehaviorSnapshot: { root: string; body: string } | null = null
 let viewportSceneTrackingBound = false
 let heroEditorialRevealTimer: number | null = null
 
-type SceneStepKey = 'featured' | 'story'
 type HomeScreenKey = 'hero' | 'featured' | 'posts' | 'story' | 'footer'
 type HomeScreenTransitionName = `${HomeScreenKey}-${HomeScreenKey}`
-
-const SCENE_INPUT_TOLERANCE = 18
-const SCENE_SCROLL_LOCK_MS = 0.42 * 1000
 
 const heroHighlightPosts = computed(() => {
   const source = homeSourcePosts.value
@@ -1973,9 +1972,7 @@ const storySceneStyle = computed(() => ({
   '--story-footer-fade': String(storyFooterFade.value),
 }))
 
-const homePageTransitionClass = computed(() =>
-  activeScreenTransition.value ? `home-page--transition-${activeScreenTransition.value}` : null
-)
+const homePageTransitionClass = computed(() => null)
 
 function isCompactHomeViewport(): boolean {
   return typeof window !== 'undefined' && window.innerWidth <= 768
@@ -2012,22 +2009,22 @@ const homePageMotionStyle = computed<Record<string, string>>(() => {
   const storyOutro = viewportSceneBlend.value.storyFooter
 
   return {
-    '--home-hero-opacity': String(clamp(1 - heroExit * 0.18, 0.78, 1)),
-    '--home-hero-scale': String(clamp(1 - heroExit * 0.04, 0.94, 1)),
-    '--home-hero-y': `${(-4 * heroExit).toFixed(4)}rem`,
-    '--home-hero-blur': `${(heroExit * 0.36).toFixed(4)}rem`,
-    '--home-rail-opacity': String(clamp(railEnter * 1.08 - railExit * 0.28, 0, 1)),
-    '--home-rail-scale': String(clamp(0.92 + railEnter * 0.08 - railExit * 0.04, 0.88, 1)),
-    '--home-rail-y': `${((1 - railEnter) * 5.2 - railExit * 2.4).toFixed(4)}rem`,
-    '--home-rail-blur': `${((1 - railEnter) * 0.8 + railExit * 0.26).toFixed(4)}rem`,
-    '--home-posts-opacity': String(clamp(postsEnter * 1.08 - postsExit * 0.28, 0, 1)),
-    '--home-posts-scale': String(clamp(0.92 + postsEnter * 0.08 - postsExit * 0.06, 0.88, 1)),
-    '--home-posts-y': `${((1 - postsEnter) * 5 - postsExit * 2.2).toFixed(4)}rem`,
-    '--home-posts-blur': `${((1 - postsEnter) * 0.72 + postsExit * 0.28).toFixed(4)}rem`,
-    '--home-story-opacity': String(clamp(storyEnter * 1.06 - storyOutro * 0.42, 0, 1)),
-    '--home-story-scale': String(clamp(0.94 + storyEnter * 0.06 - storyOutro * 0.04, 0.9, 1)),
-    '--home-story-y': `${((1 - storyEnter) * 4.4 - storyOutro * 1.8).toFixed(4)}rem`,
-    '--home-story-blur': `${((1 - storyEnter) * 0.66 + storyOutro * 0.16).toFixed(4)}rem`,
+    '--home-hero-opacity': String(clamp(1 - heroExit * 0.08, 0.92, 1)),
+    '--home-hero-scale': String(clamp(1 - heroExit * 0.012, 0.988, 1)),
+    '--home-hero-y': `${(-1.1 * heroExit).toFixed(4)}rem`,
+    '--home-hero-blur': `${(heroExit * 0.12).toFixed(4)}rem`,
+    '--home-rail-opacity': String(clamp(0.9 + railEnter * 0.1 - railExit * 0.06, 0.88, 1)),
+    '--home-rail-scale': String(clamp(0.985 + railEnter * 0.015 - railExit * 0.01, 0.97, 1)),
+    '--home-rail-y': `${((1 - railEnter) * 1.3 - railExit * 0.45).toFixed(4)}rem`,
+    '--home-rail-blur': `${((1 - railEnter) * 0.14 + railExit * 0.08).toFixed(4)}rem`,
+    '--home-posts-opacity': String(clamp(0.9 + postsEnter * 0.1 - postsExit * 0.06, 0.88, 1)),
+    '--home-posts-scale': String(clamp(0.985 + postsEnter * 0.015 - postsExit * 0.01, 0.97, 1)),
+    '--home-posts-y': `${((1 - postsEnter) * 1.25 - postsExit * 0.45).toFixed(4)}rem`,
+    '--home-posts-blur': `${((1 - postsEnter) * 0.14 + postsExit * 0.08).toFixed(4)}rem`,
+    '--home-story-opacity': String(clamp(0.92 + storyEnter * 0.08 - storyOutro * 0.08, 0.86, 1)),
+    '--home-story-scale': String(clamp(0.988 + storyEnter * 0.012 - storyOutro * 0.01, 0.97, 1)),
+    '--home-story-y': `${((1 - storyEnter) * 1.15 - storyOutro * 0.4).toFixed(4)}rem`,
+    '--home-story-blur': `${((1 - storyEnter) * 0.12 + storyOutro * 0.08).toFixed(4)}rem`,
   }
 })
 
@@ -2727,18 +2724,7 @@ function cleanupScrollTrigger(trigger: ScrollTrigger | null) {
 }
 
 function clearSceneScrollTween() {
-  sceneScrollLocked = false
-  if (typeof window === 'undefined') return
-  if (sceneScrollTweenFrame !== null) {
-    window.cancelAnimationFrame(sceneScrollTweenFrame)
-    sceneScrollTweenFrame = null
-  }
-  if (sceneScrollLockTimer !== null) {
-    window.clearTimeout(sceneScrollLockTimer)
-    sceneScrollLockTimer = null
-  }
-  restoreWindowScrollBehavior(sceneScrollBehaviorSnapshot)
-  sceneScrollBehaviorSnapshot = null
+  return
 }
 
 function clearBubbleBurstReplayFrame() {
@@ -2776,27 +2762,16 @@ function setRailNavbarLock(locked: boolean) {
 
 function setHomeFooterBlend(enabled: boolean) {
   if (typeof document === 'undefined') return
-  if (enabled) {
-    setHomeFooterBlendProgress(viewportSceneBlend.value.storyFooter)
-    return
-  }
   document.documentElement.style.removeProperty('--home-footer-opacity')
   document.documentElement.style.removeProperty('--home-footer-y')
+  if (enabled) return
 }
 
 function setHomeFooterBlendProgress(progress: number) {
   if (typeof document === 'undefined') return
-  const safeProgress = clamp(progress)
-  if (safeProgress <= 0.06) {
-    document.documentElement.style.removeProperty('--home-footer-opacity')
-    document.documentElement.style.removeProperty('--home-footer-y')
-    return
-  }
-  const footerOpacity = 0.88 + safeProgress * 0.12
-  const footerY = Math.max(0, 0.48 - safeProgress * 0.48)
-
-  document.documentElement.style.setProperty('--home-footer-opacity', footerOpacity.toFixed(4))
-  document.documentElement.style.setProperty('--home-footer-y', `${footerY.toFixed(4)}rem`)
+  void progress
+  document.documentElement.style.removeProperty('--home-footer-opacity')
+  document.documentElement.style.removeProperty('--home-footer-y')
 }
 
 function measureViewportBlend(
@@ -2879,66 +2854,6 @@ function unbindViewportSceneBlendTracking() {
   window.removeEventListener('resize', scheduleViewportSceneBlendUpdate)
 }
 
-function triggerScreenTransition(from: HomeScreenKey, to: HomeScreenKey) {
-  if (typeof window === 'undefined' || !shouldAnimate.value || isCompactHomeViewport()) {
-    activeScreenTransition.value = null
-    return
-  }
-
-  clearScreenTransitionTimer()
-  activeScreenTransition.value = `${from}-${to}`
-  screenTransitionTimer = window.setTimeout(() => {
-    screenTransitionTimer = null
-    activeScreenTransition.value = null
-  }, SCENE_SCROLL_LOCK_MS + 180)
-}
-
-function jumpToWindowY(top: number) {
-  if (typeof window === 'undefined') return
-
-  const snapshot = lockWindowScrollBehavior()
-  setWindowScrollPosition(top)
-
-  window.requestAnimationFrame(() => {
-    restoreWindowScrollBehavior(snapshot)
-    scheduleViewportSceneBlendUpdate()
-  })
-}
-
-function lockWindowScrollBehavior() {
-  if (typeof document === 'undefined') return null
-  const root = document.documentElement
-  const body = document.body
-  const snapshot = {
-    root: root.style.scrollBehavior,
-    body: body.style.scrollBehavior,
-  }
-  root.style.scrollBehavior = 'auto'
-  body.style.scrollBehavior = 'auto'
-  return snapshot
-}
-
-function restoreWindowScrollBehavior(snapshot: { root: string; body: string } | null) {
-  if (!snapshot || typeof document === 'undefined') return
-  document.documentElement.style.scrollBehavior = snapshot.root
-  document.body.style.scrollBehavior = snapshot.body
-}
-
-function setWindowScrollPosition(top: number) {
-  if (typeof window === 'undefined') return
-  const nextTop = Math.max(top, 0)
-  window.scrollTo(0, nextTop)
-  document.documentElement.scrollTop = nextTop
-  document.body.scrollTop = nextTop
-}
-
-function easeSceneScroll(progress: number): number {
-  if (progress < 0.5) {
-    return 4 * progress * progress * progress
-  }
-  return 1 - Math.pow(-2 * progress + 2, 3) / 2
-}
-
 function restartBubbleBurst() {
   if (typeof window === 'undefined') return
 
@@ -2959,124 +2874,6 @@ function restartBubbleBurst() {
   })
 }
 
-function animateWindowYTo(
-  targetY: number,
-  options: {
-    duration?: number
-    onComplete?: () => void
-  } = {}
-): boolean {
-  if (typeof window === 'undefined') return false
-
-  const safeTargetY = Math.max(targetY, 0)
-  const startY = window.scrollY
-  const travel = safeTargetY - startY
-
-  if (Math.abs(travel) < 2) {
-    jumpToWindowY(safeTargetY)
-    options.onComplete?.()
-    return true
-  }
-
-  if (!shouldAnimate.value) {
-    jumpToWindowY(safeTargetY)
-    options.onComplete?.()
-    return true
-  }
-
-  clearSceneScrollTween()
-  sceneScrollLocked = true
-  sceneScrollBehaviorSnapshot = lockWindowScrollBehavior()
-
-  const duration = Math.max(options.duration ?? SCENE_SCROLL_LOCK_MS, 180)
-  const finish = () => {
-    if (sceneScrollTweenFrame !== null) {
-      window.cancelAnimationFrame(sceneScrollTweenFrame)
-      sceneScrollTweenFrame = null
-    }
-    if (sceneScrollLockTimer !== null) {
-      window.clearTimeout(sceneScrollLockTimer)
-      sceneScrollLockTimer = null
-    }
-    restoreWindowScrollBehavior(sceneScrollBehaviorSnapshot)
-    sceneScrollBehaviorSnapshot = null
-    setWindowScrollPosition(safeTargetY)
-    scheduleViewportSceneBlendUpdate()
-    sceneScrollLocked = false
-    options.onComplete?.()
-  }
-
-  let startTime = 0
-  const step = (timestamp: number) => {
-    if (!scenesEnabled) {
-      finish()
-      return
-    }
-    if (!startTime) startTime = timestamp
-    const progress = clamp((timestamp - startTime) / duration)
-    const eased = easeSceneScroll(progress)
-    setWindowScrollPosition(startY + travel * eased)
-    scheduleViewportSceneBlendUpdate()
-
-    if (progress >= 1) {
-      finish()
-      return
-    }
-
-    sceneScrollTweenFrame = window.requestAnimationFrame(step)
-  }
-
-  sceneScrollLockTimer = window.setTimeout(finish, duration + 160)
-  sceneScrollTweenFrame = window.requestAnimationFrame(step)
-
-  return true
-}
-
-function jumpToScenePosition(targetY: number, onComplete?: () => void): boolean {
-  return animateWindowYTo(targetY, { onComplete })
-}
-
-function isSceneActiveRange(element: HTMLElement | null): boolean {
-  if (typeof window === 'undefined' || !element) return false
-  const start = element.offsetTop
-  const end = start + Math.max(element.offsetHeight - window.innerHeight, 0)
-  const current = window.scrollY
-  return current >= start - 1 && current <= end + 1
-}
-
-function getActiveSceneKey(): SceneStepKey | null {
-  if (isCompactHomeViewport()) return null
-  if (railSlideCount.value > 1 && isSceneActiveRange(featuredSectionRef.value)) return 'featured'
-  if (storyCardCount.value > 1 && isSceneActiveRange(storyDeckRef.value)) return 'story'
-  return null
-}
-
-function isSectionFocused(
-  element: HTMLElement | null,
-  topThreshold = 0.22,
-  bottomThreshold = 0.82
-): boolean {
-  if (typeof window === 'undefined' || !element) return false
-  const rect = element.getBoundingClientRect()
-  return (
-    rect.top <= window.innerHeight * topThreshold &&
-    rect.bottom >= window.innerHeight * bottomThreshold
-  )
-}
-
-function isViewportSectionVisible(
-  element: HTMLElement | null,
-  topThreshold = 0.82,
-  bottomThreshold = 0.18
-): boolean {
-  if (typeof window === 'undefined' || !element) return false
-  const rect = element.getBoundingClientRect()
-  return (
-    rect.top < window.innerHeight * topThreshold &&
-    rect.bottom > window.innerHeight * bottomThreshold
-  )
-}
-
 function runAfterNextPaint(callback: () => void) {
   if (typeof window === 'undefined') return
   window.requestAnimationFrame(() => {
@@ -3084,267 +2881,12 @@ function runAfterNextPaint(callback: () => void) {
   })
 }
 
-function getFooterEntryY(revealRatio = 0.32): number | null {
-  if (typeof window === 'undefined') return null
-  const footer = document.querySelector<HTMLElement>('footer.footer')
-  if (!footer) return null
-  const absoluteTop = window.scrollY + footer.getBoundingClientRect().top
-  return Math.max(absoluteTop - window.innerHeight * revealRatio, 0)
-}
-
-function isPageNearBottom(buffer = 28): boolean {
-  if (typeof window === 'undefined') return false
-  const root = document.documentElement
-  const remaining = root.scrollHeight - (window.scrollY + window.innerHeight)
-  return remaining <= Math.max(buffer, window.innerHeight * 0.02)
-}
-
-function getSceneState(scene: SceneStepKey) {
-  if (scene === 'featured') {
-    return {
-      element: featuredSectionRef.value,
-      count: railSlideCount.value,
-      index: activeRailIndex.value,
-    }
-  }
-
-  return {
-    element: storyDeckRef.value,
-    count: storyCardCount.value,
-    index: activeStoryIndex.value,
-  }
-}
-
-function setSceneProgress(scene: SceneStepKey, index: number, count: number) {
-  const progress = count > 1 ? index / (count - 1) : 0
-  if (scene === 'featured') {
-    railProgress.value = progress
-    return
-  }
-  storyProgress.value = progress
-}
-
-function releaseScene(scene: SceneStepKey, direction: -1 | 1): boolean {
-  if (typeof window === 'undefined') return false
-
-  const { element, count, index } = getSceneState(scene)
-  if (!element || count <= 1) return false
-
-  const edgeIndex = direction > 0 ? count - 1 : 0
-  if (index !== edgeIndex) return false
-
-  if (scene === 'featured') {
-    const targetY = direction > 0 ? postsSectionRef.value?.offsetTop : 0
-
-    if (typeof targetY !== 'number') return false
-    triggerScreenTransition('featured', direction > 0 ? 'posts' : 'hero')
-    return jumpToScenePosition(targetY, () => {
-      setSceneProgress(scene, edgeIndex, count)
-      if (direction > 0) {
-        scheduleViewportSceneBlendUpdate()
-        runAfterNextPaint(restartBubbleBurst)
-      }
-    })
-  }
-
-  const sceneTravel = Math.max(element.offsetHeight - window.innerHeight, 0)
-
-  if (direction > 0) {
-    const footerTop = document.querySelector<HTMLElement>('footer.footer')?.offsetTop
-    const targetY = getFooterEntryY(0.12) ?? footerTop ?? element.offsetTop + sceneTravel
-    triggerScreenTransition('story', 'footer')
-    return jumpToScenePosition(targetY, () => {
-      setSceneProgress(scene, edgeIndex, count)
-      scheduleViewportSceneBlendUpdate()
-    })
-  }
-
-  const targetY = Math.max(
-    postsSectionRef.value?.offsetTop ?? element.offsetTop - window.innerHeight,
-    0
-  )
-
-  triggerScreenTransition('story', 'posts')
-  return jumpToScenePosition(targetY, () => {
-    setSceneProgress(scene, edgeIndex, count)
-    runAfterNextPaint(restartBubbleBurst)
-  })
-}
-
-function handleStandaloneSceneJump(direction: -1 | 1): boolean {
-  if (typeof window === 'undefined' || isCompactHomeViewport()) return false
-
-  const featuredTop = featuredSectionRef.value?.offsetTop
-  if (direction > 0 && typeof featuredTop === 'number' && window.scrollY < featuredTop) {
-    const distance = featuredTop - window.scrollY
-    if (distance <= window.innerHeight * 1.02) {
-      triggerScreenTransition('hero', 'featured')
-      return jumpToScenePosition(featuredTop, () => {
-        railProgress.value = 0
-      })
-    }
-  }
-
-  const postsActive =
-    isSectionFocused(postsSectionRef.value) ||
-    isViewportSectionVisible(postsSectionRef.value, 0.94, 0.12)
-
-  if (!postsActive) return false
-
-  if (direction > 0) {
-    const storyTop = storyDeckRef.value?.offsetTop
-    if (typeof storyTop !== 'number') return false
-    triggerScreenTransition('posts', 'story')
-    return jumpToScenePosition(storyTop, () => {
-      storyProgress.value = 0
-    })
-  }
-
-  if (typeof featuredTop !== 'number') return false
-  const targetY = featuredTop + Math.max(railSlideCount.value - 1, 0) * window.innerHeight
-  triggerScreenTransition('posts', 'featured')
-  return jumpToScenePosition(targetY, () => {
-    railProgress.value = railSlideCount.value > 1 ? 1 : 0
-  })
-}
-
-function animateSceneStep(scene: SceneStepKey, direction: -1 | 1): boolean {
-  if (typeof window === 'undefined') return false
-
-  const { element, count, index } = getSceneState(scene)
-  if (!element || count <= 1) return false
-
-  const nextIndex = Math.min(Math.max(index + direction, 0), count - 1)
-  if (nextIndex === index) return false
-
-  const targetY = element.offsetTop + nextIndex * window.innerHeight
-  return animateWindowYTo(targetY, {
-    onComplete: () => {
-      setSceneProgress(scene, nextIndex, count)
-    },
-  })
-}
-
-function handleSceneWheel(event: WheelEvent) {
-  if (!scenesEnabled || typeof window === 'undefined') return
-  if (Math.abs(event.deltaY) < SCENE_INPUT_TOLERANCE) return
-
-  const direction = event.deltaY > 0 ? 1 : -1
-
-  if (direction > 0 && isPageNearBottom(64)) {
-    clearSceneScrollTween()
-    event.preventDefault()
-    return
-  }
-
-  const scene = getActiveSceneKey()
-  if (!scene) {
-    if (sceneScrollLocked) {
-      event.preventDefault()
-      return
-    }
-    if (handleStandaloneSceneJump(direction)) {
-      event.preventDefault()
-    }
-    return
-  }
-
-  if (sceneScrollLocked) {
-    event.preventDefault()
-    return
-  }
-
-  const { count, index } = getSceneState(scene)
-  const edgeIndex = direction > 0 ? count - 1 : 0
-  if (index === edgeIndex) {
-    if (releaseScene(scene, direction)) {
-      event.preventDefault()
-    }
-    return
-  }
-
-  if (animateSceneStep(scene, direction)) {
-    event.preventDefault()
-  }
-}
-
-function isEditableTarget(target: EventTarget | null): boolean {
-  if (!(target instanceof HTMLElement)) return false
-  if (target.isContentEditable) return true
-  return /^(input|textarea|select|button)$/i.test(target.tagName)
-}
-
-function handleSceneKeydown(event: KeyboardEvent) {
-  if (!scenesEnabled) return
-  if (event.defaultPrevented || isEditableTarget(event.target)) return
-
-  let direction: -1 | 1 | null = null
-  if (
-    event.key === 'ArrowDown' ||
-    event.key === 'PageDown' ||
-    (!event.shiftKey && event.key === ' ')
-  ) {
-    direction = 1
-  } else if (
-    event.key === 'ArrowUp' ||
-    event.key === 'PageUp' ||
-    (event.shiftKey && event.key === ' ')
-  ) {
-    direction = -1
-  }
-
-  if (!direction) return
-
-  if (direction > 0 && isPageNearBottom(64)) {
-    clearSceneScrollTween()
-    event.preventDefault()
-    return
-  }
-
-  const scene = getActiveSceneKey()
-  if (!scene) {
-    if (sceneScrollLocked) {
-      event.preventDefault()
-      return
-    }
-    if (handleStandaloneSceneJump(direction)) {
-      event.preventDefault()
-    }
-    return
-  }
-
-  if (sceneScrollLocked) {
-    event.preventDefault()
-    return
-  }
-
-  const { count, index } = getSceneState(scene)
-  const edgeIndex = direction > 0 ? count - 1 : 0
-  if (index === edgeIndex) {
-    if (releaseScene(scene, direction)) {
-      event.preventDefault()
-    }
-    return
-  }
-
-  if (animateSceneStep(scene, direction)) {
-    event.preventDefault()
-  }
-}
-
 function bindSceneInteractions() {
-  if (sceneInteractionBound || typeof window === 'undefined') return
-  sceneInteractionBound = true
-  window.addEventListener('wheel', handleSceneWheel, { passive: false })
-  window.addEventListener('keydown', handleSceneKeydown)
+  clearSceneScrollTween()
 }
 
 function unbindSceneInteractions() {
-  if (!sceneInteractionBound || typeof window === 'undefined') return
-  sceneInteractionBound = false
   clearSceneScrollTween()
-  window.removeEventListener('wheel', handleSceneWheel)
-  window.removeEventListener('keydown', handleSceneKeydown)
 }
 
 function cancelScheduledSceneSetup() {
@@ -3491,50 +3033,50 @@ function getStoryCardStyle(index: number): Record<string, string> {
   const stackDepth = clamp(offset, 0, 2.2)
   const exitProgress = clamp(-offset, 0, 1.02)
   const exitTail = clamp(-offset - 0.94, 0, 1.02)
-  const hidden = offset > 2.35 || offset < -0.98
+  const hidden = offset > 1.92 || offset < -0.98
   const translateX =
     offset < 0
-      ? `${(stackBias * exitProgress * 0.08).toFixed(2)}rem`
-      : `${(stackBias * Math.min(stackDepth, 1.8) * 0.08).toFixed(2)}rem`
+      ? `${(stackBias * exitProgress * 0.04).toFixed(2)}rem`
+      : `${(stackBias * Math.min(stackDepth, 1.6) * 0.04).toFixed(2)}rem`
   const translateY =
     offset < 0
-      ? `calc(-${(exitProgress * 88).toFixed(4)}% - ${(exitTail * 1.1 + mergeDeparture * 0.5 + footerDeparture * 0.35).toFixed(2)}rem)`
-      : `calc(${(stackDepth * 8.5).toFixed(4)}% + 0.5rem - ${(mergeDeparture * 0.5).toFixed(2)}rem)`
+      ? `calc(-${(exitProgress * 58).toFixed(4)}% - ${(exitTail * 0.42 + mergeDeparture * 0.24 + footerDeparture * 0.16).toFixed(2)}rem)`
+      : `calc(${(stackDepth * 4.8).toFixed(4)}% + 0.35rem - ${(mergeDeparture * 0.24).toFixed(2)}rem)`
   const translateZ =
     offset < 0
-      ? `${(exitProgress * 0.6 - exitTail * 0.9 - mergeDeparture * 1.2 - footerDeparture * 0.7).toFixed(2)}rem`
-      : `${(-stackDepth * 1.8 - mergeDeparture * 1.1 - footerDeparture * 0.4).toFixed(2)}rem`
+      ? `${(exitProgress * 0.16 - exitTail * 0.22 - mergeDeparture * 0.28 - footerDeparture * 0.16).toFixed(2)}rem`
+      : `${(-stackDepth * 0.72 - mergeDeparture * 0.34 - footerDeparture * 0.14).toFixed(2)}rem`
   const rotateX =
     offset < 0
-      ? `${(exitProgress * 6 + mergeDeparture * 2.2).toFixed(2)}deg`
-      : `${(stackDepth * 0.9).toFixed(2)}deg`
+      ? `${(exitProgress * 2.2 + mergeDeparture * 0.85).toFixed(2)}deg`
+      : `${(stackDepth * 0.24).toFixed(2)}deg`
   const rotateZ =
     offset < 0
-      ? `${(stackBias * (0.22 + exitProgress * 0.18)).toFixed(2)}deg`
-      : `${(stackBias * Math.min(stackDepth, 1.8) * 0.18).toFixed(2)}deg`
+      ? `${(stackBias * (0.08 + exitProgress * 0.08)).toFixed(2)}deg`
+      : `${(stackBias * Math.min(stackDepth, 1.6) * 0.08).toFixed(2)}deg`
   const scale = hidden
-    ? 0.92
+    ? 0.96
     : offset < 0
-      ? Math.max(0.97, 1 - exitProgress * 0.015 - exitTail * 0.02)
-      : Math.max(0.94, 1 - stackDepth * 0.025 - mergeDeparture * 0.02)
+      ? Math.max(0.982, 1 - exitProgress * 0.01 - exitTail * 0.012)
+      : Math.max(0.972, 1 - stackDepth * 0.014 - mergeDeparture * 0.01)
   const opacity = hidden
     ? 0
     : offset < 0
-      ? Math.max(0, 1 - exitProgress * 0.82 - exitTail * 0.14 - footerDeparture * 0.12)
-      : Math.max(0.18, 1 - stackDepth * 0.22 - footerDeparture * 0.08)
-  const visualY = offset < 0 ? `${(-exitProgress * 0.55 - exitTail * 0.18).toFixed(2)}rem` : '0rem'
+      ? Math.max(0, 1 - exitProgress * 0.64 - exitTail * 0.12 - footerDeparture * 0.08)
+      : Math.max(0.28, 1 - stackDepth * 0.16 - footerDeparture * 0.06)
+  const visualY = offset < 0 ? `${(-exitProgress * 0.22 - exitTail * 0.08).toFixed(2)}rem` : '0rem'
   const visualScale =
     offset < 0
-      ? String(Math.max(0.97, 1 - exitProgress * 0.02))
-      : String(Math.max(0.96, 1 - stackDepth * 0.015))
-  const copyY = offset < 0 ? `${(-exitProgress * 0.8 - exitTail * 0.25).toFixed(2)}rem` : '0rem'
-  const titleY = offset < 0 ? `${(-exitProgress * 1 - exitTail * 0.3).toFixed(2)}rem` : '0rem'
+      ? String(Math.max(0.986, 1 - exitProgress * 0.012))
+      : String(Math.max(0.978, 1 - stackDepth * 0.01))
+  const copyY = offset < 0 ? `${(-exitProgress * 0.24 - exitTail * 0.08).toFixed(2)}rem` : '0rem'
+  const titleY = offset < 0 ? `${(-exitProgress * 0.28 - exitTail * 0.1).toFixed(2)}rem` : '0rem'
   const copyTilt =
-    offset < 0 ? `${(exitProgress * 5.5).toFixed(2)}deg` : `${(stackDepth * 0.12).toFixed(2)}deg`
+    offset < 0 ? `${(exitProgress * 1.4).toFixed(2)}deg` : `${(stackDepth * 0.04).toFixed(2)}deg`
   const copyOpacity =
     offset < 0
-      ? Math.max(0.56, 1 - exitProgress * 0.24 - exitTail * 0.08)
-      : Math.max(0.68, 1 - stackDepth * 0.12)
+      ? Math.max(0.74, 1 - exitProgress * 0.14 - exitTail * 0.05)
+      : Math.max(0.78, 1 - stackDepth * 0.08)
   const zIndex = String(
     offset < 0
       ? Math.max(
@@ -5954,7 +5496,7 @@ onBeforeUnmount(() => {
   justify-content: flex-start;
   inline-size: 100%;
   block-size: 100%;
-  gap: clamp(0.45rem, 0.9vw, 0.65rem);
+  gap: clamp(0.4rem, 0.85vw, 0.58rem);
   min-inline-size: 0;
   min-block-size: 0;
   padding: clamp(0.2rem, 0.6vw, 0.35rem) 0 clamp(0.2rem, 0.6vw, 0.35rem);
@@ -6040,7 +5582,7 @@ onBeforeUnmount(() => {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
-  margin-top: auto;
+  margin-top: 0.15rem;
   align-self: flex-start;
 }
 
@@ -6070,11 +5612,13 @@ onBeforeUnmount(() => {
   align-items: center;
   align-self: flex-start;
   gap: 0.4rem;
+  flex-wrap: wrap;
   inline-size: fit-content;
   max-inline-size: 100%;
   min-block-size: 2rem;
-  margin-top: auto;
-  padding: 0.45rem 0.72rem;
+  min-inline-size: 0;
+  margin-top: 0.25rem;
+  padding: 0.4rem 0.68rem;
   border-radius: var(--radius-full);
   border: 0.0625rem solid color-mix(in srgb, var(--home-panel-border) 88%, transparent);
   background: color-mix(in srgb, var(--home-panel-muted) 86%, transparent);
@@ -6084,14 +5628,17 @@ onBeforeUnmount(() => {
   line-height: 1.3;
   color: var(--color-text-secondary);
   white-space: normal;
+  overflow-wrap: anywhere;
+  text-align: center;
+  justify-content: center;
 }
 
 .featured-rail-card__meta + .featured-rail-card__action {
-  margin-top: auto;
+  margin-top: 0.3rem;
 }
 
 .featured-rail-card__stats + .featured-rail-card__action {
-  margin-top: auto;
+  margin-top: 0.3rem;
 }
 
 .rail-feature-card {
@@ -6712,8 +6259,8 @@ onBeforeUnmount(() => {
   background: linear-gradient(
     180deg,
     rgba(248, 247, 244, 0) 0%,
-    rgba(248, 247, 244, 0.14) 20%,
-    rgba(248, 247, 244, 0.6) 100%
+    rgba(248, 247, 244, 0.22) 22%,
+    rgba(248, 247, 244, 0.78) 100%
   );
 }
 
@@ -6724,8 +6271,8 @@ onBeforeUnmount(() => {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
   gap: clamp(0.95rem, 1.8vw, 1.25rem);
-  padding-block: calc(var(--home-stage-safe-top) + clamp(0.75rem, 1.6vw, 1rem))
-    calc(clamp(1rem, 2vw, 1.35rem) + var(--home-stage-safe-bottom));
+  padding-block: calc(var(--home-stage-safe-top) + clamp(0.95rem, 1.9vw, 1.2rem))
+    calc(clamp(1.15rem, 2.2vw, 1.55rem) + var(--home-stage-safe-bottom));
   overflow: clip;
 }
 
@@ -6758,9 +6305,9 @@ onBeforeUnmount(() => {
 :global([data-theme='dark'] .media-slices) {
   background: linear-gradient(
     180deg,
-    rgba(7, 10, 16, 0) 0%,
-    rgba(8, 12, 18, 0.18) 20%,
-    rgba(8, 12, 18, 0.74) 100%
+    rgba(8, 12, 18, 0.06) 0%,
+    rgba(8, 12, 18, 0.26) 22%,
+    rgba(8, 12, 18, 0.78) 100%
   );
 }
 
@@ -6768,9 +6315,9 @@ onBeforeUnmount(() => {
 :global([data-theme='blue'] .media-slices) {
   background: linear-gradient(
     180deg,
-    rgba(239, 246, 255, 0) 0%,
-    rgba(239, 246, 255, 0.16) 20%,
-    rgba(239, 246, 255, 0.72) 100%
+    rgba(239, 246, 255, 0.08) 0%,
+    rgba(239, 246, 255, 0.22) 22%,
+    rgba(239, 246, 255, 0.76) 100%
   );
 }
 
@@ -6781,24 +6328,24 @@ onBeforeUnmount(() => {
   display: grid;
   place-items: center;
   gap: 0;
-  padding-block: clamp(1.25rem, 2.6vw, 1.75rem) clamp(2rem, 3.5vw, 2.9rem);
-  perspective: clamp(18rem, 28vw, 28rem);
-  perspective-origin: 50% 34%;
+  padding-block: clamp(1.6rem, 3vw, 2rem) clamp(2.35rem, 4vw, 3.1rem);
+  perspective: clamp(26rem, 38vw, 40rem);
+  perspective-origin: 50% 42%;
   transform-style: preserve-3d;
   isolation: isolate;
   overflow: clip;
   -webkit-mask-image: linear-gradient(
     180deg,
     transparent 0%,
-    rgb(0 0 0 / 100%) 14%,
-    rgb(0 0 0 / 100%) 86%,
+    rgb(0 0 0 / 100%) 11%,
+    rgb(0 0 0 / 100%) 90%,
     transparent 100%
   );
   mask-image: linear-gradient(
     180deg,
     transparent 0%,
-    rgb(0 0 0 / 100%) 14%,
-    rgb(0 0 0 / 100%) 86%,
+    rgb(0 0 0 / 100%) 11%,
+    rgb(0 0 0 / 100%) 90%,
     transparent 100%
   );
 }
@@ -6911,7 +6458,7 @@ onBeforeUnmount(() => {
 
 .media-slice {
   position: absolute;
-  inset-block: 0;
+  inset-block: clamp(0.45rem, 0.9vw, 0.75rem);
   inset-inline: clamp(0.75rem, 1.4vw, 1rem);
   block-size: 100%;
   min-height: 0;
@@ -6943,12 +6490,13 @@ onBeforeUnmount(() => {
   position: relative;
   top: auto;
   inline-size: min(calc(100% - 1rem), 72rem);
-  min-height: min(54dvh, 34rem);
+  max-block-size: 100%;
+  min-height: min(50dvh, 32rem);
   margin-inline: auto;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(18rem, 0.74fr);
-  gap: clamp(1.35rem, 2.8vw, 2.15rem);
-  padding: clamp(1.5rem, 2.8vw, 2.2rem);
+  grid-template-columns: minmax(0, 1fr) minmax(17rem, 0.78fr);
+  gap: clamp(1.1rem, 2.1vw, 1.7rem);
+  padding: clamp(1.3rem, 2.4vw, 1.9rem);
   justify-items: stretch;
   align-items: center;
   overflow: clip;
@@ -7005,11 +6553,11 @@ onBeforeUnmount(() => {
 }
 
 .media-slice__copy {
-  inline-size: min(100%, 29rem);
+  inline-size: min(100%, 27rem);
   display: grid;
   align-content: center;
   justify-items: start;
-  gap: clamp(0.8rem, 1.4vw, 1rem);
+  gap: clamp(0.72rem, 1.2vw, 0.92rem);
   margin-inline: auto;
   align-self: center;
   transform: translate3d(0, var(--story-copy-y, 0rem), 0) rotateX(var(--story-copy-tilt, 0deg));
@@ -7030,7 +6578,7 @@ onBeforeUnmount(() => {
   margin: 0;
   display: -webkit-box;
   overflow: hidden;
-  max-inline-size: 15ch;
+  max-inline-size: 13ch;
   font-size: clamp(1.4rem, 2vw, 1.85rem);
   line-height: 1.08;
   text-wrap: balance;

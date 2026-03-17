@@ -13,7 +13,7 @@
     />
 
     <div v-else-if="isLoading && favorites.length === 0" class="posts-grid">
-      <div v-for="i in 6" :key="i" class="post-card glass-card">
+      <div v-for="i in 6" :key="i" class="post-card glass-surface--base">
         <Skeleton variant="image" width="100%" />
         <div class="post-content">
           <Skeleton width="80%" height="1.125rem" />
@@ -36,7 +36,7 @@
         <article
           v-for="fav in visibleFavorites"
           :key="fav.id"
-          class="favorite-card glass-card content-auto"
+          class="favorite-card glass-surface--base content-auto"
           role="button"
           tabindex="0"
           @click="goToPost(fav.post_id, fav.post?.thumbnail_url)"

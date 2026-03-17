@@ -18,7 +18,7 @@
     </div>
 
     <template v-else>
-      <section class="security-card glass-card-enhanced">
+      <section class="security-card glass-surface--elevated">
         <div class="security-section-head">
           <div>
             <h3 class="security-section-title">{{ $t('profile.securitySummaryTitle') }}</h3>
@@ -61,7 +61,7 @@
         </div>
       </section>
 
-      <section class="security-card glass-card-enhanced">
+      <section class="security-card glass-surface--elevated">
         <div class="security-section-head">
           <div>
             <h3 class="security-section-title">{{ $t('profile.securityActivityTitle') }}</h3>

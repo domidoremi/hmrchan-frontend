@@ -41,7 +41,7 @@
             <article
               v-for="(item, idx) in group.items"
               :key="item.id"
-              class="history-card glass-card-enhanced"
+              class="history-card glass-surface--elevated"
               :style="{ '--stagger': idx }"
               role="button"
               tabindex="0"

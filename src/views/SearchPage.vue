@@ -3,16 +3,27 @@
     <div class="container">
       <header class="search-header page-hero search-hero">
         <div class="page-hero__content">
-          <div class="search-header-top">
-            <button
-              type="button"
-              class="back-btn page-control-btn page-control-btn--square"
-              @click="goBack"
-              :aria-label="$t('common.back')"
-            >
-              <AnimatedIcon name="explore" :fallback-icon="ArrowLeft" size="md" />
-            </button>
-            <h1 class="search-title">{{ $t('search.title') }}</h1>
+          <div class="page-hero__header">
+            <div class="page-hero__heading">
+              <span class="page-hero__eyebrow">{{ $t('search.title') }}</span>
+              <div class="page-hero__title-row search-header-top">
+                <button
+                  type="button"
+                  class="back-btn page-control-btn page-control-btn--square"
+                  @click="goBack"
+                  :aria-label="$t('common.back')"
+                >
+                  <AnimatedIcon name="explore" :fallback-icon="ArrowLeft" size="md" />
+                </button>
+                <h1 class="page-hero__title search-title">{{ $t('search.title') }}</h1>
+              </div>
+              <p class="page-hero__subtitle">{{ $t('search.subtitle') }}</p>
+            </div>
+            <div v-if="query" class="page-hero__actions">
+              <span class="page-hero__note">
+                {{ $t('search.resultsFor') }} <strong>"{{ query }}"</strong>
+              </span>
+            </div>
           </div>
           <SearchBar class="search-bar-main" />
           <div v-if="!query" class="page-hero__meta">
@@ -1076,35 +1087,26 @@ onBeforeUnmount(() => {
 }
 
 .search-header {
-  max-width: min(100%, 52rem);
+  max-width: min(100%, 58rem);
   margin: 0 auto var(--spacing-4);
-  text-align: center;
 }
 
 .search-header-top {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   gap: var(--spacing-3);
-  margin-bottom: var(--spacing-3);
   position: relative;
 }
 
 .search-header .back-btn {
-  position: absolute;
-  inset-inline-start: 0;
-  z-index: 1;
+  position: relative;
+  inset-inline-start: auto;
+  z-index: auto;
 }
 
 .search-title {
-  font-size: var(--text-xl);
   margin: 0;
-}
-
-@media (min-width: 768px) {
-  .search-title {
-    font-size: var(--text-2xl);
-  }
 }
 
 .search-bar-main {

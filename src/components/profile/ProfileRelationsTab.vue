@@ -27,7 +27,7 @@
       <StateIndicator v-if="users.length === 0" variant="empty" :description="emptyDescription" />
 
       <div v-else class="relations-list">
-        <article v-for="item in users" :key="item.id" class="relation-card glass-card-enhanced">
+        <article v-for="item in users" :key="item.id" class="relation-card glass-surface--elevated">
           <div class="relation-main">
             <Avatar
               :src="

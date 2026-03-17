@@ -742,27 +742,27 @@
 }
 
 /* ========== Action Buttons (icon buttons in navbar etc.) ========== */
-#app[data-ui-style='ios'] .action-btn {
+#app[data-ui-style='ios'] :is(.action-btn, .nav-action-btn) {
   border-radius: var(--radius-lg);
   transition: background var(--duration-fast) var(--ease-out);
 }
 
-#app[data-ui-style='ios'] .action-btn:hover {
+#app[data-ui-style='ios'] :is(.action-btn, .nav-action-btn):hover {
   background: rgba(var(--color-primary-rgb), 0.08);
 }
 
-#app[data-ui-style='material'] .action-btn {
+#app[data-ui-style='material'] :is(.action-btn, .nav-action-btn) {
   border-radius: 50%;
   transition:
     background var(--duration-fast) var(--ease-out),
     box-shadow var(--duration-fast) var(--ease-out);
 }
 
-#app[data-ui-style='material'] .action-btn:hover {
+#app[data-ui-style='material'] :is(.action-btn, .nav-action-btn):hover {
   background: rgba(var(--color-primary-rgb), 0.12);
 }
 
-#app[data-ui-style='material'] .action-btn:active {
+#app[data-ui-style='material'] :is(.action-btn, .nav-action-btn):active {
   box-shadow: inset 0 0 0 100px rgba(var(--color-primary-rgb), 0.08);
 }
 

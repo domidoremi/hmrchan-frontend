@@ -27,6 +27,16 @@ const ALLOWED_ORIGINS = [
 
 // 开发环境允许 localhost
 const DEV_ORIGINS = ['http://localhost:5173', 'http://127.0.0.1:5173']
+const RESPONSE_HEADERS_TO_STRIP = [
+  'content-security-policy',
+  'content-security-policy-report-only',
+  'cross-origin-embedder-policy',
+  'cross-origin-opener-policy',
+  'cross-origin-resource-policy',
+  'permissions-policy',
+  'x-frame-options',
+  'x-xss-protection',
+]
 
 /**
  * 验证 Origin 是否在白名单中
@@ -44,18 +54,47 @@ function isAllowedOrigin(origin: string | null, isDev: boolean): boolean {
 function handleCORS(request: Request, isDev: boolean): Response {
   const origin = request.headers.get('Origin')
   const allowedOrigin = isAllowedOrigin(origin, isDev) ? origin : ALLOWED_ORIGINS[0]
+  const headers = new Headers({
+    'Access-Control-Allow-Origin': allowedOrigin!,
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers':
+      'Content-Type, Authorization, X-Requested-With, Accept, Origin, X-Client-Token, X-Client-Fingerprint, X-Timestamp, X-Signature',
+    'Access-Control-Allow-Credentials': 'true',
+    'Access-Control-Max-Age': '86400',
+  })
+  appendVary(headers, 'Origin')
 
   return new Response(null, {
     status: 204,
-    headers: {
-      'Access-Control-Allow-Origin': allowedOrigin!,
-      'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
-      'Access-Control-Allow-Headers':
-        'Content-Type, Authorization, X-Requested-With, Accept, Origin, X-Client-Token, X-Client-Fingerprint, X-Timestamp, X-Signature',
-      'Access-Control-Allow-Credentials': 'true',
-      'Access-Control-Max-Age': '86400',
-    },
+    headers,
   })
+}
+
+function appendVary(headers: Headers, value: string) {
+  const current = headers.get('Vary')
+  if (!current) {
+    headers.set('Vary', value)
+    return
+  }
+
+  const values = current
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean)
+
+  if (!values.some((item) => item.toLowerCase() === value.toLowerCase())) {
+    values.push(value)
+    headers.set('Vary', values.join(', '))
+  }
+}
+
+function extractApiVersion(path: string): string | null {
+  const versionSegment = path
+    .split('/')
+    .map((segment) => segment.trim())
+    .find((segment) => /^v\d+$/i.test(segment))
+
+  return versionSegment ? versionSegment.toLowerCase() : null
 }
 
 /**
@@ -182,10 +221,19 @@ export async function onRequest(context: CFPagesContext): Promise<Response> {
     const allowedOrigin = isAllowedOrigin(origin, isDev) ? origin : ALLOWED_ORIGINS[0]
     responseHeaders.set('Access-Control-Allow-Origin', allowedOrigin!)
     responseHeaders.set('Access-Control-Allow-Credentials', 'true')
+    appendVary(responseHeaders, 'Origin')
 
     // 移除可能导致问题的头
     responseHeaders.delete('content-encoding')
     responseHeaders.delete('transfer-encoding')
+    RESPONSE_HEADERS_TO_STRIP.forEach((header) => {
+      responseHeaders.delete(header)
+    })
+
+    const apiVersion = extractApiVersion(path)
+    if (apiVersion) {
+      responseHeaders.set('X-API-Version', apiVersion)
+    }
 
     // 为媒体资源设置更长的缓存时间（30 天）
     if (
@@ -217,11 +265,15 @@ export async function onRequest(context: CFPagesContext): Promise<Response> {
       }),
       {
         status: 502,
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': allowedOrigin!,
-          'Access-Control-Allow-Credentials': 'true',
-        },
+        headers: (() => {
+          const headers = new Headers({
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': allowedOrigin!,
+            'Access-Control-Allow-Credentials': 'true',
+          })
+          appendVary(headers, 'Origin')
+          return headers
+        })(),
       }
     )
   }

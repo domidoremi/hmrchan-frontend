@@ -1,7 +1,7 @@
 <template>
   <section class="load-more-section">
     <header class="load-more-header">
-      <div class="progress-pill ui-pill ui-pill--stat empty-surface">
+      <div class="progress-pill ui-pill ui-pill--progress empty-surface">
         <span class="progress-label">{{
           t('common.showing', { count: displayCount, total: displayTotal })
         }}</span>

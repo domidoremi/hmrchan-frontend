@@ -3,12 +3,27 @@
     <div class="container">
       <section class="page-hero contact-hero">
         <div class="page-hero__content">
-          <span class="page-hero__eyebrow">{{ $t('contact.title') }}</span>
-          <h1 class="page-hero__title">{{ $t('contact.title') }}</h1>
-          <p class="page-hero__subtitle">{{ $t('contact.subtitle') }}</p>
+          <div class="page-hero__header">
+            <div class="page-hero__heading">
+              <span class="page-hero__eyebrow">{{ $t('contact.title') }}</span>
+              <div>
+                <h1 class="page-hero__title">{{ $t('contact.title') }}</h1>
+                <p class="page-hero__subtitle">{{ $t('contact.subtitle') }}</p>
+              </div>
+            </div>
+            <div class="page-hero__actions contact-hero__actions">
+              <RouterLink to="/community" class="page-inline-cta">
+                {{ $t('nav.community') }}
+              </RouterLink>
+              <RouterLink to="/about" class="page-control-btn page-control-btn--compact">
+                {{ $t('nav.about') }}
+              </RouterLink>
+            </div>
+          </div>
           <div class="page-hero__meta">
             <span class="page-hero__note">{{ $t('contact.feedbackTitle') }}</span>
             <span class="page-hero__note">{{ $t('contact.feedbackSubtitle') }}</span>
+            <span class="page-hero__note">{{ $t('nav.community') }}</span>
           </div>
         </div>
       </section>
@@ -238,16 +253,17 @@ async function handleFeedbackSubmit() {
 }
 
 .contact-hero .page-hero__content {
-  align-items: center;
-  text-align: center;
+  align-items: stretch;
 }
 
-.contact-hero .page-hero__eyebrow {
-  align-self: center;
+.contact-hero__actions {
+  justify-content: flex-end;
 }
 
-.contact-hero .page-hero__meta {
-  justify-content: center;
+@media (max-width: 48rem) {
+  .contact-hero__actions {
+    justify-content: flex-start;
+  }
 }
 
 .contact-card {
