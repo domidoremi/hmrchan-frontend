@@ -89,6 +89,8 @@ __screenshots__/
 # Cloudflare / Wrangler
 # =====================
 .wrangler/
+.wrangler/tmp/
+.wrangler/state/
 .dev.vars
 worker-configuration.d.ts
 
