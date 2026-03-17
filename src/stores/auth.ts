@@ -14,21 +14,16 @@ import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import { useRouter } from 'vue-router'
 import { authService, ApiError } from '@/api'
-import { apiClient, API_AUTH_URL } from '@/api/client'
 import type {
-  AuthResponse,
   RiskVerificationChallengeResponse,
   TwoFactorRequiredResponse,
   UserResponse,
 } from '@/api'
 import { getDeviceInfo } from '@/utils/device'
-import { secureTokenManager } from '@/utils/tokenSecurity'
+import { createAuthSessionController } from '@/services/authSessionController'
 
 // 用户类型（与 API 响应匹配）
 export type AuthUser = UserResponse
-
-// 默认心跳间隔（5 分钟），可被后端返回的 refresh_threshold 覆盖
-const DEFAULT_HEARTBEAT_INTERVAL = 5 * 60 * 1000
 
 export const useAuthStore = defineStore(
   'auth',
@@ -42,29 +37,17 @@ export const useAuthStore = defineStore(
     const error = ref<string | null>(null)
 
     const isInitialized = ref(false)
-    let initPromise: Promise<void> | null = null
-
-    let heartbeatTimer: ReturnType<typeof setTimeout> | null = null
-    let authLogoutHandler: (() => void) | null = null
-    let heartbeatInterval = DEFAULT_HEARTBEAT_INTERVAL
-    let deferredProfileTimer: ReturnType<typeof setTimeout> | null = null
-    let deferredProfileController: AbortController | null = null
-    let deferredProfileRequestToken = 0
-    let fetchCurrentUserController: AbortController | null = null
-    let fetchCurrentUserToken = 0
 
     const isAuthenticated = computed(() => !!user.value && !!token.value)
-
-    function isAbortError(err: unknown): boolean {
-      return err instanceof DOMException
-        ? err.name === 'AbortError'
-        : err instanceof Error && err.name === 'AbortError'
-    }
-
-    function abortFetchCurrentUserRequest() {
-      fetchCurrentUserController?.abort()
-      fetchCurrentUserController = null
-    }
+    const sessionController = createAuthSessionController<AuthUser>({
+      router,
+      state: {
+        user,
+        token,
+        refreshToken,
+        isInitialized,
+      },
+    })
 
     function isTwoFactorPendingResponse(response: unknown): response is TwoFactorRequiredResponse {
       return (
@@ -87,69 +70,6 @@ export const useAuthStore = defineStore(
           true &&
         typeof (response as { pending_token?: unknown }).pending_token === 'string'
       )
-    }
-
-    async function establishSession(response: AuthResponse) {
-      user.value = response.user
-      token.value = response.access_token
-      refreshToken.value = response.refresh_token ?? null
-
-      await secureTokenManager.store(response.access_token)
-
-      if (response.refresh_threshold) {
-        heartbeatInterval = response.refresh_threshold * 1000
-      }
-      startHeartbeat()
-      deferProfileRefresh()
-    }
-
-    /**
-     * 登录/注册后延迟拉取完整用户资料
-     * 使用直接 fetch 绕过 apiClient 的 401→refresh→logout 链
-     * 失败时静默忽略，不影响已建立的认证状态
-     */
-    function deferProfileRefresh() {
-      if (deferredProfileTimer) clearTimeout(deferredProfileTimer)
-      deferredProfileController?.abort()
-      const requestToken = ++deferredProfileRequestToken
-      deferredProfileTimer = setTimeout(async () => {
-        deferredProfileTimer = null
-        const controller = new AbortController()
-        deferredProfileController = controller
-        const currentToken = await secureTokenManager.retrieve()
-        if (
-          !currentToken ||
-          controller.signal.aborted ||
-          requestToken !== deferredProfileRequestToken
-        ) {
-          return
-        }
-        try {
-          const data = await apiClient.request<UserResponse>('/auth/me', {
-            baseUrl: API_AUTH_URL,
-            signal: controller.signal,
-            skipAuth: true,
-            skipErrorToast: true,
-            headers: {
-              Authorization: `Bearer ${currentToken}`,
-            },
-            responseType: 'json',
-          })
-          if (controller.signal.aborted || requestToken !== deferredProfileRequestToken) return
-          if (data && typeof data === 'object' && 'id' in data) {
-            user.value = data as AuthUser
-          }
-        } catch {
-          // 静默失败，不影响认证状态
-        } finally {
-          if (
-            requestToken === deferredProfileRequestToken &&
-            deferredProfileController === controller
-          ) {
-            deferredProfileController = null
-          }
-        }
-      }, 2000)
     }
 
     /**
@@ -189,7 +109,7 @@ export const useAuthStore = defineStore(
           }
         }
 
-        await establishSession(response)
+        await sessionController.establishSession(response)
 
         return {
           success: true,
@@ -235,7 +155,7 @@ export const useAuthStore = defineStore(
           }
         }
 
-        await establishSession(response)
+        await sessionController.establishSession(response)
 
         return { success: true, user: response.user }
       } catch (err) {
@@ -266,7 +186,7 @@ export const useAuthStore = defineStore(
           deviceInfo.device_type
         )
 
-        await establishSession(response)
+        await sessionController.establishSession(response)
 
         return { success: true, user: response.user }
       } catch (err) {
@@ -313,22 +233,7 @@ export const useAuthStore = defineStore(
           ...(turnstileToken ? { turnstile_token: turnstileToken } : {}),
         })
 
-        // 注册成功后自动登录
-        user.value = response.user
-        token.value = response.access_token
-        refreshToken.value = response.refresh_token ?? null
-
-        // 安全存储 token（加密 + 设备绑定）
-        await secureTokenManager.store(response.access_token)
-
-        // 使用后端返回的刷新阈值，或使用默认值
-        if (response.refresh_threshold) {
-          heartbeatInterval = response.refresh_threshold * 1000
-        }
-        startHeartbeat()
-
-        // 获取完整的用户资料（包含 avatar_url 等字段）
-        deferProfileRefresh()
+        await sessionController.establishSession(response)
 
         return { success: true, user: response.user }
       } catch (err) {
@@ -370,27 +275,14 @@ export const useAuthStore = defineStore(
      * 用户登出
      */
     async function logout() {
-      stopHeartbeat()
-      if (deferredProfileTimer) {
-        clearTimeout(deferredProfileTimer)
-        deferredProfileTimer = null
-      }
-      deferredProfileController?.abort()
-      deferredProfileController = null
-      deferredProfileRequestToken += 1
-      abortFetchCurrentUserRequest()
-      fetchCurrentUserToken += 1
+      sessionController.suspendSession()
       try {
         await authService.logout()
       } catch {
         // 忽略登出 API 错误
       } finally {
-        user.value = null
-        token.value = null
-        refreshToken.value = null
+        sessionController.clearSession({ navigateToLogin: true })
         error.value = null
-        // 清除安全存储的 token
-        secureTokenManager.clear()
         // 清除客户端安全凭证
         try {
           const { clientSecurityManager } = await import('@/api/clientSecurityService')
@@ -398,256 +290,6 @@ export const useAuthStore = defineStore(
         } catch {
           // ignore
         }
-        router.push('/login')
-      }
-    }
-
-    /**
-     * 获取当前用户信息
-     * 仅在明确的认证失败（401/403）时清除状态
-     * 网络错误、超时、500 等临时故障不清除认证状态
-     *
-     * @param clearOnAuthError 认证失败时是否清除状态（登录/注册后的资料拉取应传 false）
-     */
-    async function fetchCurrentUser(clearOnAuthError = true) {
-      if (!token.value) return null
-      abortFetchCurrentUserRequest()
-      const controller = new AbortController()
-      fetchCurrentUserController = controller
-      const requestToken = ++fetchCurrentUserToken
-
-      try {
-        const currentUser = await authService.getCurrentUser({
-          signal: controller.signal,
-          skipErrorToast: true,
-        })
-        if (controller.signal.aborted || requestToken !== fetchCurrentUserToken) return null
-        user.value = currentUser
-        return currentUser
-      } catch (err) {
-        if (
-          controller.signal.aborted ||
-          isAbortError(err) ||
-          requestToken !== fetchCurrentUserToken
-        ) {
-          return null
-        }
-        if (
-          clearOnAuthError &&
-          err instanceof ApiError &&
-          (err.status === 401 || err.status === 403)
-        ) {
-          // 明确的认证失败，清除状态
-          user.value = null
-          token.value = null
-        }
-        // 网络错误、500 等不清除认证状态，保留用户会话
-        return null
-      } finally {
-        if (requestToken === fetchCurrentUserToken && fetchCurrentUserController === controller) {
-          fetchCurrentUserController = null
-        }
-      }
-    }
-
-    /**
-     * 初始化认证状态（应用启动时调用）
-     * 始终向后端验证 token 有效性，防止持久化的过期状态导致 401 风暴
-     */
-    async function initAuth() {
-      // 始终尝试从安全存储恢复 token（避免依赖 localStorage 明文）
-      let secureToken = await secureTokenManager.retrieve()
-
-      // 本地 token 不可用时，仅在有持久化 user（曾经登录过）时尝试 refresh
-      // 游客用户（从未登录）没有 refresh_token cookie，跳过无意义的 401 请求
-      if (!secureToken) {
-        if (!user.value) {
-          // 从未登录过，直接返回
-          return
-        }
-        try {
-          const response = await authService.refreshToken()
-          secureToken = response.access_token
-          await secureTokenManager.store(secureToken)
-          if (response.refresh_token) {
-            refreshToken.value = response.refresh_token
-          }
-          // refreshToken 现在返回完整 LoginResp，同步 user 信息
-          if (response.user) {
-            user.value = response.user
-          }
-        } catch {
-          // refresh 也失败，真正登出
-          user.value = null
-          token.value = null
-          refreshToken.value = null
-          return
-        }
-      }
-
-      token.value = secureToken
-
-      // 始终调用 fetchCurrentUser 验证 token 有效性
-      // 即使 Pinia 持久化恢复了 user，token 可能已过期
-      const currentUser = await fetchCurrentUser()
-      if (!currentUser) {
-        // 区分：认证失败 vs 临时错误
-        if (!token.value) {
-          // token 被 fetchCurrentUser 清除了（401/403），清理安全存储
-          user.value = null
-          refreshToken.value = null
-          secureTokenManager.clear()
-        }
-        // 否则保留 token 和 user（Pinia 持久化的），下次操作时再验证
-        return
-      }
-
-      startHeartbeat()
-    }
-
-    /**
-     * 确保 initAuth 只执行一次（用于路由守卫等需要稳定认证状态的场景）
-     */
-    function ensureAuthInitialized(): Promise<void> {
-      if (isInitialized.value) return Promise.resolve()
-      if (initPromise) return initPromise
-
-      initPromise = initAuth()
-        .catch(() => {
-          // 初始化失败时保持现有状态（游客/持久化 user），避免阻塞首屏或导航
-        })
-        .finally(() => {
-          isInitialized.value = true
-          initPromise = null
-        })
-
-      return initPromise
-    }
-
-    /**
-     * 监听登出事件和 token 刷新事件（由 API client 触发）
-     * 返回清理函数，用于移除事件监听器
-     */
-    function setupAuthListener(): () => void {
-      // 先清理旧的监听器
-      if (authLogoutHandler) {
-        window.removeEventListener('auth:logout', authLogoutHandler)
-      }
-
-      authLogoutHandler = () => {
-        if (deferredProfileTimer) {
-          clearTimeout(deferredProfileTimer)
-          deferredProfileTimer = null
-        }
-        deferredProfileController?.abort()
-        deferredProfileController = null
-        deferredProfileRequestToken += 1
-        abortFetchCurrentUserRequest()
-        fetchCurrentUserToken += 1
-        user.value = null
-        token.value = null
-        refreshToken.value = null
-        stopHeartbeat()
-        // 清除安全存储的 token
-        secureTokenManager.clear()
-        router.push('/login')
-      }
-
-      // 监听 apiClient 的 token 刷新事件，同步 store 的 token ref
-      const tokenRefreshHandler = (event: Event) => {
-        const detail = (event as CustomEvent<{ token: string }>).detail
-        if (detail?.token) {
-          token.value = detail.token
-        }
-      }
-
-      window.addEventListener('auth:logout', authLogoutHandler)
-      window.addEventListener('auth:token-refreshed', tokenRefreshHandler)
-
-      // 返回清理函数
-      return () => {
-        if (authLogoutHandler) {
-          window.removeEventListener('auth:logout', authLogoutHandler)
-          authLogoutHandler = null
-        }
-        window.removeEventListener('auth:token-refreshed', tokenRefreshHandler)
-      }
-    }
-
-    /**
-     * 清理所有资源（定时器、事件监听器等）
-     */
-    function cleanup() {
-      stopHeartbeat()
-      if (deferredProfileTimer) {
-        clearTimeout(deferredProfileTimer)
-        deferredProfileTimer = null
-      }
-      deferredProfileController?.abort()
-      deferredProfileController = null
-      deferredProfileRequestToken += 1
-      abortFetchCurrentUserRequest()
-      fetchCurrentUserToken += 1
-      if (authLogoutHandler) {
-        window.removeEventListener('auth:logout', authLogoutHandler)
-        authLogoutHandler = null
-      }
-    }
-
-    /**
-     * 启动 Token 刷新定时器（带随机抖动，避免固定间隔触发行为检测）
-     */
-    function startHeartbeat() {
-      if (heartbeatTimer) return
-
-      function scheduleNextHeartbeat() {
-        // ±20% 随机抖动
-        const jitter = heartbeatInterval * 0.2 * (Math.random() * 2 - 1)
-        const interval = Math.max(30000, heartbeatInterval + jitter)
-
-        heartbeatTimer = setTimeout(async () => {
-          heartbeatTimer = null
-          if (!token.value) return
-
-          try {
-            const heartbeatResp = await authService.heartbeat()
-            // 同步心跳返回的新 token 到 store 和安全存储
-            if (heartbeatResp.access_token) {
-              token.value = heartbeatResp.access_token
-              await secureTokenManager.store(heartbeatResp.access_token).catch(() => {})
-            }
-          } catch {
-            try {
-              const response = await authService.refreshToken(refreshToken.value ?? undefined)
-              token.value = response.access_token
-              await secureTokenManager.store(response.access_token).catch(() => {})
-              if (response.refresh_token) {
-                refreshToken.value = response.refresh_token
-              }
-              if (response.user) {
-                user.value = response.user
-              }
-            } catch {
-              // 刷新也失败，可能 refresh_token 已过期
-              return
-            }
-          }
-
-          // 成功后继续调度下一次
-          scheduleNextHeartbeat()
-        }, interval)
-      }
-
-      scheduleNextHeartbeat()
-    }
-
-    /**
-     * 停止心跳保活
-     */
-    function stopHeartbeat() {
-      if (heartbeatTimer) {
-        clearTimeout(heartbeatTimer)
-        heartbeatTimer = null
       }
     }
 
@@ -742,13 +384,13 @@ export const useAuthStore = defineStore(
       verifyRiskLogin,
       register,
       logout,
-      fetchCurrentUser,
-      initAuth,
-      ensureAuthInitialized,
-      setupAuthListener,
-      startHeartbeat,
-      stopHeartbeat,
-      cleanup,
+      fetchCurrentUser: sessionController.fetchCurrentUser,
+      initAuth: sessionController.initAuth,
+      ensureAuthInitialized: sessionController.ensureAuthInitialized,
+      setupAuthListener: sessionController.setupAuthListener,
+      startHeartbeat: sessionController.startHeartbeat,
+      stopHeartbeat: sessionController.stopHeartbeat,
+      cleanup: sessionController.cleanup,
       resendVerificationEmail,
     }
   },

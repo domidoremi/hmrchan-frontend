@@ -3,949 +3,889 @@
     <!-- Hero + 今日入口 -->
     <div class="home-fold">
       <!-- Hero Section -->
-      <section
-        v-if="settings.showHeroSection"
-        class="hero home-screen"
-        :class="{ 'hero--animated': shouldAnimate }"
-      >
-        <div class="container hero-layout">
-          <div class="hero-copy">
-            <div class="hero-copy__left">
-              <p class="hero-kicker hero-copy__line hero-copy__line--kicker">
-                {{ $t('home.hero.kicker') }}
-              </p>
-              <h1 class="hero-title gradient-text hero-copy__line hero-copy__line--title">
-                {{ $t('home.hero.title') }}
-              </h1>
-              <p class="hero-subtitle hero-copy__line hero-copy__line--subtitle">
-                {{ $t('home.hero.subtitle') }}
-              </p>
+      <HeroSection :enabled="settings.showHeroSection" :animated="shouldAnimate">
+        <div class="hero-copy">
+          <div class="hero-copy__left">
+            <p class="hero-kicker hero-copy__line hero-copy__line--kicker">
+              {{ $t('home.hero.kicker') }}
+            </p>
+            <h1 class="hero-title gradient-text hero-copy__line hero-copy__line--title">
+              {{ $t('home.hero.title') }}
+            </h1>
+            <p class="hero-subtitle hero-copy__line hero-copy__line--subtitle">
+              {{ $t('home.hero.subtitle') }}
+            </p>
+          </div>
+
+          <span class="hero-copy__divider" aria-hidden="true" />
+
+          <div class="hero-copy__right">
+            <div
+              class="hero-editorial glass-card"
+              :class="{ 'hero-editorial--loaded': heroEditorialVisible }"
+              :style="noGlassBackdropStyle"
+            >
+              <div class="hero-editorial__state hero-editorial__state--loading" aria-hidden="true">
+                <div class="hero-editorial__kicker">
+                  <span class="hero-editorial__dot" />
+                  {{ $t('home.hero.editorialLabel') }}
+                </div>
+                <span
+                  class="hero-editorial__skeleton hero-editorial__skeleton--title glass-skeleton"
+                />
+                <span class="hero-editorial__skeleton glass-skeleton" />
+                <span
+                  class="hero-editorial__skeleton hero-editorial__skeleton--short glass-skeleton"
+                />
+              </div>
+
+              <div
+                v-if="heroEditorialCard"
+                class="hero-editorial__state hero-editorial__state--content"
+              >
+                <div class="hero-editorial__kicker">
+                  <span class="hero-editorial__dot" />
+                  {{ $t('home.hero.editorialLabel') }}
+                </div>
+                <strong class="hero-editorial__title">{{ heroEditorialCard.title }}</strong>
+                <p v-if="heroEditorialSupportText" class="hero-editorial__text">
+                  {{ heroEditorialSupportText }}
+                </p>
+                <div class="hero-editorial__meta">
+                  <span class="hero-editorial__author">{{ heroEditorialCard.author }}</span>
+                  <span v-if="heroEditorialCard.time" class="hero-editorial__time">
+                    {{ heroEditorialCard.time }}
+                  </span>
+                </div>
+              </div>
             </div>
 
-            <span class="hero-copy__divider" aria-hidden="true" />
+            <div
+              v-if="showPreviewNotice"
+              class="hero-preview glass-card"
+              :style="noGlassBackdropStyle"
+            >
+              <span class="hero-preview__label">{{ $t('home.preview.label') }}</span>
+              <p>{{ $t('home.preview.desc') }}</p>
+              <span v-if="error" class="hero-preview__detail">{{ error }}</span>
+            </div>
 
-            <div class="hero-copy__right">
+            <div class="hero-actions">
+              <Button size="lg" variant="primary" class="hero-btn" @click="goToExplore">
+                <AnimatedIcon name="explore" :fallback-icon="Compass" size="md" />
+                {{ $t('home.hero.primaryAction') }}
+              </Button>
+              <Button
+                size="lg"
+                variant="secondary"
+                class="hero-btn hero-btn--secondary"
+                @click="scrollToFeatured"
+              >
+                <AnimatedIcon name="sparkle" :fallback-icon="Sparkles" size="md" />
+                {{ $t('home.hero.secondaryAction') }}
+              </Button>
+            </div>
+
+            <div class="hero-tags">
+              <span class="hero-tags__label">{{ $t('home.hero.trendingLabel') }}</span>
+              <div v-if="heroTags.length > 0" class="hero-tag-list">
+                <RouterLink
+                  v-for="tag in heroTags"
+                  :key="`hero-tag-${tag}`"
+                  :to="{ name: 'search', query: { q: tag } }"
+                  class="glass-tag hero-tag"
+                >
+                  #{{ tag }}
+                </RouterLink>
+              </div>
+              <span v-else class="hero-tags__empty">{{ $t('home.hero.tagsEmpty') }}</span>
+            </div>
+
+            <div class="hero-stats" :aria-label="$t('home.hero.stats.ariaLabel')">
               <div
-                class="hero-editorial glass-card"
-                :class="{ 'hero-editorial--loaded': heroEditorialVisible }"
+                v-for="item in heroStats"
+                :key="item.key"
+                class="hero-stat glass-card"
                 :style="noGlassBackdropStyle"
               >
-                <div
-                  class="hero-editorial__state hero-editorial__state--loading"
-                  aria-hidden="true"
-                >
-                  <div class="hero-editorial__kicker">
-                    <span class="hero-editorial__dot" />
-                    {{ $t('home.hero.editorialLabel') }}
-                  </div>
-                  <span
-                    class="hero-editorial__skeleton hero-editorial__skeleton--title glass-skeleton"
-                  />
-                  <span class="hero-editorial__skeleton glass-skeleton" />
-                  <span
-                    class="hero-editorial__skeleton hero-editorial__skeleton--short glass-skeleton"
-                  />
-                </div>
-
-                <div
-                  v-if="heroEditorialCard"
-                  class="hero-editorial__state hero-editorial__state--content"
-                >
-                  <div class="hero-editorial__kicker">
-                    <span class="hero-editorial__dot" />
-                    {{ $t('home.hero.editorialLabel') }}
-                  </div>
-                  <strong class="hero-editorial__title">{{ heroEditorialCard.title }}</strong>
-                  <p v-if="heroEditorialSupportText" class="hero-editorial__text">
-                    {{ heroEditorialSupportText }}
-                  </p>
-                  <div class="hero-editorial__meta">
-                    <span class="hero-editorial__author">{{ heroEditorialCard.author }}</span>
-                    <span v-if="heroEditorialCard.time" class="hero-editorial__time">
-                      {{ heroEditorialCard.time }}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div
-                v-if="showPreviewNotice"
-                class="hero-preview glass-card"
-                :style="noGlassBackdropStyle"
-              >
-                <span class="hero-preview__label">{{ $t('home.preview.label') }}</span>
-                <p>{{ $t('home.preview.desc') }}</p>
-                <span v-if="error" class="hero-preview__detail">{{ error }}</span>
-              </div>
-
-              <div class="hero-actions">
-                <Button size="lg" variant="primary" class="hero-btn" @click="goToExplore">
-                  <AnimatedIcon name="explore" :fallback-icon="Compass" size="md" />
-                  {{ $t('home.hero.primaryAction') }}
-                </Button>
-                <Button
-                  size="lg"
-                  variant="secondary"
-                  class="hero-btn hero-btn--secondary"
-                  @click="scrollToFeatured"
-                >
-                  <AnimatedIcon name="sparkle" :fallback-icon="Sparkles" size="md" />
-                  {{ $t('home.hero.secondaryAction') }}
-                </Button>
-              </div>
-
-              <div class="hero-tags">
-                <span class="hero-tags__label">{{ $t('home.hero.trendingLabel') }}</span>
-                <div v-if="heroTags.length > 0" class="hero-tag-list">
-                  <RouterLink
-                    v-for="tag in heroTags"
-                    :key="`hero-tag-${tag}`"
-                    :to="{ name: 'search', query: { q: tag } }"
-                    class="glass-tag hero-tag"
-                  >
-                    #{{ tag }}
-                  </RouterLink>
-                </div>
-                <span v-else class="hero-tags__empty">{{ $t('home.hero.tagsEmpty') }}</span>
-              </div>
-
-              <div class="hero-stats" :aria-label="$t('home.hero.stats.ariaLabel')">
-                <div
-                  v-for="item in heroStats"
-                  :key="item.key"
-                  class="hero-stat glass-card"
-                  :style="noGlassBackdropStyle"
-                >
-                  <span class="hero-stat__label">{{ item.label }}</span>
-                  <strong class="hero-stat__value">{{ item.value }}</strong>
-                  <span class="hero-stat__note">{{ item.note }}</span>
-                </div>
+                <span class="hero-stat__label">{{ item.label }}</span>
+                <strong class="hero-stat__value">{{ item.value }}</strong>
+                <span class="hero-stat__note">{{ item.note }}</span>
               </div>
             </div>
           </div>
         </div>
-      </section>
+      </HeroSection>
     </div>
     <!-- /.home-fold -->
 
     <!-- Horizontal Rail -->
-    <section ref="featuredSectionRef" class="rail home-screen" :style="featuredSceneStyle">
-      <div class="rail-sticky">
-        <div class="rail-stage">
-          <div class="rail-stage__chrome">
-            <div class="rail-stage__eyebrow">
-              <span class="rail-stage__index">{{
-                String(activeRailIndex + 1).padStart(2, '0')
-              }}</span>
-              <span class="rail-stage__label">{{ activeRailSlide?.label }}</span>
+    <FeaturedRailSection
+      ref="featuredSectionRef"
+      :scene-style="featuredSceneStyle"
+      :track-style="railTrackStyle"
+      :slides="railSlides"
+      :active-index="activeRailIndex"
+      :active-key="activeRailSlide?.key"
+      :active-label="activeRailSlide?.label"
+    >
+      <article class="rail-panel rail-panel--portal">
+        <div class="rail-panel__content">
+          <header class="page-section-head page-section-head--stage">
+            <div class="page-section-copy">
+              <h2>{{ $t('home.portal.title') }}</h2>
+              <p>{{ $t('home.portal.subtitle') }}</p>
             </div>
-            <div class="rail-stage__dots" aria-hidden="true">
-              <span
-                v-for="slide in railSlides"
-                :key="slide.key"
-                class="rail-stage__dot"
-                :class="{ 'is-active': slide.key === activeRailSlide?.key }"
+            <RouterLink to="/explore" class="page-inline-cta">
+              <AnimatedIcon name="explore" :fallback-icon="ArrowUpRight" size="sm" />
+              {{ $t('home.portal.action') }}
+            </RouterLink>
+          </header>
+
+          <div class="portal-grid">
+            <RouterLink
+              :to="portalRecommendLink"
+              class="portal-card portal-card--primary glass-card"
+              :style="noGlassBackdropStyle"
+            >
+              <div
+                v-if="portalLeadCard"
+                class="portal-card__preview portal-card__preview--lead"
+                :style="
+                  portalLeadCard.thumbnail ? undefined : { background: 'var(--home-pill-bg)' }
+                "
+              >
+                <img
+                  v-if="portalLeadCard.thumbnail && !isHomeMediaFailed(portalLeadCard.thumbnail)"
+                  :src="portalLeadCard.thumbnail"
+                  :alt="portalLeadCard.title"
+                  class="portal-card__preview-image"
+                  loading="eager"
+                  decoding="async"
+                  @error="markHomeMediaFailed(portalLeadCard.thumbnail)"
+                />
+                <div v-else class="portal-card__preview-empty">
+                  <AnimatedIcon name="sparkle" :fallback-icon="Sparkles" size="lg" />
+                  <strong>{{ $t('home.portal.items.recommend.title') }}</strong>
+                  <span>{{ $t('home.portal.subtitle') }}</span>
+                </div>
+                <div class="portal-card__preview-overlay">
+                  <span class="portal-card__preview-kicker">{{ portalLeadEyebrow }}</span>
+                  <strong class="portal-card__preview-title">
+                    {{ portalLeadPreviewTitle }}
+                  </strong>
+                </div>
+              </div>
+              <div
+                v-else
+                class="portal-card__preview portal-card__preview--lead portal-card__preview--empty glass-skeleton"
+              />
+              <div class="portal-card__copy">
+                <div class="portal-card__header">
+                  <div class="portal-card__icon portal-card__icon--primary">
+                    <AnimatedIcon name="sparkle" :fallback-icon="Sparkles" size="lg" />
+                  </div>
+                  <AnimatedIcon
+                    name="explore"
+                    :fallback-icon="ArrowUpRight"
+                    size="sm"
+                    class="portal-card__arrow"
+                  />
+                </div>
+                <div class="portal-card__body">
+                  <h3>{{ $t('home.portal.items.recommend.title') }}</h3>
+                  <p>{{ portalRecommendDescription }}</p>
+                </div>
+                <div class="portal-card__stats">
+                  <span
+                    v-for="stat in portalOverviewStats"
+                    :key="`portal-stat-${stat.key}`"
+                    class="portal-card__stat"
+                  >
+                    <strong>{{ stat.value }}</strong>
+                    <small>{{ stat.label }}</small>
+                  </span>
+                </div>
+              </div>
+            </RouterLink>
+
+            <div class="portal-sidebar">
+              <RouterLink
+                v-if="portalPanels[0]"
+                :to="portalPanels[0].to"
+                class="portal-card portal-card--secondary portal-card--secondary-lead glass-card"
+                :style="noGlassBackdropStyle"
+              >
+                <div class="portal-card__header">
+                  <div
+                    class="portal-card__icon"
+                    :class="`portal-card__icon--${portalPanels[0].key}`"
+                  >
+                    <AnimatedIcon
+                      :name="portalPanels[0].animation"
+                      :fallback-icon="portalPanels[0].icon"
+                      size="lg"
+                    />
+                  </div>
+                  <AnimatedIcon
+                    name="explore"
+                    :fallback-icon="ArrowUpRight"
+                    size="sm"
+                    class="portal-card__arrow"
+                  />
+                </div>
+                <div class="portal-card__body">
+                  <h3>{{ portalPanels[0].title }}</h3>
+                  <p>{{ portalPanels[0].desc }}</p>
+                </div>
+                <div class="portal-card__micro">
+                  <span class="portal-card__micro-label">{{ portalPanels[0].noteLabel }}</span>
+                  <strong class="portal-card__micro-title">{{ portalPanels[0].noteTitle }}</strong>
+                  <p class="portal-card__micro-text">{{ portalPanels[0].noteText }}</p>
+                  <span class="portal-card__micro-meta">{{ portalPanels[0].noteMeta }}</span>
+                </div>
+              </RouterLink>
+
+              <div class="portal-sidebar__row">
+                <RouterLink
+                  v-for="panel in portalPanels.slice(1)"
+                  :key="panel.key"
+                  :to="panel.to"
+                  class="portal-card portal-card--secondary portal-card--secondary-compact glass-card"
+                  :style="noGlassBackdropStyle"
+                >
+                  <div class="portal-card__header">
+                    <div class="portal-card__icon" :class="`portal-card__icon--${panel.key}`">
+                      <AnimatedIcon :name="panel.animation" :fallback-icon="panel.icon" size="lg" />
+                    </div>
+                    <AnimatedIcon
+                      name="explore"
+                      :fallback-icon="ArrowUpRight"
+                      size="sm"
+                      class="portal-card__arrow"
+                    />
+                  </div>
+                  <div class="portal-card__body">
+                    <h3>{{ panel.title }}</h3>
+                    <p>{{ panel.desc }}</p>
+                  </div>
+                  <div class="portal-card__micro">
+                    <span class="portal-card__micro-label">{{ panel.noteLabel }}</span>
+                    <strong class="portal-card__micro-title">{{ panel.noteTitle }}</strong>
+                    <p class="portal-card__micro-text">{{ panel.noteText }}</p>
+                    <span class="portal-card__micro-meta">{{ panel.noteMeta }}</span>
+                  </div>
+                </RouterLink>
+              </div>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="rail-panel rail-panel--spotlight">
+        <div class="rail-panel__content rail-panel__content--highlight">
+          <header class="page-section-head page-section-head--stage">
+            <div class="page-section-copy">
+              <h2>{{ heroEditorialTitle }}</h2>
+              <p>{{ heroEditorialText }}</p>
+            </div>
+            <div class="rail-panel__meta rail-panel__meta--spotlight">
+              <span class="rail-panel__meta-label">{{ $t('home.hero.editorialLabel') }}</span>
+              <strong class="rail-panel__meta-title">{{ heroSpotlightMeta }}</strong>
+              <span v-if="heroSpotlightTag" class="rail-panel__meta-tag">
+                #{{ heroSpotlightTag }}
+              </span>
+            </div>
+          </header>
+
+          <div class="rail-highlight">
+            <div class="hero-collage">
+              <div class="hero-collage-grid">
+                <template v-if="spotlightMediaCards.length > 0">
+                  <button
+                    v-for="(card, index) in spotlightMediaCards"
+                    :key="`hero-highlight-${card.post.id}`"
+                    type="button"
+                    class="hero-collage-card glass-card"
+                    :style="noGlassBackdropStyle"
+                    :class="{
+                      'hero-collage-card--primary': index === 0,
+                      'hero-collage-card--textual': !card.thumbnail,
+                    }"
+                    @click="openPostPreview(card.post, card.thumbnail)"
+                  >
+                    <img
+                      v-if="card.thumbnail && !isHomeMediaFailed(card.thumbnail)"
+                      class="hero-collage-image"
+                      :src="card.thumbnail"
+                      :alt="card.title"
+                      loading="eager"
+                      decoding="async"
+                      @error="markHomeMediaFailed(card.thumbnail)"
+                    />
+                    <div v-else class="hero-collage-placeholder">
+                      <AnimatedIcon name="image" :fallback-icon="Image" size="lg" />
+                    </div>
+                    <div class="hero-collage-overlay">
+                      <span class="hero-collage-title">{{ card.title }}</span>
+                      <span class="hero-collage-meta">{{ card.author }}</span>
+                    </div>
+                  </button>
+                </template>
+                <template v-else>
+                  <div
+                    v-for="i in 4"
+                    :key="`hero-placeholder-${i}`"
+                    class="hero-collage-card hero-collage-card--placeholder glass-skeleton"
+                  />
+                </template>
+              </div>
+            </div>
+
+            <div class="hero-spotlight-stack">
+              <button
+                v-for="(card, index) in spotlightTextCards"
+                :key="`spotlight-text-${card.post.id}`"
+                type="button"
+                class="hero-spotlight-card glass-card"
+                :style="noGlassBackdropStyle"
+                :class="{
+                  'hero-spotlight-card--lead': index === 0,
+                  'hero-spotlight-card--dense': !card.supportText,
+                }"
+                @click="openPostPreview(card.post, null)"
+              >
+                <span class="hero-spotlight-card__label">
+                  {{ index === 0 ? $t('home.hero.editorialLabel') : card.author }}
+                </span>
+                <strong class="hero-spotlight-card__title">{{ card.title }}</strong>
+                <p v-if="card.supportText" class="hero-spotlight-card__summary">
+                  {{ card.supportText }}
+                </p>
+                <span class="hero-spotlight-card__meta">
+                  <span>{{ card.author }}</span>
+                  <span v-if="card.time">{{ card.time }}</span>
+                </span>
+              </button>
+              <div
+                v-if="spotlightTextCards.length === 0"
+                class="hero-spotlight-card hero-spotlight-card--empty glass-skeleton"
               />
             </div>
           </div>
-
-          <div class="rail-track" :style="railTrackStyle" role="list">
-            <article class="rail-panel rail-panel--portal">
-              <div class="rail-panel__content">
-                <header class="page-section-head page-section-head--stage">
-                  <div class="page-section-copy">
-                    <h2>{{ $t('home.portal.title') }}</h2>
-                    <p>{{ $t('home.portal.subtitle') }}</p>
-                  </div>
-                  <RouterLink to="/explore" class="page-inline-cta">
-                    <AnimatedIcon name="explore" :fallback-icon="ArrowUpRight" size="sm" />
-                    {{ $t('home.portal.action') }}
-                  </RouterLink>
-                </header>
-
-                <div class="portal-grid">
-                  <RouterLink
-                    :to="portalRecommendLink"
-                    class="portal-card portal-card--primary glass-card"
-                    :style="noGlassBackdropStyle"
-                  >
-                    <div
-                      v-if="portalLeadCard"
-                      class="portal-card__preview portal-card__preview--lead"
-                      :style="
-                        portalLeadCard.thumbnail ? undefined : { background: 'var(--home-pill-bg)' }
-                      "
-                    >
-                      <img
-                        v-if="
-                          portalLeadCard.thumbnail && !isHomeMediaFailed(portalLeadCard.thumbnail)
-                        "
-                        :src="portalLeadCard.thumbnail"
-                        :alt="portalLeadCard.title"
-                        class="portal-card__preview-image"
-                        loading="eager"
-                        decoding="async"
-                        @error="markHomeMediaFailed(portalLeadCard.thumbnail)"
-                      />
-                      <div v-else class="portal-card__preview-empty">
-                        <AnimatedIcon name="sparkle" :fallback-icon="Sparkles" size="lg" />
-                        <strong>{{ $t('home.portal.items.recommend.title') }}</strong>
-                        <span>{{ $t('home.portal.subtitle') }}</span>
-                      </div>
-                      <div class="portal-card__preview-overlay">
-                        <span class="portal-card__preview-kicker">{{ portalLeadEyebrow }}</span>
-                        <strong class="portal-card__preview-title">
-                          {{ portalLeadPreviewTitle }}
-                        </strong>
-                      </div>
-                    </div>
-                    <div
-                      v-else
-                      class="portal-card__preview portal-card__preview--lead portal-card__preview--empty glass-skeleton"
-                    />
-                    <div class="portal-card__copy">
-                      <div class="portal-card__header">
-                        <div class="portal-card__icon portal-card__icon--primary">
-                          <AnimatedIcon name="sparkle" :fallback-icon="Sparkles" size="lg" />
-                        </div>
-                        <AnimatedIcon
-                          name="explore"
-                          :fallback-icon="ArrowUpRight"
-                          size="sm"
-                          class="portal-card__arrow"
-                        />
-                      </div>
-                      <div class="portal-card__body">
-                        <h3>{{ $t('home.portal.items.recommend.title') }}</h3>
-                        <p>{{ portalRecommendDescription }}</p>
-                      </div>
-                      <div class="portal-card__stats">
-                        <span
-                          v-for="stat in portalOverviewStats"
-                          :key="`portal-stat-${stat.key}`"
-                          class="portal-card__stat"
-                        >
-                          <strong>{{ stat.value }}</strong>
-                          <small>{{ stat.label }}</small>
-                        </span>
-                      </div>
-                    </div>
-                  </RouterLink>
-
-                  <div class="portal-sidebar">
-                    <RouterLink
-                      v-if="portalPanels[0]"
-                      :to="portalPanels[0].to"
-                      class="portal-card portal-card--secondary portal-card--secondary-lead glass-card"
-                      :style="noGlassBackdropStyle"
-                    >
-                      <div class="portal-card__header">
-                        <div
-                          class="portal-card__icon"
-                          :class="`portal-card__icon--${portalPanels[0].key}`"
-                        >
-                          <AnimatedIcon
-                            :name="portalPanels[0].animation"
-                            :fallback-icon="portalPanels[0].icon"
-                            size="lg"
-                          />
-                        </div>
-                        <AnimatedIcon
-                          name="explore"
-                          :fallback-icon="ArrowUpRight"
-                          size="sm"
-                          class="portal-card__arrow"
-                        />
-                      </div>
-                      <div class="portal-card__body">
-                        <h3>{{ portalPanels[0].title }}</h3>
-                        <p>{{ portalPanels[0].desc }}</p>
-                      </div>
-                      <div class="portal-card__micro">
-                        <span class="portal-card__micro-label">{{
-                          portalPanels[0].noteLabel
-                        }}</span>
-                        <strong class="portal-card__micro-title">{{
-                          portalPanels[0].noteTitle
-                        }}</strong>
-                        <p class="portal-card__micro-text">{{ portalPanels[0].noteText }}</p>
-                        <span class="portal-card__micro-meta">{{ portalPanels[0].noteMeta }}</span>
-                      </div>
-                    </RouterLink>
-
-                    <div class="portal-sidebar__row">
-                      <RouterLink
-                        v-for="panel in portalPanels.slice(1)"
-                        :key="panel.key"
-                        :to="panel.to"
-                        class="portal-card portal-card--secondary portal-card--secondary-compact glass-card"
-                        :style="noGlassBackdropStyle"
-                      >
-                        <div class="portal-card__header">
-                          <div class="portal-card__icon" :class="`portal-card__icon--${panel.key}`">
-                            <AnimatedIcon
-                              :name="panel.animation"
-                              :fallback-icon="panel.icon"
-                              size="lg"
-                            />
-                          </div>
-                          <AnimatedIcon
-                            name="explore"
-                            :fallback-icon="ArrowUpRight"
-                            size="sm"
-                            class="portal-card__arrow"
-                          />
-                        </div>
-                        <div class="portal-card__body">
-                          <h3>{{ panel.title }}</h3>
-                          <p>{{ panel.desc }}</p>
-                        </div>
-                        <div class="portal-card__micro">
-                          <span class="portal-card__micro-label">{{ panel.noteLabel }}</span>
-                          <strong class="portal-card__micro-title">{{ panel.noteTitle }}</strong>
-                          <p class="portal-card__micro-text">{{ panel.noteText }}</p>
-                          <span class="portal-card__micro-meta">{{ panel.noteMeta }}</span>
-                        </div>
-                      </RouterLink>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </article>
-
-            <article class="rail-panel rail-panel--spotlight">
-              <div class="rail-panel__content rail-panel__content--highlight">
-                <header class="page-section-head page-section-head--stage">
-                  <div class="page-section-copy">
-                    <h2>{{ heroEditorialTitle }}</h2>
-                    <p>{{ heroEditorialText }}</p>
-                  </div>
-                  <div class="rail-panel__meta rail-panel__meta--spotlight">
-                    <span class="rail-panel__meta-label">{{ $t('home.hero.editorialLabel') }}</span>
-                    <strong class="rail-panel__meta-title">{{ heroSpotlightMeta }}</strong>
-                    <span v-if="heroSpotlightTag" class="rail-panel__meta-tag">
-                      #{{ heroSpotlightTag }}
-                    </span>
-                  </div>
-                </header>
-
-                <div class="rail-highlight">
-                  <div class="hero-collage">
-                    <div class="hero-collage-grid">
-                      <template v-if="spotlightMediaCards.length > 0">
-                        <button
-                          v-for="(card, index) in spotlightMediaCards"
-                          :key="`hero-highlight-${card.post.id}`"
-                          type="button"
-                          class="hero-collage-card glass-card"
-                          :style="noGlassBackdropStyle"
-                          :class="{
-                            'hero-collage-card--primary': index === 0,
-                            'hero-collage-card--textual': !card.thumbnail,
-                          }"
-                          @click="openPostPreview(card.post, card.thumbnail)"
-                        >
-                          <img
-                            v-if="card.thumbnail && !isHomeMediaFailed(card.thumbnail)"
-                            class="hero-collage-image"
-                            :src="card.thumbnail"
-                            :alt="card.title"
-                            loading="eager"
-                            decoding="async"
-                            @error="markHomeMediaFailed(card.thumbnail)"
-                          />
-                          <div v-else class="hero-collage-placeholder">
-                            <AnimatedIcon name="image" :fallback-icon="Image" size="lg" />
-                          </div>
-                          <div class="hero-collage-overlay">
-                            <span class="hero-collage-title">{{ card.title }}</span>
-                            <span class="hero-collage-meta">{{ card.author }}</span>
-                          </div>
-                        </button>
-                      </template>
-                      <template v-else>
-                        <div
-                          v-for="i in 4"
-                          :key="`hero-placeholder-${i}`"
-                          class="hero-collage-card hero-collage-card--placeholder glass-skeleton"
-                        />
-                      </template>
-                    </div>
-                  </div>
-
-                  <div class="hero-spotlight-stack">
-                    <button
-                      v-for="(card, index) in spotlightTextCards"
-                      :key="`spotlight-text-${card.post.id}`"
-                      type="button"
-                      class="hero-spotlight-card glass-card"
-                      :style="noGlassBackdropStyle"
-                      :class="{
-                        'hero-spotlight-card--lead': index === 0,
-                        'hero-spotlight-card--dense': !card.supportText,
-                      }"
-                      @click="openPostPreview(card.post, null)"
-                    >
-                      <span class="hero-spotlight-card__label">
-                        {{ index === 0 ? $t('home.hero.editorialLabel') : card.author }}
-                      </span>
-                      <strong class="hero-spotlight-card__title">{{ card.title }}</strong>
-                      <p v-if="card.supportText" class="hero-spotlight-card__summary">
-                        {{ card.supportText }}
-                      </p>
-                      <span class="hero-spotlight-card__meta">
-                        <span>{{ card.author }}</span>
-                        <span v-if="card.time">{{ card.time }}</span>
-                      </span>
-                    </button>
-                    <div
-                      v-if="spotlightTextCards.length === 0"
-                      class="hero-spotlight-card hero-spotlight-card--empty glass-skeleton"
-                    />
-                  </div>
-                </div>
-              </div>
-            </article>
-
-            <article class="rail-panel rail-panel--featured">
-              <div class="rail-panel__content">
-                <header class="page-section-head page-section-head--stage">
-                  <div class="page-section-copy">
-                    <h2>{{ $t('home.featured.title') }}</h2>
-                    <p>{{ $t('home.featured.subtitle') }}</p>
-                  </div>
-                  <RouterLink to="/explore" class="page-inline-cta">
-                    <AnimatedIcon name="explore" :fallback-icon="ArrowUpRight" size="sm" />
-                    {{ $t('home.featured.action') }}
-                  </RouterLink>
-                </header>
-
-                <div class="rail-featured-grid">
-                  <template v-if="featuredRailCards.length > 0">
-                    <button
-                      v-for="(card, index) in featuredRailCards"
-                      :key="`featured-rail-${card.id}`"
-                      type="button"
-                      class="featured-rail-card glass-card"
-                      :style="noGlassBackdropStyle"
-                      :class="[
-                        index === 0 ? 'featured-rail-card--lead' : 'featured-rail-card--support',
-                        index > 1 ? 'featured-rail-card--compact' : null,
-                        !card.summary ? 'featured-rail-card--dense' : null,
-                        !card.thumbnail ? 'featured-rail-card--textual' : null,
-                      ]"
-                      @click="openPostPreview(card.post, card.thumbnail)"
-                    >
-                      <div
-                        class="featured-rail-card__media"
-                        :class="{ 'featured-rail-card__media--empty': !card.thumbnail }"
-                      >
-                        <img
-                          v-if="card.thumbnail && !isHomeMediaFailed(card.thumbnail)"
-                          :src="card.thumbnail"
-                          :alt="card.title"
-                          class="featured-rail-card__image"
-                          loading="eager"
-                          decoding="async"
-                          @error="markHomeMediaFailed(card.thumbnail)"
-                        />
-                        <div v-else class="featured-rail-card__placeholder">
-                          <AnimatedIcon name="image" :fallback-icon="Image" size="lg" />
-                        </div>
-                        <div class="featured-rail-card__overlay">
-                          <span class="featured-rail-card__kicker">{{ card.kicker }}</span>
-                          <span v-if="card.time" class="featured-rail-card__time">
-                            {{ card.time }}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div class="featured-rail-card__body">
-                        <span class="featured-rail-card__eyebrow">{{ card.eyebrow }}</span>
-                        <strong class="featured-rail-card__title">{{ card.title }}</strong>
-                        <p v-if="card.summary" class="featured-rail-card__summary">
-                          {{ card.summary }}
-                        </p>
-                        <div class="featured-rail-card__meta">
-                          <span>{{ card.author }}</span>
-                          <span v-if="card.time">{{ card.time }}</span>
-                        </div>
-                        <div v-if="card.stats.length > 0" class="featured-rail-card__stats">
-                          <span
-                            v-for="stat in card.stats"
-                            :key="`${card.id}-${stat.key}`"
-                            class="featured-rail-card__stat"
-                          >
-                            <strong>{{ stat.value }}</strong>
-                            <span>{{ stat.label }}</span>
-                          </span>
-                        </div>
-                        <span class="featured-rail-card__action">
-                          <AnimatedIcon name="explore" :fallback-icon="ArrowUpRight" size="sm" />
-                          {{ $t('home.featured.action') }}
-                        </span>
-                      </div>
-                    </button>
-                  </template>
-                  <template v-else-if="featuredRailPosts.length > 0">
-                    <PostCard
-                      v-for="(post, index) in featuredRailPosts"
-                      :key="`featured-rail-${post.id}`"
-                      :class="[
-                        'rail-feature-card',
-                        index === 0 ? 'rail-feature-card--lead' : 'rail-feature-card--support',
-                      ]"
-                      :post="post"
-                      :aspect-ratio="index === 0 ? '4 / 3' : '16 / 9'"
-                      :thumbnail-size="index === 0 ? 'large' : 'medium'"
-                      :priority="index < 2"
-                      :show-excerpt="index === 0"
-                      @click="(_id, thumb) => openPostPreview(post, thumb)"
-                    />
-                  </template>
-                  <template v-else>
-                    <PostCardSkeleton v-for="i in 4" :key="`featured-rail-skeleton-${i}`" />
-                  </template>
-                </div>
-              </div>
-            </article>
-
-            <article class="rail-panel rail-panel--trends">
-              <div class="rail-panel__content">
-                <header class="page-section-head page-section-head--stage">
-                  <div class="page-section-copy">
-                    <h2>{{ $t('home.trends.authorsTitle') }}</h2>
-                    <p>{{ $t('home.trends.scheduleHint') }}</p>
-                  </div>
-                </header>
-
-                <div class="trends-grid">
-                  <div
-                    class="trends-card trends-card--authors glass-card"
-                    :style="noGlassBackdropStyle"
-                  >
-                    <div class="trends-card__header">
-                      <h3>{{ $t('home.trends.authorsTitle') }}</h3>
-                      <RouterLink to="/authors" class="trends-link">
-                        {{ $t('home.trends.authorsAction') }}
-                      </RouterLink>
-                    </div>
-                    <div v-if="trendingAuthors.length > 0" class="trends-authors-shell">
-                      <RouterLink
-                        v-if="leadingTrendingAuthor"
-                        :to="leadingTrendingAuthor.link"
-                        class="trends-authors-highlight"
-                      >
-                        <img
-                          v-if="
-                            leadingTrendingAuthor.avatar &&
-                            !isTrendAuthorAvatarFailed(leadingTrendingAuthor.key)
-                          "
-                          class="trends-authors-highlight__avatar"
-                          :src="leadingTrendingAuthor.avatar"
-                          :alt="leadingTrendingAuthor.name"
-                          loading="lazy"
-                          decoding="async"
-                          @error="markTrendAuthorAvatarFailed(leadingTrendingAuthor.key)"
-                        />
-                        <div
-                          v-else
-                          class="trends-authors-highlight__avatar trends-authors-highlight__avatar--fallback"
-                        >
-                          <AnimatedIcon name="user" :fallback-icon="Users" size="sm" />
-                        </div>
-                        <span class="trends-authors-highlight__copy">
-                          <span class="trends-authors-highlight__label">
-                            {{ $t('home.hero.spotlightLabel') }}
-                          </span>
-                          <strong class="trends-authors-highlight__title">
-                            {{ leadingTrendingAuthor.name }}
-                          </strong>
-                          <span class="trends-authors-highlight__meta">
-                            {{ $t('home.trends.authorCount', { n: leadingTrendingAuthor.count }) }}
-                          </span>
-                        </span>
-                        <span class="trends-authors-highlight__action">
-                          {{ $t('home.trends.authorsAction') }}
-                        </span>
-                      </RouterLink>
-                      <div class="trends-list">
-                        <RouterLink
-                          v-for="author in trendingAuthors"
-                          :key="`trend-author-${author.key}`"
-                          :to="author.link"
-                          class="trend-author"
-                        >
-                          <img
-                            v-if="author.avatar && !isTrendAuthorAvatarFailed(author.key)"
-                            class="trend-author__avatar"
-                            :src="author.avatar"
-                            :alt="author.name"
-                            loading="lazy"
-                            decoding="async"
-                            @error="markTrendAuthorAvatarFailed(author.key)"
-                          />
-                          <div v-else class="trend-author__avatar trend-author__avatar--fallback">
-                            <AnimatedIcon name="user" :fallback-icon="Users" size="sm" />
-                          </div>
-                          <div class="trend-author__meta">
-                            <span class="trend-author__name">{{ author.name }}</span>
-                            <span class="trend-author__count">
-                              {{ $t('home.trends.authorCount', { n: author.count }) }}
-                            </span>
-                          </div>
-                        </RouterLink>
-                      </div>
-                    </div>
-                    <div v-else class="trends-empty">{{ $t('home.trends.authorsEmpty') }}</div>
-                  </div>
-
-                  <div
-                    class="trends-card trends-card--tags glass-card"
-                    :style="noGlassBackdropStyle"
-                  >
-                    <div class="trends-card__header">
-                      <h3>{{ $t('home.trends.tagsTitle') }}</h3>
-                      <RouterLink to="/search" class="trends-link">
-                        {{ $t('home.trends.tagsAction') }}
-                      </RouterLink>
-                    </div>
-                    <div v-if="trendingTags.length > 0" class="trend-tags">
-                      <RouterLink
-                        v-for="tag in trendingTags"
-                        :key="`trend-tag-${tag}`"
-                        :to="{ name: 'search', query: { q: tag } }"
-                        class="glass-tag trend-tag"
-                      >
-                        #{{ tag }}
-                      </RouterLink>
-                    </div>
-                    <div v-else class="trends-empty">{{ $t('home.trends.tagsEmpty') }}</div>
-                    <div class="trend-tags__stats">
-                      <span
-                        v-for="stat in heroStats"
-                        :key="`tag-stat-${stat.key}`"
-                        class="trend-tags__stat"
-                      >
-                        <strong>{{ stat.value }}</strong>
-                        <span>{{ stat.label }}</span>
-                      </span>
-                    </div>
-                  </div>
-
-                  <div
-                    class="trends-card trends-card--editorial glass-card"
-                    :style="noGlassBackdropStyle"
-                  >
-                    <div class="trends-card__header">
-                      <h3>{{ $t('home.hero.editorialLabel') }}</h3>
-                      <span v-if="heroEditorialCard?.time" class="trends-card__hint">
-                        {{ heroEditorialCard.time }}
-                      </span>
-                    </div>
-                    <template v-if="heroEditorialCard">
-                      <div
-                        class="trends-editorial"
-                        :class="{ 'trends-editorial--compact': !heroEditorialSupportText }"
-                      >
-                        <strong class="trends-editorial__title">{{
-                          heroEditorialCard.title
-                        }}</strong>
-                        <p v-if="heroEditorialSupportText" class="trends-editorial__text">
-                          {{ heroEditorialSupportText }}
-                        </p>
-                        <div class="trends-editorial__meta">
-                          <span>{{ heroEditorialCard.author }}</span>
-                          <span v-if="heroEditorialCard.time">{{ heroEditorialCard.time }}</span>
-                        </div>
-                      </div>
-                    </template>
-                    <div v-else class="trends-empty">
-                      {{ $t('home.hero.editorialFallbackTitle') }}
-                    </div>
-                  </div>
-
-                  <div
-                    class="trends-card trends-card--schedule glass-card"
-                    :style="noGlassBackdropStyle"
-                  >
-                    <div class="trends-card__header">
-                      <h3>{{ $t('home.trends.scheduleTitle') }}</h3>
-                      <RouterLink to="/schedule" class="trends-link">
-                        {{ $t('home.trends.scheduleAction') }}
-                      </RouterLink>
-                    </div>
-                    <div
-                      v-if="primaryScheduleHighlights.length > 0"
-                      class="schedule-highlight-list"
-                      :class="{
-                        'schedule-highlight-list--paired': Boolean(trendsScheduleCompanion),
-                      }"
-                    >
-                      <RouterLink
-                        v-for="item in primaryScheduleHighlights"
-                        :key="`schedule-highlight-${item.id}`"
-                        :to="item.deep_link || '/schedule'"
-                        class="schedule-highlight"
-                      >
-                        <span class="schedule-highlight__label">
-                          {{ item.badge || getScheduleCategoryLabel(item.category) }}
-                        </span>
-                        <strong class="schedule-highlight__title">{{ item.title }}</strong>
-                        <span class="schedule-highlight__meta">
-                          {{
-                            formatScheduleHighlightMeta(item) ||
-                            formatHomeAuthorName(item.author) ||
-                            $t('home.trends.scheduleAction')
-                          }}
-                        </span>
-                      </RouterLink>
-                      <RouterLink
-                        v-if="trendsScheduleCompanion"
-                        :to="trendsScheduleCompanion.to"
-                        class="schedule-highlight schedule-highlight--companion"
-                        :class="`schedule-highlight--${trendsScheduleCompanion.kind}`"
-                      >
-                        <span class="schedule-highlight__label">
-                          {{ trendsScheduleCompanion.label }}
-                        </span>
-                        <strong class="schedule-highlight__title">
-                          {{ trendsScheduleCompanion.title }}
-                        </strong>
-                        <p v-if="trendsScheduleCompanion.text" class="schedule-highlight__copy">
-                          {{ trendsScheduleCompanion.text }}
-                        </p>
-                        <span class="schedule-highlight__meta">
-                          {{ trendsScheduleCompanion.meta }}
-                        </span>
-                      </RouterLink>
-                    </div>
-                    <div v-else-if="communityHighlightPreview" class="trends-community-note">
-                      <span class="trends-community-note__eyebrow">{{ $t('nav.community') }}</span>
-                      <strong class="trends-community-note__title">
-                        {{ communityHighlightPreview.title }}
-                      </strong>
-                      <p class="trends-community-note__text">
-                        {{ communityHighlightPreview.excerpt }}
-                      </p>
-                      <span class="trends-community-note__meta">
-                        {{ formatCommunityHighlightMeta(communityHighlightPreview) }}
-                      </span>
-                    </div>
-                    <div v-else class="schedule-cta">
-                      <div class="schedule-cta__intro">
-                        <span class="schedule-cta__eyebrow">{{ scheduleFallbackCard.label }}</span>
-                        <strong class="schedule-cta__title">{{
-                          scheduleFallbackCard.title
-                        }}</strong>
-                        <p>{{ scheduleFallbackCard.text }}</p>
-                        <span class="schedule-cta__meta">{{ scheduleFallbackCard.meta }}</span>
-                      </div>
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        class="schedule-btn"
-                        @click="goToSchedule"
-                      >
-                        <AnimatedIcon name="calendar" :fallback-icon="Calendar" size="sm" />
-                        {{ $t('home.trends.scheduleAction') }}
-                      </Button>
-                      <div class="schedule-cta__stats">
-                        <span
-                          v-for="stat in heroStats"
-                          :key="`trend-stat-${stat.key}`"
-                          class="schedule-cta__stat"
-                        >
-                          <strong>{{ stat.value }}</strong>
-                          <span>{{ stat.label }}</span>
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </article>
-          </div>
         </div>
-      </div>
-    </section>
+      </article>
 
-    <!-- Latest Posts -->
-    <section
-      ref="postsSectionRef"
-      class="posts posts--bubble home-screen"
-      :class="{ 'posts--revealed': hasTriggeredBubbleBurst }"
-    >
-      <div class="container">
-        <header class="posts-header">
-          <div class="posts-header__title">
-            <h2>{{ $t('home.latest') }}</h2>
-            <p class="posts-subtitle">{{ $t('home.latestSubtitle') }}</p>
-          </div>
-          <div class="posts-header__actions">
+      <article class="rail-panel rail-panel--featured">
+        <div class="rail-panel__content">
+          <header class="page-section-head page-section-head--stage">
+            <div class="page-section-copy">
+              <h2>{{ $t('home.featured.title') }}</h2>
+              <p>{{ $t('home.featured.subtitle') }}</p>
+            </div>
             <RouterLink to="/explore" class="page-inline-cta">
               <AnimatedIcon name="explore" :fallback-icon="ArrowUpRight" size="sm" />
-              {{ $t('home.latestAction') }}
+              {{ $t('home.featured.action') }}
             </RouterLink>
-            <span v-if="isLoading && posts.length > 0" class="spinner spinner-sm" />
-          </div>
-        </header>
+          </header>
 
-        <div class="posts-toolbar">
-          <div class="posts-toolbar__panel posts-toolbar__panel--tags">
-            <span class="tags-label">{{ $t('home.tags.label') }}</span>
-            <div v-if="postsToolbarTags.length > 0" class="tags-list">
-              <RouterLink
-                v-for="tag in postsToolbarTags"
-                :key="`latest-tag-${tag}`"
-                :to="{ name: 'search', query: { q: tag } }"
-                class="glass-tag"
+          <div class="rail-featured-grid">
+            <template v-if="featuredRailCards.length > 0">
+              <button
+                v-for="(card, index) in featuredRailCards"
+                :key="`featured-rail-${card.id}`"
+                type="button"
+                class="featured-rail-card glass-card"
+                :style="noGlassBackdropStyle"
+                :class="[
+                  index === 0 ? 'featured-rail-card--lead' : 'featured-rail-card--support',
+                  index > 1 ? 'featured-rail-card--compact' : null,
+                  !card.summary ? 'featured-rail-card--dense' : null,
+                  !card.thumbnail ? 'featured-rail-card--textual' : null,
+                ]"
+                @click="openPostPreview(card.post, card.thumbnail)"
               >
-                #{{ tag }}
-              </RouterLink>
+                <div
+                  class="featured-rail-card__media"
+                  :class="{ 'featured-rail-card__media--empty': !card.thumbnail }"
+                >
+                  <img
+                    v-if="card.thumbnail && !isHomeMediaFailed(card.thumbnail)"
+                    :src="card.thumbnail"
+                    :alt="card.title"
+                    class="featured-rail-card__image"
+                    loading="eager"
+                    decoding="async"
+                    @error="markHomeMediaFailed(card.thumbnail)"
+                  />
+                  <div v-else class="featured-rail-card__placeholder">
+                    <AnimatedIcon name="image" :fallback-icon="Image" size="lg" />
+                  </div>
+                  <div class="featured-rail-card__overlay">
+                    <span class="featured-rail-card__kicker">{{ card.kicker }}</span>
+                    <span v-if="card.time" class="featured-rail-card__time">
+                      {{ card.time }}
+                    </span>
+                  </div>
+                </div>
+
+                <div class="featured-rail-card__body">
+                  <span class="featured-rail-card__eyebrow">{{ card.eyebrow }}</span>
+                  <strong class="featured-rail-card__title">{{ card.title }}</strong>
+                  <p v-if="card.summary" class="featured-rail-card__summary">
+                    {{ card.summary }}
+                  </p>
+                  <div class="featured-rail-card__meta">
+                    <span>{{ card.author }}</span>
+                    <span v-if="card.time">{{ card.time }}</span>
+                  </div>
+                  <div v-if="card.stats.length > 0" class="featured-rail-card__stats">
+                    <span
+                      v-for="stat in card.stats"
+                      :key="`${card.id}-${stat.key}`"
+                      class="featured-rail-card__stat"
+                    >
+                      <strong>{{ stat.value }}</strong>
+                      <span>{{ stat.label }}</span>
+                    </span>
+                  </div>
+                  <span class="featured-rail-card__action">
+                    <AnimatedIcon name="explore" :fallback-icon="ArrowUpRight" size="sm" />
+                    {{ $t('home.featured.action') }}
+                  </span>
+                </div>
+              </button>
+            </template>
+            <template v-else-if="featuredRailPosts.length > 0">
+              <PostCard
+                v-for="(post, index) in featuredRailPosts"
+                :key="`featured-rail-${post.id}`"
+                :class="[
+                  'rail-feature-card',
+                  index === 0 ? 'rail-feature-card--lead' : 'rail-feature-card--support',
+                ]"
+                :post="post"
+                :aspect-ratio="index === 0 ? '4 / 3' : '16 / 9'"
+                :thumbnail-size="index === 0 ? 'large' : 'medium'"
+                :priority="index < 2"
+                :show-excerpt="index === 0"
+                @click="(_id, thumb) => openPostPreview(post, thumb)"
+              />
+            </template>
+            <template v-else>
+              <PostCardSkeleton v-for="i in 4" :key="`featured-rail-skeleton-${i}`" />
+            </template>
+          </div>
+        </div>
+      </article>
+
+      <article class="rail-panel rail-panel--trends">
+        <div class="rail-panel__content">
+          <header class="page-section-head page-section-head--stage">
+            <div class="page-section-copy">
+              <h2>{{ $t('home.trends.authorsTitle') }}</h2>
+              <p>{{ $t('home.trends.scheduleHint') }}</p>
             </div>
+          </header>
+
+          <div class="trends-grid">
+            <div class="trends-card trends-card--authors glass-card" :style="noGlassBackdropStyle">
+              <div class="trends-card__header">
+                <h3>{{ $t('home.trends.authorsTitle') }}</h3>
+                <RouterLink to="/authors" class="trends-link">
+                  {{ $t('home.trends.authorsAction') }}
+                </RouterLink>
+              </div>
+              <div v-if="trendingAuthors.length > 0" class="trends-authors-shell">
+                <RouterLink
+                  v-if="leadingTrendingAuthor"
+                  :to="leadingTrendingAuthor.link"
+                  class="trends-authors-highlight"
+                >
+                  <img
+                    v-if="
+                      leadingTrendingAuthor.avatar &&
+                      !isTrendAuthorAvatarFailed(leadingTrendingAuthor.key)
+                    "
+                    class="trends-authors-highlight__avatar"
+                    :src="leadingTrendingAuthor.avatar"
+                    :alt="leadingTrendingAuthor.name"
+                    loading="lazy"
+                    decoding="async"
+                    @error="markTrendAuthorAvatarFailed(leadingTrendingAuthor.key)"
+                  />
+                  <div
+                    v-else
+                    class="trends-authors-highlight__avatar trends-authors-highlight__avatar--fallback"
+                  >
+                    <AnimatedIcon name="user" :fallback-icon="Users" size="sm" />
+                  </div>
+                  <span class="trends-authors-highlight__copy">
+                    <span class="trends-authors-highlight__label">
+                      {{ $t('home.hero.spotlightLabel') }}
+                    </span>
+                    <strong class="trends-authors-highlight__title">
+                      {{ leadingTrendingAuthor.name }}
+                    </strong>
+                    <span class="trends-authors-highlight__meta">
+                      {{ $t('home.trends.authorCount', { n: leadingTrendingAuthor.count }) }}
+                    </span>
+                  </span>
+                  <span class="trends-authors-highlight__action">
+                    {{ $t('home.trends.authorsAction') }}
+                  </span>
+                </RouterLink>
+                <div class="trends-list">
+                  <RouterLink
+                    v-for="author in trendingAuthors"
+                    :key="`trend-author-${author.key}`"
+                    :to="author.link"
+                    class="trend-author"
+                  >
+                    <img
+                      v-if="author.avatar && !isTrendAuthorAvatarFailed(author.key)"
+                      class="trend-author__avatar"
+                      :src="author.avatar"
+                      :alt="author.name"
+                      loading="lazy"
+                      decoding="async"
+                      @error="markTrendAuthorAvatarFailed(author.key)"
+                    />
+                    <div v-else class="trend-author__avatar trend-author__avatar--fallback">
+                      <AnimatedIcon name="user" :fallback-icon="Users" size="sm" />
+                    </div>
+                    <div class="trend-author__meta">
+                      <span class="trend-author__name">{{ author.name }}</span>
+                      <span class="trend-author__count">
+                        {{ $t('home.trends.authorCount', { n: author.count }) }}
+                      </span>
+                    </div>
+                  </RouterLink>
+                </div>
+              </div>
+              <div v-else class="trends-empty">{{ $t('home.trends.authorsEmpty') }}</div>
+            </div>
+
+            <div class="trends-card trends-card--tags glass-card" :style="noGlassBackdropStyle">
+              <div class="trends-card__header">
+                <h3>{{ $t('home.trends.tagsTitle') }}</h3>
+                <RouterLink to="/search" class="trends-link">
+                  {{ $t('home.trends.tagsAction') }}
+                </RouterLink>
+              </div>
+              <div v-if="trendingTags.length > 0" class="trend-tags">
+                <RouterLink
+                  v-for="tag in trendingTags"
+                  :key="`trend-tag-${tag}`"
+                  :to="{ name: 'search', query: { q: tag } }"
+                  class="glass-tag trend-tag"
+                >
+                  #{{ tag }}
+                </RouterLink>
+              </div>
+              <div v-else class="trends-empty">{{ $t('home.trends.tagsEmpty') }}</div>
+              <div class="trend-tags__stats">
+                <span
+                  v-for="stat in heroStats"
+                  :key="`tag-stat-${stat.key}`"
+                  class="trend-tags__stat"
+                >
+                  <strong>{{ stat.value }}</strong>
+                  <span>{{ stat.label }}</span>
+                </span>
+              </div>
+            </div>
+
             <div
-              class="posts-toolbar__stats"
-              :class="{ 'posts-toolbar__stats--with-tags': postsToolbarTags.length > 0 }"
+              class="trends-card trends-card--editorial glass-card"
+              :style="noGlassBackdropStyle"
             >
-              <span
-                v-for="stat in heroStats"
-                :key="`latest-stat-${stat.key}`"
-                class="posts-toolbar__stat"
-              >
-                <strong>{{ stat.value }}</strong>
-                <span>{{ stat.label }}</span>
-              </span>
+              <div class="trends-card__header">
+                <h3>{{ $t('home.hero.editorialLabel') }}</h3>
+                <span v-if="heroEditorialCard?.time" class="trends-card__hint">
+                  {{ heroEditorialCard.time }}
+                </span>
+              </div>
+              <template v-if="heroEditorialCard">
+                <div
+                  class="trends-editorial"
+                  :class="{ 'trends-editorial--compact': !heroEditorialSupportText }"
+                >
+                  <strong class="trends-editorial__title">{{ heroEditorialCard.title }}</strong>
+                  <p v-if="heroEditorialSupportText" class="trends-editorial__text">
+                    {{ heroEditorialSupportText }}
+                  </p>
+                  <div class="trends-editorial__meta">
+                    <span>{{ heroEditorialCard.author }}</span>
+                    <span v-if="heroEditorialCard.time">{{ heroEditorialCard.time }}</span>
+                  </div>
+                </div>
+              </template>
+              <div v-else class="trends-empty">
+                {{ $t('home.hero.editorialFallbackTitle') }}
+              </div>
             </div>
-          </div>
 
-          <div class="posts-toolbar__panel posts-toolbar__panel--filters">
-            <span class="filters-label">{{ $t('home.filters.label') }}</span>
-            <div class="filters-list">
-              <RouterLink
-                v-for="filter in quickFilters"
-                :key="`quick-filter-${filter.key}`"
-                :to="filter.to"
-                class="filter-pill"
+            <div class="trends-card trends-card--schedule glass-card" :style="noGlassBackdropStyle">
+              <div class="trends-card__header">
+                <h3>{{ $t('home.trends.scheduleTitle') }}</h3>
+                <RouterLink to="/schedule" class="trends-link">
+                  {{ $t('home.trends.scheduleAction') }}
+                </RouterLink>
+              </div>
+              <div
+                v-if="primaryScheduleHighlights.length > 0"
+                class="schedule-highlight-list"
+                :class="{
+                  'schedule-highlight-list--paired': Boolean(trendsScheduleCompanion),
+                }"
               >
-                {{ filter.label }}
-              </RouterLink>
+                <RouterLink
+                  v-for="item in primaryScheduleHighlights"
+                  :key="`schedule-highlight-${item.id}`"
+                  :to="item.deep_link || '/schedule'"
+                  class="schedule-highlight"
+                >
+                  <span class="schedule-highlight__label">
+                    {{ item.badge || getScheduleCategoryLabel(item.category) }}
+                  </span>
+                  <strong class="schedule-highlight__title">{{ item.title }}</strong>
+                  <span class="schedule-highlight__meta">
+                    {{
+                      formatScheduleHighlightMeta(item) ||
+                      formatHomeAuthorName(item.author) ||
+                      $t('home.trends.scheduleAction')
+                    }}
+                  </span>
+                </RouterLink>
+                <RouterLink
+                  v-if="trendsScheduleCompanion"
+                  :to="trendsScheduleCompanion.to"
+                  class="schedule-highlight schedule-highlight--companion"
+                  :class="`schedule-highlight--${trendsScheduleCompanion.kind}`"
+                >
+                  <span class="schedule-highlight__label">
+                    {{ trendsScheduleCompanion.label }}
+                  </span>
+                  <strong class="schedule-highlight__title">
+                    {{ trendsScheduleCompanion.title }}
+                  </strong>
+                  <p v-if="trendsScheduleCompanion.text" class="schedule-highlight__copy">
+                    {{ trendsScheduleCompanion.text }}
+                  </p>
+                  <span class="schedule-highlight__meta">
+                    {{ trendsScheduleCompanion.meta }}
+                  </span>
+                </RouterLink>
+              </div>
+              <div v-else-if="communityHighlightPreview" class="trends-community-note">
+                <span class="trends-community-note__eyebrow">{{ $t('nav.community') }}</span>
+                <strong class="trends-community-note__title">
+                  {{ communityHighlightPreview.title }}
+                </strong>
+                <p class="trends-community-note__text">
+                  {{ communityHighlightPreview.excerpt }}
+                </p>
+                <span class="trends-community-note__meta">
+                  {{ formatCommunityHighlightMeta(communityHighlightPreview) }}
+                </span>
+              </div>
+              <div v-else class="schedule-cta">
+                <div class="schedule-cta__intro">
+                  <span class="schedule-cta__eyebrow">{{ scheduleFallbackCard.label }}</span>
+                  <strong class="schedule-cta__title">{{ scheduleFallbackCard.title }}</strong>
+                  <p>{{ scheduleFallbackCard.text }}</p>
+                  <span class="schedule-cta__meta">{{ scheduleFallbackCard.meta }}</span>
+                </div>
+                <Button size="sm" variant="secondary" class="schedule-btn" @click="goToSchedule">
+                  <AnimatedIcon name="calendar" :fallback-icon="Calendar" size="sm" />
+                  {{ $t('home.trends.scheduleAction') }}
+                </Button>
+                <div class="schedule-cta__stats">
+                  <span
+                    v-for="stat in heroStats"
+                    :key="`trend-stat-${stat.key}`"
+                    class="schedule-cta__stat"
+                  >
+                    <strong>{{ stat.value }}</strong>
+                    <span>{{ stat.label }}</span>
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
+      </article>
+    </FeaturedRailSection>
 
-        <StateIndicator
-          v-if="error && !isUsingFallbackPosts"
-          variant="error"
-          :description="error"
-          @action="fetchHomeData"
-        />
+    <!-- Latest Posts -->
+    <LatestPostsSection ref="postsSectionRef" :revealed="hasTriggeredBubbleBurst">
+      <header class="posts-header">
+        <div class="posts-header__title">
+          <h2>{{ $t('home.latest') }}</h2>
+          <p class="posts-subtitle">{{ $t('home.latestSubtitle') }}</p>
+        </div>
+        <div class="posts-header__actions">
+          <RouterLink to="/explore" class="page-inline-cta">
+            <AnimatedIcon name="explore" :fallback-icon="ArrowUpRight" size="sm" />
+            {{ $t('home.latestAction') }}
+          </RouterLink>
+          <span v-if="isLoading && posts.length > 0" class="spinner spinner-sm" />
+        </div>
+      </header>
 
-        <template v-else>
-          <div class="bubble-stage">
-            <div
-              v-if="isLoading && bubbleItems.length === 0"
-              class="bubble-empty glass-card"
-              :style="noGlassBackdropStyle"
+      <div class="posts-toolbar">
+        <div class="posts-toolbar__panel posts-toolbar__panel--tags">
+          <span class="tags-label">{{ $t('home.tags.label') }}</span>
+          <div v-if="postsToolbarTags.length > 0" class="tags-list">
+            <RouterLink
+              v-for="tag in postsToolbarTags"
+              :key="`latest-tag-${tag}`"
+              :to="{ name: 'search', query: { q: tag } }"
+              class="glass-tag"
             >
-              <span class="spinner spinner-sm" />
-              <span>{{ $t('common.loading') }}</span>
-            </div>
-            <template v-else-if="bubbleItems.length > 0">
-              <button
-                v-for="(bubble, index) in bubbleItems"
-                :key="`bubble-${bubble.post.id}-${index}`"
-                type="button"
-                class="latest-bubble glass-card"
-                :style="[noGlassBackdropStyle, bubble.style]"
-                @click="openPostPreview(bubble.post, bubble.thumbnail)"
-              >
-                <span class="latest-bubble__inner">
-                  <span class="latest-bubble__text">{{ bubble.text }}</span>
-                  <span class="latest-bubble__meta">
-                    <span class="latest-bubble__author">{{ bubble.author }}</span>
-                    <span v-if="bubble.time" class="latest-bubble__time">{{ bubble.time }}</span>
-                  </span>
-                </span>
-              </button>
-            </template>
-            <div v-else class="bubble-empty glass-card" :style="noGlassBackdropStyle">
-              <span>{{ $t('common.noResults') }}</span>
-            </div>
+              #{{ tag }}
+            </RouterLink>
           </div>
-        </template>
+          <div
+            class="posts-toolbar__stats"
+            :class="{ 'posts-toolbar__stats--with-tags': postsToolbarTags.length > 0 }"
+          >
+            <span
+              v-for="stat in heroStats"
+              :key="`latest-stat-${stat.key}`"
+              class="posts-toolbar__stat"
+            >
+              <strong>{{ stat.value }}</strong>
+              <span>{{ stat.label }}</span>
+            </span>
+          </div>
+        </div>
+
+        <div class="posts-toolbar__panel posts-toolbar__panel--filters">
+          <span class="filters-label">{{ $t('home.filters.label') }}</span>
+          <div class="filters-list">
+            <RouterLink
+              v-for="filter in quickFilters"
+              :key="`quick-filter-${filter.key}`"
+              :to="filter.to"
+              class="filter-pill"
+            >
+              {{ filter.label }}
+            </RouterLink>
+          </div>
+        </div>
       </div>
-    </section>
 
-    <section ref="storyDeckRef" class="media-slices home-screen" :style="storySceneStyle">
-      <div class="container story-stage">
-        <header class="page-section-head page-section-head--stage">
-          <div class="page-section-copy">
-            <p class="page-section-kicker">{{ $t('home.featured.kicker') }}</p>
-            <h2>{{ $t('home.featured.title') }}</h2>
-            <p>{{ $t('home.featured.subtitle') }}</p>
-          </div>
-          <div class="story-progress">
-            <span>{{ String(activeStoryIndex + 1).padStart(2, '0') }}</span>
-            <span>/</span>
-            <span>{{ String(Math.max(storyCardCount, 1)).padStart(2, '0') }}</span>
-          </div>
-        </header>
+      <StateIndicator
+        v-if="error && !isUsingFallbackPosts"
+        variant="error"
+        :description="error"
+        @action="fetchHomeData"
+      />
 
-        <div class="media-slice-list">
-          <template v-if="storyCards.length > 0">
-            <article
-              v-for="(card, index) in storyCards"
-              :key="`media-${card.post.id}`"
-              class="media-slice"
-              :class="{ 'is-active': activeStoryIndex === index }"
-              :style="getStoryCardStyle(index)"
+      <template v-else>
+        <div class="bubble-stage">
+          <div
+            v-if="isLoading && bubbleItems.length === 0"
+            class="bubble-empty glass-card"
+            :style="noGlassBackdropStyle"
+          >
+            <span class="spinner spinner-sm" />
+            <span>{{ $t('common.loading') }}</span>
+          </div>
+          <template v-else-if="bubbleItems.length > 0">
+            <button
+              v-for="(bubble, index) in bubbleItems"
+              :key="`bubble-${bubble.post.id}-${index}`"
+              type="button"
+              class="latest-bubble glass-card"
+              :style="[noGlassBackdropStyle, bubble.style]"
+              @click="openPostPreview(bubble.post, bubble.thumbnail)"
             >
-              <div class="media-slice__sticky glass-card" :style="noGlassBackdropStyle">
-                <div class="media-slice__visual">
-                  <PostCard
-                    :post="card.post"
-                    :show-content="false"
-                    :priority="index === 0"
-                    :style="noGlassBackdropStyle"
-                    @click="(_id, thumb) => openPostPreview(card.post, thumb)"
-                  />
-                </div>
-                <div class="media-slice__copy">
-                  <p class="media-slice__eyebrow">{{ card.eyebrow }}</p>
-                  <h3>{{ card.title }}</h3>
-                  <p>{{ card.excerpt }}</p>
-                  <div class="media-slice__meta">
-                    <span class="media-slice__author">{{ card.author }}</span>
-                    <span v-if="card.time" class="media-slice__time">{{ card.time }}</span>
-                  </div>
-                  <div class="media-slice__actions">
-                    <Button
-                      size="sm"
-                      variant="primary"
-                      class="media-slice__button"
-                      @click="openPostPreview(card.post, card.thumbnail)"
-                    >
-                      <AnimatedIcon name="sparkle" :fallback-icon="Sparkles" size="sm" />
-                      {{ $t('home.featured.action') }}
-                    </Button>
-                    <RouterLink :to="card.detailLink" class="page-inline-cta media-slice__link">
-                      <AnimatedIcon name="explore" :fallback-icon="ArrowUpRight" size="sm" />
-                      {{ $t('home.latestAction') }}
-                    </RouterLink>
-                  </div>
-                </div>
-              </div>
-            </article>
+              <span class="latest-bubble__inner">
+                <span class="latest-bubble__text">{{ bubble.text }}</span>
+                <span class="latest-bubble__meta">
+                  <span class="latest-bubble__author">{{ bubble.author }}</span>
+                  <span v-if="bubble.time" class="latest-bubble__time">{{ bubble.time }}</span>
+                </span>
+              </span>
+            </button>
           </template>
-          <div v-else class="media-empty glass-card">
+          <div v-else class="bubble-empty glass-card" :style="noGlassBackdropStyle">
             <span>{{ $t('common.noResults') }}</span>
           </div>
         </div>
-      </div>
-    </section>
+      </template>
+    </LatestPostsSection>
 
-    <PostPreviewModal
+    <StoryDeckSection ref="storyDeckRef" :scene-style="storySceneStyle">
+      <header class="page-section-head page-section-head--stage">
+        <div class="page-section-copy">
+          <p class="page-section-kicker">{{ $t('home.featured.kicker') }}</p>
+          <h2>{{ $t('home.featured.title') }}</h2>
+          <p>{{ $t('home.featured.subtitle') }}</p>
+        </div>
+        <div class="story-progress">
+          <span>{{ String(activeStoryIndex + 1).padStart(2, '0') }}</span>
+          <span>/</span>
+          <span>{{ String(Math.max(storyCardCount, 1)).padStart(2, '0') }}</span>
+        </div>
+      </header>
+
+      <div class="media-slice-list">
+        <template v-if="storyCards.length > 0">
+          <article
+            v-for="(card, index) in storyCards"
+            :key="`media-${card.post.id}`"
+            class="media-slice"
+            :class="{ 'is-active': activeStoryIndex === index }"
+            :style="getStoryCardStyle(index)"
+          >
+            <div class="media-slice__sticky glass-card" :style="noGlassBackdropStyle">
+              <div class="media-slice__visual">
+                <PostCard
+                  :post="card.post"
+                  :show-content="false"
+                  :priority="index === 0"
+                  :style="noGlassBackdropStyle"
+                  @click="(_id, thumb) => openPostPreview(card.post, thumb)"
+                />
+              </div>
+              <div class="media-slice__copy">
+                <p class="media-slice__eyebrow">{{ card.eyebrow }}</p>
+                <h3>{{ card.title }}</h3>
+                <p>{{ card.excerpt }}</p>
+                <div class="media-slice__meta">
+                  <span class="media-slice__author">{{ card.author }}</span>
+                  <span v-if="card.time" class="media-slice__time">{{ card.time }}</span>
+                </div>
+                <div class="media-slice__actions">
+                  <Button
+                    size="sm"
+                    variant="primary"
+                    class="media-slice__button"
+                    @click="openPostPreview(card.post, card.thumbnail)"
+                  >
+                    <AnimatedIcon name="sparkle" :fallback-icon="Sparkles" size="sm" />
+                    {{ $t('home.featured.action') }}
+                  </Button>
+                  <RouterLink :to="card.detailLink" class="page-inline-cta media-slice__link">
+                    <AnimatedIcon name="explore" :fallback-icon="ArrowUpRight" size="sm" />
+                    {{ $t('home.latestAction') }}
+                  </RouterLink>
+                </div>
+              </div>
+            </div>
+          </article>
+        </template>
+        <div v-else class="media-empty glass-card">
+          <span>{{ $t('common.noResults') }}</span>
+        </div>
+      </div>
+    </StoryDeckSection>
+
+    <HomepagePreviewController
       v-model:isOpen="isPreviewOpen"
       :post-id="previewPostId"
       :initial-post="previewPost"
@@ -977,45 +917,42 @@ import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import {
-  ArrowUpRight,
-  Calendar,
-  Compass,
-  Image,
-  MessageSquare,
-  Sparkles,
-  Users,
-} from 'lucide-vue-next'
+import { ArrowUpRight, Compass, Image, Sparkles } from 'lucide-vue-next'
 import { useSettingsStore } from '@/stores'
 import {
   homeService,
-  normalizeAvatarUrl,
   type HomeAggregateResponse,
-  type HomeAuthorBrief,
   type HomeCommunityHighlight,
-  type HomeFeaturedItem,
-  type HomeLatestTextPostItem,
-  type HomePortalItem,
-  type HomePortalPreview,
   type HomeScheduleHighlight,
-  type HomeStoryDeckItem,
-  type HomeTagBrief,
   type PostListItem,
 } from '@/api'
 import { prefersReducedMotion } from '@/utils/performance'
 import { isFilteredAuthor } from '@/config/filters'
 import { storePostNavigationContext } from '@/utils/postNavigation'
-import { normalizeToThumbnailUrl } from '@/utils/mediaOptimizer'
-import { formatRelativeTime } from '@/utils/date'
 import { HOME_FALLBACK_POSTS, isHomeFallbackPost } from '@/mocks/homepageFallback'
 import { buildHomepageBootstrapFallback } from '@/mocks/homepageBootstrapFallback'
+import {
+  buildHomePostsFromAggregate,
+  clamp,
+  formatHomeAuthorName,
+  formatCommunityHighlightMeta as formatCommunityHighlightMetaValue,
+  formatScheduleHighlightMeta as formatScheduleHighlightMetaValue,
+  normalizeText,
+  resolvePostIdFromLink,
+  resolvePostLink,
+} from '@/views/homepage/homeModel'
+import { useHomeViewModel } from '@/views/homepage/useHomeViewModel'
 import Button from '@/components/ui/Button.vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
+import FeaturedRailSection from '@/components/home/FeaturedRailSection.vue'
+import HeroSection from '@/components/home/HeroSection.vue'
+import HomepagePreviewController from '@/components/home/HomepagePreviewController.vue'
+import LatestPostsSection from '@/components/home/LatestPostsSection.vue'
 import PostCard from '@/components/business/PostCard.vue'
 import PostCardSkeleton from '@/components/business/PostCardSkeleton.vue'
-import PostPreviewModal from '@/components/business/PostPreviewModal.vue'
 import ScrollDownFab from '@/components/ui/ScrollDownFab.vue'
+import StoryDeckSection from '@/components/home/StoryDeckSection.vue'
 
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger)
@@ -1032,7 +969,7 @@ const noGlassBackdropStyle = Object.freeze({
   WebkitBackdropFilter: 'blur(0rem)',
 }) as Readonly<Record<string, string>>
 const initialHomeAggregate = buildHomepageBootstrapFallback()
-const initialHomePosts = buildHomePostsFromAggregate(initialHomeAggregate).filter(
+const initialHomePosts = buildHomePostsFromAggregate(initialHomeAggregate, t).filter(
   (post) => !isFilteredAuthor(post.author_name)
 )
 
@@ -1062,21 +999,18 @@ const homeDataSource = ref<'idle' | 'aggregate' | 'support' | 'fallback'>('idle'
 const failedTrendAuthorAvatarKeys = ref<Set<string>>(new Set())
 const failedHomeMediaUrls = ref<Set<string>>(new Set())
 
+type HomeSectionInstance = {
+  element: HTMLElement | null
+}
+
 // DOM refs
-const postsSectionRef = useTemplateRef<HTMLElement>('postsSectionRef')
-const featuredSectionRef = useTemplateRef<HTMLElement>('featuredSectionRef')
-const storyDeckRef = useTemplateRef<HTMLElement>('storyDeckRef')
+const postsSectionRef = useTemplateRef<HomeSectionInstance>('postsSectionRef')
+const featuredSectionRef = useTemplateRef<HomeSectionInstance>('featuredSectionRef')
+const storyDeckRef = useTemplateRef<HomeSectionInstance>('storyDeckRef')
 
 const railProgress = ref(0)
 const storyProgress = ref(0)
 const hasTriggeredBubbleBurst = ref(false)
-const homeSourcePosts = computed(() => {
-  if (homeDataSource.value !== 'fallback') return allPosts.value
-  return allPosts.value.length > 0 ? allPosts.value : HOME_FALLBACK_POSTS
-})
-const isUsingFallbackPosts = computed(() => homeDataSource.value === 'fallback')
-const showPreviewNotice = computed(() => Boolean(error.value) && isUsingFallbackPosts.value)
-const heroEditorialVisible = ref(false)
 const viewportSceneBlend = ref({
   heroRail: 0,
   railPosts: 0,
@@ -1084,6 +1018,70 @@ const viewportSceneBlend = ref({
   storyFooter: 0,
 })
 const activeScreenTransition = ref<HomeScreenTransitionName | null>(null)
+
+const {
+  bubbleItems,
+  clearHeroEditorialRevealTimer,
+  communityHighlightPreview,
+  featuredRailCards,
+  featuredRailPosts,
+  heroEditorialCard,
+  heroEditorialSupportText,
+  heroEditorialText,
+  heroEditorialTitle,
+  heroEditorialVisible,
+  heroSpotlightMeta,
+  heroSpotlightTag,
+  heroStats,
+  heroTags,
+  homeSourcePosts,
+  isUsingFallbackPosts,
+  leadingTrendingAuthor,
+  portalLeadCard,
+  portalLeadEyebrow,
+  portalLeadPreviewTitle,
+  portalOverviewStats,
+  portalPanels,
+  portalRecommendDescription,
+  portalRecommendLink,
+  postsToolbarTags,
+  primaryScheduleHighlights,
+  quickFilters,
+  scheduleFallbackCard,
+  showPreviewNotice,
+  spotlightMediaCards,
+  spotlightTextCards,
+  storyCardCount,
+  storyCards,
+  trendingAuthors,
+  trendingTags,
+  trendsScheduleCompanion,
+} = useHomeViewModel({
+  homeAggregate,
+  allPosts,
+  homeDataSource,
+  error,
+  total,
+  homeScheduleHighlights,
+  homeCommunityHighlights,
+  shouldAnimate,
+  translate: t,
+  locale,
+})
+
+function formatScheduleHighlightMeta(item: HomeScheduleHighlight | null | undefined): string {
+  return formatScheduleHighlightMetaValue(item, locale.value)
+}
+
+function formatCommunityHighlightMeta(item: HomeCommunityHighlight | null | undefined): string {
+  return formatCommunityHighlightMetaValue(item, t)
+}
+
+function resolveSectionElement(
+  section: HomeSectionInstance | null | undefined
+): HTMLElement | null {
+  return section?.element ?? null
+}
 
 let bubbleBurstTrigger: ScrollTrigger | null = null
 let storyDeckTrigger: ScrollTrigger | null = null
@@ -1096,841 +1094,9 @@ let bubbleBurstReplayFrame: number | null = null
 let viewportSceneFrame: number | null = null
 let screenTransitionTimer: number | null = null
 let viewportSceneTrackingBound = false
-let heroEditorialRevealTimer: number | null = null
 
 type HomeScreenKey = 'hero' | 'featured' | 'posts' | 'story' | 'footer'
 type HomeScreenTransitionName = `${HomeScreenKey}-${HomeScreenKey}`
-
-const heroHighlightPosts = computed(() => {
-  const source = homeSourcePosts.value
-  const withThumb = source.filter((post) => !!post.thumbnail_url)
-  return (withThumb.length > 0 ? withThumb : source).slice(0, 5)
-})
-
-const heroHighlightCards = computed(() =>
-  heroHighlightPosts.value.map((post) => ({
-    post,
-    thumbnail: normalizeToThumbnailUrl(post.thumbnail_url, 'medium'),
-    title: formatHeroTitle(post),
-    author: formatHeroAuthor(post),
-  }))
-)
-
-const fallbackTrendingTags = computed(() => {
-  const tagCounts = new Map<string, number>()
-  for (const post of homeSourcePosts.value) {
-    const tags = post.tags ?? []
-    for (const rawTag of tags) {
-      const tag = normalizeTag(rawTag)
-      if (!tag) continue
-      tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1)
-    }
-  }
-  return Array.from(tagCounts.entries())
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 8)
-    .map(([tag]) => tag)
-})
-
-const trendingTags = computed(() => {
-  const liveTags = [
-    ...(homeAggregate.value?.hero.trending_tags ?? []),
-    ...(homeAggregate.value?.trends.tags ?? []),
-  ]
-    .map((tag) => normalizeHomeTag(tag))
-    .filter(Boolean)
-
-  if (liveTags.length > 0) {
-    return Array.from(new Set(liveTags)).slice(0, 8)
-  }
-
-  return fallbackTrendingTags.value
-})
-
-const heroTags = computed(() => trendingTags.value.slice(0, 6))
-const postsToolbarTags = computed(() => trendingTags.value.slice(0, 5))
-
-const uniqueAuthorCount = computed(() => {
-  const keys = new Set<string>()
-  for (const post of homeSourcePosts.value) {
-    const key =
-      post.author_id || post.author_username || post.author_name || post.original_author_id || ''
-    if (key) keys.add(key)
-  }
-  return keys.size
-})
-
-const fallbackTrendingAuthors = computed(() => {
-  const authorMap = new Map<
-    string,
-    { key: string; name: string; avatar: string | null; count: number; link: string }
-  >()
-  for (const post of homeSourcePosts.value) {
-    const key =
-      post.author_id || post.author_username || post.author_name || post.original_author_id || ''
-    if (!key) continue
-    const name = formatAuthorName(post)
-    const avatar = normalizeAvatarUrl(post.author_avatar_url) || post.author_avatar_url || null
-    const entry = authorMap.get(key)
-    if (entry) {
-      entry.count += 1
-      if (!entry.name && name) entry.name = name
-      if (!entry.avatar && avatar) entry.avatar = avatar
-    } else {
-      authorMap.set(key, {
-        key,
-        name: name || t('home.hero.fallbackAuthor'),
-        avatar,
-        count: 1,
-        link: post.author_id ? `/author/${post.author_id}` : '/authors',
-      })
-    }
-  }
-  return Array.from(authorMap.values())
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 4)
-})
-
-const trendingAuthors = computed(() => {
-  const liveAuthors = homeAggregate.value?.trends.authors ?? []
-  if (liveAuthors.length > 0) {
-    return liveAuthors.slice(0, 4).map((author) => ({
-      key: author.id || author.deep_link || author.display_name,
-      name: author.display_name || t('home.hero.fallbackAuthor'),
-      avatar: normalizeAvatarUrl(author.avatar_url) || author.avatar_url || null,
-      count: author.post_count ?? 0,
-      link: author.deep_link || '/authors',
-    }))
-  }
-
-  return fallbackTrendingAuthors.value
-})
-const leadingTrendingAuthor = computed(() => trendingAuthors.value[0] ?? null)
-
-const textPosts = computed(() => homeSourcePosts.value.filter((post) => isTextPost(post)))
-const mediaPosts = computed(() => homeSourcePosts.value.filter((post) => isMediaPost(post)))
-const fallbackFeaturedRailPosts = computed(() => {
-  const ordered = [...mediaPosts.value, ...homeSourcePosts.value]
-  const seen = new Set<string>()
-  return ordered
-    .filter((post) => {
-      if (seen.has(post.id)) return false
-      seen.add(post.id)
-      return true
-    })
-    .slice(0, 4)
-})
-
-const portalItemMap = computed(
-  () => new Map((homeAggregate.value?.portal.items ?? []).map((item) => [item.key, item] as const))
-)
-const portalRecommendItem = computed(() => portalItemMap.value.get('recommend') ?? null)
-const portalSchedulePreview = computed(() => portalItemMap.value.get('schedule')?.preview ?? null)
-const portalCommunityPreview = computed(() => portalItemMap.value.get('community')?.preview ?? null)
-const portalRecommendLink = computed(() => portalRecommendItem.value?.deep_link || '/explore')
-const portalRecommendDescription = computed(() => {
-  if (!portalRecommendItem.value) return t('home.portal.items.recommend.desc')
-  return t('home.portal.items.recommend.dynamicDesc', {
-    count: getPortalItemCountText(portalRecommendItem.value),
-  })
-})
-
-type FeaturedRailCard = {
-  id: string
-  post: PostListItem
-  thumbnail: string | null
-  kicker: string
-  eyebrow: string
-  title: string
-  summary: string
-  author: string
-  time: string
-  stats: Array<{
-    key: string
-    label: string
-    value: string
-  }>
-}
-
-type MediaHighlightCard = {
-  post: PostListItem
-  thumbnail: string | null
-  title: string
-  author: string
-}
-
-type SpotlightTextCard = {
-  post: PostListItem
-  title: string
-  text: string
-  supportText: string
-  author: string
-  time: string
-}
-
-type StoryDeckCard = {
-  post: PostListItem
-  thumbnail: string | null
-  eyebrow: string
-  title: string
-  excerpt: string
-  author: string
-  time: string
-  detailLink: string
-}
-
-function collectUniqueItems<T>(
-  sources: readonly T[][],
-  limit: number,
-  getId: (item: T) => string | null | undefined,
-  excludedIds: Iterable<string> = []
-): T[] {
-  const seen = new Set(Array.from(excludedIds).filter(Boolean))
-  const result: T[] = []
-
-  for (const source of sources) {
-    for (const item of source) {
-      const id = getId(item)
-      if (!id || seen.has(id)) continue
-      seen.add(id)
-      result.push(item)
-      if (result.length >= limit) return result
-    }
-  }
-
-  return result
-}
-
-function buildMediaHighlightCard(
-  post: PostListItem,
-  overrides: Partial<Omit<MediaHighlightCard, 'post'>> = {}
-): MediaHighlightCard {
-  return {
-    post,
-    thumbnail:
-      overrides.thumbnail ??
-      (post.thumbnail_url ? normalizeToThumbnailUrl(post.thumbnail_url, 'large') : null),
-    title: overrides.title ?? formatStoryTitle(post),
-    author: overrides.author ?? (formatAuthorName(post) || t('home.hero.fallbackAuthor')),
-  }
-}
-
-const liveFeaturedRailItems = computed(() =>
-  (homeAggregate.value?.featured.items ?? []).slice(0, 4)
-)
-
-const featuredRailCards = computed<FeaturedRailCard[]>(() =>
-  liveFeaturedRailItems.value.map((item) => {
-    const post = mapFeaturedItemToPost(item)
-    const relatedPost = item.related_posts?.[0]
-    const author =
-      formatHomeAuthorName(getPrimaryFeaturedAuthor(item)) || t('home.hero.fallbackAuthor')
-    const title = normalizeText(item.title) || formatHeroTitle(post)
-    const rawSummary =
-      normalizeText(item.summary || item.subtitle) ||
-      normalizeText(relatedPost?.excerpt) ||
-      normalizeText(post.description)
-    const summary = rawSummary && rawSummary !== title ? rawSummary : ''
-    const time = relatedPost?.published_at ? formatRelativeTime(relatedPost.published_at, t) : ''
-    const primaryTag = normalizeHomeTag(relatedPost?.tags?.[0])
-    const kicker =
-      normalizeText(item.kicker).toUpperCase() ||
-      normalizeText(relatedPost?.platform).toUpperCase() ||
-      t('home.featured.kicker')
-
-    const stats = [
-      ...(relatedPost?.metrics?.view_count
-        ? [
-            {
-              key: 'views',
-              label: t('post.views'),
-              value: formatMetricValue(relatedPost.metrics.view_count),
-            },
-          ]
-        : []),
-      ...(relatedPost?.metrics?.like_count
-        ? [
-            {
-              key: 'likes',
-              label: t('post.likes'),
-              value: formatMetricValue(relatedPost.metrics.like_count),
-            },
-          ]
-        : []),
-    ].slice(0, 2)
-
-    return {
-      id: post.id,
-      post,
-      thumbnail: mapHomeImageUrl(item.cover),
-      kicker,
-      eyebrow: primaryTag ? `#${primaryTag}` : author,
-      title,
-      summary,
-      author,
-      time,
-      stats,
-    }
-  })
-)
-
-const featuredRailPostIds = computed(
-  () => new Set(featuredRailCards.value.map((card) => card.post.id))
-)
-
-const featuredRailPosts = computed(() => {
-  return fallbackFeaturedRailPosts.value
-})
-
-const latestTextPost = computed(() => textPosts.value[0] ?? null)
-const heroSpotlightPost = computed<PostListItem | null>(() => {
-  const spotlight = homeAggregate.value?.hero.spotlight
-  if (!spotlight?.post_id) return null
-
-  return {
-    id: spotlight.post_id,
-    platform: 'story',
-    title: normalizeText(spotlight.title) || t('home.hero.fallbackTitle'),
-    content: normalizeText(spotlight.summary) || undefined,
-    description: normalizeText(spotlight.summary) || undefined,
-    thumbnail_url: mapHomeImageUrl(spotlight.image, 'large'),
-    published_at: undefined,
-    view_count: 0,
-    like_count: 0,
-    comment_count: 0,
-    media_count: spotlight.image ? 1 : 0,
-    media_type: spotlight.image ? 'image' : undefined,
-    author_name: formatHomeAuthorName(spotlight.author) || undefined,
-    author_id: spotlight.author?.id ?? undefined,
-    author_username: spotlight.author?.username ?? undefined,
-    author_avatar_url: spotlight.author?.avatar_url ?? undefined,
-    post_url: resolvePostLink(spotlight.deep_link, spotlight.post_id),
-    tags: spotlight.primary_tag ? [normalizeHomeTag(spotlight.primary_tag)] : undefined,
-  }
-})
-
-const heroSpotlightMediaCard = computed<MediaHighlightCard | null>(() => {
-  const post = heroSpotlightPost.value
-  if (!post) return null
-  return buildMediaHighlightCard(post, {
-    thumbnail: post.thumbnail_url ?? null,
-    title: normalizeText(homeAggregate.value?.hero.spotlight?.title) || formatHeroTitle(post),
-    author:
-      formatHomeAuthorName(homeAggregate.value?.hero.spotlight?.author) || formatHeroAuthor(post),
-  })
-})
-const curatedMediaHighlights = computed<MediaHighlightCard[]>(() => {
-  const featuredCards = liveFeaturedRailItems.value.map((item) => {
-    const post = mapFeaturedItemToPost(item)
-    return buildMediaHighlightCard(post, {
-      thumbnail: mapHomeImageUrl(item.cover),
-      title: normalizeText(item.title) || formatHeroTitle(post),
-      author: formatHomeAuthorName(getPrimaryFeaturedAuthor(item)) || formatHeroAuthor(post),
-    })
-  })
-
-  const storyCardsAsHighlights = rawStoryCards.value.map((card) =>
-    buildMediaHighlightCard(card.post, {
-      thumbnail: card.thumbnail,
-      title: card.title,
-      author: card.author,
-    })
-  )
-
-  const fallbackCards = mediaPosts.value.map((post) => buildMediaHighlightCard(post))
-
-  return collectUniqueItems(
-    [
-      heroSpotlightMediaCard.value ? [heroSpotlightMediaCard.value] : [],
-      storyCardsAsHighlights,
-      featuredCards,
-      heroHighlightCards.value,
-      fallbackCards,
-    ],
-    12,
-    (card) => card.post.id
-  )
-})
-
-const portalLeadCard = computed<MediaHighlightCard | null>(() => {
-  const excludedIds = new Set([...featuredRailPostIds.value, ...storyCardIds.value])
-  const preferred = collectUniqueItems(
-    [curatedMediaHighlights.value],
-    1,
-    (card) => card.post.id,
-    excludedIds
-  )
-
-  return preferred[0] ?? curatedMediaHighlights.value[0] ?? null
-})
-
-const spotlightMediaCards = computed(() => {
-  const excludedIds = new Set([...featuredRailPostIds.value, ...storyCardIds.value])
-  if (portalLeadCard.value) excludedIds.add(portalLeadCard.value.post.id)
-
-  const preferred = collectUniqueItems(
-    [curatedMediaHighlights.value],
-    4,
-    (card) => card.post.id,
-    excludedIds
-  )
-
-  return preferred.length > 0 ? preferred : curatedMediaHighlights.value.slice(0, 4)
-})
-const portalLeadEyebrow = computed(() => {
-  if (heroSpotlightTag.value) return `#${heroSpotlightTag.value}`
-  return portalLeadCard.value?.author || t('home.hero.fallbackAuthor')
-})
-const portalLeadPreviewTitle = computed(() => {
-  const title = normalizeText(portalLeadCard.value?.title)
-  if (!title) return t('home.portal.items.recommend.title')
-  return title.length > 56 ? `${title.slice(0, 56)}…` : title
-})
-const portalOverviewStats = computed(() => {
-  const keys = ['authors', 'schedule', 'community'] as const
-  const liveStats = keys
-    .map((key) => {
-      const item = portalItemMap.value.get(key)
-      if (!item) return null
-      return {
-        key,
-        label: getPortalItemLabel(key),
-        value: getPortalItemCountText(item),
-      }
-    })
-    .filter((item): item is { key: string; label: string; value: string } => Boolean(item))
-
-  if (liveStats.length > 0) return liveStats
-  return heroStats.value
-})
-
-const heroEditorialCard = computed(() => {
-  const editorial = homeAggregate.value?.hero.editorial_card
-  if (editorial) {
-    const title = normalizeText(editorial.title)
-    const text = normalizeText(editorial.text)
-    const author = formatHomeAuthorName(editorial.author) || t('home.hero.fallbackAuthor')
-    const time =
-      normalizeText(editorial.time_hint) ||
-      (editorial.published_at ? formatRelativeTime(editorial.published_at, t) : '')
-
-    if (title || text || author) {
-      return {
-        title: title || author,
-        text: text || t('home.hero.fallbackTitle'),
-        author,
-        time,
-      }
-    }
-  }
-
-  const post = latestTextPost.value
-  if (!post) return null
-
-  const rawText = normalizeText(post.content ?? post.description ?? post.title)
-  const rawTitle = normalizeText(post.title)
-  const author = formatAuthorName(post) || t('home.hero.fallbackAuthor')
-  const time = post.published_at ? formatRelativeTime(post.published_at, t) : ''
-
-  return {
-    title:
-      rawTitle && rawTitle !== rawText
-        ? rawTitle.length > 40
-          ? `${rawTitle.slice(0, 40)}…`
-          : rawTitle
-        : author,
-    text:
-      rawText.length > 120 ? `${rawText.slice(0, 120)}…` : rawText || t('home.hero.fallbackTitle'),
-    author,
-    time,
-  }
-})
-const heroEditorialSupportText = computed(() => {
-  const card = heroEditorialCard.value
-  if (!card) return ''
-  const title = normalizeText(card.title)
-  const text = normalizeText(card.text)
-  return text && text !== title ? text : ''
-})
-
-const heroEditorialRevealKey = computed(() => {
-  const card = heroEditorialCard.value
-  if (!card) return ''
-  return [card.title, card.text, card.author, card.time]
-    .map((value) => normalizeText(value))
-    .join('|')
-})
-
-function getSpotlightTextScore(item: HomeLatestTextPostItem) {
-  return normalizeText(item.excerpt).length + (item.tags?.length ?? 0) * 16
-}
-
-const rawSpotlightTextCards = computed<SpotlightTextCard[]>(() => {
-  const liveItems = homeAggregate.value?.latest_text_posts ?? []
-  if (liveItems.length > 0) {
-    const editorialPostId = homeAggregate.value?.hero.editorial_card?.post_id ?? null
-    const filteredItems = editorialPostId
-      ? liveItems.filter((item) => item.post_id !== editorialPostId)
-      : liveItems
-    const spotlightItems = (filteredItems.length >= 3 ? filteredItems : liveItems)
-      .slice(0, 6)
-      .sort((a, b) => {
-        const scoreDelta = getSpotlightTextScore(b) - getSpotlightTextScore(a)
-        if (scoreDelta !== 0) return scoreDelta
-
-        const publishedA = Date.parse(a.published_at ?? '')
-        const publishedB = Date.parse(b.published_at ?? '')
-        if (Number.isFinite(publishedA) && Number.isFinite(publishedB)) {
-          return publishedB - publishedA
-        }
-        return 0
-      })
-      .slice(0, 3)
-
-    return spotlightItems.map((item) => {
-      const post = mapLatestTextItemToPost(item)
-      const title = formatHeroTitle(post)
-      const text = formatBubbleText(post)
-      return {
-        post,
-        title,
-        text,
-        supportText: normalizeText(text) !== normalizeText(title) ? text : '',
-        author: formatHomeAuthorName(item.author) || t('home.hero.fallbackAuthor'),
-        time:
-          normalizeText(item.time_hint) ||
-          (item.published_at ? formatRelativeTime(item.published_at, t) : ''),
-      }
-    })
-  }
-
-  return textPosts.value.slice(0, 3).map((post) => {
-    const title = formatHeroTitle(post)
-    const text = formatBubbleText(post)
-    return {
-      post,
-      title,
-      text,
-      supportText: normalizeText(text) !== normalizeText(title) ? text : '',
-      author: formatAuthorName(post) || t('home.hero.fallbackAuthor'),
-      time: post.published_at ? formatRelativeTime(post.published_at, t) : '',
-    }
-  })
-})
-
-const spotlightTextCards = computed(() =>
-  collectUniqueItems([rawSpotlightTextCards.value], 3, (card) => card.post.id)
-)
-const spotlightTextPostIds = computed(
-  () => new Set(spotlightTextCards.value.map((card) => card.post.id))
-)
-
-const portalPanels = computed(() => {
-  const firstAuthor = trendingAuthors.value[0]
-  const authorItem = portalItemMap.value.get('authors')
-  const scheduleItem = portalItemMap.value.get('schedule')
-  const communityItem = portalItemMap.value.get('community')
-  const schedulePreview = portalSchedulePreview.value
-  const communityPreview = portalCommunityPreview.value
-  const firstSchedule = resolvedScheduleHighlights.value[0]
-  const firstCommunity = communityHighlightPreview.value
-
-  return [
-    {
-      key: 'authors',
-      title: t('home.portal.items.authors.title'),
-      desc: t('home.portal.items.authors.desc'),
-      to: authorItem?.deep_link || '/authors',
-      icon: Users,
-      animation: 'user',
-      noteLabel: firstAuthor
-        ? t('home.trends.authorsTitle')
-        : getPortalCardAvailabilityLabel(authorItem),
-      noteTitle: firstAuthor?.name ?? t('home.portal.items.authors.title'),
-      noteText: firstAuthor
-        ? t('home.trends.authorCount', { n: firstAuthor.count })
-        : t('home.portal.items.authors.desc'),
-      noteMeta: firstAuthor
-        ? getPortalItemCountSummary(authorItem)
-        : t('home.trends.authorsAction'),
-    },
-    {
-      key: 'schedule',
-      title: t('home.portal.items.schedule.title'),
-      desc: t('home.portal.items.schedule.desc'),
-      to: schedulePreview?.deep_link || scheduleItem?.deep_link || '/schedule',
-      icon: Calendar,
-      animation: 'calendar',
-      noteLabel:
-        getPortalPreviewAuthorLabel(schedulePreview) ||
-        firstSchedule?.badge ||
-        (firstSchedule ? getScheduleCategoryLabel(firstSchedule.category) : null) ||
-        getPortalCardAvailabilityLabel(scheduleItem),
-      noteTitle:
-        normalizeText(schedulePreview?.title) ||
-        firstSchedule?.title ||
-        t('home.portal.items.schedule.title'),
-      noteText:
-        normalizeText(schedulePreview?.summary) ||
-        (firstSchedule
-          ? [formatScheduleHighlightText(firstSchedule), formatHomeAuthorName(firstSchedule.author)]
-              .filter(Boolean)
-              .join(' · ')
-          : t('home.portal.items.schedule.desc')),
-      noteMeta:
-        normalizeText(schedulePreview?.meta) ||
-        formatScheduleHighlightMeta(firstSchedule) ||
-        getPortalItemCountSummary(scheduleItem) ||
-        t('home.trends.scheduleAction'),
-    },
-    {
-      key: 'community',
-      title: t('home.portal.items.community.title'),
-      desc: t('home.portal.items.community.desc'),
-      to:
-        communityPreview?.deep_link ||
-        firstCommunity?.deep_link ||
-        communityItem?.deep_link ||
-        '/community',
-      icon: MessageSquare,
-      animation: 'sparkle',
-      noteLabel:
-        getPortalPreviewAuthorLabel(communityPreview) ||
-        (firstCommunity
-          ? t('community.recentDiscussions')
-          : getPortalCardAvailabilityLabel(communityItem)),
-      noteTitle:
-        normalizeText(communityPreview?.title) ||
-        firstCommunity?.title ||
-        t('home.portal.items.community.title'),
-      noteText:
-        normalizeText(communityPreview?.summary) ||
-        normalizeText(firstCommunity?.excerpt) ||
-        t('home.portal.items.community.desc'),
-      noteMeta:
-        normalizeText(communityPreview?.meta) ||
-        formatCommunityHighlightMeta(firstCommunity) ||
-        getPortalItemCountSummary(communityItem) ||
-        t('nav.community'),
-    },
-  ]
-})
-
-const bubbleBursts = [
-  {
-    x: 'clamp(-30rem, -31vw, -17rem)',
-    y: 'clamp(-13.2rem, -14dvh, -7.8rem)',
-    introX: 'clamp(-7.2rem, -8vw, -4.6rem)',
-    introY: 'clamp(-4.4rem, -5dvh, -2.7rem)',
-    delay: '0s',
-    scale: '1.02',
-    tailAngle: '-148deg',
-  },
-  {
-    x: 'clamp(-11rem, -12vw, -6rem)',
-    y: 'clamp(-16.8rem, -18dvh, -9.4rem)',
-    introX: 'clamp(-2.8rem, -3.6vw, -1.8rem)',
-    introY: 'clamp(-5.6rem, -6dvh, -3.2rem)',
-    delay: '0.06s',
-    scale: '0.94',
-    tailAngle: '-108deg',
-  },
-  {
-    x: 'clamp(11.5rem, 13vw, 6.6rem)',
-    y: 'clamp(-14.6rem, -15.8dvh, -8.2rem)',
-    introX: 'clamp(3rem, 3.8vw, 2rem)',
-    introY: 'clamp(-4.8rem, -5.4dvh, -3rem)',
-    delay: '0.12s',
-    scale: '0.9',
-    tailAngle: '-28deg',
-  },
-  {
-    x: 'clamp(29rem, 31vw, 17.8rem)',
-    y: 'clamp(-7rem, -8dvh, -4rem)',
-    introX: 'clamp(7.8rem, 8.4vw, 4.8rem)',
-    introY: 'clamp(-2.4rem, -3dvh, -1.5rem)',
-    delay: '0.24s',
-    scale: '0.92',
-    tailAngle: '18deg',
-  },
-  {
-    x: 'clamp(-31.5rem, -32vw, -18.5rem)',
-    y: 'clamp(-1.6rem, -0.4dvh, 0.8rem)',
-    introX: 'clamp(-8rem, -8.8vw, -4.8rem)',
-    introY: 'clamp(-0.2rem, 0.4dvh, 0.8rem)',
-    delay: '0.3s',
-    scale: '0.88',
-    tailAngle: '164deg',
-  },
-  {
-    x: 'clamp(31rem, 31vw, 18.5rem)',
-    y: 'clamp(0.2rem, 1dvh, 1.8rem)',
-    introX: 'clamp(8.2rem, 8.8vw, 5rem)',
-    introY: 'clamp(0.4rem, 0.8dvh, 1rem)',
-    delay: '0.36s',
-    scale: '0.9',
-    tailAngle: '32deg',
-  },
-  {
-    x: 'clamp(-22rem, -23vw, -12rem)',
-    y: 'clamp(4.8rem, 5.5dvh, 3rem)',
-    introX: 'clamp(-5.6rem, -6vw, -3.3rem)',
-    introY: 'clamp(2rem, 2.4dvh, 1.2rem)',
-    delay: '0.42s',
-    scale: '0.92',
-    tailAngle: '120deg',
-  },
-  {
-    x: '0rem',
-    y: 'clamp(5.8rem, 6.4dvh, 3.6rem)',
-    introX: '0rem',
-    introY: 'clamp(2.4rem, 2.8dvh, 1.4rem)',
-    delay: '0.48s',
-    scale: '0.92',
-    tailAngle: '92deg',
-  },
-  {
-    x: 'clamp(21rem, 22vw, 12rem)',
-    y: 'clamp(4.9rem, 5.6dvh, 3rem)',
-    introX: 'clamp(5.2rem, 5.8vw, 3.2rem)',
-    introY: 'clamp(1.8rem, 2.2dvh, 1.1rem)',
-    delay: '0.54s',
-    scale: '0.88',
-    tailAngle: '64deg',
-  },
-  {
-    x: 'clamp(-8rem, -8.8vw, -4.6rem)',
-    y: 'clamp(6.3rem, 7dvh, 3.9rem)',
-    introX: 'clamp(-1.8rem, -2.2vw, -1rem)',
-    introY: 'clamp(2.8rem, 3dvh, 1.6rem)',
-    delay: '0.6s',
-    scale: '0.86',
-    tailAngle: '104deg',
-  },
-]
-
-const bubbleItems = computed(() => {
-  const liveItems = homeAggregate.value?.latest_text_posts ?? []
-  if (liveItems.length > 0) {
-    const editorialPostId = homeAggregate.value?.hero.editorial_card?.post_id ?? null
-    const preferredItems = collectUniqueItems(
-      [
-        liveItems.filter(
-          (item) =>
-            !spotlightTextPostIds.value.has(item.post_id) && item.post_id !== editorialPostId
-        ),
-        liveItems,
-      ],
-      bubbleBursts.length,
-      (item) => item.post_id
-    )
-
-    return preferredItems.map((item, index) => {
-      const orbit = bubbleBursts[index]
-      const post = mapLatestTextItemToPost(item)
-
-      return {
-        post,
-        thumbnail: null,
-        text: formatBubbleText(post),
-        author: formatHomeAuthorName(item.author) || t('home.hero.fallbackAuthor'),
-        time:
-          normalizeText(item.time_hint) ||
-          (item.published_at ? formatRelativeTime(item.published_at, t) : ''),
-        style: {
-          '--bubble-x': orbit.x,
-          '--bubble-y': orbit.y,
-          '--bubble-x-intro': orbit.introX,
-          '--bubble-y-intro': orbit.introY,
-          '--bubble-delay': orbit.delay,
-          '--bubble-scale': orbit.scale,
-          '--bubble-tail-angle': orbit.tailAngle,
-        } as Record<string, string>,
-      }
-    })
-  }
-
-  const items = collectUniqueItems(
-    [
-      textPosts.value.filter(
-        (post) =>
-          !spotlightTextPostIds.value.has(post.id) && post.id !== (latestTextPost.value?.id ?? '')
-      ),
-      textPosts.value,
-    ],
-    bubbleBursts.length,
-    (post) => post.id
-  )
-  return items.map((post, index) => {
-    const orbit = bubbleBursts[index]
-    return {
-      post,
-      thumbnail: post.thumbnail_url ? normalizeToThumbnailUrl(post.thumbnail_url, 'medium') : null,
-      text: formatBubbleText(post),
-      author: formatAuthorName(post) || t('home.hero.fallbackAuthor'),
-      time: post.published_at ? formatRelativeTime(post.published_at, t) : '',
-      style: {
-        '--bubble-x': orbit.x,
-        '--bubble-y': orbit.y,
-        '--bubble-x-intro': orbit.introX,
-        '--bubble-y-intro': orbit.introY,
-        '--bubble-delay': orbit.delay,
-        '--bubble-scale': orbit.scale,
-        '--bubble-tail-angle': orbit.tailAngle,
-      } as Record<string, string>,
-    }
-  })
-})
-
-const rawStoryCards = computed<StoryDeckCard[]>(() => {
-  const liveItems = homeAggregate.value?.story_deck.items ?? []
-  if (liveItems.length > 0) {
-    return liveItems.slice(0, 5).map((item) => {
-      const post = mapStoryDeckItemToPost(item)
-      const author = formatHomeAuthorName(item.author) || t('home.hero.fallbackAuthor')
-      return {
-        post,
-        thumbnail: mapHomeImageUrl(item.image),
-        eyebrow: normalizeText(item.eyebrow) || author,
-        title: normalizeText(item.title) || formatStoryTitle(post),
-        excerpt: normalizeText(item.summary) || formatStoryExcerpt(post),
-        author,
-        time: resolveStoryDeckTime(item),
-        detailLink: resolvePostLink(item.deep_link, item.post_id),
-      }
-    })
-  }
-
-  const source = mediaPosts.value.length > 0 ? mediaPosts.value : homeSourcePosts.value
-  return source.slice(0, 5).map((post) => {
-    const firstTag = normalizeTag(post.tags?.[0] ?? '')
-    const author = formatAuthorName(post) || t('home.hero.fallbackAuthor')
-    return {
-      post,
-      thumbnail: post.thumbnail_url ? normalizeToThumbnailUrl(post.thumbnail_url, 'large') : null,
-      eyebrow: firstTag ? `#${firstTag}` : author,
-      title: formatStoryTitle(post),
-      excerpt: formatStoryExcerpt(post),
-      author,
-      time: post.published_at ? formatRelativeTime(post.published_at, t) : '',
-      detailLink: `/post/${post.id}`,
-    }
-  })
-})
-
-const storyCards = computed(() =>
-  collectUniqueItems(
-    [
-      rawStoryCards.value.filter((card) => !featuredRailPostIds.value.has(card.post.id)),
-      rawStoryCards.value,
-    ],
-    5,
-    (card) => card.post.id
-  )
-)
-const storyCardIds = computed(() => new Set(storyCards.value.map((card) => card.post.id)))
-
-const storyCardCount = computed(() => storyCards.value.length)
 const storyTravel = computed(() => Math.max(storyCardCount.value - 1, 0))
 const storyProgressIndex = computed(() => storyProgress.value * storyTravel.value)
 const storyMergeProgress = computed(() => clamp((storyProgress.value - 0.86) / 0.14))
@@ -2028,164 +1194,12 @@ const homePageMotionStyle = computed<Record<string, string>>(() => {
   }
 })
 
-const heroEditorialTitle = computed(() => {
-  const spotlight = homeAggregate.value?.hero.spotlight
-  return (
-    normalizeText(spotlight?.title) ||
-    heroHighlightCards.value[0]?.title ||
-    t('home.hero.editorialFallbackTitle')
-  )
-})
-
-const heroEditorialText = computed(() => {
-  const spotlight = homeAggregate.value?.hero.spotlight
-  const spotlightSummary = normalizeText(spotlight?.summary)
-  if (spotlightSummary) {
-    return spotlightSummary
-  }
-
-  const author = heroHighlightCards.value[0]?.author || t('home.hero.fallbackAuthor')
-  const tag = heroTags.value[0]
-  return tag
-    ? t('home.hero.editorialTextWithTag', { author, tag: `#${tag}` })
-    : t('home.hero.editorialText', { author })
-})
-
-const heroSpotlightTag = computed(() => {
-  const spotlight = homeAggregate.value?.hero.spotlight
-  return normalizeHomeTag(spotlight?.primary_tag) || heroTags.value[0] || ''
-})
-
-const heroSpotlightMeta = computed(() => {
-  const spotlight = homeAggregate.value?.hero.spotlight
-  return (
-    formatHomeAuthorName(spotlight?.author) ||
-    heroHighlightCards.value[0]?.author ||
-    t('home.hero.fallbackAuthor')
-  )
-})
-
-const heroStats = computed(() => {
-  const liveStats = homeAggregate.value?.hero.stats ?? []
-  if (liveStats.length > 0) {
-    return liveStats.slice(0, 3).map((stat) => ({
-      key: stat.key,
-      label: getHeroStatLabel(stat.key, stat.label),
-      value: stat.display_value || formatMetricValue(stat.value),
-      note: getHeroStatHint(stat.key, stat.hint),
-    }))
-  }
-
-  return [
-    {
-      key: 'updates',
-      label: t('home.hero.stats.updates'),
-      value: formatMetricValue(total.value || homeSourcePosts.value.length),
-      note: t('home.hero.stats.updatesHint'),
-    },
-    {
-      key: 'authors',
-      label: t('home.hero.stats.authors'),
-      value: formatMetricValue(uniqueAuthorCount.value),
-      note: t('home.hero.stats.authorsHint'),
-    },
-    {
-      key: 'tags',
-      label: t('home.hero.stats.tags'),
-      value: formatMetricValue(trendingTags.value.length),
-      note: t('home.hero.stats.tagsHint'),
-    },
-  ]
-})
-
-const resolvedScheduleHighlights = computed(() => {
-  if (homeScheduleHighlights.value.length > 0) {
-    return homeScheduleHighlights.value
-  }
-  return homeAggregate.value?.trends.schedules ?? []
-})
-const resolvedCommunityHighlights = computed(() => {
-  if (homeCommunityHighlights.value.length > 0) {
-    return homeCommunityHighlights.value
-  }
-  return homeAggregate.value?.trends.community ?? []
-})
-const communityHighlightPreview = computed(() => resolvedCommunityHighlights.value[0] ?? null)
-
-const scheduleFallbackCard = computed(() => {
-  const scheduleItem = portalItemMap.value.get('schedule')
-  return {
-    label: t('home.trends.scheduleTitle'),
-    title: getPortalCardAvailabilityLabel(scheduleItem),
-    text: t('home.portal.items.schedule.desc'),
-    meta: getPortalItemCountSummary(scheduleItem) || t('home.trends.scheduleAction'),
-  }
-})
-
-const primaryScheduleHighlights = computed(() => resolvedScheduleHighlights.value.slice(0, 2))
-
-const trendsScheduleCompanion = computed(() => {
-  if (primaryScheduleHighlights.value.length !== 1) return null
-
-  const community = communityHighlightPreview.value
-  if (community) {
-    return {
-      kind: 'community',
-      label: t('nav.community'),
-      title: community.title,
-      text: community.excerpt,
-      meta: formatCommunityHighlightMeta(community),
-      to: community.deep_link || '/community',
-    }
-  }
-
-  return null
-})
-
-const quickFilters = computed(() => [
-  { key: 'newest', label: t('explore.newest'), to: { name: 'explore' } },
-  {
-    key: 'popular',
-    label: t('explore.popular'),
-    to: { name: 'explore', query: { sort: 'popular' } },
-  },
-  {
-    key: 'trending',
-    label: t('explore.trending'),
-    to: { name: 'explore', query: { sort: 'trending' } },
-  },
-])
-
 watchSyncEffect(() => {
   // 确保全量加载和分页加载状态不会并存，减少 UI 状态抖动。
   if (isLoading.value && isLoadingMore.value) {
     isLoadingMore.value = false
   }
 })
-
-watch(
-  [heroEditorialRevealKey, shouldAnimate],
-  ([key, animate]) => {
-    clearHeroEditorialRevealTimer()
-
-    if (!key) {
-      heroEditorialVisible.value = false
-      return
-    }
-
-    if (!animate || typeof window === 'undefined') {
-      heroEditorialVisible.value = true
-      return
-    }
-
-    heroEditorialVisible.value = false
-    heroEditorialRevealTimer = window.setTimeout(() => {
-      heroEditorialVisible.value = true
-      heroEditorialRevealTimer = null
-    }, 220)
-  },
-  { immediate: true }
-)
 
 onActivated(() => {
   scenesEnabled = true
@@ -2237,7 +1251,7 @@ function applyHomeAggregate(
   homeScheduleHighlights.value = payload.trends.schedules ?? []
   homeCommunityHighlights.value = payload.trends.community ?? []
 
-  const normalizedPosts = buildHomePostsFromAggregate(payload).filter(
+  const normalizedPosts = buildHomePostsFromAggregate(payload, t).filter(
     (post) => !isFilteredAuthor(post.author_name)
   )
 
@@ -2326,380 +1340,6 @@ async function fetchHomeData(): Promise<boolean> {
   }
 }
 
-function normalizeTag(tag: string): string {
-  return String(tag ?? '')
-    .replace(/^#/, '')
-    .trim()
-}
-
-function normalizeText(value: string | null | undefined): string {
-  return String(value ?? '')
-    .replace(/\s+/g, ' ')
-    .trim()
-}
-
-function normalizeHomeTag(tag: HomeTagBrief | string | null | undefined): string {
-  if (typeof tag === 'string') return normalizeTag(tag)
-  return normalizeTag(tag?.name ?? tag?.display_text ?? '')
-}
-
-function formatHomeAuthorName(author: HomeAuthorBrief | null | undefined): string {
-  if (!author) return ''
-  const displayName = normalizeText(author.display_name)
-  if (displayName) return displayName
-  const username = normalizeText(author.username)
-  if (!username) return ''
-  return username.startsWith('@') ? username : `@${username}`
-}
-
-function mapHomeImageUrl(
-  image: { url?: string | null; thumbnail_url?: string | null } | null | undefined,
-  size: 'small' | 'medium' | 'large' = 'large'
-): string | null {
-  const source = normalizeText(image?.url) || normalizeText(image?.thumbnail_url)
-  if (!source) return null
-  return normalizeToThumbnailUrl(source, size) || source
-}
-
-function resolvePostIdFromLink(link: string | null | undefined): string | null {
-  const value = normalizeText(link)
-  if (!value) return null
-  const match = value.match(/\/post\/([^/?#]+)/)
-  return match?.[1] ?? null
-}
-
-function resolvePostLink(
-  link: string | null | undefined,
-  fallbackId: string | null | undefined
-): string {
-  const value = normalizeText(link)
-  if (value) return value
-  const fallback = normalizeText(fallbackId)
-  return fallback ? `/post/${fallback}` : '/explore'
-}
-
-function normalizePlatform(value: string | null | undefined, fallback = 'story'): string {
-  const normalized = normalizeText(value).toLowerCase()
-  if (!normalized) return fallback
-
-  const mapped: Record<string, string> = {
-    x: 'twitter',
-    twitter: 'twitter',
-    youtube: 'youtube',
-    instagram: 'instagram',
-    tiktok: 'tiktok',
-    bilibili: 'bilibili',
-    text: 'text',
-    story: 'story',
-  }
-
-  return mapped[normalized] ?? normalized
-}
-
-function getPrimaryFeaturedAuthor(
-  item: HomeFeaturedItem | null | undefined
-): HomeAuthorBrief | null {
-  if (!item) return null
-  return item.related_authors?.[0] ?? item.related_posts?.[0]?.author ?? null
-}
-
-function mapLatestTextItemToPost(item: HomeLatestTextPostItem): PostListItem {
-  const excerpt = normalizeText(item.excerpt)
-  const authorName = formatHomeAuthorName(item.author)
-  return {
-    id: item.post_id,
-    platform: 'text',
-    title: excerpt.slice(0, 36) || authorName || t('home.hero.fallbackTitle'),
-    content: excerpt,
-    description: excerpt,
-    published_at: item.published_at ?? undefined,
-    view_count: 0,
-    like_count: 0,
-    comment_count: 0,
-    media_count: 0,
-    author_name: authorName || undefined,
-    author_id: item.author?.id ?? undefined,
-    author_username: item.author?.username ?? undefined,
-    author_avatar_url: item.author?.avatar_url ?? undefined,
-    post_url: resolvePostLink(item.deep_link, item.post_id),
-    tags: (item.tags ?? []).map((tag) => normalizeHomeTag(tag)).filter(Boolean),
-  }
-}
-
-function mapFeaturedItemToPost(item: HomeFeaturedItem): PostListItem {
-  const author = getPrimaryFeaturedAuthor(item)
-  const postId =
-    resolvePostIdFromLink(item.primary_cta?.target) ||
-    item.related_posts?.[0]?.post_id ||
-    item.related_posts?.[0]?.id ||
-    item.id
-
-  return {
-    id: postId,
-    platform: normalizePlatform(item.kicker, 'story'),
-    title: normalizeText(item.title) || t('home.hero.fallbackTitle'),
-    content: normalizeText(item.summary || item.subtitle) || undefined,
-    description: normalizeText(item.summary || item.subtitle) || undefined,
-    thumbnail_url: mapHomeImageUrl(item.cover, 'large'),
-    published_at: item.related_posts?.[0]?.published_at ?? undefined,
-    view_count: 0,
-    like_count: 0,
-    comment_count: 0,
-    media_count: item.cover ? 1 : 0,
-    media_type: item.cover ? 'image' : undefined,
-    author_name: formatHomeAuthorName(author) || undefined,
-    author_id: author?.id ?? undefined,
-    author_username: author?.username ?? undefined,
-    author_avatar_url: author?.avatar_url ?? undefined,
-    post_url: resolvePostLink(item.primary_cta?.target, postId),
-  }
-}
-
-function mapStoryDeckItemToPost(item: HomeStoryDeckItem): PostListItem {
-  const authorName = formatHomeAuthorName(item.author)
-  const rawEyebrow = normalizeText(item.eyebrow)
-  const firstTag = rawEyebrow.startsWith('#') ? normalizeTag(rawEyebrow) : ''
-  return {
-    id: item.post_id,
-    platform: 'story',
-    title: normalizeText(item.title) || t('home.hero.fallbackTitle'),
-    content: normalizeText(item.summary) || undefined,
-    description: normalizeText(item.summary) || undefined,
-    thumbnail_url: mapHomeImageUrl(item.image, 'large'),
-    published_at: item.published_at ?? undefined,
-    view_count: 0,
-    like_count: 0,
-    comment_count: 0,
-    media_count: item.image ? 1 : 0,
-    media_type: item.image ? 'image' : undefined,
-    author_name: authorName || undefined,
-    author_id: item.author?.id ?? undefined,
-    author_username: item.author?.username ?? undefined,
-    author_avatar_url: item.author?.avatar_url ?? undefined,
-    post_url: resolvePostLink(item.deep_link, item.post_id),
-    tags: firstTag ? [firstTag] : undefined,
-  }
-}
-
-function buildHomePostsFromAggregate(payload: HomeAggregateResponse): PostListItem[] {
-  const deduped = new Map<string, PostListItem>()
-
-  for (const item of payload.latest_text_posts ?? []) {
-    const post = mapLatestTextItemToPost(item)
-    deduped.set(post.id, post)
-  }
-
-  for (const item of payload.featured.items ?? []) {
-    const post = mapFeaturedItemToPost(item)
-    deduped.set(post.id, post)
-  }
-
-  for (const item of payload.story_deck.items ?? []) {
-    const post = mapStoryDeckItemToPost(item)
-    deduped.set(post.id, post)
-  }
-
-  const spotlight = payload.hero.spotlight
-  if (spotlight?.post_id) {
-    const spotlightPost: PostListItem = {
-      id: spotlight.post_id,
-      platform: 'story',
-      title: normalizeText(spotlight.title) || t('home.hero.fallbackTitle'),
-      content: normalizeText(spotlight.summary) || undefined,
-      description: normalizeText(spotlight.summary) || undefined,
-      thumbnail_url: mapHomeImageUrl(spotlight.image, 'large'),
-      published_at: undefined,
-      view_count: 0,
-      like_count: 0,
-      comment_count: 0,
-      media_count: spotlight.image ? 1 : 0,
-      media_type: spotlight.image ? 'image' : undefined,
-      author_name: formatHomeAuthorName(spotlight.author) || undefined,
-      author_id: spotlight.author?.id ?? undefined,
-      author_username: spotlight.author?.username ?? undefined,
-      author_avatar_url: spotlight.author?.avatar_url ?? undefined,
-      post_url: resolvePostLink(spotlight.deep_link, spotlight.post_id),
-      tags: spotlight.primary_tag ? [normalizeHomeTag(spotlight.primary_tag)] : undefined,
-    }
-    deduped.set(spotlightPost.id, spotlightPost)
-  }
-
-  return Array.from(deduped.values())
-}
-
-function resolveStoryDeckTime(item: HomeStoryDeckItem): string {
-  if (item.published_at) return formatRelativeTime(item.published_at, t)
-  const meta = normalizeText(item.meta)
-  if (!meta) return ''
-  const parts = meta
-    .split('·')
-    .map((part) => part.trim())
-    .filter(Boolean)
-  return parts.length > 1 ? parts[parts.length - 1] || '' : ''
-}
-
-function getScheduleCategoryLabel(category: string): string {
-  const normalized = normalizeText(category)
-  if (!normalized) return ''
-  if (
-    normalized === 'live' ||
-    normalized === 'media' ||
-    normalized === 'birth' ||
-    normalized === 'other'
-  ) {
-    return t(`schedule.categories.${normalized}`)
-  }
-  return normalized
-}
-
-function formatScheduleHighlightText(item: HomeScheduleHighlight | null | undefined): string {
-  if (!item) return ''
-  return getScheduleCategoryLabel(item.category)
-}
-
-function formatScheduleHighlightMeta(item: HomeScheduleHighlight | null | undefined): string {
-  if (!item) return ''
-  const date = new Date(item.start_date)
-  if (Number.isNaN(date.getTime())) return ''
-  return item.is_all_day
-    ? date.toLocaleDateString(locale.value, { month: 'short', day: 'numeric' })
-    : date.toLocaleString(locale.value, {
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      })
-}
-
-function formatCommunityHighlightMeta(item: HomeCommunityHighlight | null | undefined): string {
-  if (!item) return ''
-  return `${item.comment_count} · ${formatRelativeTime(item.updated_at, t)}`
-}
-
-function getPortalPreviewAuthorLabel(preview: HomePortalPreview | null | undefined): string {
-  if (!preview?.author) return ''
-  if (typeof preview.author === 'string') return normalizeText(preview.author)
-  return formatHomeAuthorName(preview.author)
-}
-
-function getPortalItemLabel(key: 'authors' | 'schedule' | 'community'): string {
-  switch (key) {
-    case 'authors':
-      return t('home.portal.items.authors.title')
-    case 'schedule':
-      return t('home.portal.items.schedule.title')
-    case 'community':
-      return t('home.portal.items.community.title')
-  }
-}
-
-function getPortalItemCountText(item: HomePortalItem | null | undefined): string {
-  const displayCount = normalizeText(item?.display_count)
-  if (displayCount) return displayCount
-  return formatMetricValue(item?.count ?? 0)
-}
-
-function getPortalItemCountSummary(item: HomePortalItem | null | undefined): string {
-  if (!item) return ''
-  return t('home.portal.publicCount', { count: getPortalItemCountText(item) })
-}
-
-function getPortalCardAvailabilityLabel(item: HomePortalItem | null | undefined): string {
-  return (item?.count ?? 0) > 0 ? getPortalItemCountSummary(item) : t('home.portal.emptyState')
-}
-
-function getHeroStatLabel(key: string, fallback: string): string {
-  switch (key) {
-    case 'updates':
-      return t('home.hero.stats.updates')
-    case 'authors':
-      return t('home.hero.stats.authors')
-    case 'tags':
-      return t('home.hero.stats.tags')
-    default:
-      return fallback
-  }
-}
-
-function getHeroStatHint(key: string, fallback: string): string {
-  switch (key) {
-    case 'updates':
-      return t('home.hero.stats.updatesHint')
-    case 'authors':
-      return t('home.hero.stats.authorsHint')
-    case 'tags':
-      return t('home.hero.stats.tagsHint')
-    default:
-      return fallback
-  }
-}
-
-function hasMedia(post: PostListItem): boolean {
-  if (post.thumbnail_url) return true
-  if ((post.media_count ?? 0) > 0) return true
-  if (post.media_type === 'video' || post.media_type === 'image') return true
-  return false
-}
-
-function isTextPost(post: PostListItem): boolean {
-  if (hasMedia(post)) return false
-  const candidate = normalizeText(post.content ?? post.description ?? post.title)
-  return Boolean(candidate)
-}
-
-function isMediaPost(post: PostListItem): boolean {
-  return hasMedia(post)
-}
-
-function formatBubbleText(post: PostListItem): string {
-  const candidate = normalizeText(post.content ?? post.description ?? post.title)
-  if (!candidate) return t('home.hero.fallbackTitle')
-  return candidate.length > 90 ? `${candidate.slice(0, 90)}…` : candidate
-}
-
-function formatStoryTitle(post: PostListItem): string {
-  const candidate = normalizeText(post.title) || normalizeText(post.description)
-  const fallback = t('home.hero.fallbackTitle')
-  const text = candidate || fallback
-  return text.length > 52 ? `${text.slice(0, 52)}…` : text
-}
-
-function formatStoryExcerpt(post: PostListItem): string {
-  const candidate = normalizeText(post.description ?? post.content ?? post.title)
-  if (!candidate) return t('home.hero.editorialFallbackTitle')
-  return candidate.length > 160 ? `${candidate.slice(0, 160)}…` : candidate
-}
-
-function formatAuthorName(post: PostListItem): string {
-  const name = normalizeText(post.author_name)
-  if (name) return name
-  const username = normalizeText(post.author_username)
-  if (!username) return ''
-  return username.startsWith('@') ? username : `@${username}`
-}
-
-function formatHeroTitle(post: PostListItem): string {
-  const candidate = normalizeText(post.title) || normalizeText(post.description)
-  const fallback = t('home.hero.fallbackTitle')
-  const text = candidate || fallback
-  return text.length > 28 ? `${text.slice(0, 28)}…` : text
-}
-
-function formatHeroAuthor(post: PostListItem): string {
-  return formatAuthorName(post) || t('home.hero.fallbackAuthor')
-}
-
-function formatMetricValue(value: number): string {
-  if (value >= 1000) {
-    return `${(value / 1000).toFixed(1).replace(/\.0$/, '')}k`
-  }
-  return String(Math.max(0, value))
-}
-
-function clamp(value: number, min = 0, max = 1): number {
-  return Math.min(max, Math.max(min, value))
-}
-
 function resolveSceneProgress(element: HTMLElement | null): number {
   if (typeof window === 'undefined' || !element) return 0
   const travel = Math.max(element.offsetHeight - window.innerHeight, 1)
@@ -2712,10 +1352,12 @@ function syncSceneProgressFromViewport() {
 
   railProgress.value =
     railSlideCount.value > 1
-      ? resolveSceneProgress(featuredSectionRef.value)
+      ? resolveSceneProgress(resolveSectionElement(featuredSectionRef.value))
       : clamp(railProgress.value)
   storyProgress.value =
-    storyCardCount.value > 1 ? resolveSceneProgress(storyDeckRef.value) : clamp(storyProgress.value)
+    storyCardCount.value > 1
+      ? resolveSceneProgress(resolveSectionElement(storyDeckRef.value))
+      : clamp(storyProgress.value)
 }
 
 function cleanupScrollTrigger(trigger: ScrollTrigger | null) {
@@ -2743,12 +1385,6 @@ function clearScreenTransitionTimer() {
   if (typeof window === 'undefined' || screenTransitionTimer === null) return
   window.clearTimeout(screenTransitionTimer)
   screenTransitionTimer = null
-}
-
-function clearHeroEditorialRevealTimer() {
-  if (typeof window === 'undefined' || heroEditorialRevealTimer === null) return
-  window.clearTimeout(heroEditorialRevealTimer)
-  heroEditorialRevealTimer = null
 }
 
 function setRailNavbarLock(locked: boolean) {
@@ -2806,9 +1442,9 @@ function updateViewportSceneBlend() {
   syncSceneProgressFromViewport()
 
   const nextBlend = {
-    heroRail: measureViewportBlend(featuredSectionRef.value, 1.04, 0.16),
-    railPosts: measureViewportBlend(postsSectionRef.value, 1.04, 0.18),
-    postsStory: measureViewportBlend(storyDeckRef.value, 1.04, 0.18),
+    heroRail: measureViewportBlend(resolveSectionElement(featuredSectionRef.value), 1.04, 0.16),
+    railPosts: measureViewportBlend(resolveSectionElement(postsSectionRef.value), 1.04, 0.18),
+    postsStory: measureViewportBlend(resolveSectionElement(storyDeckRef.value), 1.04, 0.18),
     storyFooter: measureViewportBlend(
       document.querySelector<HTMLElement>('footer.footer'),
       1.04,
@@ -2817,9 +1453,11 @@ function updateViewportSceneBlend() {
   }
 
   const footerBlendProgress = nextBlend.storyFooter > 0.04 ? nextBlend.storyFooter : 0
+  const postsElement = resolveSectionElement(postsSectionRef.value)
+  const featuredElement = resolveSectionElement(featuredSectionRef.value)
   const railLockBoundary =
-    postsSectionRef.value?.offsetTop ??
-    (featuredSectionRef.value?.offsetTop ?? 0) + (featuredSectionRef.value?.offsetHeight ?? 0)
+    postsElement?.offsetTop ??
+    (featuredElement?.offsetTop ?? 0) + (featuredElement?.offsetHeight ?? 0)
   const railLockActive = window.scrollY < Math.max(railLockBoundary - window.innerHeight * 0.08, 0)
 
   viewportSceneBlend.value = {
@@ -2918,9 +1556,9 @@ function observeSceneLayout() {
   disconnectSceneLayoutObserver()
 
   const trackedElements = [
-    featuredSectionRef.value,
-    postsSectionRef.value,
-    storyDeckRef.value,
+    resolveSectionElement(featuredSectionRef.value),
+    resolveSectionElement(postsSectionRef.value),
+    resolveSectionElement(storyDeckRef.value),
   ].filter((element): element is HTMLElement => Boolean(element))
 
   if (trackedElements.length === 0) return
@@ -2967,7 +1605,7 @@ function setupSceneTriggers() {
 
   if (typeof window === 'undefined' || !scenesEnabled) return
 
-  const postsElement = postsSectionRef.value
+  const postsElement = resolveSectionElement(postsSectionRef.value)
   if (postsElement) {
     bubbleBurstTrigger = ScrollTrigger.create({
       trigger: postsElement,
@@ -2989,7 +1627,7 @@ function setupSceneTriggers() {
     })
   }
 
-  const storyElement = storyDeckRef.value
+  const storyElement = resolveSectionElement(storyDeckRef.value)
   if (storyElement && storyCardCount.value > 1) {
     storyDeckTrigger = ScrollTrigger.create({
       trigger: storyElement,
@@ -3114,7 +1752,10 @@ function goToSchedule() {
 }
 
 function scrollToFeatured() {
-  featuredSectionRef.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  resolveSectionElement(featuredSectionRef.value)?.scrollIntoView({
+    behavior: 'smooth',
+    block: 'start',
+  })
 }
 
 function isTrendAuthorAvatarFailed(key: string): boolean {
