@@ -3,6 +3,8 @@
  * 跟踪 Core Web Vitals 和自定义性能指标
  */
 
+import { reportClientPerformance } from './clientReporter'
+
 interface PerformanceMetrics {
   lcp?: number // Largest Contentful Paint
   fid?: number // First Input Delay
@@ -302,13 +304,17 @@ export function initPerformanceMonitoring(): void {
   visibilityHandler = () => {
     if (document.visibilityState === 'hidden') {
       const finalMetrics = getMetrics()
+      const performanceScore = getPerformanceScore()
 
       if (import.meta.env.DEV) {
         console.log('Final Performance Metrics:', finalMetrics)
       }
 
-      // 生产环境可以在这里上报到分析服务
-      // sendToAnalytics(finalMetrics)
+      reportClientPerformance('web-vitals.final', {
+        ...finalMetrics,
+        score: performanceScore.score,
+        grade: performanceScore.grade,
+      })
     }
   }
 

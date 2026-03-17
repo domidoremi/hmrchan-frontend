@@ -7,7 +7,7 @@
  * 3. Service Worker 在空闲时注册
  */
 
-import { createApp, vaporInteropPlugin } from 'vue'
+import { createApp, vaporInteropPlugin, watch } from 'vue'
 import { createPinia } from 'pinia'
 import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
 
@@ -16,6 +16,8 @@ import router from './router'
 import i18n, { preloadActiveLocale } from './i18n'
 
 import './styles/index.css'
+import { canTrackAnalytics, updateAnalyticsConsent } from './utils/analyticsConsent'
+import { reportClientError, reportClientEvent } from './utils/clientReporter'
 
 // 生产环境控制台保护（防止 Self-XSS 攻击）
 import { initConsoleGuard } from './utils/consoleGuard'
@@ -79,6 +81,13 @@ function reloadOnceForChunkError(reason: string): void {
   if (import.meta.env.DEV) {
     console.warn('[Chunk Recovery] Reloading due to chunk error:', reason)
   }
+  reportClientEvent(
+    'chunk.reload_requested',
+    {
+      reason,
+    },
+    { severity: 'warn' }
+  )
   window.location.reload()
 }
 
@@ -110,8 +119,13 @@ app.config.errorHandler = (err, instance, info) => {
     console.error('Info:', info)
   }
 
-  // 可以在这里上报错误到监控服务
-  // reportError({ error: err, component: instance?.$options.name, info })
+  reportClientError('vue.error', err, {
+    component:
+      instance && '$options' in instance
+        ? ((instance.$options as { name?: string } | undefined)?.name ?? 'anonymous')
+        : 'anonymous',
+    info,
+  })
 }
 
 // 开发环境：打印 Vue 警告详情
@@ -143,7 +157,9 @@ if (import.meta.hot) {
 // 初始化认证状态（异步：需要从安全存储解密 token）
 // 必须在 mount 前完成，确保路由守卫能正确判断认证状态
 import { useAuthStore } from './stores/auth'
-const authStore = useAuthStore()
+import { useSettingsStore } from './stores'
+const authStore = useAuthStore(pinia)
+const settingsStore = useSettingsStore(pinia)
 const disposeAuthListener = authStore.setupAuthListener()
 if (import.meta.hot) {
   import.meta.hot.dispose(() => {
@@ -152,10 +168,27 @@ if (import.meta.hot) {
   })
 }
 
+watch(
+  () => ({
+    cookieConsent: settingsStore.settings.cookieConsent,
+    analyticsEnabled: settingsStore.settings.analyticsEnabled,
+    performanceCookiesEnabled: settingsStore.settings.performanceCookiesEnabled,
+  }),
+  (snapshot) => {
+    updateAnalyticsConsent(snapshot)
+    if (canTrackAnalytics()) {
+      initCloudflareAnalytics()
+    } else {
+      removeCloudflareAnalytics()
+    }
+  },
+  { immediate: true, deep: true }
+)
+
 // 初始化设备指纹（异步，不阻塞应用启动）
 import { initFingerprint } from './utils/fingerprint'
-initFingerprint().catch(() => {
-  // 指纹初始化失败不影响应用运行
+initFingerprint().catch((error) => {
+  reportClientError('fingerprint.init_failed', error, undefined, { severity: 'warn' })
 })
 
 const enableDataPrefetch = import.meta.env.VITE_ENABLE_DATA_PREFETCH !== 'false'
@@ -164,13 +197,16 @@ const enableDeferredAnimationStyles =
 
 // 客户端安全改为按需初始化，避免公共页面首屏自动弹出 challenge；
 // 认证恢复阶段若真的需要签名，请求层会自行完成初始化。
-void authStore.ensureAuthInitialized().catch(() => {})
+void authStore.ensureAuthInitialized().catch((error) => {
+  reportClientError('auth.init_failed', error, undefined, { severity: 'warn' })
+})
 
 void preloadActiveLocale()
   .catch((error) => {
     if (import.meta.env.DEV) {
       console.warn('[i18n] Failed to preload active locale:', error)
     }
+    reportClientError('i18n.preload_failed', error, undefined, { severity: 'warn' })
   })
   .finally(() => {
     app.mount('#app-root')
@@ -211,6 +247,7 @@ function initCloudflareAnalytics(): void {
   if (!import.meta.env.PROD) return
   if (!CF_BEACON_TOKEN) return
   if (typeof document === 'undefined') return
+  if (!canTrackAnalytics()) return
   if (document.querySelector('script[data-cf-beacon]')) return
 
   const script = document.createElement('script')
@@ -218,6 +255,13 @@ function initCloudflareAnalytics(): void {
   script.src = 'https://static.cloudflareinsights.com/beacon.min.js'
   script.setAttribute('data-cf-beacon', JSON.stringify({ token: CF_BEACON_TOKEN }))
   document.body.appendChild(script)
+  reportClientEvent('analytics.cloudflare.injected')
+}
+
+function removeCloudflareAnalytics(): void {
+  if (typeof document === 'undefined') return
+  const existingScript = document.querySelector('script[data-cf-beacon]')
+  existingScript?.parentElement?.removeChild(existingScript)
 }
 
 scheduleTask(
@@ -234,7 +278,13 @@ scheduleTask(
   () => {
     if (scheduledTasksDisposed) return
     import('./utils/cache').then(({ registerServiceWorker }) => {
-      registerServiceWorker()
+      registerServiceWorker().then((result) => {
+        if (!result.success && result.error) {
+          reportClientError('sw.register_failed', result.error, undefined, { severity: 'warn' })
+        } else if (result.success) {
+          reportClientEvent('sw.registered')
+        }
+      })
       // 初始化 SW 更新检测器
       import('./utils/sw-update-checker').then(
         ({ initSwUpdateChecker, disposeSwUpdateChecker }) => {
@@ -317,11 +367,18 @@ function triggerPrefetchPipeline(reason: 'intent' | 'fallback'): void {
             if (import.meta.env.DEV || import.meta.env['VITE_ENABLE_DEBUG'] === 'true') {
               console.log('[Prefetch] Popular content prefetched:', result)
             }
+            reportClientEvent('prefetch.popular_content_completed', result)
           })
           .catch((error) => {
             if (import.meta.env.DEV || import.meta.env['VITE_ENABLE_DEBUG'] === 'true') {
               console.warn('[Prefetch] Popular content prefetch skipped:', error)
             }
+            reportClientError(
+              'prefetch.popular_content_failed',
+              error,
+              { reason },
+              { severity: 'warn' }
+            )
           })
       })
     },
