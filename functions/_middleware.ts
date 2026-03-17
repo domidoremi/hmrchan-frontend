@@ -1,13 +1,19 @@
 /**
- * Cloudflare Pages Middleware — 动态 CSP nonce 注入
+ * Cloudflare Pages Middleware
  *
- * 对 HTML 响应：
- * 1. 生成随机 nonce
- * 2. 用 HTMLRewriter 给所有 <script> 标签注入 nonce 属性
- * 3. 只为 HTML 文档注入安全头，避免与 /api 响应头重复叠加
- *
- * 非 HTML 响应直接透传，零开销。
+ * 作用：
+ * 1. 为 HTML 响应注入动态 CSP nonce 与安全头
+ * 2. 为高价值公开路由输出服务端首包 meta/canonical/骨架内容
+ * 3. 为未知导航路由返回真实 404，避免所有导航都回 200 的软 404
  */
+
+import {
+  DEFAULT_OG_IMAGE,
+  resolveCanonicalUrl,
+  renderPrerenderShell,
+  resolveStructuredDataPayload,
+} from '@/edge/htmlDocument'
+import { resolveHtmlDocumentWithEdgeData } from '@/edge/detailDocumentResolver'
 
 /** 生成 16 字节随机 nonce（Base64 编码） */
 function generateNonce(): string {
@@ -16,13 +22,6 @@ function generateNonce(): string {
   return btoa(String.fromCharCode(...bytes))
 }
 
-/**
- * 构建带 nonce 的 CSP
- *
- * - `'nonce-xxx'`: 允许带此 nonce 的内联/外部脚本执行
- * - `'strict-dynamic'`: 被信任脚本动态加载的子脚本自动信任
- * - 保留域名白名单作为不支持 strict-dynamic 的浏览器的 fallback
- */
 function buildCSP(nonce: string): string {
   return [
     "default-src 'self'",
@@ -53,32 +52,115 @@ const HTML_SECURITY_HEADERS = {
     'camera=(), microphone=(), geolocation=(), fullscreen=(self), payment=(), accelerometer=(), gyroscope=(), magnetometer=(), midi=(), usb=(), display-capture=(), screen-wake-lock=(), xr-spatial-tracking=(), clipboard-read=(), clipboard-write=(self), autoplay=(self)',
 } as const
 
+class ScriptNonceHandler {
+  constructor(private readonly nonce: string) {}
+
+  element(el: Element) {
+    if (!el.getAttribute('nonce')) {
+      el.setAttribute('nonce', this.nonce)
+    }
+  }
+}
+
+class TitleHandler {
+  constructor(private readonly text: string) {}
+
+  element(el: Element) {
+    el.setInnerContent(this.text)
+  }
+}
+
+class MetaContentHandler {
+  constructor(private readonly content: string) {}
+
+  element(el: Element) {
+    el.setAttribute('content', this.content)
+  }
+}
+
+class CanonicalHandler {
+  constructor(private readonly href: string) {}
+
+  element(el: Element) {
+    el.setAttribute('href', this.href)
+  }
+}
+
+class StructuredDataHandler {
+  constructor(private readonly payload: string | null) {}
+
+  element(el: Element) {
+    if (!this.payload) {
+      el.remove()
+      return
+    }
+
+    el.setAttribute('type', 'application/ld+json')
+    el.setInnerContent(this.payload)
+  }
+}
+
+class AppRootHandler {
+  constructor(private readonly html: string) {}
+
+  element(el: Element) {
+    el.setInnerContent(this.html, { html: true })
+  }
+}
+
 export async function onRequest(
-  context: EventContext<unknown, string, unknown>
+  context: EventContext<
+    {
+      API_BASE_URL?: string
+      VPC_API_ORIGIN?: string
+      VPC_SERVICE?: { fetch(input: Request): Promise<Response> }
+    },
+    string,
+    unknown
+  >
 ): Promise<Response> {
   const response = await context.next()
-
-  // 只处理 HTML 响应
   const contentType = response.headers.get('content-type') || ''
+
   if (!contentType.includes('text/html')) {
     return response
   }
 
   const nonce = generateNonce()
+  const requestUrl = new URL(context.request.url)
+  const documentConfig = await resolveHtmlDocumentWithEdgeData(requestUrl, context.env)
+  const canonicalUrl = resolveCanonicalUrl(documentConfig)
+  const prerenderShell = renderPrerenderShell(documentConfig)
+  const structuredDataPayload = resolveStructuredDataPayload(documentConfig)
 
-  // HTMLRewriter 给所有 <script> 标签注入 nonce
   const rewritten = new HTMLRewriter()
-    .on('script', {
-      element(el) {
-        // 跳过已有 nonce 的标签（理论上不会有）
-        if (!el.getAttribute('nonce')) {
-          el.setAttribute('nonce', nonce)
-        }
-      },
-    })
+    .on('script', new ScriptNonceHandler(nonce))
+    .on('title', new TitleHandler(documentConfig.title))
+    .on('meta[name="description"]', new MetaContentHandler(documentConfig.description))
+    .on('meta[name="robots"]', new MetaContentHandler(documentConfig.robots))
+    .on('meta[property="og:type"]', new MetaContentHandler(documentConfig.ogType))
+    .on('meta[property="og:url"]', new MetaContentHandler(canonicalUrl))
+    .on('meta[property="og:title"]', new MetaContentHandler(documentConfig.title))
+    .on('meta[property="og:description"]', new MetaContentHandler(documentConfig.description))
+    .on(
+      'meta[property="og:image"]',
+      new MetaContentHandler(documentConfig.ogImage || DEFAULT_OG_IMAGE)
+    )
+    .on('meta[name="twitter:title"]', new MetaContentHandler(documentConfig.title))
+    .on('meta[name="twitter:description"]', new MetaContentHandler(documentConfig.description))
+    .on('meta[name="twitter:url"]', new MetaContentHandler(canonicalUrl))
+    .on(
+      'meta[name="twitter:image"]',
+      new MetaContentHandler(documentConfig.ogImage || DEFAULT_OG_IMAGE)
+    )
+    .on('link[rel="canonical"]', new CanonicalHandler(canonicalUrl))
+    .on(
+      'script[data-prerender-structured-data="true"]',
+      new StructuredDataHandler(structuredDataPayload)
+    )
+    .on('#app-root', new AppRootHandler(prerenderShell))
     .transform(response)
 
-  // 替换 CSP header
   const headers = new Headers(rewritten.headers)
   headers.set('Content-Security-Policy', buildCSP(nonce))
   Object.entries(HTML_SECURITY_HEADERS).forEach(([key, value]) => {
@@ -86,8 +168,8 @@ export async function onRequest(
   })
 
   return new Response(rewritten.body, {
-    status: rewritten.status,
-    statusText: rewritten.statusText,
+    status: documentConfig.status,
+    statusText: documentConfig.status === 404 ? 'Not Found' : rewritten.statusText,
     headers,
   })
 }
