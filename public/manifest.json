@@ -126,22 +126,6 @@
   "launch_handler": {
     "client_mode": ["navigate-existing", "auto"]
   },
-  "share_target": {
-    "action": "/share",
-    "method": "POST",
-    "enctype": "multipart/form-data",
-    "params": {
-      "title": "title",
-      "text": "text",
-      "url": "url",
-      "files": [
-        {
-          "name": "media",
-          "accept": ["image/*", "video/*"]
-        }
-      ]
-    }
-  },
   "edge_side_panel": {
     "preferred_width": 400
   }
