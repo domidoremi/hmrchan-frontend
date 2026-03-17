@@ -29,6 +29,7 @@ export default defineConfigWithVueTs(
       '**/dist/**',
       '**/dist-ssr/**',
       '**/coverage/**',
+      '**/.wrangler/**',
       '**/.claude/**',
       '**/.agent/**',
       '**/.qoder/**',
