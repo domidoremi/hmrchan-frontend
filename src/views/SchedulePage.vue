@@ -1405,10 +1405,14 @@ onMounted(() => {
   }
 
   .category-filters {
+    justify-content: flex-start;
+    inline-size: 100%;
+    max-inline-size: 100%;
     overflow-x: auto;
     flex-wrap: nowrap;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
+    scroll-padding-inline: var(--spacing-2);
   }
 
   .category-filters::-webkit-scrollbar {
@@ -1416,6 +1420,7 @@ onMounted(() => {
   }
 
   .schedule-filter-pill {
+    flex: 0 0 auto;
     white-space: nowrap;
   }
 }
