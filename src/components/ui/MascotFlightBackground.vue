@@ -1,5 +1,5 @@
 <template>
-  <div v-if="isActive" class="mascot-flight-bg" aria-hidden="true">
+  <div v-if="isActive && assetAvailable" class="mascot-flight-bg" aria-hidden="true">
     <span
       v-for="lane in activeLanes"
       :key="lane.id"
@@ -15,6 +15,7 @@
           decoding="async"
           fetchpriority="low"
           draggable="false"
+          @error="handleAssetError"
         />
       </span>
     </span>
@@ -47,7 +48,7 @@ interface FlightLane {
 const settingsStore = useSettingsStore()
 const { settings } = storeToRefs(settingsStore)
 const defaultMascotSettings = {
-  enabled: true,
+  enabled: false,
   density: 1,
   speed: 1,
   opacity: 0.85,
@@ -108,6 +109,7 @@ const activeLaneCount = computed(() => {
   return Math.min(MAX_LANES, Math.max(1, Math.round(base * mascotSettings.value.density)))
 })
 const isActive = computed(() => mascotSettings.value.enabled && activeLaneCount.value > 0)
+const assetAvailable = ref(true)
 
 const createLane = (id: number, index: number, total: number): FlightLane => {
   const sizeIndex = randomInt(0, sizePresets.length - 1)
@@ -167,6 +169,19 @@ watch(
   { immediate: true }
 )
 
+watch(
+  () => mascotSettings.value.enabled,
+  (enabled) => {
+    if (enabled) {
+      assetAvailable.value = true
+    }
+  }
+)
+
+function handleAssetError() {
+  assetAvailable.value = false
+}
+
 const laneStyle = (lane: FlightLane): Record<string, string> => {
   const speedScale = speedScaleByIntensity[animationIntensity.value] / mascotSettings.value.speed
   const opacity = Math.max(0.05, Math.min(1, lane.opacity * mascotSettings.value.opacity))
@@ -195,7 +210,7 @@ const wobbleStyle = (lane: FlightLane): Record<string, string> => ({
 .mascot-flight-bg {
   position: fixed;
   inset: 0;
-  z-index: -2;
+  z-index: 1;
   overflow: hidden;
   pointer-events: none;
   contain: layout paint;

@@ -101,13 +101,13 @@ const defaultSettings: Settings = {
     opacity: 0.6,
   },
   mascotBackground: {
-    enabled: true,
+    enabled: false,
     density: 1,
     speed: 1,
     opacity: 0.85,
   },
   deskPet: {
-    enabled: true,
+    enabled: false,
     scale: 1,
     speechEnabled: true,
     autoHeroInteraction: true,

@@ -39,7 +39,9 @@
     </main>
 
     <!-- Footer - only show on key routes -->
-    <AppFooter v-if="showFooter" />
+    <div v-if="showFooter" class="app-footer-shell">
+      <AppFooter />
+    </div>
 
     <!-- Toast Container -->
     <Teleport to="body">
@@ -52,14 +54,17 @@
     <!-- Back to Top Button -->
     <BackToTop :show-progress="true" />
 
-    <!-- Global Mascot Flight Background -->
-    <MascotFlightBackground v-if="decorationsReady" />
-
-    <!-- Global Particle Background -->
-    <ParticleBackground v-if="decorationsReady" />
+    <div
+      v-if="showMascotBackground || showParticleBackground"
+      class="app-decoration-layer"
+      aria-hidden="true"
+    >
+      <MascotFlightBackground v-if="showMascotBackground" />
+      <ParticleBackground v-if="showParticleBackground" />
+    </div>
 
     <!-- Desk Pet -->
-    <DeskPet v-if="decorationsReady" />
+    <DeskPet v-if="showDeskPet" />
   </div>
 </template>
 
@@ -128,16 +133,41 @@ onMounted(() => {
   )
 })
 
+const showParticleBackground = computed(
+  () =>
+    decorationsReady.value &&
+    settings.value.enableAnimations &&
+    settings.value.animationIntensity !== 'none' &&
+    settings.value.backgroundEffect.type !== 'none'
+)
+const showMascotBackground = computed(
+  () =>
+    decorationsReady.value &&
+    settings.value.enableAnimations &&
+    settings.value.animationIntensity !== 'none' &&
+    settings.value.mascotBackground.enabled
+)
+const showDeskPet = computed(() => decorationsReady.value && settings.value.deskPet.enabled)
+
 // Footer only appears on key pages (configured via route meta)
 const showFooter = computed(() => Boolean(route.meta.showFooter))
 const isHomeRoute = computed(() => route.name === 'home' || route.path === '/')
 
 // Page transition name
 const transitionName = ref('')
-const AUTH_TRANSITION_NAME = 'auth-safe'
+const AUTH_ENTER_TRANSITION_NAME = 'auth-enter'
+const AUTH_SWAP_FORWARD_TRANSITION_NAME = 'auth-swap-forward'
+const AUTH_SWAP_BACK_TRANSITION_NAME = 'auth-swap-back'
+const AUTH_EXIT_TRANSITION_NAME = 'auth-exit'
+const AUTH_TRANSITION_NAMES = new Set([
+  AUTH_ENTER_TRANSITION_NAME,
+  AUTH_SWAP_FORWARD_TRANSITION_NAME,
+  AUTH_SWAP_BACK_TRANSITION_NAME,
+  AUTH_EXIT_TRANSITION_NAME,
+])
 const authKeepAliveExclude = ['LoginPage', 'RegisterPage', 'ForgotPasswordPage']
 const transitionMode = computed<'out-in' | undefined>(() =>
-  transitionName.value === AUTH_TRANSITION_NAME ? undefined : 'out-in'
+  AUTH_TRANSITION_NAMES.has(transitionName.value) ? undefined : 'out-in'
 )
 const authRouteOrder: Record<string, number> = {
   login: 0,
@@ -145,15 +175,37 @@ const authRouteOrder: Record<string, number> = {
   register: 2,
 }
 
+function isAuthRouteName(routeName: string | undefined): boolean {
+  return Boolean(routeName && authRouteOrder[routeName] !== undefined)
+}
+
 function resolveAuthTransition(
   toName: string | undefined,
   fromName: string | undefined
-): typeof AUTH_TRANSITION_NAME | null {
-  if (!toName || !fromName) return null
-  const toOrder = authRouteOrder[toName]
-  const fromOrder = authRouteOrder[fromName]
-  if (toOrder === undefined || fromOrder === undefined) return null
-  return AUTH_TRANSITION_NAME
+):
+  | typeof AUTH_ENTER_TRANSITION_NAME
+  | typeof AUTH_SWAP_FORWARD_TRANSITION_NAME
+  | typeof AUTH_SWAP_BACK_TRANSITION_NAME
+  | typeof AUTH_EXIT_TRANSITION_NAME
+  | null {
+  const toIsAuth = isAuthRouteName(toName)
+  const fromIsAuth = isAuthRouteName(fromName)
+
+  if (toIsAuth && fromIsAuth) {
+    const toOrder = authRouteOrder[toName!]
+    const fromOrder = authRouteOrder[fromName!]
+    return toOrder >= fromOrder ? AUTH_SWAP_FORWARD_TRANSITION_NAME : AUTH_SWAP_BACK_TRANSITION_NAME
+  }
+
+  if (toIsAuth && !fromIsAuth) {
+    return AUTH_ENTER_TRANSITION_NAME
+  }
+
+  if (!toIsAuth && fromIsAuth) {
+    return AUTH_EXIT_TRANSITION_NAME
+  }
+
+  return null
 }
 
 function toRouteName(routeName: unknown): string | undefined {
@@ -260,7 +312,10 @@ function handleRetry() {
 }
 
 main {
-  flex: 1;
+  position: relative;
+  z-index: 1;
+  flex: 1 1 auto;
+  min-height: 0;
   padding-top: var(--navbar-visible-height);
 }
 
@@ -276,45 +331,102 @@ main.main--home {
 
 .route-view {
   position: relative;
-  min-height: calc(100svh - var(--navbar-visible-height));
-  min-height: calc(100dvh - var(--navbar-visible-height));
+  min-height: var(--app-safe-block-size);
   background: var(--color-background);
   overflow-x: hidden;
   overflow-y: visible;
 }
 
 .route-view.route-view--home {
-  min-height: 100svh;
-  min-height: 100dvh;
+  min-height: var(--app-safe-block-size);
   overflow: visible;
 }
 
 /* 认证页安全过渡：同帧交叠，避免 out-in 空窗白屏 */
-.auth-safe-enter-active,
-.auth-safe-leave-active {
-  transition: transform var(--duration-fast) var(--ease-out);
-  will-change: transform;
+.auth-enter-enter-active,
+.auth-enter-leave-active,
+.auth-swap-forward-enter-active,
+.auth-swap-forward-leave-active,
+.auth-swap-back-enter-active,
+.auth-swap-back-leave-active,
+.auth-exit-enter-active,
+.auth-exit-leave-active {
+  transition:
+    opacity var(--duration-fast) var(--ease-out-smooth),
+    transform var(--duration-fast) var(--ease-fluid);
+  will-change: transform, opacity;
 }
 
-.auth-safe-enter-active {
+.auth-enter-enter-active,
+.auth-swap-forward-enter-active,
+.auth-swap-back-enter-active,
+.auth-exit-enter-active {
   position: relative;
   z-index: 2;
 }
 
-.auth-safe-leave-active {
+.auth-enter-leave-active,
+.auth-swap-forward-leave-active,
+.auth-swap-back-leave-active,
+.auth-exit-leave-active {
   position: absolute;
   inset: 0;
-  width: 100%;
+  inline-size: 100%;
   z-index: 1;
   pointer-events: none;
 }
 
-.auth-safe-enter-from {
-  transform: translate3d(1.2rem, 0, 0);
+.auth-enter-enter-from {
+  opacity: 0;
+  transform: translate3d(0.55rem, 0.35rem, 0) scale3d(0.997, 0.997, 1);
 }
 
-.auth-safe-leave-to {
-  transform: translate3d(-0.9rem, 0, 0);
+.auth-enter-leave-to {
+  opacity: 0;
+  transform: translate3d(-0.2rem, 0, 0) scale3d(0.999, 0.999, 1);
+}
+
+.auth-swap-forward-enter-from {
+  opacity: 0;
+  transform: translate3d(0.75rem, 0, 0) scale3d(0.997, 0.997, 1);
+}
+
+.auth-swap-forward-leave-to {
+  opacity: 0;
+  transform: translate3d(-0.45rem, 0, 0) scale3d(0.998, 0.998, 1);
+}
+
+.auth-swap-back-enter-from {
+  opacity: 0;
+  transform: translate3d(-0.75rem, 0, 0) scale3d(0.997, 0.997, 1);
+}
+
+.auth-swap-back-leave-to {
+  opacity: 0;
+  transform: translate3d(0.45rem, 0, 0) scale3d(0.998, 0.998, 1);
+}
+
+.auth-exit-enter-from {
+  opacity: 0;
+  transform: translate3d(-0.25rem, 0.4rem, 0) scale3d(0.997, 0.997, 1);
+}
+
+.auth-exit-leave-to {
+  opacity: 0;
+  transform: translate3d(0.45rem, 0, 0) scale3d(0.999, 0.999, 1);
+}
+
+.app-decoration-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.app-footer-shell {
+  position: relative;
+  z-index: 1;
 }
 
 /* 动效强度控制 */

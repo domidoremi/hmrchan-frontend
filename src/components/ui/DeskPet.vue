@@ -9,7 +9,7 @@ const settingsStore = useSettingsStore()
 const { settings } = storeToRefs(settingsStore)
 
 const defaultDeskPetSettings = {
-  enabled: true,
+  enabled: false,
   scale: 1,
   speechEnabled: true,
   autoHeroInteraction: true,

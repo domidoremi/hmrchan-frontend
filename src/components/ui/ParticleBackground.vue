@@ -47,10 +47,9 @@ onMounted(() => {
 .particle-bg {
   position: fixed;
   inset: 0;
-  z-index: -1;
-  width: 100vw;
-  height: 100svh;
-  height: 100dvh;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
   pointer-events: none;
   contain: strict;
   /* 提升至独立合成层，避免页面滚动触发 canvas 重绘 */

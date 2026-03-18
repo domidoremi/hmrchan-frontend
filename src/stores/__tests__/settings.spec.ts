@@ -54,4 +54,12 @@ describe('Settings Store', () => {
       personalized_content: false,
     })
   })
+
+  it('defaults non-essential decorations to disabled for new users', () => {
+    const store = useSettingsStore()
+
+    expect(store.settings.backgroundEffect.type).toBe('none')
+    expect(store.settings.mascotBackground.enabled).toBe(false)
+    expect(store.settings.deskPet.enabled).toBe(false)
+  })
 })
