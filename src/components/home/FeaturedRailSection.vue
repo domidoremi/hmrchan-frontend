@@ -1,5 +1,10 @@
 <template>
-  <section ref="element" class="rail home-screen" :style="sceneStyle">
+  <section
+    ref="element"
+    class="rail home-screen"
+    data-scroll-anchor="home-featured"
+    :style="sceneStyle"
+  >
     <div class="rail-sticky">
       <div class="rail-stage">
         <div class="rail-stage__chrome">
