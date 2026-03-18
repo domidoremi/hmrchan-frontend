@@ -347,6 +347,10 @@ main.main--home {
   main {
     padding-bottom: var(--mobile-nav-height);
   }
+
+  main.main--home {
+    padding-bottom: 0;
+  }
 }
 
 .route-view {
@@ -360,6 +364,12 @@ main.main--home {
 .route-view.route-view--home {
   min-height: var(--app-safe-block-size);
   overflow: visible;
+}
+
+@media (max-width: 768px) {
+  .route-view.route-view--home {
+    min-height: var(--app-safe-block-size-with-mobile-nav);
+  }
 }
 
 /* 认证页安全过渡：同帧交叠，避免 out-in 空窗白屏 */
