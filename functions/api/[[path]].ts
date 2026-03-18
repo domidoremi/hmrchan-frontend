@@ -6,6 +6,8 @@
  * 如果 VPC 绑定不可用，回退到公网访问
  */
 
+import { hasMediaAuthContext, resolveMediaCacheControl } from './mediaCachePolicy'
+
 interface Env {
   API_BASE_URL: string
   VPC_API_ORIGIN?: string
@@ -235,16 +237,20 @@ export async function onRequest(context: CFPagesContext): Promise<Response> {
       responseHeaders.set('X-API-Version', apiVersion)
     }
 
-    // 为媒体资源设置更长的缓存时间（30 天）
-    if (
-      request.method === 'GET' &&
-      path.includes('/media/') &&
-      (path.includes('/thumbnail') || path.includes('/image'))
-    ) {
-      responseHeaders.set(
-        'Cache-Control',
-        'public, max-age=2592000, s-maxage=2592000, stale-while-revalidate=604800, immutable'
-      )
+    const mediaCacheControl = resolveMediaCacheControl({
+      path,
+      method: request.method,
+      requestHeaders: request.headers,
+      responseStatus: response.status,
+    })
+
+    if (mediaCacheControl) {
+      responseHeaders.set('Cache-Control', mediaCacheControl)
+
+      if (mediaCacheControl === 'private, no-store' || hasMediaAuthContext(request.headers)) {
+        appendVary(responseHeaders, 'Authorization')
+        appendVary(responseHeaders, 'Cookie')
+      }
     }
 
     return new Response(response.body, {

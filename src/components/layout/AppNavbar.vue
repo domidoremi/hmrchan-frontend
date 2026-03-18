@@ -731,10 +731,14 @@ function updateDropdownPosition(kind: 'settings' | 'user') {
 
   if (isMobile.value) {
     if (kind === 'settings') {
-      settingsDropdownStyle.value = {}
+      settingsDropdownStyle.value = {
+        transformOrigin: '50% 0.75rem',
+      }
       isSettingsDropdownPositioned.value = true
     } else {
-      userDropdownStyle.value = {}
+      userDropdownStyle.value = {
+        transformOrigin: '50% 0.75rem',
+      }
       isUserDropdownPositioned.value = true
     }
     return
@@ -768,6 +772,7 @@ function updateDropdownPosition(kind: 'settings' | 'user') {
         right: 'auto',
         maxInlineSize: `${position.maxInlineSize}px`,
         maxBlockSize: `${position.maxBlockSize}px`,
+        transformOrigin: position.transformOrigin,
       }
 
       if (kind === 'settings') {
@@ -1264,6 +1269,10 @@ onUnmounted(() => {
   position: fixed;
   inset-block-start: calc(var(--navbar-visible-height) + var(--spacing-2));
   inset-inline-end: var(--spacing-4);
+  --nav-dropdown-enter-y: -0.45rem;
+  --nav-dropdown-leave-y: -0.18rem;
+  --nav-dropdown-enter-scale: 0.965;
+  --nav-dropdown-leave-scale: 0.985;
   transform-origin: top right;
   inline-size: min(24rem, calc(100vw - 2rem));
   max-block-size: min(var(--app-safe-block-size), 36rem);
@@ -1298,6 +1307,85 @@ onUnmounted(() => {
   pointer-events: auto;
   transform: translate3d(0, 0, 0) scale3d(1, 1, 1);
   transition-delay: 0s;
+}
+
+.dropdown-enter-active.settings-dropdown,
+.dropdown-enter-active.user-dropdown {
+  transition:
+    opacity 220ms var(--ease-out),
+    transform 280ms var(--ease-spring);
+}
+
+.dropdown-leave-active.settings-dropdown,
+.dropdown-leave-active.user-dropdown {
+  transition:
+    opacity 180ms var(--ease-in),
+    transform 180ms var(--ease-in);
+}
+
+.dropdown-enter-from.settings-dropdown,
+.dropdown-enter-from.user-dropdown {
+  opacity: 0;
+  transform: translate3d(0, var(--nav-dropdown-enter-y), 0)
+    scale3d(var(--nav-dropdown-enter-scale), var(--nav-dropdown-enter-scale), 1);
+}
+
+.dropdown-leave-to.settings-dropdown,
+.dropdown-leave-to.user-dropdown {
+  opacity: 0;
+  transform: translate3d(0, var(--nav-dropdown-leave-y), 0)
+    scale3d(var(--nav-dropdown-leave-scale), var(--nav-dropdown-leave-scale), 1);
+}
+
+.settings-dropdown :deep(.settings-header),
+.settings-dropdown :deep(.settings-group),
+.user-dropdown .user-info,
+.user-dropdown .dropdown-link {
+  will-change: transform, opacity;
+}
+
+.dropdown-enter-active.settings-dropdown :deep(.settings-header),
+.dropdown-enter-active.settings-dropdown :deep(.settings-group),
+.dropdown-enter-active.user-dropdown .user-info,
+.dropdown-enter-active.user-dropdown .dropdown-link,
+.dropdown-leave-active.settings-dropdown :deep(.settings-header),
+.dropdown-leave-active.settings-dropdown :deep(.settings-group),
+.dropdown-leave-active.user-dropdown .user-info,
+.dropdown-leave-active.user-dropdown .dropdown-link {
+  transition:
+    opacity 220ms var(--ease-out),
+    transform 260ms var(--ease-out);
+}
+
+.dropdown-enter-from.settings-dropdown :deep(.settings-header),
+.dropdown-leave-to.settings-dropdown :deep(.settings-header),
+.dropdown-enter-from.user-dropdown .user-info,
+.dropdown-leave-to.user-dropdown .user-info {
+  opacity: 0;
+  transform: translate3d(0, -0.25rem, 0);
+}
+
+.dropdown-enter-from.settings-dropdown :deep(.settings-group),
+.dropdown-leave-to.settings-dropdown :deep(.settings-group),
+.dropdown-enter-from.user-dropdown .dropdown-link,
+.dropdown-leave-to.user-dropdown .dropdown-link {
+  opacity: 0;
+  transform: translate3d(0, 0.35rem, 0);
+}
+
+.dropdown-enter-active.settings-dropdown :deep(.settings-group:nth-of-type(1)),
+.dropdown-enter-active.user-dropdown .dropdown-link:nth-of-type(1) {
+  transition-delay: 24ms;
+}
+
+.dropdown-enter-active.settings-dropdown :deep(.settings-group:nth-of-type(2)),
+.dropdown-enter-active.user-dropdown .dropdown-link:nth-of-type(2) {
+  transition-delay: 48ms;
+}
+
+.dropdown-enter-active.settings-dropdown :deep(.settings-group:nth-of-type(3)),
+.dropdown-enter-active.user-dropdown .dropdown-link:nth-of-type(3) {
+  transition-delay: 72ms;
 }
 
 .user-info {
@@ -1573,6 +1661,10 @@ onUnmounted(() => {
 
   .settings-dropdown,
   .user-dropdown {
+    --nav-dropdown-enter-y: -0.3rem;
+    --nav-dropdown-leave-y: -0.14rem;
+    --nav-dropdown-enter-scale: 0.99;
+    --nav-dropdown-leave-scale: 0.995;
     inset-inline: clamp(0.75rem, 3vw, 1rem);
     inset-block-start: calc(var(--navbar-visible-height) + clamp(0.5rem, 2vw, 0.75rem));
     inline-size: auto;

@@ -2,8 +2,10 @@ import type { Ref } from 'vue'
 import { authService, ApiError, type AuthResponse, type UserResponse } from '@/api'
 import { apiClient, API_AUTH_URL } from '@/api/client'
 import { secureTokenManager } from '@/utils/tokenSecurity'
+import { reportClientEvent } from '@/utils/clientReporter'
 
 const DEFAULT_HEARTBEAT_INTERVAL = 5 * 60 * 1000
+const REFRESH_RETRY_COOLDOWN_MS = 60 * 1000
 
 interface RouterLike {
   push: (to: string) => unknown
@@ -36,6 +38,135 @@ export function createAuthSessionController<TUser extends UserResponse>(options:
   let deferredProfileRequestToken = 0
   let fetchCurrentUserController: AbortController | null = null
   let fetchCurrentUserToken = 0
+  let refreshBlockedUntil = 0
+  let authRecoveryTimer: ReturnType<typeof setTimeout> | null = null
+
+  function clearAuthRecoveryTimer(): void {
+    if (!authRecoveryTimer) return
+    clearTimeout(authRecoveryTimer)
+    authRecoveryTimer = null
+  }
+
+  function setRefreshCooldown(delay = REFRESH_RETRY_COOLDOWN_MS): void {
+    refreshBlockedUntil = Date.now() + delay
+  }
+
+  function clearRefreshCooldown(): void {
+    refreshBlockedUntil = 0
+  }
+
+  function getRefreshCooldownRemaining(): number {
+    return Math.max(0, refreshBlockedUntil - Date.now())
+  }
+
+  function isRefreshInCooldown(): boolean {
+    return getRefreshCooldownRemaining() > 0
+  }
+
+  function isAuthFailure(error: unknown): error is ApiError {
+    return error instanceof ApiError && (error.status === 401 || error.status === 403)
+  }
+
+  function isRetriableRefreshError(error: unknown): boolean {
+    if (isAbortError(error) || isAuthFailure(error)) return false
+    if (!(error instanceof ApiError)) return true
+    return error.status === 408 || error.status === 429 || error.status >= 500
+  }
+
+  async function persistAccessToken(token: string): Promise<void> {
+    state.token.value = token
+    await secureTokenManager.store(token).catch(() => {})
+  }
+
+  async function applySessionTokens(
+    response: Pick<AuthResponse, 'access_token'> & Partial<AuthResponse>,
+    options: {
+      deferProfile?: boolean
+      startHeartbeat?: boolean
+    } = {}
+  ): Promise<void> {
+    await persistAccessToken(response.access_token)
+
+    if (response.refresh_token !== undefined) {
+      state.refreshToken.value = response.refresh_token ?? null
+    }
+    if (response.user) {
+      state.user.value = response.user as TUser
+    }
+    if (response.refresh_threshold) {
+      heartbeatInterval = response.refresh_threshold * 1000
+    }
+
+    clearRefreshCooldown()
+    clearAuthRecoveryTimer()
+
+    if (options.startHeartbeat) {
+      startHeartbeat()
+    }
+    if (options.deferProfile) {
+      deferProfileRefresh()
+    }
+  }
+
+  function scheduleInitAuthRetry(delay = REFRESH_RETRY_COOLDOWN_MS): void {
+    clearAuthRecoveryTimer()
+    authRecoveryTimer = setTimeout(() => {
+      authRecoveryTimer = null
+      if (state.token.value || !state.user.value) return
+      void initAuth().catch(() => {
+        // Keep background recovery silent.
+      })
+    }, delay)
+  }
+
+  async function attemptTokenRefresh(options: {
+    source: 'bootstrap' | 'heartbeat'
+    reason?: string
+    refreshToken?: string
+  }): Promise<'success' | 'fatal' | 'cooldown' | 'skipped'> {
+    const { source, reason, refreshToken } = options
+
+    if (isRefreshInCooldown()) {
+      return 'cooldown'
+    }
+
+    try {
+      const response = await authService.refreshToken(refreshToken)
+      await applySessionTokens(response, {
+        deferProfile: source !== 'bootstrap',
+      })
+      return 'success'
+    } catch (error) {
+      if (source === 'bootstrap') {
+        reportClientEvent(
+          'auth.bootstrap_refresh_failed',
+          {
+            reason,
+            status: error instanceof ApiError ? error.status : undefined,
+            code: error instanceof ApiError ? error.code : undefined,
+          },
+          { severity: 'warn' }
+        )
+      }
+
+      if (isAbortError(error)) {
+        return 'skipped'
+      }
+
+      if (isAuthFailure(error)) {
+        clearSession()
+        return 'fatal'
+      }
+
+      if (isRetriableRefreshError(error)) {
+        setRefreshCooldown()
+        return 'cooldown'
+      }
+
+      clearSession()
+      return 'fatal'
+    }
+  }
 
   function abortFetchCurrentUserRequest() {
     fetchCurrentUserController?.abort()
@@ -44,6 +175,7 @@ export function createAuthSessionController<TUser extends UserResponse>(options:
 
   function suspendSession(): void {
     stopHeartbeat()
+    clearAuthRecoveryTimer()
 
     if (deferredProfileTimer) {
       clearTimeout(deferredProfileTimer)
@@ -59,6 +191,7 @@ export function createAuthSessionController<TUser extends UserResponse>(options:
 
   function clearSession(options: { navigateToLogin?: boolean } = {}): void {
     suspendSession()
+    clearRefreshCooldown()
     state.user.value = null
     state.token.value = null
     state.refreshToken.value = null
@@ -70,18 +203,10 @@ export function createAuthSessionController<TUser extends UserResponse>(options:
   }
 
   async function establishSession(response: AuthResponse) {
-    state.user.value = response.user as TUser
-    state.token.value = response.access_token
-    state.refreshToken.value = response.refresh_token ?? null
-
-    await secureTokenManager.store(response.access_token)
-
-    if (response.refresh_threshold) {
-      heartbeatInterval = response.refresh_threshold * 1000
-    }
-
-    startHeartbeat()
-    deferProfileRefresh()
+    await applySessionTokens(response, {
+      deferProfile: true,
+      startHeartbeat: true,
+    })
   }
 
   function deferProfileRefresh() {
@@ -174,27 +299,46 @@ export function createAuthSessionController<TUser extends UserResponse>(options:
   }
 
   async function initAuth() {
-    let secureToken = await secureTokenManager.retrieve()
+    const secureTokenResult = await secureTokenManager.retrieveState()
+    let secureToken = secureTokenResult.token
 
     if (!secureToken) {
+      if (secureTokenResult.state === 'binding_invalid') {
+        reportClientEvent(
+          'auth.token_binding_mismatch',
+          {
+            reason: secureTokenResult.reason,
+          },
+          { severity: 'warn' }
+        )
+      } else if (secureTokenResult.state === 'invalid_payload') {
+        secureTokenManager.clear()
+      }
+
       if (!state.user.value) {
         return
       }
 
-      try {
-        const response = await authService.refreshToken()
-        secureToken = response.access_token
-        await secureTokenManager.store(secureToken)
-        if (response.refresh_token) {
-          state.refreshToken.value = response.refresh_token
-        }
-        if (response.user) {
-          state.user.value = response.user as TUser
-        }
-      } catch {
-        clearSession()
+      const refreshOutcome = await attemptTokenRefresh({
+        source: 'bootstrap',
+        reason: secureTokenResult.reason ?? secureTokenResult.state,
+        refreshToken: state.refreshToken.value ?? undefined,
+      })
+
+      if (refreshOutcome === 'cooldown') {
+        scheduleInitAuthRetry(getRefreshCooldownRemaining() || REFRESH_RETRY_COOLDOWN_MS)
         return
       }
+
+      if (refreshOutcome !== 'success') {
+        return
+      }
+
+      secureToken = state.token.value
+    }
+
+    if (!secureToken) {
+      return
     }
 
     state.token.value = secureToken
@@ -272,6 +416,12 @@ export function createAuthSessionController<TUser extends UserResponse>(options:
       const jitter = heartbeatInterval * 0.2 * (Math.random() * 2 - 1)
       const interval = Math.max(30000, heartbeatInterval + jitter)
 
+      scheduleHeartbeatTick(interval)
+    }
+
+    function scheduleHeartbeatTick(delay: number) {
+      const interval = Math.max(30000, delay)
+
       heartbeatTimer = setTimeout(async () => {
         heartbeatTimer = null
         if (!state.token.value) return
@@ -279,26 +429,30 @@ export function createAuthSessionController<TUser extends UserResponse>(options:
         try {
           const heartbeatResp = await authService.heartbeat()
           if (heartbeatResp.access_token) {
-            state.token.value = heartbeatResp.access_token
-            await secureTokenManager.store(heartbeatResp.access_token).catch(() => {})
+            await applySessionTokens(heartbeatResp, {
+              deferProfile: false,
+            })
           }
-        } catch {
-          try {
-            const response = await authService.refreshToken(state.refreshToken.value ?? undefined)
-            state.token.value = response.access_token
-            await secureTokenManager.store(response.access_token).catch(() => {})
-            if (response.refresh_token) {
-              state.refreshToken.value = response.refresh_token
-            }
-            if (response.user) {
-              state.user.value = response.user as TUser
-            }
-          } catch {
+          scheduleNextHeartbeat()
+        } catch (heartbeatError) {
+          if (isAbortError(heartbeatError)) {
             return
           }
-        }
 
-        scheduleNextHeartbeat()
+          const refreshOutcome = await attemptTokenRefresh({
+            source: 'heartbeat',
+            refreshToken: state.refreshToken.value ?? undefined,
+          })
+
+          if (refreshOutcome === 'success') {
+            scheduleNextHeartbeat()
+            return
+          }
+
+          if (refreshOutcome === 'cooldown') {
+            scheduleHeartbeatTick(getRefreshCooldownRemaining() || REFRESH_RETRY_COOLDOWN_MS)
+          }
+        }
       }, interval)
     }
 

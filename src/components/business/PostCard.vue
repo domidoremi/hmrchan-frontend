@@ -129,6 +129,7 @@ import { IconYoutube, IconX, IconTiktok, IconInstagram } from '@/components/icon
 import type { PostListItem } from '@/api'
 import { normalizeAvatarUrl } from '@/api/userService'
 import { prefetchPostDetail } from '@/utils/prefetch'
+import { reportClientEvent } from '@/utils/clientReporter'
 import {
   normalizeToThumbnailUrl,
   extractMediaIdFromUrl,
@@ -198,6 +199,7 @@ const props = withDefaults(defineProps<PostCardProps>(), {
 })
 
 const imageFit = computed(() => props.imageFit)
+const thumbnailFailed = ref(false)
 
 const emit = defineEmits<{
   click: [postId: string, thumbnailSrc: string | null]
@@ -371,7 +373,7 @@ const effectiveThumbnailSize = computed(() => {
 })
 
 const thumbnailSrc = computed(() => {
-  if (!props.post.thumbnail_url) return null
+  if (!props.post.thumbnail_url || thumbnailFailed.value) return null
 
   const mediaId = extractMediaIdFromUrl(props.post.thumbnail_url)
   const rawSize = effectiveThumbnailSize.value || 'medium'
@@ -491,13 +493,13 @@ function preloadImageDimensions() {
 }
 
 watch(
-  thumbnailSrc,
-  (newSrc, oldSrc) => {
+  () => `${props.post.id}:${props.post.thumbnail_url ?? ''}:${effectiveThumbnailSize.value ?? ''}`,
+  () => {
+    thumbnailFailed.value = false
     isImageLoaded.value = false
-    if (newSrc !== oldSrc) {
-      preloadedAspectRatio.value = null
-      preloadImageDimensions()
-    }
+    shouldRenderImage.value = true
+    preloadedAspectRatio.value = null
+    preloadImageDimensions()
   },
   { immediate: true }
 )
@@ -572,7 +574,26 @@ function onImageLoad(event: Event) {
 }
 
 function onImageError() {
+  const mediaId = props.post.thumbnail_url ? extractMediaIdFromUrl(props.post.thumbnail_url) : null
+  const size = effectiveThumbnailSize.value || 'medium'
+
+  if (mediaId) {
+    thumbnailCache.markFailure(mediaId, size)
+    reportClientEvent(
+      'media.thumbnail_forbidden',
+      {
+        inferred: true,
+        postId: props.post.id,
+        mediaId,
+        size,
+      },
+      { severity: 'warn' }
+    )
+  }
+
+  thumbnailFailed.value = true
   isImageLoaded.value = true
+  shouldRenderImage.value = false
 }
 
 function prefetchPostDetailPage() {

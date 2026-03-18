@@ -99,6 +99,22 @@ export interface TokenBinding {
   nonce: string
 }
 
+export type TokenBindingFailureReason = 'device_mismatch' | 'browser_mismatch' | 'binding_expired'
+
+export type SecureTokenRetrievalState =
+  | 'ok'
+  | 'missing'
+  | 'binding_invalid'
+  | 'invalid_payload'
+  | 'storage_error'
+
+export interface SecureTokenRetrieveResult {
+  token: string | null
+  state: SecureTokenRetrievalState
+  reason?: TokenBindingFailureReason | 'invalid_payload' | 'storage_error'
+  integrityValid?: boolean
+}
+
 /**
  * 创建 Token 绑定信息
  */
@@ -117,7 +133,7 @@ export async function createTokenBinding(): Promise<TokenBinding> {
  */
 export async function validateTokenBinding(binding: TokenBinding): Promise<{
   valid: boolean
-  reason?: string
+  reason?: TokenBindingFailureReason
 }> {
   const currentFingerprint = await getDeviceFingerprint()
 
@@ -167,25 +183,42 @@ export const secureTokenManager = {
   /**
    * 读取 Token（带解密和验证）
    */
-  async retrieve(): Promise<string | null> {
+  async retrieveState(): Promise<SecureTokenRetrieveResult> {
     try {
       const stored = localStorage.getItem(STORAGE_KEY_PREFIX + 'data')
-      if (!stored) return null
+      if (!stored) {
+        return {
+          token: null,
+          state: 'missing',
+        }
+      }
 
       const data = safeJsonParse<{
         token: string
         binding: TokenBinding
         integrity: string
       }>(stored)
-      if (!data) return null
+      if (
+        !data ||
+        typeof data.token !== 'string' ||
+        !data.binding ||
+        typeof data.integrity !== 'string'
+      ) {
+        return {
+          token: null,
+          state: 'invalid_payload',
+          reason: 'invalid_payload',
+        }
+      }
 
       // 验证绑定
       const bindingResult = await validateTokenBinding(data.binding)
       if (!bindingResult.valid) {
-        console.warn('Token binding validation failed:', bindingResult.reason)
-        // 绑定验证失败，清除存储
-        this.clear()
-        return null
+        return {
+          token: null,
+          state: 'binding_invalid',
+          reason: bindingResult.reason,
+        }
       }
 
       // 解密 Token
@@ -193,16 +226,26 @@ export const secureTokenManager = {
 
       // 验证完整性
       const integrityValid = await verifyTokenIntegrity(token, data.integrity)
-      if (!integrityValid) {
-        console.warn('Token integrity check failed')
-        // 完整性验证失败，但不一定是攻击（可能是时间窗口问题）
-        // 仍然返回 token，让后端做最终验证
+      return {
+        token,
+        state: 'ok',
+        integrityValid,
       }
-
-      return token
     } catch {
-      return null
+      return {
+        token: null,
+        state: 'storage_error',
+        reason: 'storage_error',
+      }
     }
+  },
+
+  /**
+   * 读取 Token（兼容旧调用点）
+   */
+  async retrieve(): Promise<string | null> {
+    const result = await this.retrieveState()
+    return result.token
   },
 
   /**

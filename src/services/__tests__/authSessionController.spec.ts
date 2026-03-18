@@ -34,6 +34,12 @@ vi.mock('@/utils/tokenSecurity', () => ({
   secureTokenManager: {
     store: vi.fn(() => Promise.resolve()),
     retrieve: vi.fn(() => Promise.resolve(null)),
+    retrieveState: vi.fn(() =>
+      Promise.resolve({
+        token: null,
+        state: 'missing',
+      })
+    ),
     clear: vi.fn(),
   },
 }))
@@ -141,5 +147,73 @@ describe('createAuthSessionController', () => {
     expect(result).toBeNull()
     expect(state.user.value).toBeNull()
     expect(state.token.value).toBeNull()
+  })
+
+  it('attempts a single bootstrap refresh when the stored token binding mismatches', async () => {
+    const state = createState()
+    state.user.value = createUser({ username: 'persisted-user' })
+    const controller = createAuthSessionController({ router, state })
+    const refreshedUser = createUser({ username: 'boot-refreshed' })
+
+    vi.mocked(secureTokenManager.retrieveState).mockResolvedValueOnce({
+      token: null,
+      state: 'binding_invalid',
+      reason: 'device_mismatch',
+    })
+    vi.mocked(authService.refreshToken).mockResolvedValueOnce({
+      access_token: 'boot-token',
+      refresh_token: 'boot-refresh',
+      token_type: 'Bearer',
+      user: refreshedUser,
+    })
+    vi.mocked(authService.getCurrentUser).mockResolvedValueOnce(refreshedUser)
+
+    await controller.initAuth()
+
+    expect(authService.refreshToken).toHaveBeenCalledTimes(1)
+    expect(secureTokenManager.store).toHaveBeenCalledWith('boot-token')
+    expect(state.token.value).toBe('boot-token')
+    expect(state.user.value).toEqual(refreshedUser)
+  })
+
+  it('clears the stale session when bootstrap refresh returns 401', async () => {
+    const state = createState()
+    state.user.value = createUser({ username: 'persisted-user' })
+    const controller = createAuthSessionController({ router, state })
+
+    vi.mocked(secureTokenManager.retrieveState).mockResolvedValueOnce({
+      token: null,
+      state: 'binding_invalid',
+      reason: 'device_mismatch',
+    })
+    vi.mocked(authService.refreshToken).mockRejectedValueOnce(new ApiError('Unauthorized', 401))
+
+    await controller.initAuth()
+
+    expect(state.user.value).toBeNull()
+    expect(state.token.value).toBeNull()
+    expect(state.refreshToken.value).toBeNull()
+    expect(secureTokenManager.clear).toHaveBeenCalled()
+  })
+
+  it('keeps state and schedules a retry when bootstrap refresh fails with a network error', async () => {
+    const state = createState()
+    state.user.value = createUser({ username: 'persisted-user' })
+    const controller = createAuthSessionController({ router, state })
+
+    vi.mocked(secureTokenManager.retrieveState).mockResolvedValue({
+      token: null,
+      state: 'binding_invalid',
+      reason: 'device_mismatch',
+    })
+    vi.mocked(authService.refreshToken).mockRejectedValueOnce(new Error('Network error'))
+
+    await controller.initAuth()
+
+    expect(state.user.value).not.toBeNull()
+    expect(state.token.value).toBeNull()
+    expect(vi.getTimerCount()).toBeGreaterThan(0)
+
+    controller.cleanup()
   })
 })

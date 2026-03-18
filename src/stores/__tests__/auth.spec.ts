@@ -25,6 +25,10 @@ vi.mock('@/utils/tokenSecurity', () => ({
   secureTokenManager: {
     store: vi.fn().mockResolvedValue(undefined),
     retrieve: vi.fn().mockResolvedValue(null),
+    retrieveState: vi.fn().mockResolvedValue({
+      token: null,
+      state: 'missing',
+    }),
     clear: vi.fn(),
   },
 }))
