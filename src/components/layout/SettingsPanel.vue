@@ -652,7 +652,7 @@ const { settings } = storeToRefs(settingsStore)
 const mascotBackground = computed(() => {
   return (
     settings.value.mascotBackground ?? {
-      enabled: true,
+      enabled: false,
       density: 1,
       speed: 1,
       opacity: 0.85,
@@ -662,7 +662,7 @@ const mascotBackground = computed(() => {
 const deskPetConfig = computed(() => {
   return (
     settings.value.deskPet ?? {
-      enabled: true,
+      enabled: false,
       scale: 1,
       speechEnabled: true,
       autoHeroInteraction: true,
@@ -843,9 +843,10 @@ function resetVideoSettings() {
 <style scoped>
 .settings-panel {
   padding: var(--spacing-2);
-  min-width: 15rem;
-  max-height: calc(100svh - 7.5rem);
-  max-height: calc(100dvh - 7.5rem);
+  min-inline-size: 0;
+  inline-size: 100%;
+  max-inline-size: min(100%, 24rem);
+  max-block-size: var(--app-safe-block-size);
   overflow-y: auto;
   overflow-x: hidden;
   overscroll-behavior: contain;
@@ -855,10 +856,10 @@ function resetVideoSettings() {
 .settings-panel--compact {
   padding: var(--spacing-2);
   gap: var(--spacing-2);
-  min-width: 13.5rem;
-  width: min(94vw, 22rem);
-  max-height: min(70svh, calc(100svh - 9rem));
-  max-height: min(70dvh, calc(100dvh - 9rem));
+  min-inline-size: min(100%, 13.5rem);
+  inline-size: min(100%, 22rem);
+  max-inline-size: min(100%, 22rem);
+  max-block-size: min(var(--app-safe-block-size), 36rem);
   background: var(--color-background);
   border: 1px solid var(--glass-border);
   border-radius: var(--ui-radius-dialog, var(--radius-xl));
@@ -867,14 +868,13 @@ function resetVideoSettings() {
 /* 移动端优化：确保面板可以滚动 */
 @media (max-width: 768px) {
   .settings-panel {
-    max-height: calc(100svh - 10rem);
-    max-height: calc(100dvh - 10rem);
+    max-block-size: var(--app-safe-block-size-with-mobile-nav);
   }
 
   .settings-panel--compact {
-    width: min(96vw, 22rem);
-    max-height: min(65svh, calc(100svh - 8rem));
-    max-height: min(65dvh, calc(100dvh - 8rem));
+    inline-size: 100%;
+    max-inline-size: min(100%, 22rem);
+    max-block-size: min(var(--app-safe-block-size-with-mobile-nav), 34rem);
   }
 }
 
@@ -889,7 +889,7 @@ function resetVideoSettings() {
   font-weight: var(--font-semibold);
   color: var(--color-text-primary);
   position: sticky;
-  top: 0;
+  inset-block-start: 0;
   z-index: 2;
   background: var(--color-background);
   border-bottom: 1px solid var(--glass-border);
@@ -899,6 +899,7 @@ function resetVideoSettings() {
   display: flex;
   align-items: center;
   gap: var(--spacing-2);
+  min-inline-size: 0;
 }
 
 .settings-panel--compact .settings-header {
@@ -955,6 +956,7 @@ function resetVideoSettings() {
 /* ========== Group ========== */
 .settings-group {
   padding: var(--spacing-2);
+  min-inline-size: 0;
 }
 
 .settings-group + .settings-group {
@@ -994,8 +996,10 @@ function resetVideoSettings() {
 /* ========== Theme Options ========== */
 .theme-options,
 .ui-style-options {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--spacing-2);
+  min-inline-size: 0;
 }
 
 .theme-btn {
@@ -1009,6 +1013,7 @@ function resetVideoSettings() {
   background: var(--glass-bg-light);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
+  min-inline-size: 0;
   transition:
     background var(--transition-fast),
     border-color var(--transition-fast),
@@ -1066,6 +1071,8 @@ function resetVideoSettings() {
   font-size: var(--text-xs);
   font-weight: var(--font-medium);
   color: var(--color-text-secondary);
+  overflow-wrap: anywhere;
+  text-align: center;
   transition: color var(--transition-fast);
 }
 
@@ -1116,6 +1123,7 @@ function resetVideoSettings() {
   display: flex;
   flex-wrap: wrap;
   gap: var(--spacing-2);
+  min-inline-size: 0;
 }
 
 .lang-btn {
@@ -1126,6 +1134,7 @@ function resetVideoSettings() {
   background: var(--glass-bg-light);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-full);
+  min-inline-size: 0;
   font-size: var(--text-sm);
   color: var(--color-text-secondary);
   transition:
@@ -1166,6 +1175,7 @@ function resetVideoSettings() {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-2);
+  min-inline-size: 0;
 }
 
 .toggle-btn {
@@ -1178,6 +1188,7 @@ function resetVideoSettings() {
   background: var(--glass-bg-light);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
+  min-inline-size: 0;
   transition:
     background var(--transition-fast),
     border-color var(--transition-fast),
@@ -1284,6 +1295,7 @@ function resetVideoSettings() {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-2);
+  min-inline-size: 0;
 }
 
 .link-btn {
@@ -1295,6 +1307,7 @@ function resetVideoSettings() {
   background: var(--glass-bg-light);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
+  min-inline-size: 0;
   color: var(--color-text-primary);
   text-decoration: none;
   transition:
@@ -1339,6 +1352,7 @@ function resetVideoSettings() {
   font-size: var(--text-sm);
   font-weight: var(--font-medium);
   text-align: left;
+  overflow-wrap: anywhere;
 }
 
 .link-btn-arrow {
@@ -1376,6 +1390,7 @@ function resetVideoSettings() {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--spacing-2);
+  min-inline-size: 0;
 }
 
 .bg-effect-btn {
@@ -1418,7 +1433,8 @@ function resetVideoSettings() {
   font-size: 0.625rem;
   font-weight: var(--font-medium);
   color: var(--color-text-secondary);
-  white-space: nowrap;
+  overflow-wrap: anywhere;
+  text-align: center;
 }
 
 .bg-effect-btn.active .bg-effect-label {
@@ -1429,6 +1445,7 @@ function resetVideoSettings() {
 /* ========== Slider Group ========== */
 .slider-group {
   padding: var(--spacing-2) 0 0;
+  min-inline-size: 0;
 }
 
 .slider-label {

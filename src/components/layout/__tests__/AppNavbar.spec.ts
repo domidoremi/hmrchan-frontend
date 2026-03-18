@@ -5,6 +5,8 @@ import { createI18n } from 'vue-i18n'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import AppNavbar from '../AppNavbar.vue'
 
+const MOBILE_NAV_QUERY = '(max-width: 960px)'
+
 vi.mock('pinia', async () => {
   const actual = await vi.importActual<typeof import('pinia')>('pinia')
   const vue = await vi.importActual<typeof import('vue')>('vue')
@@ -144,7 +146,7 @@ describe('AppNavbar', () => {
     vi.stubGlobal(
       'matchMedia',
       vi.fn().mockImplementation((query: string) => ({
-        matches: query === '(max-width: 768px)' ? false : false,
+        matches: query === MOBILE_NAV_QUERY ? false : false,
         media: query,
         onchange: null,
         addListener: vi.fn(),
@@ -174,6 +176,16 @@ describe('AppNavbar', () => {
     await nextTick()
 
     expect(wrapper.find('#navbar-settings-panel').exists()).toBe(false)
+
+    wrapper.unmount()
+  })
+
+  it('renders the compact brand shell without the legacy mark or tagline', async () => {
+    const wrapper = await createWrapper()
+
+    expect(wrapper.find('.brand-mark').exists()).toBe(false)
+    expect(wrapper.find('.brand-tagline').exists()).toBe(false)
+    expect(wrapper.find('.navbar-brand .brand-name').text()).toContain('MomiChan')
 
     wrapper.unmount()
   })
