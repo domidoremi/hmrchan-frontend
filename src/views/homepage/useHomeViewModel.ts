@@ -34,6 +34,7 @@ import {
   normalizeHomeTag,
   normalizeTag,
   normalizeText,
+  selectBubbleBursts,
   type FeaturedRailCard,
   type HomeTranslate,
 } from './homeModel'
@@ -534,8 +535,10 @@ export function useHomeViewModel(options: {
         (item) => item.post_id
       )
 
+      const orbits = selectBubbleBursts(preferredItems.length, bubbleBursts)
+
       return preferredItems.map((item, index) => {
-        const orbit = bubbleBursts[index]
+        const orbit = orbits[index]
         const post = mapLatestTextItemToPost(item, translate)
         return {
           post,
@@ -571,8 +574,10 @@ export function useHomeViewModel(options: {
       (post) => post.id
     )
 
+    const orbits = selectBubbleBursts(items.length, bubbleBursts)
+
     return items.map((post, index) => {
-      const orbit = bubbleBursts[index]
+      const orbit = orbits[index]
       return {
         post,
         thumbnail: post.thumbnail_url ?? null,

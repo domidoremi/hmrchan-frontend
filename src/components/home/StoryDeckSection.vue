@@ -1,5 +1,10 @@
 <template>
-  <section ref="element" class="media-slices home-screen" :style="sceneStyle">
+  <section
+    ref="element"
+    class="media-slices home-screen"
+    data-scroll-anchor="home-story"
+    :style="sceneStyle"
+  >
     <div class="container story-stage">
       <slot />
     </div>
