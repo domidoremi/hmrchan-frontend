@@ -97,14 +97,27 @@ describe('resolveHtmlDocument', () => {
       shellStats: [{ label: 'Robots', value: 'No index' }],
       shellLinks: [{ href: '/explore', label: 'Explore' }],
       structuredData: [],
+      shellVariant: 'default',
     })
 
     expect(shell).toContain('data-prerender-shell="true"')
+    expect(shell).toContain('data-prerender-shell-variant="default"')
+    expect(shell).toContain('data-prerender-shell-content="true"')
     expect(shell).toContain('404 &lt;missing&gt;')
     expect(shell).toContain('Page &quot;not found&quot;')
     expect(shell).toContain('Try another route &amp; keep browsing.')
     expect(shell).toContain('Missing route &amp; fallback')
     expect(shell).toContain('href="/explore"')
+  })
+
+  it('renders the homepage shell with the dedicated home variant', () => {
+    const homeConfig = resolveHtmlDocument(new URL('https://momichan.xyz/'))
+    const shell = renderPrerenderShell(homeConfig)
+
+    expect(homeConfig.shellVariant).toBe('home')
+    expect(shell).toContain('data-prerender-shell-variant="home"')
+    expect(shell).toContain('data-prerender-shell-content="true"')
+    expect(shell).toContain('Quick bridge')
   })
 
   it('renders JSON-LD payloads for structured public pages', () => {

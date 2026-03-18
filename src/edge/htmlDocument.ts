@@ -32,6 +32,7 @@ export type HtmlDocumentConfig = {
   shellStats: HtmlDocumentShellStat[]
   shellLinks: HtmlDocumentShellLink[]
   structuredData: HtmlStructuredData[]
+  shellVariant: 'default' | 'home'
 }
 
 type HtmlDocumentOverrides = {
@@ -43,6 +44,7 @@ type HtmlDocumentOverrides = {
   shellStats?: HtmlDocumentShellStat[]
   shellLinks?: HtmlDocumentShellLink[]
   structuredData?: HtmlStructuredData[]
+  shellVariant?: HtmlDocumentConfig['shellVariant']
 }
 
 function escapeHtml(value: string): string {
@@ -141,6 +143,7 @@ function createDocumentConfig(
     shellStats: options.shellStats ?? [],
     shellLinks: options.shellLinks ?? [],
     structuredData: options.structuredData ?? [],
+    shellVariant: options.shellVariant ?? 'default',
   }
 }
 
@@ -217,6 +220,7 @@ export function resolveHtmlDocument(url: URL): HtmlDocumentConfig {
           { label: 'Public coverage', value: 'Home / Explore / Authors / Schedule' },
         ],
         shellLinks: createPrimaryPublicLinks(),
+        shellVariant: 'home',
         structuredData: [
           createWebsiteStructuredData(),
           createOrganizationStructuredData(),
@@ -645,7 +649,7 @@ export function renderStructuredDataScript(config: HtmlDocumentConfig): string {
   return `<script type="application/ld+json" data-prerender-structured-data="true">${payload}</script>`
 }
 
-export function renderPrerenderShell(config: HtmlDocumentConfig): string {
+function renderDefaultPrerenderShell(config: HtmlDocumentConfig): string {
   const accent = config.status === 404 ? '#f97316' : '#2563eb'
   const summaryMarkup = renderShellSummary(config.shellSummary)
   const linksMarkup = renderShellLinks(config.shellLinks)
@@ -653,8 +657,8 @@ export function renderPrerenderShell(config: HtmlDocumentConfig): string {
   const visualMarkup = renderShellVisual(config)
 
   return `
-    <section data-prerender-shell="true" style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:32px 20px;background:linear-gradient(180deg,#f8fafc 0%,#eef2ff 100%);color:#0f172a;">
-      <div style="width:min(100%,1120px);display:grid;gap:24px;">
+    <section data-prerender-shell="true" data-prerender-shell-variant="default" style="min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:32px 20px;background:linear-gradient(180deg,#f8fafc 0%,#eef2ff 100%);color:#0f172a;">
+      <div data-prerender-shell-content="true" style="width:min(100%,1120px);display:grid;gap:24px;">
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px;align-items:start;">
           <article style="display:grid;gap:16px;padding:28px;border-radius:28px;background:rgba(255,255,255,0.90);border:1px solid rgba(15,23,42,0.08);box-shadow:0 20px 52px rgba(15,23,42,0.08);">
             <span style="display:inline-flex;width:max-content;padding:6px 10px;border-radius:999px;background:rgba(37,99,235,0.08);color:${accent};font:600 12px/1.2 ui-sans-serif,system-ui;">${escapeHtml(config.shellEyebrow)}</span>
@@ -671,4 +675,43 @@ export function renderPrerenderShell(config: HtmlDocumentConfig): string {
       </div>
     </section>
   `
+}
+
+function renderHomePrerenderShell(config: HtmlDocumentConfig): string {
+  const summaryMarkup = renderShellSummary(config.shellSummary)
+  const linksMarkup = renderShellLinks(config.shellLinks)
+  const statsMarkup = renderShellStats(config.shellStats)
+
+  return `
+    <section data-prerender-shell="true" data-prerender-shell-variant="home" style="position:relative;min-height:100dvh;padding:96px 20px 40px;background:radial-gradient(circle at top left,rgba(147,197,253,0.34) 0%,transparent 34%),radial-gradient(circle at top right,rgba(129,140,248,0.24) 0%,transparent 28%),radial-gradient(circle at 50% 18%,rgba(186,230,253,0.32) 0%,transparent 26%),linear-gradient(180deg,rgba(240,249,255,0.98) 0%,rgba(239,246,255,0.96) 52%,#eff6ff 100%);color:#0f172a;overflow:hidden;">
+      <div style="position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle at 16% 16%,rgba(255,255,255,0.62) 0%,transparent 38%),radial-gradient(circle at 82% 24%,rgba(96,165,250,0.18) 0%,transparent 32%);opacity:0.9;"></div>
+      <div style="position:relative;width:min(100%,1160px);margin:0 auto;display:grid;gap:24px;">
+        <div data-prerender-shell-content="true" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:24px;align-items:center;">
+          <article style="display:grid;gap:16px;align-content:center;min-height:min(36rem,calc(100dvh - 136px));padding:clamp(24px,4vw,40px) 0;">
+            <span style="display:inline-flex;width:max-content;padding:8px 12px;border-radius:999px;background:rgba(255,255,255,0.72);border:1px solid rgba(59,130,246,0.12);box-shadow:0 12px 24px rgba(37,99,235,0.08);color:#2563eb;font:600 12px/1.2 ui-sans-serif,system-ui;">${escapeHtml(config.shellEyebrow)}</span>
+            <h1 style="margin:0;max-width:14ch;font:700 clamp(40px,6vw,64px)/1.02 ui-sans-serif,system-ui;color:#0f172a;letter-spacing:-0.03em;text-wrap:balance;">${escapeHtml(config.shellTitle)}</h1>
+            <p style="margin:0;max-width:62ch;font:400 16px/1.8 ui-sans-serif,system-ui;color:#334155;">${escapeHtml(config.shellBody)}</p>
+            ${summaryMarkup}
+            ${linksMarkup}
+          </article>
+          <aside style="display:grid;gap:16px;align-content:center;">
+            <section style="display:grid;gap:14px;padding:24px;border-radius:28px;background:linear-gradient(160deg,rgba(255,255,255,0.98),rgba(240,249,255,0.92));border:1px solid rgba(96,165,250,0.18);box-shadow:0 28px 56px -34px rgba(37,99,235,0.28);">
+              <div style="display:grid;gap:8px;">
+                <span style="font:600 12px/1.2 ui-sans-serif,system-ui;letter-spacing:0.08em;text-transform:uppercase;color:#64748b;">Quick bridge</span>
+                <strong style="font:700 24px/1.15 ui-sans-serif,system-ui;color:#0f172a;">Explore today’s picks, authors, schedule, and community.</strong>
+                <p style="margin:0;font:400 14px/1.7 ui-sans-serif,system-ui;color:#475569;">首页首包先给出可抓取的精选摘要与公开入口，完整内容会在客户端接管后继续填充，不再出现独立说明卡片般的首屏闪现。</p>
+              </div>
+              ${statsMarkup}
+            </section>
+          </aside>
+        </div>
+      </div>
+    </section>
+  `
+}
+
+export function renderPrerenderShell(config: HtmlDocumentConfig): string {
+  return config.shellVariant === 'home'
+    ? renderHomePrerenderShell(config)
+    : renderDefaultPrerenderShell(config)
 }

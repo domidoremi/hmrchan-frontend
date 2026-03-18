@@ -66,12 +66,31 @@
 
     <!-- 动态标题将由 Vue Router 管理 -->
 
+    <style>
+      html[data-js='1']
+        [data-prerender-shell='true'][data-prerender-shell-variant='home']
+        [data-prerender-shell-content='true'] {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+      }
+    </style>
+
     <!--
       点击劫持防御 — 第一阶段（同步 JS）
       服务端已有 X-Frame-Options + CSP frame-ancestors，此处只做前端兜底：
       - 仅在 iframe 内嵌时隐藏页面并尝试跳出
       - 顶层访问不再默认隐藏，避免影响首屏渲染
     -->
+    <script>
+      document.documentElement.setAttribute('data-js', '1')
+      window.setTimeout(function () {
+        var appRoot = document.getElementById('app-root')
+        if (!appRoot || !appRoot.hasAttribute('data-v-app')) {
+          document.documentElement.removeAttribute('data-js')
+        }
+      }, 4000)
+    </script>
     <script>
       (function(){
         if(window.self!==window.top){

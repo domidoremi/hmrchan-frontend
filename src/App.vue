@@ -212,7 +212,17 @@ function toRouteName(routeName: unknown): string | undefined {
   return typeof routeName === 'string' ? routeName : undefined
 }
 
+function toRouteViewKey(viewKey: unknown): string | null {
+  if (typeof viewKey !== 'string') return null
+  const trimmed = viewKey.trim()
+  return trimmed.length > 0 ? trimmed : null
+}
+
 function resolveRouteKey(routeRecord: RouteLocationNormalizedLoaded): string {
+  const viewKey = toRouteViewKey(routeRecord.meta.viewKey)
+  if (viewKey) {
+    return `view:${viewKey}`
+  }
   return routeRecord.matched[0]?.path ?? routeRecord.path
 }
 
@@ -220,10 +230,20 @@ function resolveRouteKey(routeRecord: RouteLocationNormalizedLoaded): string {
 const routeDepth = (path: string) => path.split('/').filter(Boolean).length
 
 watch(
-  () => [route.name, route.path] as const,
-  ([toRouteNameValue, toPath], [fromRouteNameValue, fromPath]) => {
+  () => [route.name, route.path, route.meta.viewKey] as const,
+  (
+    [toRouteNameValue, toPath, toViewKeyValue],
+    [fromRouteNameValue, fromPath, fromViewKeyValue]
+  ) => {
     const toName = toRouteName(toRouteNameValue)
     const fromName = toRouteName(fromRouteNameValue)
+    const toViewKey = toRouteViewKey(toViewKeyValue)
+    const fromViewKey = toRouteViewKey(fromViewKeyValue)
+
+    if (toViewKey && toViewKey === fromViewKey) {
+      transitionName.value = ''
+      return
+    }
 
     if (!settings.value.enableAnimations) {
       transitionName.value = ''
