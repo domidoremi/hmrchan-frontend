@@ -494,12 +494,15 @@ onMounted(() => {
 
 .tab-bar {
   display: flex;
+  align-items: stretch;
   gap: 0.125rem;
   padding: 0.1875rem;
   background: var(--profile-muted-bg);
   border: 1px solid var(--profile-muted-border);
   border-radius: var(--radius-xl);
   overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-padding-inline: 0.1875rem;
   scrollbar-width: none;
   box-shadow: var(--profile-surface-shadow);
 }
@@ -509,7 +512,8 @@ onMounted(() => {
 }
 
 .tab-btn {
-  flex: 1;
+  flex: 1 1 0;
+  min-inline-size: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -542,6 +546,14 @@ onMounted(() => {
 
 .tab-label {
   display: inline;
+}
+
+.profile-quick-nav :deep(svg),
+.profile-quick-nav--mobile :deep(svg),
+.tab-btn :deep(svg) {
+  flex-shrink: 0;
+  inline-size: 1rem;
+  block-size: 1rem;
 }
 
 /* Tab Panel */
@@ -583,6 +595,7 @@ onMounted(() => {
     gap: var(--spacing-2);
     margin-bottom: var(--spacing-4);
     overflow-x: auto;
+    overscroll-behavior-x: contain;
     scrollbar-width: none;
     padding-bottom: var(--spacing-1);
   }
@@ -595,6 +608,7 @@ onMounted(() => {
     display: inline-flex;
     align-items: center;
     gap: var(--spacing-1);
+    min-inline-size: max-content;
     padding: var(--spacing-2) var(--spacing-3);
     background: var(--profile-chip-bg);
     border: 1px solid var(--profile-chip-border);
@@ -639,6 +653,8 @@ onMounted(() => {
   }
 
   .tab-btn {
+    flex: 0 0 auto;
+    min-inline-size: 3rem;
     padding: var(--spacing-2);
     font-size: var(--text-xs);
     gap: var(--spacing-1);
@@ -650,6 +666,10 @@ onMounted(() => {
 
   .tab-btn--active .tab-label {
     display: inline;
+  }
+
+  .tab-btn--active {
+    padding-inline: var(--spacing-3);
   }
 }
 

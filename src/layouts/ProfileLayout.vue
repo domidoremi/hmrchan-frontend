@@ -14,8 +14,7 @@ defineOptions({ name: 'ProfileLayout' })
 
 <style scoped>
 .profile-layout {
-  min-height: 100dvh;
-  min-height: 100svh;
+  min-height: var(--app-safe-block-size);
 }
 
 /* Slide transition for sub-page navigation */
@@ -34,5 +33,11 @@ defineOptions({ name: 'ProfileLayout' })
 .profile-slide-leave-to {
   opacity: 0;
   translate: -1rem 0;
+}
+
+@media (max-width: 768px) {
+  .profile-layout {
+    min-height: var(--app-safe-block-size-with-mobile-nav);
+  }
 }
 </style>
