@@ -60,98 +60,148 @@ export type StoryDeckCard = {
   detailLink: string
 }
 
+function spreadInline(value: string): string {
+  return `calc(${value} * var(--home-bubble-spread-inline, 1))`
+}
+
+function spreadBlock(value: string): string {
+  return `calc(${value} * var(--home-bubble-spread-block, 1))`
+}
+
 export const bubbleBursts = [
   {
-    x: 'clamp(-30rem, -31vw, -17rem)',
-    y: 'clamp(-13.2rem, -14dvh, -7.8rem)',
-    introX: 'clamp(-7.2rem, -8vw, -4.6rem)',
-    introY: 'clamp(-4.4rem, -5dvh, -2.7rem)',
+    x: spreadInline('clamp(-30rem, -31vw, -17rem)'),
+    y: spreadBlock('clamp(-13.2rem, -14dvh, -7.8rem)'),
+    introX: spreadInline('clamp(-7.2rem, -8vw, -4.6rem)'),
+    introY: spreadBlock('clamp(-4.4rem, -5dvh, -2.7rem)'),
     delay: '0s',
     scale: '1.02',
     tailAngle: '-148deg',
   },
   {
-    x: 'clamp(-11rem, -12vw, -6rem)',
-    y: 'clamp(-16.8rem, -18dvh, -9.4rem)',
-    introX: 'clamp(-2.8rem, -3.6vw, -1.8rem)',
-    introY: 'clamp(-5.6rem, -6dvh, -3.2rem)',
-    delay: '0.06s',
+    x: spreadInline('clamp(-11rem, -12vw, -6rem)'),
+    y: spreadBlock('clamp(-16.8rem, -18dvh, -9.4rem)'),
+    introX: spreadInline('clamp(-2.8rem, -3.6vw, -1.8rem)'),
+    introY: spreadBlock('clamp(-5.6rem, -6dvh, -3.2rem)'),
+    delay: '0.03s',
     scale: '0.94',
     tailAngle: '-108deg',
   },
   {
-    x: 'clamp(11.5rem, 13vw, 6.6rem)',
-    y: 'clamp(-14.6rem, -15.8dvh, -8.2rem)',
-    introX: 'clamp(3rem, 3.8vw, 2rem)',
-    introY: 'clamp(-4.8rem, -5.4dvh, -3rem)',
-    delay: '0.12s',
+    x: spreadInline('clamp(11.5rem, 13vw, 6.6rem)'),
+    y: spreadBlock('clamp(-14.6rem, -15.8dvh, -8.2rem)'),
+    introX: spreadInline('clamp(3rem, 3.8vw, 2rem)'),
+    introY: spreadBlock('clamp(-4.8rem, -5.4dvh, -3rem)'),
+    delay: '0.06s',
     scale: '0.9',
     tailAngle: '-28deg',
   },
   {
-    x: 'clamp(29rem, 31vw, 17.8rem)',
-    y: 'clamp(-7rem, -8dvh, -4rem)',
-    introX: 'clamp(7.8rem, 8.4vw, 4.8rem)',
-    introY: 'clamp(-2.4rem, -3dvh, -1.5rem)',
-    delay: '0.24s',
+    x: spreadInline('clamp(29rem, 31vw, 17.8rem)'),
+    y: spreadBlock('clamp(-7rem, -8dvh, -4rem)'),
+    introX: spreadInline('clamp(7.8rem, 8.4vw, 4.8rem)'),
+    introY: spreadBlock('clamp(-2.4rem, -3dvh, -1.5rem)'),
+    delay: '0.09s',
     scale: '0.92',
     tailAngle: '18deg',
   },
   {
-    x: 'clamp(-31.5rem, -32vw, -18.5rem)',
-    y: 'clamp(-1.6rem, -0.4dvh, 0.8rem)',
-    introX: 'clamp(-8rem, -8.8vw, -4.8rem)',
-    introY: 'clamp(-0.2rem, 0.4dvh, 0.8rem)',
-    delay: '0.3s',
+    x: spreadInline('clamp(-31.5rem, -32vw, -18.5rem)'),
+    y: spreadBlock('clamp(-1.6rem, -0.4dvh, 0.8rem)'),
+    introX: spreadInline('clamp(-8rem, -8.8vw, -4.8rem)'),
+    introY: spreadBlock('clamp(-0.2rem, 0.4dvh, 0.8rem)'),
+    delay: '0.12s',
     scale: '0.88',
     tailAngle: '164deg',
   },
   {
-    x: 'clamp(31rem, 31vw, 18.5rem)',
-    y: 'clamp(0.2rem, 1dvh, 1.8rem)',
-    introX: 'clamp(8.2rem, 8.8vw, 5rem)',
-    introY: 'clamp(0.4rem, 0.8dvh, 1rem)',
-    delay: '0.36s',
+    x: spreadInline('clamp(31rem, 31vw, 18.5rem)'),
+    y: spreadBlock('clamp(0.2rem, 1dvh, 1.8rem)'),
+    introX: spreadInline('clamp(8.2rem, 8.8vw, 5rem)'),
+    introY: spreadBlock('clamp(0.4rem, 0.8dvh, 1rem)'),
+    delay: '0.15s',
     scale: '0.9',
     tailAngle: '32deg',
   },
   {
-    x: 'clamp(-22rem, -23vw, -12rem)',
-    y: 'clamp(4.8rem, 5.5dvh, 3rem)',
-    introX: 'clamp(-5.6rem, -6vw, -3.3rem)',
-    introY: 'clamp(2rem, 2.4dvh, 1.2rem)',
-    delay: '0.42s',
+    x: spreadInline('clamp(-22rem, -23vw, -12rem)'),
+    y: spreadBlock('clamp(4.8rem, 5.5dvh, 3rem)'),
+    introX: spreadInline('clamp(-5.6rem, -6vw, -3.3rem)'),
+    introY: spreadBlock('clamp(2rem, 2.4dvh, 1.2rem)'),
+    delay: '0.18s',
     scale: '0.92',
     tailAngle: '120deg',
   },
   {
     x: '0rem',
-    y: 'clamp(5.8rem, 6.4dvh, 3.6rem)',
+    y: spreadBlock('clamp(5.8rem, 6.4dvh, 3.6rem)'),
     introX: '0rem',
-    introY: 'clamp(2.4rem, 2.8dvh, 1.4rem)',
-    delay: '0.48s',
+    introY: spreadBlock('clamp(2.4rem, 2.8dvh, 1.4rem)'),
+    delay: '0.21s',
     scale: '0.92',
     tailAngle: '92deg',
   },
   {
-    x: 'clamp(21rem, 22vw, 12rem)',
-    y: 'clamp(4.9rem, 5.6dvh, 3rem)',
-    introX: 'clamp(5.2rem, 5.8vw, 3.2rem)',
-    introY: 'clamp(1.8rem, 2.2dvh, 1.1rem)',
-    delay: '0.54s',
+    x: spreadInline('clamp(21rem, 22vw, 12rem)'),
+    y: spreadBlock('clamp(4.9rem, 5.6dvh, 3rem)'),
+    introX: spreadInline('clamp(5.2rem, 5.8vw, 3.2rem)'),
+    introY: spreadBlock('clamp(1.8rem, 2.2dvh, 1.1rem)'),
+    delay: '0.24s',
     scale: '0.88',
     tailAngle: '64deg',
   },
   {
-    x: 'clamp(-8rem, -8.8vw, -4.6rem)',
-    y: 'clamp(6.3rem, 7dvh, 3.9rem)',
-    introX: 'clamp(-1.8rem, -2.2vw, -1rem)',
-    introY: 'clamp(2.8rem, 3dvh, 1.6rem)',
-    delay: '0.6s',
+    x: spreadInline('clamp(-8rem, -8.8vw, -4.6rem)'),
+    y: spreadBlock('clamp(6.3rem, 7dvh, 3.9rem)'),
+    introX: spreadInline('clamp(-1.8rem, -2.2vw, -1rem)'),
+    introY: spreadBlock('clamp(2.8rem, 3dvh, 1.6rem)'),
+    delay: '0.27s',
     scale: '0.86',
     tailAngle: '104deg',
   },
 ] as const
+
+const bubbleBurstLayoutByCount: Partial<Record<number, readonly number[]>> = {
+  1: [7],
+  2: [4, 5],
+  3: [0, 3, 7],
+  4: [0, 3, 6, 8],
+  5: [0, 3, 4, 5, 7],
+  6: [0, 3, 4, 5, 6, 8],
+  7: [0, 3, 4, 5, 6, 7, 8],
+}
+
+function getEvenlyDistributedBubbleIndexes(count: number, total: number): number[] {
+  if (count <= 0 || total <= 0) return []
+  if (count >= total) return Array.from({ length: total }, (_, index) => index)
+  if (count === 1) return [Math.floor((total - 1) / 2)]
+
+  const indexes = new Set<number>()
+  const maxIndex = total - 1
+
+  for (let index = 0; index < count; index += 1) {
+    const ratio = index / (count - 1)
+    indexes.add(Math.round(ratio * maxIndex))
+  }
+
+  return Array.from(indexes).sort((left, right) => left - right)
+}
+
+export function selectBubbleBursts(
+  count: number,
+  bursts: readonly (typeof bubbleBursts)[number][] = bubbleBursts
+): Array<(typeof bubbleBursts)[number]> {
+  if (count <= 0 || bursts.length === 0) return []
+
+  const clampedCount = Math.min(count, bursts.length)
+  const preferredIndexes = bubbleBurstLayoutByCount[clampedCount]
+  const indexes =
+    preferredIndexes && preferredIndexes.length === clampedCount
+      ? [...preferredIndexes]
+      : getEvenlyDistributedBubbleIndexes(clampedCount, bursts.length)
+
+  return indexes.map((index) => bursts[index]).filter(Boolean)
+}
 
 export function normalizeTag(tag: string): string {
   return String(tag ?? '')

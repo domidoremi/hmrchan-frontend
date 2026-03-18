@@ -4,6 +4,14 @@ defineOptions({ name: 'ScrollDownFab' })
 import { ref, onMounted, onUnmounted } from 'vue'
 import { ChevronDown } from 'lucide-vue-next'
 import { throttleRAF } from '@/utils/performance'
+import {
+  collectDocumentScrollTargets,
+  computeScrollAnchorTop,
+  isNearDocumentBottom,
+  readNavbarVisibleOffset,
+  resolveNextScrollAnchor,
+  type ScrollAnchorTarget,
+} from '@/components/ui/scrollAnchorTargets'
 
 const props = withDefaults(
   defineProps<{
@@ -15,21 +23,37 @@ const props = withDefaults(
 )
 
 const isVisible = ref(false)
+const nextTarget = ref<ScrollAnchorTarget | null>(null)
 
 function updateVisibility() {
   const scrollTop = window.scrollY || document.documentElement.scrollTop
   const docHeight = document.documentElement.scrollHeight
   const viewHeight = window.innerHeight
-  // Use provided threshold, or fallback to half viewport height
-  const threshold = props.scrollThreshold || viewHeight * 0.5
-  isVisible.value = scrollTop > threshold && scrollTop + viewHeight < docHeight - 200
+  const navbarOffset = readNavbarVisibleOffset(document)
+  const targets = collectDocumentScrollTargets(document)
+  const threshold = Math.max(0, props.scrollThreshold)
+
+  nextTarget.value = resolveNextScrollAnchor({
+    scrollY: scrollTop,
+    navbarOffset,
+    targets,
+  })
+
+  isVisible.value =
+    scrollTop >= threshold &&
+    !isNearDocumentBottom(scrollTop, viewHeight, docHeight) &&
+    nextTarget.value !== null
 }
 
 const handleScroll = throttleRAF(updateVisibility)
+const handleResize = throttleRAF(updateVisibility)
 
 function scrollDown() {
-  window.scrollBy({
-    top: window.innerHeight * 0.75,
+  if (!nextTarget.value) return
+
+  const navbarOffset = readNavbarVisibleOffset(document)
+  window.scrollTo({
+    top: computeScrollAnchorTop(nextTarget.value.top, navbarOffset),
     behavior: 'smooth',
   })
 }
@@ -37,11 +61,14 @@ function scrollDown() {
 onMounted(() => {
   updateVisibility()
   window.addEventListener('scroll', handleScroll, { passive: true })
+  window.addEventListener('resize', handleResize)
 })
 
 onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll)
+  window.removeEventListener('resize', handleResize)
   handleScroll.cancel?.()
+  handleResize.cancel?.()
 })
 </script>
 

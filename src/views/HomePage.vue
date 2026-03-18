@@ -952,6 +952,10 @@ import LatestPostsSection from '@/components/home/LatestPostsSection.vue'
 import PostCard from '@/components/business/PostCard.vue'
 import PostCardSkeleton from '@/components/business/PostCardSkeleton.vue'
 import ScrollDownFab from '@/components/ui/ScrollDownFab.vue'
+import {
+  computeScrollAnchorTop,
+  readNavbarVisibleOffset,
+} from '@/components/ui/scrollAnchorTargets'
 import StoryDeckSection from '@/components/home/StoryDeckSection.vue'
 
 if (typeof window !== 'undefined') {
@@ -1455,6 +1459,12 @@ function updateViewportSceneBlend() {
   const footerBlendProgress = nextBlend.storyFooter > 0.04 ? nextBlend.storyFooter : 0
   const postsElement = resolveSectionElement(postsSectionRef.value)
   const featuredElement = resolveSectionElement(featuredSectionRef.value)
+  const postsRect = postsElement?.getBoundingClientRect() ?? null
+  const shouldRevealBubbles =
+    bubbleItems.value.length > 0 &&
+    Boolean(postsRect) &&
+    postsRect.bottom > window.innerHeight * 0.28 &&
+    postsRect.top < window.innerHeight * 0.86
   const railLockBoundary =
     postsElement?.offsetTop ??
     (featuredElement?.offsetTop ?? 0) + (featuredElement?.offsetHeight ?? 0)
@@ -1464,6 +1474,20 @@ function updateViewportSceneBlend() {
     ...nextBlend,
     storyFooter: footerBlendProgress,
   }
+
+  if (shouldRevealBubbles) {
+    if (!hasTriggeredBubbleBurst.value && bubbleBurstReplayFrame === null) {
+      if (shouldAnimate.value) {
+        restartBubbleBurst()
+      } else {
+        hasTriggeredBubbleBurst.value = true
+      }
+    }
+  } else if (hasTriggeredBubbleBurst.value || bubbleBurstReplayFrame !== null) {
+    clearBubbleBurstReplayFrame()
+    hasTriggeredBubbleBurst.value = false
+  }
+
   setRailNavbarLock(railLockActive)
   setHomeFooterBlendProgress(footerBlendProgress)
 }
@@ -1605,28 +1629,6 @@ function setupSceneTriggers() {
 
   if (typeof window === 'undefined' || !scenesEnabled) return
 
-  const postsElement = resolveSectionElement(postsSectionRef.value)
-  if (postsElement) {
-    bubbleBurstTrigger = ScrollTrigger.create({
-      trigger: postsElement,
-      start: 'top 82%',
-      end: 'bottom top',
-      invalidateOnRefresh: true,
-      onEnter: () => {
-        restartBubbleBurst()
-      },
-      onEnterBack: () => {
-        restartBubbleBurst()
-      },
-      onLeave: () => {
-        hasTriggeredBubbleBurst.value = false
-      },
-      onLeaveBack: () => {
-        hasTriggeredBubbleBurst.value = false
-      },
-    })
-  }
-
   const storyElement = resolveSectionElement(storyDeckRef.value)
   if (storyElement && storyCardCount.value > 1) {
     storyDeckTrigger = ScrollTrigger.create({
@@ -1752,9 +1754,13 @@ function goToSchedule() {
 }
 
 function scrollToFeatured() {
-  resolveSectionElement(featuredSectionRef.value)?.scrollIntoView({
+  const target = resolveSectionElement(featuredSectionRef.value)
+  if (!target) return
+
+  const targetTop = window.scrollY + target.getBoundingClientRect().top
+  window.scrollTo({
+    top: computeScrollAnchorTop(targetTop, readNavbarVisibleOffset(document)),
     behavior: 'smooth',
-    block: 'start',
   })
 }
 
@@ -1852,11 +1858,28 @@ onBeforeUnmount(() => {
 <style scoped>
 .home-page {
   position: relative;
-  min-height: 100svh;
-  min-height: 100dvh;
-  --home-stage-safe-top: calc(var(--navbar-height, 4rem) + clamp(0.35rem, 1.2vw, 0.9rem));
+  min-height: var(--app-safe-block-size);
+  --home-safe-block-size: var(--app-safe-block-size);
+  --home-safe-block-size-with-mobile-nav: var(--app-safe-block-size-with-mobile-nav);
+  --home-stage-safe-top: calc(
+    var(--navbar-visible-height, var(--navbar-height, 4rem)) + clamp(0.35rem, 1.2vw, 0.9rem)
+  );
   --home-stage-safe-bottom: clamp(1.5rem, 4vw, 2.75rem);
   --home-stage-chrome-height: clamp(2.25rem, 3.2vw, 2.85rem);
+  --home-stage-max-inline: min(100%, 90rem);
+  --home-hero-max-inline: min(100%, 66rem);
+  --home-hero-copy-max-inline: 38rem;
+  --home-hero-aside-max-inline: 28rem;
+  --home-feed-max-inline: min(100%, 90rem);
+  --home-story-stage-max-inline: min(100%, 90rem);
+  --home-story-card-max-inline: 72rem;
+  --home-story-copy-max-inline: 27rem;
+  --home-story-visual-max-inline: 31rem;
+  --home-story-merge-max-inline: 74rem;
+  --home-bubble-spread-inline: 1;
+  --home-bubble-spread-block: 0.72;
+  --home-bubble-max-inline: 18.5rem;
+  --home-bubble-inner-max-inline: 15rem;
   --home-blush-rgb: 246, 218, 229;
   --home-mist-rgb: 199, 220, 244;
   --home-lilac-rgb: 219, 211, 245;
@@ -2096,8 +2119,7 @@ onBeforeUnmount(() => {
 }
 
 .home-screen {
-  min-height: 100svh;
-  min-height: 100dvh;
+  min-height: var(--home-safe-block-size);
   box-sizing: border-box;
 }
 
@@ -2314,7 +2336,7 @@ onBeforeUnmount(() => {
 .hero {
   position: relative;
   z-index: 1;
-  min-height: 100dvh;
+  min-height: var(--home-safe-block-size);
   padding-block: clamp(2rem, 6dvh, 4rem) calc(2rem + var(--home-stage-safe-bottom));
   display: flex;
   align-items: center;
@@ -2336,7 +2358,11 @@ onBeforeUnmount(() => {
   display: grid;
   justify-items: center;
   align-content: center;
-  min-block-size: calc(100dvh - clamp(4rem, 12dvh, 8rem) - var(--home-stage-safe-bottom));
+  inline-size: 100%;
+  max-inline-size: var(--home-stage-max-inline);
+  min-block-size: calc(
+    var(--home-safe-block-size) - clamp(4rem, 12dvh, 8rem) - var(--home-stage-safe-bottom)
+  );
   padding-block: clamp(0.5rem, 1.6vw, 1.25rem);
 }
 
@@ -2345,7 +2371,7 @@ onBeforeUnmount(() => {
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   gap: clamp(1rem, 2.4vw, 1.5rem);
   align-items: center;
-  inline-size: min(100%, 66rem);
+  inline-size: min(100%, var(--home-hero-max-inline));
   min-block-size: clamp(23rem, 48dvh, 29rem);
 }
 
@@ -2358,6 +2384,7 @@ onBeforeUnmount(() => {
 }
 
 .hero-copy__left {
+  max-inline-size: min(100%, var(--home-hero-copy-max-inline));
   align-items: flex-end;
   justify-content: center;
   text-align: end;
@@ -2365,6 +2392,7 @@ onBeforeUnmount(() => {
 }
 
 .hero-copy__right {
+  inline-size: min(100%, var(--home-hero-aside-max-inline));
   justify-content: center;
 }
 
@@ -3250,7 +3278,7 @@ onBeforeUnmount(() => {
 /* ========== Posts Section ========== */
 .posts {
   position: relative;
-  min-block-size: 100dvh;
+  min-block-size: var(--home-safe-block-size);
   padding-block: calc(var(--home-stage-safe-top) + clamp(0.35rem, 1vw, 0.75rem))
     calc(var(--home-stage-safe-bottom) + clamp(0.6rem, 1.8vw, 1.15rem));
   z-index: 1;
@@ -3359,7 +3387,7 @@ onBeforeUnmount(() => {
   grid-template-rows: auto auto minmax(0, 1fr);
   gap: clamp(0.875rem, 1.8vw, 1.25rem);
   min-block-size: calc(
-    100dvh - var(--home-stage-safe-top) - var(--home-stage-safe-bottom) -
+    var(--home-safe-block-size) - var(--home-stage-safe-top) - var(--home-stage-safe-bottom) -
       clamp(0.95rem, 2.4vw, 1.9rem)
   );
 }
@@ -3397,7 +3425,7 @@ onBeforeUnmount(() => {
 
 /* ========== Scroll Narrative Overrides ========== */
 .hero {
-  min-block-size: 100dvh;
+  min-block-size: var(--home-safe-block-size);
   padding-block: max(var(--home-stage-safe-top), clamp(0.75rem, 1.8vw, 1.25rem))
     clamp(1.25rem, 3vw, 2.25rem);
 }
@@ -3408,12 +3436,14 @@ onBeforeUnmount(() => {
   align-content: center;
   justify-content: center;
   justify-items: center;
-  min-block-size: calc(100dvh - var(--home-stage-safe-top) - clamp(1.25rem, 3vw, 2.25rem));
+  min-block-size: calc(
+    var(--home-safe-block-size) - var(--home-stage-safe-top) - clamp(1.25rem, 3vw, 2.25rem)
+  );
 }
 
 .hero-copy {
-  inline-size: min(100%, 66rem);
-  max-inline-size: min(100%, 66rem);
+  inline-size: min(100%, var(--home-hero-max-inline));
+  max-inline-size: min(100%, var(--home-hero-max-inline));
   min-block-size: clamp(23rem, 48dvh, 29rem);
   margin-inline: auto;
   align-items: center;
@@ -3421,7 +3451,7 @@ onBeforeUnmount(() => {
 }
 
 .hero-copy__left {
-  max-inline-size: 38rem;
+  max-inline-size: min(100%, var(--home-hero-copy-max-inline));
   align-items: flex-end;
   justify-content: center;
   text-align: end;
@@ -3429,7 +3459,7 @@ onBeforeUnmount(() => {
 }
 
 .hero-copy__right {
-  inline-size: min(100%, 28rem);
+  inline-size: min(100%, var(--home-hero-aside-max-inline));
   justify-content: center;
 }
 
@@ -3489,14 +3519,14 @@ onBeforeUnmount(() => {
 
 .rail {
   position: relative;
-  min-block-size: calc(var(--rail-slide-count, 1) * 100dvh);
+  min-block-size: calc(var(--rail-slide-count, 1) * var(--home-safe-block-size));
   padding: 0;
 }
 
 .rail-sticky {
   position: sticky;
   inset-block-start: 0;
-  block-size: 100dvh;
+  block-size: var(--home-safe-block-size);
   overflow: clip;
 }
 
@@ -3588,7 +3618,7 @@ onBeforeUnmount(() => {
 }
 
 .rail-panel__content {
-  inline-size: min(100%, 90rem);
+  inline-size: min(100%, var(--home-stage-max-inline));
   block-size: 100%;
   margin-inline: auto;
   display: grid;
@@ -4658,8 +4688,8 @@ onBeforeUnmount(() => {
 .posts--bubble {
   display: grid;
   align-items: stretch;
-  block-size: 100dvh;
-  min-block-size: 100dvh;
+  block-size: var(--home-safe-block-size);
+  min-block-size: var(--home-safe-block-size);
   padding-block: calc(var(--home-stage-safe-top) + clamp(0.3rem, 0.8vw, 0.55rem))
     calc(clamp(0.7rem, 1.4vw, 1rem) + var(--home-stage-safe-bottom));
   overflow: clip;
@@ -4826,7 +4856,7 @@ onBeforeUnmount(() => {
   border: 0 !important;
   box-shadow: none !important;
   padding: 0;
-  max-inline-size: min(17rem, calc(100% - 3rem));
+  max-inline-size: min(var(--home-bubble-max-inline), calc(100% - 3rem));
   max-width: none;
   opacity: 0;
   filter: none;
@@ -4860,7 +4890,8 @@ onBeforeUnmount(() => {
 .latest-bubble__inner {
   display: grid;
   gap: 0.5625rem;
-  max-inline-size: min(18ch, 14rem);
+  inline-size: clamp(12rem, 14vw, var(--home-bubble-inner-max-inline));
+  max-inline-size: min(100%, var(--home-bubble-inner-max-inline));
   padding: 0.8125rem 0.9375rem;
   border-radius: var(--home-card-radius) var(--home-shell-radius) var(--home-shell-radius)
     calc(var(--home-card-radius) * 0.9);
@@ -4875,16 +4906,22 @@ onBeforeUnmount(() => {
 }
 
 .latest-bubble__text {
+  display: -webkit-box;
+  overflow: hidden;
   font-size: clamp(0.92rem, 1.35vw, 1.18rem);
   font-weight: var(--font-semibold);
   line-height: 1.44;
   text-wrap: pretty;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 7;
 }
 
 .posts--revealed .latest-bubble {
   opacity: 1;
   pointer-events: auto;
-  animation: bubbleBurstFromCenter 540ms cubic-bezier(0.2, 0.82, 0.24, 1) both;
+  transform: translate3d(calc(-50% + var(--bubble-x)), calc(-50% + var(--bubble-y)), 0)
+    scale(var(--bubble-scale, 1));
+  animation: bubbleBurstFromCenter 420ms cubic-bezier(0.2, 0.82, 0.24, 1) both;
   animation-delay: var(--bubble-delay, 0s);
 }
 
@@ -4895,7 +4932,7 @@ onBeforeUnmount(() => {
 
 .media-slices {
   position: relative;
-  min-block-size: calc(var(--story-card-count, 1) * 100dvh);
+  min-block-size: calc(var(--story-card-count, 1) * var(--home-safe-block-size));
   padding: 0;
   background: linear-gradient(
     180deg,
@@ -4908,7 +4945,7 @@ onBeforeUnmount(() => {
 .story-stage {
   position: sticky;
   inset-block-start: 0;
-  block-size: 100dvh;
+  block-size: var(--home-safe-block-size);
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
   gap: clamp(0.95rem, 1.8vw, 1.25rem);
@@ -4997,7 +5034,7 @@ onBeforeUnmount(() => {
   inset-block-end: clamp(1.125rem, 2.4vw, 1.75rem);
   z-index: 4;
   display: grid;
-  inline-size: min(100%, 74rem);
+  inline-size: min(100%, var(--home-story-merge-max-inline));
   margin-inline: auto;
   grid-template-columns: minmax(0, 0.8fr) minmax(14rem, 0.92fr);
   gap: clamp(0.75rem, 1.4vw, 1rem);
@@ -5130,7 +5167,7 @@ onBeforeUnmount(() => {
 .media-slice__sticky {
   position: relative;
   top: auto;
-  inline-size: min(calc(100% - 1rem), 72rem);
+  inline-size: min(calc(100% - 1rem), var(--home-story-card-max-inline));
   max-block-size: 100%;
   min-height: min(50dvh, 32rem);
   margin-inline: auto;
@@ -5194,7 +5231,7 @@ onBeforeUnmount(() => {
 }
 
 .media-slice__copy {
-  inline-size: min(100%, 27rem);
+  inline-size: min(100%, var(--home-story-copy-max-inline));
   display: grid;
   align-content: center;
   justify-items: start;
@@ -5289,7 +5326,7 @@ onBeforeUnmount(() => {
 }
 
 :deep(.media-slice__visual .post-card.glass-card) {
-  inline-size: min(100%, 31rem);
+  inline-size: min(100%, var(--home-story-visual-max-inline));
   block-size: auto;
   margin-inline: auto;
   border-color: var(--home-story-card-border) !important;
@@ -5491,6 +5528,129 @@ onBeforeUnmount(() => {
   }
 }
 
+@media (min-width: 120rem) {
+  .home-page {
+    --home-stage-max-inline: min(100%, 108rem);
+    --home-hero-max-inline: min(100%, 82rem);
+    --home-hero-copy-max-inline: 44rem;
+    --home-hero-aside-max-inline: 32rem;
+    --home-feed-max-inline: min(100%, 96rem);
+    --home-story-stage-max-inline: min(100%, 96rem);
+    --home-story-card-max-inline: 78rem;
+    --home-story-copy-max-inline: 29rem;
+    --home-story-visual-max-inline: 33rem;
+    --home-story-merge-max-inline: 80rem;
+    --home-bubble-spread-inline: 1.14;
+    --home-bubble-spread-block: 0.82;
+    --home-bubble-max-inline: 20.5rem;
+    --home-bubble-inner-max-inline: 16.25rem;
+  }
+}
+
+@media (min-width: 180rem) {
+  .home-page {
+    --home-stage-max-inline: min(100%, 124rem);
+    --home-hero-max-inline: min(100%, 96rem);
+    --home-hero-copy-max-inline: 52rem;
+    --home-hero-aside-max-inline: 36rem;
+    --home-feed-max-inline: min(100%, 110rem);
+    --home-story-stage-max-inline: min(100%, 110rem);
+    --home-story-card-max-inline: 92rem;
+    --home-story-copy-max-inline: 33rem;
+    --home-story-visual-max-inline: 39rem;
+    --home-story-merge-max-inline: 94rem;
+    --home-bubble-spread-inline: 1.34;
+    --home-bubble-spread-block: 0.92;
+    --home-bubble-max-inline: 22.75rem;
+    --home-bubble-inner-max-inline: 18.25rem;
+  }
+
+  .hero {
+    align-items: flex-start;
+    padding-block: max(var(--home-stage-safe-top), clamp(1.5rem, 2vw, 2rem))
+      clamp(1.75rem, 3vw, 2.5rem);
+  }
+
+  .home-page .hero-layout {
+    align-content: start;
+    min-block-size: min(
+      68rem,
+      calc(var(--home-safe-block-size) - var(--home-stage-safe-top) - clamp(1.75rem, 3vw, 2.5rem))
+    );
+    padding-block-start: clamp(3.5rem, 4.8vw, 5rem);
+  }
+
+  .hero-copy {
+    min-block-size: clamp(27rem, 52dvh, 34rem);
+    gap: clamp(1.5rem, 2.6vw, 2rem);
+  }
+
+  .hero-title {
+    font-size: clamp(3rem, 2.2vw, 4.6rem);
+    line-height: 1.02;
+    max-inline-size: 11ch;
+  }
+
+  .hero-subtitle {
+    max-inline-size: 48ch;
+    font-size: clamp(1.06rem, 0.8vw + 0.55rem, 1.28rem);
+  }
+
+  .bubble-stage::before {
+    inline-size: clamp(16rem, 24vw, 22rem);
+    block-size: clamp(9rem, 16vw, 13rem);
+    opacity: 0.52;
+  }
+
+  .bubble-stage::after {
+    inline-size: clamp(28rem, 44vw, 40rem);
+    block-size: clamp(28rem, 44vw, 40rem);
+    opacity: 0.18;
+  }
+
+  .latest-bubble__inner {
+    padding: 0.95rem 1.1rem;
+  }
+
+  .latest-bubble__text {
+    font-size: clamp(1rem, 0.74vw + 0.55rem, 1.28rem);
+    line-height: 1.5;
+  }
+
+  .story-stage {
+    gap: clamp(1.1rem, 1.6vw, 1.4rem);
+    padding-block: calc(var(--home-stage-safe-top) + clamp(0.7rem, 1vw, 0.9rem))
+      calc(clamp(1.1rem, 1.8vw, 1.45rem) + var(--home-stage-safe-bottom));
+  }
+
+  .media-slice-list {
+    place-items: start center;
+    padding-block: clamp(0.85rem, 1.3vw, 1.1rem) clamp(2rem, 3vw, 2.5rem);
+    perspective-origin: 50% 24%;
+  }
+
+  .story-progress {
+    padding: 0.75rem 1rem;
+  }
+
+  .media-slice__sticky {
+    min-height: min(58dvh, 36rem);
+    grid-template-columns: minmax(0, 1.08fr) minmax(21rem, 0.92fr);
+    gap: clamp(1.5rem, 2.2vw, 2rem);
+  }
+
+  .media-slice__copy h3 {
+    max-inline-size: 12ch;
+    font-size: clamp(1.7rem, 1.7vw, 2.2rem);
+  }
+
+  .media-slice__copy > p {
+    max-inline-size: 32ch;
+    font-size: clamp(1rem, 0.62vw + 0.65rem, 1.16rem);
+    -webkit-line-clamp: 3;
+  }
+}
+
 @media (max-width: 1024px) {
   .hero-copy {
     grid-template-columns: 1fr;
@@ -5627,7 +5787,7 @@ onBeforeUnmount(() => {
   }
 
   .hero {
-    min-block-size: calc(100dvh - var(--mobile-nav-height) - env(safe-area-inset-bottom, 0rem));
+    min-block-size: var(--home-safe-block-size-with-mobile-nav);
     padding-block: max(var(--home-stage-safe-top), clamp(0.75rem, 3vw, 1.1rem))
       calc(env(safe-area-inset-bottom, 0rem) + clamp(1rem, 4vw, 1.35rem));
   }
@@ -5635,8 +5795,8 @@ onBeforeUnmount(() => {
   .hero-layout {
     grid-template-columns: minmax(0, 1fr);
     min-block-size: calc(
-      100dvh - var(--home-stage-safe-top) - var(--mobile-nav-height) -
-        env(safe-area-inset-bottom, 0rem) - clamp(1rem, 4vw, 1.35rem)
+      var(--home-safe-block-size-with-mobile-nav) - var(--home-stage-safe-top) -
+        clamp(1rem, 4vw, 1.35rem)
     );
     align-items: center;
     align-content: center;
@@ -6560,7 +6720,11 @@ onBeforeUnmount(() => {
   align-content: center;
   justify-content: center;
   justify-items: center;
-  min-block-size: calc(100dvh - var(--home-stage-safe-top) - clamp(1.25rem, 3vw, 2.25rem));
+  inline-size: 100%;
+  max-inline-size: var(--home-stage-max-inline);
+  min-block-size: calc(
+    var(--home-safe-block-size) - var(--home-stage-safe-top) - clamp(1.25rem, 3vw, 2.25rem)
+  );
 }
 
 .home-page .rail-stage,
@@ -6583,8 +6747,11 @@ onBeforeUnmount(() => {
   display: grid;
   grid-template-rows: auto auto minmax(0, 1fr);
   gap: clamp(0.875rem, 1.8vw, 1.25rem);
+  inline-size: min(100%, var(--home-feed-max-inline));
+  max-inline-size: var(--home-feed-max-inline);
+  margin-inline: auto;
   min-block-size: calc(
-    100dvh - var(--home-stage-safe-top) - var(--home-stage-safe-bottom) -
+    var(--home-safe-block-size) - var(--home-stage-safe-top) - var(--home-stage-safe-bottom) -
       clamp(0.95rem, 2.4vw, 1.9rem)
   );
   opacity: var(--home-posts-opacity, 1);
@@ -6594,7 +6761,7 @@ onBeforeUnmount(() => {
 .home-page .rail-sticky {
   position: sticky;
   inset-block-start: 0;
-  block-size: 100dvh;
+  block-size: var(--home-safe-block-size);
   overflow: clip;
 }
 
@@ -6667,7 +6834,10 @@ onBeforeUnmount(() => {
 .home-page .story-stage {
   position: sticky;
   inset-block-start: 0;
-  block-size: 100dvh;
+  inline-size: min(100%, var(--home-story-stage-max-inline));
+  max-inline-size: var(--home-story-stage-max-inline);
+  margin-inline: auto;
+  block-size: var(--home-safe-block-size);
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
   gap: clamp(0.95rem, 1.8vw, 1.25rem);
@@ -6762,6 +6932,32 @@ onBeforeUnmount(() => {
     both;
 }
 
+@media (min-width: 180rem) {
+  .home-page .hero-layout {
+    align-content: start;
+    min-block-size: min(
+      68rem,
+      calc(var(--home-safe-block-size) - var(--home-stage-safe-top) - clamp(1.75rem, 3vw, 2.5rem))
+    );
+    padding-block-start: clamp(3rem, 4vw, 4.5rem);
+  }
+
+  .home-page .hero-copy {
+    min-block-size: clamp(24rem, 44dvh, 31rem);
+    gap: clamp(1.35rem, 2.3vw, 1.85rem);
+  }
+
+  .home-page .posts--bubble > .container {
+    gap: clamp(0.95rem, 1.4vw, 1.15rem);
+  }
+
+  .home-page .story-stage {
+    gap: clamp(1.1rem, 1.6vw, 1.4rem);
+    padding-block: calc(var(--home-stage-safe-top) + clamp(0.7rem, 1vw, 0.9rem))
+      calc(clamp(1.1rem, 1.8vw, 1.45rem) + var(--home-stage-safe-bottom));
+  }
+}
+
 @media (max-width: 768px) {
   .home-page .rail-stage,
   .home-page .posts--bubble > .container,
@@ -6781,8 +6977,8 @@ onBeforeUnmount(() => {
   .home-page .hero-layout {
     grid-template-columns: minmax(0, 1fr);
     min-block-size: calc(
-      100dvh - var(--home-stage-safe-top) - var(--mobile-nav-height) -
-        env(safe-area-inset-bottom, 0rem) - clamp(1rem, 4vw, 1.35rem)
+      var(--home-safe-block-size-with-mobile-nav) - var(--home-stage-safe-top) -
+        clamp(1rem, 4vw, 1.35rem)
     );
     align-items: center;
     align-content: center;

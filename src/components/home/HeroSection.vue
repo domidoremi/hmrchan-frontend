@@ -1,5 +1,10 @@
 <template>
-  <section v-if="enabled" class="hero home-screen" :class="{ 'hero--animated': animated }">
+  <section
+    v-if="enabled"
+    class="hero home-screen"
+    data-scroll-anchor="home-hero"
+    :class="{ 'hero--animated': animated }"
+  >
     <div class="container hero-layout">
       <slot />
     </div>
