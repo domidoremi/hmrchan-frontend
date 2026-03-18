@@ -34,6 +34,56 @@ export function computeScrollAnchorTop(anchorTop: number, navbarOffset: number):
   return Math.max(0, anchorTop - Math.max(0, navbarOffset))
 }
 
+function readExplicitAnchorTop(element: HTMLElement): number | null {
+  const rawValue = element.dataset.scrollAnchorTop
+  if (!rawValue) return null
+
+  const parsed = Number(rawValue)
+  return Number.isFinite(parsed) ? parsed : null
+}
+
+function resolveSteppedAnchorTop(
+  element: HTMLElement,
+  doc: Document,
+  scrollY: number
+): number | null {
+  const rawStep = element.dataset.scrollAnchorStep
+  if (!rawStep) return null
+
+  const step = Number(rawStep)
+  if (!Number.isFinite(step)) return null
+
+  const root = element.closest<HTMLElement>('[data-scroll-anchor-root]')
+  if (!root) return null
+
+  const rawCount = root.dataset.scrollAnchorStepCount
+  const count = Number(rawCount)
+  if (!Number.isFinite(count) || count <= 1) {
+    const rootTop = scrollY + root.getBoundingClientRect().top
+    return rootTop
+  }
+
+  const rootRect = root.getBoundingClientRect()
+  const rootTop = scrollY + rootRect.top
+  const viewportHeight = window.innerHeight || doc.documentElement.clientHeight || 0
+  const travel = Math.max(rootRect.height - viewportHeight, 0)
+  const interval = travel / Math.max(count - 1, 1)
+
+  return rootTop + interval * step
+}
+
+export function resolveDocumentAnchorTop(
+  element: HTMLElement,
+  doc: Document = document,
+  scrollY = window.scrollY || doc.documentElement.scrollTop || 0
+): number {
+  return (
+    readExplicitAnchorTop(element) ??
+    resolveSteppedAnchorTop(element, doc, scrollY) ??
+    scrollY + element.getBoundingClientRect().top
+  )
+}
+
 function getAnchorId(element: HTMLElement, index: number): string {
   return (
     element.dataset.scrollAnchor ||
@@ -72,7 +122,7 @@ export function collectDocumentScrollTargets(doc: Document = document): ScrollAn
   return candidates
     .map((element, index) => {
       const id = getAnchorId(element, index)
-      const top = scrollY + element.getBoundingClientRect().top
+      const top = resolveDocumentAnchorTop(element, doc, scrollY)
       return {
         id,
         top,

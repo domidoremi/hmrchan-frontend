@@ -129,7 +129,11 @@
       :active-key="activeRailSlide?.key"
       :active-label="activeRailSlide?.label"
     >
-      <article class="rail-panel rail-panel--portal">
+      <article
+        class="rail-panel rail-panel--portal"
+        data-scroll-anchor="home-featured-portal"
+        data-scroll-anchor-step="0"
+      >
         <div class="rail-panel__content">
           <header class="page-section-head page-section-head--stage">
             <div class="page-section-copy">
@@ -282,7 +286,11 @@
         </div>
       </article>
 
-      <article class="rail-panel rail-panel--spotlight">
+      <article
+        class="rail-panel rail-panel--spotlight"
+        data-scroll-anchor="home-featured-spotlight"
+        data-scroll-anchor-step="1"
+      >
         <div class="rail-panel__content rail-panel__content--highlight">
           <header class="page-section-head page-section-head--stage">
             <div class="page-section-copy">
@@ -376,7 +384,11 @@
         </div>
       </article>
 
-      <article class="rail-panel rail-panel--featured">
+      <article
+        class="rail-panel rail-panel--featured"
+        data-scroll-anchor="home-featured-featured"
+        data-scroll-anchor-step="2"
+      >
         <div class="rail-panel__content">
           <header class="page-section-head page-section-head--stage">
             <div class="page-section-copy">
@@ -479,7 +491,11 @@
         </div>
       </article>
 
-      <article class="rail-panel rail-panel--trends">
+      <article
+        class="rail-panel rail-panel--trends"
+        data-scroll-anchor="home-featured-trends"
+        data-scroll-anchor-step="3"
+      >
         <div class="rail-panel__content">
           <header class="page-section-head page-section-head--stage">
             <div class="page-section-copy">
@@ -957,6 +973,7 @@ import ScrollDownFab from '@/components/ui/ScrollDownFab.vue'
 import {
   computeScrollAnchorTop,
   readNavbarVisibleOffset,
+  resolveDocumentAnchorTop,
 } from '@/components/ui/scrollAnchorTargets'
 import StoryDeckSection from '@/components/home/StoryDeckSection.vue'
 
@@ -1091,6 +1108,7 @@ function resolveSectionElement(
 }
 
 let storyDeckTrigger: ScrollTrigger | null = null
+let featuredRailTrigger: ScrollTrigger | null = null
 let sceneSetupFrame: number | null = null
 let sceneSetupQueued = false
 let scenesEnabled = false
@@ -1132,9 +1150,7 @@ const featuredSceneStyle = computed(() => ({
 
 const railTrackStyle = computed(() => ({
   transform: `translate3d(-${
-    railProgress.value *
-    Math.max(railSlideCount.value - 1, 0) *
-    (100 / Math.max(railSlideCount.value, 1))
+    activeRailIndex.value * (100 / Math.max(railSlideCount.value, 1))
   }%, 0, 0)`,
 }))
 
@@ -1239,7 +1255,6 @@ onDeactivated(() => {
   clearHeroEditorialRevealTimer()
   clearScreenTransitionTimer()
   activeScreenTransition.value = null
-  hasTriggeredBubbleBurst.value = false
 })
 let homeRequestController: AbortController | null = null
 
@@ -1357,9 +1372,11 @@ function syncSceneProgressFromViewport() {
   if (typeof window === 'undefined') return
 
   railProgress.value =
-    railSlideCount.value > 1
-      ? resolveSceneProgress(resolveSectionElement(featuredSectionRef.value))
-      : clamp(railProgress.value)
+    featuredRailTrigger && railSlideCount.value > 1
+      ? clamp(featuredRailTrigger.progress)
+      : railSlideCount.value > 1
+        ? resolveSceneProgress(resolveSectionElement(featuredSectionRef.value))
+        : clamp(railProgress.value)
   storyProgress.value =
     storyCardCount.value > 1
       ? resolveSceneProgress(resolveSectionElement(storyDeckRef.value))
@@ -1564,10 +1581,14 @@ function cancelScheduledSceneSetup() {
   sceneSetupFrame = null
 }
 
-function cleanupSceneTriggers() {
+function cleanupSceneTriggers(options: { preserveBubbleReveal?: boolean } = {}) {
   cancelScheduledSceneSetup()
   clearSceneScrollTween()
-  resetBubbleRevealState()
+  if (!options.preserveBubbleReveal) {
+    resetBubbleRevealState()
+  }
+  cleanupScrollTrigger(featuredRailTrigger)
+  featuredRailTrigger = null
   cleanupScrollTrigger(storyDeckTrigger)
   storyDeckTrigger = null
 }
@@ -1628,10 +1649,34 @@ function observeSceneLayout() {
 }
 
 function setupSceneTriggers() {
-  cleanupSceneTriggers()
+  cleanupSceneTriggers({ preserveBubbleReveal: true })
   syncSceneProgressFromViewport()
 
   if (typeof window === 'undefined' || !scenesEnabled) return
+
+  const featuredElement = resolveSectionElement(featuredSectionRef.value)
+  if (featuredElement && railSlideCount.value > 1 && !isCompactHomeViewport()) {
+    const railStops = Math.max(railSlideCount.value - 1, 1)
+    featuredRailTrigger = ScrollTrigger.create({
+      trigger: featuredElement,
+      start: 'top top',
+      end: () => `+=${Math.max(featuredElement.offsetHeight - window.innerHeight, 1)}`,
+      invalidateOnRefresh: true,
+      scrub: 0.18,
+      snap: {
+        snapTo: (value: number) => Math.round(clamp(value) * railStops) / railStops,
+        duration: { min: 0.16, max: 0.32 },
+        delay: 0.04,
+        ease: 'power2.out',
+      },
+      onUpdate: (self) => {
+        railProgress.value = self.progress
+      },
+      onRefresh: (self) => {
+        railProgress.value = self.progress
+      },
+    })
+  }
 
   const storyElement = resolveSectionElement(storyDeckRef.value)
   if (storyElement && storyCardCount.value > 1) {
@@ -1690,7 +1735,9 @@ function scrollToFeatured() {
   const target = resolveSectionElement(featuredSectionRef.value)
   if (!target) return
 
-  const targetTop = window.scrollY + target.getBoundingClientRect().top
+  const panelAnchor =
+    target.querySelector<HTMLElement>('[data-scroll-anchor="home-featured-portal"]') ?? target
+  const targetTop = resolveDocumentAnchorTop(panelAnchor, document)
   window.scrollTo({
     top: computeScrollAnchorTop(targetTop, readNavbarVisibleOffset(document)),
     behavior: 'smooth',
@@ -3533,7 +3580,7 @@ onBeforeUnmount(() => {
   margin: 0;
   scroll-snap-type: none;
   will-change: transform;
-  transition: none;
+  transition: transform 320ms var(--ease-fluid);
 }
 
 .rail-track::-webkit-scrollbar {
@@ -5713,9 +5760,9 @@ onBeforeUnmount(() => {
 
 @media (max-width: 768px) {
   .home-page {
-    --home-stage-safe-bottom: calc(
-      var(--mobile-nav-height) + env(safe-area-inset-bottom, 0rem) + clamp(0.9rem, 2vw, 1.25rem)
-    );
+    --home-safe-block-size: var(--app-safe-block-size-with-mobile-nav);
+    --home-safe-block-size-with-mobile-nav: var(--app-safe-block-size-with-mobile-nav);
+    --home-stage-safe-bottom: clamp(0.9rem, 2vw, 1.25rem);
     --home-screen-transition-ms: 0ms;
   }
 
@@ -5776,7 +5823,8 @@ onBeforeUnmount(() => {
   }
 
   .rail {
-    min-block-size: auto;
+    block-size: var(--home-safe-block-size);
+    min-block-size: var(--home-safe-block-size);
     padding-block: clamp(0.625rem, 3vw, 0.875rem) calc(0.875rem + var(--home-stage-safe-bottom));
     overflow: hidden;
   }
@@ -5785,7 +5833,7 @@ onBeforeUnmount(() => {
   .rail-stage {
     position: relative;
     block-size: auto;
-    min-block-size: 0;
+    min-block-size: var(--home-safe-block-size);
     overflow: visible;
   }
 
@@ -6020,6 +6068,8 @@ onBeforeUnmount(() => {
   }
 
   .story-stage {
+    block-size: var(--home-safe-block-size);
+    min-block-size: var(--home-safe-block-size);
     gap: 0.75rem;
     padding-block: calc(var(--home-stage-safe-top) + 0.625rem)
       calc(0.75rem + var(--home-stage-safe-bottom));
@@ -6356,15 +6406,18 @@ onBeforeUnmount(() => {
 
   .posts,
   .posts--bubble {
-    block-size: auto;
-    min-block-size: auto;
+    block-size: var(--home-safe-block-size);
+    min-block-size: var(--home-safe-block-size);
     padding-block: calc(var(--home-stage-safe-top) + 0.5rem)
       calc(0.875rem + var(--home-stage-safe-bottom));
     overflow: visible;
   }
 
   .posts--bubble > .container {
-    min-block-size: auto;
+    min-block-size: calc(
+      var(--home-safe-block-size) - var(--home-stage-safe-top) - var(--home-stage-safe-bottom) -
+        clamp(0.75rem, 3vw, 1rem)
+    );
     gap: 0.625rem;
   }
 
@@ -6780,7 +6833,7 @@ onBeforeUnmount(() => {
   margin: 0;
   scroll-snap-type: none;
   will-change: transform;
-  transition: none;
+  transition: transform 320ms var(--ease-fluid);
 }
 
 .home-page .story-stage {
@@ -6911,6 +6964,13 @@ onBeforeUnmount(() => {
 }
 
 @media (max-width: 768px) {
+  .home-page .rail,
+  .home-page .posts,
+  .home-page .posts--bubble,
+  .home-page .media-slices {
+    min-block-size: var(--home-safe-block-size);
+  }
+
   .home-page .rail-stage,
   .home-page .posts--bubble > .container,
   .home-page .story-stage {
@@ -6942,8 +7002,15 @@ onBeforeUnmount(() => {
   .home-page .rail-stage {
     position: relative;
     block-size: auto;
-    min-block-size: 0;
+    min-block-size: var(--home-safe-block-size);
     overflow: visible;
+  }
+
+  .home-page .posts--bubble > .container {
+    min-block-size: calc(
+      var(--home-safe-block-size) - var(--home-stage-safe-top) - var(--home-stage-safe-bottom) -
+        clamp(0.75rem, 3vw, 1rem)
+    );
   }
 
   .home-page .rail-stage__chrome {
@@ -6980,6 +7047,8 @@ onBeforeUnmount(() => {
   }
 
   .home-page .story-stage {
+    block-size: var(--home-safe-block-size);
+    min-block-size: var(--home-safe-block-size);
     gap: 0.75rem;
     padding-block: calc(var(--home-stage-safe-top) + 0.625rem)
       calc(0.75rem + var(--home-stage-safe-bottom));

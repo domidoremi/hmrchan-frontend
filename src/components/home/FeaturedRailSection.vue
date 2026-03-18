@@ -2,9 +2,18 @@
   <section
     ref="element"
     class="rail home-screen"
-    data-scroll-anchor="home-featured"
+    data-scroll-anchor-root="home-featured"
+    :data-scroll-anchor-step-count="String(Math.max(slides.length, 1))"
     :style="sceneStyle"
   >
+    <span
+      v-for="(slide, index) in slides"
+      :key="`rail-anchor-${slide.key}`"
+      class="rail-scroll-anchor"
+      :data-scroll-anchor="`home-featured-${slide.key}`"
+      :data-scroll-anchor-step="String(index)"
+      aria-hidden="true"
+    />
     <div class="rail-sticky">
       <div class="rail-stage">
         <div class="rail-stage__chrome">
@@ -50,3 +59,16 @@ defineExpose({
   element,
 })
 </script>
+
+<style scoped>
+.rail-scroll-anchor {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline: 0;
+  display: block;
+  inline-size: 100%;
+  block-size: 0.0625rem;
+  opacity: 0;
+  pointer-events: none;
+}
+</style>
