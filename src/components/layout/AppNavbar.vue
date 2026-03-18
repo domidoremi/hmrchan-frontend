@@ -1,13 +1,9 @@
 <template>
-  <nav class="navbar glass-navbar" :class="{ 'navbar-hidden': isNavbarHidden }">
+  <nav ref="navbarRef" class="navbar glass-navbar" :class="{ 'navbar-hidden': isNavbarHidden }">
     <div class="container navbar-content">
       <!-- Logo -->
       <RouterLink to="/" class="navbar-brand" :aria-label="$t('app.name')">
-        <span class="brand-mark">M</span>
-        <span class="brand-copy">
-          <span class="brand-name gradient-text">{{ $t('app.name') }}</span>
-          <span class="brand-tagline desktop-only">{{ $t('app.tagline') }}</span>
-        </span>
+        <span class="brand-name gradient-text">{{ $t('app.name') }}</span>
       </RouterLink>
 
       <!-- Desktop Navigation -->
@@ -113,6 +109,7 @@
         id="navbar-settings-panel"
         ref="settingsDropdownRef"
         class="settings-dropdown glass-dropdown"
+        :data-positioned="isSettingsDropdownPositioned"
         :style="settingsDropdownStyle"
         role="dialog"
         aria-modal="true"
@@ -120,7 +117,7 @@
         tabindex="-1"
         @click.stop
       >
-        <SettingsPanel @close="showSettings = false" />
+        <SettingsPanel @close="closeSettings()" />
       </div>
     </Transition>
 
@@ -131,6 +128,7 @@
         id="navbar-user-menu"
         ref="userDropdownRef"
         class="user-dropdown glass-dropdown"
+        :data-positioned="isUserDropdownPositioned"
         :style="userDropdownStyle"
         role="menu"
         :aria-label="$t('nav.profile')"
@@ -303,6 +301,7 @@ import { prefetchExploreData, prefetchAuthorsData } from '@/utils/prefetch'
 import { throttleRAF, scheduleDOMUpdate, prefersReducedMotion } from '@/utils/performance'
 import { useNavigation, registerPrefetchFunction } from '@/composables/useNavigation'
 import type { NavigationItem } from '@/config/navigation'
+import { resolveNavbarDropdownPosition } from '@/components/layout/navbarDropdownPosition'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import Separator from '@/components/ui/Separator.vue'
 
@@ -366,6 +365,7 @@ const userBtnRef = useTemplateRef<HTMLButtonElement>('userBtnRef')
 const settingsDropdownRef = useTemplateRef<HTMLDivElement>('settingsDropdownRef')
 const userDropdownRef = useTemplateRef<HTMLDivElement>('userDropdownRef')
 const navLinksRef = useTemplateRef<HTMLDivElement>('navLinksRef')
+const navbarRef = useTemplateRef<HTMLElement>('navbarRef')
 
 useFocusTrap(settingsDropdownRef, showSettings, {
   autoFocus: true,
@@ -382,6 +382,8 @@ useFocusTrap(userDropdownRef, showUserMenu, {
 
 const settingsDropdownStyle = ref<Record<string, string>>({})
 const userDropdownStyle = ref<Record<string, string>>({})
+const isSettingsDropdownPositioned = ref(false)
+const isUserDropdownPositioned = ref(false)
 
 // 导航指示器样式
 const navIndicatorStyle = ref<Record<string, string>>({
@@ -397,11 +399,15 @@ const hideHysteresis = 24
 const showHysteresis = 16
 const minScrollDelta = 4
 let lastToggleTime = 0
+const MOBILE_NAV_BREAKPOINT_QUERY = '(max-width: 960px)'
 
 let navbarHeightPx = '64px'
 
 function syncNavbarVisibleHeight() {
   if (typeof document === 'undefined') return
+  const measuredHeight = navbarRef.value?.getBoundingClientRect().height
+  navbarHeightPx =
+    measuredHeight && Number.isFinite(measuredHeight) ? `${measuredHeight}px` : navbarHeightPx
   // When navbar is hidden via translateY(-100%), expose 0px so fixed headers can pin to top.
   document.documentElement.style.setProperty(
     '--navbar-visible-height',
@@ -617,6 +623,8 @@ function restoreTriggerFocus(kind: 'settings' | 'user') {
 function closeSettings(options: { restoreFocus?: boolean } = {}) {
   if (!showSettings.value) return
   showSettings.value = false
+  isSettingsDropdownPositioned.value = false
+  settingsDropdownStyle.value = {}
   if (options.restoreFocus) {
     nextTick(() => restoreTriggerFocus('settings'))
   }
@@ -625,27 +633,53 @@ function closeSettings(options: { restoreFocus?: boolean } = {}) {
 function closeUserMenu(options: { restoreFocus?: boolean } = {}) {
   if (!showUserMenu.value) return
   showUserMenu.value = false
+  isUserDropdownPositioned.value = false
+  userDropdownStyle.value = {}
   if (options.restoreFocus) {
     nextTick(() => restoreTriggerFocus('user'))
   }
 }
 
 function toggleSettings() {
+  updateIsMobile()
   closeUserMenu()
-  showSettings.value = !showSettings.value
 
   if (showSettings.value) {
-    nextTick(() => updateDropdownPosition('settings'))
+    closeSettings()
+    return
   }
+
+  showSettings.value = true
+  isSettingsDropdownPositioned.value = isMobile.value
+  settingsDropdownStyle.value = isMobile.value
+    ? {}
+    : {
+        opacity: '0',
+        visibility: 'hidden',
+        pointerEvents: 'none',
+      }
+  nextTick(() => updateDropdownPosition('settings'))
 }
 
 function toggleUserMenu() {
+  updateIsMobile()
   closeSettings()
-  showUserMenu.value = !showUserMenu.value
 
   if (showUserMenu.value) {
-    nextTick(() => updateDropdownPosition('user'))
+    closeUserMenu()
+    return
   }
+
+  showUserMenu.value = true
+  isUserDropdownPositioned.value = isMobile.value
+  userDropdownStyle.value = isMobile.value
+    ? {}
+    : {
+        opacity: '0',
+        visibility: 'hidden',
+        pointerEvents: 'none',
+      }
+  nextTick(() => updateDropdownPosition('user'))
 }
 
 function handleLogout() {
@@ -689,15 +723,20 @@ function handleKeydown(event: KeyboardEvent) {
 }
 
 function updateIsMobile() {
-  isMobile.value = window.matchMedia('(max-width: 768px)').matches
+  isMobile.value = window.matchMedia(MOBILE_NAV_BREAKPOINT_QUERY).matches
 }
 
 function updateDropdownPosition(kind: 'settings' | 'user') {
   updateIsMobile()
 
   if (isMobile.value) {
-    settingsDropdownStyle.value = {}
-    userDropdownStyle.value = {}
+    if (kind === 'settings') {
+      settingsDropdownStyle.value = {}
+      isSettingsDropdownPositioned.value = true
+    } else {
+      userDropdownStyle.value = {}
+      isUserDropdownPositioned.value = true
+    }
     return
   }
 
@@ -716,25 +755,27 @@ function updateDropdownPosition(kind: 'settings' | 'user') {
     }),
     // 写入阶段：基于读取的值更新样式
     ({ triggerRect, dropdownRect, viewportWidth, viewportHeight }) => {
-      const margin = 16
-      const offsetY = 8
-
-      let left = triggerRect.right - dropdownRect.width
-      let top = triggerRect.bottom + offsetY
-
-      left = Math.max(margin, Math.min(left, viewportWidth - dropdownRect.width - margin))
-      top = Math.max(margin, Math.min(top, viewportHeight - dropdownRect.height - margin))
+      const position = resolveNavbarDropdownPosition({
+        triggerRect,
+        dropdownRect,
+        viewportWidth,
+        viewportHeight,
+      })
 
       const style = {
-        left: `${left}px`,
-        top: `${top}px`,
+        left: `${position.left}px`,
+        top: `${position.top}px`,
         right: 'auto',
+        maxInlineSize: `${position.maxInlineSize}px`,
+        maxBlockSize: `${position.maxBlockSize}px`,
       }
 
       if (kind === 'settings') {
         settingsDropdownStyle.value = style
+        isSettingsDropdownPositioned.value = true
       } else {
         userDropdownStyle.value = style
+        isUserDropdownPositioned.value = true
       }
     }
   )
@@ -794,6 +835,7 @@ const handleScroll = throttleRAF(() => {
 // 使用 throttleRAF 节流 resize 事件，避免高频触发导致的性能问题
 const handleResize = throttleRAF(() => {
   updateIsMobile()
+  syncNavbarVisibleHeight()
   // 更新导航指示器
   updateNavIndicator()
   if (showSettings.value) {
@@ -917,6 +959,7 @@ onUnmounted(() => {
   align-items: center;
   justify-content: space-between;
   gap: var(--spacing-4);
+  min-inline-size: 0;
 }
 
 .glass-navbar {
@@ -931,58 +974,32 @@ onUnmounted(() => {
 .navbar-brand {
   display: inline-flex;
   align-items: center;
-  gap: var(--spacing-3);
+  flex: 0 1 auto;
+  min-inline-size: 0;
   text-decoration: none;
-}
-
-.brand-mark {
-  display: inline-grid;
-  place-items: center;
-  inline-size: 2.25rem;
-  block-size: 2.25rem;
-  border-radius: 0.875rem;
-  background:
-    linear-gradient(135deg, rgba(var(--color-primary-rgb), 0.12) 0%, transparent 100%),
-    var(--nav-chip-bg);
-  border: 1px solid var(--nav-chip-border);
-  color: var(--color-text-primary);
-  font-size: 1rem;
-  font-weight: var(--font-bold);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.28),
-    0 1rem 2rem -1.5rem rgba(15, 23, 42, 0.2);
-}
-
-.brand-copy {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
 }
 
 .brand-name {
   font-size: var(--text-lg);
   font-weight: var(--font-bold);
   letter-spacing: 0.04em;
-}
-
-.brand-tagline {
-  font-size: 0.6875rem;
-  color: var(--color-text-tertiary);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  white-space: nowrap;
 }
 
 /* ========== Navigation Links ========== */
 .navbar-links {
   position: relative;
   display: flex;
+  flex: 1 1 auto;
   align-items: center;
+  justify-content: center;
   gap: var(--spacing-1);
   padding: 0.1875rem;
   border: 1px solid var(--nav-muted-border);
   border-radius: var(--ui-radius-nav, var(--radius-lg));
   background: var(--nav-muted-bg);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  min-inline-size: 0;
 }
 
 /* 滑动指示器 */
@@ -1049,8 +1066,11 @@ onUnmounted(() => {
 /* ========== Actions ========== */
 .navbar-actions {
   display: flex;
+  flex: 0 0 auto;
   align-items: center;
+  justify-content: flex-end;
   gap: var(--spacing-2);
+  min-inline-size: 0;
 }
 
 .nav-action-btn {
@@ -1121,28 +1141,24 @@ onUnmounted(() => {
 }
 
 .nav-action-btn--primary {
-  border-color: rgba(var(--color-primary-rgb), 0.16);
+  border-color: rgba(var(--color-primary-rgb), 0.12);
   background:
-    linear-gradient(
-      135deg,
-      rgba(var(--color-primary-rgb), 0.96),
-      rgba(var(--color-accent-rgb), 0.88)
-    ),
-    rgba(var(--color-primary-rgb), 0.94);
-  color: var(--color-on-primary);
-  box-shadow: 0 0.75rem 1.5rem -1rem rgba(var(--color-primary-rgb), 0.34);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.78)),
+    var(--nav-action-bg);
+  color: var(--color-text-primary);
+  box-shadow: 0 0.85rem 1.8rem -1.4rem rgba(15, 23, 42, 0.18);
 }
 
 .nav-action-btn--primary:hover,
 .nav-action-btn--primary.nav-action-btn--active {
-  color: var(--color-on-primary);
-  border-color: rgba(var(--color-primary-rgb), 0.22);
-  box-shadow: 0 0.95rem 1.75rem -1rem rgba(var(--color-primary-rgb), 0.4);
+  color: var(--color-primary);
+  border-color: rgba(var(--color-primary-rgb), 0.18);
+  box-shadow: 0 1rem 2rem -1.4rem rgba(15, 23, 42, 0.22);
 }
 
 .nav-action-btn--primary:hover::before,
 .nav-action-btn--primary.nav-action-btn--active::before {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.02));
+  background: linear-gradient(180deg, rgba(var(--color-primary-rgb), 0.06), transparent);
 }
 
 .icon-spin {
@@ -1173,10 +1189,10 @@ onUnmounted(() => {
 .login-btn:visited,
 .login-btn.router-link-active,
 .login-btn.router-link-exact-active {
-  color: var(--color-on-primary);
+  color: currentColor;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 960px) {
   .login-btn {
     padding: var(--spacing-2);
     border-radius: var(--ui-radius-button, var(--radius-lg));
@@ -1246,9 +1262,15 @@ onUnmounted(() => {
 .settings-dropdown,
 .user-dropdown {
   position: fixed;
-  top: calc(var(--navbar-height) - var(--spacing-2));
-  right: var(--spacing-4);
+  inset-block-start: calc(var(--navbar-visible-height) + var(--spacing-2));
+  inset-inline-end: var(--spacing-4);
   transform-origin: top right;
+  inline-size: min(24rem, calc(100vw - 2rem));
+  max-block-size: min(var(--app-safe-block-size), 36rem);
+  transition:
+    opacity var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-spring),
+    visibility 0s linear var(--duration-fast);
 }
 
 .settings-dropdown.glass-dropdown,
@@ -1259,6 +1281,23 @@ onUnmounted(() => {
   box-shadow: var(--nav-shell-shadow);
   backdrop-filter: blur(var(--blur-lg));
   -webkit-backdrop-filter: blur(var(--blur-lg));
+}
+
+.settings-dropdown[data-positioned='false'],
+.user-dropdown[data-positioned='false'] {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translate3d(0, -0.35rem, 0) scale3d(0.985, 0.985, 1);
+}
+
+.settings-dropdown[data-positioned='true'],
+.user-dropdown[data-positioned='true'] {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translate3d(0, 0, 0) scale3d(1, 1, 1);
+  transition-delay: 0s;
 }
 
 .user-info {
@@ -1514,7 +1553,7 @@ onUnmounted(() => {
   display: none;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 960px) {
   .desktop-only {
     display: none;
   }
@@ -1534,17 +1573,19 @@ onUnmounted(() => {
 
   .settings-dropdown,
   .user-dropdown {
-    left: var(--spacing-4);
-    right: var(--spacing-4);
-    min-width: auto;
+    inset-inline: clamp(0.75rem, 3vw, 1rem);
+    inset-block-start: calc(var(--navbar-visible-height) + clamp(0.5rem, 2vw, 0.75rem));
+    inline-size: auto;
+    max-inline-size: calc(100vw - (clamp(0.75rem, 3vw, 1rem) * 2));
+    max-block-size: min(var(--app-safe-block-size-with-mobile-nav), 34rem);
   }
+}
 
-  .settings-dropdown {
-    left: auto;
-    right: var(--spacing-4);
-    width: min(92vw, 22rem);
-    min-width: auto;
-  }
+:global(#app[data-theme='dark'] .nav-action-btn--primary),
+:global([data-theme='dark'] .nav-action-btn--primary) {
+  background:
+    linear-gradient(180deg, rgba(20, 28, 42, 0.92), rgba(10, 16, 28, 0.82)), var(--nav-action-bg);
+  color: var(--color-text-primary);
 }
 
 /* ========== Nav Badge Dot ========== */
