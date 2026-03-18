@@ -136,8 +136,7 @@ async function resend() {
 
 <style scoped>
 .auth-page {
-  min-height: calc(100svh - var(--navbar-height));
-  min-height: calc(100dvh - var(--navbar-height));
+  min-height: var(--app-safe-block-size);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -148,6 +147,7 @@ async function resend() {
   inline-size: 100%;
   max-inline-size: min(90vw, 23.75rem);
   display: grid;
+  align-content: start;
   justify-items: center;
   gap: var(--spacing-4);
   text-align: center;
@@ -199,5 +199,21 @@ async function resend() {
   inline-size: 100%;
   display: grid;
   gap: var(--spacing-2);
+}
+
+@media (max-width: 768px) {
+  .auth-page {
+    min-height: var(--app-safe-block-size-with-mobile-nav);
+    align-items: stretch;
+    justify-content: flex-start;
+    padding: clamp(0.6rem, 3.2vw, 1rem);
+  }
+
+  .auth-card {
+    max-inline-size: min(100%, 23.75rem);
+    margin-inline: auto;
+    margin-block-start: clamp(0.5rem, 2vw, 0.9rem);
+    gap: var(--spacing-3);
+  }
 }
 </style>

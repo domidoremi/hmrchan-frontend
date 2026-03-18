@@ -636,8 +636,7 @@ function handleTurnstileError(error?: Error) {
   --auth-form-border: rgba(75, 86, 137, 0.24);
   --auth-form-surface: #f5f0e8;
   --auth-book-radius: clamp(1.4rem, 2.7vw, 2.5rem);
-  min-height: calc(100svh - var(--navbar-height));
-  min-height: calc(100dvh - var(--navbar-height));
+  min-height: var(--app-safe-block-size);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -670,7 +669,7 @@ function handleTurnstileError(error?: Error) {
   box-shadow:
     0 2.6rem 4.2rem -2.2rem rgba(11, 15, 34, 0.72),
     0 1.2rem 2.4rem -1.6rem rgba(10, 14, 32, 0.46);
-  animation: auth-card-enter-left 560ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+  animation: auth-card-enter-left 420ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
 }
 
 .auth-book::before {
@@ -686,6 +685,17 @@ function handleTurnstileError(error?: Error) {
 
 .auth-book > * {
   min-height: 0;
+}
+
+.auth-book,
+.auth-panel,
+.auth-panel-inner,
+.auth-form,
+.form-group,
+.password-field,
+.turnstile-block,
+.auth-restore {
+  min-inline-size: 0;
 }
 
 .auth-book--two-factor {
@@ -728,7 +738,7 @@ function handleTurnstileError(error?: Error) {
 }
 
 .auth-panel-inner {
-  width: min(100%, 29rem);
+  inline-size: min(100%, 29rem);
   max-block-size: 100%;
   display: flex;
   flex-direction: column;
@@ -1005,38 +1015,8 @@ function handleTurnstileError(error?: Error) {
 
 @media (max-width: 56rem) {
   .auth-page {
-    min-height: calc(100svh - var(--navbar-height) - var(--mobile-nav-height));
-    min-height: calc(100dvh - var(--navbar-height) - var(--mobile-nav-height));
+    min-height: var(--app-safe-block-size-with-mobile-nav);
     padding: clamp(0.6rem, 3.2vw, 1rem);
-  }
-
-  .auth-book,
-  .auth-book--two-factor {
-    max-width: min(95vw, 36rem);
-    height: auto;
-    min-height: auto;
-    grid-template-columns: 1fr;
-    grid-template-areas:
-      'visual'
-      'panel';
-  }
-
-  .auth-visual {
-    min-height: 14rem;
-    padding: 0;
-    border-inline-end: none;
-    border-start-end-radius: var(--auth-book-radius);
-    border-end-start-radius: 0;
-    border-bottom: 1px solid rgba(99, 111, 161, 0.2);
-  }
-
-  .auth-panel {
-    max-height: none;
-    padding: clamp(0.8rem, 3.2vw, 1.25rem);
-    overflow: visible;
-    border-inline-start: none;
-    border-start-end-radius: 0;
-    border-end-start-radius: var(--auth-book-radius);
   }
 
   .auth-title,
@@ -1054,7 +1034,7 @@ function handleTurnstileError(error?: Error) {
 @keyframes auth-card-enter-left {
   0% {
     opacity: 0;
-    transform: translateY(0.75rem) scale(0.985);
+    transform: translateY(0.45rem) scale(0.992);
   }
 
   100% {

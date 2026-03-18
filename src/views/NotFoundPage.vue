@@ -29,8 +29,7 @@ function goHome() {
 
 <style scoped>
 .not-found-page {
-  min-height: calc(100svh - var(--navbar-height));
-  min-height: calc(100dvh - var(--navbar-height));
+  min-height: var(--app-safe-block-size);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -66,5 +65,11 @@ function goHome() {
   color: var(--color-text-tertiary);
   margin-bottom: var(--spacing-4);
   font-size: var(--text-sm);
+}
+
+@media (max-width: 768px) {
+  .not-found-page {
+    min-height: var(--app-safe-block-size-with-mobile-nav);
+  }
 }
 </style>

@@ -670,14 +670,14 @@
 /* 注意：移除 filter: blur() 以避免 CLS，仅使用合成属性 transform/opacity */
 .page-fade-enter-active {
   transition:
-    opacity var(--duration-normal) var(--ease-out),
-    transform var(--duration-normal) var(--ease-spring);
+    opacity var(--duration-fast) var(--ease-out-smooth),
+    transform var(--duration-fast) var(--ease-fluid);
 }
 
 .page-fade-leave-active {
   transition:
-    opacity var(--duration-fast) var(--ease-in),
-    transform var(--duration-fast) var(--ease-in);
+    opacity var(--duration-fast) var(--ease-in-smooth),
+    transform var(--duration-fast) var(--ease-in-smooth);
   position: absolute;
   width: 100%;
   top: 0;
@@ -686,25 +686,25 @@
 
 .page-fade-enter-from {
   opacity: 0;
-  transform: scale3d(0.98, 0.98, 1);
+  transform: translate3d(0, 0.42rem, 0) scale3d(0.998, 0.998, 1);
 }
 
 .page-fade-leave-to {
   opacity: 0;
-  transform: scale3d(1.01, 1.01, 1);
+  transform: translate3d(0, -0.2rem, 0) scale3d(0.999, 0.999, 1);
 }
 
 /* Page Slide Up - 进入深层页面 */
 .page-slide-up-enter-active {
   transition:
-    opacity var(--duration-normal) var(--ease-out),
-    transform var(--duration-normal) var(--ease-spring);
+    opacity var(--duration-fast) var(--ease-out-smooth),
+    transform var(--duration-fast) var(--ease-fluid);
 }
 
 .page-slide-up-leave-active {
   transition:
-    opacity var(--duration-fast) var(--ease-in),
-    transform var(--duration-fast) var(--ease-in);
+    opacity var(--duration-fast) var(--ease-in-smooth),
+    transform var(--duration-fast) var(--ease-in-smooth);
   position: absolute;
   width: 100%;
   top: 0;
@@ -713,26 +713,26 @@
 
 .page-slide-up-enter-from {
   opacity: 0;
-  transform: translate3d(0, 2rem, 0) scale3d(0.97, 0.97, 1);
+  transform: translate3d(0, 0.65rem, 0) scale3d(0.997, 0.997, 1);
 }
 
 .page-slide-up-leave-to {
   opacity: 0;
-  transform: translate3d(0, -1rem, 0) scale3d(1.02, 1.02, 1);
+  transform: translate3d(0, -0.28rem, 0) scale3d(0.999, 0.999, 1);
 }
 
 /* Page Slide Down - 返回上层页面 */
 /* 注意：移除 filter: blur() 以避免 CLS，仅使用合成属性 transform/opacity */
 .page-slide-down-enter-active {
   transition:
-    opacity var(--duration-normal) var(--ease-out),
-    transform var(--duration-normal) var(--ease-spring);
+    opacity var(--duration-fast) var(--ease-out-smooth),
+    transform var(--duration-fast) var(--ease-fluid);
 }
 
 .page-slide-down-leave-active {
   transition:
-    opacity var(--duration-fast) var(--ease-in),
-    transform var(--duration-fast) var(--ease-in);
+    opacity var(--duration-fast) var(--ease-in-smooth),
+    transform var(--duration-fast) var(--ease-in-smooth);
   position: absolute;
   width: 100%;
   top: 0;
@@ -741,12 +741,12 @@
 
 .page-slide-down-enter-from {
   opacity: 0;
-  transform: translate3d(0, -1.5rem, 0) scale3d(1.02, 1.02, 1);
+  transform: translate3d(0, -0.55rem, 0) scale3d(0.997, 0.997, 1);
 }
 
 .page-slide-down-leave-to {
   opacity: 0;
-  transform: translate3d(0, 1.5rem, 0) scale3d(0.97, 0.97, 1);
+  transform: translate3d(0, 0.34rem, 0) scale3d(0.999, 0.999, 1);
 }
 
 /* Page Slide Left/Right - Post-to-post navigation */

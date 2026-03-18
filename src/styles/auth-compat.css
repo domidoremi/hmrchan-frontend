@@ -20,6 +20,10 @@
   --auth-text-muted: var(--color-text-secondary);
   --auth-text-soft: var(--color-text-tertiary);
   --auth-link: var(--color-primary);
+  --auth-button-ink: #2a3454;
+  --auth-button-accent: #5f6bff;
+  --auth-button-accent-soft: #8893ff;
+  --auth-button-shadow: rgba(95, 107, 255, 0.42);
   --auth-shell-radius: clamp(1.4rem, 2.7vw, 2.5rem);
   --auth-shell-gloss: rgba(255, 255, 255, 0.34);
   --auth-shell-sheen: rgba(255, 255, 255, 0.08);
@@ -106,15 +110,15 @@
 #app .auth-page .auth-panel .btn-default {
   background: linear-gradient(
     132deg,
-    color-mix(in srgb, var(--auth-link) 82%, #ffffff 18%),
-    color-mix(in srgb, var(--auth-link) 58%, var(--color-accent) 42%)
+    color-mix(in srgb, var(--auth-button-ink) 58%, var(--auth-button-accent) 42%),
+    color-mix(in srgb, var(--auth-button-accent) 76%, var(--auth-button-accent-soft) 24%)
   );
   color: var(--color-on-primary) !important;
-  box-shadow: 0 0.8rem 1.6rem -1rem rgba(var(--color-primary-rgb), 0.6) !important;
+  box-shadow: 0 0.8rem 1.6rem -1rem var(--auth-button-shadow) !important;
 }
 
 #app .auth-page .auth-panel .btn-default:hover:not(:disabled) {
-  box-shadow: 0 1rem 1.9rem -1rem rgba(var(--color-primary-rgb), 0.68) !important;
+  box-shadow: 0 1rem 1.9rem -1rem rgba(95, 107, 255, 0.5) !important;
 }
 
 #app .auth-page .auth-panel .btn-ghost {
@@ -174,6 +178,9 @@
   --auth-shell-gloss: rgba(255, 255, 255, 0.08);
   --auth-shell-sheen: rgba(255, 255, 255, 0.04);
   --auth-shell-overlay: rgba(255, 255, 255, 0.04);
+  --auth-button-ink: #1c2438;
+  --auth-button-accent-soft: #a6b0ff;
+  --auth-button-shadow: rgba(95, 107, 255, 0.34);
 }
 
 #app[data-theme='dark'] .auth-page .auth-panel .btn-default {
@@ -245,6 +252,19 @@
 #app .auth-page .auth-panel-inner {
   width: min(100%, 30rem) !important;
   gap: var(--spacing-3) !important;
+}
+
+#app .auth-page .auth-book,
+#app .auth-page .auth-panel,
+#app .auth-page .auth-panel-inner,
+#app .auth-page .auth-form,
+#app .auth-page .form-group,
+#app .auth-page .password-field,
+#app .auth-page .turnstile-block,
+#app .auth-page .step-indicator,
+#app .auth-page .resend-row,
+#app .auth-page .code-sent-banner {
+  min-inline-size: 0;
 }
 
 #app .auth-page .auth-topline {
@@ -368,13 +388,13 @@
   #app .auth-page .auth-book--sent {
     max-width: min(100%, 34rem) !important;
     min-height: calc(
-      100dvh - var(--navbar-height) - var(--mobile-nav-height) - clamp(0.8rem, 4vw, 1.5rem)
+      var(--app-safe-block-size-with-mobile-nav) - clamp(0.8rem, 4vw, 1.5rem)
     ) !important;
     height: calc(
-      100dvh - var(--navbar-height) - var(--mobile-nav-height) - clamp(0.8rem, 4vw, 1.5rem)
+      var(--app-safe-block-size-with-mobile-nav) - clamp(0.8rem, 4vw, 1.5rem)
     ) !important;
     max-height: calc(
-      100dvh - var(--navbar-height) - var(--mobile-nav-height) - clamp(0.8rem, 4vw, 1.5rem)
+      var(--app-safe-block-size-with-mobile-nav) - clamp(0.8rem, 4vw, 1.5rem)
     ) !important;
     grid-template-columns: 1fr !important;
     grid-template-areas: 'panel' !important;
@@ -393,6 +413,7 @@
   #app .auth-page .auth-panel-inner {
     width: min(100%, 28rem) !important;
     min-height: 100%;
+    justify-content: flex-start;
     gap: var(--spacing-2) !important;
   }
 
