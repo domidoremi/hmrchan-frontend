@@ -93,8 +93,7 @@ withDefaults(defineProps<Props>(), {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: calc(100svh - var(--navbar-height));
-  min-height: calc(100dvh - var(--navbar-height));
+  min-height: var(--app-safe-block-size);
   padding: var(--spacing-6);
 }
 
@@ -328,6 +327,12 @@ withDefaults(defineProps<Props>(), {
   color: var(--color-muted-foreground);
   margin: 0;
   line-height: var(--leading-relaxed);
+}
+
+@media (max-width: 768px) {
+  .page-loading {
+    min-height: var(--app-safe-block-size-with-mobile-nav);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
