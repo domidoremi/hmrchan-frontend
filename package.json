@@ -14,9 +14,10 @@
     "defaults and fully supports es6-module"
   ],
   "scripts": {
-    "dev": "vite",
-    "build": "vue-tsc --noEmit --pretty && node ./node_modules/vite/bin/vite.js build",
+    "dev": "node scripts/patch-lucide-vue-next.mjs && vite",
+    "build": "node scripts/patch-lucide-vue-next.mjs && vue-tsc --noEmit --pretty && node ./node_modules/vite/bin/vite.js build",
     "preview": "vite preview",
+    "postinstall": "node scripts/patch-lucide-vue-next.mjs",
     "test:unit": "vitest run --passWithNoTests",
     "test:unit:watch": "vitest",
     "test:e2e": "bun run scripts/test-e2e.ts",
