@@ -26,6 +26,15 @@ const template = `<!doctype html>
 </html>`
 
 describe('createPrerenderedHtml', () => {
+  it('rewrites the homepage using the dedicated home prerender shell', () => {
+    const html = createPrerenderedHtml(template, '/')
+
+    expect(html).toContain('<title>Home · MomiChan</title>')
+    expect(html).toContain('data-prerender-shell-variant="home"')
+    expect(html).toContain('data-prerender-shell-content="true"')
+    expect(html).toContain('Quick bridge')
+  })
+
   it('rewrites public route metadata and shell markup', () => {
     const html = createPrerenderedHtml(template, '/explore')
 

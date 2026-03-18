@@ -20,6 +20,10 @@ declare module 'vue-router' {
     guestOnly?: boolean
     /** Show global footer on this route */
     showFooter?: boolean
+    /** Stable view key used to preserve component instance across modal/detail URL changes */
+    viewKey?: string
+    /** Preserve scroll position when navigating within the same stable view */
+    preserveScrollOnIntraViewNav?: boolean
   }
 }
 
@@ -66,6 +70,23 @@ async function ensureAuthCompatStyles(to: RouteLocationNormalized): Promise<void
       console.warn('[Router] Failed to load auth compat styles:', error)
     }
   }
+}
+
+function resolveViewKey(route: RouteLocationNormalized): string | null {
+  const viewKey = route.meta.viewKey
+  if (typeof viewKey !== 'string') return null
+  const trimmed = viewKey.trim()
+  return trimmed.length > 0 ? trimmed : null
+}
+
+function shouldPreserveIntraViewNavigation(
+  to: RouteLocationNormalized,
+  from: RouteLocationNormalized
+): boolean {
+  const toViewKey = resolveViewKey(to)
+  if (!toViewKey || toViewKey !== resolveViewKey(from)) return false
+
+  return Boolean(to.meta.preserveScrollOnIntraViewNav || from.meta.preserveScrollOnIntraViewNav)
 }
 
 const routes: RouteRecordRaw[] = [
@@ -218,13 +239,21 @@ const routes: RouteRecordRaw[] = [
     path: '/schedule',
     name: 'schedule',
     component: () => import('@/views/SchedulePage.vue'),
-    meta: { title: 'nav.schedule' },
+    meta: {
+      title: 'nav.schedule',
+      viewKey: 'schedule',
+      preserveScrollOnIntraViewNav: true,
+    },
   },
   {
     path: '/schedule/:id',
     name: 'schedule-detail',
     component: () => import('@/views/SchedulePage.vue'),
-    meta: { title: 'nav.schedule' },
+    meta: {
+      title: 'nav.schedule',
+      viewKey: 'schedule',
+      preserveScrollOnIntraViewNav: true,
+    },
   },
   {
     path: '/about',
@@ -243,7 +272,7 @@ const routes: RouteRecordRaw[] = [
 const router = createRouter({
   history: createWebHistory(),
   routes,
-  scrollBehavior(to, _from, savedPosition) {
+  scrollBehavior(to, from, savedPosition) {
     if (savedPosition) {
       return new Promise((resolve) => {
         const targetLeft = savedPosition.left ?? 0
@@ -268,6 +297,9 @@ const router = createRouter({
 
         requestAnimationFrame(check)
       })
+    }
+    if (shouldPreserveIntraViewNavigation(to, from)) {
+      return false
     }
     if (to.hash) {
       return { el: to.hash, behavior: 'smooth' }
