@@ -11,7 +11,9 @@ interface CacheEntry {
 
 class ThumbnailCache {
   private cache = new Map<string, CacheEntry>()
+  private failed = new Map<string, number>()
   private maxAge = 30 * 60 * 1000 // 30分钟缓存
+  private failureMaxAge = 5 * 60 * 1000 // 失败短缓存，避免同一视图反复打 401/403
   private maxSize = 100 // 最多缓存100个缩略图
 
   /**
@@ -26,6 +28,15 @@ class ThumbnailCache {
    */
   get(mediaId: string, size: 'small' | 'medium' | 'large' = 'medium'): string | null {
     const key = this.buildKey(mediaId, size)
+    const failedAt = this.failed.get(key)
+
+    if (typeof failedAt === 'number') {
+      if (Date.now() - failedAt <= this.failureMaxAge) {
+        return null
+      }
+      this.failed.delete(key)
+    }
+
     const entry = this.cache.get(key)
 
     if (!entry) return null
@@ -55,6 +66,25 @@ class ThumbnailCache {
       url,
       timestamp: Date.now(),
     })
+    this.failed.delete(key)
+  }
+
+  /**
+   * 标记缩略图请求失败，短时间内不再重试。
+   */
+  markFailure(mediaId: string, size: 'small' | 'medium' | 'large' = 'medium'): void {
+    const key = this.buildKey(mediaId, size)
+    this.cache.delete(key)
+    this.failed.set(key, Date.now())
+  }
+
+  /**
+   * 删除指定缩略图缓存/失败状态。
+   */
+  delete(mediaId: string, size: 'small' | 'medium' | 'large' = 'medium'): void {
+    const key = this.buildKey(mediaId, size)
+    this.cache.delete(key)
+    this.failed.delete(key)
   }
 
   /**
@@ -67,6 +97,12 @@ class ThumbnailCache {
         this.cache.delete(key)
       }
     }
+
+    for (const [key, failedAt] of this.failed.entries()) {
+      if (now - failedAt > this.failureMaxAge) {
+        this.failed.delete(key)
+      }
+    }
   }
 
   /**
@@ -74,6 +110,7 @@ class ThumbnailCache {
    */
   clear(): void {
     this.cache.clear()
+    this.failed.clear()
   }
 
   /**

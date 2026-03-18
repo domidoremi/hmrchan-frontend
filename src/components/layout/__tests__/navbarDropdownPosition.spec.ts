@@ -22,6 +22,7 @@ describe('resolveNavbarDropdownPosition', () => {
     expect(position.top).toBe(60)
     expect(position.maxInlineSize).toBe(328)
     expect(position.maxBlockSize).toBe(608)
+    expect(position.transformOrigin).toBe('256px 0px')
   })
 
   it('clamps oversize dropdowns to the safe viewport area', () => {
@@ -44,5 +45,6 @@ describe('resolveNavbarDropdownPosition', () => {
     expect(position.top).toBe(68)
     expect(position.maxInlineSize).toBe(358)
     expect(position.maxBlockSize).toBe(812)
+    expect(position.transformOrigin).toBe('44px 504px')
   })
 })

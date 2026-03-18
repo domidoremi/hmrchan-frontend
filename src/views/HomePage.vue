@@ -941,6 +941,8 @@ import {
   resolvePostIdFromLink,
   resolvePostLink,
 } from '@/views/homepage/homeModel'
+import { resolveBubbleRevealWindow } from '@/views/homepage/bubbleRevealState'
+import { buildStoryCardMotion } from '@/views/homepage/storyDeckMotion'
 import { useHomeViewModel } from '@/views/homepage/useHomeViewModel'
 import Button from '@/components/ui/Button.vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
@@ -1014,7 +1016,8 @@ const storyDeckRef = useTemplateRef<HomeSectionInstance>('storyDeckRef')
 
 const railProgress = ref(0)
 const storyProgress = ref(0)
-const hasTriggeredBubbleBurst = ref(false)
+const bubbleRevealPhase = ref<'idle' | 'arming' | 'revealed'>('idle')
+const hasTriggeredBubbleBurst = computed(() => bubbleRevealPhase.value === 'revealed')
 const viewportSceneBlend = ref({
   heroRail: 0,
   railPosts: 0,
@@ -1087,7 +1090,6 @@ function resolveSectionElement(
   return section?.element ?? null
 }
 
-let bubbleBurstTrigger: ScrollTrigger | null = null
 let storyDeckTrigger: ScrollTrigger | null = null
 let sceneSetupFrame: number | null = null
 let sceneSetupQueued = false
@@ -1379,6 +1381,11 @@ function clearBubbleBurstReplayFrame() {
   bubbleBurstReplayFrame = null
 }
 
+function resetBubbleRevealState() {
+  clearBubbleBurstReplayFrame()
+  bubbleRevealPhase.value = 'idle'
+}
+
 function clearViewportSceneFrame() {
   if (typeof window === 'undefined' || viewportSceneFrame === null) return
   window.cancelAnimationFrame(viewportSceneFrame)
@@ -1431,6 +1438,7 @@ function updateViewportSceneBlend() {
   if (typeof window === 'undefined') return
 
   if (isCompactHomeViewport()) {
+    resetBubbleRevealState()
     viewportSceneBlend.value = {
       heroRail: 0,
       railPosts: 0,
@@ -1459,12 +1467,11 @@ function updateViewportSceneBlend() {
   const footerBlendProgress = nextBlend.storyFooter > 0.04 ? nextBlend.storyFooter : 0
   const postsElement = resolveSectionElement(postsSectionRef.value)
   const featuredElement = resolveSectionElement(featuredSectionRef.value)
-  const postsRect = postsElement?.getBoundingClientRect() ?? null
-  const shouldRevealBubbles =
-    bubbleItems.value.length > 0 &&
-    Boolean(postsRect) &&
-    postsRect.bottom > window.innerHeight * 0.28 &&
-    postsRect.top < window.innerHeight * 0.86
+  const bubbleRevealWindow = resolveBubbleRevealWindow(
+    postsElement?.getBoundingClientRect() ?? null,
+    window.innerHeight,
+    bubbleItems.value.length
+  )
   const railLockBoundary =
     postsElement?.offsetTop ??
     (featuredElement?.offsetTop ?? 0) + (featuredElement?.offsetHeight ?? 0)
@@ -1475,17 +1482,16 @@ function updateViewportSceneBlend() {
     storyFooter: footerBlendProgress,
   }
 
-  if (shouldRevealBubbles) {
-    if (!hasTriggeredBubbleBurst.value && bubbleBurstReplayFrame === null) {
+  if (bubbleRevealWindow.shouldReveal) {
+    if (bubbleRevealPhase.value === 'idle' && bubbleBurstReplayFrame === null) {
       if (shouldAnimate.value) {
         restartBubbleBurst()
       } else {
-        hasTriggeredBubbleBurst.value = true
+        bubbleRevealPhase.value = 'revealed'
       }
     }
-  } else if (hasTriggeredBubbleBurst.value || bubbleBurstReplayFrame !== null) {
-    clearBubbleBurstReplayFrame()
-    hasTriggeredBubbleBurst.value = false
+  } else if (bubbleRevealWindow.shouldReset && bubbleRevealPhase.value !== 'idle') {
+    resetBubbleRevealState()
   }
 
   setRailNavbarLock(railLockActive)
@@ -1519,18 +1525,18 @@ function unbindViewportSceneBlendTracking() {
 function restartBubbleBurst() {
   if (typeof window === 'undefined') return
 
-  clearBubbleBurstReplayFrame()
-  hasTriggeredBubbleBurst.value = false
+  resetBubbleRevealState()
 
   if (bubbleItems.value.length === 0) return
   if (!shouldAnimate.value) {
-    hasTriggeredBubbleBurst.value = true
+    bubbleRevealPhase.value = 'revealed'
     return
   }
 
+  bubbleRevealPhase.value = 'arming'
   bubbleBurstReplayFrame = window.requestAnimationFrame(() => {
     bubbleBurstReplayFrame = window.requestAnimationFrame(() => {
-      hasTriggeredBubbleBurst.value = true
+      bubbleRevealPhase.value = 'revealed'
       bubbleBurstReplayFrame = null
     })
   })
@@ -1561,10 +1567,8 @@ function cancelScheduledSceneSetup() {
 function cleanupSceneTriggers() {
   cancelScheduledSceneSetup()
   clearSceneScrollTween()
-  clearBubbleBurstReplayFrame()
-  cleanupScrollTrigger(bubbleBurstTrigger)
+  resetBubbleRevealState()
   cleanupScrollTrigger(storyDeckTrigger)
-  bubbleBurstTrigger = null
   storyDeckTrigger = null
 }
 
@@ -1665,84 +1669,13 @@ function scheduleSceneSetup() {
 }
 
 function getStoryCardStyle(index: number): Record<string, string> {
-  const offset = index - storyProgressIndex.value
-  const isLastCard = index === storyCardCount.value - 1
-  const mergeDeparture = isLastCard ? storyMergeProgress.value : 0
-  const footerDeparture = isLastCard ? storyFooterFade.value : 0
-  const stackBias = index % 2 === 0 ? -1 : 1
-  const stackDepth = clamp(offset, 0, 2.2)
-  const exitProgress = clamp(-offset, 0, 1.02)
-  const exitTail = clamp(-offset - 0.94, 0, 1.02)
-  const hidden = offset > 1.92 || offset < -0.98
-  const translateX =
-    offset < 0
-      ? `${(stackBias * exitProgress * 0.04).toFixed(2)}rem`
-      : `${(stackBias * Math.min(stackDepth, 1.6) * 0.04).toFixed(2)}rem`
-  const translateY =
-    offset < 0
-      ? `calc(-${(exitProgress * 58).toFixed(4)}% - ${(exitTail * 0.42 + mergeDeparture * 0.24 + footerDeparture * 0.16).toFixed(2)}rem)`
-      : `calc(${(stackDepth * 4.8).toFixed(4)}% + 0.35rem - ${(mergeDeparture * 0.24).toFixed(2)}rem)`
-  const translateZ =
-    offset < 0
-      ? `${(exitProgress * 0.16 - exitTail * 0.22 - mergeDeparture * 0.28 - footerDeparture * 0.16).toFixed(2)}rem`
-      : `${(-stackDepth * 0.72 - mergeDeparture * 0.34 - footerDeparture * 0.14).toFixed(2)}rem`
-  const rotateX =
-    offset < 0
-      ? `${(exitProgress * 2.2 + mergeDeparture * 0.85).toFixed(2)}deg`
-      : `${(stackDepth * 0.24).toFixed(2)}deg`
-  const rotateZ =
-    offset < 0
-      ? `${(stackBias * (0.08 + exitProgress * 0.08)).toFixed(2)}deg`
-      : `${(stackBias * Math.min(stackDepth, 1.6) * 0.08).toFixed(2)}deg`
-  const scale = hidden
-    ? 0.96
-    : offset < 0
-      ? Math.max(0.982, 1 - exitProgress * 0.01 - exitTail * 0.012)
-      : Math.max(0.972, 1 - stackDepth * 0.014 - mergeDeparture * 0.01)
-  const opacity = hidden
-    ? 0
-    : offset < 0
-      ? Math.max(0, 1 - exitProgress * 0.64 - exitTail * 0.12 - footerDeparture * 0.08)
-      : Math.max(0.28, 1 - stackDepth * 0.16 - footerDeparture * 0.06)
-  const visualY = offset < 0 ? `${(-exitProgress * 0.22 - exitTail * 0.08).toFixed(2)}rem` : '0rem'
-  const visualScale =
-    offset < 0
-      ? String(Math.max(0.986, 1 - exitProgress * 0.012))
-      : String(Math.max(0.978, 1 - stackDepth * 0.01))
-  const copyY = offset < 0 ? `${(-exitProgress * 0.24 - exitTail * 0.08).toFixed(2)}rem` : '0rem'
-  const titleY = offset < 0 ? `${(-exitProgress * 0.28 - exitTail * 0.1).toFixed(2)}rem` : '0rem'
-  const copyTilt =
-    offset < 0 ? `${(exitProgress * 1.4).toFixed(2)}deg` : `${(stackDepth * 0.04).toFixed(2)}deg`
-  const copyOpacity =
-    offset < 0
-      ? Math.max(0.74, 1 - exitProgress * 0.14 - exitTail * 0.05)
-      : Math.max(0.78, 1 - stackDepth * 0.08)
-  const zIndex = String(
-    offset < 0
-      ? Math.max(
-          1,
-          storyCardCount.value + 2 - Math.round(exitProgress * 2) - Math.round(exitTail * 4)
-        )
-      : Math.max(1, storyCardCount.value - Math.round(stackDepth))
-  )
-
-  return {
-    '--story-translate-x': translateX,
-    '--story-translate-y': translateY,
-    '--story-translate-z': translateZ,
-    '--story-rotate-x': rotateX,
-    '--story-rotate-z': rotateZ,
-    '--story-scale': String(scale),
-    '--story-opacity': String(opacity),
-    '--story-visual-y': visualY,
-    '--story-visual-scale': visualScale,
-    '--story-copy-y': copyY,
-    '--story-copy-title-y': titleY,
-    '--story-copy-tilt': copyTilt,
-    '--story-copy-opacity': String(copyOpacity),
-    '--story-blur': '0rem',
-    'z-index': zIndex,
-  }
+  return buildStoryCardMotion({
+    index,
+    storyProgressIndex: storyProgressIndex.value,
+    storyCardCount: storyCardCount.value,
+    storyMergeProgress: storyMergeProgress.value,
+    storyFooterFade: storyFooterFade.value,
+  })
 }
 
 function goToExplore() {
@@ -1822,6 +1755,7 @@ function openDetailFromPreview(postId: string) {
 }
 
 watch([railSlideCount, storyCardCount, () => bubbleItems.value.length, shouldAnimate], () => {
+  resetBubbleRevealState()
   scheduleSceneSetup()
 })
 
@@ -5007,8 +4941,8 @@ onBeforeUnmount(() => {
   place-items: center;
   gap: 0;
   padding-block: clamp(1.6rem, 3vw, 2rem) clamp(2.35rem, 4vw, 3.1rem);
-  perspective: clamp(26rem, 38vw, 40rem);
-  perspective-origin: 50% 42%;
+  perspective: clamp(20rem, 32vw, 34rem);
+  perspective-origin: 48% 36%;
   transform-style: preserve-3d;
   isolation: isolate;
   overflow: clip;
@@ -5143,19 +5077,19 @@ onBeforeUnmount(() => {
   display: grid;
   place-items: center;
   overflow: clip;
-  transform-origin: 50% 92%;
+  transform-origin: var(--story-origin-inline, 50%) var(--story-origin-block, 92%);
   transform-style: preserve-3d;
   backface-visibility: hidden;
-  will-change: transform, opacity;
+  will-change: transform, opacity, filter;
   opacity: var(--story-opacity, 1);
   transform: translate3d(
       var(--story-translate-x, 0rem),
       var(--story-translate-y, 0rem),
       var(--story-translate-z, 0rem)
     )
-    rotateX(var(--story-rotate-x, 0deg)) rotateZ(var(--story-rotate-z, 0deg))
-    scale(var(--story-scale, 1));
-  filter: none;
+    rotateX(var(--story-rotate-x, 0deg)) rotateY(var(--story-rotate-y, 0deg))
+    rotateZ(var(--story-rotate-z, 0deg)) scale(var(--story-scale, 1));
+  filter: blur(var(--story-blur, 0rem));
   transition: none;
   pointer-events: none;
 }
@@ -5184,10 +5118,18 @@ onBeforeUnmount(() => {
     radial-gradient(circle at top right, rgba(var(--home-mist-rgb), 0.14), transparent 40%),
     radial-gradient(circle at bottom left, rgba(var(--home-blush-rgb), 0.12), transparent 34%),
     var(--home-story-card-bg) !important;
-  box-shadow: var(--home-story-card-shadow) !important;
+  box-shadow:
+    0 calc(2rem + (var(--story-shadow-strength, 1) * 0.6rem))
+      calc(3.3rem + (var(--story-shadow-strength, 1) * 1.2rem))
+      calc(-2.2rem - (var(--story-shadow-strength, 1) * 0.4rem))
+      rgba(35, 53, 85, calc(0.24 + (var(--story-shadow-strength, 1) * 0.08))),
+    0 0.875rem 1.8rem -1.45rem rgba(15, 23, 42, 0.16) !important;
   backdrop-filter: none !important;
   isolation: isolate;
   transform-style: preserve-3d;
+  transform: translate3d(0, 0, var(--story-card-lift, 0rem))
+    rotateY(calc(var(--story-rotate-y, 0deg) * -0.14));
+  transform-origin: var(--story-origin-inline, 50%) var(--story-origin-block, 86%);
 }
 
 .media-slice__sticky::before {
@@ -5207,7 +5149,12 @@ onBeforeUnmount(() => {
 }
 
 .media-slice.is-active .media-slice__sticky {
-  box-shadow: var(--home-story-card-shadow);
+  box-shadow:
+    0 calc(2.15rem + (var(--story-shadow-strength, 1) * 0.7rem))
+      calc(3.5rem + (var(--story-shadow-strength, 1) * 1.3rem))
+      calc(-2.1rem - (var(--story-shadow-strength, 1) * 0.42rem))
+      rgba(35, 53, 85, calc(0.28 + (var(--story-shadow-strength, 1) * 0.08))),
+    0 1rem 2rem -1.4rem rgba(15, 23, 42, 0.18) !important;
 }
 
 .media-slice__visual,
@@ -5225,7 +5172,8 @@ onBeforeUnmount(() => {
   background: var(--home-story-visual-bg);
   border: 0.0625rem solid var(--home-story-card-border);
   box-shadow: inset 0 0.0625rem 0 rgba(255, 255, 255, 0.12);
-  transform: translate3d(0, var(--story-visual-y, 0rem), 0) scale(var(--story-visual-scale, 1));
+  transform: translate3d(0, var(--story-visual-y, 0rem), calc(var(--story-card-lift, 0rem) * 0.5))
+    scale(var(--story-visual-scale, 1));
   transform-origin: 50% 100%;
   will-change: transform;
 }
@@ -5331,7 +5279,9 @@ onBeforeUnmount(() => {
   margin-inline: auto;
   border-color: var(--home-story-card-border) !important;
   background: var(--home-panel-bg-strong) !important;
-  box-shadow: 0 1.75rem 3.2rem -2rem rgba(35, 53, 85, 0.22) !important;
+  box-shadow: 0 calc(1.7rem + (var(--story-shadow-strength, 1) * 0.4rem))
+    calc(3rem + (var(--story-shadow-strength, 1) * 0.75rem)) -2rem
+    rgba(35, 53, 85, calc(0.18 + (var(--story-shadow-strength, 1) * 0.05))) !important;
 }
 
 :deep(.media-slice__visual .post-card.glass-card::before),
@@ -5626,7 +5576,7 @@ onBeforeUnmount(() => {
   .media-slice-list {
     place-items: start center;
     padding-block: clamp(0.85rem, 1.3vw, 1.1rem) clamp(2rem, 3vw, 2.5rem);
-    perspective-origin: 50% 24%;
+    perspective-origin: 47% 20%;
   }
 
   .story-progress {
@@ -6529,6 +6479,8 @@ onBeforeUnmount(() => {
 
   .media-slice {
     inset-inline: 0;
+    filter: none;
+    transform-origin: 50% 100%;
     transform: translate3d(0, calc(var(--story-translate-y, 0rem) * 0.68), 0)
       scale(var(--story-scale, 1));
   }

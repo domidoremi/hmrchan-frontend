@@ -24,6 +24,7 @@ export interface NavbarDropdownPositionResult {
   top: number
   maxInlineSize: number
   maxBlockSize: number
+  transformOrigin: string
 }
 
 function clamp(value: number, min: number, max: number): number {
@@ -46,11 +47,21 @@ export function resolveNavbarDropdownPosition({
 
   const maxLeft = Math.max(margin, viewportWidth - dropdownWidth - margin)
   const maxTop = Math.max(margin, viewportHeight - dropdownHeight - margin)
+  const left = clamp(triggerRect.right - dropdownWidth, margin, maxLeft)
+  const top = clamp(triggerRect.bottom + offsetY, margin, maxTop)
+  const triggerCenterInline = triggerRect.left + (triggerRect.right - triggerRect.left) / 2
+  const transformOriginInline = clamp(
+    triggerCenterInline - left,
+    1.5 * 16,
+    dropdownWidth - 1.5 * 16
+  )
+  const transformOriginBlock = clamp(triggerRect.bottom + offsetY - top, 0, dropdownHeight)
 
   return {
-    left: clamp(triggerRect.right - dropdownWidth, margin, maxLeft),
-    top: clamp(triggerRect.bottom + offsetY, margin, maxTop),
+    left,
+    top,
     maxInlineSize: safeViewportWidth,
     maxBlockSize: safeViewportHeight,
+    transformOrigin: `${transformOriginInline}px ${transformOriginBlock}px`,
   }
 }
