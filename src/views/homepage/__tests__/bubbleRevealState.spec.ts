@@ -34,12 +34,28 @@ describe('resolveBubbleRevealWindow', () => {
     })
   })
 
+  it('does not reset while the section hovers near the top edge during slow scrolling', () => {
+    expect(
+      resolveBubbleRevealWindow(
+        {
+          top: -180,
+          bottom: 160,
+        },
+        1200,
+        6
+      )
+    ).toEqual({
+      shouldReveal: false,
+      shouldReset: false,
+    })
+  })
+
   it('resets only after the section fully exits the wider deadband', () => {
     expect(
       resolveBubbleRevealWindow(
         {
           top: -640,
-          bottom: 40,
+          bottom: -320,
         },
         1200,
         6

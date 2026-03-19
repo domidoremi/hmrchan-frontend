@@ -10,8 +10,8 @@ export interface BubbleRevealWindow {
 
 const ENTER_BOTTOM_RATIO = 0.28
 const ENTER_TOP_RATIO = 0.86
-const RESET_BOTTOM_RATIO = 0.06
-const RESET_TOP_RATIO = 1.04
+const RESET_BOTTOM_RATIO = -0.18
+const RESET_TOP_RATIO = 1.18
 
 export function resolveBubbleRevealWindow(
   rect: BubbleRevealRectLike | null,
