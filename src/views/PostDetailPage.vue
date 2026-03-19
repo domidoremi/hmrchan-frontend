@@ -100,6 +100,9 @@
                     :class="{ 'is-loaded': isMediaLoaded }"
                     :src="getMediaStreamUrl(activeMedia.id)"
                     :alt="post?.title || ''"
+                    :width="activeMedia.width || undefined"
+                    :height="activeMedia.height || undefined"
+                    decoding="async"
                     fetchpriority="high"
                     @load="onMediaLoad"
                   />
@@ -116,6 +119,7 @@
                   :src="getMediaStreamUrl(activeMedia.id)"
                   :poster="getMediaThumbnailUrl(activeMedia.id, 'large')"
                   :subtitles="activeMedia.subtitles ?? null"
+                  :style="activeMediaElementStyle"
                   playsinline
                   @ready="onMediaLoad"
                 />
@@ -154,7 +158,10 @@
                   ''
                 "
                 :alt="post?.title || ''"
+                width="1280"
+                height="720"
                 loading="lazy"
+                decoding="async"
               />
               <div
                 v-else-if="post?.description && post.media_count === 0"
@@ -219,7 +226,10 @@
                   class="thumbnail-img"
                   :src="getMediaThumbnailUrl(media.id, 'small')"
                   :alt="post?.title || ''"
+                  width="72"
+                  height="72"
                   loading="lazy"
+                  decoding="async"
                 />
               </button>
             </div>
@@ -502,15 +512,27 @@ const activeMediaAspectRatio = computed(() => {
 
 const activeMediaViewerStyle = computed<Record<string, string>>(() => {
   const media = activeMedia.value
-  if (!media) return {}
+  if (!media) {
+    return {
+      '--aspect-ratio': '1.7777778',
+      '--media-min-block-size': 'clamp(18rem, 52dvh, 40rem)',
+    }
+  }
 
   const bgUrl = getMediaThumbnailUrl(media.id, 'large')
+  const intrinsicHeight =
+    media.width && media.height ? `${media.height}px` : 'clamp(18rem, 52dvh, 40rem)'
 
   return {
     '--media-bg': `url("${bgUrl}")`,
     '--aspect-ratio': String(activeMediaAspectRatio.value),
+    '--media-min-block-size': intrinsicHeight,
   }
 })
+
+const activeMediaElementStyle = computed<Record<string, string>>(() => ({
+  aspectRatio: String(activeMediaAspectRatio.value),
+}))
 
 // 获取缓存的缩略图作为占位图
 const placeholderSrc = computed(() => {
@@ -1475,6 +1497,10 @@ onUnmounted(() => {
   position: relative;
   width: min(100%, 60rem);
   max-width: 100%;
+  min-height: min(
+    var(--media-min-block-size, clamp(18rem, 52dvh, 40rem)),
+    clamp(20rem, 65dvh, 48rem)
+  );
   max-height: clamp(20rem, 65dvh, 48rem);
   aspect-ratio: var(--aspect-ratio, 16 / 9);
   display: flex;
@@ -1487,7 +1513,8 @@ onUnmounted(() => {
 
 .post-media-empty {
   width: 100%;
-  min-height: clamp(16.25rem, 40dvh, 32.5rem);
+  min-height: clamp(18rem, 52dvh, 40rem);
+  aspect-ratio: 16 / 9;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1504,6 +1531,7 @@ onUnmounted(() => {
   border-radius: var(--radius-2xl);
   box-shadow: var(--post-shadow-sm);
   background: var(--post-media-bg);
+  aspect-ratio: 16 / 9;
 }
 
 .post-media-text-only {
@@ -1620,6 +1648,7 @@ onUnmounted(() => {
   filter: blur(0.9375rem);
   transform: scale(1.05);
   opacity: 0.8;
+  aspect-ratio: var(--aspect-ratio, 16 / 9);
 }
 
 .media-viewer-item {
@@ -1632,6 +1661,7 @@ onUnmounted(() => {
   border-radius: 0;
   opacity: 0;
   transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  aspect-ratio: var(--aspect-ratio, 16 / 9);
 }
 
 @media (min-width: 900px) {
@@ -1823,6 +1853,7 @@ onUnmounted(() => {
   flex-direction: column;
   gap: var(--spacing-2);
   padding-bottom: var(--spacing-2);
+  min-block-size: 8.5rem;
   border-bottom: 1px solid var(--post-panel-border);
 }
 
@@ -1864,6 +1895,7 @@ onUnmounted(() => {
 
 .post-description-block {
   min-width: 0;
+  min-block-size: 10rem;
 }
 
 .post-description {
@@ -1976,6 +2008,7 @@ onUnmounted(() => {
   overflow-x: auto;
   overflow-y: hidden;
   max-width: 100%;
+  min-block-size: 5rem;
   scrollbar-width: none;
   -ms-overflow-style: none;
   -webkit-overflow-scrolling: touch;
@@ -1989,6 +2022,7 @@ onUnmounted(() => {
   flex: 0 0 auto;
   width: 4.5rem;
   height: 4.5rem;
+  aspect-ratio: 1;
   border-radius: var(--radius-lg);
   overflow: hidden;
   border: 2px solid transparent;
