@@ -1150,7 +1150,8 @@ const featuredSceneStyle = computed(() => ({
 
 const railTrackStyle = computed(() => ({
   transform: `translate3d(-${
-    activeRailIndex.value * (100 / Math.max(railSlideCount.value, 1))
+    clamp(railProgress.value) *
+    ((Math.max(railSlideCount.value, 1) - 1) * (100 / Math.max(railSlideCount.value, 1)))
   }%, 0, 0)`,
 }))
 
@@ -1507,7 +1508,11 @@ function updateViewportSceneBlend() {
         bubbleRevealPhase.value = 'revealed'
       }
     }
-  } else if (bubbleRevealWindow.shouldReset && bubbleRevealPhase.value !== 'idle') {
+  } else if (
+    bubbleRevealWindow.shouldReset &&
+    bubbleRevealPhase.value === 'revealed' &&
+    bubbleBurstReplayFrame === null
+  ) {
     resetBubbleRevealState()
   }
 
@@ -1656,19 +1661,12 @@ function setupSceneTriggers() {
 
   const featuredElement = resolveSectionElement(featuredSectionRef.value)
   if (featuredElement && railSlideCount.value > 1 && !isCompactHomeViewport()) {
-    const railStops = Math.max(railSlideCount.value - 1, 1)
     featuredRailTrigger = ScrollTrigger.create({
       trigger: featuredElement,
       start: 'top top',
       end: () => `+=${Math.max(featuredElement.offsetHeight - window.innerHeight, 1)}`,
       invalidateOnRefresh: true,
       scrub: 0.18,
-      snap: {
-        snapTo: (value: number) => Math.round(clamp(value) * railStops) / railStops,
-        duration: { min: 0.16, max: 0.32 },
-        delay: 0.04,
-        ease: 'power2.out',
-      },
       onUpdate: (self) => {
         railProgress.value = self.progress
       },
@@ -6833,7 +6831,7 @@ onBeforeUnmount(() => {
   margin: 0;
   scroll-snap-type: none;
   will-change: transform;
-  transition: transform 320ms var(--ease-fluid);
+  transition: none;
 }
 
 .home-page .story-stage {
