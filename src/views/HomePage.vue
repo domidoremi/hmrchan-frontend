@@ -1666,7 +1666,7 @@ function setupSceneTriggers() {
       start: 'top top',
       end: () => `+=${Math.max(featuredElement.offsetHeight - window.innerHeight, 1)}`,
       invalidateOnRefresh: true,
-      scrub: 0.18,
+      scrub: true,
       onUpdate: (self) => {
         railProgress.value = self.progress
       },
