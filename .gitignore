@@ -8,8 +8,10 @@ node_modules/
 # =====================
 # Build outputs
 # =====================
+build/
 dist/
 dist-ssr/
+.vite/
 *.local
 
 # =====================
@@ -23,6 +25,7 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 bun-debug.log*
+.codex*.log
 
 # =====================
 # Environment variables
@@ -36,6 +39,7 @@ bun-debug.log*
 # =====================
 # Editor & IDE
 # =====================
+.vscode/
 .idea/
 *.suo
 *.ntvs*
@@ -69,14 +73,12 @@ desktop.ini
 coverage/
 *.lcov
 .nyc_output/
+__screenshots__/
 
 # Cypress
 cypress/videos/
 cypress/screenshots/
 cypress/downloads/
-
-# Vitest
-__screenshots__/
 
 # =====================
 # Linting & Formatting
@@ -102,24 +104,21 @@ lighthouse-report.*
 *.report.json
 lighthouse-reports/
 .lighthouse/
+.lighthouse-prod/
+.tmp-lighthouse-prod/
+.tmp-lighthouse-*.json
+.lighthouse-a11y
 
 # =====================
 # Package Managers
 # =====================
-# Bun (项目使用)
 bun.lockb
-
-# npm (不使用,忽略)
 package-lock.json
 npm-shrinkwrap.json
-
-# Yarn (不使用,忽略)
 yarn.lock
 .yarn/
 .yarnrc
 .yarnrc.yml
-
-# pnpm (不使用,忽略)
 pnpm-lock.yaml
 .pnpm-store/
 
@@ -130,6 +129,8 @@ pnpm-lock.yaml
 .cache/
 .temp/
 .tmp/
+tmp/
+output/
 
 # =====================
 # AI Agent Tools
@@ -145,15 +146,21 @@ pnpm-lock.yaml
 .mcp.json
 .skills/
 .superpowers/
+
 # =====================
-# Project specific
+# Project specific generated files
 # =====================
-scripts/analyze-*.js
-scripts/measure-*.js
-scripts/compare-*.js
-scripts/lighthouse-audit.mjs
 .unused-code/
-lighthouse-reports/
+production_test_report_*.md
+output_*.png
+output_*.jpg
+output_*.jpeg
+warp_configs.json
+
+# Shared script config stays tracked; ignore only local/generated variants
+scripts/config/*.local.json
+scripts/config/*.generated.json
+scripts/config/*.tmp.json
 
 # =====================
 # Draft & Notes (not for production)
@@ -162,22 +169,6 @@ lighthouse-reports/
 **/draft*.md
 **/temp*.md
 **/TODO.md
-*.md
-!FRONTEND_API_CONTRACT.md
-# =====================
-# Documentation (except README.md)
-# =====================
-*_MIGRATION.md
-CHANGELOG.md
-CONTRIBUTING.md
-ARCHITECTURE.md
-AGENTS.md
-Dual View Responsive Layout (Masonry Feed + Immersive Theater).md
-warp_configs.json
-HMRChan 前端 API 合约文档 v1.md
-*.png
-.lighthouse-a11y
-.vscode/
 
 # allow specific expression PNG assets
 !public/images/expressions/22.png
@@ -187,5 +178,3 @@ HMRChan 前端 API 合约文档 v1.md
 # allow docs directory and all documents under it
 !docs/
 !docs/**
-tmp/
-output/

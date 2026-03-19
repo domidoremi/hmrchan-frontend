@@ -224,6 +224,8 @@
                   "
                   :sizes="thumbnailSizes"
                   :alt="discussion.referenced_post.title"
+                  width="80"
+                  height="80"
                   loading="lazy"
                   decoding="async"
                 />
@@ -267,6 +269,8 @@
                     "
                     :alt="discussion.referenced_post.title"
                     class="referenced-thumb"
+                    width="36"
+                    height="36"
                     loading="lazy"
                     decoding="async"
                   />
@@ -281,6 +285,8 @@
                     :src="normalizeAvatarUrl(discussion.author.avatar_url) || undefined"
                     :alt="discussion.author.username"
                     class="author-avatar"
+                    width="20"
+                    height="20"
                     loading="lazy"
                     decoding="async"
                   />
@@ -902,11 +908,13 @@ onUnmounted(() => {
   padding: var(--spacing-3);
   cursor: pointer;
   min-inline-size: 0;
+  min-block-size: 10rem;
 }
 
 .discussion-thumbnail {
   inline-size: 5rem;
   block-size: 5rem;
+  aspect-ratio: 1;
   border-radius: var(--radius-md);
   overflow: hidden;
   flex-shrink: 0;
@@ -921,8 +929,10 @@ onUnmounted(() => {
 .discussion-content {
   flex: 1;
   min-inline-size: 0;
+  min-block-size: 100%;
   display: grid;
   gap: var(--spacing-2);
+  align-content: start;
 }
 
 .discussion-title {
@@ -1045,6 +1055,7 @@ onUnmounted(() => {
 .author-avatar {
   width: 1.25rem;
   height: 1.25rem;
+  aspect-ratio: 1;
   border-radius: 50%;
   object-fit: cover;
 }
@@ -1066,6 +1077,7 @@ onUnmounted(() => {
 .comment-avatar {
   width: 1.5rem;
   height: 1.5rem;
+  aspect-ratio: 1;
   border-radius: 50%;
   object-fit: cover;
 }
@@ -1117,6 +1129,7 @@ onUnmounted(() => {
   padding: var(--spacing-3);
   cursor: pointer;
   min-inline-size: 0;
+  min-block-size: 5.75rem;
 }
 
 .topic-rank {

@@ -1,5 +1,5 @@
 <template>
-  <div class="home-page" :class="homePageTransitionClass" :style="homePageMotionStyle">
+  <div class="home-page" :style="homePageMotionStyle">
     <!-- Hero + 今日入口 -->
     <div class="home-fold">
       <!-- Hero Section -->
@@ -21,6 +21,7 @@
 
           <div class="hero-copy__right">
             <div
+              v-if="isHeroSupplementVisible"
               class="hero-editorial glass-card"
               :class="{ 'hero-editorial--loaded': heroEditorialVisible }"
               :style="noGlassBackdropStyle"
@@ -86,7 +87,7 @@
               </Button>
             </div>
 
-            <div class="hero-tags">
+            <div v-if="isHeroSupplementVisible" class="hero-tags">
               <span class="hero-tags__label">{{ $t('home.hero.trendingLabel') }}</span>
               <div v-if="heroTags.length > 0" class="hero-tag-list">
                 <RouterLink
@@ -101,7 +102,11 @@
               <span v-else class="hero-tags__empty">{{ $t('home.hero.tagsEmpty') }}</span>
             </div>
 
-            <div class="hero-stats" :aria-label="$t('home.hero.stats.ariaLabel')">
+            <div
+              v-if="isHeroSupplementVisible"
+              class="hero-stats"
+              :aria-label="$t('home.hero.stats.ariaLabel')"
+            >
               <div
                 v-for="item in heroStats"
                 :key="item.key"
@@ -121,6 +126,7 @@
 
     <!-- Horizontal Rail -->
     <FeaturedRailSection
+      v-if="isHomeSecondaryContentReady"
       ref="featuredSectionRef"
       :scene-style="featuredSceneStyle"
       :track-style="railTrackStyle"
@@ -735,7 +741,11 @@
     </FeaturedRailSection>
 
     <!-- Latest Posts -->
-    <LatestPostsSection ref="postsSectionRef" :revealed="hasTriggeredBubbleBurst">
+    <LatestPostsSection
+      v-if="isHomeSecondaryContentReady"
+      ref="postsSectionRef"
+      :revealed="hasTriggeredBubbleBurst"
+    >
       <header class="posts-header">
         <div class="posts-header__title">
           <h2>{{ $t('home.latest') }}</h2>
@@ -835,7 +845,11 @@
       </template>
     </LatestPostsSection>
 
-    <StoryDeckSection ref="storyDeckRef" :scene-style="storySceneStyle">
+    <StoryDeckSection
+      v-if="isHomeSecondaryContentReady"
+      ref="storyDeckRef"
+      :scene-style="storySceneStyle"
+    >
       <header class="page-section-head page-section-head--stage">
         <div class="page-section-copy">
           <p class="page-section-kicker">{{ $t('home.featured.kicker') }}</p>
@@ -931,8 +945,6 @@ import {
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
-import gsap from 'gsap'
-import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { ArrowUpRight, Compass, Image, Sparkles } from 'lucide-vue-next'
 import { useSettingsStore } from '@/stores'
 import {
@@ -976,10 +988,18 @@ import {
   resolveDocumentAnchorTop,
 } from '@/components/ui/scrollAnchorTargets'
 import StoryDeckSection from '@/components/home/StoryDeckSection.vue'
+import { scheduleTask } from '@/utils/modernAPIs'
 
-if (typeof window !== 'undefined') {
-  gsap.registerPlugin(ScrollTrigger)
-}
+type GsapModule = typeof import('gsap')
+type ScrollTriggerModule = typeof import('gsap/ScrollTrigger')
+type ScrollTriggerInstance = InstanceType<ScrollTriggerModule['ScrollTrigger']>
+
+let gsapModule: GsapModule['default'] | null = null
+let scrollTriggerModule: ScrollTriggerModule['ScrollTrigger'] | null = null
+let scrollTriggerReadyPromise: Promise<boolean> | null = null
+
+const HOME_SECONDARY_CONTENT_DELAY_MS = 900
+const HOME_SUPPLEMENT_DELAY_MS = 600
 
 const router = useRouter()
 const settingsStore = useSettingsStore()
@@ -995,6 +1015,11 @@ const initialHomeAggregate = buildHomepageBootstrapFallback()
 const initialHomePosts = buildHomePostsFromAggregate(initialHomeAggregate, t).filter(
   (post) => !isFilteredAuthor(post.author_name)
 )
+
+const isHomeSecondaryContentReady = ref(false)
+const isHeroSupplementVisible = ref(false)
+let heroSupplementTimer: number | null = null
+let homeSecondaryContentTimer: number | null = null
 
 // Posts state
 const posts = ref<PostListItem[]>(initialHomePosts)
@@ -1041,7 +1066,6 @@ const viewportSceneBlend = ref({
   postsStory: 0,
   storyFooter: 0,
 })
-const activeScreenTransition = ref<HomeScreenTransitionName | null>(null)
 
 const {
   bubbleItems,
@@ -1107,8 +1131,8 @@ function resolveSectionElement(
   return section?.element ?? null
 }
 
-let storyDeckTrigger: ScrollTrigger | null = null
-let featuredRailTrigger: ScrollTrigger | null = null
+let storyDeckTrigger: ScrollTriggerInstance | null = null
+let featuredRailTrigger: ScrollTriggerInstance | null = null
 let sceneSetupFrame: number | null = null
 let sceneSetupQueued = false
 let scenesEnabled = false
@@ -1119,8 +1143,6 @@ let viewportSceneFrame: number | null = null
 let screenTransitionTimer: number | null = null
 let viewportSceneTrackingBound = false
 
-type HomeScreenKey = 'hero' | 'featured' | 'posts' | 'story' | 'footer'
-type HomeScreenTransitionName = `${HomeScreenKey}-${HomeScreenKey}`
 const storyTravel = computed(() => Math.max(storyCardCount.value - 1, 0))
 const storyProgressIndex = computed(() => storyProgress.value * storyTravel.value)
 const storyMergeProgress = computed(() => clamp((storyProgress.value - 0.86) / 0.14))
@@ -1160,8 +1182,6 @@ const storySceneStyle = computed(() => ({
   '--story-progress': String(storyProgress.value),
   '--story-footer-fade': String(storyFooterFade.value),
 }))
-
-const homePageTransitionClass = computed(() => null)
 
 function isCompactHomeViewport(): boolean {
   return typeof window !== 'undefined' && window.innerWidth <= 768
@@ -1225,17 +1245,10 @@ watchSyncEffect(() => {
 })
 
 onActivated(() => {
-  scenesEnabled = true
-  setRailNavbarLock(true)
-  setHomeFooterBlend(true)
-  bindSceneInteractions()
-  bindViewportSceneBlendTracking()
-  observeSceneLayout()
-  scheduleSceneSetup()
-  runAfterNextPaint(() => {
-    scheduleViewportSceneBlendUpdate()
-    window.dispatchEvent(new Event('scroll'))
-  })
+  setHomeSceneLifecycleEnabled(true)
+  if (!isHeroSupplementVisible.value || !isHomeSecondaryContentReady.value) {
+    scheduleHeroSecondaryContent()
+  }
   if (
     (homeDataSource.value === 'idle' || homeDataSource.value === 'fallback') &&
     !isLoading.value
@@ -1245,17 +1258,10 @@ onActivated(() => {
 })
 
 onDeactivated(() => {
-  scenesEnabled = false
-  setHomeFooterBlend(false)
-  unbindSceneInteractions()
-  unbindViewportSceneBlendTracking()
-  disconnectSceneLayoutObserver()
+  resetHeroSecondaryContent()
+  setHomeSceneLifecycleEnabled(false)
   abortHomeRequest()
-  cleanupSceneTriggers()
   setRailNavbarLock(false)
-  clearHeroEditorialRevealTimer()
-  clearScreenTransitionTimer()
-  activeScreenTransition.value = null
 })
 let homeRequestController: AbortController | null = null
 
@@ -1384,9 +1390,71 @@ function syncSceneProgressFromViewport() {
       : clamp(storyProgress.value)
 }
 
-function cleanupScrollTrigger(trigger: ScrollTrigger | null) {
+function cleanupScrollTrigger(trigger: ScrollTriggerInstance | null) {
   trigger?.animation?.kill()
   trigger?.kill()
+}
+
+async function ensureScrollTriggerReady(): Promise<boolean> {
+  if (typeof window === 'undefined') return false
+  if (scrollTriggerModule && gsapModule) return true
+  if (!scrollTriggerReadyPromise) {
+    scrollTriggerReadyPromise = Promise.all([import('gsap'), import('gsap/ScrollTrigger')])
+      .then(([gsapImport, scrollTriggerImport]) => {
+        gsapModule = gsapImport.default
+        scrollTriggerModule = scrollTriggerImport.ScrollTrigger
+        gsapModule.registerPlugin(scrollTriggerModule)
+        return true
+      })
+      .catch(() => false)
+      .finally(() => {
+        scrollTriggerReadyPromise = null
+      })
+  }
+  return scrollTriggerReadyPromise
+}
+
+function scheduleHomeEnhancements(delay = 1800) {
+  if (typeof window === 'undefined' || !scenesEnabled) return
+  scheduleTask(
+    async () => {
+      if (!scenesEnabled) return
+      const ready = await ensureScrollTriggerReady()
+      if (!ready || !scenesEnabled) return
+      bindSceneInteractions()
+      bindViewportSceneBlendTracking()
+      observeSceneLayout()
+      scheduleSceneSetup()
+      runAfterNextPaint(() => {
+        scheduleViewportSceneBlendUpdate()
+        window.dispatchEvent(new Event('scroll'))
+      })
+    },
+    { priority: 'background', delay }
+  )
+}
+
+function setHomeSceneLifecycleEnabled(enabled: boolean) {
+  scenesEnabled = enabled
+  setRailNavbarLock(enabled)
+  setHomeFooterBlend(enabled)
+
+  if (!enabled) {
+    unbindSceneInteractions()
+    unbindViewportSceneBlendTracking()
+    disconnectSceneLayoutObserver()
+    cleanupSceneTriggers()
+    clearHeroEditorialRevealTimer()
+    clearHeroSupplementTimer()
+    clearHomeSecondaryContentTimer()
+    clearScreenTransitionTimer()
+    activeScreenTransition.value = null
+    return
+  }
+
+  if (isHomeSecondaryContentReady.value) {
+    scheduleHomeEnhancements()
+  }
 }
 
 function clearSceneScrollTween() {
@@ -1408,6 +1476,49 @@ function clearViewportSceneFrame() {
   if (typeof window === 'undefined' || viewportSceneFrame === null) return
   window.cancelAnimationFrame(viewportSceneFrame)
   viewportSceneFrame = null
+}
+
+function clearHeroSupplementTimer() {
+  if (typeof window === 'undefined' || heroSupplementTimer === null) return
+  window.clearTimeout(heroSupplementTimer)
+  heroSupplementTimer = null
+}
+
+function clearHomeSecondaryContentTimer() {
+  if (typeof window === 'undefined' || homeSecondaryContentTimer === null) return
+  window.clearTimeout(homeSecondaryContentTimer)
+  homeSecondaryContentTimer = null
+}
+
+function scheduleHeroSecondaryContent() {
+  if (typeof window === 'undefined') {
+    isHeroSupplementVisible.value = true
+    isHomeSecondaryContentReady.value = true
+    return
+  }
+
+  clearHeroSupplementTimer()
+  clearHomeSecondaryContentTimer()
+
+  heroSupplementTimer = window.setTimeout(() => {
+    isHeroSupplementVisible.value = true
+    heroSupplementTimer = null
+  }, HOME_SUPPLEMENT_DELAY_MS)
+
+  homeSecondaryContentTimer = window.setTimeout(() => {
+    isHomeSecondaryContentReady.value = true
+    homeSecondaryContentTimer = null
+    if (scenesEnabled) {
+      scheduleHomeEnhancements(150)
+    }
+  }, HOME_SECONDARY_CONTENT_DELAY_MS)
+}
+
+function resetHeroSecondaryContent() {
+  clearHeroSupplementTimer()
+  clearHomeSecondaryContentTimer()
+  isHeroSupplementVisible.value = false
+  isHomeSecondaryContentReady.value = false
 }
 
 function clearScreenTransitionTimer() {
@@ -1463,7 +1574,6 @@ function updateViewportSceneBlend() {
       postsStory: 0,
       storyFooter: 0,
     }
-    activeScreenTransition.value = null
     setRailNavbarLock(false)
     setHomeFooterBlend(false)
     return
@@ -1653,15 +1763,18 @@ function observeSceneLayout() {
   }
 }
 
-function setupSceneTriggers() {
+async function setupSceneTriggers() {
   cleanupSceneTriggers({ preserveBubbleReveal: true })
   syncSceneProgressFromViewport()
 
   if (typeof window === 'undefined' || !scenesEnabled) return
 
+  const ready = await ensureScrollTriggerReady()
+  if (!ready || !scrollTriggerModule || !scenesEnabled) return
+
   const featuredElement = resolveSectionElement(featuredSectionRef.value)
   if (featuredElement && railSlideCount.value > 1 && !isCompactHomeViewport()) {
-    featuredRailTrigger = ScrollTrigger.create({
+    featuredRailTrigger = scrollTriggerModule.create({
       trigger: featuredElement,
       start: 'top top',
       end: () => `+=${Math.max(featuredElement.offsetHeight - window.innerHeight, 1)}`,
@@ -1678,7 +1791,7 @@ function setupSceneTriggers() {
 
   const storyElement = resolveSectionElement(storyDeckRef.value)
   if (storyElement && storyCardCount.value > 1) {
-    storyDeckTrigger = ScrollTrigger.create({
+    storyDeckTrigger = scrollTriggerModule.create({
       trigger: storyElement,
       start: 'top top',
       end: () => `+=${Math.max(storyCardCount.value - 1, 0) * window.innerHeight}`,
@@ -1801,36 +1914,21 @@ function openDetailFromPreview(postId: string) {
 
 watch([railSlideCount, storyCardCount, () => bubbleItems.value.length, shouldAnimate], () => {
   resetBubbleRevealState()
+  if (!scenesEnabled) return
   scheduleSceneSetup()
 })
 
 onMounted(() => {
-  scenesEnabled = true
-  setRailNavbarLock(true)
-  setHomeFooterBlend(true)
-  bindSceneInteractions()
-  bindViewportSceneBlendTracking()
-  observeSceneLayout()
-  scheduleSceneSetup()
-  runAfterNextPaint(() => {
-    scheduleViewportSceneBlendUpdate()
-    window.dispatchEvent(new Event('scroll'))
-  })
+  setHomeSceneLifecycleEnabled(true)
+  scheduleHeroSecondaryContent()
   void fetchHomeData()
 })
 
 onBeforeUnmount(() => {
-  scenesEnabled = false
-  setHomeFooterBlend(false)
-  unbindSceneInteractions()
-  unbindViewportSceneBlendTracking()
-  disconnectSceneLayoutObserver()
+  resetHeroSecondaryContent()
+  setHomeSceneLifecycleEnabled(false)
   abortHomeRequest()
-  cleanupSceneTriggers()
   setRailNavbarLock(false)
-  clearHeroEditorialRevealTimer()
-  clearScreenTransitionTimer()
-  activeScreenTransition.value = null
 })
 </script>
 
@@ -5774,13 +5872,6 @@ onBeforeUnmount(() => {
     will-change: auto;
   }
 
-  .home-page[class*='home-page--transition-'] .hero,
-  .home-page[class*='home-page--transition-'] .rail-stage,
-  .home-page[class*='home-page--transition-'] .posts--bubble > .container,
-  .home-page[class*='home-page--transition-'] .story-stage {
-    animation: none !important;
-  }
-
   .hero {
     min-block-size: var(--home-safe-block-size-with-mobile-nav);
     padding-block: max(var(--home-stage-safe-top), clamp(0.75rem, 3vw, 1.1rem))
@@ -6865,76 +6956,6 @@ onBeforeUnmount(() => {
   z-index: 1;
 }
 
-.home-page--transition-featured-hero .hero,
-.home-page--transition-hero-featured .rail-stage,
-.home-page--transition-posts-featured .rail-stage,
-.home-page--transition-featured-posts .posts--bubble > .container,
-.home-page--transition-story-posts .posts--bubble > .container,
-.home-page--transition-posts-story .story-stage {
-  opacity: 1;
-  transform: translate3d(0, 0rem, 0) scale(1);
-}
-
-.home-page--transition-story-footer .story-stage {
-  opacity: 0.94;
-  transform: translate3d(0, -0.35rem, 0) scale(0.995);
-}
-
-.home-page--transition-hero-featured .rail-stage {
-  animation: homeScreenEnterRise var(--home-screen-transition-ms) cubic-bezier(0.2, 0.9, 0.25, 1)
-    both;
-}
-
-.home-page--transition-featured-hero .rail-stage {
-  animation: homeScreenExitCompress var(--home-screen-transition-ms)
-    cubic-bezier(0.2, 0.84, 0.24, 1) both;
-}
-
-.home-page--transition-featured-posts .rail-stage {
-  animation: homeScreenExitNorth var(--home-screen-transition-ms) cubic-bezier(0.2, 0.84, 0.24, 1)
-    both;
-}
-
-.home-page--transition-featured-posts .posts--bubble > .container {
-  animation: homeScreenEnterBloom var(--home-screen-transition-ms) cubic-bezier(0.18, 0.9, 0.24, 1)
-    both;
-}
-
-.home-page--transition-posts-featured .posts--bubble > .container {
-  animation: homeScreenExitCompress var(--home-screen-transition-ms)
-    cubic-bezier(0.2, 0.84, 0.24, 1) both;
-}
-
-.home-page--transition-posts-featured .rail-stage {
-  animation: homeScreenEnterRise var(--home-screen-transition-ms) cubic-bezier(0.2, 0.9, 0.25, 1)
-    both;
-}
-
-.home-page--transition-posts-story .posts--bubble > .container {
-  animation: homeScreenExitCompress var(--home-screen-transition-ms)
-    cubic-bezier(0.2, 0.84, 0.24, 1) both;
-}
-
-.home-page--transition-posts-story .story-stage {
-  animation: homeScreenEnterRise var(--home-screen-transition-ms) cubic-bezier(0.2, 0.9, 0.25, 1)
-    both;
-}
-
-.home-page--transition-story-posts .story-stage {
-  animation: homeScreenExitCompress var(--home-screen-transition-ms)
-    cubic-bezier(0.2, 0.84, 0.24, 1) both;
-}
-
-.home-page--transition-story-posts .posts--bubble > .container {
-  animation: homeScreenEnterBloom var(--home-screen-transition-ms) cubic-bezier(0.18, 0.9, 0.24, 1)
-    both;
-}
-
-.home-page--transition-story-footer .story-stage {
-  animation: homeScreenExitSettle var(--home-screen-transition-ms) cubic-bezier(0.18, 0.82, 0.24, 1)
-    both;
-}
-
 @media (min-width: 180rem) {
   .home-page .hero-layout {
     align-content: start;
@@ -6976,12 +6997,6 @@ onBeforeUnmount(() => {
     transform: none !important;
     filter: none !important;
     will-change: auto;
-  }
-
-  .home-page[class*='home-page--transition-'] .rail-stage,
-  .home-page[class*='home-page--transition-'] .posts--bubble > .container,
-  .home-page[class*='home-page--transition-'] .story-stage {
-    animation: none !important;
   }
 
   .home-page .hero-layout {

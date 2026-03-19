@@ -30,6 +30,7 @@
     "lint": "eslint . --fix --cache",
     "format": "prettier --write src/",
     "perf:lighthouse": "node scripts/lighthouse-audit.mjs",
+    "perf:lighthouse:prod": "node scripts/lighthouse-prod-audit.mjs",
     "lint:strict": "eslint . --ext .vue,.ts,.tsx --max-warnings=0",
     "format:check": "prettier --check src/",
     "lint-staged": "lint-staged",
