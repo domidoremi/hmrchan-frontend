@@ -210,7 +210,10 @@
                   :src="normalizeAvatarUrl(author.avatar_url) || author.avatar_url"
                   :alt="author.display_name || author.name"
                   class="author-avatar"
+                  width="48"
+                  height="48"
                   loading="lazy"
+                  decoding="async"
                 />
                 <div v-else class="author-avatar author-placeholder">
                   <AnimatedIcon name="user" :fallback-icon="User" size="lg" />
@@ -1283,6 +1286,7 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   gap: var(--spacing-3);
+  min-block-size: 5.5rem;
 }
 
 .skeleton-content {
@@ -1382,6 +1386,7 @@ onBeforeUnmount(() => {
   padding: var(--spacing-3);
   cursor: pointer;
   min-inline-size: 0;
+  min-block-size: 5.5rem;
   text-align: left;
 }
 
@@ -1546,6 +1551,8 @@ onBeforeUnmount(() => {
   gap: var(--spacing-3);
   padding: clamp(0.875rem, 2vw, 1rem);
   min-inline-size: 0;
+  align-content: start;
+  min-block-size: 16rem;
 }
 
 .search-history-panel__header {
@@ -1575,6 +1582,7 @@ onBeforeUnmount(() => {
   border: 1px solid var(--page-control-border);
   background: var(--page-control-bg);
   box-shadow: 0 0.85rem 1.65rem -1.45rem rgba(15, 23, 42, 0.22);
+  min-block-size: 3.5rem;
   transition:
     background 220ms var(--ease-out),
     border-color 220ms var(--ease-out),

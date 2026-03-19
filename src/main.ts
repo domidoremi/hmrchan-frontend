@@ -187,9 +187,49 @@ watch(
 
 // 初始化设备指纹（异步，不阻塞应用启动）
 import { initFingerprint } from './utils/fingerprint'
-initFingerprint().catch((error) => {
-  reportClientError('fingerprint.init_failed', error, undefined, { severity: 'warn' })
-})
+
+function scheduleFingerprintInit(): void {
+  const run = () => {
+    if (scheduledTasksDisposed) return
+    initFingerprint().catch((error) => {
+      reportClientError('fingerprint.init_failed', error, undefined, { severity: 'warn' })
+    })
+  }
+
+  if (typeof window === 'undefined') {
+    run()
+    return
+  }
+
+  let triggered = false
+  const cleanup = () => {
+    window.removeEventListener('pointerdown', onIntent)
+    window.removeEventListener('keydown', onIntent)
+    window.removeEventListener('touchstart', onIntent)
+  }
+  const onIntent = () => {
+    if (triggered) return
+    triggered = true
+    cleanup()
+    scheduleTask(run, { priority: 'background', delay: 1500 })
+  }
+
+  window.addEventListener('pointerdown', onIntent, { once: true, passive: true })
+  window.addEventListener('keydown', onIntent, { once: true })
+  window.addEventListener('touchstart', onIntent, { once: true, passive: true })
+
+  scheduleTask(
+    () => {
+      if (triggered) return
+      triggered = true
+      cleanup()
+      run()
+    },
+    { priority: 'background', delay: 12000 }
+  )
+}
+
+scheduleFingerprintInit()
 
 const enableDataPrefetch = import.meta.env.VITE_ENABLE_DATA_PREFETCH !== 'false'
 const enableDeferredAnimationStyles =
@@ -223,6 +263,11 @@ if (import.meta.hot) {
 
 // 非关键任务：使用现代 Scheduler API 在空闲时执行
 import { scheduleTask } from './utils/modernAPIs'
+const PREFETCH_SETUP_DELAY_MS = 14000
+const PREFETCH_FALLBACK_DELAY_MS = 40000
+const POPULAR_PREFETCH_DELAY_AFTER_INTENT_MS = 12000
+const SW_REGISTER_DELAY_MS = 8000
+const SW_SYNC_DELAY_MS = 14000
 let scheduledTasksDisposed = false
 if (import.meta.hot) {
   import.meta.hot.dispose(() => {
@@ -303,7 +348,7 @@ scheduleTask(
       )
     })
   },
-  { priority: 'background', delay: 5000 } // 延迟 5 秒，降低与首屏关键资源的竞争
+  { priority: 'background', delay: SW_REGISTER_DELAY_MS } // 延迟注册，降低与首屏关键资源的竞争
 )
 
 // 后台同步管理器：监听网络状态和 SW 消息
@@ -323,14 +368,11 @@ scheduleTask(
       }
     )
   },
-  { priority: 'background', delay: 9000 } // 延迟后台同步初始化，避免首屏主线程竞争
+  { priority: 'background', delay: SW_SYNC_DELAY_MS } // 进一步后移后台同步初始化，避免首屏主线程竞争
 )
 
 // 智能路由预加载：在首屏渲染完成后预加载关键路由
 import { disposePrefetch, prefetchCriticalRoutes, setupHoverPrefetch } from './utils/prefetch'
-const PREFETCH_SETUP_DELAY_MS = 10000
-const PREFETCH_FALLBACK_DELAY_MS = 30000
-const POPULAR_PREFETCH_DELAY_AFTER_INTENT_MS = 8000
 let prefetchTaskDisposed = false
 let prefetchStarted = false
 let prefetchFallbackTimer: number | null = null
