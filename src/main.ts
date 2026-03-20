@@ -389,6 +389,7 @@ function cleanupPrefetchIntentListeners(): void {
 
 function triggerPrefetchPipeline(reason: 'intent' | 'fallback'): void {
   if (scheduledTasksDisposed || prefetchTaskDisposed || prefetchStarted) return
+  if (!authStore.isAuthenticated) return
   prefetchStarted = true
   cleanupPrefetchIntentListeners()
 
@@ -431,6 +432,7 @@ function triggerPrefetchPipeline(reason: 'intent' | 'fallback'): void {
 function setupIntentDrivenPrefetch(): void {
   if (typeof window === 'undefined') return
   if (scheduledTasksDisposed || prefetchTaskDisposed || prefetchStarted) return
+  if (!authStore.isAuthenticated) return
 
   cleanupPrefetchIntentListeners()
 
@@ -463,6 +465,21 @@ if (import.meta.hot) {
     disposePrefetch()
   })
 }
+watch(
+  () => authStore.isAuthenticated,
+  (isAuthenticated) => {
+    if (scheduledTasksDisposed || prefetchTaskDisposed) return
+
+    if (isAuthenticated) {
+      setupIntentDrivenPrefetch()
+      return
+    }
+
+    cleanupPrefetchIntentListeners()
+    disposePrefetch()
+    prefetchStarted = false
+  }
+)
 scheduleTask(
   () => {
     if (scheduledTasksDisposed || prefetchTaskDisposed) return

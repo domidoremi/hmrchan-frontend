@@ -104,10 +104,11 @@ lighthouse-report.*
 *.report.json
 lighthouse-reports/
 .lighthouse/
-.lighthouse-prod/
+.lighthouse-prod*/
 .tmp-lighthouse-prod/
 .tmp-lighthouse-*.json
 .lighthouse-a11y
+%SystemDrive%/
 
 # =====================
 # Package Managers
