@@ -50,9 +50,17 @@ export function supportsWebP(): boolean {
   if (typeof window === 'undefined') return false
 
   const canvas = document.createElement('canvas')
-  if (canvas.getContext && canvas.getContext('2d')) {
-    webpSupported = canvas.toDataURL('image/webp').indexOf('data:image/webp') === 0
-  } else {
+  try {
+    if (canvas.getContext && canvas.getContext('2d')) {
+      webpSupported = canvas.toDataURL('image/webp').indexOf('data:image/webp') === 0
+      return webpSupported
+    }
+  } catch {
+    // Some test/runtime environments expose canvas APIs but do not implement them.
+  }
+
+  webpSupported = false
+  if (!canvas.getContext) {
     webpSupported = false
   }
 
@@ -125,6 +133,19 @@ export function getResponsiveThumbnailUrl(
 ): string {
   const size = getResponsiveThumbnailSize(baseSize)
   return getMediaThumbnailUrl(mediaId, size)
+}
+
+/**
+ * 根据媒体 ID 生成响应式缩略图 srcset
+ */
+export function getMediaThumbnailSrcset(mediaId?: string | null): string | null {
+  if (!mediaId) return null
+
+  const small = getMediaThumbnailUrl(mediaId, 'small')
+  const medium = getMediaThumbnailUrl(mediaId, 'medium')
+  const large = getMediaThumbnailUrl(mediaId, 'large')
+
+  return `${small} ${THUMBNAIL_SIZES.small.width}w, ${medium} ${THUMBNAIL_SIZES.medium.width}w, ${large} ${THUMBNAIL_SIZES.large.width}w`
 }
 
 /**
@@ -203,10 +224,5 @@ export function createImageLoader(
 export function getThumbnailSrcset(thumbnailUrl?: string | null): string | null {
   const mediaId = extractMediaIdFromUrl(thumbnailUrl)
   if (!mediaId) return null
-
-  const small = getMediaThumbnailUrl(mediaId, 'small')
-  const medium = getMediaThumbnailUrl(mediaId, 'medium')
-  const large = getMediaThumbnailUrl(mediaId, 'large')
-
-  return `${small} ${THUMBNAIL_SIZES.small.width}w, ${medium} ${THUMBNAIL_SIZES.medium.width}w, ${large} ${THUMBNAIL_SIZES.large.width}w`
+  return getMediaThumbnailSrcset(mediaId)
 }

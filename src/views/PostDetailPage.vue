@@ -98,12 +98,15 @@
                   <img
                     class="media-viewer-item"
                     :class="{ 'is-loaded': isMediaLoaded }"
-                    :src="getMediaStreamUrl(activeMedia.id)"
+                    :src="activeImageSrc"
+                    :srcset="activeImageSrcset || undefined"
+                    :sizes="detailMediaImageSizes"
                     :alt="post?.title || ''"
                     :width="activeMedia.width || undefined"
                     :height="activeMedia.height || undefined"
                     decoding="async"
-                    fetchpriority="high"
+                    loading="eager"
+                    :fetchpriority="activeMediaIndex === 0 ? 'high' : 'auto'"
                     @load="onMediaLoad"
                   />
                   <!-- 点击提示 -->
@@ -112,17 +115,27 @@
                     {{ t('common.clickToEnlarge') }}
                   </div>
                 </div>
-                <VideoPlayer
+                <video
                   v-else-if="activeMedia?.file_type === 'video'"
                   :key="`video-${activeMedia.id}`"
                   class="media-viewer-item is-loaded"
                   :src="getMediaStreamUrl(activeMedia.id)"
-                  :poster="getMediaThumbnailUrl(activeMedia.id, 'large')"
-                  :subtitles="activeMedia.subtitles ?? null"
+                  :poster="getMediaThumbnailUrl(activeMedia.id, 'medium')"
                   :style="activeMediaElementStyle"
+                  controls
                   playsinline
-                  @ready="onMediaLoad"
-                />
+                  preload="metadata"
+                  @loadeddata="onMediaLoad"
+                >
+                  <track
+                    v-for="track in activeMedia.subtitles ?? []"
+                    :key="`${track.language}-${track.url ?? track.file_path ?? track.path ?? ''}`"
+                    kind="subtitles"
+                    :label="track.label ?? track.language"
+                    :srclang="track.language"
+                    :src="track.url ?? track.file_path ?? track.path ?? ''"
+                  />
+                </video>
                 <div
                   v-else
                   :key="`fallback-${activeMedia?.id ?? activeMediaIndex}`"
@@ -152,16 +165,15 @@
               <img
                 v-if="post?.thumbnail_url"
                 class="post-image"
-                :src="
-                  normalizeToThumbnailUrl(post?.thumbnail_url ?? '', 'large') ||
-                  post?.thumbnail_url ||
-                  ''
-                "
+                :src="fallbackMediaSrc"
+                :srcset="fallbackMediaSrcset || undefined"
+                :sizes="detailMediaImageSizes"
                 :alt="post?.title || ''"
                 width="1280"
                 height="720"
-                loading="lazy"
+                loading="eager"
                 decoding="async"
+                fetchpriority="high"
               />
               <div
                 v-else-if="post?.description && post.media_count === 0"
@@ -211,27 +223,39 @@
               </button>
             </div>
 
-            <div v-if="hasMultipleMedia" class="media-thumbnails">
-              <button
-                v-for="(media, idx) in post?.media_files ?? []"
-                :key="media.id"
-                type="button"
-                class="thumbnail-btn"
-                :class="{ active: idx === activeMediaIndex }"
-                :aria-label="`${idx + 1}`"
-                :aria-pressed="idx === activeMediaIndex"
-                @click="selectMedia(idx)"
-              >
-                <img
-                  class="thumbnail-img"
-                  :src="getMediaThumbnailUrl(media.id, 'small')"
-                  :alt="post?.title || ''"
-                  width="72"
-                  height="72"
-                  loading="lazy"
-                  decoding="async"
-                />
-              </button>
+            <div v-if="shouldShowThumbnailRail" class="media-thumbnails">
+              <template v-if="hasMultipleMedia">
+                <button
+                  v-for="(media, idx) in post?.media_files ?? []"
+                  :key="media.id"
+                  type="button"
+                  class="thumbnail-btn"
+                  :class="{ active: idx === activeMediaIndex }"
+                  :aria-label="`${idx + 1}`"
+                  :aria-pressed="idx === activeMediaIndex"
+                  @click="selectMedia(idx)"
+                >
+                  <img
+                    class="thumbnail-img"
+                    :src="getMediaThumbnailUrl(media.id, 'small')"
+                    :alt="post?.title || ''"
+                    width="72"
+                    height="72"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                </button>
+              </template>
+              <template v-else>
+                <div
+                  v-for="placeholderIndex in thumbnailPlaceholderCount"
+                  :key="`thumb-placeholder-${placeholderIndex}`"
+                  class="thumbnail-btn thumbnail-btn--placeholder"
+                  aria-hidden="true"
+                >
+                  <div class="thumbnail-img skeleton" />
+                </div>
+              </template>
             </div>
 
             <div class="post-actions">
@@ -271,8 +295,15 @@
       </Transition>
     </section>
 
-    <section v-if="post && postId && postId !== 'undefined'" class="post-comments">
-      <CommentList :post-id="postId" />
+    <section
+      v-if="post && postId && postId !== 'undefined'"
+      ref="commentsSectionRef"
+      class="post-comments"
+    >
+      <CommentList v-if="shouldLoadComments" :post-id="postId" />
+      <div v-else class="post-comments__placeholder glass-card">
+        <span class="post-comments__placeholder-label">{{ t('comment.title') }}</span>
+      </div>
     </section>
 
     <!-- Media Lightbox -->
@@ -299,6 +330,7 @@ import {
   onDeactivated,
   onWatcherCleanup,
   useTemplateRef,
+  nextTick,
 } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
@@ -308,12 +340,13 @@ import { ArrowLeft, ChevronLeft, ChevronRight, Eye, Heart } from 'lucide-vue-nex
 import { useAuthStore, useSettingsStore } from '@/stores'
 import { useI18n } from 'vue-i18n'
 import { usePageTitle } from '@/composables/usePageTitle'
-import { CommentList } from '@/components/comment'
 import { postService, type PostDetailResponse, ApiError } from '@/api'
 import PostActionStrip from '@/components/business/PostActionStrip.vue'
 import {
   getMediaStreamUrl,
+  getMediaThumbnailSrcset,
   getMediaThumbnailUrl,
+  getThumbnailSrcset,
   normalizeToThumbnailUrl,
 } from '@/utils/mediaOptimizer'
 import { useCachedPost } from '@/composables/useCachedPosts'
@@ -324,7 +357,6 @@ import {
   updatePostNavigationIndex,
   type PostNavigationContext,
 } from '@/utils/postNavigation'
-import { prefetchPostDetail } from '@/utils/prefetch'
 import { getFallbackPostDetailById } from '@/mocks/postFallback'
 import {
   isServiceUnavailableError,
@@ -333,12 +365,12 @@ import {
 } from '@/mocks/publicPageFallback'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import Skeleton from '@/components/ui/Skeleton.vue'
-import VideoPlayer from '@/components/ui/VideoPlayer.vue'
 import { defineAsyncComponent } from 'vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import { lockBodyScroll, unlockBodyScroll } from '@/utils/bodyScrollLock'
 
 // 动态导入大型组件以减少初始包体积
+const CommentList = defineAsyncComponent(() => import('@/components/comment/CommentList.vue'))
 const MediaLightbox = defineAsyncComponent({
   loader: () => import('@/components/ui/MediaLightbox.vue'),
   onError(error, retry, fail, attempts) {
@@ -400,9 +432,13 @@ const preloadedImages = ref<Set<string>>(new Set())
 const autoPlayTimer = ref<number | null>(null)
 const autoPlayResumeTimer = ref<number | null>(null)
 const isAutoPlayPaused = ref(false)
+const shouldLoadComments = ref(false)
+const allowAdjacentMediaPreload = ref(false)
 
 const stageRef = useTemplateRef<HTMLElement>('stageRef')
+const commentsSectionRef = useTemplateRef<HTMLElement>('commentsSectionRef')
 const navigationContext = ref<PostNavigationContext | null>(null)
+let commentsObserver: IntersectionObserver | null = null
 
 // Back FAB progress (matches BackToTop visual language)
 const backScrollProgress = ref(0)
@@ -474,6 +510,9 @@ const activeMedia = computed(() => {
   return list[activeMediaIndex.value] ?? null
 })
 
+const detailMediaImageSizes =
+  '(min-width: 1100px) 60rem, (min-width: 900px) calc(100vw - 31rem), 100vw'
+
 const subtitlesAvailable = computed(() => {
   const m = activeMedia.value
   return Boolean(m && m.file_type === 'video' && (m.subtitles?.length ?? 0) > 0)
@@ -519,12 +558,10 @@ const activeMediaViewerStyle = computed<Record<string, string>>(() => {
     }
   }
 
-  const bgUrl = getMediaThumbnailUrl(media.id, 'large')
   const intrinsicHeight =
     media.width && media.height ? `${media.height}px` : 'clamp(18rem, 52dvh, 40rem)'
 
   return {
-    '--media-bg': `url("${bgUrl}")`,
     '--aspect-ratio': String(activeMediaAspectRatio.value),
     '--media-min-block-size': intrinsicHeight,
   }
@@ -533,6 +570,38 @@ const activeMediaViewerStyle = computed<Record<string, string>>(() => {
 const activeMediaElementStyle = computed<Record<string, string>>(() => ({
   aspectRatio: String(activeMediaAspectRatio.value),
 }))
+
+const activeImageSrc = computed(() => {
+  const media = activeMedia.value
+  if (!media || media.file_type !== 'image') return ''
+  return getMediaThumbnailUrl(media.id, 'large')
+})
+
+const activeImageSrcset = computed(() => {
+  const media = activeMedia.value
+  if (!media || media.file_type !== 'image') return null
+  return getMediaThumbnailSrcset(media.id)
+})
+
+const fallbackMediaSrc = computed(() => {
+  return (
+    normalizeToThumbnailUrl(post.value?.thumbnail_url ?? '', 'large') ||
+    post.value?.thumbnail_url ||
+    ''
+  )
+})
+
+const fallbackMediaSrcset = computed(() => getThumbnailSrcset(post.value?.thumbnail_url ?? null))
+
+const shouldShowThumbnailRail = computed(() => {
+  if (hasMultipleMedia.value) return true
+  return Boolean(post.value && !detailFetched.value && (post.value.media_count ?? 0) > 1)
+})
+
+const thumbnailPlaceholderCount = computed(() => {
+  const mediaCountValue = post.value?.media_count ?? 0
+  return Math.min(Math.max(mediaCountValue, 2), 6)
+})
 
 // 获取缓存的缩略图作为占位图
 const placeholderSrc = computed(() => {
@@ -556,6 +625,7 @@ const placeholderSrc = computed(() => {
 function selectMedia(index: number) {
   if (index === activeMediaIndex.value) return
   pauseAutoPlay()
+  allowAdjacentMediaPreload.value = true
   mediaTransitionName.value =
     index > activeMediaIndex.value ? 'media-slide-left' : 'media-slide-right'
   isMediaLoaded.value = false
@@ -567,6 +637,7 @@ function prevMedia(): boolean {
   if (total <= 1) return false
   if (!canGoPrevMedia.value) return false
   pauseAutoPlay()
+  allowAdjacentMediaPreload.value = true
   mediaTransitionName.value = 'media-slide-right'
   isMediaLoaded.value = false
   activeMediaIndex.value = Math.max(0, activeMediaIndex.value - 1)
@@ -578,6 +649,7 @@ function nextMedia(): boolean {
   if (total <= 1) return false
   if (!canGoNextMedia.value) return false
   pauseAutoPlay()
+  allowAdjacentMediaPreload.value = true
   mediaTransitionName.value = 'media-slide-left'
   isMediaLoaded.value = false
   activeMediaIndex.value = Math.min(total - 1, activeMediaIndex.value + 1)
@@ -587,8 +659,9 @@ function nextMedia(): boolean {
 function onMediaLoad() {
   isMediaLoaded.value = true
 
-  // 预加载相邻图片
-  preloadAdjacentMedia()
+  if (allowAdjacentMediaPreload.value) {
+    preloadAdjacentMedia()
+  }
 }
 
 function startAutoPlay() {
@@ -632,7 +705,7 @@ function advanceMedia() {
   activeMediaIndex.value = (activeMediaIndex.value + 1) % total
 }
 
-// 预加载相邻媒体的缩略图和原图
+// 用户明确切换媒体后，仅预热相邻缩略图，避免详情页首屏竞争完整媒体资源。
 function preloadAdjacentMedia() {
   const mediaFiles = post.value?.media_files
   if (!mediaFiles || mediaFiles.length <= 1) return
@@ -654,14 +727,6 @@ function preloadAdjacentMedia() {
       thumbImg.src = thumbUrl
       thumbImg.onload = () => preloadedImages.value.add(thumbUrl)
     }
-
-    // 预加载原图
-    const streamUrl = getMediaStreamUrl(media.id)
-    if (!preloadedImages.value.has(streamUrl)) {
-      const fullImg = new Image()
-      fullImg.src = streamUrl
-      fullImg.onload = () => preloadedImages.value.add(streamUrl)
-    }
   })
 }
 
@@ -679,20 +744,38 @@ function syncNavigationContext() {
   navigationContext.value = getPostNavigationContext()
 }
 
-function prefetchAdjacentPosts() {
-  const context = navigationContext.value
-  if (!context) return
+function disconnectCommentsObserver() {
+  commentsObserver?.disconnect()
+  commentsObserver = null
+}
 
-  const { ids, index } = context
-  const prevId = ids[index - 1]
-  const nextId = ids[index + 1]
+function loadCommentsWhenVisible() {
+  if (shouldLoadComments.value) return
+  shouldLoadComments.value = true
+  disconnectCommentsObserver()
+}
 
-  if (prevId) {
-    void prefetchPostDetail(prevId)
+function observeCommentsSection() {
+  if (typeof window === 'undefined' || shouldLoadComments.value) return
+
+  const section = commentsSectionRef.value
+  if (!section) return
+
+  if (!('IntersectionObserver' in window)) {
+    loadCommentsWhenVisible()
+    return
   }
-  if (nextId) {
-    void prefetchPostDetail(nextId)
-  }
+
+  disconnectCommentsObserver()
+  commentsObserver = new IntersectionObserver(
+    (entries) => {
+      if (entries.some((entry) => entry.isIntersecting)) {
+        loadCommentsWhenVisible()
+      }
+    },
+    { rootMargin: '320px 0px' }
+  )
+  commentsObserver.observe(section)
 }
 
 function showPeek(direction: 'left' | 'right') {
@@ -848,6 +931,7 @@ function goToAuthor(authorId: string) {
 // 打开 Lightbox 查看大图
 function openLightbox(index?: number) {
   pauseAutoPlay()
+  allowAdjacentMediaPreload.value = true
   lightboxInitialIndex.value = index ?? activeMediaIndex.value
   isLightboxOpen.value = true
 }
@@ -867,6 +951,9 @@ async function fetchPost(signal?: AbortSignal) {
   isLoading.value = true
   error.value = null
   detailFetched.value = false
+  shouldLoadComments.value = false
+  allowAdjacentMediaPreload.value = false
+  disconnectCommentsObserver()
 
   // 从 sessionStorage 获取缓存的缩略图
   const cachedThumb = sessionStorage.getItem(`post-thumbnail-${currentPostId}`)
@@ -884,7 +971,6 @@ async function fetchPost(signal?: AbortSignal) {
       isMediaLoaded.value = false
 
       syncNavigationContext()
-      prefetchAdjacentPosts()
 
       // 更新页面标题
       updateTitle(post.value.title)
@@ -927,7 +1013,6 @@ async function fetchPost(signal?: AbortSignal) {
     isMediaLoaded.value = false
 
     syncNavigationContext()
-    prefetchAdjacentPosts()
 
     // 更新页面标题
     updateTitle(post.value.title)
@@ -948,7 +1033,6 @@ async function fetchPost(signal?: AbortSignal) {
         fallbackReason.value = resolvePublicFallbackReason(err) ?? t('error.serviceUnavailable')
         error.value = null
         syncNavigationContext()
-        prefetchAdjacentPosts()
         updateTitle(fallbackPost.title)
         return
       }
@@ -967,7 +1051,6 @@ async function fetchPost(signal?: AbortSignal) {
 
 onMounted(() => {
   syncNavigationContext()
-  prefetchAdjacentPosts()
   fetchPost()
   attachStageListeners()
 })
@@ -998,10 +1081,23 @@ watch(postId, (nextId, prevId) => {
   }
   cachedThumbnailUrl.value = null
   preloadedImages.value = new Set()
+  shouldLoadComments.value = false
+  allowAdjacentMediaPreload.value = false
+  disconnectCommentsObserver()
   syncNavigationContext()
-  prefetchAdjacentPosts()
   void fetchPost(controller.signal)
 })
+
+watch(
+  [commentsSectionRef, () => post.value?.id ?? null, shouldLoadComments],
+  ([section, currentPostId, commentsLoaded]) => {
+    if (!section || !currentPostId || commentsLoaded) return
+    void nextTick(() => {
+      observeCommentsSection()
+    })
+  },
+  { flush: 'post' }
+)
 
 watch([hasMultipleMedia, isImageSequence, isLightboxOpen], () => {
   if (isLightboxOpen.value) {
@@ -1076,6 +1172,7 @@ onUnmounted(() => {
   isLoading.value = false
   detachStageListeners()
   stopAutoPlay()
+  disconnectCommentsObserver()
   unlockBodyScroll()
   if (typeof window !== 'undefined') window.removeEventListener('keydown', onTextModalKeydown)
 
@@ -1207,6 +1304,20 @@ onUnmounted(() => {
   width: min(100%, calc(var(--container-max) + var(--post-gutter) * 2));
   margin-inline: auto;
   padding: var(--spacing-5) var(--post-gutter) var(--spacing-6);
+}
+
+.post-comments__placeholder {
+  min-height: 12.5rem;
+  display: grid;
+  place-items: center;
+  padding: var(--spacing-6);
+  border-radius: var(--radius-xl);
+}
+
+.post-comments__placeholder-label {
+  font-size: var(--text-base);
+  font-weight: var(--font-semibold);
+  color: var(--post-text-secondary);
 }
 
 @media (max-width: 768px) {
@@ -2034,6 +2145,12 @@ onUnmounted(() => {
   cursor: pointer;
 }
 
+.thumbnail-btn--placeholder {
+  pointer-events: none;
+  border-color: transparent;
+  box-shadow: none;
+}
+
 .thumbnail-btn.active {
   border-color: var(--color-primary);
   box-shadow: 0 0 0 2px rgba(var(--color-primary-rgb), 0.2);
@@ -2049,6 +2166,11 @@ onUnmounted(() => {
   height: 100%;
   object-fit: cover;
   display: block;
+}
+
+.thumbnail-btn--placeholder .thumbnail-img {
+  inline-size: 100%;
+  block-size: 100%;
 }
 
 .author-link {

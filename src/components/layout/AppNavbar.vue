@@ -569,6 +569,7 @@ watch(
 
 function shouldPrefetchOnIdle(): boolean {
   if (typeof navigator === 'undefined') return false
+  if (!isAuthenticated.value) return false
   if (!navigator.onLine) return false
 
   const connection = (

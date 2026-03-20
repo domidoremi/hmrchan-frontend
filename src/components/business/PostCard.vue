@@ -186,6 +186,10 @@ export interface PostCardProps {
   imageFit?: 'cover' | 'contain'
   /** 是否为首屏图片（前4张优先加载） */
   priority?: boolean
+  /** 是否允许 hover / focus 时预取详情页 */
+  prefetchOnHover?: boolean
+  /** 是否允许 hover / focus 时预热大图 */
+  preloadLargeImageOnHover?: boolean
 }
 
 const props = withDefaults(defineProps<PostCardProps>(), {
@@ -453,6 +457,10 @@ const imageWrapperStyle = computed<Record<string, string>>(() => {
   return { aspectRatio: wrapperAspectRatio.value }
 })
 
+const shouldPrefetchDetailOnHover = computed(() => props.prefetchOnHover === true)
+
+const shouldPreloadLargeImageOnHover = computed(() => props.preloadLargeImageOnHover === true)
+
 // 图片加载策略：首屏图片 eager，其他 lazy
 const imageLoadingStrategy = computed(() => (props.priority ? 'eager' : 'lazy'))
 
@@ -547,6 +555,7 @@ function formatPublishedTime(dateStr: string): string {
  * 注意：只预加载到缓存，不替换当前显示的小图，避免 CLS
  */
 function preloadLargeImage() {
+  if (!shouldPreloadLargeImageOnHover.value) return
   if (hasPreloadedLargeImage || !props.post.thumbnail_url) return
   hasPreloadedLargeImage = true
 
@@ -597,6 +606,7 @@ function onImageError() {
 }
 
 function prefetchPostDetailPage() {
+  if (!shouldPrefetchDetailOnHover.value) return
   if (hasPrefetchedPostDetailPage) return
   hasPrefetchedPostDetailPage = true
   import('@/views/PostDetailPage.vue').catch(() => {})
