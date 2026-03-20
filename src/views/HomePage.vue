@@ -170,7 +170,7 @@
                   :src="portalLeadCard.thumbnail"
                   :alt="portalLeadCard.title"
                   class="portal-card__preview-image"
-                  loading="eager"
+                  loading="lazy"
                   decoding="async"
                   @error="markHomeMediaFailed(portalLeadCard.thumbnail)"
                 />
@@ -333,7 +333,7 @@
                       class="hero-collage-image"
                       :src="card.thumbnail"
                       :alt="card.title"
-                      loading="eager"
+                      loading="lazy"
                       decoding="async"
                       @error="markHomeMediaFailed(card.thumbnail)"
                     />
@@ -432,7 +432,7 @@
                     :src="card.thumbnail"
                     :alt="card.title"
                     class="featured-rail-card__image"
-                    loading="eager"
+                    loading="lazy"
                     decoding="async"
                     @error="markHomeMediaFailed(card.thumbnail)"
                   />
@@ -485,7 +485,8 @@
                 :post="post"
                 :aspect-ratio="index === 0 ? '4 / 3' : '16 / 9'"
                 :thumbnail-size="index === 0 ? 'large' : 'medium'"
-                :priority="index < 2"
+                :prefetch-on-hover="index < 2"
+                :preload-large-image-on-hover="index < 2"
                 :show-excerpt="index === 0"
                 @click="(_id, thumb) => openPostPreview(post, thumb)"
               />
@@ -859,7 +860,7 @@
         <div class="story-progress">
           <span>{{ String(activeStoryIndex + 1).padStart(2, '0') }}</span>
           <span>/</span>
-          <span>{{ String(Math.max(storyCardCount, 1)).padStart(2, '0') }}</span>
+          <span>{{ String(Math.max(effectiveStoryCardCount, 1)).padStart(2, '0') }}</span>
         </div>
       </header>
 
@@ -877,7 +878,6 @@
                 <PostCard
                   :post="card.post"
                   :show-content="false"
-                  :priority="index === 0"
                   :style="noGlassBackdropStyle"
                   @click="(_id, thumb) => openPostPreview(card.post, thumb)"
                 />
@@ -916,6 +916,7 @@
     </StoryDeckSection>
 
     <HomepagePreviewController
+      v-if="shouldMountHomepagePreviewController"
       v-model:isOpen="isPreviewOpen"
       :post-id="previewPostId"
       :initial-post="previewPost"
@@ -933,6 +934,7 @@ defineOptions({ name: 'HomePage' })
 import {
   ref,
   computed,
+  defineAsyncComponent,
   nextTick,
   onMounted,
   onBeforeUnmount,
@@ -977,7 +979,6 @@ import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import FeaturedRailSection from '@/components/home/FeaturedRailSection.vue'
 import HeroSection from '@/components/home/HeroSection.vue'
-import HomepagePreviewController from '@/components/home/HomepagePreviewController.vue'
 import LatestPostsSection from '@/components/home/LatestPostsSection.vue'
 import PostCard from '@/components/business/PostCard.vue'
 import PostCardSkeleton from '@/components/business/PostCardSkeleton.vue'
@@ -998,8 +999,11 @@ let gsapModule: GsapModule['default'] | null = null
 let scrollTriggerModule: ScrollTriggerModule['ScrollTrigger'] | null = null
 let scrollTriggerReadyPromise: Promise<boolean> | null = null
 
-const HOME_SECONDARY_CONTENT_DELAY_MS = 900
 const HOME_SUPPLEMENT_DELAY_MS = 600
+const HOME_SECONDARY_CONTENT_FALLBACK_DELAY_MS = 12000
+const HomepagePreviewController = defineAsyncComponent(
+  () => import('@/components/home/HomepagePreviewController.vue')
+)
 
 const router = useRouter()
 const settingsStore = useSettingsStore()
@@ -1019,7 +1023,13 @@ const initialHomePosts = buildHomePostsFromAggregate(initialHomeAggregate, t).fi
 const isHomeSecondaryContentReady = ref(false)
 const isHeroSupplementVisible = ref(false)
 let heroSupplementTimer: number | null = null
-let homeSecondaryContentTimer: number | null = null
+let homeSecondaryContentFallbackTimer: number | null = null
+let disposeHomeSecondaryContentIntent: (() => void) | null = null
+let homeSupportRefreshController: AbortController | null = null
+let pendingHomeSupportRefresh: HomeSupportRefreshTargets = {
+  schedule: false,
+  community: false,
+}
 
 // Posts state
 const posts = ref<PostListItem[]>(initialHomePosts)
@@ -1030,6 +1040,9 @@ const isPreviewOpen = ref(false)
 const previewPostId = ref<string | null>(null)
 const previewThumbnailSrc = ref<string | null>(null)
 const previewPost = ref<PostListItem | null>(null)
+const shouldMountHomepagePreviewController = computed(
+  () => isPreviewOpen.value || Boolean(previewPostId.value)
+)
 
 // Loading & error state
 const isLoading = ref(false)
@@ -1049,6 +1062,11 @@ const failedHomeMediaUrls = ref<Set<string>>(new Set())
 
 type HomeSectionInstance = {
   element: HTMLElement | null
+}
+
+type HomeSupportRefreshTargets = {
+  schedule: boolean
+  community: boolean
 }
 
 // DOM refs
@@ -1115,6 +1133,7 @@ const {
   shouldAnimate,
   translate: t,
   locale,
+  secondaryReady: isHomeSecondaryContentReady,
 })
 
 function formatScheduleHighlightMeta(item: HomeScheduleHighlight | null | undefined): string {
@@ -1143,12 +1162,15 @@ let viewportSceneFrame: number | null = null
 let screenTransitionTimer: number | null = null
 let viewportSceneTrackingBound = false
 
-const storyTravel = computed(() => Math.max(storyCardCount.value - 1, 0))
+const storyTravel = computed(() => Math.max(effectiveStoryCardCount.value - 1, 0))
 const storyProgressIndex = computed(() => storyProgress.value * storyTravel.value)
 const storyMergeProgress = computed(() => clamp((storyProgress.value - 0.86) / 0.14))
 const storyFooterFade = computed(() => clamp((storyProgress.value - 0.9) / 0.1))
 const activeStoryIndex = computed(() =>
-  storyCardCount.value > 1 ? Math.round(storyProgressIndex.value) : 0
+  effectiveStoryCardCount.value > 1 ? Math.round(storyProgressIndex.value) : 0
+)
+const effectiveStoryCardCount = computed(() =>
+  isHomeSecondaryContentReady.value ? storyCardCount.value : 0
 )
 
 const railSlides = computed(() => [
@@ -1178,7 +1200,7 @@ const railTrackStyle = computed(() => ({
 }))
 
 const storySceneStyle = computed(() => ({
-  '--story-card-count': String(Math.max(storyCardCount.value, 1)),
+  '--story-card-count': String(Math.max(effectiveStoryCardCount.value, 1)),
   '--story-progress': String(storyProgress.value),
   '--story-footer-fade': String(storyFooterFade.value),
 }))
@@ -1261,6 +1283,7 @@ onDeactivated(() => {
   resetHeroSecondaryContent()
   setHomeSceneLifecycleEnabled(false)
   abortHomeRequest()
+  abortHomeSupportRefresh()
   setRailNavbarLock(false)
 })
 let homeRequestController: AbortController | null = null
@@ -1288,39 +1311,99 @@ function applyHomeAggregate(
   total.value = normalizedPosts.length
 }
 
-function shouldRefreshHomeSupportBlocks(
+function createEmptyHomeSupportRefreshTargets(): HomeSupportRefreshTargets {
+  return {
+    schedule: false,
+    community: false,
+  }
+}
+
+function hasPendingHomeSupportRefresh(targets: HomeSupportRefreshTargets): boolean {
+  return targets.schedule || targets.community
+}
+
+function resolveHomeSupportRefreshTargets(
   payload: HomeAggregateResponse,
   source: 'aggregate' | 'support' | 'fallback'
-) {
-  if (source === 'support' || source === 'fallback') return false
+): HomeSupportRefreshTargets {
+  if (source === 'support' || source === 'fallback') {
+    return createEmptyHomeSupportRefreshTargets()
+  }
 
   const scheduleCount = payload.portal.items.find((item) => item.key === 'schedule')?.count ?? 0
   const communityCount = payload.portal.items.find((item) => item.key === 'community')?.count ?? 0
   const hasScheduleDetails = (payload.trends.schedules ?? []).length > 0
   const hasCommunityDetails = (payload.trends.community ?? []).length > 0
 
-  return (scheduleCount > 0 && !hasScheduleDetails) || (communityCount > 0 && !hasCommunityDetails)
+  return {
+    schedule: scheduleCount > 0 && !hasScheduleDetails,
+    community: communityCount > 0 && !hasCommunityDetails,
+  }
 }
 
-async function refreshHomeSupportBlocks(signal: AbortSignal) {
-  const [scheduleResult, communityResult] = await Promise.allSettled([
-    homeService.getScheduleHighlights(4, { signal, skipErrorToast: true }),
-    homeService.getCommunityHighlights(4, { signal, skipErrorToast: true }),
-  ])
+async function refreshHomeSupportBlocks(
+  signal: AbortSignal,
+  targets: HomeSupportRefreshTargets
+): Promise<void> {
+  const tasks = [
+    ...(targets.schedule
+      ? [
+          homeService
+            .getScheduleHighlights(4, { signal, skipErrorToast: true })
+            .then((result) => ({ kind: 'schedule' as const, result })),
+        ]
+      : []),
+    ...(targets.community
+      ? [
+          homeService
+            .getCommunityHighlights(4, { signal, skipErrorToast: true })
+            .then((result) => ({ kind: 'community' as const, result })),
+        ]
+      : []),
+  ]
+
+  if (tasks.length === 0) return
+
+  const results = await Promise.allSettled(tasks)
 
   if (signal.aborted) return
 
-  if (scheduleResult.status === 'fulfilled') {
-    homeScheduleHighlights.value = scheduleResult.value.payload.items
-  }
+  for (const task of results) {
+    if (task.status !== 'fulfilled') continue
 
-  if (communityResult.status === 'fulfilled') {
-    homeCommunityHighlights.value = communityResult.value.payload.items
+    if (task.value.kind === 'schedule') {
+      homeScheduleHighlights.value = task.value.result.payload.items
+      continue
+    }
+
+    homeCommunityHighlights.value = task.value.result.payload.items
   }
+}
+
+function abortHomeSupportRefresh() {
+  homeSupportRefreshController?.abort()
+  homeSupportRefreshController = null
+}
+
+function runHomeSupportRefresh() {
+  if (!hasPendingHomeSupportRefresh(pendingHomeSupportRefresh)) return
+
+  abortHomeSupportRefresh()
+  const refreshTargets = { ...pendingHomeSupportRefresh }
+  pendingHomeSupportRefresh = createEmptyHomeSupportRefreshTargets()
+
+  const controller = new AbortController()
+  homeSupportRefreshController = controller
+  void refreshHomeSupportBlocks(controller.signal, refreshTargets).finally(() => {
+    if (homeSupportRefreshController === controller) {
+      homeSupportRefreshController = null
+    }
+  })
 }
 
 async function fetchHomeData(): Promise<boolean> {
   abortHomeRequest()
+  abortHomeSupportRefresh()
   isLoading.value = true
   isLoadingMore.value = false
   error.value = null
@@ -1328,6 +1411,7 @@ async function fetchHomeData(): Promise<boolean> {
   failedHomeMediaUrls.value = new Set()
   homeScheduleHighlights.value = []
   homeCommunityHighlights.value = []
+  pendingHomeSupportRefresh = createEmptyHomeSupportRefreshTargets()
 
   const controller = new AbortController()
   homeRequestController = controller
@@ -1344,8 +1428,12 @@ async function fetchHomeData(): Promise<boolean> {
     error.value =
       result.source === 'fallback' ? (result.reason ?? t('error.serviceUnavailable')) : null
 
-    if (shouldRefreshHomeSupportBlocks(result.payload, result.source)) {
-      void refreshHomeSupportBlocks(controller.signal)
+    const refreshTargets = resolveHomeSupportRefreshTargets(result.payload, result.source)
+    if (hasPendingHomeSupportRefresh(refreshTargets)) {
+      pendingHomeSupportRefresh = refreshTargets
+      if (isHomeSecondaryContentReady.value) {
+        runHomeSupportRefresh()
+      }
     }
     return true
   } catch (err) {
@@ -1385,7 +1473,7 @@ function syncSceneProgressFromViewport() {
         ? resolveSceneProgress(resolveSectionElement(featuredSectionRef.value))
         : clamp(railProgress.value)
   storyProgress.value =
-    storyCardCount.value > 1
+    effectiveStoryCardCount.value > 1
       ? resolveSceneProgress(resolveSectionElement(storyDeckRef.value))
       : clamp(storyProgress.value)
 }
@@ -1485,9 +1573,58 @@ function clearHeroSupplementTimer() {
 }
 
 function clearHomeSecondaryContentTimer() {
-  if (typeof window === 'undefined' || homeSecondaryContentTimer === null) return
-  window.clearTimeout(homeSecondaryContentTimer)
-  homeSecondaryContentTimer = null
+  if (typeof window === 'undefined' || homeSecondaryContentFallbackTimer === null) return
+  window.clearTimeout(homeSecondaryContentFallbackTimer)
+  homeSecondaryContentFallbackTimer = null
+}
+
+function clearHomeSecondaryContentIntentListeners() {
+  disposeHomeSecondaryContentIntent?.()
+  disposeHomeSecondaryContentIntent = null
+}
+
+function revealHomeSecondaryContent() {
+  clearHomeSecondaryContentTimer()
+  clearHomeSecondaryContentIntentListeners()
+
+  if (isHomeSecondaryContentReady.value) return
+
+  isHomeSecondaryContentReady.value = true
+  if (hasPendingHomeSupportRefresh(pendingHomeSupportRefresh)) {
+    runHomeSupportRefresh()
+  }
+  if (scenesEnabled) {
+    scheduleHomeEnhancements(150)
+  }
+}
+
+async function ensureHomeSecondaryContentReady() {
+  if (isHomeSecondaryContentReady.value) return
+
+  revealHomeSecondaryContent()
+  await nextTick()
+}
+
+function bindHomeSecondaryContentIntent() {
+  if (typeof window === 'undefined' || isHomeSecondaryContentReady.value) return
+
+  clearHomeSecondaryContentIntentListeners()
+
+  const onIntent = () => {
+    revealHomeSecondaryContent()
+  }
+
+  window.addEventListener('scroll', onIntent, { once: true, passive: true })
+  window.addEventListener('pointerdown', onIntent, { once: true, passive: true })
+  window.addEventListener('touchstart', onIntent, { once: true, passive: true })
+  window.addEventListener('keydown', onIntent, { once: true })
+
+  disposeHomeSecondaryContentIntent = () => {
+    window.removeEventListener('scroll', onIntent)
+    window.removeEventListener('pointerdown', onIntent)
+    window.removeEventListener('touchstart', onIntent)
+    window.removeEventListener('keydown', onIntent)
+  }
 }
 
 function scheduleHeroSecondaryContent() {
@@ -1499,24 +1636,23 @@ function scheduleHeroSecondaryContent() {
 
   clearHeroSupplementTimer()
   clearHomeSecondaryContentTimer()
+  clearHomeSecondaryContentIntentListeners()
 
   heroSupplementTimer = window.setTimeout(() => {
     isHeroSupplementVisible.value = true
     heroSupplementTimer = null
   }, HOME_SUPPLEMENT_DELAY_MS)
 
-  homeSecondaryContentTimer = window.setTimeout(() => {
-    isHomeSecondaryContentReady.value = true
-    homeSecondaryContentTimer = null
-    if (scenesEnabled) {
-      scheduleHomeEnhancements(150)
-    }
-  }, HOME_SECONDARY_CONTENT_DELAY_MS)
+  bindHomeSecondaryContentIntent()
+  homeSecondaryContentFallbackTimer = window.setTimeout(() => {
+    revealHomeSecondaryContent()
+  }, HOME_SECONDARY_CONTENT_FALLBACK_DELAY_MS)
 }
 
 function resetHeroSecondaryContent() {
   clearHeroSupplementTimer()
   clearHomeSecondaryContentTimer()
+  clearHomeSecondaryContentIntentListeners()
   isHeroSupplementVisible.value = false
   isHomeSecondaryContentReady.value = false
 }
@@ -1598,7 +1734,7 @@ function updateViewportSceneBlend() {
   const bubbleRevealWindow = resolveBubbleRevealWindow(
     postsElement?.getBoundingClientRect() ?? null,
     window.innerHeight,
-    bubbleItems.value.length
+    isHomeSecondaryContentReady.value ? bubbleItems.value.length : 0
   )
   const railLockBoundary =
     postsElement?.offsetTop ??
@@ -1659,7 +1795,7 @@ function restartBubbleBurst() {
 
   resetBubbleRevealState()
 
-  if (bubbleItems.value.length === 0) return
+  if (!isHomeSecondaryContentReady.value || bubbleItems.value.length === 0) return
   if (!shouldAnimate.value) {
     bubbleRevealPhase.value = 'revealed'
     return
@@ -1790,11 +1926,11 @@ async function setupSceneTriggers() {
   }
 
   const storyElement = resolveSectionElement(storyDeckRef.value)
-  if (storyElement && storyCardCount.value > 1) {
+  if (storyElement && effectiveStoryCardCount.value > 1) {
     storyDeckTrigger = scrollTriggerModule.create({
       trigger: storyElement,
       start: 'top top',
-      end: () => `+=${Math.max(storyCardCount.value - 1, 0) * window.innerHeight}`,
+      end: () => `+=${Math.max(effectiveStoryCardCount.value - 1, 0) * window.innerHeight}`,
       invalidateOnRefresh: true,
       scrub: false,
       snap: false,
@@ -1828,7 +1964,7 @@ function getStoryCardStyle(index: number): Record<string, string> {
   return buildStoryCardMotion({
     index,
     storyProgressIndex: storyProgressIndex.value,
-    storyCardCount: storyCardCount.value,
+    storyCardCount: effectiveStoryCardCount.value,
     storyMergeProgress: storyMergeProgress.value,
     storyFooterFade: storyFooterFade.value,
   })
@@ -1842,7 +1978,9 @@ function goToSchedule() {
   router.push('/schedule')
 }
 
-function scrollToFeatured() {
+async function scrollToFeatured() {
+  await ensureHomeSecondaryContentReady()
+
   const target = resolveSectionElement(featuredSectionRef.value)
   if (!target) return
 
@@ -1912,11 +2050,19 @@ function openDetailFromPreview(postId: string) {
   router.push(`/post/${postId}`)
 }
 
-watch([railSlideCount, storyCardCount, () => bubbleItems.value.length, shouldAnimate], () => {
-  resetBubbleRevealState()
-  if (!scenesEnabled) return
-  scheduleSceneSetup()
-})
+watch(
+  [
+    railSlideCount,
+    () => (isHomeSecondaryContentReady.value ? storyCardCount.value : 0),
+    () => (isHomeSecondaryContentReady.value ? bubbleItems.value.length : 0),
+    shouldAnimate,
+  ],
+  () => {
+    resetBubbleRevealState()
+    if (!scenesEnabled) return
+    scheduleSceneSetup()
+  }
+)
 
 onMounted(() => {
   setHomeSceneLifecycleEnabled(true)
@@ -1928,6 +2074,7 @@ onBeforeUnmount(() => {
   resetHeroSecondaryContent()
   setHomeSceneLifecycleEnabled(false)
   abortHomeRequest()
+  abortHomeSupportRefresh()
   setRailNavbarLock(false)
 })
 </script>

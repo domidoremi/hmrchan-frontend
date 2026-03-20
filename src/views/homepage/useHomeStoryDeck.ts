@@ -21,11 +21,16 @@ export function useHomeStoryDeck(options: {
   homeSourcePosts: ComputedRef<PostListItem[]>
   mediaPosts: ComputedRef<PostListItem[]>
   featuredRailPostIds: ComputedRef<Set<string>>
+  enabled?: ComputedRef<boolean> | Ref<boolean>
   translate: HomeTranslate
 }) {
-  const { homeAggregate, homeSourcePosts, mediaPosts, featuredRailPostIds, translate } = options
+  const { homeAggregate, homeSourcePosts, mediaPosts, featuredRailPostIds, enabled, translate } =
+    options
+  const isEnabled = computed(() => enabled?.value ?? true)
 
   const rawStoryCards = computed<StoryDeckCard[]>(() => {
+    if (!isEnabled.value) return []
+
     const liveItems = homeAggregate.value?.story_deck.items ?? []
     if (liveItems.length > 0) {
       return liveItems.slice(0, 5).map((item) => {
@@ -61,8 +66,10 @@ export function useHomeStoryDeck(options: {
     })
   })
 
-  const storyCards = computed(() =>
-    collectUniqueItems(
+  const storyCards = computed(() => {
+    if (!isEnabled.value) return []
+
+    return collectUniqueItems(
       [
         rawStoryCards.value.filter((card) => !featuredRailPostIds.value.has(card.post.id)),
         rawStoryCards.value,
@@ -70,10 +77,13 @@ export function useHomeStoryDeck(options: {
       5,
       (card) => card.post.id
     )
-  )
+  })
 
-  const storyCardIds = computed(() => new Set(storyCards.value.map((card) => card.post.id)))
-  const storyCardCount = computed(() => storyCards.value.length)
+  const storyCardIds = computed(() => {
+    if (!isEnabled.value) return new Set<string>()
+    return new Set(storyCards.value.map((card) => card.post.id))
+  })
+  const storyCardCount = computed(() => (isEnabled.value ? storyCards.value.length : 0))
 
   return {
     rawStoryCards,

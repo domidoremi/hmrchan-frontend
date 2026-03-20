@@ -4,6 +4,7 @@
     :class="buttonClass"
     :disabled="disabled || loading"
     :type="type"
+    :aria-busy="loading ? 'true' : undefined"
     @click="handleClick"
     @mousedown="handleMouseDown"
     @mouseup="handleMouseUp"
@@ -13,20 +14,20 @@
     <span ref="rippleContainer" class="btn-ripple-container" />
 
     <!-- 加载状态 -->
-    <span v-if="loading" class="btn-loader">
+    <span v-if="loading" class="btn-loader" aria-hidden="true">
       <span class="btn-loader-dot" />
       <span class="btn-loader-dot" />
       <span class="btn-loader-dot" />
     </span>
 
     <!-- 图标和内容 -->
-    <template v-else>
+    <span class="btn-visual" :class="{ 'btn-visual--hidden': loading }">
       <component v-if="showLeftIcon" :is="icon" :size="iconSize" class="btn-icon-el" />
       <span v-if="hasDefaultSlot" class="btn-content">
         <slot />
       </span>
       <component v-if="showRightIcon" :is="icon" :size="iconSize" class="btn-icon-el" />
-    </template>
+    </span>
   </button>
 </template>
 
@@ -105,7 +106,7 @@ const SIZE_MAP: Record<string, string> = {
 const normalizedVariant = computed(() => VARIANT_MAP[props.variant] ?? 'default')
 const normalizedSize = computed(() => SIZE_MAP[props.size] ?? 'md')
 const hasDefaultSlot = computed(() => !!slots['default'])
-const isIconOnly = computed(() => !!props.icon && !props.loading && !hasDefaultSlot.value)
+const isIconOnly = computed(() => !!props.icon && !hasDefaultSlot.value)
 const shouldUseRipple = computed(
   () => props.ripple && !(normalizedVariant.value === 'ghost' && normalizedSize.value === 'sm')
 )
@@ -128,10 +129,8 @@ const iconSize = computed(() => {
   return sizes[normalizedSize.value] ?? 18
 })
 
-const showLeftIcon = computed(() => !!props.icon && props.iconPosition === 'left' && !props.loading)
-const showRightIcon = computed(
-  () => !!props.icon && props.iconPosition === 'right' && !props.loading
-)
+const showLeftIcon = computed(() => !!props.icon && props.iconPosition === 'left')
+const showRightIcon = computed(() => !!props.icon && props.iconPosition === 'right')
 
 // CSS-based ripple effect (no GSAP)
 function createRipple(event: MouseEvent) {
@@ -248,9 +247,14 @@ function handleMouseLeave() {
 
 /* Loader Animation */
 .btn-loader {
+  position: absolute;
+  inset-block-start: 50%;
+  inset-inline-start: 50%;
   display: flex;
   align-items: center;
   gap: 0.25rem;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
 }
 
 .btn-loader-dot {
@@ -477,6 +481,17 @@ function handleMouseLeave() {
 .btn-content {
   display: inline-flex;
   align-items: center;
+}
+
+.btn-visual {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: inherit;
+}
+
+.btn-visual--hidden {
+  visibility: hidden;
 }
 
 /* Reduced motion - 禁用弹簧动画，保留基本反馈 */

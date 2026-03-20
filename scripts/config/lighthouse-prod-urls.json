@@ -1,15 +1,47 @@
-[
-  "https://momichan.xyz/",
-  "https://momichan.xyz/explore",
-  "https://momichan.xyz/search",
-  "https://momichan.xyz/authors",
-  "https://momichan.xyz/community",
-  "https://momichan.xyz/schedule",
-  "https://momichan.xyz/about",
-  "https://momichan.xyz/contact",
-  "https://momichan.xyz/author/e10368cf-779e-4253-8b37-c2ce493a4106",
-  "https://momichan.xyz/author/ab3bc6fc-0264-4334-b013-15a7715decd3",
-  "https://momichan.xyz/post/d3969260-edbb-4435-a8a2-a1cafa79d47b",
-  "https://momichan.xyz/post/ac6f02e7-c8b6-4c71-9c78-ac40c0914137",
-  "https://momichan.xyz/post/775e758b-51a3-4f85-9d69-67a518f18c53"
-]
+{
+  "generatedAt": "2026-03-20T00:00:00+09:00",
+  "base": "https://momichan.xyz",
+  "notes": {
+    "purpose": "Anonymous-surface Lighthouse fallback sample URLs",
+    "discussionDetail": "No public discussion IDs were available when this fallback set was refreshed; discovery should report an explicit gap if the public API remains empty."
+  },
+  "entries": [
+    "https://momichan.xyz/",
+    "https://momichan.xyz/explore",
+    "https://momichan.xyz/search",
+    "https://momichan.xyz/authors",
+    "https://momichan.xyz/community",
+    "https://momichan.xyz/schedule",
+    "https://momichan.xyz/about",
+    "https://momichan.xyz/contact",
+    "https://momichan.xyz/login",
+    "https://momichan.xyz/register",
+    "https://momichan.xyz/forgot-password",
+    "https://momichan.xyz/reset-password",
+    "https://momichan.xyz/verify-email",
+    {
+      "url": "https://momichan.xyz/author/e10368cf-779e-4253-8b37-c2ce493a4106",
+      "pageType": "author-detail"
+    },
+    {
+      "url": "https://momichan.xyz/author/ab3bc6fc-0264-4334-b013-15a7715decd3",
+      "pageType": "author-detail"
+    },
+    {
+      "url": "https://momichan.xyz/post/d3969260-edbb-4435-a8a2-a1cafa79d47b",
+      "pageType": "post-detail"
+    },
+    {
+      "url": "https://momichan.xyz/post/ac6f02e7-c8b6-4c71-9c78-ac40c0914137",
+      "pageType": "post-detail"
+    },
+    {
+      "url": "https://momichan.xyz/post/775e758b-51a3-4f85-9d69-67a518f18c53",
+      "pageType": "post-detail"
+    },
+    {
+      "url": "https://momichan.xyz/schedule/1d869000-8083-4616-844d-8857717d70dc",
+      "pageType": "schedule-detail"
+    }
+  ]
+}

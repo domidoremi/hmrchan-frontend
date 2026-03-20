@@ -257,11 +257,16 @@ async function handleFeedbackSubmit() {
 }
 
 .contact-hero__actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  inline-size: min(100%, 18rem);
   justify-content: flex-end;
 }
 
 @media (max-width: 48rem) {
   .contact-hero__actions {
+    grid-template-columns: minmax(0, 1fr);
+    inline-size: 100%;
     justify-content: flex-start;
   }
 }
@@ -307,15 +312,14 @@ async function handleFeedbackSubmit() {
 
 .contact-side__chips,
 .contact-side__links {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 8rem), 1fr));
   gap: var(--spacing-2);
   min-inline-size: 0;
 }
 
 .contact-side__link {
-  flex: 1 1 8rem;
-  min-inline-size: min(100%, 8rem);
+  min-inline-size: 0;
   text-decoration: none;
 }
 
@@ -360,12 +364,14 @@ async function handleFeedbackSubmit() {
 }
 
 .category-list {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 8rem), 1fr));
   gap: var(--spacing-2);
 }
 
 .category-btn {
+  inline-size: 100%;
+  justify-content: center;
   white-space: nowrap;
 }
 
@@ -375,10 +381,6 @@ async function handleFeedbackSubmit() {
 }
 
 @media (max-width: 48rem) {
-  .contact-side__links {
-    flex-direction: column;
-  }
-
   .contact-side__link {
     inline-size: 100%;
   }
