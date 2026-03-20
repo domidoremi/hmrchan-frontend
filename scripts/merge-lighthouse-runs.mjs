@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-const fs = require('node:fs')
-const path = require('node:path')
+import fs from 'node:fs'
+import path from 'node:path'
 
 const LEGACY_RUN_DIRS = ['.lighthouse-prod-full', '.lighthouse-prod-run2', '.lighthouse-prod-run3']
 const DEFAULT_ROOT_DIR = '.lighthouse-prod'

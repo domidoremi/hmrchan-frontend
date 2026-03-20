@@ -205,7 +205,6 @@ export function mergeRunSummaries({ runSummaries, manifest = null }) {
   for (let runIndex = 0; runIndex < runSummaries.length; runIndex += 1) {
     const summary = runSummaries[runIndex]
     for (const entry of summary.results ?? []) {
-      const key = `${entry.profile}::${entry.url}`
       const bucket = registerKey(entry.url, entry.profile)
       bucket.entriesByRun.set(runIndex + 1, entry)
     }
