@@ -637,26 +637,17 @@ import { useVideoSettings } from '@/composables/useVideoSettings'
 import type { SubtitleShadowPreset, SubtitleAlign } from '@/composables/useVideoSettings'
 import { useVideoGestures } from '@/composables/useVideoGestures'
 import { apiClient } from '@/api/client'
-import { normalizeToProxyPath } from '@/utils/url'
-
-interface SubtitleTrack {
-  id?: string | null
-  language: string
-  format?: string | null
-  label?: string | null
-  url?: string | null
-  subtitle_url?: string | null
-  file_path?: string | null
-  subtitle_path?: string | null
-  path?: string | null
-}
-
-interface NormalizedSubtitleTrack {
-  language: string
-  label: string
-  src: string
-  format?: string | null | undefined
-}
+import {
+  buildSubtitleOverlayStyle,
+  buildSubtitlePreviewStyle,
+  formatTime,
+  normalizeSubtitleTracks,
+  SUBTITLE_BG_COLORS,
+  SUBTITLE_COLORS,
+  SUBTITLE_SHADOWS,
+  type NormalizedSubtitleTrack,
+  type SubtitleTrack,
+} from './video-player/videoPlayerModel'
 
 interface Props {
   src: string
@@ -750,28 +741,6 @@ const subtitleBgOpacity = computed(() => videoSettings.value.subtitleBgOpacity)
 const subtitleShadow = computed(() => videoSettings.value.subtitleShadow)
 const subtitleAlign = computed(() => videoSettings.value.subtitleAlign)
 
-const SUBTITLE_COLORS = [
-  { value: '#ffffff', label: 'white' },
-  { value: '#ffff00', label: 'yellow' },
-  { value: '#00ff00', label: 'green' },
-  { value: '#00ffff', label: 'cyan' },
-  { value: '#ff00ff', label: 'magenta' },
-  { value: '#ff6b6b', label: 'red' },
-]
-
-const SUBTITLE_BG_COLORS = [
-  { value: '#000000', label: 'black' },
-  { value: '#1a1a2e', label: 'navy' },
-  { value: '#333333', label: 'gray' },
-]
-
-const SUBTITLE_SHADOWS: { value: SubtitleShadowPreset; labelKey: string }[] = [
-  { value: 'none', labelKey: 'video.subtitleShadowNone' },
-  { value: 'outline', labelKey: 'video.subtitleShadowOutline' },
-  { value: 'drop-shadow', labelKey: 'video.subtitleShadowDropShadow' },
-  { value: 'raised', labelKey: 'video.subtitleShadowRaised' },
-]
-
 const {
   showVolumeIndicator,
   showBrightnessIndicator,
@@ -812,45 +781,16 @@ const displayPercent = computed(() => {
 
 const supportsPiP = computed(() => document.pictureInPictureEnabled)
 
-const normalizedSubtitles = computed<NormalizedSubtitleTrack[]>(() => {
-  const tracks = props.subtitles ?? []
-  if (!tracks.length) return []
-  return tracks.reduce<NormalizedSubtitleTrack[]>((acc, track) => {
-    const src = normalizeSubtitleSrc(track)
-    if (!src || !track.language) return acc
-    const label = track.label || track.language.toUpperCase()
-    const override = subtitleOverrides.value[src]
-    acc.push({ language: track.language, label, src: override || src, format: track.format })
-    return acc
-  }, [])
-})
+const normalizedSubtitles = computed<NormalizedSubtitleTrack[]>(() =>
+  normalizeSubtitleTracks({
+    tracks: props.subtitles,
+    apiBaseUrl: apiBaseUrl.value,
+    videoSrc: props.src,
+    overrides: subtitleOverrides.value,
+  })
+)
 
 // --- Subtitle helpers ---
-
-function extractMediaIdFromSrc(src: string): string | null {
-  if (!src?.trim()) return null
-  const match = src.match(/\/media\/([0-9a-f-]+)\/stream/i)
-  return match?.[1] ?? null
-}
-
-function normalizeSubtitleSrc(track: SubtitleTrack): string | null {
-  const raw =
-    track.url || track.subtitle_url || track.file_path || track.subtitle_path || track.path
-  if (raw) {
-    const normalized = normalizeToProxyPath(raw)
-    if (normalized) {
-      if (normalized.startsWith('http://') || normalized.startsWith('https://')) return normalized
-      if (normalized.startsWith('/')) return normalized
-    }
-    const base = apiBaseUrl.value
-    return raw.startsWith('/') ? `${base}${raw}` : `${base}/${raw}`
-  }
-  if (track.language && props.src?.trim()) {
-    const mediaId = extractMediaIdFromSrc(props.src)
-    if (mediaId) return `${apiBaseUrl.value}/media/${mediaId}/subtitle?language=${track.language}`
-  }
-  return null
-}
 
 function isSrtTrack(track: NormalizedSubtitleTrack): boolean {
   if (track.format?.toLowerCase() === 'srt') return true
@@ -970,67 +910,30 @@ function onCueChange() {
   activeCueHtml.value = parts.join('<br>')
 }
 
-function getSubtitleShadowCss(preset: SubtitleShadowPreset): string {
-  switch (preset) {
-    case 'outline':
-      return '-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000'
-    case 'drop-shadow':
-      return '2px 2px 4px rgba(0,0,0,0.9)'
-    case 'raised':
-      return '1px 1px 0 rgba(0,0,0,0.5), 2px 2px 2px rgba(0,0,0,0.3)'
-    default:
-      return 'none'
-  }
-}
-
-function hexToRgba(hex: string, alpha: number): string {
-  const r = parseInt(hex.slice(1, 3), 16)
-  const g = parseInt(hex.slice(3, 5), 16)
-  const b = parseInt(hex.slice(5, 7), 16)
-  return `rgba(${r},${g},${b},${alpha})`
-}
-
 /** Reactive style object for the custom subtitle overlay */
-const subtitleOverlayStyle = computed(() => {
-  const offset = subtitleOffset.value
-  // Default bottom ~8%, each step adds ~4%
-  const bottom = 8 + offset * 4
-  const fontSize = subtitleFontSize.value
-  const color = subtitleColor.value
-  const bgColor = hexToRgba(subtitleBgColor.value, subtitleBgOpacity.value)
-  const shadow = getSubtitleShadowCss(subtitleShadow.value)
-  const align = subtitleAlign.value
-
-  return {
-    bottom: `${bottom}%`,
-    color,
-    backgroundColor: bgColor,
-    fontSize: `${fontSize}em`,
-    textShadow: shadow === 'none' ? undefined : shadow,
-    textAlign: align,
-  } as Record<string, string | undefined>
-})
+const subtitleOverlayStyle = computed(() =>
+  buildSubtitleOverlayStyle({
+    offset: subtitleOffset.value,
+    fontSize: subtitleFontSize.value,
+    color: subtitleColor.value,
+    backgroundColor: subtitleBgColor.value,
+    backgroundOpacity: subtitleBgOpacity.value,
+    shadow: subtitleShadow.value,
+    align: subtitleAlign.value,
+  })
+)
 
 /** Preview style for the settings panel */
-const subtitlePreviewStyle = computed(() => {
-  const color = subtitleColor.value
-  const bgColor = hexToRgba(subtitleBgColor.value, subtitleBgOpacity.value)
-  const shadow = getSubtitleShadowCss(subtitleShadow.value)
-  return {
-    color,
-    backgroundColor: bgColor,
-    textShadow: shadow === 'none' ? undefined : shadow,
-  } as Record<string, string | undefined>
-})
+const subtitlePreviewStyle = computed(() =>
+  buildSubtitlePreviewStyle({
+    color: subtitleColor.value,
+    backgroundColor: subtitleBgColor.value,
+    backgroundOpacity: subtitleBgOpacity.value,
+    shadow: subtitleShadow.value,
+  })
+)
 
 // --- Core playback ---
-
-function formatTime(seconds: number): string {
-  if (!isFinite(seconds)) return '0:00'
-  const mins = Math.floor(seconds / 60)
-  const secs = Math.floor(seconds % 60)
-  return `${mins}:${secs.toString().padStart(2, '0')}`
-}
 
 function updateBufferedPercent() {
   if (!videoRef.value) return
