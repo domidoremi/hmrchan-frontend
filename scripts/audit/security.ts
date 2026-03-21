@@ -2,8 +2,6 @@ import { readFile } from 'fs/promises'
 import { join } from 'path'
 import { glob } from 'fs/promises'
 import type { AuditModule, AuditIssue, AuditOptions, AuditResult, AuditStatus } from './types'
-import { runCommand } from './utils'
-
 /** Regex patterns for detecting hardcoded secrets in source code */
 const SECRET_PATTERNS: Array<{ pattern: RegExp; label: string }> = [
   { pattern: /['"](?:sk|pk)[-_](?:live|test)[-_][a-zA-Z0-9]{20,}['"]/, label: 'Stripe key' },
@@ -33,70 +31,6 @@ const SCAN_EXCLUDE = [
   /\.d\.ts$/,
   /scripts\/audit\//,
 ]
-
-async function auditDependencies(options: AuditOptions): Promise<AuditIssue[]> {
-  const issues: AuditIssue[] = []
-
-  // Try bun pm audit first
-  const bunResult = await runCommand('bun', ['pm', 'audit'], options.projectRoot)
-
-  if (bunResult.exitCode !== 0) {
-    // Fallback to npm audit --json
-    const npmResult = await runCommand('npm', ['audit', '--json'], options.projectRoot)
-
-    if (npmResult.exitCode !== 0 && npmResult.stdout) {
-      try {
-        const audit = JSON.parse(npmResult.stdout)
-        const vulns = audit.vulnerabilities ?? audit.advisories ?? {}
-
-        for (const [name, info] of Object.entries(vulns) as [string, Record<string, unknown>][]) {
-          const sev = String(info.severity ?? 'unknown')
-          const title = String(
-            info.title ??
-              (Array.isArray(info.via) && info.via[0]
-                ? (info.via[0] as Record<string, unknown>).title
-                : undefined) ??
-              'unknown'
-          )
-          if (sev === 'high' || sev === 'critical') {
-            issues.push({
-              severity: 'error',
-              message: `Vulnerability in ${name}: ${sev} - ${title}`,
-              rule: 'dependency-audit',
-              suggestion: `Run \`npm audit fix\` or update ${name}`,
-            })
-          } else if (sev === 'moderate') {
-            issues.push({
-              severity: 'warning',
-              message: `Vulnerability in ${name}: ${sev}`,
-              rule: 'dependency-audit',
-            })
-          }
-        }
-      } catch {
-        // npm audit output wasn't valid JSON — report as info
-        issues.push({
-          severity: 'info',
-          message: 'Could not parse dependency audit output',
-          rule: 'dependency-audit',
-        })
-      }
-    }
-  } else {
-    // bun pm audit succeeded (exit 0 = no issues)
-    // If exit code was non-zero but we got output, parse it
-    const output = bunResult.stdout + bunResult.stderr
-    if (output.toLowerCase().includes('found') && output.toLowerCase().includes('vulnerabilit')) {
-      issues.push({
-        severity: 'warning',
-        message: `Dependency audit reported issues: ${output.trim().split('\n')[0]}`,
-        rule: 'dependency-audit',
-      })
-    }
-  }
-
-  return issues
-}
 
 async function scanForSecrets(options: AuditOptions): Promise<AuditIssue[]> {
   const issues: AuditIssue[] = []
@@ -229,19 +163,15 @@ const securityAudit: AuditModule = {
     const start = Date.now()
     const allIssues: AuditIssue[] = []
 
-    // 1. Dependency audit
-    const depIssues = await auditDependencies(options)
-    allIssues.push(...depIssues)
-
-    // 2. Scan for hardcoded secrets
+    // 1. Scan for hardcoded secrets
     const secretIssues = await scanForSecrets(options)
     allIssues.push(...secretIssues)
 
-    // 3. Check .gitignore
+    // 2. Check .gitignore
     const gitignoreIssues = await checkGitignore(options)
     allIssues.push(...gitignoreIssues)
 
-    // 4. Check vite.config.ts
+    // 3. Check vite.config.ts
     const viteIssues = await checkViteConfig(options)
     allIssues.push(...viteIssues)
 

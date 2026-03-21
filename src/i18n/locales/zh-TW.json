@@ -141,7 +141,8 @@
       "turnstileHostnameMismatch": "當前站點網域未被 Cloudflare Turnstile 授權，請聯絡管理員檢查站點金鑰的 Hostname 設定",
       "unknown": "發生未知錯誤",
       "twoFactorInvalid": "驗證碼錯誤，請重新輸入",
-      "codeRequired": "請輸入6位數驗證碼"
+      "codeRequired": "請輸入6位數驗證碼",
+      "riskVerificationInvalid": "信箱驗證碼錯誤，請重新輸入"
     },
     "secureBadge": "安全防護已啟用",
     "loginHint": "使用使用者名稱或電子郵件安全登入。",
@@ -158,7 +159,35 @@
     "sendCodeButton": "傳送驗證碼",
     "codeSentBanner": "驗證碼已傳送至 {email}",
     "verificationCode": "驗證碼",
-    "changeEmail": "更換信箱"
+    "changeEmail": "更換信箱",
+    "restoreTitle": "恢復已刪除帳號",
+    "restoreHint": "請輸入原帳號的使用者名稱或信箱，以及目前密碼。若帳號仍在恢復期內，我們會撤銷刪除申請。",
+    "restoreAfterDeleteNotice": "刪除申請已送出，目前登入狀態也已失效。請先在這裡恢復帳號後再繼續使用。",
+    "restoreButton": "恢復帳號",
+    "restoreLink": "需要恢復已刪除帳號？",
+    "riskVerificationHint": "這次登入被判定為高風險，請輸入傳送到信箱中的驗證碼以完成確認",
+    "riskVerificationFallbackHint": "請完成這次高風險登入確認",
+    "riskVerificationCode": "信箱驗證碼",
+    "riskVerificationCodePlaceholder": "輸入 6 位信箱驗證碼",
+    "riskVerificationExpiresIn": "驗證碼將在 {seconds} 秒後失效",
+    "clientChallengeHint": "為了繼續目前操作，請先完成人機驗證並提升目前裝置的信任等級。",
+    "clientChallengeLoading": "正在準備安全驗證，請稍候…",
+    "stepUp": {
+      "title": "請確認是你本人",
+      "defaultDescription": "這是敏感操作，請先輸入目前密碼完成二次驗證。",
+      "invalidPassword": "密碼驗證失敗，請重新輸入後再試。",
+      "reasons": {
+        "updateSecuritySettings": "修改兩步驗證等安全設定前，需要先完成一次密碼確認。",
+        "revokeSessions": "撤銷裝置或工作階段前，需要先完成一次密碼確認。",
+        "exportData": "匯出帳號資料前，需要先完成一次密碼確認。",
+        "deleteAccount": "刪除帳號前，需要先完成一次密碼確認。",
+        "deleteContent": "刪除內容前，需要先完成一次密碼確認。",
+        "changeEmail": "修改信箱前，需要先完成一次密碼確認。",
+        "changePassword": "修改密碼前，需要先完成一次密碼確認。",
+        "manageApiKeys": "管理 API Key 前，需要先完成一次密碼確認。",
+        "adminOperation": "執行高風險操作前，需要先完成一次密碼確認。"
+      }
+    }
   },
   "video": {
     "playbackSpeed": "播放速度",
@@ -342,7 +371,8 @@
       "items": {
         "recommend": {
           "title": "今日推薦",
-          "desc": "編輯精選 4 張內容卡"
+          "desc": "編輯精選 4 張內容卡",
+          "dynamicDesc": "編輯精選 {count} 張內容卡"
         },
         "authors": {
           "title": "熱門作者",
@@ -356,7 +386,9 @@
           "title": "社群熱帖",
           "desc": "今天最熱的討論與分享"
         }
-      }
+      },
+      "publicCount": "公開 {count} 項",
+      "emptyState": "暫無公開內容"
     },
     "featured": {
       "kicker": "編輯精選",
@@ -869,7 +901,76 @@
     "unfavorite": "取消收藏評論",
     "unfavoriteSuccess": "已取消收藏",
     "confirmUnfavoriteComment": "取消收藏評論",
-    "confirmUnfavoriteCommentMessage": "確定要取消收藏這條評論嗎？"
+    "confirmUnfavoriteCommentMessage": "確定要取消收藏這條評論嗎？",
+    "twoFactorTitle": "兩步驗證",
+    "twoFactorHint": "為帳號增加一層額外保護，支援啟用、停用與備份碼管理。",
+    "twoFactorStatusLabel": "目前狀態",
+    "twoFactorSummaryLabel": "兩步驗證",
+    "twoFactorEnabled": "已啟用",
+    "twoFactorDisabled": "未啟用",
+    "twoFactorEnabledHint": "已啟用兩步驗證，目前剩餘 {count} 個備份碼。",
+    "twoFactorStatusLoadingHint": "正在同步兩步驗證狀態，請稍候。",
+    "twoFactorDisabledHint": "建議啟用兩步驗證以保護帳號登入安全。",
+    "twoFactorSetupAction": "啟用兩步驗證",
+    "twoFactorSetupInstructions": "使用認證器 App 掃描 QR Code，或手動輸入金鑰後，再輸入 6 位驗證碼完成啟用。",
+    "twoFactorManualCode": "手動輸入金鑰",
+    "twoFactorCopySecret": "複製金鑰",
+    "twoFactorVerifyCodeLabel": "認證器驗證碼",
+    "twoFactorConfirmSetup": "確認啟用",
+    "twoFactorSetupSuccess": "兩步驗證已啟用",
+    "twoFactorDisableAction": "停用兩步驗證",
+    "twoFactorDisableHint": "請輸入目前認證器驗證碼與目前密碼，以關閉兩步驗證。",
+    "twoFactorDisabledSuccess": "兩步驗證已關閉",
+    "twoFactorRegenerateAction": "重新產生備份碼",
+    "twoFactorRegenerateHint": "輸入目前認證器驗證碼後，將產生一組新的備份碼，舊備份碼會立即失效。",
+    "twoFactorBackupCodesTitle": "備份碼",
+    "twoFactorBackupCodesHint": "請將這些備份碼保存在安全位置，每個備份碼只能使用一次。",
+    "twoFactorBackupCodesSavedHint": "請將最新備份碼妥善保管；舊備份碼在重新產生後會失效。",
+    "twoFactorBackupCodesRegenerated": "備份碼已重新產生",
+    "twoFactorViewBackupCodes": "查看備份碼",
+    "twoFactorCopyBackupCodes": "複製備份碼",
+    "twoFactorLatestBackupCodes": "最新備份碼",
+    "twoFactorNoBackupCodes": "目前沒有可顯示的備份碼，請重新產生。",
+    "twoFactorCopied": "已複製到剪貼板",
+    "twoFactorQrAlt": "兩步驗證 QR Code",
+    "accountToolsTitle": "帳號與資料",
+    "accountToolsHint": "管理帳號匯出、刪除申請與恢復狀態。",
+    "accountStatusLabel": "帳號狀態",
+    "accountStatusLoadingHint": "正在同步帳號狀態，請稍候。",
+    "accountActive": "正常使用中",
+    "accountActiveHint": "你可以匯出帳號資料，或在確認後發起帳號刪除申請。",
+    "accountDeletionPending": "刪除申請處理中",
+    "accountDeletionPendingHint": "帳號已進入恢復期，剩餘 {days} 天可撤銷刪除申請。",
+    "accountDeletedAt": "申請時間",
+    "accountPermanentDeleteAt": "永久刪除時間",
+    "exportDataAction": "匯出帳號資料",
+    "exportDataSuccess": "帳號資料匯出已開始",
+    "deleteAccountAction": "申請刪除帳號",
+    "deleteAccountHint": "提交後帳號會進入保留期，在永久刪除前仍可恢復。",
+    "deleteAccountReasonLabel": "刪除原因",
+    "deleteAccountReasonPlaceholder": "選填：告訴我們你刪除帳號的原因",
+    "deleteAccountConfirmTitle": "確認刪除帳號",
+    "deleteAccountConfirmDesc": "此操作會發起帳號刪除申請，並在保留期結束後永久移除帳號資料。",
+    "deleteAccountSuccess": "帳號刪除申請已送出",
+    "restoreAccountAction": "恢復帳號",
+    "restoreAccountSuccess": "帳號已恢復",
+    "reportIdLabel": "舉報單",
+    "reportUpdatedLabel": "最近更新",
+    "reportDescriptionEmpty": "未填寫補充說明",
+    "reportTargetTypes": {
+      "post": "帖子",
+      "comment": "評論",
+      "discussion": "討論",
+      "discussion_comment": "討論評論",
+      "user": "使用者"
+    },
+    "reportStatuses": {
+      "pending": "待處理",
+      "resolved": "已處理",
+      "rejected": "已駁回",
+      "reviewed": "已審核",
+      "dismissed": "已忽略"
+    }
   },
   "user": {
     "username": {
@@ -992,7 +1093,8 @@
       "revokeAllFailed": "登出所有裝置失敗",
       "trustFailed": "更新裝置信任狀態失敗",
       "updateNameFailed": "更新裝置名稱失敗",
-      "emptyName": "裝置名稱不能為空"
+      "emptyName": "裝置名稱不能為空",
+      "trustCurrentOnly": "只有目前裝置可以被標記為受信任裝置"
     }
   },
   "about": {
