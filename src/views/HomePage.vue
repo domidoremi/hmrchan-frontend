@@ -1000,7 +1000,7 @@ let scrollTriggerModule: ScrollTriggerModule['ScrollTrigger'] | null = null
 let scrollTriggerReadyPromise: Promise<boolean> | null = null
 
 const HOME_SUPPLEMENT_DELAY_MS = 600
-const HOME_SECONDARY_CONTENT_FALLBACK_DELAY_MS = 12000
+const HOME_SECONDARY_CONTENT_FALLBACK_DELAY_MS = 900
 const HomepagePreviewController = defineAsyncComponent(
   () => import('@/components/home/HomepagePreviewController.vue')
 )
@@ -1159,7 +1159,6 @@ let sceneResizeObserver: ResizeObserver | null = null
 let sceneObservedSizes = new WeakMap<HTMLElement, { width: number; height: number }>()
 let bubbleBurstReplayFrame: number | null = null
 let viewportSceneFrame: number | null = null
-let screenTransitionTimer: number | null = null
 let viewportSceneTrackingBound = false
 
 const storyTravel = computed(() => Math.max(effectiveStoryCardCount.value - 1, 0))
@@ -1456,11 +1455,32 @@ async function fetchHomeData(): Promise<boolean> {
   }
 }
 
-function resolveSceneProgress(element: HTMLElement | null): number {
+function resolveSceneTravelDistance(element: HTMLElement | null, pinnedSelector?: string): number {
+  if (typeof window === 'undefined' || !element) return 1
+
+  const pinnedElement = pinnedSelector ? element.querySelector<HTMLElement>(pinnedSelector) : null
+  const pinnedBlockSize = pinnedElement?.offsetHeight ?? window.innerHeight
+
+  return Math.max(element.offsetHeight - pinnedBlockSize, 1)
+}
+
+function resolveSceneProgress(element: HTMLElement | null, pinnedSelector?: string): number {
   if (typeof window === 'undefined' || !element) return 0
-  const travel = Math.max(element.offsetHeight - window.innerHeight, 1)
+  const travel = resolveSceneTravelDistance(element, pinnedSelector)
   const distance = window.scrollY - element.offsetTop
   return clamp(distance / travel)
+}
+
+function buildSceneSnap(stepCount: number) {
+  if (stepCount <= 1) return false
+
+  return {
+    snapTo: 1 / Math.max(stepCount - 1, 1),
+    delay: 0.04,
+    duration: { min: 0.12, max: 0.24 },
+    ease: 'power2.out',
+    inertia: false,
+  }
 }
 
 function syncSceneProgressFromViewport() {
@@ -1470,11 +1490,11 @@ function syncSceneProgressFromViewport() {
     featuredRailTrigger && railSlideCount.value > 1
       ? clamp(featuredRailTrigger.progress)
       : railSlideCount.value > 1
-        ? resolveSceneProgress(resolveSectionElement(featuredSectionRef.value))
+        ? resolveSceneProgress(resolveSectionElement(featuredSectionRef.value), '.rail-sticky')
         : clamp(railProgress.value)
   storyProgress.value =
     effectiveStoryCardCount.value > 1
-      ? resolveSceneProgress(resolveSectionElement(storyDeckRef.value))
+      ? resolveSceneProgress(resolveSectionElement(storyDeckRef.value), '.story-stage')
       : clamp(storyProgress.value)
 }
 
@@ -1535,8 +1555,6 @@ function setHomeSceneLifecycleEnabled(enabled: boolean) {
     clearHeroEditorialRevealTimer()
     clearHeroSupplementTimer()
     clearHomeSecondaryContentTimer()
-    clearScreenTransitionTimer()
-    activeScreenTransition.value = null
     return
   }
 
@@ -1655,12 +1673,6 @@ function resetHeroSecondaryContent() {
   clearHomeSecondaryContentIntentListeners()
   isHeroSupplementVisible.value = false
   isHomeSecondaryContentReady.value = false
-}
-
-function clearScreenTransitionTimer() {
-  if (typeof window === 'undefined' || screenTransitionTimer === null) return
-  window.clearTimeout(screenTransitionTimer)
-  screenTransitionTimer = null
 }
 
 function setRailNavbarLock(locked: boolean) {
@@ -1913,9 +1925,10 @@ async function setupSceneTriggers() {
     featuredRailTrigger = scrollTriggerModule.create({
       trigger: featuredElement,
       start: 'top top',
-      end: () => `+=${Math.max(featuredElement.offsetHeight - window.innerHeight, 1)}`,
+      end: () => `+=${resolveSceneTravelDistance(featuredElement, '.rail-sticky')}`,
       invalidateOnRefresh: true,
-      scrub: true,
+      scrub: 0.28,
+      snap: buildSceneSnap(railSlideCount.value),
       onUpdate: (self) => {
         railProgress.value = self.progress
       },
@@ -1930,11 +1943,14 @@ async function setupSceneTriggers() {
     storyDeckTrigger = scrollTriggerModule.create({
       trigger: storyElement,
       start: 'top top',
-      end: () => `+=${Math.max(effectiveStoryCardCount.value - 1, 0) * window.innerHeight}`,
+      end: () => `+=${resolveSceneTravelDistance(storyElement, '.story-stage')}`,
       invalidateOnRefresh: true,
-      scrub: false,
-      snap: false,
+      scrub: 0.4,
+      snap: buildSceneSnap(effectiveStoryCardCount.value),
       onUpdate: (self) => {
+        storyProgress.value = self.progress
+      },
+      onRefresh: (self) => {
         storyProgress.value = self.progress
       },
     })
@@ -2082,14 +2098,21 @@ onBeforeUnmount(() => {
 <style scoped>
 .home-page {
   position: relative;
-  min-height: var(--app-safe-block-size);
-  --home-safe-block-size: var(--app-safe-block-size);
-  --home-safe-block-size-with-mobile-nav: var(--app-safe-block-size-with-mobile-nav);
-  --home-stage-safe-top: calc(
-    var(--navbar-visible-height, var(--navbar-height, 4rem)) + clamp(0.35rem, 1.2vw, 0.9rem)
+  min-height: var(--home-safe-block-size);
+  --home-navbar-stable-height: max(
+    var(--navbar-height, 4rem),
+    var(--navbar-visible-height, var(--navbar-height, 4rem))
   );
+  --home-safe-block-size: calc(100dvh - var(--home-navbar-stable-height));
+  --home-safe-block-size-with-mobile-nav: calc(
+    100dvh - var(--home-navbar-stable-height) - var(--mobile-nav-height, 0rem) -
+      env(safe-area-inset-bottom, 0rem)
+  );
+  --home-stage-safe-top: calc(var(--home-navbar-stable-height) + clamp(0.35rem, 1.2vw, 0.9rem));
   --home-stage-safe-bottom: clamp(1.5rem, 4vw, 2.75rem);
   --home-stage-chrome-height: clamp(2.25rem, 3.2vw, 2.85rem);
+  --home-rail-scroll-travel: clamp(10rem, 20dvh, 14rem);
+  --home-story-scroll-travel: clamp(11rem, 24dvh, 16rem);
   --home-stage-max-inline: min(100%, 90rem);
   --home-hero-max-inline: min(100%, 66rem);
   --home-hero-copy-max-inline: 38rem;
@@ -2482,17 +2505,26 @@ onBeforeUnmount(() => {
 
 .page-section-head {
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-start;
   justify-content: space-between;
   gap: clamp(0.875rem, 1.8vw, 1.25rem);
   margin-bottom: clamp(0.9rem, 1.8vw, 1.2rem);
+  min-inline-size: 0;
 }
 
 .page-section-copy {
   display: flex;
+  flex: 1 1 min(100%, 32rem);
   flex-direction: column;
   gap: clamp(0.3rem, 0.8vw, 0.5rem);
   max-inline-size: min(100%, 36rem);
+  min-inline-size: 0;
+}
+
+.page-section-head--stage .page-inline-cta {
+  flex: 0 0 auto;
+  align-self: flex-start;
 }
 
 .page-section-kicker {
@@ -3616,9 +3648,31 @@ onBeforeUnmount(() => {
   );
 }
 
+.rail-panel__content,
+.portal-grid,
+.portal-grid > *,
+.portal-sidebar,
+.portal-sidebar__row,
+.rail-featured-grid,
+.rail-featured-grid > *,
+.trends-grid,
+.trends-grid > *,
+.rail-highlight,
+.rail-highlight > *,
+.hero-spotlight-stack,
+.story-merge-panel,
+.story-merge-panel > *,
+.media-slice__sticky,
+.media-slice__visual,
+.media-slice__copy,
+.media-slice__actions {
+  min-inline-size: 0;
+}
+
 .latest-bubble__meta {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: var(--spacing-2);
   font-size: var(--text-xs);
   color: var(--color-text-tertiary);
@@ -3743,7 +3797,10 @@ onBeforeUnmount(() => {
 
 .rail {
   position: relative;
-  min-block-size: calc(var(--rail-slide-count, 1) * var(--home-safe-block-size));
+  min-block-size: calc(
+    var(--home-safe-block-size) +
+      ((var(--rail-slide-count, 1) - 1) * var(--home-rail-scroll-travel))
+  );
   padding: 0;
 }
 
@@ -3835,7 +3892,7 @@ onBeforeUnmount(() => {
   block-size: 100%;
   display: grid;
   padding: calc(
-      var(--home-stage-safe-top) + var(--home-stage-chrome-height) + clamp(0.12rem, 0.4vw, 0.28rem)
+      var(--home-stage-safe-top) + var(--home-stage-chrome-height) + clamp(0.4rem, 0.8vw, 0.65rem)
     )
     clamp(1rem, 3vw, 2.5rem) clamp(1rem, 2.4vw, 1.6rem);
   overflow: clip;
@@ -3944,21 +4001,21 @@ onBeforeUnmount(() => {
 
 .rail-panel--portal .portal-grid {
   inline-size: 100%;
-  block-size: auto;
+  block-size: 100%;
   min-block-size: 0;
   align-self: stretch;
   grid-template-columns: minmax(0, 1.12fr) minmax(0, 0.88fr);
-  grid-template-rows: auto;
+  grid-template-rows: minmax(0, 1fr);
   max-block-size: none;
   align-items: stretch;
 }
 
 .rail-panel--portal .portal-grid > .portal-card--primary {
   min-block-size: 0;
-  block-size: auto;
+  block-size: 100%;
   position: relative;
   display: grid;
-  grid-template-rows: auto auto;
+  grid-template-rows: minmax(0, 1fr) auto;
   gap: clamp(0.75rem, 1.4vw, 1rem);
   align-content: stretch;
   padding: clamp(0.875rem, 1.6vw, 1rem);
@@ -3966,18 +4023,20 @@ onBeforeUnmount(() => {
 
 .portal-sidebar {
   display: grid;
-  grid-template-rows: auto auto;
+  grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
   gap: clamp(0.75rem, 1.4vw, 1rem);
+  block-size: 100%;
   min-block-size: 0;
-  align-content: start;
+  align-content: stretch;
 }
 
 .portal-sidebar__row {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: clamp(0.75rem, 1.4vw, 1rem);
+  block-size: 100%;
   min-block-size: 0;
-  align-items: start;
+  align-items: stretch;
 }
 
 .rail-panel--portal .rail-panel__content,
@@ -3996,7 +4055,7 @@ onBeforeUnmount(() => {
   align-content: start;
   gap: clamp(0.75rem, 1.4vw, 1rem);
   min-block-size: 0;
-  block-size: auto;
+  block-size: 100%;
   background: var(--home-panel-bg-soft), var(--home-pill-bg);
 }
 
@@ -4071,17 +4130,17 @@ onBeforeUnmount(() => {
 
 .rail-panel--portal .portal-card--primary .portal-card__preview {
   min-block-size: auto;
-  aspect-ratio: 16 / 10;
+  aspect-ratio: 16 / 9.6;
   box-shadow: inset 0 -5rem 6rem -4rem rgba(15, 23, 42, 0.48);
 }
 
 .rail-panel--portal .portal-card--primary .portal-card__copy {
   position: relative;
   inset: auto;
-  inline-size: min(100%, 24rem);
+  inline-size: 100%;
   max-inline-size: none;
-  margin-block-start: calc(clamp(2rem, 5vw, 3rem) * -1);
-  margin-inline: clamp(0.5rem, 1vw, 0.75rem);
+  margin-block-start: 0;
+  margin-inline: 0;
   padding: clamp(0.875rem, 1.6vw, 1rem);
   border-radius: var(--home-card-radius);
   background: var(--home-panel-bg-strong), var(--home-pill-bg);
@@ -5021,6 +5080,7 @@ onBeforeUnmount(() => {
   min-block-size: 0;
   max-block-size: 100%;
   align-self: stretch;
+  contain: layout paint;
   border-radius: var(--home-shell-radius);
   background:
     radial-gradient(circle at 50% 52%, rgba(255, 255, 255, 0.12) 0%, transparent 17rem),
@@ -5093,8 +5153,11 @@ onBeforeUnmount(() => {
       0
     )
     scale(0.72);
-  transition: none;
+  transition:
+    opacity 220ms var(--ease-out-smooth),
+    transform 320ms var(--ease-fluid);
   will-change: transform, opacity;
+  backface-visibility: hidden;
 }
 
 .latest-bubble::after {
@@ -5126,7 +5189,10 @@ onBeforeUnmount(() => {
   -webkit-backdrop-filter: none !important;
   text-shadow: 0 0.5rem 1.5rem rgba(15, 23, 42, 0.08);
   transform: translate3d(0, 0.35rem, 0) scale(0.99);
-  transition: none;
+  transition:
+    opacity 220ms var(--ease-out-smooth),
+    transform 320ms var(--ease-fluid);
+  backface-visibility: hidden;
 }
 
 .latest-bubble__text {
@@ -5145,18 +5211,21 @@ onBeforeUnmount(() => {
   pointer-events: auto;
   transform: translate3d(calc(-50% + var(--bubble-x)), calc(-50% + var(--bubble-y)), 0)
     scale(var(--bubble-scale, 1));
-  animation: bubbleBurstFromCenter 420ms cubic-bezier(0.2, 0.82, 0.24, 1) both;
-  animation-delay: var(--bubble-delay, 0s);
+  transition-delay: var(--bubble-delay, 0s);
 }
 
 .posts--revealed .latest-bubble__inner {
+  opacity: 1;
   transform: translate3d(0, 0, 0);
-  animation: none;
+  transition-delay: var(--bubble-delay, 0s);
 }
 
 .media-slices {
   position: relative;
-  min-block-size: calc(var(--story-card-count, 1) * var(--home-safe-block-size));
+  min-block-size: calc(
+    var(--home-safe-block-size) +
+      ((var(--story-card-count, 1) - 1) * var(--home-story-scroll-travel))
+  );
   padding: 0;
   background: linear-gradient(
     180deg,
@@ -5392,13 +5461,20 @@ onBeforeUnmount(() => {
   position: relative;
   top: auto;
   inline-size: min(calc(100% - 1rem), var(--home-story-card-max-inline));
+  block-size: min(
+    100%,
+    calc(
+      var(--home-safe-block-size) - var(--home-stage-safe-top) - var(--home-stage-safe-bottom) -
+        clamp(3rem, 6vw, 4.75rem)
+    )
+  );
   max-block-size: 100%;
-  min-height: min(50dvh, 32rem);
+  min-block-size: clamp(22rem, 54dvh, 30rem);
   margin-inline: auto;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(17rem, 0.78fr);
-  gap: clamp(1.1rem, 2.1vw, 1.7rem);
-  padding: clamp(1.3rem, 2.4vw, 1.9rem);
+  grid-template-columns: minmax(0, 1fr) minmax(15rem, 0.74fr);
+  gap: clamp(0.95rem, 1.8vw, 1.45rem);
+  padding: clamp(1rem, 2vw, 1.5rem);
   justify-items: stretch;
   align-items: center;
   overflow: clip;
@@ -6001,10 +6077,310 @@ onBeforeUnmount(() => {
   }
 }
 
+@media (min-width: 769px) and (max-width: 1280px), (min-width: 769px) and (max-height: 860px) {
+  .page-section-head--stage {
+    margin-block-end: clamp(0.3rem, 0.7vw, 0.45rem);
+  }
+
+  .page-section-copy h2 {
+    max-inline-size: 14ch;
+    font-size: clamp(1.45rem, 1.9vw, 1.9rem);
+  }
+
+  .page-section-copy p,
+  .rail-panel--portal .portal-card--primary .portal-card__body p,
+  .portal-card__micro-text,
+  .featured-rail-card__summary,
+  .trends-editorial__text,
+  .trends-community-note__text {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .rail-panel {
+    padding: calc(
+        var(--home-stage-safe-top) + var(--home-stage-chrome-height) +
+          clamp(0.25rem, 0.6vw, 0.45rem)
+      )
+      clamp(0.875rem, 2vw, 1.5rem) clamp(0.75rem, 1.6vw, 1.15rem);
+  }
+
+  .rail-panel__content,
+  .portal-grid,
+  .rail-highlight,
+  .rail-featured-grid,
+  .trends-grid {
+    gap: clamp(0.7rem, 1.3vw, 0.95rem);
+  }
+
+  .rail-panel--portal .portal-grid {
+    grid-template-columns: minmax(0, 1.02fr) minmax(0, 0.98fr);
+  }
+
+  .rail-panel--portal .portal-card--primary {
+    gap: clamp(0.5rem, 1vw, 0.75rem);
+    padding: clamp(0.75rem, 1.2vw, 0.9rem);
+  }
+
+  .rail-panel--portal .portal-card--primary .portal-card__preview {
+    aspect-ratio: 16 / 8.6;
+  }
+
+  .rail-panel--portal .portal-card--primary .portal-card__copy,
+  .portal-card,
+  .hero-spotlight-card,
+  .featured-rail-card,
+  .trends-card {
+    padding: clamp(0.75rem, 1.2vw, 0.9rem);
+  }
+
+  .portal-card__stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem;
+  }
+
+  .portal-card__stat:nth-child(n + 3) {
+    display: none;
+  }
+
+  .rail-highlight {
+    grid-template-columns: minmax(0, 1.08fr) minmax(13.5rem, 0.92fr);
+  }
+
+  .hero-spotlight-stack {
+    gap: clamp(0.55rem, 1vw, 0.75rem);
+  }
+
+  .featured-rail-card__media {
+    min-block-size: clamp(8.75rem, 17dvh, 10.5rem);
+  }
+
+  .featured-rail-card--lead .featured-rail-card__media {
+    min-block-size: clamp(10.5rem, 22dvh, 13rem);
+  }
+
+  .posts-toolbar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .bubble-stage {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    align-items: stretch;
+    align-content: stretch;
+    gap: clamp(0.55rem, 1vw, 0.75rem);
+    padding: clamp(0.625rem, 1.2vw, 0.875rem);
+  }
+
+  .bubble-stage::before,
+  .bubble-stage::after,
+  .latest-bubble::after {
+    display: none;
+  }
+
+  .latest-bubble {
+    position: relative;
+    inset: auto;
+    inline-size: 100%;
+    block-size: 100%;
+    max-inline-size: none;
+    opacity: 1;
+    pointer-events: auto;
+    transform: none !important;
+    display: grid;
+    min-block-size: 0;
+  }
+
+  .latest-bubble:nth-child(n + 5) {
+    display: none;
+  }
+
+  .latest-bubble__inner {
+    inline-size: 100%;
+    block-size: 100%;
+    min-block-size: 0;
+    max-inline-size: none;
+    padding: clamp(0.625rem, 1.1vw, 0.8rem);
+    gap: 0.375rem;
+    transform: none;
+    grid-template-rows: minmax(0, 1fr) auto;
+  }
+
+  .latest-bubble__text {
+    -webkit-line-clamp: 3;
+  }
+
+  .rail-panel--trends .trends-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
+    block-size: 100%;
+    align-content: stretch;
+  }
+
+  .rail-panel--trends .trends-card {
+    block-size: 100%;
+    min-block-size: 0;
+  }
+
+  .rail-panel--trends .trends-card--authors {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .rail-panel--trends .trends-card--tags {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .rail-panel--trends .trends-card--editorial {
+    display: none;
+  }
+
+  .rail-panel--trends .trends-card--schedule {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    min-block-size: 0;
+  }
+
+  .trends-list > :nth-child(n + 4),
+  .schedule-highlight-list > :nth-child(n + 3) {
+    display: none;
+  }
+
+  .trends-authors-highlight {
+    grid-template-columns: auto minmax(0, 1fr);
+    padding: 0.625rem 0.75rem;
+  }
+
+  .trends-authors-highlight__action {
+    display: none;
+  }
+
+  .trends-list {
+    gap: 0.5rem;
+  }
+
+  .trends-list > :nth-child(n + 3) {
+    display: none;
+  }
+
+  .trend-author {
+    min-block-size: 3.5rem;
+    padding: 0.5rem 0.625rem;
+  }
+
+  .trend-author__name,
+  .trend-author__count,
+  .schedule-highlight__meta {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 1;
+  }
+
+  .trend-tags__stats,
+  .schedule-cta__stats {
+    display: none;
+  }
+
+  .schedule-highlight {
+    gap: 0.25rem;
+    padding: 0.5625rem 0.6875rem;
+  }
+
+  .schedule-highlight__title,
+  .schedule-highlight__copy {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+  }
+
+  .schedule-highlight__title {
+    font-size: var(--text-sm);
+    -webkit-line-clamp: 2;
+  }
+
+  .schedule-highlight__copy {
+    display: none;
+  }
+
+  .media-slice-list {
+    padding-block: clamp(1rem, 2vw, 1.4rem) clamp(1.5rem, 3vw, 2rem);
+    perspective: clamp(16rem, 24vw, 26rem);
+  }
+
+  .media-slice__sticky {
+    block-size: min(
+      100%,
+      calc(
+        var(--home-safe-block-size) - var(--home-stage-safe-top) - var(--home-stage-safe-bottom) -
+          clamp(3.5rem, 7vw, 5rem)
+      )
+    );
+    grid-template-columns: minmax(0, 1fr) minmax(13rem, 0.76fr);
+    gap: clamp(0.85rem, 1.6vw, 1.2rem);
+    padding: clamp(0.9rem, 1.6vw, 1.25rem);
+  }
+
+  .media-slice__copy {
+    gap: clamp(0.55rem, 1vw, 0.75rem);
+  }
+
+  .media-slice__copy h3 {
+    max-inline-size: 12ch;
+    font-size: clamp(1.22rem, 1.7vw, 1.58rem);
+  }
+}
+
+@media (min-width: 769px) and (max-height: 760px) {
+  .trends-card {
+    gap: 0.625rem;
+    padding: 0.75rem;
+  }
+
+  .trends-card__header {
+    gap: 0.5rem;
+  }
+
+  .trends-authors-shell {
+    gap: 0.375rem;
+  }
+
+  .trends-authors-highlight {
+    gap: 0.5rem;
+    padding: 0.5rem 0.625rem;
+  }
+
+  .trends-authors-highlight__avatar {
+    inline-size: 2.25rem;
+    block-size: 2.25rem;
+  }
+
+  .trend-author {
+    min-block-size: 3rem;
+    padding: 0.4375rem 0.5625rem;
+  }
+
+  .trend-author__avatar {
+    inline-size: 1.75rem;
+    block-size: 1.75rem;
+  }
+
+  .trends-list > :nth-child(n + 2) {
+    display: none;
+  }
+
+  .schedule-highlight__title {
+    -webkit-line-clamp: 1;
+  }
+}
+
 @media (max-width: 768px) {
   .home-page {
-    --home-safe-block-size: var(--app-safe-block-size-with-mobile-nav);
-    --home-safe-block-size-with-mobile-nav: var(--app-safe-block-size-with-mobile-nav);
+    --home-safe-block-size: var(--home-safe-block-size-with-mobile-nav);
     --home-stage-safe-bottom: clamp(0.9rem, 2vw, 1.25rem);
     --home-screen-transition-ms: 0ms;
   }
@@ -6332,10 +6708,10 @@ onBeforeUnmount(() => {
   .rail-panel--portal .portal-card--primary .portal-card__copy {
     position: relative;
     inset: auto;
-    inline-size: calc(100% - 0.75rem);
+    inline-size: 100%;
     max-inline-size: none;
-    margin-block-start: -1rem;
-    margin-inline: 0.375rem;
+    margin-block-start: 0;
+    margin-inline: 0;
     padding: 0.625rem 0.75rem;
     border-radius: var(--home-card-radius);
     background: var(--home-panel-bg-strong), var(--home-pill-bg);
@@ -6702,11 +7078,16 @@ onBeforeUnmount(() => {
 
   .bubble-stage {
     display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: repeat(2, minmax(0, 1fr));
     gap: 0.625rem;
-    align-content: start;
+    align-content: stretch;
+    align-items: stretch;
     padding: 0.625rem;
-    block-size: auto;
-    max-block-size: none;
+    block-size: 100%;
+    min-block-size: 0;
+    max-block-size: 100%;
+    overflow: clip;
   }
 
   .bubble-stage::before,
@@ -6718,11 +7099,13 @@ onBeforeUnmount(() => {
     position: relative;
     inset: auto;
     inline-size: 100%;
+    block-size: 100%;
     max-inline-size: none;
     opacity: 1;
     pointer-events: auto;
     transform: none !important;
-    display: block;
+    display: grid;
+    min-block-size: 0;
   }
 
   .posts--revealed .latest-bubble {
@@ -6738,6 +7121,10 @@ onBeforeUnmount(() => {
   }
 
   .latest-bubble__inner {
+    inline-size: 100%;
+    block-size: 100%;
+    min-block-size: 0;
+    grid-template-rows: minmax(0, 1fr) auto;
     max-inline-size: none;
     padding: 0.75rem 0.8125rem;
     border-radius: 1.125rem;
@@ -6751,7 +7138,7 @@ onBeforeUnmount(() => {
     font-size: var(--text-base);
     line-height: 1.45;
     -webkit-box-orient: vertical;
-    -webkit-line-clamp: 3;
+    -webkit-line-clamp: 4;
   }
 
   .latest-bubble__meta {
@@ -6761,7 +7148,7 @@ onBeforeUnmount(() => {
 
   .media-slice-list {
     inline-size: 100%;
-    padding-block: 0.375rem 1rem;
+    padding-block: 0.375rem 0.875rem;
     perspective: 14rem;
     perspective-origin: 50% 18%;
   }
@@ -6784,7 +7171,14 @@ onBeforeUnmount(() => {
 
   .media-slice__sticky {
     inline-size: 100%;
-    min-height: min(46dvh, 27rem);
+    block-size: min(
+      100%,
+      calc(
+        var(--home-safe-block-size) - var(--home-stage-safe-top) - var(--home-stage-safe-bottom) -
+          clamp(2.75rem, 8vw, 3.75rem)
+      )
+    );
+    min-block-size: min(100%, 22rem);
     grid-template-columns: minmax(0, 1fr);
     gap: 0.75rem;
     padding: 0.75rem;
@@ -7130,11 +7524,21 @@ onBeforeUnmount(() => {
 }
 
 @media (max-width: 768px) {
+  .home-page {
+    --home-story-scroll-travel: clamp(7rem, 14dvh, 9.5rem);
+  }
+
   .home-page .rail,
   .home-page .posts,
-  .home-page .posts--bubble,
-  .home-page .media-slices {
+  .home-page .posts--bubble {
     min-block-size: var(--home-safe-block-size);
+  }
+
+  .home-page .media-slices {
+    min-block-size: calc(
+      var(--home-safe-block-size) +
+        ((var(--story-card-count, 1) - 1) * var(--home-story-scroll-travel))
+    );
   }
 
   .home-page .rail-stage,
