@@ -89,7 +89,10 @@ export default defineConfig({
     isolate: true,
 
     /** 测试文件匹配模式 */
-    include: ['src/**/__tests__/**/*.{test,spec}.{js,ts,jsx,tsx}'],
+    include: [
+      'src/**/__tests__/**/*.{test,spec}.{js,ts,jsx,tsx}',
+      'functions/**/__tests__/**/*.{test,spec}.{js,ts,jsx,tsx}',
+    ],
 
     /** Setup files for global test configuration */
     setupFiles: ['vitest.setup.ts'],
