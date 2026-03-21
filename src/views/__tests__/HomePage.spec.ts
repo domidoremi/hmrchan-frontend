@@ -5,6 +5,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { buildHomepageBootstrapFallback } from '@/mocks/homepageBootstrapFallback'
 import HomePage from '../HomePage.vue'
 
+const HOME_SECONDARY_CONTENT_FALLBACK_DELAY_MS = 900
+const HOME_SECONDARY_CONTENT_PRE_REVEAL_CHECK_MS = HOME_SECONDARY_CONTENT_FALLBACK_DELAY_MS - 100
+
 const mocks = vi.hoisted(() => ({
   routerPush: vi.fn(),
   loadHomepageBootstrap: vi.fn(),
@@ -306,7 +309,7 @@ describe('HomePage', () => {
     vi.useRealTimers()
   })
 
-  it('keeps secondary sections hidden for the extended idle window and delays support refresh until reveal', async () => {
+  it('keeps secondary sections hidden before the idle fallback reveal and delays support refresh until reveal', async () => {
     mocks.loadHomepageBootstrap.mockResolvedValueOnce({
       payload: buildAggregateNeedingSupportRefresh(),
       visibility: 'public',
@@ -324,7 +327,7 @@ describe('HomePage', () => {
     expect(mocks.getScheduleHighlights).not.toHaveBeenCalled()
     expect(mocks.getCommunityHighlights).not.toHaveBeenCalled()
 
-    await vi.advanceTimersByTimeAsync(5000)
+    await vi.advanceTimersByTimeAsync(HOME_SECONDARY_CONTENT_PRE_REVEAL_CHECK_MS)
     await nextTick()
 
     expect(wrapper.findComponent({ name: 'FeaturedRailSection' }).exists()).toBe(false)
@@ -333,7 +336,9 @@ describe('HomePage', () => {
     expect(mocks.getScheduleHighlights).not.toHaveBeenCalled()
     expect(mocks.getCommunityHighlights).not.toHaveBeenCalled()
 
-    await vi.advanceTimersByTimeAsync(7000)
+    await vi.advanceTimersByTimeAsync(
+      HOME_SECONDARY_CONTENT_FALLBACK_DELAY_MS - HOME_SECONDARY_CONTENT_PRE_REVEAL_CHECK_MS
+    )
     await flushPromises()
 
     expect(wrapper.findComponent({ name: 'FeaturedRailSection' }).exists()).toBe(true)
@@ -349,7 +354,7 @@ describe('HomePage', () => {
 
     expect(wrapper.find('[data-testid="home-preview-controller"]').exists()).toBe(false)
 
-    await vi.advanceTimersByTimeAsync(12000)
+    await vi.advanceTimersByTimeAsync(HOME_SECONDARY_CONTENT_FALLBACK_DELAY_MS)
     await flushPromises()
 
     expect(wrapper.find('[data-testid="home-preview-controller"]').exists()).toBe(false)
@@ -371,7 +376,7 @@ describe('HomePage', () => {
     expect(mocks.getScheduleHighlights).not.toHaveBeenCalled()
     expect(mocks.getCommunityHighlights).not.toHaveBeenCalled()
 
-    await vi.advanceTimersByTimeAsync(12000)
+    await vi.advanceTimersByTimeAsync(HOME_SECONDARY_CONTENT_FALLBACK_DELAY_MS)
     await flushPromises()
 
     expect(wrapper.findComponent({ name: 'FeaturedRailSection' }).exists()).toBe(true)
