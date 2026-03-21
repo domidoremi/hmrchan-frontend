@@ -1,6 +1,6 @@
 import { computed, nextTick, ref } from 'vue'
 import { describe, expect, it } from 'vitest'
-import { buildHomepageBootstrapFallback } from '@/mocks/homepageBootstrapFallback'
+import { buildHomepageBootstrapFallback } from '@/fallbacks/homepageBootstrapFallback'
 import { buildHomePostsFromAggregate } from '../homeModel'
 import { useHomeViewModel } from '../useHomeViewModel'
 

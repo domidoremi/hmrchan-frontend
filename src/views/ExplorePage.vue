@@ -192,12 +192,12 @@ import { useSettingsStore } from '@/stores'
 import { throttleRAF } from '@/utils/performance'
 import { createResizeObserver } from '@/utils/modernAPIs'
 import { storePostNavigationContext } from '@/utils/postNavigation'
-import { getFallbackExplorePosts } from '@/mocks/exploreFallback'
+import { getFallbackExplorePosts } from '@/fallbacks/exploreFallback'
 import {
   isServiceUnavailableError,
   resolvePublicFallbackReason,
   type PublicPageDataSource,
-} from '@/mocks/publicPageFallback'
+} from '@/fallbacks/publicPageFallback'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import PostCard from '@/components/business/PostCard.vue'
 import PostCardSkeleton from '@/components/business/PostCardSkeleton.vue'

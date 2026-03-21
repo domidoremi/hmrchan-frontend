@@ -84,12 +84,12 @@ import { authorService, type AuthorResponse, type PostListItem, ApiError } from 
 import { normalizeAvatarUrl } from '@/api/userService'
 import { authorCache } from '@/utils/cache'
 import { storePostNavigationContext } from '@/utils/postNavigation'
-import { getFallbackAuthorById, getFallbackAuthorPosts } from '@/mocks/authorsFallback'
+import { getFallbackAuthorById, getFallbackAuthorPosts } from '@/fallbacks/authorsFallback'
 import {
   isServiceUnavailableError,
   resolvePublicFallbackReason,
   type PublicPageDataSource,
-} from '@/mocks/publicPageFallback'
+} from '@/fallbacks/publicPageFallback'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import Skeleton from '@/components/ui/Skeleton.vue'
 import PostCard from '@/components/business/PostCard.vue'

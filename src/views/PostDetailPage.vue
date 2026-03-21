@@ -357,17 +357,26 @@ import {
   updatePostNavigationIndex,
   type PostNavigationContext,
 } from '@/utils/postNavigation'
-import { getFallbackPostDetailById } from '@/mocks/postFallback'
+import { getFallbackPostDetailById } from '@/fallbacks/postFallback'
 import {
   isServiceUnavailableError,
   resolvePublicFallbackReason,
   type PublicPageDataSource,
-} from '@/mocks/publicPageFallback'
+} from '@/fallbacks/publicPageFallback'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import Skeleton from '@/components/ui/Skeleton.vue'
 import { defineAsyncComponent } from 'vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import { lockBodyScroll, unlockBodyScroll } from '@/utils/bodyScrollLock'
+import {
+  buildActiveMediaElementStyle,
+  buildActiveMediaViewerStyle,
+  buildDetailTitle,
+  getThumbnailPlaceholderCount,
+  isMediaPending as computeIsMediaPending,
+  shouldShowReadFullText as computeShouldShowReadFullText,
+  shouldShowThumbnailRail as computeShouldShowThumbnailRail,
+} from './post-detail/postDetailModel'
 
 // 动态导入大型组件以减少初始包体积
 const CommentList = defineAsyncComponent(() => import('@/components/comment/CommentList.vue'))
@@ -474,17 +483,10 @@ const lightboxInitialIndex = ref(0)
 
 // Long text → open in overlay modal for comfortable reading
 const isTextModalOpen = ref(false)
-const shouldShowReadFullText = computed(() => (post.value?.description?.length ?? 0) > 280)
+const shouldShowReadFullText = computed(() => computeShouldShowReadFullText(post.value?.description))
 
 // Hide title when it duplicates the description (many platforms only have body text)
-const detailTitle = computed(() => {
-  const title = (post.value?.title ?? '').trim()
-  const desc = (post.value?.description ?? '').trim()
-  if (!title) return ''
-  if (title === desc) return ''
-  if (desc && desc.startsWith(title)) return ''
-  return title
-})
+const detailTitle = computed(() => buildDetailTitle(post.value))
 
 const publishedMeta = computed(() => {
   const publishedAt = post.value?.published_at
@@ -526,15 +528,7 @@ const canGoNextMedia = computed(() => activeMediaIndex.value + 1 < mediaCount.va
 // 缓存来自列表页时可能没有 media_files，但 media_count > 0 表示有媒体
 // 此时应显示加载骨架而非"无媒体"占位
 // 一旦详情 API 已返回（detailFetched），不再显示骨架
-const isMediaPending = computed(() => {
-  if (!post.value) return false
-  if (detailFetched.value) return false
-  const hasFiles = post.value.media_files && post.value.media_files.length > 0
-  if (hasFiles) return false
-  const expectedCount =
-    post.value.media_count ?? (post.value as unknown as { file_count?: number }).file_count ?? 0
-  return expectedCount > 0
-})
+const isMediaPending = computed(() => computeIsMediaPending(post.value, detailFetched.value))
 
 const isImageSequence = computed(() =>
   (post.value?.media_files ?? []).every((media) => media.file_type === 'image')
@@ -542,34 +536,13 @@ const isImageSequence = computed(() =>
 
 const canSwipeNavigate = computed(() => settings.value.enableSwipeNavigation)
 
-// 计算媒体宽高比，用于固定容器尺寸防止抖动
-const activeMediaAspectRatio = computed(() => {
-  const media = activeMedia.value
-  if (!media?.width || !media?.height) return 16 / 9
-  return media.width / media.height
-})
+const activeMediaViewerStyle = computed<Record<string, string>>(() =>
+  buildActiveMediaViewerStyle(activeMedia.value)
+)
 
-const activeMediaViewerStyle = computed<Record<string, string>>(() => {
-  const media = activeMedia.value
-  if (!media) {
-    return {
-      '--aspect-ratio': '1.7777778',
-      '--media-min-block-size': 'clamp(18rem, 52dvh, 40rem)',
-    }
-  }
-
-  const intrinsicHeight =
-    media.width && media.height ? `${media.height}px` : 'clamp(18rem, 52dvh, 40rem)'
-
-  return {
-    '--aspect-ratio': String(activeMediaAspectRatio.value),
-    '--media-min-block-size': intrinsicHeight,
-  }
-})
-
-const activeMediaElementStyle = computed<Record<string, string>>(() => ({
-  aspectRatio: String(activeMediaAspectRatio.value),
-}))
+const activeMediaElementStyle = computed<Record<string, string>>(() =>
+  buildActiveMediaElementStyle(activeMedia.value)
+)
 
 const activeImageSrc = computed(() => {
   const media = activeMedia.value
@@ -593,15 +566,13 @@ const fallbackMediaSrc = computed(() => {
 
 const fallbackMediaSrcset = computed(() => getThumbnailSrcset(post.value?.thumbnail_url ?? null))
 
-const shouldShowThumbnailRail = computed(() => {
-  if (hasMultipleMedia.value) return true
-  return Boolean(post.value && !detailFetched.value && (post.value.media_count ?? 0) > 1)
-})
+const shouldShowThumbnailRail = computed(() =>
+  computeShouldShowThumbnailRail(post.value, detailFetched.value)
+)
 
-const thumbnailPlaceholderCount = computed(() => {
-  const mediaCountValue = post.value?.media_count ?? 0
-  return Math.min(Math.max(mediaCountValue, 2), 6)
-})
+const thumbnailPlaceholderCount = computed(() =>
+  getThumbnailPlaceholderCount(post.value?.media_count)
+)
 
 // 获取缓存的缩略图作为占位图
 const placeholderSrc = computed(() => {

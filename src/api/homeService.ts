@@ -4,8 +4,8 @@ import {
   readPublicVisibilityHeaders,
   type PublicVisibilityScope,
 } from './publicVisibility'
-import { buildHomepageBootstrapFallback } from '@/mocks/homepageBootstrapFallback'
-import { isServiceUnavailableError } from '@/mocks/publicPageFallback'
+import { buildHomepageBootstrapFallback } from '@/fallbacks/homepageBootstrapFallback'
+import { isServiceUnavailableError } from '@/fallbacks/publicPageFallback'
 
 export interface HomeImageAsset {
   url: string

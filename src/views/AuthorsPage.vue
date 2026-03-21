@@ -142,12 +142,12 @@ import { normalizeAvatarUrl } from '@/api/userService'
 import { authorCache } from '@/utils/cache'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import { useForwardedElementRef } from '@/composables/useForwardedElementRef'
-import { getFallbackAuthors } from '@/mocks/authorsFallback'
+import { getFallbackAuthors } from '@/fallbacks/authorsFallback'
 import {
   isServiceUnavailableError,
   resolvePublicFallbackReason,
   type PublicPageDataSource,
-} from '@/mocks/publicPageFallback'
+} from '@/fallbacks/publicPageFallback'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import Skeleton from '@/components/ui/Skeleton.vue'
