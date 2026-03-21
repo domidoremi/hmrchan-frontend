@@ -1,0 +1,106 @@
+name: frontend-nightly
+
+on:
+  schedule:
+    - cron: '0 18 * * *'
+  workflow_dispatch:
+
+jobs:
+  accessibility:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.10
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Accessibility audit
+        run: bun run test:a11y
+
+      - name: Upload accessibility artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-a11y
+          path: |
+            .lighthouse-a11y/**
+          if-no-files-found: ignore
+
+  performance:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.10
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Performance audit
+        run: bun run test:perf
+
+      - name: Upload performance artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-perf
+          path: |
+            .lighthouse/**
+          if-no-files-found: ignore
+
+  pwa_smoke:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.10
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: PWA / E2E smoke
+        run: bun run test:e2e
+
+  nightly_panel:
+    runs-on: ubuntu-latest
+    needs:
+      - accessibility
+      - performance
+      - pwa_smoke
+    if: always()
+
+    steps:
+      - name: Publish nightly panel
+        shell: bash
+        env:
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          A11Y_RESULT: ${{ needs.accessibility.result }}
+          PERF_RESULT: ${{ needs.performance.result }}
+          PWA_RESULT: ${{ needs.pwa_smoke.result }}
+        run: |
+          {
+            echo "## Frontend nightly panel"
+            echo
+            echo "| Check | Status | Details |"
+            echo "| --- | --- | --- |"
+            echo "| Accessibility audit | ${A11Y_RESULT} | [Workflow run](${RUN_URL}) · artifact: \`lighthouse-a11y\` |"
+            echo "| Performance audit | ${PERF_RESULT} | [Workflow run](${RUN_URL}) · artifact: \`lighthouse-perf\` |"
+            echo "| PWA / E2E smoke | ${PWA_RESULT} | [Workflow run](${RUN_URL}) |"
+          } >> "$GITHUB_STEP_SUMMARY"

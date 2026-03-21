@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
+  "packageManager": "bun@1.3.10",
   "sideEffects": [
     "*.css",
     "*.vue"
@@ -20,6 +21,7 @@
     "postinstall": "node scripts/patch-lucide-vue-next.mjs",
     "test:unit": "vitest run --passWithNoTests",
     "test:unit:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "test:e2e": "bun run scripts/test-e2e.ts",
     "test:perf": "bun run scripts/test-performance.ts",
     "test:a11y": "bun run scripts/test-accessibility.ts",
