@@ -181,7 +181,8 @@ async function assertBrowserRoute(
   browser: puppeteer.Browser,
   baseUrl: string,
   path: string,
-  expectedSelector: string
+  expectedSelector: string,
+  expectedCanonicalPath = path
 ): Promise<void> {
   const page = await browser.newPage()
   page.setDefaultTimeout(15_000)
@@ -201,7 +202,10 @@ async function assertBrowserRoute(
 
   await page.waitForSelector('link[rel="canonical"]')
   const canonicalHref = await page.$eval('link[rel="canonical"]', (el) => el.getAttribute('href'))
-  if (canonicalHref !== `https://momichan.xyz${path === '/' ? '/' : path}`) {
+  if (
+    canonicalHref !==
+    `https://momichan.xyz${expectedCanonicalPath === '/' ? '/' : expectedCanonicalPath}`
+  ) {
     throw new Error(`Unexpected canonical for ${path}: ${canonicalHref}`)
   }
 
@@ -213,6 +217,71 @@ async function assertBrowserRoute(
       `Cloudflare analytics beacon should not be injected for ${path} without consent`
     )
   }
+
+  await page.close()
+}
+
+async function assertServiceWorkerLifecycle(
+  browser: puppeteer.Browser,
+  baseUrl: string
+): Promise<void> {
+  const page = await browser.newPage()
+  page.setDefaultTimeout(20_000)
+
+  await page.goto(`${baseUrl}/`, {
+    waitUntil: 'networkidle0',
+  })
+
+  await page.waitForFunction(async () => {
+    if (!('serviceWorker' in navigator)) return false
+    const ready = await navigator.serviceWorker.ready
+    const scriptUrl =
+      ready.active?.scriptURL ?? ready.waiting?.scriptURL ?? ready.installing?.scriptURL ?? null
+    return Boolean(scriptUrl?.endsWith('/sw.js'))
+  })
+
+  await page.reload({ waitUntil: 'networkidle0' })
+  await page.waitForFunction(async () => {
+    if (navigator.serviceWorker.controller) return true
+    await navigator.serviceWorker.ready
+    return Boolean(navigator.serviceWorker.controller)
+  })
+
+  const registrationScriptUrl = await page.evaluate(async () => {
+    const ready = await navigator.serviceWorker.ready
+    return (
+      ready.active?.scriptURL ?? ready.waiting?.scriptURL ?? ready.installing?.scriptURL ?? null
+    )
+  })
+
+  if (!registrationScriptUrl?.endsWith('/sw.js')) {
+    throw new Error(`Unexpected service worker script URL: ${registrationScriptUrl}`)
+  }
+
+  await page.setOfflineMode(true)
+  const offlineResponse = await page.goto(`${baseUrl}/offline-check`, {
+    waitUntil: 'domcontentloaded',
+  })
+  await page.waitForSelector('.not-found-page')
+  await page.waitForFunction(() => document.title.includes('MomiChan'))
+
+  if (!offlineResponse) {
+    throw new Error('Expected offline navigation to return a response')
+  }
+
+  if (offlineResponse.status() !== 200) {
+    throw new Error(`Expected offline navigation to return 200, got ${offlineResponse.status()}`)
+  }
+
+  if (!offlineResponse.fromServiceWorker()) {
+    throw new Error('Expected offline navigation to be fulfilled by the service worker')
+  }
+
+  await page.setOfflineMode(false)
+  await page.goto(`${baseUrl}/search`, {
+    waitUntil: 'domcontentloaded',
+  })
+  await page.waitForSelector('.search-page')
 
   await page.close()
 }
@@ -261,14 +330,20 @@ async function main(): Promise<void> {
     console.log('🧭 Verifying browser routes...')
     await assertBrowserRoute(browser, baseUrl, '/', '.home-page')
     await assertBrowserRoute(browser, baseUrl, '/explore', '.explore-page')
+    await assertBrowserRoute(browser, baseUrl, '/search', '.search-page')
     await assertBrowserRoute(browser, baseUrl, '/authors', '.authors-page')
+    await assertBrowserRoute(browser, baseUrl, '/login', '.auth-page--login')
     await assertBrowserRoute(
       browser,
       baseUrl,
       '/post/00000000-0000-4000-8000-000000000000',
       '.post-detail-page'
     )
+    await assertBrowserRoute(browser, baseUrl, '/profile/settings', '.auth-page--login', '/login')
     await assertBrowserRoute(browser, baseUrl, '/this-route-does-not-exist', '.not-found-page')
+
+    console.log('🛰️ Verifying service worker lifecycle...')
+    await assertServiceWorkerLifecycle(browser, baseUrl)
 
     console.log('\n✅ Minimal E2E checks passed')
   } catch (error) {

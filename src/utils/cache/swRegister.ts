@@ -2,7 +2,10 @@
  * Service Worker 注册与生命周期管理
  */
 
-const SW_PATH = '/sw.js'
+export const SW_PATH = '/sw.js'
+const isVitestRuntime =
+  import.meta.env.MODE === 'test' ||
+  Boolean((import.meta as ImportMeta & { vitest?: unknown }).vitest)
 
 function buildSwConfig(): { apiBase: string; apiHostnames: string[] } {
   const apiBase =
@@ -50,7 +53,7 @@ export async function registerServiceWorker(): Promise<SWRegistrationResult> {
   }
 
   // 开发环境跳过 SW（避免缓存干扰开发）
-  if (import.meta.env.DEV) {
+  if (import.meta.env.DEV && !isVitestRuntime) {
     return { success: false }
   }
 
