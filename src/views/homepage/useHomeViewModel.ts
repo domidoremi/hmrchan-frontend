@@ -7,7 +7,7 @@ import {
   type HomeScheduleHighlight,
   type PostListItem,
 } from '@/api'
-import { HOME_FALLBACK_POSTS } from '@/mocks/homepageFallback'
+import { HOME_FALLBACK_POSTS } from '@/fallbacks/homepageFallback'
 import { formatRelativeTime } from '@/utils/date'
 import type { ComputedRef, Ref } from 'vue'
 import {

@@ -8,6 +8,7 @@ import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import { scheduleService, type ScheduleCalendarItem } from '@/api/scheduleService'
 import { ApiError } from '@/api'
+import { isServiceUnavailableError } from '@/fallbacks/publicPageFallback'
 
 export const useScheduleStore = defineStore(
   'schedule',
@@ -53,7 +54,7 @@ export const useScheduleStore = defineStore(
         }
       } catch (err) {
         // 接口未部署或后端暂不可用时，标记不可用避免重复噪音请求
-        if (err instanceof ApiError && [404, 500, 502, 503].includes(err.status)) {
+        if ((err instanceof ApiError && err.status === 404) || isServiceUnavailableError(err)) {
           apiAvailable = false
         }
       }

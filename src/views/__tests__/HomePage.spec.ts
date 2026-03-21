@@ -2,7 +2,7 @@ import { nextTick } from 'vue'
 import { flushPromises, shallowMount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { buildHomepageBootstrapFallback } from '@/mocks/homepageBootstrapFallback'
+import { buildHomepageBootstrapFallback } from '@/fallbacks/homepageBootstrapFallback'
 import HomePage from '../HomePage.vue'
 
 const HOME_SECONDARY_CONTENT_FALLBACK_DELAY_MS = 900
