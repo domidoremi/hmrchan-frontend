@@ -386,6 +386,34 @@ describe('apiClient', () => {
       await expect(apiClient.get('/error')).rejects.toThrow(ApiError)
     })
 
+    it('should treat Cloudflare tunnel HTML errors as service unavailable', async () => {
+      const cloudflareTunnelHtml = `
+        <html>
+          <body>
+            <h1>Error 1033</h1>
+            <h2>Cloudflare Tunnel error</h2>
+            <p>The host is configured as a Cloudflare Tunnel, and Cloudflare is currently unable to resolve it.</p>
+          </body>
+        </html>
+      `
+
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+        headers: new Headers(),
+        json: () => Promise.reject(new SyntaxError('Unexpected token < in JSON')),
+        text: () => Promise.resolve(cloudflareTunnelHtml),
+        clone() {
+          return this
+        },
+      })
+
+      await expect(apiClient.get('/home')).rejects.toMatchObject({
+        message: 'error.serviceUnavailable',
+        status: 530,
+      })
+    })
+
     it('should retry JSON request after verification is required', async () => {
       mockEnsureVerificationToken.mockResolvedValueOnce('verification-token-1')
 

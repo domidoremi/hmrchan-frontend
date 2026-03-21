@@ -38,6 +38,38 @@ function pickNonEmptyString(...values: unknown[]): string | undefined {
   return undefined
 }
 
+function normalizeErrorText(value: string): string {
+  return value.replace(/\s+/g, ' ').trim().toLowerCase()
+}
+
+function isUpstreamServiceUnavailableMessage(value: string | undefined): boolean {
+  if (!value) return false
+
+  const normalized = normalizeErrorText(value)
+
+  return (
+    normalized.includes('cloudflare tunnel error') ||
+    normalized.includes('configured as a cloudflare tunnel') ||
+    normalized.includes('cloudflare is currently unable to resolve it') ||
+    normalized.includes('error 1033') ||
+    normalized.includes('error code: 1033') ||
+    normalized.includes('error 1016') ||
+    normalized.includes('error code: 1016') ||
+    normalized.includes('origin dns error') ||
+    normalized.includes('upstream connect error')
+  )
+}
+
+async function readErrorBodyText(response: Response): Promise<string> {
+  const readable = typeof response.clone === 'function' ? response.clone() : response
+
+  try {
+    return await readable.text()
+  } catch {
+    return ''
+  }
+}
+
 export function normalizeResponse<T>(payload: unknown): T {
   if (isRecord(payload)) {
     const maybeEnvelope = payload as ApiEnvelope
@@ -107,6 +139,7 @@ export async function handleErrorResponse(
   skipErrorToast?: boolean
 ): Promise<never> {
   let errorMessage = 'error.unknown'
+  let effectiveStatus = response.status
   let errorCode: string | undefined
   let errorDetails: Record<string, unknown> | undefined
   let rawErrorMessage: string | undefined
@@ -155,7 +188,21 @@ export async function handleErrorResponse(
       errorDetails = { ...errorDetails, ...errorData.details }
     }
   } catch {
-    // ignore malformed error bodies
+    const errorText = await readErrorBodyText(response)
+    if (errorText) {
+      if (isUpstreamServiceUnavailableMessage(errorText)) {
+        errorMessage = 'service temporarily unavailable'
+        rawErrorMessage = 'cloudflare tunnel error'
+        effectiveStatus = 530
+      }
+    }
+  }
+
+  if (
+    effectiveStatus === response.status &&
+    isUpstreamServiceUnavailableMessage(rawErrorMessage || errorMessage)
+  ) {
+    effectiveStatus = 530
   }
 
   const statusMessages: Record<number, string> = {
@@ -168,6 +215,13 @@ export async function handleErrorResponse(
     422: 'error.validationError',
     429: 'error.tooManyRequests',
     500: 'error.serverError',
+    520: 'error.serviceUnavailable',
+    521: 'error.serviceUnavailable',
+    522: 'error.serviceUnavailable',
+    523: 'error.serviceUnavailable',
+    524: 'error.serviceUnavailable',
+    525: 'error.serviceUnavailable',
+    526: 'error.serviceUnavailable',
     502: 'error.badGateway',
     503: 'error.serviceUnavailable',
     530: 'error.serviceUnavailable',
@@ -240,7 +294,7 @@ export async function handleErrorResponse(
   const { t } = i18nInstance.global
   let localizedMessage: string
 
-  if (response.status === 429) {
+  if (effectiveStatus === 429) {
     const retryAfter = response.headers.get('Retry-After')
     const seconds = retryAfter ? parseInt(retryAfter, 10) : 60
     localizedMessage = t('error.tooManyRequestsWithTime', { seconds })
@@ -249,17 +303,17 @@ export async function handleErrorResponse(
       errorMessage !== 'error.unknown' ? resolveServerMessage(errorMessage) : undefined
     localizedMessage = mappedKey
       ? t(mappedKey)
-      : statusMessages[response.status]
-        ? t(statusMessages[response.status])
+      : statusMessages[effectiveStatus]
+        ? t(statusMessages[effectiveStatus])
         : t('error.unknown')
   }
 
-  if (!skipErrorToast && response.status !== 401) {
+  if (!skipErrorToast && effectiveStatus !== 401) {
     const activeToastStore = await getToastStore()
     activeToastStore.error(localizedMessage)
   }
 
-  throw new ApiError(localizedMessage, response.status, errorCode, errorDetails)
+  throw new ApiError(localizedMessage, effectiveStatus, errorCode, errorDetails)
 }
 
 export async function handleTransportError(
