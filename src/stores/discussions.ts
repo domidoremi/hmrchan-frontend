@@ -18,12 +18,12 @@ import {
   getFallbackDiscussionById,
   getFallbackDiscussionComments,
   getFallbackDiscussions,
-} from '@/mocks/communityFallback'
+} from '@/fallbacks/communityFallback'
 import {
   isServiceUnavailableError,
   resolvePublicFallbackReason,
   type PublicPageDataSource,
-} from '@/mocks/publicPageFallback'
+} from '@/fallbacks/publicPageFallback'
 
 export const useDiscussionsStore = defineStore('discussions', () => {
   const items = ref<Discussion[]>([])

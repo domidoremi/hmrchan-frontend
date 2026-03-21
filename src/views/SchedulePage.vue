@@ -439,12 +439,12 @@ import { scheduleService, type ScheduleCalendarItem } from '@/api/scheduleServic
 import type { ScheduleCategory, ScheduleResponse } from '@/api/scheduleService'
 import { useScheduleStore } from '@/stores/schedule'
 import { ApiError } from '@/api'
-import { getFallbackScheduleById, getFallbackScheduleCalendar } from '@/mocks/scheduleFallback'
+import { getFallbackScheduleById, getFallbackScheduleCalendar } from '@/fallbacks/scheduleFallback'
 import {
   isServiceUnavailableError,
   resolvePublicFallbackReason,
   type PublicPageDataSource,
-} from '@/mocks/publicPageFallback'
+} from '@/fallbacks/publicPageFallback'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import Dialog from '@/components/ui/Dialog.vue'
 

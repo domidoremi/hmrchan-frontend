@@ -959,8 +959,8 @@ import {
 import { prefersReducedMotion } from '@/utils/performance'
 import { isFilteredAuthor } from '@/config/filters'
 import { storePostNavigationContext } from '@/utils/postNavigation'
-import { HOME_FALLBACK_POSTS, isHomeFallbackPost } from '@/mocks/homepageFallback'
-import { buildHomepageBootstrapFallback } from '@/mocks/homepageBootstrapFallback'
+import { HOME_FALLBACK_POSTS, isHomeFallbackPost } from '@/fallbacks/homepageFallback'
+import { buildHomepageBootstrapFallback } from '@/fallbacks/homepageBootstrapFallback'
 import {
   buildHomePostsFromAggregate,
   clamp,
