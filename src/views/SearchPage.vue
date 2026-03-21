@@ -435,10 +435,8 @@
 <script setup lang="ts">
 defineOptions({ name: 'SearchPage' })
 
-import { ref, computed, markRaw, watch, onMounted, onBeforeUnmount, onWatcherCleanup } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { computed, markRaw } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { storeToRefs } from 'pinia'
 import {
   FileText,
   User,
@@ -452,21 +450,7 @@ import {
   Trash2,
 } from 'lucide-vue-next'
 import { IconYoutube, IconX, IconTiktok, IconInstagram } from '@/components/icons'
-import {
-  DEFAULT_PUBLIC_VISIBILITY_SCOPE,
-  readPublicVisibilityHeaders,
-  searchService,
-  postService,
-  type PostListItem,
-  type AuthorListItem,
-} from '@/api'
-import { historyService, type HistoryStats, type SearchHistoryItem } from '@/api/historyService'
 import { normalizeAvatarUrl } from '@/api/userService'
-import { useDebouncedRef } from '@/composables/useDebouncedRef'
-import { usePreferredPageSize } from '@/composables/usePreferredPageSize'
-import { useAuthStore, useToastStore } from '@/stores'
-import { formatRelativeTime } from '@/utils/date'
-import { storePostNavigationContext } from '@/utils/postNavigation'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import SearchBar from '@/components/business/SearchBar.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
@@ -475,89 +459,54 @@ import PostCard from '@/components/business/PostCard.vue'
 import PostCardSkeleton from '@/components/business/PostCardSkeleton.vue'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
 import Skeleton from '@/components/ui/Skeleton.vue'
+import { useSearchPageState } from './search/useSearchPageState'
+import type { SearchPlatformFilter, SearchSortBy } from './search/searchPageModel'
 
-const route = useRoute()
-const router = useRouter()
 const { t } = useI18n()
-const authStore = useAuthStore()
-const toastStore = useToastStore()
-const { isAuthenticated } = storeToRefs(authStore)
-
-const query = computed(() => (route.query['q'] as string) || '')
-const activeTab = ref<'posts' | 'authors'>('posts')
-const sortBy = ref<'relevance' | 'published_at' | 'view_count'>('relevance')
-const sortOrder = ref<'asc' | 'desc'>('desc')
-const currentPlatform = ref<'all' | 'youtube' | 'tiktok' | 'twitter' | 'instagram'>('all')
-const searchControlKey = computed(
-  () => `${sortBy.value}|${sortOrder.value}|${currentPlatform.value}`
-)
-const { debounced: debouncedSearchControlKey, cancel: cancelSearchControlDebounce } =
-  useDebouncedRef(searchControlKey, 120)
-let hasInitializedSearchControlWatcher = false
-
-const results = ref<PostListItem[]>([])
-const discoverPosts = ref<PostListItem[]>([])
-const authors = ref<AuthorListItem[]>([])
-const searchHistory = ref<SearchHistoryItem[]>([])
-const searchStats = ref<HistoryStats | null>(null)
-const total = ref(0)
-const authorTotal = ref(0)
-const page = ref(1)
-const pageSize = usePreferredPageSize({ fallback: 20, min: 10, max: 50, mobileCap: 20 })
-const discoverPageSize = computed(() => Math.min(12, Math.max(6, pageSize.value)))
-const authorPageSize = computed(() => Math.min(pageSize.value, 20))
-
-const isLoading = ref(false)
-const isLoadingMore = ref(false)
-const isLoadingAuthors = ref(false)
-const isDiscoverLoading = ref(false)
-const isHistoryLoading = ref(false)
-const isHistoryMutating = ref(false)
-const error = ref<string | null>(null)
-const authorError = ref<string | null>(null)
-const discoverError = ref<string | null>(null)
-const historyError = ref<string | null>(null)
-const searchVisibility = ref({ ...DEFAULT_PUBLIC_VISIBILITY_SCOPE })
-let discoverRequestToken = 0
-let postsRequestToken = 0
-let authorRequestToken = 0
-let historyRequestToken = 0
-let discoverController: AbortController | null = null
-let postsSearchController: AbortController | null = null
-let postsLoadMoreController: AbortController | null = null
-let authorsSearchController: AbortController | null = null
-let lastRecordedSearchKey = ''
-
-const hasMore = computed(() => results.value.length < total.value)
-const topSearchQueries = computed(() => {
-  const combined = new Map<string, number>()
-
-  for (const item of searchStats.value?.top_searches ?? []) {
-    combined.set(item.query, item.count)
-  }
-
-  for (const item of searchHistory.value) {
-    if (!combined.has(item.query)) {
-      combined.set(item.query, 0)
-    }
-  }
-
-  return Array.from(combined.entries())
-    .map(([queryText, count]) => ({ query: queryText, count }))
-    .slice(0, 5)
-})
-
-// 游客搜索仍受统一公开可见域限制，避免再依赖旧的“15条”前端硬编码。
-const mayHaveMoreResults = computed(() => {
-  if (isAuthenticated.value || results.value.length === 0) return false
-
-  const visibleLimit = searchVisibility.value.limit
-  if (searchVisibility.value.tier === 'guest' && visibleLimit !== null) {
-    return total.value >= visibleLimit || results.value.length >= visibleLimit
-  }
-
-  return total.value > results.value.length
-})
+const {
+  query,
+  activeTab,
+  sortBy,
+  sortOrder,
+  currentPlatform,
+  isAuthenticated,
+  results,
+  discoverPosts,
+  authors,
+  searchHistory,
+  searchStats,
+  total,
+  authorTotal,
+  isLoading,
+  isLoadingMore,
+  isLoadingAuthors,
+  isDiscoverLoading,
+  isHistoryLoading,
+  isHistoryMutating,
+  error,
+  authorError,
+  discoverError,
+  historyError,
+  hasMore,
+  topSearchQueries,
+  mayHaveMoreResults,
+  goBack,
+  toggleSortOrder,
+  fetchDiscoverPosts,
+  search,
+  searchAuthors,
+  loadMore,
+  goToPost,
+  goToAuthor,
+  goToLogin,
+  formatHistoryTime,
+  runSearch,
+  fetchSearchInsights,
+  deleteSearchHistoryItem,
+  clearSearchHistory,
+  getPostMemo,
+  getAuthorMemo,
+} = useSearchPageState()
 
 const tabIcons = {
   posts: markRaw(FileText),
@@ -578,31 +527,26 @@ const platformIcons = {
 } as const
 
 const platformOptions = computed(() => [
-  { value: 'all' as const, label: t('explore.allPlatforms'), icon: platformIcons.all },
-  { value: 'youtube' as const, label: 'YouTube', icon: platformIcons.youtube },
-  { value: 'tiktok' as const, label: 'TikTok', icon: platformIcons.tiktok },
-  { value: 'twitter' as const, label: 'X', icon: platformIcons.twitter },
-  { value: 'instagram' as const, label: 'Instagram', icon: platformIcons.instagram },
+  {
+    value: 'all' as SearchPlatformFilter,
+    label: t('explore.allPlatforms'),
+    icon: platformIcons.all,
+  },
+  { value: 'youtube' as SearchPlatformFilter, label: 'YouTube', icon: platformIcons.youtube },
+  { value: 'tiktok' as SearchPlatformFilter, label: 'TikTok', icon: platformIcons.tiktok },
+  { value: 'twitter' as SearchPlatformFilter, label: 'X', icon: platformIcons.twitter },
+  {
+    value: 'instagram' as SearchPlatformFilter,
+    label: 'Instagram',
+    icon: platformIcons.instagram,
+  },
 ])
 
 const sortOptions = computed(() => [
-  { value: 'relevance' as const, label: t('search.sort.relevance') },
-  { value: 'published_at' as const, label: t('search.sort.date') },
-  { value: 'view_count' as const, label: t('search.sort.views') },
+  { value: 'relevance' as SearchSortBy, label: t('search.sort.relevance') },
+  { value: 'published_at' as SearchSortBy, label: t('search.sort.date') },
+  { value: 'view_count' as SearchSortBy, label: t('search.sort.views') },
 ])
-
-const getThumbnailQuality = (): 'medium' | 'large' => {
-  if (typeof window === 'undefined') return 'medium'
-  const width = window.innerWidth
-  if (width < 640) return 'medium'
-  return 'large'
-}
-
-function isAbortError(err: unknown): boolean {
-  return err instanceof DOMException
-    ? err.name === 'AbortError'
-    : err instanceof Error && err.name === 'AbortError'
-}
 
 function getPlatformIcon(platform: string) {
   switch (platform.toLowerCase()) {
@@ -618,468 +562,6 @@ function getPlatformIcon(platform: string) {
       return Globe
   }
 }
-
-function goBack() {
-  router.back()
-}
-
-function toggleSortOrder() {
-  sortOrder.value = sortOrder.value === 'desc' ? 'asc' : 'desc'
-}
-function shufflePosts(items: PostListItem[]) {
-  const copy = [...items]
-  for (let i = copy.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(Math.random() * (i + 1))
-    ;[copy[i], copy[j]] = [copy[j], copy[i]]
-  }
-  return copy
-}
-
-function abortDiscoverRequest() {
-  discoverController?.abort()
-  discoverController = null
-}
-
-function abortPostsSearchRequest() {
-  postsSearchController?.abort()
-  postsSearchController = null
-}
-
-function abortPostsLoadMoreRequest() {
-  postsLoadMoreController?.abort()
-  postsLoadMoreController = null
-}
-
-function abortAuthorsSearchRequest() {
-  authorsSearchController?.abort()
-  authorsSearchController = null
-}
-
-async function fetchDiscoverPosts(signal?: AbortSignal) {
-  const requestToken = ++discoverRequestToken
-
-  if (isDiscoverLoading.value) return
-  abortDiscoverRequest()
-  const controller = signal ? null : new AbortController()
-  if (controller) {
-    discoverController = controller
-  }
-  const requestSignal = signal ?? controller?.signal
-  isDiscoverLoading.value = true
-  discoverError.value = null
-
-  try {
-    const res = await postService.listPosts(
-      {
-        page: 1,
-        page_size: discoverPageSize.value,
-        sort_by: 'published_at',
-        sort_order: 'desc',
-        thumbnail_quality: getThumbnailQuality(),
-      },
-      requestSignal ? { signal: requestSignal } : undefined
-    )
-    if (requestSignal?.aborted || requestToken !== discoverRequestToken) return
-    discoverPosts.value = shufflePosts(res.items)
-  } catch (err) {
-    if (requestSignal?.aborted || isAbortError(err) || requestToken !== discoverRequestToken) return
-    discoverError.value = t('common.error')
-    discoverPosts.value = []
-  } finally {
-    if (requestToken === discoverRequestToken) {
-      isDiscoverLoading.value = false
-      if (controller && discoverController === controller) {
-        discoverController = null
-      }
-    }
-  }
-}
-
-async function search(signal?: AbortSignal) {
-  if (!query.value) return
-
-  abortPostsSearchRequest()
-  abortPostsLoadMoreRequest()
-  const controller = signal ? null : new AbortController()
-  if (controller) {
-    postsSearchController = controller
-  }
-  const requestSignal = signal ?? controller?.signal
-  const requestToken = ++postsRequestToken
-  isLoading.value = true
-  isLoadingMore.value = false
-  error.value = null
-  page.value = 1
-
-  try {
-    const platform = currentPlatform.value !== 'all' ? currentPlatform.value : undefined
-    const res = await searchService.searchPosts(
-      {
-        q: query.value,
-        page: 1,
-        page_size: pageSize.value,
-        sort_by: sortBy.value,
-        sort_order: sortOrder.value,
-        thumbnail_quality: getThumbnailQuality(),
-        ...(platform && { platform }),
-      },
-      {
-        ...(requestSignal ? { signal: requestSignal } : undefined),
-        onResponseHeaders: (headers) => {
-          searchVisibility.value = readPublicVisibilityHeaders(headers)
-        },
-      }
-    )
-    if (requestSignal?.aborted || requestToken !== postsRequestToken) return
-    results.value = res.items
-    total.value = res.total
-    recordSearchHistory(res.total)
-  } catch (err) {
-    if (requestSignal?.aborted || isAbortError(err) || requestToken !== postsRequestToken) return
-    error.value = t('common.error')
-    results.value = []
-    total.value = 0
-  } finally {
-    if (requestToken === postsRequestToken) {
-      isLoading.value = false
-      if (controller && postsSearchController === controller) {
-        postsSearchController = null
-      }
-    }
-  }
-}
-
-async function loadMore() {
-  if (isLoadingMore.value || !hasMore.value) return
-
-  abortPostsLoadMoreRequest()
-  const controller = new AbortController()
-  postsLoadMoreController = controller
-  const requestToken = postsRequestToken
-  isLoadingMore.value = true
-
-  try {
-    const nextPage = page.value + 1
-    const platform = currentPlatform.value !== 'all' ? currentPlatform.value : undefined
-    const res = await searchService.searchPosts(
-      {
-        q: query.value,
-        page: nextPage,
-        page_size: pageSize.value,
-        sort_by: sortBy.value,
-        sort_order: sortOrder.value,
-        thumbnail_quality: getThumbnailQuality(),
-        ...(platform && { platform }),
-      },
-      {
-        signal: controller.signal,
-        onResponseHeaders: (headers) => {
-          searchVisibility.value = readPublicVisibilityHeaders(headers)
-        },
-      }
-    )
-    if (controller.signal.aborted || requestToken !== postsRequestToken) return
-    results.value.push(...res.items)
-    page.value = nextPage
-    total.value = res.total
-  } catch (err) {
-    if (controller.signal.aborted || isAbortError(err) || requestToken !== postsRequestToken) return
-    // Silent fail for load more
-  } finally {
-    if (requestToken === postsRequestToken) {
-      isLoadingMore.value = false
-    }
-    if (postsLoadMoreController === controller) {
-      postsLoadMoreController = null
-    }
-  }
-}
-
-async function searchAuthors(signal?: AbortSignal) {
-  if (!query.value) return
-
-  abortAuthorsSearchRequest()
-  const controller = signal ? null : new AbortController()
-  if (controller) {
-    authorsSearchController = controller
-  }
-  const requestSignal = signal ?? controller?.signal
-  const requestToken = ++authorRequestToken
-  isLoadingAuthors.value = true
-  authorError.value = null
-
-  try {
-    const res = await searchService.searchAuthors(
-      {
-        q: query.value,
-        page: 1,
-        page_size: authorPageSize.value,
-      },
-      requestSignal ? { signal: requestSignal } : undefined
-    )
-    if (requestSignal?.aborted || requestToken !== authorRequestToken) return
-    authors.value = res.items
-    authorTotal.value = res.total
-  } catch (err) {
-    if (requestSignal?.aborted || isAbortError(err) || requestToken !== authorRequestToken) return
-    authorError.value = t('common.error')
-    authors.value = []
-    authorTotal.value = 0
-  } finally {
-    if (requestToken === authorRequestToken) {
-      isLoadingAuthors.value = false
-      if (controller && authorsSearchController === controller) {
-        authorsSearchController = null
-      }
-    }
-  }
-}
-
-function goToPost(postId: string, thumbnailSrc: string | null) {
-  const contextPosts = results.value.length > 0 ? results.value : discoverPosts.value
-  storePostNavigationContext(contextPosts, postId, 'search')
-  if (thumbnailSrc) {
-    sessionStorage.setItem(`post-thumbnail-${postId}`, thumbnailSrc)
-  }
-  router.push(`/post/${postId}`)
-}
-
-function goToAuthor(authorId: string) {
-  router.push({ name: 'author-detail', params: { id: authorId } })
-}
-
-function goToLogin() {
-  router.push({ path: '/login', query: { redirect: route.fullPath } })
-}
-
-function formatHistoryTime(value: string) {
-  return formatRelativeTime(value, t)
-}
-
-function runSearch(queryText: string) {
-  void router.push({ name: 'search', query: { q: queryText } })
-}
-
-function buildSearchRecordKey() {
-  return query.value.trim().toLowerCase()
-}
-
-function recordSearchHistory(resultCount: number) {
-  if (!isAuthenticated.value) return
-
-  const normalizedQuery = buildSearchRecordKey()
-  if (!normalizedQuery || normalizedQuery === lastRecordedSearchKey) {
-    return
-  }
-
-  const filters: Record<string, unknown> = {
-    tab: activeTab.value,
-    sort_by: sortBy.value,
-    sort_order: sortOrder.value,
-  }
-
-  if (currentPlatform.value !== 'all') {
-    filters['platform'] = currentPlatform.value
-  }
-
-  lastRecordedSearchKey = normalizedQuery
-  void historyService
-    .recordSearch(query.value.trim(), activeTab.value, resultCount, filters)
-    .catch(() => {
-      if (lastRecordedSearchKey === normalizedQuery) {
-        lastRecordedSearchKey = ''
-      }
-    })
-}
-
-async function fetchSearchInsights() {
-  if (!isAuthenticated.value || query.value) return
-
-  const requestToken = ++historyRequestToken
-  isHistoryLoading.value = true
-  historyError.value = null
-
-  try {
-    const [historyResponse, statsResponse] = await Promise.all([
-      historyService.getSearchHistory(pageSize.value, 0),
-      historyService.getStats(),
-    ])
-
-    if (requestToken !== historyRequestToken) return
-    searchHistory.value = historyResponse.items
-    searchStats.value = statsResponse
-  } catch {
-    if (requestToken !== historyRequestToken) return
-    searchHistory.value = []
-    searchStats.value = null
-    historyError.value = t('search.historyLoadFailed')
-  } finally {
-    if (requestToken === historyRequestToken) {
-      isHistoryLoading.value = false
-    }
-  }
-}
-
-async function deleteSearchHistoryItem(historyId: string) {
-  if (isHistoryMutating.value) return
-
-  isHistoryMutating.value = true
-  try {
-    await historyService.deleteSearchHistory(historyId)
-    await fetchSearchInsights()
-  } catch {
-    toastStore.error(t('common.error'))
-  } finally {
-    isHistoryMutating.value = false
-  }
-}
-
-async function clearSearchHistory() {
-  if (isHistoryMutating.value) return
-
-  isHistoryMutating.value = true
-  try {
-    await historyService.clearSearchHistory()
-    searchHistory.value = []
-    await fetchSearchInsights()
-    toastStore.success(t('search.historyCleared'))
-  } catch {
-    toastStore.error(t('common.error'))
-  } finally {
-    isHistoryMutating.value = false
-  }
-}
-
-function getPostMemo(post: PostListItem) {
-  return [
-    post.id,
-    post.updated_at ?? post.created_at ?? post.published_at ?? '',
-    post.view_count ?? 0,
-    post.like_count ?? 0,
-    post.comment_count ?? 0,
-    post.thumbnail_url ?? '',
-  ]
-}
-
-function getAuthorMemo(author: AuthorListItem) {
-  return [
-    author.id,
-    author.updated_at ?? author.created_at ?? '',
-    author.post_count ?? 0,
-    author.follower_count ?? 0,
-    author.avatar_url ?? '',
-    author.display_name ?? author.name ?? author.username,
-  ]
-}
-
-watch(query, (nextQuery) => {
-  lastRecordedSearchKey = ''
-  searchVisibility.value = { ...DEFAULT_PUBLIC_VISIBILITY_SCOPE }
-  const controller = new AbortController()
-  onWatcherCleanup(() => controller.abort())
-  abortPostsLoadMoreRequest()
-
-  if (nextQuery) {
-    discoverRequestToken += 1
-    abortDiscoverRequest()
-    isDiscoverLoading.value = false
-    discoverError.value = null
-    void search(controller.signal)
-    void searchAuthors(controller.signal)
-  } else {
-    postsRequestToken += 1
-    authorRequestToken += 1
-    abortPostsSearchRequest()
-    abortAuthorsSearchRequest()
-    isLoading.value = false
-    isLoadingMore.value = false
-    isLoadingAuthors.value = false
-    results.value = []
-    authors.value = []
-    total.value = 0
-    authorTotal.value = 0
-    activeTab.value = 'posts'
-    void fetchDiscoverPosts(controller.signal)
-    void fetchSearchInsights()
-  }
-})
-
-watch(debouncedSearchControlKey, () => {
-  if (!hasInitializedSearchControlWatcher) {
-    hasInitializedSearchControlWatcher = true
-    return
-  }
-  const controller = new AbortController()
-  onWatcherCleanup(() => controller.abort())
-  if (query.value) {
-    void search(controller.signal)
-  }
-})
-
-watch(activeTab, (tab) => {
-  const controller = new AbortController()
-  onWatcherCleanup(() => controller.abort())
-  if (tab === 'authors' && authors.value.length === 0 && query.value) {
-    void searchAuthors(controller.signal)
-  }
-})
-
-watch(pageSize, () => {
-  const controller = new AbortController()
-  onWatcherCleanup(() => controller.abort())
-
-  if (query.value) {
-    void search(controller.signal)
-    if (activeTab.value === 'authors') {
-      void searchAuthors(controller.signal)
-    }
-    return
-  }
-
-  void fetchDiscoverPosts(controller.signal)
-  void fetchSearchInsights()
-})
-
-watch(isAuthenticated, (authenticated) => {
-  if (!authenticated) {
-    searchHistory.value = []
-    searchStats.value = null
-    historyError.value = null
-    return
-  }
-
-  if (!query.value) {
-    void fetchSearchInsights()
-  }
-})
-
-onMounted(() => {
-  if (query.value) {
-    search()
-    searchAuthors()
-  } else {
-    fetchDiscoverPosts()
-    if (isAuthenticated.value) {
-      void fetchSearchInsights()
-    }
-  }
-})
-
-onBeforeUnmount(() => {
-  cancelSearchControlDebounce()
-  postsRequestToken += 1
-  authorRequestToken += 1
-  discoverRequestToken += 1
-  abortPostsSearchRequest()
-  abortPostsLoadMoreRequest()
-  abortAuthorsSearchRequest()
-  abortDiscoverRequest()
-  isLoading.value = false
-  isLoadingMore.value = false
-  isLoadingAuthors.value = false
-  isDiscoverLoading.value = false
-  isHistoryLoading.value = false
-})
 </script>
 
 <style scoped>
