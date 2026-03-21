@@ -10,6 +10,7 @@ import {
   type RouteLocationNormalizedLoadedGeneric,
 } from 'vue-router'
 import i18n from '@/i18n'
+import HomePage from '@/views/HomePage.vue'
 
 // 扩展 RouteMeta 类型，提供类型安全的路由元信息访问
 declare module 'vue-router' {
@@ -93,7 +94,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/',
     name: 'home',
-    component: () => import('@/views/HomePage.vue'),
+    component: HomePage,
     meta: { title: 'nav.home', showFooter: true },
   },
   {
