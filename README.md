@@ -20,11 +20,11 @@
 
 ### 核心框架
 
-- **Vue 3.5** - 组合式 API + `<script setup>` 语法
+- **Vue 3.6.0-beta.7** - 组合式 API + `<script setup>` 语法
 - **TypeScript 5.9** - 类型安全开发
 - **Vite 8** (Rolldown) - 极速构建工具
 - **Pinia 3** - 状态管理
-- **Vue Router 4** - 路由管理
+- **Vue Router 5** - 路由管理
 - **Vue I18n 11** - 国际化 (简中/英/日)
 
 ### UI 与动画
@@ -38,8 +38,8 @@
 
 ### 前置要求
 
-- **Node.js**: `^20.19.0` 或 `>=22.12.0`
-- **包管理器**: [Bun](https://bun.sh) (推荐) 或 npm/pnpm
+- **Node.js**: `24.14.0`（仓库当前锁定主版本为 Node 24，`package.json` 要求 `>=24.11.1 <25`）
+- **包管理器**: [Bun](https://bun.sh) `1.3.10`（推荐；仓库已声明 `packageManager: bun@1.3.10`）
 
 ### 安装步骤
 
@@ -52,8 +52,8 @@ cd frontend
 bun install
 
 # 3. 配置环境变量
-cp .env.example .env
-# 编辑 .env 文件，配置必要的环境变量
+cp .env.example .env.development
+# 编辑 .env.development 文件，配置必要的环境变量
 
 # 4. 启动开发服务器
 bun run dev
@@ -79,6 +79,12 @@ VITE_APP_DESCRIPTION=Social Media Content Aggregation System
 VITE_ENABLE_DEBUG=false
 VITE_ENABLE_DEVTOOLS=false
 VITE_LOG_LEVEL=warn
+VITE_ENABLE_CLIENT_INIT=true
+VITE_ENABLE_SCHEDULE_API=true
+VITE_ENABLE_DATA_PREFETCH=true
+VITE_ENABLE_DEFERRED_ANIMATION_STYLES=true
+VITE_ENABLE_ADVANCED_FINGERPRINT=false
+VITE_SOURCEMAP=false
 
 # Anti-tamper（运行时软防护）
 # off | warn | balanced | strict
@@ -116,35 +122,42 @@ VITE_TURNSTILE_SITE_KEY=your_site_key_here
 > 本地 `vite dev` / `vite preview` 也会使用 `VITE_API_BASE_URL` 作为 `/api` 与 `/uploads` 的代理目标；若联调本机后端，可改为 `http://127.0.0.1:8000` 等本地地址。
 > 前端会将指向后端的 `/api/*` 与 `/uploads/*` 绝对链接归一化为同源路径，避免泄露后端地址；建议后端返回相对路径或上述标准路径。
 > 如遇 CSP inline script 报错，建议在 Cloudflare 关闭 Rocket Loader，或保留入口脚本的 `data-cfasync="false"`。
+> 生产构建默认**不输出 sourcemap**；仅在私有排障场景下显式设置 `VITE_SOURCEMAP=hidden` 或 `VITE_SOURCEMAP=true`。
 > 若需要启用构建混淆，请先安装：`bun add -d javascript-obfuscator`。
 > 详细策略见：`docs/security/anti-tamper-feasibility.md`。
 
 ### 环境变量说明
 
-| 变量名                    | 说明                    | 必填 |
-| ------------------------- | ----------------------- | ---- |
-| `VITE_API_BASE_URL`       | API 基础 URL            | ✅   |
-| `VITE_API_ENDPOINT`       | API 完整端点            | ✅   |
-| `VITE_API_URL`            | API 代理路径            | ✅   |
-| `VITE_APP_NAME`           | 应用名称                | ✅   |
-| `VITE_APP_DESCRIPTION`    | 应用描述                | ✅   |
-| `VITE_ENABLE_DEBUG`       | 启用调试模式            | ❌   |
-| `VITE_ENABLE_DEVTOOLS`    | 启用开发者工具          | ❌   |
-| `VITE_LOG_LEVEL`          | 前端日志级别            | ❌   |
-| `VITE_ANTI_TAMPER_MODE`   | anti-tamper 模式        | ❌   |
-| `VITE_ANTI_TAMPER_ALLOW_DEV` | 开发环境强制启用 anti-tamper | ❌ |
-| `VITE_DISABLE_CONTEXT_MENU` | strict 模式禁用右键   | ❌   |
-| `VITE_ENABLE_OBFUSCATION` | 是否启用构建混淆        | ❌   |
-| `VITE_OBFUSCATION_PROFILE` | 混淆强度（safe/aggressive） | ❌ |
-| `VITE_OBFUSCATION_STRING_ARRAY` | 字符串阵列化开关  | ❌   |
-| `VITE_OBFUSCATION_STRING_ARRAY_ENCODING` | 字符串编码（none/base64/rc4） | ❌ |
-| `VITE_OBFUSCATION_ANTI_FORMATTING` | anti-formatting 开关 | ❌ |
-| `VITE_OBFUSCATION_INFINITE_DEBUGGER` | infinite debugger 开关 | ❌ |
-| `VITE_OBFUSCATION_INFINITE_DEBUGGER_INTERVAL` | debugger 触发间隔（ms） | ❌ |
-| `VITE_OBFUSCATION_CODE_ENCRYPTION` | 前端代码伪加密开关 | ❌ |
-| `VITE_OBFUSCATION_CONTROL_FLOW` | 控制流平坦化开关 | ❌   |
-| `VITE_OBFUSCATION_DEAD_CODE` | 废代码注入开关       | ❌   |
-| `VITE_TURNSTILE_SITE_KEY` | Cloudflare 人机验证密钥 | ❌   |
+| 变量名                                        | 说明                                     | 必填 |
+| --------------------------------------------- | ---------------------------------------- | ---- |
+| `VITE_API_BASE_URL`                           | API 基础 URL                             | ✅   |
+| `VITE_API_ENDPOINT`                           | API 完整端点                             | ✅   |
+| `VITE_API_URL`                                | API 代理路径                             | ✅   |
+| `VITE_APP_NAME`                               | 应用名称                                 | ✅   |
+| `VITE_APP_DESCRIPTION`                        | 应用描述                                 | ✅   |
+| `VITE_ENABLE_DEBUG`                           | 启用调试模式                             | ❌   |
+| `VITE_ENABLE_DEVTOOLS`                        | 启用开发者工具                           | ❌   |
+| `VITE_LOG_LEVEL`                              | 前端日志级别                             | ❌   |
+| `VITE_ENABLE_CLIENT_INIT`                     | 启动时执行 client init                   | ❌   |
+| `VITE_ENABLE_SCHEDULE_API`                    | 启用日程接口请求                         | ❌   |
+| `VITE_ENABLE_DATA_PREFETCH`                   | 启用后台数据预取                         | ❌   |
+| `VITE_ENABLE_DEFERRED_ANIMATION_STYLES`       | 延迟加载动画样式                         | ❌   |
+| `VITE_ENABLE_ADVANCED_FINGERPRINT`            | 启用高熵指纹                             | ❌   |
+| `VITE_SOURCEMAP`                              | 构建 sourcemap 策略（false/hidden/true） | ❌   |
+| `VITE_ANTI_TAMPER_MODE`                       | anti-tamper 模式                         | ❌   |
+| `VITE_ANTI_TAMPER_ALLOW_DEV`                  | 开发环境强制启用 anti-tamper             | ❌   |
+| `VITE_DISABLE_CONTEXT_MENU`                   | strict 模式禁用右键                      | ❌   |
+| `VITE_ENABLE_OBFUSCATION`                     | 是否启用构建混淆                         | ❌   |
+| `VITE_OBFUSCATION_PROFILE`                    | 混淆强度（safe/aggressive）              | ❌   |
+| `VITE_OBFUSCATION_STRING_ARRAY`               | 字符串阵列化开关                         | ❌   |
+| `VITE_OBFUSCATION_STRING_ARRAY_ENCODING`      | 字符串编码（none/base64/rc4）            | ❌   |
+| `VITE_OBFUSCATION_ANTI_FORMATTING`            | anti-formatting 开关                     | ❌   |
+| `VITE_OBFUSCATION_INFINITE_DEBUGGER`          | infinite debugger 开关                   | ❌   |
+| `VITE_OBFUSCATION_INFINITE_DEBUGGER_INTERVAL` | debugger 触发间隔（ms）                  | ❌   |
+| `VITE_OBFUSCATION_CODE_ENCRYPTION`            | 前端代码伪加密开关                       | ❌   |
+| `VITE_OBFUSCATION_CONTROL_FLOW`               | 控制流平坦化开关                         | ❌   |
+| `VITE_OBFUSCATION_DEAD_CODE`                  | 废代码注入开关                           | ❌   |
+| `VITE_TURNSTILE_SITE_KEY`                     | Cloudflare 人机验证密钥                  | ❌   |
 
 ## 📜 可用脚本
 
@@ -162,6 +175,9 @@ bun run type-check       # TypeScript 类型检查
 # 测试
 bun run test:unit        # 运行单元测试
 bun run test:unit:watch  # 监听模式运行测试
+bun run test:coverage    # 运行覆盖率检查（当前阈值为 60%）
+bun run test:e2e         # 生产构建 + 关键路径 smoke E2E
+bun run test:a11y        # Lighthouse 可访问性审计
 
 # 性能测试
 bun run test:perf        # 性能测试（启动开发服务器并运行 Lighthouse）
@@ -191,6 +207,7 @@ frontend/
 │   │   ├── layout/       # 布局组件
 │   │   └── ui/           # 通用 UI 组件
 │   ├── composables/      # 组合式函数
+│   ├── fallbacks/        # 生产运行时降级数据与 helper
 │   ├── i18n/             # 国际化
 │   ├── router/           # 路由配置
 │   ├── stores/           # Pinia 状态管理
