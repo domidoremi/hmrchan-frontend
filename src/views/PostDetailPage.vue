@@ -483,7 +483,9 @@ const lightboxInitialIndex = ref(0)
 
 // Long text → open in overlay modal for comfortable reading
 const isTextModalOpen = ref(false)
-const shouldShowReadFullText = computed(() => computeShouldShowReadFullText(post.value?.description))
+const shouldShowReadFullText = computed(() =>
+  computeShouldShowReadFullText(post.value?.description)
+)
 
 // Hide title when it duplicates the description (many platforms only have body text)
 const detailTitle = computed(() => buildDetailTitle(post.value))

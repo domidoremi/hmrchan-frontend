@@ -1121,6 +1121,15 @@ import { useAuthStore, useToastStore } from '@/stores'
 import { refreshAvatarCache } from '@/composables/useUserAvatar'
 import { checkPasswordStrength } from '@/utils/crypto'
 import { ensureVerificationToken, isVerificationCancelledError } from '@/api/verificationBridge'
+import {
+  buildPasswordToggleLabel,
+  getPasswordStrengthClass,
+  getPasswordStrengthScore,
+  isEmailChangeAllowed,
+  isPasswordChangeAllowed,
+  normalizeTwoFactorQrCode,
+  passwordsMatch as checkPasswordsMatch,
+} from './profile-settings/profileSettingsModel'
 import Button from '@/components/ui/Button.vue'
 import Input from '@/components/ui/Input.vue'
 import Textarea from '@/components/ui/Textarea.vue'
@@ -1170,9 +1179,12 @@ let profileFetchController: AbortController | null = null
 let profileFetchToken = 0
 
 function passwordToggleLabel(visible: boolean): string {
-  return visible
-    ? `${t('common.hide')} ${t('auth.password')}`
-    : `${t('common.show')} ${t('auth.password')}`
+  return buildPasswordToggleLabel({
+    visible,
+    showLabel: t('common.show'),
+    hideLabel: t('common.hide'),
+    fieldLabel: t('auth.password'),
+  })
 }
 
 // Change email
@@ -1242,13 +1254,13 @@ const dataSummaryItems = computed(() => {
   ]
 })
 
-const canChangeEmail = computed(() => {
-  return (
-    emailForm.value.new_email &&
-    emailForm.value.new_email !== profile.value?.email &&
-    emailForm.value.password
-  )
-})
+const canChangeEmail = computed(() =>
+  isEmailChangeAllowed({
+    currentEmail: profile.value?.email,
+    nextEmail: emailForm.value.new_email,
+    password: emailForm.value.password,
+  })
+)
 
 // Email verification code dialog
 const showEmailVerify = ref(false)
@@ -1299,19 +1311,13 @@ const passwordStrengthResult = computed(() => {
   return checkPasswordStrength(passwordForm.value.new_password)
 })
 
-const passwordStrength = computed(() => {
-  // 映射到 0-4 范围以兼容现有 UI
-  const { level } = passwordStrengthResult.value
-  if (level === 'weak') return 1
-  if (level === 'fair') return 2
-  if (level === 'good') return 3
-  return 4
-})
+const passwordStrength = computed(() =>
+  getPasswordStrengthScore(passwordStrengthResult.value.level)
+)
 
-const passwordStrengthClass = computed(() => {
-  const { level } = passwordStrengthResult.value
-  return `strength-${level}`
-})
+const passwordStrengthClass = computed(() =>
+  getPasswordStrengthClass(passwordStrengthResult.value.level)
+)
 
 const passwordStrengthText = computed(() => {
   const { level } = passwordStrengthResult.value
@@ -1324,24 +1330,21 @@ const passwordStrengthText = computed(() => {
   return textMap[level]
 })
 
-const passwordsMatch = computed(() => {
-  return passwordForm.value.new_password === passwordForm.value.confirm_password
-})
+const passwordsMatch = computed(() =>
+  checkPasswordsMatch(passwordForm.value.new_password, passwordForm.value.confirm_password)
+)
 
-const canChangePassword = computed(() => {
-  return (
-    passwordForm.value.current_password &&
-    passwordForm.value.new_password.length >= 8 &&
-    passwordsMatch.value
-  )
-})
+const canChangePassword = computed(() =>
+  isPasswordChangeAllowed({
+    currentPassword: passwordForm.value.current_password,
+    nextPassword: passwordForm.value.new_password,
+    confirmPassword: passwordForm.value.confirm_password,
+  })
+)
 
-const normalizedTwoFactorQrCode = computed(() => {
-  const raw = twoFactorSetup.value?.qr_code?.trim()
-  if (!raw) return ''
-  if (raw.startsWith('data:') || raw.startsWith('http')) return raw
-  return `data:image/png;base64,${raw}`
-})
+const normalizedTwoFactorQrCode = computed(() =>
+  normalizeTwoFactorQrCode(twoFactorSetup.value?.qr_code)
+)
 
 const setupBackupCodes = computed(() => twoFactorSetup.value?.backup_codes ?? [])
 
