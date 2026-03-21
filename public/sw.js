@@ -97,6 +97,7 @@ const STATIC_ASSETS = [
   '/icons/sitting-192.webp',
   OFFLINE_FALLBACK,
 ]
+const ESSENTIAL_STATIC_ASSETS = ['/', '/index.html', OFFLINE_FALLBACK]
 
 // 媒体缓存配置
 const MEDIA_CACHE_CONFIG = {
@@ -119,19 +120,39 @@ self.addEventListener('install', (event) => {
   // console.log('[SW] Installing...')
 
   event.waitUntil(
-    caches
-      .open(CACHE_NAMES.static)
-      .then((cache) => {
-        // console.log('[SW] Caching static assets')
-        return cache.addAll(STATIC_ASSETS)
-      })
-      .then(() => {
-        // console.log('[SW] Install complete')
-        return self.skipWaiting() // 立即激活新的SW
-      })
-      .catch((error) => {
-        console.error('[SW] Install failed:', error)
-      })
+    (async () => {
+      const cache = await caches.open(CACHE_NAMES.static)
+      const results = await Promise.allSettled(
+        STATIC_ASSETS.map((asset) => cacheStaticAsset(cache, asset))
+      )
+
+      const failures = results
+        .map((result, index) => ({ result, asset: STATIC_ASSETS[index] }))
+        .filter(({ result }) => result.status === 'rejected')
+
+      if (failures.length > 0) {
+        console.error(
+          '[SW] Install completed with partial precache failure:',
+          failures.map(({ asset, result }) => ({
+            asset,
+            reason: result.reason instanceof Error ? result.reason.message : String(result.reason),
+          }))
+        )
+      }
+
+      const missingEssentialAssets = ESSENTIAL_STATIC_ASSETS.filter(
+        (asset) => !results[STATIC_ASSETS.indexOf(asset)] || results[STATIC_ASSETS.indexOf(asset)].status === 'rejected'
+      )
+
+      if (missingEssentialAssets.length > 0) {
+        console.error('[SW] Essential precache assets missing:', missingEssentialAssets)
+      }
+
+      // console.log('[SW] Install complete')
+      await self.skipWaiting() // 立即激活新的SW
+    })().catch((error) => {
+      console.error('[SW] Install failed:', error)
+    })
   )
 })
 
@@ -213,7 +234,7 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(networkFirstApi(request))
   } else {
     // 其他: Network Only
-    event.respondWith(fetch(request))
+    event.respondWith(networkOnly(request))
   }
 })
 
@@ -366,6 +387,41 @@ async function handleNavigationRequest(event) {
   if (offline) return offline
 
   return new Response('Offline', { status: 503 })
+}
+
+async function cacheStaticAsset(cache, asset) {
+  const request = new Request(asset, { cache: 'reload' })
+  const response = await fetch(request)
+
+  if (!response || !response.ok) {
+    throw new Error(`Request failed for ${asset} with status ${response?.status ?? 'unknown'}`)
+  }
+
+  await cache.put(asset, response.clone())
+}
+
+function acceptsHtml(request) {
+  const accept = request.headers.get('accept') || ''
+  return accept.includes('text/html')
+}
+
+async function networkOnly(request) {
+  try {
+    return await fetch(request)
+  } catch (error) {
+    swWarn('[SW] Network-only request failed:', request.url, error)
+
+    if (request.mode === 'navigate' || request.destination === 'document' || acceptsHtml(request)) {
+      const cache = await caches.open(CACHE_NAMES.static)
+      const cachedIndex = await cache.match('/index.html')
+      if (cachedIndex) return cachedIndex
+
+      const offline = await cache.match(OFFLINE_FALLBACK)
+      if (offline) return offline
+    }
+
+    return new Response('Offline', { status: 503 })
+  }
 }
 /**
  * 为缓存响应添加时间戳
