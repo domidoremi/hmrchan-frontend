@@ -1,6 +1,6 @@
 # Robots.txt for MomiChan
 # https://www.robotstxt.org/robotstxt.html
-# 更新时间: 2026-01-27
+# 更新时间: 2026-03-22
 
 # 全局规则 - 允许所有爬虫
 User-agent: *

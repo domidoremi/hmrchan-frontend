@@ -23,8 +23,8 @@ const DRY_RUN = process.argv.includes('--dry-run')
 const LANGUAGES = ['zh-CN', 'zh-TW', 'ja', 'en']
 
 /**
- * 路由配置
- * 注意：手动维护此列表，确保与 src/router/index.ts 同步
+ * 可被搜索引擎索引的公开路由。
+ * 仅收录当前真实公开页面，避免与 robots.txt 产生漂移。
  */
 const ROUTES = [
   {
@@ -58,6 +58,12 @@ const ROUTES = [
     multilang: false,
   },
   {
+    path: '/schedule',
+    priority: 0.8,
+    changefreq: 'weekly',
+    multilang: false,
+  },
+  {
     path: '/about',
     priority: 0.6,
     changefreq: 'monthly',
@@ -66,36 +72,6 @@ const ROUTES = [
   {
     path: '/contact',
     priority: 0.5,
-    changefreq: 'monthly',
-    multilang: false,
-  },
-  {
-    path: '/favorites',
-    priority: 0.4,
-    changefreq: 'weekly',
-    multilang: false,
-  },
-  {
-    path: '/login',
-    priority: 0.3,
-    changefreq: 'monthly',
-    multilang: false,
-  },
-  {
-    path: '/register',
-    priority: 0.3,
-    changefreq: 'monthly',
-    multilang: false,
-  },
-  {
-    path: '/settings',
-    priority: 0.2,
-    changefreq: 'monthly',
-    multilang: false,
-  },
-  {
-    path: '/settings/profile',
-    priority: 0.2,
     changefreq: 'monthly',
     multilang: false,
   },
