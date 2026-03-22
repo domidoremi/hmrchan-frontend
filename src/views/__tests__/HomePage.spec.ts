@@ -1,12 +1,11 @@
-import { nextTick } from 'vue'
 import { flushPromises, shallowMount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { buildHomepageBootstrapFallback } from '@/fallbacks/homepageBootstrapFallback'
 import HomePage from '../HomePage.vue'
 
-const HOME_SECONDARY_CONTENT_FALLBACK_DELAY_MS = 900
-const HOME_SECONDARY_CONTENT_PRE_REVEAL_CHECK_MS = HOME_SECONDARY_CONTENT_FALLBACK_DELAY_MS - 100
+const HOME_SECONDARY_CONTENT_FALLBACK_DELAY_MS = 420
+const HOME_SECONDARY_CONTENT_POST_PAINT_REVEAL_MS = 40
 
 const mocks = vi.hoisted(() => ({
   routerPush: vi.fn(),
@@ -309,7 +308,7 @@ describe('HomePage', () => {
     vi.useRealTimers()
   })
 
-  it('keeps secondary sections hidden before the idle fallback reveal and delays support refresh until reveal', async () => {
+  it('keeps secondary sections hidden before the post-paint reveal and delays support refresh until reveal', async () => {
     mocks.loadHomepageBootstrap.mockResolvedValueOnce({
       payload: buildAggregateNeedingSupportRefresh(),
       visibility: 'public',
@@ -327,18 +326,7 @@ describe('HomePage', () => {
     expect(mocks.getScheduleHighlights).not.toHaveBeenCalled()
     expect(mocks.getCommunityHighlights).not.toHaveBeenCalled()
 
-    await vi.advanceTimersByTimeAsync(HOME_SECONDARY_CONTENT_PRE_REVEAL_CHECK_MS)
-    await nextTick()
-
-    expect(wrapper.findComponent({ name: 'FeaturedRailSection' }).exists()).toBe(false)
-    expect(wrapper.findComponent({ name: 'LatestPostsSection' }).exists()).toBe(false)
-    expect(wrapper.findComponent({ name: 'StoryDeckSection' }).exists()).toBe(false)
-    expect(mocks.getScheduleHighlights).not.toHaveBeenCalled()
-    expect(mocks.getCommunityHighlights).not.toHaveBeenCalled()
-
-    await vi.advanceTimersByTimeAsync(
-      HOME_SECONDARY_CONTENT_FALLBACK_DELAY_MS - HOME_SECONDARY_CONTENT_PRE_REVEAL_CHECK_MS
-    )
+    await vi.advanceTimersByTimeAsync(HOME_SECONDARY_CONTENT_POST_PAINT_REVEAL_MS)
     await flushPromises()
 
     expect(wrapper.findComponent({ name: 'FeaturedRailSection' }).exists()).toBe(true)
