@@ -30,7 +30,7 @@
   </span>
 </template>
 
-<script setup lang="ts">
+<script setup lang="ts" vapor>
 import { computed, ref } from 'vue'
 
 defineOptions({ name: 'UiAvatar' })
