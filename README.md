@@ -182,6 +182,7 @@ bun run test:a11y        # Lighthouse 可访问性审计
 # 性能测试
 bun run test:perf        # 性能测试（启动开发服务器并运行 Lighthouse）
 bun run perf:lighthouse  # Lighthouse 性能审计
+bun run test:prod:regression # 生产深度回归（momichan.xyz，交互式人工协助）
 
 # PWA 资源生成
 bun run icons:generate   # 生成 PWA 图标（需要源图标）
@@ -191,6 +192,55 @@ bun run screenshots:generate  # 生成应用截图（需要开发服务器运行
 bun run sitemap:generate # 生成 sitemap.xml
 bun run sitemap:preview  # 预览 sitemap（不写入文件）
 ```
+
+### 生产深度回归 runner
+
+生产深度回归脚本位于：`scripts/prod-regression-runner.mjs`，用于对 `https://momichan.xyz` 执行匿名公开面、主生产账号私有面、以及临时 QA 账号安全链路的交互式回归。
+
+默认产物目录：
+
+```bash
+output/prod-regression/<timestamp>/
+```
+
+运行示例：
+
+```bash
+BASE_URL=https://momichan.xyz \
+PRIMARY_USERNAME=<main-account> \
+PRIMARY_PASSWORD=<main-password> \
+SECONDARY_EMAIL_MODE=user-assisted \
+ARTIFACT_DIR=/absolute/path/to/output/prod-regression/<timestamp> \
+QA_PREFIX=qa-prod-<timestamp> \
+node scripts/prod-regression-runner.mjs
+```
+
+或使用 package script：
+
+```bash
+BASE_URL=https://momichan.xyz \
+PRIMARY_USERNAME=<main-account> \
+PRIMARY_PASSWORD=<main-password> \
+SECONDARY_EMAIL_MODE=user-assisted \
+ARTIFACT_DIR=/absolute/path/to/output/prod-regression/<timestamp> \
+QA_PREFIX=qa-prod-<timestamp> \
+bun run test:prod:regression
+```
+
+支持参数：
+
+```bash
+node scripts/prod-regression-runner.mjs --help
+node scripts/prod-regression-runner.mjs --headless
+```
+
+运行时会在以下节点暂停，等待人工协助：
+
+- 注册验证码
+- 登录 2FA / 风险验证码（若触发）
+- 验证邮箱链接
+- 忘记密码重置链接
+- Turnstile（若触发）
 
 ## 🧾 提交规范
 
