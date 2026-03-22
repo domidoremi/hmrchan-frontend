@@ -93,6 +93,8 @@
             class="post-author-avatar"
             :src="normalizeAvatarUrl(post.author_avatar_url) || undefined"
             :alt="displayAuthorName"
+            width="24"
+            height="24"
             loading="lazy"
             decoding="async"
           />

@@ -225,9 +225,9 @@ if (renderDebugEnabled) {
   })
 }
 
-const shouldShowPlatformBg = computed(() => settings.value.enableAnimations)
+const shouldShowPlatformBg = computed(() => settings.value.enableAnimations && !isMobile)
 const platformBgReady = ref(false)
-const PLATFORM_BG_DELAY_MS = 1800
+const PLATFORM_BG_DELAY_MS = 2600
 let platformBgTimer: number | null = null
 const shouldRenderPlatformBg = computed(() => shouldShowPlatformBg.value && platformBgReady.value)
 
@@ -295,7 +295,7 @@ const { elementRef: sentinelRef, setElementRef: setSentinelRef } =
 
 // 移动端优化：减少初始渲染数量（首屏渲染 6 张，平衡性能和 CLS）
 const initialRenderCount = computed(() =>
-  isMobile ? Math.min(pageSize.value, 6) : Math.min(pageSize.value, 24)
+  isMobile ? Math.min(pageSize.value, 6) : Math.min(pageSize.value, 18)
 )
 const progressiveBatchSize = computed(() => Math.min(pageSize.value, 12))
 const {
