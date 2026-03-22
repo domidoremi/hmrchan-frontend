@@ -440,6 +440,7 @@ import type { ScheduleCategory, ScheduleResponse } from '@/api/scheduleService'
 import { useScheduleStore } from '@/stores/schedule'
 import { ApiError } from '@/api'
 import { getFallbackScheduleById, getFallbackScheduleCalendar } from '@/fallbacks/scheduleFallback'
+import { applyPageMeta } from '@/utils/pageMeta'
 import {
   isServiceUnavailableError,
   resolvePublicFallbackReason,
@@ -773,6 +774,28 @@ function formatEventDate(dateStr: string): string {
   return d.toLocaleDateString(locale.value, { month: 'short', day: 'numeric' })
 }
 
+function resolveCalendarDay(dateStr: string): CalendarDay | null {
+  const targetDate = dateStr.slice(0, 10)
+  return (
+    calendarDays.value.find((day) => day.fullDate.toISOString().slice(0, 10) === targetDate) ?? null
+  )
+}
+
+function syncSelectedDayWithDetail(event: ScheduleResponse | null | undefined) {
+  if (!event?.start_date) return
+
+  const eventDate = new Date(event.start_date)
+  if (!Number.isNaN(eventDate.getTime())) {
+    currentYear.value = eventDate.getFullYear()
+    currentMonth.value = eventDate.getMonth()
+  }
+
+  const matchedDay = resolveCalendarDay(event.start_date)
+  if (matchedDay) {
+    selectedDay.value = matchedDay
+  }
+}
+
 // ========== 详情弹窗 ==========
 const hasDetailLinks = computed(() => {
   if (!detailEvent.value) return false
@@ -784,6 +807,8 @@ async function loadDetail(eventId: string) {
   detailEvent.value = { id: eventId } as ScheduleResponse // placeholder to open dialog
   try {
     detailEvent.value = await scheduleService.getById(eventId, { skipErrorToast: true })
+    syncScheduleDetailMeta(detailEvent.value)
+    syncSelectedDayWithDetail(detailEvent.value)
   } catch (err) {
     if (isServiceUnavailableError(err)) {
       const fallbackDetail = getFallbackScheduleById(eventId)
@@ -791,6 +816,8 @@ async function loadDetail(eventId: string) {
         detailEvent.value = fallbackDetail
         eventsSource.value = 'fallback'
         fallbackReason.value = resolvePublicFallbackReason(err) ?? t('error.serviceUnavailable')
+        syncScheduleDetailMeta(fallbackDetail)
+        syncSelectedDayWithDetail(fallbackDetail)
         return
       }
     }
@@ -846,6 +873,17 @@ function formatTimeOnly(dateStr: string): string {
 
 function isSameDay(a: string, b: string): boolean {
   return a.slice(0, 10) === b.slice(0, 10)
+}
+
+function syncScheduleDetailMeta(event: ScheduleResponse | null | undefined) {
+  const title = event?.title?.trim()
+  if (!title) return
+
+  applyPageMeta({
+    title,
+    description: event?.description ?? event?.venue,
+    canonicalPath: route.path,
+  })
 }
 
 // ========== 描述解析 ==========
@@ -945,6 +983,19 @@ watch(
     onWatcherCleanup(() => controller.abort())
   },
   { immediate: true }
+)
+
+watch(
+  [events, routeScheduleId],
+  ([, nextId]) => {
+    if (!nextId || !detailEvent.value?.start_date) return
+
+    const matchedDay = resolveCalendarDay(detailEvent.value.start_date)
+    if (matchedDay) {
+      selectedDay.value = matchedDay
+    }
+  },
+  { flush: 'post' }
 )
 
 watch(
