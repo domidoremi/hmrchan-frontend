@@ -334,13 +334,12 @@ import {
 } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
-import { preconnect, preloadResource, throttleRAF } from '@/utils/performance'
+import { preconnect, preloadResource, runWhenIdle, throttleRAF } from '@/utils/performance'
 import { formatDate } from '@/utils/date'
 import { ArrowLeft, ChevronLeft, ChevronRight, Eye, Heart } from 'lucide-vue-next'
 import { useAuthStore, useSettingsStore } from '@/stores'
 import { useI18n } from 'vue-i18n'
 import { postService, type PostDetailResponse, ApiError } from '@/api'
-import PostActionStrip from '@/components/business/PostActionStrip.vue'
 import {
   getMediaStreamUrl,
   getMediaThumbnailSrcset,
@@ -380,6 +379,9 @@ import {
 } from './post-detail/postDetailModel'
 
 // 动态导入大型组件以减少初始包体积
+const PostActionStrip = defineAsyncComponent({
+  loader: () => import('@/components/business/PostActionStrip.vue'),
+})
 const CommentList = defineAsyncComponent(() => import('@/components/comment/CommentList.vue'))
 const MediaLightbox = defineAsyncComponent({
   loader: () => import('@/components/ui/MediaLightbox.vue'),
@@ -447,6 +449,9 @@ const stageRef = useTemplateRef<HTMLElement>('stageRef')
 const commentsSectionRef = useTemplateRef<HTMLElement>('commentsSectionRef')
 const navigationContext = ref<PostNavigationContext | null>(null)
 let commentsObserver: IntersectionObserver | null = null
+let stageListenersAttached = false
+let stageListenersWanted = false
+let clearPendingStageListenerArming: (() => void) | null = null
 
 // Back FAB progress (matches BackToTop visual language)
 const backScrollProgress = ref(0)
@@ -951,6 +956,14 @@ function syncPostMeta(currentPost: PostDetailResponse | null | undefined) {
   })
 }
 
+function schedulePostViewTracking(currentPostId: string, requestToken: number) {
+  if (typeof window === 'undefined') return
+  runWhenIdle(() => {
+    if (requestToken !== fetchPostToken || postId.value !== currentPostId) return
+    void trackPostView(currentPostId, isAuthenticated.value)
+  }, 1500)
+}
+
 async function fetchPost(signal?: AbortSignal) {
   if (!postId.value || postId.value === 'undefined') return
 
@@ -987,7 +1000,7 @@ async function fetchPost(signal?: AbortSignal) {
 
       isLoading.value = false
 
-      void Promise.allSettled([trackPostView(currentPostId, isAuthenticated.value)])
+      schedulePostViewTracking(currentPostId, requestToken)
 
       // 后台刷新：缓存来自列表页时不含 media_files，需要网络请求补全
       void loadCachedPost(currentPostId, signal ? { signal } : undefined)
@@ -1029,7 +1042,7 @@ async function fetchPost(signal?: AbortSignal) {
     dataSource.value = 'live'
     fallbackReason.value = null
 
-    void Promise.allSettled([trackPostView(currentPostId, isAuthenticated.value)])
+    schedulePostViewTracking(currentPostId, requestToken)
   } catch (err) {
     if (signal?.aborted || isAbortError(err) || requestToken !== fetchPostToken) return
     if (isServiceUnavailableError(err)) {
@@ -1061,9 +1074,10 @@ async function fetchPost(signal?: AbortSignal) {
 }
 
 onMounted(() => {
+  stageListenersWanted = true
   syncNavigationContext()
-  fetchPost()
-  attachStageListeners()
+  void fetchPost()
+  scheduleStageListeners()
 })
 
 // 记录访问开始时间（用于智能预缓存）
@@ -1139,6 +1153,10 @@ watch(
   { immediate: true }
 )
 function attachStageListeners() {
+  if (stageListenersAttached) return
+  clearPendingStageListenerArming?.()
+  clearPendingStageListenerArming = null
+  stageListenersAttached = true
   handleScroll()
   window.addEventListener('scroll', handleScroll, { passive: true })
 
@@ -1150,6 +1168,10 @@ function attachStageListeners() {
 }
 
 function detachStageListeners() {
+  clearPendingStageListenerArming?.()
+  clearPendingStageListenerArming = null
+  if (!stageListenersAttached) return
+  stageListenersAttached = false
   window.removeEventListener('scroll', handleScroll)
   handleScroll.cancel?.()
 
@@ -1160,8 +1182,43 @@ function detachStageListeners() {
   }
 }
 
+function scheduleStageListeners() {
+  if (
+    typeof window === 'undefined' ||
+    !stageListenersWanted ||
+    stageListenersAttached ||
+    clearPendingStageListenerArming
+  ) {
+    return
+  }
+
+  const activate = () => {
+    if (!stageListenersWanted || stageListenersAttached) return
+    clearPendingStageListenerArming?.()
+    clearPendingStageListenerArming = null
+    attachStageListeners()
+  }
+
+  const onPointerDown = () => activate()
+  const onKeyDown = () => activate()
+  const onWheel = () => activate()
+
+  window.addEventListener('pointerdown', onPointerDown, { passive: true, once: true })
+  window.addEventListener('keydown', onKeyDown, { once: true })
+  window.addEventListener('wheel', onWheel, { passive: true, once: true })
+
+  clearPendingStageListenerArming = () => {
+    window.removeEventListener('pointerdown', onPointerDown)
+    window.removeEventListener('keydown', onKeyDown)
+    window.removeEventListener('wheel', onWheel)
+  }
+
+  runWhenIdle(activate, 1200)
+}
+
 onActivated(() => {
-  attachStageListeners()
+  stageListenersWanted = true
+  scheduleStageListeners()
   if (isTextModalOpen.value) {
     lockBodyScroll()
     if (typeof window !== 'undefined') window.addEventListener('keydown', onTextModalKeydown)
@@ -1169,6 +1226,7 @@ onActivated(() => {
 })
 
 onDeactivated(() => {
+  stageListenersWanted = false
   fetchPostToken += 1
   isLoading.value = false
   isTextModalOpen.value = false
@@ -1179,6 +1237,7 @@ onDeactivated(() => {
 
 // 清理 sessionStorage
 onUnmounted(() => {
+  stageListenersWanted = false
   fetchPostToken += 1
   isLoading.value = false
   detachStageListeners()
