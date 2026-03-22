@@ -52,9 +52,9 @@
 
       <template v-else>
         <div v-if="isLoading && authors.length === 0" class="authors-grid">
-          <div v-for="i in 8" :key="i" class="author-card author-card--skeleton page-list-card">
+          <div v-for="i in 8" :key="i" class="author-skeleton-card page-list-card">
             <Skeleton variant="avatar" width="64px" height="64px" />
-            <div class="author-info">
+            <div class="author-skeleton__info">
               <Skeleton width="60%" height="20px" />
               <Skeleton width="40%" height="14px" />
             </div>
@@ -63,59 +63,15 @@
 
         <template v-else>
           <div class="authors-grid">
-            <button
+            <AuthorCard
               v-for="author in authors"
               :key="author.id"
-              type="button"
-              class="author-card page-list-card author-card-btn content-auto-sm"
-              @click="goToAuthor(author.id)"
+              :author="author"
+              :prefetch-on-hover="true"
+              @click="goToAuthor"
               @mouseenter="prefetchAuthorDetailPage"
               @focus="prefetchAuthorDetailPage"
-            >
-              <div class="author-card__head">
-                <img
-                  v-if="hasAuthorAvatar(author)"
-                  class="author-avatar"
-                  :src="normalizeAvatarUrl(author.avatar_url) || author.avatar_url"
-                  :alt="author.display_name || author.name"
-                  width="72"
-                  height="72"
-                  loading="lazy"
-                  decoding="async"
-                  style="object-fit: cover"
-                  @error="markAuthorAvatarFailed(author.id)"
-                />
-                <div v-else class="author-avatar author-avatar--fallback">
-                  {{ getAuthorFallbackLabel(author) }}
-                </div>
-                <span v-if="author.is_verified" class="author-verified">
-                  <BadgeCheck :size="14" />
-                </span>
-              </div>
-
-              <div class="author-info">
-                <div class="author-topline">
-                  <h3 class="author-name">{{ author.display_name || author.name }}</h3>
-                  <span class="author-platform">{{ author.platform }}</span>
-                </div>
-                <p class="author-username">@{{ author.username }}</p>
-                <p v-if="author.description" class="author-description">{{ author.description }}</p>
-                <div class="author-meta">
-                  <span v-if="author.follower_count" class="author-metric">
-                    <Users :size="14" />
-                    {{ formatCompactCount(author.follower_count) }}
-                  </span>
-                  <span v-if="author.post_count" class="author-metric">
-                    <FileText :size="14" />
-                    {{ formatCompactCount(author.post_count) }}
-                  </span>
-                </div>
-              </div>
-
-              <span class="author-card__cta">
-                <ArrowRight :size="16" />
-              </span>
-            </button>
+            />
           </div>
 
           <StateIndicator v-if="authors.length === 0" variant="empty" />
@@ -141,9 +97,7 @@ defineOptions({ name: 'AuthorsPage' })
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { ArrowRight, BadgeCheck, FileText, Users } from 'lucide-vue-next'
 import { authorService, type AuthorListItem, ApiError } from '@/api'
-import { normalizeAvatarUrl } from '@/api/userService'
 import { authorCache } from '@/utils/cache'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import { useForwardedElementRef } from '@/composables/useForwardedElementRef'
@@ -153,6 +107,7 @@ import {
   resolvePublicFallbackReason,
   type PublicPageDataSource,
 } from '@/fallbacks/publicPageFallback'
+import AuthorCard from '@/components/business/AuthorCard.vue'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import Skeleton from '@/components/ui/Skeleton.vue'
@@ -179,7 +134,6 @@ const hasMore = computed(() => authors.value.length < total.value)
 const { elementRef: sentinelRef, setElementRef: setSentinelRef } =
   useForwardedElementRef<HTMLElement>()
 
-const failedAuthorAvatars = ref<Set<string>>(new Set())
 let hasPrefetchedAuthorDetailPage = false
 let fetchAuthorsController: AbortController | null = null
 let fetchAuthorsToken = 0
@@ -193,20 +147,6 @@ function prefetchAuthorDetailPage() {
   if (hasPrefetchedAuthorDetailPage) return
   hasPrefetchedAuthorDetailPage = true
   import('@/views/AuthorDetailPage.vue').catch(() => {})
-}
-
-function hasAuthorAvatar(author: AuthorListItem): boolean {
-  return Boolean(author.avatar_url) && !failedAuthorAvatars.value.has(author.id)
-}
-
-function markAuthorAvatarFailed(authorId: string) {
-  if (failedAuthorAvatars.value.has(authorId)) return
-  failedAuthorAvatars.value = new Set(failedAuthorAvatars.value).add(authorId)
-}
-
-function getAuthorFallbackLabel(author: AuthorListItem): string {
-  const source = author.display_name || author.name || author.username || '?'
-  return source.trim().slice(0, 1).toUpperCase() || '?'
 }
 
 async function fetchAuthors(reset = true): Promise<boolean> {
@@ -318,12 +258,6 @@ function goToExplore() {
   router.push('/explore')
 }
 
-function formatCompactCount(value: number): string {
-  if (value >= 1000000) return `${(value / 1000000).toFixed(value >= 10000000 ? 0 : 1)}M`
-  if (value >= 1000) return `${(value / 1000).toFixed(value >= 10000 ? 0 : 1)}K`
-  return String(value)
-}
-
 onMounted(() => {
   if (authors.value.length === 0) {
     void fetchAuthors()
@@ -387,6 +321,21 @@ onUnmounted(() => {
   gap: var(--spacing-3);
 }
 
+.author-skeleton-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--spacing-4);
+  padding: var(--spacing-4);
+  pointer-events: none;
+}
+
+.author-skeleton__info {
+  display: grid;
+  gap: var(--spacing-2);
+  inline-size: 100%;
+}
+
 @media (min-width: 640px) {
   .authors-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -415,179 +364,5 @@ onUnmounted(() => {
   .authors-grid {
     grid-template-columns: repeat(7, minmax(0, 1fr));
   }
-}
-
-.author-card {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--spacing-4);
-  padding: var(--spacing-4);
-  min-inline-size: 0;
-}
-
-.author-card-btn {
-  inline-size: 100%;
-  min-inline-size: 0;
-  text-align: left;
-  cursor: pointer;
-  appearance: none;
-}
-
-.author-card--skeleton {
-  pointer-events: none;
-}
-
-.author-card__head {
-  position: relative;
-  isolation: isolate;
-}
-
-.author-avatar {
-  inline-size: 4rem;
-  block-size: 4rem;
-  border-radius: 1.4rem;
-  flex-shrink: 0;
-  box-shadow: 0 1rem 1.8rem -1.3rem rgba(15, 23, 42, 0.45);
-}
-
-.author-avatar--fallback {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.25rem;
-  font-weight: var(--font-semibold);
-  color: var(--page-control-ink-strong);
-  background:
-    radial-gradient(circle at 30% 20%, rgba(var(--color-accent-rgb), 0.22), transparent 55%),
-    linear-gradient(145deg, rgba(255, 255, 255, 0.92), rgba(226, 232, 240, 0.9));
-  border: 1px solid var(--page-control-border);
-}
-
-@media (min-width: 768px) {
-  .author-avatar {
-    inline-size: 4.5rem;
-    block-size: 4.5rem;
-  }
-}
-
-.author-verified {
-  position: absolute;
-  inset-inline-end: -0.25rem;
-  inset-block-end: -0.25rem;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.75rem;
-  height: 1.75rem;
-  border-radius: var(--radius-full);
-  background: rgba(var(--color-accent-rgb), 0.18);
-  color: var(--color-accent-dark);
-  border: 1px solid rgba(var(--color-accent-rgb), 0.22);
-}
-
-.author-info {
-  flex: 1;
-  display: grid;
-  gap: var(--spacing-2);
-  min-width: 0;
-}
-
-.author-topline {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--spacing-2);
-}
-
-.author-name {
-  font-size: var(--text-base);
-  font-weight: var(--font-semibold);
-  margin: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.author-platform {
-  display: inline-flex;
-  align-items: center;
-  min-height: 1.75rem;
-  padding-inline: 0.75rem;
-  border-radius: var(--radius-full);
-  border: 1px solid var(--page-control-border);
-  background: var(--page-control-bg);
-  color: var(--page-control-ink);
-  font-size: var(--text-xs);
-  font-weight: var(--font-medium);
-  text-transform: capitalize;
-}
-
-.author-username {
-  font-size: var(--text-xs);
-  color: var(--color-text-tertiary);
-  margin: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.author-description {
-  margin: 0;
-  font-size: var(--text-sm);
-  color: var(--color-text-secondary);
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.author-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--spacing-2);
-}
-
-.author-metric {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  min-height: 2rem;
-  padding-inline: 0.8rem;
-  border-radius: var(--radius-full);
-  border: 1px solid var(--page-control-border);
-  background: var(--page-control-bg);
-  color: var(--page-control-ink);
-  box-shadow: 0 0.8rem 1.5rem -1.45rem rgba(15, 23, 42, 0.22);
-  font-size: var(--text-xs);
-  font-weight: var(--font-medium);
-}
-
-.author-card__cta {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  margin-top: auto;
-  align-self: flex-end;
-  inline-size: 2rem;
-  block-size: 2rem;
-  border-radius: var(--radius-full);
-  border: 1px solid var(--page-control-border);
-  background: var(--page-control-bg);
-  color: var(--page-control-ink);
-  box-shadow: 0 0.8rem 1.5rem -1.45rem rgba(15, 23, 42, 0.22);
-  transition:
-    background var(--transition-fast),
-    border-color var(--transition-fast),
-    color var(--transition-fast),
-    box-shadow var(--transition-fast);
-}
-
-.author-card-btn:hover .author-card__cta,
-.author-card-btn:focus-visible .author-card__cta {
-  background: var(--page-control-bg-hover);
-  border-color: var(--page-control-border-strong);
-  color: var(--page-control-ink-strong);
-  box-shadow: 0 1rem 1.85rem -1.45rem rgba(15, 23, 42, 0.28);
 }
 </style>
