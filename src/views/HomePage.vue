@@ -168,10 +168,15 @@
                 <img
                   v-if="portalLeadCard.thumbnail && !isHomeMediaFailed(portalLeadCard.thumbnail)"
                   :src="portalLeadCard.thumbnail"
+                  :srcset="resolveHomeImageSrcset(portalLeadCard.thumbnail) || undefined"
+                  :sizes="PORTAL_LEAD_IMAGE_SIZES"
                   :alt="portalLeadCard.title"
                   class="portal-card__preview-image"
-                  loading="lazy"
+                  :width="PORTAL_LEAD_IMAGE_SIZE.width"
+                  :height="PORTAL_LEAD_IMAGE_SIZE.height"
+                  loading="eager"
                   decoding="async"
+                  fetchpriority="high"
                   @error="markHomeMediaFailed(portalLeadCard.thumbnail)"
                 />
                 <div v-else class="portal-card__preview-empty">
@@ -332,9 +337,14 @@
                       v-if="card.thumbnail && !isHomeMediaFailed(card.thumbnail)"
                       class="hero-collage-image"
                       :src="card.thumbnail"
+                      :srcset="resolveHomeImageSrcset(card.thumbnail) || undefined"
+                      :sizes="resolveHeroCollageImageSizes(index)"
                       :alt="card.title"
-                      loading="lazy"
+                      :width="resolveHeroCollageImageDimensions(index).width"
+                      :height="resolveHeroCollageImageDimensions(index).height"
+                      :loading="resolveHeroCollageImageLoading(index)"
                       decoding="async"
+                      :fetchpriority="resolveHeroCollageFetchPriority(index)"
                       @error="markHomeMediaFailed(card.thumbnail)"
                     />
                     <div v-else class="hero-collage-placeholder">
@@ -430,10 +440,15 @@
                   <img
                     v-if="card.thumbnail && !isHomeMediaFailed(card.thumbnail)"
                     :src="card.thumbnail"
+                    :srcset="resolveHomeImageSrcset(card.thumbnail) || undefined"
+                    :sizes="resolveFeaturedRailImageSizes(index)"
                     :alt="card.title"
                     class="featured-rail-card__image"
-                    loading="lazy"
+                    :width="resolveFeaturedRailImageSize(index).width"
+                    :height="resolveFeaturedRailImageSize(index).height"
+                    :loading="resolveFeaturedRailImageLoading(index)"
                     decoding="async"
+                    :fetchpriority="resolveFeaturedRailFetchPriority(index)"
                     @error="markHomeMediaFailed(card.thumbnail)"
                   />
                   <div v-else class="featured-rail-card__placeholder">
@@ -533,6 +548,8 @@
                     class="trends-authors-highlight__avatar"
                     :src="leadingTrendingAuthor.avatar"
                     :alt="leadingTrendingAuthor.name"
+                    :width="TREND_AUTHOR_HIGHLIGHT_AVATAR_SIZE.width"
+                    :height="TREND_AUTHOR_HIGHLIGHT_AVATAR_SIZE.height"
                     loading="lazy"
                     decoding="async"
                     @error="markTrendAuthorAvatarFailed(leadingTrendingAuthor.key)"
@@ -570,6 +587,8 @@
                       class="trend-author__avatar"
                       :src="author.avatar"
                       :alt="author.name"
+                      :width="TREND_AUTHOR_AVATAR_SIZE.width"
+                      :height="TREND_AUTHOR_AVATAR_SIZE.height"
                       loading="lazy"
                       decoding="async"
                       @error="markTrendAuthorAvatarFailed(author.key)"
@@ -957,6 +976,7 @@ import {
   type PostListItem,
 } from '@/api'
 import { prefersReducedMotion } from '@/utils/performance'
+import { getThumbnailSrcset } from '@/utils/mediaOptimizer'
 import { isFilteredAuthor } from '@/config/filters'
 import { storePostNavigationContext } from '@/utils/postNavigation'
 import { HOME_FALLBACK_POSTS, isHomeFallbackPost } from '@/fallbacks/homepageFallback'
@@ -999,8 +1019,12 @@ let gsapModule: GsapModule['default'] | null = null
 let scrollTriggerModule: ScrollTriggerModule['ScrollTrigger'] | null = null
 let scrollTriggerReadyPromise: Promise<boolean> | null = null
 
-const HOME_SUPPLEMENT_DELAY_MS = 600
-const HOME_SECONDARY_CONTENT_FALLBACK_DELAY_MS = 900
+const HOME_SUPPLEMENT_DELAY_MS = 120
+const HOME_SECONDARY_CONTENT_FALLBACK_DELAY_MS = 420
+const PORTAL_LEAD_IMAGE_SIZE = Object.freeze({ width: 1600, height: 1000 })
+const PORTAL_LEAD_IMAGE_SIZES = '(min-width: 1280px) 34rem, (min-width: 768px) 92vw, 100vw'
+const TREND_AUTHOR_HIGHLIGHT_AVATAR_SIZE = Object.freeze({ width: 44, height: 44 })
+const TREND_AUTHOR_AVATAR_SIZE = Object.freeze({ width: 32, height: 32 })
 const HomepagePreviewController = defineAsyncComponent(
   () => import('@/components/home/HomepagePreviewController.vue')
 )
@@ -1021,7 +1045,7 @@ const initialHomePosts = buildHomePostsFromAggregate(initialHomeAggregate, t).fi
 )
 
 const isHomeSecondaryContentReady = ref(false)
-const isHeroSupplementVisible = ref(false)
+const isHeroSupplementVisible = ref(true)
 let heroSupplementTimer: number | null = null
 let homeSecondaryContentFallbackTimer: number | null = null
 let disposeHomeSecondaryContentIntent: (() => void) | null = null
@@ -1142,6 +1166,48 @@ function formatScheduleHighlightMeta(item: HomeScheduleHighlight | null | undefi
 
 function formatCommunityHighlightMeta(item: HomeCommunityHighlight | null | undefined): string {
   return formatCommunityHighlightMetaValue(item, t)
+}
+
+function resolveHomeImageSrcset(url: string | null | undefined): string | null {
+  return getThumbnailSrcset(url)
+}
+
+function resolveHeroCollageImageDimensions(index: number): { width: number; height: number } {
+  return index === 0 ? { width: 1600, height: 1000 } : { width: 1000, height: 1000 }
+}
+
+function resolveHeroCollageImageSizes(index: number): string {
+  return index === 0
+    ? '(min-width: 1280px) 30rem, (min-width: 768px) 92vw, 100vw'
+    : '(min-width: 1280px) 14rem, (min-width: 768px) 44vw, 50vw'
+}
+
+function resolveHeroCollageImageLoading(index: number): 'eager' | 'lazy' {
+  return index === 0 ? 'eager' : 'lazy'
+}
+
+function resolveHeroCollageFetchPriority(index: number): 'high' | 'auto' {
+  return index === 0 ? 'high' : 'auto'
+}
+
+function resolveFeaturedRailImageSize(index: number): { width: number; height: number } {
+  if (index === 0) return { width: 880, height: 1000 }
+  if (index > 1) return { width: 1600, height: 900 }
+  return { width: 1180, height: 1000 }
+}
+
+function resolveFeaturedRailImageSizes(index: number): string {
+  if (index === 0) return '(min-width: 1280px) 22rem, (min-width: 768px) 88vw, 100vw'
+  if (index > 1) return '(min-width: 1280px) 16rem, (min-width: 768px) 42vw, 50vw'
+  return '(min-width: 1280px) 18rem, (min-width: 768px) 48vw, 100vw'
+}
+
+function resolveFeaturedRailImageLoading(index: number): 'eager' | 'lazy' {
+  return index === 0 ? 'eager' : 'lazy'
+}
+
+function resolveFeaturedRailFetchPriority(index: number): 'high' | 'auto' {
+  return index === 0 ? 'high' : 'auto'
 }
 
 function resolveSectionElement(
@@ -1612,7 +1678,7 @@ function revealHomeSecondaryContent() {
     runHomeSupportRefresh()
   }
   if (scenesEnabled) {
-    scheduleHomeEnhancements(150)
+    scheduleHomeEnhancements(1200)
   }
 }
 
@@ -1662,6 +1728,9 @@ function scheduleHeroSecondaryContent() {
   }, HOME_SUPPLEMENT_DELAY_MS)
 
   bindHomeSecondaryContentIntent()
+  runAfterNextPaint(() => {
+    revealHomeSecondaryContent()
+  })
   homeSecondaryContentFallbackTimer = window.setTimeout(() => {
     revealHomeSecondaryContent()
   }, HOME_SECONDARY_CONTENT_FALLBACK_DELAY_MS)

@@ -78,6 +78,8 @@
                   class="author-avatar"
                   :src="normalizeAvatarUrl(author.avatar_url) || author.avatar_url"
                   :alt="author.display_name || author.name"
+                  width="72"
+                  height="72"
                   loading="lazy"
                   decoding="async"
                   style="object-fit: cover"

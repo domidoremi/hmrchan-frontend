@@ -334,7 +334,7 @@ import {
 } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
-import { throttleRAF } from '@/utils/performance'
+import { preconnect, preloadResource, throttleRAF } from '@/utils/performance'
 import { formatDate } from '@/utils/date'
 import { ArrowLeft, ChevronLeft, ChevronRight, Eye, Heart } from 'lucide-vue-next'
 import { useAuthStore, useSettingsStore } from '@/stores'
@@ -574,6 +574,32 @@ const shouldShowThumbnailRail = computed(() =>
 const thumbnailPlaceholderCount = computed(() =>
   getThumbnailPlaceholderCount(post.value?.media_count)
 )
+
+function primeImageRequest(url: string | null | undefined) {
+  if (typeof window === 'undefined' || !url) return
+
+  try {
+    const resolvedUrl = new URL(url, window.location.origin)
+    preconnect(resolvedUrl.origin)
+    preloadResource(resolvedUrl.toString(), 'image')
+  } catch {
+    preloadResource(url, 'image')
+  }
+}
+
+function hintPostMedia(postDetail: PostDetailResponse | null | undefined) {
+  if (!postDetail) return
+
+  const primaryImage = postDetail.media_files?.find((media) => media.file_type === 'image')
+  if (primaryImage) {
+    primeImageRequest(getMediaThumbnailUrl(primaryImage.id, 'large'))
+    return
+  }
+
+  const fallbackUrl =
+    normalizeToThumbnailUrl(postDetail.thumbnail_url ?? '', 'large') || postDetail.thumbnail_url
+  primeImageRequest(fallbackUrl)
+}
 
 // 获取缓存的缩略图作为占位图
 const placeholderSrc = computed(() => {
@@ -942,6 +968,7 @@ async function fetchPost(signal?: AbortSignal) {
   const cachedThumb = sessionStorage.getItem(`post-thumbnail-${currentPostId}`)
   if (cachedThumb) {
     cachedThumbnailUrl.value = cachedThumb
+    primeImageRequest(normalizeToThumbnailUrl(cachedThumb, 'large') || cachedThumb)
   }
 
   try {
@@ -949,6 +976,7 @@ async function fetchPost(signal?: AbortSignal) {
     if (signal?.aborted || requestToken !== fetchPostToken) return
 
     if (cached) {
+      hintPostMedia(cached as PostDetailResponse)
       post.value = cached as PostDetailResponse
       activeMediaIndex.value = 0
       isMediaLoaded.value = false
@@ -989,6 +1017,7 @@ async function fetchPost(signal?: AbortSignal) {
     const res = await loadCachedPost(currentPostId, signal ? { signal } : undefined)
     if (signal?.aborted || requestToken !== fetchPostToken) return
 
+    hintPostMedia(res.data)
     post.value = res.data
     detailFetched.value = true
     activeMediaIndex.value = 0
@@ -1006,6 +1035,7 @@ async function fetchPost(signal?: AbortSignal) {
     if (isServiceUnavailableError(err)) {
       const fallbackPost = getFallbackPostDetailById(currentPostId)
       if (fallbackPost) {
+        hintPostMedia(fallbackPost)
         post.value = fallbackPost
         detailFetched.value = true
         activeMediaIndex.value = 0
