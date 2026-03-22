@@ -13,7 +13,13 @@ export interface PostDetailLike {
 }
 
 export function buildDetailTitle(post: PostDetailLike | null | undefined): string {
-  return (post?.title ?? '').trim()
+  const title = (post?.title ?? '').trim()
+  const description = (post?.description ?? '').trim()
+
+  if (!title) return ''
+  if (title === description) return ''
+  if (description && description.startsWith(title)) return ''
+  return title
 }
 
 export function buildDetailDescription(post: PostDetailLike | null | undefined): string {
