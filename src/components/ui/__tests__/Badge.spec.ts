@@ -1,4 +1,5 @@
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+vi.mock('vue', async () => await import('vue/dist/vue.runtime-with-vapor.esm-browser.js'))
 import { createApp, defineComponent, h, vaporInteropPlugin, type App } from 'vue'
 import Badge from '../Badge.vue'
 
