@@ -13,13 +13,25 @@ export interface PostDetailLike {
 }
 
 export function buildDetailTitle(post: PostDetailLike | null | undefined): string {
+  return (post?.title ?? '').trim()
+}
+
+export function buildDetailDescription(post: PostDetailLike | null | undefined): string {
   const title = (post?.title ?? '').trim()
   const description = (post?.description ?? '').trim()
 
-  if (!title) return ''
-  if (title === description) return ''
-  if (description && description.startsWith(title)) return ''
-  return title
+  if (!description) return ''
+  if (!title) return description
+  if (description === title) return ''
+
+  if (description.startsWith(title)) {
+    return description
+      .slice(title.length)
+      .replace(/^[\s\u3000\-–—:：|｜/\\]+/, '')
+      .trim()
+  }
+
+  return description
 }
 
 export function shouldShowReadFullText(

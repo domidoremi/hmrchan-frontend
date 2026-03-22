@@ -124,7 +124,7 @@
                   :style="activeMediaElementStyle"
                   controls
                   playsinline
-                  preload="metadata"
+                  preload="none"
                   @loadeddata="onMediaLoad"
                 >
                   <track
@@ -211,8 +211,8 @@
               </div>
             </header>
 
-            <div v-if="post?.description" class="post-description-block">
-              <p class="post-description post-description--clamped">{{ post?.description }}</p>
+            <div v-if="detailDescription" class="post-description-block">
+              <p class="post-description post-description--clamped">{{ detailDescription }}</p>
               <button
                 v-if="shouldShowReadFullText"
                 type="button"
@@ -288,7 +288,7 @@
               </button>
             </header>
             <div class="post-text-body">
-              <p class="post-text-content">{{ post?.description }}</p>
+              <p class="post-text-content">{{ detailDescription }}</p>
             </div>
           </div>
         </div>
@@ -339,7 +339,6 @@ import { formatDate } from '@/utils/date'
 import { ArrowLeft, ChevronLeft, ChevronRight, Eye, Heart } from 'lucide-vue-next'
 import { useAuthStore, useSettingsStore } from '@/stores'
 import { useI18n } from 'vue-i18n'
-import { usePageTitle } from '@/composables/usePageTitle'
 import { postService, type PostDetailResponse, ApiError } from '@/api'
 import PostActionStrip from '@/components/business/PostActionStrip.vue'
 import {
@@ -368,9 +367,11 @@ import Skeleton from '@/components/ui/Skeleton.vue'
 import { defineAsyncComponent } from 'vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import { lockBodyScroll, unlockBodyScroll } from '@/utils/bodyScrollLock'
+import { applyPageMeta } from '@/utils/pageMeta'
 import {
   buildActiveMediaElementStyle,
   buildActiveMediaViewerStyle,
+  buildDetailDescription,
   buildDetailTitle,
   getThumbnailPlaceholderCount,
   isMediaPending as computeIsMediaPending,
@@ -408,9 +409,6 @@ const settingsStore = useSettingsStore()
 const { isAuthenticated } = storeToRefs(authStore)
 const { settings } = storeToRefs(settingsStore)
 
-// 动态标题管理
-const { updateTitle } = usePageTitle()
-
 const postId = computed(() => route.params['id'] as string)
 const post = ref<PostDetailResponse | null>(null)
 const isLoading = ref(false)
@@ -428,6 +426,7 @@ const { data: cachedPost, load: loadCachedPost } = useCachedPost<PostDetailRespo
     onUpdate: () => {
       if (cachedPost.value) {
         post.value = cachedPost.value
+        syncPostMeta(cachedPost.value)
       }
     },
   }
@@ -484,11 +483,11 @@ const lightboxInitialIndex = ref(0)
 // Long text → open in overlay modal for comfortable reading
 const isTextModalOpen = ref(false)
 const shouldShowReadFullText = computed(() =>
-  computeShouldShowReadFullText(post.value?.description)
+  computeShouldShowReadFullText(detailDescription.value)
 )
 
-// Hide title when it duplicates the description (many platforms only have body text)
 const detailTitle = computed(() => buildDetailTitle(post.value))
+const detailDescription = computed(() => buildDetailDescription(post.value))
 
 const publishedMeta = computed(() => {
   const publishedAt = post.value?.published_at
@@ -497,7 +496,7 @@ const publishedMeta = computed(() => {
 })
 
 function openTextModal() {
-  if (!post.value?.description) return
+  if (!detailDescription.value) return
   isTextModalOpen.value = true
 }
 
@@ -915,6 +914,17 @@ function isAbortError(err: unknown): boolean {
     : err instanceof Error && err.name === 'AbortError'
 }
 
+function syncPostMeta(currentPost: PostDetailResponse | null | undefined) {
+  const title = currentPost?.title?.trim()
+  if (!title) return
+
+  applyPageMeta({
+    title,
+    description: buildDetailDescription(currentPost) || title,
+    canonicalPath: route.path,
+  })
+}
+
 async function fetchPost(signal?: AbortSignal) {
   if (!postId.value || postId.value === 'undefined') return
 
@@ -945,8 +955,7 @@ async function fetchPost(signal?: AbortSignal) {
 
       syncNavigationContext()
 
-      // 更新页面标题
-      updateTitle(post.value.title)
+      syncPostMeta(post.value)
 
       isLoading.value = false
 
@@ -969,7 +978,7 @@ async function fetchPost(signal?: AbortSignal) {
               dataSource.value = 'fallback'
               fallbackReason.value =
                 resolvePublicFallbackReason(err) ?? t('error.serviceUnavailable')
-              updateTitle(fallbackPost.title)
+              syncPostMeta(fallbackPost)
             }
           }
           detailFetched.value = true
@@ -987,8 +996,7 @@ async function fetchPost(signal?: AbortSignal) {
 
     syncNavigationContext()
 
-    // 更新页面标题
-    updateTitle(post.value.title)
+    syncPostMeta(post.value)
     dataSource.value = 'live'
     fallbackReason.value = null
 
@@ -1006,7 +1014,7 @@ async function fetchPost(signal?: AbortSignal) {
         fallbackReason.value = resolvePublicFallbackReason(err) ?? t('error.serviceUnavailable')
         error.value = null
         syncNavigationContext()
-        updateTitle(fallbackPost.title)
+        syncPostMeta(fallbackPost)
         return
       }
     }
