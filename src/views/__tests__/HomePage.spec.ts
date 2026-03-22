@@ -1,51 +1,19 @@
 import { flushPromises, shallowMount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
+import { createI18n } from 'vue-i18n'
+import { createMemoryHistory, createRouter } from 'vue-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { buildHomepageBootstrapFallback } from '@/fallbacks/homepageBootstrapFallback'
-import HomePage from '../HomePage.vue'
 
-const HOME_SECONDARY_CONTENT_FALLBACK_DELAY_MS = 420
-const HOME_SECONDARY_CONTENT_POST_PAINT_REVEAL_MS = 40
+const HOME_SECONDARY_CONTENT_FALLBACK_DELAY_MS = 900
 
 const mocks = vi.hoisted(() => ({
-  routerPush: vi.fn(),
   loadHomepageBootstrap: vi.fn(),
   getScheduleHighlights: vi.fn(),
   getCommunityHighlights: vi.fn(),
   scheduleTask: vi.fn(),
   storePostNavigationContext: vi.fn(),
 }))
-
-vi.mock('vue-router', async () => {
-  const { defineComponent } = await import('vue')
-
-  return {
-    useRouter: () => ({
-      push: mocks.routerPush,
-    }),
-    RouterLink: defineComponent({
-      name: 'RouterLink',
-      props: {
-        to: {
-          type: [String, Object],
-          default: '#',
-        },
-      },
-      template: "<a :href=\"typeof to === 'string' ? to : '#'\"><slot /></a>",
-    }),
-  }
-})
-
-vi.mock('vue-i18n', async () => {
-  const { ref } = await import('vue')
-
-  return {
-    useI18n: () => ({
-      t: (key: string) => key,
-      locale: ref('en-US'),
-    }),
-  }
-})
 
 vi.mock('@/stores', async () => {
   const { reactive } = await import('vue')
@@ -204,6 +172,14 @@ vi.mock('@/components/ui/ScrollDownFab.vue', async () => {
   }
 })
 
+const i18n = createI18n({
+  legacy: false,
+  locale: 'en-US',
+  messages: {
+    'en-US': {},
+  },
+})
+
 function buildInteractiveAggregate() {
   const aggregate = structuredClone(buildHomepageBootstrapFallback())
   aggregate.latest_text_posts = aggregate.latest_text_posts.map((item, index) => ({
@@ -251,9 +227,19 @@ function buildAggregateNeedingCommunityRefreshOnly() {
   return aggregate
 }
 
-function mountHomePage() {
+async function mountHomePage() {
+  const { default: HomePage } = await import('../HomePage.vue')
+  const router = createRouter({
+    history: createMemoryHistory(),
+    routes: [{ path: '/', component: { template: '<div />' } }],
+  })
+
+  await router.push('/')
+  await router.isReady()
+
   return shallowMount(HomePage, {
     global: {
+      plugins: [router, i18n],
       stubs: {
         RouterLink: {
           template: '<a><slot /></a>',
@@ -268,7 +254,6 @@ describe('HomePage', () => {
     setActivePinia(createPinia())
     vi.useFakeTimers()
 
-    mocks.routerPush.mockReset()
     mocks.loadHomepageBootstrap.mockReset()
     mocks.getScheduleHighlights.mockReset()
     mocks.getCommunityHighlights.mockReset()
@@ -308,7 +293,7 @@ describe('HomePage', () => {
     vi.useRealTimers()
   })
 
-  it('keeps secondary sections hidden before the post-paint reveal and delays support refresh until reveal', async () => {
+  it('keeps secondary sections hidden before intent and delays support refresh until reveal', async () => {
     mocks.loadHomepageBootstrap.mockResolvedValueOnce({
       payload: buildAggregateNeedingSupportRefresh(),
       visibility: 'public',
@@ -317,7 +302,7 @@ describe('HomePage', () => {
       reason: null,
     })
 
-    const wrapper = mountHomePage()
+    const wrapper = await mountHomePage()
     await flushPromises()
 
     expect(wrapper.findComponent({ name: 'FeaturedRailSection' }).exists()).toBe(false)
@@ -326,7 +311,7 @@ describe('HomePage', () => {
     expect(mocks.getScheduleHighlights).not.toHaveBeenCalled()
     expect(mocks.getCommunityHighlights).not.toHaveBeenCalled()
 
-    await vi.advanceTimersByTimeAsync(HOME_SECONDARY_CONTENT_POST_PAINT_REVEAL_MS)
+    window.dispatchEvent(new Event('scroll'))
     await flushPromises()
 
     expect(wrapper.findComponent({ name: 'FeaturedRailSection' }).exists()).toBe(true)
@@ -337,7 +322,7 @@ describe('HomePage', () => {
   })
 
   it('does not mount the preview controller during initial load or idle secondary reveal', async () => {
-    const wrapper = mountHomePage()
+    const wrapper = await mountHomePage()
     await flushPromises()
 
     expect(wrapper.find('[data-testid="home-preview-controller"]').exists()).toBe(false)
@@ -357,7 +342,7 @@ describe('HomePage', () => {
       reason: null,
     })
 
-    const wrapper = mountHomePage()
+    const wrapper = await mountHomePage()
     await flushPromises()
 
     expect(wrapper.findComponent({ name: 'FeaturedRailSection' }).exists()).toBe(false)
