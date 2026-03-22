@@ -27,6 +27,12 @@ describe('resolveHtmlDocumentWithEdgeData', () => {
               view_count: 54000,
               comment_count: 230,
               media_count: 3,
+              media_files: [
+                {
+                  id: 'media-1',
+                  file_type: 'image',
+                },
+              ],
               published_at: '2026-03-14T12:34:56Z',
               author_other_posts: [
                 {
@@ -60,6 +66,14 @@ describe('resolveHtmlDocumentWithEdgeData', () => {
     )
     expect(config.shellLinks.some((link) => link.href === '/author/author-1')).toBe(true)
     expect(config.ogImage).toBe('https://cdn.example.com/post-1.jpg')
+    expect(config.preloadImages?.[0]).toMatchObject({
+      href: '/api/v1/media/media-1/thumbnail?size=large&format=webp',
+      sizes: '(min-width: 1100px) 60rem, (min-width: 900px) calc(100vw - 31rem), 100vw',
+      fetchPriority: 'high',
+    })
+    expect(config.preloadImages?.[0]?.srcset).toContain(
+      '/api/v1/media/media-1/thumbnail?size=small&format=webp 200w'
+    )
     expect(config.structuredData[0]).toMatchObject({
       '@type': 'SocialMediaPosting',
     })

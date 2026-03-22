@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createPrerenderedHtml } from '@/edge/prerenderHtml'
+import { applyPrerenderDocument, createPrerenderedHtml } from '@/edge/prerenderHtml'
 
 const template = `<!doctype html>
 <html lang="zh-CN">
@@ -57,5 +57,39 @@ describe('createPrerenderedHtml', () => {
     expect(html).toContain('name="robots" content="noindex, nofollow"')
     expect(html).toContain('Page not found')
     expect(html).not.toContain('application/json" data-prerender-structured-data="true"')
+  })
+
+  it('injects image preload hints for prerendered detail routes', () => {
+    const html = applyPrerenderDocument(template, {
+      status: 200,
+      title: 'Post detail · MomiChan',
+      description: 'detail description',
+      canonicalPath: '/post/post-1',
+      ogType: 'article',
+      ogImage: 'https://cdn.example.com/post-1.jpg',
+      robots: 'index, follow',
+      shellTitle: 'Post detail',
+      shellBody: 'detail body',
+      shellEyebrow: 'Post',
+      shellSummary: [],
+      shellStats: [],
+      shellLinks: [],
+      structuredData: [],
+      shellVariant: 'default',
+      preloadImages: [
+        {
+          href: '/api/v1/media/media-1/thumbnail?size=large&format=webp',
+          srcset:
+            '/api/v1/media/media-1/thumbnail?size=small&format=webp 200w, /api/v1/media/media-1/thumbnail?size=medium&format=webp 400w, /api/v1/media/media-1/thumbnail?size=large&format=webp 800w',
+          sizes: '100vw',
+          fetchPriority: 'high',
+        },
+      ],
+    })
+
+    expect(html).toContain('data-prerender-preload-image="true"')
+    expect(html).toContain('href="/api/v1/media/media-1/thumbnail?size=large&amp;format=webp"')
+    expect(html).toContain('imagesizes="100vw"')
+    expect(html).toContain('fetchpriority="high"')
   })
 })
