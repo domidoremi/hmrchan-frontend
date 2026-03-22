@@ -33,7 +33,7 @@
 - 运行时与工具层
   - `src/utils/modernAPIs.ts`
   - `src/utils/performance.ts`
-  - `vitest.config.ts`
+  - `vitest.setup.ts`
 
 ## Part A: 长期指南
 
@@ -68,9 +68,9 @@
 - `requestIdleCallback` 包装函数
   - 例子：`src/utils/performance.ts`、`src/utils/modernAPIs.ts`、`src/views/PostDetailPage.vue`
   - 用途：把非关键监听、预热或次级逻辑往 idle 时段挪。
-- Vapor 测试运行时已对齐
-  - 例子：`vitest.config.ts`
-  - 用途：让 Vapor 组件的测试环境和真实运行环境一致，避免只在测试里缺运行时能力。
+- Vapor 测试链路已打通
+  - 例子：`src/components/business/__tests__/AuthorCard.spec.ts`、`src/components/ui/__tests__/Badge.spec.ts`、`src/components/ui/__tests__/Avatar.spec.ts`
+  - 用途：只在需要的 spec 内局部切到 Vapor runtime，避免污染整套旧测试环境。
 
 #### 已经存在的 Vapor 组件
 
