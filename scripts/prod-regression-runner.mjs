@@ -1012,35 +1012,6 @@ async function verifyRoute({
   })
 }
 
-async function verifyRedirectCheck(state, baseUrl, routePath, expectedLocationPath, name) {
-  return runCheck(
-    state,
-    {
-      category: 'route',
-      scope: 'public',
-      name,
-      severity: 'P2',
-      url: new URL(routePath, baseUrl).toString(),
-    },
-    async () => {
-      const result = await inspectServerRoute(baseUrl, routePath)
-      assert(result.status === 308, `${routePath} 期望 308，实际 ${result.status}`)
-      assert(
-        result.locationPath === expectedLocationPath,
-        `${routePath} 期望跳转到 ${expectedLocationPath}，实际 ${result.locationPath}`
-      )
-      return {
-        url: result.url,
-        finalUrl: result.locationPath ? new URL(result.locationPath, baseUrl).toString() : null,
-        details: {
-          status: result.status,
-          locationPath: result.locationPath,
-        },
-      }
-    }
-  )
-}
-
 async function verifyProtectedGuard(state, harness, baseUrl, routePath) {
   const targetUrl = new URL(routePath, baseUrl).toString()
   return runCheck(
@@ -1338,10 +1309,6 @@ async function verifyInvalidPostFallback(state, harness, baseUrl) {
 }
 
 async function runPublicRegression(state, harness, config, discovered) {
-  await verifyRedirectCheck(state, config.baseUrl, '/authors', '/authors/', 'authors trailing-slash redirect')
-  await verifyRedirectCheck(state, config.baseUrl, '/community', '/community/', 'community trailing-slash redirect')
-  await verifyRedirectCheck(state, config.baseUrl, '/schedule', '/schedule/', 'schedule trailing-slash redirect')
-
   const staticRoutes = [
     {
       name: 'home',
@@ -1367,23 +1334,23 @@ async function runPublicRegression(state, harness, config, discovered) {
     },
     {
       name: 'authors page',
-      path: '/authors/',
+      path: '/authors',
       selector: '.authors-page',
-      expectedFinalPath: '/authors/',
+      expectedFinalPath: '/authors',
       titleKey: 'nav.authors',
     },
     {
       name: 'community page',
-      path: '/community/',
+      path: '/community',
       selector: '.community-page',
-      expectedFinalPath: '/community/',
+      expectedFinalPath: '/community',
       titleKey: 'community.title',
     },
     {
       name: 'schedule page',
-      path: '/schedule/',
+      path: '/schedule',
       selector: '.schedule-page',
-      expectedFinalPath: '/schedule/',
+      expectedFinalPath: '/schedule',
       titleKey: 'nav.schedule',
     },
     {
@@ -2311,7 +2278,7 @@ async function runQaAccountRegression(state, harness, config, discovered) {
       scope: 'qa-account',
       name: 'discussion create/delete round-trip',
       severity: 'P1',
-      url: new URL('/community/', config.baseUrl).toString(),
+      url: new URL('/community', config.baseUrl).toString(),
     },
     async () => {
       const discussionTitle = `${config.qaPrefix} discussion`
@@ -2319,7 +2286,7 @@ async function runQaAccountRegression(state, harness, config, discovered) {
       const discussionTag = slugify(config.qaPrefix).slice(0, 24)
 
       const { diagnostics } = await captureDiagnosticsWindow(harness.diagnostics, async () => {
-        await gotoPath(harness.page, config.baseUrl, '/community/', '.community-page')
+        await gotoPath(harness.page, config.baseUrl, '/community', '.community-page')
         await harness.page.waitForSelector('.discussion-composer', { timeout: 20_000 })
         await setInputValue(harness.page, '.composer-title-input', discussionTitle)
         await harness.page.click('.category-btn:nth-of-type(2)').catch(() => {})
@@ -2362,7 +2329,7 @@ async function runQaAccountRegression(state, harness, config, discovered) {
         await confirmButtons[confirmButtons.length - 1].click()
         await waitForPath(
           harness.page,
-          (url) => url.pathname === '/community' || url.pathname === '/community/',
+          (url) => url.pathname === '/community',
           20_000
         )
       })

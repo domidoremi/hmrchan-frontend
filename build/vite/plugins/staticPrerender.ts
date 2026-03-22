@@ -11,7 +11,9 @@ type PrerenderRouteTarget = {
 function toRouteTargets(): PrerenderRouteTarget[] {
   const staticTargets = STATIC_PRERENDER_ROUTES.map((path) => ({
     path,
-    outputFile: path === '/' ? 'index.html' : `${path.replace(/^\/+/, '')}/index.html`,
+    // Emit flat HTML files so Cloudflare Pages serves `/route` directly
+    // instead of canonicalizing collection pages to `/route/`.
+    outputFile: path === '/' ? 'index.html' : `${path.replace(/^\/+/, '')}.html`,
   }))
 
   return [
