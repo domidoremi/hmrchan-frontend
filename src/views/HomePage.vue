@@ -997,18 +997,13 @@ import { useHomeViewModel } from '@/views/homepage/useHomeViewModel'
 import Button from '@/components/ui/Button.vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
-import FeaturedRailSection from '@/components/home/FeaturedRailSection.vue'
 import HeroSection from '@/components/home/HeroSection.vue'
-import LatestPostsSection from '@/components/home/LatestPostsSection.vue'
-import PostCard from '@/components/business/PostCard.vue'
-import PostCardSkeleton from '@/components/business/PostCardSkeleton.vue'
 import ScrollDownFab from '@/components/ui/ScrollDownFab.vue'
 import {
   computeScrollAnchorTop,
   readNavbarVisibleOffset,
   resolveDocumentAnchorTop,
 } from '@/components/ui/scrollAnchorTargets'
-import StoryDeckSection from '@/components/home/StoryDeckSection.vue'
 import { scheduleTask } from '@/utils/modernAPIs'
 
 type GsapModule = typeof import('gsap')
@@ -1020,12 +1015,33 @@ let scrollTriggerModule: ScrollTriggerModule['ScrollTrigger'] | null = null
 let scrollTriggerReadyPromise: Promise<boolean> | null = null
 
 const HOME_SUPPLEMENT_DELAY_MS = 120
-const HOME_SECONDARY_CONTENT_FALLBACK_DELAY_MS = 420
+const HOME_SECONDARY_CONTENT_FALLBACK_DELAY_MS = 900
 const PORTAL_LEAD_IMAGE_SIZE = Object.freeze({ width: 1600, height: 1000 })
 const PORTAL_LEAD_IMAGE_SIZES = '(min-width: 1280px) 34rem, (min-width: 768px) 92vw, 100vw'
 const TREND_AUTHOR_HIGHLIGHT_AVATAR_SIZE = Object.freeze({ width: 44, height: 44 })
 const TREND_AUTHOR_AVATAR_SIZE = Object.freeze({ width: 32, height: 32 })
-const HomepagePreviewController = defineAsyncComponent(
+
+function defineHomeAsyncComponent<T extends object>(loader: () => Promise<T>) {
+  return defineAsyncComponent({
+    loader,
+    suspensible: false,
+  })
+}
+
+const FeaturedRailSection = defineHomeAsyncComponent(
+  () => import('@/components/home/FeaturedRailSection.vue')
+)
+const LatestPostsSection = defineHomeAsyncComponent(
+  () => import('@/components/home/LatestPostsSection.vue')
+)
+const StoryDeckSection = defineHomeAsyncComponent(
+  () => import('@/components/home/StoryDeckSection.vue')
+)
+const PostCard = defineHomeAsyncComponent(() => import('@/components/business/PostCard.vue'))
+const PostCardSkeleton = defineHomeAsyncComponent(
+  () => import('@/components/business/PostCardSkeleton.vue')
+)
+const HomepagePreviewController = defineHomeAsyncComponent(
   () => import('@/components/home/HomepagePreviewController.vue')
 )
 
@@ -1728,9 +1744,6 @@ function scheduleHeroSecondaryContent() {
   }, HOME_SUPPLEMENT_DELAY_MS)
 
   bindHomeSecondaryContentIntent()
-  runAfterNextPaint(() => {
-    revealHomeSecondaryContent()
-  })
   homeSecondaryContentFallbackTimer = window.setTimeout(() => {
     revealHomeSecondaryContent()
   }, HOME_SECONDARY_CONTENT_FALLBACK_DELAY_MS)
