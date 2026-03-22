@@ -259,7 +259,18 @@
             </div>
 
             <div class="post-actions">
-              <PostActionStrip :post-id="postId" :subtitles-available="subtitlesAvailable" />
+              <Suspense>
+                <template #default>
+                  <PostActionStrip :post-id="postId" :subtitles-available="subtitlesAvailable" />
+                </template>
+                <template #fallback>
+                  <div class="post-actions-placeholder" aria-hidden="true">
+                    <span class="post-actions-placeholder__pill skeleton" />
+                    <span class="post-actions-placeholder__button skeleton" />
+                    <span class="post-actions-placeholder__button skeleton" />
+                  </div>
+                </template>
+              </Suspense>
             </div>
           </aside>
         </div>
@@ -1408,7 +1419,33 @@ onUnmounted(() => {
 
 .post-actions {
   margin-top: var(--spacing-2);
+  min-block-size: calc(var(--ui-control-min-size, 2.75rem) + var(--spacing-3));
   padding-bottom: var(--spacing-2);
+}
+
+.post-actions-placeholder {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-2);
+  min-block-size: var(--ui-control-min-size, 2.75rem);
+}
+
+.post-actions-placeholder__pill,
+.post-actions-placeholder__button {
+  display: inline-flex;
+  border-radius: var(--radius-full);
+}
+
+.post-actions-placeholder__pill {
+  inline-size: 4.25rem;
+  block-size: 1.75rem;
+}
+
+.post-actions-placeholder__button {
+  inline-size: 6.75rem;
+  block-size: var(--ui-control-min-size, 2.75rem);
+  border-radius: var(--radius-lg);
 }
 
 .post-topbar {
