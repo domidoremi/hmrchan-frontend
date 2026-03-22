@@ -87,7 +87,7 @@
       </section>
 
       <!-- 官方网站 & 社交媒体 -->
-      <section class="section links-section">
+      <section class="section links-section content-auto">
         <div class="page-section-head about-section-head">
           <AnimatedIcon
             name="explore"
@@ -178,7 +178,7 @@
       </section>
 
       <!-- 核心功能 -->
-      <section class="section">
+      <section class="section content-auto">
         <div class="page-section-head about-section-head">
           <AnimatedIcon
             name="sparkle"
@@ -203,7 +203,7 @@
       </section>
 
       <!-- 技术实现 -->
-      <section class="section tech-section">
+      <section class="section tech-section content-auto">
         <div class="page-section-head about-section-head">
           <AnimatedIcon name="explore" :fallback-icon="Code" size="lg" class="about-section-icon" />
           <h2 class="page-section-title about-section-title">{{ $t('about.tech.title') }}</h2>
@@ -227,7 +227,7 @@
       </section>
 
       <!-- 项目信息 -->
-      <section class="section info-section">
+      <section class="section info-section content-auto-sm">
         <div class="page-section-head about-section-head">
           <AnimatedIcon name="sparkle" :fallback-icon="Info" size="lg" class="about-section-icon" />
           <h2 class="page-section-title about-section-title">
