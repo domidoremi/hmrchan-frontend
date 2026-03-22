@@ -1,0 +1,65 @@
+import { afterEach, describe, expect, it } from 'vitest'
+import { createApp, defineComponent, h, nextTick, vaporInteropPlugin, type App } from 'vue'
+import Avatar from '../Avatar.vue'
+
+const mountedApps: Array<{ app: App; host: HTMLDivElement }> = []
+
+function mountAvatar(props: Record<string, unknown>) {
+  const host = document.createElement('div')
+  document.body.appendChild(host)
+
+  const app = createApp(
+    defineComponent({
+      setup() {
+        return () => h(Avatar, props)
+      },
+    })
+  )
+
+  app.use(vaporInteropPlugin)
+  app.mount(host)
+  mountedApps.push({ app, host })
+  return host
+}
+
+afterEach(() => {
+  while (mountedApps.length > 0) {
+    const entry = mountedApps.pop()
+    entry?.app.unmount()
+    entry?.host.remove()
+  }
+})
+
+describe('UiAvatar', () => {
+  it('renders the provided image before any failure occurs', () => {
+    const host = mountAvatar({
+      src: 'https://example.com/avatar.jpg',
+      alt: 'Avatar alt',
+      fallback: 'A',
+      size: 'xl',
+    })
+
+    const img = host.querySelector('img')
+    const avatar = host.querySelector('.ui-avatar')
+
+    expect(img?.getAttribute('src')).toBe('https://example.com/avatar.jpg')
+    expect(img?.getAttribute('alt')).toBe('Avatar alt')
+    expect(avatar?.classList.contains('ui-avatar--xl')).toBe(true)
+  })
+
+  it('falls back to the provided label after the image errors', async () => {
+    const host = mountAvatar({
+      src: 'https://example.com/avatar.jpg',
+      fallback: 'A',
+      shape: 'square',
+    })
+
+    const img = host.querySelector('img')
+    img?.dispatchEvent(new Event('error'))
+    await nextTick()
+
+    expect(host.querySelector('img')).toBeNull()
+    expect(host.querySelector('.ui-avatar__fallback')?.textContent?.trim()).toBe('A')
+    expect(host.querySelector('.ui-avatar')?.classList.contains('ui-avatar--square')).toBe(true)
+  })
+})

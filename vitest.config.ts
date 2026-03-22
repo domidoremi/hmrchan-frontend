@@ -23,6 +23,9 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
+      vue: fileURLToPath(
+        new URL('./node_modules/vue/dist/vue.runtime-with-vapor.esm-browser.js', import.meta.url)
+      ),
     },
   },
   test: {
