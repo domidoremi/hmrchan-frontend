@@ -84,6 +84,7 @@ import { authorService, type AuthorResponse, type PostListItem, ApiError } from 
 import { normalizeAvatarUrl } from '@/api/userService'
 import { authorCache } from '@/utils/cache'
 import { storePostNavigationContext } from '@/utils/postNavigation'
+import { applyPageMeta } from '@/utils/pageMeta'
 import { getFallbackAuthorById, getFallbackAuthorPosts } from '@/fallbacks/authorsFallback'
 import {
   isServiceUnavailableError,
@@ -137,6 +138,21 @@ function getPostMemo(post: PostListItem) {
   ] as const
 }
 
+function syncAuthorMeta(currentAuthor: AuthorResponse | null | undefined) {
+  const title =
+    currentAuthor?.display_name?.trim() ||
+    currentAuthor?.name?.trim() ||
+    currentAuthor?.username?.trim()
+
+  if (!title) return
+
+  applyPageMeta({
+    title,
+    description: currentAuthor?.bio ?? currentAuthor?.description,
+    canonicalPath: route.path,
+  })
+}
+
 async function fetchAuthor(targetAuthorId = authorId.value, signal?: AbortSignal) {
   const requestId = ++latestRequestId
   const controller = signal ? null : new AbortController()
@@ -158,6 +174,7 @@ async function fetchAuthor(targetAuthorId = authorId.value, signal?: AbortSignal
 
   if (cached) {
     author.value = cached.data as AuthorResponse
+    syncAuthorMeta(author.value)
   }
 
   try {
@@ -180,6 +197,7 @@ async function fetchAuthor(targetAuthorId = authorId.value, signal?: AbortSignal
     posts.value = postsRes.items
     dataSource.value = 'live'
     fallbackReason.value = null
+    syncAuthorMeta(authorRes)
 
     // 写入缓存
     await authorCache.setAuthor(targetAuthorId, authorRes)
@@ -195,6 +213,7 @@ async function fetchAuthor(targetAuthorId = authorId.value, signal?: AbortSignal
         dataSource.value = 'fallback'
         fallbackReason.value = resolvePublicFallbackReason(err) ?? t('error.serviceUnavailable')
         error.value = null
+        syncAuthorMeta(fallbackAuthor)
         return
       }
     }

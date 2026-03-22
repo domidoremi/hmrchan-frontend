@@ -5,8 +5,7 @@
  * 本 composable 仅供需要动态覆盖标题的页面使用（如 PostDetailPage）。
  */
 
-const APP_NAME = 'MomiChan'
-const SEPARATOR = ' · '
+import { applyPageMeta } from '@/utils/pageMeta'
 
 /**
  * 提供 updateTitle 方法，用于在页面内动态设置标题
@@ -15,7 +14,7 @@ const SEPARATOR = ' · '
 export function usePageTitle() {
   function updateTitle(pageTitle?: string) {
     if (pageTitle) {
-      document.title = `${pageTitle}${SEPARATOR}${APP_NAME}`
+      applyPageMeta({ title: pageTitle })
     }
   }
 
