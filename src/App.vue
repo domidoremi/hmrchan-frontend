@@ -48,8 +48,8 @@
       <ToastContainer />
     </Teleport>
 
-    <ClientChallengeDialog />
-    <VerificationDialog />
+    <ClientChallengeDialog v-if="shouldMountClientChallengeDialog" />
+    <VerificationDialog v-if="shouldMountVerificationDialog" />
 
     <!-- Back to Top Button -->
     <BackToTop :show-progress="true" />
@@ -81,6 +81,8 @@ import AppFooter from '@/components/layout/AppFooter.vue'
 import PageLoading from '@/components/ui/PageLoading.vue'
 import BackToTop from '@/components/ui/BackToTop.vue'
 import ErrorBoundary from '@/components/ui/ErrorBoundary.vue'
+import { clientChallengeState } from '@/api/clientChallengeBridge'
+import { verificationDialogState } from '@/api/verificationBridge'
 
 const ParticleBackground = defineAsyncComponent(
   () => import('@/components/ui/ParticleBackground.vue')
@@ -152,6 +154,11 @@ const showDeskPet = computed(() => decorationsReady.value && settings.value.desk
 // Footer only appears on key pages (configured via route meta)
 const showFooter = computed(() => Boolean(route.meta.showFooter))
 const isHomeRoute = computed(() => route.name === 'home' || route.path === '/')
+const shouldMountClientChallengeDialog = computed(() => clientChallengeState.isOpen.value)
+const shouldMountVerificationDialog = computed(
+  () =>
+    verificationDialogState.isOpen.value || Boolean(verificationDialogState.currentRequest.value)
+)
 
 // Page transition name
 const transitionName = ref('')
