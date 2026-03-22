@@ -1,14 +1,14 @@
 {
-  "name": "MomiChan - 籾山ひめり Fan Hub",
+  "name": "MomiChan - Momiyama Himeri Fan Hub",
   "short_name": "MomiChan",
-  "description": "籾山ひめり Fan Hub - 聚合 YouTube、X(Twitter)、TikTok、Instagram 最新内容，支持离线浏览和实时通知",
+  "description": "Browse Momiyama Himeri updates from YouTube, X, TikTok, and Instagram with offline support and notifications.",
   "start_url": "/?source=pwa",
   "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#8b5cf6",
   "orientation": "portrait-primary",
   "categories": ["entertainment", "social", "lifestyle"],
-  "lang": "zh-CN",
+  "lang": "en",
   "dir": "ltr",
   "icons": [
     {
@@ -54,21 +54,21 @@
       "sizes": "390x844",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "首页 - 移动端"
+      "label": "Home - Mobile"
     },
     {
       "src": "/screenshots/home-desktop.png",
       "sizes": "1920x1080",
       "type": "image/png",
       "form_factor": "wide",
-      "label": "首页 - 桌面端"
+      "label": "Home - Desktop"
     }
   ],
   "shortcuts": [
     {
-      "name": "首页",
-      "short_name": "首页",
-      "description": "返回首页浏览最新内容",
+      "name": "Home",
+      "short_name": "Home",
+      "description": "Browse the latest updates",
       "url": "/?source=shortcut",
       "icons": [
         {
@@ -79,9 +79,9 @@
       ]
     },
     {
-      "name": "探索",
-      "short_name": "探索",
-      "description": "发现更多精彩内容",
+      "name": "Explore",
+      "short_name": "Explore",
+      "description": "Discover more posts and creators",
       "url": "/explore?source=shortcut",
       "icons": [
         {
@@ -92,9 +92,9 @@
       ]
     },
     {
-      "name": "收藏",
-      "short_name": "收藏",
-      "description": "查看我的收藏内容",
+      "name": "Favorites",
+      "short_name": "Favorites",
+      "description": "View your saved posts",
       "url": "/favorites?source=shortcut",
       "icons": [
         {
@@ -105,9 +105,9 @@
       ]
     },
     {
-      "name": "设置",
-      "short_name": "设置",
-      "description": "个性化设置和偏好",
+      "name": "Settings",
+      "short_name": "Settings",
+      "description": "Manage preferences and personalization",
       "url": "/profile/settings?source=shortcut",
       "icons": [
         {
