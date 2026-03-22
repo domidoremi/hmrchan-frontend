@@ -298,23 +298,6 @@ async function fetchJson(url, label) {
   return response.json()
 }
 
-async function inspectServerRoute(baseUrl, routePath) {
-  const url = new URL(routePath, baseUrl).toString()
-  const response = await fetch(url, {
-    method: 'GET',
-    redirect: 'manual',
-    signal: AbortSignal.timeout(20_000),
-  })
-
-  const locationHeader = response.headers.get('location')
-  const locationPath = locationHeader ? new URL(locationHeader, url).pathname : null
-  return {
-    url,
-    status: response.status,
-    locationPath,
-  }
-}
-
 function extractHomeCandidates(homePayload) {
   const featuredItems = homePayload?.data?.featured?.items ?? []
   const trends = homePayload?.data?.trends ?? {}
