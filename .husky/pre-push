@@ -68,7 +68,11 @@ fi
 
 # Unit tests
 echo "🧪 运行单元测试..."
-run_node_tool node_modules/vitest/vitest.mjs run --passWithNoTests
+if resolve_bun_bin; then
+  run_bun run test:unit
+else
+  run_node_tool node_modules/vitest/vitest.mjs run --passWithNoTests
+fi
 if [ $? -ne 0 ]; then
   echo ""
   echo "❌ 单元测试失败，请修复测试后再推送"
