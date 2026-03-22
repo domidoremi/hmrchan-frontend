@@ -1,8 +1,30 @@
+#!/bin/sh
+. "$(dirname "$0")/ensure-runtime.sh"
+
 echo "🔍 运行提交前检查..."
 
-# Run lint-staged (format and lint staged files)
 echo "📝 检查暂存文件..."
-bun run lint-staged
+staged_code_files="$(mktemp)"
+staged_format_files="$(mktemp)"
+
+cleanup() {
+  rm -f "$staged_code_files" "$staged_format_files"
+}
+
+trap cleanup EXIT
+
+git diff --cached --name-only --diff-filter=ACMR -z -- '*.ts' '*.tsx' '*.vue' > "$staged_code_files"
+if [ -s "$staged_code_files" ]; then
+  xargs -0r -- "$NODE_BIN" node_modules/eslint/bin/eslint.js --fix --cache < "$staged_code_files"
+  xargs -0r -- "$NODE_BIN" node_modules/prettier/bin/prettier.cjs --write < "$staged_code_files"
+  xargs -0r git add -- < "$staged_code_files"
+fi
+
+git diff --cached --name-only --diff-filter=ACMR -z -- '*.json' '*.md' '*.css' '*.scss' > "$staged_format_files"
+if [ -s "$staged_format_files" ]; then
+  xargs -0r -- "$NODE_BIN" node_modules/prettier/bin/prettier.cjs --write < "$staged_format_files"
+  xargs -0r git add -- < "$staged_format_files"
+fi
 
 if [ $? -ne 0 ]; then
   echo "❌ 代码检查失败，请修复后再提交"
