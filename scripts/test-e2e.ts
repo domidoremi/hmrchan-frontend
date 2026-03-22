@@ -306,12 +306,12 @@ async function main(): Promise<void> {
       canonical: 'https://momichan.xyz/',
       robots: 'index, follow',
     })
-    await assertStaticPrerenderedRoute(baseUrl, '/explore/', {
+    await assertStaticPrerenderedRoute(baseUrl, '/explore', {
       title: 'Explore · MomiChan',
       canonical: 'https://momichan.xyz/explore',
       robots: 'index, follow',
     })
-    await assertStaticPrerenderedRoute(baseUrl, '/authors/', {
+    await assertStaticPrerenderedRoute(baseUrl, '/authors', {
       title: 'Authors · MomiChan',
       canonical: 'https://momichan.xyz/authors',
       robots: 'index, follow',
