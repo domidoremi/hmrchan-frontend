@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import {
   buildActiveMediaElementStyle,
   buildActiveMediaViewerStyle,
+  buildDetailDescription,
   buildDetailTitle,
   getThumbnailPlaceholderCount,
   isMediaPending,
@@ -17,6 +18,19 @@ describe('postDetailModel', () => {
     expect(buildDetailTitle({ title: 'Lead', description: 'Lead with more context' })).toBe('')
     expect(buildDetailTitle({ title: 'Distinct title', description: 'Body copy' })).toBe(
       'Distinct title'
+    )
+  })
+
+  it('strips duplicated title prefixes from descriptions', () => {
+    expect(buildDetailDescription({ title: 'Same', description: 'Same' })).toBe('')
+    expect(buildDetailDescription({ title: 'Lead', description: 'Lead with more context' })).toBe(
+      'with more context'
+    )
+    expect(buildDetailDescription({ title: 'Lead', description: 'Lead：with punctuation' })).toBe(
+      'with punctuation'
+    )
+    expect(buildDetailDescription({ title: 'Distinct title', description: 'Body copy' })).toBe(
+      'Body copy'
     )
   })
 
