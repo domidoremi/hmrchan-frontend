@@ -78,7 +78,29 @@ export interface ExportAccountDataResult {
 export function normalizeAvatarUrl(url: string | null | undefined): string | null {
   if (!url) return null
   const normalized = normalizeToProxyPath(url)
-  return normalized ?? url
+  const resolved = normalized ?? url
+
+  if (!/^https?:\/\//i.test(resolved)) {
+    return resolved
+  }
+
+  try {
+    const parsed = new URL(resolved)
+    const isYoutubeThumbnail = parsed.hostname === 'i.ytimg.com'
+    const isMaxResVariant = /\/vi\/[^/]+\/maxresdefault\.jpg$/i.test(parsed.pathname)
+
+    // `maxresdefault.jpg` is missing for a subset of YouTube videos and
+    // produces noisy network errors in Lighthouse. Fall back to the more
+    // widely available `hqdefault.jpg` before the request starts.
+    if (isYoutubeThumbnail && isMaxResVariant) {
+      parsed.pathname = parsed.pathname.replace(/maxresdefault\.jpg$/i, 'hqdefault.jpg')
+      return parsed.toString()
+    }
+  } catch {
+    return resolved
+  }
+
+  return resolved
 }
 
 // 用户名更新限制

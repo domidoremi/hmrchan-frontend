@@ -74,7 +74,7 @@
             >
               <div class="author-card__head">
                 <img
-                  v-if="author.avatar_url"
+                  v-if="hasAuthorAvatar(author)"
                   class="author-avatar"
                   :src="normalizeAvatarUrl(author.avatar_url) || author.avatar_url"
                   :alt="author.display_name || author.name"
@@ -83,8 +83,11 @@
                   loading="lazy"
                   decoding="async"
                   style="object-fit: cover"
+                  @error="markAuthorAvatarFailed(author.id)"
                 />
-                <div v-else class="author-avatar skeleton" />
+                <div v-else class="author-avatar author-avatar--fallback">
+                  {{ getAuthorFallbackLabel(author) }}
+                </div>
                 <span v-if="author.is_verified" class="author-verified">
                   <BadgeCheck :size="14" />
                 </span>
@@ -176,6 +179,7 @@ const hasMore = computed(() => authors.value.length < total.value)
 const { elementRef: sentinelRef, setElementRef: setSentinelRef } =
   useForwardedElementRef<HTMLElement>()
 
+const failedAuthorAvatars = ref<Set<string>>(new Set())
 let hasPrefetchedAuthorDetailPage = false
 let fetchAuthorsController: AbortController | null = null
 let fetchAuthorsToken = 0
@@ -189,6 +193,20 @@ function prefetchAuthorDetailPage() {
   if (hasPrefetchedAuthorDetailPage) return
   hasPrefetchedAuthorDetailPage = true
   import('@/views/AuthorDetailPage.vue').catch(() => {})
+}
+
+function hasAuthorAvatar(author: AuthorListItem): boolean {
+  return Boolean(author.avatar_url) && !failedAuthorAvatars.value.has(author.id)
+}
+
+function markAuthorAvatarFailed(authorId: string) {
+  if (failedAuthorAvatars.value.has(authorId)) return
+  failedAuthorAvatars.value = new Set(failedAuthorAvatars.value).add(authorId)
+}
+
+function getAuthorFallbackLabel(author: AuthorListItem): string {
+  const source = author.display_name || author.name || author.username || '?'
+  return source.trim().slice(0, 1).toUpperCase() || '?'
 }
 
 async function fetchAuthors(reset = true): Promise<boolean> {
@@ -431,6 +449,19 @@ onUnmounted(() => {
   border-radius: 1.4rem;
   flex-shrink: 0;
   box-shadow: 0 1rem 1.8rem -1.3rem rgba(15, 23, 42, 0.45);
+}
+
+.author-avatar--fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  font-weight: var(--font-semibold);
+  color: var(--page-control-ink-strong);
+  background:
+    radial-gradient(circle at 30% 20%, rgba(var(--color-accent-rgb), 0.22), transparent 55%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.92), rgba(226, 232, 240, 0.9));
+  border: 1px solid var(--page-control-border);
 }
 
 @media (min-width: 768px) {
