@@ -102,6 +102,40 @@ function replaceStructuredDataScript(html: string, script: string): string {
   )
 }
 
+function renderPreloadImageLinks(config: HtmlDocumentConfig): string {
+  const preloadImages = config.preloadImages ?? []
+  if (preloadImages.length === 0) return ''
+
+  return preloadImages
+    .map((image) => {
+      const attributes = [
+        'rel="preload"',
+        'as="image"',
+        `href="${escapeHtml(image.href)}"`,
+        'data-prerender-preload-image="true"',
+        image.srcset ? `imagesrcset="${escapeHtml(image.srcset)}"` : '',
+        image.sizes ? `imagesizes="${escapeHtml(image.sizes)}"` : '',
+        image.fetchPriority ? `fetchpriority="${escapeHtml(image.fetchPriority)}"` : '',
+      ]
+        .filter(Boolean)
+        .join(' ')
+
+      return `<link ${attributes} />`
+    })
+    .join('\n  ')
+}
+
+function replacePreloadImageLinks(html: string, links: string): string {
+  const pattern = /\s*<link[^>]*data-prerender-preload-image=["']true["'][^>]*>\s*/gi
+  const clearedHtml = html.replace(pattern, '\n')
+
+  if (!links) {
+    return clearedHtml
+  }
+
+  return clearedHtml.replace('</head>', `  ${links}\n  </head>`)
+}
+
 export function applyPrerenderDocument(
   html: string,
   documentConfig: HtmlDocumentConfig,
@@ -109,6 +143,7 @@ export function applyPrerenderDocument(
 ): string {
   let nextHtml = html
   const structuredDataScript = renderStructuredDataScript(documentConfig)
+  const preloadImageLinks = renderPreloadImageLinks(documentConfig)
 
   nextHtml = replaceTitle(nextHtml, documentConfig.title)
   nextHtml = replaceMetaByName(nextHtml, 'description', documentConfig.description)
@@ -127,6 +162,7 @@ export function applyPrerenderDocument(
   nextHtml = replaceMetaByProperty(nextHtml, 'og:description', documentConfig.description)
   nextHtml = replaceMetaByProperty(nextHtml, 'og:image', documentConfig.ogImage || DEFAULT_OG_IMAGE)
   nextHtml = replaceCanonicalLink(nextHtml, canonicalUrl)
+  nextHtml = replacePreloadImageLinks(nextHtml, preloadImageLinks)
   nextHtml = replaceStructuredDataScript(nextHtml, structuredDataScript)
   nextHtml = replaceAppRoot(nextHtml, renderPrerenderShell(documentConfig))
 

@@ -5,6 +5,7 @@ import {
   normalizeDocumentPath,
   resolveHtmlDocument,
   type HtmlDocumentConfig,
+  type HtmlDocumentPreloadImage,
   type HtmlDocumentShellLink,
   type HtmlDocumentShellStat,
   type HtmlStructuredData,
@@ -29,6 +30,11 @@ type EdgeAuthorRelatedPost = {
   view_count?: number
 }
 
+type EdgePostMediaFile = {
+  id?: string | null
+  file_type?: string | null
+}
+
 type EdgePostDetail = {
   id?: string | null
   platform?: string | null
@@ -50,6 +56,7 @@ type EdgePostDetail = {
   media_count?: number
   duration?: number | null
   language?: string | null
+  media_files?: EdgePostMediaFile[] | null
   author_other_posts?: EdgeAuthorRelatedPost[] | null
 }
 
@@ -134,6 +141,10 @@ type EdgeScheduleDetail = {
   created_at?: string | null
   updated_at?: string | null
 }
+
+const DETAIL_PRELOAD_IMAGE_SIZES =
+  '(min-width: 1100px) 60rem, (min-width: 900px) calc(100vw - 31rem), 100vw'
+const EDGE_PRELOAD_IMAGE_FORMAT = 'webp'
 
 function normalizeText(value: unknown): string {
   return typeof value === 'string' ? value.replace(/\s+/g, ' ').trim() : ''
@@ -255,6 +266,57 @@ function hasContent(value: unknown): boolean {
 
 function compactRecord<T extends Record<string, unknown>>(record: T): T {
   return Object.fromEntries(Object.entries(record).filter(([, value]) => hasContent(value))) as T
+}
+
+function buildEdgeMediaThumbnailUrl(mediaId: string, size: 'small' | 'medium' | 'large'): string {
+  return `/api/v1/media/${encodeURIComponent(mediaId)}/thumbnail?size=${size}&format=${EDGE_PRELOAD_IMAGE_FORMAT}`
+}
+
+function buildEdgeMediaThumbnailSrcset(mediaId: string): string {
+  return [
+    `${buildEdgeMediaThumbnailUrl(mediaId, 'small')} 200w`,
+    `${buildEdgeMediaThumbnailUrl(mediaId, 'medium')} 400w`,
+    `${buildEdgeMediaThumbnailUrl(mediaId, 'large')} 800w`,
+  ].join(', ')
+}
+
+function extractMediaIdFromThumbnailUrl(url: string): string | null {
+  const match = url.match(/\/media\/([^/?#]+)\/(?:stream|thumbnail)/i)
+  return match?.[1] ? decodeURIComponent(match[1]) : null
+}
+
+function buildPostPreloadImages(post: EdgePostDetail): HtmlDocumentPreloadImage[] {
+  const primaryImageId = normalizeIdentifier(
+    post.media_files?.find((media) => normalizeText(media.file_type).toLowerCase() === 'image')?.id
+  )
+
+  if (primaryImageId) {
+    return [
+      {
+        href: buildEdgeMediaThumbnailUrl(primaryImageId, 'large'),
+        srcset: buildEdgeMediaThumbnailSrcset(primaryImageId),
+        sizes: DETAIL_PRELOAD_IMAGE_SIZES,
+        fetchPriority: 'high',
+      },
+    ]
+  }
+
+  const fallbackThumbnailUrl = normalizeText(post.thumbnail_url)
+  if (!fallbackThumbnailUrl) return []
+
+  const fallbackMediaId = extractMediaIdFromThumbnailUrl(fallbackThumbnailUrl)
+  if (!fallbackMediaId) {
+    return [{ href: fallbackThumbnailUrl, fetchPriority: 'high' }]
+  }
+
+  return [
+    {
+      href: buildEdgeMediaThumbnailUrl(fallbackMediaId, 'large'),
+      srcset: buildEdgeMediaThumbnailSrcset(fallbackMediaId),
+      sizes: DETAIL_PRELOAD_IMAGE_SIZES,
+      fetchPriority: 'high',
+    },
+  ]
 }
 
 function pushUnique(list: string[], value: string | null | undefined): void {
@@ -1057,6 +1119,7 @@ function buildDynamicPostDocument(path: string, post: EdgePostDetail): HtmlDocum
     shellStats: buildPostShellStats(post),
     shellLinks: buildPostShellLinks(post),
     structuredData: buildPostStructuredData(path, post, shellBody, metaDescription),
+    preloadImages: buildPostPreloadImages(post),
   }
 }
 

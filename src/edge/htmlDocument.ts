@@ -17,6 +17,13 @@ export type HtmlDocumentShellLink = {
   label: string
 }
 
+export type HtmlDocumentPreloadImage = {
+  href: string
+  srcset?: string
+  sizes?: string
+  fetchPriority?: 'high' | 'auto'
+}
+
 export type HtmlDocumentConfig = {
   status: 200 | 404
   title: string
@@ -33,6 +40,7 @@ export type HtmlDocumentConfig = {
   shellLinks: HtmlDocumentShellLink[]
   structuredData: HtmlStructuredData[]
   shellVariant: 'default' | 'home'
+  preloadImages?: HtmlDocumentPreloadImage[]
 }
 
 type HtmlDocumentOverrides = {
@@ -45,6 +53,7 @@ type HtmlDocumentOverrides = {
   shellLinks?: HtmlDocumentShellLink[]
   structuredData?: HtmlStructuredData[]
   shellVariant?: HtmlDocumentConfig['shellVariant']
+  preloadImages?: HtmlDocumentPreloadImage[]
 }
 
 function escapeHtml(value: string): string {
@@ -144,6 +153,7 @@ function createDocumentConfig(
     shellLinks: options.shellLinks ?? [],
     structuredData: options.structuredData ?? [],
     shellVariant: options.shellVariant ?? 'default',
+    preloadImages: options.preloadImages ?? [],
   }
 }
 
