@@ -206,7 +206,7 @@
                 @keydown.space.prevent="goToAuthor(author.id)"
               >
                 <img
-                  v-if="author.avatar_url"
+                  v-if="hasSearchAuthorAvatar(author.id, author.avatar_url)"
                   :src="normalizeAvatarUrl(author.avatar_url) || author.avatar_url"
                   :alt="author.display_name || author.name"
                   class="author-avatar"
@@ -214,6 +214,7 @@
                   height="48"
                   loading="lazy"
                   decoding="async"
+                  @error="markSearchAuthorAvatarFailed(author.id)"
                 />
                 <div v-else class="author-avatar author-placeholder">
                   <AnimatedIcon name="user" :fallback-icon="User" size="lg" />
@@ -542,6 +543,8 @@ const platformOptions = computed(() => [
   },
 ])
 
+const failedSearchAuthorAvatars = ref<Set<string>>(new Set())
+
 const sortOptions = computed(() => [
   { value: 'relevance' as SearchSortBy, label: t('search.sort.relevance') },
   { value: 'published_at' as SearchSortBy, label: t('search.sort.date') },
@@ -561,6 +564,15 @@ function getPlatformIcon(platform: string) {
     default:
       return Globe
   }
+}
+
+function hasSearchAuthorAvatar(authorId: string, avatarUrl: string | null | undefined): boolean {
+  return Boolean(avatarUrl) && !failedSearchAuthorAvatars.value.has(authorId)
+}
+
+function markSearchAuthorAvatarFailed(authorId: string) {
+  if (failedSearchAuthorAvatars.value.has(authorId)) return
+  failedSearchAuthorAvatars.value = new Set(failedSearchAuthorAvatars.value).add(authorId)
 }
 </script>
 

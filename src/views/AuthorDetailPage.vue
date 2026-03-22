@@ -26,7 +26,7 @@
 
           <template v-else-if="author">
             <img
-              v-if="author.avatar_url"
+              v-if="hasAuthorAvatar"
               class="author-avatar"
               :src="normalizeAvatarUrl(author.avatar_url) || author.avatar_url"
               :alt="author.display_name || author.name"
@@ -34,8 +34,11 @@
               decoding="async"
               fetchpriority="high"
               style="object-fit: cover"
+              @error="markAuthorAvatarFailed"
             />
-            <div v-else class="author-avatar skeleton" />
+            <div v-else class="author-avatar author-avatar--fallback">
+              {{ authorFallbackLabel }}
+            </div>
 
             <div class="author-info">
               <h1 class="author-name">{{ author.display_name || author.name }}</h1>
@@ -106,12 +109,28 @@ const author = ref<AuthorResponse | null>(null)
 const posts = ref<PostListItem[]>([])
 const isLoading = ref(false)
 const error = ref<string | null>(null)
+const authorAvatarFailed = ref(false)
 const dataSource = ref<PublicPageDataSource>('live')
 const fallbackReason = ref<string | null>(null)
 const isUsingFallback = computed(() => dataSource.value === 'fallback')
 const showPreviewNotice = computed(() => Boolean(fallbackReason.value) && isUsingFallback.value)
+const hasAuthorAvatar = computed(
+  () => Boolean(author.value?.avatar_url) && !authorAvatarFailed.value
+)
+const authorFallbackLabel = computed(() => {
+  const source =
+    author.value?.display_name?.trim() ||
+    author.value?.name?.trim() ||
+    author.value?.username?.trim() ||
+    '?'
+  return source.slice(0, 1).toUpperCase() || '?'
+})
 let latestRequestId = 0
 let authorController: AbortController | null = null
+
+function markAuthorAvatarFailed() {
+  authorAvatarFailed.value = true
+}
 
 function isAbortError(err: unknown): boolean {
   return err instanceof DOMException
@@ -167,6 +186,7 @@ async function fetchAuthor(targetAuthorId = authorId.value, signal?: AbortSignal
 
   isLoading.value = true
   error.value = null
+  authorAvatarFailed.value = false
 
   // 先从缓存加载（快速显示）
   const cached = await authorCache.getAuthor(targetAuthorId)
@@ -286,6 +306,19 @@ onBeforeUnmount(() => {
   max-width: 52ch;
   font-size: var(--text-sm);
   color: var(--color-text-secondary);
+}
+
+.author-avatar--fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  font-weight: var(--font-semibold);
+  color: var(--color-text-primary);
+  background:
+    radial-gradient(circle at 30% 20%, rgba(var(--color-accent-rgb), 0.2), transparent 55%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.92), rgba(226, 232, 240, 0.88));
+  border: 1px solid var(--glass-border);
 }
 
 .fallback-preview__detail {
