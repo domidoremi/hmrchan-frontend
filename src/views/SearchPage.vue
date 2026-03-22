@@ -436,7 +436,7 @@
 <script setup lang="ts">
 defineOptions({ name: 'SearchPage' })
 
-import { computed, markRaw } from 'vue'
+import { computed, markRaw, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
   FileText,
