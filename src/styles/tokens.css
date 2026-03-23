@@ -354,7 +354,7 @@
 
   /* ========== Layout ========== */
   --navbar-height: clamp(3.5rem, 4vw, 4rem);
-  --mobile-nav-height: clamp(4rem, 8vw, 4.5rem);
+  --mobile-nav-height: 0rem;
   /* Runtime-updated by AppNavbar: 0px when hidden, navbar-height when visible */
   --navbar-visible-height: var(--navbar-height);
   --app-safe-block-size: calc(100dvh - var(--navbar-visible-height));

@@ -99,10 +99,14 @@ const i18n = createI18n({
     en: {
       app: {
         name: 'MomiChan',
-        tagline: 'A soft editorial home for creator moments',
       },
       common: {
         search: 'Search',
+      },
+      home: {
+        hero: {
+          primaryAction: 'Start Exploring',
+        },
       },
       nav: {
         home: 'Home',
@@ -114,6 +118,7 @@ const i18n = createI18n({
         about: 'About',
         settings: 'Settings',
         login: 'Login',
+        profile: 'Profile',
       },
     },
   },
@@ -124,6 +129,7 @@ async function createWrapper() {
     history: createMemoryHistory(),
     routes: [
       { path: '/', component: { template: '<div>home</div>' } },
+      { path: '/explore', component: { template: '<div>explore</div>' } },
       { path: '/search', component: { template: '<div>search</div>' } },
       { path: '/login', component: { template: '<div>login</div>' } },
       { path: '/:pathMatch(.*)*', component: { template: '<div>fallback</div>' } },
@@ -206,12 +212,17 @@ describe('AppNavbar', () => {
     wrapper.unmount()
   })
 
-  it('renders the compact brand shell without the legacy mark or tagline', async () => {
+  it('renders the transparent compact shell without the legacy nav rows', async () => {
     const { wrapper } = await createWrapper()
 
     expect(wrapper.find('.brand-mark').exists()).toBe(false)
     expect(wrapper.find('.brand-tagline').exists()).toBe(false)
     expect(wrapper.find('.navbar-brand .brand-name').text()).toContain('MomiChan')
+    expect(wrapper.find('.navbar-shell').exists()).toBe(true)
+    expect(wrapper.find('.glass-navbar').exists()).toBe(false)
+    expect(wrapper.find('.navbar-links').exists()).toBe(false)
+    expect(wrapper.find('.mobile-nav').exists()).toBe(false)
+    expect(wrapper.find('.navbar-cta').text()).toContain('Start Exploring')
 
     wrapper.unmount()
   })

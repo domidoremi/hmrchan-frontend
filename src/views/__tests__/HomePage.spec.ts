@@ -5,8 +5,6 @@ import { createMemoryHistory, createRouter } from 'vue-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { buildHomepageBootstrapFallback } from '@/fallbacks/homepageBootstrapFallback'
 
-const HOME_SECONDARY_CONTENT_FALLBACK_DELAY_MS = 900
-
 const mocks = vi.hoisted(() => ({
   loadHomepageBootstrap: vi.fn(),
   getScheduleHighlights: vi.fn(),
@@ -307,7 +305,7 @@ describe('HomePage', () => {
     vi.useRealTimers()
   })
 
-  it('keeps secondary sections hidden before intent and delays support refresh until reveal', async () => {
+  it('renders all five homepage shells immediately and refreshes missing support blocks right away', async () => {
     mocks.loadHomepageBootstrap.mockResolvedValueOnce({
       payload: buildAggregateNeedingSupportRefresh(),
       visibility: 'public',
@@ -319,18 +317,20 @@ describe('HomePage', () => {
     const wrapper = await mountHomePage()
     await flushPromises()
 
-    expect(wrapper.findComponent({ name: 'FeaturedRailSection' }).exists()).toBe(false)
-    expect(wrapper.findComponent({ name: 'LatestPostsSection' }).exists()).toBe(false)
-    expect(wrapper.findComponent({ name: 'StoryDeckSection' }).exists()).toBe(false)
-    expect(mocks.getScheduleHighlights).not.toHaveBeenCalled()
-    expect(mocks.getCommunityHighlights).not.toHaveBeenCalled()
-
-    window.dispatchEvent(new Event('scroll'))
-    await flushPromises()
-
     expect(wrapper.findComponent({ name: 'FeaturedRailSection' }).exists()).toBe(true)
     expect(wrapper.findComponent({ name: 'LatestPostsSection' }).exists()).toBe(true)
     expect(wrapper.findComponent({ name: 'StoryDeckSection' }).exists()).toBe(true)
+    expect(wrapper.findComponent({ name: 'HomeQuickNav' }).exists()).toBe(true)
+    expect(wrapper.find('#home-fold').exists()).toBe(true)
+    expect(wrapper.find('#home-rail').exists()).toBe(true)
+    expect(wrapper.find('#home-posts').exists()).toBe(true)
+    expect(wrapper.find('#home-media').exists()).toBe(true)
+    expect(wrapper.find('#home-footer').exists()).toBe(true)
+    expect(wrapper.find('.home-quick-nav').exists()).toBe(true)
+    expect(wrapper.findAll('.home-quick-nav__item')).toHaveLength(5)
+    expect(wrapper.find('.hero-editorial').exists()).toBe(true)
+    expect(wrapper.find('.hero-tags').exists()).toBe(true)
+    expect(wrapper.find('.hero-stats').exists()).toBe(true)
     expect(mocks.getScheduleHighlights).toHaveBeenCalledTimes(1)
     expect(mocks.getCommunityHighlights).toHaveBeenCalledTimes(1)
   })
@@ -340,14 +340,10 @@ describe('HomePage', () => {
     await flushPromises()
 
     expect(wrapper.find('[data-testid="home-preview-controller"]').exists()).toBe(false)
-
-    await vi.advanceTimersByTimeAsync(HOME_SECONDARY_CONTENT_FALLBACK_DELAY_MS)
-    await flushPromises()
-
     expect(wrapper.find('[data-testid="home-preview-controller"]').exists()).toBe(false)
   })
 
-  it('refreshes only the missing support block after secondary reveal', async () => {
+  it('refreshes only the missing support block when aggregate data leaves one block empty', async () => {
     mocks.loadHomepageBootstrap.mockResolvedValueOnce({
       payload: buildAggregateNeedingCommunityRefreshOnly(),
       visibility: 'public',
@@ -357,13 +353,6 @@ describe('HomePage', () => {
     })
 
     const wrapper = await mountHomePage()
-    await flushPromises()
-
-    expect(wrapper.findComponent({ name: 'FeaturedRailSection' }).exists()).toBe(false)
-    expect(mocks.getScheduleHighlights).not.toHaveBeenCalled()
-    expect(mocks.getCommunityHighlights).not.toHaveBeenCalled()
-
-    await vi.advanceTimersByTimeAsync(HOME_SECONDARY_CONTENT_FALLBACK_DELAY_MS)
     await flushPromises()
 
     expect(wrapper.findComponent({ name: 'FeaturedRailSection' }).exists()).toBe(true)
