@@ -13,7 +13,7 @@ import {
   type MaybeRefOrGetter,
 } from 'vue'
 import gsap from 'gsap'
-import { prefersReducedMotion } from '@/utils/performance'
+import { prefersReducedMotion, throttleRAF } from '@/utils/performance'
 import { createResizeObserver } from '@/utils/modernAPIs'
 
 export type PlatformMorphState = 'all' | 'instagram' | 'tiktok' | 'youtube' | 'twitter'
@@ -140,6 +140,8 @@ const PARTICLE_COUNT = 160
 const MOBILE_PARTICLE_COUNT = 80
 const CONNECTION_DIST = 55
 const MOBILE_CONNECTION_DIST = 40
+const RESIZE_THRESHOLD_PX = 16
+const DPR_THRESHOLD = 0.05
 
 function hex2rgb(hex: string): [number, number, number] {
   const h = hex.replace('#', '')
@@ -580,6 +582,10 @@ export function usePlatformAnimation(
   let particleCount = PARTICLE_COUNT
   let connectionDist = CONNECTION_DIST
   let resizeObserver: ResizeObserver | null = null
+  let observedCanvas: HTMLCanvasElement | null = null
+  let lastMeasuredWidth = 0
+  let lastMeasuredHeight = 0
+  let lastMeasuredDpr = 1
   let startRafId: number | null = null
 
   function getTheme(): PlatformTheme {
@@ -798,26 +804,63 @@ export function usePlatformAnimation(
     }
   }
 
-  let resizeTimer: ReturnType<typeof setTimeout> | null = null
-  function debouncedResize() {
-    if (resizeTimer) clearTimeout(resizeTimer)
-    resizeTimer = setTimeout(handleResize, 150)
+  const scheduleResize = throttleRAF((nextWidth?: number, nextHeight?: number) => {
+    handleResize(nextWidth, nextHeight)
+  })
+
+  function shouldResize(nextWidth: number, nextHeight: number) {
+    const nextDpr = Math.min(window.devicePixelRatio || 1, 2)
+    const widthChanged = Math.abs(nextWidth - lastMeasuredWidth) >= RESIZE_THRESHOLD_PX
+    const heightChanged = Math.abs(nextHeight - lastMeasuredHeight) >= RESIZE_THRESHOLD_PX
+    const dprChanged = Math.abs(nextDpr - lastMeasuredDpr) >= DPR_THRESHOLD
+
+    if (!widthChanged && !heightChanged && !dprChanged) {
+      return false
+    }
+
+    lastMeasuredWidth = nextWidth
+    lastMeasuredHeight = nextHeight
+    lastMeasuredDpr = nextDpr
+    return true
+  }
+
+  function scheduleCanvasResize(nextWidth?: number, nextHeight?: number) {
+    const canvas = getCanvas()
+    if (!canvas) return
+
+    const measuredWidth =
+      typeof nextWidth === 'number' && nextWidth > 0 ? Math.round(nextWidth) : canvas.clientWidth
+    const measuredHeight =
+      typeof nextHeight === 'number' && nextHeight > 0
+        ? Math.round(nextHeight)
+        : canvas.clientHeight
+
+    if (measuredWidth <= 0 || measuredHeight <= 0) return
+    if (!shouldResize(measuredWidth, measuredHeight)) return
+
+    scheduleResize(measuredWidth, measuredHeight)
   }
 
   function detachResizeObserver() {
     resizeObserver?.disconnect()
     resizeObserver = null
+    observedCanvas = null
   }
 
   function attachResizeObserver() {
     const canvas = getCanvas()
     if (!canvas) return
+    if (resizeObserver && observedCanvas === canvas) return
 
     detachResizeObserver()
+    observedCanvas = canvas
+    lastMeasuredWidth = canvas.clientWidth
+    lastMeasuredHeight = canvas.clientHeight
+    lastMeasuredDpr = Math.min(window.devicePixelRatio || 1, 2)
     resizeObserver = createResizeObserver((entries) => {
       const entry = entries[0]
       if (!entry) return
-      handleResize(entry.contentRect.width, entry.contentRect.height)
+      scheduleCanvasResize(entry.contentRect.width, entry.contentRect.height)
     })
 
     resizeObserver?.observe(canvas)
@@ -866,13 +909,13 @@ export function usePlatformAnimation(
     isActive = false
     pause()
     gsap.killTweensOf(particles.value)
-    if (resizeTimer) clearTimeout(resizeTimer)
     if (startRafId !== null) {
       cancelAnimationFrame(startRafId)
       startRafId = null
     }
+    scheduleResize.cancel?.()
     detachResizeObserver()
-    window.removeEventListener('resize', debouncedResize)
+    window.removeEventListener('resize', scheduleCanvasResize)
     document.removeEventListener('visibilitychange', handleVisibility)
   }
 
@@ -914,7 +957,7 @@ export function usePlatformAnimation(
 
   onMounted(() => {
     attachResizeObserver()
-    window.addEventListener('resize', debouncedResize)
+    window.addEventListener('resize', scheduleCanvasResize, { passive: true })
     document.addEventListener('visibilitychange', handleVisibility)
     startRafId = requestAnimationFrame(() => {
       startRafId = null

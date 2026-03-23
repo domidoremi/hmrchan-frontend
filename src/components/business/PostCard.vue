@@ -132,6 +132,7 @@ import type { PostListItem } from '@/api'
 import { normalizeAvatarUrl } from '@/api/userService'
 import { prefetchPostDetail } from '@/utils/prefetch'
 import { reportClientEvent } from '@/utils/clientReporter'
+import { warmDecodedImage } from '@/utils/performance'
 import {
   normalizeToThumbnailUrl,
   extractMediaIdFromUrl,
@@ -510,6 +511,10 @@ watch(
     shouldRenderImage.value = true
     preloadedAspectRatio.value = null
     preloadImageDimensions()
+
+    if (props.priority && thumbnailSrc.value) {
+      void warmDecodedImage(thumbnailSrc.value)
+    }
   },
   { immediate: true }
 )
@@ -566,10 +571,7 @@ function preloadLargeImage() {
 
   const largeUrl = getMediaThumbnailUrl(mediaId, 'large')
 
-  // 使用 Image 对象预加载到浏览器缓存
-  // 用户进入详情页时，大图已在缓存中，加载更快
-  const img = new Image()
-  img.src = largeUrl
+  void warmDecodedImage(largeUrl)
 }
 
 function onImageLoad(event: Event) {

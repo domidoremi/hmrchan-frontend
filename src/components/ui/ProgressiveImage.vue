@@ -12,7 +12,7 @@
       ref="fullImageRef"
       class="progressive-image__full"
       :class="{ 'is-loaded': isFullLoaded, 'is-error': hasError }"
-      :src="src"
+      :src="resolvedSrc"
       :alt="alt"
       :loading="loadingStrategy"
       :decoding="decoding"
@@ -41,6 +41,7 @@ import { ref, computed, watch, onMounted, useTemplateRef } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { AlertTriangle, RefreshCw } from 'lucide-vue-next'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
+import { warmDecodedImage } from '@/utils/performance'
 
 export interface ProgressiveImageProps {
   src: string
@@ -78,6 +79,11 @@ const fullImageRef = useTemplateRef<HTMLImageElement>('fullImageRef')
 const isFullLoaded = ref(false)
 const hasError = ref(false)
 const reloadToken = ref(0)
+const resolvedSrc = computed(() =>
+  reloadToken.value > 0
+    ? `${props.src}${props.src.includes('?') ? '&' : '?'}retry=${reloadToken.value}`
+    : props.src
+)
 
 const containerStyle = computed(() => {
   const style: Record<string, string> = {}
@@ -107,23 +113,33 @@ function onFullLoad() {
 
 function onFullError() {
   hasError.value = true
-  emit('error', new Error(`Failed to load image: ${props.src}`))
+  emit('error', new Error(`Failed to load image: ${resolvedSrc.value}`))
 }
 
-// 当 src 变化时重置状态
 watch(
   () => props.src,
   () => {
-    isFullLoaded.value = false
-    hasError.value = false
-    reloadToken.value += 1
+    reloadToken.value = 0
   }
 )
+
+watch(resolvedSrc, (nextSrc) => {
+  isFullLoaded.value = false
+  hasError.value = false
+  if (nextSrc) {
+    void warmDecodedImage(nextSrc)
+  }
+})
 
 // 检查图片是否已经在缓存中
 onMounted(() => {
   if (fullImageRef.value?.complete && fullImageRef.value?.naturalWidth > 0) {
     isFullLoaded.value = true
+    return
+  }
+
+  if (resolvedSrc.value) {
+    void warmDecodedImage(resolvedSrc.value)
   }
 })
 
@@ -131,9 +147,6 @@ function retry() {
   hasError.value = false
   isFullLoaded.value = false
   reloadToken.value += 1
-  if (fullImageRef.value) {
-    fullImageRef.value.src = `${props.src}${props.src.includes('?') ? '&' : '?'}retry=${reloadToken.value}`
-  }
 }
 </script>
 

@@ -6,6 +6,14 @@ import { createMemoryHistory, createRouter } from 'vue-router'
 import AppNavbar from '../AppNavbar.vue'
 
 const MOBILE_NAV_QUERY = '(max-width: 960px)'
+const idleTasks: Array<{ task: () => void; cancel: ReturnType<typeof vi.fn> }> = []
+const prefetchExploreDataMock = vi.fn()
+const prefetchAuthorsDataMock = vi.fn()
+const runWhenIdleMock = vi.fn((task: () => void) => {
+  const cancel = vi.fn()
+  idleTasks.push({ task, cancel })
+  return cancel
+})
 
 vi.mock('pinia', async () => {
   const actual = await vi.importActual<typeof import('pinia')>('pinia')
@@ -58,11 +66,12 @@ vi.mock('@/composables/useUserAvatar', () => ({
 }))
 
 vi.mock('@/utils/prefetch', () => ({
-  prefetchExploreData: vi.fn(),
-  prefetchAuthorsData: vi.fn(),
+  prefetchExploreData: prefetchExploreDataMock,
+  prefetchAuthorsData: prefetchAuthorsDataMock,
 }))
 
 vi.mock('@/utils/performance', () => ({
+  runWhenIdle: runWhenIdleMock,
   prefersReducedMotion: () => false,
   scheduleDOMUpdate: (read: () => unknown, write: (value: unknown) => void) => {
     write(read())
@@ -115,7 +124,7 @@ async function createWrapper() {
   await router.push('/')
   await router.isReady()
 
-  return mount(AppNavbar, {
+  const wrapper = mount(AppNavbar, {
     attachTo: document.body,
     global: {
       plugins: [router, i18n],
@@ -134,10 +143,17 @@ async function createWrapper() {
       },
     },
   })
+
+  return { wrapper, router }
 }
 
 describe('AppNavbar', () => {
   beforeEach(() => {
+    vi.useFakeTimers()
+    idleTasks.length = 0
+    runWhenIdleMock.mockClear()
+    prefetchExploreDataMock.mockClear()
+    prefetchAuthorsDataMock.mockClear()
     authStoreState.user = null
     authStoreState.isAuthenticated = false
     authStoreState.logout.mockClear()
@@ -159,12 +175,13 @@ describe('AppNavbar', () => {
   })
 
   afterEach(() => {
+    vi.useRealTimers()
     vi.unstubAllGlobals()
     document.body.innerHTML = ''
   })
 
   it('closes settings dropdown when clicking outside', async () => {
-    const wrapper = await createWrapper()
+    const { wrapper } = await createWrapper()
 
     const settingsButton = wrapper.find('button[aria-label="Settings"]')
     await settingsButton.trigger('click')
@@ -181,7 +198,7 @@ describe('AppNavbar', () => {
   })
 
   it('renders the compact brand shell without the legacy mark or tagline', async () => {
-    const wrapper = await createWrapper()
+    const { wrapper } = await createWrapper()
 
     expect(wrapper.find('.brand-mark').exists()).toBe(false)
     expect(wrapper.find('.brand-tagline').exists()).toBe(false)
@@ -191,7 +208,7 @@ describe('AppNavbar', () => {
   })
 
   it('closes settings dropdown on Escape and restores focus to the trigger', async () => {
-    const wrapper = await createWrapper()
+    const { wrapper } = await createWrapper()
 
     const settingsButton = wrapper.find('button[aria-label="Settings"]')
     await settingsButton.trigger('click')
@@ -209,5 +226,50 @@ describe('AppNavbar', () => {
     expect(document.activeElement).toBe(settingsButton.element)
 
     wrapper.unmount()
+  })
+
+  it('cancels pending idle prefetch on route change and only executes once per visible cycle', async () => {
+    authStoreState.isAuthenticated = true
+    authStoreState.user = { username: 'momo', email: 'momo@example.com' }
+    const { wrapper, router } = await createWrapper()
+
+    await vi.advanceTimersByTimeAsync(8000)
+    expect(runWhenIdleMock).toHaveBeenCalledTimes(1)
+    expect(idleTasks).toHaveLength(1)
+
+    await router.push('/search')
+    await nextTick()
+
+    expect(idleTasks[0]?.cancel).toHaveBeenCalledTimes(1)
+
+    await vi.advanceTimersByTimeAsync(8000)
+    expect(runWhenIdleMock).toHaveBeenCalledTimes(2)
+
+    idleTasks[1]?.task()
+    await nextTick()
+
+    expect(prefetchExploreDataMock).toHaveBeenCalledTimes(1)
+    expect(prefetchAuthorsDataMock).toHaveBeenCalledTimes(1)
+
+    await router.push('/')
+    await nextTick()
+    await vi.advanceTimersByTimeAsync(8000)
+
+    expect(runWhenIdleMock).toHaveBeenCalledTimes(2)
+
+    wrapper.unmount()
+  })
+
+  it('cancels pending idle prefetch on unmount', async () => {
+    authStoreState.isAuthenticated = true
+    authStoreState.user = { username: 'momo', email: 'momo@example.com' }
+    const { wrapper } = await createWrapper()
+
+    await vi.advanceTimersByTimeAsync(8000)
+    expect(runWhenIdleMock).toHaveBeenCalledTimes(1)
+
+    wrapper.unmount()
+
+    expect(idleTasks[0]?.cancel).toHaveBeenCalledTimes(1)
   })
 })

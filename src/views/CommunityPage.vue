@@ -175,7 +175,7 @@
         </div>
 
         <!-- Recent Discussions -->
-        <section v-if="activeTab === 'recent'" class="community-section">
+        <section v-if="activeTab === 'recent'" class="community-section content-auto-xl">
           <div class="page-section-head">
             <div class="page-section-copy">
               <p class="page-section-kicker">{{ $t('nav.community') }}</p>
@@ -280,15 +280,14 @@
                   </div>
                 </div>
                 <div class="discussion-author">
-                  <img
-                    v-if="discussion.author.avatar_url"
+                  <Avatar
                     :src="normalizeAvatarUrl(discussion.author.avatar_url) || undefined"
                     :alt="discussion.author.username"
                     class="author-avatar"
-                    width="20"
-                    height="20"
+                    size="custom"
                     loading="lazy"
                     decoding="async"
+                    :fallback="getDiscussionAuthorFallbackLabel(discussion.author.username)"
                   />
                   <span class="author-name">{{ discussion.author.username }}</span>
                 </div>
@@ -308,7 +307,7 @@
         </section>
 
         <!-- Hot Topics -->
-        <section v-if="activeTab === 'hot'" class="community-section">
+        <section v-if="activeTab === 'hot'" class="community-section content-auto-xl">
           <div class="page-section-head">
             <div class="page-section-copy">
               <p class="page-section-kicker">{{ $t('community.guideTitle') }}</p>
@@ -392,6 +391,7 @@ import Button from '@/components/ui/Button.vue'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import Skeleton from '@/components/ui/Skeleton.vue'
+import Avatar from '@/components/ui/Avatar.vue'
 import DiscussionComposer from '@/components/community/DiscussionComposer.vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import Dialog from '@/components/ui/Dialog.vue'
@@ -474,6 +474,11 @@ function prefetchDiscussionDetailPage() {
 
 function formatTime(dateStr: string): string {
   return formatRelativeTime(dateStr, t)
+}
+
+function getDiscussionAuthorFallbackLabel(username: string | null | undefined): string {
+  const source = username?.trim() || '?'
+  return source.slice(0, 1).toUpperCase() || '?'
 }
 
 function goToDiscussion(discussionId: string) {
@@ -648,7 +653,8 @@ watch(
 
 useInfiniteScroll(sentinelRef, loadMore, {
   rootMargin: '800px',
-  enabled: () => activeTab.value === 'recent' && hasMore.value && !isLoading.value,
+  enabled: () =>
+    activeTab.value === 'recent' && hasMore.value && !isLoading.value && !isLoadingMore.value,
 })
 
 onMounted(() => {
@@ -1053,11 +1059,8 @@ onUnmounted(() => {
 }
 
 .author-avatar {
-  width: 1.25rem;
-  height: 1.25rem;
-  aspect-ratio: 1;
-  border-radius: 50%;
-  object-fit: cover;
+  --avatar-size: 1.25rem;
+  border: 0;
 }
 
 .author-name {

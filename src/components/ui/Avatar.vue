@@ -4,6 +4,9 @@
       v-if="src && !hasError"
       :src="src"
       :alt="alt"
+      :loading="loading"
+      :decoding="decoding"
+      :fetchpriority="fetchPriority"
       class="ui-avatar__image"
       @error="handleError"
     />
@@ -39,14 +42,20 @@ interface Props {
   src?: string
   alt?: string
   fallback?: string
-  size?: 'xs' | 'sm' | 'default' | 'lg' | 'xl'
+  size?: 'xs' | 'sm' | 'default' | 'lg' | 'xl' | 'custom'
   shape?: 'circle' | 'square'
+  loading?: 'eager' | 'lazy'
+  decoding?: 'sync' | 'async' | 'auto'
+  fetchPriority?: 'high' | 'low' | 'auto'
 }
 
 const props = withDefaults(defineProps<Props>(), {
   alt: '',
   size: 'default',
   shape: 'circle',
+  loading: 'lazy',
+  decoding: 'async',
+  fetchPriority: 'auto',
 })
 defineSlots<{
   fallback?: () => unknown
@@ -61,6 +70,8 @@ const avatarClass = computed(() => [
 ])
 
 const avatarStyle = computed(() => {
+  if (props.size === 'custom') return undefined
+
   const sizes: Record<string, string> = {
     xs: '1.5rem',
     sm: '2rem',

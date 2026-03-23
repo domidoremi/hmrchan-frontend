@@ -4,6 +4,7 @@
  */
 
 import { reportClientError } from './clientReporter'
+import { runWhenIdle } from './performance'
 
 interface PrefetchOptions {
   priority?: 'high' | 'low'
@@ -18,6 +19,7 @@ let prefetchLoadHandler: (() => void) | null = null
 let prefetchLoadListenerAttached = false
 let prefetchStartTimer: number | null = null
 let prefetchDataTimer: number | null = null
+const pendingIdlePrefetchTasks = new Set<() => void>()
 const DATA_PREFETCH_ENABLED = import.meta.env.VITE_ENABLE_DATA_PREFETCH !== 'false'
 
 export function disposeHoverPrefetch(): void {
@@ -48,6 +50,10 @@ export function disposePrefetch(): void {
     clearTimeout(prefetchDataTimer)
     prefetchDataTimer = null
   }
+  for (const cancelTask of pendingIdlePrefetchTasks) {
+    cancelTask()
+  }
+  pendingIdlePrefetchTasks.clear()
 
   prefetchScheduled = false
   prefetchLoadListenerAttached = false
@@ -55,7 +61,6 @@ export function disposePrefetch(): void {
 
 // Configuration constants
 const DEFAULT_TIMEOUT_MS = 2000 // 2 seconds for requestIdleCallback
-const IDLE_TIMEOUT_MS = 100 // Fallback timeout for browsers without requestIdleCallback
 const PREFETCH_DELAY_MS = 1000 // Delay after page load before prefetching
 
 // 已预加载的路由缓存
@@ -80,6 +85,39 @@ function isSavingData(): boolean {
     return conn?.saveData ?? false
   }
   return false
+}
+
+function scheduleIdlePrefetchTask(
+  task: () => Promise<void> | void,
+  timeout = DEFAULT_TIMEOUT_MS
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    let settled = false
+    let cancelTask: (() => void) | null = null
+
+    const settle = (callback: () => void) => {
+      if (settled) return
+      settled = true
+      if (cancelTask) {
+        pendingIdlePrefetchTasks.delete(cancelTask)
+      }
+      callback()
+    }
+
+    const idleCleanup = runWhenIdle(() => {
+      void Promise.resolve(task()).then(
+        () => settle(resolve),
+        (error) => settle(() => reject(error))
+      )
+    }, timeout)
+
+    cancelTask = () => {
+      idleCleanup()
+      settle(resolve)
+    }
+
+    pendingIdlePrefetchTasks.add(cancelTask)
+  })
 }
 
 /**
@@ -110,28 +148,10 @@ export async function prefetchRoute(
   const { timeout = DEFAULT_TIMEOUT_MS } = options
 
   try {
-    // 使用 requestIdleCallback 在空闲时预加载
-    if ('requestIdleCallback' in window) {
-      await new Promise<void>((resolve) => {
-        requestIdleCallback(
-          async () => {
-            await importFn()
-            prefetchedRoutes.add(routeName)
-            resolve()
-          },
-          { timeout }
-        )
-      })
-    } else {
-      // 降级方案：使用 setTimeout
-      await new Promise<void>((resolve) => {
-        setTimeout(async () => {
-          await importFn()
-          prefetchedRoutes.add(routeName)
-          resolve()
-        }, IDLE_TIMEOUT_MS)
-      })
-    }
+    await scheduleIdlePrefetchTask(async () => {
+      await importFn()
+      prefetchedRoutes.add(routeName)
+    }, timeout)
   } catch (error) {
     console.warn(`Failed to prefetch route: ${routeName}`, error)
     reportClientError(
@@ -339,34 +359,14 @@ async function prefetchData(
   }
 
   try {
-    if ('requestIdleCallback' in window) {
-      await new Promise<void>((resolve) => {
-        requestIdleCallback(
-          async () => {
-            try {
-              await importFn()
-            } catch {
-              // 静默失败 - 预加载失败不应影响用户体验
-              // 在开发模式下也不记录，避免控制台噪音
-            }
-            resolve()
-          },
-          { timeout: DEFAULT_TIMEOUT_MS }
-        )
-      })
-    } else {
-      await new Promise<void>((resolve) => {
-        setTimeout(async () => {
-          try {
-            await importFn()
-          } catch {
-            // 静默失败 - 预加载失败不应影响用户体验
-            // 在开发模式下也不记录，避免控制台噪音
-          }
-          resolve()
-        }, IDLE_TIMEOUT_MS)
-      })
-    }
+    await scheduleIdlePrefetchTask(async () => {
+      try {
+        await importFn()
+      } catch {
+        // 静默失败 - 预加载失败不应影响用户体验
+        // 在开发模式下也不记录，避免控制台噪音
+      }
+    }, DEFAULT_TIMEOUT_MS)
   } catch {
     // 外层错误捕获（requestIdleCallback 本身的错误）
     // 完全静默，避免控制台噪音

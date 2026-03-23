@@ -19,9 +19,13 @@
     </div>
 
     <div v-else class="form-content">
-      <div class="user-avatar">
-        <img :src="userAvatar" :alt="user?.username" />
-      </div>
+      <Avatar
+        :src="userAvatar"
+        :alt="user?.username"
+        class="user-avatar"
+        size="custom"
+        :fallback="userAvatarFallbackLabel"
+      />
       <div class="form-input-wrapper">
         <Textarea
           ref="textareaRef"
@@ -61,6 +65,7 @@ import { useAuthStore, useToastStore } from '@/stores'
 import { discussionService, type DiscussionComment, ApiError } from '@/api'
 import { validateComment, sanitizeComment, commentRateLimiter } from '@/utils/security'
 import { useUserAvatar } from '@/composables/useUserAvatar'
+import Avatar from '@/components/ui/Avatar.vue'
 import Button from '@/components/ui/Button.vue'
 import Textarea from '@/components/ui/Textarea.vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
@@ -97,6 +102,10 @@ const placeholder = computed(() => {
     return t('comment.replyPlaceholder', { username: props.replyToUsername })
   }
   return t('comment.placeholder')
+})
+const userAvatarFallbackLabel = computed(() => {
+  const source = user.value?.username?.trim() || '?'
+  return source.slice(0, 1).toUpperCase() || '?'
 })
 
 const canSubmit = computed(() => {
@@ -229,11 +238,9 @@ defineExpose({ focus, setContent })
   gap: var(--spacing-3);
 }
 
-.user-avatar img {
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: 50%;
-  object-fit: cover;
+.user-avatar {
+  --avatar-size: 2.5rem;
+  border: 0;
 }
 
 .form-input-wrapper {

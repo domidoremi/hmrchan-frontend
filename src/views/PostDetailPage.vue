@@ -309,7 +309,7 @@
     <section
       v-if="post && postId && postId !== 'undefined'"
       ref="commentsSectionRef"
-      class="post-comments"
+      class="post-comments content-auto-xl"
     >
       <CommentList v-if="shouldLoadComments" :post-id="postId" />
       <div v-else class="post-comments__placeholder glass-card">
@@ -345,7 +345,13 @@ import {
 } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
-import { preconnect, preloadResource, runWhenIdle, throttleRAF } from '@/utils/performance'
+import {
+  preconnect,
+  preloadResource,
+  runWhenIdle,
+  throttleRAF,
+  warmDecodedImage,
+} from '@/utils/performance'
 import { formatDate } from '@/utils/date'
 import { ArrowLeft, ChevronLeft, ChevronRight, Eye, Heart } from 'lucide-vue-next'
 import { useAuthStore, useSettingsStore } from '@/stores'
@@ -463,6 +469,8 @@ let commentsObserver: IntersectionObserver | null = null
 let stageListenersAttached = false
 let stageListenersWanted = false
 let clearPendingStageListenerArming: (() => void) | null = null
+let cancelIdleStageListenerArming: (() => void) | null = null
+let cancelIdlePostViewTracking: (() => void) | null = null
 
 // Back FAB progress (matches BackToTop visual language)
 const backScrollProgress = ref(0)
@@ -741,6 +749,8 @@ function preloadAdjacentMedia() {
       thumbImg.src = thumbUrl
       thumbImg.onload = () => preloadedImages.value.add(thumbUrl)
     }
+
+    void warmDecodedImage(getMediaThumbnailUrl(media.id, 'large'))
   })
 }
 
@@ -967,9 +977,18 @@ function syncPostMeta(currentPost: PostDetailResponse | null | undefined) {
   })
 }
 
+function cancelPostDetailIdleWork() {
+  cancelIdleStageListenerArming?.()
+  cancelIdleStageListenerArming = null
+  cancelIdlePostViewTracking?.()
+  cancelIdlePostViewTracking = null
+}
+
 function schedulePostViewTracking(currentPostId: string, requestToken: number) {
   if (typeof window === 'undefined') return
-  runWhenIdle(() => {
+  cancelIdlePostViewTracking?.()
+  cancelIdlePostViewTracking = runWhenIdle(() => {
+    cancelIdlePostViewTracking = null
     if (requestToken !== fetchPostToken || postId.value !== currentPostId) return
     void trackPostView(currentPostId, isAuthenticated.value)
   }, 1500)
@@ -1110,6 +1129,7 @@ watch(postId, (nextId, prevId) => {
   const controller = new AbortController()
   onWatcherCleanup(() => controller.abort())
 
+  cancelPostDetailIdleWork()
   isSwitchingPost.value = false
   // 清理上一条内容的缓存，避免长时间浏览造成内存堆积
   if (prevId && prevId !== nextId) {
@@ -1150,6 +1170,15 @@ watch([hasMultipleMedia, isImageSequence, isLightboxOpen], () => {
 })
 
 watch(
+  [activeImageSrc, () => activeMedia.value?.file_type ?? null],
+  ([nextSrc, mediaType]) => {
+    if (mediaType !== 'image' || !nextSrc) return
+    void warmDecodedImage(nextSrc)
+  },
+  { flush: 'sync' }
+)
+
+watch(
   isTextModalOpen,
   (open) => {
     if (typeof window === 'undefined') return
@@ -1165,6 +1194,8 @@ watch(
 )
 function attachStageListeners() {
   if (stageListenersAttached) return
+  cancelIdleStageListenerArming?.()
+  cancelIdleStageListenerArming = null
   clearPendingStageListenerArming?.()
   clearPendingStageListenerArming = null
   stageListenersAttached = true
@@ -1179,6 +1210,8 @@ function attachStageListeners() {
 }
 
 function detachStageListeners() {
+  cancelIdleStageListenerArming?.()
+  cancelIdleStageListenerArming = null
   clearPendingStageListenerArming?.()
   clearPendingStageListenerArming = null
   if (!stageListenersAttached) return
@@ -1205,6 +1238,8 @@ function scheduleStageListeners() {
 
   const activate = () => {
     if (!stageListenersWanted || stageListenersAttached) return
+    cancelIdleStageListenerArming?.()
+    cancelIdleStageListenerArming = null
     clearPendingStageListenerArming?.()
     clearPendingStageListenerArming = null
     attachStageListeners()
@@ -1224,7 +1259,8 @@ function scheduleStageListeners() {
     window.removeEventListener('wheel', onWheel)
   }
 
-  runWhenIdle(activate, 1200)
+  cancelIdleStageListenerArming?.()
+  cancelIdleStageListenerArming = runWhenIdle(activate, 1200)
 }
 
 onActivated(() => {
@@ -1241,6 +1277,7 @@ onDeactivated(() => {
   fetchPostToken += 1
   isLoading.value = false
   isTextModalOpen.value = false
+  cancelPostDetailIdleWork()
   detachStageListeners()
   unlockBodyScroll()
   if (typeof window !== 'undefined') window.removeEventListener('keydown', onTextModalKeydown)
@@ -1251,6 +1288,7 @@ onUnmounted(() => {
   stageListenersWanted = false
   fetchPostToken += 1
   isLoading.value = false
+  cancelPostDetailIdleWork()
   detachStageListeners()
   stopAutoPlay()
   disconnectCommentsObserver()

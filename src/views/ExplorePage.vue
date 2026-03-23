@@ -621,6 +621,7 @@ function updateMasonryLayout(items: PostListItem[], reset = false) {
 
 // 响应式调整列数 - 使用 ResizeObserver 监听容器而非 window
 let resizeObserver: ResizeObserver | null = null
+let observedResizeElement: HTMLElement | null = null
 let lastContainerWidth = 0
 
 /**
@@ -628,7 +629,7 @@ let lastContainerWidth = 0
  */
 const handleContainerResize = throttleRAF((width: number) => {
   // 忽略微小变化，避免频繁重排
-  if (Math.abs(width - lastContainerWidth) < 50) return
+  if (Math.abs(width - lastContainerWidth) < 24) return
   lastContainerWidth = width
 
   const newColumnCount = calculateColumnCount()
@@ -644,6 +645,7 @@ const handleContainerResize = throttleRAF((width: number) => {
 function detachResizeObserver() {
   resizeObserver?.disconnect()
   resizeObserver = null
+  observedResizeElement = null
 }
 function attachGlobalListeners() {
   window.addEventListener('keydown', onGlobalKeydown)
@@ -654,13 +656,16 @@ function detachGlobalListeners() {
 }
 
 function attachResizeObserver(el: HTMLElement) {
+  if (observedResizeElement === el && resizeObserver) return
+
   detachResizeObserver()
 
-  lastContainerWidth = 0
+  observedResizeElement = el
+  lastContainerWidth = Math.round(el.getBoundingClientRect().width)
   resizeObserver = createResizeObserver((entries) => {
     const entry = entries[0]
     if (entry) {
-      handleContainerResize(entry.contentRect.width)
+      handleContainerResize(Math.round(entry.contentRect.width))
     }
   })
   resizeObserver?.observe(el)

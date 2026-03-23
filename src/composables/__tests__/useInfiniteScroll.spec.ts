@@ -165,4 +165,75 @@ describe('useInfiniteScroll', () => {
 
     wrapper.unmount()
   })
+
+  it('enabled 从 false 切换到 true 时不应重复 re-observe', async () => {
+    const loadMore = vi.fn()
+    const enabled = ref(false)
+    const wrapper = mountHost(loadMore, enabled)
+
+    await nextTick()
+    expect(MockIntersectionObserver.instances).toHaveLength(0)
+
+    enabled.value = true
+    await nextTick()
+
+    const observer = MockIntersectionObserver.instances[0]!
+    const sentinel = wrapper.get('[data-testid="sentinel"]').element
+
+    expect(observer.observe).toHaveBeenCalledTimes(1)
+    expect(observer.observe).toHaveBeenCalledWith(sentinel)
+    expect(observer.unobserve).not.toHaveBeenCalled()
+
+    wrapper.unmount()
+  })
+
+  it('sentinel 持续可见时应只在成功加载后重新 arm observer', async () => {
+    const loadMore = vi.fn(async () => true)
+    const wrapper = mountHost(loadMore, true)
+
+    await nextTick()
+
+    const observer = MockIntersectionObserver.instances[0]!
+    const sentinel = wrapper.get('[data-testid="sentinel"]').element
+
+    observer.trigger({ isIntersecting: true, target: sentinel })
+    await Promise.resolve()
+    await Promise.resolve()
+
+    expect(loadMore).toHaveBeenCalledTimes(1)
+    expect(observer.disconnect).not.toHaveBeenCalled()
+    expect(observer.unobserve).toHaveBeenCalledTimes(1)
+    expect(observer.unobserve).toHaveBeenCalledWith(sentinel)
+    expect(observer.observe).toHaveBeenCalledTimes(2)
+
+    wrapper.unmount()
+  })
+
+  it('loadMore 进行中时不应重复触发', async () => {
+    let resolveLoadMore: ((value: void | boolean) => void) | null = null
+    const loadMore = vi.fn(
+      () =>
+        new Promise<void | boolean>((resolve) => {
+          resolveLoadMore = resolve
+        })
+    )
+    const wrapper = mountHost(loadMore, true)
+
+    await nextTick()
+
+    const observer = MockIntersectionObserver.instances[0]!
+    const sentinel = wrapper.get('[data-testid="sentinel"]').element
+
+    observer.trigger({ isIntersecting: true, target: sentinel })
+    observer.trigger({ isIntersecting: true, target: sentinel })
+    await Promise.resolve()
+
+    expect(loadMore).toHaveBeenCalledTimes(1)
+
+    resolveLoadMore?.(true)
+    await Promise.resolve()
+    await Promise.resolve()
+
+    wrapper.unmount()
+  })
 })

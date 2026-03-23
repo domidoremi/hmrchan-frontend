@@ -198,27 +198,23 @@
                 v-for="author in authors"
                 :key="author.id"
                 v-memo="getAuthorMemo(author)"
-                class="author-card page-list-card"
+                class="author-card page-list-card content-auto-sm"
                 role="button"
                 tabindex="0"
                 @click="goToAuthor(author.id)"
                 @keydown.enter.prevent="goToAuthor(author.id)"
                 @keydown.space.prevent="goToAuthor(author.id)"
               >
-                <img
-                  v-if="hasSearchAuthorAvatar(author.id, author.avatar_url)"
-                  :src="normalizeAvatarUrl(author.avatar_url) || author.avatar_url"
-                  :alt="author.display_name || author.name"
+                <Avatar
+                  :key="`${author.id}:${getSearchAuthorAvatarSrc(author.avatar_url) ?? 'fallback'}`"
                   class="author-avatar"
-                  width="48"
-                  height="48"
+                  size="custom"
+                  :src="getSearchAuthorAvatarSrc(author.avatar_url)"
+                  :alt="author.display_name || author.name"
                   loading="lazy"
                   decoding="async"
-                  @error="markSearchAuthorAvatarFailed(author.id)"
+                  :fallback="getAuthorFallbackLabel(author)"
                 />
-                <div v-else class="author-avatar author-placeholder">
-                  <AnimatedIcon name="user" :fallback-icon="User" size="lg" />
-                </div>
                 <div class="author-info">
                   <h3 class="author-name">{{ author.display_name || author.name }}</h3>
                   <p class="author-platform">
@@ -253,7 +249,7 @@
           </div>
         </div>
 
-        <section v-if="isAuthenticated" class="search-history-section empty-surface">
+        <section v-if="isAuthenticated" class="search-history-section empty-surface content-auto">
           <div class="search-history-header">
             <div>
               <h2 class="search-history-title">{{ $t('search.history') }}</h2>
@@ -388,7 +384,7 @@
           </div>
         </section>
 
-        <section class="discover-section">
+        <section class="discover-section content-auto-lg">
           <div class="discover-header">
             <div>
               <h2 class="discover-title">{{ $t('search.discoverTitle') }}</h2>
@@ -436,7 +432,7 @@
 <script setup lang="ts">
 defineOptions({ name: 'SearchPage' })
 
-import { computed, markRaw, ref } from 'vue'
+import { computed, markRaw } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
   FileText,
@@ -456,6 +452,7 @@ import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import SearchBar from '@/components/business/SearchBar.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import Select from '@/components/ui/Select.vue'
+import Avatar from '@/components/ui/Avatar.vue'
 import PostCard from '@/components/business/PostCard.vue'
 import PostCardSkeleton from '@/components/business/PostCardSkeleton.vue'
 import LoadMoreSection from '@/components/ui/LoadMoreSection.vue'
@@ -543,8 +540,6 @@ const platformOptions = computed(() => [
   },
 ])
 
-const failedSearchAuthorAvatars = ref<Set<string>>(new Set())
-
 const sortOptions = computed(() => [
   { value: 'relevance' as SearchSortBy, label: t('search.sort.relevance') },
   { value: 'published_at' as SearchSortBy, label: t('search.sort.date') },
@@ -566,13 +561,18 @@ function getPlatformIcon(platform: string) {
   }
 }
 
-function hasSearchAuthorAvatar(authorId: string, avatarUrl: string | null | undefined): boolean {
-  return Boolean(avatarUrl) && !failedSearchAuthorAvatars.value.has(authorId)
+function getSearchAuthorAvatarSrc(avatarUrl: string | null | undefined): string | undefined {
+  return normalizeAvatarUrl(avatarUrl || undefined) || avatarUrl || undefined
 }
 
-function markSearchAuthorAvatarFailed(authorId: string) {
-  if (failedSearchAuthorAvatars.value.has(authorId)) return
-  failedSearchAuthorAvatars.value = new Set(failedSearchAuthorAvatars.value).add(authorId)
+function getAuthorFallbackLabel(author: {
+  display_name?: string | null
+  name?: string | null
+  username?: string | null
+}): string {
+  const source =
+    author.display_name?.trim() || author.name?.trim() || author.username?.trim() || '?'
+  return source.slice(0, 1).toUpperCase() || '?'
 }
 </script>
 
@@ -885,19 +885,8 @@ function markSearchAuthorAvatarFailed(authorId: string) {
 }
 
 .author-avatar {
-  inline-size: 3rem;
-  block-size: 3rem;
-  border-radius: 50%;
-  object-fit: cover;
-  flex-shrink: 0;
-}
-
-.author-placeholder {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--color-surface);
-  color: var(--color-text-secondary);
+  --avatar-size: 3rem;
+  border: 0;
 }
 
 .author-info {
