@@ -12,7 +12,13 @@ const mocks = vi.hoisted(() => ({
   getScheduleHighlights: vi.fn(),
   getCommunityHighlights: vi.fn(),
   scheduleTask: vi.fn(),
+  createResizeObserver: vi.fn(),
   storePostNavigationContext: vi.fn(),
+  throttleRAF: vi.fn((fn: (...args: unknown[]) => void) => {
+    const wrapped = (...args: unknown[]) => fn(...args)
+    ;(wrapped as typeof wrapped & { cancel?: () => void }).cancel = vi.fn()
+    return wrapped
+  }),
 }))
 
 vi.mock('@/stores', async () => {
@@ -39,10 +45,12 @@ vi.mock('@/api', () => ({
 
 vi.mock('@/utils/performance', () => ({
   prefersReducedMotion: () => false,
+  throttleRAF: mocks.throttleRAF,
 }))
 
 vi.mock('@/utils/modernAPIs', () => ({
   scheduleTask: mocks.scheduleTask,
+  createResizeObserver: mocks.createResizeObserver,
 }))
 
 vi.mock('@/utils/postNavigation', () => ({
@@ -258,9 +266,15 @@ describe('HomePage', () => {
     mocks.getScheduleHighlights.mockReset()
     mocks.getCommunityHighlights.mockReset()
     mocks.scheduleTask.mockReset()
+    mocks.createResizeObserver.mockReset()
     mocks.storePostNavigationContext.mockReset()
+    mocks.throttleRAF.mockClear()
 
     mocks.scheduleTask.mockImplementation(() => {})
+    mocks.createResizeObserver.mockImplementation(() => ({
+      observe: vi.fn(),
+      disconnect: vi.fn(),
+    }))
     mocks.loadHomepageBootstrap.mockResolvedValue({
       payload: buildInteractiveAggregate(),
       visibility: 'public',

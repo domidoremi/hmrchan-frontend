@@ -6,13 +6,22 @@ import { createMemoryHistory, createRouter } from 'vue-router'
 import AppNavbar from '../AppNavbar.vue'
 
 const MOBILE_NAV_QUERY = '(max-width: 960px)'
-const idleTasks: Array<{ task: () => void; cancel: ReturnType<typeof vi.fn> }> = []
-const prefetchExploreDataMock = vi.fn()
-const prefetchAuthorsDataMock = vi.fn()
-const runWhenIdleMock = vi.fn((task: () => void) => {
-  const cancel = vi.fn()
-  idleTasks.push({ task, cancel })
-  return cancel
+const navbarMocks = vi.hoisted(() => {
+  const idleTasks: Array<{ task: () => void; cancel: ReturnType<typeof vi.fn> }> = []
+  const prefetchExploreDataMock = vi.fn()
+  const prefetchAuthorsDataMock = vi.fn()
+  const runWhenIdleMock = vi.fn((task: () => void) => {
+    const cancel = vi.fn()
+    idleTasks.push({ task, cancel })
+    return cancel
+  })
+
+  return {
+    idleTasks,
+    prefetchExploreDataMock,
+    prefetchAuthorsDataMock,
+    runWhenIdleMock,
+  }
 })
 
 vi.mock('pinia', async () => {
@@ -66,12 +75,12 @@ vi.mock('@/composables/useUserAvatar', () => ({
 }))
 
 vi.mock('@/utils/prefetch', () => ({
-  prefetchExploreData: prefetchExploreDataMock,
-  prefetchAuthorsData: prefetchAuthorsDataMock,
+  prefetchExploreData: navbarMocks.prefetchExploreDataMock,
+  prefetchAuthorsData: navbarMocks.prefetchAuthorsDataMock,
 }))
 
 vi.mock('@/utils/performance', () => ({
-  runWhenIdle: runWhenIdleMock,
+  runWhenIdle: navbarMocks.runWhenIdleMock,
   prefersReducedMotion: () => false,
   scheduleDOMUpdate: (read: () => unknown, write: (value: unknown) => void) => {
     write(read())
@@ -150,10 +159,10 @@ async function createWrapper() {
 describe('AppNavbar', () => {
   beforeEach(() => {
     vi.useFakeTimers()
-    idleTasks.length = 0
-    runWhenIdleMock.mockClear()
-    prefetchExploreDataMock.mockClear()
-    prefetchAuthorsDataMock.mockClear()
+    navbarMocks.idleTasks.length = 0
+    navbarMocks.runWhenIdleMock.mockClear()
+    navbarMocks.prefetchExploreDataMock.mockClear()
+    navbarMocks.prefetchAuthorsDataMock.mockClear()
     authStoreState.user = null
     authStoreState.isAuthenticated = false
     authStoreState.logout.mockClear()
@@ -234,28 +243,28 @@ describe('AppNavbar', () => {
     const { wrapper, router } = await createWrapper()
 
     await vi.advanceTimersByTimeAsync(8000)
-    expect(runWhenIdleMock).toHaveBeenCalledTimes(1)
-    expect(idleTasks).toHaveLength(1)
+    expect(navbarMocks.runWhenIdleMock).toHaveBeenCalledTimes(1)
+    expect(navbarMocks.idleTasks).toHaveLength(1)
 
     await router.push('/search')
     await nextTick()
 
-    expect(idleTasks[0]?.cancel).toHaveBeenCalledTimes(1)
+    expect(navbarMocks.idleTasks[0]?.cancel).toHaveBeenCalledTimes(1)
 
     await vi.advanceTimersByTimeAsync(8000)
-    expect(runWhenIdleMock).toHaveBeenCalledTimes(2)
+    expect(navbarMocks.runWhenIdleMock).toHaveBeenCalledTimes(2)
 
-    idleTasks[1]?.task()
+    navbarMocks.idleTasks[1]?.task()
     await nextTick()
 
-    expect(prefetchExploreDataMock).toHaveBeenCalledTimes(1)
-    expect(prefetchAuthorsDataMock).toHaveBeenCalledTimes(1)
+    expect(navbarMocks.prefetchExploreDataMock).toHaveBeenCalledTimes(1)
+    expect(navbarMocks.prefetchAuthorsDataMock).toHaveBeenCalledTimes(1)
 
     await router.push('/')
     await nextTick()
     await vi.advanceTimersByTimeAsync(8000)
 
-    expect(runWhenIdleMock).toHaveBeenCalledTimes(2)
+    expect(navbarMocks.runWhenIdleMock).toHaveBeenCalledTimes(2)
 
     wrapper.unmount()
   })
@@ -266,10 +275,10 @@ describe('AppNavbar', () => {
     const { wrapper } = await createWrapper()
 
     await vi.advanceTimersByTimeAsync(8000)
-    expect(runWhenIdleMock).toHaveBeenCalledTimes(1)
+    expect(navbarMocks.runWhenIdleMock).toHaveBeenCalledTimes(1)
 
     wrapper.unmount()
 
-    expect(idleTasks[0]?.cancel).toHaveBeenCalledTimes(1)
+    expect(navbarMocks.idleTasks[0]?.cancel).toHaveBeenCalledTimes(1)
   })
 })
