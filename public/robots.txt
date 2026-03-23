@@ -63,4 +63,4 @@ Disallow: /
 Sitemap: https://momichan.xyz/sitemap.xml
 
 # 主机信息（可选）
-Host: https://momichan.xyz
+Host: momichan.xyz

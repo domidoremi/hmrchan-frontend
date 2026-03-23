@@ -23,13 +23,60 @@
           <div class="page-hero__meta">
             <span class="page-hero__note">{{ $t('contact.feedbackTitle') }}</span>
             <span class="page-hero__note">{{ $t('contact.feedbackSubtitle') }}</span>
-            <span class="page-hero__note">{{ $t('nav.community') }}</span>
+            <span class="page-hero__note">{{ $t('contact.securityTitle') }}</span>
           </div>
         </div>
       </section>
 
       <div class="contact-layout page-grid page-grid--sidebar">
         <div class="page-card-stack">
+          <section id="security-reporting" class="contact-card contact-security empty-surface">
+            <div class="contact-security__header">
+              <span class="page-hero__eyebrow">{{ $t('contact.securityTitle') }}</span>
+              <div>
+                <h2 class="contact-section-title contact-card__title">
+                  {{ $t('contact.securityTitle') }}
+                </h2>
+                <p class="card-subtitle">{{ $t('contact.securitySubtitle') }}</p>
+              </div>
+            </div>
+
+            <p class="contact-security__body">{{ $t('contact.securityBody') }}</p>
+
+            <div class="contact-security__summary">
+              <article
+                v-for="item in securitySummaryItems"
+                :key="item.label"
+                class="contact-security__summary-item"
+              >
+                <span class="contact-security__summary-label">{{ item.label }}</span>
+                <p class="contact-security__summary-value">{{ item.value }}</p>
+              </article>
+            </div>
+
+            <ul class="contact-security__checklist">
+              <li v-for="item in securityChecklistItems" :key="item" class="contact-security__item">
+                {{ item }}
+              </li>
+            </ul>
+
+            <div class="contact-security__actions">
+              <a
+                href="#security-feedback-form"
+                class="page-inline-cta contact-security__link"
+                @click="prepareSecurityFeedback"
+              >
+                {{ $t('contact.securityAction') }}
+              </a>
+              <a
+                href="/.well-known/security.txt"
+                class="page-control-btn page-control-btn--compact contact-security__link"
+              >
+                {{ $t('contact.securityTxtAction') }}
+              </a>
+            </div>
+          </section>
+
           <section class="contact-card empty-surface">
             <h2 class="contact-section-title contact-card__title">{{ $t('contact.title') }}</h2>
             <p class="card-subtitle">{{ $t('contact.subtitle') }}</p>
@@ -67,7 +114,7 @@
             </form>
           </section>
 
-          <section class="contact-card empty-surface">
+          <section id="security-feedback-form" class="contact-card empty-surface">
             <h2 class="contact-section-title contact-card__title">
               {{ $t('contact.feedbackTitle') }}
             </h2>
@@ -121,6 +168,19 @@
         </div>
 
         <aside class="contact-side empty-surface">
+          <div class="contact-side__section">
+            <h2 class="contact-side__title">{{ $t('contact.securityTitle') }}</h2>
+            <p class="contact-side__copy">{{ $t('contact.securitySubtitle') }}</p>
+            <div class="contact-side__links">
+              <a href="#security-reporting" class="page-control-btn contact-side__link">
+                {{ $t('contact.securityAction') }}
+              </a>
+              <a href="/.well-known/security.txt" class="page-control-btn contact-side__link">
+                {{ $t('contact.securityTxtAction') }}
+              </a>
+            </div>
+          </div>
+
           <div class="contact-side__section">
             <h2 class="contact-side__title">{{ $t('contact.feedbackTitle') }}</h2>
             <p class="contact-side__copy">{{ $t('contact.feedbackSubtitle') }}</p>
@@ -193,6 +253,29 @@ const feedbackCategoryOptions = computed(() => [
   { value: 'feature' as const, label: t('contact.feedbackCategoryFeature') },
   { value: 'other' as const, label: t('contact.feedbackCategoryOther') },
 ])
+const securitySummaryItems = computed(() => [
+  {
+    label: t('contact.securitySummaryScopeLabel'),
+    value: t('contact.securitySummaryScopeValue'),
+  },
+  {
+    label: t('contact.securitySummaryChannelLabel'),
+    value: t('contact.securitySummaryChannelValue'),
+  },
+  {
+    label: t('contact.securitySummaryPreparationLabel'),
+    value: t('contact.securitySummaryPreparationValue'),
+  },
+])
+const securityChecklistItems = computed(() => [
+  t('contact.securityChecklistPrivate'),
+  t('contact.securityChecklistScope'),
+  t('contact.securityChecklistEvidence'),
+])
+
+function prepareSecurityFeedback() {
+  feedback.category = 'bug'
+}
 
 async function handleSubmit() {
   isSubmitting.value = true
@@ -275,6 +358,66 @@ async function handleFeedbackSubmit() {
   inline-size: 100%;
   display: grid;
   gap: var(--spacing-4);
+}
+
+.contact-security__header {
+  display: grid;
+  gap: var(--spacing-3);
+}
+
+.contact-security__body,
+.contact-security__summary-value {
+  margin: 0;
+  color: var(--color-text-secondary);
+}
+
+.contact-security__body {
+  max-inline-size: 72ch;
+}
+
+.contact-security__summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+  gap: var(--spacing-3);
+}
+
+.contact-security__summary-item {
+  display: grid;
+  gap: var(--spacing-2);
+  padding: var(--spacing-3);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg, 1rem);
+  background: var(--glass-bg-subtle);
+}
+
+.contact-security__summary-label {
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+}
+
+.contact-security__checklist {
+  display: grid;
+  gap: var(--spacing-2);
+  margin: 0;
+  padding-inline-start: 1.25rem;
+  color: var(--color-text-secondary);
+}
+
+.contact-security__item {
+  line-height: 1.6;
+}
+
+.contact-security__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-2);
+}
+
+.contact-security__link {
+  text-decoration: none;
 }
 
 .contact-layout {
