@@ -741,7 +741,21 @@
     "feedbackSend": "Send Feedback",
     "feedbackSending": "Submitting...",
     "feedbackSuccess": "Feedback submitted. Thanks for helping us improve.",
-    "feedbackError": "Failed to submit feedback"
+    "feedbackError": "Failed to submit feedback",
+    "securityTitle": "Security Reporting",
+    "securitySubtitle": "Share suspected vulnerabilities privately so we can verify them before public disclosure.",
+    "securityBody": "Use this page for vulnerability reports that affect the public site, login flows, uploads, or exposed data paths. If an issue could impact other people, avoid destructive testing on production and send the smallest reliable reproduction you have.",
+    "securityAction": "Open bug report form",
+    "securityTxtAction": "View security.txt",
+    "securitySummaryScopeLabel": "Best for",
+    "securitySummaryScopeValue": "XSS, authentication issues, access-control mistakes, data exposure, and abusive automation paths.",
+    "securitySummaryChannelLabel": "Submission path",
+    "securitySummaryChannelValue": "Use the bug feedback form below and leave a reply address if you want a follow-up.",
+    "securitySummaryPreparationLabel": "Include",
+    "securitySummaryPreparationValue": "The affected URL, steps to reproduce, impact, screenshots, timestamps, and any request IDs you captured.",
+    "securityChecklistPrivate": "Keep the report private and avoid posting exploit details publicly before the issue is fixed.",
+    "securityChecklistScope": "Test only accounts and data you control, and stop once you have enough evidence to explain the problem.",
+    "securityChecklistEvidence": "Describe the expected behavior, actual behavior, impact, and the smallest reliable reproduction path."
   },
   "profile": {
     "settings": "Profile Settings",

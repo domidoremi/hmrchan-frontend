@@ -741,7 +741,21 @@
     "feedbackSend": "フィードバックを送信",
     "feedbackSending": "送信中...",
     "feedbackSuccess": "フィードバックを送信しました。ありがとうございます。",
-    "feedbackError": "フィードバックの送信に失敗しました"
+    "feedbackError": "フィードバックの送信に失敗しました",
+    "securityTitle": "セキュリティ報告",
+    "securitySubtitle": "脆弱性の疑いがある内容は、公開前に確認できるよう非公開で共有してください。",
+    "securityBody": "この窓口は、公開サイト、ログインフロー、アップロード経路、またはデータ露出につながる問題の報告に適しています。他の利用者へ影響する可能性がある場合は、本番環境で破壊的な検証を行わず、再現確認に必要な最小限の情報だけを送ってください。",
+    "securityAction": "不具合報告フォームを開く",
+    "securityTxtAction": "security.txt を見る",
+    "securitySummaryScopeLabel": "対象",
+    "securitySummaryScopeValue": "XSS、認証不備、アクセス制御ミス、情報露出、悪用可能な自動化経路など。",
+    "securitySummaryChannelLabel": "送信方法",
+    "securitySummaryChannelValue": "下の不具合フィードバックフォームを利用し、返信が必要な場合は連絡先を残してください。",
+    "securitySummaryPreparationLabel": "含めてほしい内容",
+    "securitySummaryPreparationValue": "影響を受ける URL、再現手順、影響、スクリーンショット、発生時刻、記録できたリクエスト ID。",
+    "securityChecklistPrivate": "修正前に公開の場へ悪用手順を投稿せず、まずは非公開で共有してください。",
+    "securityChecklistScope": "自分で管理しているアカウントとデータだけを対象にし、問題を説明できるだけの証拠が集まった時点で検証を止めてください。",
+    "securityChecklistEvidence": "期待される挙動、実際の挙動、影響範囲、そして最小の再現手順を記載してください。"
   },
   "profile": {
     "settings": "プロフィール設定",
