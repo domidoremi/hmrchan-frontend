@@ -213,7 +213,8 @@ describe('functions/_middleware', () => {
     expect(html).toContain('content="noindex, nofollow"')
     expect(html).toContain('href="https://momichan.xyz/missing"')
     expect(html).toContain('data-prerender-shell="true"')
-    expect(html).not.toContain('data-prerender-structured-data="true"')
+    expect(html).toContain('data-prerender-structured-data="true"')
+    expect(html).toContain('application/ld+json')
     expect(html).toMatch(/nonce="[A-Za-z0-9+/=]+"/)
   })
 
