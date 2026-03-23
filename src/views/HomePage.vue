@@ -3968,7 +3968,7 @@ onBeforeUnmount(() => {
   margin: 0;
   scroll-snap-type: none;
   will-change: transform;
-  transition: transform 320ms var(--ease-fluid);
+  backface-visibility: hidden;
 }
 
 .rail-track::-webkit-scrollbar {
@@ -6523,17 +6523,17 @@ onBeforeUnmount(() => {
   }
 
   .rail {
-    block-size: var(--home-safe-block-size);
-    min-block-size: var(--home-safe-block-size);
+    block-size: auto;
+    min-block-size: 0;
     padding-block: clamp(0.625rem, 3vw, 0.875rem) calc(0.875rem + var(--home-stage-safe-bottom));
-    overflow: hidden;
+    overflow: visible;
   }
 
   .rail-sticky,
   .rail-stage {
     position: relative;
     block-size: auto;
-    min-block-size: var(--home-safe-block-size);
+    min-block-size: 0;
     overflow: visible;
   }
 
@@ -6637,6 +6637,8 @@ onBeforeUnmount(() => {
     scroll-snap-type: x mandatory;
     scroll-padding-inline: 0.875rem;
     overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x;
     scrollbar-width: none;
   }
 
