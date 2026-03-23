@@ -1,7 +1,6 @@
 {
   "app": {
-    "name": "MomiChan",
-    "tagline": "A soft editorial home for creator moments"
+    "name": "MomiChan"
   },
   "nav": {
     "home": "Home",
@@ -308,6 +307,9 @@
     }
   },
   "home": {
+    "quickNav": {
+      "ariaLabel": "Homepage section navigation"
+    },
     "hero": {
       "title": "Discover creator moments worth saving today",
       "subtitle": "Collect the posts, creators, and schedules you love in one place.",

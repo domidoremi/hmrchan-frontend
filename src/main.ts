@@ -15,6 +15,7 @@ import App from './App.vue'
 import router from './router'
 import i18n, { preloadActiveLocale } from './i18n'
 
+import 'lenis/dist/lenis.css'
 import './styles/index.css'
 import { canTrackAnalytics, updateAnalyticsConsent } from './utils/analyticsConsent'
 import { reportClientError, reportClientEvent } from './utils/clientReporter'

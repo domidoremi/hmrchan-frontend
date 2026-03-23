@@ -1,7 +1,13 @@
 <template>
   <div class="home-page" :style="homePageMotionStyle">
+    <HomeQuickNav
+      :anchors="homeQuickNavAnchors"
+      :active-id="activeHomeSectionId"
+      @navigate="scrollToHomeSection"
+    />
+
     <!-- Hero + 今日入口 -->
-    <div class="home-fold">
+    <section id="home-fold" class="home-fold home-screen">
       <!-- Hero Section -->
       <HeroSection :enabled="settings.showHeroSection" :animated="shouldAnimate">
         <div class="hero-copy">
@@ -21,7 +27,6 @@
 
           <div class="hero-copy__right">
             <div
-              v-if="isHeroSupplementVisible"
               class="hero-editorial glass-card"
               :class="{ 'hero-editorial--loaded': heroEditorialVisible }"
               :style="noGlassBackdropStyle"
@@ -87,7 +92,7 @@
               </Button>
             </div>
 
-            <div v-if="isHeroSupplementVisible" class="hero-tags">
+            <div class="hero-tags">
               <span class="hero-tags__label">{{ $t('home.hero.trendingLabel') }}</span>
               <div v-if="heroTags.length > 0" class="hero-tag-list">
                 <RouterLink
@@ -102,11 +107,7 @@
               <span v-else class="hero-tags__empty">{{ $t('home.hero.tagsEmpty') }}</span>
             </div>
 
-            <div
-              v-if="isHeroSupplementVisible"
-              class="hero-stats"
-              :aria-label="$t('home.hero.stats.ariaLabel')"
-            >
+            <div class="hero-stats" :aria-label="$t('home.hero.stats.ariaLabel')">
               <div
                 v-for="item in heroStats"
                 :key="item.key"
@@ -121,13 +122,14 @@
           </div>
         </div>
       </HeroSection>
-    </div>
+    </section>
     <!-- /.home-fold -->
 
     <!-- Horizontal Rail -->
     <FeaturedRailSection
-      v-if="isHomeSecondaryContentReady"
+      id="home-rail"
       ref="featuredSectionRef"
+      class="rail home-screen"
       :scene-style="featuredSceneStyle"
       :track-style="railTrackStyle"
       :slides="railSlides"
@@ -762,8 +764,9 @@
 
     <!-- Latest Posts -->
     <LatestPostsSection
-      v-if="isHomeSecondaryContentReady"
+      id="home-posts"
       ref="postsSectionRef"
+      class="posts posts--bubble home-screen"
       :revealed="hasTriggeredBubbleBurst"
     >
       <header class="posts-header">
@@ -866,8 +869,9 @@
     </LatestPostsSection>
 
     <StoryDeckSection
-      v-if="isHomeSecondaryContentReady"
+      id="home-media"
       ref="storyDeckRef"
+      class="media-slices home-screen"
       :scene-style="storySceneStyle"
     >
       <header class="page-section-head page-section-head--stage">
@@ -934,6 +938,10 @@
       </div>
     </StoryDeckSection>
 
+    <section id="home-footer" class="app-footer-shell app-footer-shell--home home-screen">
+      <AppFooter variant="home" />
+    </section>
+
     <HomepagePreviewController
       v-if="shouldMountHomepagePreviewController"
       v-model:isOpen="isPreviewOpen"
@@ -942,8 +950,6 @@
       :initial-thumbnail-src="previewThumbnailSrc"
       @open-detail="openDetailFromPreview"
     />
-
-    <ScrollDownFab />
   </div>
 </template>
 
@@ -997,14 +1003,17 @@ import { useHomeViewModel } from '@/views/homepage/useHomeViewModel'
 import Button from '@/components/ui/Button.vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
+import AppFooter from '@/components/layout/AppFooter.vue'
 import HeroSection from '@/components/home/HeroSection.vue'
-import ScrollDownFab from '@/components/ui/ScrollDownFab.vue'
+import HomeQuickNav from '@/components/home/HomeQuickNav.vue'
 import {
   computeScrollAnchorTop,
   readNavbarVisibleOffset,
   resolveDocumentAnchorTop,
 } from '@/components/ui/scrollAnchorTargets'
 import { createResizeObserver, scheduleTask } from '@/utils/modernAPIs'
+import { homeSectionAnchors, type HomeSectionAnchor } from '@/config/homeSections'
+import { scrollWithSmoothScroll } from '@/composables/useSmoothScroll'
 
 type GsapModule = typeof import('gsap')
 type ScrollTriggerModule = typeof import('gsap/ScrollTrigger')
@@ -1014,8 +1023,6 @@ let gsapModule: GsapModule['default'] | null = null
 let scrollTriggerModule: ScrollTriggerModule['ScrollTrigger'] | null = null
 let scrollTriggerReadyPromise: Promise<boolean> | null = null
 
-const HOME_SUPPLEMENT_DELAY_MS = 120
-const HOME_SECONDARY_CONTENT_FALLBACK_DELAY_MS = 900
 const SCENE_LAYOUT_REFRESH_THRESHOLD_PX = 24
 const PORTAL_LEAD_IMAGE_SIZE = Object.freeze({ width: 1600, height: 1000 })
 const PORTAL_LEAD_IMAGE_SIZES = '(min-width: 1280px) 34rem, (min-width: 768px) 92vw, 100vw'
@@ -1061,11 +1068,6 @@ const initialHomePosts = buildHomePostsFromAggregate(initialHomeAggregate, t).fi
   (post) => !isFilteredAuthor(post.author_name)
 )
 
-const isHomeSecondaryContentReady = ref(false)
-const isHeroSupplementVisible = ref(true)
-let heroSupplementTimer: number | null = null
-let homeSecondaryContentFallbackTimer: number | null = null
-let disposeHomeSecondaryContentIntent: (() => void) | null = null
 let homeSupportRefreshController: AbortController | null = null
 let pendingHomeSupportRefresh: HomeSupportRefreshTargets = {
   schedule: false,
@@ -1114,6 +1116,9 @@ type HomeSupportRefreshTargets = {
 const postsSectionRef = useTemplateRef<HomeSectionInstance>('postsSectionRef')
 const featuredSectionRef = useTemplateRef<HomeSectionInstance>('featuredSectionRef')
 const storyDeckRef = useTemplateRef<HomeSectionInstance>('storyDeckRef')
+const homeQuickNavAnchors = homeSectionAnchors
+const activeHomeSectionId = ref<HomeSectionAnchor['id']>(homeSectionAnchors[0]?.id ?? 'home-fold')
+let homeSectionObserver: IntersectionObserver | null = null
 
 const railProgress = ref(0)
 const storyProgress = ref(0)
@@ -1174,7 +1179,6 @@ const {
   shouldAnimate,
   translate: t,
   locale,
-  secondaryReady: isHomeSecondaryContentReady,
 })
 
 function formatScheduleHighlightMeta(item: HomeScheduleHighlight | null | undefined): string {
@@ -1233,6 +1237,75 @@ function resolveSectionElement(
   return section?.element ?? null
 }
 
+function getHomeSectionElement(id: HomeSectionAnchor['id']): HTMLElement | null {
+  if (typeof document === 'undefined') return null
+  return document.getElementById(id)
+}
+
+function disconnectHomeSectionObserver() {
+  homeSectionObserver?.disconnect()
+  homeSectionObserver = null
+}
+
+function observeHomeSections() {
+  if (typeof window === 'undefined' || typeof document === 'undefined') return
+
+  disconnectHomeSectionObserver()
+
+  if (typeof window.IntersectionObserver !== 'function') return
+
+  const visibility = new Map<HomeSectionAnchor['id'], number>()
+  homeSectionObserver = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) {
+        const id = entry.target.getAttribute('id') as HomeSectionAnchor['id'] | null
+        if (!id) continue
+        visibility.set(id, entry.isIntersecting ? entry.intersectionRatio : 0)
+      }
+
+      let nextActive = activeHomeSectionId.value
+      let maxRatio = -1
+      for (const anchor of homeQuickNavAnchors) {
+        const ratio = visibility.get(anchor.id) ?? 0
+        if (ratio > maxRatio) {
+          maxRatio = ratio
+          nextActive = anchor.id
+        }
+      }
+
+      if (maxRatio > 0) {
+        activeHomeSectionId.value = nextActive
+      }
+    },
+    {
+      threshold: [0.2, 0.35, 0.55, 0.75],
+      rootMargin: '-18% 0% -18% 0%',
+    }
+  )
+
+  for (const anchor of homeQuickNavAnchors) {
+    const element = getHomeSectionElement(anchor.id)
+    if (element) {
+      homeSectionObserver.observe(element)
+    }
+  }
+}
+
+function scrollToHomeSection(id: HomeSectionAnchor['id']) {
+  if (typeof document === 'undefined') return
+
+  const target = getHomeSectionElement(id)
+  if (!target) return
+
+  activeHomeSectionId.value = id
+
+  const targetTop = resolveDocumentAnchorTop(target, document)
+  const top = computeScrollAnchorTop(targetTop, readNavbarVisibleOffset(document))
+  scrollWithSmoothScroll(top, {
+    immediate: !shouldAnimate.value,
+  })
+}
+
 let storyDeckTrigger: ScrollTriggerInstance | null = null
 let featuredRailTrigger: ScrollTriggerInstance | null = null
 let sceneSetupFrame: number | null = null
@@ -1254,9 +1327,7 @@ const storyFooterFade = computed(() => clamp((storyProgress.value - 0.9) / 0.1))
 const activeStoryIndex = computed(() =>
   effectiveStoryCardCount.value > 1 ? Math.round(storyProgressIndex.value) : 0
 )
-const effectiveStoryCardCount = computed(() =>
-  isHomeSecondaryContentReady.value ? storyCardCount.value : 0
-)
+const effectiveStoryCardCount = computed(() => storyCardCount.value)
 
 const railSlides = computed(() => [
   { key: 'portal', label: t('home.portal.title') },
@@ -1353,9 +1424,7 @@ watchSyncEffect(() => {
 
 onActivated(() => {
   setHomeSceneLifecycleEnabled(true)
-  if (!isHeroSupplementVisible.value || !isHomeSecondaryContentReady.value) {
-    scheduleHeroSecondaryContent()
-  }
+  observeHomeSections()
   if (
     (homeDataSource.value === 'idle' || homeDataSource.value === 'fallback') &&
     !isLoading.value
@@ -1365,11 +1434,11 @@ onActivated(() => {
 })
 
 onDeactivated(() => {
-  resetHeroSecondaryContent()
   setHomeSceneLifecycleEnabled(false)
   abortHomeRequest()
   abortHomeSupportRefresh()
   setRailNavbarLock(false)
+  disconnectHomeSectionObserver()
 })
 let homeRequestController: AbortController | null = null
 
@@ -1516,9 +1585,7 @@ async function fetchHomeData(): Promise<boolean> {
     const refreshTargets = resolveHomeSupportRefreshTargets(result.payload, result.source)
     if (hasPendingHomeSupportRefresh(refreshTargets)) {
       pendingHomeSupportRefresh = refreshTargets
-      if (isHomeSecondaryContentReady.value) {
-        runHomeSupportRefresh()
-      }
+      runHomeSupportRefresh()
     }
     return true
   } catch (err) {
@@ -1639,14 +1706,10 @@ function setHomeSceneLifecycleEnabled(enabled: boolean) {
     disconnectSceneLayoutObserver()
     cleanupSceneTriggers()
     clearHeroEditorialRevealTimer()
-    clearHeroSupplementTimer()
-    clearHomeSecondaryContentTimer()
     return
   }
 
-  if (isHomeSecondaryContentReady.value) {
-    scheduleHomeEnhancements()
-  }
+  scheduleHomeEnhancements()
 }
 
 function clearSceneScrollTween() {
@@ -1670,97 +1733,6 @@ function clearViewportSceneFrame() {
   viewportSceneFrame = null
 }
 
-function clearHeroSupplementTimer() {
-  if (typeof window === 'undefined' || heroSupplementTimer === null) return
-  window.clearTimeout(heroSupplementTimer)
-  heroSupplementTimer = null
-}
-
-function clearHomeSecondaryContentTimer() {
-  if (typeof window === 'undefined' || homeSecondaryContentFallbackTimer === null) return
-  window.clearTimeout(homeSecondaryContentFallbackTimer)
-  homeSecondaryContentFallbackTimer = null
-}
-
-function clearHomeSecondaryContentIntentListeners() {
-  disposeHomeSecondaryContentIntent?.()
-  disposeHomeSecondaryContentIntent = null
-}
-
-function revealHomeSecondaryContent() {
-  clearHomeSecondaryContentTimer()
-  clearHomeSecondaryContentIntentListeners()
-
-  if (isHomeSecondaryContentReady.value) return
-
-  isHomeSecondaryContentReady.value = true
-  if (hasPendingHomeSupportRefresh(pendingHomeSupportRefresh)) {
-    runHomeSupportRefresh()
-  }
-  if (scenesEnabled) {
-    scheduleHomeEnhancements(1200)
-  }
-}
-
-async function ensureHomeSecondaryContentReady() {
-  if (isHomeSecondaryContentReady.value) return
-
-  revealHomeSecondaryContent()
-  await nextTick()
-}
-
-function bindHomeSecondaryContentIntent() {
-  if (typeof window === 'undefined' || isHomeSecondaryContentReady.value) return
-
-  clearHomeSecondaryContentIntentListeners()
-
-  const onIntent = () => {
-    revealHomeSecondaryContent()
-  }
-
-  window.addEventListener('scroll', onIntent, { once: true, passive: true })
-  window.addEventListener('pointerdown', onIntent, { once: true, passive: true })
-  window.addEventListener('touchstart', onIntent, { once: true, passive: true })
-  window.addEventListener('keydown', onIntent, { once: true })
-
-  disposeHomeSecondaryContentIntent = () => {
-    window.removeEventListener('scroll', onIntent)
-    window.removeEventListener('pointerdown', onIntent)
-    window.removeEventListener('touchstart', onIntent)
-    window.removeEventListener('keydown', onIntent)
-  }
-}
-
-function scheduleHeroSecondaryContent() {
-  if (typeof window === 'undefined') {
-    isHeroSupplementVisible.value = true
-    isHomeSecondaryContentReady.value = true
-    return
-  }
-
-  clearHeroSupplementTimer()
-  clearHomeSecondaryContentTimer()
-  clearHomeSecondaryContentIntentListeners()
-
-  heroSupplementTimer = window.setTimeout(() => {
-    isHeroSupplementVisible.value = true
-    heroSupplementTimer = null
-  }, HOME_SUPPLEMENT_DELAY_MS)
-
-  bindHomeSecondaryContentIntent()
-  homeSecondaryContentFallbackTimer = window.setTimeout(() => {
-    revealHomeSecondaryContent()
-  }, HOME_SECONDARY_CONTENT_FALLBACK_DELAY_MS)
-}
-
-function resetHeroSecondaryContent() {
-  clearHeroSupplementTimer()
-  clearHomeSecondaryContentTimer()
-  clearHomeSecondaryContentIntentListeners()
-  isHeroSupplementVisible.value = false
-  isHomeSecondaryContentReady.value = false
-}
-
 function setRailNavbarLock(locked: boolean) {
   if (typeof document === 'undefined') return
   if (locked) {
@@ -1772,16 +1744,48 @@ function setRailNavbarLock(locked: boolean) {
 
 function setHomeFooterBlend(enabled: boolean) {
   if (typeof document === 'undefined') return
-  document.documentElement.style.removeProperty('--home-footer-opacity')
-  document.documentElement.style.removeProperty('--home-footer-y')
-  if (enabled) return
+  if (!enabled) {
+    document.documentElement.style.removeProperty('--home-footer-opacity')
+    document.documentElement.style.removeProperty('--home-footer-y')
+    document.documentElement.style.removeProperty('--home-footer-scale')
+    document.documentElement.style.removeProperty('--home-footer-marquee-opacity')
+    document.documentElement.style.removeProperty('--home-footer-marquee-speed-progress')
+    document.documentElement.style.removeProperty('--home-footer-marquee-play-state')
+    return
+  }
+
+  document.documentElement.style.setProperty('--home-footer-opacity', '0.76')
+  document.documentElement.style.setProperty('--home-footer-y', '1.75rem')
+  document.documentElement.style.setProperty('--home-footer-scale', '0.986')
+  document.documentElement.style.setProperty('--home-footer-marquee-opacity', '0.58')
+  document.documentElement.style.setProperty('--home-footer-marquee-speed-progress', '0')
+  document.documentElement.style.setProperty('--home-footer-marquee-play-state', 'running')
 }
 
 function setHomeFooterBlendProgress(progress: number) {
   if (typeof document === 'undefined') return
-  void progress
-  document.documentElement.style.removeProperty('--home-footer-opacity')
-  document.documentElement.style.removeProperty('--home-footer-y')
+  const clamped = clamp(progress)
+  document.documentElement.style.setProperty(
+    '--home-footer-opacity',
+    (0.76 + clamped * 0.24).toFixed(3)
+  )
+  document.documentElement.style.setProperty(
+    '--home-footer-y',
+    `${((1 - clamped) * 1.75).toFixed(3)}rem`
+  )
+  document.documentElement.style.setProperty(
+    '--home-footer-scale',
+    (0.986 + clamped * 0.014).toFixed(4)
+  )
+  document.documentElement.style.setProperty(
+    '--home-footer-marquee-opacity',
+    (0.58 + clamped * 0.42).toFixed(3)
+  )
+  document.documentElement.style.setProperty(
+    '--home-footer-marquee-speed-progress',
+    (clamped * 0.7).toFixed(3)
+  )
+  document.documentElement.style.setProperty('--home-footer-marquee-play-state', 'running')
 }
 
 function measureViewportBlend(
@@ -1819,11 +1823,7 @@ function updateViewportSceneBlend() {
     heroRail: measureViewportBlend(resolveSectionElement(featuredSectionRef.value), 1.04, 0.16),
     railPosts: measureViewportBlend(resolveSectionElement(postsSectionRef.value), 1.04, 0.18),
     postsStory: measureViewportBlend(resolveSectionElement(storyDeckRef.value), 1.04, 0.18),
-    storyFooter: measureViewportBlend(
-      document.querySelector<HTMLElement>('footer.footer'),
-      1.04,
-      0.24
-    ),
+    storyFooter: measureViewportBlend(document.getElementById('home-footer'), 1.04, 0.24),
   }
 
   const footerBlendProgress = nextBlend.storyFooter > 0.04 ? nextBlend.storyFooter : 0
@@ -1832,7 +1832,7 @@ function updateViewportSceneBlend() {
   const bubbleRevealWindow = resolveBubbleRevealWindow(
     postsElement?.getBoundingClientRect() ?? null,
     window.innerHeight,
-    isHomeSecondaryContentReady.value ? bubbleItems.value.length : 0
+    bubbleItems.value.length
   )
   const railLockBoundary =
     postsElement?.offsetTop ??
@@ -1893,7 +1893,7 @@ function restartBubbleBurst() {
 
   resetBubbleRevealState()
 
-  if (!isHomeSecondaryContentReady.value || bubbleItems.value.length === 0) return
+  if (bubbleItems.value.length === 0) return
   if (!shouldAnimate.value) {
     bubbleRevealPhase.value = 'revealed'
     return
@@ -2082,19 +2082,8 @@ function goToSchedule() {
   router.push('/schedule')
 }
 
-async function scrollToFeatured() {
-  await ensureHomeSecondaryContentReady()
-
-  const target = resolveSectionElement(featuredSectionRef.value)
-  if (!target) return
-
-  const panelAnchor =
-    target.querySelector<HTMLElement>('[data-scroll-anchor="home-featured-portal"]') ?? target
-  const targetTop = resolveDocumentAnchorTop(panelAnchor, document)
-  window.scrollTo({
-    top: computeScrollAnchorTop(targetTop, readNavbarVisibleOffset(document)),
-    behavior: 'smooth',
-  })
+function scrollToFeatured() {
+  scrollToHomeSection('home-rail')
 }
 
 function isTrendAuthorAvatarFailed(key: string): boolean {
@@ -2155,12 +2144,7 @@ function openDetailFromPreview(postId: string) {
 }
 
 watch(
-  [
-    railSlideCount,
-    () => (isHomeSecondaryContentReady.value ? storyCardCount.value : 0),
-    () => (isHomeSecondaryContentReady.value ? bubbleItems.value.length : 0),
-    shouldAnimate,
-  ],
+  [railSlideCount, () => storyCardCount.value, () => bubbleItems.value.length, shouldAnimate],
   () => {
     resetBubbleRevealState()
     if (!scenesEnabled) return
@@ -2170,16 +2154,16 @@ watch(
 
 onMounted(() => {
   setHomeSceneLifecycleEnabled(true)
-  scheduleHeroSecondaryContent()
+  observeHomeSections()
   void fetchHomeData()
 })
 
 onBeforeUnmount(() => {
-  resetHeroSecondaryContent()
   setHomeSceneLifecycleEnabled(false)
   abortHomeRequest()
   abortHomeSupportRefresh()
   setRailNavbarLock(false)
+  disconnectHomeSectionObserver()
 })
 </script>
 
@@ -2192,9 +2176,8 @@ onBeforeUnmount(() => {
     var(--navbar-visible-height, var(--navbar-height, 4rem))
   );
   --home-safe-block-size: calc(100dvh - var(--home-navbar-stable-height));
-  --home-safe-block-size-with-mobile-nav: calc(
-    100dvh - var(--home-navbar-stable-height) - var(--mobile-nav-height, 0rem) -
-      env(safe-area-inset-bottom, 0rem)
+  --home-safe-block-size-mobile: calc(
+    100dvh - var(--home-navbar-stable-height) - env(safe-area-inset-bottom, 0rem)
   );
   --home-stage-safe-top: calc(var(--home-navbar-stable-height) + clamp(0.35rem, 1.2vw, 0.9rem));
   --home-stage-safe-bottom: clamp(1.5rem, 4vw, 2.75rem);
@@ -2294,6 +2277,17 @@ onBeforeUnmount(() => {
     radial-gradient(circle at 84% 22%, rgba(var(--home-blush-rgb), 0.12) 0%, transparent 38%),
     linear-gradient(180deg, rgba(246, 244, 241, 0) 0%, rgba(248, 247, 244, 0.66) 100%);
   --home-screen-transition-ms: 640ms;
+}
+
+.home-page .home-screen {
+  position: relative;
+  scroll-margin-top: calc(var(--navbar-visible-height, var(--navbar-height, 4rem)) + 1rem);
+}
+
+.home-page .app-footer-shell--home {
+  position: relative;
+  min-block-size: min(36rem, 100dvh);
+  padding-block-start: clamp(1.5rem, 4vw, 3rem);
 }
 
 :global(#app[data-theme='dark'] .home-page),
@@ -6468,7 +6462,7 @@ onBeforeUnmount(() => {
 
 @media (max-width: 768px) {
   .home-page {
-    --home-safe-block-size: var(--home-safe-block-size-with-mobile-nav);
+    --home-safe-block-size: var(--home-safe-block-size-mobile);
     --home-stage-safe-bottom: clamp(0.9rem, 2vw, 1.25rem);
     --home-screen-transition-ms: 0ms;
   }
@@ -6484,7 +6478,7 @@ onBeforeUnmount(() => {
   }
 
   .hero {
-    min-block-size: var(--home-safe-block-size-with-mobile-nav);
+    min-block-size: var(--home-safe-block-size-mobile);
     padding-block: max(var(--home-stage-safe-top), clamp(0.75rem, 3vw, 1.1rem))
       calc(env(safe-area-inset-bottom, 0rem) + clamp(1rem, 4vw, 1.35rem));
   }
@@ -6492,8 +6486,7 @@ onBeforeUnmount(() => {
   .hero-layout {
     grid-template-columns: minmax(0, 1fr);
     min-block-size: calc(
-      var(--home-safe-block-size-with-mobile-nav) - var(--home-stage-safe-top) -
-        clamp(1rem, 4vw, 1.35rem)
+      var(--home-safe-block-size-mobile) - var(--home-stage-safe-top) - clamp(1rem, 4vw, 1.35rem)
     );
     align-items: center;
     align-content: center;
@@ -7643,8 +7636,7 @@ onBeforeUnmount(() => {
   .home-page .hero-layout {
     grid-template-columns: minmax(0, 1fr);
     min-block-size: calc(
-      var(--home-safe-block-size-with-mobile-nav) - var(--home-stage-safe-top) -
-        clamp(1rem, 4vw, 1.35rem)
+      var(--home-safe-block-size-mobile) - var(--home-stage-safe-top) - clamp(1rem, 4vw, 1.35rem)
     );
     align-items: center;
     align-content: center;
