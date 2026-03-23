@@ -975,7 +975,7 @@ import {
   type HomeScheduleHighlight,
   type PostListItem,
 } from '@/api'
-import { prefersReducedMotion } from '@/utils/performance'
+import { prefersReducedMotion, throttleRAF } from '@/utils/performance'
 import { getThumbnailSrcset } from '@/utils/mediaOptimizer'
 import { isFilteredAuthor } from '@/config/filters'
 import { storePostNavigationContext } from '@/utils/postNavigation'
@@ -1004,7 +1004,7 @@ import {
   readNavbarVisibleOffset,
   resolveDocumentAnchorTop,
 } from '@/components/ui/scrollAnchorTargets'
-import { scheduleTask } from '@/utils/modernAPIs'
+import { createResizeObserver, scheduleTask } from '@/utils/modernAPIs'
 
 type GsapModule = typeof import('gsap')
 type ScrollTriggerModule = typeof import('gsap/ScrollTrigger')
@@ -1016,6 +1016,7 @@ let scrollTriggerReadyPromise: Promise<boolean> | null = null
 
 const HOME_SUPPLEMENT_DELAY_MS = 120
 const HOME_SECONDARY_CONTENT_FALLBACK_DELAY_MS = 900
+const SCENE_LAYOUT_REFRESH_THRESHOLD_PX = 24
 const PORTAL_LEAD_IMAGE_SIZE = Object.freeze({ width: 1600, height: 1000 })
 const PORTAL_LEAD_IMAGE_SIZES = '(min-width: 1280px) 34rem, (min-width: 768px) 92vw, 100vw'
 const TREND_AUTHOR_HIGHLIGHT_AVATAR_SIZE = Object.freeze({ width: 44, height: 44 })
@@ -1239,6 +1240,9 @@ let sceneSetupQueued = false
 let scenesEnabled = false
 let sceneResizeObserver: ResizeObserver | null = null
 let sceneObservedSizes = new WeakMap<HTMLElement, { width: number; height: number }>()
+const scheduleSceneRefreshFromResize = throttleRAF(() => {
+  scheduleSceneSetup()
+})
 let bubbleBurstReplayFrame: number | null = null
 let viewportSceneFrame: number | null = null
 let viewportSceneTrackingBound = false
@@ -1942,10 +1946,11 @@ function disconnectSceneLayoutObserver() {
   sceneResizeObserver?.disconnect()
   sceneResizeObserver = null
   sceneObservedSizes = new WeakMap()
+  scheduleSceneRefreshFromResize.cancel?.()
 }
 
 function observeSceneLayout() {
-  if (typeof window === 'undefined' || !('ResizeObserver' in window)) return
+  if (typeof window === 'undefined') return
 
   disconnectSceneLayoutObserver()
 
@@ -1957,7 +1962,7 @@ function observeSceneLayout() {
 
   if (trackedElements.length === 0) return
 
-  sceneResizeObserver = new ResizeObserver((entries) => {
+  sceneResizeObserver = createResizeObserver((entries) => {
     let shouldRefresh = false
 
     for (const entry of entries) {
@@ -1973,14 +1978,15 @@ function observeSceneLayout() {
 
       if (
         previousSize &&
-        (previousSize.width !== nextSize.width || previousSize.height !== nextSize.height)
+        (Math.abs(previousSize.width - nextSize.width) >= SCENE_LAYOUT_REFRESH_THRESHOLD_PX ||
+          Math.abs(previousSize.height - nextSize.height) >= SCENE_LAYOUT_REFRESH_THRESHOLD_PX)
       ) {
         shouldRefresh = true
       }
     }
 
     if (shouldRefresh) {
-      scheduleSceneSetup()
+      scheduleSceneRefreshFromResize()
     }
   })
 

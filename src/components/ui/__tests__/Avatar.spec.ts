@@ -38,6 +38,9 @@ describe('UiAvatar', () => {
       alt: 'Avatar alt',
       fallback: 'A',
       size: 'xl',
+      loading: 'eager',
+      decoding: 'sync',
+      fetchPriority: 'high',
     })
 
     const img = host.querySelector('img')
@@ -45,6 +48,9 @@ describe('UiAvatar', () => {
 
     expect(img?.getAttribute('src')).toBe('https://example.com/avatar.jpg')
     expect(img?.getAttribute('alt')).toBe('Avatar alt')
+    expect(img?.getAttribute('loading')).toBe('eager')
+    expect(img?.getAttribute('decoding')).toBe('sync')
+    expect(img?.getAttribute('fetchpriority')).toBe('high')
     expect(avatar?.classList.contains('ui-avatar--xl')).toBe(true)
   })
 
@@ -62,5 +68,14 @@ describe('UiAvatar', () => {
     expect(host.querySelector('img')).toBeNull()
     expect(host.querySelector('.ui-avatar__fallback')?.textContent?.trim()).toBe('A')
     expect(host.querySelector('.ui-avatar')?.classList.contains('ui-avatar--square')).toBe(true)
+  })
+
+  it('skips inline sizing when custom size is requested', () => {
+    const host = mountAvatar({
+      fallback: 'A',
+      size: 'custom',
+    })
+
+    expect(host.querySelector('.ui-avatar')?.getAttribute('style')).toBeNull()
   })
 })

@@ -198,6 +198,7 @@ import {
 } from 'lucide-vue-next'
 import { getMediaStreamUrl } from '@/utils/mediaOptimizer'
 import { useFocusTrap } from '@/composables/useFocusTrap'
+import { warmDecodedImage } from '@/utils/performance'
 import VideoPlayer from './VideoPlayer.vue'
 import Button from './Button.vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
@@ -295,6 +296,11 @@ const currentMediaKey = computed(
 )
 const imageKey = computed(() => `${currentMedia.value?.id ?? 'unknown'}-${imageReloadToken.value}`)
 
+function warmCurrentImage() {
+  if (currentMedia.value?.file_type !== 'image' || !fullSizeUrl.value) return
+  void warmDecodedImage(fullSizeUrl.value)
+}
+
 const mediaStyle = computed(() => {
   const x = translateX.value + (scale.value <= 1 ? swipeOffsetX.value : 0)
   const y = translateY.value + (scale.value <= 1 ? swipeOffsetY.value : 0)
@@ -322,6 +328,7 @@ watch(
       imageReloadToken.value += 1
       lockBodyScroll()
       shouldFocusShell.value = true
+      warmCurrentImage()
       prefetchAround(currentIndex.value)
     } else {
       unbindGlobalEvents()
@@ -360,6 +367,7 @@ watch(currentIndex, (idx) => {
   swipeOffsetY.value = 0
   swipeStart.value = null
   isSwiping.value = false
+  warmCurrentImage()
   prefetchAround(idx)
   startHintsTimer()
 })
@@ -656,8 +664,7 @@ function downloadCurrent() {
 }
 
 function prefetchImage(url: string) {
-  const img = new Image()
-  img.src = url
+  void warmDecodedImage(url)
 }
 
 function prefetchAround(index: number) {

@@ -298,7 +298,12 @@ import { getUserDisplayName } from '@/utils/user'
 import { useFocusTrap } from '@/composables/useFocusTrap'
 import { useUserAvatar, preloadUserAvatar } from '@/composables/useUserAvatar'
 import { prefetchExploreData, prefetchAuthorsData } from '@/utils/prefetch'
-import { throttleRAF, scheduleDOMUpdate, prefersReducedMotion } from '@/utils/performance'
+import {
+  runWhenIdle,
+  throttleRAF,
+  scheduleDOMUpdate,
+  prefersReducedMotion,
+} from '@/utils/performance'
 import { useNavigation, registerPrefetchFunction } from '@/composables/useNavigation'
 import type { NavigationItem } from '@/config/navigation'
 import { resolveNavbarDropdownPosition } from '@/components/layout/navbarDropdownPosition'
@@ -556,6 +561,14 @@ watch(
   }
 )
 
+watch([() => route.fullPath, isAuthenticated], () => {
+  if (hasCompletedIdlePrefetchCycle) {
+    cancelIdlePrefetch()
+    return
+  }
+  scheduleNavigationIdlePrefetch()
+})
+
 // 预加载头像以提高导航栏显示优先级
 watch(
   userAvatar,
@@ -580,33 +593,6 @@ function shouldPrefetchOnIdle(): boolean {
   if (connection.effectiveType && ['slow-2g', '2g', '3g'].includes(connection.effectiveType))
     return false
   return true
-}
-
-function requestIdle(fn: () => void) {
-  const idleApi = window as unknown as {
-    requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number
-    cancelIdleCallback?: (id: number) => void
-  }
-  const scheduleInIdle = () => {
-    if (idleApi.requestIdleCallback) {
-      idlePrefetchHandle = idleApi.requestIdleCallback(run, { timeout: 1500 })
-    } else {
-      idlePrefetchTimer = window.setTimeout(run, IDLE_PREFETCH_FALLBACK_MS)
-    }
-  }
-  const run = () => {
-    idlePrefetchTimer = null
-    idlePrefetchHandle = null
-    fn()
-  }
-  if (idlePrefetchStartTimer !== null) {
-    clearTimeout(idlePrefetchStartTimer)
-  }
-  // 在可交互后的较晚时机再进行闲时预取，避免占用首屏关键路径。
-  idlePrefetchStartTimer = window.setTimeout(() => {
-    idlePrefetchStartTimer = null
-    scheduleInIdle()
-  }, IDLE_PREFETCH_START_DELAY_MS)
 }
 
 function goToSearch() {
@@ -852,26 +838,54 @@ const handleResize = throttleRAF(() => {
   }
 })
 
-let idlePrefetchHandle: number | null = null
-let idlePrefetchTimer: number | null = null
-let idlePrefetchStartTimer: number | null = null
+let cancelIdlePrefetchTask: (() => void) | null = null
+let hasCompletedIdlePrefetchCycle = false
 const IDLE_PREFETCH_START_DELAY_MS = 8000
-const IDLE_PREFETCH_FALLBACK_MS = 1200
+const IDLE_PREFETCH_TIMEOUT_MS = 1500
 
 function cancelIdlePrefetch() {
-  const idleApi = window as unknown as { cancelIdleCallback?: (id: number) => void }
-  if (idlePrefetchHandle !== null && idleApi.cancelIdleCallback) {
-    idleApi.cancelIdleCallback(idlePrefetchHandle)
-    idlePrefetchHandle = null
+  cancelIdlePrefetchTask?.()
+  cancelIdlePrefetchTask = null
+}
+
+function scheduleIdlePrefetch(task: () => void) {
+  cancelIdlePrefetch()
+
+  let cancelIdleRun: (() => void) | null = null
+  const startTimer = window.setTimeout(() => {
+    cancelIdleRun = runWhenIdle(() => {
+      cancelIdleRun = null
+      cancelIdlePrefetchTask = null
+      task()
+    }, IDLE_PREFETCH_TIMEOUT_MS)
+
+    cancelIdlePrefetchTask = () => {
+      cancelIdleRun?.()
+      cancelIdleRun = null
+      cancelIdlePrefetchTask = null
+    }
+  }, IDLE_PREFETCH_START_DELAY_MS)
+
+  cancelIdlePrefetchTask = () => {
+    window.clearTimeout(startTimer)
+    cancelIdleRun?.()
+    cancelIdleRun = null
+    cancelIdlePrefetchTask = null
   }
-  if (idlePrefetchTimer !== null) {
-    clearTimeout(idlePrefetchTimer)
-    idlePrefetchTimer = null
+}
+
+function scheduleNavigationIdlePrefetch() {
+  if (hasCompletedIdlePrefetchCycle || !shouldPrefetchOnIdle()) {
+    cancelIdlePrefetch()
+    return
   }
-  if (idlePrefetchStartTimer !== null) {
-    clearTimeout(idlePrefetchStartTimer)
-    idlePrefetchStartTimer = null
-  }
+
+  scheduleIdlePrefetch(() => {
+    if (hasCompletedIdlePrefetchCycle) return
+    hasCompletedIdlePrefetchCycle = true
+    prefetchExplorePage()
+    prefetchAuthorsPage()
+  })
 }
 onMounted(() => {
   updateIsMobile()
@@ -900,12 +914,7 @@ onMounted(() => {
   requestAnimationFrame(() => {
     handleScroll()
   })
-  if (shouldPrefetchOnIdle()) {
-    requestIdle(() => {
-      prefetchExplorePage()
-      prefetchAuthorsPage()
-    })
-  }
+  scheduleNavigationIdlePrefetch()
   // 检查日程是否有新事件
   scheduleStore.checkForNew()
 })

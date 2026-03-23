@@ -48,13 +48,16 @@
               }}</span>
             </div>
             <div class="discussion-author">
-              <img
-                v-if="discussion.author.avatar_url"
-                :src="normalizeAvatarUrl(discussion.author.avatar_url) || undefined"
+              <Avatar
+                :key="`${discussion.id}:${resolvedDiscussionAuthorAvatarSrc ?? 'fallback'}`"
+                :src="resolvedDiscussionAuthorAvatarSrc"
                 :alt="discussion.author.username"
                 class="author-avatar"
-                loading="lazy"
+                size="custom"
+                loading="eager"
                 decoding="async"
+                fetch-priority="high"
+                :fallback="discussionAuthorFallbackLabel"
               />
               <span class="author-name">{{ discussion.author.username }}</span>
               <span class="category-pill">{{ formatCategory(discussion.category) }}</span>
@@ -158,6 +161,7 @@ import { formatRelativeTime } from '@/utils/date'
 import Button from '@/components/ui/Button.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import Skeleton from '@/components/ui/Skeleton.vue'
+import Avatar from '@/components/ui/Avatar.vue'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import DiscussionCommentList from '@/components/community/DiscussionCommentList.vue'
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
@@ -181,6 +185,16 @@ let fetchDiscussionToken = 0
 const isUsingFallback = computed(() => discStore.source === 'fallback')
 const fallbackReason = computed(() => discStore.fallbackReason)
 const showPreviewNotice = computed(() => Boolean(fallbackReason.value) && isUsingFallback.value)
+const resolvedDiscussionAuthorAvatarSrc = computed(
+  () =>
+    normalizeAvatarUrl(discussion.value?.author.avatar_url || undefined) ||
+    discussion.value?.author.avatar_url ||
+    undefined
+)
+const discussionAuthorFallbackLabel = computed(() => {
+  const source = discussion.value?.author.username?.trim() || '?'
+  return source.slice(0, 1).toUpperCase() || '?'
+})
 
 const isAdmin = computed(() => {
   return Boolean(user.value?.is_admin || user.value?.roles?.includes('admin'))
@@ -391,10 +405,8 @@ watch(
 }
 
 .author-avatar {
-  inline-size: 2rem;
-  block-size: 2rem;
-  border-radius: 50%;
-  object-fit: cover;
+  --avatar-size: 2rem;
+  border: 0;
 }
 
 .author-name {

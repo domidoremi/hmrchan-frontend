@@ -25,7 +25,7 @@
         :description="$t('profile.noCommentFavorites')"
       />
 
-      <div v-else class="timeline">
+      <div v-else class="timeline content-auto-xl">
         <article
           v-for="(item, idx) in items"
           :key="item.id"

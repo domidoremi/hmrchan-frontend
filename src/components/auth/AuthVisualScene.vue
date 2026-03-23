@@ -34,6 +34,8 @@
 
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, watch, useTemplateRef } from 'vue'
+import { createResizeObserver } from '@/utils/modernAPIs'
+import { throttleRAF } from '@/utils/performance'
 
 defineOptions({ name: 'AuthVisualScene' })
 
@@ -86,6 +88,12 @@ let width = 0
 let height = 0
 let dpr = 1
 let authBookEl: HTMLElement | null = null
+let lastStageSize = { width: 0, height: 0 }
+
+const SCENE_RESIZE_THRESHOLD_PX = 12
+const scheduleSceneResize = throttleRAF(() => {
+  syncCanvasSize()
+})
 
 const pointer = {
   x: 0,
@@ -954,11 +962,35 @@ onMounted(() => {
   window.addEventListener('pointerup', handleBookPointerUp)
   window.addEventListener('pointercancel', handleBookPointerUp)
 
-  observer = new ResizeObserver(() => {
-    syncCanvasSize()
+  if (stageRef.value) {
+    const rect = stageRef.value.getBoundingClientRect()
+    lastStageSize = {
+      width: Math.round(rect.width),
+      height: Math.round(rect.height),
+    }
+  }
+
+  observer = createResizeObserver((entries) => {
+    const entry = entries[0]
+    if (!entry) return
+
+    const nextWidth = Math.round(entry.contentRect.width)
+    const nextHeight = Math.round(entry.contentRect.height)
+    if (
+      Math.abs(nextWidth - lastStageSize.width) < SCENE_RESIZE_THRESHOLD_PX &&
+      Math.abs(nextHeight - lastStageSize.height) < SCENE_RESIZE_THRESHOLD_PX
+    ) {
+      return
+    }
+
+    lastStageSize = {
+      width: nextWidth,
+      height: nextHeight,
+    }
+    scheduleSceneResize()
   })
 
-  if (stageRef.value) observer.observe(stageRef.value)
+  if (stageRef.value) observer?.observe(stageRef.value)
   drawScene()
 })
 
@@ -980,6 +1012,7 @@ onUnmounted(() => {
   window.removeEventListener('pointercancel', handleBookPointerUp)
   observer?.disconnect()
   observer = null
+  scheduleSceneResize.cancel?.()
   ctx = null
 })
 </script>
