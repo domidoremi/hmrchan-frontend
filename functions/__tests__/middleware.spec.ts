@@ -126,6 +126,24 @@ describe('functions/_middleware', () => {
     vi.unstubAllGlobals()
   })
 
+  it('redirects the www host to the canonical apex host', async () => {
+    const next = vi.fn()
+    const { onRequest } = await import('../_middleware')
+
+    const response = await onRequest({
+      request: new Request('https://www.momichan.xyz/explore?q=test'),
+      env: {},
+      next,
+    } as never)
+
+    expect(next).not.toHaveBeenCalled()
+    expect(response.status).toBe(308)
+    expect(response.headers.get('Location')).toBe('https://momichan.xyz/explore?q=test')
+    expect(response.headers.get('Strict-Transport-Security')).toBe(
+      'max-age=63072000; includeSubDomains; preload'
+    )
+  })
+
   it('applies HTML security headers, rewrites metadata, and returns the edge status', async () => {
     resolveHtmlDocumentWithEdgeData.mockResolvedValue({
       status: 404,
@@ -171,6 +189,8 @@ describe('functions/_middleware', () => {
             {
               headers: {
                 'content-type': 'text/html; charset=utf-8',
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Credentials': 'true',
               },
             }
           )
@@ -183,13 +203,17 @@ describe('functions/_middleware', () => {
     expect(response.headers.get('Strict-Transport-Security')).toBe(
       'max-age=63072000; includeSubDomains; preload'
     )
+    expect(response.headers.get('Access-Control-Allow-Origin')).toBeNull()
+    expect(response.headers.get('Access-Control-Allow-Credentials')).toBeNull()
 
     const html = await response.text()
     expect(html).toContain('Page not found · MomiChan')
-    expect(html).toContain('content="missing page"')
+    expect(html).not.toContain('content="old description"')
+    expect(html).not.toContain('https://old.example')
+    expect(html).toContain('content="noindex, nofollow"')
     expect(html).toContain('href="https://momichan.xyz/missing"')
     expect(html).toContain('data-prerender-shell="true"')
-    expect(html).toContain('application/ld+json')
+    expect(html).not.toContain('data-prerender-structured-data="true"')
     expect(html).toMatch(/nonce="[A-Za-z0-9+/=]+"/)
   })
 

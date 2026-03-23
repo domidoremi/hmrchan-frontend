@@ -741,7 +741,21 @@
     "feedbackSend": "提交回饋",
     "feedbackSending": "提交中...",
     "feedbackSuccess": "回饋已提交，感謝你的幫助",
-    "feedbackError": "提交回饋失敗"
+    "feedbackError": "提交回饋失敗",
+    "securityTitle": "安全問題通報",
+    "securitySubtitle": "若發現疑似漏洞，請先透過私下管道回報，方便我們在公開前完成確認與處理。",
+    "securityBody": "這個入口適合回報影響公開站點、登入流程、上傳鏈路或資料外洩路徑的安全問題。如果問題可能波及其他使用者，請避免在正式環境做破壞性測試，並只提交足以復現與驗證的最小證據。",
+    "securityAction": "開啟缺陷回饋表單",
+    "securityTxtAction": "查看 security.txt",
+    "securitySummaryScopeLabel": "適用範圍",
+    "securitySummaryScopeValue": "XSS、驗證問題、存取控制錯誤、資料外洩，以及可被濫用的自動化路徑。",
+    "securitySummaryChannelLabel": "提交方式",
+    "securitySummaryChannelValue": "請使用下方的「問題缺陷」回饋表單；若希望收到後續聯絡，請留下可回覆的方式。",
+    "securitySummaryPreparationLabel": "建議附上",
+    "securitySummaryPreparationValue": "受影響 URL、重現步驟、影響說明、截圖、時間點，以及你記錄到的請求 ID。",
+    "securityChecklistPrivate": "在問題修復前，請保持私下溝通，避免公開張貼利用細節。",
+    "securityChecklistScope": "只測試你自己控制的帳號與資料，並在確認問題後停止擴大測試。",
+    "securityChecklistEvidence": "請描述預期行為、實際行為、影響範圍，以及最小可穩定重現的路徑。"
   },
   "profile": {
     "settings": "個人設定",

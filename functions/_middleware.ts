@@ -15,6 +15,18 @@ import {
 } from '../src/edge/htmlDocument'
 import { resolveHtmlDocumentWithEdgeData } from '../src/edge/detailDocumentResolver'
 
+const CANONICAL_HOSTNAME = 'momichan.xyz'
+const REDIRECT_HOSTNAMES = new Set(['www.momichan.xyz'])
+const HTML_CORS_HEADERS = [
+  'Access-Control-Allow-Origin',
+  'Access-Control-Allow-Credentials',
+  'Access-Control-Allow-Headers',
+  'Access-Control-Allow-Methods',
+  'Access-Control-Allow-Private-Network',
+  'Access-Control-Expose-Headers',
+  'Access-Control-Max-Age',
+] as const
+
 /** 生成 16 字节随机 nonce（Base64 编码） */
 function generateNonce(): string {
   const bytes = new Uint8Array(16)
@@ -108,6 +120,17 @@ class AppRootHandler {
   }
 }
 
+function resolveCanonicalHostRedirect(requestUrl: URL): string | null {
+  if (!REDIRECT_HOSTNAMES.has(requestUrl.hostname)) {
+    return null
+  }
+
+  const redirectUrl = new URL(requestUrl.toString())
+  redirectUrl.protocol = 'https:'
+  redirectUrl.hostname = CANONICAL_HOSTNAME
+  return redirectUrl.toString()
+}
+
 export async function onRequest(
   context: EventContext<
     {
@@ -119,6 +142,19 @@ export async function onRequest(
     unknown
   >
 ): Promise<Response> {
+  const requestUrl = new URL(context.request.url)
+  const canonicalRedirectUrl = resolveCanonicalHostRedirect(requestUrl)
+  if (canonicalRedirectUrl) {
+    return new Response(null, {
+      status: 308,
+      headers: {
+        Location: canonicalRedirectUrl,
+        'Strict-Transport-Security': HTML_SECURITY_HEADERS['Strict-Transport-Security'],
+        'X-Content-Type-Options': HTML_SECURITY_HEADERS['X-Content-Type-Options'],
+      },
+    })
+  }
+
   const response = await context.next()
   const contentType = response.headers.get('content-type') || ''
 
@@ -127,7 +163,6 @@ export async function onRequest(
   }
 
   const nonce = generateNonce()
-  const requestUrl = new URL(context.request.url)
   const documentConfig = await resolveHtmlDocumentWithEdgeData(requestUrl, context.env)
   const canonicalUrl = resolveCanonicalUrl(documentConfig)
   const prerenderShell = renderPrerenderShell(documentConfig)
@@ -162,6 +197,9 @@ export async function onRequest(
     .transform(response)
 
   const headers = new Headers(rewritten.headers)
+  HTML_CORS_HEADERS.forEach((headerName) => {
+    headers.delete(headerName)
+  })
   headers.set('Content-Security-Policy', buildCSP(nonce))
   Object.entries(HTML_SECURITY_HEADERS).forEach(([key, value]) => {
     headers.set(key, value)

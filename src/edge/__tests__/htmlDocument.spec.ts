@@ -11,6 +11,7 @@ describe('resolveHtmlDocument', () => {
   it('returns indexable metadata for public discovery pages', () => {
     const homeConfig = resolveHtmlDocument(new URL('https://momichan.xyz/'))
     const exploreConfig = resolveHtmlDocument(new URL('https://momichan.xyz/explore'))
+    const contactConfig = resolveHtmlDocument(new URL('https://momichan.xyz/contact'))
 
     expect(homeConfig.status).toBe(200)
     expect(homeConfig.title).toBe('Home · MomiChan')
@@ -22,6 +23,12 @@ describe('resolveHtmlDocument', () => {
     expect(exploreConfig.title).toBe('Explore · MomiChan')
     expect(exploreConfig.robots).toBe('index, follow')
     expect(resolveCanonicalUrl(exploreConfig)).toBe('https://momichan.xyz/explore')
+
+    expect(contactConfig.status).toBe(200)
+    expect(contactConfig.title).toBe('Contact · MomiChan')
+    expect(contactConfig.robots).toBe('index, follow')
+    expect(contactConfig.description).toContain('安全问题披露')
+    expect(resolveCanonicalUrl(contactConfig)).toBe('https://momichan.xyz/contact')
   })
 
   it('marks auth and private routes as noindex', () => {

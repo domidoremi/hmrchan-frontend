@@ -741,7 +741,21 @@
     "feedbackSend": "提交反馈",
     "feedbackSending": "提交中...",
     "feedbackSuccess": "反馈已提交，感谢你的帮助",
-    "feedbackError": "提交反馈失败"
+    "feedbackError": "提交反馈失败",
+    "securityTitle": "安全问题披露",
+    "securitySubtitle": "请通过私密渠道提交疑似漏洞，方便我们在公开披露前完成确认与处理。",
+    "securityBody": "这个入口适合提交影响公开站点、登录流程、上传链路或数据暴露路径的安全问题。如果问题可能影响其他用户，请避免在生产环境做破坏性测试，并只提交足够复现与验证的问题证据。",
+    "securityAction": "打开缺陷反馈表单",
+    "securityTxtAction": "查看 security.txt",
+    "securitySummaryScopeLabel": "适用范围",
+    "securitySummaryScopeValue": "XSS、认证问题、访问控制错误、数据泄露以及可被滥用的自动化路径。",
+    "securitySummaryChannelLabel": "提交方式",
+    "securitySummaryChannelValue": "请使用下方的“问题缺陷”反馈表单；如果希望收到跟进，请留下可回复的联系方式。",
+    "securitySummaryPreparationLabel": "建议附带",
+    "securitySummaryPreparationValue": "受影响 URL、复现步骤、影响说明、截图、时间点，以及你记录到的请求 ID。",
+    "securityChecklistPrivate": "在问题修复前，请保持私下沟通，避免公开发布利用细节。",
+    "securityChecklistScope": "只测试你自己控制的账号与数据，并在确认问题后停止继续扩展测试。",
+    "securityChecklistEvidence": "请说明预期行为、实际行为、影响范围，以及最小可稳定复现的路径。"
   },
   "profile": {
     "settings": "个人设置",

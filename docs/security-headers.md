@@ -20,8 +20,14 @@ MomiChan 的响应头来源分为两层，避免再出现“注释说有安全�
 - 来源: [`public/_headers`](../public/_headers)
 - 负责:
   - HTML 短缓存
+  - `/.well-known/security.txt` 等静态公开说明文件
   - 带 hash 的 JS/CSS/图片/字体长缓存
   - Service Worker 禁止缓存
+
+## Well-Known 公共文件
+
+- 来源: [`public/.well-known/security.txt`](../public/.well-known/security.txt)
+- 路由放行: [`public/_routes.json`](../public/_routes.json) 需要排除 `/.well-known/*`，否则 Pages Functions 会把该路径误当成 SPA HTML 请求处理。
 
 ## 运行时职责总览
 
