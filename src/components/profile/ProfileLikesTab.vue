@@ -25,7 +25,7 @@
         :description="$t('profile.noLikes')"
       />
 
-      <div v-else class="timeline">
+      <div v-else class="timeline content-auto-xl">
         <article
           v-for="(comment, idx) in comments"
           :key="comment.id"

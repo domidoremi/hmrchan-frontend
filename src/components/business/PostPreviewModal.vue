@@ -87,6 +87,7 @@
                       aria-hidden="true"
                       loading="eager"
                       decoding="async"
+                      fetchpriority="low"
                     />
                     <img
                       v-if="primaryMedia.file_type === 'image'"
@@ -95,6 +96,7 @@
                       :alt="post?.title || ''"
                       loading="eager"
                       decoding="async"
+                      fetchpriority="high"
                     />
 
                     <VideoPlayer
@@ -114,6 +116,7 @@
                       aria-hidden="true"
                       loading="eager"
                       decoding="async"
+                      fetchpriority="low"
                     />
                     <img
                       class="post-preview-media-item"
@@ -121,6 +124,7 @@
                       :alt="displayTitle || ''"
                       loading="eager"
                       decoding="async"
+                      fetchpriority="high"
                     />
                   </div>
                   <div v-else class="post-preview-media-empty">
@@ -157,6 +161,8 @@
                         class="thumb-img"
                         :src="getMediaThumbnailUrl(m.id, 'small')"
                         :alt="post?.title || ''"
+                        loading="lazy"
+                        decoding="async"
                       />
                     </button>
                   </div>
@@ -188,7 +194,18 @@
               </div>
 
               <div class="post-preview-action-bar">
-                <PostActionStrip v-if="postId" :post-id="postId" variant="compact" />
+                <Suspense>
+                  <template #default>
+                    <PostActionStrip v-if="postId" :post-id="postId" variant="compact" />
+                  </template>
+                  <template #fallback>
+                    <div class="post-preview-action-placeholder" aria-hidden="true">
+                      <span class="post-preview-action-placeholder__pill skeleton" />
+                      <span class="post-preview-action-placeholder__button skeleton" />
+                      <span class="post-preview-action-placeholder__button skeleton" />
+                    </div>
+                  </template>
+                </Suspense>
                 <button
                   type="button"
                   class="post-preview-btn post-preview-btn--primary post-preview-cta"
@@ -209,6 +226,7 @@
 <script setup lang="ts">
 import {
   computed,
+  defineAsyncComponent,
   nextTick,
   onBeforeUnmount,
   onWatcherCleanup,
@@ -223,9 +241,12 @@ import { useCachedPost } from '@/composables/useCachedPosts'
 import { prefetchPostDetail } from '@/utils/prefetch'
 import { getMediaStreamUrl, getMediaThumbnailUrl } from '@/utils/mediaOptimizer'
 import { formatDate } from '@/utils/date'
-import PostActionStrip from '@/components/business/PostActionStrip.vue'
 import VideoPlayer from '@/components/ui/VideoPlayer.vue'
 import { lockBodyScroll, unlockBodyScroll } from '@/utils/bodyScrollLock'
+
+const PostActionStrip = defineAsyncComponent(
+  () => import('@/components/business/PostActionStrip.vue')
+)
 
 const props = withDefaults(
   defineProps<{
@@ -968,6 +989,33 @@ function openDetail() {
   flex: 0 0 auto;
 }
 
+.post-preview-action-placeholder {
+  flex: 1;
+  min-width: 0;
+  min-block-size: var(--ui-control-min-size, 2.75rem);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-2);
+}
+
+.post-preview-action-placeholder__pill,
+.post-preview-action-placeholder__button {
+  display: inline-flex;
+  border-radius: var(--radius-full);
+}
+
+.post-preview-action-placeholder__pill {
+  inline-size: 4.25rem;
+  block-size: 1.75rem;
+}
+
+.post-preview-action-placeholder__button {
+  inline-size: 6.75rem;
+  block-size: var(--ui-control-min-size, 2.75rem);
+  border-radius: var(--radius-lg);
+}
+
 .post-preview-media {
   position: relative;
   min-width: 0;
@@ -984,6 +1032,8 @@ function openDetail() {
   position: relative;
   flex: 1;
   min-height: 0;
+  min-block-size: min(24rem, 52vh);
+  aspect-ratio: 16 / 10;
   display: flex;
   align-items: center;
   justify-content: center;

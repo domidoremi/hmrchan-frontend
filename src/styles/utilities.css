@@ -65,6 +65,16 @@
   contain-intrinsic-size: auto 18.75rem;
 }
 
+.content-auto-lg {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 32rem;
+}
+
+.content-auto-xl {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 44rem;
+}
+
 .content-auto-sm {
   content-visibility: auto;
   contain-intrinsic-size: auto 9.375rem;

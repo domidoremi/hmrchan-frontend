@@ -119,13 +119,17 @@ function isAbortError(error: unknown): boolean {
   return error instanceof Error && /abort/i.test(error.message)
 }
 
-function abortSuggestionRequest() {
-  cancelSuggestionDebounce()
+function abortActiveSuggestionRequest() {
   if (suggestionController) {
     suggestionController.abort()
     suggestionController = null
   }
   suggestionRequestToken += 1
+}
+
+function abortSuggestionRequest() {
+  cancelSuggestionDebounce()
+  abortActiveSuggestionRequest()
 }
 
 const router = useRouter()
@@ -322,7 +326,10 @@ function handleInput() {
     isLoading.value = false
     return
   }
-  fetchSuggestions(query.value)
+
+  // 输入过程中立即取消旧请求，但把新请求交给 debounce 链路，避免一次输入触发两轮网络请求。
+  abortActiveSuggestionRequest()
+  isLoading.value = true
 }
 
 async function handleSearch() {

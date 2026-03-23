@@ -33,6 +33,9 @@
                 "
                 :alt="profile.username"
                 size="xl"
+                loading="eager"
+                decoding="async"
+                fetch-priority="high"
               />
 
               <div class="profile-copy">
@@ -78,7 +81,7 @@
 
         <section
           v-if="profile && !isLoading"
-          class="profile-card profile-card--actions empty-surface"
+          class="profile-card profile-card--actions empty-surface content-auto-sm"
         >
           <div class="action-header">
             <div>

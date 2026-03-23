@@ -199,15 +199,44 @@ export function disableGPUAcceleration(element: HTMLElement): void {
 /**
  * 在空闲时执行任务
  */
-export function runWhenIdle(task: () => void, timeout = 2000): void {
-  if ('requestIdleCallback' in window) {
-    ;(
-      window as Window & {
-        requestIdleCallback: (cb: () => void, opts?: { timeout: number }) => number
-      }
-    ).requestIdleCallback(task, { timeout })
+export function runWhenIdle(task: () => void, timeout = 2000): () => void {
+  if (typeof window === 'undefined') return () => {}
+
+  const idleWindow = window as Window & {
+    requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number
+    cancelIdleCallback?: (id: number) => void
+  }
+
+  let cancelled = false
+  let idleHandle: number | null = null
+  let timerHandle: number | null = null
+
+  const runTask = () => {
+    idleHandle = null
+    timerHandle = null
+    if (cancelled) return
+    task()
+  }
+
+  if (idleWindow.requestIdleCallback) {
+    idleHandle = idleWindow.requestIdleCallback(runTask, { timeout })
   } else {
-    setTimeout(task, 1)
+    timerHandle = window.setTimeout(runTask, 1)
+  }
+
+  return () => {
+    if (cancelled) return
+    cancelled = true
+
+    if (idleHandle !== null && idleWindow.cancelIdleCallback) {
+      idleWindow.cancelIdleCallback(idleHandle)
+      idleHandle = null
+    }
+
+    if (timerHandle !== null) {
+      window.clearTimeout(timerHandle)
+      timerHandle = null
+    }
   }
 }
 
@@ -244,6 +273,67 @@ export function preconnect(url: string): void {
   link.href = url
   link.crossOrigin = 'anonymous'
   document.head.appendChild(link)
+}
+
+const pendingDecodedImages = new Map<string, Promise<void>>()
+
+/**
+ * 预热图片并在支持时提前 decode，减少切图时的空白帧。
+ * 仅对进行中的相同 URL 请求做去重，完成后释放引用。
+ */
+export function warmDecodedImage(url: string | null | undefined): Promise<void> {
+  if (typeof window === 'undefined' || typeof Image === 'undefined' || !url) {
+    return Promise.resolve()
+  }
+
+  const existing = pendingDecodedImages.get(url)
+  if (existing) {
+    return existing
+  }
+
+  const promise = new Promise<void>((resolve) => {
+    const image = new Image()
+    image.decoding = 'async'
+    let decodeStarted = false
+
+    const settle = () => {
+      image.onload = null
+      image.onerror = null
+      resolve()
+    }
+
+    const decodeIfPossible = () => {
+      if (decodeStarted) return
+      decodeStarted = true
+
+      if (typeof image.decode !== 'function') {
+        settle()
+        return
+      }
+
+      image
+        .decode()
+        .catch(() => undefined)
+        .finally(settle)
+    }
+
+    image.onload = () => {
+      decodeIfPossible()
+    }
+    image.onerror = () => {
+      settle()
+    }
+    image.src = url
+
+    if (image.complete) {
+      decodeIfPossible()
+    }
+  }).finally(() => {
+    pendingDecodedImages.delete(url)
+  })
+
+  pendingDecodedImages.set(url, promise)
+  return promise
 }
 
 /**

@@ -281,7 +281,7 @@
 
       <!-- 选中日期的事件列表 -->
       <Transition name="slide-fade">
-        <section v-if="selectedDay" class="day-events">
+        <section v-if="selectedDay" class="day-events content-auto-lg">
           <div class="page-section-head page-section-head--stage day-events-header">
             <div class="page-section-copy">
               <p class="page-section-kicker">{{ $t('schedule.title') }}</p>
@@ -358,7 +358,7 @@
       </Transition>
 
       <!-- 即将到来的事件 -->
-      <section v-if="!selectedDay" class="upcoming-section">
+      <section v-if="!selectedDay" class="upcoming-section content-auto-lg">
         <div class="page-section-head">
           <div class="page-section-copy">
             <p class="page-section-kicker">{{ monthLabel }}</p>

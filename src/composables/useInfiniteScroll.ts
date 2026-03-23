@@ -61,6 +61,45 @@ export function useInfiniteScroll(
     return toValue(resolvedOptions.enabled)
   }
 
+  function ensureObserver() {
+    if (observerState.observer) return observerState.observer
+
+    observerState.observer = new IntersectionObserver(handleIntersect, {
+      root: null,
+      rootMargin: resolvedOptions.rootMargin,
+      threshold: resolvedOptions.threshold,
+    })
+
+    return observerState.observer
+  }
+
+  function observeSentinel() {
+    const sentinel = getSentinel()
+    if (!sentinel || !getEnabled()) return false
+
+    const observer = ensureObserver()
+    if (observerState.observedElement === sentinel && isObserving.value) return true
+
+    if (observerState.observedElement && observerState.observedElement !== sentinel) {
+      observer.unobserve(observerState.observedElement)
+    }
+
+    observer.observe(sentinel)
+    observerState.observedElement = sentinel
+    observerState.lastIsIntersecting = false
+    isObserving.value = true
+    return true
+  }
+
+  function rearmObservedSentinel() {
+    const sentinel = getSentinel()
+    if (!observerState.observer || !sentinel) return
+    if (observerState.observedElement !== sentinel) return
+
+    observerState.observer.unobserve(sentinel)
+    observerState.observer.observe(sentinel)
+  }
+
   async function triggerLoadMore() {
     if (observerState.isTriggering) return
     if (!getEnabled()) return
@@ -70,11 +109,11 @@ export function useInfiniteScroll(
       const result = await loadMore()
       if (result === false) return
 
-      const sentinel = getSentinel()
-      if (observerState.lastIsIntersecting && getEnabled() && observerState.observer && sentinel) {
-        observerState.observer.unobserve(sentinel)
-        observerState.observer.observe(sentinel)
-      }
+      if (!observerState.lastIsIntersecting) return
+      if (!getEnabled()) return
+      if (!observerState.observer) return
+
+      rearmObservedSentinel()
     } catch {
       return
     } finally {
@@ -92,18 +131,7 @@ export function useInfiniteScroll(
   }
 
   function startObserving() {
-    const sentinel = getSentinel()
-    if (isObserving.value || !sentinel || !getEnabled()) return
-
-    observerState.observer = new IntersectionObserver(handleIntersect, {
-      root: null,
-      rootMargin: resolvedOptions.rootMargin,
-      threshold: resolvedOptions.threshold,
-    })
-
-    observerState.observer.observe(sentinel)
-    observerState.observedElement = sentinel
-    isObserving.value = true
+    observeSentinel()
   }
 
   function stopObserving() {
@@ -112,6 +140,7 @@ export function useInfiniteScroll(
     observerState.observer.disconnect()
     observerState.observer = null
     observerState.observedElement = null
+    observerState.lastIsIntersecting = false
     isObserving.value = false
   }
 
@@ -120,11 +149,12 @@ export function useInfiniteScroll(
     watch(
       () => getSentinel(),
       (el) => {
-        if (el && isObserving.value && observerState.observedElement === el) return
-        stopObserving()
-        if (el) {
-          startObserving()
+        if (!el) {
+          stopObserving()
+          return
         }
+        if (isObserving.value && observerState.observedElement === el) return
+        startObserving()
       }
     )
 
@@ -139,10 +169,6 @@ export function useInfiniteScroll(
         const sentinel = getSentinel()
         if (sentinel) {
           startObserving()
-          if (observerState.observer) {
-            observerState.observer.unobserve(sentinel)
-            observerState.observer.observe(sentinel)
-          }
         }
       },
       { immediate: true }

@@ -36,7 +36,7 @@
         <article
           v-for="fav in visibleFavorites"
           :key="fav.id"
-          class="favorite-card glass-surface--base content-auto"
+          class="favorite-card glass-surface--base content-auto-lg"
           role="button"
           tabindex="0"
           @click="goToPost(fav.post_id, fav.post?.thumbnail_url)"
@@ -165,7 +165,7 @@ async function loadMore(): Promise<boolean> {
 
 useInfiniteScroll(sentinelRef, loadMore, {
   rootMargin: '800px',
-  enabled: () => hasMoreForUi.value && !isLoading.value,
+  enabled: () => hasMoreForUi.value && !isLoading.value && !isLoadingMore.value,
 })
 
 async function removeFavorite(favoriteId: string) {

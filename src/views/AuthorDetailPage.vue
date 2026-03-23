@@ -25,20 +25,17 @@
           </template>
 
           <template v-else-if="author">
-            <img
-              v-if="hasAuthorAvatar"
+            <Avatar
+              :key="`${authorId}:${resolvedAuthorAvatarSrc ?? 'fallback'}`"
               class="author-avatar"
-              :src="normalizeAvatarUrl(author.avatar_url) || author.avatar_url"
+              size="custom"
+              :src="resolvedAuthorAvatarSrc"
               :alt="author.display_name || author.name"
               loading="eager"
               decoding="async"
-              fetchpriority="high"
-              style="object-fit: cover"
-              @error="markAuthorAvatarFailed"
+              fetch-priority="high"
+              :fallback="authorFallbackLabel"
             />
-            <div v-else class="author-avatar author-avatar--fallback">
-              {{ authorFallbackLabel }}
-            </div>
 
             <div class="author-info">
               <h1 class="author-name">{{ author.display_name || author.name }}</h1>
@@ -94,6 +91,7 @@ import {
   resolvePublicFallbackReason,
   type PublicPageDataSource,
 } from '@/fallbacks/publicPageFallback'
+import Avatar from '@/components/ui/Avatar.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import Skeleton from '@/components/ui/Skeleton.vue'
 import PostCard from '@/components/business/PostCard.vue'
@@ -109,13 +107,15 @@ const author = ref<AuthorResponse | null>(null)
 const posts = ref<PostListItem[]>([])
 const isLoading = ref(false)
 const error = ref<string | null>(null)
-const authorAvatarFailed = ref(false)
 const dataSource = ref<PublicPageDataSource>('live')
 const fallbackReason = ref<string | null>(null)
 const isUsingFallback = computed(() => dataSource.value === 'fallback')
 const showPreviewNotice = computed(() => Boolean(fallbackReason.value) && isUsingFallback.value)
-const hasAuthorAvatar = computed(
-  () => Boolean(author.value?.avatar_url) && !authorAvatarFailed.value
+const resolvedAuthorAvatarSrc = computed(
+  () =>
+    normalizeAvatarUrl(author.value?.avatar_url || undefined) ||
+    author.value?.avatar_url ||
+    undefined
 )
 const authorFallbackLabel = computed(() => {
   const source =
@@ -127,10 +127,6 @@ const authorFallbackLabel = computed(() => {
 })
 let latestRequestId = 0
 let authorController: AbortController | null = null
-
-function markAuthorAvatarFailed() {
-  authorAvatarFailed.value = true
-}
 
 function isAbortError(err: unknown): boolean {
   return err instanceof DOMException
@@ -186,7 +182,6 @@ async function fetchAuthor(targetAuthorId = authorId.value, signal?: AbortSignal
 
   isLoading.value = true
   error.value = null
-  authorAvatarFailed.value = false
 
   // 先从缓存加载（快速显示）
   const cached = await authorCache.getAuthor(targetAuthorId)
@@ -308,19 +303,6 @@ onBeforeUnmount(() => {
   color: var(--color-text-secondary);
 }
 
-.author-avatar--fallback {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.5rem;
-  font-weight: var(--font-semibold);
-  color: var(--color-text-primary);
-  background:
-    radial-gradient(circle at 30% 20%, rgba(var(--color-accent-rgb), 0.2), transparent 55%),
-    linear-gradient(145deg, rgba(255, 255, 255, 0.92), rgba(226, 232, 240, 0.88));
-  border: 1px solid var(--glass-border);
-}
-
 .fallback-preview__detail {
   font-size: var(--text-xs);
   color: var(--color-text-tertiary);
@@ -333,10 +315,7 @@ onBeforeUnmount(() => {
 }
 
 .author-avatar {
-  inline-size: 4.5rem;
-  block-size: 4.5rem;
-  border-radius: 50%;
-  flex-shrink: 0;
+  --avatar-size: 4.5rem;
 }
 
 @media (min-width: 768px) {
@@ -345,8 +324,7 @@ onBeforeUnmount(() => {
   }
 
   .author-avatar {
-    inline-size: 5.5rem;
-    block-size: 5.5rem;
+    --avatar-size: 5.5rem;
   }
 }
 
