@@ -51,7 +51,7 @@
 
   /* 布局 */
   --navbar-height: 64px;
-  --mobile-nav-height: 4.5rem;
+  --mobile-nav-height: 0rem;
   --navbar-visible-height: var(--navbar-height);
   --app-safe-block-size: calc(100dvh - var(--navbar-visible-height));
   --app-safe-block-size-with-mobile-nav: calc(

@@ -1,6 +1,17 @@
 <template>
-  <footer class="footer">
+  <footer class="footer" :class="{ 'footer--home': isHomeVariant }">
     <div class="container">
+      <div v-if="isHomeVariant" class="footer-marquee" aria-hidden="true">
+        <div class="footer-marquee__track">
+          <span v-for="(item, index) in marqueeItems" :key="`footer-marquee-a-${index}`">
+            {{ item }}
+          </span>
+          <span v-for="(item, index) in marqueeItems" :key="`footer-marquee-b-${index}`">
+            {{ item }}
+          </span>
+        </div>
+      </div>
+
       <div class="footer-shell empty-surface" :style="[footerShellStyle, noGlassBackdropStyle]">
         <div class="footer-main">
           <div class="footer-brand">
@@ -8,13 +19,20 @@
               <span class="brand-logo__mark">M</span>
               <span class="brand-logo__copy">
                 <span class="brand-logo__name">{{ $t('app.name') }}</span>
-                <span class="brand-logo__tagline">{{ $t('app.tagline') }}</span>
               </span>
             </RouterLink>
             <p>{{ $t('footer.desc') }}</p>
             <div class="footer-note ui-pill ui-pill--info">
               <AnimatedIcon name="sparkle" :fallback-icon="Sparkles" size="sm" />
               <span>{{ $t('footer.note') }}</span>
+            </div>
+            <div v-if="isHomeVariant" class="footer-actions">
+              <RouterLink to="/explore" class="footer-link footer-link--cta cta-secondary">
+                {{ $t('home.hero.primaryAction') }}
+              </RouterLink>
+              <RouterLink to="/contact" class="footer-link cta-secondary">
+                {{ $t('nav.contact') }}
+              </RouterLink>
             </div>
           </div>
 
@@ -70,23 +88,48 @@ import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { RouterLink } from 'vue-router'
 import { Github, Sparkles } from 'lucide-vue-next'
+import { useI18n } from 'vue-i18n'
 import { useSettingsStore, useThemeStore } from '@/stores'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 
+const props = withDefaults(
+  defineProps<{
+    variant?: 'default' | 'home'
+  }>(),
+  {
+    variant: 'default',
+  }
+)
+
+const { t } = useI18n()
 const currentYear = computed(() => new Date().getFullYear())
 const themeStore = useThemeStore()
 const settingsStore = useSettingsStore()
 const { resolvedTheme } = storeToRefs(themeStore)
 const { settings } = storeToRefs(settingsStore)
+const isHomeVariant = computed(() => props.variant === 'home')
 const noGlassBackdropStyle = Object.freeze({
   backdropFilter: 'blur(0rem)',
   WebkitBackdropFilter: 'blur(0rem)',
 }) as Readonly<Record<string, string>>
+const marqueeItems = computed(() => [
+  t('app.name'),
+  t('nav.explore'),
+  t('nav.authors'),
+  t('nav.community'),
+  t('nav.schedule'),
+])
 const footerShellStyle = computed<Record<string, string>>(() => {
   const style: Record<string, string> = {
-    '--footer-shell-bg': 'var(--chrome-surface-bg)',
-    '--footer-shell-border': 'var(--chrome-surface-border)',
-    '--footer-shell-shadow': 'var(--chrome-surface-shadow)',
+    '--footer-shell-bg': isHomeVariant.value
+      ? 'rgba(255, 255, 255, 0.42)'
+      : 'rgba(255, 255, 255, 0.5)',
+    '--footer-shell-border': isHomeVariant.value
+      ? 'rgba(148, 163, 184, 0.16)'
+      : 'rgba(148, 163, 184, 0.18)',
+    '--footer-shell-shadow': isHomeVariant.value
+      ? '0 1.5rem 3rem -2.25rem rgba(15, 23, 42, 0.16)'
+      : '0 1.25rem 2.75rem -2.1rem rgba(15, 23, 42, 0.14)',
     '--footer-chip-bg': 'var(--chrome-chip-bg)',
     '--footer-chip-border': 'var(--chrome-chip-border)',
     '--footer-divider': 'var(--chrome-muted-border)',
@@ -132,6 +175,16 @@ const footerShellStyle = computed<Record<string, string>>(() => {
   --footer-divider: var(--chrome-muted-border);
   --footer-link-hover-bg: var(--chrome-muted-bg);
   background: var(--footer-bg);
+}
+
+.footer--home {
+  opacity: var(--home-footer-opacity, 1);
+  transform: translate3d(0, var(--home-footer-y, 0rem), 0)
+    scale3d(var(--home-footer-scale, 1), var(--home-footer-scale, 1), 1);
+  transform-origin: 50% 100%;
+  transition:
+    opacity 220ms cubic-bezier(0.2, 0.84, 0.24, 1),
+    transform 220ms cubic-bezier(0.2, 0.84, 0.24, 1);
 }
 
 .footer::before,
@@ -269,6 +322,35 @@ const footerShellStyle = computed<Record<string, string>>(() => {
     background 240ms cubic-bezier(0.2, 0.84, 0.24, 1);
 }
 
+.footer-marquee {
+  overflow: clip;
+  margin-block-end: clamp(0.875rem, 2vw, 1.25rem);
+  border-block: 0.0625rem solid rgba(148, 163, 184, 0.12);
+  opacity: var(--home-footer-marquee-opacity, 1);
+  transition: opacity 220ms cubic-bezier(0.2, 0.84, 0.24, 1);
+}
+
+.footer-marquee__track {
+  display: inline-flex;
+  min-inline-size: max-content;
+  gap: clamp(1.25rem, 2.4vw, 1.75rem);
+  padding-block: 0.625rem;
+  font-size: clamp(1.35rem, 3vw, 2.5rem);
+  font-weight: var(--font-semibold);
+  letter-spacing: 0.04em;
+  color: color-mix(in srgb, var(--color-text-primary) 72%, transparent);
+  text-transform: uppercase;
+  white-space: nowrap;
+  animation: footer-marquee 22s linear infinite;
+  animation-duration: calc(22s - (var(--home-footer-marquee-speed-progress, 0) * 6s));
+  animation-play-state: var(--home-footer-marquee-play-state, running);
+  will-change: transform;
+}
+
+.footer--home .footer-shell.empty-surface {
+  background: rgba(255, 255, 255, 0.34) !important;
+}
+
 .footer-shell.empty-surface::before,
 .footer-shell.empty-surface::after {
   display: none;
@@ -327,13 +409,6 @@ const footerShellStyle = computed<Record<string, string>>(() => {
   font-weight: var(--font-bold);
 }
 
-.brand-logo__tagline {
-  font-size: 0.6875rem;
-  color: var(--color-text-tertiary);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
 .footer-brand p {
   margin: 0;
   font-size: var(--text-sm);
@@ -348,6 +423,12 @@ const footerShellStyle = computed<Record<string, string>>(() => {
   align-self: flex-start;
   font-size: var(--text-xs);
   color: var(--color-text-secondary);
+}
+
+.footer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
 }
 
 .footer-columns {
@@ -382,6 +463,10 @@ const footerShellStyle = computed<Record<string, string>>(() => {
     color var(--transition-fast),
     background var(--transition-fast),
     border-color var(--transition-fast);
+}
+
+.footer-link--cta {
+  color: var(--color-text-primary);
 }
 
 .footer-link:hover {
@@ -434,9 +519,22 @@ const footerShellStyle = computed<Record<string, string>>(() => {
   color: var(--color-primary);
 }
 
+@keyframes footer-marquee {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
 @media (max-width: 768px) {
   .footer {
-    padding-bottom: calc(var(--mobile-nav-height) + var(--spacing-6));
+    padding-bottom: calc(env(safe-area-inset-bottom, 0rem) + var(--spacing-6));
+  }
+
+  .footer-marquee__track {
+    font-size: clamp(1.1rem, 6vw, 1.8rem);
   }
 
   .footer-main,
@@ -454,5 +552,30 @@ const footerShellStyle = computed<Record<string, string>>(() => {
   .footer-bottom__meta {
     margin-inline-start: 0;
   }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .footer--home {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .footer-marquee,
+  .footer-marquee__track {
+    transition: none;
+    animation: none;
+  }
+}
+
+:global(#app[data-animation-intensity='none'] .footer--home),
+:global([data-animation-intensity='none'] .footer--home) {
+  opacity: 1;
+  transform: none;
+}
+
+:global(#app[data-animation-intensity='none'] .footer-marquee__track),
+:global([data-animation-intensity='none'] .footer-marquee__track) {
+  animation: none;
 }
 </style>

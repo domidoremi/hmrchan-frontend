@@ -274,6 +274,11 @@ const router = createRouter({
   history: createWebHistory(),
   routes,
   scrollBehavior(to, from, savedPosition) {
+    const smoothBehavior: ScrollBehavior =
+      typeof document !== 'undefined' && document.documentElement.dataset.smoothScroll
+        ? 'auto'
+        : 'smooth'
+
     if (savedPosition) {
       return new Promise((resolve) => {
         const targetLeft = savedPosition.left ?? 0
@@ -303,9 +308,9 @@ const router = createRouter({
       return false
     }
     if (to.hash) {
-      return { el: to.hash, behavior: 'smooth' }
+      return { el: to.hash, behavior: smoothBehavior }
     }
-    return { top: 0, behavior: 'smooth' }
+    return { top: 0, behavior: smoothBehavior }
   },
 })
 

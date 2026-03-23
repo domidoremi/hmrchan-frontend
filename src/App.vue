@@ -83,6 +83,7 @@ import BackToTop from '@/components/ui/BackToTop.vue'
 import ErrorBoundary from '@/components/ui/ErrorBoundary.vue'
 import { clientChallengeState } from '@/api/clientChallengeBridge'
 import { verificationDialogState } from '@/api/verificationBridge'
+import { useSmoothScroll } from '@/composables/useSmoothScroll'
 
 const ParticleBackground = defineAsyncComponent(
   () => import('@/components/ui/ParticleBackground.vue')
@@ -109,6 +110,10 @@ usePreferencesSync()
 
 const { resolvedTheme } = storeToRefs(themeStore)
 const { settings } = storeToRefs(settingsStore)
+useSmoothScroll(
+  computed(() => settings.value.enableAnimations),
+  computed(() => settings.value.animationIntensity)
+)
 
 // 地区配置
 const { currentLocale, layout: localeLayout, interaction: localeInteraction } = useLocaleConfig()
@@ -152,7 +157,7 @@ const showMascotBackground = computed(
 const showDeskPet = computed(() => decorationsReady.value && settings.value.deskPet.enabled)
 
 // Footer only appears on key pages (configured via route meta)
-const showFooter = computed(() => Boolean(route.meta.showFooter))
+const showFooter = computed(() => Boolean(route.meta.showFooter) && !isHomeRoute.value)
 const isHomeRoute = computed(() => route.name === 'home' || route.path === '/')
 const shouldMountClientChallengeDialog = computed(() => clientChallengeState.isOpen.value)
 const shouldMountVerificationDialog = computed(
@@ -351,10 +356,6 @@ main.main--home {
 }
 
 @media (max-width: 768px) {
-  main {
-    padding-bottom: var(--mobile-nav-height);
-  }
-
   main.main--home {
     padding-bottom: 0;
   }

@@ -52,7 +52,6 @@ export function useHomeViewModel(options: {
   shouldAnimate: ComputedRef<boolean>
   translate: HomeTranslate
   locale: Ref<string>
-  secondaryReady?: ComputedRef<boolean> | Ref<boolean>
 }) {
   const {
     homeAggregate,
@@ -65,9 +64,7 @@ export function useHomeViewModel(options: {
     shouldAnimate,
     translate,
     locale,
-    secondaryReady,
   } = options
-  const canResolveSecondary = computed(() => secondaryReady?.value ?? true)
 
   const homeSourcePosts = computed(() => {
     if (homeDataSource.value !== 'fallback') return allPosts.value
@@ -108,9 +105,7 @@ export function useHomeViewModel(options: {
     return fallbackTrendingTags.value
   })
 
-  const postsToolbarTags = computed(() =>
-    canResolveSecondary.value ? trendingTags.value.slice(0, 5) : []
-  )
+  const postsToolbarTags = computed(() => trendingTags.value.slice(0, 5))
 
   const uniqueAuthorCount = computed(() => {
     const keys = new Set<string>()
@@ -157,8 +152,6 @@ export function useHomeViewModel(options: {
   })
 
   const trendingAuthors = computed(() => {
-    if (!canResolveSecondary.value) return []
-
     const liveAuthors = homeAggregate.value?.trends.authors ?? []
     if (liveAuthors.length > 0) {
       return liveAuthors.slice(0, 4).map((author) => ({
@@ -211,8 +204,6 @@ export function useHomeViewModel(options: {
   )
 
   const featuredRailCards = computed<FeaturedRailCard[]>(() => {
-    if (!canResolveSecondary.value) return []
-
     return liveFeaturedRailItems.value.map((item) => {
       const post = mapFeaturedItemToPost(item, translate)
       const relatedPost = item.related_posts?.[0]
@@ -270,10 +261,8 @@ export function useHomeViewModel(options: {
     })
   })
 
-  const featuredRailPostIds = computed(() =>
-    canResolveSecondary.value
-      ? new Set(featuredRailCards.value.map((card) => card.post.id))
-      : new Set()
+  const featuredRailPostIds = computed(
+    () => new Set(featuredRailCards.value.map((card) => card.post.id))
   )
 
   const { rawStoryCards, storyCards, storyCardIds, storyCardCount } = useHomeStoryDeck({
@@ -281,7 +270,6 @@ export function useHomeViewModel(options: {
     homeSourcePosts,
     mediaPosts,
     featuredRailPostIds,
-    enabled: canResolveSecondary,
     translate,
   })
 
@@ -296,13 +284,9 @@ export function useHomeViewModel(options: {
     translate,
   })
 
-  const featuredRailPosts = computed(() =>
-    canResolveSecondary.value ? fallbackFeaturedRailPosts.value : []
-  )
+  const featuredRailPosts = computed(() => fallbackFeaturedRailPosts.value)
 
   const curatedMediaHighlights = computed(() => {
-    if (!canResolveSecondary.value) return []
-
     const featuredCards = liveFeaturedRailItems.value.map((item) => {
       const post = mapFeaturedItemToPost(item, translate)
       return buildMediaHighlightCard(post, translate, {
@@ -339,8 +323,6 @@ export function useHomeViewModel(options: {
   })
 
   const portalLeadCard = computed(() => {
-    if (!canResolveSecondary.value) return null
-
     const excludedIds = new Set([...featuredRailPostIds.value, ...storyCardIds.value])
     const preferred = collectUniqueItems(
       [curatedMediaHighlights.value],
@@ -353,8 +335,6 @@ export function useHomeViewModel(options: {
   })
 
   const spotlightMediaCards = computed(() => {
-    if (!canResolveSecondary.value) return []
-
     const excludedIds = new Set([...featuredRailPostIds.value, ...storyCardIds.value])
     if (portalLeadCard.value) excludedIds.add(portalLeadCard.value.post.id)
 
@@ -369,21 +349,17 @@ export function useHomeViewModel(options: {
   })
 
   const portalLeadEyebrow = computed(() => {
-    if (!canResolveSecondary.value) return translate('home.hero.fallbackAuthor')
     if (heroState.heroSpotlightTag.value) return `#${heroState.heroSpotlightTag.value}`
     return portalLeadCard.value?.author || translate('home.hero.fallbackAuthor')
   })
 
   const portalLeadPreviewTitle = computed(() => {
-    if (!canResolveSecondary.value) return translate('home.portal.items.recommend.title')
     const title = normalizeText(portalLeadCard.value?.title)
     if (!title) return translate('home.portal.items.recommend.title')
     return title.length > 56 ? `${title.slice(0, 56)}…` : title
   })
 
   const portalOverviewStats = computed(() => {
-    if (!canResolveSecondary.value) return []
-
     const keys = ['authors', 'schedule', 'community'] as const
     const liveStats = keys
       .map((key) => {
@@ -402,8 +378,6 @@ export function useHomeViewModel(options: {
   })
 
   const resolvedScheduleHighlights = computed(() => {
-    if (!canResolveSecondary.value) return []
-
     if (homeScheduleHighlights.value.length > 0) {
       return homeScheduleHighlights.value
     }
@@ -411,8 +385,6 @@ export function useHomeViewModel(options: {
   })
 
   const resolvedCommunityHighlights = computed(() => {
-    if (!canResolveSecondary.value) return []
-
     if (homeCommunityHighlights.value.length > 0) {
       return homeCommunityHighlights.value
     }
@@ -435,7 +407,6 @@ export function useHomeViewModel(options: {
   })
 
   const trendsScheduleCompanion = computed(() => {
-    if (!canResolveSecondary.value) return null
     if (primaryScheduleHighlights.value.length !== 1) return null
 
     const community = communityHighlightPreview.value
@@ -454,8 +425,6 @@ export function useHomeViewModel(options: {
   })
 
   const portalPanels = computed(() => {
-    if (!canResolveSecondary.value) return []
-
     const firstAuthor = trendingAuthors.value[0]
     const authorItem = portalItemMap.value.get('authors')
     const scheduleItem = portalItemMap.value.get('schedule')
@@ -550,8 +519,6 @@ export function useHomeViewModel(options: {
   })
 
   const bubbleItems = computed(() => {
-    if (!canResolveSecondary.value) return []
-
     const liveItems = homeAggregate.value?.latest_text_posts ?? []
     if (liveItems.length > 0) {
       const editorialPostId = homeAggregate.value?.hero.editorial_card?.post_id ?? null
@@ -630,9 +597,7 @@ export function useHomeViewModel(options: {
     })
   })
 
-  const spotlightTextCards = computed(() =>
-    canResolveSecondary.value ? heroState.spotlightTextCards.value : []
-  )
+  const spotlightTextCards = computed(() => heroState.spotlightTextCards.value)
 
   const quickFilters = computed(() => [
     { key: 'newest', label: translate('explore.newest'), to: { name: 'explore' } },

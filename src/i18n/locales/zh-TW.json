@@ -1,7 +1,6 @@
 {
   "app": {
-    "name": "MomiChan",
-    "tagline": "把想持續關注的創作者瞬間收進來"
+    "name": "MomiChan"
   },
   "nav": {
     "home": "首頁",
@@ -308,6 +307,9 @@
     }
   },
   "home": {
+    "quickNav": {
+      "ariaLabel": "首頁分區導覽"
+    },
     "hero": {
       "title": "發現今天值得收藏的創作者瞬間",
       "subtitle": "把喜歡的內容、作者與日程聚在一起，輕鬆追更與發現。",

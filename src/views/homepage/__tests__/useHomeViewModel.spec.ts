@@ -60,10 +60,9 @@ describe('useHomeViewModel', () => {
     expect(viewModel.trendingAuthors.value.length).toBeGreaterThan(0)
   })
 
-  it('defers secondary homepage view-model groups until secondary content is ready', async () => {
+  it('resolves secondary homepage view-model groups immediately', async () => {
     const aggregate = buildHomepageBootstrapFallback()
     const allPosts = ref(buildHomePostsFromAggregate(aggregate, t))
-    const secondaryReady = ref(false)
 
     const viewModel = useHomeViewModel({
       homeAggregate: ref(aggregate),
@@ -76,25 +75,15 @@ describe('useHomeViewModel', () => {
       shouldAnimate: computed(() => false),
       translate: t,
       locale: ref('en-US'),
-      secondaryReady,
     })
 
     await nextTick()
 
     expect(viewModel.heroTags.value.length).toBeGreaterThan(0)
     expect(viewModel.heroEditorialVisible.value).toBe(true)
-    expect(viewModel.featuredRailCards.value).toHaveLength(0)
-    expect(viewModel.storyCards.value).toHaveLength(0)
-    expect(viewModel.storyCardCount.value).toBe(0)
-    expect(viewModel.bubbleItems.value).toHaveLength(0)
-    expect(viewModel.trendingAuthors.value).toHaveLength(0)
-    expect(viewModel.spotlightTextCards.value).toHaveLength(0)
-
-    secondaryReady.value = true
-    await nextTick()
-
     expect(viewModel.featuredRailCards.value.length).toBeGreaterThan(0)
     expect(viewModel.storyCards.value.length).toBeGreaterThan(0)
+    expect(viewModel.storyCardCount.value).toBeGreaterThan(0)
     expect(viewModel.bubbleItems.value.length).toBeGreaterThan(0)
     expect(viewModel.trendingAuthors.value.length).toBeGreaterThan(0)
     expect(viewModel.spotlightTextCards.value.length).toBeGreaterThan(0)

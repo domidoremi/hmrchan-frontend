@@ -1,104 +1,94 @@
 <template>
-  <nav ref="navbarRef" class="navbar glass-navbar" :class="{ 'navbar-hidden': isNavbarHidden }">
+  <nav ref="navbarRef" class="navbar navbar--minimal" :class="{ 'navbar-hidden': isNavbarHidden }">
     <div class="container navbar-content">
-      <!-- Logo -->
-      <RouterLink to="/" class="navbar-brand" :aria-label="$t('app.name')">
-        <span class="brand-name gradient-text">{{ $t('app.name') }}</span>
-      </RouterLink>
-
-      <!-- Desktop Navigation -->
-      <div ref="navLinksRef" class="navbar-links desktop-only">
-        <!-- 滑动指示器 -->
-        <div class="nav-indicator" :style="navIndicatorStyle" />
-
-        <!-- 动态渲染导航项 -->
-        <RouterLink
-          v-for="(item, index) in desktopNavItems"
-          :key="item.path"
-          :to="item.path"
-          class="nav-link"
-          active-class="nav-link--active"
-          @mouseenter="handlePrefetch(item)"
-          @focus="handlePrefetch(item)"
-        >
-          <span class="nav-link-icon-wrap">
-            <AnimatedIcon
-              :name="getNavAnimation(item)"
-              :fallback-icon="item.icon"
-              size="md"
-              :active="activeDesktopIndex === index"
-            />
-            <span v-if="item.showBadge && scheduleHasNew" class="nav-badge-dot" />
+      <div class="navbar-shell">
+        <RouterLink to="/" class="navbar-brand" :aria-label="$t('app.name')">
+          <span class="navbar-brand__meta">
+            <span class="brand-name gradient-text">{{ $t('app.name') }}</span>
           </span>
-          <span>{{ $t(item.i18nKey) }}</span>
-        </RouterLink>
-      </div>
-
-      <!-- Actions -->
-      <div class="navbar-actions">
-        <button
-          type="button"
-          class="nav-action-btn nav-action-btn--pill nav-action-btn--search"
-          @click="goToSearch"
-          @mouseenter="prefetchExplorePage"
-          @focus="prefetchExplorePage"
-          :aria-label="$t('common.search')"
-        >
-          <AnimatedIcon name="search" :fallback-icon="Search" size="md" />
-          <span class="nav-action-btn__label desktop-only">{{ $t('common.search') }}</span>
-        </button>
-
-        <button
-          type="button"
-          ref="settingsBtnRef"
-          class="nav-action-btn nav-action-btn--square"
-          :class="{ 'nav-action-btn--active': showSettings }"
-          @click="toggleSettings"
-          @mouseenter="prefetchSettingsPanel"
-          @focus="prefetchSettingsPanel"
-          :aria-label="$t('nav.settings')"
-          :aria-expanded="showSettings"
-          aria-haspopup="dialog"
-          :aria-controls="showSettings ? 'navbar-settings-panel' : undefined"
-        >
-          <AnimatedIcon name="sparkle" :fallback-icon="Settings" size="md" :active="showSettings" />
-        </button>
-
-        <RouterLink
-          v-if="!isAuthenticated"
-          :to="{
-            path: '/login',
-            query: {
-              redirect:
-                $route.path !== '/' && $route.path !== '/login' && $route.path !== '/register'
-                  ? $route.fullPath
-                  : undefined,
-            },
-          }"
-          class="login-btn nav-action-btn nav-action-btn--pill nav-action-btn--primary"
-          :aria-label="$t('nav.login')"
-          @mouseenter="prefetchLoginPage"
-          @focus="prefetchLoginPage"
-        >
-          <AnimatedIcon name="user" :fallback-icon="LogIn" size="sm" />
-          <span class="desktop-only">{{ $t('nav.login') }}</span>
         </RouterLink>
 
-        <button
-          type="button"
-          v-else
-          ref="userBtnRef"
-          class="nav-user-btn"
-          :class="{ 'nav-user-btn--active': showUserMenu }"
-          :aria-label="$t('nav.profile')"
-          :aria-expanded="showUserMenu"
-          aria-haspopup="menu"
-          :aria-controls="showUserMenu ? 'navbar-user-menu' : undefined"
-          @click="toggleUserMenu"
-        >
-          <img :src="userAvatar" :alt="user?.username" class="nav-user-avatar" />
-          <div class="nav-user-status" />
-        </button>
+        <div class="navbar-actions">
+          <button
+            type="button"
+            class="nav-action-btn nav-action-btn--pill nav-action-btn--search"
+            @click="goToSearch"
+            @mouseenter="prefetchExplorePage"
+            @focus="prefetchExplorePage"
+            :aria-label="$t('common.search')"
+          >
+            <AnimatedIcon name="search" :fallback-icon="Search" size="md" />
+            <span class="nav-action-btn__label desktop-only">{{ $t('common.search') }}</span>
+          </button>
+
+          <RouterLink
+            to="/explore"
+            class="nav-action-btn nav-action-btn--pill nav-action-btn--primary navbar-cta"
+            :aria-label="$t('home.hero.primaryAction')"
+            @mouseenter="prefetchExplorePage"
+            @focus="prefetchExplorePage"
+          >
+            <AnimatedIcon name="explore" :fallback-icon="Compass" size="sm" />
+            <span class="nav-action-btn__label">{{ $t('home.hero.primaryAction') }}</span>
+          </RouterLink>
+
+          <button
+            type="button"
+            ref="settingsBtnRef"
+            class="nav-action-btn nav-action-btn--square"
+            :class="{ 'nav-action-btn--active': showSettings }"
+            @click="toggleSettings"
+            @mouseenter="prefetchSettingsPanel"
+            @focus="prefetchSettingsPanel"
+            :aria-label="$t('nav.settings')"
+            :aria-expanded="showSettings"
+            aria-haspopup="dialog"
+            :aria-controls="showSettings ? 'navbar-settings-panel' : undefined"
+          >
+            <AnimatedIcon
+              name="sparkle"
+              :fallback-icon="Settings"
+              size="md"
+              :active="showSettings"
+            />
+          </button>
+
+          <RouterLink
+            v-if="!isAuthenticated"
+            :to="{
+              path: '/login',
+              query: {
+                redirect:
+                  $route.path !== '/' && $route.path !== '/login' && $route.path !== '/register'
+                    ? $route.fullPath
+                    : undefined,
+              },
+            }"
+            class="login-btn nav-action-btn nav-action-btn--pill"
+            :aria-label="$t('nav.login')"
+            @mouseenter="prefetchLoginPage"
+            @focus="prefetchLoginPage"
+          >
+            <AnimatedIcon name="user" :fallback-icon="LogIn" size="sm" />
+            <span class="desktop-only">{{ $t('nav.login') }}</span>
+          </RouterLink>
+
+          <button
+            v-else
+            type="button"
+            ref="userBtnRef"
+            class="nav-user-btn"
+            :class="{ 'nav-user-btn--active': showUserMenu }"
+            :aria-label="$t('nav.profile')"
+            :aria-expanded="showUserMenu"
+            aria-haspopup="menu"
+            :aria-controls="showUserMenu ? 'navbar-user-menu' : undefined"
+            @click="toggleUserMenu"
+          >
+            <img :src="userAvatar" :alt="user?.username" class="nav-user-avatar" />
+            <div class="nav-user-status" />
+          </button>
+        </div>
       </div>
     </div>
 
@@ -239,34 +229,6 @@
       </div>
     </Transition>
   </nav>
-
-  <!-- Mobile Bottom Navigation - Enhanced -->
-  <nav class="mobile-nav mobile-only" :class="{ 'mobile-nav--animated': shouldAnimateMobile }">
-    <!-- 滑动指示器背景 -->
-    <div class="mobile-nav-indicator" :style="mobileIndicatorStyle" />
-
-    <!-- 动态渲染移动端导航项 -->
-    <RouterLink
-      v-for="(item, index) in mobileNavItems"
-      :key="item.path"
-      :to="item.requiresAuth && !isAuthenticated ? favoritesLink : item.path"
-      class="mobile-nav-item"
-      :class="{ 'mobile-nav-item--active': activeMobileIndex === index }"
-      @mouseenter="handlePrefetch(item)"
-      @focus="handlePrefetch(item)"
-    >
-      <div class="mobile-nav-icon">
-        <AnimatedIcon
-          :name="getNavAnimation(item)"
-          :fallback-icon="item.icon"
-          size="lg"
-          :active="activeMobileIndex === index"
-        />
-        <span v-if="item.showBadge && scheduleHasNew" class="nav-badge-dot nav-badge-dot--mobile" />
-      </div>
-      <span class="mobile-nav-label">{{ $t(item.i18nKey) }}</span>
-    </RouterLink>
-  </nav>
 </template>
 
 <script setup lang="ts">
@@ -277,7 +239,6 @@ import {
   onUnmounted,
   defineAsyncComponent,
   nextTick,
-  computed,
   useTemplateRef,
 } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
@@ -285,6 +246,7 @@ import { storeToRefs } from 'pinia'
 import {
   Bell,
   ChevronRight,
+  Compass,
   LogIn,
   LogOut,
   Search,
@@ -292,20 +254,12 @@ import {
   Smartphone,
   User,
 } from 'lucide-vue-next'
-import { useAuthStore, useSettingsStore } from '@/stores'
-import { useScheduleStore } from '@/stores/schedule'
+import { useAuthStore } from '@/stores'
 import { getUserDisplayName } from '@/utils/user'
 import { useFocusTrap } from '@/composables/useFocusTrap'
 import { useUserAvatar, preloadUserAvatar } from '@/composables/useUserAvatar'
 import { prefetchExploreData, prefetchAuthorsData } from '@/utils/prefetch'
-import {
-  runWhenIdle,
-  throttleRAF,
-  scheduleDOMUpdate,
-  prefersReducedMotion,
-} from '@/utils/performance'
-import { useNavigation, registerPrefetchFunction } from '@/composables/useNavigation'
-import type { NavigationItem } from '@/config/navigation'
+import { runWhenIdle, throttleRAF, scheduleDOMUpdate } from '@/utils/performance'
 import { resolveNavbarDropdownPosition } from '@/components/layout/navbarDropdownPosition'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
 import Separator from '@/components/ui/Separator.vue'
@@ -326,50 +280,15 @@ function prefetchSettingsPanel() {
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
-const settingsStore = useSettingsStore()
-const scheduleStore = useScheduleStore()
 const { user, isAuthenticated } = storeToRefs(authStore)
-const { settings } = storeToRefs(settingsStore)
-
-// 使用导航 composable
-const {
-  desktopNavItems,
-  mobileNavItems,
-  activeDesktopIndex,
-  activeMobileIndex,
-  favoritesLink,
-  handlePrefetch: handleNavPrefetch,
-} = useNavigation()
-
-// 是否启用动画
-const shouldAnimateMobile = computed(
-  () => settings.value.enableAnimations && !prefersReducedMotion()
-)
-
-// 日程未读标识
-const scheduleHasNew = computed(() => scheduleStore.hasNew)
 
 const showSettings = ref(false)
 const showUserMenu = ref(false)
-
-const navAnimationMap: Record<string, string> = {
-  '/': 'home',
-  '/explore': 'explore',
-  '/favorites': 'heart',
-  '/authors': 'user',
-  '/community': 'sparkle',
-  '/schedule': 'sparkle',
-}
-
-function getNavAnimation(item: NavigationItem) {
-  return navAnimationMap[item.path] || 'sparkle'
-}
 
 const settingsBtnRef = useTemplateRef<HTMLButtonElement>('settingsBtnRef')
 const userBtnRef = useTemplateRef<HTMLButtonElement>('userBtnRef')
 const settingsDropdownRef = useTemplateRef<HTMLDivElement>('settingsDropdownRef')
 const userDropdownRef = useTemplateRef<HTMLDivElement>('userDropdownRef')
-const navLinksRef = useTemplateRef<HTMLDivElement>('navLinksRef')
 const navbarRef = useTemplateRef<HTMLElement>('navbarRef')
 
 useFocusTrap(settingsDropdownRef, showSettings, {
@@ -389,12 +308,6 @@ const settingsDropdownStyle = ref<Record<string, string>>({})
 const userDropdownStyle = ref<Record<string, string>>({})
 const isSettingsDropdownPositioned = ref(false)
 const isUserDropdownPositioned = ref(false)
-
-// 导航指示器样式
-const navIndicatorStyle = ref<Record<string, string>>({
-  opacity: '0',
-  transform: 'translateX(0) scaleX(0)',
-})
 
 const isMobile = ref(false)
 const isNavbarHidden = ref(false)
@@ -428,22 +341,6 @@ function isHomeRailNavLockEnabled(): boolean {
 // 使用统一的用户头像 composable，确保与其他组件同步
 const { avatarUrl: userAvatar } = useUserAvatar()
 
-// 移动端滑动指示器样式
-const mobileIndicatorStyle = computed(() => {
-  const index = activeMobileIndex.value
-  const count = mobileNavItems.value.length || 5
-  if (index === -1) {
-    return { opacity: '0', translate: '0 0' }
-  }
-  // 每个导航项占 1/count 宽度，指示器居中于该项
-  const pct = ((index + 0.5) / count) * 100
-  return {
-    opacity: '1',
-    left: `${pct}%`,
-    translate: '-50% 0',
-  }
-})
-
 const prefetchedPageKeys = new Set<string>()
 
 function runOncePrefetch(key: string, loader: () => void) {
@@ -466,18 +363,6 @@ function prefetchAuthorsPage() {
   })
 }
 
-function prefetchCommunityPage() {
-  runOncePrefetch('community', () => {
-    import('@/views/CommunityPage.vue').catch(() => {})
-  })
-}
-
-function prefetchFavoritesPage() {
-  runOncePrefetch('favorites', () => {
-    import('@/views/FavoritesPage.vue').catch(() => {})
-  })
-}
-
 function prefetchLoginPage() {
   runOncePrefetch('login', () => {
     import('@/views/LoginPage.vue').catch(() => {})
@@ -489,61 +374,6 @@ function prefetchProfileSettingsPage() {
     import('@/views/ProfileSettingsPage.vue').catch(() => {})
   })
 }
-
-// 注册预加载函数到 composable
-registerPrefetchFunction('prefetchExplorePage', prefetchExplorePage)
-registerPrefetchFunction('prefetchAuthorsPage', prefetchAuthorsPage)
-registerPrefetchFunction('prefetchCommunityPage', prefetchCommunityPage)
-registerPrefetchFunction('prefetchFavoritesPage', prefetchFavoritesPage)
-
-// 处理导航项预加载的包装函数
-function handlePrefetch(item: NavigationItem) {
-  handleNavPrefetch(item)
-}
-
-// 更新导航指示器位置
-function updateNavIndicator() {
-  if (isMobile.value || !navLinksRef.value) {
-    navIndicatorStyle.value = { opacity: '0', transform: 'translateX(0) scaleX(0)' }
-    return
-  }
-
-  const index = activeDesktopIndex.value
-  if (index === -1) {
-    navIndicatorStyle.value = { opacity: '0', transform: 'translateX(0) scaleX(0)' }
-    return
-  }
-
-  const navLinks = navLinksRef.value.querySelectorAll('.nav-link')
-  const activeLink = navLinks[index] as HTMLElement
-  if (!activeLink) {
-    navIndicatorStyle.value = { opacity: '0', transform: 'translateX(0) scaleX(0)' }
-    return
-  }
-
-  const containerRect = navLinksRef.value.getBoundingClientRect()
-  const linkRect = activeLink.getBoundingClientRect()
-
-  const left = linkRect.left - containerRect.left
-  const width = linkRect.width
-
-  navIndicatorStyle.value = {
-    opacity: '1',
-    transform: `translateX(${left}px)`,
-    width: `${width}px`,
-  }
-}
-
-// 监听路由变化更新指示器
-watch(
-  [() => route.path, activeDesktopIndex, isAuthenticated],
-  () => {
-    nextTick(() => {
-      requestAnimationFrame(updateNavIndicator)
-    })
-  },
-  { immediate: true }
-)
 
 // 路由变化时关闭所有菜单
 watch(
@@ -828,8 +658,6 @@ const handleScroll = throttleRAF(() => {
 const handleResize = throttleRAF(() => {
   updateIsMobile()
   syncNavbarVisibleHeight()
-  // 更新导航指示器
-  updateNavIndicator()
   if (showSettings.value) {
     nextTick(() => updateDropdownPosition('settings'))
   }
@@ -902,11 +730,6 @@ onMounted(() => {
 
   // Initialize visible height.
   syncNavbarVisibleHeight()
-
-  // 初始化导航指示器
-  nextTick(() => {
-    requestAnimationFrame(updateNavIndicator)
-  })
   document.addEventListener('click', handleClickOutside)
   document.addEventListener('keydown', handleKeydown)
   window.addEventListener('resize', handleResize)
@@ -915,8 +738,6 @@ onMounted(() => {
     handleScroll()
   })
   scheduleNavigationIdlePrefetch()
-  // 检查日程是否有新事件
-  scheduleStore.checkForNew()
 })
 
 onUnmounted(() => {
@@ -937,10 +758,9 @@ onUnmounted(() => {
 
 <style scoped>
 .navbar {
-  --nav-shell-bg: var(--chrome-surface-bg);
-  --nav-shell-border: var(--chrome-surface-border);
-  --nav-shell-shadow: var(--chrome-surface-shadow);
-  --nav-shell-divider: rgba(255, 255, 255, 0.42);
+  --nav-shell-bg: rgba(255, 255, 255, 0.26);
+  --nav-shell-border: rgba(148, 163, 184, 0.12);
+  --nav-shell-shadow: 0 1.25rem 2.75rem -2rem rgba(15, 23, 42, 0.16);
   --nav-muted-bg: var(--chrome-muted-bg);
   --nav-muted-bg-strong: var(--chrome-muted-bg-strong);
   --nav-muted-border: var(--chrome-muted-border);
@@ -953,10 +773,10 @@ onUnmounted(() => {
   --nav-action-border: var(--chrome-action-border);
   --nav-action-border-strong: var(--chrome-action-border-strong);
   --nav-dropdown-bg: var(--chrome-surface-bg-soft);
-  --nav-mobile-bg: var(--chrome-surface-bg);
   display: flex;
   align-items: center;
   height: var(--navbar-height);
+  padding-block: 0.75rem;
   transition:
     transform var(--duration-normal) var(--ease-out),
     box-shadow var(--transition-fast);
@@ -972,17 +792,25 @@ onUnmounted(() => {
 .navbar-content {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--spacing-4);
+  justify-content: center;
+  gap: var(--spacing-3);
   min-inline-size: 0;
 }
 
-.glass-navbar {
+.navbar-shell {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: clamp(0.75rem, 2vw, 1.5rem);
+  inline-size: 100%;
+  min-inline-size: 0;
+  padding: 0.625rem clamp(0.75rem, 1.8vw, 1.1rem);
+  border: 0.0625rem solid var(--nav-shell-border);
+  border-radius: 999rem;
   background: var(--nav-shell-bg);
-  border-bottom: 1px solid var(--nav-shell-border);
   box-shadow: var(--nav-shell-shadow);
-  backdrop-filter: blur(var(--blur-lg));
-  -webkit-backdrop-filter: blur(var(--blur-lg));
+  backdrop-filter: blur(0.5rem);
+  -webkit-backdrop-filter: blur(0.5rem);
 }
 
 /* ========== Brand ========== */
@@ -994,88 +822,18 @@ onUnmounted(() => {
   text-decoration: none;
 }
 
-.brand-name {
-  font-size: var(--text-lg);
-  font-weight: var(--font-bold);
-  letter-spacing: 0.04em;
-  white-space: nowrap;
-}
-
-/* ========== Navigation Links ========== */
-.navbar-links {
-  position: relative;
-  display: flex;
-  flex: 1 1 auto;
+.navbar-brand__meta {
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  gap: var(--spacing-1);
-  padding: 0.1875rem;
-  border: 1px solid var(--nav-muted-border);
-  border-radius: var(--ui-radius-nav, var(--radius-lg));
-  background: var(--nav-muted-bg);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
   min-inline-size: 0;
 }
 
-/* 滑动指示器 */
-.nav-indicator {
-  position: absolute;
-  top: 0.1875rem;
-  bottom: 0.1875rem;
-  left: 0.1875rem;
-  height: auto;
-  background: var(--nav-muted-bg-strong);
-  border: 1px solid var(--nav-muted-border-strong);
-  border-radius: var(--ui-radius-nav, var(--radius-lg));
-  box-shadow: 0 1rem 2rem -1.6rem rgba(15, 23, 42, 0.28);
-  transition:
-    transform var(--duration-normal) var(--ease-spring),
-    width var(--duration-normal) var(--ease-spring),
-    opacity var(--duration-fast) var(--ease-out);
-  pointer-events: none;
-  z-index: 0;
-}
-
-.nav-indicator::after {
-  content: '';
-  position: absolute;
-  bottom: 0.375rem;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 1.25rem;
-  height: 0.1875rem;
-  background: rgba(var(--color-primary-rgb), 0.76);
-  border-radius: var(--radius-full);
-  box-shadow: 0 0 0.5rem rgba(var(--color-primary-rgb), 0.28);
-}
-
-.nav-link {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-2);
-  padding: var(--spacing-2) var(--spacing-3);
-  border-radius: var(--ui-radius-nav, var(--radius-lg));
-  border: 1px solid transparent;
-  color: var(--color-text-secondary);
-  text-decoration: none;
-  font-size: var(--text-sm);
-  font-weight: var(--font-medium);
-  transition:
-    color var(--duration-fast) var(--ease-out),
-    background var(--duration-fast) var(--ease-out),
-    border-color var(--duration-fast) var(--ease-out);
-  z-index: 1;
-}
-
-.nav-link:hover {
-  color: var(--color-text-primary);
-  background: rgba(var(--color-primary-rgb), 0.04);
-  border-color: rgba(var(--color-primary-rgb), 0.08);
-}
-
-.nav-link--active {
-  color: var(--color-primary);
+.brand-name {
+  font-size: clamp(1rem, 1.3vw, 1.1rem);
+  font-weight: var(--font-bold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 
 /* ========== Actions ========== */
@@ -1086,6 +844,7 @@ onUnmounted(() => {
   justify-content: flex-end;
   gap: var(--spacing-2);
   min-inline-size: 0;
+  flex-wrap: nowrap;
 }
 
 .nav-action-btn {
@@ -1156,12 +915,10 @@ onUnmounted(() => {
 }
 
 .nav-action-btn--primary {
-  border-color: rgba(var(--color-primary-rgb), 0.12);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.78)),
-    var(--nav-action-bg);
+  border-color: rgba(var(--color-primary-rgb), 0.16);
+  background: rgba(255, 255, 255, 0.62);
   color: var(--color-text-primary);
-  box-shadow: 0 0.85rem 1.8rem -1.4rem rgba(15, 23, 42, 0.18);
+  box-shadow: 0 0.85rem 1.8rem -1.4rem rgba(15, 23, 42, 0.14);
 }
 
 .nav-action-btn--primary:hover,
@@ -1174,6 +931,10 @@ onUnmounted(() => {
 .nav-action-btn--primary:hover::before,
 .nav-action-btn--primary.nav-action-btn--active::before {
   background: linear-gradient(180deg, rgba(var(--color-primary-rgb), 0.06), transparent);
+}
+
+.navbar-cta {
+  text-decoration: none;
 }
 
 .icon-spin {
@@ -1294,12 +1055,12 @@ onUnmounted(() => {
 
 .settings-dropdown.glass-dropdown,
 .user-dropdown.glass-dropdown {
-  background: var(--nav-dropdown-bg);
+  background: rgba(255, 255, 255, 0.64);
   border: 1px solid var(--nav-shell-border);
   border-radius: var(--ui-radius-dropdown, var(--radius-xl));
   box-shadow: var(--nav-shell-shadow);
-  backdrop-filter: blur(var(--blur-lg));
-  -webkit-backdrop-filter: blur(var(--blur-lg));
+  backdrop-filter: blur(0.5rem);
+  -webkit-backdrop-filter: blur(0.5rem);
 }
 
 .settings-dropdown[data-positioned='false'],
@@ -1444,12 +1205,6 @@ onUnmounted(() => {
   text-overflow: ellipsis;
 }
 
-.dropdown-divider {
-  height: 0.0625rem;
-  margin: 0 var(--spacing-3);
-  background: var(--nav-muted-border);
-}
-
 .dropdown-links {
   padding: var(--spacing-2);
 }
@@ -1531,133 +1286,14 @@ onUnmounted(() => {
   background: rgba(var(--color-error-rgb), 0.15);
 }
 
-/* ========== Mobile Navigation - 增强版 ========== */
-.mobile-nav {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 4.5rem;
-  background: var(--nav-mobile-bg);
-  backdrop-filter: blur(var(--blur-lg));
-  -webkit-backdrop-filter: blur(var(--blur-lg));
-  border-top: 1px solid var(--nav-shell-border);
-  display: flex;
-  align-items: center;
-  justify-content: space-around;
-  padding-bottom: env(safe-area-inset-bottom);
-  z-index: var(--z-sticky);
-  box-shadow: 0 -1rem 2rem -1.5rem rgba(15, 23, 42, 0.22);
-}
-
-/* 滑动指示器 - 跟随活跃项移动 */
-.mobile-nav-indicator {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 2rem;
-  height: 0.1875rem;
-  background: var(--color-primary);
-  border-radius: 0 0 0.1875rem 0.1875rem;
-  transition:
-    left 280ms var(--ease-out),
-    opacity 200ms var(--ease-out);
-  box-shadow: 0 1px 6px rgba(var(--color-primary-rgb), 0.35);
-  pointer-events: none;
-}
-
-.mobile-nav:not(.mobile-nav--animated) .mobile-nav-indicator {
-  transition: none;
-}
-
-.mobile-nav-item {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  flex: 1 1 0;
-  gap: 0.125rem;
-  padding: var(--spacing-2) var(--spacing-1);
-  color: var(--color-text-tertiary);
-  text-decoration: none;
-  font-size: 0.625rem;
-  font-weight: var(--font-medium);
-  transition: color 0.25s ease;
-  min-width: 0;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.mobile-nav-icon {
-  position: relative;
-  width: 2.5rem;
-  height: 2.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--ui-radius-nav-icon, var(--radius-xl));
-  border: 1px solid transparent;
-  transition:
-    background 220ms var(--ease-out),
-    border-color 220ms var(--ease-out),
-    box-shadow 220ms var(--ease-out);
-}
-
-.mobile-nav-label {
-  transition: opacity 220ms var(--ease-out);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100%;
-}
-
-/* Hover 状态 */
-.mobile-nav-item:hover {
-  color: var(--color-text-secondary);
-}
-
-.mobile-nav-item:hover .mobile-nav-icon {
-  background: var(--nav-muted-bg);
-  border-color: var(--nav-muted-border);
-}
-
-/* 活跃状态 */
-.mobile-nav-item--active {
-  color: var(--color-primary);
-}
-
-.mobile-nav-item--active .mobile-nav-icon {
-  background: var(--nav-muted-bg-strong);
-  border-color: var(--nav-muted-border-strong);
-  box-shadow:
-    0 0 0 4px rgba(var(--color-primary-rgb), 0.06),
-    0 4px 12px -2px rgba(var(--color-primary-rgb), 0.2);
-}
-
-.mobile-nav-item--active .mobile-nav-label {
-  font-weight: var(--font-semibold);
-}
-
-/* 旧的顶部指示器样式移除，使用新的滑动指示器 */
-.mobile-nav-item::before {
-  display: none;
-}
-
 /* ========== Responsive ========== */
 .desktop-only {
   display: flex;
 }
 
-.mobile-only {
-  display: none;
-}
-
 @media (max-width: 960px) {
   .desktop-only {
     display: none;
-  }
-
-  .mobile-only {
-    display: flex;
   }
 
   .nav-action-btn {
@@ -1667,6 +1303,10 @@ onUnmounted(() => {
 
   .brand-name {
     font-size: var(--text-lg);
+  }
+
+  .navbar-shell {
+    padding-inline: 0.75rem;
   }
 
   .settings-dropdown,
@@ -1679,63 +1319,27 @@ onUnmounted(() => {
     inset-block-start: calc(var(--navbar-visible-height) + clamp(0.5rem, 2vw, 0.75rem));
     inline-size: auto;
     max-inline-size: calc(100vw - (clamp(0.75rem, 3vw, 1rem) * 2));
-    max-block-size: min(var(--app-safe-block-size-with-mobile-nav), 34rem);
+    max-block-size: min(var(--app-safe-block-size), 34rem);
   }
 }
 
 :global(#app[data-theme='dark'] .nav-action-btn--primary),
 :global([data-theme='dark'] .nav-action-btn--primary) {
-  background:
-    linear-gradient(180deg, rgba(20, 28, 42, 0.92), rgba(10, 16, 28, 0.82)), var(--nav-action-bg);
+  background: rgba(15, 23, 42, 0.62);
   color: var(--color-text-primary);
-}
-
-/* ========== Nav Badge Dot ========== */
-.nav-link-icon-wrap {
-  position: relative;
-  display: inline-flex;
-}
-
-.nav-badge-dot {
-  position: absolute;
-  top: -0.125rem;
-  right: -0.25rem;
-  width: 0.5rem;
-  height: 0.5rem;
-  background: var(--color-error);
-  border-radius: 50%;
-  border: 2px solid var(--nav-muted-bg-strong);
-  animation: badge-pulse 2s ease-in-out infinite;
-  pointer-events: none;
-}
-
-.nav-badge-dot--mobile {
-  top: 0.125rem;
-  right: 0.125rem;
-  width: 0.4375rem;
-  height: 0.4375rem;
-}
-
-@keyframes badge-pulse {
-  0%,
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.7;
-    transform: scale(1.2);
-  }
 }
 
 :global(#app[data-theme='dark'] .navbar),
 :global([data-theme='dark'] .navbar) {
-  --nav-shell-divider: rgba(255, 255, 255, 0.12);
+  --nav-shell-bg: rgba(15, 23, 42, 0.28);
+  --nav-shell-border: rgba(255, 255, 255, 0.1);
+  --nav-shell-shadow: 0 1.5rem 3rem -2.25rem rgba(2, 6, 23, 0.34);
 }
 
 :global(#app[data-theme='blue'] .navbar),
 :global([data-theme='blue'] .navbar) {
-  --nav-shell-divider: rgba(59, 130, 246, 0.18);
+  --nav-shell-bg: rgba(239, 246, 255, 0.32);
+  --nav-shell-border: rgba(96, 165, 250, 0.16);
 }
 
 :global(#app[data-ui-style='material'] .navbar),
