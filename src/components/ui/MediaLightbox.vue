@@ -699,6 +699,8 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   backdrop-filter: blur(0.625rem);
+  overscroll-behavior: none;
+  overflow: hidden;
 }
 
 .lightbox-shell {
@@ -712,6 +714,7 @@ onUnmounted(() => {
   border: 1px solid rgba(255, 255, 255, 0.12);
   box-shadow: var(--shadow-2xl);
   overflow: hidden;
+  overscroll-behavior: contain;
   outline: none;
 }
 
@@ -776,6 +779,7 @@ onUnmounted(() => {
   position: relative;
   flex: 1;
   overflow: hidden;
+  overscroll-behavior: contain;
   display: flex;
   align-items: center;
   justify-content: center;
