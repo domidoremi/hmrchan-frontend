@@ -379,6 +379,7 @@ import { discussionService, type Discussion, ApiError } from '@/api'
 import { normalizeToThumbnailUrl, getThumbnailSrcset } from '@/utils/mediaOptimizer'
 import { normalizeAvatarUrl } from '@/api/userService'
 import { formatRelativeTime } from '@/utils/date'
+import { shouldExposeFallbackPreviewNotice } from '@/utils/runtimeHost'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import { useForwardedElementRef } from '@/composables/useForwardedElementRef'
 import { getFallbackHotTopics, searchFallbackDiscussions } from '@/fallbacks/communityFallback'
@@ -452,7 +453,8 @@ const fallbackReason = computed(
 const showPreviewNotice = computed(
   () =>
     Boolean(fallbackReason.value) &&
-    (isUsingRecentFallback.value || isUsingSearchFallback.value || isUsingHotFallback.value)
+    (isUsingRecentFallback.value || isUsingSearchFallback.value || isUsingHotFallback.value) &&
+    shouldExposeFallbackPreviewNotice()
 )
 
 function switchTab(tabId: string) {

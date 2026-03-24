@@ -5,6 +5,9 @@ const { mockApiClient } = vi.hoisted(() => ({
     get: vi.fn(),
   },
 }))
+const { mockShouldUsePreviewHomepageFallback } = vi.hoisted(() => ({
+  mockShouldUsePreviewHomepageFallback: vi.fn(() => false),
+}))
 
 vi.mock('../client', async () => {
   const actual = await vi.importActual<typeof import('../client')>('../client')
@@ -12,6 +15,15 @@ vi.mock('../client', async () => {
   return {
     ...actual,
     apiClient: mockApiClient,
+  }
+})
+
+vi.mock('@/utils/runtimeHost', async () => {
+  const actual = await vi.importActual<typeof import('@/utils/runtimeHost')>('@/utils/runtimeHost')
+
+  return {
+    ...actual,
+    shouldUsePreviewHomepageFallback: mockShouldUsePreviewHomepageFallback,
   }
 })
 
@@ -30,6 +42,18 @@ const buildAuthor = (overrides: Record<string, unknown> = {}) => ({
 describe('homeService', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockShouldUsePreviewHomepageFallback.mockReturnValue(false)
+  })
+
+  it('uses direct fallback data on Pages preview hosts without calling the API', async () => {
+    mockShouldUsePreviewHomepageFallback.mockReturnValue(true)
+
+    const result = await homeService.loadHomepageBootstrap()
+
+    expect(result.source).toBe('fallback')
+    expect(result.reason).toBeNull()
+    expect(result.payload.version).toBe('home.v1.fallback')
+    expect(mockApiClient.get).not.toHaveBeenCalled()
   })
 
   it('normalizes aggregate preview and community trend payloads', async () => {

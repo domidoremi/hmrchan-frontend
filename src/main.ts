@@ -264,6 +264,7 @@ if (import.meta.hot) {
 
 // 非关键任务：使用现代 Scheduler API 在空闲时执行
 import { scheduleTask } from './utils/modernAPIs'
+import { shouldEnableCloudflareAnalytics } from './utils/runtimeHost'
 const PREFETCH_SETUP_DELAY_MS = 14000
 const PREFETCH_FALLBACK_DELAY_MS = 40000
 const POPULAR_PREFETCH_DELAY_AFTER_INTENT_MS = 12000
@@ -293,6 +294,7 @@ function initCloudflareAnalytics(): void {
   if (!import.meta.env.PROD) return
   if (!CF_BEACON_TOKEN) return
   if (typeof document === 'undefined') return
+  if (!shouldEnableCloudflareAnalytics()) return
   if (!canTrackAnalytics()) return
   if (document.querySelector('script[data-cf-beacon]')) return
 

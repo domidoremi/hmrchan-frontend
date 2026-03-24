@@ -109,4 +109,12 @@ describe('AppFooter', () => {
     expect(wrapper.text()).toContain('Start Exploring')
     expect(wrapper.text()).toContain('Contact')
   })
+
+  it('links GitHub to the repository instead of the bare host', () => {
+    const wrapper = createWrapper()
+
+    expect(wrapper.find('a[href="https://github.com/domidoremi/hmrchan-frontend"]').exists()).toBe(
+      true
+    )
+  })
 })

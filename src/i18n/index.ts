@@ -6,6 +6,7 @@
 import { createI18n } from 'vue-i18n'
 import en from './locales/en.json'
 import { getLocaleConfig, isCJKLocale } from '@/config/locale'
+import { getPreferredPreviewLocale } from '@/utils/runtimeHost'
 
 export type SupportedLocale = 'en' | 'zh-CN' | 'zh-TW' | 'ja'
 type LocaleMessages = typeof en
@@ -30,6 +31,9 @@ function isSupportedLocale(locale: string | null | undefined): locale is Support
 function getDefaultLocale(): SupportedLocale {
   const saved = typeof window !== 'undefined' ? localStorage.getItem('locale') : null
   if (isSupportedLocale(saved)) return saved
+
+  const previewLocale = getPreferredPreviewLocale()
+  if (previewLocale) return previewLocale
 
   const browserLang = typeof navigator !== 'undefined' ? navigator.language : ''
   if (browserLang === 'zh-TW' || browserLang === 'zh-HK') return 'zh-TW'

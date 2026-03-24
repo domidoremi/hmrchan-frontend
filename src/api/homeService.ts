@@ -6,6 +6,7 @@ import {
 } from './publicVisibility'
 import { buildHomepageBootstrapFallback } from '@/fallbacks/homepageBootstrapFallback'
 import { isServiceUnavailableError } from '@/fallbacks/publicPageFallback'
+import { shouldUsePreviewHomepageFallback } from '@/utils/runtimeHost'
 
 export interface HomeImageAsset {
   url: string
@@ -750,6 +751,16 @@ export const homeService = {
   },
 
   async loadHomepageBootstrap(config?: RequestConfig): Promise<HomeBootstrapResult> {
+    if (shouldUsePreviewHomepageFallback()) {
+      return {
+        payload: buildHomepageBootstrapFallback(),
+        visibility: DEFAULT_PUBLIC_VISIBILITY_SCOPE,
+        etag: null,
+        source: 'fallback',
+        reason: null,
+      }
+    }
+
     try {
       const result = await this.getHome(config)
       return {

@@ -69,7 +69,7 @@
           <span>&copy; {{ currentYear }} {{ $t('app.name') }}</span>
           <span class="footer-bottom__meta">{{ $t('footer.rights') }}</span>
           <a
-            href="https://github.com"
+            href="https://github.com/domidoremi/hmrchan-frontend"
             target="_blank"
             rel="noopener noreferrer"
             aria-label="GitHub"

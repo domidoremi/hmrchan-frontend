@@ -158,6 +158,7 @@ import { discussionService, ApiError } from '@/api'
 import { normalizeAvatarUrl } from '@/api/userService'
 import { normalizeToThumbnailUrl } from '@/utils/mediaOptimizer'
 import { formatRelativeTime } from '@/utils/date'
+import { shouldExposeFallbackPreviewNotice } from '@/utils/runtimeHost'
 import Button from '@/components/ui/Button.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import Skeleton from '@/components/ui/Skeleton.vue'
@@ -184,7 +185,10 @@ const isPinning = ref(false)
 let fetchDiscussionToken = 0
 const isUsingFallback = computed(() => discStore.source === 'fallback')
 const fallbackReason = computed(() => discStore.fallbackReason)
-const showPreviewNotice = computed(() => Boolean(fallbackReason.value) && isUsingFallback.value)
+const showPreviewNotice = computed(
+  () =>
+    Boolean(fallbackReason.value) && isUsingFallback.value && shouldExposeFallbackPreviewNotice()
+)
 const resolvedDiscussionAuthorAvatarSrc = computed(
   () =>
     normalizeAvatarUrl(discussion.value?.author.avatar_url || undefined) ||

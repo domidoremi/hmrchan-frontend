@@ -101,6 +101,7 @@ import { authorService, type AuthorListItem, ApiError } from '@/api'
 import { authorCache } from '@/utils/cache'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import { useForwardedElementRef } from '@/composables/useForwardedElementRef'
+import { shouldExposeFallbackPreviewNotice } from '@/utils/runtimeHost'
 import { getFallbackAuthors } from '@/fallbacks/authorsFallback'
 import {
   isServiceUnavailableError,
@@ -123,7 +124,10 @@ const error = ref<string | null>(null)
 const dataSource = ref<PublicPageDataSource>('live')
 const fallbackReason = ref<string | null>(null)
 const isUsingFallback = computed(() => dataSource.value === 'fallback')
-const showPreviewNotice = computed(() => Boolean(fallbackReason.value) && isUsingFallback.value)
+const showPreviewNotice = computed(
+  () =>
+    Boolean(fallbackReason.value) && isUsingFallback.value && shouldExposeFallbackPreviewNotice()
+)
 
 const page = ref(1)
 const total = ref(0)

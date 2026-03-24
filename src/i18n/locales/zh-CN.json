@@ -308,7 +308,14 @@
   },
   "home": {
     "quickNav": {
-      "ariaLabel": "首页分区导航"
+      "ariaLabel": "首页分区导航",
+      "items": {
+        "fold": "首页",
+        "rail": "今日入口",
+        "posts": "最新发布",
+        "media": "今日推荐",
+        "footer": "页脚"
+      }
     },
     "hero": {
       "title": "发现今天值得收藏的创作者瞬间",
@@ -410,6 +417,7 @@
       "scheduleAction": "查看日程",
       "authorsEmpty": "暂无热门作者",
       "tagsEmpty": "暂无热门标签",
+      "authorsHint": "关注本周最受注意的创作者",
       "scheduleHint": "查看本周最新活动与直播安排",
       "authorCount": "共 {n} 条更新"
     },
@@ -1031,7 +1039,7 @@
     "updated": "收藏信息已更新"
   },
   "footer": {
-    "desc": "发现来自优秀创作者的精彩内容，探索无限可能。",
+    "desc": "在一个地方浏览帖子、创作者、日程与社区更新。",
     "rights": "保留所有权利。",
     "cta": {
       "title1": "准备好了吗？",
@@ -1046,7 +1054,7 @@
       "explore": "探索",
       "support": "支持"
     },
-    "note": "适合慢慢逛、慢慢收藏，也适合明天再回来。",
+    "note": "为日常浏览、轻量发现与快速回访而设计。",
     "columns": {
       "discover": "发现",
       "community": "社区"

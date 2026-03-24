@@ -524,7 +524,7 @@
           <header class="page-section-head page-section-head--stage">
             <div class="page-section-copy">
               <h2>{{ $t('home.trends.authorsTitle') }}</h2>
-              <p>{{ $t('home.trends.scheduleHint') }}</p>
+              <p>{{ $t('home.trends.authorsHint') }}</p>
             </div>
           </header>
 
