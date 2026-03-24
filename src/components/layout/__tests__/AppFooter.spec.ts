@@ -110,6 +110,19 @@ describe('AppFooter', () => {
     expect(wrapper.text()).toContain('Contact')
   })
 
+  it('binds the home variant shell to homepage surface tokens', () => {
+    const wrapper = createWrapper('home')
+    const style = wrapper.find('.footer-shell').attributes('style')
+
+    expect(style).toContain('--footer-bg: transparent;')
+    expect(style).toContain(
+      '--footer-shell-bg: var(--home-panel-bg-soft, var(--chrome-surface-bg));'
+    )
+    expect(style).toContain(
+      '--footer-shell-border: var(--home-panel-border, var(--chrome-surface-border));'
+    )
+  })
+
   it('links GitHub to the repository instead of the bare host', () => {
     const wrapper = createWrapper()
 

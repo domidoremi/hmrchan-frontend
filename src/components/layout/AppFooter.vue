@@ -122,21 +122,33 @@ const marqueeItems = computed(() => [
 const footerShellStyle = computed<Record<string, string>>(() => {
   const style: Record<string, string> = {
     '--footer-shell-bg': isHomeVariant.value
-      ? 'rgba(255, 255, 255, 0.42)'
-      : 'rgba(255, 255, 255, 0.5)',
+      ? 'var(--home-panel-bg-soft, var(--chrome-surface-bg))'
+      : 'var(--chrome-surface-bg)',
     '--footer-shell-border': isHomeVariant.value
-      ? 'rgba(148, 163, 184, 0.16)'
-      : 'rgba(148, 163, 184, 0.18)',
+      ? 'var(--home-panel-border, var(--chrome-surface-border))'
+      : 'var(--chrome-surface-border)',
     '--footer-shell-shadow': isHomeVariant.value
-      ? '0 1.5rem 3rem -2.25rem rgba(15, 23, 42, 0.16)'
-      : '0 1.25rem 2.75rem -2.1rem rgba(15, 23, 42, 0.14)',
-    '--footer-chip-bg': 'var(--chrome-chip-bg)',
-    '--footer-chip-border': 'var(--chrome-chip-border)',
-    '--footer-divider': 'var(--chrome-muted-border)',
-    '--footer-link-hover-bg': 'var(--chrome-muted-bg)',
+      ? 'var(--home-panel-shadow, var(--chrome-surface-shadow))'
+      : 'var(--chrome-surface-shadow)',
+    '--footer-chip-bg': isHomeVariant.value
+      ? 'var(--home-pill-bg, var(--chrome-chip-bg))'
+      : 'var(--chrome-chip-bg)',
+    '--footer-chip-border': isHomeVariant.value
+      ? 'var(--home-pill-border, var(--chrome-chip-border))'
+      : 'var(--chrome-chip-border)',
+    '--footer-divider': isHomeVariant.value
+      ? 'var(--home-panel-border, var(--chrome-muted-border))'
+      : 'var(--chrome-muted-border)',
+    '--footer-link-hover-bg': isHomeVariant.value
+      ? 'var(--home-tag-hover, var(--chrome-muted-bg))'
+      : 'var(--chrome-muted-bg)',
   }
 
-  if (resolvedTheme.value === 'dark') {
+  if (isHomeVariant.value) {
+    style['--footer-bg'] = 'transparent'
+    style['--footer-overlay'] = 'none'
+    style['--footer-top-fade'] = 'none'
+  } else if (resolvedTheme.value === 'dark') {
     style['--footer-top-fade'] =
       'linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, transparent 100%)'
   }
@@ -348,7 +360,7 @@ const footerShellStyle = computed<Record<string, string>>(() => {
 }
 
 .footer--home .footer-shell.empty-surface {
-  background: rgba(255, 255, 255, 0.34) !important;
+  background: var(--footer-shell-bg) !important;
 }
 
 .footer-shell.empty-surface::before,

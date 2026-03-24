@@ -2288,6 +2288,20 @@ onBeforeUnmount(() => {
   position: relative;
   min-block-size: min(36rem, 100dvh);
   padding-block-start: clamp(1.5rem, 4vw, 3rem);
+  background: var(--home-story-stage-footer-bg);
+}
+
+.home-page .app-footer-shell--home::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--home-story-stage-footer-bg);
+  pointer-events: none;
+}
+
+.home-page .app-footer-shell--home > * {
+  position: relative;
+  z-index: 1;
 }
 
 :global(#app[data-theme='dark'] .home-page),

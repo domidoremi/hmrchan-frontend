@@ -759,9 +759,9 @@ onUnmounted(() => {
 
 <style scoped>
 .navbar {
-  --nav-shell-bg: rgba(255, 255, 255, 0.26);
-  --nav-shell-border: rgba(148, 163, 184, 0.12);
-  --nav-shell-shadow: 0 1.25rem 2.75rem -2rem rgba(15, 23, 42, 0.16);
+  --nav-shell-bg: transparent;
+  --nav-shell-border: var(--chrome-surface-border);
+  --nav-shell-shadow: none;
   --nav-muted-bg: var(--chrome-muted-bg);
   --nav-muted-bg-strong: var(--chrome-muted-bg-strong);
   --nav-muted-border: var(--chrome-muted-border);
@@ -774,6 +774,9 @@ onUnmounted(() => {
   --nav-action-border: var(--chrome-action-border);
   --nav-action-border-strong: var(--chrome-action-border-strong);
   --nav-dropdown-bg: var(--chrome-surface-bg-soft);
+  --nav-dropdown-border: var(--chrome-surface-border);
+  --nav-dropdown-shadow: var(--chrome-surface-shadow);
+  --nav-dropdown-backdrop: blur(0.5rem);
   position: fixed;
   inset-block-start: 0;
   inset-inline: 0;
@@ -926,8 +929,12 @@ onUnmounted(() => {
 }
 
 .nav-action-btn--primary {
-  border-color: rgba(var(--color-primary-rgb), 0.16);
-  background: rgba(255, 255, 255, 0.2);
+  border-color: color-mix(
+    in srgb,
+    var(--nav-action-border-strong) 76%,
+    rgba(var(--color-primary-rgb), 0.16)
+  );
+  background: color-mix(in srgb, var(--nav-action-bg) 74%, rgba(var(--color-primary-rgb), 0.12));
   color: var(--color-text-primary);
   box-shadow: none;
 }
@@ -1066,12 +1073,12 @@ onUnmounted(() => {
 
 .settings-dropdown.glass-dropdown,
 .user-dropdown.glass-dropdown {
-  background: rgba(255, 255, 255, 0.64);
-  border: 1px solid var(--nav-shell-border);
+  background: var(--nav-dropdown-bg);
+  border: 1px solid var(--nav-dropdown-border);
   border-radius: var(--ui-radius-dropdown, var(--radius-xl));
-  box-shadow: var(--nav-shell-shadow);
-  backdrop-filter: blur(0.5rem);
-  -webkit-backdrop-filter: blur(0.5rem);
+  box-shadow: var(--nav-dropdown-shadow);
+  backdrop-filter: var(--nav-dropdown-backdrop);
+  -webkit-backdrop-filter: var(--nav-dropdown-backdrop);
 }
 
 .settings-dropdown[data-positioned='false'],
@@ -1336,14 +1343,18 @@ onUnmounted(() => {
 
 :global(#app[data-theme='dark'] .nav-action-btn--primary),
 :global([data-theme='dark'] .nav-action-btn--primary) {
-  background: rgba(15, 23, 42, 0.24);
+  background: color-mix(in srgb, var(--nav-action-bg) 78%, rgba(var(--color-primary-rgb), 0.12));
   color: var(--color-text-primary);
 }
 
 :global(#app[data-theme='dark'] .navbar),
 :global([data-theme='dark'] .navbar) {
   --nav-shell-bg: transparent;
-  --nav-shell-border: rgba(255, 255, 255, 0.1);
+  --nav-shell-border: color-mix(
+    in srgb,
+    var(--chrome-surface-border) 86%,
+    rgba(255, 255, 255, 0.1)
+  );
   --nav-shell-shadow: none;
 }
 
@@ -1355,6 +1366,17 @@ onUnmounted(() => {
 
 :global(#app[data-ui-style='material'] .navbar),
 :global([data-ui-style='material'] .navbar) {
+  --nav-action-bg: color-mix(in srgb, var(--chrome-action-bg) 90%, transparent);
+  --nav-dropdown-bg: color-mix(in srgb, var(--ui-surface-bg) 94%, transparent);
+  --nav-dropdown-border: var(--ui-surface-border);
+  --nav-dropdown-shadow: var(--shadow-md);
+  --nav-dropdown-backdrop: blur(0.375rem);
   --nav-shell-shadow: none;
+}
+
+:global(#app[data-ui-style='ios'] .navbar),
+:global([data-ui-style='ios'] .navbar) {
+  --nav-dropdown-bg: color-mix(in srgb, var(--chrome-surface-bg-soft) 92%, transparent);
+  --nav-dropdown-backdrop: blur(0.75rem);
 }
 </style>
