@@ -73,6 +73,12 @@ coverage/
 *.lcov
 .nyc_output/
 __screenshots__/
+playwright-report/
+test-results/
+blob-report/
+.playwright/
+.tmp-playwright/
+vitest-results*.json
 
 # Cypress
 cypress/videos/
@@ -129,6 +135,7 @@ pnpm-lock.yaml
 .cache/
 .temp/
 .tmp/
+.tmp-codex/
 tmp/
 output/
 
