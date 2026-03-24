@@ -117,6 +117,7 @@ const i18n = createI18n({
       },
       common: {
         search: 'Search',
+        primaryNavigation: 'Primary navigation',
       },
       home: {
         hero: {
@@ -146,6 +147,11 @@ async function createWrapper() {
       { path: '/', component: { template: '<div>home</div>' } },
       { path: '/explore', component: { template: '<div>explore</div>' } },
       { path: '/search', component: { template: '<div>search</div>' } },
+      { path: '/favorites', component: { template: '<div>favorites</div>' } },
+      { path: '/authors', component: { template: '<div>authors</div>' } },
+      { path: '/community', component: { template: '<div>community</div>' } },
+      { path: '/schedule', component: { template: '<div>schedule</div>' } },
+      { path: '/about', component: { template: '<div>about</div>' } },
       { path: '/login', component: { template: '<div>login</div>' } },
       { path: '/:pathMatch(.*)*', component: { template: '<div>fallback</div>' } },
     ],
@@ -309,13 +315,33 @@ describe('AppNavbar', () => {
     wrapper.unmount()
   })
 
-  it('keeps brand and explore CTA in the mobile navbar', async () => {
+  it('keeps brand and renders the mobile route trigger instead of the CTA', async () => {
     stubMatchMedia(true)
     const { wrapper } = await createWrapper()
 
     expect(wrapper.find('.navbar-brand .brand-name').text()).toContain('MomiChan')
     expect(wrapper.find('.navbar-shell--actions-only').exists()).toBe(false)
-    expect(wrapper.find('.navbar-cta').text()).toContain('Start Exploring')
+    expect(wrapper.find('.navbar-cta').exists()).toBe(false)
+    expect(wrapper.find('button[aria-label="Primary navigation"]').exists()).toBe(true)
+
+    wrapper.unmount()
+  })
+
+  it('opens the mobile route menu with primary destinations', async () => {
+    stubMatchMedia(true)
+    const { wrapper } = await createWrapper()
+
+    await wrapper.get('button[aria-label="Primary navigation"]').trigger('click')
+    await nextTick()
+
+    const routeLinks = wrapper.findAll('.route-dropdown__link')
+    const labels = routeLinks.map((link) => link.text())
+
+    expect(wrapper.find('#navbar-route-menu').exists()).toBe(true)
+    expect(labels).toEqual(
+      expect.arrayContaining(['Home', 'Explore', 'Favorites', 'Authors', 'Community', 'Schedule'])
+    )
+    expect(wrapper.find('.route-dropdown__utility').text()).toContain('About')
 
     wrapper.unmount()
   })
